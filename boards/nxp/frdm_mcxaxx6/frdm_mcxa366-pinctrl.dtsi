@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -144,6 +144,29 @@
 			slew-rate = "fast";
 			drive-strength = "low";
 			input-enable;
+		};
+	};
+
+	pinmux_slcd0: slcd_pins {
+		group0 {
+			pinmux = <LCD_P16_P0_12>,
+				 <LCD_P17_P0_13>,
+				 <LCD_P18_P0_14>,
+				 <LCD_P19_P0_15>,
+				 <LCD_P20_P0_16>,
+				 <LCD_P21_P0_17>,
+				 <LCD_P22_P0_18>,
+				 <LCD_P23_P0_19>,
+				 <LCD_P24_P0_20>,
+				 <LCD_P25_P0_21>,
+				 <LCD_P26_P0_22>,
+				 <LCD_P27_P0_23>,
+				 <LCD_P28_P0_24>,
+				 <LCD_P29_P0_25>,
+				 <LCD_P30_P0_26>,
+				 <LCD_P31_P0_27>;
+			drive-strength = "low";
+			slew-rate = "fast";
 		};
 	};
 };
