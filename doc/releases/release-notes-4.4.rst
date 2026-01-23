@@ -320,6 +320,11 @@ New Drivers
 
   * :dtcompatible:`solomon,ssd1325`
 
+* OTP
+
+  * Added new stm32 BSEC driver that provides means to program and read OTP fuses
+    (:dtcompatible:`st,stm32-bsec`). (:github:`102403`)
+
 New Samples
 ***********
 
