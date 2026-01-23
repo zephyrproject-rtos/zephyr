@@ -11,8 +11,14 @@ config ZEPHYR_LORA_BASICS_MODEM_MODULE
 config USE_LORA_BASICS_MODEM_DRIVERS
 	bool
 
+if ZEPHYR_LORA_BASICS_MODEM_MODULE
+
+menu "LoRa Basics Modem"
+	depends on LORA_MODULE_BACKEND_LORA_BASICS_MODEM
+
 config LORA_BASICS_MODEM_HAL
 	bool "LoRa Basics Modem HAL implementation"
+	default y
 	depends on USE_LORA_BASICS_MODEM_DRIVERS && LORA_SX126X
 	select ENTROPY_GENERATOR
 	select REBOOT
@@ -30,3 +36,98 @@ config LORA_BASICS_MODEM_HAL_WORKQ_PRIORITY
 	  Cooperative priority of the HAL workqueue thread used for handling
 	  radio IRQ callbacks. The value is passed to K_PRIO_COOP(), so 10
 	  results in priority -11. Lower values = higher priority.
+
+choice LORA_BASICS_MODEM_RP_VERSION
+	prompt "Regional Parameters version"
+	default LORA_BASICS_MODEM_RP2_103
+
+config LORA_BASICS_MODEM_RP2_101
+	bool "RP2-1.0.1"
+
+config LORA_BASICS_MODEM_RP2_103
+	bool "RP2-1.0.3"
+
+endchoice
+
+config LORA_BASICS_MODEM_NUMBER_OF_STACKS
+	int "Number of LoRaWAN stacks"
+	default 1
+	range 1 3
+	help
+	  Number of LoRaWAN stacks to use. Each stack can be configured
+	  independently with its own credentials and region.
+
+choice LORA_BASICS_MODEM_CRYPTOGRAPHY
+	prompt "Cryptography backend"
+	default LORA_BASICS_MODEM_CRYPTOGRAPHY_SOFT
+
+config LORA_BASICS_MODEM_CRYPTOGRAPHY_SOFT
+	bool "Software cryptography"
+	help
+	  Use software-based cryptography implementation.
+
+endchoice
+
+config LORA_BASICS_MODEM_CLASS_B
+	bool "Class B support"
+	help
+	  Enable LoRaWAN Class B (beacon) support.
+
+config LORA_BASICS_MODEM_CLASS_C
+	bool "Class C support"
+	help
+	  Enable LoRaWAN Class C (continuous receive) support.
+
+config LORA_BASICS_MODEM_MULTICAST
+	bool "Multicast support"
+	help
+	  Enable LoRaWAN multicast support.
+
+config LORA_BASICS_MODEM_CSMA
+	bool "CSMA support"
+	help
+	  Enable Carrier Sense Multiple Access (CSMA) support.
+
+config LORA_BASICS_MODEM_CSMA_BY_DEFAULT
+	bool "CSMA enabled by default"
+	depends on LORA_BASICS_MODEM_CSMA
+	help
+	  Enable CSMA by default at modem initialization.
+
+config LORA_BASICS_MODEM_MIN_RANDOM_DELAY_MS
+	int "Minimum random TX delay (ms)"
+	default 500
+	range 0 10000
+	help
+	  Minimum random delay in milliseconds added before each uplink
+	  transmission for collision avoidance. Set to 0 to disable.
+	  Default is 500ms. LBM adds a random delay between this value
+	  and LORA_BASICS_MODEM_MAX_RANDOM_DELAY_MS before each TX.
+
+config LORA_BASICS_MODEM_MAX_RANDOM_DELAY_MS
+	int "Maximum random TX delay (ms)"
+	default 6000
+	range 0 10000
+	help
+	  Maximum random delay in milliseconds added before each uplink
+	  transmission for collision avoidance.
+	  Default is 6000ms. LBM adds a random delay between
+	  LORA_BASICS_MODEM_MIN_RANDOM_DELAY_MS and this value before each TX.
+
+config LORA_BASICS_MODEM_DBG_TRACE
+	bool "LBM debug trace"
+	depends on LOG
+	help
+	  Enable debug trace output in the LBM library.
+	  Requires the Zephyr logging subsystem to be enabled.
+
+config LORA_BASICS_MODEM_DEEP_DBG_TRACE
+	bool "LBM deep debug trace"
+	depends on LORA_BASICS_MODEM_DBG_TRACE
+	help
+	  Enable deep debug trace output in the LBM library.
+	  This produces very verbose output.
+
+endmenu
+
+endif # ZEPHYR_LORA_BASICS_MODEM_MODULE
