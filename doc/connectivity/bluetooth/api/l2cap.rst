@@ -59,10 +59,11 @@ passed to the application as it is received.
 The ``seg_recv`` callback allows applications to process large or streaming
 data incrementally without waiting for full reassembly.
 
-The callback should return 0 when the segment has been handled successfully,
-or a negative error code on failure.
-
-
+Since :c:member:`bt_l2cap_chan_ops.seg_recv` is a ``void`` callback, it
+cannot report errors using a return value. If an unrecoverable error occurs
+while processing a segment, the application should handle it explicitly, for
+example by disconnecting the channel with
+:c:func:`bt_l2cap_chan_disconnect` or closing the underlying connection.
 .. note::
   The ``recv`` callback is called directly from RX Thread thus it is not
   recommended to block for long periods of time.
