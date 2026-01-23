@@ -41,7 +41,24 @@ These two features proved the return and forward edge validation, respectively. 
 
 As IBT is effectively implemented by the compiler, toolchain support is necessary. Currently, Zephyr SDK x86 toolchain can be used to build applications with IBT support. However, their precompiled artifacts, such as ``libc`` and ``libgcc``, do not have IBT enabled. Therefore, for ``libc``, one needs to build it as a module, for example, by using :kconfig:option:`CONFIG_PICOLIBC_USE_MODULE`. For other bits, one would need a custom toolchain.
 
-Limitations
------------
+Intel CET Limitations
+^^^^^^^^^^^^^^^^^^^^^
 
 Currently, the shadow stacks that are created behind the scenes live on the global namespace. Thus, one *cannot* reuse thread stack names, even across different compilation units.
+
+ARM Pointer Authentication and Branch Target Identification
+*************************************************************
+
+ARM platforms provide hardware-based CFI features through Pointer Authentication (PAC) and Branch Target Identification (BTI), available on both Cortex-M and ARM64 (Cortex-A/R) architectures:
+
+1. **Pointer Authentication (PAC)**: Signs return addresses and other pointers using cryptographic signatures. When a return address is pushed to the stack, it is signed with a key unique to each thread. Before returning, the signature is verified, ensuring the return address has not been tampered with. This protects against Return-Oriented Programming (ROP) attacks. Available in ARMv8.1-M Mainline (Cortex-M) and ARMv8.3-A and later (ARM64).
+
+2. **Branch Target Identification (BTI)**: Marks legitimate indirect branch targets with special BTI landing pad instructions. The processor verifies that indirect branches land only on valid targets marked with BTI instructions. This protects against Jump-Oriented Programming (JOP) attacks. Available in ARMv8.1-M Mainline (Cortex-M) and ARMv8.5-A and later (ARM64).
+
+These features provide return and forward edge validation, respectively. PAC and BTI can be enabled via the :kconfig:option:`ARM_PACBTI` menu. Available options include :kconfig:option:`CONFIG_ARM_PACBTI_STANDARD` (both PAC and BTI), :kconfig:option:`CONFIG_ARM_PACBTI_PACRET` (PAC only), :kconfig:option:`CONFIG_ARM_PACBTI_BTI` (BTI only), and other variants. Both features can be used independently or combined for comprehensive control flow integrity.
+
+Like x86 CET IBT, these features require compiler support and proper C library instrumentation. PAC requires that functions use the appropriate signing and verification instructions, while BTI requires that all legitimate branch targets include BTI landing pad instructions. Precompiled C libraries from toolchains typically lack this instrumentation.
+
+For BTI support, the C library must be compiled with ``-mbranch-protection`` flags to include BTI landing pads in all functions. Therefore, when using any option that enables BTI, only :kconfig:option:`CONFIG_MINIMAL_LIBC` or picolibc built as a module via :kconfig:option:`CONFIG_PICOLIBC_USE_MODULE` can be used. Newlib from toolchains is not supported with BTI.
+
+PAC has less strict requirements as it primarily affects function prologues and epilogues, but for optimal security, building the C library with PAC support is recommended.
