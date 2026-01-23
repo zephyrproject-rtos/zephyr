@@ -3427,6 +3427,10 @@ Microchip SAM Platforms:
     - nandojve
   collaborators:
     - ArunMCHP
+    - fabin-mchp
+    - Farsin-Nasar-Microchip
+    - mchp-asif
+    - sunil-abraham
     - stephanosio
   files:
     - boards/atmel/
