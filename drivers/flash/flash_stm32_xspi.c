@@ -1826,6 +1826,52 @@ static int stm32_xspi_enable_qe(const struct device *dev)
 	return ret;
 }
 
+/* Enter 4-byte address mode (required for >16MB NOR flashes like W25Q512) */
+static int stm32_xspi_enter_4byte_mode(const struct device *dev)
+{
+	struct flash_stm32_xspi_data *dev_data = dev->data;
+	XSPI_RegularCmdTypeDef s_command = {0};
+	uint8_t status_reg3;
+	int ret;
+
+	LOG_INF("Entering 4-byte address mode");
+
+	/* Initialize the command to enter 4-byte address mode */
+	s_command.Instruction = SPI_NOR_CMD_4BA; /* 0xB7 */
+	s_command.InstructionMode = HAL_XSPI_INSTRUCTION_1_LINE;
+	s_command.InstructionWidth = HAL_XSPI_INSTRUCTION_8_BITS;
+	s_command.InstructionDTRMode = HAL_XSPI_INSTRUCTION_DTR_DISABLE;
+	s_command.AddressMode = HAL_XSPI_ADDRESS_NONE;
+	s_command.DataMode = HAL_XSPI_DATA_NONE;
+	s_command.DummyCycles = 0U;
+	s_command.DQSMode = HAL_XSPI_DQS_DISABLE;
+	s_command.SIOOMode = HAL_XSPI_SIOO_INST_EVERY_CMD;
+
+	if (HAL_XSPI_Command(&dev_data->hxspi, &s_command,
+			     HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+		LOG_ERR("Failed to send 4-byte address mode command");
+		return -EIO;
+	}
+
+	/* Small delay for flash to process the mode change */
+	k_busy_wait(10);
+
+	/* Verify by reading Status Register 3 - ADS bit (bit 0) indicates 4-byte mode */
+	ret = stm32_xspi_read_status_register(dev, 3, &status_reg3);
+	if (ret < 0) {
+		LOG_ERR("Failed to read Status Register 3");
+		return ret;
+	}
+
+	if (status_reg3 & 0x01) {
+		LOG_INF("4-byte address mode enabled (SR3=0x%02x, ADS=1)", status_reg3);
+		return 0;
+	}
+
+	LOG_ERR("Failed to enter 4-byte mode (SR3=0x%02x, ADS=0)", status_reg3);
+	return -EIO;
+}
+
 static void spi_nor_process_bfp_addrbytes(const struct device *dev,
 					  const uint8_t jesd216_bfp_addrbytes)
 {
@@ -1889,6 +1935,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 	const size_t flash_size = jesd216_bfp_density(bfp) / 8U;
 	struct jesd216_instr read_instr = { 0 };
 	struct jesd216_bfp_dw15 dw15;
+	int ret;
 
 	if (flash_size != dev_cfg->flash_size) {
 		LOG_DBG("Unexpected flash size: %u", flash_size);
@@ -1910,6 +1957,18 @@ static int spi_nor_process_bfp(const struct device *dev,
 
 	spi_nor_process_bfp_addrbytes(dev, jesd216_bfp_addrbytes(bfp));
 	LOG_DBG("Address width: %u Bytes", data->address_width);
+
+	/* Enter 4-byte address mode if flash supports it
+	 * This is critical for flashes >16MB (e.g., W25Q512JV 64MB)
+	 * The flash powers up in 3-byte mode and must be explicitly switched
+	 */
+	if (data->address_width == 4U) {
+		ret = stm32_xspi_enter_4byte_mode(dev);
+		if (ret < 0) {
+			LOG_ERR("Failed to enter 4-byte address mode: %d", ret);
+			return ret;
+		}
+	}
 
 	/* use PP opcode based on configured data mode if nothing is set in DTS */
 	if (data->write_opcode == SPI_NOR_WRITEOC_NONE) {
