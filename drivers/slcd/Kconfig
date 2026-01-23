@@ -16,10 +16,17 @@ config SLCD_CONTROLLER_INIT_PRIORITY
 	int "Controller initialization priority"
 	default 85
 	help
-	  SLCD Bus Controllers initialization priority.
+	  SLCD Controller initialization priority.
+
+config SLCD_PANEL_INIT_PRIORITY
+	int "Panel initialization priority"
+	default 90
+	help
+	  SLCD Panel initialization priority.
 
 # zephyr-keep-sorted-start
 source "drivers/slcd/Kconfig.nxp_slcd"
+source "drivers/slcd/Kconfig.segment7"
 # zephyr-keep-sorted-stop
 
 endif # SLCD
