@@ -18,7 +18,13 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/irq.h>
 
+#if defined(CONFIG_SOC_SERIES_RTL87X2G)
 #include <rtl_uart.h>
+#elif defined(CONFIG_SOC_SERIES_RTL8752H)
+#include <rtl876x_uart.h>
+#else
+#error "Unsupported Realtek Bee SoC series"
+#endif
 
 #include <zephyr/logging/log.h>
 
@@ -418,7 +424,6 @@ int uart_bee_drv_cmd(const struct device *dev, uint32_t cmd, uint32_t p)
 #endif
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-
 static void uart_bee_isr(const struct device *dev)
 {
 	struct uart_bee_data *data = dev->data;
