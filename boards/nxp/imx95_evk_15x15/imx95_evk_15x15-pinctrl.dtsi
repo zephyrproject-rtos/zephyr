@@ -4,6 +4,7 @@
  */
 
 #include <nxp/nxp_imx/mimx9596cvtxn-pinctrl.dtsi>
+#include "../imx95_evk/imx95_evk-pinctrl.dtsi"
 
 &pinctrl {
 	emdio_default: emdio_default {
