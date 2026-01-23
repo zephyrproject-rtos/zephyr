@@ -8,4 +8,7 @@ if BOARD_NUCLEO_N657X0_Q
 configdefault NET_L2_ETHERNET
 	default y
 
+configdefault OTP
+	default y if ETH_STM32_HAL && NVMEM
+
 endif # BOARD_NUCLEO_N657X0_Q
