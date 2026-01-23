@@ -1,0 +1,43 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_mcxw72.dtsi>
+#include "frdm_mcxw72-pinctrl.dtsi"
+
+/ {
+	model = "NXP FRDM-MCXW72 board (CPU1)";
+	compatible = "nxp,mcxw727c";
+
+	chosen {
+		zephyr,flash = &flash;
+		zephyr,flash-controller = &fmu;
+		zephyr,sram = &stcm0;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+	};
+
+	cpus {
+		/delete-node/ cpu@0;
+	};
+};
+
+&lpuart1 {
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpuart1>;
+	pinctrl-names = "default";
+};
+
+/*
+ * Some test suites enable PM on CPU1 builds, which selects the MCUX LPTMR
+ * system timer. Ensure one LPTMR instance is enabled so the timer driver
+ * doesn't hit its build-time assertion.
+ */
+&lptmr0 {
+	status = "okay";
+};
