@@ -154,6 +154,11 @@ static uint8_t supported_services(const void *cmd, uint16_t cmd_len,
 	tester_set_bit(rp->data, BTP_SERVICE_ID_RFCOMM);
 #endif /* CONFIG_BT_RFCOMM */
 
+	/* octet 5 */
+#if defined(CONFIG_BT_MAP)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_MAP);
+#endif /* CONFIG_BT_MAP */
+
 	*rsp_len = SUPPORTED_SERVICES_RSP_LEN;
 
 	return BTP_STATUS_SUCCESS;
@@ -314,6 +319,11 @@ static uint8_t register_service(const void *cmd, uint16_t cmd_len,
 		status = tester_init_rfcomm();
 		break;
 #endif /* CONFIG_BT_RFCOMM */
+#if defined(CONFIG_BT_MAP)
+	case BTP_SERVICE_ID_MAP:
+		status = tester_init_map();
+		break;
+#endif /* CONFIG_BT_MAP */
 	default:
 		LOG_WRN("unknown id: 0x%02x", cp->id);
 		status = BTP_STATUS_FAILED;
@@ -479,6 +489,11 @@ static uint8_t unregister_service(const void *cmd, uint16_t cmd_len,
 		status = tester_unregister_rfcomm();
 		break;
 #endif /* CONFIG_BT_RFCOMM */
+#if defined(CONFIG_BT_MAP)
+	case BTP_SERVICE_ID_MAP:
+		status = tester_unregister_map();
+		break;
+#endif /* CONFIG_BT_MAP */
 	default:
 		LOG_WRN("unknown id: 0x%x", cp->id);
 		status = BTP_STATUS_FAILED;
