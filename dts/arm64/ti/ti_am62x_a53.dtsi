@@ -130,3 +130,18 @@
 	interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&gic>;
 };
+
+&main_sdhci0 {
+	interrupts = <GIC_SPI 133 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
+&main_sdhci1 {
+	interrupts = <GIC_SPI 83 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
+&main_sdhci2 {
+	interrupts = <GIC_SPI 82 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
