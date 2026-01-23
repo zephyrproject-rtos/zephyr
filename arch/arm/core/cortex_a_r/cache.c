@@ -40,7 +40,7 @@ size_t arch_dcache_line_size_get(void)
 		val = read_sysreg(ctr);
 		dminline = (val >> CTR_DMINLINE_SHIFT) & CTR_DMINLINE_MASK;
 		/* Log2 of the number of words */
-		dcache_line_size = 2 << dminline;
+		dcache_line_size = 4 << dminline;
 	}
 
 	return dcache_line_size;
