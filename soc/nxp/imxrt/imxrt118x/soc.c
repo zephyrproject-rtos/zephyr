@@ -91,7 +91,7 @@ const __imx_boot_container_section container boot_header = {
 #define EDMA_DID           0x7U
 
 /* When CM33 sets TRDC, CM7 must NOT require TRDC ownership from ELE */
-#if defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_SOC_MIMXRT1189_CM7)
+#if defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M7)
 /* When CONFIG_SECOND_CORE_MCUX then TRDC(AON/WAKEUP) ownership cannot be released
  * to CM33 and CM7 both in one ELE reset cycle.
  * Only CM33 will set TRDC.
@@ -728,10 +728,10 @@ static ALWAYS_INLINE void trdc_enable_all_access(void)
 		sts = ELE_BaseAPI_GetFwStatus(MU_RT_S3MUA, &ele_fw_sts);
 	} while (sts != kStatus_Success);
 
-#if defined(CONFIG_SOC_MIMXRT1189_CM33)
+#if defined(CONFIG_CPU_CORTEX_M33)
 	/* Release TRDC AON to CM33 core */
 	sts = ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_AON_ID, ELE_CORE_CM33_ID);
-#elif defined(CONFIG_SOC_MIMXRT1189_CM7)
+#elif defined(CONFIG_CPU_CORTEX_M7)
 	/* Release TRDC AON to CM7 core */
 	sts = ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_AON_ID, ELE_CORE_CM7_ID);
 #endif
@@ -740,10 +740,10 @@ static ALWAYS_INLINE void trdc_enable_all_access(void)
 			"AON permission, AON domain permission can't be configured.");
 	}
 
-#if defined(CONFIG_SOC_MIMXRT1189_CM33)
+#if defined(CONFIG_CPU_CORTEX_M33)
 	/* Release TRDC Wakeup to CM33 core */
 	sts = ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_WAKEUP_ID, ELE_CORE_CM33_ID);
-#elif defined(CONFIG_SOC_MIMXRT1189_CM7)
+#elif defined(CONFIG_CPU_CORTEX_M7)
 	/* Release TRDC Wakeup to CM7 core */
 	sts = ELE_BaseAPI_ReleaseRDC(MU_RT_S3MUA, ELE_TRDC_WAKEUP_ID, ELE_CORE_CM7_ID);
 #endif

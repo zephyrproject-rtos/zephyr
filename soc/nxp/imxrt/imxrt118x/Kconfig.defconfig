@@ -1,4 +1,4 @@
-# Copyright 2024-2025 NXP
+# Copyright 2024-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_IMXRT118X
@@ -39,7 +39,7 @@ config NXP_IMXRT_BOOT_HEADER
 endif # SECOND_CORE_MCUX
 
 choice CACHE_TYPE
-	default EXTERNAL_CACHE if SOC_MIMXRT1189_CM33
+	default EXTERNAL_CACHE if CPU_CORTEX_M33
 endchoice
 
 endif # SOC_SERIES_IMXRT118X
