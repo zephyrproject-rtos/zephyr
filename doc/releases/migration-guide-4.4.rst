@@ -413,6 +413,7 @@ Ethernet
   * :dtcompatible:`litex,liteeth` (:github:`100620`)
   * :dtcompatible:`microchip,lan865x` (:github:`100318`)
   * :dtcompatible:`microchip,lan9250` (:github:`99127`)
+  * :dtcompatible:`nxp,enet-mac` (:github:`102775`)
   * :dtcompatible:`sensry,sy1xx-mac` (:github:`100619`)
   * :dtcompatible:`virtio,net` (:github:`100106`)
   * :dtcompatible:`vnd,ethernet` (:github:`96598`)
