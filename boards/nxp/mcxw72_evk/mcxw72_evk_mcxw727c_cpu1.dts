@@ -1,0 +1,46 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_mcxw72.dtsi>
+#include "mcxw72_evk-pinctrl.dtsi"
+
+/ {
+	model = "NXP MCXW72 EVK board (CPU1)";
+	compatible = "nxp,mcxw727c";
+
+	chosen {
+		zephyr,flash = &flash;
+		zephyr,flash-controller = &fmu;
+		zephyr,sram = &stcm0;
+
+		/* Required by uart console/logging tests */
+		zephyr,console = &lpuart0;
+		zephyr,shell-uart = &lpuart0;
+	};
+
+	cpus {
+		/delete-node/ cpu@0;
+	};
+};
+
+/*
+ * Some test suites enable PM on CPU1 builds, which selects the MCUX LPTMR
+ * system timer. Ensure one LPTMR instance is enabled so the timer driver
+ * doesn't hit its build-time assertion.
+ */
+&lptmr0 {
+	status = "okay";
+};
+
+/* Enable a UART for console/logging backends on CPU1 */
+&lpuart0 {
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpuart0>;
+	pinctrl-names = "default";
+};
