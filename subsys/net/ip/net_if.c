@@ -5419,9 +5419,7 @@ static void remove_ipv4_ifaddr(struct net_if *iface,
 		goto out;
 	}
 
-#if defined(CONFIG_NET_IPV4_ACD)
 	net_ipv4_acd_cancel(iface, ifaddr);
-#endif
 
 	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_ADDR_DEL,
 					iface,
