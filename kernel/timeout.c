@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/init.h>
 #include <zephyr/spinlock.h>
 #include <ksched.h>
 #include <timeout_q.h>
@@ -17,7 +18,7 @@
 
 static uint64_t curr_tick;
 
-static sys_dlist_t timeout_list = SYS_DLIST_STATIC_INIT(&timeout_list);
+static struct timeout_q timeout_list;
 
 /*
  * The timeout code shall take no locks other than its own (timeout_lock), nor
@@ -28,28 +29,136 @@ static struct k_spinlock timeout_lock;
 /* Ticks left to process in the currently-executing sys_clock_announce() */
 static int announce_remaining;
 
-static struct _timeout *first(void)
+#if defined(CONFIG_TIMEOUT_MANAGEMENT_DELTAQ)
+static inline int timeout_deltaq_init(void)
 {
-	sys_dnode_t *t = sys_dlist_peek_head(&timeout_list);
+	sys_dlist_init(&timeout_list.deltaq);
+
+	return 0;
+}
+
+/**
+ * Get the first timeout in the delta-q timeout management structure
+ */
+static struct _timeout *timeout_deltaq_first(void)
+{
+	sys_dnode_t *t = sys_dlist_peek_head(&timeout_list.deltaq);
 
 	return (t == NULL) ? NULL : CONTAINER_OF(t, struct _timeout, node);
 }
 
-static struct _timeout *next(struct _timeout *t)
+/**
+ * Given a pointer to a timeout structure, get the next timeout
+ */
+static struct _timeout *timeout_deltaq_next(struct _timeout *t)
 {
-	sys_dnode_t *n = sys_dlist_peek_next(&timeout_list, &t->node);
+	sys_dnode_t *n = sys_dlist_peek_next(&timeout_list.deltaq, &t->node);
 
 	return (n == NULL) ? NULL : CONTAINER_OF(n, struct _timeout, node);
 }
 
-static void remove_timeout(struct _timeout *t)
+/**
+ * Remove a timeout from the delta-q timeout management structure
+ */
+static void timeout_deltaq_remove_timeout(struct _timeout *t)
 {
-	if (next(t) != NULL) {
-		next(t)->dticks += t->dticks;
+	if (timeout_deltaq_next(t) != NULL) {
+		timeout_deltaq_next(t)->dticks += t->dticks;
 	}
 
 	sys_dlist_remove(&t->node);
 }
+
+/**
+ * Get the remaining number of ticks until the specified timeout expires
+ */
+static k_ticks_t timeout_deltaq_remainder(const struct _timeout *to)
+{
+	k_ticks_t ticks = 0;
+
+	for (struct _timeout *t = timeout_deltaq_first();
+	     t != NULL;
+	     t = timeout_deltaq_next(t)) {
+		ticks += t->dticks;
+		if (to == t) {
+			break;
+		}
+	}
+
+	return ticks;
+}
+
+/**
+ * Add a timeout to the delta-q timeout management structure
+ */
+static void timeout_deltaq_add_timeout(struct _timeout *to)
+{
+	struct _timeout *t;
+
+	for (t = timeout_deltaq_first();
+	     t != NULL;
+	     t = timeout_deltaq_next(t)) {
+		if (t->dticks > to->dticks) {
+			t->dticks -= to->dticks;
+			sys_dlist_insert(&t->node, &to->node);
+			break;
+		}
+		to->dticks -= t->dticks;
+		}
+
+	if (t == NULL) {
+		sys_dlist_append(&timeout_list.deltaq, &to->node);
+	}
+}
+
+/**
+ * Loop to announce ticks and process expired timeouts
+ */
+static inline k_spinlock_key_t timeout_deltaq_announce(k_spinlock_key_t key)
+{
+	struct _timeout *t;
+
+	for (t = timeout_deltaq_first();
+	     (t != NULL) && (t->dticks <= announce_remaining);
+	     t = timeout_deltaq_first()) {
+		int dt = t->dticks;
+
+		curr_tick += dt;
+		t->dticks = 0;
+		timeout_deltaq_remove_timeout(t);
+		t->dticks = TIMEOUT_DTICKS_ANNOUNCING;
+
+		k_spin_unlock(&timeout_lock, key);
+		t->fn(t);
+		key = k_spin_lock(&timeout_lock);
+		announce_remaining -= dt;
+	}
+
+	if (t != NULL) {
+		t->dticks -= announce_remaining;
+	}
+
+	curr_tick += announce_remaining;
+	announce_remaining = 0;
+
+	return key;
+}
+
+static int32_t timeout_deltaq_next_timeout(int32_t ticks_elapsed)
+{
+	struct _timeout *to = timeout_deltaq_first();
+	int32_t ret;
+
+	if ((to == NULL) ||
+	    ((int64_t)(to->dticks - ticks_elapsed) > (int64_t)INT_MAX)) {
+		ret = SYS_CLOCK_MAX_WAIT;
+	} else {
+		ret = max(0, to->dticks - ticks_elapsed);
+	}
+
+	return ret;
+}
+#endif
 
 static int32_t elapsed(void)
 {
@@ -72,21 +181,6 @@ static int32_t elapsed(void)
 	return announce_remaining == 0 ? sys_clock_elapsed() : 0U;
 }
 
-static int32_t next_timeout(int32_t ticks_elapsed)
-{
-	struct _timeout *to = first();
-	int32_t ret;
-
-	if ((to == NULL) ||
-	    ((int64_t)(to->dticks - ticks_elapsed) > (int64_t)INT_MAX)) {
-		ret = SYS_CLOCK_MAX_WAIT;
-	} else {
-		ret = max(0, to->dticks - ticks_elapsed);
-	}
-
-	return ret;
-}
-
 k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t timeout)
 {
 	k_ticks_t ticks = 0;
@@ -103,7 +197,6 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 	to->fn = fn;
 
 	K_SPINLOCK(&timeout_lock) {
-		struct _timeout *t;
 		int32_t ticks_elapsed;
 		bool has_elapsed = false;
 
@@ -119,27 +212,17 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 			ticks = timeout.ticks;
 		}
 
-		for (t = first(); t != NULL; t = next(t)) {
-			if (t->dticks > to->dticks) {
-				t->dticks -= to->dticks;
-				sys_dlist_insert(&t->node, &to->node);
-				break;
-			}
-			to->dticks -= t->dticks;
-		}
+		timeout_q_add_timeout(to);
 
-		if (t == NULL) {
-			sys_dlist_append(&timeout_list, &to->node);
-		}
-
-		if (to == first() && announce_remaining == 0) {
+		if ((to == timeout_q_first()) &&
+		    (announce_remaining == 0)) {
 			if (!has_elapsed) {
 				/* In case of absolute timeout that is first to expire
 				 * elapsed need to be read from the system clock.
 				 */
 				ticks_elapsed = elapsed();
 			}
-			sys_clock_set_timeout(next_timeout(ticks_elapsed), false);
+			sys_clock_set_timeout(timeout_q_next_timeout(ticks_elapsed), false);
 		}
 	}
 
@@ -152,13 +235,13 @@ int z_abort_timeout(struct _timeout *to)
 
 	K_SPINLOCK(&timeout_lock) {
 		if (sys_dnode_is_linked(&to->node)) {
-			bool is_first = (to == first());
+			bool is_first = (to == timeout_q_first());
 
-			remove_timeout(to);
+			timeout_q_remove_timeout(to);
 			to->dticks = TIMEOUT_DTICKS_ABORTED;
 			ret = 0;
 			if (is_first) {
-				sys_clock_set_timeout(next_timeout(elapsed()), false);
+				sys_clock_set_timeout(timeout_q_next_timeout(elapsed()), false);
 			}
 		} else if (to->dticks == TIMEOUT_DTICKS_ANNOUNCING) {
 			to->dticks = TIMEOUT_DTICKS_ABORTED;
@@ -168,28 +251,13 @@ int z_abort_timeout(struct _timeout *to)
 	return ret;
 }
 
-/* must be locked */
-static k_ticks_t timeout_rem(const struct _timeout *timeout)
-{
-	k_ticks_t ticks = 0;
-
-	for (struct _timeout *t = first(); t != NULL; t = next(t)) {
-		ticks += t->dticks;
-		if (timeout == t) {
-			break;
-		}
-	}
-
-	return ticks;
-}
-
 k_ticks_t z_timeout_remaining(const struct _timeout *timeout)
 {
 	k_ticks_t ticks = 0;
 
 	K_SPINLOCK(&timeout_lock) {
 		if (!z_is_inactive_timeout(timeout)) {
-			ticks = timeout_rem(timeout) - elapsed();
+			ticks = timeout_q_remainder(timeout) - elapsed();
 		}
 	}
 
@@ -204,7 +272,7 @@ k_ticks_t z_timeout_expires(const struct _timeout *timeout)
 	K_SPINLOCK(&timeout_lock) {
 		ticks = curr_tick;
 		if (!z_is_inactive_timeout(timeout)) {
-			ticks += timeout_rem(timeout);
+			ticks += timeout_q_remainder(timeout);
 		}
 	}
 
@@ -217,7 +285,7 @@ int32_t z_get_next_timeout_expiry(void)
 	int32_t ret = (int32_t) K_TICKS_FOREVER;
 
 	K_SPINLOCK(&timeout_lock) {
-		ret = next_timeout(elapsed());
+		ret = timeout_q_next_timeout(elapsed());
 	}
 	return ret;
 }
@@ -238,32 +306,9 @@ void sys_clock_announce_locked(int32_t ticks, k_spinlock_key_t key)
 
 	announce_remaining = ticks;
 
-	struct _timeout *t;
+	key = timeout_q_announce(key);
 
-	for (t = first();
-	     (t != NULL) && (t->dticks <= announce_remaining);
-	     t = first()) {
-		int dt = t->dticks;
-
-		curr_tick += dt;
-		t->dticks = 0;
-		remove_timeout(t);
-		t->dticks = TIMEOUT_DTICKS_ANNOUNCING;
-
-		k_spin_unlock(&timeout_lock, key);
-		t->fn(t);
-		key = k_spin_lock(&timeout_lock);
-		announce_remaining -= dt;
-	}
-
-	if (t != NULL) {
-		t->dticks -= announce_remaining;
-	}
-
-	curr_tick += announce_remaining;
-	announce_remaining = 0;
-
-	sys_clock_set_timeout(next_timeout(0), false);
+	sys_clock_set_timeout(timeout_q_next_timeout(0), false);
 
 	k_spin_unlock(&timeout_lock, key);
 
@@ -371,3 +416,6 @@ void z_vrfy_sys_clock_tick_set(uint64_t tick)
 	z_impl_sys_clock_tick_set(tick);
 }
 #endif /* CONFIG_ZTEST */
+
+/* Initialize the timeout management subsystem before the timer driver */
+SYS_INIT(timeout_q_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

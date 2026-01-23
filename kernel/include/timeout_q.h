@@ -22,6 +22,23 @@ extern "C" {
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 
+#if defined(CONFIG_TIMEOUT_MANAGEMENT_DELTAQ)
+
+struct timeout_q {
+	sys_dlist_t deltaq;
+};
+
+#define timeout_q_init           timeout_deltaq_init
+#define timeout_q_first          timeout_deltaq_first
+#define timeout_q_remainder      timeout_deltaq_remainder
+#define timeout_q_add_timeout    timeout_deltaq_add_timeout
+#define timeout_q_remove_timeout timeout_deltaq_remove_timeout
+#define timeout_q_announce       timeout_deltaq_announce
+#define timeout_q_next_timeout   timeout_deltaq_next_timeout
+#else
+#error "Unknown timeout management implementation"
+#endif
+
 /* Value written to dticks when timeout is aborted. */
 #define TIMEOUT_DTICKS_ABORTED (IS_ENABLED(CONFIG_TIMEOUT_64BIT) ? INT64_MIN : INT32_MIN)
 

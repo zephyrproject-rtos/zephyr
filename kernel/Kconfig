@@ -753,6 +753,23 @@ config TIMEOUT_64BIT
 	  availability of absolute timeout values (which require the
 	  extra precision).
 
+choice TIMEOUT_MANAGEMENT_ALGORITHM
+	prompt "Timeout management algorithm"
+	default TIMEOUT_MANAGEMENT_DELTAQ
+	help
+	  The kernel can be built with different choices for the timeout
+	  management algorithm. These offer different trade-offs between
+	  code size, and performance scaling when many timeouts are added.
+
+config TIMEOUT_MANAGEMENT_DELTAQ
+	bool "Use a delta queue for timeout management"
+	help
+	  This is the traditional Zephyr timeout management algorithm. Timeouts
+	  are stored in a single linked list sorted by their expiration time.
+	  Insertion is O(n), and removal is O(1).
+
+endchoice # TIMEOUT_MANAGEMENT_ALGORITHM
+
 config SYS_CLOCK_MAX_TIMEOUT_DAYS
 	int "Max timeout (in days) used in conversions"
 	default 365
