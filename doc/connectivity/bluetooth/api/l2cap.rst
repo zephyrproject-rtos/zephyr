@@ -57,8 +57,14 @@ incoming L2CAP data is delivered in multiple segments. Each segment is
 passed to the application as it is received.
 
 The ``seg_recv`` callback allows applications to process large or streaming
-data incrementally without waiting for full reassembly.
+data incrementally without waiting for full reassembly. It is an alternative
+to the ``recv`` callback, and both must not be used at the same time on the
+same channel instance.
 
+When using ``seg_recv``, the application is responsible for managing flow
+control explicitly by giving credits to the channel, for example with
+:c:func:`bt_l2cap_chan_give_credits`. Failing to grant sufficient credits
+will prevent further segments from being delivered.
 Since :c:member:`bt_l2cap_chan_ops.seg_recv` is a ``void`` callback, it
 cannot report errors using a return value. If an unrecoverable error occurs
 while processing a segment, the application should handle it explicitly, for
