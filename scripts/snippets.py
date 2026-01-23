@@ -17,7 +17,7 @@ Output CMake variables:
 from collections import defaultdict, UserDict
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
-from typing import Dict, Iterable, List, Set
+from collections.abc import Iterable
 from jsonschema.exceptions import best_match
 import argparse
 import logging
@@ -36,8 +36,8 @@ except ImportError:
 
 # Marker type for an 'append:' configuration. Maps variables
 # to the list of values to append to them.
-Appends = Dict[str, List[str]]
-BoardRevisionAppends = Dict[str, Dict[str, List[str]]]
+Appends = dict[str, list[str]]
+BoardRevisionAppends = dict[str, dict[str, list[str]]]
 
 def _new_append():
     return defaultdict(list)
@@ -52,7 +52,7 @@ class Snippet:
 
     name: str
     appends: Appends = field(default_factory=_new_append)
-    board2appends: Dict[str, BoardRevisionAppends] = field(default_factory=_new_board2appends)
+    board2appends: dict[str, BoardRevisionAppends] = field(default_factory=_new_board2appends)
 
     def process_data(self, pathobj: Path, snippet_data: dict, sysbuild: bool):
         '''Process the data in a snippet.yml file, after it is loaded into a
@@ -95,8 +95,8 @@ class Snippets(UserDict):
 
     def __init__(self, requested: Iterable[str] = None):
         super().__init__()
-        self.paths: Set[Path] = set()
-        self.requested: List[str] = list(requested or [])
+        self.paths: set[Path] = set()
+        self.requested: list[str] = list(requested or [])
 
 class SnippetsError(Exception):
     '''Class for signalling expected errors'''
