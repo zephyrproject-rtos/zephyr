@@ -192,7 +192,7 @@ struct eswifi_dev *eswifi_by_iface_idx(uint8_t iface)
 	return &eswifi0;
 }
 
-static int __parse_ipv4_address(char *str, char *ssid, uint8_t ip[4])
+static void __parse_ipv4_address(char *str, char *ssid, uint8_t ip[4])
 {
 	int byte = -1;
 
@@ -211,8 +211,6 @@ static int __parse_ipv4_address(char *str, char *ssid, uint8_t ip[4])
 		while (*str && (*str++ != '.')) {
 		}
 	}
-
-	return 0;
 }
 
 static void eswifi_scan(struct eswifi_dev *eswifi)
@@ -298,12 +296,7 @@ static int eswifi_connect(struct eswifi_dev *eswifi)
 	}
 
 	/* Any IP assigned ? (dhcp offload or manually) */
-	err = __parse_ipv4_address(rsp, eswifi->sta.ssid,
-				   (uint8_t *)&addr.s4_addr);
-	if (err < 0) {
-		LOG_ERR("Unable to retrieve IP address");
-		goto error;
-	}
+	__parse_ipv4_address(rsp, eswifi->sta.ssid, (uint8_t *)&addr.s4_addr);
 
 	LOG_DBG("ip = %d.%d.%d.%d", addr.s4_addr[0], addr.s4_addr[1],
 		   addr.s4_addr[2], addr.s4_addr[3]);
