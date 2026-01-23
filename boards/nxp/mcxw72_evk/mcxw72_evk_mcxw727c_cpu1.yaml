@@ -1,0 +1,16 @@
+#
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mcxw72_evk/mcxw727c/cpu1
+name: NXP MCXW72_EVK (CPU1)
+type: mcu
+arch: arm
+ram: 64
+flash: 200
+toolchain:
+  - zephyr
+  - gnuarmemb
+vendor: nxp
