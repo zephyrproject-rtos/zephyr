@@ -8,6 +8,19 @@
 #include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
+/ {
+	chosen {
+		zephyr,display = &co5300;
+		zephyr,touch = &chsc5x;
+		ambiq,gpu = &gpu;
+	};
+
+	lvgl_pointer {
+		compatible = "zephyr,lvgl-pointer-input";
+		input = <&chsc5x>;
+	};
+};
+
 &iom2 {
 	cmdq-buffer-location = "SRAM_NO_CACHE";
 	cmdq-buffer-size = <256>;
@@ -30,42 +43,6 @@
 	};
 };
 
-&pinctrl {
-	/* QSPI pinctrl */
-	dc_spi_default: dc_spi_default {
-		group1 {
-			pinmux = <DISP_TE_P33>,
-				<DISP_QSPI_D0_P79>,
-				<DISP_QSPI_D1_P80>,
-				<DISP_QSPI_SCK_P81>,
-				<DISP_QSPI_D2_P82>,
-				<DISP_QSPI_D3_P83>;
-			drive-strength = "0.5";
-		};
-		group2 {
-			pinmux = <NCE209_P209>;
-			ambiq,nce-src = <0x33>;
-			drive-strength = "0.5";
-		};
-	};
-	/* SPI/DSPI pinctrl,co5300 couldn't support SPI.
-	 * dc_spi_default: dc_spi_default {
-	 *	group1 {
-	 *		pinmux = <DISP_TE_P33>,
-	 *			<DISP_SPI_SD_P79>,
-	 *			<DISP_SPI_DCX_P80>,
-	 *			<DISP_SPI_SCK_P81>,
-	 *		drive-strength = "0.5";
-	 *	};
-	 *	group2 {
-	 *		pinmux = <NCE209_P209>;
-	 *		ambiq,nce-src = <0x32>;
-	 *		drive-strength = "0.5";
-	 *	};
-	 *};
-	 */
-};
-
 &dc_spi {
 	status = "okay";
 	clock-frequency = <48000000>;
@@ -85,7 +62,6 @@
 	co5300: co5300@0 {
 		status = "okay";
 		compatible = "chipone,co5300";
-		reset-gpios = <&gpio32_63 31 (GPIO_PULL_UP)>;
 		reg = <0x0>;
 		pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
 		rotation = <0>;
@@ -100,12 +76,4 @@
 		spi-cpha;
 		/*spi-hold-cs;*/
 	};
-};
-
-&gpio32_63 {
-	status = "okay";
-};
-
-&gpio64_95 {
-	status = "okay";
 };

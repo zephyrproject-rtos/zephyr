@@ -12,16 +12,16 @@
 	dc_spi_default: dc_spi_default {
 		group1 {
 			pinmux = <DISP_TE_P33>,
-				 <DISP_QSPI_D0_P79>,
-				 <DISP_QSPI_D1_P80>,
-				 <DISP_QSPI_SCK_P81>,
-				 <DISP_QSPI_D2_P82>,
-				 <DISP_QSPI_D3_P83>;
+				 <DISP_QSPI_D0_P100>,
+				 <DISP_QSPI_D1_P101>,
+				 <DISP_QSPI_SCK_P102>,
+				 <DISP_QSPI_D2_P103>,
+				 <DISP_QSPI_D3_P104>;
 			drive-strength = "0.5";
 		};
 
 		group2 {
-			pinmux = <NCE209_P209>;
+			pinmux = <NCE31_P31>;
 			ambiq,nce-src = <0x33>;
 			drive-strength = "0.5";
 		};
@@ -30,13 +30,13 @@
 	 * dc_spi_default: dc_spi_default {
 	 *	group1 {
 	 *		pinmux = <DISP_TE_P33>,
-	 *			<DISP_SPI_SD_P79>,
-	 *			<DISP_SPI_DCX_P80>,
-	 *			<DISP_SPI_SCK_P81>,
+	 *			<DISP_SPI_SD_P100>,
+	 *			<DISP_SPI_DCX_P101>,
+	 *			<DISP_SPI_SCK_P102>,
 	 *		drive-strength = "0.5";
 	 *	};
 	 *	group2 {
-	 *		pinmux = <NCE209_P209>;
+	 *		pinmux = <NCE31_P31>;
 	 *		ambiq,nce-src = <0x32>;
 	 *		drive-strength = "0.5";
 	 *	};
@@ -46,15 +46,19 @@
 
 &dc_spi {
 	co5300: co5300@0 {
-		reset-gpios = <&gpio32_63 31 GPIO_PULL_UP>;
+		reset-gpios = <&gpio32_63 3 GPIO_PULL_UP>;
 	};
+};
+
+&gpio0_31 {
+	status = "okay";
 };
 
 &gpio32_63 {
 	status = "okay";
 };
 
-&gpio64_95 {
+&gpio96_127 {
 	status = "okay";
 };
 
