@@ -571,7 +571,7 @@ static uint8_t set_connectable(const void *cmd, uint16_t cmd_len,
 	if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
 		int err;
 
-		err = bt_br_set_connectable(cp->connectable ? true : false);
+		err = bt_br_set_connectable(cp->connectable ? true : false, NULL);
 		if ((err < 0) && (err != -EALREADY)) {
 			return BTP_STATUS_FAILED;
 		}
@@ -721,7 +721,7 @@ static uint8_t set_discoverable(const void *cmd, uint16_t cmd_len,
 		if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
 			int err;
 
-			err = bt_br_set_connectable(true);
+			err = bt_br_set_connectable(true, NULL);
 			if (err == -EALREADY) {
 				err = bt_br_set_discoverable(false, false);
 				if ((err < 0) && (err != -EALREADY)) {
@@ -746,7 +746,7 @@ static uint8_t set_discoverable(const void *cmd, uint16_t cmd_len,
 		if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
 			int err;
 
-			err = bt_br_set_connectable(true);
+			err = bt_br_set_connectable(true, NULL);
 			if (err == -EALREADY) {
 				err = bt_br_set_discoverable(false, false);
 				if ((err < 0) && (err != -EALREADY)) {

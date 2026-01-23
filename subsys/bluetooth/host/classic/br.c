@@ -35,6 +35,8 @@ static size_t discovery_results_size;
 static size_t discovery_results_count;
 static sys_slist_t discovery_cbs = SYS_SLIST_STATIC_INIT(&discovery_cbs);
 
+static bt_br_conn_req_func_t br_conn_req_func;
+
 static int reject_conn(const bt_addr_t *bdaddr, uint8_t reason)
 {
 	struct bt_hci_cp_reject_conn_req *cp;
@@ -58,40 +60,62 @@ static int reject_conn(const bt_addr_t *bdaddr, uint8_t reason)
 	return 0;
 }
 
-static int accept_conn(const bt_addr_t *bdaddr)
+static uint8_t accept_conn(const struct bt_hci_evt_conn_request *evt)
 {
 	struct bt_hci_cp_accept_conn_req *cp;
 	struct net_buf *buf;
+	uint32_t cod;
 	int err;
+	enum bt_br_conn_req_rsp rsp;
+	uint8_t role;
+
+	if (br_conn_req_func != NULL) {
+		cod = sys_get_le24(evt->dev_class);
+		rsp = br_conn_req_func(&evt->bdaddr, cod);
+
+		switch (rsp) {
+		case BT_BR_CONN_REQ_ACCEPT_CENTRAL:
+		case BT_BR_CONN_REQ_ACCEPT_PERIPHERAL:
+			role = (uint8_t)rsp;
+			break;
+		case BT_BR_CONN_REQ_REJECT_NO_RESOURCES:
+		case BT_BR_CONN_REQ_REJECT_SECURITY:
+		case BT_BR_CONN_REQ_REJECT_ADDR:
+			return (uint8_t)rsp;
+		default:
+			return BT_HCI_ERR_UNSPECIFIED;
+		}
+	} else {
+		role = IS_ENABLED(CONFIG_BT_ACCEPT_CONN_AS_CENTRAL) ?
+			BT_HCI_ROLE_CENTRAL : BT_HCI_ROLE_PERIPHERAL;
+	}
 
 	buf = bt_hci_cmd_alloc(K_FOREVER);
-	if (!buf) {
-		return -ENOBUFS;
+	if (buf == NULL) {
+		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
 	}
 
 	cp = net_buf_add(buf, sizeof(*cp));
-	bt_addr_copy(&cp->bdaddr, bdaddr);
-	cp->role = IS_ENABLED(CONFIG_BT_ACCEPT_CONN_AS_CENTRAL) ? BT_HCI_ROLE_CENTRAL :
-			BT_HCI_ROLE_PERIPHERAL;
+	bt_addr_copy(&cp->bdaddr, &evt->bdaddr);
+	cp->role = role;
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_ACCEPT_CONN_REQ, buf, NULL);
-	if (err) {
-		return err;
+	if (err != 0) {
+		return BT_HCI_ERR_UNSPECIFIED;
 	}
 
-	return 0;
+	return BT_HCI_ERR_SUCCESS;
 }
 
 void bt_hci_conn_req(struct net_buf *buf)
 {
 	struct bt_hci_evt_conn_request *evt = (void *)buf->data;
 	struct bt_conn *conn;
+	uint8_t err;
 
 	LOG_DBG("conn req from %s, type 0x%02x", bt_addr_str(&evt->bdaddr), evt->link_type);
 
 	if (evt->link_type != BT_HCI_ACL) {
-		uint8_t err;
-
 		err = bt_esco_conn_req(evt);
 		if (err != BT_HCI_ERR_SUCCESS) {
 			reject_conn(&evt->bdaddr, err);
@@ -105,7 +129,13 @@ void bt_hci_conn_req(struct net_buf *buf)
 		return;
 	}
 
-	accept_conn(&evt->bdaddr);
+	err = accept_conn(evt);
+	if (err != BT_HCI_ERR_SUCCESS) {
+		LOG_ERR("Failed to accept conn from %s (err %u)", bt_addr_str(&evt->bdaddr), err);
+		reject_conn(&evt->bdaddr, err);
+		bt_conn_unref(conn);
+		return;
+	}
 
 	/* The role is peripheral by default. If CONFIG_BT_ACCEPT_CONN_AS_CENTRAL is enabled,
 	 * the role will be updated by the role change event if the role switch is accepted by
@@ -1144,21 +1174,22 @@ static int write_scan_enable(uint8_t scan)
 	return 0;
 }
 
-int bt_br_set_connectable(bool enable)
+int bt_br_set_connectable(bool enable, bt_br_conn_req_func_t func)
 {
 	if (enable) {
 		if (atomic_test_bit(bt_dev.flags, BT_DEV_PSCAN)) {
 			return -EALREADY;
-		} else {
-			return write_scan_enable(BT_BREDR_SCAN_PAGE);
 		}
-	} else {
-		if (!atomic_test_bit(bt_dev.flags, BT_DEV_PSCAN)) {
-			return -EALREADY;
-		} else {
-			return write_scan_enable(BT_BREDR_SCAN_DISABLED);
-		}
+
+		br_conn_req_func = func;
+		return write_scan_enable(BT_BREDR_SCAN_PAGE);
 	}
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_PSCAN)) {
+		return -EALREADY;
+	}
+
+	return write_scan_enable(BT_BREDR_SCAN_DISABLED);
 }
 
 #define BT_LIAC 0x9e8b00

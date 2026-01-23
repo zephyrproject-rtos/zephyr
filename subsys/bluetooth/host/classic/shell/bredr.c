@@ -800,9 +800,9 @@ static int cmd_connectable(const struct shell *sh, size_t argc, char *argv[])
 	action = argv[1];
 
 	if (!strcmp(action, "on")) {
-		err = bt_br_set_connectable(true);
+		err = bt_br_set_connectable(true, NULL);
 	} else if (!strcmp(action, "off")) {
-		err = bt_br_set_connectable(false);
+		err = bt_br_set_connectable(false, NULL);
 	} else {
 		shell_help(sh);
 		return SHELL_CMD_HELP_PRINTED;
