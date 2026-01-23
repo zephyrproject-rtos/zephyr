@@ -441,6 +441,8 @@ Ethernet
   * :dtcompatible:`microchip,lan865x` (:github:`100318`)
   * :dtcompatible:`microchip,lan9250` (:github:`99127`)
   * :dtcompatible:`sensry,sy1xx-mac` (:github:`100619`)
+  * :dtcompatible:`st,stm32n6-ethernet`, :dtcompatible:`st,stm32h7-ethernet`
+    and :dtcompatible:`st,stm32-ethernet` (:github:`102810`)
   * :dtcompatible:`virtio,net` (:github:`100106`)
   * :dtcompatible:`vnd,ethernet` (:github:`96598`)
   * :dtcompatible:`wiznet,w5500` (:github:`100919`)
@@ -651,6 +653,29 @@ STM32
   ``div-divr`` properties have been renamed respectively to ``post-div-q`` and ``post-div-r``.
   Besides, when applicable to the SoC, these properties need to be defined if the corresponding
   ``div-q`` or ``div-r`` properties are used.
+
+* The MAC address generation in :zephyr_file:`drivers/ethernet/eth_stm32_hal_common.c` for STM32
+  platforms now use :c:struct:`net_eth_mac_config` when one of these properties are used in the MAC
+  device-tree node:
+
+    * ``zephyr,random-mac-address`` (a)
+    * ``local-mac-address`` (b)
+    * ``nvmem-cells`` (c) (NEW)
+
+  This causes backward compatibility breakage for implementations using (a) or (b) properties.
+  Previous implementation using these properties in the DT mixed an ST OUI for the first 3 MSB with
+  random (a) or explicit (b) bits for the 3 LSB of the MAC address. Now, the MAC address is fully
+  random (a), fully or partially written in the device-tree (b).
+
+  New implementation (c) allows to refer to a MAC address stored in non-volatile memory.
+  E.g: BSEC peripheral managing :abbr:`OTP(One Time Programmable)` fuses on STM32N6x platforms.
+  See :c:func:`net_eth_mac_load` for more details.
+
+  When none of these properties are specified in the MAC node, the legacy implementation is used.
+  (:github:`102810`)
+
+  .. note:: This change aligns STM32 platforms' behavior with the generic Zephyr one. Previous
+            implementation wasn't product-ready so this shouldn't cause much trouble.
 
 USB
 ===
