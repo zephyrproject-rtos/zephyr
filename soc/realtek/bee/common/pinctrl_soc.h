@@ -6,17 +6,24 @@
 
 /**
  * @file
- * @brief RTL87X2G SoC Specific Pinctrl Data Structures
+ * @brief Realtek Bee series Specific Pinctrl Data Structures
  *
  * This file defines the pinctrl state structure and initialization macros
- * used by the Zephyr pinctrl driver for the Realtek RTL87X2G series.
+ * used by the Zephyr pinctrl driver for the Realtek Bee series.
  */
 
-#ifndef ZEPHYR_SOC_REALTEK_BEE_RTL87X2G_PINCTRL_SOC_H_
-#define ZEPHYR_SOC_REALTEK_BEE_RTL87X2G_PINCTRL_SOC_H_
+#ifndef ZEPHYR_SOC_REALTEK_BEE_PINCTRL_SOC_H_
+#define ZEPHYR_SOC_REALTEK_BEE_PINCTRL_SOC_H_
 
 #include <zephyr/devicetree.h>
+#if defined(CONFIG_SOC_SERIES_RTL87X2G)
 #include <zephyr/dt-bindings/pinctrl/rtl87x2g-pinctrl.h>
+#elif defined(CONFIG_SOC_SERIES_RTL8752H)
+#include <zephyr/dt-bindings/pinctrl/rtl8752h-pinctrl.h>
+#else
+#error "Unsupported Realtek Bee SoC series"
+#endif
+
 #include <zephyr/types.h>
 
 #ifdef __cplusplus
@@ -24,7 +31,7 @@ extern "C" {
 #endif
 
 /**
- * @brief Realtek RTL87X2G pin configuration structure.
+ * @brief Realtek Bee series pin configuration structure.
  *
  * This structure holds the decoded configuration for a single pin,
  * using bitfields to optimize storage.
@@ -93,4 +100,4 @@ typedef struct pinctrl_soc_pin pinctrl_soc_pin_t;
 }
 #endif
 
-#endif /* ZEPHYR_SOC_REALTEK_BEE_RTL87X2G_PINCTRL_SOC_H_ */
+#endif /* ZEPHYR_SOC_REALTEK_BEE_PINCTRL_SOC_H_ */
