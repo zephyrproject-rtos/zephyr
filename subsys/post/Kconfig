@@ -1,0 +1,77 @@
+# Copyright (c) 2026 Aerlync Labs Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig POST
+	bool "Power On Self Test (POST) subsystem"
+	help
+	  Enable the POST subsystem for hardware and software self-testing.
+	  This provides a framework for registering and executing tests at
+	  boot time and runtime.
+
+if POST
+
+config POST_EARLY_TESTS
+	bool "Enable EARLY level tests"
+	default y
+	help
+	  Run POST tests at the EARLY init level, before any kernel
+	  services are available. Only minimal tests can run at this level.
+
+config POST_HALT_ON_FAILURE
+	bool "Halt on critical test failure"
+	default y
+	help
+	  If a test marked with POST_FLAG_CRITICAL fails during boot,
+	  halt the system instead of continuing. This is recommended
+	  for safety-critical applications.
+
+config POST_RESULT_BUFFER_SIZE
+	int "Number of test results to buffer"
+	default 32
+	range 8 256
+	help
+	  Maximum number of test results stored for later query.
+	  Each result uses approximately 24 bytes of RAM.
+
+config POST_RUNTIME_TESTS
+	bool "Enable runtime test execution"
+	default y
+	help
+	  Allow tests marked with POST_FLAG_RUNTIME_OK to be executed
+	  after boot via API calls. Disable to save code size if only
+	  boot-time tests are needed.
+
+config POST_USERSPACE
+	bool "Enable userspace POST API"
+	depends on USERSPACE
+	default y if USERSPACE
+	help
+	  Enable syscall interface for POST test execution and
+	  result queries from userspace. Only tests marked with
+	  POST_FLAG_USERSPACE_OK can be executed from userspace.
+
+config POST_SHELL
+	bool "POST shell commands"
+	depends on SHELL
+	default y if SHELL
+	help
+	  Enable shell commands for POST test execution and status.
+	  Commands include: post list, post run, post status.
+
+config POST_LOG_LEVEL
+	int "POST log level"
+	depends on LOG
+	default 3
+	range 0 4
+	help
+	  Log level for POST subsystem.
+	  0 = off, 1 = error, 2 = warning, 3 = info, 4 = debug
+
+config POST_MAX_FAILURE_HOOKS
+	int "Maximum number of failure hooks"
+	default 4
+	range 1 16
+	help
+	  Maximum number of failure callbacks that can be registered.
+
+endif # POST
