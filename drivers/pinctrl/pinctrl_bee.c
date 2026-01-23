@@ -6,7 +6,25 @@
 
 #include <zephyr/drivers/pinctrl.h>
 
+#if defined(CONFIG_SOC_SERIES_RTL87X2G)
 #include <rtl_pinmux.h>
+#elif defined(CONFIG_SOC_SERIES_RTL8752H)
+#include <rtl876x_pinmux.h>
+#endif
+
+#if defined(CONFIG_SOC_SERIES_RTL87X2G)
+#define BEE_PAD_SET_PULL(pin, stre) Pad_SetPullStrength(pin, stre)
+#define BEE_DRIVING_LEVEL0          LEVEL0
+#define BEE_DRIVING_LEVEL1          LEVEL1
+#define BEE_DRIVING_LEVEL2          LEVEL2
+#define BEE_DRIVING_LEVEL3          LEVEL3
+#elif defined(CONFIG_SOC_SERIES_RTL8752H)
+#define BEE_PAD_SET_PULL(pin, stre) Pad_PullConfigValue(pin, stre)
+#define BEE_DRIVING_LEVEL0          PAD_DRIVING_CURRENT_8_8mA
+#define BEE_DRIVING_LEVEL1          PAD_DRIVING_CURRENT_12_18mA
+#define BEE_DRIVING_LEVEL2          PAD_DRIVING_CURRENT_16_28mA
+#define BEE_DRIVING_LEVEL3          PAD_DRIVING_CURRENT_16_28mA
+#endif
 
 static void pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 {
@@ -27,24 +45,24 @@ static void pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 	}
 
 	/* set pull strength */
-	Pad_SetPullStrength(cfg_pin, cfg_pull_strength);
+	BEE_PAD_SET_PULL(cfg_pin, cfg_pull_strength);
 
 	/* set current level */
 	switch (current_level) {
 	case 0:
-		Pad_SetDrivingCurrent(cfg_pin, LEVEL0);
+		Pad_SetDrivingCurrent(cfg_pin, BEE_DRIVING_LEVEL0);
 		break;
 
 	case 1:
-		Pad_SetDrivingCurrent(cfg_pin, LEVEL1);
+		Pad_SetDrivingCurrent(cfg_pin, BEE_DRIVING_LEVEL1);
 		break;
 
 	case 2:
-		Pad_SetDrivingCurrent(cfg_pin, LEVEL2);
+		Pad_SetDrivingCurrent(cfg_pin, BEE_DRIVING_LEVEL2);
 		break;
 
 	case 3:
-		Pad_SetDrivingCurrent(cfg_pin, LEVEL3);
+		Pad_SetDrivingCurrent(cfg_pin, BEE_DRIVING_LEVEL3);
 		break;
 
 	default:
@@ -60,6 +78,7 @@ static void pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 		Pad_Config(cfg_pin, PAD_PINMUX_MODE, PAD_IS_PWRON, cfg_pull, cfg_dir, cfg_drv);
 		Pinmux_Config(cfg_pin, cfg_fun);
 	} else if (cfg_fun > BEE_PWR_OFF) {
+#if defined(CONFIG_SOC_SERIES_RTL87X2G)
 		if (cfg_fun <= BEE_SDHC1_D7_P4_7) {
 			Pad_Config(cfg_pin, PAD_PINMUX_MODE, PAD_IS_PWRON, cfg_pull, cfg_dir,
 				   cfg_drv);
@@ -70,6 +89,7 @@ static void pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 				   cfg_drv);
 			Pinmux_AON_Config(cfg_fun);
 		}
+#endif
 	} else {
 		__ASSERT(false, "Pinctrl configuration fail");
 	}
