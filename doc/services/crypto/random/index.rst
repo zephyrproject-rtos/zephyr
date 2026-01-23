@@ -28,8 +28,65 @@ much faster if non-cryptographic values are needed.
    :c:func:`sys_rand64_get`) for security-sensitive operations. These functions
    do not provide cryptographically secure random numbers.
 
+API Usage
+*********
 
+Non-Cryptographic Random Numbers
+================================
 
+The following functions provide non-cryptographically secure random numbers:
+
+- :c:func:`sys_rand_get` - Fill a buffer with random bytes
+- :c:func:`sys_rand8_get` - Get a random 8-bit value
+- :c:func:`sys_rand16_get` - Get a random 16-bit value
+- :c:func:`sys_rand32_get` - Get a random 32-bit value
+- :c:func:`sys_rand64_get` - Get a random 64-bit value
+
+Example usage:
+
+.. code-block:: c
+
+   #include <zephyr/random/random.h>
+
+   void example_random_usage(void)
+   {
+       uint8_t buffer[16];
+       uint32_t random_value;
+
+       /* Fill buffer with random bytes */
+       sys_rand_get(buffer, sizeof(buffer));
+
+       /* Get a single random 32-bit value */
+       random_value = sys_rand32_get();
+   }
+
+Cryptographically Secure Random Numbers
+=======================================
+
+For cryptographic purposes, use :c:func:`sys_csrand_get`:
+
+.. code-block:: c
+
+   #include <zephyr/random/random.h>
+
+   int generate_encryption_key(uint8_t *key, size_t key_len)
+   {
+       int ret;
+
+       ret = sys_csrand_get(key, key_len);
+       if (ret != 0) {
+           /* Handle error - entropy source may have failed */
+           return ret;
+       }
+
+       return 0;
+   }
+
+.. note::
+
+   :c:func:`sys_csrand_get` returns 0 on success, or ``-EIO`` if the entropy
+   source fails. Always check the return value when generating cryptographic
+   material.
 
 .. _random_kconfig:
 
