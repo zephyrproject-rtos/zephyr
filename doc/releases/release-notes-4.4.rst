@@ -228,6 +228,17 @@ New APIs and options
 
     * Add support for Wi-Fi Direct (P2P) mode.
 
+* OTP
+
+  * New OTP driver API providing means to provision (:c:func:`otp_program()`) and
+    read (:c:func:`otp_read()`) :abbr:`OTP(One Time Programmable)` memory devices
+    (:github:`101292`). OTP devices can also be accessed through the
+    :ref:`Non-Volatile Memory (NVMEM)<nvmem>` subsystem. Available options are:
+
+    * :kconfig:option:`CONFIG_OTP`
+    * :kconfig:option:`CONFIG_OTP_PROGRAM`
+    * :kconfig:option:`CONFIG_OTP_INIT_PRIORITY`
+
 * PWM
 
   * Extended API with PWM events
