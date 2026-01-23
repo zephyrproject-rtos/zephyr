@@ -43,6 +43,9 @@
 #ifdef CONFIG_NEWLIB_LIBC
 #include <unistd.h>
 #endif
+#ifdef CONFIG_COMMON_LIBC_MALLOC
+#include <sys_malloc.h>
+#endif
 
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define LIST_LEN 2
@@ -1312,6 +1315,47 @@ ZTEST(libc_common, test_exit)
 	k_thread_abort(tid);
 	zassert_equal(a, 0, "exit failed");
 #endif
+}
+
+/**
+ *
+ * @brief Test malloc and associated functions.
+ *
+ */
+ZTEST(libc_common, test_malloc)
+{
+#if defined(CONFIG_COMMON_LIBC_MALLOC) && CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE > 220
+	char *buf = NULL, *temp_buf = NULL;
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+	int rc;
+	struct sys_memory_stats pre_malloc_stats, post_malloc_stats;
+
+	rc = malloc_runtime_stats_get(&pre_malloc_stats);
+	zassert_equal(rc, 0, "malloc_runtime_stats_get_failed: %d", rc);
+#endif
+
+	buf = malloc(100);
+	zassert_not_null(buf, "malloc failed");
+
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+	rc = malloc_runtime_stats_get(&post_malloc_stats);
+	zassert_equal(rc, 0, "malloc_runtime_stats_get_failed: %d", rc);
+	zassert(pre_malloc_stats.free_bytes - post_malloc_stats.free_bytes >= 100,
+		"malloc_runtime_stats_get failed, free bytes did not reduce as expected");
+	zassert(post_malloc_stats.allocated_bytes - pre_malloc_stats.allocated_bytes >= 100,
+		"malloc_runtime_stats_get failed, used bytes did not increase as expected");
+#endif
+
+	temp_buf = realloc(buf, 200);
+	zassert_not_null(temp_buf, "realloc failed");
+	if (temp_buf != NULL) {
+		buf = temp_buf;
+	}
+
+	free(buf);
+#else
+	ztest_test_skip();
+#endif /* CONFIG_COMMON_LIBC_MALLOC && CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE > 220 */
 }
 /**
  * @}
