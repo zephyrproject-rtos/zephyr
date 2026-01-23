@@ -329,7 +329,11 @@ Libraries / Subsystems
 
 * LoRa/LoRaWAN
 
-   * :c:func:`lora_airtime`
+  * Added LoRa Basics Modem backend as an alternative to LoRaMac-node for LoRaWAN
+    applications using SX126x radios. The backend can be selected with
+    :kconfig:option:`CONFIG_LORA_MODULE_BACKEND_LORA_BASICS_MODEM`.
+
+  * :c:func:`lora_airtime`
 
 * Mbed TLS
 
