@@ -1,0 +1,99 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SLCD Panel Device
+
+  Represents a segmented LCD panel connected to an SLCD controller.
+  The SLCD panel defines the characteristics of the display including
+  segment type, how many positions of numbers, letters and icons, the
+  front plane pins and back plane COMs used by this panel, and the
+  multiplexing configuration.
+
+include: base.yaml
+
+on-bus: slcd
+
+properties:
+  segment-type:
+    type: string
+    enum:
+      - "3-segment"
+      - "7-segment"
+      - "8-segment"
+      - "9-segment"
+      - "10-segment"
+      - "11-segment"
+      - "12-segment"
+      - "14-segment"
+      - "16-segment"
+    description: |
+      Type of segment display. Defines the number of segments per position.
+      Common values:
+      - "7-segment": Standard 7-segment alphanumeric display (segments A-G)
+      - "14-segment" or "16-segment": Extended alphanumeric displays
+      - "3-segment": Minimal segment display
+      
+  num-positions:
+    type: int
+    description: |
+      Number of character positions or digit positions on the display.
+      For example, a 6-digit display would have num-positions = 6.
+
+  num-icons:
+    type: int
+    description: |
+      Number of special icons or indicators on the display.
+      Icons are individual segments that are not part of standard character positions.
+      For example, a colon, decimal point, or status indicator would count as one icon.
+
+  com-list:
+    type: array
+    description: |
+      The number list of each back plane COMs used for multiplexing the display. Each
+      number cannot exceed the slcd controller's num-back-coms value minus 1.
+      For example, if the controller has 8 back plane COMs, the list can be <4,5,6,7>.
+      This is used to map the COM indices in the segment-mux/icon-mux array, and to support
+      SLCD controller controlling multiple panels.
+
+  pin-list:
+    type: array
+    description: |
+      The number list of each front plane pins used for multiplexing the display. Each
+      number cannot exceed the slcd controller's num-front-pins value minus 1.
+      For example, if the controller has 32 back plane COMs, the list can be
+      <16,17,18,19,20,21,22,23,24,25,26,27>.
+      This is used to map the pin indices in the segment-mux/icon-mux array, and to support
+      SLCD controller controlling multiple panels.
+
+  segment-mux:
+    type: array
+    description: |
+      2D multiplexing array for segment mapping.
+      Maps each segment of each position to a specific pin and COM line.
+
+      Array dimensions: num-positions x num-segments
+      For a 7-segment(segment A to G) display with 6 positions, array size
+      is 6 x 7 = 42 elements
+
+      Encoding: Each uint32 value encodes pin number and COM bit as 0xPPCC
+      - PP: Pin number (cannot exceed the array size of pin-list)
+      - CC: COM bit (cannot exceed the array size of com-list)
+
+      Example: For segment A of position 2 controlled by pin 8, COM 3:
+      segment-mux value = 0x88 (pin=8, com=0b1000)
+
+  icon-mux:
+    type: array
+    description: |
+      1D multiplexing array for icon mapping.
+      Maps each special icon to a specific pin and COM line.
+
+      Array size: num-icons elements
+
+      Encoding: Same format as segment-mux (0xPPCC)
+      - PP: Pin number (cannot exceed the array size of pin-list)
+      - CC: COM bit (cannot exceed the array size of com-list)
+
+      Example: For icon 0 controlled by pin 15, COM 2:
+      icon-mux value = 0xF4 (pin=15, com=0b100)
