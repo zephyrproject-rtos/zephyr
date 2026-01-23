@@ -78,6 +78,10 @@ static struct net_mgmt_event_callback mgmt4_addr_cb;
 #if defined(CONFIG_NET_IPV6)
 static struct net_mgmt_event_callback mgmt6_addr_cb;
 #endif
+#if defined(CONFIG_NET_DHCPV4)
+static struct net_mgmt_event_callback mgmt_dhcpv4_cb;
+struct k_work_delayable announce_timer;
+#endif
 static struct k_work_q mdns_work_q;
 static K_KERNEL_STACK_DEFINE(mdns_work_q_stack, CONFIG_MDNS_WORKQ_STACK_SIZE);
 struct k_work_delayable init_listener_timer;
@@ -962,6 +966,29 @@ static void probing(struct k_work *work)
 	}
 }
 
+#if defined(CONFIG_NET_DHCPV4)
+/* This is arbitrary delay to let things cool down a bit before announcing
+ * the address.
+ */
+#define ANNOUNCE_DELAY 100 /* ms */
+
+static void start_announce(struct net_if *iface)
+{
+	int ret;
+
+	do_announce = true;
+	announce_count = 0;
+	mark_needs_announce(iface, true);
+
+	ret = k_work_reschedule_for_queue(&mdns_work_q,
+					  &announce_timer,
+					  K_MSEC(ANNOUNCE_DELAY));
+	if (ret < 0) {
+		NET_DBG("Cannot schedule %s announce work (%d)", "mDNS", ret);
+	}
+}
+#endif /* CONFIG_NET_DHCPV4 */
+
 static void mdns_addr_event_handler(struct net_mgmt_event_callback *cb,
 				    uint64_t mgmt_event, struct net_if *iface)
 {
@@ -1112,6 +1139,13 @@ static void mdns_addr_event_handler(struct net_mgmt_event_callback *cb,
 		return;
 	}
 #endif /* defined(CONFIG_NET_IPV6) */
+
+#if defined(CONFIG_NET_DHCPV4)
+	if (mgmt_event == NET_EVENT_IPV4_DHCP_BOUND) {
+		start_announce(iface);
+		return;
+	}
+#endif /* CONFIG_NET_DHCPV4 */
 }
 
 static void mdns_conn_event_handler(struct net_mgmt_event_callback *cb,
@@ -1796,9 +1830,12 @@ static void announce_start(struct k_work *work)
 	do_announce = true;
 	announce_count++;
 
-	ret = k_work_reschedule_for_queue(&mdns_work_q, dwork, K_SECONDS(ANNOUNCE_TIMEOUT));
-	if (ret < 0) {
-		NET_DBG("Cannot schedule %s work (%d)", "announce", ret);
+	/* Do not re-schedule if we were triggered by the DHCP BOUND event */
+	if (COND_CODE_1(CONFIG_NET_DHCPV4, (&announce_timer != dwork), (true))) {
+		ret = k_work_reschedule_for_queue(&mdns_work_q, dwork, K_SECONDS(ANNOUNCE_TIMEOUT));
+		if (ret < 0) {
+			NET_DBG("Cannot schedule %s work (%d)", "announce", ret);
+		}
 	}
 }
 
@@ -1862,6 +1899,15 @@ static int mdns_responder_init(void)
 				     NET_EVENT_IPV6_ADDR_ADD |
 				     NET_EVENT_IPV6_ADDR_DEL);
 	net_mgmt_add_event_callback(&mgmt6_addr_cb);
+#endif
+
+#define DHCPV4_EVENT_MASK (NET_EVENT_IPV4_DHCP_BOUND)
+#if defined(CONFIG_NET_DHCPV4)
+	net_mgmt_init_event_callback(&mgmt_dhcpv4_cb, mdns_addr_event_handler,
+				     DHCPV4_EVENT_MASK);
+	net_mgmt_add_event_callback(&mgmt_dhcpv4_cb);
+
+	k_work_init_delayable(&announce_timer, announce_start);
 #endif
 
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
