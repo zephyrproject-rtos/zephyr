@@ -1184,6 +1184,7 @@ Display drivers:
     - danieldegrasse
     - VynDragon
     - KATE-WANG-NXP
+    - avolmat-st
   files:
     - drivers/display/
     - dts/bindings/display/
