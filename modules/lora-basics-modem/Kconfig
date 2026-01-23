@@ -8,9 +8,6 @@
 config ZEPHYR_LORA_BASICS_MODEM_MODULE
 	bool
 
-config USE_LORA_BASICS_MODEM_DRIVERS
-	bool
-
 if ZEPHYR_LORA_BASICS_MODEM_MODULE
 
 menu "LoRa Basics Modem"
@@ -19,7 +16,7 @@ menu "LoRa Basics Modem"
 config LORA_BASICS_MODEM_HAL
 	bool "LoRa Basics Modem HAL implementation"
 	default y
-	depends on USE_LORA_BASICS_MODEM_DRIVERS && LORA_SX126X
+	depends on LORA_SX126X
 	select ENTROPY_GENERATOR
 	select REBOOT
 	select LORA_BASICS_MODEM_DEFERRED_INIT

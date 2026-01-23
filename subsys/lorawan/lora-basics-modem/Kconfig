@@ -1,0 +1,39 @@
+# LoRaWAN lora-basics-modem backend configuration
+#
+# Copyright (c) 2025 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if LORA_MODULE_BACKEND_LORA_BASICS_MODEM
+
+config LORAWAN_LORA_BASICS_MODEM
+	bool
+	default y
+	depends on LORA_SX126X
+	select LORA_BASICS_MODEM_HAL
+	help
+	  Hidden config to enable lora-basics-modem LoRaWAN backend.
+	  The LBM HAL currently only supports SX126x radios.
+
+config LORAWAN_LBM_THREAD_STACK_SIZE
+	int "Stack size of the LoRaWAN LBM thread"
+	default 2048
+	help
+	  Stack size for the LoRaWAN LBM main thread.
+
+config LORAWAN_LBM_THREAD_PRIORITY
+	int "Priority of the LoRaWAN LBM thread"
+	default 2
+	help
+	  Thread priority of the LoRaWAN LBM main thread.
+
+config LORAWAN_LBM_ACK_DOWNLINK_CB
+	bool "Invoke downlink callback on ACK reception"
+	help
+	  When enabled, the downlink callback is invoked on port 0 when an ACK
+	  is received for a confirmed uplink. This provides compatibility with
+	  the loramac-node backend behavior expected by some applications.
+
+	  Note that RSSI/SNR values will be zero since this information is not
+	  available from the LBM TXDONE event.
+
+endif # LORA_MODULE_BACKEND_LORA_BASICS_MODEM
