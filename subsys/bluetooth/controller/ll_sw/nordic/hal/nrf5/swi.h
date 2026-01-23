@@ -5,7 +5,8 @@
  */
 
 /* nRF51 and nRF52 Series IRQ mapping*/
-#if defined(CONFIG_SOC_SERIES_NRF51) || defined(CONFIG_SOC_COMPATIBLE_NRF52X)
+#if defined(CONFIG_SOC_SERIES_NRF51) || \
+	defined(CONFIG_SOC_COMPATIBLE_NRF52X)
 
 #define HAL_SWI_RADIO_IRQ  SWI4_IRQn
 #define HAL_SWI_WORKER_IRQ RTC0_IRQn
@@ -41,8 +42,9 @@
 #error Unknown NRF5340 CPU.
 #endif /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET */
 
-/* nRF54L Series IRQ mapping */
-#elif defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+/* nRF54L/nRF71 Series IRQ mapping */
+#elif defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || \
+	defined(CONFIG_SOC_SERIES_NRF71)
 
 #define HAL_SWI_RADIO_IRQ  SWI02_IRQn
 
