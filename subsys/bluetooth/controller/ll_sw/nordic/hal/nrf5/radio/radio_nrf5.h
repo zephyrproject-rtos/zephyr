@@ -42,6 +42,10 @@
 #elif defined(CONFIG_SOC_SERIES_NRF54L)
 #include <hal/nrf_ppib.h>
 #include "radio_nrf54lx.h"
+#elif defined(CONFIG_SOC_SERIES_NRF71)
+#include <hal/nrf_ppib.h>
+#include <hal/nrf_lrcconf.h>
+#include "radio_nrf7120.h"
 #elif defined(CONFIG_BOARD_NRF52_BSIM)
 #include "radio_sim_nrf52.h"
 #elif defined(CONFIG_BOARD_NRF5340BSIM_NRF5340_CPUNET)

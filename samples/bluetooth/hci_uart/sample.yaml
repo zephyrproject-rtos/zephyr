@@ -10,12 +10,14 @@ tests:
       - nrf21540dk/nrf52840
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
     integration_platforms:
       - nrf52dk/nrf52832
       - nrf52840dk/nrf52840
       - nrf21540dk/nrf52840
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
     tags:
       - uart
       - bluetooth
@@ -110,6 +112,17 @@ tests:
     extra_args:
       - EXTRA_CONF_FILE=overlay-all-bt_ll_sw_split.conf
       - DTC_OVERLAY_FILE=./boards/nrf54lm20dk_nrf54lm20a_cpuapp_df.overlay
+    tags:
+      - uart
+      - bluetooth
+  sample.bluetooth.hci_uart.nrf7120.all:
+    harness: bluetooth
+    platform_allow: nrf7120dk/nrf7120/cpuapp
+    integration_platforms:
+      - nrf7120dk/nrf7120/cpuapp
+    extra_args:
+      - EXTRA_CONF_FILE=overlay-all-bt_ll_sw_split.conf
+      - DTC_OVERLAY_FILE=./boards/nrf7120dk_nrf7120_cpuapp_df.overlay
     tags:
       - uart
       - bluetooth

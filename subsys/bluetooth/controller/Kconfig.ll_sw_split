@@ -7,12 +7,14 @@ if BT_LL_SW_SPLIT
 
 config BT_LLL_VENDOR_NORDIC
 	bool "Use Nordic LLL"
-	depends on SOC_COMPATIBLE_NRF
+	depends on SOC_COMPATIBLE_NRF || SOC_SERIES_NRF71
 	depends on !$(dt_nodelabel_enabled,timer0)
 	depends on !$(dt_nodelabel_enabled,rtc0)
 
 	select BT_CTLR_ENTROPY_SUPPORT
-	select ENTROPY_NRF5_RNG if BT_CTLR_ENTROPY && !SOC_COMPATIBLE_NRF54LX
+	select ENTROPY_NRF5_RNG if BT_CTLR_ENTROPY && \
+				   !SOC_COMPATIBLE_NRF54LX && \
+				   !SOC_SERIES_NRF71
 	select ENTROPY_NRF5_BIAS_CORRECTION if ENTROPY_NRF5_RNG
 	select EXPERIMENTAL if !ENTROPY_HAS_DRIVER
 
@@ -30,6 +32,7 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_CTLR_DATA_LEN_UPDATE_SUPPORT if !BT_CTLR_LE_ENC_SUPPORT || \
 						  HAS_HW_NRF_CCM_LFLEN_8BIT || \
 						  SOC_COMPATIBLE_NRF54LX || \
+						  SOC_SERIES_NRF71 || \
 						  BT_CTLR_DATA_LENGTH_CLEAR
 	select BT_CTLR_EXT_SCAN_FP_SUPPORT
 	select BT_CTLR_PHY_2M_SUPPORT if HAS_HW_NRF_RADIO_BLE_2M || \
@@ -60,7 +63,8 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_CTLR_TIFS_HW_SUPPORT
 	select BT_CTLR_ULL_LLL_PRIO_SUPPORT
 
-	select BT_TICKER_REMAINDER_SUPPORT if !SOC_COMPATIBLE_NRF54LX
+	select BT_TICKER_REMAINDER_SUPPORT if !SOC_COMPATIBLE_NRF54LX && \
+					      !SOC_SERIES_NRF71
 	select BT_TICKER_UPDATE if BT_BROADCASTER || BT_CONN || \
 				   (BT_OBSERVER && BT_CTLR_ADV_EXT)
 	select BT_TICKER_START_REMAINDER if BT_TICKER_REMAINDER_SUPPORT && \
@@ -76,7 +80,8 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_TICKER_NEXT_SLOT_GET_MATCH if (BT_BROADCASTER && \
 						 BT_CTLR_ADV_EXT) || \
 						BT_CENTRAL || BT_CTLR_CONN_ISO
-	select BT_TICKER_CNTR_FREE_RUNNING if SOC_COMPATIBLE_NRF54LX
+	select BT_TICKER_CNTR_FREE_RUNNING if SOC_COMPATIBLE_NRF54LX || \
+					      SOC_SERIES_NRF71
 	select BT_TICKER_PREFER_START_BEFORE_STOP if BT_TICKER_SLOT_AGNOSTIC
 
 	select BT_CTLR_ASSERT_OPTIMIZE_FOR_SIZE_SUPPORT if CPU_CORTEX_M
@@ -917,7 +922,7 @@ config BT_CTLR_ULL_LOW_PRIO
 config BT_CTLR_LLL_PREPARE_AT_MARGIN
 	bool "LLL prepare at margin"
 	depends on !BT_CTLR_LOW_LAT
-	default y if SOC_COMPATIBLE_NRF54LX
+	default y if SOC_COMPATIBLE_NRF54LX || SOC_SERIES_NRF71
 	help
 	  Execute LLL prepare callback at the prepare margin, even when no
 	  overlapping state/role is currently active.
@@ -970,10 +975,12 @@ config BT_CTLR_RX_PDU_META
 
 config BT_CTLR_NRF_GRTC
 	bool "Use nRF GRTC peripheral"
-	depends on BT_TICKER_CNTR_FREE_RUNNING && SOC_COMPATIBLE_NRF54LX
+	depends on BT_TICKER_CNTR_FREE_RUNNING && \
+		   (SOC_COMPATIBLE_NRF54LX || \
+		    SOC_SERIES_NRF71)
 	default y
 	help
-	  Enable use of nRF54Lx NRF_GRTC peripheral.
+	  Enable use of nRF54Lx/nRF54H/nRF71 NRF_GRTC peripheral.
 
 config BT_CTLR_NRF_GRTC_START
 	bool "Start nRF GRTC peripheral"
@@ -1003,7 +1010,8 @@ config BT_CTLR_RADIO_ENABLE_FAST
 	bool "Use tTXEN/RXEN,FAST ramp-up"
 	depends on SOC_COMPATIBLE_NRF52X || \
 		   SOC_COMPATIBLE_NRF53X || \
-		   SOC_COMPATIBLE_NRF54LX
+		   SOC_COMPATIBLE_NRF54LX || \
+		   SOC_SERIES_NRF71
 	default y
 	help
 	  Enable use of fast radio ramp-up mode.
@@ -1027,8 +1035,9 @@ config BT_CTLR_SW_SWITCH_SINGLE_TIMER
 	depends on BT_CTLR_RADIO_ENABLE_FAST && \
 		   (SOC_COMPATIBLE_NRF52X || \
 		    SOC_COMPATIBLE_NRF53X || \
-		    SOC_COMPATIBLE_NRF54LX)
-	default y if SOC_COMPATIBLE_NRF54LX
+		    SOC_COMPATIBLE_NRF54LX || \
+		    SOC_SERIES_NRF71)
+	default y if SOC_COMPATIBLE_NRF54LX || SOC_SERIES_NRF71
 	help
 	  Implement the tIFS Trx SW switch with the same TIMER
 	  instance, as the one used for Bluetooth event timing. Requires
