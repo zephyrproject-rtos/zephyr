@@ -1,4 +1,5 @@
 # Copyright (c) 2024 Semtech Corporation
+# Copyright (c) 2025 Carlo Caione <ccaione@baylibre.com>
 # SPDX-License-Identifier: Apache-2.0
 
 # Top-level configuration file for LoRa Basics Modem containing LoRa
@@ -13,7 +14,19 @@ config USE_LORA_BASICS_MODEM_DRIVERS
 config LORA_BASICS_MODEM_HAL
 	bool "LoRa Basics Modem HAL implementation"
 	depends on USE_LORA_BASICS_MODEM_DRIVERS && LORA_SX126X
+	select ENTROPY_GENERATOR
+	select REBOOT
+	select LORA_BASICS_MODEM_DEFERRED_INIT
 	help
 	  Compile the smtc_modem_hal implementation for LoRa Basics Modem.
 	  This is required for porting tests and full modem functionality.
 	  Currently only supported with SX126x radios.
+
+config LORA_BASICS_MODEM_HAL_WORKQ_PRIORITY
+	int "HAL workqueue thread priority"
+	default 10
+	depends on LORA_BASICS_MODEM_HAL
+	help
+	  Cooperative priority of the HAL workqueue thread used for handling
+	  radio IRQ callbacks. The value is passed to K_PRIO_COOP(), so 10
+	  results in priority -11. Lower values = higher priority.
