@@ -66,6 +66,9 @@ struct sdhc_infineon_config {
 	const struct pinctrl_dev_config *pincfg;
 	struct gpio_dt_spec cd_gpio;
 	SDHC_Type *reg_addr;
+#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+	en_clk_dst_t clk_dst;
+#endif
 	uint8_t irq_priority;
 	IRQn_Type irq;
 };
@@ -701,23 +704,13 @@ static int sdhc_change_clock(const struct device *dev, uint32_t *frequency)
 	uint32_t most_suitable_div = 0;
 	uint32_t bus_freq = 0;
 	uint32_t source_freq = 0;
-	en_clk_dst_t clk_idx;
 
 #if defined(COMPONENT_CAT1A)
-	(void)clk_idx;
 	(void)sdhc_data;
 	source_freq = Cy_SysClk_ClkHfGetFrequency(CLK_HF4);
 #elif defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-	if (config->reg_addr == SDHC0) {
-		clk_idx = PCLK_SDHC0_CLK_HF;
-	} else if (config->reg_addr == SDHC1) {
-		clk_idx = PCLK_SDHC1_CLK_HF;
-	} else {
-		return -EINVAL;
-	}
-
-	source_freq =
-		ifx_cat1_utils_peri_pclk_get_frequency((en_clk_dst_t)clk_idx, &sdhc_data->clock);
+	source_freq = ifx_cat1_utils_peri_pclk_get_frequency((en_clk_dst_t)config->clk_dst,
+							     &sdhc_data->clock);
 #endif
 
 	sdhc_find_best_div(source_freq, *frequency, &most_suitable_div);
@@ -978,6 +971,7 @@ static int sdhc_infineon_init(const struct device *dev)
 	const struct sdhc_infineon_config *config = dev->config;
 	struct sdhc_infineon_data *sdhc_data = dev->data;
 	cy_stc_sd_host_context_t context;
+	cy_rslt_t status;
 
 	/* Configure DT provided device signals when available */
 	result = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
@@ -1005,6 +999,12 @@ static int sdhc_infineon_init(const struct device *dev)
 	} else if (config->reg_addr == SDHC1) {
 		Cy_SysClk_PeriGroupSlaveInit(CY_MMIO_SDHC1_PERI_NR, CY_MMIO_SDHC1_GROUP_NR,
 					     CY_MMIO_SDHC1_SLAVE_NR, CY_MMIO_SDHC1_CLK_HF_NR);
+	}
+
+	/* Connect to the peripheral clock */
+	status = ifx_cat1_utils_peri_pclk_assign_divider(config->clk_dst, &sdhc_data->clock);
+	if (status != CY_RSLT_SUCCESS) {
+		return -EIO;
 	}
 #endif
 
@@ -1105,7 +1105,9 @@ static DEVICE_API(sdhc, sdhc_infineon_api) = {
 		.cd_gpio = GPIO_DT_SPEC_INST_GET_OR(n, cd_gpios, {0}),                             \
 		.reg_addr = (SDHC_Type *)DT_INST_REG_ADDR(n),                                      \
 		.irq_priority = DT_INST_IRQ(n, priority),                                          \
-		IRQ_INFO(n)};                                                                      \
+		IRQ_INFO(n),                                                                       \
+		IF_ENABLED(CONFIG_SOC_FAMILY_INFINEON_EDGE,                                        \
+			   (.clk_dst = DT_INST_PROP(n, clk_dst),)) };                              \
                                                                                                    \
 	static struct sdhc_infineon_data sdhc_infineon_##n##_data = {                              \
 		.power_mode = SDHC_POWER_ON,                                                       \
