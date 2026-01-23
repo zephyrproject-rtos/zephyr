@@ -5,11 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || \
+	defined(CONFIG_SOC_SERIES_NRF71)
 #define NRF_DPPIC NRF_DPPIC10
 #elif defined(CONFIG_SOC_SERIES_NRF54H)
 #define NRF_DPPIC NRF_DPPIC020
-#endif /* CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif
 
 static inline void hal_radio_nrf_ppi_channels_enable(uint32_t mask)
 {
@@ -20,12 +21,15 @@ static inline void hal_radio_nrf_ppi_channels_disable(uint32_t mask)
 {
 	nrf_dppi_channels_disable(NRF_DPPIC, mask);
 
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX) && !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+#if (defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || defined(CONFIG_SOC_SERIES_NRF71)) && \
+	!defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 	/* FIXME: call `nrf_dppi_channels_disable(NRF_DPPIC00, mask_dppic00);` , where
 	 *        mask_dppic00 is translated bitmap of channels in DPPIC00 that corresponds to
 	 *        mask value of DPPIC in radio domain
 	 */
-#endif /* CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#endif /* (CONFIG_SOC_COMPATIBLE_NRF54LX || CONFIG_SOC_SERIES_NRF71) &&
+	* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER
+	*/
 }
 
 /*******************************************************************************
@@ -34,7 +38,8 @@ static inline void hal_radio_nrf_ppi_channels_disable(uint32_t mask)
  */
 static inline void hal_radio_enable_on_tick_ppi_config_and_enable(uint8_t trx)
 {
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX) && !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+#if (defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || defined(CONFIG_SOC_SERIES_NRF71)) && \
+	!defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 	/* Dual-timer mode: EVENT_TIMER = NRF_TIMER00 (DPPIC00), Radio on DPPIC10.
 	 * Bridge: DPPIC00 ch HAL_NRF54LX_DUAL_TIMER_RADIO_ENABLE_ON_TICK_DPPIC00
 	 *      -> PPIB00 SEND_1 -> PPIB10 RECEIVE_1
@@ -65,7 +70,9 @@ static inline void hal_radio_enable_on_tick_ppi_config_and_enable(uint8_t trx)
 					 BIT(HAL_NRF54LX_DUAL_TIMER_RADIO_ENABLE_ON_TICK_DPPIC00));
 		nrf_dppi_channels_enable(NRF_DPPIC, BIT(HAL_RADIO_ENABLE_RX_ON_TICK_PPI));
 	}
-#else /* !(CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER) */
+#else /* !((CONFIG_SOC_COMPATIBLE_NRF54LX || CONFIG_SOC_SERIES_NRF71) &&
+	*   !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	*/
 	if (trx) {
 		nrf_timer_publish_set(EVENT_TIMER, HAL_EVENT_TIMER_TRX_EVENT,
 				      HAL_RADIO_ENABLE_TX_ON_TICK_PPI);
@@ -95,7 +102,9 @@ static inline void hal_radio_enable_on_tick_ppi_config_and_enable(uint8_t trx)
 		nrf_dppi_channels_enable(NRF_DPPIC,
 					 BIT(HAL_RADIO_ENABLE_RX_ON_TICK_PPI));
 	}
-#endif /* !(CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER) */
+#endif /* !((CONFIG_SOC_COMPATIBLE_NRF54LX || CONFIG_SOC_SERIES_NRF71) &&
+	*   !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	*/
 }
 
 /*******************************************************************************
@@ -107,7 +116,8 @@ static inline void hal_radio_recv_timeout_cancel_ppi_config(void)
 {
 	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_ADDRESS,
 			      HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI);
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX) && !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+#if (defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || defined(CONFIG_SOC_SERIES_NRF71)) && \
+	!defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 	/* Dual-timer mode: Radio is on DPPIC10, EVENT_TIMER = NRF_TIMER00 on DPPIC00.
 	 * Bridge: DPPIC10 ch HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI
 	 *      -> PPIB10 SEND_3 -> PPIB00 RECEIVE_3
@@ -121,10 +131,14 @@ static inline void hal_radio_recv_timeout_cancel_ppi_config(void)
 				 BIT(HAL_NRF54LX_DUAL_TIMER_RECV_TIMEOUT_CANCEL_DPPIC00));
 	nrf_timer_subscribe_set(EVENT_TIMER, HAL_EVENT_TIMER_ADDRESS_TASK,
 				HAL_NRF54LX_DUAL_TIMER_RECV_TIMEOUT_CANCEL_DPPIC00);
-#else /* !(CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER) */
+#else /* !((CONFIG_SOC_COMPATIBLE_NRF54LX || CONFIG_SOC_SERIES_NRF71) &&
+	*   !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	*/
 	nrf_timer_subscribe_set(EVENT_TIMER, HAL_EVENT_TIMER_ADDRESS_TASK,
 				HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI);
-#endif /* !(CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER) */
+#endif /* !((CONFIG_SOC_COMPATIBLE_NRF54LX || CONFIG_SOC_SERIES_NRF71) &&
+	*   !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	*/
 }
 
 /*******************************************************************************
@@ -134,7 +148,8 @@ static inline void hal_radio_recv_timeout_cancel_ppi_config(void)
  */
 static inline void hal_radio_disable_on_hcto_ppi_config(void)
 {
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX) && !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+#if (defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || defined(CONFIG_SOC_SERIES_NRF71)) && \
+	!defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 	/* Dual-timer mode: EVENT_TIMER = NRF_TIMER00 (DPPIC00), Radio on DPPIC10.
 	 * Bridge: DPPIC00 ch HAL_NRF54LX_DUAL_TIMER_RADIO_DISABLE_ON_HCTO_DPPIC00
 	 *      -> PPIB00 SEND_4 -> PPIB10 RECEIVE_4
@@ -151,12 +166,16 @@ static inline void hal_radio_disable_on_hcto_ppi_config(void)
 	nrf_dppi_channels_enable(NRF_DPPIC00,
 				 BIT(HAL_NRF54LX_DUAL_TIMER_RADIO_DISABLE_ON_HCTO_DPPIC00));
 	nrf_dppi_channels_enable(NRF_DPPIC, BIT(HAL_RADIO_DISABLE_ON_HCTO_PPI));
-#else /* !(CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER) */
+#else /* !((CONFIG_SOC_COMPATIBLE_NRF54LX || CONFIG_SOC_SERIES_NRF71) &&
+	*   !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	*/
 	nrf_timer_publish_set(EVENT_TIMER, HAL_EVENT_TIMER_HCTO_EVENT,
 			      HAL_RADIO_DISABLE_ON_HCTO_PPI);
 	nrf_radio_subscribe_set(NRF_RADIO, NRF_RADIO_TASK_DISABLE,
 				HAL_RADIO_DISABLE_ON_HCTO_PPI);
-#endif /* !(CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER) */
+#endif /* !((CONFIG_SOC_COMPATIBLE_NRF54LX || CONFIG_SOC_SERIES_NRF71) &&
+	*   !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	*/
 }
 
 /*******************************************************************************
@@ -168,7 +187,8 @@ static inline void hal_radio_end_time_capture_ppi_config(void)
 {
 	nrf_radio_publish_set(NRF_RADIO, HAL_NRF_RADIO_TRX_EVENT_END,
 			      HAL_RADIO_END_TIME_CAPTURE_PPI);
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX) && !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+#if (defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || defined(CONFIG_SOC_SERIES_NRF71)) && \
+	!defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 	/* Dual-timer mode: Radio is on DPPIC10, EVENT_TIMER = NRF_TIMER00 on DPPIC00.
 	 * Bridge: DPPIC10 ch HAL_RADIO_END_TIME_CAPTURE_PPI
 	 *      -> PPIB10 SEND_5 -> PPIB00 RECEIVE_5
@@ -182,10 +202,14 @@ static inline void hal_radio_end_time_capture_ppi_config(void)
 				 BIT(HAL_NRF54LX_DUAL_TIMER_END_TIME_CAPTURE_DPPIC00));
 	nrf_timer_subscribe_set(EVENT_TIMER, HAL_EVENT_TIMER_TRX_END_TASK,
 				HAL_NRF54LX_DUAL_TIMER_END_TIME_CAPTURE_DPPIC00);
-#else /* !(CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER) */
+#else /* !((CONFIG_SOC_COMPATIBLE_NRF54LX || CONFIG_SOC_SERIES_NRF71) &&
+	*   !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	*/
 	nrf_timer_subscribe_set(EVENT_TIMER, HAL_EVENT_TIMER_TRX_END_TASK,
 				HAL_RADIO_END_TIME_CAPTURE_PPI);
-#endif /* !(CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER) */
+#endif /* !((CONFIG_SOC_COMPATIBLE_NRF54LX || CONFIG_SOC_SERIES_NRF71) &&
+	*   !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	*/
 }
 
 /*******************************************************************************
@@ -199,7 +223,8 @@ static inline void hal_event_timer_start_ppi_config(void)
 	nrf_grtc_publish_set(NRF_GRTC, HAL_CNTR_GRTC_EVENT_COMPARE_RADIO,
 			     HAL_EVENT_TIMER_START_PPI);
 
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || \
+	defined(CONFIG_SOC_SERIES_NRF71)
 	/* Setup PPIB receive publish for Radio domain (PPIB11/PPIB21):
 	 * GRTC (DPPIC20) -> NRF_TIMER10 (DPPIC10).
 	 * In single-timer mode NRF_TIMER10 is the EVENT_TIMER; in dual-timer mode
@@ -276,7 +301,8 @@ static inline void hal_radio_ready_time_capture_ppi_config(void)
 {
 	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_READY,
 			      HAL_RADIO_READY_TIME_CAPTURE_PPI);
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX) && !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+#if (defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || defined(CONFIG_SOC_SERIES_NRF71)) && \
+	!defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 	/* Dual-timer mode: Radio is on DPPIC10, EVENT_TIMER = NRF_TIMER00 on DPPIC00.
 	 * Bridge: DPPIC10 ch HAL_RADIO_READY_TIME_CAPTURE_PPI
 	 *      -> PPIB10 SEND_2 -> PPIB00 RECEIVE_2
@@ -290,10 +316,14 @@ static inline void hal_radio_ready_time_capture_ppi_config(void)
 				 BIT(HAL_NRF54LX_DUAL_TIMER_RADIO_READY_CAPTURE_DPPIC00));
 	nrf_timer_subscribe_set(EVENT_TIMER, HAL_EVENT_TIMER_READY_TASK,
 				HAL_NRF54LX_DUAL_TIMER_RADIO_READY_CAPTURE_DPPIC00);
-#else /* !(CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER) */
+#else /* !((CONFIG_SOC_COMPATIBLE_NRF54LX || CONFIG_SOC_SERIES_NRF71) &&
+	*   !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	*/
 	nrf_timer_subscribe_set(EVENT_TIMER, HAL_EVENT_TIMER_READY_TASK,
 				HAL_RADIO_READY_TIME_CAPTURE_PPI);
-#endif /* !(CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER) */
+#endif /* !((CONFIG_SOC_COMPATIBLE_NRF54LX || CONFIG_SOC_SERIES_NRF71) &&
+	*   !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	*/
 }
 
 #if defined(CONFIG_BT_CTLR_LE_ENC) || defined(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)
@@ -306,11 +336,14 @@ static inline void hal_radio_ready_time_capture_ppi_config(void)
  */
 static inline void hal_trigger_crypt_ppi_config(void)
 {
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || defined(CONFIG_SOC_SERIES_NRF54H)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || \
+	defined(CONFIG_SOC_SERIES_NRF54H) || \
+	defined(CONFIG_SOC_SERIES_NRF71)
 	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_PAYLOAD, HAL_TRIGGER_CRYPT_PPI);
 	nrf_ccm_subscribe_set(NRF_CCM, NRF_CCM_TASK_START, HAL_TRIGGER_CRYPT_PPI);
 
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || \
+	defined(CONFIG_SOC_SERIES_NRF71)
 	/* Setup PPIB receive publish */
 	nrf_ppib_publish_set(NRF_PPIB00, HAL_PPIB_RECEIVE_TRIGGER_CRYPT_PPI, HAL_TRIGGER_CRYPT_PPI);
 
@@ -398,7 +431,8 @@ static inline void hal_trigger_aar_ppi_config(void)
 	nrf_radio_publish_set(NRF_RADIO, NRF_RADIO_EVENT_BCMATCH, HAL_TRIGGER_AAR_PPI);
 	nrf_aar_subscribe_set(NRF_AAR, NRF_AAR_TASK_START, HAL_TRIGGER_AAR_PPI);
 
-#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX)
+#if defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || \
+	defined(CONFIG_SOC_SERIES_NRF71)
 	/* Setup PPIB receive publish */
 	nrf_ppib_publish_set(NRF_PPIB00, HAL_PPIB_RECEIVE_TRIGGER_AAR_PPI, HAL_TRIGGER_AAR_PPI);
 
