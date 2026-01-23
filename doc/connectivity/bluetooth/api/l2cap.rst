@@ -68,9 +68,9 @@ control explicitly by giving credits to the channel, for example with
 will prevent further segments from being delivered.
 Since :c:member:`bt_l2cap_chan_ops.seg_recv` is a ``void`` callback, it
 cannot report errors using a return value. If an unrecoverable error occurs
-while processing a segment, the application should handle it explicitly, for
-example by disconnecting the channel with
-:c:func:`bt_l2cap_chan_disconnect` or closing the underlying connection.
+When using ``seg_recv``, the application should handle unrecoverable errors
+explicitly, for example by triggering a channel disconnect using
+:c:func:`bt_l2cap_chan_disconnect`, potentially deferred outside the callback.
 .. note::
   The ``recv`` callback is called directly from RX Thread thus it is not
   recommended to block for long periods of time.
