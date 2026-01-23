@@ -77,8 +77,8 @@ set_variable_ifdef(CONFIG_ENTROPY_MCUX_RNGA     CONFIG_MCUX_COMPONENT_driver.rng
 set_variable_ifdef(CONFIG_ENTROPY_MCUX_TRNG     CONFIG_MCUX_COMPONENT_driver.trng)
 set_variable_ifdef(CONFIG_ENTROPY_MCUX_CAAM     CONFIG_MCUX_COMPONENT_driver.caam)
 set_variable_ifdef(CONFIG_ETH_NXP_ENET          CONFIG_MCUX_COMPONENT_driver.enet)
-set_variable_ifdef(CONFIG_SOC_SERIES_K2X        CONFIG_MCUX_COMPONENT_driver.smc)
-set_variable_ifdef(CONFIG_SOC_SERIES_KE1XZ      CONFIG_MCUX_COMPONENT_driver.smc)
+set_variable_ifdef(CONFIG_DT_HAS_NXP_SMC_ENABLED  CONFIG_MCUX_COMPONENT_driver.smc)
+set_variable_ifdef(CONFIG_WUC_MCUX_LLWU           CONFIG_MCUX_COMPONENT_driver.llwu)
 set_variable_ifdef(CONFIG_I2C_MCUX              CONFIG_MCUX_COMPONENT_driver.i2c)
 set_variable_ifdef(CONFIG_I2C_NXP_II2C          CONFIG_MCUX_COMPONENT_driver.ii2c)
 set_variable_ifdef(CONFIG_I3C_MCUX              CONFIG_MCUX_COMPONENT_driver.i3c)
@@ -171,7 +171,6 @@ set_variable_ifdef(CONFIG_OPAMP_MCUX_OPAMP          CONFIG_MCUX_COMPONENT_driver
 set_variable_ifdef(CONFIG_OPAMP_MCUX_OPAMP_FAST     CONFIG_MCUX_COMPONENT_driver.opamp_fast)
 set_variable_ifdef(CONFIG_CRC_DRIVER_NXP        CONFIG_MCUX_COMPONENT_driver.crc)
 set_variable_ifdef(CONFIG_CRC_DRIVER_NXP_LPC    CONFIG_MCUX_COMPONENT_driver.lpc_crc)
-set_variable_ifdef(CONFIG_WUC_MCUX_LLWU         CONFIG_MCUX_COMPONENT_driver.llwu)
 set_variable_ifdef(CONFIG_PHY_NXP_T1S           CONFIG_MCUX_COMPONENT_driver.tenbaset_phy)
 
 if(NOT CONFIG_SOC_MIMX9596)
