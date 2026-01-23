@@ -52,9 +52,10 @@ marked as processed by returning 0 or using
 :c:func:`bt_l2cap_chan_recv_complete` API if processing is asynchronous.
 
 For channels that support segmentation, the ``seg_recv`` callback can be
-provided in :c:struct:`bt_l2cap_chan_ops`. This callback is invoked when
-incoming L2CAP data is delivered in multiple segments. Each segment is
-passed to the application as it is received.
+provided in :c:struct:`bt_l2cap_chan_ops`. This callback is called for each
+received L2CAP segment. Each segment is passed to the application as it is
+received, regardless of whether the SDU fits in a single segment or spans
+multiple segments.
 
 The ``seg_recv`` callback allows applications to process large or streaming
 data incrementally without waiting for full reassembly. It is an alternative
