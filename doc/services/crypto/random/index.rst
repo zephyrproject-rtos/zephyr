@@ -3,24 +3,33 @@
 Random Number Generation
 ########################
 
+Overview
+********
+
 The random API subsystem provides random number generation APIs in both
 cryptographically and non-cryptographically secure instances. Which
 random API to use is based on the cryptographic requirements of the
 random number. The non-cryptographic APIs will return random values
 much faster if non-cryptographic values are needed.
 
-The cryptographically secure random functions shall be compliant to the
-FIPS 140-2 [NIST02]_ recommended algorithms. Hardware based random-number
-generators (RNG) can be used on platforms with appropriate hardware support.
-Platforms without hardware RNG support shall use the `CTR-DRBG algorithm
-<https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-90Ar1.pdf>`_.
+- Use :c:func:`sys_rand_get` and related functions for non-cryptographic
+  purposes such as randomizing delays, shuffling data, or general-purpose
+  randomization. These functions are faster but not suitable for security
+  applications.
 
-The algorithm can be provided by  `mbedTLS <https://tls.mbed.org/ctr-drbg-source-code>`_.
+- Use :c:func:`sys_csrand_get` for cryptographic purposes such as generating
+  encryption keys, nonces, initialization vectors, or any data that must be
+  unpredictable to an attacker.
 
-  .. note::
+.. warning::
 
-    The CTR-DRBG generator needs an entropy source to establish and
-    maintain the cryptographic security of the PRNG.
+   Never use the non-cryptographic random functions (:c:func:`sys_rand_get`,
+   :c:func:`sys_rand8_get`, :c:func:`sys_rand16_get`, :c:func:`sys_rand32_get`,
+   :c:func:`sys_rand64_get`) for security-sensitive operations. These functions
+   do not provide cryptographically secure random numbers.
+
+
+
 
 .. _random_kconfig:
 
