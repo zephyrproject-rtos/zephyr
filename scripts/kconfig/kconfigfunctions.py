@@ -192,6 +192,16 @@ def _node_reg_addr(node, index, unit):
     return node.regs[int(index)].addr >> _dt_units_to_scale(unit)
 
 
+def _node_unit_addr(node, unit):
+    if not node:
+        return 0
+
+    if not node.unit_addr:
+        return 0
+
+    return node.unit_addr >> _dt_units_to_scale(unit)
+
+
 def _node_reg_addr_by_name(node, name, unit):
     if not node:
         return 0
@@ -374,13 +384,10 @@ def dt_chosen_reg(kconf, name, chosen, index=0, unit=None):
         return hex(_dt_chosen_reg_addr(kconf, chosen, index, unit))
 
 
-def _dt_chosen_partition_addr(kconf, chosen, index=0, unit=None):
+def _dt_chosen_partition_addr(kconf, chosen, unit=None):
     """
-    This function takes a 'chosen' property and treats that property as a path
-    to an EDT node.  If it finds an EDT node, it will look to see if that
-    node has a register, and if that node has a grandparent that has a register
-    at the given 'index'. The addition of both addresses will be returned, if
-    not, we return 0.
+    This function takes a 'chosen' property and treats that property as a path to an EDT node.
+    If it finds an EDT node, it will return the unit address of that node, and if not, we return 0.
 
     The function will divide the value based on 'unit':
         None        No division
@@ -395,25 +402,19 @@ def _dt_chosen_partition_addr(kconf, chosen, index=0, unit=None):
         return 0
 
     node = edt.chosen_node(chosen)
-    if not node:
-        return 0
 
-    p_node = node.parent
-    if not p_node:
-        return 0
-
-    return _node_reg_addr(p_node.parent, index, unit) + _node_reg_addr(node, 0, unit)
+    return _node_unit_addr(node, unit)
 
 
 def dt_chosen_partition_addr(kconf, name, chosen, index=0, unit=None):
     """
     This function just routes to the proper function and converts
-    the result to either a string int or string hex value.
+    the result to either a string int or string hex value. The index value is not used.
     """
     if name == "dt_chosen_partition_addr_int":
-        return str(_dt_chosen_partition_addr(kconf, chosen, index, unit))
+        return str(_dt_chosen_partition_addr(kconf, chosen, unit))
     if name == "dt_chosen_partition_addr_hex":
-        return hex(_dt_chosen_partition_addr(kconf, chosen, index, unit))
+        return hex(_dt_chosen_partition_addr(kconf, chosen, unit))
 
 
 def _dt_node_reg_addr(kconf, path, index=0, unit=None):
