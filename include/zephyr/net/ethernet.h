@@ -845,6 +845,18 @@ static inline bool net_eth_is_addr_multicast(struct net_eth_addr *addr)
 }
 
 /**
+ * @brief Check if the Ethernet MAC address is an unicast address.
+ *
+ * @param addr A valid pointer to a Ethernet MAC address.
+ *
+ * @return true if address is an unicast address, false if not
+ */
+static inline bool net_eth_is_addr_unicast(struct net_eth_addr *addr)
+{
+	return !net_eth_is_addr_unspecified(addr) && !net_eth_is_addr_multicast(addr);
+}
+
+/**
  * @brief Check if the Ethernet MAC address is valid.
  *
  * @param addr A valid pointer to a Ethernet MAC address.
