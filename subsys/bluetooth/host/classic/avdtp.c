@@ -404,7 +404,7 @@ static void avdtp_tx_rel_buf(struct net_buf *buf, struct net_buf *frag)
 	avdtp_tx_raise();
 }
 
-static void avdtp_tx_signal(struct bt_avdtp *session, struct net_buf *buf)
+static void avdtp_tx_single(struct bt_avdtp *session, struct net_buf *buf)
 {
 	int err;
 
@@ -532,7 +532,7 @@ static void avdtp_tx_processor(struct k_work *item)
 
 	/* The buf can be sent directly */
 	if (user_data->frag_count == 1) {
-		avdtp_tx_signal(session, buf);
+		avdtp_tx_single(session, buf);
 		avdtp_tx_raise();
 		return;
 	}
