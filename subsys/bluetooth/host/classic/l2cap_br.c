@@ -156,11 +156,6 @@ enum {
 
 	/* Receiving S-frame/I-frame flags */
 	L2CAP_FLAG_RECV_FRAME_P,         /* Poll (P) flag of received frame */
-	L2CAP_FLAG_RECV_FRAME_R,         /* Retransmission Disable (R) of received frame */
-	L2CAP_FLAG_RECV_FRAME_R_CHANGED, /* Flag the R flag changed.
-					  * After send received frame with R bit set,
-					  * clear the flag.
-					  */
 
 	/* Sending S-frame/I-frame flags */
 	L2CAP_FLAG_SEND_FRAME_REJ,         /* Report an REJ in received frame */
@@ -644,8 +639,7 @@ static int bt_l2cap_br_update_req_seq_direct(struct bt_l2cap_br_chan *br_chan, u
 		}
 	}
 
-	if (!atomic_test_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R) &&
-	    !atomic_test_bit(br_chan->flags, L2CAP_FLAG_REMOTE_BUSY)) {
+	if (!atomic_test_bit(br_chan->flags, L2CAP_FLAG_REMOTE_BUSY)) {
 		if (bt_l2cap_br_get_outstanding_count(br_chan)) {
 			/*
 			 * If unacknowledged I-frames have been sent but the retransmission
@@ -802,12 +796,8 @@ static void l2cap_br_monitor_timeout(struct k_work *work)
 		}
 	} else if ((br_chan->tx.mode == BT_L2CAP_BR_LINK_MODE_FC) ||
 		   (br_chan->tx.mode == BT_L2CAP_BR_LINK_MODE_RET)) {
-		/* Send S-frame with R=0.
-		 * Send S-Frame if there is not any pending I-frame
-		 */
-
+		/* Send S-Frame if there is not any pending I-frame */
 		l2cap_br_send_s_frame(br_chan);
-		atomic_clear_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R);
 	}
 }
 #endif /* CONFIG_BT_L2CAP_RET_FC */
@@ -1010,15 +1000,17 @@ static int bt_l2cap_br_pack_s_frame_header(struct bt_l2cap_br_chan *br_chan, str
 		}
 	}
 
-	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY) &&
-	    (s != BT_L2CAP_CONTROL_S_RNR)) {
-		LOG_WRN("Local is busy and cannot send S-frame on %p", br_chan);
-		return -EINVAL;
-	}
+	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY)) {
+		if ((br_chan->tx.mode == BT_L2CAP_BR_LINK_MODE_ERET) &&
+		    (s != BT_L2CAP_CONTROL_S_RNR)) {
+			LOG_WRN("Local is busy and cannot send S-frame on %p", br_chan);
+			return -EINVAL;
+		}
 
-	if (atomic_test_and_clear_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R_CHANGED) &&
-	    atomic_test_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R)) {
-		r_bit = 1;
+		if (br_chan->tx.mode == BT_L2CAP_BR_LINK_MODE_RET) {
+			r_bit = 1;
+			s = BT_L2CAP_CONTROL_S_REJ;
+		}
 	}
 
 	if (br_chan->tx.mode != BT_L2CAP_BR_LINK_MODE_STREAM) {
@@ -1070,8 +1062,8 @@ static void bt_l2cap_br_pack_i_frame_header(struct bt_l2cap_br_chan *br_chan, st
 		f_bit = 1;
 	}
 
-	if (atomic_test_and_clear_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R_CHANGED) &&
-	    atomic_test_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R)) {
+	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY) &&
+	    (br_chan->tx.mode == BT_L2CAP_BR_LINK_MODE_RET)) {
 		r_bit = 1;
 	}
 
@@ -1125,7 +1117,7 @@ static struct net_buf *l2cap_br_get_next_sdu(struct bt_l2cap_br_chan *br_chan)
 
 static bool l2cap_br_send_i_frame(struct bt_l2cap_br_chan *br_chan, struct net_buf *sdu)
 {
-	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R)) {
+	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_REMOTE_BUSY)) {
 		return false;
 	}
 
@@ -1144,10 +1136,6 @@ static bool l2cap_br_send_i_frame(struct bt_l2cap_br_chan *br_chan, struct net_b
 	}
 
 	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P)) {
-		return false;
-	}
-
-	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_REMOTE_BUSY)) {
 		return false;
 	}
 
@@ -1214,9 +1202,7 @@ static struct net_buf *l2cap_br_ret_fc_data_pull(struct bt_conn *conn, size_t am
 		uint8_t s_bit = BT_L2CAP_CONTROL_S_RR;
 		bool alloc = false;
 
-		if ((atomic_test_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R) &&
-		     atomic_test_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R_CHANGED)) ||
-		    (atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_REJ) &&
+		if ((atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_REJ) &&
 		     atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_REJ_CHANGED)) ||
 		    (atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P) &&
 		     atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P_CHANGED)) ||
@@ -1265,15 +1251,6 @@ static struct net_buf *l2cap_br_ret_fc_data_pull(struct bt_conn *conn, size_t am
 			make_closure(send_buf->user_data, NULL, NULL);
 
 			goto done;
-		}
-
-		if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R)) {
-			/* No I-frames shall be transmitted if the last
-			 * RetransmissionDisableBit (R) received is set to one.
-			 */
-			LOG_DBG("Stop to send I-frame on %p", br_chan);
-			lower_data_ready(br_chan);
-			return NULL;
 		}
 
 		if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_REMOTE_BUSY)) {
@@ -5267,6 +5244,20 @@ static void bt_l2cap_br_update_srej(struct bt_l2cap_br_chan *br_chan, uint16_t r
 	}
 }
 
+static void l2cap_br_retransmit_i_frames(struct bt_l2cap_br_chan *br_chan)
+{
+	struct bt_l2cap_br_window *tx_win, *next;
+
+	if (atomic_test_and_set_bit(br_chan->flags, L2CAP_FLAG_RET_I_FRAMES)) {
+		LOG_WRN("Retransmit-I-frames is ongoing");
+		return;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&br_chan->_pdu_outstanding, tx_win, next, node) {
+		tx_win->retransmit = true;
+	}
+}
+
 static void bt_l2cap_br_update_r(struct bt_l2cap_br_chan *br_chan, uint8_t r)
 {
 	if (br_chan->rx.mode != BT_L2CAP_BR_LINK_MODE_RET) {
@@ -5275,13 +5266,12 @@ static void bt_l2cap_br_update_r(struct bt_l2cap_br_chan *br_chan, uint8_t r)
 	}
 
 	if (!r) {
-		if (!atomic_test_and_clear_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R)) {
+		if (!atomic_test_and_clear_bit(br_chan->flags, L2CAP_FLAG_REMOTE_BUSY)) {
 			/* R bit without any change */
 			return;
 		}
 
 		/* R bit is changed from 1 -> 0 */
-		atomic_set_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R_CHANGED);
 		if (bt_l2cap_br_get_outstanding_count(br_chan)) {
 			/* If any unacknowledged I-frames have been sent then RetransmissionTimer
 			 * shall be restarted.
@@ -5293,14 +5283,16 @@ static void bt_l2cap_br_update_r(struct bt_l2cap_br_chan *br_chan, uint8_t r)
 			 */
 			l2cap_br_start_timer(br_chan, BT_L2CAP_BR_TIMER_MONITOR, false);
 		}
+
+		/* Retransmit I-frames */
+		l2cap_br_retransmit_i_frames(br_chan);
 	} else {
-		if (atomic_test_and_set_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R)) {
+		if (atomic_test_and_set_bit(br_chan->flags, L2CAP_FLAG_REMOTE_BUSY)) {
 			/* R bit without any change */
 			return;
 		}
 
 		/* R bit is changed from 0 -> 1 */
-		atomic_set_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_R_CHANGED);
 		l2cap_br_start_timer(br_chan, BT_L2CAP_BR_TIMER_MONITOR, false);
 	}
 
@@ -5341,20 +5333,6 @@ static int bt_l2cap_br_update_f(struct bt_l2cap_br_chan *br_chan, uint8_t f)
 	}
 
 	return 0;
-}
-
-static void l2cap_br_retransmit_i_frames(struct bt_l2cap_br_chan *br_chan)
-{
-	struct bt_l2cap_br_window *tx_win, *next;
-
-	if (atomic_test_and_set_bit(br_chan->flags, L2CAP_FLAG_RET_I_FRAMES)) {
-		LOG_WRN("Retransmit-I-frames is ongoing");
-		return;
-	}
-
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&br_chan->_pdu_outstanding, tx_win, next, node) {
-		tx_win->retransmit = true;
-	}
 }
 
 static void l2cap_br_stop_retransmit_i_frames(struct bt_l2cap_br_chan *br_chan)
@@ -5430,8 +5408,12 @@ static void bt_l2cap_br_ret_fc_s_recv(struct bt_l2cap_br_chan *br_chan, struct n
 		}
 
 		bt_l2cap_br_update_req_seq(br_chan, req_seq, false);
-		remote_busy = atomic_test_bit(br_chan->flags, L2CAP_FLAG_REMOTE_BUSY);
-		atomic_clear_bit(br_chan->flags, L2CAP_FLAG_REMOTE_BUSY);
+
+		if (br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_RET) {
+			break;
+		}
+
+		remote_busy = atomic_test_and_clear_bit(br_chan->flags, L2CAP_FLAG_REMOTE_BUSY);
 
 		if (f && !atomic_test_and_clear_bit(br_chan->flags, L2CAP_FLAG_REJ_ACTIONED)) {
 			/* Retransmit I-frames */
@@ -5453,6 +5435,11 @@ static void bt_l2cap_br_ret_fc_s_recv(struct bt_l2cap_br_chan *br_chan, struct n
 		if (br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_FC) {
 			/* Unsupported */
 			LOG_DBG("Ignore REJ frame");
+			break;
+		}
+
+		if (br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_RET) {
+			bt_l2cap_br_update_req_seq(br_chan, req_seq, true);
 			break;
 		}
 
@@ -5906,13 +5893,14 @@ valid_frame:
 			goto done;
 		}
 
-		if ((br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_RET) ||
-		    (br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_ERET)) {
-			expected_tx_seq = false;
+		if ((br_chan->rx.mode != BT_L2CAP_BR_LINK_MODE_RET) &&
+		    (br_chan->rx.mode != BT_L2CAP_BR_LINK_MODE_ERET)) {
+			goto done;
 		}
 
-		if ((br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_ERET) &&
-		    (!atomic_test_and_set_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY))) {
+		expected_tx_seq = false;
+
+		if (!atomic_test_and_set_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY)) {
 			atomic_set_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY_CHANGED);
 			l2cap_br_send_s_frame(br_chan);
 		}
@@ -6086,24 +6074,38 @@ int bt_l2cap_br_chan_recv_complete(struct bt_l2cap_chan *chan)
 
 	LOG_DBG("Receiving completed on %p", br_chan);
 
-	if ((br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_ERET) &&
-	    atomic_test_and_clear_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY)) {
+	if ((br_chan->rx.mode != BT_L2CAP_BR_LINK_MODE_ERET) &&
+	    (br_chan->rx.mode != BT_L2CAP_BR_LINK_MODE_RET)) {
+		LOG_DBG("Unsupported mode (%u)", br_chan->rx.mode);
+		return 0;
+	}
 
-		if (!atomic_test_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY_CHANGED) &&
-		    !atomic_test_and_set_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P)) {
-			/* State: XMIT
-			 * Local Busy Clears
-			 * Action: send RR(P=1)
-			 */
-			br_chan->retry_count = 1;
+	if (!atomic_test_and_clear_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY)) {
+		LOG_DBG("Local is not busy");
+		return 0;
+	}
 
-			l2cap_br_start_timer(br_chan, BT_L2CAP_BR_TIMER_MONITOR, true);
+	if (br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_RET) {
+		/* Ignore local busy changed flag */
+		atomic_clear_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY_CHANGED);
+		l2cap_br_send_s_frame(br_chan);
+		return 0;
+	}
 
-			atomic_set_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P_CHANGED);
-			l2cap_br_send_s_frame(br_chan);
-		} else {
-			atomic_clear_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY_CHANGED);
-		}
+	/* ERET Mode */
+	if (atomic_test_and_clear_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY_CHANGED)) {
+		return 0;
+	}
+
+	if (!atomic_test_and_set_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P)) {
+		/* State: XMIT
+		 * Local Busy Clears
+		 * Action: send RR(P=1)
+		 */
+		br_chan->retry_count = 1;
+		l2cap_br_start_timer(br_chan, BT_L2CAP_BR_TIMER_MONITOR, true);
+		atomic_set_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P_CHANGED);
+		l2cap_br_send_s_frame(br_chan);
 	}
 
 	return 0;
