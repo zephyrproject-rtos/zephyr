@@ -28,6 +28,12 @@ import yaml
 import platform
 import jsonschema
 
+try:
+    # Use the C LibYAML parser if available, rather than the Python parser.
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader     # type: ignore
+
 # Marker type for an 'append:' configuration. Maps variables
 # to the list of values to append to them.
 Appends = Dict[str, List[str]]
@@ -207,8 +213,12 @@ if("${{BOARD}}/${{BOARD_QUALIFIERS}}" STREQUAL "{board}")
 # Name of the file containing the jsonschema schema for snippet.yml
 # files.
 SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'snippet-schema.yaml')
-with open(SCHEMA_PATH, 'r') as f:
-    SNIPPET_SCHEMA = yaml.safe_load(f.read())
+with open(SCHEMA_PATH, 'rb') as f:
+    SNIPPET_SCHEMA = yaml.load(f.read(), Loader=SafeLoader)
+
+SNIPPET_VALIDATOR_CLASS = jsonschema.validators.validator_for(SNIPPET_SCHEMA)
+SNIPPET_VALIDATOR_CLASS.check_schema(SNIPPET_SCHEMA)
+SNIPPET_VALIDATOR = SNIPPET_VALIDATOR_CLASS(SNIPPET_SCHEMA)
 
 # The name of the file which contains metadata about the snippets
 # being defined in a directory.
@@ -309,16 +319,13 @@ def load_snippet_yml(snippet_yml: Path) -> dict:
     against the schema, and do other basic checks. Return the dict
     of the resulting YAML data.'''
 
-    with open(snippet_yml, 'r') as f:
+    with open(snippet_yml, 'rb') as f:
         try:
-            snippet_data = yaml.safe_load(f.read())
+            snippet_data = yaml.load(f.read(), Loader=SafeLoader)
         except yaml.scanner.ScannerError:
             _err(f'snippets file {snippet_yml} is invalid YAML')
 
-    validator_class = jsonschema.validators.validator_for(SNIPPET_SCHEMA)
-    validator_class.check_schema(SNIPPET_SCHEMA)
-    snippet_validator = validator_class(SNIPPET_SCHEMA)
-    errors = list(snippet_validator.iter_errors(snippet_data))
+    errors = list(SNIPPET_VALIDATOR.iter_errors(snippet_data))
 
     if errors:
         sys.exit('ERROR: Malformed snippet YAML file: '
