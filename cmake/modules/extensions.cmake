@@ -3352,6 +3352,8 @@ function(zephyr_scope_exists result scope)
   get_property(scope_defined GLOBAL PROPERTY scope:${scope})
   if(scope_defined)
     set(${result} TRUE PARENT_SCOPE)
+  elseif(scope STREQUAL cache)
+    set(${result} TRUE PARENT_SCOPE)
   else()
     set(${result} FALSE PARENT_SCOPE)
   endif()
@@ -3362,6 +3364,9 @@ endfunction()
 #
 # Get the current value of <var> in a specific <scope>, as defined by a
 # previous zephyr_set() call. The value will be stored in the <output> var.
+#
+# Note: the scope `cache` will return the CMake cache value of the variable set
+#       in current CMake run. (cache values from earlier runs are ignored).
 #
 # <output> : Variable to store the value in
 # <scope>  : Scope for the variable look up
@@ -3388,6 +3393,9 @@ endfunction()
 # scope. The scope is used on later zephyr_get() invocation for precedence
 # handling when a variable it set in multiple scopes.
 #
+# Note: the scope `cache` sets the CMake cache value of the variable but cache
+#       values from earlier CMake runs are ignored.
+#
 # <variable>   : Name of variable
 # <value>      : Value of variable, multiple values will create a list.
 #                The SCOPE argument identifies the end of value list.
@@ -3411,6 +3419,11 @@ function(zephyr_set variable)
   set_property(GLOBAL ${property_args} PROPERTY
                ${SET_VAR_SCOPE}_scope:${variable} ${SET_VAR_UNPARSED_ARGUMENTS}
   )
+
+  if(SET_VAR_SCOPE STREQUAL cache)
+    zephyr_get_scoped(value ${SET_VAR_SCOPE} ${variable})
+    set(${variable} "${value}" CACHE INTERNAL "")
+  endif()
 endfunction()
 
 # Usage:
