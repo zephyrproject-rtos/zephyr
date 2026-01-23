@@ -308,6 +308,9 @@ struct _timeout {
 #endif
 };
 
+#define _TIMEOUT_FLAG_TIMER_WHEEL_SOON    BIT(0)
+#define _TIMEOUT_FLAG_TIMER_WHEEL_LATER   BIT(1)
+
 typedef void (*k_thread_timeslice_fn_t)(struct k_thread *thread, void *data);
 
 #ifdef __cplusplus

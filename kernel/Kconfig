@@ -768,6 +768,14 @@ config TIMEOUT_MANAGEMENT_DELTAQ
 	  are stored in a single linked list sorted by their expiration time.
 	  Insertion is O(n), and removal is O(1).
 
+config TIMEOUT_MANAGEMENT_WHEEL
+	bool "Use a timing wheel for timeout management [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  This algorithm uses a timing wheel data structure to manage timeouts.
+	  Insertion and removal are O(1) on average, but the code size is larger
+	  due to the more complex data structure and algorithms involved.
+
 endchoice # TIMEOUT_MANAGEMENT_ALGORITHM
 
 config SYS_CLOCK_MAX_TIMEOUT_DAYS

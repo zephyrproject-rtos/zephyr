@@ -35,6 +35,34 @@ struct timeout_q {
 #define timeout_q_remove_timeout timeout_deltaq_remove_timeout
 #define timeout_q_announce       timeout_deltaq_announce
 #define timeout_q_next_timeout   timeout_deltaq_next_timeout
+
+#elif defined(CONFIG_TIMEOUT_MANAGEMENT_WHEEL)
+
+#define NUM_SOON_LISTS  32
+#define NUM_LATER_LISTS 32
+
+#define DISTANT_DTICKS_START   (((NUM_SOON_LISTS + 1) * NUM_LATER_LISTS) + 1)
+
+struct timeout_q {
+	sys_dlist_t soon[NUM_SOON_LISTS];   /* timeouts expiring soon lists */
+	sys_dlist_t later[NUM_LATER_LISTS]; /* timeouts expiring later lists */
+	sys_dlist_t distant;                /* timeouts expiring far in future */
+	sys_dlist_t soon_defer;             /* special soon list */
+	uint32_t    soon_bits;              /* Set bit indicates list in use */
+	uint32_t    soon_index;             /* Current soon list index */
+	uint32_t    later_index;
+	uint32_t    announcing;             /* 1: Announcing soon_index, else 0*/
+	uint32_t    sifted;                 /* 1: Sifted, else 0 */
+};
+
+#define timeout_q_init           timeout_wheel_init
+#define timeout_q_first          timeout_wheel_first
+#define timeout_q_remainder      timeout_wheel_remainder
+#define timeout_q_add_timeout    timeout_wheel_add_timeout
+#define timeout_q_remove_timeout timeout_wheel_remove_timeout
+#define timeout_q_announce       timeout_wheel_announce
+#define timeout_q_next_timeout   timeout_wheel_next_timeout
+
 #else
 #error "Unknown timeout management implementation"
 #endif
