@@ -51,6 +51,18 @@ whenever an incoming data has been received. Data received this way can be
 marked as processed by returning 0 or using
 :c:func:`bt_l2cap_chan_recv_complete` API if processing is asynchronous.
 
+For channels that support segmentation, the ``seg_recv`` callback can be
+provided in :c:struct:`bt_l2cap_chan_ops`. This callback is invoked when
+incoming L2CAP data is delivered in multiple segments. Each segment is
+passed to the application as it is received.
+
+The ``seg_recv`` callback allows applications to process large or streaming
+data incrementally without waiting for full reassembly.
+
+The callback should return 0 when the segment has been handled successfully,
+or a negative error code on failure.
+
+
 .. note::
   The ``recv`` callback is called directly from RX Thread thus it is not
   recommended to block for long periods of time.
