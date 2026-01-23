@@ -726,6 +726,7 @@ static int add_address(struct net_if *iface, net_sa_family_t family,
 		}
 
 		if (memcmp(&mon_if[j].addr.in_addr, address, expected_len) == 0) {
+			mon_if[j].in_use = true;
 			return -EALREADY;
 		}
 	}
