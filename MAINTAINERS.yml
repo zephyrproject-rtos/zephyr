@@ -5088,6 +5088,8 @@ TI K3 Platforms:
     - drivers/*/*davinci*
     - drivers/*/*omap*
     - drivers/*/*ti_k3*
+    - drivers/*/*tisci*
+    - drivers/*/*secproxy*
     - dts/arm/ti/am6*
     - dts/arm/ti/j7*
     - dts/bindings/*/ti,k3*
