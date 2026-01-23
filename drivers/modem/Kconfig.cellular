@@ -56,6 +56,17 @@ config MODEM_CELLULAR_APN
 	  If left empty the driver will wait for the application to call
 	  cellular_set_apn() before it proceeds to the dial phase.
 
+config MODEM_CELLULAR_APN_ALLOW_EMPTY
+	bool "Allow empty APN string"
+	default n
+	help
+	  Some cellular modem support automatic APN configuration when an
+	  empty APN string is provided. When enabled, this option allows the
+	  modem driver to accept and use empty APN strings from both the Kconfig
+	  setting and the cellular_set_apn() API. The modem will proceed with
+	  the connection sequence using the empty APN instead of waiting in the
+	  WAIT_FOR_APN state.
+
 config MODEM_CELLULAR_PERIODIC_SCRIPT_MS
 	int "Periodic script interval in milliseconds"
 	default 2000
