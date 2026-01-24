@@ -801,7 +801,7 @@ static void uart_sf32lb_async_rx_timeout(struct k_work *work)
 }
 #endif /* CONFIG_UART_ASYNC_API */
 
-static const struct uart_driver_api uart_sf32lb_api = {
+static DEVICE_API(uart, uart_sf32lb_api) = {
 	.poll_in = uart_sf32lb_poll_in,
 	.poll_out = uart_sf32lb_poll_out,
 	.err_check = uart_sf32lb_err_check,
