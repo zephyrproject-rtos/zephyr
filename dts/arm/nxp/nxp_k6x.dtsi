@@ -112,7 +112,7 @@
 			prescaler = <32768>;
 		};
 
-		rcm: rcm@4007F000 {
+		rcm: rcm@4007f000 {
 			compatible = "nxp,rcm-hwinfo";
 			reg = <0x4007F000 0x1000>;
 		};

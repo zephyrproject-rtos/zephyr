@@ -80,7 +80,7 @@
 		ranges = <0x0 0x41380000 DT_SIZE_K(510)>;
 	};
 
-	smu2: sram@443C0000 {
+	smu2: sram@443c0000 {
 		ranges = <0x0 0x443C0000 DT_SIZE_K(140)>;
 	};
 
