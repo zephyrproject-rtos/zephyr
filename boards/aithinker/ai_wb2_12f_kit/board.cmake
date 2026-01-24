@@ -4,7 +4,7 @@
 
 board_runner_args(openocd --cmd-pre-init "source [find bl60x.cfg]")
 
-board_runner_args(openocd --use-elf --no-load --no-init)
+board_runner_args(openocd --file-type=elf --no-load --no-init)
 board_runner_args(openocd --gdb-init "set mem inaccessible-by-default off")
 board_runner_args(openocd --gdb-init "set architecture riscv:rv32")
 board_runner_args(openocd --gdb-init "set remotetimeout 250")
