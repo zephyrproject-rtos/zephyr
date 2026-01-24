@@ -108,6 +108,7 @@ class Board:
     revisions: list[str] = field(default_factory=list, compare=False)
     socs: list[Soc] = field(default_factory=list, compare=False)
     variants: list[str] = field(default_factory=list, compare=False)
+    default_qualifier: str | None = None
 
     @property
     def dir(self):
@@ -194,6 +195,7 @@ def load_v2_boards(board_name, board_yml, systems):
                 socs=socs,
                 variants=[Variant.from_dict(v) for v in board.get('variants', [])],
                 hwm='v2',
+                default_qualifier=board.get('default_qualifier'),
             )
             board_qualifiers = board_v2_qualifiers(boards[board['name']])
             duplicates = [q for q, n in Counter(board_qualifiers).items() if n > 1]
@@ -343,7 +345,8 @@ def dump_v2_boards(args):
                 REVISIONS='REVISIONS;' + ';'.join(
                           [x.name for x in b.revisions]),
                 SOCS='SOCS;' + ';'.join([s.name for s in b.socs]),
-                QUALIFIERS='QUALIFIERS;' + ';'.join(qualifiers_list)
+                QUALIFIERS='QUALIFIERS;' + ';'.join(qualifiers_list),
+                DEFAULT_QUALIFIER='DEFAULT_QUALIFIER;' + notfound(b.default_qualifier)
             )
             print(info)
         else:
