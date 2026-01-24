@@ -455,8 +455,7 @@ struct uvc_frame_discrete_descriptor {
 	uint32_t dwMaxVideoFrameBufferSize;
 	uint32_t dwDefaultFrameInterval;
 	uint8_t bFrameIntervalType;
-	/* TODO: consider about device and host */
-	uint32_t dwFrameInterval[CONFIG_USBH_VIDEO_MAX_FRMIVAL];
+	uint32_t dwFrameInterval[CONFIG_USB_VIDEO_MAX_FRMIVAL];
 } __packed;
 
 struct uvc_frame_based_continuous_descriptor {
@@ -488,8 +487,7 @@ struct uvc_frame_based_discrete_descriptor {
 	uint32_t dwMaxBitRate;
 	uint32_t dwDefaultFrameInterval;
 	uint8_t bFrameIntervalType;
-	/* TODO: consider about device and host */
-	uint32_t dwFrameInterval[CONFIG_USBH_VIDEO_MAX_FRMIVAL];
+	uint32_t dwFrameInterval[CONFIG_USB_VIDEO_MAX_FRMIVAL];
 } __packed;
 
 struct uvc_cs_descriptor_header {
