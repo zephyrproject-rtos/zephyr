@@ -1171,11 +1171,20 @@ static inline void async_user_callback(struct uart_stm32_data *data,
 static inline void async_evt_rx_rdy(struct uart_stm32_data *data)
 {
 	LOG_DBG("rx_rdy: (%d %d)", data->dma_rx.offset, data->dma_rx.counter);
+	
+	size_t len;
+
+	/* Handle wrap-around in circular DMA mode */
+	if (data->dma_rx.counter < data->dma_rx.offset) {
+		len = (data->dma_rx.buffer_length - data->dma_rx.offset) + data->dma_rx.counter;
+	} else {
+		len = data->dma_rx.counter - data->dma_rx.offset;
+	}
 
 	struct uart_event event = {
 		.type = UART_RX_RDY,
 		.data.rx.buf = data->dma_rx.buffer,
-		.data.rx.len = data->dma_rx.counter - data->dma_rx.offset,
+		.data.rx.len = len,
 		.data.rx.offset = data->dma_rx.offset
 	};
 
