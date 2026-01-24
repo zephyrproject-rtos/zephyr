@@ -983,6 +983,13 @@ int nrf_wifi_if_stop_zep(const struct device *dev)
 		goto out;
 	}
 
+	/* Teardown starts here: mark VIF as permanently stopping to prevent
+	 * any concurrent or late firmware/device boot attempts. This flag is
+	 * intentionally one-way and is not reset for this VIF lifecycle.
+	 */
+	vif_ctx_zep->teardown_ongoing = true;
+
+
 	ret = k_mutex_lock(&vif_ctx_zep->vif_lock, K_FOREVER);
 	if (ret != 0) {
 		LOG_ERR("%s: Failed to lock vif_lock", __func__);

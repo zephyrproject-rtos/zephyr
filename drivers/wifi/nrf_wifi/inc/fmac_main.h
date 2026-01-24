@@ -104,6 +104,7 @@ struct nrf_wifi_vif_ctx_zep {
 #endif /* CONFIG_NRF_WIFI_RPU_RECOVERY */
 	int rts_threshold_value;
 	unsigned short bss_max_idle_period;
+	bool teardown_ongoing; /* VIF teardown in progress */
 };
 
 struct nrf_wifi_vif_ctx_map {

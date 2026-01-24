@@ -647,6 +647,16 @@ enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv
 
 	rpu_ctx_zep->drv_priv_zep = drv_priv_zep;
 
+	/* Skip device add/init if VIF teardown is in progress.
+	 * Teardown is terminal for this VIF; the context will be destroyed,
+	 * so firmware boot must not be retriggered.
+	 */
+	if (rpu_ctx_zep->teardown_ongoing) {
+		LOG_INF("%s: VIF teardown ongoing, skipping device add/init", __func__);
+		return NRF_WIFI_STATUS_SUCCESS;
+	}
+
+
 #ifdef CONFIG_NRF70_RADIO_TEST
 	rpu_ctx = nrf_wifi_rt_fmac_dev_add(drv_priv_zep->fmac_priv, rpu_ctx_zep);
 #else
