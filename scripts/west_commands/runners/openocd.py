@@ -7,6 +7,7 @@
 
 '''Runner for openocd.'''
 
+import argparse
 import re
 import subprocess
 from os import name as os_name
@@ -24,7 +25,7 @@ try:  # noqa SIM105
 except ImportError:
     pass
 
-from runners.core import RunnerCaps, ZephyrBinaryRunner
+from runners.core import FileType, RunnerCaps, ZephyrBinaryRunner
 
 DEFAULT_OPENOCD_TCL_PORT = 6333
 DEFAULT_OPENOCD_TELNET_PORT = 4444
@@ -95,7 +96,10 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         self.openocd_cmd = [cfg.openocd or 'openocd'] + search_args
         # openocd doesn't cope with Windows path names, so convert
         # them to POSIX style just to be sure.
+        self.file = Path(cfg.file).as_posix() if cfg.file else None
         self.elf_name = Path(cfg.elf_file).as_posix() if cfg.elf_file else None
+        self.hex_name = Path(cfg.hex_file).as_posix() if cfg.hex_file else None
+        self.bin_name = Path(cfg.bin_file).as_posix() if cfg.bin_file else None
         self.pre_init = pre_init or []
         self.reset_halt_cmd = reset_halt_cmd
         self.pre_load = pre_load or []
@@ -131,7 +135,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def capabilities(cls):
         return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach', 'rtt'},
-                          rtt=True, erase=True, skip_load=True)
+                          rtt=True, erase=True, skip_load=True, file=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -141,16 +145,16 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--serial', default="",
                             help='''if given, selects FTDI instance by its serial number,
                             defaults to empty''')
-        # Multiple flags share the same dest; last one wins.
+        # Deprecated --use-* flags for backward compatibility
         parser.add_argument('--use-hex', action='store_const',
-                            dest='image_type', const='hex',
-                            help='use HEX file for loading (default)')
+                            dest='use_image_type', const='hex',
+                            help=argparse.SUPPRESS)
         parser.add_argument('--use-elf', action='store_const',
-                            dest='image_type', const='elf',
-                            help='use ELF file for loading instead of HEX')
+                            dest='use_image_type', const='elf',
+                            help=argparse.SUPPRESS)
         parser.add_argument('--use-bin', action='store_const',
-                            dest='image_type', const='bin',
-                            help='use BIN file for loading instead of HEX')
+                            dest='use_image_type', const='bin',
+                            help=argparse.SUPPRESS)
         parser.add_argument('--flash-address', default=None,
                             help='flash address to use when flashing BIN file')
         # Options for flashing:
@@ -213,6 +217,19 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def do_create(cls, cfg, args):
+        # Handle deprecated --use-* flags
+        if args.use_image_type:
+            cls.logger.warning('--use-hex/--use-elf/--use-bin are deprecated, '
+                               'use --file-type instead')
+            if cfg.file_type == FileType.OTHER or cfg.file_type is None:
+                # Map deprecated string to FileType enum
+                type_map = {'hex': FileType.HEX, 'elf': FileType.ELF, 'bin': FileType.BIN}
+                image_type = type_map.get(args.use_image_type)
+            else:
+                image_type = cfg.file_type
+        else:
+            image_type = cfg.file_type
+
         return OpenOcdBinaryRunner(
             cfg,
             pre_init=args.cmd_pre_init, reset_halt_cmd=args.cmd_reset_halt,
@@ -220,7 +237,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             verify_cmd=args.cmd_verify, post_verify=args.cmd_post_verify,
             do_verify=args.verify, do_verify_only=args.verify_only, do_erase=args.erase,
             tui=args.tui, config=args.config, serial=args.serial,
-            image_type=args.image_type,
+            image_type=image_type,
             flash_address=args.flash_address, no_halt=args.no_halt, no_init=args.no_init,
             no_targets=args.no_targets, tcl_port=args.tcl_port,
             telnet_port=args.telnet_port, gdb_port=args.gdb_port,
@@ -285,35 +302,40 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         return [x for cmd in cmd_list for x in ("-c", cmd)]
 
     def do_flash(self, **kwargs):
-        match self.image_type:
-            case 'elf':
-                if self.elf_name is None:
-                    raise ValueError('Cannot flash; no .elf specified')
-                image_file = self.elf_name
-                with open(image_file, 'rb') as f:
-                    ep_addr = f"0x{ELFFile(f).header['e_entry']:016x}"
+        if self.file is not None:
+            image_file = self.file
+        elif self.image_type == FileType.ELF:
+            if self.elf_name is None:
+                raise ValueError('Cannot flash; no .elf specified')
+            image_file = self.elf_name
+        elif self.image_type == FileType.BIN:
+            self.ensure_output('bin')
+            image_file = self.bin_name
+        else:
+            self.ensure_output('hex')
+            image_file = self.hex_name
 
-            case 'bin':
-                self.ensure_output('bin')
-                if self.load_cmd is None:
-                    raise ValueError('Cannot flash; load command is missing')
-                if self.flash_address is None:
-                    raise ValueError('Cannot flash; flash address is missing')
-                image_file = Path(self.cfg.bin_file).as_posix()
+        if self.image_type == FileType.BIN:
+            if self.load_cmd is None:
+                raise ValueError('Cannot flash; load command is missing')
+            if self.flash_address is None:
+                raise ValueError('Cannot flash; flash address is missing')
+        elif self.image_type != FileType.ELF:
+            if self.load_cmd is None:
+                raise ValueError('Cannot flash; load command is missing')
+            if self.verify_cmd is None:
+                raise ValueError('Cannot flash; verify command is missing')
 
-            case _:  # 'hex' or None (default)
-                self.ensure_output('hex')
-                if self.load_cmd is None:
-                    raise ValueError('Cannot flash; load command is missing')
-                if self.verify_cmd is None:
-                    raise ValueError('Cannot flash; verify command is missing')
-                image_file = Path(self.cfg.hex_file).as_posix()
+        ep_addr = None
+        if self.image_type == FileType.ELF:
+            with open(image_file, 'rb') as f:
+                ep_addr = f"0x{ELFFile(f).header['e_entry']:016x}"
 
         self.logger.info(f'Flashing file: {image_file}')
 
         pre_init_cmd = self._openocd_cmd(self.pre_init)
 
-        if self.image_type == 'elf':
+        if self.image_type == FileType.ELF:
             pre_load_cmd = []
             load_image = []
             if not self.do_verify_only:
@@ -341,17 +363,17 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                         self.logger.error('--erase not supported for target without --cmd-erase')
                         return
                     load_image += self._openocd_cmd(self.erase_cmd)
-                    if self.image_type != 'bin' and self.load_cmd.endswith(' erase'):
+                    if self.image_type != FileType.BIN and self.load_cmd.endswith(' erase'):
                         self.load_cmd = self.load_cmd[:-6]
 
-                if self.image_type == 'bin':
+                if self.image_type == FileType.BIN:
                     load_image += ['-c', f'{self.load_cmd} {image_file} {self.flash_address}']
                 else:
                     load_image += ['-c', f'{self.load_cmd} {image_file}']
 
             verify_image = []
             if self.do_verify or self.do_verify_only:
-                if self.image_type == 'bin':
+                if self.image_type == FileType.BIN:
                     if self.verify_cmd:
                         verify_cmd = f'{self.verify_cmd} {image_file} {self.flash_address}'
                         verify_image = ['-c', self.reset_halt_cmd, '-c', verify_cmd]
