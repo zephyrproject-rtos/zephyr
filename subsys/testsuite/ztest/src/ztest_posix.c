@@ -86,6 +86,20 @@ bool z_ztest_get_list_test(void)
 	return list_tests;
 }
 
+void ztest_reset_test_args(void)
+{
+	if (test_args != NULL) {
+		nsi_host_free((void *)test_args);
+	}
+	test_args = NULL;
+}
+
+void ztest_set_test_args(char *args)
+{
+	ztest_reset_test_args();
+	test_args = nsi_host_strdup(args);
+}
+
 /**
  * @brief Helper function to get command line test arguments
  *
