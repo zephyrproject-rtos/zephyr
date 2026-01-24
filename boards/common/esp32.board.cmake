@@ -21,7 +21,7 @@ board_runner_args(openocd  --gdb-init "mon esp appimage_offset ${CONFIG_FLASH_LO
 board_runner_args(openocd  --gdb-init "mon reset halt")
 board_runner_args(openocd  --gdb-init "thb main")
 
-board_runner_args(openocd  --use-bin)
+board_runner_args(openocd  --file-type=bin)
 board_runner_args(openocd  "--flash-address=${CONFIG_FLASH_LOAD_OFFSET}")
 board_runner_args(openocd  --cmd-load "program_esp")
 board_runner_args(openocd  --cmd-verify "esp verify_bank_hash 0")
