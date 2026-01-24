@@ -532,7 +532,7 @@ static void uart_ft9001_isr(const struct device *dev)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 /* UART driver API structure */
-static const struct uart_driver_api uart_ft9001_driver_api = {
+static DEVICE_API(uart, uart_ft9001_driver_api) = {
 	.poll_in = uart_ft9001_poll_in,
 	.poll_out = uart_ft9001_poll_out,
 	.err_check = uart_ft9001_err_check,

@@ -281,7 +281,7 @@ static void loguart_ameba_isr(const struct device *dev)
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-static const struct uart_driver_api loguart_ameba_driver_api = {
+static DEVICE_API(uart, loguart_ameba_driver_api) = {
 	.poll_in = loguart_ameba_poll_in,
 	.poll_out = loguart_ameba_poll_out,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
