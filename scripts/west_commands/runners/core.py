@@ -700,8 +700,6 @@ class ZephyrBinaryRunner(abc.ABC):
             _missing_cap(cls, '--tool-opt')
         if args.file and not caps.file:
             _missing_cap(cls, '--file')
-        if args.file_type and not args.file:
-            raise ValueError("--file-type requires --file")
         if args.file_type and not caps.file:
             _missing_cap(cls, '--file-type')
         if args.rtt_address and not caps.rtt:
