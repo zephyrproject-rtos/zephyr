@@ -152,7 +152,10 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 
 	if (xfer->err == 0 && cmd->submit.length != 0) {
 		if (USB_EP_DIR_IS_IN(xfer->ep)) {
-			ret.submit.actual_length = net_htonl(buf->len);
+			/* Cap actual_length to the requested length */
+			uint32_t actual = MIN(buf->len, cmd->submit.length);
+
+			ret.submit.actual_length = net_htonl(actual);
 		} else {
 			ret.submit.actual_length = net_htonl(cmd->submit.length);
 		}
@@ -160,7 +163,7 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 
 
 	if (USB_EP_GET_IDX(xfer->ep) == 0U) {
-		check_ctrl_request(dev_ctx->udev, xfer->ep, xfer->setup_pkt);
+		check_ctrl_request(udev, xfer->ep, xfer->setup_pkt);
 	}
 
 	err = zsock_send(dev_ctx->connfd, &ret, sizeof(ret), 0);
@@ -171,13 +174,21 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 	}
 
 	if (USB_EP_DIR_IS_IN(xfer->ep) && ret.submit.actual_length != 0) {
-		LOG_INF("Send RET_SUBMIT transfer_buffer len %u", buf->len);
-		err = zsock_send(dev_ctx->connfd, buf->data, buf->len, 0);
-		if (err != buf->len) {
-			LOG_ERR("Send transfer_buffer failed err %d errno %d",
-				err, errno);
-			err = -errno;
-			goto usbip_req_cb_error;
+		size_t send_len = net_ntohl(ret.submit.actual_length);
+		size_t sent = 0;
+
+		LOG_INF("Send RET_SUBMIT transfer_buffer len %zu (buf->len %u)",
+			send_len, buf->len);
+		while (sent < send_len) {
+			err = zsock_send(dev_ctx->connfd, buf->data + sent,
+					 send_len - sent, 0);
+			if (err < 0) {
+				LOG_ERR("Send transfer_buffer failed err %d errno %d",
+					err, errno);
+				err = -errno;
+				goto usbip_req_cb_error;
+			}
+			sent += err;
 		}
 	}
 
@@ -191,7 +202,7 @@ usbip_req_cb_error:
 		net_buf_unref(buf);
 	}
 
-	usbh_xfer_free(dev_ctx->udev, xfer);
+	usbh_xfer_free(udev, xfer);
 
 	return 0;
 }
