@@ -207,6 +207,11 @@ union ic_sdahold_register {
 #define DW_IC_DMA_TX_ENABLE BIT(1)
 #define DW_IC_DMA_ENABLE    (BIT(0) | BIT(1))
 
+/* Minimum supported spike length value
+ * in terms of ic clocks
+ */
+#define DW_IC_SPKLEN_MIN     0x1
+
 DEFINE_TEST_BIT_OP(con_master_mode, DW_IC_REG_CON, DW_IC_CON_MASTER_MODE_BIT)
 DEFINE_MM_REG_WRITE(con, DW_IC_REG_CON, 32)
 DEFINE_MM_REG_READ(con, DW_IC_REG_CON, 32)
@@ -297,8 +302,8 @@ DEFINE_MM_REG_WRITE(tdlr, DW_IC_REG_TDLR, 32)
 DEFINE_MM_REG_READ(rdlr, DW_IC_REG_RDLR, 32)
 DEFINE_MM_REG_WRITE(rdlr, DW_IC_REG_RDLR, 32)
 
-DEFINE_MM_REG_READ(fs_spklen, DW_IC_REG_FS_SPKLEN, 32)
-DEFINE_MM_REG_READ(hs_spklen, DW_IC_REG_HS_SPKLEN, 32)
+DEFINE_MM_REG_WRITE(fs_spklen, DW_IC_REG_FS_SPKLEN, 32)
+DEFINE_MM_REG_WRITE(hs_spklen, DW_IC_REG_HS_SPKLEN, 32)
 
 DEFINE_MM_REG_WRITE(scltimeout, DW_IC_REG_SCL_TIMEOUT, 32)
 DEFINE_MM_REG_READ(scltimeout, DW_IC_REG_SCL_TIMEOUT, 32)
