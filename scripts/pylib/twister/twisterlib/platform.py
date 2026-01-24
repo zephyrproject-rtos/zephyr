@@ -252,7 +252,8 @@ def generate_platforms(board_roots, soc_roots, arch_roots):
             else:
                 target = f"{board.name}/{qual}"
                 alias2target[target] = target
-                if '/' not in qual and len(board.socs) == 1:
+                if (('/' not in qual and len(board.socs) == 1)
+                        or (board.default_qualifier and qual == board.default_qualifier)):
                     alias2target[board.name] = target
                 target2board[target] = board
 

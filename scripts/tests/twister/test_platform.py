@@ -167,6 +167,14 @@ TESTDATA_2 = [
         SchemaError(), # Unknown message as this is raised externally
         None,
     ),
+    (
+        ['m0', 'm6'],
+        None,
+        {
+            'p1e1/s1', 'p1e2/s1', 'p2/s1', 'p3@A/s2/c1', 'p3@B/s2/c1',
+            'p5/s3/c1',
+        },
+    ),
 ]
 
 @pytest.mark.parametrize(
@@ -179,6 +187,7 @@ TESTDATA_2 = [
         '1 extra board root, duplicate platform',
         '2 extra board roots, duplicate platform',
         '1 extra board root, malformed yaml',
+        '1 extra board root, default_qualifier',
     ]
 )
 def test_generate_platforms(
@@ -349,6 +358,29 @@ vendor: vendor2
 board:
   extend: p2
 """,
+        'm6/boards/zephyr/p5/board.yml': """\
+board:
+  name: p5
+  full_name: p5
+  vendor: zephyr
+  default_qualifier: s3/c1
+  socs:
+    - name: s3
+""",
+        'm6/boards/zephyr/p5/twister.yaml': """\
+type: mcu
+arch: xtensa
+""",
+        'm6/soc/zephyr/soc.yml': """\
+family:
+  - name: zephyr
+    series:
+      - name: zephyr_testing2
+        socs:
+          - name: s3
+            cpuclusters:
+              - name: c1
+""",
     }
 
     for filename, content in tmp_files.items():
@@ -477,6 +509,14 @@ board:
             'type': 'qemu',
             'simulators': [Simulator({'name': 'qemu'})],
             'simulation': 'qemu',
+        },
+        'p5/s3/c1': {
+            'aliases': ['p5/s3/c1', 'p5'],
+            # m6/boards/zephyr/p5/board.yml (with default_qualifier)
+            'vendor': 'zephyr',
+            # m6/boards/zephyr/p5/twister.yaml
+            'arch': 'xtensa',
+            'type': 'mcu',
         },
     }
 
