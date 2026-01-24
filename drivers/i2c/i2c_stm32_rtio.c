@@ -209,7 +209,7 @@ static void i2c_stm32_submit(const struct device *dev, struct rtio_iodev_sqe *io
 	}
 }
 
-static const struct i2c_driver_api api_funcs = {
+static DEVICE_API(i2c, api_funcs) = {
 	.configure = i2c_stm32_configure,
 	.transfer = i2c_stm32_transfer,
 	.get_config = i2c_stm32_get_config,
