@@ -2,5 +2,6 @@ board:
   name: esp_wrover_kit
   full_name: ESP-WROVER-KIT
   vendor: espressif
+  default_qualifier: esp32/procpu
   socs:
   - name: esp32

@@ -2,5 +2,6 @@ board:
   name: esp32c6_devkitc
   full_name: ESP32-C6-DevKitC
   vendor: espressif
+  default_qualifier: esp32c6/hpcore
   socs:
   - name: esp32c6
