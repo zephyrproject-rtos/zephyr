@@ -36,6 +36,25 @@ Kernel
 Boards
 ******
 
+* The OpenOCD runner now uses the standard ``--file`` and ``--file-type`` interface for specifying
+  flash files, aligning with other runners like JLink. The following changes apply:
+
+  * The ``--use-hex``, ``--use-elf``, and ``--use-bin`` flags are deprecated. Use ``--file-type``
+    instead:
+
+    * ``--use-elf`` → ``--file-type=elf``
+    * ``--use-bin`` → ``--file-type=bin``
+    * ``--use-hex`` → ``--file-type=hex`` (or omit, as hex is the default)
+
+  * The ``--file`` option is now supported to specify a custom file path, similar to the JLink
+    runner.
+
+  * Board cmake files using the deprecated flags will continue to work but will emit a deprecation
+    warning.
+
+  * The ``--file-type`` option can now be used without ``--file`` to select between build artifacts
+    (hex, elf, bin).
+
 * m5stack_fire: Removed unused pinctrl entries for UART2, and updated the UART1
   pin mapping from GPIO32/GPIO33 to GPIO16/GPIO17 to match the documented Grove
   PORT.C wiring.
@@ -761,6 +780,7 @@ LoRaWAN
 
 Other subsystems
 ****************
+
 * The DAP subsystem initialization and configuration has changed. Please take a look at
   :zephyr:code-sample:`cmsis-dap` sample on how to initialize Zephyr DAP Link with USB backend.
 
