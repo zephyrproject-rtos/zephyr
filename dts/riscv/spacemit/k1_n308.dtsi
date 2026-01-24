@@ -1,0 +1,71 @@
+/*
+ * Copyright (c) 2025 Junhui Liu <junhui.liu@pigmoral.tech>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <mem.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu: cpu@0 {
+			clock-frequency = <0x20000>;
+			compatible = "nuclei,n308", "riscv";
+			riscv,isa = "rv32imafdc_zicsr_zifencei";
+			reg = <0>;
+		};
+	};
+
+	sram: memory@0 {
+		compatible = "mmio-sram";
+		reg = <0x00000000 DT_SIZE_K(256)>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		interrupt-parent = <&eclic>;
+		ranges;
+
+		eclic: interrupt-controller@e0020000 {
+			compatible = "nuclei,eclic";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			reg =  <0xe0020000 0x2000>;
+		};
+
+		systimer: timer@e0030000 {
+			compatible = "nuclei,systimer", "riscv,machine-timer";
+			reg = <0xe0030000 0x8 0xe0030008 0x8>;
+			reg-names = "mtime", "mtimecmp";
+			interrupts-extended = <&eclic 7 0>;
+		};
+
+		uart0: uart@c0881000 {
+			compatible = "intel,xscale-uart", "ns16550";
+			reg = <0xc0881000 0x1000>;
+			interrupts = <63 0>;
+			reg-shift = <2>;
+			clock-frequency = <DT_FREQ_K(24576)>;
+			status = "disabled";
+		};
+
+		uart1: uart@c088d000 {
+			compatible = "intel,xscale-uart", "ns16550";
+			reg = <0xc088d000 0x1000>;
+			interrupts = <36 0>;
+			reg-shift = <2>;
+			clock-frequency = <DT_FREQ_K(24576)>;
+			status = "disabled";
+		};
+	};
+};

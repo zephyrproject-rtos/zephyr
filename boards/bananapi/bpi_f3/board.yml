@@ -1,0 +1,6 @@
+board:
+  name: bpi_f3
+  full_name: BPI-F3
+  vendor: bananapi
+  socs:
+    - name: k1

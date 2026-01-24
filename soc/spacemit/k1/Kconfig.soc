@@ -1,0 +1,19 @@
+# Copyright (c) 2025 Junhui Liu <junhui.liu@pigmoral.tech>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_KEY_STONE
+	bool
+
+config SOC_SERIES
+	default "key_stone" if SOC_SERIES_KEY_STONE
+
+config SOC_K1
+	bool
+	select SOC_SERIES_KEY_STONE
+
+config SOC
+	default "k1" if SOC_K1
+
+config SOC_K1_N308
+	bool
+	select SOC_K1
