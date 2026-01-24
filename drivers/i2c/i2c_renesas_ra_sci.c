@@ -602,7 +602,7 @@ static void calc_sci_iic_clock_setting(const struct device *dev, const uint32_t 
 	clk_cfg->cycles_value = (uint8_t)sda_delay_counts;
 }
 
-static const struct i2c_driver_api renesas_ra_sci_i2c_driver_api = {
+static DEVICE_API(i2c, renesas_ra_sci_i2c_driver_api) = {
 	.configure = renesas_ra_sci_i2c_configure,
 	.get_config = renesas_ra_sci_i2c_get_config,
 	.transfer = renesas_ra_sci_i2c_transfer,

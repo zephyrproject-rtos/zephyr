@@ -252,7 +252,7 @@ static int shim_nrf_twis_target_unregister(const struct device *dev,
 	return 0;
 }
 
-const struct i2c_driver_api shim_nrf_twis_api = {
+static DEVICE_API(i2c, shim_nrf_twis_api) = {
 	.target_register = shim_nrf_twis_target_register,
 	.target_unregister = shim_nrf_twis_target_unregister,
 };
