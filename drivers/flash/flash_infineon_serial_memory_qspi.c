@@ -257,7 +257,7 @@ static int ifx_serial_memory_flash_init(const struct device *dev)
 	return result;
 }
 
-static const struct flash_driver_api ifx_serial_memory_flash_driver_api = {
+static DEVICE_API(flash, ifx_serial_memory_flash_driver_api) = {
 	.read = ifx_serial_memory_flash_read,
 	.write = ifx_serial_memory_flash_write,
 	.erase = ifx_serial_memory_flash_erase,
