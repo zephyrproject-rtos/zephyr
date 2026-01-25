@@ -25,9 +25,12 @@ extern "C" {
 /* Value written to dticks when timeout is aborted. */
 #define TIMEOUT_DTICKS_ABORTED (IS_ENABLED(CONFIG_TIMEOUT_64BIT) ? INT64_MIN : INT32_MIN)
 
+/* Special value for heap_idx indicating timeout is not in heap */
+#define TIMEOUT_NOT_IN_HEAP ((size_t)0)
+
 static inline void z_init_timeout(struct _timeout *to)
 {
-	sys_dnode_init(&to->node);
+	to->heap_idx = TIMEOUT_NOT_IN_HEAP;
 }
 
 /* Adds the timeout to the queue.
@@ -40,7 +43,7 @@ int z_abort_timeout(struct _timeout *to);
 
 static inline bool z_is_inactive_timeout(const struct _timeout *to)
 {
-	return !sys_dnode_is_linked(&to->node);
+	return to->heap_idx == TIMEOUT_NOT_IN_HEAP;
 }
 
 static inline bool z_is_aborted_timeout(const struct _timeout *to)

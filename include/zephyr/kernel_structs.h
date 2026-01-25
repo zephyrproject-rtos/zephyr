@@ -300,13 +300,13 @@ struct _timeout;
 typedef void (*_timeout_func_t)(struct _timeout *t);
 
 struct _timeout {
-	sys_dnode_t node;
+	size_t heap_idx;  /* Index in the timeout heap */
 	_timeout_func_t fn;
 #ifdef CONFIG_TIMEOUT_64BIT
 	/* Can't use k_ticks_t for header dependency reasons */
-	int64_t dticks;
+	int64_t dticks;  /* Absolute expiry tick (not delta anymore) */
 #else
-	int32_t dticks;
+	int32_t dticks;  /* Absolute expiry tick (not delta anymore) */
 #endif
 };
 

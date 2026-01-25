@@ -21,6 +21,13 @@ LOG_MODULE_REGISTER(min_heap);
  */
 static void heapify_up(struct min_heap *heap, size_t index)
 {
+	/* Notify the element at the starting position */
+	if (heap->update_index != NULL) {
+		void *elem = min_heap_get_element(heap, index);
+
+		heap->update_index(elem, index);
+	}
+
 	while (index > 0) {
 		size_t parent = (index - 1) / 2;
 		void *curr = min_heap_get_element(heap, index);
@@ -30,6 +37,15 @@ static void heapify_up(struct min_heap *heap, size_t index)
 			break;
 		}
 		byteswp(curr, par, heap->elem_size);
+
+		/* Notify about index changes after swap */
+		if (heap->update_index != NULL) {
+			/* curr points to heap[index], tell it the index */
+			heap->update_index(curr, index);
+			/* par points to heap[parent], tell it the parent index */
+			heap->update_index(par, parent);
+		}
+
 		index = parent;
 	}
 }
@@ -46,6 +62,13 @@ static void heapify_up(struct min_heap *heap, size_t index)
 
 static void heapify_down(struct min_heap *heap, size_t index)
 {
+	/* Notify the element at the starting position */
+	if (heap->update_index != NULL) {
+		void *elem = min_heap_get_element(heap, index);
+
+		heap->update_index(elem, index);
+	}
+
 	/* Terminate the loop naturally when the left child is out of bounds */
 	for (size_t left = 2 * index + 1; left < heap->size; left = 2 * index + 1) {
 
@@ -74,6 +97,15 @@ static void heapify_down(struct min_heap *heap, size_t index)
 		}
 
 		byteswp(elem_index, elem_smallest, heap->elem_size);
+
+		/* Notify about index changes after swap */
+		if (heap->update_index != NULL) {
+			/* elem_index points to heap[index], tell it the index */
+			heap->update_index(elem_index, index);
+			/* elem_smallest points to heap[smallest], tell it the smallest index */
+			heap->update_index(elem_smallest, smallest);
+		}
+
 		index = smallest;
 	}
 }
@@ -87,6 +119,7 @@ void min_heap_init(struct min_heap *heap, void *storage, size_t cap,
 	heap->elem_size = elem_size;
 	heap->cmp = cmp;
 	heap->size = 0;
+	heap->update_index = NULL;
 }
 
 void *min_heap_peek(const struct min_heap *heap)

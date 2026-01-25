@@ -50,7 +50,20 @@ typedef bool (*min_heap_eq_t)(const void *node,
 			       const void *other);
 
 /**
+ * @brief Index update callback function.
+ *
+ * Called whenever an element's position in the heap changes.
+ * This allows users to maintain external index tracking.
+ *
+ * @param element Pointer to the element that was moved.
+ * @param new_index New index of the element in the heap.
+ */
+typedef void (*min_heap_update_index_t)(void *element, size_t new_index);
+
+/**
  * @brief min-heap data structure with user-provided comparator.
+ *
+ * Uses indexing; valid element indices are 0..size-1.
  */
 struct min_heap {
 	/** Raw pointer to contiguous memory for elements */
@@ -63,6 +76,8 @@ struct min_heap {
 	size_t size;
 	/** Comparator function */
 	min_heap_cmp_t cmp;
+	/** Optional index update callback */
+	min_heap_update_index_t update_index;
 };
 
 /**
@@ -80,7 +95,8 @@ struct min_heap {
 				.capacity = (cap),                                                 \
 				.elem_size = (elem_sz),                                            \
 				.size = 0,                                                         \
-				.cmp = (cmp_func)}
+				.cmp = (cmp_func),                                                 \
+				.update_index = NULL}
 
 /**
  * @brief Define a statically allocated and aligned min-heap instance.
@@ -98,7 +114,8 @@ struct min_heap {
 			.capacity = (cap), \
 			.elem_size = (elem_sz), \
 			.size = 0, \
-			.cmp = (cmp_func) \
+			.cmp = (cmp_func), \
+			.update_index = NULL \
 	}
 
 /**
@@ -119,6 +136,22 @@ struct min_heap {
  */
 void min_heap_init(struct min_heap *heap, void *storage, size_t cap,
 		   size_t elem_size, min_heap_cmp_t cmp);
+
+/**
+ * @brief Set the index update callback for a min-heap.
+ *
+ * Configures a callback function that will be invoked whenever an element's
+ * position in the heap changes. This allows maintaining external index tracking
+ * with O(log n) overhead instead of O(n).
+ *
+ * @param heap Pointer to the min-heap structure.
+ * @param update_fn Callback function to invoke on index updates, or NULL to disable.
+ */
+static inline void min_heap_set_update_callback(struct min_heap *heap,
+						 min_heap_update_index_t update_fn)
+{
+	heap->update_index = update_fn;
+}
 
 /**
  * @brief Push an element into the min-heap.
