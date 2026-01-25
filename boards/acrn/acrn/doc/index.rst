@@ -1,3 +1,5 @@
+.. zephyr:board:: acrn
+
 ACRN hypervisor
 ###############
 

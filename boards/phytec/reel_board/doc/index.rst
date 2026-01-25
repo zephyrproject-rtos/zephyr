@@ -1,4 +1,4 @@
-.. _reel_board:
+.. zephyr:board:: reel_board
 
 reel board
 ##########

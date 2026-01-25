@@ -1,4 +1,4 @@
-.. _ubx_bmd300eval_nrf52832:
+.. zephyr:board:: ubx_bmd300eval
 
 u-blox EVK-BMD-30/35: BMD-300-EVAL, BMD-301-EVAL, and BMD-350-EVAL
 ##################################################################

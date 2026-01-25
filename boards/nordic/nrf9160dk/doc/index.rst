@@ -1,4 +1,4 @@
-.. _nrf9160dk_nrf9160:
+.. zephyr:board:: nrf9160dk
 
 nRF9160 DK
 ##########

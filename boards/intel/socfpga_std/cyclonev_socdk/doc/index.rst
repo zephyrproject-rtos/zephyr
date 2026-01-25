@@ -1,4 +1,4 @@
-.. _cyclonev_socdk:
+.. zephyr:board:: cyclonev_socdk
 
 Intel® Cyclone® V SoC Development Kit
 #####################################

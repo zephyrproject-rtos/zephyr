@@ -1,4 +1,4 @@
-.. _boards-intel-adsp:
+.. zephyr:board:: intel_adsp
 
 Intel ADSP
 ##########

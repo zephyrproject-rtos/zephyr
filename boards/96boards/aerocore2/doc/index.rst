@@ -1,4 +1,4 @@
-.. _96b_aerocore2_board:
+.. zephyr:board:: 96b_aerocore2
 
 96Boards Aerocore2
 ##################

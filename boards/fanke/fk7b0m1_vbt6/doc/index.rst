@@ -1,4 +1,4 @@
-.. _fk7b0m1_vbt6:
+.. zephyr:board:: fk7b0m1_vbt6
 
 FANKE FK7B0M1-VBT6
 ##################

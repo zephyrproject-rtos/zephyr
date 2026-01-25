@@ -1,4 +1,4 @@
-.. _niosv_m:
+.. zephyr:board:: niosv_m
 
 INTEL FPGA niosv_m
 ####################

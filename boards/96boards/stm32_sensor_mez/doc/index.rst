@@ -1,4 +1,4 @@
-.. _96b_stm32_sensor_mez:
+.. zephyr:board:: 96b_stm32_sensor_mez
 
 96Boards STM32 Sensor Mezzanine
 ###############################

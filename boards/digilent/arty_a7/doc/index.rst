@@ -1,4 +1,4 @@
-.. _arty:
+.. zephyr:board:: arty_a7
 
 Digilent Arty
 #############

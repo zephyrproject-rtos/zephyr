@@ -1,4 +1,4 @@
-.. _96b_avenger96:
+.. zephyr:board:: 96b_avenger96
 
 96Boards Avenger96
 ##################

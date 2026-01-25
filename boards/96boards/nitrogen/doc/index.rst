@@ -1,4 +1,4 @@
-.. _96b_nitrogen_board:
+.. zephyr:board:: 96b_nitrogen
 
 96Boards Nitrogen
 #################
