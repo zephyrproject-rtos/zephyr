@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2026 Panoramix Labs
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "ai_m61_32s.dtsi"
+#include "aipi_eyes_s2-pinctrl.dtsi"
+
+/ {
+	model = "AiPi-Eyes-S2 Multi-Functional Development Board";
+
+	aliases {
+		sw0 = &button_0;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button_0: sw0 {
+			gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+};
+
+&spi0 {
+	status = "okay";
+
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+
+	/* shared between SD card and display, use only one */
+	cs-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+};

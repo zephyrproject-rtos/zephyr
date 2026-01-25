@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2026 Panoramix Labs
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <GPIO0_I2C0_SCL>,
+				 <GPIO1_I2C0_SDA>;
+			bias-pull-up;
+			input-schmitt-enable;
+		};
+	};
+
+	/* "SPI Touch Screen", "CON1" connector */
+	spi0_default: spi0_default {
+		group1 {
+			pinmux = <GPIO15_SPI_MOSI>,
+				 <GPIO17_SPI_SCLK>;
+			bias-pull-up;
+			input-schmitt-enable;
+		};
+	};
+};
