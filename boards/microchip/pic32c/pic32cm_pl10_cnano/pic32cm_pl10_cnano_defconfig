@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_BUILD_OUTPUT_HEX=y
+CONFIG_USE_DT_CODE_PARTITION=y

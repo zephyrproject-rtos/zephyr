@@ -1,0 +1,59 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <microchip/pic32c/pic32cm_pl/pic32cm_pl10/pic32cm6408pl10048.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "PIC32CM PL10 Curiosity Nano";
+	compatible = "pic32cmpl10,cnano";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	aliases {
+		led0 = &led0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&portb 2 GPIO_ACTIVE_HIGH>;
+			label = "LED0";
+		};
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		slot0_partition: partition@0 {
+			reg = <0x0 DT_SIZE_K(60)>;
+		};
+
+		storage_partition: partition@bfff000 {
+			label = "storage";
+			reg = <0x0bfff000 DT_SIZE_K(4)>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <4000000>; /* 4 MHz */
+};
+
+&portb {
+	status = "okay";
+};
