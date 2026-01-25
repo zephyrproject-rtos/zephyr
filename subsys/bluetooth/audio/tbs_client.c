@@ -761,8 +761,13 @@ static uint8_t notify_handler(struct bt_conn *conn,
 
 static void initialize_net_buf_read_buffer(struct bt_tbs_instance *inst)
 {
-	net_buf_simple_init_with_data(&inst->net_buf, &inst->read_buf,
-				      sizeof(inst->read_buf));
+	if (inst->net_buf.data == NULL) {
+		net_buf_simple_init_with_data(&inst->net_buf, &inst->read_buf,
+					      sizeof(inst->read_buf));
+	} else {
+		(void)memset(inst->net_buf.data, 0, inst->net_buf.len);
+	}
+
 	net_buf_simple_reset(&inst->net_buf);
 }
 
