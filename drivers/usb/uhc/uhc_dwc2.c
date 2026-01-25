@@ -58,8 +58,8 @@ enum uhc_dwc2_port_event {
 enum uhc_dwc2_channel_event {
 	UHC_DWC2_CHANNEL_EVENT_NONE = 0,
 	UHC_DWC2_CHANNEL_EVENT_XFER_DONE,
+	UHC_DWC2_CHANNEL_EVENT_STALL,
 	UHC_DWC2_CHANNEL_EVENT_ERROR,
-	UHC_DWC2_CHANNEL_EVENT_HALTED,
 };
 
 enum uhc_dwc2_speed {
@@ -464,32 +464,21 @@ enum uhc_dwc2_channel_event dwc2_hal_get_channel_event(const struct usb_dwc2_hos
 	/* Clear the interrupt bits by writing them back */
 	sys_write32(hcint, (mem_addr_t)&chan_regs->hcint);
 
-	enum uhc_dwc2_channel_event event;
+	// LOG_DBG("HCINT=%08Xh", hcint);
 
-	/*
-	 * Note:
-	 * Do not change order of checks as some events take precedence over others.
-	 * Errors > Channel Halt Request > Transfer completed
-	*/
-	if (hcint & (USB_DWC2_HCINT_STALL | USB_DWC2_HCINT_BBLERR | USB_DWC2_HCINT_XACTERR)) {
-		__ASSERT(hcint & USB_DWC2_HCINT_CHHLTD,
-			 "uhc_dwc2_hal_chan_decode_intr: Channel error without channel halted interrupt");
+	enum uhc_dwc2_channel_event event = UHC_DWC2_CHANNEL_EVENT_NONE;
 
+	if (hcint & USB_DWC2_HCINT_CHHLTD) {
+		if (hcint & USB_DWC2_HCINT_STALL) {
+			event = UHC_DWC2_CHANNEL_EVENT_STALL;
+		} else if (hcint & USB_DWC2_HCINT_XFERCOMPL) {
+			event = UHC_DWC2_CHANNEL_EVENT_XFER_DONE;
+		} 
+	} else {
 		LOG_ERR("Error on channel: HCINT=0x%08x", hcint);
 		event = UHC_DWC2_CHANNEL_EVENT_ERROR;
-	} else if (hcint & USB_DWC2_HCINT_CHHLTD) {
-		// if (chan_obj->flags.halt_requested) {
-			// chan_obj->flags.halt_requested = 0;
-			// chan_event = DWC2_CHAN_EVENT_HALT_REQ;
-		// } else {
-			event = UHC_DWC2_CHANNEL_EVENT_XFER_DONE;
-		// }
-		// chan_obj->flags.active = 0;
-	} else {
-		__ASSERT(false,
-				"Unknown channel interrupt, HCINT=%08Xh", hcint);
-		event = UHC_DWC2_CHANNEL_EVENT_NONE;
 	}
+
 	return event;
 }
 /* ---------------------------- */
@@ -631,14 +620,13 @@ static enum uhc_dwc2_channel_event uhc_dwc2_get_channel_event(struct uhc_dwc2_ch
 		/* Transfer finished, pass the event higher */
 		break;
 	}
+	case UHC_DWC2_CHANNEL_EVENT_STALL: {
+		/* Nothing to do in Buffer DMA mode, pass the event higher */
+		break;
+	}
 	case UHC_DWC2_CHANNEL_EVENT_ERROR: {
 		LOG_ERR("Channel error handling not implemented yet");
 		/* TODO: get channel error, halt the pipe */
-		break;
-	}
-	case UHC_DWC2_CHANNEL_EVENT_HALTED: {
-		LOG_ERR("Channel halt request handling not implemented yet");
-		/* TODO: Implement halting the ongoing transfer */
 		break;
 	}
 	default:
@@ -670,7 +658,7 @@ static enum uhc_dwc2_port_event uhc_dwc2_port_get_event(const struct device *dev
 		sys_write32(hprt & (~USB_DWC2_HPRT_PRTENA), (mem_addr_t)&dwc2->hprt);
 	}
 
-	LOG_DBG("GINTSTS=%08Xh, HPRT=%08Xh", gintsts, hprt);
+	// LOG_DBG("GINTSTS=%08Xh, HPRT=%08Xh", gintsts, hprt);
 
 	enum uhc_dwc2_port_event port_event = UHC_DWC2_PORT_EVENT_NONE;
 	/*
@@ -891,8 +879,9 @@ static int uhc_dwc2_port_channel_claim(const struct device *dev,
 	sys_set_bits((mem_addr_t)&dwc2->haintmsk, (1 << idx));
 
 	/* Enable transfer complete and channel halted interrupts */
-	sys_set_bits((mem_addr_t)&channel->regs->hcintmsk,
-						USB_DWC2_HCINT_XFERCOMPL | USB_DWC2_HCINT_CHHLTD);
+	sys_set_bits((mem_addr_t)&channel->regs->hcintmsk, USB_DWC2_HCINT_XFERCOMPL | \
+														USB_DWC2_HCINT_CHHLTD | \
+														USB_DWC2_HCINT_STALL);
 
 	uint32_t hcchar = ((uint32_t)channel->ep_mps << USB_DWC2_HCCHAR_MPS_POS) |
 			((uint32_t)USB_EP_GET_IDX(channel->ep_addr) << USB_DWC2_HCCHAR_EPNUM_POS) |
@@ -948,7 +937,7 @@ static int uhc_dwc2_port_channel_submit_ctrl(const struct device *dev, uint8_t c
 	struct uhc_transfer *const xfer = channel->xfer;
 	const struct usb_setup_packet *setup_pkt = (const struct usb_setup_packet *)xfer->setup_pkt;
 	
-	LOG_HEXDUMP_WRN(xfer->setup_pkt, 8, "setup");
+	LOG_HEXDUMP_DBG(xfer->setup_pkt, 8, "setup");
 
 	channel->ctrl_stg = UHC_CONTROL_STAGE_SETUP;
 	channel->data_stg_in = usb_reqtype_is_to_host(setup_pkt);
@@ -1162,13 +1151,23 @@ static void uhc_dwc2_channel_handle_events(const struct device *dev)
 	LOG_DBG("New event on channel%d, %d", chan_idx, channel->last_event);
 
 	switch (channel->last_event) {
+		case UHC_DWC2_CHANNEL_EVENT_STALL: {
+			struct uhc_transfer *const xfer = channel->xfer;
+			/* XFER transfer is STALLed, release the channel */
+			channel->executing = 0;
+			/* Release channel */
+			uhc_dwc2_port_channel_release(dev, chan_idx);
+			/* Notify the upper logic */
+			uhc_xfer_return(dev, xfer, -EPIPE);
+			break;
+		}
 		case UHC_DWC2_CHANNEL_EVENT_XFER_DONE: {
 			struct uhc_transfer *const xfer = channel->xfer;
-			/* XFER transfer is done, process the transfer and release the pipe buffer */
+			/* XFER transfer is done, process the transfer and release the channel */
 			channel->executing = 0;
 
 			if (xfer->buf != NULL && xfer->buf->len) {
-				LOG_HEXDUMP_WRN(xfer->buf->data, xfer->buf->len, "data");
+				LOG_HEXDUMP_DBG(xfer->buf->data, xfer->buf->len, "data");
 			}
 
 			if (channel->set_address) {
@@ -1194,8 +1193,7 @@ static void uhc_dwc2_isr_handler(const struct device *dev)
 	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
 	enum uhc_dwc2_port_event port_event = uhc_dwc2_port_get_event(dev);
 
-	switch (port_event)
-	{
+	switch (port_event)	{
 	case UHC_DWC2_PORT_EVENT_CHANNEL: {
 		/* This is the one event, we do not propagate to the thread. */
 		/* Instead, we handle the channels and keep the last event in associated channel object. */
