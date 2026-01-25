@@ -119,6 +119,7 @@ void video_esp32_dma_rx_done(const struct device *dev, void *user_data, uint32_t
 		return;
 	}
 
+	data->active_vbuf->timestamp = k_uptime_get_32();
 	k_fifo_put(&data->fifo_out, data->active_vbuf);
 	VIDEO_ESP32_RAISE_OUT_SIG_IF_ENABLED(VIDEO_BUF_DONE)
 	data->active_vbuf = k_fifo_get(&data->fifo_in, K_NO_WAIT);
@@ -391,19 +392,10 @@ static int video_esp32_init(const struct device *dev)
 	const struct video_esp32_config *cfg = dev->config;
 	struct video_esp32_data *data = dev->data;
 
-	if (!cfg->cam_clk) {
-		LOG_ERR("No cam_clk specified\n");
-		return -EINVAL;
-	}
-
-	if (ESP32_CLK_CPU_PLL_160M % cfg->cam_clk) {
-		LOG_ERR("Invalid cam_clk value. It must be a divisor of 160M\n");
-		return -EINVAL;
-	}
-
-	/* Enable camera main clock output */
-	cam_ll_select_clk_src(0, LCD_CLK_SRC_PLL160M);
-	cam_ll_set_group_clock_coeff(0, ESP32_CLK_CPU_PLL_160M / cfg->cam_clk, 0, 0);
+	/*
+	 * Camera clock (XCLK) is configured in esp_lcd_cam.c at PRE_KERNEL_2
+	 * to ensure the image sensor receives clock before its I2C init.
+	 */
 
 	k_fifo_init(&data->fifo_in);
 	k_fifo_init(&data->fifo_out);
@@ -426,7 +418,6 @@ int video_esp32_set_selection(const struct device *dev, struct video_selection *
 
 	ret = video_set_selection(cfg->source_dev, sel);
 	if (ret < 0) {
-		LOG_ERR("Failed to set selection on source device");
 		return ret;
 	}
 
