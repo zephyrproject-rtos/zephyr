@@ -74,9 +74,9 @@
 			reg = <0x42020000 0x00004000>;
 			interrupts = <26 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			status = "disabled";
 		};
 
@@ -85,9 +85,9 @@
 			reg = <0x421e8000 0x00004000>;
 			interrupts = <27 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			status = "disabled";
 		};
 
@@ -96,9 +96,9 @@
 			reg = <0x421ec000 0x00004000>;
 			interrupts = <28 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			status = "disabled";
 		};
 
@@ -107,9 +107,9 @@
 			reg = <0x421f0000 0x00004000>;
 			interrupts = <29 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			status = "disabled";
 		};
 
@@ -118,9 +118,9 @@
 			reg = <0x421f4000 0x00004000>;
 			interrupts = <30 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			status = "disabled";
 		};
 
@@ -129,9 +129,9 @@
 			reg = <0x422a0000 0x00004000>;
 			interrupts = <17 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			status = "disabled";
 		};
 
@@ -140,9 +140,9 @@
 			reg = <0x4209c000 0x4000>;
 			interrupts = <66 0>, <67 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "disabled";
@@ -153,9 +153,9 @@
 			reg = <0x420a0000 0x4000>;
 			interrupts = <68 0>, <69 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "disabled";
@@ -166,9 +166,9 @@
 			reg = <0x420a4000 0x4000>;
 			interrupts = <70 0>, <71 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "disabled";
@@ -179,9 +179,9 @@
 			reg = <0x420a8000 0x4000>;
 			interrupts = <72 0>, <73 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "disabled";
@@ -192,9 +192,9 @@
 			reg = <0x420ac000 0x4000>;
 			interrupts = <74 0>, <75 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "disabled";
@@ -205,9 +205,9 @@
 			reg = <0x420b0000 0x4000>;
 			interrupts = <76 0>, <77 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "disabled";
@@ -218,9 +218,9 @@
 			reg = <0x420b4000 0x4000>;
 			interrupts = <78 0>, <79 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "disabled";
@@ -231,9 +231,9 @@
 			reg = <0x4229c000 0x4000>;
 			interrupts = <99 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			status = "disabled";
 		};
 
@@ -243,9 +243,9 @@
 			interrupts = <56 0>;
 			prescaler = <0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			status = "disabled";
 		};
 
@@ -267,9 +267,9 @@
 			interrupts = <57 0>;
 			prescaler = <0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			status = "disabled";
 		};
 
@@ -281,9 +281,9 @@
 			reg = <0x421a0000 0x4000>;
 			interrupts = <36 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			status = "disabled";
 		};
 
@@ -295,9 +295,9 @@
 			reg = <0x421a4000 0x4000>;
 			interrupts = <37 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			status = "disabled";
 		};
 
@@ -309,9 +309,9 @@
 			reg = <0x421a8000 0x4000>;
 			interrupts = <38 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			status = "disabled";
 		};
 
@@ -323,9 +323,9 @@
 			reg = <0x421f8000 0x4000>;
 			interrupts = <35 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			status = "disabled";
 		};
 
@@ -334,9 +334,9 @@
 			reg = <0x42080000 0x4000>;
 			interrupts = <83 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			prescaler = <0>;
 			#pwm-cells = <2>;
 			status = "disabled";
@@ -347,9 +347,9 @@
 			reg = <0x42084000 0x4000>;
 			interrupts = <84 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			prescaler = <0>;
 			#pwm-cells = <2>;
 			status = "disabled";
@@ -360,9 +360,9 @@
 			reg = <0x42088000 0x4000>;
 			interrupts = <85 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			prescaler = <0>;
 			#pwm-cells = <2>;
 			status = "disabled";
@@ -373,9 +373,9 @@
 			reg = <0x4208c000 0x4000>;
 			interrupts = <86 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			prescaler = <0>;
 			#pwm-cells = <2>;
 			status = "disabled";
@@ -386,9 +386,9 @@
 			reg = <0x422a4000 0x4000>;
 			interrupts = <83 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			prescaler = <0>;
 			#pwm-cells = <2>;
 			status = "disabled";
@@ -399,9 +399,9 @@
 			reg = <0x422a8000 0x4000>;
 			interrupts = <84 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			prescaler = <0>;
 			#pwm-cells = <2>;
 			status = "disabled";
@@ -412,9 +412,9 @@
 			reg = <0x422ac000 0x4000>;
 			interrupts = <85 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			prescaler = <0>;
 			#pwm-cells = <2>;
 			status = "disabled";
@@ -425,9 +425,9 @@
 			reg = <0x422ab000 0x4000>;
 			interrupts = <86 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			prescaler = <0>;
 			#pwm-cells = <2>;
 			status = "disabled";
@@ -440,9 +440,9 @@
 			clk-divider = <2>;
 			interrupts = <100 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
@@ -454,9 +454,9 @@
 			clk-divider = <2>;
 			interrupts = <101 0>;
 			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW) |
+						RDC_DOMAIN_PERM_RW) |
 				RDC_DOMAIN_PERM(M4_DOMAIN_ID, \
-					       RDC_DOMAIN_PERM_RW))>;
+						RDC_DOMAIN_PERM_RW))>;
 			status = "disabled";
 			#io-channel-cells = <1>;
 		};
