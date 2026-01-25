@@ -1,0 +1,23 @@
+identifier: w6300_evb_pico2/rp2350a/m33
+name: Wiznet W6300 Evaluation Board with RP2350
+type: mcu
+arch: arm
+flash: 16384
+ram: 520
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - clock
+  - counter
+  - dma
+  - gpio
+  - hwinfo
+  - i2c
+  - netif:eth
+  - pwm
+  - spi
+  - uart
+  - usbd
+  - watchdog
