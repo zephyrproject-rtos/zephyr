@@ -28,6 +28,10 @@ DEFINE_FAKE_VOID_FUNC(mock_ccp_call_control_client_bearer_uci_cb,
 DEFINE_FAKE_VOID_FUNC(mock_ccp_call_control_client_bearer_tech_cb,
 		      struct bt_ccp_call_control_client_bearer *, int, enum bt_bearer_tech);
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY */
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST)
+DEFINE_FAKE_VOID_FUNC(mock_ccp_call_control_client_bearer_uri_schemes_cb,
+		      struct bt_ccp_call_control_client_bearer *, int, const char *);
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST */
 
 struct bt_ccp_call_control_client_cb mock_ccp_call_control_client_cb = {
 	.discover = mock_ccp_call_control_client_discover_cb,
@@ -40,6 +44,9 @@ struct bt_ccp_call_control_client_cb mock_ccp_call_control_client_cb = {
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY)
 	.bearer_tech = mock_ccp_call_control_client_bearer_tech_cb,
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY */
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST)
+	.bearer_uri_schemes = mock_ccp_call_control_client_bearer_uri_schemes_cb,
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST */
 };
 
 void mock_ccp_call_control_client_init(void)

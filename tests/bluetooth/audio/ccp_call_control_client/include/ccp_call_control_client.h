@@ -26,5 +26,7 @@ DECLARE_FAKE_VOID_FUNC(mock_ccp_call_control_client_bearer_uci_cb,
 		       struct bt_ccp_call_control_client_bearer *, int, const char *);
 DECLARE_FAKE_VOID_FUNC(mock_ccp_call_control_client_bearer_tech_cb,
 		       struct bt_ccp_call_control_client_bearer *, int, enum bt_bearer_tech);
+DECLARE_FAKE_VOID_FUNC(mock_ccp_call_control_client_bearer_uri_schemes_cb,
+		       struct bt_ccp_call_control_client_bearer *, int, const char *);
 
 #endif /* MOCKS_CCP_CALL_CONTROL_CLIENT_H_ */

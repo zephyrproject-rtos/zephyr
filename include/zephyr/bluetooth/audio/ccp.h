@@ -291,6 +291,21 @@ struct bt_ccp_call_control_client_cb {
 			    enum bt_bearer_tech tech);
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY */
 
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST) || defined(__DOXYGEN__)
+	/**
+	 * @brief Callback function for bt_ccp_call_control_client_read_bearer_tech().
+	 *
+	 * This callback is called once the read bearer technology procedure is completed.
+	 *
+	 * @param bearer Call Control Client bearer pointer.
+	 * @param err Error value. 0 on success, GATT error on positive
+	 *            value or errno on negative value.
+	 * @param tech The technology of the bearer.
+	 */
+	void (*bearer_uri_schemes)(struct bt_ccp_call_control_client_bearer *bearer, int err,
+				   const char *uci_schemes);
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST */
+
 	/** @cond INTERNAL_HIDDEN */
 	/** Internally used field for list handling */
 	sys_snode_t _node;
@@ -406,6 +421,25 @@ int bt_ccp_call_control_client_read_bearer_uci(struct bt_ccp_call_control_client
  * @retval -ENOEXEC Rejected by the GATT layer for expected reasons
  */
 int bt_ccp_call_control_client_read_bearer_tech(struct bt_ccp_call_control_client_bearer *bearer);
+
+/**
+ * @brief Read the bearer URI schemes supported list of a remote TBS bearer.
+ *
+ * @kconfig_dep{CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST}
+ *
+ * @param bearer The bearer to read the URI schemes supported list from
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p bearer is NULL
+ * @retval -EFAULT @p bearer has not been discovered
+ * @retval -EEXIST A @ref bt_ccp_call_control_client could not be identified for @p bearer
+ * @retval -EBUSY The @ref bt_ccp_call_control_client identified by @p bearer is busy, or the TBS
+ * instance of @p bearer is busy.
+ * @retval -ENOTCONN The @ref bt_ccp_call_control_client identified by @p bearer is not connected
+ * @retval -ENOEXEC Rejected by the GATT layer for expected reasons
+ */
+int bt_ccp_call_control_client_read_bearer_uri_schemes(
+	struct bt_ccp_call_control_client_bearer *bearer);
 /** @} */ /* End of group bt_ccp_call_control_client */
 #ifdef __cplusplus
 }

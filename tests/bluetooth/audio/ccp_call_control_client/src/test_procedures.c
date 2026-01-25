@@ -265,3 +265,56 @@ static ZTEST_F(ccp_call_control_client_procedures_test_suite,
 	err = bt_ccp_call_control_client_read_bearer_tech(invalid_bearer);
 	zassert_equal(err, -EEXIST, "Unexpected return value %d", err);
 }
+
+static ZTEST_F(ccp_call_control_client_procedures_test_suite,
+	       test_ccp_call_control_client_read_bearer_uri_schemes)
+{
+	int err;
+
+	err = bt_ccp_call_control_client_read_bearer_uri_schemes(fixture->bearers[0]);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	zexpect_call_count("bt_ccp_call_control_client_cb.bearer_uri_schemes", 1,
+			   mock_ccp_call_control_client_bearer_uri_schemes_cb_fake.call_count);
+	zassert_not_null(mock_ccp_call_control_client_bearer_uri_schemes_cb_fake
+				 .arg0_history[0]); /* bearer */
+	zassert_equal(
+		0,
+		mock_ccp_call_control_client_bearer_uri_schemes_cb_fake.arg1_history[0]); /* err */
+	zassert_not_null(mock_ccp_call_control_client_bearer_uri_schemes_cb_fake
+				 .arg2_history[0]); /* uri_schemes */
+}
+
+static ZTEST_F(ccp_call_control_client_procedures_test_suite,
+	       test_ccp_call_control_client_read_bearer_uri_schemes_inval_null_bearer)
+{
+	int err;
+
+	err = bt_ccp_call_control_client_read_bearer_uri_schemes(NULL);
+	zassert_equal(err, -EINVAL, "Unexpected return value %d", err);
+}
+
+static ZTEST_F(ccp_call_control_client_procedures_test_suite,
+	       test_ccp_call_control_client_read_bearer_uri_schemes_inval_not_discovered)
+{
+	int err;
+
+	/* Fake disconnection to clear the discovered value for the bearers*/
+	mock_bt_conn_disconnected(&fixture->conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	/* Mark as connected again but without discovering */
+	test_conn_init(&fixture->conn);
+
+	err = bt_ccp_call_control_client_read_bearer_uri_schemes(fixture->bearers[0]);
+	zassert_equal(err, -EFAULT, "Unexpected return value %d", err);
+}
+
+static ZTEST_F(ccp_call_control_client_procedures_test_suite,
+	       test_ccp_call_control_client_read_bearer_uri_schemes_inval_bearer)
+{
+	struct bt_ccp_call_control_client_bearer *invalid_bearer =
+		(struct bt_ccp_call_control_client_bearer *)0xdeadbeefU;
+	int err;
+
+	err = bt_ccp_call_control_client_read_bearer_uri_schemes(invalid_bearer);
+	zassert_equal(err, -EEXIST, "Unexpected return value %d", err);
+}
