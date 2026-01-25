@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv6-m.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m0+";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+	};
+
+	soc {
+		flash0: flash@c000000 {
+			compatible = "soc-nv-flash";
+			write-block-size = <4>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+		};
+
+		porta: gpio@41000000 {
+			compatible = "microchip,port-g1-gpio";
+			reg = <0x41000000 0x80>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			#microchip,pin-cells = <2>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <2>;
+};
