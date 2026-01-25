@@ -12,6 +12,7 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/assigned_numbers.h>
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/audio/ccp.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/conn.h>
@@ -35,6 +36,7 @@ struct ccp_call_control_client_procedures_test_suite_fixture {
 		*bearers[CONFIG_BT_CCP_CALL_CONTROL_CLIENT_BEARER_COUNT];
 	char bearer_name[CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH];
 	char bearer_uci[BT_TBS_MAX_UCI_SIZE];
+	char bearer_uri_schemes[BT_ATT_MAX_ATTRIBUTE_LEN + 1 /* NULL terminator*/];
 	enum bt_bearer_tech tech;
 };
 
@@ -108,6 +110,25 @@ static void bearer_tech_cb(struct bt_ccp_call_control_client_bearer *bearer, int
 	fixture->tech = tech;
 }
 
+static void bearer_uri_schemes_cb(struct bt_ccp_call_control_client_bearer *bearer, int err,
+				  const char *uri_schemes, void *user_data)
+{
+	struct ccp_call_control_client_procedures_test_suite_fixture *fixture = user_data;
+
+	zassert_not_null(bearer);
+	zassert_equal(err, 0);
+
+	zassert_not_null(user_data);
+
+	zassert_not_null(bearer);
+	zassert_equal(err, 0);
+	zassert_not_null(uri_schemes);
+	zassert_not_null(user_data);
+	zassert_true(strlen(uri_schemes) < CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH);
+	zassert_true(strlen(fixture->bearer_uri_schemes) == 0U); /* expect only a single call */
+	utf8_lcpy(fixture->bearer_uri_schemes, uri_schemes, CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH);
+}
+
 static void *ccp_call_control_client_procedures_test_suite_setup(void)
 {
 	struct ccp_call_control_client_procedures_test_suite_fixture *fixture;
@@ -130,6 +151,7 @@ static void ccp_call_control_client_procedures_test_suite_before(void *f)
 	fixture->client_cbs.bearer_provider_name = bearer_provider_name_cb;
 	fixture->client_cbs.bearer_uci = bearer_uci_cb;
 	fixture->client_cbs.bearer_tech = bearer_tech_cb;
+	fixture->client_cbs.bearer_uri_schemes = bearer_uri_schemes_cb;
 	fixture->client_cbs.user_data = fixture;
 
 	err = bt_ccp_call_control_client_register_cb(&fixture->client_cbs);
@@ -292,5 +314,50 @@ static ZTEST_F(ccp_call_control_client_procedures_test_suite,
 	int err;
 
 	err = bt_ccp_call_control_client_read_bearer_tech(invalid_bearer);
+	zassert_equal(err, -EEXIST, "Unexpected return value %d", err);
+}
+
+static ZTEST_F(ccp_call_control_client_procedures_test_suite,
+	       test_ccp_call_control_client_read_bearer_uri_schemes)
+{
+	int err;
+
+	err = bt_ccp_call_control_client_read_bearer_uri_schemes(fixture->bearers[0]);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	zassert_true(strlen(fixture->bearer_uri_schemes) > 0U);
+}
+
+static ZTEST_F(ccp_call_control_client_procedures_test_suite,
+	       test_ccp_call_control_client_read_bearer_uri_schemes_inval_null_bearer)
+{
+	int err;
+
+	err = bt_ccp_call_control_client_read_bearer_uri_schemes(NULL);
+	zassert_equal(err, -EINVAL, "Unexpected return value %d", err);
+}
+
+static ZTEST_F(ccp_call_control_client_procedures_test_suite,
+	       test_ccp_call_control_client_read_bearer_uri_schemes_inval_not_discovered)
+{
+	int err;
+
+	/* Fake disconnection to clear the discovered value for the bearers*/
+	mock_bt_conn_disconnected(&fixture->conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+	/* Mark as connected again but without discovering */
+	test_conn_init(&fixture->conn);
+
+	err = bt_ccp_call_control_client_read_bearer_uri_schemes(fixture->bearers[0]);
+	zassert_equal(err, -EFAULT, "Unexpected return value %d", err);
+}
+
+static ZTEST_F(ccp_call_control_client_procedures_test_suite,
+	       test_ccp_call_control_client_read_bearer_uri_schemes_inval_bearer)
+{
+	struct bt_ccp_call_control_client_bearer *invalid_bearer =
+		(struct bt_ccp_call_control_client_bearer *)0xdeadbeefU;
+	int err;
+
+	err = bt_ccp_call_control_client_read_bearer_uri_schemes(invalid_bearer);
 	zassert_equal(err, -EEXIST, "Unexpected return value %d", err);
 }
