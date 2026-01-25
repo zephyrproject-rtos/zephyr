@@ -41,6 +41,7 @@ static struct bt_ccp_call_control_client_bearers client_bearers;
 static K_SEM_DEFINE(sem_conn_state_change, 0U, 1U);
 static K_SEM_DEFINE(sem_security_updated, 0U, 1U);
 static K_SEM_DEFINE(sem_ccp_action_completed, 0U, 1U);
+static bool required_action_failed;
 
 static void connected_cb(struct bt_conn *conn, uint8_t err)
 {
@@ -208,13 +209,14 @@ static void ccp_call_control_client_discover_cb(struct bt_ccp_call_control_clien
 
 	if (err != 0) {
 		LOG_ERR("Discovery failed: %d", err);
-		return;
+		required_action_failed = true;
+	} else {
+
+		LOG_INF("Discovery completed with %s%u TBS bearers",
+			bearers->gtbs_bearer != NULL ? "GTBS and " : "", bearers->tbs_count);
+
+		(void)memcpy(&client_bearers, bearers, sizeof(client_bearers));
 	}
-
-	LOG_INF("Discovery completed with %s%u TBS bearers",
-		bearers->gtbs_bearer != NULL ? "GTBS and " : "", bearers->tbs_count);
-
-	memcpy(&client_bearers, bearers, sizeof(client_bearers));
 
 	k_sem_give(&sem_ccp_action_completed);
 }
@@ -228,10 +230,10 @@ static void ccp_call_control_client_read_bearer_provider_name_cb(
 
 	if (err != 0) {
 		LOG_ERR("Failed to read bearer %p provider name: %d\n", (void *)bearer, err);
-		return;
+		required_action_failed = true;
+	} else {
+		LOG_INF("Bearer %p provider name: %s", (void *)bearer, name);
 	}
-
-	LOG_INF("Bearer %p provider name: %s", (void *)bearer, name);
 
 	k_sem_give(&sem_ccp_action_completed);
 }
@@ -246,10 +248,10 @@ ccp_call_control_client_read_bearer_tech_cb(struct bt_ccp_call_control_client_be
 
 	if (err != 0) {
 		LOG_ERR("Failed to read bearer %p technology: %d\n", (void *)bearer, err);
-		return;
+		required_action_failed = true;
+	} else {
+		LOG_INF("Bearer %p technology: %d", (void *)bearer, tech);
 	}
-
-	LOG_INF("Bearer %p technology: %d", (void *)bearer, tech);
 
 	k_sem_give(&sem_ccp_action_completed);
 }
@@ -262,14 +264,33 @@ ccp_call_control_client_read_bearer_uci_cb(struct bt_ccp_call_control_client_bea
 {
 	if (err != 0) {
 		LOG_ERR("Failed to read bearer %p UCI: %d\n", (void *)bearer, err);
-		return;
+		required_action_failed = true;
+	} else {
+		LOG_INF("Bearer %p UCI: %s", (void *)bearer, uci);
 	}
-
-	LOG_INF("Bearer %p UCI: %s", (void *)bearer, uci);
 
 	k_sem_give(&sem_ccp_action_completed);
 }
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_UCI */
+
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST)
+static void
+ccp_call_control_client_read_bearer_uri_schemes_cb(struct bt_ccp_call_control_client_bearer *bearer,
+						   int err, const char *uri_schemes,
+						   void *user_data)
+{
+	ARG_UNUSED(user_data);
+
+	if (err != 0) {
+		LOG_ERR("Failed to read bearer %p URI schemes: %d\n", (void *)bearer, err);
+		required_action_failed = true;
+	} else {
+		LOG_INF("Bearer %p URI schemes: %s", (void *)bearer, uri_schemes);
+	}
+
+	k_sem_give(&sem_ccp_action_completed);
+}
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST */
 
 static int reset_ccp_call_control_client(void)
 {
@@ -298,6 +319,7 @@ static int reset_ccp_call_control_client(void)
 	}
 
 	k_sem_reset(&sem_conn_state_change);
+	required_action_failed = false;
 
 	return 0;
 }
@@ -320,6 +342,10 @@ static int discover_services(void)
 		return err;
 	}
 
+	if (required_action_failed) {
+		return -ENODATA;
+	}
+
 	return 0;
 }
 
@@ -336,6 +362,10 @@ static int read_bearer_name(struct bt_ccp_call_control_client_bearer *bearer)
 	if (err != 0) {
 		LOG_ERR("Failed to take sem_ccp_action_completed: %d", err);
 		return err;
+	}
+
+	if (required_action_failed) {
+		return -ENODATA;
 	}
 
 	return 0;
@@ -356,6 +386,10 @@ static int read_bearer_uci(struct bt_ccp_call_control_client_bearer *bearer)
 		return err;
 	}
 
+	if (required_action_failed) {
+		return -ENODATA;
+	}
+
 	return 0;
 }
 
@@ -372,6 +406,32 @@ static int read_bearer_tech(struct bt_ccp_call_control_client_bearer *bearer)
 	if (err != 0) {
 		LOG_ERR("Failed to take sem_ccp_action_completed: %d", err);
 		return err;
+	}
+
+	if (required_action_failed) {
+		return -ENODATA;
+	}
+
+	return 0;
+}
+
+static int read_bearer_uri_schemes(struct bt_ccp_call_control_client_bearer *bearer)
+{
+	int err;
+
+	err = bt_ccp_call_control_client_read_bearer_uri_schemes(bearer);
+	if (err != 0) {
+		return err;
+	}
+
+	err = k_sem_take(&sem_ccp_action_completed, SEM_TIMEOUT);
+	if (err != 0) {
+		LOG_ERR("Failed to take sem_ccp_action_completed: %d", err);
+		return err;
+	}
+
+	if (required_action_failed) {
+		return -ENODATA;
 	}
 
 	return 0;
@@ -405,6 +465,14 @@ static int read_bearer_values(void)
 			return err;
 		}
 	}
+
+	if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST)) {
+		err = read_bearer_uri_schemes(client_bearers.gtbs_bearer);
+		if (err != 0) {
+			LOG_ERR("Failed to read URI schemes for GTBS bearer: %d", err);
+			return err;
+		}
+	}
 #endif /* CONFIG_BT_TBS_CLIENT_GTBS */
 
 #if defined(CONFIG_BT_TBS_CLIENT_TBS)
@@ -433,6 +501,15 @@ static int read_bearer_values(void)
 				return err;
 			}
 		}
+
+		if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST)) {
+			err = read_bearer_uri_schemes(client_bearers.tbs_bearers[i]);
+			if (err != 0) {
+				LOG_ERR("Failed to read URI schemes for TBS bearer[%zu]: %d", i,
+					err);
+				return err;
+			}
+		}
 	}
 #endif /* CONFIG_BT_TBS_CLIENT_TBS */
 
@@ -452,6 +529,9 @@ static int init_ccp_call_control_client(void)
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY)
 		.bearer_tech = ccp_call_control_client_read_bearer_tech_cb,
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY */
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST)
+		.bearer_uri_schemes = ccp_call_control_client_read_bearer_uri_schemes_cb,
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST */
 	};
 	static struct bt_le_scan_cb scan_cbs = {
 		.recv = scan_recv_cb,
