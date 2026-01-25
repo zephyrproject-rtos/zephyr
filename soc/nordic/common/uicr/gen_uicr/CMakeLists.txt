@@ -261,6 +261,12 @@ if(CONFIG_GEN_UICR_SECONDARY)
   endif()
 endif()
 
+if(NOT CONFIG_GEN_UICR_EXTRA_ARGS STREQUAL "")
+  separate_arguments(extra_args UNIX_COMMAND ${CONFIG_GEN_UICR_EXTRA_ARGS})
+else()
+  set(extra_args)
+endif()
+
 # Generate hex files (merged, uicr-only, periphconf-only, and secondary-periphconf-only)
 add_custom_command(
   OUTPUT ${merged_hex_file} ${uicr_hex_file} ${periphconf_hex_file} ${secondary_periphconf_hex_file}
@@ -279,6 +285,7 @@ add_custom_command(
           ${securestorage_args}
           ${protectedmem_args}
           ${secondary_args}
+          ${extra_args}
   DEPENDS ${periphconf_elfs} ${secondary_periphconf_elfs}
   WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
   COMMENT "Using gen_uicr.py to generate ${merged_hex_file}, ${uicr_hex_file}, ${periphconf_hex_file}, and ${secondary_periphconf_hex_file} from ${periphconf_elfs} ${secondary_periphconf_elfs}"
