@@ -151,8 +151,8 @@ static int paj7620_sample_fetch(const struct device *dev, enum sensor_channel ch
 	const struct paj7620_config *config = dev->config;
 	uint8_t gest_data[2];
 
-	if (chan != SENSOR_CHAN_ALL
-		&& ((enum sensor_channel_paj7620)chan != SENSOR_CHAN_PAJ7620_GESTURES)) {
+	if (chan != SENSOR_CHAN_ALL &&
+	    ((enum sensor_channel_paj7620)chan != SENSOR_CHAN_PAJ7620_GESTURES)) {
 		return -ENOTSUP;
 	}
 
@@ -173,9 +173,8 @@ static int paj7620_sample_fetch(const struct device *dev, enum sensor_channel ch
 	return 0;
 }
 
-static int paj7620_channel_get(const struct device *dev,
-				enum sensor_channel chan,
-				struct sensor_value *val)
+static int paj7620_channel_get(const struct device *dev, enum sensor_channel chan,
+			       struct sensor_value *val)
 {
 	struct paj7620_data *data = dev->data;
 
@@ -296,14 +295,14 @@ static int paj7620_attr_set(const struct device *dev, enum sensor_channel chan,
 	    ((enum sensor_channel_paj7620)chan != SENSOR_CHAN_PAJ7620_GESTURES)) {
 		return -ENOTSUP;
 	}
-		switch ((uint32_t)attr) {
-		case SENSOR_ATTR_SAMPLING_FREQUENCY:
-			ret = paj7620_set_sampling_rate(dev, val);
-			break;
+	switch ((uint32_t)attr) {
+	case SENSOR_ATTR_SAMPLING_FREQUENCY:
+		ret = paj7620_set_sampling_rate(dev, val);
+		break;
 
-		default:
-			return -ENOTSUP;
-		}
+	default:
+		return -ENOTSUP;
+	}
 	return ret;
 }
 
@@ -370,23 +369,17 @@ static DEVICE_API(sensor, paj7620_driver_api) = {
 #endif
 };
 
-#define PAJ7620_INIT(n)                                                                    \
-	static const struct paj7620_config paj7620_config_##n = {                          \
-		.i2c = I2C_DT_SPEC_INST_GET(n),					           \
+#define PAJ7620_INIT(n)                                                                            \
+	static const struct paj7620_config paj7620_config_##n = {                                  \
+		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
 		IF_ENABLED(CONFIG_PAJ7620_TRIGGER,                                         \
-				(.int_gpio = GPIO_DT_SPEC_INST_GET_OR(n, int_gpios, {0}))) \
-	};                                                                                 \
-                                                                                           \
-	static struct paj7620_data paj7620_data_##n;                                       \
+				(.int_gpio = GPIO_DT_SPEC_INST_GET_OR(n, int_gpios, {0}))) };    \
+                                                                                                   \
+	static struct paj7620_data paj7620_data_##n;                                               \
 	IF_ENABLED(CONFIG_PM_DEVICE,							\
-				(PM_DEVICE_DT_INST_DEFINE(n, paj7620_pm_action);))              \
-	SENSOR_DEVICE_DT_INST_DEFINE(n,                                                    \
-				paj7620_init,                                              \
-				PM_DEVICE_DT_INST_GET(n),                                                      \
-				&paj7620_data_##n,                                         \
-				&paj7620_config_##n,                                       \
-				POST_KERNEL,                                               \
-				CONFIG_SENSOR_INIT_PRIORITY,                               \
-				&paj7620_driver_api);
+				(PM_DEVICE_DT_INST_DEFINE(n, paj7620_pm_action);))        \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, paj7620_init, PM_DEVICE_DT_INST_GET(n), &paj7620_data_##n, \
+				     &paj7620_config_##n, POST_KERNEL,                             \
+				     CONFIG_SENSOR_INIT_PRIORITY, &paj7620_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(PAJ7620_INIT);
