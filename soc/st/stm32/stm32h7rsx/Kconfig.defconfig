@@ -11,4 +11,11 @@ config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT
 	default 0x0   if !BOOTLOADER_MCUBOOT
 
+if LVGL && DT_HAS_ST_STM32_DMA2D_ENABLED
+
+config LV_DRAW_DMA2D_HAL_INCLUDE
+	default "stm32h7rsxx.h"
+
+endif # LVGL
+
 endif # SOC_SERIES_STM32H7RSX
