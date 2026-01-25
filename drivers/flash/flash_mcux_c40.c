@@ -313,7 +313,7 @@ static int flash_mcux_c40_init(const struct device *dev)
 	return 0;
 }
 
-static const struct flash_driver_api mcux_c40_api = {
+static DEVICE_API(flash, mcux_c40_api) = {
 	.read = flash_mcux_c40_read,
 	.write = flash_mcux_c40_write,
 	.erase = flash_mcux_c40_erase,
