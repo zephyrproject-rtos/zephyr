@@ -1,0 +1,9 @@
+board:
+  name: aipi_eyes_s2
+  full_name: AiPi-Eyes-S2 Multi-Functional Development Board
+  vendor: aithinker
+  socs:
+    - name: bl618m05q2i
+      variants:
+        - name: "safe_overclock"
+        - name: "unsafe_overclock"
