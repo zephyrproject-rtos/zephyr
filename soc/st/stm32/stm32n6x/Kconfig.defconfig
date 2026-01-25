@@ -38,4 +38,12 @@ configdefault NVMEM
 
 endif # STM32_IOCELL
 
+# Add LVGL HAL include file for SOC supporting DMA2D
+if LVGL && DT_HAS_ST_STM32_DMA2D_ENABLED
+
+config LV_DRAW_DMA2D_HAL_INCLUDE
+	default "stm32n6xx.h"
+
+endif # LVGL
+
 endif # SOC_SERIES_STM32N6X
