@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: pic32cm_pl10_cnano
+  full_name: PIC32CM PL10 Curiosity Nano
+  vendor: microchip
+  socs:
+    - name: pic32cm6408pl10048
