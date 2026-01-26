@@ -83,6 +83,8 @@ struct flash_stm32_xspi_config {
 #if STM32_XSPI_RESET_GPIO
 	const struct gpio_dt_spec reset;
 #endif /* STM32_XSPI_RESET_GPIO */
+	bool has_pclken_ker;
+	bool has_pclken_mgr;
 };
 
 struct flash_stm32_xspi_data {
