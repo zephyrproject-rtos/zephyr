@@ -1659,6 +1659,14 @@ static int spi_stm32_transceive(const struct device *dev,
 	return transceive(dev, config, tx_bufs, rx_bufs, false, NULL, NULL);
 }
 
+static int spi_stm32_transceive_cpu(const struct device *dev,
+				const struct spi_config *config,
+				const struct spi_buf_set *tx_bufs,
+				const struct spi_buf_set *rx_bufs)
+{
+	return transceive(dev, config, tx_bufs, rx_bufs, false, NULL, NULL);
+}
+
 #ifdef CONFIG_SPI_ASYNC
 static int spi_stm32_transceive_async(const struct device *dev,
 				      const struct spi_config *config,
@@ -1673,6 +1681,7 @@ static int spi_stm32_transceive_async(const struct device *dev,
 
 static DEVICE_API(spi, api_funcs) = {
 	.transceive = spi_stm32_transceive,
+	.transceive_cpu = spi_stm32_transceive_cpu,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_stm32_transceive_async,
 #endif
