@@ -1419,6 +1419,13 @@ static int transceive_dma(const struct device *dev,
 	if (asynchronous) {
 		return -ENOTSUP;
 	}
+    
+	 // We need this for creating clocks on spi line internally to support supposedly simplex mode at higher layers.
+	if((tx_bufs == NULL) && (rx_bufs != NULL)) {
+		tx_bufs = rx_bufs;
+	} else if((tx_bufs != NULL) && (rx_bufs == NULL)) {
+		rx_bufs = tx_bufs;
+	}
 
 #ifdef CONFIG_DCACHE
 	if ((tx_bufs != NULL && !spi_buf_set_in_nocache(tx_bufs)) ||
@@ -1499,7 +1506,6 @@ static int transceive_dma(const struct device *dev,
 
 		if (transfer_dir == LL_SPI_FULL_DUPLEX) {
 			dma_len = spi_context_max_continuous_chunk(&data->ctx);
-
 			ret = spi_dma_move_buffers(dev, dma_len);
 		} else if (transfer_dir == LL_SPI_HALF_DUPLEX_TX) {
 			dma_len = data->ctx.tx_len;
