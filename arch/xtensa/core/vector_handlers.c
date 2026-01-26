@@ -542,6 +542,10 @@ void *xtensa_excint1_c(void *esf)
 	void *pc, *print_stack = (void *)interrupted_stack;
 	uint32_t depc = 0;
 
+#if defined(CONFIG_XTENSA_MMU) && defined(CONFIG_USERSPACE)
+	bool load_store_ring_error = false;
+#endif /* CONFIG_XTENSA_MMU && CONFIG_USERSPACE */
+
 #ifdef CONFIG_XTENSA_MMU
 	depc = XTENSA_RSR(ZSR_DEPC_SAVE_STR);
 
@@ -635,7 +639,8 @@ void *xtensa_excint1_c(void *esf)
 		xtensa_exc_dtlb_multihit_handle();
 		break;
 	case EXCCAUSE_LOAD_STORE_RING:
-		if (!xtensa_exc_load_store_ring_error_check(bsa)) {
+		load_store_ring_error = xtensa_exc_load_store_ring_error_check(bsa);
+		if (!load_store_ring_error) {
 			break;
 		}
 		__fallthrough;
@@ -718,6 +723,11 @@ skip_checks:
 #endif /* CONFIG_XTENSA_LAZY_HIFI_SHARING */
 		is_fatal_error = false;
 		break;
+#if defined(CONFIG_USERSPACE)
+	case EXCCAUSE_LOAD_STORE_RING:
+		is_fatal_error = load_store_ring_error;
+		break;
+#endif /* CONFIG_USERSPACE */
 	default:
 		is_fatal_error = true;
 		break;
