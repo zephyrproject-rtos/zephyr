@@ -28,6 +28,7 @@ tests:
       - panb611evb/nrf54l15/cpuflpr
       - panb611evb/nrf54l15/cpuflpr/xip
       - nrf54lm20dk/nrf54lm20a/cpuapp/ns
+      - nrf54lm20dk/nrf54lm20b/cpuapp/ns
       - nrf54l15dk/nrf54l15/cpuapp/ns
       - nrf54l15dk/nrf54l10/cpuapp/ns
       - nrf54l15tag/nrf54l15/cpuapp
