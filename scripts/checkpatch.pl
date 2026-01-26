@@ -6192,6 +6192,13 @@ sub process {
 			}
 		}
 
+# check for sizeof used on character literals
+		if ($line =~ /\bsizeof\s*\(\s*'(?:X+)'\s*\)/) {
+			WARN("SIZEOF_CHAR_LITERAL",
+			     "sizeof() used on a character literal; character literals have type int\n" .
+			     "Suggestion: use sizeof((char)'x') instead, e.g.sizeof((char)'/') \n" . $herecurr);
+		}
+
 # check for struct spinlock declarations
 		if ($line =~ /^.\s*\bstruct\s+spinlock\s+\w+\s*;/) {
 			WARN("USE_SPINLOCK_T",
