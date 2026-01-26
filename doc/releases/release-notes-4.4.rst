@@ -194,6 +194,14 @@ New APIs and options
   * :dtcompatible:`jedec,mspi-nor` now allows MSPI configuration of read, write and
     control commands separately via devicetree.
 
+* Haptics
+
+  * Added error callback to API
+
+    * :c:enum:`haptics_error_type` to enumerate common fault conditions in haptics devices.
+    * :c:type:`haptics_error_callback_t` to provide function prototype for error callbacks.
+    * :c:func:`haptics_register_error_callback` to register an error callback with a driver.
+
 * IPM
 
   * IPM callbacks for the mailbox backend now correctly handle signal-only mailbox
