@@ -168,13 +168,14 @@ static void read_msg_start(Twihs *const twihs, struct twihs_msg *msg,
 	/* Set slave address and number of internal address bytes */
 	twihs->TWIHS_MMR = TWIHS_MMR_MREAD | TWIHS_MMR_DADR(daddr);
 
-	/* Enable Receive Ready and Transmission Completed interrupts */
-	twihs->TWIHS_IER = TWIHS_IER_RXRDY | TWIHS_IER_TXCOMP | TWIHS_IER_NACK;
-
 	/* In single data byte read the START and STOP must both be set */
 	twihs_cr_stop = (msg->len == 1U) ? TWIHS_CR_STOP : 0;
+
 	/* Start the transfer by sending START condition */
 	twihs->TWIHS_CR = TWIHS_CR_START | twihs_cr_stop;
+
+	/* Enable Receive Ready and Transmission Completed interrupts */
+	twihs->TWIHS_IER = TWIHS_IER_RXRDY | TWIHS_IER_TXCOMP | TWIHS_IER_NACK;
 }
 
 static int i2c_sam_twihs_transfer(const struct device *dev,
