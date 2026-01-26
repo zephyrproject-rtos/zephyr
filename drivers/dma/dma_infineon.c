@@ -249,18 +249,21 @@ static int _initialize_descriptor(cy_stc_dma_descriptor_t *descriptor, struct dm
 	descriptor_config.dstXincrement =
 		_convert_dma_xy_increment_z_to_pdl(block_config->dest_addr_adj);
 
+	/* Convert bytes to transfer count based on data size */
+	uint32_t transfer_count = bytes / config->source_data_size;
+
 	/* Setup 1D/2D descriptor for each data block */
-	if (bytes >= DMA_LOOP_X_COUNT_MAX) {
+	if (transfer_count > DMA_LOOP_X_COUNT_MAX) {
 		descriptor_config.descriptorType = CY_DMA_2D_TRANSFER;
 		descriptor_config.xCount = DMA_LOOP_X_COUNT_MAX;
-		descriptor_config.yCount = DIV_ROUND_UP(bytes, DMA_LOOP_X_COUNT_MAX);
+		descriptor_config.yCount = DIV_ROUND_UP(transfer_count, DMA_LOOP_X_COUNT_MAX);
 		descriptor_config.srcYincrement =
 			descriptor_config.srcXincrement * DMA_LOOP_X_COUNT_MAX;
 		descriptor_config.dstYincrement =
 			descriptor_config.dstXincrement * DMA_LOOP_X_COUNT_MAX;
 	} else {
 		descriptor_config.descriptorType = CY_DMA_1D_TRANSFER;
-		descriptor_config.xCount = bytes;
+		descriptor_config.xCount = transfer_count;
 		descriptor_config.yCount = 1;
 		descriptor_config.srcYincrement = 0;
 		descriptor_config.dstYincrement = 0;
