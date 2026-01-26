@@ -1322,6 +1322,7 @@ Documentation Infrastructure:
     - alexanderwachter
     - martinjaeger
     - str4t0m
+    - william-tang914
   files:
     - boards/shields/canis_canpico/
     - boards/shields/mcp2515/
