@@ -80,3 +80,18 @@ struct btp_tbs_set_signal_strength_cmd {
 struct btp_tbs_terminate_call_cmd {
 	uint8_t index;
 } __packed;
+
+#define BTP_TBS_REGISTER_BEARER		0x0c
+struct btp_tbs_register_bearer_cmd {
+	uint8_t gtbs;
+	uint8_t technology;
+	uint16_t optional_opcodes;
+	uint8_t provider_name_len;
+	uint8_t uci_len;
+	uint8_t uri_scheme_list_len;
+	uint8_t strings[]; /* provider_name, uci, uri_scheme_list packed in order */
+} __packed;
+
+struct btp_tbs_register_bearer_rp {
+	uint8_t index;
+} __packed;
