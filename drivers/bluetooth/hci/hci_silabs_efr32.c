@@ -9,8 +9,8 @@
 
 #include <sl_btctrl_linklayer.h>
 #include <sl_hci_common_transport.h>
-#include <pa_conversions_efr32.h>
-#include <rail.h>
+#include <sl_rail_util_compatible_pa.h>
+#include <sl_rail.h>
 #include <soc_radio.h>
 
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
@@ -277,11 +277,19 @@ static int slz_bt_open(const struct device *dev, bt_hci_recv_t recv)
 	slz_set_tx_power(CONFIG_BT_CTLR_TX_PWR_ANTENNA);
 
 	if (IS_ENABLED(CONFIG_PM)) {
-		RAIL_ConfigSleep(sli_btctrl_get_radio_context_handle(),
-				 RAIL_SLEEP_CONFIG_TIMERSYNC_ENABLED);
-		RAIL_Status_t status = RAIL_InitPowerManager();
+		sl_rail_timer_sync_config_t timer_sync_config = SL_RAIL_TIMER_SYNC_DEFAULT;
+		sl_rail_status_t status;
 
-		if (status != RAIL_STATUS_NO_ERROR) {
+		status = sl_rail_config_sleep(sli_btctrl_get_radio_context_handle(),
+					      &timer_sync_config);
+		if (status != SL_RAIL_STATUS_NO_ERROR) {
+			LOG_ERR("RAIL: failed to configure sleep, status=%d", status);
+			ret = -EIO;
+			goto deinit;
+		}
+
+		status = sl_rail_init_power_manager();
+		if (status != SL_RAIL_STATUS_NO_ERROR) {
 			LOG_ERR("RAIL: failed to initialize power management, status=%d",
 					status);
 			ret = -EIO;
