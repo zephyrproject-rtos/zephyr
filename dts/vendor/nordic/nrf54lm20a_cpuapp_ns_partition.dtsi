@@ -7,9 +7,10 @@
 /*
  * Default SRAM planning when building for nRF54LM20A with ARM TrustZone-M support
  * - Lowest 256 kB SRAM allocated to Secure image (sram0_s).
- * - Upper 256 kB SRAM allocated to Non-Secure image (sram0_ns).
+ * - Upper 252 kB SRAM allocated to Non-Secure image (sram0_ns).
  *
- * nRF54LM20A has 512 kB of volatile memory (SRAM).
+ * nRF54LM20A has 512 kB of volatile memory (SRAM), but only 511 kB is available to use.
+ * Since TF-m requires 4kB page alignment we can only use a total of 508 kB.
  * This static layout needs to be the same with the upstream TF-M layout in the
  * header flash_layout.h of the relevant platform. Any updates in the layout
  * needs to happen both in the flash_layout.h and in this file at the same time.
@@ -27,8 +28,8 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		/* Non-Secure image memory */
-		reg = <0x40000 0x7FE40>;
-		ranges = <0x0 0x40000 0x7FE40>;
+		reg = <0x40000 DT_SIZE_K(252)>;
+		ranges = <0x0 0x40000 DT_SIZE_K(252)>;
 	};
 };
 
