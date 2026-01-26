@@ -35,81 +35,7 @@ zephyr_include_directories(.)
 
 include(${BSP_DIR}/zephyr/nrfx.cmake OPTIONAL)
 
-# Define MDK defines globally
-zephyr_compile_definitions_ifdef(CONFIG_SOC_SERIES_NRF51       NRF51)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF51822_QFAA       NRF51422_XXAA)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF51822_QFAB       NRF51422_XXAB)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF51822_QFAC       NRF51422_XXAC)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF52805            NRF52805_XXAA)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF52810            NRF52810_XXAA)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF52811            NRF52811_XXAA)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF52820            NRF52820_XXAA)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF52832            NRF52832_XXAA)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_COMPATIBLE_NRF52833 NRF52833_XXAA)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF52840            NRF52840_XXAA)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_COMPATIBLE_NRF5340_CPUAPP NRF5340_XXAA_APPLICATION)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET NRF5340_XXAA_NETWORK)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_CPUAPP     NRF54H20_XXAA
-                                                                NRF_APPLICATION)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_CPURAD     NRF54H20_XXAA
-                                                                NRF_RADIOCORE)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_CPUPPR     NRF54H20_XXAA
-                                                                NRF_PPR)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54H20_CPUFLPR    NRF54H20_XXAA
-                                                                NRF_FLPR)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L05            NRF54L05_XXAA
-                                                                DEVELOP_IN_NRF54L15)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L05_CPUAPP     NRF_APPLICATION)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L05_CPUFLPR    NRF_FLPR)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L10            NRF54L10_XXAA
-                                                                DEVELOP_IN_NRF54L15)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L10_CPUAPP     NRF_APPLICATION)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L10_CPUFLPR    NRF_FLPR)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_COMPATIBLE_NRF54L15 NRF54L15_XXAA)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_COMPATIBLE_NRF54L15_CPUAPP NRF_APPLICATION)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54L15_CPUFLPR    NRF_FLPR)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LM20A_ENGA     NRF54LM20A_ENGA_XXAA)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LM20A_ENGA_CPUAPP NRF_APPLICATION)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LM20A_ENGA_CPUFLPR NRF_FLPR)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_COMPATIBLE_NRF54LM20A NRF54LM20A_ENGA_XXAA)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_COMPATIBLE_NRF54LM20A_CPUAPP NRF_APPLICATION)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF7120_ENGA NRF7120_ENGA_XXAA)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF7120_ENGA_CPUAPP NRF_APPLICATION)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF7120_ENGA_CPUFLPR NRF_FLPR)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_COMPATIBLE_NRF7120_ENGA NRF7120_ENGA_XXAA)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_COMPATIBLE_NRF7120_ENGA_CPUAPP NRF_APPLICATION)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF9120             NRF9120_XXAA)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF9160             NRF9160_XXAA)
-
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF9230_ENGB_CPUAPP NRF9230_ENGB_XXAA
-                                                                NRF_APPLICATION)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF9230_ENGB_CPURAD NRF9230_ENGB_XXAA
-                                                                NRF_RADIOCORE)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF9230_ENGB_CPUPPR NRF9230_ENGB_XXAA
-                                                                NRF_PPR)
-
-zephyr_compile_definitions_ifdef(CONFIG_NRF_APPROTECT_LOCK
-                                 ENABLE_APPROTECT)
-zephyr_compile_definitions_ifdef(CONFIG_NRF_APPROTECT_USER_HANDLING
-                                 ENABLE_APPROTECT_USER_HANDLING
-                                 ENABLE_AUTHENTICATED_APPROTECT)
-zephyr_compile_definitions_ifdef(CONFIG_NRF_SECURE_APPROTECT_LOCK
-                                 ENABLE_SECURE_APPROTECT
-                                 ENABLE_SECUREAPPROTECT)
-zephyr_compile_definitions_ifdef(CONFIG_NRF_SECURE_APPROTECT_USER_HANDLING
-                                 ENABLE_SECURE_APPROTECT_USER_HANDLING
-                                 ENABLE_AUTHENTICATED_SECUREAPPROTECT)
-zephyr_library_compile_definitions_ifdef(CONFIG_NRF_TRACE_PORT
-                                 ENABLE_TRACE)
-
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF5340_CPUAPP
-                                 NRF_SKIP_FICR_NS_COPY_TO_RAM)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_SERIES_NRF91
-                                 NRF_SKIP_FICR_NS_COPY_TO_RAM)
-
-# Connect Kconfig compilation option for Non-Secure software with option required by MDK/nrfx
-zephyr_compile_definitions_ifdef(CONFIG_ARM_NONSECURE_FIRMWARE NRF_TRUSTZONE_NONSECURE)
-zephyr_compile_definitions_ifdef(CONFIG_LOG_BACKEND_SWO ENABLE_SWO)
+zephyr_compile_definitions(NRF_CONFIG_USE_MDK_CONFIG_FILE)
 
 zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_NRF51  ${MDK_DIR}/system_nrf51.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_NRF52805       ${MDK_DIR}/system_nrf52805.c)
@@ -191,58 +117,6 @@ zephyr_library_sources_ifdef(CONFIG_NRFX_WDT     ${SRC_DIR}/nrfx_wdt.c)
 if(CONFIG_NRFX_TWI OR CONFIG_NRFX_TWIM)
   zephyr_library_sources(${SRC_DIR}/nrfx_twi_twim.c)
 endif()
-
-# Inject HAL "NFCT_PINS_AS_GPIOS" definition if user requests to
-# configure the NFCT pins as GPIOS. Do the same with "CONFIG_GPIO_AS_PINRESET"
-# to configure the reset GPIO as nRESET. This way, the HAL will take care of
-# doing the proper configuration sequence during system init
-
-dt_nodelabel(uicr_path NODELABEL "uicr")
-if(DEFINED uicr_path)
-  dt_prop(nfct_pins_as_gpios PATH ${uicr_path} PROPERTY "nfct-pins-as-gpios")
-  if(${nfct_pins_as_gpios})
-    zephyr_library_compile_definitions(
-      NRF_CONFIG_NFCT_PINS_AS_GPIOS
-    )
-  endif()
-
-  dt_prop(gpio_as_nreset PATH ${uicr_path} PROPERTY "gpio-as-nreset")
-  if(${gpio_as_nreset})
-    zephyr_library_compile_definitions(
-      NRF_CONFIG_GPIO_AS_PINRESET
-    )
-  endif()
-endif()
-
-dt_nodelabel(tampc_path NODELABEL "tampc")
-if(DEFINED tampc_path)
-  dt_prop(swd_pins_as_gpios PATH ${tampc_path} PROPERTY "swd-pins-as-gpios")
-  if(${swd_pins_as_gpios})
-    zephyr_library_compile_definitions(
-      NRF_CONFIG_SWD_PINS_AS_GPIOS
-    )
-  endif()
-endif()
-
-if(CONFIG_SOC_NRF54L_CPUAPP_COMMON)
-  # Ideally, hfpll should taken as a phandle from clocks property from cpu but it
-  # seems that there is no such option in DT cmake functions. Assuming that nrf54l
-  # is using hfpll as CPU clock source (true for all existing devices).
-  dt_prop(clock_frequency PATH "/clocks/hfpll" PROPERTY "clock-frequency")
-  math(EXPR clock_frequency_mhz "${clock_frequency} / 1000000")
-  zephyr_compile_definitions("NRF_CONFIG_CPU_FREQ_MHZ=${clock_frequency_mhz}")
-endif()
-
-if(CONFIG_SOC_NRF7120_ENGA_CPUAPP)
-  dt_prop(clock_frequency PATH "/cpus/cpu@0" PROPERTY "clock-frequency")
-  math(EXPR clock_frequency_mhz "${clock_frequency} / 1000000")
-  zephyr_compile_definitions("NRF_CONFIG_CPU_FREQ_MHZ=${clock_frequency_mhz}")
-endif()
-
-zephyr_compile_definitions_ifdef(CONFIG_NRF_SKIP_CLOCK_CONFIG NRF_SKIP_CLOCK_CONFIGURATION)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LX_DISABLE_FICR_TRIMCNF NRF_DISABLE_FICR_TRIMCNF)
-zephyr_compile_definitions_ifdef(CONFIG_SOC_NRF54LX_SKIP_GLITCHDETECTOR_DISABLE NRF_SKIP_GLITCHDETECTOR_DISABLE)
-zephyr_compile_definitions_ifndef(CONFIG_SOC_NRF54L_ANOMALY_56_WORKAROUND NRF54L_CONFIGURATION_56_ENABLE=0)
 
 if(CONFIG_SOC_SERIES_NRF54H AND CONFIG_NRFX_GPPI_V1)
   zephyr_library_sources(${HELPERS_DIR}/internal/nrfx_gppiv1_ipct.c)
