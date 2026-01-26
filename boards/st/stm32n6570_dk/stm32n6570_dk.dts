@@ -15,3 +15,7 @@
 		zephyr,sram = &axisram1;
 	};
 };
+
+&xspi2 {
+	memory-mapped;
+};
