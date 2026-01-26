@@ -1,3 +1,6 @@
+# Copyright (c) 2025 Arduino SA
+# SPDX-License-Identifier: Apache-2.0
+
 *.ssid max_size:32 max_length:31
 *.bssid max_size:17
 *.mac max_size:17
@@ -5,4 +8,4 @@
 *.entries type:FT_POINTER
 *.stations type:FT_POINTER
 *.init_data max_size:0
-esp_hosted_proto.pb max_size:256 max_count:64 anonymous_oneof:true type:FT_STATIC
+esp_hosted_latest.pb max_size:256 max_count:64 anonymous_oneof:true type:FT_STATIC

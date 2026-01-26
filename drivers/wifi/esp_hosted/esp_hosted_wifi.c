@@ -6,7 +6,7 @@
 
 #include <pb_encode.h>
 #include <pb_decode.h>
-#include <esp_hosted_proto.pb.h>
+#include <esp_hosted_legacy.pb.h>
 
 #include <esp_hosted_wifi.h>
 #include <esp_hosted_hal.h>

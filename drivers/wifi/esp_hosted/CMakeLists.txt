@@ -13,12 +13,14 @@ zephyr_library_sources(
   esp_hosted_wifi.c
 )
 
-zephyr_nanopb_sources(esp_hosted
-  esp_hosted_proto.pb
-)
-
 zephyr_include_directories(
   ./
 )
+
+if(CONFIG_WIFI_ESP_HOSTED_LEGACY)
+  zephyr_nanopb_sources(esp_hosted esp_hosted_legacy.pb)
+else()
+  zephyr_nanopb_sources(esp_hosted esp_hosted_latest.pb)
+endif()
 
 endif()
