@@ -31,6 +31,7 @@ struct bt_tbs_instance *tbs_inst;
 static uint8_t call_index;
 static uint8_t inst_ccid;
 static bool send_ev;
+static uint8_t tbs_register_bearer(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len);
 
 static uint8_t ccp_supported_commands(const void *cmd, uint16_t cmd_len,
 				      void *rsp, uint16_t *rsp_len)
@@ -1093,6 +1094,11 @@ static struct bt_tbs_cb tbs_cbs = {
 
 static const struct btp_handler tbs_handlers[] = {
 	{
+		.opcode = BTP_TBS_REGISTER_BEARER,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = tbs_register_bearer,
+	},
+	{
 		.opcode = BTP_TBS_READ_SUPPORTED_COMMANDS,
 		.index = BTP_INDEX_NONE,
 		.expect_len = 0,
@@ -1152,50 +1158,89 @@ static const struct btp_handler tbs_handlers[] = {
 
 uint8_t tester_init_tbs(void)
 {
-	const struct bt_tbs_register_param gtbs_param = {
-		.provider_name = "Generic TBS",
-		.uci = "un000",
-		.uri_schemes_supported = "tel,skype",
-		.gtbs = true,
-		.authorization_required = false,
-		.technology = BT_TBS_TECHNOLOGY_3G,
-		.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
-	};
-	const struct bt_tbs_register_param tbs_param = {
-		.provider_name = "TBS",
-		.uci = "un000",
-		.uri_schemes_supported = "tel,skype",
-		.gtbs = false,
-		.authorization_required = false,
-		/* Set different technologies per bearer */
-		.technology = BT_TBS_TECHNOLOGY_4G,
-		.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
-	};
-	int err;
-
 	bt_tbs_register_cb(&tbs_cbs);
 
 	tester_register_command_handlers(BTP_SERVICE_ID_TBS, tbs_handlers,
 					 ARRAY_SIZE(tbs_handlers));
-
-	err = bt_tbs_register_bearer(&gtbs_param);
-	if (err < 0) {
-		LOG_DBG("Failed to register GTBS: %d", err);
-
-		return BTP_STATUS_FAILED;
-	}
-
-	err = bt_tbs_register_bearer(&tbs_param);
-	if (err < 0) {
-		LOG_DBG("Failed to register TBS: %d", err);
-
-		return BTP_STATUS_FAILED;
-	}
 
 	return BTP_STATUS_SUCCESS;
 }
 
 uint8_t tester_unregister_tbs(void)
 {
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t tbs_register_bearer(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_tbs_register_bearer_cmd *cp = cmd;
+	const uint8_t *strings = cp->strings;
+	struct btp_tbs_register_bearer_rp *rp = rsp;
+	char provider_name[CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH + 1];
+	char uci[BT_TBS_MAX_UCI_SIZE];
+	char uri_scheme_list[CONFIG_BT_TBS_MAX_URI_LENGTH + 1];
+
+	if (cmd_len < sizeof(*cp)) {
+		LOG_DBG("Packet too short: %u", cmd_len);
+		return BTP_STATUS_FAILED;
+	}
+
+	if (cmd_len != sizeof(*cp) + cp->provider_name_len +
+	    cp->uci_len + cp->uri_scheme_list_len) {
+		LOG_DBG("Invalid length: %u", cmd_len);
+		return BTP_STATUS_FAILED;
+	}
+
+	if (cp->provider_name_len >= sizeof(provider_name)) {
+		LOG_DBG("Buffer overflow risk: provider_name_len=%u (max=%d)",
+			cp->provider_name_len, CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH);
+		return BTP_STATUS_FAILED;
+	}
+
+	if (cp->uci_len >= sizeof(uci)) {
+		LOG_DBG("Buffer overflow risk: uci_len=%u (max=%u)",
+			cp->uci_len, BT_TBS_MAX_UCI_SIZE - 1U);
+		return BTP_STATUS_FAILED;
+	}
+
+	if (cp->uri_scheme_list_len >= sizeof(uri_scheme_list)) {
+		LOG_DBG("Buffer overflow risk: uri_scheme_list_len=%u (max=%d)",
+			cp->uri_scheme_list_len, CONFIG_BT_TBS_MAX_URI_LENGTH);
+		return BTP_STATUS_FAILED;
+	}
+
+	/* Extract provider_name */
+	(void)memcpy(provider_name, strings, cp->provider_name_len);
+	provider_name[cp->provider_name_len] = '\0';
+
+	/* Extract uci */
+	(void)memcpy(uci, strings + cp->provider_name_len, cp->uci_len);
+	uci[cp->uci_len] = '\0';
+
+	/* Extract uri_scheme_list */
+	(void)memcpy(uri_scheme_list,
+		     strings + cp->provider_name_len + cp->uci_len,
+		     cp->uri_scheme_list_len);
+	uri_scheme_list[cp->uri_scheme_list_len] = '\0';
+
+	struct bt_tbs_register_param param = {
+		.provider_name = provider_name,
+		.uci = uci,
+		.uri_schemes_supported = uri_scheme_list,
+		.gtbs = cp->gtbs == 1U ? true : false,
+		.technology = cp->technology,
+		.supported_features  = sys_le16_to_cpu(cp->optional_opcodes),
+	};
+
+	int index = bt_tbs_register_bearer(&param);
+
+	if (index < 0) {
+		return BTP_STATUS_FAILED;
+	}
+
+	/* Return the assigned index in the response */
+	rp->index = (uint8_t)index;
+	*rsp_len = sizeof(*rp);
+
 	return BTP_STATUS_SUCCESS;
 }
