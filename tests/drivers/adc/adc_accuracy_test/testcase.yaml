@@ -39,6 +39,10 @@ tests:
       - ek_ra2a1
       - ek_ra2l1
   drivers.adc.accuracy.ref_volt:
+    extra_configs:
+      - CONFIG_REFERENCE_VOLTAGE_TEST=y
+    # Test scenario is filtered if Kconfig dependencies are not satisfied
+    filter: CONFIG_REFERENCE_VOLTAGE_TEST
     harness_config:
       fixture: adc_ref_volt
     platform_allow:
