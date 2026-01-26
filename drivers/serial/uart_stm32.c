@@ -1989,6 +1989,11 @@ static int uart_stm32_async_rx_buf_rsp(const struct device *dev, uint8_t *buf,
 
 	LOG_DBG("replace buffer (%d)", len);
 
+	if (!stm32_buf_in_nocache((uintptr_t)buf, len)) {
+		LOG_ERR("Rx buffer should be placed in a nocache memory region");
+		return -EFAULT;
+	}
+
 	key = irq_lock();
 
 	if (data->rx_next_buffer != NULL) {
@@ -1996,10 +2001,6 @@ static int uart_stm32_async_rx_buf_rsp(const struct device *dev, uint8_t *buf,
 	} else if (!data->dma_rx.enabled) {
 		err = -EACCES;
 	} else {
-		if (!stm32_buf_in_nocache((uintptr_t)buf, len)) {
-			LOG_ERR("Rx buffer should be placed in a nocache memory region");
-			return -EFAULT;
-		}
 		data->rx_next_buffer = buf;
 		data->rx_next_buffer_len = len;
 	}
