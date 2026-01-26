@@ -236,7 +236,8 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 	 */
 	if (!IS_TIM_32B_COUNTER_INSTANCE(timer) &&
 	    (period_cycles > UINT16_MAX + 1)) {
-		LOG_ERR("Cannot set PWM output, value exceeds 16-bit timer limit.");
+		LOG_ERR("Cannot set PWM output, period cycles %u exceeds 16-bit timer limit.",
+			period_cycles);
 		return -ENOTSUP;
 	}
 
