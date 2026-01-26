@@ -1039,6 +1039,23 @@ pytest_dut_scope: <function|class|module|package|session> (default function)
               - test_file_2.py::test_A
               - test_file_2.py::test_B[param_a]
 
+.. _extra_test_args:
+
+extra_test_args: <list of arguments> (default empty)
+    Specify a list of additional arguments to pass to the build executable when building
+    for the ``native_sim`` target e.g.:
+    ``<build_folder>/zephyr.exe -no-color``. Note that the arguments
+    must be supported by the executable, otherwise an error will occur.
+
+    The following is an example yaml file:
+
+    .. code-block:: yaml
+
+        harness_config:
+          extra_test_args:
+            - -no-color
+            - -stop_at=3
+            - -no-rt
 
 .. _twister_console_harness:
 
