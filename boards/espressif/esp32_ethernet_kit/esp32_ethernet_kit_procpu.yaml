@@ -13,4 +13,5 @@ supported:
   - i2s
   - crypto
   - retained_mem
+  - rmt
 vendor: espressif
