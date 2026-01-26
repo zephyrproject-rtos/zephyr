@@ -278,6 +278,48 @@ static inline int cipher_cbc_op(struct cipher_ctx *ctx,
 }
 
 /**
+ * @brief Perform Cipher Feedback (CFB) crypto operation.
+ *
+ * @param  ctx       Pointer to the crypto context of this op.
+ * @param  pkt   Structure holding the input/output buffer pointers.
+ * @param  iv        Initialization Vector (IV) for the operation. Same
+ *			 IV value should not be reused across multiple
+ *			 operations (within a session context) for security.
+ *
+ * @return 0 on success, negative errno code on fail.
+ */
+static inline int cipher_cfb_op(struct cipher_ctx *ctx,
+				struct cipher_pkt *pkt, uint8_t *iv)
+{
+	__ASSERT(ctx->ops.cipher_mode == CRYPTO_CIPHER_MODE_CFB, "CFB mode "
+		 "session invoking a different mode handler");
+
+	pkt->ctx = ctx;
+	return ctx->ops.cfb_crypt_hndlr(ctx, pkt, iv);
+}
+
+/**
+ * @brief Perform Output Feedback (OFB) mode crypto operation.
+ *
+ * @param  ctx       Pointer to the crypto context of this op.
+ * @param  pkt   Structure holding the input/output buffer pointers.
+ * @param  iv        Initialization Vector (IV) for the operation. Same
+ *			 IV value should not be reused across multiple
+ *			 operations (within a session context) for security.
+ *
+ * @return 0 on success, negative errno code on fail.
+ */
+static inline int cipher_ofb_op(struct cipher_ctx *ctx,
+				struct cipher_pkt *pkt, uint8_t *iv)
+{
+	__ASSERT(ctx->ops.cipher_mode == CRYPTO_CIPHER_MODE_OFB, "OFB mode "
+		 "session invoking a different mode handler");
+
+	pkt->ctx = ctx;
+	return ctx->ops.ofb_crypt_hndlr(ctx, pkt, iv);
+}
+
+/**
  * @brief Perform Counter (CTR) mode crypto operation.
  *
  * @param  ctx       Pointer to the crypto context of this op.
