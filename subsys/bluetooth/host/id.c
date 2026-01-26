@@ -181,7 +181,13 @@ int bt_id_set_adv_random_addr(struct bt_le_ext_adv *adv,
 
 	if (!(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	      BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
-		return set_random_address(addr);
+		err = set_random_address(addr);
+		if (err == 0) {
+			bt_addr_copy(&adv->random_addr.a, addr);
+			adv->random_addr.type = BT_ADDR_LE_RANDOM;
+		}
+
+		return err;
 	}
 
 	LOG_DBG("%s", bt_addr_str(addr));
@@ -432,7 +438,13 @@ int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv)
 
 	if (!(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	      BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
-		return bt_id_set_private_addr(adv->id);
+		err = bt_id_set_private_addr(adv->id);
+		if (err == 0) {
+			bt_addr_copy(&adv->random_addr.a, &bt_dev.random_addr.a);
+			adv->random_addr.type = bt_dev.random_addr.type;
+		}
+
+		return err;
 	}
 
 	/* check if RPA is valid */
