@@ -1529,7 +1529,7 @@ static uint8_t join_calls(struct tbs_inst *inst, const struct bt_tbs_call_cp_joi
 	uint8_t call_state;
 
 	if ((inst->optional_opcodes & BT_TBS_FEATURE_JOIN) == 0) {
-		return BT_TBS_RESULT_CODE_OPCODE_NOT_SUPPORTED;
+		return BT_TBS_RESULT_CODE_OPERATION_NOT_POSSIBLE;
 	}
 
 	/* Check length */
@@ -1541,7 +1541,7 @@ static uint8_t join_calls(struct tbs_inst *inst, const struct bt_tbs_call_cp_joi
 	for (int i = 0; i < call_index_cnt; i++) {
 		for (int j = 0; j < i; j++) {
 			if (ccp->call_indexes[i] == ccp->call_indexes[j]) {
-				return BT_TBS_RESULT_CODE_INVALID_CALL_INDEX;
+				return BT_TBS_RESULT_CODE_OPERATION_NOT_POSSIBLE;
 			}
 		}
 	}
@@ -1562,7 +1562,7 @@ static uint8_t join_calls(struct tbs_inst *inst, const struct bt_tbs_call_cp_joi
 		if (call_state != BT_TBS_CALL_STATE_LOCALLY_HELD &&
 		    call_state != BT_TBS_CALL_STATE_LOCALLY_AND_REMOTELY_HELD &&
 		    call_state != BT_TBS_CALL_STATE_ACTIVE) {
-			return BT_TBS_RESULT_CODE_STATE_MISMATCH;
+			return BT_TBS_RESULT_CODE_OPERATION_NOT_POSSIBLE;
 		}
 	}
 
