@@ -22,6 +22,7 @@ nvic: &cpuapp_nvic {};
 
 / {
 	chosen {
+		zephyr,bt-hci = &bt_hci_controller;
 		zephyr,entropy = &rng;
 	};
 
@@ -40,6 +41,10 @@ nvic: &cpuapp_nvic {};
 		status = "okay";
 		compatible = "nordic,nrf-cracen-ctrdrbg";
 	};
+};
+
+&bt_hci_controller {
+	status = "okay";
 };
 
 &cpuflpr_vpr {
