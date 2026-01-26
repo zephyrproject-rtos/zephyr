@@ -498,6 +498,15 @@ MDIO
   MDIO bus enabling/disabling is now handled internally by the MDIO drivers.
   (:github:`99690`).
 
+MEMC
+====
+
+* :dtcompatible:`st,stm32-xspi-psram` and :dtcompatible:`st,stm32-ospi-psram`
+  compatible nodes now need to include the ``st,refresh`` property to specify
+  the PSRAM refresh rate in number of memory clock cycles. (:github:`102735`).
+  Hard-coded default values in drivers, of 320 (:dtcompatible:`st,stm32-xspi-psram`) and 129
+  (:dtcompatible:`st,stm32-ospi-psram`), have been removed.
+
 QSPI
 ====
 
