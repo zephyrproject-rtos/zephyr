@@ -36,17 +36,18 @@ static int imsic_init(const struct device *dev)
 
 	LOG_DBG("Setting EIDELIVERY=0x%08x (ENABLE=0x%x, MODE_MMSI=0x%x)", eidelivery_value,
 		(unsigned int)EIDELIVERY_ENABLE, (unsigned int)EIDELIVERY_MODE_MMSI);
-	icsr_write(ICSR_EIDELIVERY, eidelivery_value);
+	micsr_write(ICSR_EIDELIVERY, eidelivery_value);
 
 	/* Set EITHRESHOLD to 0 to allow all interrupts (no priority filtering) */
-	icsr_write(ICSR_EITHRESH, 0);
+	micsr_write(ICSR_EITHRESH, 0);
 
 	LOG_DBG("IMSIC init hart=%u num_ids=%u nr_irqs=%u",
 		((const struct imsic_cfg *)dev->config)->hart_id,
 		((const struct imsic_cfg *)dev->config)->num_ids,
 		((const struct imsic_cfg *)dev->config)->nr_irqs);
 	LOG_DBG("  EIDELIVERY=0x%08lx EITHRESHOLD=0x%08lx",
-		(unsigned long)icsr_read(ICSR_EIDELIVERY), (unsigned long)icsr_read(ICSR_EITHRESH));
+		(unsigned long)micsr_read(ICSR_EIDELIVERY),
+		(unsigned long)micsr_read(ICSR_EITHRESH));
 
 	return 0;
 }
@@ -77,7 +78,7 @@ void riscv_imsic_enable_eiid(uint32_t eiid)
 
 	LOG_DBG("IMSIC enable EIID %u on CPU %u: EIE[%u] bit %u", eiid, arch_proc_id(),
 		reg_index, bit);
-	icsr_set(icsr_addr, BIT(bit));
+	micsr_set(icsr_addr, BIT(bit));
 }
 
 /* Disable an EIID in IMSIC EIE - operates on CURRENT CPU's IMSIC via CSRs */
@@ -88,7 +89,7 @@ void riscv_imsic_disable_eiid(uint32_t eiid)
 	eiid_to_eie_index(eiid, &reg_index, &bit);
 	uint32_t icsr_addr = ICSR_EIE0 + reg_index;
 
-	icsr_clear(icsr_addr, BIT(bit));
+	micsr_clear(icsr_addr, BIT(bit));
 	LOG_DBG("IMSIC disable EIID %u on CPU %u", eiid, arch_proc_id());
 }
 
@@ -100,7 +101,7 @@ int riscv_imsic_is_enabled(uint32_t eiid)
 	eiid_to_eie_index(eiid, &reg_index, &bit);
 	uint32_t icsr_addr = ICSR_EIE0 + reg_index;
 
-	return !!(icsr_read(icsr_addr) & BIT(bit));
+	return !!(micsr_read(icsr_addr) & BIT(bit));
 }
 
 /* Separate IRQ registration for hart 0 vs other harts to avoid duplicate registration */
@@ -229,19 +230,19 @@ void z_riscv_imsic_secondary_init(void)
 	/* EIDELIVERY[30:29] = 10: MMSI mode (0x40000000) */
 	uint32_t eidelivery_value = EIDELIVERY_ENABLE | EIDELIVERY_MODE_MMSI;
 
-	icsr_write(ICSR_EIDELIVERY, eidelivery_value);
+	micsr_write(ICSR_EIDELIVERY, eidelivery_value);
 
 	/* Set EITHRESHOLD to 0 to allow all interrupt priorities */
-	icsr_write(ICSR_EITHRESH, 0);
+	micsr_write(ICSR_EITHRESH, 0);
 
 	/* Enable MEXT interrupt on this CPU */
 	irq_enable(RISCV_IRQ_MEXT);
 
 	/* Read back to verify initialization */
-	unsigned long eidelivery_readback = icsr_read(ICSR_EIDELIVERY);
+	unsigned long eidelivery_readback = micsr_read(ICSR_EIDELIVERY);
 
 	LOG_DBG("CPU %u IMSIC initialized: EIDELIVERY=0x%08lx EITHRESH=0x%08lx", arch_proc_id(),
-		eidelivery_readback, (unsigned long)icsr_read(ICSR_EITHRESH));
+		eidelivery_readback, (unsigned long)micsr_read(ICSR_EITHRESH));
 
 	/* Sanity check: verify EIDELIVERY enable bit is set */
 	if (!(eidelivery_readback & EIDELIVERY_ENABLE)) {
