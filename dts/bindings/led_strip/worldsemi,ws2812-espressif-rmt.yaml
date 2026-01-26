@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Worldsemi WS2812 LED strip, Espressif RMT binding
+
+  Driver bindings for controlling a WS2812 or compatible LED
+  strip with Espressif RMT GPIO.
+
+  Here is an example ESP32 configuration with a RMT device:
+
+  &pinctrl {
+    rmt_default: rmt_default {
+      group1 {
+        pinmux = <RMT_OUT3_GPIO48>;
+      };
+    };
+  };
+
+  &rmt {
+    status = "okay";
+    pinctrl-0 = <&rmt_default>;
+    pinctrl-names = "default";
+    dmas = <&dma 9>;
+    dma-names = "tx";
+
+    led_strip: ws2812@0 {
+      compatible = "worldsemi,ws2812-espressif-rmt";
+      reg = <0>;
+      chain-length = <1>;
+      color-mapping = <LED_COLOR_ID_GREEN
+        LED_COLOR_ID_RED
+        LED_COLOR_ID_BLUE>;
+      reset-delay = <500>;
+    };
+  };
+
+compatible: "worldsemi,ws2812-espressif-rmt"
+
+include: ["espressif,esp32-rmt-device.yaml", ws2812.yaml]

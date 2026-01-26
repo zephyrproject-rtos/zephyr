@@ -1,0 +1,39 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/led/led.h>
+
+/delete-node/ &rmt_default;
+
+/ {
+	aliases {
+		led-strip = &led_strip;
+	};
+};
+
+&pinctrl {
+	rmt_default: rmt_default {
+		group1 {
+			pinmux = <RMT_OUT0_GPIO13>;
+		};
+	};
+};
+
+&rmt {
+	status = "okay";
+	pinctrl-0 = <&rmt_default>;
+	pinctrl-names = "default";
+
+	led_strip: ws2812@0 {
+		compatible = "worldsemi,ws2812-espressif-rmt";
+		reg = <0>;
+		chain-length = <1>;
+		color-mapping = <LED_COLOR_ID_GREEN
+				 LED_COLOR_ID_RED
+				 LED_COLOR_ID_BLUE>;
+		reset-delay = <500>;
+	};
+};

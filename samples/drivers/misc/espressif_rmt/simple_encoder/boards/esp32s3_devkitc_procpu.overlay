@@ -1,0 +1,17 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&rmt {
+	pinctrl-0 = <&rmt_default>;
+	pinctrl-names = "default";
+	dmas = <&dma 8>, <&dma 9>;
+	dma-names = "rx", "tx";
+	status = "okay";
+};
+
+&dma {
+	status = "okay";
+};

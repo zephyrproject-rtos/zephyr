@@ -6,27 +6,31 @@
 
 #include <zephyr/dt-bindings/led/led.h>
 
+/delete-node/ &rmt_default;
+
 / {
 	aliases {
 		led-strip = &led_strip;
 	};
 };
 
-&i2s0_default {
-	group1 {
-		pinmux = <I2S0_O_SD_GPIO48>;
+&pinctrl {
+	rmt_default: rmt_default {
+		group1 {
+			pinmux = <RMT_OUT3_GPIO48>;
+		};
 	};
 };
 
-i2s_led: &i2s0 {
+&rmt {
 	status = "okay";
-
-	dmas = <&dma 3>;
+	pinctrl-0 = <&rmt_default>;
+	pinctrl-names = "default";
+	dmas = <&dma 9>;
 	dma-names = "tx";
 
 	led_strip: ws2812@0 {
-		compatible = "worldsemi,ws2812-i2s";
-
+		compatible = "worldsemi,ws2812-espressif-rmt";
 		reg = <0>;
 		chain-length = <1>;
 		color-mapping = <LED_COLOR_ID_GREEN
