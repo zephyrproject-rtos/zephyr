@@ -24,3 +24,11 @@ properties:
     type: phandle-array
     description: |
       GPIO pins used to control the enable signal of the motor driver.
+
+  m0-gpios:
+    type: phandle-array
+    description: Microstep configuration pin 0.
+
+  m1-gpios:
+    type: phandle-array
+    description: Microstep configuration pin 1.
