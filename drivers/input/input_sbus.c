@@ -7,6 +7,7 @@
 
 #define DT_DRV_COMPAT futaba_sbus
 
+#include <zephyr/input/input_sbus.h>
 #include <zephyr/device.h>
 #include <zephyr/input/input.h>
 #include <zephyr/irq.h>
@@ -34,6 +35,7 @@ const struct uart_config uart_cfg_sbus = {
 };
 
 struct input_sbus_config {
+	bool input_report_connected;
 	uint8_t num_channels;
 	const struct sbus_input_channel *channel_info;
 	const struct device *uart_dev;
@@ -117,6 +119,7 @@ static void input_sbus_report(const struct device *dev, unsigned int sbus_channe
 static void input_sbus_input_report_thread(const struct device *dev, void *dummy2, void *dummy3)
 {
 	struct input_sbus_data *const data = dev->data;
+	const struct input_sbus_config *const cfg = dev->config;
 
 	ARG_UNUSED(dummy2);
 	ARG_UNUSED(dummy3);
@@ -128,6 +131,15 @@ static void input_sbus_input_report_thread(const struct device *dev, void *dummy
 	unsigned int key;
 	int ret;
 	bool connected_reported = false;
+
+	/* Before officially starting the report, let's first report a disconnection. */
+	if (cfg->input_report_connected) {
+		input_report(dev, INPUT_EV_DEVICE, INPUT_EV_SBUS_CONNECTED, SBUS_DISCONNECTED,
+			     false, K_FOREVER);
+#ifdef CONFIG_INPUT_SBUS_SEND_SYNC
+		input_report(dev, 0, 0, 0, true, K_FOREVER);
+#endif
+	}
 
 	while (true) {
 		if (!data->in_sync) {
@@ -161,10 +173,24 @@ static void input_sbus_input_report_thread(const struct device *dev, void *dummy
 		if (connected_reported &&
 		    data->sbus_frame[SBUS_BYTE24_IDX] & SBUS_BYTE24_FRAME_LOST) {
 			LOG_DBG("SBUS controller connection lost");
+
+			/* Report disconnection */
+			if (cfg->input_report_connected) {
+				input_report(dev, INPUT_EV_DEVICE, INPUT_EV_SBUS_CONNECTED,
+					     SBUS_DISCONNECTED, false, K_FOREVER);
+			}
+
 			connected_reported = false;
 		} else if (!connected_reported &&
 			   !(data->sbus_frame[SBUS_BYTE24_IDX] & SBUS_BYTE24_FRAME_LOST)) {
 			LOG_DBG("SBUS controller connected");
+
+			/* Report connection */
+			if (cfg->input_report_connected) {
+				input_report(dev, INPUT_EV_DEVICE, INPUT_EV_SBUS_CONNECTED,
+					     SBUS_CONNECTED, false, K_FOREVER);
+			}
+
 			connected_reported = true;
 		}
 
@@ -363,6 +389,7 @@ static int input_sbus_init(const struct device *dev)
 	static struct input_sbus_data sbus_data_##n;                                               \
                                                                                                    \
 	static const struct input_sbus_config sbus_cfg_##n = {                                     \
+		.input_report_connected = DT_INST_PROP(n, input_report_connected),                 \
 		.channel_info = input_##n,                                                         \
 		.uart_dev = DEVICE_DT_GET(DT_INST_BUS(n)),                                         \
 		.num_channels = ARRAY_SIZE(input_##n),                                             \

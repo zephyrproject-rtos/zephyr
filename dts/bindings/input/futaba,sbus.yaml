@@ -52,6 +52,14 @@ compatible: "futaba,sbus"
 
 include: [base.yaml, uart-device.yaml]
 
+properties:
+  input-report-connected:
+    type: boolean
+    description: |
+      Indicates whether the remote control is connected.
+      Reported via INPUT_EV_DEVICE with custom code
+      INPUT_EV_SBUS_CONNECTED.
+
 child-binding:
   description: |
     SBUS Channel to input-event-code binding
