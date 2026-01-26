@@ -479,7 +479,8 @@ do_fault:
 	addi sp, sp, -__callee_saved_t_SIZEOF
 	STORE_CALLEE_SAVED(a1)
 #endif /* CONFIG_EXCEPTION_DEBUG */
-	tail z_riscv_fatal_error
+	call z_riscv_fatal_error
+	j check_reschedule
 
 #if defined(CONFIG_IRQ_OFFLOAD)
 do_irq_offload:

@@ -44,6 +44,7 @@ FUNC_NORETURN void z_irq_spurious(const void *unused)
 	}
 #endif
 	z_riscv_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
+	CODE_UNREACHABLE;
 #endif /* CONFIG_EMPTY_IRQ_SPURIOUS */
 }
 
