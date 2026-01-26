@@ -590,7 +590,7 @@ static int tmag5273_sample_fetch(const struct device *dev, enum sensor_channel c
 		break;
 	case SENSOR_CHAN_MAGN_Z:
 		if (!(drv_cfg->axis & TMAG5273_MAG_CH_EN_Z)) {
-			LOG_ERR("x-axis measurement deactivated");
+			LOG_ERR("z-axis measurement deactivated");
 			return -ENOTSUP;
 		}
 		start_address = TMAG5273_REG_Z_MSB_RESULT;
