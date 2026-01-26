@@ -327,6 +327,14 @@ DeviceTree
 Libraries / Subsystems
 **********************
 
+* Firmware
+
+  * SCMI
+
+    * Added power management driver.
+    * Added system power management protocol driver.
+    * Added protocol driver versioning and protocol negotiation logic.
+
 * LoRa/LoRaWAN
 
    * :c:func:`lora_airtime`
