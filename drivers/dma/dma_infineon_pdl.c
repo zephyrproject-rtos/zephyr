@@ -234,19 +234,22 @@ static int ifx_cat1_dma_config(const struct device *dev, uint32_t channel,
 		descriptor_config.dstXincrement =
 			convert_dma_xy_increment_z_to_pdl(block_config->dest_addr_adj);
 
+		/* Calculate total number of data elements in this block */
+		uint32_t total_elements = block_config->block_size / config->dest_data_size;
+
 		/* Setup 1D/2D descriptor for each data block */
 		if (config->dest_burst_length != 0) {
 			descriptor_config.descriptorType = CY_DMA_2D_TRANSFER;
 			descriptor_config.xCount = config->dest_burst_length;
 			descriptor_config.yCount =
-				DIV_ROUND_UP(block_config->block_size, config->dest_burst_length);
+				DIV_ROUND_UP(total_elements, config->dest_burst_length);
 			descriptor_config.srcYincrement =
 				descriptor_config.srcXincrement * config->dest_burst_length;
 			descriptor_config.dstYincrement =
 				descriptor_config.dstXincrement * config->dest_burst_length;
 		} else {
 			descriptor_config.descriptorType = CY_DMA_1D_TRANSFER;
-			descriptor_config.xCount = block_config->block_size;
+			descriptor_config.xCount = total_elements;
 			descriptor_config.yCount = 1;
 			descriptor_config.srcYincrement = 0;
 			descriptor_config.dstYincrement = 0;
@@ -256,10 +259,10 @@ static int ifx_cat1_dma_config(const struct device *dev, uint32_t channel,
 		 * Note: In devices with CBUS and SAHB address spaces, the DMA only supports SAHB
 		 * mapped transactions.
 		 */
-		descriptor_config.srcAddress = (void *)CY_REMAP_ADDRESS_CBUS_TO_SAHB(
-			(void *)config->head_block->source_address);
-		descriptor_config.dstAddress = (void *)CY_REMAP_ADDRESS_CBUS_TO_SAHB(
-			(void *)config->head_block->dest_address);
+		descriptor_config.srcAddress =
+			(void *)CY_REMAP_ADDRESS_CBUS_TO_SAHB((void *)block_config->source_address);
+		descriptor_config.dstAddress =
+			(void *)CY_REMAP_ADDRESS_CBUS_TO_SAHB((void *)block_config->dest_address);
 
 		/* Allocate next descriptor if need */
 		if (i + 1u < config->block_count) {
