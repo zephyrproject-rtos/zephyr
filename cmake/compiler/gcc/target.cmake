@@ -82,6 +82,10 @@ elseif("${ARCH}" STREQUAL "rx")
   include(${CMAKE_CURRENT_LIST_DIR}/target_rx.cmake)
 endif()
 
+if(CONFIG_XTENSA_CALL0_ABI)
+  list(APPEND TOOLCHAIN_C_FLAGS -mabi=call0)
+endif()
+
 if(SYSROOT_DIR)
   # The toolchain has specified a sysroot dir, pass it to the compiler
   list(APPEND TOOLCHAIN_C_FLAGS
