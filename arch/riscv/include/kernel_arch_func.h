@@ -72,7 +72,7 @@ arch_switch(void *switch_to, void **switched_from)
 #endif
 }
 
-FUNC_NORETURN void z_riscv_fatal_error(unsigned int reason,
+void z_riscv_fatal_error(unsigned int reason,
 				       const struct arch_esf *esf);
 
 static inline bool arch_is_in_isr(void)
