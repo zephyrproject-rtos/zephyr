@@ -43,13 +43,11 @@ LOG_MODULE_REGISTER(flash_stm32_xspi, CONFIG_FLASH_LOG_LEVEL);
 
 #define STM32_XSPI_RESET_GPIO DT_INST_NODE_HAS_PROP(0, reset_gpios)
 
-#define STM32_XSPI_USE_DMA DT_NODE_HAS_PROP(STM32_XSPI_NODE, dmas)
-
-#if STM32_XSPI_USE_DMA
+#ifdef CONFIG_FLASH_STM32_XSPI_DMA
 #include <zephyr/drivers/dma/dma_stm32.h>
 #include <zephyr/drivers/dma.h>
 #include <stm32_ll_dma.h>
-#endif /* STM32_XSPI_USE_DMA */
+#endif /* CONFIG_FLASH_STM32_XSPI_DMA */
 
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
 #include <stm32_ll_pwr.h>
@@ -109,7 +107,7 @@ static int xspi_read_access(const struct device *dev, XSPI_RegularCmdTypeDef *cm
 		return -EIO;
 	}
 
-#if STM32_XSPI_USE_DMA
+#ifdef CONFIG_FLASH_STM32_XSPI_DMA
 	hal_ret = HAL_XSPI_Receive_DMA(&dev_data->hxspi, data);
 #else
 	hal_ret = HAL_XSPI_Receive_IT(&dev_data->hxspi, data);
@@ -151,7 +149,7 @@ static int xspi_write_access(const struct device *dev, XSPI_RegularCmdTypeDef *c
 		return -EIO;
 	}
 
-#if STM32_XSPI_USE_DMA
+#ifdef CONFIG_FLASH_STM32_XSPI_DMA
 	hal_ret = HAL_XSPI_Transmit_DMA(&dev_data->hxspi, (uint8_t *)data);
 #else
 	hal_ret = HAL_XSPI_Transmit_IT(&dev_data->hxspi, (uint8_t *)data);
@@ -1487,7 +1485,7 @@ __weak HAL_StatusTypeDef HAL_DMA_Abort(DMA_HandleTypeDef *hdma)
 #endif /* !CONFIG_SOC_SERIES_STM32H7X */
 
 /* This function is executed in the interrupt context */
-#if STM32_XSPI_USE_DMA
+#ifdef CONFIG_FLASH_STM32_XSPI_DMA
 static void xspi_dma_callback(const struct device *dev, void *arg,
 			 uint32_t channel, int status)
 {
@@ -2001,7 +1999,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 	return 0;
 }
 
-#if STM32_XSPI_USE_DMA
+#ifdef CONFIG_FLASH_STM32_XSPI_DMA
 static int flash_stm32_xspi_dma_init(DMA_HandleTypeDef *hdma, struct stream *dma_stream)
 {
 	int ret;
@@ -2074,7 +2072,7 @@ static int flash_stm32_xspi_dma_init(DMA_HandleTypeDef *hdma, struct stream *dma
 	LOG_DBG("XSPI with DMA transfer");
 	return 0;
 }
-#endif /* STM32_XSPI_USE_DMA */
+#endif /* CONFIG_FLASH_STM32_XSPI_DMA */
 
 
 static int flash_stm32_xspi_init(const struct device *dev)
@@ -2243,7 +2241,7 @@ static int flash_stm32_xspi_init(const struct device *dev)
 	LOG_DBG("Delay Block Init");
 #endif /* XSPI_DCR1_DLYBYP */
 
-#if STM32_XSPI_USE_DMA
+#ifdef CONFIG_FLASH_STM32_XSPI_DMA
 	/* Configure and enable the DMA channels after XSPI config */
 	static DMA_HandleTypeDef hdma_tx;
 	static DMA_HandleTypeDef hdma_rx;
@@ -2442,7 +2440,7 @@ static int flash_stm32_xspi_init(const struct device *dev)
 }
 
 
-#if STM32_XSPI_USE_DMA
+#ifdef CONFIG_FLASH_STM32_XSPI_DMA
 #define DMA_CHANNEL_CONFIG(node, dir)						\
 		DT_DMAS_CELL_BY_NAME(node, dir, channel_config)
 
