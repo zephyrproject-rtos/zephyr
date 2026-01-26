@@ -1,0 +1,7 @@
+sample:
+  name: bflb_wo_uart
+tests:
+  sample.drivers.misc.bflb_wo_uart:
+    tags:
+      - drivers
+    platform_allow: bl61x
