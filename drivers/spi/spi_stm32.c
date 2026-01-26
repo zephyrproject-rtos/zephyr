@@ -385,15 +385,15 @@ static void spi_dma_enable_requests(SPI_TypeDef *spi)
 
 static void spi_stm32_send_next_frame(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
-	const uint8_t frame_size = bits2bytes(data->ctx.config->operation);
+	const uint8_t dfs = bits2bytes(data->ctx.config->operation);
 	uint32_t tx_frame = SPI_STM32_TX_NOP;
 
-	if (frame_size == 1U) {
+	if (dfs == 1U) {
 		if (spi_context_tx_buf_on(&data->ctx)) {
 			tx_frame = UNALIGNED_GET((uint8_t *)(data->ctx.tx_buf));
 		}
 		LL_SPI_TransmitData8(spi, tx_frame);
-	} else if (frame_size == 2U) {
+	} else if (dfs == 2U) {
 		if (spi_context_tx_buf_on(&data->ctx)) {
 			tx_frame = UNALIGNED_GET((uint16_t *)(data->ctx.tx_buf));
 		}
@@ -406,20 +406,20 @@ static void spi_stm32_send_next_frame(SPI_TypeDef *spi, struct spi_stm32_data *d
 		LL_SPI_TransmitData32(spi, tx_frame);
 #endif
 	}
-	spi_context_update_tx(&data->ctx, frame_size, 1);
+	spi_context_update_tx(&data->ctx, dfs, 1);
 }
 
 static void spi_stm32_read_next_frame(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
-	const uint8_t frame_size = bits2bytes(data->ctx.config->operation);
+	const uint8_t dfs = bits2bytes(data->ctx.config->operation);
 	uint32_t rx_frame = 0;
 
-	if (frame_size == 1U) {
+	if (dfs == 1U) {
 		rx_frame = LL_SPI_ReceiveData8(spi);
 		if (spi_context_rx_buf_on(&data->ctx)) {
 			UNALIGNED_PUT(rx_frame, (uint8_t *)data->ctx.rx_buf);
 		}
-	} else if (frame_size == 2U) {
+	} else if (dfs == 2U) {
 		rx_frame = LL_SPI_ReceiveData16(spi);
 		if (spi_context_rx_buf_on(&data->ctx)) {
 			UNALIGNED_PUT(rx_frame, (uint16_t *)data->ctx.rx_buf);
@@ -432,7 +432,7 @@ static void spi_stm32_read_next_frame(SPI_TypeDef *spi, struct spi_stm32_data *d
 		}
 #endif
 	}
-	spi_context_update_rx(&data->ctx, frame_size, 1);
+	spi_context_update_rx(&data->ctx, dfs, 1);
 }
 
 static bool spi_stm32_transfer_ongoing(struct spi_stm32_data *data)
@@ -1092,13 +1092,13 @@ static int32_t spi_stm32_count_bufset_frames(const struct spi_config *config,
 		num_bytes += bufs->buffers[i].len;
 	}
 
-	uint8_t bytes_per_frame = bits2bytes(config->operation);
+	uint8_t dfs = bits2bytes(config->operation);
 
-	if ((num_bytes % bytes_per_frame) != 0) {
+	if ((num_bytes % dfs) != 0) {
 		return -EINVAL;
 	}
 
-	int frames = num_bytes / bytes_per_frame;
+	int frames = num_bytes / dfs;
 
 	if (frames > UINT16_MAX) {
 		return -EMSGSIZE;
@@ -1170,13 +1170,13 @@ static int spi_stm32_half_duplex_switch_to_receive(const struct spi_stm32_config
 
 		if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
 			int num_bytes = spi_context_total_rx_len(&data->ctx);
-			uint8_t bytes_per_frame = bits2bytes(config->operation);
+			uint8_t dfs = bits2bytes(config->operation);
 
-			if ((num_bytes % bytes_per_frame) != 0) {
+			if ((num_bytes % dfs) != 0) {
 				return -EINVAL;
 			}
 
-			LL_SPI_SetTransferSize(spi, (uint32_t) num_bytes / bytes_per_frame);
+			LL_SPI_SetTransferSize(spi, (uint32_t) num_bytes / dfs);
 		}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
@@ -1449,13 +1449,13 @@ static int transceive_dma(const struct device *dev,
 	/* This is turned off in spi_stm32_complete(). */
 	spi_stm32_cs_control(dev, true);
 
-	uint8_t word_size_bytes = bits2bytes(config->operation);
+	uint8_t dfs = bits2bytes(config->operation);
 	struct dma_config *rx_cfg = &data->dma_rx.dma_cfg, *tx_cfg = &data->dma_tx.dma_cfg;
 
-	rx_cfg->source_data_size = rx_cfg->source_burst_length = word_size_bytes;
-	rx_cfg->dest_data_size = rx_cfg->dest_burst_length = word_size_bytes;
-	tx_cfg->source_data_size = tx_cfg->source_burst_length = word_size_bytes;
-	tx_cfg->dest_data_size = tx_cfg->dest_burst_length = word_size_bytes;
+	rx_cfg->source_data_size = rx_cfg->source_burst_length = dfs;
+	rx_cfg->dest_data_size = rx_cfg->dest_burst_length = dfs;
+	tx_cfg->source_data_size = tx_cfg->source_burst_length = dfs;
+	tx_cfg->dest_data_size = tx_cfg->dest_burst_length = dfs;
 
 	while (data->ctx.rx_len > 0 || data->ctx.tx_len > 0) {
 		size_t dma_len;
@@ -1523,15 +1523,13 @@ static int transceive_dma(const struct device *dev,
 		LL_SPI_DisableDMAReq_RX(spi);
 #endif /* ! st_stm32h7_spi */
 
-		uint8_t frame_size_bytes = bits2bytes(config->operation);
-
 		if (transfer_dir == LL_SPI_FULL_DUPLEX) {
-			spi_context_update_tx(&data->ctx, frame_size_bytes, dma_len);
-			spi_context_update_rx(&data->ctx, frame_size_bytes, dma_len);
+			spi_context_update_tx(&data->ctx, dfs, dma_len);
+			spi_context_update_rx(&data->ctx, dfs, dma_len);
 		} else if (transfer_dir == LL_SPI_HALF_DUPLEX_TX) {
-			spi_context_update_tx(&data->ctx, frame_size_bytes, dma_len);
+			spi_context_update_tx(&data->ctx, dfs, dma_len);
 		} else {
-			spi_context_update_rx(&data->ctx, frame_size_bytes, dma_len);
+			spi_context_update_rx(&data->ctx, dfs, dma_len);
 		}
 
 		if (transfer_dir == LL_SPI_HALF_DUPLEX_TX &&
