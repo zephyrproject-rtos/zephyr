@@ -12,7 +12,7 @@ config TEST_IRQ_NUM
 	default 18 if SOC_SERIES_STM32C0X
 	default 1 if (SOC_SERIES_NPCX9 || SOC_SERIES_NPCX7 || SOC_SERIES_NPCK3)
 	default 29 if SOC_K32L2B31A
-	default 28 if SOC_SERIES_NRF54L
+	default 28 if (SOC_SERIES_NRF54L || SOC_SERIES_RTL8752H)
 	default 52 if SOC_SERIES_EFR32BG22
 	default 0
 	help
@@ -27,6 +27,7 @@ config TEST_IRQ_NUM
 	  - NPCX9, NPCX7, NPCK3 series: 1 (unused IRQ not mapped to MIWU groups)
 	  - K32L2B31A: 29 (available test IRQ)
 	  - EFR32BG22: 52 (available test IRQ (SW0 - SGI), (NUM_IRQS - 1) equates to EUART0 TX)
+	  - RTL8752H: 28 (available test IRQ, (NUM_IRQS - 1) equates to UART2))
 	  - Other platforms: 0 (magic config value to select the last IRQ: NUM_IRQS - 1)
 
 config TEST_IRQ_PRIO

@@ -1,0 +1,17 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RTL8752H
+	select ARM
+	select CPU_CORTEX_M0PLUS
+	select CPU_CORTEX_M_HAS_VTOR
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_HAS_ARM_MPU
+	select CLOCK_CONTROL
+	select GEN_ISR_TABLES
+	select PINCTRL
+	select DYNAMIC_INTERRUPTS
+	select THREAD_STACK_INFO
+	select SOC_EARLY_RESET_HOOK
+	help
+	  Enable support for RTL8752H MCU series

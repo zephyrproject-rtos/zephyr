@@ -1,0 +1,31 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RTL8752H
+	bool
+	select SOC_FAMILY_REALTEK_BEE
+
+config SOC_SERIES
+	default "rtl8752h" if SOC_SERIES_RTL8752H
+
+config SOC_RTL8752HJL
+	bool "SOC_RTL8752HJL"
+	select SOC_SERIES_RTL8752H
+
+config SOC_RTL8752HMF
+	bool "SOC_RTL8752HMF"
+	select SOC_SERIES_RTL8752H
+
+config SOC_RTL8752HKF
+	bool "SOC_RTL8752HKF"
+	select SOC_SERIES_RTL8752H
+
+config SOC_RTL8752HJF
+	bool "SOC_RTL8752HJF"
+	select SOC_SERIES_RTL8752H
+
+config SOC
+	default "rtl8752hjl" if SOC_RTL8752HJL
+	default "rtl8752hmf" if SOC_RTL8752HMF
+	default "rtl8752hkf" if SOC_RTL8752HKF
+	default "rtl8752hjf" if SOC_RTL8752HJF

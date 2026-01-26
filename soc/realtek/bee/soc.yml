@@ -13,3 +13,9 @@ family:
     - name: rtl8762gth
     - name: rtl8772gwf
     - name: rtl8772gwp
+  - name: rtl8752h
+    socs:
+    - name: rtl8752hjl
+    - name: rtl8752hmf
+    - name: rtl8752hkf
+    - name: rtl8752hjf
