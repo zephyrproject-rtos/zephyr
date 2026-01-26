@@ -789,6 +789,10 @@ Serial
   :c:func:`pl011_err_check`, which is the appropriate place to detect,
   and report receive error conditions. (:github:`101715`)
 
+* :c:func:`uart_irq_update` will no longer return ``-ENOSYS`` and will return
+  ``1`` instead, as it is now allowed to not implement this function, when it is not
+  needed. (:github:`102725`)
+
 Settings
 ========
 
