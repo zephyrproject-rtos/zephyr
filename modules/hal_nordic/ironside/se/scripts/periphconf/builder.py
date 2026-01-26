@@ -1049,23 +1049,23 @@ class NrfFun(int, enum.Enum):
 
 class NrfSaadcChannel(int, enum.Enum):
     """Identifiers representing SAADC channels.
-    See include/zephyr/dt-bindings/adc/nrf-saadc-haltium.h.
+    See include/zephyr/dt-bindings/adc/nrf-saadc.h.
     """
 
-    AIN0 = 1
-    AIN1 = 2
-    AIN2 = 3
-    AIN3 = 4
-    AIN4 = 5
-    AIN5 = 6
-    AIN6 = 7
-    AIN7 = 8
-    AIN8 = 9
-    AIN9 = 10
-    AIN10 = 11
-    AIN11 = 12
-    AIN12 = 13
-    AIN13 = 14
+    AIN0 = 0
+    AIN1 = 1
+    AIN2 = 2
+    AIN3 = 3
+    AIN4 = 4
+    AIN5 = 5
+    AIN6 = 6
+    AIN7 = 7
+    AIN8 = 8
+    AIN9 = 9
+    AIN10 = 10
+    AIN11 = 11
+    AIN12 = 12
+    AIN13 = 13
 
 
 class NrfCompChannel(str, enum.Enum):
