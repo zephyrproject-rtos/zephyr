@@ -3001,6 +3001,11 @@ static int endtx_stoptx_ppi_init(NRF_UARTE_Type *uarte,
 {
 	int ret;
 
+#ifdef DPPIC_PRESENT
+	nrf_uarte_publish_clear(uarte, NRF_UARTE_EVENT_ENDTX);
+	nrf_uarte_subscribe_clear(uarte, NRF_UARTE_TASK_STOPTX);
+#endif
+
 	ret = nrfx_gppi_conn_alloc(
 		nrf_uarte_event_address_get(uarte, NRF_UARTE_EVENT_ENDTX),
 		nrf_uarte_task_address_get(uarte, NRF_UARTE_TASK_STOPTX), &data->ppi_h_endtx);
