@@ -1010,17 +1010,21 @@ static int flash_flexspi_nor_config_flash(struct flash_flexspi_nor_data *data,
 		ret = flash_flexspi_nor_4byte_enable(data, flexspi_lut,
 						     dw16.enter_4ba);
 		if (ret == 0) {
-			/* Use 4 byte address width */
+			LOG_DBG("Enable 4 byte commands");
+			/* Use 4 byte address width with explicit 4-byte commands */
 			addr_width = 32;
-			/* Update LUT for ERASE_SECTOR and ERASE_BLOCK to use 32 bit addr */
+			flexspi_lut[READ][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_READ_4B,
+				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, addr_width);
+			flexspi_lut[PAGE_PROGRAM][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_PP_4B,
+				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, addr_width);
 			flexspi_lut[ERASE_SECTOR][0] = FLEXSPI_LUT_SEQ(
-					kFLEXSPI_Command_SDR, kFLEXSPI_1PAD,
-					SPI_NOR_CMD_SE, kFLEXSPI_Command_RADDR_SDR,
-					kFLEXSPI_1PAD, addr_width);
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_SE_4B,
+				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, addr_width);
 			flexspi_lut[ERASE_BLOCK][0] = FLEXSPI_LUT_SEQ(
-					kFLEXSPI_Command_SDR, kFLEXSPI_1PAD,
-					SPI_NOR_CMD_BE, kFLEXSPI_Command_RADDR_SDR,
-					kFLEXSPI_1PAD, addr_width);
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_BE_4B,
+				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, addr_width);
 		}
 	}
 	/* Extract the read command.
