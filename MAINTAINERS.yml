@@ -4452,6 +4452,7 @@ Raspberry Pi Pico Platforms:
     - boards/wiznet/w5500_evb_pico*/
     - dts/arm/raspberrypi/rpi_pico/
     - dts/bindings/*/raspberrypi,pico*
+    - dts/riscv/raspberrypi/
     - drivers/*/*rpi_pico
     - drivers/*/*rpi_pico*/
     - drivers/*/*rpi_pico*.c
