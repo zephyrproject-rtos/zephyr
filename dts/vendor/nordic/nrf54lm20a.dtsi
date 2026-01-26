@@ -863,19 +863,35 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
+#ifdef USE_NON_SECURE_ADDRESS_MAP
 			cpuapp_rram: rram@0 {
 				compatible = "soc-nv-flash";
 				reg = <0x0 DT_SIZE_K(2036)>;
+				ranges = <0x0 0x0 DT_SIZE_K(2036)>;
 				erase-block-size = <4096>;
 				write-block-size = <16>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+#else
+			cpuapp_rram: rram@0 {
+				compatible = "soc-nv-flash";
+				reg = <0x0 DT_SIZE_K(1940)>;
+				ranges = <0x0 0x0 DT_SIZE_K(1940)>;
+				erase-block-size = <4096>;
+				write-block-size = <16>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 
-#ifndef USE_NON_SECURE_ADDRESS_MAP
 			cpuflpr_rram: rram@1e5000 {
 				compatible = "soc-nv-flash";
 				reg = <0x1e5000 DT_SIZE_K(96)>;
+				ranges = <0x0 0x1e5000 DT_SIZE_K(96)>;
 				erase-block-size = <4096>;
 				write-block-size = <16>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 #endif
 		};
