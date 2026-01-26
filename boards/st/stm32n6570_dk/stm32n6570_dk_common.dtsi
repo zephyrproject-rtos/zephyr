@@ -366,9 +366,6 @@ zephyr_udc0: &usbotg_hs1 {
 		     &xspim_p1_io15_pp15>;
 	pinctrl-names = "default";
 
-	clocks = <&rcc STM32_CLOCK(AHB5, 5)>,
-		 <&rcc STM32_SRC_HCLK5 XSPI1_SEL(0)>;
-
 	status = "okay";
 
 	memc: aps256xxn_obr: memory@0 {
@@ -392,9 +389,6 @@ zephyr_udc0: &usbotg_hs1 {
 		     &xspim_p2_io3_pn5 &xspim_p2_io4_pn8 &xspim_p2_io5_pn9
 		     &xspim_p2_io6_pn10 &xspim_p2_io7_pn11>;
 	pinctrl-names = "default";
-
-	clocks = <&rcc STM32_CLOCK(AHB5, 12)>,
-		 <&rcc STM32_SRC_HCLK5 XSPI2_SEL(0)>;
 
 	status = "okay";
 
