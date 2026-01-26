@@ -23,6 +23,20 @@ struct bsec_stm32_config {
 	unsigned int upper_fuse_limit;
 };
 
+static inline void otp_bsec_stm32_lock(void)
+{
+	if (!k_is_pre_kernel()) {
+		(void)k_mutex_lock(&lock, K_FOREVER);
+	}
+}
+
+static inline void otp_bsec_stm32_unlock(void)
+{
+	if (!k_is_pre_kernel()) {
+		(void)k_mutex_unlock(&lock);
+	}
+}
+
 static int otp_bsec_stm32_check_accessible(BSEC_HandleTypeDef *handle,
 					   const struct bsec_stm32_config *config, off_t offset,
 					   unsigned int nb_fuse)
@@ -79,7 +93,7 @@ static int otp_bsec_stm32_program(const struct device *dev, off_t offset, const 
 		return ret;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
+	otp_bsec_stm32_lock();
 
 	for (i = 0; i < nb_fuse; i++) {
 		uint32_t prog_data = 0;
@@ -91,12 +105,12 @@ static int otp_bsec_stm32_program(const struct device *dev, off_t offset, const 
 		hal_ret = HAL_BSEC_OTP_Program(&handle, (offset / BSEC_WORD_SIZE) + i, prog_data,
 					       0);
 		if (hal_ret != HAL_OK) {
-			k_mutex_unlock(&lock);
+			otp_bsec_stm32_unlock();
 			return -EACCES;
 		}
 	}
 
-	k_mutex_unlock(&lock);
+	otp_bsec_stm32_unlock();
 
 	return 0;
 }
@@ -121,7 +135,7 @@ static int otp_bsec_stm32_read(const struct device *dev, off_t offset, void *buf
 		return ret;
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
+	otp_bsec_stm32_lock();
 
 	for (i = 0; i < nb_fuse; i++) {
 		size_t first_offset  = (i == 0) ? offset % BSEC_WORD_SIZE : 0;
@@ -132,7 +146,7 @@ static int otp_bsec_stm32_read(const struct device *dev, off_t offset, void *buf
 
 		hal_ret = HAL_BSEC_OTP_Read(&handle, (offset / BSEC_WORD_SIZE) + i, &fuse_data);
 		if (hal_ret != HAL_OK) {
-			k_mutex_unlock(&lock);
+			otp_bsec_stm32_unlock();
 			return -EACCES;
 		}
 
@@ -144,7 +158,7 @@ static int otp_bsec_stm32_read(const struct device *dev, off_t offset, void *buf
 		}
 	}
 
-	k_mutex_unlock(&lock);
+	otp_bsec_stm32_unlock();
 
 	return 0;
 }
