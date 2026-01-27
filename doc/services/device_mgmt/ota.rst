@@ -19,90 +19,41 @@ same method can be used as part of OTA. The binary is first downloaded
 into an unoccupied code partition, usually named ``slot1_partition``, then
 upgraded using the :ref:`mcuboot` process.
 
-Examples of OTA
-***************
-
-Golioth
-=======
-
-`Golioth`_ is an IoT management platform that includes OTA updates. Devices are
-configured to observe your available firmware revisions on the Golioth Cloud.
-When a new version is available, the device downloads and flashes the binary. In
-this implementation, the connection between cloud and device is secured using
-TLS/DTLS, and the signed firmware binary is confirmed by MCUboot before the
-upgrade occurs.
-
-1. A working sample can be found on the `Golioth Firmware SDK repository`_
-2. The `Golioth OTA documentation`_ includes complete information about the
-   versioning process
-
-Eclipse hawkBit |trade|
-=======================
-
-`Eclipse hawkBit`_ |trade| is an update server framework that uses polling on a
-REST api to detect firmware updates. When a new update is detected, the binary
-is downloaded and installed. MCUboot can be used to verify the signature before
-upgrading the firmware.
-
-There is a :zephyr:code-sample:`hawkbit-api` sample included in the
-Zephyr :zephyr:code-sample-category:`mgmt` section.
-
-UpdateHub
-=========
-
-`UpdateHub`_ is a platform for remotely updating embedded devices. Updates can
-be manually triggered or monitored via polling. When a new update is detected,
-the binary is downloaded and installed. MCUboot can be used to verify the
-signature before upgrading the firmware.
-
-There is an :zephyr:code-sample:`updatehub-fota` sample included in the Zephyr
-:zephyr:code-sample-category:`mgmt` section.
-
-SMP Server
-==========
-
-A Simple Management Protocol (SMP) server can be used to update firmware via
-Bluetooth Low Energy (LE) or UDP. :ref:`mcu_mgr` is used to send a signed
-firmware binary to the remote device where it is verified by MCUboot before the
-upgrade occurs.
-
-There is an :zephyr:code-sample:`smp-svr` sample included in the Zephyr
-:zephyr:code-sample-category:`mgmt` section.
-
-Lightweight M2M (LWM2M)
-=======================
-
-The :ref:`lwm2m_interface` protocol includes support for firmware update via
-:kconfig:option:`CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT`. Devices securely
-connect to an LwM2M server using DTLS. A :zephyr:code-sample:`lwm2m-client` sample is
-available but it does not demonstrate the firmware update feature.
-
-mender-mcu
-==========
-
-`mender-mcu`_ enables robust firmware updates on resource-constrained devices by
-integrating with Zephyr. It implements an Update Module interface and provides
-a default Update Module that integrates with MCUboot to provide A/B updates.
-This allows microcontroller units (MCUs) to perform atomic, fail-safe OTA
-updates with automatic rollback on failure.
-
-See :ref:`external_module_mender_mcu` for integration details and examples.
-
 Memfault and nRF Cloud powered by Memfault
-==========================================
+******************************************
 
-`Memfault`_ is a IoT observability platform that includes OTA management. Devices check-in with
-Memfault's service periodically for an OTA update, and when an update is available, download and
-install the binary.
+`Memfault`_ is an IoT observability platform that includes OTA management.
+Devices check in with Memfault's service periodically for an OTA update, and
+when an update is available, download and install the binary.
 
-See :ref:`external_module_memfault_firmware_sdk` for overall integration details and
-examples.
+Zephyr projects that use MCUboot and have a direct Internet connection can
+leverage the `Memfault Firmware SDK's <Memfault Firmware SDK_>`_ OTA client to
+download a payload from Memfault's OTA service, load it into the secondary
+partition, and then reboot into the new image.
+See `Memfault OTA for Zephyr documentation`_ for more details on this support
+for Zephyr projects.
 
-.. _MCUboot bootloader: https://mcuboot.com/
-.. _Golioth: https://golioth.io/
-.. _Golioth Firmware SDK repository: https://github.com/golioth/golioth-firmware-sdk/tree/main/examples/zephyr/fw_update
-.. _Golioth OTA documentation: https://docs.golioth.io/device-management/ota
-.. _Eclipse hawkBit: https://www.eclipse.org/hawkbit/
-.. _UpdateHub: https://updatehub.io/
-.. _mender-mcu: https://github.com/mendersoftware/mender-mcu
+For Nordic Semiconductor cellular chip users, the Memfault
+Firmware SDK includes support for downloading the payload over a cellular
+connection using nRF Connect SDK's FOTA and downloader libraries.
+See the `Memfault Quickstart for the nRF91 Series`_ for more
+information. Zephyr projects with a Bluetooth Low Energy connection can
+leverage the `Memfault Diagnostic Service`_ (MDS) with the `Memfault iOS SDK`_
+and `Memfault Android SDK`_ to deliver the update payload to the device. For
+Nordic Semiconductor's Bluetooth Low Energy chip users, the Zephyr-based
+nRF Connect SDK provides an implementation of MDS. See the
+`nRF Connect SDK documentation on MDS`_ for more information as well as
+`nRF Cloud powered by Memfault`_ for detail on using the Memfault platform with
+Nordic Semiconductor Bluetooth Low Energy chips.
+See :ref:`external_module_memfault_firmware_sdk` for overall integration
+details and examples.
+
 .. _Memfault: https://memfault.com/
+.. _Memfault Firmware SDK: https://github.com/memfault/memfault-firmware-sdk
+.. _Memfault OTA for Zephyr documentation: https://docs.memfault.com/docs/mcu/zephyr-guide#ota
+.. _Memfault Quickstart for the nRF91 Series: https://docs.memfault.com/docs/mcu/quickstart-nrf9160
+.. _Memfault Diagnostic Service: https://docs.memfault.com/docs/mcu/mds
+.. _Memfault iOS SDK: https://github.com/memfault/memfault-cloud-ios
+.. _Memfault Android SDK: https://github.com/memfault/memfault-cloud-android
+.. _nRF Connect SDK documentation on MDS: https://docs.nordicsemi.com/bundle/ncs-latest/page/nrf/libraries/bluetooth/services/mds.html
+.. _nRF Cloud powered by Memfault: https://nrfcloud.com/#/
