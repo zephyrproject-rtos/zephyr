@@ -129,11 +129,6 @@
 		#phy-cells = <0>;
 		status = "disabled";
 	};
-
-	die_temp: dietemp {
-		ts-cal1-addr = <0x0bfa0710>;
-		ts-cal2-addr = <0x0bfa0742>;
-	};
 };
 
 &pwr {

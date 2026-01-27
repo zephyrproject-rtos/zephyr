@@ -3,13 +3,18 @@
 
 description: Common fields for STM32 family TEMP production calibrated sensors
 
-include: [base.yaml, "st,stm32-temp-common.yaml"]
+include: [base.yaml, nvmem-consumer.yaml, "st,stm32-temp-common.yaml"]
 
 properties:
-  ts-cal1-addr:
-    type: int
+  nvmem-cells:
     required: true
-    description: Address of TS_CAL1 calibration parameter
+    description: |
+      NVMEM cell(s) containing sensor calibration parameter(s).
+
+      Refer to description of `nvmem-cell-names` for details.
+
+  nvmem-cell-names:
+    required: true
 
   ts-cal1-temp:
     type: int
