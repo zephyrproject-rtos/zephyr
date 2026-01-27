@@ -241,4 +241,20 @@ config NET_TCP_IPV6_ND_REACHABILITY_HINT
 	  about the active link to a specific neighbor by signaling recent
 	  "forward progress" event as described in RFC 4861.
 
+config NET_TCP_PRESERVE_CONTEXT_STATE_ON_IFACE_DOWN
+	bool "Keep the TCP connection contexts open when interface goes down"
+	help
+	  Zephyr by default closes all TCP contexts associated with a given
+	  network interface when the interface goes down. This leads to
+	  reporting an error on the associated network socket, allowing the
+	  application to reopen sockets (for example in case of a network or
+	  an IP address change).
+	  It's been reported however that in certain cases this behavior is
+	  undesirable. If this option is enabled, the TCP stack won't
+	  close any TCP contexts when the network interface is going down.
+	  Therefore, it is the application's responsibility to monitor the IP
+	  address or network interface state changes, and restart the TCP
+	  sockets when needed. Enable this option only if you can guarantee that
+	  the application handles that properly.
+
 endif # NET_TCP
