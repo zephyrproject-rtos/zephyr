@@ -1648,6 +1648,32 @@ void xtensa_exc_dtlb_multihit_handle(void *vaddr)
 	__asm__ volatile("isync");
 }
 
+void xtensa_exc_itlb_multihit_handle(void *vaddr)
+{
+	uint8_t way, i;
+	const uint8_t num_entries = BIT(XCHAL_ITLB_ARF_ENTRIES_LOG2);
+
+	/* Each auto-refill way has a number of entries (4 or 8 depending on
+	 * configuration). So we need to ignore the lowest bits of
+	 * the virtual page number (VPN) to match the truncated VPN in
+	 * each TLB entry.
+	 */
+	const uint32_t excvaddr =
+		(uint32_t)vaddr & (XTENSA_MMU_PTE_VPN_MASK << XCHAL_ITLB_ARF_ENTRIES_LOG2);
+
+	for (way = 0; way < XTENSA_MMU_NUM_TLB_AUTOREFILL_WAYS; way++) {
+		for (i = 0; i < num_entries; i++) {
+			uint32_t entry = way + (i << XTENSA_MMU_PTE_PPN_SHIFT);
+			uint32_t tlb_vaddr = (uint32_t)xtensa_itlb_vaddr_read(entry);
+
+			if (tlb_vaddr == excvaddr) {
+				xtensa_itlb_entry_invalidate(entry);
+			}
+		}
+	}
+	__asm__ volatile("isync");
+}
+
 bool xtensa_exc_load_store_ring_error_check(void *bsa_p)
 {
 	uintptr_t ring, vaddr;

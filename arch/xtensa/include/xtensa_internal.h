@@ -85,6 +85,16 @@ bool xtensa_mem_kernel_has_access(const void *addr, size_t size, int write);
 void xtensa_exc_dtlb_multihit_handle(void *vaddr);
 
 /**
+ * @brief Handle ITLB multihit exception.
+ *
+ * Handle ITLB multihit exception by invalidating all auto-refilled ITLBs of
+ * a particular memory page.
+ *
+ * @param[in] vaddr Virtual address of ITLB to be invalidated.
+ */
+void xtensa_exc_itlb_multihit_handle(void *vaddr);
+
+/**
  * @brief Check if it is a true load/store ring exception.
  *
  * When a page can be accessed by both kernel and user threads, the autofill DTLB
