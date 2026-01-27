@@ -361,6 +361,8 @@
 			clocks = <&rcc STM32_CLOCK(APB2, 12)>;
 			interrupts = <59 0>;
 			st,spi-data-width = "full-4-to-32-bit";
+			fifo-size = <16>;
+			fifo-max-transfer-size = <65535>;
 			status = "disabled";
 		};
 
@@ -372,6 +374,8 @@
 			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
 			interrupts = <60 0>;
 			st,spi-data-width = "full-4-to-32-bit";
+			fifo-size = <16>;
+			fifo-max-transfer-size = <65535>;
 			status = "disabled";
 		};
 
@@ -383,6 +387,8 @@
 			clocks = <&rcc STM32_CLOCK(APB1, 8)>;
 			interrupts = <99 0>;
 			st,spi-data-width = "limited-8-16-bit";
+			fifo-size = <8>;
+			fifo-max-transfer-size = <1023>;
 			status = "disabled";
 		};
 
