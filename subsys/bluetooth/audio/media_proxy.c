@@ -14,10 +14,12 @@
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/media_proxy.h>
 #include <zephyr/bluetooth/audio/mcc.h>
+#include <zephyr/bluetooth/audio/mcs.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/services/ots.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/toolchain.h>
 
 #include "media_proxy_internal.h"
 #include "mcs_internal.h"
@@ -26,7 +28,7 @@ LOG_MODULE_REGISTER(bt_media_proxy, CONFIG_MCTL_LOG_LEVEL);
 
 /* Media player */
 struct media_player {
-	struct media_proxy_pl_calls *calls;
+	struct bt_mcs_cb *calls;
 	struct bt_conn *conn;  /* TODO: Treat local and remote player differently */
 	bool   registered;
 };
@@ -1002,163 +1004,8 @@ uint8_t media_proxy_ctrl_get_content_ctrl_id(struct media_player *player)
 #if defined(CONFIG_MCTL_LOCAL_PLAYER_CONTROL)
 /* Player calls *******************************************/
 
-static bool pl_calls_is_valid(const struct media_proxy_pl_calls *pl_calls)
+int media_proxy_pl_register(struct bt_mcs_cb *pl_calls)
 {
-	if (pl_calls == NULL) {
-		LOG_DBG("pl_calls is NULL");
-		return false;
-	}
-
-	if (pl_calls->get_player_name == NULL) {
-		LOG_DBG("get_player_name is NULL");
-		return false;
-	}
-
-#ifdef CONFIG_BT_MPL_OBJECTS
-	if (pl_calls->get_icon_id == NULL) {
-		LOG_DBG("get_icon_id is NULL");
-		return false;
-	}
-#endif /* CONFIG_BT_MPL_OBJECTS */
-
-	if (pl_calls->get_icon_url == NULL) {
-		LOG_DBG("get_icon_url is NULL");
-		return false;
-	}
-
-	if (pl_calls->get_track_title == NULL) {
-		LOG_DBG("get_track_title is NULL");
-		return false;
-	}
-
-	if (pl_calls->get_track_duration == NULL) {
-		LOG_DBG("get_track_duration is NULL");
-		return false;
-	}
-
-	if (pl_calls->get_track_position == NULL) {
-		LOG_DBG("get_track_position is NULL");
-		return false;
-	}
-
-	if (pl_calls->set_track_position == NULL) {
-		LOG_DBG("set_track_position is NULL");
-		return false;
-	}
-
-	if (pl_calls->get_playback_speed == NULL) {
-		LOG_DBG("get_playback_speed is NULL");
-		return false;
-	}
-
-	if (pl_calls->set_playback_speed == NULL) {
-		LOG_DBG("set_playback_speed is NULL");
-		return false;
-	}
-
-	if (pl_calls->get_seeking_speed == NULL) {
-		LOG_DBG("get_seeking_speed is NULL");
-		return false;
-	}
-
-#ifdef CONFIG_BT_MPL_OBJECTS
-	if (pl_calls->get_track_segments_id == NULL) {
-		LOG_DBG("get_track_segments_id is NULL");
-		return false;
-	}
-
-	if (pl_calls->get_current_track_id == NULL) {
-		LOG_DBG("get_current_track_id is NULL");
-		return false;
-	}
-
-	if (pl_calls->set_current_track_id == NULL) {
-		LOG_DBG("set_current_track_id is NULL");
-		return false;
-	}
-
-	if (pl_calls->get_next_track_id == NULL) {
-		LOG_DBG("get_next_track_id is NULL");
-		return false;
-	}
-
-	if (pl_calls->set_next_track_id == NULL) {
-		LOG_DBG("set_next_track_id is NULL");
-		return false;
-	}
-
-	if (pl_calls->get_parent_group_id == NULL) {
-		LOG_DBG("get_parent_group_id is NULL");
-		return false;
-	}
-
-	if (pl_calls->get_current_group_id == NULL) {
-		LOG_DBG("get_current_group_id is NULL");
-		return false;
-	}
-
-	if (pl_calls->set_current_group_id == NULL) {
-		LOG_DBG("set_current_group_id is NULL");
-		return false;
-	}
-
-#endif /* CONFIG_BT_MPL_OBJECTS */
-	if (pl_calls->get_playing_order == NULL) {
-		LOG_DBG("get_playing_order is NULL");
-		return false;
-	}
-
-	if (pl_calls->set_playing_order == NULL) {
-		LOG_DBG("set_playing_order is NULL");
-		return false;
-	}
-
-	if (pl_calls->get_playing_orders_supported == NULL) {
-		LOG_DBG("get_playing_orders_supported is NULL");
-		return false;
-	}
-
-	if (pl_calls->get_media_state == NULL) {
-		LOG_DBG("get_media_state is NULL");
-		return false;
-	}
-
-	if (pl_calls->send_command == NULL) {
-		LOG_DBG("send_command is NULL");
-		return false;
-	}
-
-	if (pl_calls->get_commands_supported == NULL) {
-		LOG_DBG("get_commands_supported is NULL");
-		return false;
-	}
-
-#ifdef CONFIG_BT_MPL_OBJECTS
-	if (pl_calls->send_search == NULL) {
-		LOG_DBG("send_search is NULL");
-		return false;
-	}
-
-	if (pl_calls->get_search_results_id == NULL) {
-		LOG_DBG("get_search_results_id is NULL");
-		return false;
-	}
-
-#endif /* CONFIG_BT_MPL_OBJECTS */
-	if (pl_calls->get_content_ctrl_id == NULL) {
-		LOG_DBG("get_content_ctrl_id is NULL");
-		return false;
-	}
-
-	return true;
-}
-
-int media_proxy_pl_register(struct media_proxy_pl_calls *pl_calls)
-{
-	CHECKIF(!pl_calls_is_valid(pl_calls)) {
-		return -EINVAL;
-	}
-
 	if (mprx.local_player.registered) {
 		LOG_DBG("Player already registered");
 		return -EALREADY;
