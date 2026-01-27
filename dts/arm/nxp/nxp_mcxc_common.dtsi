@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -388,6 +388,14 @@
 			status = "disabled";
 			#io-channel-cells = <1>;
 			voltage-reference = <2>;
+		};
+
+		llwu: llwu@0x4007C000 {
+			compatible = "nxp,llwu";
+			reg = <0x4007C000 0xA>;
+			interrupts = <7 0>;
+			#wakeup-ctrl-cells = <1>;
+			status = "disabled";
 		};
 	};
 };
