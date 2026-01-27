@@ -229,6 +229,31 @@
 				     <101>, <102>, <103>;
 			dma-channels = <11>;
 		};
+
+		eth: ethernet@40028000 {
+			reg = <0x40028000 0x2000>;
+			compatible = "wch,ethernet-controller";
+			clocks = <&rcc CH32V20X_V30X_CLOCK_ETHMAC>,
+				 <&rcc CH32V20X_V30X_CLOCK_ETHMACTX>,
+				 <&rcc CH32V20X_V30X_CLOCK_ETHMACRX>;
+			clock-names = "mac", "tx", "rx";
+
+			mac: ethernet {
+				compatible = "wch,ethernet";
+				interrupt-parent = <&pfic>;
+				interrupts = <77 78>;
+				internal-phy-pllmul = <15>;
+				internal-phy-prediv = <2>;
+				status = "disabled";
+			};
+
+			mdio: mdio {
+				compatible = "wch,mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
 	};
 };
 
