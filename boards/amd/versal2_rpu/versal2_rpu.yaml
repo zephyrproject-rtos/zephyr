@@ -1,6 +1,8 @@
 identifier: versal2_rpu
 name: AMD Development board for Versal Gen 2 RPU
 arch: arm
+simulation:
+  - name: qemu
 toolchain:
   - zephyr
 supported:
