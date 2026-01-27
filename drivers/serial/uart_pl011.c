@@ -427,8 +427,19 @@ static void pl011_irq_tx_enable(const struct device *dev)
 	 * uart_fifo_fill() is called with small amounts of data, the 1/8 TX
 	 * FIFO threshold may never be reached, and the hardware TX interrupt
 	 * will never trigger.
+	 *
+	 * Exit loop if CTS flow control is enabled and CTS is blocking
+	 * transmission. CTS bit low means remote is not ready.
 	 */
 	while (uart->imsc & PL011_IMSC_TXIM) {
+		/* If CTS flow control is enabled and CTS is blocking, exit loop */
+		if ((uart->cr & PL011_CR_CTSEn) && !(uart->fr & PL011_FR_CTS)) {
+			/* clear software flag to allow TX enable to be called again */
+			data->sw_call_txdrdy = true;
+			/* Enable CTS interrupt to resume when CTS clears */
+			uart->imsc |= PL011_IMSC_CTSMIM;
+			break;
+		}
 		K_SPINLOCK(&data->irq_cb_lock) {
 			data->irq_cb(dev, data->irq_cb_data);
 		}
@@ -438,9 +449,11 @@ static void pl011_irq_tx_enable(const struct device *dev)
 static void pl011_irq_tx_disable(const struct device *dev)
 {
 	struct pl011_data *data = dev->data;
+	volatile struct pl011_regs *uart = get_uart(dev);
 
 	data->sw_call_txdrdy = true;
-	get_uart(dev)->imsc &= ~PL011_IMSC_TXIM;
+	/* Clear TX and CTS interrupts */
+	uart->imsc &= ~(PL011_IMSC_TXIM | PL011_IMSC_CTSMIM);
 }
 
 static int pl011_irq_tx_complete(const struct device *dev)
@@ -697,6 +710,13 @@ static int pl011_init(const struct device *dev)
 void pl011_isr(const struct device *dev)
 {
 	struct pl011_data *data = dev->data;
+	volatile struct pl011_regs *uart = get_uart(dev);
+
+	/* Clear CTS modem status interrupt and disable it */
+	if (uart->mis & PL011_IMSC_CTSMIM) {
+		uart->icr = PL011_IMSC_CTSMIM;
+		uart->imsc &= ~PL011_IMSC_CTSMIM;
+	}
 
 	/* Verify if the callback has been registered */
 	if (data->irq_cb) {
