@@ -49,6 +49,9 @@ west-commands:
       - name: rtt
         class: Rtt
         help: open an rtt shell
+      - name: reset
+        class: Reset
+        help: reset the board to reboot
   - file: scripts/west_commands/export.py
     commands:
       - name: zephyr-export
