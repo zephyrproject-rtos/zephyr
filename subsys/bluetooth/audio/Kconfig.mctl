@@ -38,22 +38,4 @@ config MCTL_LOCAL_PLAYER_REMOTE_CONTROL
 	  This option enables support for remote control of local media
 	   players.
 
-config MCTL_REMOTE_PLAYER_CONTROL
-	bool "Support for control of remote media player"
-	default y
-	# TODO: Remove dependency on BT_MCC once MCC has been reworked
-	depends on BT_MCC
-	help
-	  This options enables support for control of a remote media player.
-
-config MCTL_REMOTE_PLAYER_CONTROL_OBJECTS
-	bool "Support for accessing objects on remote player"
-	depends on MCTL_REMOTE_PLAYER_CONTROL
-	default y
-	# TODO: Remove dependency on BT_MCC_OTS once MCC has been reworked
-	depends on BT_MCC_OTS
-	help
-	  This options enables support for accessing objects (tracks, groups,
-	  search results, ...) on a remote media player
-
 endif # MCTL
