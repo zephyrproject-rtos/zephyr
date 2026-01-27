@@ -46,8 +46,8 @@ struct mcux_lpadc_config {
 	lpadc_reference_voltage_source_t voltage_ref;
 	uint8_t power_level;
 	uint32_t calibration_average;
-	uint32_t offset_a;
-	uint32_t offset_b;
+	int16_t offset_a;
+	int16_t offset_b;
 	void (*irq_config_func)(const struct device *dev);
 	const struct pinctrl_dev_config *pincfg;
 	const struct device *ref_supplies;
@@ -795,9 +795,13 @@ static int mcux_lpadc_init(const struct device *dev)
 #if defined(CONFIG_LPADC_DO_OFFSET_CALIBRATION) && CONFIG_LPADC_DO_OFFSET_CALIBRATION
 	LPADC_DoOffsetCalibration(base);
 #else
+#if defined(FSL_FEATURE_LPADC_OFSTRIM_COUNT) && (FSL_FEATURE_LPADC_OFSTRIM_COUNT == 1U)
+	LPADC_SetOffsetValue(base, config->offset_a);
+#else
 	LPADC_SetOffsetValue(base, config->offset_a, config->offset_b);
-#endif  /* DEMO_LPADC_DO_OFFSET_CALIBRATION */
-#endif  /* FSL_FEATURE_LPADC_HAS_OFSTRIM */
+#endif /* FSL_FEATURE_LPADC_OFSTRIM_COUNT */
+#endif /* DEMO_LPADC_DO_OFFSET_CALIBRATION */
+#endif /* FSL_FEATURE_LPADC_HAS_OFSTRIM */
 	/* Request gain calibration. */
 	LPADC_DoAutoCalibration(base);
 #endif /* FSL_FEATURE_LPADC_HAS_CTRL_CALOFS */
@@ -886,8 +890,8 @@ static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 		.voltage_ref =	DT_INST_PROP(n, voltage_ref),					\
 		.calibration_average = DT_INST_ENUM_IDX_OR(n, calibration_average, 0),		\
 		.power_level = DT_INST_PROP_OR(n, power_level, 0),				\
-		.offset_a = DT_INST_PROP(n, offset_value_a),					\
-		.offset_b = DT_INST_PROP(n, offset_value_b),					\
+		.offset_a = (int16_t)DT_INST_PROP(n, offset_value_a),				\
+		.offset_b = (int16_t)DT_INST_PROP(n, offset_value_b),				\
 		.irq_config_func = mcux_lpadc_config_func_##n,					\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),					\
 		.ref_supplies = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, nxp_references),		\
