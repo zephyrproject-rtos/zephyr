@@ -4808,6 +4808,11 @@ static void close_tcp_conn(struct tcp *conn, void *user_data)
 
 void net_tcp_close_all_for_iface(struct net_if *iface)
 {
+	if (IS_ENABLED(CONFIG_NET_TCP_PRESERVE_CONTEXT_STATE_ON_IFACE_DOWN)) {
+		NET_INFO("Not closing TCP connections at interface down");
+		return;
+	}
+
 	net_tcp_foreach(close_tcp_conn, iface);
 }
 
