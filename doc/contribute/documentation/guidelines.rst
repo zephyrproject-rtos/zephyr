@@ -423,18 +423,14 @@ This would render as:
 Non-ASCII Characters
 ====================
 
-You can insert non-ASCII characters such as a Trademark symbol (|trade|),
-by using the notation ``|trade|``.
-Available replacement names are defined in an include file used during the Sphinx processing
-of the reST files.  The names of these replacement characters are the same as used in HTML
-entities used to insert characters in HTML, e.g., ``\&trade;`` and are defined in the
-file :zephyr_file:`doc/substitutions.txt` as listed below:
+Prefer plain ASCII unless a specific symbol is required for correctness or conventional typography
+(for example units like µ, or well-known marks like ™).
 
-.. literalinclude:: ../../substitutions.txt
-   :language: rst
+Avoid adding non-ASCII characters purely for aesthetic purposes.
 
-We've kept the substitutions list small but others can be added as
-needed by submitting a change to the :zephyr_file:`doc/substitutions.txt` file.
+The file :zephyr_file:`doc/substitutions.txt` contains some basic HTML substitution definitions for
+special formatting needs (e.g. to force line breaks), but Unicode characters can and should be used
+directly in the documentation source files.
 
 Code Blocks and Command Examples
 ================================
