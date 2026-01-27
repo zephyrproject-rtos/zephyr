@@ -87,11 +87,11 @@ static int eth_bridge_forward(struct net_if *bridge, struct net_if *orig_iface, 
 	net_pkt_set_iface(out_pkt, bridge);
 	net_pkt_set_orig_iface(out_pkt, orig_iface);
 
-	net_if_queue_tx(bridge, out_pkt);
-
 	NET_DBG("Passing rx pkt %p (orig %p) to bridge %d tx path from %d",
 		out_pkt, pkt, net_if_get_by_iface(bridge),
 		net_if_get_by_iface(orig_iface));
+
+	net_if_queue_tx(bridge, out_pkt);
 
 	return 0;
 }
@@ -104,16 +104,16 @@ static int eth_bridge_handle_locally(struct net_if *bridge, struct net_if *orig_
 	net_pkt_set_iface(pkt, bridge);
 	net_pkt_set_orig_iface(pkt, orig_iface);
 
+	NET_DBG("Passing rx pkt %p to bridge %d rx path from %d",
+		pkt, net_if_get_by_iface(bridge),
+		net_if_get_by_iface(orig_iface));
+
 	if (net_if_l2(bridge)->recv != NULL) {
 		verdict = net_if_l2(bridge)->recv(bridge, pkt);
 		if (verdict == NET_DROP) {
 			return -EIO;
 		}
 	}
-
-	NET_DBG("Passing rx pkt %p to bridge %d rx path from %d",
-		pkt, net_if_get_by_iface(bridge),
-		net_if_get_by_iface(orig_iface));
 
 	return 0;
 }
