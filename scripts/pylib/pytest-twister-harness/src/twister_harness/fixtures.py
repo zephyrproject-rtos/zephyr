@@ -88,8 +88,8 @@ def shell(dut: DeviceAdapter) -> Shell:
 
 
 @pytest.fixture(scope='session')
-def required_build_dirs(request: pytest.FixtureRequest) -> list[str]:
-    return request.config.getoption('--required-build')
+def required_build_dirs(twister_harness_config: TwisterHarnessConfig) -> list[str]:
+    return twister_harness_config.test_params.required_builds
 
 
 @pytest.fixture()

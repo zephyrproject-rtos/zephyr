@@ -3,21 +3,22 @@
 #
 # Copyright (c) 2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
+# pylint: disable=unexpected-keyword-arg
 from __future__ import annotations
 
 import logging
 import os
 import platform
 import re
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass
 from multiprocessing import Lock, Value
 from pathlib import Path
-from typing import Any
 
 import scl
 import yaml
 from natsort import natsorted
 from twisterlib.environment import ZEPHYR_BASE
+from twisterlib.hardwaredata import HardwareData
 
 try:
     # Use the C LibYAML parser if available, rather than the Python parser.
@@ -36,28 +37,8 @@ logger = logging.getLogger('twister')
 
 
 @dataclass
-class DUT:
-    """Device Under Test configuration."""
-    id: str | None = None
-    serial: str | None = None
-    serial_baud: int = 115200
-    platform: str | None = None
-    product: str | None = None
-    serial_pty: str | None = None
-    connected: bool = False
-    runner_params: str | None = None
-    pre_script: str | None = None
-    post_script: str | None = None
-    post_flash_script: str | None = None
-    script_param: str | None = None
-    runner: str | None = None
-    flash_timeout: int = 60
-    flash_with_test: bool = False
-    flash_before: bool = False
-    fixtures: list[str] = field(default_factory=list)
-    probe_id: str | None = None
-    notes: str | None = None
-    match: bool = False
+class DUT(HardwareData):
+    """Device Under Test with runtime data."""
 
     def __post_init__(self):
         """Initialize non-serializable objects after dataclass initialization."""
@@ -106,12 +87,6 @@ class DUT:
     def failures_increment(self, value=1):
         with self._failures.get_lock():
             self._failures.value += value
-
-    def to_dict(self) -> dict[str, Any]:
-        """Convert DUT dataclass to dictionary for YAML serialization."""
-        result = asdict(self)
-        # Remove None and False values and empty lists to keep YAML clean
-        return {k: v for k, v in result.items() if v}
 
     def __repr__(self):
         return f"<{self.platform} ({self.product}) on {self.serial}>"
