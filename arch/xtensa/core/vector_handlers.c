@@ -704,23 +704,6 @@ skip_checks:
 		break;
 	}
 
-#ifdef CONFIG_XTENSA_MMU
-	switch (cause) {
-	case EXCCAUSE_LEVEL1_INTERRUPT:
-#ifndef CONFIG_USERSPACE
-	case EXCCAUSE_SYSCALL:
-#endif /* !CONFIG_USERSPACE */
-#ifdef CONFIG_XTENSA_LAZY_HIFI_SHARING
-	case EXCCAUSE_CP_DISABLED(XCHAL_CP_ID_AUDIOENGINELX):
-#endif /* CONFIG_XTENSA_LAZY_HIFI_SHARING */
-		is_fatal_error = false;
-		break;
-	default:
-		is_fatal_error = true;
-		break;
-	}
-#endif /* CONFIG_XTENSA_MMU */
-
 	if (is_dblexc || is_fatal_error) {
 		uint32_t ignore;
 
