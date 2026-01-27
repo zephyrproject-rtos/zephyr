@@ -1,9 +1,15 @@
-# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+# Copyright (C) 2025-2026 Microchip Technology Inc. and its subsidiaries
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
-description: Microchip SAM Secure Hash Algorithm (SHA).
+title: Microchip G1 SHA Controller Driver
+
+description: |
+  Microchip SAM Secure Hash Algorithm (SHA).
+
+  Group G1 SHA driver supports following hardware peripherals:
+    - module name="SHA" id="6156" version="700"
 
 compatible: "microchip,sha-g1-crypto"
 
