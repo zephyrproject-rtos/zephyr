@@ -370,7 +370,7 @@ manifest:
         - testing
         - tee
     - name: segger
-      revision: 7c843ea24b9b4f100c226bce0b4eb807e50a42ac
+      revision: 50892fdbcf2f570e67baa72b8894a66b16946f72
       path: modules/debug/segger
       groups:
         - debug
