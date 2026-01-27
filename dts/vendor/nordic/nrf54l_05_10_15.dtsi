@@ -530,7 +530,7 @@
 				gpio-controller;
 				reg = <0xd8200 0x300>;
 				#gpio-cells = <2>;
-				ngpios = <16>;
+				ngpios = <17>;
 				status = "disabled";
 				port = <1>;
 				gpiote-instance = <&gpiote20>;
