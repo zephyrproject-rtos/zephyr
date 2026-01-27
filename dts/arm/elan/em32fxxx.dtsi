@@ -261,6 +261,14 @@
 			reg-io-width = <4>;
 			status = "disabled";
 		};
+
+		/* Information control (trim codes, device id/version, etc.) */
+		infoctrl: syscon@100a6000 {
+			compatible = "syscon";
+			reg = <0x100a6000 0x2000>;
+			reg-io-width = <4>;
+			status = "disabled";
+		};
 	};
 };
 
