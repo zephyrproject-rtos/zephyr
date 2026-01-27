@@ -88,6 +88,7 @@ struct flash_stm32_xspi_config {
 	bool has_pclken_ker;
 	bool has_pclken_mgr;
 	bool has_pclken_xspix_alt;
+	bool read_while_write;
 };
 
 struct flash_stm32_xspi_data {

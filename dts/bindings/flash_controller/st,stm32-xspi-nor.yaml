@@ -12,10 +12,12 @@ include:
       - spi-bus-width
       - data-rate
       - sfdp-bfp
+
 properties:
   size:
     required: true
     description: Flash Memory size in bits
+
   spi-bus-width:
     type: int
     required: true
@@ -32,6 +34,7 @@ properties:
       - 2
       - 4
       - 8
+
   data-rate:
     type: int
     required: true
@@ -53,6 +56,12 @@ properties:
       - 2
     description: |
       Specifies which nCS line of the XSPI IO Manager is connected to the Flash.
+
+  read-while-write:
+    type: boolean
+    description: |
+      When enabled, a specific write sequence is applied to allow write on a bank
+      while code is being executed from another bank.
 
 examples:
   - |
