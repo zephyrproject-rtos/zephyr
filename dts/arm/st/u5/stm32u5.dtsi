@@ -1061,7 +1061,7 @@
 
 	vref1: vref_1 {
 		compatible = "st,stm32-vref";
-		vrefint-cal-addr = <0x0bfa07a5>;
+		nvmem-cells = <&vrefint_otp>;
 		vrefint-cal-mv = <3000>;
 		vrefint-cal-resolution = <14>;
 		io-channels = <&adc1 0>;
@@ -1070,7 +1070,7 @@
 
 	vref4: vref_4 {
 		compatible = "st,stm32-vref";
-		vrefint-cal-addr = <0x0bfa07a5>;
+		nvmem-cells = <&vrefint_otp>;
 		vrefint-cal-mv = <3000>;
 		vrefint-cal-resolution = <14>;
 		io-channels = <&adc4 0>;

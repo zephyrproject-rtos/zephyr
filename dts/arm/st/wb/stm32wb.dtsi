@@ -609,7 +609,7 @@
 
 	vref: vref {
 		compatible = "st,stm32-vref";
-		vrefint-cal-addr = <0x1fff75aa>;
+		nvmem-cells = <&vrefint_otp>;
 		vrefint-cal-mv = <3600>;
 		io-channels = <&adc1 0>;
 		status = "disabled";
