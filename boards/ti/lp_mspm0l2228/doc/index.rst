@@ -23,7 +23,7 @@ Hardware
 Launchpad MSPM0L2228 provides the following hardware components:
 
 - MSPM0L2228TPN SoC
-- ARM |reg| 32-bit Cortex |reg|-M0+ CPU
+- ARM® 32-bit Cortex®-M0+ CPU
 - 32 MHz max CPU frequency
 - VDD from 1.62 V to 3.6 V
 - 256 KB Flash

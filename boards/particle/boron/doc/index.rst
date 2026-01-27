@@ -12,8 +12,8 @@ It is equipped with a onboard LIPO circuit and conforms to the
 Adafruit Feather formfactor.
 
 The Particle Boron board provides support for the Nordic Semiconductor nRF52840
-ARM |reg| Cortex |reg|-M4F SoC with an integrated 2.4 GHz transceiver supporting
-Bluetooth |reg| Low Energy and IEEE |reg| 802.15.4.
+ARM® Cortex®-M4F SoC with an integrated 2.4 GHz transceiver supporting
+Bluetooth® Low Energy and IEEE® 802.15.4.
 
 For more information about the Particle Boron board:
 

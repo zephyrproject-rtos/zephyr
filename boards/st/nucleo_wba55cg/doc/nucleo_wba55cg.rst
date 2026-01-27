@@ -146,11 +146,11 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
-Bluetooth |reg| support
------------------------
+Bluetooth® support
+------------------
 
-Bluetooth |reg| Low Energy support is enabled on nucleo_wba55cg. To build a zephyr sample using this board
-you first need to install Bluetooth |reg| Controller libraries available in Zephyr as binary
+Bluetooth® Low Energy support is enabled on nucleo_wba55cg. To build a zephyr sample using this board
+you first need to install Bluetooth® Controller libraries available in Zephyr as binary
 blobs.
 
 To fetch Binary Blobs:

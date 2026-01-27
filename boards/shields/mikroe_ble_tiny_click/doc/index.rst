@@ -7,7 +7,7 @@ Overview
 ********
 
 The MikroElektronika BLE TINY Click carries the Renesas `DA14531MOD`_ Bluetooth
-LE module in a `mikroBUS`_ |trade| form factor.
+LE module in a `mikroBUS™`_ form factor.
 
 .. figure:: ble-tiny-click.webp
    :align: center
@@ -18,7 +18,7 @@ LE module in a `mikroBUS`_ |trade| form factor.
 Requirements
 ************
 
-This shield can only be used with a board that provides a mikroBUS |trade|
+This shield can only be used with a board that provides a mikroBUS™
 socket and defines the ``mikrobus_serial`` node label (see :ref:`shields`
 for more details).
 
@@ -75,7 +75,7 @@ References
 .. _DA14531MOD:
    https://www.renesas.com/us/en/products/wireless-connectivity/bluetooth-low-energy/da14531mod-smartbond-tiny-bluetooth-low-energy-module
 
-.. _mikroBUS:
+.. _mikroBUS™:
    https://www.mikroe.com/mikrobus
 
 .. _DA14531MOD Datasheet:

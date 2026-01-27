@@ -4,26 +4,26 @@ Overview
 ********
 
 The STM32H573I-DK Discovery kit is designed as a complete demonstration and
-development platform for STMicroelectronics Arm |reg| Cortex |reg|-M33 core-based
-STM32H573IIK3Q microcontroller with TrustZone |reg|. Here are some highlights of
+development platform for STMicroelectronics Arm® Cortex®-M33 core-based
+STM32H573IIK3Q microcontroller with TrustZone®. Here are some highlights of
 the STM32H573I-DK Discovery board:
 
 
 - STM32H573IIK3Q microcontroller featuring 2 Mbytes of Flash memory and 640 Kbytes of SRAM in 176-pin BGA package
 - 1.54-inch 240x240 pixels TFT-LCD with LED  backlight and touch panel
-- USB Type-C |reg| Host and device with USB power-delivery controller
+- USB Type-C® Host and device with USB power-delivery controller
 - SAI Audio DAC stereo with one audio jacks for input/output,
 - ST MEMS digital microphone with PDM interface
 - Octo-SPI interface connected to 512Mbit Octo-SPI NORFlash memory device (MX25LM51245GXDI00 from MACRONIX)
 - 10/100-Mbit Ethernet,
-- microSD  |trade|
+- microSD™
 - A Wi‑Fi® add-on board
 - Board connectors
 
-  - STMod+ expansion connector with fan-out expansion board for Wi‑Fi |reg|, Grove and mikroBUS |trade| compatible connectors
-  - Pmod |trade| expansion connector
+  - STMod+ expansion connector with fan-out expansion board for Wi‑Fi®, Grove and mikroBUS™ compatible connectors
+  - Pmod™ expansion connector
   - Audio MEMS daughterboard expansion connector
-  - ARDUINO |reg| Uno V3 expansion connector
+  - ARDUINO® Uno V3 expansion connector
 
 - Flexible power-supply options
 
@@ -46,19 +46,19 @@ Hardware
 ********
 
 The STM32H573xx devices are an high-performance microcontrollers family (STM32H5
-Series) based on the high-performance Arm |reg| Cortex |reg|-M33 32-bit RISC core.
+Series) based on the high-performance Arm® Cortex®-M33 32-bit RISC core.
 They operate at a frequency of up to 250 MHz.
 
-- Core: ARM |reg| 32-bit Cortex |reg| -M33 CPU with TrustZone |reg| and FPU.
+- Core: ARM® 32-bit Cortex®-M33 CPU with TrustZone® and FPU.
 - Performance benchmark:
 
   - 375 DMPIS/MHz (Dhrystone 2.1)
 
 - Security
 
-  - Arm |reg| TrustZone |reg| with ARMv8-M mainline security extension
+  - Arm® TrustZone® with ARMv8-M mainline security extension
   - Up to 8 configurable SAU regions
-  - TrustZone |reg| aware and securable peripherals
+  - TrustZone® aware and securable peripherals
   - Flexible lifecycle scheme with secure debug authentication
   - Preconfigured immutable root of trust (ST-iROT)
   - SFI (secure firmware installation)
@@ -78,7 +78,7 @@ They operate at a frequency of up to 250 MHz.
   - 25 MHz crystal oscillator (HSE)
   - 32 kHz crystal oscillator for RTC (LSE)
   - Internal 64 MHz (HSI) trimmable by software
-  - Internal low-power 32 kHz RC (LSI)( |plusminus| 5%)
+  - Internal low-power 32 kHz RC (LSI)(±5%)
   - Internal 4 MHz oscillator (CSI), trimmable by software
   - Internal 48 MHz (HSI48) with recovery system
   - 3 PLLs for system clock, USB, audio, ADC
@@ -136,7 +136,7 @@ They operate at a frequency of up to 250 MHz.
 - CORDIC for trigonometric functions acceleration
 - FMAC (filter mathematical accelerator)
 - CRC calculation unit
-- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell |trade|
+- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell™
 
 
 More information about STM32H573 can be found here:

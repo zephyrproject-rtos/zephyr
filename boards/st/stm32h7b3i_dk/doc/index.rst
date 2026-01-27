@@ -22,7 +22,7 @@ Important board features include:
 
 - STM32H7B3LIH6Q microcontroller featuring 2 Mbytes of Flash memory and 1.4 Mbyte of RAM in BGA225 package
 - 4.3" (480x272 pixels) TFT color LCD module including a capacitive touch panel with RGB interface
-- Wi-Fi |reg| module compliant with 802.11 b/g/n
+- Wi-Fi® module compliant with 802.11 b/g/n
 - USB OTG HS
 - Audio codec
 - 512-Mbit Octo-SPI NOR Flash memory
@@ -37,10 +37,10 @@ Important board features include:
   - USB with Micro-AB
   - Stereo headset jack including analog microphone input
   - Audio jack for external speakers
-  - microSD |trade| card
+  - microSD™ card
   - TAG-Connect 10-pin footprint
-  - Arm |reg| Cortex |reg| 10-pin 1.27mm-pitch debug connector over STDC14 footprint
-  - ARDUINO |reg| Uno V3 expansion connector
+  - Arm® Cortex® 10-pin 1.27mm-pitch debug connector over STDC14 footprint
+  - ARDUINO® Uno V3 expansion connector
   - STMod+ expansion connector
   - Audio daughterboard expansion connector
   - External I2C expansion connector
@@ -59,7 +59,7 @@ Hardware
 The STM32H7B3I Discovery kit provides the following hardware components:
 
 - STM32H7B3LIH6Q in BGA225 package
-- ARM |reg| 32-bit Cortex |reg| -M7 CPU with FPU
+- ARM® 32-bit Cortex®-M7 CPU with FPU
 - 280 MHz max CPU frequency
 - VDD from 1.62 V to 3.6 V
 - 2 MB Flash

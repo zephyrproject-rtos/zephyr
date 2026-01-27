@@ -202,8 +202,8 @@ Extension. The IDAU may configure bus accesses by the network core to
 have Secure attribute set; the latter allows to build and run Secure
 only applications on the BL5340 module.
 
-Building Secure/Non-Secure Zephyr applications with Arm |reg| TrustZone |reg|
-=============================================================================
+Building Secure/Non-Secure Zephyr applications with Arm® TrustZone®
+===================================================================
 
 Applications on the BL5340 module may contain a Secure and a Non-Secure
 firmware image for the application core. The Secure image can be built

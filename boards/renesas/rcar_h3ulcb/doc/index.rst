@@ -4,10 +4,10 @@ Overview
 ********
 R-Car H3ULCB starter kit board is based on the R-Car H3 SoC that features basic
 functions for next-generation car navigation systems.
-It is composed of a quad Cortex |reg|-A57, a quad Cortex |reg|-A53 cluster and a
-dual lockstep Cortex |reg|-R7.
+It is composed of a quad Cortex®-A57, a quad Cortex®-A53 cluster and a
+dual lockstep Cortex®-R7.
 
-Zephyr OS support is available for both Cortex |reg|-A cores & Cortex |reg|-R7 core.
+Zephyr OS support is available for both Cortex®-A cores & Cortex®-R7 core.
 
 More information about the H3 SoC can be found at `Renesas R-Car H3 chip`_.
 

@@ -550,7 +550,7 @@ STM32CubeCLT Flash & Debug Host Tools
 *************************************
 
 STMicroelectronics provides `STM32CubeCLT`_ as an official all-in-one toolset compatible with
-Linux |reg|, macOS |reg| and Windows |reg|, allowing the use of STMicroelectronics proprietary
+Linux®, macOS® and Windows®, allowing the use of STMicroelectronics proprietary
 tools within third-party development environments.
 
 It notably provides a GDB debugging server (the *ST-LINK GDB Server*) that can be used to debug
@@ -594,7 +594,7 @@ STM32CubeProgrammer Flash Host Tools
 ************************************
 
 STMicroelectronics provides `STM32CubeProgrammer`_ (STM32CubeProg) as an official programming tool
-for STM32 boards on Linux |reg|, macOS |reg|, and Windows |reg| operating systems.
+for STM32 boards on Linux®, macOS®, and Windows® operating systems.
 
 It provides an easy-to-use and efficient environment for reading, writing, and verifying device memory
 through both the debug interface (JTAG and SWD) and the bootloader interface (UART and USB DFU, I2C, SPI, and CAN).

@@ -63,8 +63,8 @@ The STM32L072CZ SoC provides the following hardware IPs:
 
         - 1 to 32 MHz crystal oscillator
         - 32 kHz crystal oscillator for RTC (LSE)
-        - Internal 16 MHz factory-trimmed RC ( |plusminus| 1%)
-        - Internal low-power 37 kHz RC ( |plusminus| 5%)
+        - Internal 16 MHz factory-trimmed RC (±1%)
+        - Internal low-power 37 kHz RC (±5%)
         - Internal multispeed low-power 65 kHz to 4.2 MHz RC
 - RTC with HW calendar, alarms and calibration
 - Up to 24 capacitive sensing channels: support touchkey, linear and rotary touch sensors

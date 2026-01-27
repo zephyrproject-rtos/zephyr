@@ -5,7 +5,7 @@ Overview
 
 The SimpleLink MSP‐EXP432P401R LaunchPad development kit is an easy-to-use evaluation
 module for the SimpleLink MSP432P401R microcontroller. It contains everything needed to start
-developing on the SimpleLink MSP432 low-power + performance ARM |reg| 32-bit Cortex |reg|-M4F
+developing on the SimpleLink MSP432 low-power + performance ARM® 32-bit Cortex®-M4F
 microcontroller (MCU).
 
 Features:

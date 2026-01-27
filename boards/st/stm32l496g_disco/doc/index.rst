@@ -46,17 +46,17 @@ Hardware
 The STM32L496AG SoC provides the following hardware capabilities:
 
 - Ultra-low-power with FlexPowerControl (down to 108 nA Standby mode and 91
-  |micro| A/MHz run mode)
-- Core: ARM |reg| 32-bit Cortex |reg| -M4 CPU with FPU, frequency up to 80 MHz,
+  µA/MHz run mode)
+- Core: ARM® 32-bit Cortex®-M4 CPU with FPU, frequency up to 80 MHz,
   100DMIPS/1.25DMIPS/MHz (Dhrystone 2.1)
 - Clock Sources:
 
   - 4 to 48 MHz crystal oscillator
   - 32 kHz crystal oscillator for RTC (LSE)
-  - Internal 16 MHz factory-trimmed RC ( |plusminus| 1%)
-  - Internal low-power 32 kHz RC ( |plusminus| 5%)
+  - Internal 16 MHz factory-trimmed RC (±1%)
+  - Internal low-power 32 kHz RC (±5%)
   - Internal multispeed 100 kHz to 48 MHz oscillator, auto-trimmed by
-    LSE (better than |plusminus| 0.25 % accuracy)
+    LSE (better than ±0.25 % accuracy)
   - Internal 48 MHz with clock recovery
   - 3 PLLs for system clock, USB, audio, ADC
 
@@ -84,7 +84,7 @@ The STM32L496AG SoC provides the following hardware capabilities:
 - Rich analog peripherals (independent supply)
 
   - 3x 12-bit ADC 5 MSPS, up to 16-bit with hardware oversampling, 200
-    |micro| A/MSPS
+    µA/MSPS
   - 2x 12-bit DAC, low-power sample and hold
   - 2x operational amplifiers with built-in PGA
   - 2x ultra-low-power comparators
