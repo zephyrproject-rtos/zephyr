@@ -220,6 +220,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_WUT_MAX32
 	DEVS_FOR_DT_COMPAT(adi_max32_wut)
 #endif
+#ifdef CONFIG_COUNTER_XLNX_TTC
+	DEVS_FOR_DT_COMPAT(xlnx_ttc_counter)
+#endif
 };
 
 static const struct device *const period_devs[] = {
@@ -1287,6 +1290,9 @@ static bool reliable_cancel_capable(const struct device *dev)
 	if (single_channel_alarm_capable(dev)) {
 		return true;
 	}
+#endif
+#ifdef CONFIG_COUNTER_XLNX_TTC
+	return true;
 #endif
 	return false;
 }
