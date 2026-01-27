@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(spi_litex_litespi);
 #define SPIFLASH_MASTER_STATUS_TX_READY_OFFSET 0x0
 #define SPIFLASH_MASTER_STATUS_RX_READY_OFFSET 0x1
 
-#define SPI_MAX_WORD_SIZE 32
+#define SPI_MAX_WORD_SIZE  8
 #define SPI_MAX_CS_SIZE   32
 
 #define SPI_LITEX_WIDTH BIT(0)
@@ -51,7 +51,6 @@ struct spi_litex_dev_config {
 
 struct spi_litex_data {
 	struct spi_context ctx;
-	uint8_t dfs; /* dfs in bytes: 1,2 or 4 */
 	uint8_t len; /* length of the last transfer in bytes */
 };
 
@@ -91,9 +90,8 @@ static int spi_config(const struct device *dev, const struct spi_config *config)
 		return -ENOTSUP;
 	}
 
-	if (SPI_WORD_SIZE_GET(config->operation) > SPI_MAX_WORD_SIZE) {
-		LOG_ERR("Word size must be <= %d, is %d", SPI_MAX_WORD_SIZE,
-			SPI_WORD_SIZE_GET(config->operation));
+	if (SPI_WORD_SIZE_GET(config->operation) != SPI_MAX_WORD_SIZE) {
+		LOG_ERR("Word size must be 8, is %d", SPI_WORD_SIZE_GET(config->operation));
 		return -ENOTSUP;
 	}
 
@@ -127,8 +125,6 @@ static int spi_config(const struct device *dev, const struct spi_config *config)
 		LOG_ERR("Loopback mode not supported");
 		return -ENOTSUP;
 	}
-
-	dev_data->dfs = get_dfs_value(config);
 
 	spi_litex_set_frequency(dev, config);
 
@@ -172,7 +168,7 @@ static void spi_litex_spi_do_tx(const struct device *dev)
 	LOG_DBG("txd: 0x%x", txd);
 	litex_write32(txd, dev_config->master_rxtx_addr);
 
-	spi_context_update_tx(ctx, data->dfs, len / data->dfs);
+	spi_context_update_tx(ctx, 1U, len);
 }
 
 static void spi_litex_spi_do_rx(const struct device *dev)
@@ -189,7 +185,7 @@ static void spi_litex_spi_do_rx(const struct device *dev)
 		litex_spi_rx_put(data->len, &rxd, ctx->rx_buf);
 	}
 
-	spi_context_update_rx(ctx, data->dfs, data->len / data->dfs);
+	spi_context_update_rx(ctx, 1U, data->len);
 }
 
 static int spi_litex_xfer(const struct device *dev, const struct spi_config *config)
@@ -266,7 +262,7 @@ static int transceive(const struct device *dev,
 		goto end;
 	}
 
-	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, data->dfs);
+	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1U);
 
 	ret = spi_litex_xfer(dev, config);
 
