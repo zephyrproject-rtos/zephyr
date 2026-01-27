@@ -240,6 +240,10 @@ New APIs and options
   * :kconfig:option:`CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION`
   * :kconfig:option:`CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION_VALUE_SIZE`
 
+* Shell
+
+  * :c:func:`shell_readline` for :ref:`user input <shell-readline>`
+
 * Sys
 
   * :c:macro:`COND_CASE_1`
