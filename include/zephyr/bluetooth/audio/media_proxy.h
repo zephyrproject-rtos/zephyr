@@ -45,15 +45,39 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <zephyr/bluetooth/audio/mcs.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/sys/util_macro.h>
-
-/* TODO: Remove dependency on mcs.h */
-#include "mcs.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Search control point minimum length
+ *
+ * At least one search control item (SCI), consisting of the length octet and the type octet.
+ * (The * parameter field may be empty.)
+ */
+#define SEARCH_LEN_MIN 2
+
+/** Search control point maximum length */
+#define SEARCH_LEN_MAX 64
+
+/**
+ * @brief Search control point item (SCI) minimum length
+ *
+ * An SCI length can be as little as one byte, for an SCI that has only the type field.
+ * (The SCI len is the length of type + param.)
+ */
+#define SEARCH_SCI_LEN_MIN                                                                         \
+	1 /* An SCI length can be as little as one byte,                                           \
+	   * for an SCI that has only the type field.                                              \
+	   * (The SCI len is the length of type + param.)                                          \
+	   */
+
+/** Search parameters maximum length  */
+#define SEARCH_PARAM_MAX 62
 
 /**
  * @brief Media player command
@@ -1548,6 +1572,9 @@ struct media_proxy_pl_calls {
 	uint8_t (*get_content_ctrl_id)(void);
 };
 
+/* Temporary forward declaration to avoid circular dependency */
+struct bt_mcs_cb;
+
 /**
  * @brief Register a player with the media proxy
  *
@@ -1561,7 +1588,7 @@ struct media_proxy_pl_calls {
  *
  * @return 0 if success, errno on failure
  */
-int media_proxy_pl_register(struct media_proxy_pl_calls *pl_calls);
+int media_proxy_pl_register(struct bt_mcs_cb *pl_calls);
 
 /**
  * @brief Initialize player
@@ -1569,13 +1596,6 @@ int media_proxy_pl_register(struct media_proxy_pl_calls *pl_calls);
  * TODO: Move to player header file
  */
 int media_proxy_pl_init(void);
-
-/**
- * @brief Get the pointer of the Object Transfer Service used by the Media Control Service
- *
- * TODO: Find best location for this call, and move this one also
- */
-struct bt_ots *bt_mcs_get_ots(void);
 
 /**
  * @brief Player name changed callback

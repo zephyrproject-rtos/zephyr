@@ -14,6 +14,7 @@
 #include <stdint.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/mcs.h>
 #include <zephyr/bluetooth/audio/media_proxy.h>
 #include <zephyr/kernel.h>
 
@@ -89,7 +90,7 @@ struct mpl_mediaplayer   {
 	uint64_t            search_results_id;
 #endif /* CONFIG_BT_MPL_OBJECTS || CONFIG_BT_OTS_CLIENT */
 	uint8_t             content_ctrl_id;
-	struct media_proxy_pl_calls calls;
+	struct bt_mcs_cb calls;
 
 	bool                        next_track_set; /* If next track explicitly set */
 	struct {

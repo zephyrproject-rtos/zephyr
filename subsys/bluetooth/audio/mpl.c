@@ -2428,6 +2428,14 @@ int media_proxy_pl_init(void)
 #endif /* CONFIG_BT_MPL_OBJECTS */
 	media_player.calls.get_content_ctrl_id          = get_content_ctrl_id;
 
+	if (IS_ENABLED(CONFIG_BT_MCS)) {
+		ret = bt_mcs_register_cb(&media_player.calls);
+		if (ret < 0) {
+			LOG_ERR("Unable to MCS callbacks");
+			return ret;
+		}
+	}
+
 	ret = media_proxy_pl_register(&media_player.calls);
 	if (ret < 0) {
 		LOG_ERR("Unable to register player");
