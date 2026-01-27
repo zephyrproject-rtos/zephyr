@@ -45,15 +45,17 @@
 			light_sleep: light_sleep {
 				compatible = "zephyr,power-state";
 				power-state-name = "standby";
-				min-residency-us = <200>;
-				exit-latency-us = <60>;
+				min-residency-us = <1000>;
+				exit-latency-us = <50>;
 			};
 
 			deep_sleep: deep_sleep {
+				/* Deep sleep must be entered using pm_state_force()
+				 * or sys_poweroff() calls only
+				 */
 				compatible = "zephyr,power-state";
 				power-state-name = "soft-off";
-				min-residency-us = <2000>;
-				exit-latency-us = <212>;
+				status = "disabled";
 			};
 		};
 	};
