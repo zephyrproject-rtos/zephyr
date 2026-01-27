@@ -1,0 +1,19 @@
+# Copyright (c) 2026 ELAN Microelectronics Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+# EMC32F967 GPIO driver configuration
+
+config GPIO_EM32
+	bool "ELAN EMC32Fxxx GPIO driver"
+	default y
+	depends on SOC_EM32F967
+	depends on DT_HAS_ELAN_EM32_GPIO_ENABLED
+	help
+	  Enable GPIO driver for ELAN EM32F967 microcontroller.
+
+	  The EM32F967 has two GPIO ports (GPIOA and GPIOB), each with 16 pins.
+	  Each port supports:
+	  - Input/output direction control
+	  - Pull-up/pull-down resistors
+	  - Interrupt generation (edge/level triggered)
+	  - Alternate function selection
