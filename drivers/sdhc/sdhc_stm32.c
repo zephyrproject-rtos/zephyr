@@ -566,7 +566,6 @@ static int sdhc_stm32_get_host_props(const struct device *dev, struct sdhc_host_
 static int sdhc_stm32_get_card_present(const struct device *dev)
 {
 	int res = 0;
-	struct sdhc_stm32_data *dev_data = dev->data;
 	const struct sdhc_stm32_config *config = dev->config;
 
 	/* If a CD pin is configured, use it for card detection */
@@ -575,21 +574,8 @@ static int sdhc_stm32_get_card_present(const struct device *dev)
 		return res;
 	}
 
-	(void)pm_device_runtime_get(dev);
-	/* Prevent the clocks to be stopped during the request */
-	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-	k_mutex_lock(&dev_data->bus_mutex, K_FOREVER);
-
-	/* Card is considered present if the read command did not time out */
-	if (SDMMC_CmdSendOperationcondition(config->hsd->Instance, 0, NULL) != 0) {
-		res = -EIO;
-		sdhc_stm32_log_err_type(config->hsd);
-	}
-	k_mutex_unlock(&dev_data->bus_mutex);
-	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-	(void)pm_device_runtime_put(dev);
-
-	return res == 0;
+	/* No CD pin configured, assume card is in slot */
+	return 1;
 }
 
 static int sdhc_stm32_card_busy(const struct device *dev)
