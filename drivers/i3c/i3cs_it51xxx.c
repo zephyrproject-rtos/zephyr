@@ -475,7 +475,8 @@ static int it51xxx_i3cs_target_ibi_raise(const struct device *dev, struct i3c_ib
 		goto out;
 	}
 
-	if (it51xxx_i3cs_wait_to_complete(dev) != 0) {
+	ret = it51xxx_i3cs_wait_to_complete(dev);
+	if (ret) {
 		LOG_INST_WRN(cfg->log, "failed to issue ibi. maybe the controller is offline");
 		sys_write8(I3CS_EVENT_SELECT(EVT_NORMAL_MODE), cfg->base + I3CS0C_CONTROL_0);
 	}
