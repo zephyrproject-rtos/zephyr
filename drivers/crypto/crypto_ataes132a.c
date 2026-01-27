@@ -33,7 +33,7 @@ static void ataes132a_init_states(void)
 {
 	int i;
 
-	for (i = 0; i < ATAES132A_AES_KEY_SIZE; i++) {
+	for (i = 0; i < CRYPTO_MAX_SESSION; i++) {
 		ataes132a_state[i].in_use = false;
 		ataes132a_state[i].key_id = i;
 	}
