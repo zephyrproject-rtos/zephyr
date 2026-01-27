@@ -30,7 +30,7 @@ STM32WB5MMG supports the following features:
 - 68 GPIOs
 - SWD, JTAG
 
-More information about the board can be found at the `` `STM32WB5MMG on www.st.com`_.
+More information about the board can be found at the `STM32WB5MMG website`_.
 
 Hardware
 ********
@@ -151,7 +151,7 @@ cut 2.2.
 
 More information about STM32WB5MMG can be found here:
 
-- `STM32WB5MMG on www.st.com`_
+- `STM32WB5MMG website`_
 - `STM32WB5MMG datasheet`_
 
 Supported Features
@@ -285,7 +285,7 @@ You can debug an application in the usual way.  Here is an example for the
    :maybe-skip-config:
    :goals: debug
 
-.. _STM32WB5MMG on www.st.com:
+.. _STM32WB5MMG website:
    https://www.st.com/en/microcontrollers-microprocessors/stm32wb5mmg.html
 
 .. _STM32WB5MMG datasheet:
