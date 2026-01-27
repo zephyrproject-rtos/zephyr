@@ -37,6 +37,10 @@ set_property(TARGET linker PROPERTY warnings_as_errors)
 # such as, "-no-pie" for LD, and "--no-pie" for LLD.
 set_property(TARGET linker PROPERTY no_position_independent)
 
+# Linker flag for ignoring section overlap check errors
+# such as, "--no-check-sections" for LD and LLD.
+set_property(TARGET linker PROPERTY no_check_sections)
+
 # Linker flag for doing partial linking
 # such as, "-r" or "--relocatable" for LD and LLD.
 set_property(TARGET linker PROPERTY partial_linking)

@@ -24,10 +24,10 @@ BUILD_ASSERT(CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE % LLEXT_PAGE_SIZE == 0,
 	     "CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE must be multiple of LLEXT_PAGE_SIZE");
 uint8_t llext_instr_heap_buf[CONFIG_LLEXT_INSTR_HEAP_SIZE * KB(1)]
 	__aligned(CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE)
-	__attribute__((section(".rodata.llext_instr_heap")));
+	__attribute__((section(".rodata.llext_instr_heap_buf")));
 uint8_t llext_data_heap_buf[CONFIG_LLEXT_DATA_HEAP_SIZE * KB(1)]
 	__aligned(CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE)
-	__attribute__((section(".data.llext_data_heap")));
+	__attribute__((section(".data.llext_data_heap_buf")));
 SYS_MEM_BLOCKS_DEFINE_WITH_EXT_BUF(llext_instr_heap, CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE,
 				   CONFIG_LLEXT_INSTR_HEAP_SIZE * KB(1) /
 					   CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE,
