@@ -137,11 +137,6 @@
 			     &debug_jtdi_pa15 &debug_jtdo_swo_pb3
 			     &debug_njtrst_pb4>;
 	};
-
-	die_temp: dietemp {
-		ts-cal1-addr = <0x0bfa0710>;
-		ts-cal2-addr = <0x0bfa0742>;
-	};
 };
 
 &pwr {
