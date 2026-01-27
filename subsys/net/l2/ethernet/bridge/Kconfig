@@ -42,6 +42,19 @@ config NET_ETHERNET_BRIDGE_SHELL
 	help
 	  Enables shell utility to manage bridge configuration interactively.
 
+config NET_ETHERNET_BRIDGE_FDB
+	bool "FDB (Forwarding database) table support"
+	help
+	  Enables FDB (Forwarding database) table support.
+
+config NET_ETHERNET_BRIDGE_FDB_MAX_ENTRIES
+	int "Max number of FDB (Forwarding database) entries"
+	depends on NET_ETHERNET_BRIDGE_FDB
+	default 32
+	range 1 $(UINT16_MAX)
+	help
+	  How many FDB (Forwarding database) entries supported.
+
 module = NET_ETHERNET_BRIDGE
 module-dep = NET_LOG
 module-str = Log level for Ethernet Bridging
