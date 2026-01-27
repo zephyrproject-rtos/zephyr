@@ -86,7 +86,7 @@ ZTEST(double_tap, test_double_tap_timeout)
 	zassert_equal(event_count, 0);
 
 	/* wait for timeout to expire - triggers double_tap_deferred */
-	k_sleep(K_MSEC(350));
+	k_sleep(K_MSEC(150));
 
 	/* another single tap - should NOT trigger double tap since first_tap was reset */
 	input_report_key(fake_dev, INPUT_KEY_0, 1, true, K_FOREVER);
