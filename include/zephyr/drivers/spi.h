@@ -914,6 +914,7 @@ typedef int (*spi_api_release)(const struct device *dev,
  */
 __subsystem struct spi_driver_api {
 	spi_api_io transceive;
+	spi_api_io transceive_cpu;
 #ifdef CONFIG_SPI_ASYNC
 	spi_api_io_async transceive_async;
 #endif /* CONFIG_SPI_ASYNC */
@@ -1050,6 +1051,78 @@ static inline int spi_transceive_dt(const struct spi_dt_spec *spec,
 }
 
 /**
+ * @brief Read/write the specified amount of data from the SPI driver using CPU.
+ *
+ * @note This function is synchronous.
+ *
+ * @note In master mode, the chip select line will remain asserted (active) for
+ *       the entire duration of the transfer of all buffers in the provided buf sets.
+ *       Only after all buffers have been transferred will CS be deasserted.
+ *
+ * @note In peripheral mode, data transfer happens when the master asserts CS and
+ *       provides the clock. The function will wait for the master to complete
+ *       the transfer before returning. The CS is controlled by master
+ *       and therefore may not be continuously asserted for the whole transfer.
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @param config Pointer to a valid spi_config structure instance.
+ *        Pointer-comparison may be used to detect changes from
+ *        previous operations.
+ * @param tx_bufs Buffer array where data to be sent originates from,
+ *        or NULL if none.
+ * @param rx_bufs Buffer array where data to be read will be written to,
+ *        or NULL if none.
+ *
+ * @retval frames Positive number of frames received in slave mode.
+ * @retval 0 If successful in master mode.
+ * @retval -ENOTSUP means some part of the spi config is not supported either by the
+ *	   device hardware or the driver software.
+ * @retval -EINVAL means that some parameter of the spi_config is invalid.
+ * @retval -errno Negative errno code on failure.
+ */
+__syscall int spi_transceive_cpu(const struct device *dev,
+			     const struct spi_config *config,
+			     const struct spi_buf_set *tx_bufs,
+			     const struct spi_buf_set *rx_bufs);
+
+static inline int z_impl_spi_transceive_cpu(const struct device *dev,
+					const struct spi_config *config,
+					const struct spi_buf_set *tx_bufs,
+					const struct spi_buf_set *rx_bufs)
+{
+	const struct spi_driver_api *api =
+		(const struct spi_driver_api *)dev->api;
+	int ret;
+
+	ret = api->transceive_cpu(dev, config, tx_bufs, rx_bufs);
+	spi_transceive_stats(dev, ret, tx_bufs, rx_bufs);
+
+	return ret;
+}
+
+/**
+ * @brief Read/write data from an SPI bus specified in @p spi_dt_spec.
+ *
+ * This is equivalent to:
+ *
+ *     spi_transceive_cpu(spec->bus, &spec->config, tx_bufs, rx_bufs);
+ *
+ * @param spec SPI specification from devicetree
+ * @param tx_bufs Buffer array where data to be sent originates from,
+ *        or NULL if none.
+ * @param rx_bufs Buffer array where data to be read will be written to,
+ *        or NULL if none.
+ *
+ * @return a value from spi_transceive().
+ */
+static inline int spi_transceive_dt_cpu(const struct spi_dt_spec *spec,
+				    const struct spi_buf_set *tx_bufs,
+				    const struct spi_buf_set *rx_bufs)
+{
+	return spi_transceive_cpu(spec->bus, &spec->config, tx_bufs, rx_bufs);
+}
+
+/**
  * @brief Read the specified amount of data from the SPI driver.
  *
  * @note This function is synchronous.
@@ -1137,6 +1210,96 @@ static inline int spi_write_dt(const struct spi_dt_spec *spec,
 {
 	return spi_write(spec->bus, &spec->config, tx_bufs);
 }
+
+/**
+ * @brief Read the specified amount of data from the SPI driver using CPU only
+ *
+ * @note This function is synchronous.
+ *
+ * @note This function is a helper function calling spi_transceive_cpu.
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @param config Pointer to a valid spi_config structure instance.
+ *        Pointer-comparison may be used to detect changes from
+ *        previous operations.
+ * @param rx_bufs Buffer array where data to be read will be written to.
+ *
+ * @retval frames Positive number of frames received in slave mode.
+ * @retval 0 If successful.
+ * @retval -ENOTSUP means some part of the spi config is not supported either by the
+ *	   device hardware or the driver software.
+ * @retval -EINVAL means that some parameter of the spi_config is invalid.
+ * @retval -errno Negative errno code on failure.
+ */
+static inline int spi_read_cpu(const struct device *dev,
+			   const struct spi_config *config,
+			   const struct spi_buf_set *rx_bufs)
+{
+	return spi_transceive_cpu(dev, config, NULL, rx_bufs);
+}
+
+/**
+ * @brief Read data from a SPI bus specified in @p spi_dt_spec.
+ *
+ * This is equivalent to:
+ *
+ *     spi_read_cpu(spec->bus, &spec->config, rx_bufs);
+ *
+ * @param spec SPI specification from devicetree
+ * @param rx_bufs Buffer array where data to be read will be written to.
+ *
+ * @return a value from spi_read().
+ */
+static inline int spi_read_dt_cpu(const struct spi_dt_spec *spec,
+			      const struct spi_buf_set *rx_bufs)
+{
+	return spi_read_cpu(spec->bus, &spec->config, rx_bufs);
+}
+
+/**
+ * @brief Write the specified amount of data from the SPI driver using CPU only.
+ *
+ * @note This function is synchronous.
+ *
+ * @note This function is a helper function calling spi_transceive_cpu.
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @param config Pointer to a valid spi_config structure instance.
+ *        Pointer-comparison may be used to detect changes from
+ *        previous operations.
+ * @param tx_bufs Buffer array where data to be sent originates from.
+ *
+ * @retval 0 If successful.
+ * @retval -ENOTSUP means some part of the spi config is not supported either by the
+ *	   device hardware or the driver software.
+ * @retval -EINVAL means that some parameter of the spi_config is invalid.
+ * @retval -errno Negative errno code on failure.
+ */
+static inline int spi_write_cpu(const struct device *dev,
+			    const struct spi_config *config,
+			    const struct spi_buf_set *tx_bufs)
+{
+	return spi_transceive_cpu(dev, config, tx_bufs, NULL);
+}
+
+/**
+ * @brief Write data to a SPI bus specified in @p spi_dt_spec.
+ *
+ * This is equivalent to:
+ *
+ *     spi_write_cpu(spec->bus, &spec->config, tx_bufs);
+ *
+ * @param spec SPI specification from devicetree
+ * @param tx_bufs Buffer array where data to be sent originates from.
+ *
+ * @return a value from spi_write().
+ */
+static inline int spi_write_dt_cpu(const struct spi_dt_spec *spec,
+			       const struct spi_buf_set *tx_bufs)
+{
+	return spi_write_cpu(spec->bus, &spec->config, tx_bufs);
+}
+
 /** @} */
 
 #if defined(CONFIG_SPI_ASYNC) || defined(__DOXYGEN__)
