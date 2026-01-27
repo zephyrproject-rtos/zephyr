@@ -34,6 +34,8 @@ struct spi_stm32_config {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	int midi_clocks;
 	int mssi_clocks;
+	uint8_t fifo_size;
+	uint32_t max_transfer_size;
 #endif
 	size_t pclk_len;
 	const struct stm32_pclken *pclken;
