@@ -64,3 +64,18 @@
 	status = "okay";
 	clocks = <&sdhci_ref_clk>;
 };
+
+&ttc0_timer0 {
+	status = "okay";
+	clock-frequency = <149998505>;
+};
+
+&ttc0_timer1 {
+	status = "okay";
+	clock-frequency = <149998505>;
+};
+
+&ttc0_timer2 {
+	status = "okay";
+	clock-frequency = <149998505>;
+};
