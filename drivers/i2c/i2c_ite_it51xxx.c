@@ -336,6 +336,7 @@ struct i2c_it51xxx_data {
 	uint16_t addr_16bit;
 	/* Wait for stop bit interrupt */
 	uint8_t stop;
+	uint8_t *buf;
 #ifdef CONFIG_I2C_IT51XXX_FIFO_MODE
 	struct i2c_msg *msgs_list;
 	/* Read or write byte counts. */
@@ -817,7 +818,7 @@ int i2c_tran_read(const struct device *dev)
 		} else if (sys_read8(config->host_base + SMB_HOSTA) & SMB_BDS) {
 			if (data->ridx < data->msg->len) {
 				/* To get received data. */
-				*(data->msg->buf++) = sys_read8(config->host_base + SMB_HOBDB);
+				*data->buf++ = sys_read8(config->host_base + SMB_HOBDB);
 				data->ridx++;
 				/* For last byte */
 				i2c_r_last_byte(dev);
@@ -855,7 +856,7 @@ int i2c_tran_write(const struct device *dev)
 
 		sys_write8((uint8_t)(data->addr_16bit << 1), config->host_base + SMB_TRASLA);
 		/* Send first byte */
-		sys_write8(*(data->msg->buf++), config->host_base + SMB_HOBDB);
+		sys_write8(*data->buf++, config->host_base + SMB_HOBDB);
 
 		data->widx++;
 		/* Clear start flag */
@@ -867,7 +868,7 @@ int i2c_tran_write(const struct device *dev)
 		if (sys_read8(config->host_base + SMB_HOSTA) & SMB_BDS) {
 			if (data->widx < data->msg->len) {
 				/* Send next byte */
-				sys_write8(*(data->msg->buf++), config->host_base + SMB_HOBDB);
+				sys_write8(*data->buf++, config->host_base + SMB_HOBDB);
 
 				data->widx++;
 				/* W/C byte done for next byte */
@@ -980,7 +981,7 @@ void i2c_tran_fifo_write_start(const struct device *dev)
 	data->bytecnt = MIN(data->msg->len, SMB_FIFO_MODE_MAX_SIZE);
 	for (i = 0; i < data->bytecnt; i++) {
 		/* Set host block data byte. */
-		sys_write8(*(data->msg->buf++), config->host_base + SMB_HOBDB);
+		sys_write8(*data->buf++, config->host_base + SMB_HOBDB);
 	}
 	/* Calculate the remaining byte counts. */
 	data->bytecnt = data->msg->len - data->bytecnt;
@@ -1002,7 +1003,7 @@ void i2c_tran_fifo_write_next_block(const struct device *dev)
 	_bytecnt = MIN(data->bytecnt, SMB_FIFO_MODE_MAX_SIZE);
 	for (i = 0; i < _bytecnt; i++) {
 		/* Set host block data byte. */
-		sys_write8(*(data->msg->buf++), config->host_base + SMB_HOBDB);
+		sys_write8(*data->buf++, config->host_base + SMB_HOBDB);
 	}
 
 	/* Clear FIFO block done status. */
@@ -1058,6 +1059,7 @@ int i2c_tran_fifo_w2r_change_direction(const struct device *dev)
 
 	/* Point to the next msg for the read location. */
 	data->msg = &data->msgs_list[data->msg_index];
+	data->buf = data->msg->buf;
 	/* Set read byte counts. */
 	sys_write8(data->msg->len, config->host_base + SMB_D0REG);
 	data->bytecnt = data->msg->len;
@@ -1106,7 +1108,7 @@ void i2c_tran_fifo_read_next_block(const struct device *dev)
 
 	for (i = 0; i < SMB_FIFO_MODE_MAX_SIZE; i++) {
 		/* To get received data. */
-		*(data->msg->buf++) = sys_read8(config->host_base + SMB_HOBDB);
+		*data->buf++ = sys_read8(config->host_base + SMB_HOBDB);
 	}
 	/* Clear FIFO block done status. */
 	sys_write8(sys_read8(config->i2cbase + SMB_MSTFCSTS) | blkds,
@@ -1124,7 +1126,7 @@ void i2c_tran_fifo_read_finish(const struct device *dev)
 
 	for (i = 0; i < data->bytecnt; i++) {
 		/* To get received data. */
-		*(data->msg->buf++) = sys_read8(config->host_base + SMB_HOBDB);
+		*data->buf++ = sys_read8(config->host_base + SMB_HOBDB);
 	}
 	/* Clear byte count register. */
 	sys_write8(0, config->host_base + SMB_D0REG);
@@ -1499,6 +1501,7 @@ static int i2c_it51xxx_transfer(const struct device *dev, struct i2c_msg *msgs, 
 		data->ridx = 0;
 		data->err = 0;
 		data->msg = &msgs[i];
+		data->buf = msgs[i].buf;
 		data->addr_16bit = addr;
 
 #ifdef CONFIG_I2C_IT51XXX_FIFO_MODE
