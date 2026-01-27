@@ -15,6 +15,7 @@
 #include <esp_err.h>
 
 #include <esp_app_format.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/storage/flash_map.h>
 #include <esp_rom_uart.h>
 #include <esp_flash.h>
@@ -81,7 +82,11 @@
 #define HDR_ATTR __attribute__((section(".entry_addr"))) __attribute__((used))
 
 #if !defined(CONFIG_SOC_ESP32_APPCPU) && !defined(CONFIG_SOC_ESP32S3_APPCPU)
+#if DT_NODE_EXISTS(DT_CHOSEN(zephyr_code_partition))
+#define PART_OFFSET DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition))
+#else
 #define PART_OFFSET FIXED_PARTITION_OFFSET(slot0_partition)
+#endif
 #else
 #define PART_OFFSET FIXED_PARTITION_OFFSET(slot0_appcpu_partition)
 #endif
