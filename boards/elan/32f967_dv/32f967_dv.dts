@@ -57,11 +57,11 @@
 };
 
 &gpioa {
-	status = "disabled";
+	status = "okay";
 };
 
 &gpiob {
-	status = "disabled";
+	status = "okay";
 };
 
 zephyr_udc0: &usbd {
