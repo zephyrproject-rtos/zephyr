@@ -215,6 +215,7 @@ endchoice
 config WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA
 	bool "Crypto Platform Secure Architecture support for WiFi"
 	default y
+	depends on WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT
 	select PSA_CRYPTO
 	select MBEDTLS_USE_PSA_CRYPTO
 	select PSA_WANT_ALG_ECDH
