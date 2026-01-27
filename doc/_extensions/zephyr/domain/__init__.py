@@ -1155,7 +1155,7 @@ class ZephyrDomain(Domain):
         "code-sample": XRefRole(innernodeclass=nodes.inline, warn_dangling=True),
         "code-sample-category": XRefRole(innernodeclass=nodes.inline, warn_dangling=True),
         "board": XRefRole(innernodeclass=nodes.inline, warn_dangling=True),
-        "board-catalog": XRefRole(innernodeclass=nodes.inline, warn_dangling=True),
+        "board-catalog": XRefRole(innernodeclass=nodes.inline, warn_dangling=False),
     }
 
     directives = {
