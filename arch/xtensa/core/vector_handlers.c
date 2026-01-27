@@ -633,10 +633,11 @@ void *xtensa_excint1_c(void *esf)
 #if defined(CONFIG_XTENSA_MMU) && defined(CONFIG_USERSPACE)
 	case EXCCAUSE_DTLB_MULTIHIT:
 		xtensa_exc_dtlb_multihit_handle();
+		goto return_to_interrupted;
 		break;
 	case EXCCAUSE_LOAD_STORE_RING:
 		if (!xtensa_exc_load_store_ring_error_check(bsa)) {
-			break;
+			goto return_to_interrupted;
 		}
 		__fallthrough;
 #endif /* CONFIG_XTENSA_MMU && CONFIG_USERSPACE */
@@ -740,6 +741,15 @@ skip_checks:
 #endif /* CONFIG_XTENSA_MMU */
 
 	return return_to(interrupted_stack);
+
+#if defined(CONFIG_XTENSA_MMU) && defined(CONFIG_USERSPACE)
+return_to_interrupted:
+	if (is_dblexc) {
+		XTENSA_WSR(ZSR_DEPC_SAVE_STR, 0);
+	}
+
+	return interrupted_stack;
+#endif /* CONFIG_XTENSA_MMU && CONFIG_USERSPACE */
 }
 
 #if defined(CONFIG_GDBSTUB)
