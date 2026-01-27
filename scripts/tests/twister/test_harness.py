@@ -13,6 +13,7 @@ import textwrap
 from unittest import mock
 
 import pytest
+from twisterlib.hardwaredata import HardwareData
 from twisterlib.harness import (
     Bsim,
     Console,
@@ -549,7 +550,7 @@ def test_pytest__generate_parameters_for_hardware(tmp_path, pty_value, hardware_
     handler = mock.Mock()
     handler.instance = instance
 
-    hardware = mock.Mock()
+    hardware = HardwareData()
     hardware.serial_pty = pty_value
     hardware.serial = "serial"
     hardware.serial_baud = 115200
@@ -573,8 +574,8 @@ def test_pytest__generate_parameters_for_hardware(tmp_path, pty_value, hardware_
     # Act
     if hardware_value == 0:
         handler.get_hardware.return_value = hardware
-        handler.get_more_serials_from_device = mock.Mock(return_value=[])
-        command = pytest_test._generate_parameters_for_hardware(handler)
+        handler.get_other_duts_with_same_id = mock.Mock(return_value=[])
+        pytest_test._generate_parameters_for_hardware(handler)
     else:
         handler.get_hardware.return_value = None
 
@@ -584,24 +585,22 @@ def test_pytest__generate_parameters_for_hardware(tmp_path, pty_value, hardware_
             pytest_test._generate_parameters_for_hardware(handler)
         assert str(exinfo.value) == "Hardware is not available"
     else:
-        assert "--device-type=hardware" in command
+        assert pytest_test.pytest_params.duts
         if pty_value == "serial_pty":
-            assert "--device-serial-pty=serial_pty" in command
+            assert pytest_test.pytest_params.duts[0].serial_pty == "serial_pty"
         else:
-            assert "--device-serial=serial" in command
-            assert "--device-serial-baud=115200" in command
-        assert "--runner=runner" in command
-        assert "--runner-params=--runner-param1" in command
-        assert "--runner-params=runner-param2" in command
-        assert "--west-flash-extra-args=args" in command
-        assert "--flash-command=flash_command" in command
-        assert "--device-id=123" in command
-        assert "--device-product=product" in command
-        assert "--pre-script=pre_script" in command
-        assert "--post-flash-script=post_flash_script" in command
-        assert "--post-script=post_script" in command
-        assert "--twister-fixture=fixture1:option1" in command
-        assert "--twister-fixture=fixture2" in command
+            assert pytest_test.pytest_params.duts[0].serial == "serial"
+            assert pytest_test.pytest_params.duts[0].serial_baud == 115200
+        assert pytest_test.pytest_params.duts[0].runner == "runner"
+        assert pytest_test.pytest_params.duts[0].runner_params == ["--runner-param1", "runner-param2"]
+        assert pytest_test.pytest_params.west_flash_extra_args == "args"
+        assert pytest_test.pytest_params.flash_command == "flash_command"
+        assert pytest_test.pytest_params.duts[0].probe_id == "123"
+        assert pytest_test.pytest_params.duts[0].product == "product"
+        assert pytest_test.pytest_params.duts[0].pre_script == "pre_script"
+        assert pytest_test.pytest_params.duts[0].post_flash_script == "post_flash_script"
+        assert pytest_test.pytest_params.duts[0].post_script == "post_script"
+        assert pytest_test.pytest_params.duts[0].fixtures == ["fixture1:option1", "fixture2"]
 
 
 def test_pytest__update_command_with_env_dependencies():
