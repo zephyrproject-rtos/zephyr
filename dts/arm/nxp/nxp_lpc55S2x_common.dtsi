@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020 Lemonbeat GmbH
- * Copyright 2024 NXP
+ * Copyright 2024, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -310,6 +310,7 @@
 	wwdt0: watchdog@c000 {
 		compatible = "nxp,lpc-wwdt";
 		reg = <0xc000 0x1000>;
+		clocks = <&syscon MCUX_WWDT0_CLK>;
 		interrupts = <0 0>;
 		status = "disabled";
 		clk-divider = <1>;
