@@ -324,8 +324,14 @@ manifest:
       revision: 85aa60d18b3d5e5588d7b247abf90198f07c8a63
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: c5b06d89c9c498d8fc8659ce31f7e53137b6270f
+      revision: 26158d1c012477e77765d138b26a791db917c881
       path: modules/crypto/mbedtls
+      groups:
+        - crypto
+    - name: mbedtls-3.6 # Required for TF-M build until we bump it to v2.3
+      repo-path: mbedtls
+      revision: 93344a458295c891f71fe31beaa3a3a8d8057790
+      path: modules/crypto/mbedtls-3.6
       groups:
         - crypto
     - name: mcuboot
@@ -338,6 +344,11 @@ manifest:
       groups:
         - debug
       revision: 5a9d6055b62edc54566d6d0034d9daec91749b98
+    - name: mldsa-native
+      revision: 5772b4f4a0105694b1203abb582273f78fa951b7
+      path: modules/crypto/mbedtls/tf-psa-crypto/drivers/pqpc/mldsa-native
+      groups:
+        - crypto
     - name: nanopb
       revision: 5499fd4c9a478f8139eeb07a82c3b4468d6067f7
       path: modules/lib/nanopb
@@ -383,6 +394,11 @@ manifest:
       groups:
         - testing
         - tee
+    - name: tf-psa-crypto
+      revision: 9deb104c6f18f80f2944c7e672fcfa8f14639fab
+      path: modules/crypto/mbedtls/tf-psa-crypto
+      groups:
+        - crypto
     - name: trusted-firmware-a
       revision: 44bcc378b6ec4af8693d008f43983e488f1f5740
       path: modules/tee/tf-a/trusted-firmware-a
