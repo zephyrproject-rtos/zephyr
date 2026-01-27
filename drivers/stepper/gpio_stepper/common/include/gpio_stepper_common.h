@@ -67,6 +67,7 @@ struct gpio_stepper_common_data {
 	enum stepper_direction direction;
 	enum stepper_run_mode run_mode;
 	uint64_t microstep_interval_ns;
+	uint64_t timing_source_interval_ns;
 	atomic_t actual_position;
 	atomic_t step_count;
 	stepper_event_callback_t callback;
