@@ -633,6 +633,7 @@ argument, as follows:
    A variable :samp:`DT_COMPAT_{VND_MY_DEVICE} := {vnd,my-device}`
    is automatically created by Zephyr for every ``compatible`` found
    in Devicetree bindings; there is no need to define such variables.
+   See :ref:`auto-dts-kconfig` for details.
 
 Checking changes in menuconfig/guiconfig
 ****************************************
