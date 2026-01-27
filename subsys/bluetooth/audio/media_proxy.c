@@ -14,6 +14,7 @@
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/media_proxy.h>
 #include <zephyr/bluetooth/audio/mcc.h>
+#include <zephyr/bluetooth/audio/mcs.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/services/ots.h>
 #include <zephyr/logging/log.h>
@@ -27,7 +28,7 @@ LOG_MODULE_REGISTER(bt_media_proxy, CONFIG_MCTL_LOG_LEVEL);
 
 /* Media player */
 struct media_player {
-	struct media_proxy_pl_calls *calls;
+	struct bt_mcs_cb *calls;
 	struct bt_conn *conn;  /* TODO: Treat local and remote player differently */
 	bool   registered;
 };
@@ -1167,9 +1168,7 @@ uint8_t media_proxy_ctrl_get_content_ctrl_id(struct media_player *player)
 #if defined(CONFIG_MCTL_LOCAL_PLAYER_CONTROL)
 /* Player calls *******************************************/
 
-
-
-int media_proxy_pl_register(struct media_proxy_pl_calls *pl_calls)
+int media_proxy_pl_register(struct bt_mcs_cb *pl_calls)
 {
 	CHECKIF(pl_calls == NULL) {
 		LOG_DBG("pl_calls is NULL");
