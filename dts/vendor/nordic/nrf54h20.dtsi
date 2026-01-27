@@ -636,8 +636,10 @@
 				interrupts = <134 NRF_DEFAULT_IRQ_PRIORITY>;
 				num-in-eps = <8>;
 				num-out-eps = <10>;
+				gsnpsid = <0x4f54430a>;
 				ghwcfg1 = <0xaa555000>;
 				ghwcfg2 = <0x22abfc72>;
+				ghwcfg3 = <0x0beac0e8>;
 				ghwcfg4 = <0x1e10aa60>;
 				status = "disabled";
 			};
