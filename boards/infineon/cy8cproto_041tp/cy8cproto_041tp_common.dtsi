@@ -23,6 +23,18 @@ uart0: &scb0 {
 	pinctrl-names = "default";
 };
 
+&tcpwm0_1 {
+	status = "disabled";
+
+	pwm0_1 {
+		clocks = <&peri_clk_div3>;
+		compatible = "infineon,tcpwm-pwm";
+		status = "disabled";
+		pinctrl-0 = <&p5_5_pwm0_1>;
+		pinctrl-names = "default";
+	};
+};
+
 &peri_clk_div0 {
 	status = "okay";
 	resource-type = <IFX_RSC_SCB>;
