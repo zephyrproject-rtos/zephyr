@@ -587,7 +587,6 @@ static int sdhc_stm32_card_busy(const struct device *dev)
 
 static int sdhc_stm32_reset(const struct device *dev)
 {
-	HAL_StatusTypeDef res;
 	struct sdhc_stm32_data *data = dev->data;
 	const struct sdhc_stm32_config *config = dev->config;
 
@@ -602,17 +601,16 @@ static int sdhc_stm32_reset(const struct device *dev)
 	(void)SDMMC_PowerState_ON(config->hsd->Instance);
 	k_msleep(data->props.power_delay);
 
-	/* Resetting card */
-	res = HAL_SDIO_CardReset(config->hsd);
-	if (res != HAL_OK) {
-		LOG_ERR("Card reset failed");
-	}
+	/* Clear error flags */
+	__SDMMC_CLEAR_FLAG(config->hsd->Instance, SDMMC_STATIC_FLAGS);
+	config->hsd->ErrorCode = SDMMC_ERROR_NONE;
+	config->hsd->State = SDMMC_STATE_READY;
 
 	k_mutex_unlock(&data->bus_mutex);
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	(void)pm_device_runtime_put(dev);
 
-	return res == HAL_OK ? 0 : -EIO;
+	return 0;
 }
 
 static DEVICE_API(sdhc, sdhc_stm32_api) = {
@@ -627,7 +625,6 @@ static DEVICE_API(sdhc, sdhc_stm32_api) = {
 void sdhc_stm32_event_isr(const struct device *dev)
 {
 	uint32_t icr_clear_flag = 0;
-	struct sdhc_stm32_data *data = dev->data;
 	const struct sdhc_stm32_config *config = dev->config;
 
 	if (__HAL_SDIO_GET_FLAG(config->hsd,
