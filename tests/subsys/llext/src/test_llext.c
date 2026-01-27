@@ -111,7 +111,7 @@ EXPORT_SYMBOL(my_thread_stack);
  * even in supervisor mode, so that user mode descendant threads can inherit
  * these permissions.
  */
-static void threads_objects_test_setup(struct llext *, struct k_thread *llext_thread)
+static void threads_objects_test_setup(struct llext *ext, struct k_thread *llext_thread)
 {
 	k_object_access_grant(&my_sem, llext_thread);
 	k_object_access_grant(&my_thread, llext_thread);
@@ -393,22 +393,24 @@ ZTEST(llext, test_inspect)
 	res = llext_load(ldr, "inspect", &ext, &ldr_parm);
 	zassert_ok(res, "load should succeed");
 
-	/* MWDT puts variables that are supposed to go into .bss into .data,
-	 * and, when Harvard / CCM is enabled, puts rodata in data-type sections.
-	 */
+	/* MWDT puts variables that are supposed to go into .bss into .data */
 #ifdef __CCAC__
 	do_inspect_checks(ldr, ext, LLEXT_MEM_DATA, ".data", "number_in_bss");
 #else
 	do_inspect_checks(ldr, ext, LLEXT_MEM_BSS, ".bss", "number_in_bss");
 #endif
 
-#if defined(CONFIG_HARVARD) && defined(__CCAC__)
-	do_inspect_checks(ldr, ext, LLEXT_MEM_DATA, ".rodata_in_data", "number_in_rodata");
-	do_inspect_checks(ldr, ext, LLEXT_MEM_DATA, ".my_rodata", "number_in_my_rodata");
-#else
-	do_inspect_checks(ldr, ext, LLEXT_MEM_RODATA, ".rodata", "number_in_rodata");
-	do_inspect_checks(ldr, ext, LLEXT_MEM_RODATA, ".my_rodata", "number_in_my_rodata");
-#endif
+	/* When the -Hccm flag is passed to MWDT, it puts read-only data into
+	 * a special data-type section called .rodata_in_data
+	 */
+	res = llext_section_shndx(ldr, ext, ".rodata_in_data");
+	if (res > 0) {
+		do_inspect_checks(ldr, ext, LLEXT_MEM_DATA, ".rodata_in_data", "number_in_rodata");
+		do_inspect_checks(ldr, ext, LLEXT_MEM_DATA, ".my_rodata", "number_in_my_rodata");
+	} else {
+		do_inspect_checks(ldr, ext, LLEXT_MEM_RODATA, ".rodata", "number_in_rodata");
+		do_inspect_checks(ldr, ext, LLEXT_MEM_RODATA, ".my_rodata", "number_in_my_rodata");
+	}
 
 	do_inspect_checks(ldr, ext, LLEXT_MEM_DATA, ".data", "number_in_data");
 	do_inspect_checks(ldr, ext, LLEXT_MEM_TEXT, ".text", "function_in_text");
