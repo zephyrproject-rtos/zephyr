@@ -22,25 +22,27 @@ typedef void (*irq_config_func_t)(const struct device *port);
 struct spi_stm32_config {
 	SPI_TypeDef *spi;
 	const struct pinctrl_dev_config *pcfg;
+	const struct stm32_pclken *pclken;
+	size_t pclk_len;
+	int datawidth;
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	irq_config_func_t irq_config;
 #ifdef CONFIG_SOC_SERIES_STM32H7X
 	uint32_t irq_line;
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 #endif
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
-	bool use_subghzspi_nss;
-#endif
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	int midi_clocks;
 	int mssi_clocks;
+	uint32_t fifo_max_transfer_size;
+	uint8_t fifo_size;
 #endif
-	size_t pclk_len;
-	const struct stm32_pclken *pclken;
-	int datawidth;
 	bool fifo_enabled: 1;
 	bool ioswp: 1;
 	bool soft_nss: 1;
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
+	bool use_subghzspi_nss: 1;
+#endif
 };
 
 #ifdef CONFIG_SPI_STM32_DMA
