@@ -6,7 +6,7 @@ Overview
 The Dragino NBSN95 NB-IoT Sensor Node for IoT allows users to develop
 applications with NB-IoT connectivity via the Quectel BC95-G.
 Dragino NBSN95 enables a wide diversity of applications by exploiting
-low-power communication, ARM |reg| Cortex |reg|-M0 core-based
+low-power communication, ARM® Cortex®-M0 core-based
 STM32L0 Series features.
 
 This kit provides:
@@ -29,13 +29,13 @@ Hardware
 The STM32L072CZ SoC provides the following hardware IPs:
 
 - Ultra-low-power (down to 0.29 µA Standby mode and 93 uA/MHz run mode)
-- Core: ARM |reg| 32-bit Cortex |reg|-M0+ CPU, frequency up to 32 MHz
+- Core: ARM® 32-bit Cortex®-M0+ CPU, frequency up to 32 MHz
 - Clock Sources:
 
         - 1 to 32 MHz crystal oscillator
         - 32 kHz crystal oscillator for RTC (LSE)
-        - Internal 16 MHz factory-trimmed RC ( |plusminus| 1%)
-        - Internal low-power 37 kHz RC ( |plusminus| 5%)
+        - Internal 16 MHz factory-trimmed RC (±1%)
+        - Internal low-power 37 kHz RC (±5%)
         - Internal multispeed low-power 65 kHz to 4.2 MHz RC
 - RTC with HW calendar, alarms and calibration
 - Up to 24 capacitive sensing channels: support touchkey, linear and rotary touch sensors
@@ -68,7 +68,7 @@ The STM32L072CZ SoC provides the following hardware IPs:
 - 7-channel DMA controller
 - True random number generator
 - CRC calculation unit, 96-bit unique ID
-- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell |trade|
+- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell™
 
 
 More information about STM32L072CZ can be found here:

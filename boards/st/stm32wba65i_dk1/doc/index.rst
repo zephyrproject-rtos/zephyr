@@ -3,24 +3,24 @@
 Overview
 ********
 
-STM32WBA65I-DK1 is a Bluetooth |reg| Low Energy, 802.15.4 and Zigbee |reg|
+STM32WBA65I-DK1 is a Bluetooth® Low Energy, 802.15.4 and Zigbee®
 wireless and ultra-low-power board embedding a powerful and ultra-low-power
-radio compliant with the Bluetooth |reg| Low Energy SIG specification v5.4
-with IEEE 802.15.4-2015 and Zigbee |reg| specifications.
+radio compliant with the Bluetooth® Low Energy SIG specification v5.4
+with IEEE 802.15.4-2015 and Zigbee® specifications.
 
-The ARDUINO |reg| Uno V3 connectivity support and the ST morpho headers allow
+The ARDUINO® Uno V3 connectivity support and the ST morpho headers allow
 the easy expansion of the functionality of the STM32 Discovery kit open
 development platform with a wide choice of specialized shields.
 
-- Ultra-low-power wireless STM32WBA65RI microcontroller based on the Arm |reg|
-  Cortex |reg| ‑M33 core with TrustZone |reg|, MPU, DSP, and FPU, that operates
+- Ultra-low-power wireless STM32WBA65RI microcontroller based on the Arm®
+  Cortex® ‑M33 core with TrustZone®, MPU, DSP, and FPU, that operates
   at a frequency of up to 100 MHz, featuring 2 Mbyte of flash memory and 512
   Kbytes of SRAM in a VFQFPN68 package
 
 - MCU RF board (MB2130):
 
-  - 2.4 GHz RF transceiver supporting Bluetooth |reg| specification v5.4
-  - Arm |reg| Cortex |reg| M33 CPU with TrustZone |reg|, MPU, DSP, and FPU
+  - 2.4 GHz RF transceiver supporting Bluetooth® specification v5.4
+  - Arm® Cortex® M33 CPU with TrustZone®, MPU, DSP, and FPU
   - Integrated PCB antenna
 
 - Three user LEDs (incl. one default not connected)
@@ -30,7 +30,7 @@ development platform with a wide choice of specialized shields.
 - Board connectors:
 
   - 2 USB Type-C
-  - ARDUINO |reg| Uno V3 expansion connector
+  - ARDUINO® Uno V3 expansion connector
   - ST morpho headers for full access to all STM32 I/Os
 
 - Flexible power-supply options: ST-LINK USB VBUS or external sources
@@ -41,7 +41,7 @@ Hardware
 ********
 
 The STM32WBA65xx multiprotocol wireless and ultralow power devices embed a
-powerful and ultralow power radio compliant with the Bluetooth |reg| SIG Low
+powerful and ultralow power radio compliant with the Bluetooth® SIG Low
 Energy specification 5.4.
 
 - Includes ST state-of-the-art patented technology
@@ -49,10 +49,10 @@ Energy specification 5.4.
 - Ultra low power radio:
 
   - 2.4 GHz radio
-  - RF transceiver supporting Bluetooth |reg| Low Energy 5.4 specification
-    IEEE 802.15.4-2015 PHY and MAC, supporting Thread, Matter and Zigbee |reg|
+  - RF transceiver supporting Bluetooth® Low Energy 5.4 specification
+    IEEE 802.15.4-2015 PHY and MAC, supporting Thread, Matter and Zigbee®
   - Proprietary protocols
-  - RX sensitivity: -96 dBm (Bluetooth |reg| Low Energy at 1 Mbps)
+  - RX sensitivity: -96 dBm (Bluetooth® Low Energy at 1 Mbps)
     and -100 dBm (IEEE 802.15.4 at 250 kbps)
   - Programmable output power, up to +10 dBm with 1 dB steps
   - Support for external PA
@@ -66,12 +66,12 @@ Energy specification 5.4.
   - - 40 °C to 85 °C temperature range
   - Autonomous peripherals with DMA, functional down to Stop 1 mode
   - 120 nA Standby mode (16 wake-up pins)
-  - 1.68 |micro| A Standby mode with 64 KB SRAM with RTC
-  - 5.58 |micro| A Stop 2 mode with 64 KB SRAM with RTC
-  - 28.75 |micro| A/MHz Run mode at 3.3 V
+  - 1.68 µA Standby mode with 64 KB SRAM with RTC
+  - 5.58 µA Stop 2 mode with 64 KB SRAM with RTC
+  - 28.75 µA/MHz Run mode at 3.3 V
   - Radio: Rx 4.26 mA / Tx at 0 dBm 5.94 mA
 
-- ART Accelerator |trade|: 8-Kbyte instruction cache allowing 0-wait-state execution
+- ART Accelerator™: 8-Kbyte instruction cache allowing 0-wait-state execution
   from flash memory (frequency up to 100 MHz, 150 DMIPS)
 - Power management: embedded regulator LDO and SMPS step-down converter
 - Supporting switch on-the-fly and voltage scaling
@@ -79,7 +79,7 @@ Energy specification 5.4.
 - Benchmarks:
 
   - 1.5 DMIPS/MHz (Drystone 2.1)
-  - 410 CoreMark |reg| (4.10 CoreMark/MHz)
+  - 410 CoreMark® (4.10 CoreMark/MHz)
 
 - Clock sources:
 
@@ -103,7 +103,7 @@ Energy specification 5.4.
 
   - Four UARTs (ISO 7816, IrDA, modem)
   - Three SPIs
-  - Four I2C Fm+ (1 Mbit/s), SMBus/PMBus |reg|
+  - Four I2C Fm+ (1 Mbit/s), SMBus/PMBus®
 
 - System peripherals:
 
@@ -120,7 +120,7 @@ Energy specification 5.4.
 
 - Security and cryptography:
 
-  - Arm |reg| TrustZone |reg| and securable I/Os, memories, and peripherals
+  - Arm® TrustZone® and securable I/Os, memories, and peripherals
   - Flexible life cycle scheme with RDP and password protected debug
   - Root of trust thanks to unique boot entry and secure hide protection area (HDP)
   - SFI (secure firmware installation) thanks to embedded RSS (root secure services)
@@ -138,7 +138,7 @@ Energy specification 5.4.
 
 - Development support:
 
-  - Serial wire debug (SWD), JTAG, Embedded Trace Macrocell |trade|
+  - Serial wire debug (SWD), JTAG, Embedded Trace Macrocell™
 
 - ECOPACK2 compliant package
 

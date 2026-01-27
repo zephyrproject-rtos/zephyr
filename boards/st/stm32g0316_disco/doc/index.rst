@@ -11,7 +11,7 @@ and program the embedded STM32 microcontroller.
 Hardware
 ********
 
-- STM32G031J6 Arm |reg| Cortex |reg|-M0+ core-based microcontroller,
+- STM32G031J6 Arm® Cortex®-M0+ core-based microcontroller,
   featuring 32 Kbytes of Flash memory and 8 Kbytes of SRAM, in an SO8 package
 - 1 user LED
 - 1 reset/user push-button

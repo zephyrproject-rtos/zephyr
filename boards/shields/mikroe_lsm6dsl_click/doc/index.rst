@@ -10,7 +10,7 @@ Overview
 LSM6DSL high-performance 3-axis digital accelerometer and 3-axis digital gyroscope. The click is
 designed to run on a 3.3V power supply. `LSM6DSL Click`_ communicates with the target
 micro-controller over SPI or I2C interface, with additional functionality provided by the INT pin on
-the mikroBUS |trade| line.
+the mikroBUS™ line.
 
 .. figure:: images/mikroe_lsm6dsl_click.webp
    :align: center
@@ -22,8 +22,8 @@ the mikroBUS |trade| line.
 Requirements
 ************
 
-This shield can only be used with a board that provides a mikroBUS |trade| socket and defines a
-``mikrobus_spi`` node label for the mikroBUS |trade| SPI interface. See :ref:`shields` for more
+This shield can only be used with a board that provides a mikroBUS™ socket and defines a
+``mikrobus_spi`` node label for the mikroBUS™ SPI interface. See :ref:`shields` for more
 details.
 
 Programming

@@ -11,7 +11,7 @@ Hardware
 STM32 Flight Controller Unit provides the following hardware components:
 
 - STM32F401CC in UFQFPN48 package
-- ARM |reg| 32-bit Cortex |reg|-M4 MCU with FPU
+- ARM® 32-bit Cortex®-M4 MCU with FPU
 - 84MHz max MCU frequency
 - VDD from 1.7 V to 3.6 V
 - 256 KB FLASH
@@ -27,7 +27,7 @@ STM32 Flight Controller Unit provides the following hardware components:
 - 2 User LEDS
 - USART/UART (1)
 - I2C (1)
-- Bluetooth |reg| Low Energy over SPI
+- Bluetooth® Low Energy over SPI
 
 More information about the STM32 Flight Controller Unit
 can be found in these documents:

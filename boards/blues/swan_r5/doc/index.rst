@@ -59,7 +59,7 @@ The STM32L4R5ZI SoC provides the following hardware IPs:
 
 - Ultra-low-power with FlexPowerControl (down to 130 nA Standby mode
   and 100 uA/MHz run mode)
-- Core: ARM |reg| 32-bit Cortex |reg|-M4 CPU with FPU, adaptive
+- Core: ARM® 32-bit Cortex®-M4 CPU with FPU, adaptive
   real-time accelerator (ART Accelerator) allowing 0-wait-state
   execution from Flash memory, frequency up to 120 MHz, MPU, 150
   DMIPS/1.25 DMIPS/MHz (Dhrystone 2.1), and DSP instructions

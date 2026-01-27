@@ -4,12 +4,12 @@ Overview
 ********
 
 The STM32H745I-DISCO Discovery kit is a complete demonstration and development
-platform for STMicroelectronics Arm |reg| Cortex |reg|‑M7 and Cortex |reg|‑M4 core-based STM32H745XI microcontroller.
+platform for STMicroelectronics Arm® Cortex®‑M7 and Cortex®‑M4 core-based STM32H745XI microcontroller.
 
 The full range of hardware features available on the board helps users enhance their application
 development by an evaluation of almost all peripherals (such as USB OTG FS, Ethernet 10/100Mb/s,
 eMMC, USART, SAI audio DAC stereo with audio jack input and output, MEMS digital microphone, SDRAM,
-Quad-SPI flash memory, and RGB interface LCD with capacitive multi-touch panel). ARDUINO |reg| Uno V3
+Quad-SPI flash memory, and RGB interface LCD with capacitive multi-touch panel). ARDUINO® Uno V3
 connectors provide easy connection to extension shields or daughterboards for specific applications.
 
 STLINK-V3E is integrated into the board, as an embedded in-circuit debugger and programmer for the
@@ -17,7 +17,7 @@ STM32 MCU and the USB Virtual COM port bridge
 
 Key Features
 
-- Arm |reg| Cortex |reg| core-based microcontroller with 2 Mbytes of flash memory and 1 Mbyte of RAM, in a TFBGA240+25 package
+- Arm® Cortex® core-based microcontroller with 2 Mbytes of flash memory and 1 Mbyte of RAM, in a TFBGA240+25 package
 - 4.3” RGB interface LCD with touch panel connector
 - Ethernet compliant with IEEE-802.3-2002, and PoE
 - USB OTG FS
@@ -37,16 +37,16 @@ Key Features
  - Ethernet RJ45
  - Stereo headset jack including analog microphone input
  - Audio header for external speakers
- - Tag‑Connect |trade| (TAG) 10-pin footprint
- - Arm |reg| Cortex |reg| 10-pin 1.27 mm pitch debug connector over STDC14 footprint
- - ARDUINO |reg| Uno V3 expansion connectors
+ - Tag‑Connect™ (TAG) 10-pin footprint
+ - Arm® Cortex® 10-pin 1.27 mm pitch debug connector over STDC14 footprint
+ - ARDUINO® Uno V3 expansion connectors
  - STMod+
 
 - Flexible power-supply options:
 
  - STLINK-V3E USB connector, USB FS connector
  - 5 V delivered by RJ45 (Power over Ethernet)
- - 5 V delivered by ARDUINO |reg| or external connector
+ - 5 V delivered by ARDUINO® or external connector
  - USB charger
  - USB power
 

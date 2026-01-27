@@ -5,16 +5,16 @@ Overview
 
 The STM32MP257F-DK Discovery kit is designed as a complete demonstration
 and development platform for the STMicroelectronics STM32MP257F microprocessor
-based on Arm |reg| dual-core Cortex |reg|-A35 (1.5 GHz) and Cortex |reg|-M33
+based on Arm® dual-core Cortex®-A35 (1.5 GHz) and Cortex®-M33
 (400 MHz), and the STPMIC25 companion chip.
-Zephyr OS is ported to run on the Cortex |reg|-M33 core, as a coprocessor of
-the Cortex |reg|-A35 core.
+Zephyr OS is ported to run on the Cortex®-M33 core, as a coprocessor of
+the Cortex®-A35 core.
 
 Features:
 =========
 
-- STM32MP257FAI3 microprocessor featuring dual-core Arm |reg| Cortex |reg|-A35,
-  a Cortex |reg|-M33 in a VFBGA424 package
+- STM32MP257FAI3 microprocessor featuring dual-core Arm® Cortex®-A35,
+  a Cortex®-M33 in a VFBGA424 package
 - ST power management STPMIC25
 - 32‑Gbit LPDDR4 DRAM
 - 64-Gbit eMMC v5.1
@@ -31,10 +31,10 @@ Features:
 
   - Ethernet RJ45
   - Two stacked USB 2.0 HS Type-A
-  - USB 3.0 USB Type-C |reg| PD
-  - microSD |trade| card holder
-  - Dual-lane MIPI CSI-2 |reg| camera module expansion connector
-  - HDMI |reg|
+  - USB 3.0 USB Type-C® PD
+  - microSD™ card holder
+  - Dual-lane MIPI CSI-2® camera module expansion connector
+  - HDMI®
   - LVDS
   - GPIO expansion connector
   - VBAT for power backup
@@ -42,11 +42,11 @@ Features:
 - On-board STLINK-V3EC:
 
   - Debugger with USB re-enumeration capability: Virtual COM port and debug port
-  - Board power source through USB Type-C |reg|
+  - Board power source through USB Type-C®
 
-- Mainlined open-source Linux |reg| STM32 MPU OpenSTLinux Distribution and
+- Mainlined open-source Linux® STM32 MPU OpenSTLinux Distribution and
   STM32CubeMP2 software with examples
-- Linux |reg| Yocto project |reg|, Buildroot, and STM32CubeIDE as
+- Linux® Yocto project®, Buildroot, and STM32CubeIDE as
   development environments
 
 More information about the board can be found at the
@@ -57,8 +57,8 @@ Hardware
 
 - Cores
 
-  - 64-bit dual-core Arm |reg| Cortex |reg|-A35 with 1.5 GHz max frequency
-  - 32-bit Arm |reg| Cortex |reg|-M33 with FPU/MPU, Arm |reg| TrustZone |reg|,  and 400 MHz max frequency
+  - 64-bit dual-core Arm® Cortex®-A35 with 1.5 GHz max frequency
+  - 32-bit Arm® Cortex®-M33 with FPU/MPU, Arm® TrustZone®,  and 400 MHz max frequency
 
 - Memories
 
@@ -83,7 +83,7 @@ Hardware
 
 - Security/Safety
 
-  - Secure boot, TrustZone |reg| peripherals, active tamper, environmental
+  - Secure boot, TrustZone® peripherals, active tamper, environmental
     monitors, display secure layers, hardware accelerators
   - Complete resource isolation framework
 
@@ -91,7 +91,7 @@ Hardware
 
   - 1x Gigabit Ethernet (RGMII)
   - USB 2.0 High-Speed Host (dual-port)
-  - USB Type-C |reg| DRP
+  - USB Type-C® DRP
   - GPIO expansion connector
 
 - Display & Camera
@@ -121,15 +121,15 @@ STM32MP257F-DK Discovery kit schematic is available here:
 System Clock
 ============
 
-Cortex |reg|-A35
+Cortex®-A35
 ----------------
 
 Not yet supported in Zephyr.
 
-Cortex |reg|-M33
+Cortex®-M33
 ----------------
 
-The Cortex |reg|-M33 Core is configured to run at a 400 MHz clock speed.
+The Cortex®-M33 Core is configured to run at a 400 MHz clock speed.
 
 Programming and Debugging
 *************************
@@ -140,9 +140,9 @@ Prerequisite
 ============
 
 Before you can run Zephyr on the STM32MP257F-DK Discovery kit, you need to
-set up the Cortex |reg|-A35 core with a Linux |reg| environment. The Cortex
-|reg|-M33 core runs Zephyr as a coprocessor, and it requires the Cortex
-|reg|-A35 to load and start the firmware using remoteproc.
+set up the Cortex®-A35 core with a Linux® environment. The Cortex®-M33
+core runs Zephyr as a coprocessor, and it requires the Cortex®-A35 to load
+and start the firmware using remoteproc.
 
 One way to set up the Linux environment is to use the official ST
 OpenSTLinux distribution, following the `Starter Package`_. (more information
@@ -151,9 +151,9 @@ about the procedure can be found in the `STM32MPU Wiki`_)
 Loading the firmware
 ====================
 
-Once the OpenSTLinux distribution is installed on the board, the Cortex |reg|
+Once the OpenSTLinux distribution is installed on the board, the Cortex®
 -A35 is responsible (in the current distribution) for loading the Zephyr
-firmware image in DDR and/or SRAM and starting the Cortex |reg| -M33 core. The
+firmware image in DDR and/or SRAM and starting the Cortex® -M33 core. The
 application can be built using west, taking the :zephyr:code-sample:`blinky` as
 an example.
 
@@ -170,7 +170,7 @@ Debugging
 =========
 Applications can be debugged using OpenOCD and GDB. The OpenOCD files can be
 found at `device-stm-openocd`_.
-The firmware must first be started by the Cortex |reg|-A35. The debugger can
+The firmware must first be started by the Cortex®-A35. The debugger can
 then be attached to the running Zephyr firmware using OpenOCD.
 
 - Build the sample:
