@@ -8,12 +8,13 @@
 
 #include "usbh_device.h"
 #include "usbh_ch9.h"
+#include "usbh_class.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbh_dev, CONFIG_USBH_LOG_LEVEL);
 
-K_MEM_SLAB_DEFINE_STATIC(usb_device_slab, sizeof(struct usb_device),
-			 CONFIG_USBH_USB_DEVICE_MAX, sizeof(void *));
+K_MEM_SLAB_DEFINE_STATIC(usb_device_slab, sizeof(struct usb_device), CONFIG_USBH_USB_DEVICE_MAX,
+			 sizeof(void *));
 
 K_HEAP_DEFINE(usb_device_heap, CONFIG_USBH_USB_DEVICE_HEAP);
 
@@ -123,8 +124,7 @@ enum ep_op {
 	EP_OP_DOWN, /* Disable endpoint and update endpoint pointers */
 };
 
-static void assign_ep_desc_ptr(struct usb_device *const udev,
-			       const uint8_t ep, void *const ptr)
+static void assign_ep_desc_ptr(struct usb_device *const udev, const uint8_t ep, void *const ptr)
 {
 	uint8_t idx = USB_EP_GET_IDX(ep) & 0xF;
 
@@ -135,8 +135,7 @@ static void assign_ep_desc_ptr(struct usb_device *const udev,
 	}
 }
 
-static int handle_ep_op(struct usb_device *const udev,
-			const enum ep_op op, const uint8_t ep,
+static int handle_ep_op(struct usb_device *const udev, const enum ep_op op, const uint8_t ep,
 			struct usb_ep_descriptor *const ep_desc)
 {
 	switch (op) {
@@ -157,8 +156,7 @@ static int handle_ep_op(struct usb_device *const udev,
 	return 0;
 }
 
-static int device_interface_modify(struct usb_device *const udev,
-				   const enum ep_op op,
+static int device_interface_modify(struct usb_device *const udev, const enum ep_op op,
 				   const uint8_t iface, const uint8_t alt)
 {
 	struct usb_cfg_descriptor *cfg_desc = udev->cfg_desc;
@@ -198,19 +196,17 @@ static int device_interface_modify(struct usb_device *const udev,
 				return err;
 			}
 
-			LOG_INF("Modify interface %u ep 0x%02x by op %u",
-				iface, ep_desc->bEndpointAddress, op);
+			LOG_INF("Modify interface %u ep 0x%02x by op %u", iface,
+				ep_desc->bEndpointAddress, op);
 		}
 
 		dhp = (void *)((uint8_t *)dhp + dhp->bLength);
 	}
 
-
 	return found_iface ? 0 : -ENODATA;
 }
 
-int usbh_device_interface_set(struct usb_device *const udev,
-			      const uint8_t iface, const uint8_t alt,
+int usbh_device_interface_set(struct usb_device *const udev, const uint8_t iface, const uint8_t alt,
 			      const bool dry)
 {
 	uint8_t cur_alt;
@@ -407,9 +403,9 @@ int usbh_device_set_configuration(struct usb_device *const udev, const uint8_t n
 		goto error;
 	}
 
-	udev->cfg_desc = k_heap_alloc(&usb_device_heap,
-				      cfg_desc.wTotalLength + sizeof(struct usb_desc_header),
-				      K_NO_WAIT);
+	udev->cfg_desc =
+		k_heap_alloc(&usb_device_heap,
+			     cfg_desc.wTotalLength + sizeof(struct usb_desc_header), K_NO_WAIT);
 	if (udev->cfg_desc == NULL) {
 		LOG_ERR("Failed to allocate memory for configuration descriptor");
 		err = -ENOMEM;
@@ -441,8 +437,8 @@ int usbh_device_set_configuration(struct usb_device *const udev, const uint8_t n
 		goto error;
 	}
 
-	LOG_INF("Configuration %u bNumInterfaces %u",
-		cfg_desc.bConfigurationValue, cfg_desc.bNumInterfaces);
+	LOG_INF("Configuration %u bNumInterfaces %u", cfg_desc.bConfigurationValue,
+		cfg_desc.bNumInterfaces);
 
 	err = parse_configuration_descriptor(udev);
 	if (err) {
@@ -530,9 +526,25 @@ int usbh_device_init(struct usb_device *const udev)
 
 	LOG_INF("New device with address %u state %u", udev->addr, udev->state);
 
-	err = usbh_device_set_configuration(udev, 1);
-	if (err) {
-		LOG_ERR("Failed to configure new device with address %u", udev->addr);
+	for (unsigned int i = 0; i < udev->dev_desc.bNumConfigurations; i++) {
+		err = usbh_device_set_configuration(udev, i + 1);
+		if (err != 0) {
+			LOG_ERR("Failed to configure new device with address %u", udev->addr);
+		} else {
+			err = usbh_class_probe_device(udev);
+			switch (err) {
+			case 0:
+				LOG_INF("Device class probed successfully for configuration %u",
+					i + 1);
+				break;
+			case -ENOTSUP:
+				LOG_WRN("No supported class found for configuration %u", i + 1);
+				continue;
+			default:
+				LOG_ERR("Failed to probe device class for configuration %u", i + 1);
+				break;
+			}
+		}
 	}
 
 error:
