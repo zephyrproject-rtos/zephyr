@@ -487,10 +487,17 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 		}
 	}
 
-	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-	(void)pm_device_runtime_put(dev);
-	k_mutex_unlock(&dev_data->bus_mutex);
+	/*
+	 * Defer PM release to ISR only for successful DMA-based SDIO_RW_EXTENDED.
+	 * Release PM here for all other cases (polling mode, other commands, or errors).
+	 */
+	if (IS_ENABLED(CONFIG_SDHC_STM32_POLLING_MODE) || cmd->opcode != SDIO_RW_EXTENDED ||
+	    res != 0) {
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+		(void)pm_device_runtime_put(dev);
+	}
 
+	k_mutex_unlock(&dev_data->bus_mutex);
 	return res;
 }
 
@@ -631,35 +638,56 @@ static int sdhc_stm32_reset(const struct device *dev)
 	return 0;
 }
 
-void sdhc_stm32_event_isr(const struct device *dev)
+static void sdhc_stm32_clear_icr_flags(SDMMC_TypeDef *Instance)
 {
 	uint32_t icr_clear_flag = 0;
-	const struct sdhc_stm32_config *config = dev->config;
+	uint32_t sta = Instance->STA;
 
-	if (__HAL_SDIO_GET_FLAG(config->hsd, SDMMC_FLAG_DATAEND | SDMMC_FLAG_DCRCFAIL |
-						     SDMMC_FLAG_DTIMEOUT | SDMMC_FLAG_RXOVERR |
-						     SDMMC_FLAG_TXUNDERR)) {
+	if ((sta & SDMMC_STA_DCRCFAIL) != 0U) {
+		icr_clear_flag |= SDMMC_ICR_DCRCFAILC;
+	}
+
+	if ((sta & SDMMC_STA_DTIMEOUT) != 0U) {
+		icr_clear_flag |= SDMMC_ICR_DTIMEOUTC;
+	}
+
+	if ((sta & SDMMC_STA_TXUNDERR) != 0U) {
+		icr_clear_flag |= SDMMC_ICR_TXUNDERRC;
+	}
+
+	if ((sta & SDMMC_STA_RXOVERR) != 0U) {
+		icr_clear_flag |= SDMMC_ICR_RXOVERRC;
+	}
+
+	if (icr_clear_flag != 0U) {
+		LOG_ERR("SDMMC interrupt err flag raised: 0x%08X", icr_clear_flag);
+		Instance->ICR = icr_clear_flag;
+	}
+}
+
+void sdhc_stm32_event_isr(const struct device *dev)
+{
+	const struct sdhc_stm32_config *config = dev->config;
+	struct sdhc_stm32_data *data = dev->data;
+
+	if (__SDMMC_GET_FLAG(config->hsd->Instance,
+			     SDMMC_FLAG_DATAEND | SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_DTIMEOUT |
+				     SDMMC_FLAG_RXOVERR | SDMMC_FLAG_TXUNDERR)) {
 		k_sem_give(&data->device_sync_sem);
 	}
 
-	if ((config->hsd->Instance->STA & SDMMC_STA_DCRCFAIL) != 0U) {
-		icr_clear_flag |= SDMMC_ICR_DCRCFAILC;
-	}
-	if ((config->hsd->Instance->STA & SDMMC_STA_DTIMEOUT) != 0U) {
-		icr_clear_flag |= SDMMC_ICR_DTIMEOUTC;
-	}
-	if ((config->hsd->Instance->STA & SDMMC_STA_TXUNDERR) != 0U) {
-		icr_clear_flag |= SDMMC_ICR_TXUNDERRC;
-	}
-	if ((config->hsd->Instance->STA & SDMMC_STA_RXOVERR) != 0U) {
-		icr_clear_flag |= SDMMC_ICR_RXOVERRC;
-	}
-	if (icr_clear_flag) {
-		LOG_ERR("SDMMC interrupt err flag raised: 0x%08X", icr_clear_flag);
-		config->hsd->Instance->ICR = icr_clear_flag;
+	sdhc_stm32_clear_icr_flags(config->hsd->Instance);
+
+	if (data->error_code != 0) {
+		LOG_ERR("Error Interrupt");
+		sdhc_stm32_log_err_type(data);
 	}
 
 	HAL_SDIO_IRQHandler(config->hsd);
+
+	/* Release PM locks when transfer finishes (successfully or with error) */
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	(void)pm_device_runtime_put(dev);
 }
 
 static int sdhc_stm32_init(const struct device *dev)
