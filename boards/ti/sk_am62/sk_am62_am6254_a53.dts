@@ -25,15 +25,15 @@
 		};
 
 		cpu@1 {
-			status = "disabled";
+			status = "okay";
 		};
 
 		cpu@2 {
-			status = "disabled";
+			status = "okay";
 		};
 
 		cpu@3 {
-			status = "disabled";
+			status = "okay";
 		};
 	};
 
