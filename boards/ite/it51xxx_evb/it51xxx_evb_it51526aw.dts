@@ -8,6 +8,7 @@
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <ite/it51xxx.dtsi>
+#include <ite/it51526aw.dtsi>
 #include <ite/it51xxx-pinctrl-map.dtsi>
 
 / {
