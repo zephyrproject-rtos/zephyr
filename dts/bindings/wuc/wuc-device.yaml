@@ -1,0 +1,10 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: This file needs to be included by devices that need a wake up controller.
+
+properties:
+  wakeup-ctrls:
+    type: phandle-array
+    description: |
+      Phandle to the wakeup controller used by this device.

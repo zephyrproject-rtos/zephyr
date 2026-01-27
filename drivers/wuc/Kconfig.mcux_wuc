@@ -1,0 +1,9 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config WUC_MCUX_LLWU
+	bool "NXP Low Leakage Wakeup Unit"
+	default y
+	depends on DT_HAS_NXP_LLWU_ENABLED
+	help
+		Enable support for NXP LLWU(Low Leakage Wakeup Unit) wakeup controller driver.
