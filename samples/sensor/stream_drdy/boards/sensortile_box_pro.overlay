@@ -20,7 +20,7 @@
 	lsm6dsv16x_0: lsm6dsv16x@0 {
 		compatible = "st,lsm6dsv16x";
 
-		accel-odr = <LSM6DSV16X_DT_ODR_AT_960Hz>;
+		accel-odr = <LSM6DSVXXX_DT_ODR_AT_960Hz>;
 		accel-range = <LSM6DSV16X_DT_FS_16G>;
 	};
 };
