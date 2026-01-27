@@ -5332,7 +5332,6 @@ USB-C:
   status: maintained
   maintainers:
     - sambhurst
-  collaborators:
     - keith-zephyr
   files:
     - drivers/usb_c/
