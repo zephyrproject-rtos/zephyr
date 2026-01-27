@@ -54,7 +54,8 @@
 #define CSIS_RANK_CHAR_ATTR_COUNT 2 /* declaration + value */
 
 #define CSIS_MAX_ATTR                                                                              \
-	(10U + IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE) +                             \
+	(8U + IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE) +                             \
+	 (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT) ? 2U : 0U) +                         \
 	 IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE))
 
 LOG_MODULE_REGISTER(bt_csip_set_member, CONFIG_BT_CSIP_SET_MEMBER_LOG_LEVEL);
@@ -76,7 +77,9 @@ struct csip_client {
 
 struct bt_csip_set_member_svc_inst {
 	struct bt_csip_sirk sirk;
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT)
 	uint8_t set_size;
+#endif
 	uint8_t set_lock;
 	uint8_t rank;
 	bool lockable;
@@ -321,6 +324,7 @@ static void sirk_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 	LOG_DBG("value 0x%04x", value);
 }
 
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT)
 static ssize_t read_set_size(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
 			     void *buf, uint16_t len, uint16_t offset)
@@ -339,7 +343,7 @@ static void set_size_cfg_changed(const struct bt_gatt_attr *attr,
 {
 	LOG_DBG("value 0x%04x", value);
 }
-
+#endif
 static ssize_t read_set_lock(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
 			     void *buf, uint16_t len, uint16_t offset)
@@ -676,16 +680,23 @@ void *bt_csip_set_member_svc_decl_get(const struct bt_csip_set_member_svc_inst *
 
 static bool valid_register_param(const struct bt_csip_set_member_register_param *param)
 {
+	if (!IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT) && param->set_size > 0U) {
+		LOG_DBG("Set size cannot be greater than 0 if set size is not enabled");
+		return false;
+	}
+
 	if (param->lockable && param->rank == 0) {
 		LOG_DBG("Rank cannot be 0 if service is lockable");
 		return false;
 	}
 
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT)
 	if (param->rank > 0 && param->set_size > 0 && param->rank > param->set_size) {
 		LOG_DBG("Invalid rank: %u (shall be less than or equal to set_size: %u)",
 			param->rank, param->set_size);
 		return false;
 	}
+#endif
 
 #if CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT > 1
 	if (param->parent == NULL) {
@@ -783,12 +794,13 @@ static void notify_cb(struct bt_conn *conn, void *data)
 			notify(svc_inst, conn, BT_UUID_CSIS_SIRK, &svc_inst->sirk,
 			       sizeof(svc_inst->sirk));
 		}
-
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT)
 		if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE) &&
 		    atomic_test_and_clear_bit(client->flags, FLAG_NOTIFY_SIZE)) {
 			notify(svc_inst, conn, BT_UUID_CSIS_SET_SIZE, &svc_inst->set_size,
 			       sizeof(svc_inst->set_size));
 		}
+#endif
 
 unlock_and_return:
 		err = k_mutex_unlock(&svc_inst->mutex);
@@ -851,6 +863,7 @@ static struct bt_gatt_ccc_managed_user_data set_sirk_audio_ccc_user_data[] = {
 		CSIS_SET_SIRK_AUDIO_CCC_USER_DATA, (,)),
 };
 
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT)
 /* Set size */
 static const struct bt_gatt_chrc set_size_user_data = BT_GATT_CHRC_INIT(
 	BT_UUID_CSIS_SET_SIZE, 0U,
@@ -877,6 +890,7 @@ static struct bt_gatt_ccc_managed_user_data set_size_audio_ccc_user_data[] = {
 	LISTIFY(CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT,
 		CSIS_SET_SIZE_AUDIO_CCC_USER_DATA, (,)),
 };
+#endif
 
 /* Set lock */
 static const struct bt_gatt_chrc set_lock_user_data = BT_GATT_CHRC_INIT(
@@ -921,7 +935,9 @@ static const struct bt_uuid *ccc_uuid = BT_UUID_GATT_CCC;
 static const struct bt_uuid *chrc_uuid = BT_UUID_GATT_CHRC;
 static const struct bt_uuid *csis_uuid = BT_UUID_CSIS;
 static const struct bt_uuid *sirk_uuid = BT_UUID_CSIS_SIRK;
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT)
 static const struct bt_uuid *size_uuid = BT_UUID_CSIS_SET_SIZE;
+#endif
 static const struct bt_uuid *lock_uuid = BT_UUID_CSIS_SET_LOCK;
 static const struct bt_uuid *rank_uuid = BT_UUID_CSIS_RANK;
 static void instantiate_service(struct bt_csip_set_member_svc_inst *inst,
@@ -962,6 +978,7 @@ static void instantiate_service(struct bt_csip_set_member_svc_inst *inst,
 		attr_cnt++;
 	}
 
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT)
 	if (param->set_size > 0U) {
 		/* Set Size declaration */
 		inst->attrs[attr_cnt].uuid = chrc_uuid;
@@ -988,6 +1005,7 @@ static void instantiate_service(struct bt_csip_set_member_svc_inst *inst,
 			attr_cnt++;
 		}
 	}
+#endif
 	if (param->lockable) {
 		/* Set lock declaration */
 		inst->attrs[attr_cnt].uuid = chrc_uuid;
@@ -1094,7 +1112,9 @@ int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *
 	k_work_init_delayable(&inst->set_lock_timer,
 			      set_lock_timer_handler);
 	inst->rank = param->rank;
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT)
 	inst->set_size = param->set_size;
+#endif
 	inst->set_lock = BT_CSIP_RELEASE_VALUE;
 	inst->sirk.type = BT_CSIP_SIRK_TYPE_PLAIN;
 	inst->cb = param->cb;
@@ -1184,6 +1204,11 @@ int bt_csip_set_member_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
 int bt_csip_set_member_set_size_and_rank(struct bt_csip_set_member_svc_inst *svc_inst, uint8_t size,
 					 uint8_t rank)
 {
+	if (!IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT)) {
+		LOG_DBG("set size support is not enabled");
+		return -ENOTSUP;
+	}
+
 	if (svc_inst == NULL) {
 		LOG_DBG("svc_inst is NULL");
 		return -EINVAL;
@@ -1204,12 +1229,14 @@ int bt_csip_set_member_set_size_and_rank(struct bt_csip_set_member_svc_inst *svc
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT)
 	if (svc_inst->set_size == size) {
 		LOG_DBG("Set size %u is already set", size);
 		return -EALREADY;
 	}
 
 	svc_inst->set_size = size;
+#endif
 	svc_inst->rank = svc_inst->lockable ? rank : 0U;
 
 	if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE)) {
@@ -1235,7 +1262,11 @@ int bt_csip_set_member_get_info(const struct bt_csip_set_member_svc_inst *svc_in
 	info->lockable = svc_inst->lockable;
 	info->locked = svc_inst->set_lock == BT_CSIP_LOCK_VALUE;
 	info->rank = svc_inst->rank;
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT)
 	info->set_size = svc_inst->set_size;
+#else
+	info->set_size = 0U;
+#endif
 	memcpy(info->sirk, svc_inst->sirk.value, BT_CSIP_SIRK_SIZE);
 	bt_addr_le_copy(&info->lock_client_addr, &svc_inst->lock_client_addr);
 
