@@ -7,7 +7,7 @@ description: |
   Listens for key events as an input and produces key events as output
   corresponding to double taps.
 
-  Can be optionally be associated to a specific device to listen for events
+  Can optionally be associated to a specific device to listen for events
   only from that device.
 
   Example configuration:
