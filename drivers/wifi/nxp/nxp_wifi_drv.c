@@ -2204,6 +2204,21 @@ static int nxp_wifi_set_config(const struct device *dev, enum ethernet_config_ty
 	return 0;
 }
 
+static int nxp_wifi_get_config(const struct device *dev,
+			       enum ethernet_config_type type,
+			       struct ethernet_config *config)
+{
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_EXTRA_TX_PKT_HEADROOM:
+		config->extra_tx_pkt_headroom = CONFIG_NXP_WIFI_EXTRA_TX_HEADROOM;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 #ifdef CONFIG_PM_DEVICE
 #ifdef CONFIG_NXP_RW610
 void device_pm_dump_wakeup_source(void)
@@ -2392,6 +2407,7 @@ static const struct zep_wpa_supp_dev_ops nxp_wifi_drv_ops = {
 static const struct net_wifi_mgmt_offload nxp_wifi_sta_apis = {
 	.wifi_iface.iface_api.init = nxp_wifi_sta_init,
 	.wifi_iface.set_config = nxp_wifi_set_config,
+	.wifi_iface.get_config = nxp_wifi_get_config,
 	.wifi_iface.send = nxp_wifi_send,
 	.wifi_mgmt_api = &nxp_wifi_sta_mgmt,
 #if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT)
@@ -2435,6 +2451,7 @@ DEFINE_WIFI_NM_INSTANCE(wifi_sap, &nxp_wifi_uap_mgmt);
 static const struct net_wifi_mgmt_offload nxp_wifi_uap_apis = {
 	.wifi_iface.iface_api.init = nxp_wifi_uap_init,
 	.wifi_iface.set_config = nxp_wifi_set_config,
+	.wifi_iface.get_config = nxp_wifi_get_config,
 	.wifi_iface.send = nxp_wifi_send,
 	.wifi_mgmt_api = &nxp_wifi_uap_mgmt,
 #if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT)
