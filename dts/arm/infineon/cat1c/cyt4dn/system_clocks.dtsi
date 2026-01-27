@@ -198,9 +198,9 @@
 		clk_hf5: clk_hf5 {
 			#clock-cells = <0>;
 			compatible = "infineon,cat1-clock";
-			clock-frequency = <125000000>;
+			clock-frequency = <196000000>;
 			ifx,hf-predivider = <IFX_CAT1_CLKHF_NO_DIVIDE>;
-			clocks = <&pll7>;
+			clocks = <&pll1>;
 			ifx,hf-instance = <5>;
 		};
 

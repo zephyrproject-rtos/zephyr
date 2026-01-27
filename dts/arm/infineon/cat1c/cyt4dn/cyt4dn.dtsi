@@ -2509,5 +2509,54 @@
 				#size-cells = <0>;
 			};
 		};
+
+		i2s0: tdm@40818000 {
+                        #address-cells = <1>;
+                        #size-cells = <0>;
+                        compatible = "infineon,i2s";
+                        reg = <0x40818000 0x200>;
+                        system-interrupts = <752 4>, /* TX Structure */
+                        <753 4>; /* RX Structure */	
+			dmas = <&dma1 68>, <&dma1 72>;
+			dma-names = "tx", "rx";
+                        status = "disabled";
+                };
+
+		i2s1: tdm@40818200 {
+                        #address-cells = <1>;
+                        #size-cells = <0>;
+                        compatible = "infineon,i2s";
+                        reg = <0x40818200 0x200>;
+                        system-interrupts = <754 4>, /* TX Structure */
+                        <755 4>; /* RX Structure */
+			dmas = <&dma1 69>, <&dma1 73>;
+			dma-names = "tx", "rx";
+                        status = "disabled";
+                };
+
+		i2s2: tdm@40818400 {
+                        #address-cells = <1>;
+                        #size-cells = <0>;
+                        compatible = "infineon,i2s";
+                        reg = <0x40818400 0x200>;
+                        system-interrupts = <756 4>, /* TX Structure */
+                        <757 4>; /* RX Structure */
+			dmas = <&dma1 70>, <&dma1 74>;
+			dma-names = "tx", "rx";
+                        status = "disabled";
+                };
+
+		 i2s3: tdm@40818600 {
+                        #address-cells = <1>;
+                        #size-cells = <0>;
+                        compatible = "infineon,i2s";
+                        reg = <0x40818600 0x200>;
+                        system-interrupts = <758 4>, /* TX Structure */
+                        <759 4>; /* RX Structure */
+			dmas = <&dma1 71>, <&dma1 75>;
+			dma-names = "tx", "rx";
+                        status = "disabled";
+                };
+
 	};
 };
