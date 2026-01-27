@@ -1622,14 +1622,30 @@ int arch_buffer_validate(const void *addr, size_t size, int write)
 	return mem_buffer_validate(addr, size, write, RING_USER);
 }
 
-void xtensa_exc_dtlb_multihit_handle(void)
+void xtensa_exc_dtlb_multihit_handle(void *vaddr)
 {
-	/* For some unknown reasons, using xtensa_dtlb_probe() would result in
-	 * QEMU raising privileged instruction exception. So for now, just
-	 * invalidate all auto-refilled DTLBs.
-	 */
+	uint8_t way, i;
+	const uint8_t num_entries = BIT(XCHAL_DTLB_ARF_ENTRIES_LOG2);
 
-	xtensa_dtlb_autorefill_invalidate();
+	/* Each auto-refill way has a number of entries (4 or 8 depending on
+	 * configuration). So we need to ignore the lowest bits of
+	 * the virtual page number (VPN) to match the truncated VPN in
+	 * each TLB entry.
+	 */
+	const uint32_t excvaddr =
+		(uint32_t)vaddr & (XTENSA_MMU_PTE_VPN_MASK << XCHAL_DTLB_ARF_ENTRIES_LOG2);
+
+	for (way = 0; way < XTENSA_MMU_NUM_TLB_AUTOREFILL_WAYS; way++) {
+		for (i = 0; i < num_entries; i++) {
+			uint32_t entry = way + (i << XTENSA_MMU_PTE_PPN_SHIFT);
+			uint32_t tlb_vaddr = (uint32_t)xtensa_dtlb_vaddr_read(entry);
+
+			if (tlb_vaddr == excvaddr) {
+				xtensa_dtlb_entry_invalidate(entry);
+			}
+		}
+	}
+	__asm__ volatile("isync");
 }
 
 bool xtensa_exc_load_store_ring_error_check(void *bsa_p)

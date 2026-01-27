@@ -632,7 +632,7 @@ void *xtensa_excint1_c(void *esf)
 #endif /* CONFIG_XTENSA_LAZY_HIFI_SHARING */
 #if defined(CONFIG_XTENSA_MMU) && defined(CONFIG_USERSPACE)
 	case EXCCAUSE_DTLB_MULTIHIT:
-		xtensa_exc_dtlb_multihit_handle();
+		xtensa_exc_dtlb_multihit_handle((void *)bsa->excvaddr);
 		goto return_to_interrupted;
 		break;
 	case EXCCAUSE_LOAD_STORE_RING:
