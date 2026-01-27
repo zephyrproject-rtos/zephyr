@@ -11,12 +11,6 @@ compatible: "nxp,flexcan-fd"
 include: ["nxp,flexcan.yaml", "can-fd-controller.yaml", "pinctrl-device.yaml",
           "nxp,rdc-policy.yaml"]
 
-properties:
-  number-of-mb-fd:
-    type: int
-    required: true
-    description: Number of 64-byte payload message buffers FlexCAN FD instance supported
-
 examples:
   - |
     flexcan3: can@401d8000 {
@@ -29,7 +23,6 @@ examples:
       clock-names = "clksrc1";
       clk-source = <1>;
       number-of-mb = <64>;
-      number-of-mb-fd = <14>;
       pinctrl-0 = <&pinmux_flexcan3>;
       pinctrl-names = "default";
 

@@ -40,8 +40,15 @@ properties:
 
   number-of-mb:
     type: int
+    enum:
+      - 16
+      - 32
+      - 64
+      - 96
+      - 128
     required: true
-    description: Number of 8-byte payload message buffers FlexCAN instance supported
+    description: |
+      Number of 8-byte sized message buffers supported by this FlexCAN instance.
 
 examples:
   - |
