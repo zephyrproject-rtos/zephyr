@@ -798,8 +798,8 @@ static int sdhc_stm32_pm_action(const struct device *dev, enum pm_device_action 
 												\
 	PM_DEVICE_DT_INST_DEFINE(index, sdhc_stm32_pm_action);					\
 												\
-	DEVICE_DT_INST_DEFINE(index, &sdhc_stm32_init, NULL, &sdhc_stm32_data_##index,		\
-				&sdhc_stm32_cfg_##index, POST_KERNEL, CONFIG_SDHC_INIT_PRIORITY,\
-				&sdhc_stm32_api);
+	DEVICE_DT_INST_DEFINE(index, &sdhc_stm32_init, PM_DEVICE_DT_INST_GET(index),            \
+			      &sdhc_stm32_data_##index, &sdhc_stm32_cfg_##index, POST_KERNEL,   \
+			      CONFIG_SDHC_INIT_PRIORITY, &sdhc_stm32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SDHC_STM32_INIT)
