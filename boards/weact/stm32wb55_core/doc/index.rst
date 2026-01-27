@@ -5,12 +5,12 @@ Overview
 
 The WeAct Studio STM32WB55 Core Board is a compact multi-protocol wireless and
 ultra-low-power development board embedding a powerful radio compliant with the
-Bluetooth |reg| Low Energy (BLE) SIG specification v5.0 and with IEEE 802.15.4-2011.
+Bluetooth® Low Energy (BLE) SIG specification v5.0 and with IEEE 802.15.4-2011.
 
 - STM32WB55CGU6 microcontroller in UFQFPN48 package
-- 2.4 GHz RF transceiver supporting Bluetooth |reg| specification v5.0 and
+- 2.4 GHz RF transceiver supporting Bluetooth® specification v5.0 and
   IEEE 802.15.4-2011 PHY and MAC
-- Dedicated Arm |reg| 32-bit Cortex |reg| M0+ CPU for real-time Radio layer
+- Dedicated Arm® 32-bit Cortex® M0+ CPU for real-time Radio layer
 - One user LED (Blue)
 - One BOOT button
 - One RESET button
@@ -30,17 +30,17 @@ with 1 Mbyte of Flash memory, Bluetooth 5, 802.15.4, USB, AES-256 SoC and
 provides the following hardware capabilities:
 
 - Ultra-low-power with FlexPowerControl (down to 600 nA Standby mode with RTC and 32KB RAM)
-- Core: ARM |reg| 32-bit Cortex |reg|-M4 CPU with FPU, frequency up to 64 MHz
+- Core: ARM® 32-bit Cortex®-M4 CPU with FPU, frequency up to 64 MHz
 - Radio:
 
   - 2.4GHz
-  - RF transceiver supporting Bluetooth |reg| 5 specification, IEEE 802.15.4-2011 PHY and MAC,
-    supporting Thread and ZigBee |reg| 3.0
-  - RX Sensitivity: -96 dBm (Bluetooth |reg| Low Energy at 1 Mbps), -100 dBm (802.15.4)
+  - RF transceiver supporting Bluetooth® 5 specification, IEEE 802.15.4-2011 PHY and MAC,
+    supporting Thread and ZigBee® 3.0
+  - RX Sensitivity: -96 dBm (Bluetooth® Low Energy at 1 Mbps), -100 dBm (802.15.4)
   - Programmable output power up to +6 dBm with 1 dB steps
   - Integrated balun to reduce BOM
   - Support for 2 Mbps
-  - Dedicated Arm |reg| 32-bit Cortex |reg| M0+ CPU for real-time Radio layer
+  - Dedicated Arm® 32-bit Cortex® M0+ CPU for real-time Radio layer
   - Accurate RSSI to enable power control
 
 - Clock Sources:

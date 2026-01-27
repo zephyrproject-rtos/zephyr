@@ -364,8 +364,8 @@ boot in the Secure state.
 
 MPS2+ AN521 (CPU1) does not support the Armv8m Security Extension.
 
-Building Secure/Non-Secure Zephyr applications with Arm |reg| TrustZone |reg|
-=============================================================================
+Building Secure/Non-Secure Zephyr applications with Arm® TrustZone®
+===================================================================
 
 Applications on the MPS2+ AN521 (CPU0) may contain a Secure and a Non-Secure
 firmware image. The Secure image can be built using either Zephyr

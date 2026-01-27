@@ -24,7 +24,7 @@ Hardware
 SECO SBC-3.5-PX30 provides the following hardware components:
 
 - STM32F302VCT6
-  - ARM |reg| 32-bit Cortex |reg| -M4 CPU with FPU
+  - ARM® 32-bit Cortex®-M4 CPU with FPU
   - 256 KB Flash
   - 40 KB SRAM
   - 72 MHz max CPU frequency

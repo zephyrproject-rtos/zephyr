@@ -8,7 +8,7 @@ and is a ready-to-use box kit for wireless IoT and wearable sensor platforms to 
 and developing apps based on remote motion and environmental sensor data.
 
 The SensorTile.box PRO board fits into a small plastic box with a long-life rechargeable
-battery, and communicates with a standard smartphone through its Bluetooth |reg| interface,
+battery, and communicates with a standard smartphone through its Bluetooth® interface,
 providing data coming from the sensors.
 
 More information about the board can be found at the `SensorTile.box PRO website`_.
@@ -40,19 +40,19 @@ The following is a summary of the main board features. More info can be find on 
 and the `schematic`_.
 
 The STM32U585xx devices are an ultra-low-power microcontrollers family (STM32U5
-Series) based on the high-performance Arm |reg| Cortex |reg|-M33 32-bit RISC core.
+Series) based on the high-performance Arm® Cortex®-M33 32-bit RISC core.
 They operate at a frequency of up to 160 MHz.
 
 - Ultra-low-power with FlexPowerControl (down to 300 nA Standby mode and 19.5 uA/MHz run mode)
-- Core: ARM |reg| 32-bit Cortex |reg| -M33 CPU with TrustZone |reg| and FPU.
+- Core: ARM® 32-bit Cortex®-M33 CPU with TrustZone® and FPU.
 - Performance benchmark:
 
   - 1.5 DMPIS/MHz (Drystone 2.1)
-  - 651 CoreMark |reg| (4.07 CoreMark |reg| /MHZ)
+  - 651 CoreMark® (4.07 CoreMark® /MHZ)
 
 - Security and cryptography
 
-  - Arm |reg|  TrustZone |reg| and securable I/Os memories and peripherals
+  - Arm®  TrustZone® and securable I/Os memories and peripherals
   - Flexible life cycle scheme with RDP (readout protection) and password protected debug
   - Root of trust thanks to unique boot entry and secure hide protection area (HDP)
   - Secure Firmware Installation thanks to embedded Root Secure Services
@@ -72,10 +72,10 @@ They operate at a frequency of up to 160 MHz.
 
   - 4 to 50 MHz crystal oscillator
   - 32 kHz crystal oscillator for RTC (LSE)
-  - Internal 16 MHz factory-trimmed RC ( |plusminus| 1%)
-  - Internal low-power 32 kHz RC ( |plusminus| 5%)
+  - Internal 16 MHz factory-trimmed RC (±1%)
+  - Internal low-power 32 kHz RC (±5%)
   - 2 internal multispeed 100 kHz to 48 MHz oscillators, including one auto-trimmed by
-    LSE (better than  |plusminus| 0.25 % accuracy)
+    LSE (better than ±0.25 % accuracy)
   - 3 PLLs for system clock, USB, audio, ADC
   - Internal 48 MHz with clock recovery
 
@@ -131,7 +131,7 @@ They operate at a frequency of up to 160 MHz.
     sound-activity detection
 
 - CRC calculation unit
-- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell |trade|
+- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell™
 - True Random Number Generator (RNG)
 
 - Graphic features
@@ -213,7 +213,7 @@ functions.
 BlueNRG-LP chip
 ===============
 
-The board is equipped with an STMicroelectronics `BlueNRG-LP`_ chip. Before running Zephyr Bluetooth |reg| samples
+The board is equipped with an STMicroelectronics `BlueNRG-LP`_ chip. Before running Zephyr Bluetooth® samples
 on SensorTile.box PRO, it is required to upgrade the BlueNRG chip with a Zephyr BLE stack compatible firmware.
 The upgrade may be easily performed using the application provided in `SensorTile.box PRO BLE firmware upgrade package`_.
 For more information about BLE binaries for SensorTile.box family, see `stsw-mkbox-bleco`_.

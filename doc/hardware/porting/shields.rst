@@ -184,8 +184,8 @@ See :dtcompatible:`microbit,edge-connector` for GPIO pin definitions and
 links to technical requirements.
 
 
-mikroBUS |trade|
-----------------
+mikroBUS™
+---------
 
 This is an interface standard for add-on boards, developed by Mikroe.
 
@@ -194,7 +194,7 @@ This is an interface standard for add-on boards, developed by Mikroe.
    :alt: 3D Hall 3 Click
    :height: 300px
 
-   3D Hall 3 Click, an example of a mikroBUS |trade| shield
+   3D Hall 3 Click, an example of a mikroBUS™ shield
 
 Relevant devicetree node labels:
 
@@ -205,7 +205,7 @@ Relevant devicetree node labels:
 - ``mikrobus_spi``
 - ``mikrobus_serial``
 
-Note that boards with several mikroBUS |trade| connectors might define for
+Note that boards with several mikroBUS™ connectors might define for
 example ``mikrobus_2_spi``.
 
 

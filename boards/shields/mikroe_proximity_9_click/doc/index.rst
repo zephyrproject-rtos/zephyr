@@ -12,7 +12,7 @@ Filtron™ technology
 
 The 940nm IRED emitter, along with the low noise analog front end, and the PS/ALS photo-sensitive
 elements, is integrated on the VCNL4040 IC, ensuring very accurate and reliable measurements. The
-proprietary Filtron |trade| technology provides response near to the human eye spectral response,
+proprietary Filtron™ technology provides response near to the human eye spectral response,
 providing the background light cancellation. The programmable interrupt engine allows for the
 development of an optimized firmware, reducing the MCU workload and power consumption.
 
@@ -26,8 +26,8 @@ development of an optimized firmware, reducing the MCU workload and power consum
 Requirements
 ************
 
-This shield can only be used with a board that provides a mikroBUS |trade| socket and defines a
-``mikrobus_i2c`` node label for the mikroBUS |trade| I2C interface. See :ref:`shields` for more
+This shield can only be used with a board that provides a mikroBUS™ socket and defines a
+``mikrobus_i2c`` node label for the mikroBUS™ I2C interface. See :ref:`shields` for more
 details.
 
 Programming

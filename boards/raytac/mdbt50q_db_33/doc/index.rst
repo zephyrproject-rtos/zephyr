@@ -34,7 +34,7 @@ Hardware
 - BT5.2&BT5.1&BT5 Bluetooth Specification Certified
 - Supports BT5 Long Range Features
 - Certifications: FCC, IC, CE, Telec(MIC), KC, SRRC, NCC, RCM, WPC
-- 32-bit ARM® Cortex |reg| M4F CPU
+- 32-bit ARM® Cortex® M4F CPU
 - 512kB Flash Memory/128kB RAM
 - RoHs & Reach Compliant.
 - 42 GPIO

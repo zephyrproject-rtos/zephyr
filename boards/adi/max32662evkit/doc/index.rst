@@ -21,7 +21,7 @@ Hardware
     - 16KB Unified Cache
     - Memory Protection Unit (MPU)
     - Dual- or Single-Supply Operation: 1.7V to 3.6V
-    - Wide Operating Temperature: -40°C to +105°C
+    - Wide Operating Temperature: -40 °C to +105 °C
 
   - Flexible Clocking Schemes
 

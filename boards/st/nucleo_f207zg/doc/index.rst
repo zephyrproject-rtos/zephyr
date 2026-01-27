@@ -34,7 +34,7 @@ Hardware
 Nucleo F207ZG provides the following hardware components:
 
 - STM32F207ZGT6 in LQFP144 package
-- ARM |reg| 32-bit Cortex |reg| -M3 CPU
+- ARM® 32-bit Cortex®-M3 CPU
 - 120 MHz max CPU frequency
 - VDD from 1.7 V to 3.6 V
 - 1 MB Flash

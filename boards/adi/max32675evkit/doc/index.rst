@@ -47,7 +47,7 @@ Hardware
     - TRNG Compliant to SP800-90B
     - Secure Nonvolatile Key Storage and AES-128/192/256
     - Secure Bootloader to Protect IP/Firmware
-    - Wide, -40°C to +105°C Operating TemperatureRange
+    - Wide, -40 °C to +105 °C Operating TemperatureRange
 
 
 - Benefits and Features of MAX32675EVKIT:

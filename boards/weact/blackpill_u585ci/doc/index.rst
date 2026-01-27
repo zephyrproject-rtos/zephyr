@@ -12,8 +12,8 @@ on `WeAct Github`_.
 Key Features
 
 - STM32U585CI microcontroller in UFQFPN48 package
-- ARM |reg| 32-bit Cortex |reg| -M33 with TrustZone |reg|, MPU, DSP and FPU
-- 160 MHz max CPU frequency, 1.5 DMPIS/MHz, 4.07 CoreMark |reg| /MHz
+- ARM® 32-bit Cortex®-M33 with TrustZone®, MPU, DSP and FPU
+- 160 MHz max CPU frequency, 1.5 DMPIS/MHz, 4.07 CoreMark® /MHz
 - 2 MB Flash with ECC and 2 banks
 - 784 KB SRAM
 - GPIO with external interrupt capability
@@ -25,7 +25,7 @@ Key Features
 - 32.768 kHz and 8MHz HSE crystal oscillators
 - Board connectors:
 
-   - USB Type-C |reg| Connector
+   - USB Type-C® Connector
    - SWD header for external debugger
    - 2x 20-pin GPIO connector
 
@@ -33,7 +33,7 @@ Hardware
 ********
 
 The STM32U585xx devices are an ultra-low-power microcontrollers family (STM32U5
-Series) based on the high-performance Arm |reg| Cortex |reg| -M33 32-bit RISC core.
+Series) based on the high-performance Arm® Cortex®-M33 32-bit RISC core.
 They operate at a frequency of up to 160 MHz.
 More information about STM32U585CI can be found here:
 

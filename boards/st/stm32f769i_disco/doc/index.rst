@@ -45,7 +45,7 @@ Hardware
 The STM32F769I Discovery kit provides the following hardware components:
 
 - STM32F769NIH6 in BGA216 package
-- ARM |reg| 32-bit Cortex |reg| -M7 CPU with FPU
+- ARM® 32-bit Cortex®-M7 CPU with FPU
 - 216 MHz max CPU frequency
 - VDD from 1.7 V to 3.6 V
 - 2 MB Flash
@@ -55,7 +55,7 @@ The STM32F769I Discovery kit provides the following hardware components:
 - Chrom-ART Accelerator(DMA2D), graphical hardware accelerator enabling enhanced graphical user interface
 - Hardware JPEG codec
 - LCD-TFT controller supporting up to XGA resolution
-- MIPI |reg|  DSI host controller supporting up to 720p 30Hz resolution
+- MIPI®  DSI host controller supporting up to 720p 30Hz resolution
 - 3x12-bit ADC with 24 channels
 - 2x12-bit D/A converters
 - DMA Controller
