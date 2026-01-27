@@ -200,6 +200,10 @@ New APIs and options
     mailbox usage. Applications should be prepared to receive a NULL payload pointer
     in IPM callbacks when no data buffer is provided by the mailbox.
 
+* Kernel
+
+  * :c:func:`k_thread_runtime_stats_is_enabled`
+
 * Modem
 
   * :kconfig:option:`CONFIG_MODEM_HL78XX_AT_SHELL`
