@@ -401,9 +401,6 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 	switch (cmd->opcode) {
 	case SD_GO_IDLE_STATE:
 		sdmmc_res = sdhc_stm32_go_idle_state(dev);
-		if (sdmmc_res != 0U) {
-			res = -EIO;
-		}
 		break;
 
 	case SD_SELECT_CARD:
@@ -432,9 +429,6 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 	case SDIO_SEND_OP_COND:
 		sdmmc_res = SDMMC_CmdSendOperationcondition(config->hsd->Instance, cmd->arg,
 							    (uint32_t *)&cmd->response);
-		if (sdmmc_res != 0U) {
-			res = -EIO;
-		}
 		break;
 
 	case SDIO_RW_DIRECT:
@@ -455,9 +449,13 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 		res = -ENOTSUP;
 	}
 
-	if (res != 0) {
+	if ((sdmmc_res != 0U) || (res != 0)) {
 		LOG_DBG("Command Failed, opcode:%d", cmd->opcode);
 		sdhc_stm32_log_err_type(config->hsd);
+
+		if (res == 0) {
+			res = -EIO;
+		}
 	}
 
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
@@ -485,12 +483,12 @@ static int sdhc_stm32_set_io(const struct device *dev, struct sdhc_io *ios)
 			LOG_ERR("Invalid clock frequency, domain (%u, %u)", props->f_min,
 				props->f_max);
 			res = -EINVAL;
-			goto out;
+			goto end;
 		}
 		if (HAL_SDIO_ConfigFrequency(config->hsd, (uint32_t)ios->clock) != HAL_OK) {
 			LOG_ERR("Failed to set clock to %d", ios->clock);
 			res = -EIO;
-			goto out;
+			goto end;
 		}
 		host_io->clock = ios->clock;
 		LOG_DBG("Clock set to %d", ios->clock);
@@ -520,7 +518,7 @@ static int sdhc_stm32_set_io(const struct device *dev, struct sdhc_io *ios)
 		host_io->bus_width = ios->bus_width;
 	}
 
-out:
+end:
 	k_mutex_unlock(&data->bus_mutex);
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	(void)pm_device_runtime_put(dev);
@@ -604,15 +602,6 @@ static int sdhc_stm32_reset(const struct device *dev)
 	return 0;
 }
 
-static DEVICE_API(sdhc, sdhc_stm32_api) = {
-	.request = sdhc_stm32_request,
-	.set_io = sdhc_stm32_set_io,
-	.get_host_props = sdhc_stm32_get_host_props,
-	.get_card_present = sdhc_stm32_get_card_present,
-	.card_busy = sdhc_stm32_card_busy,
-	.reset = sdhc_stm32_reset,
-};
-
 void sdhc_stm32_event_isr(const struct device *dev)
 {
 	uint32_t icr_clear_flag = 0;
@@ -694,6 +683,15 @@ static int sdhc_stm32_init(const struct device *dev)
 
 	return ret;
 }
+
+static DEVICE_API(sdhc, sdhc_stm32_api) = {
+	.request = sdhc_stm32_request,
+	.set_io = sdhc_stm32_set_io,
+	.get_host_props = sdhc_stm32_get_host_props,
+	.get_card_present = sdhc_stm32_get_card_present,
+	.card_busy = sdhc_stm32_card_busy,
+	.reset = sdhc_stm32_reset,
+};
 
 #ifdef CONFIG_PM_DEVICE
 static int sdhc_stm32_suspend(const struct device *dev)
