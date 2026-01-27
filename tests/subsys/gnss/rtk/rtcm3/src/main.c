@@ -56,3 +56,32 @@ ZTEST(rtk_decoder, test_frame_with_invalid_crc_is_invalid_data)
 	zassert_equal(-ENOENT,
 		      gnss_rtk_decoder_frame_get(cmd_rtcm3, sizeof(cmd_rtcm3), &data, &data_len));
 }
+
+ZTEST(rtk_decoder, test_frame_with_zero_payload_len_is_skipped)
+{
+	uint8_t cmd_rtcm3[] = {
+		0xD3, /* Sync byte */
+		0x00, 0x00, /* Length: 0 byte */
+		0x00, 0x00, 0x00 /* CRC (value shouldn't matter, frame will be skipped) */
+	};
+	uint8_t *data;
+	size_t data_len;
+
+	zassert_equal(-ENOENT,
+		      gnss_rtk_decoder_frame_get(cmd_rtcm3, sizeof(cmd_rtcm3), &data, &data_len));
+}
+
+ZTEST(rtk_decoder, test_frame_exceeding_remaining_bytes_is_skipped)
+{
+	uint8_t cmd_rtcm3[] = {
+		0xD3, /* Sync byte */
+		0x00, 0x03, /* Length: 4 bytes */
+		0x4C, 0xE0, 0x00, 0x80, /* Payload */
+		0xED, 0xED /* truncated CRC, 1 byte missing for the frame to be complete */
+	};
+	uint8_t *data;
+	size_t data_len;
+
+	zassert_equal(-ENOENT,
+		      gnss_rtk_decoder_frame_get(cmd_rtcm3, sizeof(cmd_rtcm3), &data, &data_len));
+}
