@@ -1,0 +1,27 @@
+# Infineon CAT1 I2S configuration options
+
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config I2S_INFINEON
+	bool "Infineon CAT1 I2S driver"
+	default y
+	depends on DT_HAS_INFINEON_I2S_ENABLED
+	select USE_INFINEON_I2S
+	select PINCTRL
+	help
+	  This option enables the I2S driver.
+
+if I2S_INFINEON
+
+config I2S_INFINEON_RX_QUEUE_SIZE
+	int "RX queue length"
+	default 8
+
+config I2S_INFINEON_TX_QUEUE_SIZE
+	int "TX queue length"
+	default 8
+
+endif # I2S_INFINEON
