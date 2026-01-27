@@ -119,7 +119,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach', 'rtt'},
+        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach', 'rtt', 'reset'},
                           dev_id=True, flash_addr=True, erase=True, reset=True,
                           tool_opt=True, file=True, rtt=True, batch_debug=True)
 
@@ -414,6 +414,15 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                     client_cmd += ['-ex', 'monitor go', '-ex', 'disconnect', '-ex', 'quit']
                 elif self.reset:
                     client_cmd += ['-ex', 'monitor reset']
+            if command == 'reset':
+                client_cmd += [
+                    '-ex', 'monitor halt',
+                    '-ex', 'monitor reset',
+                    '-ex', 'set confirm off',
+                    '-ex', 'monitor go',
+                    '-ex', 'disconnect',
+                    '-ex', 'quit',
+                ]
 
             if not self.gdb_host:
                 self.require(self.gdbserver)

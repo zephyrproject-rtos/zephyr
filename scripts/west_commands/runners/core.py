@@ -249,7 +249,17 @@ class MissingProgram(FileNotFoundError):
         super().__init__(errno.ENOENT, os.strerror(errno.ENOENT), program)
 
 
-_RUNNERCAPS_COMMANDS = {'flash', 'debug', 'debugserver', 'attach', 'simulate', 'robot', 'rtt'}
+_RUNNERCAPS_COMMANDS = {
+    "flash",
+    "debug",
+    "debugserver",
+    "attach",
+    "simulate",
+    "robot",
+    "rtt",
+    "reset",
+}
+
 
 @dataclass
 class RunnerCaps:
