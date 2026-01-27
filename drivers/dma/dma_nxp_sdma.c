@@ -498,7 +498,7 @@ static int dma_nxp_sdma_init(const struct device *dev)
 	static void dma_nxp_sdma_##inst_irq_config(void)		\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(inst),				\
-			    DT_INST_IRQ_(inst, priority),		\
+			    DT_INST_IRQ(inst, priority),		\
 			    dma_nxp_sdma_isr, DEVICE_DT_INST_GET(inst), 0);	\
 		irq_enable(DT_INST_IRQN(inst));				\
 	}								\
