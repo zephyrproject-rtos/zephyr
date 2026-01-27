@@ -77,4 +77,6 @@ zephyr_library_sources_ifdef(CONFIG_COUNTER_XEC counter_mchp_xec.c)
 zephyr_library_sources_ifdef(CONFIG_COUNTER_XLNX_AXI_TIMER counter_xlnx_axi_timer.c)
 zephyr_library_sources_ifdef(CONFIG_TIMER_DTMR_CMSDK_APB timer_dtmr_cmsdk_apb.c)
 zephyr_library_sources_ifdef(CONFIG_TIMER_TMR_CMSDK_APB timer_tmr_cmsdk_apb.c)
+zephyr_library_sources_ifdef(CONFIG_COUNTER_TTC counter_xlnx_ttc.c)
+
 # zephyr-keep-sorted-stop
