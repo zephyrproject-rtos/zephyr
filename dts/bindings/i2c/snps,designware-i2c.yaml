@@ -32,3 +32,15 @@ properties:
     default: 30
     description: |
       Describe the SCL stuck at low timeout value, unit in ms
+      
+  sda-tx-hold-ns:
+    type: int
+    default: 300
+    description: |
+      Hold time in nanoseconds of SDA during transmit in both slave and master mode (after SCL goes from HIGH to LOW)
+
+  sda-rx-hold-ns:
+    type: int
+    default: 0
+    description: |
+      Extend the SDA transition (if any) whenever SCL is HIGH in the receiver in either master or slave mode (nanoseconds)
