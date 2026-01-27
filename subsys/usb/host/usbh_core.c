@@ -72,8 +72,6 @@ static void dev_connected_handler(struct usbh_context *const ctx,
 	if (usbh_device_init(ctx->root)) {
 		LOG_ERR("Failed to reset new USB device");
 	}
-
-	usbh_class_probe_device(ctx->root);
 }
 
 static void dev_removed_handler(struct usbh_context *const ctx)
