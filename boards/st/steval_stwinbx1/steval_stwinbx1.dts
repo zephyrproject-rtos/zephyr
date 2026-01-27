@@ -55,6 +55,7 @@
 	};
 
 	aliases {
+		accel0 = &iis2dlpc;
 		led0 = &green_led;
 		led1 = &orange_led;
 		pwm-led0 = &green_pwm_led;
