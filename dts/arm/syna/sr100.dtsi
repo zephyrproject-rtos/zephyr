@@ -189,8 +189,10 @@
 			num-out-eps = <8>;
 			num-in-eps = <8>;
 			clocks = <&gcr SYNA_USB_CLK>;
+			gsnpsid = <0x5532430a>;
 			ghwcfg1 = <0x00000000>;
 			ghwcfg2 = <0x02882054>; // 8 endpoints, dynamic sizing
+			ghwcfg3 = <0x0c78c468>;
 			ghwcfg4 = <0xe2003e20>; // 9 in endpoints, desc-DMA
 			status = "disabled";
 		};
