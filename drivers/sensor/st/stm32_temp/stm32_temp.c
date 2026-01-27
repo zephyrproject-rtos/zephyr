@@ -10,6 +10,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/nvmem.h>
 #include <zephyr/pm/device_runtime.h>
 #include <stm32_ll_adc.h>
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
@@ -58,6 +59,12 @@ struct stm32_temp_data {
 	int16_t raw; /* raw adc Sensor value */
 };
 
+#if defined(CONFIG_STM32_TEMP_READ_CALIB_VIA_NVMEM)
+typedef struct nvmem_cell calib_info_t;
+#else
+typedef const void *calib_info_t;
+#endif /* CONFIG_STM32_TEMP_READ_CALIB_VIA_NVMEM */
+
 struct stm32_temp_config {
 	const struct device *adc;
 	struct adc_channel_cfg adc_cfg;
@@ -69,12 +76,12 @@ struct stm32_temp_config {
 #else /* HAS_CALIBRATION */
 	unsigned int calib_vrefanalog;	/** Unit: mV */
 	unsigned int calib_data_shift;
-	const void *ts_cal1_addr;
+	calib_info_t ts_cal1;
 	int ts_cal1_temp;		/** Unit: °C */
 #if defined(HAS_SINGLE_CALIBRATION)
 	float average_slope;		/** Unit: mV/°C */
 #else /* HAS_DUAL_CALIBRATION */
-	const void *ts_cal2_addr;
+	calib_info_t ts_cal2;
 	int ts_cal2_temp;		/** Unit: °C */
 #endif
 #endif /* HAS_CALIBRATION */
@@ -235,7 +242,7 @@ static DEVICE_API(sensor, stm32_temp_driver_api) = {
 	.channel_get = stm32_temp_channel_get,
 };
 
-#if defined(HAS_CALIBRATION)
+#if defined(HAS_CALIBRATION) && !defined(CONFIG_STM32_TEMP_READ_CALIB_VIA_NVMEM)
 static uint32_t fetch_mfg_data(const void *addr)
 {
 	/* On all STM32 series, the calibration data is stored
@@ -243,28 +250,49 @@ static uint32_t fetch_mfg_data(const void *addr)
 	 */
 	return sys_read16((mem_addr_t)addr);
 }
+#endif /* HAS_CALIBRATION && !CONFIG_STM32_TEMP_READ_CALIB_VIA_NVMEM */
 
-static void read_calibration_data(const struct stm32_temp_config *cfg,
+#if defined(HAS_CALIBRATION)
+static int read_calibration_data(const struct stm32_temp_config *cfg,
 				  union stm32_dietemp_calib_data *cd)
 {
-#if defined(CONFIG_SOC_SERIES_STM32H5X)
+# if defined(CONFIG_STM32_TEMP_READ_CALIB_VIA_NVMEM)
+	int res;
+
+	res = nvmem_cell_read(&cfg->ts_cal1, &cd->raw[0], 0, sizeof(cd->raw[0]));
+	if (res < 0) {
+		LOG_ERR("Failed to read TS_CAL1: %d", res);
+		return res;
+	}
+
+#  if defined(HAS_DUAL_CALIBRATION)
+	res = nvmem_cell_read(&cfg->ts_cal2, &cd->raw[1], 0, sizeof(cd->raw[1]));
+	if (res < 0) {
+		LOG_ERR("Failed to read TS_CAL2: %d", res);
+		return res;
+	}
+#  endif /* HAS_DUAL_CALIBRATION */
+# else /* CONFIG_STM32_TEMP_READ_CALIB_VIA_NVMEM */
+#  if defined(CONFIG_SOC_SERIES_STM32H5X)
 	/* Disable the ICACHE to ensure all memory accesses are non-cacheable.
 	 * This is required on STM32H5, where the manufacturing flash must be
 	 * accessed in non-cacheable mode - otherwise, a bus error occurs.
 	 */
 	sys_cache_instr_disable();
-#endif /* CONFIG_SOC_SERIES_STM32H5X */
+#  endif /* CONFIG_SOC_SERIES_STM32H5X */
 
-	cd->raw[0] = fetch_mfg_data(cfg->ts_cal1_addr);
-#if defined(HAS_DUAL_CALIBRATION)
-	cd->raw[1] = fetch_mfg_data(cfg->ts_cal2_addr);
-#endif
+	cd->raw[0] = fetch_mfg_data(cfg->ts_cal1);
+#  if defined(HAS_DUAL_CALIBRATION)
+	cd->raw[1] = fetch_mfg_data(cfg->ts_cal2);
+#  endif
 
-
-#if defined(CONFIG_SOC_SERIES_STM32H5X)
+#  if defined(CONFIG_SOC_SERIES_STM32H5X)
 	/* Re-enable the ICACHE (unconditonally - it should always be turned on) */
 	sys_cache_instr_enable();
-#endif /* CONFIG_SOC_SERIES_STM32H5X */
+#  endif /* CONFIG_SOC_SERIES_STM32H5X */
+# endif /* CONFIG_STM32_TEMP_READ_CALIB_VIA_NVMEM */
+
+	return 0;
 }
 #endif /* HAS_CALIBRATION */
 
@@ -283,7 +311,11 @@ static int stm32_temp_init(const struct device *dev)
 
 #if defined(HAS_CALIBRATION)
 	/* Read calibration data once during init */
-	read_calibration_data(cfg, &data->calib_data);
+	int res = read_calibration_data(cfg, &data->calib_data);
+
+	if (res < 0) {
+		return res;
+	}
 #endif
 
 	*asp = (struct adc_sequence){
@@ -313,6 +345,16 @@ BUILD_ASSERT(0,	"ADC '" DT_NODE_FULL_NAME(DT_INST_IO_CHANNELS_CTLR(0)) "' needed
  */
 #else
 
+#if defined(CONFIG_STM32_TEMP_READ_CALIB_VIA_NVMEM)
+#define INIT_PARAMETER(inst, cell_name) NVMEM_CELL_INST_GET_BY_NAME(inst, cell_name)
+#else
+/* MMIO address = base of OTP flash area + offset of cell in OTP */
+#define INIT_PARAM_INNER(nvmc)							\
+	((void *)(DT_REG_ADDR(DT_MTD_FROM_NVMEM_CELL(nvmc)) + DT_REG_ADDR(nvmc)))
+#define INIT_PARAMETER(inst, cell_name)							\
+	INIT_PARAM_INNER(DT_INST_NVMEM_CELL_BY_NAME(inst, cell_name))
+#endif /* CONFIG_STM32_TEMP_READ_CALIB_VIA_NVMEM */
+
 static struct stm32_temp_data stm32_temp_dev_data;
 
 static const struct stm32_temp_config stm32_temp_dev_config = {
@@ -325,14 +367,13 @@ static const struct stm32_temp_config stm32_temp_dev_config = {
 		.channel_id = DT_INST_IO_CHANNELS_INPUT(0),
 		.differential = 0
 	},
-
 #if defined(HAS_CALIBRATION)
-	.ts_cal1_addr = (const void *)DT_INST_PROP(0, ts_cal1_addr),
+	.ts_cal1 = INIT_PARAMETER(0, ts_cal1),
 	.ts_cal1_temp = DT_INST_PROP(0, ts_cal1_temp),
 #if defined(HAS_SINGLE_CALIBRATION)
 	.average_slope = ((float)DT_INST_STRING_UNQUOTED(0, avgslope)),
 #else /* HAS_DUAL_CALIBRATION */
-	.ts_cal2_addr = (const void *)DT_INST_PROP(0, ts_cal2_addr),
+	.ts_cal2 = INIT_PARAMETER(0, ts_cal2),
 	.ts_cal2_temp = DT_INST_PROP(0, ts_cal2_temp),
 #endif
 	.calib_data_shift = (DT_INST_PROP(0, ts_cal_resolution) - CAL_RES),

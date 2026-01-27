@@ -88,11 +88,6 @@
 		};
 	};
 
-	die_temp: dietemp {
-		ts-cal1-addr = <0x1ff07a2c>;
-		ts-cal2-addr = <0x1ff07a2e>;
-	};
-
 	vref: vref {
 		vrefint-cal-addr = <0x1ff07a2a>;
 	};
