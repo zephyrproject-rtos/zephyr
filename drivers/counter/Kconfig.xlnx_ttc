@@ -1,0 +1,21 @@
+# Copyright 2026 Advanced Micro Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# TTC Counter configuration
+
+config COUNTER_XLNX_TTC
+	bool "Xilinx TTC (Triple Timer Counter) driver"
+	default y
+	depends on DT_HAS_XLNX_TTC_COUNTER_ENABLED
+	help
+	  Enable driver for Xilinx TTC (Triple Timer Counter).
+	  Each timer within a TTC block is treated as a separate counter device.
+
+if COUNTER_XLNX_TTC
+
+module = COUNTER_XLNX_TTC
+module-str = ttc
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # COUNTER_XLNX_TTC
