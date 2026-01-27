@@ -15,3 +15,4 @@ string
 	default "ek_ra8p1/r7ka8p1kflcac/cm33" if $(BOARD) = "ek_ra8p1"
 	default "ek_ra8d2/r7ka8d2kflcac/cm33" if $(BOARD) = "ek_ra8d2"
 	default "ek_ra8m2/r7ka8m2jflcac/cm33" if $(BOARD) = "ek_ra8m2"
+	default "ek_ra8t2/r7ka8t2lflcac/cm33" if $(BOARD) = "ek_ra8t2"
