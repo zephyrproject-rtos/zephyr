@@ -14,3 +14,15 @@ config STM32_TEMP
 	select ADC
 	help
 	  Enable driver for STM32 temperature sensor.
+
+if STM32_TEMP
+
+config STM32_TEMP_READ_CALIB_VIA_NVMEM
+	bool "Read Temperature Sensor calibration data using NVMEM"
+	default y
+	depends on OTP && NVMEM
+	help
+	  Read calibration data using the NVMEM subsystem
+	  instead of using raw memory accesses.
+
+endif # STM32_TEMP

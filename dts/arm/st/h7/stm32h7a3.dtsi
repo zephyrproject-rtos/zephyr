@@ -200,8 +200,6 @@
 	};
 
 	die_temp: dietemp {
-		ts-cal1-addr = <0x08fff814>;
-		ts-cal2-addr = <0x08fff818>;
 		io-channels = <&adc2 18>;
 		ts-cal2-temp = <130>;
 	};
