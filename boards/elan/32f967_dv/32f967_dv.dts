@@ -19,6 +19,10 @@
 		zephyr,flash-controller = &em32_flash_controller;
 		zephyr,flash = &flash0;
 	};
+
+	aliases {
+		clock0 = &clk_ahb;
+	};
 };
 
 &clk_ahb {
@@ -26,7 +30,7 @@
 };
 
 &clk_apb {
-	clocks = <&clk_ahb>;
+	clocks = <&clk_ahb EM32_GATE_NONE>;
 	status = "okay";
 };
 
@@ -108,7 +112,10 @@ zephyr_udc0: &usbd {
 };
 
 &sysctrl {
-	status = "disabled";
+	/* Enabled so the pinctrl and gpio drivers can serialize their shared
+	 * register writes through the syscon API (syscon_update_bits).
+	 */
+	status = "okay";
 };
 
 &pwrctrl {
@@ -116,5 +123,9 @@ zephyr_udc0: &usbd {
 };
 
 &clkctrl {
-	status = "disabled";
+	status = "okay";
+};
+
+&infoctrl {
+	status = "okay";
 };
