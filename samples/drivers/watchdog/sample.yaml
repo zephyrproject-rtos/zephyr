@@ -16,7 +16,8 @@ common:
   depends_on: watchdog
 tests:
   sample.drivers.watchdog:
-    filter: not (CONFIG_SOC_FAMILY_STM32 or CONFIG_SOC_FAMILY_GD_GD32 or SOC_SERIES_GD32VF103)
+    filter: not (CONFIG_SOC_FAMILY_STM32 or CONFIG_SOC_FAMILY_GD_GD32 or SOC_SERIES_GD32VF103) and
+      dt_nodelabel_enabled("watchdog0")
     platform_exclude:
       - s32z2xxdc2/s32z270/rtu0
       - s32z2xxdc2/s32z270/rtu1

@@ -116,9 +116,13 @@
 #define DAC_CHANNEL_ID		0
 
 #else
-#error "Unsupported board."
+#pragma message "Unsupported board."
+#define DAC_RESOLUTION          12
+#define DAC_CHANNEL_ID          0
+#define DAC_UNSET
 #endif
 
+#ifndef DAC_UNSET
 static const struct dac_channel_cfg dac_ch_cfg = {
 	.channel_id = DAC_CHANNEL_ID,
 	.resolution = DAC_RESOLUTION,
@@ -128,6 +132,7 @@ static const struct dac_channel_cfg dac_ch_cfg = {
 	.buffered = true,
 #endif /* CONFIG_DAC_BUFFER_NOT_SUPPORT */
 };
+
 
 const struct device *get_dac_device(void)
 {
@@ -170,3 +175,13 @@ static void *dac_setup(void)
 }
 
 ZTEST_SUITE(dac, NULL, dac_setup, NULL, NULL, NULL);
+
+#else
+
+ZTEST(dac, test_task_write_value)
+{
+	ztest_test_skip();
+}
+
+ZTEST_SUITE(dac, NULL, NULL, NULL, NULL, NULL);
+#endif
