@@ -187,6 +187,8 @@
 			clocks = <&rcc STM32_CLOCK(SPI1, STM32_CLK)>;
 			interrupts = <112 0>;
 			st,spi-data-width = "full-4-to-32-bit";
+			fifo-size = <16>;
+			fifo-max-transfer-size = <65535>;
 			status = "disabled";
 		};
 
@@ -198,6 +200,8 @@
 			clocks = <&rcc STM32_CLOCK(SPI2, STM32_CLK)>;
 			interrupts = <113 0>;
 			st,spi-data-width = "full-4-to-32-bit";
+			fifo-size = <16>;
+			fifo-max-transfer-size = <65535>;
 			status = "disabled";
 		};
 
@@ -209,6 +213,8 @@
 			clocks = <&rcc STM32_CLOCK(SPI3, STM32_CLK)>;
 			interrupts = <125 0>;
 			st,spi-data-width = "full-4-to-32-bit";
+			fifo-size = <16>;
+			fifo-max-transfer-size = <65535>;
 			status = "disabled";
 		};
 
@@ -220,6 +226,8 @@
 			clocks = <&rcc STM32_CLOCK(SPI4, STM32_CLK)>;
 			interrupts = <152 0>;
 			st,spi-data-width = "full-4-to-16-bit";
+			fifo-size = <8>;
+			fifo-max-transfer-size = <65535>;
 			status = "disabled";
 		};
 
@@ -231,6 +239,8 @@
 			clocks = <&rcc STM32_CLOCK(SPI5, STM32_CLK)>;
 			interrupts = <153 0>;
 			st,spi-data-width = "full-4-to-16-bit";
+			fifo-size = <8>;
+			fifo-max-transfer-size = <65535>;
 			status = "disabled";
 		};
 
@@ -242,6 +252,8 @@
 			clocks = <&rcc STM32_CLOCK(SPI6, STM32_CLK)>;
 			interrupts = <154 0>;
 			st,spi-data-width = "full-4-to-16-bit";
+			fifo-size = <8>;
+			fifo-max-transfer-size = <65535>;
 			status = "disabled";
 		};
 
@@ -253,6 +265,8 @@
 			clocks = <&rcc STM32_CLOCK(SPI7, STM32_CLK)>;
 			interrupts = <155 0>;
 			st,spi-data-width = "full-4-to-16-bit";
+			fifo-size = <8>;
+			fifo-max-transfer-size = <65535>;
 			status = "disabled";
 		};
 
