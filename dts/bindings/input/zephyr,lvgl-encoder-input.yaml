@@ -7,14 +7,6 @@ description: |
   Listens for button/encoder input events and routes the
   lv_indev_data_t to the underlying encoder lv_indev_t managed by LVGL.
 
-  Example configuration:
-
-  encoder {
-          compatible = "zephyr,lvgl-encoder-input";
-          rotation-input-code = <INPUT_REL_Y>;
-          button-input-code = <INPUT_KEY_0>;
-  };
-
 compatible: "zephyr,lvgl-encoder-input"
 
 include: zephyr,lvgl-common-input.yaml
@@ -30,3 +22,11 @@ properties:
     type: int
     description: |
       Input event key code for encoder button (INPUT_KEY_* or INPUT_BTN_*).
+
+examples:
+  - |
+    encoder {
+            compatible = "zephyr,lvgl-encoder-input";
+            rotation-input-code = <INPUT_REL_Y>;
+            button-input-code = <INPUT_KEY_0>;
+    };

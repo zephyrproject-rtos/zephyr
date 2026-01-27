@@ -10,19 +10,6 @@ description: |
   Can be optionally be associated to a specific device to listen for events
   only from that device.
 
-  Example configuration:
-
-  #include <zephyr/dt-bindings/input/input-event-codes.h>
-
-  longpress {
-          input = <&buttons>;
-          compatible = "zephyr,input-longpress";
-          input-codes = <INPUT_KEY_0>, <INPUT_KEY_1>;
-          short-codes = <INPUT_KEY_A>, <INPUT_KEY_B>;
-          long-codes = <INPUT_KEY_X>, <INPUT_KEY_Y>;
-          long-delay-ms = <1000>;
-  };
-
   Example output:
 
   # short press
@@ -71,3 +58,16 @@ properties:
     type: int
     required: true
     description: Time delay to register a long press in milliseconds.
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/input/input-event-codes.h>
+
+    longpress {
+            input = <&buttons>;
+            compatible = "zephyr,input-longpress";
+            input-codes = <INPUT_KEY_0>, <INPUT_KEY_1>;
+            short-codes = <INPUT_KEY_A>, <INPUT_KEY_B>;
+            long-codes = <INPUT_KEY_X>, <INPUT_KEY_Y>;
+            long-delay-ms = <1000>;
+    };
