@@ -24,6 +24,11 @@ config USE_INFINEON_I2C
 	help
 	  Enable Inter-Integrated Circuit Interface (I2C) HAL module driver for Infineon devices
 
+config USE_INFINEON_I2S
+	bool
+	help
+	  Enable Inter-Integrated Sound Interface (I2S) HAL module driver for Infineon devices
+
 config USE_INFINEON_RTC
 	bool
 	help

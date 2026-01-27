@@ -1,0 +1,40 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon I2S Controller
+
+compatible: "infineon,i2s"
+
+include: [i2s-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    type: array
+    required: true
+
+  system-interrupts:
+    type: array
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  dmas:
+    required: true
+
+  dma-names:
+    required: true
+
+  clksel:
+    type: int
+    enum: [0, 1, 2]
+    description: |
+      This is used for seleting the clock.
+      0 - CY_TDM_SEL_SRSS_CLK0
+      1 - CY_TDM_SEL_SRSS_CLK1
+      2 - CY_TDM_SEL_SRSS_CLK2
