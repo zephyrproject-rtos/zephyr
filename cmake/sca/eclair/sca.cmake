@@ -23,7 +23,7 @@ else()
 endif()
 
 # ECLAIR Settings
-set(ECLAIR_PROJECT_NAME "Zephyr-${BOARD}${BOARD_QUALIFIERS}")
+set(ECLAIR_PROJECT_NAME "Zephyr-${BOARD}/${BOARD_QUALIFIERS}")
 set(ECLAIR_PROJECT_ROOT "${ZEPHYR_BASE}")
 set(ECLAIR_OUTPUT_DIR "${CMAKE_BINARY_DIR}/sca/eclair")
 set(ECLAIR_ECL_DIR "${ZEPHYR_BASE}/cmake/sca/eclair/ECL")
