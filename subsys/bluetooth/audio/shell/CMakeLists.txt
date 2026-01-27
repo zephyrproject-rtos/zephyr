@@ -52,10 +52,6 @@ zephyr_library_sources_ifdef(
   mcc.c
   )
 zephyr_library_sources_ifdef(
-  CONFIG_BT_MCS
-  media_controller.c
-  )
-zephyr_library_sources_ifdef(
   CONFIG_BT_HAS_PRESET_SUPPORT
   has.c
   )
