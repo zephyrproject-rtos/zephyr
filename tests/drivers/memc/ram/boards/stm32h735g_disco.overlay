@@ -1,4 +1,5 @@
 /delete-node/ &sram2;
+/delete-node/ &mac;
 
 /* D2 domain, AHB SRAM */
 &sram1 {
