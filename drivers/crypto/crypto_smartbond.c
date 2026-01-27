@@ -45,7 +45,7 @@ LOG_MODULE_REGISTER(crypto_smartbond_crypto, CONFIG_CRYPTO_LOG_LEVEL);
 
 struct crypto_smartbond_data {
     /*
-     * Semaphore to provide mutual exlusion when a crypto session is requested.
+     * Semaphore to provide mutual exclusion when a crypto session is requested.
      */
 	struct k_sem session_sem;
 
@@ -66,7 +66,7 @@ struct crypto_smartbond_data {
 	};
 
     /*
-     * Packet context should be stored during a session so that can be rertieved
+     * Packet context should be stored during a session so that can be retrieved
      * from within the crypto engine ISR context.
      */
 	union {
@@ -278,7 +278,7 @@ static int crypto_smartbond_hash_set_out_len(void)
 
 static uint32_t crypto_smartbond_swap_word(uint8_t *data)
 {
-    /* Check word boundaries of given address and if possible accellerate swapping */
+    /* Check word boundaries of given address and if possible accelerate swapping */
 	if ((uint32_t)data & 0x3) {
 		return SWAP32(sys_get_le32(data));
 	} else {
@@ -973,14 +973,14 @@ static int crypto_smartbond_init(const struct device *dev)
 	k_sem_init(&data->device_sem, 1, 1);
 
 #if !defined(CONFIG_CRYPTO_ASYNC)
-    /* Sempahore used when sync operations are enabled */
+    /* Semaphore used when sync operations are enabled */
 	k_sem_init(&data->sync_sem, 0, 1);
 #endif
 
 	IRQ_CONNECT(SMARTBOND_IRQN, SMARTBOND_IRQ_PRIO, smartbond_crypto_isr,
 			DEVICE_DT_INST_GET(0), 0);
 
-	/* Controller should be initialized once a crypyographic session is requested */
+	/* Controller should be initialized once a cryptographic session is requested */
 	crypto_smartbond_set_status(false);
 
 	return 0;
