@@ -1,0 +1,27 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig WUC
+	bool "Wakeup Controller drivers"
+	help
+	  Enable wakeup controller driver configuration
+
+if WUC
+
+module = WUC
+module-str = WUC
+source "subsys/logging/Kconfig.template.log_config"
+
+config WUC_INIT_PRIORITY
+	int "Wakeup controller init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  Wakeup controller device driver initialization priority.
+
+
+# zephyr-keep-sorted-start
+rsource "Kconfig.ite_wuc"
+rsource "Kconfig.mcux_wuc"
+# zephyr-keep-sorted-stop
+
+endif # WAKEUP_CONTROL

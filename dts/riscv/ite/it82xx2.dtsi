@@ -828,6 +828,7 @@
 			       0x00f01b23 1>; /* WUBEMR9 */
 			wakeup-controller;
 			#wuc-cells = <1>;
+			#wakeup-ctrl-cells = <1>;
 		};
 
 		wuc10: wakeup-controller@f01b24 {
@@ -1005,6 +1006,7 @@
 				      IT8XXX2_IRQ_WU90 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			wucctrl = <&wuc_wu90>;
+			wakeup-ctrls = <&wuc9 BIT(2)>;
 			reg = <0x00f02f00 256>;
 			status = "disabled";
 			num-bidir-endpoints = <1>;

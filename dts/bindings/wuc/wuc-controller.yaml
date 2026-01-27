@@ -1,0 +1,12 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Wakeup Controller
+
+properties:
+  "#wakeup-ctrl-cells":
+    type: int
+    required: true
+    description: |
+      Number of cells in wakeup-ctrls property. There must be a cell
+      name "id" to use.

@@ -14,8 +14,8 @@
 #include <string.h>
 #include <zephyr/irq.h>
 #include <zephyr/pm/policy.h>
-#include <zephyr/drivers/interrupt_controller/wuc_ite_it8xxx2.h>
-#include <zephyr/dt-bindings/interrupt-controller/it8xxx2-wuc.h>
+#include <zephyr/drivers/wuc.h>
+#include <zephyr/drivers/wuc/wuc_ite.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_dc_it82xx2, CONFIG_USB_DRIVER_LOG_LEVEL);
@@ -122,21 +122,14 @@ enum it82xx2_ep_ctrl {
 	EP_READY_ENABLE,
 };
 
-struct usb_it8xxx2_wuc {
-	/* WUC control device structure */
-	const struct device *wucs;
-	/* WUC pin mask */
-	uint8_t mask;
-};
-
 struct usb_it82xx2_config {
 	struct usb_it82xx2_regs *const base;
 	const struct pinctrl_dev_config *pcfg;
-	const struct usb_it8xxx2_wuc *wuc_list;
+	const struct wuc_dt_spec *wuc_list;
 };
 
-static const struct usb_it8xxx2_wuc usb_wuc0[IT8XXX2_DT_INST_WUCCTRL_LEN(0)] =
-		IT8XXX2_DT_WUC_ITEMS_LIST(0);
+static const struct wuc_dt_spec usb_wuc0[IT8XXX2_DT_INST_WUCCTRL_LEN(0)] =
+		IT8XXX2_DT_WUC_SPEC_ITEMS_LIST(0);
 
 PINCTRL_DT_INST_DEFINE(0);
 
@@ -234,9 +227,10 @@ static void it82xx2_enable_standby_state(bool enable)
 static void it82xx2_enable_wu90_irq(const struct device *dev, bool enable)
 {
 	const struct usb_it82xx2_config *cfg = dev->config;
+	const struct wuc_dt_spec *wuc = &cfg->wuc_list[0];
 
 	/* Clear pending interrupt */
-	it8xxx2_wuc_clear_status(cfg->wuc_list[0].wucs, cfg->wuc_list[0].mask);
+	wuc_clear_wakeup_source_triggered_dt(wuc);
 
 	if (enable) {
 		irq_enable(IT8XXX2_WU90_IRQ);
@@ -256,16 +250,14 @@ static void it82xx2_wu90_isr(const struct device *dev)
 static void it8xxx2_usb_dc_wuc_init(const struct device *dev)
 {
 	const struct usb_it82xx2_config *cfg = dev->config;
+	struct wuc_dt_spec wuc = cfg->wuc_list[0];
 
 	/* Initializing the WUI */
-	it8xxx2_wuc_set_polarity(cfg->wuc_list[0].wucs,
-				cfg->wuc_list[0].mask,
-				WUC_TYPE_EDGE_FALLING);
-	it8xxx2_wuc_clear_status(cfg->wuc_list[0].wucs,
-				cfg->wuc_list[0].mask);
+	wuc.id = ITE_WUC_ID_ENCODE(ITE_WUC_ID_DECODE_MASK(wuc.id), ITE_WUC_FLAG_EDGE_FALLING);
+	wuc_clear_wakeup_source_triggered_dt(&wuc);
 
 	/* Enabling the WUI */
-	it8xxx2_wuc_enable(cfg->wuc_list[0].wucs, cfg->wuc_list[0].mask);
+	wuc_enable_wakeup_source_dt(&wuc);
 
 	/* Connect WU90 (USB D+) interrupt but make it disabled initially */
 	IRQ_CONNECT(IT8XXX2_WU90_IRQ, 0, it82xx2_wu90_isr, 0, 0);

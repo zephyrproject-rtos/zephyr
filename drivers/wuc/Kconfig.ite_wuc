@@ -1,0 +1,9 @@
+# Copyright 2026 ITE Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config WUC_ITE
+	bool "ITE Wakeup Controller"
+	default y
+	depends on (DT_HAS_ITE_IT8XXX2_WUC_ENABLED || DT_HAS_ITE_IT51XXX_WUC_ENABLED)
+	help
+	  Enable support for ITE WUC (it8xxx2/it51xxx) wakeup controller driver.

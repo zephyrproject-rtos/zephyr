@@ -27,5 +27,15 @@ properties:
       number of items to expect in a wakeup controller specifier
     const: 1
 
+  "#wakeup-ctrl-cells":
+    type: int
+    required: false
+    description: |
+      number of items to expect in a wakeup-ctrls specifier
+    const: 1
+
 wuc-cells:
   - mask
+
+wakeup-ctrl-cells:
+  - id
