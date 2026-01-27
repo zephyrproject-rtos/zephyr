@@ -290,7 +290,7 @@ static struct its_cmd_block *its_allocate_entry(struct gicv3_its_data *data)
 			LOG_ERR("ITS queue not draining");
 			return NULL;
 		}
-		k_usleep(1);
+		k_busy_wait(1);
 	}
 
 	cmd = data->cmd_write++;
@@ -351,11 +351,7 @@ static int its_post_command(struct gicv3_its_data *data, struct its_cmd_block *c
 				rd_idx, idx, wr_idx);
 			return -ETIMEDOUT;
 		}
-		if (k_is_pre_kernel()) {
-			k_busy_wait(1);
-		} else {
-			k_usleep(1);
-		}
+		k_busy_wait(1);
 	}
 
 	return 0;
