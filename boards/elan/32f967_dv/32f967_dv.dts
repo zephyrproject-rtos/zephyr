@@ -19,6 +19,10 @@
 		zephyr,flash-controller = &em32_flash_controller;
 		zephyr,flash = &flash0;
 	};
+
+	aliases {
+		clock0 = &clk_ahb;
+	};
 };
 
 &clk_ahb {
@@ -26,7 +30,7 @@
 };
 
 &clk_apb {
-	clocks = <&clk_ahb>;
+	clocks = <&clk_ahb EM32_GATE_NONE>;
 	status = "okay";
 };
 

@@ -40,7 +40,7 @@
 
 		clk_ahb: clk-ahb {
 			compatible = "elan,em32-ahb";
-			#clock-cells = <0>;
+			#clock-cells = <1>;
 			clock-source = <EM32_CLK_SRC_IRCHIGH>;
 			clock-frequency = <EM32_CLK_FREQ_IRCHIGH96>;
 			clock-divider = <EM32_AHB_CLK_DIV1>;
@@ -49,8 +49,8 @@
 
 		clk_apb: clk-apb {
 			compatible = "elan,em32-apb";
-			#clock-cells = <0>;
-			clocks = <&clk_ahb>;
+			#clock-cells = <1>;
+			clocks = <&clk_ahb EM32_GATE_NONE>;
 			status = "disabled";
 		};
 	};
@@ -81,7 +81,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <16>;
-				clocks = <&clk_ahb>;
+				clocks = <&clk_ahb EM32_GATE_HCLKG_GPIOA>;
 				status = "disabled";
 			};
 
@@ -93,7 +93,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <16>;
-				clocks = <&clk_ahb>;
+				clocks = <&clk_ahb EM32_GATE_HCLKG_GPIOB>;
 				status = "disabled";
 			};
 		};
@@ -101,7 +101,7 @@
 		uart1: serial@40002000 {
 			compatible = "elan,elandev-uart";
 			reg = <0x40002000 0x4c>;
-			clocks = <&clk_apb>;
+			clocks = <&clk_apb EM32_GATE_PCLKG_UART1>;
 			status = "disabled";
 		};
 
@@ -111,7 +111,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			interrupts = <25 0>;
-			clocks = <&clk_apb>;
+			clocks = <&clk_apb EM32_GATE_PCLKG_SSP2>;
 			status = "disabled";
 		};
 
@@ -162,7 +162,7 @@
 			compatible = "elan,em32-trng";
 			reg = <0x40018000 0x100>;
 			interrupts = <41 0>;
-			clocks = <&clk_apb>;
+			clocks = <&clk_apb EM32_GATE_PCLKG_TRNG>;
 			status = "disabled";
 		};
 
@@ -170,7 +170,7 @@
 			compatible = "elan,em32-wdt";
 			reg = <0x40035000 0x1000>;
 			interrupts = <2 0>;
-			clocks = <&clk_apb>;
+			clocks = <&clk_apb EM32_GATE_PCLKG_DWG>;
 			status = "disabled";
 		};
 
@@ -178,7 +178,7 @@
 			compatible = "elan,em32-crypto";
 			reg = <0x40016000 0x1000>;
 			interrupts = <40 0>;
-			clocks = <&clk_apb>;
+			clocks = <&clk_apb EM32_GATE_HCLKG_ENCRYPT>;
 			status = "disabled";
 		};
 
@@ -186,7 +186,7 @@
 		timer1: timer@40000000 {
 			compatible = "elan,em32-timer";
 			reg = <0x40000000 0x1000>;
-			clocks = <&clk_apb>;
+			clocks = <&clk_apb EM32_GATE_PCLKG_TMR1>;
 			interrupts = <16 0>;
 			status = "disabled";
 		};
@@ -194,7 +194,7 @@
 		timer2: timer@40001000 {
 			compatible = "elan,em32-timer";
 			reg = <0x40001000 0x1000>;
-			clocks = <&clk_apb>;
+			clocks = <&clk_apb EM32_GATE_PCLKG_TMR2>;
 			interrupts = <17 0>;
 			status = "disabled";
 		};
@@ -202,7 +202,7 @@
 		timer3: timer@40010000 {
 			compatible = "elan,em32-timer";
 			reg = <0x40010000 0x1000>;
-			clocks = <&clk_apb>;
+			clocks = <&clk_apb EM32_GATE_PCLKG_TMR3>;
 			interrupts = <18 0>;
 			status = "disabled";
 		};
@@ -210,7 +210,7 @@
 		timer4: timer@40011000 {
 			compatible = "elan,em32-timer";
 			reg = <0x40011000 0x1000>;
-			clocks = <&clk_apb>;
+			clocks = <&clk_apb EM32_GATE_PCLKG_TMR4>;
 			interrupts = <19 0>;
 			status = "disabled";
 		};
@@ -219,7 +219,7 @@
 		rtc0: rtc@40032000 {
 			compatible = "elan,em32-rtc";
 			reg = <0x40032000 0x1000>;
-			clocks = <&clk_apb>;
+			clocks = <&clk_apb EM32_GATE_PCLKG_RTC>;
 			interrupts = <21 0>;
 			clock-frequency = <32768>;
 			status = "disabled";
@@ -229,7 +229,7 @@
 		pwm0: pwm@40006000 {
 			compatible = "elan,em32-pwm";
 			reg = <0x40006000 0x1000>;
-			clocks = <&clk_apb>;
+			clocks = <&clk_apb EM32_GATE_PCLKG_PWM>;
 			interrupts = <27 0>, <28 0>, <29 0>,
 				     <78 0>, <79 0>, <80 0>;
 			interrupt-names = "pwma", "pwmb", "pwmc",
