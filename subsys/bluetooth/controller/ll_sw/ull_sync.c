@@ -379,12 +379,16 @@ void ull_sync_setup_from_sync_transfer(struct ll_conn *conn, uint16_t service_da
 		sync_offset_us -= drift_us;
 	}
 
-	interval_us -= lll->window_widening_periodic_us;
+	lll->window_widening_prepare_us = lll->window_widening_periodic_us;
+	interval_us -= lll->window_widening_prepare_us;
 
 	/* Calculate event time reservation */
 	slot_us = PDU_AC_MAX_US(PDU_AC_EXT_PAYLOAD_RX_SIZE, lll->phy);
 	ready_delay_us = lll_radio_rx_ready_delay_get(lll->phy, PHY_FLAGS_S8);
 	slot_us += ready_delay_us;
+	slot_us += lll->window_widening_periodic_us << 1U;
+	slot_us += EVENT_JITTER_US << 1U;
+	slot_us += EVENT_TICKER_RES_MARGIN_US << 1U;
 
 	/* Add implementation defined radio event overheads */
 	if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX)) {
@@ -418,7 +422,11 @@ void ull_sync_setup_from_sync_transfer(struct ll_conn *conn, uint16_t service_da
 			   HAL_TICKER_US_TO_TICKS(sync_offset_us),
 			   HAL_TICKER_US_TO_TICKS(interval_us),
 			   HAL_TICKER_REMAINDER(interval_us),
+#if !defined(CONFIG_BT_TICKER_LOW_LAT) && !defined(CONFIG_BT_CTLR_LOW_LAT)
+			   TICKER_NULL_OUST_EXPIRE,
+#else /* CONFIG_BT_TICKER_LOW_LAT || CONFIG_BT_CTLR_LOW_LAT */
 			   TICKER_NULL_LAZY,
+#endif /* CONFIG_BT_TICKER_LOW_LAT || CONFIG_BT_CTLR_LOW_LAT */
 			   (sync->ull.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, sync,
 			   ticker_start_op_cb, (void *)__LINE__);
@@ -1122,6 +1130,9 @@ void ull_sync_setup(struct ll_scan_set *scan, uint8_t phy,
 	/* Calculate event time reservation */
 	slot_us = PDU_AC_MAX_US(PDU_AC_EXT_PAYLOAD_RX_SIZE, lll->phy);
 	slot_us += ready_delay_us;
+	slot_us += lll->window_widening_periodic_us << 1U;
+	slot_us += EVENT_JITTER_US << 1U;
+	slot_us += EVENT_TICKER_RES_MARGIN_US << 1U;
 
 	/* Add implementation defined radio event overheads */
 	if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX)) {
@@ -1146,7 +1157,11 @@ void ull_sync_setup(struct ll_scan_set *scan, uint8_t phy,
 			   HAL_TICKER_US_TO_TICKS(sync_offset_us),
 			   HAL_TICKER_US_TO_TICKS(interval_us),
 			   HAL_TICKER_REMAINDER(interval_us),
+#if !defined(CONFIG_BT_TICKER_LOW_LAT) && !defined(CONFIG_BT_CTLR_LOW_LAT)
+			   TICKER_NULL_OUST_EXPIRE,
+#else /* CONFIG_BT_TICKER_LOW_LAT || CONFIG_BT_CTLR_LOW_LAT */
 			   TICKER_NULL_LAZY,
+#endif /* CONFIG_BT_TICKER_LOW_LAT || CONFIG_BT_CTLR_LOW_LAT */
 			   (sync->ull.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, sync,
 			   ticker_start_op_cb, (void *)__LINE__);
@@ -1339,6 +1354,8 @@ void ull_sync_done(struct node_rx_event_done *done)
 			sync->sync_expire = 0U;
 		}
 
+		force = 0U;
+		force_lll = 0U;
 		elapsed_event = lll->lazy_prepare + 1U;
 
 		/* Reset supervision countdown */
@@ -1350,6 +1367,9 @@ void ull_sync_done(struct node_rx_event_done *done)
 		else if (sync->sync_expire) {
 			if (sync->sync_expire > elapsed_event) {
 				sync->sync_expire -= elapsed_event;
+
+				force = 1U;
+				force_lll = 1U;
 			} else {
 				sync_ticker_cleanup(sync, ticker_stop_sync_expire_op_cb);
 
@@ -1363,8 +1383,6 @@ void ull_sync_done(struct node_rx_event_done *done)
 		}
 
 		/* check timeout */
-		force = 0U;
-		force_lll = 0U;
 		if (sync->timeout_expire) {
 			if (sync->timeout_expire > elapsed_event) {
 				sync->timeout_expire -= elapsed_event;
@@ -1372,12 +1390,12 @@ void ull_sync_done(struct node_rx_event_done *done)
 				/* break skip */
 				lll->skip_event = 0U;
 
-				if (sync->timeout_expire <= 6U) {
-					force_lll = 1U;
-
+				if (sync->timeout_expire <= CONN_ESTAB_COUNTDOWN) {
 					force = 1U;
+					force_lll = 1U;
 				} else if (skip_event) {
 					force = 1U;
+					force_lll = 1U;
 				}
 			} else {
 				sync_ticker_cleanup(sync, ticker_stop_sync_lost_op_cb);
@@ -1698,12 +1716,56 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 
 	lll = &sync->lll;
 
-	/* Commit receive enable changed value */
-	lll->is_rx_enabled = sync->rx_enable;
+	if (!IS_ENABLED(CONFIG_BT_TICKER_LOW_LAT) && !IS_ENABLED(CONFIG_BT_CTLR_JIT_SCHEDULING) &&
+	    ((lazy & TICKER_LAZY_OUST_EXPIRE_BITMASK) != 0U)) {
+		lazy &= ~TICKER_LAZY_OUST_EXPIRE_BITMASK;
+
+		uint16_t timeout_expire = sync->timeout_expire;
+
+		/* Supervision timeout, if not started already */
+		if (timeout_expire == 0U) {
+			timeout_expire = sync->timeout_reload;
+		}
+
+		/* lazy has been incremented by one when ousted */
+		uint16_t elapsed_event = lazy;
+
+		/* Check timeout threshold */
+		if (timeout_expire > elapsed_event) {
+			timeout_expire -= elapsed_event;
+			if (timeout_expire <= CONN_ESTAB_COUNTDOWN) {
+				uint8_t handle = ull_sync_handle_get(sync);
+				uint32_t ticker_status;
+
+				/* Call to ticker_update can fail under the race condition where in
+				 * the periodic sync role is being stopped but at the same time it
+				 * is preempted by periodic sync event that gets into close state.
+				 * Accept failure when periodic sync role is being stopped.
+				 */
+				ticker_status = ticker_update(TICKER_INSTANCE_ID_CTLR,
+							      TICKER_USER_ID_ULL_HIGH,
+							      (TICKER_ID_SCAN_SYNC_BASE + handle),
+							      0U, 0U, 0U, 0U, 0U, 1U,
+							      ticker_update_op_cb, sync);
+				LL_ASSERT_ERR((ticker_status == TICKER_STATUS_SUCCESS) ||
+					      (ticker_status == TICKER_STATUS_BUSY) ||
+					      ((void *)sync == ull_disable_mark_get()));
+			}
+		} else {
+			LL_ASSERT_MSG(false, "%s: %p Ousted %u lazy %u\n", __func__, lll,
+				      lll->event_counter, lazy);
+		}
+
+		DEBUG_RADIO_CLOSE_O(0);
+		return;
+	}
 
 	/* Increment prepare reference count */
 	ref = ull_ref_inc(&sync->ull);
 	LL_ASSERT_DBG(ref);
+
+	/* Commit receive enable changed value */
+	lll->is_rx_enabled = sync->rx_enable;
 
 	/* Append timing parameters */
 	p.ticks_at_expire = ticks_at_expire;

@@ -967,10 +967,11 @@ struct profile {
 	uint16_t lll;
 	uint16_t ull_high;
 	uint16_t ull_low;
-	uint8_t  radio_ticks;
-	uint8_t  lll_ticks;
-	uint8_t  ull_high_ticks;
-	uint8_t  ull_low_ticks;
+	uint16_t overhead;
+	uint16_t radio_ticks;
+	uint16_t lll_ticks;
+	uint16_t ull_high_ticks;
+	uint16_t ull_low_ticks;
 } __packed;
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 
