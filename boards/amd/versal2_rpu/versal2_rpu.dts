@@ -25,6 +25,12 @@
 		compatible = "mmio-sram";
 		reg = <0x30000 0x7ffd0000>;
 	};
+
+	/* RPU-local TCM address (system address: 0xEBA00000) */
+	tcm: memory@0 {
+		compatible = "mmio-sram";
+		reg = <0x0 DT_SIZE_K(64)>;
+	};
 };
 
 &ocm {
