@@ -15,6 +15,7 @@
 LOG_MODULE_REGISTER(modem_at_shell, CONFIG_MODEM_LOG_LEVEL);
 
 #define AT_SHELL_STATE_SCRIPT_RUNNING_BIT 1
+#define AT_SHELL_SCRIPT_TIMEOUT_SEC       10
 
 const static struct device *modem = DEVICE_DT_GET(DT_ALIAS(modem));
 static struct modem_chat *at_shell_chat;
@@ -64,7 +65,7 @@ static void at_shell_script_callback(struct modem_chat *chat, enum modem_chat_sc
 }
 
 MODEM_CHAT_SCRIPT_DEFINE(at_shell_script, at_shell_script_chat, at_shell_abort_matches,
-			 at_shell_script_callback, CONFIG_MODEM_AT_SHELL_RESPONSE_TIMEOUT_MS);
+			 at_shell_script_callback, AT_SHELL_SCRIPT_TIMEOUT_SEC);
 
 static void at_shell_init_script_chat(void)
 {
