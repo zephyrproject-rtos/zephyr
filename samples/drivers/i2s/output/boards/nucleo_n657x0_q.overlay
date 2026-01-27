@@ -41,3 +41,9 @@
 	mclk-divider = "div-256";
 	dma-names = "tx";
 };
+
+/* SAI2_B MCLK conflicts with I2C SDA */
+/* SAI2_B FS conflicts with I2C SCK */
+&i2c4 {
+	status = "disabled";
+};
