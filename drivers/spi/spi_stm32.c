@@ -1422,7 +1422,8 @@ static int transceive(const struct device *dev,
 			ret = spi_stm32_half_duplex_switch_to_receive(cfg, data);
 			transfer_dir = LL_SPI_GetTransferDirection(spi);
 		}
-	} while (ret == 0 && spi_stm32_transfer_ongoing(data));
+	} while (ret == 0 && spi_stm32_transfer_ongoing(data) &&
+		 transfer_dir != LL_SPI_FULL_DUPLEX);
 #else /* CONFIG_SPI_STM32_INTERRUPT */
 	while (ret == 0 && spi_stm32_transfer_ongoing(data)) {
 		ret = spi_stm32_shift_frames(cfg, data);
