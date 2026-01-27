@@ -1,0 +1,37 @@
+# Copyright (c) 2026 Advanced Micro Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Xilinx TTC (Triple Timer Counter) individual timer
+
+compatible: "xlnx,ttc-counter"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: Base address of the TTC block
+
+  interrupts:
+    required: true
+    description: Timer interrupt configuration
+
+  timer-id:
+    type: int
+    required: true
+    description: Timer number within TTC block (0, 1, or 2)
+
+  prescaler:
+    type: int
+    description: Clock prescaler value (0-15)
+
+  clock-frequency:
+    type: int
+    required: true
+    description: Input clock frequency in Hz
+
+  timer-width:
+    type: int
+    required: true
+    description: Number of bits in the timer counter (e.g. 32)
