@@ -70,6 +70,8 @@ There are **exceptions** to these rules:
   instance of a hardware device to be used for a particular purpose. An example
   of this is selecting a particular UART for use as the system's console.
 
+.. _auto-dts-kconfig:
+
 Automatic Kconfig symbols from devicetree
 *****************************************
 
