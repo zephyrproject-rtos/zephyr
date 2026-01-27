@@ -812,7 +812,9 @@ config NXP_WIFI_5GHz_SUPPORT
 
 config NXP_WIFI_TX_RX_ZERO_COPY
 	bool "Zero memory copy TX/RX data packets"
-	depends on NXP_RW610 || NXP_WIFI_SDIO_MULTI_PORT_TX_AGGR
+	depends on NXP_RW610 || SDHC_SUPPORTS_SCATTER_GATHER_TRANSFER
+	select SDHC_SCATTER_GATHER_TRANSFER if !NXP_RW610
+	select NET_L2_ETHERNET_RESERVE_HEADER if !NXP_RW610
 	imply NET_IPV4_FRAGMENT
 	help
 	  This option enables the Zero memory copy of data packets in Wi-Fi driver data path.
@@ -1217,6 +1219,15 @@ endif
 
 endif # NXP_WIFI_SMOKE_TESTS
 
+config NXP_WIFI_EXTRA_TX_HEADROOM
+	int "Extra headroom reserved before 802.3 eth header"
+	default 26 if NET_L2_ETHERNET_RESERVE_HEADER
+	default 0
+	help
+	  Reserve extra payload before 802.3 eth header.
+	  Make sure this val adding eth header reserve size is 4 bytes
+	  aligned for DMA access.
+
 menu "Development and Debugging"
 
 config NXP_WIFI_ENABLE_ERROR_LOGS
@@ -1426,5 +1437,17 @@ config RX_CHAN_INFO
 config TXPD_RXPD_V3
 	bool
 	default y
+
+if NXP_WIFI_TX_RX_ZERO_COPY && !NXP_RW610
+
+# For SDHC zero copy, net buf size should be multiples of SDHC block size
+configdefault NET_BUF_DATA_SIZE
+	default 2048
+
+# For SDHC zero copy, net buf should be aligned by cache line size
+configdefault NET_BUF_ALIGNMENT
+	default DCACHE_LINE_SIZE
+
+endif # NXP_WIFI_TX_RX_ZERO_COPY && !NXP_RW610
 
 endif # WIFI_NXP
