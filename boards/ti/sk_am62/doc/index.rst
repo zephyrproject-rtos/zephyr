@@ -123,7 +123,18 @@ Use U-Boot to load and kick zephyr.bin:
 
     fatload mmc 1:1 0x82000000 zephyr.bin; go 0x82000000
 
-The Zephyr application should start running on the A53 core.
+The Zephyr application should start running on the A53 core. When running the
+hello_world sample, you should see output similar to:
+
+.. code-block:: console
+
+    *** Booting Zephyr OS build v4.3.0-4646-g13fc152f3546 ***
+    Secondary CPU core 1 (MPID:0x1) is up
+    Secondary CPU core 2 (MPID:0x2) is up
+    Secondary CPU core 3 (MPID:0x3) is up
+    Hello World! sk_am62/am6254/a53
+
+This indicates that all four A53 cores have successfully booted.
 
 Debugging
 *********
