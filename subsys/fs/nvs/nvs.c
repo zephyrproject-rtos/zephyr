@@ -1,6 +1,7 @@
 /*  NVS: non volatile storage in flash
  *
  * Copyright (c) 2018 Laczen
+ * Copyright (c) 2026 Lingao Meng
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -294,34 +295,120 @@ static int nvs_flash_cmp_const(struct nvs_fs *fs, uint32_t addr, uint8_t value,
 	return 0;
 }
 
-/* flash block move: move a block at addr to the current data write location
- * and updates the data write location.
+/* flash block move (GC-only helper)
+ *
+ * Move data starting at @addr to the current data write location during GC.
+ *
+ * This function writes data in write_block_size-aligned chunks only.
+ * If the total length is not aligned to write_block_size, the tail bytes
+ * (less than one write block) are read into @buf but NOT written immediately.
+ *
+ * The number of buffered but unwritten bytes is returned via @ctx->buffer_pos.
+ * The caller is responsible for flushing these remaining bytes later
+ * (typically before writing the corresponding ATE).
+ *
+ * Notes:
+ * - This function is intended to be used ONLY during GC.
+ * - @ctx->buffer_pos is guaranteed to be < write_block_size.
+ * - No padding or alignment is added to the data.
  */
-static int nvs_flash_block_move(struct nvs_fs *fs, uint32_t addr, size_t len)
+static int nvs_flash_block_move(struct nvs_fs *fs, uint32_t addr, struct nvs_block_move_ctx *ctx,
+				struct nvs_ate *gc_ate)
 {
+	size_t bytes_to_copy, block_size, unaligned_len;
+	size_t len = gc_ate->len;
 	int rc;
-	size_t bytes_to_copy, block_size;
-	uint8_t buf[NVS_BLOCK_SIZE];
+
+	/* Update ATE offset to the new data location.
+	 * ctx.buffer_pos accounts for any buffered but unwritten
+	 * data carried over from previous moves.
+	 */
+	gc_ate->offset = (uint16_t)((fs->data_wra + ctx->buffer_pos)
+				    & ADDR_OFFS_MASK);
+
+	len += ctx->buffer_pos;
+
+	/* Split the length into an aligned part and a tail part.
+	 * The tail (unaligned_len) is smaller than one write block and
+	 * will be buffered for the next write.
+	 */
+	unaligned_len = len & (fs->flash_parameters->write_block_size - 1U);
 
 	block_size =
 		NVS_BLOCK_SIZE & ~(fs->flash_parameters->write_block_size - 1U);
 
+	len -= unaligned_len;
+
+	/* Copy and write only write_block_size-aligned data.
+	 * Any previously buffered bytes (ctx->buffer_pos) are prepended
+	 * to the newly read data to form a full aligned write.
+	 */
 	while (len) {
-		bytes_to_copy = MIN(block_size, len);
-		rc = nvs_flash_rd(fs, addr, buf, bytes_to_copy);
+		bytes_to_copy = MIN(block_size, len) - ctx->buffer_pos;
+
+		rc = nvs_flash_rd(fs, addr, ctx->buffer + ctx->buffer_pos, bytes_to_copy);
 		if (rc) {
 			return rc;
 		}
+
 		/* Just rewrite the whole record, no need to recompute the CRC as the data
 		 * did not change
 		 */
-		rc = nvs_flash_data_wrt(fs, buf, bytes_to_copy, false);
+		rc = nvs_flash_data_wrt(fs, ctx->buffer, bytes_to_copy + ctx->buffer_pos, false);
 		if (rc) {
 			return rc;
 		}
-		len -= bytes_to_copy;
+
+		len  -= bytes_to_copy + ctx->buffer_pos;
 		addr += bytes_to_copy;
+		ctx->buffer_pos = 0U;
 	}
+
+	/* Read the remaining unaligned tail into buffer.
+	 * This data is not written now and will be combined with the next data block.
+	 */
+	if (unaligned_len) {
+		rc = nvs_flash_rd(fs, addr, ctx->buffer + ctx->buffer_pos, unaligned_len);
+		if (rc) {
+			return rc;
+		}
+
+		ctx->buffer_pos += unaligned_len;
+	}
+
+	return 0;
+}
+
+/**
+ * @brief Flush remaining buffered data during flash block move (GC).
+ *
+ * During block move, data is written in write_block_size-aligned chunks.
+ * If the total data length is not aligned, the remaining tail bytes are
+ * buffered and must be flushed explicitly at the end of the move.
+ *
+ * @param fs   NVS file system context
+ * @param ctx  Block move context containing buffered tail data
+ *
+ * @return 0 on success, negative errno on failure
+ */
+static int nvs_flash_block_move_flush_tail(struct nvs_fs *fs,
+					   struct nvs_block_move_ctx *ctx)
+{
+	int rc;
+
+	/* Write remaining buffered tail data if present */
+	if (ctx->buffer_pos == 0U) {
+		return 0;
+	}
+
+	rc = nvs_flash_data_wrt(fs, ctx->buffer, ctx->buffer_pos, false);
+	if (rc) {
+		return rc;
+	}
+
+	/* Tail data has been flushed */
+	ctx->buffer_pos = 0U;
+
 	return 0;
 }
 
@@ -630,6 +717,9 @@ static int nvs_gc(struct nvs_fs *fs)
 	struct nvs_ate close_ate, gc_ate, wlk_ate;
 	uint32_t sec_addr, gc_addr, gc_prev_addr, wlk_addr, wlk_prev_addr,
 	      data_addr, stop_addr;
+	struct nvs_block_move_ctx ctx = {
+		.buffer_pos = 0U,
+	};
 	size_t ate_size;
 
 	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
@@ -699,8 +789,13 @@ static int nvs_gc(struct nvs_fs *fs)
 			}
 		} while (wlk_addr != fs->ate_wra);
 
-		/* if walk has reached the same address as gc_addr copy is
-		 * needed unless it is a deleted item.
+		/* If the walk cursor reaches the same entry as the GC cursor,
+		 * the data must be moved unless this entry represents a deleted item
+		 * (len == 0).
+		 *
+		 * During GC, data is compacted and rewritten to the current data
+		 * write location. Data may be packed back-to-back without alignment
+		 * padding; write alignment is handled internally by buffering.
 		 */
 		if ((wlk_prev_addr == gc_prev_addr) && gc_ate.len) {
 			/* copy needed */
@@ -709,13 +804,17 @@ static int nvs_gc(struct nvs_fs *fs)
 			data_addr = (gc_prev_addr & ADDR_SECT_MASK);
 			data_addr += gc_ate.offset;
 
-			gc_ate.offset = (uint16_t)(fs->data_wra & ADDR_OFFS_MASK);
-			nvs_ate_crc8_update(&gc_ate);
-
-			rc = nvs_flash_block_move(fs, data_addr, gc_ate.len);
+			/* Move the data to the new location.
+			 * Data is written in write_block_size-aligned chunks only.
+			 * Any remaining unaligned bytes are buffered in ctx.buffer and
+			 * reported back via ctx.buffer_pos.
+			 */
+			rc = nvs_flash_block_move(fs, data_addr, &ctx, &gc_ate);
 			if (rc) {
 				return rc;
 			}
+
+			nvs_ate_crc8_update(&gc_ate);
 
 			rc = nvs_flash_ate_wrt(fs, &gc_ate);
 			if (rc) {
@@ -723,6 +822,12 @@ static int nvs_gc(struct nvs_fs *fs)
 			}
 		}
 	} while (gc_prev_addr != stop_addr);
+
+	/* write the last data if needed */
+	rc = nvs_flash_block_move_flush_tail(fs, &ctx);
+	if (rc) {
+		return rc;
+	}
 
 gc_done:
 
