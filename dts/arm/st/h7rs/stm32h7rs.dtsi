@@ -457,6 +457,8 @@
 				 <&rcc STM32_SRC_PLL1_Q SPI1_SEL(0)>;
 			interrupts = <58 0>;
 			st,spi-data-width = "full-4-to-32-bit";
+			fifo-size = <16>;
+			max-transfer-size = <65535>;
 			status = "disabled";
 		};
 
@@ -469,6 +471,8 @@
 				 <&rcc STM32_SRC_PLL1_Q SPI23_SEL(0)>;
 			interrupts = <59 0>;
 			st,spi-data-width = "full-4-to-32-bit";
+			fifo-size = <16>;
+			max-transfer-size = <65535>;
 			status = "disabled";
 		};
 
@@ -481,6 +485,8 @@
 				 <&rcc STM32_SRC_PLL1_Q SPI23_SEL(0)>;
 			interrupts = <60 0>;
 			st,spi-data-width = "full-4-to-32-bit";
+			fifo-size = <16>;
+			max-transfer-size = <65535>;
 			status = "disabled";
 		};
 
@@ -492,6 +498,8 @@
 			clocks = <&rcc STM32_CLOCK(APB2, 13)>;
 			interrupts = <61 0>;
 			st,spi-data-width = "full-4-to-16-bit";
+			fifo-size = <8>;
+			max-transfer-size = <65535>;
 			status = "disabled";
 		};
 
@@ -504,6 +512,8 @@
 			interrupts = <62 0>;
 			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
+			fifo-size = <8>;
+			max-transfer-size = <65535>;
 		};
 
 		i2s1: i2s@40013000 {
