@@ -11,7 +11,7 @@ if SOC_AMD_VERSAL2_RPU
 config NUM_IRQS
 	# must be >= the highest interrupt number used
 	# - include the UART interrupts
-	default 256
+	default 288
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
