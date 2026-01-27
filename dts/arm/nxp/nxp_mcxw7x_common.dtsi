@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/drivers/wuc/wuc_nxp_wuu.h>
 
 / {
 	aliases {
@@ -145,6 +146,7 @@
 		compatible = "nxp,wuu";
 		reg = <0x19000 0x1000>;
 		interrupts = <22 0>;
+		#wakeup-ctrl-cells = <1>;
 	};
 
 	scg: clock-controller@1e000 {
@@ -341,6 +343,8 @@
 		prescale-glitch-filter-bypass;
 		resolution = <32>;
 		status = "disabled";
+		wakeup-source;
+		wakeup-ctrls = <&wuu NXP_WUU_MODULE_0_INT>;
 	};
 
 	lptmr1: timer@2e000 {

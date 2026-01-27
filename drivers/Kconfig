@@ -99,6 +99,7 @@ source "drivers/virtualization/Kconfig"
 source "drivers/w1/Kconfig"
 source "drivers/watchdog/Kconfig"
 source "drivers/wifi/Kconfig"
+source "drivers/wuc/Kconfig"
 source "drivers/xen/Kconfig"
 # zephyr-keep-sorted-stop
 

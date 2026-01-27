@@ -1,0 +1,11 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - wuc
+tests:
+  drivers.wuc.api.nxp:
+    depends_on: wuc
+    filter: dt_compat_enabled("nxp,llwu")
