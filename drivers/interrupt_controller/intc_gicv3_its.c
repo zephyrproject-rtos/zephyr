@@ -53,6 +53,7 @@ struct gicv3_its_data {
 	size_t indirect_dev_lvl1_width;
 	size_t indirect_dev_lvl2_width;
 	size_t indirect_dev_page_size;
+	struct k_spinlock lock;
 };
 
 struct gicv3_its_config {
@@ -310,19 +311,32 @@ static struct its_cmd_block *its_allocate_entry(struct gicv3_its_data *data)
 
 static int its_post_command(struct gicv3_its_data *data, struct its_cmd_block *cmd)
 {
+	struct its_cmd_block *cmd_entry;
 	uint64_t wr_idx, rd_idx, idx;
+	k_spinlock_key_t key;
 	unsigned int count = 1000000;   /* 1s! */
 
+	key = k_spin_lock(&data->lock);
+
+	cmd_entry = its_allocate_entry(data);
+	if (!cmd_entry) {
+		k_spin_unlock(&data->lock, key);
+		return -EBUSY;
+	}
+
+	memcpy(cmd_entry, cmd, sizeof(*cmd_entry));
 #ifdef CONFIG_GIC_V3_ITS_DMA_NONCOHERENT
-	arch_dcache_flush_and_invd_range(cmd, sizeof(*cmd));
+	arch_dcache_flush_and_invd_range(cmd_entry, sizeof(*cmd_entry));
 #endif
 
-	wr_idx = (data->cmd_write - data->cmd_base) * sizeof(*cmd);
+	wr_idx = (data->cmd_write - data->cmd_base) * sizeof(*cmd_entry);
 	rd_idx = sys_read32(data->base + GITS_CREADR);
 
 	barrier_dsync_fence_full();
 
 	sys_write32(wr_idx, data->base + GITS_CWRITER);
+
+	k_spin_unlock(&data->lock, key);
 
 	while (1) {
 		idx = sys_read32(data->base + GITS_CREADR);
@@ -349,98 +363,74 @@ static int its_post_command(struct gicv3_its_data *data, struct its_cmd_block *c
 
 static int its_send_sync_cmd(struct gicv3_its_data *data, uintptr_t rd_addr)
 {
-	struct its_cmd_block *cmd = its_allocate_entry(data);
+	struct its_cmd_block cmd;
 
-	if (!cmd) {
-		return -EBUSY;
-	}
+	cmd.raw_cmd[0] = MASK_SET(GITS_CMD_ID_SYNC, GITS_CMD_ID);
+	cmd.raw_cmd[2] = MASK_SET(rd_addr, GITS_CMD_RDBASE);
 
-	cmd->raw_cmd[0] = MASK_SET(GITS_CMD_ID_SYNC, GITS_CMD_ID);
-	cmd->raw_cmd[2] = MASK_SET(rd_addr, GITS_CMD_RDBASE);
-
-	return its_post_command(data, cmd);
+	return its_post_command(data, &cmd);
 }
 
 static int its_send_mapc_cmd(struct gicv3_its_data *data, uint32_t icid,
 			     uintptr_t rd_addr, bool valid)
 {
-	struct its_cmd_block *cmd = its_allocate_entry(data);
+	struct its_cmd_block cmd;
 
-	if (!cmd) {
-		return -EBUSY;
-	}
-
-	cmd->raw_cmd[0] = MASK_SET(GITS_CMD_ID_MAPC, GITS_CMD_ID);
-	cmd->raw_cmd[2] = MASK_SET(icid, GITS_CMD_ICID) | MASK_SET(rd_addr, GITS_CMD_RDBASE) |
+	cmd.raw_cmd[0] = MASK_SET(GITS_CMD_ID_MAPC, GITS_CMD_ID);
+	cmd.raw_cmd[2] = MASK_SET(icid, GITS_CMD_ICID) | MASK_SET(rd_addr, GITS_CMD_RDBASE) |
 			  MASK_SET(valid ? 1 : 0, GITS_CMD_VALID);
 
-	return its_post_command(data, cmd);
+	return its_post_command(data, &cmd);
 }
 
 static int its_send_mapd_cmd(struct gicv3_its_data *data, uint32_t device_id,
 			     uint32_t size, uintptr_t itt_addr, bool valid)
 {
-	struct its_cmd_block *cmd = its_allocate_entry(data);
+	struct its_cmd_block cmd;
 
-	if (!cmd) {
-		return -EBUSY;
-	}
-
-	cmd->raw_cmd[0] = MASK_SET(GITS_CMD_ID_MAPD, GITS_CMD_ID) |
+	cmd.raw_cmd[0] = MASK_SET(GITS_CMD_ID_MAPD, GITS_CMD_ID) |
 			  MASK_SET(device_id, GITS_CMD_DEVICEID);
-	cmd->raw_cmd[1] = MASK_SET(size, GITS_CMD_SIZE);
-	cmd->raw_cmd[2] = MASK_SET(itt_addr >> GITS_CMD_ITTADDR_ALIGN, GITS_CMD_ITTADDR) |
+	cmd.raw_cmd[1] = MASK_SET(size, GITS_CMD_SIZE);
+	cmd.raw_cmd[2] = MASK_SET(itt_addr >> GITS_CMD_ITTADDR_ALIGN, GITS_CMD_ITTADDR) |
 			  MASK_SET(valid ? 1 : 0, GITS_CMD_VALID);
 
-	return its_post_command(data, cmd);
+	return its_post_command(data, &cmd);
 }
 
 static int its_send_mapti_cmd(struct gicv3_its_data *data, uint32_t device_id,
 			      uint32_t event_id, uint32_t intid, uint32_t icid)
 {
-	struct its_cmd_block *cmd = its_allocate_entry(data);
+	struct its_cmd_block cmd;
 
-	if (!cmd) {
-		return -EBUSY;
-	}
-
-	cmd->raw_cmd[0] = MASK_SET(GITS_CMD_ID_MAPTI, GITS_CMD_ID) |
+	cmd.raw_cmd[0] = MASK_SET(GITS_CMD_ID_MAPTI, GITS_CMD_ID) |
 			  MASK_SET(device_id, GITS_CMD_DEVICEID);
-	cmd->raw_cmd[1] = MASK_SET(event_id, GITS_CMD_EVENTID) |
+	cmd.raw_cmd[1] = MASK_SET(event_id, GITS_CMD_EVENTID) |
 			  MASK_SET(intid, GITS_CMD_PINTID);
-	cmd->raw_cmd[2] = MASK_SET(icid, GITS_CMD_ICID);
+	cmd.raw_cmd[2] = MASK_SET(icid, GITS_CMD_ICID);
 
-	return its_post_command(data, cmd);
+	return its_post_command(data, &cmd);
 }
 
 static int its_send_int_cmd(struct gicv3_its_data *data, uint32_t device_id,
 			    uint32_t event_id)
 {
-	struct its_cmd_block *cmd = its_allocate_entry(data);
+	struct its_cmd_block cmd;
 
-	if (!cmd) {
-		return -EBUSY;
-	}
-
-	cmd->raw_cmd[0] = MASK_SET(GITS_CMD_ID_INT, GITS_CMD_ID) |
+	cmd.raw_cmd[0] = MASK_SET(GITS_CMD_ID_INT, GITS_CMD_ID) |
 			  MASK_SET(device_id, GITS_CMD_DEVICEID);
-	cmd->raw_cmd[1] = MASK_SET(event_id, GITS_CMD_EVENTID);
+	cmd.raw_cmd[1] = MASK_SET(event_id, GITS_CMD_EVENTID);
 
-	return its_post_command(data, cmd);
+	return its_post_command(data, &cmd);
 }
 
 static int its_send_invall_cmd(struct gicv3_its_data *data, uint32_t icid)
 {
-	struct its_cmd_block *cmd = its_allocate_entry(data);
+	struct its_cmd_block cmd;
 
-	if (!cmd) {
-		return -EBUSY;
-	}
+	cmd.raw_cmd[0] = MASK_SET(GITS_CMD_ID_INVALL, GITS_CMD_ID);
+	cmd.raw_cmd[2] = MASK_SET(icid, GITS_CMD_ICID);
 
-	cmd->raw_cmd[0] = MASK_SET(GITS_CMD_ID_INVALL, GITS_CMD_ID);
-	cmd->raw_cmd[2] = MASK_SET(icid, GITS_CMD_ICID);
-
-	return its_post_command(data, cmd);
+	return its_post_command(data, &cmd);
 }
 
 static int gicv3_its_send_int(const struct device *dev, uint32_t device_id, uint32_t event_id)
