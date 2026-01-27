@@ -11,6 +11,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/nvmem.h>
 #include <zephyr/pm/device_runtime.h>
 #include <stm32_ll_adc.h>
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
@@ -34,12 +35,18 @@ struct stm32_vref_data {
 	int16_t raw; /* raw adc Sensor value */
 };
 
+#if defined(CONFIG_STM32_VREF_READ_CALIB_VIA_NVMEM)
+typedef struct nvmem_cell calib_info_t;
+#else
+typedef const uint16_t *calib_info_t;
+#endif /* CONFIG_STM32_TEMP_READ_CALIB_VIA_NVMEM */
+
 struct stm32_vref_config {
 	const struct device *adc;
 	struct adc_channel_cfg adc_cfg;
 	ADC_TypeDef *adc_base;
 
-	uint16_t *cal_addr;
+	calib_info_t vrefint_cal;
 	int cal_mv;
 	uint8_t cal_shift;
 };
@@ -140,15 +147,28 @@ static int stm32_vref_init(const struct device *dev)
  * Read calibration data and compute numerator once during init.
  * STM32H5X: accesses to flash RO region must be done with caching disabled.
  */
-#if defined(CONFIG_SOC_SERIES_STM32H5X)
+	uint16_t vrefint_cal;
+#if defined(CONFIG_STM32_VREF_READ_CALIB_VIA_NVMEM)
+	int res;
+
+	res = nvmem_cell_read(&cfg->vrefint_cal, &vrefint_cal, 0, sizeof(vrefint_cal));
+	if (res < 0) {
+		LOG_ERR("Failed to read VREFINT calibration data: %d", res);
+		return res;
+	}
+#else /* CONFIG_STM32_VREF_READ_CALIB_VIA_NVMEM */
+# if defined(CONFIG_SOC_SERIES_STM32H5X)
 	sys_cache_instr_disable();
-#endif /* CONFIG_SOC_SERIES_STM32H5X */
+# endif /* CONFIG_SOC_SERIES_STM32H5X */
 
-	data->vrefint_cal_numerator = ((*cfg->cal_addr) >> cfg->cal_shift) * cfg->cal_mv;
+	vrefint_cal = *cfg->vrefint_cal;
 
-#if defined(CONFIG_SOC_SERIES_STM32H5X)
+# if defined(CONFIG_SOC_SERIES_STM32H5X)
 	sys_cache_instr_enable();
-#endif /* CONFIG_SOC_SERIES_STM32H5X */
+# endif /* CONFIG_SOC_SERIES_STM32H5X */
+#endif /* CONFIG_STM32_VREF_READ_CALIB_VIA_NVMEM */
+
+	data->vrefint_cal_numerator = cfg->cal_mv * (vrefint_cal >> cfg->cal_shift);
 
 	return 0;
 }
@@ -170,6 +190,16 @@ BUILD_ASSERT(0,	"ADC '" DT_NODE_FULL_NAME(DT_INST_IO_CHANNELS_CTLR(0)) "' needed
  */
 #else
 
+#if defined(CONFIG_STM32_TEMP_READ_CALIB_VIA_NVMEM)
+#define VREFINT_CAL_INIT(inst) NVMEM_CELL_INST_GET_BY_IDX(inst, 0)
+#else
+/* MMIO address = base of OTP flash area + offset of cell in OTP */
+#define VREFINT_CAL_INIT_INNER(nvmc)							\
+	((void *)(DT_REG_ADDR(DT_MTD_FROM_NVMEM_CELL(nvmc)) + DT_REG_ADDR(nvmc)))
+#define VREFINT_CAL_INIT(inst)							\
+	VREFINT_CAL_INIT_INNER(DT_INST_NVMEM_CELL(inst))
+#endif /* CONFIG_STM32_TEMP_READ_CALIB_VIA_NVMEM */
+
 static struct stm32_vref_data stm32_vref_dev_data;
 
 static const struct stm32_vref_config stm32_vref_dev_config = {
@@ -181,7 +211,7 @@ static const struct stm32_vref_config stm32_vref_dev_config = {
 		    .channel_id = DT_INST_IO_CHANNELS_INPUT(0),
 		    .differential = 0},
 
-	.cal_addr = (uint16_t *)DT_INST_PROP(0, vrefint_cal_addr),
+	.vrefint_cal = VREFINT_CAL_INIT(0),
 	.cal_mv = DT_INST_PROP(0, vrefint_cal_mv),
 	.cal_shift = (DT_INST_PROP(0, vrefint_cal_resolution) - MEAS_RES),
 };
