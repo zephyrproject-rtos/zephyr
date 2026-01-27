@@ -7,3 +7,11 @@ description: |
 compatible: "st,stm32c0-temp-cal"
 
 include: "st,stm32-temp-cal-common.yaml"
+
+properties:
+  nvmem-cell-names:
+    description: |
+      One NVMEM cell must be provided: TS_CAL1
+
+      This cell corresponds to the eponymous calibration parameter.
+    enum: ["TS_CAL1"]
