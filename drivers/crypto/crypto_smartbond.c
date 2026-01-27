@@ -44,40 +44,40 @@ LOG_MODULE_REGISTER(crypto_smartbond_crypto, CONFIG_CRYPTO_LOG_LEVEL);
 
 
 struct crypto_smartbond_data {
-    /*
-     * Semaphore to provide mutual exclusion when a crypto session is requested.
-     */
+	/*
+	 * Semaphore to provide mutual exclusion when a crypto session is requested.
+	 */
 	struct k_sem session_sem;
 
-    /*
-     * Semaphore to provide mutual exlusion when a cryptographic task is requested.
-     * (a session should be requested at this point).
-     */
+	/*
+	 * Semaphore to provide mutual exlusion when a cryptographic task is requested.
+	 * (a session should be requested at this point).
+	 */
 	struct k_sem device_sem;
 #if defined(CONFIG_CRYPTO_ASYNC)
-    /*
-     * User-defined callbacks to be called upon completion of asynchronous
-     * cryptographic operations. Note that the AES and HASH modes can work
-     * complementary to each other.
-     */
+	/*
+	 * User-defined callbacks to be called upon completion of asynchronous
+	 * cryptographic operations. Note that the AES and HASH modes can work
+	 * complementary to each other.
+	 */
 	union {
 		cipher_completion_cb cipher_user_cb;
 		hash_completion_cb hash_user_cb;
 	};
 
-    /*
-     * Packet context should be stored during a session so that can be retrieved
-     * from within the crypto engine ISR context.
-     */
+	/*
+	 * Packet context should be stored during a session so that can be retrieved
+	 * from within the crypto engine ISR context.
+	 */
 	union {
 		struct cipher_pkt *cipher_pkt;
 		struct hash_pkt *hash_pkt;
 	};
 #else
-    /*
-     * Semaphore used to block for as long as a synchronous cryptographic operation
-     * is in progress.
-     */
+	/*
+	 * Semaphore used to block for as long as a synchronous cryptographic operation
+	 * is in progress.
+	 */
 	struct k_sem sync_sem;
 #endif
 };
@@ -96,7 +96,7 @@ static void smartbond_crypto_isr(const void *arg)
 	uint32_t status = AES_HASH->CRYPTO_STATUS_REG;
 
 	if (status & AES_HASH_CRYPTO_STATUS_REG_CRYPTO_IRQ_ST_Msk) {
-	    /* Clear interrupt source. Otherwise the handler will be fire constantly! */
+		/* Clear interrupt source. Otherwise the handler will be fire constantly! */
 		AES_HASH->CRYPTO_CLRIRQ_REG = 0x1;
 
 #if defined(CONFIG_CRYPTO_ASYNC)
@@ -227,7 +227,7 @@ static int crypto_smartbond_hash_set_out_len(void)
 	uint32_t hash_algo = (AES_HASH->CRYPTO_CTRL_REG & AES_HASH_CRYPTO_CTRL_REG_CRYPTO_ALG_Msk);
 
 	if (AES_HASH->CRYPTO_CTRL_REG & AES_HASH_CRYPTO_CTRL_REG_CRYPTO_ALG_MD_Msk) {
-	    /* 64-bit HASH operations */
+		/* 64-bit HASH operations */
 		switch (hash_algo) {
 		case 0x0:
 			/* SHA-384: 0..47 --> 1..48 bytes */
@@ -249,7 +249,7 @@ static int crypto_smartbond_hash_set_out_len(void)
 			break;
 		}
 	} else {
-	    /* 32-bit HASH operations */
+		/* 32-bit HASH operations */
 		switch (hash_algo) {
 		case 0x0:
 			/* MD5: 0..15 --> 1..16 bytes */
@@ -278,7 +278,7 @@ static int crypto_smartbond_hash_set_out_len(void)
 
 static uint32_t crypto_smartbond_swap_word(uint8_t *data)
 {
-    /* Check word boundaries of given address and if possible accelerate swapping */
+	/* Check word boundaries of given address and if possible accelerate swapping */
 	if ((uint32_t)data & 0x3) {
 		return SWAP32(sys_get_le32(data));
 	} else {
@@ -623,11 +623,11 @@ crypto_smartbond_cipher_cbc_handler(struct cipher_ctx *ctx, struct cipher_pkt *p
 	data->cipher_pkt = pkt;
 #endif
 
-    /* Start crypto processing */
+	/* Start crypto processing */
 	AES_HASH->CRYPTO_START_REG = 1;
 
 #if !defined(CONFIG_CRYPTO_ASYNC)
-    /* Wait for crypto to finish its task */
+	/* Wait for crypto to finish its task */
 	k_sem_take(&data->sync_sem, K_FOREVER);
 #endif
 
@@ -693,11 +693,11 @@ static int crypto_smartbond_cipher_ctr_handler(struct cipher_ctx *ctx,
 	data->cipher_pkt = pkt;
 #endif
 
-    /* Start crypto processing */
+	/* Start crypto processing */
 	AES_HASH->CRYPTO_START_REG = 1;
 
 #if !defined(CONFIG_CRYPTO_ASYNC)
-    /* Wait for crypto to finish its task */
+	/* Wait for crypto to finish its task */
 	k_sem_take(&data->sync_sem, K_FOREVER);
 #endif
 
@@ -769,7 +769,7 @@ static int crypto_smartbond_hash_handler(struct hash_ctx *ctx, struct hash_pkt *
 	data->hash_pkt = pkt;
 #endif
 
-    /* Start hash processing */
+	/* Start hash processing */
 	AES_HASH->CRYPTO_START_REG = 1;
 
 #if !defined(CONFIG_CRYPTO_ASYNC)
@@ -973,7 +973,7 @@ static int crypto_smartbond_init(const struct device *dev)
 	k_sem_init(&data->device_sem, 1, 1);
 
 #if !defined(CONFIG_CRYPTO_ASYNC)
-    /* Semaphore used when sync operations are enabled */
+	/* Semaphore used when sync operations are enabled */
 	k_sem_init(&data->sync_sem, 0, 1);
 #endif
 
