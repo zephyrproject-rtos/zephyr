@@ -16,7 +16,8 @@
 #include <mgmt/mcumgr/transport/smp_reassembly.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(mcumgr_smp, CONFIG_MCUMGR_TRANSPORT_LOG_LEVEL);
+//LOG_MODULE_REGISTER(mcumgr_smp, CONFIG_MCUMGR_TRANSPORT_LOG_LEVEL);
+LOG_MODULE_REGISTER(mcumgr_smp, 4);
 
 /* To be able to unit test some callers some functions need to be
  * demoted to allow overriding them.
@@ -42,6 +43,13 @@ static const struct k_work_queue_config smp_work_queue_config = {
 NET_BUF_POOL_DEFINE(pkt_pool, CONFIG_MCUMGR_TRANSPORT_NETBUF_COUNT,
 		    CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE,
 		    CONFIG_MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE, NULL);
+
+#if defined(CONFIG_MCUMGR_TRANSPORT_FORWARD_TREE)
+
+#define NUM_SMP_TRANSPORTS DT_NUM_INST_STATUS_OKAY(zephyr_smpmgr_transport)
+struct smp_transport *smpt_instances[NUM_SMP_TRANSPORTS] = { NULL };
+
+#endif
 
 struct net_buf *smp_packet_alloc(void)
 {
@@ -146,7 +154,12 @@ smp_process_packet(struct smp_transport *smpt, struct net_buf *nb)
 		.smpt = smpt,
 	};
 
+#if defined(CONFIG_MCUMGR_TRANSPORT_FORWARD_TREE)
+	LOG_DBG("Process transport: %s", smpt->dev->name);
+	rc = smp_ft_process_request_packet(&streamer, nb);
+#else
 	rc = smp_process_request_packet(&streamer, nb);
+#endif
 	return rc;
 }
 
@@ -169,6 +182,10 @@ smp_handle_reqs(struct k_work *work)
 
 int smp_transport_init(struct smp_transport *smpt)
 {
+#if defined(CONFIG_MCUMGR_TRANSPORT_FORWARD_TREE)
+	int counter;
+#endif
+
 	__ASSERT((smpt->functions.output != NULL),
 		 "Required transport output function pointer cannot be NULL");
 
@@ -183,8 +200,32 @@ int smp_transport_init(struct smp_transport *smpt)
 	k_work_init(&smpt->work, smp_handle_reqs);
 	k_fifo_init(&smpt->fifo);
 
+#if defined(CONFIG_MCUMGR_TRANSPORT_FORWARD_TREE)
+	for (counter = 0; counter < NUM_SMP_TRANSPORTS; ++counter) {
+		if (smpt_instances[counter] == NULL) {
+			smpt_instances[counter] = smpt;
+			break;
+		}
+	}
+#endif
+
 	return 0;
 }
+
+#if defined(CONFIG_MCUMGR_TRANSPORT_FORWARD_TREE)
+struct smp_transport *smp_get_smpt(const struct device *const dev)
+{
+	int counter;
+
+	for (counter = 0; counter < NUM_SMP_TRANSPORTS; ++counter) {
+		if (smpt_instances[counter]->dev == dev) {
+			return smpt_instances[counter];
+		}
+	}
+
+	return NULL;
+}
+#endif
 
 #ifdef CONFIG_SMP_CLIENT
 struct smp_transport *smp_client_transport_get(int smpt_type)
@@ -225,6 +266,10 @@ void smp_client_transport_register(struct smp_client_transport_entry *entry)
 WEAK void
 smp_rx_req(struct smp_transport *smpt, struct net_buf *nb)
 {
+#if defined(CONFIG_MCUMGR_TRANSPORT_FORWARD_TREE)
+	memcpy(smpt->user_data, net_buf_user_data((void *)nb), nb->user_data_size);
+#endif
+
 	k_fifo_put(&smpt->fifo, nb);
 	k_work_submit_to_queue(&smp_work_queue, &smpt->work);
 }

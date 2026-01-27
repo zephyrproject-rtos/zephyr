@@ -69,6 +69,12 @@ config MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE
 	  is sufficient for UART and shell, a value of 8 is sufficient for Bluetooth. For UDP, the
 	  userdata must be large enough to hold IPv4/IPv6 addresses.
 
+config MCUMGR_TRANSPORT_FORWARD_TREE
+	bool "MCUmgr transport with support to forward tree"
+	help
+	  Allow the host to forward requests to multiple devices in a board.
+	  This feature do not allow the devices to communicate between then.
+
 module = MCUMGR_TRANSPORT
 module-str = mcumgr_transport
 source "subsys/logging/Kconfig.template.log_config"

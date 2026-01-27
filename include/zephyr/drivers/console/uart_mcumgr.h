@@ -27,6 +27,9 @@ struct uart_mcumgr_rx_buf {
 	void *fifo_reserved;   /* 1st word reserved for use by fifo */
 	uint8_t data[CONFIG_UART_MCUMGR_RX_BUF_SIZE];
 	int length;
+#if defined(CONFIG_MCUMGR_TRANSPORT_FORWARD_TREE)
+	const struct device *dev;
+#endif
 };
 
 /** @typedef uart_mcumgr_recv_fn
@@ -43,12 +46,13 @@ typedef void uart_mcumgr_recv_fn(struct uart_mcumgr_rx_buf *rx_buf);
 /**
  * @brief Sends an mcumgr packet over UART.
  *
+ * @param dev                   Device instance
  * @param data                  Buffer containing the mcumgr packet to send.
  * @param len                   The length of the buffer, in bytes.
  *
  * @return                      0 on success; negative error code on failure.
  */
-int uart_mcumgr_send(const uint8_t *data, int len);
+int uart_mcumgr_send(const struct device *const dev, const uint8_t *data, int len);
 
 /**
  * @brief Frees the supplied receive buffer.
@@ -63,10 +67,11 @@ void uart_mcumgr_free_rx_buf(struct uart_mcumgr_rx_buf *rx_buf);
  * Configures the mcumgr UART driver to call the specified function when an
  * mcumgr request packet is received.
  *
+ * @param dev                   Device instance
  * @param cb                    The callback to execute when an mcumgr request
  *                                  packet is received.
  */
-void uart_mcumgr_register(uart_mcumgr_recv_fn *cb);
+void uart_mcumgr_register(const struct device *const dev, uart_mcumgr_recv_fn *cb);
 
 #ifdef __cplusplus
 }

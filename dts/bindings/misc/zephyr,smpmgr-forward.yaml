@@ -1,0 +1,83 @@
+# Copyright (c) 2025 Freedom Veiculos Eletricos
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  The SMP MCUmgr Mux is a software defined muxer to route SMP requests between
+  nodes in the hardware. It is composed from one upstream port and a finite
+  number of downstream ports.
+
+  The zephyr,smpmgr-forward node should be added in the zephyr,uart-mcumgr chosen
+  node. The zephyr,smpmgr-forward router uses a counter in the protocol to know
+  when it should stop to forward the data downstream. In this case, the data
+  is sent to the local device in the zephyr,uart-mcumgr interface.
+
+  In the below snip it is possible to see the definition of my_muxer. The
+  my_muxer is composed by three node: 'the_upstream', 'down1' and 'down2'. In
+  this case the 'down1' node is the 'index 0' and 'down2' is the 'index 1'.
+
+    / {
+      chosen {
+        zephyr,uart-mcumgr = &my_muxer;
+      };
+
+      the_upstream: the_upstream{
+        compatible = "zephyr,smpmgr-transport";
+        status = "okay";
+
+        transport = <&cdc_acm_uart0>;
+        type = "serial";
+      };
+
+      down1: down1{
+        compatible = "zephyr,smpmgr-transport";
+        status = "okay";
+
+        transport = <&uart1>;
+        type = "serial";
+      };
+
+      down2: down2{
+        compatible = "zephyr,smpmgr-transport";
+        status = "okay";
+
+        transport = <&uart0>;
+        type = "ble";
+      };
+
+      my_muxer: my_muxer {
+        compatible = "zephyr,smpmgr-forward";
+        status = "okay";
+
+        upstream = <&the_upstream>;
+        downstream = <&down1>, <&down2>;
+      };
+    };
+
+  In the above example when the protocol mux counter is 0 the content is
+  pushed to zephyr,uart-mcumgr. In any other case the system will forward to
+  the respective downstream port. An error is returned if the index is out of
+  range.
+
+  The content that came from the local or a downstream port is forward to the
+  upstream interface.
+
+compatible: "zephyr,smpmgr-forward"
+
+include:
+  - name: base.yaml
+
+properties:
+  upstream:
+    type: phandle
+    required: true
+    description: |
+      phandle to the upstream node. This should be a zephyr,smpmgr-transport
+      node.
+
+  downstream:
+    type: phandles
+    required: true
+    description: |
+      list of the phandle to all downstream nodes. These should be a
+      zephyr,smpmgr-transport node. The order of the nodes define the interface
+      number.

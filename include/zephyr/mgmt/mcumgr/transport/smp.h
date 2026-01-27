@@ -30,11 +30,16 @@ struct net_buf;
  *
  * The supplied net_buf is always consumed, regardless of return code.
  *
+ * @param dev                   Device instance
  * @param nb                    The net_buf to transmit.
  *
  * @return                      0 on success, #mcumgr_err_t code on failure.
  */
+#ifdef CONFIG_MCUMGR_TRANSPORT_FORWARD_TREE
+typedef int (*smp_transport_out_fn)(const struct device *const dev, struct net_buf *nb);
+#else
 typedef int (*smp_transport_out_fn)(struct net_buf *nb);
+#endif
 
 /** @typedef smp_transport_get_mtu_fn
  * @brief SMP MTU query callback for transport
@@ -145,6 +150,11 @@ struct smp_transport {
 		uint16_t expected;		/* expected bytes to come */
 	} __reassembly;
 #endif
+
+#ifdef CONFIG_MCUMGR_TRANSPORT_FORWARD_TREE
+	const struct device *const dev;
+	uint8_t user_data[64];
+#endif
 };
 
 /**
@@ -221,6 +231,10 @@ void smp_client_transport_register(struct smp_client_transport_entry *entry);
  * @return		Pointer to registered object. Unknown type return NULL.
  */
 struct smp_transport *smp_client_transport_get(int smpt_type);
+
+#if defined(CONFIG_MCUMGR_TRANSPORT_FORWARD_TREE)
+struct smp_transport *smp_get_smpt(const struct device *const dev);
+#endif
 
 /**
  * @}

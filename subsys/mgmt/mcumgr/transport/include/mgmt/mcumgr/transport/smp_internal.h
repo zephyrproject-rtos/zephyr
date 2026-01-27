@@ -39,6 +39,27 @@ struct smp_hdr {
 struct smp_transport;
 struct zephyr_smp_transport;
 
+#if defined(CONFIG_MCUMGR_TRANSPORT_FORWARD_TREE)
+enum smp_hdr_flag {
+	SMP_HDR_FLAG_FORWARD_TREE = 0x80,
+} __packed;
+
+struct smp_forward_tree {
+#ifdef CONFIG_LITTLE_ENDIAN
+	uint64_t port:60;
+	uint64_t hop:4;
+#else
+	uint64_t hop:4;
+	uint64_t port:60;
+#endif
+} __packed;
+
+struct smp_forward_tree_transport {
+	const struct device *const dev;
+	enum smp_transport_type type;
+};
+#endif
+
 /**
  * @brief Enqueues an incoming SMP request packet for processing.
  *
