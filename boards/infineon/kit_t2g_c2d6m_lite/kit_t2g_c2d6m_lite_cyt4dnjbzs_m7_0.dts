@@ -148,6 +148,13 @@ spi0: &scb0 {
 	};
 };
 
+&i2s0 {
+	status = "okay";
+	pinctrl-0 = <&p15_6_tdm_i2s0_tx_mck &p15_7_tdm_i2s0_tx_sck &p16_0_tdm_i2s0_tx_fsync &p16_1_tdm_i2s0_tx_sd>;
+	pinctrl-names = "default";
+	clksel = <0>;
+};
+
 &gpio_prt12 {
        status = "okay";
 };
@@ -158,4 +165,16 @@ spi0: &scb0 {
 
 &gpio_prt14 {
        status = "okay";
+};
+
+&clk_hf7 {
+        status = "okay";
+};
+
+&clk_hf6 {
+        status = "okay";
+};
+
+&clk_hf5 {
+        status = "okay";
 };
