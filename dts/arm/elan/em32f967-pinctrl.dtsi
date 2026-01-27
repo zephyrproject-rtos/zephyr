@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 ELAN Microelectronics Corp.
+ * SPDX-FileCopyrightText: 2024 ELAN Microelectronics Corp.
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -65,12 +65,12 @@
 			/* SPI1 functions on PB0-PB3: MUX 001 = AF1, IP_Share[1:0]=00 */
 			spi1_cs_pb0: spi1_cs_pb0 {
 				pinmux = <EM32F967_PINMUX('B', 0, AF1)>;
-				drive-strength = <4>;
+				drive-strength = <1>;
 			};
 
 			spi1_sck_pb1: spi1_sck_pb1 {
 				pinmux = <EM32F967_PINMUX('B', 1, AF1)>;
-				drive-strength = <4>;
+				drive-strength = <1>;
 			};
 
 			spi1_miso_pb2: spi1_miso_pb2 {
@@ -80,19 +80,19 @@
 
 			spi1_mosi_pb3: spi1_mosi_pb3 {
 				pinmux = <EM32F967_PINMUX('B', 3, AF1)>;
-				drive-strength = <4>;
+				drive-strength = <1>;
 			};
 
 			/* SPI2 Pin Configurations - PB4/PB5/PB6/PB7 (Default) */
 			/* ARM SSP2 master functions on PB4-PB7: MUX 010 = AF2, IP_Share[3:2]=00 */
 			spi2_cs_pb4: spi2_cs_pb4 {
 				pinmux = <EM32F967_PINMUX('B', 4, AF2)>;  /* SSP_SS2 - MUX 010 */
-				drive-strength = <4>;
+				drive-strength = <1>;
 			};
 
 			spi2_sck_pb5: spi2_sck_pb5 {
 				pinmux = <EM32F967_PINMUX('B', 5, AF2)>;  /* SSP_SCK2 - MUX 010 */
-				drive-strength = <4>;
+				drive-strength = <1>;
 			};
 
 			spi2_miso_pb6: spi2_miso_pb6 {
@@ -101,7 +101,7 @@
 
 			spi2_mosi_pb7: spi2_mosi_pb7 {
 				pinmux = <EM32F967_PINMUX('B', 7, AF2)>;  /* SSP_SPITX2 - MUX 010 */
-				drive-strength = <4>;
+				drive-strength = <1>;
 			};
 
 			/* I2C1 Pin Configurations - PB0/PB1 */
@@ -154,64 +154,64 @@
 			/* IOMUX 111 = AF7 for PWM on Port A */
 			/omit-if-no-ref/ pwma_pa0_p: pwma_pa0_p {
 				pinmux = <EM32F967_PINMUX('A', 0, AF7)>;  /* PWMA Positive */
-				drive-strength = <4>;
+				drive-strength = <1>;
 			};
 
 			/omit-if-no-ref/ pwma_pa1_n: pwma_pa1_n {
 				pinmux = <EM32F967_PINMUX('A', 1, AF7)>;  /* PWMA/PWMD Negative */
-				drive-strength = <4>;
+				drive-strength = <1>;
 			};
 
 			/omit-if-no-ref/ pwmb_pa2_p: pwmb_pa2_p {
 				pinmux = <EM32F967_PINMUX('A', 2, AF7)>;  /* PWMB Positive */
-				drive-strength = <4>;
+				drive-strength = <1>;
 			};
 
 			/omit-if-no-ref/ pwmb_pa3_n: pwmb_pa3_n {
 				pinmux = <EM32F967_PINMUX('A', 3, AF7)>;  /* PWMB/PWME Negative */
-				drive-strength = <4>;
+				drive-strength = <1>;
 			};
 
 			/omit-if-no-ref/ pwmc_pa4_p: pwmc_pa4_p {
 				pinmux = <EM32F967_PINMUX('A', 4, AF7)>;  /* PWMC Positive */
-				drive-strength = <4>;
+				drive-strength = <1>;
 			};
 
 			/omit-if-no-ref/ pwmc_pa5_n: pwmc_pa5_n {
 				pinmux = <EM32F967_PINMUX('A', 5, AF7)>;  /* PWMC/PWMF Negative */
-				drive-strength = <4>;
+				drive-strength = <1>;
 			};
 
 			/* Alternative PWM Pin Configurations - PB10-PB15 (PWM_S=1) */
 			/* IOMUX 001 = AF1 for PWM on Port B */
 			/omit-if-no-ref/ pwma_pb10_p: pwma_pb10_p {
 				pinmux = <EM32F967_PINMUX('B', 10, AF1)>;  /* PWMA Positive */
-				drive-strength = <4>;
+				drive-strength = <1>;
 			};
 
 			/omit-if-no-ref/ pwma_pb11_n: pwma_pb11_n {
 				pinmux = <EM32F967_PINMUX('B', 11, AF1)>;  /* PWMA/PWMD Negative */
-				drive-strength = <4>;
+				drive-strength = <1>;
 			};
 
 			/omit-if-no-ref/ pwmb_pb12_p: pwmb_pb12_p {
 				pinmux = <EM32F967_PINMUX('B', 12, AF1)>;  /* PWMB Positive */
-				drive-strength = <4>;
+				drive-strength = <1>;
 			};
 
 			/omit-if-no-ref/ pwmb_pb13_n: pwmb_pb13_n {
 				pinmux = <EM32F967_PINMUX('B', 13, AF1)>;  /* PWMB/PWME Negative */
-				drive-strength = <4>;
+				drive-strength = <1>;
 			};
 
 			/omit-if-no-ref/ pwmc_pb14_p: pwmc_pb14_p {
 				pinmux = <EM32F967_PINMUX('B', 14, AF1)>;  /* PWMC Positive */
-				drive-strength = <4>;
+				drive-strength = <1>;
 			};
 
 			/omit-if-no-ref/ pwmc_pb15_n: pwmc_pb15_n {
 				pinmux = <EM32F967_PINMUX('B', 15, AF1)>;  /* PWMC/PWMF Negative */
-				drive-strength = <4>;
+				drive-strength = <1>;
 			};
 
 			/* GPIO Pin Configurations - Default GPIO mode */
@@ -301,6 +301,70 @@
 
 			gpio_pb9: gpio_pb9 {
 				pinmux = <EM32F967_PINMUX('B', 9, GPIO)>;
+			};
+
+			/*
+			 * WakeUp Pin Configurations — WKUP1 to WKUP7 (AF5)
+			 *
+			 * These nodes configure IOMUX to AF5, routing the pin to the
+			 * EM32F967 WakeUp controller for deep-sleep (PDSW2/PDSW4) wakeup.
+			 *
+			 * No IOShare register configuration is required for AF5 WKUP pins —
+			 * routing is controlled entirely by the IOMUX register (4 bits/pin).
+			 *
+			 * Usage — reference in a board overlay or sample overlay:
+			 *   &some_device { pinctrl-0 = <&wkup3_pa15_af5>;
+			 *                  pinctrl-names = "default"; };
+			 * Or use gpio_pin_configure_dt() with EM32_GPIO_WKUP flag (recommended
+			 * for most applications — the GPIO driver's two-phase wakeup design
+			 * arms the WakeUp controller automatically at sys_poweroff() time).
+			 *
+			 * Pin-to-WKUP mapping (EM32F967 hardware fixed):
+			 *   PA6  → WKUP1    PA14 → WKUP2    PA15 → WKUP3
+			 *   PB3  → WKUP4    PB7  → WKUP5
+			 *   PB8  → WKUP6    PB9  → WKUP7
+			 */
+
+			/* WKUP1 — PA6 (5V tolerant pin) */
+			/omit-if-no-ref/ wkup1_pa6_af5: wkup1_pa6_af5 {
+				pinmux = <EM32F967_PINMUX('A', 6, AF5)>;
+				bias-pull-up; /* default: active-low wakeup button */
+			};
+
+			/* WKUP2 — PA14 */
+			/omit-if-no-ref/ wkup2_pa14_af5: wkup2_pa14_af5 {
+				pinmux = <EM32F967_PINMUX('A', 14, AF5)>;
+				bias-pull-up;
+			};
+
+			/* WKUP3 — PA15 */
+			/omit-if-no-ref/ wkup3_pa15_af5: wkup3_pa15_af5 {
+				pinmux = <EM32F967_PINMUX('A', 15, AF5)>;
+				bias-pull-up;
+			};
+
+			/* WKUP4 — PB3 */
+			/omit-if-no-ref/ wkup4_pb3_af5: wkup4_pb3_af5 {
+				pinmux = <EM32F967_PINMUX('B', 3, AF5)>;
+				bias-pull-up;
+			};
+
+			/* WKUP5 — PB7 */
+			/omit-if-no-ref/ wkup5_pb7_af5: wkup5_pb7_af5 {
+				pinmux = <EM32F967_PINMUX('B', 7, AF5)>;
+				bias-pull-up;
+			};
+
+			/* WKUP6 — PB8 */
+			/omit-if-no-ref/ wkup6_pb8_af5: wkup6_pb8_af5 {
+				pinmux = <EM32F967_PINMUX('B', 8, AF5)>;
+				bias-pull-up;
+			};
+
+			/* WKUP7 — PB9 */
+			/omit-if-no-ref/ wkup7_pb9_af5: wkup7_pb9_af5 {
+				pinmux = <EM32F967_PINMUX('B', 9, AF5)>;
+				bias-pull-up;
 			};
 
 			/* UART1 Alternate Pin Configurations - PB8/PB9 */

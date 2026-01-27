@@ -1,0 +1,167 @@
+# SPDX-FileCopyrightText: 2026 ELAN Microelectronics Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    EM32 Pin controller (EM32F967).
+
+    Based on pincfg-node.yaml binding.
+
+    Note: `bias-disable` and `drive-push-pull` are the default pin
+          configurations.  They are applied when no `bias-*` or
+          `drive-*` property is set in the child node.
+
+compatible: "elan,em32-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: |
+      This binding gives a base representation of the EM32F967 pins
+      configuration consumed by drivers/pinctrl/pinctrl_em32.c.
+
+  include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+        - bias-disable
+        - bias-pull-down
+        - bias-pull-up
+        - drive-push-pull
+        - drive-open-drain
+        - output-low
+        - output-high
+
+  properties:
+    pinmux:
+      required: true
+      type: int
+      description: |
+        32-bit value encoding port, pin, mux function and (optionally)
+        one or two IP_SHARE register operations.
+
+        Bit layout (matches
+        include/zephyr/dt-bindings/pinctrl/em32f967-pinctrl.h and the
+        decode in drivers/pinctrl/pinctrl_em32.c):
+
+          bits [ 2:0]   mux function    (3 bits)
+          bits [ 6:3]   pin number 0-15 (4 bits)
+          bit  [ 7]     port: 0 = PA, 1 = PB
+          bit  [ 8]     io1_valid       (1 = first IP_SHARE op present)
+          bits [13:9]   io1_shift       (bit position 0-31 in IP_SHARE)
+          bits [15:14]  io1_width_m1    (field width minus 1: 0 = 1 bit)
+          bits [19:16]  io1_value       (value to write at io1_shift)
+          bit  [20]     io2_valid       (1 = second IP_SHARE op present)
+          bits [25:21]  io2_shift
+          bits [27:26]  io2_width_m1
+          bits [31:28]  io2_value
+
+        Mux function values (3-bit field, range 0-7 — there is no
+        "Analog" or "GPIO=17" alias on this SoC):
+          * 0 : EM32F967_GPIO  — plain GPIO function
+          * 1 : EM32F967_AF1   — alternate function 1 (SPI1, …)
+          * 2 : EM32F967_AF2   — alternate function 2 (UART, …)
+          * 3 : EM32F967_AF3   — alternate function 3 (Timer, 7816, …)
+          * 4 : EM32F967_AF4   — alternate function 4 (I2C, …)
+          * 5 : EM32F967_AF5   — alternate function 5 (I2C, WKUP, …)
+          * 6 : EM32F967_AF6   — alternate function 6 (reserved on PB4-PB7)
+          * 7 : EM32F967_AF7   — alternate function 7 (PWM, …)
+
+        When the selected mux is EM32F967_GPIO, the pin is statically
+        configured as a plain input/output GPIO.  Default direction is
+        input; output value can be driven by adding `output-low` or
+        `output-high` to the child node.
+
+        Two helper macros are provided in
+        include/zephyr/dt-bindings/pinctrl/em32f967-pinctrl.h:
+
+          EM32F967_PINMUX(port, pin, mux)
+              Backward-compatible 3-arg form.  Sets bits [7:0] only;
+              IP_SHARE bits [31:8] are zero.  The driver falls back to
+              its built-in em32_ioshare_table[] lookup to configure
+              IP_SHARE for this pin.
+
+          EM32F967_PINMUX_IO(port, pin, mux, ioshare)
+              4-arg form.  `ioshare` embeds one or two IP_SHARE
+              read-modify-write operations directly in the pinmux cell,
+              so the driver does not need a table lookup.  Build
+              `ioshare` with one of:
+
+                EM32F967_IO_NONE                — no IP_SHARE op
+                EM32F967_IO_SET_BIT(pos)        — set bit `pos`
+                EM32F967_IO_CLR_BIT(pos)        — clear bit `pos`
+                EM32F967_IO_SET_2BIT(pos, val)  — write 2-bit field
+                EM32F967_IO_CLR_2BIT(pos)       — clear 2-bit field
+                EM32F967_IO1(shift, width, val) — explicit op (slot 1)
+                EM32F967_IO2(shift, width, val) — explicit op (slot 2,
+                  combine with the above using bitwise OR)
+
+    bias-pull-up-value:
+      type: int
+      default: 1
+      enum:
+        - 1
+        - 2
+      description: |
+        Selects WHICH internal pull-up resistor is connected when
+        `bias-pull-up` is also set on the same pin.  It is ignored
+        unless `bias-pull-up` is present (multiplied by it in the SoC
+        Z_PINCTRL_EM32_PINCFG_INIT() macro).
+
+          1 = PU0  weak   pull-up (default, == legacy `bias-pull-up;`)
+          2 = PU1  strong pull-up
+
+        Rationale: the standard pincfg booleans bias-disable /
+        bias-pull-up / bias-pull-down can only express three of the four
+        states of the 2-bit hardware pull field.  This property exposes
+        the missing PU1 state without breaking existing device-tree
+        nodes that use the plain `bias-pull-up;` boolean.
+
+        2-bit hardware pull field (IOPUPxCTRL, 2 bits per pin):
+          0b00 floating <- bias-disable        (or no bias property)
+          0b01 PU0       <- bias-pull-up        [+ bias-pull-up-value = <1>]
+          0b10 PU1       <- bias-pull-up         + bias-pull-up-value = <2>
+          0b11 PD        <- bias-pull-down
+
+        Base Address 0x4003_0000 Offset 0x214 for GPIO PORT A (PA)
+        Base Address 0x4003_0000 Offset 0x218 for GPIO PORT B (PB)
+
+        GPIO Port A: PA0~6(Bit 13~0) PU0/PU1/PD:[1:0]
+          00: Floating
+          01: PU0 (Pull Up 5V→66K,  3.3V→101K, 1.8V→238K)
+          10: PU1 (Pull Up 5V→4.7K,  3.3V→6.41K, 1.8V→12.7K)
+          11: PD (Pull Down 5V→15K,  3.3V→21.8K, 1.8V→49.6K) (Default)
+
+        GPIO Port A: PA11~15(Bit 31~22) PU0/PU1/PD:[1:0]
+          00: Floating
+          01: PU0 (Pull Up 3.3V→66K, 1.8V→140K)
+          10: PU1 (Pull Up 3.3V→4.7K, 1.8V→8.53K)
+          11: PD (Pull Down 3.3V→15K, 1.8V→25.2K) (Default)
+
+        GPIO Port B(PB)(Bit 31~0) PU0/PU1/PD:[1:0]
+          00: Floating
+          01: PU0 (Pull Up 3.3V→66K, 1.8V→140K)
+          10: PU1 (Pull Up 3.3V→4.7K, 1.8V→8.53K)
+          11: PD (Pull Down 3.3V→15K, 1.8V→25.2K) (Default)
+
+    drive-strength:
+      type: int
+      default: 0
+      enum:
+        - 0
+        - 1
+      description: |
+        Pin output drive strength (1-bit hardware field).  Use a numeric
+        value, e.g. `drive-strength = <1>;`.
+
+        Base Address 0x4003_0000 Offset 0x21C (PA high-drive control)
+        Base Address 0x4003_0000 Offset 0x220 (PB high-drive control)
+
+        0 - low drive strength when pin is configured as output (default)
+            4Mhz:  470uA(32mA)
+
+        1 - high drive strength when pin is configured as output
+            4Mhz:  490uA(65mA),
+            48Mhz: 5.8mA(68mA)
