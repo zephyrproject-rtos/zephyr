@@ -27,6 +27,7 @@ import sys
 
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
+from copy import copy
 
 # This is needed to load edt.pickle files.
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "dts", "python-devicetree", "src"))
@@ -74,6 +75,7 @@ class Priority:
                 self._priority = priority
                 # Tuples compare elementwise in order
                 self._level_priority = (self._level, self._priority)
+                self.is_own = True
                 return
 
         raise ValueError(f"Unknown level in {level}")
@@ -95,6 +97,11 @@ class Priority:
     def __hash__(self):
         return self._level_priority
 
+    def inherited(self):
+        result = copy(self)
+        result.is_own = False
+        return result
+
 
 class ZephyrInitLevels:
     """Load an executable file and find the initialization calls and devices.
@@ -110,12 +117,13 @@ class ZephyrInitLevels:
         file_path: path of the file to be loaded.
     """
 
-    def __init__(self, file_path, elf_file):
+    def __init__(self, file_path, elf_file, ord2node):
         self.file_path = file_path
         self._elf = ELFFile(elf_file)
         self._load_objects()
         self._load_level_addr()
         self._process_initlevels()
+        self._process_initchildren(ord2node)
 
     def _load_objects(self):
         """Initialize the object table."""
@@ -240,6 +248,23 @@ class ZephyrInitLevels:
                 addr += size
                 priority += 1
 
+    def _process_childnode(self, node, value, recurse_limit):
+        for child in node.children.values():
+            # Check if child have its own init priority
+            if child.dep_ordinal not in self.devices:
+                self.child_devices[child.dep_ordinal] = value
+                if recurse_limit > 0:
+                    self._process_childnode(child, value, recurse_limit - 1)
+
+    def _process_initchildren(self, ord2node):
+        self.child_devices = {}
+        # Populate child nodes
+        for node_name in self.devices:
+            new_value = (self.devices[node_name][0].inherited(), self.devices[node_name][1])
+            self._process_childnode(ord2node[node_name], new_value, 5)
+        # Merge child nodes into devices
+        self.devices = self.child_devices | self.devices
+
 
 class Validator:
     """Validates the initialization priorities.
@@ -263,7 +288,7 @@ class Validator:
 
         self._ord2node = edt.dep_ord2node
 
-        self._obj = ZephyrInitLevels(elf_file_path, elf_file)
+        self._obj = ZephyrInitLevels(elf_file_path, elf_file, self._ord2node)
 
         self.errors = 0
 
@@ -319,18 +344,34 @@ class Validator:
         dev_prio, dev_init = self._obj.devices.get(dev_ord, (None, None))
         dep_prio, dep_init = self._obj.devices.get(dep_ord, (None, None))
 
+        # Specific exceptions
+        check_exception = (
+            # Node with inherited priority referring to gpio controller
+            (dep_node.props.get("gpio-controller", False) and not dev_prio.is_own)
+            or
+            # One of the nodes doesn't use init function
+            (dep_init == "NULL" or dev_init == "NULL")
+        )
+
         if not dev_prio or not dep_prio:
             return
 
         if dev_prio == dep_prio:
-            raise ValueError(
-                f"{dev_node.path} and {dep_node.path} have the same priority: {dev_prio}"
-            )
+            if dev_prio.is_own and dep_prio.is_own:
+                raise ValueError(
+                    f"{dev_node.path} and {dep_node.path} have the same priority: {dev_prio}"
+                )
         elif dev_prio < dep_prio:
-            self._flag_error(
-                f"{dev_node.path} <{dev_init}> is initialized before its dependency "
-                f"{dep_node.path} <{dep_init}> ({dev_prio} < {dep_prio})"
-            )
+            if check_exception:
+                self.log.info(
+                    f"Ignored by exception {dev_node.path} <{dev_init}> {dev_prio} < "
+                    f"{dep_node.path} <{dep_init}> {dep_prio}"
+                )
+            else:
+                self._flag_error(
+                    f"{dev_node.path} <{dev_init}> is initialized before its dependency "
+                    f"{dep_node.path} <{dep_init}> ({dev_prio} < {dep_prio})"
+                )
         else:
             self.log.info(
                 f"{dev_node.path} <{dev_init}> {dev_prio} > {dep_node.path} <{dep_init}> {dep_prio}"

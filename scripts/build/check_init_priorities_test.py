@@ -272,7 +272,7 @@ class testValidator(unittest.TestCase):
             validator = check_init_priorities.Validator("path", "pickle", mock_log, None)
 
         self.assertEqual(validator._obj, mock_obj)
-        mock_zil.assert_called_once_with("path", None)
+        mock_zil.assert_called_once_with("path", None, validator._ord2node)
         mock_open.assert_called_once_with(pathlib.Path("pickle"), "rb")
 
     @mock.patch("check_init_priorities.Validator.__init__", return_value=None)
@@ -349,7 +349,10 @@ class testValidator(unittest.TestCase):
         validator._ord2node[2].path = "/2"
         validator._ord2node[2].props = {}
 
-        validator._obj.devices = {1: (10, "i1"), 2: (10, "i2")}
+        validator._obj.devices = {
+            1: (check_init_priorities.Priority("POST_KERNEL", 10), "i1"),
+            2: (check_init_priorities.Priority("POST_KERNEL", 10), "i2"),
+        }
 
         with self.assertRaises(ValueError):
             validator._check_dep(1, 2)
