@@ -87,8 +87,4 @@
 			};
 		};
 	};
-
-	vref: vref {
-		vrefint-cal-addr = <0x1ff07a2a>;
-	};
 };

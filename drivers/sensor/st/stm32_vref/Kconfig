@@ -12,3 +12,15 @@ config STM32_VREF
 	select ADC
 	help
 	  Enable driver for STM32 Vref sensor.
+
+if STM32_VREF
+
+config STM32_VREF_READ_CALIB_VIA_NVMEM
+	bool "Read VREF calibration data using NVMEM"
+	default y
+	depends on OTP && NVMEM
+	help
+	  Read calibration data using the NVMEM subsystem
+	  instead of using raw memory accesses.
+
+endif # STM32_VREF
