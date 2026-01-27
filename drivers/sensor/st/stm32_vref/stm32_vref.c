@@ -25,6 +25,11 @@ LOG_MODULE_REGISTER(stm32_vref, CONFIG_SENSOR_LOG_LEVEL);
 struct stm32_vref_data {
 	struct adc_sequence adc_seq;
 	struct k_mutex mutex;
+	/*
+	 * Numerator for VREFINT calculation
+	 * (VREFINT = Num / <ADC read data>)
+	 */
+	int32_t vrefint_cal_numerator;
 	int16_t sample_buffer;
 	int16_t raw; /* raw adc Sensor value */
 };
@@ -89,7 +94,6 @@ static int stm32_vref_channel_get(const struct device *dev, enum sensor_channel 
 				  struct sensor_value *val)
 {
 	struct stm32_vref_data *data = dev->data;
-	const struct stm32_vref_config *cfg = dev->config;
 	int32_t vref;
 
 	if (chan != SENSOR_CHAN_VOLTAGE) {
@@ -101,19 +105,8 @@ static int stm32_vref_channel_get(const struct device *dev, enum sensor_channel 
 		return -ENODATA;
 	}
 
-/*
- * STM32H5X: accesses to flash RO region must be done with caching disabled.
- */
-#if defined(CONFIG_SOC_SERIES_STM32H5X)
-	sys_cache_instr_disable();
-#endif /* CONFIG_SOC_SERIES_STM32H5X */
-
 	/* Calculate VREF+ using VREFINT bandgap voltage and calibration data */
-	vref = (cfg->cal_mv * ((*cfg->cal_addr) >> cfg->cal_shift)) / data->raw;
-
-#if defined(CONFIG_SOC_SERIES_STM32H5X)
-	sys_cache_instr_enable();
-#endif /* CONFIG_SOC_SERIES_STM32H5X */
+	vref = data->vrefint_cal_numerator / data->raw;
 
 	return sensor_value_from_milli(val, vref);
 }
@@ -142,6 +135,20 @@ static int stm32_vref_init(const struct device *dev)
 		.buffer_size = sizeof(data->sample_buffer),
 		.resolution = MEAS_RES,
 	};
+
+/*
+ * Read calibration data and compute numerator once during init.
+ * STM32H5X: accesses to flash RO region must be done with caching disabled.
+ */
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+	sys_cache_instr_disable();
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
+
+	data->vrefint_cal_numerator = ((*cfg->cal_addr) >> cfg->cal_shift) * cfg->cal_mv;
+
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+	sys_cache_instr_enable();
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
 
 	return 0;
 }
