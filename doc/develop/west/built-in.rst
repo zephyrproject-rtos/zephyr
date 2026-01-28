@@ -100,6 +100,8 @@ To operate on a subset of projects only, give ``PROJECT`` argument(s). Each
 path that points to the project within the workspace. If you specify
 projects explicitly, they are updated regardless of whether they are active.
 
+.. _west-update-procedure:
+
 **Project update procedure:**
 
 For each project that is updated, this command:
@@ -110,8 +112,9 @@ For each project that is updated, this command:
    it from the remote if it is not already available locally
 #. Sets the project's :ref:`manifest-rev <west-manifest-rev>` branch to the
    commit specified by the revision in the previous step
-#. Checks out ``manifest-rev`` in the local working copy as a `detached
-   HEAD <https://git-scm.com/docs/git-checkout#_detached_head>`_
+#. Checks out ``manifest-rev`` in the local working copy as a `detached HEAD
+   <https://git-scm.com/docs/git-checkout#_detached_head>`_ (see
+   :ref:`west-update-detached-heads` for details about this choice)
 #. If the manifest file specifies a :ref:`submodules
    <west-manifest-submodules>` key for the project, recursively updates
    the project's submodules as described below.
