@@ -45,12 +45,12 @@ LOG_MODULE_REGISTER(crypto_smartbond_crypto, CONFIG_CRYPTO_LOG_LEVEL);
 
 struct crypto_smartbond_data {
     /*
-     * Semaphore to provide mutual exlusion when a crypto session is requested.
+     * Semaphore to provide mutual exclusion when a crypto session is requested.
      */
 	struct k_sem session_sem;
 
     /*
-     * Semaphore to provide mutual exlusion when a cryptographic task is requested.
+     * Semaphore to provide mutual exclusion when a cryptographic task is requested.
      * (a session should be requested at this point).
      */
 	struct k_sem device_sem;
@@ -66,7 +66,7 @@ struct crypto_smartbond_data {
 	};
 
     /*
-     * Packet context should be stored during a session so that can be rertieved
+     * Packet context should be stored during a session so that can be retrieved
      * from within the crypto engine ISR context.
      */
 	union {
@@ -100,7 +100,7 @@ static void smartbond_crypto_isr(const void *arg)
 		AES_HASH->CRYPTO_CLRIRQ_REG = 0x1;
 
 #if defined(CONFIG_CRYPTO_ASYNC)
-		/* Define the slected crypto mode (AES/HASH). */
+		/* Define the selected crypto mode (AES/HASH). */
 		if (AES_HASH->CRYPTO_CTRL_REG & AES_HASH_CRYPTO_CTRL_REG_CRYPTO_HASH_SEL_Msk) {
 			if (data->hash_user_cb) {
 				data->hash_user_cb(data->hash_pkt, status);
@@ -194,7 +194,7 @@ static int crypto_smartbond_check_in_restrictions(uint16_t in_len)
 	bool not_last_in_block = !!(AES_HASH->CRYPTO_CTRL_REG &
 						AES_HASH_CRYPTO_CTRL_REG_CRYPTO_MORE_IN_Msk);
 
-	/* Define the slected crypto mode (AES/HASH). */
+	/* Define the selected crypto mode (AES/HASH). */
 	if (AES_HASH->CRYPTO_CTRL_REG & AES_HASH_CRYPTO_CTRL_REG_CRYPTO_HASH_SEL_Msk) {
 		if (not_last_in_block && (in_len & 0x7)) {
 			return -EINVAL;
@@ -278,7 +278,7 @@ static int crypto_smartbond_hash_set_out_len(void)
 
 static uint32_t crypto_smartbond_swap_word(uint8_t *data)
 {
-    /* Check word boundaries of given address and if possible accellerate swapping */
+    /* Check word boundaries of given address and if possible accelerate swapping */
 	if ((uint32_t)data & 0x3) {
 		return SWAP32(sys_get_le32(data));
 	} else {
@@ -312,7 +312,7 @@ static int crypto_smartbond_cipher_key_load(uint8_t *key, uint16_t key_len)
 	/* Check whether the cipher key is located in OTP (user keys segment) */
 	if (IS_ADDRESS_USER_DATA_KEYS_SEGMENT((uint32_t)key)) {
 
-		/* User keys segmnet can be accessed if not locked (stick bits are not set) */
+		/* User keys segment can be accessed if not locked (stick bits are not set) */
 		if (CRG_TOP->SECURE_BOOT_REG & CRG_TOP_SECURE_BOOT_REG_PROT_AES_KEY_READ_Msk) {
 			return -EIO;
 		}
@@ -397,14 +397,14 @@ static int crypto_smartbond_set_in_out_buf(const uint8_t *in_buf, uint8_t *out_b
 	}
 
 	/*
-	 * Input data can reside in any address space. Cryto DMA can only access physical addresses
+	 * Input data can reside in any address space. Crypto DMA can only access physical addresses
 	 * (not remapped).
 	 */
 	uint32_t phy_addr = black_orca_phy_addr((uint32_t)in_buf);
 
 	if (IS_QSPIF_CACHED_ADDRESS(phy_addr)) {
 		/*
-		 * To achiebe max. perfomance, peripherals should not access the Flash memory
+		 * To achiebe max. performance, peripherals should not access the Flash memory
 		 * through the instruction cache controller (avoid cache misses).
 		 */
 		phy_addr += (MCU_QSPIF_M_BASE - MCU_QSPIF_M_CACHED_BASE);
@@ -973,7 +973,7 @@ static int crypto_smartbond_init(const struct device *dev)
 	k_sem_init(&data->device_sem, 1, 1);
 
 #if !defined(CONFIG_CRYPTO_ASYNC)
-    /* Sempahore used when sync operations are enabled */
+    /* Semaphore used when sync operations are enabled */
 	k_sem_init(&data->sync_sem, 0, 1);
 #endif
 
