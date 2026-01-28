@@ -266,6 +266,8 @@ struct modem_buffers {
 	uint8_t uart_rx[CONFIG_MODEM_HL78XX_UART_BUFFER_SIZES];
 	uint8_t uart_tx[CONFIG_MODEM_HL78XX_UART_BUFFER_SIZES];
 	uint8_t chat_rx[CONFIG_MODEM_HL78XX_CHAT_BUFFER_SIZES];
+	uint8_t cmd_buffer[CONFIG_MODEM_HL78XX_COMMAND_BUFFER_SIZE];
+	size_t cmd_len;
 	uint8_t *delimiter;
 	uint8_t *filter;
 	uint8_t *argv[32];
@@ -375,6 +377,8 @@ struct hl78xx_data {
 	struct modem_pipe *uart_pipe;
 	struct modem_backend_uart uart_backend;
 	struct modem_chat chat;
+	struct modem_chat_script dynamic_script;
+	struct modem_chat_script_chat dynamic_chat;
 
 	struct k_mutex tx_lock;
 	struct k_mutex api_lock;
@@ -496,6 +500,25 @@ int modem_dynamic_cmd_send(struct hl78xx_data *data,
 			   uint16_t cmd_len, const struct modem_chat_match *response_matches,
 			   uint16_t matches_size, uint16_t response_timeout, bool user_cmd);
 
+/**
+ * @brief Send a command to the modem asynchronously and handle responses via callback.
+ * This function sends a command to the modem and processes responses asynchronously
+ * using the provided match patterns and callback function.
+ * @param data Pointer to the modem HL78xx driver data structure.
+ * @param script_user_callback Callback function invoked on matched responses or errors.
+ * @param cmd Pointer to the command buffer to send.
+ * @param cmd_size Size of the command in bytes.
+ * @param response_matches Array of expected response match patterns.
+ * @param matches_size Number of elements in the response_matches array.
+ * @param response_timeout Response timeout in seconds.
+ * @param user_cmd Boolean indicating if this is a user-initiated command.
+ * @return 0 on success, negative errno code on failure.
+ */
+int modem_dynamic_cmd_send_async(struct hl78xx_data *data,
+				 modem_chat_script_callback script_user_callback,
+				 const uint8_t *cmd, uint16_t cmd_size,
+				 const struct modem_chat_match *response_matches,
+				 uint16_t matches_size, uint16_t response_timeout, bool user_cmd);
 #define HASH_MULTIPLIER 37
 /**
  * @brief Generate a 32-bit hash from a string.

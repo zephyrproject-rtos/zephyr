@@ -967,6 +967,13 @@ config MODEM_HL78XX_SOCKETS_SOCKOPT_TLS
 	  This option enables TLS (Transport Layer Security) for sockets
 	  on the HL78xx modem.
 
+config MODEM_HL78XX_COMMAND_BUFFER_SIZE
+	int "The AT command buffer size in bytes."
+	default 1024
+	help
+	  This setting defines the size of the buffer used to store AT commands
+	  and responses exchanged with the HL78XX modem.
+
 config MODEM_HL78XX_UART_BUFFER_SIZES
 	int "The UART receive and transmit buffer sizes in bytes."
 	default 512
