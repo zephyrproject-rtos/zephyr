@@ -129,7 +129,7 @@ static int scmi_send_message_polling(struct scmi_protocol *proto,
 	 */
 	status = scmi_interrupt_enable(proto->tx, false);
 
-	ret = scmi_transport_send_message(proto->transport, proto->tx, msg);
+	ret = scmi_transport_send_message(proto->transport, proto->tx, msg, true);
 	if (ret < 0) {
 		goto cleanup;
 	}
@@ -182,7 +182,7 @@ static int scmi_send_message_interrupt(struct scmi_protocol *proto,
 		return ret;
 	}
 
-	ret = scmi_transport_send_message(proto->transport, proto->tx, msg);
+	ret = scmi_transport_send_message(proto->transport, proto->tx, msg, false);
 	if (ret < 0) {
 		LOG_ERR("failed to send message");
 		goto out_release_mutex;
