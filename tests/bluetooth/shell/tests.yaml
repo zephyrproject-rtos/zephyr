@@ -222,6 +222,7 @@ tests:
     <<: *audio_shell_config
     extra_configs:
       - CONFIG_BT_MCS=n
+      - CONFIG_BT_MPL=n
   bluetooth.audio.shell.no_mcc:
     <<: *audio_shell_config
     extra_configs:
