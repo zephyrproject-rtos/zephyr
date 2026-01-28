@@ -4366,6 +4366,8 @@ RISCV arch:
     - ycsin
     - VynDragon
     - masz-nordic
+    - lstnl
+    - meijemac
   files:
     - arch/riscv/
     - boards/enjoydigital/litex_vexriscv/
@@ -5826,6 +5828,7 @@ West:
     - adamkondraciuk
     - lstnl
     - rlubos
+    - mstasiaknordic
   files:
     - modules/hal_nordic/
   labels:
@@ -6536,6 +6539,7 @@ nRF Platforms:
     - magp-nordic
     - nika-nordic
     - lstnl
+    - mstasiaknordic
   files:
     - boards/nordic/
     - drivers/*/*nrf*.c
