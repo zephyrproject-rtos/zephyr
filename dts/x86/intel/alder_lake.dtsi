@@ -74,7 +74,7 @@
 		gpio_c: gpio_c {
 			acpi-hid = "INTC1057";
 			acpi-uid = "0";
-			group-index = <0x0B>;
+			group-index = <0x0b>;
 			int-stat-offset = <0x40>;
 			int-en-offset = <0x20>;
 			status = "okay";
@@ -92,7 +92,7 @@
 		gpio_e: gpio_e {
 			acpi-hid = "INTC1057";
 			acpi-uid = "0";
-			group-index = <0xE>;
+			group-index = <0xe>;
 			int-stat-offset = <0x40>;
 			int-en-offset = <0x20>;
 			status = "okay";
@@ -101,7 +101,7 @@
 		gpio_f: gpio_f {
 			acpi-hid = "INTC1057";
 			acpi-uid = "0";
-			group-index = <0xC>;
+			group-index = <0xc>;
 			int-stat-offset = <0x40>;
 			int-en-offset = <0x20>;
 			status = "okay";
@@ -155,7 +155,7 @@
 		gpio_v: gpio_v {
 			acpi-hid = "INTC1057";
 			acpi-uid = "0";
-			group-index = <0xA>;
+			group-index = <0xa>;
 			int-stat-offset = <0x40>;
 			int-en-offset = <0x20>;
 			status = "okay";
@@ -205,7 +205,7 @@
 		uart1: uart1 {
 			compatible = "ns16550";
 			vendor-id = <0x8086>;
-			device-id = <0x54A9>;
+			device-id = <0x54a9>;
 			clock-frequency = <1843200>;
 			current-speed = <115200>;
 			reg-shift = <2>;
@@ -225,7 +225,7 @@
 		uart2: uart2 {
 			compatible = "ns16550";
 			vendor-id = <0x8086>;
-			device-id = <0x54C7>;
+			device-id = <0x54c7>;
 			clock-frequency = <1843200>;
 			current-speed = <115200>;
 			reg-shift = <2>;
@@ -366,7 +366,7 @@
 		emmc: emmc0 {
 			compatible = "intel,emmc-host";
 			vendor-id = <0x8086>;
-			device-id = <0x54C4>;
+			device-id = <0x54c4>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 

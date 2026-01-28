@@ -200,7 +200,7 @@
 		};
 
 		rtc_timer: rtc_timer@3ff48004 {
-			reg = <0x3ff48004 0xC>;
+			reg = <0x3ff48004 0xc>;
 			compatible = "espressif,esp32-rtc-timer";
 			clocks = <&clock ESP32_MODULE_MAX>;
 			interrupts = <RTC_CORE_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
@@ -256,7 +256,7 @@
 
 		uart2: uart@3ff6e000 {
 			compatible = "espressif,esp32-uart";
-			reg = <0x3ff6E000 0x400>;
+			reg = <0x3ff6e000 0x400>;
 			interrupts = <UART2_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_UART2_MODULE>;
@@ -397,7 +397,7 @@
 
 		trng0: trng@3ff75144 {
 			compatible = "espressif,esp32-trng";
-			reg = <0x3FF75144 0x4>;
+			reg = <0x3ff75144 0x4>;
 			clocks = <&clock ESP32_RNG_MODULE>;
 			status = "disabled";
 		};

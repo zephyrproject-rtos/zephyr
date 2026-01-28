@@ -246,7 +246,7 @@
 
 		egpio1: egpio@2404c000 {
 			compatible = "silabs,siwx91x-gpio";
-			reg = <0x2404C000 0x1260>;
+			reg = <0x2404c000 0x1260>;
 			interrupts = <18 0>;
 			interrupt-names = "ULP";
 			silabs,ulp;
@@ -319,7 +319,7 @@
 			compatible = "silabs,siwx91x-dma";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x24078000 0x82C>;
+			reg = <0x24078000 0x82c>;
 			interrupts = <10 0>;
 			interrupt-names = "ulpdma";
 			clocks = <&clock0 SIWX91X_CLK_ULP_DMA>;
@@ -335,7 +335,7 @@
 			compatible = "silabs,siwx91x-dma";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x44030000 0x82C>;
+			reg = <0x44030000 0x82c>;
 			interrupts = <33 0>;
 			interrupt-names = "dma0";
 			clocks = <&clock0 SIWX91X_CLK_DMA0>;
@@ -366,7 +366,7 @@
 			compatible = "silabs,siwx91x-pwm";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x47070000 0x14C>;
+			reg = <0x47070000 0x14c>;
 			interrupts = <48 0>;
 			interrupt-names = "pwm";
 			clocks = <&clock0 SIWX91X_CLK_PWM>;
@@ -390,7 +390,7 @@
 			compatible = "silabs,siwx91x-wdt";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x24048300 0x1C>;
+			reg = <0x24048300 0x1c>;
 			interrupts = <20 0>;
 			interrupt-names = "watchdog";
 			clocks = <&clock0 SIWX91X_CLK_WATCHDOG>;
@@ -411,7 +411,7 @@
 			compatible = "silabs,gspi";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x45030000 0xBC>;
+			reg = <0x45030000 0xbc>;
 			interrupts = <46 0>;
 			interrupt-names = "gspi";
 			clocks = <&clock0 SIWX91X_CLK_GSPI>;

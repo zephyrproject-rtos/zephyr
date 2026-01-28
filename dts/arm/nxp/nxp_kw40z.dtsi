@@ -60,9 +60,9 @@
 			clock-frequency = <32768>;
 		};
 
-		rcm: rcm@4007F000 {
+		rcm: rcm@4007f000 {
 			compatible = "nxp,rcm-hwinfo";
-			reg = <0x4007F000 0x1000>;
+			reg = <0x4007f000 0x1000>;
 		};
 
 		sim: sim@40047000 {
@@ -182,9 +182,9 @@
 
 		spi0: spi@4002c000 {
 			compatible = "nxp,dspi";
-			reg = <0x4002c000 0x9C>;
+			reg = <0x4002c000 0x9c>;
 			interrupts = <10 3>;
-			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 12>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103c 12>;
 			status = "disabled";
 
 			#address-cells = <1>;
@@ -193,9 +193,9 @@
 
 		spi1: spi@4002d000 {
 			compatible = "nxp,dspi";
-			reg = <0x4002d000 0x9C>;
+			reg = <0x4002d000 0x9c>;
 			interrupts = <29 3>;
-			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 13>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103c 13>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
