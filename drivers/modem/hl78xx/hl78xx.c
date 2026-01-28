@@ -1898,8 +1898,6 @@ static void hl78xx_event_handler(struct hl78xx_data *data, enum hl78xx_event evt
 	}
 }
 
-#ifdef CONFIG_PM_DEVICE
-
 /* -------------------------------------------------------------------------
  * Power management
  * -------------------------------------------------------------------------
@@ -1942,7 +1940,6 @@ static int hl78xx_driver_pm_action(const struct device *dev, enum pm_device_acti
 	}
 	return ret;
 }
-#endif /* CONFIG_PM_DEVICE */
 
 /* -------------------------------------------------------------------------
  * Initialization
@@ -2118,17 +2115,13 @@ static int hl78xx_init(const struct device *dev)
 		goto error;
 	}
 
-#ifndef CONFIG_PM_DEVICE
-	hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_RESUME);
-#else
-	pm_device_init_suspended(dev);
-#endif /* CONFIG_PM_DEVICE */
-
 #ifdef CONFIG_MODEM_HL78XX_STAY_IN_BOOT_MODE_FOR_ROAMING
 	k_sem_take(&data->stay_in_boot_mode_sem, K_FOREVER);
 #endif
 	LOG_INF("Modem HL78xx initialized");
-	return 0;
+	/* Register the power management handler */
+	return pm_device_driver_init(dev, hl78xx_driver_pm_action);
+
 error:
 	return ret;
 }
