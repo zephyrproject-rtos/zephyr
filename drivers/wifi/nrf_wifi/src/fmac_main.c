@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,9 @@
 #include <util.h>
 #include "common/fmac_util.h"
 #include <fmac_main.h>
+#ifndef CONFIG_NRF71_ON_IPC
+#include <zephyr/drivers/wifi/nrf_wifi/bus/rpu_hw_if.h>
+#endif /* !CONFIG_NRF71_ON_IPC */
 
 #ifndef CONFIG_NRF70_RADIO_TEST
 #ifdef CONFIG_NRF70_STA_MODE
@@ -785,6 +788,23 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 		/* FMAC is already initialized for VIF-0 */
 		return 0;
 	}
+
+#ifndef CONFIG_NRF71_ON_IPC
+	int ret;
+
+	/* Configure all nRF70 GPIO pins to OUTPUT_INACTIVE state early
+	 * during driver initialization to prevent floating pins from
+	 * accidentally powering the module or affecting RF switch. This is
+	 * done before any other RPU initialization to ensure pins are in a
+	 * known state.
+	 */
+	ret = nrf_wifi_gpio_config_early();
+	if (ret) {
+		LOG_ERR("%s: nrf_wifi_gpio_config_early failed with error %d",
+			__func__, ret);
+		return ret;
+	}
+#endif /* !CONFIG_NRF71_ON_IPC */
 
 #ifdef CONFIG_NRF70_DATA_TX
 	data_config.aggregation = aggregation;

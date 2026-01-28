@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -181,6 +181,96 @@ int rpu_irq_remove(struct gpio_callback *irq_callback_data)
 
 out:
 	return ret;
+}
+
+/**
+ * @brief Configure RPU GPIO pins to OUTPUT_INACTIVE state during driver
+ * initialization.
+ *
+ * This function configures the voltage control pins (BUCKEN, VDDIO_CTRL)
+ * to OUTPUT_INACTIVE state to prevent them from floating. This should be
+ * called early during driver initialization, before the interface is
+ * brought up.
+ *
+ * @return 0 on success, negative error code on failure
+ */
+static int rpu_gpio_config_early(void)
+{
+	int ret;
+
+#ifdef NRF70_IOVDD_GPIO
+	if (!device_is_ready(iovdd_ctrl_spec.port)) {
+		LOG_ERR("IOVDD GPIO %s is not ready", iovdd_ctrl_spec.port->name);
+		return -ENODEV;
+	}
+#endif
+
+	if (!device_is_ready(bucken_spec.port)) {
+		LOG_ERR("BUCKEN GPIO %s is not ready", bucken_spec.port->name);
+		return -ENODEV;
+	}
+
+	/* Configure BUCKEN as output in inactive (low) state to prevent
+	 * floating pin from accidentally powering the module.
+	 */
+	ret = gpio_pin_configure_dt(&bucken_spec,
+				     (GPIO_OUTPUT_INACTIVE | NRF_GPIO_DRIVE_H0H1));
+	if (ret) {
+		LOG_ERR("BUCKEN GPIO configuration failed...");
+		return ret;
+	}
+
+#ifdef NRF70_IOVDD_GPIO
+	/* Configure IOVDD_CTRL as output in inactive (low) state to prevent
+	 * floating pin from accidentally enabling IOVDD.
+	 */
+	ret = gpio_pin_configure_dt(&iovdd_ctrl_spec, GPIO_OUTPUT_INACTIVE);
+	if (ret) {
+		LOG_ERR("IOVDD GPIO configuration failed...");
+		gpio_pin_configure_dt(&bucken_spec, GPIO_DISCONNECTED);
+		return ret;
+	}
+#endif
+
+	return 0;
+}
+
+/**
+ * @brief Configure all nRF70 GPIO pins to OUTPUT_INACTIVE state during
+ * driver initialization.
+ *
+ * This function configures all output GPIO pins controlled by the nRF70
+ * driver (BUCKEN, VDDIO_CTRL, SR RF switch) to OUTPUT_INACTIVE state to
+ * prevent them from floating. This should be called early during driver
+ * initialization, before the interface is brought up.
+ *
+ * @return 0 on success, negative error code on failure
+ */
+int nrf_wifi_gpio_config_early(void)
+{
+	int ret;
+
+	ret = rpu_gpio_config_early();
+	if (ret) {
+		return ret;
+	}
+
+#ifdef CONFIG_NRF70_SR_COEX_RF_SWITCH
+	/* Configure SR RF switch GPIO to OUTPUT_INACTIVE state to prevent
+	 * floating pin from accidentally switching the antenna.
+	 */
+	ret = sr_gpio_config_early();
+	if (ret) {
+		LOG_ERR("SR GPIO early configuration failed...");
+		/* Clean up RPU GPIOs on failure */
+		rpu_gpio_remove();
+		return ret;
+	}
+#endif
+
+	LOG_DBG("Early GPIO configuration done (pins set to inactive)...\n");
+
+	return 0;
 }
 
 static int rpu_gpio_config(void)
