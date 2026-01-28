@@ -1,10 +1,10 @@
 # Copyright (c) 2026 Basalte bv
 # SPDX-License-Identifier: Apache-2.0
 
-title: NXP MCUX OCOTP driver
+title: NXP OCOTP
 
 description: |
-  NXP MCUX On-Chip OTP (One-Time Programmable) controller driver.
+  NXP On-Chip OTP (One-Time Programmable) controller.
 
   This binding represents the OCOTP peripheral found on NXP i.MX RT series
   and similar SoCs. The OCOTP module provides access to on-chip fuse memory
@@ -20,14 +20,14 @@ description: |
   child nodes, use byte offsets. The driver handles the conversion between byte
   addresses and register indices internally.
 
-compatible: "nxp,mcux-ocotp"
+compatible: "nxp,ocotp"
 
 include: base.yaml
 
 examples:
   - |
     ocotp: ocotp@401f4000 {
-            compatible = "nxp,mcux-ocotp";
+            compatible = "nxp,ocotp";
             reg = <0x401f4000 0x4000>;
             status = "okay";
             clocks = <&ccm IMX_CCM_OCOTP_CLK 0 0>;
