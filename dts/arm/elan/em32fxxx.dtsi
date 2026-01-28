@@ -99,7 +99,7 @@
 		};
 
 		uart1: serial@40002000 {
-			compatible = "elan,elandev-uart";
+			compatible = "elan,em32-uart";
 			reg = <0x40002000 0x4c>;
 			clocks = <&clk_apb EM32_GATE_PCLKG_UART1>;
 			status = "disabled";
