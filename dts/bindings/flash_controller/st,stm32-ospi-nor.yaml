@@ -4,18 +4,6 @@
 description: |
     STM32 OSPI Flash controller supporting the JEDEC CFI interface
 
-    Representation of a serial flash on a octospi bus:
-
-        mx25lm51245: ospi-nor-flash@0 {
-                compatible = "st,stm32-ospi-nor";
-                reg = <0>;
-                size = <DT_SIZE_M(512)>; /* 512 Mbits */
-                data-mode = <OSPI_OPI_MODE>; /* access on 8 data lines */
-                data-rate = <OSPI_DTR_TRANSFER>; /* access in DTR */
-                ospi-max-frequency = <DT_FREQ_M(50)>;
-                status = "okay";
-        };
-
 compatible: "st,stm32-ospi-nor"
 
 include: ["flash-controller.yaml", "jedec,jesd216.yaml"]
@@ -118,3 +106,15 @@ properties:
       protection register that initializes to write-protected. Use this
       property to indicate that the BPR must be unlocked before write
       operations can proceed.
+
+examples:
+  - |
+    mx25lm51245: ospi-nor-flash@0 {
+        compatible = "st,stm32-ospi-nor";
+        reg = <0>;
+        size = <DT_SIZE_M(512)>; /* 512 Mbits */
+        data-mode = <OSPI_OPI_MODE>; /* access on 8 data lines */
+        data-rate = <OSPI_DTR_TRANSFER>; /* access in DTR */
+        ospi-max-frequency = <DT_FREQ_M(50)>;
+        status = "okay";
+    };
