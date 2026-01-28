@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_imx7d_m4.dtsi>
+#include <nxp/imx/nxp_imx7d_m4.dtsi>
 #include "warp7-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 

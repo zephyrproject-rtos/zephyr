@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/nxp_mcxn94x.dtsi>
+#include <nxp/mcx/nxp_mcxn94x.dtsi>
 #include "mcx_nx4x_evk.dtsi"
 #include "mcx_n9xx_evk-pinctrl.dtsi"
 

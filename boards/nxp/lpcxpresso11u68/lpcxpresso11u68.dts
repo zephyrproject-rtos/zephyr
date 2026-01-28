@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_lpc11u68.dtsi>
+#include <nxp/lpc/nxp_lpc11u68.dtsi>
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
