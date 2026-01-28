@@ -18,7 +18,6 @@
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/audio/mcs.h>
-#include <zephyr/bluetooth/audio/media_proxy.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
@@ -81,6 +80,7 @@ struct mcs_flags {
 };
 
 static struct mcs_inst {
+	bool initialized;
 	struct k_mutex mutex;
 
 	/* Client states. Access and modification of these shall be guarded by the mutex */
@@ -1868,94 +1868,144 @@ static void deferred_nfy_work_handler(struct k_work *work)
 	bt_conn_foreach(BT_CONN_TYPE_LE, notify_cb, NULL);
 }
 
-static void media_proxy_sctrl_player_name_cb(const char *name)
+void bt_mcs_player_name_changed(void)
 {
-	ARG_UNUSED(name);
+	if (!mcs_inst.initialized) {
+		LOG_DBG("MCS is not initialized");
+		return;
+	}
 
 	set_value_changed(set_player_name_changed_cb, BT_UUID_MCS_PLAYER_NAME);
 }
 
-void media_proxy_sctrl_icon_url_cb(const char *name)
+void bt_mcs_icon_url_changed(void)
 {
-	ARG_UNUSED(name);
+	if (!mcs_inst.initialized) {
+		LOG_DBG("MCS is not initialized");
+		return;
+	}
 
 	set_value_changed(set_icon_url_changed_cb, BT_UUID_MCS_ICON_URL);
 }
 
-void media_proxy_sctrl_track_changed_cb(void)
+void bt_mcs_track_changed(void)
 {
+	if (!mcs_inst.initialized) {
+		LOG_DBG("MCS is not initialized");
+		return;
+	}
+
 	set_value_changed(set_track_changed_changed_cb, BT_UUID_MCS_TRACK_CHANGED);
 }
-void media_proxy_sctrl_track_title_cb(const char *title)
+
+void bt_mcs_track_title_changed(void)
 {
-	ARG_UNUSED(title);
+	if (!mcs_inst.initialized) {
+		LOG_DBG("MCS is not initialized");
+		return;
+	}
 
 	set_value_changed(set_track_title_changed_cb, BT_UUID_MCS_TRACK_TITLE);
 }
-void media_proxy_sctrl_track_position_cb(int32_t position)
+
+void bt_mcs_track_position_changed(void)
 {
-	ARG_UNUSED(position);
+	if (!mcs_inst.initialized) {
+		LOG_DBG("MCS is not initialized");
+		return;
+	}
 
 	set_value_changed(set_track_position_changed_cb, BT_UUID_MCS_TRACK_POSITION);
 }
 
-void media_proxy_sctrl_track_duration_cb(int32_t duration)
+void bt_mcs_track_duration_changed(void)
 {
-	ARG_UNUSED(duration);
+	if (!mcs_inst.initialized) {
+		LOG_DBG("MCS is not initialized");
+		return;
+	}
 
 	set_value_changed(set_track_duration_changed_cb, BT_UUID_MCS_TRACK_DURATION);
 }
-void media_proxy_sctrl_playback_speed_cb(int8_t speed)
+
+void bt_mcs_playback_speed_changed(void)
 {
-	ARG_UNUSED(speed);
+	if (!mcs_inst.initialized) {
+		LOG_DBG("MCS is not initialized");
+		return;
+	}
 
 	set_value_changed(set_playback_speed_changed_cb, BT_UUID_MCS_PLAYBACK_SPEED);
 }
-void media_proxy_sctrl_seeking_speed_cb(int8_t speed)
+
+void bt_mcs_seeking_speed_changed(void)
 {
-	ARG_UNUSED(speed);
+	if (!mcs_inst.initialized) {
+		LOG_DBG("MCS is not initialized");
+		return;
+	}
 
 	set_value_changed(set_seeking_speed_changed_cb, BT_UUID_MCS_SEEKING_SPEED);
 }
 
 #if defined(CONFIG_BT_OTS)
-void media_proxy_sctrl_current_track_id_cb(uint64_t id)
+void bt_mcs_current_track_id_changed(void)
 {
-	ARG_UNUSED(id);
+	if (!mcs_inst.initialized) {
+		LOG_DBG("MCS is not initialized");
+		return;
+	}
 
 	set_value_changed(set_current_track_obj_id_changed_cb, BT_UUID_MCS_CURRENT_TRACK_OBJ_ID);
 }
-void media_proxy_sctrl_next_track_id_cb(uint64_t id)
+
+void bt_mcs_next_track_id_changed(void)
 {
-	ARG_UNUSED(id);
+	if (!mcs_inst.initialized) {
+		LOG_DBG("MCS is not initialized");
+		return;
+	}
 
 	set_value_changed(set_next_track_obj_id_changed_cb, BT_UUID_MCS_NEXT_TRACK_OBJ_ID);
 }
-void media_proxy_sctrl_parent_group_id_cb(uint64_t id)
+
+void bt_mcs_parent_group_id_changed(void)
 {
-	ARG_UNUSED(id);
+	if (!mcs_inst.initialized) {
+		LOG_DBG("MCS is not initialized");
+		return;
+	}
 
 	set_value_changed(set_parent_group_obj_id_changed_cb, BT_UUID_MCS_PARENT_GROUP_OBJ_ID);
 }
 
-void media_proxy_sctrl_current_group_id_cb(uint64_t id)
+void bt_mcs_current_group_id_changed(void)
 {
-	ARG_UNUSED(id);
+	if (!mcs_inst.initialized) {
+		LOG_DBG("MCS is not initialized");
+		return;
+	}
 
 	set_value_changed(set_current_group_obj_id_changed_cb, BT_UUID_MCS_CURRENT_GROUP_OBJ_ID);
 }
 #endif /* CONFIG_BT_OTS */
 
-void media_proxy_sctrl_playing_order_cb(uint8_t order)
+void bt_mcs_playing_order_changed(void)
 {
-	ARG_UNUSED(order);
+	if (!mcs_inst.initialized) {
+		LOG_DBG("MCS is not initialized");
+		return;
+	}
 
 	set_value_changed(set_playing_order_changed_cb, BT_UUID_MCS_PLAYING_ORDER);
 }
 
-void media_proxy_sctrl_media_state_cb(uint8_t state)
+void bt_mcs_media_state_changed(void)
 {
-	ARG_UNUSED(state);
+	if (!mcs_inst.initialized) {
+		LOG_DBG("MCS is not initialized");
+		return;
+	}
 
 	set_value_changed(set_media_state_changed_cb, BT_UUID_MCS_MEDIA_STATE);
 }
@@ -2004,15 +2054,23 @@ static void defer_media_control_point_ntf(struct bt_conn *conn, void *data)
 	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 }
 
-void media_proxy_sctrl_command_cb(const struct mpl_cmd_ntf *cmd_ntf)
+void bt_mcs_command_complete(const struct mpl_cmd_ntf *cmd_ntf)
 {
+	if (!mcs_inst.initialized) {
+		LOG_DBG("MCS is not initialized");
+		return;
+	}
+
 	/* FIXME: Control Point notification shall be sent to operation initiator only */
 	bt_conn_foreach(BT_CONN_TYPE_LE, defer_media_control_point_ntf, (void *)cmd_ntf);
 }
 
-void media_proxy_sctrl_commands_supported_cb(uint32_t opcodes)
+void bt_mcs_commands_supported_changed(void)
 {
-	ARG_UNUSED(opcodes);
+	if (!mcs_inst.initialized) {
+		LOG_DBG("MCS is not initialized");
+		return;
+	}
 
 	set_value_changed(set_media_control_opcodes_changed_cb, BT_UUID_MCS_MEDIA_CONTROL_OPCODES);
 }
@@ -2061,15 +2119,24 @@ static void defer_search_control_point_ntf(struct bt_conn *conn, void *data)
 	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 }
 
-void media_proxy_sctrl_search_cb(uint8_t result_code)
+void bt_mcs_search_complete(uint8_t result_code)
 {
+	if (!mcs_inst.initialized) {
+		LOG_DBG("MCS is not initialized");
+		return;
+	}
+
 	/* FIXME: Control Point notification shall be sent to operation initiator only */
 	bt_conn_foreach(BT_CONN_TYPE_LE, defer_search_control_point_ntf,
 			UINT_TO_POINTER(result_code));
 }
-void media_proxy_sctrl_search_results_id_cb(uint64_t id)
+
+void bt_mcs_search_results_id_changed(void)
 {
-	ARG_UNUSED(id);
+	if (!mcs_inst.initialized) {
+		LOG_DBG("MCS is not initialized");
+		return;
+	}
 
 	set_value_changed(set_search_results_obj_id_changed_cb, BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID);
 }
@@ -2078,15 +2145,12 @@ void media_proxy_sctrl_search_results_id_cb(uint64_t id)
 /* Register the service */
 int bt_mcs_init(struct bt_ots_cb *ots_cbs)
 {
-	static struct media_proxy_sctrl_cbs cbs;
-	static bool initialized;
 	int err;
 
-	if (initialized) {
+	if (mcs_inst.initialized) {
 		LOG_DBG("Already initialized");
 		return -EALREADY;
 	}
-
 
 	mcs = (struct bt_gatt_service)BT_GATT_SERVICE(svc_attrs);
 
@@ -2130,35 +2194,10 @@ int bt_mcs_init(struct bt_ots_cb *ots_cbs)
 		return -ENOEXEC;
 	}
 
-	/* Set up the callback structure */
-	cbs.player_name          = media_proxy_sctrl_player_name_cb;
-	cbs.icon_url             = media_proxy_sctrl_icon_url_cb;
-	cbs.track_changed        = media_proxy_sctrl_track_changed_cb;
-	cbs.track_title          = media_proxy_sctrl_track_title_cb;
-	cbs.track_duration       = media_proxy_sctrl_track_duration_cb;
-	cbs.track_position       = media_proxy_sctrl_track_position_cb;
-	cbs.playback_speed       = media_proxy_sctrl_playback_speed_cb;
-	cbs.seeking_speed        = media_proxy_sctrl_seeking_speed_cb;
-#ifdef CONFIG_BT_OTS
-	cbs.current_track_id     = media_proxy_sctrl_current_track_id_cb;
-	cbs.next_track_id        = media_proxy_sctrl_next_track_id_cb;
-	cbs.parent_group_id      = media_proxy_sctrl_parent_group_id_cb;
-	cbs.current_group_id     = media_proxy_sctrl_current_group_id_cb;
-#endif /* CONFIG_BT_OTS */
-	cbs.playing_order        = media_proxy_sctrl_playing_order_cb;
-	cbs.media_state          = media_proxy_sctrl_media_state_cb;
-	cbs.command              = media_proxy_sctrl_command_cb;
-	cbs.commands_supported   = media_proxy_sctrl_commands_supported_cb;
-#ifdef CONFIG_BT_OTS
-	cbs.search               = media_proxy_sctrl_search_cb;
-	cbs.search_results_id    = media_proxy_sctrl_search_results_id_cb;
-#endif /* CONFIG_BT_OTS */
-
 	k_work_init_delayable(&mcs_inst.notify_work, deferred_nfy_work_handler);
 
-	media_proxy_sctrl_register(&cbs);
+	mcs_inst.initialized = true;
 
-	initialized = true;
 	return 0;
 }
 
