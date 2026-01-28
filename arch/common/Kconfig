@@ -105,12 +105,16 @@ config ARM_BTI
 choice ARM_PACBTI
 	prompt "Pointer Authentication and Branch Target Identification (PACBTI)"
 	default ARM_PACBTI_NONE
-	depends on ARMV8_1_M_MAINLINE
+	depends on ARMV8_1_M_MAINLINE || ARMV8_A || ARMV9_A
 	help
 	  Select a PACBTI configuration to enable the compiler to insert the required
 	  Pointer Authentication and Branch Target Identification (PACBTI) instructions.
 	  This also sets the necessary configuration options to enable PACBTI bits
 	  in hardware.
+
+	  On ARM32, PACBTI is available on ARMv8.1-M Mainline processors.
+	  On ARM64, PAC requires ARMv8.3-A or later and BTI requires
+	  ARMv8.5-A or later. ARMv9-A includes both as mandatory features.
 
 config ARM_PACBTI_STANDARD
 	bool "Standard (PACRET + LEAF + BTI)"
