@@ -736,8 +736,8 @@ int sdhc_stm32_ll_read_blocks(SDMMC_TypeDef *Instance, uint8_t *pData, uint32_t 
 	}
 
 	/* Check for data transfer errors */
-	errorstate = sdhc_stm32_ll_check_data_errors(Instance);
-	if (errorstate != SDMMC_ERROR_NONE) {
+	errorstate = __SDMMC_GET_FLAG(Instance, SDMMC_DATA_ERROR_FLAGS);
+	if (errorstate != 0U) {
 		data->Context = SDMMC_CONTEXT_NONE;
 		return sdhc_stm32_ll_handle_data_error(Instance, errorstate, data);
 	}
@@ -820,8 +820,8 @@ int sdhc_stm32_ll_write_blocks(SDMMC_TypeDef *Instance, const uint8_t *pData, ui
 	}
 
 	/* Check for data transfer errors */
-	errorstate = sdhc_stm32_ll_check_data_errors(Instance);
-	if (errorstate != SDMMC_ERROR_NONE) {
+	errorstate = __SDMMC_GET_FLAG(Instance, SDMMC_DATA_ERROR_FLAGS);
+	if (errorstate != 0U) {
 		data->Context = SDMMC_CONTEXT_NONE;
 		return sdhc_stm32_ll_handle_data_error(Instance, errorstate, data);
 	}
@@ -976,59 +976,142 @@ int sdhc_stm32_ll_read_blocks_dma(SDMMC_TypeDef *Instance, uint8_t *pData, uint3
 }
 
 /**
- * @brief SDIO interrupt handler
- *
- * This function handles SDIO interrupts. It checks for various flags including
- * DATAEND, DCRCFAIL, DTIMEOUT, RXOVERR, and TXUNDERR.
- *
- * For DMA transfers, it disables DMA and clears the data path after completion.
- * This is a simplified version that doesn't handle multi-part transfers or callbacks.
+ * @brief Check if multi-block transfer context
+ * @param context Current transfer context
+ * @return true if multi-block read or write
+ */
+static bool sdhc_stm32_ll_is_multi_block(uint32_t context)
+{
+	return ((context & SDMMC_CONTEXT_READ_MULTIPLE_BLOCK) != 0U) ||
+	       ((context & SDMMC_CONTEXT_WRITE_MULTIPLE_BLOCK) != 0U);
+}
+
+/**
+ * @brief Handle data error interrupt
  * @param Instance Pointer to SDMMC register base
+ * @param context Current transfer context
  * @param data Pointer to the STM32 SDHC data structure
  */
-void sdhc_stm32_ll_irq_handler(SDMMC_TypeDef *Instance, struct sdhc_stm32_data *data);
+static void sdhc_stm32_ll_handle_data_error_irq(SDMMC_TypeDef *Instance, uint32_t context,
+						struct sdhc_stm32_data *data)
 {
-	uint32_t flags;
+	data->error_code |= __SDMMC_GET_FLAG(Instance, SDMMC_DATA_ERROR_FLAGS);
+	__SDMMC_CLEAR_FLAG(Instance, SDMMC_STATIC_DATA_FLAGS);
+	sdhc_stm32_ll_disable_data_interrupts(Instance);
+
+	__SDMMC_CMDTRANS_DISABLE(Instance);
+	Instance->DCTRL |= SDMMC_DCTRL_FIFORST;
+	Instance->CMD |= SDMMC_CMD_CMDSTOP;
+	data->error_code |= SDMMC_CmdStopTransfer(Instance);
+	Instance->CMD &= ~(SDMMC_CMD_CMDSTOP);
+	__SDMMC_CLEAR_FLAG(Instance, SDMMC_FLAG_DABORT);
+
+	if ((context & SDMMC_CONTEXT_DMA) != 0U) {
+		if (data->error_code != SDMMC_ERROR_NONE) {
+			__SDMMC_DISABLE_IT(Instance, SDMMC_IT_IDMABTC);
+			Instance->IDMACTRL = SDMMC_DISABLE_IDMA;
+		}
+	}
+}
+
+/**
+ * @brief  This function handles SD card interrupt request.
+ * @param Instance Pointer to SDMMC register base
+ * @param dev_data Pointer to the STM32 SDHC data structure
+ * @retval None
+ */
+void sdhc_stm32_ll_irq_handler(SDMMC_TypeDef *Instance, struct sdhc_stm32_data *dev_data)
+{
+	uint32_t context = dev_data->Context;
 	uint32_t errorcode;
-	const struct sdhc_stm32_config *config = dev->config;
 
-	/* Read interrupt flags */
-	flags = READ_REG(Instance->STA);
-
-	/* Check for data transfer completion */
-	if (READ_BIT(flags, SDMMC_FLAG_DATAEND) != 0U) {
+	/* Check for data end interrupt */
+	if (__SDMMC_GET_FLAG(Instance, SDMMC_FLAG_DATAEND) != 0U) {
 		__SDMMC_CLEAR_FLAG(Instance, SDMMC_FLAG_DATAEND);
 
-		/* Disable all data transfer interrupts */
+		/* SDIO interrupt handling */
+		if (dev_data->is_sdio_transfer) {
+			/* Disable all data transfer interrupts */
+			sdhc_stm32_ll_disable_data_interrupts(Instance);
+			__SDMMC_CMDTRANS_DISABLE(Instance);
+
+			/* Clean up DMA configuration */
+			Instance->DLEN = 0;
+			Instance->IDMACTRL = SDMMC_DISABLE_IDMA;
+
+			/* Reset DCTRL register, preserving SDIOEN bit if set */
+			if ((Instance->DCTRL & SDMMC_DCTRL_SDIOEN) != 0U) {
+				Instance->DCTRL = SDMMC_DCTRL_SDIOEN;
+			} else {
+				Instance->DCTRL = 0U;
+			}
+
+			dev_data->Context = SDMMC_CONTEXT_NONE;
+			dev_data->is_sdio_transfer = false;
+
+			LOG_DBG("SDIO data transfer completed");
+			return;
+		}
+
+		/* SD memory mode - use Context-based handling */
 		sdhc_stm32_ll_disable_data_interrupts(Instance);
 		__SDMMC_CMDTRANS_DISABLE(Instance);
 
-		/* If DMA was used, clean up DMA configuration */
-		Instance->DLEN = 0;
-		Instance->IDMACTRL = SDMMC_DISABLE_IDMA;
+		if ((context & SDMMC_CONTEXT_DMA) != 0U) {
+			uint32_t errorstate;
 
-		/* Reset DCTRL register, preserving SDIOEN bit if it was set */
-		if ((Instance->DCTRL & SDMMC_DCTRL_SDIOEN) != 0U) {
-			Instance->DCTRL = SDMMC_DCTRL_SDIOEN;
-		} else {
-			Instance->DCTRL = 0U;
+			/* Clean up DMA configuration */
+			Instance->DLEN = 0;
+			Instance->DCTRL = 0;
+			Instance->IDMACTRL = SDMMC_DISABLE_IDMA;
+
+			/*
+			 * Send CMD12 (stop transfer) for multi-block operations.
+			 * SD memory cards require CMD12 to stop multi-block transfers.
+			 */
+			if (sdhc_stm32_ll_is_multi_block(context)) {
+				errorstate = SDMMC_CmdStopTransfer(Instance);
+				if (errorstate != SDMMC_ERROR_NONE) {
+					dev_data->error_code |= errorstate;
+				}
+			}
+
+			dev_data->Context = SDMMC_CONTEXT_NONE;
+
+			LOG_DBG("SDMMC DMA transfer completed");
 		}
-
-		LOG_DBG("SDIO data transfer completed");
+		return;
 	}
 
-	/* Check for errors */
+	/* Check for data error interrupts */
 	errorcode = __SDMMC_GET_FLAG(Instance, SDMMC_DATA_ERROR_FLAGS);
 	if (errorcode != 0U) {
-		dev_data->error_code |= errorcode;
+		/* SDIO-specific error handling */
+		if (dev_data->is_sdio_transfer) {
+			dev_data->error_code |= errorcode;
 
-		/* Clear error flags */
-		__SDMMC_CLEAR_FLAG(Instance, SDMMC_DATA_ERROR_FLAGS);
+			/* Clear error flags */
+			__SDMMC_CLEAR_FLAG(Instance, SDMMC_DATA_ERROR_FLAGS);
 
-		/* Disable interrupts */
-		sdhc_stm32_ll_disable_data_interrupts(Instance);
+			/* Disable interrupts */
+			sdhc_stm32_ll_disable_data_interrupts(Instance);
 
-		LOG_ERR("SDIO transfer error: 0x%x", dev_data->error_code);
+			dev_data->Context = SDMMC_CONTEXT_NONE;
+			dev_data->is_sdio_transfer = false;
+
+			LOG_ERR("SDIO transfer error: 0x%x", dev_data->error_code);
+			return;
+		}
+
+		/* SD memory error handling */
+		sdhc_stm32_ll_handle_data_error_irq(Instance, context, dev_data);
+		return;
+	}
+
+	/* Check for IDMA buffer transfer complete interrupt */
+	if (__SDMMC_GET_FLAG(Instance, SDMMC_FLAG_IDMABTC) != 0U) {
+		__SDMMC_CLEAR_FLAG(Instance, SDMMC_FLAG_IDMABTC);
+		return;
 	}
 }
 

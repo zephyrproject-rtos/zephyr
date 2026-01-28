@@ -89,6 +89,7 @@ struct sdhc_stm32_data {
 	struct k_sem device_sync_sem; /* Sync between device communication messages */
 	void *sdio_dma_buf;           /* DMA buffer for SDIO/SDMMC data transfer */
 	SDMMC_InitTypeDef Init;       /* SD required parameters */
+	bool is_sdio_transfer;        /* Flag to indicate if current transfer is SDIO */
 };
 
 /**
@@ -118,7 +119,7 @@ uint32_t sdhc_stm32_ll_find_scr(SDMMC_TypeDef *Instance, struct sdhc_stm32_data 
 				uint32_t *scr, uint32_t block_size);
 uint32_t sdhc_stm32_ll_send_status(SDMMC_TypeDef *Instance, struct sdhc_stm32_data *dev_data,
 				   uint32_t card_rca, uint32_t *pCardStatus);
-void sdhc_stm32_ll_irq_handler(SDMMC_TypeDef *Instance, struct sdhc_stm32_data *data);
+void sdhc_stm32_ll_irq_handler(SDMMC_TypeDef *Instance, struct sdhc_stm32_data *dev_data);
 int sdhc_stm32_ll_config_freq(SDMMC_TypeDef *Instance, uint32_t ClockSpeed,
 			      struct sdhc_stm32_data *data);
 int sdhc_stm32_ll_init(SDMMC_TypeDef *Instance, struct sdhc_stm32_data *data);
