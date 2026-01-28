@@ -191,7 +191,7 @@ static void transfer_chunk(const struct device *dev)
 
 		if (chunk_len > IFX_CAT1_SPI_DMA_BURST_SIZE) {
 			dma_rx->dma_cfg.source_burst_length = dma_tx->dma_cfg.source_burst_length =
-				IFX_CAT1_SPI_DMA_BURST_SIZE;
+				1;
 			dma_rx->dma_cfg.dest_burst_length = dma_tx->dma_cfg.dest_burst_length =
 				IFX_CAT1_SPI_DMA_BURST_SIZE;
 			if (chunk_len % IFX_CAT1_SPI_DMA_BURST_SIZE != 0) {
@@ -203,7 +203,7 @@ static void transfer_chunk(const struct device *dev)
 			dma_rx->dma_cfg.block_count = dma_tx->dma_cfg.block_count = 1;
 		} else {
 			dma_rx->dma_cfg.source_burst_length = dma_tx->dma_cfg.source_burst_length =
-				0;
+				1;
 			dma_rx->dma_cfg.dest_burst_length = dma_tx->dma_cfg.dest_burst_length = 0;
 			dma_rx->dma_cfg.block_count = dma_tx->dma_cfg.block_count = 1;
 		}
@@ -523,6 +523,7 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		data->dma_rx.dma_cfg.head_block = &data->dma_rx.blk_cfg;
 		data->dma_rx.dma_cfg.user_data = (void *)dev;
 		data->dma_rx.dma_cfg.dma_callback = dma_callback;
+		data->dma_rx.dma_cfg.source_handshake = 0;
 #if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 		Cy_TrigMux_Connect(PERI_0_TRIG_IN_MUX_0_SCB_RX_TR_OUT0 + data->resource.block_num,
 				   PERI_0_TRIG_OUT_MUX_0_PDMA0_TR_IN0 + data->dma_rx.dma_channel,
@@ -540,6 +541,7 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		data->dma_tx.dma_cfg.head_block = &data->dma_tx.blk_cfg;
 		data->dma_tx.dma_cfg.user_data = (void *)dev;
 		data->dma_tx.dma_cfg.dma_callback = dma_callback;
+		data->dma_tx.dma_cfg.source_handshake = 1;
 #if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 		Cy_TrigMux_Connect(PERI_0_TRIG_IN_MUX_0_SCB_TX_TR_OUT0 + data->resource.block_num,
 				   PERI_0_TRIG_OUT_MUX_0_PDMA0_TR_IN0 + data->dma_tx.dma_channel,
@@ -575,7 +577,7 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		.channel_direction = ch_dir,                                                       \
 		.source_data_size = src_data_size,                                                 \
 		.dest_data_size = dst_data_size,                                                   \
-		.source_burst_length = 0,                                                          \
+		.source_burst_length = 1,                                                          \
 		.dest_burst_length = 0,                                                            \
 		.block_count = 1,                                                                  \
 		.complete_callback_en = 1,                                                         \
