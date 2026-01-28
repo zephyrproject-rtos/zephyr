@@ -3122,8 +3122,8 @@ static void uarte_pm_suspend(const struct device *dev)
 		wait_for_tx_stopped(dev);
 	}
 
-	(void)pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
 	nrf_uarte_disable(uarte);
+	(void)pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
 }
 
 static int uarte_nrfx_pm_action(const struct device *dev, enum pm_device_action action)
