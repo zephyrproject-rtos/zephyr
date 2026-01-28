@@ -49,7 +49,7 @@
 		 */
 		storage_partition: partition@77000 {
 			label = "storage";
-			reg = <0x0007F000 DT_SIZE_K(40)>;
+			reg = <0x0007f000 DT_SIZE_K(40)>;
 		};
 	};
 };

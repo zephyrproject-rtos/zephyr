@@ -87,9 +87,9 @@
 			#clock-cells = <1>;
 		};
 
-		rcm: rcm@4007F000 {
+		rcm: rcm@4007f000 {
 			compatible = "nxp,rcm-hwinfo";
-			reg = <0x4007F000 0x1000>;
+			reg = <0x4007f000 0x1000>;
 		};
 
 		sim: sim@40047000 {
@@ -257,7 +257,7 @@
 			compatible = "nxp,kinetis-tpm";
 			reg = <0x40038000 0x88>;
 			interrupts = <17 0>;
-			clocks = <&sim KINETIS_SIM_MCGPCLK 0x103C 24>;
+			clocks = <&sim KINETIS_SIM_MCGPCLK 0x103c 24>;
 			prescaler = <16>;
 			status = "disabled";
 			#pwm-cells = <3>;
@@ -267,7 +267,7 @@
 			compatible = "nxp,kinetis-tpm";
 			reg = <0x40039000 0x88>;
 			interrupts = <18 0>;
-			clocks = <&sim KINETIS_SIM_MCGPCLK 0x103C 25>;
+			clocks = <&sim KINETIS_SIM_MCGPCLK 0x103c 25>;
 			prescaler = <16>;
 			status = "disabled";
 			#pwm-cells = <3>;
@@ -277,7 +277,7 @@
 			compatible = "nxp,kinetis-tpm";
 			reg = <0x4003a000 0x88>;
 			interrupts = <19 0>;
-			clocks = <&sim KINETIS_SIM_MCGPCLK 0x103C 26>;
+			clocks = <&sim KINETIS_SIM_MCGPCLK 0x103c 26>;
 			prescaler = <16>;
 			status = "disabled";
 			#pwm-cells = <3>;

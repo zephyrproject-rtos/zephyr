@@ -45,9 +45,9 @@
 			status = "disabled";
 		};
 
-		rcm: rcm@4007F000 {
+		rcm: rcm@4007f000 {
 			compatible = "nxp,rcm-hwinfo";
-			reg = <0x4007F000 0x1000>;
+			reg = <0x4007f000 0x1000>;
 		};
 
 		sim: sim@40047000 {
@@ -110,7 +110,7 @@
 		adc0: adc@4003b000 {
 			compatible = "nxp,kinetis-adc16";
 			reg = <0x4003b000 0x1000>;
-			clocks = <&sim KINETIS_SIM_SIM_SOPT7 0 0xF>,
+			clocks = <&sim KINETIS_SIM_SIM_SOPT7 0 0xf>,
 				 <&sim KINETIS_SIM_SIM_SOPT7 7 0x80>;
 			interrupts = <39 0>;
 			dmas = <&edma0 0 40>;
@@ -444,7 +444,7 @@
 				     <12 0>, <13 0>, <14 0>, <15 0>,
 				     <16 0>;
 			clocks = <&sim KINETIS_SIM_DMA_CLK 0x1040 0x00000002>,
-				 <&sim KINETIS_SIM_DMAMUX_CLK 0x103C 0x00000002>;
+				 <&sim KINETIS_SIM_DMAMUX_CLK 0x103c 0x00000002>;
 			status = "disabled";
 		};
 	};

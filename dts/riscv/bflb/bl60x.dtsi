@@ -149,7 +149,7 @@
 
 		adc0: adc@40002000 {
 			compatible = "bflb,adc";
-			reg = <0x40002000 0x1000 0x4000F000 0x1000>;
+			reg = <0x40002000 0x1000 0x4000f000 0x1000>;
 			#io-channel-cells = <1>;
 			#address-cells = <1>;
 			#size-cells = <0>;

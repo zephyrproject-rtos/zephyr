@@ -807,7 +807,7 @@
 			clocks = <&rcc STM32_CLOCK(APB2, 21)>,
 				 <&rcc STM32_SRC_PLLSAI1_P SAI1_SEL(0)>;
 			dmas = <&dma1 1 37 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-				STM32_DMA_16BITS)>;
+					    STM32_DMA_16BITS)>;
 			status = "disabled";
 		};
 
@@ -819,7 +819,7 @@
 			clocks = <&rcc STM32_CLOCK(APB2, 21)>,
 				 <&rcc STM32_SRC_PLLSAI1_P SAI1_SEL(0)>;
 			dmas = <&dma1 2 38 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-				STM32_DMA_16BITS)>;
+					    STM32_DMA_16BITS)>;
 			status = "disabled";
 		};
 	};

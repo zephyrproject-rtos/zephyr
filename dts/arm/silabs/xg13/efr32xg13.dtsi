@@ -165,7 +165,7 @@
 
 		wdog0: wdog@40052000 {
 			compatible = "silabs,gecko-wdog";
-			reg = <0x40052000 0x2C>;
+			reg = <0x40052000 0x2c>;
 			peripheral-id = <0>;
 			interrupts = <2 0>;
 			status = "disabled";
@@ -173,7 +173,7 @@
 
 		wdog1: wdog@40052400 {
 			compatible = "silabs,gecko-wdog";
-			reg = <0x40052400 0x2C>;
+			reg = <0x40052400 0x2c>;
 			peripheral-id = <1>;
 			interrupts = <3 0>;
 			status = "disabled";

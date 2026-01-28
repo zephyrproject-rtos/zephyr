@@ -188,7 +188,7 @@ i2c0: &i2c0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_tpm0>;
 	pinctrl-names = "default";
-	clocks = <&sim KINETIS_SIM_MCGPCLK 0x103C 24>;
+	clocks = <&sim KINETIS_SIM_MCGPCLK 0x103c 24>;
 };
 
 zephyr_udc0: &usb {
