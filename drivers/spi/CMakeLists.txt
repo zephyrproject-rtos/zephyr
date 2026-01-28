@@ -66,7 +66,6 @@ zephyr_library_sources_ifdef(CONFIG_SPI_RPI_PICO_PIO spi_rpi_pico_pio.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_RV32M1_LPSPI spi_rv32m1_lpspi.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_SAM spi_sam.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_SAM0 spi_sam0.c)
-zephyr_library_sources_ifdef(CONFIG_SPI_SC18IS606 spi_sc18is606.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_SEDI spi_sedi.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_SF32LB spi_sf32lb.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_SIFIVE spi_sifive.c)
@@ -85,3 +84,8 @@ zephyr_library_sources_ifdef(CONFIG_SPI_XMC4XXX spi_xmc4xxx.c)
 # zephyr-keep-sorted-stop
 
 add_subdirectory(spi_nxp_lpspi)
+
+if(CONFIG_SPI_SC18IS606)
+  zephyr_library_include_directories(${ZEPHYR_BASE}/drivers/mfd)
+  zephyr_library_sources(spi_sc18is606.c)
+endif()
