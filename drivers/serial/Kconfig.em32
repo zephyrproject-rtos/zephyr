@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Elan Microelectronics Corp..
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_EM32
+	bool "ELAN EM32 serial driver"
+	default y
+	depends on SOC_EM32F967
+	depends on DT_HAS_ELAN_EM32_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select PINCTRL
+	help
+	  This option enables the elan em32 serial driver.
