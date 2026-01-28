@@ -4,7 +4,6 @@
 config SDHC_STM32_SDIO
 	bool "STM32 SDMMC driver support for SDIO"
 	depends on DT_HAS_ST_STM32_SDIO_ENABLED
-	select USE_STM32_HAL_SDIO
 	select USE_STM32_LL_SDMMC
 	select SDHC_SUPPORTS_NATIVE_MODE
 	select PINCTRL

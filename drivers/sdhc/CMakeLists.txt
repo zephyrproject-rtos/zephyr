@@ -17,7 +17,7 @@ zephyr_library_sources_ifdef(CONFIG_SDHC_ESP32 sdhc_esp32.c)
 zephyr_library_sources_ifdef(CONFIG_SDHC_INFINEON_CAT1 infineon_sdio.c)
 zephyr_library_sources_ifdef(CONFIG_SDHC_MAX32 sdhc_max32.c)
 zephyr_library_sources_ifdef(CONFIG_SDHC_RENESAS_RA sdhc_renesas_ra.c)
-zephyr_library_sources_ifdef(CONFIG_SDHC_STM32_SDIO sdhc_stm32.c)
+zephyr_library_sources_ifdef(CONFIG_SDHC_STM32_SDMMC sdhc_stm32.c sdhc_stm32_ll.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_SDHC sdhc_spi.c)
 zephyr_library_sources_ifdef(CONFIG_XLNX_SDHC xlnx_sdhc.c)
 # zephyr-keep-sorted-stop
