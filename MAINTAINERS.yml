@@ -1578,6 +1578,8 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - finikorg
+  collaborators:
+    - yvesll
   files:
     - drivers/edac/
     - dts/bindings/edac/
