@@ -20,6 +20,21 @@ properties:
     description: |
       Number of cells required to represent a child node's size.
 
+  mmio:
+    type: boolean
+    description: |
+      Access the cells through the parent controller's memory mapped IO region
+      instead of a device driver API. When set, the controller's "reg" property
+      is treated as a physical base address: each access maps the region
+      on demand (uncached) and copies to or from the cell.
+
+      Accesses are plain memory reads and writes, so the backing memory must
+      behave like RAM: directly memory mapped and byte-writable (e.g. MRAM,
+      FRAM or battery-backed SRAM). Do not use it to write memory mapped flash:
+      a store does not perform the erase/program sequence and, depending on the
+      hardware, is either ignored or raises a bus fault. Mark flash-backed cells
+      "read-only" or access them through the flash device API instead.
+
 child-binding:
   description: |
     Each child node of the NVMEM provider node represents
