@@ -1314,6 +1314,7 @@ __syscall int can_send(const struct device *dev, const struct can_frame *frame,
  * @retval -ENOSPC if there are no free filters.
  * @retval -EINVAL if the requested filter type is invalid.
  * @retval -ENOTSUP if the requested filter type is not supported.
+ * @retval -EIO General input/output error, failed to add filter.
  */
 int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
 		      void *user_data, const struct can_filter *filter);
@@ -1355,7 +1356,9 @@ int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
  *
  * @retval filter_id on success.
  * @retval -ENOSPC if there are no free filters.
+ * @retval -EINVAL if the requested filter type is invalid.
  * @retval -ENOTSUP if the requested filter type is not supported.
+ * @retval -EIO General input/output error, failed to add filter.
  */
 __syscall int can_add_rx_filter_msgq(const struct device *dev, struct k_msgq *msgq,
 				     const struct can_filter *filter);
@@ -1452,6 +1455,7 @@ static inline int z_impl_can_get_state(const struct device *dev, enum can_state 
  * @retval -ENETDOWN if the CAN controller is in stopped state.
  * @retval -EAGAIN on timeout.
  * @retval -ENOSYS If this function is not implemented by the driver.
+ * @retval -EIO General input/output error, failed to recover.
  */
 __syscall int can_recover(const struct device *dev, k_timeout_t timeout);
 
