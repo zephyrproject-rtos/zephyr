@@ -180,7 +180,7 @@ static int msg_tlv_post_recv(struct ptp_msg *msg, int length)
 		suffix += tlv_container->tlv->length;
 		suffix_len += tlv_container->tlv->length;
 
-		ret = ptp_tlv_post_recv(tlv_container->tlv);
+		ret = ptp_tlv_post_recv(&tlv_container->tlv);
 		if (ret) {
 			ptp_tlv_free(tlv_container);
 			return ret;
