@@ -43,6 +43,8 @@
 #define SPI_NOR_CMD_PP_1_1_2    0xA2    /* Dual Page program (1-1-2) */
 #define SPI_NOR_CMD_PP_1_1_4    0x32    /* Quad Page program (1-1-4) */
 #define SPI_NOR_CMD_PP_1_4_4    0x38    /* Quad Page program (1-4-4) */
+#define SPI_NOR_CMD_PP_1_1_8    0x82    /* Octal Page program (1-1-8) */
+#define SPI_NOR_CMD_PP_1_8_8    0xC2    /* Extended Octal Page program (1-8-8) */
 #define SPI_NOR_CMD_RDCR        0x15    /* Read control register */
 #define SPI_NOR_CMD_SE          0x20    /* Sector erase */
 #define SPI_NOR_CMD_SE_4B       0x21    /* Sector erase 4 byte address*/
@@ -70,6 +72,8 @@
 #define SPI_NOR_CMD_PP_4B        0x12  /* Page Program 4 Byte Address */
 #define SPI_NOR_CMD_PP_1_1_4_4B  0x34  /* Quad Page program (1-1-4) 4 Byte Address */
 #define SPI_NOR_CMD_PP_1_4_4_4B  0x3e  /* Quad Page program (1-4-4) 4 Byte Address */
+#define SPI_NOR_CMD_PP_1_1_8_4B  0x84  /* Octal Page program (1-1-8) 4 Byte Address */
+#define SPI_NOR_CMD_PP_1_8_8_4B  0x8E  /* Extended Octal Page program (1-8-8) 4 Byte Address */
 #define SPI_NOR_CMD_RDFLSR       0x70  /* Read Flag Status Register */
 #define SPI_NOR_CMD_CLRFLSR      0x50  /* Clear Flag Status Register */
 #define SPI_NOR_CMD_WR_VCFGREG   0x81  /* Octal Write volatile configuration Register */
