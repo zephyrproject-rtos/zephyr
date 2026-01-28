@@ -48,9 +48,9 @@ struct mctp_binding_uart {
 };
 
 /**
- * @brief Start the receive of a single mctp message
+ * @brief Start the receive of mctp messages
  *
- * Will read a single mctp message from the uart.
+ * Will read mctp messages from the uart.
  *
  * @param uart MCTP UART binding
  */
