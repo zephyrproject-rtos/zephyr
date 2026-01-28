@@ -86,94 +86,24 @@ static int scmi_core_setup_chan(const struct device *transport,
 	return 0;
 }
 
-static int scmi_send_message_polling(struct scmi_protocol *proto,
-					struct scmi_message *msg,
-					struct scmi_message *reply)
+static int scmi_core_wait_reply(struct scmi_protocol *proto, bool use_polling)
 {
-	int ret;
-
-	/* wait for channel to be free */
-	if (!k_is_pre_kernel() && k_mutex_lock(&proto->tx->lock, K_NO_WAIT)) {
-		LOG_ERR("failed to acquire chan lock");
-		return -EBUSY;
+	if (!use_polling) {
+		return k_sem_take(&proto->tx->sem,
+				  K_USEC(CONFIG_ARM_SCMI_CHAN_SEM_TIMEOUT_USEC));
 	}
 
-	ret = scmi_transport_send_message(proto->transport, proto->tx, msg, true);
-	if (ret < 0) {
-		goto cleanup;
-	}
-
-	/* no kernel primitives, we're forced to poll here.
-	 *
-	 * Cortex-M quirk: no interrupts at this point => no timer =>
-	 * no timeout mechanism => this can block the whole system.
-	 *
-	 * Polling mode repeatedly checks the chan_status field in share memory
-	 * to detect whether the remote side have completed message processing
-	 *
-	 * TODO: is there a better way to handle this?
-	 */
 	while (!scmi_transport_channel_is_free(proto->transport, proto->tx)) {
 	}
 
-	ret = scmi_transport_read_message(proto->transport, proto->tx, reply);
-	if (ret < 0) {
-		return ret;
-	}
-
-cleanup:
-	if (!k_is_pre_kernel()) {
-		k_mutex_unlock(&proto->tx->lock);
-	}
-
-	return ret;
-}
-
-static int scmi_send_message_interrupt(struct scmi_protocol *proto,
-					 struct scmi_message *msg,
-					 struct scmi_message *reply)
-{
-	int ret = 0;
-
-	if (!proto->tx) {
-		return -ENODEV;
-	}
-
-	/* wait for channel to be free */
-	ret = k_mutex_lock(&proto->tx->lock, K_USEC(SCMI_CHAN_LOCK_TIMEOUT_USEC));
-	if (ret < 0) {
-		LOG_ERR("failed to acquire chan lock");
-		return ret;
-	}
-
-	ret = scmi_transport_send_message(proto->transport, proto->tx, msg, false);
-	if (ret < 0) {
-		LOG_ERR("failed to send message");
-		goto out_release_mutex;
-	}
-
-	/* only one protocol instance can wait for a message reply at a time */
-	ret = k_sem_take(&proto->tx->sem, K_USEC(CONFIG_ARM_SCMI_CHAN_SEM_TIMEOUT_USEC));
-	if (ret < 0) {
-		LOG_ERR("failed to wait for msg reply");
-		goto out_release_mutex;
-	}
-
-	ret = scmi_transport_read_message(proto->transport, proto->tx, reply);
-	if (ret < 0) {
-		LOG_ERR("failed to read reply");
-		goto out_release_mutex;
-	}
-
-out_release_mutex:
-	k_mutex_unlock(&proto->tx->lock);
-
-	return ret;
+	return 0;
 }
 
 int scmi_send_message(struct scmi_protocol *proto, struct scmi_message *msg,
 		      struct scmi_message *reply, bool use_polling)
 {
+	int ret;
+
 	if (!proto->tx) {
 		return -ENODEV;
 	}
@@ -182,11 +112,47 @@ int scmi_send_message(struct scmi_protocol *proto, struct scmi_message *msg,
 		return -EINVAL;
 	}
 
-	if (use_polling) {
-		return scmi_send_message_polling(proto, msg, reply);
-	} else {
-		return scmi_send_message_interrupt(proto, msg, reply);
+	/*
+	 * while in PRE_KERNEL, interrupt-based messaging is forbidden
+	 * because of the lack of kernel primitives (i.e. semaphores)
+	 * (and potentially even interrupts, based on the architecture).
+	 * Because of this, we ignore the caller's request and forcibly
+	 * enable polling.
+	 */
+	use_polling = k_is_pre_kernel() ? true : use_polling;
+
+	if (!k_is_pre_kernel()) {
+		ret = k_mutex_lock(&proto->tx->lock, K_USEC(SCMI_CHAN_LOCK_TIMEOUT_USEC));
+		if (ret < 0) {
+			LOG_ERR("failed to acquire TX channel lock: %d", ret);
+			return ret;
+		}
 	}
+
+	ret = scmi_transport_send_message(proto->transport, proto->tx, msg, use_polling);
+	if (ret < 0) {
+		LOG_ERR("failed to send message at transport layer: %d", ret);
+		goto out_release_mutex;
+	}
+
+	ret = scmi_core_wait_reply(proto, use_polling);
+	if (ret < 0) {
+		LOG_ERR("failed to wait for message reply: %d", ret);
+		goto out_release_mutex;
+	}
+
+	ret = scmi_transport_read_message(proto->transport, proto->tx, reply);
+	if (ret < 0) {
+		LOG_ERR("failed to read message reply: %d", ret);
+		goto out_release_mutex;
+	}
+
+out_release_mutex:
+	if (!k_is_pre_kernel()) {
+		k_mutex_unlock(&proto->tx->lock);
+	}
+
+	return ret;
 }
 
 static int scmi_core_protocol_negotiate(struct scmi_protocol *proto)
