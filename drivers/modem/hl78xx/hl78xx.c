@@ -765,13 +765,10 @@ static int modem_init_chat(const struct device *dev)
 }
 
 /* clang-format off */
-int modem_dynamic_cmd_send(
-			struct hl78xx_data *data,
-			modem_chat_script_callback script_user_callback,
-			const uint8_t *cmd, uint16_t cmd_size,
-			const struct modem_chat_match *response_matches, uint16_t matches_size,
-			uint16_t response_timeout, bool user_cmd
-		)
+int modem_dynamic_cmd_send(struct hl78xx_data *data,
+			modem_chat_script_callback script_user_callback, const uint8_t *cmd,
+			uint16_t cmd_size, const struct modem_chat_match *response_matches,
+			uint16_t matches_size, uint16_t response_timeout, bool user_cmd)
 {
 	int ret = 0;
 	int script_ret = 0;
@@ -807,6 +804,60 @@ int modem_dynamic_cmd_send(
 	}
 	/* run the chat script */
 	script_ret = modem_chat_run_script(&data->chat, &chat_script);
+	if (script_ret < 0) {
+		LOG_ERR("%d %s Failed to run at command: %d", __LINE__, __func__, script_ret);
+	} else {
+		LOG_DBG("Chat script executed successfully.");
+	}
+	ret = k_mutex_unlock(&data->tx_lock);
+	if (ret < 0) {
+		if (user_cmd == false) {
+			errno = -ret;
+		}
+		/* we still return the script result if available, prioritize script_ret */
+		return script_ret < 0 ? -1 : script_ret;
+	}
+	return script_ret;
+}
+
+int modem_dynamic_cmd_send_async(struct hl78xx_data *data,
+			modem_chat_script_callback script_user_callback, const uint8_t *cmd,
+			uint16_t cmd_size, const struct modem_chat_match *response_matches,
+			uint16_t matches_size, uint16_t response_timeout, bool user_cmd)
+{
+	int ret = 0;
+	int script_ret = 0;
+
+	if (data == NULL) {
+		LOG_ERR("%d %s Invalid parameter", __LINE__, __func__);
+		errno = EINVAL;
+		return -1;
+	}
+	ret = k_mutex_lock(&data->tx_lock, K_NO_WAIT);
+	if (ret < 0) {
+		if (user_cmd == false) {
+			errno = -ret;
+		}
+		return -1;
+	}
+	LOG_DBG("Executing async command: %.*s", cmd_size, cmd);
+	/* prepare the dynamic script */
+	data->buffers.cmd_len = snprintf(data->buffers.cmd_buffer, sizeof(data->buffers.cmd_buffer),
+				      "%.*s", cmd_size, cmd);
+	data->dynamic_chat.response_matches = response_matches;
+	data->dynamic_chat.response_matches_size = matches_size;
+	data->dynamic_chat.timeout = 0; /* Has no effect */
+	data->dynamic_script.name = "dynamic_script";
+	data->dynamic_script.script_chats = &data->dynamic_chat;
+	data->dynamic_script.script_chats_size = 1;
+	data->dynamic_script.abort_matches = hl78xx_get_abort_matches();
+	data->dynamic_script.abort_matches_size = hl78xx_get_abort_matches_size();
+	data->dynamic_script.callback = script_user_callback;
+	data->dynamic_script.timeout = response_timeout; /* overall script timeout */
+	data->dynamic_chat.request = data->buffers.cmd_buffer;
+	data->dynamic_chat.request_size = data->buffers.cmd_len;
+	/* run the chat script */
+	script_ret = modem_chat_run_script_async(&data->chat, &data->dynamic_script);
 	if (script_ret < 0) {
 		LOG_ERR("%d %s Failed to run at command: %d", __LINE__, __func__, script_ret);
 	} else {
