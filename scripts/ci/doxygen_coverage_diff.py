@@ -57,6 +57,9 @@ def extract_symbols(data: dict, strip_prefix: str = None) -> list[Symbol]:
     for path, sym_list in data.get("files", {}).items():
         if strip_prefix and path.startswith(strip_prefix):
             path = path.removeprefix(strip_prefix).lstrip("/")
+        # skip POSIX API, since it is already fully documented by the specification
+        if path.startswith("include/zephyr/posix/"):
+            continue
         if not isinstance(sym_list, list):
             continue
         symbols.extend(
