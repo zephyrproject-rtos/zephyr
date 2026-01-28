@@ -23,6 +23,7 @@ tests:
       - adp_xc7k/ae350
       - adp_xc7k/ae350/clic
       - bg29_rb4420a
+      - xg24_rb4187c
     filter: dt_nodelabel_enabled("tst_dma0")
     integration_platforms:
       - intel_adsp/cavs25
