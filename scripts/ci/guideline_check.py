@@ -24,6 +24,7 @@ coccinelle_reserved_names_exclude_regex = [
     r"lib/libc/.*",
     r"lib/posix/.*",
     r"include/zephyr/posix/.*",
+    r"tests/posix/.*",
 ]
 
 
