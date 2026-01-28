@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/ethernet_bridge.h>
+#include <zephyr/net/ethernet_bridge_fdb.h>
 #include <zephyr/net/virtual.h>
 #include <zephyr/net/promiscuous.h>
 
@@ -364,6 +365,58 @@ static void test_recv_with_bridge(void)
 	check_free_packet_count();
 }
 
+static void test_recv_with_bridge_fdb(void)
+{
+	struct net_eth_addr mac;
+	struct net_pkt *pkt;
+	struct net_eth_hdr *hdr;
+	uint8_t iface0_index = net_if_get_by_iface(fake_iface[0]);
+	int ret;
+
+	/* Add FDB entry: forward fake_iface[0] rx pkt to fake_iface[1] tx path */
+	mac.addr[0] = 0xb2;
+	mac.addr[1] = 0x11;
+	mac.addr[2] = 0x22;
+	mac.addr[3] = 0x33;
+	mac.addr[4] = iface0_index;
+	mac.addr[5] = 0x55;
+
+	ret = eth_bridge_fdb_add(&mac, fake_iface[1]);
+	zassert_equal(ret, 0, "");
+
+	/* fake reception of packets */
+	_recv_data(fake_iface[0]);
+
+	/* give time to the processing threads to run */
+	k_sleep(K_MSEC(100));
+
+	/* check fake_iface[0] tx path */
+	pkt = eth_fake_data[0].sent_pkt;
+	zassert_is_null(pkt, "");
+
+	/* check fake_iface[2] tx path */
+	pkt = eth_fake_data[2].sent_pkt;
+	zassert_is_null(pkt, "");
+
+	/* check fake_iface[1] tx path */
+	pkt = eth_fake_data[1].sent_pkt;
+
+	eth_fake_data[1].sent_pkt = NULL;
+	zassert_not_null(pkt, "");
+
+	/* make sure nothing messed up our ethernet header */
+	hdr = NET_ETH_HDR(pkt);
+
+	zassert_equal(hdr->dst.addr[0], 0xb2, "");
+	zassert_equal(hdr->src.addr[0], 0xa2, "");
+	zassert_equal(hdr->dst.addr[4], iface0_index, "");
+	zassert_equal(hdr->src.addr[3], iface0_index, "");
+
+	net_pkt_unref(pkt);
+
+	check_free_packet_count();
+}
+
 static void test_recv_after_bridging(void)
 {
 	int ret;
@@ -407,6 +460,7 @@ ZTEST(net_eth_bridge, test_net_eth_bridge)
 	DBG("With bridging\n");
 	test_setup_bridge();
 	test_recv_with_bridge();
+	test_recv_with_bridge_fdb();
 	DBG("After bridging\n");
 	test_recv_after_bridging();
 }
