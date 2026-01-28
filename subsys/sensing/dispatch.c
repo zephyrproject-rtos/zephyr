@@ -85,7 +85,7 @@ static void dispatch_task(void *a, void *b, void *c)
 	ARG_UNUSED(b);
 	ARG_UNUSED(c);
 
-	if (IS_ENABLED(CONFIG_USERSPACE) && !k_is_user_context()) {
+	if (!k_is_user_context()) {
 		rtio_access_grant(&sensing_rtio_ctx, k_current_get());
 		k_thread_user_mode_enter(dispatch_task, a, b, c);
 	}
