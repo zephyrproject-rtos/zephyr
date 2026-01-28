@@ -43,10 +43,6 @@ Sample console interaction
    ----------
    Scan request done
    
-   shell> wifi help
-   
-
-
    shell> wifi connect --ssid "gksu" --key-mgmt 1 --passphrase SecretStuff
    Connection requested
    shell>
