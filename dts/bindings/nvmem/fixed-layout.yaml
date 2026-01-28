@@ -20,6 +20,12 @@ properties:
     description: |
       Number of cells required to represent a child node's size.
 
+  mmio:
+    type: boolean
+    description: |
+      Use direct memory mapped IO of the parent controller instead of a
+      device driver API.
+
 child-binding:
   description: |
     Each child node of the NVMEM provider node represents
