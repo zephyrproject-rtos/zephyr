@@ -31,7 +31,7 @@ static int scmi_mbox_send_message(const struct device *transport,
 
 	mbox_chan = chan->data;
 
-	ret = scmi_shmem_write_message(mbox_chan->shmem, msg);
+	ret = scmi_shmem_write_message(mbox_chan->shmem, msg, use_polling);
 	if (ret < 0) {
 		LOG_ERR("failed to write message to shmem: %d", ret);
 		return ret;
