@@ -292,6 +292,10 @@ static int mcux_igpio_pin_interrupt_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	if (pin >= 32) {
+		return -EINVAL;
+	}
+
 	if (mode == GPIO_INT_MODE_DISABLED) {
 		key = irq_lock();
 
@@ -314,17 +318,15 @@ static int mcux_igpio_pin_interrupt_configure(const struct device *dev,
 		icr = 0;
 	}
 
+	key = irq_lock();
+
 	if (pin < 16) {
 		shift = 2 * pin;
 		base->ICR1 = (base->ICR1 & ~(3 << shift)) | (icr << shift);
-	} else if (pin < 32) {
+	} else {
 		shift = 2 * (pin - 16);
 		base->ICR2 = (base->ICR2 & ~(3 << shift)) | (icr << shift);
-	} else {
-		return -EINVAL;
 	}
-
-	key = irq_lock();
 
 	WRITE_BIT(base->EDGE_SEL, pin, trig == GPIO_INT_TRIG_BOTH);
 	WRITE_BIT(base->ISR, pin, 1);

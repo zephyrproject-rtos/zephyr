@@ -14,4 +14,18 @@
 			drive-strength = <1>;
 		};
 	};
+
+	/omit-if-no-ref/ gpt3_pins: gpt3 {
+		gpt3-pinmux {
+			pinmux = <RZV_PINMUX(PORT_08, 2, 9)>, /* GTIOCA */
+				 <RZV_PINMUX(PORT_08, 3, 9)>; /* GTIOCB */
+		};
+	};
+
+	/omit-if-no-ref/ gpt5_pins: gpt5 {
+		gpt5-pinmux {
+			pinmux = <RZV_PINMUX(PORT_08, 4, 9)>, /* GTIOCA */
+				 <RZV_PINMUX(PORT_08, 5, 9)>; /* GTIOCB */
+		};
+	};
 };

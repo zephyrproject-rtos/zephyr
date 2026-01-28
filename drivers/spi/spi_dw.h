@@ -14,6 +14,10 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
 
+#if defined(CONFIG_CLOCK_CONTROL)
+#include <zephyr/drivers/clock_control.h>
+#endif
+
 #include "spi_context.h"
 
 #ifdef __cplusplus
@@ -46,6 +50,10 @@ struct spi_dw_config {
 	uint8_t max_xfer_size;
 #ifdef CONFIG_PINCTRL
 	const struct pinctrl_dev_config *pcfg;
+#endif
+#if defined(CONFIG_CLOCK_CONTROL)
+	const struct device *clk_dev;
+	const clock_control_subsys_t clk_id;
 #endif
 	spi_dw_read_t read_func;
 	spi_dw_write_t write_func;

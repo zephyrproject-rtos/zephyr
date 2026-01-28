@@ -9,11 +9,12 @@ import argparse
 import os
 
 import yaml
+
 try:
     # Use the C LibYAML parser if available, rather than the Python parser.
     from yaml import CSafeLoader as SafeLoader
 except ImportError:
-    from yaml import SafeLoader     # type: ignore
+    from yaml import SafeLoader  # type: ignore
 
 
 HEADER = """\
@@ -47,11 +48,13 @@ def parse_args():
     # Returns parsed command-line arguments
 
     parser = argparse.ArgumentParser(allow_abbrev=False)
-    parser.add_argument("--kconfig-out", required=True,
-                        help="path to write the Kconfig file")
-    parser.add_argument("--bindings-dirs", nargs='+', required=True,
-                        help="directory with bindings in YAML format, "
-                        "we allow multiple")
+    parser.add_argument("--kconfig-out", required=True, help="path to write the Kconfig file")
+    parser.add_argument(
+        "--bindings-dirs",
+        nargs='+',
+        required=True,
+        help="directory with bindings in YAML format, we allow multiple",
+    )
 
     return parser.parse_args()
 
@@ -68,8 +71,10 @@ def main():
                 # we don't need the whole file converted into a dict.
                 root = yaml.compose(f, Loader=SafeLoader)
             except yaml.YAMLError as e:
-                print(f"WARNING: '{binding_path}' appears in binding "
-                      f"directories but isn't valid YAML: {e}")
+                print(
+                    f"WARNING: '{binding_path}' appears in binding "
+                    f"directories but isn't valid YAML: {e}"
+                )
                 continue
 
         if not isinstance(root, yaml.MappingNode):
@@ -83,9 +88,7 @@ def main():
         print(HEADER, file=kconfig_file)
 
         for c in sorted(compats):
-            out = KCONFIG_TEMPLATE.format(
-                compat=c, COMPAT=c.upper().translate(TO_UNDERSCORES)
-            )
+            out = KCONFIG_TEMPLATE.format(compat=c, COMPAT=c.upper().translate(TO_UNDERSCORES))
             print(out, file=kconfig_file)
 
 

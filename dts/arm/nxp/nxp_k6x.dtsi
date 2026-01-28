@@ -112,8 +112,13 @@
 			prescaler = <32768>;
 		};
 
+		rcm: rcm@4007F000 {
+			compatible = "nxp,rcm-hwinfo";
+			reg = <0x4007F000 0x1000>;
+		};
+
 		sim: sim@40047000 {
-			compatible = "nxp,kinetis-sim";
+			compatible = "nxp,kinetis-sim", "nxp,sim-uuid";
 			reg = <0x40047000 0x1060>;
 			#clock-cells = <3>;
 
@@ -521,7 +526,9 @@
 			interrupts = <75 0>, <76 0>, <77 0>, <78 0>, <79 0>, <80 0>;
 			interrupt-names = "mb-0-15", "bus-off", "error", "tx-warning", "rx-warning",
 					  "wake-up";
-			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 4>;
+			clocks = <&sim KINETIS_SIM_OSCERCLK 0x103C 4>,
+				 <&sim KINETIS_SIM_BUS_CLK 0x103C 4>;
+			clock-names = "clksrc0", "clksrc1";
 			clk-source = <1>;
 			number-of-mb = <16>;
 			status = "disabled";

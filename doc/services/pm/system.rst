@@ -122,6 +122,30 @@ remaining time until the next scheduled timeout.
 An example of an application that defines its own policy can be found in
 :zephyr_file:`tests/subsys/pm/power_mgmt/`.
 
+Custom ticks hook
+-----------------
+
+In addition to the kernel tick expiration and the PM policy event list,
+applications and SoC-specific code may need to derive the next wake-up time
+from proprietary or hardware-specific data sources. Examples include hardware
+registers, binary-only third-party modules, or complex/legacy data structures
+that are not practical to model as standard PM policy events.
+
+When :kconfig:option:`CONFIG_PM_CUSTOM_TICKS_HOOK` is enabled, the PM core calls the
+optional function :c:func:`pm_policy_next_custom_ticks()` during
+:c:func:`pm_system_suspend()`. The hook returns the ticks to the next custom
+event, or ``K_TICKS_FOREVER`` if no custom event needs to be considered.
+
+The PM core then selects the earliest expiration among:
+
+* kernel tick expiration,
+* PM policy event list ticks (from :c:func:`pm_policy_next_event_ticks()`),
+* the custom ticks value (from :c:func:`pm_policy_next_custom_ticks()`).
+
+This mechanism allows boards and applications to integrate additional timing
+sources into the system power management decisions without modifying the PM
+event list infrastructure.
+
 .. _pm-policy-power-states:
 
 Policy and Power States

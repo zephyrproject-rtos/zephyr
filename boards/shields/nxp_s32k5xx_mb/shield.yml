@@ -4,3 +4,4 @@ shield:
   vendor: nxp
   supported_features:
     - uart
+    - can

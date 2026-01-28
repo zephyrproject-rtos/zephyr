@@ -30,8 +30,10 @@
 #define HAL_DCMIPP_PARALLEL_SetConfig HAL_DCMIPP_SetParallelConfig
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_dcmipp)
+#if defined(DCMIPP_SERIAL_MODE)
 #define STM32_DCMIPP_HAS_CSI
+#endif
+#if defined(DCMIPP_PIPE1) && defined(DCMIPP_PIPE2)
 #define STM32_DCMIPP_HAS_PIXEL_PIPES
 #endif
 
@@ -1166,6 +1168,17 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 		if (ret < 0) {
 			goto out;
 		}
+
+		/* Limit the amount of hardware handshake interrupts received by slave IP */
+		if (pipe->id == DCMIPP_PIPE1) {
+			stm32_reg_modify_bits(&dcmipp->hdcmipp.Instance->P1PPCR,
+					      DCMIPP_P1PPCR_LINEMULT_Msk,
+					      DCMIPP_MULTILINE_128_LINES);
+		} else {
+			stm32_reg_modify_bits(&dcmipp->hdcmipp.Instance->P2PPCR,
+					      DCMIPP_P1PPCR_LINEMULT_Msk,
+					      DCMIPP_MULTILINE_128_LINES);
+		}
 	}
 #endif
 
@@ -1227,6 +1240,7 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 	struct stm32_dcmipp_pipe_data *pipe = dev->data;
 	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
 	const struct stm32_dcmipp_config *config = dev->config;
+	struct video_buffer *vbuf;
 	int ret;
 
 	k_mutex_lock(&pipe->lock, K_FOREVER);
@@ -1285,6 +1299,12 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 	}
 	if (pipe->active != NULL) {
 		k_fifo_put(&pipe->fifo_in, pipe->active);
+	}
+
+	/* Forward all buffers in fifo_in to fifo_out */
+	while ((vbuf = k_fifo_get(&pipe->fifo_in, K_NO_WAIT)) != NULL) {
+		vbuf->bytesused = 0;
+		k_fifo_put(&pipe->fifo_out, vbuf);
 	}
 
 	pipe->state = STM32_DCMIPP_STOPPED;

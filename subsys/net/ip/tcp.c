@@ -2315,7 +2315,7 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 	if (th_flags(th) & SYN && !(th_flags(th) & ACK)) {
 		struct tcp *conn_old = ((struct net_context *)user_data)->tcp;
 
-		if (tcp_backlog_is_full(conn_old)) {
+		if (conn_old == NULL || tcp_backlog_is_full(conn_old)) {
 			/* If the connection backlog is full, ignore the SYN
 			 * packet (same behavior as on Linux). Retransmitted SYN
 			 * attempts may be successful later.
@@ -3289,7 +3289,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 			}
 		}
 #endif
-		NET_ASSERT((conn->send_data_total == 0) ||
+		NET_ASSERT((conn->send_data_total == 0) || (conn->send_win == 0) ||
 			   k_work_delayable_is_pending(&conn->send_data_timer),
 			   "conn: %p, Missing a subscription "
 				"of the send_data queue timer", conn);

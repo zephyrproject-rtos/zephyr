@@ -7,36 +7,6 @@ description: |
 
   The PMIC has three DCDC converters and two LDOs (LDO1 cannot be disabled).
   All need to be defined as children nodes.
-  For example:
-
-  i2c {
-    pmic@34 {
-      reg = <0x34>;
-      ...
-      regulators {
-        compatible = "x-powers,axp192-regulator";
-
-        DCDC1 {
-          /* all properties for DCDC1 */
-        };
-        DCDC2 {
-          /* all properties for DCDC2 */
-        };
-        DCDC3 {
-          /* all properties for DCDC3 */
-        };
-        LDOIO0 {
-          /* all properties for LDOIO0 */
-        };
-        LDO2 {
-          /* all properties for LDO2 */
-        };
-        LDO3 {
-          /* all properties for LDO3 */
-        };
-      };
-    };
-  };
 
 compatible: "x-powers,axp192-regulator"
 
@@ -68,3 +38,34 @@ child-binding:
         Initial operating mode. AXP192 supports 2 different power modes:
         AXP192_DCDC_MODE_AUTO: Auto (0, default)
         AXP192_DCDC_MODE_PWM:  PWM
+
+examples:
+  - |
+    i2c {
+      pmic@34 {
+        reg = <0x34>;
+        /* ... */
+        regulators {
+          compatible = "x-powers,axp192-regulator";
+
+          DCDC1 {
+            /* all properties for DCDC1 */
+          };
+          DCDC2 {
+            /* all properties for DCDC2 */
+          };
+          DCDC3 {
+            /* all properties for DCDC3 */
+          };
+          LDOIO0 {
+            /* all properties for LDOIO0 */
+          };
+          LDO2 {
+            /* all properties for LDO2 */
+          };
+          LDO3 {
+            /* all properties for LDO3 */
+          };
+        };
+      };
+    };

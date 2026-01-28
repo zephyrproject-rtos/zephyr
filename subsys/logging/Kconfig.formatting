@@ -109,6 +109,11 @@ config LOG_DICTIONARY_SUPPORT
 
 	  This should be selected by the backend automatically.
 
+config LOG_DOMAIN_NAME_PREFIX
+	bool "Domain name prefix"
+	help
+		Enable support for prefixing the log source with the domain name.
+
 config LOG_THREAD_ID_PREFIX
 	bool "Thread ID prefix"
 	help

@@ -9,3 +9,13 @@ include: base.yaml
 properties:
   reg:
     required: true
+
+  reg-names:
+    required: true
+
+  gpioint-table:
+    type: array
+
+  max-gpioint:
+    required: true
+    type: int

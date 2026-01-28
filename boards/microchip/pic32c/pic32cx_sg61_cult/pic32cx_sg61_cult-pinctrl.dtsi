@@ -21,6 +21,13 @@
 		};
 	};
 
+	tc5_pwm_default: tc5_pwm_default {
+		group1 {
+			pinmux = <PB14E_TC5_WO0>,
+				 <PB15E_TC5_WO1>;
+		};
+	};
+
 	tcc0_pwm_default: tcc0_pwm_default {
 		group1 {
 			pinmux = <PC21F_TCC0_WO5>;

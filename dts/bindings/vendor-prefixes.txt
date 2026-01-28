@@ -107,6 +107,7 @@ beagle	BeagleBoard.org Foundation
 bflb	Bouffalo Lab (Nanjing) Co., Ltd.
 bhf	Beckhoff Automation GmbH & Co. KG
 bitmain	Bitmain Technologies
+blackberry	BlackBerry Limited
 blues	Blues Wireless
 blutek	BluTek Power
 boe	BOE Technology Group Co., Ltd.
@@ -400,6 +401,7 @@ litex	LiteX SoC builder
 lltc	Linear Technology Corporation
 logicpd	Logic PD, Inc.
 logictechno	Logic Technologies Limited
+longan	Longan Labs (Shenzhen Longan Technology Co., Ltd.)
 longcheer	Longcheer Technology (Shanghai) Co., Ltd.
 lontium	Lontium Semiconductor Corporation
 loongson	Loongson Technology Corporation Limited
@@ -610,6 +612,7 @@ sc	Space Cubics Inc.
 scdz	Shenzhen Qiushi IoT Technology Co., Ltd.
 schindler	Schindler
 sciosense	Sciosense B.V.
+sct	StarChips Technology Inc.
 seagate	Seagate Technology PLC
 seco	SECO S.p.A.
 seeed	Seeed Technology Co., Ltd

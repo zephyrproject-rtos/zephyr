@@ -1,0 +1,11 @@
+board:
+  name: nrf7120dk
+  full_name: nRF7120 DK
+  vendor: nordic
+  socs:
+  - name: nrf7120
+    variants:
+    - name: xip
+      cpucluster: cpuflpr
+    - name: ns
+      cpucluster: cpuapp

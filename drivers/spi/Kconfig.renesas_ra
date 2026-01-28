@@ -34,6 +34,33 @@ config SPI_USE_HW_SS
 
 endif # SPI_RENESAS_RA
 
+config SPI_RENESAS_RA_SCI
+	bool "Renesas RA SCI SPI"
+	default y
+	depends on DT_HAS_RENESAS_RA_SPI_SCI_ENABLED
+	select SPI_RENESAS_RA_SCI_INTERRUPT if SPI_ASYNC
+	select USE_RA_FSP_SCI_SPI
+	select PINCTRL
+	help
+	  Enable Renesas RA SCI SPI Driver.
+
+if SPI_RENESAS_RA_SCI
+
+config SPI_RENESAS_RA_SCI_INTERRUPT
+	bool "RENESAS RA SCI SPI Interrupt Support"
+	depends on SPI_ASYNC
+	help
+	  Enable Interrupt support for the SCI SPI Driver of RA family.
+
+config SPI_RENESAS_RA_SCI_DTC
+	bool "RA MCU SCI SPI DTC Support"
+	depends on SPI_RENESAS_RA_SCI_INTERRUPT
+	select USE_RA_FSP_DTC
+	help
+	  Enable DTC support for the SCI SPI Driver of RA family.
+
+endif # SPI_RENESAS_RA_SCI
+
 config SPI_RENESAS_RA_SCI_B
 	bool "Renesas RA SCI B SPI"
 	default y

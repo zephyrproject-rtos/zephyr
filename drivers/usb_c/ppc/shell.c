@@ -118,16 +118,16 @@ SHELL_DYNAMIC_CMD_CREATE(list_device_names, device_name_get);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_ppc_cmds,
 			       SHELL_CMD_ARG(dump, &list_device_names,
-					     "Dump PPC registers\n"
-					     "Usage: ppc dump [<ppc device>]",
+					     SHELL_HELP("Dump PPC registers",
+							"[<ppc device>]"),
 					     cmd_ppc_dump, 1, 1),
 			       SHELL_CMD_ARG(status, &list_device_names,
-					     "Write PPC power status\n"
-					     "Usage: ppc status [<ppc device>]",
+					     SHELL_HELP("Display PPC power status",
+							"[<ppc device>]"),
 					     cmd_ppc_status, 1, 1),
 			       SHELL_CMD_ARG(exitdb, &list_device_names,
-					     "Exit from the dead battery mode\n"
-					     "Usage: ppc exitdb [<ppc device>]",
+					     SHELL_HELP("Exit from the dead battery mode",
+							"[<ppc device>]"),
 					     cmd_ppc_exit_db, 1, 1),
 			       SHELL_SUBCMD_SET_END);
 

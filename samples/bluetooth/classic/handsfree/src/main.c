@@ -247,7 +247,7 @@ static void bt_ready(int err)
 
 	printk("Bluetooth initialized\n");
 
-	err = bt_br_set_connectable(true);
+	err = bt_br_set_connectable(true, NULL);
 	if (err) {
 		printk("BR/EDR set/rest connectable failed (err %d)\n", err);
 		return;

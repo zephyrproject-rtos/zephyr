@@ -944,9 +944,9 @@ static __maybe_unused void mspi_stm32_xspi_dma_callback(const struct device *dev
 }
 #endif
 
-static int mspi_stm32_xspi_validate_freq(uint32_t freq)
+static int mspi_stm32_xspi_validate_freq(uint32_t freq, uint32_t max_freq)
 {
-	if (freq > MSPI_MAX_FREQ) {
+	if (freq > max_freq) {
 		LOG_ERR("%u, freq is too large", __LINE__);
 		return -ENOTSUP;
 	}
@@ -1094,7 +1094,7 @@ static int mspi_stm32_xspi_dev_cfg_save(const struct device *controller,
 	}
 
 	if ((param_mask & MSPI_DEVICE_CONFIG_FREQUENCY) != 0) {
-		ret = mspi_stm32_xspi_validate_freq(dev_cfg->freq);
+		ret = mspi_stm32_xspi_validate_freq(dev_cfg->freq, cfg->mspicfg.max_freq);
 		if (ret != 0) {
 			goto end;
 		}
@@ -1427,14 +1427,14 @@ static int mspi_stm32_xspi_dma_init(DMA_HandleTypeDef *hdma, struct stm32_stream
 	return 0;
 }
 
-static int mspi_validate_config(const struct mspi_cfg *config)
+static int mspi_validate_config(const struct mspi_cfg *config, uint32_t max_frequency)
 {
 	if (config->op_mode != MSPI_OP_MODE_CONTROLLER) {
 		LOG_ERR("Only support MSPI controller mode");
 		return -ENOTSUP;
 	}
 
-	if (config->max_freq > MSPI_STM32_MAX_FREQ) {
+	if (config->max_freq > max_frequency) {
 		LOG_ERR("Max_freq %d too large", config->max_freq);
 		return -ENOTSUP;
 	}
@@ -1552,7 +1552,7 @@ static int mspi_stm32_xspi_config(const struct mspi_dt_spec *spec)
 	struct mspi_stm32_data *dev_data = spec->bus->data;
 	uint32_t ahb_clock_freq;
 
-	ret = mspi_validate_config(config);
+	ret = mspi_validate_config(config, dev_cfg->mspicfg.max_freq);
 	if (ret != 0) {
 		return ret;
 	}
@@ -1746,7 +1746,7 @@ static int mspi_stm32_xspi_pm_action(const struct device *dev, enum pm_device_ac
 		.channel_num = 0,                                                                 \
 		.op_mode = DT_INST_ENUM_IDX_OR(index, op_mode, MSPI_OP_MODE_CONTROLLER),          \
 		.duplex = DT_INST_ENUM_IDX_OR(index, duplex, MSPI_HALF_DUPLEX),                   \
-		.max_freq = DT_INST_PROP_OR(index, mspi_max_frequency, MSPI_STM32_MAX_FREQ),      \
+		.max_freq = DT_INST_PROP(index, clock_frequency),                                 \
 		.dqs_support = DT_INST_PROP(index, dqs_support),                                  \
 		.num_periph = DT_INST_CHILD_NUM(index),                                           \
 		.sw_multi_periph = DT_INST_PROP(index, software_multiperipheral),                 \

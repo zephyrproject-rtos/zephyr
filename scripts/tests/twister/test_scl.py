@@ -6,116 +6,38 @@
 Tests for scl.py functions
 """
 
-import logging
 import sys
+import types
 from contextlib import nullcontext
 from importlib import reload
 from unittest import mock
 
 import pytest
 import scl
-from pykwalify.errors import SchemaError
+from jsonschema.exceptions import ValidationError
 from yaml.scanner import ScannerError
 
-TESTDATA_1 = [
-    (False,),
-    (True,),
-]
 
-@pytest.mark.parametrize(
-    'fail_c',
-    TESTDATA_1,
-    ids=['C YAML', 'non-C YAML']
-)
-def test_yaml_imports(fail_c):
-    class ImportRaiser:
-        def find_spec(self, fullname, path, target=None):
-            if fullname == 'yaml.CLoader' and fail_c:
-                raise ImportError()
-            if fullname == 'yaml.CSafeLoader' and fail_c:
-                raise ImportError()
-            if fullname == 'yaml.CDumper' and fail_c:
-                raise ImportError()
+@pytest.mark.parametrize("has_cyaml", [True, False], ids=["C YAML", "non-C YAML"])
+def test_yaml_imports(has_cyaml):
+    """
+    scl.py does:
+        from yaml import CSafeLoader as SafeLoader
+    falling back to:
+        from yaml import SafeLoader
+    So we simulate a yaml module with/without CSafeLoader.
+    """
+    fake_yaml = types.ModuleType("yaml")
+    fake_yaml.load = mock.Mock()
+    fake_yaml.SafeLoader = object()
+    if has_cyaml:
+        fake_yaml.CSafeLoader = object()
 
-    modules_mock = sys.modules.copy()
-
-    if hasattr(modules_mock['yaml'], 'CLoader'):
-        del modules_mock['yaml'].CLoader
-        del modules_mock['yaml'].CSafeLoader
-        del modules_mock['yaml'].CDumper
-
-    cloader_mock = mock.Mock()
-    loader_mock = mock.Mock()
-    csafeloader_mock = mock.Mock()
-    safeloader_mock = mock.Mock()
-    cdumper_mock = mock.Mock()
-    dumper_mock = mock.Mock()
-
-    if not fail_c:
-        modules_mock['yaml'].CLoader = cloader_mock
-        modules_mock['yaml'].CSafeLoader = csafeloader_mock
-        modules_mock['yaml'].CDumper = cdumper_mock
-
-    modules_mock['yaml'].Loader = loader_mock
-    modules_mock['yaml'].SafeLoader = safeloader_mock
-    modules_mock['yaml'].Dumper = dumper_mock
-
-    meta_path_mock = sys.meta_path[:]
-    meta_path_mock.insert(0, ImportRaiser())
-
-    with mock.patch.dict('sys.modules', modules_mock, clear=True), \
-         mock.patch('sys.meta_path', meta_path_mock):
+    with mock.patch.dict(sys.modules, {"yaml": fake_yaml}):
         reload(scl)
+        assert scl.SafeLoader is (fake_yaml.CSafeLoader if has_cyaml else fake_yaml.SafeLoader)
 
-    assert sys.modules['scl'].Loader == loader_mock if fail_c else \
-                                        cloader_mock
-
-    assert sys.modules['scl'].SafeLoader == safeloader_mock if fail_c else \
-                                        csafeloader_mock
-
-    assert sys.modules['scl'].Dumper == dumper_mock if fail_c else \
-                                        cdumper_mock
-
-    import yaml
-    reload(yaml)
-
-
-TESTDATA_2 = [
-    (False, logging.CRITICAL, []),
-    (True, None, ['can\'t import pykwalify; won\'t validate YAML']),
-]
-
-@pytest.mark.parametrize(
-    'fail_pykwalify, log_level, expected_logs',
-    TESTDATA_2,
-    ids=['pykwalify OK', 'no pykwalify']
-)
-def test_pykwalify_import(caplog, fail_pykwalify, log_level, expected_logs):
-    class ImportRaiser:
-        def find_spec(self, fullname, path, target=None):
-            if fullname == 'pykwalify.core' and fail_pykwalify:
-                raise ImportError()
-
-    modules_mock = sys.modules.copy()
-    modules_mock['pykwalify'] = None if fail_pykwalify else \
-                                modules_mock['pykwalify']
-
-    meta_path_mock = sys.meta_path[:]
-    meta_path_mock.insert(0, ImportRaiser())
-
-    with mock.patch.dict('sys.modules', modules_mock, clear=True), \
-         mock.patch('sys.meta_path', meta_path_mock):
-        reload(scl)
-
-    if log_level:
-        assert logging.getLogger('pykwalify.core').level == log_level
-
-    assert all([log in caplog.text for log in expected_logs])
-
-    if fail_pykwalify:
-        assert scl._yaml_validate(None, None) is None
-        assert scl._yaml_validate(mock.Mock(), mock.Mock()) is None
-
+    # cleanup
     reload(scl)
 
 
@@ -169,7 +91,7 @@ def test_yaml_load(caplog, fail_parsing):
 
 TESTDATA_4 = [
     (True, False, None),
-    (False, False, SchemaError),
+    (False, False, ValidationError),
     (False, True, ScannerError),
 ]
 
@@ -183,18 +105,18 @@ def test_yaml_load_verify(validate, fail_load, expected_error):
     schema_mock = mock.Mock()
     data_mock = mock.Mock()
 
-    def mock_load(file_name, *args, **kwargs):
+    def mock_load(file_name):
         assert file_name == filename
         if fail_load:
             raise ScannerError
         return data_mock
 
-    def mock_validate(data, schema, *args, **kwargs):
+    def mock_validate(data, schema):
         assert data == data_mock
         assert schema == schema_mock
         if validate:
-            return True
-        raise SchemaError(u'Schema validation failed.')
+            return None
+        raise ValidationError("Schema validation failed")
 
     with mock.patch('scl.yaml_load', side_effect=mock_load), \
          mock.patch('scl._yaml_validate', side_effect=mock_validate), \
@@ -204,47 +126,28 @@ def test_yaml_load_verify(validate, fail_load, expected_error):
     if validate:
         assert res == data_mock
 
+def test_yaml_validate():
+    data = {"a": 1}
+    schema = {
+        "type": "object",
+        "properties": {
+            "a": {"type": "string"}
+        },
+        "required": ["a"],
+        "additionalProperties": False,
+    }
 
-TESTDATA_5 = [
-    (True, True, None),
-    (True, False, SchemaError),
-    (False, None, None),
-]
+    with pytest.raises(ValidationError):
+        scl._yaml_validate(data, schema)
 
-@pytest.mark.parametrize(
-    'schema_exists, validate, expected_error',
-    TESTDATA_5,
-    ids=['successful validation', 'failed validation', 'no schema']
-)
-def test_yaml_validate(schema_exists, validate, expected_error):
-    data_mock = mock.Mock()
-    schema_mock = mock.Mock() if schema_exists else None
 
-    def mock_validate(raise_exception, *args, **kwargs):
-        assert raise_exception
-        if validate:
-            return True
-        raise SchemaError(u'Schema validation failed.')
-
-    def mock_core(source_data, schema_data, *args, **kwargs):
-        assert source_data == data_mock
-        assert schema_data == schema_mock
-        return mock.Mock(validate=mock_validate)
-
-    core_mock = mock.Mock(side_effect=mock_core)
-
-    with mock.patch('pykwalify.core.Core', core_mock), \
-         pytest.raises(expected_error) if expected_error else nullcontext():
-        scl._yaml_validate(data_mock, schema_mock)
-
-    if schema_exists:
-        core_mock.assert_called_once()
-    else:
-        core_mock.assert_not_called()
+def test_yaml_validate_no_schema():
+    data = {"a": 1}
+    assert scl._yaml_validate(data, None) is None
 
 
 def test_yaml_load_empty_file(tmp_path):
     quarantine_file = tmp_path / 'empty_quarantine.yml'
-    quarantine_file.write_text("# yaml file without data")
+    quarantine_file.write_text("# yaml file without data", encoding="utf-8")
     with pytest.raises(scl.EmptyYamlFileException):
         scl.yaml_load_verify(quarantine_file, None)

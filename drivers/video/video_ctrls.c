@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <inttypes.h>
 #include <stdio.h>
 
 #include <zephyr/drivers/video.h>
@@ -596,9 +597,8 @@ fill_query:
 
 void video_print_ctrl(const struct video_ctrl_query *const cq)
 {
-	uint8_t i = 0;
 	const char *type = NULL;
-	char typebuf[8];
+	char buf[11];
 
 	__ASSERT_NO_MSG(cq != NULL);
 	__ASSERT_NO_MSG(cq->dev != NULL);
@@ -618,7 +618,7 @@ void video_print_ctrl(const struct video_ctrl_query *const cq)
 		type = "menu";
 		break;
 	case VIDEO_CTRL_TYPE_INTEGER_MENU:
-		type = "integer menu";
+		type = "int menu";
 		break;
 	case VIDEO_CTRL_TYPE_STRING:
 		type = "string";
@@ -626,7 +626,7 @@ void video_print_ctrl(const struct video_ctrl_query *const cq)
 	default:
 		break;
 	}
-	snprintf(typebuf, sizeof(typebuf), "(%s)", type);
+	snprintf(buf, sizeof(buf), "(%s)", type);
 
 	/* Get current value of the control */
 	struct video_control vc = {.id = cq->id};
@@ -635,26 +635,26 @@ void video_print_ctrl(const struct video_ctrl_query *const cq)
 
 	/* Print the control information */
 	if (cq->type == VIDEO_CTRL_TYPE_INTEGER64) {
-		LOG_INF("%32s 0x%08x %-8s (flags=0x%02x) : min=%lld max=%lld step=%lld "
+		LOG_INF("%32s 0x%08x %-10s (flags=0x%02x) : min=%lld max=%lld step=%lld "
 			"default=%lld value=%lld ",
-			cq->name, cq->id, typebuf, cq->flags, cq->range.min64, cq->range.max64,
+			cq->name, cq->id, buf, cq->flags, cq->range.min64, cq->range.max64,
 			cq->range.step64, cq->range.def64, vc.val64);
 	} else {
-		LOG_INF("%32s 0x%08x %-8s (flags=0x%02x) : min=%d max=%d step=%d default=%d "
+		LOG_INF("%32s 0x%08x %-10s (flags=0x%02x) : min=%d max=%d step=%d default=%d "
 			"value=%d ",
-			cq->name, cq->id, typebuf, cq->flags, cq->range.min, cq->range.max,
+			cq->name, cq->id, buf, cq->flags, cq->range.min, cq->range.max,
 			cq->range.step, cq->range.def, vc.val);
 	}
 
-	if (cq->type == VIDEO_CTRL_TYPE_MENU && cq->menu) {
-		while (cq->menu[i]) {
-			LOG_INF("%*s %u: %s", 32, "", i, cq->menu[i]);
-			i++;
-		}
-	} else if (cq->type == VIDEO_CTRL_TYPE_INTEGER_MENU && cq->int_menu) {
-		while (cq->int_menu[i]) {
-			LOG_INF("%*s %u: %lld", 12, "", i, cq->int_menu[i]);
-			i++;
+	if ((cq->type == VIDEO_CTRL_TYPE_MENU && cq->menu) ||
+	    (cq->type == VIDEO_CTRL_TYPE_INTEGER_MENU && cq->int_menu)) {
+		for (uint8_t i = 0; i <= cq->range.max; i++) {
+			if (cq->type == VIDEO_CTRL_TYPE_INTEGER_MENU) {
+				snprintf(buf, sizeof(buf), "%" PRId64, cq->int_menu[i]);
+			}
+
+			LOG_INF("%*s %u: %s", 32, "", i,
+				(cq->type == VIDEO_CTRL_TYPE_MENU) ? cq->menu[i] : buf);
 		}
 	}
 }

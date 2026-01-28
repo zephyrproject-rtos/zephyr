@@ -89,12 +89,12 @@ tests:
       - native_sim/native/64
     extra_configs:
       - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_565=y
-  drivers.display.read_write.sdl.bgr565:
+  drivers.display.read_write.sdl.rgb565x:
     platform_allow:
       - native_sim
       - native_sim/native/64
     extra_configs:
-      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGR_565=y
+      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_565X=y
   drivers.display.read_write.ili9340:
     tags:
       - shield

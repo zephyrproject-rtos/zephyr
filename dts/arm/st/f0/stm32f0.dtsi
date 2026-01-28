@@ -372,6 +372,16 @@
 			interrupts = <9 0 10 0 10 0 11 0 11 0>;
 			status = "disabled";
 		};
+
+		tsc: tsc@40024000 {
+			compatible = "st,stm32-tsc";
+			reg = <0x40024000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 24)>;
+			resets = <&rctl STM32_RESET(AHB1, 24)>;
+			interrupts = <8 0>;
+			interrupt-names = "global";
+			status = "disabled";
+		};
 	};
 
 	vref: vref {

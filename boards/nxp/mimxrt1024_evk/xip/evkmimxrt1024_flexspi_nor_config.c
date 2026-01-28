@@ -7,7 +7,7 @@
 
 #include "evkmimxrt1024_flexspi_nor_config.h"
 
-#if defined(XIP_BOOT_HEADER_ENABLE) && (XIP_BOOT_HEADER_ENABLE == 1)
+#if defined(CONFIG_NXP_IMXRT_BOOT_HEADER) && defined(CONFIG_BOOT_FLEXSPI_NOR)
 __attribute__((section(".boot_hdr.conf"), used))
 
 const flexspi_nor_config_t qspi_flash_config = {
@@ -65,4 +65,4 @@ const flexspi_nor_config_t qspi_flash_config = {
 	.is_uniform_block_size = false,
 };
 
-#endif /* XIP_BOOT_HEADER_ENABLE */
+#endif /* defined(CONFIG_NXP_IMXRT_BOOT_HEADER) && defined(CONFIG_BOOT_FLEXSPI_NOR) */

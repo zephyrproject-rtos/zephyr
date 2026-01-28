@@ -9,17 +9,7 @@ description: |
 
     When setting the mag-range and mag-odr properties in
     a .dts or .dtsi file you may include lsm9ds1.h and use the macros
-    defined here.
-
-    Example:
-    #include <zephyr/dt-bindings/sensor/lsm9ds1.h>
-
-    lsm9ds1_mag: lsm9ds1_mag@0 {
-      ...
-
-      mag-range = <LSM9DS1_DT_FS_4Ga>;
-      mag-odr = <LSM9DS1_MAG_MP_40Hz>;
-    };
+    defined there.
 
 compatible: "st,lsm9ds1_mag"
 
@@ -87,3 +77,14 @@ properties:
     enum: [0xC0, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x10, 0x11, 0x12, 0x13,
            0x14, 0x15, 0x16, 0x17, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x30, 0x31,
            0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x28, 0x18, 0x08, 0x70]
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/lsm9ds1.h>
+
+    lsm9ds1_mag: lsm9ds1_mag@0 {
+      /* ... */
+
+      mag-range = <LSM9DS1_DT_FS_4Ga>;
+      mag-odr = <LSM9DS1_MAG_MP_40Hz>;
+    };

@@ -54,6 +54,6 @@ config LORA_INIT_PRIORITY
 
 rsource "Kconfig.sx12xx"
 rsource "Kconfig.rylrxxx"
-rsource "lora_basics_modem/Kconfig"
+rsource "lora-basics-modem/Kconfig"
 
 endif # LORA

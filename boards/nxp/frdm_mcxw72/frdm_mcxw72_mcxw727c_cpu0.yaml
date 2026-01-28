@@ -1,5 +1,5 @@
 identifier: frdm_mcxw72/mcxw727c/cpu0
-name: NXP FRDM_MCXW72
+name: NXP FRDM-MCXW72
 type: mcu
 arch: arm
 ram: 264

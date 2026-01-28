@@ -75,8 +75,6 @@ struct sy1xx_mac_dma_buffers {
 };
 
 struct sy1xx_mac_dev_data {
-	struct k_mutex mutex;
-
 	/* current state of link and mac address */
 	bool link_is_up;
 	enum phy_link_speed link_speed;
@@ -117,8 +115,6 @@ static int sy1xx_mac_initialize(const struct device *dev)
 
 	data->link_is_up = false;
 	data->link_speed = -1;
-
-	k_mutex_init(&data->mutex);
 
 	/* PAD config */
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
@@ -452,8 +448,6 @@ static int sy1xx_mac_send(const struct device *dev, struct net_pkt *pkt)
 	uint32_t retries_left;
 	struct net_buf *frag;
 
-	k_mutex_lock(&data->mutex, K_FOREVER);
-
 	/* push all fragments of the packet into one linear buffer */
 	frag = pkt->buffer;
 	data->temp.tx_len = 0;
@@ -464,7 +458,6 @@ static int sy1xx_mac_send(const struct device *dev, struct net_pkt *pkt)
 				data->temp.tx[data->temp.tx_len++] = frag->data[i];
 			} else {
 				LOG_ERR("tx buffer overflow");
-				k_mutex_unlock(&data->mutex);
 				return -ENOMEM;
 			}
 		}
@@ -481,14 +474,12 @@ static int sy1xx_mac_send(const struct device *dev, struct net_pkt *pkt)
 		}
 		if (ret != -EBUSY) {
 			LOG_ERR("tx error");
-			k_mutex_unlock(&data->mutex);
 			return ret;
 		}
 		k_sleep(K_MSEC(1));
 		retries_left--;
 	};
 
-	k_mutex_unlock(&data->mutex);
 	return ret;
 }
 

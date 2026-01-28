@@ -281,7 +281,13 @@ uint32_t zperf_packet_duration(uint32_t packet_size, uint32_t rate_in_kbps)
 void zperf_async_work_submit(enum session_proto proto, int session_id, struct k_work *work)
 {
 #if defined(CONFIG_ZPERF_SESSION_PER_THREAD)
-	k_work_submit_to_queue(zperf_work_q[proto * SESSION_INDEX + session_id].queue, work);
+	/* Raw TX doesn't support per-thread sessions, use first available queue */
+	if (proto == SESSION_RAW || session_id < 0) {
+		k_work_submit_to_queue(zperf_work_q[0].queue, work);
+	} else {
+		k_work_submit_to_queue(zperf_work_q[proto * SESSION_INDEX + session_id].queue,
+				       work);
+	}
 #else
 	ARG_UNUSED(proto);
 	ARG_UNUSED(session_id);
@@ -332,6 +338,9 @@ static int zperf_init(void)
 	}
 	if (IS_ENABLED(CONFIG_NET_TCP)) {
 		zperf_tcp_uploader_init();
+	}
+	if (IS_ENABLED(CONFIG_NET_ZPERF_RAW_TX)) {
+		zperf_raw_uploader_init();
 	}
 
 	if (IS_ENABLED(CONFIG_NET_ZPERF_SERVER) ||

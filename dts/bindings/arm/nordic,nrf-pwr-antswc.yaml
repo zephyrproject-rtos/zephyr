@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+
+  Nordic nRF family pwr-antswc (Powering Antenna Switch)
+
+  Uses pwr-gpios to control the 1.8V supply for the antenna switch. This
+  pin is SoC specific and cannot be modified at a board level.
+  Relevant configuration is implemented in soc_early_init_hook().
+
+compatible: "nordic,nrf-pwr-antswc"
+
+include: base.yaml
+
+properties:
+  pwr-gpios:
+    type: phandle-array
+    description: |
+      GPIO specifier that controls power to the antenna switch controller.

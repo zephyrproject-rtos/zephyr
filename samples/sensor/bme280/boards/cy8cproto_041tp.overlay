@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+i2c1: &scb1 {
+	status = "okay";
+	compatible = "infineon,i2c";
+	clocks = <&peri_clk_div2>;
+	pinctrl-0 = <&p6_3_scb1_i2c_scl &p6_4_scb1_i2c_sda>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	bme280@76 {
+		status = "okay";
+		compatible = "bosch,bme280";
+		reg = <0x76>;
+		label = "BME280_I2C";
+	};
+};

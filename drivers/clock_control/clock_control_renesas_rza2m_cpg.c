@@ -18,7 +18,7 @@ static int clock_control_renesas_rza2m_on_off(const struct device *dev, clock_co
 		return -EINVAL;
 	}
 
-	int ret = -EINVAL;
+	int ret;
 	uint32_t *clock_id = (uint32_t *)sys;
 	uint32_t clk_module = RZA2M_GET_MODULE(*clock_id);
 
@@ -46,7 +46,7 @@ static int clock_control_renesas_rza2m_get_rate(const struct device *dev,
 		return -EINVAL;
 	}
 
-	int ret = -EINVAL;
+	int ret;
 	uint32_t *clock_id = (uint32_t *)sys;
 	enum rza2m_cpg_get_freq_src clk_src = RZA2M_GET_CLOCK_SRC(*clock_id);
 

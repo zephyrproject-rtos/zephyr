@@ -261,6 +261,15 @@
 				  : "memory");		\
 	} while (0)
 
+#define csr_swap(csr, val)					\
+({								\
+	unsigned long __swv = (unsigned long)(val);		\
+	__asm__ volatile ("csrrw %0, " STRINGIFY(csr) ", %1"	\
+			  : "=r" (__swv) : "rK" (__swv)		\
+			  : "memory");				\
+	__swv;							\
+})
+
 #ifdef CONFIG_RISCV_ISA_EXT_SMCSRIND
 
 static inline unsigned long icsr_read(unsigned int index)
@@ -275,20 +284,28 @@ static inline void icsr_write(unsigned int index, unsigned long value)
 	csr_write(MIREG, value);
 }
 
+static inline void icsr_set(unsigned int index, unsigned long mask)
+{
+	csr_write(MISELECT, index);
+	csr_set(MIREG, mask);
+}
+
+static inline void icsr_clear(unsigned int index, unsigned long mask)
+{
+	csr_write(MISELECT, index);
+	csr_clear(MIREG, mask);
+}
+
 static inline unsigned long icsr_read_set(unsigned int index, unsigned long mask)
 {
-	unsigned long val = icsr_read(index);
-
-	icsr_write(index, val | mask);
-	return val;
+	csr_write(MISELECT, index);
+	return csr_read_set(MIREG, mask);
 }
 
 static inline unsigned long icsr_read_clear(unsigned int index, unsigned long mask)
 {
-	unsigned long val = icsr_read(index);
-
-	icsr_write(index, val & ~mask);
-	return val;
+	csr_write(MISELECT, index);
+	return csr_read_clear(MIREG, mask);
 }
 
 #endif /* CONFIG_RISCV_ISA_EXT_SMCSRIND */

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/display/ili9xxx.h>
+#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 
 / {
@@ -27,7 +27,7 @@
 			reg = <0>;
 			width = <320>;
 			height = <240>;
-			pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB888>;
+			pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
 			rotation = <90>;
 			frmctr1 = [00 18];
 			pwctrl1 = [23 00];

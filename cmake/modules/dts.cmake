@@ -127,6 +127,9 @@ set(DTS_KCONFIG                 ${KCONFIG_BINARY_DIR}/Kconfig.dts)
 # modules.
 set(VENDOR_PREFIXES             dts/bindings/vendor-prefixes.txt)
 
+# Fetch variable from sysbuild which might be forcing a configuration (for variant build images)
+zephyr_get(DTS_SOURCE SYSBUILD LOCAL)
+
 if(NOT DEFINED DTS_SOURCE)
   zephyr_build_string(board_string SHORT shortened_board_string
                       BOARD ${BOARD} BOARD_QUALIFIERS ${BOARD_QUALIFIERS}
@@ -257,6 +260,9 @@ zephyr_dt_preprocess(
   INCLUDE_DIRECTORIES ${DTS_ROOT_SYSTEM_INCLUDE_DIRS}
   WORKING_DIRECTORY ${APPLICATION_SOURCE_DIR}
   )
+
+# Fetch variable from sysbuild which might be forcing a configuration (for variant build images)
+zephyr_get(DTS_DEPS SYSBUILD LOCAL)
 
 #
 # Make sure we re-run CMake if any devicetree sources or transitive

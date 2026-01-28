@@ -16,8 +16,8 @@ menuconfig MCUMGR_GRP_ENUM
 	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_2
 	select MCUMGR_SMP_CBOR_MIN_DECODING_LEVEL_3 if ZCBOR_CANONICAL
 	help
-	  Enables MCUmgr handlers for enumeration management. This allows
-	  for listing supported command groups.
+	  Enables MCUmgr handlers for enumeration management. This allows for listing supported
+	  command groups.
 
 if MCUMGR_GRP_ENUM
 

@@ -76,6 +76,32 @@ struct zperf_download_params {
 	char if_name[NET_IFNAMSIZ];
 };
 
+#ifdef CONFIG_NET_ZPERF_RAW_TX
+/**
+ * Raw TX upload parameters
+ *
+ * Buffer structure sent to driver:
+ * [User-provided header] + [Payload 'z']
+ *
+ * The user provides everything as a single header blob (vendor metadata,
+ * frame header like 802.11/Ethernet, etc.). Zperf appends 'z' payload
+ * bytes to reach the desired packet_size. This is generic and works
+ * with any frame format.
+ *
+ * Header bytes are transmitted exactly as provided - no byte order conversion
+ * is performed. Users must provide bytes in the format expected by their
+ * target driver/hardware.
+ */
+struct zperf_raw_upload_params {
+	uint32_t duration_ms;         /**< Duration of the test in milliseconds */
+	uint32_t rate_kbps;           /**< Target rate in kilobits per second */
+	uint16_t packet_size;         /**< Total packet size (header + payload) */
+	uint8_t *hdr;                 /**< Header bytes (vendor metadata + frame hdr) */
+	uint16_t hdr_len;             /**< Length of header in bytes */
+	int if_index;                 /**< Network interface index */
+};
+#endif /* CONFIG_NET_ZPERF_RAW_TX */
+
 /** @endcond */
 
 /** Performance results */
@@ -199,6 +225,35 @@ int zperf_udp_download_stop(void);
  * @return 0 if server was stopped successfully, a negative error code otherwise.
  */
 int zperf_tcp_download_stop(void);
+
+#ifdef CONFIG_NET_ZPERF_RAW_TX
+/**
+ * @brief Synchronous raw packet TX upload operation. The function blocks until
+ *        the upload is complete.
+ *
+ * @param param Upload parameters including custom header and destination MAC.
+ * @param result Session results.
+ *
+ * @return 0 if session completed successfully, a negative error code otherwise.
+ */
+int zperf_raw_upload(const struct zperf_raw_upload_params *param,
+		     struct zperf_results *result);
+
+/**
+ * @brief Asynchronous raw packet TX upload operation.
+ *
+ * @note Only one asynchronous raw TX upload can be performed at a time.
+ *
+ * @param param Upload parameters including custom header and destination MAC.
+ * @param callback Session results callback.
+ * @param user_data A pointer to the user data to be provided with the callback.
+ *
+ * @return 0 if session was scheduled successfully, a negative error code
+ *         otherwise.
+ */
+int zperf_raw_upload_async(const struct zperf_raw_upload_params *param,
+			   zperf_callback callback, void *user_data);
+#endif /* CONFIG_NET_ZPERF_RAW_TX */
 
 #ifdef __cplusplus
 }

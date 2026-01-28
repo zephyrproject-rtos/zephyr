@@ -5,8 +5,7 @@ family:
   series:
   - name: cv64a6
     socs:
-    - name: cv64a6_imafdc
-    - name: cv64a6_imac
+    - name: cv64a6
   - name: cv32a6
     socs:
     - name: cv32a6

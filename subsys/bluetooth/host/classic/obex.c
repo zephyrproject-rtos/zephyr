@@ -76,7 +76,7 @@ static int obex_transport_disconn(struct bt_obex *obex)
 	if (err) {
 		LOG_ERR("Fail to disconnect transport (err %d)", err);
 	}
-	return -EINVAL;
+	return err;
 }
 
 struct bt_obex_has_header {
@@ -219,8 +219,12 @@ static int obex_server_connect(struct bt_obex_server *server, uint16_t len, stru
 
 	if (mopl > server->obex->tx.mtu) {
 		LOG_WRN("MOPL exceeds MTU (%d > %d)", mopl, server->obex->tx.mtu);
-		rsp_code = BT_OBEX_RSP_CODE_PRECON_FAIL;
-		goto failed;
+		/* In mainstream mobile operating system settings, such as IPhone and Android,
+		 * MOPL is usually greater than the MTU of rfcomm or l2cap.
+		 * Therefore, the smaller value among them is selected as the final MOPL and
+		 * transmitted to the application by callback.
+		 */
+		mopl = server->obex->tx.mtu;
 	}
 
 	server->tx.mopl = mopl;
@@ -2753,7 +2757,13 @@ int bt_obex_add_header_end_body(struct net_buf *buf, uint16_t len, const uint8_t
 {
 	size_t total;
 
-	if (!buf || !body || !len) {
+	/*
+	 * OBEX Version 1.5, section 2.2.9 Body, End-of-Body
+	 * The `body` could be a NULL, so the `len` of the name could 0.
+	 * In some cases, the object body data is generated on the fly and the end cannot
+	 * be anticipated, so it is legal to send a zero length End-of-Body header.
+	 */
+	if ((buf == NULL) || ((len != 0) && (body == NULL))) {
 		LOG_WRN("Invalid parameter");
 		return -EINVAL;
 	}
@@ -3641,6 +3651,47 @@ int bt_obex_get_header_app_param(struct net_buf *buf, uint16_t *len, const uint8
 	*len = data.hdr.len;
 	*app_param = data.hdr.data;
 	return 0;
+}
+
+struct bt_obex_has_app_param {
+	uint8_t id;
+	bool found;
+};
+
+static bool bt_obex_has_app_param_cb(struct bt_obex_tlv *tlv, void *user_data)
+{
+	struct bt_obex_has_app_param *data = user_data;
+
+	if (tlv->type == data->id) {
+		data->found = true;
+		return false;
+	}
+	return true;
+}
+
+bool bt_obex_has_app_param(struct net_buf *buf, uint8_t id)
+{
+	struct bt_obex_has_app_param ap;
+	uint16_t len = 0;
+	const uint8_t *data = NULL;
+	int err;
+
+	if (bt_obex_get_header_app_param(buf, &len, &data) != 0) {
+		return false;
+	}
+	if (len == 0U || data == NULL) {
+		return false;
+	}
+
+	ap.id = id;
+	ap.found = false;
+
+	err = bt_obex_tlv_parse(len, data, bt_obex_has_app_param_cb, &ap);
+	if (err != 0) {
+		return false;
+	}
+
+	return ap.found;
 }
 
 int bt_obex_get_header_auth_challenge(struct net_buf *buf, uint16_t *len, const uint8_t **auth)

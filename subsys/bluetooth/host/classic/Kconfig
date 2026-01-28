@@ -44,6 +44,16 @@ config BT_MAX_SCO_CONN
 	  Maximum number of simultaneous Bluetooth synchronous connections
 	  supported. The minimum (and default) number is 1.
 
+config BT_ACCEPT_CONN_AS_CENTRAL
+	bool "Accept a new incoming ACL connection request as central role"
+	help
+	  By default, the device will accept the ACL connection request as the peripheral role.
+	  If the option is enabled, the device will accept the ACL connection request as the
+	  central role. Normally, the HCI Role Change event will be generated after the HCI command
+	  Accept Connection Request is succeeded.
+	  The kconfig option only works when calling function bt_br_set_discoverable to enable
+	  connectable mode with a NULL callback parameter.
+
 config BT_L2CAP_RX_FLUSH_TO
 	hex "Minimum Bluetooth L2CAP RX flush Timeout accepted in milliseconds"
 	default 0x0001 if BT_A2DP_SINK
@@ -685,7 +695,10 @@ config BT_GOEP_L2CAP_MTU
 	# For GOEP over L2CAP, including,
 	# 255 bytes - the minimum MTU of GOEP,
 	# 4 bytes - L2CAP Header,
-	range 259 BT_BUF_ACL_RX_SIZE
+	# 6 bytes - Field length of L2CAP I-frame, including,
+	#   4 bytes - extended control field,
+	#   2 bytes - FCS field.
+	range 265 BT_BUF_ACL_RX_SIZE
 	help
 	  Maximum size of L2CAP MTU for GOEP.
 	  RX MTU will be truncated to account for ACL data and type overhead, and the L2CAP PDU

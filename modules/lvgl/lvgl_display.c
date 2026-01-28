@@ -90,7 +90,7 @@ int set_lvgl_rendering_cb(lv_display_t *display)
 					display);
 		break;
 	case PIXEL_FORMAT_RGB_565:
-	case PIXEL_FORMAT_BGR_565:
+	case PIXEL_FORMAT_RGB_565X:
 		lv_display_set_color_format(display, LV_COLOR_FORMAT_RGB565);
 		lv_display_set_flush_cb(display, lvgl_flush_cb_16bit);
 		lv_display_add_event_cb(display, lvgl_rounder_cb, LV_EVENT_INVALIDATE_AREA,

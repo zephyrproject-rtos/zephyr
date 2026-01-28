@@ -88,10 +88,10 @@ int main(void)
 	k_thread_create(&thread_data, thread_stack, CONFIG_MAIN_APP_TASK_STACK_SIZE, app_task,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
 
-#if defined(CONFIG_SOC_MPS2_AN521) || defined(CONFIG_SOC_V2M_MUSCA_B1)
+#if defined(CONFIG_SOC_AN521) || defined(CONFIG_SOC_MUSCA_B1)
 	wakeup_cpu1();
 	k_msleep(500);
-#endif /* #if defined(CONFIG_SOC_MPS2_AN521) */
+#endif /* #if defined(CONFIG_SOC_AN521) */
 	return 0;
 }
 

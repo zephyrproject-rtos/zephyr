@@ -6,18 +6,6 @@ description: |
     a .dts or .dtsi file you may include lsm6dsv80x.h and use the macros
     defined there.
 
-    Example:
-    #include <zephyr/dt-bindings/sensor/lsm6dsv80x.h>
-
-    lsm6dsv80x: lsm6dsv80x@0 {
-      ...
-
-      accel-range = <LSM6DSV80X_DT_FS_8G>;
-      accel-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
-      gyro-range = <LSM6DSV80X_DT_FS_4000DPS>;
-      gyro-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
-    };
-
 include: st,lsm6dsvxxx-common.yaml
 
 properties:
@@ -72,3 +60,16 @@ properties:
       - 0x5 # LSM6DSV80X_DT_FS_4000DPS (140 mdps/LSB)
 
     enum: [0x0, 0x1, 0x2, 0x3, 0x4, 0x5]
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/lsm6dsv80x.h>
+
+    lsm6dsv80x: lsm6dsv80x@0 {
+      /* ... */
+
+      accel-range = <LSM6DSV80X_DT_FS_8G>;
+      accel-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
+      gyro-range = <LSM6DSV80X_DT_FS_4000DPS>;
+      gyro-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
+    };

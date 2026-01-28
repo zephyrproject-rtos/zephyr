@@ -169,13 +169,13 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 19807014b69b2dc24edb7a1b49c915fd58083527
+      revision: 2e6348fd9534226fc0829915e0c15d780855a012
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
         - hal
     - name: hal_ethos_u
-      revision: fd5d5b7b36b209f2c48635de5d6c9b8dbf0bfff0
+      revision: 03567073fe2b9802c0bd73f9534da6f8a03924d1
       path: modules/hal/ethos_u
       groups:
         - hal
@@ -200,17 +200,17 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 248eadcacf976bbd27f1c0bc0dd3f11d8ec8657e
+      revision: daad38f2e9f6c641849010d74fe02ea736d4d921
       path: modules/hal/nordic
       groups:
         - hal
     - name: hal_nuvoton
-      revision: 602db600cae5275ab0946de696a6068d769a6b3d
+      revision: 8f1bf948a94cf59926ea7b686985e1d6c6f954c7
       path: modules/hal/nuvoton
       groups:
         - hal
     - name: hal_nxp
-      revision: 05702fcda8247876970f198669b72e3a8c99f6e5
+      revision: 796e242aabb37f50de0d90c44249e36d8de4268d
       path: modules/hal/nxp
       groups:
         - hal
@@ -231,12 +231,12 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 6894582f2d7ff750caa60d60dd5ccac7927b72e4
+      revision: 14f3c2bdd307009eaf9520cdfda2cbabb81e8d10
       groups:
         - hal
     - name: hal_rpi_pico
       path: modules/hal/rpi_pico
-      revision: 09e957522da60581cf7958b31f8e625d969c69a5
+      revision: 562b41e10a1d8b1a761b253b107c5c6a84cf4535
       groups:
         - hal
     - name: hal_sifli
@@ -255,7 +255,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: ec0fe4a09a5bbf0e482ab1f4bd42d66131c64369
+      revision: e05bb4707857ecf4344c29a9407aaa4227407546
       path: modules/hal/stm32
       groups:
         - hal
@@ -291,7 +291,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 1a2fbb7910f23822a785294eab9f4922c6119711
+      revision: 7c5d886f4b1afd6d00192e346268f03f5f44354c
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
@@ -318,7 +318,7 @@ manifest:
       revision: fb00b383072518c918e2258b0916c996f2d4eebe
       path: modules/lib/loramac-node
     - name: lvgl
-      revision: c016f72d4c125098287be5e83c0f1abed4706ee5
+      revision: 94ae6c0535aa6ac4b08a75f4ae2c3a08cacb5c41
       path: modules/lib/gui/lvgl
     - name: mbedtls
       revision: c5b06d89c9c498d8fc8659ce31f7e53137b6270f
@@ -326,7 +326,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 9ac72969f281491d677e669d053281fc2d538ed4
+      revision: cb6e4ceaacd4dfe1e3cdeb92c7f5680f62967837
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -344,16 +344,16 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: 0f0c43748111c65800c6920f1c0690676423a351
+      revision: cf40f6dc7fc441ee6848ea2e177c4522588c1b8c
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: eaf223da0c3f987caa1156cbed54b513bee4ba37
+      revision: 29afb11a512787bc68e2afd58c9dfde4bb4d5dc4
       path: modules/lib/nrf_wifi
     - name: open-amp
       revision: 5efe7974f9546582e99f5a842a816ea4b65f5227
       path: modules/lib/open-amp
     - name: openthread
-      revision: 2bc7712f57af22058770d1ef131ad3da79a0c764
+      revision: 9a40380a47b2493cfcd172b362704581e9aef47f
       path: modules/lib/openthread
     - name: percepio
       path: modules/debug/percepio
@@ -364,7 +364,7 @@ manifest:
       path: modules/lib/picolibc
       revision: ca8b6ebba5226a75545e57a140443168a26ba664
     - name: psa-arch-tests
-      revision: 941cd8436a2e0f1da9d8584b83a403930826899d
+      revision: d70b2c7072cedf0f14724211d2122ef07b98720c
       path: modules/tee/tf-m/psa-arch-tests
       groups:
         - testing
@@ -386,7 +386,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: e9ea674ed02e8ee00548f1bb994d52df23c8068d
+      revision: 6788687e013733d12f015b5d45b214019dea58f7
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
@@ -394,7 +394,7 @@ manifest:
       revision: ac80c3bf2b88deec86d129654fbde09761582342
       path: modules/lib/uoscore-uedhoc
     - name: zcbor
-      revision: 9b07780aca6fb21f82a241ba386ad9b379809337
+      revision: 9164bd18dcd88ff9d9ef98279501fc1093571017
       path: modules/lib/zcbor
   # zephyr-keep-sorted-stop
 

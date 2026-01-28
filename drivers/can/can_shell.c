@@ -1141,72 +1141,100 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_can_device_name_mode, cmd_can_device_name_mode);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_can_filter_cmds,
 	SHELL_CMD_ARG(add, &dsub_can_device_name,
-		"Add rx filter\n"
-		"Usage: can filter add <device> [-e] <CAN ID> [CAN ID mask]\n"
-		"-e  use extended (29-bit) CAN ID/CAN ID mask\n",
+		SHELL_HELP(
+			"Add rx filter",
+			"<device> [-e] <CAN ID> [CAN ID mask]\n"
+			"-e  use extended (29-bit) CAN ID/CAN ID mask"
+		),
 		cmd_can_filter_add, 3, 2),
 	SHELL_CMD_ARG(remove, &dsub_can_device_name,
-		"Remove rx filter\n"
-		"Usage: can filter remove <device> <filter_id>",
+		SHELL_HELP(
+			"Remove rx filter",
+			"<device> <filter_id>"
+		),
 		cmd_can_filter_remove, 3, 0),
 	SHELL_SUBCMD_SET_END
 );
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_can_cmds,
 	SHELL_CMD_ARG(start, &dsub_can_device_name,
-		"Start CAN controller\n"
-		"Usage: can start <device>",
+		SHELL_HELP(
+			"Start CAN controller",
+			"<device>"
+		),
 		cmd_can_start, 2, 0),
 	SHELL_CMD_ARG(stop, &dsub_can_device_name,
-		"Stop CAN controller\n"
-		"Usage: can stop <device>",
+		SHELL_HELP(
+			"Stop CAN controller",
+			"<device>"
+		),
 		cmd_can_stop, 2, 0),
 	SHELL_CMD_ARG(show, &dsub_can_device_name,
-		"Show CAN controller information\n"
-		"Usage: can show <device>",
+		SHELL_HELP(
+			"Show CAN controller information",
+			"<device>"
+		),
 		cmd_can_show, 2, 0),
 	SHELL_CMD_ARG(bitrate, &dsub_can_device_name,
-		"Set CAN controller bitrate (sample point and SJW optional)\n"
-		"Usage: can bitrate <device> <bitrate> [sample point] [sjw]",
+		SHELL_HELP(
+			"Set CAN controller bitrate (sample point and SJW optional)",
+			"<device> <bitrate> [sample point] [sjw]"
+		),
 		cmd_can_bitrate_set, 3, 2),
 	SHELL_COND_CMD_ARG(CONFIG_CAN_FD_MODE,
 		dbitrate, &dsub_can_device_name,
-		"Set CAN controller data phase bitrate (sample point and SJW optional)\n"
-		"Usage: can dbitrate <device> <data phase bitrate> [sample point] [sjw]",
+		SHELL_HELP(
+			"Set CAN controller data phase bitrate (sample point and SJW optional)",
+			"<device> <data phase bitrate> [sample point] [sjw]"
+		),
 		cmd_can_dbitrate_set, 3, 2),
 	SHELL_CMD_ARG(timing, &dsub_can_device_name,
-		"Set CAN controller timing\n"
-		"Usage: can timing <device> <sjw> <prop_seg> <phase_seg1> <phase_seg2> <prescaler>",
+		SHELL_HELP(
+			"Set CAN controller timing",
+			"<device> <sjw> <prop_seg> <phase_seg1> <phase_seg2> <prescaler>"
+		),
 		cmd_can_timing_set, 7, 0),
 	SHELL_COND_CMD_ARG(CONFIG_CAN_FD_MODE,
 		dtiming, &dsub_can_device_name,
-		"Set CAN controller data phase timing\n"
-		"Usage: can dtiming <device> <sjw> <prop_seg> <phase_seg1> <phase_seg2> <prescaler>",
+		SHELL_HELP(
+			"Set CAN controller data phase timing",
+			"<device> <sjw> <prop_seg> <phase_seg1> <phase_seg2> <prescaler>"
+		),
 		cmd_can_dtiming_set, 7, 0),
 	SHELL_CMD_ARG(mode, &dsub_can_device_name_mode,
-		"Set CAN controller mode\n"
-		"Usage: can mode <device> <mode> [mode] [mode] [...]",
+		SHELL_HELP(
+			"Set CAN controller mode",
+			"<device> <mode> [mode] [mode] [...]"
+		),
 		cmd_can_mode_set, 3, SHELL_OPT_ARG_CHECK_SKIP),
 	SHELL_CMD_ARG(send, &dsub_can_device_name,
-		"Enqueue a CAN frame for sending\n"
-		"Usage: can send <device> [-e] [-r] [-f] [-b] <CAN ID> [data] [...]\n"
-		"-e  use extended (29-bit) CAN ID\n"
-		"-r  send Remote Transmission Request (RTR) frame\n"
-		"-f  use CAN FD frame format\n"
-		"-b  use CAN FD Bit Rate Switching (BRS)",
+		SHELL_HELP(
+			"Enqueue a CAN frame for sending",
+			"<device> [-e] [-r] [-f] [-b] <CAN ID> [data] [...]\n"
+			"-e  use extended (29-bit) CAN ID\n"
+			"-r  send Remote Transmission Request (RTR) frame\n"
+			"-f  use CAN FD frame format\n"
+			"-b  use CAN FD Bit Rate Switching (BRS)"
+		),
 		cmd_can_send, 3, SHELL_OPT_ARG_CHECK_SKIP),
 	SHELL_CMD(filter, &sub_can_filter_cmds,
-		"CAN rx filter commands\n"
-		"Usage: can filter <add|remove> <device> ...",
+		SHELL_HELP(
+			"CAN rx filter commands",
+			"<add|remove> <device> ..."
+		),
 		NULL),
 	SHELL_COND_CMD_ARG(CONFIG_CAN_MANUAL_RECOVERY_MODE,
 		recover, &dsub_can_device_name,
-		"Manually recover CAN controller from bus-off state\n"
-		"Usage: can recover <device> [timeout ms]",
+		SHELL_HELP(
+			"Manually recover CAN controller from bus-off state",
+			"<device> [timeout ms]"
+		),
 		cmd_can_recover, 2, 1),
 	SHELL_CMD_ARG(dump, &dsub_can_device_name,
-		"Dump all CAN controller RX frames\n"
-		"Usage: can dump <device>",
+		SHELL_HELP(
+			"Dump all CAN controller RX frames",
+			"<device>"
+		),
 		cmd_can_dump, 2, 0),
 	SHELL_SUBCMD_SET_END
 );

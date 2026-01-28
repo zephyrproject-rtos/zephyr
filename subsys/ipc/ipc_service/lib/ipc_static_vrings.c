@@ -103,7 +103,7 @@ static int vq_setup(struct ipc_static_vrings *vr, unsigned int role)
 	return 0;
 }
 
-static int vq_teardown(struct ipc_static_vrings *vr, unsigned int role)
+static void vq_teardown(struct ipc_static_vrings *vr, unsigned int role)
 {
 	memset(&vr->vdev, 0, sizeof(struct virtio_device));
 
@@ -112,8 +112,6 @@ static int vq_teardown(struct ipc_static_vrings *vr, unsigned int role)
 
 	virtqueue_free(vr->vq[RPMSG_VQ_1]);
 	virtqueue_free(vr->vq[RPMSG_VQ_0]);
-
-	return 0;
 }
 
 int ipc_static_vrings_init(struct ipc_static_vrings *vr, unsigned int role)
@@ -140,12 +138,8 @@ int ipc_static_vrings_init(struct ipc_static_vrings *vr, unsigned int role)
 
 int ipc_static_vrings_deinit(struct ipc_static_vrings *vr, unsigned int role)
 {
-	int err;
 
-	err = vq_teardown(vr, role);
-	if (err != 0) {
-		return err;
-	}
+	vq_teardown(vr, role);
 
 	metal_io_finish(&vr->shm_io);
 

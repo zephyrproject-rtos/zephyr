@@ -65,7 +65,7 @@ int main(void)
 		return 0;
 	}
 
-#if defined(CONFIG_LORAMAC_REGION_EU868)
+#if defined(CONFIG_LORAWAN_REGION_EU868)
 	/* If more than one region Kconfig is selected, app should set region
 	 * before calling lorawan_start()
 	 */

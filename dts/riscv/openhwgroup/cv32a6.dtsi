@@ -21,8 +21,9 @@
 			clock-frequency = <DT_FREQ_M(50)>;
 			timebase-frequency = <DT_FREQ_M(25)>;
 			device_type = "cpu";
-			compatible = "openhwgroup,cva6";
-			riscv,isa = "rv32ima";
+			compatible = "openhwgroup,cva6", "riscv";
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "zicsr", "zifencei";
 			/* overwrite in board configuration if sv32 MMU is enabled */
 			mmu-type = "riscv,none";
 			reg = <0>;

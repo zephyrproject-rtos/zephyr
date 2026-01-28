@@ -69,9 +69,10 @@ static inline void send_external_midi1(const struct midi_ump ump)
 }
 #endif /* DT_NODE_EXISTS(SERIAL_NODE) */
 
+#define MIDI2_NODE DT_NODELABEL(midi2)
 
 static const struct ump_endpoint_dt_spec ump_ep_dt =
-	UMP_ENDPOINT_DT_SPEC_GET(DT_NODELABEL(midi2));
+	UMP_ENDPOINT_DT_SPEC_GET(MIDI2_NODE);
 
 static inline void handle_ump_stream(struct netmidi2_session *session,
 				     const struct midi_ump ump)
@@ -96,7 +97,7 @@ static void netmidi2_callback(struct netmidi2_session *session,
 
 #if defined(CONFIG_NET_SAMPLE_MIDI2_AUTH_NONE)
 /* Simple Network MIDI 2.0 endpoint without authentication */
-NETMIDI2_EP_DEFINE(midi_server, ump_ep_dt.name, NULL, 0);
+NETMIDI2_EP_DEFINE(midi_server, DT_PROP_OR(MIDI2_NODE, label, NULL), NULL, 0);
 
 #elif defined(CONFIG_NET_SAMPLE_MIDI2_AUTH_SHARED_SECRET)
 /* Network MIDI 2.0 endpoint with shared secret authentication */
@@ -105,7 +106,7 @@ BUILD_ASSERT(
 	"CONFIG_NET_SAMPLE_MIDI2_SHARED_SECRET must be not empty"
 );
 
-NETMIDI2_EP_DEFINE_WITH_AUTH(midi_server, ump_ep_dt.name, NULL, 0,
+NETMIDI2_EP_DEFINE_WITH_AUTH(midi_server, DT_PROP_OR(MIDI2_NODE, label, NULL), NULL, 0,
 	CONFIG_NET_SAMPLE_MIDI2_SHARED_SECRET);
 
 #elif defined(CONFIG_NET_SAMPLE_MIDI2_AUTH_USER_PASSWORD)
@@ -119,7 +120,7 @@ BUILD_ASSERT(
 	"CONFIG_NET_SAMPLE_MIDI2_PASSWORD must be not empty"
 );
 
-NETMIDI2_EP_DEFINE_WITH_USERS(midi_server, ump_ep_dt.name, NULL, 0,
+NETMIDI2_EP_DEFINE_WITH_USERS(midi_server, DT_PROP_OR(MIDI2_NODE, label, NULL), NULL, 0,
 	{.name = CONFIG_NET_SAMPLE_MIDI2_USERNAME,
 	 .password = CONFIG_NET_SAMPLE_MIDI2_PASSWORD});
 

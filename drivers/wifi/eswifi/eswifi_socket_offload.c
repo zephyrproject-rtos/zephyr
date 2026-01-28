@@ -288,6 +288,23 @@ static ssize_t eswifi_socket_send(void *obj, const void *buf, size_t len,
 	snprintk(eswifi->buf, sizeof(eswifi->buf), "S3=%u\r", len);
 	offset = strlen(eswifi->buf);
 
+	/* Check for overflow */
+	if (offset + len > sizeof(eswifi->buf)) {
+		if (socket->type == ESWIFI_TRANSPORT_TCP ||
+		    socket->type == ESWIFI_TRANSPORT_TCP_SSL) {
+			/* Stream socket, just send as much as possible. */
+			len = sizeof(eswifi->buf) - offset;
+			/* Recalculate the header. */
+			snprintk(eswifi->buf, sizeof(eswifi->buf), "S3=%u\r", len);
+			offset = strlen(eswifi->buf);
+		} else {
+			/* Datagram socket, report an error. */
+			errno = EMSGSIZE;
+			ret = -1;
+			goto out;
+		}
+	}
+
 	/* copy payload */
 	memcpy(&eswifi->buf[offset], buf, len);
 	offset += len;
@@ -301,6 +318,7 @@ static ssize_t eswifi_socket_send(void *obj, const void *buf, size_t len,
 		ret = len;
 	}
 
+out:
 	eswifi_unlock(eswifi);
 	return ret;
 }
@@ -701,7 +719,7 @@ static int eswifi_off_getaddrinfo(const char *node, const char *service,
 	}
 
 	/* Allocate out res (addrinfo) struct.	Just one. */
-	*res = calloc(1, sizeof(struct zsock_addrinfo));
+	*res = k_calloc(1, sizeof(struct zsock_addrinfo));
 	ai = *res;
 	if (!ai) {
 		err = DNS_EAI_MEMORY;
@@ -709,9 +727,9 @@ static int eswifi_off_getaddrinfo(const char *node, const char *service,
 	}
 
 	/* Now, alloc the embedded net_sockaddr struct: */
-	ai_addr = calloc(1, sizeof(*ai_addr));
+	ai_addr = k_calloc(1, sizeof(*ai_addr));
 	if (!ai_addr) {
-		free(*res);
+		k_free(*res);
 		err = DNS_EAI_MEMORY;
 		goto done_unlock;
 	}
@@ -724,8 +742,8 @@ static int eswifi_off_getaddrinfo(const char *node, const char *service,
 	ai_addr->sin_port = net_htons(port);
 
 	if (!net_ipaddr_parse(rsp, strlen(rsp), (struct net_sockaddr *)ai_addr)) {
-		free(ai_addr);
-		free(*res);
+		k_free(ai_addr);
+		k_free(*res);
 		err = DNS_EAI_FAIL;
 		goto done_unlock;
 	}
@@ -743,8 +761,8 @@ static void eswifi_off_freeaddrinfo(struct zsock_addrinfo *res)
 {
 	__ASSERT_NO_MSG(res);
 
-	free(res->ai_addr);
-	free(res);
+	k_free(res->ai_addr);
+	k_free(res);
 }
 
 const struct socket_dns_offload eswifi_dns_ops = {

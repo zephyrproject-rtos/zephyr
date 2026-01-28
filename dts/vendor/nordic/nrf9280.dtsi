@@ -38,11 +38,12 @@
 		};
 
 		cpuppr: cpu@d {
-			compatible = "nordic,vpr";
+			compatible = "nordic,vpr", "riscv";
 			reg = <13>;
 			device_type = "cpu";
 			clock-frequency = <DT_FREQ_M(16)>;
-			riscv,isa = "rv32emc";
+			riscv,isa-base = "rv32e";
+			riscv,isa-extensions = "e", "m", "c", "zicsr";
 			nordic,bus-width = <32>;
 
 			cpuppr_vevif_rx: mailbox {

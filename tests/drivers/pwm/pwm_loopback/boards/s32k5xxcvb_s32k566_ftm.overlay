@@ -1,0 +1,37 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&lpe_ftm 0 0 PWM_POLARITY_NORMAL>,
+		       <&lpe_ftm 4 0 PWM_POLARITY_NORMAL>;
+	};
+};
+
+&pinctrl {
+	lpe_ftm_default: lpe_ftm_default {
+		group0 {
+			pinmux = <PK13_LPE_FTM_CH0_O>; /* GPIO173 - J318 - P4*/
+			output-enable;
+		};
+
+		group1 {
+			pinmux = <PK7_LPE_FTM_CH4_I>; /* GPIO167 - J405 - D1 */
+			input-enable;
+		};
+	};
+};
+
+&lpe_ftm {
+	pinctrl-0 = <&lpe_ftm_default>;
+	pinctrl-names = "default";
+	clock-source = "system";
+	prescaler = <128>;
+	status = "okay";
+};

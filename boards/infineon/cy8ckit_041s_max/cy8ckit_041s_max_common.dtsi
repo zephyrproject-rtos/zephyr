@@ -1,0 +1,68 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "cy8ckit_041s_max-pinctrl.dtsi"
+
+uart2: &scb2 {
+	compatible = "infineon,uart";
+	status = "okay";
+	current-speed = <115200>;
+	clocks = <&peri_clk_div1>;
+	pinctrl-0 = <&p0_5_scb2_uart_tx &p0_4_scb2_uart_rx>;
+	pinctrl-names = "default";
+};
+
+&peri_clk_div0 {
+	status = "okay";
+	resource-type = <IFX_RSC_SCB>;
+	resource-instance = <0>;
+};
+
+&peri_clk_div1 {
+	status = "okay";
+	resource-type = <IFX_RSC_SCB>;
+	resource-instance = <2>;
+};
+
+&peri_clk_div2 {
+	status = "okay";
+	resource-type = <IFX_RSC_SCB>;
+	resource-instance = <1>;
+};
+
+&peri_clk_div3 {
+	status = "okay";
+	resource-type = <IFX_RSC_TCPWM>;
+	resource-instance = <0>;
+	clock-div = <11500>;
+};
+
+/*
+ * Note : use IFX_PATH_PSOC4_IMO for internal main oscillator as src
+ *	  use IFX_PATH_PSOC4_EXT for External clock as src
+ */
+&clk_hf {
+	status = "okay";
+	source-path = <IFX_PATH_PSOC4_IMO>;
+};
+
+/*
+ * Note : use IFX_PATH_PSOC4_PUMP_GND for No clock, connect to gnd
+ *	  use IFX_PATH_PSOC4_PUMP_IMO for main IMO pump output
+ *        use IFX_PATH_PSOC4_PUMP_HFCLK for clk_hf pump
+ *
+ * usage : The pump clock can be used for the analog pump
+ */
+&clk_pump {
+	status = "okay";
+	source-path = <IFX_PATH_PSOC4_PUMP_GND>;
+};
+
+&gpio_prt7 {
+	status = "okay";
+};

@@ -282,6 +282,13 @@ config NET_NATIVE_OFFLOADED_SOCKETS_CONNECTIVITY_SIM_AUTO_CONNECT
 	  network interface has been brought up. This option sets the default value, the option has
 	  a corresponding flag that can be set at run time by calling conn_mgr_if_set_flag().
 
+config HEAP_MEM_POOL_ADD_SIZE_NET_NATIVE_SOCKETS_GETADDRINFO
+	# Defaults to heap memory required for 8 zsock_addrinfo_wrap structures.
+	# Single queries have been observed to return 6 results.
+	# Excessive memory consumption is not a concern for native sockets.
+	int
+	default 2304
+
 endif # NET_NATIVE_OFFLOADED_SOCKETS
 
 endif # NET_DRIVERS

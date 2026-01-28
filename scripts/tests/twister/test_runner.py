@@ -1648,7 +1648,7 @@ def test_projectbuilder_determine_testcases(
     instance_mock.testsuite.id = 'dummy.test_id'
     instance_mock.testsuite.ztest_suite_names = []
     instance_mock.testsuite.detailed_test_id = detailed_id
-    instance_mock.compose_case_name = mock.Mock(side_effect=iter(added_tcs))
+    instance_mock.testsuite.compose_case_name = mock.Mock(side_effect=iter(added_tcs))
 
     pb = ProjectBuilder(instance_mock, mocked_env, mocked_jobserver)
 

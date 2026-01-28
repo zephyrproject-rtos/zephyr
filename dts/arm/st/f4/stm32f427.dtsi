@@ -12,7 +12,7 @@
 / {
 	clocks {
 		pllsai: pllsai {
-			compatible = "st,stm32fx-pllsai-clock";
+			compatible = "st,stm32fx-pll-clock";
 			#clock-cells = <0>;
 			status = "disabled";
 		};

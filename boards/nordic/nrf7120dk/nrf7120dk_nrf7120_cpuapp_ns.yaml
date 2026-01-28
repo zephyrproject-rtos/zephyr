@@ -1,0 +1,22 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: nrf7120dk/nrf7120/cpuapp/ns
+name: nRF7120-DK-nRF7120-Application-Non-Secure
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - xtools
+  - zephyr
+ram: 896
+flash: 512
+supported:
+  - adc
+  - gpio
+  - i2c
+  - spi
+  - counter
+  - watchdog
+  - adc
+  - i2s

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 set(POSIX_VERSION 200809L)
+set(XOPEN_VERSION 700)
 set(GEN_DIR ${ZEPHYR_BINARY_DIR}/include/generated)
 
 zephyr_compile_definitions(-D_POSIX_C_SOURCE=${POSIX_VERSION})
@@ -165,13 +166,18 @@ if(NOT CONFIG_TC_PROVIDES_XSI_REALTIME)
   zephyr_library_sources_ifdef(CONFIG_POSIX_SHARED_MEMORY_OBJECTS shm.c)
 endif()
 
-zephyr_library_sources_ifdef(CONFIG_XOPEN_STREAMS stropts.c)
-
 if(NOT CONFIG_TC_PROVIDES_XSI_SINGLE_PROCESS)
   zephyr_library_sources_ifdef(CONFIG_XSI_SINGLE_PROCESS
     env_common.c
     xsi_single_process.c
   )
+endif()
+
+if(NOT CONFIG_TC_PROVIDES_XSI_STREAMS)
+  zephyr_library_sources_ifdef(CONFIG_XSI_STREAMS stropts.c)
+endif()
+if(CONFIG_XSI_STREAMS)
+  zephyr_compile_definitions(-D_XOPEN_STREAMS=${XOPEN_VERSION})
 endif()
 
 if(NOT CONFIG_TC_PROVIDES_XSI_SYSTEM_LOGGING)

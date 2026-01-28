@@ -13,6 +13,7 @@ tests:
       - nrf54h20dk/nrf54h20/cpurad
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
       - nrf9280pdk/nrf9280/cpuapp
       - nrf9280pdk/nrf9280/cpurad
       - ophelia4ev/nrf54l15/cpuapp
@@ -20,6 +21,7 @@ tests:
       - xg27_dk2602a
       - raytac_an54lq_db_15/nrf54l15/cpuapp
       - sam_e54_xpro
+      - pic32cx_sg41_cult
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
       - ophelia4ev/nrf54l15/cpuapp

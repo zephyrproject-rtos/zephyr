@@ -14,19 +14,15 @@ config SOC_SERIES_KINETIS_K6X
 
 config SOC_MK64F12
 	select HAS_MCUX
-	select HAS_MCUX_SIM
 	select HAS_OSC
 	select HAS_MCG
 	select CPU_HAS_FPU
-	select HAS_MCUX_RCM
 
 config SOC_MK66F18
 	select HAS_MCUX
-	select HAS_MCUX_SIM
 	select HAS_OSC
 	select HAS_MCG
 	select CPU_HAS_FPU
-	select HAS_MCUX_RCM
 
 
 if SOC_MK66F18

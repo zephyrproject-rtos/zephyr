@@ -1100,7 +1100,7 @@ static int bt_l2cap_br_pack_s_frame_header(struct bt_l2cap_br_chan *br_chan, str
 }
 
 static void bt_l2cap_br_pack_i_frame_header(struct bt_l2cap_br_chan *br_chan, struct net_buf *buf,
-					    uint8_t pdu_len, uint8_t sar, uint8_t tx_seq)
+					    uint16_t pdu_len, uint8_t sar, uint8_t tx_seq)
 {
 	struct bt_l2cap_hdr *hdr;
 	uint16_t std_control;
@@ -4126,8 +4126,18 @@ static uint16_t l2cap_br_conf_opt_ret_fc(struct bt_l2cap_chan *chan, struct net_
 		uint16_t mps = CONFIG_BT_L2CAP_MPS;
 
 		if (sys_le16_to_cpu(opt_ret_fc->mps) > br_chan->tx.mtu) {
+			/*
+			 * There is an issue that the mps is bigger than tx mtu sent from the peer
+			 * device. The L2CAP configuration request from the peer device contains
+			 * a mps value that is bigger its tx mtu (sent in the same
+			 * L2CAP_CONFIGURATION_REQ packet or omitted). The issue can occur when
+			 * connecting to an iphone with the enhanced retransmission mode if the
+			 * test profile is MAP or PBAP.
+			 *
+			 * Just adjust it to the tx mtu, and give the suggested value in the
+			 * L2CAP_CONFIGURATION_RSP packet.
+			 */
 			opt_ret_fc->mps = sys_cpu_to_le16(br_chan->tx.mtu);
-			accept = false;
 		}
 
 		if (sys_le16_to_cpu(opt_ret_fc->mps) > mps) {
@@ -6195,8 +6205,6 @@ BT_L2CAP_BR_CHANNEL_DEFINE(br_fixed_chan, BT_L2CAP_CID_BR_SIG, l2cap_br_accept);
 
 void bt_l2cap_br_init(void)
 {
-	sys_slist_init(&br_servers);
-
 	if (IS_ENABLED(CONFIG_BT_RFCOMM)) {
 		bt_rfcomm_init();
 	}

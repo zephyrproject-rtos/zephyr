@@ -62,6 +62,7 @@
 		};
 
 		rng: rng@48021800 {
+			nist-config = <0xf00d00>;
 			health-test-magic = <0x17590abc>;
 			health-test-config = <0xaa74>;
 		};

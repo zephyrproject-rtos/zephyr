@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if("${SB_CONFIG_REMOTE_BOARD}" STREQUAL "")
-  message(FATAL_ERROR "Target ${BOARD}${BOARD_QUALIFIERS} not supported for this sample. "
+  message(FATAL_ERROR "Target ${BOARD}/${BOARD_QUALIFIERS} not supported for this sample. "
     "There is no remote board selected in Kconfig.sysbuild")
 endif()
 

@@ -14,7 +14,6 @@
 #include "rsi_rom_clks.h"
 #include "rsi_sysrtc.h"
 #include "rsi_pll.h"
-#include "rsi_adc.h"
 #include "clock_update.h"
 #include "sl_si91x_clock_manager.h"
 
@@ -106,10 +105,16 @@ static int siwx91x_clock_on(const struct device *dev, clock_control_subsys_t sys
 		RSI_ULPSS_PeripheralEnable(ULPCLK, ULP_I2S_CLK, ENABLE_STATIC_CLK);
 		break;
 	case SIWX91X_CLK_ADC:
-		RSI_ADC_PowerControl(ADC_POWER_ON);
+		/* Warning, DAC also use these clocks */
+		RSI_IPMU_PowerGateSet(AUXADC_PG_ENB);
+		RSI_PS_UlpssPeriPowerUp(ULPSS_PWRGATE_ULP_AUX);
+		RSI_ULPSS_AuxClkConfig(ULPCLK, ENABLE_STATIC_CLK, ULP_AUX_REF_CLK);
 		break;
 	case SIWX91X_CLK_GPDMA0:
 		RSI_CLK_PeripheralClkEnable(M4CLK, RPDMA_CLK, ENABLE_STATIC_CLK);
+		break;
+	case SIWX91X_CLK_RNG:
+		RSI_CLK_PeripheralClkEnable1(M4CLK, HWRNG_PCLK_ENABLE);
 		break;
 	default:
 		return -EINVAL;
@@ -147,8 +152,12 @@ static int siwx91x_clock_off(const struct device *dev, clock_control_subsys_t sy
 		RSI_ULPSS_PeripheralDisable(ULPCLK, ULP_I2S_CLK);
 		break;
 	case SIWX91X_CLK_ADC:
-		RSI_ADC_PowerControl(ADC_POWER_OFF);
+		/* Warning, DAC also use these clocks */
+		RSI_PS_UlpssPeriPowerDown(ULPSS_PWRGATE_ULP_AUX);
+		RSI_ULPSS_PeripheralDisable(ULPCLK, ULP_AUX_CLK);
+		RSI_IPMU_PowerGateClr(AUXADC_PG_ENB);
 		break;
+	case SIWX91X_CLK_RNG:
 	case SIWX91X_CLK_ULP_UART:
 	case SIWX91X_CLK_I2C0:
 	case SIWX91X_CLK_I2C1:
@@ -194,31 +203,26 @@ static int siwx91x_clock_get_rate(const struct device *dev, clock_control_subsys
 }
 
 static int siwx91x_clock_set_rate(const struct device *dev, clock_control_subsys_t sys,
-				  clock_control_subsys_rate_t rate)
+				  clock_control_subsys_rate_t raw_rate)
 {
-	ARG_UNUSED(dev);
-	int div_numerator = FIELD_GET(0xFFFF0000, *(uint32_t *)rate);
-	int div_denominator =  FIELD_GET(0x0000FFFF, *(uint32_t *)rate);
 	uintptr_t clockid = (uintptr_t)sys;
-	ULP_I2S_CLK_SELECT_T ref_clk;
-	uint32_t freq;
+	uint32_t rate = *(uint32_t *)raw_rate;
 	int ret;
+
+	ARG_UNUSED(dev);
 
 	switch (clockid) {
 	case SIWX91X_CLK_I2S0:
-		RSI_CLK_SetI2sPllFreq(M4CLK, *((uint32_t *)rate), XTAL_FREQUENCY);
+		RSI_CLK_SetI2sPllFreq(M4CLK, rate, XTAL_FREQUENCY);
 		RSI_CLK_I2sClkConfig(M4CLK, I2S_PLLCLK, 0);
 		return 0;
 	case SIWX91X_CLK_ULP_I2S:
-		ref_clk = ULPCLK->ULP_I2S_CLK_GEN_REG_b.ULP_I2S_CLK_SEL_b;
-		freq = RSI_CLK_GetBaseClock(ULPSS_I2S);
-		ret = RSI_ULPSS_UlpI2sClkConfig(ULPCLK, ref_clk, freq / (*((uint32_t *)rate) / 2));
+		ret = RSI_ULPSS_UlpI2sClkConfig(ULPCLK,
+						ULPCLK->ULP_I2S_CLK_GEN_REG_b.ULP_I2S_CLK_SEL_b,
+						RSI_CLK_GetBaseClock(ULPSS_I2S) * 2 / rate);
 		if (ret) {
 			return -EIO;
 		}
-		return 0;
-	case SIWX91X_CLK_ADC:
-		RSI_ADC_ClkDivfactor(AUX_ADC_DAC_COMP, div_numerator, div_denominator);
 		return 0;
 	default:
 		/* For now, no other driver need clock rate */

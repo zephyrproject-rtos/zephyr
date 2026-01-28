@@ -22,6 +22,28 @@ config COUNTER_SHELL
 	help
 	  Enable Shell Commands for Counter and Timer
 
+config COUNTER_64BITS_FREQ
+	bool
+	help
+	  Select this option if the counter driver should use 64-bits for frequency.
+	  This is typically set by drivers that have frequencies greater than
+	  4,294,967,295 Hz.
+
+config COUNTER_SUPPORTS_64BITS_TICKS
+	bool
+	help
+	  Select this option if the counter driver supports 64-bits for ticks.
+	  This is typically set by drivers that require extended
+	  tick ranges beyond the 32-bit limit.
+
+config COUNTER_64BITS_TICKS
+	bool "API to support ticks longer than 32-bits"
+	depends on COUNTER_SUPPORTS_64BITS_TICKS
+	help
+	  This enables APIs to handle ticks larger than 32-bits with a
+	  64-bit typedef. It is up to the driver to implement the necessary
+	  functions to supports.
+
 module = COUNTER
 module-str = counter
 source "subsys/logging/Kconfig.template.log_config"

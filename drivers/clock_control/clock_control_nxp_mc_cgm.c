@@ -42,8 +42,10 @@ const clock_pcfs_config_t pcfs_config = {.maxAllowableIDDchange = NXP_PLL_MAXIDO
 
 static int mc_cgm_clock_control_on(const struct device *dev, clock_control_subsys_t sub_system)
 {
+	uint32_t clock_name = (uint32_t)sub_system;
+
+	switch (clock_name) {
 #if defined(CONFIG_CAN_MCUX_FLEXCAN)
-	switch ((uint32_t)sub_system) {
 	case MCUX_FLEXCAN0_CLK:
 		CLOCK_EnableClock(kCLOCK_Flexcan0);
 		break;
@@ -62,13 +64,9 @@ static int mc_cgm_clock_control_on(const struct device *dev, clock_control_subsy
 	case MCUX_FLEXCAN5_CLK:
 		CLOCK_EnableClock(kCLOCK_Flexcan5);
 		break;
-	default:
-		break;
-	}
 #endif /* defined(CONFIG_CAN_MCUX_MCAN) */
 
 #if defined(CONFIG_UART_MCUX_LPUART)
-	switch ((uint32_t)sub_system) {
 	case MCUX_LPUART0_CLK:
 		CLOCK_EnableClock(kCLOCK_Lpuart0);
 		break;
@@ -117,13 +115,9 @@ static int mc_cgm_clock_control_on(const struct device *dev, clock_control_subsy
 	case MCUX_LPUART15_CLK:
 		CLOCK_EnableClock(kCLOCK_Lpuart15);
 		break;
-	default:
-		break;
-	}
 #endif /* defined(CONFIG_UART_MCUX_LPUART) */
 
 #if defined(CONFIG_SPI_NXP_LPSPI)
-	switch ((uint32_t)sub_system) {
 	case MCUX_LPSPI0_CLK:
 		CLOCK_EnableClock(kCLOCK_Lpspi0);
 		break;
@@ -142,36 +136,40 @@ static int mc_cgm_clock_control_on(const struct device *dev, clock_control_subsy
 	case MCUX_LPSPI5_CLK:
 		CLOCK_EnableClock(kCLOCK_Lpspi5);
 		break;
-	default:
-		break;
-	}
 #endif /* defined(CONFIG_SPI_NXP_LPSPI) */
 
 #if defined(CONFIG_I2C_MCUX_LPI2C)
-	switch ((uint32_t)sub_system) {
 	case MCUX_LPI2C0_CLK:
 		CLOCK_EnableClock(kCLOCK_Lpi2c0);
 		break;
 	case MCUX_LPI2C1_CLK:
 		CLOCK_EnableClock(kCLOCK_Lpi2c1);
 		break;
-	default:
-		break;
-	}
 #endif /* defined(CONFIG_I2C_MCUX_LPI2C) */
 
 #if defined(CONFIG_COUNTER_MCUX_STM)
-	switch ((uint32_t)sub_system) {
 	case MCUX_STM0_CLK:
 		CLOCK_EnableClock(kCLOCK_Stm0);
 		break;
 	case MCUX_STM1_CLK:
 		CLOCK_EnableClock(kCLOCK_Stm1);
 		break;
-	default:
-		break;
-	}
 #endif /* defined(CONFIG_COUNTER_MCUX_STM) */
+
+#ifdef CONFIG_COUNTER_NXP_PIT
+	case MCUX_PIT0_CLK:
+		CLOCK_EnableClock(kCLOCK_Pit0Clk);
+		break;
+	case MCUX_PIT1_CLK:
+		CLOCK_EnableClock(kCLOCK_Pit1Clk);
+		break;
+	case MCUX_PIT2_CLK:
+		CLOCK_EnableClock(kCLOCK_Pit2Clk);
+		break;
+#endif
+	default:
+		return -ENOTSUP;
+	}
 
 #if defined(CONFIG_COMPARATOR_NXP_LPCMP)
 	switch ((uint32_t)sub_system) {
@@ -309,6 +307,17 @@ static int mc_cgm_get_subsys_rate(const struct device *dev, clock_control_subsys
 		break;
 
 #endif /* CONFIG_ADC_NXP_SAR_ADC */
+
+#if defined(CONFIG_COUNTER_NXP_PIT)
+	case MCUX_PIT0_CLK:
+	case MCUX_PIT1_CLK:
+	case MCUX_PIT2_CLK:
+		*rate = CLOCK_GetAipsSlowClkFreq();
+		break;
+#endif /* defined(CONFIG_COUNTER_NXP_PIT) */
+
+	default:
+		return -ENOTSUP;
 	}
 
 	return 0;

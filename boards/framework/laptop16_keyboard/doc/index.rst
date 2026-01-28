@@ -17,10 +17,6 @@ and with per-key RGB or white backlight:
   * ISO Keyboard
   * Numpad
 
-.. figure:: img/framework_laptop16_keyboard.webp
-     :align: center
-     :alt: Framework Laptop 16 Keyboard
-
 Hardware
 ********
 * Dual core Arm Cortex-M0+ processor running up to 133MHz

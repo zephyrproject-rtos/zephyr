@@ -85,6 +85,10 @@ Deprecated APIs and options
       :c:member:`bt_conn_le_info.interval_us` instead. Note that the units have changed:
       ``interval`` was in units of 1.25 milliseconds, while ``interval_us`` is in microseconds.
 
+* POSIX
+
+  * :kconfig:option:`CONFIG_XOPEN_STREAMS` was deprecated. Instead, use :kconfig:option:`CONFIG_XSI_STREAMS`
+
 * Sensors
 
   * NXP
@@ -101,6 +105,15 @@ New APIs and options
   instead.
 
 .. zephyr-keep-sorted-start re(^\* \w)
+
+* ADC
+
+  * :c:macro:`ADC_DT_SPEC_GET_BY_IDX_OR`
+  * :c:macro:`ADC_DT_SPEC_GET_BY_NAME_OR`
+  * :c:macro:`ADC_DT_SPEC_GET_OR`
+  * :c:macro:`ADC_DT_SPEC_INST_GET_BY_IDX_OR`
+  * :c:macro:`ADC_DT_SPEC_INST_GET_BY_NAME_OR`
+  * :c:macro:`ADC_DT_SPEC_INST_GET_OR`
 
 * Architectures
 
@@ -123,6 +136,7 @@ New APIs and options
   * Host
 
     * :c:func:`bt_gatt_cb_unregister` Added an API to unregister GATT callback handlers.
+    * :c:func:`bt_le_per_adv_sync_cb_unregister`
 
   * Mesh
 
@@ -140,10 +154,25 @@ New APIs and options
 
 * Build system
 
+  * Added :ref:`slot1-partition <snippet-slot1-partition>` snippet.
+
   * Sysbuild
 
     * Added :kconfig:option:`SB_CONFIG_MERGED_HEX_FILES` which allows generating
       :ref:`merged hex files <sysbuild_merged_hex_files>`.
+
+    * Added experimental ``ExternalZephyrVariantProject_Add()`` sysbuild CMake function which
+      allows for adding :ref:`variant images<sysbuild_zephyr_application>` to projects which are
+      based on existing images in a build.
+
+    * Added :kconfig:option:`SB_CONFIG_MCUBOOT_DIRECT_XIP_GENERATE_VARIANT` which allows for
+      generating slot 1 images automatically in sysbuild projects when using MCUboot in
+      direct-xip mode.
+
+* Display
+
+  * :kconfig:option:`SSD1325_DEFAULT_CONTRAST`
+  * :kconfig:option:`SSD1325_CONV_BUFFER_LINES`
 
 * Ethernet
 
@@ -171,6 +200,16 @@ New APIs and options
     mailbox usage. Applications should be prepared to receive a NULL payload pointer
     in IPM callbacks when no data buffer is provided by the mailbox.
 
+* Management
+
+  * MCUmgr
+
+    * :kconfig:option:`CONFIG_UART_MCUMGR_RAW_PROTOCOL`,
+      :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_RAW_UART`,
+      :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT`,
+      :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT_TIME_MS` see
+      :ref:`raw UART MCUmgr SMP transport <mcumgr_smp_transport_raw_uart>` for details.
+
 * Modem
 
   * :kconfig:option:`CONFIG_MODEM_HL78XX_AT_SHELL`
@@ -188,6 +227,17 @@ New APIs and options
   * Wi-Fi
 
     * Add support for Wi-Fi Direct (P2P) mode.
+
+* OTP
+
+  * New OTP driver API providing means to provision (:c:func:`otp_program()`) and
+    read (:c:func:`otp_read()`) :abbr:`OTP(One Time Programmable)` memory devices
+    (:github:`101292`). OTP devices can also be accessed through the
+    :ref:`Non-Volatile Memory (NVMEM)<nvmem>` subsystem. Available options are:
+
+    * :kconfig:option:`CONFIG_OTP`
+    * :kconfig:option:`CONFIG_OTP_PROGRAM`
+    * :kconfig:option:`CONFIG_OTP_INIT_PRIORITY`
 
 * PWM
 
@@ -218,6 +268,19 @@ New APIs and options
 * Timeutil
 
   * :kconfig:option:`CONFIG_TIMEUTIL_APPLY_SKEW`
+
+* Utilities
+
+  * :abbr:`COBS (Consistent Overhead Byte Stuffing)` streaming support
+
+    * :c:struct:`cobs_decoder`
+    * :c:func:`cobs_decoder_init`
+    * :c:func:`cobs_decoder_write`
+    * :c:func:`cobs_decoder_close`
+    * :c:struct:`cobs_encoder`
+    * :c:func:`cobs_encoder_init`
+    * :c:func:`cobs_encoder_write`
+    * :c:func:`cobs_encoder_close`
 
 * Video
 
@@ -262,6 +325,15 @@ New Drivers
 
   * :dtcompatible:`radio-fem-two-ctrl-pins` (renamed from ``generic-fem-two-ctrl-pins``)
   * :dtcompatible:`radio-gpio-coex` (renamed from ``gpio-radio-coex``)
+
+* Display
+
+  * :dtcompatible:`solomon,ssd1325`
+
+* OTP
+
+  * Added new stm32 BSEC driver that provides means to program and read OTP fuses
+    (:dtcompatible:`st,stm32-bsec`). (:github:`102403`)
 
 New Samples
 ***********

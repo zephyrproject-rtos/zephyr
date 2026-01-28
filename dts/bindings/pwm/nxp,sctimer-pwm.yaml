@@ -22,6 +22,23 @@ properties:
       - 64
       - 128
 
+  input-channels:
+    type: array
+    description: |
+      Array of SCTimer input channel numbers that are configured for capture.
+      Each element represents an input channel (0-7 for most NXP SoCs).
+      Example: <0 1 2> configures IN0, IN1, and IN2.
+
+  inputmux-connections:
+    type: array
+    description: |
+      Array of INPUTMUX connection types for each input channel.
+      Each element corresponds to the input channel at the same index in input-channels.
+      Values map to device-specific inputmux_connection_t enum values from
+      fsl_inputmux_connections.h, take LPC55S36 as example:
+      - 0: kINPUTMUX_SctGpioInAToSct0 (GPIO to SCT input A)
+      - 1: kINPUTMUX_SctGpioInBToSct0 (GPIO to SCT input B)
+
   "#pwm-cells":
     const: 3
 

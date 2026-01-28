@@ -486,6 +486,7 @@
 			reg = <0x58001000 0x400>;
 			interrupts = <52 0>;
 			clocks = <&rcc STM32_CLOCK(AHB3, 18)>;
+			nist-config = <0xf00d00>;
 			health-test-magic = <0x17590abc>;
 			health-test-config = <0xaa74>;
 			status = "disabled";

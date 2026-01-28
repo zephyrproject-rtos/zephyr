@@ -1,0 +1,43 @@
+/*
+ * Copyright (C) 2025 Texas Instruments Incorporated - https://www.ti.com/
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/am62l3_a53.dtsi>
+#include "am62l_evm_am62l3_a53-pinctrl.dtsi"
+
+/ {
+	model = "TI AM62L EVALUATION MODULE (EVM)";
+	compatible = "ti,am62l_evm";
+
+	chosen {
+		zephyr,console = &main_uart0;
+		zephyr,shell-uart = &main_uart0;
+		zephyr,sram = &ddr0;
+	};
+
+	cpus {
+		cpu@0 {
+			status = "okay";
+		};
+
+		cpu@1 {
+			status = "okay";
+		};
+	};
+
+	ddr0: memory@82000000 {
+		reg = <0x82000000 (DT_SIZE_G(2) - DT_SIZE_M(32))>;
+	};
+};
+
+&main_uart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_rx_default>,
+		    <&uart0_tx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

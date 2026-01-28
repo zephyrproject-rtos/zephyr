@@ -10,11 +10,12 @@ LATEXMKOPTS ?= -halt-on-error -no-shell-escape
 DT_TURBO_MODE ?= 0
 HW_FEATURES_TURBO_MODE ?= 0
 HW_FEATURES_VENDOR_FILTER ?=
+DOXYGEN_FORCE_SINGLE_THREAD ?= 0
 
 # ------------------------------------------------------------------------------
 # Documentation targets
 
-.PHONY: configure clean html html-fast html-live html-live-fast latex pdf doxygen doxygen-coverage
+.PHONY: configure clean html html-fast html-live html-live-fast latex pdf doxygen doxygen-coverage doxygen-coverage-json
 
 html-fast:
 	${MAKE} html DT_TURBO_MODE=1 HW_FEATURES_TURBO_MODE=1
@@ -22,7 +23,11 @@ html-fast:
 html-live-fast:
 	${MAKE} html-live DT_TURBO_MODE=1 HW_FEATURES_TURBO_MODE=1
 
-html html-live latex pdf linkcheck doxygen doxygen-coverage: configure
+doxygen-coverage doxygen-coverage-json:
+	${MAKE} configure DOXYGEN_FORCE_SINGLE_THREAD=1
+	cmake --build ${BUILDDIR} --target $@
+
+html html-live latex pdf linkcheck doxygen: configure
 	cmake --build ${BUILDDIR} --target $@
 
 configure:
@@ -36,7 +41,8 @@ configure:
 		-DLATEXMKOPTS="${LATEXMKOPTS}" \
 		-DDT_TURBO_MODE=${DT_TURBO_MODE} \
 		-DHW_FEATURES_TURBO_MODE=${HW_FEATURES_TURBO_MODE} \
-		-DHW_FEATURES_VENDOR_FILTER=${HW_FEATURES_VENDOR_FILTER}
+		-DHW_FEATURES_VENDOR_FILTER=${HW_FEATURES_VENDOR_FILTER} \
+		-DDOXYGEN_FORCE_SINGLE_THREAD=${DOXYGEN_FORCE_SINGLE_THREAD}
 
 clean:
 	cmake --build ${BUILDDIR} --target clean

@@ -486,7 +486,8 @@ Bluetooth Classic:
     - makeshi
     - chengkai15
   files:
-    - doc/connectivity/bluetooth/shell/classic/a2dp.rst
+    - doc/connectivity/bluetooth/shell/classic/
+    - doc/connectivity/bluetooth/api/classic/
     - subsys/bluetooth/common/
     - subsys/bluetooth/host/classic/
     - include/zephyr/bluetooth/classic/
@@ -589,9 +590,10 @@ Bluetooth Host:
     - doc/connectivity/bluetooth/autopts/
     - doc/connectivity/bluetooth/img/ctlr*
     - doc/connectivity/bluetooth/api/audio/
+    - doc/connectivity/bluetooth/api/classic/
     - doc/connectivity/bluetooth/api/mesh/
     - doc/connectivity/bluetooth/api/controller.rst
-    - doc/connectivity/bluetooth/shell/classic/a2dp.rst
+    - doc/connectivity/bluetooth/shell/classic/
     - doc/connectivity/bluetooth/shell/host/iso.rst
     - doc/connectivity/bluetooth/shell/audio/
     - samples/bluetooth/bap*/
@@ -1179,9 +1181,10 @@ Display drivers:
   maintainers:
     - JarmouniA
   collaborators:
-    - jfischer-no
     - danieldegrasse
     - VynDragon
+    - KATE-WANG-NXP
+    - avolmat-st
   files:
     - drivers/display/
     - dts/bindings/display/
@@ -1323,6 +1326,7 @@ Documentation Infrastructure:
     - boards/shields/canis_canpico/
     - boards/shields/mcp2515/
     - boards/shields/mikroe_can_fd_6_click/
+    - boards/shields/mikroe_mcp251xfd_click/
     - boards/shields/tcan4550evm/
     - doc/connectivity/canbus/
     - doc/hardware/peripherals/can/
@@ -1456,6 +1460,7 @@ Documentation Infrastructure:
     - nordic-krch
   collaborators:
     - Holt-Sun
+    - FelixWang47831
   files:
     - drivers/counter/
     - include/zephyr/drivers/counter.h
@@ -1515,6 +1520,7 @@ Documentation Infrastructure:
     - lgirdwood
     - iuliana-prodan
     - dbaluta
+    - abonislawski
   files:
     - drivers/dai/
     - doc/hardware/peripherals/audio/dai.rst
@@ -2021,6 +2027,7 @@ Documentation Infrastructure:
   collaborators:
     - JarmouniA
     - VynDragon
+    - KATE-WANG-NXP
   files:
     - drivers/mipi_dbi/
     - include/zephyr/drivers/mipi_dbi.h
@@ -2033,6 +2040,7 @@ Documentation Infrastructure:
   status: odd fixes
   collaborators:
     - JarmouniA
+    - KATE-WANG-NXP
   files:
     - drivers/mipi_dsi/
     - include/zephyr/drivers/mipi_dsi.h
@@ -2224,6 +2232,7 @@ Documentation Infrastructure:
   collaborators:
     - anangl
     - henrikbrixandersen
+    - FelixWang47831
   files:
     - drivers/pwm/
     - dts/bindings/pwm/
@@ -2584,6 +2593,7 @@ Documentation Infrastructure:
   collaborators:
     - katsuster
     - martinjaeger
+    - yvesll
   files:
     - doc/hardware/peripherals/watchdog.rst
     - drivers/watchdog/
@@ -2632,6 +2642,7 @@ Documentation Infrastructure:
     - dts/bindings/wifi/nordic,nrf7000-spi.yaml
     - dts/bindings/wifi/nordic,nrf7001-qspi.yaml
     - dts/bindings/wifi/nordic,nrf7001-spi.yaml
+    - dts/bindings/wifi/nordic,nrf71-wifi.yaml
     - boards/shields/nrf7002ek/
   labels:
     - "area: Wi-Fi"
@@ -3051,6 +3062,7 @@ Intel Platforms (Xtensa):
     - jxstelter
     - marcinszkudlinski
     - nashif
+    - abonislawski
   files:
     - boards/intel/adsp/
     - soc/intel/intel_adsp/
@@ -3375,6 +3387,7 @@ Microchip MEC Platforms:
   status: maintained
   maintainers:
     - jvasanth1
+    - scottwcpg
   collaborators:
     - VenkatKotakonda
     - albertofloyd
@@ -3398,11 +3411,14 @@ Microchip RISC-V Platforms:
   collaborators:
     - kgugala
     - tgorochowik
+    - con-pax
   files:
     - boards/microchip/m2gl025_miv/
     - boards/microchip/mpfs_icicle/
+    - boards/microchip/pic64gx_curiosity_kit/
     - dts/riscv/microchip/
     - soc/microchip/miv/
+    - soc/microchip/pic64/
   labels:
     - "platform: Microchip RISC-V"
 
@@ -3599,6 +3615,7 @@ NXP Platforms (MCU):
     - mmahadevan108
   collaborators:
     - butok
+    - DerekSnell
   files:
     - boards/nxp/mimxrt*/
     - boards/nxp/frdm*/
@@ -3606,7 +3623,6 @@ NXP Platforms (MCU):
     - boards/nxp/lpcxpress*/
     - boards/nxp/twr_*/
     - boards/nxp/*rw*/
-    - boards/nxp/hexiwear/
     - boards/nxp/common/
     - boards/nxp/*
     - soc/nxp/common/
@@ -4163,6 +4179,22 @@ OSDP:
   tests:
     - sample.mgmt.osdp
 
+OTP:
+  status: odd fixes
+  collaborators:
+    - GseoC
+    - pdgendt
+  files:
+    - doc/hardware/peripherals/otp/
+    - drivers/otp/
+    - dts/bindings/otp/
+    - include/zephyr/drivers/otp.h
+    - tests/subsys/nvmem/api/otp.overlay
+  labels:
+    - "area: OTP"
+  tests:
+    - nvmem
+
 Octavo Systems Platforms:
   status: maintained
   maintainers:
@@ -4227,6 +4259,7 @@ PMCI:
   collaborators:
     - nashif
     - kehintel
+    - edersondisouza
   files:
     - subsys/pmci/
     - samples/subsys/pmci/
@@ -4295,6 +4328,16 @@ Power management:
     - "area: Power Management"
   tests:
     - pm
+
+QNX Hypervisor Platforms:
+  status: maintained
+  maintainers:
+    - soburi
+  files:
+    - boards/blackberry/qnxhv_vm/
+    - soc/blackberry/qnxhv_vm/
+  labels:
+    - "platform: QNX Hypervisor"
 
 "Quicklogic Platform":
   status: odd fixes
@@ -4405,10 +4448,12 @@ Raspberry Pi Pico Platforms:
     - boards/pimoroni/pico_plus2/
     - boards/seeed/xiao_rp2040/
     - boards/sparkfun/pro_micro_rp2040/
+    - boards/sparkfun/rp2040_mikrobus/
     - boards/waveshare/rp2040_zero/
     - boards/wiznet/w5500_evb_pico*/
     - dts/arm/raspberrypi/rpi_pico/
     - dts/bindings/*/raspberrypi,pico*
+    - dts/riscv/raspberrypi/
     - drivers/*/*rpi_pico
     - drivers/*/*rpi_pico*/
     - drivers/*/*rpi_pico*.c
@@ -4900,6 +4945,17 @@ Silabs SiM3U Platforms:
   description: >-
     SiM3U SoCs, dts files, and related drivers. Boards based on SiM3U SoCs.
 
+Space Cubics Platforms:
+  status: maintained
+  maintainers:
+    - yashi
+  files:
+    - boards/sc/
+  labels:
+    - "platform: Space Cubics"
+  description: >-
+    Space Cubics on-board computers (OBCs).
+
 State machine framework:
   status: maintained
   maintainers:
@@ -5224,6 +5280,7 @@ Twister:
     - gchwier
     - LukaszMrugala
     - KamilxPaszkiet
+    - fundakol
   files:
     - scripts/twister
     - scripts/schemas/twister/
@@ -5382,11 +5439,10 @@ VFS:
     - filesystem
 
 WCH Platforms:
-  status: maintained
-  maintainers:
+  status: odd fixes
+  collaborators:
     - nzmichaelh
     - kholia
-  collaborators:
     - VynDragon
   files:
     - boards/wch/

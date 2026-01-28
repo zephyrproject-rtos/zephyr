@@ -47,6 +47,10 @@ if(NOT CONFIG_LLEXT_TYPE_ELF_SHAREDLIB)
     list(APPEND ext_names init_fini)
 endif()
 
+if(CONFIG_LLEXT_RODATA_NO_RELOC)
+    list(APPEND ext_names rodata_no_reloc)
+endif()
+
 # generate extension targets for each extension in 'ext_names'
 foreach(ext_name ${ext_names})
   set(ext_src ${PROJECT_SOURCE_DIR}/src/${ext_name}_ext.c)

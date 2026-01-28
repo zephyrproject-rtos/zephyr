@@ -16,7 +16,7 @@ each supported architecture (:file:`libc.a`).
 
 Zephyr implements the “API hook” functions that are invoked by the C
 standard library functions in the Picolibc. These hook functions are
-implemented in :file:`lib/libc/picolibc/libc-hooks.c` and translate
+implemented in :zephyr_file:`lib/libc/picolibc/` and translate
 the library internal system calls to the equivalent Zephyr API calls.
 
 .. _`Picolibc`: https://github.com/picolibc/picolibc

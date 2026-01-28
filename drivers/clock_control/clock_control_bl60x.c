@@ -130,7 +130,7 @@ static int clock_control_bl60x_init_crystal(void)
 }
 
 /* HCLK is the core clock */
-static int clock_control_bl60x_set_root_clock_dividers(uint32_t hclk_div, uint32_t bclk_div)
+static void clock_control_bl60x_set_root_clock_dividers(uint32_t hclk_div, uint32_t bclk_div)
 {
 	uint32_t tmp;
 	uint32_t old_rootclk;
@@ -164,8 +164,6 @@ static int clock_control_bl60x_set_root_clock_dividers(uint32_t hclk_div, uint32
 
 	clock_bflb_set_root_clock(old_rootclk);
 	clock_bflb_settle();
-
-	return 0;
 }
 
 static void clock_control_bl60x_set_machine_timer_clock_enable(bool enable)
@@ -559,9 +557,7 @@ static int clock_control_bl60x_update_root(const struct device *dev)
 
 	/* set root clock to internal 32MHz Oscillator as failsafe */
 	clock_bflb_set_root_clock(BFLB_MAIN_CLOCK_RC32M);
-	if (clock_control_bl60x_set_root_clock_dividers(0, 0) != 0) {
-		return -EIO;
-	}
+	clock_control_bl60x_set_root_clock_dividers(0, 0);
 	sys_write32(BFLB_RC32M_FREQUENCY, CORECLOCKREGISTER);
 
 	clock_control_bl60x_set_PKA_clock(0);
@@ -574,11 +570,7 @@ static int clock_control_bl60x_update_root(const struct device *dev)
 		clock_control_bl60x_deinit_crystal();
 	}
 
-	ret = clock_control_bl60x_set_root_clock_dividers(data->root.divider - 1,
-							  data->bclk.divider - 1);
-	if (ret < 0) {
-		return ret;
-	}
+	clock_control_bl60x_set_root_clock_dividers(data->root.divider - 1, data->bclk.divider - 1);
 
 	if (data->root.source == bl60x_clkid_clk_pll) {
 		clock_control_bl60x_init_root_as_pll(dev);

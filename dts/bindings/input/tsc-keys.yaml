@@ -8,25 +8,6 @@ description: |
   calculations to detect an input event on a group which is the child of
   st,stm32-tsc. For more information see drivers/misc/st,stm32-tsc.yaml
 
-  Example:
-
-  #include <zephyr/dt-bindings/input/input-event-codes.h>
-
-  &tsc {
-    compatible = "st,stm32-tsc";
-
-    tsc_group6: g6 {
-      ...
-      ts1 {
-        compatible = "tsc-keys";
-        sampling-interval-ms = <10>;
-        oversampling = <10>;
-        noise-threshold = <50>;
-        zephyr,code = <INPUT_KEY_0>;
-      };
-    };
-  };
-
 compatible: "tsc-keys"
 
 include:
@@ -69,3 +50,22 @@ properties:
     type: int
     required: true
     description: Key code to emit.
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/input/input-event-codes.h>
+
+    &tsc {
+      compatible = "st,stm32-tsc";
+
+      tsc_group6: g6 {
+        /* ... */
+        ts1 {
+          compatible = "tsc-keys";
+          sampling-interval-ms = <10>;
+          oversampling = <10>;
+          noise-threshold = <50>;
+          zephyr,code = <INPUT_KEY_0>;
+        };
+      };
+    };

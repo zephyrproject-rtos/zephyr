@@ -31,6 +31,17 @@ LOG_MODULE_REGISTER(nxp_sar_adc, CONFIG_ADC_LOG_LEVEL);
 #define NXP_SAR_ADC_HAS_GROUP2_REGS 0
 #endif
 
+/* Some NXP SAR ADC variants don't implement MCR[ADCLKSEL].
+ * Guard both the mask and the value macro so the driver can compile across SoCs.
+ */
+#if defined(ADC_MCR_ADCLKSEL_MASK) && defined(ADC_MCR_ADCLKSEL)
+#define NXP_SAR_ADC_MCR_ADCLKSEL_MASK ADC_MCR_ADCLKSEL_MASK
+#define NXP_SAR_ADC_MCR_ADCLKSEL(x)   ADC_MCR_ADCLKSEL(x)
+#else
+#define NXP_SAR_ADC_MCR_ADCLKSEL_MASK 0U
+#define NXP_SAR_ADC_MCR_ADCLKSEL(x)   0U
+#endif
+
 struct nxp_sar_adc_config {
 	ADC_Type *base;
 	const struct device *clock_dev;
@@ -465,9 +476,9 @@ static int nxp_sar_adc_init(const struct device *dev)
 	}
 
 	base->MCR = ((base->MCR & ~(ADC_MCR_OWREN_MASK | ADC_MCR_ACKO_MASK |
-		      ADC_MCR_ADCLKSEL_MASK)) | ADC_MCR_OWREN(config->overwrite ? 1U : 0U) |
+		      NXP_SAR_ADC_MCR_ADCLKSEL_MASK)) | ADC_MCR_OWREN(config->overwrite ? 1U : 0U) |
 		      ADC_MCR_ACKO(config->auto_clock_off ? 1U : 0U) |
-		      ADC_MCR_ADCLKSEL(config->conv_clk_freq_div_factor));
+		      NXP_SAR_ADC_MCR_ADCLKSEL(config->conv_clk_freq_div_factor));
 
 	/* Disable global and all channels' interrupt. */
 	base->IMR = 0U;

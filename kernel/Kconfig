@@ -1165,6 +1165,19 @@ endif # BOOTARGS
 
 endmenu
 
+config KERNEL_NO_LTO
+	bool
+	depends on LTO
+	depends on XIP
+	help
+	  Some SoCs require kernel code to be placed in RAM, which makes link-time
+	  optimization (LTO) unsuitable for these files (-fno-lto). Disabling LTO
+	  allows the affected code to be linked as separate objects and placed in
+	  specific memory regions.
+
+	  Running kernel code from RAM can improve execution performance, especially
+	  for timing-critical routines or context switch paths.
+
 rsource "Kconfig.device"
 rsource "Kconfig.vm"
 rsource "Kconfig.init"

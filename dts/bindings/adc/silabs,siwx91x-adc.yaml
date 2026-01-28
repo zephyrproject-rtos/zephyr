@@ -14,7 +14,7 @@ properties:
   silabs,adc-ref-voltage:
     type: int
     description: |
-        ADC reference volatge in mv. This voltage is common for all
+        ADC reference voltage in mv. This voltage is common for all
         the channels.
         Valid range: 1800 - 3600
     required: true

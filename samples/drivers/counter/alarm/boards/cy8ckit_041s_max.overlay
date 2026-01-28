@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&tcpwm0_1 {
+	status = "okay";
+	interrupts = <18 0>;
+
+	counter0_1 {
+		status = "okay";
+		clocks = <&peri_clk_div3>;
+	};
+};
+
+&peri_clk_div3 {
+	resource-channel = <1>;
+	clock-div = <11519>;
+	status = "okay";
+};

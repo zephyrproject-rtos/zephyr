@@ -11,9 +11,11 @@ config CAN_NXP_S32_CANXL
 	  Enable support for NXP S32 CANXL driver.
 
 if CAN_NXP_S32_CANXL
+
 config CAN_NXP_S32_RX_FIFO
 	bool "NXP S32 CANXL uses RX FIFO"
 	default y
+	depends on SOC_SERIES_S32ZE
 	help
 	  If this is enabled, NXP S32 CANXL uses RX FIFO.
 	  Otherwise NXP S32 CANXL uses RX Message Descriptor.
@@ -32,4 +34,5 @@ config CAN_NXP_S32_MAX_TX
 	range 1 128
 	help
 	  Maximum number of TX descriptors.
+
 endif # CAN_NXP_S32_CANXL

@@ -1,0 +1,174 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* This file is common to the secure and non-secure domain */
+
+#include <nordic/nrf7120_enga_cpuapp.dtsi>
+#include "nrf7120dk_nrf7120-common.dtsi"
+
+/ {
+	chosen {
+		zephyr,console = &uart20;
+		zephyr,shell-uart = &uart20;
+		zephyr,uart-mcumgr = &uart20;
+		zephyr,bt-mon-uart = &uart20;
+		zephyr,bt-c2h-uart = &uart20;
+		zephyr,flash = &cpuapp_mram;
+		zephyr,ieee802154 = &ieee802154;
+		zephyr,wifi = &wlan0;
+	};
+
+	/* TODO: Fine tune the sizes */
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		ipc_shm_area_cpuapp_cpuuma: memory@200C0000 {
+			compatible = "mmio-sram";
+			reg = <0x200C0000 0x2000>;
+			ranges = <0x0 0x200C0000 0x2000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			ipc_shm_cpuapp_cpuuma_0: memory@0 {
+				reg = <0x0 DT_SIZE_K(2)>;
+			};
+
+			ipc_shm_cpuuma_cpuapp_0: memory@800 {
+				reg = <0x800 DT_SIZE_K(2)>;
+			};
+
+			ipc_shm_cpuapp_cpuuma_1: memory@1000 {
+				reg = <0x1000 DT_SIZE_K(2)>;
+			};
+
+			ipc_shm_cpuuma_cpuapp_1: memory@1800 {
+				reg = <0x1800 DT_SIZE_K(2)>;
+			};
+		};
+	};
+
+	ipc {
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-icmsg";
+			tx-region = <&ipc_shm_cpuapp_cpuuma_0>;
+			rx-region = <&ipc_shm_cpuuma_cpuapp_0>;
+			mboxes = <&wifi_bellboard 2>,
+				 <&cpuapp_bellboard 0>;
+			mbox-names = "tx", "rx";
+			status = "okay";
+		};
+
+		ipc1: ipc1 {
+			compatible = "zephyr,ipc-icmsg";
+			tx-region = <&ipc_shm_cpuapp_cpuuma_1>;
+			rx-region = <&ipc_shm_cpuuma_cpuapp_1>;
+			mboxes = <&wifi_bellboard 3>,
+				 <&cpuapp_bellboard 1>;
+			mbox-names = "tx", "rx";
+			status = "okay";
+		};
+	};
+};
+
+&cpuapp_sram {
+	status = "okay";
+};
+
+&grtc {
+	owned-channels = <0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15>;
+	/* Channels 7-11 reserved for Zero Latency IRQs, 3-4 for FLPR */
+	child-owned-channels = <3 4 7 8 9 10 11>;
+	status = "okay";
+};
+
+&uart20 {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&gpiote20 {
+	status = "okay";
+};
+
+&gpiote30 {
+	status = "okay";
+};
+
+&radio {
+	status = "okay";
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&temp {
+	status = "okay";
+};
+
+&clock {
+	status = "okay";
+};
+
+&spi00 {
+	status = "okay";
+	cs-gpios = <&gpio2 5 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&spi00_default>;
+	pinctrl-1 = <&spi00_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&adc {
+	status = "okay";
+};
+
+&pwr_antswc {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};
+
+&audio_auxpll {
+	nordic,frequency = <NRF_AUXPLL_FREQ_DIV_AUDIO_48K>;
+	status = "okay";
+};
+
+&cpuapp_bellboard {
+	status = "okay";
+};
+
+&wifi_bellboard {
+	status = "okay";
+};
+
+&qspi00 {
+	status = "okay";
+	op-mode = "MSPI_OP_MODE_CONTROLLER";
+};

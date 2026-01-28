@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 MASSDRIVER EI (massdriver.space)
+ * Copyright (c) 2024-2026 MASSDRIVER EI (massdriver.space)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,6 +85,10 @@
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
+
+	zephyr,user {
+		io-channels = <&adc0 0>;
+	};
 };
 
 &i2c0 {
@@ -100,4 +104,20 @@
 
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
+};
+
+&adc0 {
+	status = "okay";
+
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <16>;
+		zephyr,input-positive = <0>;
+	};
 };

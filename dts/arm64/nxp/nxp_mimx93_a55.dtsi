@@ -123,6 +123,7 @@
 		interrupt-parent = <&gic>;
 		/* clk-source and clocks must aligned: 0-ipg_clk, 1-lpo_clk, 2-int_clk, 3-ext_clk */
 		clocks = <&lpo_clk>;
+		clock-names = "clksrc1";
 		clk-source = <1>;
 		clk-divider = <256>;
 		status = "disabled";
@@ -135,6 +136,7 @@
 		interrupt-parent = <&gic>;
 		/* clk-source and clocks must aligned: 0-ipg_clk, 1-lpo_clk, 2-int_clk, 3-ext_clk */
 		clocks = <&lpo_clk>;
+		clock-names = "clksrc1";
 		clk-source = <1>;
 		clk-divider = <256>;
 		status = "disabled";
@@ -419,6 +421,7 @@
 			     <GIC_SPI 9 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "common", "error";
 		clocks = <&ccm IMX_CCM_CAN1_CLK 0x68 14>;
+		clock-names = "clksrc0";
 		clk-source = <0>;
 		number-of-mb = <96>;
 		number-of-mb-fd = <21>;
@@ -433,6 +436,7 @@
 			     <GIC_SPI 52 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "common", "error";
 		clocks = <&ccm IMX_CCM_CAN2_CLK 0x68 14>;
+		clock-names = "clksrc0";
 		clk-source = <0>;
 		number-of-mb = <96>;
 		number-of-mb-fd = <21>;

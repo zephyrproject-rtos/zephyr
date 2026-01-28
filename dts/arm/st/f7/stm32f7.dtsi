@@ -85,13 +85,26 @@
 
 		pll: pll {
 			#clock-cells = <0>;
-			compatible = "st,stm32f7-pll-clock";
+			compatible = "st,stm32fx-pll-clock";
+			status = "disabled";
+		};
+
+		plli2s: plli2s {
+			#clock-cells = <0>;
+			compatible = "st,stm32fx-pll-clock";
 			status = "disabled";
 		};
 
 		pllsai: pllsai {
-			compatible = "st,stm32fx-pllsai-clock";
+			compatible = "st,stm32fx-pll-clock";
 			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		clk48: clk48 {
+			#clock-cells = <0>;
+			compatible = "st,stm32-clock-mux";
+			clocks = <&rcc STM32_SRC_PLL_Q CK48M_SEL(0)>;
 			status = "disabled";
 		};
 	};

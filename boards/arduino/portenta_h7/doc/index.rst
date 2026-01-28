@@ -36,8 +36,6 @@ information on how to build for specific revisions of the board).
 
 Applications that intend to use BLE must specify hardware revision at build time.
 
-Currently only BLE is supported on this board, WiFi is not supported.
-
 Fetch Binary Blobs
 ******************
 

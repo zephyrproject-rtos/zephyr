@@ -13,14 +13,9 @@ if SOC_SERIES_IT8XXX2
 
 config SOC_IT8XXX2
 	select RISCV
-	select RISCV_ISA_RV32I
-	select RISCV_ISA_EXT_ZICSR
-	select RISCV_ISA_EXT_ZIFENCEI
 	# Workaround mul instruction bug, see:
 	# https://www.ite.com.tw/uploads/product_download/it81202-bx-chip-errata.pdf
 	select RISCV_ISA_EXT_M if !(SOC_IT81302BX || SOC_IT81202BX)
-	select RISCV_ISA_EXT_A
-	select RISCV_ISA_EXT_C
 	imply XIP
 
 config SOC_IT8XXX2_REG_SET_V1
@@ -235,6 +230,7 @@ config SOC_IT8XXX2_KERNEL_IN_RAM
 	bool "Place kernel handling code in RAM"
 	select SOC_IT8XXX2_USE_ILM
 	select SOC_IT8XXX2_LIBRARY_TO_RAM
+	select KERNEL_NO_LTO if LTO
 	help
 	  Place kernel handling code in ILM. This can significantly improve performance.
 

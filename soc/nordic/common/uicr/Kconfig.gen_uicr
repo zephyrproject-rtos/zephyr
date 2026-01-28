@@ -56,6 +56,17 @@ config GEN_UICR_ERASEPROTECT
 	  Note that gen_uicr.py can be used directly to create a configuration
 	  with both enabled if needed.
 
+	  The command used when invoking gen_uicr.py can be found in the build directory.
+	  For ninja based builds the command is found in
+	  build/uicr/build.ninja
+	  For make based builds the command is found in
+	  build/CMakefiles/gen_uicr.dir/build.make
+
+	  Add the '--eraseprotect' argument to this command to  enable the configuration
+	  that would be added by setting this option. Note that programming the
+	  resulting UICR hex file would completely lock the UICR from any modification
+	  for the lifetime of the device.
+
 menu "UICR.APPROTECT - Access Port Protection"
 
 config GEN_UICR_APPROTECT_APPLICATION_PROTECTED

@@ -41,6 +41,7 @@ source "drivers/mdio/Kconfig.renesas_ra"
 source "drivers/mdio/Kconfig.sam"
 source "drivers/mdio/Kconfig.stm32_hal"
 source "drivers/mdio/Kconfig.sy1xx"
+source "drivers/mdio/Kconfig.xilinx_axi_ethernet_lite"
 source "drivers/mdio/Kconfig.xilinx_axienet"
 source "drivers/mdio/Kconfig.xmc4xxx"
 # zephyr-keep-sorted-stop

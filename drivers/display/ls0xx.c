@@ -42,6 +42,7 @@ LOG_MODULE_REGISTER(ls0xx, CONFIG_DISPLAY_LOG_LEVEL);
 #define LS0XX_BIT_WRITECMD    0x01
 #define LS0XX_BIT_VCOM        0x02
 #define LS0XX_BIT_CLEAR       0x04
+#define LS0XX_VCOM_PRIO       CONFIG_LS0XX_VCOM_THREAD_PRIO
 
 /* These timings are based on:
  * - A view that 1 frame dropped at 10fps is more than any reasonable wait.
@@ -329,7 +330,7 @@ static int ls0xx_init(const struct device *dev)
 	/* Start thread for toggling VCOM */
 	k_tid_t vcom_toggle_tid = k_thread_create(
 		&vcom_toggle_thread, vcom_toggle_stack, K_THREAD_STACK_SIZEOF(vcom_toggle_stack),
-		ls0xx_vcom_toggle, (void *)dev, NULL, NULL, 3, 0, K_NO_WAIT);
+		ls0xx_vcom_toggle, (void *)dev, NULL, NULL, LS0XX_VCOM_PRIO, 0, K_NO_WAIT);
 	k_thread_name_set(vcom_toggle_tid, "ls0xx_vcom");
 #endif /* USE_VCOM_THREAD */
 

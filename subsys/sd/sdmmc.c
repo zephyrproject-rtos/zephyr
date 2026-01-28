@@ -591,7 +591,7 @@ static int sdmmc_init_hs(struct sd_card *card)
 		LOG_ERR("Failed to switch card to HS mode");
 		return ret;
 	}
-	if (card->host_props.host_caps.bus_4_bit_support && (card->flags & SD_4BITS_WIDTH)) {
+	if (card->host_props.bus_4_bit_support && (card->flags & SD_4BITS_WIDTH)) {
 		/* Raise bus width to 4 bits */
 		ret = sdmmc_set_bus_width(card, SDHC_BUS_WIDTH4BIT);
 		if (ret) {
@@ -610,6 +610,7 @@ int sdmmc_card_init(struct sd_card *card)
 {
 	int ret;
 	uint32_t ocr_arg = 0U;
+	uint32_t cid[4] = {0};
 
 	/* First send a probing OCR */
 	if (IS_ENABLED(CONFIG_SDHC_SUPPORTS_SPI_MODE) && card->host_props.is_spi) {
@@ -695,7 +696,7 @@ int sdmmc_card_init(struct sd_card *card)
 		}
 	}
 	/* Read the card's CID (card identification register) */
-	ret = card_read_cid(card);
+	ret = card_read_cid(card, cid);
 	if (ret) {
 		return ret;
 	}

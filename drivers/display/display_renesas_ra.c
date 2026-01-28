@@ -368,20 +368,6 @@ static int display_init(const struct device *dev)
 	struct display_ra_data *data = dev->data;
 	int err;
 
-#if BSP_FEATURE_BSP_HAS_GRAPHICS_DOMAIN
-
-	R_BSP_RegisterProtectDisable(BSP_REG_PROTECT_OM_LPC_BATT);
-	FSP_HARDWARE_REGISTER_WAIT(
-		(R_SYSTEM->PDCTRGD & (R_SYSTEM_PDCTRGD_PDCSF_Msk | R_SYSTEM_PDCTRGD_PDPGSF_Msk)),
-		R_SYSTEM_PDCTRGD_PDPGSF_Msk);
-	R_SYSTEM->PDCTRGD = 0;
-	FSP_HARDWARE_REGISTER_WAIT(
-		(R_SYSTEM->PDCTRGD & (R_SYSTEM_PDCTRGD_PDCSF_Msk | R_SYSTEM_PDCTRGD_PDPGSF_Msk)),
-		0);
-	R_BSP_RegisterProtectEnable(BSP_REG_PROTECT_OM_LPC_BATT);
-
-#endif
-
 	if (config->pincfg != NULL) {
 		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 		if (err) {

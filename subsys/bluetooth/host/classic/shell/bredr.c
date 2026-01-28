@@ -476,7 +476,7 @@ static int cmd_l2cap_register(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	shell_print(sh, "L2CAP psm %u registered", l2cap_server.server.psm);
+	shell_print(sh, "L2CAP psm %04x registered", l2cap_server.server.psm);
 
 	return 0;
 }
@@ -573,7 +573,7 @@ static int cmd_l2cap_disconnect(const struct shell *sh, size_t argc, char *argv[
 
 	err = bt_l2cap_chan_disconnect(&l2cap_chan.chan.chan);
 	if (err) {
-		shell_error(sh, "Unable to disconnect: %u", -err);
+		shell_error(sh, "Unable to disconnect: %d", err);
 	}
 
 	return err;
@@ -618,7 +618,7 @@ static int cmd_l2cap_send(const struct shell *sh, size_t argc, char *argv[])
 		net_buf_add_mem(buf, buf_data, len);
 		err = bt_l2cap_chan_send(&l2cap_chan.chan.chan, buf);
 		if (err < 0) {
-			shell_error(sh, "Unable to send: %d", -err);
+			shell_error(sh, "Unable to send: %d", err);
 			net_buf_unref(buf);
 			return -ENOEXEC;
 		}
@@ -637,7 +637,7 @@ static int cmd_l2cap_credits(const struct shell *sh, size_t argc, char *argv[])
 	if (buf != NULL) {
 		err = bt_l2cap_chan_recv_complete(&l2cap_chan.chan.chan, buf);
 		if (err < 0) {
-			shell_error(sh, "Unable to set recv_complete: %d", -err);
+			shell_error(sh, "Unable to set recv_complete: %d", err);
 		}
 	} else {
 		shell_warn(sh, "No pending recv buffer");
@@ -676,7 +676,7 @@ static int cmd_l2cap_echo_reg(const struct shell *sh, size_t argc, char *argv[])
 
 	err = bt_l2cap_br_echo_cb_register(&echo_cb);
 	if (err) {
-		shell_error(sh, "Failed to register echo callback: %d", -err);
+		shell_error(sh, "Failed to register echo callback: %d", err);
 		return err;
 	}
 
@@ -689,7 +689,7 @@ static int cmd_l2cap_echo_unreg(const struct shell *sh, size_t argc, char *argv[
 
 	err = bt_l2cap_br_echo_cb_unregister(&echo_cb);
 	if (err) {
-		shell_error(sh, "Failed to unregister echo callback: %d", -err);
+		shell_error(sh, "Failed to unregister echo callback: %d", err);
 		return err;
 	}
 
@@ -721,7 +721,7 @@ static int cmd_l2cap_echo_req(const struct shell *sh, size_t argc, char *argv[])
 	net_buf_add_mem(buf, buf_data, len);
 	err = bt_l2cap_br_echo_req(default_conn, buf);
 	if (err < 0) {
-		shell_error(sh, "Unable to send ECHO REQ: %d", -err);
+		shell_error(sh, "Unable to send ECHO REQ: %d", err);
 		net_buf_unref(buf);
 		return -ENOEXEC;
 	}
@@ -757,7 +757,7 @@ static int cmd_l2cap_echo_rsp(const struct shell *sh, size_t argc, char *argv[])
 	net_buf_add_mem(buf, buf_data, len);
 	err = bt_l2cap_br_echo_rsp(default_conn, identifier, buf);
 	if (err < 0) {
-		shell_error(sh, "Unable to send ECHO RSP: %d", -err);
+		shell_error(sh, "Unable to send ECHO RSP: %d", err);
 		net_buf_unref(buf);
 		return -ENOEXEC;
 	}
@@ -792,17 +792,49 @@ static int cmd_discoverable(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static bool central_role_required;
+static bool auto_reject_conn_req;
+
+static enum bt_br_conn_req_rsp br_conn_req_cb(const bt_addr_t *addr, uint32_t cod)
+{
+	if (auto_reject_conn_req) {
+		return BT_BR_CONN_REQ_REJECT_ADDR;
+	}
+
+	if (central_role_required) {
+		return BT_BR_CONN_REQ_ACCEPT_CENTRAL;
+	}
+
+	return BT_BR_CONN_REQ_ACCEPT_PERIPHERAL;
+}
+
 static int cmd_connectable(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 	const char *action;
+	const char *role;
+	bt_br_conn_req_func_t func = NULL;
 
 	action = argv[1];
 
+	if (argc > 2) {
+		func = br_conn_req_cb;
+		role = argv[2];
+
+		if (strcmp(role, "central") == 0) {
+			central_role_required = true;
+		} else if (strcmp(role, "peripheral") == 0) {
+			central_role_required = false;
+		} else {
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		}
+	}
+
 	if (!strcmp(action, "on")) {
-		err = bt_br_set_connectable(true);
+		err = bt_br_set_connectable(true, func);
 	} else if (!strcmp(action, "off")) {
-		err = bt_br_set_connectable(false);
+		err = bt_br_set_connectable(false, NULL);
 	} else {
 		shell_help(sh);
 		return SHELL_CMD_HELP_PRINTED;
@@ -814,6 +846,25 @@ static int cmd_connectable(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	shell_print(sh, "BR/EDR set/reset connectable done");
+
+	return 0;
+}
+
+static int cmd_auto_reject_conn(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err = 0;
+	bool enable;
+
+	enable = shell_strtobool(argv[1], 0, &err);
+	if (err != 0) {
+		shell_help(sh);
+		return SHELL_CMD_HELP_PRINTED;
+	}
+
+	auto_reject_conn_req = enable;
+	shell_print(sh, "Auto reject connection request %s", auto_reject_conn_req ? "yes" : "no");
+	shell_print(sh, "This setting only takes effect if the 'connectable' command has the "
+		    "optional parameter 'central/peripheral' set.");
 
 	return 0;
 }
@@ -1894,7 +1945,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
 		      cmd_discoverable, 2, 1),
 	SHELL_CMD(l2cap, &l2cap_cmds, HELP_NONE, cmd_default_handler),
 	SHELL_CMD_ARG(oob, NULL, NULL, cmd_oob, 1, 0),
-	SHELL_CMD_ARG(pscan, NULL, "<value: on, off>", cmd_connectable, 2, 0),
+	SHELL_CMD_ARG(pscan, NULL, "<value: on, off> [central/peripheral]", cmd_connectable, 2, 1),
+	SHELL_CMD_ARG(auto_reject_conn, NULL, "<value: on, off>", cmd_auto_reject_conn, 2, 0),
 	SHELL_CMD_ARG(sdp-find, NULL, "[HFPAG, HFPHF, A2SRC, A2SNK, PNP, AVRCP_CT, AVRCP_TG]",
 		      cmd_sdp_find_record, 1, 1),
 	SHELL_CMD_ARG(switch-role, NULL, "<value: central, peripheral>", cmd_switch_role, 2, 0),

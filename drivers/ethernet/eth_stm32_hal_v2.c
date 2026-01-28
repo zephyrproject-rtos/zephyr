@@ -169,8 +169,6 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 		return -EIO;
 	}
 
-	k_mutex_lock(&dev_data->tx_mutex, K_FOREVER);
-
 	while (ctx == NULL) {
 		ctx = allocate_tx_context_async(pkt);
 		if (ctx == NULL) {
@@ -232,8 +230,6 @@ error:
 		HAL_ETH_TxFreeCallback((uint32_t *)ctx);
 	}
 
-	k_mutex_unlock(&dev_data->tx_mutex);
-
 	return res;
 }
 #else
@@ -276,8 +272,6 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 		LOG_ERR("PKT too big");
 		return -EIO;
 	}
-
-	k_mutex_lock(&dev_data->tx_mutex, K_FOREVER);
 
 	ctx = allocate_tx_context(pkt);
 	buf_header = &dma_tx_buffer_header[ctx->first_tx_buffer_index];
@@ -389,8 +383,6 @@ error:
 		/* We need to release the tx context and its buffers */
 		HAL_ETH_TxFreeCallback(STM32_ETH_ARGS(heth, (uint32_t *)ctx));
 	}
-
-	k_mutex_unlock(&dev_data->tx_mutex);
 
 	return res;
 }
@@ -635,7 +627,6 @@ int eth_stm32_hal_init(const struct device *dev)
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
 	/* Initialize semaphores */
-	k_mutex_init(&dev_data->tx_mutex);
 	k_sem_init(&dev_data->rx_int_sem, 0, K_SEM_MAX_LIMIT);
 	k_sem_init(&dev_data->tx_int_sem, 0, 1);
 

@@ -12,6 +12,9 @@
 #include <zephyr/arch/riscv/irq.h>
 #include <zephyr/drivers/pm_cpu_ops.h>
 #include <zephyr/platform/hooks.h>
+#if defined(CONFIG_RISCV_IMSIC)
+#include <zephyr/drivers/interrupt_controller/riscv_imsic.h>
+#endif
 
 volatile struct {
 	arch_cpustart_t fn;
@@ -79,6 +82,10 @@ void arch_secondary_cpu_init(int hartid)
 	/* Enable on secondary cores so that they can respond to PLIC */
 	irq_enable(RISCV_IRQ_MEXT);
 #endif /* CONFIG_PLIC_IRQ_AFFINITY */
+#if defined(CONFIG_RISCV_IMSIC) && defined(CONFIG_SMP)
+	/* Initialize IMSIC on secondary CPU */
+	z_riscv_imsic_secondary_init();
+#endif /* CONFIG_RISCV_IMSIC && CONFIG_SMP */
 	soc_per_core_init_hook();
 	riscv_cpu_init[cpu_num].fn(riscv_cpu_init[cpu_num].arg);
 }

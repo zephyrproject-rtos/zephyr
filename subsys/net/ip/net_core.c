@@ -365,6 +365,8 @@ static inline bool process_multicast(struct net_pkt *pkt)
 }
 #endif
 
+static void net_queue_rx(struct net_if *iface, struct net_pkt *pkt);
+
 int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 {
 	struct net_if *iface;
@@ -413,7 +415,7 @@ int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 		NET_DBG("Loopback pkt %p back to us", pkt);
 		net_pkt_set_loopback(pkt, true);
 		net_pkt_set_l2_processed(pkt, true);
-		processing_data(pkt);
+		net_queue_rx(net_pkt_iface(pkt), pkt);
 		ret = 0;
 		goto err;
 	}

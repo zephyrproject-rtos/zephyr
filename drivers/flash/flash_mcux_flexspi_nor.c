@@ -19,6 +19,10 @@
 #include <fsl_cache.h>
 #endif
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+#include <zephyr/drivers/gpio.h>
+#endif
+
 #define NOR_WRITE_SIZE	1
 #define NOR_ERASE_VALUE	0xff
 
@@ -68,6 +72,11 @@ struct flash_flexspi_nor_config {
 	 * into a RAM structure
 	 */
 	const struct device *controller;
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+	const struct gpio_dt_spec rst_gpio;
+	uint16_t rst_assert_ms;
+	uint16_t rst_deassert_ms;
+#endif
 };
 
 /* Device variables used in critical sections should be in this structure */
@@ -588,10 +597,14 @@ static int flash_flexspi_nor_quad_enable(struct flash_flexspi_nor_data *data,
 		return 0;
 	case JESD216_DW15_QER_VAL_S2B1v1:
 	case JESD216_DW15_QER_VAL_S2B1v4:
+	case JESD216_DW15_QER_VAL_S2B1v5:
 		/* Install read and write status command */
 		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR,
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR2,
 				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x1);
+		flexspi_lut[SCRATCH_CMD][1] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0,
+				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
 		flexspi_lut[SCRATCH_CMD2][0] = FLEXSPI_LUT_SEQ(
 				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_WRSR,
 				kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x1);
@@ -629,20 +642,6 @@ static int flash_flexspi_nor_quad_enable(struct flash_flexspi_nor_data *data,
 		rd_size = 1;
 		wr_size = 1;
 		break;
-	case JESD216_DW15_QER_VAL_S2B1v5:
-		/* Install read and write status command */
-		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR2,
-				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x1);
-		flexspi_lut[SCRATCH_CMD2][0] = FLEXSPI_LUT_SEQ(
-				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_WRSR,
-				kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x1);
-
-		/* Set bit 1 of status register 2 */
-		bit = BIT(9);
-		rd_size = 1;
-		wr_size = 2;
-		break;
 	case JESD216_DW15_QER_VAL_S2B1v6:
 		/* Install read and write status command */
 		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
@@ -668,23 +667,40 @@ static int flash_flexspi_nor_quad_enable(struct flash_flexspi_nor_data *data,
 	if (ret < 0) {
 		return ret;
 	}
-	transfer.dataSize = rd_size;
+
+	uint8_t tmp_save = 0;
+
+	if (rd_size == 2) {
+		/* Read first status register byte */
+		transfer.dataSize = 1;
+		transfer.seqIndex = READ_STATUS_REG;
+		transfer.cmdType = kFLEXSPI_Read;
+		ret = memc_flexspi_transfer(&data->controller, &transfer);
+		if (ret < 0) {
+			return ret;
+		}
+		tmp_save = (uint8_t)(buffer & 0xFF);
+	}
+
+	/* Read second status register byte */
+	transfer.dataSize = 1;
 	transfer.seqIndex = SCRATCH_CMD;
 	transfer.cmdType = kFLEXSPI_Read;
-	/* Read status register */
 	ret = memc_flexspi_transfer(&data->controller, &transfer);
 	if (ret < 0) {
 		return ret;
+	}
+
+	if (rd_size == 2) {
+		/* Combine both bytes: SR2 in upper byte, SR1 in lower byte */
+		buffer = ((buffer & 0xFF) << 8) | tmp_save;
 	}
 	/* Enable write */
 	ret = flash_flexspi_nor_write_enable(data);
 	if (ret < 0) {
 		return ret;
 	}
-	if (qer == JESD216_DW15_QER_VAL_S2B1v5) {
-		/* Left shift buffer by a byte */
-		buffer = buffer << 8;
-	}
+
 	buffer |= bit;
 	transfer.dataSize = wr_size;
 	transfer.seqIndex = SCRATCH_CMD2;
@@ -1630,6 +1646,26 @@ static int flash_flexspi_nor_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+	if (config->rst_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&config->rst_gpio)) {
+			LOG_ERR("Reset GPIO device is not ready");
+			return -ENODEV;
+		}
+
+		if (gpio_pin_configure_dt(&config->rst_gpio, GPIO_OUTPUT_ACTIVE) < 0) {
+			LOG_ERR("Reset GPIO config failed");
+			return -EIO;
+		}
+
+		k_sleep(K_MSEC(config->rst_assert_ms));
+
+		gpio_pin_set_dt(&config->rst_gpio, 0);
+
+		k_sleep(K_MSEC(config->rst_deassert_ms));
+	}
+#endif
+
 	if (flash_flexspi_nor_probe(data)) {
 		if (memc_flexspi_is_running_xip(&data->controller)) {
 			/* We can't continue from here- the LUT stored in
@@ -1680,6 +1716,16 @@ static DEVICE_API(flash, flash_flexspi_nor_api) = {
 #define AHB_WRITE_WAIT_UNIT(unit)					\
 	CONCAT3(kFLEXSPI_AhbWriteWaitUnit, unit, AhbCycle)
 
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+#define FLASH_FLEXSPI_RST_GPIO(inst)                                                               \
+	.rst_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                              \
+	.rst_assert_ms = DT_INST_PROP_OR(inst, reset_assert_duration_ms, 0),                       \
+	.rst_deassert_ms = DT_INST_PROP_OR(inst, boot_duration_ms, 0),
+#else
+#define FLASH_FLEXSPI_RST_GPIO(inst)
+#endif
+
 #define FLASH_FLEXSPI_DEVICE_CONFIG(n)					\
 	{								\
 		.flexspiRootClk = DT_INST_PROP(n, spi_max_frequency),	\
@@ -1708,6 +1754,7 @@ static DEVICE_API(flash, flash_flexspi_nor_api) = {
 	static const struct flash_flexspi_nor_config			\
 		flash_flexspi_nor_config_##n = {			\
 		.controller = DEVICE_DT_GET(DT_INST_BUS(n)),		\
+		FLASH_FLEXSPI_RST_GPIO(n)				\
 	};								\
 	static struct flash_flexspi_nor_data				\
 		flash_flexspi_nor_data_##n = {				\

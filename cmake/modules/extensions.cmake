@@ -1733,7 +1733,7 @@ function(zephyr_build_string outvar)
   list(REMOVE_DUPLICATES ${outvar})
 
   if(BUILD_STR_SHORT AND BUILD_STR_BOARD_QUALIFIERS)
-    string(REGEX REPLACE "^/[^/]*(.*)" "\\1" shortened_qualifiers "${BOARD_QUALIFIERS}")
+    string(REGEX REPLACE "^.[^/]*(.*)" "\\1" shortened_qualifiers "${BOARD_QUALIFIERS}")
     string(REPLACE "/" ";" str_short_segment_list "${shortened_qualifiers}")
     string(JOIN "_" ${BUILD_STR_SHORT}
            ${BUILD_STR_BOARD} ${str_short_segment_list} ${revision_string}
@@ -1876,6 +1876,30 @@ function(zephyr_blobs_verify)
   endif()
 endfunction()
 
+#
+# Usage:
+#   zephyr_custom_target_shared(<arguments>)
+#
+# Extension function of add_custom_command().
+#
+# The purpose of this function is to add the custom target to a CMake cache `ZEPHYR_SHARED_TARGETS`
+# list of targets.
+# The list of targets provides a possibility for external tools or build system to fetch important
+# build targets expected to be available to users.
+#
+# For example, Sysbuild will use this list for making build targets available to the user for the
+# image.
+#
+# All arguments to this function is passed to CMake add_custom_command() function as-is.
+#
+# Arguments:
+#  - See `add_custom_target` documentation
+#
+macro(zephyr_custom_target_shared)
+  add_custom_target(${ARGN})
+
+  zephyr_set(ZEPHYR_SHARED_TARGETS ${ARGV0} SCOPE cache APPEND)
+endmacro()
 ########################################################
 # 2. Kconfig-aware extensions
 ########################################################
@@ -3352,6 +3376,8 @@ function(zephyr_scope_exists result scope)
   get_property(scope_defined GLOBAL PROPERTY scope:${scope})
   if(scope_defined)
     set(${result} TRUE PARENT_SCOPE)
+  elseif(scope STREQUAL cache)
+    set(${result} TRUE PARENT_SCOPE)
   else()
     set(${result} FALSE PARENT_SCOPE)
   endif()
@@ -3362,6 +3388,9 @@ endfunction()
 #
 # Get the current value of <var> in a specific <scope>, as defined by a
 # previous zephyr_set() call. The value will be stored in the <output> var.
+#
+# Note: the scope `cache` will return the CMake cache value of the variable set
+#       in current CMake run. (cache values from earlier runs are ignored).
 #
 # <output> : Variable to store the value in
 # <scope>  : Scope for the variable look up
@@ -3388,6 +3417,9 @@ endfunction()
 # scope. The scope is used on later zephyr_get() invocation for precedence
 # handling when a variable it set in multiple scopes.
 #
+# Note: the scope `cache` sets the CMake cache value of the variable but cache
+#       values from earlier CMake runs are ignored.
+#
 # <variable>   : Name of variable
 # <value>      : Value of variable, multiple values will create a list.
 #                The SCOPE argument identifies the end of value list.
@@ -3411,6 +3443,11 @@ function(zephyr_set variable)
   set_property(GLOBAL ${property_args} PROPERTY
                ${SET_VAR_SCOPE}_scope:${variable} ${SET_VAR_UNPARSED_ARGUMENTS}
   )
+
+  if(SET_VAR_SCOPE STREQUAL cache)
+    zephyr_get_scoped(value ${SET_VAR_SCOPE} ${variable})
+    set(${variable} "${value}" CACHE INTERNAL "")
+  endif()
 endfunction()
 
 # Usage:

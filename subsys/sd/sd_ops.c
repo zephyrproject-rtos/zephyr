@@ -281,9 +281,8 @@ int sdmmc_read_csd(struct sd_card *card)
 }
 
 /* Reads card identification register, and decodes it */
-int card_read_cid(struct sd_card *card)
+int card_read_cid(struct sd_card *card, uint32_t *cid)
 {
-	uint32_t cid[4];
 	int ret;
 #if defined(CONFIG_SDMMC_STACK) || defined(CONFIG_SDIO_STACK)
 	/* Keep CID on stack for reduced RAM usage */
@@ -864,8 +863,10 @@ int card_ioctl(struct sd_card *card, uint8_t cmd, void *buf)
 		(*(uint32_t *)buf) = card->block_count;
 		break;
 	case DISK_IOCTL_GET_SECTOR_SIZE:
-	case DISK_IOCTL_GET_ERASE_BLOCK_SZ:
 		(*(uint32_t *)buf) = card->block_size;
+		break;
+	case DISK_IOCTL_GET_ERASE_BLOCK_SZ: /* in sectors */
+		(*(uint32_t *)buf) = 1;
 		break;
 	case DISK_IOCTL_CTRL_SYNC:
 		/* Ensure card is not busy with data write.
@@ -883,6 +884,9 @@ int card_ioctl(struct sd_card *card, uint8_t cmd, void *buf)
 		/* Power down the card */
 		card->bus_io.power_mode = SDHC_POWER_OFF;
 		ret = sdhc_set_io(card->sdhc, &card->bus_io);
+		break;
+	case DISK_IOCTL_GET_CARD_CID:
+		ret = card_read_cid(card, buf);
 		break;
 	default:
 		ret = -ENOTSUP;

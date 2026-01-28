@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2019 Vestas Wind Systems A/S
- * Copyright 2025 NXP
+ * Copyright (c) 2019-2026 Vestas Wind Systems A/S
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -64,7 +64,7 @@ struct mcux_flexcan_config {
 
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
-	int clk_source;
+	uint32_t clk_source;
 	uint32_t number_of_mb;
 	uint32_t rx_mb;
 	uint32_t tx_mb;
@@ -1112,9 +1112,6 @@ static FLEXCAN_CALLBACK(mcux_flexcan_transfer_callback)
 	ARG_UNUSED(base);
 
 	switch (status) {
-	case kStatus_FLEXCAN_UnHandled:
-		/* Not all fault confinement state changes are handled by the HAL */
-		__fallthrough;
 	case kStatus_FLEXCAN_ErrorStatus:
 		mcux_flexcan_transfer_error_status(data->dev, status_flags);
 		break;
@@ -1141,6 +1138,12 @@ static FLEXCAN_CALLBACK(mcux_flexcan_transfer_callback)
 	case kStatus_FLEXCAN_RxIdle:
 		mcux_flexcan_transfer_rx_idle(data->dev, mb);
 		break;
+	case kStatus_FLEXCAN_UnHandled:
+		/*
+		 * Unhandled status during Message Buffer processing.
+		 * If result field is 0xFF, it means no message buffer interrupt occurred.
+		 */
+		__fallthrough;
 	default:
 		LOG_WRN("Unhandled status 0x%08x (result = 0x%016llx)",
 			status, status_flags);
@@ -1149,10 +1152,12 @@ static FLEXCAN_CALLBACK(mcux_flexcan_transfer_callback)
 
 static void mcux_flexcan_isr(const struct device *dev)
 {
+	const struct mcux_flexcan_config *config = dev->config;
 	struct mcux_flexcan_data *data = dev->data;
 	CAN_Type *base = get_base(dev);
 
-	FLEXCAN_TransferHandleIRQ(base, &data->handle);
+	FLEXCAN_BusoffErrorHandleIRQ(base, &data->handle);
+	FLEXCAN_MbHandleIRQ(base, &data->handle, 0U, config->number_of_mb);
 }
 
 static int mcux_flexcan_init(const struct device *dev)
@@ -1175,6 +1180,24 @@ static int mcux_flexcan_init(const struct device *dev)
 		LOG_ERR("clock device not ready");
 		return -ENODEV;
 	}
+
+	err = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
+	if (err) {
+		/* Check if error is due to lack of support */
+		if (err != -ENOSYS) {
+			/* Real error occurred */
+			LOG_ERR("Failed to configure clock: %d", err);
+			return err;
+		}
+	}
+
+#if FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL
+	err = clock_control_on(config->clock_dev, config->clock_subsys);
+	if (err) {
+		LOG_ERR("Failed to enable clock: %d", err);
+		return err;
+	}
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 	DEVICE_MMIO_NAMED_MAP(dev, flexcan_mmio, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
 
@@ -1488,6 +1511,30 @@ static DEVICE_API(can, mcux_flexcan_fd_driver_api) = {
 #define FLEXCAN_INST_RX_MB(id) (CONFIG_CAN_MCUX_FLEXCAN_MAX_FILTERS + RX_START_IDX)
 #define FLEXCAN_INST_TX_MB(id) (FLEXCAN_INST_NUMBER_OF_MB(id) - FLEXCAN_INST_RX_MB(id))
 
+#define FLEXCAN_CLK_SOURCE(id) DT_INST_PROP(id, clk_source)
+#define FLEXCAN_CLK_SOURCE_NAME(id) CONCAT(clksrc, FLEXCAN_CLK_SOURCE(id))
+
+#define FLEXCAN_INST_CLOCKS_FROM_CLK_SOURCE(id)							  \
+	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(id, FLEXCAN_CLK_SOURCE_NAME(id))), \
+	.clock_subsys = (clock_control_subsys_t)						  \
+		DT_INST_CLOCKS_CELL_BY_NAME(id, FLEXCAN_CLK_SOURCE_NAME(id), name),		  \
+	.clk_source = FLEXCAN_CLK_SOURCE(id)
+
+#define FLEXCAN_INST_CLOCKS_NO_CLK_SOURCE(id)					\
+	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),			\
+	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),	\
+	.clk_source = 0U
+
+#define FLEXCAN_INST_CLOCKS(id)							\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(id, clk_source),			\
+		(FLEXCAN_INST_CLOCKS_FROM_CLK_SOURCE(id)),			\
+		(FLEXCAN_INST_CLOCKS_NO_CLK_SOURCE(id)))
+
+#define FLEXCAN_CHECK_CLK_SOURCE(id)								\
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(id, clk_source),					\
+		(BUILD_ASSERT(DT_INST_CLOCKS_HAS_NAME(id, FLEXCAN_CLK_SOURCE_NAME(id)),		\
+			"FlexCAN instance " STRINGIFY(id) " clk-source without named clock")))
+
 #define FLEXCAN_CHECK_MAX_FILTER(id)						\
 	BUILD_ASSERT(CONFIG_CAN_MCUX_FLEXCAN_MAX_FILTERS > 0,			\
 		"Maximum number of RX filters should greater than 0");		\
@@ -1499,6 +1546,7 @@ static DEVICE_API(can, mcux_flexcan_fd_driver_api) = {
 
 #define FLEXCAN_DEVICE_INIT_MCUX(id)					\
 	PINCTRL_DT_INST_DEFINE(id);					\
+	FLEXCAN_CHECK_CLK_SOURCE(id);					\
 	FLEXCAN_CHECK_MAX_FILTER(id);					\
 									\
 	static void mcux_flexcan_irq_config_##id(const struct device *dev); \
@@ -1518,10 +1566,7 @@ static DEVICE_API(can, mcux_flexcan_fd_driver_api) = {
 	static const struct mcux_flexcan_config mcux_flexcan_config_##id = { \
 		DEVICE_MMIO_NAMED_ROM_INIT(flexcan_mmio, DT_DRV_INST(id)),	\
 		.common = CAN_DT_DRIVER_CONFIG_INST_GET(id, 0, FLEXCAN_MAX_BITRATE(id)), \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),	\
-		.clock_subsys = (clock_control_subsys_t)		\
-			DT_INST_CLOCKS_CELL(id, name),			\
-		.clk_source = DT_INST_PROP(id, clk_source),		\
+		FLEXCAN_INST_CLOCKS(id),				\
 		.number_of_mb = FLEXCAN_INST_NUMBER_OF_MB(id),		\
 		.rx_mb = FLEXCAN_INST_RX_MB(id),			\
 		.tx_mb = FLEXCAN_INST_TX_MB(id),			\

@@ -1,4 +1,5 @@
-# Copyright (c) 2019, Linaro Limited
+# Copyright (c) 2019 Linaro Limited
+# Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP MCUX PWM
@@ -46,6 +47,24 @@ properties:
       "half-cycle" - registers loaded on a PWM half cycle;
       "full-cycle" - registers loaded on a PWM full cycle;
       "half-and-full-cycle" - registers loaded on a PWM half & full cycle.
+
+  input-filter-count:
+    type: int
+    description: |
+      Set the number of consecutive samples that must agree prior to
+      the input filter accepting an input transition. The number of samples
+      is the decimal value of this field plus three: the bit field value of 0-7
+      represents 3-10 samples, respectively. The value affects the input latency.
+      Valid range: 0 - 7
+
+  input-filter-period:
+    type: int
+    description: |
+      Set the sampling period (in IPBus clock cycles) of the input capture pin input filter.
+      Each input is sampled multiple times at the rate specified by this field.
+      If the value is 0x00 (default), then the input filter is bypassed. The value affects
+      the input latency.
+      Valid range: 0 - 255
 
   "#pwm-cells":
     const: 3

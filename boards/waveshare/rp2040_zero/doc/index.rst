@@ -39,14 +39,18 @@ Default Zephyr Peripheral Mapping:
 
 - UART0_TX : P0
 - UART0_RX : P1
-- I2C0_SDA : P4
-- I2C0_SCL : P5
-- I2C1_SDA : P6
-- I2C1_SCL : P7
+- I2C0_SDA : P24
+- I2C0_SCL : P25
+- I2C1_SDA : P22
+- I2C1_SCL : P23
+- SPI0_TX : P3
+- SPI0_RX : P4
+- SPI0_SCK : P6
 - ADC_CH0 : P26
 - ADC_CH1 : P27
 - ADC_CH2 : P28
 - ADC_CH3 : P29
+- RGB LED (WS2812): P16
 
 Programming and Debugging
 *************************

@@ -114,6 +114,12 @@
 			st,adc-has-differential-support;
 			status = "disabled";
 		};
+
+		rng: rng@420c0800 {
+			nist-config = <0xf10f00>;
+			health-test-config = <0x92f3>;
+			noise-source-control = <0x1609>;
+		};
 	};
 
 	smbus5: smbus5 {

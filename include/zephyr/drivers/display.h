@@ -46,34 +46,102 @@ extern "C" {
  * big endian.
  */
 enum display_pixel_format {
-	PIXEL_FORMAT_RGB_888		= BIT(0), /**< 24-bit RGB */
-	PIXEL_FORMAT_MONO01		= BIT(1), /**< Monochrome (0=Black 1=White) */
-	PIXEL_FORMAT_MONO10		= BIT(2), /**< Monochrome (1=Black 0=White) */
-	PIXEL_FORMAT_ARGB_8888		= BIT(3), /**< 32-bit ARGB */
 	/**
-	 * 16-bit RGB format packed into two bytes: 5 red bits [15:11], 6
-	 * green bits [10:5], 5 blue bits [4:0]. For example, in little-endian machine:
+	 * 24-bit RGB format with 8 bits per component.
+	 *
+	 * Below shows how data are organized in memory.
 	 *
 	 * @code{.unparsed}
+	 *   Byte 0   Byte 1   Byte 2
+	 *   7......0 15.....8 23....16
+	 * | Bbbbbbbb Gggggggg Rrrrrrrr | ...
+	 * @endcode
+	 *
+	 */
+	PIXEL_FORMAT_RGB_888		= BIT(0), /**< 24-bit RGB */
+
+	/**
+	 * 1-bit monochrome format with 1 bit per pixel, thus each byte represent 8 pixels
+	 * Two variants, with black being either represented by 0 or 1
+	 *
+	 * Below shows how data are organized in memory.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   | Byte 1   |
+	 *   7......0   7......0
+	 * | MMMMMMMM | MMMMMMMM | ...
+	 * @endcode
+	 *
+	 */
+	PIXEL_FORMAT_MONO01		= BIT(1), /**< Monochrome (0=Black 1=White) */
+	PIXEL_FORMAT_MONO10		= BIT(2), /**< Monochrome (1=Black 0=White) */
+
+	/**
+	 * 32-bit RGB format with 8 bits per component and 8 bits for alpha.
+	 *
+	 * Below shows how data are organized in memory.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   Byte 1   Byte 2   Byte 3
+	 *   7......0 15.....8 23....16 31....24
+	 * | Bbbbbbbb Gggggggg Rrrrrrrr Aaaaaaaa | ...
+	 * @endcode
+	 *
+	 */
+	PIXEL_FORMAT_ARGB_8888		= BIT(3), /**< 32-bit ARGB */
+
+	/**
+	 * 16-bit RGB format packed into two bytes: 5 red bits [15:11], 6
+	 * green bits [10:5], 5 blue bits [4:0].
+	 *
+	 * Below shows how data are organized in memory.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   Byte 1   |
 	 *   7......0 15.....8
 	 * | gggBbbbb RrrrrGgg | ...
 	 * @endcode
 	 *
 	 */
 	PIXEL_FORMAT_RGB_565		= BIT(4),
+
 	/**
-	 * 16-bit RGB format packed into two bytes: 5 blue bits [15:11], 6
-	 * green bits [10:5], 5 red bits [4:0]. For example, in little-endian machine:
+	 * 16-bit RGB format packed into two bytes. Byte swapped version of
+	 * the PIXEL_FORMAT_RGB_565 format.
 	 *
 	 * @code{.unparsed}
 	 *   7......0 15.....8
-	 * | gggRrrrr BbbbbGgg | ...
+	 * | RrrrrGgg gggBbbbb | ...
 	 * @endcode
 	 *
 	 */
-	PIXEL_FORMAT_BGR_565		= BIT(5),
+	PIXEL_FORMAT_RGB_565X		= BIT(5),
+
+	/**
+	 * 8-bit Greyscale format
+	 *
+	 * Below shows how data are organized in memory.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   | Byte 1   |
+	 *   7......0   7......0
+	 * | Gggggggg | Gggggggg | ...
+	 * @endcode
+	 */
 	PIXEL_FORMAT_L_8		= BIT(6), /**< 8-bit Grayscale/Luminance, equivalent to */
 						  /**< GRAY, GREY, GRAY8, Y8, R8, etc...        */
+
+	/**
+	 * 16-bit Greyscale format with 8-bit luminance and 8-bit for alpha
+	 *
+	 * Below shows how data are organized in memory.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0    Byte 1   |
+	 *   7......0  15.....8
+	 * | Gggggggg  Aaaaaaaa | ...
+	 * @endcode
+	 */
 	PIXEL_FORMAT_AL_88		= BIT(7), /**< 8-bit Grayscale/Luminance with alpha */
 };
 
@@ -90,7 +158,7 @@ enum display_pixel_format {
 	(((fmt & PIXEL_FORMAT_MONO10) >> 2) * 1U) +				\
 	(((fmt & PIXEL_FORMAT_ARGB_8888) >> 3) * 32U) +				\
 	(((fmt & PIXEL_FORMAT_RGB_565) >> 4) * 16U) +				\
-	(((fmt & PIXEL_FORMAT_BGR_565) >> 5) * 16U) +				\
+	(((fmt & PIXEL_FORMAT_RGB_565X) >> 5) * 16U) +				\
 	(((fmt & PIXEL_FORMAT_L_8) >> 6) * 8U) +				\
 	(((fmt & PIXEL_FORMAT_AL_88) >> 7) * 16U))
 

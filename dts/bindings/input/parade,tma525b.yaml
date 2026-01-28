@@ -1,0 +1,24 @@
+# Copyright (c) 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: TMA525b capacitive touch controller
+
+compatible: "parade,tma525b"
+
+include: [i2c-device.yaml, touchscreen-common.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      Interrupt GPIO. Used by the controller to signal touch data is
+      available. Active low.
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Reset GPIO. Used to reset the controller during initialization, and
+      to wake it from hibernation mode. Active low.
+  power-gpios:
+    type: phandle-array
+    description: |
+      Power on GPIO. Used to enable the controller during initialization.

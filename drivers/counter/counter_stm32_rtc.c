@@ -372,10 +372,15 @@ static int rtc_stm32_start(const struct device *dev)
 
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 	stm32_backup_domain_enable_access();
+#ifdef CONFIG_SOC_SERIES_STM32U3X
+	/* STM32U3 series uses LL_RCC_RTC_ClockEnable instead of LL_RCC_EnableRTC */
+	LL_RCC_RTC_ClockEnable();
+#else
 	LL_RCC_EnableRTC();
+#endif /* CONFIG_SOC_SERIES_STM32U3X */
 	stm32_backup_domain_disable_access();
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
-#endif
+#endif /* CONFIG_SOC_SERIES_STM32WBAX || CONFIG_SOC_SERIES_STM32U5X */
 
 	return 0;
 }
@@ -397,10 +402,15 @@ static int rtc_stm32_stop(const struct device *dev)
 
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 	stm32_backup_domain_enable_access();
+#ifdef CONFIG_SOC_SERIES_STM32U3X
+	/* STM32U3 series uses LL_RCC_RTC_ClockDisable instead of LL_RCC_DisableRTC */
+	LL_RCC_RTC_ClockDisable();
+#else
 	LL_RCC_DisableRTC();
+#endif /* CONFIG_SOC_SERIES_STM32U3X */
 	stm32_backup_domain_disable_access();
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
-#endif
+#endif /* CONFIG_SOC_SERIES_STM32WBAX || CONFIG_SOC_SERIES_STM32U5X */
 
 	return 0;
 }
@@ -724,8 +734,10 @@ void rtc_stm32_isr(const struct device *dev)
 	|| defined(CONFIG_SOC_SERIES_STM32L5X) \
 	|| defined(CONFIG_SOC_SERIES_STM32H5X)
 	LL_EXTI_ClearRisingFlag_0_31(RTC_EXTI_LINE);
-#elif defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32WBAX)
-	/* in STM32U5 family RTC is not connected to EXTI */
+#elif defined(CONFIG_SOC_SERIES_STM32U3X) \
+	|| defined(CONFIG_SOC_SERIES_STM32U5X) \
+	|| defined(CONFIG_SOC_SERIES_STM32WBAX)
+	/* RTC is not connected to EXTI for these SoC series */
 #else
 	LL_EXTI_ClearFlag_0_31(RTC_EXTI_LINE);
 #endif
@@ -771,8 +783,13 @@ static int rtc_stm32_init(const struct device *dev)
 	}
 
 #if !defined(CONFIG_SOC_SERIES_STM32WBAX)
+#ifdef CONFIG_SOC_SERIES_STM32U3X
+	/* STM32U3 series uses LL_RCC_RTC_ClockEnable instead of LL_RCC_EnableRTC */
+	LL_RCC_RTC_ClockEnable();
+#else
 	LL_RCC_EnableRTC();
-#endif
+#endif /* CONFIG_SOC_SERIES_STM32U3X */
+#endif /* !CONFIG_SOC_SERIES_STM32WBAX */
 
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 
@@ -799,8 +816,9 @@ static int rtc_stm32_init(const struct device *dev)
 #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CONFIG_CPU_CORTEX_M4)
 	LL_C2_EXTI_EnableIT_0_31(RTC_EXTI_LINE);
 	LL_EXTI_EnableRisingTrig_0_31(RTC_EXTI_LINE);
-#elif defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32WBAX)
-	/* in STM32U5 family RTC is not connected to EXTI */
+#elif defined(CONFIG_SOC_SERIES_STM32U3X) || defined(CONFIG_SOC_SERIES_STM32U5X) || \
+	  defined(CONFIG_SOC_SERIES_STM32WBAX)
+	/* RTC is not connected to EXTI for these SoC series */
 #else
 	LL_EXTI_EnableIT_0_31(RTC_EXTI_LINE);
 	LL_EXTI_EnableRisingTrig_0_31(RTC_EXTI_LINE);

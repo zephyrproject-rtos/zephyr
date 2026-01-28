@@ -450,7 +450,16 @@ int net_ipv4_acd_start(struct net_if *iface, struct net_if_addr *ifaddr);
  * @param iface Network interface the address belongs to.
  * @param ifaddr IPv4 address to probe.
  */
+#if defined(CONFIG_NET_IPV4_ACD)
 void net_ipv4_acd_cancel(struct net_if *iface, struct net_if_addr *ifaddr);
+#else
+static inline void net_ipv4_acd_cancel(struct net_if *iface,
+				       struct net_if_addr *ifaddr)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(ifaddr);
+}
+#endif /* CONFIG_NET_IPV4_ACD */
 
 /**
  * @brief Notify no conflict was detected for an IPv4 address.

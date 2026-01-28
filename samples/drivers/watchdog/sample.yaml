@@ -22,6 +22,7 @@ tests:
       - s32z2xxdc2/s32z270/rtu1
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
+      - s32k5xxcvb/s32k566/r52
       - panb611evb/nrf54l15/cpuapp
       - panb611evb/nrf54l15/cpuapp/ns
       - panb611evb/nrf54l15/cpuflpr
@@ -29,6 +30,11 @@ tests:
       - nrf54lm20dk/nrf54lm20a/cpuapp/ns
       - nrf54l15dk/nrf54l15/cpuapp/ns
       - nrf54l15dk/nrf54l10/cpuapp/ns
+      - nrf54l15tag/nrf54l15/cpuapp
+      - nrf54l15tag/nrf54l15/cpuapp/ns
+      - nrf54l15tag/nrf54l15/cpuflpr
+      - nrf54l15tag/nrf54l15/cpuflpr/xip
+      - nrf7120dk/nrf7120/cpuapp/ns
       - bl54l15_dvk/nrf54l10/cpuapp/ns
       - bl54l15_dvk/nrf54l15/cpuapp/ns
       - bl54l15u_dvk/nrf54l15/cpuapp/ns
@@ -148,12 +154,13 @@ tests:
       - longan_nano
     integration_platforms:
       - gd32e103v_eval
-  sample.drivers.watchdog.s32z270dc2_r52:
+  sample.drivers.watchdog.nxp_s32_swt:
     build_only: true
     platform_allow:
       - s32z2xxdc2/s32z270/rtu0
       - s32z2xxdc2/s32z270/rtu1
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
+      - s32k5xxcvb/s32k566/r52
     integration_platforms:
       - s32z2xxdc2/s32z270/rtu0

@@ -58,6 +58,14 @@ config I3C_TARGET_BUFFER_MODE
 	help
 	  This is an option to enable buffer mode.
 
+config HEAP_MEM_POOL_ADD_SIZE_I3C
+	int "Heap memory pool size for I3C"
+	default 48
+	depends on I3C_CONTROLLER && I3C_TARGET
+	help
+	  The size of the memory pool used by I3C. Used only for
+	  DEFTGTS (Define List of Targets) CCC (Common Command Code).
+
 menuconfig I3C_USE_IBI
 	bool "Use In-Band Interrupt (IBI)"
 	default y

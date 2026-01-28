@@ -32,7 +32,7 @@ static int pd_intel_adsp_set_power_enable(struct pg_bits *bits, bool power_enabl
 			return -EIO;
 		}
 	} else {
-#if CONFIG_SOC_INTEL_ACE15_MTPM
+#if CONFIG_SOC_ACE15_MTPM
 		extern uint32_t adsp_pending_buffer;
 
 		if (bits->SPA_bit == INTEL_ADSP_HST_DOMAIN_BIT) {

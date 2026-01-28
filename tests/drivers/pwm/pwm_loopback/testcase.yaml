@@ -9,3 +9,17 @@ tests:
     harness: ztest
     harness_config:
       fixture: pwm_loopback
+  drivers.pwm.s32k5xxcvb_s32k566_ftm.loopback:
+    tags:
+      - pwm
+      - drivers
+      - userspace
+    extra_args: DTC_OVERLAY_FILE="boards/s32k5xxcvb_s32k566_ftm.overlay"
+    platform_allow:
+      - s32k5xxcvb/s32k566/m7
+      - s32k5xxcvb/s32k566/r52
+    depends_on: pwm
+    filter: dt_compat_enabled("test-pwm-loopback")
+    harness: ztest
+    harness_config:
+      fixture: pwm_loopback

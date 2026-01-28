@@ -20,6 +20,7 @@ tests:
       - platform:mimxrt1180_evk/mimxrt1189/cm7:DTC_OVERLAY_FILE="boards/mimxrt1180_evk_flexio_pwm.overlay"
       - platform:frdm_mcxa366/mcxa366:DTC_OVERLAY_FILE="boards/frdm_mcxa366_flexio_pwm.overlay"
       - platform:frdm_mcxa266/mcxa266:DTC_OVERLAY_FILE="boards/frdm_mcxa266_flexio_pwm.overlay"
+      - platform:frdm_mcxe247/mcxe247:DTC_OVERLAY_FILE="boards/frdm_mcxe247_flexio_pwm.overlay"
     platform_allow:
       - frdm_ke17z
       - frdm_ke17z512
@@ -28,6 +29,7 @@ tests:
       - mimxrt1180_evk/mimxrt1189/cm7
       - frdm_mcxa366/mcxa366
       - frdm_mcxa266/mcxa266
+      - frdm_mcxe247
     filter: dt_alias_exists("pwm-test") and CONFIG_DT_HAS_NXP_FLEXIO_ENABLED
      and CONFIG_DT_HAS_NXP_FLEXIO_PWM_ENABLED
     depends_on: pwm
@@ -132,9 +134,12 @@ tests:
       - sam_e54_xpro
     filter: dt_alias_exists("pwm-test")
   drivers.pwm.mchp_tc5:
-    extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc5.overlay"
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc5.overlay"
+      - DTC_OVERLAY_FILE="boards/microchip/pic32cx_sg41_cult_tc5.overlay"
     platform_allow:
       - sam_e54_xpro
+      - pic32cx_sg41_cult
     filter: dt_alias_exists("pwm-test")
   drivers.pwm.mchp_tc6:
     extra_args: DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tc6.overlay"
@@ -146,3 +151,13 @@ tests:
     platform_allow:
       - sam_e54_xpro
     filter: dt_alias_exists("pwm-test")
+  drivers.pwm.s32k5xxcvb_s32k566_ftm:
+    tags:
+      - drivers
+      - pwm
+      - userspace
+    extra_args: DTC_OVERLAY_FILE="boards/s32k5xxcvb_s32k566_ftm.overlay"
+    platform_allow:
+      - s32k5xxcvb/s32k566/m7
+      - s32k5xxcvb/s32k566/r52
+    depends_on: pwm

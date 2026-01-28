@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#define USE_NON_SECURE_ADDRESS_MAP 1
+
+#include "nrf7120_cpuapp_common.dtsi"
+
+/ {
+	compatible = "nordic,nrf7120dk_nrf7120-cpuapp";
+	model = "Nordic nRF7120 DK nRF7120 Application MCU";
+
+	chosen {
+		zephyr,code-partition = &slot0_ns_partition;
+		zephyr,sram = &cpuapp_sram;
+	};
+};
+
+&uart30 {
+	/* Disable so that TF-M can use this UART */
+	status = "disabled";
+};
+
+#include <nordic/nrf7120_cpuapp_ns_partition.dtsi>

@@ -252,7 +252,7 @@ static int shim_nrf_twis_target_unregister(const struct device *dev,
 	return 0;
 }
 
-const struct i2c_driver_api shim_nrf_twis_api = {
+static DEVICE_API(i2c, shim_nrf_twis_api) = {
 	.target_register = shim_nrf_twis_target_register,
 	.target_unregister = shim_nrf_twis_target_unregister,
 };
@@ -307,16 +307,26 @@ static int shim_nrf_twis_deinit(const struct device *dev)
 #endif
 
 #define SHIM_NRF_TWIS_NAME(id, name) \
-	_CONCAT_4(shim_nrf_twis_, name, _, id)
+	CONCAT(shim_nrf_twis_, name, _, id)
 
 #define SHIM_NRF_TWIS_DEVICE_DEFINE(id)                                                            \
 	static struct shim_nrf_twis_data SHIM_NRF_TWIS_NAME(id, data);                             \
 	NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(DT_DRV_INST(id));                            \
+                                                                                                   \
+	NRF_DT_INST_IRQ_DIRECT_DEFINE(                                                             \
+		id,                                                                                \
+		nrfx_twis_irq_handler,                                                             \
+		&SHIM_NRF_TWIS_NAME(id, data).twis                                                 \
+	)                                                                                          \
+                                                                                                   \
 	static void SHIM_NRF_TWIS_NAME(id, pre_init)(void)                                         \
 	{                                                                                          \
 		SHIM_NRF_TWIS_NAME(id, data).twis.p_reg = (NRF_TWIS_Type *)DT_INST_REG_ADDR(id);   \
-		IRQ_CONNECT(DT_INST_IRQN(id), DT_INST_IRQ(id, priority), nrfx_twis_irq_handler,    \
-			    &SHIM_NRF_TWIS_NAME(id, data).twis, 0);                                \
+		NRF_DT_INST_IRQ_CONNECT(                                                           \
+			id,                                                                        \
+			nrfx_twis_irq_handler,                                                     \
+			&SHIM_NRF_TWIS_NAME(id, data).twis                                         \
+		)                                                                                  \
 	}                                                                                          \
                                                                                                    \
 	static void SHIM_NRF_TWIS_NAME(id, event_handler)(nrfx_twis_event_t const *event)          \

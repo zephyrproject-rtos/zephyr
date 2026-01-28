@@ -94,35 +94,61 @@ static int lan9250_wait_ready(const struct device *dev, uint16_t address, uint32
 static int lan9250_read_mac_reg(const struct device *dev, uint8_t address, uint32_t *value)
 {
 	uint32_t tmp;
+	int ret;
 
 	/* Wait for MAC to be ready and send writing register command and data */
-	lan9250_wait_ready(dev, LAN9250_MAC_CSR_CMD, LAN9250_MAC_CSR_CMD_BUSY, 0,
-			   LAN9250_MAC_TIMEOUT);
-	lan9250_write_sys_reg(dev, LAN9250_MAC_CSR_CMD,
-			      address | LAN9250_MAC_CSR_CMD_BUSY | LAN9250_MAC_CSR_CMD_READ);
+	ret = lan9250_wait_ready(dev, LAN9250_MAC_CSR_CMD, LAN9250_MAC_CSR_CMD_BUSY, 0,
+				 LAN9250_MAC_TIMEOUT);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = lan9250_write_sys_reg(dev, LAN9250_MAC_CSR_CMD,
+				    address | LAN9250_MAC_CSR_CMD_BUSY | LAN9250_MAC_CSR_CMD_READ);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Wait for MAC to be ready and send writing register command and data */
-	lan9250_wait_ready(dev, LAN9250_MAC_CSR_CMD, LAN9250_MAC_CSR_CMD_BUSY, 0,
-			   LAN9250_MAC_TIMEOUT);
-	lan9250_read_sys_reg(dev, LAN9250_MAC_CSR_DATA, &tmp);
+	ret = lan9250_wait_ready(dev, LAN9250_MAC_CSR_CMD, LAN9250_MAC_CSR_CMD_BUSY, 0,
+				 LAN9250_MAC_TIMEOUT);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = lan9250_read_sys_reg(dev, LAN9250_MAC_CSR_DATA, &tmp);
+	if (ret < 0) {
+		return ret;
+	}
 
 	*value = tmp;
+
 	return 0;
 }
 
 static int lan9250_write_mac_reg(const struct device *dev, uint8_t address, uint32_t data)
 {
+	int ret;
 	/* Wait for MAC to be ready and send writing register command and data */
-	lan9250_wait_ready(dev, LAN9250_MAC_CSR_CMD, LAN9250_MAC_CSR_CMD_BUSY, 0,
-			   LAN9250_MAC_TIMEOUT);
-	lan9250_write_sys_reg(dev, LAN9250_MAC_CSR_DATA, data);
-	lan9250_write_sys_reg(dev, LAN9250_MAC_CSR_CMD, address | LAN9250_MAC_CSR_CMD_BUSY);
+	ret = lan9250_wait_ready(dev, LAN9250_MAC_CSR_CMD, LAN9250_MAC_CSR_CMD_BUSY, 0,
+				 LAN9250_MAC_TIMEOUT);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = lan9250_write_sys_reg(dev, LAN9250_MAC_CSR_DATA, data);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = lan9250_write_sys_reg(dev, LAN9250_MAC_CSR_CMD, address | LAN9250_MAC_CSR_CMD_BUSY);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Wait until writing MAC is done */
-	lan9250_wait_ready(dev, LAN9250_MAC_CSR_CMD, LAN9250_MAC_CSR_CMD_BUSY, 0,
-			   LAN9250_MAC_TIMEOUT);
-
-	return 0;
+	return lan9250_wait_ready(dev, LAN9250_MAC_CSR_CMD, LAN9250_MAC_CSR_CMD_BUSY, 0,
+				  LAN9250_MAC_TIMEOUT);
 }
 
 static int lan9250_wait_mac_ready(const struct device *dev, uint8_t address, uint32_t mask,
@@ -147,10 +173,14 @@ static int lan9250_wait_mac_ready(const struct device *dev, uint8_t address, uin
 static int lan9250_read_phy_reg(const struct device *dev, uint8_t address, uint16_t *value)
 {
 	uint32_t tmp;
+	int ret;
 
 	/* Wait PHY to be ready and send reading register command */
-	lan9250_wait_mac_ready(dev, LAN9250_HMAC_MII_ACC, LAN9250_HMAC_MII_ACC_MIIBZY, 0,
-			       LAN9250_PHY_TIMEOUT);
+	ret = lan9250_wait_mac_ready(dev, LAN9250_HMAC_MII_ACC, LAN9250_HMAC_MII_ACC_MIIBZY, 0,
+				     LAN9250_PHY_TIMEOUT);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Reference: Microchip Ethernet LAN9250
 	 * https://github.com/microchip-pic-avr-solutions/ethernet-lan9250/
@@ -166,14 +196,24 @@ static int lan9250_read_phy_reg(const struct device *dev, uint8_t address, uint1
 	 * Where phy_add = 0b00001 & index = address
 	 * Data = ((phy_add & 0x1F) << 11) | ((index & 0x1F) << 6)
 	 */
-	lan9250_write_mac_reg(dev, LAN9250_HMAC_MII_ACC, (1 << 11) | ((address & 0x1F) << 6));
+	ret = lan9250_write_mac_reg(dev, LAN9250_HMAC_MII_ACC, (1 << 11) | ((address & 0x1F) << 6));
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Wait PHY to be ready and send reading register command */
-	lan9250_wait_mac_ready(dev, LAN9250_HMAC_MII_ACC, LAN9250_HMAC_MII_ACC_MIIBZY, 0,
-			       LAN9250_PHY_TIMEOUT);
+	ret = lan9250_wait_mac_ready(dev, LAN9250_HMAC_MII_ACC, LAN9250_HMAC_MII_ACC_MIIBZY, 0,
+				     LAN9250_PHY_TIMEOUT);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Read 32bit value from the indirect MAC registers */
-	lan9250_read_mac_reg(dev, LAN9250_HMAC_MII_DATA, &tmp);
+	ret = lan9250_read_mac_reg(dev, LAN9250_HMAC_MII_DATA, &tmp);
+	if (ret < 0) {
+		return ret;
+	}
+
 	*value = tmp;
 
 	return 0;
@@ -181,10 +221,18 @@ static int lan9250_read_phy_reg(const struct device *dev, uint8_t address, uint1
 
 static int lan9250_write_phy_reg(const struct device *dev, uint8_t address, uint16_t data)
 {
+	int ret;
 	/* Wait PHY to be ready and send reading register command */
-	lan9250_wait_mac_ready(dev, LAN9250_HMAC_MII_ACC, LAN9250_HMAC_MII_ACC_MIIBZY, 0,
-			       LAN9250_PHY_TIMEOUT);
-	lan9250_write_mac_reg(dev, LAN9250_HMAC_MII_DATA, data);
+	ret = lan9250_wait_mac_ready(dev, LAN9250_HMAC_MII_ACC, LAN9250_HMAC_MII_ACC_MIIBZY, 0,
+				     LAN9250_PHY_TIMEOUT);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = lan9250_write_mac_reg(dev, LAN9250_HMAC_MII_DATA, data);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Reference: Microchip Ethernet LAN9250
 	 * https://github.com/microchip-pic-avr-solutions/ethernet-lan9250/
@@ -200,35 +248,45 @@ static int lan9250_write_phy_reg(const struct device *dev, uint8_t address, uint
 	 * Where phy_add = 0b00001 & index = address
 	 * Data = ((phy_add & 0x1F) << 11) | ((index & 0x1F)<< 6) | MIIWnR
 	 */
-	lan9250_write_mac_reg(dev, LAN9250_HMAC_MII_ACC,
-			      (1 << 11) | ((address & 0x1F) << 6) | LAN9250_HMAC_MII_ACC_MIIW_R);
+	ret = lan9250_write_mac_reg(dev, LAN9250_HMAC_MII_ACC,
+				    (1 << 11) | ((address & 0x1F) << 6) |
+					    LAN9250_HMAC_MII_ACC_MIIW_R);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Wait PHY to be ready and send reading register command */
-	lan9250_wait_mac_ready(dev, LAN9250_HMAC_MII_ACC, LAN9250_HMAC_MII_ACC_MIIBZY, 0,
-			       LAN9250_PHY_TIMEOUT);
-
-	return 0;
+	return lan9250_wait_mac_ready(dev, LAN9250_HMAC_MII_ACC, LAN9250_HMAC_MII_ACC_MIIBZY, 0,
+				      LAN9250_PHY_TIMEOUT);
 }
 
 static int lan9250_set_macaddr(const struct device *dev)
 {
 	struct lan9250_runtime *ctx = dev->data;
+	int ret;
 
-	lan9250_write_mac_reg(dev, LAN9250_HMAC_ADDRL,
-			      ctx->mac_address[0] | (ctx->mac_address[1] << 8) |
-			      (ctx->mac_address[2] << 16) | (ctx->mac_address[3] << 24));
-	lan9250_write_mac_reg(dev, LAN9250_HMAC_ADDRH,
-			      ctx->mac_address[4] | (ctx->mac_address[5] << 8));
+	ret = lan9250_write_mac_reg(dev, LAN9250_HMAC_ADDRL,
+				    ctx->mac_address[0] | (ctx->mac_address[1] << 8) |
+					    (ctx->mac_address[2] << 16) |
+					    (ctx->mac_address[3] << 24));
+	if (ret < 0) {
+		return ret;
+	}
 
-	return 0;
+	return lan9250_write_mac_reg(dev, LAN9250_HMAC_ADDRH,
+				     ctx->mac_address[4] | (ctx->mac_address[5] << 8));
 }
 
 static int lan9250_hw_cfg_check(const struct device *dev)
 {
 	uint32_t tmp;
+	int ret;
 
 	do {
-		lan9250_read_sys_reg(dev, LAN9250_HW_CFG, &tmp);
+		ret = lan9250_read_sys_reg(dev, LAN9250_HW_CFG, &tmp);
+		if (ret < 0) {
+			return ret;
+		}
 		k_busy_wait(USEC_PER_MSEC * 1U);
 	} while ((tmp & LAN9250_HW_CFG_DEVICE_READY) == 0);
 
@@ -240,26 +298,33 @@ static int lan9250_sw_reset(const struct device *dev)
 	int ret;
 
 	ret = lan9250_write_sys_reg(dev, LAN9250_RESET_CTL,
-				    LAN9250_RESET_CTL_HMAC_RST |
-				    LAN9250_RESET_CTL_PHY_RST |
-				    LAN9250_RESET_CTL_DIGITAL_RST);
+				    LAN9250_RESET_CTL_HMAC_RST | LAN9250_RESET_CTL_PHY_RST |
+					    LAN9250_RESET_CTL_DIGITAL_RST);
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Wait until LAN9250 SPI bus is ready */
-	return lan9250_wait_ready(dev, LAN9250_BYTE_TEST, BOTR_MASK,
-				  LAN9250_BYTE_TEST_DEFAULT, LAN9250_RESET_TIMEOUT);
+	return lan9250_wait_ready(dev, LAN9250_BYTE_TEST, BOTR_MASK, LAN9250_BYTE_TEST_DEFAULT,
+				  LAN9250_RESET_TIMEOUT);
 }
 
 static int lan9250_configure(const struct device *dev)
 {
 	uint32_t tmp;
+	int ret;
 
-	lan9250_hw_cfg_check(dev);
+	ret = lan9250_hw_cfg_check(dev);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Read LAN9250 hardware ID */
-	lan9250_read_sys_reg(dev, LAN9250_ID_REV, &tmp);
+	ret = lan9250_read_sys_reg(dev, LAN9250_ID_REV, &tmp);
+	if (ret < 0) {
+		return ret;
+	}
+
 	if ((tmp & LAN9250_ID_REV_CHIP_ID) != LAN9250_ID_REV_CHIP_ID_DEFAULT) {
 		LOG_ERR("ERROR: Bad Rev ID: %08x\n", tmp);
 		return -ENODEV;
@@ -272,8 +337,11 @@ static int lan9250_configure(const struct device *dev)
 	 *   - TX status FIFO size: 512
 	 *   - RX status FIFO size: 512
 	 */
-	lan9250_write_sys_reg(dev, LAN9250_HW_CFG,
-			      LAN9250_HW_CFG_MBO | LAN9250_HW_CFG_TX_FIF_SZ_8KB);
+	ret = lan9250_write_sys_reg(dev, LAN9250_HW_CFG,
+				    LAN9250_HW_CFG_MBO | LAN9250_HW_CFG_TX_FIF_SZ_8KB);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Configure MAC automatic flow control:
 	 *
@@ -282,7 +350,10 @@ static int lan9250_configure(const struct device *dev)
 	 *  LAN_Regwrite32(AFC_CFG, 0x006E3741);
 	 *
 	 */
-	lan9250_write_sys_reg(dev, LAN9250_AFC_CFG, 0x006e3741);
+	ret = lan9250_write_sys_reg(dev, LAN9250_AFC_CFG, 0x006e3741);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Configure interrupt:
 	 *
@@ -291,27 +362,39 @@ static int lan9250_configure(const struct device *dev)
 	 *   - Interrupt pin active output low
 	 *   - Interrupt pin push-pull driver
 	 */
-	lan9250_write_sys_reg(dev, LAN9250_IRQ_CFG,
-			      LAN9250_IRQ_CFG_INT_DEAS_100US | LAN9250_IRQ_CFG_IRQ_EN |
-			      LAN9250_IRQ_CFG_IRQ_TYPE_PP);
+	ret = lan9250_write_sys_reg(dev, LAN9250_IRQ_CFG,
+				    LAN9250_IRQ_CFG_INT_DEAS_100US | LAN9250_IRQ_CFG_IRQ_EN |
+					    LAN9250_IRQ_CFG_IRQ_TYPE_PP);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Configure interrupt trigger source, please refer to macro
 	 * LAN9250_INT_SOURCE.
 	 */
-	lan9250_write_sys_reg(dev, LAN9250_INT_EN,
-			      LAN9250_INT_EN_PHY_INT_EN | LAN9250_INT_EN_RSFL_EN);
+	ret = lan9250_write_sys_reg(dev, LAN9250_INT_EN,
+				    LAN9250_INT_EN_PHY_INT_EN | LAN9250_INT_EN_RSFL_EN);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Disable TX data FIFO available interrupt */
-	lan9250_write_sys_reg(dev, LAN9250_FIFO_INT,
-			      LAN9250_FIFO_INT_TX_DATA_AVAILABLE_LEVEL |
-			      LAN9250_FIFO_INT_TX_STATUS_LEVEL);
+	ret = lan9250_write_sys_reg(dev, LAN9250_FIFO_INT,
+				    LAN9250_FIFO_INT_TX_DATA_AVAILABLE_LEVEL |
+					    LAN9250_FIFO_INT_TX_STATUS_LEVEL);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Configure RX:
 	 *
 	 *   - RX DMA counter: Ethernet maximum packet size
 	 *   - RX data offset: 4, so that need read dummy before reading data
 	 */
-	lan9250_write_sys_reg(dev, LAN9250_RX_CFG, 0x06000000 | 0x00000400);
+	ret = lan9250_write_sys_reg(dev, LAN9250_RX_CFG, 0x06000000 | 0x00000400);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Configure remote power management:
 	 *
@@ -322,19 +405,25 @@ static int lan9250_configure(const struct device *dev)
 	 *   - Wake on
 	 *   - Clear wakeon
 	 */
-	lan9250_write_sys_reg(dev, LAN9250_PMT_CTRL,
-			      LAN9250_PMT_CTRL_PM_WAKE | LAN9250_PMT_CTRL_1588_DIS |
-			      LAN9250_PMT_CTRL_1588_TSU_DIS | LAN9250_PMT_CTRL_WOL_EN |
-			      LAN9250_PMT_CTRL_WOL_STS);
+	ret = lan9250_write_sys_reg(dev, LAN9250_PMT_CTRL,
+				    LAN9250_PMT_CTRL_PM_WAKE | LAN9250_PMT_CTRL_1588_DIS |
+					    LAN9250_PMT_CTRL_1588_TSU_DIS |
+					    LAN9250_PMT_CTRL_WOL_EN | LAN9250_PMT_CTRL_WOL_STS);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Configure PHY basic control:
 	 *
 	 *   - Auto-Negotiation for 10/100 Mbits and Half/Full Duplex
 	 */
-	lan9250_write_phy_reg(dev, LAN9250_PHY_BASIC_CONTROL,
-			      LAN9250_PHY_BASIC_CONTROL_PHY_AN |
-			      LAN9250_PHY_BASIC_CONTROL_PHY_SPEED_SEL_LSB |
-			      LAN9250_PHY_BASIC_CONTROL_PHY_DUPLEX);
+	ret = lan9250_write_phy_reg(dev, LAN9250_PHY_BASIC_CONTROL,
+				    LAN9250_PHY_BASIC_CONTROL_PHY_AN |
+					    LAN9250_PHY_BASIC_CONTROL_PHY_SPEED_SEL_LSB |
+					    LAN9250_PHY_BASIC_CONTROL_PHY_DUPLEX);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Configure PHY auto-negotiation advertisement capability:
 	 *
@@ -344,18 +433,25 @@ static int lan9250_configure(const struct device *dev)
 	 *   - 10Base-X half/full duplex
 	 *   - Select IEEE802.3
 	 */
-	lan9250_write_phy_reg(dev, LAN9250_PHY_AN_ADV,
-			      LAN9250_PHY_AN_ADV_ASYM_PAUSE | LAN9250_PHY_AN_ADV_SYM_PAUSE |
-			      LAN9250_PHY_AN_ADV_100BTX_HD | LAN9250_PHY_AN_ADV_100BTX_FD |
-			      LAN9250_PHY_AN_ADV_10BT_HD | LAN9250_PHY_AN_ADV_10BT_FD |
-			      LAN9250_PHY_AN_ADV_SELECTOR_DEFAULT);
+	ret = lan9250_write_phy_reg(
+		dev, LAN9250_PHY_AN_ADV,
+		LAN9250_PHY_AN_ADV_ASYM_PAUSE | LAN9250_PHY_AN_ADV_SYM_PAUSE |
+			LAN9250_PHY_AN_ADV_100BTX_HD | LAN9250_PHY_AN_ADV_100BTX_FD |
+			LAN9250_PHY_AN_ADV_10BT_HD | LAN9250_PHY_AN_ADV_10BT_FD |
+			LAN9250_PHY_AN_ADV_SELECTOR_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Configure PHY special mode:
 	 *
 	 *   - PHY mode = 111b, enable all capable and auto-nagotiation
 	 *   - PHY address = 1, default value is fixed to 1 by manufacturer
 	 */
-	lan9250_write_phy_reg(dev, LAN9250_PHY_SPECIAL_MODES, 0x00E0 | 1);
+	ret = lan9250_write_phy_reg(dev, LAN9250_PHY_SPECIAL_MODES, 0x00E0 | 1);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Configure PHY special control or status indication:
 	 *
@@ -363,49 +459,64 @@ static int lan9250_configure(const struct device *dev)
 	 *   - Auto-MDIX
 	 *   - Disable SQE tests
 	 */
-	lan9250_write_phy_reg(dev, LAN9250_PHY_SPECIAL_CONTROL_STAT_IND,
-			      LAN9250_PHY_SPECIAL_CONTROL_STAT_IND_AMDIXCTRL |
-			      LAN9250_PHY_SPECIAL_CONTROL_STAT_IND_AMDIXEN |
-			      LAN9250_PHY_SPECIAL_CONTROL_STAT_IND_SQEOFF);
+	ret = lan9250_write_phy_reg(dev, LAN9250_PHY_SPECIAL_CONTROL_STAT_IND,
+				    LAN9250_PHY_SPECIAL_CONTROL_STAT_IND_AMDIXCTRL |
+					    LAN9250_PHY_SPECIAL_CONTROL_STAT_IND_AMDIXEN |
+					    LAN9250_PHY_SPECIAL_CONTROL_STAT_IND_SQEOFF);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Configure PHY interrupt source:
 	 *
 	 *   - Link up
 	 *   - Link down
 	 */
-	lan9250_write_phy_reg(dev, LAN9250_PHY_INTERRUPT_MASK,
-			      LAN9250_PHY_INTERRUPT_SOURCE_LINK_UP |
-			      LAN9250_PHY_INTERRUPT_SOURCE_LINK_DOWN);
+	ret = lan9250_write_phy_reg(dev, LAN9250_PHY_INTERRUPT_MASK,
+				    LAN9250_PHY_INTERRUPT_SOURCE_LINK_UP |
+					    LAN9250_PHY_INTERRUPT_SOURCE_LINK_DOWN);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Configure special control or status:
 	 *
 	 *   - Fixed to write 0000010b to reserved filed
 	 */
-	lan9250_write_phy_reg(dev, LAN9250_PHY_SPECIAL_CONTROL_STATUS,
-			      LAN9250_PHY_MODE_CONTROL_STATUS_ALTINT);
+	ret = lan9250_write_phy_reg(dev, LAN9250_PHY_SPECIAL_CONTROL_STATUS,
+				    LAN9250_PHY_MODE_CONTROL_STATUS_ALTINT);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Clear interrupt status */
-	lan9250_write_sys_reg(dev, LAN9250_INT_STS, 0xFFFFFFFF);
+	ret = lan9250_write_sys_reg(dev, LAN9250_INT_STS, 0xFFFFFFFFU);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Configure HMAC control:
 	 *
 	 *   - Automatically strip the pad field on incoming packets
+	 *   - Full duplex
 	 *   - TX enable
 	 *   - RX enable
-	 *   - Full duplex
+	 *   - Pass all multicast frames
+	 *   - Hash filtering disabled
 	 *   - Promiscuous disabled
 	 */
-	lan9250_write_mac_reg(dev, LAN9250_HMAC_CR,
-			      LAN9250_HMAC_CR_PADSTR | LAN9250_HMAC_CR_TXEN | LAN9250_HMAC_CR_RXEN |
-			      LAN9250_HMAC_CR_FDPX);
+	ret = lan9250_write_mac_reg(dev, LAN9250_HMAC_CR,
+				    LAN9250_HMAC_CR_PADSTR | LAN9250_HMAC_CR_TXEN |
+					    LAN9250_HMAC_CR_RXEN | LAN9250_HMAC_CR_FDPX);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Configure TX:
 	 *
 	 *   - TX enable
 	 */
-	lan9250_write_sys_reg(dev, LAN9250_TX_CFG, LAN9250_TX_CFG_TX_ON);
-
-	return 0;
+	return lan9250_write_sys_reg(dev, LAN9250_TX_CFG, LAN9250_TX_CFG_TX_ON);
 }
 
 static int lan9250_write_buf(const struct device *dev, uint8_t *data_buffer, uint16_t buf_len)
@@ -462,13 +573,20 @@ static int lan9250_rx(const struct device *dev)
 	uint16_t pkt_len;
 	uint8_t pktcnt;
 	uint32_t tmp;
+	int ret;
 
 	/* Check valid packet count */
-	lan9250_read_sys_reg(dev, LAN9250_RX_FIFO_INF, &tmp);
+	ret = lan9250_read_sys_reg(dev, LAN9250_RX_FIFO_INF, &tmp);
+	if (ret < 0) {
+		return ret;
+	}
 	pktcnt = (tmp & 0x00ff0000) >> 16;
 
 	/* Check packet length */
-	lan9250_read_sys_reg(dev, LAN9250_RX_STATUS_FIFO, &tmp);
+	ret = lan9250_read_sys_reg(dev, LAN9250_RX_STATUS_FIFO, &tmp);
+	if (ret < 0) {
+		return ret;
+	}
 	pkt_len = (tmp & LAN9250_RX_STS_PACKET_LEN) >> 16;
 
 	if (pktcnt == 0 || pkt_len == 0) {
@@ -476,7 +594,10 @@ static int lan9250_rx(const struct device *dev)
 	}
 
 	/* Read dummy  data */
-	lan9250_read_sys_reg(dev, LAN9250_RX_DATA_FIFO, &tmp);
+	ret = lan9250_read_sys_reg(dev, LAN9250_RX_DATA_FIFO, &tmp);
+	if (ret < 0) {
+		return ret;
+	}
 	pkt_len -= 4;
 
 	if (pkt_len > NET_ETH_MAX_FRAME_SIZE) {
@@ -506,12 +627,18 @@ static int lan9250_rx(const struct device *dev)
 		}
 		pkt_len -= data_len;
 
-		lan9250_read_buf(dev, data_ptr, data_len);
+		ret = lan9250_read_buf(dev, data_ptr, data_len);
+		if (ret < 0) {
+			return ret;
+		}
 		net_buf_add(pkt_buf, data_len);
 		pkt_buf = pkt_buf->frags;
 	} while (pkt_len > 0);
 
-	lan9250_read_sys_reg(dev, LAN9250_RX_DATA_FIFO, &tmp);
+	ret = lan9250_read_sys_reg(dev, LAN9250_RX_DATA_FIFO, &tmp);
+	if (ret < 0) {
+		return ret;
+	}
 	net_pkt_set_iface(pkt, ctx->iface);
 
 	/* Feed buffer frame to IP stack */
@@ -532,30 +659,48 @@ static int lan9250_tx(const struct device *dev, struct net_pkt *pkt)
 	uint16_t free_size;
 	uint8_t status_size;
 	uint32_t tmp;
+	int ret;
 
-	lan9250_read_sys_reg(dev, LAN9250_TX_FIFO_INF, &regval);
+	ret = lan9250_read_sys_reg(dev, LAN9250_TX_FIFO_INF, &regval);
+	if (ret < 0) {
+		return ret;
+	}
+
 	status_size = (regval & LAN9250_TX_FIFO_INF_TXSUSED) >> 16;
 	free_size = regval & LAN9250_TX_FIFO_INF_TXFREE;
 
 	k_sem_take(&ctx->tx_rx_sem, K_FOREVER);
 
 	/* TX command 'A' */
-	lan9250_write_sys_reg(dev, LAN9250_TX_DATA_FIFO,
-			      LAN9250_TX_CMD_A_INT_ON_COMP | LAN9250_TX_CMD_A_BUFFER_ALIGN_4B |
-			      LAN9250_TX_CMD_A_START_OFFSET_0B |
-			      LAN9250_TX_CMD_A_FIRST_SEG | LAN9250_TX_CMD_A_LAST_SEG | len);
+	ret = lan9250_write_sys_reg(
+		dev, LAN9250_TX_DATA_FIFO,
+		LAN9250_TX_CMD_A_INT_ON_COMP | LAN9250_TX_CMD_A_BUFFER_ALIGN_4B |
+			LAN9250_TX_CMD_A_START_OFFSET_0B | LAN9250_TX_CMD_A_FIRST_SEG |
+			LAN9250_TX_CMD_A_LAST_SEG | len);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* TX command 'B' */
-	lan9250_write_sys_reg(dev, LAN9250_TX_DATA_FIFO, LAN9250_TX_CMD_B_PACKET_TAG | len);
+	ret = lan9250_write_sys_reg(dev, LAN9250_TX_DATA_FIFO, LAN9250_TX_CMD_B_PACKET_TAG | len);
+	if (ret < 0) {
+		return ret;
+	}
 
 	if (net_pkt_read(pkt, ctx->buf, len)) {
 		return -EIO;
 	}
 
-	lan9250_write_buf(dev, ctx->buf, LAN9250_ALIGN(len));
+	ret = lan9250_write_buf(dev, ctx->buf, LAN9250_ALIGN(len));
+	if (ret < 0) {
+		return ret;
+	}
 
 	for (int i = 0; i < status_size; i++) {
-		lan9250_read_sys_reg(dev, LAN9250_TX_STATUS_FIFO, &tmp);
+		ret = lan9250_read_sys_reg(dev, LAN9250_TX_STATUS_FIFO, &tmp);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	k_sem_give(&ctx->tx_rx_sem);
@@ -578,7 +723,7 @@ static void lan9250_thread(void *p1, void *p2, void *p3)
 	const struct device *dev = p1;
 	struct lan9250_runtime *context = dev->data;
 	uint32_t int_sts;
-	uint16_t tmp;
+	uint16_t tmp = 0;
 	uint32_t ier;
 
 	while (true) {
@@ -620,7 +765,11 @@ static enum ethernet_hw_caps lan9250_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
+	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+		| ETHERNET_PROMISC_MODE
+#endif
+	;
 }
 
 static void lan9250_iface_init(struct net_if *iface)
@@ -640,12 +789,62 @@ static int lan9250_set_config(const struct device *dev, enum ethernet_config_typ
 			      const struct ethernet_config *config)
 {
 	struct lan9250_runtime *ctx = dev->data;
+	int ret;
 
-	if (type == ETHERNET_CONFIG_TYPE_MAC_ADDRESS) {
-		memcpy(ctx->mac_address, config->mac_address.addr, sizeof(ctx->mac_address));
-		lan9250_set_macaddr(dev);
-		return net_if_set_link_addr(ctx->iface, ctx->mac_address, sizeof(ctx->mac_address),
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
+		memcpy(ctx->mac_address, config->mac_address.addr,
+		       sizeof(ctx->mac_address));
+		ret = lan9250_set_macaddr(dev);
+		if (ret < 0) {
+			LOG_ERR("Set mac address failed");
+			return ret;
+		}
+
+		LOG_INF("%s MAC set to %02x:%02x:%02x:%02x:%02x:%02x",
+			dev->name,
+			ctx->mac_address[0], ctx->mac_address[1],
+			ctx->mac_address[2], ctx->mac_address[3],
+			ctx->mac_address[4], ctx->mac_address[5]);
+
+		/* register the new mac address with the upper layer */
+		return net_if_set_link_addr(ctx->iface, ctx->mac_address,
+					    sizeof(ctx->mac_address),
 					    NET_LINK_ETHERNET);
+	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
+		if (IS_ENABLED(CONFIG_NET_PROMISCUOUS_MODE)) {
+			uint32_t reg;
+
+			ret = lan9250_read_mac_reg(dev, LAN9250_HMAC_CR, &reg);
+			if (ret < 0) {
+				return ret;
+			}
+
+			/* See Table 11-1 from the LAN9250 data sheet */
+			if (config->promisc_mode) {
+				if ((reg & LAN9250_HMAC_CR_PRMS) != 0) {
+					return -EALREADY;
+				}
+
+				reg &= ~LAN9250_HMAC_CR_MCPAS;
+				reg |= LAN9250_HMAC_CR_PRMS;
+				reg &= ~LAN9250_HMAC_CR_HO;
+			} else {
+				if ((reg & LAN9250_HMAC_CR_PRMS) == 0) {
+					return -EALREADY;
+				}
+
+				reg |= LAN9250_HMAC_CR_MCPAS;
+				reg &= ~LAN9250_HMAC_CR_PRMS;
+				reg &= ~LAN9250_HMAC_CR_HO;
+			}
+
+			return lan9250_write_mac_reg(dev, LAN9250_HMAC_CR, reg);
+		}
+
+		break;
+	default:
+		break;
 	}
 
 	return -ENOTSUP;
@@ -726,10 +925,18 @@ static int lan9250_init(const struct device *dev)
 		LOG_ERR("Reset failed");
 		return ret;
 	}
-	lan9250_configure(dev);
+	ret = lan9250_configure(dev);
+	if (ret < 0) {
+		LOG_ERR("Configuration failed");
+		return ret;
+	}
 
 	(void)net_eth_mac_load(&config->mac_cfg, context->mac_address);
-	lan9250_set_macaddr(dev);
+	ret = lan9250_set_macaddr(dev);
+	if (ret < 0) {
+		LOG_ERR("Set mac address failed");
+		return ret;
+	}
 
 	k_thread_create(&context->thread, context->thread_stack,
 			CONFIG_ETH_LAN9250_RX_THREAD_STACK_SIZE,

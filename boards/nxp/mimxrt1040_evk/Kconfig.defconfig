@@ -9,4 +9,7 @@ config DEVICE_CONFIGURATION_DATA
 config NXP_IMX_EXTERNAL_SDRAM
 	default y
 
+configdefault NET_L2_ETHERNET
+	default y if DT_HAS_NXP_ENET_ENABLED
+
 endif # BOARD_MIMXRT1040_EVK

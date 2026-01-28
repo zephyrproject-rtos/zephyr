@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 MASSDRIVER EI (massdriver.space)
+ * Copyright (c) 2024-2026 MASSDRIVER EI (massdriver.space)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/spi/spi.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	#address-cells = <1>;
@@ -85,7 +86,8 @@
 			device_type = "cpu";
 			compatible = "xuantie,e907", "riscv";
 			reg = <0>;
-			riscv,isa = "rv32imafcp";
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei";
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
 			hardware-exec-breakpoint-count = <4>;
@@ -158,6 +160,18 @@
 				      "wifipll_360",
 				      "aupll_div1", "aupll_div2",
 				      "root", "bclk", "flash";
+		};
+
+		adc0: adc@20002000 {
+			compatible = "bflb,adc";
+			reg = <0x20002000 0x400 0x2000F000 0x1000>;
+			#io-channel-cells = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			interrupts = <41 1>;
+			interrupt-parent = <&clic>;
 		};
 
 		uart0: uart@2000a000 {

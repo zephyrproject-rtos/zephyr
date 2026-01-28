@@ -6,7 +6,19 @@ description: |
 
   This is a specialization of the NXP FlexCAN CAN controller with support for CAN FD.
 
-  Example:
+compatible: "nxp,flexcan-fd"
+
+include: ["nxp,flexcan.yaml", "can-fd-controller.yaml", "pinctrl-device.yaml",
+          "nxp,rdc-policy.yaml"]
+
+properties:
+  number-of-mb-fd:
+    type: int
+    required: true
+    description: Number of 64-byte payload message buffers FlexCAN FD instance supported
+
+examples:
+  - |
     flexcan3: can@401d8000 {
       status = "okay";
       compatible = "nxp,flexcan-fd", "nxp,flexcan";
@@ -24,14 +36,3 @@ description: |
         max-bitrate = <5000000>;
       };
     };
-
-compatible: "nxp,flexcan-fd"
-
-include: ["nxp,flexcan.yaml", "can-fd-controller.yaml", "pinctrl-device.yaml",
-          "nxp,rdc-policy.yaml"]
-
-properties:
-  number-of-mb-fd:
-    type: int
-    required: true
-    description: Number of 64-byte payload message buffers FlexCAN FD instance supported

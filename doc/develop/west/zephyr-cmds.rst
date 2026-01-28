@@ -445,3 +445,49 @@ each individual commit associated with the given pull request.
     │   ├── second-commit-from-pr.patch
     │   └── third-commit-from-pr.patch
     └── patches.yml
+
+Working with the Zephyr SDK: ``west sdk``
+*****************************************
+
+The ``west sdk`` command is a Zephyr-specific west command used to list
+and install the Zephyr SDK and its toolchains.
+
+Listing SDKs and toolchains
+---------------------------
+
+To list installed Zephyr SDKs as well as available SDK releases and
+toolchains, run:
+
+.. code-block:: console
+
+   west sdk list
+
+This command shows:
+
+- Installed SDK versions
+- Available SDK releases
+- Toolchains included in each SDK
+
+Installing the Zephyr SDK
+-------------------------
+
+To install the Zephyr SDK, run:
+
+.. code-block:: console
+
+   west sdk install
+
+This command may run in interactive mode and prompt for SDK or
+toolchain selection. When specific toolchains are provided via
+``--toolchains``, the command runs non-interactively, which is
+recommended for automation.
+
+To install specific toolchains only, use the ``--toolchains`` option:
+
+.. code-block:: console
+
+   west sdk install --toolchains arm-zephyr-eabi riscv64-zephyr-elf
+
+If you are unsure which toolchains you need, run ``west sdk list`` first
+to see the available options and avoid downloading unnecessary
+toolchains, which can save gigabytes of disk space and download time.

@@ -41,6 +41,7 @@ void clock_ipc_receive_cb(const void *data, size_t len, void *priv)
 
 	/* Store returned timestamp from the extended payload word. */
 	tpd->priv = (void *)(uintptr_t)msg[1];
+	tpd->msg_done = true;
 }
 
 struct ipc_ept_cfg clock_ipc_ept_cfg = {
@@ -62,6 +63,8 @@ ZTEST(intel_adsp, test_clock_calibrate)
 
 #ifdef CONFIG_INTEL_ADSP_IPC_OLD_INTERFACE
 	host_dt = &old_host_dt;
+	/* Set handler early so all messages get ACK'd, even if we don't care about the response */
+	intel_adsp_ipc_set_message_handler(INTEL_ADSP_IPC_HOST_DEV, clock_msg, (void *)host_dt);
 #else
 	int ret;
 
@@ -78,9 +81,6 @@ ZTEST(intel_adsp, test_clock_calibrate)
 
 	k_msleep(1000);
 	*host_dt = 0;
-#ifdef CONFIG_INTEL_ADSP_IPC_OLD_INTERFACE
-	intel_adsp_ipc_set_message_handler(INTEL_ADSP_IPC_HOST_DEV, clock_msg, (void *)host_dt);
-#endif /* CONFIG_INTEL_ADSP_IPC_OLD_INTERFACE */
 
 	/* Now do it again, but with a handler to catch the result */
 	cyc1 = k_cycle_get_32();

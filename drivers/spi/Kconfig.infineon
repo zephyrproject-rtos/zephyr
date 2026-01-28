@@ -27,18 +27,10 @@ config SPI_INFINEON_CAT1_PDL
 
 if USE_INFINEON_SPI
 
-config IFX_CAT1_SPI_DMA
-	bool "Infineon CAT1 SPI Interrupt Support"
+config SPI_INFINEON_DMA
+	bool "Infineon SPI DMA Support"
 	select DMA
 	help
 		Enable DMA during usage of SPI driver.
-
-config IFX_CAT1_SPI_DMA_TX_AUTO_TRIGGER
-	bool "Infineon CAT1 SPI Tx DMA channel trigger mechanism"
-	default y
-	depends on IFX_CAT1_SPI_DMA
-	select DMA
-	help
-		Automatically trigger SPI Tx DMA after config
 
 endif # USE_INFINEON_SPI

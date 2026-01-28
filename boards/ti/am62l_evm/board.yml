@@ -1,0 +1,6 @@
+board:
+  name: am62l_evm
+  full_name: AM62L TMDS62LEVM evaluation module (EVM)
+  vendor: ti
+  socs:
+  - name: am62l3

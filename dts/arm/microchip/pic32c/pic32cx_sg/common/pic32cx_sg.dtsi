@@ -10,6 +10,10 @@
 #include <zephyr/dt-bindings/clock/mchp_sam_d5x_e5x_clock.h>
 
 / {
+	aliases {
+		watchdog0 = &wdt;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -100,6 +104,20 @@
 			reg = <0x40000c00 0x400>;
 		};
 
+		wdt: watchdog@40002000 {
+			compatible = "microchip,wdt-g1";
+			reg = <0x40002000 13>;
+			interrupts = <10 0>;
+			interrupt-names = "wdt-ew";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBA_WDT>;
+			clock-names = "mclk";
+			max-installable-timeout-count = <1>;
+			max-timeout-window = <0x4000>; /* 16384 milliseconds */
+			max-timeout-window-mode = <0x8000>; /* 32768 milliseconds */
+			min-window-limit = <0x8>; /* 8 milliseconds */
+			status = "disabled";
+		};
+
 		rtc: rtc@40002400 {
 			compatible = "microchip,rtc-g1";
 			reg = <0x40002400 0x400>;
@@ -132,6 +150,33 @@
 			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBA_SERCOM1>,
 				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM1_CORE>;
 			clock-names = "mclk", "gclk";
+			status = "disabled";
+		};
+
+		tc0: tc@40003800 {
+			compatible = "microchip,tc-g1";
+			reg = <0x40003800 0x400>;
+			interrupts = <107 0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBA_TC0>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TC0>,
+				 <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBA_TC1>;
+			clock-names = "mclk", "gclk", "client_mclk";
+			max-bit-width = <16>;
+			prescaler = <1>;
+			channels = <2>;
+			status = "disabled";
+		};
+
+		tc1: tc@40003c00 {
+			compatible = "microchip,tc-g1";
+			reg = <0x40003c00 0x400>;
+			interrupts = <108 0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBA_TC1>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TC1>;
+			clock-names = "mclk", "gclk";
+			max-bit-width = <16>;
+			prescaler = <1>;
+			channels = <2>;
 			status = "disabled";
 		};
 
@@ -245,6 +290,33 @@
 			status = "disabled";
 		};
 
+		tc2: tc@4101a000 {
+			compatible = "microchip,tc-g1";
+			reg = <0x4101a000 0x400>;
+			interrupts = <109 0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBB_TC2>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TC2>,
+				 <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBB_TC3>;
+			clock-names = "mclk", "gclk", "client_mclk";
+			max-bit-width = <16>;
+			prescaler = <1>;
+			channels = <2>;
+			status = "disabled";
+		};
+
+		tc3: tc@4101c000 {
+			compatible = "microchip,tc-g1";
+			reg = <0x4101c000 0x400>;
+			interrupts = <110 0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBB_TC3>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TC3>;
+			clock-names = "mclk", "gclk";
+			max-bit-width = <16>;
+			prescaler = <1>;
+			channels = <2>;
+			status = "disabled";
+		};
+
 		tcc2: tcc@42000c00 {
 			compatible = "microchip,tcc-g1";
 			reg = <0x42000c00 0x2000>;
@@ -257,12 +329,47 @@
 			status = "disabled";
 		};
 
+		ac: ac@42002000 {
+			compatible = "microchip,ac-g1-comparator";
+			reg = <0x42002000 0x26>;
+			interrupts = <122 0>;
+			interrupt-names = "ac";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_AC>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_AC>;
+			clock-names = "mclk", "gclk";
+			status = "disabled";
+		};
+
 		tcc3: tcc@42001000 {
 			compatible = "microchip,tcc-g1";
 			reg = <0x42001000 0x2000>;
 			interrupts = <101 0>, <102 0>, <103 0>;
 			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_TCC3>,
 				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TCC3>;
+			clock-names = "mclk", "gclk";
+			max-bit-width = <16>;
+			channels = <2>;
+			status = "disabled";
+		};
+
+		tc4: tc@42001400 {
+			compatible = "microchip,tc-g1";
+			reg = <0x42001400 0x400>;
+			interrupts = <111 0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_TC4>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TC4>;
+			clock-names = "mclk", "gclk";
+			max-bit-width = <16>;
+			channels = <2>;
+			status = "disabled";
+		};
+
+		tc5: tc@42001800 {
+			compatible = "microchip,tc-g1";
+			reg = <0x42001800 0x400>;
+			interrupts = <112 0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_TC5>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TC5>;
 			clock-names = "mclk", "gclk";
 			max-bit-width = <16>;
 			channels = <2>;

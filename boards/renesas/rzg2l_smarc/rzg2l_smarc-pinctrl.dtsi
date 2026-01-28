@@ -20,4 +20,16 @@
 				 <RZG_PINMUX(PORT_48, 1, 1)>; /* RXD */
 		};
 	};
+
+	/omit-if-no-ref/ gpt3_pins: gpt3 {
+		gpt3-pinmux {
+			pinmux = <RZG_PINMUX(PORT_03, 1, 3)>; /* GTIOCB */
+		};
+	};
+
+	/omit-if-no-ref/ gpt6_pins: gpt6 {
+		gpt6-pinmux {
+			pinmux = <RZG_PINMUX(PORT_43, 0, 3)>; /* GTIOCA */
+		};
+	};
 };

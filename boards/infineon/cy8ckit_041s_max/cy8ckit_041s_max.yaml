@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: cy8ckit_041s_max
+name: CY8CKIT-041S-MAX Development Board
+type: mcu
+arch: arm
+ram: 32
+flash: 384
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+  - gpio
+  - clock_control
+  - pinctrl
+vendor: infineon

@@ -347,7 +347,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 
 	net_pkt_set_ll_proto_type(pkt, type);
 	dst_broadcast = net_eth_is_addr_broadcast((struct net_eth_addr *)lladdr->addr);
-	dst_eth_multicast = net_eth_is_addr_group((struct net_eth_addr *)lladdr->addr);
+	dst_eth_multicast = net_eth_is_addr_multicast((struct net_eth_addr *)lladdr->addr);
 	dst_iface_addr = net_linkaddr_cmp(net_if_get_link_addr(iface), lladdr);
 
 	if (is_vlan_pkt) {
@@ -1020,6 +1020,7 @@ int net_eth_promisc_mode(struct net_if *iface, bool enable)
 
 int net_eth_txinjection_mode(struct net_if *iface, bool enable)
 {
+#ifdef CONFIG_NET_L2_ETHERNET_MGMT
 	struct ethernet_req_params params;
 
 	if (!(net_eth_get_hw_capabilities(iface) & ETHERNET_TXINJECTION_MODE)) {
@@ -1030,6 +1031,12 @@ int net_eth_txinjection_mode(struct net_if *iface, bool enable)
 
 	return net_mgmt(NET_REQUEST_ETHERNET_SET_TXINJECTION_MODE, iface,
 			&params, sizeof(struct ethernet_req_params));
+#else
+	ARG_UNUSED(iface);
+	ARG_UNUSED(enable);
+
+	return -ENOTSUP;
+#endif
 }
 
 int net_eth_mac_filter(struct net_if *iface, struct net_eth_addr *mac,

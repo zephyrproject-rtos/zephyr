@@ -746,8 +746,31 @@
 			status = "disabled";
 		};
 
+		bsec: efuse@56009000 {
+			compatible = "st,stm32-bsec";
+			reg = <0x56009000 0x1000>;
+			st,upper-fuse-limit = <256>;
+			status = "disabled";
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				mac_address0: mac-address@2a4 {
+					reg = <0x2a4 0x6>;
+					#nvmem-cell-cells = <0>;
+				};
+
+				mac_address1: mac-address@2ac {
+					reg = <0x2ac 0x6>;
+					#nvmem-cell-cells = <0>;
+				};
+			};
+		};
+
 		dcmipp: dcmipp@58002000 {
-			compatible = "st,stm32n6-dcmipp", "st,stm32-dcmipp";
+			compatible = "st,stm32-dcmipp";
 			reg = <0x58002000 0x1000>;
 			clock-names = "dcmipp", "dcmipp-ker", "csi";
 			clocks = <&rcc STM32_CLOCK(APB5, 2)>,
@@ -787,16 +810,15 @@
 		ethernet@58036000 {
 			reg = <0x58036000 0x8000>;
 			compatible = "st,stm32-ethernet-controller";
-			clock-names = "stm-eth";
-			clocks = <&rcc STM32_CLOCK(AHB5, 22)>;
+			clock-names = "stm-eth", "mac-clk-tx", "mac-clk-rx";
+			clocks = <&rcc STM32_CLOCK(AHB5, 22)>,
+				 <&rcc STM32_CLOCK(AHB5, 23)>,
+				 <&rcc STM32_CLOCK(AHB5, 24)>;
 
 			mac: ethernet {
 				compatible = "st,stm32n6-ethernet", "st,stm32h7-ethernet",
 					     "st,stm32-ethernet";
 				interrupts = <179 0>;
-				clock-names = "mac-clk-tx", "mac-clk-rx";
-				clocks = <&rcc STM32_CLOCK(AHB5, 23)>,
-					 <&rcc STM32_CLOCK(AHB5, 24)>;
 				status = "disabled";
 			};
 
@@ -1288,6 +1310,8 @@
 			reg = <0x54020000 0x400>;
 			interrupts = <40 0>;
 			clocks = <&rcc STM32_CLOCK(AHB3, 0)>;
+			nist-config = <0xf00d00>;
+			health-test-config = <0xaac7>;
 			status = "disabled";
 		};
 
@@ -1338,12 +1362,17 @@
 		npu: npu@580e0000 {
 			compatible = "st,stm32-npu";
 			reg = <0x580e0000 DT_SIZE_K(128)>;
-			clocks = <&rcc STM32_CLOCK(AHB5, 31)>,
-				 <&rcc STM32_CLOCK(AHB5, 30)>;
-			clock-names = "npu", "cacheaxi";
-			resets = <&rctl STM32_RESET(AHB5, 31)>,
-				 <&rctl STM32_RESET(AHB5, 30)>;
+			clocks = <&rcc STM32_CLOCK(AHB5, 31)>;
+			resets = <&rctl STM32_RESET(AHB5, 31)>;
 			status = "disabled";
+		};
+
+		npu_cache: cache-controller@580dfc00 {
+			compatible = "st,stm32-npu-cache";
+			reg = <0x580dfc00 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(AHB5, 30)>;
+			resets = <&rctl STM32_RESET(AHB5, 30)>;
+			status = "okay";
 		};
 
 		venc: venc@58005000 {

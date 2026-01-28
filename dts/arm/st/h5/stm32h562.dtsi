@@ -525,6 +525,12 @@
 			status = "disabled";
 		};
 
+		rng: rng@420c0800 {
+			nist-config = <0xf00e00>;
+			health-test-config = <0x6a91>;
+			noise-source-control = <0x3af66>;
+		};
+
 		sdmmc1: sdmmc@46008000 {
 			compatible = "st,stm32-sdmmc";
 			reg = <0x46008000 0x400>;

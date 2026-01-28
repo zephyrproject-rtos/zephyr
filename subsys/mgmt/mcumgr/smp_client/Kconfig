@@ -26,8 +26,8 @@ config SMP_CMD_RETRY_TIME
 	range 100 1000
 	default 500
 	help
-	  The time (in ms) which the SMP client will wait for a response before re-sending
-	  a command.
+	  The time (in ms) which the SMP client will wait for a response before re-sending a
+	  command.
 
 config SMP_CLIENT_CMD_MAX
 	int "SMP client max buffer count"

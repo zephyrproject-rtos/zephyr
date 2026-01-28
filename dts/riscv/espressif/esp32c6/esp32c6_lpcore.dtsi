@@ -20,8 +20,9 @@
 
 		cpu0: cpu@0 {
 			device_type = "cpu";
-			compatible = "espressif,riscv";
-			riscv,isa = "rv32imac_zicsr_zifencei";
+			compatible = "espressif,riscv", "riscv";
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "c", "zicsr", "zifencei";
 			reg = <0>;
 			clock-source = <ESP32_RTC_FAST_CLK_SRC_XTAL_D2>;
 			clock-frequency = <DT_FREQ_M(20)>;

@@ -303,12 +303,9 @@ static int ptp_stm32_init(const struct device *port)
 	eth_stm32_ptp_enable_timestamping(heth);
 
 	/* Query ethernet clock rate */
-	ret = clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
-				     (clock_control_subsys_t)&eth_cfg->pclken,
-#else
-				     (clock_control_subsys_t)&eth_cfg->pclken_ptp,
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */
+	clock_control_subsys_t rate_clk = (void *)&eth_cfg->pclken[eth_cfg->rate_pclken_idx];
+
+	ret = clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE), rate_clk,
 				     &ptp_hclk_rate);
 	if (ret) {
 		LOG_ERR("Failed to query ethernet clock");

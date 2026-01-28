@@ -78,6 +78,10 @@ static struct net_mgmt_event_callback mgmt4_addr_cb;
 #if defined(CONFIG_NET_IPV6)
 static struct net_mgmt_event_callback mgmt6_addr_cb;
 #endif
+#if defined(CONFIG_NET_DHCPV4)
+static struct net_mgmt_event_callback mgmt_dhcpv4_cb;
+struct k_work_delayable announce_timer;
+#endif
 static struct k_work_q mdns_work_q;
 static K_KERNEL_STACK_DEFINE(mdns_work_q_stack, CONFIG_MDNS_WORKQ_STACK_SIZE);
 struct k_work_delayable init_listener_timer;
@@ -247,7 +251,7 @@ static int get_socket(net_sa_family_t family)
 
 static void setup_dns_hdr(uint8_t *buf, uint16_t answers)
 {
-	uint16_t offset;
+	struct dns_header *hdr = (struct dns_header *)buf;
 	uint16_t flags;
 
 	/* See RFC 1035, ch 4.1.1 for header details */
@@ -255,34 +259,30 @@ static void setup_dns_hdr(uint8_t *buf, uint16_t answers)
 	flags = BIT(15);  /* This is response */
 	flags |= BIT(10); /* Authoritative Answer */
 
-	UNALIGNED_PUT(0, (uint16_t *)(buf)); /* Identifier, RFC 6762 ch 18.1 */
-	offset = DNS_HEADER_ID_LEN;
-
-	UNALIGNED_PUT(net_htons(flags), (uint16_t *)(buf+offset));
-	offset += DNS_HEADER_FLAGS_LEN;
-
-	UNALIGNED_PUT(0, (uint16_t *)(buf + offset));
-	offset += DNS_QDCOUNT_LEN;
-
-	UNALIGNED_PUT(net_htons(answers), (uint16_t *)(buf + offset));
-	offset += DNS_ANCOUNT_LEN;
-
-	UNALIGNED_PUT(0, (uint16_t *)(buf + offset));
-	offset += DNS_NSCOUNT_LEN;
-
-	UNALIGNED_PUT(0, (uint16_t *)(buf + offset));
+	UNALIGNED_PUT(0, &hdr->id); /* Identifier, RFC 6762 ch 18.1 */
+	UNALIGNED_PUT(net_htons(flags), &hdr->flags);
+	UNALIGNED_PUT(0, &hdr->qdcount);
+	UNALIGNED_PUT(net_htons(answers), &hdr->ancount);
+	UNALIGNED_PUT(0, &hdr->nscount);
+	UNALIGNED_PUT(0, &hdr->arcount);
 }
 
-static void add_answer(struct net_buf *query, enum dns_rr_type qtype,
-		       uint32_t ttl, uint16_t addr_len, uint8_t *addr)
+static int init_name_labels(struct net_buf *query)
 {
 	char *dot = query->data + DNS_MSG_HEADER_SIZE + 1;
 	char *prev = query->data + DNS_MSG_HEADER_SIZE;
-	uint16_t offset;
 
-	/* For the length of the first label. */
-	query->len += 1;
+	/* Verify the buffer has enough space to store header and query name
+	 * + 2 for the length of the first label and the terminator byte
+	 */
+	if ((net_buf_max_len(query) - query->len) < (DNS_MSG_HEADER_SIZE + 2)) {
+		return -ENOBUFS;
+	}
 
+	/* Move the name, making space for the header. +1 for the initial label length */
+	memmove(query->data + DNS_MSG_HEADER_SIZE + 1, query->data, query->len);
+
+	/* Loop over labels, inserting the label length */
 	while ((dot = strchr(dot, '.')) != NULL) {
 		*prev = dot - prev - 1;
 		prev = dot++;
@@ -290,53 +290,115 @@ static void add_answer(struct net_buf *query, enum dns_rr_type qtype,
 
 	*prev = strlen(prev + 1);
 
-	/* terminator byte (0x00) */
-	query->len += 1;
+	/* Query length increased by the header size and the length field of the
+	 * first label
+	 */
+	query->len += DNS_MSG_HEADER_SIZE + 1;
 
-	offset = DNS_MSG_HEADER_SIZE + query->len;
-	UNALIGNED_PUT(net_htons(qtype), (uint16_t *)(query->data+offset));
+	/* Append the terminator byte (0x00) */
+	net_buf_add_u8(query, 0x00);
 
-	/* Bit 15 tells to flush the cache */
-	offset += DNS_QTYPE_LEN;
-	UNALIGNED_PUT(net_htons(DNS_CLASS_IN | BIT(15)),
-		      (uint16_t *)(query->data+offset));
-
-
-	offset += DNS_QCLASS_LEN;
-	UNALIGNED_PUT(net_htonl(ttl), query->data + offset);
-
-	offset += DNS_TTL_LEN;
-	UNALIGNED_PUT(net_htons(addr_len), query->data + offset);
-
-	offset += DNS_RDLENGTH_LEN;
-	memcpy(query->data + offset, addr, addr_len);
+	return 0;
 }
 
-static int create_answer(int sock,
-			 struct net_buf *query,
-			 enum dns_rr_type qtype,
-			 uint16_t addr_len, uint8_t *addr)
+struct answer_ctx {
+	struct net_buf *query;
+	enum dns_rr_type qtype;
+	int answer_count;
+	uint16_t name_offset;
+};
+
+static void add_a_aaaa_answer(struct answer_ctx *ctx, uint32_t ttl,
+			      uint16_t addr_len, const uint8_t *addr,
+			      bool include_name_ptr)
 {
-	/* Prepare the response into the query buffer: move the name
-	 * query buffer has to get enough free space: dns_hdr + answer
-	 */
-	if ((net_buf_max_len(query) - query->len) < (DNS_MSG_HEADER_SIZE + 1 +
-					  DNS_QTYPE_LEN + DNS_QCLASS_LEN +
-					  DNS_TTL_LEN + DNS_RDLENGTH_LEN +
-					  addr_len)) {
-		return -ENOBUFS;
+	uint16_t name_len = 0;
+
+	if (include_name_ptr) {
+		name_len = DNS_POINTER_SIZE;
 	}
 
-	/* +1 for the initial label length */
-	memmove(query->data + DNS_MSG_HEADER_SIZE + 1, query->data, query->len);
+	if (net_buf_tailroom(ctx->query) < (DNS_QTYPE_LEN + DNS_QCLASS_LEN +
+					    DNS_TTL_LEN + DNS_RDLENGTH_LEN +
+					    addr_len + name_len)) {
+		return;
+	}
 
-	setup_dns_hdr(query->data, 1);
+	if (include_name_ptr) {
+		net_buf_add_u8(ctx->query, NS_CMPRSFLGS | ((ctx->name_offset >> 8) & 0x3f));
+		net_buf_add_u8(ctx->query, ctx->name_offset & 0xff);
+	}
 
-	add_answer(query, qtype, MDNS_TTL, addr_len, addr);
+	net_buf_add_be16(ctx->query, ctx->qtype);
+	/* Bit 15 tells to flush the cache */
+	net_buf_add_be16(ctx->query, DNS_CLASS_IN | BIT(15));
+	net_buf_add_be32(ctx->query, ttl);
+	net_buf_add_be16(ctx->query, addr_len);
+	net_buf_add_mem(ctx->query, addr, addr_len);
 
-	query->len += DNS_MSG_HEADER_SIZE +
-		DNS_QTYPE_LEN + DNS_QCLASS_LEN +
-		DNS_TTL_LEN + DNS_RDLENGTH_LEN + addr_len;
+	ctx->answer_count++;
+}
+
+static void answer_addr_cb(struct net_if *iface, struct net_if_addr *ifaddr,
+			   void *user_data)
+{
+	struct answer_ctx *ctx = (struct answer_ctx *)user_data;
+	bool include_name_ptr = true;
+	const uint8_t *addr;
+	uint16_t addr_len;
+
+	if (ifaddr->addr_state != NET_ADDR_PREFERRED &&
+	    ifaddr->addr_state != NET_ADDR_DEPRECATED) {
+		return;
+	}
+
+	if (ifaddr->address.family == NET_AF_INET6) {
+		addr_len = sizeof(struct net_in6_addr);
+		addr = ifaddr->address.in6_addr.s6_addr;
+	} else {
+		addr_len = sizeof(struct net_in_addr);
+		addr = ifaddr->address.in_addr.s4_addr;
+	}
+
+	/* First answer contains full DNS name (already encoded). Consecutive
+	 * answers use label compression and encode label pointers.
+	 */
+	if (ctx->answer_count == 0) {
+		include_name_ptr = false;
+	}
+
+	add_a_aaaa_answer(ctx, MDNS_TTL, addr_len, addr, include_name_ptr);
+}
+
+static int create_answer(struct net_buf *query, enum dns_rr_type qtype,
+			 struct net_if *iface)
+{
+	struct answer_ctx ctx = {
+		.query = query,
+		.qtype = qtype,
+		.name_offset = DNS_MSG_HEADER_SIZE,
+	};
+	int ret;
+
+	ret = init_name_labels(query);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (qtype == DNS_RR_TYPE_A) {
+		net_if_ipv4_addr_foreach(iface, answer_addr_cb, &ctx);
+	} else if (qtype == DNS_RR_TYPE_AAAA) {
+		net_if_ipv6_addr_foreach(iface, answer_addr_cb, &ctx);
+	} else {
+		return -EINVAL;
+	}
+
+	if (ctx.answer_count == 0) {
+		/* No addresses added */
+		return -ENOMEM;
+	}
+
+	setup_dns_hdr(query->data, ctx.answer_count);
 
 	return 0;
 }
@@ -367,45 +429,14 @@ static int send_response(int sock,
 		iface = net_if_ipv4_select_src_iface(&net_sin(src_addr)->sin_addr);
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV4) && qtype == DNS_RR_TYPE_A) {
-		const struct net_in_addr *addr;
-
-		if (family == NET_AF_INET) {
-			addr = net_if_ipv4_select_src_addr(iface,
-							   &net_sin(src_addr)->sin_addr);
-		} else {
-			struct net_sockaddr_in tmp_addr;
-
-			create_ipv4_addr(&tmp_addr);
-			addr = net_if_ipv4_select_src_addr(iface, &tmp_addr.sin_addr);
-		}
-
-		ret = create_answer(sock, query, qtype, sizeof(struct net_in_addr),
-				    (uint8_t *)addr);
-		if (ret != 0) {
-			return ret;
-		}
-	} else if (IS_ENABLED(CONFIG_NET_IPV6) && qtype == DNS_RR_TYPE_AAAA) {
-		const struct net_in6_addr *addr;
-
-		if (family == NET_AF_INET6) {
-			addr = net_if_ipv6_select_src_addr(iface,
-							   &net_sin6(src_addr)->sin6_addr);
-		} else {
-			struct net_sockaddr_in6 tmp_addr;
-
-			create_ipv6_addr(&tmp_addr);
-			addr = net_if_ipv6_select_src_addr(iface, &tmp_addr.sin6_addr);
-		}
-
-		ret = create_answer(sock, query, qtype, sizeof(struct net_in6_addr),
-				    (uint8_t *)addr);
-		if (ret != 0) {
-			return -ENOMEM;
-		}
-	} else {
-		/* TODO: support also service PTRs */
+	if ((qtype == DNS_RR_TYPE_A && !IS_ENABLED(CONFIG_NET_IPV4)) ||
+	    (qtype == DNS_RR_TYPE_AAAA && !IS_ENABLED(CONFIG_NET_IPV6))) {
 		return -EINVAL;
+	}
+
+	ret = create_answer(query, qtype, iface);
+	if (ret != 0) {
+		return -ENOMEM;
 	}
 
 	ret = zsock_sendto(sock, query->data, query->len, 0,
@@ -560,7 +591,7 @@ static void send_sd_response(int sock,
 					continue;
 				}
 			} else {
-				ret = dns_sd_handle_ptr_query(record, addr4, addr6,
+				ret = dns_sd_handle_ptr_query(iface, record, addr4, addr6,
 						result->data, net_buf_max_len(result));
 				if (ret < 0) {
 					NET_DBG("dns_sd_handle_ptr_query() failed (%d)", ret);
@@ -726,6 +757,7 @@ static int add_address(struct net_if *iface, net_sa_family_t family,
 		}
 
 		if (memcmp(&mon_if[j].addr.in_addr, address, expected_len) == 0) {
+			mon_if[j].in_use = true;
 			return -EALREADY;
 		}
 	}
@@ -961,6 +993,29 @@ static void probing(struct k_work *work)
 	}
 }
 
+#if defined(CONFIG_NET_DHCPV4)
+/* This is arbitrary delay to let things cool down a bit before announcing
+ * the address.
+ */
+#define ANNOUNCE_DELAY 100 /* ms */
+
+static void start_announce(struct net_if *iface)
+{
+	int ret;
+
+	do_announce = true;
+	announce_count = 0;
+	mark_needs_announce(iface, true);
+
+	ret = k_work_reschedule_for_queue(&mdns_work_q,
+					  &announce_timer,
+					  K_MSEC(ANNOUNCE_DELAY));
+	if (ret < 0) {
+		NET_DBG("Cannot schedule %s announce work (%d)", "mDNS", ret);
+	}
+}
+#endif /* CONFIG_NET_DHCPV4 */
+
 static void mdns_addr_event_handler(struct net_mgmt_event_callback *cb,
 				    uint64_t mgmt_event, struct net_if *iface)
 {
@@ -1111,6 +1166,13 @@ static void mdns_addr_event_handler(struct net_mgmt_event_callback *cb,
 		return;
 	}
 #endif /* defined(CONFIG_NET_IPV6) */
+
+#if defined(CONFIG_NET_DHCPV4)
+	if (mgmt_event == NET_EVENT_IPV4_DHCP_BOUND) {
+		start_announce(iface);
+		return;
+	}
+#endif /* CONFIG_NET_DHCPV4 */
 }
 
 static void mdns_conn_event_handler(struct net_mgmt_event_callback *cb,
@@ -1795,9 +1857,12 @@ static void announce_start(struct k_work *work)
 	do_announce = true;
 	announce_count++;
 
-	ret = k_work_reschedule_for_queue(&mdns_work_q, dwork, K_SECONDS(ANNOUNCE_TIMEOUT));
-	if (ret < 0) {
-		NET_DBG("Cannot schedule %s work (%d)", "announce", ret);
+	/* Do not re-schedule if we were triggered by the DHCP BOUND event */
+	if (COND_CODE_1(CONFIG_NET_DHCPV4, (&announce_timer != dwork), (true))) {
+		ret = k_work_reschedule_for_queue(&mdns_work_q, dwork, K_SECONDS(ANNOUNCE_TIMEOUT));
+		if (ret < 0) {
+			NET_DBG("Cannot schedule %s work (%d)", "announce", ret);
+		}
 	}
 }
 
@@ -1861,6 +1926,15 @@ static int mdns_responder_init(void)
 				     NET_EVENT_IPV6_ADDR_ADD |
 				     NET_EVENT_IPV6_ADDR_DEL);
 	net_mgmt_add_event_callback(&mgmt6_addr_cb);
+#endif
+
+#define DHCPV4_EVENT_MASK (NET_EVENT_IPV4_DHCP_BOUND)
+#if defined(CONFIG_NET_DHCPV4)
+	net_mgmt_init_event_callback(&mgmt_dhcpv4_cb, mdns_addr_event_handler,
+				     DHCPV4_EVENT_MASK);
+	net_mgmt_add_event_callback(&mgmt_dhcpv4_cb);
+
+	k_work_init_delayable(&announce_timer, announce_start);
 #endif
 
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)

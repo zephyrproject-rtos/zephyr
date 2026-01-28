@@ -1,6 +1,5 @@
 /*
- * Copyright 2025 NXP
- *
+ * SPDX-FileCopyrightText: Copyright 2025-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -8,12 +7,12 @@
 LOG_MODULE_REGISTER(dsa_netc, CONFIG_ETHERNET_LOG_LEVEL);
 
 #include <zephyr/net/dsa_core.h>
-#include <zephyr/net/dsa_tag_netc.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/ethernet/nxp_imx_netc.h>
 #include <zephyr/dt-bindings/ethernet/dsa_tag_proto.h>
 #include <zephyr/sys/util_macro.h>
 
+#include "dsa_tag_netc.h"
 #include "../eth.h"
 #include "fsl_netc_switch.h"
 
@@ -36,7 +35,7 @@ struct dsa_netc_config {
 #ifdef CONFIG_NET_QBV
 struct netc_qbv_config {
 	netc_tb_tgs_gcl_t tgs_config;
-	netc_tgs_gate_entry_t gcList[CONFIG_DSA_NXP_NETC_GCL_LEN];
+	netc_tgs_gate_entry_t gcList[CONFIG_DSA_NXP_IMX_NETC_GCL_LEN];
 };
 #endif
 
@@ -105,7 +104,7 @@ static int dsa_netc_port_init(const struct device *dev)
 #ifdef CONFIG_NET_QBV
 	memset(&(prv->qbv_config[cfg->port_idx].tgs_config), 0, sizeof(netc_tb_tgs_gcl_t));
 	memset(prv->qbv_config[cfg->port_idx].gcList, 0,
-	       sizeof(netc_tgs_gate_entry_t) * CONFIG_DSA_NXP_NETC_GCL_LEN);
+	       sizeof(netc_tgs_gate_entry_t) * CONFIG_DSA_NXP_IMX_NETC_GCL_LEN);
 	prv->qbv_config[cfg->port_idx].tgs_config.entryID = cfg->port_idx;
 	prv->qbv_config[cfg->port_idx].tgs_config.gcList = prv->qbv_config[cfg->port_idx].gcList;
 #endif
@@ -388,7 +387,7 @@ static int dsa_netc_set_qbv(const struct device *dev, const struct ethernet_conf
 	case ETHERNET_QBV_PARAM_TYPE_GATE_CONTROL_LIST:
 		row = config->qbv_param.gate_control.row;
 		gate_num = ((CONFIG_NET_TC_TX_COUNT) < 8 ? (CONFIG_NET_TC_TX_COUNT) : 8);
-		if (row > CONFIG_DSA_NXP_NETC_GCL_LEN) {
+		if (row > CONFIG_DSA_NXP_IMX_NETC_GCL_LEN) {
 			LOG_ERR("The gate control list length exceeds the limit");
 			return -ENOTSUP;
 		}
@@ -451,7 +450,7 @@ static int dsa_netc_get_qbv(const struct device *dev, struct ethernet_config *co
 	case ETHERNET_QBV_PARAM_TYPE_GATE_CONTROL_LIST:
 		row = config->qbv_param.gate_control.row;
 		gate_num = ((CONFIG_NET_TC_TX_COUNT) < 8 ? (CONFIG_NET_TC_TX_COUNT) : 8);
-		if (row > CONFIG_DSA_NXP_NETC_GCL_LEN) {
+		if (row > CONFIG_DSA_NXP_IMX_NETC_GCL_LEN) {
 			LOG_ERR("The gate control list length exceeds the limit");
 			return -ENOTSUP;
 		}

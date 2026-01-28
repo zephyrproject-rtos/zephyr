@@ -3,22 +3,32 @@
 # Copyright (c) 2016 Linaro Limited
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_NRF51X
+config SOC_SERIES_NRF51
+	bool
 	select SOC_FAMILY_NORDIC_NRF
 	help
 	  Enable support for NRF51 MCU series
 
+config SOC_SERIES_NRF51X
+	bool
+	select SOC_SERIES_NRF51
+	help
+	  Deprecated Kconfig, use SOC_SERIES_NRF51 instead
+
+config SOC_SERIES
+	default "nrf51" if SOC_SERIES_NRF51
+
 config SOC_NRF51822_QFAA
 	bool
-	select SOC_SERIES_NRF51X
+	select SOC_SERIES_NRF51
 
 config SOC_NRF51822_QFAB
 	bool
-	select SOC_SERIES_NRF51X
+	select SOC_SERIES_NRF51
 
 config SOC_NRF51822_QFAC
 	bool
-	select SOC_SERIES_NRF51X
+	select SOC_SERIES_NRF51
 
 config SOC
 	default "nrf51822" if SOC_NRF51822_QFAA || SOC_NRF51822_QFAB || SOC_NRF51822_QFAC

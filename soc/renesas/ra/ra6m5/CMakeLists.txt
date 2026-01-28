@@ -3,10 +3,6 @@
 
 zephyr_include_directories(.)
 
-zephyr_sources(
-  soc.c
-)
-
 if(CONFIG_CMAKE_LINKER_GENERATOR)
   dt_nodelabel(option_setting_ofs0 NODELABEL "option_setting_ofs0")
   dt_nodelabel(option_setting_dualsel NODELABEL "option_setting_dualsel")
@@ -37,11 +33,6 @@ if(CONFIG_CMAKE_LINKER_GENERATOR)
   dt_node_has_status(ofs1_sel_status PATH ${option_setting_ofs1_sel} STATUS okay)
   dt_node_has_status(banksel_sel_status PATH ${option_setting_banksel_sel} STATUS okay)
   dt_node_has_status(bps_sel_status PATH ${option_setting_bps_sel} STATUS okay)
-
-  if(CONFIG_USE_RA_FSP_DTC)
-    zephyr_linker_section(NAME .fsp_dtc_vector_table GROUP RAM)
-    zephyr_linker_section_configure(SECTION .fsp_dtc_vector_table KEEP INPUT ".fsp_dtc_vector_table*")
-  endif()
 
   if(${ofs0_status})
     zephyr_linker_section(NAME .option_setting_ofs0 GROUP OFS_OFS0_MEMORY ADDRESS ${ofs0_addr})
@@ -88,9 +79,12 @@ if(CONFIG_CMAKE_LINKER_GENERATOR)
     zephyr_linker_section_configure(SECTION .option_setting_bps_sel KEEP INPUT ".option_setting_bps_sel*")
   endif()
 
+  if(CONFIG_ETH_RENESAS_RA_USE_NS_BUF)
+    message(WARNING "Configure ETHERNET non-secure buffer with CMAKE_LINKER_GENERATOR is not supported.")
+  endif()
+
 elseif(CONFIG_LD_LINKER_TEMPLATE)
   zephyr_linker_sources(SECTIONS sections.ld)
-  zephyr_linker_sources(RAM_SECTIONS ram_sections.ld)
 
 else()
   message(WARNING "Unsupported linker template.")
@@ -111,6 +105,4 @@ if(CONFIG_ETH_RENESAS_RA_USE_NS_BUF)
       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     )
   endif()
-else()
-  set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
 endif()

@@ -443,7 +443,7 @@ devicetree.
 
 The FRDM-K64F and Hexiwear K64 board devicetrees are defined in
 :zephyr_file:`frdm_k64fs.dts <boards/nxp/frdm_k64f/frdm_k64f.dts>` and
-:zephyr_file:`hexiwear_k64.dts <boards/nxp/hexiwear/hexiwear_mk64f12.dts>`
+:zephyr_file:`hexiwear_k64.dts <boards/mikroe/hexiwear/hexiwear_mk64f12.dts>`
 respectively. Both boards have NXP SoCs from the same Kinetis SoC family, the
 K6X.
 

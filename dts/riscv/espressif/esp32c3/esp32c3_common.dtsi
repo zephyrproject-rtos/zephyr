@@ -34,7 +34,8 @@
 		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "espressif,riscv", "riscv";
-			riscv,isa = "rv32imc_zicsr";
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "c", "zicsr";
 			reg = <0>;
 			cpu-power-states = <&light_sleep &deep_sleep>;
 			clock-source = <ESP32_CPU_CLK_SRC_PLL>;

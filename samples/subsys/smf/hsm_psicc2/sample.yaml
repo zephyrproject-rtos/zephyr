@@ -15,5 +15,7 @@ common:
       - ".*<inf> hsm_psicc2_thread: s2_entry.*"
       - ".*<inf> hsm_psicc2_thread: s21_entry.*"
       - ".*<inf> hsm_psicc2_thread: s211_entry.*"
+  extra_configs:
+    - platform:iotdk/arc_iot:CONFIG_ARC_IOT_CUSTOM_CPU_IDLE=y
 tests:
   sample.smf.hsm_psicc2: {}

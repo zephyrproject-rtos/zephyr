@@ -335,6 +335,8 @@
 			reg = <0x420c0800 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 18)>;
 			interrupts = <94 0>;
+			nist-config = <0xf00d00>;
+			health-test-config = <0xaac7>;
 			status = "disabled";
 		};
 
@@ -396,6 +398,16 @@
 			reg = <0x40002c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 11)>;
 			interrupts = <0 0>;
+			status = "disabled";
+		};
+
+		rtc: rtc@40007800 {
+			compatible = "st,stm32-rtc";
+			reg = <0x40007800 0x400>;
+			interrupts = <2 0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 30)>;
+			prescaler = <32768>;
+			alarms-count = <2>;
 			status = "disabled";
 		};
 

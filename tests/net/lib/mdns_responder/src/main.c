@@ -22,6 +22,8 @@ LOG_MODULE_REGISTER(mdns_resp_test);
 #include <zephyr/net/socket.h>
 #include <zephyr/ztest.h>
 
+#include "dns_pack.h"
+
 #define NULL_CHAR_SIZE 1
 #define EXT_RECORDS_NUM 3
 #define MAX_RESP_PKTS 8
@@ -103,6 +105,9 @@ static struct net_in6_addr sender_ll_addr = {{{
 0xfe, 0x80, 0, 0, 0, 0, 0, 0, 0x9f, 0x74, 0x88, 0x9c, 0x1b, 0x44, 0x72, 0x39
 }}};
 
+static struct net_in6_addr extra_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
+					      0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+
 static bool test_started;
 static struct k_sem wait_data;
 static struct net_pkt *response_pkts[MAX_RESP_PKTS];
@@ -136,6 +141,7 @@ static void net_iface_init(struct net_if *iface)
 
 	net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr),
 			     NET_LINK_ETHERNET);
+	net_if_flag_set(iface, NET_IF_IPV6_NO_ND);
 }
 
 static int sender_iface(const struct device *dev, struct net_pkt *pkt)
@@ -191,8 +197,6 @@ static void *test_setup(void)
 	memset(services, 0, sizeof(services));
 	memset(records, 0, sizeof(records));
 
-	responses_count = 0;
-
 	/* Cross assign records and buffers to entries for allocation */
 	for (int i = 0; i < EXT_RECORDS_NUM; ++i) {
 		services[i].record = &records[i];
@@ -233,6 +237,11 @@ static void *test_setup(void)
 	/* we need to set the addresses preferred */
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
+	ifaddr = net_if_ipv6_addr_add(iface1, &extra_addr,
+				      NET_ADDR_MANUAL, 0);
+	zassert_not_null(ifaddr, "Failed to add second addr");
+	ifaddr->addr_state = NET_ADDR_PREFERRED;
+
 	net_if_up(iface1);
 
 	return NULL;
@@ -263,6 +272,7 @@ static void before(void *d)
 {
 	ARG_UNUSED(d);
 
+	responses_count = 0;
 	test_started = true;
 }
 
@@ -381,13 +391,13 @@ static void check_service_type_enum_resp(struct net_pkt *pkt, const uint8_t *pay
 	zassert_equal(res, len, "Payload does not match");
 }
 
+/* mDNS responder can advertise only ports that are bound - reuse its own port */
+DNS_SD_REGISTER_UDP_SERVICE(foo, "zephyr", "_foo", "local", DNS_SD_EMPTY_TXT, 5353);
+
 ZTEST(test_mdns_responder, test_external_records)
 {
 	int res;
 	struct dns_sd_rec *records[EXT_RECORDS_NUM];
-
-	/* mDNS responder can advertise only ports that are bound - reuse its own port */
-	DNS_SD_REGISTER_UDP_SERVICE(foo, "zephyr", "_foo", "local", DNS_SD_EMPTY_TXT, 5353);
 
 	records[0] = alloc_ext_record("test_rec", "_custom", "_tcp", "local", NULL, 0, 5353);
 	zassert_not_null(records[0], "Failed to alloc the record");
@@ -438,6 +448,195 @@ ZTEST(test_mdns_responder, test_external_records)
 				     sizeof(payload_foo_tcp_local));
 	check_service_type_enum_resp(response_pkts[6], payload_custom_tcp_local,
 				     sizeof(payload_custom_tcp_local));
+}
+
+static void skip_labels(struct net_pkt *pkt)
+{
+	uint8_t label_len;
+
+	while (true) {
+		zassert_ok(net_pkt_read_u8(pkt, &label_len), "net_pkt read failed");
+		if (label_len == 0) {
+			break;
+		}
+
+		if ((label_len & NS_CMPRSFLGS) == NS_CMPRSFLGS) {
+			zassert_ok(net_pkt_skip(pkt, 1), "net_pkt skip failed");
+			break;
+		}
+
+		zassert_ok(net_pkt_skip(pkt, label_len), "net_pkt skip failed");
+	}
+}
+
+static void validate_label(struct net_pkt *pkt, const char *label, bool last)
+{
+	uint8_t temp_buf[32];
+	uint8_t label_len;
+
+	zassert_ok(net_pkt_read_u8(pkt, &label_len), "net_pkt read failed");
+	zassert_equal(label_len, strlen(label), "Invalid label");
+
+	zassert_ok(net_pkt_read(pkt, &temp_buf, label_len), "net_pkt read failed");
+	zassert_mem_equal(temp_buf, label, label_len);
+
+	if (last) {
+		zassert_ok(net_pkt_read_u8(pkt, &label_len), "net_pkt read failed");
+		zassert_equal(label_len, 0, "Invalid label");
+	}
+}
+
+static void check_basic_query_resp(struct net_pkt *pkt)
+{
+	struct dns_header resp_header;
+	struct dns_rr resp_record;
+	struct net_in6_addr resp_addr[2];
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+
+	/* Jump to DNS payload */
+	zassert_ok(net_pkt_skip(pkt, NET_IPV6UDPH_LEN), "net_pkt skip failed");
+
+	/* Header */
+	zassert_ok(net_pkt_read(pkt, &resp_header, sizeof(resp_header)), "net_pkt read failed");
+	zassert_equal(net_ntohs(resp_header.ancount), 2, "Invalid record count");
+
+	validate_label(pkt, "zephyr", false);
+	validate_label(pkt, "local", true);
+
+	/* First AAAA record */
+	zassert_ok(net_pkt_read(pkt, &resp_record, sizeof(resp_record)), "net_pkt read failed");
+	zassert_equal(net_ntohs(resp_record.type), DNS_RR_TYPE_AAAA, "Invalid record type");
+	zassert_equal(net_ntohs(resp_record.rdlength), sizeof(struct net_in6_addr),
+		      "Invalid record len");
+	zassert_ok(net_pkt_read(pkt, &resp_addr[0], sizeof(struct net_in6_addr)),
+		   "net_pkt read failed");
+
+	/* Second AAAA record */
+	skip_labels(pkt);
+	zassert_ok(net_pkt_read(pkt, &resp_record, sizeof(resp_record)), "net_pkt read failed");
+	zassert_equal(net_ntohs(resp_record.type), DNS_RR_TYPE_AAAA, "Invalid record type");
+	zassert_equal(net_ntohs(resp_record.rdlength), sizeof(struct net_in6_addr),
+		      "Invalid record len");
+	zassert_ok(net_pkt_read(pkt, &resp_addr[1], sizeof(struct net_in6_addr)),
+		   "net_pkt read failed");
+
+	/* Verify both addresses belong to the network interface. */
+	zassert_false(net_ipv6_addr_cmp(&resp_addr[0], &resp_addr[1]), "Got same address twice");
+	zassert_not_null(net_if_ipv6_addr_lookup_by_iface(iface1, &resp_addr[0]),
+			 "Address 1 not found");
+	zassert_not_null(net_if_ipv6_addr_lookup_by_iface(iface1, &resp_addr[1]),
+			 "Address 2 not found");
+}
+
+ZTEST(test_mdns_responder, test_basic_query)
+{
+	static uint8_t zephyr_local_query[] = {
+		/* Header */
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		/* zephyr.local */
+		0x06, 0x7a, 0x65, 0x70, 0x68, 0x79, 0x72, 0x05, 0x6c, 0x6f, 0x63, 0x61, 0x6c, 0x00,
+		/* AAAA record */
+		0x00, 0x1c, 0x00, 0x01
+	};
+	int res;
+
+	/* Send basic mDNS query for zephyr.local */
+	send_msg(zephyr_local_query, sizeof(zephyr_local_query));
+
+	/* Expect response */
+	res = k_sem_take(&wait_data, RESPONSE_TIMEOUT);
+	zassert_ok(res, "Did not receive a response");
+
+	check_basic_query_resp(response_pkts[0]);
+}
+
+static void check_basic_dns_sd_query_resp(struct net_pkt *pkt)
+{
+	struct dns_header resp_header;
+	struct dns_rr resp_record;
+	struct net_in6_addr resp_addr[2];
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+
+	/* Jump to DNS payload */
+	zassert_ok(net_pkt_skip(pkt, NET_IPV6UDPH_LEN), "net_pkt skip failed");
+
+	/* Header */
+	zassert_ok(net_pkt_read(pkt, &resp_header, sizeof(resp_header)), "net_pkt read failed");
+	zassert_equal(net_ntohs(resp_header.ancount), 1, "Invalid record count");
+	zassert_equal(net_ntohs(resp_header.arcount), 4, "Invalid record count");
+
+	validate_label(pkt, "_foo", false);
+	validate_label(pkt, "_udp", false);
+	validate_label(pkt, "local", true);
+
+	/* PTR answer record */
+	zassert_ok(net_pkt_read(pkt, &resp_record, sizeof(resp_record)), "net_pkt read failed");
+	zassert_equal(net_ntohs(resp_record.type), DNS_RR_TYPE_PTR, "Invalid record type");
+	zassert_ok(net_pkt_skip(pkt, net_ntohs(resp_record.rdlength)), "net_pkt skip failed");
+
+	/* TXT additional record */
+	skip_labels(pkt);
+	zassert_ok(net_pkt_read(pkt, &resp_record, sizeof(resp_record)), "net_pkt read failed");
+	zassert_equal(net_ntohs(resp_record.type), DNS_RR_TYPE_TXT, "Invalid record type");
+	zassert_ok(net_pkt_skip(pkt, net_ntohs(resp_record.rdlength)), "net_pkt skip failed");
+
+	/* SRV additional record */
+	skip_labels(pkt);
+	zassert_ok(net_pkt_read(pkt, &resp_record, sizeof(resp_record)), "net_pkt read failed");
+	zassert_equal(net_ntohs(resp_record.type), DNS_RR_TYPE_SRV, "Invalid record type");
+	zassert_ok(net_pkt_skip(pkt, net_ntohs(resp_record.rdlength)), "net_pkt skip failed");
+
+	/* First AAAA additional record */
+	skip_labels(pkt);
+	zassert_ok(net_pkt_read(pkt, &resp_record, sizeof(resp_record)), "net_pkt read failed");
+	zassert_equal(net_ntohs(resp_record.type), DNS_RR_TYPE_AAAA, "Invalid record type");
+	zassert_equal(net_ntohs(resp_record.rdlength), sizeof(struct net_in6_addr),
+		      "Invalid record len");
+	zassert_ok(net_pkt_read(pkt, &resp_addr[0], sizeof(struct net_in6_addr)),
+		   "net_pkt read failed");
+
+	/* Second AAAA additional record */
+	skip_labels(pkt);
+	zassert_ok(net_pkt_read(pkt, &resp_record, sizeof(resp_record)), "net_pkt read failed");
+	zassert_equal(net_ntohs(resp_record.type), DNS_RR_TYPE_AAAA, "Invalid record type");
+	zassert_equal(net_ntohs(resp_record.rdlength), sizeof(struct net_in6_addr),
+		      "Invalid record len");
+	zassert_ok(net_pkt_read(pkt, &resp_addr[1], sizeof(struct net_in6_addr)),
+		   "net_pkt read failed");
+
+	/* Verify both addresses belong to the network interface. */
+	zassert_false(net_ipv6_addr_cmp(&resp_addr[0], &resp_addr[1]), "Got same address twice");
+	zassert_not_null(net_if_ipv6_addr_lookup_by_iface(iface1, &resp_addr[0]),
+			 "Address 1 not found");
+	zassert_not_null(net_if_ipv6_addr_lookup_by_iface(iface1, &resp_addr[1]),
+			 "Address 2 not found");
+}
+
+ZTEST(test_mdns_responder, test_basic_dns_sd_query)
+{
+	static uint8_t dns_sd_query[] = {
+		/* Header */
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		/* _foo._udp.local */
+		0x04, 0x5f, 0x66, 0x6f, 0x6f, 0x04, 0x5f, 0x75, 0x64, 0x70, 0x05, 0x6c,
+		0x6f, 0x63, 0x61, 0x6c, 0x00,
+		/* PTR record */
+		0x00, 0x0c, 0x00, 0x01
+	};
+	int res;
+
+	/* Send basic DNS SD query  */
+	send_msg(dns_sd_query, sizeof(dns_sd_query));
+
+	/* Expect response */
+	res = k_sem_take(&wait_data, RESPONSE_TIMEOUT);
+	zassert_ok(res, "Did not receive a response");
+
+	check_basic_dns_sd_query_resp(response_pkts[0]);
 }
 
 ZTEST_SUITE(test_mdns_responder, NULL, test_setup, before, cleanup, NULL);

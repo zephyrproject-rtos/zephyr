@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021-2025 ATL Electronics
- * Copyright (c) 2024-2025 MASSDRIVER EI (massdriver.space)
+ * Copyright (c) 2024-2026 MASSDRIVER EI (massdriver.space)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/spi/spi.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	#address-cells = <1>;
@@ -71,7 +72,8 @@
 			device_type = "cpu";
 			compatible = "sifive,e24", "riscv";
 			reg = <0>;
-			riscv,isa = "rv32imafcb";
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei";
 			hardware-exec-breakpoint-count = <4>;
 			status = "okay";
 
@@ -143,6 +145,18 @@
 			clock-names = "rc32m", "crystal", "root", "bclk",
 				      "pll_192", "pll_160",
 				      "pll_120", "pll_48";
+		};
+
+		adc0: adc@40002000 {
+			compatible = "bflb,adc";
+			reg = <0x40002000 0x1000 0x4000F000 0x1000>;
+			#io-channel-cells = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			interrupts = <41 0>;
+			interrupt-parent = <&clic>;
 		};
 
 		efuse: efuse@40007000 {

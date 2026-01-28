@@ -1,0 +1,37 @@
+# PHYBOARD-ATLAS
+
+# Copyright (c) 2025 PHYTEC America, LLC
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_PHYBOARD_ATLAS
+
+if CPU_CORTEX_M7
+
+# Use External Memory Configuration Data (XMCD) by default when booting primary core (M7)
+config EXTERNAL_MEM_CONFIG_DATA
+	default y
+
+config NXP_IMX_EXTERNAL_SDRAM
+	default y
+
+configdefault NET_L2_ETHERNET
+	default y # No cache memory support is required for driver
+
+endif # CPU_CORTEX_M7
+
+if SECOND_CORE_MCUX && CPU_CORTEX_M4
+
+config BUILD_OUTPUT_INFO_HEADER
+	default y
+
+DT_CHOSEN_IMAGE_M4 = nxp,m4-partition
+
+# Adjust the offset of the output image if building for RT11xx SOC
+config BUILD_OUTPUT_ADJUST_LMA
+	default "($(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_M4)) + \
+	$(dt_node_reg_addr_hex,/soc/spi@400cc000,1)) - \
+	$(dt_node_reg_addr_hex,/soc/ocram@20200000)"
+
+endif # SECOND_CORE_MCUX && CPU_CORTEX_M4
+
+endif # BOARD_PHYBOARD_ATLAS

@@ -30,7 +30,9 @@
 			interrupts = <94 0>, <95 0>, <96 0>, <97 0>, <98 0>, <99 0>;
 			interrupt-names = "mb-0-15", "bus-off", "error", "tx-warning",
 					  "rx-warning", "wake-up";
-			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1030 4>;
+			clocks = <&sim KINETIS_SIM_OSCERCLK 0x1030 4>,
+				 <&sim KINETIS_SIM_BUS_CLK 0x1030 4>;
+			clock-names = "clksrc0", "clksrc1";
 			clk-source = <1>;
 			number-of-mb = <16>;
 			status = "disabled";

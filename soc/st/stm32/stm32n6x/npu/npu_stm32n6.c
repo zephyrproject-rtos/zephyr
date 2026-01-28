@@ -34,11 +34,11 @@ static int npu_stm32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken_npu) != 0) {
+	if (clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken_npu) != 0) {
 		return -EIO;
 	}
 
-	if (clock_control_on(clk, (clock_control_subsys_t) &cfg->pclken_cacheaxi) != 0) {
+	if (clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken_cacheaxi) != 0) {
 		return -EIO;
 	}
 
@@ -53,14 +53,16 @@ static int npu_stm32_init(const struct device *dev)
 	return 0;
 }
 
-
 static const struct npu_stm32_cfg npu_stm32_cfg = {
-	.pclken_npu = STM32_CLOCK_INFO_BY_NAME(DT_NODELABEL(npu), npu),
-	.pclken_cacheaxi = STM32_CLOCK_INFO_BY_NAME(DT_NODELABEL(npu), cacheaxi),
-	.reset_npu = RESET_DT_SPEC_GET_BY_IDX(DT_NODELABEL(npu), 0),
-	.reset_cacheaxi = RESET_DT_SPEC_GET_BY_IDX(DT_NODELABEL(npu), 1),
+	.pclken_npu = STM32_DT_INST_CLOCK_INFO(0),
+	.reset_npu = RESET_DT_SPEC_INST_GET(0),
+	/*
+	 * Even if npu_cache node is disabled, its clocks must be enabled for NPU operation.
+	 * This is why we need to get clock and reset line from the npu_cache node.
+	 */
+	.pclken_cacheaxi = STM32_CLOCK_INFO(0, DT_NODELABEL(npu_cache)),
+	.reset_cacheaxi = RESET_DT_SPEC_GET(DT_NODELABEL(npu_cache)),
 };
 
-DEVICE_DT_DEFINE(DT_NODELABEL(npu), npu_stm32_init, NULL,
-		 NULL, &npu_stm32_cfg, POST_KERNEL,
-		 CONFIG_APPLICATION_INIT_PRIORITY, NULL);
+DEVICE_DT_INST_DEFINE(0, npu_stm32_init, NULL, NULL, &npu_stm32_cfg, POST_KERNEL,
+		      CONFIG_STM32N6_NPU_INIT_PRIORITY, NULL);

@@ -19,6 +19,13 @@
 	reg = <0x00000000 DT_SIZE_K(512)>;
 };
 
+&radio {
+	ble-2mbps-supported;
+	ble-coded-phy-supported;
+	ble-cte-rx-supported;
+	ble-cte-tx-supported;
+};
+
 &sram0 {
 	reg = <0x20000000 DT_SIZE_K(32)>;
 };

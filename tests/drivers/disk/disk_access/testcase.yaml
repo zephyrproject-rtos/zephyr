@@ -64,7 +64,7 @@ tests:
       fixture: fixture_sdhc
     filter: dt_compat_enabled("zephyr,sdhc-spi-slot") and dt_compat_enabled("renesas,ra-spi-sci-b")
     extra_args:
-      - DTC_OVERLAY_FILE="boards/${BOARD}${NORMALIZED_BOARD_QUALIFIERS}_sci_b_spi.overlay"
-      - CONF_FILE="prj.conf boards/${BOARD}${NORMALIZED_BOARD_QUALIFIERS}_sci_b_spi.conf"
+      - DTC_OVERLAY_FILE="boards/${BOARD}_${NORMALIZED_BOARD_QUALIFIERS}_sci_b_spi.overlay"
+      - CONF_FILE="prj.conf boards/${BOARD}_${NORMALIZED_BOARD_QUALIFIERS}_sci_b_spi.conf"
     platform_allow:
       - ek_ra8p1/r7ka8p1kflcac/cm85

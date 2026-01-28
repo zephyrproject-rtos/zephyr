@@ -5,7 +5,7 @@
 #
 
 identifier: mimxrt1180_evk/mimxrt1189/cm7
-name: NXP MIMXRT1180-EVK CM7
+name: NXP MIMXRT1180-EVK (CM7)
 type: mcu
 arch: arm
 toolchain:

@@ -157,6 +157,23 @@ static void clear_flash_caches(void)
 #define clear_flash_caches(...)
 #endif
 
+#if defined(FTFx_DRIVER_IS_FLASH_RESIDENT) && FTFx_DRIVER_IS_FLASH_RESIDENT
+/*
+ * MCUXSDK FTFX driver (fsl_ftfx_controller.c) places the run command function
+ * in data section (array s_ftfxRunCommand). When Zephyr configured the memory
+ * permission, the data section is not executable. The workaround is
+ * implementing a ram function in Zephyr, to replace FTFX driver's run command
+ * function.
+ */
+static __ramfunc void flash_ftfx_run_command(FTFx_REG8_ACCESS_TYPE ftfx_fstat)
+{
+	*ftfx_fstat = FTFx_FSTAT_CCIF_MASK;
+
+	while (!((*ftfx_fstat) & FTFx_FSTAT_CCIF_MASK)) {
+	}
+}
+#endif /* FTFx_DRIVER_IS_FLASH_RESIDENT */
+
 struct flash_priv {
 	flash_config_t config;
 	/*
@@ -377,6 +394,15 @@ static int flash_mcux_init(const struct device *dev)
 	k_sem_init(&priv->write_lock, 1, 1);
 
 	rc = FLASH_Init(&priv->config);
+
+#if defined(FTFx_DRIVER_IS_FLASH_RESIDENT) && FTFx_DRIVER_IS_FLASH_RESIDENT
+	/* MCUXSDK FTFX driver's commadAddr is an address to data (LSB = 0), but
+	 * (uint32_t)flash_ftfx_run_command is an address to code (LDB = 1), so
+	 * clear the LSB here.
+	 */
+	priv->config.ftfxConfig->runCmdFuncAddr.commadAddr =
+		((uint32_t)flash_ftfx_run_command) & ~0x01U;
+#endif /* FTFx_DRIVER_IS_FLASH_RESIDENT */
 
 	FLASH_GetProperty(&priv->config, FLASH_PROP_BLOCK_BASE, &pflash_block_base);
 

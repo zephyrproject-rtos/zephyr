@@ -14,6 +14,7 @@
 #include <zephyr/dt-bindings/gpio/nordic-nrf-gpio.h>
 #include <zephyr/irq.h>
 #include <zephyr/pm/device.h>
+#include <soc.h>
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
@@ -594,12 +595,23 @@ void gpio_nrfx_gpiote_irq_handler(void const *param)
 }
 #endif
 
-#define GPIOTE_IRQ_HANDLER_CONNECT(node_id)		\
-	IRQ_CONNECT(DT_IRQN(node_id),			\
-		    DT_IRQ(node_id, priority),		\
-		    gpio_nrfx_gpiote_irq_handler,       \
-		    &GPIOTE_NRFX_INST_BY_NODE(node_id), \
-		    0);
+#define GPIOTE_IRQ_HANDLER_CONNECT(node_id)							\
+	NRF_DT_IRQ_CONNECT(									\
+		node_id,									\
+		gpio_nrfx_gpiote_irq_handler,							\
+		&GPIOTE_NRFX_INST_BY_NODE(node_id)						\
+	)
+
+#define GPIOTE_IRQ_DIRECT_DEFINE(node_id)							\
+	NRF_DT_IRQ_DIRECT_DEFINE(								\
+		node_id,									\
+		gpio_nrfx_gpiote_irq_handler,							\
+		&GPIOTE_NRFX_INST_BY_NODE(node_id)						\
+	)
+
+#ifdef CONFIG_GPIO_NRFX_INTERRUPT
+	DT_FOREACH_STATUS_OKAY(nordic_nrf_gpiote, GPIOTE_IRQ_DIRECT_DEFINE);
+#endif /* CONFIG_GPIO_NRFX_INTERRUPT */
 
 static int gpio_nrfx_pm_hook(const struct device *port, enum pm_device_action action)
 {

@@ -10,7 +10,6 @@ config SOC_SERIES_MEC174X
 	select CPU_HAS_FPU
 	select CPU_HAS_ARM_MPU
 	select HAS_SWO
-	select HAS_MEC5_HAL
 	select SOC_PREP_HOOK
 
 if SOC_SERIES_MEC174X

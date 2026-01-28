@@ -66,9 +66,9 @@ struct mqtt_sn_topic {
 
 struct mqtt_sn_gateway {
 	sys_snode_t next;
-	char gw_id;
+	uint8_t gw_id;
 	int64_t adv_timer;
-	char addr[CONFIG_MQTT_SN_LIB_MAX_ADDR_SIZE];
+	uint8_t addr[CONFIG_MQTT_SN_LIB_MAX_ADDR_SIZE];
 	size_t addr_len;
 };
 
@@ -344,7 +344,7 @@ static void mqtt_sn_topic_destroy_all(struct mqtt_sn_client *client)
 
 static void mqtt_sn_gw_destroy(struct mqtt_sn_client *client, struct mqtt_sn_gateway *gw)
 {
-	LOG_DBG("Destroying gateway %d", gw->gw_id);
+	LOG_DBG("Destroying gateway 0x%02x", gw->gw_id);
 	sys_slist_find_and_remove(&client->gateway, &gw->next);
 	k_mem_slab_free(&gateways, (void *)gw);
 }
@@ -389,7 +389,7 @@ static struct mqtt_sn_gateway *mqtt_sn_gw_create(uint8_t gw_id, short duration,
 	return gw;
 }
 
-static struct mqtt_sn_gateway *mqtt_sn_gw_find_by_id(struct mqtt_sn_client *client, uint16_t gw_id)
+static struct mqtt_sn_gateway *mqtt_sn_gw_find_by_id(struct mqtt_sn_client *client, uint8_t gw_id)
 {
 	struct mqtt_sn_gateway *gw;
 
@@ -1007,7 +1007,7 @@ static int process_ping(struct mqtt_sn_client *client, int64_t *next_cycle)
 			LOG_WRN("Ping ran out of retries");
 			mqtt_sn_disconnect_internal(client);
 			SYS_SLIST_PEEK_HEAD_CONTAINER(&client->gateway, gw, next);
-			LOG_DBG("Removing non-responsive GW 0x%08x", gw->gw_id);
+			LOG_DBG("Removing non-responsive GW 0x%02x", gw->gw_id);
 			mqtt_sn_gw_destroy(client, gw);
 			return -ETIMEDOUT;
 		}
@@ -1032,9 +1032,8 @@ static int process_ping(struct mqtt_sn_client *client, int64_t *next_cycle)
  *
  * @param client
  * @param next_cycle will be set to the time when the next action is required
- * @retval 0 on success
  */
-static int process_search(struct mqtt_sn_client *client, int64_t *next_cycle)
+static void process_search(struct mqtt_sn_client *client, int64_t *next_cycle)
 {
 	const int64_t now = k_uptime_get();
 
@@ -1064,8 +1063,6 @@ static int process_search(struct mqtt_sn_client *client, int64_t *next_cycle)
 	}
 
 	LOG_DBG("next_cycle: %lld", *next_cycle);
-
-	return 0;
 }
 
 /**
@@ -1073,9 +1070,8 @@ static int process_search(struct mqtt_sn_client *client, int64_t *next_cycle)
  *
  * @param client
  * @param next_cycle will be set to the time when the next action is required
- * @return int
  */
-static int process_advertise(struct mqtt_sn_client *client, int64_t *next_cycle)
+static void process_advertise(struct mqtt_sn_client *client, int64_t *next_cycle)
 {
 	const int64_t now = k_uptime_get();
 	struct mqtt_sn_gateway *gw;
@@ -1084,7 +1080,7 @@ static int process_advertise(struct mqtt_sn_client *client, int64_t *next_cycle)
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&client->gateway, gw, gw_next, next) {
 		LOG_DBG("Checking if GW 0x%02x is old", gw->gw_id);
 		if (gw->adv_timer != -1 && gw->adv_timer <= now) {
-			LOG_DBG("Removing non-responsive GW 0x%08x", gw->gw_id);
+			LOG_DBG("Removing non-responsive GW 0x%02x", gw->gw_id);
 			if (client->gateway.head == &gw->next) {
 				mqtt_sn_disconnect(client);
 			}
@@ -1095,8 +1091,6 @@ static int process_advertise(struct mqtt_sn_client *client, int64_t *next_cycle)
 		}
 	}
 	LOG_DBG("next_cycle: %lld", *next_cycle);
-
-	return 0;
 }
 
 /**
@@ -1118,16 +1112,10 @@ static void process_work(struct k_work *wrk)
 		k_uptime_get());
 
 	/* Clean up old advertised gateways from list */
-	err = process_advertise(client, &next_cycle);
-	if (err) {
-		return;
-	}
+	process_advertise(client, &next_cycle);
 
 	/* Handle GW search process timers */
-	err = process_search(client, &next_cycle);
-	if (err) {
-		return;
-	}
+	process_search(client, &next_cycle);
 
 	process_pubs_qos_m1(client);
 
@@ -1484,14 +1472,14 @@ static void handle_advertise(struct mqtt_sn_client *client, struct mqtt_sn_param
 	gw = mqtt_sn_gw_find_by_id(client, p->gw_id);
 
 	if (gw == NULL) {
-		LOG_DBG("Creating GW 0x%02x with duration %d", p->gw_id, p->duration);
+		LOG_DBG("Creating GW 0x%02x with duration %u", p->gw_id, p->duration);
 		gw = mqtt_sn_gw_create(p->gw_id, p->duration, rx_addr);
 		if (!gw) {
 			return;
 		}
 		sys_slist_append(&client->gateway, &gw->next);
 	} else {
-		LOG_DBG("Updating timer for GW 0x%02x with duration %d", p->gw_id, p->duration);
+		LOG_DBG("Updating timer for GW 0x%02x with duration %u", p->gw_id, p->duration);
 		gw->adv_timer =
 			k_uptime_get() + (p->duration * CONFIG_MQTT_SN_LIB_N_ADV * MSEC_PER_SEC);
 	}
@@ -1899,7 +1887,7 @@ static int handle_msg(struct mqtt_sn_client *client, struct mqtt_sn_data rx_addr
 int mqtt_sn_input(struct mqtt_sn_client *client)
 {
 	ssize_t next_frame_size;
-	char addr[CONFIG_MQTT_SN_LIB_MAX_ADDR_SIZE];
+	uint8_t addr[CONFIG_MQTT_SN_LIB_MAX_ADDR_SIZE];
 	struct mqtt_sn_data rx_addr = {.data = addr, .size = CONFIG_MQTT_SN_LIB_MAX_ADDR_SIZE};
 	int err;
 
@@ -1921,8 +1909,12 @@ int mqtt_sn_input(struct mqtt_sn_client *client)
 	if (next_frame_size <= 0) {
 		return next_frame_size;
 	}
-
 	if (next_frame_size > client->rx.size) {
+		return -ENOBUFS;
+	}
+	if (rx_addr.size > sizeof(addr)) {
+		LOG_DBG("Received packet has an address larger than "
+			"CONFIG_MQTT_SN_LIB_MAX_ADDR_SIZE");
 		return -ENOBUFS;
 	}
 

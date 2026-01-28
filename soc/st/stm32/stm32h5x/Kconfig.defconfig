@@ -10,8 +10,14 @@ rsource "Kconfig.defconfig.stm32h5*"
 config ICACHE
 	default y
 
+config ICACHE_LINE_SIZE
+	default 16
+
 config DCACHE
 	default y if !SOC_STM32H503XX
+
+config DCACHE_LINE_SIZE
+	default 16
 
 config CACHE_MANAGEMENT
 	default y

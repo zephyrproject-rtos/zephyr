@@ -29,12 +29,35 @@ Build System
   :kconfig:option:`CONFIG_STD_C99` or :kconfig:option:`CONFIG_STD_C11`.
 * The ``full_name`` property of ``board``/``boards`` entries corresponding to new boards in
   board.yml files is now required.
+* The CMake variable ``BOARD_QUALIFIERS`` is aligned with the corresponding
+  :kconfig:option:`CONFIG_BOARD_QUALIFIERS` so that it is no longer prefixed with a ``/``.
+  This means that any use of ``${BOARD}${BOARD_QUALIFIERS}`` must be updated to include ``/``, like
+  this: ``${BOARD}/${BOARD_QUALIFIERS}``.
 
 Kernel
 ******
 
 Boards
 ******
+
+* The OpenOCD runner now uses the standard ``--file`` and ``--file-type`` interface for specifying
+  flash files, aligning with other runners like JLink. The following changes apply:
+
+  * The ``--use-hex``, ``--use-elf``, and ``--use-bin`` flags are deprecated. Use ``--file-type``
+    instead:
+
+    * ``--use-elf`` → ``--file-type=elf``
+    * ``--use-bin`` → ``--file-type=bin``
+    * ``--use-hex`` → ``--file-type=hex`` (or omit, as hex is the default)
+
+  * The ``--file`` option is now supported to specify a custom file path, similar to the JLink
+    runner.
+
+  * Board cmake files using the deprecated flags will continue to work but will emit a deprecation
+    warning.
+
+  * The ``--file-type`` option can now be used without ``--file`` to select between build artifacts
+    (hex, elf, bin).
 
 * m5stack_fire: Removed unused pinctrl entries for UART2, and updated the UART1
   pin mapping from GPIO32/GPIO33 to GPIO16/GPIO17 to match the documented Grove
@@ -45,6 +68,58 @@ Boards
   and :zephyr_file:`boards/nxp/mimxrt1170_evk/xmcd/xmcd.c`, we have changed them to local scope
   in the respective board CMakeLists.txt files. Applications that depended on these definitions
   being globally available may need to be updated. (:github:`101322`)
+
+* Renesas ``ek_ra8t2/r7ka8t2lfecac/cm85`` is renamed to ``ek_ra8t2/r7ka8t2lflcac/cm85``.
+
+* NXP has changed the scope of some in-tree compile flags to limit their visibility to only where
+  they are needed. Out-of-tree applications or boards that depended on these flags being globally
+  available may need to add them to their own CMakeLists.txt files to ensure they continue to build
+  correctly. (:github:`100252`)
+  The affected flags are listed below:
+
+  * For the RT10xx and RT11xx families, the compile flag ``BOARD_FLASH_SIZE``, originally defined in
+    ``boards/nxp/mimxrt10xx_evk/CMakeLists.txt`` and ``boards/nxp/mimxrt11xx_evk/CMakeLists.txt``, is
+    used only by the HAL header ``fsl_flexspi_nor_boot.h``, which is included by
+    :zephyr_file:`soc/nxp/imxrt/imxrt10xx/soc.c` and :zephyr_file:`soc/nxp/imxrt/imxrt11xx/soc.c`.
+    To avoid potential collisions with other global flags, the macro is now defined at the SoC layer
+    using ``zephyr_library_compile_definitions()`` in :zephyr_file:`soc/nxp/imxrt/imxrt10xx/CMakeLists.txt`
+    and :zephyr_file:`soc/nxp/imxrt/imxrt11xx/CMakeLists.txt`. This change has been applied to all
+    RTxxxx boards.
+
+  * For the RTxxx family, the compile flag ``BOARD_FLASH_SIZE``, originally defined in
+    ``boards/nxp/mimxrtxxx_evk/CMakeLists.txt``, is not used in the Zephyr tree and has
+    therefore been removed from all RTxxx board CMakeLists.txt files.
+
+  * For the RTxxx family, the compile flag ``BOOT_HEADER_ENABLE``, previously defined in
+    ``boards/nxp/mimxrtxxx_evk/CMakeLists.txt`` and used in ``boards/nxp/rtxxx/<boot_header>.c``,
+    has been replaced by a Kconfig option. Consequently, the line
+    ``zephyr_compile_definitions(BOOT_HEADER_ENABLE=1)`` has been removed from the RTxxx board
+    CMakeLists.txt files.
+
+  * Removed compile flag ``BOOT_HEADER_ENABLE`` definition from :zephyr_file:`boards/nxp/rd_rw612_bga/CMakeLists.txt`,
+    as it is not used in the Zephyr tree.
+
+  * Originally, the compile flags ``XIP_BOOT_HEADER_ENABLE`` and ``XIP_BOOT_HEADER_DCD_ENABLE`` were
+    used in ``boards/nxp/rt1xxx/<boot_header>.c``. These flags have been converted to Kconfig options
+    across NXP RTxxxx evaluation boards, allowing boot-header configuration via the Kconfig build system
+    instead of compile-time defines. Consequently, we removed ``zephyr_compile_definitions(XIP_BOOT_HEADER_ENABLE=1)``
+    and ``zephyr_compile_definitions(XIP_BOOT_HEADER_DCD_ENABLE=1)`` from the RTxxxx board-level CMakeLists.txt files.
+    Because these macros are also required by ``hal_nxp/rt10xx/fsl_flexspi_nor_boot.h`` and
+    ``hal_nxp/rt11xx/fsl_flexspi_nor_boot.h``, they were added to the corresponding SoC-layer CMakeLists.txt files
+    using ``zephyr_library_compile_definitions()`` to limit their scope.
+
+* The following Nordic SoC Kconfigs have been deprecated and replaced, and Kconfig/CMake/code
+  needs to be updated if they reference the deprecated Kconfigs:
+
+  * :kconfig:option:`CONFIG_SOC_SERIES_NRF51X` with :kconfig:option:`CONFIG_SOC_SERIES_NRF51`
+  * :kconfig:option:`CONFIG_SOC_SERIES_NRF52X` with :kconfig:option:`CONFIG_SOC_SERIES_NRF52`
+  * :kconfig:option:`CONFIG_SOC_SERIES_NRF53X` with :kconfig:option:`CONFIG_SOC_SERIES_NRF53`
+  * :kconfig:option:`CONFIG_SOC_SERIES_NRF54HX` with :kconfig:option:`CONFIG_SOC_SERIES_NRF54H`
+  * :kconfig:option:`CONFIG_SOC_SERIES_NRF54LX` with :kconfig:option:`CONFIG_SOC_SERIES_NRF54L`
+  * :kconfig:option:`CONFIG_SOC_SERIES_NRF91X` with :kconfig:option:`CONFIG_SOC_SERIES_NRF91`
+  * :kconfig:option:`CONFIG_SOC_SERIES_NRF92X` with :kconfig:option:`CONFIG_SOC_SERIES_NRF92`
+
+* ITE ``it515xx_evb`` is renamed to ``it51xxx_evb``.
 
 Device Drivers and Devicetree
 *****************************
@@ -104,8 +179,16 @@ Controller Area Network (CAN)
   :dtcompatible:`nxp,flexcan-fd` with per-instance ``number-of-mb`` and
   ``number-of-mb-fd`` devicetree properties (:github:`99483`).
 
+* The :dtcompatible:`nxp,flexcan` ``clk-source`` devicetree property, if present, now automatically
+  selects between the named input clocks ``clksrc0`` and ``clksrc1`` for use as the CAN protocol
+  engine clock.
+
 Counter
 =======
+
+* Drivers that implement ``get_value_64`` API will now need to select
+  :kconfig:option:`CONFIG_COUNTER_SUPPORTS_64BITS_TICKS` and applications will need
+  :kconfig:option:`CONFIG_COUNTER_64BITS_TICKS` to enable the API. (:github:`94189`).
 
 * The NXP LPTMR driver (:dtcompatible:`nxp,lptmr`) has been updated to fix incorrect
   prescaler and glitch filter configuration:
@@ -275,6 +358,46 @@ Counter
      GPT now uses explicit devicetree properties rather than hardcoded values, allowing
      per-instance customization.
 
+Display
+=======
+
+* For ILI9XXX controllers, the usage of ``ILI9XXX_PIXEL_FORMAT_x`` in devicetrees for panel color
+  format selection has been updated to ``PANEL_PIXEL_FORMAT_x``. Out-of-tree boards and shields
+  should be updated accordingly. (:github:`99267`).
+
+* For ILI9341 controller, display mirroring configuration has been updated to conform with
+  the described behavior of the sample ``samples/drivers/display``. (:github:`99267`).
+
+* The ``PIXEL_FORMAT_BGR_565`` pixel format has been renamed to
+  :c:macro:`PIXEL_FORMAT_RGB_565X` to correctly reflect that it is a
+  byte-swapped version of RGB_565, not a channel-swapped format.
+  Applications using ``PIXEL_FORMAT_BGR_565`` must update to use
+  :c:macro:`PIXEL_FORMAT_RGB_565X`. (:github:`99276`)
+
+* The devicetree macro ``PANEL_PIXEL_FORMAT_BGR_565`` has been renamed to
+  :c:macro:`PANEL_PIXEL_FORMAT_RGB_565X`. (:github:`99276`)
+
+* The Kconfig options ``SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGR_565`` and
+  ``ST7789V_BGR565`` have been renamed to
+  :kconfig:option:`SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_565X` and :kconfig:option:`ST7789V_RGB565X`
+  respectively. (:github:`99276`)
+
+* ``CONFIG_SSD1327`` symbol has been renamed to :kconfig:option:`CONFIG_SSD1327_5` to include ``SSD1325`` as well.
+
+* ``solomon,ssd1327fb`` devicetree compatible has been renamed :dtcompatible:`solomon,ssd1327`
+  to harmonize with other display controllers and eliminate the zephyr-irrelevant ``fb`` suffix.
+
+* ``solomon,ssd1306fb`` and ``solomon,ssd1309fb`` devicetree compatibles has been renamed
+  :dtcompatible:`solomon,ssd1306` and :dtcompatible:`solomon,ssd1309` respectively,
+  to harmonize with other display controllers and eliminate the zephyr-irrelevant ``fb`` suffix.
+
+DMA
+===
+
+* Removed the :kconfig:option:`CONFIG_DMA_MCUX_EDMA_V5` (:github:`100341`). This macro previously distinguished between
+  nxp,version(5) and nxp,version(4). It now supports unified maintenance for both versions.
+  Users can modify ``DMA_MCUX_EDMA_V5`` to ``DMA_MCUX_EDMA_V4``.
+
 EEPROM
 ======
 
@@ -318,6 +441,8 @@ Ethernet
   * :dtcompatible:`microchip,lan865x` (:github:`100318`)
   * :dtcompatible:`microchip,lan9250` (:github:`99127`)
   * :dtcompatible:`sensry,sy1xx-mac` (:github:`100619`)
+  * :dtcompatible:`st,stm32n6-ethernet`, :dtcompatible:`st,stm32h7-ethernet`
+    and :dtcompatible:`st,stm32-ethernet` (:github:`102810`)
   * :dtcompatible:`virtio,net` (:github:`100106`)
   * :dtcompatible:`vnd,ethernet` (:github:`96598`)
   * :dtcompatible:`wiznet,w5500` (:github:`100919`)
@@ -338,6 +463,27 @@ GPIO
   The driver now uses the reg-names property to detect supported modes of the GPIO controller.
   The Devicetree property ``port-is-output`` has been removed.
   The reg-names are now taken directly from LiteX. (:github:`99329`)
+
+* The ``irqs`` property of :dtcompatible:`renesas,rz-gpio` has been reworked
+  to map a pin to an interrupt phandle explicitly instead of an interrupt index (:github:`101256`).
+
+  .. code-block:: devicetree
+
+     /* Old (Zephyr ≤ 4.3) */
+     &gpio16 {
+         /* Map port16 pin3 to tint7 */
+         irqs = <3 7>;
+     };
+
+     /* New (Zephyr ≥ 4.4) */
+     &tint7 {
+         status = "okay";
+     };
+
+     &gpio16 {
+         /* Map port16 pin3 to tint7 */
+         irqs = <&tint7 3>;
+     };
 
 Infineon
 ========
@@ -402,6 +548,14 @@ Radio
   ``radio-tx-high-power-supported`` for consistency.
 
 * Device trees and overlays using the old compatible strings must be updated to use the new names.
+
+SD Host Controller
+==================
+
+* Moved extra fields ``bus_4_bit_support``, ``hs200_support`` and ``hs400_support`` from
+  :c:struct:`sdhc_host_caps` to :c:struct:`sdhc_host_props` as per the
+  `SD Host Controller Specification <https://www.sdcard.org/downloads/pls/pdf/?p=PartA2_SD%20Host_Controller_Simplified_Specification_Ver4.20.jpg>`_.
+  (:github:`91701`)
 
 Shell
 =====
@@ -491,6 +645,38 @@ STM32
   The previous ``swap using move`` mode can still be selected in sysbuild by enabling
   :kconfig:option:`SB_CONFIG_MCUBOOT_MODE_SWAP_USING_MOVE`.
 
+* For STM32F2x/F4x/F7x, the different PLL bindings (:dtcompatible:`st,stm32f2-pll-clock`,
+  :dtcompatible:`st,stm32f4-pll-clock`, :dtcompatible:`st,stm32f4-plli2s-clock`,
+  :dtcompatible:`st,stm32f411-plli2s-clock`, :dtcompatible:`st,stm32f7-pll-clock` and
+  :dtcompatible:`st,stm32fx-pllsai-clock` ) has been merged into a single one
+  :dtcompatible:`st,stm32fx-pll-clock`. This merge brings some changes, notably ``div-divq`` and
+  ``div-divr`` properties have been renamed respectively to ``post-div-q`` and ``post-div-r``.
+  Besides, when applicable to the SoC, these properties need to be defined if the corresponding
+  ``div-q`` or ``div-r`` properties are used.
+
+* The MAC address generation in :zephyr_file:`drivers/ethernet/eth_stm32_hal_common.c` for STM32
+  platforms now use :c:struct:`net_eth_mac_config` when one of these properties are used in the MAC
+  device-tree node:
+
+    * ``zephyr,random-mac-address`` (a)
+    * ``local-mac-address`` (b)
+    * ``nvmem-cells`` (c) (NEW)
+
+  This causes backward compatibility breakage for implementations using (a) or (b) properties.
+  Previous implementation using these properties in the DT mixed an ST OUI for the first 3 MSB with
+  random (a) or explicit (b) bits for the 3 LSB of the MAC address. Now, the MAC address is fully
+  random (a), fully or partially written in the device-tree (b).
+
+  New implementation (c) allows to refer to a MAC address stored in non-volatile memory.
+  E.g: BSEC peripheral managing :abbr:`OTP(One Time Programmable)` fuses on STM32N6x platforms.
+  See :c:func:`net_eth_mac_load` for more details.
+
+  When none of these properties are specified in the MAC node, the legacy implementation is used.
+  (:github:`102810`)
+
+  .. note:: This change aligns STM32 platforms' behavior with the generic Zephyr one. Previous
+            implementation wasn't product-ready so this shouldn't cause much trouble.
+
 USB
 ===
 
@@ -532,6 +718,9 @@ Bluetooth Audio
   receive states at the end of the procedure. Users will have to manually call
   :c:func:`bt_bap_broadcast_assistant_read_recv_state` to read the existing receive states, if any,
   prior to performing any operations. (:github:`91587`)
+* :kconfig:option:`CONFIG_BT_AUDIO` now depends on :kconfig:option:`CONFIG_UTF8`.
+  Applications that enable :kconfig:option:`CONFIG_BT_AUDIO` must also have
+  :kconfig:option:`CONFIG_UTF8` enabled. (:github:`102350`)
 
 Bluetooth Mesh
 ==============
@@ -575,6 +764,16 @@ Networking
   handle this status in the handler callback to properly reset resource state after successful
   response transmission.
 
+* The protocol version passed to :c:func:`zsock_socket` when creating a secure socket is now
+  enforced as the minimum TLS version to use for the TLS session.
+
+* Automatic selection of crypto Kconfigs has been removed from :kconfig:option:`NET_SOCKETS_SOCKOPT_TLS`
+  as they strongly depend on the final application's needs. As a consequence the desired TLS protocol
+  version and ciphersuite(s) must be explicitly selected.
+  Available :kconfig:option-regex:`CONFIG_MBEDTLS_CIPHERSUITE_TLS_.*` Kconfig helpers can be used
+  to automatically enable all the dependencies of a given ciphersuite, and more can be added as
+  needed following the same pattern.
+
 Modem
 *****
 
@@ -594,8 +793,27 @@ Modem HL78XX
 
   Applications depending on the previous defaults must update their configuration.
 
+LoRaWAN
+*******
+
+* The LoRaWAN region Kconfig symbols have been renamed from ``LORAMAC_REGION_*`` to
+  ``LORAWAN_REGION_*`` to make them backend-agnostic. Applications using any of the following
+  symbols must update their configuration files:
+
+  * ``CONFIG_LORAMAC_REGION_AS923`` → :kconfig:option:`CONFIG_LORAWAN_REGION_AS923`
+  * ``CONFIG_LORAMAC_REGION_AU915`` → :kconfig:option:`CONFIG_LORAWAN_REGION_AU915`
+  * ``CONFIG_LORAMAC_REGION_CN470`` → :kconfig:option:`CONFIG_LORAWAN_REGION_CN470`
+  * ``CONFIG_LORAMAC_REGION_CN779`` → :kconfig:option:`CONFIG_LORAWAN_REGION_CN779`
+  * ``CONFIG_LORAMAC_REGION_EU433`` → :kconfig:option:`CONFIG_LORAWAN_REGION_EU433`
+  * ``CONFIG_LORAMAC_REGION_EU868`` → :kconfig:option:`CONFIG_LORAWAN_REGION_EU868`
+  * ``CONFIG_LORAMAC_REGION_KR920`` → :kconfig:option:`CONFIG_LORAWAN_REGION_KR920`
+  * ``CONFIG_LORAMAC_REGION_IN865`` → :kconfig:option:`CONFIG_LORAWAN_REGION_IN865`
+  * ``CONFIG_LORAMAC_REGION_US915`` → :kconfig:option:`CONFIG_LORAWAN_REGION_US915`
+  * ``CONFIG_LORAMAC_REGION_RU864`` → :kconfig:option:`CONFIG_LORAWAN_REGION_RU864`
+
 Other subsystems
 ****************
+
 * The DAP subsystem initialization and configuration has changed. Please take a look at
   :zephyr:code-sample:`cmsis-dap` sample on how to initialize Zephyr DAP Link with USB backend.
 
@@ -603,6 +821,15 @@ Other subsystems
 
   * Use :kconfig:option:`CONFIG_CACHE_HAS_MIRRORED_MEMORY_REGIONS` instead of
     :kconfig:option:`CONFIG_CACHE_DOUBLEMAP` as the former is more descriptive of the feature.
+
+Flash
+=====
+
+* Previously deprecated ``CONFIG_FLASH_AREA_CHECK_INTEGRITY_MBEDTLS`` is now
+  removed.
+
+* ``CONFIG_FLASH_AREA_CHECK_INTEGRITY_PSA`` is also removed since there is
+  now no alternative for the crypto library backend.
 
 JWT
 ===
@@ -616,6 +843,15 @@ Libsbc
 
 * Libsbc (sbc.c and sbc.h) is moved under the Bluetooth subsystem. The sbc.h is in
   include/zephyr/bluetooth now.
+
+Management
+==========
+
+* MCUmgr
+
+  * If using :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UART` then
+    :kconfig:option:`CONFIG_UART_MCUMGR` must now also be selected, this has changed to be
+    ``depends on`` rather than ``select``.
 
 Tracing
 ========
@@ -641,6 +877,34 @@ Settings
 Modules
 *******
 
+HostAP
+======
+
+* Kconfig :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA` is now
+  enabled by default.
+
+OpenThread
+==========
+
+* The following Kconfigs options were renamed:
+
+  * ``CONFIG_OPENTHREAD_MBEDTLS_CHOICE`` to
+    :kconfig:option:`CONFIG_OPENTHREAD_SECURITY_DEFAULT_CONFIG`
+  * ``CONFIG_CUSTOM_OPENTHREAD_SECURITY`` to
+    :kconfig:option:`CONFIG_OPENTHREAD_SECURITY_CUSTOM_CONFIG`
+
+* :kconfig:option:`CONFIG_OPENTHREAD_CRYPTO_PSA` no more depends on
+  :kconfig:option:`CONFIG_PSA_CRYPTO_CLIENT`, but instead selects
+  :kconfig:option:`CONFIG_PSA_CRYPTO`.
+
+* In builds without TF-M, :kconfig:option:`CONFIG_SECURE_STORAGE` is now automatically
+  implied if :kconfig:option:`CONFIG_OPENTHREAD_SECURITY_DEFAULT_CONFIG` and
+  :kconfig:option:`CONFIG_OPENTHREAD_CRYPTO_PSA` are set. This
+  guarantees that a PSA ITS implementation is available and it requires a backend
+  for Secure Storage (Settings, ZMS, or a custom one) to be configured.
+
+* :kconfig:option:`CONFIG_OPENTHREAD_CRYPTO_PSA` is now enabled by default.
+
 Trusted Firmware-M
 ==================
 
@@ -655,3 +919,24 @@ Architectures
   the feature is cache related so move it under cache.
 
   * Use :c:func:`sys_cache_is_mem_coherent` instead of :c:func:`arch_mem_coherent`.
+
+* :kconfig:option:`CONFIG_RISCV` now requires, that the :dtcompatible:`riscv` is present in the
+  devicetree.
+
+* The ``riscv,isa-base`` and  ``riscv,isa-extensions`` devicetree properties of
+  :dtcompatible:`riscv` are now used to set the Base Integer Instruction Set and the RISC-V
+  extensions. They are no longer set by the SoC. The devicetree property ``riscv,isa`` has been
+  deprecated in favor of the two new properties. (:github:`97540`)
+
+  * ``CONFIG_SOC_CV64A6_IMAFDC`` and ``CONFIG_SOC_CV64A6_IMAC`` are now combined into
+    :kconfig:option:`CONFIG_SOC_CV64A6`, as the RISC-V extensions are now set by the devicetree.
+
+  * The following options of :kconfig:option:`CONFIG_SOC_SERIES_AE350` had been removed, as they
+    now can be set via the devicetree:
+
+    * ``CONFIG_RV32I_CPU``
+    * ``CONFIG_RV32E_CPU``
+    * ``CONFIG_RV64I_CPU``
+    * ``CONFIG_NO_FPU``
+    * ``CONFIG_SINGLE_PRECISION_FPU``
+    * ``CONFIG_DOUBLE_PRECISION_FPU``

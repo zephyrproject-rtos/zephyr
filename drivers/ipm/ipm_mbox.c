@@ -48,7 +48,7 @@ static void ipm_mbox_callback(const struct device *mboxdev,
 {
 	const struct device *ipmdev = user_data;
 	struct ipm_mbox_data *ipm_mbox_data = ipmdev->data;
-	void *payload = NULL;
+	volatile void *payload = NULL;
 
 	if (!ipm_mbox_data || !ipm_mbox_data->callback) {
 		return;
@@ -56,7 +56,7 @@ static void ipm_mbox_callback(const struct device *mboxdev,
 
 	/* Only use the payload if the mailbox provides a non-empty buffer */
 	if (data && data->data && data->size > 0) {
-		payload = data->data;
+		payload = (volatile void *)(uintptr_t)data->data;
 	}
 
 	ipm_mbox_data->callback(ipmdev,

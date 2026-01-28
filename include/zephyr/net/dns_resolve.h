@@ -530,6 +530,11 @@ struct dns_resolve_context {
 		 */
 		uint16_t query_hash;
 
+		/* Number of additional queries sent to resolve CNAME record
+		 * name aliases.
+		 */
+		uint8_t additional_queries;
+
 		/** Flag to indicate that the callback has been called at least once. */
 		bool cb_called;
 	} queries[DNS_NUM_CONCUR_QUERIES];
@@ -541,6 +546,11 @@ struct dns_resolve_context {
 	/** DNS packet forwarding callback. */
 	dns_resolve_pkt_fw_cb_t pkt_fw_cb;
 #endif /* CONFIG_DNS_RESOLVER_PACKET_FORWARDING */
+
+/** @cond INTERNAL_HIDDEN */
+	/** How many times the DNS context init been called. */
+	int init_called;
+/** @endcond */
 };
 
 /** @cond INTERNAL_HIDDEN */

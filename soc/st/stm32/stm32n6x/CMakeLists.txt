@@ -7,6 +7,7 @@ zephyr_sources(
 
 zephyr_sources_ifdef(CONFIG_STM32N6_NPU
   npu/npu_stm32n6.c
+  npu/npu_cache_stm32n6.c
 )
 
 zephyr_include_directories(.)

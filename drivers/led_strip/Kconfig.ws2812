@@ -56,7 +56,7 @@ config WS2812_STRIP_GPIO
 	# nRF52 and nRF53 is supported currently.
 	default y
 	depends on DT_HAS_WORLDSEMI_WS2812_GPIO_ENABLED
-	depends on (SOC_SERIES_NRF91X || SOC_SERIES_NRF51X || SOC_SERIES_NRF52X || SOC_SERIES_NRF53X)
+	depends on (SOC_SERIES_NRF91 || SOC_SERIES_NRF51 || SOC_SERIES_NRF52 || SOC_SERIES_NRF53)
 	help
 	  Enable driver for WS2812 (and compatible) LED strips directly
 	  controlling with GPIO. The GPIO driver does bit-banging with inline

@@ -1,0 +1,30 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_KIT_PSE84_EVAL_PSE846GPS2DBZC4A_M55
+
+if WIFI
+
+# Select AIROC part and module
+choice AIROC_PART
+	default CYW55500
+endchoice
+
+choice CYW55500_MODULE
+	default CYW55513IUBG_SM
+endchoice
+
+# Enable L2 Ethernet
+config NET_L2_ETHERNET
+	default y
+
+# Heap Pool Size
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 15000
+
+endif # WIFI
+
+endif # BOARD_KIT_PSE84_EVAL_PSE846GPS2DBZC4A_M55

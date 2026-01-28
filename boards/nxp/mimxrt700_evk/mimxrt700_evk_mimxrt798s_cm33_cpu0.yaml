@@ -5,7 +5,7 @@
 #
 
 identifier: mimxrt700_evk/mimxrt798s/cm33_cpu0
-name: NXP MIMXRT700-EVK (CM33_CPU0)
+name: NXP MIMXRT700-EVK (CPU0)
 type: mcu
 arch: arm
 ram: 512

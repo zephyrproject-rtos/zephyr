@@ -1,6 +1,10 @@
 # Copyright (c) 2021 Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
+description: RISC-V CPU
+
+compatible: "riscv"
+
 include: cpu.yaml
 
 properties:
@@ -15,5 +19,25 @@ properties:
 
   riscv,isa:
     description: RISC-V instruction set architecture
-    required: true
     type: string
+    deprecated: true
+
+  riscv,isa-base:
+    description: The base ISA implemented by the hart.
+    type: string
+    required: true
+    enum:
+      - rv32i
+      - rv32e
+      - rv64i
+      - rv128i
+
+  riscv,isa-extensions:
+    description: |
+      Extensions supported by the hart. Take a look at
+      https://www.kernel.org/doc/Documentation/devicetree/bindings/riscv/extensions.yaml
+      and https://gcc.gnu.org/onlinedocs/gcc/RISC-V-Options.html
+      for a list of possible extensions. Not all options listed there are
+      necessarily supported by Zephyr.
+    type: string-array
+    required: true

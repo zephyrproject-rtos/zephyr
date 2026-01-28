@@ -47,6 +47,15 @@ struct mcumgr_serial_rx_ctxt {
 
 	/** Length of full packet, as read from header. */
 	uint16_t pkt_len;
+
+#if defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_SMP_OVER_CONSOLE) && \
+	defined(CONFIG_MCUMGR_TRANSPORT_SERIAL_HAS_RAW_BINARY_NON_SMP_OVER_CONSOLE)
+	/**
+	 * Set to true by transports which use raw MCUmgr over UART (not SMP over console) to know
+	 * not to deal with the extra base64 etc. processing.
+	 */
+	const bool raw_transport;
+#endif
 };
 
 /** @typedef mcumgr_serial_tx_cb

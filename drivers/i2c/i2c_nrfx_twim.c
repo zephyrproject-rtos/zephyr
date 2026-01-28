@@ -281,12 +281,20 @@ static DEVICE_API(i2c, i2c_nrfx_twim_driver_api) = {
 		     "Wrong I2C " #inst " frequency setting in dts");			      \
 	static struct i2c_nrfx_twim_data twim_##inst##_data;				      \
 	static struct i2c_nrfx_twim_common_config twim_##inst##z_config;		      \
+	NRF_DT_INST_IRQ_DIRECT_DEFINE(							      \
+		inst,									      \
+		nrfx_twim_irq_handler,							      \
+		&CONCAT(twim_, inst, _data.twim)					      \
+	)										      \
 	static void pre_init##inst(void)						      \
 	{										      \
 		twim_##inst##z_config.twim = &twim_##inst##_data.twim;			      \
 		twim_##inst##_data.twim.p_twim = (NRF_TWIM_Type *)DT_INST_REG_ADDR(inst);     \
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),		      \
-			    nrfx_twim_irq_handler, &twim_##inst##_data.twim, 0);	      \
+		NRF_DT_INST_IRQ_CONNECT(						      \
+			inst,								      \
+			nrfx_twim_irq_handler,						      \
+			&CONCAT(twim_, inst, _data.twim)				      \
+		)									      \
 	}										      \
 	IF_ENABLED(USES_MSG_BUF(inst),							      \
 		(static uint8_t twim_##inst##_msg_buf[MSG_BUF_SIZE(inst)]		      \

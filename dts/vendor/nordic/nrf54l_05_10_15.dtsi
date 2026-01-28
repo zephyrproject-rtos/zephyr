@@ -39,11 +39,12 @@
 		};
 
 		cpuflpr: cpu@1 {
-			compatible = "nordic,vpr";
+			compatible = "nordic,vpr", "riscv";
 			reg = <1>;
 			device_type = "cpu";
 			clocks = <&hfpll>;
-			riscv,isa = "rv32emc";
+			riscv,isa-base = "rv32e";
+			riscv,isa-extensions = "e", "m", "c", "zicsr";
 			nordic,bus-width = <32>;
 		};
 	};
@@ -529,7 +530,7 @@
 				gpio-controller;
 				reg = <0xd8200 0x300>;
 				#gpio-cells = <2>;
-				ngpios = <16>;
+				ngpios = <17>;
 				status = "disabled";
 				port = <1>;
 				gpiote-instance = <&gpiote20>;

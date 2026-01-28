@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "pinctrl/m55m1h2l-pinctrl.h"
+
+&pinctrl {
+	uart5_default: uart5_default {
+		group0 {
+			pinmux = <PB4MFP_UART5_RXD>,
+				 <PB5MFP_UART5_TXD>;
+		};
+	};
+
+	uart2_default: uart2_default {
+		group0 {
+			pinmux = <PB0MFP_UART2_RXD>,
+				 <PB1MFP_UART2_TXD>;
+		};
+	};
+};

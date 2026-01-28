@@ -9,8 +9,26 @@ description: |
   - SWION should be connected to half the IO level voltage (1.65V for 3.3V systems)
   - SW_SEL must be HIGH (either via GPIO control or hardwired)
 
-  Example:
+compatible: "adi,tmc51xx"
 
+include: [uart-device.yaml, "adi,tmc51xx-base.yaml"]
+
+properties:
+  sw-sel-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the SW_SEL pin of TMC51XX.
+      Must be set HIGH for UART mode operation.
+      If not provided, it's assumed SW_SEL is hardwired to VCC/HIGH.
+
+  uart-device-addr:
+    type: int
+    description: |
+        UART device address for TMC51XX in UART mode.
+        Valid range: 0 - 253
+
+examples:
+  - |
     &uart2 {
         current-speed = <115200>;
         status = "okay";
@@ -60,21 +78,3 @@ description: |
             };
         };
     };
-
-compatible: "adi,tmc51xx"
-
-include: [uart-device.yaml, "adi,tmc51xx-base.yaml"]
-
-properties:
-  sw-sel-gpios:
-    type: phandle-array
-    description: |
-      GPIO connected to the SW_SEL pin of TMC51XX.
-      Must be set HIGH for UART mode operation.
-      If not provided, it's assumed SW_SEL is hardwired to VCC/HIGH.
-
-  uart-device-addr:
-    type: int
-    description: |
-        UART device address for TMC51XX in UART mode.
-        Valid range: 0 - 253

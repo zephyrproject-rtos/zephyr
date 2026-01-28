@@ -1,0 +1,29 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* PWM signal is visible on J2-4. */
+/ {
+	aliases {
+		pwm-test = &flexio0_pwm;
+	};
+};
+
+&flexio0 {
+	status = "okay";
+
+	flexio0_pwm: flexio0_pwm {
+		compatible = "nxp,flexio-pwm";
+		#pwm-cells = <3>;
+		status = "okay";
+		pinctrl-0 = <&flexio_pwm_default>;
+		pinctrl-names = "default";
+
+		pwm_0 {
+			pin-id = <7>;
+			prescaler = <1>;
+		};
+	};
+};

@@ -401,7 +401,7 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
 
             .. code-tab:: bat
 
-               cmd /c scripts\utils\west-packages-pip-install.cmd
+               cmd /c zephyr\scripts\utils\west-packages-pip-install.cmd
 
             .. code-tab:: powershell
 

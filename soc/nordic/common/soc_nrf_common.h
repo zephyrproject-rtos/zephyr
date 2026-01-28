@@ -324,6 +324,64 @@
 		(0)										\
 	)
 
+/**
+ * @brief Utility macro to declare and define direct IRQ if required
+ *
+ * @param node_id Devicetree node identifier
+ * @param handler IRQ handler
+ * @param param Parameter passed to IRQ handler
+ */
+#define NRF_DT_IRQ_DIRECT_DEFINE(node_id, handler, param)					\
+	COND_CODE_1(										\
+		CONFIG_GEN_SW_ISR_TABLE,							\
+		(),										\
+		(										\
+			ISR_DIRECT_DECLARE(CONCAT(handler, _, DT_DEP_ORD(node_id)))		\
+			{									\
+				handler(param);							\
+				ISR_DIRECT_PM();						\
+				return 1;							\
+			}									\
+		)										\
+	)
+
+/** Device driver instance variant of NRF_DT_IRQ_DIRECT_DEFINE() */
+#define NRF_DT_INST_IRQ_DIRECT_DEFINE(inst, handler, param) \
+	NRF_DT_IRQ_DIRECT_DEFINE(DT_DRV_INST(inst), handler, param)
+
+/**
+ * @brief Utility macro to connect IRQ handler
+ *
+ * @param node_id Devicetree node identifier
+ * @param handler IRQ handler
+ * @param param Parameter passed to IRQ handler
+ */
+#define NRF_DT_IRQ_CONNECT(node_id, handler, param)						\
+	COND_CODE_1(										\
+		CONFIG_GEN_SW_ISR_TABLE,							\
+		(										\
+			IRQ_CONNECT(								\
+				DT_IRQN(node_id),						\
+				DT_IRQ(node_id, priority),					\
+				handler,							\
+				param,								\
+				0								\
+			)									\
+		),										\
+		(										\
+			IRQ_DIRECT_CONNECT(							\
+				DT_IRQN(node_id),						\
+				DT_IRQ(node_id, priority),					\
+				CONCAT(handler, _, DT_DEP_ORD(node_id)),			\
+				0								\
+			)									\
+		)										\
+	)
+
+/** Device driver instance variant of NRF_DT_IRQ_DIRECT_DEFINE() */
+#define NRF_DT_INST_IRQ_CONNECT(inst, handler, param) \
+	NRF_DT_IRQ_CONNECT(DT_DRV_INST(inst), handler, param)
+
 #endif /* !_ASMLANGUAGE */
 
 #endif

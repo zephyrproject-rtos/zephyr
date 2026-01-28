@@ -17,7 +17,7 @@ int sdmmc_switch_voltage(struct sd_card *card);
 /*
  * Reads card identification register, and decodes it
  */
-int card_read_cid(struct sd_card *card);
+int card_read_cid(struct sd_card *card, uint32_t *cid);
 
 /*
  * Read card specific data register

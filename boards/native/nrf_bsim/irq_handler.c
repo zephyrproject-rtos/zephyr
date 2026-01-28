@@ -117,6 +117,7 @@ void posix_irq_handler(void)
 
 		currently_running_irq = irq_nbr;
 		vector_to_irq(irq_nbr, &may_swap);
+		nrfbsim_clear_excl_access();
 		currently_running_irq = last_running_irq;
 
 		hw_irq_ctrl_reeval_level_irq(cpu_n, irq_nbr);

@@ -21,9 +21,9 @@
 			clock-names = "xspix", "xspi-ker";
 			clocks = <&rcc STM32_CLOCK(AHB4, 20U)>,
 				 <&rcc STM32_SRC_PLL1_Q OCTOSPI1_SEL(1)>;
+			clock-frequency = <DT_FREQ_M(50)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			clock-frequency = <0x17d7840>;
 			op-mode = "MSPI_OP_MODE_CONTROLLER";
 			status = "okay";
 			pinctrl-0 = <&octospi1_io0_pb1 &octospi1_io1_pd12

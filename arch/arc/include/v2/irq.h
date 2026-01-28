@@ -68,7 +68,7 @@ static ALWAYS_INLINE void z_irq_setup(void)
 
 #ifdef CONFIG_ARC_NORMAL_FIRMWARE
 	/* normal mode cannot write irq_ctrl, ignore it */
-	aux_irq_ctrl_value = aux_irq_ctrl_value;
+	ARG_UNUSED(aux_irq_ctrl_value);
 #else
 	z_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_CTRL, aux_irq_ctrl_value);
 #endif

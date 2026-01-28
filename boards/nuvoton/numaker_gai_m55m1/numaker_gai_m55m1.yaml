@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: numaker_gai_m55m1
+name: NUVOTON NUMAKER-GAI-M55M1 Kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 1536
+flash: 2048
+supported:
+  - gpio
+  - usb
+vendor: nuvoton

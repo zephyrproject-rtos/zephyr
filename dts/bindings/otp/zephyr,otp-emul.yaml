@@ -1,0 +1,14 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: Zephyr OTP memory emulation peripheral
+
+compatible: "zephyr,otp-emul"
+
+include: base.yaml
+
+properties:
+  size:
+    type: int
+    required: true
+    description: OTP Memory size in bytes

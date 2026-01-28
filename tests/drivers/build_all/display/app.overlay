@@ -136,8 +136,8 @@
 				height = <240>;
 			};
 
-			test_spi_ssd1327fb: ssd1327fb@7 {
-				compatible = "solomon,ssd1327fb";
+			test_spi_ssd1327: ssd1327@7 {
+				compatible = "solomon,ssd1327";
 				reg = <7>;
 				mipi-max-frequency = <100000000>;
 				width = <128>;
@@ -370,6 +370,24 @@
 				line-offset = <0>;
 				regulation-ratio = <7>;
 				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			};
+
+			test_spi_ssd1325: ssd1325@21 {
+				compatible = "solomon,ssd1325";
+				reg = <21>;
+				mipi-max-frequency = <20000000>;
+				width = <128>;
+				height = <64>;
+				precharge-voltage = <0x10>;
+				remap-value = <0x50>;
+				oscillator-freq = <0x91>;
+				display-offset = <0x4c>;
+				start-line = <0>;
+				multiplex-ratio = <0x3f>;
+				phase-length = <0x22>;
+				vcomh-voltage = <0x2>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+				grayscale-table = [02 02 02 02 02 02 02 02 03 04 05 06 07 07 07];
 			};
 		};
 
@@ -625,7 +643,7 @@
 			};
 
 			test_ssd1306: ssd1306@1 {
-				compatible = "solomon,ssd1306fb";
+				compatible = "solomon,ssd1306";
 				reg = <0x1>;
 				width = <128>;
 				height = <64>;
@@ -679,8 +697,8 @@
 				vcomh-voltage = <0>;
 			};
 
-			test_ssd1327fb: ssd1327fb@5 {
-				compatible = "solomon,ssd1327fb";
+			test_ssd1327: ssd1327@5 {
+				compatible = "solomon,ssd1327";
 				reg = <5>;
 				width = <128>;
 				height = <128>;
@@ -706,6 +724,21 @@
 				start-line = <0>;
 				multiplex-ratio = <0>;
 				phase-length = <0x0>;
+			};
+
+			test_ssd1325: ssd1325@7 {
+				compatible = "solomon,ssd1325";
+				reg = <7>;
+				width = <128>;
+				height = <64>;
+				precharge-voltage = <0x10>;
+				remap-value = <0x50>;
+				oscillator-freq = <0x91>;
+				display-offset = <0x4c>;
+				start-line = <0>;
+				multiplex-ratio = <0x3f>;
+				phase-length = <0x22>;
+				vcomh-voltage = <0x2>;
 			};
 		};
 	};

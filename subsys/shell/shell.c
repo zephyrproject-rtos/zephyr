@@ -1449,12 +1449,6 @@ int shell_start(const struct shell *sh)
 		z_shell_vt100_color_set(sh, SHELL_NORMAL);
 	}
 
-	/* print new line before printing the prompt to clear the line
-	 * vt100 are not used here for compatibility reasons
-	 */
-	z_cursor_next_line_move(sh);
-	state_set(sh, SHELL_STATE_ACTIVE);
-
 	/*
 	 * If the shell is stopped with the shell_stop function, its backend remains active
 	 * and continues to buffer incoming data. As a result, when the shell is resumed,
@@ -1462,6 +1456,12 @@ int shell_start(const struct shell *sh)
 	 * received while the shell was stopped.
 	 */
 	z_shell_backend_rx_buffer_flush(sh);
+
+	/* print new line before printing the prompt to clear the line
+	 * vt100 are not used here for compatibility reasons
+	 */
+	z_cursor_next_line_move(sh);
+	state_set(sh, SHELL_STATE_ACTIVE);
 
 	z_shell_unlock(sh);
 

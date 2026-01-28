@@ -164,9 +164,7 @@ struct net_tcp_context {
 
 static int net_tcp_dev_init(const struct device *dev)
 {
-	struct net_tcp_context *net_tcp_context = dev->data;
-
-	net_tcp_context = net_tcp_context;
+	ARG_UNUSED(dev);
 
 	return 0;
 }

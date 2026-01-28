@@ -253,9 +253,7 @@ struct net_6lo_data {
 
 int net_6lo_dev_init(const struct device *dev)
 {
-	struct net_6lo_context *net_6lo_context = dev->data;
-
-	net_6lo_context = net_6lo_context;
+	ARG_UNUSED(dev);
 
 	return 0;
 }

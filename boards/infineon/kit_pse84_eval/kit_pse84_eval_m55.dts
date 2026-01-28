@@ -32,6 +32,8 @@
 		zephyr,sram = &m55_data;
 		zephyr,console = &uart2;
 		zephyr,shell-uart = &uart2;
+		zephyr,dtcm = &dtcm;
+		zephyr,itcm = &itcm;
 	};
 
 	power-states {
@@ -58,4 +60,69 @@
 
 &mcwdt1 {
 	status = "okay";
+};
+
+&peri1_group2_8bit_0 {
+	status = "okay";
+	resource-type = <IFX_RSC_SDHC>;
+	resource-instance = <0>;
+	clock-div = <2>;
+};
+
+&peri1_group3_8bit_0 {
+	status = "okay";
+	resource-type = <IFX_RSC_SDHC>;
+	resource-instance = <1>;
+	clock-div = <2>;
+};
+
+&sdhc0 {
+	status = "okay";
+
+	/* SDIO pins */
+	pinctrl-0 = <&p21_0_sdhc0_card_cmd &p12_0_sdhc0_clk_card &p12_1_sdhc0_card_dat_3to0
+		     &p12_2_sdhc0_card_dat_3to0 &p12_4_sdhc0_card_dat_3to0
+		     &p12_5_sdhc0_card_dat_3to0>;
+	pinctrl-names = "default";
+
+	clocks = <&peri1_group2_8bit_0>;
+	bus-width = <4>;
+	max-bus-freq = <50000000>;
+	min-bus-freq = <400000>;
+	power-delay-ms = <1000>;
+	no-1-8-v;
+
+	/* Wi-Fi configuration */
+	airoc-wifi {
+		status = "okay";
+		compatible = "infineon,airoc-wifi";
+
+		/* Wi-Fi control gpios */
+		wifi-reg-on-gpios = <&gpio_prt11 6 GPIO_ACTIVE_HIGH>;
+		wifi-host-wake-gpios = <&gpio_prt11 4 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&sdhc1 {
+	status = "okay";
+
+	/* SDHC pins */
+	pinctrl-0 = <&p7_0_sdhc1_card_cmd &p7_1_sdhc1_clk_card &p7_3_sdhc1_card_dat_3to0
+		     &p7_5_sdhc1_card_dat_3to0 &p7_6_sdhc1_card_dat_3to0
+		     &p7_7_sdhc1_card_dat_3to0>;
+	pinctrl-names = "default";
+
+	clocks = <&peri1_group3_8bit_0>;
+	bus-width = <4>;
+	max-bus-freq = <100000000>;
+	min-bus-freq = <400000>;
+	power-delay-ms = <1000>;
+	/* Card detect gpios */
+	cd-gpios = <&gpio_prt17 7 GPIO_PULL_UP>;
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
 };

@@ -44,6 +44,7 @@ tests:
     extra_conf_files: ['no_mem_protection.conf']
     extra_configs:
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
+      - CONFIG_LLEXT_RODATA_NO_RELOC=y
   llext.readonly_mpu:
     arch_allow:
       - arm # Xtensa needs writable storage, currently not supported on RISC-V
@@ -64,6 +65,7 @@ tests:
     extra_configs:
       - CONFIG_LLEXT_HEAP_SIZE=128 # qemu_cortex_a9 requires larger heap
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
+      - CONFIG_LLEXT_RODATA_NO_RELOC=y
   llext.writable:
     arch_allow:
       - arm

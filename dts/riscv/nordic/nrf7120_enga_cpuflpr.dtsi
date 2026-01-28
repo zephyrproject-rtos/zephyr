@@ -1,0 +1,74 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nordic/nrf7120_enga.dtsi>
+
+cpu: &cpuflpr {};
+
+clic: &cpuflpr_clic {};
+
+/delete-node/ &cpuapp;
+/delete-node/ &cpuapp_ppb;
+/delete-node/ &cpuapp_sram;
+/delete-node/ &cpuapp_mram;
+
+&mram_controller {
+	cpuflpr_mram: mram@3e0000 {
+		compatible = "soc-nv-flash";
+		reg = <0x3e0000 DT_SIZE_K(116)>;
+		erase-block-size = <4096>;
+		write-block-size = <4>;
+	};
+};
+
+/ {
+	soc {
+		compatible = "simple-bus";
+		interrupt-parent = <&cpuflpr_clic>;
+		ranges;
+	};
+};
+
+&cpuflpr_vpr {
+	cpuflpr_vevif_tx: mailbox {
+		compatible = "nordic,nrf-vevif-event-tx";
+		#mbox-cells = <1>;
+		nordic,events = <1>;
+		nordic,events-mask = <0x00100000>;
+		status = "disabled";
+	};
+};
+
+&cpuflpr_clic {
+	status = "okay";
+};
+
+&wifi_bellboard {
+	compatible = "nordic,nrf-bellboard-rx";
+	interrupts = <116 NRF_DEFAULT_IRQ_PRIORITY>,
+		     <117 NRF_DEFAULT_IRQ_PRIORITY>,
+		     <118 NRF_DEFAULT_IRQ_PRIORITY>,
+		     <119 NRF_DEFAULT_IRQ_PRIORITY>;
+	interrupt-names = "irq0", "irq1", "irq2", "irq3";
+	nordic,interrupt-mapping = <0x0000000f 0>, <0x0000000f 1>,
+				   <0x0000000f 2>, <0x0000000f 3>;
+};
+
+&cpuapp_bellboard {
+	compatible = "nordic,nrf-bellboard-tx";
+};
+
+&grtc {
+	interrupts = <226 NRF_DEFAULT_IRQ_PRIORITY>;
+};
+
+&gpiote20 {
+	interrupts = <218 NRF_DEFAULT_IRQ_PRIORITY>;
+};
+
+&gpiote30 {
+	interrupts = <268 NRF_DEFAULT_IRQ_PRIORITY>;
+};

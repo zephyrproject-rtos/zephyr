@@ -11,6 +11,7 @@
 #ifndef _SOC_MICROCHIP_MEC_COMMON_MMCR_H_
 #define _SOC_MICROCHIP_MEC_COMMON_MMCR_H_
 
+#include <zephyr/toolchain.h>
 #include <zephyr/sys/sys_io.h> /* mem_addr_t definition */
 
 /* Zephyr only provides 32-bit version of these routines. We need these for memory
@@ -125,6 +126,30 @@ static ALWAYS_INLINE int soc_test_and_clear_bit16(mem_addr_t addr, unsigned int 
 	soc_clear_bit16(addr, bit);
 
 	return ret;
+}
+
+static ALWAYS_INLINE void soc_mmcr_mask_set(mem_addr_t addr, uint32_t val, uint32_t mask)
+{
+	uint32_t temp = *(volatile uint32_t *)addr;
+
+	temp = (temp & ~mask) | (val & mask);
+	*(volatile uint32_t *)addr = temp;
+}
+
+static ALWAYS_INLINE void soc_mmcr_mask_set16(mem_addr_t addr, uint16_t val, uint16_t mask)
+{
+	uint32_t temp = *(volatile uint16_t *)addr;
+
+	temp = (temp & ~mask) | (val & mask);
+	*(volatile uint16_t *)addr = (uint16_t)temp;
+}
+
+static ALWAYS_INLINE void soc_mmcr_mask_set8(mem_addr_t addr, uint8_t val, uint8_t mask)
+{
+	uint32_t temp = *(volatile uint8_t *)addr;
+
+	temp = (temp & ~mask) | (val & mask);
+	*(volatile uint8_t *)addr = (uint8_t)temp;
 }
 
 #endif /* SOC_MICROCHIP_MEC_COMMON_MMCR_H_ */

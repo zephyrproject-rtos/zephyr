@@ -176,9 +176,9 @@ uint64_t z_cms_lptim_hook_on_lpm_exit(void)
 	uint32_t idle_timer_post, idle_timer_diff, idle_timer_top;
 	bool idle_timer_int_pending, idle_timer_wrap;
 
-	counter_get_value(idle_timer, &idle_timer_post);
 	idle_timer_int_pending = counter_get_pending_int(idle_timer) ? true : false;
 	idle_timer_top = counter_get_top_value(idle_timer);
+	counter_get_value(idle_timer, &idle_timer_post);
 
 	/**
 	 * Check for counter timer overflow
@@ -384,6 +384,17 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		 * to it after waking up.
 		 */
 		sys_clock_disable();
+		/* Ensure the SysTick interrupt is not pending. This is safe
+		 * as we just did the ISR's job, and MUST be done because
+		 * a pending interrupt could inhibit low-power mode entry.
+		 * Note: On Armv8-M, ICSR.STTNS is R/W, so preserve it while
+		 * writing the write-1-to-clear PENDSTCLR bit.
+		 */
+#ifdef SCB_ICSR_STTNS_Msk
+		SCB->ICSR = (SCB->ICSR & SCB_ICSR_STTNS_Msk) | SCB_ICSR_PENDSTCLR_Msk;
+#else
+		SCB->ICSR = SCB_ICSR_PENDSTCLR_Msk;
+#endif
 
 		cycle_count += elapsed();
 		overflow_cyc = 0;

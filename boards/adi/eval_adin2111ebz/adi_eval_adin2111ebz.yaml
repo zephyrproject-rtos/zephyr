@@ -1,5 +1,5 @@
 identifier: adi_eval_adin2111ebz
-name: ADI EVAL-ADIN2111EBZ evaulation board
+name: ADI EVAL-ADIN2111EBZ evaluation board
 type: mcu
 arch: arm
 toolchain:

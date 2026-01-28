@@ -859,7 +859,7 @@ static void dai_ssp_pm_runtime_dis_ssp_power(struct dai_intel_ssp *dp, uint32_t 
 static void dai_ssp_program_channel_map(struct dai_intel_ssp *dp,
 		const struct dai_config *cfg, uint32_t ssp_index, const void *spec_config)
 {
-#if defined(CONFIG_SOC_INTEL_ACE20_LNL)
+#if defined(CONFIG_SOC_ACE20_LNL)
 	ARG_UNUSED(spec_config);
 	uint16_t pcmsycm = cfg->link_config;
 	 /* Set upper slot number from configuration */
@@ -918,7 +918,7 @@ static void dai_ssp_program_channel_map(struct dai_intel_ssp *dp,
 	ARG_UNUSED(cfg);
 	ARG_UNUSED(ssp_index);
 	ARG_UNUSED(spec_config);
-#endif /* CONFIG_SOC_INTEL_ACE20_LNL */
+#endif /* CONFIG_SOC_ACE20_LNL */
 }
 
 /* empty SSP transmit FIFO */
@@ -2066,15 +2066,13 @@ static int dai_ssp_set_clock_control_ver_1_5(struct dai_intel_ssp *dp,
 	return 0;
 }
 
-static int dai_ssp_set_clock_control_ver_1(struct dai_intel_ssp *dp,
+static void dai_ssp_set_clock_control_ver_1(struct dai_intel_ssp *dp,
 					   const struct dai_intel_ipc4_ssp_mclk_config *cc)
 {
 	/* ssp blob is set by pcm_hw_params for ipc4 stream, so enable
 	 * mclk and bclk at this time.
 	 */
 	dai_ssp_mn_set_mclk_blob(dp, cc->mdivc, cc->mdivr);
-
-	return 0;
 }
 
 #if SSP_IP_VER > SSP_IP_VER_2_0
@@ -2227,10 +2225,7 @@ static int dai_ssp_set_config_blob(struct dai_intel_ssp *dp, const struct dai_co
 		}
 	} else {
 		dai_ssp_set_reg_config(dp, cfg, (void *)&blob->i2s_driver_config.i2s_config);
-		err = dai_ssp_set_clock_control_ver_1(dp, &blob->i2s_driver_config.mclk_config);
-		if (err) {
-			return err;
-		}
+		dai_ssp_set_clock_control_ver_1(dp, &blob->i2s_driver_config.mclk_config);
 	}
 
 	ssp_plat_data->clk_active |= SSP_CLK_MCLK_ES_REQ;

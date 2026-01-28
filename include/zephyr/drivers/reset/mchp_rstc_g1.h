@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Microchip Technology Inc.
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,5 +31,14 @@ enum rstc_g1_rcause {
 	RSTC_G1_RCAUSE_SYST = 6,  /* System Reset Request */
 	RSTC_G1_RCAUSE_BACKUP = 7 /* Backup Reset */
 };
+
+#ifdef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH
+/* Reserved reset-cause bits on PIC32CM JH */
+#define RSTC_RESERVED_BIT_3     BIT(3)
+#define RSTC_RESERVED_BIT_7     BIT(7)
+#define RSTC_UNSUPPORTED_RCAUSE ((RSTC_RESERVED_BIT_3) | (RSTC_RESERVED_BIT_7))
+#else
+#define RSTC_UNSUPPORTED_RCAUSE 0U
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
 
 #endif /* INCLUDE_ZEPHYR_DRIVERS_RESET_MCHP_RSTC_G1_H_ */

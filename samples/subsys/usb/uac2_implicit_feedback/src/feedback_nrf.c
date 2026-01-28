@@ -29,7 +29,7 @@ static inline void feedback_target_init(void)
 	/* No target specific init necessary */
 }
 
-#elif IS_ENABLED(CONFIG_SOC_SERIES_NRF54HX)
+#elif IS_ENABLED(CONFIG_SOC_SERIES_NRF54H)
 
 #include <hal/nrf_tdm.h>
 

@@ -8,7 +8,7 @@
 #include "st/f4/stm32f405Xg.dtsi"
 #include "st/f4/stm32f405vgtx-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
-#include <zephyr/dt-bindings/display/ili9xxx.h>
+#include <zephyr/dt-bindings/display/panel.h>
 
 / {
 	model = "ST ST25DV Discovery Kit with MB1283";
@@ -87,7 +87,7 @@
 			compatible = "ilitek,ili9341";
 			mipi-max-frequency = <DT_FREQ_M(20)>;
 			reg = <0>;
-			pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB888>;
+			pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
 			rotation = <0>;
 			width = <240>;
 			height = <320>;

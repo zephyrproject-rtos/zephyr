@@ -108,6 +108,23 @@
 		};
 	};
 
+	power-domains {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		disp_mix: power-domain@13 {
+			compatible = "arm,scmi-power-domain";
+			reg = <13>;
+			#power-domain-cells = <0>;
+		};
+
+		netc_mix: power-domain@18 {
+			compatible = "arm,scmi-power-domain";
+			reg = <18>;
+			#power-domain-cells = <0>;
+		};
+	};
+
 	soc {
 		itcm: itcm@0 {
 			compatible = "zephyr,memory-region", "nxp,imx-itcm";
@@ -684,6 +701,8 @@
 			#address-cells = <1>;
 			nxp,irq-offset = <874>;
 			nxp,num-irqs = <512>;
+			power-domains = <&disp_mix>;
+			status = "disabled";
 
 			disp_irqsteer_master0: interrupt-controller@0 {
 				compatible = "nxp,irqsteer-master";
@@ -691,6 +710,7 @@
 				interrupt-controller;
 				#interrupt-cells = <2>;
 				interrupts-extended = <&nvic 214 0>;
+				status = "disabled";
 			};
 
 			disp_irqsteer_master1: interrupt-controller@1 {
@@ -699,6 +719,7 @@
 				interrupt-controller;
 				#interrupt-cells = <2>;
 				interrupts-extended = <&nvic 215 0>;
+				status = "disabled";
 			};
 
 			disp_irqsteer_master2: interrupt-controller@2 {
@@ -707,6 +728,7 @@
 				interrupt-controller;
 				#interrupt-cells = <2>;
 				interrupts-extended = <&nvic 216 0>;
+				status = "disabled";
 			};
 
 			disp_irqsteer_master3: interrupt-controller@3 {
@@ -715,6 +737,7 @@
 				interrupt-controller;
 				#interrupt-cells = <2>;
 				interrupts-extended = <&nvic 217 0>;
+				status = "disabled";
 			};
 
 			disp_irqsteer_master4: interrupt-controller@4 {
@@ -723,6 +746,7 @@
 				interrupt-controller;
 				#interrupt-cells = <2>;
 				interrupts-extended = <&nvic 218 0>;
+				status = "disabled";
 			};
 
 			disp_irqsteer_master7: interrupt-controller@7 {
@@ -731,6 +755,7 @@
 				interrupt-controller;
 				#interrupt-cells = <2>;
 				interrupts-extended = <&nvic 219 0>;
+				status = "disabled";
 			};
 		};
 
@@ -742,6 +767,7 @@
 			reg-names = "ierb", "prb", "netcmix";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			power-domains = <&netc_mix>;
 			ranges;
 
 			netc: ethernet {
@@ -759,6 +785,7 @@
 					reg-names = "port", "pfconfig";
 					mac-index = <0>;
 					si-index = <0>;
+					power-domains = <&netc_mix>;
 					status = "disabled";
 				};
 
@@ -769,6 +796,7 @@
 					reg-names = "port", "pfconfig";
 					mac-index = <1>;
 					si-index = <1>;
+					power-domains = <&netc_mix>;
 					status = "disabled";
 				};
 
@@ -779,6 +807,7 @@
 					reg-names = "port", "pfconfig";
 					mac-index = <2>;
 					si-index = <2>;
+					power-domains = <&netc_mix>;
 					status = "disabled";
 				};
 
@@ -790,6 +819,7 @@
 					clocks = <&scmi_clk IMX95_CLK_ENET>;
 					#address-cells = <1>;
 					#size-cells = <0>;
+					power-domains = <&netc_mix>;
 					status = "disabled";
 				};
 
@@ -797,6 +827,7 @@
 					compatible = "nxp,netc-ptp-clock";
 					reg = <0x4ccc0000 0x10000>;
 					clocks = <&scmi_clk IMX95_CLK_ENET>;
+					power-domains = <&netc_mix>;
 					status = "disabled";
 				};
 			};

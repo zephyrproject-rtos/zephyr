@@ -569,6 +569,115 @@ int add_aaaa_record(const struct dns_sd_rec *inst, uint32_t ttl,
 	return offset - buf_offset;
 }
 
+struct answer_addr_ctx {
+	uint8_t *buf;
+	uint16_t buf_offset;
+	uint16_t buf_size;
+	union {
+		const struct net_in_addr *skip_addr4;
+		const struct net_in6_addr *skip_addr6;
+	};
+	int answer_count;
+	const struct dns_sd_rec *inst;
+	uint16_t host_offset;
+	enum dns_rr_type qtype;
+};
+
+static void answer_addr_cb(struct net_if *iface, struct net_if_addr *ifaddr,
+			   void *user_data)
+{
+	struct answer_addr_ctx *ctx = (struct answer_addr_ctx *)user_data;
+	int ret;
+
+	if (ifaddr->addr_state != NET_ADDR_PREFERRED &&
+	    ifaddr->addr_state != NET_ADDR_DEPRECATED) {
+		return;
+	}
+
+	if (ctx->qtype == DNS_RR_TYPE_AAAA) {
+		if (ctx->skip_addr6 != NULL &&
+		    net_ipv6_addr_cmp(&ifaddr->address.in6_addr, ctx->skip_addr6)) {
+			/* Already included */
+			return;
+		}
+
+		ret = add_aaaa_record(ctx->inst, DNS_SD_AAAA_TTL, ctx->host_offset,
+				      ifaddr->address.in6_addr.s6_addr,
+				      ctx->buf, ctx->buf_offset, ctx->buf_size);
+	} else {
+		if (ctx->skip_addr4 != NULL &&
+		    net_ipv4_addr_cmp(&ifaddr->address.in_addr, ctx->skip_addr4)) {
+			/* Already included */
+			return;
+		}
+
+		ret = add_a_record(ctx->inst, DNS_SD_A_TTL, ctx->host_offset,
+				   net_htonl(ifaddr->address.in_addr.s_addr),
+				   ctx->buf, ctx->buf_offset, ctx->buf_size);
+	}
+
+	if (ret > 0) {
+		ctx->buf_offset += ret;
+		ctx->buf_size -= ret;
+		ctx->answer_count++;
+	} else {
+		NET_DBG("Not enough buffer space to include additional A/AAAA record");
+	}
+}
+
+
+int add_remaining_a_records(struct net_if *iface, const struct dns_sd_rec *inst,
+			    uint16_t host_offset, const struct net_in_addr *addr4,
+			    uint8_t *buf, uint16_t *buf_offset, uint16_t buf_size)
+{
+	struct answer_addr_ctx ctx = {
+		.buf = buf,
+		.buf_offset = *buf_offset,
+		.buf_size = buf_size,
+		.skip_addr4 = addr4,
+		.answer_count = 0,
+		.inst = inst,
+		.host_offset = host_offset,
+		.qtype = DNS_RR_TYPE_A,
+	};
+
+	if (iface == NULL) {
+		return 0;
+	}
+
+	net_if_ipv4_addr_foreach(iface, answer_addr_cb, &ctx);
+
+	*buf_offset = ctx.buf_offset;
+
+	return ctx.answer_count;
+}
+
+int add_remaining_aaaa_records(struct net_if *iface, const struct dns_sd_rec *inst,
+			       uint16_t host_offset, const struct net_in6_addr *addr6,
+			       uint8_t *buf, uint16_t *buf_offset, uint16_t buf_size)
+{
+	struct answer_addr_ctx ctx = {
+		.buf = buf,
+		.buf_offset = *buf_offset,
+		.buf_size = buf_size,
+		.skip_addr6 = addr6,
+		.answer_count = 0,
+		.inst = inst,
+		.host_offset = host_offset,
+		.qtype = DNS_RR_TYPE_AAAA,
+	};
+
+	if (iface == NULL) {
+		return 0;
+	}
+
+	net_if_ipv6_addr_foreach(iface, answer_addr_cb, &ctx);
+
+	*buf_offset = ctx.buf_offset;
+
+	return ctx.answer_count;
+}
+
 int add_srv_record(const struct dns_sd_rec *inst, uint32_t ttl,
 		   uint16_t instance_offset, uint16_t domain_offset,
 		   uint8_t *buf, uint16_t buf_offset, uint16_t buf_size,
@@ -719,8 +828,9 @@ static inline bool port_in_use(uint16_t proto, uint16_t port, const struct net_i
 #endif /* CONFIG_NET_TEST */
 
 
-int dns_sd_handle_ptr_query(const struct dns_sd_rec *inst, const struct net_in_addr *addr4,
-			    const struct net_in6_addr *addr6, uint8_t *buf, uint16_t buf_size)
+int dns_sd_handle_ptr_query(struct net_if *iface, const struct dns_sd_rec *inst,
+			    const struct net_in_addr *addr4, const struct net_in6_addr *addr6,
+			    uint8_t *buf, uint16_t buf_size)
 {
 	/*
 	 * RFC 6763 Section 12.1
@@ -801,7 +911,7 @@ int dns_sd_handle_ptr_query(const struct dns_sd_rec *inst, const struct net_in_a
 	rsp->arcount++;
 	offset += r;
 
-	if (addr6 != NULL) {
+	if (addr6 != NULL && !net_ipv6_is_addr_unspecified(addr6)) {
 		r = add_aaaa_record(inst, DNS_SD_AAAA_TTL, host_offset, addr6->s6_addr, buf, offset,
 				    buf_size - offset); /* LCOV_EXCL_LINE */
 		if (r < 0) {
@@ -812,7 +922,7 @@ int dns_sd_handle_ptr_query(const struct dns_sd_rec *inst, const struct net_in_a
 		offset += r;
 	}
 
-	if (addr4 != NULL) {
+	if (addr4 != NULL && !net_ipv4_is_addr_unspecified(addr4)) {
 		tmp = net_htonl(*(addr4->s4_addr32));
 		r = add_a_record(inst, DNS_SD_A_TTL, host_offset, tmp, buf, offset,
 				 buf_size - offset);
@@ -822,6 +932,26 @@ int dns_sd_handle_ptr_query(const struct dns_sd_rec *inst, const struct net_in_a
 
 		rsp->arcount++;
 		offset += r;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6)) {
+		/* Best effort here, include AAAA records for the remaining IPv6
+		 * addresses if they fit.
+		 */
+		r = add_remaining_aaaa_records(iface, inst, host_offset, addr6,
+					       buf, &offset, buf_size - offset);
+		/* offset was updated inside the function */
+		rsp->arcount += r;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4)) {
+		/* Best effort here, include A records for the remaining IPv4
+		 * addresses if they fit.
+		 */
+		r = add_remaining_a_records(iface, inst, host_offset, addr4,
+					    buf, &offset, buf_size - offset);
+		/* offset was updated inside the function */
+		rsp->arcount += r;
 	}
 
 	/* Set the Response and AA bits */

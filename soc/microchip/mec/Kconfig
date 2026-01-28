@@ -218,7 +218,7 @@ endif # MCHP_MEC_UNSIGNED_HEADER
 choice
 	prompt "MEC debug interface general configuration"
 	default SOC_MEC_DEBUG_AND_TRACING
-	depends on SOC_SERIES_MEC174X || SOC_SERIES_MEC175X
+	depends on SOC_SERIES_MEC174X || SOC_SERIES_MEC175X || SOC_SERIES_MEC165XB
 	help
 	  Select Debug SoC interface support for MEC SoC family
 

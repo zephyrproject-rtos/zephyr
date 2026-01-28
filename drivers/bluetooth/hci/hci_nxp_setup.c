@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/crc.h>
 
+#include <zephyr/drivers/bluetooth.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 
@@ -71,6 +72,40 @@ static struct nxp_ctlr_dev_data uart_dev_data;
 
 static unsigned long crc_table[256U];
 static bool made_table;
+#if (defined(CONFIG_BT_NXP_CTRL_WAKE_ON_BT) && defined(CONFIG_BT_NXP_CTRL_WAKE_ON_BT_LED_BLINK))
+#define LED0_NODE DT_ALIAS(led0)
+
+static const struct gpio_dt_spec led_gpio = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
+#define BLINK_ONOFF K_MSEC(1000)
+static struct k_work_delayable led_blink_work;
+static void led_blink_cb(struct k_work *work)
+{
+	int current_state = gpio_pin_get_dt(&led_gpio);
+
+	if (current_state == 0) {
+		/* LED is OFF, turn it ON briefly */
+		gpio_pin_set_dt(&led_gpio, 1);
+		k_work_reschedule(&led_blink_work, BLINK_ONOFF);
+	} else {
+		/* LED is ON, turn it OFF and keep it OFF */
+		gpio_pin_set_dt(&led_gpio, 0);
+		/* Don't reschedule - wait for next interrupt */
+	}
+}
+
+#endif /* CONFIG_BT_NXP_CTRL_WAKE_ON_BT && CONFIG_BT_NXP_CTRL_WAKE_ON_BT_LED_BLINK */
+
+#if defined(CONFIG_BT_NXP_CTRL_WAKE_ON_BT)
+static struct gpio_callback bt_wakeup_callback;
+static void gpio_wakeup_callback_bt(const struct device *port, struct gpio_callback *cb,
+				 gpio_port_pins_t pins)
+{
+#if (defined(CONFIG_BT_NXP_CTRL_WAKE_ON_BT_LED_BLINK))
+	/* Schedule LED blink when activity is detected on wake-up IO */
+	k_work_schedule(&led_blink_work, BLINK_ONOFF);
+#endif
+}
+#endif
 
 static void fw_upload_gen_crc32_table(void)
 {
@@ -175,7 +210,7 @@ struct change_speed_config {
 	uint32_t fcr_val;
 };
 
-#define SEND_BUFFER_MAX_LENGTH  0xFFFFU /* Maximum 2 byte value */
+#define SEND_BUFFER_MAX_LENGTH  4096 /* The supported maximum FW chunk size is 4 KB */
 #define RECV_RING_BUFFER_LENGTH 1024
 
 struct nxp_ctlr_fw_upload_state {
@@ -184,7 +219,7 @@ struct nxp_ctlr_fw_upload_state {
 
 	uint8_t buffer[A6REQ_PAYLOAD_LEN + REQ_HEADER_LEN + 1];
 
-	uint8_t send_buffer[SEND_BUFFER_MAX_LENGTH + 1];
+	uint8_t send_buffer[SEND_BUFFER_MAX_LENGTH];
 
 	struct {
 		uint8_t buffer[RECV_RING_BUFFER_LENGTH];
@@ -880,6 +915,15 @@ static int fw_upload_v1_send_data(uint16_t len)
 		len = fw_upload.fw_length - fw_upload.current_length;
 	}
 
+	__ASSERT(sizeof(fw_upload.send_buffer) >= len, "V1: Out of sending buffer range (%u < %u)",
+		 sizeof(fw_upload.send_buffer), len);
+
+	if (sizeof(fw_upload.send_buffer) < len) {
+		LOG_ERR("V1: Out of sending buffer range (%u < %u)", sizeof(fw_upload.send_buffer),
+			len);
+		return -ENOMEM;
+	}
+
 	memcpy(fw_upload.send_buffer, fw_upload.fw + fw_upload.current_length, len);
 	fw_upload.current_length += len;
 	cmd = sys_get_le32(fw_upload.send_buffer);
@@ -930,6 +974,16 @@ static int fw_upload_v3_send_data(void)
 	if ((fw_upload.length + start) > fw_upload.fw_length) {
 		fw_upload.length = fw_upload.fw_length - start;
 	}
+	__ASSERT(sizeof(fw_upload.send_buffer) >= fw_upload.length,
+		 "V3: Out of sending buffer range (%u < %u)", sizeof(fw_upload.send_buffer),
+		 fw_upload.length);
+
+	if (sizeof(fw_upload.send_buffer) < fw_upload.length) {
+		LOG_ERR("V3: Out of sending buffer range (%u < %u)", sizeof(fw_upload.send_buffer),
+			fw_upload.length);
+		return -ENOMEM;
+	}
+
 	memcpy(fw_upload.send_buffer, fw_upload.fw + start, fw_upload.length);
 	fw_upload.current_length = start + fw_upload.length;
 
@@ -1412,12 +1466,14 @@ static int bt_hci_baudrate_update(const struct device *dev, uint32_t baudrate)
 	return 0;
 }
 
-int bt_h4_vnd_setup(const struct device *dev)
+int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *params)
 {
 	int err;
 	uint32_t default_speed;
 	uint32_t operation_speed;
 	bool flowcontrol_of_hci;
+
+	ARG_UNUSED(params);
 
 	if (dev != uart_dev) {
 		return -EINVAL;
@@ -1464,7 +1520,61 @@ int bt_h4_vnd_setup(const struct device *dev)
 			LOG_ERR("Fail to load annex-100 calibration data");
 			return err;
 		}
+#if defined(CONFIG_BT_NXP_CTRL_WAKE_ON_BT)
+#if DT_NODE_HAS_PROP(DT_DRV_INST(0), wakeup_bt_gpios)
+	struct gpio_dt_spec wakeup = GPIO_DT_SPEC_GET(DT_DRV_INST(0), wakeup_bt_gpios);
 
+	LOG_DBG("Configuring Wakeup IOs\n");
+	if (!gpio_is_ready_dt(&wakeup)) {
+		LOG_ERR("Error: failed to configure wakeup %s pin %d", wakeup.port->name,
+			wakeup.pin);
+		return -EIO;
+	}
+
+	/* Configure wakeup gpio as input  */
+	err = gpio_pin_configure_dt(&wakeup, GPIO_INPUT);
+	if (err) {
+		LOG_ERR("Error %d: failed to configure wakeup %s pin %d", err,
+			wakeup.port->name, wakeup.pin);
+		return err;
+	}
+
+	err = gpio_pin_set_dt(&wakeup, 0);
+	if (err) {
+		return err;
+	}
+
+	/* Configure wakeup gpio interrupt */
+	err = gpio_pin_interrupt_configure_dt(&wakeup, GPIO_INT_EDGE_FALLING);
+	if (err) {
+		return err;
+	}
+
+	/* Set wakeup gpio callback function */
+	gpio_init_callback(&bt_wakeup_callback, gpio_wakeup_callback_bt, BIT(wakeup.pin));
+	err = gpio_add_callback_dt(&wakeup, &bt_wakeup_callback);
+	if (err) {
+		return err;
+	}
+#endif
+
+#if (defined(CONFIG_BT_NXP_CTRL_WAKE_ON_BT_LED_BLINK))
+	LOG_DBG("Configuring LED0 for BT Activity\n");
+	if (!gpio_is_ready_dt(&led_gpio)) {
+		return 0;
+	}
+
+	err = gpio_pin_configure_dt(&led_gpio, GPIO_OUTPUT_ACTIVE);
+	if (err < 0) {
+		return 0;
+	}
+
+	/* Setting the default value for LED0 to off*/
+	gpio_pin_set_dt(&led_gpio, 0);
+
+	k_work_init_delayable(&led_blink_work, led_blink_cb);
+#endif /* CONFIG_BT_NXP_CTRL_WAKE_ON_BT_LED_BLINK */
+#endif /* CONFIG_BT_NXP_CTRL_WAKE_ON_BT */
 		fw_upload.is_setup_done = true;
 	}
 

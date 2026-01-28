@@ -172,7 +172,7 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 		size = <DT_SIZE_M(64)>;
 		reg = <0>;
 		spi-max-frequency = <DT_SIZE_M(133)>;
-		jedec-id = [ef 40 17];
+		jedec-id = [ef 60 17];
 		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <1>;
 		cs-interval-unit = <1>;

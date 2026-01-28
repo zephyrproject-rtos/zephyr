@@ -29,11 +29,16 @@
 /* Maximum bytes we can write and read at once */
 #define MAX_SPI_BYTES MIN((CONFIG_SHELL_ARGC_MAX - TXRX_ARGV_BYTES), 32)
 
-/* Runs the given fn only if the node_id belongs to a spi device, which is on an okay spi bus. */
-#define RUN_FN_ON_SPI_DEVICE(node_id, fn)                                                          \
-	COND_CODE_1(DT_ON_BUS(node_id, spi), \
-	(COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(DT_BUS(node_id)), \
-	(fn), ())), ())
+/* Runs the given fn only if the node_id is a direct child of the SPI
+ * controller (i.e. DT_PARENT(node_id) == DT_BUS(node_id)), and the node
+ * itself has status okay. This prevents enumerating sub-nodes of SPI
+ * devices (for example GPIO sub-devices) which are on the same SPI bus
+ * but are not direct children of the controller.
+ */
+#define RUN_FN_ON_SPI_DEVICE(node_id, fn)                                                         \
+	COND_CODE_1(DT_ON_BUS(node_id, spi),                                                      \
+	(COND_CODE_1(DT_SAME_NODE(DT_PARENT(node_id), DT_BUS(node_id)),                           \
+	(COND_CODE_1(DT_NODE_HAS_STATUS_OKAY(node_id), (fn), ())), ())), ())
 
 /* Create specified number of empty structs, separated by ',' */
 #define _EMPTY_STRUCT_INST(idx, list) {0}
@@ -416,24 +421,24 @@ static int cmd_spi_conf_cs(const struct shell *ctx, size_t argc, char **argv)
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_spi_cmds,
 	SHELL_CMD_ARG(conf, &dsub_get_spi_shell_device_name,
-		      "Configure SPI\n"
-		      "Usage: spi conf <spi-device> <frequency> [<settings>]\n"
-		      "<settings> - any sequence of letters:\n"
-		      "o - SPI_MODE_CPOL\n"
-		      "h - SPI_MODE_CPHA\n"
-		      "l - SPI_TRANSFER_LSB\n"
-		      "T - SPI_FRAME_FORMAT_TI\n"
-		      "example: spi conf spi1 1000000 ol",
+		      SHELL_HELP("Configure SPI bus",
+				 "<spi-device> <frequency> [<settings>]\n"
+				 "<settings> any sequence of letters:\n"
+				 "o - SPI_MODE_CPOL\n"
+				 "h - SPI_MODE_CPHA\n"
+				 "l - SPI_TRANSFER_LSB\n"
+				 "T - SPI_FRAME_FORMAT_TI\n"
+				 "Example: spi conf spi1 1000000 ol"),
 		      cmd_spi_conf, 3, 1),
 	SHELL_CMD_ARG(cs, &dsub_get_spi_shell_device_name_and_set_gpio_dsub,
-		      "Assign CS GPIO to SPI device\n"
-		      "Usage: spi cs <spi-device> <gpio-device> <pin> [<gpio flags>]\n"
-		      "example: spi cs spi1 gpio1 3 0x01",
+		      SHELL_HELP("Assign CS GPIO to SPI device",
+				 "<spi-device> <gpio-device> <pin> [<flags>]\n"
+				 "Example: spi cs spi1 gpio1 3 0x01"),
 		      cmd_spi_conf_cs, 4, 1),
 	SHELL_CMD_ARG(transceive, &dsub_get_spi_shell_device_name,
-		      "Transceive data to and from an SPI device\n"
-		      "Usage: spi transceive <spi-device> <TX byte 1> [<TX byte 2> ...]\n"
-		      "example: spi transceive spi1 0x00 0x01",
+		      SHELL_HELP("Transceive data to/from SPI device",
+				 "<spi-device> <tx-byte1> [<tx-byte2> ...]\n"
+				 "Example: spi transceive spi1 0x00 0x01"),
 		      cmd_spi_transceive, 3, MAX_SPI_BYTES - 1),
 	SHELL_SUBCMD_SET_END);
 

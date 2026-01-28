@@ -4,23 +4,6 @@
 description: |
   Charger part of the AXP2101 PMU MFD device.
 
-  This charger should be instantiated as child of the AXP2101 MFD device, i.e.
-
-  axp2101@34 {
-    compatible = "x-powers,axp2101";
-    reg = <0x34>;
-
-    charger {
-      compatible = "x-powers,axp2101-charger";
-      constant-charge-current-max-microamp = <300000>;
-      constant-charge-voltage-max-microvolt = <4200000>;
-    };
-
-    regulators {
-    ...
-    }
-  }
-
 compatible: "x-powers,axp2101-charger"
 
 on-bus: axp2101
@@ -75,3 +58,20 @@ properties:
     description:
       Enable Vbackup on boot. This is normally used to charge a button battery
       that is used by some RTC IC.
+
+examples:
+  - |
+    axp2101@34 {
+      compatible = "x-powers,axp2101";
+      reg = <0x34>;
+
+      charger {
+        compatible = "x-powers,axp2101-charger";
+        constant-charge-current-max-microamp = <300000>;
+        constant-charge-voltage-max-microvolt = <4200000>;
+      };
+
+      regulators {
+      ...
+      }
+    }

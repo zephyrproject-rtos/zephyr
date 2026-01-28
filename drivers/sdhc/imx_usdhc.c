@@ -135,10 +135,20 @@ static void sdio_interrupt_cb(USDHC_Type *usdhc, void *user_data)
 {
 	const struct device *dev = user_data;
 	struct usdhc_data *data = dev->data;
+	USDHC_Type *base = get_base(dev);
 
 	if (data->sdhc_cb) {
 		data->sdhc_cb(dev, SDHC_INT_SDIO, data->sdhc_cb_user_data);
 	}
+
+	/*
+	 * Match the behavior of other Zephyr sdhc drivers, which automatically
+	 * mask the card interrupt when it arrives and expect an asynchronous
+	 * handler to re-enable it once the card's interrupt condition has been
+	 * cleared.
+	 */
+	USDHC_DisableInterruptStatus(base, kUSDHC_CardInterruptFlag);
+	USDHC_DisableInterruptSignal(base, kUSDHC_CardInterruptFlag);
 }
 
 static void card_inserted_cb(USDHC_Type *usdhc, void *user_data)
@@ -225,14 +235,14 @@ static void imx_usdhc_error_recovery(const struct device *dev)
 
 	if (status & kUSDHC_CommandInhibitFlag) {
 		/* Reset command line */
-		if (!USDHC_Reset(base, kUSDHC_ResetCommand, 100U)) {
+		if (!USDHC_Reset(base, kUSDHC_ResetCommand, 1000U)) {
 			LOG_ERR("Failed to reset command line");
 		}
 	}
 	if (((status & (uint32_t)kUSDHC_DataInhibitFlag) != 0U) ||
 	    (USDHC_GetAdmaErrorStatusFlags(base) != 0U)) {
 		/* Reset data line */
-		if (!USDHC_Reset(base, kUSDHC_ResetData, 100U)) {
+		if (!USDHC_Reset(base, kUSDHC_ResetData, 1000U)) {
 			LOG_ERR("Failed to reset data line");
 		}
 	}
@@ -273,9 +283,9 @@ static void imx_usdhc_init_host_props(const struct device *dev)
 	props->host_caps.sdr104_support = (bool)(caps.flags & kUSDHC_SupportSDR104Flag);
 	props->host_caps.sdr50_support = (bool)(caps.flags & kUSDHC_SupportSDR50Flag);
 	props->host_caps.bus_8_bit_support = (bool)(caps.flags & kUSDHC_Support8BitFlag);
-	props->host_caps.bus_4_bit_support = (bool)(caps.flags & kUSDHC_Support4BitFlag);
-	props->host_caps.hs200_support = (bool)(cfg->mmc_hs200_1_8v);
-	props->host_caps.hs400_support = (bool)(cfg->mmc_hs400_1_8v);
+	props->bus_4_bit_support = (bool)(caps.flags & kUSDHC_Support4BitFlag);
+	props->hs200_support = (bool)(cfg->mmc_hs200_1_8v);
+	props->hs400_support = (bool)(cfg->mmc_hs400_1_8v);
 }
 
 /*
@@ -654,7 +664,7 @@ static int imx_usdhc_execute_tuning(const struct device *dev)
 #endif
 
 	/* Reset tuning circuit */
-	USDHC_Reset(base, kUSDHC_ResetTuning, 100U);
+	USDHC_Reset(base, kUSDHC_ResetTuning, 1000U);
 	/* Disable standard tuning */
 	USDHC_EnableStandardTuning(base, IMX_USDHC_STANDARD_TUNING_START, IMX_USDHC_TUNING_STEP,
 				   false);

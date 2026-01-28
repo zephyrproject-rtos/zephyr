@@ -322,7 +322,7 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  * restore the contents of these registers when scheduling the thread.
  * No effect if @kconfig{CONFIG_DSP_SHARING} is not enabled.
  */
-#define K_DSP_IDX 6
+#define K_DSP_IDX 13
 #define K_DSP_REGS (BIT(K_DSP_IDX))
 
 /**
@@ -333,7 +333,7 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  * memory and DSP feature. Often used with @kconfig{CONFIG_ARC_AGU_SHARING}.
  * No effect if @kconfig{CONFIG_ARC_AGU_SHARING} is not enabled.
  */
-#define K_AGU_IDX 7
+#define K_AGU_IDX 14
 #define K_AGU_REGS (BIT(K_AGU_IDX))
 
 /**
@@ -345,7 +345,7 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  * save and restore the contents of these registers when scheduling
  * the thread. No effect if @kconfig{CONFIG_X86_SSE} is not enabled.
  */
-#define K_SSE_REGS (BIT(7))
+#define K_SSE_REGS (BIT(15))
 
 /* end - thread options */
 
@@ -1665,6 +1665,22 @@ const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size);
  */
 #define K_FOREVER Z_FOREVER
 
+/**
+ * @brief Add two k_timeout_t values together
+ *
+ * This macro adds two k_timeout_t values together. If only one value is an
+ * absolute timeout, the result will be an absolute timeout. If both are
+ * relative timeouts, the result will be a relative timeout. If the calculation
+ * overflows, underflows or if both values are absolute timeouts, K_FOREVER
+ * is returned.
+ *
+ * @param timeout1 First k_timeout_t value
+ * @param timeout2 Second k_timeout_t value
+ *
+ * @return Sum of the two timeout values, or K_FOREVER if incalculable
+ */
+#define K_TIMEOUT_SUM(timeout1, timeout2)  K_TICKS(z_timeout_sum(timeout1, timeout2))
+
 #ifdef CONFIG_TIMEOUT_64BIT
 
 /**
@@ -1748,7 +1764,6 @@ const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size);
  * @return Timeout delay value
  */
 #define K_TIMEOUT_ABS_CYC(t) K_TIMEOUT_ABS_TICKS(k_cyc_to_ticks_ceil64(t))
-
 #endif
 
 /**
