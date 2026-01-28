@@ -1847,6 +1847,7 @@ static void run_ancillary_recvmsg_test(int client_sock,
 	}
 
 	if (!k_is_user_context()) {
+		compiler_barrier();
 		iface = net_if_get_default();
 		zassert_equal(ifindex, net_if_get_by_iface(iface));
 	}
