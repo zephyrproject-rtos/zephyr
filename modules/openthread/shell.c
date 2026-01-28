@@ -24,6 +24,11 @@ static char rx_buffer[OT_SHELL_BUFFER_SIZE];
 static const struct shell *shell_p;
 static bool is_shell_initialized;
 
+#if defined(CONFIG_OPENTHREAD_SHELL_WAIT_FOR_COMPLETION)
+static int32_t last_activity_timestamp;
+static K_SEM_DEFINE(completion_sem, 0, 1);
+#endif
+
 static int ot_console_cb(void *context, const char *format, va_list arg)
 {
 	ARG_UNUSED(context);
@@ -32,6 +37,25 @@ static int ot_console_cb(void *context, const char *format, va_list arg)
 		return 0;
 	}
 
+#if defined(CONFIG_OPENTHREAD_SHELL_WAIT_FOR_COMPLETION)
+	last_activity_timestamp = k_uptime_get_32();
+
+	/* Inspect output to detect OpenThread command completion */
+	char tmp[8];
+	va_list arg_copy;
+
+	va_copy(arg_copy, arg);
+	vsnprintf(tmp, sizeof(tmp), format, arg_copy);
+	va_end(arg_copy);
+
+	/* "Done" is sent as a distinct string */
+	bool is_done = (strncmp(tmp, "Done", 4) == 0);
+	bool is_error = (strncmp(tmp, "Error ", 6) == 0);
+
+	if (is_done || is_error) {
+		k_sem_give(&completion_sem);
+	}
+#endif
 	shell_vfprintf(shell_p, SHELL_NORMAL, format, arg);
 
 	return 0;
@@ -75,9 +99,35 @@ static int ot_cmd(const struct shell *sh, size_t argc, char *argv[])
 
 	shell_p = sh;
 
+#if defined(CONFIG_OPENTHREAD_SHELL_WAIT_FOR_COMPLETION)
+	last_activity_timestamp = k_uptime_get_32();
+	k_sem_reset(&completion_sem);
+#endif
+
 	openthread_mutex_lock();
 	otCliInputLine(rx_buffer);
 	openthread_mutex_unlock();
+
+#if defined(CONFIG_OPENTHREAD_SHELL_WAIT_FOR_COMPLETION)
+	int32_t completion_timeout = CONFIG_OPENTHREAD_SHELL_WAIT_FOR_COMPLETION_TIMEOUT;
+
+	/*
+	 * Wait for output to finish (signal) or timeout.
+	 * If output is received (activity), the timeout is effectively extended.
+	 */
+	while (true) {
+		int32_t time_left = completion_timeout -
+				    (k_uptime_get_32() - last_activity_timestamp);
+
+		if (time_left <= 0) {
+			break;
+		}
+
+		if (k_sem_take(&completion_sem, K_MSEC(time_left)) == 0) {
+			break;
+		}
+	}
+#endif
 
 	return 0;
 }
