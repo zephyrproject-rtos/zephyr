@@ -56,6 +56,10 @@ tests:
     extra_configs:
       - CONFIG_SOC_NRF_FORCE_CONSTLAT=y
   sample.boards.nordic.nrf_sys_event.rramc_wakeup:
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest/test_reg_event.py::test_rramc_wakeup"
     extra_configs:
       - CONFIG_NRF_SYS_EVENT_IRQ_LATENCY=y
       - CONFIG_NRF_SYS_EVENT_GRTC_CHAN_CNT=0
@@ -65,6 +69,10 @@ tests:
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
   sample.boards.nordic.nrf_sys_event.rramc_wakeup.ppi:
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest/test_reg_event.py::test_rramc_wakeup"
     extra_configs:
       - CONFIG_NRF_SYS_EVENT_IRQ_LATENCY=y
     platform_allow:
