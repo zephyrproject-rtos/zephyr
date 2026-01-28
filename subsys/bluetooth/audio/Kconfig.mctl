@@ -31,11 +31,4 @@ config MCTL_LOCAL_PLAYER_LOCAL_CONTROL
 	  This option enables support for local application control of local
 	   media players
 
-config MCTL_LOCAL_PLAYER_REMOTE_CONTROL
-	bool "Support for remote control of local media players"
-	depends on MCTL_LOCAL_PLAYER_CONTROL
-	help
-	  This option enables support for remote control of local media
-	   players.
-
 endif # MCTL
