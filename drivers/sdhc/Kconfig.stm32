@@ -8,7 +8,7 @@ config SDHC_STM32_SDIO
 	select USE_STM32_LL_SDMMC
 	select SDHC_SUPPORTS_NATIVE_MODE
 	select PINCTRL
-	imply CACHE_MANAGEMENT if !SDHC_STM32_POLLING_SUPPORT && DCACHE
+	imply CACHE_MANAGEMENT if !SDHC_STM32_POLLING_MODE && DCACHE
 	default y
 	help
 	  Enable support for SDMMC on STM32 platforms for SDIO devices.
@@ -18,9 +18,9 @@ if SDHC_STM32_SDIO
 config SDHC_BUFFER_ALIGNMENT
 	default 32
 
-config SDHC_STM32_POLLING_SUPPORT
-	bool "STM32 SDHC Polling driver support"
+config SDHC_STM32_POLLING_MODE
+	bool "Use polling mode instead of DMA"
 	help
-	  Enables support for SDHC Polling mode on STM32 microcontrollers.
+	  Use polling mode for data transfers instead of DMA mode.
 
 endif # SDHC_STM32_SDIO
