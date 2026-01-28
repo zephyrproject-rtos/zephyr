@@ -18,7 +18,6 @@
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/audio/mcs.h>
-#include <zephyr/bluetooth/audio/media_proxy.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
@@ -1209,86 +1208,86 @@ static void defer_value_ntf(struct bt_conn *conn, void *data)
 	k_work_submit(&deferred_nfy_work);
 }
 
-static void media_proxy_sctrl_player_name_cb(const char *name)
+void bt_mcs_player_name_changed(const char *name)
 {
 	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
 			UINT_TO_POINTER(FLAG_PLAYER_NAME_CHANGED));
 }
 
-void media_proxy_sctrl_icon_url_cb(const char *name)
+void bt_mcs_icon_url_changed(const char *url)
 {
 	bt_conn_foreach(BT_CONN_TYPE_LE, mark_icon_url_changed_cb, NULL);
 }
 
-void media_proxy_sctrl_track_changed_cb(void)
+void bt_mcs_track_changed(void)
 {
 	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
 			UINT_TO_POINTER(FLAG_TRACK_CHANGED));
 }
 
-void media_proxy_sctrl_track_title_cb(const char *title)
+void bt_mcs_track_title_changed(const char *title)
 {
 	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
 			UINT_TO_POINTER(FLAG_TRACK_TITLE_CHANGED));
 }
 
-void media_proxy_sctrl_track_position_cb(int32_t position)
+void bt_mcs_track_position_changed(int32_t position)
 {
 	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
 			UINT_TO_POINTER(FLAG_TRACK_POSITION_CHANGED));
 }
 
-void media_proxy_sctrl_track_duration_cb(int32_t duration)
+void bt_mcs_track_duration_changed(int32_t duration)
 {
 	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
 			UINT_TO_POINTER(FLAG_TRACK_DURATION_CHANGED));
 }
 
-void media_proxy_sctrl_playback_speed_cb(int8_t speed)
+void bt_mcs_playback_speed_changed(int8_t speed)
 {
 	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
 			UINT_TO_POINTER(FLAG_PLAYBACK_SPEED_CHANGED));
 }
 
-void media_proxy_sctrl_seeking_speed_cb(int8_t speed)
+void bt_mcs_seeking_speed_changed(int8_t speed)
 {
 	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
 			UINT_TO_POINTER(FLAG_SEEKING_SPEED_CHANGED));
 }
 
 #if defined(CONFIG_BT_OTS)
-void media_proxy_sctrl_current_track_id_cb(uint64_t id)
+void bt_mcs_current_track_id_changed(uint64_t id)
 {
 	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
 			UINT_TO_POINTER(FLAG_CURRENT_TRACK_OBJ_ID_CHANGED));
 }
 
-void media_proxy_sctrl_next_track_id_cb(uint64_t id)
+void bt_mcs_next_track_id_changed(uint64_t id)
 {
 	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
 			UINT_TO_POINTER(FLAG_NEXT_TRACK_OBJ_ID_CHANGED));
 }
 
-void media_proxy_sctrl_parent_group_id_cb(uint64_t id)
+void bt_mcs_parent_group_id_changed(uint64_t id)
 {
 	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
 			UINT_TO_POINTER(FLAG_PARENT_GROUP_OBJ_ID_CHANGED));
 }
 
-void media_proxy_sctrl_current_group_id_cb(uint64_t id)
+void bt_mcs_current_group_id_changed(uint64_t id)
 {
 	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
 			UINT_TO_POINTER(FLAG_CURRENT_GROUP_OBJ_ID_CHANGED));
 }
 #endif /* CONFIG_BT_OTS */
 
-void media_proxy_sctrl_playing_order_cb(uint8_t order)
+void bt_mcs_playing_order_changed(uint8_t order)
 {
 	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
 			UINT_TO_POINTER(FLAG_PLAYING_ORDER_CHANGED));
 }
 
-void media_proxy_sctrl_media_state_cb(uint8_t state)
+void bt_mcs_media_state_changed(uint8_t state)
 {
 	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
 			UINT_TO_POINTER(FLAG_MEDIA_STATE_CHANGED));
@@ -1319,13 +1318,13 @@ static void defer_media_control_point_ntf(struct bt_conn *conn, void *data)
 	}
 }
 
-void media_proxy_sctrl_command_cb(const struct mpl_cmd_ntf *cmd_ntf)
+void bt_mcs_command_complete(const struct mpl_cmd_ntf *cmd_ntf)
 {
 	/* FIXME: Control Point notification shall be sent to operation initiator only */
 	bt_conn_foreach(BT_CONN_TYPE_LE, defer_media_control_point_ntf, (void *)cmd_ntf);
 }
 
-void media_proxy_sctrl_commands_supported_cb(uint32_t opcodes)
+void bt_mcs_commands_supported_changed(uint32_t opcodes)
 {
 	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
 			UINT_TO_POINTER(FLAG_MEDIA_CONTROL_OPCODES_CHANGED));
@@ -1356,14 +1355,14 @@ static void defer_search_control_point_ntf(struct bt_conn *conn, void *data)
 	}
 }
 
-void media_proxy_sctrl_search_cb(uint8_t result_code)
+void bt_mcs_search_complete(uint8_t result_code)
 {
 	/* FIXME: Control Point notification shall be sent to operation initiator only */
 	bt_conn_foreach(BT_CONN_TYPE_LE, defer_search_control_point_ntf,
 			UINT_TO_POINTER(result_code));
 }
 
-void media_proxy_sctrl_search_results_id_cb(uint64_t id)
+void bt_mcs_search_results_id_changed(uint64_t id)
 {
 	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
 			UINT_TO_POINTER(FLAG_SEARCH_RESULTS_OBJ_ID_CHANGED));
@@ -1373,7 +1372,6 @@ void media_proxy_sctrl_search_results_id_cb(uint64_t id)
 /* Register the service */
 int bt_mcs_init(struct bt_ots_cb *ots_cbs)
 {
-	static struct media_proxy_sctrl_cbs cbs;
 	static bool initialized;
 	int err;
 
@@ -1424,32 +1422,6 @@ int bt_mcs_init(struct bt_ots_cb *ots_cbs)
 #endif /* CONFIG_BT_OTS */
 		return -ENOEXEC;
 	}
-
-	/* Set up the callback structure */
-	cbs.player_name          = media_proxy_sctrl_player_name_cb;
-	cbs.icon_url             = media_proxy_sctrl_icon_url_cb;
-	cbs.track_changed        = media_proxy_sctrl_track_changed_cb;
-	cbs.track_title          = media_proxy_sctrl_track_title_cb;
-	cbs.track_duration       = media_proxy_sctrl_track_duration_cb;
-	cbs.track_position       = media_proxy_sctrl_track_position_cb;
-	cbs.playback_speed       = media_proxy_sctrl_playback_speed_cb;
-	cbs.seeking_speed        = media_proxy_sctrl_seeking_speed_cb;
-#ifdef CONFIG_BT_OTS
-	cbs.current_track_id     = media_proxy_sctrl_current_track_id_cb;
-	cbs.next_track_id        = media_proxy_sctrl_next_track_id_cb;
-	cbs.parent_group_id      = media_proxy_sctrl_parent_group_id_cb;
-	cbs.current_group_id     = media_proxy_sctrl_current_group_id_cb;
-#endif /* CONFIG_BT_OTS */
-	cbs.playing_order        = media_proxy_sctrl_playing_order_cb;
-	cbs.media_state          = media_proxy_sctrl_media_state_cb;
-	cbs.command              = media_proxy_sctrl_command_cb;
-	cbs.commands_supported   = media_proxy_sctrl_commands_supported_cb;
-#ifdef CONFIG_BT_OTS
-	cbs.search               = media_proxy_sctrl_search_cb;
-	cbs.search_results_id    = media_proxy_sctrl_search_results_id_cb;
-#endif /* CONFIG_BT_OTS */
-
-	media_proxy_sctrl_register(&cbs);
 
 	initialized = true;
 	return 0;
