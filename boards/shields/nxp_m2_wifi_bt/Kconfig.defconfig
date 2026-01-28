@@ -143,7 +143,7 @@ config MAIN_STACK_SIZE
 	default 2560
 
 configdefault FPU
-	default y if CPU_HAS_FPU
+	default y
 
 configdefault LIBLC3
 	default y if BT_NXP_NW612 && BT_AUDIO && FPU
