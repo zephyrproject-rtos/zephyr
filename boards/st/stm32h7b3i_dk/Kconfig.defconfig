@@ -16,8 +16,9 @@ if LVGL
 config LV_USE_DRAW_DMA2D
 	default y
 
+# Double frame buffer maintained by lvgl.
 config STM32_LTDC_FB_NUM
-	default 2
+	default 0
 
 config LV_Z_DOUBLE_VDB
 	default y
@@ -30,12 +31,6 @@ config LV_Z_VDB_ZEPHYR_REGION
 
 config LV_Z_VDB_ZEPHYR_REGION_NAME
 	default "SDRAM2"
-
-config LV_Z_FLUSH_THREAD
-	default y
-
-config LV_Z_BITS_PER_PIXEL
-	default 16 if STM32_LTDC_RGB565
 
 endif # LVGL
 
