@@ -1348,6 +1348,8 @@ struct bt_le_adv_info {
  *
  * @retval 0 Success.
  * @retval -EINVAL advertising is not started or @p info is NULL.
+ *
+ * @see bt_le_oob_get_local
  */
 int bt_le_adv_get_info(struct bt_le_adv_info *info);
 
@@ -1593,6 +1595,8 @@ struct bt_le_ext_adv_info {
  *
  * @retval 0 Success.
  * @retval -EINVAL @p adv is not valid advertising set or @p info is NULL.
+ *
+ * @see bt_le_ext_adv_oob_get_local
  */
 int bt_le_ext_adv_get_info(const struct bt_le_ext_adv *adv,
 			   struct bt_le_ext_adv_info *info);
@@ -2836,6 +2840,8 @@ struct bt_le_oob {
  *
  * @return Zero on success or error code otherwise, positive in case of
  *         protocol error or negative (POSIX) in case of stack internal error.
+ *
+ * @see bt_le_adv_get_info
  */
 int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob);
 
@@ -2865,6 +2871,8 @@ int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob);
  *
  * @return Zero on success or error code otherwise, positive in case
  * of protocol error or negative (POSIX) in case of stack internal error.
+ *
+ * @see bt_le_ext_adv_get_info
  */
 int bt_le_ext_adv_oob_get_local(struct bt_le_ext_adv *adv,
 				struct bt_le_oob *oob);
