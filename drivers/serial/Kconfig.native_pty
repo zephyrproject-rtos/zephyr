@@ -33,14 +33,19 @@ config UART_NATIVE_PTY_0_ON_OWN_PTY
 config UART_NATIVE_PTY_0_ON_STDINOUT
 	bool "Connect the first PTY UART to the invoking shell stdin/stdout"
 	help
-	  Connect this UART to the stdin & stdout of the calling shell/terminal
-	  which invoked the native executable. This is good enough for
-	  automated testing, or when feeding from a file/pipe.
-	  Note that other, non UART messages, will also be printed to the
-	  terminal.
-	  It is strongly discouraged to try to use this option with the new
-	  shell interactively, as the default terminal configuration is NOT
-	  appropriate for interactive use.
+	  Connect the first UART instance to the stdin & stdout of the calling shell/terminal which
+	  invoked the native executable. This is good enough for automated testing, or when feeding from a
+	  file/pipe.
+
+	  NOTE: This applies to whichever PTY instance is instantiated first. If there is more than one,
+	  and you want to control which instance is on stdin/out you should instead use the command line
+	  options, or the corresponding instance DT `on-stdinout` property.
+
+	  Note that other, non UART messages, will also be printed to the terminal.
+
+	  It is discouraged to use this option with the shell interactively: The default terminal
+	  configuration is not appropriate for Zephyr's shell interactive use and several shell functions
+	  like autocomplete or the history search will appear faulty.
 
 endchoice
 
