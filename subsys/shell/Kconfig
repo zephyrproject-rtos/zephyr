@@ -372,6 +372,16 @@ config SHELL_TX_TIMEOUT_MS
 	  When using the shell log backend, the timeout should be longer to avoid
 	  timeouts due to log processing. A value of 0 means no timeout.
 
+config SHELL_BYPASS_BUF_SIZE
+	int "Bypass buffer size"
+	range 1 $(UINT16_MAX)
+	default 16
+	help
+	  Size of buffer used for bypass mode data transfer.
+	  This buffer is allocated on stack. The bypass reads data
+	  in a loop, so a small buffer is sufficient.
+	  Must be smaller than SHELL_STACK_SIZE.
+
 source "subsys/shell/modules/Kconfig"
 
 endif # SHELL
