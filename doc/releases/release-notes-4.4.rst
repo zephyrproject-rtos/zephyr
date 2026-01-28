@@ -334,6 +334,7 @@ New Drivers
 
   * Added new stm32 BSEC driver that provides means to program and read OTP fuses
     (:dtcompatible:`st,stm32-bsec`). (:github:`102403`)
+  * :dtcompatible:`nxp,mcux-ocotp` (:github:`102567`)
 
 New Samples
 ***********
