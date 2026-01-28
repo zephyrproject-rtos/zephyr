@@ -343,9 +343,9 @@ static void configure_clock_with_calibration(int range)
 	LL_RCC_SetAPB2Prescaler(LL_RCC_APB2_HCLK_DIV_1);
 	LL_RCC_SetAPB3Prescaler(LL_RCC_APB3_HCLK_DIV_1);
 
-	BUILD_ASSERT(STM32_LSE_ENABLED || !IS_ENABLED(STM32_MSIK_ENABLED),
+	BUILD_ASSERT(IS_ENABLED(STM32_LSE_ENABLED) || !IS_ENABLED(STM32_MSIK_ENABLED),
 		"MSIK requires LSE clock to be enabled for auto-calibration");
-	BUILD_ASSERT(STM32_LSE_ENABLED || !IS_ENABLED(STM32_MSIS_ENABLED),
+	BUILD_ASSERT(IS_ENABLED(STM32_LSE_ENABLED) || !IS_ENABLED(STM32_MSIS_ENABLED),
 		"MSIS requires LSE clock to be enabled for auto-calibration");
 	if (IN_RANGE(range, 0, 3)) {
 		/*
