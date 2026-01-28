@@ -43,6 +43,7 @@ if version.parse(elftools.__version__) < version.parse('0.24'):
 SHF_WRITE = 0x1
 SHF_ALLOC = 0x2
 SHF_EXEC = 0x4
+SHF_TLS = 0x400
 SHF_WRITE_ALLOC = SHF_WRITE | SHF_ALLOC
 SHF_ALLOC_EXEC = SHF_ALLOC | SHF_EXEC
 
@@ -155,8 +156,28 @@ def get_symbols(elf, addr_ranges):
                 if get_symbol_size(sym) == 0:
                     continue
 
-                ram_sym = is_symbol_in_ranges(sym, ram_addr_ranges)
-                rom_sym = is_symbol_in_ranges(sym, rom_addr_ranges)
+                # TLS sections (e.g. .tdata/.tbss) use addresses as TLS offsets
+                # and can overlap normal VMA ranges. Don't classify based on
+                # address ranges for TLS.
+                sym_is_tls = False
+                tls_section_name = None
+                try:
+                    shndx = sym['st_shndx']
+                    if isinstance(shndx, int):
+                        sec = elf.get_section(shndx)
+                        if sec['sh_flags'] & SHF_TLS:
+                            sym_is_tls = True
+                            tls_section_name = sec.name
+                except Exception:
+                    sym_is_tls = False
+                    tls_section_name = None
+
+                if sym_is_tls:
+                    ram_sym = {'name': tls_section_name}
+                    rom_sym = None
+                else:
+                    ram_sym = is_symbol_in_ranges(sym, ram_addr_ranges)
+                    rom_sym = is_symbol_in_ranges(sym, rom_addr_ranges)
 
                 # Determine the location(s) for this symbol.
                 loc = []
@@ -232,10 +253,12 @@ def get_section_ranges(elf):
         sec_end = sec_start + (size - 1 if size else 0)
         bound = {'start': sec_start, 'end': sec_end, 'name': section.name}
         is_assigned = False
+        flags = section['sh_flags']
 
         if section['sh_type'] == 'SHT_NOBITS':
             # BSS and noinit sections
-            ram_addr_ranges.append(bound)
+            if not (flags & SHF_TLS):
+                ram_addr_ranges.append(bound)
             ram_size += size
             total_size += size
             is_assigned = True
@@ -243,7 +266,6 @@ def get_section_ranges(elf):
 
         elif section['sh_type'] == 'SHT_PROGBITS':
             # Sections to be in flash or memory
-            flags = section['sh_flags']
             if (flags & SHF_ALLOC_EXEC) == SHF_ALLOC_EXEC:
                 # Text section
                 rom_addr_ranges.append(bound)
@@ -259,7 +281,8 @@ def get_section_ranges(elf):
                     # since at boot, content is copied from ROM to RAM
                     rom_addr_ranges.append(bound)
                     rom_size += size
-                ram_addr_ranges.append(bound)
+                if not (flags & SHF_TLS):
+                    ram_addr_ranges.append(bound)
                 ram_size += size
                 total_size += size
                 is_assigned = True
