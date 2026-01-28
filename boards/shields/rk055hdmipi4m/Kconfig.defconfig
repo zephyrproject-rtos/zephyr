@@ -20,10 +20,6 @@ config INPUT
 config INPUT_GT911_INTERRUPT
 	default y
 
-# LVGL should allocate buffers equal to size of display
-config LV_Z_VDB_SIZE
-	default 100
-
 # Enable double buffering
 config LV_Z_DOUBLE_VDB
 	default y
