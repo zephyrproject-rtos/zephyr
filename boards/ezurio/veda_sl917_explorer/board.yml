@@ -1,0 +1,6 @@
+board:
+  name: veda_sl917_explorer
+  full_name: Veda SL917 Wi-Fi 6 and Bluetooth LE SoC Explorer Board
+  vendor: ezurio
+  socs:
+    - name: siwg917m111mgtba
