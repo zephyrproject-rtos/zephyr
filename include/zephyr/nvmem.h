@@ -25,10 +25,18 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/devicetree/nvmem.h>
+#include <zephyr/sys/device_mmio.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* @cond INTERNAL_HIDDEN */
+enum nvmem_cell_type {
+	NVMEM_CELL_TYPE_DEVICE,
+	NVMEM_CELL_TYPE_MMIO,
+};
+/* @endcond */
 
 /**
  * @brief Non-Volatile Memory cell representation.
@@ -36,17 +44,43 @@ extern "C" {
 struct nvmem_cell {
 	/* @cond INTERNAL_HIDDEN */
 
-	/** NVMEM parent controller device instance. */
-	const struct device *dev;
+	union {
+		/** NVMEM parent controller device instance. */
+		const struct device *dev;
+		/** Physical address for MMIO access. */
+		uintptr_t phys_addr;
+	};
 	/** Offset of the NVMEM cell relative to the parent controller's base address */
 	off_t offset;
 	/** Size of the NVMEM cell */
 	size_t size;
+	/** Type of NVMEM cell */
+	enum nvmem_cell_type type: 1;
 	/** Indicator if the NVMEM cell is read-write or read-only */
-	bool read_only;
+	bool read_only: 1;
 
 	/* @endcond */
 };
+
+/* @cond INTERNAL_HIDDEN */
+#define Z_NVMEM_CELL_DEVICE_INIT(node_id)                                                          \
+	{                                                                                          \
+		.dev = DEVICE_DT_GET(DT_MTD_FROM_NVMEM_CELL(node_id)),                             \
+		.type = NVMEM_CELL_TYPE_DEVICE,                                                    \
+		.offset = DT_REG_ADDR(node_id),                                                    \
+		.size = DT_REG_SIZE(node_id),                                                      \
+		.read_only = DT_PROP(node_id, read_only),                                          \
+	}
+
+#define Z_NVMEM_CELL_MMIO_INIT(node_id)                                                            \
+	{                                                                                          \
+		.phys_addr = DT_REG_ADDR(DT_MTD_FROM_NVMEM_CELL(node_id)),                         \
+		.type = NVMEM_CELL_TYPE_MMIO,                                                      \
+		.offset = DT_REG_ADDR(node_id),                                                    \
+		.size = DT_REG_SIZE(node_id),                                                      \
+		.read_only = DT_PROP(node_id, read_only),                                          \
+	}
+/* @endcond */
 
 /**
  * @brief Get a static initializer for a struct nvmem_cell.
@@ -93,12 +127,9 @@ struct nvmem_cell {
  * @return Static initializer for a struct nvmem_cell
  */
 #define NVMEM_CELL_INIT(node_id)                                                                   \
-	{                                                                                          \
-		.dev = DEVICE_DT_GET(DT_MTD_FROM_NVMEM_CELL(node_id)),                             \
-		.offset = DT_REG_ADDR(node_id),                                                    \
-		.size = DT_REG_SIZE(node_id),                                                      \
-		.read_only = DT_PROP(node_id, read_only),                                          \
-	}
+	COND_CODE_1(DT_PROP(DT_PARENT(node_id), mmio),                                             \
+		    (Z_NVMEM_CELL_MMIO_INIT(node_id)),                                             \
+		    (Z_NVMEM_CELL_DEVICE_INIT(node_id)))
 
 /**
  * @brief Get a static initializer for a struct nvmem_cell by name.
@@ -361,7 +392,18 @@ int nvmem_cell_write(const struct nvmem_cell *cell, const void *data, off_t off,
  */
 static inline bool nvmem_cell_is_ready(const struct nvmem_cell *cell)
 {
-	return cell != NULL && device_is_ready(cell->dev);
+	if (cell == NULL) {
+		return false;
+	}
+
+	switch (cell->type) {
+	case NVMEM_CELL_TYPE_DEVICE:
+		return device_is_ready(cell->dev);
+	case NVMEM_CELL_TYPE_MMIO:
+		return true;
+	default:
+		return false;
+	}
 }
 
 /**
