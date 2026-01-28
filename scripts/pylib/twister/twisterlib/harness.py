@@ -403,7 +403,6 @@ class Pytest(Harness):
             'pytest',
             '--twister-harness',
             '-s', '-v',
-            '--log-level=DEBUG',
             f'--build-dir={self.running_dir}',
             f'--junit-xml={self.report_file}',
             f'--platform={self.instance.platform.name}'
@@ -414,6 +413,12 @@ class Pytest(Harness):
 
         if pytest_dut_scope:
             command.append(f'--dut-scope={pytest_dut_scope}')
+
+        # Always pass output from the pytest test and the test image up to Twister log.
+        command.extend([
+            '--log-cli-level=DEBUG',
+            '--log-cli-format=%(levelname)s: %(message)s'
+        ])
 
         # Use the test timeout as the base timeout for pytest
         base_timeout = handler.get_test_timeout()
