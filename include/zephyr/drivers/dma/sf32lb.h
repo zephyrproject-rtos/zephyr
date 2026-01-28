@@ -60,6 +60,18 @@ struct sf32lb_dma_dt_spec {
 	}
 
 /**
+ * @brief Initialize a `sf32lb_dma_dt_spec` structure from a DT node,
+ *        with a fallback to default values.
+ * @param node_id DT node identifier
+ * @param name lowercase-and-underscores name of a dmas element
+ *             as defined by the node's dma-names property
+ * @param default_value a fallback value to expand to
+ */
+#define SF32LB_DMA_DT_SPEC_GET_BY_NAME_OR(node_id, name, default_value)                            \
+	COND_CODE_1(DT_DMAS_HAS_NAME(node_id, name),                                               \
+		(SF32LB_DMA_DT_SPEC_GET_BY_NAME(node_id, name)), (default_value))
+
+/**
  * @brief Initialize a `sf32lb_dma_dt_spec` structure from a DT instance.
  *
  * @param index DT instance index
@@ -74,6 +86,16 @@ struct sf32lb_dma_dt_spec {
  */
 #define SF32LB_DMA_DT_INST_SPEC_GET_BY_NAME(index, name)                                           \
 	SF32LB_DMA_DT_SPEC_GET_BY_NAME(DT_DRV_INST(index), name)
+
+/**
+ * @brief Initialize a `sf32lb_dma_dt_spec` structure from a DT instance.
+ *
+ * @param index DT instance index
+ * @param name DMA name
+ * @param default_value Default value for missing cells
+ */
+#define SF32LB_DMA_DT_INST_SPEC_GET_BY_NAME_OR(index, name, default_value)                         \
+	SF32LB_DMA_DT_SPEC_GET_BY_NAME_OR(DT_DRV_INST(index), name, default_value)
 
 /**
  * @brief Check if the DMA controller is ready
