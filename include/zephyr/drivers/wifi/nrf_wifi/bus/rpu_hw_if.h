@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,11 +72,13 @@ int rpu_read_reg(uint8_t reg_addr, uint8_t *reg_value);
  */
 int rpu_write_reg(uint8_t reg_addr, uint8_t reg_value);
 
+int nrf_wifi_gpio_config_early(void);
 int rpu_init(void);
 int rpu_enable(void);
 int rpu_disable(void);
 
 #ifdef CONFIG_NRF70_SR_COEX_RF_SWITCH
+int sr_gpio_config_early(void);
 int sr_ant_switch(unsigned int ant_switch);
 int sr_gpio_remove(void);
 int sr_gpio_config(void);
