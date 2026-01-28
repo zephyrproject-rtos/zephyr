@@ -6,3 +6,17 @@ description: Native PTY UART
 compatible: "zephyr,native-pty-uart"
 
 include: uart-controller.yaml
+
+properties:
+  on-stdinout:
+    type: boolean
+    description: |
+      Connect this PTY UART instance to the stdin & stdout of the calling shell/terminal which
+      invoked the native executable. This is good enough for automated testing, or when feeding
+      from a file/pipe.
+      NOTE: Only one PTY UART can be connected to the stdin/out. If this property is set in several,
+      it will only apply to whichever is instantiated first. Note that if
+      CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT is set this property is effectively ignored.
+      It is discouraged to use this property with the shell interactively: The default terminal
+      configuration is not appropriate for Zephyr's shell interactive use and several shell
+      functions like autocomplete or the history search will appear faulty.
