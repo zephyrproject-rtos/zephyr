@@ -89,7 +89,7 @@ struct adc_npcx_threshold_data {
 	/*
 	 * While threshold interruption is enabled, adc_npcx_read must disable
 	 * all active threshold running to avoid race condition, this variable
-	 * helps restore active threshods after adc_npcs_read has finnished.
+	 * helps restore active thresholds after adc_npcs_read has finished.
 	 */
 	uint8_t active_thresholds;
 	/* This array holds current configuration for each threshold. */
@@ -234,7 +234,7 @@ static void adc_npcx_v2t_ch_apply(const struct device *dev, uint16_t enabled_ch)
 	inst->ADCSTS |= BIT(NPCX_ADCSTS_TEOCCEV);
 
 	/* Disable ADC raw end of cyclic conversion event interrupt
-	 * For V2T, wait for TEOCCEV instead of the end of coversion flag of ADC raw.
+	 * For V2T, wait for TEOCCEV instead of the end of conversion flag of ADC raw.
 	 */
 	inst->ADCCNF &= ~BIT(NPCX_ADCCNF_INTECCEN);
 
@@ -244,7 +244,7 @@ static void adc_npcx_v2t_ch_apply(const struct device *dev, uint16_t enabled_ch)
 	/* Enable the voltage to temperature function */
 	inst->V2T_CTRL |= BIT(NPCX_V2T_CTRL_TEMP_EN);
 
-	LOG_DBG("ADC termperature channel TEMP_CH is %#x", inst->TEMP_CH);
+	LOG_DBG("ADC temperature channel TEMP_CH is %#x", inst->TEMP_CH);
 }
 #endif /* CONFIG_ADC_V2T_NPCX */
 
