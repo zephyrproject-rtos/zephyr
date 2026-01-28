@@ -34,6 +34,14 @@
 					#size-cells = <0>;
 					frequency = <1875>;
 				};
+
+				gpio_ext: sc18is606_gpio {
+					compatible = "nxp,sc18is606-gpio";
+					status = "okay";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <3>;
+				};
 			};
 		};
 
