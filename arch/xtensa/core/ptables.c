@@ -474,7 +474,7 @@ static void map_memory_range(const uint32_t start, const uint32_t end,
 	}
 }
 
-void xtensa_init_page_tables(void)
+static void xtensa_init_page_tables(void)
 {
 	volatile uint8_t entry;
 	static bool already_inited;
@@ -516,6 +516,45 @@ void xtensa_init_page_tables(void)
 	if (IS_ENABLED(PAGE_TABLE_IS_CACHED)) {
 		sys_cache_data_flush_all();
 	}
+}
+
+__weak void arch_xtensa_mmu_post_init(bool is_core0)
+{
+	ARG_UNUSED(is_core0);
+}
+
+void xtensa_mmu_init(void)
+{
+	xtensa_init_page_tables();
+
+	xtensa_mmu_init_paging();
+
+	/*
+	 * This is used to determine whether we are faulting inside double
+	 * exception if this is not zero. Sometimes SoC starts with this not
+	 * being set to zero. So clear it during boot.
+	 */
+	XTENSA_WSR(ZSR_DEPC_SAVE_STR, 0);
+
+	arch_xtensa_mmu_post_init(_current_cpu->id == 0);
+}
+
+void xtensa_mmu_reinit(void)
+{
+	/* First initialize the hardware */
+	xtensa_mmu_init_paging();
+
+#ifdef CONFIG_USERSPACE
+	struct k_thread *thread = _current_cpu->current;
+	struct arch_mem_domain *domain =
+			&(thread->mem_domain_info.mem_domain->arch);
+
+
+	/* Set the page table for current context */
+	xtensa_mmu_set_paging(domain);
+#endif /* CONFIG_USERSPACE */
+
+	arch_xtensa_mmu_post_init(_current_cpu->id == 0);
 }
 
 #ifdef CONFIG_ARCH_HAS_RESERVED_PAGE_FRAMES
