@@ -160,6 +160,7 @@ ZTEST(flash_driver_negative, test_negative_flash_fill_unaligned)
 	rc = flash_fill(flash_dev, fill_val, TEST_AREA_OFFSET + 1, page_info.size);
 	zassert_true(rc < 0, "Invalid use of flash_fill returned %d", rc);
 
+	/* Check error returned when filling unaligned size */
 	rc = flash_fill(flash_dev, fill_val, TEST_AREA_OFFSET, page_info.size + 1);
 	zassert_true(rc < 0, "Invalid use of flash_fill returned %d", rc);
 }
@@ -283,6 +284,10 @@ ZTEST(flash_driver_negative, test_negative_flash_write_unaligned)
 	/* Check error returned when writing at unaligned memory */
 	rc = flash_write(flash_dev, (TEST_AREA_OFFSET + 1), expected, page_info.size);
 	zassert_true(rc < 0, "Invalid use of flash_write returned %d", rc);
+
+	/* Check error returned when writing unaligned size */
+	rc = flash_write(flash_dev, TEST_AREA_OFFSET, expected, page_info.size + 1);
+	zassert_true(rc < 0, "Invalid use of flash_write (unaligned size) returned %d", rc);
 }
 
 ZTEST_SUITE(flash_driver_negative, NULL, flash_driver_setup, NULL, NULL, NULL);
