@@ -15,6 +15,8 @@
 	compatible = "elan,em32f967_dv";
 
 	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
 		zephyr,sram = &sram0;
 		zephyr,flash-controller = &em32_flash_controller;
 		zephyr,flash = &flash0;
@@ -46,7 +48,7 @@
 };
 
 &uart1 {
-	status = "disabled";
+	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_rx_pa1 &uart1_tx_pa2>;
 	pinctrl-names = "default";
