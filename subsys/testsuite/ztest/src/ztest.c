@@ -651,7 +651,7 @@ static void test_cb(void *a, void *b, void *c)
 	struct ztest_unit_test *test = b;
 	const bool config_user_mode = FIELD_GET(K_USER, test->thread_options) != 0;
 
-	if (!IS_ENABLED(CONFIG_USERSPACE) || !k_is_user_context()) {
+	if (!k_is_user_context()) {
 		__ztest_set_test_result(ZTEST_RESULT_PENDING);
 		run_test_rules(/*is_before=*/true, test, /*data=*/c);
 		if (suite->before) {
