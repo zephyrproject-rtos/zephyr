@@ -28,6 +28,7 @@ tests:
     platform_allow:
       - xg29_rb4412a
       - bg29_rb4420a
+      - xg24_rb4187c
 
   drivers.pwm.gpio_loopback.ifx:
     platform_allow:
