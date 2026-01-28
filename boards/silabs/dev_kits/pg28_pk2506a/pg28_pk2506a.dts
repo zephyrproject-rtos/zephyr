@@ -173,7 +173,7 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	clock-frequency = <4000000>;
-	pinctrl-0 = <&eusart0_default>;
+	pinctrl-0 = <&usart0_default>;
 	pinctrl-names = "default";
 	status = "okay";
 
