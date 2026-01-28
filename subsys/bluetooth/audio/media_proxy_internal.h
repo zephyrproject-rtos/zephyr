@@ -9,8 +9,6 @@
 
 /** @brief Internal APIs for Bluetooth Media Control */
 
-#include <stdint.h>
-
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/media_proxy.h>
 #include <zephyr/sys/util_macro.h>
@@ -31,50 +29,5 @@
 
 
 /* SYNCHRONOUS (CALL/RETURN) API FOR CONTROLLERS */
-
-/** @brief Callbacks to a controller, from the media proxy */
-struct media_proxy_sctrl_cbs {
-	void (*player_name)(const char *name);
-
-	void (*icon_url)(const char *url);
-
-	void (*track_changed)(void);
-
-	void (*track_title)(const char *title);
-
-	void (*track_duration)(int32_t duration);
-
-	void (*track_position)(int32_t position);
-
-	void (*playback_speed)(int8_t speed);
-
-	void (*seeking_speed)(int8_t speed);
-#ifdef CONFIG_BT_OTS
-	void (*current_track_id)(uint64_t id);
-
-	void (*next_track_id)(uint64_t id);
-
-	void (*current_group_id)(uint64_t id);
-
-	void (*parent_group_id)(uint64_t id);
-#endif /* CONFIG_BT_OTS */
-
-	void (*playing_order)(uint8_t order);
-
-	void (*media_state)(uint8_t state);
-
-	void (*command)(const struct mpl_cmd_ntf *cmd_ntf);
-
-	void (*commands_supported)(uint32_t opcodes);
-
-#ifdef CONFIG_BT_OTS
-	void (*search)(uint8_t result_code);
-
-	void (*search_results_id)(uint64_t id);
-#endif /* CONFIG_BT_OTS */
-};
-
-/** @brief Register a controller with the media proxy */
-int media_proxy_sctrl_register(struct media_proxy_sctrl_cbs *sctrl_cbs);
 
 #endif /* ZEPHYR_SUBSYS_BLUETOOTH_AUDIO_MEDIA_PROXY_INTERNAL_H_ */
