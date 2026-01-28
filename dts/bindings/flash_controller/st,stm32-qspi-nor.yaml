@@ -4,19 +4,6 @@
 description: |
     STM32 QSPI Flash controller supporting the JEDEC CFI interface
 
-    Representation of a serial flash on a quadspi bus:
-
-        mx25r6435f: qspi-nor-flash@0 {
-                compatible = "st,stm32-qspi-nor";
-                reg = <0>;
-                size = <DT_SIZE_M(64)>; /* 64 Mbits */
-                qspi-max-frequency = <80000000>;
-                reset-gpios = <&gpiod 3 GPIO_ACTIVE_LOW>;
-                reset-gpios-duration = <1>;
-                spi-bus-width = <4>;
-                status = "okay";
-        };
-
 compatible: "st,stm32-qspi-nor"
 
 include: ["flash-controller.yaml", "jedec,jesd216.yaml"]
@@ -103,3 +90,16 @@ properties:
       suboptimal as it would reduce the throughput.
 
       Defaults to 8 clock cycles, which is the maximum supported value.
+
+examples:
+  - |
+    mx25r6435f: qspi-nor-flash@0 {
+        compatible = "st,stm32-qspi-nor";
+        reg = <0>;
+        size = <DT_SIZE_M(64)>; /* 64 Mbits */
+        qspi-max-frequency = <80000000>;
+        reset-gpios = <&gpiod 3 GPIO_ACTIVE_LOW>;
+        reset-gpios-duration = <1>;
+        spi-bus-width = <4>;
+        status = "okay";
+    };
