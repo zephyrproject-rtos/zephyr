@@ -110,6 +110,26 @@ enum hl78xx_modem_info_type {
 	HL78XX_MODEM_INFO_CURRENT_BAUD_RATE,
 };
 
+/** NMEA output port options. */
+enum nmea_output_port {
+	/** 0x00 — NMEA frames are not output */
+	NMEA_OUTPUT_NONE = 0x00,
+	/** 0x01 — NMEA frames are output on dedicated NMEA port over USB */
+	NMEA_OUTPUT_USB_NMEA_PORT = 0x01,
+	/** 0x03 — NMEA frames are output on UART1 */
+	NMEA_OUTPUT_UART1 = 0x03,
+	/** 0x04 — NMEA frames are output on the same port the +GNSSNMEA was received on */
+	NMEA_OUTPUT_SAME_PORT = 0x04,
+	/** 0x05 — NMEA frames are output on CMUX DLC1 */
+	NMEA_OUTPUT_CMUX_DLC1 = 0x05,
+	/** 0x06 — NMEA frames are output on CMUX DLC2 */
+	NMEA_OUTPUT_CMUX_DLC2 = 0x06,
+	/** 0x07 — NMEA frames are output on CMUX DLC3 */
+	NMEA_OUTPUT_CMUX_DLC3 = 0x07,
+	/** 0x08 — NMEA frames are output on CMUX DLC4 */
+	NMEA_OUTPUT_CMUX_DLC4 = 0x08
+};
+
 /** Cellular network structure */
 struct hl78xx_network {
 	/** Cellular access technology */
@@ -129,6 +149,19 @@ enum hl78xx_evt_type {
 	HL78XX_LTE_SIM_REGISTRATION,
 	HL78XX_LTE_MODEM_STARTUP,
 	HL78XX_LTE_FOTA_UPDATE_STATUS,
+#ifdef CONFIG_HL78XX_GNSS
+	HL78XX_GNSS_ENGINE_READY,
+	HL78XX_GNSS_EVENT_INIT,
+	HL78XX_GNSS_EVENT_START,
+	HL78XX_GNSS_EVENT_STOP,
+	HL78XX_GNSS_EVENT_POSITION,
+	/** GNSS start failed because LTE is active (shared RF path) */
+	HL78XX_GNSS_EVENT_START_BLOCKED,
+	/** GNSS search timeout expired */
+	HL78XX_GNSS_EVENT_SEARCH_TIMEOUT,
+	/** GNSS mode exited - modem is now in airplane mode, user can decide next step */
+	HL78XX_GNSS_EVENT_MODE_EXITED,
+#endif /* CONFIG_HL78XX_GNSS */
 };
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 /**
@@ -177,6 +210,34 @@ enum wdsi_indication {
 };
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 
+#ifdef CONFIG_HL78XX_GNSS
+enum hl78xx_gnss_event_type {
+	HL78XX_GNSSEV_INITIALISATION = 0,
+	HL78XX_GNSSEV_START = 1,
+	HL78XX_GNSSEV_STOP = 2,
+	HL78XX_GNSSEV_POSITION = 3
+};
+/** GNSS position events */
+enum hl78xx_event_status {
+	/* This event specifies the status of internal GNSS context initialization. */
+	HL78XX_STATUS_FAILED = 0,
+	HL78XX_STATUS_SUCCESS = 1
+};
+/** GNSS position events (eventType = 3). */
+enum gnss_position_events {
+	/** 0 — The GNSS fix is lost or not available yet */
+	GNSS_FIX_LOST_OR_UNAVAILABLE = 0,
+	/** 1 — An estimated GNSS (predicted) position is available */
+	GNSS_ESTIMATED_POSITION_AVAILABLE = 1,
+	/** 2 — A 2-dimensional GNSS position is available */
+	GNSS_2D_POSITION_AVAILABLE = 2,
+	/** 3 — A 3-dimensional position is available */
+	GNSS_3D_POSITION_AVAILABLE = 3,
+	/** 4 — GNSS fix has been changed to invalid position */
+	GNSS_FIX_CHANGED_TO_INVALID = 4
+};
+#endif /* CONFIG_HL78XX_GNSS */
+
 struct hl78xx_evt {
 	enum hl78xx_evt_type type;
 
@@ -186,10 +247,161 @@ struct hl78xx_evt {
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 		enum wdsi_indication wdsi_indication;
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
+#ifdef CONFIG_HL78XX_GNSS
+		enum hl78xx_event_status event_status;
+		enum gnss_position_events position_event;
+#endif /* CONFIG_HL78XX_GNSS */
 		bool status;
 		int value;
 	} content;
 };
+
+#if defined(CONFIG_HL78XX_GNSS_AUX_DATA_PARSER) || defined(__DOXYGEN__)
+/**
+ * @brief Parsed GSA sentence data (GNSS DOP and Active Satellites)
+ *
+ * Contains dilution of precision values from the GSA NMEA sentence.
+ * Values are stored as fixed-point integers (multiply by appropriate scale).
+ */
+struct nmea_match_gsa_data {
+	/** Fix type: 1=no fix, 2=2D fix, 3=3D fix */
+	int32_t fix_type;
+	/** Position Dilution of Precision (scaled) */
+	int64_t pdop;
+	/** Horizontal Dilution of Precision (scaled) */
+	int64_t hdop;
+	/** Vertical Dilution of Precision (scaled) */
+	int64_t vdop;
+};
+
+/**
+ * @brief Parsed GST sentence data (GNSS Pseudorange Error Statistics)
+ *
+ * Contains position error estimates from the GST NMEA sentence.
+ * Error values are in meters, stored as fixed-point integers.
+ */
+struct nmea_match_gst_data {
+	/** Reserved for internal use */
+	int32_t i32;
+	/** UTC time of associated position fix (HHMMSS format) */
+	uint32_t gst_utc;
+	/** RMS value of standard deviation of range inputs */
+	int64_t rms;
+	/** Standard deviation of semi-major axis of error ellipse (meters) */
+	int64_t sd_major;
+	/** Standard deviation of semi-minor axis of error ellipse (meters) */
+	int64_t sd_minor;
+	/** Orientation of semi-major axis of error ellipse (degrees from true north) */
+	int64_t orient;
+	/** Standard deviation of latitude error (meters) */
+	int64_t lat_err;
+	/** Standard deviation of longitude error (meters) */
+	int64_t lon_err;
+	/** Standard deviation of altitude error (meters) */
+	int64_t alt_err;
+};
+
+/**
+ * @brief Parsed EPU sentence data (HL78xx proprietary position error)
+ *
+ * Contains estimated position and velocity uncertainty from the
+ * HL78xx proprietary PEPU NMEA sentence. All values are in meters
+ * or meters/second, stored as fixed-point integers.
+ */
+struct nmea_match_epu_data {
+	/** 3D position error estimate (meters) */
+	int64_t pos_3d;
+	/** 2D (horizontal) position error estimate (meters) */
+	int64_t pos_2d;
+	/** Latitude position error estimate (meters) */
+	int64_t pos_lat;
+	/** Longitude position error estimate (meters) */
+	int64_t pos_lon;
+	/** Altitude position error estimate (meters) */
+	int64_t pos_alt;
+	/** 3D velocity error estimate (m/s) */
+	int64_t vel_3d;
+	/** 2D (horizontal) velocity error estimate (m/s) */
+	int64_t vel_2d;
+	/** Heading velocity error estimate (m/s) */
+	int64_t vel_hdg;
+	/** East velocity error estimate (m/s) */
+	int64_t vel_east;
+	/** North velocity error estimate (m/s) */
+	int64_t vel_north;
+	/** Up (vertical) velocity error estimate (m/s) */
+	int64_t vel_up;
+};
+
+/**
+ * @brief Container for all GNSS auxiliary NMEA data
+ *
+ * Aggregates parsed data from supplementary NMEA sentences
+ * (GSA, GST, PEPU) that provide quality and accuracy metrics.
+ */
+struct hl78xx_gnss_nmea_aux_data {
+	/** GSA sentence data (DOP and fix type) */
+	struct nmea_match_gsa_data gsa;
+	/** GST sentence data (pseudorange error statistics) */
+	struct nmea_match_gst_data gst;
+	/** EPU sentence data (HL78xx proprietary position/velocity error) */
+	struct nmea_match_epu_data epu;
+};
+
+/** Template for GNSS satellites callback */
+typedef void (*hl78xx_gnss_aux_data_callback_t)(const struct device *dev,
+						const struct hl78xx_gnss_nmea_aux_data *aux_data,
+						uint16_t size);
+
+/** GNSS callback structure */
+struct hl78xx_gnss_aux_data_callback {
+	/** Filter callback to GNSS data from this device if not NULL */
+	const struct device *dev;
+	/** Callback called when GNSS satellites is published */
+	hl78xx_gnss_aux_data_callback_t callback;
+};
+
+/**
+ * @brief Register a callback structure for GNSS auxiliary data published
+ *
+ * @param _dev Device pointer
+ * @param _callback The callback function
+ */
+#define GNSS_AUX_DATA_CALLBACK_DEFINE(_dev, _callback)                                             \
+	static const STRUCT_SECTION_ITERABLE(hl78xx_gnss_aux_data_callback,                        \
+					     _hl78xx_gnss_aux_data_callback__##_callback) = {      \
+		.dev = _dev,                                                                       \
+		.callback = _callback,                                                             \
+	}
+/**
+ * @brief Register a callback structure for GNSS auxiliary data published
+ *
+ * @param _node_id Device tree node identifier
+ * @param _callback The callback function
+ */
+#define GNSS_DT_AUX_DATA_CALLBACK_DEFINE(_node_id, _callback)                                      \
+	static const STRUCT_SECTION_ITERABLE(hl78xx_gnss_aux_data_callback,                        \
+					     _CONCAT_4(_hl78xx_gnss_aux_data_callback_,            \
+						       DT_DEP_ORD(_node_id), _, _callback)) = {    \
+		.dev = DEVICE_DT_GET(_node_id),                                                    \
+		.callback = _callback,                                                             \
+	}
+#else
+/**
+ * @brief Register a callback structure for GNSS auxiliary data published
+ *
+ * @param _dev Device pointer
+ * @param _callback The callback function
+ */
+#define GNSS_AUX_DATA_CALLBACK_DEFINE(_dev, _callback)
+/**
+ * @brief Register a callback structure for GNSS auxiliary data published
+ *
+ * @param _node_id Device tree node identifier
+ * @param _callback The callback function
+ */
+#define GNSS_DT_AUX_DATA_CALLBACK_DEFINE(_node_id, _callback)
+#endif
 /** API for configuring networks */
 typedef int (*hl78xx_api_configure_networks)(const struct device *dev,
 					     const struct hl78xx_network *networks, uint8_t size);
@@ -519,6 +731,69 @@ int hl78xx_start_airvantage_dm_session(const struct device *dev);
 /** Stop a AirVantage Device Management (DM) session. */
 int hl78xx_stop_airvantage_dm_session(const struct device *dev);
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
+
+#ifdef CONFIG_HL78XX_GNSS
+/**
+ * @brief Enter GNSS mode
+ *
+ * Switches modem from LTE mode to GNSS mode. This will:
+ * 1. Put modem in airplane mode (AT+CFUN=4)
+ * 2. Initialize GNSS engine
+ * 3. Fire HL78XX_GNSS_ENGINE_READY event when complete
+ *
+ * After entering GNSS mode, call hl78xx_queue_gnss_search() to start fix acquisition.
+ *
+ * @param dev Pointer to the modem device
+ * @return 0 on success, negative errno on failure
+ */
+int hl78xx_enter_gnss_mode(const struct device *dev);
+
+/**
+ * @brief Exit GNSS mode and return to LTE mode
+ *
+ * Switches modem from GNSS mode back to LTE mode. This will:
+ * 1. Stop any active GNSS search
+ * 2. Restore full phone functionality (AT+CFUN=1)
+ * 3. Modem will re-register to the network
+ *
+ * @param dev Pointer to the modem device
+ * @return 0 on success, -EALREADY if not in GNSS mode, negative errno on failure
+ */
+int hl78xx_exit_gnss_mode(const struct device *dev);
+
+int hl78xx_queue_gnss_search(const struct device *dev);
+
+/**
+ * @brief Set NMEA output port for GNSS
+ *
+ * @param dev Pointer to the GNSS device
+ * @param port NMEA output port configuration
+ * @return 0 on success, -EBUSY if GNSS search is active, negative errno on failure
+ */
+int hl78xx_gnss_set_nmea_output(const struct device *dev, enum nmea_output_port port);
+
+/**
+ * @brief Set GNSS search timeout
+ *
+ * @param dev Pointer to the GNSS device
+ * @param timeout_ms Timeout in milliseconds (0 = no timeout)
+ * @return 0 on success, -EBUSY if GNSS search is active, negative errno on failure
+ */
+int hl78xx_gnss_set_search_timeout(const struct device *dev, uint32_t timeout_ms);
+
+/**
+ * @brief Get the latest known GNSS fix from the modem
+ *
+ * Queries the modem for the last known position using AT+GNSSLOC?
+ * Result is delivered via GNSS data callback.
+ *
+ * @param dev Pointer to the GNSS device
+ * @return 0 on success, -EBUSY if another script is running, other negative errno on failure
+ */
+int hl78xx_gnss_get_latest_known_fix(const struct device *dev);
+
+#endif /* CONFIG_HL78XX_GNSS */
+
 #ifdef __cplusplus
 }
 #endif
