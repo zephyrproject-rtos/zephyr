@@ -46,6 +46,9 @@ BUILD_ASSERT(SHELL_THREAD_PRIORITY >=
 		&& SHELL_THREAD_PRIORITY <= K_LOWEST_APPLICATION_THREAD_PRIO,
 		  "Invalid range for thread priority");
 
+BUILD_ASSERT(CONFIG_SHELL_BYPASS_READ_BUF_SIZE < CONFIG_SHELL_STACK_SIZE,
+		  "Bypass buffer size must be smaller than shell stack size");
+
 static inline void receive_state_change(const struct shell *sh,
 					enum shell_receive_state state)
 {
@@ -990,11 +993,7 @@ static void state_collect(const struct shell *sh)
 		void *bypass_user_data = sh->ctx->bypass_user_data;
 
 		if (bypass) {
-#if defined(CONFIG_SHELL_BACKEND_RTT) && defined(CONFIG_SEGGER_RTT_BUFFER_SIZE_DOWN)
-			uint8_t buf[CONFIG_SEGGER_RTT_BUFFER_SIZE_DOWN];
-#else
-			uint8_t buf[16];
-#endif
+			uint8_t buf[CONFIG_SHELL_BYPASS_READ_BUF_SIZE];
 
 			(void)sh->iface->api->read(sh->iface, buf,
 							sizeof(buf), &count);
