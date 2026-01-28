@@ -945,6 +945,19 @@ static int nvs_startup(struct nvs_fs *fs)
 		}
 
 		fs->data_wra += fs->flash_parameters->write_block_size;
+
+		/*
+		 * If the loop exits because data_wra has caught up with ate_wra,
+		 * this does not indicate an error, but that no erased space
+		 * remains for further data writes in this sector.
+		 *
+		 * In this case, the sector is logically full and will be closed
+		 * by the next write, which will also trigger garbage collection.
+		 *
+		 * Therefore, ensure rc is set to 0 so startup does not fail
+		 * due to the absence of writable space.
+		 */
+		rc = 0;
 	}
 
 	/* If the ate_wra is pointing to the first ate write location in a
