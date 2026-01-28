@@ -2773,6 +2773,7 @@ Filesystems:
   collaborators:
     - Laczen
     - nashif
+    - LingaoM
   files:
     - include/zephyr/fs/
     - samples/subsys/fs/
