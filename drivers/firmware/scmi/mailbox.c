@@ -97,11 +97,6 @@ static int scmi_mbox_setup_chan(const struct device *transport,
 		LOG_ERR("failed to enable tx reply dbell");
 	}
 
-	/* enable interrupt-based communication */
-	scmi_shmem_update_flags(mbox_chan->shmem,
-				SCMI_SHMEM_CHAN_FLAG_IRQ_BIT,
-				SCMI_SHMEM_CHAN_FLAG_IRQ_BIT);
-
 	return 0;
 }
 

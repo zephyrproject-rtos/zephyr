@@ -151,6 +151,8 @@ int scmi_shmem_write_message(const struct device *shmem,
 		return -EINVAL;
 	}
 
+	layout->chan_flags = !use_polling ? SCMI_SHMEM_CHAN_FLAG_IRQ_BIT : 0;
+
 	/* done, mark channel as busy and proceed */
 	layout->chan_status &= ~SCMI_SHMEM_CHAN_STATUS_BUSY_BIT;
 
