@@ -2,11 +2,25 @@
  * Copyright (c) 2025 Ayush Singh, BeagleBoard.org Foundation
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * Here is a table of pins in PocketBeagle 2 header which can be driven by MSPM0L1105
+ *
+ * | MSPM0L1105 Pin | Header Pin |
+ * |++++++++++++++++|++++++++++++|
+ * | PA15           | P2.36      |
+ * | PA16           | P1.02      |
+ * | PA20           | P2.35      |
+ * | PA21           | P1.27      |
+ * | PA22           | P1.25      |
+ * | PA24           | P1.23      |
+ * | PA25           | P1.21      |
+ * | PA26           | P1.19      |
  */
 
 /dts-v1/;
 
 #include <ti/mspm0/l/mspm0l1105.dtsi>
+#include <ti/mspm0/l/mspm0l110x-pinctrl.dtsi>
 
 / {
 	model = "BeagleBoard.org PocketBeagle 2";
@@ -15,6 +29,7 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
 	};
 };
 
@@ -24,4 +39,10 @@
 
 &pinctrl {
 	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_rx_pa26 &uart0_tx_pa25>;
 };
