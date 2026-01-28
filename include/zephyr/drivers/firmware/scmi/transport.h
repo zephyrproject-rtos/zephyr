@@ -112,13 +112,15 @@ struct scmi_transport_api {
 	 * @param transport transport device
 	 * @param chan channel used to send the message
 	 * @param msg message to send
+	 * @param use_polling true if polling should be used, false otherwise
 	 *
 	 * @retval 0 if successful
 	 * @retval <0 negative errno code if failure
 	 */
 	int (*send_message)(const struct device *transport,
 			    struct scmi_channel *chan,
-			    struct scmi_message *msg);
+			    struct scmi_message *msg,
+			    bool use_polling);
 
 	/**
 	 * @brief Prepare a channel for communication
@@ -248,7 +250,8 @@ static inline int scmi_transport_setup_chan(const struct device *transport,
  */
 static inline int scmi_transport_send_message(const struct device *transport,
 					      struct scmi_channel *chan,
-					      struct scmi_message *msg)
+					      struct scmi_message *msg,
+					      bool use_polling)
 {
 	const struct scmi_transport_api *api =
 		(const struct scmi_transport_api *)transport->api;
@@ -257,7 +260,7 @@ static inline int scmi_transport_send_message(const struct device *transport,
 		return -ENOSYS;
 	}
 
-	return api->send_message(transport, chan, msg);
+	return api->send_message(transport, chan, msg, use_polling);
 }
 
 /**
