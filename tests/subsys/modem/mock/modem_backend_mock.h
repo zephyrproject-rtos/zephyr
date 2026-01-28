@@ -38,7 +38,7 @@ struct modem_backend_mock {
 
 	/* Max allowed read/write size */
 	size_t limit;
-	/* Mock Brige pair */
+	/* Mock Bridge pair */
 	struct modem_backend_mock *bridge;
 };
 
