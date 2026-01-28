@@ -4841,6 +4841,15 @@ Settings:
         - subsys/settings/include/settings/settings_zms.h
         - tests/subsys/settings/zms/
         - tests/subsys/settings/functional/zms/
+    - name: NVS backend
+      collaborators:
+        - Laczen
+        - LingaoM
+      files:
+        - subsys/settings/src/settings_nvs.c
+        - subsys/settings/include/settings/settings_nvs.h
+        - tests/subsys/settings/nvs/
+        - tests/subsys/settings/functional/nvs/
   labels:
     - "area: Settings"
   tests:
