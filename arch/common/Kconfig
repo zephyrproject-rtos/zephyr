@@ -79,7 +79,8 @@ config ARM_MPU
 config ARM_PAC_PER_THREAD
 	bool "Set cryptographically secure PAC key per thread"
 	depends on ARM_PAC
-	depends on ENTROPY_DEVICE_RANDOM_GENERATOR || TIMER_RANDOM_GENERATOR
+	select CSPRNG_NEEDED
+	imply TEST_RANDOM_GENERATOR if !CSPRNG_ENABLED
 	help
 	  Select this option to generate and use unique keys per thread to generate Pointer
 	  Authentication Code.
