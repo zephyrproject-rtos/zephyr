@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA, RBR Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: Uninitialised BBRAM-based retained memory area.
+
+compatible: "zephyr,retained-bbram"
+
+include: base.yaml
+
+properties:
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 1
