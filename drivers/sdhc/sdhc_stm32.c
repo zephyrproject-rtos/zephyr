@@ -315,7 +315,7 @@ static int sdhc_stm32_rw_extended(const struct device *dev, struct sdhc_command 
 	config->hsd->block_size = is_block_mode ? data->block_size : 0;
 	dev_data->total_transfer_bytes = data->blocks * data->block_size;
 
-	if (!IS_ENABLED(CONFIG_SDHC_STM32_POLLING_SUPPORT)) {
+	if (IS_ENABLED(CONFIG_SDHC_STM32_DMA_MODE)) {
 		dev_data->sdio_dma_buf = k_aligned_alloc(CONFIG_SDHC_BUFFER_ALIGNMENT,
 							 data->blocks * data->block_size);
 		if (dev_data->sdio_dma_buf == NULL) {
@@ -325,31 +325,31 @@ static int sdhc_stm32_rw_extended(const struct device *dev, struct sdhc_command 
 	}
 
 	if (direction == SDIO_IO_WRITE) {
-		if (IS_ENABLED(CONFIG_SDHC_STM32_POLLING_SUPPORT)) {
-			res = HAL_SDIO_WriteExtended(config->hsd, &arg, data->data,
-						     dev_data->total_transfer_bytes,
-						     data->timeout_ms);
-		} else {
+		if (IS_ENABLED(CONFIG_SDHC_STM32_DMA_MODE)) {
 			memcpy(dev_data->sdio_dma_buf, data->data, dev_data->total_transfer_bytes);
 			sys_cache_data_flush_range(dev_data->sdio_dma_buf,
 						   dev_data->total_transfer_bytes);
 			res = HAL_SDIO_WriteExtended_DMA(config->hsd, &arg, dev_data->sdio_dma_buf,
 							 dev_data->total_transfer_bytes);
+		} else {
+			res = HAL_SDIO_WriteExtended(config->hsd, &arg, data->data,
+						     dev_data->total_transfer_bytes,
+						     data->timeout_ms);
 		}
 	} else {
-		if (IS_ENABLED(CONFIG_SDHC_STM32_POLLING_SUPPORT)) {
-			res = HAL_SDIO_ReadExtended(config->hsd, &arg, data->data,
-						    dev_data->total_transfer_bytes,
-						    data->timeout_ms);
-		} else {
+		if (IS_ENABLED(CONFIG_SDHC_STM32_DMA_MODE)) {
 			sys_cache_data_flush_range(dev_data->sdio_dma_buf,
 						   dev_data->total_transfer_bytes);
 			res = HAL_SDIO_ReadExtended_DMA(config->hsd, &arg, dev_data->sdio_dma_buf,
 							dev_data->total_transfer_bytes);
+		} else {
+			res = HAL_SDIO_ReadExtended(config->hsd, &arg, data->data,
+						    dev_data->total_transfer_bytes,
+						    data->timeout_ms);
 		}
 	}
 
-	if (!IS_ENABLED(CONFIG_SDHC_STM32_POLLING_SUPPORT)) {
+	if (IS_ENABLED(CONFIG_SDHC_STM32_DMA_MODE)) {
 		/* Only wait on semaphore if HAL function succeeded */
 		if (res != HAL_OK) {
 			k_free(dev_data->sdio_dma_buf);
