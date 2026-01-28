@@ -23,7 +23,8 @@ static void scmi_mbox_cb(const struct device *mbox,
 
 static int scmi_mbox_send_message(const struct device *transport,
 				  struct scmi_channel *chan,
-				  struct scmi_message *msg)
+				  struct scmi_message *msg,
+				  bool use_polling)
 {
 	struct scmi_mbox_channel *mbox_chan;
 	int ret;
