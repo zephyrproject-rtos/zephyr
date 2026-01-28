@@ -217,6 +217,15 @@ static void sensor_later_config(void)
 	}
 }
 
+static void sensor_do_poll(void)
+{
+	for_each_sensor(sensor) {
+		if (atomic_test_and_clear_bit(&sensor->flag, SENSOR_POLL_BIT)) {
+			sensor_read_async_mempool(sensor->iodev, &sensing_rtio_ctx, sensor);
+		}
+	}
+}
+
 static void sensing_runtime_thread(void *p1, void *p2, void *p3)
 {
 	struct sensing_context *ctx = p1;
@@ -230,6 +239,9 @@ static void sensing_runtime_thread(void *p1, void *p2, void *p3)
 			if (atomic_test_and_clear_bit(&ctx->event_flag, EVENT_CONFIG_READY)) {
 				LOG_INF("runtime thread triggered by EVENT_CONFIG_READY");
 				sensor_later_config();
+			}
+			if (atomic_test_and_clear_bit(&ctx->event_flag, EVENT_SENSOR_POLL)) {
+				sensor_do_poll();
 			}
 		}
 	} while (1);
@@ -283,9 +295,12 @@ static void sensing_sensor_polling_timer(struct k_timer *timer_id)
 {
 	struct sensing_sensor *sensor = CONTAINER_OF(timer_id,
 			struct sensing_sensor, timer);
+	struct sensing_context *ctx = &sensing_ctx;
 
-	/* TODO: move it into sensing_runtime_thread */
-	sensor_read_async_mempool(sensor->iodev, &sensing_rtio_ctx, sensor);
+	/* Mark this sensor for polling - actual I2C read happens in thread context. */
+	atomic_set_bit(&sensor->flag, SENSOR_POLL_BIT);
+	atomic_set_bit(&ctx->event_flag, EVENT_SENSOR_POLL);
+	k_sem_give(&ctx->event_sem);
 }
 
 static void init_sensor(struct sensing_sensor *sensor)
