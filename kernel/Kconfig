@@ -432,6 +432,13 @@ config CURRENT_THREAD_USE_TLS
 	  Use thread local storage to store the current thread. This avoids a
 	  syscall if userspace is enabled.
 
+config NONZERO_SPINLOCK_SIZE
+	bool "Force spinlock to have non-zero size"
+	help
+	  This option indicates that the spinlock structure must have a
+	  non-zero size (such as if used in an array). It is automatically
+	  selected when using C++.
+
 endmenu
 
 menu "Kernel Debugging and Metrics"

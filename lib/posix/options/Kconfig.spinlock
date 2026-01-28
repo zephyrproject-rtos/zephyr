@@ -4,6 +4,7 @@
 
 menuconfig POSIX_SPIN_LOCKS
 	bool "POSIX spin locks"
+	select NONZERO_SPINLOCK_SIZE
 	help
 	  Select 'y' here to enable POSIX spin locks.
 
