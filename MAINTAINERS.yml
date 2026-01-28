@@ -3204,6 +3204,7 @@ Key-Value Storage Systems:
   collaborators:
     - Laczen
     - nashif
+    - LingaoM
   files:
     - include/zephyr/kvss/
     - samples/subsys/kvss/
