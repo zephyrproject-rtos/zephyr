@@ -354,6 +354,7 @@ struct bt_ots *bt_mcs_get_ots(void);
 /* Temporary forward declaration to avoid circular dependency */
 struct mpl_cmd;
 struct mpl_search;
+struct mpl_cmd_ntf;
 
 /** @brief Callbacks when information about the player is requested via MCS */
 struct bt_mcs_cb {
@@ -686,6 +687,156 @@ int bt_mcs_init(struct bt_ots_cb *ots_cbs);
  * @return 0 if success, errno on failure
  */
 int bt_mcs_register_cb(struct bt_mcs_cb *cbs);
+
+/**
+ * @brief Player name changed callback
+ *
+ * To be called when the player's name is changed.
+ */
+void bt_mcs_player_name_changed(void);
+
+/**
+ * @brief Player icon URL changed callback
+ *
+ * To be called when the player's icon URL is changed.
+ */
+void bt_mcs_icon_url_changed(void);
+
+/**
+ * @brief Track changed callback
+ *
+ * To be called when the player's current track is changed
+ */
+void bt_mcs_track_changed(void);
+
+/**
+ * @brief Track title callback
+ *
+ * To be called when the player's current track is changed
+ */
+void bt_mcs_track_title_changed(void);
+
+/**
+ * @brief Track position callback
+ *
+ * To be called when the media player's position in the track is
+ * changed, or when the player is paused or similar.
+ *
+ * Exception: This callback should not be called when the position
+ * changes during regular playback, i.e. while the player is playing
+ * and playback happens at a constant speed.
+ *
+ * The track position is given in hundredths of a second from the
+ * start of the track.
+ */
+void bt_mcs_track_position_changed(void);
+
+/**
+ * @brief Track duration callback
+ *
+ * To be called when the current track's duration is changed (e.g. due
+ * to a track change)
+ *
+ * The track duration is given in hundredths of a second.
+ */
+void bt_mcs_track_duration_changed(void);
+
+/**
+ * @brief Playback speed callback
+ *
+ * To be called when the playback speed is changed.
+ */
+void bt_mcs_playback_speed_changed(void);
+
+/**
+ * @brief Seeking speed callback
+ *
+ * To be called when the seeking speed is changed.
+ */
+void bt_mcs_seeking_speed_changed(void);
+
+/**
+ * @brief Current track object ID callback
+ *
+ * To be called when the ID of the current track is changed (e.g. due
+ * to a track change).
+ */
+void bt_mcs_current_track_id_changed(void);
+
+/**
+ * @brief Next track object ID callback
+ *
+ * To be called when the ID of the current track is changes
+ */
+void bt_mcs_next_track_id_changed(void);
+
+/**
+ * @brief Parent group object ID callback
+ *
+ * To be called when the ID of the parent group is changed
+ */
+void bt_mcs_parent_group_id_changed(void);
+
+/**
+ * @brief Current group object ID callback
+ *
+ * To be called when the ID of the current group is changed
+ */
+void bt_mcs_current_group_id_changed(void);
+
+/**
+ * @brief Playing order callback
+ *
+ * To be called when the playing order is changed
+ */
+void bt_mcs_playing_order_changed(void);
+
+/**
+ * @brief Media state callback
+ *
+ * To be called when the media state is changed
+ */
+void bt_mcs_media_state_changed(void);
+
+/**
+ * @brief Commands supported callback
+ *
+ * To be called when the set of commands supported is changed
+ */
+void bt_mcs_commands_supported_changed(void);
+
+/**
+ * @brief Search Results object ID callback
+ *
+ * To be called when the ID of the search results is changed
+ * (typically as the result of a new successful search).
+ */
+void bt_mcs_search_results_id_changed(void);
+
+/**
+ * @brief Command callback
+ *
+ * To be called when a command has been sent, to notify whether the
+ * command was successfully performed or not.
+ * See the MEDIA_PROXY_CMD_* result code defines.
+ *
+ * @param cmd_ntf	The result of the command
+ */
+void bt_mcs_command_complete(const struct mpl_cmd_ntf *cmd_ntf);
+
+/**
+ * @brief Search callback
+ *
+ * To be called when a search has been set to notify whether the
+ * search was successfully performed or not.
+ * See the MEDIA_PROXY_SEARCH_* result code defines.
+ *
+ * The actual results of the search, if successful, can be found in
+ * the search results object.
+ *
+ * @param result_code	The result (success or failure) of the search
+ */
+void bt_mcs_search_complete(uint8_t result_code);
 
 #ifdef __cplusplus
 }

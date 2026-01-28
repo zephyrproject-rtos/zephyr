@@ -1269,25 +1269,20 @@ static void do_goto_group(struct mpl_mediaplayer *pl, int32_t groupnum)
 
 static void do_track_change_notifications(struct mpl_mediaplayer *pl)
 {
-	media_proxy_pl_track_changed_cb();
-	media_proxy_pl_track_title_cb(pl->group->track->title);
-	media_proxy_pl_track_duration_cb(pl->group->track->duration);
-	media_proxy_pl_track_position_cb(pl->track_pos);
+	bt_mcs_track_changed();
+	bt_mcs_track_title_changed();
+	bt_mcs_track_duration_changed();
+	bt_mcs_track_position_changed();
 #ifdef CONFIG_BT_MPL_OBJECTS
-	media_proxy_pl_current_track_id_cb(pl->group->track->id);
-	if (pl->group->track->next) {
-		media_proxy_pl_next_track_id_cb(pl->group->track->next->id);
-	} else {
-		/* Send a zero value to indicate that there is no next track */
-		media_proxy_pl_next_track_id_cb(MPL_NO_TRACK_ID);
-	}
+	bt_mcs_current_track_id_changed();
+	bt_mcs_next_track_id_changed();
 #endif /* CONFIG_BT_MPL_OBJECTS */
 }
 
 static void do_group_change_notifications(struct mpl_mediaplayer *pl)
 {
 #ifdef CONFIG_BT_MPL_OBJECTS
-	media_proxy_pl_current_group_id_cb(pl->group->id);
+	bt_mcs_current_group_id_changed();
 #endif /* CONFIG_BT_MPL_OBJECTS */
 }
 
@@ -1352,7 +1347,7 @@ static void mpl_set_state(uint8_t state)
 	}
 
 	media_player.state = state;
-	media_proxy_pl_media_state_cb(media_player.state);
+	bt_mcs_media_state_changed();
 }
 
 /* Command handlers (state machines) */
@@ -1467,13 +1462,13 @@ static uint8_t playing_state_command_handler(const struct mpl_cmd *command)
 		/* We're in playing state, seeking speed must have been zero */
 		media_player.seeking_speed_factor = -MPL_SEEKING_SPEED_FACTOR_STEP;
 		mpl_set_state(MEDIA_PROXY_STATE_SEEKING);
-		media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
+		bt_mcs_seeking_speed_changed();
 		break;
 	case MEDIA_PROXY_OP_FAST_FORWARD:
 		/* We're in playing state, seeking speed must have been zero */
 		media_player.seeking_speed_factor = MPL_SEEKING_SPEED_FACTOR_STEP;
 		mpl_set_state(MEDIA_PROXY_STATE_SEEKING);
-		media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
+		bt_mcs_seeking_speed_changed();
 		break;
 	case MEDIA_PROXY_OP_STOP:
 		set_track_position(0);
@@ -1591,13 +1586,13 @@ static uint8_t paused_state_command_handler(const struct mpl_cmd *command)
 		/* We're in paused state, seeking speed must have been zero */
 		media_player.seeking_speed_factor = -MPL_SEEKING_SPEED_FACTOR_STEP;
 		mpl_set_state(MEDIA_PROXY_STATE_SEEKING);
-		media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
+		bt_mcs_seeking_speed_changed();
 		break;
 	case MEDIA_PROXY_OP_FAST_FORWARD:
 		/* We're in paused state, seeking speed must have been zero */
 		media_player.seeking_speed_factor = MPL_SEEKING_SPEED_FACTOR_STEP;
 		mpl_set_state(MEDIA_PROXY_STATE_SEEKING);
-		media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
+		bt_mcs_seeking_speed_changed();
 		break;
 	case MEDIA_PROXY_OP_STOP:
 		set_track_position(0);
@@ -1732,13 +1727,13 @@ static uint8_t seeking_state_command_handler(const struct mpl_cmd *command)
 	case MEDIA_PROXY_OP_PLAY:
 		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
 		mpl_set_state(MEDIA_PROXY_STATE_PLAYING);
-		media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
+		bt_mcs_seeking_speed_changed();
 		break;
 	case MEDIA_PROXY_OP_PAUSE:
 		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
 		/* TODO: Set track and track position */
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
-		media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
+		bt_mcs_seeking_speed_changed();
 		break;
 	case MEDIA_PROXY_OP_FAST_REWIND:
 		/* TODO: Here, and for FAST_FORWARD */
@@ -1750,7 +1745,7 @@ static uint8_t seeking_state_command_handler(const struct mpl_cmd *command)
 		if (media_player.seeking_speed_factor >= -(MEDIA_PROXY_SEEKING_SPEED_FACTOR_MAX
 						 - MPL_SEEKING_SPEED_FACTOR_STEP)) {
 			media_player.seeking_speed_factor -= MPL_SEEKING_SPEED_FACTOR_STEP;
-			media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
+			bt_mcs_seeking_speed_changed();
 		}
 		break;
 	case MEDIA_PROXY_OP_FAST_FORWARD:
@@ -1758,14 +1753,14 @@ static uint8_t seeking_state_command_handler(const struct mpl_cmd *command)
 		if (media_player.seeking_speed_factor <= (MEDIA_PROXY_SEEKING_SPEED_FACTOR_MAX
 						- MPL_SEEKING_SPEED_FACTOR_STEP)) {
 			media_player.seeking_speed_factor += MPL_SEEKING_SPEED_FACTOR_STEP;
-			media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
+			bt_mcs_seeking_speed_changed();
 		}
 		break;
 	case MEDIA_PROXY_OP_STOP:
 		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
 		set_track_position(0);
 		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
-		media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
+		bt_mcs_seeking_speed_changed();
 		break;
 	case MEDIA_PROXY_OP_MOVE_RELATIVE:
 		if (command->use_param) {
@@ -2028,7 +2023,7 @@ static void set_track_position(int32_t position)
 		 * at a constant speed.
 		 */
 		if (media_player.state != MEDIA_PROXY_STATE_PLAYING) {
-			media_proxy_pl_track_position_cb(new_pos);
+			bt_mcs_track_position_changed();
 		}
 	}
 }
@@ -2099,7 +2094,7 @@ static void set_playback_speed(int8_t speed)
 	/* Set new speed parameter and notify, if different from current */
 	if (speed != media_player.playback_speed_param) {
 		media_player.playback_speed_param = speed;
-		media_proxy_pl_playback_speed_cb(media_player.playback_speed_param);
+		bt_mcs_playback_speed_changed();
 	}
 }
 
@@ -2175,7 +2170,7 @@ static void set_next_track_id(uint64_t id)
 		media_player.next_track_set = true;
 		media_player.next.group = group;
 		media_player.next.track = track;
-		media_proxy_pl_next_track_id_cb(id);
+		bt_mcs_next_track_id_changed();
 		return;
 	}
 
@@ -2225,7 +2220,7 @@ static void set_playing_order(uint8_t order)
 	if (order != media_player.playing_order) {
 		if (BIT(order - 1) & media_player.playing_orders_supported) {
 			media_player.playing_order = order;
-			media_proxy_pl_playing_order_cb(media_player.playing_order);
+			bt_mcs_playing_order_changed();
 		}
 	}
 }
@@ -2254,7 +2249,7 @@ static void send_command(const struct mpl_cmd *command)
 		ntf.requested_opcode = command->opcode;
 		ntf.result_code = command_handlers[media_player.state](command);
 
-		media_proxy_pl_command_cb(&ntf);
+		bt_mcs_command_complete(&ntf);
 	} else {
 		LOG_DBG("INVALID STATE");
 	}
@@ -2311,14 +2306,14 @@ static void parse_search(const struct mpl_search *search)
 
 	if (search_failed) {
 		media_player.search_results_id = 0U;
-		media_proxy_pl_search_cb(MEDIA_PROXY_SEARCH_FAILURE);
+		bt_mcs_search_complete(MEDIA_PROXY_SEARCH_FAILURE);
 	} else {
 		/* Use current group as search result for now */
 		media_player.search_results_id = media_player.group->id;
-		media_proxy_pl_search_cb(MEDIA_PROXY_SEARCH_SUCCESS);
+		bt_mcs_search_complete(MEDIA_PROXY_SEARCH_SUCCESS);
 	}
 
-	media_proxy_pl_search_results_id_cb(media_player.search_results_id);
+	bt_mcs_search_results_id_changed();
 }
 
 static void send_search(const struct mpl_search *search)
@@ -2471,12 +2466,10 @@ int media_proxy_pl_init(void)
 #endif /* CONFIG_BT_MPL_OBJECTS */
 	media_player.calls.get_content_ctrl_id          = get_content_ctrl_id;
 
-	if (IS_ENABLED(CONFIG_BT_MCS)) {
-		ret = bt_mcs_register_cb(&media_player.calls);
-		if (ret < 0) {
-			LOG_ERR("Unable to MCS callbacks");
-			return ret;
-		}
+	ret = bt_mcs_register_cb(&media_player.calls);
+	if (ret < 0) {
+		LOG_ERR("Unable to MCS callbacks");
+		return ret;
 	}
 
 	ret = media_proxy_pl_register(&media_player.calls);
@@ -2591,85 +2584,85 @@ void mpl_test_media_state_set(uint8_t state)
 
 void mpl_test_player_name_changed_cb(void)
 {
-	media_proxy_pl_name_cb(media_player.name);
+	bt_mcs_player_name_changed();
 }
 
 void mpl_test_player_icon_url_changed_cb(void)
 {
-	media_proxy_pl_icon_url_cb(media_player.icon_url);
+	bt_mcs_icon_url_changed();
 }
 
 void mpl_test_track_changed_cb(void)
 {
-	media_proxy_pl_track_changed_cb();
+	bt_mcs_track_changed();
 }
 
 void mpl_test_title_changed_cb(void)
 {
-	media_proxy_pl_track_title_cb(media_player.group->track->title);
+	bt_mcs_track_title_changed();
 }
 
 void mpl_test_duration_changed_cb(void)
 {
-	media_proxy_pl_track_duration_cb(media_player.group->track->duration);
+	bt_mcs_track_position_changed();
 }
 
 void mpl_test_position_changed_cb(void)
 {
-	media_proxy_pl_track_position_cb(media_player.track_pos);
+	bt_mcs_track_position_changed();
 }
 
 void mpl_test_playback_speed_changed_cb(void)
 {
-	media_proxy_pl_playback_speed_cb(media_player.playback_speed_param);
+	bt_mcs_playback_speed_changed();
 }
 
 void mpl_test_seeking_speed_changed_cb(void)
 {
-	media_proxy_pl_seeking_speed_cb(media_player.seeking_speed_factor);
+	bt_mcs_seeking_speed_changed();
 }
 
 #ifdef CONFIG_BT_MPL_OBJECTS
 void mpl_test_current_track_id_changed_cb(void)
 {
-	media_proxy_pl_current_track_id_cb(media_player.group->track->id);
+	bt_mcs_current_track_id_changed();
 }
 
 void mpl_test_next_track_id_changed_cb(void)
 {
-	media_proxy_pl_next_track_id_cb(media_player.group->track->next->id);
+	bt_mcs_next_track_id_changed();
 }
 
 void mpl_test_parent_group_id_changed_cb(void)
 {
-	media_proxy_pl_parent_group_id_cb(media_player.group->id);
+	bt_mcs_parent_group_id_changed();
 }
 
 void mpl_test_current_group_id_changed_cb(void)
 {
-	media_proxy_pl_current_group_id_cb(media_player.group->id);
+	bt_mcs_current_group_id_changed();
 }
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 void mpl_test_playing_order_changed_cb(void)
 {
-	media_proxy_pl_playing_order_cb(media_player.playing_order);
+	bt_mcs_playing_order_changed();
 }
 
 void mpl_test_media_state_changed_cb(void)
 {
-	media_proxy_pl_media_state_cb(media_player.playing_order);
+	bt_mcs_media_state_changed();
 }
 
 void mpl_test_opcodes_supported_changed_cb(void)
 {
-	media_proxy_pl_commands_supported_cb(media_player.opcodes_supported);
+	bt_mcs_commands_supported_changed();
 }
 
 #ifdef CONFIG_BT_MPL_OBJECTS
 void mpl_test_search_results_changed_cb(void)
 {
-	media_proxy_pl_search_cb(media_player.search_results_id);
+	bt_mcs_search_complete(media_player.search_results_id);
 }
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
