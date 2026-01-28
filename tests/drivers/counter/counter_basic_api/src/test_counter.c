@@ -211,6 +211,7 @@ static void counter_setup_instance(const struct device *dev)
 {
 	k_sem_reset(&alarm_cnt_sem);
 	if (!k_is_user_context()) {
+		compiler_barrier();
 		alarm_cnt = 0;
 	}
 }
