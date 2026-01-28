@@ -7,8 +7,8 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
 	default $(dt_node_int_prop_int,/timer,clock-frequency) if ARM_ARCH_TIMER
 
-config FPU
-	default y if CPU_HAS_FPU
+configdefault FPU
+	default y
 
 config CACHE_MANAGEMENT
 	default y
