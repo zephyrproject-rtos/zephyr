@@ -38,6 +38,13 @@ second:
 Sample console interaction
 ==========================
 
+For in-depth description of each shell command, you can run ``wifi --help`` on the shell.
+
+In this shell example, we will scan for available access points and connect to one of them.
+``--key-mgmt`` indicates the security type, where 0 is open, 1 is WPA/WPA2 Personal.
+
+More information can be obtained by running ``wifi connect --help``.
+
 .. code-block:: console
 
    shell> wifi scan
@@ -51,7 +58,7 @@ Sample console interaction
    ----------
    Scan request done
 
-   shell> wifi connect "gksu" 4 SecretStuff
+   shell> wifi connect --ssid "gksu" --key-mgmt 1 --passphrase SecretStuff
    Connection requested
    shell>
    Connected
