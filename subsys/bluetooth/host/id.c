@@ -660,6 +660,11 @@ static void le_update_private_addr(void)
 		return;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER) && adv && adv_enabled) {
+		bt_addr_copy(&adv->random_addr.a, &bt_dev.random_addr.a);
+		adv->random_addr.type = bt_dev.random_addr.type;
+	}
+
 	if (IS_ENABLED(CONFIG_BT_BROADCASTER) &&
 	    IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
