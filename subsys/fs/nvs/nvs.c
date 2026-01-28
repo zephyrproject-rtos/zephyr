@@ -17,7 +17,8 @@
 LOG_MODULE_REGISTER(fs_nvs, CONFIG_NVS_LOG_LEVEL);
 
 static int nvs_prev_ate(struct nvs_fs *fs, uint32_t *addr, struct nvs_ate *ate);
-static int nvs_ate_valid(struct nvs_fs *fs, const struct nvs_ate *entry);
+static int nvs_ate_valid(struct nvs_fs *fs, uint16_t entry_addr,
+			 const struct nvs_ate *entry);
 
 #ifdef CONFIG_NVS_LOOKUP_CACHE
 
@@ -58,7 +59,7 @@ static int nvs_lookup_cache_rebuild(struct nvs_fs *fs)
 		cache_entry = &fs->lookup_cache[nvs_lookup_cache_pos(ate.id)];
 
 		if (ate.id != 0xFFFF && *cache_entry == NVS_LOOKUP_CACHE_NO_ADDR &&
-		    nvs_ate_valid(fs, &ate)) {
+		    nvs_ate_valid(fs, ate_addr, &ate)) {
 			*cache_entry = ate_addr;
 		}
 
@@ -402,16 +403,15 @@ static int nvs_ate_cmp_const(const struct nvs_ate *entry, uint8_t value)
  *     return 1 if crc8, offset and length are valid,
  *            0 otherwise
  */
-static int nvs_ate_valid(struct nvs_fs *fs, const struct nvs_ate *entry)
+static int nvs_ate_valid(struct nvs_fs *fs, uint16_t entry_addr,
+			 const struct nvs_ate *entry)
 {
-	size_t ate_size;
 	uint32_t position;
 
-	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
 	position = entry->offset + entry->len;
 
 	if ((nvs_ate_crc8_check(entry)) ||
-	    (position >= (fs->sector_size - ate_size))) {
+	    (position > (entry_addr & ADDR_OFFS_MASK))) {
 		return 0;
 	}
 
@@ -428,12 +428,13 @@ static int nvs_close_ate_valid(struct nvs_fs *fs, const struct nvs_ate *entry)
 {
 	size_t ate_size;
 
-	if ((!nvs_ate_valid(fs, entry)) || (entry->len != 0U) ||
-	    (entry->id != 0xFFFF)) {
+	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
+
+	if ((!nvs_ate_valid(fs, (fs->sector_size - ate_size), entry)) ||
+	    (entry->len != 0U) || (entry->id != 0xFFFF)) {
 		return 0;
 	}
 
-	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
 	if ((fs->sector_size - entry->offset) % ate_size) {
 		return 0;
 	}
@@ -499,7 +500,7 @@ static int nvs_recover_last_ate(struct nvs_fs *fs, uint32_t *addr)
 		if (rc) {
 			return rc;
 		}
-		if (nvs_ate_valid(fs, &end_ate)) {
+		if (nvs_ate_valid(fs, ate_end_addr, &end_ate)) {
 			/* found a valid ate, update data_end_addr and *addr */
 			data_end_addr &= ADDR_SECT_MASK;
 			data_end_addr += end_ate.offset + end_ate.len;
@@ -669,7 +670,7 @@ static int nvs_gc(struct nvs_fs *fs)
 			return rc;
 		}
 
-		if (!nvs_ate_valid(fs, &gc_ate)) {
+		if (!nvs_ate_valid(fs, gc_prev_addr, &gc_ate)) {
 			continue;
 		}
 
@@ -694,7 +695,7 @@ static int nvs_gc(struct nvs_fs *fs)
 			 * invalid, don't consider these as a match.
 			 */
 			if ((wlk_ate.id == gc_ate.id) &&
-			    (nvs_ate_valid(fs, &wlk_ate))) {
+			    (nvs_ate_valid(fs, wlk_prev_addr, &wlk_ate))) {
 				break;
 			}
 		} while (wlk_addr != fs->ate_wra);
@@ -843,7 +844,7 @@ static int nvs_startup(struct nvs_fs *fs)
 			break;
 		}
 
-		if (nvs_ate_valid(fs, &last_ate)) {
+		if (nvs_ate_valid(fs, fs->ate_wra, &last_ate)) {
 			/* complete write of ate was performed */
 			fs->data_wra = addr & ADDR_SECT_MASK;
 			/* Align the data write address to the current
@@ -892,7 +893,7 @@ static int nvs_startup(struct nvs_fs *fs)
 			if (rc) {
 				goto end;
 			}
-			if (nvs_ate_valid(fs, &gc_done_ate) &&
+			if (nvs_ate_valid(fs, addr, &gc_done_ate) &&
 			    (gc_done_ate.id == 0xffff) &&
 			    (gc_done_ate.len == 0U)) {
 				gc_done_marker = true;
@@ -1114,7 +1115,8 @@ ssize_t nvs_write(struct nvs_fs *fs, uint16_t id, const void *data, size_t len)
 		if (rc) {
 			return rc;
 		}
-		if ((wlk_ate.id == id) && (nvs_ate_valid(fs, &wlk_ate))) {
+		if ((wlk_ate.id == id) &&
+		    (nvs_ate_valid(fs, rd_addr, &wlk_ate))) {
 			prev_found = true;
 			break;
 		}
@@ -1257,7 +1259,8 @@ ssize_t nvs_read_hist(struct nvs_fs *fs, uint16_t id, void *data, size_t len,
 		if (rc) {
 			goto err;
 		}
-		if ((wlk_ate.id == id) &&  (nvs_ate_valid(fs, &wlk_ate))) {
+		if ((wlk_ate.id == id) &&
+		    (nvs_ate_valid(fs, rd_addr, &wlk_ate))) {
 			cnt_his++;
 		}
 		if (wlk_addr == fs->ate_wra) {
@@ -1319,10 +1322,10 @@ ssize_t nvs_read(struct nvs_fs *fs, uint16_t id, void *data, size_t len)
 
 ssize_t nvs_calc_free_space(struct nvs_fs *fs)
 {
-	int rc;
+	uint32_t step_prev_addr, step_addr, wlk_addr;
 	struct nvs_ate step_ate, wlk_ate;
-	uint32_t step_addr, wlk_addr;
 	size_t ate_size, free_space;
+	int rc;
 
 	if (!fs->ready) {
 		LOG_ERR("NVS not initialized");
@@ -1342,6 +1345,7 @@ ssize_t nvs_calc_free_space(struct nvs_fs *fs)
 	step_addr = fs->ate_wra;
 
 	while (1) {
+		step_prev_addr = step_addr;
 		rc = nvs_prev_ate(fs, &step_addr, &step_ate);
 		if (rc) {
 			return rc;
@@ -1360,7 +1364,7 @@ ssize_t nvs_calc_free_space(struct nvs_fs *fs)
 			}
 		}
 
-		if (nvs_ate_valid(fs, &step_ate)) {
+		if (nvs_ate_valid(fs, step_prev_addr, &step_ate)) {
 			/* Take into account the GC done ATE if it is present */
 			if (step_ate.len == 0) {
 				if (step_ate.id == 0xFFFF) {
