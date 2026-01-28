@@ -372,7 +372,7 @@ void z_log_msg_runtime_vcreate(uint8_t domain_id, const void *source,
 	struct log_msg_desc desc =
 		Z_LOG_MSG_DESC_INITIALIZER(domain_id, level, plen, dlen);
 
-	if (IS_ENABLED(CONFIG_USERSPACE) && k_is_user_context()) {
+	if (k_is_user_context()) {
 		pkg = alloca(plen);
 		msg = NULL;
 	} else if (IS_ENABLED(CONFIG_LOG_MODE_DEFERRED) && BACKENDS_IN_USE()) {
@@ -392,7 +392,7 @@ void z_log_msg_runtime_vcreate(uint8_t domain_id, const void *source,
 		__ASSERT_NO_MSG(plen >= 0);
 	}
 
-	if (IS_ENABLED(CONFIG_USERSPACE) && k_is_user_context()) {
+	if (k_is_user_context()) {
 		z_log_msg_static_create(source, desc, pkg, data);
 	} else {
 		if (IS_ENABLED(CONFIG_LOG_FRONTEND) &&
