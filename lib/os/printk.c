@@ -124,6 +124,7 @@ void vprintk(const char *fmt, va_list ap)
 			buf_flush(&ctx);
 		}
 	} else {
+		compiler_barrier();
 #ifdef CONFIG_PRINTK_SYNC
 		k_spinlock_key_t key = k_spin_lock(&lock);
 #endif
