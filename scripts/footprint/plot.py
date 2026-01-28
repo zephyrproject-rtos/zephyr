@@ -103,6 +103,7 @@ def main():
         skip_invalid=True,
     )
     fig.update_layout(margin={'t': 0, 'l': 0, 'r': 0, 'b': 0})
+    fig.update_traces(textfont=dict(size=24))
 
     if args.html:
         fig.write_html(args.html, auto_open=False)
