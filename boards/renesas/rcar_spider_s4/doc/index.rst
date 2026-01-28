@@ -4,8 +4,8 @@ Overview
 ********
 
 R-Car S4 Spider board is based on the R-Car S4 SoC made for Car
-Server/Communication Gateway and that is composed of a octo Cortex |reg|-A55, a
-dual lockstep Cortex |reg|-R52 and a double dual lockstep G4MH.
+Server/Communication Gateway and that is composed of a octo Cortex®-A55, a
+dual lockstep Cortex®-R52 and a double dual lockstep G4MH.
 
 The R-Car S4 SoC enables the launch of Car Server/CoGW with high performance,
 high-speed networking, high security and high functional safety levels that are
@@ -19,7 +19,7 @@ basic software such as Linux BSP and hypervisors.
 The Renesas R-Car Spider board is the Renesas R-Car S4 reference board and is designed for
 evaluating features and performance of this SoC.
 
-Zephyr OS support is available for both Cortex |reg|-A cores & Cortex |reg|-R52 core.
+Zephyr OS support is available for both Cortex®-A cores & Cortex®-R52 core.
 
 More information about the S4 SoC can be found at `Renesas R-Car S4 chip`_.
 

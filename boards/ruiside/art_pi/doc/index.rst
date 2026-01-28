@@ -34,7 +34,7 @@ Hardware
 ART-Pi provides the following hardware components:
 
 The STM32H750xx devices are a high-performance microcontrollers family (STM32H7
-Series) based on the high-performance Arm |reg| Cortex |reg|-M7 32-bit RISC core.
+Series) based on the high-performance Arm® Cortex®-M7 32-bit RISC core.
 They operate at a frequency of up to 480 MHz.
 
 More information about STM32H750xx can be found here:

@@ -369,7 +369,7 @@ Boards & SoC Support
   * Added support for STM32H7R/S SoC series.
   * Added support for NXP mke15z7, mke17z7, mke17z9, MCXNx4x, RW61x
   * Added support for Analog Devices MAX32 SoC series.
-  * Added support for Infineon Technologies AIROC |trade| CYW20829 Bluetooth LE SoC series.
+  * Added support for Infineon Technologies AIROC™ CYW20829 Bluetooth LE SoC series.
   * Added support for MediaTek MT8195 Audio DSPs
   * Added support for Nuvoton Numaker M2L31X SoC series.
   * Added support for the Microchip PolarFire ICICLE Kit SMP variant.

@@ -518,7 +518,7 @@ see the following message in the terminal:
    ***** Booting Zephyr OS build v4.1.0 *****
    Hello World! max32657evkit/max32657
 
-Building and flashing secure/non-secure with Arm |reg| TrustZone |reg|
+Building and flashing secure/non-secure with Arm® TrustZone®
 ----------------------------------------------------------------------
 The TF-M integration samples can be run using the
 ``max32657evkit/max32657/ns`` board target. To run we need to manually flash

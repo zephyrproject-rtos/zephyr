@@ -3,23 +3,23 @@
 Overview
 ********
 
-The Texas Instruments CC1352P LaunchPad |trade| (LAUNCHXL-CC1352P1) is a
-development kit for the SimpleLink |trade| multi-Standard CC1352P wireless MCU.
+The Texas Instruments CC1352P LaunchPad™ (LAUNCHXL-CC1352P1) is a
+development kit for the SimpleLink™ multi-Standard CC1352P wireless MCU.
 
 See the `TI CC1352P LaunchPad Product Page`_ for details.
 
 Hardware
 ********
 
-The CC1352P LaunchPad |trade| development kit features the CC1352P wireless MCU.
+The CC1352P LaunchPad™ development kit features the CC1352P wireless MCU.
 The board is equipped with two LEDs, two push buttons, antenna switch and
 BoosterPack connectors for expansion. It also includes an integrated (XDS110)
 debugger.
 
-The CC1352P wireless MCU has a 48 MHz Arm |reg| Cortex |reg|-M4F SoC and an
+The CC1352P wireless MCU has a 48 MHz Arm® Cortex®-M4F SoC and an
 integrated sub-1GHz and 2.4 GHz transceiver with integrated 20dBm power amplifier
-(PA) supporting multiple protocols including Bluetooth |reg| Low Energy and IEEE
-|reg| 802.15.4.
+(PA) supporting multiple protocols including Bluetooth® Low Energy and IEEE®
+802.15.4.
 
 See the `TI CC1352P Product Page`_ for additional details.
 

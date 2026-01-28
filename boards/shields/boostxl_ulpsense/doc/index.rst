@@ -7,7 +7,7 @@ Overview
 ********
 
 The Ultra-low Power Sensor BoosterPack (BOOSTXL-ULPSENSE) adds analog and
-digital sensors to a TI LaunchPad |trade| development kit. The plug-in module
+digital sensors to a TI LaunchPad™ development kit. The plug-in module
 features inductive flow meter measurement circuits, two capacitive touch
 buttons, a light sensor, a reed switch, and an ultra-low power accelerometer.
 
@@ -17,7 +17,7 @@ More information about the board can be found at the
 Requirements
 ************
 
-This shield can be used with any TI LaunchPad |trade| development kit with
+This shield can be used with any TI LaunchPad™ development kit with
 BoosterPack connectors.
 
 Programming

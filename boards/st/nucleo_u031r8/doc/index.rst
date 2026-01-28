@@ -22,9 +22,9 @@ board:
 
   - USB VBUS or external source(3.3V, 5V, 7 - 12V)
 
-- User LED shared with ARDUINO |reg| Uno V3
+- User LED shared with ARDUINO® Uno V3
 - Two push-buttons: USER and RESET
-- USB Type-C |reg| connector for the ST-LINK
+- USB Type-C® connector for the ST-LINK
 
 More information about the board can be found at the `NUCLEO_U031R8 website`_.
 
@@ -32,7 +32,7 @@ Hardware
 ********
 
 The STM32U031x4/6/8 devices are an ultra-low-power microcontrollers family (STM32U0
-Series) based on the high-performance Arm |reg| Cortex |reg|-M0+ 32-bit RISC core.
+Series) based on the high-performance Arm® Cortex®-M0+ 32-bit RISC core.
 They operate at a frequency of up to 56 MHz.
 
 - Includes ST state-of-the-art patented technology
@@ -52,7 +52,7 @@ They operate at a frequency of up to 56 MHz.
 
 - Core:
 
-  - 32-bit Arm |reg| Cortex |reg|-M0+ CPU, frequency up to 56 MHz
+  - 32-bit Arm® Cortex®-M0+ CPU, frequency up to 56 MHz
 
 - ART Accelerator:
 
@@ -61,7 +61,7 @@ They operate at a frequency of up to 56 MHz.
 - Benchmarks:
 
   - 1.13 DMIPS/MHz (Drystone 2.1)
-  - 134 CoreMark |reg| (2.4 CoreMark/MHz at 56 MHz)
+  - 134 CoreMark® (2.4 CoreMark/MHz at 56 MHz)
   - 430 ULPMark™-CP
   - 167 ULPMark™-PP
   - 20.3 ULPMark™-CM
@@ -93,7 +93,7 @@ They operate at a frequency of up to 56 MHz.
   - Hardware protection feature (HDP)
   - Secure boot
   - True random number generation, candidate for NIST SP 800-90B certification
-  - Candidate for Arm |reg| PSA level 1 and SESIP level 3 certifications
+  - Candidate for Arm® PSA level 1 and SESIP level 3 certifications
   - 5 passive anti-tamper pins
   - 96-bit unique ID
 

@@ -25,7 +25,7 @@ Hardware
 96Boards Nitrogen provides the following hardware components:
 
 - nRF52832 microcontroller with 512kB Flash, 64kB RAM
-- ARM |reg| 32-bit Cortex |reg|-M4 CPU with FPU
+- ARM® 32-bit Cortex®-M4 CPU with FPU
 - Bluetooth LE
 - NFC
 - LPC11U35 on board SWD debugger

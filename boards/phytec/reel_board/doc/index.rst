@@ -24,9 +24,9 @@ Zephyr OS in these kinds of use cases:
 * product, name or price tag
 * interactive badge for meetings and conferences
 
-The board provides support for the Nordic Semiconductor nRF52840 ARM |reg|
-Cortex |reg|-M4F SoC with an integrated 2.4 GHz transceiver supporting Bluetooth
-|reg| Low Energy and IEEE |reg| 802.15.4.
+The board provides support for the Nordic Semiconductor nRF52840 ARM®
+Cortex®-M4F SoC with an integrated 2.4 GHz transceiver supporting Bluetooth®
+Low Energy and IEEE® 802.15.4.
 
 The schematic can be found on the `reel board website`_.
 
