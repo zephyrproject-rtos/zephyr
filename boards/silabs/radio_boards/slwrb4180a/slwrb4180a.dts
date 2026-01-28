@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <silabs/xg21/efr32mg21a020f1024im32.dtsi>
 #include <zephyr/dt-bindings/adc/silabs-adc.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "slwrb4180a-pinctrl.dtsi"
 
@@ -28,6 +29,7 @@
 	aliases {
 		led0 = &led0;
 		led1 = &led1;
+		pwm-led0 = &pwm_led0;
 		sw0 = &button0;
 		sw1 = &button1;
 		watchdog0 = &wdog0;
@@ -45,6 +47,15 @@
 		led1: led_1 {
 			gpios = <&gpiob 1 0>;
 			label = "LED 1";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led_0 {
+			label = "PWM LED0";
+			pwms = <&timer0_pwm 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 	};
 
@@ -263,5 +274,15 @@
 			reg = <0x000f8000 DT_SIZE_K(32)>;
 			label = "storage";
 		};
+	};
+};
+
+&timer0 {
+	status = "okay";
+
+	timer0_pwm: pwm {
+		pinctrl-0 = <&timer0_pwm_default>;
+		pinctrl-names = "default";
+		status = "okay";
 	};
 };
