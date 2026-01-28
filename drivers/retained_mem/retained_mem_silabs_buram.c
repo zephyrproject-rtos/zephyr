@@ -63,7 +63,12 @@ static int silabs_buram_init(const struct device *dev)
 #ifdef CONFIG_RETAINED_MEM_MUTEXES
 	struct silabs_buram_data *data = dev->data;
 
-	k_mutex_init(&data->lock);
+	err = k_mutex_init(&data->lock);
+	if (err < 0) {
+		return err;
+	}
+#else
+	ARG_UNUSED(dev);
 #endif
 
 	if (!config->clock_dev) {
