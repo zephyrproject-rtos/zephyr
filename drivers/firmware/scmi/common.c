@@ -65,7 +65,7 @@ int scmi_protocol_get_version(struct scmi_protocol *proto, uint32_t *version)
 	reply.len = sizeof(reply_buffer);
 	reply.content = &reply_buffer;
 
-	ret = scmi_send_message(proto, &msg, &reply, k_is_pre_kernel());
+	ret = scmi_send_message(proto, &msg, &reply, false);
 	if (ret < 0) {
 		return ret;
 	}
@@ -94,7 +94,7 @@ int scmi_protocol_attributes_get(struct scmi_protocol *proto, uint32_t *attribut
 	reply.len = sizeof(reply_buffer);
 	reply.content = &reply_buffer;
 
-	ret = scmi_send_message(proto, &msg, &reply, k_is_pre_kernel());
+	ret = scmi_send_message(proto, &msg, &reply, false);
 	if (ret < 0) {
 		return ret;
 	}
@@ -153,7 +153,7 @@ int scmi_protocol_version_negotiate(struct scmi_protocol *proto, uint32_t versio
 	reply.len = sizeof(status);
 	reply.content = &status;
 
-	ret = scmi_send_message(proto, &msg, &reply, k_is_pre_kernel());
+	ret = scmi_send_message(proto, &msg, &reply, false);
 	if (ret < 0) {
 		return ret;
 	}
