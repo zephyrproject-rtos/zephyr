@@ -65,7 +65,13 @@ int hl78xx_run_fota_script_install_accept_async(struct hl78xx_data *data);
 /* Async runners for init/periodic scripts */
 int hl78xx_run_init_script_async(struct hl78xx_data *data);
 int hl78xx_run_periodic_script_async(struct hl78xx_data *data);
-
+int hl78xx_run_cfun_query_script_async(struct hl78xx_data *data);
+#ifdef CONFIG_HL78XX_GNSS
+int hl78xx_run_gnss_init_chat_script_async(struct hl78xx_data *data);
+int hl78xx_run_gnss_stop_search_chat_script(struct hl78xx_data *data);
+int hl78xx_run_gnss_terminate_nmea_chat_script(struct hl78xx_data *data);
+int hl78xx_run_gnss_gnssloc_script(struct hl78xx_data *data);
+#endif /* CONFIG_HL78XX_GNSS */
 /* Getter for ksrat match (moved into chat TU) */
 const struct modem_chat_match *hl78xx_get_ksrat_match(void);
 
@@ -80,5 +86,12 @@ const struct modem_chat_match *hl78xx_get_ktcpind_match(void);
 const struct modem_chat_match *hl78xx_get_ktcpcfg_match(void);
 const struct modem_chat_match *hl78xx_get_cgdcontrdp_match(void);
 const struct modem_chat_match *hl78xx_get_ktcp_state_match(void);
+#ifdef CONFIG_HL78XX_GNSS
+/* GNSS-related chat matches used by the GNSS TU */
+const struct modem_chat_match *hl78xx_get_gnssnmea_match(void);
+const struct modem_chat_match *hl78xx_get_gnssconf_enabledsys_match(void);
+const struct modem_chat_match *hl78xx_get_gnssconf_enabledfilter_match(void);
+
+#endif /* CONFIG_HL78XX_GNSS */
 
 #endif /* ZEPHYR_DRIVERS_MODEM_HL78XX_HL78XX_CHAT_H_ */

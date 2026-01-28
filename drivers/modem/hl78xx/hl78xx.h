@@ -38,6 +38,18 @@
 #define MDM_DNS_ADD_TIMEOUT                  (100) /*K_MSEC*/
 #define MODEM_HL78XX_PERIODIC_SCRIPT_TIMEOUT K_MSEC(CONFIG_MODEM_HL78XX_PERIODIC_SCRIPT_MS)
 
+#ifdef CONFIG_HL78XX_GNSS
+/**
+ * GNSS $PSGSA sentence comes with more arguments
+ * So we need a larger argv buffer
+ * see some discussion about this:
+ * https://forum.sierrawireless.com/t/clarification-on-proprietary-nmea-sentence-hl7812-5-5-14-0/34478
+ */
+#define MDM_CHAT_ARGV_BUFFER_SIZE 40
+#else
+#define MDM_CHAT_ARGV_BUFFER_SIZE 32
+#endif /* CONFIG_HL78XX_GNSS */
+
 #define MDM_MAX_DATA_LENGTH CONFIG_MODEM_HL78XX_UART_BUFFER_SIZES
 
 #define MDM_MAX_SOCKETS           CONFIG_MODEM_HL78XX_NUM_SOCKETS
@@ -155,6 +167,10 @@ enum hl78xx_state {
 	 * CFUN=4
 	 */
 	MODEM_HL78XX_STATE_AIRPLANE,
+#ifdef CONFIG_HL78XX_GNSS
+	MODEM_HL78XX_STATE_RUN_GNSS_INIT_SCRIPT,
+	MODEM_HL78XX_STATE_GNSS_SEARCH_STARTED,
+#endif /* CONFIG_HL78XX_GNSS */
 	MODEM_HL78XX_STATE_INIT_POWER_OFF,
 	MODEM_HL78XX_STATE_POWER_OFF_PULSE,
 	MODEM_HL78XX_STATE_AWAIT_POWER_OFF,
@@ -174,6 +190,19 @@ enum hl78xx_event {
 	/* Modem unexpected restart event */
 	MODEM_HL78XX_EVENT_MDM_RESTART,
 	MODEM_HL78XX_EVENT_SOCKET_READY,
+	MODEM_HL78XX_EVENT_PHONE_FUNCTIONALITY_CHANGED,
+#ifdef CONFIG_HL78XX_GNSS
+	MODEM_HL78XX_EVENT_GNSS_START_REQUESTED,
+	MODEM_HL78XX_EVENT_GNSS_SEARCH_STARTED,
+	MODEM_HL78XX_EVENT_GNSS_SEARCH_STARTED_FAILED,
+	MODEM_HL78XX_EVENT_GNSS_FIX_ACQUIRED,
+	MODEM_HL78XX_EVENT_GNSS_FIX_LOST,
+	MODEM_HL78XX_EVENT_GNSS_STOP_REQUESTED,
+	MODEM_HL78XX_EVENT_GNSS_STOPPED,
+	/* Explicit GNSS mode switching events */
+	MODEM_HL78XX_EVENT_GNSS_MODE_ENTER_REQUESTED,
+	MODEM_HL78XX_EVENT_GNSS_MODE_EXIT_REQUESTED,
+#endif /* CONFIG_HL78XX_GNSS */
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 
 	/* WDSI FOTA events */
@@ -270,7 +299,7 @@ struct modem_buffers {
 	size_t cmd_len;
 	uint8_t *delimiter;
 	uint8_t *filter;
-	uint8_t *argv[32];
+	uint8_t *argv[MDM_CHAT_ARGV_BUFFER_SIZE];
 	uint8_t *eof_pattern;
 	uint8_t eof_pattern_size;
 	uint8_t *termination_pattern;
@@ -761,5 +790,18 @@ void notif_carrier_on(const struct device *dev);
  * @return int Description of return value.
  */
 int check_if_any_socket_connected(const struct device *dev);
+
+/**
+ * @brief Schedule a work to generate MODEM_HL78XX_EVENT_TIMEOUT
+ * @param data pointer to hl78xx_data.
+ * @param timeout the time to wait before submitting the work item.
+ *
+ */
+void hl78xx_start_timer(struct hl78xx_data *data, k_timeout_t timeout);
+/**
+ * @brief Dispatch an event
+ * @param notif event information.
+ */
+void event_dispatcher_dispatch(struct hl78xx_evt *notif);
 
 #endif /* HL78XX_H */

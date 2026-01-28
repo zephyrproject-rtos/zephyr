@@ -18,6 +18,12 @@ zephyr_library_sources_ifdef(
     hl78xx_at_shell.c
 )
 
+zephyr_library_sources_ifdef(
+    CONFIG_HL78XX_GNSS
+    hl78xx_gnss.c
+    hl78xx_gnss_parsers.c
+)
+
 add_subdirectory_ifdef(CONFIG_HL78XX_EVT_MONITOR hl78xx_evt_monitor)
 
 zephyr_library_include_directories(
@@ -31,3 +37,8 @@ zephyr_library_include_directories_ifdef(
   CONFIG_NET_SOCKETS_SOCKOPT_TLS
   ${ZEPHYR_BASE}/subsys/net/lib/tls_credentials
 )
+
+if(CONFIG_HL78XX_GNSS_AUX_DATA_PARSER)
+  zephyr_iterable_section(NAME hl78xx_gnss_data_callback KVMA RAM_REGION GROUP RODATA_REGION)
+  zephyr_linker_sources(SECTIONS gnss_linker.ld)
+endif()
