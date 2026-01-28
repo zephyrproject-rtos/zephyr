@@ -19,9 +19,6 @@ config LV_USE_DRAW_DMA2D
 config STM32_LTDC_FB_NUM
 	default 2
 
-config LV_Z_VDB_SIZE
-	default 100
-
 config LV_Z_DOUBLE_VDB
 	default y
 
