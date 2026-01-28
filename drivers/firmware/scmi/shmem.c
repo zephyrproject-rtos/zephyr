@@ -110,7 +110,9 @@ int scmi_shmem_read_message(const struct device *shmem, struct scmi_message *msg
 	return 0;
 }
 
-int scmi_shmem_write_message(const struct device *shmem, struct scmi_message *msg)
+int scmi_shmem_write_message(const struct device *shmem,
+			     struct scmi_message *msg,
+			     bool use_polling)
 {
 	struct scmi_shmem_layout *layout;
 	struct scmi_shmem_data *data;
