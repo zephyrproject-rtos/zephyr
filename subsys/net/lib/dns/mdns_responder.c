@@ -259,12 +259,12 @@ static void setup_dns_hdr(uint8_t *buf, uint16_t answers)
 	flags = BIT(15);  /* This is response */
 	flags |= BIT(10); /* Authoritative Answer */
 
-	UNALIGNED_PUT(0, &hdr->id); /* Identifier, RFC 6762 ch 18.1 */
-	UNALIGNED_PUT(net_htons(flags), &hdr->flags);
-	UNALIGNED_PUT(0, &hdr->qdcount);
-	UNALIGNED_PUT(net_htons(answers), &hdr->ancount);
-	UNALIGNED_PUT(0, &hdr->nscount);
-	UNALIGNED_PUT(0, &hdr->arcount);
+	UNALIGNED_PUT(0, UNALIGNED_MEMBER_ADDR(hdr, id)); /* Identifier, RFC 6762 ch 18.1 */
+	UNALIGNED_PUT(net_htons(flags), UNALIGNED_MEMBER_ADDR(hdr, flags));
+	UNALIGNED_PUT(0, UNALIGNED_MEMBER_ADDR(hdr, qdcount));
+	UNALIGNED_PUT(net_htons(answers), UNALIGNED_MEMBER_ADDR(hdr, ancount));
+	UNALIGNED_PUT(0, UNALIGNED_MEMBER_ADDR(hdr, nscount));
+	UNALIGNED_PUT(0, UNALIGNED_MEMBER_ADDR(hdr, arcount));
 }
 
 static int init_name_labels(struct net_buf *query)
