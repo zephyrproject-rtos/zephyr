@@ -21,7 +21,7 @@ interface and a high-speed `ATA6563`_ CAN transceiver.
 More information about the shield can be found at
 `Mikroe MCP2517FD click`_.
 
-.. figure:: mcp2517fd_click.webp
+.. figure:: mikroe_mcp2517fd_click.webp
    :align: center
    :alt: MikroElektronika MCP2517FD Click
 
@@ -41,7 +41,7 @@ interface and a high-speed `ATA6563`_ CAN transceiver.
 More information about the shield can be found at
 `Mikroe MCP2518FD click`_.
 
-.. figure:: mcp2518fd_click.webp
+.. figure:: mikroe_mcp2518fd_click.webp
    :align: center
    :alt: MikroElektronika MCP2518FD Click
 
@@ -63,7 +63,7 @@ CAN FD controller.
 More information about the shield can be found at
 `Mikroe MCP251863 click`_.
 
-.. figure:: mcp251863_click.webp
+.. figure:: mikroe_mcp251863_click.webp
    :align: center
    :alt: MikroElektronika MCP251863 Click
 
