@@ -10,7 +10,9 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/lc3.h>
@@ -973,6 +975,113 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_meta_get_broadcast_name)
 	zassert_mem_equal(expected_data, broadcast_name, ARRAY_SIZE(expected_data));
 }
 
+static ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_meta_get_broadcast_name_utf8)
+{
+	const uint8_t type = BT_AUDIO_METADATA_TYPE_BROADCAST_NAME;
+	const uint8_t expected_data[] = "ᛒᛒᛒᛒ";
+
+	struct bt_audio_codec_cfg codec_cfg =
+		BT_AUDIO_CODEC_CFG(BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000, {}, {});
+	const uint8_t *broadcast_name;
+	int ret;
+
+	codec_cfg.meta[0] = sizeof(type) + strlen(expected_data);
+	codec_cfg.meta[1] = type;
+	memcpy(&codec_cfg.meta[2], expected_data, strlen(expected_data));
+	/* meta_len is the length of the name LTV + the size of the length field */
+	codec_cfg.meta_len = sizeof(codec_cfg.meta[0]) + codec_cfg.meta[0];
+
+	ret = bt_audio_codec_cfg_meta_get_broadcast_name(&codec_cfg, &broadcast_name);
+	zassert_equal(ret, strlen(expected_data), "Unexpected return value %d != %zu", ret,
+		      strlen(expected_data));
+	zassert_mem_equal(expected_data, broadcast_name, strlen(expected_data));
+}
+
+static ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_meta_get_broadcast_name_inval_min_len)
+{
+	struct bt_audio_codec_cfg codec_cfg = BT_AUDIO_CODEC_CFG(
+		BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000, {},
+		{BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_BROADCAST_NAME, 'b', 'a', 'd')});
+	const uint8_t *broadcast_name;
+	int ret;
+
+	ret = bt_audio_codec_cfg_meta_get_broadcast_name(&codec_cfg, &broadcast_name);
+	zassert_equal(ret, -EBADMSG, "Unexpected return value %d", ret);
+}
+
+static ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_meta_get_broadcast_name_inval_max_len)
+{
+	struct bt_audio_codec_cfg codec_cfg = BT_AUDIO_CODEC_CFG(
+		BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000, {},
+		{BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_BROADCAST_NAME, 'T', 'h', 'i', 's', ' ',
+				     'i', 's', ' ', 'a', ' ', 'v', 'e', 'r', 'y', ' ', 'l', 'o',
+				     'n', 'g', ' ', 's', 't', 'r', 'i', 'n', 'g', ' ', 't', 'o',
+				     ' ', 'r', 'e', 't', 'u', 'r', 'n', ' ', 'e', 'r', 'r', 'o',
+				     'r')});
+	const uint8_t *broadcast_name;
+	int ret;
+
+	ret = bt_audio_codec_cfg_meta_get_broadcast_name(&codec_cfg, &broadcast_name);
+	zassert_equal(ret, -EBADMSG, "Unexpected return value %d", ret);
+}
+
+static ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_meta_get_broadcast_name_inval_utf8)
+{
+	struct bt_audio_codec_cfg codec_cfg =
+		BT_AUDIO_CODEC_CFG(BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000, {},
+				   {BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_BROADCAST_NAME, 0x80,
+							0x80, 0x80, 0x80, 0x80)});
+	const uint8_t *broadcast_name;
+	int ret;
+
+	ret = bt_audio_codec_cfg_meta_get_broadcast_name(&codec_cfg, &broadcast_name);
+	zassert_equal(ret, -EBADMSG, "Unexpected return value %d", ret);
+}
+
+static ZTEST(audio_codec_test_suite,
+	     test_bt_audio_codec_cfg_meta_get_broadcast_name_inval_char_cnt_min)
+{
+	const uint8_t type = BT_AUDIO_METADATA_TYPE_BROADCAST_NAME;
+	const uint8_t bad_name[] = "ᛒᛒ"; /* 2 3-octet characters */
+
+	/* 2 4-octet characters */
+	struct bt_audio_codec_cfg codec_cfg =
+		BT_AUDIO_CODEC_CFG(BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000, {}, {});
+	const uint8_t *broadcast_name;
+	int ret;
+
+	codec_cfg.meta[0] = sizeof(type) + strlen(bad_name);
+	codec_cfg.meta[1] = type;
+	memcpy(&codec_cfg.meta[2], bad_name, strlen(bad_name));
+	/* meta_len is the length of the name LTV + the size of the length field */
+	codec_cfg.meta_len = sizeof(codec_cfg.meta[0]) + codec_cfg.meta[0];
+
+	ret = bt_audio_codec_cfg_meta_get_broadcast_name(&codec_cfg, &broadcast_name);
+	zassert_equal(ret, -EBADMSG, "Unexpected return value %d", ret);
+}
+
+static ZTEST(audio_codec_test_suite,
+	     test_bt_audio_codec_cfg_meta_get_broadcast_name_inval_char_cnt_max)
+{
+	const uint8_t type = BT_AUDIO_METADATA_TYPE_BROADCAST_NAME;
+	/* 33 3-octet characters */
+	const uint8_t bad_name[] = "ᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒ";
+
+	struct bt_audio_codec_cfg codec_cfg =
+		BT_AUDIO_CODEC_CFG(BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000, {}, {});
+	const uint8_t *broadcast_name;
+	int ret;
+
+	codec_cfg.meta[0] = sizeof(type) + strlen(bad_name);
+	codec_cfg.meta[1] = type;
+	memcpy(&codec_cfg.meta[2], bad_name, strlen(bad_name));
+	/* meta_len is the length of the name LTV + the size of the length field */
+	codec_cfg.meta_len = sizeof(codec_cfg.meta[0]) + codec_cfg.meta[0];
+
+	ret = bt_audio_codec_cfg_meta_get_broadcast_name(&codec_cfg, &broadcast_name);
+	zassert_equal(ret, -EBADMSG, "Unexpected return value %d", ret);
+}
+
 ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_meta_set_broadcast_name)
 {
 	const uint8_t expected_data[] = {'m', 'y', ' ', 'b', 'c', 'a', 's', 't'};
@@ -995,6 +1104,106 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_meta_set_broadcast_name)
 	ret = bt_audio_codec_cfg_meta_get_broadcast_name(&codec_cfg, &broadcast_name);
 	zassert_equal(ret, ARRAY_SIZE(new_expected_data), "Unexpected return value %d", ret);
 	zassert_mem_equal(new_expected_data, broadcast_name, ARRAY_SIZE(new_expected_data));
+}
+
+static ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_meta_set_broadcast_name_utf8)
+{
+	const uint8_t expected_data[] = {'m', 'y', ' ', 'b', 'c', 'a', 's', 't'};
+	const uint8_t new_expected_data[] = "ᛒᛒᛒᛒ";
+	struct bt_audio_codec_cfg codec_cfg =
+		BT_AUDIO_CODEC_CFG(BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000, {},
+				   {BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_BROADCAST_NAME, 'm',
+							'y', ' ', 'b', 'c', 'a', 's', 't')});
+	const uint8_t *broadcast_name;
+	int ret;
+
+	ret = bt_audio_codec_cfg_meta_get_broadcast_name(&codec_cfg, &broadcast_name);
+	zassert_equal(ret, ARRAY_SIZE(expected_data), "Unexpected return value %d", ret);
+	zassert_mem_equal(expected_data, broadcast_name, ARRAY_SIZE(expected_data));
+
+	ret = bt_audio_codec_cfg_meta_set_broadcast_name(&codec_cfg, new_expected_data,
+							 strlen(new_expected_data));
+	zassert_true(ret > 0, "Unexpected return value %d", ret);
+
+	ret = bt_audio_codec_cfg_meta_get_broadcast_name(&codec_cfg, &broadcast_name);
+	zassert_equal(ret, strlen(new_expected_data), "Unexpected return value %d", ret);
+	zassert_mem_equal(new_expected_data, broadcast_name, strlen(new_expected_data));
+}
+
+static ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_meta_set_broadcast_name_inval_min_len)
+{
+	const uint8_t new_data[] = {'n', 'e', 'w'};
+	struct bt_audio_codec_cfg codec_cfg =
+		BT_AUDIO_CODEC_CFG(BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000, {},
+				   {BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_BROADCAST_NAME, 'm',
+							'y', ' ', 'b', 'c', 'a', 's', 't')});
+	int ret;
+
+	ret = bt_audio_codec_cfg_meta_set_broadcast_name(&codec_cfg, new_data,
+							 ARRAY_SIZE(new_data));
+	zassert_equal(ret, -EINVAL, "Unexpected return value %d", ret);
+}
+
+static ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_meta_set_broadcast_name_inval_max_len)
+{
+	const uint8_t new_data[] = {'T', 'h', 'i', 's', ' ', 'i', 's', ' ', 'a', ' ', 'v',
+				    'e', 'r', 'y', ' ', 'l', 'o', 'n', 'g', ' ', 's', 't',
+				    'r', 'i', 'n', 'g', ' ', 't', 'o', ' ', 'r', 'e', 't',
+				    'u', 'r', 'n', ' ', 'e', 'r', 'r', 'o', 'r'};
+	struct bt_audio_codec_cfg codec_cfg =
+		BT_AUDIO_CODEC_CFG(BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000, {},
+				   {BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_BROADCAST_NAME, 'm',
+							'y', ' ', 'b', 'c', 'a', 's', 't')});
+	int ret;
+
+	ret = bt_audio_codec_cfg_meta_set_broadcast_name(&codec_cfg, new_data,
+							 ARRAY_SIZE(new_data));
+	zassert_equal(ret, -EINVAL, "Unexpected return value %d", ret);
+}
+
+static ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_meta_set_broadcast_name_inval_utf8)
+{
+	const uint8_t new_data[] = {0x80, 0x80, 0x80, 0x80, 0x80};
+	struct bt_audio_codec_cfg codec_cfg =
+		BT_AUDIO_CODEC_CFG(BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000, {},
+				   {BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_BROADCAST_NAME, 'm',
+							'y', ' ', 'b', 'c', 'a', 's', 't')});
+	int ret;
+
+	ret = bt_audio_codec_cfg_meta_set_broadcast_name(&codec_cfg, new_data,
+							 ARRAY_SIZE(new_data));
+	zassert_equal(ret, -EINVAL, "Unexpected return value %d", ret);
+}
+
+static ZTEST(audio_codec_test_suite,
+	     test_bt_audio_codec_cfg_meta_set_broadcast_name_inval_char_cnt_min)
+{
+	const uint8_t new_data[] = "ᛒᛒ"; /* 2 3-octet characters */
+	struct bt_audio_codec_cfg codec_cfg =
+		BT_AUDIO_CODEC_CFG(BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000, {},
+				   {BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_BROADCAST_NAME, 'm',
+							'y', ' ', 'b', 'c', 'a', 's', 't')});
+	int ret;
+
+	ret = bt_audio_codec_cfg_meta_set_broadcast_name(&codec_cfg, new_data, strlen(new_data));
+	zassert_equal(ret, -EINVAL, "Unexpected return value %d", ret);
+}
+
+static ZTEST(audio_codec_test_suite,
+	     test_bt_audio_codec_cfg_meta_set_broadcast_name_inval_char_cnt_max)
+{
+	/* 33 3-octet characters */
+	const uint8_t new_data[] = "ᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒ";
+
+	struct bt_audio_codec_cfg codec_cfg =
+		BT_AUDIO_CODEC_CFG(BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000, {},
+				   {BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_BROADCAST_NAME, 'm',
+							'y', ' ', 'b', 'c', 'a', 's', 't')});
+	int ret;
+
+	ret = bt_audio_codec_cfg_meta_set_broadcast_name(&codec_cfg, new_data, strlen(new_data));
+
+	zassert_equal(ret, -EINVAL, "Unexpected return value %d", ret);
 }
 
 ZTEST(audio_codec_test_suite, test_bt_audio_codec_cfg_meta_get_extended)
@@ -1925,6 +2134,112 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_meta_get_broadcast_name)
 	zassert_mem_equal(expected_data, broadcast_name, ARRAY_SIZE(expected_data));
 }
 
+static ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_meta_get_broadcast_name_utf8)
+{
+	const uint8_t type = BT_AUDIO_METADATA_TYPE_BROADCAST_NAME;
+	const uint8_t expected_data[] = "ᛒᛒᛒᛒ";
+
+	struct bt_audio_codec_cap codec_cap =
+		BT_AUDIO_CODEC_CAP(BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000, {}, {});
+	const uint8_t *broadcast_name;
+	int ret;
+
+	codec_cap.meta[0] = sizeof(type) + strlen(expected_data);
+	codec_cap.meta[1] = type;
+	memcpy(&codec_cap.meta[2], expected_data, strlen(expected_data));
+	/* meta_len is the length of the name LTV + the size of the length field */
+	codec_cap.meta_len = sizeof(codec_cap.meta[0]) + codec_cap.meta[0];
+
+	ret = bt_audio_codec_cap_meta_get_broadcast_name(&codec_cap, &broadcast_name);
+	zassert_equal(ret, strlen(expected_data), "Unexpected return value %d != %zu", ret,
+		      strlen(expected_data));
+	zassert_mem_equal(expected_data, broadcast_name, strlen(expected_data));
+}
+
+static ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_meta_get_broadcast_name_inval_min_len)
+{
+	struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP(
+		BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000, {},
+		{BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_BROADCAST_NAME, 'b', 'a', 'd')});
+	const uint8_t *broadcast_name;
+	int ret;
+
+	ret = bt_audio_codec_cap_meta_get_broadcast_name(&codec_cap, &broadcast_name);
+	zassert_equal(ret, -EBADMSG, "Unexpected return value %d", ret);
+}
+
+static ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_meta_get_broadcast_name_inval_max_len)
+{
+	struct bt_audio_codec_cap codec_cap = BT_AUDIO_CODEC_CAP(
+		BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000, {},
+		{BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_BROADCAST_NAME, 'T', 'h', 'i', 's', ' ',
+				     'i', 's', ' ', 'a', ' ', 'v', 'e', 'r', 'y', ' ', 'l', 'o',
+				     'n', 'g', ' ', 's', 't', 'r', 'i', 'n', 'g', ' ', 't', 'o',
+				     ' ', 'r', 'e', 't', 'u', 'r', 'n', ' ', 'e', 'r', 'r', 'o',
+				     'r')});
+	const uint8_t *broadcast_name;
+	int ret;
+
+	ret = bt_audio_codec_cap_meta_get_broadcast_name(&codec_cap, &broadcast_name);
+	zassert_equal(ret, -EBADMSG, "Unexpected return value %d", ret);
+}
+
+static ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_meta_get_broadcast_name_inval_utf8)
+{
+	struct bt_audio_codec_cap codec_cap =
+		BT_AUDIO_CODEC_CAP(BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000, {},
+				   {BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_BROADCAST_NAME, 0x80,
+							0x80, 0x80, 0x80, 0x80)});
+	const uint8_t *broadcast_name;
+	int ret;
+
+	ret = bt_audio_codec_cap_meta_get_broadcast_name(&codec_cap, &broadcast_name);
+	zassert_equal(ret, -EBADMSG, "Unexpected return value %d", ret);
+}
+
+static ZTEST(audio_codec_test_suite,
+	     test_bt_audio_codec_cap_meta_get_broadcast_name_inval_char_cnt_min)
+{
+	const uint8_t type = BT_AUDIO_METADATA_TYPE_BROADCAST_NAME;
+	const uint8_t bad_name[] = "ᛒᛒ"; /* 2 3-octet characters */
+
+	struct bt_audio_codec_cap codec_cap =
+		BT_AUDIO_CODEC_CAP(BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000, {}, {});
+	const uint8_t *broadcast_name;
+	int ret;
+
+	codec_cap.meta[0] = sizeof(type) + strlen(bad_name);
+	codec_cap.meta[1] = type;
+	memcpy(&codec_cap.meta[2], bad_name, strlen(bad_name));
+	/* meta_len is the length of the name LTV + the size of the length field */
+	codec_cap.meta_len = sizeof(codec_cap.meta[0]) + codec_cap.meta[0];
+
+	ret = bt_audio_codec_cap_meta_get_broadcast_name(&codec_cap, &broadcast_name);
+	zassert_equal(ret, -EBADMSG, "Unexpected return value %d", ret);
+}
+
+static ZTEST(audio_codec_test_suite,
+	     test_bt_audio_codec_cap_meta_get_broadcast_name_inval_char_cnt_max)
+{
+	const uint8_t type = BT_AUDIO_METADATA_TYPE_BROADCAST_NAME;
+	/* 33 3-octet characters */
+	const uint8_t bad_name[] = "ᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒ";
+
+	struct bt_audio_codec_cap codec_cap =
+		BT_AUDIO_CODEC_CAP(BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000, {}, {});
+	const uint8_t *broadcast_name;
+	int ret;
+
+	codec_cap.meta[0] = sizeof(type) + strlen(bad_name);
+	codec_cap.meta[1] = type;
+	memcpy(&codec_cap.meta[2], bad_name, strlen(bad_name));
+	/* meta_len is the length of the name LTV + the size of the length field */
+	codec_cap.meta_len = sizeof(codec_cap.meta[0]) + codec_cap.meta[0];
+
+	ret = bt_audio_codec_cap_meta_get_broadcast_name(&codec_cap, &broadcast_name);
+	zassert_equal(ret, -EBADMSG, "Unexpected return value %d", ret);
+}
+
 ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_meta_set_broadcast_name)
 {
 	const uint8_t expected_data[] = {'m', 'y', ' ', 'b', 'c', 'a', 's', 't'};
@@ -1947,6 +2262,106 @@ ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_meta_set_broadcast_name)
 	ret = bt_audio_codec_cap_meta_get_broadcast_name(&codec_cap, &broadcast_name);
 	zassert_equal(ret, ARRAY_SIZE(new_expected_data), "Unexpected return value %d", ret);
 	zassert_mem_equal(new_expected_data, broadcast_name, ARRAY_SIZE(new_expected_data));
+}
+
+static ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_meta_set_broadcast_name_utf8)
+{
+	const uint8_t expected_data[] = {'m', 'y', ' ', 'b', 'c', 'a', 's', 't'};
+	const uint8_t new_expected_data[] = "ᛒᛒᛒᛒ";
+	struct bt_audio_codec_cap codec_cap =
+		BT_AUDIO_CODEC_CAP(BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000, {},
+				   {BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_BROADCAST_NAME, 'm',
+							'y', ' ', 'b', 'c', 'a', 's', 't')});
+	const uint8_t *broadcast_name;
+	int ret;
+
+	ret = bt_audio_codec_cap_meta_get_broadcast_name(&codec_cap, &broadcast_name);
+	zassert_equal(ret, ARRAY_SIZE(expected_data), "Unexpected return value %d", ret);
+	zassert_mem_equal(expected_data, broadcast_name, ARRAY_SIZE(expected_data));
+
+	ret = bt_audio_codec_cap_meta_set_broadcast_name(&codec_cap, new_expected_data,
+							 strlen(new_expected_data));
+	zassert_true(ret > 0, "Unexpected return value %d", ret);
+
+	ret = bt_audio_codec_cap_meta_get_broadcast_name(&codec_cap, &broadcast_name);
+	zassert_equal(ret, strlen(new_expected_data), "Unexpected return value %d", ret);
+	zassert_mem_equal(new_expected_data, broadcast_name, strlen(new_expected_data));
+}
+
+static ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_meta_set_broadcast_name_inval_min_len)
+{
+	const uint8_t new_data[] = {'n', 'e', 'w'};
+	struct bt_audio_codec_cap codec_cap =
+		BT_AUDIO_CODEC_CAP(BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000, {},
+				   {BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_BROADCAST_NAME, 'm',
+							'y', ' ', 'b', 'c', 'a', 's', 't')});
+	int ret;
+
+	ret = bt_audio_codec_cap_meta_set_broadcast_name(&codec_cap, new_data,
+							 ARRAY_SIZE(new_data));
+	zassert_equal(ret, -EINVAL, "Unexpected return value %d", ret);
+}
+
+static ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_meta_set_broadcast_name_inval_max_len)
+{
+	const uint8_t new_data[] = {'T', 'h', 'i', 's', ' ', 'i', 's', ' ', 'a', ' ', 'v',
+				    'e', 'r', 'y', ' ', 'l', 'o', 'n', 'g', ' ', 's', 't',
+				    'r', 'i', 'n', 'g', ' ', 't', 'o', ' ', 'r', 'e', 't',
+				    'u', 'r', 'n', ' ', 'e', 'r', 'r', 'o', 'r'};
+	struct bt_audio_codec_cap codec_cap =
+		BT_AUDIO_CODEC_CAP(BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000, {},
+				   {BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_BROADCAST_NAME, 'm',
+							'y', ' ', 'b', 'c', 'a', 's', 't')});
+	int ret;
+
+	ret = bt_audio_codec_cap_meta_set_broadcast_name(&codec_cap, new_data,
+							 ARRAY_SIZE(new_data));
+	zassert_equal(ret, -EINVAL, "Unexpected return value %d", ret);
+}
+
+static ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_meta_set_broadcast_name_inval_utf8)
+{
+	const uint8_t new_data[] = {0x80, 0x80, 0x80, 0x80, 0x80};
+	struct bt_audio_codec_cap codec_cap =
+		BT_AUDIO_CODEC_CAP(BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000, {},
+				   {BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_BROADCAST_NAME, 'm',
+							'y', ' ', 'b', 'c', 'a', 's', 't')});
+	int ret;
+
+	ret = bt_audio_codec_cap_meta_set_broadcast_name(&codec_cap, new_data,
+							 ARRAY_SIZE(new_data));
+	zassert_equal(ret, -EINVAL, "Unexpected return value %d", ret);
+}
+
+static ZTEST(audio_codec_test_suite,
+	     test_bt_audio_codec_cap_meta_set_broadcast_name_inval_char_cnt_min)
+{
+	const uint8_t new_data[] = "ᛒᛒ"; /* 2 3-octet characters */
+	struct bt_audio_codec_cap codec_cap =
+		BT_AUDIO_CODEC_CAP(BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000, {},
+				   {BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_BROADCAST_NAME, 'm',
+							'y', ' ', 'b', 'c', 'a', 's', 't')});
+	int ret;
+
+	ret = bt_audio_codec_cap_meta_set_broadcast_name(&codec_cap, new_data, strlen(new_data));
+	zassert_equal(ret, -EINVAL, "Unexpected return value %d", ret);
+}
+
+static ZTEST(audio_codec_test_suite,
+	     test_bt_audio_codec_cap_meta_set_broadcast_name_inval_char_cnt_max)
+{
+	/* 33 3-octet characters */
+	const uint8_t new_data[] = "ᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒᛒ";
+
+	struct bt_audio_codec_cap codec_cap =
+		BT_AUDIO_CODEC_CAP(BT_HCI_CODING_FORMAT_LC3, 0x0000, 0x0000, {},
+				   {BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_BROADCAST_NAME, 'm',
+							'y', ' ', 'b', 'c', 'a', 's', 't')});
+	int ret;
+
+	ret = bt_audio_codec_cap_meta_set_broadcast_name(&codec_cap, new_data, strlen(new_data));
+
+	zassert_equal(ret, -EINVAL, "Unexpected return value %d", ret);
 }
 
 ZTEST(audio_codec_test_suite, test_bt_audio_codec_cap_meta_get_extended)
