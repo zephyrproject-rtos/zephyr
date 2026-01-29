@@ -12,6 +12,10 @@ menuconfig BMI323
 	  * Enable and disable accelerometer and gyroscope respectively
 	  * Set full scale for accelerometer and gyroscope respectively
 	  * Set data rate for accelerometer and gyroscope respectively
+	  * Set -3dB cut-off frequency for accelerometer and gyroscope respectively
+	  * Set number of samples to be averaged for accelerometer and gyroscope respectively
+	  * Set offset and gain for accelerometer and gyroscope on each axis (x,y,z) respectively
+	  * Perform self-calibration of offset and gain for gyroscope
 	  * Get samples (x,y,z) from accelerometer and gyroscope respectively
 	  * Get die temperature
 	  * Set trigger to accelerometer data ready, and accelerometer any motion.
