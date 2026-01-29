@@ -20,6 +20,8 @@
 	mcu_uart0: serial@4a00000 {
 		compatible = "ns16550";
 		reg = <0x04a00000 0x200>;
+		power-domains = <&mcu_uart0_pd>;
+		clocks = <&k3_clks 149 0>;
 		clock-frequency = <DT_FREQ_M(48)>;
 		current-speed = <115200>;
 		reg-shift = <2>;
@@ -29,6 +31,8 @@
 	mcu_uart1: serial@4a10000 {
 		compatible = "ns16550";
 		reg = <0x04a10000 0x200>;
+		power-domains = <&mcu_uart1_pd>;
+		clocks = <&k3_clks 160 0>;
 		clock-frequency = <DT_FREQ_M(48)>;
 		current-speed = <115200>;
 		reg-shift = <2>;
@@ -38,6 +42,8 @@
 	mcu_i2c0: i2c0@4900000 {
 		compatible = "ti,omap-i2c";
 		reg = <0x4900000 0x100>;
+		power-domains = <&mcu_i2c0_pd>;
+		clocks = <&k3_clks 106 0>;
 		clock-frequency = <DT_FREQ_K(100)>;
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -46,6 +52,8 @@
 
 	mcu_i2c1: i2c0@4910000 {
 		compatible = "ti,omap-i2c";
+		power-domains = <&mcu_i2c1_pd>;
+		clocks = <&k3_clks 107 0>;
 		reg = <0x4910000 0x100>;
 		clock-frequency = <DT_FREQ_K(100)>;
 		#address-cells = <1>;
@@ -65,6 +73,8 @@
 	mcu_mcspi0: spi@4b00000 {
 		compatible = "ti,omap-mcspi";
 		reg = <0x4b00000 0x400>;
+		power-domains = <&mcu_mcspi0_pd>;
+		clocks = <&k3_clks 147 0>;
 		clock-frequency = <DT_FREQ_M(50)>;
 		ti,spi-num-cs = <4>;
 		#address-cells = <1>;
@@ -75,6 +85,8 @@
 	mcu_mcspi1: spi@4b10000 {
 		compatible = "ti,omap-mcspi";
 		reg = <0x4b10000 0x400>;
+		power-domains = <&mcu_mcspi1_pd>;
+		clocks = <&k3_clks 148 0>;
 		clock-frequency = <DT_FREQ_M(50)>;
 		ti,spi-num-cs = <4>;
 		#address-cells = <1>;
