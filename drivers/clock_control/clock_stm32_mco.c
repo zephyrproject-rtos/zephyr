@@ -10,6 +10,9 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include "clock_stm32_ll_common.h"
+#if defined(CONFIG_SOC_SERIES_STM32N6X)
+#include <stm32_ll_rcc.h>
+#endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_clock_mco)
 #define DT_DRV_COMPAT st_stm32_clock_mco
@@ -66,7 +69,11 @@ static int stm32_mco_init(const struct device *dev)
 			STM32_DT_CLKSEL_SHIFT_GET(config->prescaler));
 #endif
 
-	return pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	err = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+#if defined(CONFIG_SOC_SERIES_STM32N6X)
+	LL_RCC_EnableMCO(LL_RCC_MCO1);
+#endif
+	return err;
 }
 
 #define STM32_MCO_INIT(inst)								\

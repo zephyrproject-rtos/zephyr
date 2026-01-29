@@ -807,6 +807,12 @@
 			};
 		};
 
+		mcos {
+			mco1: mco1 {
+				compatible = "st,stm32-clock-mco";
+				status = "disabled";
+			};
+		};
 		ethernet@58036000 {
 			reg = <0x58036000 0x8000>;
 			compatible = "st,stm32-ethernet-controller";
