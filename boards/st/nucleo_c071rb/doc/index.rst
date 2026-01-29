@@ -71,8 +71,9 @@ Default Zephyr Peripheral Mapping:
 - I2C1 SCL/SDA : PB8/PB9 (Arduino I2C)
 - LD1       : PA5
 - LD2       : PC9
-- SPI1 NSS/SCK/MISO/MOSI : PA4/PA5/PA11/PA12 (Arduino SPI)
-- UART_2 TX/RX : PA2/PA3 (ST-Link Virtual Port Com)
+- SPI1 NSS/SCK/MISO/MOSI : PA15/PA5/PA6/PA7 (Arduino SPI)
+- UART_1 TX/RX : PB6/PB7 (Arduino Serial)
+- UART_2 TX/RX : PA2/PA3 (ST-Link Virtual COM Port)
 - USER_PB : PC13
 
 
