@@ -159,25 +159,9 @@ out:
 	return ret;
 }
 
-int k_mem_domain_add_partition(struct k_mem_domain *domain,
-			       struct k_mem_partition *part)
+static int add_partition_locked(struct k_mem_domain *domain, struct k_mem_partition *part)
 {
 	int p_idx;
-	k_spinlock_key_t key;
-	int ret = 0;
-
-	CHECKIF(domain == NULL) {
-		ret = -EINVAL;
-		goto out;
-	}
-
-	CHECKIF(!check_add_partition(domain, part)) {
-		LOG_ERR("invalid partition %p", part);
-		ret = -EINVAL;
-		goto out;
-	}
-
-	key = k_spin_lock(&z_mem_domain_lock);
 
 	for (p_idx = 0; p_idx < max_partitions; p_idx++) {
 		/* A zero-sized partition denotes it's a free partition */
@@ -188,8 +172,7 @@ int k_mem_domain_add_partition(struct k_mem_domain *domain,
 
 	CHECKIF(!(p_idx < max_partitions)) {
 		LOG_ERR("no free partition slots available");
-		ret = -ENOSPC;
-		goto unlock_out;
+		return -ENOSPC;
 	}
 
 	LOG_DBG("add partition base %lx size %zu to domain %p",
@@ -202,13 +185,66 @@ int k_mem_domain_add_partition(struct k_mem_domain *domain,
 	domain->num_partitions++;
 
 #ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
-	ret = arch_mem_domain_partition_add(domain, p_idx);
+	return arch_mem_domain_partition_add(domain, p_idx);
+#else
+	return 0;
 #endif /* CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API */
+}
 
-unlock_out:
+int k_mem_domain_add_partition(struct k_mem_domain *domain,
+			       struct k_mem_partition *part)
+{
+	k_spinlock_key_t key;
+	int ret;
+
+	CHECKIF(domain == NULL) {
+		return -EINVAL;
+	}
+
+	CHECKIF(!check_add_partition(domain, part)) {
+		LOG_ERR("invalid partition %p", part);
+		return -EINVAL;
+	}
+
+	key = k_spin_lock(&z_mem_domain_lock);
+	ret = add_partition_locked(domain, part);
 	k_spin_unlock(&z_mem_domain_lock, key);
+	return ret;
+}
 
-out:
+static int copy_domain_partitions(struct k_mem_domain *dst, struct k_mem_domain *src)
+{
+	size_t p_idx;
+	int ret;
+
+	for (p_idx = 0; p_idx < max_partitions; p_idx++) {
+		if (src->partitions[p_idx].size == 0) {
+			continue;
+		}
+
+		ret = add_partition_locked(dst, &src->partitions[p_idx]);
+		if (ret) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
+int k_mem_domain_inherit_thread_partitions(struct k_mem_domain *domain, k_tid_t thread)
+{
+	struct k_mem_domain *thread_domain;
+	k_spinlock_key_t key;
+	int ret;
+
+	CHECKIF((domain == NULL) || (thread == NULL)) {
+		return -EINVAL;
+	}
+
+	key = k_spin_lock(&z_mem_domain_lock);
+	thread_domain = thread->mem_domain_info.mem_domain;
+	ret = copy_domain_partitions(domain, thread_domain);
+	k_spin_unlock(&z_mem_domain_lock, key);
 	return ret;
 }
 

@@ -61,5 +61,6 @@ add_subdirectory_ifdef(CONFIG_SENSING sensing)
 add_subdirectory_ifdef(CONFIG_SETTINGS settings)
 add_subdirectory_ifdef(CONFIG_SHELL shell)
 add_subdirectory_ifdef(CONFIG_TIMING_FUNCTIONS timing)
+add_subdirectory_ifdef(CONFIG_PROCESS process)
 add_subdirectory_ifdef(CONFIG_ZBUS zbus)
 # zephyr-keep-sorted-stop
