@@ -776,7 +776,8 @@
 			clocks = <&rcc STM32_CLOCK(APB5, 2)>,
 				 <&rcc STM32_SRC_IC17 DCMIPP_SEL(2)>,
 				 <&rcc STM32_CLOCK(APB5, 6)>;
-			interrupts = <48 0>;
+			interrupts = <48 0>, <47 0>;
+			interrupt-names = "dcmipp", "dcmipp_csi";
 			resets = <&rctl STM32_RESET(APB5, 2)>,
 				 <&rctl STM32_RESET(APB5, 6)>;
 			status = "disabled";
