@@ -1,0 +1,12 @@
+- connected: true
+  id: "69652041"
+  platform: s32k3x4evb_t172
+  product: jlink
+  runner: jlink
+  serial: /dev/ttyACM0
+  connected: true
+  id: A50285BI
+  platform: unknown
+  product: FT232R USB UART
+  runner: unknown
+  serial: /dev/ttyUSB0

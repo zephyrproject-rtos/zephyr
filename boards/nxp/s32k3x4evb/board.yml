@@ -1,0 +1,14 @@
+board:
+  name: s32k3x4evb_t172
+  full_name: S32K3X4EVB-T172
+  vendor: nxp
+  revision:
+    format: "custom"
+    default: "B2"
+    revisions:
+      - name: "A"
+      - name: "B"
+      - name: "B1"
+      - name: "B2"
+  socs:
+    - name: s32k344

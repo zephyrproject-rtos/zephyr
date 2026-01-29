@@ -1,0 +1,27 @@
+/*
+ * Copyright 2023 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/s32/S32K344-172MQFP-pinctrl.h>
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		/* PTA19 as output, PTA20 as input */
+		out-gpios = <&gpioa_h 3 GPIO_ACTIVE_HIGH>;
+		in-gpios  = <&gpioa_h 4 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&gpioa_h {
+	status = "okay";
+};
+
+&eirq0_default {
+	group2 {
+		pinmux = <PTA20_EIRQ2>;
+		input-enable;
+	};
+};
