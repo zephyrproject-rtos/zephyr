@@ -865,6 +865,23 @@ class TestPlan:
                     platform_scope = list(
                         filter(lambda item: item.name in ts.platform_allow, self.platforms)
                     )
+
+            # Discover required snippet YAML files and load them once per testsuite
+            found_snippets = None
+            snippet_args = None
+            missing_required_snippet = None
+
+            if ts.required_snippets:
+                snippet_args = {"snippets": ts.required_snippets}
+                found_snippets = snippets.find_snippets_in_roots(
+                    snippet_args,
+                    [*self.env.snippet_roots, Path(ts.source_dir)]
+                )
+                for this_snippet in snippet_args["snippets"]:
+                    if this_snippet not in found_snippets:
+                        missing_required_snippet = this_snippet
+                        break
+
             # list of instances per testsuite, aka configurations.
             instance_list = []
             for itoolchain, plat in itertools.product(
@@ -1029,25 +1046,13 @@ class TestPlan:
                     instance.add_filter("Excluded tags per platform (only_tags)", Filters.PLATFORM)
 
                 if ts.required_snippets:
-                    missing_snippet = False
-                    snippet_args = {"snippets": ts.required_snippets}
-                    found_snippets = snippets.find_snippets_in_roots(
-                        snippet_args,
-                        [*self.env.snippet_roots, Path(ts.source_dir)]
-                    )
-
-                    # Search and check that all required snippet files are found
-                    for this_snippet in snippet_args['snippets']:
-                        if this_snippet not in found_snippets:
-                            logger.error(
-                                f"Can't find snippet '{this_snippet}' for test '{ts.name}'"
-                            )
-                            instance.status = TwisterStatus.ERROR
-                            instance.reason = f"Snippet {this_snippet} not found"
-                            missing_snippet = True
-                            break
-
-                    if not missing_snippet:
+                    if missing_required_snippet:
+                        logger.error(
+                            f"Can't find snippet '{missing_required_snippet}' for test '{ts.name}'"
+                        )
+                        instance.status = TwisterStatus.ERROR
+                        instance.reason = f"Snippet {missing_required_snippet} not found"
+                    else:
                         # Look for required snippets and check that they are applicable for these
                         # platforms/boards
                         for this_snippet in snippet_args['snippets']:
