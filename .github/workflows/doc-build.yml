@@ -149,11 +149,59 @@ jobs:
         lcov --remove doc-coverage.info \*/deprecated > new.info
         genhtml --no-function-coverage --no-branch-coverage new.info -o coverage-report
 
+    - name: run-accessibility-check
+      run: |
+        set -e
+
+        npm install -g pa11y-ci@3.1.0 pa11y-ci-reporter-html@6.0.2
+
+        python3 -m http.server 8000 --directory doc/_build/html &
+        SERVER_PID=$!
+        sleep 1
+
+        cat <<EOF > .pa11yci.json
+        {
+          "defaults": {
+            "timeout": 240000,
+            "runners": ["axe", "htmlcs"],
+            "concurrency": 2,
+            "chromeLaunchConfig": {
+              "args": ["--disable-dev-shm-usage", "--no-sandbox"]
+            }
+          },
+          "urls": [
+            {
+              "url": "http://localhost:8000/index.html"
+            },
+            {
+              "url": "http://localhost:8000/boards/index.html"
+            },
+            {
+              "url": "http://localhost:8000/samples/index.html"
+            },
+            {
+              "url": "http://localhost:8000/develop/getting_started/index.html"
+            }
+          ]
+        }
+        EOF
+
+        pa11y-ci -c .pa11yci.json -T 9999 --reporter=pa11y-ci-reporter-html
+
+        kill $SERVER_PID
+
     - name: Compress documentation build artifacts
       run: |
         tar --use-compress-program="xz -T0" -cf html-output.tar.xz --exclude html/_sources --exclude html/doxygen/xml --directory=doc/_build html
         tar --use-compress-program="xz -T0" -cf api-output.tar.xz --directory=doc/_build html/doxygen/html
         tar --use-compress-program="xz -T0" -cf api-coverage.tar.xz coverage-report
+        tar --use-compress-program="xz -T0" -cf accessibility-report.tar.xz pa11y-ci-report
+
+    - name: upload-accessibility-report
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      with:
+        name: accessibility-report
+        path: accessibility-report.tar.xz
 
     - name: Upload HTML output
       uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
@@ -176,11 +224,16 @@ jobs:
         DOC_URL="https://builds.zephyrproject.io/${REPO_NAME}/pr/${PR_NUM}/docs/"
         API_DOC_URL="https://builds.zephyrproject.io/${REPO_NAME}/pr/${PR_NUM}/docs/doxygen/html/"
         API_COVERAGE_URL="https://builds.zephyrproject.io/${REPO_NAME}/pr/${PR_NUM}/api-coverage/"
+        A11Y_REPORT_URL="https://builds.zephyrproject.io/${REPO_NAME}/pr/${PR_NUM}/accessibility-report/"
 
         echo "${PR_NUM}" > pr_num
-        echo "Documentation will be available shortly at: ${DOC_URL}" >> $GITHUB_STEP_SUMMARY
-        echo "API Documentation will be available shortly at: ${API_DOC_URL}" >> $GITHUB_STEP_SUMMARY
-        echo "API Coverage Report will be available shortly at: ${API_COVERAGE_URL}" >> $GITHUB_STEP_SUMMARY
+        echo "Build results will be available shortly at the following URLs:" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- Documentation: ${DOC_URL}" >> $GITHUB_STEP_SUMMARY
+        echo "- API Documentation: ${API_DOC_URL}" >> $GITHUB_STEP_SUMMARY
+        echo "- API Coverage Report: ${API_COVERAGE_URL}" >> $GITHUB_STEP_SUMMARY
+        echo "- Accessibility Report: ${A11Y_REPORT_URL}" >> $GITHUB_STEP_SUMMARY
+
 
     - name: Upload PR number
       uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
