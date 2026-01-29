@@ -35,6 +35,12 @@ config NR_GRANT_FRAMES
 	  grant table driver in runtime. This value should be <= max_grant_frames
 	  configured for domain in Xen hypervisor.
 
+config XEN_EVENTS
+	bool "Xen events driver"
+	default y
+	help
+	  Xen event channels driver.
+
 endmenu
 
 endif # XEN
