@@ -4647,7 +4647,7 @@ Retention:
     - dts/bindings/retention/
     - include/zephyr/retention/
     - subsys/retention/
-    - doc/services/storage/retention/
+    - doc/services/retention/
   labels:
     - "area: Retention"
 
