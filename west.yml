@@ -200,7 +200,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: daad38f2e9f6c641849010d74fe02ea736d4d921
+      revision: pull/337/head
       path: modules/hal/nordic
       groups:
         - hal
@@ -386,7 +386,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 6788687e013733d12f015b5d45b214019dea58f7
+      revision: pull/168/head
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
