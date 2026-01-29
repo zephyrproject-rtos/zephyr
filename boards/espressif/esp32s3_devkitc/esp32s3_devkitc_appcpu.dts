@@ -20,6 +20,19 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_appcpu_partition;
 	};
+
+	aliases {
+		led0 = &led0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpio0 38 GPIO_ACTIVE_HIGH>;
+			label = "LED 0";
+		};
+	};
 };
 
 &trng0 {
