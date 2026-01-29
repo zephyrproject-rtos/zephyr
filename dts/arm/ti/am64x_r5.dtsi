@@ -247,3 +247,13 @@
 	interrupts = <0 62 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
+
+&main_sdhci0 {
+	interrupts = <0 165 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
+
+&main_sdhci1 {
+	interrupts = <0 166 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};

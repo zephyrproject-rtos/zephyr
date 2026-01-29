@@ -23,6 +23,7 @@ source "drivers/sdhc/Kconfig.sam_sdmmc"
 source "drivers/sdhc/Kconfig.sdhc_cdns"
 source "drivers/sdhc/Kconfig.spi"
 source "drivers/sdhc/Kconfig.stm32"
+source "drivers/sdhc/Kconfig.ti"
 source "drivers/sdhc/Kconfig.xlnx"
 # zephyr-keep-sorted-stop
 
