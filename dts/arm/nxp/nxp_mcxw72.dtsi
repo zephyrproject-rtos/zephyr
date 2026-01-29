@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,12 +10,17 @@
 	smu2: smu2@1c0000 {
 		#address-cells = <1>;
 		#size-cells = <1>;
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "SMU2";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+		reg = <0x1c0000 DT_SIZE_K(64)>;
 
-		rpmsgmem: memory@220 {
-			compatible = "zephyr,memory-region", "mmio-sram";
-			reg = <0x220 0x1100>;
-			zephyr,memory-region = "rpmsg_sh_mem";
-			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+		shmem_fwk: memory@200 {
+			reg = <0x200 0x20>;
+		};
+
+		shmem_rpmsg: memory@220 {
+			reg = <0x220 0xA00>;
 		};
 	};
 };
