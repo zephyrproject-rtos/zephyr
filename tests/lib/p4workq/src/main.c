@@ -126,7 +126,7 @@ static int active_count(void)
 	int count = 0;
 	sys_dnode_t *dummy;
 
-	SYS_DLIST_FOR_EACH_NODE(&wq.waitq.waitq, dummy) {
+	SYS_DLIST_FOR_EACH_NODE(&wq.waitq, dummy) {
 		count++;
 	}
 
