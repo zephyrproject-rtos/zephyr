@@ -93,6 +93,8 @@ LOG_MODULE_REGISTER(ssd1306, CONFIG_DISPLAY_LOG_LEVEL);
 #define SSD1306_RESET_DELAY			1
 #define SSD1306_SUPPLY_DELAY			20
 
+#define SSD1306_I2C_CHUNK_SIZE 128
+
 #ifndef SSD1306_ADDRESSING_MODE
 #define SSD1306_ADDRESSING_MODE		(SSD1306_MEM_ADDRESSING_HORIZONTAL)
 #endif
@@ -153,6 +155,9 @@ struct ssd1306_data {
 #if (DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1306, i2c) || \
 	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(solomon_ssd1309, i2c) || \
 	DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(sinowealth_sh1106, i2c))
+
+K_MUTEX_DEFINE(ssd1306_i2c_buffer_lock);
+
 static bool ssd1306_bus_ready_i2c(const struct device *dev)
 {
 	const struct ssd1306_config *config = dev->config;
@@ -164,10 +169,35 @@ static int ssd1306_write_bus_i2c(const struct device *dev, uint8_t *buf, size_t 
 {
 	const struct ssd1306_config *config = dev->config;
 
-	return i2c_burst_write_dt(&config->bus.i2c,
-				  command ? SSD1306_I2C_ALL_BYTES_CMD :
-				  SSD1306_I2C_ALL_BYTES_DATA,
-				  buf, len);
+	const uint8_t control =
+		command ? SSD1306_I2C_ALL_BYTES_CMD : SSD1306_I2C_ALL_BYTES_DATA;
+	static uint8_t tmp[SSD1306_I2C_CHUNK_SIZE + 1];
+	int ret = 0;
+	size_t off = 0;
+
+	if (len == 0U) {
+		return 0;
+	}
+
+	k_mutex_lock(&ssd1306_i2c_buffer_lock, K_FOREVER);
+
+	while (off < len) {
+		size_t this_len = MIN(SSD1306_I2C_CHUNK_SIZE, len - off);
+
+		tmp[0] = control;
+		memcpy(&tmp[1], &buf[off], this_len);
+
+		ret = i2c_write_dt(&config->bus.i2c, tmp, this_len + 1);
+		if (ret < 0) {
+			goto out;
+		}
+
+		off += this_len;
+	}
+
+out:
+	k_mutex_unlock(&ssd1306_i2c_buffer_lock);
+	return ret;
 }
 
 static const char *ssd1306_bus_name_i2c(const struct device *dev)
