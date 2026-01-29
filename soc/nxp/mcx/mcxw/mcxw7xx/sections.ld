@@ -1,18 +1,18 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* NOINIT section for rpmsg_sh_mem */
-.noinit_rpmsg_sh_mem (NOLOAD) : ALIGN(4)
+/* NOINIT section for shared memory SMU2 */
+.noinit_smu2 (NOLOAD) : ALIGN(4)
 {
-   __RPMSG_SH_MEM_START__ = .;
-PROVIDE(rpmsg_sh_mem_start = __RPMSG_SH_MEM_START__);
-
-   *(.noinit.$rpmsg_sh_mem*)
-   . = ALIGN(4) ;
-   __RPMSG_SH_MEM_END__ = .;
-PROVIDE(rpmsg_sh_mem_end = __RPMSG_SH_MEM_END__);
-
-} > rpmsg_sh_mem
+    . = DT_REG_ADDR(DT_NODELABEL(shmem_fwk)) - DT_REG_ADDR(DT_NODELABEL(smu2));
+    PROVIDE(m_lowpower_flag_start = . + 0x4);
+    . = DT_REG_ADDR(DT_NODELABEL(shmem_rpmsg)) - DT_REG_ADDR(DT_NODELABEL(smu2));
+    PROVIDE(rpmsg_sh_mem_start = .);
+    *(.noinit.$rpmsg_sh_mem*)
+    . = ALIGN(4) ;
+    PROVIDE(rpmsg_sh_mem_end = .);
+    . = DT_REG_SIZE(DT_NODELABEL(smu2));
+} > SMU2
