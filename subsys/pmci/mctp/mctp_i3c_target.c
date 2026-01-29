@@ -80,7 +80,7 @@ int mctp_i3c_target_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt)
 
 	/* Some I3C IP need to have data at TX fifo before raising IBI */
 	ret = i3c_target_tx_write(b->i3c, pkt->data + pkt->start, pkt->end - pkt->start, 0);
-	if (ret != 0) {
+	if (ret < 0) {
 		LOG_ERR("i3c_target_tx_write failed: %d", ret);
 		goto out;
 	}

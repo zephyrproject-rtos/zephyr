@@ -114,6 +114,7 @@ int mctp_i3c_controller_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt
 	struct i3c_msg msg = {
 		.buf = &pkt->data[pkt->start],
 		.len = pktsize,
+		.flags = I3C_MSG_WRITE | I3C_MSG_STOP,
 	};
 
 	int rc = i3c_transfer(b->endpoint_i3c_devs[endpoint_idx], &msg, 1);
