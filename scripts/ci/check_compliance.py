@@ -536,6 +536,7 @@ class DevicetreeLintingCheck(ComplianceTest):
     name = "DevicetreeLinting"
     doc = zephyr_doc_detail_builder("/contribute/style/devicetree.html")
     NPX_EXECUTABLE = "npx"
+    prefix = ZEPHYR_BASE / "scripts" / "ci"
 
     def ensure_npx(self) -> bool:
         if not (npx_executable := shutil.which(self.NPX_EXECUTABLE)):
@@ -544,7 +545,7 @@ class DevicetreeLintingCheck(ComplianceTest):
             self.npx_exe = npx_executable
             # --no prevents npx from fetching from registry
             subprocess.run(
-                [self.npx_exe, "--prefix", "./scripts/ci", "--no", 'dts-linter', "--", "--version"],
+                [self.npx_exe, "--prefix", self.prefix, "--no", 'dts-linter', "--", "--version"],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 check=True,
@@ -625,7 +626,7 @@ class DevicetreeLintingCheck(ComplianceTest):
             cmd = [
                 self.npx_exe,
                 "--prefix",
-                "./scripts/ci",
+                self.prefix,
                 "--no",
                 "dts-linter",
                 "--",
