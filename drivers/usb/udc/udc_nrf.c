@@ -1333,13 +1333,11 @@ static int udc_event_xfer_setup(const struct device *dev)
 	int err;
 
 	/* Make sure there isn't any obsolete data stage buffer queued */
-	buf = udc_buf_get_all(cfg_out);
-	if (buf) {
+	while ((buf = udc_buf_get(cfg_out))) {
 		net_buf_unref(buf);
 	}
 
-	buf = udc_buf_get_all(cfg_in);
-	if (buf) {
+	while ((buf = udc_buf_get(cfg_in))) {
 		net_buf_unref(buf);
 	}
 
@@ -1587,11 +1585,8 @@ static int udc_nrf_ep_dequeue(const struct device *dev,
 
 	nrf_usbd_legacy_ep_abort(cfg->addr);
 
-	buf = udc_buf_get_all(cfg);
-	if (buf) {
+	while ((buf = udc_buf_get(cfg))) {
 		udc_submit_ep_event(dev, buf, -ECONNABORTED);
-	} else {
-		LOG_INF("ep 0x%02x queue is empty", cfg->addr);
 	}
 
 	udc_ep_set_busy(cfg, false);
