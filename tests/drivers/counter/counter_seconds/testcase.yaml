@@ -6,6 +6,7 @@ tests:
     arch_allow: x86
     extra_configs:
       - CONFIG_COUNTER_CMOS=y
+    platform_exclude: sam_e54_xpro
     filter: CONFIG_X86_PC_COMPATIBLE
 
   drivers.counter.mcux.snvs.rtc:
@@ -13,3 +14,9 @@ tests:
       - drivers
       - counter
     platform_allow: mimxrt1064_evk
+
+  drivers.counter.mchp.rtc:
+    tags:
+      - drivers
+      - counter
+    platform_allow: sam_e54_xpro

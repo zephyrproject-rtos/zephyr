@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2019 Intel Corp.
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -12,14 +14,14 @@
  */
 
 #ifdef CONFIG_COUNTER_CMOS
-#define CTR_DEV		DT_COMPAT_GET_ANY_STATUS_OKAY(motorola_mc146818)
+#define CTR_DEV DT_COMPAT_GET_ANY_STATUS_OKAY(motorola_mc146818)
 #else
-#define CTR_DEV		DT_ALIAS(rtc_0)
+#define CTR_DEV DT_ALIAS(rtc_0)
 #endif
 
-#define DELAY_MS 1200	/* pause 1.2 seconds should always pass */
-#define MIN_BOUND 1	/* counter must report at least MIN_BOUND .. */
-#define MAX_BOUND 2	/* .. but at most MAX_BOUND seconds elapsed */
+#define DELAY_MS  1200 /* pause 1.2 seconds should always pass */
+#define MIN_BOUND 1    /* counter must report at least MIN_BOUND .. */
+#define MAX_BOUND 2    /* .. but at most MAX_BOUND seconds elapsed */
 
 ZTEST(seconds_counter, test_seconds_rate)
 {
@@ -28,6 +30,9 @@ ZTEST(seconds_counter, test_seconds_rate)
 	int err;
 
 	zassert_true(device_is_ready(dev), "counter device is not ready");
+
+	err = counter_start(dev);
+	zassert_equal(0, err, "%s: Counter failed to start", dev->name);
 
 	err = counter_get_value(dev, &start);
 	zassert_true(err == 0, "failed to read counter device");
