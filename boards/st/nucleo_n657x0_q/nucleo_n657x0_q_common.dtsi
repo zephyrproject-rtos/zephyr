@@ -17,7 +17,10 @@
 		zephyr,shell-uart = &usart1;
 		zephyr,sram = &axisram2;
 		zephyr,canbus = &fdcan1;
-		spi-flash0 = &mx25um51245g;
+		spi-flash0 = &ospi_nor_flash;
+		zephyr,flash-controller = &ospi_nor_flash;
+		zephyr,flash = &ext_flash;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds: leds {
@@ -307,7 +310,7 @@ zephyr_udc0: &usbotg_hs1 {
 	pinctrl-names = "default";
 	status = "okay";
 
-	mx25um51245g: ospi-nor-flash@0 {
+	ospi_nor_flash: ospi-nor-flash@0 {
 		compatible = "st,stm32-xspi-nor";
 		reg = <0>;
 		size = <DT_SIZE_M(512)>; /* 512 Mbits */
