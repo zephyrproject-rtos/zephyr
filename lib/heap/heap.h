@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Intel Corporation
+ * Copyright (c) 2026 Qualcomm Technologies, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -65,6 +66,26 @@ struct z_heap_bucket {
 	chunkid_t next;
 };
 
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+#define Z_HEAP_GET_CALLER_ADDRESS(level) ((void *)__builtin_return_address(level))
+#define Z_HEAP_CUSTOM_HEADER_BYTES sizeof(struct z_heap_custom_header)
+
+struct __aligned(sizeof(void *)) z_heap_custom_header {
+	uint32_t global_tid;
+	void *caller_address;
+};
+
+struct z_heap_stats_thread_info {
+	char thread_name[CONFIG_SYS_HEAP_THREAD_NAME_LEN];
+};
+
+struct z_heap_stats {
+	uint64_t alloc_size;
+};
+#else
+#define Z_HEAP_CUSTOM_HEADER_BYTES 0U
+#endif
+
 struct z_heap {
 	chunkid_t chunk0_hdr[2];
 	chunkid_t end_chunk;
@@ -73,6 +94,10 @@ struct z_heap {
 	size_t free_bytes;
 	size_t allocated_bytes;
 	size_t max_allocated_bytes;
+#endif
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+	uint16_t heap_stats_index;
+	void *heap_stats_buffer_ptr;
 #endif
 	struct z_heap_bucket buckets[];
 };
@@ -110,6 +135,12 @@ static inline chunkid_t chunk_field(struct z_heap *h, chunkid_t c,
 	chunk_unit_t *buf = chunk_buf(h);
 	void *cmem = &buf[c];
 
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+	if (c != 0U && c != h->end_chunk) {
+		cmem = ((uint8_t *)cmem) + Z_HEAP_CUSTOM_HEADER_BYTES;
+	}
+#endif
+
 	if (big_heap(h)) {
 		return ((uint32_t *)cmem)[f];
 	} else {
@@ -124,6 +155,12 @@ static inline void chunk_set(struct z_heap *h, chunkid_t c,
 
 	chunk_unit_t *buf = chunk_buf(h);
 	void *cmem = &buf[c];
+
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+	if (c != 0U && c != h->end_chunk) {
+		cmem = ((uint8_t *)cmem) + Z_HEAP_CUSTOM_HEADER_BYTES;
+	}
+#endif
 
 	if (big_heap(h)) {
 		CHECK(val == (uint32_t)val);
@@ -148,6 +185,12 @@ static inline void set_chunk_used(struct z_heap *h, chunkid_t c, bool used)
 {
 	chunk_unit_t *buf = chunk_buf(h);
 	void *cmem = &buf[c];
+
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+	if (c != 0 && c != h->end_chunk) {
+		cmem = ((uint8_t *)cmem) + Z_HEAP_CUSTOM_HEADER_BYTES;
+	}
+#endif
 
 	if (big_heap(h)) {
 		if (used) {
@@ -212,14 +255,35 @@ static inline void set_left_chunk_size(struct z_heap *h, chunkid_t c,
 	chunk_set(h, c, LEFT_SIZE, size);
 }
 
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+static inline size_t zephyr_base_header_bytes(struct z_heap *h)
+{
+	return big_heap(h) ? 8U : 4U;
+}
+
+static inline size_t zephyr_free_list_pointers_bytes(struct z_heap *h)
+{
+	return big_heap(h) ? (2U * sizeof(uint32_t)) : (2U * sizeof(uint16_t));
+}
+#endif
+
 static inline bool solo_free_header(struct z_heap *h, chunkid_t c)
 {
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+	return false;
+#else
 	return big_heap(h) && (chunk_size(h, c) == 1U);
+#endif
 }
 
 static inline size_t chunk_header_bytes(struct z_heap *h)
 {
+#ifdef CONFIG_SYS_HEAP_PER_THREAD_STATS
+	return Z_HEAP_CUSTOM_HEADER_BYTES + zephyr_base_header_bytes(h) +
+	       zephyr_free_list_pointers_bytes(h);
+#else
 	return big_heap(h) ? 8 : 4;
+#endif
 }
 
 static inline size_t heap_footer_bytes(size_t size)
