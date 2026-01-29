@@ -34,9 +34,7 @@ struct spi_sf32lb_config {
 	uintptr_t base;
 	struct sf32lb_clock_dt_spec clock;
 	const struct pinctrl_dev_config *pcfg;
-#ifdef CONFIG_SPI_ASYNC
 	void (*irq_config_func)(void);
-#endif
 };
 
 struct spi_sf32lb_data {
@@ -48,7 +46,6 @@ static bool spi_sf32lb_transfer_ongoing(struct spi_sf32lb_data *data)
 	return spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx);
 }
 
-#ifdef CONFIG_SPI_ASYNC
 void spi_sf32lb_complete(const struct device *dev, int status)
 {
 	const struct spi_sf32lb_config *cfg = dev->config;
@@ -69,40 +66,68 @@ static void spi_sf32lb_isr(const struct device *dev)
 	uint32_t status = sys_read32(cfg->base + SPI_STATUS);
 	uint16_t tx_frame, rx_frame;
 	uint8_t word_size = SPI_WORD_SIZE_GET(ctx->config->operation);
+	uint8_t dfs = word_size >> 3;
+	uint8_t rne = FIELD_GET(SPI_STATUS_RNE_Msk, status);
+	uint8_t tnf = FIELD_GET(SPI_STATUS_TNF_Msk, status);
 
+	uint8_t rfs = FIELD_GET(SPI_STATUS_RFS_Msk, status);
+	uint8_t tfs = FIELD_GET(SPI_STATUS_TFS_Msk, status);
+
+	uint8_t tfl = FIELD_GET(SPI_STATUS_TFL_Msk, status);
+	uint8_t rfl = FIELD_GET(SPI_STATUS_RFL_Msk, status);
+	printk("spi slave: %d tnf=%u, tfs=%u TFL=%u, rne=%u, rfs=%u RFL=%u\n", spi_context_is_slave(ctx), tnf, tfs, tfl, rne, rfs, rfl);
 	if (status & (SPI_STATUS_ROR | SPI_STATUS_TUR)) {
 		spi_sf32lb_complete(dev, -EIO);
 		return;
 	}
-
-	if (IS_BIT_SET(status, SPI_STATUS_RFS_Pos) && spi_context_rx_buf_on(ctx)) {
-		if (word_size == 8) {
-			rx_frame = sys_read8(cfg->base + SPI_DATA);
-			UNALIGNED_PUT(rx_frame, (uint8_t *)data->ctx.rx_buf);
-			spi_context_update_rx(ctx, 1, 1);
-		} else {
-			rx_frame = sys_read32(cfg->base + SPI_DATA);
-			UNALIGNED_PUT(rx_frame, (uint16_t *)data->ctx.rx_buf);
-			spi_context_update_rx(ctx, 2, 1);
-		}
-
-		if (!spi_context_rx_buf_on(ctx)) {
-			sys_clear_bit(cfg->base + SPI_INTE, SPI_INTE_RIE_Pos);
+//printk("tx left=%u, rx left=%u\n", spi_context_tx_len_left(ctx, dfs), spi_context_rx_len_left(ctx, dfs));
+	if (IS_BIT_SET(status, SPI_STATUS_RFS_Pos)) {
+		rx_frame = sys_read32(cfg->base + SPI_DATA);
+		if (spi_context_rx_on(ctx)) {printk("spi slave:%d rx left=%d\n", spi_context_is_slave(ctx), spi_context_rx_len_left(ctx, dfs));
+			if (spi_context_rx_buf_on(ctx)) {
+				if (word_size == 8) {
+					rx_frame &= 0xFF;
+					UNALIGNED_PUT(rx_frame, (uint8_t *)data->ctx.rx_buf);
+					spi_context_update_rx(ctx, 1, 1);
+				} else {
+					UNALIGNED_PUT(rx_frame, (uint16_t *)data->ctx.rx_buf);
+					spi_context_update_rx(ctx, 2, 1);
+				}
+			} else {
+				if (word_size == 8) {
+					/* No RX buffer, read and discard */
+					spi_context_update_rx(ctx, 1, 1);
+				} else {
+					/* No RX buffer, read and discard */
+					spi_context_update_rx(ctx, 2, 1);
+				}
+			}
 		}
 	}
 
-	if (IS_BIT_SET(status, SPI_STATUS_TNF_Pos) && spi_context_tx_buf_on(ctx)) {
-		if (word_size == 8) {
-			tx_frame = UNALIGNED_GET((uint8_t *)(data->ctx.tx_buf));
-			sys_write8(tx_frame, cfg->base + SPI_DATA);
-			spi_context_update_tx(ctx, 1, 1);
+	if (IS_BIT_SET(status, SPI_STATUS_TNF_Pos)) {
+		if (spi_context_tx_on(ctx)) {printk("spi slave:%d tx left=%d\n", spi_context_is_slave(ctx), spi_context_tx_len_left(ctx, dfs));
+			if (spi_context_tx_buf_on(ctx)) {
+				if (word_size == 8) {
+					tx_frame = UNALIGNED_GET((uint8_t *)(data->ctx.tx_buf));
+					sys_write8(tx_frame, cfg->base + SPI_DATA);
+					spi_context_update_tx(ctx, 1, 1);
+				} else {
+					tx_frame = UNALIGNED_GET((uint16_t *)(data->ctx.tx_buf));
+					sys_write32(tx_frame, cfg->base + SPI_DATA);
+					spi_context_update_tx(ctx, 2, 1);
+				}
+			} else {
+				/* No TX buffer, send dummy data */
+				if (word_size == 8) {
+					sys_write8(0xFF, cfg->base + SPI_DATA);
+					spi_context_update_tx(ctx, 1, 1);
+				} else {
+					sys_write32(0xFFFF, cfg->base + SPI_DATA);
+					spi_context_update_tx(ctx, 2, 1);
+				}
+			}
 		} else {
-			tx_frame = UNALIGNED_GET((uint16_t *)(data->ctx.tx_buf));
-			sys_write32(tx_frame, cfg->base + SPI_DATA);
-			spi_context_update_tx(ctx, 2, 1);
-		}
-
-		if (!spi_context_tx_buf_on(ctx)) {
 			sys_clear_bit(cfg->base + SPI_INTE, SPI_INTE_TIE_Pos);
 		}
 	}
@@ -111,7 +136,6 @@ static void spi_sf32lb_isr(const struct device *dev)
 		spi_sf32lb_complete(dev, 0);
 	}
 }
-#endif
 
 static int spi_sf32lb_configure(const struct device *dev, const struct spi_config *config)
 {
@@ -178,13 +202,25 @@ static int spi_sf32lb_configure(const struct device *dev, const struct spi_confi
 	sys_write32(triwire_ctrl, cfg->base + SPI_TRIWIRE_CTRL);
 
 	sys_set_bit(cfg->base + SPI_CLK_CTRL, SPI_CLK_CTRL_CLK_SSP_EN_Pos);
-	clk_div = DIV_ROUND_UP(clk_freq,
-			       config->frequency); /* see Manual 7.2.6.2.4 clock freq settings */
-	clk_ctrl = sys_read32(cfg->base + SPI_CLK_CTRL);
-	clk_ctrl &= ~SPI_CLK_CTRL_CLK_DIV_Msk;
-	clk_ctrl |= FIELD_PREP(SPI_CLK_CTRL_CLK_DIV_Msk, clk_div);
-	sys_write32(clk_ctrl, cfg->base + SPI_CLK_CTRL);
 
+	if (SPI_OP_MODE_GET(config->operation) != SPI_OP_MODE_SLAVE) {
+		clk_div = DIV_ROUND_UP(clk_freq,
+				config->frequency); /* see Manual 7.2.6.2.4 clock freq settings */
+		clk_ctrl = sys_read32(cfg->base + SPI_CLK_CTRL);
+		clk_ctrl &= ~SPI_CLK_CTRL_CLK_DIV_Msk;
+		clk_ctrl |= FIELD_PREP(SPI_CLK_CTRL_CLK_DIV_Msk, clk_div);
+		sys_write32(clk_ctrl, cfg->base + SPI_CLK_CTRL);
+	}
+
+	/* For slave mode, set FIFO threshold */
+	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_SLAVE) {
+		/* Set FIFO reception threshold to 5 (as in bf0_hal_spi.c) */
+		uint32_t fifo_ctrl = sys_read32(cfg->base + SPI_FIFO_CTRL);
+		fifo_ctrl &= ~SPI_FIFO_CTRL_TFT_Msk;
+		fifo_ctrl |= FIELD_PREP(SPI_FIFO_CTRL_TFT_Msk, 6U);
+		//fifo_ctrl |= FIELD_PREP(SPI_FIFO_CTRL_RFT_Msk, 6U);
+		sys_write32(fifo_ctrl, cfg->base + SPI_FIFO_CTRL);
+	}
 	/* Issue 1401: Make SPO setting is valid before start transfer data*/
 	sys_set_bit(cfg->base + SPI_TOP_CTRL, SPI_TOP_CTRL_SSE_Pos);
 	sys_clear_bit(cfg->base + SPI_TOP_CTRL, SPI_TOP_CTRL_SSE_Pos);
@@ -226,135 +262,11 @@ static int spi_sf32lb_wait_not_busy(const struct device *dev)
 	return 0;
 }
 
-static int spi_sf32lb_shift_tx(const struct device *dev)
-{
-	struct spi_sf32lb_data *data = dev->data;
-	const struct spi_sf32lb_config *cfg = dev->config;
-	struct spi_context *ctx = &data->ctx;
-	uint16_t tx_frame = 0;
-
-	if (spi_context_tx_buf_on(ctx)) {
-		if (sys_test_bit(cfg->base + SPI_STATUS, SPI_STATUS_TNF_Pos)) {
-			if (SPI_WORD_SIZE_GET(ctx->config->operation) == 8) {
-				tx_frame = UNALIGNED_GET((uint8_t *)(data->ctx.tx_buf));
-				sys_write8(tx_frame, cfg->base + SPI_DATA);
-				spi_context_update_tx(ctx, 1, 1);
-			} else if (SPI_WORD_SIZE_GET(ctx->config->operation) == 16) {
-				tx_frame = UNALIGNED_GET((uint16_t *)(data->ctx.tx_buf));
-				sys_write32(tx_frame, cfg->base + SPI_DATA);
-				spi_context_update_tx(ctx, 2, 1);
-			} else {
-				LOG_ERR("Unsupported word size: %u",
-					SPI_WORD_SIZE_GET(ctx->config->operation));
-				return -ENOTSUP;
-			}
-		}
-	} else {
-		if (sys_test_bit(cfg->base + SPI_STATUS, SPI_STATUS_TNF_Pos)) {
-			if (SPI_WORD_SIZE_GET(ctx->config->operation) == 8) {
-				sys_write8(tx_frame, cfg->base + SPI_DATA);
-				spi_context_update_tx(ctx, 1, 1);
-			} else if (SPI_WORD_SIZE_GET(ctx->config->operation) == 16) {
-				sys_write32(tx_frame, cfg->base + SPI_DATA);
-				spi_context_update_tx(ctx, 2, 1);
-			} else {
-				LOG_ERR("Unsupported word size: %u",
-					SPI_WORD_SIZE_GET(ctx->config->operation));
-				return -ENOTSUP;
-			}
-		}
-	}
-
-	return 0;
-}
-
-static int spi_sf32lb_shift_rx(const struct device *dev)
-{
-	struct spi_sf32lb_data *data = dev->data;
-	const struct spi_sf32lb_config *cfg = dev->config;
-	struct spi_context *ctx = &data->ctx;
-	uint16_t rx_frame = 0;
-
-	if (!spi_context_tx_buf_on(ctx) &&
-		sys_test_bit(cfg->base + SPI_STATUS, SPI_STATUS_TNF_Pos)) {
-		if (SPI_WORD_SIZE_GET(ctx->config->operation) == 8) {
-			sys_write8(0U, cfg->base + SPI_DATA);
-		} else if (SPI_WORD_SIZE_GET(ctx->config->operation) == 16) {
-			sys_write32(0U, cfg->base + SPI_DATA);
-		} else {
-			LOG_ERR("Unsupported word size: %u",
-				SPI_WORD_SIZE_GET(ctx->config->operation));
-			return -ENOTSUP;
-		}
-	}
-
-	if (spi_context_rx_buf_on(ctx)) {
-		if (sys_test_bit(cfg->base + SPI_STATUS, SPI_STATUS_RNE_Pos)) {
-			if (SPI_WORD_SIZE_GET(ctx->config->operation) == 8) {
-				rx_frame = sys_read8(cfg->base + SPI_DATA);
-				UNALIGNED_PUT(rx_frame, (uint8_t *)data->ctx.rx_buf);
-				spi_context_update_rx(ctx, 1, 1);
-			} else if (SPI_WORD_SIZE_GET(ctx->config->operation) == 16) {
-				rx_frame = sys_read32(cfg->base + SPI_DATA);
-				UNALIGNED_PUT(rx_frame, (uint16_t *)data->ctx.rx_buf);
-				spi_context_update_rx(ctx, 2, 1);
-			} else {
-				LOG_ERR("Unsupported word size: %u",
-					SPI_WORD_SIZE_GET(ctx->config->operation));
-				return -ENOTSUP;
-			}
-		}
-	} else {
-		if (sys_test_bit(cfg->base + SPI_STATUS, SPI_STATUS_RNE_Pos)) {
-			if (SPI_WORD_SIZE_GET(ctx->config->operation) == 8) {
-				(void)sys_read8(cfg->base + SPI_DATA);
-				spi_context_update_rx(ctx, 1, 1);
-			} else if (SPI_WORD_SIZE_GET(ctx->config->operation) == 16) {
-				(void)sys_read32(cfg->base + SPI_DATA);
-				spi_context_update_rx(ctx, 2, 1);
-			} else {
-				LOG_ERR("Unsupported word size: %u",
-					SPI_WORD_SIZE_GET(ctx->config->operation));
-				return -ENOTSUP;
-			}
-		}
-	}
-
-	return 0;
-}
-
-static int spi_sf32lb_frame_exchange(const struct device *dev)
-{
-	struct spi_sf32lb_data *data = dev->data;
-	const struct spi_sf32lb_config *cfg = dev->config;
-	struct spi_context *ctx = &data->ctx;
-	int ret = 0;
-
-	/* Check if the SPI is already enabled */
-	if (!sys_test_bit(cfg->base + SPI_TOP_CTRL, SPI_TOP_CTRL_SSE_Pos)) {
-		/* Enable SPI peripheral */
-		sys_set_bit(cfg->base + SPI_TOP_CTRL, SPI_TOP_CTRL_SSE_Pos);
-	}
-
-	if (spi_context_tx_on(ctx)) {
-		ret = spi_sf32lb_shift_tx(dev);
-		if (ret < 0) {
-			return ret;
-		}
-	}
-	if (spi_context_rx_on(ctx)) {
-		ret = spi_sf32lb_shift_rx(dev);
-		if (ret < 0) {
-			return ret;
-		}
-	}
-
-	return ret;
-}
-
-static int spi_sf32lb_transceive(const struct device *dev, const struct spi_config *config,
-				 const struct spi_buf_set *tx_bufs,
-				 const struct spi_buf_set *rx_bufs)
+static int transceive(const struct device *dev, const struct spi_config *config,
+		      const struct spi_buf_set *tx_bufs,
+		      const struct spi_buf_set *rx_bufs, bool asynchronous,
+		      spi_callback_t cb,
+		      void *userdata)
 {
 	const struct spi_sf32lb_config *cfg = dev->config;
 	struct spi_sf32lb_data *data = dev->data;
@@ -365,7 +277,7 @@ static int spi_sf32lb_transceive(const struct device *dev, const struct spi_conf
 		return 0;
 	}
 
-	spi_context_lock(&data->ctx, false, NULL, NULL, config);
+	spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
 
 	ret = spi_sf32lb_configure(dev, config);
 	if (ret < 0) {
@@ -376,33 +288,50 @@ static int spi_sf32lb_transceive(const struct device *dev, const struct spi_conf
 	dfs = SPI_WORD_SIZE_GET(config->operation) >> 3;
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, dfs);
 
+	if (!spi_sf32lb_transfer_ongoing(data)) {
+		spi_context_release(&data->ctx, 0);
+		return 0;
+	}
+
 	spi_context_cs_control(&data->ctx, true);
 
-	/* Restart peripheral to avoid residue between back-to-back transfers
-	 * when the same spi_config pointer is reused (concurrent test case).
-	 */
+	/* Restart peripheral to avoid residue between back-to-back transfers */
 	sys_clear_bit(cfg->base + SPI_TOP_CTRL, SPI_TOP_CTRL_SSE_Pos);
 	sys_set_bit(cfg->base + SPI_TOP_CTRL, SPI_TOP_CTRL_SSE_Pos);
 
 	spi_sf32lb_reset_fifos(dev);
 	spi_sf32lb_flush_rx_fifo(dev);
 	sys_set_bits(cfg->base + SPI_STATUS, SPI_STATUS_ROR | SPI_STATUS_TUR | SPI_STATUS_TINT);
-	do {
-		ret = spi_sf32lb_frame_exchange(dev);
-		if (ret < 0) {
-			break;
-		}
-	} while (spi_sf32lb_transfer_ongoing(data));
 
-	if (ret == 0U) {
-		ret = spi_sf32lb_wait_not_busy(dev);
+	/* Clear all interrupts */
+	sys_clear_bits(cfg->base + SPI_INTE, SPI_INTE_RIE | SPI_INTE_TIE | SPI_INTE_TINTE);
+
+	/* Enable interrupts based on transfer direction */
+	if (spi_context_tx_on(&data->ctx)) {
+		sys_set_bit(cfg->base + SPI_INTE, SPI_INTE_TIE_Pos);
 	}
+	if (spi_context_rx_on(&data->ctx)) {
+		sys_set_bit(cfg->base + SPI_INTE, SPI_INTE_RIE_Pos);
+	}
+
+	/* Enable error interrupt */
+	sys_set_bit(cfg->base + SPI_INTE, SPI_INTE_TINTE_Pos);
+
+	/* Wait for transfer completion */
+	ret = spi_context_wait_for_completion(&data->ctx);
 
 	spi_context_cs_control(&data->ctx, false);
 
 	spi_context_release(&data->ctx, ret);
-
+spi_sf32lb_wait_not_busy(dev);
 	return ret;
+}
+
+static int spi_sf32lb_transceive(const struct device *dev, const struct spi_config *config,
+				 const struct spi_buf_set *tx_bufs,
+				 const struct spi_buf_set *rx_bufs)
+{
+	return transceive(dev, config, tx_bufs, rx_bufs, false, NULL, NULL);
 }
 
 #ifdef CONFIG_SPI_ASYNC
@@ -411,49 +340,7 @@ static int spi_sf32lb_transceive_async(const struct device *dev, const struct sp
 				       const struct spi_buf_set *rx_bufs, spi_callback_t cb,
 				       void *userdata)
 {
-	const struct spi_sf32lb_config *cfg = dev->config;
-	struct spi_sf32lb_data *data = dev->data;
-	uint8_t dfs;
-	int ret;
-
-	spi_context_lock(&data->ctx, true, cb, userdata, config);
-
-	ret = spi_sf32lb_configure(dev, config);
-	if (ret < 0) {
-		spi_context_release(&data->ctx, ret);
-		return ret;
-	}
-
-	dfs = SPI_WORD_SIZE_GET(config->operation) >> 3;
-	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, dfs);
-	spi_context_cs_control(&data->ctx, true);
-
-	sys_set_bits(cfg->base + SPI_STATUS, SPI_STATUS_ROR | SPI_STATUS_TUR);
-
-	sys_clear_bits(cfg->base + SPI_INTE, SPI_INTE_RIE | SPI_INTE_TIE);
-
-	if (spi_context_tx_buf_on(&data->ctx)) {
-		sys_set_bit(cfg->base + SPI_INTE, SPI_INTE_TIE_Pos);
-	}
-	if (spi_context_rx_buf_on(&data->ctx)) {
-		sys_set_bit(cfg->base + SPI_INTE, SPI_INTE_RIE_Pos);
-	}
-
-	/* Enable error interrupt */
-	sys_set_bit(cfg->base + SPI_INTE, SPI_INTE_TINTE_Pos);
-
-	/* Enable SPI peripheral if not already enabled */
-	if (!sys_test_bit(cfg->base + SPI_TOP_CTRL, SPI_TOP_CTRL_SSE_Pos)) {
-		sys_set_bit(cfg->base + SPI_TOP_CTRL, SPI_TOP_CTRL_SSE_Pos);
-	}
-
-	ret = spi_context_wait_for_completion(&data->ctx);
-
-	spi_context_cs_control(&data->ctx, false);
-
-	spi_context_release(&data->ctx, ret);
-
-	return ret;
+	return transceive(dev, config, tx_bufs, rx_bufs, true, cb, userdata);
 }
 #endif
 
@@ -503,17 +390,15 @@ static int spi_sf32lb_init(const struct device *dev)
 	}
 
 	spi_context_unlock_unconditionally(&data->ctx);
-#ifdef CONFIG_SPI_ASYNC
+
 	cfg->irq_config_func();
-#endif
 
 	return err;
 }
 
 #define SPI_SF32LB_DEFINE(n)                                                                       \
-	IF_ENABLED(CONFIG_SPI_ASYNC,                                                               \
-		(static void spi_sf32lb_irq_config_func_##n(void);))                               \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+	static void spi_sf32lb_irq_config_func_##n(void);                                          \
 	static struct spi_sf32lb_data spi_sf32lb_data_##n = {                                      \
 		SPI_CONTEXT_INIT_LOCK(spi_sf32lb_data_##n, ctx),                                   \
 		SPI_CONTEXT_INIT_SYNC(spi_sf32lb_data_##n, ctx),                                   \
@@ -523,18 +408,16 @@ static int spi_sf32lb_init(const struct device *dev)
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.clock = SF32LB_CLOCK_DT_INST_SPEC_GET(n),                                         \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		IF_ENABLED(CONFIG_SPI_ASYNC,                                                       \
-			(.irq_config_func = spi_sf32lb_irq_config_func_##n,))                      \
+		.irq_config_func = spi_sf32lb_irq_config_func_##n,                                 \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(n, spi_sf32lb_init, NULL, &spi_sf32lb_data_##n,                      \
 			      &spi_sf32lb_config_##n, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,       \
 			      &spi_sf32lb_api);                                                    \
-	IF_ENABLED(CONFIG_SPI_ASYNC,                                                               \
-		(static void spi_sf32lb_irq_config_func_##n(void)                                  \
-		{                                                                                  \
-			IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), spi_sf32lb_isr,     \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-			irq_enable(DT_INST_IRQN(n));                                               \
-		}))
+	static void spi_sf32lb_irq_config_func_##n(void)                                           \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), spi_sf32lb_isr,             \
+			DEVICE_DT_INST_GET(n), 0);                                                 \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+	}
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_SF32LB_DEFINE)
