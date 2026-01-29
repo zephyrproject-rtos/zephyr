@@ -4,18 +4,6 @@
 description: |
   Renesas RZ Clock Pulse Generator
 
-  Usage example:
-
-    #include <zephyr/dt-bindings/clock/renesas_rz[agv]_clock.h>
-
-    scif0: serial@xxx {
-        ...
-        channel = <0>;
-        /* Cell encodes HWIP, channel, clock source and division */
-        clocks = <&cpg RZ_CLOCK_SCIF(0)>;
-        ...
-    }
-
 compatible: "renesas,rz-cpg"
 
 include: [base.yaml, clock-controller.yaml]
@@ -27,3 +15,16 @@ properties:
 
 clock-cells:
   - clk-id
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/clock/renesas_rz[agv]_clock.h>
+
+    scif0: serial@xxx {
+        /* ... */
+        channel = <0>;
+        /* Cell encodes HWIP, channel, clock source and division */
+        clocks = <&cpg RZ_CLOCK_SCIF(0)>;
+        /* ... */
+    }
+

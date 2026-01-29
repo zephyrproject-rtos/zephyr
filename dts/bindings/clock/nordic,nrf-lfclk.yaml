@@ -16,17 +16,6 @@ description: |
       available. The LFXO clock is used indirectly through
       the FLL16M clock in BYPASS mode.
 
-  Devicetree example:
-
-    lfclk {
-            lfrc-accuracy-ppm = <500>;
-            lflprc-accuracy-ppm = <1000>;
-            lfrc-startup-time-us = <400>;
-            lflprc-startup-time-us = <400>;
-            clocks = <&hfxo>, <&lfxo>;
-            clock-names = "hfxo", "lfxo";
-    };
-
 compatible: "nordic,nrf-lfclk"
 
 include: fixed-clock.yaml
@@ -50,3 +39,15 @@ properties:
   lflprc-startup-time-us:
     type: int
     description: Clock startup time in microseconds if LFLPRC clock source is used.
+
+examples:
+  - |
+    lfclk {
+            lfrc-accuracy-ppm = <500>;
+            lflprc-accuracy-ppm = <1000>;
+            lfrc-startup-time-us = <400>;
+            lflprc-startup-time-us = <400>;
+            clocks = <&hfxo>, <&lfxo>;
+            clock-names = "hfxo", "lfxo";
+    };
+
