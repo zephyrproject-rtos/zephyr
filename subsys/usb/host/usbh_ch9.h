@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2022 Nordic Semiconductor ASA
- *
+ * SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -40,6 +39,12 @@ int usbh_req_desc_cfg(struct usb_device *const udev,
 		      const uint8_t index,
 		      const uint16_t len,
 		      struct usb_cfg_descriptor *const desc);
+
+int usbh_req_desc_str(struct usb_device *const udev,
+		      const uint8_t index,
+		      const uint16_t len,
+		      const uint16_t langid,
+		      struct usb_string_descriptor *const desc);
 
 int usbh_req_set_alt(struct usb_device *const udev,
 		     const uint8_t iface,
