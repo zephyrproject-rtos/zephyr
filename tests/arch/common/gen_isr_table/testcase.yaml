@@ -63,6 +63,10 @@ tests:
   arch.interrupt.gen_isr_table_local.riscv:
     arch_allow: riscv
     platform_exclude:
+      - cdns_swerv/s400/whisper
+      - cdns_swerv/s400/pmp/whisper
+      - cdns_swerv/s420/whisper
+      - cdns_swerv/s420_64/whisper
       - it8xxx2_evb
     extra_configs:
       - CONFIG_ISR_TABLES_LOCAL_DECLARATION=y

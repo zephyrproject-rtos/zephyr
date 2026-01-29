@@ -39,6 +39,11 @@ tests:
       # On it8xxx2_evb, current trigger_irq implementation of RISC-V architecture
       # does not trigger interrupts
       - it8xxx2_evb
+      # whisper does not support writing to MIP register to trigger interrupts
+      - cdns_swerv/s400/whisper
+      - cdns_swerv/s400/pmp/whisper
+      - cdns_swerv/s420/whisper
+      - cdns_swerv/s420_64/whisper
     arch_exclude:
       # test needs 2 working interrupt lines
       - xtensa
@@ -56,6 +61,11 @@ tests:
       - qemu_cortex_m0
       # excluded because of assertion during test_isr_offload_job_identi (issue #98658)
       - mpfs_icicle/polarfire/u54/smp
+      # whisper does not support writing to MIP register to trigger interrupts
+      - cdns_swerv/s400/whisper
+      - cdns_swerv/s400/pmp/whisper
+      - cdns_swerv/s420/whisper
+      - cdns_swerv/s420_64/whisper
     arch_exclude:
       # test needs 2 working interrupt lines
       - xtensa
