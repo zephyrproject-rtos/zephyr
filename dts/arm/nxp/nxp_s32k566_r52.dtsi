@@ -442,3 +442,35 @@
 &swt_startup {
 	interrupts = <GIC_SPI 23 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 };
+
+&lpe_lpspi0 {
+	interrupts = <GIC_SPI 220 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpe_lpspi1 {
+	interrupts = <GIC_SPI 221 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpspi0 {
+	interrupts = <GIC_SPI 136 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpspi1 {
+	interrupts = <GIC_SPI 137 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpspi2 {
+	interrupts = <GIC_SPI 138 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpspi3 {
+	interrupts = <GIC_SPI 139 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpspi4 {
+	interrupts = <GIC_SPI 140 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lpspi5 {
+	interrupts = <GIC_SPI 141 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
