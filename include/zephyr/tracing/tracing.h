@@ -24,6 +24,8 @@
 #include "tracing_test.h"
 #elif defined CONFIG_TRACING_USER
 #include "tracing_user.h"
+#elif defined CONFIG_TRACING_CUSTOM
+#include "zephyr_custom_tracing.h"
 #else
 /**
  * @brief Interfaces for the tracing subsystem.
