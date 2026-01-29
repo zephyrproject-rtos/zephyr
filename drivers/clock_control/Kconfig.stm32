@@ -112,4 +112,11 @@ config CLOCK_STM32_MCO
 	  Allows to output various different clock sources onto the MCO pin
 	  using a configurable prescaler.
 
+config CLOCK_STM32_MCO_HAS_ENABLE_BIT
+	def_bool y
+	depends on DT_HAS_ST_STM32_CLOCK_MCO_ENABLED
+	depends on SOC_SERIES_STM32MP13X
+	help
+	  Hidden option indicating the series has a dedicated bit to enable MCO output
+
 endif # CLOCK_CONTROL_STM32_CUBE
