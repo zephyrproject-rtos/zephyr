@@ -61,27 +61,36 @@ static const uint8_t webusb_origin_url[] = {
 	'l', 'o', 'c', 'a', 'l', 'h', 'o', 's', 't', ':', '8', '0', '0', '0'
 };
 
-static int webusb_to_host_cb(const struct usbd_context *const ctx,
-			     const struct usb_setup_packet *const setup,
-			     struct net_buf *const buf)
+static struct net_buf *webusb_to_host_cb(const struct usbd_context *const ctx,
+					 const struct usb_setup_packet *const setup)
 {
 	LOG_INF("Vendor callback to host");
 
 	if (setup->wIndex == WEBUSB_REQ_GET_URL) {
+		struct net_buf *buf;
+		uint16_t len;
 		uint8_t index = USB_GET_DESCRIPTOR_INDEX(setup->wValue);
 
 		if (index != SAMPLE_WEBUSB_LANDING_PAGE) {
-			return -ENOTSUP;
+			errno = -ENOTSUP;
+			return NULL;
+		}
+
+		len = MIN(setup->wLength, sizeof(webusb_origin_url));
+		buf = usbd_ep_ctrl_data_in_alloc(ctx, len);
+		if (buf == NULL) {
+			errno = -ENOMEM;
+			return NULL;
 		}
 
 		LOG_INF("Get URL request, index %u", index);
-		net_buf_add_mem(buf, &webusb_origin_url,
-				MIN(net_buf_tailroom(buf), sizeof(webusb_origin_url)));
+		net_buf_add_mem(buf, &webusb_origin_url, len);
 
-		return 0;
+		return buf;
 	}
 
-	return -ENOTSUP;
+	errno = -ENOTSUP;
+	return NULL;
 }
 
 USBD_DESC_BOS_VREQ_DEFINE(bos_vreq_webusb, sizeof(bos_cap_webusb), &bos_cap_webusb,

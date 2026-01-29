@@ -397,12 +397,23 @@ static int usbd_hid_ctd(struct usbd_class_data *const c_data,
 	return ret;
 }
 
-static int usbd_hid_cth(struct usbd_class_data *const c_data,
-			const struct usb_setup_packet *const setup,
-			struct net_buf *const buf)
+static struct net_buf *usbd_hid_cth(struct usbd_class_data *const c_data,
+				    const struct usb_setup_packet *const setup)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
+	struct net_buf *buf;
 	int ret = 0;
+
+	/* Get Report is problematic because ops->get_report() currently does
+	 * not make it possible to determine report size without passing
+	 * sufficiently large buffer first. For the time being, just allocate
+	 * setup->wLength bytes.
+	 */
+	buf = usbd_ep_ctrl_data_in_alloc(usbd_class_get_ctx(c_data), setup->wLength);
+	if (buf == NULL) {
+		errno = -ENOMEM;
+		return NULL;
+	}
 
 	switch (setup->bRequest) {
 	case USB_HID_GET_IDLE:
@@ -422,7 +433,7 @@ static int usbd_hid_cth(struct usbd_class_data *const c_data,
 		break;
 	}
 
-	return ret;
+	return buf;
 }
 
 static void usbd_hid_sof(struct usbd_class_data *const c_data)

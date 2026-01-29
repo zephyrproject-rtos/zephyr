@@ -101,24 +101,33 @@ struct usbd_str_desc_data {
  * Example callback code fragment:
  *
  * @code{.c}
- * static int foo_to_host_cb(const struct usbd_context *const ctx,
- *                           const struct usb_setup_packet *const setup,
- *                           struct net_buf *const buf)
+ * static net_buf *foo_to_host_cb(const struct usbd_context *const ctx,
+ *                                const struct usb_setup_packet *const setup)
  * {
  *     if (setup->wIndex == WEBUSB_REQ_GET_URL) {
+ *         struct net_buf *buf;
+ *         uint16_t len;
  *         uint8_t index = USB_GET_DESCRIPTOR_INDEX(setup->wValue);
  *
  *         if (index != SAMPLE_WEBUSB_LANDING_PAGE) {
- *             return -ENOTSUP;
+ *             errno = -ENOTSUP;
+ *             return NULL;
  *         }
  *
- *         net_buf_add_mem(buf, &webusb_origin_url,
- *                         MIN(net_buf_tailroom(buf), sizeof(webusb_origin_url)));
+ *         len = MIN(setup->wLength, sizeof(webusb_origin_url));
+ *         buf = usbd_ep_ctrl_data_in_alloc(ctx, len);
+ *         if (buf == NULL) {
+ *             errno = -ENOMEM;
+ *             return NULL;
+ *         }
  *
- *         return 0;
+ *         net_buf_add_mem(buf, &webusb_origin_url, len);
+ *
+ *         return buf;
  *     }
  *
- *     return -ENOTSUP;
+ *     errno = -ENOTSUP;
+ *     return NULL;
  * }
  * @endcode
  */
@@ -128,9 +137,8 @@ struct usbd_vreq_node {
 	/** Vendor code (bRequest value) */
 	const uint8_t code;
 	/** Vendor request callback for device-to-host direction */
-	int (*to_host)(const struct usbd_context *const ctx,
-		       const struct usb_setup_packet *const setup,
-		       struct net_buf *const buf);
+	struct net_buf *(*to_host)(const struct usbd_context *const ctx,
+				   const struct usb_setup_packet *const setup);
 	/** Vendor request callback for host-to-device direction */
 	int (*to_dev)(const struct usbd_context *const ctx,
 		      const struct usb_setup_packet *const setup,
@@ -342,9 +350,8 @@ struct usbd_class_api {
 			      const struct net_buf *const buf);
 
 	/** USB control request handler to host */
-	int (*control_to_host)(struct usbd_class_data *const c_data,
-			       const struct usb_setup_packet *const setup,
-			       struct net_buf *const buf);
+	struct net_buf *(*control_to_host)(struct usbd_class_data *const c_data,
+					   const struct usb_setup_packet *const setup);
 
 	/** Endpoint request completion event handler */
 	int (*request)(struct usbd_class_data *const c_data,
@@ -1028,6 +1035,19 @@ bool usbd_ep_is_halted(struct usbd_context *uds_ctx, uint8_t ep);
  */
 struct net_buf *usbd_ep_buf_alloc(const struct usbd_class_data *const c_data,
 				  const uint8_t ep, const size_t size);
+
+/**
+ * @brief Allocate buffer for USB control transfer data stage
+ *
+ * Allocate a new buffer from controller's driver buffer pool.
+ *
+ * @param[in] uds_ctx Pointer to USB device support context
+ * @param[in] size    Size of the request buffer
+ *
+ * @return pointer to allocated request or NULL on error.
+ */
+struct net_buf *usbd_ep_ctrl_data_in_alloc(const struct usbd_context *const uds_ctx,
+					   const size_t size);
 
 /**
  * @brief Queue USB device control request

@@ -1255,12 +1255,13 @@ err:
 	return UVC_OP_RETURN_ERROR;
 }
 
-static int uvc_control_to_host(struct usbd_class_data *const c_data,
-			       const struct usb_setup_packet *const setup,
-			       struct net_buf *const buf)
+static struct net_buf *uvc_control_to_host(struct usbd_class_data *const c_data,
+					   const struct usb_setup_packet *const setup)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
 	const struct uvc_control_map *map = NULL;
+	struct net_buf *buf;
+	const size_t size = MIN(sizeof(struct uvc_probe), setup->wLength);
 	uint8_t request = setup->bRequest;
 
 	LOG_INF("Host sent a %s request, wValue 0x%04x, wIndex 0x%04x, wLength %u",
@@ -1269,6 +1270,12 @@ static int uvc_control_to_host(struct usbd_class_data *const c_data,
 		request == UVC_GET_LEN ? "GET_LEN" : request == UVC_GET_DEF ? "GET_DEF" :
 		request == UVC_GET_INFO ? "GET_INFO" : "bad",
 		setup->wValue, setup->wIndex, setup->wLength);
+
+	buf = usbd_ep_ctrl_data_in_alloc(usbd_class_get_ctx(c_data), size);
+	if (buf == NULL) {
+		errno = ENOMEM;
+		return NULL;
+	}
 
 	switch (uvc_get_control_op(dev, setup, &map)) {
 	case UVC_OP_VS_PROBE:
@@ -1285,7 +1292,8 @@ static int uvc_control_to_host(struct usbd_class_data *const c_data,
 		break;
 	case UVC_OP_RETURN_ERROR:
 		errno = EINVAL;
-		return 0;
+		net_buf_unref(buf);
+		return NULL;
 	default:
 		LOG_WRN("Unhandled operation, stalling control command");
 		errno = EINVAL;
@@ -1293,7 +1301,7 @@ static int uvc_control_to_host(struct usbd_class_data *const c_data,
 
 	uvc_set_errno(dev, errno);
 
-	return 0;
+	return buf;
 }
 
 static int uvc_control_to_dev(struct usbd_class_data *const c_data,
