@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2025 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "rpi_5_bcm2712.dts"
+
+/ {
+	chosen {
+		zephyr,console = &rp1_uart0;
+		zephyr,shell-uart = &rp1_uart0;
+	};
+};
+
+&rp1_uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&rp1_uart0_default>;
+	pinctrl-names = "default";
+};
+
+&uart10 {
+	status = "disabled";
+};
