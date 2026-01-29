@@ -15,12 +15,21 @@ if(NOT CONFIG_TFM_PARTITION_PLATFORM)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_POWEROFF poweroff.c)
-if(CONFIG_ARM)
-  zephyr_library_sources_ifdef(CONFIG_NRF_PLATFORM_HALTIUM soc_lrcconf.c)
-endif()
 
-if((CONFIG_SOC_SERIES_NRF54H OR CONFIG_SOC_SERIES_NRF92) AND CONFIG_CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS)
-  zephyr_library_sources(nrf54hx_nrf92x_mpu_regions.c)
+if(CONFIG_ARM)
+  if(CONFIG_NRF_PLATFORM_HALTIUM)
+    if(CONFIG_PM OR CONFIG_POWEROFF)
+      zephyr_library_sources(haltium_power.c)
+      zephyr_code_relocate(
+        FILES haltium_power.c
+        FILTER ".*\\.cache_retain_and_sleep"
+        LOCATION PMLocalRamfunc_TEXT
+      )
+    endif()
+    zephyr_library_sources_ifdef(CONFIG_PM_S2RAM haltium_pm_s2ram.c)
+    zephyr_library_sources_ifdef (CONFIG_CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS nrf54hx_nrf92x_mpu_regions.c)
+    zephyr_library_sources(soc_lrcconf.c)
+  endif()
 endif()
 
 zephyr_include_directories(.)
