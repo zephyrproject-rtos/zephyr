@@ -21,7 +21,7 @@
 #if CONFIG_HARVARD && CONFIG_ARC
 #define IN_NODE(inst, compat, base_addr, alloc)                                                    \
 	(((uintptr_t)(base_addr) >= DT_REG_ADDR(DT_INST(inst, compat)) &&                          \
-	  (uintptr_t)(base_addr + alloc) <=                                                        \
+	  (uintptr_t)((uintptr_t)base_addr + (uintptr_t)alloc) <=                                  \
 		  DT_REG_ADDR(DT_INST(inst, compat)) + DT_REG_SIZE(DT_INST(inst, compat)))) ||
 #define INSTR_FETCHABLE(base_addr, alloc)                                                          \
 	(DT_COMPAT_FOREACH_STATUS_OKAY_VARGS(arc_iccm, IN_NODE, base_addr, alloc) false)
