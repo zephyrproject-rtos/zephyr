@@ -10,7 +10,7 @@
 
 #include "fsl_ocotp.h"
 
-#define DT_DRV_COMPAT nxp_mcux_ocotp
+#define DT_DRV_COMPAT nxp_ocotp
 
 LOG_MODULE_REGISTER(mcux_ocotp, CONFIG_OTP_LOG_LEVEL);
 

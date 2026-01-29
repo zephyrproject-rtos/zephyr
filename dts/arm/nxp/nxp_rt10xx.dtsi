@@ -1227,7 +1227,7 @@
 		};
 
 		ocotp: ocotp@401f4000 {
-			compatible = "nxp,mcux-ocotp";
+			compatible = "nxp,ocotp";
 			reg = <0x401f4000 0x4000>;
 			status = "disabled";
 			clocks = <&ccm IMX_CCM_OCOTP_CLK 0 0>;
