@@ -107,7 +107,7 @@ static void __parse_scan_res(char *str, struct wifi_scan_result *res)
 		case 2: /* mac addr */
 			break;
 		case 3: /* RSSI */
-			res->rssi = atoi(str);
+			res->rssi = strtol(str, NULL, 10);
 			break;
 		case 4: /* bitrate */
 			break;
@@ -123,7 +123,7 @@ static void __parse_scan_res(char *str, struct wifi_scan_result *res)
 		case 7: /* band */
 			break;
 		case 8: /* channel */
-			res->channel = atoi(str);
+			res->channel = strtol(str, NULL, 10);
 			break;
 		}
 
@@ -192,9 +192,11 @@ struct eswifi_dev *eswifi_by_iface_idx(uint8_t iface)
 	return &eswifi0;
 }
 
-static void __parse_ipv4_address(char *str, char *ssid, uint8_t ip[4])
+static int __parse_ipv4_address(char *str, char *ssid, uint8_t ip[4])
 {
 	int byte = -1;
+	char *end;
+	long v;
 
 	/* fmt => [JOIN   ] SSID,192.168.2.18,0,0 */
 	while (*str && byte < 4) {
@@ -207,10 +209,18 @@ static void __parse_ipv4_address(char *str, char *ssid, uint8_t ip[4])
 			continue;
 		}
 
-		ip[byte++] = atoi(str);
+		errno = 0;
+		v = strtol(str, &end, 10);
+
+		if (errno || end == str || v < 0 || v > 255) {
+			return -EINVAL;
+		}
+
+		ip[byte++] = (uint8_t)v;
 		while (*str && (*str++ != '.')) {
 		}
 	}
+	return 0;
 }
 
 static void eswifi_scan(struct eswifi_dev *eswifi)
@@ -296,7 +306,12 @@ static int eswifi_connect(struct eswifi_dev *eswifi)
 	}
 
 	/* Any IP assigned ? (dhcp offload or manually) */
-	__parse_ipv4_address(rsp, eswifi->sta.ssid, (uint8_t *)&addr.s4_addr);
+	err = __parse_ipv4_address(rsp, eswifi->sta.ssid, (uint8_t *)&addr.s4_addr);
+
+	if (err < 0) {
+		LOG_ERR("Unable to retrieve IP address");
+		goto error;
+	}
 
 	LOG_DBG("ip = %d.%d.%d.%d", addr.s4_addr[0], addr.s4_addr[1],
 		   addr.s4_addr[2], addr.s4_addr[3]);
@@ -345,6 +360,8 @@ static void eswifi_status_work(struct k_work *work)
 	char rssi[] = "CR\r";
 	char *rsp;
 	int ret;
+	long v;
+	char *end;
 
 	eswifi = CONTAINER_OF(dwork, struct eswifi_dev, status_work);
 
@@ -374,7 +391,13 @@ static void eswifi_status_work(struct k_work *work)
 		LOG_ERR("Unable to retrieve rssi");
 		/* continue */
 	} else {
-		eswifi->sta.rssi = atoi(rsp);
+		errno = 0;
+		v = strtol(rsp, &end, 10);
+		if (errno || end == rsp) {
+			LOG_ERR("Invalid RSSI value");
+			goto done;
+		}
+		eswifi->sta.rssi = (int8_t)v;
 	}
 
 	k_work_reschedule_for_queue(&eswifi->work_q, &eswifi->status_work,
@@ -418,6 +441,8 @@ static int eswifi_get_mac_addr(struct eswifi_dev *eswifi, uint8_t addr[6])
 	char cmd[] = "Z5\r";
 	int ret, i, byte = 0;
 	char *rsp;
+	char *end;
+	long v;
 
 	ret = eswifi_at_cmd_rsp(eswifi, cmd, &rsp);
 	if (ret < 0) {
@@ -426,7 +451,12 @@ static int eswifi_get_mac_addr(struct eswifi_dev *eswifi, uint8_t addr[6])
 
 	/* format is "ff:ff:ff:ff:ff:ff" */
 	for (i = 0; i < ret && byte < 6; i++) {
-		addr[byte++] = strtol(&rsp[i], NULL, 16);
+		errno = 0;
+		v = strtol(&rsp[i], &end, 16);
+		if (errno || end != &rsp[i + 2] || v < 0 || v > 0xff) {
+			return -EIO;
+		}
+		addr[byte++] = (uint8_t)v;
 		i += 2;
 	}
 
