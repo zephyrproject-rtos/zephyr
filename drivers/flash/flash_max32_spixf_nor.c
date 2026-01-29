@@ -298,9 +298,10 @@ static int qspi_write_status_register(const struct device *dev, uint8_t reg_num,
 
 static int qspi_read_jedec_id_priv(const struct device *dev, uint8_t *id)
 {
+	uint32_t dummy_cycles = DT_INST_PROP(0, read_id_dummy_cycles);
 	int ret;
 
-	ret = qspi_read_access(dev, JESD216_CMD_READ_ID, id, JESD216_READ_ID_LEN, 8);
+	ret = qspi_read_access(dev, JESD216_CMD_READ_ID, id, JESD216_READ_ID_LEN, dummy_cycles);
 	if (ret < 0) {
 		LOG_ERR("Failed to read ID (%d)", ret);
 		return ret;
