@@ -187,7 +187,8 @@ Glossary of Terms
       and :term:`CPU cluster`. Common uses of the variant concept include
       introducing both secure and non-secure builds for platforms with Trusted
       Execution Environment support, or selecting the type of RAM used in a
-      build.
+      build. Variants are also used to distinguish between boards with
+      varying peripherals.
 
    west
       A multi-repo meta-tool developed for the Zephyr project. See :ref:`west`.
