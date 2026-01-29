@@ -358,6 +358,18 @@ ssize_t zvfs_read(int fd, void *buf, size_t sz, const size_t *from_offset);
  */
 ssize_t zvfs_write(int fd, const void *buf, size_t sz, const size_t *from_offset);
 
+/**
+ * @brief Set I/O position of file.
+ *
+ * @param fd File descriptor index
+ * @param offset New file I/O position
+ * @param whence Offset relative to 0 - offset is absolute.
+ * 1 - offset is relative to current. 2 - offset is relative to end.
+ *
+ * @return New position or (off_t) -1 with errno set on failure.
+ */
+off_t zvfs_lseek(int fd, off_t offset, int whence);
+
 #ifdef CONFIG_ZVFS_DEFAULT_FILE_VMETHODS
 int zvfs_ioctl_vmeth(void *obj, unsigned int request, va_list args);
 int zvfs_close_vmeth(void *obj);
