@@ -1,0 +1,81 @@
+# ARM9 platform configuration options
+
+# Copyright (C) 2025-2026 Microchip Technology Inc. and its subsidiaries
+
+# SPDX-License-Identifier: Apache-2.0
+
+config CPU_ARM926EJ_S
+	bool
+	select ARMV5TEJ
+	select CPU_AARCH32_ARM9
+	select CPU_HAS_MMU
+	select CPU_HAS_ICACHE
+	select CPU_HAS_DCACHE
+	help
+	  This option signifies the use of a ARM926EJ-S CPU.
+
+config ARMV5TEJ
+	bool
+	select ARMV5TE
+	help
+	  This option signifies the use of a ARMv5TEJ CPU.
+
+config ARMV5TE
+	bool
+	select ARMV5T
+	help
+	  This option signifies the use of a ARMv5TE CPU.
+
+config ARMV5T
+	bool
+	select ARMV5
+	help
+	  This option signifies the use of a ARMv5T CPU.
+
+config ARMV5
+	bool
+	help
+	  This option signifies the use of a ARMv5 CPU.
+
+if ARMV5
+
+config ARMV5_EXCEPTION_STACK_SIZE
+	int "Undefined Instruction and Abort stack size (in bytes)"
+	default 256
+	help
+	  This option specifies the size of the stack used by the undefined
+	  instruction and data abort exception handlers.
+
+config ARMV5_FIQ_STACK_SIZE
+	int "FIQ stack size (in bytes)"
+	default 256
+	help
+	  This option specifies the size of the stack used by the FIQ handler.
+
+config ARMV5_SVC_STACK_SIZE
+	int "SVC stack size (in bytes)"
+	default 512
+	help
+	  This option specifies the size of the stack used by the SVC handler.
+
+config ARMV5_SYS_STACK_SIZE
+	int "SYS stack size (in bytes)"
+	default 1024
+	help
+	  This option specifies the size of the stack used by the system mode.
+
+config GEN_ISR_TABLES
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
+config DCACHE_LINE_SIZE
+	depends on CPU_HAS_DCACHE
+	default 32
+
+config ICACHE_LINE_SIZE
+	depends on CPU_HAS_ICACHE
+	default 32
+
+endif # ARMV5
