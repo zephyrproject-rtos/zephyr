@@ -31,6 +31,7 @@ struct bt_tbs_instance *tbs_inst;
 static uint8_t call_index;
 static uint8_t inst_ccid;
 static bool send_ev;
+static uint8_t tbs_register_bearer(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len);
 
 static uint8_t ccp_supported_commands(const void *cmd, uint16_t cmd_len,
 				      void *rsp, uint16_t *rsp_len)
@@ -1093,6 +1094,11 @@ static struct bt_tbs_cb tbs_cbs = {
 
 static const struct btp_handler tbs_handlers[] = {
 	{
+		.opcode = BTP_TBS_REGISTER_BEARER,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = tbs_register_bearer,
+	},
+	{
 		.opcode = BTP_TBS_READ_SUPPORTED_COMMANDS,
 		.index = BTP_INDEX_NONE,
 		.expect_len = 0,
@@ -1197,5 +1203,56 @@ uint8_t tester_init_tbs(void)
 
 uint8_t tester_unregister_tbs(void)
 {
+	return BTP_STATUS_SUCCESS;
+}
+
+static uint8_t tbs_register_bearer(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	const struct btp_tbs_register_bearer_cmd *cp = cmd;
+	const uint8_t *strings = cp->strings;
+	char provider_name[CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH + 1];
+	char uci[BT_TBS_MAX_UCI_SIZE];
+	char uri_scheme_list[CONFIG_BT_TBS_MAX_URI_LENGTH + 1];
+
+	if (cmd_len != sizeof(*cp) + cp->provider_name_len +
+	cp->uci_len + cp->uri_scheme_list_len) {
+		LOG_DBG("Invalid length: %u", cmd_len);
+		return BTP_STATUS_FAILED;
+	}
+	/* Extract provider_name */
+	(void)memcpy(provider_name, strings, cp->provider_name_len);
+	provider_name[cp->provider_name_len] = '\0';
+
+	/* Extract uci */
+	(void)memcpy(uci, strings + cp->provider_name_len, cp->uci_len);
+	uci[cp->uci_len] = '\0';
+
+	/* Extract uri_scheme_list */
+	(void)memcpy(uri_scheme_list,
+		strings + cp->provider_name_len + cp->uci_len,
+		cp->uri_scheme_list_len);
+	uri_scheme_list[cp->uri_scheme_list_len] = '\0';
+
+	struct bt_tbs_register_param param = {
+		.provider_name = provider_name,
+		.uci = uci,
+		.uri_schemes_supported = uri_scheme_list,
+		.gtbs = cp->gtbs,
+		.technology = cp->technology,
+		.supported_features = sys_le16_to_cpu(cp->supported_features),
+	};
+
+	int index = bt_tbs_register_bearer(&param);
+
+	if (index < 0) {
+		return BTP_STATUS_FAILED;
+	}
+
+	/* Return the assigned index in the response */
+	if (rsp != NULL && rsp_len != NULL) {
+		*(uint8_t *)rsp = (uint8_t)index;
+		*rsp_len = 1U;
+	}
+
 	return BTP_STATUS_SUCCESS;
 }
