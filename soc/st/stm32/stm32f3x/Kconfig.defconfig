@@ -14,4 +14,14 @@ configdefault SHARED_INTERRUPTS
 	default y if $(dt_nodelabel_enabled,timers1) && $(dt_nodelabel_enabled,timers16)
 	default y if $(dt_nodelabel_enabled,timers1) && $(dt_nodelabel_enabled,timers17)
 
+if PM
+
+configdefault COUNTER
+	default y
+
+configdefault COUNTER_RTC_STM32_SUBSECONDS
+	default y if DT_HAS_ST_STM32_RTC_ENABLED
+
+endif # PM
+
 endif # SOC_SERIES_STM32F3X
