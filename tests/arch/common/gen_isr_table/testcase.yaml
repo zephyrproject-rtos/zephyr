@@ -80,6 +80,7 @@ tests:
       - adp_xc7k/ae350
       - nrf9280pdk/nrf9280/cpuppr
       - nrf9280pdk/nrf9280/cpuppr/xip
+      - xiaohui_c908/c908
     filter: CONFIG_RISCV_PRIVILEGED
     extra_configs:
       - CONFIG_GEN_IRQ_VECTOR_TABLE=y

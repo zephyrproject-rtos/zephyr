@@ -67,6 +67,11 @@ extern const uintptr_t _irq_vector_table[];
 #define ISR5_OFFSET SPARE_IRQ_4
 #define ISR6_OFFSET SPARE_IRQ_5
 #define TRIG_CHECK_SIZE (ISR6_OFFSET + 1)
+#elif defined(CONFIG_SOC_SERIES_XIAOHUI_C9XX)
+#define ISR1_OFFSET	1 /* Superuser mode software interrupt */
+#define ISR3_OFFSET	5 /* Superuser mode timer interrupt */
+#define ISR5_OFFSET	9 /* Superuser mode external interrupt */
+#define TRIG_CHECK_SIZE 10
 #else
 
 #if !defined(IRQ1_USED)
