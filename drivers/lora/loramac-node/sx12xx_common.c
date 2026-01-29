@@ -192,10 +192,46 @@ static void sx12xx_ev_rx_error(void)
 	}
 }
 
+/**
+ * @brief Convert Zephyr bandwidth enum to loramac-node bandwidth index
+ *
+ * The loramac-node library expects bandwidth as an index (0, 1, 2) into its
+ * internal Bandwidths[] array, not the actual kHz value.
+ *
+ * @param bandwidth Zephyr lora_signal_bandwidth enum value
+ * @param bw_idx Pointer to store the resulting bandwidth index
+ * @return 0 on success, -EINVAL if bandwidth is not supported
+ */
+static int sx12xx_get_bandwidth_idx(enum lora_signal_bandwidth bandwidth,
+				    uint32_t *bw_idx)
+{
+	switch (bandwidth) {
+	case BW_125_KHZ:
+		*bw_idx = 0;
+		break;
+	case BW_250_KHZ:
+		*bw_idx = 1;
+		break;
+	case BW_500_KHZ:
+		*bw_idx = 2;
+		break;
+	default:
+		return -EINVAL;
+	}
+	return 0;
+}
+
 uint32_t sx12xx_airtime(const struct device *dev, uint32_t data_len)
 {
+	uint32_t bw_idx;
+
+	/* Translate bandwidth to loramac-node index, default to 0 if invalid */
+	if (sx12xx_get_bandwidth_idx(dev_data.tx_cfg.bandwidth, &bw_idx) < 0) {
+		bw_idx = 0;
+	}
+
 	return Radio.TimeOnAir(MODEM_LORA,
-			       dev_data.tx_cfg.bandwidth,
+			       bw_idx,
 			       dev_data.tx_cfg.datarate,
 			       dev_data.tx_cfg.coding_rate,
 			       dev_data.tx_cfg.preamble_len,
@@ -343,6 +379,14 @@ int sx12xx_lora_config(const struct device *dev,
 		       struct lora_modem_config *config)
 {
 	bool crc = !config->packet_crc_disable;
+	uint32_t bw_idx;
+	int ret;
+
+	ret = sx12xx_get_bandwidth_idx(config->bandwidth, &bw_idx);
+	if (ret < 0) {
+		LOG_ERR("Unsupported bandwidth: %d", config->bandwidth);
+		return ret;
+	}
 
 	/* Ensure available, decremented after configuration */
 	if (!modem_acquire(&dev_data)) {
@@ -356,12 +400,12 @@ int sx12xx_lora_config(const struct device *dev,
 		memcpy(&dev_data.tx_cfg, config, sizeof(dev_data.tx_cfg));
 		/* Configure radio driver */
 		Radio.SetTxConfig(MODEM_LORA, config->tx_power, 0,
-				  config->bandwidth, config->datarate,
+				  bw_idx, config->datarate,
 				  config->coding_rate, config->preamble_len,
 				  false, crc, 0, 0, config->iq_inverted, 4000);
 	} else {
 		/* TODO: Get symbol timeout value from config parameters */
-		Radio.SetRxConfig(MODEM_LORA, config->bandwidth,
+		Radio.SetRxConfig(MODEM_LORA, bw_idx,
 				  config->datarate, config->coding_rate,
 				  0, config->preamble_len, 10, false, 0,
 				  crc, false, 0, config->iq_inverted, true);
