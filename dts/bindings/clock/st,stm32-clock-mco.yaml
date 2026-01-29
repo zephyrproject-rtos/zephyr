@@ -15,6 +15,7 @@ description: |
         Example:
                 &mco1 {
                         clocks = <&rcc STM32_SRC_LSE MCO1_SEL(7)>;
+                        clock-names = "clksel"
                         prescaler = <MCO1_PRE(MCO_PRE_DIV_5)>;
                         pinctrl-0 = <&rcc_mco_pa8>;
                         pinctrl-names = "default";
@@ -26,6 +27,9 @@ include: [base.yaml, pinctrl-device.yaml]
 properties:
 
   clocks:
+    required: true
+
+  clock-names:
     required: true
 
   prescaler:
