@@ -1,0 +1,13 @@
+# Copyright (c) 2025, Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SF32LB_VBAT
+	bool "SF32LB VBAT sensor"
+	default y
+	depends on DT_HAS_SIFLI_SF32LB_VBAT_ENABLED
+	select ADC
+	select NVMEM
+	select OTP
+	help
+	  Enable support for measuring the SF32LB internal VBAT channel using the
+	  Zephyr ADC API.
