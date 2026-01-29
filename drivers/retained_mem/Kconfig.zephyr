@@ -1,6 +1,26 @@
 # Copyright (c) 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+menuconfig RETAINED_MEM_ZEPHYR_BBRAM
+	bool "Generic BBRAM retained memory driver"
+	default y
+	depends on BBRAM
+	depends on DT_HAS_ZEPHYR_RETAINED_BBRAM_ENABLED
+	help
+	  Enable driver for retained memory in BBRAM.
+
+config RETAINED_MEM_ZEPHYR_BBRAM_CLEAR_CHUNK_SIZE
+	int "Number of BBRAM bytes to clear at a time"
+	default 128
+	depends on RETAINED_MEM_ZEPHYR_BBRAM
+	help
+	  Dictates the size of stack allocation and number of writes performed by
+	  each retained memory clear operation.
+
+	  BBRAMs do not have a clear operation; to clear one, we must repeatedly
+	  write chunks of zeroes. Each clear operation will stack-allocate this
+	  many bytes, and then make ceil(BBRAM size / clear chunk size) writes.
+
 config RETAINED_MEM_ZEPHYR_RAM
 	bool "Generic Zephyr RAM retained memory driver"
 	default y

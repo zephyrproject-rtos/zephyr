@@ -55,10 +55,12 @@ static int zephyr_retained_mem_ram_init(const struct device *dev)
 #ifdef CONFIG_RETAINED_MEM_MUTEXES
 	struct zephyr_retained_mem_ram_data *data = dev->data;
 
-	k_mutex_init(&data->lock);
-#endif
+	return k_mutex_init(&data->lock);
+#else
+	ARG_UNUSED(dev);
 
 	return 0;
+#endif
 }
 
 static ssize_t zephyr_retained_mem_ram_size(const struct device *dev)

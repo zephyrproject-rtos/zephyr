@@ -1,0 +1,16 @@
+/ {
+	aliases {
+		retainedmemtestdevice = &retainedmem0;
+	};
+
+	bbram: bbram {
+		compatible = "zephyr,bbram-emul";
+		status = "okay";
+		size = <0xff>;
+
+		retainedmem0: retainedmem {
+			compatible = "zephyr,retained-bbram";
+			status = "okay";
+		};
+	};
+};

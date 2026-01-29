@@ -1,9 +1,19 @@
+common:
+  tags:
+    - drivers
+    - retained_mem
 tests:
+  drivers.retained_mem.api.bbram:
+    extra_args:
+      - FILE_SUFFIX="bbram"
+    platform_allow:
+      - native_sim
+      - nucleo_f411re
+      - nucleo_l452re
+    integration_platforms:
+      - native_sim
   drivers.retained_mem.api.gpregret:
     platform_allow: nrf52840dk/nrf52840
-    tags:
-      - drivers
-      - retained_mem
   drivers.retained_mem.api.ram:
     platform_allow:
       - esp32_devkitc/esp32/procpu
@@ -24,22 +34,13 @@ tests:
       - ophelia4ev/nrf54l15/cpuapp
     integration_platforms:
       - qemu_cortex_m3
-    tags:
-      - drivers
-      - retained_mem
   drivers.retained_mem.api.ram.nrf52840dk_nrf52840:
     platform_allow: nrf52840dk/nrf52840
     extra_args:
       - DTC_OVERLAY_FILE="boards/nrf52840dk_nrf52840_ram.overlay"
       - EXTRA_CONF_FILE="boards/nrf52840dk_nrf52840_ram.conf"
-    tags:
-      - drivers
-      - retained_mem
   drivers.retained_mem.api.buram:
     platform_allow:
       - slwrb4180b
       - xg24_rb4187c
       - xg29_rb4412a
-    tags:
-      - drivers
-      - retained_mem
