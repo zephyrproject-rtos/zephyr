@@ -479,4 +479,23 @@ ZTEST(gpio_api_1pin_port, test_gpio_port_set_clr_bits)
 	}
 }
 
-ZTEST_SUITE(gpio_api_1pin_port, NULL, NULL, NULL, NULL, NULL);
+static gpio_port_value_t test_gpio_port_value;
+
+void test_gpio_port_before(void *fixture)
+{
+	ARG_UNUSED(fixture);
+	const struct device *port = DEVICE_DT_GET(TEST_NODE);
+
+	gpio_port_get_raw(port, &test_gpio_port_value);
+}
+
+void test_gpio_port_after(void *fixture)
+{
+	ARG_UNUSED(fixture);
+	const struct device *port = DEVICE_DT_GET(TEST_NODE);
+	const struct gpio_driver_config *const cfg = port->config;
+
+	gpio_port_set_masked_raw(port, cfg->port_pin_mask, test_gpio_port_value);
+}
+
+ZTEST_SUITE(gpio_api_1pin_port, NULL, NULL, test_gpio_port_before, test_gpio_port_after, NULL);
