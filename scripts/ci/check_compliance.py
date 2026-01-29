@@ -951,6 +951,24 @@ class KconfigCheck(ComplianceTest):
         if len(tmp_output) > 0:
             kconfigs += tmp_output + "\n"
 
+        if ZEPHYR_BASE != GIT_TOP:
+            # Use hard coded paths for Zephyr based tests and samples
+            tmp_output = git(
+                "grep",
+                "-I",
+                "-h",
+                "--perl-regexp",
+                regex,
+                "--",
+                ":tests",
+                ":samples",
+                cwd=GIT_TOP,
+                ignore_non_zero=True,
+            )
+
+            if len(tmp_output) > 0:
+                kconfigs += tmp_output + "\n"
+
         for project in manifest.get_projects([]):
             if not manifest.is_active(project):
                 continue
