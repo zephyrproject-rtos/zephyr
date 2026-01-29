@@ -30,9 +30,11 @@ config LORAWAN_REGION_CN470
 
 config LORAWAN_REGION_CN779
 	bool "China 779MHz Frequency band"
+	depends on !LORA_MODULE_BACKEND_LORA_BASICS_MODEM
 
 config LORAWAN_REGION_EU433
 	bool "Europe 433MHz Frequency band"
+	depends on !LORA_MODULE_BACKEND_LORA_BASICS_MODEM
 
 config LORAWAN_REGION_EU868
 	bool "Europe 868MHz Frequency band"
@@ -50,6 +52,8 @@ config LORAWAN_REGION_RU864
 	bool "Russia 864MHz Frequency band"
 
 endmenu
+
+rsource "lora-basics-modem/Kconfig"
 
 rsource "loramac-node/Kconfig"
 

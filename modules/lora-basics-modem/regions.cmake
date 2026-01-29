@@ -1,0 +1,29 @@
+# Copyright (c) 2024 Semtech Corporation - Félix Piédallu
+# Copyright (c) 2025 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+set(LBM_LIB_SMTC_REGIONS_DIR ${LBM_LIB_SMTC_MODEM_CORE_DIR}/lr1mac/src/smtc_real/src/)
+
+# Regional parameters version
+zephyr_library_compile_definitions_ifdef(CONFIG_LORA_BASICS_MODEM_RP2_101 RP2_101)
+zephyr_library_compile_definitions_ifdef(CONFIG_LORA_BASICS_MODEM_RP2_103 RP2_103)
+
+# Map Zephyr LORAWAN_REGION_* to LBM REGION_* defines
+zephyr_library_compile_definitions_ifdef(CONFIG_LORAWAN_REGION_AS923 REGION_AS_923)
+zephyr_library_compile_definitions_ifdef(CONFIG_LORAWAN_REGION_AU915 REGION_AU_915)
+zephyr_library_compile_definitions_ifdef(CONFIG_LORAWAN_REGION_CN470 REGION_CN_470)
+zephyr_library_compile_definitions_ifdef(CONFIG_LORAWAN_REGION_EU868 REGION_EU_868)
+zephyr_library_compile_definitions_ifdef(CONFIG_LORAWAN_REGION_IN865 REGION_IN_865)
+zephyr_library_compile_definitions_ifdef(CONFIG_LORAWAN_REGION_KR920 REGION_KR_920)
+zephyr_library_compile_definitions_ifdef(CONFIG_LORAWAN_REGION_RU864 REGION_RU_864)
+zephyr_library_compile_definitions_ifdef(CONFIG_LORAWAN_REGION_US915 REGION_US_915)
+
+# Region source files
+zephyr_library_sources_ifdef(CONFIG_LORAWAN_REGION_AS923 ${LBM_LIB_SMTC_REGIONS_DIR}/region_as_923.c)
+zephyr_library_sources_ifdef(CONFIG_LORAWAN_REGION_AU915 ${LBM_LIB_SMTC_REGIONS_DIR}/region_au_915.c)
+zephyr_library_sources_ifdef(CONFIG_LORAWAN_REGION_CN470 ${LBM_LIB_SMTC_REGIONS_DIR}/region_cn_470.c)
+zephyr_library_sources_ifdef(CONFIG_LORAWAN_REGION_EU868 ${LBM_LIB_SMTC_REGIONS_DIR}/region_eu_868.c)
+zephyr_library_sources_ifdef(CONFIG_LORAWAN_REGION_IN865 ${LBM_LIB_SMTC_REGIONS_DIR}/region_in_865.c)
+zephyr_library_sources_ifdef(CONFIG_LORAWAN_REGION_KR920 ${LBM_LIB_SMTC_REGIONS_DIR}/region_kr_920.c)
+zephyr_library_sources_ifdef(CONFIG_LORAWAN_REGION_RU864 ${LBM_LIB_SMTC_REGIONS_DIR}/region_ru_864.c)
+zephyr_library_sources_ifdef(CONFIG_LORAWAN_REGION_US915 ${LBM_LIB_SMTC_REGIONS_DIR}/region_us_915.c)
