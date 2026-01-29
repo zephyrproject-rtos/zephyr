@@ -107,6 +107,7 @@ zephyr_library_sources_ifdef(CONFIG_UART_XEN_HVC_CONSOLEIO uart_hvc_xen_consolei
 zephyr_library_sources_ifdef(CONFIG_UART_XLNX_PS uart_xlnx_ps.c)
 zephyr_library_sources_ifdef(CONFIG_UART_XLNX_UARTLITE uart_xlnx_uartlite.c)
 zephyr_library_sources_ifdef(CONFIG_UART_XMC4XXX uart_xmc4xxx.c)
+zephyr_library_sources_ifdef(CONFIG_USART_AT32 usart_at32.c)
 zephyr_library_sources_ifdef(CONFIG_USART_GD32 usart_gd32.c)
 zephyr_library_sources_ifdef(CONFIG_USART_SAM usart_sam.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE uart_handlers.c)

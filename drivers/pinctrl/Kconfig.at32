@@ -1,0 +1,10 @@
+# Copyright (c) 2021 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_AT32
+	bool "AT32 pin controller driver"
+	default y
+	depends on DT_HAS_ARTERY_AT32_PINCTRL_ENABLED
+	help
+	  AT32 pin controller driver. This driver is used by series using the
+	  AF pin multiplexing model.
