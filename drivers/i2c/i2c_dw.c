@@ -115,7 +115,6 @@ static int i2c_dw_error_chk(const struct device *dev)
 	uint32_t reg_base = get_regs(dev);
 	union ic_interrupt_register intr_stat;
 	union ic_txabrt_register ic_txabrt_src;
-	uint32_t value;
 	/* Cache ic_intr_stat and txabrt_src for processing,
 	 * so there is no need to read the register multiple times.
 	 */
@@ -138,8 +137,11 @@ static int i2c_dw_error_chk(const struct device *dev)
 			dw->state |= I2C_DW_USER_ABRT;
 			LOG_ERR("User Abort on %s", dev->name);
 		}
-		/* clear RTS5912_INTR_STAT_TX_ABRT */
-		value = read_clr_tx_abrt(reg_base);
+	}
+	/* TX abrt because STOP */
+	if (intr_stat.bits.tx_abrt && intr_stat.bits.stop_det) {
+		dw->state |= 0x10;
+		LOG_ERR("ABR and STOP on %s", dev->name);
 	}
 	/* check SCL stuck low */
 	if (intr_stat.bits.scl_stuck_low) {
@@ -521,6 +523,7 @@ static void i2c_dw_isr(const struct device *port)
 		    intr_stat.raw) {
 			dw->state = I2C_DW_CMD_ERROR;
 			i2c_dw_error_chk(port);
+			value = read_clr_tx_abrt(reg_base);
 #if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
 			dw->need_setup = true;
 #endif

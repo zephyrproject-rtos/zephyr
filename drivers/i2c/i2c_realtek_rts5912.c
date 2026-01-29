@@ -28,7 +28,7 @@ BUILD_ASSERT(CONFIG_I2C_RTS5912_INIT_PRIORITY > CONFIG_I2C_INIT_PRIORITY,
 #define DT_DRV_COMPAT realtek_rts5912_i2c
 #endif
 
-#define RECOVERY_TIME 30 /* in ms */
+#define RECOVERY_TIME 31 /* in ms, need bigger than DW_IC_REG_SCL_TIMEOUT */
 
 struct i2c_rts5912_config {
 	const struct device *clk_dev;
@@ -61,7 +61,7 @@ static int i2c_rts5912_recover_bus(const struct device *dev)
 	gpio_flags_t flags;
 	int i;
 
-	LOG_DBG("starting bus recover");
+	LOG_ERR("starting bus recover");
 	/* disable all interrupt mask */
 	write_intr_mask(DW_DISABLE_ALL_I2C_INT, reg_base);
 	/* enable controller to make sure function works */
@@ -123,7 +123,19 @@ static int i2c_rts5912_recover_bus(const struct device *dev)
 	value = read_clr_intr(reg_base);
 	value = read_clr_tx_abrt(reg_base);
 	/* disable controller */
+	start = k_uptime_get_32();
 	clear_bit_enable_en(reg_base);
+	while (test_bit_enable_sts(reg_base) && (k_uptime_get_32() - start < RECOVERY_TIME)) {
+		;
+	}
+	/* check if Controller is not disable */
+	if (test_bit_enable_sts(reg_base)) {
+		LOG_ERR("ERROR: DISABLE Fail!");
+		;
+		ret = -1;
+	} else {
+		LOG_DBG("DISABLE success");
+	}
 
 	/* Input type selection */
 	flags = GPIO_INPUT | RTS5912_GPIO_SCHEN;
@@ -185,11 +197,52 @@ static int i2c_rts5912_recover_bus(const struct device *dev)
 		LOG_DBG("ABORT success");
 	}
 	/* disable controller */
+	start = k_uptime_get_32();
 	clear_bit_enable_en(reg_base);
+	while (test_bit_enable_sts(reg_base) && (k_uptime_get_32() - start < RECOVERY_TIME)) {
+		;
+	}
+	/* check if Controller is not disable */
+	if (test_bit_enable_sts(reg_base)) {
+		LOG_ERR("ERROR: DISABLE Fail!");
+		ret = -1;
+	} else {
+		LOG_DBG("DISABLE success");
+	}
 
 	if (ret) {
 		LOG_ERR("ERROR: Bus Recover Fail, a slave device may be faulty or require a power "
 			"reset");
+
+		/* reset the i2c bus */
+		LOG_DBG("try reset i2c bus");
+		/* initiate the host Clock Reset */
+		start = k_uptime_get_32();
+		set_bit_enable_clk_reset(reg_base);
+		while (test_bit_enable_clk_reset(reg_base) &&
+		       (k_uptime_get_32() - start < RECOVERY_TIME)) {
+			;
+		}
+		/* check if SCL bus clk is not reset */
+		if (test_bit_enable_clk_reset(reg_base)) {
+			LOG_ERR("ERROR: CLK recovery Fail");
+			ret = -1;
+		} else {
+			LOG_DBG("CLK Recovery Success");
+		}
+		start = k_uptime_get_32();
+		set_bit_enable_sdarecov(reg_base);
+		while (test_bit_enable_sdarecov(reg_base) &&
+		       (k_uptime_get_32() - start < RECOVERY_TIME)) {
+			;
+		}
+		/* Check if bus is not clear */
+		if (test_bit_status_sdanotrecov(reg_base)) {
+			LOG_ERR("ERROR: SDA Recovery Fail");
+			ret = -1;
+		} else {
+			LOG_DBG("SDA Recovery Success");
+		}
 	} else {
 		LOG_DBG("BUS Recover success");
 	}
@@ -200,6 +253,7 @@ static int i2c_rts5912_initialize(const struct device *dev)
 {
 	const struct i2c_rts5912_config *const config = dev->config;
 	int ret = 0;
+	uint32_t start;
 
 	/* Register our recovery routine with the DW I2C driver. */
 	if (!device_is_ready(config->dw_i2c_dev)) {
@@ -220,7 +274,17 @@ static int i2c_rts5912_initialize(const struct device *dev)
 
 	uint32_t reg_base = get_regs(config->dw_i2c_dev);
 	/* clear enable register */
+	start = k_uptime_get_32();
 	clear_bit_enable_en(reg_base);
+	while (test_bit_enable_sts(reg_base) && (k_uptime_get_32() - start < RECOVERY_TIME)) {
+		;
+	}
+	if (test_bit_enable_sts(reg_base)) {
+		LOG_ERR("INIT: DISABLE Fail!");
+		ret = -EIO;
+	} else {
+		LOG_DBG("INIT success");
+	}
 	/* disable block mode */
 	clear_bit_enable_block(reg_base);
 
