@@ -392,6 +392,12 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 {
 	struct bt_hci_cmd_hdr *hdr;
 
+	/* Make sure the HCI transport is open before attempting anything else */
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
+		net_buf_unref(buf);
+		return -EHOSTDOWN;
+	}
+
 	if (!buf) {
 		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
@@ -4683,9 +4689,7 @@ int bt_enable(bt_ready_cb_t cb)
 
 	bt_monitor_new_index(BT_MONITOR_TYPE_PRIMARY, BT_HCI_BUS, BT_ADDR_ANY, BT_HCI_NAME);
 
-	atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLE);
-
-	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_ENABLE)) {
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
 		return -EALREADY;
 	}
 
@@ -4729,6 +4733,8 @@ int bt_enable(bt_ready_cb_t cb)
 		return err;
 	}
 
+	atomic_set_bit(bt_dev.flags, BT_DEV_OPEN);
+
 	bt_monitor_send(BT_MONITOR_OPEN_INDEX, NULL, 0);
 
 	if (!cb) {
@@ -4743,12 +4749,9 @@ int bt_disable(void)
 {
 	int err;
 
-	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_DISABLE)) {
+	if (!atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_READY)) {
 		return -EALREADY;
 	}
-
-	/* Clear BT_DEV_READY before disabling HCI link */
-	atomic_clear_bit(bt_dev.flags, BT_DEV_READY);
 
 #if defined(CONFIG_BT_BROADCASTER)
 	bt_adv_reset_adv_pool();
@@ -4786,21 +4789,17 @@ int bt_disable(void)
 		hci_reset_complete();
 	}
 
+	/* Clear the flag early to prevent races with command queuing */
+	atomic_clear_bit(bt_dev.flags, BT_DEV_OPEN);
+
 	err = bt_hci_close(bt_dev.hci);
-	if (err == -ENOSYS) {
-		atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLE);
-		atomic_set_bit(bt_dev.flags, BT_DEV_READY);
-		return -ENOTSUP;
-	}
-
 	if (err) {
-		LOG_ERR("HCI driver close failed (%d)", err);
-
-		/* Re-enable BT_DEV_READY to avoid inconsistent stack state */
+		/* Re-enable state bits to avoid inconsistent stack state */
+		atomic_set_bit(bt_dev.flags, BT_DEV_OPEN);
 		atomic_set_bit(bt_dev.flags, BT_DEV_READY);
-
 		return err;
 	}
+
 
 #if defined(CONFIG_BT_RECV_WORKQ_BT)
 	/* Abort RX thread */
@@ -4821,11 +4820,6 @@ int bt_disable(void)
 	bt_addr_le_copy(&bt_dev.random_addr, BT_ADDR_LE_ANY);
 
 	bt_monitor_send(BT_MONITOR_CLOSE_INDEX, NULL, 0);
-
-	/* Clear BT_DEV_ENABLE here to prevent early bt_enable() calls, before disable is
-	 * completed.
-	 */
-	atomic_clear_bit(bt_dev.flags, BT_DEV_ENABLE);
 
 	return 0;
 }
@@ -5104,6 +5098,22 @@ int bt_configure_data_path(uint8_t dir, uint8_t id, uint8_t vs_config_len,
 /* Return `true` if a command was processed/sent */
 static bool process_pending_cmd(k_timeout_t timeout)
 {
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
+		struct net_buf *buf;
+
+		LOG_WRN("Dropping queued commands since HCI transport is closed");
+
+		while ((buf = k_fifo_get(&bt_dev.cmd_tx_queue, K_NO_WAIT))) {
+			if (cmd(buf)->sync) {
+				cmd(buf)->status = BT_HCI_ERR_UNSPECIFIED;
+				k_sem_give(cmd(buf)->sync);
+			}
+			net_buf_unref(buf);
+		}
+
+		return false;
+	}
+
 	if (!k_fifo_is_empty(&bt_dev.cmd_tx_queue)) {
 		if (k_sem_take(&bt_dev.ncmd_sem, timeout) == 0) {
 			hci_core_send_cmd();
