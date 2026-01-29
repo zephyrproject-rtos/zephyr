@@ -1,8 +1,19 @@
 # Copyright (c) 2018 Aurelien Jarno
+# Copyright (c) 2026 Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
     Atmel SAM Family USB (USBHS) in device mode
+
+    The USBHS controller has two memory regions:
+    - "core": USBHS register block
+    - "fifo": Dual-Port RAM (DPRAM) for endpoint FIFOs
+
+    The SAM USBHS has 10 hardware endpoints (EP0-EP9). EP0 is the
+    bidirectional control endpoint. The remaining endpoints are
+    direction-constrained by hardware:
+    - Odd endpoints (1, 3, 5, 7, 9): IN direction only
+    - Even endpoints (2, 4, 6, 8): OUT direction only
 
 compatible: "atmel,sam-usbhs"
 
@@ -13,9 +24,37 @@ include:
 properties:
   reg:
     required: true
+    description: |
+      Register regions for the USBHS controller.
+      Contain two entries in order:
+        - core registers
+        - fifo DPRAM
+
+  reg-names:
+    required: true
+    description: |
+      Names for the register regions. Must be "core" and "fifo".
 
   interrupts:
     required: true
 
   clocks:
     required: true
+
+  num-bidir-endpoints:
+    const: 1
+    description: |
+      Number of bidirectional endpoints. For SAM USBHS, only EP0 is truly
+      bidirectional. Non-EP0 endpoints are direction-constrained by hardware.
+
+  num-in-endpoints:
+    required: true
+    description: |
+      Number of IN endpoints including EP0 IN. For SAM USBHS:
+        - 6 (EP0 IN + EP1, EP3, EP5, EP7, EP9)
+
+  num-out-endpoints:
+    required: true
+    description: |
+      Number of OUT endpoints including EP0 OUT. For SAM USBHS:
+        - 5 (EP0 OUT + EP2, EP4, EP6, EP8)
