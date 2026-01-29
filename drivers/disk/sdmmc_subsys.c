@@ -39,7 +39,7 @@ static int disk_sdmmc_access_init(struct disk_info *disk)
 	int ret;
 
 	if (!sd_is_card_present(cfg->host_controller)) {
-		return DISK_STATUS_NOMEDIA;
+		return -ENODEV;
 	}
 
 	ret = sd_init(cfg->host_controller, &data->card);
