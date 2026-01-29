@@ -480,6 +480,13 @@ Ethernet
   reworked to be used as active low, you may have to set the pin as
   ``GPIO_ACTIVE_LOW`` in devicetree (:github:`100751`).
 
+File System
+===========
+
+* :kconfig:option:`CONFIG_FS_FATFS_FSTAB_AUTOMOUNT` is now enabled by default, if any enabled
+  :dtcompatible:`zephyr,fstab,fatfs` with the ``automount`` property are present in the devicetree.
+  Applications that do not want this behavior need to explicitly disable this option.
+
 GPIO
 ====
 
