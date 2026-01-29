@@ -705,11 +705,11 @@ static inline int gpio_pca_series_reset_write_reg(const struct device *dev)
 	/**
 	 * write reset value to registers
 	 */
-	ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_OUTPUT_PORT, reset_value_1);
+	ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_CONFIGURATION, reset_value_1);
 	if (ret) {
 		return ret;
 	}
-	ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_CONFIGURATION, reset_value_1);
+	ret = gpio_pca_series_reg_write(dev, PCA_REG_TYPE_1B_OUTPUT_PORT, reset_value_1);
 	if (ret) {
 		return ret;
 	}
