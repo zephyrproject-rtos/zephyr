@@ -541,7 +541,8 @@ config NET_MAX_CONTEXTS
 
 config ZVFS_OPEN_ADD_SIZE_NET
 	int "Number of network sockets to allocate"
-	default NET_MAX_CONTEXTS
+	default NET_MAX_CONTEXTS if NET_NATIVE && NET_SOCKETS
+	default 0
 
 config NET_CONTEXT_NET_PKT_POOL
 	bool "Net_buf TX pool / context"
