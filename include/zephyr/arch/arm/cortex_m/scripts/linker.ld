@@ -168,7 +168,6 @@ GROUP_END(ITCM)
 
 	*(.text)
 	*(".text.*")
-	*(".TEXT.*")
 	*(.gnu.linkonce.t.*)
 
 	/*

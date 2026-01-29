@@ -13,6 +13,7 @@
 #include <offsets_short.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/common/pm_s2ram.h>
+#include <zephyr/linker/sections.h>
 
 /**
  * Macro expanding to an integer literal equal to the offset of
