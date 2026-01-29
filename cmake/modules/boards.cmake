@@ -178,7 +178,7 @@ endif()
 
 set(format_str "{NAME}\;{DIR}\;")
 set(format_str "${format_str}{REVISION_FORMAT}\;{REVISION_DEFAULT}\;{REVISION_EXACT}\;")
-set(format_str "${format_str}{REVISIONS}\;{SOCS}\;{QUALIFIERS}")
+set(format_str "${format_str}{REVISIONS}\;{SOCS}\;{QUALIFIERS}\;{DEFAULT_QUALIFIER}")
 
 list(TRANSFORM BOARD_DIRECTORIES PREPEND "--board-dir=" OUTPUT_VARIABLE board_dir_arg)
 execute_process(${list_boards_commands} --board=${BOARD} ${board_dir_arg}
@@ -193,7 +193,7 @@ endif()
 
 if(NOT "${ret_board}" STREQUAL "")
   string(STRIP "${ret_board}" ret_board)
-  set(single_val "NAME;REVISION_FORMAT;REVISION_DEFAULT;REVISION_EXACT")
+  set(single_val "NAME;REVISION_FORMAT;REVISION_DEFAULT;REVISION_EXACT;DEFAULT_QUALIFIER")
   set(multi_val  "DIR;REVISIONS;SOCS;QUALIFIERS")
   cmake_parse_arguments(LIST_BOARD "" "${single_val}" "${multi_val}" ${ret_board})
   list(GET LIST_BOARD_DIR 0 BOARD_DIR)
@@ -261,6 +261,11 @@ elseif(DEFINED BOARD_REVISION)
 endif()
 
 if(LIST_BOARD_QUALIFIERS)
+  # Allow users to omit qualifier when board defines default_qualifier.
+  if(NOT DEFINED BOARD_QUALIFIERS AND LIST_BOARD_DEFAULT_QUALIFIER)
+    set(BOARD_QUALIFIERS "/${LIST_BOARD_DEFAULT_QUALIFIER}")
+  endif()
+
   # Allow users to omit the SoC when building for a board with a single SoC.
   list(LENGTH LIST_BOARD_SOCS socs_length)
   if(socs_length EQUAL 1)

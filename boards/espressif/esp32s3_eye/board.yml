@@ -2,5 +2,6 @@ board:
   name: esp32s3_eye
   full_name: ESP32-S3-EYE
   vendor: espressif
+  default_qualifier: esp32s3/procpu
   socs:
   - name: esp32s3

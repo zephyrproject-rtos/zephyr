@@ -2,5 +2,6 @@ board:
   name: esp32_devkitc
   full_name: ESP32-DevKitC
   vendor: espressif
+  default_qualifier: esp32/procpu
   socs:
   - name: esp32

@@ -64,6 +64,9 @@ $defs:
       vendor:
         type: string
         description: SoC family of the SoC on the board.
+      default_qualifier:
+        type: string
+        description: Default qualifier to use when board is specified without qualifier.
       revision:
         type: object
         properties:
