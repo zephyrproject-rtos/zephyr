@@ -1409,7 +1409,7 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
 		break;
 	case MODEM_CELLULAR_EVENT_RING:
-		LOG_INF("RING received!");
+		LOG_DBG("RING received!");
 		modem_pipe_open_async(data->uart_pipe);
 		break;
 	default:
@@ -1467,7 +1467,7 @@ static void modem_cellular_await_registered_event_handler(struct modem_cellular_
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
 		break;
 	case MODEM_CELLULAR_EVENT_RING:
-		LOG_INF("RING received!");
+		LOG_DBG("RING received!");
 		modem_pipe_open_async(data->uart_pipe);
 		break;
 	default:
@@ -1536,7 +1536,7 @@ static void modem_cellular_carrier_on_event_handler(struct modem_cellular_data *
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
 		break;
 	case MODEM_CELLULAR_EVENT_RING:
-		LOG_INF("RING received!");
+		LOG_DBG("RING received!");
 		modem_pipe_open_async(data->uart_pipe);
 		break;
 	default:
@@ -1562,10 +1562,12 @@ static void modem_cellular_dormant_event_handler(struct modem_cellular_data *dat
 						 enum modem_cellular_event evt)
 {
 	switch (evt) {
+	case MODEM_CELLULAR_EVENT_RING:
+		LOG_DBG("RING received!");
+		modem_pipe_open_async(data->uart_pipe);
 	case MODEM_CELLULAR_EVENT_PPP_DEAD:
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
 		break;
-
 	default:
 		break;
 	}
