@@ -15,6 +15,7 @@
 #include "siwx91x_wifi_socket.h"
 #include "siwx91x_wifi_sta.h"
 
+#include "sli_wifi_utility.h"
 #include "sl_rsi_utility.h"
 #include "sl_wifi_callback_framework.h"
 
@@ -43,7 +44,7 @@ static int siwx91x_sl_to_z_mode(sl_wifi_interface_t interface)
 int siwx91x_status(const struct device *dev, struct wifi_iface_status *status)
 {
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
-	sl_si91x_rsp_wireless_info_t wlan_info = { };
+	sl_wifi_interface_info_t wlan_info = { };
 	struct siwx91x_dev *sidev = dev->data;
 	sl_wifi_mfp_mode_t mfp;
 	int32_t rssi;
@@ -58,13 +59,14 @@ int siwx91x_status(const struct device *dev, struct wifi_iface_status *status)
 		return 0;
 	}
 
-	ret = sl_wifi_get_wireless_info(&wlan_info);
+	ret = sl_wifi_get_interface_info(interface, &wlan_info);
 	if (ret) {
 		LOG_ERR("Failed to get the wireless info: 0x%x", ret);
 		return -EIO;
 	}
 
-	strncpy(status->ssid, wlan_info.ssid, WIFI_SSID_MAX_LEN);
+	strncpy(status->ssid, wlan_info.ssid, sizeof(status->ssid));
+	status->ssid[sizeof(status->ssid) - 1] = 0;
 	status->ssid_len = strlen(status->ssid);
 	status->wpa3_ent_type = WIFI_WPA3_ENTERPRISE_NA;
 
@@ -266,7 +268,7 @@ static int siwx91x_send(const struct device *dev, struct net_pkt *pkt)
 sl_status_t sl_si91x_host_process_data_frame(sl_wifi_interface_t interface,
 					     sl_wifi_buffer_t *buffer)
 {
-	sl_si91x_packet_t *si_pkt = sl_si91x_host_get_buffer_data(buffer, 0, NULL);
+	sl_wifi_system_packet_t *si_pkt = sl_si91x_host_get_buffer_data(buffer, 0, NULL);
 	const struct net_eth_hdr *eth = (const struct net_eth_hdr *)si_pkt->data;
 	struct net_if *iface = net_if_get_first_wifi();
 	const struct net_linkaddr *ll = net_if_get_link_addr(iface);
@@ -422,7 +424,7 @@ static int siwx91x_get_version(const struct device *dev, struct wifi_version *pa
 	return 0;
 }
 
-static int map_sdk_region_to_zephyr_channel_info(const sli_si91x_set_region_ap_request_t *sdk_reg,
+static int map_sdk_region_to_zephyr_channel_info(const sli_wifi_set_region_ap_request_t *sdk_reg,
 						 struct wifi_reg_chan_info *z_chan_info,
 						 size_t *num_channels)
 {
@@ -456,8 +458,8 @@ static int map_sdk_region_to_zephyr_channel_info(const sli_si91x_set_region_ap_r
 static int siwx91x_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_domain)
 {
 	const struct siwx91x_config *siwx91x_cfg = dev->config;
-	const sli_si91x_set_region_ap_request_t *sdk_reg = NULL;
-	sl_wifi_operation_mode_t oper_mode = sli_get_opermode();
+	const sli_wifi_set_region_ap_request_t *sdk_reg = NULL;
+	sl_wifi_operation_mode_t oper_mode = sli_wifi_get_opermode();
 	sl_wifi_region_code_t region_code;
 	const char *country_code;
 	int ret;
@@ -515,15 +517,13 @@ static void siwx91x_iface_init(struct net_if *iface)
 	sidev->state = WIFI_STATE_INTERFACE_DISABLED;
 	sidev->iface = iface;
 
-	sl_wifi_set_callback(SL_WIFI_SCAN_RESULT_EVENTS,
-			     (sl_wifi_callback_function_t)siwx91x_on_scan, sidev);
-	sl_wifi_set_callback(SL_WIFI_JOIN_EVENTS, (sl_wifi_callback_function_t)siwx91x_on_join,
-			     sidev);
-	sl_wifi_set_callback(SL_WIFI_CLIENT_CONNECTED_EVENTS, siwx91x_on_ap_sta_connect, sidev);
-	sl_wifi_set_callback(SL_WIFI_CLIENT_DISCONNECTED_EVENTS, siwx91x_on_ap_sta_disconnect,
-			     sidev);
-	sl_wifi_set_callback(SL_WIFI_STATS_RESPONSE_EVENTS, siwx91x_wifi_module_stats_event_handler,
-			     sidev);
+	sl_wifi_set_callback_v2(SL_WIFI_SCAN_RESULT_EVENTS, siwx91x_on_scan, sidev);
+	sl_wifi_set_callback_v2(SL_WIFI_JOIN_EVENTS, siwx91x_on_join, sidev);
+	sl_wifi_set_callback_v2(SL_WIFI_CLIENT_CONNECTED_EVENTS, siwx91x_on_ap_sta_connect, sidev);
+	sl_wifi_set_callback_v2(SL_WIFI_CLIENT_DISCONNECTED_EVENTS,
+				siwx91x_on_ap_sta_disconnect, sidev);
+	sl_wifi_set_callback_v2(SL_WIFI_STATS_RESPONSE_EVENTS,
+				siwx91x_wifi_module_stats_event_handler, sidev);
 
 	ret = siwx91x_set_max_tx_power(siwx91x_cfg);
 	if (ret != SL_STATUS_OK) {

@@ -72,16 +72,16 @@ static const char *siwx91x_get_reason_string(uint8_t reason_code)
 	return "Unknown";
 }
 
-sl_status_t siwx91x_wifi_module_stats_event_handler(sl_wifi_event_t event, void *response,
-							   uint32_t result_length, void *arg)
+unsigned int siwx91x_wifi_module_stats_event_handler(sl_wifi_event_t event, unsigned int status,
+						     void *data, uint32_t data_length, void *arg)
 {
-	sl_si91x_module_state_stats_response_t *notif = response;
+	sl_wifi_module_state_stats_response_t *notif = data;
 	const char *reason_str = siwx91x_get_reason_string(notif->reason_code);
 	uint8_t module_state = notif->state_code & 0xF0;
 	struct siwx91x_dev *sidev = arg;
 
 	ARG_UNUSED(event);
-	ARG_UNUSED(result_length);
+	ARG_UNUSED(data_length);
 
 	switch (module_state) {
 	case STATE_BEACON_LOSS:
@@ -107,12 +107,13 @@ sl_status_t siwx91x_wifi_module_stats_event_handler(sl_wifi_event_t event, void 
 	return 0;
 }
 
-unsigned int siwx91x_on_join(sl_wifi_event_t event,
-			     char *result, uint32_t result_size, void *arg)
+unsigned int siwx91x_on_join(sl_wifi_event_t event, unsigned int status,
+			     void *data, uint32_t data_length, void *arg)
 {
+	char result = *(char *)data;
 	struct siwx91x_dev *sidev = arg;
 
-	if (*result != 'C') {
+	if (result != 'C') {
 		/* TODO: report the real reason of failure */
 		wifi_mgmt_raise_connect_result_event(sidev->iface, WIFI_STATUS_CONN_FAIL);
 		sidev->state = WIFI_STATE_INACTIVE;

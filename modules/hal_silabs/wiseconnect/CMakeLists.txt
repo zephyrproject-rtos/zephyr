@@ -26,7 +26,6 @@ endfunction()
 # Keep these values sync with
 # components/device/silabs/si91x/mcu/core/chip/component/siwg917*.slcc
 zephyr_compile_definitions(
-  SL_SUPPRESS_DEPRECATION_WARNINGS_WISECONNECT_3_5
   SL_SI91X_ENABLE_LITTLE_ENDIAN
   SLI_CODE_CLASSIFICATION_DISABLE
   SLI_SI91X_MCU_COMMON_FLASH_MODE
@@ -64,8 +63,10 @@ zephyr_include_directories(
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/clock_manager/inc
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/power_manager/config
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/power_manager/inc
+  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/service/sl_log/inc
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/inc
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_api/config
+  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_api/config/psram_device_config/aps6404l_sqrh
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_api/config/sl_i2s_config
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_api/inc
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_peripheral_drivers/inc
@@ -79,12 +80,15 @@ zephyr_include_directories(
   ${WISECONNECT}/components/device/silabs/si91x/wireless/socket/inc
   ${WISECONNECT}/components/protocol/wifi/inc
   ${WISECONNECT}/components/service/network_manager/inc
+  ${WISECONNECT}/components/sli_buffer_manager/inc
   ${WISECONNECT}/components/sli_wifi_command_engine/inc
+  ${WISECONNECT}/components/sli_wifi/inc
   ${WISECONNECT}/resources/defaults
 )
 
 zephyr_library_sources(
   ${SISDK}/platform/common/src/sl_core_cortexm.c
+  ${SISDK}/platform/common/src/sl_string.c
   ${SISDK}/platform/service/mem_pool/src/sl_mem_pool.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/core/chip/src/rsi_deepsleep_soc.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/core/chip/src/system_si91x.c
@@ -196,9 +200,6 @@ zephyr_library_sources_ifdef(CONFIG_WDT_SILABS_SIWX91X
 
 if(CONFIG_WIFI_SILABS_SIWX91X)
   zephyr_library_sources(
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/sl_net/src/sl_si91x_net_internal_stack.c
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/sl_net/src/sl_net_si91x_integration_handler.c
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/sl_net/src/sl_net_rsi_utility.c
     ${WISECONNECT}/components/device/silabs/si91x/wireless/sl_net/src/sli_net_si91x_utility.c
     ${WISECONNECT}/components/protocol/wifi/src/sl_wifi_basic_credentials.c
     ${WISECONNECT}/components/service/network_manager/src/sl_net_basic_profiles.c
@@ -222,8 +223,10 @@ if(CONFIG_WIFI_SILABS_SIWX91X)
   zephyr_library_sources_ifdef(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_OFFLOAD
     ${WISECONNECT}/components/device/silabs/si91x/wireless/socket/src/sl_si91x_socket_utility.c
     ${WISECONNECT}/components/device/silabs/si91x/wireless/asynchronous_socket/src/sl_si91x_socket.c
+    ${WISECONNECT}/components/device/silabs/si91x/wireless/sl_net/src/sl_si91x_net_internal_stack.c
+    ${WISECONNECT}/components/device/silabs/si91x/wireless/sl_net/src/sl_net_si91x_integration_handler.c
+    ${WISECONNECT}/components/device/silabs/si91x/wireless/sl_net/src/sl_net_rsi_utility.c
     ${WISECONNECT}/components/device/silabs/si91x/wireless/sl_net/src/sl_net_si91x_callback_framework.c
-    ${WISECONNECT}/components/service/network_manager/src/sl_net.c
   )
 endif() # CONFIG_WIFI_SILABS_SIWX91X
 
@@ -250,18 +253,27 @@ if(CONFIG_SILABS_SIWX91X_NWP)
     ${WISECONNECT}/components/device/silabs/si91x/wireless/ahb_interface/src/sl_si91x_bus.c
     ${WISECONNECT}/components/device/silabs/si91x/wireless/host_mcu/si91x/siwx917_soc_ncp_host.c
     ${WISECONNECT}/components/device/silabs/si91x/wireless/memory/mem_pool_buffer_quota.c
+    ${WISECONNECT}/components/device/silabs/si91x/wireless/src/sli_wifi_memory_manager.c
+    ${WISECONNECT}/components/device/silabs/si91x/wireless/src/sli_wifi_power_profile.c
     ${WISECONNECT}/components/device/silabs/si91x/wireless/src/sl_rsi_utility.c
     ${WISECONNECT}/components/device/silabs/si91x/wireless/src/sl_si91x_driver.c
     ${WISECONNECT}/components/protocol/wifi/si91x/sl_wifi.c
+    ${WISECONNECT}/components/protocol/wifi/src/sli_wifi_callback_framework.c
     ${WISECONNECT}/components/protocol/wifi/src/sl_wifi_callback_framework.c
     ${WISECONNECT}/components/service/network_manager/src/sli_net_common_utility.c
     ${WISECONNECT}/components/sli_si91x_wifi_event_handler/src/sli_si91x_wifi_event_handler.c
+    ${WISECONNECT}/components/sli_wifi/src/sli_wifi.c
+    ${WISECONNECT}/components/sli_wifi/src/sli_wifi_utility.c
     ${WISECONNECT}/components/sli_wifi_command_engine/src/sli_wifi_command_engine.c
   )
   zephyr_library_sources_ifdef(CONFIG_SIWX91X_FIRMWARE_UPGRADE
     ${WISECONNECT}/components/device/silabs/si91x/wireless/firmware_upgrade/firmware_upgradation.c
   )
   zephyr_include_directories(.)
+  zephyr_code_relocate(FILES
+    ${WISECONNECT}/components/device/silabs/si91x/wireless/ahb_interface/src/rsi_hal_mcu_m4_ram.c
+    LOCATION RAM
+  )
 endif() # CONFIG_SILABS_SIWX91X_NWP
 
 if(CONFIG_SILABS_SISDK_SLEEPTIMER)
