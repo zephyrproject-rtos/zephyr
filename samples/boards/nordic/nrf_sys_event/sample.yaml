@@ -56,16 +56,7 @@ tests:
   sample.boards.nordic.nrf_sys_event.rramc_wakeup:
     extra_configs:
       - CONFIG_NRF_SYS_EVENT_IRQ_LATENCY=y
-      - CONFIG_NRF_SYS_EVENT_GRTC_CHAN_CNT=0
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
-    integration_platforms:
-      - nrf54l15dk/nrf54l15/cpuapp
-  sample.boards.nordic.nrf_sys_event.rramc_wakeup.ppi:
-    extra_configs:
-      - CONFIG_NRF_SYS_EVENT_IRQ_LATENCY=y
-    platform_allow:
-      - nrf54l15dk/nrf54l15/cpuapp
-      - nrf54l15dk/nrf54l15/cpuflpr/xip
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp

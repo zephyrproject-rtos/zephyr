@@ -10,6 +10,18 @@
 #include <stdio.h>
 
 #ifdef CONFIG_NRF_SYS_EVENT_IRQ_LATENCY
+#define ALARM_CH 0
+#define TIMEOUT_US 100
+
+enum rramc_mode {
+	/* Default mode where RRAMC goes to low power state and had approx.15 us wake up time. */
+	RRAMC_DEFAULT,
+	/* Using nrf_sys_event API to schedule a PPI wake up before expected interrupt. */
+	RRAMC_PPI_WAKEUP,
+	/* Using nrf_sys_event API to change the power mode of RRAMC to 0 us wake up time. */
+	RRAMC_POWER_MODE,
+};
+
 static void counter_handler(const struct device *counter_dev, uint8_t ch_id,
 			    uint32_t ticks, void *user_data)
 {
@@ -27,7 +39,7 @@ static uint32_t counter_alarm_execute(const struct device *counter_dev,
 	alarm_cfg->user_data = &sem;
 
 	now = k_cycle_get_32();
-	err = counter_set_channel_alarm(counter_dev, 0, alarm_cfg);
+	err = counter_set_channel_alarm(counter_dev, ALARM_CH, alarm_cfg);
 	if (err < 0) {
 		printf("Failed to set the counter alarm.\n");
 		return 0;
@@ -41,15 +53,17 @@ static uint32_t counter_alarm_execute(const struct device *counter_dev,
 	return k_cycle_get_32() - now;
 }
 
-static void sys_event_irq_latency(void)
+static void sys_event_irq_latency_run(enum rramc_mode mode)
 {
 	const struct device *counter = DEVICE_DT_GET(DT_NODELABEL(sample_counter));
 	struct counter_alarm_cfg alarm_cfg;
-	uint32_t delay = 1000;
-	uint32_t delay_adj = 8;
-	uint32_t rpt = 100;
+	uint32_t delay = TIMEOUT_US;
+	uint32_t delay_adj = 4;
+	uint32_t rpt = 10;
 	uint32_t cyc;
 	int event_handle;
+	const char *mode_str = (mode == RRAMC_DEFAULT) ? "default RRAMC mode" :
+		(mode == RRAMC_PPI_WAKEUP) ? "RRAMC waken by PPI" : "RRAMC Standby mode";
 
 	counter_start(counter);
 	alarm_cfg.flags = 0;
@@ -59,30 +73,32 @@ static void sys_event_irq_latency(void)
 	cyc = 0;
 	for (int i = 0; i < rpt; i++) {
 		sys_cache_instr_invd_all();
-		cyc += counter_alarm_execute(counter, &alarm_cfg, K_USEC(delay + 100));
-	}
+		if (mode != RRAMC_DEFAULT) {
+			uint32_t t = (mode == RRAMC_PPI_WAKEUP) ? (delay + delay_adj) : 0;
 
-	cyc /= rpt;
-	printf("Alarm set for %d us, execution took:%d (no event registered)\n", delay, cyc);
-
-	cyc = 0;
-	for (int i = 0; i < rpt; i++) {
-		sys_cache_instr_invd_all();
-		/* Event is delayed because it is registered early and not as it should just
-		 * before starting. Triggering event too early may result in RRAMC going back
-		 * to sleep before actual event wakes up the CPU.
-		 */
-		event_handle = nrf_sys_event_register(delay + delay_adj, true);
-		if (event_handle < 0) {
-			printf("Failed to register an event:%d\n", event_handle);
-			return;
+			event_handle = nrf_sys_event_register(t, true);
+			if (mode == RRAMC_PPI_WAKEUP && event_handle == 32) {
+				printk("err\n");
+			}
 		}
+
 		cyc += counter_alarm_execute(counter, &alarm_cfg, K_USEC(delay + 100));
-		(void)nrf_sys_event_unregister(event_handle, false);
+		if (mode != RRAMC_DEFAULT) {
+			(void)nrf_sys_event_unregister(event_handle, false);
+		}
 	}
 
 	cyc /= rpt;
-	printf("Alarm set for %d us, execution took:%d\n", delay, cyc);
+	printf("Alarm set for %d us, execution took:%d (%s)\n", delay, cyc, mode_str);
+
+	counter_stop(counter);
+}
+
+static void sys_event_irq_latency(void)
+{
+	sys_event_irq_latency_run(RRAMC_DEFAULT);
+	sys_event_irq_latency_run(RRAMC_POWER_MODE);
+	sys_event_irq_latency_run(RRAMC_PPI_WAKEUP);
 }
 #endif /* CONFIG_NRF_SYS_EVENT_IRQ_LATENCY */
 
