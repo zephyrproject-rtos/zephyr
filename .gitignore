@@ -118,9 +118,13 @@ SysbuildKconfig.txt
 SysbuildKconfigBasic.txt
 SysbuildKconfigBasicNoModules.txt
 TextEncoding.txt
+Vale.txt
 YAMLLint.txt
 ZephyrModuleFile.txt
 # zephyr-keep-sorted-stop
 
 # Node dependecies
 node_modules
+
+# Vale
+.vale/
