@@ -19,6 +19,7 @@ OS Services
    input/index.rst
    instrumentation/index.rst
    ipc/index.rst
+   jwt/index.rst
    llext/index.rst
    logging/index.rst
    tracing/index.rst
@@ -38,7 +39,7 @@ OS Services
    sensing/index.rst
    task_wdt/index.rst
    tfm/index
+   uuid/index.rst
    virtualization/index.rst
    rtio/index.rst
    zbus/index.rst
-   misc.rst
