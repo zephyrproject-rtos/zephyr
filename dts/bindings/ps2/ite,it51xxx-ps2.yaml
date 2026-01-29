@@ -1,0 +1,33 @@
+# Copyright (c) 2026 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: IT51XXX PS2 controller
+
+compatible: "ite,it51xxx-ps2"
+
+include: [ps2.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts-extended:
+    required: true
+
+  bus-busy-timeout-ms:
+    type: int
+    description: |
+      Timeout, in milliseconds, to wait for ps2 bus to become idle before
+      transmitting. This value must be 500 (msec) or less. Default: 10 (msec).
+
+  clk-gpios:
+    type: phandle-array
+    description: |
+      GPIO pin used for the PS/2 clock signal, configured as wake source.
+      This property is required if (device) power management is enabled.
+
+  data-gpios:
+    type: phandle-array
+    description: |
+      GPIO pin used for the PS/2 data signal, configured as wake source.
+      This property is required if (device) power management is enabled.

@@ -455,4 +455,13 @@
 	/omit-if-no-ref/ uart2_tx_gph2_default: uart2_tx_gph2_default {
 		pinmuxs = <&pinctrlh 2 IT8XXX2_ALT_FUNC_3>;
 	};
+
+	/* PS2 alternate function */
+	/omit-if-no-ref/ ps2_0_clk_gph3_default: ps2_0_clk_gph3_default {
+		pinmuxs = <&pinctrlh 3 IT8XXX2_ALT_FUNC_1>;
+	};
+
+	/omit-if-no-ref/ ps2_0_data_gph4_default: ps2_0_data_gph4_default {
+		pinmuxs = <&pinctrlh 4 IT8XXX2_ALT_FUNC_1>;
+	};
 };

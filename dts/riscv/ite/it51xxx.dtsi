@@ -1418,5 +1418,14 @@
 			clocks = <&ecpm IT51XXX_ECPM_CGCTRL3R_OFF BIT(1)>;
 			status = "disabled";
 		};
+
+		ps2_0: ps2@f01700 {
+			compatible = "ite,it51xxx-ps2";
+			reg = <0x00f01700 0x0c>;
+			interrupts-extended = <&intc IT51XXX_IRQ_PS2_0 IRQ_TYPE_EDGE_RISING>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
 	};
 };
