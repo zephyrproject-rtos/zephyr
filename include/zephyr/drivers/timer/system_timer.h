@@ -163,6 +163,56 @@ uint32_t sys_clock_cycle_get_32(void);
  */
 uint64_t sys_clock_cycle_get_64(void);
 
+#if defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE) || defined(__DOXYGEN__)
+/**
+ * @brief Notify the system timer driver of a frequency change.
+ *
+ * @kconfig_dep{CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE}
+ *
+ * This hook lets the active system timer driver react when the system timer
+ * clock frequency changes at runtime.
+ *
+ * Drivers that cache derived constants (e.g. cycles-per-tick) or need to
+ * reprogram hardware on a frequency change should implement this hook.
+ *
+ * This function must not be called directly by platform code. Use
+ * z_sys_clock_hw_cycles_per_sec_update() to ensure the kernel properly updates
+ * its backing value before invoking this hook.
+ *
+ * If a system timer driver does not need to do anything on a frequency change,
+ * it may omit an implementation; the kernel provides a weak, no-op default.
+ *
+ * @param old_hz Previous system timer clock frequency, in Hz.
+ * @param new_hz New system timer clock frequency, in Hz.
+ */
+void sys_clock_notify_freq_change(uint32_t old_hz, uint32_t new_hz);
+
+/**
+ * @brief Update the system timer frequency at runtime.
+ *
+ * @kconfig_dep{CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE}
+ *
+ * Update the kernel's stored system timer frequency and notify the active
+ * system timer driver of the change.
+ *
+ * When TIMER_READS_ITS_FREQUENCY_AT_RUNTIME is enabled, the updated value is
+ * also visible via sys_clock_hw_cycles_per_sec().
+ *
+ * Platforms that can change the system timer clock rate at runtime must call this
+ * helper after the clock change has been applied.
+ *
+ * Notes:
+ * - @p new_hz is the frequency of the system timer's clock source, not
+ *   necessarily the CPU/core clock.
+ * - If @p new_hz is unchanged from the previous value, this function performs
+ *   no notification.
+ * - If @p new_hz is 0, the update is ignored.
+ *
+ * @param new_hz New system timer clock frequency, in Hz.
+ */
+void z_sys_clock_hw_cycles_per_sec_update(uint32_t new_hz);
+#endif /* CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE */
+
 /**
  * @}
  */

@@ -25,11 +25,58 @@ represents the fastest cycle counter that the operating system is able
 to present to the user (for example, a CPU cycle counter) and that the
 read operation is very fast.  The expectation is that very sensitive
 application code might use this in a polling manner to achieve maximal
-precision.  The frequency of this counter is required to be steady
-over time, and is available from
-:c:func:`sys_clock_hw_cycles_per_sec` (which on almost all
-platforms is a runtime constant that evaluates to
-CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC).
+precision.  The frequency of this counter is available from
+:c:func:`sys_clock_hw_cycles_per_sec` (which on almost all platforms is a
+runtime constant that evaluates to :kconfig:option:`CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC`
+and is fixed for the lifetime of the system). On platforms where the active
+system timer frequency can change at runtime, the kernel can be notified of
+the new value using :kconfig:option:`CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE`;
+in that case, application code should not assume that conversions derived from
+:c:func:`sys_clock_hw_cycles_per_sec` are based on a single immutable frequency.
+
+Runtime System Timer Frequency
+------------------------------
+
+Most platforms have a system timer whose frequency is fixed for the lifetime
+of the system, and :c:func:`sys_clock_hw_cycles_per_sec` evaluates to a build-time
+constant.
+
+Some platforms need the system timer frequency to be available at runtime.
+This includes timer drivers that determine the timer rate by querying hardware
+at boot, and platforms where the system timer clock rate can change after boot
+(e.g. dynamic voltage and frequency scaling where the system timer is derived
+from a CPU clock).
+
+Platforms that can change the active system timer frequency at runtime must
+enable :kconfig:option:`CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE` and:
+
+* Call :c:func:`z_sys_clock_hw_cycles_per_sec_update` after applying the clock change.
+* Provide a timer-driver implementation of :c:func:`sys_clock_notify_freq_change`
+  if the system timer driver caches derived constants (e.g. cycles_per_tick)
+  or needs to reprogram hardware when the frequency changes.
+
+The default implementation of :c:func:`sys_clock_notify_freq_change` is a no-op.
+
+.. note::
+
+  :kconfig:option:`CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE` tracks
+  the system timer frequency as a single **global** value. It is therefore not
+  compatible with per-CPU frequency scaling configurations where different CPUs
+  could observe different system timer frequencies.
+
+.. note::
+
+  :kconfig:option:`CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE` can be
+  enabled even if :kconfig:option:`CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME`
+  is not enabled. In that case, :c:func:`sys_clock_hw_cycles_per_sec` remains
+  a build-time constant, but the update/notify mechanism is still available to
+  allow the active system timer driver to reprogram hardware and keep its
+  internal accounting consistent across frequency changes.
+
+  If application code relies on :c:func:`sys_clock_hw_cycles_per_sec` (or time
+  conversions derived from it) and the system timer frequency can change,
+  :kconfig:option:`CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME` should also be
+  enabled.
 
 For asynchronous timekeeping, the kernel defines a "ticks" concept.  A
 "tick" is the internal count in which the kernel does all its internal
