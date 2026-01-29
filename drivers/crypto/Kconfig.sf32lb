@@ -1,0 +1,42 @@
+# SiFli SF32LB Crypto Accelerator configuration options
+
+# Copyright (c) 2025 SiFli Technologies(Nanjing) Co., Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+config CRYPTO_SF32LB
+	bool "SiFli SF32LB Crypto Accelerator driver"
+	default y
+	depends on DT_HAS_SIFLI_SF32LB_CRYPTO_ENABLED
+	help
+	  Enable SiFli SF32LB Crypto Accelerator driver.
+	  This driver supports AES encryption/decryption and
+	  SHA hash operations.
+
+if CRYPTO_SF32LB
+
+config CRYPTO_SIFLI_MAX_SESSION
+	int "Maximum number of sessions"
+	default 2
+	help
+	  Maximum number of concurrent crypto sessions.
+
+config CRYPTO_SIFLI_HASH
+	bool "SiFli SHA hash support"
+	default y
+	help
+	  Enable SHA-224 and SHA-256 hash support.
+
+config CRYPTO_SIFLI_AES
+	bool "SiFli AES cipher support"
+	default y
+	help
+	  Enable AES-128/192/256 ECB/CBC/CTR cipher support.
+
+config CRYPTO_SIFLI_ASYNC
+	bool "SiFli crypto async operations support"
+	default n
+	help
+	  Enable async crypto operations using interrupts.
+	  When disabled, the driver uses polling mode.
+
+endif # CRYPTO_SF32LB

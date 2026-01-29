@@ -171,6 +171,10 @@
 	status = "okay";
 };
 
+&crypto {
+	status = "okay";
+};
+
 temp_sensor: &tsen {
 	status = "okay";
 };
