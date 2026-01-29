@@ -5815,10 +5815,9 @@ West:
   maintainers:
     - anangl
     - nika-nordic
-    - masz-nordic
+    - nordic-krch
     - carlescufi
   collaborators:
-    - nordic-krch
     - kl-cruz
     - magp-nordic
     - jaz1-nordic
@@ -6528,7 +6527,7 @@ nRF Platforms:
   status: maintained
   maintainers:
     - anangl
-    - masz-nordic
+    - nordic-krch
     - bjarki-andreasen
   collaborators:
     - jaz1-nordic
