@@ -678,6 +678,10 @@ STM32
   .. note:: This change aligns STM32 platforms' behavior with the generic Zephyr one. Previous
             implementation wasn't product-ready so this shouldn't cause much trouble.
 
+* The Kconfig option :kconfig:option:`CONFIG_PI_STM32_USE_HW_SS` has been removed.  To achieve the same behavior,
+  be sure your devicetree node does not have a :dtcompatible:`cs-gpios` property and also does not have the
+  new :dtcompatible:`st,soft-nss` property.
+
 USB
 ===
 
