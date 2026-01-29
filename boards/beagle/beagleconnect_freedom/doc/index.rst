@@ -20,6 +20,7 @@ The CC1352P7 wireless MCU has a 48 MHz Arm Cortex-M4F SoC and a Bluetooth Low En
 The board also features a TI MSP430F5503 microcontroller used as a USB-to-serial bridge and
 GPIO expander.
 
+(NOTE: Rev C5 used TI CC1352P MCU and is no longer available. Rev C7 uses TI CC1352P7.)
 
 Supported Features
 ==================

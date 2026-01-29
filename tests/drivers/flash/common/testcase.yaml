@@ -191,7 +191,8 @@ tests:
     filter: CONFIG_FLASH_HAS_DRIVER_ENABLED
       and dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
     platform_exclude:
-      - beagleconnect_freedom/cc1352p7
+      - beagleconnect_freedom@C5/cc1352p
+      - beagleconnect_freedom@C7/cc1352p7
     extra_args:
       - CONFIG_TEST_FORCE_STORAGE_PARTITION=y
   drivers.flash.common.ra_ospi_b_nor:
