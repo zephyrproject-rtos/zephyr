@@ -1204,4 +1204,13 @@ config BT_HCI_VS_EVT_USER
 	  Enable registering a callback for delegating to the user the handling of
 	  VS events that are not known to the stack
 
+config BT_BUF_SYNC_EVT_POOL_COUNT
+	int "Num of Sync event buffer pool count"
+	range 1 $(UINT8_MAX)
+	default 1
+	help
+	  This option enables vendor to configure number of sync event buffer count
+	  based on application needs. The default value for sync event buf pool
+	  count would be 1.
+
 endmenu
