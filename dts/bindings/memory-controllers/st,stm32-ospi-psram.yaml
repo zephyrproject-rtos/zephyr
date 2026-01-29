@@ -160,3 +160,13 @@ properties:
       of the PSRAM device for the linear burst command.
     enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
            21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
+
+  st,refresh:
+    type: int
+    required: true
+    description: |
+      Refresh rate in number of memory clock cycles. The chip select must not
+      stay low for a period longer than the refresh rate. This value effectively
+      defines the maximum length of a transaction. It should be configured
+      depending on the memory datasheet.
+      A value of 0 means the feature is disabled.

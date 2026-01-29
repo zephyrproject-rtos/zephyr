@@ -152,6 +152,7 @@ stm32_lp_tick_source: &lptim1 {
 		fixed-latency;
 		burst-length = <3>;
 		st,csbound = <10>;
+		st,refresh = <320>;
 		status = "okay";
 	};
 };
