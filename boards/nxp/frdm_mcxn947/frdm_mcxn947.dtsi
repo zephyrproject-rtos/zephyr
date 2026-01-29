@@ -404,6 +404,11 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 	pinctrl-names = "default";
 };
 
+&tsi0 {
+	pinctrl-0 = <&pinmux_tsi>;
+	pinctrl-names = "default";
+};
+
 dvp_20pin_i2c: &flexcomm7_lpi2c7 {};
 
 dvp_20pin_interface: &video_sdma {};
