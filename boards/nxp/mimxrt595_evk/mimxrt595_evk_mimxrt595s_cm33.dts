@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023, NXP
+ * Copyright 2022-2023, 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -550,5 +550,17 @@ zephyr_udc0: &usbhs {
 };
 
 &mrt_channel0 {
+	status = "okay";
+};
+
+&cache64_ctrl0 {
+	/* 0x0000_0000-0x03FF_FFFF: WB (16MB NOR XIP) */
+	regions = <0x4000000 1>;
+	status = "okay";
+};
+
+&cache64_ctrl1 {
+	/* 0x0000_0000-0x03FF_FFFF: WB (64MB PSRAM) */
+	regions = <0x4000000 2>;
 	status = "okay";
 };
