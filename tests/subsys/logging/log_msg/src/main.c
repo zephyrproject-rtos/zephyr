@@ -336,16 +336,16 @@ ZTEST(log_msg, test_log_msg_fp)
 	test_init();
 
 	Z_LOG_MSG_CREATE3(1, mode, 0, domain, source, level, NULL, 0,
-			TEST_MSG, i, lli, (double)f, &i, d, source);
+			TEST_MSG, i, lli, (double)f, (void*)(uintptr_t)i, d, source);
 	zassert_equal(mode, EXP_MODE(ZERO_COPY));
 
 	Z_LOG_MSG_CREATE3(0, mode, 0, domain, source, level, NULL, 0,
-			TEST_MSG, i, lli, (double)f, &i, d, source);
+			TEST_MSG, i, lli, (double)f, (void*)(uintptr_t)i, d, source);
 	zassert_equal(mode, EXP_MODE(FROM_STACK));
 
 	z_log_msg_runtime_create(domain, (void *)source, level, NULL, 0, 0,
-				  TEST_MSG, i, lli, (double)f, &i, d, source);
-	snprintfcb(str, sizeof(str), TEST_MSG, i, lli, (double)f, &i, d, source);
+				  TEST_MSG, i, lli, (double)f, (void*)(uintptr_t)i, d, source);
+	snprintfcb(str, sizeof(str), TEST_MSG, i, lli, (double)f, (void*)(uintptr_t)i, d, source);
 
 	validate_base_message_set(source, domain, level,
 				   TEST_TIMESTAMP_INIT_VALUE,
