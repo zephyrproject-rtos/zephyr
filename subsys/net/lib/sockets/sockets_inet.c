@@ -479,6 +479,31 @@ int zsock_listen_ctx(struct net_context *ctx, int backlog)
 	return 0;
 }
 
+static int sock_get_stream_src_addr(struct net_context *ctx, struct net_sockaddr *addr,
+				    net_socklen_t *addrlen)
+{
+	if (addr != NULL && addrlen != NULL) {
+		size_t len;
+
+		if (ctx->remote.sa_family == NET_AF_INET) {
+			len = sizeof(struct net_sockaddr_in);
+		} else if (ctx->remote.sa_family == NET_AF_INET6) {
+			len = sizeof(struct net_sockaddr_in6);
+		} else {
+			return -ENOTSUP;
+		}
+
+		memcpy(addr, &ctx->remote, MIN(len, *addrlen));
+
+		/* addrlen is a value-result argument, set to actual
+		 * size of source address
+		 */
+		*addrlen = len;
+	}
+
+	return 0;
+}
+
 int zsock_accept_ctx(struct net_context *parent, struct net_sockaddr *addr,
 		     net_socklen_t *addrlen)
 {
@@ -547,25 +572,13 @@ int zsock_accept_ctx(struct net_context *parent, struct net_sockaddr *addr,
 
 	net_context_set_accepting(ctx, false);
 
-
-	if (addr != NULL && addrlen != NULL) {
-		int len = MIN(*addrlen, sizeof(ctx->remote));
-
-		memcpy(addr, &ctx->remote, len);
-		/* addrlen is a value-result argument, set to actual
-		 * size of source address
-		 */
-		if (ctx->remote.sa_family == NET_AF_INET) {
-			*addrlen = sizeof(struct net_sockaddr_in);
-		} else if (ctx->remote.sa_family == NET_AF_INET6) {
-			*addrlen = sizeof(struct net_sockaddr_in6);
-		} else {
-			zvfs_free_fd(fd);
-			errno = ENOTSUP;
-			zsock_flush_queue(ctx);
-			net_context_put(ctx);
-			return -1;
-		}
+	ret = sock_get_stream_src_addr(ctx, addr, addrlen);
+	if (ret < 0) {
+		zvfs_free_fd(fd);
+		errno = -ret;
+		zsock_flush_queue(ctx);
+		net_context_put(ctx);
+		return -1;
 	}
 
 	NET_DBG("accept: ctx=%p, fd=%d", ctx, fd);
@@ -1514,7 +1527,8 @@ again:
 }
 
 static ssize_t zsock_recv_stream(struct net_context *ctx, struct net_msghdr *msg,
-				 void *buf, size_t max_len, int flags)
+				 void *buf, size_t max_len, int flags,
+				 struct net_sockaddr *src_addr, net_socklen_t *addrlen)
 {
 	ssize_t res;
 	size_t recv_len = 0;
@@ -1549,6 +1563,12 @@ static ssize_t zsock_recv_stream(struct net_context *ctx, struct net_msghdr *msg
 		return -1;
 	}
 
+	res = sock_get_stream_src_addr(ctx, src_addr, addrlen);
+	if (res < 0) {
+		errno = -res;
+		return -1;
+	}
+
 	if (!(flags & ZSOCK_MSG_PEEK)) {
 		net_context_update_recv_wnd(ctx, recv_len);
 	}
@@ -1569,7 +1589,7 @@ ssize_t zsock_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
 	if (sock_type == NET_SOCK_DGRAM || sock_type == NET_SOCK_RAW) {
 		return zsock_recv_dgram(ctx, NULL, buf, max_len, flags, src_addr, addrlen);
 	} else if (sock_type == NET_SOCK_STREAM) {
-		return zsock_recv_stream(ctx, NULL, buf, max_len, flags);
+		return zsock_recv_stream(ctx, NULL, buf, max_len, flags, src_addr, addrlen);
 	}
 
 	__ASSERT(0, "Unknown socket type");
@@ -1603,7 +1623,8 @@ ssize_t zsock_recvmsg_ctx(struct net_context *ctx, struct net_msghdr *msg,
 		return zsock_recv_dgram(ctx, msg, NULL, max_len, flags,
 					msg->msg_name, &msg->msg_namelen);
 	} else if (sock_type == NET_SOCK_STREAM) {
-		return zsock_recv_stream(ctx, msg, NULL, max_len, flags);
+		return zsock_recv_stream(ctx, msg, NULL, max_len, flags,
+					 msg->msg_name, &msg->msg_namelen);
 	}
 
 	__ASSERT(0, "Unknown socket type");
