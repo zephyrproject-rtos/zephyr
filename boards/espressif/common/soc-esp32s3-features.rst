@@ -66,9 +66,21 @@ Security:
 Asymmetric Multiprocessing (AMP)
 ================================
 
-Boards featuring the ESP32-S3 SoC allows 2 different applications to be executed. Due to its dual-core
-architecture, each core can be enabled to execute customized tasks in stand-alone mode
+Boards featuring the ESP32 and ESP32-S3 SoC allows 2 different applications to be executed.
+Due to its dual-core architecture, each core can be enabled to execute customized tasks in stand-alone mode
 and/or exchanging data over OpenAMP framework. See :zephyr:code-sample-category:`ipc` folder as code reference.
+
+.. note::
+
+   ** AMP and serial output support **
+
+   In the current Zephyr ESP32 implementation, access to Zephyr-managed serial
+   drivers (such as ``printk()``, logging, or the console UART) is not yet
+   implemented for applications running on the APPCPU. As a result, serial
+   output APIs provided by Zephyr are only available on the PROCPU.
+
+   As a mitigation, applications running on the APPCPU may use ESP32 ROM
+   functions such as ``ets_printf()`` to emit diagnostic or debug output.
 
 For more information, check the `ESP32-S3 Datasheet`_ or the `ESP32-S3 Technical Reference Manual`_.
 
