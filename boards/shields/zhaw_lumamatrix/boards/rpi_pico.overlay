@@ -1,0 +1,90 @@
+/*
+ * Copyright (c) 2026, Institute of Embedded Systems ZHAW
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/rpi-pico-rp2040-pinctrl.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	aliases {
+		sw0 = &joy_up;
+		sw1 = &joy_down;
+		sw2 = &joy_left;
+		sw3 = &joy_right;
+		sw4 = &joy_center;
+		sw5 = &switch;
+	};
+
+	buttons {
+		status = "okay";
+		compatible = "gpio-keys";
+
+		joy_up: joystick_up {
+			gpios = <&gpio0 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "joystick button up";
+			zephyr,code = <INPUT_KEY_UP>;
+		};
+
+		joy_down: joystick_down {
+			gpios = <&gpio0 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "joystick button down";
+			zephyr,code = <INPUT_KEY_DOWN>;
+		};
+
+		joy_left: joystick_left {
+			gpios = <&gpio0 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "joystick button left";
+			zephyr,code = <INPUT_KEY_LEFT>;
+		};
+
+		joy_right: joystick_right {
+			gpios = <&gpio0 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "joystick button right";
+			zephyr,code = <INPUT_KEY_RIGHT>;
+		};
+
+		joy_center: joystick_center {
+			gpios = <&gpio0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "joystick button center";
+			zephyr,code = <INPUT_KEY_ENTER>;
+		};
+
+		switch: switch_0 {
+			gpios = <&gpio0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "switch";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&pinctrl {
+	pinctrl_bff_ws2812: pinctrl_bff_ws2812 {
+		ws2812 {
+			pinmux = <PIO0_P19>;
+		};
+	};
+};
+
+&pio0 {
+	status = "okay";
+
+	bff-ws2812 {
+		compatible = "worldsemi,ws2812-rpi_pico-pio";
+		status = "okay";
+		pinctrl-0 = <&pinctrl_bff_ws2812>;
+		pinctrl-names = "default";
+		bit-waveform = <3>, <3>, <4>;
+
+		bff_led_strip: bff_led_strip {
+			status = "okay";
+			gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+			chain-length = <64>;
+			color-mapping = <LED_COLOR_ID_GREEN
+					 LED_COLOR_ID_RED
+					 LED_COLOR_ID_BLUE>;
+			reset-delay = <280>;
+			frequency = <800000>;
+		};
+	};
+};
