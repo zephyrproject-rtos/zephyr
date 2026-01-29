@@ -226,6 +226,14 @@ config SOC_IT8XXX2_SERIAL_IN_RAM
 	  Place serial handling (Include uart_ns16550.c and uart_ite_it8xxx2.c) code
 	  in ILM. This can improve performance.
 
+config SOC_IT8XXX2_PIGWEED_IN_RAM
+	bool "Put pigweed relative library code in RAM"
+	depends on PIGWEED_TOKENIZER && PIGWEED_LOG_TOKENIZED_LIB
+	select SOC_IT8XXX2_USE_ILM
+	select SOC_IT8XXX2_LIBRARY_TO_RAM
+	help
+	  Put pigweed relative library code in ILM. This can improve performance.
+
 config SOC_IT8XXX2_KERNEL_IN_RAM
 	bool "Place kernel handling code in RAM"
 	select SOC_IT8XXX2_USE_ILM
