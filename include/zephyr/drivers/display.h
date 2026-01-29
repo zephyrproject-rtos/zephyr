@@ -143,6 +143,7 @@ enum display_pixel_format {
 	 * @endcode
 	 */
 	PIXEL_FORMAT_AL_88		= BIT(7), /**< 8-bit Grayscale/Luminance with alpha */
+	PIXEL_FORMAT_XRGB_8888		= BIT(8), /**< 32-bit XRGB */
 };
 
 /**
@@ -160,7 +161,8 @@ enum display_pixel_format {
 	(((fmt & PIXEL_FORMAT_RGB_565) >> 4) * 16U) +				\
 	(((fmt & PIXEL_FORMAT_RGB_565X) >> 5) * 16U) +				\
 	(((fmt & PIXEL_FORMAT_L_8) >> 6) * 8U) +				\
-	(((fmt & PIXEL_FORMAT_AL_88) >> 7) * 16U))
+	(((fmt & PIXEL_FORMAT_AL_88) >> 7) * 16U) +				\
+	(((fmt & PIXEL_FORMAT_XRGB_8888) >> 8) * 32U))
 
 /**
  * @brief Display screen information
