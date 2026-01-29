@@ -36,6 +36,7 @@ def test_runner_imports():
         'mdb-nsim',
         'minichlink',
         'misc-flasher',
+        'mpcli',
         'native',
         'nrfjprog',
         'nrfutil',
