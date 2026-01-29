@@ -262,6 +262,10 @@ if(CONFIG_SILABS_SIWX91X_NWP)
     ${WISECONNECT}/components/device/silabs/si91x/wireless/firmware_upgrade/firmware_upgradation.c
   )
   zephyr_include_directories(.)
+  zephyr_code_relocate(FILES
+    ${WISECONNECT}/components/device/silabs/si91x/wireless/ahb_interface/src/rsi_hal_mcu_m4_ram.c
+    LOCATION RAM
+  )
 endif() # CONFIG_SILABS_SIWX91X_NWP
 
 if(CONFIG_SILABS_SISDK_SLEEPTIMER)
