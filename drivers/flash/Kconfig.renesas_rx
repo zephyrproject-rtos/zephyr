@@ -29,7 +29,7 @@ config FLASH_RENESAS_RX_BGO_ENABLED
 
 config RX_FLASH_TYPE1
 	bool
-	depends on SOC_SERIES_RX130 || SOC_SERIES_RX261
+	depends on SOC_SERIES_RX130 || SOC_SERIES_RX261 || SOC_SERIES_RX140
 	default y
 	help
 	  RX flash driver type 1
