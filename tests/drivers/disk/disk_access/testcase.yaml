@@ -68,3 +68,8 @@ tests:
       - CONF_FILE="prj.conf boards/${BOARD}_${NORMALIZED_BOARD_QUALIFIERS}_sci_b_spi.conf"
     platform_allow:
       - ek_ra8p1/r7ka8p1kflcac/cm85
+  drivers.disk.ufs:
+    filter: dt_compat_enabled("zephyr,ufs-disk")
+    build_only: true
+    extra_configs:
+      - CONFIG_DISK_DRIVER_UFS=y
