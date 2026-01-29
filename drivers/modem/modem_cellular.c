@@ -358,7 +358,11 @@ static bool modem_cellular_gpio_is_enabled(const struct gpio_dt_spec *gpio)
 
 static bool modem_cellular_has_apn(const struct modem_cellular_data *data)
 {
+#ifdef CONFIG_MODEM_CELLULAR_APN_ALLOW_EMPTY
+	return true;
+#else
 	return data->apn[0] != '\0';
+#endif
 }
 
 static void modem_cellular_notify_user_pipes_connected(struct modem_cellular_data *data)
@@ -2139,9 +2143,15 @@ static int modem_cellular_set_apn(const struct device *dev, const char *apn)
 	struct modem_cellular_data *data = dev->data;
 	int ret = 0;
 
-	if ((apn == NULL) || (*apn == '\0')) {
+	if (apn == NULL) {
 		return -EINVAL;
 	}
+
+#ifndef CONFIG_MODEM_CELLULAR_APN_ALLOW_EMPTY
+	if (*apn == '\0') {
+		return -EINVAL;
+	}
+#endif
 
 	if (strlen(apn) >= MODEM_CELLULAR_DATA_APN_LEN) {
 		return -EINVAL;
@@ -2252,10 +2262,15 @@ static void modem_cellular_ring_gpio_callback(const struct device *dev, struct g
 static void modem_cellular_init_apn(struct modem_cellular_data *data)
 {
 #ifdef CONFIG_MODEM_CELLULAR_APN
+#ifdef CONFIG_MODEM_CELLULAR_APN_ALLOW_EMPTY
+	strncpy(data->apn, CONFIG_MODEM_CELLULAR_APN, sizeof(data->apn) - 1);
+	data->apn[sizeof(data->apn) - 1] = '\0';
+#else
 	if (strlen(CONFIG_MODEM_CELLULAR_APN) > 0) {
 		strncpy(data->apn, CONFIG_MODEM_CELLULAR_APN, sizeof(data->apn) - 1);
 		data->apn[sizeof(data->apn) - 1] = '\0';
 	}
+#endif
 #endif
 
 	modem_chat_script_init(&data->apn_script);
