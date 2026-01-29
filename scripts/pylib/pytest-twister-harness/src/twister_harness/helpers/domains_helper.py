@@ -3,15 +3,9 @@
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
-import os
-import sys
 import logging
 
 from pathlib import Path
-
-ZEPHYR_BASE = os.environ['ZEPHYR_BASE']
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, 'scripts', 'pylib', 'build_helpers'))
-
 from domains import Domains
 
 logger = logging.getLogger(__name__)
