@@ -2,6 +2,9 @@
 
 zephyr_system_include_directories(include)
 
+# Override the system malloc.h with the common libc one if in use.
+zephyr_include_directories_ifdef(CONFIG_COMMON_LIBC_MALLOC include/malloc)
+
 zephyr_library()
 zephyr_library_property(ALLOW_EMPTY TRUE)
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_ABORT source/stdlib/abort.c)
