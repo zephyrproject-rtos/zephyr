@@ -22,6 +22,13 @@
 	};
 
 	soc {
+		wdt1: wdt1@40082000 {
+			compatible = "ti,mspm0-watchdog";
+			reg = <0x40082000 0x2000>;
+			ti,watchdog-reset-action = <1>;
+			status = "disabled";
+		};
+
 		timg0: timg0@40084000 {
 			compatible = "ti,mspm0-timer";
 			reg = <0x40084000 0x2000>;

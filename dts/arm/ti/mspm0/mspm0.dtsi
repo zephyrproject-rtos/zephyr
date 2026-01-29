@@ -154,6 +154,13 @@
 			compatible = "serial-flash";
 		};
 
+		wdt0: wdt0@40080000 {
+			compatible = "ti,mspm0-watchdog";
+			reg = <0x40080000 0x2000>;
+			ti,watchdog-reset-action = <1>;
+			status = "disabled";
+		};
+
 		rtc: rtc@40094000 {
 			compatible = "ti,mspm0-rtc";
 			reg = <0x40094000 0x2000>;
