@@ -16,6 +16,13 @@
 #include <bouffalolab/bl61x/glb_reg.h>
 #include <bouffalolab/bl61x/hbn_reg.h>
 
+#ifdef CONFIG_BFLB_WO
+#include <zephyr/drivers/misc/bflb_wo/bflb_wo.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/dt-bindings/clock/bflb_clock_common.h>
+#include <zephyr/drivers/clock_control/clock_control_bflb_common.h>
+#endif
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_bflb_bl61x);
 
@@ -28,7 +35,12 @@ LOG_MODULE_REGISTER(gpio_bflb_bl61x);
 #define GPIO_BFLB_TRIG_MODE_SYNC_LEVEL     2
 #define GPIO_BFLB_TRIG_MODE_SYNC_EDGE_BOTH 4
 
-#define GPIO_BFLB_PIN_REG_SIZE_SHIFT 2
+#define GPIO_BFLB_PIN_REG_SIZE_SHIFT	2
+#define GPIO_BFLB_PIN_CNT_MAX		34
+
+#define GPIO_BFLB_MODE_FIFO 2
+
+#define GPIO_BFLB_FIFO_THRES 64
 
 /* This driver is limited by zephyr masks and supports only 32 pins for simplicity.
  * BL61x serie supports up to 35 pins.
@@ -372,3 +384,196 @@ static DEVICE_API(gpio, gpio_bflb_api) = {
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_BFLB_INIT)
+
+
+/* GPIO FIFO Extension */
+#ifdef CONFIG_BFLB_WO
+
+static uint32_t bflb_wo_frequency_get_clk(void)
+{
+	uint32_t clk;
+	const struct device *clock_ctrl =  DEVICE_DT_GET_ANY(bflb_clock_controller);
+	uint32_t main_clock = clock_bflb_get_root_clock();
+
+	if (main_clock == BFLB_MAIN_CLOCK_RC32M || main_clock == BFLB_MAIN_CLOCK_PLL_RC32M) {
+		clk = BFLB_RC32M_FREQUENCY;
+	} else {
+		clock_control_get_rate(clock_ctrl, (void *)BFLB_CLKID_CLK_CRYSTAL, &clk);
+	}
+
+	return clk;
+}
+
+uint16_t bflb_wo_frequency_to_cycles(const uint32_t frequency, const bool exact)
+{
+	uint32_t clk = bflb_wo_frequency_get_clk();
+
+	if (frequency == 0 || frequency > clk) {
+		return 0;
+	}
+
+	if (exact && ((clk % frequency) != 0)) {
+		return 0;
+	}
+
+	return clk / frequency;
+}
+
+uint16_t bflb_wo_time_to_cycles(const uint32_t time, const bool exact)
+{
+	uint64_t t = bflb_wo_frequency_get_clk() * (uint64_t)time;
+
+	if (exact && ((t % Z_HZ_ns) != 0)) {
+		return 0;
+	}
+
+	return t / Z_HZ_ns;
+}
+
+/* Reset pins previously used for FIFO to avoid overlap */
+static void bflb_wo_clear_pins(void)
+{
+	uint32_t tmp;
+
+	for (int i = 0; i < GPIO_BFLB_PIN_CNT_MAX; i++) {
+		tmp = sys_read32(GLB_BASE + GLB_GPIO_CFG0_OFFSET
+			+ (i << GPIO_BFLB_PIN_REG_SIZE_SHIFT));
+		if (((tmp & GLB_REG_GPIO_0_MODE_MSK) >> GLB_REG_GPIO_0_MODE_POS)
+			== GPIO_BFLB_MODE_FIFO) {
+			tmp &= GLB_REG_GPIO_0_MODE_UMSK;
+		}
+		sys_write32(tmp, GLB_BASE + GLB_GPIO_CFG0_OFFSET
+			+ (i << GPIO_BFLB_PIN_REG_SIZE_SHIFT));
+	}
+}
+
+static void bflb_wo_configure_pin(const uint8_t pin, const bool pu, const bool pd)
+{
+	uint32_t cfg = GLB_REG_GPIO_0_INT_MASK_MSK
+		| GLB_REG_GPIO_0_OE_MSK
+		| (GPIO_BFLB_DRIVE_STRENGTH << GLB_REG_GPIO_0_DRV_POS)
+		| GLB_REG_GPIO_0_SMT_MSK
+		| (GPIO_BFLB_FUNCTION_GPIO << GLB_REG_GPIO_0_FUNC_SEL_POS)
+		| (GPIO_BFLB_MODE_FIFO << GLB_REG_GPIO_0_MODE_POS);
+
+	/* disable RC32K muxing */
+	if (pin == 16) {
+		*(volatile uint32_t *)(HBN_BASE + HBN_PAD_CTRL_0_OFFSET)
+			&= ~(1 << HBN_REG_EN_AON_CTRL_GPIO_POS);
+	} else if (pin == 17) {
+		*(volatile uint32_t *)(HBN_BASE + HBN_PAD_CTRL_0_OFFSET)
+			&= ~(1 << (HBN_REG_EN_AON_CTRL_GPIO_POS + 1));
+	}
+
+	if (pu) {
+		cfg |= GLB_REG_GPIO_0_PU_MSK;
+	} else if (pd) {
+		cfg |= GLB_REG_GPIO_0_PD_MSK;
+	}
+
+	sys_write32(cfg, GLB_BASE + GLB_GPIO_CFG0_OFFSET + (pin << GPIO_BFLB_PIN_REG_SIZE_SHIFT));
+}
+
+static void bflb_wo_configure_fifo(const struct bflb_wo_config *const config)
+{
+	uint32_t tmp;
+
+	tmp = sys_read32(GLB_BASE + GLB_GPIO_CFG142_OFFSET);
+	tmp &= GLB_CR_GPIO_TX_EN_UMSK;
+	sys_write32(tmp, GLB_BASE + GLB_GPIO_CFG142_OFFSET);
+
+	tmp = sys_read32(GLB_BASE + GLB_GPIO_CFG142_OFFSET);
+	tmp &= GLB_CR_CODE_TOTAL_TIME_UMSK;
+	tmp &= GLB_CR_CODE0_HIGH_TIME_UMSK;
+	tmp &= GLB_CR_CODE1_HIGH_TIME_UMSK;
+	tmp |= (config->total_cycles << GLB_CR_CODE_TOTAL_TIME_POS);
+	tmp |= (config->set_cycles << GLB_CR_CODE1_HIGH_TIME_POS);
+	tmp |= (config->unset_cycles << GLB_CR_CODE0_HIGH_TIME_POS);
+	if (config->set_invert) {
+		tmp |= GLB_CR_INVERT_CODE1_HIGH_MSK;
+	} else {
+		tmp &= GLB_CR_INVERT_CODE1_HIGH_UMSK;
+	}
+	if (config->unset_invert) {
+		tmp |= GLB_CR_INVERT_CODE0_HIGH_MSK;
+	} else {
+		tmp &= GLB_CR_INVERT_CODE0_HIGH_UMSK;
+	}
+	sys_write32(tmp, GLB_BASE + GLB_GPIO_CFG142_OFFSET);
+
+	tmp = sys_read32(GLB_BASE + GLB_GPIO_CFG143_OFFSET);
+	tmp &= GLB_CR_GPIO_TX_FIFO_TH_UMSK;
+	/* For DMA */
+	tmp |= GPIO_BFLB_FIFO_THRES << GLB_CR_GPIO_TX_FIFO_TH_POS;
+	if (config->park_high) {
+		tmp |= GLB_CR_GPIO_DMA_PARK_VALUE_MSK;
+	} else {
+		tmp &= GLB_CR_GPIO_DMA_PARK_VALUE_UMSK;
+	}
+	tmp &= GLB_CR_GPIO_DMA_OUT_SEL_LATCH_UMSK;
+	tmp |= (GLB_CR_GPIO_TX_END_MASK_MSK
+		| GLB_CR_GPIO_TX_FIFO_MASK_MSK
+		| GLB_CR_GPIO_TX_FER_MASK_MSK);
+	tmp |= (GLB_CR_GPIO_TX_END_EN_MSK
+		| GLB_CR_GPIO_TX_FIFO_EN_MSK
+		| GLB_CR_GPIO_TX_FER_EN_MSK);
+	tmp |= (GLB_GPIO_TX_FIFO_CLR_MSK
+		| GLB_GPIO_TX_END_CLR_MSK);
+	tmp &= GLB_CR_GPIO_DMA_TX_EN_UMSK;
+	sys_write32(tmp, GLB_BASE + GLB_GPIO_CFG143_OFFSET);
+}
+
+static void bflb_wo_enable(const bool enabled)
+{
+	uint32_t tmp;
+
+	tmp = sys_read32(GLB_BASE + GLB_GPIO_CFG142_OFFSET);
+	if (enabled) {
+		tmp |= GLB_CR_GPIO_TX_EN_MSK;
+	} else {
+		tmp &= GLB_CR_GPIO_TX_EN_UMSK;
+	}
+	sys_write32(tmp, GLB_BASE + GLB_GPIO_CFG142_OFFSET);
+}
+
+static uint32_t bflb_wo_free(void)
+{
+	return (sys_read32(GLB_BASE + GLB_GPIO_CFG143_OFFSET)
+		& GLB_GPIO_TX_FIFO_CNT_MSK) >> GLB_GPIO_TX_FIFO_CNT_POS;
+}
+
+int bflb_wo_configure(const struct bflb_wo_config *const config)
+{
+	bflb_wo_enable(false);
+
+	bflb_wo_clear_pins();
+
+	for (size_t i = 0; i < BFLB_WO_PIN_CNT; i++) {
+		if (config->pins[i] != BFLB_WO_PIN_NONE) {
+			bflb_wo_configure_pin(config->pins[i], config->pull_up, config->pull_down);
+		}
+	}
+
+	bflb_wo_configure_fifo(config);
+	LOG_DBG("Configured GPIO FIFO");
+
+	/* Free run */
+	bflb_wo_enable(true);
+
+	return 0;
+}
+
+int bflb_wo_write(const uint16_t *const data, const size_t len)
+{
+	size_t left = len;
+
+	while (left) {
+		if (bflb_wo_free() > 0) {
+			sys_write32((uint32_t)data[len - left], GLB_BASE + GLB_GPIO_CFG144_OFFSET);
+			left--;
+		}
+	}
+	return 0;
+}
+
+#endif /* CONFIG_BFLB_WO */
