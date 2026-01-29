@@ -228,6 +228,138 @@ static inline void eth_xmc4xxx_trigger_dma_rx(ETH_GLOBAL_TypeDef *regs)
 	regs->RECEIVE_POLL_DEMAND = 0U;
 }
 
+static inline void pkt_hexdump(struct net_pkt *pkt, const char *str)
+{
+	struct net_buf *buf = pkt->buffer;
+
+	while (buf) {
+		LOG_HEXDUMP_DBG(buf->data, buf->len, str);
+		buf = buf->frags;
+	}
+}
+
+/* Clears the checksum field of an ICMPv4 packet. */
+static int eth_xmc4xxx_clear_checksum_icmpv4(struct net_pkt *pkt)
+{
+	NET_PKT_DATA_ACCESS_DEFINE(icmpv4_access, struct net_icmp_hdr);
+	struct net_icmp_hdr *icmp_hdr;
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_HDR_OPTIONS)) {
+		if (net_pkt_skip(pkt, net_pkt_ipv4_opts_len(pkt))) {
+			return -ENOBUFS;
+		}
+	}
+
+	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data(pkt, &icmpv4_access);
+	if (!icmp_hdr) {
+		return -ENOBUFS;
+	}
+
+	icmp_hdr->chksum = 0;
+	net_pkt_set_chksum_done(pkt, true);
+
+	return net_pkt_set_data(pkt, &icmpv4_access);
+}
+
+/* Clears the checksum value in packets that will go through checksum
+ * offloading.
+ */
+static int eth_xmc4xxx_clear_checksum(struct net_pkt *pkt)
+{
+	int ret = 0;
+	uint16_t p_type = 0xFFFF;
+	uint8_t next_header = 0xFF;
+	struct net_eth_hdr *eth_hdr;
+	struct net_pkt_cursor backup;
+	bool overwrite;
+	const char *msg = NULL;
+	const char *msg_does_not_apply = "<does not apply>";
+	const char *p_type_str = msg_does_not_apply;
+	const char *next_header_str = msg_does_not_apply;
+	const char *msg_error_skipping_pkt = "Error skipping pkt";
+
+	overwrite = net_pkt_is_being_overwritten(pkt);
+	net_pkt_cursor_backup(pkt, &backup);
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+	eth_hdr = NET_ETH_HDR(pkt);
+	ret = net_pkt_skip(pkt, sizeof(struct net_eth_hdr));
+	if (ret) {
+		msg = msg_error_skipping_pkt;
+		goto end;
+	}
+	p_type = ntohs(eth_hdr->type);
+	switch (p_type) {
+	case NET_ETH_PTYPE_IP: {
+		NET_PKT_DATA_ACCESS_DEFINE(ip_access, struct net_ipv4_hdr);
+		struct net_ipv4_hdr *ip_hdr;
+
+		p_type_str = "IPv4";
+		ip_hdr = (struct net_ipv4_hdr *)net_pkt_get_data(pkt, &ip_access);
+		next_header = ip_hdr->proto;
+		ret = net_pkt_skip(pkt, sizeof(struct net_ipv4_hdr));
+		if (ret) {
+			msg = msg_error_skipping_pkt;
+			goto end;
+		}
+
+		break;
+	}
+	case NET_ETH_PTYPE_IPV6: {
+		NET_PKT_DATA_ACCESS_DEFINE(ip_access, struct net_ipv6_hdr);
+		struct net_ipv6_hdr *ip_hdr;
+
+		p_type_str = "IPv6";
+		ip_hdr = (struct net_ipv6_hdr *)net_pkt_get_data(pkt, &ip_access);
+		next_header = ip_hdr->nexthdr;
+		ret = net_pkt_skip(pkt, sizeof(struct net_ipv6_hdr));
+		if (ret) {
+			msg = msg_error_skipping_pkt;
+			goto end;
+		}
+
+		break;
+	}
+	case NET_ETH_PTYPE_ARP:
+		p_type_str = "ARP";
+		goto end;
+	default:
+		p_type_str = "Unknown";
+		msg = "Unknown protocol type";
+		goto end;
+	}
+
+	switch (next_header) {
+	case IPPROTO_TCP:
+		next_header_str = "TCP";
+		break;
+	case IPPROTO_UDP:
+		next_header_str = "UDP";
+		break;
+	case IPPROTO_ICMP:
+		next_header_str = "ICMPv4";
+		ret = eth_xmc4xxx_clear_checksum_icmpv4(pkt);
+		break;
+	case IPPROTO_ICMPV6:
+		next_header_str = "ICMPv6";
+		break;
+	default:
+		next_header_str = "Unknown";
+		msg = "Unknown next header";
+		break;
+	}
+
+end:
+	net_pkt_cursor_restore(pkt, &backup);
+	net_pkt_set_overwrite(pkt, overwrite);
+	if (msg) {
+		LOG_DBG("p_type = 0x%04x (%s), next_header = 0x%02x (%s)", /**/
+			p_type, p_type_str, next_header, next_header_str);
+		pkt_hexdump(pkt, msg);
+	}
+	return ret;
+}
+
 static int eth_xmc4xxx_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct eth_xmc4xxx_data *dev_data = dev->data;
@@ -336,6 +468,23 @@ static int eth_xmc4xxx_send(const struct device *dev, struct net_pkt *pkt)
 #endif
 		LOG_DBG("Dropping frame. Buffered Tx frames were flushed in ISR.");
 		return -EIO;
+	}
+
+	/* Due to checksum offloading, the checksum field must be zero before
+	 * sending the packet to the ethernet controller, otherwise the computed
+	 * checksum will be incorrect.
+	 *
+	 * If the packet is bridged, it already has the correct checksum in
+	 * place, which will cause the automatically computed checksum to
+	 * incorrectly become zero.
+	 *
+	 * Here we give bridged packets the special attention they need.
+	 */
+	if (net_pkt_is_l2_bridged(pkt)) {
+		ret = eth_xmc4xxx_clear_checksum(pkt);
+		if (ret) {
+			return ret;
+		}
 	}
 
 	unsigned int key = irq_lock();
