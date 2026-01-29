@@ -147,6 +147,7 @@ struct i2c_enhance_data {
 	uint8_t stop;
 	/* Number of messages. */
 	uint8_t num_msgs;
+	uint8_t *buf;
 	/* NACK */
 	bool nack;
 #ifdef CONFIG_I2C_IT8XXX2_CQ_MODE
@@ -526,7 +527,7 @@ static int enhanced_i2c_tran_read(const struct device *dev)
 		} else {
 			if (data->ridx < data->active_msg->len) {
 				/* read data */
-				*(data->active_msg->buf++) = IT8XXX2_I2C_DRR(base);
+				*data->buf++ = IT8XXX2_I2C_DRR(base);
 				data->ridx++;
 				/* done */
 				if (data->ridx == data->active_msg->len) {
@@ -573,7 +574,7 @@ static int enhanced_i2c_tran_write(const struct device *dev)
 	} else {
 		/* Host has completed the transmission of a byte */
 		if (data->widx < data->active_msg->len) {
-			out_data = *(data->active_msg->buf++);
+			out_data = *data->buf++;
 			data->widx++;
 
 			/* Send Byte */
@@ -663,6 +664,7 @@ static int i2c_enhance_pio_transfer(const struct device *dev,
 		data->ridx = 0;
 		data->err = 0;
 		data->active_msg = &msgs[i];
+		data->buf = msgs[i].buf;
 
 		/*
 		 * Start transaction.
