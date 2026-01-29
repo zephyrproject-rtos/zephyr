@@ -6251,7 +6251,6 @@ West:
   status: maintained
   maintainers:
     - eriktamlin
-    - aronlander-pe
   files:
     - modules/percepio/
   labels:
