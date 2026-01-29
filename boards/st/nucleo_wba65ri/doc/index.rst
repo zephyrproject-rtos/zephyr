@@ -278,7 +278,14 @@ Debugging
 Debugging using OpenOCD
 -----------------------
 
-You can debug an application in the usual way using OpenOCD. Here is an example for the
+OpenOCD added STM32WB65x full support in January 2026 (`OpenOCD WBA6xx commit`_),
+after v0.12.0 release tag. Leveraging OpenOCD support for STM32WBA5x (merged
+in `OpenOCD WBA5xx commit`_, September 2023, after v0.12.0 release tag) allows
+basic support. Zephyr SDK fork of OpenOCD currently only includes this STM32WBA5x
+support.
+
+Assuming your OpenOCD tool (local or from the Zephyr SDK) supports at least STM32WBA5x,
+you can debug an application in the usual way using OpenOCD. Here is an example for the
 :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
@@ -295,3 +302,9 @@ You can debug an application in the usual way using OpenOCD. Here is an example 
 
 .. _How to disable STM32WBA65 TZEN Option Byte:
    https://wiki.st.com/stm32mcu/wiki/Connectivity:STM32WBA_BLE_%26_TrustZone#How_to_disable_the_TrustZone
+
+.. _OpenOCD WBA6xx commit:
+   https://github.com/openocd-org/openocd/commit/df14f586629a70878636d138ec3bffd9148aaf1b
+
+.. _OpenOCD WBA5xx commit:
+   https://github.com/openocd-org/openocd/commit/870769b0ba9f4dae6ada9d8b1a40d75bd83aaa06
