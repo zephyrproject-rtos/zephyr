@@ -20,9 +20,16 @@ set(SRC_DIR ${NRFX_DIR}/drivers/src)
 set(HELPERS_DIR ${NRFX_DIR}/helpers)
 
 if(DEFINED CONFIG_SOC_NORDIC_BSP_PATH_OVERRIDE)
+  # BSP path override provided
   set(BSP_DIR ${ZEPHYR_CURRENT_MODULE_DIR}/${CONFIG_SOC_NORDIC_BSP_PATH_OVERRIDE}/${CONFIG_SOC_NORDIC_BSP_NAME})
-else()
+elseif(CONFIG_SOC_NORDIC_BSP_NAME STREQUAL "stable")
+  # Use the stable BSP provided with nrfx
   set(BSP_DIR ${NRFX_DIR}/bsp/${CONFIG_SOC_NORDIC_BSP_NAME})
+else()
+  # BSP provided as a Zephyr module
+  string(TOUPPER ${CONFIG_SOC_NORDIC_BSP_NAME} SOC_NORDIC_BSP_NAME_UPPER)
+  string(REPLACE "-" "_" SOC_NORDIC_BSP_NAME_UPPER ${SOC_NORDIC_BSP_NAME_UPPER})
+  set(BSP_DIR ${ZEPHYR_${SOC_NORDIC_BSP_NAME_UPPER}_MODULE_DIR})
 endif()
 
 set(MDK_DIR ${BSP_DIR}/mdk)
