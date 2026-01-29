@@ -6,18 +6,6 @@ description: |
 
   Implement an input device for a GPIO based keyboard matrix.
 
-  Example configuration:
-
-  kbd-matrix {
-          compatible = "gpio-kbd-matrix";
-          row-gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>,
-                      <&gpio0 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-          col-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>,
-                      <&gpio0 3 GPIO_ACTIVE_LOW>,
-                      <&gpio0 4 GPIO_ACTIVE_LOW>;
-          no-ghostkey-check;
-  };
-
 compatible: "gpio-kbd-matrix"
 
 include:
@@ -62,3 +50,15 @@ properties:
       press using GPIO interrupts on the row lines, "poll"  periodically polls
       the row lines with all the columns selected, "scan" just keep scanning
       the matrix continuously, requires "poll-timeout-ms" to be set to 0.
+
+examples:
+  - |
+    kbd-matrix {
+            compatible = "gpio-kbd-matrix";
+            row-gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>,
+                        <&gpio0 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+            col-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>,
+                        <&gpio0 3 GPIO_ACTIVE_LOW>,
+                        <&gpio0 4 GPIO_ACTIVE_LOW>;
+            no-ghostkey-check;
+    };

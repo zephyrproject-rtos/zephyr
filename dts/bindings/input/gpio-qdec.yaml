@@ -10,20 +10,6 @@ description: |
   and samples the two signal lines periodically to track the encoder position,
   and goes back to idling after the specified timeout.
 
-  Example configuration:
-
-  #include <zephyr/dt-bindings/input/input-event-codes.h>
-
-  qdec {
-          compatible = "gpio-qdec";
-          gpios = <&gpio0 14 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>,
-                  <&gpio0 13 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>;
-          steps-per-period = <4>;
-          zephyr,axis = <INPUT_REL_WHEEL>;
-          sample-time-us = <2000>;
-          idle-timeout-ms = <200>;
-  };
-
 compatible: "gpio-qdec"
 
 include: base.yaml
@@ -83,3 +69,17 @@ properties:
     description: |
       Timeout for the last detected transition before stopping the sampling
       timer and going back to idle state.
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/input/input-event-codes.h>
+
+    qdec {
+            compatible = "gpio-qdec";
+            gpios = <&gpio0 14 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>,
+                    <&gpio0 13 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>;
+            steps-per-period = <4>;
+            zephyr,axis = <INPUT_REL_WHEEL>;
+            sample-time-us = <2000>;
+            idle-timeout-ms = <200>;
+    };

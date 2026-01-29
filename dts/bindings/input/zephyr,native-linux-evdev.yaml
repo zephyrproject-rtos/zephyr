@@ -7,12 +7,6 @@ description: |
   Allows using a Linux evdev device to read input events and report them back
   as Zephyr input events.
 
-  Example configuration:
-
-  evdev {
-          compatible = "zephyr,native-linux-evdev";
-  };
-
   Then run the binary specifying the evdev device with the --evdev flag, for
   example:
 
@@ -21,3 +15,9 @@ description: |
 compatible: "zephyr,native-linux-evdev"
 
 include: base.yaml
+
+examples:
+  - |
+    evdev {
+            compatible = "zephyr,native-linux-evdev";
+    };
