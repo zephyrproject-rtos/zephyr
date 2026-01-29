@@ -11,7 +11,7 @@ properties:
   int1-gpios:
     type: phandle-array
     description: |
-      INT1 pin
+      INT1 (or RES) pin
 
       This pin defaults to active high when produced by the sensor.
       The property value should ensure the flags properly describe
@@ -31,10 +31,11 @@ properties:
     enum:
       - 1 # drdy is generated from INT1
       - 2 # drdy is generated from INT2
+      - 3 # drdy is generated from INT1 via RES
     description: |
-      Select DRDY pin number (1 or 2).
-      This number represents which of the two interrupt pins
-      (INT1 or INT2) the drdy line is attached to. This property is not
+      Select DRDY pin number (1, 2 or 3).
+      This number represents which of the three interrupt pins
+      (INT1, INT2 or RES) the drdy line is attached to. This property is not
       mandatory and if not present it defaults to 1 which is the
       configuration at power-up.
 
