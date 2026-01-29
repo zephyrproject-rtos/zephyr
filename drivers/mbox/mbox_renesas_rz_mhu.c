@@ -295,6 +295,9 @@ static DEVICE_API(mbox, mbox_rz_mhu_driver_api) = {
 #define MHU_RZG_CONFIG_FUNC(idx) MHU_RZG_IRQ_CONNECT(idx, mhuns, mbox_rz_mhu_isr);
 
 #define MHU_RZG_INIT(idx)                                                                          \
+	static const mhu_ns_extended_cfg_t g_mhu_ns##idx##_cfg_extend = {                          \
+		.p_reg = (void *)DT_INST_REG_ADDR(idx),                                            \
+	};                                                                                         \
 	static mhu_ns_instance_ctrl_t g_mhu_ns##idx##_ctrl;                                        \
 	static mhu_cfg_t g_mhu_ns##idx##_cfg = {                                                   \
 		.channel = DT_INST_PROP(idx, channel),                                             \
@@ -302,6 +305,7 @@ static DEVICE_API(mbox, mbox_rz_mhu_driver_api) = {
 		.rx_irq = DT_INST_IRQ_BY_NAME(idx, mhuns, irq),                                    \
 		.p_callback = mhu_ns_callback,                                                     \
 		.p_context = NULL,                                                                 \
+		.p_extend = &g_mhu_ns##idx##_cfg_extend,                                           \
 		.p_shared_memory = (void *)COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, shared_memory),  \
 		      (DT_REG_ADDR(DT_INST_PHANDLE(idx, shared_memory))), (NULL)),                 \
 	};                                                                                         \
