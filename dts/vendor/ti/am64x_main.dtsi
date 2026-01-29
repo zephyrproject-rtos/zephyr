@@ -335,4 +335,17 @@
 		#mbox-cells = <1>;
 		status = "disabled";
 	};
+
+	main_ospi0: ospi@fc40000 {
+		status = "okay";
+		compatible = "cdns,mspi-controller";
+		clock-frequency = <DT_FREQ_M(200)>;
+		power-domains = <&fss0_ospi_0_pd>;
+		baud-rate-div = <8>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		indirect-trigger-offset = <0x00>;
+		reg = <0x0fc40000 0x100 0x60000000 DT_SIZE_M(128)>;
+		sram-allocated-for-read = <0x80>;
+	};
 };

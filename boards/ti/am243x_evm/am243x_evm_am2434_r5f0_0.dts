@@ -20,6 +20,8 @@
 		zephyr,shell-uart = &main_uart0;
 		zephyr,ipc = &ipc0;
 		zephyr,ipc-shm = &ipc_shm0;
+		zephyr,flash-controller = &main_ospi0;
+		zephyr,flash = &flash0;
 	};
 
 	aliases {
@@ -186,4 +188,41 @@
 &main_mbox6 {
 	usr-id = <0>;
 	status = "okay";
+};
+
+&main_ospi0 {
+	pinctrl-0 = <&main_ospi0_clk
+		     &main_ospi0_d0
+		     &main_ospi0_d1
+		     &main_ospi0_d2
+		     &main_ospi0_d3
+		     &main_ospi0_d4
+		     &main_ospi0_d5
+		     &main_ospi0_d6
+		     &main_ospi0_d7
+		     &main_ospi0_dqs
+		     &main_ospi0_lbclko
+		     &main_ospi0_csn0>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	flash0: flash@0 {
+		compatible = "infineon,s28hx512t", "jedec,mspi-nor";
+		power-domains = <&fss0_fsas_0_pd>;
+		status = "okay";
+		reg = <0x0>;
+		jedec-id = [34 5B 1A];
+		size = <DT_SIZE_M(128)>;
+		mspi-max-frequency = <DT_FREQ_M(50)>;
+		mspi-io-mode = "MSPI_IO_MODE_OCTAL";
+		mspi-endian = "MSPI_LITTLE_ENDIAN";
+		mspi-data-rate = "MSPI_DATA_RATE_DUAL";
+		address-length = "ADDR_4_BYTE";
+		command-length = "INSTR_2_BYTE";
+		mspi-hardware-ce-num = <0>;
+		mspi-cpp-mode = "MSPI_CPP_MODE_0";
+		mspi-ce-polarity = "MSPI_CE_ACTIVE_LOW";
+		initial-soft-reset;
+		t-reset-recovery = <90000>; /* 90us */
+	};
 };
