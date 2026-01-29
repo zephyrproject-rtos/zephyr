@@ -48,3 +48,30 @@ properties:
     type: int
     description: Time in milliseconds after which CMUX will enter power save mode.
     default: 10000
+
+  zephyr,use-default-pdp-ctx:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Modem automatically configures and connects the default PDP context (cid=0) when
+      registered to the network.
+      If this is set to 1, the modem driver will not configure any APN or activate any
+      PDP contexts with AT+CGACT command.
+
+      Use enum to allow specific device bindings to override the default value.
+
+  zephyr,use-default-apn:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Modem automatically configures the APN name when registering to the network.
+      If this is set to 1, the modem driver will supply empty string as APN name when
+      configuring the PDP context with AT+CGDCONT=1,"IP","" command.
+
+      Use enum to allow specific device bindings to override the default value.
