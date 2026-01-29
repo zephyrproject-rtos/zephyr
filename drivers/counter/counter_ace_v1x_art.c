@@ -59,6 +59,11 @@ static void counter_ace_v1x_art_hhtse_set(bool enable)
 	sys_write32(val, ACE_TSCTRL);
 }
 
+static uint32_t counter_ace_v1x_art_counter_get_32(void)
+{
+	return sys_read32(ACE_ARTCS_LO);
+}
+
 static uint64_t counter_ace_v1x_art_counter_get(void)
 {
 	uint32_t hi0, lo, hi1;
@@ -70,6 +75,36 @@ static uint64_t counter_ace_v1x_art_counter_get(void)
 	} while (hi0 != hi1);
 
 	return (((uint64_t)hi1) << 32) | lo;
+}
+
+int counter_ace_v1x_art_get_value_32(const struct device *dev, uint32_t *value)
+{
+	ARG_UNUSED(dev);
+
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	counter_ace_v1x_art_ionte_set(1);
+	counter_ace_v1x_art_cdmas_set(1);
+
+	if (counter_ace_v1x_art_ntk_get()) {
+		counter_ace_v1x_art_ntk_set(1);
+		while (counter_ace_v1x_art_ntk_get()) {
+			k_busy_wait(10);
+		}
+	}
+
+	counter_ace_v1x_art_hhtse_set(1);
+
+	while (!counter_ace_v1x_art_ntk_get()) {
+		k_busy_wait(10);
+	}
+
+	*value = counter_ace_v1x_art_counter_get_32();
+
+	counter_ace_v1x_art_ntk_set(1);
+	k_spin_unlock(&lock, key);
+
+	return 0;
 }
 
 int counter_ace_v1x_art_get_value(const struct device *dev, uint64_t *value)
@@ -103,7 +138,10 @@ int counter_ace_v1x_art_get_value(const struct device *dev, uint64_t *value)
 }
 
 static DEVICE_API(counter, ace_v1x_art_counter_apis) = {
-	.get_value_64 = counter_ace_v1x_art_get_value
+	.get_value = counter_ace_v1x_art_get_value_32,
+#ifdef CONFIG_COUNTER_64BITS_TICKS
+	.get_value_64 = counter_ace_v1x_art_get_value,
+#endif /* CONFIG_COUNTER_64BITS_TICKS */
 };
 
 DEVICE_DT_DEFINE(DT_NODELABEL(ace_art_counter), NULL, NULL, NULL, NULL,

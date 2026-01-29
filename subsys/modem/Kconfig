@@ -64,6 +64,49 @@ config MODEM_CMUX_WORK_BUFFER_SIZE_EXTRA
 	  Extra bytes to add to the work buffers used by the CMUX module.
 	  The default size of these buffers is MODEM_CMUX_MTU + 7 (CMUX header size).
 
+config MODEM_CMUX_MSC_FC_THRESHOLD
+	int "Enable flow control when the DLCI ring buffer has less than this many bytes free"
+	range 0 MODEM_CMUX_MTU
+	default MODEM_CMUX_MTU if MODEM_CMUX_WORK_BUFFER_SIZE_EXTRA > 0
+	default 0
+	help
+	  When the available space in a DLCI receive ring buffer is less than this
+	  value, the CMUX module will send Modem Status Command frame with the
+	  flow control bit set to indicate that the sender should stop sending data.
+	  Flow control is released once the incoming buffer has at least MODEM_CMUX_MTU
+	  bytes free again.
+	  This only works if the peer supports MSC messages.
+	  Disable flow control by setting this value to 0.
+
+config MODEM_CMUX_T1_TIMEOUT
+	int "CMUX T1 timeout in milliseconds"
+	range 10 2550
+	default 100
+	help
+	  Acknowledgment Timer (T1).
+	  Time in milliseconds to wait for an acknowledgment before retransmitting
+	  a frame.
+
+config MODEM_CMUX_T2_TIMEOUT
+	int "CMUX T2 timeout in milliseconds"
+	range 20 2550
+	default 300
+	help
+	  Response Timer for multiplexer control channel (T2).
+	  Time in milliseconds to wait for a response to a multiplexer control
+	  command before considering the link dead.
+	  NOTE: Zephyr's CMUX implementation deviates from the 3GPP TS 27.010
+	  specification by using T1 for all retry timers and T2 only for
+	  a total response timeout.
+
+config MODEM_CMUX_T3_TIMEOUT
+	int "CMUX T3 timeout in seconds"
+	range 1 255
+	default 10
+	help
+	  Response Timer for wake-up procedure(T3).
+	  Time in seconds before the link is considered dead.
+
 module = MODEM_CMUX
 module-str = modem_cmux
 source "subsys/logging/Kconfig.template.log_config"

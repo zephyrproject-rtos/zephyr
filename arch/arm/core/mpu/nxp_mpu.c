@@ -51,9 +51,9 @@ static inline uint8_t get_num_regions(void)
 	return FSL_FEATURE_SYSMPU_DESCRIPTOR_COUNT;
 }
 
-/* @brief Partition sanity check
+/* @brief Partition coherence check
  *
- * This internal function performs run-time sanity check for
+ * This internal function performs run-time coherence check for
  * MPU region start address and size.
  *
  * @param part Pointer to the data structure holding the partition
@@ -297,11 +297,11 @@ static int mpu_sram_partitioning(uint8_t index,
 
 /* This internal function programs a set of given MPU regions
  * over a background memory area, optionally performing a
- * sanity check of the memory regions to be programmed.
+ * coherence check of the memory regions to be programmed.
  */
 static int mpu_configure_regions(const struct z_arm_mpu_partition regions[],
 				 uint8_t regions_num, uint8_t start_reg_index,
-				 bool do_sanity_check)
+				 bool do_coherence_check)
 {
 	int i;
 	int reg_index = start_reg_index;
@@ -312,9 +312,9 @@ static int mpu_configure_regions(const struct z_arm_mpu_partition regions[],
 		}
 		/* Non-empty region. */
 
-		if (do_sanity_check &&
+		if (do_coherence_check &&
 				(!mpu_partition_is_valid(&regions[i]))) {
-			LOG_ERR("Partition %u: sanity check failed.", i);
+			LOG_ERR("Partition %u: coherence check failed.", i);
 			return -EINVAL;
 		}
 

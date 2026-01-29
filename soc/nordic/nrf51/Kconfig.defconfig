@@ -4,16 +4,12 @@
 # Copyright (c) 2018 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_NRF51X
+if SOC_SERIES_NRF51
 
 config NUM_IRQS
 	default 26
 
-# If the kernel has timer support, enable the timer
-config NRF_RTC_TIMER
-	default y if SYS_CLOCK_EXISTS
-
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_nodelabel_int_prop,rtc1,clock-frequency)
 
-endif # SOC_SERIES_NRF51X
+endif # SOC_SERIES_NRF51

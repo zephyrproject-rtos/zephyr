@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pic32c/pic32cx_sg/pic32cx_sg41/pic32cx1025sg41128-pinctrl.h>
+
+&pinctrl {
+	sercom4_uart_default: sercom4_uart_default {
+		group1 {
+			pinmux = <PB12C_SERCOM4_PAD0>,
+				 <PB13C_SERCOM4_PAD1>;
+		};
+	};
+
+	sercom6_i2c_default: sercom6_i2c_default {
+		group1 {
+			pinmux = <PD9D_SERCOM6_PAD0>,
+				 <PD8D_SERCOM6_PAD1>;
+		};
+	};
+
+	tc5_pwm_default: tc5_pwm_default {
+		group1 {
+			pinmux = <PB14E_TC5_WO0>,
+				 <PB15E_TC5_WO1>;
+		};
+	};
+
+	tcc0_pwm_default: tcc0_pwm_default {
+		group1 {
+			pinmux = <PC21F_TCC0_WO5>;
+		};
+	};
+};

@@ -9,7 +9,7 @@
 #include <zephyr/zbus/zbus.h>
 LOG_MODULE_REGISTER(sample, CONFIG_LOG_MAX_LEVEL);
 
-extern struct sys_heap _system_heap;
+extern struct k_heap _system_heap;
 static size_t total_allocated;
 
 void on_heap_alloc(uintptr_t heap_id, void *mem, size_t bytes)
@@ -28,10 +28,11 @@ void on_heap_free(uintptr_t heap_id, void *mem, size_t bytes)
 
 #if defined(CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC)
 
-HEAP_LISTENER_ALLOC_DEFINE(my_heap_listener_alloc, HEAP_ID_FROM_POINTER(&_system_heap),
+HEAP_LISTENER_ALLOC_DEFINE(my_heap_listener_alloc, HEAP_ID_FROM_POINTER(&_system_heap.heap),
 			   on_heap_alloc);
 
-HEAP_LISTENER_FREE_DEFINE(my_heap_listener_free, HEAP_ID_FROM_POINTER(&_system_heap), on_heap_free);
+HEAP_LISTENER_FREE_DEFINE(my_heap_listener_free, HEAP_ID_FROM_POINTER(&_system_heap.heap),
+			  on_heap_free);
 
 #endif /* CONFIG_ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_DYNAMIC */
 struct acc_msg {

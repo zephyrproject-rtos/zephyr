@@ -338,7 +338,7 @@ static inline void read_payload(const struct device *dev)
 		LOG_DBG("Allocated rx.buf %p", h4->rx.buf);
 
 		buf_tailroom = net_buf_tailroom(h4->rx.buf);
-		if (buf_tailroom < h4->rx.remaining) {
+		if (buf_tailroom < (h4->rx.remaining + h4->rx.hdr_len)) {
 			LOG_ERR("Not enough space in buffer %u/%zu", h4->rx.remaining,
 				buf_tailroom);
 			h4->rx.discard = h4->rx.remaining;
@@ -583,17 +583,16 @@ static int h4_setup(const struct device *dev, const struct bt_hci_setup_params *
 {
 	const struct h4_config *cfg = dev->config;
 
-	ARG_UNUSED(params);
-
 	/* Extern bt_h4_vnd_setup function.
 	 * This function executes vendor-specific commands sequence to
 	 * initialize BT Controller before BT Host executes Reset sequence.
 	 * bt_h4_vnd_setup function must be implemented in vendor-specific HCI
 	 * extansion module if CONFIG_BT_HCI_SETUP is enabled.
 	 */
-	extern int bt_h4_vnd_setup(const struct device *dev);
+	extern int bt_h4_vnd_setup(const struct device *dev,
+				   const struct bt_hci_setup_params *params);
 
-	return bt_h4_vnd_setup(cfg->uart);
+	return bt_h4_vnd_setup(cfg->uart, params);
 }
 #endif
 

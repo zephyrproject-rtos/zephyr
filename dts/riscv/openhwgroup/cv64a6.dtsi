@@ -21,8 +21,9 @@
 			clock-frequency = <DT_FREQ_M(50)>;
 			timebase-frequency = <DT_FREQ_M(25)>;
 			device_type = "cpu";
-			compatible = "openhwgroup,cva6";
-			riscv,isa = "rv64imafdc";
+			compatible = "openhwgroup,cva6", "riscv";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
 			mmu-type = "riscv,sv39";
 			reg = <0>;
 

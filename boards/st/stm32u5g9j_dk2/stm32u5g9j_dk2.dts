@@ -63,7 +63,7 @@
 		compatible = "zephyr,memory-region";
 		reg = <0xa0000000 DT_SIZE_M(128)>;
 		zephyr,memory-region = "EXTMEM";
-		/* The ATTR_MPU_EXTMEM attribut causing a MPU FAULT */
+		/* The ATTR_MPU_EXTMEM attribute causing a MPU FAULT */
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 	};
 };
@@ -248,7 +248,7 @@
 	pinctrl-0 = <&adc1_in5_pa0 &adc1_in12_pa7>;
 	pinctrl-names = "default";
 	st,adc-clock-source = "ASYNC";
-	st,adc-prescaler = <1>;
+	st,adc-prescaler = <2>;
 	status = "okay";
 
 	#address-cells = <1>;

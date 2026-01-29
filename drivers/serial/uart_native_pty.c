@@ -5,13 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/devicetree.h>
-#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_native_posix_uart)
-#define DT_DRV_COMPAT zephyr_native_posix_uart
-#warning "zephyr,native-posix-uart is deprecated in favor of zephyr,native-pty-uart"
-#else
 #define DT_DRV_COMPAT zephyr_native_pty_uart
-#endif
 
 #include <stdbool.h>
 #include <zephyr/drivers/uart.h>
@@ -407,6 +401,11 @@ static void native_pty_uart_async_poll_function(void *arg1, void *arg2, void *ar
 			/* Sleep if RX not disabled and last read didn't result in any data */
 			k_sleep(K_MSEC(10));
 		}
+	}
+
+	if (data->async.user_callback) {
+		evt.type = UART_RX_DISABLED;
+		data->async.user_callback(data->async.dev, &evt, data->async.user_data);
 	}
 }
 

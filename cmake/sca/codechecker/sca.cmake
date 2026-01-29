@@ -31,7 +31,7 @@ zephyr_get(TC_NAME)
 
 if(NOT CODECHECKER_NAME)
   if(TC_NAME)
-    set(CODECHECKER_NAME "${BOARD}${BOARD_QUALIFIERS}:${TC_NAME}")
+    set(CODECHECKER_NAME "${BOARD}/${BOARD_QUALIFIERS}:${TC_NAME}")
   else()
     set(CODECHECKER_NAME zephyr)
   endif()

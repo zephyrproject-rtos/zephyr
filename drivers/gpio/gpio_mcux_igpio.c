@@ -200,6 +200,9 @@ static int mcux_igpio_configure(const struct device *dev,
 	}
 #endif /* CONFIG_SOC_SERIES_IMXRT10XX */
 
+	/* Enable input buffer via Software Input On (SION). */
+	reg |= 0x1 << MCUX_IMX_INPUT_ENABLE_SHIFT;
+
 	memcpy(&pin_cfg.pinmux, &config->pin_muxes[cfg_idx], sizeof(pin_cfg.pinmux));
 	/* cfg register will be set by pinctrl_configure_pins */
 	pin_cfg.pin_ctrl_flags = reg;
@@ -226,7 +229,8 @@ static int mcux_igpio_port_get_raw(const struct device *dev, uint32_t *value)
 {
 	GPIO_Type *base = get_base(dev);
 
-	*value = base->DR;
+	/* Read the Pad Status Register to get current input value */
+	*value = base->PSR;
 
 	return 0;
 }
@@ -288,6 +292,10 @@ static int mcux_igpio_pin_interrupt_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	if (pin >= 32) {
+		return -EINVAL;
+	}
+
 	if (mode == GPIO_INT_MODE_DISABLED) {
 		key = irq_lock();
 
@@ -310,17 +318,15 @@ static int mcux_igpio_pin_interrupt_configure(const struct device *dev,
 		icr = 0;
 	}
 
+	key = irq_lock();
+
 	if (pin < 16) {
 		shift = 2 * pin;
 		base->ICR1 = (base->ICR1 & ~(3 << shift)) | (icr << shift);
-	} else if (pin < 32) {
+	} else {
 		shift = 2 * (pin - 16);
 		base->ICR2 = (base->ICR2 & ~(3 << shift)) | (icr << shift);
-	} else {
-		return -EINVAL;
 	}
-
-	key = irq_lock();
 
 	WRITE_BIT(base->EDGE_SEL, pin, trig == GPIO_INT_TRIG_BOTH);
 	WRITE_BIT(base->ISR, pin, 1);

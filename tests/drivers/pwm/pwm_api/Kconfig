@@ -7,14 +7,14 @@ source "Kconfig.zephyr"
 
 config DEFAULT_PWM_PORT
 	int "Default PWM port/channel"
-	default 1 if PWM_STM32 || PWM_MCHP_G1_TCC
+	default 1 if PWM_STM32 || PWM_MCHP_G1_TCC || PWM_MCHP_TC_G1
 	default 0
 	help
 	  PWM port matching the channel associated with PWM pin.
 
 config INVALID_PWM_PORT
 	int "Invalid PWM port/channel"
-	default 9 if PWM_NRFX || PWM_MCHP_G1_TCC
+	default 9 if PWM_NRFX || PWM_MCHP_G1_TCC || PWM_MCHP_TC_G1
 	default -1
 	help
 	  Invalid PWM port/channel for negative testing.

@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Hubert Miś
+# SPDX-License-Identifier: Apache-2.0
+
+config LED_SCT2024
+	bool "SCT2024 LED controller support"
+	default y
+	depends on DT_HAS_SCT_SCT2024_ENABLED
+	select SPI
+	help
+	  This option enables support for the SCT2024 LED controller driver.
+	  The SCT2024 is a 16-channel constant current LED driver that
+	  communicates over SPI.

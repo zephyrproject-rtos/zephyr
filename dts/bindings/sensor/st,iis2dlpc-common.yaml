@@ -5,16 +5,6 @@ description: |
     When setting the odr property in a .dts or .dtsi file you may include
     iis2dlpc.h and use the macros defined there.
 
-    Example:
-    #include <zephyr/dt-bindings/sensor/iis2dlpc.h>
-
-    iis2dlpc: iis2dlpc@0 {
-      ...
-
-      tap-mode = <IIS2DLPC_DT_SINGLE_DOUBLE_TAP>;
-      power-mode = <IIS2DLPC_DT_HP_MODE>;
-    };
-
 include: sensor-device.yaml
 
 properties:
@@ -132,3 +122,14 @@ properties:
       This register represents the time after the first detected tap in which
       there must not be any overthreshold event. Where 0 equals 2*1/ODR
       and 1LSB = 4*1/ODR.
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/iis2dlpc.h>
+
+    iis2dlpc: iis2dlpc@0 {
+      /* ... */
+
+      tap-mode = <IIS2DLPC_DT_SINGLE_DOUBLE_TAP>;
+      power-mode = <IIS2DLPC_DT_HP_MODE>;
+    };

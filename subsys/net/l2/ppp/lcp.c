@@ -61,6 +61,7 @@ struct lcp_option_data {
 	bool auth_proto_present;
 	uint32_t async_ctrl_char_map;
 	uint16_t auth_proto;
+	uint16_t mru;
 };
 
 static const enum ppp_protocol_type lcp_supported_auth_protos[] = {
@@ -121,11 +122,46 @@ static int lcp_async_ctrl_char_map_parse(struct ppp_fsm *fsm, struct net_pkt *pk
 	return 0;
 }
 
+#if defined(CONFIG_NET_L2_PPP_OPTION_MRU)
+static int lcp_peer_mru_parse(struct ppp_fsm *fsm, struct net_pkt *pkt,
+			      void *user_data)
+{
+	struct lcp_option_data *data = user_data;
+	uint16_t peer_mru;
+	int ret;
+
+	ret = net_pkt_read_be16(pkt, &peer_mru);
+	if (ret < 0) {
+		/* Should not happen, is the pkt corrupt? */
+		return -EMSGSIZE;
+	}
+
+	NET_DBG("[LCP] Received peer MRU %u", peer_mru);
+
+	data->mru = peer_mru;
+
+	return 0;
+}
+
+static int lcp_peer_mru_nack(struct ppp_fsm *fsm, struct net_pkt *ret_pkt,
+			     void *user_data)
+{
+	struct ppp_context *ctx = ppp_fsm_ctx(fsm);
+
+	(void)net_pkt_write_u8(ret_pkt, LCP_OPTION_MRU);
+	(void)net_pkt_write_u8(ret_pkt, 4);
+	return net_pkt_write_be16(ret_pkt, ctx->lcp.my_options.mru);
+}
+#endif
+
 static const struct ppp_peer_option_info lcp_peer_options[] = {
 	PPP_PEER_OPTION(LCP_OPTION_AUTH_PROTO, lcp_auth_proto_parse,
 			lcp_auth_proto_nack),
 	PPP_PEER_OPTION(LCP_OPTION_ASYNC_CTRL_CHAR_MAP, lcp_async_ctrl_char_map_parse,
 			NULL),
+#if defined(CONFIG_NET_L2_PPP_OPTION_MRU)
+	PPP_PEER_OPTION(LCP_OPTION_MRU, lcp_peer_mru_parse, lcp_peer_mru_nack),
+#endif
 };
 
 static int lcp_config_info_req(struct ppp_fsm *fsm,
@@ -152,6 +188,9 @@ static int lcp_config_info_req(struct ppp_fsm *fsm,
 
 	ctx->lcp.peer_options.auth_proto = data.auth_proto;
 	ctx->lcp.peer_options.async_map = data.async_ctrl_char_map;
+#if defined(CONFIG_NET_L2_PPP_OPTION_MRU)
+	ctx->lcp.peer_options.mru = data.mru;
+#endif
 	NET_DBG("Asynchronous Control Character Map: %08X",  data.async_ctrl_char_map);
 
 	if (data.auth_proto_present) {
@@ -189,7 +228,12 @@ static void lcp_open(struct ppp_context *ctx)
 static void lcp_close(struct ppp_context *ctx, const uint8_t *reason)
 {
 	if (ctx->phase != PPP_DEAD) {
-		ppp_change_phase(ctx, PPP_TERMINATE);
+		if (ctx->phase == PPP_ESTABLISH) {
+			/* Link is not established yet, so we can go directly to DEAD */
+			ppp_change_phase(ctx, PPP_DEAD);
+		} else {
+			ppp_change_phase(ctx, PPP_TERMINATE);
+		}
 	}
 
 	ppp_fsm_close(&ctx->lcp.fsm, reason);
@@ -215,7 +259,22 @@ static void lcp_up(struct ppp_fsm *fsm)
 	struct ppp_context *ctx = CONTAINER_OF(fsm, struct ppp_context,
 					       lcp.fsm);
 
-	/* TODO: Set MRU/MTU of the network interface here */
+#if defined(CONFIG_NET_L2_PPP_OPTION_MRU)
+	/* Set MTU based on negotiated MRU values.
+	 * Use the minimum of our MRU and peer's MRU to ensure both sides
+	 * can handle the packet size.
+	 */
+	uint16_t mtu = ctx->lcp.my_options.mru;
+
+	if (ctx->lcp.peer_options.mru > 0 &&
+	    ctx->lcp.peer_options.mru < mtu) {
+		mtu = ctx->lcp.peer_options.mru;
+	}
+
+	NET_DBG("PPP MTU set to %d (mru=%d, peer_mru=%d)",
+		mtu, ctx->lcp.my_options.mru, ctx->lcp.peer_options.mru);
+	net_if_set_mtu(ctx->iface, mtu);
+#endif
 
 	ppp_link_established(ctx, fsm);
 }
@@ -257,7 +316,7 @@ static int lcp_ack_mru(struct ppp_context *ctx, struct net_pkt *pkt,
 		return -EINVAL;
 	}
 
-	ret = net_pkt_read(pkt, &mru, sizeof(mru));
+	ret = net_pkt_read_be16(pkt, &mru);
 	if (ret) {
 		return ret;
 	}
@@ -280,7 +339,7 @@ static int lcp_nak_mru(struct ppp_context *ctx, struct net_pkt *pkt,
 		return -EINVAL;
 	}
 
-	ret = net_pkt_read(pkt, &mru, sizeof(mru));
+	ret = net_pkt_read_be16(pkt, &mru);
 	if (ret) {
 		return ret;
 	}
@@ -408,6 +467,7 @@ static void lcp_init(struct ppp_context *ctx)
 
 	ctx->lcp.fsm.cb.config_info_add = lcp_config_info_add;
 	ctx->lcp.fsm.cb.config_info_req = lcp_config_info_req;
+	ctx->lcp.fsm.cb.config_info_ack = ppp_my_options_parse_conf_ack;
 	ctx->lcp.fsm.cb.config_info_nack = lcp_config_info_nack;
 	ctx->lcp.fsm.cb.config_info_rej = ppp_my_options_parse_conf_rej;
 

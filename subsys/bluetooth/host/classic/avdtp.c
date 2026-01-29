@@ -1,7 +1,7 @@
 /*
  * Audio Video Distribution Protocol
  *
- * Copyright 2024 - 2025 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -445,9 +445,11 @@ static void avdtp_tx_frags(struct bt_avdtp *session, struct net_buf *buf,
 			struct bt_avdtp_start_sig_hdr *start_hdr;
 			struct bt_avdtp_single_sig_hdr *sig_hdr;
 
+			__ASSERT_NO_MSG(buf->len >= sizeof(*sig_hdr));
 			sig_hdr = net_buf_pull_mem(buf, sizeof(*sig_hdr));
 			user_data->hdr = *sig_hdr;
 
+			__ASSERT_NO_MSG(net_buf_tailroom(frag) >= sizeof(*start_hdr));
 			start_hdr = net_buf_add(frag, sizeof(*start_hdr));
 			/* use same transaction label and message type */
 			start_hdr->hdr = (user_data->hdr.hdr & ~AVDTP_PKT_MASK) |
@@ -455,6 +457,7 @@ static void avdtp_tx_frags(struct bt_avdtp *session, struct net_buf *buf,
 			start_hdr->num_of_signal_pkts = user_data->frag_count;
 			start_hdr->signal_id = user_data->hdr.signal_id;
 
+			__ASSERT_NO_MSG(mtu >= sizeof(*start_hdr));
 			len = mtu - sizeof(*start_hdr);
 			if (len >= buf->len) {
 				LOG_ERR("The start packet can send all data");
@@ -468,11 +471,13 @@ static void avdtp_tx_frags(struct bt_avdtp *session, struct net_buf *buf,
 			uint8_t pkt_type = (user_data->frag_count == user_data->current_frag) ?
 					   BT_AVDTP_PACKET_TYPE_END : BT_AVDTP_PACKET_TYPE_CONTINUE;
 
+			__ASSERT_NO_MSG(net_buf_tailroom(frag) >= sizeof(*cont_hdr));
 			cont_hdr = net_buf_add(frag, sizeof(*cont_hdr));
 			/* use same transaction label and message type */
 			cont_hdr->hdr = (user_data->hdr.hdr & ~AVDTP_PKT_MASK) |
 					AVDTP_PKT_PREP(pkt_type);
 
+			__ASSERT_NO_MSG(mtu >= sizeof(*cont_hdr));
 			len = mtu - sizeof(*cont_hdr);
 			if (pkt_type == BT_AVDTP_PACKET_TYPE_CONTINUE && len >= buf->len) {
 				LOG_ERR("The continue packet can send all data");
@@ -2228,8 +2233,12 @@ int bt_avdtp_register(struct bt_avdtp_event_cb *cb)
 {
 	LOG_DBG("");
 
-	if (event_cb) {
+	if (event_cb == cb) {
 		return -EALREADY;
+	}
+
+	if (event_cb != NULL) {
+		return -EEXIST;
 	}
 
 	event_cb = cb;
@@ -2275,9 +2284,11 @@ int bt_avdtp_register_sep(uint8_t media_type, uint8_t sep_type, struct bt_avdtp_
 }
 
 /* init function */
-int bt_avdtp_init(void)
+void bt_avdtp_init(void)
 {
 	int err;
+
+	static bool initialized;
 	static struct bt_l2cap_server avdtp_l2cap = {
 		.psm = BT_L2CAP_PSM_AVDTP,
 		.sec_level = BT_SECURITY_L2,
@@ -2286,13 +2297,18 @@ int bt_avdtp_init(void)
 
 	LOG_DBG("");
 
-	/* Register AVDTP PSM with L2CAP */
-	err = bt_l2cap_br_server_register(&avdtp_l2cap);
-	if (err < 0) {
-		LOG_ERR("AVDTP L2CAP Registration failed %d", err);
+	if (initialized) {
+		return;
 	}
 
-	return err;
+	/* Register AVDTP PSM with L2CAP */
+	err = bt_l2cap_br_server_register(&avdtp_l2cap);
+	if ((err < 0) && (err != -EEXIST)) {
+		LOG_ERR("AVDTP L2CAP Registration failed %d", err);
+		return;
+	}
+
+	initialized = true;
 }
 
 /* AVDTP Discover Request */

@@ -20,6 +20,7 @@
 			pa-initial-power-dbm = <10>;
 			pa-ramp-time-us = <2>;
 			pa-voltage-mv = <3300>;
+			radio-tx-high-power-supported;
 
 			pti: pti {
 				compatible = "silabs,pti";

@@ -27,26 +27,6 @@ description: |
     y -> -y
     z -> -z
 
-    Example of how to encode that into DTS:
-    #include <zephyr/dt-bindings/sensor/sensor_axis_align.h>
-
-    sensor-top-90: sensor-top-90@0 {
-      ...
-      axis-align-x = <SENSOR_AXIS_ALIGN_DT_Y>
-      axis-align-y = <SENSOR_AXIS_ALIGN_DT_X>
-      axis-align-y-sign = <SENSOR_AXIS_ALIGN_DT_NEG>
-      axis-align-z = <SENSOR_AXIS_ALIGN_DT_Z>
-    };
-
-    sensor-bottom: sensor-bottom@1 {
-      ...
-      axis-align-x = <SENSOR_AXIS_ALIGN_DT_X>
-      axis-align-y = <SENSOR_AXIS_ALIGN_DT_Y>
-      axis-align-y-sign = <SENSOR_AXIS_ALIGN_DT_NEG>
-      axis-align-z = <SENSOR_AXIS_ALIGN_DT_Z>
-      axis-align-z-sign = <SENSOR_AXIS_ALIGN_DT_NEG>
-    };
-
 include: base.yaml
 properties:
   axis-align-x:
@@ -111,3 +91,24 @@ properties:
     enum:
       - 0 # SENSOR_AXIS_ALIGN_DT_NEG
       - 2 # SENSOR_AXIS_ALIGN_DT_POS
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/sensor_axis_align.h>
+
+    sensor-top-90: sensor-top-90@0 {
+      /* ... */
+      axis-align-x = <SENSOR_AXIS_ALIGN_DT_Y>
+      axis-align-y = <SENSOR_AXIS_ALIGN_DT_X>
+      axis-align-y-sign = <SENSOR_AXIS_ALIGN_DT_NEG>
+      axis-align-z = <SENSOR_AXIS_ALIGN_DT_Z>
+    };
+
+    sensor-bottom: sensor-bottom@1 {
+      /* ... */
+      axis-align-x = <SENSOR_AXIS_ALIGN_DT_X>
+      axis-align-y = <SENSOR_AXIS_ALIGN_DT_Y>
+      axis-align-y-sign = <SENSOR_AXIS_ALIGN_DT_NEG>
+      axis-align-z = <SENSOR_AXIS_ALIGN_DT_Z>
+      axis-align-z-sign = <SENSOR_AXIS_ALIGN_DT_NEG>
+    };

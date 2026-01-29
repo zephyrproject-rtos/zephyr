@@ -114,10 +114,15 @@ static uint32_t wwdg_stm32_get_timeout(const struct device *dev,
 				       uint32_t prescaler_exp,
 				       uint32_t counter)
 {
-	uint32_t divider = WWDG_INTERNAL_DIVIDER * (1 << prescaler_exp);
-	float f_wwdg = (float)wwdg_stm32_get_pclk(dev) / divider;
+	uint32_t pclk = wwdg_stm32_get_pclk(dev);
+	uint32_t ticks = (counter & 0x3FU) + 1U;
+	uint64_t divider = WWDG_INTERNAL_DIVIDER << prescaler_exp;
+	uint64_t num = (uint64_t)ticks * divider * (uint64_t)USEC_PER_SEC;
+	uint64_t time_us64 = num / (uint64_t)pclk;
 
-	return USEC_PER_SEC * (((counter & 0x3F) + 1) / f_wwdg);
+	__ASSERT_NO_MSG(time_us64 <= UINT32_MAX);
+
+	return (uint32_t)time_us64;
 }
 
 /**
@@ -133,24 +138,20 @@ static void wwdg_stm32_convert_timeout(const struct device *dev,
 				       uint32_t *prescaler_exp,
 				       uint32_t *counter)
 {
-	uint32_t clock_freq = wwdg_stm32_get_pclk(dev);
+	uint32_t pclk = wwdg_stm32_get_pclk(dev);
+	uint32_t psc_exp;
+	uint32_t count;
 
-	/* Convert timeout to seconds. */
-	float timeout_s = (float)timeout / USEC_PER_SEC;
-	float wwdg_freq;
+	for (psc_exp = 0U; psc_exp <= WWDG_PRESCALER_EXPONENT_MAX; psc_exp++) {
+		uint32_t divider = WWDG_INTERNAL_DIVIDER << psc_exp;
+		uint64_t num = (uint64_t)timeout * (uint64_t)pclk;
+		uint64_t den = (uint64_t)USEC_PER_SEC * (uint64_t)divider;
 
-	*prescaler_exp = 0U;
-	*counter = 0;
+		count = (num / den) + WWDG_RESET_LIMIT;
 
-	for (*prescaler_exp = 0; *prescaler_exp <= WWDG_PRESCALER_EXPONENT_MAX;
-	     (*prescaler_exp)++) {
-		wwdg_freq = ((float)clock_freq) / WWDG_INTERNAL_DIVIDER
-			     / (1 << *prescaler_exp);
-		/* +1 to ceil the result, which may lose from truncation */
-		*counter = (uint32_t)(timeout_s * wwdg_freq + 1) - 1;
-		*counter += WWDG_RESET_LIMIT;
-
-		if (*counter <= WWDG_COUNTER_MAX) {
+		if (count <= WWDG_COUNTER_MAX) {
+			*counter = count;
+			*prescaler_exp = psc_exp;
 			return;
 		}
 	}
@@ -307,10 +308,7 @@ static struct wwdg_stm32_data wwdg_stm32_dev_data = {
 };
 
 static struct wwdg_stm32_config wwdg_stm32_dev_config = {
-	.pclken = {
-		.enr = DT_INST_CLOCKS_CELL(0, bits),
-		.bus = DT_INST_CLOCKS_CELL(0, bus)
-	},
+	.pclken = STM32_DT_INST_CLOCK_INFO(0),
 	.Instance = (WWDG_TypeDef *)DT_INST_REG_ADDR(0),
 };
 

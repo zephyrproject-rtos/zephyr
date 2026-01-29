@@ -31,10 +31,10 @@ endfunction()
 #
 # CMake should set current toolchain in CMake Variable
 # `CONFIG_TOOLCHAIN` to use this feature.
-if (${COMPILER} STREQUAL iar)
+if(${COMPILER} STREQUAL iar)
   set(CONFIG_TOOLCHAIN iar)
-elseif (${COMPILER} STREQUAL xcc)
+elseif(${COMPILER} STREQUAL xcc)
   set(CONFIG_TOOLCHAIN xtensa)
-else ()
+else()
   set(CONFIG_TOOLCHAIN armgcc)
 endif()

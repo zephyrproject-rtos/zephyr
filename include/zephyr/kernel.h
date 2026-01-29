@@ -322,7 +322,7 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  * restore the contents of these registers when scheduling the thread.
  * No effect if @kconfig{CONFIG_DSP_SHARING} is not enabled.
  */
-#define K_DSP_IDX 6
+#define K_DSP_IDX 13
 #define K_DSP_REGS (BIT(K_DSP_IDX))
 
 /**
@@ -333,7 +333,7 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  * memory and DSP feature. Often used with @kconfig{CONFIG_ARC_AGU_SHARING}.
  * No effect if @kconfig{CONFIG_ARC_AGU_SHARING} is not enabled.
  */
-#define K_AGU_IDX 7
+#define K_AGU_IDX 14
 #define K_AGU_REGS (BIT(K_AGU_IDX))
 
 /**
@@ -345,7 +345,7 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  * save and restore the contents of these registers when scheduling
  * the thread. No effect if @kconfig{CONFIG_X86_SSE} is not enabled.
  */
-#define K_SSE_REGS (BIT(7))
+#define K_SSE_REGS (BIT(15))
 
 /* end - thread options */
 
@@ -532,6 +532,108 @@ static inline void k_thread_heap_assign(struct k_thread *thread,
  */
 __syscall int k_thread_stack_space_get(const struct k_thread *thread,
 				       size_t *unused_ptr);
+
+/**
+ * @brief Set the unused stack threshold for a thread as a percentage
+ *
+ * This function sets the unused stack safety usage threshold for a thread as a
+ * percentage of the specified thread's total stack size. When performing a
+ * runtime stack safety usage check, if the thread's unused stack is detected
+ * to be below this threshold, then a runtime stack safety usage hook will be
+ * invoked. Setting this threshold to 0% disables the hook.
+ *
+ * @param thread Thread on which to set the threshold
+ * @param pct Percentage of total stack size to use as threshold
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if @p pct exceeds 99%
+ */
+__syscall int k_thread_runtime_stack_unused_threshold_pct_set(struct k_thread *thread,
+							      uint32_t pct);
+
+/**
+ * @brief Set the unused stack threshold for a thread as a number of bytes
+ *
+ * This function sets the unused stack safety usage threshold for a thread as a
+ * number of bytes. When performing a runtime stack safety usage check, if the
+ * thread's unused stack is detected to be below this threshold, then a runtime
+ * stack safety usage hook will be invoked. Setting this threshold to 0 bytes
+ * disables the hook.
+ *
+ * @param thread Thread on which to set the threshold
+ * @param threshold Number of bytes to use as threshold
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if @p threshold exceeds stack size
+ */
+__syscall int k_thread_runtime_stack_unused_threshold_set(struct k_thread *thread,
+							  size_t threshold);
+
+/**
+ * @brief Get the unused stack usage threshold (in bytes)
+ *
+ * This function retrieves the unused stack usage threshold for a thread as a
+ * number of bytes. A value of 0 bytes indicates thread does not have an
+ * unused stack usage threshold and that the runtime stack safety usage hook is
+ * disabled for this thread.
+ *
+ * @param thread Thread from which to retrieve the threshold
+ *
+ * @retval Unused stack threshold (in bytes)
+ */
+__syscall size_t k_thread_runtime_stack_unused_threshold_get(struct k_thread *thread);
+
+/**
+ * @brief Thread stack safety handler type
+ *
+ * This type defines the prototype for a custom thread stack safety handler.
+ * The handler is invoked when a thread's unused stack space is detected to
+ * have crossed below its configured threshold.
+ *
+ * @param thread Thread whose stack has crossed the safety threshold
+ * @param unused_space Amount of unused stack space remaining
+ * @param arg Pointer to user defined argument passed to the handler
+ */
+typedef void (*k_thread_stack_safety_handler_t)(const struct k_thread *thread,
+						size_t unused_space, void *arg);
+
+/**
+ * @brief Run the full stack safety check on a thread
+ *
+ * This function scans the specified thread's stack to determine how much of it
+ * remains unused. If the unused stack space is found to be less than the
+ * thread's configured threshold then the specified handler is executed.
+ *
+ * @param thread Thread whose stack to check
+ * @param unused_ptr Amount of unused stack space remaining
+ * @param handler Custom handler to invoke if threshold crossed
+ * @param arg Argument to pass to handler
+ *
+ * @return 0 on success, -ENOTSUP if forbidden by hardware policy
+ */
+int k_thread_runtime_stack_safety_full_check(const struct k_thread *thread,
+					     size_t *unused_ptr,
+					     k_thread_stack_safety_handler_t handler,
+					     void *arg);
+
+/**
+ * @brief Run the an abbreviated stack safety check on a thread
+ *
+ * This function scans the specified thread's stack for evidence that it has
+ * crossed its configured threshold of unused stack space. If this evidence is
+ * found, the specified handler is executed.
+ *
+ * @param thread Thread whose stack to check
+ * @param unused_ptr Amount of unused stack space remaining
+ * @param handler Custom handler to invoke if threshold crossed
+ * @param arg Argument to pass to handler
+ *
+ * @return 0 on success, -ENOTSUP if forbidden by hardware policy
+ */
+int k_thread_runtime_stack_safety_threshold_check(const struct k_thread *thread,
+						  size_t *unused_ptr,
+						  k_thread_stack_safety_handler_t handler,
+						  void *arg);
 #endif
 
 #if (K_HEAP_MEM_POOL_SIZE > 0)
@@ -688,6 +790,43 @@ __attribute_const__
 __syscall k_tid_t k_sched_current_thread_query(void);
 
 /**
+ * @brief Test whether startup is in the before-main-task phase.
+ *
+ * This routine allows the caller to customize its actions, depending on
+ * whether it being invoked before the kernel is fully active.
+ *
+ * @funcprops \isr_ok
+ *
+ * @return true if invoked before post-kernel initialization
+ * @return false if invoked during/after post-kernel initialization
+ */
+static inline bool k_is_pre_kernel(void)
+{
+	extern bool z_sys_post_kernel; /* in init.c */
+
+	/*
+	 * If called from userspace, it must be post kernel.
+	 * This guard is necessary because z_sys_post_kernel memory
+	 * is not accessible to user threads.
+	 */
+	if (k_is_user_context()) {
+		return false;
+	}
+
+	/*
+	 * Some compilers might optimize by pre-reading
+	 * z_sys_post_kernel. This is absolutely not desirable.
+	 * We are trying to avoid reading it if we are in user
+	 * context as reading z_sys_post_kernel in user context
+	 * will result in access fault. So add a compiler barrier
+	 * here to stop that kind of optimizations.
+	 */
+	compiler_barrier();
+
+	return !z_sys_post_kernel;
+}
+
+/**
  * @brief Get thread ID of the current thread.
  *
  * @return ID of current thread.
@@ -696,6 +835,8 @@ __syscall k_tid_t k_sched_current_thread_query(void);
 __attribute_const__
 static inline k_tid_t k_current_get(void)
 {
+	__ASSERT(!k_is_pre_kernel(), "k_current_get called pre-kernel");
+
 #ifdef CONFIG_CURRENT_THREAD_USE_TLS
 
 	/* Thread-local cache of current thread ID, set in z_thread_entry() */
@@ -820,7 +961,7 @@ struct _static_thread_data {
 			       entry, p1, p2, p3,			\
 			       prio, options, delay)			\
 	struct k_thread _k_thread_obj_##name;				\
-	STRUCT_SECTION_ITERABLE(_static_thread_data,			\
+	const STRUCT_SECTION_ITERABLE(_static_thread_data,		\
 				_k_thread_data_##name) =		\
 		Z_THREAD_INITIALIZER(&_k_thread_obj_##name,		\
 				     _k_thread_stack_##name, stack_size,\
@@ -1275,24 +1416,6 @@ bool k_is_in_isr(void);
 __syscall int k_is_preempt_thread(void);
 
 /**
- * @brief Test whether startup is in the before-main-task phase.
- *
- * This routine allows the caller to customize its actions, depending on
- * whether it being invoked before the kernel is fully active.
- *
- * @funcprops \isr_ok
- *
- * @return true if invoked before post-kernel initialization
- * @return false if invoked during/after post-kernel initialization
- */
-static inline bool k_is_pre_kernel(void)
-{
-	extern bool z_sys_post_kernel; /* in init.c */
-
-	return !z_sys_post_kernel;
-}
-
-/**
  * @}
  */
 
@@ -1542,6 +1665,22 @@ const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size);
  */
 #define K_FOREVER Z_FOREVER
 
+/**
+ * @brief Add two k_timeout_t values together
+ *
+ * This macro adds two k_timeout_t values together. If only one value is an
+ * absolute timeout, the result will be an absolute timeout. If both are
+ * relative timeouts, the result will be a relative timeout. If the calculation
+ * overflows, underflows or if both values are absolute timeouts, K_FOREVER
+ * is returned.
+ *
+ * @param timeout1 First k_timeout_t value
+ * @param timeout2 Second k_timeout_t value
+ *
+ * @return Sum of the two timeout values, or K_FOREVER if incalculable
+ */
+#define K_TIMEOUT_SUM(timeout1, timeout2)  K_TICKS(z_timeout_sum(timeout1, timeout2))
+
 #ifdef CONFIG_TIMEOUT_64BIT
 
 /**
@@ -1625,7 +1764,6 @@ const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size);
  * @return Timeout delay value
  */
 #define K_TIMEOUT_ABS_CYC(t) K_TIMEOUT_ABS_TICKS(k_cyc_to_ticks_ceil64(t))
-
 #endif
 
 /**
@@ -1677,6 +1815,23 @@ struct k_timer {
 	 * INTERNAL_HIDDEN @endcond
 	 */
 };
+
+#ifdef CONFIG_TIMER_OBSERVER
+struct k_timer_observer {
+	/* Invoked upon completion of k_timer initialization */
+	void (*on_init)(struct k_timer *timer);
+
+	/* Invoked after the timer transitions to the running state  */
+	void (*on_start)(struct k_timer *timer, k_timeout_t duration,
+			 k_timeout_t period);
+
+	/* Invoked when the active timer is explicitly stopped */
+	void (*on_stop)(struct k_timer *timer);
+
+	/* Executes in ISR context, keep minimal and non-blocking */
+	void (*on_expiry)(struct k_timer *timer);
+};
+#endif /* CONFIG_TIMER_OBSERVER */
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -1748,6 +1903,42 @@ typedef void (*k_timer_stop_t)(struct k_timer *timer);
 #define K_TIMER_DEFINE(name, expiry_fn, stop_fn) \
 	STRUCT_SECTION_ITERABLE(k_timer, name) = \
 		Z_TIMER_INITIALIZER(name, expiry_fn, stop_fn)
+
+
+#ifdef CONFIG_TIMER_OBSERVER
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+#define Z_TIMER_OBSERVER_INITIALIZER(name, init, start, stop, expiry) \
+	{ \
+	.on_init = init, \
+	.on_start = start, \
+	.on_stop = stop, \
+	.on_expiry = expiry \
+	}
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
+/**
+ * @brief Statically define and initialize a timer observer.
+ *
+ * Iterable-section based observer interface for k_timer lifecycle
+ * events (init/start/stop/expiry). External modules can register
+ * additional functionality without modifying kernel internals.
+ *
+ * @param name Name of the k_timer_observer variable.
+ * @param init Pointer to initialization callback (or NULL).
+ * @param start Pointer to start callback (or NULL).
+ * @param stop Pointer to stop callback (or NULL).
+ * @param expiry Pointer to expiry callback (or NULL).
+ */
+#define K_TIMER_OBSERVER_DEFINE(name, init, start, stop, expiry) \
+	static const STRUCT_SECTION_ITERABLE(k_timer_observer, name) = \
+		Z_TIMER_OBSERVER_INITIALIZER(name, init, start, stop, expiry)
+
+#endif /* CONFIG_TIMER_OBSERVER */
 
 /**
  * @brief Initialize a timer.
@@ -2000,7 +2191,7 @@ static inline uint32_t k_uptime_seconds(void)
 }
 
 /**
- * @brief Get elapsed time.
+ * @brief Get elapsed time, and update the referenced time.
  *
  * This routine computes the elapsed time between the current system uptime
  * and an earlier reference time, in milliseconds.
@@ -4418,9 +4609,9 @@ struct z_work_canceller {
  * from both the caller thread and the work queue thread.
  *
  * @note If CONFIG_KERNEL_COHERENCE is enabled the object must be allocated in
- * coherent memory; see arch_mem_coherent().  The stack on these architectures
- * is generally not coherent.  be stack-allocated.  Violations are detected by
- * runtime assertion.
+ * coherent memory; see sys_cache_is_mem_coherent().  The stack on these
+ * architectures is generally not coherent.  be stack-allocated.  Violations are
+ * detected by runtime assertion.
  */
 struct k_work_sync {
 	union {
@@ -5919,10 +6110,14 @@ void *k_heap_realloc(struct k_heap *h, void *ptr, size_t bytes, k_timeout_t time
  */
 void k_heap_free(struct k_heap *h, void *mem) __attribute_nonnull(1);
 
-/* Hand-calculated minimum heap sizes needed to return a successful
- * 1-byte allocation.  See details in lib/os/heap.[ch]
+/* Minimum heap sizes needed to return a successful 1-byte allocation.
+ * Assumes a chunk aligned (8 byte) memory buffer.
  */
+#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+#define Z_HEAP_MIN_SIZE ((sizeof(void *) > 4) ? 80 : 52)
+#else
 #define Z_HEAP_MIN_SIZE ((sizeof(void *) > 4) ? 56 : 44)
+#endif /* CONFIG_SYS_HEAP_RUNTIME_STATS */
 
 /**
  * @brief Define a static k_heap in the specified linker section

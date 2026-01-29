@@ -55,7 +55,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                  gdb_host='',
                  gdb_port=DEFAULT_JLINK_GDB_PORT,
                  rtt_port=DEFAULT_JLINK_RTT_PORT,
-                 tui=False, tool_opt=None, dev_id_type=None):
+                 tui=False, tool_opt=None, dev_id_type=None, batch=False):
         super().__init__(cfg)
         self.file = cfg.file
         self.file_type = cfg.file_type
@@ -81,6 +81,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.loader = loader
         self.rtt_port = rtt_port
         self.dev_id_type = dev_id_type
+        self.is_batch = batch
 
         self.tool_opt = []
         if tool_opt is not None:
@@ -120,7 +121,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
     def capabilities(cls):
         return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach', 'rtt'},
                           dev_id=True, flash_addr=True, erase=True, reset=True,
-                          tool_opt=True, file=True, rtt=True)
+                          tool_opt=True, file=True, rtt=True, batch_debug=True)
 
     @classmethod
     def dev_id_help(cls) -> str:
@@ -221,7 +222,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                                  gdb_port=args.gdb_port,
                                  rtt_port=args.rtt_port,
                                  tui=args.tui, tool_opt=args.tool_opt,
-                                 dev_id_type=args.dev_id_type)
+                                 dev_id_type=args.dev_id_type,
+                                 batch=args.batch)
 
     def print_gdbserver_message(self):
         if not self.thread_info_enabled:
@@ -398,16 +400,21 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                 raise ValueError('Cannot debug; elf is missing')
             else:
                 elf_name = self.elf_name
+
             client_cmd = (self.gdb_cmd +
                           self.tui_arg +
                           [elf_name] +
+                          ['-batch' if self.is_batch else ''] +
                           ['-ex', f'target remote {self.gdb_host}:{self.gdb_port}'])
             if command == 'debug':
                 client_cmd += ['-ex', 'monitor halt',
                                '-ex', 'monitor reset',
                                '-ex', 'load']
-                if self.reset:
+                if self.is_batch:
+                    client_cmd += ['-ex', 'monitor go', '-ex', 'disconnect', '-ex', 'quit']
+                elif self.reset:
                     client_cmd += ['-ex', 'monitor reset']
+
             if not self.gdb_host:
                 self.require(self.gdbserver)
                 self.print_gdbserver_message()

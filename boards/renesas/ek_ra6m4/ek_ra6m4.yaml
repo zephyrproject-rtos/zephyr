@@ -12,4 +12,5 @@ supported:
   - usbd
   - watchdog
   - counter
+  - pwm
 vendor: renesas

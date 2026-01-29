@@ -4,21 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/display/ili9xxx.h>
+#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 
 / {
 	chosen {
 		zephyr,display = &ili9488_buydisplay_3_5_tft_touch_arduino;
 		zephyr,touch = &ft5336_buydisplay_3_5_tft_touch_arduino;
-	};
-
-	lvgl_pointer {
-		compatible = "zephyr,lvgl-pointer-input";
-		input = <&ft5336_buydisplay_3_5_tft_touch_arduino>;
-		swap-xy;
-		invert-x;
-		invert-y;
 	};
 
 	buydisplay_3_5_tft_touch_arduino_mipi_dbi {
@@ -34,7 +26,7 @@
 			compatible = "ilitek,ili9488";
 			mipi-max-frequency = <25000000>;
 			reg = <0>;
-			pixel-format = <ILI9XXX_PIXEL_FORMAT_RGB888>;
+			pixel-format = <PANEL_PIXEL_FORMAT_RGB888>;
 			width = <320>;
 			height = <480>;
 			rotation = <0>;
@@ -56,6 +48,9 @@
 	ft5336_buydisplay_3_5_tft_touch_arduino: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
+		swapped-x-y;
+		screen-width = <320>;
+		screen-height = <480>;
 		/* Uncomment if IRQ line is available (requires to solder jumper) */
 		/* int-gpios = <&arduino_header ARDUINO_HEADER_R3_D5 GPIO_ACTIVE_LOW>; */
 	};

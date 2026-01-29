@@ -1,0 +1,26 @@
+# Copyright (c) 2025-2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: pic32cx_sg41_cult
+name: PIC32CX SG41 Curiosity Ultra
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+flash: 1024
+ram: 256
+supported:
+  - clock_control
+  - comparator
+  - dma
+  - flash
+  - gpio
+  - hwinfo
+  - i2c
+  - pinctrl
+  - pwm
+  - reset
+  - rtc
+  - uart
+  - watchdog
+vendor: microchip

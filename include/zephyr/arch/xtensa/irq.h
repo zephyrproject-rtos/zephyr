@@ -199,19 +199,19 @@ static ALWAYS_INLINE void xtensa_irq_enable(uint32_t irq)
 #if XCHAL_NUM_INTERRUPTS > 32
 	switch (irq >> 5) {
 	case 0:
-		z_xt_ints_on(1 << irq);
+		z_xt_ints_on(1 << (irq & 0x1f));
 		break;
 	case 1:
-		z_xt_ints1_on(1 << irq);
+		z_xt_ints1_on(1 << (irq & 0x1f));
 		break;
 #if XCHAL_NUM_INTERRUPTS > 64
 	case 2:
-		z_xt_ints2_on(1 << irq);
+		z_xt_ints2_on(1 << (irq & 0x1f));
 		break;
 #endif
 #if XCHAL_NUM_INTERRUPTS > 96
 	case 3:
-		z_xt_ints3_on(1 << irq);
+		z_xt_ints3_on(1 << (irq & 0x1f));
 		break;
 #endif
 	default:
@@ -232,19 +232,19 @@ static ALWAYS_INLINE void xtensa_irq_disable(uint32_t irq)
 #if XCHAL_NUM_INTERRUPTS > 32
 	switch (irq >> 5) {
 	case 0:
-		z_xt_ints_off(1 << irq);
+		z_xt_ints_off(1 << (irq & 0x1f));
 		break;
 	case 1:
-		z_xt_ints1_off(1 << irq);
+		z_xt_ints1_off(1 << (irq & 0x1f));
 		break;
 #if XCHAL_NUM_INTERRUPTS > 64
 	case 2:
-		z_xt_ints2_off(1 << irq);
+		z_xt_ints2_off(1 << (irq & 0x1f));
 		break;
 #endif
 #if XCHAL_NUM_INTERRUPTS > 96
 	case 3:
-		z_xt_ints3_off(1 << irq);
+		z_xt_ints3_off(1 << (irq & 0x1f));
 		break;
 #endif
 	default:

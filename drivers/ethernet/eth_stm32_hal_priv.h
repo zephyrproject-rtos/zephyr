@@ -9,6 +9,7 @@
 
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/phy.h>
@@ -36,6 +37,11 @@ extern const struct device *eth_stm32_phy_dev;
 #elif defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32H7RSX)
 #define __eth_stm32_desc __attribute__((section(".eth_stm32_desc")))
 #define __eth_stm32_buf  __attribute__((section(".eth_stm32_buf")))
+#elif defined(CONFIG_SOC_SERIES_STM32MP13X)
+#define ETH_DMA_REGION  DT_INST_PHANDLE(0, memory_regions)
+#define ETH_SECTION Z_GENERIC_SECTION(LINKER_DT_NODE_REGION_NAME_TOKEN(ETH_DMA_REGION))
+#define __eth_stm32_desc __aligned(32) ETH_SECTION
+#define __eth_stm32_buf  __aligned(32) ETH_SECTION
 #elif defined(CONFIG_NOCACHE_MEMORY)
 #define __eth_stm32_desc __nocache __aligned(4)
 #define __eth_stm32_buf  __nocache __aligned(4)
@@ -48,9 +54,6 @@ extern const struct device *eth_stm32_phy_dev;
 
 #define ETH_MII_MODE	ETH_MEDIA_INTERFACE_MII
 #define ETH_RMII_MODE	ETH_MEDIA_INTERFACE_RMII
-
-#define ETH_STM32_AUTO_NEGOTIATION_ENABLE                                                          \
-	UTIL_NOT(DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, phy_handle), fixed_link))
 
 #else /* CONFIG_ETH_STM32_HAL_API_V2 */
 
@@ -101,13 +104,16 @@ extern ETH_DMADescTypeDef dma_tx_desc_tab[ETH_TXBUFNB];
 /* Device constant configuration parameters */
 struct eth_stm32_hal_dev_cfg {
 	void (*config_func)(void);
-	struct stm32_pclken pclken;
-	struct stm32_pclken pclken_rx;
-	struct stm32_pclken pclken_tx;
-#if DT_INST_CLOCKS_HAS_NAME(0, mac_clk_ptp)
-	struct stm32_pclken pclken_ptp;
+	const struct stm32_pclken *pclken;
+	uint8_t pclken_cnt;
+	/* Index of the clock used for kernel clock selection ("eth-ker"), or UINT8_MAX if none */
+	uint8_t kclk_sel_idx;
+#ifdef CONFIG_PTP_CLOCK_STM32_HAL
+	/* Index of the clock that gives the ethernet clock rate */
+	uint8_t rate_pclken_idx;
 #endif
 	const struct pinctrl_dev_config *pcfg;
+	const struct net_eth_mac_config mac_cfg;
 };
 
 /* Device run time data */
@@ -115,7 +121,6 @@ struct eth_stm32_hal_dev_data {
 	struct net_if *iface;
 	uint8_t mac_addr[6];
 	ETH_HandleTypeDef heth;
-	struct k_mutex tx_mutex;
 	struct k_sem rx_int_sem;
 #if defined(CONFIG_ETH_STM32_HAL_API_V2)
 	struct k_sem tx_int_sem;

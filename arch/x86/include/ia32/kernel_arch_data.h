@@ -11,8 +11,8 @@
  * This file contains private kernel structures definitions and various
  * other definitions for the Intel Architecture 32 bit (IA-32) processor
  * architecture.
- * The header include/kernel.h contains the public kernel interface
- * definitions, with include/arch/x86/ia32/arch.h supplying the
+ * The header include/zephyr/kernel.h contains the public kernel interface
+ * definitions, with include/zephyr/arch/x86/ia32/arch.h supplying the
  * IA-32 specific portions of the public kernel interface.
  *
  * This file is also included by assembly language files which must #define
@@ -53,7 +53,6 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <zephyr/sys/util.h>
 
 #ifdef __cplusplus
 extern "C" {

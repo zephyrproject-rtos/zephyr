@@ -43,7 +43,6 @@
 
 /* clang-format off */
 
-#define RRAM_BASE REG_ADDR_NS(DT_CHOSEN(zephyr_flash))
 #define RRAM_CONTROLLER DT_NODELABEL(rram_controller)
 
 #if !DT_NODE_EXISTS(RRAM_CONTROLLER)
@@ -56,9 +55,9 @@
 			" (required for all children of " DT_NODE_PATH(RRAM_CONTROLLER) ")")
 
 #define CHECK_RRAM_PARTITION_WITHIN_PARENT(node_id)                                            \
-	BUILD_ASSERT(RRAM_BASE + REG_ADDR_NS(node_id) >= REG_ADDR_NS(DT_GPARENT(node_id)) && \
-			RRAM_BASE + REG_END_NS(node_id) <= REG_END_NS(DT_GPARENT(node_id)),      \
-			DT_NODE_FULL_NAME(node_id) " is not fully contained within its parent "  \
+	BUILD_ASSERT(REG_ADDR_NS(node_id) >= REG_ADDR_NS(DT_GPARENT(node_id)) && \
+			REG_END_NS(node_id) <= REG_END_NS(DT_GPARENT(node_id)), \
+			DT_NODE_FULL_NAME(node_id) " is not fully contained within its parent " \
 			DT_NODE_PATH(DT_GPARENT(node_id)))
 
 #define CHECK_NODES_NON_OVERLAPPING(node_id_1, node_id_2)                                \

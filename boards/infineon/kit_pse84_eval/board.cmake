@@ -5,6 +5,7 @@
 
 if(CONFIG_CPU_CORTEX_M55)
   # Connect to the second port for CM55 (default port is 3333)
+  board_runner_args(openocd "--gdb-init=disconnect")
   board_runner_args(openocd "--gdb-init=target extended-remote :3334")
 endif()
 

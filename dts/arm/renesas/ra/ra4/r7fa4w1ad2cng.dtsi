@@ -59,6 +59,15 @@
 				channel = <4>;
 				status = "disabled";
 			};
+
+			spi {
+				compatible = "renesas,ra-spi-sci";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				channel = <4>;
+				overrun-character = <0x00>;
+				status = "disabled";
+			};
 		};
 
 		trng: trng {

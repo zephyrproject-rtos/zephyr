@@ -7,7 +7,6 @@
 #include <zephyr/dt-bindings/led/led.h>
 
 &spi1 {
-
 	apa102: apa102@0 {
 		compatible = "apa,apa102";
 		reg = <0>;

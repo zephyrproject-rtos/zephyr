@@ -48,6 +48,16 @@
 #define z_apb5_prescaler(v) LL_RCC_APB5_DIV_ ## v
 #define apb5_prescaler(v) z_apb5_prescaler(v)
 
+/* PLLx fractional ratio is 2^13 */
+#define PLL_FRACN_DIVISOR 8192
+
+/* Given source clock and dividers, compute the output frequency of PLLx_P */
+#define PLLX_VCO_FREQ(pllsrc_freq, divm, divn, fracn) \
+	((((pllsrc_freq) / (divm)) * (((divn) * PLL_FRACN_DIVISOR) + (fracn))) / PLL_FRACN_DIVISOR)
+
+#define PLLX_OUT_FREQ(pllsrc_freq, divm, divn, fracn, out_div) \
+	(PLLX_VCO_FREQ((pllsrc_freq), (divm), (divn), (fracn)) / (out_div))
+
 /* Macro to check for clock feasibility */
 /* It is Cortex M7's responsibility to setup clock tree */
 /* This check should only be performed for the M7 core code */
@@ -78,16 +88,10 @@
 #define PLLSRC_FREQ  0
 #endif
 
-/* Given source clock and dividers, computed the output frequency of PLLP */
-#define PLLP_FREQ(pllsrc_freq, divm, divn, divp)	(((pllsrc_freq)*\
-							(divn))/((divm)*(divp)))
-
 /* PLL P output frequency value */
-#define PLLP_VALUE	PLLP_FREQ(\
-				PLLSRC_FREQ,\
-				STM32_PLL_M_DIVISOR,\
-				STM32_PLL_N_MULTIPLIER,\
-				STM32_PLL_P_DIVISOR)
+#define PLLP_VALUE \
+	PLLX_OUT_FREQ(PLLSRC_FREQ, STM32_PLL_M_DIVISOR, STM32_PLL_N_MULTIPLIER, \
+		      STM32_PLL_FRACN_VALUE, STM32_PLL_P_DIVISOR)
 
 /* SYSCLKSRC before the D1CPRE prescaler */
 #if defined(STM32_SYSCLK_SRC_PLL)
@@ -205,13 +209,16 @@ static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
 
 __unused
 static uint32_t get_pllout_frequency(uint32_t pllsrc_freq,
-				     int pllm_div,
-				     int plln_mul,
-				     int pllout_div)
+				     unsigned int pllm_div,
+				     unsigned int plln_mul,
+				     unsigned int plln_frac,
+				     unsigned int pllout_div)
 {
-	__ASSERT_NO_MSG(pllm_div && pllout_div);
+	uint64_t plln_mul_u64 = plln_mul;
 
-	return (pllsrc_freq / pllm_div) * plln_mul / pllout_div;
+	__ASSERT_NO_MSG(pllm_div != 0 && pllout_div != 0);
+
+	return PLLX_OUT_FREQ(pllsrc_freq, pllm_div, plln_mul_u64, plln_frac, pllout_div);
 }
 
 __unused
@@ -246,6 +253,7 @@ static uint32_t get_hclk_frequency(void)
 		sysclk = get_pllout_frequency(get_pllsrc_frequency(),
 					      STM32_PLL_M_DIVISOR,
 					      STM32_PLL_N_MULTIPLIER,
+					      STM32_PLL_FRACN_VALUE,
 					      STM32_PLL_P_DIVISOR);
 		break;
 #endif /* STM32_PLL_ENABLED */
@@ -354,6 +362,10 @@ int enabled_clock(uint32_t src_clk)
 	    (src_clk == STM32_SRC_HCLK3) ||
 	    (src_clk == STM32_SRC_HCLK4) ||
 	    (src_clk == STM32_SRC_HCLK5) ||
+	    (src_clk == STM32_SRC_PCLK1) ||
+	    (src_clk == STM32_SRC_PCLK2) ||
+	    (src_clk == STM32_SRC_PCLK4) ||
+	    (src_clk == STM32_SRC_PCLK5) ||
 	    ((src_clk == STM32_SRC_PLL2_S) && IS_ENABLED(STM32_PLL2_S_ENABLED)) ||
 	    ((src_clk == STM32_SRC_PLL2_T) && IS_ENABLED(STM32_PLL2_T_ENABLED)) ||
 	    ((src_clk == STM32_SRC_PLL3_S) && IS_ENABLED(STM32_PLL3_S_ENABLED)) ||
@@ -493,9 +505,17 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 		break;
 	case STM32_CLOCK_BUS_APB1:
 	case STM32_CLOCK_BUS_APB1_2:
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+	/* PCLK1 is a possible source clock for some peripherals */
+	case STM32_SRC_PCLK1:
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 		*rate = apb1_clock;
 		break;
 	case STM32_CLOCK_BUS_APB2:
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+	/* PCLK2 is a possible source clock for some peripherals */
+	case STM32_SRC_PCLK2:
+#endif
 		*rate = apb2_clock;
 		break;
 #if !defined(CONFIG_SOC_SERIES_STM32H7RSX)
@@ -504,10 +524,18 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 		break;
 #endif /* !CONFIG_SOC_SERIES_STM32H7RSX */
 	case STM32_CLOCK_BUS_APB4:
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+	/* PCLK2 is a possible source clock for some peripherals */
+	case STM32_SRC_PCLK4:
+#endif
 		*rate = apb4_clock;
 		break;
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
 	case STM32_CLOCK_BUS_APB5:
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+	/* PCLK5 is a possible source clock for some peripherals */
+	case STM32_SRC_PCLK5:
+#endif
 		*rate = apb5_clock;
 		break;
 	case STM32_CLOCK_BUS_AHB5:
@@ -552,18 +580,21 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 		*rate = get_pllout_frequency(get_pllsrc_frequency(),
 					      STM32_PLL_M_DIVISOR,
 					      STM32_PLL_N_MULTIPLIER,
+					      STM32_PLL_FRACN_VALUE,
 					      STM32_PLL_P_DIVISOR);
 		break;
 	case STM32_SRC_PLL1_Q:
 		*rate = get_pllout_frequency(get_pllsrc_frequency(),
 					      STM32_PLL_M_DIVISOR,
 					      STM32_PLL_N_MULTIPLIER,
+					      STM32_PLL_FRACN_VALUE,
 					      STM32_PLL_Q_DIVISOR);
 		break;
 	case STM32_SRC_PLL1_R:
 		*rate = get_pllout_frequency(get_pllsrc_frequency(),
 					      STM32_PLL_M_DIVISOR,
 					      STM32_PLL_N_MULTIPLIER,
+					      STM32_PLL_FRACN_VALUE,
 					      STM32_PLL_R_DIVISOR);
 		break;
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
@@ -571,6 +602,7 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 		*rate = get_pllout_frequency(get_pllsrc_frequency(),
 					      STM32_PLL_M_DIVISOR,
 					      STM32_PLL_N_MULTIPLIER,
+					      STM32_PLL_FRACN_VALUE,
 					      STM32_PLL_S_DIVISOR);
 		break;
 	/* PLL 1 has no T-divider */
@@ -581,18 +613,21 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 		*rate = get_pllout_frequency(get_pllsrc_frequency(),
 					      STM32_PLL2_M_DIVISOR,
 					      STM32_PLL2_N_MULTIPLIER,
+					      STM32_PLL2_FRACN_VALUE,
 					      STM32_PLL2_P_DIVISOR);
 		break;
 	case STM32_SRC_PLL2_Q:
 		*rate = get_pllout_frequency(get_pllsrc_frequency(),
 					      STM32_PLL2_M_DIVISOR,
 					      STM32_PLL2_N_MULTIPLIER,
+					      STM32_PLL2_FRACN_VALUE,
 					      STM32_PLL2_Q_DIVISOR);
 		break;
 	case STM32_SRC_PLL2_R:
 		*rate = get_pllout_frequency(get_pllsrc_frequency(),
 					      STM32_PLL2_M_DIVISOR,
 					      STM32_PLL2_N_MULTIPLIER,
+					      STM32_PLL2_FRACN_VALUE,
 					      STM32_PLL2_R_DIVISOR);
 		break;
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
@@ -600,12 +635,14 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 		*rate = get_pllout_frequency(get_pllsrc_frequency(),
 					      STM32_PLL2_M_DIVISOR,
 					      STM32_PLL2_N_MULTIPLIER,
+					      STM32_PLL2_FRACN_VALUE,
 					      STM32_PLL2_S_DIVISOR);
 		break;
 	case STM32_SRC_PLL2_T:
 		*rate = get_pllout_frequency(get_pllsrc_frequency(),
 					      STM32_PLL2_M_DIVISOR,
 					      STM32_PLL2_N_MULTIPLIER,
+					      STM32_PLL2_FRACN_VALUE,
 					      STM32_PLL2_T_DIVISOR);
 		break;
 #endif /* CONFIG_SOC_SERIES_STM32H7RSX */
@@ -615,18 +652,21 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 		*rate = get_pllout_frequency(get_pllsrc_frequency(),
 					      STM32_PLL3_M_DIVISOR,
 					      STM32_PLL3_N_MULTIPLIER,
+					      STM32_PLL3_FRACN_VALUE,
 					      STM32_PLL3_P_DIVISOR);
 		break;
 	case STM32_SRC_PLL3_Q:
 		*rate = get_pllout_frequency(get_pllsrc_frequency(),
 					      STM32_PLL3_M_DIVISOR,
 					      STM32_PLL3_N_MULTIPLIER,
+					      STM32_PLL3_FRACN_VALUE,
 					      STM32_PLL3_Q_DIVISOR);
 		break;
 	case STM32_SRC_PLL3_R:
 		*rate = get_pllout_frequency(get_pllsrc_frequency(),
 					      STM32_PLL3_M_DIVISOR,
 					      STM32_PLL3_N_MULTIPLIER,
+					      STM32_PLL3_FRACN_VALUE,
 					      STM32_PLL3_R_DIVISOR);
 		break;
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
@@ -634,6 +674,7 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 		*rate = get_pllout_frequency(get_pllsrc_frequency(),
 					      STM32_PLL3_M_DIVISOR,
 					      STM32_PLL3_N_MULTIPLIER,
+					      STM32_PLL3_FRACN_VALUE,
 					      STM32_PLL3_S_DIVISOR);
 		break;
 	/* PLL 3  has no T-divider */

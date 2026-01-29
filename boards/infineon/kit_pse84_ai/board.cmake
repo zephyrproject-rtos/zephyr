@@ -5,6 +5,7 @@
 
 if(CONFIG_CPU_CORTEX_M55)
   # Connect to the second port for CM55 (default port is 3333)
+  board_runner_args(openocd "--gdb-init=disconnect")
   board_runner_args(openocd "--gdb-init=target extended-remote :3334")
 endif()
 
@@ -17,5 +18,5 @@ include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)
 
 if(CONFIG_CPU_CORTEX_M33 AND CONFIG_TRUSTED_EXECUTION_SECURE)
   set_property(TARGET runners_yaml_props_target
-    PROPERTY hex_file ${ZEPHYR_BINARY_DIR}/${KERNEL_NAME}.signed.hex)
+    PROPERTY hex_file ${KERNEL_NAME}.signed.hex)
 endif()

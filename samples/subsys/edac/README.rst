@@ -63,13 +63,17 @@ Injection help can be received with:
    inject - Inject ECC error commands
             edac inject <subcommands>
    Subcommands:
-     addr          :Get / Set physical address
-     mask          :Get / Set address mask
+     param1        :Get / Set injection param 1
+     param2        :Get / Set injection param 2
      trigger       :Trigger injection
      error_type    :Get / Set injection error type
      disable_nmi   :Disable NMI
      enable_nmi    :Enable NMI
      test_default  :Test default injection parameters
+
+.. note::
+   Since each vendor implements EDAC differently, the exact meanings of param1
+   and param2 should be checked in the corresponding driver implementation.
 
 Testing Error Injection
 =======================
@@ -78,11 +82,11 @@ Set Error Injection parameters with:
 
 .. code-block:: console
 
-   uart:~$ edac inject addr 0x1000
-   Set injection address base to: 0x1000
+   uart:~$ edac inject param1 0x1000
+   Set injection param1 to: 0x1000
 
-   uart:~$ edac inject mask 0x7fffffffc0
-   Set injection address mask to 7fffffffc0
+   uart:~$ edac inject param2 0x7fffffffc0
+   Set injection param2 to 7fffffffc0
 
    uart:~$ edac inject error_type correctable
    Set injection error type: correctable
@@ -111,8 +115,8 @@ following devmem commands:
    Using data width 32
    Read value 0xabcd
 
-We should get the following message on screen indicating an IBECC event:
+We should get the following message on screen indicating an ECC event:
 
 .. code-block:: none
 
-   Got notification about IBECC event
+   Got notification about ECC event

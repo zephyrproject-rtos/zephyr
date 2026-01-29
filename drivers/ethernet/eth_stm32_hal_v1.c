@@ -58,7 +58,6 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
-	int res;
 	size_t total_len;
 	uint8_t *dma_buffer;
 	__IO ETH_DMADescTypeDef *dma_tx_desc;
@@ -73,8 +72,6 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 		return -EIO;
 	}
 
-	k_mutex_lock(&dev_data->tx_mutex, K_FOREVER);
-
 	dma_tx_desc = heth->TxDesc;
 	while (IS_ETH_DMATXDESC_OWN(dma_tx_desc) != (uint32_t)RESET) {
 		k_yield();
@@ -83,16 +80,14 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 	dma_buffer = (uint8_t *)(dma_tx_desc->Buffer1Addr);
 
 	if (net_pkt_read(pkt, dma_buffer, total_len)) {
-		res = -ENOBUFS;
-		goto error;
+		return -ENOBUFS;
 	}
 
 	hal_ret = HAL_ETH_TransmitFrame(heth, total_len);
 
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("HAL_ETH_Transmit: failed!");
-		res = -EIO;
-		goto error;
+		return -EIO;
 	}
 
 	/* When Transmit Underflow flag is set, clear it and issue a
@@ -103,16 +98,10 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 		heth->Instance->DMASR = ETH_DMASR_TUS;
 		/* Resume DMA transmission*/
 		heth->Instance->DMATPDR = 0;
-		res = -EIO;
-		goto error;
+		return -EIO;
 	}
 
-	res = 0;
-error:
-
-	k_mutex_unlock(&dev_data->tx_mutex);
-
-	return res;
+	return 0;
 }
 
 struct net_pkt *eth_stm32_rx(const struct device *dev)
@@ -135,7 +124,7 @@ struct net_pkt *eth_stm32_rx(const struct device *dev)
 	dma_buffer = (uint8_t *)heth->RxFrameInfos.buffer;
 
 	pkt = net_pkt_rx_alloc_with_buffer(dev_data->iface,
-					   total_len, AF_UNSPEC, 0, K_MSEC(100));
+					   total_len, NET_AF_UNSPEC, 0, K_MSEC(100));
 	if (!pkt) {
 		LOG_ERR("Failed to obtain RX buffer");
 		goto release_desc;
@@ -188,32 +177,15 @@ int eth_stm32_hal_init(const struct device *dev)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
-	HAL_StatusTypeDef hal_ret = HAL_OK;
-
-	if (!ETH_STM32_AUTO_NEGOTIATION_ENABLE) {
-		struct phy_link_state state;
-
-		phy_get_link_state(eth_stm32_phy_dev, &state);
-
-		heth->Init.DuplexMode = PHY_LINK_IS_FULL_DUPLEX(state.speed) ? ETH_MODE_FULLDUPLEX
-									     : ETH_MODE_HALFDUPLEX;
-		heth->Init.Speed =
-			PHY_LINK_IS_SPEED_100M(state.speed) ? ETH_SPEED_100M : ETH_SPEED_10M;
-	}
+	HAL_StatusTypeDef hal_ret;
 
 	hal_ret = HAL_ETH_Init(heth);
-	if (hal_ret == HAL_TIMEOUT) {
-		/* HAL Init time out. This could be linked to */
-		/* a recoverable error. Log the issue and continue */
-		/* driver initialisation */
-		LOG_WRN("HAL_ETH_Init timed out (cable not connected?)");
-	} else if (hal_ret != HAL_OK) {
+	if (hal_ret != HAL_OK) {
 		LOG_ERR("HAL_ETH_Init failed: %d", hal_ret);
-		return -EINVAL;
+		return -EIO;
 	}
 
 	/* Initialize semaphores */
-	k_mutex_init(&dev_data->tx_mutex);
 	k_sem_init(&dev_data->rx_int_sem, 0, K_SEM_MAX_LIMIT);
 
 	if (HAL_ETH_DMATxDescListInit(heth, dma_tx_desc_tab,

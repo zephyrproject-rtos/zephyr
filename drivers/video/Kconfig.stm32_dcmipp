@@ -8,7 +8,6 @@ config VIDEO_STM32_DCMIPP
 	default y
 	depends on DT_HAS_ST_STM32_DCMIPP_ENABLED
 	select USE_STM32_HAL_DCMIPP
-	select USE_STM32_HAL_RIF if SOC_SERIES_STM32N6X
 	select RESET
 	select PINCTRL
 	help

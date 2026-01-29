@@ -7,7 +7,7 @@ Overview
 ********
 
 What is SCMI?
-*************
+=============
 
 System Control and Management Interface (SCMI) is a specification developed by
 ARM, which describes a set of OS-agnostic software interfaces used to perform
@@ -15,52 +15,53 @@ system management (e.g: clock control, pinctrl, etc...).
 
 
 Agent, platform, protocol and transport
-***************************************
+=======================================
 
 The SCMI specification defines **four** key terms, which will also be used throughout
 this documentation:
 
-	#. Agent
-		Entity that performs SCMI requests (e.g: gating a clock or configuring
-		a pin). In this context, Zephyr itself is an agent.
-	#. Platform
-		This refers to a set of hardware components that handle the requests from
-		agents and provide the necessary functionality. In some cases, the requests
-		are handled by a firmware, running on a core dedicated to performing system
-		management tasks.
-	#. Protocol
-		A protocol is a set of messages grouped by functionality. Intuitively, a message
-		can be thought of as a remote procedure call.
+#. Agent
+	Entity that performs SCMI requests (e.g: gating a clock or configuring
+	a pin). In this context, Zephyr itself is an agent.
 
-		The SCMI specification defines ten standard protocols:
+#. Platform
+	This refers to a set of hardware components that handle the requests from
+	agents and provide the necessary functionality. In some cases, the requests
+	are handled by a firmware, running on a core dedicated to performing system
+	management tasks.
 
-		#. **Base** (0x10)
-		#. **Power domain management** (0x11)
-		#. **System power management** (0x12)
-		#. **Performance domain management** (0x13)
-		#. **Clock management** (0x14)
-		#. **Sensor management** (0x15)
-		#. **Reset domain management** (0x16)
-		#. **Voltage domain management** (0x17)
-		#. **Power capping and monitoring** (0x18)
-		#. **Pin Control** (0x19)
+#. Protocol
+	A protocol is a set of messages grouped by functionality. Intuitively, a message
+	can be thought of as a remote procedure call.
 
-		where each of these protocols is identified by an unique protocol ID
-		(listed between brackets).
+	The SCMI specification defines ten standard protocols:
 
-		Apart from the standard protocols, the SCMI specification reserves the
-		**0x80-0xFF** protocol ID range for vendor-specific protocols.
+	#. **Base** (0x10)
+	#. **Power domain management** (0x11)
+	#. **System power management** (0x12)
+	#. **Performance domain management** (0x13)
+	#. **Clock management** (0x14)
+	#. **Sensor management** (0x15)
+	#. **Reset domain management** (0x16)
+	#. **Voltage domain management** (0x17)
+	#. **Power capping and monitoring** (0x18)
+	#. **Pin Control** (0x19)
 
+	where each of these protocols is identified by an unique protocol ID
+	(listed between brackets).
 
-	#. Transport
-		This describes how messages are exchanged between agents and the platform.
-		The communication itself happens through channels.
+	Apart from the standard protocols, the SCMI specification reserves the
+	**0x80-0xFF** protocol ID range for vendor-specific protocols.
+
+#. Transport
+	This describes how messages are exchanged between agents and the platform.
+	The communication itself happens through channels.
 
 .. note::
 	A system may have more than one agent.
 
 Channels
-********
+========
 
 A **channel** is the medium through which agents and the platform exchange messages.
 The structure of a channel and the way it works is solely dependent on the transport.
@@ -71,31 +72,34 @@ by two different agents for example.
 Channels are **bidirectional** (exception: FastChannels), and, depending on which entity
 initiates the communication, can be one of **two** types:
 
-	#. A2P (agent to platform)
-		The agent is the initiator/requester. The messages passed through these
-		channels are known as **commands**.
-	#. P2A (platform to agent)
-		The platform is the initiator/requester.
+#. A2P (agent to platform)
+	The agent is the initiator/requester. The messages passed through these
+	channels are known as **commands**.
+
+#. P2A (platform to agent)
+	The platform is the initiator/requester.
 
 Messages
-********
+========
 
 The SCMI specification defines **four** types of messages:
 
-	#. Synchronous
-		These are commands that block until the platform has completed the
-		requested work and are sent over A2P channels.
-	#. Asynchronous
-		For these commands, the platform schedules the requested work to
-		be performed at a later time. As such, they return almost immediately.
-		These commands are sent over A2P channels.
-	#. Delayed response
-		These messages indicate the completion of the work associated
-		with an asynchronous command. These are sent over P2A channels.
+#. Synchronous
+	These are commands that block until the platform has completed the
+	requested work and are sent over A2P channels.
 
-	#. Notification
-		These messages are used to notify agents of events that take place on
-		the platform. These are sent over P2A channels.
+#. Asynchronous
+	For these commands, the platform schedules the requested work to
+	be performed at a later time. As such, they return almost immediately.
+	These commands are sent over A2P channels.
+
+#. Delayed response
+	These messages indicate the completion of the work associated
+	with an asynchronous command. These are sent over P2A channels.
+
+#. Notification
+	These messages are used to notify agents of events that take place on
+	the platform. These are sent over P2A channels.
 
 The Zephyr support for SCMI is based on the documentation provided by ARM:
 `DEN0056E <https://developer.arm.com/documentation/den0056/latest/>`_. For more details
@@ -105,7 +109,7 @@ SCMI support in Zephyr
 **********************
 
 Shared memory and doorbell-based transport
-******************************************
+==========================================
 
 This form of transport uses shared memory for reading/writing messages
 and doorbells for signaling. The interaction with the shared
@@ -120,10 +124,10 @@ transport driver (:file:`drivers/firmware/scmi/mailbox.c`).
 The steps below exemplify how the communication between the Zephyr agent
 and the platform may happen using this transport:
 
-	#. Write message to the shared memory area.
-	#. Zephyr rings request doorbell. If in ``PRE_KERNEL_1`` or ``PRE_KERNEL_2`` phase start polling for reply, otherwise wait for reply doorbell ring.
-	#. Platform reads message from shared memory area, processes it, writes the reply back to the same area and rings the reply doorbell.
-	#. Zephyr reads reply from the shared memory area.
+#. Write message to the shared memory area.
+#. Zephyr rings request doorbell. If in ``PRE_KERNEL_1`` or ``PRE_KERNEL_2`` phase start polling for reply, otherwise wait for reply doorbell ring.
+#. Platform reads message from shared memory area, processes it, writes the reply back to the same area and rings the reply doorbell.
+#. Zephyr reads reply from the shared memory area.
 
 In the context of this transport, a channel is comprised of a **single** shared
 memory area and one or more mailbox channels. This is because users may need/want
@@ -131,19 +135,21 @@ to use different mailbox channels for the request/reply doorbells.
 
 
 Protocols
-*********
+=========
 
 Currently, Zephyr has support for the following standard protocols:
 
-	#. **Power domain management**
-	#. **Clock management**
-	#. **Pin Control**
+#. **Power domain management**
+#. **System power management**
+#. **Clock management**
+#. **Pin Control**
 
 NXP-specific protocols:
-	#. **CPU domain management**
+
+#. **CPU domain management**
 
 Power domain management
-***********************
+-----------------------
 
 This protocol is intended for management of power states of power domains.
 This is done via a set of functions implementing various commands, for
@@ -153,8 +159,22 @@ example, ``POWER_STATE_GET`` and ``POWER_STATE_SET``.
 	This driver is vendor-agnostic. As such, it may be used on any
 	system that uses SCMI for power domain management operations.
 
-Clock management protocol
-*************************
+.. doxygengroup:: scmi_power
+
+System power management
+-----------------------
+
+This protocol is intended for system power management. This is done via a set
+of functions implementing various commands, for example, ``SYSTEM_POWER_STATE_SET``.
+
+.. note::
+	This driver is vendor-agnostic. As such, it may be used on any
+	system that uses SCMI for system power management operations.
+
+.. doxygengroup:: scmi_system
+
+Clock management
+----------------
 
 This protocol is used to perform clock management operations. This is done
 via a driver (:file:`drivers/clock_control/clock_control_arm_scmi.c`), which
@@ -166,8 +186,8 @@ management driver.
 	This driver is vendor-agnostic. As such, it may be used on any
 	system that uses SCMI for clock management operations.
 
-Pin Control protocol
-********************
+Pin Control
+-----------
 
 This protocol is used to perform pin configuration operations. This is done
 via a set of functions implementing various commands. Currently, the only
@@ -180,8 +200,10 @@ supported command is ``PINCTRL_SETTINGS_CONFIGURE``.
 	call into the SCMI pin control protocol function implementing the
 	``PINCTRL_SETTINGS_CONFIGURE`` command.
 
+.. doxygengroup:: scmi_pinctrl
+
 NXP - CPU domain management
-***************************
+---------------------------
 
 This protocol is intended for management of cpu states.
 This is done via a set of functions implementing various commands, for

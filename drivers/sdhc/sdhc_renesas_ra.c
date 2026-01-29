@@ -721,12 +721,10 @@ static DEVICE_API(sdhc, sdhc_api) = {
 					.ddr50_support = false,                                    \
 					.sdr104_support = false,                                   \
 					.sdr50_support = false,                                    \
-					.bus_8_bit_support = false,                                \
-					.bus_4_bit_support = (DT_INST_PROP(index, bus_width) == 4) \
-								     ? true                        \
-								     : false,                      \
-					.hs200_support = false,                                    \
-					.hs400_support = false}},                                  \
+					.bus_8_bit_support = false},                               \
+			  .bus_4_bit_support = (DT_INST_PROP(index, bus_width) == 4),              \
+			  .hs200_support = false,                                                  \
+			  .hs400_support = false},                                                 \
 		RA_SDHI_EN(index),                                                                 \
 		RA_SDMMC_DTC_STRUCT_INIT(index)};                                                  \
                                                                                                    \

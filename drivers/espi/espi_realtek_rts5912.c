@@ -684,6 +684,8 @@ static void espi_periph_ch_setup(const struct device *dev)
 
 #ifdef CONFIG_ESPI_PERIPHERAL_DEBUG_PORT_80
 
+#define P80_MAX_ITEM 16
+
 static void espi_port80_isr(const struct device *dev)
 {
 	const struct espi_rts5912_config *const espi_config = dev->config;
@@ -693,8 +695,13 @@ static void espi_port80_isr(const struct device *dev)
 				 ESPI_PERIPHERAL_NODATA};
 	volatile struct port80_reg *const port80_reg = espi_config->port80_reg;
 
-	evt.evt_data = port80_reg->DATA;
-	espi_send_callbacks(&espi_data->callbacks, dev, evt);
+	int i = 0;
+
+	while (!(port80_reg->STS & PORT80_STS_FIFOEM) && i < P80_MAX_ITEM) {
+		evt.evt_data = port80_reg->DATA;
+		espi_send_callbacks(&espi_data->callbacks, dev, evt);
+		i++;
+	}
 }
 
 static int espi_peri_ch_port80_setup(const struct device *dev)

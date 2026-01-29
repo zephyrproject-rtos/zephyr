@@ -103,7 +103,7 @@ static inline int z_impl_entropy_get_entropy(const struct device *dev,
  * @param buffer Buffer to fill with entropy.
  * @param length Buffer length.
  * @param flags Flags to modify the behavior of the call.
- * @retval number of bytes filled with entropy or -error.
+ * @return number of bytes filled with entropy or -error.
  */
 static inline int entropy_get_entropy_isr(const struct device *dev,
 					  uint8_t *buffer,

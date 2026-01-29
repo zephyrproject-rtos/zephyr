@@ -51,7 +51,7 @@ struct mld_report_mcast_record {
 	uint8_t record_type;
 	uint8_t aux_data_len;
 	uint16_t num_of_sources;
-	struct in6_addr mcast_addr;
+	struct net_in6_addr mcast_addr;
 } __packed;
 
 struct mld_report_info {
@@ -66,14 +66,14 @@ struct mld_report_handler {
 	void *user_data;
 };
 
-static struct in6_addr my_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr my_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 				       0, 0, 0, 0, 0, 0, 0, 0x1 } } };
-static struct in6_addr peer_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr peer_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					 0, 0, 0, 0, 0, 0, 0, 0x2 } } };
-static struct in6_addr mcast_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+static struct net_in6_addr mcast_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					  0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
-static struct in6_addr *exp_mcast_group;
+static struct net_in6_addr *exp_mcast_group;
 static struct net_if *net_iface;
 static bool is_group_joined;
 static bool is_group_left;
@@ -426,15 +426,15 @@ static void test_verify_leave_group(void)
 static void send_query(struct net_if *iface)
 {
 	struct net_pkt *pkt;
-	struct in6_addr dst;
+	struct net_in6_addr dst;
 	int ret;
 
 	/* Sent to all MLDv2-capable routers */
 	net_ipv6_addr_create(&dst, 0xff02, 0, 0, 0, 0, 0, 0, 0x0016);
 
 	/* router alert opt + icmpv6 reserved space + mldv2 mcast record */
-	pkt = net_pkt_alloc_with_buffer(iface, 144, AF_INET6,
-					IPPROTO_ICMPV6, K_FOREVER);
+	pkt = net_pkt_alloc_with_buffer(iface, 144, NET_AF_INET6,
+					NET_IPPROTO_ICMPV6, K_FOREVER);
 	zassert_not_null(pkt, "Cannot allocate pkt");
 
 	net_pkt_set_ipv6_hop_limit(pkt, 1); /* RFC 3810 ch 7.4 */
@@ -442,7 +442,7 @@ static void send_query(struct net_if *iface)
 	zassert_false(ret, "Cannot create ipv6 pkt");
 
 	/* Add hop-by-hop option and router alert option, RFC 3810 ch 5. */
-	ret = net_pkt_write_u8(pkt, IPPROTO_ICMPV6);
+	ret = net_pkt_write_u8(pkt, NET_IPPROTO_ICMPV6);
 	zassert_false(ret, "Failed to write");
 	ret = net_pkt_write_u8(pkt, 0); /* length (0 means 8 bytes) */
 	zassert_false(ret, "Failed to write");
@@ -479,11 +479,11 @@ static void send_query(struct net_if *iface)
 	zassert_false(ret, "Failed to write");
 
 	ret = net_pkt_write(pkt, net_ipv6_unspecified_address(),
-			    sizeof(struct in6_addr));
+			    sizeof(struct net_in6_addr));
 	zassert_false(ret, "Failed to write");
 
 	net_pkt_cursor_init(pkt);
-	ret = net_ipv6_finalize(pkt, IPPROTO_ICMPV6);
+	ret = net_ipv6_finalize(pkt, NET_IPPROTO_ICMPV6);
 	zassert_false(ret, "Failed to finalize ipv6 packet");
 
 	net_pkt_cursor_init(pkt);
@@ -557,7 +557,7 @@ static void test_catch_query(void)
 
 	is_query_received = false;
 
-	ret = net_icmp_init_ctx(&ctx, NET_ICMPV6_MLD_QUERY,
+	ret = net_icmp_init_ctx(&ctx, NET_AF_INET6, NET_ICMPV6_MLD_QUERY,
 				0, handle_mld_query);
 	zassert_equal(ret, 0, "Cannot register %s handler (%d)",
 		      STRINGIFY(NET_ICMPV6_MLD_QUERY), ret);
@@ -625,7 +625,7 @@ ZTEST(net_mld_test_suite, test_allnodes)
 {
 	struct net_if *iface = NULL;
 	struct net_if_mcast_addr *ifmaddr;
-	struct in6_addr addr;
+	struct net_in6_addr addr;
 
 	net_ipv6_addr_create_ll_allnodes_mcast(&addr);
 
@@ -669,7 +669,7 @@ static void verify_allnodes_on_iface_event(void (*action)(void))
 {
 	struct net_if *iface = NULL;
 	struct net_if_mcast_addr *ifmaddr;
-	struct in6_addr addr;
+	struct net_in6_addr addr;
 	bool exclude_report_sent = false;
 	struct mld_report_handler handler = {
 		.fn = expect_exclude_mcast_report,
@@ -718,7 +718,7 @@ ZTEST(net_mld_test_suite, test_solicit_node)
 {
 	struct net_if *iface = NULL;
 	struct net_if_mcast_addr *ifmaddr;
-	struct in6_addr addr;
+	struct net_in6_addr addr;
 
 	net_ipv6_addr_create_solicited_node(&my_addr, &addr);
 
@@ -732,7 +732,7 @@ static void verify_solicit_node_on_iface_event(void (*action)(void))
 {
 	struct net_if *iface = NULL;
 	struct net_if_mcast_addr *ifmaddr;
-	struct in6_addr addr;
+	struct net_in6_addr addr;
 	bool exclude_report_sent = false;
 	struct mld_report_handler handler = {
 		.fn = expect_exclude_mcast_report,
@@ -861,7 +861,7 @@ static size_t get_mcast_addr_count(struct net_if *iface)
 	return ret;
 }
 
-static void add_mcast_route_and_verify(struct net_if *iface, struct in6_addr *addr,
+static void add_mcast_route_and_verify(struct net_if *iface, struct net_in6_addr *addr,
 				       struct mld_report_info *info)
 {
 	k_sem_reset(&wait_data);
@@ -876,10 +876,10 @@ static void add_mcast_route_and_verify(struct net_if *iface, struct in6_addr *ad
 	zassert_equal(info->records[0].record_type, NET_IPV6_MLDv2_CHANGE_TO_EXCLUDE_MODE,
 		      "Invalid MLDv2 record type");
 	zassert_mem_equal(&info->records[0].mcast_addr, addr,
-			  sizeof(struct in6_addr), "Invalid reported address");
+			  sizeof(struct net_in6_addr), "Invalid reported address");
 }
 
-static void del_mcast_route_and_verify(struct net_if *iface, struct in6_addr *addr,
+static void del_mcast_route_and_verify(struct net_if *iface, struct net_in6_addr *addr,
 				       struct mld_report_info *info)
 {
 	struct net_route_entry_mcast *entry;
@@ -899,16 +899,16 @@ static void del_mcast_route_and_verify(struct net_if *iface, struct in6_addr *ad
 	zassert_equal(info->records[0].record_type, NET_IPV6_MLDv2_CHANGE_TO_INCLUDE_MODE,
 		      "Invalid MLDv2 record type");
 	zassert_mem_equal(&info->records[0].mcast_addr, addr,
-			  sizeof(struct in6_addr), "Invalid reported address");
+			  sizeof(struct net_in6_addr), "Invalid reported address");
 }
 
 static void verify_mcast_routes_in_mld(struct mld_report_info *info)
 {
 	struct net_if *dummy_iface = net_if_get_by_index(net_if_get_by_name("dummy0"));
 	struct net_if *null_iface = net_if_get_by_index(net_if_get_by_name("dummy1"));
-	struct in6_addr site_local_mcast_addr_abcd;
-	struct in6_addr site_local_mcast_addr_beef;
-	struct in6_addr site_local_mcast_addr_cafe;
+	struct net_in6_addr site_local_mcast_addr_abcd;
+	struct net_in6_addr site_local_mcast_addr_beef;
+	struct net_in6_addr site_local_mcast_addr_cafe;
 
 	zassert_not_null(dummy_iface, "Invalid dummy iface");
 	zassert_not_null(null_iface, "Invalid null iface");
@@ -984,7 +984,7 @@ ZTEST(net_mld_test_suite, test_mcast_routes_in_mld)
 	struct mld_report_info info;
 	struct mld_report_handler handler = { .fn = handle_mld_report, .user_data = &info};
 	struct net_if *iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
-	char str[INET6_ADDRSTRLEN], *addr_str;
+	char str[NET_INET6_ADDRSTRLEN], *addr_str;
 
 	memset(&info, 0, sizeof(info));
 
@@ -1004,7 +1004,8 @@ ZTEST(net_mld_test_suite, test_mcast_routes_in_mld)
 	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Timeout while waiting for a report");
 
 	for (int i = 0; i < info.records_count; ++i) {
-		addr_str = zsock_inet_ntop(AF_INET6, &info.records[i].mcast_addr, str, sizeof(str));
+		addr_str = zsock_inet_ntop(NET_AF_INET6, &info.records[i].mcast_addr,
+					   str, sizeof(str));
 	}
 
 	/* 1. Expect that report contains all iface's multicast addressses and no route */
@@ -1019,33 +1020,33 @@ ZTEST(net_mld_test_suite, test_mcast_routes_in_mld)
 	leave_mldv2_capable_routers_group();
 }
 
-static void socket_group_with_index(const struct in6_addr *local_addr, bool do_join)
+static void socket_group_with_index(const struct net_in6_addr *local_addr, bool do_join)
 {
-	struct ipv6_mreq mreq = { 0 };
+	struct net_ipv6_mreq mreq = { 0 };
 	int option;
 	int ret, fd;
 
 	if (do_join) {
-		option = IPV6_ADD_MEMBERSHIP;
+		option = ZSOCK_IPV6_ADD_MEMBERSHIP;
 	} else {
-		option = IPV6_DROP_MEMBERSHIP;
+		option = ZSOCK_IPV6_DROP_MEMBERSHIP;
 	}
 
-	fd = zsock_socket(AF_INET6, SOCK_DGRAM, 0);
+	fd = zsock_socket(NET_AF_INET6, NET_SOCK_DGRAM, 0);
 	zassert_true(fd >= 0, "Cannot get socket (%d)", -errno);
 
-	ret = zsock_setsockopt(fd, IPPROTO_IPV6, option,
+	ret = zsock_setsockopt(fd, NET_IPPROTO_IPV6, option,
 			       NULL, sizeof(mreq));
 	zassert_true(ret == -1 && errno == EINVAL,
 		     "Incorrect return value (%d)", -errno);
 
-	ret = zsock_setsockopt(fd, IPPROTO_IPV6, option,
+	ret = zsock_setsockopt(fd, NET_IPPROTO_IPV6, option,
 			       (void *)&mreq, 1);
 	zassert_true(ret == -1 && errno == EINVAL,
 		     "Incorrect return value (%d)", -errno);
 
 	/* First try with empty mreq */
-	ret = zsock_setsockopt(fd, IPPROTO_IPV6, option,
+	ret = zsock_setsockopt(fd, NET_IPPROTO_IPV6, option,
 			       (void *)&mreq, sizeof(mreq));
 	zassert_true(ret == -1 && errno == EINVAL,
 		     "Incorrect return value (%d)", -errno);
@@ -1054,7 +1055,7 @@ static void socket_group_with_index(const struct in6_addr *local_addr, bool do_j
 	memcpy(&mreq.ipv6mr_multiaddr, &mcast_addr,
 	       sizeof(mreq.ipv6mr_multiaddr));
 
-	ret = zsock_setsockopt(fd, IPPROTO_IPV6, option,
+	ret = zsock_setsockopt(fd, NET_IPPROTO_IPV6, option,
 			       (void *)&mreq, sizeof(mreq));
 
 	if (do_join) {
@@ -1085,12 +1086,12 @@ static void socket_group_with_index(const struct in6_addr *local_addr, bool do_j
 	k_msleep(THREAD_SLEEP);
 }
 
-static void socket_join_group_with_index(const struct in6_addr *addr)
+static void socket_join_group_with_index(const struct net_in6_addr *addr)
 {
 	socket_group_with_index(addr, true);
 }
 
-static void socket_leave_group_with_index(const struct in6_addr *addr)
+static void socket_leave_group_with_index(const struct net_in6_addr *addr)
 {
 	socket_group_with_index(addr, false);
 }

@@ -29,6 +29,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL_INF);
 #define TEST_MESSAGE_OP_3  BT_MESH_MODEL_OP_1(0x13)
 #define TEST_MESSAGE_OP_4  BT_MESH_MODEL_OP_1(0x14)
 #define TEST_MESSAGE_OP_5  BT_MESH_MODEL_OP_1(0x15)
+#define TEST_MESSAGE_OP_E  BT_MESH_MODEL_OP_1(0x1E)
 #define TEST_MESSAGE_OP_F  BT_MESH_MODEL_OP_1(0x1F)
 
 #define PUB_PERIOD_COUNT 3
@@ -40,10 +41,14 @@ static int model2_init(const struct bt_mesh_model *model);
 static int model3_init(const struct bt_mesh_model *model);
 static int model4_init(const struct bt_mesh_model *model);
 static int model5_init(const struct bt_mesh_model *model);
+static int vnd_model_init(const struct bt_mesh_model *model);
 static int test_msg_handler(const struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf);
 static int test_msg_ne_handler(const struct bt_mesh_model *model,
+			struct bt_mesh_msg_ctx *ctx,
+			struct net_buf_simple *buf);
+static int test_vnd_msg_handler(const struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf);
 
@@ -97,7 +102,8 @@ static const struct {
 	},
 };
 
-static struct k_sem publish_sem;
+static K_SEM_DEFINE(publish_sem, 0, 1);
+static K_SEM_DEFINE(vnd_rx_sem, 0, 1);
 static bool publish_allow;
 
 static int model1_update(const struct bt_mesh_model *model)
@@ -155,6 +161,10 @@ static const struct bt_mesh_model_cb test_model5_cb = {
 	.init = model5_init,
 };
 
+static const struct bt_mesh_model_cb vnd_model_cb = {
+	.init = vnd_model_init,
+};
+
 static const struct bt_mesh_model_op model_op1[] = {
 	{ TEST_MESSAGE_OP_1, 0, test_msg_handler },
 	{ TEST_MESSAGE_OP_F, 0, test_msgf_handler },
@@ -178,6 +188,11 @@ static const struct bt_mesh_model_op model_op4[] = {
 
 static const struct bt_mesh_model_op model_op5[] = {
 	{ TEST_MESSAGE_OP_5, 0, test_msg_handler },
+	BT_MESH_MODEL_OP_END
+};
+
+static const struct bt_mesh_model_op vnd_model_op[] = {
+	{ TEST_MESSAGE_OP_E, 0, test_vnd_msg_handler },
 	BT_MESH_MODEL_OP_END
 };
 
@@ -228,11 +243,16 @@ static const struct bt_mesh_model models_ne[] = {
 	BT_MESH_MODEL_CB(TEST_MODEL_ID_5, model_ne_op5, NULL, NULL, &test_model5_cb),
 };
 
-static const struct bt_mesh_model vnd_models[] = {};
+static const struct bt_mesh_model vnd_models[] = {
+	BT_MESH_MODEL_VND_CB(TEST_VND_COMPANY_ID, TEST_VND_MOD_ID, vnd_model_op, NULL, NULL,
+			     &vnd_model_cb)
+};
+
+static const struct bt_mesh_model vnd_models_ne[] = {};
 
 static const struct bt_mesh_elem elems[] = {
 	BT_MESH_ELEM(0, models, vnd_models),
-	BT_MESH_ELEM(1, models_ne, vnd_models),
+	BT_MESH_ELEM(1, models_ne, vnd_models_ne),
 };
 
 const struct bt_mesh_comp local_comp = {
@@ -287,6 +307,11 @@ static int model5_init(const struct bt_mesh_model *model)
 	return 0;
 }
 
+static int vnd_model_init(const struct bt_mesh_model *model)
+{
+	return 0;
+}
+
 static int test_msg_handler(const struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
@@ -302,6 +327,16 @@ static int test_msg_ne_handler(const struct bt_mesh_model *model,
 			struct net_buf_simple *buf)
 {
 	FAIL("Model %#4x on neighbor element received msg", model->id);
+
+	return 0;
+}
+
+static int test_vnd_msg_handler(const struct bt_mesh_model *model,
+			struct bt_mesh_msg_ctx *ctx,
+			struct net_buf_simple *buf)
+{
+	LOG_DBG("vnd msg rx");
+	k_sem_give(&vnd_rx_sem);
 
 	return 0;
 }
@@ -344,6 +379,13 @@ static void common_configure(uint16_t addr)
 					model_ids[i], err, status);
 			return;
 		}
+	}
+
+	err = bt_mesh_cfg_cli_mod_app_bind_vnd(0, addr, addr, 0, TEST_VND_MOD_ID,
+					       TEST_VND_COMPANY_ID, &status);
+	if (err || status) {
+		FAIL("Vendor model bind failed (err %d, status %u)", err, status);
+		return;
 	}
 
 	err = bt_mesh_cfg_cli_net_transmit_set(0, addr, BT_MESH_TRANSMIT(2, 20), &status);
@@ -689,8 +731,6 @@ static void tx_period(bool delayable)
 	provision(UNICAST_ADDR1);
 	common_configure(UNICAST_ADDR1);
 
-	k_sem_init(&publish_sem, 0, 1);
-
 	model->pub->delayable = delayable;
 
 	for (size_t i = 0; i < ARRAY_SIZE(test_period); i++) {
@@ -729,8 +769,6 @@ static void rx_period(bool delayable)
 	bt_mesh_device_setup(&prov, &local_comp);
 	provision(UNICAST_ADDR2);
 	common_configure(UNICAST_ADDR2);
-
-	k_sem_init(&publish_sem, 0, 1);
 
 	for (size_t i = 0; i < ARRAY_SIZE(test_period); i++) {
 		if (delayable) {
@@ -776,8 +814,6 @@ static void tx_transmit(bool delayable)
 	bt_mesh_device_setup(&prov, &local_comp);
 	provision(UNICAST_ADDR1);
 	common_configure(UNICAST_ADDR1);
-
-	k_sem_init(&publish_sem, 0, 1);
 
 	/* Network retransmissions has to be disabled so that the legacy advertiser sleeps for the
 	 * least possible time, which is 50ms. This will let the access layer publish a message
@@ -828,8 +864,6 @@ static void rx_transmit(bool delayable)
 	provision(UNICAST_ADDR2);
 	common_configure(UNICAST_ADDR2);
 
-	k_sem_init(&publish_sem, 0, 1);
-
 	for (size_t i = 0; i < ARRAY_SIZE(test_transmit); i++) {
 		int32_t interval = BT_MESH_PUB_TRANSMIT_INT(test_transmit[i]);
 		int count = BT_MESH_PUB_TRANSMIT_COUNT(test_transmit[i]);
@@ -876,8 +910,6 @@ static void test_tx_cancel(void)
 	bt_mesh_device_setup(&prov, &local_comp);
 	provision(UNICAST_ADDR1);
 	common_configure(UNICAST_ADDR1);
-
-	k_sem_init(&publish_sem, 0, 1);
 
 	model->pub->retr_update = true;
 
@@ -935,8 +967,6 @@ static void test_rx_cancel(void)
 	provision(UNICAST_ADDR2);
 	common_configure(UNICAST_ADDR2);
 
-	k_sem_init(&publish_sem, 0, 1);
-
 	for (size_t i = 0; i < ARRAY_SIZE(test_cancel); i++) {
 		int64_t timestamp;
 		int err;
@@ -972,6 +1002,47 @@ static void test_rx_cancel(void)
 	PASS();
 }
 
+static void test_tx_transmit_sig_msg_to_vnd(void)
+{
+	const struct bt_mesh_model *model = &models[2];
+
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_device_setup(&prov, &local_comp);
+	provision(UNICAST_ADDR1);
+	common_configure(UNICAST_ADDR1);
+
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = 0,
+		.app_idx = 0,
+		.addr = UNICAST_ADDR2,
+		.send_rel = false,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	BT_MESH_MODEL_BUF_DEFINE(msg, TEST_MESSAGE_OP_E, 0);
+
+	LOG_INF("Sending SIG message to vendor model");
+	bt_mesh_model_msg_init(&msg, TEST_MESSAGE_OP_E);
+	bt_mesh_model_send(model, &ctx, &msg, NULL, NULL);
+
+	PASS();
+}
+
+static void test_rx_transmit_sig_msg_to_vnd(void)
+{
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_device_setup(&prov, &local_comp);
+	provision(UNICAST_ADDR2);
+	common_configure(UNICAST_ADDR2);
+
+	int err = k_sem_take(&vnd_rx_sem, K_SECONDS(3));
+
+	if (err) {
+		FAIL("Vendor model RX timed out");
+	}
+
+	PASS();
+}
+
 #define TEST_CASE(role, name, description)                     \
 	{                                                      \
 		.test_id = "access_" #role "_" #name,          \
@@ -998,6 +1069,8 @@ static const struct bst_test_instance test_access[] = {
 	TEST_CASE(rx, transmit_delayable, "Access: Receive delayable publication with"
 		  " retransmissions"),
 
+	TEST_CASE(tx, transmit_sig_msg_to_vnd, "Access: Send SIG message to vendor model"),
+	TEST_CASE(rx, transmit_sig_msg_to_vnd, "Access: Receive SIG message in vendor model"),
 	BSTEST_END_MARKER
 };
 

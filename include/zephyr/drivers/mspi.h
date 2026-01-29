@@ -7,7 +7,7 @@
 /**
  * @file
  * @ingroup mspi_interface
- * @brief Main header file for MSPI (Multi-Master Serial Peripheral Interface) driver API.
+ * @brief Main header file for MSPI (Multi-bit Serial Peripheral Interface) driver API.
  */
 
 #ifndef ZEPHYR_INCLUDE_MSPI_H_
@@ -30,7 +30,7 @@ extern "C" {
  *        controllers.
  * @defgroup mspi_interface MSPI
  * @since 3.7
- * @version 0.1.0
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @{
  */

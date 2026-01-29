@@ -282,8 +282,7 @@ static int dai_nhlt_dmic_dai_params_get(struct dai_intel_dmic *dmic, const int c
 static inline void dai_dmic_clock_select_set(const struct dai_intel_dmic *dmic, uint32_t source)
 {
 	uint32_t val;
-#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30) ||                      \
-	defined(CONFIG_SOC_INTEL_ACE40) /* ACE 2.0,3.0,4.0 */
+#if defined(CONFIG_SOC_ACE20_LNL) || defined(CONFIG_SOC_ACE30) || defined(CONFIG_SOC_ACE40)
 	val = sys_read32(dmic->vshim_base + DMICLVSCTL_OFFSET);
 	val &= ~DMICLVSCTL_MLCS;
 	val |= FIELD_PREP(DMICLVSCTL_MLCS, source);
@@ -309,7 +308,7 @@ static int dai_dmic_set_clock(const struct dai_intel_dmic *dmic, const uint8_t c
 		return -ENOTSUP;
 	}
 
-#if defined(CONFIG_SOC_INTEL_ACE15_MTPM)
+#if defined(CONFIG_SOC_ACE15_MTPM)
 	if (clock_source && !(sys_read32(dmic->shim_base + DMICLCAP_OFFSET) & DMICLCAP_MLCS)) {
 		return -ENOTSUP;
 	}

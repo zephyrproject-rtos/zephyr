@@ -23,7 +23,8 @@
 			compatible = "sifive,s7", "riscv";
 			device_type = "cpu";
 			reg = <0>;
-			riscv,isa = "rv64imac_zicsr_zifencei";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "c", "zicsr", "zifencei";
 			status = "okay";
 
 			cpu0_intc: interrupt-controller {
@@ -36,21 +37,10 @@
 		U74_1: cpu@1 {
 			compatible = "sifive,u74", "riscv";
 			device_type = "cpu";
-			d-cache-block-size = <64>;
-			d-cache-sets = <64>;
-			d-cache-size = <32768>;
-			d-tlb-sets = <1>;
-			d-tlb-size = <40>;
-			i-cache-block-size = <64>;
-			i-cache-sets = <64>;
-			i-cache-size = <32768>;
-			i-tlb-sets = <1>;
-			i-tlb-size = <40>;
 			mmu-type = "riscv,sv39";
-			next-level-cache = <&ccache>;
 			reg = <0x1>;
-			riscv,isa = "rv64imafdcg";
-			tlb-spilt;
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
 
 			cpu1_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -62,21 +52,10 @@
 		U74_2: cpu@2 {
 			compatible = "sifive,u74", "riscv";
 			device_type = "cpu";
-			d-cache-block-size = <64>;
-			d-cache-sets = <64>;
-			d-cache-size = <32768>;
-			d-tlb-sets = <1>;
-			d-tlb-size = <40>;
-			i-cache-block-size = <64>;
-			i-cache-sets = <64>;
-			i-cache-size = <32768>;
-			i-tlb-sets = <1>;
-			i-tlb-size = <40>;
 			mmu-type = "riscv,sv39";
-			next-level-cache = <&ccache>;
 			reg = <0x2>;
-			riscv,isa = "rv64imafdcg";
-			tlb-split;
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
 
 			cpu2_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -88,21 +67,10 @@
 		U74_3: cpu@3 {
 			compatible = "sifive,u74", "riscv";
 			device_type = "cpu";
-			d-cache-block-size = <64>;
-			d-cache-sets = <64>;
-			d-cache-size = <32768>;
-			d-tlb-sets = <1>;
-			d-tlb-size = <40>;
-			i-cache-block-size = <64>;
-			i-cache-sets = <64>;
-			i-cache-size = <32768>;
-			i-tlb-sets = <1>;
-			i-tlb-size = <40>;
 			mmu-type = "riscv,sv39";
-			next-level-cache = <&ccache>;
 			reg = <0x3>;
-			riscv,isa = "rv64imafdcg";
-			tlb-split;
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
 
 			cpu3_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -114,21 +82,10 @@
 		U74_4: cpu@4 {
 			compatible = "sifive,u74", "riscv";
 			device_type = "cpu";
-			d-cache-block-size = <64>;
-			d-cache-sets = <64>;
-			d-cache-size = <32768>;
-			d-tlb-sets = <1>;
-			d-tlb-size = <40>;
-			i-cache-block-size = <64>;
-			i-cache-sets = <64>;
-			i-cache-size = <32768>;
-			i-tlb-sets = <1>;
-			i-tlb-size = <40>;
 			mmu-type = "riscv,sv39";
-			next-level-cache = <&ccache>;
 			reg = <0x4>;
-			riscv,isa = "rv64imafdcg";
-			tlb-split;
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
 
 			cpu4_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";

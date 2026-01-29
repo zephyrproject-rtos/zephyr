@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Jimmy Johnson <catch22@fastmail.net>
+ * Copyright (c) 2025 Byteflies NV
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +10,29 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/sensor/tmp108.h>
+
+const struct device *get_tmp_sensor_dev(void)
+{
+
+	const struct device *temp_sensor = DEVICE_DT_GET_ANY(ti_tmp108);
+
+	if (!temp_sensor) {
+		printf("warning: tmp108 device not found checking for compatible ams device\n");
+
+		temp_sensor = DEVICE_DT_GET_ANY(ams_as6212);
+	}
+
+	if (!temp_sensor) {
+		temp_sensor = DEVICE_DT_GET_ANY(ams_as6221);
+
+		if (!temp_sensor) {
+			printf("error: tmp108 compatible devices not found\n");
+			return 0;
+		}
+	}
+
+	return temp_sensor;
+}
 
 void temperature_one_shot(const struct device *dev,
 			  const struct sensor_trigger *trigger)
@@ -135,18 +159,7 @@ int main(void)
 
 	printf("TI TMP108 Example, %s\n", CONFIG_ARCH);
 
-	temp_sensor = DEVICE_DT_GET_ANY(ti_tmp108);
-
-	if (!temp_sensor) {
-		printf("warning: tmp108 device not found checking for compatible ams device\n");
-
-		temp_sensor = DEVICE_DT_GET_ANY(ams_as6212);
-
-		if (!temp_sensor) {
-			printf("error: tmp108 compatible devices not found\n");
-			return 0;
-		}
-	}
+	temp_sensor = get_tmp_sensor_dev();
 
 	if (!device_is_ready(temp_sensor)) {
 		printf("error: tmp108 device not ready\n");

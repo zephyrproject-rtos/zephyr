@@ -32,6 +32,7 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
         self,
         cfg: RunnerConfig,
         port: str,
+        dev_id: str | None,
         frequency: int | None,
         reset_mode: str | None,
         download_address: int | None,
@@ -48,6 +49,7 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
         super().__init__(cfg)
 
         self._port = port
+        self._dev_id = dev_id
         self._frequency = frequency
 
         self._download_address = download_address
@@ -146,7 +148,7 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={"flash"}, erase=True, extload=True, tool_opt=True)
+        return RunnerCaps(commands={"flash"}, dev_id=True, erase=True, extload=True, tool_opt=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -230,6 +232,7 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
         return STM32CubeProgrammerBinaryRunner(
             cfg,
             port=args.port,
+            dev_id=args.dev_id,
             frequency=args.frequency,
             reset_mode=args.reset_mode,
             download_address=args.download_address,
@@ -262,6 +265,8 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
             connect_opts += f" reset={reset_mode}"
         if self._conn_modifiers:
             connect_opts += f" {self._conn_modifiers}"
+        if self._dev_id:
+            connect_opts += f" sn={self._dev_id}"
 
         cmd += ["--connect", connect_opts]
         cmd += self._tool_opt

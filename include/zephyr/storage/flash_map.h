@@ -19,7 +19,7 @@
  *
  * @defgroup flash_area_api flash area Interface
  * @since 1.11
- * @version 1.0.0
+ * @version 1.1.0
  * @ingroup storage_apis
  * @{
  */
@@ -464,6 +464,32 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
 		DT_FIXED_SUBPARTITION_EXISTS(node), \
 			(DT_MTD_FROM_FIXED_SUBPARTITION(node)), \
 			(DT_MTD_FROM_FIXED_PARTITION(node))))
+
+/**
+ * Get the node identifier of the flash controller the area/partition resides on
+ *
+ * @param label DTS node label of a partition
+ *
+ * @return Pointer to a device.
+ */
+#define FIXED_PARTITION_MTD(label) \
+	COND_CODE_1( \
+		DT_FIXED_SUBPARTITION_EXISTS(DT_NODELABEL(label)), \
+			(DT_MTD_FROM_FIXED_SUBPARTITION(DT_NODELABEL(label))), \
+			(DT_MTD_FROM_FIXED_PARTITION(DT_NODELABEL(label))))
+
+/**
+ * Get the node identifier of the flash controller the area/partition resides on
+ *
+ * @param node DTS node of a partition
+ *
+ * @return Pointer to a device.
+ */
+#define FIXED_PARTITION_NODE_MTD(node) \
+	COND_CODE_1( \
+		DT_FIXED_SUBPARTITION_EXISTS(node), \
+			(DT_MTD_FROM_FIXED_SUBPARTITION(node)), \
+			(DT_MTD_FROM_FIXED_PARTITION(node)))
 
 /**
  * Get pointer to flash_area object by partition label

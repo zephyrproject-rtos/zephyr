@@ -33,75 +33,139 @@
 LOG_MODULE_REGISTER(bt_settings);
 
 #if defined(CONFIG_BT_SETTINGS_USE_PRINTK)
-void bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
+int bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
 			    const bt_addr_le_t *addr, const char *key)
 {
+	int err;
+
 	if (key) {
-		snprintk(path, path_size,
-			 "bt/%s/%02x%02x%02x%02x%02x%02x%u/%s", subsys,
-			 addr->a.val[5], addr->a.val[4], addr->a.val[3],
-			 addr->a.val[2], addr->a.val[1], addr->a.val[0],
-			 addr->type, key);
+		err = snprintk(path, path_size, "bt/%s/%02x%02x%02x%02x%02x%02x%u/%s", subsys,
+			       addr->a.val[5], addr->a.val[4], addr->a.val[3], addr->a.val[2],
+			       addr->a.val[1], addr->a.val[0], addr->type, key);
 	} else {
-		snprintk(path, path_size,
-			 "bt/%s/%02x%02x%02x%02x%02x%02x%u", subsys,
-			 addr->a.val[5], addr->a.val[4], addr->a.val[3],
-			 addr->a.val[2], addr->a.val[1], addr->a.val[0],
-			 addr->type);
+		err = snprintk(path, path_size, "bt/%s/%02x%02x%02x%02x%02x%02x%u", subsys,
+			       addr->a.val[5], addr->a.val[4], addr->a.val[3], addr->a.val[2],
+			       addr->a.val[1], addr->a.val[0], addr->type);
+	}
+
+	if ((err < 0) || (err >= path_size)) {
+		/* Error or output was truncated */
+		return -EINVAL;
 	}
 
 	LOG_DBG("Encoded path %s", path);
+
+	return 0;
 }
-#else
-void bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
-			    const bt_addr_le_t *addr, const char *key)
+
+static int bt_settings_encode_key_no_addr(char *path, size_t path_size, const char *key)
 {
-	size_t len = 3;
+	int err;
 
-	/* Skip if path_size is less than 3; strlen("bt/") */
-	if (len < path_size) {
-		/* Key format:
-		 *  "bt/<subsys>/<addr><type>/<key>", "/<key>" is optional
-		 */
-		strcpy(path, "bt/");
-		strncpy(&path[len], subsys, path_size - len);
-		len = strlen(path);
-		if (len < path_size) {
-			path[len] = '/';
-			len++;
-		}
-
-		for (int8_t i = 5; i >= 0 && len < path_size; i--) {
-			len += bin2hex(&addr->a.val[i], 1, &path[len],
-				       path_size - len);
-		}
-
-		if (len < path_size) {
-			/* Type can be either BT_ADDR_LE_PUBLIC or
-			 * BT_ADDR_LE_RANDOM (value 0 or 1)
-			 */
-			path[len] = '0' + addr->type;
-			len++;
-		}
-
-		if (key && len < path_size) {
-			path[len] = '/';
-			len++;
-			strncpy(&path[len], key, path_size - len);
-			len += strlen(&path[len]);
-		}
-
-		if (len >= path_size) {
-			/* Truncate string */
-			path[path_size - 1] = '\0';
-		}
-	} else if (path_size > 0) {
-		*path = '\0';
+	err = snprintk(path, path_size, "bt/%s", key);
+	if ((err < 0) || (err >= path_size)) {
+		/* Error or output was truncated */
+		return -EINVAL;
 	}
 
-	LOG_DBG("Encoded path %s", path);
+	return 0;
 }
-#endif
+
+#else /* !CONFIG_BT_SETTINGS_USE_PRINTK */
+int bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
+			   const bt_addr_le_t *addr, const char *key)
+{
+	/* Key format:
+	 *  "bt/<subsys>/<addr><type>/<key>", "/<key>" is optional
+	 */
+	const char delimiter = '/';
+	const char null_term = '\0';
+	const size_t prefix_len = sizeof("bt") - 1U;
+	const size_t subsys_len = strlen(subsys);
+	const size_t addr_str_len = sizeof("554433221100t") - 1U;
+	const size_t key_len = (key == NULL) ? 0U : strlen(key);
+	const size_t total_len = prefix_len +
+				 sizeof(delimiter) + subsys_len +
+				 sizeof(delimiter) + addr_str_len +
+				 ((key == NULL) ? 0U : (sizeof(delimiter) + key_len)) +
+				 sizeof(null_term);
+	size_t offset = 0U;
+	int err;
+
+	if (path_size < total_len) {
+		return -EINVAL;
+	}
+
+	memcpy(path, "bt", prefix_len);
+	offset += prefix_len;
+
+	path[offset] = delimiter;
+	offset++;
+	memcpy(&path[offset], subsys, subsys_len);
+	offset += subsys_len;
+
+	path[offset] = delimiter;
+	offset++;
+	for (int8_t i = 5; i >= 0; i--) {
+		/* We supply valid 0-15 as input */
+		err = hex2char(addr->a.val[i] >> 4, &path[offset]);
+		__ASSERT_NO_MSG(err == 0);
+		offset++;
+		/* We supply valid 0-15 as input */
+		err = hex2char(addr->a.val[i] & 0xf, &path[offset]);
+		__ASSERT_NO_MSG(err == 0);
+		offset++;
+	}
+	/* We are not checking hex2char return value as we supply valid 0-1 as input */
+	err = hex2char(addr->type, &path[offset]);
+	__ASSERT_NO_MSG(err == 0);
+	offset++;
+
+	if (key != NULL) {
+		path[offset] = delimiter;
+		offset++;
+		memcpy(&path[offset], key, key_len);
+		offset += key_len;
+	}
+
+	path[offset] = null_term;
+
+	LOG_DBG("Encoded path %s", path);
+
+	return 0;
+}
+
+static int bt_settings_encode_key_no_addr(char *path, size_t path_size, const char *key)
+{
+	/* Key format:
+	 *  "bt/<key>"
+	 */
+	const char delimiter = '/';
+	const char null_term = '\0';
+	const size_t prefix_len = sizeof("bt") - 1U;
+	const size_t key_len = strlen(key);
+	const size_t total_len = prefix_len + sizeof(delimiter) + key_len + sizeof(null_term);
+	size_t offset = 0U;
+
+	if (path_size < total_len) {
+		return -EINVAL;
+	}
+
+	memcpy(path, "bt", prefix_len);
+	offset += prefix_len;
+
+	path[offset] = delimiter;
+	offset++;
+	memcpy(&path[offset], key, key_len);
+	offset += key_len;
+
+	path[offset] = null_term;
+
+	LOG_DBG("Encoded path %s", path);
+
+	return 0;
+}
+#endif /* !CONFIG_BT_SETTINGS_USE_PRINTK */
 
 int bt_settings_decode_key(const char *key, bt_addr_le_t *addr)
 {
@@ -149,7 +213,7 @@ static int set_setting(const char *name, size_t len_rd, settings_read_cb read_cb
 
 	len = settings_name_next(name, &next);
 
-	if (!strncmp(name, "id", len)) {
+	if ((len == 2) && (memcmp(name, "id", len) == 0)) {
 		/* Any previously provided identities supersede flash */
 		if (atomic_test_bit(bt_dev.flags, BT_DEV_PRESET_ID)) {
 			LOG_WRN("Ignoring identities stored in flash");
@@ -181,7 +245,7 @@ static int set_setting(const char *name, size_t len_rd, settings_read_cb read_cb
 	}
 
 #if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
-	if (!strncmp(name, "name", len)) {
+	if ((len == 4) && (memcmp(name, "name", len) == 0)) {
 		len = read_cb(cb_arg, &bt_dev.name, sizeof(bt_dev.name) - 1);
 		if (len < 0) {
 			LOG_ERR("Failed to read device name from storage"
@@ -196,7 +260,7 @@ static int set_setting(const char *name, size_t len_rd, settings_read_cb read_cb
 #endif
 
 #if defined(CONFIG_BT_DEVICE_APPEARANCE_DYNAMIC)
-	if (!strncmp(name, "appearance", len)) {
+	if ((len == 10) && (memcmp(name, "appearance", len) == 0)) {
 		if (len_rd != sizeof(bt_dev.appearance)) {
 			LOG_ERR("Ignoring settings entry 'bt/appearance'. Wrong length.");
 			return -EINVAL;
@@ -212,7 +276,7 @@ static int set_setting(const char *name, size_t len_rd, settings_read_cb read_cb
 #endif
 
 #if defined(CONFIG_BT_PRIVACY)
-	if (!strncmp(name, "irk", len)) {
+	if ((len == 3) && (memcmp(name, "irk", len) == 0)) {
 		len = read_cb(cb_arg, bt_dev.irk, sizeof(bt_dev.irk));
 		if (len < sizeof(bt_dev.irk[0])) {
 			if (len < 0) {
@@ -324,21 +388,24 @@ __weak void bt_testing_settings_delete_hook(const char *key)
 int bt_settings_store(const char *key, uint8_t id, const bt_addr_le_t *addr, const void *value,
 		      size_t val_len)
 {
-	int err;
-	char id_str[4];
 	char key_str[BT_SETTINGS_KEY_MAX];
+	int err;
 
 	if (addr) {
+		char id_str[4];
+
 		if (id) {
 			u8_to_dec(id_str, sizeof(id_str), id);
 		}
 
-		bt_settings_encode_key(key_str, sizeof(key_str), key, addr, (id ? id_str : NULL));
+		err = bt_settings_encode_key(key_str, sizeof(key_str), key, addr,
+					     (id ? id_str : NULL));
 	} else {
-		err = snprintk(key_str, sizeof(key_str), "bt/%s", key);
-		if (err < 0) {
-			return -EINVAL;
-		}
+		err = bt_settings_encode_key_no_addr(key_str, sizeof(key_str), key);
+	}
+
+	if (err != 0) {
+		return err;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_TESTING)) {
@@ -350,21 +417,24 @@ int bt_settings_store(const char *key, uint8_t id, const bt_addr_le_t *addr, con
 
 int bt_settings_delete(const char *key, uint8_t id, const bt_addr_le_t *addr)
 {
-	int err;
-	char id_str[4];
 	char key_str[BT_SETTINGS_KEY_MAX];
+	int err;
 
 	if (addr) {
+		char id_str[4];
+
 		if (id) {
 			u8_to_dec(id_str, sizeof(id_str), id);
 		}
 
-		bt_settings_encode_key(key_str, sizeof(key_str), key, addr, (id ? id_str : NULL));
+		err = bt_settings_encode_key(key_str, sizeof(key_str), key, addr,
+					     (id ? id_str : NULL));
 	} else {
-		err = snprintk(key_str, sizeof(key_str), "bt/%s", key);
-		if (err < 0) {
-			return -EINVAL;
-		}
+		err = bt_settings_encode_key_no_addr(key_str, sizeof(key_str), key);
+	}
+
+	if (err != 0) {
+		return err;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_TESTING)) {

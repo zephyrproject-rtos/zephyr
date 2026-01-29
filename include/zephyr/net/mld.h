@@ -40,10 +40,10 @@ extern "C" {
  * @return 0 if joining was done, <0 otherwise.
  */
 #if defined(CONFIG_NET_IPV6_MLD)
-int net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr);
+int net_ipv6_mld_join(struct net_if *iface, const struct net_in6_addr *addr);
 #else
 static inline int
-net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr)
+net_ipv6_mld_join(struct net_if *iface, const struct net_in6_addr *addr)
 {
 	ARG_UNUSED(addr);
 	ARG_UNUSED(iface);
@@ -61,10 +61,10 @@ net_ipv6_mld_join(struct net_if *iface, const struct in6_addr *addr)
  * @return 0 if leaving is done, <0 otherwise.
  */
 #if defined(CONFIG_NET_IPV6_MLD)
-int net_ipv6_mld_leave(struct net_if *iface, const struct in6_addr *addr);
+int net_ipv6_mld_leave(struct net_if *iface, const struct net_in6_addr *addr);
 #else
 static inline int
-net_ipv6_mld_leave(struct net_if *iface, const struct in6_addr *addr)
+net_ipv6_mld_leave(struct net_if *iface, const struct net_in6_addr *addr)
 {
 	ARG_UNUSED(iface);
 	ARG_UNUSED(addr);

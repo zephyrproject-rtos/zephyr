@@ -68,7 +68,7 @@ int scmi_shmem_read_message(const struct device *shmem, struct scmi_message *msg
 	cfg = shmem->config;
 	layout = (struct scmi_shmem_layout *)data->regmap;
 
-	/* some sanity checks first */
+	/* some input validation first */
 	if (!msg) {
 		return -EINVAL;
 	}
@@ -120,7 +120,7 @@ int scmi_shmem_write_message(const struct device *shmem, struct scmi_message *ms
 	cfg = shmem->config;
 	layout = (struct scmi_shmem_layout *)data->regmap;
 
-	/* some sanity checks first */
+	/* some input validation first */
 	if (!msg) {
 		return -EINVAL;
 	}

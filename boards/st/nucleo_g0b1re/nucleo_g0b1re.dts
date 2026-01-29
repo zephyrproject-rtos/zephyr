@@ -210,14 +210,14 @@ zephyr_udc0: &usb {
 			read-only;
 		};
 
-		slot0_partition: partition@C000 {
+		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x0000C000 DT_SIZE_K(200)>;
+			reg = <0x0000c000 DT_SIZE_K(200)>;
 		};
 
-		slot1_partition: partition@3E000 {
+		slot1_partition: partition@3e000 {
 			label = "image-1";
-			reg = <0x0003E000 DT_SIZE_K(200)>;
+			reg = <0x0003e000 DT_SIZE_K(200)>;
 		};
 
 		/* final 64KiB reserved for app storage partition */

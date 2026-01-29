@@ -39,24 +39,19 @@ For more information about the RAK3112 stamp module:
 - `WisDuo RAK3112 Website`_
 - `Espressif ESP32-S3 Website`_
 
+.. include:: ../../../espressif/common/soc-esp32s3-features.rst
+   :start-after: espressif-soc-esp32s3-features
+
 Supported Features
 ==================
 
 .. zephyr:board-supported-hw::
 
-System requirements
+System Requirements
 *******************
 
-Espressif HAL requires WiFi and Bluetooth binary blobs in order work. Run the command
-below to retrieve those files.
-
-.. code-block:: console
-
-   west blobs fetch hal_espressif
-
-.. note::
-
-   It is recommended running the command above after :file:`west update`.
+.. include:: ../../../espressif/common/system-requirements.rst
+   :start-after: espressif-system-requirements
 
 Programming and Debugging
 *************************
@@ -69,13 +64,16 @@ Programming and Debugging
 .. include:: ../../../espressif/common/board-variants.rst
    :start-after: espressif-board-variants
 
+Debugging
+=========
+
+.. include:: ../../../espressif/common/openocd-debugging.rst
+   :start-after: espressif-openocd-debugging
+
 References
 **********
 
 .. target-notes::
 
-.. _WisDuo RAK3112 Website:
-   https://docs.rakwireless.com/Product-Categories/WisDuo/RAK3112-Module/Overview/
-
-.. _Espressif ESP32-S3 Website:
-   https://www.espressif.com/en/products/socs/esp32-s3
+.. _`WisDuo RAK3112 Website`: https://docs.rakwireless.com/Product-Categories/WisDuo/RAK3112-Module/Overview/
+.. _`Espressif ESP32-S3 Website`: https://www.espressif.com/en/products/socs/esp32-s3

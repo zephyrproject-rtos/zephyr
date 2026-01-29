@@ -10,6 +10,10 @@ void input_touchscreen_report_pos(const struct device *dev,
 		k_timeout_t timeout)
 {
 	const struct input_touchscreen_common_config *cfg = dev->config;
+	__ASSERT(cfg->inverted_y == (cfg->screen_height > 0),
+		 "Y coordinate inversion requires screen-height");
+	__ASSERT(cfg->inverted_x == (cfg->screen_width > 0),
+		 "X coordinate inversion requires screen-width");
 	const uint32_t reported_x_code = cfg->swapped_x_y ? INPUT_ABS_Y : INPUT_ABS_X;
 	const uint32_t reported_y_code = cfg->swapped_x_y ? INPUT_ABS_X : INPUT_ABS_Y;
 	const uint32_t reported_x = cfg->inverted_x ? cfg->screen_width - x : x;

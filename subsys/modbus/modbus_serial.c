@@ -693,8 +693,11 @@ int modbus_serial_init(struct modbus_context *ctx,
 		if (!err) {
 			k_timer_init(&cfg->rtu_timer, rtu_tmr_handler, NULL);
 			k_timer_user_data_set(&cfg->rtu_timer, ctx);
-			modbus_serial_rx_on(ctx);
 		}
+	}
+
+	if (!err && !ctx->client) {
+		modbus_serial_rx_on(ctx);
 	}
 
 	LOG_INF("RTU timeout %u us", cfg->rtu_timeout);

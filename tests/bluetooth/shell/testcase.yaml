@@ -46,6 +46,13 @@ tests:
       - CONFIG_BT_LE_EXTENDED_FEAT_SET=y
       - CONFIG_BT_LL_SW_SPLIT=n
     build_only: true
+  bluetooth.shell.shorter_connection_intervals:
+    extra_configs:
+      - CONFIG_BT_SHORTER_CONNECTION_INTERVALS=y
+      - CONFIG_BT_LE_EXTENDED_FEAT_SET=y
+      - CONFIG_BT_SUBRATING=y
+      - CONFIG_BT_LL_SW_SPLIT=n
+    build_only: true
   bluetooth.shell.channel_sounding:
     extra_configs:
       - CONFIG_BT_CHANNEL_SOUNDING=y
@@ -55,6 +62,19 @@ tests:
   bluetooth.shell.shell_br:
     extra_configs:
       - CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
+    extra_args: CONF_FILE="prj_br.conf"
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+      - native_sim
+      - native_sim/native/64
+    platform_exclude: nrf52dk/nrf52810
+    tags: bluetooth
+    harness: keyboard
+  bluetooth.shell.shell_br.accept_conn_as_central:
+    extra_configs:
+      - CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
+      - CONFIG_BT_ACCEPT_CONN_AS_CENTRAL=y
     extra_args: CONF_FILE="prj_br.conf"
     platform_allow:
       - qemu_cortex_m3

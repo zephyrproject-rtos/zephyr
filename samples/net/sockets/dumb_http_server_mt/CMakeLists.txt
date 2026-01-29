@@ -10,14 +10,14 @@ target_sources(app PRIVATE ${app_sources})
 set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
 
 foreach(inc_file
-	mt-http-server-cert.der
-	mt-http-server-key.der
-	response_big.html.bin
-	response_100k.html.bin
-    )
+  mt-http-server-cert.der
+  mt-http-server-key.der
+  response_big.html.bin
+  response_100k.html.bin
+)
   generate_inc_file_for_target(
     app
     src/${inc_file}
     ${gen_dir}/${inc_file}.inc
-    )
+  )
 endforeach()

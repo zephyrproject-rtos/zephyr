@@ -37,15 +37,15 @@ extern "C" {
  * @anchor RTC_ALARM_TIME_MASK
  * @{
  */
-#define RTC_ALARM_TIME_MASK_SECOND	BIT(0)
-#define RTC_ALARM_TIME_MASK_MINUTE	BIT(1)
-#define RTC_ALARM_TIME_MASK_HOUR	BIT(2)
-#define RTC_ALARM_TIME_MASK_MONTHDAY	BIT(3)
-#define RTC_ALARM_TIME_MASK_MONTH	BIT(4)
-#define RTC_ALARM_TIME_MASK_YEAR	BIT(5)
-#define RTC_ALARM_TIME_MASK_WEEKDAY	BIT(6)
-#define RTC_ALARM_TIME_MASK_YEARDAY	BIT(7)
-#define RTC_ALARM_TIME_MASK_NSEC	BIT(8)
+#define RTC_ALARM_TIME_MASK_SECOND	BIT(0) /**< Second */
+#define RTC_ALARM_TIME_MASK_MINUTE	BIT(1) /**< Minute */
+#define RTC_ALARM_TIME_MASK_HOUR	BIT(2) /**< Hour */
+#define RTC_ALARM_TIME_MASK_MONTHDAY	BIT(3) /**< Day of the month */
+#define RTC_ALARM_TIME_MASK_MONTH	BIT(4) /**< Month */
+#define RTC_ALARM_TIME_MASK_YEAR	BIT(5) /**< Year */
+#define RTC_ALARM_TIME_MASK_WEEKDAY	BIT(6) /**< Day of the week */
+#define RTC_ALARM_TIME_MASK_YEARDAY	BIT(7) /**< Day of the year */
+#define RTC_ALARM_TIME_MASK_NSEC	BIT(8) /**< Nanosecond */
 /**
  * @}
  */

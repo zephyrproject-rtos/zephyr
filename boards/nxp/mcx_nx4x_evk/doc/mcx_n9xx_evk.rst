@@ -41,10 +41,12 @@ Supported Features
 
 Shields for Supported Features
 ==============================
+
 Some features in the table above are tested with Zephyr shields.  These shields
 are tested on this board:
+
 - :ref:`lcd_par_s035` - supports the Display interface.  This board uses the
-MIPI_DBI interface of the shield, connected to the FlexIO on-chip peripheral.
+  MIPI_DBI interface of the shield, connected to the FlexIO on-chip peripheral.
 
 Dual Core samples
 *****************
@@ -360,10 +362,10 @@ Troubleshooting
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/mcx-arm-cortex-m/mcx-n-series-microcontrollers/mcx-n94x-54x-highly-integrated-multicore-mcus-with-on-chip-accelerators-intelligent-peripherals-and-advanced-security:MCX-N94X-N54X
 
 .. _MCX-N947 Datasheet:
-   https://www.nxp.com/docs/en/data-sheet/MCXNx4xDS.pdf
+   https://www.nxp.com/docs/en/data-sheet/MCXNP184M150F70.pdf
 
 .. _MCX-N947 Reference Manual:
-   https://www.nxp.com/webapp/Download?colCode=MCXNX4XRM
+   https://www.nxp.com/webapp/Download?colCode=MCXNP184M150F70RM
 
 .. _MCX-N9XX-EVK Website:
    https://www.nxp.com/design/design-center/development-boards-and-designs/MCX-N9XX-EVK

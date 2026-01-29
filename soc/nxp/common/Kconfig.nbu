@@ -3,7 +3,7 @@
 
 config NXP_NBU
 	bool
-	default y if BT || IEEE802154
+	default y if BT || IEEE802154 || NXP_IEEE802154_MAC
 	depends on DT_HAS_NXP_NBU_ENABLED
 	help
 	  NXP Narrow Band Unit interrupt initialization.

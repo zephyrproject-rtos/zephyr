@@ -23,6 +23,13 @@ static inline int z_vrfy_i2s_configure(const struct device *dev,
 	K_OOPS(k_usermode_from_copy(&config, (const void *)cfg_ptr,
 				sizeof(struct i2s_config)));
 
+	/* When frame_clk_freq is 0, the stream is being disabled/unconfigured
+	 * and other config fields are not used, so skip validation.
+	 */
+	if (config.frame_clk_freq == 0U) {
+		goto do_configure;
+	}
+
 	/* Check that the k_mem_slab provided is a valid pointer and that
 	 * the caller has permission on it
 	 */
@@ -37,6 +44,7 @@ static inline int z_vrfy_i2s_configure(const struct device *dev,
 		goto out;
 	}
 
+do_configure:
 	ret = z_impl_i2s_configure((const struct device *)dev, dir, &config);
 out:
 	return ret;

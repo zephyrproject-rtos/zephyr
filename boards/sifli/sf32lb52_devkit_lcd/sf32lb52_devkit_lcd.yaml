@@ -13,4 +13,7 @@ supported:
   - uart
   - gpio
   - watchdog
+  - bluetooth
+  - audio
+  - rtc
 vendor: sifli

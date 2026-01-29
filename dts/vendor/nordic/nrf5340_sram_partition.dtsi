@@ -15,23 +15,30 @@
 	 */
 	sram0_image: sram@0 {
 		/* Zephyr image(s) memory */
-		reg = <0x20000000 DT_SIZE_K(448)>;
-	};
-
-	sram0_s: sram@20000000 {
-		/* Secure image memory */
-		reg = <0x20000000 0x40000>;
-	};
-
-	sram0_ns: sram@20040000 {
-		/* Non-Secure image memory */
-		reg = <0x20040000 0x40000>;
-		ranges = <0x0 0x20040000 0x40000>;
+		reg = <0x0 DT_SIZE_K(448)>;
+		ranges = <0x0 0x0 0x70000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		sram0_ns_app: sram@0 {
-			/* Non-Secure image memory */
+		sram0_s: sram0_image@0 {
+			/* Secure image memory */
+			reg = <0x0 0x40000>;
+		};
+	};
+
+	/*
+	 * This is overlapping with the above part as this is used to set memory permissions to
+	 * non-secure, the above outer partition is used for applications without TF-M support.
+	 */
+	sram0_ns: sram@40000 {
+		/* Non-Secure image memory */
+		reg = <0x40000 0x40000>;
+		ranges = <0x0 0x40000 0x40000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		sram0_ns_app: sram0_ns@0 {
+			/* Non-Secure application memory */
 			reg = <0x0 0x30000>;
 		};
 	};

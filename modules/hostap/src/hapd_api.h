@@ -26,9 +26,9 @@ int hostapd_ap_config_params(const struct device *dev, struct wifi_ap_config_par
  *
  * @param reg_domain region domain parameters
  * @param dev Wi-Fi device
- * @return true for OK; false for ERROR
+ * @return 0 if OK; < 0 if error
  */
-bool hostapd_ap_reg_domain(const struct device *dev,
+int hostapd_ap_reg_domain(const struct device *dev,
 	struct wifi_reg_domain *reg_domain);
 
 #ifdef CONFIG_WIFI_NM_HOSTAPD_WPS
@@ -89,5 +89,36 @@ int hostapd_ap_sta_disconnect(const struct device *dev,
 int hostapd_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *params);
 #endif /* CONFIG_WIFI_NM_HOSTAPD_AP */
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
+
+/**
+ * @brief Enable or disable 11N for AP
+ *
+ * @param dev Wi-Fi interface name to use
+ * @param enable Enable or disable
+ * @return 0 for OK; -1 for ERROR
+ */
+int hostapd_11n_cfg(const struct device *dev, uint8_t enable);
+
+#if CONFIG_WIFI_NM_WPA_SUPPLICANT_11AC
+/**
+ * @brief Enable or disable 11AC for AP
+ *
+ * @param dev Wi-Fi interface name to use
+ * @param enable Enable or disable
+ * @return 0 for OK; -1 for ERROR
+ */
+int hostapd_11ac_cfg(const struct device *dev, uint8_t enable);
+#endif
+
+#if CONFIG_WIFI_NM_WPA_SUPPLICANT_11AX
+/**
+ * @brief Enable or disable 11AX for AP
+ *
+ * @param dev Wi-Fi interface name to use
+ * @param enable Enable or disable
+ * @return 0 for OK; -1 for ERROR
+ */
+int hostapd_11ax_cfg(const struct device *dev, uint8_t enable);
+#endif
 
 #endif /* __HAPD_API_H_ */

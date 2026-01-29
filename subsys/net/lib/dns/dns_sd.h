@@ -127,6 +127,7 @@ bool dns_sd_rec_match(const struct dns_sd_rec *record,
  * If there is no IPv6 address to advertise, then @p addr6 should be
  * NULL.
  *
+ * @param iface the network interface the query was received on
  * @param inst the DNS-SD record to advertise
  * @param addr4 pointer to the IPv4 address
  * @param addr6 pointer to the IPv6 address
@@ -136,8 +137,8 @@ bool dns_sd_rec_match(const struct dns_sd_rec *record,
  * @return on success, number of bytes written to @p buf
  * @return on failure, a negative errno value
  */
-int dns_sd_handle_ptr_query(const struct dns_sd_rec *inst,
-	const struct in_addr *addr4, const struct in6_addr *addr6,
+int dns_sd_handle_ptr_query(struct net_if *iface, const struct dns_sd_rec *inst,
+	const struct net_in_addr *addr4, const struct net_in6_addr *addr6,
 	uint8_t *buf, uint16_t buf_size);
 
 /**
@@ -155,7 +156,7 @@ int dns_sd_handle_ptr_query(const struct dns_sd_rec *inst,
  * @return on failure, a negative errno value
  */
 int dns_sd_handle_service_type_enum(const struct dns_sd_rec *service,
-	const struct in_addr *addr4, const struct in6_addr *addr6,
+	const struct net_in_addr *addr4, const struct net_in6_addr *addr6,
 	uint8_t *buf, uint16_t buf_size);
 
 /**

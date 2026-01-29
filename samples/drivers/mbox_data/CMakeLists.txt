@@ -20,9 +20,9 @@ if(CONFIG_BOARD_MIMXRT1170_EVK_MIMXRT1176_CM7 OR
    CONFIG_BOARD_IMX943_EVK_MIMX94398_M7_0 OR
    CONFIG_BOARD_IMX943_EVK_MIMX94398_M7_1 OR
    CONFIG_BOARD_IMX943_EVK_MIMX94398_M33)
-  message(STATUS "${BOARD}${BOARD_QUALIFIERS} compile as Main in this sample")
+  message(STATUS "${BOARD}/${BOARD_QUALIFIERS} compile as Main in this sample")
 else()
-  message(FATAL_ERROR "${BOARD}${BOARD_QUALIFIERS} is not supported for this sample")
+  message(FATAL_ERROR "${BOARD}/${BOARD_QUALIFIERS} is not supported for this sample")
 endif()
 
 project(mbox_data_ipc)

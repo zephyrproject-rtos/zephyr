@@ -9,6 +9,11 @@
 #include <stdlib.h>
 #include "tests.h"
 
+#ifndef CONFIG_INTEL_ADSP_IPC_OLD_INTERFACE
+#include <zephyr/ipc/ipc_service.h>
+#include <zephyr/ipc/backends/intel_adsp_host_ipc.h>
+#endif
+
 #ifdef CONFIG_INTEL_ADSP_IPC_OLD_INTERFACE
 
 static volatile uint32_t old_host_dt;
@@ -27,15 +32,16 @@ struct intel_adsp_ipc_ept_priv_data test_priv_data;
 
 void clock_ipc_receive_cb(const void *data, size_t len, void *priv)
 {
-	if (len == INTEL_ADSP_IPC_CB_MSG) {
-		const struct intel_adsp_ipc_msg *msg = (const struct intel_adsp_ipc_msg *)data;
-		struct intel_adsp_ipc_ept_priv_data *tpd =
-			(struct intel_adsp_ipc_ept_priv_data *)priv;
+	struct intel_adsp_ipc_ept_priv_data *tpd =
+		(struct intel_adsp_ipc_ept_priv_data *)priv;
+	const uint32_t *msg = (const uint32_t *)data;
 
-		tpd->priv = (void *)msg->data;
+	zassert_equal(len, sizeof(uint32_t) * 2, "unexpected IPC message length");
+	zassert_not_null(data, "IPC payload pointer is NULL");
 
-		tpd->cb_ret = INTEL_ADSP_IPC_CB_RET_OKAY;
-	}
+	/* Store returned timestamp from the extended payload word. */
+	tpd->priv = (void *)(uintptr_t)msg[1];
+	tpd->msg_done = true;
 }
 
 struct ipc_ept_cfg clock_ipc_ept_cfg = {
@@ -57,6 +63,8 @@ ZTEST(intel_adsp, test_clock_calibrate)
 
 #ifdef CONFIG_INTEL_ADSP_IPC_OLD_INTERFACE
 	host_dt = &old_host_dt;
+	/* Set handler early so all messages get ACK'd, even if we don't care about the response */
+	intel_adsp_ipc_set_message_handler(INTEL_ADSP_IPC_HOST_DEV, clock_msg, (void *)host_dt);
 #else
 	int ret;
 
@@ -73,9 +81,6 @@ ZTEST(intel_adsp, test_clock_calibrate)
 
 	k_msleep(1000);
 	*host_dt = 0;
-#ifdef CONFIG_INTEL_ADSP_IPC_OLD_INTERFACE
-	intel_adsp_ipc_set_message_handler(INTEL_ADSP_IPC_HOST_DEV, clock_msg, (void *)host_dt);
-#endif /* CONFIG_INTEL_ADSP_IPC_OLD_INTERFACE */
 
 	/* Now do it again, but with a handler to catch the result */
 	cyc1 = k_cycle_get_32();

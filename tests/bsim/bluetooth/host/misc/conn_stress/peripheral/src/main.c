@@ -29,7 +29,6 @@ LOG_MODULE_REGISTER(peripheral, LOG_LEVEL_INF);
 #include "bstests.h"
 #include "bs_types.h"
 #include "bs_tracing.h"
-#include "bstests.h"
 #include "bs_pc_backchannel.h"
 #include "argparse.h"
 
@@ -472,6 +471,12 @@ void test_peripheral_main(void)
 				disconnect();
 			}
 		}
+	}
+
+	err = bt_gatt_cb_unregister(&gatt_callbacks);
+	if (err != 0) {
+		TEST_FAIL("Unregister GATT callbacks failed (%d)", err);
+		return;
 	}
 
 	TEST_PASS("Peripheral tests passed");

@@ -1176,7 +1176,13 @@ no_cached_entry:
 			goto end;
 		}
 
-		if (fs->ate_wra >= (fs->data_wra + required_space)) {
+		/* ATEs grow backwards within a sector. In delete-only scenarios,
+		 * a sector may contain only delete ATEs and no data entries.
+		 * Prevent ATE writes at current start of sector to avoid crossing
+		 * into the previous sector.
+		 */
+		if (fs->ate_wra >= (fs->data_wra + required_space) &&
+		    (fs->ate_wra & ADDR_OFFS_MASK) != 0) {
 
 			rc = nvs_flash_wrt_entry(fs, id, data, len);
 			if (rc) {

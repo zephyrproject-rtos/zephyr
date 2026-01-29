@@ -27,6 +27,27 @@ config PM
 	  power management subsystem of the number of ticks until the next kernel
 	  timer is due to expire.
 
+config PM_CUSTOM_TICKS_HOOK
+	bool "Custom ticks hook for PM policy"
+	depends on PM
+	help
+	  This option enables a policy-level hook that can provide a
+	  custom "next event" tick value during pm_system_suspend().
+
+	  This is intended for cases where the next event timing is derived
+	  from proprietary or complex data sources that are not practical
+	  to translate into the standard PM policy event list. Typical
+	  examples include:
+	  - timing information stored in hardware registers
+	  - binary-only modules
+	  - complex scheduling data structures
+
+	  When enabled, the PM core will call pm_policy_next_custom_ticks()
+	  to obtain an additional candidate tick value, and will consider
+	  it when choosing the earliest expiry.
+
+	  If unsure, say N.
+
 rsource "policy/Kconfig"
 
 if PM

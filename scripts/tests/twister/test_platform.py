@@ -10,7 +10,7 @@ from contextlib import nullcontext
 from unittest import mock
 
 import pytest
-from pykwalify.errors import SchemaError
+from jsonschema.exceptions import ValidationError
 from twisterlib.platform import Platform, Simulator, generate_platforms
 
 TESTDATA_1 = [
@@ -131,12 +131,14 @@ TESTDATA_2 = [
     (
         ['m0'],
         None,
+        None,
         {
             'p1e1/s1', 'p1e2/s1', 'p2/s1', 'p3@A/s2/c1', 'p3@B/s2/c1',
         },
     ),
     (
         ['m0', 'm1'],
+        None,
         None,
         {
             'p1e1/s1', 'p1e2/s1', 'p2/s1', 'p3@A/s2/c1', 'p3@B/s2/c1',
@@ -146,6 +148,7 @@ TESTDATA_2 = [
     (
         ['m0', 'm1', 'm2'],
         None,
+        None,
         {
             'p1e1/s1', 'p1e2/s1', 'p2/s1', 'p3@A/s2/c1', 'p3@B/s2/c1',
             'p1e1/s1/v1', 'p1e1/s1/v2', 'p1e2/s1/v1', 'p2/s1/v1',
@@ -154,23 +157,26 @@ TESTDATA_2 = [
     ),
     (
         ['m0', 'm3'],
-        Exception("Duplicate platform identifier p1e1/s1 found"),
+        Exception,
+        "Duplicate platform identifier p1e1/s1 found",
         None,
     ),
     (
         ['m0', 'm1', 'm4'],
-        Exception("Duplicate platform identifier p1e2/s1/v1 found"),
+        Exception,
+        "Duplicate platform identifier p1e2/s1/v1 found",
         None,
     ),
     (
         ['m0', 'm5'],
-        SchemaError(), # Unknown message as this is raised externally
+        ValidationError, # Unknown message as this is raised externally
+        None,
         None,
     ),
 ]
 
 @pytest.mark.parametrize(
-    'roots, expected_exception, expected_platform_names',
+    'roots, expected_exception, expected_exception_msg, expected_platform_names',
     TESTDATA_2,
     ids=[
         'default board root',
@@ -185,16 +191,19 @@ def test_generate_platforms(
     tmp_path,
     roots,
     expected_exception,
+    expected_exception_msg,
     expected_platform_names,
 ):
     tmp_files = {
         'm0/boards/zephyr/p1/board.yml': """\
 boards:
   - name: p1e1
+    full_name: p1e1
     vendor: zephyr
     socs:
       - name: s1
   - name: p1e2
+    full_name: p1e2
     vendor: zephyr
     socs:
       - name: s1
@@ -211,6 +220,7 @@ variants:
         'm0/boards/zephyr/p2/board.yml': """\
 boards:
   - name: p2
+    full_name: p2
     vendor: zephyr
     socs:
       - name: s1
@@ -226,6 +236,7 @@ testing:
         'm0/boards/arm/p3/board.yml': """\
 board:
   name: p3
+  full_name: p3
   vendor: arm
   revision:
     format: letter
@@ -296,6 +307,7 @@ identifier: p2/s1/v1
 boards:
   - extend: p3
   - name: p4
+    full_name: p4
     vendor: misc
     socs:
       - name: s1
@@ -351,13 +363,13 @@ board:
         (tmp_path / filename).write_text(content)
 
     roots = list(map(tmp_path.joinpath, roots))
-    with pytest.raises(type(expected_exception)) if \
+    with pytest.raises(expected_exception) if \
           expected_exception else nullcontext() as exception:
         platforms = list(generate_platforms(board_roots=roots, soc_roots=roots, arch_roots=roots))
 
     if expected_exception:
-        if expected_exception.args:
-            assert str(expected_exception) == str(exception.value)
+        if expected_exception_msg:
+            assert expected_exception_msg == str(exception.value)
         return
 
     platform_names = {platform.name for platform in platforms}

@@ -29,13 +29,14 @@ For more information about P3T1755DP-ARD see these NXP documents:
 
 Hardware Connection
 *******************
-- Shield board p3t1755dp_ard in I3C mode
+
+Shield board p3t1755dp_ard in I3C mode
    J10, J11, J12 3-5, the i3c addr is 0x4800000236152a0090
    JP2, Jp3 1-2
    I3C is from J13
    The VDD from arduino is 3v3 JP1 2-3
 
-- Shield board p3t1755dp_ard in I2C mode
+Shield board p3t1755dp_ard in I2C mode
    J10, J11, J12 3-5, the i2c addr is 0x48
    JP2, Jp3 2-3
    The I2C is from Arduino J5 pin9(SCL_ARD) pin10(SDA_ARD)

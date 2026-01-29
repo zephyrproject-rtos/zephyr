@@ -94,7 +94,7 @@ static void sdhc_max32_init_props(const struct device *dev)
 	sdhc_data->props.host_caps.sd_base_clk = 0x00;
 	sdhc_data->props.host_caps.max_blk_len = 0b10;
 	sdhc_data->props.host_caps.bus_8_bit_support = false;
-	sdhc_data->props.host_caps.bus_4_bit_support = false;
+	sdhc_data->props.bus_4_bit_support = false;
 	sdhc_data->props.host_caps.adma_2_support = true;
 	sdhc_data->props.host_caps.high_spd_support = true;
 	sdhc_data->props.host_caps.sdma_support = true;
@@ -119,8 +119,8 @@ static void sdhc_max32_init_props(const struct device *dev)
 	sdhc_data->props.host_caps.clk_multiplier = 0;
 	sdhc_data->props.host_caps.adma3_support = false;
 	sdhc_data->props.host_caps.vdd2_180_support = false;
-	sdhc_data->props.host_caps.hs200_support = false;
-	sdhc_data->props.host_caps.hs400_support = false;
+	sdhc_data->props.hs200_support = false;
+	sdhc_data->props.hs400_support = false;
 	sdhc_data->props.power_delay = sdhc_config->power_delay_ms;
 }
 

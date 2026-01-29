@@ -172,8 +172,12 @@ static bool prov_check_method(struct bt_mesh_dev_capabilities *caps)
 				return false;
 			}
 		} else {
+#if defined CONFIG_BT_MESH_PROV_OOB_API_LEGACY
 			if (!bt_mesh_prov->output_number) {
-				LOG_WRN("Not support output number");
+#else
+			if (!bt_mesh_prov->output_numeric) {
+#endif
+				LOG_WRN("Not support output numeric");
 				return false;
 			}
 		}

@@ -310,11 +310,18 @@ static int ids_print(const struct log_output *output,
 	}
 
 	if (IS_ENABLED(CONFIG_LOG_THREAD_ID_PREFIX) && thread_on) {
-		if (IS_ENABLED(CONFIG_THREAD_NAME)) {
-			total += print_formatted(output, "[%s] ",
-				tid == NULL ? "irq" : k_thread_name_get(tid));
+		if (tid == NULL) {
+			total += print_formatted(output, "[irq] ");
+		} else if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+			total += print_formatted(output,
+					"[%3d %s] ",
+					k_thread_priority_get(tid),
+					k_thread_name_get(tid));
 		} else {
-			total += print_formatted(output, "[%p] ", tid);
+			total += print_formatted(output,
+					"[%3d %p] ",
+					k_thread_priority_get(tid),
+					tid);
 		}
 	}
 
@@ -691,12 +698,14 @@ void log_output_msg_process(const struct log_output *output,
 	uint8_t domain_id = log_msg_get_domain(msg);
 	int16_t source_id = log_msg_get_source_id(msg);
 
+	const char *dname = IS_ENABLED(CONFIG_LOG_DOMAIN_NAME_PREFIX) ?
+		log_domain_name_get(domain_id) : NULL;
 	const char *sname = source_id >= 0 ? log_source_name_get(domain_id, source_id) : NULL;
 	size_t plen, dlen;
 	uint8_t *package = log_msg_get_package(msg, &plen);
 	uint8_t *data = log_msg_get_data(msg, &dlen);
 
-	log_output_process(output, timestamp, NULL, sname, (k_tid_t)log_msg_get_tid(msg), level,
+	log_output_process(output, timestamp, dname, sname, (k_tid_t)log_msg_get_tid(msg), level,
 			   plen > 0 ? package : NULL, data, dlen, flags);
 }
 

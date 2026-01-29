@@ -23,7 +23,7 @@ ZTEST_USER_F(net_socketpair, test_close_one_end_and_write_to_the_other)
 		zassert_equal(res, 0, "close(fixture->sv[%u]) failed: %d", i, errno);
 		fixture->sv[(!i) & 1] = -1;
 
-		res = zsock_socketpair(AF_UNIX, SOCK_STREAM, 0, fixture->sv);
+		res = zsock_socketpair(NET_AF_UNIX, NET_SOCK_STREAM, 0, fixture->sv);
 		zassert_equal(res, 0, "socketpair() failed: %d", errno);
 	}
 }
@@ -60,7 +60,7 @@ ZTEST_USER_F(net_socketpair, test_close_one_end_and_read_from_the_other)
 		zassert_equal(res, 0, "close(fixture->sv[%u]) failed: %d", i, errno);
 		fixture->sv[(!i) & 1] = -1;
 
-		res = zsock_socketpair(AF_UNIX, SOCK_STREAM, 0, fixture->sv);
+		res = zsock_socketpair(NET_AF_UNIX, NET_SOCK_STREAM, 0, fixture->sv);
 		zassert_equal(res, 0, "socketpair() failed: %d", errno);
 	}
 }

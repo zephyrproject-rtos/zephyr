@@ -279,7 +279,7 @@ Image configuration script
 ==========================
 
 An image configuration script is a CMake file that can be used to configure an image with common
-configuration values, multiple can be used per image, the configuration should be transferrable to
+configuration values, multiple can be used per image, the configuration should be transferable to
 different images to correctly configure them based upon options set in sysbuild. MCUboot
 configuration options are configured in both the application the MCUboot image using this method
 which allows sysbuild to be the central location for things like the signing key which are then

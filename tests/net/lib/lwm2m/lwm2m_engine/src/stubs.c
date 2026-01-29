@@ -26,7 +26,7 @@ DEFINE_FAKE_VALUE_FUNC(int64_t, engine_observe_shedule_next_event, struct observ
 		       const int64_t);
 DEFINE_FAKE_VALUE_FUNC(int, handle_request, struct coap_packet *, struct lwm2m_message *);
 DEFINE_FAKE_VOID_FUNC(lwm2m_udp_receive, struct lwm2m_ctx *, uint8_t *, uint16_t,
-		      struct sockaddr *);
+		      struct net_sockaddr *);
 DEFINE_FAKE_VALUE_FUNC(bool, lwm2m_rd_client_is_registred, struct lwm2m_ctx *);
 DEFINE_FAKE_VOID_FUNC(lwm2m_engine_context_close, struct lwm2m_ctx *);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_get_res_buf, const struct lwm2m_obj_path *, void **, uint16_t *,
@@ -41,7 +41,7 @@ DEFINE_FAKE_VALUE_FUNC(int, lwm2m_get_bool, const struct lwm2m_obj_path *, bool 
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_delete_obj_inst, uint16_t, uint16_t);
 DEFINE_FAKE_VOID_FUNC(lwm2m_clear_block_contexts);
 DEFINE_FAKE_VALUE_FUNC(int, lwm2m_security_mode, struct lwm2m_ctx *);
-DEFINE_FAKE_VALUE_FUNC(int, z_impl_zsock_setsockopt, int, int, int, const void *, socklen_t);
+DEFINE_FAKE_VALUE_FUNC(int, z_impl_zsock_setsockopt, int, int, int, const void *, net_socklen_t);
 DEFINE_FAKE_VOID_FUNC(engine_update_tx_time);
 DEFINE_FAKE_VALUE_FUNC(bool, coap_block_has_more, struct coap_packet *);
 DEFINE_FAKE_VOID_FUNC(lwm2m_rd_client_hint_socket_state, struct lwm2m_ctx *,
@@ -94,10 +94,10 @@ int z_impl_zsock_socketpair(int family, int type, int proto, int *sv)
 	return 0;
 }
 
-DEFINE_FAKE_VALUE_FUNC(int, z_impl_zsock_connect, int, const struct sockaddr *, socklen_t);
+DEFINE_FAKE_VALUE_FUNC(int, z_impl_zsock_connect, int, const struct net_sockaddr *, net_socklen_t);
 
 ssize_t z_impl_zsock_sendto(int sock, const void *buf, size_t len, int flags,
-			    const struct sockaddr *dest_addr, socklen_t addrlen)
+			    const struct net_sockaddr *dest_addr, net_socklen_t addrlen)
 {
 	if (sock == PAIR_OUT) {
 		return 1;
@@ -110,7 +110,7 @@ ssize_t z_impl_zsock_sendto(int sock, const void *buf, size_t len, int flags,
 }
 
 ssize_t z_impl_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
-			      struct sockaddr *src_addr, socklen_t *addrlen)
+			      struct net_sockaddr *src_addr, net_socklen_t *addrlen)
 {
 	if (sock == PAIR_IN) {
 		return 1;

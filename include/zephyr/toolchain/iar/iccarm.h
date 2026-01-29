@@ -121,10 +121,14 @@ do {                                                                    \
 				"." Z_STRINGIFY(c))))
 #define __in_section(a, b, c) ___in_section(a, b, c)
 
-#define __in_section_unique(seg) ___in_section(seg, __FILE__, __COUNTER__)
+#define ___in_section_unique(a, b) \
+	__attribute__((section("." Z_STRINGIFY(a)		\
+				"." __FILE__			\
+				"." Z_STRINGIFY(b))))
 
-#define __in_section_unique_named(seg, name) \
-	___in_section(seg, __FILE__, name)
+#define __in_section_unique(seg) ___in_section_unique(seg, __COUNTER__)
+
+#define __in_section_unique_named(seg, name) ___in_section_unique(seg, name)
 
 /* When using XIP, using '__ramfunc' places a function into RAM instead
  * of FLASH. Make sure '__ramfunc' is defined only when
@@ -248,7 +252,7 @@ do {                                                                    \
 #define __WARN1(s) __PRAGMA(message = #s)
 
 /* Generic message */
-#ifndef CONFIG_DEPRECATION_TEST
+#if !(defined(CONFIG_DEPRECATION_TEST) || !defined(CONFIG_WARN_DEPRECATED))
 #define __DEPRECATED_MACRO __WARN("Macro is deprecated")
 #else
 #define __DEPRECATED_MACRO

@@ -38,7 +38,7 @@ endif()
 ExternalProject_Add(core
     SOURCE_DIR ${CMAKE_CURRENT_LIST_DIR}/core
     CMAKE_ARGS
-      -DBOARD:STRING=${BOARD}${BOARD_QUALIFIERS}
+      -DBOARD:STRING=${BOARD}/${BOARD_QUALIFIERS}
       -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_BINARY_DIR}/core
       ${fail_test_config}
 )

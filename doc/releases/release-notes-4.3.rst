@@ -26,12 +26,53 @@
 
 .. _zephyr_4.3:
 
-Zephyr 4.3.0 (Working Draft)
-############################
+Zephyr 4.3.0
+############
 
 We are pleased to announce the release of Zephyr version 4.3.0.
 
 Major enhancements with this release include:
+
+**USB Device "Next" stack is now the default**
+  The new :ref:`USB device stack <usb_device_stack_next>`, built on the modern UDC (USB Device
+  Controller) API, replaces the legacy stack and brings support for multiple simultaneous
+  controllers, runtime configuration, and overall better architecture.
+  The legacy stack is now deprecated and will be removed in Zephyr 4.5.
+
+**CPU load and dynamic frequency scaling subsystems**
+  A new experimental :ref:`CPU frequency <cpu_freq>` scaling subsystem enables dynamic,
+  policy-driven, clock adjustments to balance power consumption and performance.
+  Alongside it, a new :ref:`cpu_load` subsystem allows users to obtain CPU usage metrics based on
+  scheduler statistics, which can be used to drive the frequency scaling policy.
+
+**Instrumentation Subsystem**
+  A new :ref:`instrumentation subsystem <instrumentation>` simplifies tracing and profiling of
+  Zephyr applications by leveraging compiler-managed function instrumentation, allowing the
+  recording of call-graph traces and statistical profiles at runtime.
+
+**OCPP 1.6 library**
+  A new :ref:`OCPP (Open Charge Point Protocol) <ocpp_interface>` library enables EV charging
+  station development with Zephyr. The library implements OCPP 1.6 Charge Point functionality
+  over WebSocket, supporting core profile operations including authorization, transaction
+  management, and meter value reporting for communication with Central System servers.
+
+**Twister Display Harness**
+  Twister can now :ref:`validate on-target display output <twister_display_capture_harness>` by
+  capturing frames from a USB video camera and matching them against pre-recorded visual
+  "fingerprints".
+
+**Developer Experience Improvements**
+  Several new tools have been introduced to help with common development and troubleshooting tasks:
+
+  - :ref:`dtdoctor` to help diagnose Devicetree build errors.
+  - :ref:`traceconfig <kconfig_traceconfig>` build target to help understand where Kconfig symbols
+    come from and their final values.
+  - :ref:`Interactive footprint charts <footprint_tools_plot>` to visualize RAM/ROM usage of an
+    application.
+
+**Expanded Board Support**
+  Support for 105 :ref:`new boards <boards_added_in_zephyr_4_3>` and 39
+  :ref:`new shields <shields_added_in_zephyr_4_3>` has been added in this release.
 
 An overview of the changes required or recommended when migrating your application from Zephyr
 v4.2.0 to Zephyr v4.3.0 can be found in the separate :ref:`migration guide<migration_4.3>`.
@@ -42,7 +83,16 @@ Security Vulnerability Related
 ******************************
 The following CVEs are addressed by this release:
 
+* :cve:`2025-9408` `Zephyr project bug tracker GHSA-3r6j-5mp3-75wr
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-3r6j-5mp3-75wr>`_
+* :cve:`2025-9557`: Under embargo until 2025-11-24
+* :cve:`2025-9558`: Under embargo until 2025-11-24
 * :cve:`2025-12035`: Under embargo until 2025-12-13
+* :cve:`2025-12899`: Under embargo until 2026-01-28
+* :cve:`2025-59438` `Padding oracle through timing of cipher error reporting
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-10-invalid-padding-error/>`_
+* :cve:`2025-54764` `Side channel in RSA key generation and operations (SSBleed, M-Step)
+  <https://mbed-tls.readthedocs.io/en/latest/security-advisories/mbedtls-security-advisory-2025-10-ssbleed-mstep/>`_
 
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
@@ -65,15 +115,15 @@ Removed APIs and options
 * The legacy pipe object API was removed. Use the new pipe API instead.
 * ``bt_le_set_auto_conn``
 * ``CONFIG_BT_BUF_ACL_RX_COUNT``
-* ``ok`` enum value has now been removed completely from ``base.yaml`` binding ``status`` property in devicetree.
-* STM32 LPTIM clock source selection through Kconfig was removed. Device Tree must now be used instead.
-  Affected Kconfig symbols: ``CONFIG_STM32_LPTIM_CLOCK_LSI`` / ``CONFIG_STM32_LPTIM_CLOCK_LSI``
+* ``ok`` enum value has now been removed completely from ``base.yaml`` binding ``status`` property in Devicetree.
+* STM32 LPTIM clock source selection through Kconfig was removed. Devicetree must now be used instead.
+  Affected Kconfig symbols: :kconfig:option:`CONFIG_STM32_LPTIM_CLOCK_LSI` / :kconfig:option:`CONFIG_STM32_LPTIM_CLOCK_LSE`
 
 Deprecated APIs and options
 ===========================
 
 * :dtcompatible:`maxim,ds3231` is deprecated in favor of :dtcompatible:`maxim,ds3231-rtc`.
-* Providing a third agument to :c:macro:`SPI_CONFIG_DT`, :c:macro:`SPI_CONFIG_DT_INST`,
+* Providing a third argument to :c:macro:`SPI_CONFIG_DT`, :c:macro:`SPI_CONFIG_DT_INST`,
   :c:macro:`SPI_DT_SPEC_GET`, :c:macro:`SPI_DT_SPEC_INST_GET` is deprecated. Providing a
   second argument to :c:macro:`SPI_CS_CONTROL_INIT` is deprecated. Use new DT properties
   ``spi-cs-setup-delay-ns`` and ``spi-cs-hold-delay-ns`` to specify delay instead.
@@ -86,9 +136,6 @@ Deprecated APIs and options
   preferred for automatic updates.
 
 * :kconfig:option:`CONFIG_POSIX_READER_WRITER_LOCKS` is deprecated. Use :kconfig:option:`CONFIG_POSIX_RW_LOCKS` instead.
-
-* :c:func:`bt_ctlr_set_public_addr` is deprecated in favor of using
-  :c:struct:`bt_hci_cp_vs_write_bd_addr` for setting the public Bluetooth device address.
 
 * :kconfig:option:`CONFIG_JWT_SIGN_RSA_LEGACY` is deprecated. Please switch to the
   PSA Crypto API based alternative (i.e. :kconfig:option:`CONFIG_JWT_SIGN_RSA_PSA`).
@@ -124,6 +171,13 @@ New APIs and options
     * :c:func:`z_arm_save_scb_context` / :c:func:`z_arm_restore_scb_context`
     * :c:func:`z_arm_save_mpu_context` / :c:func:`z_arm_restore_mpu_context`
     * Existing :c:func:`z_arm_save_fp_context` and :c:func:`z_arm_save_fp_context` have also been updated
+
+  * Xtensa
+
+    * :kconfig:option:`CONFIG_XTENSA_HIFI_SHARING_MODEL`
+    * :kconfig:option:`CONFIG_XTENSA_EAGER_HIFI_SHARING`
+    * :kconfig:option:`CONFIG_XTENSA_LAZY_HIFI_SHARING`
+    * :kconfig:option:`CONFIG_XTENSA_EXCEPTION_ENTER_GDB`
 
 * Bluetooth
 
@@ -175,9 +229,53 @@ New APIs and options
     * :kconfig:option:`CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_AL_88`
     * :kconfig:option:`CONFIG_SDL_DISPLAY_COLOR_TINT`
 
+* Ethernet
+
+   * The devicetree property ``default-speeds`` was added to most of the ethernet phys to configure
+     the advertised speeds for auto-negotiation during initialization of the driver.
+
 * Haptics
 
   * :kconfig:option:`CONFIG_HAPTICS_SHELL`
+
+* Instrumentation subsystem
+
+  * Introduced instrumentation subsystem
+
+    * :kconfig:option:`CONFIG_INSTRUMENTATION`
+    * :kconfig:option:`CONFIG_INSTRUMENTATION_MODE_CALLGRAPH`
+    * :kconfig:option:`CONFIG_INSTRUMENTATION_MODE_CALLGRAPH_BUFFER_SIZE`
+    * :kconfig:option:`CONFIG_INSTRUMENTATION_MODE_CALLGRAPH_BUFFER_OVERWRITE`
+    * :kconfig:option:`CONFIG_INSTRUMENTATION_MODE_STATISTICAL`
+    * :kconfig:option:`CONFIG_INSTRUMENTATION_MODE_STATISTICAL_MAX_NUM_FUNC`
+    * :kconfig:option:`CONFIG_INSTRUMENTATION_MODE_STATISTICAL_MAX_CALL_DEPTH`
+    * :kconfig:option:`CONFIG_INSTRUMENTATION_TRIGGER_FUNCTION`
+    * :kconfig:option:`CONFIG_INSTRUMENTATION_STOPPER_FUNCTION`
+    * :kconfig:option:`CONFIG_INSTRUMENTATION_EXCLUDE_FUNCTION_LIST`
+    * :kconfig:option:`CONFIG_INSTRUMENTATION_EXCLUDE_FILE_LIST`
+    * :c:struct:`instr_header`
+    * :c:struct:`instr_event_context`
+    * :c:struct:`instr_record`
+    * :c:func:`instr_tracing_supported`
+    * :c:func:`instr_profiling_supported`
+    * :c:func:`instr_fundamentals_initialized`
+    * :c:func:`instr_init`
+    * :c:func:`instr_initialized`
+    * :c:func:`instr_enabled`
+    * :c:func:`instr_enable`
+    * :c:func:`instr_disable`
+    * :c:func:`instr_turn_on`
+    * :c:func:`instr_turn_off`
+    * :c:func:`instr_turned_on`
+    * :c:func:`instr_trace_enabled`
+    * :c:func:`instr_profile_enabled`
+    * :c:func:`instr_dump_buffer_uart`
+    * :c:func:`instr_dump_deltas_uart`
+    * :c:func:`instr_event_handler`
+    * :c:func:`instr_set_trigger_func`
+    * :c:func:`instr_set_stop_func`
+    * :c:func:`instr_get_trigger_func`
+    * :c:func:`instr_get_stop_func`
 
 * Kernel
 
@@ -236,6 +334,11 @@ New APIs and options
     * :kconfig:option:`CONFIG_HAWKBIT_CONFIRM_IMG_ON_INIT`
     * :kconfig:option:`CONFIG_HAWKBIT_ERASE_SECOND_SLOT_ON_CONFIRM`
 
+  * MCUmgr
+
+    * :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UDP_DTLS`
+    * :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_ALLOW_CONFIRM_NON_ACTIVE_SLOT`
+
 * Modem
 
   * :kconfig:option:`CONFIG_MODEM_DEDICATED_WORKQUEUE`
@@ -259,11 +362,85 @@ New APIs and options
 
     * :c:struct:`coap_client_response_data`
     * :c:member:`coap_client_request.payload_cb`
+    * :kconfig:option:`CONFIG_COAP_CLIENT_MAX_PATH_LENGTH`
+    * :kconfig:option:`CONFIG_COAP_CLIENT_MAX_EXTRA_OPTIONS`
+
+  * Connection manager
+
+    * :c:macro:`NET_EVENT_CONN_IF_IDLE_TIMEOUT`
+    * :c:func:`conn_mgr_if_set_idle_timeout`
+    * :c:func:`conn_mgr_if_get_idle_timeout`
+    * :c:func:`conn_mgr_if_used`
+
+  * DNS
+
+    * :c:enumerator:`DNS_QUERY_TYPE_CNAME`
+    * :c:enumerator:`DNS_QUERY_TYPE_TXT`
+    * :c:enumerator:`DNS_QUERY_TYPE_SRV`
+    * :c:func:`dns_resolve_enable_packet_forwarding`
+    * :c:func:`dns_resolve_remove_server_addresses`
+
+  * HTTP
+
+    * :kconfig:option:`CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE`
+    * :c:struct:`http_service_config`
+
+  * IPv6
+
+    * :kconfig:option:`CONFIG_NET_IPV6_NS_TIMEOUT`
+    * :c:func:`net_ipv6_get_addr_mcast_scope`
+
+  * LwM2M
+
+    * :c:type:`lwm2m_cache_filter_cb_t`
+    * :c:func:`lwm2m_set_cache_filter`
+
+  * MQTT-SN
+
+    * :c:func:`mqtt_sn_predefine_topic`
+    * :c:func:`mqtt_sn_update_will_topic`
+    * :c:func:`mqtt_sn_update_will_message`
+    * :c:func:`mqtt_sn_define_short_topic`
+
+  * Misc
+
+    * :kconfig:option:`CONFIG_NET_LATMON`
+    * :kconfig:option:`CONFIG_NETMIDI2_HOST`
+    * :kconfig:option:`CONFIG_OCPP`
+    * :c:member:`npf_rule.priority`
+    * :c:macro:`NPF_PRIORITY`
+    * :kconfig:option:`CONFIG_NET_CONFIG_CLOCK_SNTP_SET_RTC`
+    * :c:func:`ppp_peer_async_control_character_map`
+
+  * OpenThread
+
+    * :kconfig:option:`CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER`
+    * :kconfig:option:`CONFIG_OPENTHREAD_BORDER_ROUTING_DHCP6_PD_CLIENT`
+    * :kconfig:option:`CONFIG_OPENTHREAD_CHANNEL_MONITOR_AUTO_START`
+    * :kconfig:option:`CONFIG_OPENTHREAD_MAC_BEACON_PAYLOAD_PARSING`
+    * :kconfig:option:`CONFIG_OPENTHREAD_MULTIPLE_INSTANCE_NUM`
+    * :kconfig:option:`CONFIG_OPENTHREAD_PLATFORM_RADIO_COEX_ENABLE`
+    * :kconfig:option:`CONFIG_OPENTHREAD_PLATFORM_USEC_TIMER`
+    * :kconfig:option:`CONFIG_OPENTHREAD_RCP_RESTORATION_MAX_COUNT`
+    * :kconfig:option:`CONFIG_OPENTHREAD_SRP_SERVER_FAST_START`
+    * :kconfig:option:`CONFIG_OPENTHREAD_TREL_MANAGE_DNSSD`
 
   * Sockets
 
     * :c:func:`zsock_listen` now implements the ``backlog`` parameter support. The TCP server
       socket will limit the number of pending incoming connections to that value.
+    * :c:macro:`IP_RECVTTL`
+    * :c:macro:`IPV6_PKTINFO`
+    * :c:macro:`IPV6_RECVHOPLIMIT`
+    * :c:macro:`IPV6_HOPLIMIT`
+
+  * Wi-Fi
+
+    * :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_DEBUG_SHOW_KEYS`
+    * Set enterprise crypto insecure because certificate validation is disabled.
+    * If the usage mode option has AP enabled, then automatically enable AP mode.
+    * Add configuration options for background scanning (bgscan) in wpa_supplicant.
+    * Add support for multiple virtual interfaces (VIF).
 
 * Newlib
 
@@ -281,7 +458,7 @@ New APIs and options
    * :c:func:`pm_device_driver_deinit`
    * :kconfig:option:`CONFIG_PM_DEVICE_RUNTIME_DEFAULT_ENABLE`
    * :kconfig:option:`CONFIG_PM_S2RAM` has been refactored to be promptless. The application now
-     only needs to enable any "suspend-to-ram" power state in the devicetree.
+     only needs to enable any "suspend-to-ram" power state in the Devicetree.
    * The :kconfig:option:`PM_S2RAM_CUSTOM_MARKING` has been renamed to
      :kconfig:option:`HAS_PM_S2RAM_CUSTOM_MARKING` and refactored to be promptless. This option
      is now selected by SoCs if they need it for their "suspend-to-ram" implementations.
@@ -335,6 +512,8 @@ New APIs and options
 
 .. zephyr-keep-sorted-stop
 
+.. _boards_added_in_zephyr_4_3:
+
 New Boards
 **********
 
@@ -362,16 +541,25 @@ New Boards
 
 * Ai-Thinker Co., Ltd.
 
-   * :zephyr:board:`ai_m62_12f` (``ai_m62_12f``)
+   * :zephyr:board:`ai_m62_12f_kit` (``ai_m62_12f_kit``)
    * :zephyr:board:`esp32_cam` (``esp32_cam``)
 
 * Ambiq Micro, Inc.
 
    * :zephyr:board:`apollo2_evb` (``apollo2_evb``)
 
+* Analog Devices, Inc.
+
+   * :zephyr:board:`max32658evkit` (``max32658evkit``)
+
 * Arduino
 
    * :zephyr:board:`arduino_uno_q` (``arduino_uno_q``)
+
+* Core Devices LLC
+
+   * :zephyr:board:`p2d` (``p2d``)
+   * :zephyr:board:`pt2` (``pt2``)
 
 * DFRobot
 
@@ -408,6 +596,7 @@ New Boards
 * Infineon Technologies
 
    * :zephyr:board:`kit_psc3m5_evk` (``kit_psc3m5_evk``)
+   * :zephyr:board:`kit_pse84_ai` (``kit_pse84_ai``)
    * :zephyr:board:`kit_pse84_eval` (``kit_pse84_eval``)
 
 * Intel Corporation
@@ -418,10 +607,14 @@ New Boards
 
    * :zephyr:board:`pic32cm_jh01_cnano` (``pic32cm_jh01_cnano``)
    * :zephyr:board:`pic32cm_jh01_cpro` (``pic32cm_jh01_cpro``)
+   * :zephyr:board:`pic32cx_sg61_cult` (``pic32cx_sg61_cult``)
+   * :zephyr:board:`pic32cz_ca80_cult` (``pic32cz_ca80_cult``)
    * :zephyr:board:`sam_e54_xpro` (``sam_e54_xpro``)
+   * :zephyr:board:`sama7d65_curiosity` (``sama7d65_curiosity``)
 
 * Nuvoton Technology Corporation
 
+   * :zephyr:board:`numaker_m3334ki` (``numaker_m3334ki``)
    * :zephyr:board:`numaker_m5531` (``numaker_m5531``)
 
 * NXP Semiconductors
@@ -429,9 +622,12 @@ New Boards
    * :zephyr:board:`frdm_imx91` (``frdm_imx91``)
    * :zephyr:board:`frdm_imx93` (``frdm_imx93``)
    * :zephyr:board:`frdm_k32l2b3` (``frdm_k32l2b3``)
+   * :zephyr:board:`frdm_mcxa344` (``frdm_mcxa344``)
    * :zephyr:board:`frdm_mcxa266` (``frdm_mcxa266``)
    * :zephyr:board:`frdm_mcxa346` (``frdm_mcxa346``)
    * :zephyr:board:`frdm_mcxa366` (``frdm_mcxa366``)
+   * :zephyr:board:`frdm_mcxe247` (``frdm_mcxe247``)
+   * :zephyr:board:`frdm_mcxe31b` (``frdm_mcxe31b``)
    * :zephyr:board:`frdm_mcxw23` (``frdm_mcxw23``)
    * :zephyr:board:`imx91_qsb` (``imx91_qsb``)
    * :zephyr:board:`imx95_evk_15x15` (``imx95_evk_15x15``)
@@ -443,6 +639,14 @@ New Boards
 
    * :zephyr:board:`panb611evb` (``panb611evb``)
 
+* PCB Cupid
+
+   * :zephyr:board:`glyph_c6` (``glyph_c6``)
+
+* RAKwireless Technology Limited
+
+   * :zephyr:board:`rak3112` (``rak3112``)
+
 * Raspberry Pi Foundation
 
    * :zephyr:board:`rpi_debug_probe` (``rpi_debug_probe``)
@@ -450,6 +654,8 @@ New Boards
 * Renesas Electronics Corporation
 
    * :zephyr:board:`ek_ra4c1` (``ek_ra4c1``)
+   * :zephyr:board:`ek_ra8d2` (``ek_ra8d2``)
+   * :zephyr:board:`ek_ra8m2` (``ek_ra8m2``)
    * :zephyr:board:`ek_rx261` (``ek_rx261``)
    * :zephyr:board:`fpb_rx261` (``fpb_rx261``)
    * :zephyr:board:`mcb_rx26t` (``mcb_rx26t``)
@@ -479,16 +685,29 @@ New Boards
    * :zephyr:board:`pg23_pk2504a` (``pg23_pk2504a``)
    * :zephyr:board:`pg28_pk2506a` (``pg28_pk2506a``)
    * :zephyr:board:`siwx917_dk2605a` (``siwx917_dk2605a``)
+   * :zephyr:board:`bg22_ek4108a` (``bg22_ek4108a``)
    * :zephyr:board:`xg22_ek2710a` (``xg22_ek2710a``)
+   * :zephyr:board:`mgm260p_ek2713a` (``mgm260p_ek2713a``)
+   * :zephyr:board:`pg26_ek2711a` (``pg26_ek2711a``)
+   * :zephyr:board:`xg26_ek2709a` (``xg26_ek2709a``)
    * :zephyr:board:`bg29_rb4420a` (``bg29_rb4420a``)
+   * :zephyr:board:`slwrb4182a` (``slwrb4182a``)
+   * :zephyr:board:`slwrb4311a` (``slwrb4311a``)
    * :zephyr:board:`xg24_rb4186c` (``xg24_rb4186c``)
    * :zephyr:board:`xg24_rb4187c` (``xg24_rb4187c``)
    * :zephyr:board:`xgm240_rb4316a` (``xgm240_rb4316a``)
    * :zephyr:board:`xgm240_rb4317a` (``xgm240_rb4317a``)
+   * :zephyr:board:`mgm260p_rb4350a` (``mgm260p_rb4350a``)
+   * :zephyr:board:`xg26_rb4118a` (``xg26_rb4118a``)
+   * :zephyr:board:`xg26_rb4120a` (``xg26_rb4120a``)
    * :zephyr:board:`bg27_rb4110b` (``bg27_rb4110b``)
    * :zephyr:board:`bg27_rb4111b` (``bg27_rb4111b``)
    * :zephyr:board:`xg27_rb4194a` (``xg27_rb4194a``)
    * :zephyr:board:`xg28_rb4401c` (``xg28_rb4401c``)
+
+* SparkFun Electronics
+
+   * :zephyr:board:`sparkfun_samd21_breakout` (``sparkfun_samd21_breakout``)
 
 * SteelSeries
 
@@ -519,8 +738,14 @@ New Boards
 
    * :zephyr:board:`blackpill_h523ce` (``blackpill_h523ce``)
    * :zephyr:board:`blackpill_u585ci` (``blackpill_u585ci``)
+   * :zephyr:board:`weact_esp32c3_mini` (``weact_esp32c3_mini``)
+   * :zephyr:board:`weact_esp32c6_mini` (``weact_esp32c6_mini``)
+   * :zephyr:board:`weact_esp32s3_mini` (``weact_esp32s3_mini``)
+   * :zephyr:board:`weact_stm32g030_core` (``weact_stm32g030_core``)
    * :zephyr:board:`weact_stm32wb55_core` (``weact_stm32wb55_core``)
    * :zephyr:board:`weact_esp32s3_b` (``weact_esp32s3_b``)
+
+.. _shields_added_in_zephyr_4_3:
 
 New Shields
 ***********
@@ -575,7 +800,12 @@ New Drivers
 
 * :abbr:`ADC (Analog to Digital Converter)`
 
+   * :dtcompatible:`adi,ad4170-adc`
+   * :dtcompatible:`adi,ad4190-adc`
+   * :dtcompatible:`adi,ad4195-adc`
    * :dtcompatible:`adi,max32-adc-b-me18`
+   * :dtcompatible:`infineon,autanalog-sar-adc`
+   * :dtcompatible:`infineon,hppass-sar-adc`
    * :dtcompatible:`nxp,sar-adc`
    * :dtcompatible:`renesas,rx-adc`
    * :dtcompatible:`renesas,rz-adc-c`
@@ -585,6 +815,16 @@ New Drivers
 
    * :dtcompatible:`microchip,sercom-g1`
    * :dtcompatible:`nuvoton,numaker-npu`
+   * :dtcompatible:`renesas,ra-npu`
+
+* Audio
+
+   * :dtcompatible:`dlg,da7212`
+   * :dtcompatible:`nxp,micfil`
+
+* Auxiliary Display
+
+   * :dtcompatible:`titanmec,tm1637`
 
 * Cache
 
@@ -604,6 +844,7 @@ New Drivers
    * :dtcompatible:`mediatek,mt818x_cpuclk`
    * :dtcompatible:`microchip,sam-d5x-e5x-clock`
    * :dtcompatible:`nordic,nrf-iron-hsfll-local`
+   * :dtcompatible:`nxp,mc-cgm`
    * :dtcompatible:`renesas,ra-cgc-utasel`
    * :dtcompatible:`renesas,rz-cgc`
    * :dtcompatible:`sifli,sf32lb-rcc-clk`
@@ -612,10 +853,12 @@ New Drivers
    * :dtcompatible:`st,stm32h5-rcc`
    * :dtcompatible:`st,stm32l0-hsi-clock`
    * :dtcompatible:`st,stm32l4-pllsai-clock`
+   * :dtcompatible:`ti,cc23x0-lf-xosc`
 
 * Comparator
 
    * :dtcompatible:`nxp,cmp`
+   * :dtcompatible:`renesas,ra-lvd`
    * :dtcompatible:`renesas,rx-lvd`
    * :dtcompatible:`st,stm32-comp`
    * :dtcompatible:`st,stm32g4-comp`
@@ -624,9 +867,11 @@ New Drivers
 * Counter
 
    * :dtcompatible:`infineon,tcpwm-counter`
+   * :dtcompatible:`microchip,tcc-g1`
    * :dtcompatible:`nxp,imx-snvs-rtc`
    * :dtcompatible:`nxp,lpit`
    * :dtcompatible:`nxp,lpit-channel`
+   * :dtcompatible:`nxp,stm`
    * :dtcompatible:`renesas,rz-cmtw-counter`
 
 * CPU
@@ -648,11 +893,16 @@ New Drivers
 
 * Cryptographic accelerator
 
+   * :dtcompatible:`espressif,esp32-aes`
+   * :dtcompatible:`espressif,esp32-sha`
    * :dtcompatible:`nxp,els`
    * :dtcompatible:`st,stm32-hash`
 
 * :abbr:`DAC (Digital to Analog Converter)`
 
+   * :dtcompatible:`adi,ad5601`
+   * :dtcompatible:`adi,ad5611`
+   * :dtcompatible:`adi,ad5621`
    * :dtcompatible:`atmel,samd5x-dac`
    * :dtcompatible:`silabs,vdac`
 
@@ -662,18 +912,25 @@ New Drivers
 
 * Display
 
+   * :dtcompatible:`chipone,co5300`
+   * :dtcompatible:`himax,hx8379c`
    * :dtcompatible:`jdi,lpm013m126`
+   * :dtcompatible:`nxp,imx-lcdifv3`
    * :dtcompatible:`sitronix,st7305`
    * :dtcompatible:`sitronix,st7306`
    * :dtcompatible:`sitronix,st7567`
    * :dtcompatible:`solomon,ssd1357`
    * :dtcompatible:`ultrachip,uc8151d`
+   * :dtcompatible:`waveshare,7inch-dsi-lcd-c`
+   * :dtcompatible:`zephyr,hub12`
 
 * :abbr:`DMA (Direct Memory Access)`
 
    * :dtcompatible:`andestech,atcdmacx00`
+   * :dtcompatible:`bflb,dma`
    * :dtcompatible:`nuvoton,npcx-gdma`
    * :dtcompatible:`renesas,ra-dma`
+   * :dtcompatible:`renesas,rz-dmac`
    * :dtcompatible:`sifli,sf32lb-dmac`
    * :dtcompatible:`silabs,gpdma`
 
@@ -681,6 +938,7 @@ New Drivers
 
    * :dtcompatible:`intel,eth-plat`
    * :dtcompatible:`intel,igc-mac`
+   * :dtcompatible:`microchip,ksz9131`
    * :dtcompatible:`microchip,sam-ethernet-controller`
    * :dtcompatible:`nxp,imx-netc`
    * :dtcompatible:`nxp,imx-netc-blk-ctrl`
@@ -691,8 +949,14 @@ New Drivers
    * :dtcompatible:`adi,max32-spixf-nor`
    * :dtcompatible:`bflb,flash-controller`
    * :dtcompatible:`ite,it51xxx-manual-flash-1k`
+   * :dtcompatible:`microchip,nvmctrl-g1-flash`
    * :dtcompatible:`nordic,nrf-mramc`
+   * :dtcompatible:`nxp,kinetis-ftfc`
+   * :dtcompatible:`nxp,xspi-nor`
+   * :dtcompatible:`renesas,ra-flash-lp-controller`
    * :dtcompatible:`renesas,ra-mram-controller`
+   * :dtcompatible:`renesas,rz-qspi-spibsc`
+   * :dtcompatible:`renesas,rz-qspi-xspi`
 
 * File system
 
@@ -700,6 +964,7 @@ New Drivers
 
 * Fuel gauge
 
+   * :dtcompatible:`adi,ltc2959`
    * :dtcompatible:`silergy,sy24561`
    * :dtcompatible:`ti,bq40z50`
 
@@ -712,7 +977,6 @@ New Drivers
    * :dtcompatible:`fobe,quill-header`
    * :dtcompatible:`microchip,port-g1-gpio`
    * :dtcompatible:`microchip,sam-pio4`
-   * :dtcompatible:`nordic,nrf-gpio-pad-group`
    * :dtcompatible:`nxp,pca6408`
    * :dtcompatible:`nxp,pcal6408`
    * :dtcompatible:`nxp,pcal6416`
@@ -734,6 +998,7 @@ New Drivers
 * :abbr:`I2C (Inter-Integrated Circuit)`
 
    * :dtcompatible:`infineon,cat1-i2c-pdl`
+   * :dtcompatible:`renesas,ra-i2c-sci`
    * :dtcompatible:`renesas,rz-iic`
    * :dtcompatible:`silabs,i2c`
    * :dtcompatible:`ti,cc23x0-i2c`
@@ -757,10 +1022,10 @@ New Drivers
 
    * :dtcompatible:`hazard3,hazard3-intc`
    * :dtcompatible:`microchip,dmec-ecia-girq`
+   * :dtcompatible:`nxp,wuu`
    * :dtcompatible:`renesas,rz-icu`
    * :dtcompatible:`renesas,rz-intc`
    * :dtcompatible:`sifive,clic-draft`
-   * :dtcompatible:`st,stm32-exti`
 
 * :abbr:`LED (Light Emitting Diode)`
 
@@ -781,18 +1046,26 @@ New Drivers
 
 * Memory controller
 
+   * :dtcompatible:`bflb,bl61x-psram`
    * :dtcompatible:`motorola,mc146818-bbram`
-   * :dtcompatible:`sifli,sf32lb-mpi`
+   * :dtcompatible:`nxp,xspi-psram`
    * :dtcompatible:`st,stm32-ospi-psram`
 
 * :abbr:`MFD (Multi-Function Device)`
 
    * :dtcompatible:`motorola,mc146818-mfd`
    * :dtcompatible:`nxp,pca9422`
+   * :dtcompatible:`nxp,sc18is606`
    * :dtcompatible:`sifli,sf32lb-rcc`
+
+* :abbr:`MIPI DSI (Mobile Industry Processor Interface Display Serial Interface)`
+
+   * :dtcompatible:`nxp,mipi-dsi-dwc`
+   * :dtcompatible:`st,stm32u5-mipi-dsi`
 
 * Miscellaneous
 
+   * :dtcompatible:`nxp,imx93-mediamix`
    * :dtcompatible:`nxp,rt600-dsp-ctrl`
    * :dtcompatible:`nxp,rt700-dsp-ctrl-hifi4`
    * :dtcompatible:`renesas,rx-dtc`
@@ -802,23 +1075,30 @@ New Drivers
 
    * :dtcompatible:`quectel,bg96`
    * :dtcompatible:`swir,hl7812`
+   * :dtcompatible:`swir,hl7812-gnss`
+   * :dtcompatible:`swir,hl7812-offload`
    * :dtcompatible:`swir,hl78xx`
+   * :dtcompatible:`swir,hl78xx-gnss`
+   * :dtcompatible:`swir,hl78xx-offload`
+
+* Multi-bit SPI
+
+   * :dtcompatible:`nordic,nrf-qspi-v2`
 
 * :abbr:`MTD (Memory Technology Device)`
 
    * :dtcompatible:`andestech,qspi-nor-xip`
    * :dtcompatible:`atmel,at25xv021a`
+   * :dtcompatible:`infineon,fm25xxx`
+   * :dtcompatible:`jedec,qspi-nor`
    * :dtcompatible:`renesas,ra-nv-mram`
    * :dtcompatible:`renesas,ra-qspi-nor`
+   * :dtcompatible:`sifli,sf32lb-mpi-qspi-nor`
 
 * :abbr:`OPAMP (Operational Amplifier)`
 
    * :dtcompatible:`nxp,opamp`
    * :dtcompatible:`nxp,opamp-fast`
-
-   * :dtcompatible:`zephyr,generic-pstate`
-   * :dtcompatible:`zephyr,native-sim-pstate`
-   * :dtcompatible:`zephyr,pstate`
 
 * Pin control
 
@@ -826,11 +1106,16 @@ New Drivers
    * :dtcompatible:`microchip,port-g1-pinctrl`
    * :dtcompatible:`nxp,imx-blkctrl-ns-aon`
    * :dtcompatible:`nxp,imx-blkctrl-wakeup`
+   * :dtcompatible:`nxp,mcxe31x-siul2-pinctrl`
    * :dtcompatible:`sifli,sf32lb52x-pinmux`
 
 * Power management
 
    * :dtcompatible:`ite,it8xxx2-power-elpm`
+   * :dtcompatible:`nxp,cmc`
+   * :dtcompatible:`nxp,spc`
+   * :dtcompatible:`nxp,vbat`
+   * :dtcompatible:`renesas,ra-battery-backup`
    * :dtcompatible:`sifli,sf32lb-aon`
    * :dtcompatible:`sifli,sf32lb-pmuc`
 
@@ -845,6 +1130,7 @@ New Drivers
    * :dtcompatible:`ambiq,ctimer-pwm`
    * :dtcompatible:`ambiq,timer-pwm`
    * :dtcompatible:`infineon,tcpwm-pwm`
+   * :dtcompatible:`microchip,tcc-g1-pwm`
    * :dtcompatible:`renesas,rz-mtu-pwm`
    * :dtcompatible:`ti,cc23x0-lgpt-pwm`
 
@@ -852,6 +1138,8 @@ New Drivers
 
    * :dtcompatible:`adi,max32-spixf`
    * :dtcompatible:`renesas,ra-qspi`
+   * :dtcompatible:`renesas,rz-spibsc`
+   * :dtcompatible:`renesas,rz-xspi`
 
 * Regulator
 
@@ -864,12 +1152,14 @@ New Drivers
 
 * Reset controller
 
+   * :dtcompatible:`microchip,rstc-g1-reset`
    * :dtcompatible:`nxp,mrcc-reset`
    * :dtcompatible:`sifli,sf32lb-rcc-rctl`
 
 * Retained memory
 
    * :dtcompatible:`sifli,sf32lb-rtc-backup`
+   * :dtcompatible:`silabs,buram`
 
 * :abbr:`RNG (Random Number Generator)`
 
@@ -880,9 +1170,16 @@ New Drivers
 
    * :dtcompatible:`microcrystal,rv3032`
    * :dtcompatible:`nxp,pcf85063a`
+   * :dtcompatible:`renesas,ra-rtc`
    * :dtcompatible:`sifli,sf32lb-rtc`
+   * :dtcompatible:`silabs,rtcc`
+   * :dtcompatible:`silabs,sysrtc`
    * :dtcompatible:`ti,mspm0-rtc`
    * :dtcompatible:`zephyr,rtc-counter`
+
+* Renesas RX
+
+   * :dtcompatible:`renesas,rx-swint`
 
 * :abbr:`SDHC (Secure Digital Host Controller)`
 
@@ -891,17 +1188,25 @@ New Drivers
 
 * Sensors
 
+   * :dtcompatible:`allegro,als31300`
    * :dtcompatible:`invensense,icm42686`
    * :dtcompatible:`invensense,icm4268x`
    * :dtcompatible:`maxbotix,mb7040`
+   * :dtcompatible:`maxim,max32664c`
+   * :dtcompatible:`microchip,mtch9010`
+   * :dtcompatible:`nxp,pmc-tmpsns`
    * :dtcompatible:`nxp,tmpsns`
+   * :dtcompatible:`omron,2smpb-02e`
    * :dtcompatible:`omron,d6f-p0001`
    * :dtcompatible:`omron,d6f-p0010`
    * :dtcompatible:`pni,rm3100`
    * :dtcompatible:`st,iis3dwb`
+   * :dtcompatible:`ti,hdc302x`
    * :dtcompatible:`ti,ina228`
    * :dtcompatible:`ti,ina7xx`
+   * :dtcompatible:`vishay,veml6046`
    * :dtcompatible:`we,wsen-isds-2536030320001`
+   * :dtcompatible:`we,wsen-pdms-25131308XXX05`
 
 * Serial controller
 
@@ -914,11 +1219,18 @@ New Drivers
 * :abbr:`SPI (Serial Peripheral Interface)`
 
    * :dtcompatible:`egis,et171-spi`
+   * :dtcompatible:`infineon,cat1-spi-pdl`
+   * :dtcompatible:`nxp,sc18is606-spi`
+   * :dtcompatible:`renesas,rz-spi`
    * :dtcompatible:`ti,omap-mcspi`
 
 * System controller
 
    * :dtcompatible:`sifli,sf32lb-cfg`
+
+* Tachometer
+
+   * :dtcompatible:`zephyr,tach-gpio`
 
 * Timer
 
@@ -936,7 +1248,9 @@ New Drivers
 
 * Video
 
+   * :dtcompatible:`himax,hm01b0`
    * :dtcompatible:`renesas,ra-ceu`
+   * :dtcompatible:`st,stm32-jpeg`
    * :dtcompatible:`st,stm32-venc`
 
 * Watchdog
@@ -951,6 +1265,10 @@ New Drivers
 * Wi-Fi
 
    * :dtcompatible:`nordic,wlan`
+
+* :abbr:`XSPI (Expanded Serial Peripheral Interface)`
+
+   * :dtcompatible:`nxp,xspi`
 
 New Samples
 ***********
@@ -970,6 +1288,8 @@ New Samples
 * :zephyr:code-sample:`hello_hl78xx`
 * :zephyr:code-sample:`instrumentation`
 * :zephyr:code-sample:`latmon-client`
+* :zephyr:code-sample:`max32664c`
+* :zephyr:code-sample:`mctp-usb-endpoint`
 * :zephyr:code-sample:`mctp_i2c_bus_endpoint`
 * :zephyr:code-sample:`mctp_i2c_bus_owner`
 * :zephyr:code-sample:`msg_queue`
@@ -978,13 +1298,24 @@ New Samples
 * :zephyr:code-sample:`opamp_output_measure`
 * :zephyr:code-sample:`openthread-border-router`
 * :zephyr:code-sample:`producer_consumer`
+* :zephyr:code-sample:`quality-of-service`
 * :zephyr:code-sample:`red-black-tree`
 * :zephyr:code-sample:`renesas_lvd`
 * :zephyr:code-sample:`rtk0eg0019b01002bj`
+* :zephyr:code-sample:`veml6046`
 * :zephyr:code-sample:`virtiofs`
 
 Libraries / Subsystems
 **********************
+
+* Firmware
+
+  * SCMI
+
+    * Added :kconfig:option:`ARM_SCMI_CHAN_SEM_TIMEOUT_USEC` to allow configuring the channel semaphore timeout.
+    * Use :c:func:`scmi_status_to_errno` directly for checking the returned command status code.
+    * Added new parameter to :c:func:`scmi_send_message` allowing users to specify if they want to use polling or not.
+    * [NXP] Various additions related to the NXP-specific CPU protocol.
 
 * Logging:
 
@@ -1005,6 +1336,11 @@ Libraries / Subsystems
     case while :kconfig:option:`CONFIG_PSA_CRYPTO_PROVIDER_MBEDTLS` is set in the latter.
     :kconfig:option:`CONFIG_PSA_CRYPTO_PROVIDER_CUSTOM` is also added to allow end users to
     provide a custom solution.
+
+  * Updated from version 3.6.4 to version 3.6.5. Release notes for this release can be found at the
+    following link:
+
+    * https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.5
 
 * Secure storage
 

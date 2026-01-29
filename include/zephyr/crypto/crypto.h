@@ -9,9 +9,6 @@
  * @brief Crypto Cipher APIs
  *
  * This file contains the Crypto Abstraction layer APIs.
- *
- * [Experimental] Users should note that the APIs can change
- * as a part of ongoing development.
  */
 
 #ifndef ZEPHYR_INCLUDE_CRYPTO_H_

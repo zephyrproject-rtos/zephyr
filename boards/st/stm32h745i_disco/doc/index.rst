@@ -62,7 +62,7 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
-For more details please refer to `STM32H745-Disco UM`_.
+For more details please refer to the `STM32H745-Disco User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
@@ -192,7 +192,7 @@ Here is an example for the :zephyr:code-sample:`blinky` application on M4 core.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: stm32h745i_disco/stm32h745xx/m7
+   :board: stm32h745i_disco/stm32h745xx/m4
    :goals: build flash
 
 .. note::
@@ -228,7 +228,7 @@ In order to debug a Zephyr application on Cortex M4 side, you can use
 .. _STM32H745xx datasheet:
    https://www.st.com/resource/en/datasheet/stm32h745xi.pdf
 
-.. _STM32H745-Disco UM:
+.. _STM32H745-Disco User Manual:
    https://www.st.com/resource/en/user_manual/um2488-discovery-kits-with-stm32h745xi-and-stm32h750xb-mcus-stmicroelectronics.pdf
 
 .. _STM32CubeProgrammer:

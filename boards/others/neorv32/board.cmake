@@ -1,7 +1,7 @@
 # Copyright (c) 2021,2025 Henrik Brix Andersen <henrik@brixandersen.dk>
 # SPDX-License-Identifier: Apache-2.0
 
-board_runner_args(openocd "--use-elf" "--cmd-reset-halt" "halt")
+board_runner_args(openocd "--file-type=elf" "--cmd-reset-halt" "halt")
 include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)
 
 if("${BOARD_QUALIFIERS}" STREQUAL "/neorv32")

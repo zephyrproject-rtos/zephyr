@@ -18,11 +18,11 @@
 
 #include <cmsis_core.h>
 
-#include <stm32wbaxx_ll_bus.h>
-#include <stm32wbaxx_ll_cortex.h>
-#include <stm32wbaxx_ll_pwr.h>
-#include <stm32wbaxx_ll_rcc.h>
-#include <stm32wbaxx_ll_system.h>
+#include <stm32_ll_bus.h>
+#include <stm32_ll_cortex.h>
+#include <stm32_ll_pwr.h>
+#include <stm32_ll_rcc.h>
+#include <stm32_ll_system.h>
 #include <clock_control/clock_stm32_ll_common.h>
 
 #include <zephyr/logging/log.h>
@@ -245,11 +245,8 @@ void stm32_power_init(void)
 	LL_AHB4_GRP1_EnableClock(LL_AHB4_GRP1_PERIPH_PWR);
 
 #ifdef CONFIG_DEBUG
-	LL_DBGMCU_EnableDBGStandbyMode();
 	LL_DBGMCU_APB7_GRP1_FreezePeriph(LL_DBGMCU_APB7_GRP1_RTC_STOP);
 	LL_DBGMCU_APB7_GRP1_FreezePeriph(LL_DBGMCU_APB7_GRP1_LPTIM1_STOP);
-#else
-	LL_DBGMCU_DisableDBGStandbyMode();
 #endif
 
 	/* Enable SRAM full retention */

@@ -1,0 +1,10 @@
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config OTP_STM32_BSEC
+	bool "STM32 BSEC driver"
+	default y
+	select USE_STM32_HAL_BSEC
+	depends on DT_HAS_ST_STM32_BSEC_ENABLED
+	help
+	  Enable OTP fuse access for STM32 SoCs embedding a BSEC peripheral.

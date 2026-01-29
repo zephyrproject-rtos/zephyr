@@ -101,11 +101,11 @@ class OutputSection(NamedTuple):
 
 
 PRINT_TEMPLATE = """
-                KEEP(*{obj_file_name}({section_name}))
+                KEEP(*{obj_file_name}("{section_name}"))
 """
 
 PRINT_TEMPLATE_NOKEEP = """
-                *{obj_file_name}({section_name})
+                *{obj_file_name}("{section_name}")
 """
 
 SECTION_LOAD_MEMORY_SEQ = """
@@ -208,12 +208,12 @@ MEMCPY_TEMPLATE = """
 	arch_early_memcpy(&__{mem}_{kind}_reloc_start, &__{mem}_{kind}_rom_start,
 		           (size_t) &__{mem}_{kind}_reloc_size);
 
-"""
+"""  # noqa: E101
 
 MEMSET_TEMPLATE = """
 	arch_early_memset(&__{mem}_bss_reloc_start, 0,
 		           (size_t) &__{mem}_bss_reloc_size);
-"""
+"""  # noqa: E101
 
 
 def region_is_default_ram(region_name: str) -> bool:

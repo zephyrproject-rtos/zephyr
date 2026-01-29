@@ -14,54 +14,6 @@
 
 #include <zephyr/ipc/ipc_service_backend.h>
 
-/** Enum on IPC send length argument to indicate IPC message type. */
-enum intel_adsp_send_len {
-	/** Normal IPC message. */
-	INTEL_ADSP_IPC_SEND_MSG,
-
-	/** Synchronous IPC message. */
-	INTEL_ADSP_IPC_SEND_MSG_SYNC,
-
-	/** Emergency IPC message. */
-	INTEL_ADSP_IPC_SEND_MSG_EMERGENCY,
-
-	/** Send a DONE message. */
-	INTEL_ADSP_IPC_SEND_DONE,
-
-	/** Query backend to see if IPC is complete. */
-	INTEL_ADSP_IPC_SEND_IS_COMPLETE,
-};
-
-/** Enum on callback return values. */
-enum intel_adsp_cb_ret {
-	/** Callback return to indicate no issue. Must be 0. */
-	INTEL_ADSP_IPC_CB_RET_OKAY = 0,
-
-	/** Callback return to signal needing external completion. */
-	INTEL_ADSP_IPC_CB_RET_EXT_COMPLETE,
-};
-
-/** Enum on callback length argument to indicate which triggers the callback. */
-enum intel_adsp_cb_len {
-	/** Callback length to indicate this is an IPC message. */
-	INTEL_ADSP_IPC_CB_MSG,
-
-	/** Callback length to indicate this is a DONE message. */
-	INTEL_ADSP_IPC_CB_DONE,
-};
-
-/** Struct for IPC message descriptor. */
-struct intel_adsp_ipc_msg {
-	/** Header specific to platform. */
-	uint32_t data;
-
-	/** Extension specific to platform. */
-	uint32_t ext_data;
-
-	/** Timeout for sending synchronuous message. */
-	k_timeout_t timeout;
-};
-
 #ifdef CONFIG_INTEL_ADSP_IPC_OLD_INTERFACE
 
 /**
@@ -89,6 +41,7 @@ struct intel_adsp_ipc_msg {
  */
 typedef bool (*intel_adsp_ipc_handler_t)(const struct device *dev, void *arg, uint32_t data,
 					 uint32_t ext_data);
+#endif /* CONFIG_INTEL_ADSP_IPC_OLD_INTERFACE */
 
 /**
  * @brief Intel ADSP IPC Message Complete Callback.
@@ -113,8 +66,6 @@ typedef bool (*intel_adsp_ipc_handler_t)(const struct device *dev, void *arg, ui
  * writing to IPC registers signalling message completion normally by this API.
  */
 typedef bool (*intel_adsp_ipc_done_t)(const struct device *dev, void *arg);
-
-#endif /* CONFIG_INTEL_ADSP_IPC_OLD_INTERFACE */
 
 #ifdef CONFIG_PM_DEVICE
 typedef int (*intel_adsp_ipc_resume_handler_t)(const struct device *dev, void *arg);
@@ -152,13 +103,13 @@ struct intel_adsp_ipc_data {
 
 	/** Argument for message handler callback. */
 	void *handler_arg;
+#endif /* CONFIG_INTEL_ADSP_IPC_OLD_INTERFACE */
 
 	/** Callback for done notification. */
 	intel_adsp_ipc_done_t done_notify;
 
 	/** Argument for done notification callback. */
 	void *done_arg;
-#endif /* CONFIG_INTEL_ADSP_IPC_OLD_INTERFACE */
 
 #ifdef CONFIG_PM_DEVICE
 	/** Pointer to resume handler. */
@@ -179,9 +130,8 @@ struct intel_adsp_ipc_data {
  * Endpoint private data struct.
  */
 struct intel_adsp_ipc_ept_priv_data {
-	/** Callback return value (enum intel_adsp_cb_ret). */
-	int cb_ret;
-
+	/* Message done flag. */
+	bool msg_done;
 	/** Pointer to additional private data. */
 	void *priv;
 };

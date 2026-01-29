@@ -11,10 +11,10 @@ config CAN_RCAR
 	help
 	  Enable Renesas R-Car CAN Driver.
 
-config CAN_RCAR_MAX_FILTER
+config CAN_RCAR_MAX_FILTERS
 	int "Maximum number of concurrent active filters"
 	depends on CAN_RCAR
-	default 5
+	default 16
 	range 1 32
 	help
 	  Defines the array size of the callback/msgq pointers.

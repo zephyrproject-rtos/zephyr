@@ -38,7 +38,7 @@ int sys_mm_drv_map_region_safe(const struct sys_mm_drv_region *virtual_region,
 
 	/* check if memory to be mapped is within given virtual region */
 	if ((POINTER_TO_UINT(virt) >= virtual_region_start) &&
-	    (POINTER_TO_UINT(virt) + size < virtual_region_end)) {
+	    (POINTER_TO_UINT(virt) + size <= virtual_region_end)) {
 		return sys_mm_drv_map_region(virt, phys, size, flags);
 	}
 
@@ -81,7 +81,7 @@ bool sys_mm_drv_is_virt_region_mapped(void *virt, size_t size)
 	bool ret = true;
 
 	for (offset = 0; offset < size; offset += CONFIG_MM_DRV_PAGE_SIZE) {
-		uint8_t *va = (uint8_t *)virt + offset;
+		void *va = (uint8_t *)virt + offset;
 
 		if (sys_mm_drv_page_phys_get(va, NULL) != 0) {
 			ret = false;
@@ -98,7 +98,7 @@ bool sys_mm_drv_is_virt_region_unmapped(void *virt, size_t size)
 	bool ret = true;
 
 	for (offset = 0; offset < size; offset += CONFIG_MM_DRV_PAGE_SIZE) {
-		uint8_t *va = (uint8_t *)virt + offset;
+		void *va = (uint8_t *)virt + offset;
 
 		if (sys_mm_drv_page_phys_get(va, NULL) != -EFAULT) {
 			ret = false;
@@ -126,7 +126,7 @@ static int unmap_locked(void *virt, size_t size, bool is_reset)
 	size_t offset;
 
 	for (offset = 0; offset < size; offset += CONFIG_MM_DRV_PAGE_SIZE) {
-		uint8_t *va = (uint8_t *)virt + offset;
+		void *va = (uint8_t *)virt + offset;
 
 		int ret2 = sys_mm_drv_unmap_page(va);
 
@@ -161,7 +161,7 @@ int sys_mm_drv_simple_map_region(void *virt, uintptr_t phys,
 	key = k_spin_lock(&sys_mm_drv_common_lock);
 
 	for (offset = 0; offset < size; offset += CONFIG_MM_DRV_PAGE_SIZE) {
-		uint8_t *va = (uint8_t *)virt + offset;
+		void *va = (uint8_t *)virt + offset;
 		uintptr_t pa = phys + offset;
 
 		ret = sys_mm_drv_map_page(va, pa, flags);
@@ -207,7 +207,7 @@ int sys_mm_drv_simple_map_array(void *virt, uintptr_t *phys,
 	offset = 0;
 	idx = 0;
 	while (idx < cnt) {
-		uint8_t *va = (uint8_t *)virt + offset;
+		void *va = (uint8_t *)virt + offset;
 
 		ret = sys_mm_drv_map_page(va, phys[idx], flags);
 
@@ -289,8 +289,8 @@ int sys_mm_drv_simple_remap_region(void *virt_old, size_t size,
 	}
 
 	for (offset = 0; offset < size; offset += CONFIG_MM_DRV_PAGE_SIZE) {
-		uint8_t *va_old = (uint8_t *)virt_old + offset;
-		uint8_t *va_new = (uint8_t *)virt_new + offset;
+		void *va_old = (uint8_t *)virt_old + offset;
+		void *va_new = (uint8_t *)virt_new + offset;
 		uintptr_t pa;
 		uint32_t flags;
 
@@ -387,8 +387,8 @@ int sys_mm_drv_simple_move_region(void *virt_old, size_t size,
 	}
 
 	for (offset = 0; offset < size; offset += CONFIG_MM_DRV_PAGE_SIZE) {
-		uint8_t *va_old = (uint8_t *)virt_old + offset;
-		uint8_t *va_new = (uint8_t *)virt_new + offset;
+		void *va_old = (uint8_t *)virt_old + offset;
+		void *va_new = (uint8_t *)virt_new + offset;
 		uintptr_t pa = phys_new + offset;
 		uint32_t flags;
 
@@ -474,8 +474,8 @@ int sys_mm_drv_simple_move_array(void *virt_old, size_t size,
 	offset = 0;
 	idx = 0;
 	while (idx < phys_cnt) {
-		uint8_t *va_old = (uint8_t *)virt_old + offset;
-		uint8_t *va_new = (uint8_t *)virt_new + offset;
+		void *va_old = (uint8_t *)virt_old + offset;
+		void *va_new = (uint8_t *)virt_new + offset;
 		uint32_t flags;
 
 		ret = sys_mm_drv_page_flag_get(va_old, &flags);
@@ -547,7 +547,7 @@ int sys_mm_drv_simple_update_region_flags(void *virt, size_t size, uint32_t flag
 	key = k_spin_lock(&sys_mm_drv_common_lock);
 
 	for (offset = 0; offset < size; offset += CONFIG_MM_DRV_PAGE_SIZE) {
-		uint8_t *va = (uint8_t *)virt + offset;
+		void *va = (uint8_t *)virt + offset;
 
 		int ret2 = sys_mm_drv_update_page_flags(va, flags);
 

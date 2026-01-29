@@ -32,8 +32,6 @@ config SOC_SIWX91X_PM_BACKEND_PMGR
 	bool
 	select SILABS_SIWX91X_NWP
 	select SILABS_SLEEPTIMER_TIMER
-	select SRAM_VECTOR_TABLE
-	select CODE_DATA_RELOCATION_SRAM
 	default y if PM
 	help
 	  Implement PM using sl_power_manager service from Gecko SDK

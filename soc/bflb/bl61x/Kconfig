@@ -10,7 +10,6 @@ config SOC_SERIES_BL61X
 	select FPU
 	select ICACHE
 	select RISCV
-	select RISCV_ISA_EXT_F
 	select SOC_EARLY_INIT_HOOK
 	select SYSCON
 	select XIP

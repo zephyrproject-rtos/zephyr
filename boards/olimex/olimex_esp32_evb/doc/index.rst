@@ -26,7 +26,7 @@ Hardware
 - BL4054B LiPo battery charger with status LEDs for stand-alone operation during
   power outages.
 - Power jack for external 5VDC power supply.
-- Univeral EXTension (UEXT) connector for connecting UEXT modules.
+- Universal EXTension (UEXT) connector for connecting UEXT modules.
 - User push button.
 - 40 pin GPIO connector with all ESP32 pins.
 

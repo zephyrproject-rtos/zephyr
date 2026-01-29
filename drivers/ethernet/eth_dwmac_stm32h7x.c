@@ -32,18 +32,7 @@ PINCTRL_DT_INST_DEFINE(0);
 static const struct pinctrl_dev_config *eth0_pcfg =
 	PINCTRL_DT_INST_DEV_CONFIG_GET(0);
 
-static const struct stm32_pclken pclken = {
-	.bus = DT_CLOCKS_CELL_BY_NAME(DT_INST_PARENT(0), stm_eth, bus),
-	.enr = DT_CLOCKS_CELL_BY_NAME(DT_INST_PARENT(0), stm_eth, bits),
-};
-static const struct stm32_pclken pclken_tx = {
-	.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_tx, bus),
-	.enr = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_tx, bits),
-};
-static const struct stm32_pclken pclken_rx = {
-	.bus = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_rx, bus),
-	.enr = DT_INST_CLOCKS_CELL_BY_NAME(0, mac_clk_rx, bits),
-};
+static const struct stm32_pclken pclken[] = STM32_DT_CLOCKS(DT_INST_PARENT(0));
 
 int dwmac_bus_init(struct dwmac_priv *p)
 {
@@ -57,12 +46,12 @@ int dwmac_bus_init(struct dwmac_priv *p)
 		return -ENODEV;
 	}
 
-	ret  = clock_control_on(p->clock, (clock_control_subsys_t)&pclken);
-	ret |= clock_control_on(p->clock, (clock_control_subsys_t)&pclken_tx);
-	ret |= clock_control_on(p->clock, (clock_control_subsys_t)&pclken_rx);
-	if (ret) {
-		LOG_ERR("Failed to enable ethernet clock");
-		return -EIO;
+	for (size_t n = 0; n < ARRAY_SIZE(pclken); n++) {
+		ret  = clock_control_on(p->clock, (clock_control_subsys_t)&pclken[n]);
+		if (ret) {
+			LOG_ERR("Failed to enable ethernet clock #%zu", n);
+			return -EIO;
+		}
 	}
 
 	ret = pinctrl_apply_state(eth0_pcfg, PINCTRL_STATE_DEFAULT);

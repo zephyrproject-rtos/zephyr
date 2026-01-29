@@ -512,6 +512,14 @@ applications as sysbuild domains. Call this CMake function from your
 application's :file:`sysbuild.cmake` file, or any other CMake file you know will
 run as part sysbuild CMake invocation.
 
+A variant image can also added using the ``ExternalZephyrVariantProject_Add()`` function which
+will duplicate an existing image in the sysbuild project, and allows for slight differences in
+configuration. An example use case for this feature is to change the chosen flash node of an image
+but having the rest of the configuration identical to the base image. When this is used, neither
+sysbuild itself nor the image will have the extra Kconfig targets made for it such as menuconfig,
+guiconfig, hardenconfig or traceconfig, as the base image can be used for viewing/adjusting
+these instead.
+
 Targeting the same board
 ========================
 
@@ -804,6 +812,22 @@ As a result, ``my_sample`` will be flashed after ``sample_a`` and ``sample_b``
    Adding flashing dependencies is not allowed for build-only applications.
    If ``my_sample`` had been created with ``BUILD_ONLY TRUE``, then the above
    call to ``sysbuild_add_dependencies()`` would have produced an error.
+
+.. _sysbuild_merged_hex_files:
+
+Merged hex files
+****************
+
+Sysbuild supports creating merged hex files, which will be created one per unique board target
+in a sysbuild project and can be enabled with :kconfig:option:`SB_CONFIG_MERGED_HEX_FILES`.
+The output filename format will be :file:`merged_<NORMALIZED_BOARD_TARGET>.hex`. This is ideal
+for creating production images for deployment, it requires that all images output hex files.
+If a sysbuild project builds multiple images for the same board target but for **different**
+devices (e.g. 3 images for 3 different boards as part of a test), then this option should remain
+disabled. Hex files will be merged as per the flashing order they have been configured in, any
+overlapping data from previous addresses that conflicts with later merged hex files will be
+overwritten with the later hex file data - see :ref:`sysbuild_zephyr_application_dependencies`
+for how to configure the flashing order of sysbuild images.
 
 Adding non-Zephyr applications to sysbuild
 ******************************************

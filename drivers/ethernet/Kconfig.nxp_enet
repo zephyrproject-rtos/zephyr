@@ -16,6 +16,7 @@ config ETH_NXP_ENET
 	select ETH_DSA_SUPPORT_DEPRECATED
 	select PINCTRL
 	select HWINFO if $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_ENET_MAC),$(DT_NXP_UNIQUE_MAC_PROP),True)
+	imply NVMEM if $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_ENET_MAC),nvmem-cells)
 	help
 	  Enable NXP ENET Ethernet driver.
 

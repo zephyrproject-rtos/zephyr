@@ -20,6 +20,17 @@ extern "C" {
  */
 
 /**
+ * MGMT event opcodes for settings management group.
+ */
+enum settings_mgmt_group_events {
+	/** Callback when a setting is read/written/deleted. */
+	MGMT_EVT_OP_SETTINGS_MGMT_ACCESS	= MGMT_DEF_EVT_OP_ID(MGMT_EVT_GRP_SETTINGS, 0),
+
+	/** Used to enable all settings_mgmt_group events. */
+	MGMT_EVT_OP_SETTINGS_MGMT_ALL		= MGMT_DEF_EVT_OP_ALL(MGMT_EVT_GRP_SETTINGS),
+};
+
+/**
  * @name Settings access types
  * @{
  */
@@ -59,13 +70,12 @@ struct settings_mgmt_access {
 #endif
 
 	/**
-	 * Data provided by the user (only set for SETTINGS_ACCESS_WRITE and SETTINGS_ACCESS_SAVE)
+	 * Data provided by the user (only set for SETTINGS_ACCESS_WRITE)
 	 */
 	const uint8_t *val;
 
 	/**
-	 * Length of data provided by the user (only set for SETTINGS_ACCESS_WRITE and
-	 * SETTINGS_ACCESS_SAVE)
+	 * Length of data provided by the user (only set for SETTINGS_ACCESS_WRITE)
 	 */
 	const size_t *val_length;
 };

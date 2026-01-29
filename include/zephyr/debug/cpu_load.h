@@ -36,8 +36,8 @@ void cpu_load_on_exit_idle(void);
  *
  * @param reset Reset the measurement after reading.
  *
- * @retval Positive number - CPU load in per mille.
- * @retval Negative number - error code.
+ * @retval >=0 Positive number - CPU load in per mille.
+ * @retval <0 Negative number - error code.
  */
 int cpu_load_get(bool reset);
 

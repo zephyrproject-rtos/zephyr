@@ -16,7 +16,6 @@
 #include <zephyr/zsr.h>
 #include <zephyr/arch/common/exc_handle.h>
 
-#include <kernel_internal.h>
 #include <xtensa_internal.h>
 #include <xtensa_stack.h>
 
@@ -468,7 +467,7 @@ __unused static void xtensa_handle_irq_lvl(int irq_lvl)
 
 #if XCHAL_NUM_INTERRUPTS > 64
 	__asm__ volatile("rsr.interrupt2 %0" : "=r"(irq_mask));
-	__asm__ volatile("rsr.intenable2 %0" : "=r"(intenable2));
+	__asm__ volatile("rsr.intenable2 %0" : "=r"(intenable));
 	irq_mask &= intenable;
 	irq_mask &= xtensa_lvl_mask[irq_lvl - 1][2];
 	while (irq_mask) {

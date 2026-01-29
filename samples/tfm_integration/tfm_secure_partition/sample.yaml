@@ -1,6 +1,7 @@
 common:
   tags:
     - trusted-firmware-m
+    - mcuboot
   platform_allow:
     - mps2/an521/cpu0/ns
     - v2m_musca_s1/musca_s1/ns
@@ -8,6 +9,7 @@ common:
     - nrf9160dk/nrf9160/ns
     - lpcxpresso55s69/lpc55s69/cpu0/ns
     - max32657evkit/max32657/ns
+    - stm32h573i_dk/stm32h573xx/ns
   integration_platforms:
     - mps2/an521/cpu0/ns
   harness: console
@@ -24,7 +26,9 @@ sample:
   name: "TFM Secure Partition Sample"
 
 tests:
-  sample.tfm.secure_partition:
-    tags:
-      - trusted-firmware-m
-      - mcuboot
+  sample.tfm.secure_partition.ipc:
+    extra_configs:
+      - CONFIG_TFM_IPC=y
+  sample.tfm.secure_partition.sfn:
+    extra_configs:
+      - CONFIG_TFM_SFN=y

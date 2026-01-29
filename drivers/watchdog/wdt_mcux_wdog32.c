@@ -1,6 +1,6 @@
 /*
  * Copyright (2) 2019 Vestas Wind Systems A/S
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * Based on wdt_mcux_wdog.c, which is:
  * Copyright (c) 2018, NXP
@@ -18,6 +18,7 @@
 #define LOG_LEVEL CONFIG_WDT_LOG_LEVEL
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
+#include <zephyr/kernel.h>
 LOG_MODULE_REGISTER(wdt_mcux_wdog32);
 
 #define MIN_TIMEOUT 1
@@ -205,6 +206,27 @@ static int mcux_wdog32_init(const struct device *dev)
 {
 	const struct mcux_wdog32_config *config = dev->config;
 
+#if (!DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency))
+	int ret;
+
+	ret = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
+	if (ret != 0) {
+		/* Check if error is due to lack of support */
+		if (ret != -ENOSYS) {
+			/* Real error occurred */
+			LOG_ERR("Failed to configure clock: %d", ret);
+			return ret;
+		}
+	}
+
+#if FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL
+	ret = clock_control_on(config->clock_dev, config->clock_subsys);
+	if (ret) {
+		LOG_ERR("Failed to enable clock: %d", ret);
+		return ret;
+	}
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+#endif
 	/* Map the named MMIO region */
 	DEVICE_MMIO_NAMED_MAP(dev, reg, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
 
@@ -223,15 +245,32 @@ static DEVICE_API(wdt, mcux_wdog32_api) = {
 #define TO_WDOG32_CLK_SRC(val) _DO_CONCAT(kWDOG32_ClockSource, val)
 #define TO_WDOG32_CLK_DIV(val) _DO_CONCAT(kWDOG32_ClockPrescalerDivide, val)
 
+#define WDOG32_CLK_SOURCE(id) DT_INST_PROP(id, clk_source)
+#define WDOG32_CLK_SOURCE_NAME(id) CONCAT(clksrc, WDOG32_CLK_SOURCE(id))
+
+#define WDOG32_INST_CLOCKS_FROM_CLK_SOURCE(id)							\
+	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(id, WDOG32_CLK_SOURCE_NAME(id))), \
+	.clock_subsys = (clock_control_subsys_t)						\
+		DT_INST_CLOCKS_CELL_BY_NAME(id, WDOG32_CLK_SOURCE_NAME(id), name)
+
+#define WDOG32_INST_CLOCKS(id)							\
+	WDOG32_INST_CLOCKS_FROM_CLK_SOURCE(id)
+
+#define WDOG32_CHECK_CLK_SOURCES(id)				\
+	IF_DISABLED(DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency),		\
+	(BUILD_ASSERT(DT_INST_CLOCKS_HAS_NAME(id, WDOG32_CLK_SOURCE_NAME(id)),		\
+			"WDOG32 instance " STRINGIFY(id) " clk-source without named clock")))
+
 static void mcux_wdog32_config_func_0(const struct device *dev);
+
+WDOG32_CHECK_CLK_SOURCES(0);
 
 static const struct mcux_wdog32_config mcux_wdog32_config_0 = {
 	DEVICE_MMIO_NAMED_ROM_INIT(reg, DT_DRV_INST(0)),
 #if DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency)
 	.clock_frequency = DT_INST_PROP_BY_PHANDLE(0, clocks, clock_frequency),
-#else  /* !DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency) */
-	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
-	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(0, name),
+#else /* !DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency) */
+	WDOG32_INST_CLOCKS(0),
 #endif /* DT_NODE_HAS_PROP(DT_INST_PHANDLE(0, clocks), clock_frequency) */
 	.clk_source = TO_WDOG32_CLK_SRC(DT_INST_PROP(0, clk_source)),
 	.clk_divider = TO_WDOG32_CLK_DIV(DT_INST_PROP(0, clk_divider)),

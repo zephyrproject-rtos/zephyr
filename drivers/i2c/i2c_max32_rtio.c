@@ -396,7 +396,7 @@ static int i2c_max32_init(const struct device *dev)
 	return ret;
 }
 
-static const struct i2c_driver_api max32_driver_api = {
+static DEVICE_API(i2c, max32_driver_api) = {
 	.configure = max32_configure,
 	.transfer = max32_transfer,
 	.iodev_submit = max32_submit,

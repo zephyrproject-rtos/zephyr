@@ -733,6 +733,18 @@ void sys_trace_thread_info(struct k_thread *thread);
 #define sys_port_trace_k_timer_status_sync_exit(timer, result)                                     \
 	SEGGER_SYSVIEW_RecordEndCallU32(TID_TIMER_STATUS_SYNC, (uint32_t)result)
 
+#define sys_port_trace_k_timer_expiry_enter(timer)                                                 \
+	SEGGER_SYSVIEW_RecordU32(TID_TIMER_EXPIRY, (uint32_t)(uintptr_t)timer)
+
+#define sys_port_trace_k_timer_expiry_exit(timer)                                                  \
+	SEGGER_SYSVIEW_RecordEndCall(TID_TIMER_EXPIRY)
+
+#define sys_port_trace_k_timer_stop_fn_expiry_enter(timer)                                         \
+	SEGGER_SYSVIEW_RecordU32(TID_TIMER_STOP_EXPIRY, (uint32_t)(uintptr_t)timer)
+
+#define sys_port_trace_k_timer_stop_fn_expiry_exit(timer)                                          \
+	SEGGER_SYSVIEW_RecordEndCall(TID_TIMER_STOP_EXPIRY)
+
 #define sys_port_trace_syscall_enter(id, name, ...)                                                \
 	SEGGER_SYSVIEW_RecordString(TID_SYSCALL, (const char *)#name)
 
@@ -858,6 +870,23 @@ void sys_trace_named_event(const char *name, uint32_t arg0, uint32_t arg1);
 #define sys_port_trace_gpio_get_pending_int_exit(dev, ret)
 #define sys_port_trace_gpio_fire_callbacks_enter(list, port, pins)
 #define sys_port_trace_gpio_fire_callback(port, cb)
+
+#define sys_port_trace_rtio_submit_enter(rtio, wait_count)
+#define sys_port_trace_rtio_submit_exit(rtio)
+#define sys_port_trace_rtio_sqe_acquire_enter(rtio)
+#define sys_port_trace_rtio_sqe_acquire_exit(rtio, sqe)
+#define sys_port_trace_rtio_sqe_cancel(sqe)
+#define sys_port_trace_rtio_cqe_submit_enter(rtio, result, flags)
+#define sys_port_trace_rtio_cqe_submit_exit(rtio)
+#define sys_port_trace_rtio_cqe_acquire_enter(rtio)
+#define sys_port_trace_rtio_cqe_acquire_exit(rtio, cqe)
+#define sys_port_trace_rtio_cqe_release(rtio, cqe)
+#define sys_port_trace_rtio_cqe_consume_enter(rtio)
+#define sys_port_trace_rtio_cqe_consume_exit(rtio, cqe)
+#define sys_port_trace_rtio_txn_next_enter(rtio, iodev_sqe)
+#define sys_port_trace_rtio_txn_next_exit(rtio, iodev_sqe)
+#define sys_port_trace_rtio_chain_next_enter(rtio, iodev_sqe)
+#define sys_port_trace_rtio_chain_next_exit(rtio, iodev_sqe)
 
 #ifdef __cplusplus
 }

@@ -89,7 +89,7 @@ internal "Z_GENLIST" template API which allows for extracting those
 fields from arbitrary structures and emits an arbitrarily named set of
 functions.  This allows for implementing more complicated
 single-linked list variants using the same basic primitives.  The
-genlist implementor is responsible for a custom implementation of the
+genlist implementer is responsible for a custom implementation of the
 primitive operations only: an "init" step for each struct, and a "get"
 and "set" primitives for each of head, tail and next pointers on their
 relevant structs.  These inline functions are passed as parameters to

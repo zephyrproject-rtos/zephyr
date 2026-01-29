@@ -463,7 +463,7 @@ static const struct flash_parameters *qspi_flash_ra_get_parameters(const struct 
 
 	return &qspi_flash_ra_config_para;
 }
-static const struct flash_driver_api qspi_flash_ra_api = {
+static DEVICE_API(flash, qspi_flash_ra_api) = {
 	.erase = qspi_flash_ra_erase,
 	.write = qspi_flash_ra_write,
 	.read = qspi_flash_ra_read,

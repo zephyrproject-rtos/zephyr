@@ -6,23 +6,7 @@ description: |
 
   The PMIC has one buck converter and one buck-boost converter. Both need to be
   defined as children nodes, strictly following the BUCK and BUCKBOOST node
-  names. For example:
-
-  pmic@46 {
-    compatible = "adi,adp5360";
-    reg = <0x46>;
-    ...
-    regulators {
-      compatible = "adi,adp5360-regulator";
-
-      BUCK {
-        /* all properties for BUCK */
-      };
-      BUCKBOOST {
-        /* all properties for BUCKBOOST */
-      };
-    };
-  };
+  names.
 
 compatible: "adi,adp5360-regulator"
 
@@ -84,3 +68,21 @@ child-binding:
     adi,enable-output-discharge:
       type: boolean
       description: Enable output discharge functionality
+
+examples:
+  - |
+    pmic@46 {
+      compatible = "adi,adp5360";
+      reg = <0x46>;
+      /* ... */
+      regulators {
+        compatible = "adi,adp5360-regulator";
+
+        BUCK {
+          /* all properties for BUCK */
+        };
+        BUCKBOOST {
+          /* all properties for BUCKBOOST */
+        };
+      };
+    };

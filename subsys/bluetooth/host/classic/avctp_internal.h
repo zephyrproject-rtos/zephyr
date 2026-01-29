@@ -5,6 +5,7 @@
 /*
  * Copyright (c) 2015-2016 Intel Corporation
  * Copyright (C) 2024 Xiaomi Corporation
+ * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -95,6 +96,7 @@ struct bt_avctp_ops_cb {
 	void (*connected)(struct bt_avctp *session);
 	void (*disconnected)(struct bt_avctp *session);
 	int (*recv)(struct bt_avctp *session, struct net_buf *buf, bt_avctp_cr_t cr, uint8_t tid);
+	struct net_buf *(*alloc_buf)(struct bt_avctp *session);
 };
 
 struct bt_avctp {
@@ -157,7 +159,7 @@ struct bt_avctp_event_cb {
 };
 
 /* Initialize AVCTP layer*/
-int bt_avctp_init(void);
+void bt_avctp_init(void);
 
 /* Application register with AVCTP layer */
 int bt_avctp_server_register(struct bt_avctp_server *server);

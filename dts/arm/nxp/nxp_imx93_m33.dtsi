@@ -1,12 +1,12 @@
 /*
- * Copyright 2024-2025 NXP
- *
+ * SPDX-FileCopyrightText: Copyright 2024-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <mem.h>
 #include <freq.h>
 
@@ -42,11 +42,99 @@
 			reg = <0x20000000 DT_SIZE_K(124)>;
 		};
 
+		lpi2c3: i2c@42530000 {
+			compatible = "nxp,lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x42530000 0x4000>;
+			interrupts = <62 0>;
+			clocks = <&ccm IMX_CCM_LPI2C3_CLK 0x70 10>;
+			status = "disabled";
+		};
+
+		lpi2c4: i2c@42540000 {
+			compatible = "nxp,lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x42540000 0x4000>;
+			interrupts = <63 0>;
+			clocks = <&ccm IMX_CCM_LPI2C4_CLK 0x80 24>;
+			status = "disabled";
+		};
+
+		lpi2c5: i2c@426b0000 {
+			compatible = "nxp,lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x426b0000 0x4000>;
+			interrupts = <195 0>;
+			clocks = <&ccm IMX_CCM_LPI2C5_CLK 0x80 24>;
+			status = "disabled";
+		};
+
+		lpi2c6: i2c@426c0000 {
+			compatible = "nxp,lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x426c0000 0x4000>;
+			interrupts = <196 0>;
+			clocks = <&ccm IMX_CCM_LPI2C6_CLK 0x80 24>;
+			status = "disabled";
+		};
+
+		lpi2c7: i2c@426d0000 {
+			compatible = "nxp,lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x426d0000 0x4000>;
+			interrupts = <197 0>;
+			clocks = <&ccm IMX_CCM_LPI2C7_CLK 0x80 24>;
+			status = "disabled";
+		};
+
+		lpi2c8: i2c@426e0000 {
+			compatible = "nxp,lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x426e0000 0x4000>;
+			interrupts = <198 0>;
+			clocks = <&ccm IMX_CCM_LPI2C8_CLK 0x80 24>;
+			status = "disabled";
+		};
+
 		mu1: mailbox@44220000 {
 			compatible = "nxp,mbox-imx-mu";
 			reg = <0x44220000 DT_SIZE_K(4)>;
 			interrupts = <21 0>;
 			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		lpi2c1: i2c@44340000 {
+			compatible = "nxp,lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44340000 0x4000>;
+			interrupts = <13 0>;
+			clocks = <&ccm IMX_CCM_LPI2C1_CLK 0x70 6>;
+			status = "disabled";
+		};
+
+		lpi2c2: i2c@44350000 {
+			compatible = "nxp,lpi2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44350000 0x4000>;
+			interrupts = <14 0>;
+			clocks = <&ccm IMX_CCM_LPI2C2_CLK 0x70 8>;
 			status = "disabled";
 		};
 

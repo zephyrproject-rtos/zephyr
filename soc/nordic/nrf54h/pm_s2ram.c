@@ -19,6 +19,11 @@
 #define NVIC_MEMBER_SIZE(member) ARRAY_SIZE(((NVIC_Type *)0)->member)
 
 /* Coprocessor Power Control Register Definitions */
+#define SCnSCB_CPPWR_SU11_Pos 22U                            /*!< CPPWR: SU11 Position */
+#define SCnSCB_CPPWR_SU11_Msk (1UL << SCnSCB_CPPWR_SU11_Pos) /*!< CPPWR: SU11 Mask */
+
+#define SCnSCB_CPPWR_SU10_Pos 20U                            /*!< CPPWR: SU10 Position */
+#define SCnSCB_CPPWR_SU10_Msk (1UL << SCnSCB_CPPWR_SU10_Pos) /*!< CPPWR: SU10 Mask */
 
 typedef struct {
 	/* NVIC components stored into RAM. */

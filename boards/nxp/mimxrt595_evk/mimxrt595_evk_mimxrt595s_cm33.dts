@@ -135,6 +135,14 @@
 		enable-gpios = <&gpio3 15 GPIO_ACTIVE_HIGH>;
 		regulator-boot-on;
 	};
+
+	psram: memory@0x38000000 {
+		compatible = "zephyr,memory-region";
+		device_type = "memory";
+		reg = <0x38000000 0x8000000>;
+		status = "okay";
+		zephyr,memory-region = "FLEXSPI2";
+	};
 };
 
 /*
@@ -347,6 +355,14 @@ arduino_serial: &flexcomm12 {
 
 zephyr_udc0: &usbhs {
 	status = "okay";
+	phy-handle = <&usbphy>;
+};
+
+&usbphy {
+	status = "okay";
+	tx-d-cal = <12>;
+	tx-cal-45-dp-ohms = <6>;
+	tx-cal-45-dm-ohms = <6>;
 };
 
 &ctimer0 {
@@ -379,6 +395,7 @@ zephyr_udc0: &usbhs {
 		disk-name = "SD2";
 		status = "okay";
 	};
+
 	pinctrl-0 = <&pinmux_usdhc>;
 	pinctrl-names = "default";
 	mmc-hs200-1_8v;

@@ -11,13 +11,16 @@
 
 / {
 	clocks {
-		plli2s: plli2s {
-			compatible = "st,stm32f411-plli2s-clock";
+		pllsai: pllsai {
+			compatible = "st,stm32fx-pll-clock";
+			#clock-cells = <0>;
+			status = "disabled";
 		};
 
-		pllsai: pllsai {
-			compatible = "st,stm32fx-pllsai-clock";
+		clk48: clk48 {
 			#clock-cells = <0>;
+			compatible = "st,stm32-clock-mux";
+			clocks = <&rcc STM32_SRC_PLL_Q CK48M_SEL(0)>;
 			status = "disabled";
 		};
 	};
@@ -120,10 +123,7 @@
 			clock-names = "adcx";
 			interrupts = <18 0>;
 			#io-channel-cells = <1>;
-			resolutions = <STM32_ADC_RES(12, 0x00)
-				       STM32_ADC_RES(10, 0x01)
-				       STM32_ADC_RES(8, 0x02)
-				       STM32_ADC_RES(6, 0x03)>;
+			st,adc-resolutions = <12 10 8 6>;
 			sampling-times = <3 15 28 56 84 112 144 480>;
 			st,adc-clock-source = "SYNC";
 			st,adc-sequencer = "programmable";
@@ -139,10 +139,7 @@
 			clock-names = "adcx";
 			interrupts = <18 0>;
 			#io-channel-cells = <1>;
-			resolutions = <STM32_ADC_RES(12, 0x00)
-				       STM32_ADC_RES(10, 0x01)
-				       STM32_ADC_RES(8, 0x02)
-				       STM32_ADC_RES(6, 0x03)>;
+			st,adc-resolutions = <12 10 8 6>;
 			sampling-times = <3 15 28 56 84 112 144 480>;
 			st,adc-clock-source = "SYNC";
 			st,adc-sequencer = "programmable";

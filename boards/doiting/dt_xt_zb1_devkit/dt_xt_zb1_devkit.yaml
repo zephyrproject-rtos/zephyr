@@ -17,4 +17,7 @@ supported:
   - pinctrl
   - uart
   - dma
+  - i2c
+  - spi
+  - flash
 vendor: doiting

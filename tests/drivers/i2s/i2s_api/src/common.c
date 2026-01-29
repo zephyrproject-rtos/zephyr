@@ -175,7 +175,7 @@ int rx_block_read(const struct device *dev_i2s, int att)
 int configure_stream(const struct device *dev_i2s, enum i2s_dir dir)
 {
 	int ret;
-	struct i2s_config i2s_cfg;
+	struct i2s_config i2s_cfg = {0};
 
 	i2s_cfg.word_size = 16U;
 	i2s_cfg.channels = 2U;

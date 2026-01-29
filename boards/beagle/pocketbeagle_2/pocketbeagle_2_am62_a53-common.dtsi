@@ -93,12 +93,40 @@
 	status = "okay";
 };
 
-&main_gpio0 {
+&main_gpio0_0 {
 	pinctrl-0 = <&led_pins_default>;
 	pinctrl-names = "default";
 	status = "okay";
 };
 
+&main_gpio0_1 {
+	status = "okay";
+};
+
+&main_gpio0_2 {
+	status = "okay";
+};
+
+&main_gpio1_0 {
+	status = "okay";
+};
+
+&main_gpio1_1 {
+	status = "okay";
+};
+
 &main_rti0 {
+	status = "okay";
+};
+
+&main_spi0 {
+	pinctrl-0 = <&main_spi0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&main_spi2 {
+	pinctrl-0 = <&main_spi2_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };

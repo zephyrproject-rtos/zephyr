@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016 Freescale Semiconductor, Inc.
- * Copyright 2019-2023, NXP
+ * Copyright 2019-2026, NXP
  * Copyright (c) 2022 Vestas Wind Systems A/S
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -13,6 +13,8 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/kernel.h>
 #include <zephyr/irq.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <fsl_lpi2c.h>
 #if CONFIG_NXP_LP_FLEXCOMM
 #include <zephyr/drivers/mfd/nxp_lp_flexcomm.h>
@@ -161,6 +163,8 @@ static int mcux_lpi2c_transfer(const struct device *dev, struct i2c_msg *msgs,
 		return ret;
 	}
 
+	(void)pm_device_runtime_get(dev);
+
 	/* Iterate over all the messages */
 	for (int i = 0; i < num_msgs; i++) {
 		if (I2C_MSG_ADDR_10_BITS & msgs->flags) {
@@ -221,6 +225,8 @@ static int mcux_lpi2c_transfer(const struct device *dev, struct i2c_msg *msgs,
 		/* Move to the next message */
 		msgs++;
 	}
+
+	(void)pm_device_runtime_put(dev);
 
 	k_sem_give(&data->lock);
 
@@ -492,6 +498,52 @@ static void mcux_lpi2c_isr(const struct device *dev)
 	LPI2C_MasterTransferHandleIRQ(LPI2C_IRQHANDLE_ARG, &data->handle);
 }
 
+static int mcux_lpi2c_suspend(const struct device *dev)
+{
+	int ret;
+	const struct mcux_lpi2c_config *config = dev->config;
+
+	ret = clock_control_off(config->clock_dev, config->clock_subsys);
+	if (ret < 0) {
+		LOG_ERR("failed clock off lpi2c");
+		return ret;
+	}
+
+	return 0;
+}
+
+static int mcux_lpi2c_resume(const struct device *dev)
+{
+	int ret;
+	const struct mcux_lpi2c_config *config = dev->config;
+
+	ret = clock_control_on(config->clock_dev, config->clock_subsys);
+	if (ret < 0) {
+		LOG_ERR("failed clock on lpi2c");
+		return ret;
+	}
+
+	return 0;
+}
+
+static int mcux_lpi2c_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = mcux_lpi2c_resume(dev);
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = mcux_lpi2c_suspend(dev);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return ret;
+}
+
 static int mcux_lpi2c_init(const struct device *dev)
 {
 	const struct mcux_lpi2c_config *config = dev->config;
@@ -539,7 +591,7 @@ static int mcux_lpi2c_init(const struct device *dev)
 
 	config->irq_config_func(dev);
 
-	return 0;
+	return pm_device_driver_init(dev, mcux_lpi2c_pm_action);
 }
 
 static DEVICE_API(i2c, mcux_lpi2c_driver_api) = {
@@ -612,7 +664,10 @@ static DEVICE_API(i2c, mcux_lpi2c_driver_api) = {
 									\
 	static struct mcux_lpi2c_data mcux_lpi2c_data_##n;		\
 									\
-	I2C_DEVICE_DT_INST_DEFINE(n, mcux_lpi2c_init, NULL,		\
+	PM_DEVICE_DT_INST_DEFINE(n, mcux_lpi2c_pm_action);		\
+									\
+	I2C_DEVICE_DT_INST_DEFINE(n, mcux_lpi2c_init,			\
+				PM_DEVICE_DT_INST_GET(n),		\
 				&mcux_lpi2c_data_##n,			\
 				&mcux_lpi2c_config_##n, POST_KERNEL,	\
 				CONFIG_I2C_INIT_PRIORITY,		\

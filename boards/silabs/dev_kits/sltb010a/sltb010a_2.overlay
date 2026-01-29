@@ -27,6 +27,10 @@
 	enable-gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>;
 };
 
+&timer0_default {
+	pins = <TIMER0_CC0_PA4>;
+};
+
 &exp_header {
 	gpio-map = <3 0 &gpioa 8 0>,
 		   <4 0 &gpioc 0 0>,

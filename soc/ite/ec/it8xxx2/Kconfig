@@ -13,14 +13,9 @@ if SOC_SERIES_IT8XXX2
 
 config SOC_IT8XXX2
 	select RISCV
-	select RISCV_ISA_RV32I
-	select RISCV_ISA_EXT_ZICSR
-	select RISCV_ISA_EXT_ZIFENCEI
 	# Workaround mul instruction bug, see:
 	# https://www.ite.com.tw/uploads/product_download/it81202-bx-chip-errata.pdf
 	select RISCV_ISA_EXT_M if !(SOC_IT81302BX || SOC_IT81202BX)
-	select RISCV_ISA_EXT_A
-	select RISCV_ISA_EXT_C
 	imply XIP
 
 config SOC_IT8XXX2_REG_SET_V1
@@ -187,6 +182,9 @@ config SOC_IT8XXX2_EXT_32K
 
 endchoice
 
+config ARCH_IRQ_VECTOR_TABLE_ALIGN
+	default 4
+
 config SOC_IT8XXX2_USE_ILM
 	bool
 	default y
@@ -213,6 +211,13 @@ config SOC_IT8XXX2_LIBRARY_TO_RAM
 	  If this is selected it means that there is a library that needs to be excluded
 	  from the text section.
 
+config SOC_IT8XXX2_SWITCH_IN_RAM
+	bool "Place switch handling code in RAM"
+	select SOC_IT8XXX2_USE_ILM
+	select SOC_IT8XXX2_LIBRARY_TO_RAM
+	help
+	  Place content switching code in ILM for better performance.
+
 config SOC_IT8XXX2_SERIAL_IN_RAM
 	bool "Place serial handling code in RAM"
 	select SOC_IT8XXX2_USE_ILM
@@ -225,6 +230,7 @@ config SOC_IT8XXX2_KERNEL_IN_RAM
 	bool "Place kernel handling code in RAM"
 	select SOC_IT8XXX2_USE_ILM
 	select SOC_IT8XXX2_LIBRARY_TO_RAM
+	select KERNEL_NO_LTO if LTO
 	help
 	  Place kernel handling code in ILM. This can significantly improve performance.
 
@@ -234,6 +240,15 @@ config SOC_IT8XXX2_ZEPHYR_IN_RAM
 	select SOC_IT8XXX2_LIBRARY_TO_RAM
 	help
 	  Place zephyr handling code in ILM. This can significantly improve performance.
+
+config SOC_IT8XXX2_RAM_CODE_NOINLINE
+	bool "Force RAM code functions to be non-inlined"
+	depends on LTO
+	help
+	  When enabled, functions marked with __soc_ram_code will use the 'noinline'
+	  attribute to ensure they are not inlined by the compiler.
+	  This guarantees the function body stays in the RAM code section rather
+	  than being merged into callers.
 
 config SOC_IT8XXX2_SHA256_HW_ACCELERATE
 	bool "HW SHA256 calculation"

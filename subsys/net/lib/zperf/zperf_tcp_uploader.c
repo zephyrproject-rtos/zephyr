@@ -152,7 +152,7 @@ int zperf_tcp_upload(const struct zperf_upload_params *param,
 
 	sock = zperf_prepare_upload_sock(&param->peer_addr, param->options.tos,
 					 param->options.priority, param->options.tcp_nodelay,
-					 IPPROTO_TCP);
+					 NET_IPPROTO_TCP);
 	if (sock < 0) {
 		return sock;
 	}
@@ -206,7 +206,7 @@ static void tcp_upload_async_work(struct k_work *work)
 
 	sock = zperf_prepare_upload_sock(&param.peer_addr, param.options.tos,
 					 param.options.priority, param.options.tcp_nodelay,
-					 IPPROTO_TCP);
+					 NET_IPPROTO_TCP);
 
 	if (sock < 0) {
 		upload_ctx->callback(ZPERF_SESSION_ERROR, NULL,

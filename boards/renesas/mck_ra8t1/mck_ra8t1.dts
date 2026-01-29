@@ -6,7 +6,7 @@
 /dts-v1/;
 
 #include <renesas/ra/ra8/r7fa8t1ahecbd.dtsi>
-#include <dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include "mck_ra8t1-pinctrl.dtsi"
 
@@ -60,10 +60,6 @@
 	clock-frequency = <DT_FREQ_M(24)>;
 	mosel = <0>;
 	#clock-cells = <0>;
-	status = "okay";
-};
-
-&subclk {
 	status = "okay";
 };
 

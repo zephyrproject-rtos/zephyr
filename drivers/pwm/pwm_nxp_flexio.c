@@ -67,7 +67,7 @@ struct pwm_nxp_flexio_channel_config {
 	/** Counter decrement clock prescaler */
 	enum pwm_nxp_flexio_prescaler prescaler;
 	/** Actual Prescaler divisor */
-	uint8_t prescaler_div;
+	uint16_t prescaler_div;
 };
 
 struct pwm_nxp_flexio_pulse_info {
@@ -86,7 +86,6 @@ struct pwm_nxp_flexio_config {
 };
 
 struct pwm_nxp_flexio_data {
-	uint32_t period_cycles[FLEXIO_MAX_PWM_CHANNELS];
 	uint32_t flexio_clk;
 };
 
@@ -95,7 +94,6 @@ static int pwm_nxp_flexio_set_cycles(const struct device *dev,
 				       uint32_t pulse_cycles, pwm_flags_t flags)
 {
 	const struct pwm_nxp_flexio_config *config = dev->config;
-	struct pwm_nxp_flexio_data *data = dev->data;
 	flexio_timer_config_t timerConfig;
 	struct pwm_nxp_flexio_channel_config *pwm_info;
 	FLEXIO_Type *flexio_base = (FLEXIO_Type *)(config->flexio_base);
@@ -150,10 +148,8 @@ static int pwm_nxp_flexio_set_cycles(const struct device *dev,
 		timerConfig.timerMode = kFLEXIO_TimerModeDual8BitPWMLow;
 	}
 
-	data->period_cycles[channel] = period_cycles;
-
 	timerConfig.timerCompare = ((uint8_t)(pulse_cycles - 1U)) |
-		((uint8_t)(data->period_cycles[channel] - pulse_cycles - 1U)
+		((uint8_t)(period_cycles - pulse_cycles - 1U)
 		 << FLEXIO_PWM_TIMCMP_CMP_UPPER_SHIFT);
 
 	timerConfig.timerOutput = kFLEXIO_TimerOutputZeroNotAffectedByReset;
@@ -191,15 +187,8 @@ static int pwm_nxp_flexio_get_cycles_per_sec(const struct device *dev,
 	struct pwm_nxp_flexio_data *data = dev->data;
 	struct pwm_nxp_flexio_channel_config *pwm_info;
 
-	/* If get_cycles is called directly after init */
-	if (data->period_cycles[channel] == 0) {
-		LOG_ERR("First set the period of this channel to a non zero value");
-		return -ENOTSUP;
-	}
-
 	pwm_info = &config->pulse_info->pwm_info[channel];
-	*cycles = (uint64_t)(((data->flexio_clk) * 2) /
-			((data->period_cycles[channel]) * (pwm_info->prescaler_div)));
+	*cycles = (uint64_t)((data->flexio_clk)) / pwm_info->prescaler_div;
 
 	return 0;
 }

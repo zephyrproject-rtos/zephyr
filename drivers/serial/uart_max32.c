@@ -367,9 +367,6 @@ static int api_fifo_read(const struct device *dev, uint8_t *rx_data, const int s
 	const struct max32_uart_config *cfg = dev->config;
 
 	num_rx = MXC_UART_ReadRXFIFO(cfg->regs, (unsigned char *)rx_data, size);
-	if (num_rx == 0) {
-		MXC_UART_ClearFlags(cfg->regs, ADI_MAX32_UART_INT_RX);
-	}
 
 	return num_rx;
 }
@@ -438,9 +435,7 @@ static void api_irq_err_disable(const struct device *dev)
 
 static int api_irq_is_pending(const struct device *dev)
 {
-	struct max32_uart_data *const data = dev->data;
-
-	return (data->flags & (ADI_MAX32_UART_INT_RX | ADI_MAX32_UART_INT_TX));
+	return api_irq_rx_ready(dev) || api_irq_tx_ready(dev);
 }
 
 static int api_irq_update(const struct device *dev)
@@ -450,8 +445,6 @@ static int api_irq_update(const struct device *dev)
 
 	data->flags = MXC_UART_GetFlags(cfg->regs);
 	data->status = MXC_UART_GetStatus(cfg->regs);
-
-	MXC_UART_ClearFlags(cfg->regs, data->flags);
 
 	return 1;
 }

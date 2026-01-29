@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(net_ipv6_pe, CONFIG_NET_IPV6_PE_LOG_LEVEL);
 #include "ipv6.h"
 
 /* From RFC 5453 */
-static const struct in6_addr reserved_anycast_subnet = { { {
+static const struct net_in6_addr reserved_anycast_subnet = { { {
 			0xfd, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x80,
 			0xfd, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
 		} } };
@@ -80,7 +80,7 @@ static inline uint32_t REGEN_ADVANCE(uint32_t retrans_timer,
 #if CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT > 0
 /* Is this denylisting filter or not */
 static bool ipv6_pe_denylist;
-static struct in6_addr ipv6_pe_filter[CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT];
+static struct net_in6_addr ipv6_pe_filter[CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT];
 
 static K_MUTEX_DEFINE(lock);
 #endif
@@ -88,7 +88,7 @@ static K_MUTEX_DEFINE(lock);
 /* We need to periodically update the private address. */
 static struct k_work_delayable temp_lifetime;
 
-static bool ipv6_pe_use_this_prefix(const struct in6_addr *prefix)
+static bool ipv6_pe_use_this_prefix(const struct net_in6_addr *prefix)
 {
 #if CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT > 0
 	int filter_found = false;
@@ -134,11 +134,11 @@ out:
 }
 
 static bool ipv6_pe_prefix_already_exists(struct net_if_ipv6 *ipv6,
-					  const struct in6_addr *prefix)
+					  const struct net_in6_addr *prefix)
 {
 	ARRAY_FOR_EACH(ipv6->unicast, i) {
 		if (!ipv6->unicast[i].is_used ||
-		    ipv6->unicast[i].address.family != AF_INET6 ||
+		    ipv6->unicast[i].address.family != NET_AF_INET6 ||
 		    !ipv6->unicast[i].is_temporary ||
 		    ipv6->unicast[i].addr_state == NET_ADDR_DEPRECATED) {
 			continue;
@@ -156,13 +156,13 @@ static bool ipv6_pe_prefix_already_exists(struct net_if_ipv6 *ipv6,
 
 static int ipv6_pe_prefix_remove(struct net_if *iface,
 				 struct net_if_ipv6 *ipv6,
-				 const struct in6_addr *prefix)
+				 const struct net_in6_addr *prefix)
 {
 	int count = 0;
 
 	ARRAY_FOR_EACH(ipv6->unicast, i) {
 		if (ipv6->unicast[i].is_used &&
-		    ipv6->unicast[i].address.family == AF_INET6 &&
+		    ipv6->unicast[i].address.family == NET_AF_INET6 &&
 		    ipv6->unicast[i].is_temporary &&
 		    net_ipv6_is_prefix(
 			    (uint8_t *)&ipv6->unicast[i].address.in6_addr,
@@ -177,14 +177,14 @@ static int ipv6_pe_prefix_remove(struct net_if *iface,
 }
 
 static bool ipv6_pe_prefix_update_lifetimes(struct net_if_ipv6 *ipv6,
-					    const struct in6_addr *prefix,
+					    const struct net_in6_addr *prefix,
 					    uint32_t vlifetime)
 {
 	int32_t addr_age, new_age;
 
 	ARRAY_FOR_EACH(ipv6->unicast, i) {
 		if (!(ipv6->unicast[i].is_used &&
-		      ipv6->unicast[i].address.family == AF_INET6 &&
+		      ipv6->unicast[i].address.family == NET_AF_INET6 &&
 		      ipv6->unicast[i].is_temporary &&
 		      ipv6->unicast[i].addr_state == NET_ADDR_PREFERRED &&
 		      net_ipv6_is_prefix(
@@ -217,7 +217,7 @@ static bool ipv6_pe_prefix_update_lifetimes(struct net_if_ipv6 *ipv6,
 
 /* RFC 8981 ch 3.3.2 */
 static int gen_temporary_iid(struct net_if *iface,
-			     const struct in6_addr *prefix,
+			     const struct net_in6_addr *prefix,
 			     uint8_t *network_id, size_t network_id_len,
 			     uint8_t dad_counter,
 			     uint8_t *temporary_iid,
@@ -232,7 +232,7 @@ static int gen_temporary_iid(struct net_if *iface,
 	static bool once;
 	static uint8_t secret_key[16]; /* Min 128 bits, RFC 8981 ch 3.3.2 */
 	struct {
-		struct in6_addr prefix;
+		struct net_in6_addr prefix;
 		uint32_t current_time;
 		uint8_t network_id[16];
 		uint8_t mac[6];
@@ -242,7 +242,7 @@ static int gen_temporary_iid(struct net_if *iface,
 		.dad_counter = dad_counter,
 	};
 
-	memcpy(&buf.prefix, prefix, sizeof(struct in6_addr));
+	memcpy(&buf.prefix, prefix, sizeof(struct net_in6_addr));
 
 	if (network_id != NULL && network_id_len > 0) {
 		memcpy(buf.network_id, network_id,
@@ -293,12 +293,12 @@ err:
 	return (status == PSA_SUCCESS) ? 0 : -EIO;
 }
 
-void net_ipv6_pe_start(struct net_if *iface, const struct in6_addr *prefix,
+void net_ipv6_pe_start(struct net_if *iface, const struct net_in6_addr *prefix,
 		       uint32_t vlifetime, uint32_t preferred_lifetime)
 {
 	struct net_if_addr *ifaddr;
 	struct net_if_ipv6 *ipv6;
-	struct in6_addr addr;
+	struct net_in6_addr addr;
 	k_ticks_t remaining;
 	k_timeout_t vlifetimeout;
 	int i, ret, dad_count = 1;
@@ -369,7 +369,7 @@ void net_ipv6_pe_start(struct net_if *iface, const struct in6_addr *prefix,
 			ifaddr = net_if_ipv6_addr_lookup(&addr, NULL);
 			if (ifaddr == NULL && !net_ipv6_is_addr_unspecified(&addr) &&
 			    memcmp(&addr, &reserved_anycast_subnet,
-				   sizeof(struct in6_addr)) != 0) {
+				   sizeof(struct net_in6_addr)) != 0) {
 				valid = true;
 				break;
 			}
@@ -440,7 +440,7 @@ out:
 static void iface_cb(struct net_if *iface, void *user_data)
 {
 	bool is_new_filter_denylist = !ipv6_pe_denylist;
-	struct in6_addr *prefix = user_data;
+	struct net_in6_addr *prefix = user_data;
 	struct net_if_ipv6 *ipv6;
 	int ret;
 
@@ -456,7 +456,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 
 	ARRAY_FOR_EACH(ipv6->unicast, i) {
 		if (!ipv6->unicast[i].is_used ||
-		    ipv6->unicast[i].address.family != AF_INET6 ||
+		    ipv6->unicast[i].address.family != NET_AF_INET6 ||
 		    !ipv6->unicast[i].is_temporary) {
 			continue;
 		}
@@ -505,7 +505,7 @@ static void ipv6_pe_recheck_filters(bool is_denylist)
 #endif /* CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT > 0 */
 
 #if CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT > 0
-static void send_filter_event(struct in6_addr *addr, bool is_denylist,
+static void send_filter_event(struct net_in6_addr *addr, bool is_denylist,
 			      uint64_t event_type)
 {
 	if (IS_ENABLED(CONFIG_NET_MGMT_EVENT_INFO)) {
@@ -524,7 +524,7 @@ static void send_filter_event(struct in6_addr *addr, bool is_denylist,
 }
 #endif
 
-int net_ipv6_pe_add_filter(struct in6_addr *addr, bool is_denylist)
+int net_ipv6_pe_add_filter(struct net_in6_addr *addr, bool is_denylist)
 {
 #if CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT > 0
 	bool found = false;
@@ -588,7 +588,7 @@ out:
 #endif
 }
 
-int net_ipv6_pe_del_filter(struct in6_addr *addr)
+int net_ipv6_pe_del_filter(struct net_in6_addr *addr)
 {
 #if CONFIG_NET_IPV6_PE_FILTER_PREFIX_COUNT > 0
 	int ret = -ENOENT;
@@ -660,7 +660,7 @@ int net_ipv6_pe_filter_foreach(net_ipv6_pe_filter_cb_t cb, void *user_data)
 struct deprecated_work {
 	struct k_work_delayable work;
 	struct net_if *iface;
-	struct in6_addr addr;
+	struct net_in6_addr addr;
 };
 
 static struct deprecated_work trigger_deprecated_event;
@@ -674,13 +674,13 @@ static void send_deprecated_event(struct k_work *work)
 
 	net_mgmt_event_notify_with_info(NET_EVENT_IPV6_ADDR_DEPRECATED,
 					dw->iface, &dw->addr,
-					sizeof(struct in6_addr));
+					sizeof(struct net_in6_addr));
 }
 
 static void renewal_cb(struct net_if *iface, void *user_data)
 {
 	struct net_if_ipv6 *ipv6;
-	struct in6_addr prefix;
+	struct net_in6_addr prefix;
 
 	if (net_if_config_ipv6_get(iface, &ipv6) < 0) {
 		return;
@@ -694,7 +694,7 @@ static void renewal_cb(struct net_if *iface, void *user_data)
 		int32_t diff;
 
 		if (!ipv6->unicast[i].is_used ||
-		    ipv6->unicast[i].address.family != AF_INET6 ||
+		    ipv6->unicast[i].address.family != NET_AF_INET6 ||
 		    !ipv6->unicast[i].is_temporary ||
 		    ipv6->unicast[i].addr_state == NET_ADDR_DEPRECATED) {
 			continue;
@@ -743,7 +743,7 @@ static void renewal_cb(struct net_if *iface, void *user_data)
 		trigger_deprecated_event.iface = iface;
 		memcpy(&trigger_deprecated_event.addr,
 		       &ipv6->unicast[i].address.in6_addr,
-		       sizeof(struct in6_addr));
+		       sizeof(struct net_in6_addr));
 
 		/* 500ms should be enough for DAD to pass */
 		k_work_schedule(&trigger_deprecated_event.work, K_MSEC(500));

@@ -252,7 +252,7 @@ protected in secure devices, and inaccessible directly by users.
 
 ``TFM_CRYPTO_ALG_HUK_DERIVATION`` identifies the default key derivation
 algorithm used if a software implementation is used. The current default
-algorithm is ``HKDF`` (RFC 5869) with a SHA-256 hash. Other hardware
+algorithm is ``HKDF`` (:rfc:`5869`) with a SHA-256 hash. Other hardware
 implementations may be available on some platforms.
 
 Non-Secure Processing Environment

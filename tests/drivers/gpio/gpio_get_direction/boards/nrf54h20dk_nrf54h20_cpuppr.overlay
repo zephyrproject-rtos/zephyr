@@ -7,6 +7,7 @@
 
 	leds {
 		compatible = "gpio-leds";
+
 		led0: led_0 {
 			gpios = <&gpio9 0 GPIO_ACTIVE_HIGH>;
 			label = "Green LED 0";

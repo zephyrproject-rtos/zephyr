@@ -18,6 +18,8 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include "net_shell_private.h"
 
+#define DNS_TIMEOUT CONFIG_NET_SOCKETS_DNS_TIMEOUT
+
 #if defined(CONFIG_DNS_RESOLVER)
 static void dns_result_cb(enum dns_resolve_status status,
 			  struct dns_addrinfo *info,
@@ -35,26 +37,26 @@ static void dns_result_cb(enum dns_resolve_status status,
 		char str[MAX_STR_LEN + 1];
 
 		switch (info->ai_family) {
-		case AF_INET:
-			net_addr_ntop(AF_INET,
+		case NET_AF_INET:
+			net_addr_ntop(NET_AF_INET,
 				      &net_sin(&info->ai_addr)->sin_addr,
 				      str, sizeof(str));
 			break;
 
-		case AF_INET6:
-			net_addr_ntop(AF_INET6,
+		case NET_AF_INET6:
+			net_addr_ntop(NET_AF_INET6,
 				      &net_sin6(&info->ai_addr)->sin6_addr,
 				      str, sizeof(str));
 			break;
 
-		case AF_LOCAL:
+		case NET_AF_LOCAL:
 			/* service discovery */
 			memset(str, 0, MAX_STR_LEN);
 			memcpy(str, info->ai_canonname,
 			       MIN(info->ai_addrlen, MAX_STR_LEN));
 			break;
 
-		case AF_UNSPEC:
+		case NET_AF_UNSPEC:
 			if (info->ai_extension == DNS_RESOLVE_TXT) {
 				memset(str, 0, MAX_STR_LEN);
 				memcpy(str, info->ai_txt.text,
@@ -140,7 +142,7 @@ static void print_dns_info(const struct shell *sh,
 
 	for (i = 0; i < CONFIG_DNS_RESOLVER_MAX_SERVERS +
 		     DNS_MAX_MCAST_SERVERS; i++) {
-		char iface_name[IFNAMSIZ] = { 0 };
+		char iface_name[NET_IFNAMSIZ] = { 0 };
 
 		if (ctx->servers[i].if_index > 0) {
 			ret = net_if_get_name(
@@ -152,12 +154,12 @@ static void print_dns_info(const struct shell *sh,
 			}
 		}
 
-		if (ctx->servers[i].dns_server.sa_family == AF_INET) {
+		if (ctx->servers[i].dns_server.sa_family == NET_AF_INET) {
 			PR("\t%s:%u%s%s%s%s%s\n",
 			   net_sprint_ipv4_addr(
 				   &net_sin(&ctx->servers[i].dns_server)->
 				   sin_addr),
-			   ntohs(net_sin(&ctx->servers[i].dns_server)->sin_port),
+			   net_ntohs(net_sin(&ctx->servers[i].dns_server)->sin_port),
 			   printable_iface(iface_name, " via ", ""),
 			   printable_iface(iface_name, iface_name, ""),
 			   ctx->servers[i].source != DNS_SOURCE_UNKNOWN ? " (" : "",
@@ -165,12 +167,12 @@ static void print_dns_info(const struct shell *sh,
 					dns_get_source_str(ctx->servers[i].source) : "",
 			   ctx->servers[i].source != DNS_SOURCE_UNKNOWN ? ")" : "");
 
-		} else if (ctx->servers[i].dns_server.sa_family == AF_INET6) {
+		} else if (ctx->servers[i].dns_server.sa_family == NET_AF_INET6) {
 			PR("\t[%s]:%u%s%s%s%s%s\n",
 			   net_sprint_ipv6_addr(
 				   &net_sin6(&ctx->servers[i].dns_server)->
 				   sin6_addr),
-			   ntohs(net_sin6(&ctx->servers[i].dns_server)->sin6_port),
+			   net_ntohs(net_sin6(&ctx->servers[i].dns_server)->sin6_port),
 			   printable_iface(iface_name, " via ", ""),
 			   printable_iface(iface_name, iface_name, ""),
 			   ctx->servers[i].source != DNS_SOURCE_UNKNOWN ? " (" : "",
@@ -262,7 +264,6 @@ static int cmd_net_dns_query(const struct shell *sh, size_t argc, char *argv[])
 {
 
 #if defined(CONFIG_DNS_RESOLVER)
-#define DNS_QUERY_TIMEOUT (MSEC_PER_SEC * 2) /* ms */
 	struct dns_resolve_context *ctx;
 	enum dns_query_type qtype = DNS_QUERY_TYPE_A;
 	char *host, *type = NULL;
@@ -311,7 +312,7 @@ static int cmd_net_dns_query(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	ret = dns_resolve_name(ctx, host, qtype, NULL, dns_result_cb,
-				(void *)sh, DNS_QUERY_TIMEOUT);
+				(void *)sh, DNS_TIMEOUT);
 	if (ret < 0) {
 		PR_WARNING("Cannot resolve '%s' (%d)\n", host, ret);
 	} else {
@@ -373,7 +374,7 @@ static int cmd_net_dns_list(const struct shell *sh, size_t argc, char *argv[])
 		++n_records;
 
 		if (record->port != NULL) {
-			snprintk(buf, sizeof(buf), "%u", ntohs(*record->port));
+			snprintk(buf, sizeof(buf), "%u", net_ntohs(*record->port));
 		}
 
 		PR("[%2d] %s.%s%s%s%s%s%s%s\n",
@@ -403,7 +404,6 @@ static int cmd_net_dns_list(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_net_dns_service(const struct shell *sh, size_t argc, char *argv[])
 {
 #if defined(CONFIG_DNS_RESOLVER)
-#define DNS_SERVICE_TIMEOUT (MSEC_PER_SEC * 4) /* ms */
 	struct dns_resolve_context *ctx;
 	char *cp;
 	char *service;
@@ -427,7 +427,7 @@ static int cmd_net_dns_service(const struct shell *sh, size_t argc, char *argv[]
 	}
 
 	ret = dns_resolve_service(ctx, service, &dns_id, dns_service_cb,
-				(void *)sh, DNS_SERVICE_TIMEOUT);
+				(void *)sh, DNS_TIMEOUT);
 	if (ret < 0) {
 		PR_WARNING("Cannot resolve '%s' (%d)\n", service, ret);
 		return ret;
@@ -440,32 +440,32 @@ static int cmd_net_dns_service(const struct shell *sh, size_t argc, char *argv[]
 		enum dns_query_type qtype;
 		char query[DNS_MAX_NAME_SIZE + 1];
 		union {
-			char in4[INET_ADDRSTRLEN];
-			char in6[INET6_ADDRSTRLEN];
+			char in4[NET_INET_ADDRSTRLEN];
+			char in6[NET_INET6_ADDRSTRLEN];
 		} str;
 
-		ret = k_msgq_get(&dns_infoq, &info, K_MSEC(DNS_SERVICE_TIMEOUT));
+		ret = k_msgq_get(&dns_infoq, &info, K_MSEC(DNS_TIMEOUT));
 		if (ret < 0) {
 			/* just assume a timeout so no more data to process */
 			break;
 		}
 
 		switch (info.ai_family) {
-		case AF_INET:
-			cp = net_addr_ntop(AF_INET,
+		case NET_AF_INET:
+			cp = net_addr_ntop(NET_AF_INET,
 					   &net_sin(&info.ai_addr)->sin_addr,
 					   str.in4, sizeof(str.in4));
 			PR("AF_INET %s:%u\n", cp ? cp : "<invalid>", port);
 			break;
 
-		case AF_INET6:
-			cp = net_addr_ntop(AF_INET6,
+		case NET_AF_INET6:
+			cp = net_addr_ntop(NET_AF_INET6,
 					   &net_sin6(&info.ai_addr)->sin6_addr,
 					   str.in6, sizeof(str.in6));
 			PR("AF_INET6 [%s]:%u\n", cp ? cp : "<invalid>", port);
 			break;
 
-		case AF_LOCAL:
+		case NET_AF_LOCAL:
 			PR("AF_LOCAL %.*s\n",
 			   (int)info.ai_addrlen, info.ai_canonname);
 
@@ -476,13 +476,13 @@ static int cmd_net_dns_service(const struct shell *sh, size_t argc, char *argv[]
 			ret = dns_resolve_name(ctx, query, qtype,
 					       &dns_id,
 					       dns_service_cb, (void *)sh,
-					       DNS_SERVICE_TIMEOUT);
+					       DNS_TIMEOUT);
 			if (ret < 0) {
 				return ret;
 			}
 			break;
 
-		case AF_UNSPEC:
+		case NET_AF_UNSPEC:
 			if (info.ai_extension == DNS_RESOLVE_SRV) {
 				PR("SRV %d %d %d %.*s\n",
 				   info.ai_srv.priority,
@@ -508,7 +508,7 @@ static int cmd_net_dns_service(const struct shell *sh, size_t argc, char *argv[]
 						       &dns_id,
 						       dns_service_cb,
 						       (void *)sh,
-						       DNS_SERVICE_TIMEOUT);
+						       DNS_TIMEOUT);
 				if (ret < 0) {
 					return ret;
 				}

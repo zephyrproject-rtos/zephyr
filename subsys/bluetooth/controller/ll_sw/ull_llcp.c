@@ -1387,14 +1387,44 @@ bool ull_cp_cc_awaiting_established(struct ll_conn *conn)
 	return false;
 }
 
+bool ull_cp_cc_is_active(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO)) {
+		ctx = llcp_rr_peek(conn);
+		if (ctx != NULL && ctx->proc == PROC_CIS_CREATE) {
+			return llcp_rp_cc_is_active(ctx);
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_ISO)) {
+		ctx = llcp_lr_peek(conn);
+		if (ctx != NULL && ctx->proc == PROC_CIS_CREATE) {
+			return llcp_lp_cc_is_active(ctx);
+		}
+	}
+
+	return false;
+}
+
 #if defined(CONFIG_BT_CTLR_CENTRAL_ISO)
-bool ull_cp_cc_cancel(struct ll_conn *conn)
+bool ull_cp_cc_cancel(struct ll_conn *conn, const struct ll_conn_iso_stream *cis)
 {
 	struct proc_ctx *ctx;
 
 	ctx = llcp_lr_peek(conn);
-	if (ctx && ctx->proc == PROC_CIS_CREATE) {
+	if (ctx != NULL && ctx->proc == PROC_CIS_CREATE &&
+	    ctx->data.cis_create.cis_handle == cis->lll.handle) {
 		return llcp_lp_cc_cancel(conn, ctx);
+	} else {
+		/* Look through queue */
+		ctx = llcp_lr_peek_cc(conn, cis->lll.handle);
+		if (ctx != NULL) {
+			/* Set error - LLCP statemachine will handle the rest later */
+			ctx->data.cis_create.error = BT_HCI_ERR_OP_CANCELLED_BY_HOST;
+			return true;
+		}
 	}
 
 	return false;
@@ -1423,6 +1453,29 @@ void ull_cp_cc_established(struct ll_conn *conn, uint8_t error_code)
 	}
 #endif /* CONFIG_BT_CTLR_CENTRAL_ISO */
 }
+
+void ull_cp_cc_acl_disconnect(struct ll_conn *conn)
+{
+	struct proc_ctx *ctx;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PERIPHERAL_ISO)) {
+		ctx = llcp_rr_peek(conn);
+		if (ctx != NULL && ctx->proc == PROC_CIS_CREATE) {
+			ctx->data.cis_create.error = BT_HCI_ERR_CONN_FAIL_TO_ESTAB;
+			llcp_rp_cc_acl_disconnect(conn, ctx);
+			llcp_rr_check_done(conn, ctx);
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_CENTRAL_ISO)) {
+		ctx = llcp_lr_peek(conn);
+		if (ctx != NULL && ctx->proc == PROC_CIS_CREATE) {
+			ctx->data.cis_create.error = BT_HCI_ERR_CONN_FAIL_TO_ESTAB;
+			llcp_lp_cc_acl_disconnect(conn, ctx);
+			llcp_lr_check_done(conn, ctx);
+		}
+	}
+}
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO || CONFIG_BT_CTLR_CENTRAL_ISO */
 
 #if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_CENTRAL_ISO)
@@ -1437,11 +1490,23 @@ bool ull_lp_cc_is_active(struct ll_conn *conn)
 	return false;
 }
 
-bool ull_lp_cc_is_enqueued(struct ll_conn *conn)
+bool ull_lp_cc_is_enqueued(struct ll_conn *conn, const struct ll_conn_iso_stream *cis)
 {
 	struct proc_ctx *ctx;
+	uint16_t cis_handle;
 
-	ctx = llcp_lr_peek_proc(conn, PROC_CIS_CREATE);
+	if (cis) {
+		cis_handle = cis->lll.handle;
+	} else {
+		cis_handle = LLL_HANDLE_INVALID;
+	}
+
+	ctx = llcp_lr_peek_cc(conn, cis_handle);
+
+	if (ctx != NULL && cis != NULL && ctx->data.cis_create.error != BT_HCI_ERR_SUCCESS) {
+		/* Cis Create for this CIS enqueued, but has been cancelled */
+		ctx = NULL;
+	}
 
 	return (ctx != NULL);
 }
@@ -1487,20 +1552,19 @@ void ull_lp_past_offset_calc_reply(struct ll_conn *conn, uint32_t offset_us,
 
 			/* Update offset_us */
 			offset_us = offset_us - (conn_event_offset * conn_interval_us);
-
-			ctx->data.periodic_sync.conn_event_count = ull_conn_event_counter(conn) +
-								   conn_event_offset;
 		}
 
 		llcp_pdu_fill_sync_info_offset(&ctx->data.periodic_sync.sync_info, offset_us);
+
 #if defined(CONFIG_BT_PERIPHERAL)
 		/* Save the result for later use */
 		ctx->data.periodic_sync.offset_us = offset_us;
 #endif /* CONFIG_BT_PERIPHERAL */
 
-		ctx->data.periodic_sync.sync_conn_event_count = ull_conn_event_counter(conn);
-		ctx->data.periodic_sync.conn_event_count = ull_conn_event_counter(conn) +
-							   conn_event_offset;
+		ctx->data.periodic_sync.sync_conn_event_count =
+			ull_conn_event_counter_at_prepare(conn) - 1U;
+		ctx->data.periodic_sync.conn_event_count =
+			ull_conn_event_counter_at_prepare(conn) + conn_event_offset - 1U;
 
 		ctx->data.periodic_sync.sync_info.evt_cntr = pa_event_counter;
 

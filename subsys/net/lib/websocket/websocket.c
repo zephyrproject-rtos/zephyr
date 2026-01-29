@@ -22,12 +22,7 @@ LOG_MODULE_REGISTER(net_websocket, CONFIG_NET_WEBSOCKET_LOG_LEVEL);
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_ip.h>
-#if defined(CONFIG_POSIX_API)
-#include <zephyr/posix/unistd.h>
-#include <zephyr/posix/sys/socket.h>
-#else
 #include <zephyr/net/socket.h>
-#endif
 #include <zephyr/net/http/client.h>
 #include <zephyr/net/websocket.h>
 
@@ -35,11 +30,7 @@ LOG_MODULE_REGISTER(net_websocket, CONFIG_NET_WEBSOCKET_LOG_LEVEL);
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/base64.h>
 
-#ifdef CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT
 #include <psa/crypto.h>
-#else
-#include <mbedtls/sha1.h>
-#endif /* CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT */
 
 #include "net_private.h"
 #include "sockets_internal.h"
@@ -59,7 +50,7 @@ static struct k_sem contexts_lock;
 static const struct socket_op_vtable websocket_fd_op_vtable;
 
 #if defined(CONFIG_NET_TEST)
-int verify_sent_and_received_msg(struct msghdr *msg, bool split_msg);
+int verify_sent_and_received_msg(struct net_msghdr *msg, bool split_msg);
 #endif
 
 static const char *opcode2str(enum websocket_opcode opcode)
@@ -258,10 +249,8 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 		"Sec-WebSocket-Version: 13\r\n",
 		NULL
 	};
-#ifdef CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT
 	psa_status_t psa_status;
 	size_t hash_length;
-#endif /* CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT */
 
 	fd = -1;
 
@@ -289,7 +278,6 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 	ctx->http_cb = wreq->http_cb;
 	ctx->is_client = 1;
 
-#ifdef CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT
 	psa_status = psa_hash_compute(PSA_ALG_SHA_1, (const uint8_t *)&rnd_value, sizeof(rnd_value),
 				      sec_accept_key, sizeof(sec_accept_key), &hash_length);
 	if (psa_status != PSA_SUCCESS) {
@@ -297,15 +285,6 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 		ret = -EPROTO;
 		goto out;
 	}
-#else
-	ret = mbedtls_sha1((const unsigned char *)&rnd_value, sizeof(rnd_value), sec_accept_key);
-	if (ret != 0) {
-		NET_DBG("[%p] Cannot calculate sha1 (%d)", ctx, ret);
-		ret = -EPROTO;
-		goto out;
-	}
-#endif /* CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT */
-
 
 	ret = base64_encode(sec_ws_key + sizeof("Sec-Websocket-Key: ") - 1,
 			    sizeof(sec_ws_key) -
@@ -365,10 +344,9 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 		key_len);
 
 	olen = MIN(sizeof(key_accept) - 1 - key_len, sizeof(WS_MAGIC) - 1);
-	strncpy(key_accept + key_len, WS_MAGIC, olen);
+	memcpy(key_accept + key_len, WS_MAGIC, olen);
 
 	/* This SHA-1 value is then checked when we receive the response */
-#ifdef CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT
 	psa_status = psa_hash_compute(PSA_ALG_SHA_1, (const uint8_t *)key_accept, olen + key_len,
 				      sec_accept_key, sizeof(sec_accept_key), &hash_length);
 	if (psa_status != PSA_SUCCESS) {
@@ -376,14 +354,6 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 		ret = -EPROTO;
 		goto out;
 	}
-#else
-	ret = mbedtls_sha1(key_accept, olen + key_len, sec_accept_key);
-	if (ret != 0) {
-		NET_DBG("[%p] Cannot calculate sha1 (%d)", ctx, ret);
-		ret = -EPROTO;
-		goto out;
-	}
-#endif /* CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT */
 
 	ret = http_client_req(sock, &req, timeout, ctx);
 	if (ret < 0) {
@@ -434,7 +404,7 @@ int websocket_connect(int sock, struct websocket_request *wreq,
 	/* Init parser FSM */
 	ctx->parser_state = WEBSOCKET_PARSER_STATE_OPCODE;
 
-	(void)sock_obj_core_alloc_find(ctx->real_sock, fd, SOCK_STREAM);
+	(void)sock_obj_core_alloc_find(ctx->real_sock, fd, NET_SOCK_STREAM);
 
 	return fd;
 
@@ -585,7 +555,7 @@ static int websocket_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 }
 
 #if !defined(CONFIG_NET_TEST)
-static int sendmsg_all(int sock, const struct msghdr *message, int flags,
+static int sendmsg_all(int sock, const struct net_msghdr *message, int flags,
 			const k_timepoint_t req_end_timepoint)
 {
 	int ret, i;
@@ -648,8 +618,8 @@ static int websocket_prepare_and_send(struct websocket_context *ctx,
 				      uint8_t *payload, size_t payload_len,
 				      int32_t timeout)
 {
-	struct iovec io_vector[2];
-	struct msghdr msg;
+	struct net_iovec io_vector[2];
+	struct net_msghdr msg;
 
 	io_vector[0].iov_base = header;
 	io_vector[0].iov_len = header_len;
@@ -1175,8 +1145,8 @@ static ssize_t websocket_write_vmeth(void *obj, const void *buffer,
 
 static ssize_t websocket_sendto_ctx(void *obj, const void *buf, size_t len,
 				    int flags,
-				    const struct sockaddr *dest_addr,
-				    socklen_t addrlen)
+				    const struct net_sockaddr *dest_addr,
+				    net_socklen_t addrlen)
 {
 	struct websocket_context *ctx = obj;
 	int32_t timeout = SYS_FOREVER_MS;
@@ -1192,8 +1162,8 @@ static ssize_t websocket_sendto_ctx(void *obj, const void *buf, size_t len,
 }
 
 static ssize_t websocket_recvfrom_ctx(void *obj, void *buf, size_t max_len,
-				      int flags, struct sockaddr *src_addr,
-				      socklen_t *addrlen)
+				      int flags, struct net_sockaddr *src_addr,
+				      net_socklen_t *addrlen)
 {
 	struct websocket_context *ctx = obj;
 	int32_t timeout = SYS_FOREVER_MS;
@@ -1248,7 +1218,7 @@ int websocket_register(int sock, uint8_t *recv_buf, size_t recv_buf_len)
 	ctx->recv_buf.count = 0;
 	ctx->parser_state = WEBSOCKET_PARSER_STATE_OPCODE;
 
-	(void)sock_obj_core_alloc_find(ctx->real_sock, fd, SOCK_STREAM);
+	(void)sock_obj_core_alloc_find(ctx->real_sock, fd, NET_SOCK_STREAM);
 
 	return fd;
 

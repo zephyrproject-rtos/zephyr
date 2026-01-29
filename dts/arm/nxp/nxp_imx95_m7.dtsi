@@ -6,7 +6,7 @@
 
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/clock/imx95_clock.h>
-#include <dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <mem.h>
 #include <freq.h>
@@ -81,6 +81,11 @@
 				#power-domain-cells = <1>;
 			};
 
+			scmi_system: protocol@12 {
+				compatible = "arm,scmi-system";
+				reg = <0x12>;
+			};
+
 			scmi_clk: protocol@14 {
 				compatible = "arm,scmi-clock";
 				reg = <0x14>;
@@ -103,15 +108,49 @@
 		};
 	};
 
+	power-domains {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		disp_mix: power-domain@13 {
+			compatible = "arm,scmi-power-domain";
+			reg = <13>;
+			#power-domain-cells = <0>;
+		};
+
+		netc_mix: power-domain@18 {
+			compatible = "arm,scmi-power-domain";
+			reg = <18>;
+			#power-domain-cells = <0>;
+		};
+	};
+
 	soc {
 		itcm: itcm@0 {
-			compatible = "nxp,imx-itcm";
-			reg = <0x0 DT_SIZE_K(256)>;
+			compatible = "zephyr,memory-region", "nxp,imx-itcm";
+			reg = <0x00000000 DT_SIZE_K(256)>;
+			zephyr,memory-region = "ITCM";
 		};
 
 		dtcm: dtcm@20000000 {
 			compatible = "nxp,imx-dtcm";
 			reg = <0x20000000 DT_SIZE_K(256)>;
+		};
+
+		flexio1: flexio@425c0000 {
+			compatible = "nxp,flexio";
+			reg = <0x425c0000 0x4000>;
+			interrupts = <46 0>;
+			clocks = <&scmi_clk IMX95_CLK_FLEXIO1>;
+			status = "disabled";
+		};
+
+		flexio2: flexio@425d0000 {
+			compatible = "nxp,flexio";
+			reg = <0x425d0000 0x4000>;
+			interrupts = <47 0>;
+			clocks = <&scmi_clk IMX95_CLK_FLEXIO2>;
+			status = "disabled";
 		};
 
 		flexspi: spi@425e0000 {
@@ -131,6 +170,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <16>;
+			status = "disabled";
 		};
 
 		gpio2: gpio@43810000 {
@@ -140,6 +180,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <32>;
+			status = "disabled";
 		};
 
 		gpio3: gpio@43820000 {
@@ -149,6 +190,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <32>;
+			status = "disabled";
 		};
 
 		gpio4: gpio@43840000 {
@@ -158,6 +200,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <30>;
+			status = "disabled";
 		};
 
 		gpio5: gpio@43850000 {
@@ -167,6 +210,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <18>;
+			status = "disabled";
 		};
 
 		edma2: dma@42000000 {
@@ -267,6 +311,71 @@
 			#size-cells = <0>;
 			tx-fifo-size = <16>;
 			rx-fifo-size = <16>;
+		};
+
+		flexcan1: can@443a0000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x443a0000 DT_SIZE_K(64)>;
+			interrupts = <8 0>, <9 0>;
+			interrupt-names = "common", "error";
+			clocks = <&scmi_clk IMX95_CLK_CAN1>;
+			clock-names = "clksrc0";
+			clk-source = <0>;
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
+			status = "disabled";
+		};
+
+		flexcan2: can@425b0000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x425b0000 DT_SIZE_K(64)>;
+			interrupts = <38 0>, <39 0>;
+			interrupt-names = "common", "error";
+			clocks = <&scmi_clk IMX95_CLK_CAN2>;
+			clock-names = "clksrc0";
+			clk-source = <0>;
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
+			status = "disabled";
+		};
+
+		flexcan3: can@42600000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x42600000 DT_SIZE_K(64)>;
+			interrupts = <40 0>, <41 0>;
+			interrupt-names = "common", "error";
+			clocks = <&scmi_clk IMX95_CLK_CAN3>;
+			clock-names = "clksrc0";
+			clk-source = <0>;
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
+			status = "disabled";
+		};
+
+		flexcan4: can@427c0000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x427c0000 DT_SIZE_K(64)>;
+			interrupts = <42 0>, <43 0>;
+			interrupt-names = "common", "error";
+			clocks = <&scmi_clk IMX95_CLK_CAN4>;
+			clock-names = "clksrc0";
+			clk-source = <0>;
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
+			status = "disabled";
+		};
+
+		flexcan5: can@427d0000 {
+			compatible = "nxp,flexcan-fd", "nxp,flexcan";
+			reg = <0x427d0000 DT_SIZE_K(64)>;
+			interrupts = <44 0>, <45 0>;
+			interrupt-names = "common", "error";
+			clocks = <&scmi_clk IMX95_CLK_CAN5>;
+			clock-names = "clksrc0";
+			clk-source = <0>;
+			number-of-mb = <96>;
+			number-of-mb-fd = <21>;
+			status = "disabled";
 		};
 
 		lpuart3: serial@42570000 {
@@ -515,8 +624,34 @@
 			clocks = <&scmi_clk IMX95_CLK_LPTMR2>;
 			clock-frequency = <DT_FREQ_K(32)>;
 			clk-source = <2>;
-			prescale-glitch-filter = <0>;
+			prescale-glitch-filter-bypass;
 			resolution = <32>;
+			status = "disabled";
+		};
+
+		i3c1: i3c@44330000 {
+			compatible = "nxp,mcux-i3c";
+			reg = <0x44330000 0x1000>;
+			interrupts = <12 0>;
+			clocks = <&scmi_clk IMX95_CLK_I3C1>;
+			clk-divider = <6>;
+			clk-divider-slow = <1>;
+			clk-divider-tc = <1>;
+			#address-cells = <3>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i3c2: i3c@42520000 {
+			compatible = "nxp,mcux-i3c";
+			reg = <0x42520000 0x1000>;
+			interrupts = <57 0>;
+			clocks = <&scmi_clk IMX95_CLK_I3C2>;
+			clk-divider = <6>;
+			clk-divider-slow = <1>;
+			clk-divider-tc = <1>;
+			#address-cells = <3>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 
@@ -538,16 +673,154 @@
 		irqsteer: interrupt-controller@44680000 {
 			compatible = "nxp,irqsteer-intc";
 			reg = <0x44680000 DT_SIZE_K(64)>;
-
 			#size-cells = <0>;
 			#address-cells = <1>;
+			nxp,irq-offset = <234>;
+			nxp,num-irqs = <640>;
 
 			irqsteer_master0: interrupt-controller@0 {
 				compatible = "nxp,irqsteer-master";
 				reg = <0>;
 				interrupt-controller;
-				#interrupt-cells = <1>;
+				#interrupt-cells = <2>;
 				interrupts-extended = <&nvic 224 0>;
+			};
+
+			irqsteer_master1: interrupt-controller@1 {
+				compatible = "nxp,irqsteer-master";
+				reg = <1>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 225 0>;
+			};
+
+			irqsteer_master2: interrupt-controller@2 {
+				compatible = "nxp,irqsteer-master";
+				reg = <2>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 226 0>;
+			};
+
+			irqsteer_master3: interrupt-controller@3 {
+				compatible = "nxp,irqsteer-master";
+				reg = <3>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 227 0>;
+			};
+
+			irqsteer_master4: interrupt-controller@4 {
+				compatible = "nxp,irqsteer-master";
+				reg = <4>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 228 0>;
+			};
+
+			irqsteer_master5: interrupt-controller@5 {
+				compatible = "nxp,irqsteer-master";
+				reg = <5>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 229 0>;
+			};
+
+			irqsteer_master6: interrupt-controller@6 {
+				compatible = "nxp,irqsteer-master";
+				reg = <6>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 230 0>;
+			};
+
+			irqsteer_master7: interrupt-controller@7 {
+				compatible = "nxp,irqsteer-master";
+				reg = <7>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 231 0>;
+			};
+
+			irqsteer_master8: interrupt-controller@8 {
+				compatible = "nxp,irqsteer-master";
+				reg = <8>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 232 0>;
+			};
+
+			irqsteer_master9: interrupt-controller@9 {
+				compatible = "nxp,irqsteer-master";
+				reg = <9>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 233 0>;
+			};
+		};
+
+		disp_irqsteer: interrupt-controller@4b0b0000 {
+			compatible = "nxp,irqsteer-intc";
+			reg = <0x4b0b0000 DT_SIZE_K(64)>;
+			#size-cells = <0>;
+			#address-cells = <1>;
+			nxp,irq-offset = <874>;
+			nxp,num-irqs = <512>;
+			power-domains = <&disp_mix>;
+			status = "disabled";
+
+			disp_irqsteer_master0: interrupt-controller@0 {
+				compatible = "nxp,irqsteer-master";
+				reg = <0>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 214 0>;
+				status = "disabled";
+			};
+
+			disp_irqsteer_master1: interrupt-controller@1 {
+				compatible = "nxp,irqsteer-master";
+				reg = <1>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 215 0>;
+				status = "disabled";
+			};
+
+			disp_irqsteer_master2: interrupt-controller@2 {
+				compatible = "nxp,irqsteer-master";
+				reg = <2>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 216 0>;
+				status = "disabled";
+			};
+
+			disp_irqsteer_master3: interrupt-controller@3 {
+				compatible = "nxp,irqsteer-master";
+				reg = <3>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 217 0>;
+				status = "disabled";
+			};
+
+			disp_irqsteer_master4: interrupt-controller@4 {
+				compatible = "nxp,irqsteer-master";
+				reg = <4>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 218 0>;
+				status = "disabled";
+			};
+
+			disp_irqsteer_master7: interrupt-controller@7 {
+				compatible = "nxp,irqsteer-master";
+				reg = <7>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				interrupts-extended = <&nvic 219 0>;
+				status = "disabled";
 			};
 		};
 
@@ -559,12 +832,13 @@
 			reg-names = "ierb", "prb", "netcmix";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			power-domains = <&netc_mix>;
 			ranges;
 
 			netc: ethernet {
 				compatible = "nxp,imx-netc";
 				interrupt-parent = <&irqsteer_master0>;
-				interrupts = <13 0 0>;
+				interrupts = <13 0>;
 				#address-cells = <1>;
 				#size-cells = <1>;
 				ranges;
@@ -576,6 +850,7 @@
 					reg-names = "port", "pfconfig";
 					mac-index = <0>;
 					si-index = <0>;
+					power-domains = <&netc_mix>;
 					status = "disabled";
 				};
 
@@ -586,6 +861,7 @@
 					reg-names = "port", "pfconfig";
 					mac-index = <1>;
 					si-index = <1>;
+					power-domains = <&netc_mix>;
 					status = "disabled";
 				};
 
@@ -596,6 +872,7 @@
 					reg-names = "port", "pfconfig";
 					mac-index = <2>;
 					si-index = <2>;
+					power-domains = <&netc_mix>;
 					status = "disabled";
 				};
 
@@ -607,6 +884,7 @@
 					clocks = <&scmi_clk IMX95_CLK_ENET>;
 					#address-cells = <1>;
 					#size-cells = <0>;
+					power-domains = <&netc_mix>;
 					status = "disabled";
 				};
 
@@ -614,6 +892,7 @@
 					compatible = "nxp,netc-ptp-clock";
 					reg = <0x4ccc0000 0x10000>;
 					clocks = <&scmi_clk IMX95_CLK_ENET>;
+					power-domains = <&netc_mix>;
 					status = "disabled";
 				};
 			};

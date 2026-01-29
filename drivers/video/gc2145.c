@@ -38,6 +38,8 @@ LOG_MODULE_REGISTER(video_gc2145, CONFIG_VIDEO_LOG_LEVEL);
 #define GC2145_REG_SYNC_MODE_DEF        0x03
 #define GC2145_REG_SYNC_MODE_COL_SWITCH 0x10
 #define GC2145_REG_SYNC_MODE_ROW_SWITCH 0x20
+#define GC2145_REG_BYPASS_MODE          0x89
+#define GC2145_REG_BYPASS_MODE_SWITCH   BIT(5)
 #define GC2145_REG_CHIP_ID		GC2145_REG16_BE(0xF0)
 #define GC2145_REG_RESET                0xFE
 #define GC2145_REG_SW_RESET             0x80
@@ -168,7 +170,7 @@ static const struct video_reg8 default_regs[] = {
 	{GC2145_REG_OUTPUT_FMT, GC2145_REG_OUTPUT_FMT_RGB565},
 	{GC2145_REG_SYNC_MODE, GC2145_REG_SYNC_MODE_DEF},
 	{0x88, 0x03},
-	{0x89, 0x03},
+	{GC2145_REG_BYPASS_MODE, 0x03},
 	{0x85, 0x08},
 	{0x8a, 0x00},
 	{0x8b, 0x00},
@@ -835,6 +837,7 @@ static int gc2145_soft_reset(const struct device *dev)
 static int gc2145_set_output_format(const struct device *dev, int output_format)
 {
 	const struct gc2145_config *cfg = dev->config;
+	uint8_t bypass_switch = 0;
 	int ret;
 
 	ret = video_write_cci_reg(&cfg->i2c, GC2145_REG8(GC2145_REG_RESET),
@@ -846,6 +849,14 @@ static int gc2145_set_output_format(const struct device *dev, int output_format)
 	/* Map format to sensor format */
 	if (output_format == VIDEO_PIX_FMT_RGB565) {
 		output_format = GC2145_REG_OUTPUT_FMT_RGB565;
+
+		/*
+		 * For RGB565 format on CSI, it is necessary to set switch bit in order to
+		 * have proper RGB565 CSI format (aka _LE) generated
+		 */
+		if (cfg->bus_type == VIDEO_BUS_TYPE_CSI2_DPHY) {
+			bypass_switch = GC2145_REG_BYPASS_MODE_SWITCH;
+		}
 	} else if (output_format == VIDEO_PIX_FMT_YUYV) {
 		output_format = GC2145_REG_OUTPUT_FMT_YCBYCR;
 	} else {
@@ -857,6 +868,14 @@ static int gc2145_set_output_format(const struct device *dev, int output_format)
 				   GC2145_REG_OUTPUT_FMT_MASK, output_format);
 	if (ret < 0) {
 		return ret;
+	}
+
+	if (cfg->bus_type == VIDEO_BUS_TYPE_CSI2_DPHY) {
+		ret = video_modify_cci_reg(&cfg->i2c, GC2145_REG8(GC2145_REG_BYPASS_MODE),
+					   GC2145_REG_BYPASS_MODE_SWITCH, bypass_switch);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	k_sleep(K_MSEC(30));

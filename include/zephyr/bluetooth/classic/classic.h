@@ -24,6 +24,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/hci_types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -191,6 +192,41 @@ int bt_br_oob_get_local(struct bt_br_oob *oob);
 int bt_br_set_discoverable(bool enable, bool limited);
 
 /**
+ * @brief BR/EDR connection request response codes.
+ *
+ * Response codes for incoming BR/EDR connection requests, used by the
+ * connection request callback to accept or reject connections.
+ */
+enum bt_br_conn_req_rsp {
+	/** Accept connection as central role */
+	BT_BR_CONN_REQ_ACCEPT_CENTRAL      = BT_HCI_ROLE_CENTRAL,
+	/** Accept connection as peripheral role */
+	BT_BR_CONN_REQ_ACCEPT_PERIPHERAL   = BT_HCI_ROLE_PERIPHERAL,
+	/** Reject connection due to insufficient resources */
+	BT_BR_CONN_REQ_REJECT_NO_RESOURCES = BT_HCI_ERR_INSUFFICIENT_RESOURCES,
+	/** Reject connection due to insufficient security */
+	BT_BR_CONN_REQ_REJECT_SECURITY     = BT_HCI_ERR_INSUFFICIENT_SECURITY,
+	/** Reject connection due to unacceptable device address */
+	BT_BR_CONN_REQ_REJECT_ADDR         = BT_HCI_ERR_BD_ADDR_UNACCEPTABLE,
+};
+
+/**
+ * @brief Callback type for incoming BR/EDR connection requests.
+ *
+ * This callback is invoked when a remote Bluetooth Classic device attempts to
+ * establish a connection to the local controller. The application must return
+ * a response code to accept or reject the connection, and specify the desired
+ * role if accepting.
+ *
+ * @param addr Remote device address attempting to connect.
+ * @param cod Class of Device of the remote device.
+ *
+ * @return @ref bt_br_conn_req_rsp Response code indicating whether to accept or reject
+ *         the connection, and the desired role if accepting.
+ */
+typedef enum bt_br_conn_req_rsp (*bt_br_conn_req_func_t)(const bt_addr_t *addr, uint32_t cod);
+
+/**
  * @brief Enable/disable set controller in connectable state.
  *
  * Allows make local controller to be connectable. It means the controller
@@ -198,11 +234,19 @@ int bt_br_set_discoverable(bool enable, bool limited);
  * resets discoverability if was set.
  *
  * @param enable Value allowing/disallowing controller to be connectable.
+ * @param func   Callback function to handle incoming connection requests. If the @p enable is
+ *               false, this parameter is ignored.
+ *               If @p func is NULL, the conn_req will be accepted internally. The default role
+ *               is peripheral. The role switch request can be performed if the
+ *               @kconfig{BT_ACCEPT_CONN_AS_CENTRAL} is enabled.
+ *               If @p func is provided, the conn_req will be passed to the callback function
+ *               for the application to decide whether to accept or reject the connection, and
+ *               the desired role for the connection.
  *
  * @return Negative if fail set to requested state or requested state has been
  *         already set. Zero if done successfully.
  */
-int bt_br_set_connectable(bool enable);
+int bt_br_set_connectable(bool enable, bt_br_conn_req_func_t func);
 
 /** @brief Check if a Bluetooth classic device address is bonded.
  *

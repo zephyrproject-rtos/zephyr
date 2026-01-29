@@ -39,8 +39,8 @@ work flow is illustrated in the diagram below.
        }
        domain [label="gpio_domain"]
 
-      action -> devA [label="pm_device_get()"]
-      devA:se -> domain:n [label="pm_device_get()"]
+      action -> devA [label="pm_device_runtime_get()"]
+      devA:se -> domain:n [label="pm_device_runtime_get()"]
 
       domain -> devB [label="action_cb(PM_DEVICE_ACTION_TURN_ON)"]
       domain:sw -> devA:sw [label="action_cb(PM_DEVICE_ACTION_TURN_ON)"]
@@ -92,7 +92,7 @@ PM subsystem to turn devices on and off.
 .. code-block:: c
 
     static int mydomain_pm_action(const struct device *dev,
-                               enum pm_device_action *action)
+                               enum pm_device_action action)
     {
         switch (action) {
         case PM_DEVICE_ACTION_RESUME:

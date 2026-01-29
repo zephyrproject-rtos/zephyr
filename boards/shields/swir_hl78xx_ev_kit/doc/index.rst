@@ -14,12 +14,12 @@ for sending AT commands to the HL78 module and initiating data transmission.
    :align: center
    :alt: HL/RC Module Evaluation Kit Shield Shield
 
-   HL/RC Module Evaluation Kit Shield Shield (Credit: Sierrra Wireless)
+   HL/RC Module Evaluation Kit Shield Shield (Credit: Sierra Wireless)
 
 More information about the shield can be found at the `HL/RC Module Evaluation Kit Shield guide website`_.
 
-Pins Assignment of HL/RC Module Evaluation Kit Shield Shield
-============================================================
+Pins Assignment of HL/RC Module Evaluation Kit Shield
+=====================================================
 +--------------------------+----------------------------------------------------------+
 | Shield Connector Pin     | Function                                                 |
 +==========================+==========================================================+
@@ -67,6 +67,16 @@ example:
    :shield: swir_hl78xx_ev_kit
    :goals: build
 
+Documentation
+*************
+
+Automatic baud rate detection:
+==============================
+
+For full details, see :ref:`hl78xx_auto_baudrate`.
+
+For a condensed overview, see :ref:`hl78xx_auto_baudrate_quick_reference`.
+
 References
 **********
 
@@ -76,4 +86,4 @@ References
    https://source.sierrawireless.com/resources/airprime/development_kits/hl78xx-hl7900-development-kit-guide/
 
 .. _HL/RC Module Evaluation Kit Shield specification website:
-   https://info.sierrawireless.com/iot-modules-evaluation-kit#guide-for-the-hl78-series-evaluation-kit
+   https://info.sierrawireless.com/iot-modules-evaluation-kit#guide-for-the-hl78-series-evaluation-kit/

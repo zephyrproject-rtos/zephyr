@@ -1,0 +1,30 @@
+# STMicroelectronics STM32N6 MCU series
+
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config STM32N6_NPU
+	bool "Neural-ART accelerator (NPU)"
+	select RESET
+	default y
+	depends on DT_HAS_ST_STM32_NPU_ENABLED
+
+config STM32N6_NPU_INIT_PRIORITY
+	int "STM32N6 NPU init priority"
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	depends on STM32N6_NPU
+	help
+	  STM32N6 NPU initialization priority.
+
+	  Note: This value must have a higher priority (i.e., lower numerical value)
+	  than `STM32N6_NPU_CACHE_INIT_PRIORITY`!
+
+config STM32N6_NPU_CACHE_INIT_PRIORITY
+	int "STM32N6 NPU cache (aka CACHEAXI) init priority"
+	default APPLICATION_INIT_PRIORITY
+	depends on STM32N6_NPU
+	help
+	  STM32N6 NPU cache (aka CACHEAXI) initialization priority.
+
+	  Note: This value must have a lower priority (i.e., higher numerical value)
+	  than `STM32N6_NPU_INIT_PRIORITY`!

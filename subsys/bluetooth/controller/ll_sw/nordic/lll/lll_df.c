@@ -30,7 +30,6 @@
 #include "lll_df.h"
 #include "lll_df_internal.h"
 
-#include <soc.h>
 #include "hal/debug.h"
 
 /* Minimum number of antenna switch patterns required by Direction Finding Extension to be

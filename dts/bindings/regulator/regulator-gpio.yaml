@@ -19,7 +19,6 @@ description: |
 
       regulator-boot-on;
     };
-
   In the above example, three GPIO pins are used for controlling the regulator:
     * two of them for controlling voltage;
     * third for enabling/disabling the regulator.

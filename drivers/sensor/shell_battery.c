@@ -11,6 +11,11 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
 
+struct ch_val_result {
+		struct sensor_value val;
+		bool supported;
+};
+
 /**
  * @brief Collect the values for several channels
  *
@@ -29,18 +34,22 @@ static int get_channels(const struct device *dev, ...)
 	va_start(ptr, dev);
 	for (i = 0;; i++) {
 		int chan;
-		struct sensor_value *val;
+		struct ch_val_result *val;
 		int err;
 
 		chan = va_arg(ptr, int);
 		if (chan == -1) {
 			break;
 		}
-		val = va_arg(ptr, struct sensor_value *);
-		err = sensor_channel_get(dev, chan, val);
-		if (err < 0) {
+		val = va_arg(ptr, struct ch_val_result *);
+		err = sensor_channel_get(dev, chan, &val->val);
+		if (err == -ENOTSUP) {
+			val->supported = false;
+		} else if (err < 0) {
 			va_end(ptr);
 			return err;
+		} else {
+			val->supported = true;
 		}
 	}
 
@@ -51,9 +60,9 @@ static int get_channels(const struct device *dev, ...)
 /* battery */
 static int cmd_battery(const struct shell *sh, size_t argc, char **argv)
 {
-	struct sensor_value temp, volt, current, i_desired, charge_remain;
-	struct sensor_value charge, v_desired, v_design, cap, nom_cap;
-	struct sensor_value full, empty;
+	struct ch_val_result temp, volt, current, i_desired, charge_remain;
+	struct ch_val_result charge, v_desired, v_design, cap, nom_cap;
+	struct ch_val_result full, empty;
 	const struct device *const dev = DEVICE_DT_GET(DT_ALIAS(battery));
 	bool allowed;
 	int err;
@@ -88,36 +97,73 @@ static int cmd_battery(const struct shell *sh, size_t argc, char **argv)
 		return err;
 	}
 
-	shell_print(sh, "Temp:  %.1d.%02d C",
-		    temp.val1, temp.val2 / 10000);
-	shell_print(sh, "V: %5d.%02d V",
-		    volt.val1, volt.val2 / 10000);
-	shell_print(sh, "V-desired: %d.%02d V",
-		    v_desired.val1, v_desired.val2 / 10000);
-	shell_fprintf_normal(sh, "I:    %lld mA",
-		    sensor_value_to_milli(&current));
-	if (current.val1 > 0) {
-		shell_fprintf_normal(sh, " (CHG)");
-	} else if (current.val1 < 0) {
-		shell_fprintf_normal(sh, " (DISCHG)");
+	if (temp.supported) {
+		shell_print(sh, "Temp:  %.1d.%02d C",
+				temp.val.val1, temp.val.val2 / 10000);
 	}
-	shell_fprintf_normal(sh, "\n");
-	shell_print(sh, "I-desired: %5d mA",
-		    i_desired.val1);
-	allowed = i_desired.val1 && v_desired.val2 && charge.val1 < 100;
-	shell_print(sh, "Charging: %sAllowed",
-		    allowed ? "" : "Not ");
-	shell_print(sh, "Charge: %d %%", charge.val1);
-	shell_print(sh, "V-design: %d.%02d V",
-		    v_design.val1, v_design.val2 / 10000);
-	shell_print(sh, "Remaining: %d mAh",
-		    charge_remain.val1);
-	shell_print(sh, "Cap-full: %d mAh", cap.val1);
-	shell_print(sh, "Design: %d mAh", nom_cap.val1);
-	shell_print(sh, "Time full: %dh:%02d",
-		    full.val1 / 60, full.val1 % 60);
-	shell_print(sh, "Time empty: %dh:%02d",
-		    empty.val1 / 60, empty.val1 % 60);
+
+	if (volt.supported) {
+		shell_print(sh, "V: %5d.%02d V",
+				volt.val.val1, volt.val.val2 / 10000);
+	}
+
+	if (v_desired.supported) {
+		shell_print(sh, "V-desired: %d.%02d V",
+				v_desired.val.val1, v_desired.val.val2 / 10000);
+	}
+
+	if (current.supported) {
+		shell_fprintf_normal(sh, "I:    %lld mA",
+				sensor_value_to_milli(&current.val));
+		if (current.val.val1 > 0) {
+			shell_fprintf_normal(sh, " (CHG)");
+		} else if (current.val.val1 < 0) {
+			shell_fprintf_normal(sh, " (DISCHG)");
+		} else {
+			shell_fprintf_normal(sh, " (UNKWN)");
+		}
+		shell_fprintf_normal(sh, "\n");
+	}
+
+	if (i_desired.supported) {
+		shell_print(sh, "I-desired: %5d mA",
+				i_desired.val.val1);
+		allowed = i_desired.val.val1 && v_desired.val.val2 && charge.val.val1 < 100;
+		shell_print(sh, "Charging: %sAllowed",
+				allowed ? "" : "Not ");
+	}
+
+	if (charge.supported) {
+		shell_print(sh, "Charge: %d %%", charge.val.val1);
+	}
+
+	if (v_design.supported) {
+		shell_print(sh, "V-design: %d.%02d V",
+				v_design.val.val1, v_design.val.val2 / 10000);
+	}
+
+	if (charge_remain.supported) {
+		shell_print(sh, "Remaining: %d mAh",
+				charge_remain.val.val1);
+	}
+
+	if (cap.supported) {
+		shell_print(sh, "Cap-full: %d mAh", cap.val.val1);
+	}
+
+	if (nom_cap.supported) {
+		shell_print(sh, "Design: %d mAh", nom_cap.val.val1);
+	}
+
+	if (full.supported) {
+		shell_print(sh, "Time full: %dh:%02d",
+				full.val.val1 / 60, full.val.val1 % 60);
+	}
+
+	if (empty.supported) {
+		shell_print(sh, "Time empty: %dh:%02d",
+				empty.val.val1 / 60, empty.val.val1 % 60);
+	}
 
 	return 0;
 }

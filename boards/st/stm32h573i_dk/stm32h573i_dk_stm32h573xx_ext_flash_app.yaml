@@ -5,7 +5,7 @@ arch: arm
 toolchain:
   - zephyr
 sysbuild: true
-ram: 640
+ram: 256
 flash: 32767 # size in kB of 1 app slot minus MCUboot header size (1KB)
 supported:
   - arduino_gpio

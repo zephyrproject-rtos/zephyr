@@ -1200,7 +1200,7 @@ static void gptp_mi_clk_master_sync_rcv_state_machine(void)
 
 static void copy_path_trace(struct gptp_announce *announce)
 {
-	int len = ntohs(announce->tlv.len);
+	int len = net_ntohs(announce->tlv.len);
 	struct gptp_path_trace *sys_path_trace;
 
 	if (len > GPTP_MAX_PATHTRACE_SIZE) {
@@ -1211,7 +1211,7 @@ static void copy_path_trace(struct gptp_announce *announce)
 
 	sys_path_trace = &GPTP_GLOBAL_DS()->path_trace;
 
-	sys_path_trace->len = htons(len + GPTP_CLOCK_ID_LEN);
+	sys_path_trace->len = net_htons(len + GPTP_CLOCK_ID_LEN);
 
 	memcpy(sys_path_trace->path_sequence, announce->tlv.path_sequence,
 	       len);
@@ -1236,7 +1236,7 @@ static bool gptp_mi_qualify_announce(int port, struct net_pkt *announce_msg)
 		return false;
 	}
 
-	len = ntohs(announce->steps_removed);
+	len = net_ntohs(announce->steps_removed);
 	if (len >= 255U) {
 		return false;
 	}
@@ -1331,7 +1331,7 @@ static enum gptp_received_info compare_priority_vectors(
 	spi_cmp = memcmp(&hdr->port_id, &vector->src_port_id,
 			 sizeof(struct gptp_port_identity));
 
-	port_cmp = (int)port - ntohs(vector->port_number);
+	port_cmp = (int)port - net_ntohs(vector->port_number);
 
 	if (spi_cmp == 0) {
 		if (rsi_cmp == 0) {
@@ -1392,7 +1392,7 @@ static void record_other_announce_info(int port)
 	 */
 	bmca_data->ann_flags.octets[1] = hdr->flags.octets[1];
 
-	bmca_data->ann_current_utc_offset = ntohs(announce->cur_utc_offset);
+	bmca_data->ann_current_utc_offset = net_ntohs(announce->cur_utc_offset);
 	bmca_data->ann_time_source = announce->time_source;
 }
 
@@ -1412,7 +1412,7 @@ static void copy_priority_vector(struct gptp_priority_vector *vector,
 	       sizeof(struct gptp_port_identity));
 
 	vector->steps_removed = announce->steps_removed;
-	vector->port_number = htons(port);
+	vector->port_number = net_htons(port);
 }
 
 static void gptp_mi_port_announce_information_state_machine(int port)
@@ -1541,7 +1541,7 @@ static void gptp_mi_port_announce_information_state_machine(int port)
 				     bmca_data->rcvd_announce_ptr, port);
 
 		announce = GPTP_ANNOUNCE(bmca_data->rcvd_announce_ptr);
-		bmca_data->port_steps_removed = ntohs(announce->steps_removed);
+		bmca_data->port_steps_removed = net_ntohs(announce->steps_removed);
 		record_other_announce_info(port);
 		hdr = GPTP_HDR(bmca_data->rcvd_announce_ptr);
 		gptp_set_time_itv(&bmca_data->ann_rcpt_timeout_time_interval,
@@ -1590,7 +1590,7 @@ static void gptp_updt_role_disabled_tree(void)
 		     sizeof(struct gptp_priority_vector));
 
 	/* Set pathTrace array to contain the single element thisClock. */
-	global_ds->path_trace.len = htons(GPTP_CLOCK_ID_LEN);
+	global_ds->path_trace.len = net_htons(GPTP_CLOCK_ID_LEN);
 	memcpy(global_ds->path_trace.path_sequence, GPTP_DEFAULT_DS()->clk_id,
 	       GPTP_CLOCK_ID_LEN);
 }
@@ -1625,7 +1625,7 @@ static int compute_best_vector(void)
 	gm_prio->root_system_id.clk_quality.clock_accuracy =
 		default_ds->clk_quality.clock_accuracy;
 	gm_prio->root_system_id.clk_quality.offset_scaled_log_var =
-		htons(default_ds->clk_quality.offset_scaled_log_var);
+		net_htons(default_ds->clk_quality.offset_scaled_log_var);
 
 	memcpy(gm_prio->src_port_id.clk_id, default_ds->clk_id,
 	       GPTP_CLOCK_ID_LEN);
@@ -1663,7 +1663,7 @@ static int compute_best_vector(void)
 			}
 
 			tmp = (int)(challenger->steps_removed + 1) -
-				(int)ntohs(best_vector->steps_removed);
+				(int)net_ntohs(best_vector->steps_removed);
 			if (tmp < 0) {
 				best_vector = challenger;
 				best_port = port;
@@ -1681,8 +1681,8 @@ static int compute_best_vector(void)
 				continue;
 			}
 
-			if (ntohs(challenger->port_number) <
-			    ntohs(best_vector->port_number)) {
+			if (net_ntohs(challenger->port_number) <
+			    net_ntohs(best_vector->port_number)) {
 				best_vector = challenger;
 				best_port = port;
 			}
@@ -1708,7 +1708,7 @@ static int compute_best_vector(void)
 		}
 
 		global_ds->gm_priority.steps_removed =
-			ntohs(best_vector->steps_removed) + 1;
+			net_ntohs(best_vector->steps_removed) + 1;
 
 		if (&global_ds->gm_priority.src_port_id !=
 		    &best_vector->src_port_id) {
@@ -1736,18 +1736,18 @@ static void update_bmca(int port,
 		memcpy(&bmca_data->master_priority, gm_prio,
 		       sizeof(struct gptp_priority_vector));
 
-		bmca_data->master_priority.port_number = htons(port);
+		bmca_data->master_priority.port_number = net_htons(port);
 		bmca_data->master_priority.src_port_id.port_number =
-			htons(port);
+			net_htons(port);
 	} else {
 		memcpy(&bmca_data->master_priority.root_system_id,
 		       &gm_prio->root_system_id,
 		       sizeof(struct gptp_root_system_identity));
 		memcpy(bmca_data->master_priority.src_port_id.clk_id,
 		       default_ds->clk_id, GPTP_CLOCK_ID_LEN);
-		bmca_data->master_priority.port_number = htons(port);
+		bmca_data->master_priority.port_number = net_htons(port);
 		bmca_data->master_priority.src_port_id.port_number =
-			htons(port);
+			net_htons(port);
 		bmca_data->master_priority.steps_removed = gm_prio->steps_removed;
 	}
 
@@ -1852,7 +1852,7 @@ static void gptp_updt_roles_tree(void)
 			global_ds->sys_current_utc_offset;
 		global_ds->time_source = bmca_data->ann_time_source;
 		global_ds->master_steps_removed =
-			htons(ntohs(bmca_data->message_steps_removed) + 1);
+			net_htons(net_ntohs(bmca_data->message_steps_removed) + 1);
 	}
 
 	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
@@ -1879,7 +1879,7 @@ static void gptp_updt_roles_tree(void)
 	/* If current system is the Grand Master, set pathTrace array. */
 	if (memcmp(default_ds->clk_id, gm_prio->root_system_id.grand_master_id,
 		   GPTP_CLOCK_ID_LEN) == 0) {
-		global_ds->path_trace.len = htons(GPTP_CLOCK_ID_LEN);
+		global_ds->path_trace.len = net_htons(GPTP_CLOCK_ID_LEN);
 		memcpy(global_ds->path_trace.path_sequence,
 		       default_ds->clk_id, GPTP_CLOCK_ID_LEN);
 	}

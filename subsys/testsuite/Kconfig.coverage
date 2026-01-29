@@ -17,7 +17,7 @@ config COVERAGE
 	  This option will build your application with the -coverage option
 	  which will generate data that can be used to create coverage reports.
 	  For more information see
-	  https://docs.zephyrproject.org/latest/guides/coverage.html
+	  https://docs.zephyrproject.org/latest/develop/test/coverage.html
 
 choice
 	prompt "Coverage mode"

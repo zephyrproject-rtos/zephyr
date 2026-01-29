@@ -8,25 +8,31 @@
 #include <zephyr/drivers/firmware/scmi/nxp/cpu.h>
 #include <zephyr/kernel.h>
 
-DT_SCMI_PROTOCOL_DEFINE_NODEV(DT_INST(0, nxp_scmi_cpu), NULL);
+DT_SCMI_PROTOCOL_DEFINE_NODEV(DT_INST(0, nxp_scmi_cpu), NULL,
+		SCMI_NXP_CPU_PROTOCOL_SUPPORTED_VERSION);
 
-int scmi_cpu_sleep_mode_set(struct scmi_cpu_sleep_mode_config *cfg)
+struct scmi_nxp_cpu_info_get_reply {
+	int32_t status;
+	struct scmi_nxp_cpu_info data;
+};
+
+int scmi_nxp_cpu_sleep_mode_set(struct scmi_nxp_cpu_sleep_mode_config *cfg)
 {
-	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_CPU_DOMAIN);
+	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_NXP_CPU_DOMAIN);
 	struct scmi_message msg, reply;
 	int status, ret;
 	bool use_polling;
 
-	/* sanity checks */
+	/* input validation */
 	if (!proto || !cfg) {
 		return -EINVAL;
 	}
 
-	if (proto->id != SCMI_PROTOCOL_CPU_DOMAIN) {
+	if (proto->id != SCMI_PROTOCOL_NXP_CPU_DOMAIN) {
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_CPU_DOMAIN_MSG_CPU_SLEEP_MODE_SET, SCMI_COMMAND,
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_NXP_CPU_DOMAIN_MSG_CPU_SLEEP_MODE_SET, SCMI_COMMAND,
 					proto->id, 0x0);
 	msg.len = sizeof(*cfg);
 	msg.content = cfg;
@@ -48,23 +54,23 @@ int scmi_cpu_sleep_mode_set(struct scmi_cpu_sleep_mode_config *cfg)
 	return scmi_status_to_errno(status);
 }
 
-int scmi_cpu_pd_lpm_set(struct scmi_cpu_pd_lpm_config *cfg)
+int scmi_nxp_cpu_pd_lpm_set(struct scmi_nxp_cpu_pd_lpm_config *cfg)
 {
-	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_CPU_DOMAIN);
+	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_NXP_CPU_DOMAIN);
 	struct scmi_message msg, reply;
 	int status, ret;
 	bool use_polling;
 
-	/* sanity checks */
+	/* input validation */
 	if (!proto || !cfg) {
 		return -EINVAL;
 	}
 
-	if (proto->id != SCMI_PROTOCOL_CPU_DOMAIN) {
+	if (proto->id != SCMI_PROTOCOL_NXP_CPU_DOMAIN) {
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_CPU_DOMAIN_MSG_CPU_PD_LPM_CONFIG_SET, SCMI_COMMAND,
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_NXP_CPU_DOMAIN_MSG_CPU_PD_LPM_CONFIG_SET, SCMI_COMMAND,
 					proto->id, 0x0);
 	msg.len = sizeof(*cfg);
 	msg.content = cfg;
@@ -83,22 +89,22 @@ int scmi_cpu_pd_lpm_set(struct scmi_cpu_pd_lpm_config *cfg)
 	return scmi_status_to_errno(status);
 }
 
-int scmi_cpu_set_irq_mask(struct scmi_cpu_irq_mask_config *cfg)
+int scmi_nxp_cpu_set_irq_mask(struct scmi_nxp_cpu_irq_mask_config *cfg)
 {
-	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_CPU_DOMAIN);
+	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_NXP_CPU_DOMAIN);
 	struct scmi_message msg, reply;
 	int status, ret;
 
-	/* sanity checks */
+	/* input validation */
 	if (!proto || !cfg) {
 		return -EINVAL;
 	}
 
-	if (proto->id != SCMI_PROTOCOL_CPU_DOMAIN) {
+	if (proto->id != SCMI_PROTOCOL_NXP_CPU_DOMAIN) {
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_CPU_DOMAIN_MSG_CPU_IRQ_WAKE_SET, SCMI_COMMAND,
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_NXP_CPU_DOMAIN_MSG_CPU_IRQ_WAKE_SET, SCMI_COMMAND,
 					proto->id, 0x0);
 	msg.len = sizeof(*cfg);
 	msg.content = cfg;
@@ -113,4 +119,71 @@ int scmi_cpu_set_irq_mask(struct scmi_cpu_irq_mask_config *cfg)
 	}
 
 	return scmi_status_to_errno(status);
+}
+
+int scmi_nxp_cpu_reset_vector(struct scmi_nxp_cpu_vector_config *cfg)
+{
+	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_NXP_CPU_DOMAIN);
+	struct scmi_message msg, reply;
+	int status, ret;
+
+	/* input validation */
+	if (!proto || !cfg) {
+		return -EINVAL;
+	}
+
+	if (proto->id != SCMI_PROTOCOL_NXP_CPU_DOMAIN) {
+		return -EINVAL;
+	}
+
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_NXP_CPU_DOMAIN_MSG_CPU_RESET_VECTOR_SET, SCMI_COMMAND,
+					proto->id, 0x0);
+	msg.len = sizeof(*cfg);
+	msg.content = cfg;
+
+	reply.hdr = msg.hdr;
+	reply.len = sizeof(status);
+	reply.content = &status;
+
+	ret = scmi_send_message(proto, &msg, &reply, true);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return scmi_status_to_errno(status);
+}
+
+int scmi_nxp_cpu_info_get(uint32_t cpu_id, struct scmi_nxp_cpu_info *cfg)
+{
+	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_NXP_CPU_DOMAIN);
+	struct scmi_message msg, reply;
+	struct scmi_nxp_cpu_info_get_reply reply_buffer;
+	int ret;
+
+	/* input validation */
+	if (!proto || !cfg) {
+		return -EINVAL;
+	}
+
+	if (proto->id != SCMI_PROTOCOL_NXP_CPU_DOMAIN) {
+		return -EINVAL;
+	}
+
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_NXP_CPU_DOMAIN_MSG_CPU_INFO_GET, SCMI_COMMAND,
+					proto->id, 0x0);
+	msg.len = sizeof(uint32_t);
+	msg.content = &cpu_id;
+
+	reply.hdr = msg.hdr;
+	reply.len = sizeof(reply_buffer);
+	reply.content = &reply_buffer;
+
+	ret = scmi_send_message(proto, &msg, &reply, true);
+	if (ret < 0) {
+		return ret;
+	}
+
+	*cfg = reply_buffer.data;
+
+	return scmi_status_to_errno(reply_buffer.status);
 }

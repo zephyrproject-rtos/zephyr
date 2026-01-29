@@ -22,6 +22,7 @@
 #include <zephyr/sys/util.h>
 
 #include "udc_common.h"
+#include <stm32_usb_common.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
@@ -48,10 +49,6 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #define DT_DRV_COMPAT st_stm32_usb
 #define UDC_STM32_IRQ_NAME     usb
 #endif
-
-#define UDC_STM32_BASE_ADDRESS	DT_INST_REG_ADDR(0)
-#define UDC_STM32_IRQ		DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, irq)
-#define UDC_STM32_IRQ_PRI	DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, priority)
 
 /* Shorthand to obtain PHY node for an instance */
 #define UDC_STM32_PHY(usb_node)			DT_PROP_BY_IDX(usb_node, phys, 0)
@@ -153,31 +150,6 @@ static const int syscfg_otg_hs_phy_clk[] = {
  */
 #define UDC_STM32_EP0_MAX_PACKET_SIZE	64U
 
-struct udc_stm32_data  {
-	PCD_HandleTypeDef pcd;
-	const struct device *dev;
-	uint32_t irq;
-	uint32_t occupied_mem;
-	/* wLength of SETUP packet for s-out-status */
-	uint32_t ep0_out_wlength;
-	void (*pcd_prepare)(const struct device *dev);
-	int (*clk_enable)(void);
-	int (*clk_disable)(void);
-	struct k_thread thread_data;
-	struct k_msgq msgq_data;
-};
-
-struct udc_stm32_config {
-	uint32_t num_endpoints;
-	uint32_t dram_size;
-	/* PHY selected for use by instance */
-	uint32_t selected_phy;
-	/* Speed selected for use by instance */
-	uint32_t selected_speed;
-	/* Maximal packet size allowed for endpoints */
-	uint16_t ep_mps;
-};
-
 enum udc_stm32_msg_type {
 	UDC_STM32_MSG_SETUP,
 	UDC_STM32_MSG_DATA_OUT,
@@ -189,6 +161,62 @@ struct udc_stm32_msg {
 	uint8_t ep;
 	uint16_t rx_count;
 };
+
+struct udc_stm32_data  {
+	PCD_HandleTypeDef pcd;
+	const struct device *dev;
+	uint32_t occupied_mem;
+	/* wLength of SETUP packet for s-out-status */
+	uint32_t ep0_out_wlength;
+	struct k_thread thread_data;
+	struct k_msgq msgq_data;
+	char msgq_buf[CONFIG_UDC_STM32_MAX_QMESSAGES * sizeof(struct udc_stm32_msg)];
+};
+
+struct udc_stm32_config {
+	/* Controller MMIO base address */
+	void *base;
+	/* # of bidirectional endpoints supported */
+	uint32_t num_endpoints;
+	/* USB SRAM size (in bytes) */
+	uint32_t dram_size;
+	/* IRQ_CONNECT() per-instance wrapper */
+	void (*irq_connect)(void);
+	/* Global USB interrupt IRQn */
+	uint32_t irqn;
+	/*
+	 * Clock configuration from DTS
+	 *
+	 * Note that this actually points to a const
+	 * struct stm32_pclken but dropping the const
+	 * qualifier here allows calling Clock Control
+	 * without cast to clock_control_subsys_t.
+	 */
+	struct stm32_pclken *pclken;
+	/* Pinctrl configuration from DTS */
+	const struct pinctrl_dev_config *pinctrl;
+	/* Disconnect GPIO information (if applicable) */
+	const struct gpio_dt_spec disconnect_gpio;
+	/* ULPI reset GPIO information (if applicable) */
+	const struct gpio_dt_spec ulpi_reset_gpio;
+	/* PHY selected for use by instance */
+	uint32_t selected_phy;
+	/* Speed selected for use by instance */
+	uint32_t selected_speed;
+	/* EP configurations */
+	struct udc_ep_config *in_eps;
+	struct udc_ep_config *out_eps;
+	/* Worker thread stack info */
+	k_thread_stack_t *thread_stack;
+	size_t thread_stack_size;
+	/* Maximal packet size allowed for endpoints */
+	uint16_t ep_mps;
+	/* Number of entries in `pclken` */
+	uint8_t num_clocks;
+};
+
+static int udc_stm32_clock_enable(const struct device *);
+static int udc_stm32_clock_disable(const struct device *);
 
 static void udc_stm32_lock(const struct device *dev)
 {
@@ -609,7 +637,6 @@ static void handle_msg_setup(struct udc_stm32_data *priv)
 {
 	struct usb_setup_packet *setup = (void *)priv->pcd.Setup;
 	const struct device *dev = priv->dev;
-	HAL_StatusTypeDef status;
 	struct net_buf *buf;
 	int err;
 
@@ -634,15 +661,6 @@ static void handle_msg_setup(struct udc_stm32_data *priv)
 	net_buf_add_mem(buf, setup, sizeof(struct usb_setup_packet));
 
 	udc_ctrl_update_stage(dev, buf);
-
-	if ((setup->bmRequestType == 0) && (setup->bRequest == USB_SREQ_SET_ADDRESS)) {
-		/* HAL requires we set the address before submitting status */
-		status = HAL_PCD_SetAddress(&priv->pcd, setup->wValue);
-		if (status != HAL_OK) {
-			LOG_ERR("HAL_PCD_SetAddress() failed: %d", status);
-			__ASSERT_NO_MSG(0);
-		}
-	}
 
 	if (udc_ctrl_stage_is_data_out(dev)) {
 		/*  Allocate and feed buffer for data OUT stage */
@@ -679,35 +697,51 @@ static void udc_stm32_thread_handler(void *arg1, void *arg2, void *arg3)
 	}
 }
 
-#if DT_INST_NODE_HAS_PROP(0, disconnect_gpios)
 void HAL_PCDEx_SetConnectionState(PCD_HandleTypeDef *hpcd, uint8_t state)
 {
-	struct gpio_dt_spec usb_disconnect = GPIO_DT_SPEC_INST_GET(0, disconnect_gpios);
+	struct udc_stm32_data *priv = hpcd2data(hpcd);
+	const struct udc_stm32_config *cfg = priv->dev->config;
 
-	gpio_pin_configure_dt(&usb_disconnect,
-			      state ? GPIO_OUTPUT_ACTIVE : GPIO_OUTPUT_INACTIVE);
+	if (cfg->disconnect_gpio.port != NULL) {
+		gpio_pin_configure_dt(&cfg->disconnect_gpio,
+				      state ? GPIO_OUTPUT_ACTIVE : GPIO_OUTPUT_INACTIVE);
+	}
 }
-#endif
 
-static void udc_stm32_irq(const struct device *dev)
-{
-	const struct udc_stm32_data *priv =  udc_get_private(dev);
-
-	/* HAL irq handler will call the related above callback */
-	HAL_PCD_IRQHandler((PCD_HandleTypeDef *)&priv->pcd);
-}
+/*
+ * The callbacks above are invoked by HAL_PCD_IRQHandler() when appropriate.
+ * HAL_PCD_IRQHandler() is registered as ISR for this driver because it just
+ * so happens to match the Zephyr ISR calling convention, and we don't need
+ * to do any additional processing upon interrupt: this saves a few cycles
+ * when taking an interrupt and ought to consume less ROM too.
+ */
 
 int udc_stm32_init(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
+	const struct udc_stm32_config *cfg = dev->config;
 	HAL_StatusTypeDef status;
+	int err;
 
-	if (priv->clk_enable != NULL && priv->clk_enable() != 0) {
+	err = stm32_usb_pwr_enable();
+	if (err != 0) {
+		LOG_ERR("Error enabling USB power: %d", err);
+		return err;
+	}
+
+	if (udc_stm32_clock_enable(dev) < 0) {
 		LOG_ERR("Error enabling clock(s)");
 		return -EIO;
 	}
 
-	priv->pcd_prepare(dev);
+	/* Wipe and (re)initialize HAL context */
+	memset(&priv->pcd, 0, sizeof(priv->pcd));
+
+	priv->pcd.Instance = cfg->base;
+	priv->pcd.Init.dev_endpoints = cfg->num_endpoints;
+	priv->pcd.Init.ep0_mps = UDC_STM32_EP0_MAX_PACKET_SIZE;
+	priv->pcd.Init.phy_itface = cfg->selected_phy;
+	priv->pcd.Init.speed = cfg->selected_speed;
 
 	status = HAL_PCD_Init(&priv->pcd);
 	if (status != HAL_OK) {
@@ -853,6 +887,7 @@ static int udc_stm32_ep_mem_config(const struct device *dev,
 static int udc_stm32_enable(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
+	const struct udc_stm32_config *cfg = dev->config;
 	HAL_StatusTypeDef status;
 	int ret;
 
@@ -882,7 +917,7 @@ static int udc_stm32_enable(const struct device *dev)
 		return ret;
 	}
 
-	irq_enable(priv->irq);
+	irq_enable(cfg->irqn);
 
 	return 0;
 }
@@ -890,9 +925,10 @@ static int udc_stm32_enable(const struct device *dev)
 static int udc_stm32_disable(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
+	const struct udc_stm32_config *cfg = dev->config;
 	HAL_StatusTypeDef status;
 
-	irq_disable(UDC_STM32_IRQ);
+	irq_disable(cfg->irqn);
 
 	if (udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT) != 0) {
 		LOG_ERR("Failed to disable control endpoint");
@@ -916,7 +952,9 @@ static int udc_stm32_disable(const struct device *dev)
 static int udc_stm32_shutdown(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
+	const struct udc_stm32_config *cfg = dev->config;
 	HAL_StatusTypeDef status;
+	int err;
 
 	status = HAL_PCD_DeInit(&priv->pcd);
 	if (status != HAL_OK) {
@@ -924,13 +962,19 @@ static int udc_stm32_shutdown(const struct device *dev)
 		/* continue anyway */
 	}
 
-	if (priv->clk_disable != NULL && priv->clk_disable() != 0) {
+	if (udc_stm32_clock_disable(dev) < 0) {
 		LOG_ERR("Error disabling clock(s)");
 		/* continue anyway */
 	}
 
-	if (irq_is_enabled(priv->irq)) {
-		irq_disable(priv->irq);
+	err = stm32_usb_pwr_disable();
+	if (err != 0) {
+		LOG_ERR("Error disabling USB power: %d", err);
+		/* continue anyway */
+	}
+
+	if (irq_is_enabled(cfg->irqn)) {
+		irq_disable(cfg->irqn);
 	}
 
 	return 0;
@@ -1214,8 +1258,10 @@ static const struct udc_api udc_stm32_api = {
  * WARNING: Don't mix USB defined in STM32Cube HAL and CONFIG_USB_* from Zephyr
  * Kconfig system.
  */
-#define USB_NUM_BIDIR_ENDPOINTS	DT_INST_PROP(0, num_bidir_endpoints)
-#define USB_RAM_SIZE		DT_INST_PROP(0, ram_size)
+K_THREAD_STACK_DEFINE(udc0_thr_stk, CONFIG_UDC_STM32_STACK_SIZE);
+
+static struct udc_ep_config udc0_in_ep_cfg[DT_INST_PROP(0, num_bidir_endpoints)];
+static struct udc_ep_config udc0_out_ep_cfg[DT_INST_PROP(0, num_bidir_endpoints)];
 
 static struct udc_stm32_data udc0_priv;
 
@@ -1224,134 +1270,63 @@ static struct udc_data udc0_data = {
 	.priv = &udc0_priv,
 };
 
+static void udc0_irq_connect(void)
+{
+	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, irq),
+		    DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, priority),
+		    HAL_PCD_IRQHandler, &udc0_priv.pcd, 0);
+}
+
+PINCTRL_DT_INST_DEFINE(0);
+
+static const struct stm32_pclken udc0_pclken[] = STM32_DT_INST_CLOCKS(0);
+
 static const struct udc_stm32_config udc0_cfg  = {
-	.num_endpoints = USB_NUM_BIDIR_ENDPOINTS,
-	.dram_size = USB_RAM_SIZE,
+	.base = (void *)DT_INST_REG_ADDR(0),
+	.num_endpoints = DT_INST_PROP(0, num_bidir_endpoints),
+	.dram_size = DT_INST_PROP(0, ram_size),
+	.irq_connect = udc0_irq_connect,
+	.irqn = DT_INST_IRQ_BY_NAME(0, UDC_STM32_IRQ_NAME, irq),
+	.pclken = (struct stm32_pclken *)udc0_pclken,
+	.num_clocks = DT_INST_NUM_CLOCKS(0),
+	.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
+	.in_eps = udc0_in_ep_cfg,
+	.out_eps = udc0_out_ep_cfg,
 	.ep_mps = UDC_STM32_NODE_EP_MPS(DT_DRV_INST(0)),
 	.selected_phy = UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)),
 	.selected_speed = UDC_STM32_NODE_SPEED(DT_DRV_INST(0)),
+	.thread_stack = udc0_thr_stk,
+	.thread_stack_size = K_THREAD_STACK_SIZEOF(udc0_thr_stk),
+	.disconnect_gpio = GPIO_DT_SPEC_INST_GET_OR(0, disconnect_gpios, {0}),
+	.ulpi_reset_gpio = GPIO_DT_SPEC_GET_OR(UDC_STM32_PHY(DT_DRV_INST(0)), reset_gpios, {0}),
 };
 
-static void priv_pcd_prepare(const struct device *dev)
-{
-	struct udc_stm32_data *priv = udc_get_private(dev);
-	const struct udc_stm32_config *cfg = dev->config;
-
-	memset(&priv->pcd, 0, sizeof(priv->pcd));
-
-	/* Default values */
-	priv->pcd.Init.dev_endpoints = cfg->num_endpoints;
-	priv->pcd.Init.ep0_mps = UDC_STM32_EP0_MAX_PACKET_SIZE;
-	priv->pcd.Init.speed = cfg->selected_speed;
-
-	/* Per controller/Phy values */
-#if defined(USB)
-	priv->pcd.Instance = USB;
-#elif defined(USB_DRD_FS)
-	priv->pcd.Instance = USB_DRD_FS;
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otgfs) || DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
-	priv->pcd.Instance = (USB_OTG_GlobalTypeDef *)UDC_STM32_BASE_ADDRESS;
-#endif /* USB */
-	priv->pcd.Init.phy_itface = cfg->selected_phy;
-}
-
-static struct stm32_pclken pclken[] = STM32_DT_INST_CLOCKS(0);
-
-static int priv_clock_enable(void)
+static int udc_stm32_clock_enable(const struct device *dev)
 {
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct udc_stm32_config *cfg = dev->config;
 
 	if (!device_is_ready(clk)) {
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
 	}
 
-	/* Power configuration */
-#if defined(CONFIG_SOC_SERIES_STM32H7X)
-	LL_PWR_EnableUSBVoltageDetector();
-
-	/* Per AN2606: USBREGEN not supported when running in FS mode. */
-	LL_PWR_DisableUSBReg();
-	while (!LL_PWR_IsActiveFlag_USB()) {
-		LOG_INF("PWR not active yet");
-		k_msleep(100);
-	}
-#elif defined(CONFIG_SOC_SERIES_STM32U5X)
-	/* Sequence to enable the power of the OTG HS on a stm32U5 serie : Enable VDDUSB */
-	__ASSERT_NO_MSG(LL_AHB3_GRP1_IsEnabledClock(LL_AHB3_GRP1_PERIPH_PWR));
-
-	/* Check that power range is 1 or 2 */
-	if (LL_PWR_GetRegulVoltageScaling() < LL_PWR_REGU_VOLTAGE_SCALE2) {
-		LOG_ERR("Wrong Power range to use USB OTG HS");
-		return -EIO;
-	}
-
-	LL_PWR_EnableVddUSB();
-
-	#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
-		/* Configure VOSR register of USB HSTransceiverSupply(); */
-		LL_PWR_EnableUSBPowerSupply();
-		LL_PWR_EnableUSBEPODBooster();
-		while (LL_PWR_IsActiveFlag_USBBOOST() != 1) {
-			/* Wait for USB EPOD BOOST ready */
-		}
-	#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) */
-#elif defined(CONFIG_SOC_SERIES_STM32N6X)
-	/* Enable Vdd33USB voltage monitoring */
-	LL_PWR_EnableVddUSBMonitoring();
-	while (!LL_PWR_IsActiveFlag_USB33RDY()) {
-		/* Wait for Vdd33USB ready */
-	}
-
-	/* Enable VDDUSB */
-	LL_PWR_EnableVddUSB();
-#elif defined(CONFIG_SOC_SERIES_STM32WBAX)
-	/* Remove VDDUSB power isolation */
-	LL_PWR_EnableVddUSB();
-
-	/* Make sure that voltage scaling is Range 1 */
-	__ASSERT_NO_MSG(LL_PWR_GetRegulCurrentVOS() == LL_PWR_REGU_VOLTAGE_SCALE1);
-
-	/* Enable VDD11USB */
-	LL_PWR_EnableVdd11USB();
-
-	/* Enable USB OTG internal power */
-	LL_PWR_EnableUSBPWR();
-
-	while (!LL_PWR_IsActiveFlag_VDD11USBRDY()) {
-		/* Wait for VDD11USB supply to be ready */
-	}
-
-	/* Enable USB OTG booster */
-	LL_PWR_EnableUSBBooster();
-
-	while (!LL_PWR_IsActiveFlag_USBBOOSTRDY()) {
-		/* Wait for USB OTG booster to be ready */
-	}
-#elif defined(PWR_USBSCR_USB33SV) || defined(PWR_SVMCR_USV)
-	/*
-	 * VDDUSB independent USB supply (PWR clock is on)
-	 * with LL_PWR_EnableVDDUSB function (higher case)
-	 */
-	LL_PWR_EnableVDDUSB();
-#endif
-
-	if (DT_INST_NUM_CLOCKS(0) > 1) {
-		if (clock_control_configure(clk, &pclken[1], NULL) != 0) {
+	if (cfg->num_clocks > 1) {
+		if (clock_control_configure(clk, &cfg->pclken[1], NULL) != 0) {
 			LOG_ERR("Could not select USB domain clock");
 			return -EIO;
 		}
 	}
 
-	if (clock_control_on(clk, &pclken[0]) != 0) {
+	if (clock_control_on(clk, &cfg->pclken[0]) != 0) {
 		LOG_ERR("Unable to enable USB clock");
 		return -EIO;
 	}
 
-	if (IS_ENABLED(CONFIG_UDC_STM32_CLOCK_CHECK)) {
+	if (IS_ENABLED(CONFIG_UDC_STM32_CLOCK_CHECK) && cfg->num_clocks > 1) {
 		uint32_t usb_clock_rate;
 
-		if (clock_control_get_rate(clk, &pclken[1], &usb_clock_rate) != 0) {
+		if (clock_control_get_rate(clk, &cfg->pclken[1], &usb_clock_rate) != 0) {
 			LOG_ERR("Failed to get USB domain clock rate");
 			return -EIO;
 		}
@@ -1438,6 +1413,11 @@ static int priv_clock_enable(void)
 	#if UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)) == PCD_PHY_ULPI
 		LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 	#elif UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)) == PCD_PHY_UTMI
+		/*
+		 * For some reason, the ULPI clock still needs to be
+		 * enabled when the internal USBPHYC HS PHY is used.
+		 */
+		LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_OTGHSULPI);
 		LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_OTGPHYC);
 	#endif
 #else /* CONFIG_SOC_SERIES_STM32F2X || CONFIG_SOC_SERIES_STM32F4X */
@@ -1462,11 +1442,12 @@ static int priv_clock_enable(void)
 	return 0;
 }
 
-static int priv_clock_disable(void)
+static int udc_stm32_clock_disable(const struct device *dev)
 {
 	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct udc_stm32_config *cfg = dev->config;
 
-	if (clock_control_off(clk, &pclken[0]) != 0) {
+	if (clock_control_off(clk, &cfg->pclken[0]) != 0) {
 		LOG_ERR("Unable to disable USB clock");
 		return -EIO;
 	}
@@ -1477,24 +1458,6 @@ static int priv_clock_disable(void)
 	return 0;
 }
 
-static struct udc_ep_config ep_cfg_in[DT_INST_PROP(0, num_bidir_endpoints)];
-static struct udc_ep_config ep_cfg_out[DT_INST_PROP(0, num_bidir_endpoints)];
-
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
-PINCTRL_DT_INST_DEFINE(0);
-static const struct pinctrl_dev_config *usb_pcfg =
-					PINCTRL_DT_INST_DEV_CONFIG_GET(0);
-#endif
-
-#if UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)) == PCD_PHY_ULPI
-static const struct gpio_dt_spec ulpi_reset =
-	GPIO_DT_SPEC_GET_OR(DT_PHANDLE(DT_INST(0, st_stm32_otghs), phys), reset_gpios, {0});
-#endif
-
-static char udc_msgq_buf_0[CONFIG_UDC_STM32_MAX_QMESSAGES * sizeof(struct udc_stm32_msg)];
-
-K_THREAD_STACK_DEFINE(udc_stm32_stack_0, CONFIG_UDC_STM32_STACK_SIZE);
-
 static int udc_stm32_driver_init0(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
@@ -1502,40 +1465,40 @@ static int udc_stm32_driver_init0(const struct device *dev)
 	struct udc_data *data = dev->data;
 	int err;
 
-	for (unsigned int i = 0; i < ARRAY_SIZE(ep_cfg_out); i++) {
-		ep_cfg_out[i].caps.out = 1;
+	for (unsigned int i = 0; i < cfg->num_endpoints; i++) {
+		cfg->out_eps[i].caps.out = 1;
 		if (i == 0) {
-			ep_cfg_out[i].caps.control = 1;
-			ep_cfg_out[i].caps.mps = UDC_STM32_EP0_MAX_PACKET_SIZE;
+			cfg->out_eps[i].caps.control = 1;
+			cfg->out_eps[i].caps.mps = UDC_STM32_EP0_MAX_PACKET_SIZE;
 		} else {
-			ep_cfg_out[i].caps.bulk = 1;
-			ep_cfg_out[i].caps.interrupt = 1;
-			ep_cfg_out[i].caps.iso = 1;
-			ep_cfg_out[i].caps.mps = cfg->ep_mps;
+			cfg->out_eps[i].caps.bulk = 1;
+			cfg->out_eps[i].caps.interrupt = 1;
+			cfg->out_eps[i].caps.iso = 1;
+			cfg->out_eps[i].caps.mps = cfg->ep_mps;
 		}
 
-		ep_cfg_out[i].addr = USB_EP_DIR_OUT | i;
-		err = udc_register_ep(dev, &ep_cfg_out[i]);
+		cfg->out_eps[i].addr = USB_EP_DIR_OUT | i;
+		err = udc_register_ep(dev, cfg->out_eps + i);
 		if (err != 0) {
 			LOG_ERR("Failed to register endpoint");
 			return err;
 		}
 	}
 
-	for (unsigned int i = 0; i < ARRAY_SIZE(ep_cfg_in); i++) {
-		ep_cfg_in[i].caps.in = 1;
+	for (unsigned int i = 0; i < cfg->num_endpoints; i++) {
+		cfg->in_eps[i].caps.in = 1;
 		if (i == 0) {
-			ep_cfg_in[i].caps.control = 1;
-			ep_cfg_in[i].caps.mps = UDC_STM32_EP0_MAX_PACKET_SIZE;
+			cfg->in_eps[i].caps.control = 1;
+			cfg->in_eps[i].caps.mps = UDC_STM32_EP0_MAX_PACKET_SIZE;
 		} else {
-			ep_cfg_in[i].caps.bulk = 1;
-			ep_cfg_in[i].caps.interrupt = 1;
-			ep_cfg_in[i].caps.iso = 1;
-			ep_cfg_in[i].caps.mps = 1023;
+			cfg->in_eps[i].caps.bulk = 1;
+			cfg->in_eps[i].caps.interrupt = 1;
+			cfg->in_eps[i].caps.iso = 1;
+			cfg->in_eps[i].caps.mps = cfg->ep_mps;
 		}
 
-		ep_cfg_in[i].addr = USB_EP_DIR_IN | i;
-		err = udc_register_ep(dev, &ep_cfg_in[i]);
+		cfg->in_eps[i].addr = USB_EP_DIR_IN | i;
+		err = udc_register_ep(dev, cfg->in_eps + i);
 		if (err != 0) {
 			LOG_ERR("Failed to register endpoint");
 			return err;
@@ -1544,36 +1507,36 @@ static int udc_stm32_driver_init0(const struct device *dev)
 
 	data->caps.rwup = true;
 	data->caps.out_ack = false;
+	data->caps.addr_before_status = true;
 	data->caps.mps0 = UDC_MPS0_64;
 	if (cfg->selected_speed == PCD_SPEED_HIGH) {
 		data->caps.hs = true;
 	}
 
 	priv->dev = dev;
-	priv->irq = UDC_STM32_IRQ;
-	priv->clk_enable = priv_clock_enable;
-	priv->clk_disable = priv_clock_disable;
-	priv->pcd_prepare = priv_pcd_prepare;
 
-	k_msgq_init(&priv->msgq_data, udc_msgq_buf_0, sizeof(struct udc_stm32_msg),
+	k_msgq_init(&priv->msgq_data, priv->msgq_buf, sizeof(struct udc_stm32_msg),
 		    CONFIG_UDC_STM32_MAX_QMESSAGES);
 
-	k_thread_create(&priv->thread_data, udc_stm32_stack_0,
-			K_THREAD_STACK_SIZEOF(udc_stm32_stack_0), udc_stm32_thread_handler,
+	k_thread_create(&priv->thread_data, cfg->thread_stack,
+			cfg->thread_stack_size, udc_stm32_thread_handler,
 			(void *)dev, NULL, NULL, K_PRIO_COOP(CONFIG_UDC_STM32_THREAD_PRIORITY),
 			K_ESSENTIAL, K_NO_WAIT);
 	k_thread_name_set(&priv->thread_data, dev->name);
 
-	IRQ_CONNECT(UDC_STM32_IRQ, UDC_STM32_IRQ_PRI, udc_stm32_irq,
-		    DEVICE_DT_INST_GET(0), 0);
+	/*
+	 * Note that this really only configures the interrupt priority;
+	 * IRQn-to-ISR mapping is done at build time by IRQ_CONNECT().
+	 */
+	cfg->irq_connect();
 
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_otghs)
-	err = pinctrl_apply_state(usb_pcfg, PINCTRL_STATE_DEFAULT);
-	if (err < 0) {
+	err = pinctrl_apply_state(cfg->pinctrl, PINCTRL_STATE_DEFAULT);
+
+	/* Ignore -ENOENT returned on series without pinctrl */
+	if (err < 0 && err != -ENOENT) {
 		LOG_ERR("USB pinctrl setup failed (%d)", err);
 		return err;
 	}
-#endif
 
 #ifdef SYSCFG_CFGR1_USB_IT_RMP
 	/*
@@ -1589,38 +1552,16 @@ static int udc_stm32_driver_init0(const struct device *dev)
 	}
 #endif
 
-#if UDC_STM32_NODE_PHY_ITFACE(DT_DRV_INST(0)) == PCD_PHY_ULPI
-	if (ulpi_reset.port != NULL) {
-		if (!gpio_is_ready_dt(&ulpi_reset)) {
+	if (cfg->ulpi_reset_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&cfg->ulpi_reset_gpio)) {
 			LOG_ERR("Reset GPIO device not ready");
 			return -EINVAL;
 		}
-		if (gpio_pin_configure_dt(&ulpi_reset, GPIO_OUTPUT_INACTIVE) != 0) {
+		if (gpio_pin_configure_dt(&cfg->ulpi_reset_gpio, GPIO_OUTPUT_INACTIVE) != 0) {
 			LOG_ERR("Couldn't configure reset pin");
 			return -EIO;
 		}
 	}
-#endif
-
-	/*cd
-	 * Required for at least STM32L4 devices as they electrically
-	 * isolate USB features from VDDUSB. It must be enabled before
-	 * USB can function. Refer to section 5.1.3 in DM00083560 or
-	 * DM00310109.
-	 */
-#ifdef PWR_CR2_USV
-#if defined(LL_APB1_GRP1_PERIPH_PWR)
-	if (LL_APB1_GRP1_IsEnabledClock(LL_APB1_GRP1_PERIPH_PWR)) {
-		LL_PWR_EnableVddUSB();
-	} else {
-		LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
-		LL_PWR_EnableVddUSB();
-		LL_APB1_GRP1_DisableClock(LL_APB1_GRP1_PERIPH_PWR);
-	}
-	#else
-	LL_PWR_EnableVddUSB();
-#endif /* defined(LL_APB1_GRP1_PERIPH_PWR) */
-#endif /* PWR_CR2_USV */
 
 	return 0;
 }

@@ -31,6 +31,10 @@
 };
 
 &radio {
+	ble-2mbps-supported;
+	ble-coded-phy-supported;
+	ble-cte-rx-supported;
+	ble-cte-tx-supported;
 	pa-voltage-mv = <1800>;
 };
 

@@ -64,25 +64,27 @@ Configurability
 Main Features
 *************
 
-* Scope
-    * Focus on framework for sensor fusion, multiple clients, arbitration, data sampling, timing
-      management and scheduling.
+Scope
+  Focus on framework for sensor fusion, multiple clients, arbitration, data sampling, timing
+  management and scheduling.
 
-* Sensor Abstraction
-    * ``Physical sensor``: interacts with Zephyr sensor device drivers, focus on data collecting.
-    * ``Virtual sensor``: relies on other sensor(s), ``physical`` or ``virtual``, focus on
-      data fusion.
+Sensor Abstraction
+  * **Physical sensor**: interacts with Zephyr sensor device drivers, focus on data collecting.
+  * **Virtual sensor**: relies on other sensor(s), **physical** or **virtual**, focus on
+    data fusion.
 
-* Data Driven Model
-    * ``Polling mode``: periodical sampling rate
-    * ``Interrupt mode``: data ready, threshold interrupt etc.
+Data Driven Model
+  * **Polling mode**: periodical sampling rate
+  * **Interrupt mode**: data ready, threshold interrupt etc.
 
-* Scheduling
-    * single thread main loop for all sensor objects sampling and process.
+Scheduling
+  Single thread main loop for all sensor objects sampling and process.
 
-* Buffer Mode for Batching
+Buffer Mode for Batching
+  ..
 
-* Configurable Via Device Tree
+Configurable Via Devicetree
+  ..
 
 
 Below diagram shows the API position and scope:

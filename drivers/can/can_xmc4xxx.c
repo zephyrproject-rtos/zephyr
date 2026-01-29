@@ -65,10 +65,10 @@ struct can_xmc4xxx_data {
 	struct can_xmc4xxx_tx_callback tx_callbacks[CONFIG_CAN_XMC4XXX_MAX_TX_QUEUE];
 
 	uint32_t filter_usage;
-	struct can_xmc4xxx_rx_callback rx_callbacks[CONFIG_CAN_MAX_FILTER];
-	struct can_xmc4xxx_rx_fifo rx_fifos[CONFIG_CAN_MAX_FILTER];
+	struct can_xmc4xxx_rx_callback rx_callbacks[CONFIG_CAN_XMC4XXX_MAX_FILTERS];
+	struct can_xmc4xxx_rx_fifo rx_fifos[CONFIG_CAN_XMC4XXX_MAX_FILTERS];
 #if defined(CONFIG_CAN_ACCEPT_RTR)
-	struct can_xmc4xxx_rx_fifo rtr_fifos[CONFIG_CAN_MAX_FILTER];
+	struct can_xmc4xxx_rx_fifo rtr_fifos[CONFIG_CAN_XMC4XXX_MAX_FILTERS];
 #endif
 
 	CAN_MO_TypeDef *tx_mo[CONFIG_CAN_XMC4XXX_MAX_TX_QUEUE];
@@ -362,13 +362,13 @@ static int can_xmc4xxx_add_rx_filter(const struct device *dev, can_rx_callback_t
 
 	k_mutex_lock(&dev_data->mutex, K_FOREVER);
 
-	for (filter_idx = 0; filter_idx < CONFIG_CAN_MAX_FILTER; filter_idx++) {
+	for (filter_idx = 0; filter_idx < CONFIG_CAN_XMC4XXX_MAX_FILTERS; filter_idx++) {
 		if ((BIT(filter_idx) & dev_data->filter_usage) == 0) {
 			break;
 		}
 	}
 
-	if (filter_idx >= CONFIG_CAN_MAX_FILTER) {
+	if (filter_idx >= CONFIG_CAN_XMC4XXX_MAX_FILTERS) {
 		filter_idx = -ENOSPC;
 	} else {
 		unsigned int key = irq_lock();
@@ -408,7 +408,7 @@ static void can_xmc4xxx_remove_rx_filter(const struct device *dev, int filter_id
 	struct can_xmc4xxx_data *dev_data = dev->data;
 	unsigned int key;
 
-	if (filter_idx < 0 || filter_idx >= CONFIG_CAN_MAX_FILTER) {
+	if (filter_idx < 0 || filter_idx >= CONFIG_CAN_XMC4XXX_MAX_FILTERS) {
 		LOG_ERR("Filter ID %d out of bounds", filter_idx);
 		return;
 	}
@@ -509,7 +509,7 @@ static int can_xmc4xxx_get_max_filters(const struct device *dev, bool ide)
 {
 	ARG_UNUSED(ide);
 
-	return CONFIG_CAN_MAX_FILTER;
+	return CONFIG_CAN_XMC4XXX_MAX_FILTERS;
 }
 
 static void can_xmc4xxx_reset_tx_fifos(const struct device *dev, int status)
@@ -640,7 +640,7 @@ static void can_xmc4xxx_rx_handler(const struct device *dev)
 {
 	struct can_xmc4xxx_data *dev_data = dev->data;
 
-	for (int i = 0; i < CONFIG_CAN_MAX_FILTER; i++) {
+	for (int i = 0; i < CONFIG_CAN_XMC4XXX_MAX_FILTERS; i++) {
 		if ((BIT(i) & dev_data->filter_usage) == 0) {
 			continue;
 		}

@@ -62,6 +62,7 @@ config MBEDTLS_CFG_FILE
 	  alternative config.
 
 rsource "Kconfig.mbedtls"
+rsource "Kconfig.ciphersuites"
 rsource "Kconfig.deprecated"
 
 config MBEDTLS_SSL_MAX_CONTENT_LEN
@@ -192,7 +193,8 @@ if MBEDTLS_ENABLE_HEAP
 
 config MBEDTLS_HEAP_SIZE
 	int "Heap size for mbed TLS"
-	default 10240 if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	default 15360 if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	default 1024 if OPENTHREAD_CRYPTO_PSA
 	default 512
 	help
 	  The mbedtls routines will use this heap if enabled.

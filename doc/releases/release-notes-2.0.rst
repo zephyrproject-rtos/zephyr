@@ -451,10 +451,10 @@ Build and Infrastructure
 * The devicetree Python scripts have been rewritten to be more robust and
   easier to understand and change. The new scripts are these three files:
 
-  - :zephyr_file:`scripts/dts/dtlib.py` -- a low-level :file:`.dts` parsing
+  - ``scripts/dts/dtlib.py`` -- a low-level :file:`.dts` parsing
     library
 
-  - :zephyr_file:`scripts/dts/edtlib.py` -- a higher-level library that adds
+  - ``scripts/dts/edtlib.py`` -- a higher-level library that adds
     information from bindings
 
   - :zephyr_file:`scripts/dts/gen_defines.py` -- generates a C header from the

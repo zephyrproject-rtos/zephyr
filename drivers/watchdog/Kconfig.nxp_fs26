@@ -73,4 +73,19 @@ config WDT_NXP_FS26_INT_THREAD_PRIO
 	  Priority level for internal cooperative thread which is ran for
 	  interrupt processing.
 
+config WDT_NXP_FS26_SPI_8BIT_TRANSFER
+	bool "Use 8-bit SPI transfer mode for FS26"
+	default y if SPI_RTIO
+	help
+	  Enable this to force the FS26 driver to use 8-bit SPI transfers
+	  instead of the default 32-bit transfers.
+
+	  This is required when using SPI controllers that do not support
+	  32-bit word sizes (e.g. SPI_RTIO), or when an application requires
+	  strictly byte-sized transfers.
+
+	  When disabled, the FS26 driver will continue to use 32-bit SPI
+	  transfers as defined by the original implementation.
+
+
 endif # WDT_NXP_FS26

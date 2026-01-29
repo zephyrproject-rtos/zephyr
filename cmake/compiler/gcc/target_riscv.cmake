@@ -12,121 +12,128 @@ elseif(CONFIG_RISCV_CMODEL_LARGE)
 endif()
 
 if(CONFIG_64BIT)
-  string(CONCAT riscv_mabi  ${riscv_mabi} "64")
-  string(CONCAT riscv_march ${riscv_march} "64")
+  string(APPEND riscv_mabi "64")
+  string(APPEND riscv_march "64")
 else()
   string(CONCAT riscv_mabi  "i" ${riscv_mabi} "32")
-  string(CONCAT riscv_march ${riscv_march} "32")
+  string(APPEND riscv_march "32")
 endif()
 
 if(CONFIG_RISCV_ISA_RV32E)
-  string(CONCAT riscv_mabi ${riscv_mabi} "e")
-  string(CONCAT riscv_march ${riscv_march} "e")
+  string(APPEND riscv_mabi "e")
+  string(APPEND riscv_march "e")
 else()
-  string(CONCAT riscv_march ${riscv_march} "i")
+  string(APPEND riscv_march "i")
 endif()
 
 if(CONFIG_RISCV_ISA_EXT_M)
-  string(CONCAT riscv_march ${riscv_march} "m")
+  string(APPEND riscv_march "m")
 endif()
 
 if(CONFIG_RISCV_ISA_EXT_A)
-  string(CONCAT riscv_march ${riscv_march} "a")
+  string(APPEND riscv_march "a")
+endif()
+
+if(CONFIG_FLOAT_HARD)
+  if(CONFIG_CPU_HAS_FPU_DOUBLE_PRECISION)
+    string(APPEND riscv_mabi "d")
+  else()
+    string(APPEND riscv_mabi "f")
+  endif()
 endif()
 
 if(CONFIG_FPU)
-  if(CONFIG_CPU_HAS_FPU_DOUBLE_PRECISION)
-    if(CONFIG_FLOAT_HARD)
-      string(CONCAT riscv_mabi ${riscv_mabi} "d")
-    endif()
-    string(CONCAT riscv_march ${riscv_march} "fd")
-  else()
-    if(CONFIG_FLOAT_HARD)
-      string(CONCAT riscv_mabi ${riscv_mabi} "f")
-    endif()
-    string(CONCAT riscv_march ${riscv_march} "f")
+  if(CONFIG_RISCV_ISA_EXT_F)
+    string(APPEND riscv_march "f")
+  endif()
+  if(CONFIG_RISCV_ISA_EXT_D)
+    string(APPEND riscv_march "d")
   endif()
 endif()
 
 if(CONFIG_RISCV_ISA_EXT_C)
-  string(CONCAT riscv_march ${riscv_march} "c")
+  string(APPEND riscv_march "c")
 endif()
 
 if(CONFIG_RISCV_ISA_EXT_ZICNTR)
-  string(CONCAT riscv_march ${riscv_march} "_zicntr")
+  string(APPEND riscv_march "_zicntr")
 endif()
 
 if(CONFIG_RISCV_ISA_EXT_ZICSR)
-  string(CONCAT riscv_march ${riscv_march} "_zicsr")
+  string(APPEND riscv_march "_zicsr")
 endif()
 
 if(CONFIG_RISCV_ISA_EXT_ZIFENCEI)
-  string(CONCAT riscv_march ${riscv_march} "_zifencei")
+  string(APPEND riscv_march "_zifencei")
 endif()
 
 # Check whether we already imply Zaamo/Zalrsc by selecting the A extension; if not - check them
 # individually and enable them as needed
 if(NOT CONFIG_RISCV_ISA_EXT_A)
   if(CONFIG_RISCV_ISA_EXT_ZAAMO)
-    string(CONCAT riscv_march ${riscv_march} "_zaamo")
+    string(APPEND riscv_march "_zaamo")
   endif()
 
   if(CONFIG_RISCV_ISA_EXT_ZALRSC)
-    string(CONCAT riscv_march ${riscv_march} "_zalrsc")
+    string(APPEND riscv_march "_zalrsc")
   endif()
 endif()
 
 # Zca is implied by C
 if(CONFIG_RISCV_ISA_EXT_ZCA AND
    NOT CONFIG_RISCV_ISA_EXT_C)
-  string(CONCAT riscv_march ${riscv_march} "_zca")
+  string(APPEND riscv_march "_zca")
 endif()
 
 if(CONFIG_RISCV_ISA_EXT_ZCB)
-  string(CONCAT riscv_march ${riscv_march} "_zcb")
+  string(APPEND riscv_march "_zcb")
 endif()
 
 # Zcd is implied by C+D
 if(CONFIG_RISCV_ISA_EXT_ZCD AND
    NOT (CONFIG_RISCV_ISA_EXT_C AND CONFIG_RISCV_ISA_EXT_D))
-  string(CONCAT riscv_march ${riscv_march} "_zcd")
+  string(APPEND riscv_march "_zcd")
 endif()
 
 # Zcf is implied by C+F
 if(CONFIG_RISCV_ISA_EXT_ZCF AND
    NOT (CONFIG_RISCV_ISA_EXT_C AND CONFIG_RISCV_ISA_EXT_F))
-  string(CONCAT riscv_march ${riscv_march} "_zcf")
+  string(APPEND riscv_march "_zcf")
 endif()
 
 if(CONFIG_RISCV_ISA_EXT_ZCMP)
-  string(CONCAT riscv_march ${riscv_march} "_zcmp")
+  string(APPEND riscv_march "_zcmp")
 endif()
 
 if(CONFIG_RISCV_ISA_EXT_ZCMT)
-  string(CONCAT riscv_march ${riscv_march} "_zcmt")
+  string(APPEND riscv_march "_zcmt")
 endif()
 
 if(CONFIG_RISCV_ISA_EXT_ZBA)
-  string(CONCAT riscv_march ${riscv_march} "_zba")
+  string(APPEND riscv_march "_zba")
 endif()
 
 if(CONFIG_RISCV_ISA_EXT_ZBB)
-  string(CONCAT riscv_march ${riscv_march} "_zbb")
+  string(APPEND riscv_march "_zbb")
 endif()
 
 if(CONFIG_RISCV_ISA_EXT_ZBC)
-  string(CONCAT riscv_march ${riscv_march} "_zbc")
+  string(APPEND riscv_march "_zbc")
+endif()
+
+if(CONFIG_RISCV_ISA_EXT_ZBKB)
+  string(CONCAT riscv_march ${riscv_march} "_zbkb")
 endif()
 
 if(CONFIG_RISCV_ISA_EXT_ZBS)
-  string(CONCAT riscv_march ${riscv_march} "_zbs")
+  string(APPEND riscv_march "_zbs")
 endif()
 
 # Check whether we already imply Zmmul by selecting the M extension; if not - enable it
 if(NOT CONFIG_RISCV_ISA_EXT_M AND
    CONFIG_RISCV_ISA_EXT_ZMMUL AND
    "${GCC_COMPILER_VERSION}" VERSION_GREATER_EQUAL 13.0.0)
-  string(CONCAT riscv_march ${riscv_march} "_zmmul")
+  string(APPEND riscv_march "_zmmul")
 endif()
 
 list(APPEND RISCV_C_FLAGS

@@ -15,3 +15,58 @@ properties:
       The interrupt pin of APDS9960 is open-drain, active low.
       If connected directly the MCU pin should be configured
       as pull-up, active low.
+
+  pled-boost:
+    type: int
+    default: 0x01
+    description: Proximity LED Boost Current
+    enum:
+      - 0x00 # 100
+      - 0x01 # 150
+      - 0x10 # 200
+      - 0x11 # 300
+
+  pgain:
+    type: int
+    default: 0x01
+    description: ALS and Color Gain
+    enum:
+      - 0x00 # 1x
+      - 0x01 # 4x
+      - 0x10 # 4x
+      - 0x11 # 8x
+
+  again:
+    type: int
+    default: 0x01
+    description: ALS and Color Gain
+    enum:
+      - 0x00 # 1x
+      - 0x01 # 4x
+      - 0x10 # 16x
+      - 0x11 # 64x
+
+  ppulse-length:
+    type: int
+    default: 0x01
+    description: Proximity Pulse Length
+    enum:
+      - 0x00 # 4us
+      - 0x01 # 8us
+      - 0x10 # 16us
+      - 0x11 # 32us
+
+  ppulse-count:
+    type: int
+    default: 0x8
+    description: Proximity Pulse Count
+
+  proximity:
+    type: int
+    description: Gesture Proximity Enter Threshold
+    default: 40
+
+  ir-difference:
+    type: int
+    description: Minimum IR diode difference for gesture
+    default: 5

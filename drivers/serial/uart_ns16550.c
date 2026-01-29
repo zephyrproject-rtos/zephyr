@@ -245,6 +245,11 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define MSR_RI 0x40   /* complement of ring signal */
 #define MSR_DCD 0x80  /* complement of dcd */
 
+/* constants for uart status register */
+#define USR_TFNF 0x02 /* Transmit FIFO Not Full */
+#define USR_TFE 0x04 /* Transmit FIFO Empty */
+#define USR_RFNE 0x08 /* Receive FIFO Not Empty */
+
 #define THR(dev) (get_port(dev) + (REG_THR * reg_interval(dev)))
 #define RDR(dev) (get_port(dev) + (REG_RDR * reg_interval(dev)))
 #define BRDL(dev) (get_port(dev) + (REG_BRDL * reg_interval(dev)))
@@ -355,6 +360,7 @@ struct uart_ns16550_dev_config {
 #if UART_NS16550_RESET_ENABLED
 	struct reset_dt_spec reset_spec;
 #endif
+	bool loopback;
 };
 
 /** Device data structure */
@@ -368,6 +374,10 @@ struct uart_ns16550_dev_data {
 	uint8_t iir_cache;	/**< cache of IIR since it clears when read */
 	uart_irq_callback_user_data_t cb;  /**< Callback function pointer */
 	void *cb_data;	/**< Callback function arg */
+#endif
+
+#ifdef CONFIG_UART_NS16550_WA_TX_FIFO_EMPTY_INTERRUPT
+	uint8_t sw_tx_irq; /**< software tx ready flag */
 #endif
 
 #if UART_NS16550_DLF_ENABLED
@@ -681,7 +691,10 @@ static int uart_ns16550_configure(const struct device *dev,
 		uart_cfg.parity = LCR_PDIS;
 		break;
 	case UART_CFG_PARITY_EVEN:
-		uart_cfg.parity = LCR_EPS;
+		uart_cfg.parity = LCR_EPS | LCR_PEN;
+		break;
+	case UART_CFG_PARITY_ODD:
+		uart_cfg.parity = LCR_PEN;
 		break;
 	default:
 		ret = -ENOTSUP;
@@ -701,6 +714,10 @@ static int uart_ns16550_configure(const struct device *dev,
 		mdc |= MCR_AFCE;
 	}
 #endif
+
+	if (dev_cfg->loopback) {
+		mdc |= MCR_LOOP;
+	}
 
 	ns16550_outbyte(dev_cfg, MDC(dev), mdc);
 
@@ -966,6 +983,10 @@ static void uart_ns16550_poll_out(const struct device *dev,
 
 	ns16550_outbyte(dev_cfg, THR(dev), c);
 
+#ifdef CONFIG_UART_NS16550_WA_TX_FIFO_EMPTY_INTERRUPT
+	data->sw_tx_irq = 0; /**< clean up */
+#endif
+
 	k_spin_unlock(&data->lock, key);
 }
 
@@ -1012,6 +1033,12 @@ static int uart_ns16550_fifo_fill(const struct device *dev,
 	for (i = 0; (i < size) && (i < data->fifo_size); i++) {
 		ns16550_outbyte(dev_cfg, THR(dev), tx_data[i]);
 	}
+
+#ifdef CONFIG_UART_NS16550_WA_TX_FIFO_EMPTY_INTERRUPT
+	if (i != 0) {
+		data->sw_tx_irq = 0; /**< clean up */
+	}
+#endif
 
 	k_spin_unlock(&data->lock, key);
 
@@ -1075,6 +1102,26 @@ static void uart_ns16550_irq_tx_enable(const struct device *dev)
 #endif
 	ns16550_outbyte(dev_cfg, IER(dev), ns16550_inbyte(dev_cfg, IER(dev)) | IER_TBE);
 
+#ifdef CONFIG_UART_NS16550_WA_TX_FIFO_EMPTY_INTERRUPT
+	if (ns16550_inbyte(dev_cfg, LSR(dev)) & LSR_THRE) {
+		k_spin_unlock(&data->lock, key);
+		/*
+		 * The TX FIFO ready interrupt will be triggered if only if
+		 * when the pre-state is not empty. Thus, if the pre-state is
+		 * already empty, try to call the callback routine directly
+		 * to resolve it.
+		 */
+		int irq_lock_key = arch_irq_lock();
+
+		if (data->cb && (ns16550_inbyte(dev_cfg, LSR(dev)) & LSR_THRE)) {
+			data->sw_tx_irq = 1; /**< set tx ready */
+			data->cb(dev, data->cb_data);
+		}
+		arch_irq_unlock(irq_lock_key);
+		return;
+	}
+#endif
+
 	k_spin_unlock(&data->lock, key);
 }
 
@@ -1088,6 +1135,10 @@ static void uart_ns16550_irq_tx_disable(const struct device *dev)
 	struct uart_ns16550_dev_data *data = dev->data;
 	const struct uart_ns16550_dev_config * const dev_cfg = dev->config;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+#ifdef CONFIG_UART_NS16550_WA_TX_FIFO_EMPTY_INTERRUPT
+	data->sw_tx_irq = 0; /**< clean up */
+#endif
 
 	ns16550_outbyte(dev_cfg, IER(dev),
 			ns16550_inbyte(dev_cfg, IER(dev)) & (~IER_TBE));
@@ -1127,7 +1178,26 @@ static int uart_ns16550_irq_tx_ready(const struct device *dev)
 	struct uart_ns16550_dev_data *data = dev->data;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
+#ifdef CONFIG_UART_NS16550_DW8250_DW_APB
+	/* Use USR register to check if TX FIFO has space */
+	const struct uart_ns16550_dev_config * const dev_cfg = dev->config;
+
+	int ret = ((ns16550_inbyte(dev_cfg, USR(dev)) & (USR_TFNF | USR_TFE)) &&
+		(ns16550_inbyte(dev_cfg, IER(dev)) & IER_TBE)) ? 1 : 0;
+#else
 	int ret = ((IIRC(dev) & IIR_ID) == IIR_THRE) ? 1 : 0;
+#endif
+
+#ifdef CONFIG_UART_NS16550_WA_TX_FIFO_EMPTY_INTERRUPT
+	if (ret == 0 && data->sw_tx_irq) {
+		/**< replace resoult when there is a software solution */
+		const struct uart_ns16550_dev_config * const dev_cfg = dev->config;
+
+		if (ns16550_inbyte(dev_cfg, IER(dev)) & IER_TBE) {
+			ret = 1;
+		}
+	}
+#endif
 
 	k_spin_unlock(&data->lock, key);
 
@@ -1200,7 +1270,15 @@ static int uart_ns16550_irq_rx_ready(const struct device *dev)
 	struct uart_ns16550_dev_data *data = dev->data;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
+#ifdef CONFIG_UART_NS16550_DW8250_DW_APB
+	/* Use USR register to check if RX FIFO has data */
+	const struct uart_ns16550_dev_config * const dev_cfg = dev->config;
+
+	int ret = ((ns16550_inbyte(dev_cfg, USR(dev)) & USR_RFNE) &&
+		(ns16550_inbyte(dev_cfg, IER(dev)) & IER_RXRDY)) ? 1 : 0;
+#else
 	int ret = ((IIRC(dev) & IIR_ID) == IIR_RBRF) ? 1 : 0;
+#endif
 
 	k_spin_unlock(&data->lock, key);
 
@@ -1255,7 +1333,18 @@ static int uart_ns16550_irq_is_pending(const struct device *dev)
 	struct uart_ns16550_dev_data *data = dev->data;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
+#ifdef CONFIG_UART_NS16550_DW8250_DW_APB
+	/* Use USR register to check if any IRQ is pending */
+	const struct uart_ns16550_dev_config * const dev_cfg = dev->config;
+
+	bool tx_pending = ((ns16550_inbyte(dev_cfg, USR(dev)) & (USR_TFNF | USR_TFE)) &&
+		(ns16550_inbyte(dev_cfg, IER(dev)) & IER_TBE));
+	bool rx_pending = ((ns16550_inbyte(dev_cfg, USR(dev)) & USR_RFNE) &&
+		(ns16550_inbyte(dev_cfg, IER(dev)) & IER_RXRDY));
+	int ret = (tx_pending || rx_pending) ? 1 : 0;
+#else
 	int ret = (!(IIRC(dev) & IIR_NIP)) ? 1 : 0;
+#endif
 
 	k_spin_unlock(&data->lock, key);
 
@@ -1982,7 +2071,8 @@ static DEVICE_API(uart, uart_ns16550_driver_api) = {
 		IF_ENABLED(CONFIG_PINCTRL,                                           \
 			(.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),))              \
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, resets),                         \
-			(.reset_spec = RESET_DT_SPEC_INST_GET(n),))
+			(.reset_spec = RESET_DT_SPEC_INST_GET(n),))                  \
+		.loopback = DT_INST_PROP(n, loopback),
 
 #define UART_NS16550_COMMON_DEV_DATA_INITIALIZER(n)                                  \
 		.uart_config.baudrate = DT_INST_PROP_OR(n, current_speed, 0),        \

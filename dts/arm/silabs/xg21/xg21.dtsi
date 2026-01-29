@@ -488,6 +488,7 @@
 		acmp0: acmp@5a008000 {
 			compatible = "silabs,acmp";
 			reg = <0x5a008000 0x4000>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_INVALID>;
 			interrupt-names = "acmp0";
 			interrupts = <41 2>;
 			status = "disabled";
@@ -496,6 +497,7 @@
 		acmp1: acmp@5a00c000 {
 			compatible = "silabs,acmp";
 			reg = <0x5a00c000 0x4000>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_INVALID>;
 			interrupt-names = "acmp1";
 			interrupts = <42 2>;
 			status = "disabled";

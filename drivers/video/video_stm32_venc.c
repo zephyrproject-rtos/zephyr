@@ -16,7 +16,13 @@
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#if defined(CONFIG_VIDEO_STM32_VENC_SMH_ALLOC)
 #include <zephyr/multi_heap/shared_multi_heap.h>
+
+#define EWL_HEAP_ALIGNED_ALLOC(size)\
+	shared_multi_heap_aligned_alloc(CONFIG_VIDEO_BUFFER_SMH_ATTRIBUTE, ALIGNMENT_INCR, (size))
+#define EWL_HEAP_ALIGNED_FREE(block) shared_multi_heap_free(block)
+#endif
 
 #include <ewl.h>
 #include <h264encapi.h>
@@ -35,16 +41,33 @@ LOG_MODULE_REGISTER(stm32_venc, CONFIG_VIDEO_LOG_LEVEL);
 
 #define ALIGNMENT_INCR 8UL
 
-#define EWL_HEAP_ALIGNED_ALLOC(size)\
-	shared_multi_heap_aligned_alloc(CONFIG_VIDEO_BUFFER_SMH_ATTRIBUTE, ALIGNMENT_INCR, (size))
-#define EWL_HEAP_ALIGNED_FREE(block) shared_multi_heap_free(block)
-
 #define EWL_TIMEOUT 100UL
 
 #define MEM_CHUNKS 32
 
 #define NUM_SLICES_READY_MASK GENMASK(23, 16)
 #define LOW_LATENCY_HW_ITF_EN 29
+
+#if defined(CONFIG_VIDEO_STM32_VENC_HEAP_ALLOC)
+#if !defined(CONFIG_VIDEO_STM32_VENC_HEAP_ZEPHYR_REGION)
+#define VENC_HEAP_REGION_NAME __noinit_named(kheap_buf_venc_pool)
+#else
+#define VENC_HEAP_REGION_NAME Z_GENERIC_SECTION(CONFIG_VIDEO_STM32_VENC_HEAP_ZEPHYR_REGION_NAME)
+#endif
+
+/*
+ * The k_heap is manually initialized instead of using directly Z_HEAP_DEFINE_IN_SECT
+ * since the section might not be yet accessible from the beginning, making it impossible
+ * to initialize it if done via Z_HEAP_DEFINE_IN_SECT
+ */
+static char VENC_HEAP_REGION_NAME __aligned(8)
+	venc_pool_mem[MAX(CONFIG_VIDEO_STM32_VENC_HEAP_SIZE, Z_HEAP_MIN_SIZE)];
+static struct k_heap venc_pool;
+
+#define EWL_HEAP_ALIGNED_ALLOC(size)	\
+	k_heap_aligned_alloc(&venc_pool, ALIGNMENT_INCR, size, K_NO_WAIT)
+#define EWL_HEAP_ALIGNED_FREE(block) k_heap_free(&venc_pool, block)
+#endif
 
 typedef void (*irq_config_func_t)(const struct device *dev);
 
@@ -63,7 +86,10 @@ struct stm32_venc_ewl {
 	const struct stm32_venc_config *config;
 	struct k_sem complete;
 	uint32_t irq_status;
+
+	/* Stats counters (for debugging) */
 	uint32_t irq_cnt;
+	uint32_t irq_fuse_cnt;
 	uint32_t mem_cnt;
 };
 
@@ -145,6 +171,7 @@ const void *EWLInit(EWLInitParam_t *param)
 	/* set client type */
 	ewl_instance.client_type = param->clientType;
 	ewl_instance.irq_cnt = 0;
+	ewl_instance.irq_fuse_cnt = 0;
 
 	return (void *)&ewl_instance;
 }
@@ -326,69 +353,24 @@ i32 EWLWaitHwRdy(const void *instance, uint32_t *slices_ready)
 {
 	struct stm32_venc_ewl *inst = (struct stm32_venc_ewl *)instance;
 	const struct stm32_venc_config *config = inst->config;
-	int32_t ret = EWL_HW_WAIT_TIMEOUT;
-	volatile uint32_t irq_stats;
-	uint32_t prev_slices_ready = 0;
-	k_timepoint_t timeout = sys_timepoint_calc(K_MSEC(EWL_TIMEOUT));
 	uint32_t start = sys_clock_tick_get_32();
 
 	__ASSERT_NO_MSG(inst != NULL);
 
-	/* check how to clear IRQ flags for VENC */
-	uint32_t clr_by_write_1 = EWLReadReg(inst, BASE_HWFuse2) & HWCFGIrqClearSupport;
+	if (k_sem_take(&inst->complete, K_MSEC(EWL_TIMEOUT))) {
+		uint32_t irq_status = sys_read32(config->reg + BASE_HEncIRQ);
 
-	do {
-		irq_stats = sys_read32(config->reg + BASE_HEncIRQ);
-		/* get the number of completed slices from ASIC registers. */
-		if (slices_ready != NULL && *slices_ready > prev_slices_ready) {
-			*slices_ready = FIELD_GET(NUM_SLICES_READY_MASK,
-						 sys_read32(config->reg + BASE_HEncControl7));
-		}
-
-		LOG_DBG("IRQ stat = %08x", irq_stats);
-
-		uint32_t hw_handshake_status = IS_BIT_SET(
-			sys_read32(config->reg + BASE_HEncInstantInput), LOW_LATENCY_HW_ITF_EN);
-
-		/* ignore the irq status of input line buffer in hw handshake mode */
-		if ((irq_stats == ASIC_STATUS_LINE_BUFFER_DONE) && (hw_handshake_status != 0UL)) {
-			sys_write32(ASIC_STATUS_FUSE, config->reg + BASE_HEncIRQ);
-			continue;
-		}
-
-		if ((irq_stats & ASIC_STATUS_ALL) != 0UL) {
-			/* clear IRQ and slice ready status */
-			uint32_t clr_stats;
-
-			irq_stats &= ~(ASIC_STATUS_SLICE_READY | ASIC_IRQ_LINE);
-
-			if (clr_by_write_1 != 0UL) {
-				clr_stats = ASIC_STATUS_SLICE_READY | ASIC_IRQ_LINE;
-			} else {
-				clr_stats = irq_stats;
-			}
-
-			sys_write32(clr_stats, config->reg + BASE_HEncIRQ);
-			ret = EWL_OK;
-			break;
-		}
-
-		if (slices_ready != NULL && *slices_ready > prev_slices_ready) {
-			ret = EWL_OK;
-			break;
-		}
-
-	} while (!sys_timepoint_expired(timeout));
-
-	if (ret != EWL_OK) {
-		LOG_ERR("Timeout");
-		return ret;
+		LOG_ERR("timeout, status=0x%x", irq_status);
+		return EWL_HW_WAIT_TIMEOUT;
 	}
 
 	LOG_DBG("encoding = %d ms", k_ticks_to_ms_ceil32(sys_clock_tick_get_32() - start));
 
+	/* get the number of completed slices from ASIC registers. */
 	if (slices_ready != NULL) {
-		LOG_DBG("slices_ready = %d", *slices_ready);
+		*slices_ready = FIELD_GET(NUM_SLICES_READY_MASK,
+					  sys_read32(config->reg + BASE_HEncControl7));
+		LOG_DBG("slices=%d", *slices_ready);
 	}
 
 	return EWL_OK;
@@ -475,8 +457,11 @@ static int encoder_prepare(struct stm32_venc_data *data)
 	H264EncPreProcessingCfg preproc_cfg = {0};
 	H264EncRateCtrl ratectrl_cfg = {0};
 	H264EncCodingCtrl codingctrl_cfg = {0};
+	struct stm32_venc_ewl *inst = &ewl_instance;
 
 	data->frame_nb = 0;
+	inst->irq_cnt = 0;
+	inst->irq_fuse_cnt = 0;
 
 	/* set config to 1 reference frame */
 	cfg.refFrameAmount = 1;
@@ -578,12 +563,15 @@ static int encoder_start(struct stm32_venc_data *data, struct video_buffer *outp
 
 static int encoder_end(struct stm32_venc_data *data)
 {
+	struct stm32_venc_ewl *inst = &ewl_instance;
 	H264EncIn enc_in = {0};
 	H264EncOut enc_out = {0};
 
 	if (data->encoder != NULL) {
 		H264EncStrmEnd(data->encoder, &enc_in, &enc_out);
+		H264EncRelease(data->encoder);
 		data->encoder = NULL;
+		inst->mem_cnt = 0;
 	}
 
 	return 0;
@@ -597,6 +585,7 @@ static int encode_frame(struct stm32_venc_data *data)
 	struct video_buffer *output;
 	H264EncIn enc_in = {0};
 	H264EncOut enc_out = {0};
+	struct stm32_venc_ewl *inst = &ewl_instance;
 
 	if (k_fifo_is_empty(&data->in_fifo_in) || k_fifo_is_empty(&data->out_fifo_in)) {
 		/* Encoding deferred to next buffer queueing */
@@ -621,10 +610,14 @@ static int encode_frame(struct stm32_venc_data *data)
 		goto out;
 	}
 
-	/* one key frame every seconds */
+	/* one key frame every VENC_DEFAULT_FRAMERATE frames */
 	if ((data->frame_nb % VENC_DEFAULT_FRAMERATE) == 0 || data->resync) {
 		/* if frame is the first or resync needed: set as intra coded */
 		enc_in.codingType = H264ENC_INTRA_FRAME;
+		data->resync = false;
+
+		LOG_DBG("frames=%d irq=%d fuse=%d", data->frame_nb, inst->irq_cnt,
+			inst->irq_fuse_cnt);
 	} else {
 		/* if there was a frame previously, set as predicted */
 		enc_in.timeIncrement = 1;
@@ -697,12 +690,15 @@ out:
 static int stm32_venc_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	struct stm32_venc_data *data = dev->data;
+	struct stm32_venc_ewl *inst = &ewl_instance;
 
 	ARG_UNUSED(type);
 
 	if (!enable) {
 		/* Stop VENC */
 		encoder_end(data);
+		LOG_DBG("frames=%d irq=%d fuse=%d", data->frame_nb, inst->irq_cnt,
+			inst->irq_fuse_cnt);
 	}
 
 	return 0;
@@ -766,6 +762,7 @@ ISR_DIRECT_DECLARE(stm32_venc_isr)
 		sys_write32(ASIC_STATUS_FUSE | ASIC_IRQ_LINE, config->reg + BASE_HEncIRQ);
 		/* read back the IRQ status to update its value */
 		irq_status = sys_read32(config->reg + BASE_HEncIRQ);
+		inst->irq_fuse_cnt++;
 	}
 
 	if (irq_status != 0U) {
@@ -774,9 +771,9 @@ ISR_DIRECT_DECLARE(stm32_venc_isr)
 		 * and signal to EWLWaitHwRdy
 		 */
 		sys_write32(ASIC_STATUS_SLICE_READY | ASIC_IRQ_LINE, config->reg + BASE_HEncIRQ);
-	}
 
-	k_sem_give(&inst->complete);
+		k_sem_give(&inst->complete);
+	}
 
 	return 0;
 }
@@ -836,35 +833,22 @@ static struct stm32_venc_data stm32_venc_data_0 = {};
 
 static const struct stm32_venc_config stm32_venc_config_0 = {
 	.reg = DT_INST_REG_ADDR(0),
-	.pclken = {.bus = DT_INST_CLOCKS_CELL(0, bus), .enr = DT_INST_CLOCKS_CELL(0, bits)},
+	.pclken = STM32_DT_INST_CLOCK_INFO(0),
 	.reset = RESET_DT_SPEC_INST_GET_BY_IDX(0, 0),
 	.irq_config = stm32_venc_irq_config_func,
 };
-
-static void risaf_config(void)
-{
-	/* Define and initialize the master configuration structure */
-	RIMC_MasterConfig_t rimc_master = {0};
-
-	/* Enable the clock for the RIFSC (RIF Security Controller) */
-	__HAL_RCC_RIFSC_CLK_ENABLE();
-
-	rimc_master.MasterCID = RIF_CID_1;
-	rimc_master.SecPriv = RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV;
-
-	/* Configure the master attributes for the video encoder peripheral (VENC) */
-	HAL_RIF_RIMC_ConfigMasterAttributes(RIF_MASTER_INDEX_VENC, &rimc_master);
-
-	/* Set the secure and privileged attributes for the VENC as a slave */
-	HAL_RIF_RISC_SetSlaveSecureAttributes(RIF_RISC_PERIPH_INDEX_VENC,
-					      RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV);
-}
 
 static int stm32_venc_init(const struct device *dev)
 {
 	const struct stm32_venc_config *config = dev->config;
 	struct stm32_venc_data *data = dev->data;
 	int err;
+
+#if defined(CONFIG_VIDEO_STM32_VENC_HEAP_ALLOC)
+	/* Initialize the VENC internal buffers dedicated HEAP */
+	k_heap_init(&venc_pool, venc_pool_mem,
+		    MAX(CONFIG_VIDEO_STM32_VENC_HEAP_SIZE, Z_HEAP_MIN_SIZE));
+#endif
 
 	/* Enable VENC clock */
 	err = stm32_venc_enable_clock(dev);
@@ -889,8 +873,6 @@ static int stm32_venc_init(const struct device *dev)
 
 	/* Run IRQ init */
 	config->irq_config(dev);
-
-	risaf_config();
 
 	LOG_DBG("CPU frequency    : %d", HAL_RCC_GetCpuClockFreq() / 1000000);
 	LOG_DBG("sysclk frequency : %d", HAL_RCC_GetSysClockFreq() / 1000000);

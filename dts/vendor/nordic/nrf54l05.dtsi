@@ -33,6 +33,9 @@
 	cpuflpr_rram: rram@75800 {
 		compatible = "soc-nv-flash";
 		reg = <0x75800 DT_SIZE_K(30)>;
+		ranges = <0x0 0x75800 DT_SIZE_K(30)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
 		erase-block-size = <4096>;
 		write-block-size = <16>;
 	};

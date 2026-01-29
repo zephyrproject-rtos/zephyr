@@ -44,6 +44,16 @@ config BT_MAX_SCO_CONN
 	  Maximum number of simultaneous Bluetooth synchronous connections
 	  supported. The minimum (and default) number is 1.
 
+config BT_ACCEPT_CONN_AS_CENTRAL
+	bool "Accept a new incoming ACL connection request as central role"
+	help
+	  By default, the device will accept the ACL connection request as the peripheral role.
+	  If the option is enabled, the device will accept the ACL connection request as the
+	  central role. Normally, the HCI Role Change event will be generated after the HCI command
+	  Accept Connection Request is succeeded.
+	  The kconfig option only works when calling function bt_br_set_discoverable to enable
+	  connectable mode with a NULL callback parameter.
+
 config BT_L2CAP_RX_FLUSH_TO
 	hex "Minimum Bluetooth L2CAP RX flush Timeout accepted in milliseconds"
 	default 0x0001 if BT_A2DP_SINK
@@ -289,6 +299,18 @@ config BT_HFP_AG_CODEC_NEG
 	help
 	  This option enables Codec Negotiation for HFP AG
 
+if BT_HFP_AG_CODEC_NEG
+config BT_HFP_AG_CODEC_MSBC
+	bool "Support Codec mSBC for HFP AG [EXPERIMENTAL]"
+	help
+	  This option enables Codec mSBC for HFP AG
+
+config BT_HFP_AG_CODEC_LC3_SWB
+	bool "Support Codec LC3 SWB for HFP AG [EXPERIMENTAL]"
+	help
+	  This option enables Codec LC3 SWB for HFP AG
+endif # BT_HFP_AG_CODEC_NEG
+
 config BT_HFP_AG_ECNR
 	bool "EC and/or NR function for HFP AG [EXPERIMENTAL]"
 	help
@@ -327,17 +349,6 @@ config BT_HFP_AG_TX_BUF_COUNT
 	  Maximum number of pending TX buffers that have an associated
 	  sending buf. Normally this can be left to the default value, which
 	  is equal to the number of session in the stack-internal pool.
-
-config BT_HFP_AG_THREAD_STACK_SIZE
-	int "Size of the HFP AG thread stack [EXPERIMENTAL]"
-	default 1024
-	help
-	  Stack size needed for executing thread for HFP AG.
-
-config BT_HFP_AG_THREAD_PRIO
-	# Hidden option for HFP AG thread priority
-	int
-	default 6
 
 config BT_HFP_AG_OUTGOING_TIMEOUT
 	int "Call outgoing timeout value for HFP AG [EXPERIMENTAL]"
@@ -433,6 +444,12 @@ config BT_HFP_AG_GET_ONGOING_CALL_TIMEOUT
 	help
 	  This option sets the timeout after the get ongoing calls callback notified
 
+config BT_HFP_AG_INBAND_RINGTONE
+	bool "In-band ring tone capability"
+	default y
+	help
+	  This option enables In-band ring tone capability
+
 endif # BT_HFP_AG
 
 config BT_AVDTP
@@ -526,6 +543,17 @@ config BT_AVRCP_CONTROLLER
 	help
 	  This option enables the AVRCP profile controller function
 
+config BT_AVRCP_VD_RX_SIZE
+	int "AVRCP Vendor Dependent RX data buffer Size"
+	default 1024
+	range 512 $(INT16_MAX)
+	help
+	  Size of the AVRCP Vendor Dependent RX data buffer in bytes.
+	  This buffer is used for reassembling fragmented AVRCP Vendor Dependent
+	  commands and responses received from the CT device. If the remote CT
+	  sends large Vendor-specific PDUs or frequent fragmentation occurs,
+	  consider increasing this value to avoid incomplete message handling.
+
 config BT_AVRCP_BROWSING
 	bool "Bluetooth AVRCP Browsing channel support [EXPERIMENTAL]"
 	select EXPERIMENTAL
@@ -533,6 +561,70 @@ config BT_AVRCP_BROWSING
 	help
 	  This option enables support for the AVRCP Browsing channel
 	  over Bluetooth BR/EDR.
+
+if BT_AVRCP_BROWSING
+
+config BT_AVRCP_BROWSING_L2CAP_MTU
+	int "L2CAP MTU for AVRCP Browsing Channel"
+	default 339
+	# For AVRCP Browsing Channel over L2CAP, including:
+	# 335 bytes - the minimum MTU for AVRCP Browsing Channel,
+	# 4 bytes - L2CAP Header,
+	range 339 4096
+	help
+	  Maximum size of L2CAP MTU for AVCTP Browsing Channel.
+	  RX MTU will be truncated to account for ACL data and type overhead, and
+	  the L2CAP PDUheader.
+
+endif # BT_AVRCP_BROWSING
+
+config BT_AVRCP_TG_COVER_ART
+	bool "Bluetooth AVRCP Target Cover Art support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select BT_BIP
+	depends on BT_AVRCP_TARGET
+	help
+	  This option enables support for Cover Art in the AVRCP Target
+	  role over Bluetooth BR/EDR.
+
+config BT_AVRCP_CT_COVER_ART
+	bool
+	select EXPERIMENTAL
+	select BT_BIP
+	depends on BT_AVRCP_CONTROLLER
+	help
+	  This option enables support for Cover Art in the AVRCP controller
+	  role over Bluetooth BR/EDR.
+
+config BT_AVRCP_CT_COVER_ART_GET_IMAGE_PROPERTIES
+	bool "Bluetooth AVRCP Controller Cover Art Get Image Properties support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select BT_BIP
+	select BT_AVRCP_CT_COVER_ART
+	depends on BT_AVRCP_CONTROLLER
+	help
+	  This option enables support for Cover Art Get Image Properties in the AVRCP Controller
+	  role over Bluetooth BR/EDR.
+
+config BT_AVRCP_CT_COVER_ART_GET_IMAGE
+	bool "Bluetooth AVRCP Controller Cover Art Get Image support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select BT_BIP
+	select BT_AVRCP_CT_COVER_ART
+	depends on BT_AVRCP_CONTROLLER
+	help
+	  This option enables support for Cover Art Get Image in the AVRCP Controller
+	  role over Bluetooth BR/EDR.
+
+config BT_AVRCP_CT_COVER_ART_GET_LINKED_THUMBNAIL
+	bool "Bluetooth AVRCP Controller Cover Art Get Linked Thumbnail support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select BT_BIP
+	select BT_AVRCP_CT_COVER_ART
+	depends on BT_AVRCP_CONTROLLER
+	help
+	  This option enables support for Cover Art Get Linked Thumbnail in the AVRCP Controller
+	  role over Bluetooth BR/EDR.
 
 endif # BT_AVRCP
 
@@ -623,7 +715,10 @@ config BT_GOEP_L2CAP_MTU
 	# For GOEP over L2CAP, including,
 	# 255 bytes - the minimum MTU of GOEP,
 	# 4 bytes - L2CAP Header,
-	range 259 BT_BUF_ACL_RX_SIZE
+	# 6 bytes - Field length of L2CAP I-frame, including,
+	#   4 bytes - extended control field,
+	#   2 bytes - FCS field.
+	range 265 BT_BUF_ACL_RX_SIZE
 	help
 	  Maximum size of L2CAP MTU for GOEP.
 	  RX MTU will be truncated to account for ACL data and type overhead, and the L2CAP PDU
@@ -638,14 +733,12 @@ config BT_OEBX_RSP_CODE_TO_STR
 
 endif # BT_GOEP
 
-config BT_A2DP_SOURCE_SBC_AUDIO_SHELL
-	bool "A2DP Source SBC Audio Shell Support"
-	depends on BT_A2DP_SOURCE && SHELL
-	default n
+config BT_BIP
+	bool "Bluetooth BIP Profile [EXPERIMENTAL]"
+	select BT_GOEP
+	select EXPERIMENTAL
 	help
-	  Enable A2DP source SBC audio encoding and playback functionality
-	  in the shell. This includes SBC encoder support, audio streaming,
-	  and related shell commands for testing A2DP source functionality.
+	  This option enables the BIP profile
 
 endif # BT_CLASSIC
 

@@ -1,0 +1,63 @@
+# Copyright 2025 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_MAX31331
+	bool "MAX31331 ultra low-power RTC"
+	default y
+	depends on DT_HAS_ADI_MAX31331_ENABLED
+	select I2C
+	help
+	  Enable the Analog Devices MAX31331 RTC multi-function device driver
+
+config RTC_MAX31331_TIMESTAMPING
+	bool "Timestamping support (TS0–TS3)"
+	depends on DT_HAS_ADI_MAX31331_ENABLED
+	help
+	  Enable support for timestamping functionality using the TS0 - TS3 registers
+
+config RTC_MAX31331_INTERRUPT
+	bool "Interrupt support"
+
+choice RTC_MAX31331_INTERRUPT_MODE
+	prompt "Set option of Interrupt handling"
+	default RTC_MAX31331_INTERRUPT_GLOBAL_THREAD
+	depends on DT_HAS_ADI_MAX31331_ENABLED
+	help
+	  Choose how the interrupt handling for the MAX31331 RTC driver should be implemented.
+	  This allows selecting between different interrupt handling mechanisms based
+	  on the application requirements.
+
+config RTC_MAX31331_INTERRUPT_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ADI_MAX31331),interrupt-gpios)
+	select GPIO
+	select RTC_MAX31331_INTERRUPT
+	help
+	  Use global thread for the interrupt handler
+
+config RTC_MAX31331_INTERRUPT_OWN_THREAD
+	bool "Use own thread"
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ADI_MAX31331),interrupt-gpios)
+	select GPIO
+	select RTC_MAX31331_INTERRUPT
+	help
+	  Use own thread for the interrupt handler
+
+endchoice # RTC_MAX31331_INTERRUPT_MODE
+
+config RTC_MAX31331_THREAD_PRIORITY
+	int "Thread Priority"
+	depends on RTC_MAX31331_INTERRUPT_OWN_THREAD
+	default 10
+	help
+	  Set the priority of the thread used for handling interrupts when "Use own thread"
+	  is selected. A lower value indicates a higher priority.
+
+config RTC_MAX31331_THREAD_STACK_SIZE
+	int "Thread Stack Size"
+	depends on RTC_MAX31331_INTERRUPT_OWN_THREAD
+	default 1024
+	help
+	  Specify the stack size (in bytes) for the thread used to handle interrupts when
+	  "Use own thread" is selected. Ensure the stack size is sufficient for the interrupt
+	  handling logic to avoid stack overflows.

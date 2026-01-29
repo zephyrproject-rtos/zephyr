@@ -300,8 +300,8 @@ static void i2c_cc23x0_isr(const struct device *dev)
 	}
 }
 
-static const struct i2c_driver_api i2c_cc23x0_driver_api = {.configure = i2c_cc23x0_configure,
-							    .transfer = i2c_cc23x0_transfer};
+static DEVICE_API(i2c, i2c_cc23x0_driver_api) = {.configure = i2c_cc23x0_configure,
+						 .transfer = i2c_cc23x0_transfer};
 
 #define I2C_CC23X0_INIT_FUNC(id)                                                                   \
 	static int i2c_cc23x0_init##id(const struct device *dev)                                   \

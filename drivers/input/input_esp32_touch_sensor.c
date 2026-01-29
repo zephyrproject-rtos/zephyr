@@ -136,7 +136,7 @@ static void esp32_touch_sensor_interrupt_cb(void *arg)
 	}
 }
 
-static void esp32_touch_rtc_isr(void *arg)
+static void IRAM_ATTR esp32_touch_rtc_isr(void *arg)
 {
 	uint32_t status = REG_READ(RTC_CNTL_INT_ST_REG);
 
@@ -274,7 +274,7 @@ static int esp32_touch_sensor_init(const struct device *dev)
 
 	flags = ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, priority)) |
 		ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, flags)) |
-		ESP_INTR_FLAG_SHARED;
+		ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_IRAM;
 	err = esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, irq), flags, esp32_touch_rtc_isr,
 			     (void *)dev, NULL);
 	if (err) {

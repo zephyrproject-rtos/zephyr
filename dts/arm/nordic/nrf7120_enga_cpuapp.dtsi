@@ -1,0 +1,150 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nordic/nrf7120_enga.dtsi>
+
+cpu: &cpuapp {};
+
+systick: &cpuapp_systick {};
+
+nvic: &cpuapp_nvic {};
+
+/delete-node/ &cpuflpr;
+/delete-node/ &cpuflpr_clic;
+
+/ {
+	chosen {
+		zephyr,entropy = &psa_rng;
+	};
+
+	soc {
+		compatible = "simple-bus";
+		interrupt-parent = <&cpuapp_nvic>;
+		ranges;
+	};
+
+	rng: rng {
+		status = "okay";
+		compatible = "nordic,nrf-cracen-ctrdrbg";
+	};
+
+	psa_rng: psa-rng {
+		compatible = "zephyr,psa-crypto-rng";
+		status = "disabled";
+	};
+};
+
+&cpuflpr_vpr {
+	cpuapp_vevif_rx: mailbox@1 {
+		compatible = "nordic,nrf-vevif-event-rx";
+		reg = <0x0 0x1000>;
+		status = "disabled";
+		interrupts = <76 NRF_DEFAULT_IRQ_PRIORITY>;
+		#mbox-cells = <1>;
+		nordic,events = <1>;
+		nordic,events-mask = <0x00100000>;
+	};
+
+	cpuapp_vevif_tx: mailbox@0 {
+		compatible = "nordic,nrf-vevif-task-tx";
+		reg = <0x0 0x1000>;
+		#mbox-cells = <1>;
+		nordic,tasks = <7>;
+		nordic,tasks-mask = <0x007f0000>;
+		status = "disabled";
+	};
+};
+
+&cpuapp_ppb {
+	compatible = "simple-bus";
+	ranges;
+};
+
+&grtc {
+#ifdef USE_NON_SECURE_ADDRESS_MAP
+	interrupts = <227 NRF_DEFAULT_IRQ_PRIORITY>,
+#else
+	interrupts = <228 NRF_DEFAULT_IRQ_PRIORITY>,
+#endif
+		     /* Reserved for Zero Latency IRQs */
+		     <229 NRF_DEFAULT_IRQ_PRIORITY>;
+};
+
+&gpiote20 {
+#ifdef USE_NON_SECURE_ADDRESS_MAP
+	interrupts = <218 NRF_DEFAULT_IRQ_PRIORITY>;
+#else
+	interrupts = <219 NRF_DEFAULT_IRQ_PRIORITY>;
+#endif
+};
+
+&gpiote30 {
+#ifdef USE_NON_SECURE_ADDRESS_MAP
+	interrupts = <268 NRF_DEFAULT_IRQ_PRIORITY>;
+#else
+	interrupts = <269 NRF_DEFAULT_IRQ_PRIORITY>;
+#endif
+};
+
+&dppic00 {
+	status = "okay";
+};
+
+&dppic10 {
+	status = "okay";
+};
+
+&dppic20 {
+	status = "okay";
+};
+
+&dppic30 {
+	status = "okay";
+};
+
+&ppib00 {
+	status = "okay";
+};
+
+&ppib01 {
+	status = "okay";
+};
+
+&ppib10 {
+	status = "okay";
+};
+
+&ppib11 {
+	status = "okay";
+};
+
+&ppib20 {
+	status = "okay";
+};
+
+&ppib21 {
+	status = "okay";
+};
+
+&ppib22 {
+	status = "okay";
+};
+
+&ppib30 {
+	status = "okay";
+};
+
+&wifi_bellboard {
+	compatible = "nordic,nrf-bellboard-tx";
+};
+
+&cpuapp_bellboard {
+	compatible = "nordic,nrf-bellboard-rx";
+	interrupts = <120 NRF_DEFAULT_IRQ_PRIORITY>,
+		     <121 NRF_DEFAULT_IRQ_PRIORITY>;
+	interrupt-names = "irq0", "irq1";
+	nordic,interrupt-mapping = <0x0000000f 0>, <0x0000000f 1>;
+};

@@ -3,11 +3,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_ITS_IDS_H_
-#define ZEPHYR_ITS_IDS_H_
+#ifndef ZEPHYR_PSA_ITS_IDS_H_
+#define ZEPHYR_PSA_ITS_IDS_H_
 
-/** UID range to be used by the TF-M ITS Settings backend. */
+/** UID range to be used by the TF-M PSA ITS Settings backend. */
 #define ZEPHYR_PSA_SETTINGS_TFM_ITS_UID_RANGE_BEGIN 0x28000000
 #define ZEPHYR_PSA_SETTINGS_TFM_ITS_UID_RANGE_SIZE  0x10000 /* 64 Ki */
 
-#endif /* ZEPHYR_ITS_IDS_H_ */
+#endif /* ZEPHYR_PSA_ITS_IDS_H_ */

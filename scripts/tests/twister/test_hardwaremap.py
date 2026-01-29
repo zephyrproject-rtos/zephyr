@@ -37,7 +37,7 @@ def mocked_hm():
 TESTDATA_1 = [
     (
         {},
-        {'baud': 115200, 'lock': mock.ANY, 'flash_timeout': 60},
+        {'serial_baud': 115200, 'flash_timeout': 60},
         '<None (None) on None>'
     ),
     (
@@ -63,10 +63,9 @@ TESTDATA_1 = [
                 }
         },
         {
-            'lock': mock.ANY,
             'id': 'dummy id',
             'serial': 'dummy serial',
-            'baud': 4400,
+            'serial_baud': 4400,
             'platform': 'dummy platform',
             'product': 'dummy product',
             'serial_pty': 'dummy serial pty',
@@ -269,7 +268,7 @@ def test_hardwaremap_load():
   runner: r0
   flash_with_test: True
   flash_timeout: 15
-  baud: 14400
+  serial_baud: 14400
   fixtures:
   - dummy fixture 1
   - dummy fixture 2
@@ -310,7 +309,7 @@ def test_hardwaremap_load():
             'runner': 'r0',
             'flash_timeout': 15,
             'flash_with_test': True,
-            'baud': 14400,
+            'serial_baud': 14400,
             'fixtures': ['dummy fixture 1', 'dummy fixture 2'],
             'connected': True,
             'serial': 'dummy',
@@ -322,10 +321,9 @@ def test_hardwaremap_load():
             'runner': 'r1',
             'flash_timeout': 30,
             'flash_with_test': False,
-            'baud': 115200,
+            'serial_baud': 115200,
             'fixtures': [],
             'connected': True,
-            'serial': None,
             'serial_pty': 'dummy',
         },
     }
@@ -503,50 +501,45 @@ TESTDATA_5 = [
         '',
         [{
             'serial': 's1',
-            'baud': 115200,
+            'serial_baud': 115200,
             'platform': 'p1',
             'connected': True,
             'id': 1,
             'product': 'pr1',
-            'lock': mock.ANY,
             'flash_timeout': 60
         },
         {
             'serial': 's2',
-            'baud': 115200,
+            'serial_baud': 115200,
             'platform': 'p2',
             'id': 2,
             'product': 'pr2',
-            'lock': mock.ANY,
             'flash_timeout': 60
         },
         {
             'serial': 's3',
-            'baud': 115200,
+            'serial_baud': 115200,
             'platform': 'p3',
             'connected': True,
             'id': 3,
             'product': 'pr3',
-            'lock': mock.ANY,
             'flash_timeout': 60
         },
         {
             'serial': 's4',
-            'baud': 115200,
+            'serial_baud': 115200,
             'platform': 'p4',
             'id': 4,
             'product': 'pr4',
-            'lock': mock.ANY,
             'flash_timeout': 60
         },
         {
             'serial': 's5',
-            'baud': 115200,
+            'serial_baud': 115200,
             'platform': 'p5',
             'connected': True,
             'id': 5,
             'product': 'pr5',
-            'lock': mock.ANY,
             'flash_timeout': 60
         }]
     ),
@@ -578,7 +571,6 @@ TESTDATA_5 = [
             'platform': 'p0',
             'product': 'pr0',
             'connected': False,
-            'serial': None
         },
         {
             'id': 4,
@@ -592,52 +584,46 @@ TESTDATA_5 = [
             'platform': 'p5-5',
             'product': 'pr5-5',
             'connected': False,
-            'serial': None
         },
         {
             'id': 10,
             'platform': 'p10',
             'product': 'pr10',
             'connected': False,
-            'serial': None
         },
         {
             'serial': 's1',
-            'baud': 115200,
+            'serial_baud': 115200,
             'platform': 'p1',
             'connected': True,
             'id': 1,
             'product': 'pr1',
-            'lock': mock.ANY,
             'flash_timeout': 60
         },
         {
             'serial': 's2',
-            'baud': 115200,
+            'serial_baud': 115200,
             'platform': 'p2',
             'id': 2,
             'product': 'pr2',
-            'lock': mock.ANY,
             'flash_timeout': 60
         },
         {
             'serial': 's3',
-            'baud': 115200,
+            'serial_baud': 115200,
             'platform': 'p3',
             'connected': True,
             'id': 3,
             'product': 'pr3',
-            'lock': mock.ANY,
             'flash_timeout': 60
         },
         {
             'serial': 's5',
-            'baud': 115200,
+            'serial_baud': 115200,
             'platform': 'p5',
             'connected': True,
             'id': 5,
             'product': 'pr5',
-            'lock': mock.ANY,
             'flash_timeout': 60
         }]
     ),
@@ -731,3 +717,83 @@ def test_hardwaremap_dump(
     sys.stderr.write(err)
 
     assert out.strip() == expected_out.strip()
+
+def _run_save_and_get_dump(mocked_hm, *, exists, filename='hwm.yaml', read_data=None):
+    """
+    Run HardwareMap.save() with mocked file I/O and return the object passed to yaml.dump()
+    """
+    dump_mock = mock.Mock()
+
+    if read_data is None:
+        write_mock = mock.mock_open()
+        open_mock = mock.Mock(return_value=write_mock())
+    else:
+        read_mock = mock.mock_open(read_data=read_data)
+        write_mock = mock.mock_open()
+
+        def mock_open(filename, mode='r'):
+            if mode == 'r':
+                return read_mock()
+            if mode == 'w':
+                return write_mock()
+            raise AssertionError(f"unexpected mode {mode}")
+
+        open_mock = mock.Mock(side_effect=mock_open)
+
+    mocked_hm.load = mock.Mock()
+    mocked_hm.dump = mock.Mock()
+
+    with mock.patch('os.path.exists', return_value=exists), \
+         mock.patch('builtins.open', open_mock), \
+         mock.patch('twisterlib.hardwaremap.yaml.dump', dump_mock):
+        mocked_hm.save(filename)
+
+    return dump_mock.call_args.args[0]
+
+def test_hardwaremap_save_omits_serial_when_none(mocked_hm):
+    """
+    Verify 'serial' key is omitted when from the generated hardware map
+    when it is unknown. 'serial' is not required.
+    """
+    # Force one detected device to have no serial
+    mocked_hm.detected = list(mocked_hm.detected)
+    mocked_hm.detected[1].serial = None  # id=2 in mocked_hm fixture
+
+    dumped = _run_save_and_get_dump(mocked_hm, exists=False, filename='hwm.yaml')
+
+    entry = next(d for d in dumped if d['id'] == 2)
+    assert 'serial' not in entry
+
+    # And ensure nobody writes serial=None
+    assert all(d.get('serial') is not None for d in dumped if 'serial' in d)
+
+def test_hardwaremap_save_existing_map_disconnect_omits_serial(mocked_hm):
+    """
+    If the hardware map contained a 'serial' value, then the next time a
+    hardmap is generated and the device is disconnected, and the serial value
+    is unknown, then the new file should not contain the 'serial'.
+    """
+    mocked_hm.detected = []  # simulate unplugged
+
+    hwm = """
+- id: 4
+  platform: p4
+  product: pr4
+  runner: r4
+  connected: True
+  serial: s4
+"""
+
+    dumped = _run_save_and_get_dump(
+        mocked_hm,
+        exists=True,
+        filename='hwmap1.yaml',
+        read_data=hwm,
+    )
+
+    entry = next(d for d in dumped if d['id'] == 4)
+    assert entry['connected'] is False
+    assert 'serial' not in entry
+
+    # And ensure nobody writes serial=None
+    assert all(d.get('serial') is not None for d in dumped if 'serial' in d)

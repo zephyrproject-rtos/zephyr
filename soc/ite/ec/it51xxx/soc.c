@@ -78,6 +78,7 @@ void riscv_idle(enum chip_pll_mode mode, unsigned int key)
 	/* CPU has been woken up, the interrupt is no longer needed */
 	espi_ite_ec_enable_trans_irq(ESPI_ITE_SOC_DEV, false);
 #endif
+	sys_trace_idle_exit();
 	/*
 	 * Enable M-mode external interrupt
 	 * An interrupt can not be fired yet until we enable global interrupt

@@ -4,6 +4,9 @@ zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/led.h)
 
 zephyr_library()
 
+zephyr_library_sources_ifdef(CONFIG_LED_SHELL led_shell.c)
+zephyr_library_sources_ifdef(CONFIG_USERSPACE led_handlers.c)
+
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_HT16K33 ht16k33.c)
 zephyr_library_sources_ifdef(CONFIG_IS31FL3194 is31fl3194.c)
@@ -15,6 +18,7 @@ zephyr_library_sources_ifdef(CONFIG_LED_DAC led_dac.c)
 zephyr_library_sources_ifdef(CONFIG_LED_GPIO led_gpio.c)
 zephyr_library_sources_ifdef(CONFIG_LED_NPM13XX led_npm13xx.c)
 zephyr_library_sources_ifdef(CONFIG_LED_PWM led_pwm.c)
+zephyr_library_sources_ifdef(CONFIG_LED_SCT2024 sct2024.c)
 zephyr_library_sources_ifdef(CONFIG_LED_XEC led_mchp_xec.c)
 zephyr_library_sources_ifdef(CONFIG_LP3943 lp3943.c)
 zephyr_library_sources_ifdef(CONFIG_LP50XX lp50xx.c)
@@ -26,7 +30,3 @@ zephyr_library_sources_ifdef(CONFIG_PCA9533 pca9533.c)
 zephyr_library_sources_ifdef(CONFIG_PCA9633 pca9633.c)
 zephyr_library_sources_ifdef(CONFIG_TLC59108 tlc59108.c)
 # zephyr-keep-sorted-stop
-
-zephyr_library_sources_ifdef(CONFIG_LED_SHELL   led_shell.c)
-
-zephyr_library_sources_ifdef(CONFIG_USERSPACE   led_handlers.c)

@@ -5,16 +5,6 @@ description: |
     When setting the odr and power-mode properties in a .dts or .dtsi file you may include
     lis2ds12.h and use the macros defined there.
 
-    Example:
-    #include <zephyr/dt-bindings/sensor/lis2ds12.h>
-
-    lis2ds12: lis2ds12@0 {
-      ...
-
-      power-mode = <LIS2DS12_DT_LOW_POWER>;
-      odr = <LIS2DS12_DT_ODR_12Hz5>;
-    };
-
 include: sensor-device.yaml
 
 properties:
@@ -74,3 +64,14 @@ properties:
         - 11 # LIS2DS12_DT_ODR_6400Hz_HF
 
     enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/lis2ds12.h>
+
+    lis2ds12: lis2ds12@0 {
+      /* ... */
+
+      power-mode = <LIS2DS12_DT_LOW_POWER>;
+      odr = <LIS2DS12_DT_ODR_12Hz5>;
+    };

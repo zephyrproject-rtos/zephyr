@@ -125,6 +125,7 @@ struct ssp_intel_link_ctl {
 #define SSP_DMA_SYNC_DATA                       5
 #define SSP_DMA_CLK_CONTROLS_EXT                6
 #define SSP_LINK_CLK_SOURCE                     7
+#define SSP_GTW_DMA_CONFIG_ID			0x1000
 
 /**< Base top-level structure of an address of a gateway. */
 /*!
@@ -269,7 +270,7 @@ struct dai_intel_ipc4_ssp_mclk_config_2 {
 } __packed;
 
 struct dai_intel_ipc4_ssp_driver_config {
-#if defined(CONFIG_SOC_INTEL_ACE30) || defined(CONFIG_SOC_INTEL_ACE40)
+#if defined(CONFIG_SOC_ACE30) || defined(CONFIG_SOC_ACE40)
 	struct dai_intel_ipc4_ssp_config_ver_3_0 i2s_config;
 #else
 	struct dai_intel_ipc4_ssp_config i2s_config;

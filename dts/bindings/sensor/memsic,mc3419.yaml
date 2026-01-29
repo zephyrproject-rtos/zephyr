@@ -4,16 +4,6 @@
 description: |
     MC3419 3-axis accel sensor
 
-    Example:
-    #include <zephyr/dt-bindings/sensor/mc3419.h>
-
-    mc3419: mc3419@0 {
-      ...
-
-      lpf-fc-sel = <MC3419_LPF_DISABLE>;
-      decimation-rate = <MC3419_DECIMATE_IDR_BY_1>;
-    };
-
 compatible: "memsic,mc3419"
 
 include: [sensor-device.yaml, i2c-device.yaml]
@@ -79,3 +69,14 @@ properties:
       | 15        | MC3419_DECIMATE_IDR_BY_1000   |
       +-----------+-------------------------------+
       Default is Decimation 0 (reset value of the register).
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/mc3419.h>
+
+    mc3419: mc3419@0 {
+      /* ... */
+
+      lpf-fc-sel = <MC3419_LPF_DISABLE>;
+      decimation-rate = <MC3419_DECIMATE_IDR_BY_1>;
+    };

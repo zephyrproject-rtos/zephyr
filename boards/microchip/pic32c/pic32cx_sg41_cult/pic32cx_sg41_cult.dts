@@ -1,0 +1,235 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <microchip/pic32c/pic32cx_sg/pic32cx_sg41/pic32cx1025sg41128.dtsi>
+#include "pic32cx_sg41_cult-pinctrl.dtsi"
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "PIC32CX SG41 Curiosity Ultra";
+	compatible = "microchip,pic32cx_sg41_cult";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &sercom4;
+		zephyr,shell-uart = &sercom4;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,flash-controller = &nvmctrl;
+	};
+
+	aliases {
+		led0 = &led1;
+		sw0 = &button0;
+		pwm-led0 = &pwm_led0;
+		rtc = &rtc;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1: led_1 {
+			gpios = <&portc 21 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+		};
+
+		led2: led_2 {
+			gpios = <&porta 16 GPIO_ACTIVE_LOW>;
+			label = "LED2";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led_0 {
+			pwms = <&tcc0 5 PWM_MSEC(20) 0>;
+			status = "okay";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&portd 00 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&portd 01 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW 2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&rtc {
+	prescaler = <1024>;
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			reg = <0x00000000 0x00010000>;  /* 64 KB bootloader */
+			read-only;
+		};
+
+		slot0_partition: partition@10000 {
+			reg = <0x00010000 0x00070000>;  /* 448 KB primary app slot */
+		};
+
+		slot1_partition: partition@80000 {
+			reg = <0x00080000 0x00070000>;  /* 448 KB secondary app slot */
+		};
+
+		storage_partition: partition@f0000 {
+			reg = <0x000f0000 0x00010000>;  /* 64 KB storage area */
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <120000000>;
+};
+
+&clock {
+	compatible = "microchip,sam-d5x-e5x-clock";
+
+	xosc: xosc {
+		compatible = "microchip,sam-d5x-e5x-xosc";
+
+		xosc1 {
+			subsystem = <CLOCK_MCHP_XOSC_ID_XOSC1>;
+			xosc-frequency = <12000000>;
+			xosc-en = <1>;
+			xosc-xtal-en = <1>;
+			xosc-run-in-standby-en = <1>;
+		};
+	};
+
+	dfll: dfll {
+		compatible = "microchip,sam-d5x-e5x-dfll";
+		dfll-en = <0>;
+	};
+
+	fdpll: fdpll {
+		compatible = "microchip,sam-d5x-e5x-fdpll";
+
+		fdpll0 {
+			subsystem = <CLOCK_MCHP_FDPLL_ID_FDPLL0>;
+			fdpll-divider-ratio-int = <19>;
+			fdpll-lock-bypass-en = <1>;
+			fdpll-wakeup-fast-en = <1>;
+			fdpll-src = "xosc1";
+			fdpll-en = <1>;
+		};
+	};
+
+	xosc32k: xosc32k {
+		compatible = "microchip,sam-d5x-e5x-xosc32k";
+		xosc32k-xtal-en = <1>;
+		xosc32k-startup-time = <62>;
+		xosc32k-gain-mode = "standard";
+		xosc32k-en = <1>;
+		xosc32k-32khz-en = <1>;
+		xosc32k-1khz-en = <1>;
+	};
+
+	gclkgen: gclkgen {
+		compatible = "microchip,sam-d5x-e5x-gclkgen";
+
+		gclkgen0 {
+			subsystem = <CLOCK_MCHP_GCLKGEN_ID_GEN0>;
+			gclkgen-div-factor = <1>;
+			gclkgen-run-in-standby-en = <1>;
+			gclkgen-src = "fdpll0";
+			gclkgen-en = <1>;
+		};
+	};
+
+	gclkperiph: gclkperiph {
+		compatible = "microchip,sam-d5x-e5x-gclkperiph";
+		#clock-cells = <1>;
+	};
+
+	mclkperiph: mclkperiph {
+		compatible = "microchip,sam-d5x-e5x-mclkperiph";
+		#clock-cells = <1>;
+	};
+};
+
+&tcc0 {
+	compatible = "microchip,tcc-g1-pwm";
+	#pwm-cells = <3>;
+	pinctrl-0 = <&tcc0_pwm_default>;
+	pinctrl-names = "default";
+	max-bit-width = <24>;
+	prescaler = <8>;
+	status = "okay";
+};
+
+&porta {
+	status = "okay";
+};
+
+&portc {
+	status = "okay";
+};
+
+&portd {
+	status = "okay";
+};
+
+&sercom4 {
+	compatible = "microchip,sercom-g1-uart";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	stop-bits = "1";
+	rxpo = <1>;
+	txpo = <0>;
+	pinctrl-0 = <&sercom4_uart_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&dmac {
+	status = "okay";
+};
+
+&sercom6 {
+	compatible = "microchip,sercom-g1-i2c";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&sercom6_i2c_default>;
+	pinctrl-names = "default";
+	dmas = <&dmac 10 0x10>, <&dmac 11 0x11>;
+	dma-names = "rx", "tx";
+	status = "okay";
+};
+
+&tc5 {
+	compatible = "microchip,tc-g1-pwm";
+	#pwm-cells = <3>;
+	pinctrl-0 = <&tc5_pwm_default>;
+	pinctrl-names = "default";
+	max-bit-width = <16>;
+	prescaler = <64>;
+	status = "okay";
+};

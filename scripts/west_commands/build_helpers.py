@@ -14,10 +14,11 @@ import os
 import sys
 from pathlib import Path
 
-import zcmake
 from west import log
 from west.configuration import config
 from west.util import escapes_directory
+
+import zcmake
 
 # Domains.py must be imported from the pylib directory, since
 # twister also uses the implementation
@@ -153,14 +154,17 @@ def load_domains(path):
     domains_file = Path(path) / 'domains.yaml'
 
     if not domains_file.is_file():
-        return Domains.from_yaml(f'''\
-default: app
-build_dir: {path}
-domains:
-  - name: app
-    build_dir: {path}
-flash_order:
-  - app
-''')
+        default_domains = {
+            "default": "app",
+            "build_dir": path,
+            "domains": [
+                {
+                    "name": "app",
+                    "build_dir": path
+                }
+            ],
+            "flash_order": ["app"]
+        }
+        return Domains(default_domains)
 
     return Domains.from_file(domains_file)

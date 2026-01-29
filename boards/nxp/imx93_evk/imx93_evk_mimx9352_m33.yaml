@@ -15,4 +15,5 @@ supported:
   - uart
   - pwm
   - adc
+  - i2c
 vendor: nxp

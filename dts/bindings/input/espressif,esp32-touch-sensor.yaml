@@ -8,33 +8,6 @@ description: |
   sensor is defined in a child node of the touch-sensor node and defines a specific key
   code.
 
-  For example:
-
-  #include <zephyr/dt-bindings/input/input-event-codes.h>
-  #include <zephyr/dt-bindings/input/esp32-touch-sensor-input.h>
-
-  &touch {
-         compatible = "espressif,esp32-touch";
-         status = "okay";
-
-         debounce-interval-ms = <30>;
-         href-microvolt = <27000000>;
-         lref-microvolt = <500000>;
-         href-atten-microvolt = <1000000>;
-         filter-mode = <ESP32_TOUCH_FILTER_MODE_IIR_16>;
-         filter-debounce-cnt = <1>;
-         filter-noise-thr = <ESP32_TOUCH_FILTER_NOISE_THR_4_8TH>;
-         filter-jitter-step = <4>;
-         filter-smooth-level = <ESP32_TOUCH_FILTER_SMOOTH_MODE_IIR_2>;
-
-         touch_sensor_0 {
-                 channel-num = <1>;
-                 channel-sens = <20>;
-                 zephyr,code = <INPUT_KEY_0>;
-         };
-  };
-
-
 compatible: "espressif,esp32-touch"
 
 include: base.yaml
@@ -129,3 +102,29 @@ child-binding:
       type: int
       required: true
       description: Key code to emit.
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/input/input-event-codes.h>
+    #include <zephyr/dt-bindings/input/esp32-touch-sensor-input.h>
+
+    &touch {
+           compatible = "espressif,esp32-touch";
+           status = "okay";
+
+           debounce-interval-ms = <30>;
+           href-microvolt = <27000000>;
+           lref-microvolt = <500000>;
+           href-atten-microvolt = <1000000>;
+           filter-mode = <ESP32_TOUCH_FILTER_MODE_IIR_16>;
+           filter-debounce-cnt = <1>;
+           filter-noise-thr = <ESP32_TOUCH_FILTER_NOISE_THR_4_8TH>;
+           filter-jitter-step = <4>;
+           filter-smooth-level = <ESP32_TOUCH_FILTER_SMOOTH_MODE_IIR_2>;
+
+           touch_sensor_0 {
+                   channel-num = <1>;
+                   channel-sens = <20>;
+                   zephyr,code = <INPUT_KEY_0>;
+           };
+    };

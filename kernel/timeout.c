@@ -11,6 +11,7 @@
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
+#include <zephyr/llext/symbol.h>
 
 static uint64_t curr_tick;
 
@@ -105,7 +106,7 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 	}
 
 #ifdef CONFIG_KERNEL_COHERENCE
-	__ASSERT_NO_MSG(arch_mem_coherent(to));
+	__ASSERT_NO_MSG(sys_cache_is_mem_coherent(to));
 #endif /* CONFIG_KERNEL_COHERENCE */
 
 	__ASSERT(!sys_dnode_is_linked(&to->node), "");
@@ -202,6 +203,7 @@ k_ticks_t z_timeout_remaining(const struct _timeout *timeout)
 
 	return ticks;
 }
+EXPORT_SYMBOL(z_timeout_remaining);
 
 k_ticks_t z_timeout_expires(const struct _timeout *timeout)
 {
@@ -216,6 +218,7 @@ k_ticks_t z_timeout_expires(const struct _timeout *timeout)
 
 	return ticks;
 }
+EXPORT_SYMBOL(z_timeout_expires);
 
 int32_t z_get_next_timeout_expiry(void)
 {

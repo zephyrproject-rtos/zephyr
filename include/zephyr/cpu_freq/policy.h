@@ -39,7 +39,7 @@ extern "C" {
  *
  * @param pstate_out Pointer to the P-state struct where the next P-state is returned.
  *
- * @retval 0 in case of success, nonzero in case of failure.
+ * @return 0 in case of success, nonzero in case of failure.
  */
 int cpu_freq_policy_select_pstate(const struct pstate **pstate_out);
 

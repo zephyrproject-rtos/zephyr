@@ -250,7 +250,7 @@ static int rm67162_init(const struct device *dev)
 		}
 		/* Per datasheet, reset low pulse width should be at least 10usec */
 		k_sleep(K_USEC(30));
-		gpio_pin_set_dt(&config->reset_gpio, 1);
+		ret = gpio_pin_set_dt(&config->reset_gpio, 1);
 		if (ret < 0) {
 			LOG_ERR("Could not pull reset high (%d)", ret);
 			return ret;
@@ -355,7 +355,7 @@ static int rm67162_write_fb(const struct device *dev, bool first_write,
 {
 	const struct rm67162_config *config = dev->config;
 	struct rm67162_data *data = dev->data;
-	ssize_t wlen;
+	ssize_t wlen = 0;
 	struct mipi_dsi_msg msg = {0};
 	uint8_t *local_src = (uint8_t *)src;
 	uint32_t len = desc->height * desc->width * data->bytes_per_pixel;

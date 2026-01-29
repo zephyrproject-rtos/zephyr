@@ -9,13 +9,13 @@ target_sources(app PRIVATE
   src/main.c
   )
 
-if (CONFIG_NET_SAMPLE_CODE_RELOCATE)
+if(CONFIG_NET_SAMPLE_CODE_RELOCATE)
   # Relocate key networking stack components and L2 layer to RAM
   zephyr_code_relocate(LIBRARY subsys__net__ip
     LOCATION "${CONFIG_NET_SAMPLE_CODE_RAM_NAME}_TEXT" NOKEEP)
   zephyr_code_relocate(LIBRARY subsys__net
     LOCATION "${CONFIG_NET_SAMPLE_CODE_RAM_NAME}_TEXT" NOKEEP)
-if (CONFIG_NET_L2_ETHERNET)
+if(CONFIG_NET_L2_ETHERNET)
   zephyr_code_relocate(LIBRARY drivers__ethernet
     LOCATION "${CONFIG_NET_SAMPLE_CODE_RAM_NAME}_TEXT" NOKEEP)
   zephyr_code_relocate(LIBRARY subsys__net__l2__ethernet
@@ -23,11 +23,11 @@ if (CONFIG_NET_L2_ETHERNET)
 endif()
 endif()
 
-if (CONFIG_USB_DEVICE_STACK_NEXT)
+if(CONFIG_USB_DEVICE_STACK_NEXT)
   include(${ZEPHYR_BASE}/samples/subsys/usb/common/common.cmake)
 endif()
 
-if (CONFIG_SOC_NRF5340_CPUAPP)
+if(CONFIG_SOC_NRF5340_CPUAPP)
   target_sources(app PRIVATE
     src/nrf5340_cpu_boost.c
     )

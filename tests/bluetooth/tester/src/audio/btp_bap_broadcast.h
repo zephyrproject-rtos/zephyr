@@ -76,6 +76,10 @@ uint8_t btp_bap_broadcast_local_source_idx_get(struct btp_bap_broadcast_local_so
 struct btp_bap_broadcast_stream *btp_bap_broadcast_stream_alloc(
 	struct btp_bap_broadcast_local_source *source);
 
+struct btp_bap_broadcast_local_source *
+btp_bap_broadcast_local_source_allocate(uint32_t broadcast_id);
+int btp_bap_broadcast_local_source_free(struct btp_bap_broadcast_local_source *source);
+
 uint8_t btp_bap_broadcast_source_setup(const void *cmd, uint16_t cmd_len,
 				       void *rsp, uint16_t *rsp_len);
 uint8_t btp_bap_broadcast_source_setup_v2(const void *cmd, uint16_t cmd_len,
@@ -120,3 +124,5 @@ uint8_t btp_bap_broadcast_assistant_set_broadcast_code(const void *cmd, uint16_t
 						       void *rsp, uint16_t *rsp_len);
 uint8_t btp_bap_broadcast_assistant_send_past(const void *cmd, uint16_t cmd_len,
 					      void *rsp, uint16_t *rsp_len);
+uint8_t btp_bap_scan_delegator_add_src(const void *cmd, uint16_t cmd_len,
+				       void *rsp, uint16_t *rsp_len);

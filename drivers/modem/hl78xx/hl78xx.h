@@ -25,8 +25,8 @@
 #include "../modem_context.h"
 #include "../modem_socket.h"
 #include <stdint.h>
-
-#define MDM_CMD_TIMEOUT                      (10)  /*K_SECONDS*/
+/* clang-format off */
+#define MDM_CMD_TIMEOUT                      (40)  /*K_SECONDS*/
 #define MDM_DNS_TIMEOUT                      (70)  /*K_SECONDS*/
 #define MDM_CELL_BAND_SEARCH_TIMEOUT         (60)  /*K_SECONDS*/
 #define MDM_CMD_CONN_TIMEOUT                 (120) /*K_SECONDS*/
@@ -41,6 +41,7 @@
 #define MDM_MAX_DATA_LENGTH CONFIG_MODEM_HL78XX_UART_BUFFER_SIZES
 
 #define MDM_MAX_SOCKETS           CONFIG_MODEM_HL78XX_NUM_SOCKETS
+#define MDM_MAX_PDP_CONTEXTS      CONFIG_MODEM_HL78XX_MAX_PDP_CONTEXTS
 #define MDM_BASE_SOCKET_NUM       1
 #define MDM_BAND_BITMAP_LEN_BYTES 32
 #define MDM_BAND_HEX_STR_LEN      (MDM_BAND_BITMAP_LEN_BYTES * 2 + 1)
@@ -72,6 +73,7 @@
 #define TERMINATION_PATTERN "+++"
 #define CONNECT_STRING      "CONNECT"
 #define CME_ERROR_STRING    "+CME ERROR: "
+#define ERROR_STRING        "ERROR"
 #define OK_STRING           "OK"
 
 /* RAT (Radio Access Technology) commands */
@@ -85,9 +87,14 @@
 
 #define SET_RAT_M1_CMD    "AT+KSRAT=0,1"
 #define SET_RAT_NB1_CMD   "AT+KSRAT=1,1"
-#define SET_RAT_GMS_CMD   "AT+KSRAT=2,1"
+#define SET_RAT_GSM_CMD   "AT+KSRAT=2,1"
 #define SET_RAT_NBNTN_CMD "AT+KSRAT=3,1"
 
+/* Enable/Disable RAT registration status */
+#define ENABLE_LTE_REG_STATUS_CMD          "AT+CEREG=5"
+#define ENABLE_GSM_REG_STATUS_CMD          "AT+CREG=3"
+#define DISABLE_LTE_REG_STATUS_CMD         "AT+CEREG=0"
+#define DISABLE_GSM_REG_STATUS_CMD         "AT+CREG=0"
 /* Power mode commands */
 #define SET_AIRPLANE_MODE_CMD_LEGACY       "AT+CFUN=4,0"
 #define SET_AIRPLANE_MODE_CMD              "AT+CFUN=4,1"
@@ -100,6 +107,15 @@
 /* PDP Context commands */
 #define DEACTIVATE_PDP_CONTEXT             "AT+CGACT=0"
 #define ACTIVATE_PDP_CONTEXT               "AT+CGACT=1"
+/**
+ * Airvantage commands
+ * User initiated connection start/stop
+ */
+#define WDSI_USER_INITIATED_CONNECTION_START_CMD "AT+WDSS=1,1"
+#define WDSI_USER_INITIATED_CONNECTION_STOP_CMD  "AT+WDSS=1,0"
+/* Baud rate commands */
+#define GET_BAUDRATE_CMD                         "AT+IPR?"
+#define SET_BAUDRATE_CMD_FMT                     "AT+IPR=%d"
 
 /* Helper macros */
 #define ATOI(s_, value_, desc_) modem_atoi(s_, value_, desc_, __func__)
@@ -110,7 +126,9 @@
 		    (LOG_DBG(str, ##__VA_ARGS__)), \
 		    ((void)0))
 
-/* Enums */
+/* clang-format on */
+
+/* HL78XX States */
 enum hl78xx_state {
 	MODEM_HL78XX_STATE_IDLE = 0,
 	MODEM_HL78XX_STATE_RESET_PULSE,
@@ -126,6 +144,7 @@ enum hl78xx_state {
 	 */
 	MODEM_HL78XX_STATE_AWAIT_REGISTERED,
 	MODEM_HL78XX_STATE_CARRIER_ON,
+	MODEM_HL78XX_STATE_FOTA,
 	/* Minimum functionality, SIM powered off, Modem Power down
 	 * CFUN=0
 	 */
@@ -152,7 +171,24 @@ enum hl78xx_event {
 	MODEM_HL78XX_EVENT_DEREGISTERED,
 	MODEM_HL78XX_EVENT_BUS_OPENED,
 	MODEM_HL78XX_EVENT_BUS_CLOSED,
+	/* Modem unexpected restart event */
+	MODEM_HL78XX_EVENT_MDM_RESTART,
 	MODEM_HL78XX_EVENT_SOCKET_READY,
+#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
+
+	/* WDSI FOTA events */
+	MODEM_HL78XX_EVENT_WDSI_UPDATE,
+	MODEM_HL78XX_EVENT_WDSI_RESTART,
+	MODEM_HL78XX_EVENT_WDSI_DOWNLOAD_REQUEST,
+	MODEM_HL78XX_EVENT_WDSI_DOWNLOAD_PROGRESS,
+	MODEM_HL78XX_EVENT_WDSI_DOWNLOAD_COMPLETE,
+	MODEM_HL78XX_EVENT_WDSI_INSTALL_REQUEST,
+	MODEM_HL78XX_EVENT_WDSI_INSTALLING_FIRMWARE,
+	MODEM_HL78XX_EVENT_WDSI_FIRMWARE_INSTALL_SUCCEEDED,
+	MODEM_HL78XX_EVENT_WDSI_FIRMWARE_INSTALL_FAILED,
+#endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
+	MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT,
+	MODEM_HL78XX_EVENT_COUNT
 };
 
 enum hl78xx_tcp_notif {
@@ -173,6 +209,7 @@ enum hl78xx_tcp_notif {
 	TCP_NOTIF_SSL_INIT_ERROR = 14,
 	TCP_NOTIF_SSL_CERT_ERROR = 15
 };
+
 /** Enum representing information transfer capability events */
 enum hl78xx_info_transfer_event {
 	EVENT_START_SCAN = 0,
@@ -215,6 +252,7 @@ enum apn_state_enum_t {
 struct apn_state {
 	enum apn_state_enum_t state;
 };
+
 struct registration_status {
 	bool is_registered_currently;
 	bool is_registered_previously;
@@ -222,6 +260,7 @@ struct registration_status {
 	enum cellular_registration_status network_state_previous;
 	enum hl78xx_cell_rat_mode rat_mode;
 };
+
 /* driver data */
 struct modem_buffers {
 	uint8_t uart_rx[CONFIG_MODEM_HL78XX_UART_BUFFER_SIZES];
@@ -243,8 +282,10 @@ struct modem_identity {
 	uint8_t iccid[MDM_ICCID_LENGTH];
 	uint8_t manufacturer[MDM_MANUFACTURER_LENGTH];
 	uint8_t fw_version[MDM_REVISION_LENGTH];
+	uint8_t serial_number[MDM_SERIAL_NUMBER_LENGTH];
 	char apn[MDM_APN_MAX_LENGTH];
 };
+
 struct hl78xx_phone_functionality_work {
 	enum hl78xx_phone_functionality functionality;
 	bool in_progress;
@@ -255,6 +296,46 @@ struct hl78xx_network_operator {
 	uint8_t format;
 };
 
+struct hl78xx_modem_boot_status {
+	bool is_booted_previously;
+	enum hl78xx_module_status status;
+};
+
+struct hl78xx_gprs_status {
+	bool is_active;
+	int8_t cid;
+};
+
+#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
+/* WDSI FOTA states */
+enum hl78xx_wdsi_fota_states {
+	HL78XX_WDSI_FOTA_IDLE = 0,
+	HL78XX_WDSI_FOTA_DOWNLOADING,
+	HL78XX_WDSI_FOTA_DOWNLOAD_COMPLETED,
+	HL78XX_WDSI_FOTA_INSTALLING,
+	HL78XX_WDSI_FOTA_INSTALL_COMPLETED,
+	HL78XX_WDSI_FOTA_INSTALL_FAILED
+};
+
+struct hl78xx_wdsi_status {
+	enum wdsi_indication level;
+	uint32_t data;
+	size_t fota_size;
+	bool in_progress;
+	enum hl78xx_wdsi_fota_states fota_state;
+	bool completed;
+	int progress;
+};
+
+#endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
+
+struct hl78xx_modem_uart_status {
+	uint32_t current_baudrate;
+#ifdef CONFIG_MODEM_HL78XX_AUTO_BAUDRATE
+	uint32_t target_baudrate;
+	uint8_t baudrate_detection_retry;
+#endif /* CONFIG_MODEM_HL78XX_AUTO_BAUDRATE */
+};
 struct modem_status {
 	struct registration_status registration;
 	int16_t rssi;
@@ -265,9 +346,15 @@ struct modem_status {
 	int variant;
 	enum hl78xx_state state;
 	struct kband_syntax kbndcfg[HL78XX_RAT_COUNT];
+	struct hl78xx_gprs_status gprs[MDM_MAX_PDP_CONTEXTS];
+	struct hl78xx_modem_boot_status boot;
 	struct hl78xx_phone_functionality_work phone_functionality;
 	struct apn_state apn;
 	struct hl78xx_network_operator network_operator;
+#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
+	struct hl78xx_wdsi_status wdsi;
+#endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
+	struct hl78xx_modem_uart_status uart;
 };
 
 struct modem_gpio_callbacks {
@@ -345,11 +432,12 @@ struct hl78xx_config {
 	const struct modem_chat_script *init_chat_script;
 	const struct modem_chat_script *periodic_chat_script;
 };
+
 /* socket read callback data */
 struct socket_read_data {
 	char *recv_buf;
 	size_t recv_buf_len;
-	struct sockaddr *recv_addr;
+	struct net_sockaddr *recv_addr;
 	uint16_t recv_read_len;
 };
 
@@ -399,13 +487,14 @@ void iface_status_work_cb(struct hl78xx_data *data,
  * @param cmd_len Length of the command in bytes.
  * @param response_matches Array of expected response match patterns.
  * @param matches_size Number of elements in the response_matches array.
+ * @param response_timeout Response timeout in seconds.
  *
  * @return 0 on success, negative errno code on failure.
  */
 int modem_dynamic_cmd_send(struct hl78xx_data *data,
 			   modem_chat_script_callback script_user_callback, const uint8_t *cmd,
 			   uint16_t cmd_len, const struct modem_chat_match *response_matches,
-			   uint16_t matches_size, bool user_cmd);
+			   uint16_t matches_size, uint16_t response_timeout, bool user_cmd);
 
 #define HASH_MULTIPLIER 37
 /**

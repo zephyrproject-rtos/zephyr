@@ -37,7 +37,8 @@
 			device_type = "cpu";
 			i-cache-line-size = <0x4000>;
 			reg = <0x0>;
-			riscv,isa = "rv64imac_zicsr_zifencei";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "c", "zicsr", "zifencei";
 
 			hlic0: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -54,7 +55,8 @@
 			i-cache-line-size = <0x8000>;
 			d-cache-line-size = <0x8000>;
 			reg = <0x1>;
-			riscv,isa = "rv64gc";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
 
 			hlic1: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -72,7 +74,8 @@
 			i-cache-line-size = <0x8000>;
 			d-cache-line-size = <0x8000>;
 			reg = <0x2>;
-			riscv,isa = "rv64gc";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
 
 			hlic2: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -90,7 +93,8 @@
 			i-cache-line-size = <0x8000>;
 			d-cache-line-size = <0x8000>;
 			reg = <0x3>;
-			riscv,isa = "rv64gc";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
 
 			hlic3: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -108,7 +112,8 @@
 			i-cache-line-size = <0x8000>;
 			d-cache-line-size = <0x8000>;
 			reg = <0x4>;
-			riscv,isa = "rv64gc";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
 
 			hlic4: interrupt-controller {
 				compatible = "riscv,cpu-intc";

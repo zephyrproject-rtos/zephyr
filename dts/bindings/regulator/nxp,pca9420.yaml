@@ -6,25 +6,6 @@ description: |
 
   The PMIC has two buck converters and two LDOs. All need to be defined as
   children nodes, strictly following the BUCK1, BUCK2, LDO1 and LDO2 node names.
-  For example:
-
-  pmic@61 {
-    reg = <0x61>;
-    ...
-    BUCK1 {
-      /* all properties for BUCK1 */
-    };
-    BUCK2 {
-      /* all properties for BUCK2 */
-    };
-    LDO1 {
-      /* all properties for LDO1 */
-    };
-    LDO2 {
-      /* all properties for LDO2 */
-    };
-  };
-
 
 compatible: "nxp,pca9420"
 
@@ -115,3 +96,27 @@ child-binding:
       description: |
         The voltage level to be configured for mode 3, in microvolts. Setting
         this value to zero will disable the source in mode 3.
+
+examples:
+  - |
+    pmic@61 {
+      reg = <0x61>;
+
+      /* ... */
+
+      BUCK1 {
+        /* all properties for BUCK1 */
+      };
+
+      BUCK2 {
+        /* all properties for BUCK2 */
+      };
+
+      LDO1 {
+        /* all properties for LDO1 */
+      };
+
+      LDO2 {
+        /* all properties for LDO2 */
+      };
+    };

@@ -37,9 +37,9 @@ tests:
       - frdm_k64f
     integration_platforms:
       - frdm_k64f
-  sample.mcumgr.smp_svr.udp_dtls:
+  sample.mcumgr.smp_svr.udp-dtls:
     extra_args:
-      - EXTRA_CONF_FILE="udp_dtls.conf"
+      - EXTRA_CONF_FILE="udp-dtls.conf"
       - CONFIG_IMG_MANAGER=n
       - SB_CONFIG_BOOTLOADER_NONE=y
     platform_allow:
@@ -210,6 +210,12 @@ tests:
     extra_args:
       - FILE_SUFFIX="ram_load"
       - EXTRA_CONF_FILE="serial.conf;fs.conf;shell.conf"
+    platform_allow:
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - nrf52840dk/nrf52840
+  sample.mcumgr.smp_svr.raw-serial.fs:
+    extra_args: EXTRA_CONF_FILE="raw-serial.conf;fs.conf"
     platform_allow:
       - nrf52840dk/nrf52840
     integration_platforms:

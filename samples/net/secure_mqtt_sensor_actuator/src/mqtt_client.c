@@ -7,10 +7,13 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(app_mqtt, LOG_LEVEL_DBG);
 
-#include <zephyr/kernel.h>
-#include <zephyr/net/socket.h>
-#include <zephyr/net/mqtt.h>
 #include <zephyr/data/json.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/mqtt.h>
+#include <zephyr/posix/arpa/inet.h>
+#include <zephyr/posix/netdb.h>
+#include <zephyr/posix/poll.h>
+#include <zephyr/posix/sys/socket.h>
 #include <zephyr/random/random.h>
 
 #include "mqtt_client.h"
@@ -27,7 +30,7 @@ static uint8_t payload_buf[CONFIG_NET_SAMPLE_MQTT_PAYLOAD_SIZE];
 static struct sockaddr_storage broker;
 
 /* Socket descriptor */
-static struct zsock_pollfd fds[1];
+static struct pollfd fds[1];
 static int nfds;
 
 /* JSON payload format */
@@ -80,7 +83,7 @@ static void prepare_fds(struct mqtt_client *client)
 	}
 #endif
 
-	fds[0].events = ZSOCK_POLLIN;
+	fds[0].events = POLLIN;
 	nfds = 1;
 }
 
@@ -255,7 +258,7 @@ static int poll_mqtt_socket(struct mqtt_client *client, int timeout)
 		return -EINVAL;
 	}
 
-	rc = zsock_poll(fds, nfds, timeout);
+	rc = poll(fds, nfds, timeout);
 	if (rc < 0) {
 		LOG_ERR("Socket poll error [%d]", rc);
 	}
@@ -362,7 +365,7 @@ int app_mqtt_process(struct mqtt_client *client)
 
 	rc = poll_mqtt_socket(client, mqtt_keepalive_time_left(client));
 	if (rc != 0) {
-		if (fds[0].revents & ZSOCK_POLLIN) {
+		if (fds[0].revents & POLLIN) {
 			/* MQTT data received */
 			rc = mqtt_input(client);
 			if (rc != 0) {
@@ -370,7 +373,7 @@ int app_mqtt_process(struct mqtt_client *client)
 				return rc;
 			}
 			/* Socket error */
-			if (fds[0].revents & (ZSOCK_POLLHUP | ZSOCK_POLLERR)) {
+			if (fds[0].revents & (POLLHUP | POLLERR)) {
 				LOG_ERR("MQTT socket closed / error");
 				return -ENOTCONN;
 			}

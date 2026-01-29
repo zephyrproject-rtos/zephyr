@@ -57,9 +57,7 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 	z_arm_configure_static_mpu_regions();
 #endif /* CONFIG_ARM_MPU */
 
-#ifdef CONFIG_SOC_PER_CORE_INIT_HOOK
 	soc_per_core_init_hook();
-#endif /* CONFIG_SOC_PER_CORE_INIT_HOOK */
 }
 
 static ALWAYS_INLINE void arch_thread_return_value_set(struct k_thread *thread, unsigned int value)

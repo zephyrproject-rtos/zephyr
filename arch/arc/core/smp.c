@@ -117,9 +117,7 @@ void arch_secondary_cpu_init(int cpu_num)
 	irq_enable(DT_IRQN(DT_NODELABEL(ici)));
 #endif
 
-#ifdef CONFIG_SOC_PER_CORE_INIT_HOOK
 	soc_per_core_init_hook();
-#endif /* CONFIG_SOC_PER_CORE_INIT_HOOK */
 
 	/* call the function set by arch_cpu_start */
 	fn = arc_cpu_init[cpu_num].fn;

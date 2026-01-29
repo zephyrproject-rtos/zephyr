@@ -1,0 +1,99 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Workflow that triggers on changes impacting API documentation and that checks that any newly
+# introduced API is properly documented.
+
+name: Doxygen Coverage Delta Check
+
+on:
+  pull_request:
+    paths:
+      - 'include/**'
+      - 'subsys/testsuite/include/**'
+      - 'subsys/testsuite/ztest/include/**'
+      - 'scripts/ci/doxygen_coverage_diff.py'
+      - '.github/workflows/doxygen-coverage-delta.yml'
+    branches:
+      - main
+      - v*-branch
+      - collab-*
+
+permissions:
+  contents: read
+
+jobs:
+  doc-coverage-diff:
+    name: "Doxygen Coverage Delta Check"
+    runs-on:
+      group: zephyr-runner-v2-linux-x64-4xlarge
+    container:
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.28.7.20251127
+      options: '--entrypoint /bin/bash'
+    timeout-minutes: 60
+    env:
+      BASE_REF: ${{ github.base_ref }}
+
+    steps:
+      - name: Apply container owner mismatch workaround
+        run: |
+          git config --global --add safe.directory ${GITHUB_WORKSPACE}
+
+      - name: Clone cached Zephyr repository
+        continue-on-error: true
+        run: |
+          git clone --shared /repo-cache/zephyrproject/zephyr .
+          git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
+
+      - name: Checkout PR Branch
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Environment Setup
+        run: |
+          git config --global user.email "bot@zephyrproject.org"
+          git config --global user.name "Zephyr Builder"
+          git rebase origin/${BASE_REF}
+          git clean -f -d
+
+          west init -l . || true
+          west update --path-cache /repo-cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /repo-cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /repo-cache/zephyrproject)
+          west forall -c 'git reset --hard HEAD'
+
+          echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
+
+      - name: Install Python packages
+        run: |
+          pip install -r scripts/requirements-actions.txt --require-hashes
+          pip install -r doc/requirements.txt --require-hashes
+
+      - name: Generate PR branch coverage JSON
+        run: |
+          make -C doc doxygen-coverage-json
+          mv doc/_build/doc-coverage.json pr-coverage.json
+
+      - name: Generate Base branch coverage JSON
+        run: |
+          git worktree add --detach ../base-branch origin/${BASE_REF}
+          echo "BASE_ROOT=$(readlink -f ../base-branch)" >> $GITHUB_ENV
+          cd ../base-branch
+          west update
+          # Use the PR branch's doc build configuration to ensure consistent
+          # coverage generation between branches (plus, the target may not exist in base)
+          cp ${GITHUB_WORKSPACE}/doc/CMakeLists.txt ${GITHUB_WORKSPACE}/doc/Makefile doc/
+          make -C doc doxygen-coverage-json
+          cp doc/_build/doc-coverage.json ${GITHUB_WORKSPACE}/base-coverage.json
+
+      - name: Check for undocumented new API
+        run: |
+          PR_ROOT=$(pwd)
+
+          python3 scripts/ci/doxygen_coverage_diff.py \
+            --reference base-coverage.json \
+            --comparison pr-coverage.json \
+            --strip-reference-prefix "$BASE_ROOT" \
+            --strip-comparison-prefix "$PR_ROOT" \
+            --warn-paths "include/zephyr/dt-bindings" \
+            --summary-file "$GITHUB_STEP_SUMMARY"

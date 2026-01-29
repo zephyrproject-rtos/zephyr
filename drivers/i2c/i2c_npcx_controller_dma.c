@@ -117,6 +117,13 @@ size_t i2c_ctrl_dma_proceed_read(const struct device *dev)
 	return dma_lens;
 }
 
+void i2c_ctrl_stop(const struct device *dev)
+{
+	struct smb_reg *const inst = HAL_I2C_INSTANCE(dev);
+
+	inst->SMBCTL1 |= BIT(NPCX_SMBCTL1_STOP);
+}
+
 /* I2C controller recover function in `DMA` mode */
 bool i2c_ctrl_toggle_scls(const struct device *dev)
 {

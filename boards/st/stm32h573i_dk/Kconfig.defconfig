@@ -7,32 +7,21 @@
 
 if BOARD_STM32H573I_DK
 
-if NETWORKING
-
-config NET_L2_ETHERNET
+configdefault NET_L2_ETHERNET
 	default y
 
-endif # NETWORKING
-
-if DISK_DRIVER_SDMMC
-
-config SDMMC_STM32_CLOCK_CHECK
+configdefault SDMMC_STM32_CLOCK_CHECK
 	default n
-
-endif # DISK_DRIVER_SDMMC
 
 if DISPLAY
 
 choice ST7789V_PIXEL_FORMAT
-	default ST7789V_BGR565
+	default ST7789V_RGB565X
 endchoice
 
 # Required to enable LCD backlight
 config REGULATOR
 	default y
-
-config INPUT
-	default y if LVGL
 
 config I2C_STM32_V2_TIMING
 	default y if INPUT

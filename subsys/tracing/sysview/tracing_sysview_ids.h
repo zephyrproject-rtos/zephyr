@@ -163,7 +163,10 @@ extern "C" {
 #define TID_EVENT_POST (133u + TID_OFFSET)
 #define TID_EVENT_WAIT (134u + TID_OFFSET)
 
-/* latest ID is 134 */
+#define TID_TIMER_EXPIRY (135u + TID_OFFSET)
+#define TID_TIMER_STOP_EXPIRY (136u + TID_OFFSET)
+
+/* latest ID is 136 */
 
 #ifdef __cplusplus
 }

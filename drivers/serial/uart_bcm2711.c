@@ -154,7 +154,10 @@ static int uart_bcm2711_poll_in(const struct device *dev, unsigned char *c)
 		;
 	}
 
-	return sys_read32(uart_data->uart_addr + BCM2711_MU_IO) & 0xFF;
+	/* got a character */
+	*c = sys_read32(uart_data->uart_addr + BCM2711_MU_IO) & 0xFF;
+
+	return 0;
 }
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN

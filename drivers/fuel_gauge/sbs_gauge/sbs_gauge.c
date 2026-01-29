@@ -59,11 +59,12 @@ static int sbs_cmd_reg_read(const struct device *dev, uint8_t reg_addr, uint16_t
 static int sbs_cmd_reg_write(const struct device *dev, uint8_t reg_addr, uint16_t val)
 {
 	const struct sbs_gauge_config *config = dev->config;
-	uint8_t buf[2];
+	uint8_t buf[3];
 
-	sys_put_le16(val, buf);
+	buf[0] = reg_addr;
+	sys_put_le16(val, &buf[1]);
 
-	return i2c_burst_write_dt(&config->i2c, reg_addr, buf, sizeof(buf));
+	return i2c_write_dt(&config->i2c, buf, sizeof(buf));
 }
 
 static int sbs_cmd_buffer_read(const struct device *dev, uint8_t reg_addr, char *buffer,
@@ -215,32 +216,26 @@ static int sbs_gauge_set_prop(const struct device *dev, fuel_gauge_prop_t prop,
 			      union fuel_gauge_prop_val val)
 {
 	int rc = 0;
-	uint16_t tmp_val = 0;
 
 	switch (prop) {
 
 	case FUEL_GAUGE_SBS_MFR_ACCESS:
 		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_MANUFACTURER_ACCESS,
 				       val.sbs_mfr_access_word);
-		val.sbs_mfr_access_word = tmp_val;
 		break;
 	case FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM:
 		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_REM_CAPACITY_ALARM,
 				       val.sbs_remaining_capacity_alarm);
-		val.sbs_remaining_capacity_alarm = tmp_val;
 		break;
 	case FUEL_GAUGE_SBS_REMAINING_TIME_ALARM:
 		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_REM_TIME_ALARM,
 				       val.sbs_remaining_time_alarm);
-		val.sbs_remaining_time_alarm = tmp_val;
 		break;
 	case FUEL_GAUGE_SBS_MODE:
 		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_BATTERY_MODE, val.sbs_mode);
-		val.sbs_mode = tmp_val;
 		break;
 	case FUEL_GAUGE_SBS_ATRATE:
 		rc = sbs_cmd_reg_write(dev, SBS_GAUGE_CMD_AR, val.sbs_at_rate);
-		val.sbs_at_rate = tmp_val;
 		break;
 	default:
 		rc = -ENOTSUP;

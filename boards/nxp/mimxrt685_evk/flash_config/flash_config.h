@@ -95,7 +95,7 @@ enum {
 	FLEXSPI_MISC_OFFSET_WORD_ADDRESSABLE_ENABLE = 3,
 	/* Bit for Safe Configuration Frequency enable */
 	FLEXSPI_MISC_OFFSET_SAFE_CONFIG_FREQ_ENABLE = 4,
-	/* Bit for DDR clock confiuration indication. */
+	/* Bit for DDR clock configuration indication. */
 	FLEXSPI_MISC_OFFSET_DDR_MODE_ENABLE = 6,
 };
 
@@ -201,7 +201,7 @@ typedef struct flexspi_config {
 	 * 1 - Single, 2 - Dual, 4 - Quad, 8 - Octal
 	 */
 	uint8_t sflash_pad_type;
-	/* !< [0x046-0x046] Serial Flash Frequencey,
+	/* !< [0x046-0x046] Serial Flash Frequency,
 	 * device specific definitions,
 	 * See System Boot Chapter for more details
 	 */
@@ -275,7 +275,7 @@ typedef struct _flexspi_nor_config {
 	uint8_t need_exit_nocmd_mode;
 	/* !< Half the Serial Clock for non-read command: true/false */
 	uint8_t half_clk_for_non_read_cmd;
-	/* !< Need to Restore NoCmd mode after IP commmand execution */
+	/* !< Need to Restore NoCmd mode after IP command execution */
 	uint8_t need_restore_nocmd_mode;
 	/* !< Block size */
 	uint32_t block_size;

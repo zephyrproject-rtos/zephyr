@@ -14,7 +14,17 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - adc
+  - can
   - uart
+  - i2c
+  - spi
   - gpio
+  - adc
   - arduino_gpio
+  - comparator
+  - dma
+  - counter
+  - pwm
+  - watchdog
 vendor: nxp

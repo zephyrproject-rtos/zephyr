@@ -546,7 +546,7 @@ static int exec_cmd(const struct shell *sh, size_t argc, const char **argv,
 
 	if (!ret_val) {
 #if CONFIG_SHELL_GETOPT
-		getopt_init();
+		sys_getopt_init();
 #endif
 
 		z_flag_cmd_ctx_set(sh, true);
@@ -987,6 +987,7 @@ static void state_collect(const struct shell *sh)
 
 	while (true) {
 		shell_bypass_cb_t bypass = sh->ctx->bypass;
+		void *bypass_user_data = sh->ctx->bypass_user_data;
 
 		if (bypass) {
 #if defined(CONFIG_SHELL_BACKEND_RTT) && defined(CONFIG_SEGGER_RTT_BUFFER_SIZE_DOWN)
@@ -999,7 +1000,18 @@ static void state_collect(const struct shell *sh)
 							sizeof(buf), &count);
 			if (count) {
 				z_flag_cmd_ctx_set(sh, true);
-				bypass(sh, buf, count);
+				/** Unlock the shell mutex before calling the bypass function,
+				 * allowing shell APIs (e.g. shell_print()) to be used inside it.
+				 * Since these APIs require the mutex to be unlocked,
+				 * we temporarily leave the shell context and transfer control
+				 * to the bypass function.
+				 */
+				z_shell_unlock(sh);
+				bypass(sh, buf, count, bypass_user_data);
+				/* After returning, we're back in the shell context — re-acquire
+				 * the shell mutex on the shell thread.
+				 */
+				z_shell_lock(sh);
 				z_flag_cmd_ctx_set(sh, false);
 				/* Check if bypass mode ended. */
 				if (!(volatile shell_bypass_cb_t *)sh->ctx->bypass) {
@@ -1437,12 +1449,6 @@ int shell_start(const struct shell *sh)
 		z_shell_vt100_color_set(sh, SHELL_NORMAL);
 	}
 
-	/* print new line before printing the prompt to clear the line
-	 * vt100 are not used here for compatibility reasons
-	 */
-	z_cursor_next_line_move(sh);
-	state_set(sh, SHELL_STATE_ACTIVE);
-
 	/*
 	 * If the shell is stopped with the shell_stop function, its backend remains active
 	 * and continues to buffer incoming data. As a result, when the shell is resumed,
@@ -1450,6 +1456,12 @@ int shell_start(const struct shell *sh)
 	 * received while the shell was stopped.
 	 */
 	z_shell_backend_rx_buffer_flush(sh);
+
+	/* print new line before printing the prompt to clear the line
+	 * vt100 are not used here for compatibility reasons
+	 */
+	z_cursor_next_line_move(sh);
+	state_set(sh, SHELL_STATE_ACTIVE);
 
 	z_shell_unlock(sh);
 
@@ -1805,11 +1817,12 @@ int shell_mode_delete_set(const struct shell *sh, bool val)
 	return (int)z_flag_mode_delete_set(sh, val);
 }
 
-void shell_set_bypass(const struct shell *sh, shell_bypass_cb_t bypass)
+void shell_set_bypass(const struct shell *sh, shell_bypass_cb_t bypass, void *user_data)
 {
 	__ASSERT_NO_MSG(sh);
 
 	sh->ctx->bypass = bypass;
+	sh->ctx->bypass_user_data = user_data;
 
 	if (bypass == NULL) {
 		cmd_buffer_clear(sh);

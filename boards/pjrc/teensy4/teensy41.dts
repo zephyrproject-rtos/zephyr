@@ -9,6 +9,10 @@
 / {
 	model = "PJRC TEENSY 4.1 board";
 
+	aliases {
+		sdhc0 = &usdhc1;
+	};
+
 	chosen {
 		zephyr,flash-controller = &w25q64jvxgim;
 		zephyr,flash = &w25q64jvxgim;

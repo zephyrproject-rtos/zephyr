@@ -12,8 +12,6 @@ menuconfig NET_DSA
 
 if NET_DSA
 
-DSA_PORT_COMPAT := zephyr,dsa-port
-
 config NET_DSA_DEPRECATED
 	bool "Distributed Switch Architecture support for legacy device"
 	select DEPRECATED
@@ -34,15 +32,6 @@ config DSA_TAG_SIZE
 	default 0
 	help
 	  Set the DSA tag length in bytes.
-
-# Tag protocol ID found in <zephyr/dt-bindings/ethernet/dsa_tag_proto.h>
-config DSA_TAG_PROTOCOL_NETC
-	bool "Tag protocol - NETC"
-	default y
-	select NET_PKT_CONTROL_BLOCK
-	depends on $(dt_compat_any_has_prop,$(DSA_PORT_COMPAT),dsa-tag-protocol,1)
-	help
-	  NXP NETC tag protocol.
 
 module = NET_DSA
 module-dep = NET_LOG

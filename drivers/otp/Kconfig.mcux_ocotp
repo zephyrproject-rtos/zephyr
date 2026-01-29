@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+config OTP_MCUX_OCOTP
+	bool "MCUX OCOTP driver"
+	default y
+	depends on DT_HAS_NXP_MCUX_OCOTP_ENABLED
+	select CLOCK_CONTROL if $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_MCUX_OCOTP),clocks)
+	help
+	  Enable support for MCUX OCOTP driver.

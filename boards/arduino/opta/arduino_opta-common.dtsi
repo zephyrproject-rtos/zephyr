@@ -89,6 +89,11 @@
 	d3ppre = <2>;
 };
 
+&pwr {
+	power-supply = "smps-ext-ldo";
+	smps-output-voltage = "1V8";
+};
+
 &rtc {
 	status = "okay";
 };

@@ -16,7 +16,6 @@
 
 #include "common/bt_str.h"
 
-#include "mesh.h"
 #include "net.h"
 #include "prov.h"
 #include "crypto.h"

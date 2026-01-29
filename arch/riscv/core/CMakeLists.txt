@@ -13,11 +13,11 @@ zephyr_library_sources(
   thread.c
 )
 
-if ((CONFIG_MP_MAX_NUM_CPUS GREATER 1) OR (CONFIG_SMP))
+if((CONFIG_MP_MAX_NUM_CPUS GREATER 1) OR (CONFIG_SMP))
   zephyr_library_sources(smp.c)
-endif ()
+endif()
 
-if (CONFIG_SMP)
+if(CONFIG_SMP)
   zephyr_library_sources(ipi.c)
 
   zephyr_library_sources_ifdef(CONFIG_RISCV_SMP_IPI_CLINT ipi_clint.c)
@@ -28,6 +28,7 @@ zephyr_library_sources_ifdef(CONFIG_DEBUG_COREDUMP coredump.c)
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
 zephyr_library_sources_ifdef(CONFIG_USE_ISR_WRAPPER isr.S)
 zephyr_library_sources_ifdef(CONFIG_RISCV_PMP pmp.c pmp.S)
+zephyr_linker_sources_ifdef(CONFIG_RISCV_PMP ROM_SECTIONS pmp.ld)
 zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE tls.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.S)
 zephyr_library_sources_ifdef(CONFIG_SEMIHOST semihost.c)

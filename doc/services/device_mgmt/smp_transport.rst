@@ -194,6 +194,32 @@ The CRC16 included in final type frames is calculated over only
 raw data and does not include packet length.
 CRC16 polynomial is 0x1021 and initial value is 0.
 
+.. _mcumgr_smp_transport_raw_uart:
+
+Raw UART/serial (without console)
+*********************************
+
+In Zephyr, an alternative transport is available for UART which does not use Base64 as the SMP
+over console transport does, this allows for smaller code size and faster transfers - but
+cannot be used on devices which have shell or log output on the same UART or are connected to
+terminals that are displaying ASCII data, as all communication is done using the raw binary
+SMP protocol.
+
+To use this protocol, use :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_RAW_UART`, it requires the
+MCUmgr UART console driver to be enabled in raw mode.
+
+Timeout
+=======
+
+Because there is no framing when using this transport, it is possible that there might be invalid
+data received on the UART which causes the system to wait for e.g. a very long packet which is
+not going to arrive. To prevent this, a timeout system exists whereby if the full packet is not
+received within a specific timeframe, the whole receive buffer is cleared. It is recommended that
+this option should be enabled on UART ports, for transports like USB CDC whereby it is a "virtual"
+UART and the data can be verified before being passed, this option is not needed. The option can
+be enabled with :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT`, the timeout for
+this can be set with :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT_TIME_MS`.
+
 API Reference
 *************
 

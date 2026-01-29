@@ -37,7 +37,7 @@ static struct coap_client_internal_request *get_request_with_mid(struct coap_cli
 								 uint16_t mid);
 
 static int send_request(int sock, const void *buf, size_t len, int flags,
-			const struct sockaddr *dest_addr, socklen_t addrlen)
+			const struct net_sockaddr *dest_addr, net_socklen_t addrlen)
 {
 	int ret;
 
@@ -52,7 +52,7 @@ static int send_request(int sock, const void *buf, size_t len, int flags,
 }
 
 static int receive(int sock, void *buf, size_t max_len, int flags,
-		   struct sockaddr *src_addr, socklen_t *addrlen)
+		   struct net_sockaddr *src_addr, net_socklen_t *addrlen)
 {
 	ssize_t err;
 
@@ -87,7 +87,7 @@ static void release_internal_request(struct coap_client_internal_request *reques
 	request->pending.timeout = 0;
 }
 
-static int coap_client_schedule_poll(struct coap_client *client, int sock,
+static void coap_client_schedule_poll(struct coap_client *client, int sock,
 				     struct coap_client_request *req,
 				     struct coap_client_internal_request *internal_req)
 {
@@ -96,8 +96,6 @@ static int coap_client_schedule_poll(struct coap_client *client, int sock,
 	internal_req->request_ongoing = true;
 
 	k_sem_give(&coap_client_recv_sem);
-
-	return 0;
 }
 
 static bool exchange_lifetime_exceeded(struct coap_client_internal_request *internal_req)
@@ -197,10 +195,8 @@ static enum coap_block_size coap_client_default_block_size(void)
 	return COAP_BLOCK_256;
 }
 
-static int coap_client_init_request(struct coap_client *client,
-				    struct coap_client_request *req,
-				    struct coap_client_internal_request *internal_req,
-				    bool reconstruct)
+static int coap_client_init_request(struct coap_client *client, struct coap_client_request *req,
+				    struct coap_client_internal_request *internal_req)
 {
 	int ret = 0;
 	int i;
@@ -208,13 +204,11 @@ static int coap_client_init_request(struct coap_client *client,
 
 	memset(internal_req->send_buf, 0, sizeof(internal_req->send_buf));
 
-	if (!reconstruct) {
-		uint8_t *token = coap_next_token();
+	uint8_t *token = coap_next_token();
 
-		internal_req->last_id = coap_next_id();
-		internal_req->request_tkl = COAP_TOKEN_MAX_LEN & 0xf;
-		memcpy(internal_req->request_token, token, internal_req->request_tkl);
-	}
+	internal_req->last_id = coap_next_id();
+	internal_req->request_tkl = COAP_TOKEN_MAX_LEN & 0xf;
+	memcpy(internal_req->request_token, token, internal_req->request_tkl);
 
 	ret = coap_packet_init(&internal_req->request, internal_req->send_buf, MAX_COAP_MSG_LEN,
 			       1, req->confirmable ? COAP_TYPE_CON : COAP_TYPE_NON_CON,
@@ -414,15 +408,20 @@ out:
 	return ret;
 }
 
-int coap_client_req(struct coap_client *client, int sock, const struct sockaddr *addr,
+int coap_client_req(struct coap_client *client, int sock, const struct net_sockaddr *addr,
 		    struct coap_client_request *req, struct coap_transmission_parameters *params)
 {
 	int ret;
 	struct coap_client_internal_request *internal_req;
-	size_t pathlen = strnlen(req->path, MAX_PATH_SIZE);
+	size_t pathlen;
 
-	if (client == NULL || sock < 0 || req == NULL || pathlen == 0 ||
-	    pathlen == MAX_PATH_SIZE || req->num_options > MAX_EXTRA_OPTIONS) {
+	if (client == NULL || sock < 0 || req == NULL || req->num_options > MAX_EXTRA_OPTIONS) {
+		return -EINVAL;
+	}
+
+	pathlen = strnlen(req->path, MAX_PATH_SIZE);
+
+	if (pathlen == 0 || pathlen == MAX_PATH_SIZE) {
 		return -EINVAL;
 	}
 
@@ -469,7 +468,7 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 
 	reset_internal_request(internal_req);
 
-	ret = coap_client_init_request(client, req, internal_req, false);
+	ret = coap_client_init_request(client, req, internal_req);
 	if (ret < 0) {
 		LOG_ERR("Failed to initialize coap request");
 		goto release;
@@ -485,11 +484,7 @@ int coap_client_req(struct coap_client *client, int sock, const struct sockaddr 
 		client->send_echo = false;
 	}
 
-	ret = coap_client_schedule_poll(client, sock, req, internal_req);
-	if (ret < 0) {
-		LOG_ERR("Failed to schedule polling");
-		goto release;
-	}
+	coap_client_schedule_poll(client, sock, req, internal_req);
 
 	ret = coap_pending_init(&internal_req->pending, &internal_req->request,
 				&client->address, params);
@@ -897,7 +892,7 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 		 /* Resend request with echo option */
 		if (response_code == COAP_RESPONSE_CODE_UNAUTHORIZED) {
 			ret = coap_client_init_request(client, &internal_req->coap_request,
-						       internal_req, false);
+						       internal_req);
 
 			if (ret < 0) {
 				LOG_ERR("Error creating a CoAP request");
@@ -1052,8 +1047,7 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 
 	/* If this wasn't last block, send the next request */
 	if (blockwise_transfer && !last_block) {
-		ret = coap_client_init_request(client, &internal_req->coap_request, internal_req,
-					       false);
+		ret = coap_client_init_request(client, &internal_req->coap_request, internal_req);
 
 		if (ret < 0) {
 			LOG_ERR("Error creating a CoAP request");

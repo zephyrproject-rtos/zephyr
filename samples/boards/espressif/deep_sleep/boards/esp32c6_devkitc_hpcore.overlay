@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	memory@50003f00 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x50003f00 0x100>;
+		zephyr,memory-region = "SRAMLP_RETAINED_MEM";
+		status = "okay";
+
+		retainedmem0: retainedmem {
+			compatible = "zephyr,retained-ram";
+			status = "okay";
+		};
+	};
+
+	aliases {
+		retainedmemdevice = &retainedmem0;
+	};
+};
+
+/* Delete original shmlp node */
+/delete-node/ &shmlp;
+
+&sramlp {
+	/* Shrink sramlp size to avoid overlap with retained memory region:
+	 * 16KB - 256 = 0x3f00
+	 */
+	reg = <0x50000000 0x3f00>;
+
+	/* Shift shmlp to keep it inside sramlp memory region:
+	 * 0x50003fe0 - 256 = 0x50003ee0
+	 */
+	shmlp: memory@50003ee0 {
+		reg = <0x50003ee0 0x10>;
+	};
+};

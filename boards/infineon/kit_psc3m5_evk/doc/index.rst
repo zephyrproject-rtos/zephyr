@@ -4,7 +4,7 @@ Overview
 ********
 
 This is the standard evaluation board for the PSOC™ Control C3 family of MCU's. PSOC™ Control C3M5
-is a high-performance and low-power 32-bit single-core Arm® Cortex® M33-based MCU.
+is a high-performance and low-power 32-bit single-core Arm® Cortex®-M33-based MCU.
 In addition to the CPU subsystem, the devices contain advanced real-time control peripherals,
 such as a high-performance programmable analog subsystem, comparators, advanced timers with
 high-resolution capability, up to six SCBs, and two CAN FDs for communication.

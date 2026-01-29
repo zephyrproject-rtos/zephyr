@@ -26,6 +26,16 @@
 	};
 };
 
+&eim0_channel0 {
+	start-address = <0x1fff0000>;
+	size = <DT_SIZE_K(64)>;
+};
+
+&eim0_channel1 {
+	start-address = <0x20000000>;
+	size = <DT_SIZE_K(60)>;
+};
+
 &ftfc {
 	flash0: flash@0 {
 		compatible = "soc-nv-flash";
@@ -35,10 +45,21 @@
 	};
 };
 
+&flexcan0 {
+	number-of-mb = <32>;
+	number-of-mb-fd = <7>;
+};
+
+&flexcan1 {
+	number-of-mb = <32>;
+	number-of-mb-fd = <7>;
+};
+
 &flexcan2 {
 	compatible = "nxp,flexcan";
 	interrupts = <92 0>, <93 0>, <95 0>;
 	interrupt-names = "ored-warning-bus-off", "error", "mb-0-15";
+	number-of-mb = <16>;
 };
 
 /delete-node/ &ftm4;

@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Microchip Technology Inc
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_PIC64GX1000_U54
+
+DT_COMPAT_SIFIVE_U54 := sifive,u54
+
+config MP_MAX_NUM_CPUS
+	default $(dt_compat_enabled_num,$(DT_COMPAT_SIFIVE_U54))
+
+config RV_BOOT_HART
+	default 1 if ($(dt_path_enabled,/cpus/cpu@1))
+	default 2 if ($(dt_path_enabled,/cpus/cpu@2))
+	default 3 if ($(dt_path_enabled,/cpus/cpu@3))
+	default 4 if ($(dt_path_enabled,/cpus/cpu@4))
+
+endif

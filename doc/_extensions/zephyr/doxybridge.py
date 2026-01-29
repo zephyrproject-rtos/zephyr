@@ -40,7 +40,6 @@ class DoxygenGroupDirective(SphinxDirective):
     }
 
     def run(self):
-
         desc_node = addnodes.desc()
         desc_node["domain"] = "c"
         desc_node["objtype"] = "group"
@@ -52,7 +51,7 @@ class DoxygenGroupDirective(SphinxDirective):
             reftype="group",
             reftarget=self.arguments[0],
             refwarn=True,
-            project=self.options.get("project")
+            project=self.options.get("project"),
         )
         group_xref += nodes.Text(self.arguments[0])
         title_signode += group_xref

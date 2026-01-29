@@ -241,16 +241,13 @@ static int bq27z746_set_prop(const struct device *dev, fuel_gauge_prop_t prop,
 			     union fuel_gauge_prop_val val)
 {
 	int rc = 0;
-	uint16_t tmp_val = 0;
 
 	switch (prop) {
 	case FUEL_GAUGE_SBS_MFR_ACCESS:
 		rc = bq27z746_write16(dev, BQ27Z746_MANUFACTURERACCESS, val.sbs_mfr_access_word);
-		val.sbs_mfr_access_word = tmp_val;
 		break;
 	case FUEL_GAUGE_SBS_ATRATE:
 		rc = bq27z746_write16(dev, BQ27Z746_ATRATE, val.sbs_at_rate);
-		val.sbs_at_rate = tmp_val;
 		break;
 	default:
 		rc = -ENOTSUP;

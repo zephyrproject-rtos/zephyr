@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: collection of properties for stepper drivers.
+
+properties:
+  micro-step-res:
+    type: int
+    default: 1
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256
+    description: |
+      micro-step resolution to be set while initializing the device driver.
+
+  en-gpios:
+    type: phandle-array
+    description: |
+      GPIO pins used to control the enable signal of the motor driver.

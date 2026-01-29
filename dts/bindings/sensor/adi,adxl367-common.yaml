@@ -7,15 +7,6 @@ description: |
   streaming functionality, make sure to include adxl367.h and
   use the macros defined there for fifo-mode property.
 
-  Example:
-  #include <zephyr/dt-bindings/sensor/adxl367.h>
-
-  adxl367: adxl367@0 {
-    ...
-
-    fifo-mode = <ADXL367_FIFO_MODE_STREAM>;
-  };
-
 
 include: sensor-device.yaml
 
@@ -59,3 +50,13 @@ properties:
       - 1
       - 2
       - 3
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/adxl367.h>
+
+    adxl367: adxl367@0 {
+      /* ... */
+
+      fifo-mode = <ADXL367_FIFO_MODE_STREAM>;
+    };

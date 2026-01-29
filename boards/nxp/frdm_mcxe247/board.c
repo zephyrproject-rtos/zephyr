@@ -16,7 +16,7 @@
 
 #define ASSERT_ASYNC_CLK_DIV_VALID(val, str) \
 	BUILD_ASSERT(val == 0 || val == 1 || val == 2 || val == 4 ||	\
-		     val == 8 || val == 16 || val == 2 || val == 64, str)
+		     val == 8 || val == 16 || val == 32 || val == 64, str)
 
 #define kSCG_AsyncClkDivBy0 kSCG_AsyncClkDisable
 
@@ -131,6 +131,16 @@ static const scg_spll_config_t scg_spll_config = {
 };
 #endif
 
+static void board_set_rtc_clock(uint8_t src)
+{
+	uint32_t temp;
+
+	temp = SIM->LPOCLKS;
+	temp &= ~SIM_LPOCLKS_RTCCLKSEL_MASK;
+	temp |= SIM_LPOCLKS_RTCCLKSEL(src);
+	SIM->LPOCLKS = temp;
+}
+
 __weak void clock_init(void)
 {
 	scg_sys_clk_config_t current;
@@ -171,6 +181,15 @@ __weak void clock_init(void)
 		CLOCK_GetCurSysClkConfig(&current);
 	} while (current.src != scg_sys_clk_config.src);
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcan0))
+	CLOCK_EnableClock(kCLOCK_Can0);
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcan1))
+	CLOCK_EnableClock(kCLOCK_Can1);
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcan2))
+	CLOCK_EnableClock(kCLOCK_Can2);
+#endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpuart0))
 	CLOCK_SetIpSrc(kCLOCK_Lpuart0,
 		       DT_CLOCKS_CELL(DT_NODELABEL(lpuart0), ip_source));
@@ -204,12 +223,16 @@ __weak void clock_init(void)
 		       DT_CLOCKS_CELL(DT_NODELABEL(lpspi2), ip_source));
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(adc0))
-	CLOCK_SetIpSrc(kCLOCK_Adc0
+	CLOCK_SetIpSrc(kCLOCK_Adc0,
 		       DT_CLOCKS_CELL(DT_NODELABEL(adc0), ip_source));
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(adc1))
 	CLOCK_SetIpSrc(kCLOCK_Adc1,
 		       DT_CLOCKS_CELL(DT_NODELABEL(adc1), ip_source));
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpit0))
+	CLOCK_SetIpSrc(kCLOCK_Lpit0,
+		       DT_CLOCKS_CELL(DT_NODELABEL(lpit0), ip_source));
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ftm0))
 	CLOCK_SetIpSrc(kCLOCK_Ftm0,
@@ -244,8 +267,7 @@ __weak void clock_init(void)
 		       DT_CLOCKS_CELL(DT_NODELABEL(ftm7), ip_source));
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ewm0))
-	CLOCK_SetIpSrc(kCLOCK_Ewm0,
-		       DT_CLOCKS_CELL(DT_NODELABEL(ewm0), ip_source));
+	CLOCK_EnableClock(kCLOCK_Ewm0);
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio0))
 	CLOCK_SetIpSrc(kCLOCK_Flexio0,
@@ -254,6 +276,10 @@ __weak void clock_init(void)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet_ptp_clock))
 	CLOCK_SetIpSrc(kCLOCK_Enet,
 		       DT_CLOCKS_CELL(DT_NODELABEL(enet_ptp_clock), ip_source));
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(rtc))
+	/* Set RTC clock source to LPO32K_CLK */
+	board_set_rtc_clock(0x01);
 #endif
 }
 

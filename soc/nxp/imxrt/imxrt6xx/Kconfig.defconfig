@@ -74,4 +74,8 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config MCUX_CORE_SUFFIX
 	default "_dsp"
 
+# Must match XCHAL_DCACHE_LINESIZE from core-isa.h
+config DCACHE_LINE_SIZE
+	default 256
+
 endif # SOC_MIMXRT685S_HIFI4

@@ -10,7 +10,6 @@ description: |
 
     cirrus,initial-switched-capacitor-mode = "2:1";
   };
-
 compatible: "cirrus,cp9314"
 
 include:

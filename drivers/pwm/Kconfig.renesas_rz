@@ -9,6 +9,13 @@ config PWM_RENESAS_RZ_GPT
 	help
 	  Enable the PWM driver for the Renesas RZ General PWM Timer (GPT).
 
+config PWM_RENESAS_RZA2M_GPT
+	bool "Renesas RZA2M General PWM Timer (GPT) PWM driver"
+	default y
+	depends on DT_HAS_RENESAS_RZA2M_GPT_PWM_ENABLED
+	help
+	  Enable the PWM driver for the Renesas RZ/A2M General PWM Timer (GPT).
+
 config PWM_RENESAS_RZ_MTU
 	bool "Renesas RZ Multi-Function Timer Pulse (MTU) PWM driver"
 	default y

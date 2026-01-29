@@ -15,7 +15,7 @@
 #include <stdint.h>
 #include "cmsis_instr.h"
 #if defined(CONFIG_SOC_COMPATIBLE_NRF52833)
-#include "nrf52833.h"
+#include "mdk/nrf52833.h"
 #endif
 
 #ifdef __cplusplus
@@ -35,6 +35,8 @@ void NVIC_EnableIRQ(IRQn_Type IRQn);
 void NVIC_SetPriority(IRQn_Type IRQn, uint32_t priority);
 uint32_t NVIC_GetPriority(IRQn_Type IRQn);
 void NVIC_SystemReset(void);
+
+void nrfbsim_clear_excl_access(void);
 
 #ifdef __cplusplus
 }

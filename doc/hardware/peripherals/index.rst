@@ -45,6 +45,7 @@ Peripherals
    mspi.rst
    mbox.rst
    opamp.rst
+   otp/index.rst
    pcie.rst
    peci.rst
    ps2.rst
@@ -58,7 +59,7 @@ Peripherals
    sensor/index.rst
    sent.rst
    spi.rst
-   stepper.rst
+   stepper/index.rst
    smbus.rst
    uart.rst
    usbc_vbus.rst

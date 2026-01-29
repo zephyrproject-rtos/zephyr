@@ -72,6 +72,7 @@ class Platform:
         self.ignore_tags = []
         self.only_tags = []
         self.default = False
+        self.flash_before = False
         # if no flash size is specified by the board, take a default of 512K
         self.flash = 512
         self.supported = set()
@@ -116,6 +117,7 @@ class Platform:
         self.default = testing.get("default", self.default)
         self.binaries = testing.get("binaries", [])
         self.timeout_multiplier = testing.get("timeout_multiplier", self.timeout_multiplier)
+        self.flash_before = testing.get("flash_before", self.flash_before)
 
         # testing data for variant
         testing_var = variant_data.get("testing", data.get("testing", {}))
@@ -124,6 +126,7 @@ class Platform:
         self.only_tags = testing_var.get("only_tags", self.only_tags)
         self.default = testing_var.get("default", self.default)
         self.binaries = testing_var.get("binaries", self.binaries)
+        self.flash_before = testing_var.get("flash_before", self.flash_before)
         renode = testing.get("renode", {})
         self.uart = renode.get("uart", "")
         self.resc = renode.get("resc", "")
@@ -213,16 +216,18 @@ def generate_platforms(board_roots, soc_roots, arch_roots):
             if board_dir in dir2data:
                 # don't load the same board data twice
                 continue
-            file = board_dir / "twister.yaml"
-            if file.is_file():
-                data = scl.yaml_load_verify(file, Platform.platform_schema)
-            else:
-                data = None
-            dir2data[board_dir] = data
+            data = None
 
-            legacy_files.extend(
-                file for file in board_dir.glob("*.yaml") if file.name != "twister.yaml"
-            )
+            for entry in os.scandir(board_dir):
+                if not entry.is_file():
+                    continue
+
+                if entry.name == "twister.yaml":
+                    data = scl.yaml_load_verify(entry.path, Platform.platform_schema)
+                elif entry.name.endswith(".yaml"):
+                    legacy_files.append(entry.path)
+
+            dir2data[board_dir] = data
 
         for qual in list_boards.board_v2_qualifiers(board):
             if board.revisions:
@@ -295,7 +300,7 @@ def generate_platforms(board_roots, soc_roots, arch_roots):
         board = target2board[target]
         if dir2data[board.dir] is not None:
             # all targets are already loaded for this board
-            logger.error(f"Duplicate platform {target} in {file.parent}")
+            logger.error(f"Duplicate platform {target} in {os.path.dirname(file)}")
             raise Exception(f"Duplicate platform identifier {target} found")
 
         platform = Platform()

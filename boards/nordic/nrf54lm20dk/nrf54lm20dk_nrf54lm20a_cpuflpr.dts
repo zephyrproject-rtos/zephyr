@@ -30,6 +30,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		cpuflpr_code_partition: partition@0 {
 			label = "image-0";

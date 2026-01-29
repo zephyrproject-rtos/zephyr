@@ -7,14 +7,6 @@
 #include <st/f4/stm32f401.dtsi>
 
 / {
-	clocks {
-		plli2s: plli2s {
-			#clock-cells = <0>;
-			compatible = "st,stm32f411-plli2s-clock";
-			status = "disabled";
-		};
-	};
-
 	soc {
 		compatible = "st,stm32f411", "st,stm32f4", "simple-bus";
 
@@ -25,6 +17,7 @@
 			reg = <0x40015000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 20)>;
 			interrupts = <85 5>;
+			st,spi-data-width = "limited-8-16-bit";
 			status = "disabled";
 		};
 

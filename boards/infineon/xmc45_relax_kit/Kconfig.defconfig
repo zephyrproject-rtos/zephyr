@@ -5,15 +5,10 @@
 
 if BOARD_XMC45_RELAX_KIT
 
-if NETWORKING
-
-config NET_L2_ETHERNET
-	default y
-config MDIO
-	default y
-config TEST_RANDOM_GENERATOR
+configdefault NET_L2_ETHERNET
 	default y
 
-endif # NETWORKING
+configdefault TEST_RANDOM_GENERATOR
+	default y if NETWORKING
 
 endif # BOARD_XMC45_RELAX_KIT

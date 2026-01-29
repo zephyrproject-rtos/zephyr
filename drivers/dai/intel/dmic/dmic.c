@@ -162,8 +162,7 @@ static inline void dai_dmic_release_ownership(const struct dai_intel_dmic *dmic)
 
 static inline uint32_t dai_dmic_base(const struct dai_intel_dmic *dmic)
 {
-#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30) ||                      \
-	defined(CONFIG_SOC_INTEL_ACE40)
+#if defined(CONFIG_SOC_ACE20_LNL) || defined(CONFIG_SOC_ACE30) || defined(CONFIG_SOC_ACE40)
 	return dmic->hdamldmic_base;
 #else
 	return dmic->shim_base;
@@ -176,8 +175,7 @@ static inline void dai_dmic_set_sync_period(uint32_t period, const struct dai_in
 	uint32_t val = CONFIG_DAI_DMIC_HW_IOCLK / period - 1;
 	uint32_t base = dai_dmic_base(dmic);
 	/* DMIC Change sync period */
-#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30) ||                      \
-	defined(CONFIG_SOC_INTEL_ACE40)
+#if defined(CONFIG_SOC_ACE20_LNL) || defined(CONFIG_SOC_ACE30) || defined(CONFIG_SOC_ACE40)
 	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | FIELD_PREP(DMICSYNC_SYNCPRD, val),
 		    base + DMICSYNC_OFFSET);
 	sys_write32(sys_read32(base + DMICSYNC_OFFSET) | DMICSYNC_SYNCPU,
@@ -264,8 +262,7 @@ static void dai_dmic_stop_fifo_packers(struct dai_intel_dmic *dmic,
 static inline void dai_dmic_dis_clk_gating(const struct dai_intel_dmic *dmic)
 {
 	/* Disable DMIC clock gating */
-#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30) ||                      \
-	defined(CONFIG_SOC_INTEL_ACE40)
+#if defined(CONFIG_SOC_ACE20_LNL) || defined(CONFIG_SOC_ACE30) || defined(CONFIG_SOC_ACE40)
 	sys_write32((sys_read32(dmic->vshim_base + DMICLVSCTL_OFFSET) | DMICLVSCTL_DCGD),
 		    dmic->vshim_base + DMICLVSCTL_OFFSET);
 #else
@@ -277,8 +274,7 @@ static inline void dai_dmic_dis_clk_gating(const struct dai_intel_dmic *dmic)
 static inline void dai_dmic_en_clk_gating(const struct dai_intel_dmic *dmic)
 {
 	/* Enable DMIC clock gating */
-#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30) ||                      \
-	defined(CONFIG_SOC_INTEL_ACE40)
+#if defined(CONFIG_SOC_ACE20_LNL) || defined(CONFIG_SOC_ACE30) || defined(CONFIG_SOC_ACE40)
 	sys_write32((sys_read32(dmic->vshim_base + DMICLVSCTL_OFFSET) & ~DMICLVSCTL_DCGD),
 		    dmic->vshim_base + DMICLVSCTL_OFFSET);
 #else /* All other CAVS and ACE platforms */
@@ -292,8 +288,7 @@ static inline void dai_dmic_program_channel_map(const struct dai_intel_dmic *dmi
 						const struct dai_config *cfg,
 						uint32_t index)
 {
-#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30) ||                      \
-	defined(CONFIG_SOC_INTEL_ACE40)
+#if defined(CONFIG_SOC_ACE20_LNL) || defined(CONFIG_SOC_ACE30) || defined(CONFIG_SOC_ACE40)
 	uint16_t pcmsycm = cfg->link_config;
 	uint32_t reg_add = dmic->shim_base + DMICXPCMSyCM_OFFSET + 0x0004*index;
 
@@ -302,7 +297,7 @@ static inline void dai_dmic_program_channel_map(const struct dai_intel_dmic *dmi
 	ARG_UNUSED(dmic);
 	ARG_UNUSED(cfg);
 	ARG_UNUSED(index);
-#endif /* CONFIG_SOC_INTEL_ACE20_LNL || CONFIG_SOC_INTEL_ACE30 || CONFIG_SOC_INTEL_ACE40 */
+#endif /* CONFIG_SOC_ACE20_LNL || CONFIG_SOC_ACE30 || CONFIG_SOC_ACE40 */
 }
 
 static inline void dai_dmic_en_power(const struct dai_intel_dmic *dmic)
@@ -312,8 +307,7 @@ static inline void dai_dmic_en_power(const struct dai_intel_dmic *dmic)
 	sys_write32((sys_read32(base + DMICLCTL_OFFSET) | DMICLCTL_SPA),
 			base + DMICLCTL_OFFSET);
 
-#if defined(CONFIG_SOC_INTEL_ACE20_LNL) || defined(CONFIG_SOC_INTEL_ACE30) ||                      \
-	defined(CONFIG_SOC_INTEL_ACE40)
+#if defined(CONFIG_SOC_ACE20_LNL) || defined(CONFIG_SOC_ACE30) || defined(CONFIG_SOC_ACE40)
 	while (!(sys_read32(base + DMICLCTL_OFFSET) & DMICLCTL_CPA)) {
 		k_busy_wait(100);
 	}
@@ -328,7 +322,7 @@ static inline void dai_dmic_dis_power(const struct dai_intel_dmic *dmic)
 		     base + DMICLCTL_OFFSET);
 }
 
-static int dai_dmic_probe(struct dai_intel_dmic *dmic)
+static void dai_dmic_probe(struct dai_intel_dmic *dmic)
 {
 	LOG_INF("dmic_probe()");
 
@@ -346,8 +340,6 @@ static int dai_dmic_probe(struct dai_intel_dmic *dmic)
 
 	/* DMIC Owner Select to DSP */
 	dai_dmic_claim_ownership(dmic);
-
-	return 0;
 }
 
 static int dai_dmic_remove(struct dai_intel_dmic *dmic)
@@ -686,6 +678,25 @@ const struct dai_properties *dai_dmic_get_properties(const struct device *dev,
 	return prop;
 }
 
+static int dai_dmic_get_properties_copy(const struct device *dev,
+				       enum dai_dir dir, int stream_id,
+				       struct dai_properties *prop)
+{
+	const struct dai_properties *kernel_prop = dai_dmic_get_properties(dev, dir, stream_id);
+
+	if (!prop) {
+		return -EINVAL;
+	}
+
+	if (!kernel_prop) {
+		return -ENOENT;
+	}
+
+	memcpy(prop, kernel_prop, sizeof(*kernel_prop));
+
+	return 0;
+}
+
 static int dai_dmic_trigger(const struct device *dev, enum dai_dir dir,
 			    enum dai_trigger_cmd cmd)
 {
@@ -745,7 +756,7 @@ static int dai_dmic_get_config(const struct device *dev, struct dai_config *cfg,
 }
 
 static int dai_dmic_set_config(const struct device *dev,
-		const struct dai_config *cfg, const void *bespoke_cfg)
+		const struct dai_config *cfg, const void *bespoke_cfg, size_t size)
 
 {
 	struct dai_intel_dmic *dmic = (struct dai_intel_dmic *)dev->data;
@@ -793,25 +804,20 @@ out:
 	return ret;
 }
 
-static int dai_dmic_probe_wrapper(const struct device *dev)
+static void dai_dmic_probe_wrapper(const struct device *dev)
 {
 	struct dai_intel_dmic *dmic = (struct dai_intel_dmic *)dev->data;
 	k_spinlock_key_t key;
-	int ret = 0;
 
 	key = k_spin_lock(&dmic->lock);
 
 	if (dmic->sref == 0) {
-		ret = dai_dmic_probe(dmic);
+		dai_dmic_probe(dmic);
 	}
 
-	if (!ret) {
-		dmic->sref++;
-	}
+	dmic->sref++;
 
 	k_spin_unlock(&dmic->lock, key);
-
-	return ret;
 }
 
 static int dai_dmic_remove_wrapper(const struct device *dev)
@@ -857,6 +863,7 @@ DEVICE_API(dai, dai_dmic_ops) = {
 	.config_set		= dai_dmic_set_config,
 	.config_get		= dai_dmic_get_config,
 	.get_properties		= dai_dmic_get_properties,
+	.get_properties_copy	= dai_dmic_get_properties_copy,
 	.trigger		= dai_dmic_trigger,
 	.ts_config		= dai_dmic_timestamp_config,
 	.ts_start		= dai_timestamp_dmic_start,

@@ -21,3 +21,54 @@ properties:
       The reset signal defaults to active low to the
       sensor. The property value should ensure the flags properly
       describe the signal that is presented to the driver.
+
+  auto-wake-time:
+    type: int
+    default: 5
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+    description:
+      Auto-recalibration period during low-power mode in minutes. Range 1–5.
+      The default value is specified in the data sheet.
+
+  scan-th:
+    type: int
+    default: 48
+    description:
+      Low-power scan wake-up threshold. Smaller = more sensitive. Range 1–255.
+      The default value is specified in the data sheet.
+
+  scan-win:
+    type: int
+    default: 3
+    description:
+      Measurement range for low-power scan. Larger = more sensitive but higher consumption.
+      The datasheet is mentiones values from 0 to 3 as valid options with 3 as default.
+      But you can go higher as it is an 8-bit register and higher values than 3 seem to
+      work fine. They improve the sensitivity further at the cost of power consumption.
+
+  scan-freq:
+    type: int
+    default: 7
+    description:
+      Frequency for low-power scan. Smaller = more sensitive. Range 1–255.
+      The default value is specified in the data sheet.
+
+  scan-i-dac:
+    type: int
+    default: 200
+    description:
+      Current for low-power scan. Smaller = more sensitive. Range 1–255.
+      The default value is not specified in the data sheet. Instead, 200 is
+      chosen as a reasonable default based on typical usage.
+
+  auto-sleep-time:
+    type: int
+    default: 2
+    description:
+      Time (in seconds) of inactivity after which the controller automatically
+      enters standby / low-power mode. The default value is specified in the data sheet.

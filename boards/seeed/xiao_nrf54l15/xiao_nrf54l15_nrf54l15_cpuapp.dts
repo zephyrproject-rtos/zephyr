@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2025 Seeed Technology Co., Ltd.
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -44,13 +45,15 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,sram = &cpuapp_sram;
 		zephyr,flash = &cpuapp_rram;
+		zephyr,flash-controller = &rram_controller;
 		zephyr,console = &uart20;
 		zephyr,shell-uart = &uart20;
 		nordic,rpc-uart = &uart20;
+		zephyr,ieee802154 = &ieee802154;
 	};
 
 	aliases {
-		imu0 = &lsm6dso;
+		imu0 = &lsm6ds3tr_c;
 	};
 };
 
@@ -84,12 +87,10 @@
 &i2c30 {
 	status = "okay";
 
-	lsm6dso: lsm6dso@6a {
-		compatible = "st,lsm6dso";
+	lsm6ds3tr_c: lsm6ds3tr-c@6a {
+		compatible = "st,lsm6dsl";
 		reg = <0x6a>;
 		irq-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
-		accel-pm = <LSM6DSO_DT_XL_ULP_MODE>;
-		gyro-pm = <LSM6DSO_DT_GY_NORMAL_MODE>;
 		status = "okay";
 	};
 };
@@ -147,5 +148,31 @@ dmic_dev: &pdm20 {
 	status = "okay";
 };
 
+&hfxo {
+	load-capacitors = "internal";
+	load-capacitance-femtofarad = <16000>;
+	status = "okay";
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&temp {
+	status = "okay";
+};
+
+&radio {
+	status = "okay";
+};
+
+&nfct {
+	status = "okay";
+};
+
+&clock {
+	status = "okay";
+};
+
 /* Include default memory partition configuration file */
-#include <nordic/nrf54l15_partition.dtsi>
+#include <vendor/nordic/nrf54l15_cpuapp_partition.dtsi>

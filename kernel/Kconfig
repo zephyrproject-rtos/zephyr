@@ -570,6 +570,27 @@ config SCHED_THREAD_USAGE_AUTO_ENABLE
 
 endif # THREAD_RUNTIME_STATS
 
+menuconfig THREAD_RUNTIME_STACK_SAFETY
+	bool "Thread runtime stack safety support"
+	default n
+	help
+	  This option enables support for the thread runtime stack safety check routines.
+	  These routines are used to  detect a thread's unused stack space and invoke a
+	  user-defined handler if it was found to have dropped below a configured threshold.
+
+if THREAD_RUNTIME_STACK_SAFETY
+config THREAD_RUNTIME_STACK_SAFETY_DEFAULT_UNUSED_THRESHOLD_PCT
+	int "Runtime Stack Safety unused stack usage percentage threshold"
+	default 0
+	range 0 99
+	help
+	  This option specifies a thread's default runtime stack safety
+	  threshold as a percentage of the stack size. When the runtime stack
+	  safety routines detect that a thread's unused stack percentage has fallen
+	  _below_ this threshold, a user-defined handler is invoked.
+	  Setting this to 0 disables the check by default for all threads.
+endif
+
 endmenu
 
 rsource "Kconfig.obj_core"
@@ -696,6 +717,12 @@ config TIMESLICE_PER_THREAD
 	  a per-thread basis, with an application callback invoked when
 	  a thread reaches the end of its timeslice.
 
+config TIMER_OBSERVER
+	bool "Support extension points for k_timer lifecycle"
+	help
+	  Adds iterable‑section support for observing k_timer events.
+	  Supports extending timer behavior without kernel changes.
+
 endmenu
 
 menu "Other Kernel Object Options"
@@ -734,6 +761,7 @@ config NUM_MBOX_ASYNC_MSGS
 
 config EVENTS
 	bool "Event objects"
+	depends on MULTITHREADING
 	help
 	  This option enables event objects. Threads may wait on event
 	  objects for specific events, but both threads and ISRs may deliver
@@ -1136,6 +1164,19 @@ config BOOTARGS_ARGS_BUFFER_SIZE
 endif # BOOTARGS
 
 endmenu
+
+config KERNEL_NO_LTO
+	bool
+	depends on LTO
+	depends on XIP
+	help
+	  Some SoCs require kernel code to be placed in RAM, which makes link-time
+	  optimization (LTO) unsuitable for these files (-fno-lto). Disabling LTO
+	  allows the affected code to be linked as separate objects and placed in
+	  specific memory regions.
+
+	  Running kernel code from RAM can improve execution performance, especially
+	  for timing-critical routines or context switch paths.
 
 rsource "Kconfig.device"
 rsource "Kconfig.vm"

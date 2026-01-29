@@ -153,6 +153,9 @@ A secure socket can be created by specifying secure protocol type, for instance:
 
    sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TLS_1_2);
 
+The protocol version specified when creating the secure socket indicates the
+minimum TLS version used for the TLS session.
+
 Once created, it can be configured with socket options. For instance, the
 CA certificate and hostname can be set:
 

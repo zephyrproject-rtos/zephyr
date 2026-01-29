@@ -19,7 +19,8 @@
 			compatible = "renode,virt", "riscv";
 			device_type = "cpu";
 			reg = <0>;
-			riscv,isa = "rv32imac_zicsr_zifencei";
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "c", "zicsr", "zifencei";
 
 			hlic: interrupt-controller {
 				compatible = "riscv,cpu-intc";

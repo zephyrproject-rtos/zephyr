@@ -71,6 +71,47 @@
 /* Used to remove brackets from around a single argument. */
 #define __DEBRACKET(...) __VA_ARGS__
 
+/* Used by COND_CASE_1(); supports up to 16 flag/value pairs */
+#define Z_COND_CASE_1(...) \
+	Z_COND_CASE_1_CAT_N(NUM_VA_ARGS_LESS_1(__VA_ARGS__), __VA_ARGS__)
+
+#define Z_COND_CASE_1_CAT_N(count_minus_one, ...) \
+	UTIL_CAT(Z_COND_CASE_1_N_, count_minus_one)(__VA_ARGS__)
+
+#define Z_COND_CASE_1_N_0(_default) __DEBRACKET _default
+#define Z_COND_CASE_1_N_2(flag0, value0, _default) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (__DEBRACKET _default))
+#define Z_COND_CASE_1_N_4(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_2(__VA_ARGS__)))
+#define Z_COND_CASE_1_N_6(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_4(__VA_ARGS__)))
+#define Z_COND_CASE_1_N_8(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_6(__VA_ARGS__)))
+#define Z_COND_CASE_1_N_10(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_8(__VA_ARGS__)))
+#define Z_COND_CASE_1_N_12(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_10(__VA_ARGS__)))
+#define Z_COND_CASE_1_N_14(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_12(__VA_ARGS__)))
+#define Z_COND_CASE_1_N_16(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_14(__VA_ARGS__)))
+#define Z_COND_CASE_1_N_18(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_16(__VA_ARGS__)))
+#define Z_COND_CASE_1_N_20(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_18(__VA_ARGS__)))
+#define Z_COND_CASE_1_N_22(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_20(__VA_ARGS__)))
+#define Z_COND_CASE_1_N_24(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_22(__VA_ARGS__)))
+#define Z_COND_CASE_1_N_26(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_24(__VA_ARGS__)))
+#define Z_COND_CASE_1_N_28(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_26(__VA_ARGS__)))
+#define Z_COND_CASE_1_N_30(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_28(__VA_ARGS__)))
+#define Z_COND_CASE_1_N_32(flag0, value0, ...) \
+	Z_COND_CODE_1(flag0, (__DEBRACKET value0), (Z_COND_CASE_1_N_30(__VA_ARGS__)))
+
 /* Used by IS_EMPTY() */
 /* reference: https://gustedt.wordpress.com/2010/06/08/detect-empty-macro-arguments/ */
 #define Z_HAS_COMMA(...) \

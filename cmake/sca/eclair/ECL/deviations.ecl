@@ -329,7 +329,7 @@ safe."
 -doc_end
 
 -doc_begin="Switch statements having a controlling expression of enum type deliberately do not have a default case: gcc -Wall enables -Wswitch which warns (and breaks the build as we use -Werror) if one of the enum labels is missing from the switch."
--config=MC3A2.R16.4,reports+={deliberate,'any_area(kind(context)&&^.* has no `default.*$&&stmt(node(switch_stmt)&&child(cond,skip(__non_syntactic_paren_stmts,type(canonical(enum_underlying_type(any())))))))'}
+-config=MC3A2.R16.4,reports+={deliberate,"any_area(kind(context)&&^.* has no `default.*$&&stmt(node(switch_stmt)&&child(cond,skip(__non_syntactic_paren_stmts,ref(enum_underlying_type(any()))))))"}
 -doc_end
 
 -doc_begin="A switch statement with a single switch clause and no default label may be used in place of an equivalent if statement if it is considered to improve readability."
@@ -382,10 +382,10 @@ in assignments; (5) as initializers, possibly designated, in initalizer lists;
 -config=MC3A2.R20.7,expansion_context=
 {safe, "context(__call_expr_arg_contexts)"},
 {safe, "left_right(^[(,\\[]$,^[),\\]]$)"},
-{safe, "context(skip_to(__expr_non_syntactic_contexts, stmt_child(node(array_subscript_expr), subscript)))"},
-{safe, "context(skip_to(__expr_non_syntactic_contexts, stmt_child(operator(assign), lhs)))"},
-{safe, "context(skip_to(__expr_non_syntactic_contexts, stmt_child(node(init_list_expr||designated_init_expr), init)))"},
-{safe, "context(skip_to(__expr_non_syntactic_contexts, stmt_child(node(case_stmt), lower||upper)))"}
+{safe, "context(skip(parent(__expr_non_syntactic_contexts), is(subscript)&&parent(node(array_subscript_expr))))"},
+{safe, "context(skip(parent(__expr_non_syntactic_contexts), is(lhs)&&parent(stmt(operator(assign)))))"},
+{safe, "context(skip(parent(__expr_non_syntactic_contexts), is(init)&&parent(node(init_list_expr||designated_init_expr))))"},
+{safe, "context(skip(parent(__expr_non_syntactic_contexts), is(lower||upper)&&parent(node(case_stmt))))"}
 -doc_end
 
 -doc_begin="Violations involving the __config_enabled macros cannot be fixed without

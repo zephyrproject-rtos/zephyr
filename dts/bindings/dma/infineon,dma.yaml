@@ -1,0 +1,34 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: Infineon CAT1 DMA
+
+description: |
+  DMA for Infineon CAT1 devices
+
+compatible: "infineon,dma"
+
+include: [dma-controller.yaml, "infineon,system-interrupts.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    description: Required for non-cat1c devices
+
+  system-interrupts:
+    description: Required for cat1c devices
+
+  "#dma-cells":
+    const: 1
+
+  enable-chaining:
+    type: boolean
+    description: |
+      This property can be used to enable descriptor chaining
+
+dma-cells:
+  - channel

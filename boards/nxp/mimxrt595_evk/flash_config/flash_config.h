@@ -88,7 +88,7 @@ enum {
 	FLEXSPI_MISC_OFFSET_SAFE_CONFIG_FREQ_ENABLE = 4,
 	/* Bit for Pad setting override enable */
 	FLEXSPI_MISC_OFFSET_PAD_SETTING_OVERRIDE_ENABLE = 5,
-	/* Bit for DDR clock confiuration indication. */
+	/* Bit for DDR clock configuration indication. */
 	FLEXSPI_MISC_OFFSET_DDR_MODE_ENABLE = 6,
 	/* Bit for DLLCR settings under all modes */
 	FLEXSPI_MISC_OFFSET_USE_VALID_TIME_FOR_ALL_FREQ = 7,

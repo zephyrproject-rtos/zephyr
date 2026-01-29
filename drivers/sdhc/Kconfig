@@ -8,21 +8,23 @@ menuconfig SDHC
 
 if SDHC
 
-source "drivers/sdhc/Kconfig.ifx_cat1"
+# zephyr-keep-sorted-start
+source "drivers/sdhc/Kconfig.ambiq"
+source "drivers/sdhc/Kconfig.esp32"
 source "drivers/sdhc/Kconfig.imx"
-source "drivers/sdhc/Kconfig.spi"
+source "drivers/sdhc/Kconfig.infineon"
+source "drivers/sdhc/Kconfig.intel"
+source "drivers/sdhc/Kconfig.max32"
 source "drivers/sdhc/Kconfig.mcux_sdif"
 source "drivers/sdhc/Kconfig.rcar"
+source "drivers/sdhc/Kconfig.renesas_ra"
 source "drivers/sdhc/Kconfig.sam_hsmci"
 source "drivers/sdhc/Kconfig.sam_sdmmc"
-source "drivers/sdhc/Kconfig.intel"
 source "drivers/sdhc/Kconfig.sdhc_cdns"
-source "drivers/sdhc/Kconfig.esp32"
-source "drivers/sdhc/Kconfig.renesas_ra"
-source "drivers/sdhc/Kconfig.max32"
-source "drivers/sdhc/Kconfig.ambiq"
-source "drivers/sdhc/Kconfig.xlnx"
+source "drivers/sdhc/Kconfig.spi"
 source "drivers/sdhc/Kconfig.stm32"
+source "drivers/sdhc/Kconfig.xlnx"
+# zephyr-keep-sorted-stop
 
 config SDHC_INIT_PRIORITY
 	int "SDHC driver init priority"
@@ -38,6 +40,18 @@ config SDHC_BUFFER_ALIGNMENT
 	  in order to DMA to work correctly. Devices should change default of
 	  this value if they require alignment. This represents the alignment
 	  of buffers required in bytes
+
+config SDHC_SCATTER_GATHER_TRANSFER
+	bool "Scatter-Gather API"
+	depends on SDHC_SUPPORTS_SCATTER_GATHER_TRANSFER
+	help
+	  Enable SDHC scatter-gather API.
+
+config SDHC_SUPPORTS_SCATTER_GATHER_TRANSFER
+	bool
+	help
+	  Selected by host controller driver if scatter-gather transfer support
+	  is present.
 
 config SDHC_SUPPORTS_UHS
 	bool

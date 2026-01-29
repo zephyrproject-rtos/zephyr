@@ -7,29 +7,24 @@
 
 if BOARD_STM32H7S78_DK
 
-if NETWORKING
-
-config NET_L2_ETHERNET
+configdefault NET_L2_ETHERNET
 	default y
 
-endif # NETWORKING
-
-if DISPLAY
+if DISPLAY || VIDEO
 # MEMC needs to be enabled in order to store
-# display frame buffer to external PSRAM
+# display frame buffer and video buffer pool to external PSRAM
 config MEMC
 	default y
 
-# Rely on Multi-Heap / Shared-Multi-Heap for PSRAM access
-config MULTI_HEAP
-	default y
-config SHARED_MULTI_HEAP
+if VIDEO
+# Place video buffer pool into the PSRAM
+config VIDEO_BUFFER_POOL_ZEPHYR_REGION
 	default y
 
-# Let LTDC use memory allocated via SMH
-config STM32_LTDC_FB_USE_SHARED_MULTI_HEAP
-	default y
-endif # DISPLAY
+config VIDEO_BUFFER_POOL_ZEPHYR_REGION_NAME
+	default "PSRAM"
+endif # VIDEO
+endif # DISPLAY || VIDEO
 
 if INPUT
 

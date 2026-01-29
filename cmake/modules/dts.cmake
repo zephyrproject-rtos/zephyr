@@ -127,6 +127,9 @@ set(DTS_KCONFIG                 ${KCONFIG_BINARY_DIR}/Kconfig.dts)
 # modules.
 set(VENDOR_PREFIXES             dts/bindings/vendor-prefixes.txt)
 
+# Fetch variable from sysbuild which might be forcing a configuration (for variant build images)
+zephyr_get(DTS_SOURCE SYSBUILD LOCAL)
+
 if(NOT DEFINED DTS_SOURCE)
   zephyr_build_string(board_string SHORT shortened_board_string
                       BOARD ${BOARD} BOARD_QUALIFIERS ${BOARD_QUALIFIERS}
@@ -258,6 +261,9 @@ zephyr_dt_preprocess(
   WORKING_DIRECTORY ${APPLICATION_SOURCE_DIR}
   )
 
+# Fetch variable from sysbuild which might be forcing a configuration (for variant build images)
+zephyr_get(DTS_DEPS SYSBUILD LOCAL)
+
 #
 # Make sure we re-run CMake if any devicetree sources or transitive
 # includes change.
@@ -366,20 +372,20 @@ if(DTC)
 
 set(DTC_WARN_UNIT_ADDR_IF_ENABLED "")
 check_dtc_flag("-Wunique_unit_address_if_enabled" check)
-if (check)
+if(check)
   set(DTC_WARN_UNIT_ADDR_IF_ENABLED "-Wunique_unit_address_if_enabled")
 endif()
 
 set(DTC_NO_WARN_UNIT_ADDR "")
 check_dtc_flag("-Wno-unique_unit_address" check)
-if (check)
+if(check)
   set(DTC_NO_WARN_UNIT_ADDR "-Wno-unique_unit_address")
 endif()
 
 set(VALID_EXTRA_DTC_FLAGS "")
 foreach(extra_opt ${EXTRA_DTC_FLAGS})
   check_dtc_flag(${extra_opt} check)
-  if (check)
+  if(check)
     list(APPEND VALID_EXTRA_DTC_FLAGS ${extra_opt})
   endif()
 endforeach()

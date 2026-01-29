@@ -7,39 +7,6 @@ description: |
   The PMIC has three buck converters, one buck-boost converter and four LDOs.
   All need to be defined as children nodes, strictly following the BUCK1, BUCK2,
   BUCK3, BUCKBOOST, LDO1, LDO2, LDO3 and LDO4 node names.
-  For example:
-
-  pmic@61 {
-    reg = <0x61>;
-    ...
-    regulators {
-      compatible = "nxp,pca9422-regulator";
-      BUCK1 {
-        /* all properties for BUCK1 */
-      };
-      BUCK2 {
-        /* all properties for BUCK2 */
-      };
-      BUCK3 {
-        /* all properties for BUCK2 */
-      };
-      BUCKBOOST {
-        /* all properties for BUCKBOOST */
-      };
-      LDO1 {
-        /* all properties for LDO1 */
-      };
-      LDO2 {
-        /* all properties for LDO2 */
-      };
-      LDO3 {
-        /* all properties for LDO3 */
-      };
-      LDO4 {
-        /* all properties for LDO4 */
-      };
-    };
-  }
 
 compatible: "nxp,pca9422-regulator"
 
@@ -124,3 +91,37 @@ child-binding:
       description: |
         The voltage level to be configured for standby and dpstandby modes,
         in microvolts.
+
+examples:
+  - |
+    pmic@61 {
+      reg = <0x61>;
+      /* ... */
+      regulators {
+        compatible = "nxp,pca9422-regulator";
+        BUCK1 {
+          /* all properties for BUCK1 */
+        };
+        BUCK2 {
+          /* all properties for BUCK2 */
+        };
+        BUCK3 {
+          /* all properties for BUCK2 */
+        };
+        BUCKBOOST {
+          /* all properties for BUCKBOOST */
+        };
+        LDO1 {
+          /* all properties for LDO1 */
+        };
+        LDO2 {
+          /* all properties for LDO2 */
+        };
+        LDO3 {
+          /* all properties for LDO3 */
+        };
+        LDO4 {
+          /* all properties for LDO4 */
+        };
+      };
+    }

@@ -9,14 +9,6 @@ description: |
   streaming functionality, make sure to include adxl372.h and
   use the macros defined there for fifo-mode properties.
 
-  Example:
-  #include <zephyr/dt-bindings/sensor/adxl372.h>
-
-  adxl372: adxl372@0 {
-    ...
-    fifo-mode = <ADXL372_FIFO_MODE_STREAMED>;
-  };
-
 properties:
   odr:
     type: int
@@ -97,3 +89,12 @@ properties:
     description: |
       Specify the FIFO watermark level in frame count.
       Valid range: 0 - 512
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/adxl372.h>
+
+    adxl372: adxl372@0 {
+      /* ... */
+      fifo-mode = <ADXL372_FIFO_MODE_STREAMED>;
+    };

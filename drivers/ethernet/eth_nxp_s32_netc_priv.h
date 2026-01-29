@@ -121,7 +121,6 @@ struct nxp_s32_eth_config {
 struct nxp_s32_eth_data {
 	struct net_if *iface;
 	uint8_t mac_addr[6];
-	struct k_mutex tx_mutex;
 	struct k_sem rx_sem;
 	struct k_thread rx_thread;
 

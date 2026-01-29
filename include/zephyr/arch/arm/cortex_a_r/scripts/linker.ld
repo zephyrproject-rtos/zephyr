@@ -97,10 +97,7 @@ ENTRY(CONFIG_KERNEL_ENTRY)
 SECTIONS
 {
 #include <zephyr/linker/rel-sections.ld>
-
-#ifdef CONFIG_LLEXT
 #include <zephyr/linker/llext-sections.ld>
-#endif
 
     /*
      * .plt and .iplt are here according to 'arm-zephyr-elf-ld --verbose',
@@ -168,6 +165,12 @@ SECTIONS
         . = ALIGN(_region_min_align);
     } GROUP_LINK_IN(ROMABLE_REGION)
 
+    SECTION_PROLOGUE(rodata_start,,)
+    {
+        . = ALIGN(_region_min_align);
+        __rodata_region_start = .;
+    } GROUP_LINK_IN(ROMABLE_REGION)
+
 #if defined (CONFIG_CPP)
     SECTION_PROLOGUE(.ARM.extab,,)
     {
@@ -191,12 +194,6 @@ SECTIONS
         *(.ARM.exidx* gnu.linkonce.armexidx.*)
 #endif
         __exidx_end = .;
-    } GROUP_LINK_IN(ROMABLE_REGION)
-
-    SECTION_PROLOGUE(rodata_start,,)
-    {
-        . = ALIGN(_region_min_align);
-        __rodata_region_start = .;
     } GROUP_LINK_IN(ROMABLE_REGION)
 
 #include <zephyr/linker/common-rom.ld>

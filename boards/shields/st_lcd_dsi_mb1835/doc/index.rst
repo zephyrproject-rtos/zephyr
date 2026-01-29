@@ -116,6 +116,19 @@ Set ``--shield "st_lcd_dsi_mb1835"`` when you invoke ``west build``. For example
    :shield: st_lcd_dsi_mb1835
    :goals: build
 
+You can test both the display and the capacitive touch using the
+:zephyr:code-sample:`draw_touch_events` sample:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/input/draw_touch_events
+   :board: stm32u5g9j_dk1
+   :shield: st_lcd_dsi_mb1835
+   :goals: build
+
+This sample renders a cross that follows your finger and is a quick way to
+verify that the panel, LTDC, and touch controller are wired and configured
+correctly on STM32U5G9J-DK1 with this shield.
+
 References
 **********
 

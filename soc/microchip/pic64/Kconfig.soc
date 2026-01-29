@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Microchip Technology Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_MICROCHIP_PIC64
+	bool
+
+config SOC_FAMILY
+	default "microchip_pic64" if SOC_FAMILY_MICROCHIP_PIC64
+
+rsource "*/Kconfig.soc"

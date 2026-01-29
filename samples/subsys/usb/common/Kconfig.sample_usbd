@@ -21,11 +21,20 @@ config SAMPLE_USBD_PRODUCT
 	help
 	  USB device sample product stringa.
 
+config SAMPLE_USBD_VID
+	hex "USB device sample Vendor ID"
+	default 0x2fe3
+	help
+	  USB device sample Vendor ID. The default id (0x2fe3) is associated to
+	  Zephyr Project, you must use your own VID for samples and applications
+	  outside of Zephyr Project.
+
 config SAMPLE_USBD_PID
 	hex "USB device sample Product ID"
 	default 0x0001
 	help
-	  USB device sample Product ID.
+	  USB device sample Product ID. You must use your own PID for samples
+	  and applications outside of Zephyr Project.
 
 config SAMPLE_USBD_SELF_POWERED
 	bool "USB device sample Self-powered attribute"

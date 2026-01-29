@@ -4,6 +4,14 @@
  */
 
 &pinctrl {
+	sci1_default: sci1_default {
+		group1 {
+			/* tx rx */
+			psels = <RA_PSEL(RA_PSEL_SCI_1, 1, 15)>,
+				<RA_PSEL(RA_PSEL_SCI_1, 6, 8)>;
+		};
+	};
+
 	sci5_default: sci5_default {
 		group1 {
 			/* tx rx */

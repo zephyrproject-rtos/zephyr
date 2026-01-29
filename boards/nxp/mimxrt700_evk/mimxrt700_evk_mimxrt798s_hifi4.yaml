@@ -5,7 +5,7 @@
 #
 
 identifier: mimxrt700_evk/mimxrt798s/hifi4
-name: NXP MIMXRT700-EVK HiFi4
+name: NXP MIMXRT700-EVK (HiFi4)
 type: mcu
 arch: xtensa
 toolchain:

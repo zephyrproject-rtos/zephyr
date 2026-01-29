@@ -1,0 +1,9 @@
+family:
+  - name: realtek_ameba
+    series:
+      - name: amebad
+        socs:
+          - name: rtl872xd
+      - name: amebadplus
+        socs:
+          - name: rtl8721dx

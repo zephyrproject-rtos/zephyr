@@ -16,7 +16,7 @@ Supported Boards
 - esp32c3_devkitm
 - esp32c6_devkitc/esp32c6/hpcore
 - esp32s2_saola
-- esp32s3_devkitm/esp32s3/procpu
+- esp32s3_devkitc/esp32s3/procpu
 
 Building and Running
 ********************

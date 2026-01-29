@@ -95,8 +95,8 @@ static void init(struct mpsc_pbuf_buffer *buffer, uint32_t wlen, bool overwrite)
 	mpsc_buf_cfg.size = wlen;
 	mpsc_pbuf_init(buffer, &mpsc_buf_cfg);
 
-#if CONFIG_SOC_SERIES_NRF52X
-	CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+#if CONFIG_SOC_SERIES_NRF52
+	DCB->DEMCR |= DCB_DEMCR_TRCENA_Msk;
 	DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 	DWT->CYCCNT = 0;
 #endif
@@ -104,7 +104,7 @@ static void init(struct mpsc_pbuf_buffer *buffer, uint32_t wlen, bool overwrite)
 
 static inline uint32_t get_cyc(void)
 {
-#if CONFIG_SOC_SERIES_NRF52X
+#if CONFIG_SOC_SERIES_NRF52
 	return DWT->CYCCNT;
 #else
 	return k_cycle_get_32();
@@ -1034,6 +1034,140 @@ void start_threads(struct mpsc_pbuf_buffer *buffer)
 	}
 }
 
+static uint32_t buf32_1[128];
+struct test_msg_data {
+	union mpsc_pbuf_generic hdr;
+	uint32_t buf_len; /*contain buf_len and buf*/
+	uint8_t buf[sizeof(buf32_1)];
+};
+struct test_msg_hnd {
+	struct mpsc_pbuf_buffer mpsc_buffer;
+	uint32_t product_max_cnt;
+	uint32_t product_cnt;
+	uint32_t consumer_cnt;
+};
+
+K_THREAD_STACK_DEFINE(t3_stack, 1024);
+static struct k_thread threads_t3;
+static k_tid_t tid3;
+
+static uint32_t test_mpsc_get_used_len(const union mpsc_pbuf_generic *packet)
+{
+	uint32_t size = 0;
+	struct test_msg_data *msg_data = NULL;
+
+	msg_data =  CONTAINER_OF(packet, struct test_msg_data, hdr);
+	size = msg_data->buf_len + sizeof(union mpsc_pbuf_generic);
+	size = ROUND_UP(size, sizeof(uint32_t)); /*return number  of uint32_t */
+	size = size / sizeof(uint32_t);
+	return size;
+}
+
+static void t_data_consumer_entry(void *p0, void *p1, void *p2)
+{
+	uint32_t read_cnt = 0;
+	bool wait = true;
+	const union mpsc_pbuf_generic *msg = NULL;
+	const struct test_msg_data *test_data = NULL;
+	struct test_msg_hnd *test_hnd = (struct test_msg_hnd *)p0;
+
+	while (1) {
+		if (msg == NULL) {
+			msg = mpsc_pbuf_claim(&test_hnd->mpsc_buffer);
+		}
+		test_data = (const struct test_msg_data *)msg;
+		if (test_data == NULL) {
+			continue;
+		}
+		if (test_data && test_hnd->mpsc_buffer.wr_idx == 0) {
+			wait = false;
+		}
+		if (wait == true) {
+			continue;
+		}
+		read_cnt++;
+		mpsc_pbuf_free(&test_hnd->mpsc_buffer, msg);
+		msg = NULL;
+		if (read_cnt == test_hnd->product_max_cnt) {
+			break;
+		}
+
+	}
+	test_hnd->consumer_cnt = read_cnt;
+}
+
+/* test mpsc_pbuf_alloc can get sem_take
+ * one thread product data, one thread consumer data
+ * requirement:
+ *      consumer slow process data
+ * step:
+ *  1:product data len is  0.75 of cfg.size
+ *  2:run product times
+ *
+ */
+ZTEST(log_buffer, test_sema_lock)
+{
+	struct test_msg_hnd  test_hnd = {};
+	struct test_msg_data  test_data;
+	struct test_msg_data  *item = NULL;
+	struct mpsc_pbuf_buffer_config  cfg;
+	uint32_t loop = 0;
+	size_t wlen = 0;
+	bool fist_wait = true;
+
+	if (CONFIG_SYS_CLOCK_TICKS_PER_SEC < 10000) {
+		ztest_test_skip();
+	}
+
+	cfg.buf = buf32_1;
+	cfg.size = ARRAY_SIZE(buf32_1);
+	cfg.get_wlen = test_mpsc_get_used_len;
+
+	mpsc_pbuf_init(&test_hnd.mpsc_buffer, &cfg);
+	test_hnd.product_max_cnt = 2;
+
+	tid3 = k_thread_create(&threads_t3, t3_stack, 1024,
+			t_data_consumer_entry,
+			&test_hnd, NULL, NULL,
+			10, 0, K_NO_WAIT);
+	k_thread_name_set(&threads_t3, "test_mpsc_consumer");
+	for (loop = 0; loop < test_hnd.product_max_cnt; loop++) {
+		if (loop == 0) {
+			test_data.buf_len = sizeof(buf32_1) / 2;
+		} else {
+			test_data.buf_len = sizeof(buf32_1) / 2 + sizeof(buf32_1) / 4;
+		}
+		test_data.buf_len = ROUND_UP(test_data.buf_len, sizeof(uint32_t));
+		memset(test_data.buf, loop + 1, test_data.buf_len);
+
+		wlen = test_data.buf_len + sizeof(test_data.buf_len) +
+			 sizeof(test_data.hdr);
+		wlen = ROUND_UP(wlen, sizeof(uint32_t));
+		wlen = wlen / sizeof(uint32_t);
+
+		if (fist_wait &&
+		   test_data.buf_len == sizeof(buf32_1) / 2 + sizeof(buf32_1) / 4) {
+			PRINT(" mpsc sema wait\n");
+		}
+		item = (struct test_msg_data *)mpsc_pbuf_alloc(&test_hnd.mpsc_buffer,
+								wlen, K_FOREVER);
+		item->hdr.raw = 0;
+		memcpy(item->buf, test_data.buf, test_data.buf_len);
+		item->buf_len = test_data.buf_len + sizeof(test_data.buf_len);
+		mpsc_pbuf_commit(&test_hnd.mpsc_buffer, &item->hdr);
+		if (fist_wait &&
+		    test_data.buf_len == sizeof(buf32_1) / 2 + sizeof(buf32_1) / 4) {
+			PRINT(" mpsc sema wake\n");
+			fist_wait = false;
+		}
+		test_hnd.product_cnt++;
+	}
+	k_thread_join(tid3, K_FOREVER);
+	zassert_equal(test_hnd.product_cnt,
+		      test_hnd.consumer_cnt, "product %d consume %d",
+		      test_hnd.product_cnt, test_hnd.consumer_cnt);
+
+}
 /* Test creates two threads which pends on the buffer until there is a space
  * available. When enough buffers is released threads are woken up and they
  * allocate packets.

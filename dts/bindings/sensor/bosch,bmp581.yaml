@@ -5,19 +5,6 @@ description: |
     When setting the sensor DTS properties, make sure to include
     bmp581.h and use the macros defined there.
 
-    Example:
-    #include <zephyr/dt-bindings/sensor/bmp581.h>
-
-    bmp581@46 {
-        ...
-        odr = <BMP581_DT_ODR_50_HZ>;
-        press-osr = <BMP581_DT_OVERSAMPLING_8X>;
-        temp-osr = <BMP581_DT_OVERSAMPLING_4X>;
-        press-iir = <BMP581_DT_IIR_FILTER_COEFF_7>;
-        temp-iir = <BMP581_DT_IIR_FILTER_COEFF_3>;
-        power-mode = <BMP581_DT_MODE_NORMAL>;
-    };
-
 compatible: "bosch,bmp581"
 
 include: [sensor-device.yaml, i2c-device.yaml]
@@ -153,3 +140,17 @@ properties:
       Specify the FIFO watermark level in frame count.
       Only supports frames with both Pressure and Temperature
       Valid range: 1 - 15
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/bmp581.h>
+
+    bmp581@46 {
+        /* ... */
+        odr = <BMP581_DT_ODR_50_HZ>;
+        press-osr = <BMP581_DT_OVERSAMPLING_8X>;
+        temp-osr = <BMP581_DT_OVERSAMPLING_4X>;
+        press-iir = <BMP581_DT_IIR_FILTER_COEFF_7>;
+        temp-iir = <BMP581_DT_IIR_FILTER_COEFF_3>;
+        power-mode = <BMP581_DT_MODE_NORMAL>;
+    };

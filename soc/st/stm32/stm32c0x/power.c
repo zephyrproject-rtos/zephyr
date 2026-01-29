@@ -8,9 +8,8 @@
 #include <clock_control/clock_stm32_ll_common.h>
 #include <soc.h>
 
-#include <stm32c0xx_ll_cortex.h>
-#include <stm32c0xx_ll_pwr.h>
-#include <stm32c0xx.h>
+#include <stm32_ll_cortex.h>
+#include <stm32_ll_pwr.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>

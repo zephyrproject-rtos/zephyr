@@ -10,15 +10,13 @@ zephyr_library_sources(init.c)
 if(CONFIG_NXP_IMXRT_BOOT_HEADER)
   if(NOT DEFINED CONFIG_BOARD_MIMXRT1010_EVK)
     message(WARNING "It appears you are using the board definition for "
-     "the MIMXRT1010-EVK, but targeting a custom board. You may need to "
-     "update your flash configuration data blocks")
+      "the MIMXRT1010-EVK, but targeting a custom board. You may need to "
+      "update your flash configuration data blocks")
   endif()
   if(CONFIG_BOOT_FLEXSPI_NOR)
     # This flash configuration block may need modification if another
     # flash chip is used on your custom board. See NXP AN12238 for more
     # information.
-    zephyr_compile_definitions(XIP_BOOT_HEADER_ENABLE=1)
-    zephyr_compile_definitions(BOARD_FLASH_SIZE=CONFIG_FLASH_SIZE*1024)
     zephyr_library_sources(xip/evkmimxrt1010_flexspi_nor_config.c)
     zephyr_library_include_directories(xip)
   endif()

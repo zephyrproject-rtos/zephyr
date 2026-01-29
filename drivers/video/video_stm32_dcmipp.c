@@ -30,8 +30,10 @@
 #define HAL_DCMIPP_PARALLEL_SetConfig HAL_DCMIPP_SetParallelConfig
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_dcmipp)
+#if defined(DCMIPP_SERIAL_MODE)
 #define STM32_DCMIPP_HAS_CSI
+#endif
+#if defined(DCMIPP_PIPE1) && defined(DCMIPP_PIPE2)
 #define STM32_DCMIPP_HAS_PIXEL_PIPES
 #endif
 
@@ -328,13 +330,36 @@ static int stm32_dcmipp_conf_parallel(const struct device *dev,
 	HAL_StatusTypeDef hal_ret;
 
 	parallel_cfg.Format           = input_fmt->dcmipp_format;
-	parallel_cfg.SwapCycles       = DCMIPP_SWAPCYCLES_DISABLE;
+	/*
+	 * On parallel interface, the DCMIPP expects data in RGB565_BE, aka
+	 *		D7 D6 D5 D4 D3 D2 D1 D0
+	 *
+	 * cycle 1:	R4 R3 R2 R1 R0 G5 G4 G3
+	 * cycle 2:	G2 G1 G0 B4 B3 B2 B1 B0
+	 *
+	 * Use swapped cycle mode for RGB565 which correspond to the commonly
+	 * used RGB565 LE, aka
+	 *
+	 *		D7 D6 D5 D4 D3 D2 D1 D0
+	 *
+	 * cycle 1:	G2 G1 G0 B4 B3 B2 B1 B0
+	 * cycle 2:	R4 R3 R2 R1 R0 G5 G4 G3
+	 */
+	if (input_fmt->pixelformat == VIDEO_PIX_FMT_RGB565) {
+		parallel_cfg.SwapCycles = DCMIPP_SWAPCYCLES_ENABLE;
+	} else {
+		parallel_cfg.SwapCycles = DCMIPP_SWAPCYCLES_DISABLE;
+	}
 	parallel_cfg.VSPolarity       = config->parallel.vs_polarity;
 	parallel_cfg.HSPolarity       = config->parallel.hs_polarity;
 	parallel_cfg.PCKPolarity      = config->parallel.pck_polarity;
 	parallel_cfg.ExtendedDataMode = DCMIPP_INTERFACE_8BITS;
 	parallel_cfg.SynchroMode      = DCMIPP_SYNCHRO_HARDWARE;
 
+	/* There may be the case when HAL_DCMIPP_PARALLEL_SetConfig called second time
+	 * so reset state so it doesn't fail
+	 */
+	dcmipp->hdcmipp.State = HAL_DCMIPP_STATE_INIT;
 	hal_ret = HAL_DCMIPP_PARALLEL_SetConfig(&dcmipp->hdcmipp, &parallel_cfg);
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("Failed to configure DCMIPP Parallel interface");
@@ -1147,6 +1172,17 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 		if (ret < 0) {
 			goto out;
 		}
+
+		/* Limit the amount of hardware handshake interrupts received by slave IP */
+		if (pipe->id == DCMIPP_PIPE1) {
+			stm32_reg_modify_bits(&dcmipp->hdcmipp.Instance->P1PPCR,
+					      DCMIPP_P1PPCR_LINEMULT_Msk,
+					      DCMIPP_MULTILINE_128_LINES);
+		} else {
+			stm32_reg_modify_bits(&dcmipp->hdcmipp.Instance->P2PPCR,
+					      DCMIPP_P1PPCR_LINEMULT_Msk,
+					      DCMIPP_MULTILINE_128_LINES);
+		}
 	}
 #endif
 
@@ -1208,6 +1244,7 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 	struct stm32_dcmipp_pipe_data *pipe = dev->data;
 	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
 	const struct stm32_dcmipp_config *config = dev->config;
+	struct video_buffer *vbuf;
 	int ret;
 
 	k_mutex_lock(&pipe->lock, K_FOREVER);
@@ -1266,6 +1303,12 @@ static int stm32_dcmipp_stream_disable(const struct device *dev)
 	}
 	if (pipe->active != NULL) {
 		k_fifo_put(&pipe->fifo_in, pipe->active);
+	}
+
+	/* Forward all buffers in fifo_in to fifo_out */
+	while ((vbuf = k_fifo_get(&pipe->fifo_in, K_NO_WAIT)) != NULL) {
+		vbuf->bytesused = 0;
+		k_fifo_put(&pipe->fifo_out, vbuf);
 	}
 
 	pipe->state = STM32_DCMIPP_STOPPED;
@@ -1344,18 +1387,6 @@ static int stm32_dcmipp_dequeue(const struct device *dev, struct video_buffer **
 #define DCMIPP_CEIL_DIV(val, div)								\
 		(((val) + (div) - 1) / (div))
 
-#define DCMIPP_VIDEO_FORMAT_CAP(format, pixmul)	{						\
-	.pixelformat = VIDEO_PIX_FMT_##format,							\
-	.width_min = DCMIPP_CEIL_DIV_ROUND_UP_MUL(CONFIG_VIDEO_STM32_DCMIPP_SENSOR_WIDTH,	\
-						  STM32_DCMIPP_MAX_PIPE_SCALE_FACTOR,		\
-						  pixmul),					\
-	.width_max = CONFIG_VIDEO_STM32_DCMIPP_SENSOR_WIDTH / (pixmul) * (pixmul),		\
-	.height_min = DCMIPP_CEIL_DIV(CONFIG_VIDEO_STM32_DCMIPP_SENSOR_HEIGHT,			\
-				      STM32_DCMIPP_MAX_PIPE_SCALE_FACTOR),			\
-	.height_max = CONFIG_VIDEO_STM32_DCMIPP_SENSOR_HEIGHT,					\
-	.width_step = pixmul, .height_step = 1,							\
-}
-
 static const struct video_format_cap stm32_dcmipp_dump_fmt[] = {
 	{
 		.pixelformat = VIDEO_FOURCC_FROM_STR(CONFIG_VIDEO_STM32_DCMIPP_SENSOR_PIXEL_FORMAT),
@@ -1367,6 +1398,19 @@ static const struct video_format_cap stm32_dcmipp_dump_fmt[] = {
 	},
 	{0},
 };
+
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
+#define DCMIPP_VIDEO_FORMAT_CAP(format, pixmul)	{						\
+	.pixelformat = VIDEO_PIX_FMT_##format,							\
+	.width_min = DCMIPP_CEIL_DIV_ROUND_UP_MUL(CONFIG_VIDEO_STM32_DCMIPP_SENSOR_WIDTH,	\
+						  STM32_DCMIPP_MAX_PIPE_SCALE_FACTOR,		\
+						  pixmul),					\
+	.width_max = CONFIG_VIDEO_STM32_DCMIPP_SENSOR_WIDTH / (pixmul) * (pixmul),		\
+	.height_min = DCMIPP_CEIL_DIV(CONFIG_VIDEO_STM32_DCMIPP_SENSOR_HEIGHT,			\
+				      STM32_DCMIPP_MAX_PIPE_SCALE_FACTOR),			\
+	.height_max = CONFIG_VIDEO_STM32_DCMIPP_SENSOR_HEIGHT,					\
+	.width_step = pixmul, .height_step = 1,							\
+}
 
 static const struct video_format_cap stm32_dcmipp_main_fmts[] = {
 	DCMIPP_VIDEO_FORMAT_CAP(RGB565, 8),
@@ -1401,6 +1445,7 @@ static const struct video_format_cap stm32_dcmipp_aux_fmts[] = {
 	DCMIPP_VIDEO_FORMAT_CAP(BGRA32, 4),
 	{0},
 };
+#endif
 
 static int stm32_dcmipp_get_caps(const struct device *dev, struct video_caps *caps)
 {
@@ -1410,12 +1455,14 @@ static int stm32_dcmipp_get_caps(const struct device *dev, struct video_caps *ca
 	case DCMIPP_PIPE0:
 		caps->format_caps = stm32_dcmipp_dump_fmt;
 		break;
+#if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 	case DCMIPP_PIPE1:
 		caps->format_caps = stm32_dcmipp_main_fmts;
 		break;
 	case DCMIPP_PIPE2:
 		caps->format_caps = stm32_dcmipp_aux_fmts;
 		break;
+#endif
 	default:
 		CODE_UNREACHABLE;
 	}
@@ -1671,10 +1718,6 @@ static int stm32_dcmipp_init(const struct device *dev)
 
 	int err;
 
-#if defined(CONFIG_SOC_SERIES_STM32N6X)
-	RIMC_MasterConfig_t rimc = {0};
-#endif
-
 	dcmipp->enabled_pipe = 0;
 
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
@@ -1712,14 +1755,6 @@ static int stm32_dcmipp_init(const struct device *dev)
 
 	/* Run IRQ init */
 	cfg->irq_config(dev);
-
-#if defined(CONFIG_SOC_SERIES_STM32N6X)
-	rimc.MasterCID = RIF_CID_1;
-	rimc.SecPriv = RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV;
-	HAL_RIF_RIMC_ConfigMasterAttributes(RIF_MASTER_INDEX_DCMIPP, &rimc);
-	HAL_RIF_RISC_SetSlaveSecureAttributes(RIF_RISC_PERIPH_INDEX_DCMIPP,
-					      RIF_ATTRIBUTE_SEC | RIF_ATTRIBUTE_PRIV);
-#endif
 
 	/* Initialize DCMI peripheral */
 	err = HAL_DCMIPP_Init(&dcmipp->hdcmipp);
@@ -1811,9 +1846,7 @@ static void stm32_dcmipp_isr(const struct device *dev)
 
 #if defined(STM32_DCMIPP_HAS_CSI)
 #define STM32_DCMIPP_CSI_DT_PARAMS(inst)							\
-		.csi_pclken =									\
-			{.bus = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(inst), csi, bus),		\
-			 .enr = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(inst), csi, bits)},		\
+		.csi_pclken = STM32_DT_INST_CLOCK_INFO_BY_NAME(inst, csi),			\
 		.reset_csi = RESET_DT_SPEC_INST_GET_BY_IDX(inst, 1),				\
 		.csi.nb_lanes = DT_PROP_LEN(DT_INST_ENDPOINT_BY_ID(inst, 0, 0), data_lanes),	\
 		.csi.lanes[0] = DT_PROP_BY_IDX(DT_INST_ENDPOINT_BY_ID(inst, 0, 0),		\
@@ -1859,12 +1892,8 @@ static void stm32_dcmipp_isr(const struct device *dev)
 	PINCTRL_DT_INST_DEFINE(inst);								\
 												\
 	static const struct stm32_dcmipp_config stm32_dcmipp_config_##inst = {			\
-		.dcmipp_pclken =								\
-			{.bus = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(inst), dcmipp, bus),		\
-			 .enr = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(inst), dcmipp, bits)},	\
-		.dcmipp_pclken_ker =								\
-			{.bus = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(inst), dcmipp_ker, bus),	\
-			 .enr = DT_CLOCKS_CELL_BY_NAME(DT_DRV_INST(inst), dcmipp_ker, bits)},	\
+		.dcmipp_pclken = STM32_DT_INST_CLOCK_INFO_BY_NAME(inst, dcmipp),		\
+		.dcmipp_pclken_ker = STM32_DT_INST_CLOCK_INFO_BY_NAME(inst, dcmipp_ker),	\
 		.irq_config = stm32_dcmipp_irq_config_##inst,					\
 		.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),					\
 		.source_dev = SOURCE_DEV(inst),							\

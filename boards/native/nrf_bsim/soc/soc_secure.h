@@ -12,7 +12,7 @@
 
 
 #include <stdint.h>
-#include <nrf.h>
+#include <nrfx.h>
 #include <hal/nrf_ficr.h>
 
 static inline void soc_secure_read_deviceid(uint32_t deviceid[2])

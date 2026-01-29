@@ -10,7 +10,8 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/interrupt-controller/esp-esp32c6-intmux.h>
 #include <zephyr/dt-bindings/clock/esp32c6_clock.h>
-#include <dt-bindings/pinctrl/esp32c6-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp32c6-pinctrl.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-riscv.h>
 
 / {
 	#address-cells = <1>;
@@ -33,8 +34,9 @@
 
 		cpu0: cpu@0 {
 			device_type = "cpu";
-			compatible = "espressif,riscv";
-			riscv,isa = "rv32imac_zicsr";
+			compatible = "espressif,riscv", "riscv";
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "c", "zicsr", "zifencei";
 			reg = <0>;
 			cpu-power-states = <&light_sleep &deep_sleep>;
 			clock-source = <ESP32_CPU_CLK_SRC_PLL>;
@@ -66,6 +68,7 @@
 
 	esp32_bt_hci: esp32_bt_hci {
 		compatible = "espressif,esp32-bt-hci";
+		bt-hci-vs-ext;
 		status = "disabled";
 	};
 
@@ -92,6 +95,17 @@
 		#size-cells = <1>;
 		compatible = "simple-bus";
 		ranges;
+
+		/*
+		 * ESP32-C6 ROM region containing libc functions.
+		 * PMP protection for this region is configured via
+		 * PMP_SOC_REGION_DEFINE in pmp_regions.c
+		 */
+		soc_rom: memory@40000000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x40000000 DT_SIZE_K(320)>;
+			zephyr,memory-region = "SOC_ROM";
+		};
 
 		sramhp: memory@40800000 {
 			compatible = "zephyr,memory-region", "mmio-sram";

@@ -29,16 +29,20 @@ struct lvgl_common_input_data {
 int lvgl_input_register_driver(lv_indev_type_t indev_type, const struct device *dev);
 int lvgl_init_input_devices(void);
 
-#define LVGL_INPUT_EVENT_MSGQ(inst, type) lvgl_input_msgq_##type##_##inst
-#define LVGL_INPUT_DEVICE(inst)           DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, input))
+#define LVGL_INPUT_EVENT_MSGQ(identifier, type) lvgl_input_msgq_##type##_##identifier
+#define LVGL_INPUT_DEVICE(inst)                 DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, input))
 
 #define LVGL_COORD_VALID(coord) IN_RANGE(coord, LV_COORD_MIN, LV_COORD_MAX)
 #define LVGL_KEY_VALID(key)     IN_RANGE(key, 0, UINT8_MAX)
 
-#define LVGL_INPUT_DEFINE(inst, type, msgq_size, process_evt_cb)                                   \
-	INPUT_CALLBACK_DEFINE_NAMED(LVGL_INPUT_DEVICE(inst), process_evt_cb,                       \
-				    (void *)DEVICE_DT_INST_GET(inst), process_evt_cb_##inst);      \
-	K_MSGQ_DEFINE(lvgl_input_msgq_##type##_##inst, sizeof(lv_indev_data_t), msgq_size, 4)
+#define LVGL_INPUT_DEFINE(input_device, lvgl_device, identifier, type, msgq_size, process_evt_cb)  \
+	INPUT_CALLBACK_DEFINE_NAMED(input_device, process_evt_cb, (void *)lvgl_device,             \
+				    process_evt_cb_##identifier);                                  \
+	K_MSGQ_DEFINE(lvgl_input_msgq_##type##_##identifier, sizeof(lv_indev_data_t), msgq_size, 4)
+
+#define LVGL_INPUT_INST_DEFINE(inst, type, msgq_size, process_evt_cb)                              \
+	LVGL_INPUT_DEFINE(LVGL_INPUT_DEVICE(inst), DEVICE_DT_INST_GET(inst), inst, type,           \
+			  msgq_size, process_evt_cb)
 
 #ifdef __cplusplus
 }

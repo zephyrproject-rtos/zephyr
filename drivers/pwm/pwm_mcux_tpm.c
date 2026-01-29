@@ -1,6 +1,6 @@
 /*
  * Copyright 2019 Henrik Brix Andersen <henrik@brixandersen.dk>
- * Copyright 2020, 2024-2025 NXP
+ * Copyright 2020, 2024-2026 NXP
  *
  * Heavily based on pwm_mcux_ftm.c, which is:
  * Copyright (c) 2017, NXP
@@ -72,6 +72,7 @@ struct mcux_tpm_capture_data {
 	bool first_chan_captured;
 	bool pulse_capture;
 	bool continuous_capture;
+	bool capture_active;
 };
 #endif /* CONFIG_PWM_CAPTURE */
 
@@ -95,7 +96,6 @@ static int mcux_tpm_set_cycles(const struct device *dev, uint32_t channel,
 	TPM_Type *base = TPM_TYPE_BASE(dev, base);
 #ifdef CONFIG_PWM_CAPTURE
 	uint32_t pair = TPM_WHICH_PAIR(channel);
-	uint32_t irqs;
 #endif /* CONFIG_PWM_CAPTURE */
 
 	if (channel >= config->channel_count) {
@@ -113,15 +113,14 @@ static int mcux_tpm_set_cycles(const struct device *dev, uint32_t channel,
 	}
 
 #ifdef CONFIG_PWM_CAPTURE
-	irqs = TPM_GetEnabledInterrupts(base);
-	if (irqs & BIT(TPM_PAIR_SECOND_CH(pair))) {
-		LOG_ERR("Cannot set PWM, capture in progress on pair %d", pair);
+	if (data->capture[pair].capture_active) {
+		LOG_ERR("Capture already active on channel pair %d", pair);
 		return -EBUSY;
 	}
 #endif /* CONFIG_PWM_CAPTURE */
 
 	LOG_DBG("pulse_cycles=%d, period_cycles=%d, flags=%d", pulse_cycles, period_cycles, flags);
-
+	/* Set up PWM mode if not already configured */
 	if (period_cycles != data->period_cycles) {
 		uint32_t pwm_freq;
 		status_t status;
@@ -151,9 +150,9 @@ static int mcux_tpm_set_cycles(const struct device *dev, uint32_t channel,
 
 		/* Set counter back to zero */
 		base->CNT = 0;
-
-		status = TPM_SetupPwm(base, data->channel,
-				      config->channel_count, config->mode,
+		/* Only set up PWM for specific channel */
+		status = TPM_SetupPwm(base, &data->channel[channel],
+				      1U, config->mode,
 				      pwm_freq, data->clock_freq);
 
 		if (status != kStatus_Success) {
@@ -161,6 +160,10 @@ static int mcux_tpm_set_cycles(const struct device *dev, uint32_t channel,
 			return -ENOTSUP;
 		}
 		TPM_StartTimer(base, config->tpm_clock_source);
+	} else {
+		/* Enable channel in PWM mode with existing configuration */
+		TPM_EnableChannel(base, channel, kTPM_ChnlMSBMask | (base->CONTROLS[channel].CnSC &
+			(TPM_CnSC_ELSA_MASK | TPM_CnSC_ELSB_MASK)));
 	}
 
 	if ((flags & PWM_POLARITY_INVERTED) == 0 &&
@@ -173,10 +176,19 @@ static int mcux_tpm_set_cycles(const struct device *dev, uint32_t channel,
 		TPM_UpdateChnlEdgeLevelSelect(base, channel, kTPM_LowTrue);
 	}
 
+	if (config->mode == kTPM_CenterAlignedPwm) {
+		pulse_cycles /= 2U;
+		period_cycles /= 2U;
+	}
+
 	if (pulse_cycles == period_cycles) {
 		pulse_cycles = period_cycles + 1U;
 	}
 
+	/* Assign the value directly to avoid re-calculating period_cycles based on
+	 * pwm_freq in TPM_SetupPwm, which could lead to precision loss.
+	 */
+	base->MOD = period_cycles;
 	base->CONTROLS[channel].CnV = pulse_cycles;
 
 	return 0;
@@ -188,10 +200,15 @@ static int mcux_tpm_configure_capture(const struct device *dev,
 				      pwm_capture_callback_handler_t cb,
 				      void *user_data)
 {
-	TPM_Type *base = TPM_TYPE_BASE(dev, base);
+	const struct mcux_tpm_config *config = dev->config;
 	struct mcux_tpm_data *data = dev->data;
 	tpm_dual_edge_capture_param_t *param;
 	uint32_t pair = TPM_WHICH_PAIR(channel);
+
+	if (config->mode != kTPM_EdgeAlignedPwm) {
+		LOG_ERR("PWM capture only supported in edge aligned mode");
+		return -ENOTSUP;
+	}
 
 	if ((channel & 0x1U) == 0x1U) {
 		LOG_ERR("PWM capture only supported on even channels");
@@ -203,7 +220,7 @@ static int mcux_tpm_configure_capture(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if ((TPM_GetEnabledInterrupts(base) & BIT(TPM_PAIR_SECOND_CH(pair))) != 0) {
+	if (data->capture[pair].capture_active) {
 		LOG_ERR("Capture already active on channel pair %d", pair);
 		return -EBUSY;
 	}
@@ -255,9 +272,15 @@ static int mcux_tpm_configure_capture(const struct device *dev,
 
 static int mcux_tpm_enable_capture(const struct device *dev, uint32_t channel)
 {
+	const struct mcux_tpm_config *config = dev->config;
 	TPM_Type *base = TPM_TYPE_BASE(dev, base);
 	struct mcux_tpm_data *data = dev->data;
 	uint32_t pair = TPM_WHICH_PAIR(channel);
+
+	if (config->mode != kTPM_EdgeAlignedPwm) {
+		LOG_ERR("PWM capture only supported in edge aligned mode");
+		return -ENOTSUP;
+	}
 
 	if ((channel & 0x1U) == 0x1U) {
 		LOG_ERR("PWM capture only supported on even channels");
@@ -274,10 +297,12 @@ static int mcux_tpm_enable_capture(const struct device *dev, uint32_t channel)
 		return -EINVAL;
 	}
 
-	if ((TPM_GetEnabledInterrupts(base) & BIT(TPM_PAIR_SECOND_CH(pair))) != 0) {
+	if (data->capture[pair].capture_active) {
 		LOG_ERR("Capture already active on channel pair %d", pair);
 		return -EBUSY;
 	}
+
+	data->capture[pair].capture_active = true;
 
 	TPM_ClearStatusFlags(base, BIT(TPM_PAIR_FIRST_CH(pair)) |
 			     BIT(TPM_PAIR_SECOND_CH(pair)));
@@ -306,6 +331,8 @@ static int mcux_tpm_disable_capture(const struct device *dev, uint32_t channel)
 		LOG_ERR("Invalid channel pair %d", pair);
 		return -EINVAL;
 	}
+
+	data->capture[pair].capture_active = false;
 
 	TPM_DisableInterrupts(base, BIT(TPM_PAIR_FIRST_CH(pair)) |
 			      BIT(TPM_PAIR_SECOND_CH(pair)));
@@ -515,6 +542,16 @@ static int mcux_tpm_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	err = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
+	if (err != 0) {
+		/* Check if error is due to lack of support */
+		if (err != -ENOSYS) {
+			/* Real error occurred */
+			LOG_ERR("Failed to configure clock: %d", err);
+			return err;
+		}
+	}
+
 #if defined(CONFIG_SOC_MIMX9596)
 	/* IMX9596 AON and WAKEUP clocks aren't controllable */
 	if (config->clock_subsys != (clock_control_subsys_t)IMX95_CLK_BUSWAKEUP &&
@@ -561,6 +598,7 @@ static int mcux_tpm_init(const struct device *dev)
 
 #ifdef CONFIG_PWM_CAPTURE
 	config->irq_config_func(dev);
+	memset(data->capture, 0, sizeof(data->capture));
 	TPM_EnableInterrupts(base, kTPM_TimeOverflowInterruptEnable);
 	data->period_cycles = 0xFFFFU;
 	TPM_SetTimerPeriod(base, data->period_cycles);
@@ -617,7 +655,7 @@ static void mcux_tpm_config_func_##n(const struct device *dev) \
 		.prescale = TO_TPM_PRESCALE_DIVIDE(DT_INST_PROP(n, prescaler)), \
 		.channel_count = FSL_FEATURE_TPM_CHANNEL_COUNTn((TPM_Type *) \
 			DT_INST_REG_ADDR(n)), \
-		.mode = kTPM_EdgeAlignedPwm, \
+		.mode = DT_INST_PROP_OR(n, pwm_mode, 0),	\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n), \
 		CAPTURE_INIT \
 	}

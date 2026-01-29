@@ -9,11 +9,11 @@ menuconfig ETH_STM32_HAL
 	default y
 	depends on DT_HAS_ST_STM32_ETHERNET_ENABLED
 	select USE_STM32_HAL_ETH
-	select USE_STM32_HAL_RIF if SOC_SERIES_STM32N6X
 	select NOCACHE_MEMORY if (SOC_SERIES_STM32H7X && CPU_CORTEX_M7) || SOC_SERIES_STM32N6X
 	select HWINFO
 	select ETH_DSA_SUPPORT_DEPRECATED
 	select PINCTRL
+	imply NVMEM if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_ETHERNET),nvmem-cells)
 	imply CRC
 	help
 	  Enable STM32 HAL based Ethernet driver. It is available for
@@ -31,6 +31,7 @@ config ETH_STM32_HAL_API_V2
 		   || SOC_SERIES_STM32H5X \
 		   || SOC_SERIES_STM32H7X \
 		   || SOC_SERIES_STM32H7RSX \
+		   || SOC_SERIES_STM32MP13X \
 		   || SOC_SERIES_STM32N6X
 	select USE_STM32_HAL_ETH_EX if SOC_SERIES_STM32N6X
 	help

@@ -334,6 +334,12 @@ static int sdhc_stm32_rw_extended(const struct device *dev, struct sdhc_command 
 	}
 
 	if (!IS_ENABLED(CONFIG_SDHC_STM32_POLLING_SUPPORT)) {
+		/* Only wait on semaphore if HAL function succeeded */
+		if (res != HAL_OK) {
+			k_free(dev_data->sdio_dma_buf);
+			return -EIO;
+		}
+
 		/* Wait for whole transfer to complete */
 		if (k_sem_take(&dev_data->device_sync_sem, K_MSEC(CONFIG_SD_CMD_TIMEOUT)) != 0) {
 			k_free(dev_data->sdio_dma_buf);
@@ -545,7 +551,7 @@ static void sdhc_stm32_init_props(const struct device *dev)
 	props->host_caps.vol_330_support = true;
 	props->host_caps.vol_180_support = sdhc_config->support_1_8_v;
 	props->host_caps.bus_8_bit_support = (sdhc_config->bus_width == SDHC_BUS_WIDTH8BIT);
-	props->host_caps.bus_4_bit_support = (sdhc_config->bus_width == SDHC_BUS_WIDTH4BIT);
+	props->bus_4_bit_support = (sdhc_config->bus_width == SDHC_BUS_WIDTH4BIT);
 }
 
 static int sdhc_stm32_get_host_props(const struct device *dev, struct sdhc_host_props *props)

@@ -4,6 +4,7 @@
 config SOC_MIMX9596_M7
 	select ARM
 	select CPU_CORTEX_M7
+	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU
 	select CPU_HAS_FPU_DOUBLE_PRECISION
 	select CPU_HAS_ICACHE

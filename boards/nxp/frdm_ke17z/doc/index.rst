@@ -39,7 +39,7 @@ Supported Features
 System Clock
 ============
 
-The KE17Z SoC is configured to run at 48 MHz using the FIRC.
+The KE17Z SoC is configured to run at 72 MHz using the LPFLL.
 
 Serial Port
 ===========

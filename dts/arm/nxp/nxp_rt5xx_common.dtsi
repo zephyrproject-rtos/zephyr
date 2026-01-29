@@ -386,6 +386,12 @@
 		status = "disabled";
 	};
 
+	usbphy: usbphy@13b000 {
+		compatible = "nxp,usbphy";
+		reg = <0x13b000 0x1000>;
+		status = "disabled";
+	};
+
 	hs_lspi: spi@126000 {
 		compatible = "nxp,lpc-spi";
 		reg = <0x126000 0x1000>;
@@ -494,6 +500,7 @@
 		compatible = "nxp,os-timer";
 		reg = <0x113000 0x1000>;
 		interrupts = <41 0>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(0, 27)>;
 		status = "disabled";
 	};
 

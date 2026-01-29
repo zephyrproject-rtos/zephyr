@@ -12,9 +12,9 @@ if(CONFIG_BOARD_MIMXRT1170_EVK_MIMXRT1176_CM4 OR
    CONFIG_BOARD_LPCXPRESSO55S69_LPC55S69_CPU1 OR
    CONFIG_BOARD_MIMXRT1180_EVK_MIMXRT1189_CM7 OR
    CONFIG_BOARD_EK_RA8P1_R7KA8P1KFLCAC_CM33)
-  message(STATUS "${BOARD}${BOARD_QUALIFIERS} compile as remote in this sample")
+  message(STATUS "${BOARD}/${BOARD_QUALIFIERS} compile as remote in this sample")
 else()
-  message(FATAL_ERROR "${BOARD}${BOARD_QUALIFIERS} is not supported for this sample")
+  message(FATAL_ERROR "${BOARD}/${BOARD_QUALIFIERS} is not supported for this sample")
 endif()
 
 project(mbox_data_ipc_remote)

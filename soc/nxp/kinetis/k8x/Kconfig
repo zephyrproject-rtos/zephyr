@@ -12,10 +12,8 @@ config SOC_SERIES_KINETIS_K8X
 	select CPU_HAS_FPU
 	select CLOCK_CONTROL
 	select HAS_MCUX
-	select HAS_MCUX_SIM
 	select HAS_OSC
 	select HAS_MCG
-	select HAS_MCUX_RCM
 	select HAS_MCUX_CACHE
 	select SOC_RESET_HOOK
 	select SOC_EARLY_INIT_HOOK

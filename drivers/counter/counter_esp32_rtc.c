@@ -59,7 +59,7 @@ static int counter_esp32_init(const struct device *dev)
 			       &data->clk_src_freq);
 
 	flags = ESP_PRIO_TO_FLAGS(cfg->irq_priority) | ESP_INT_FLAGS_CHECK(cfg->irq_flags) |
-			     ESP_INTR_FLAG_SHARED;
+		ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_IRAM;
 
 	ret = esp_intr_alloc(cfg->irq_source, flags,
 			     (intr_handler_t)counter_esp32_isr, (void *)dev, NULL);
@@ -279,7 +279,9 @@ static DEVICE_API(counter, rtc_timer_esp32_api) = {
 	.start = counter_esp32_start,
 	.stop = counter_esp32_stop,
 	.get_value = counter_esp32_get_value,
+#ifdef CONFIG_COUNTER_64BITS_TICKS
 	.get_value_64 = counter_esp32_get_value_64,
+#endif /* CONFIG_COUNTER_64BITS_TICKS */
 	.set_alarm = counter_esp32_set_alarm,
 	.cancel_alarm = counter_esp32_cancel_alarm,
 	.set_top_value = counter_esp32_set_top_value,
@@ -288,7 +290,7 @@ static DEVICE_API(counter, rtc_timer_esp32_api) = {
 	.get_freq = counter_esp32_get_freq,
 };
 
-static void counter_esp32_isr(void *arg)
+static void IRAM_ATTR counter_esp32_isr(void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	struct counter_esp32_data *data = dev->data;

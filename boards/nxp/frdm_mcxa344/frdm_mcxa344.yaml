@@ -5,7 +5,7 @@
 #
 
 identifier: frdm_mcxa344
-name: NXP FRDM MCXA344
+name: NXP FRDM-MCXA344
 type: mcu
 arch: arm
 ram: 48
@@ -14,8 +14,13 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - adc
   - arduino_gpio
+  - counter
   - flash
   - gpio
+  - i2c
+  - spi
   - uart
+  - watchdog
 vendor: nxp

@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FAMILY_RENESAS_RA
+	select SOC_RESET_HOOK
+	select SOC_EARLY_INIT_HOOK
+	select SOC_LATE_INIT_HOOK
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 
 if SOC_FAMILY_RENESAS_RA
@@ -26,8 +29,7 @@ rsource "*/Kconfig"
 
 config SOC_RA_ENABLE_START_SECOND_CORE
 	bool "Allows the primary core to start the secondary core"
-	depends on (SOC_SERIES_RA8P1 && CPU_CORTEX_M85)
-	select SOC_LATE_INIT_HOOK
+	depends on ((RENESAS_PN_NUMBER_OF_CORES = 2) && CPU_CORTEX_M85)
 	help
 	  Indicates the second core will be start in the soc_late_init_hook when enabled
 
@@ -35,14 +37,6 @@ config SOC_RA_SECOND_CORE_BUILD
 	bool "Indicates the image is built for the secondary core"
 	help
 	  Indicates the image is built for the secondary core when enabled
-
-config SOC_RA_SKIP_CLOCK_INIT
-	bool "Skip clock frequency configuration in system initialization"
-	depends on SOC_RA_SECOND_CORE_BUILD
-	default y
-	help
-	  With this option, the CPU clock frequency is not set during system
-	  initialization.
 
 config RENESAS_RA_BATTERY_BACKUP_MANUAL_CONFIGURE
 	bool "VBAT switching manual"

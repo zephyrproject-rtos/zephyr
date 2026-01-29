@@ -6,11 +6,11 @@ WAVESHARE DSI LCD Panel
 Overview
 ********
 
-The WAVESHARE DSI LCD Panel Shield is a universal driver shield.
+The WAVESHARE DSI LCD Panel is a universal driver shield.
 The shield can be used to drive various DSI LCD panel.
 
 More information about the shield can be found
--at the `WAVESHARE DSI LCD Panel website`_.
+-at the `WAVESHARE DSI LCD Shield website`_.
 
 Current supported displays
 ==========================
@@ -49,5 +49,5 @@ References
 
 .. target-notes::
 
-.. _WAVESHARE DSI LCD Panel website:
+.. _WAVESHARE DSI LCD Shield website:
    https://www.waveshare.com/product/displays/lcd-oled/7inch-dsi-lcd-c.htm

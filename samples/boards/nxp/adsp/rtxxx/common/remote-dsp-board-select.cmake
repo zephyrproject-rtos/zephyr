@@ -1,7 +1,7 @@
 # Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-set(TARGET "${BOARD}${BOARD_QUALIFIERS}")
+set(TARGET "${BOARD}/${BOARD_QUALIFIERS}")
 
 if(${TARGET} STREQUAL "mimxrt685_evk/mimxrt685s/cm33")
   set(REMOTE_BOARD "mimxrt685_evk/mimxrt685s/hifi4")

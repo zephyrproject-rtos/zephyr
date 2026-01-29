@@ -38,6 +38,7 @@
 		zephyr,shell-uart = &lpuart0;
 		zephyr,uart-mcumgr = &lpuart0;
 		zephyr,canbus = &flexcan0;
+		zephyr,cortex-m-idle-timer = &lptmr0;
 	};
 
 	leds {
@@ -226,12 +227,6 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 &lpadc0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpadc0>;
-	pinctrl-names = "default";
-};
-
-&lpcmp0 {
-	status = "okay";
-	pinctrl-0 = <&pinmux_lpcmp0>;
 	pinctrl-names = "default";
 };
 

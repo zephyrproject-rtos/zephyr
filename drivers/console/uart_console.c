@@ -440,19 +440,10 @@ static void uart_console_isr(const struct device *unused, void *user_data)
 	static uint8_t last_char = '\0';
 
 	while (uart_irq_update(uart_console_dev) > 0 &&
-	       uart_irq_is_pending(uart_console_dev) > 0) {
+	       uart_irq_rx_ready(uart_console_dev) > 0) {
 		static struct console_input *cmd;
 		uint8_t byte;
 		int rx;
-
-		rx = uart_irq_rx_ready(uart_console_dev);
-		if (rx < 0) {
-			return;
-		}
-
-		if (rx == 0) {
-			continue;
-		}
 
 		/* Character(s) have been received */
 
@@ -557,8 +548,8 @@ static void console_input_init(void)
 	uart_irq_callback_set(uart_console_dev, uart_console_isr);
 
 	/* Drain the fifo */
-	while (uart_irq_rx_ready(uart_console_dev) > 0) {
-		uart_fifo_read(uart_console_dev, &c, 1);
+	while (uart_poll_in(uart_console_dev, &c) == 0) {
+		/* do nothing */
 	}
 
 	uart_irq_rx_enable(uart_console_dev);

@@ -19,13 +19,11 @@
 
 #define SAMPLE_DT_SPEC_AND_COMMA(node_id, prop, idx) ADC_DT_SPEC_GET_BY_IDX(node_id, idx),
 
-#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
 /* Data of ADC io-channels specified in devicetree. */
 static const struct adc_dt_spec adc_channels[] = {
 	DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_channels, SAMPLE_DT_SPEC_AND_COMMA)
 };
 static const int adc_channels_count = ARRAY_SIZE(adc_channels);
-#endif
 
 static void init_adc(void)
 {

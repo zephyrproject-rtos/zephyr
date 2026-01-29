@@ -6,7 +6,7 @@
  */
 
 #include "lorawan_services.h"
-#include "../lw_priv.h"
+#include <lw_priv.h>
 
 #include <LoRaMac.h>
 #include <zephyr/lorawan/lorawan.h>

@@ -14,9 +14,10 @@
 
 		cpu0: cpu@0 {
 			device_type = "cpu";
-			compatible = "wch,qingke-v4f";
+			compatible = "wch,qingke-v4f", "riscv";
 			reg = <0>;
-			riscv,isa = "rv32imacf_zicsr_zifencei";
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "c", "f", "zicsr", "zifencei";
 		};
 	};
 

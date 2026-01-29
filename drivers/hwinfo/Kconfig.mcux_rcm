@@ -4,7 +4,7 @@
 config HWINFO_MCUX_RCM
 	bool "NXP kinetis reset cause"
 	default y
-	depends on HAS_MCUX_RCM
+	depends on DT_HAS_NXP_RCM_HWINFO_ENABLED
 	select HWINFO_HAS_DRIVER
 	help
 	  Enable NXP kinetis mcux RCM hwinfo driver.

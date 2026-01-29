@@ -21,6 +21,10 @@ LOG_MODULE_REGISTER(wwdt_numaker, CONFIG_WDT_LOG_LEVEL);
 #define NUMAKER_COUNTER_MAX   0x3eU
 #define NUMAKER_COUNTER_MIN   0x01U
 
+#if defined(CLK_CLKSEL1_WWDT0SEL_LIRC)
+#define CLK_CLKSEL1_WWDTSEL_LIRC CLK_CLKSEL1_WWDT0SEL_LIRC
+#endif
+
 /* Device config */
 struct wwdt_numaker_config {
 	/* wdt base address */
@@ -151,15 +155,9 @@ static int wwdt_numaker_install_timeout(const struct device *dev,
 static int wwdt_numaker_disable(const struct device *dev)
 {
 	struct wwdt_numaker_data *data = dev->data;
-	const struct wwdt_numaker_config *cfg = dev->config;
-	WWDT_T *wwdt_base = cfg->wwdt_base;
 
+	/* watchdog counting cannot be stopped once started */
 	LOG_DBG("");
-	/* stop counting */
-	wwdt_base->CTL &= ~WWDT_CTL_WWDTEN_Msk;
-
-	/* disable interrupt enable bit */
-	wwdt_base->CTL &= ~WWDT_CTL_INTEN_Msk;
 
 	/* disable interrupt */
 	irq_disable(DT_INST_IRQN(0));

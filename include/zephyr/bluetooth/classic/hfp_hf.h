@@ -275,7 +275,7 @@ struct bt_hfp_hf_cb {
 	 *  @param number Notified phone number.
 	 *  @param type Specify the format of the phone number.
 	 */
-	void (*clip)(struct bt_hfp_hf_call *call, char *number, uint8_t type);
+	void (*clip)(struct bt_hfp_hf_call *call, const char *number, uint8_t type);
 	/** HF microphone gain notification callback to application
 	 *
 	 *  If this callback is provided it will be called whenever there
@@ -326,7 +326,7 @@ struct bt_hfp_hf_cb {
 	 *                  representing the name of the network
 	 *                  operator.
 	 */
-	void (*operator)(struct bt_hfp_hf *hf, uint8_t mode, uint8_t format, char *operator);
+	void (*operator)(struct bt_hfp_hf *hf, uint8_t mode, uint8_t format, const char *operator);
 	/** Codec negotiate callback
 	 *
 	 *  If this callback is provided it will be called whenever the
@@ -375,7 +375,7 @@ struct bt_hfp_hf_cb {
 	 *  @param number Notified phone number.
 	 *  @param type Specify the format of the phone number.
 	 */
-	void (*call_waiting)(struct bt_hfp_hf_call *call, char *number, uint8_t type);
+	void (*call_waiting)(struct bt_hfp_hf_call *call, const char *number, uint8_t type);
 	/** Voice recognition activation/deactivation callback
 	 *
 	 *  If this callback is provided it will be called whenever the
@@ -443,7 +443,7 @@ struct bt_hfp_hf_cb {
 	 *  @param text Value of `<string>`.
 	 */
 	void (*textual_representation)(struct bt_hfp_hf *hf, char *id, uint8_t type,
-				       uint8_t operation, char *text);
+				       uint8_t operation, const char *text);
 	/** Request phone number callback
 	 *
 	 *  If this callback is provided it will be called whenever the
@@ -705,7 +705,7 @@ int bt_hfp_hf_query_respond_hold_status(struct bt_hfp_hf *hf);
  *
  *  Initiate outgoing voice calls by providing the destination phone
  *  number to the AG.
- *  Send the ATDdd…dd command to start phone number call.
+ *  Send the ATDdd...dd; command to start phone number call.
  *  The result of the command will be notified through the callback
  *  `dialing`.
  *
@@ -720,7 +720,7 @@ int bt_hfp_hf_number_call(struct bt_hfp_hf *hf, const char *number);
  *
  *  Initiate outgoing voice calls using the memory dialing feature
  *  of the AG.
- *  Send the ATD>Nan... command to start memory dialing.
+ *  Send the ATD>nnn...; command to start memory dialing.
  *  The result of the command will be notified through the callback
  *  `dialing`.
  *
@@ -747,9 +747,8 @@ int bt_hfp_hf_redial(struct bt_hfp_hf *hf);
 
 /** @brief Handsfree HF setup audio connection
  *
- *  Setup audio conenction by sending AT+BCC.
- *  If @kconfig{CONFIG_BT_HFP_HF_CODEC_NEG} is not enabled, the error
- *  `-ENOTSUP` will be returned if the function called.
+ *  Setup audio conenction by sending AT+BCC if the Codec Negotiation is supported by both side.
+ *  Or, initialize the SCO audio connection directly.
  *
  *  @param hf HFP HF object.
  *

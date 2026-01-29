@@ -18,7 +18,7 @@
 		zephyr,shell-uart = &usart2;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,ccm = &ccm0;
+		zephyr,dtcm = &ccm0;
 		zephyr,canbus = &can2;
 	};
 
@@ -200,8 +200,10 @@ zephyr_udc0: &usbotg_fs {
 	 * Note: because the PLLI2S is dependent on the main PLL, the latter
 	 *       should not be changed without checking impact on PLLI2S
 	 */
+	div-m = <8>;
 	mul-n = <271>;
 	div-r = <2>;
+	clocks = <&clk_hse>;
 	status = "okay";
 };
 

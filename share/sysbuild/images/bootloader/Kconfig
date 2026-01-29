@@ -33,7 +33,7 @@ if BOOTLOADER_MCUBOOT
 choice MCUBOOT_MODE
 	prompt "Mode of operation"
 	# Should be removed if board dts is updated
-	default MCUBOOT_MODE_SWAP_USING_MOVE if SOC_FAMILY_STM32 || SOC_FAMILY_ESPRESSIF_ESP32
+	default MCUBOOT_MODE_SWAP_USING_MOVE if SOC_FAMILY_ESPRESSIF_ESP32
 	default MCUBOOT_MODE_SWAP_USING_OFFSET
 	help
 	  The operating mode of MCUboot (which will also be propagated to the application).
@@ -58,12 +58,6 @@ config MCUBOOT_MODE_SWAP_USING_MOVE
 	  MCUboot expects slot0_partition and slot1_partition to be present in DT and application
 	  will boot from slot0_partition. MCUBOOT_BOOTLOADER_NO_DOWNGRADE should also be selected
 	  in main application if MCUboot has been built with MCUBOOT_DOWNGRADE_PREVENTION.
-
-config MCUBOOT_MODE_SWAP_WITHOUT_SCRATCH
-	bool "Swap without scratch (swap using move) [DEPRECATED]"
-	select DEPRECATED
-	help
-	  This Kconfig is deprecated, use MCUBOOT_MODE_SWAP_USING_MOVE instead.
 
 config MCUBOOT_MODE_SWAP_SCRATCH
 	bool "Swap using scratch"
@@ -155,6 +149,17 @@ config MCUBOOT_MODE_SINGLE_APP_RAM_LOAD
 	  of the swap operations are supported in this mode.
 
 endchoice
+
+config MCUBOOT_DIRECT_XIP_GENERATE_VARIANT
+	bool "Generate slot 1 variant image [EXPERIMENTAL]"
+	depends on MCUBOOT_MODE_DIRECT_XIP || MCUBOOT_MODE_DIRECT_XIP_WITH_REVERT
+	select EXPERIMENTAL
+	default y
+	help
+	  Will generate an image for the alternate partition (``slot1_partition``) which can be
+	  used for firmware updates. This image will have the same configuration options applied
+	  as the main image, with an extra dts overlay that changes the chosen flash partition to
+	  slot1_partition, and will be named ``<app>_slot_1_variant``.
 
 config MCUBOOT_MODE_FIRMWARE_UPDATER_BOOT_MODE_ENTRANCE
 	bool "Firmware updater retention boot mode entrance"

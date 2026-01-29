@@ -1,53 +1,47 @@
 #
 # Schema to validate a YAML file describing a Zephyr test configuration.
 #
-
-type: map
-mapping:
-  "options":
-    type: map
-    required: false
-    mapping:
-      "integration_mode":
-        type: seq
-        required: false
-        sequence:
-          - type: str
-  "platforms":
-    type: map
-    required: false
-    mapping:
-      "override_default_platforms":
-        type: bool
-        required: false
-      "increased_platform_scope":
-        type: bool
-        required: false
-      "default_platforms":
-        type: seq
-        required: false
-        sequence:
-          - type: str
-  "levels":
-    type: seq
-    required: false
-    sequence:
-      - type: map
-        required: false
-        mapping:
-          "name":
-            type: str
-            required: true
-          "description":
-            type: str
-            required: false
-          "adds":
-            type: seq
-            required: false
-            sequence:
-              - type: str
-          "inherits":
-            type: seq
-            required: false
-            sequence:
-              - type: str
+$schema: "https://json-schema.org/draft/2020-12/schema"
+type: object
+properties:
+  options:
+    type: object
+    properties:
+      integration_mode:
+        type: array
+        items:
+          type: string
+    additionalProperties: false
+  platforms:
+    type: object
+    properties:
+      override_default_platforms:
+        type: boolean
+      increased_platform_scope:
+        type: boolean
+      default_platforms:
+        type: array
+        items:
+          type: string
+    additionalProperties: false
+  levels:
+    type: array
+    items:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        adds:
+          type: array
+          items:
+            type: string
+        inherits:
+          type: array
+          items:
+            type: string
+      required:
+        - name
+      additionalProperties: false
+additionalProperties: false

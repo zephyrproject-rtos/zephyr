@@ -150,33 +150,7 @@ The mps2/an521 board provides the following user push buttons:
 Supported Features
 ===================
 
-The mps2/an521 board configuration supports the following hardware features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | nested vector interrupt controller  |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| GPIO      | on-chip    | gpio                                |
-+-----------+------------+-------------------------------------+
-| WATCHDOG  | on-chip    | watchdog                            |
-+-----------+------------+-------------------------------------+
-| TIMER     | on-chip    | timer                               |
-+-----------+------------+-------------------------------------+
-
-Other hardware features are not currently supported by the port.
-See the `MPS2 FPGA Website`_ for a complete list of MPS2+ AN521 board hardware
-features.
-
-The default configuration can be found in
-:zephyr_file:`boards/arm/mps2/mps2_an521_cpu0_defconfig`.
+* Refer to :zephyr:board:`mps2` for details.
 
 Interrupt Controller
 ====================

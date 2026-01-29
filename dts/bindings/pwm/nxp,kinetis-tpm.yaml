@@ -31,6 +31,17 @@ properties:
       - 128
     description: Input clock prescaler
 
+  pwm-mode:
+    type: int
+    enum:
+      - 0
+      - 1
+    description: |
+      TPM PWM operation mode
+        0 - Edge aligned PWM (kTPM_EdgeAlignedPwm)
+        1 - Center aligned PWM (kTPM_CenterAlignedPwm)
+      Default is edge aligned PWM if not specified.
+
   "#pwm-cells":
     const: 3
 

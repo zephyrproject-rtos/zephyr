@@ -22,7 +22,7 @@
 	lsm6dsv16x_6b_x_nucleo_iks4a1: lsm6dsv16x@6b {
 		compatible = "st,lsm6dsv16x";
 		reg = <0x6b>;
-		accel-odr = <LSM6DSV16X_DT_ODR_AT_120Hz>;
+		accel-odr = <LSM6DSVXXX_DT_ODR_AT_120Hz>;
 		accel-range = <LSM6DSV16X_DT_FS_16G>;
 		int2-gpios = <&arduino_header 10 GPIO_ACTIVE_HIGH>; /* D4 (PB5) */
 		drdy-pin = <2>;

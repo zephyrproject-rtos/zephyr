@@ -18,6 +18,15 @@ BUILD_ASSERT((CONFIG_PRIVILEGED_STACK_SIZE > 0) &&
 
 extern uint32_t *xtensa_kernel_ptables;
 
+/**
+ * @brief Precompute register values needed during page table switching.
+ *
+ * This precomputes the necessary values for registers that must be
+ * programmed when switching page tables. This is on a per-domain basis as
+ * each domain has a corresponding set of page tables.
+ *
+ * @param domain Pointer to the memory domain.
+ */
 void xtensa_mmu_compute_domain_regs(struct arch_mem_domain *domain)
 {
 	uint32_t vecbase = XTENSA_RSR("VECBASE");
@@ -60,7 +69,10 @@ void xtensa_mmu_compute_domain_regs(struct arch_mem_domain *domain)
 				| XTENSA_MMU_VECBASE_WAY;
 }
 
-/* Switch to a new page table.  There are four items we have to set in
+/**
+ * @brief Switch to new page tables of a memory domain.
+ *
+ * Switch to a new page table. There are four items that must be set in
  * the hardware: the PTE virtual address, the ring/ASID mapping
  * register, and two pinned entries in the data TLB handling refills
  * for the page tables and the vector handlers.
@@ -74,6 +86,9 @@ void xtensa_mmu_compute_domain_regs(struct arch_mem_domain *domain)
  * holds our five instructions is sufficient to guarantee that: I
  * couldn't think of a way to do the alignment statically that also
  * interoperated well with inline assembly).
+ *
+ * @param domain Pointer to the memory domain containing the page tables
+ *               to be used after switching.
  */
 void xtensa_mmu_set_paging(struct arch_mem_domain *domain)
 {
@@ -90,7 +105,12 @@ void xtensa_mmu_set_paging(struct arch_mem_domain *domain)
 			    "r"(domain->reg_vecpin_at), "r"(domain->reg_vecpin_as));
 }
 
-/* This is effectively the same algorithm from xtensa_mmu_set_paging(),
+/**
+ * @brief Initialize paging to enable MMU.
+ *
+ * This routine initializes paging which enables MMU.
+ *
+ * This is effectively the same algorithm from xtensa_mmu_set_paging(),
  * but it also disables the hardware-initialized 512M TLB entries in
  * way 6 (because the hardware disallows duplicate TLB mappings).  For
  * instruction fetches this produces a critical ordering constraint:
@@ -187,4 +207,42 @@ void xtensa_mmu_init_paging(void)
 		}
 	}
 	__asm__ volatile("isync");
+}
+
+__weak void arch_xtensa_mmu_post_init(bool is_core0)
+{
+	ARG_UNUSED(is_core0);
+}
+
+void xtensa_mmu_init(void)
+{
+	xtensa_init_page_tables();
+
+	xtensa_mmu_init_paging();
+
+	/*
+	 * This is used to determine whether we are faulting inside double
+	 * exception if this is not zero. Sometimes SoC starts with this not
+	 * being set to zero. So clear it during boot.
+	 */
+	XTENSA_WSR(ZSR_DEPC_SAVE_STR, 0);
+
+	arch_xtensa_mmu_post_init(_current_cpu->id == 0);
+}
+
+void xtensa_mmu_reinit(void)
+{
+	/* First initialize the hardware */
+	xtensa_mmu_init_paging();
+
+#ifdef CONFIG_USERSPACE
+	struct k_thread *thread = _current_cpu->current;
+	struct arch_mem_domain *domain = &(thread->mem_domain_info.mem_domain->arch);
+
+
+	/* Set the page table for current context */
+	xtensa_mmu_set_paging(domain);
+#endif /* CONFIG_USERSPACE */
+
+	arch_xtensa_mmu_post_init(_current_cpu->id == 0);
 }

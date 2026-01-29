@@ -13,4 +13,24 @@
 				 <RZA2M_PINMUX(PORT_09, 1, 4)>; /* RXD */
 		};
 	};
+
+	/omit-if-no-ref/ adc_default: adc_default {
+		adc-pinmux {
+			pinmux = <RZA2M_PINMUX(PORT_05, 6, 1)>; /* AN006 */
+		};
+	};
+
+	/omit-if-no-ref/ gpt3_pins: gpt3 {
+		gpt3-pinmux {
+			pinmux = <RZA2M_PINMUX(PORT_08, 3, 5)>, /* GTIOCA */
+				 <RZA2M_PINMUX(PORT_00, 0, 5)>; /* GTIOCB */
+		};
+	};
+
+	/omit-if-no-ref/ gpt5_pins: gpt5 {
+		gpt5-pinmux {
+			pinmux = <RZA2M_PINMUX(PORT_08, 2, 4)>, /* GTIOCA */
+				 <RZA2M_PINMUX(PORT_08, 1, 4)>; /* GTIOCB */
+		};
+	};
 };

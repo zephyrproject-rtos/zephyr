@@ -1,5 +1,5 @@
 identifier: mcxw72_evk/mcxw727c/cpu0
-name: NXP MCXW72_EVK
+name: NXP MCXW72-EVK
 type: mcu
 arch: arm
 ram: 264

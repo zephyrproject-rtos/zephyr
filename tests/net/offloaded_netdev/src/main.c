@@ -20,8 +20,8 @@
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_l2.h>
 
-static struct in_addr test_addr_ipv4 = { { { 192, 0, 2, 1 } } };
-static struct in6_addr test_addr_ipv6 = { { {
+static struct net_in_addr test_addr_ipv4 = { { { 192, 0, 2, 1 } } };
+static struct net_in6_addr test_addr_ipv6 = { { {
 	0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1
 } } };
 

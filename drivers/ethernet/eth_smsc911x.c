@@ -567,7 +567,7 @@ static struct net_pkt *smsc_recv_pkt(const struct device *dev,
 	rem_size -= 4U;
 
 	pkt = net_pkt_rx_alloc_with_buffer(context->iface, rem_size,
-					   AF_UNSPEC, 0, K_NO_WAIT);
+					   NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("Failed to obtain RX buffer");
 		smsc_discard_pkt();

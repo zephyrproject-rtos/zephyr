@@ -192,7 +192,7 @@ int k_mem_domain_add_partition(struct k_mem_domain *domain,
 		goto unlock_out;
 	}
 
-	LOG_DBG("add partition base %lx size %zu to domain %p\n",
+	LOG_DBG("add partition base %lx size %zu to domain %p",
 		part->start, part->size, domain);
 
 	domain->partitions[p_idx].start = part->start;
@@ -240,7 +240,7 @@ int k_mem_domain_remove_partition(struct k_mem_domain *domain,
 		goto unlock_out;
 	}
 
-	LOG_DBG("remove partition base %lx size %zu from domain %p\n",
+	LOG_DBG("remove partition base %lx size %zu from domain %p",
 		part->start, part->size, domain);
 
 #ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
@@ -267,7 +267,7 @@ static int add_thread_locked(struct k_mem_domain *domain,
 	__ASSERT_NO_MSG(domain != NULL);
 	__ASSERT_NO_MSG(thread != NULL);
 
-	LOG_DBG("add thread %p to domain %p\n", thread, domain);
+	LOG_DBG("add thread %p to domain %p", thread, domain);
 
 #ifdef CONFIG_MEM_DOMAIN_HAS_THREAD_LIST
 	sys_dlist_append(&domain->thread_mem_domain_list,
@@ -288,7 +288,7 @@ static int remove_thread_locked(struct k_thread *thread)
 	int ret = 0;
 
 	__ASSERT_NO_MSG(thread != NULL);
-	LOG_DBG("remove thread %p from memory domain %p\n",
+	LOG_DBG("remove thread %p from memory domain %p",
 		thread, thread->mem_domain_info.mem_domain);
 
 #ifdef CONFIG_MEM_DOMAIN_HAS_THREAD_LIST

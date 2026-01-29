@@ -15,4 +15,7 @@ toolchain:
 supported:
   - gpio
   - spi
+  - timer
+  - uart
+  - dma
 vendor: infineon

@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_KIT_T2G_B_H_EVK
+	select SOC_CYT4BFBCHE_M0PLUS if BOARD_KIT_T2G_B_H_EVK_CYT4BFBCHE_M0P
+	select SOC_CYT4BFBCHE_M7_0 if BOARD_KIT_T2G_B_H_EVK_CYT4BFBCHE_M7_0
+	select SOC_CYT4BFBCHE_M7_1 if BOARD_KIT_T2G_B_H_EVK_CYT4BFBCHE_M7_1

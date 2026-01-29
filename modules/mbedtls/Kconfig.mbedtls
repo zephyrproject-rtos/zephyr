@@ -90,7 +90,7 @@ config MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
 
 config MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
 	bool "RSA-PSK based ciphersuite modes"
-	depends on MBEDTLS_PKCS1_V15 || MBEDTLS_PKCS1_V21
+	depends on PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_BASIC
 
 config MBEDTLS_PSK_MAX_LEN
 	int "Max size of TLS pre-shared keys"
@@ -102,11 +102,7 @@ config MBEDTLS_PSK_MAX_LEN
 config MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
 	bool "RSA-only based ciphersuite modes"
 	depends on MBEDTLS_MD_C
-	depends on PSA_CRYPTO_CLIENT || MBEDTLS_PKCS1_V15 || MBEDTLS_PKCS1_V21
-	select PSA_WANT_KEY_TYPE_RSA_PUBLIC_KEY if PSA_CRYPTO_CLIENT
-	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_IMPORT if PSA_CRYPTO_CLIENT
-	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_EXPORT if PSA_CRYPTO_CLIENT
-	select PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_GENERATE if PSA_CRYPTO_CLIENT
+	depends on PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_BASIC
 
 config MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
 	bool "DHE-RSA based ciphersuite modes"
@@ -114,8 +110,8 @@ config MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
 
 config MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
 	bool "ECDHE-RSA based ciphersuite modes"
-	depends on MBEDTLS_PKCS1_V15 || MBEDTLS_PKCS1_V21
-	depends on MBEDTLS_ECDH_C
+	depends on PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
+	depends on PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_BASIC
 
 config MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
 	bool "ECDHE-ECDSA based ciphersuite modes"
@@ -134,7 +130,7 @@ config MBEDTLS_KEY_EXCHANGE_ECDH_RSA_ENABLED
 
 config MBEDTLS_KEY_EXCHANGE_ECJPAKE_ENABLED
 	bool "ECJPAKE based ciphersuite modes"
-	depends on MBEDTLS_ECJPAKE_C
+	depends on MBEDTLS_ECJPAKE_C || PSA_WANT_ALG_JPAKE
 
 if MBEDTLS_SSL_PROTO_TLS1_3
 
@@ -148,6 +144,9 @@ config MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_EPHEMERAL_ENABLED
 	bool "TLS 1.3 PSK ephemeral key exchange mode"
 
 endif # MBEDTLS_SSL_PROTO_TLS1_3
+
+config MBEDTLS_SSL_KEYING_MATERIAL_EXPORT
+	bool "TLS keying material export support"
 
 config MBEDTLS_HKDF_C
 	bool "HMAC-based Extract-and-Expand Key Derivation Function"
@@ -493,7 +492,7 @@ config MBEDTLS_HAVE_TIME_DATE
 
 config MBEDTLS_PKCS5_C
 	bool "Password-based encryption functions"
-	select MBEDTLS_MD_C
+	depends on MBEDTLS_MD_C
 	help
 	  Enable PKCS5 functions
 
@@ -522,21 +521,9 @@ config MBEDTLS_SSL_EXTENDED_MASTER_SECRET
 	  which ensures that master secrets are different for every
 	  connection and every session.
 
-# CONFIG_CSPRNG_AVAILABLE must automatically enable CONFIG_ENTROPY_GENERATOR.
-# But we're doing it here because this enablement should be gated by Mbed TLS
-# being also enabled in the build, otherwise this will result in entropy
-# drivers being enabled without anyone needing them.
-config CSPRNG_AVAILABLE
-	select ENTROPY_GENERATOR
-
 choice MBEDTLS_PSA_CRYPTO_RNG_SOURCE
 	prompt "Select random source for built-in PSA crypto"
 	depends on MBEDTLS_PSA_CRYPTO_C
-	# The only way to check if there is any entropy driver available on the
-	# platform is to check if the "zephyr,entropy" chosen property exists.
-	# CONFIG_CSPRNG_ENABLED cannot be used for this because it gets enabled by
-	# entropy drivers but these are gated by CONFIG_ENTROPY_GENERATOR which
-	# is disabled by default.
 	default MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG if CSPRNG_ENABLED
 	default MBEDTLS_PSA_CRYPTO_LEGACY_RNG
 
@@ -592,6 +579,7 @@ config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG
 config MBEDTLS_PSA_CRYPTO_C
 	bool "Platform Security Architecture cryptography API"
 	depends on !BUILD_WITH_TFM
+	select CSPRNG_NEEDED
 
 config MBEDTLS_USE_PSA_CRYPTO
 	bool "Use PSA APIs instead of legacy MbedTLS when possible"
@@ -611,6 +599,12 @@ config MBEDTLS_LMS_C
 	depends on MBEDTLS_PSA_CRYPTO_CLIENT
 	depends on MBEDTLS_SHA256
 	select PSA_WANT_ALG_SHA_256
+
+config MBEDTLS_VERSION_C
+	bool "Support version information"
+	help
+	  Enable the mbedtls_version_get_number() function to get version
+	  information from Mbed TLS.
 
 if MBEDTLS_PSA_CRYPTO_C
 

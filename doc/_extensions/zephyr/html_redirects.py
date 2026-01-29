@@ -67,7 +67,7 @@ def create_redirect_pages(app, exception):
     if not isinstance(app.builder, StandaloneHTMLBuilder):
         return  # only relevant for standalone HTML output
 
-    for (old_url, new_url) in app.config.html_redirect_pages:
+    for old_url, new_url in app.config.html_redirect_pages:
         if old_url.startswith('/'):
             old_url = old_url[1:]
 

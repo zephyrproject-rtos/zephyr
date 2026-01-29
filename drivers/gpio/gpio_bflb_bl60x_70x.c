@@ -336,7 +336,7 @@ static int gpio_bflb_manage_callback(const struct device *port,
 	return gpio_manage_callback(&(data->callbacks), callback, set);
 }
 
-static const struct gpio_driver_api gpio_bflb_api = {
+static DEVICE_API(gpio, gpio_bflb_api) = {
 	.pin_configure = gpio_bflb_config,
 	.port_get_raw = gpio_bflb_port_get_raw,
 	.port_set_masked_raw = gpio_bflb_port_set_masked_raw,

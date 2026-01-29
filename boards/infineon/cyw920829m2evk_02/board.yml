@@ -1,6 +1,13 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
 board:
   name: cyw920829m2evk_02
   full_name: CYW920829M2EVK-02
   vendor: infineon
   socs:
-  - name: cyw20829b0lkml
+    - name: cyw20829b0lkml
+    - name: cyw20829b1010
+    - name: cyw20829b1340

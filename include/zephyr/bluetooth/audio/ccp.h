@@ -120,6 +120,19 @@ int bt_ccp_call_control_server_set_bearer_provider_name(
 int bt_ccp_call_control_server_get_bearer_provider_name(
 	struct bt_ccp_call_control_server_bearer *bearer, const char **name);
 
+/**
+ * @brief Get the bearer UCI.
+ *
+ * @param[in]  bearer  The bearer to get the UCI for.
+ * @param[out] uci     Pointer that will be updated to be the bearer uci.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p bearer or @p uci is NULL
+ * @retval -EFAULT @p bearer is not registered
+ */
+int bt_ccp_call_control_server_get_bearer_uci(struct bt_ccp_call_control_server_bearer *bearer,
+					      const char **uci);
+
 /** @} */ /* End of group bt_ccp_call_control_server */
 
 /**

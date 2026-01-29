@@ -7,7 +7,7 @@
 
 # Shell Management group public API is exposed by MCUmgr API
 # interface, when Shell Management is enabled.
-zephyr_library()
+zephyr_library_named(mcumgr_grp_shell_mgmt)
 zephyr_library_sources(src/shell_mgmt.c)
 
 zephyr_library_include_directories(include)

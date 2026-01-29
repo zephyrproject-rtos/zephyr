@@ -25,11 +25,11 @@
 	dma-names = "tx";
 };
 
-&dma1{
+&dma1 {
 	status = "okay";
 };
 
-&dmamux1{
+&dmamux1 {
 	status = "okay";
 };
 

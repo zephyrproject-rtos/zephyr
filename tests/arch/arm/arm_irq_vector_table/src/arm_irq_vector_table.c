@@ -24,10 +24,10 @@
  * the TIMER0 IRQ line, which is used by the system timer.
  */
 #define _ISR_OFFSET (TIMER0_IRQn + 1)
-#elif defined(CONFIG_SOC_SERIES_NRF54LX)
+#elif defined(CONFIG_SOC_SERIES_NRF54L) || defined(CONFIG_SOC_SERIES_NRF71)
 /* For nRF54L Series, use SWI00-02 interrupt lines. */
 #define _ISR_OFFSET SWI00_IRQn
-#elif defined(CONFIG_SOC_SERIES_NRF54HX) || defined(CONFIG_SOC_SERIES_NRF92X)
+#elif defined(CONFIG_SOC_SERIES_NRF54H) || defined(CONFIG_SOC_SERIES_NRF92)
 /* For nRF54H and nRF92 Series, use BELLBOARD_0-2 interrupt lines. */
 #define _ISR_OFFSET BELLBOARD_0_IRQn
 #else
@@ -144,9 +144,9 @@ typedef void (*vth)(void); /* Vector Table Handler */
  * Note: qemu_cortex_m0 uses TIMER0 to implement system timer.
  */
 void nrfx_power_clock_irq_handler(void);
-#if defined(CONFIG_SOC_SERIES_NRF51X) || defined(CONFIG_SOC_SERIES_NRF52X)
+#if defined(CONFIG_SOC_SERIES_NRF51) || defined(CONFIG_SOC_SERIES_NRF52)
 #define POWER_CLOCK_IRQ_NUM POWER_CLOCK_IRQn
-#elif defined(CONFIG_SOC_SERIES_NRF54HX) || defined(CONFIG_SOC_SERIES_NRF92X)
+#elif defined(CONFIG_SOC_SERIES_NRF54H) || defined(CONFIG_SOC_SERIES_NRF92)
 #define POWER_CLOCK_IRQ_NUM -1 /* not needed */
 #else
 #define POWER_CLOCK_IRQ_NUM CLOCK_POWER_IRQn
@@ -156,8 +156,8 @@ void nrfx_power_clock_irq_handler(void);
 void timer0_nrf_isr(void);
 #define TIMER_IRQ_HANDLER timer0_nrf_isr
 #define TIMER_IRQ_NUM     TIMER0_IRQn
-#elif defined(CONFIG_SOC_SERIES_NRF54LX) || defined(CONFIG_SOC_SERIES_NRF54HX) ||                  \
-	defined(CONFIG_SOC_SERIES_NRF92X)
+#elif defined(CONFIG_SOC_SERIES_NRF54L) || defined(CONFIG_SOC_SERIES_NRF54H) ||                  \
+	defined(CONFIG_SOC_SERIES_NRF71) || defined(CONFIG_SOC_SERIES_NRF92)
 void nrfx_grtc_irq_handler(void);
 #define TIMER_IRQ_HANDLER nrfx_grtc_irq_handler
 #define TIMER_IRQ_NUM     DT_IRQN(DT_NODELABEL(grtc))
@@ -265,6 +265,17 @@ const vth __irq_vector_table _irq_vector_table[IRQ_VECTOR_TABLE_SIZE] = {
 #ifdef CONFIG_SOC_SERIES_APOLLO5X
 	[TIMER0_IRQn + AM_HAL_INTERNAL_TIMER_NUM_A] = hal_internal_timer_isr,
 #endif
+};
+
+#elif defined(CONFIG_SOC_FAMILY_RENESAS_SMARTBOND)
+
+extern void timer2_isr(void);
+
+const vth __irq_vector_table _irq_vector_table[] = {
+	[_ISR_OFFSET] = isr0,
+	[_ISR_OFFSET + 1] = isr1,
+	[_ISR_OFFSET + 2] = isr2,
+	[TIMER2_IRQn] = timer2_isr,
 };
 
 #else

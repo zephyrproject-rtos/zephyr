@@ -52,7 +52,7 @@ description: |
   For input constants such as `AD4170_ADC_AIN0`, refer to the binding header:
   `include/zephyr/dt-bindings/adc/ad4170-adc.h`
 
-compatible: adi,ad4170-adc
+compatible: "adi,ad4170-adc"
 
 include: [adc-controller.yaml, spi-device.yaml]
 

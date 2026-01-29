@@ -14,6 +14,7 @@
 #include <zephyr/drivers/spi.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/wifi/nrf_wifi/bus/qspi_if.h>
+#include <zephyr/pm/device_runtime.h>
 
 #include "spi_if.h"
 
@@ -286,11 +287,19 @@ int spim_init(struct qspi_config *config)
 		spi_spec.config.frequency / MHZ(1));
 	LOG_INF("SPIM %s: latency = %d", spi_spec.bus->name, spim_config->qspi_slave_latency);
 
+#ifdef CONFIG_NRF70_SPI_PM_CLAIM_WHILE_ACTIVE
+	return pm_device_runtime_get(spi_spec.bus);
+#else
 	return 0;
+#endif /* CONFIG_NRF70_SPI_PM_CLAIM_WHILE_ACTIVE */
 }
 
 int spim_deinit(void)
 {
+#ifdef CONFIG_NRF70_SPI_PM_CLAIM_WHILE_ACTIVE
+	(void)pm_device_runtime_put(spi_spec.bus);
+#endif /* CONFIG_NRF70_SPI_PM_CLAIM_WHILE_ACTIVE */
+
 	return spi_release_dt(&spi_spec);
 }
 

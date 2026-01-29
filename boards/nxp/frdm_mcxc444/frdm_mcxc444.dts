@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -98,6 +98,10 @@
 	er32k-select = <KINETIS_SIM_ER32KSEL_OSC32KCLK>;
 };
 
+&cop {
+	status = "okay";
+};
+
 &cpu0 {
 	clock-frequency = <DT_FREQ_M(48)>;
 };
@@ -190,4 +194,41 @@ i2c0: &i2c0 {
 zephyr_udc0: &usb {
 	status = "okay";
 	num-bidir-endpoints = <8>;
+};
+
+&dma {
+	status = "okay";
+};
+
+&dac {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+			read-only;
+		};
+
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00010000 DT_SIZE_K(80)>;
+		};
+
+		slot1_partition: partition@24000 {
+			label = "image-1";
+			reg = <0x00024000 DT_SIZE_K(80)>;
+		};
+
+		storage_partition: partition@38000 {
+			label = "storage";
+			reg = <0x00038000 DT_SIZE_K(32)>;
+		};
+	};
 };

@@ -16,6 +16,7 @@
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
+#include <soc.h>
 
 /* nRF CAN wrapper offsets */
 #define CAN_TASKS_START	  offsetof(NRF_CAN_Type, TASKS_START)
@@ -201,8 +202,8 @@ static int can_nrf_init(const struct device *dev)
                                                                                                    \
 	static struct can_mcan_data can_mcan_nrf_data##n = CAN_MCAN_DATA_INITIALIZER(NULL);        \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, can_nrf_init, NULL, &can_mcan_nrf_data##n,                        \
-			      &can_mcan_nrf_config##n, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,      \
-			      &can_nrf_api);
+	CAN_DEVICE_DT_INST_DEFINE(n, can_nrf_init, NULL, &can_mcan_nrf_data##n,                    \
+				  &can_mcan_nrf_config##n, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,  \
+				  &can_nrf_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_NRF_DEFINE)

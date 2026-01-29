@@ -8,8 +8,8 @@ description: |
   The pulse counter module is designed to count the number of
   rising and/or falling edges of an input signal.
 
-  The ESP32's PCNT module has 8 independent counting “units” numbered from 0 to 7.
-  ESP32S2 and ESP32S3 have 4 independent counting “units” numbered from 0 to 3.
+  The ESP32's PCNT module has 8 independent counting "units" numbered from 0 to 7.
+  ESP32S2 and ESP32S3 have 4 independent counting "units" numbered from 0 to 3.
 
   Each pulse counter unit has a 16-bit signed counter register.
 
@@ -26,44 +26,8 @@ description: |
   By combining the usage of both signal and control inputs, a PCNT unit can
   act as a quadrature decoder.
 
-  Example: Use PCNT to read a rotary-enconder
-
-  The mapping between signal and control input and the pin is done through pinctrl:
-
-    &pinctrl {
-        pcnt_default: pcnt_default {
-            group1 {
-                pinmux = <PCNT0_CH0SIG_GPIO14>,
-                        <PCNT0_CH0CTRL_GPIO15>;
-                bias-pull-up;
-            };
-        };
-    };
-
-  Note: Check espressif,esp32-pinctrl.yaml for complete documentation regarding pinctrl.
-
-  Use the PCNT node to configure the module:
-
-    &pcnt {
-      pinctrl-0 = <&pcnt_default>;
-      pinctrl-names = "default";
-      status = "okay";
-      #address-cells = <1>;
-      #size-cells = <0>;
-      unit0@0 {
-        reg = <0>;
-        #address-cells = <1>;
-        #size-cells = <0>;
-        filter = <100>;
-        channelA@0 {
-            reg = <0>;
-            sig-pos-mode = <2>;
-            sig-neg-mode = <1>;
-            ctrl-h-mode = <0>;
-            ctrl-l-mode = <1>;
-        };
-      };
-    };
+  The mapping between signal and control input and the pin is done through pinctrl.
+  Check espressif,esp32-pinctrl.yaml for complete documentation regarding pinctrl.
 
 compatible: "espressif,esp32-pcnt"
 
@@ -158,3 +122,36 @@ child-binding:
           0 (Default) - Don't change counter mode.
           1 - Invert counter mode(increase -> decrease, decrease -> increase).
           2 - Control mode: Inhibit counter (counter value will not change in this condition).
+
+examples:
+- |
+  /* Use PCNT to read a rotary-encoder */
+  &pinctrl {
+      pcnt_default: pcnt_default {
+          group1 {
+              pinmux = <PCNT0_CH0SIG_GPIO14>,
+                      <PCNT0_CH0CTRL_GPIO15>;
+              bias-pull-up;
+          };
+      };
+  };
+  &pcnt {
+    pinctrl-0 = <&pcnt_default>;
+    pinctrl-names = "default";
+    status = "okay";
+    #address-cells = <1>;
+    #size-cells = <0>;
+    unit0@0 {
+      reg = <0>;
+      #address-cells = <1>;
+      #size-cells = <0>;
+      filter = <100>;
+      channelA@0 {
+          reg = <0>;
+          sig-pos-mode = <2>;
+          sig-neg-mode = <1>;
+          ctrl-h-mode = <0>;
+          ctrl-l-mode = <1>;
+      };
+    };
+  };

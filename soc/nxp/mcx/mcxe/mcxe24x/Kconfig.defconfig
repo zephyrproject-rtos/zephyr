@@ -1,4 +1,4 @@
-# Copyright 2025 NXP
+# Copyright 2025-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_SERIES_MCXE24X
@@ -17,6 +17,17 @@ config CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
 	default y
 
 config GPIO
+	default y
+
+# Enable cache management features
+configdefault CACHE_MANAGEMENT
+	default y
+
+choice CACHE_TYPE
+	default EXTERNAL_CACHE
+endchoice
+
+config WDT_DISABLE_AT_BOOT
 	default y
 
 endif # SOC_SERIES_MCXE24X

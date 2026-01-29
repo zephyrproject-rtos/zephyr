@@ -19,5 +19,5 @@ supported:
   - rtc
   - spi
   - usart
-ram: 40
+ram: 32
 flash: 256

@@ -114,7 +114,10 @@ void adxl372_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iode
 		adxl372_configure_fifo(dev, current_fifo_mode, data->fifo_config.fifo_format,
 					data->fifo_config.fifo_samples);
 
-		adxl372_set_op_mode(dev, cfg_372->op_mode);
+		rc = adxl372_set_op_mode(dev, cfg_372->op_mode);
+		if (rc < 0) {
+			return;
+		}
 	}
 
 	rc = gpio_pin_interrupt_configure_dt(&cfg_372->interrupt, GPIO_INT_EDGE_TO_ACTIVE);

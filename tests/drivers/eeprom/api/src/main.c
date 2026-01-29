@@ -85,6 +85,8 @@ ZTEST_USER(eeprom, test_write_at_fixed_address)
 
 	size = eeprom_get_size(eeprom);
 
+	zassert_true(size >= sizeof(wr_buf1), "EEPROM too small: %zu < %zu", size, sizeof(wr_buf1));
+
 	for (int i = 0; i < 16; i++) {
 		rc = eeprom_write(eeprom, address, wr_buf1, sizeof(wr_buf1));
 		zassert_equal(0, rc, "Unexpected error code (%d)", rc);

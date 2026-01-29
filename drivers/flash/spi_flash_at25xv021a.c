@@ -942,12 +942,12 @@ static DEVICE_API(flash, spi_flash_at25xv021a_api) = {
 #define SPI_OP (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8))
 
 #define PAGE_SIZE_IF_WRITEABLE(inst)                                                               \
-	COND_CODE_0(DT_INST_NODE_PROP_OR(inst, read_only, false),	\
+	COND_CODE_0(DT_INST_PROP_OR(inst, read_only, false),	\
 		(.page_size = DT_INST_PROP(inst, page_size),),	\
 		(EMPTY))
 
 #define TIMEOUT_ERASE_IF_WRITEABLE(inst)                                                           \
-	COND_CODE_0(DT_INST_NODE_PROP_OR(inst, read_only, false),	\
+	COND_CODE_0(DT_INST_PROP_OR(inst, read_only, false),	\
 		(.timeout_erase = K_MSEC(DT_INST_PROP(inst, timeout_erase)),),	\
 		(EMPTY))
 

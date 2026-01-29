@@ -107,6 +107,20 @@ Zephyr, to better enable the entire RT11xx family.
 
 .. zephyr:board-supported-hw::
 
+Shields for Supported Features
+==============================
+
+Some features in the table above are tested with Zephyr shields.  These shields
+are tested on this board:
+
+- :ref:`rk055hdmipi4m`, :ref:`rk055hdmipi4ma0` and :ref:`g1120b0mipi` - support
+  the MIPI-DSI display interface.
+- :ref:`nxp_btb44_ov5640` - supports the MIPI-CSI video/camera interface.
+- :ref:`nxp_m2_wifi_bt` - EVK RevB version is tested with this shield to attach any M.2 module
+  with BT HCI UART interface and Wi-Fi SDIO interface. The shield binds the required NXP
+  HCI driver or SDIO driver to perform firmware-load and other setup configurations
+  for NXP SoC IW416/IW612/IW610.
+
 Connections and I/Os
 ====================
 

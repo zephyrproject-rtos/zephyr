@@ -11,12 +11,16 @@ description: |
     gyro-odr properties in a .dts or .dtsi file you may include icm42688.h
     and use the macros defined there.
 
-    Example:
+compatible: "invensense,icm42688"
+include: ["invensense,icm4268x.yaml"]
+
+examples:
+  - |
     #include <zephyr/dt-bindings/sensor/icm42688.h>
 
     icm42688: icm42688@0 {
       compatible = "invensense,icm42688", "invensense,icm4268x"
-      ...
+      /* ... */
 
       accel-pwr-mode = <ICM42688_DT_ACCEL_LN>;
       accel-fs = <ICM42688_DT_ACCEL_FS_16>;
@@ -25,5 +29,3 @@ description: |
       gyro-fs = <ICM42688_DT_GYRO_FS_2000>;
       gyro-odr = <ICM42688_DT_GYRO_ODR_2000>;
     };
-compatible: "invensense,icm42688"
-include: ["invensense,icm4268x.yaml"]

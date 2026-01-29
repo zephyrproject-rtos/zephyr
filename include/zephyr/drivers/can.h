@@ -1002,7 +1002,7 @@ static inline const struct can_timing *z_impl_can_get_timing_data_max(const stru
  * @param sample_pnt Sample point for the data phase in permille of the entire bit
  *                   time or 0 for automatic sample point location.
  *
- * @retval 0 or positive sample point error on success.
+ * @return 0 or positive sample point error on success.
  * @retval -EINVAL if the requested bitrate or sample point is out of range.
  * @retval -ENOTSUP if the requested bitrate is not supported.
  * @retval -EIO if @a can_get_core_clock() is not available.
@@ -1314,6 +1314,7 @@ __syscall int can_send(const struct device *dev, const struct can_frame *frame,
  * @retval -ENOSPC if there are no free filters.
  * @retval -EINVAL if the requested filter type is invalid.
  * @retval -ENOTSUP if the requested filter type is not supported.
+ * @retval -EIO General input/output error, failed to add filter.
  */
 int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
 		      void *user_data, const struct can_filter *filter);
@@ -1355,7 +1356,9 @@ int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
  *
  * @retval filter_id on success.
  * @retval -ENOSPC if there are no free filters.
+ * @retval -EINVAL if the requested filter type is invalid.
  * @retval -ENOTSUP if the requested filter type is not supported.
+ * @retval -EIO General input/output error, failed to add filter.
  */
 __syscall int can_add_rx_filter_msgq(const struct device *dev, struct k_msgq *msgq,
 				     const struct can_filter *filter);
@@ -1387,7 +1390,7 @@ static inline void z_impl_can_remove_rx_filter(const struct device *dev, int fil
  * @param ide Get the maximum standard (11-bit) CAN ID filters if false, or extended (29-bit) CAN ID
  *            filters if true.
  *
- * @retval Positive number of maximum concurrent filters.
+ * @retval >=0 number of maximum concurrent filters.
  * @retval -EIO General input/output error.
  * @retval -ENOSYS If this function is not implemented by the driver.
  */
@@ -1452,6 +1455,7 @@ static inline int z_impl_can_get_state(const struct device *dev, enum can_state 
  * @retval -ENETDOWN if the CAN controller is in stopped state.
  * @retval -EAGAIN on timeout.
  * @retval -ENOSYS If this function is not implemented by the driver.
+ * @retval -EIO General input/output error, failed to recover.
  */
 __syscall int can_recover(const struct device *dev, k_timeout_t timeout);
 
@@ -1684,7 +1688,7 @@ static inline uint32_t z_impl_can_stats_get_rx_overruns(const struct device *dev
  *
  * @param dlc Data Length Code (DLC).
  *
- * @retval Number of bytes.
+ * @return Number of bytes.
  */
 static inline uint8_t can_dlc_to_bytes(uint8_t dlc)
 {
@@ -1699,7 +1703,7 @@ static inline uint8_t can_dlc_to_bytes(uint8_t dlc)
  *
  * @param num_bytes Number of bytes.
  *
- * @retval Data Length Code (DLC).
+ * @return Data Length Code (DLC).
  */
 static inline uint8_t can_bytes_to_dlc(uint8_t num_bytes)
 {

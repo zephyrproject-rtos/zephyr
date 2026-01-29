@@ -5,8 +5,8 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(os_desc)
 
 zephyr_library_include_directories(
-	${ZEPHYR_BASE}/subsys/usb/device/
-	)
+  ${ZEPHYR_BASE}/subsys/usb/device/
+)
 
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})

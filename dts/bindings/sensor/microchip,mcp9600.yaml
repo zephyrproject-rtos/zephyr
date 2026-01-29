@@ -11,18 +11,6 @@ description: |
   When setting the DTS properties, make sure to include
   mcp9600.h and use the macros defined there.
 
-  Example:
-  #include <zephyr/dt-bindings/sensor/mcp9600.h>
-
-  mcp9600: mcp9600@60 {
-    ...
-
-    thermocouple-type = <MCP9600_DT_TYPE_K>;
-    adc-resolution = <MCP9600_DT_ADC_RES_18BIT>;
-    filter-coefficient = <0>;
-    cold-junction-temp-resolution: <MCP9600_DT_COLD_JUNC_TMP_RES_0_0625C>;
-  };
-
 compatible: "microchip,mcp9600"
 
 include: [sensor-device.yaml, i2c-device.yaml]
@@ -93,3 +81,16 @@ properties:
     enum:
       - 0 # MCP9600_DT_COLD_JUNC_TMP_RES_0_0625C
       - 1 # MCP9600_DT_COLD_JUNC_TMP_RES_0_25C
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/mcp9600.h>
+
+    mcp9600: mcp9600@60 {
+      /* ... */
+
+      thermocouple-type = <MCP9600_DT_TYPE_K>;
+      adc-resolution = <MCP9600_DT_ADC_RES_18BIT>;
+      filter-coefficient = <0>;
+      cold-junction-temp-resolution: <MCP9600_DT_COLD_JUNC_TMP_RES_0_0625C>;
+    };

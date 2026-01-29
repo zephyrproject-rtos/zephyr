@@ -388,7 +388,9 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 		const void *buffer, size_t len)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
+#ifdef CONFIG_HAS_MCUX_CACHE
 	size_t size = len;
+#endif
 	uint8_t *src = (uint8_t *) buffer;
 	int i;
 	unsigned int key = 0;
@@ -396,6 +398,10 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 	uint8_t *dst = memc_flexspi_get_ahb_address(data->controller,
 						    data->port,
 						    offset);
+
+	if (!dst) {
+		return -EINVAL;
+	}
 
 	if (memc_flexspi_is_running_xip(data->controller)) {
 		/*
@@ -464,6 +470,10 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 	uint8_t *dst = memc_flexspi_get_ahb_address(data->controller,
 						    data->port,
 						    offset);
+
+	if (!dst) {
+		return -EINVAL;
+	}
 
 	if (offset % SPI_NOR_SECTOR_SIZE) {
 		LOG_ERR("Invalid offset");

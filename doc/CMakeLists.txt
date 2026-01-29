@@ -20,6 +20,7 @@ set(HW_FEATURES_TURBO_MODE OFF CACHE BOOL "Enable HW features turbo mode")
 set(HW_FEATURES_VENDOR_FILTER "" CACHE STRING "Vendor filter for HW features")
 set(DOC_TAG "development" CACHE STRING "Documentation tag")
 set(DTS_ROOTS "${ZEPHYR_BASE}" CACHE STRING "DT bindings root folders")
+set(DOXYGEN_FORCE_SINGLE_THREAD OFF CACHE BOOL "Enable Doxygen single thread mode")
 
 separate_arguments(SPHINXOPTS)
 separate_arguments(SPHINXOPTS_EXTRA)
@@ -51,15 +52,21 @@ set(SPHINX_ENV
   DOCS_HTML_DIR=${CMAKE_CURRENT_BINARY_DIR}/html
 )
 
+set(DOXYGEN_CUSTOM_LINES)
+
 if(DEFINED ENV{ZEPHYR_DOXYGEN_OVERLAY})
   if(EXISTS $ENV{ZEPHYR_DOXYGEN_OVERLAY})
-    set(INCLUDE_CUSTOM_FILE "@INCLUDE = $ENV{ZEPHYR_DOXYGEN_OVERLAY}")
+    list(APPEND DOXYGEN_CUSTOM_LINES "@INCLUDE = $ENV{ZEPHYR_DOXYGEN_OVERLAY}")
   else()
     message(FATAL_ERROR "Zephyr Doxygen overlay $ENV{ZEPHYR_DOXYGEN_OVERLAY} does not exist!")
   endif()
-else()
-  set(INCLUDE_CUSTOM_FILE "")
 endif()
+
+if(DOXYGEN_FORCE_SINGLE_THREAD)
+  list(APPEND DOXYGEN_CUSTOM_LINES "NUM_PROC_THREADS = 1")
+endif()
+
+list(JOIN DOXYGEN_CUSTOM_LINES "\n" INCLUDE_CUSTOM_FILE)
 
 set(DOCS_CFG_DIR ${CMAKE_CURRENT_LIST_DIR})
 set(DOCS_DOCTREE_DIR ${CMAKE_CURRENT_BINARY_DIR}/doctrees)
@@ -137,6 +144,17 @@ add_custom_target(
     -o ${CMAKE_CURRENT_BINARY_DIR}/coverage-report
   DEPENDS doxygen
   COMMENT "Generating Doxygen coverage info and HTML report..."
+)
+
+add_custom_target(
+  doxygen-coverage-json
+  COMMAND ${PYTHON_EXECUTABLE} -m coverxygen
+    --xml-dir ${CMAKE_CURRENT_BINARY_DIR}/doxygen/xml/
+    --src-dir ${ZEPHYR_BASE}/include/
+    --format json-v3
+    --output ${CMAKE_CURRENT_BINARY_DIR}/doc-coverage.json
+  DEPENDS doxygen
+  COMMENT "Generating Doxygen coverage info in JSON format..."
 )
 
 #-------------------------------------------------------------------------------
