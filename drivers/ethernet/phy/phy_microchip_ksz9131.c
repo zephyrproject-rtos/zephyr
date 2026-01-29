@@ -49,6 +49,13 @@ struct mchp_ksz9131_data {
 #define PHY_KSZ9131_ICS_LINK_DOWN_IE_MASK BIT(10)
 #define PHY_KSZ9131_ICS_LINK_UP_IE_MASK   BIT(8)
 
+#define PHY_KSZ9131_LPBK_REG		      0x1E
+#define PHY_KSZ9131_LPBK_LED_ERRATA_BIT	  BIT(9)
+
+#define PHY_KSZ9131_MMD_CTRL_DEVAD        0x2
+#define PHY_KSZ9131_MMD_CTRL_REG          0x0
+#define PHY_KSZ9131_MMD_CTRL_LED_MODE     BIT(4)
+
 #define USING_INTERRUPT_GPIO							\
 		UTIL_OR(DT_ALL_INST_HAS_PROP_STATUS_OKAY(int_gpios),		\
 			UTIL_AND(DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios),	\
@@ -78,6 +85,37 @@ static int ksz9131_write(const struct device *dev, uint16_t reg_addr, uint16_t v
 	}
 
 	LOG_DBG("Write 0x%x to phy (%d) register (%d)", value, cfg->phy_addr, reg_addr);
+
+	return ret;
+}
+
+static int ksz9131_read_mmd(const struct device *dev, uint32_t devad, uint16_t reg_addr,
+			    uint16_t *value)
+{
+	const struct mchp_ksz9131_config *const cfg = dev->config;
+	int ret = ksz9131_write(dev, MII_MMD_ACR,
+				(devad & MII_MMD_ACR_DEVAD_MASK) | MII_MMD_ACR_ADDR);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = ksz9131_write(dev, MII_MMD_AADR, reg_addr);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = ksz9131_write(dev, MII_MMD_ACR,
+			    (devad & MII_MMD_ACR_DEVAD_MASK) | MII_MMD_ACR_DATA_NO_POS_INC);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = mdio_read(cfg->mdio, cfg->phy_addr, MII_MMD_AADR, value);
+	if (ret < 0) {
+		LOG_ERR("Error reading phy (%d) MMD (%d.%d)", cfg->phy_addr, devad, reg_addr);
+	}
+
+	LOG_DBG("Read 0x%x from phy (%d) MMD (%d.%d)", *value, cfg->phy_addr, devad, reg_addr);
 
 	return ret;
 }
@@ -539,6 +577,35 @@ done:
 }
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios) */
 
+static int ksz9131_led_errata(const struct device *dev)
+{
+	int ret;
+	uint16_t reg_val;
+
+	/*
+	 * KSZ9131RNX Silicon Errata: DS80000693B
+	 * When configured for Individual-LED mode, LED1 is ON when KSZ9131RNX has no link.
+	 * Workaround: Set bit 9 of Register 0x1E (Loopback Control Register).
+	 */
+
+	ret = ksz9131_read_mmd(dev, PHY_KSZ9131_MMD_CTRL_DEVAD, PHY_KSZ9131_MMD_CTRL_REG, &reg_val);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (reg_val & PHY_KSZ9131_MMD_CTRL_LED_MODE) {
+		ret = ksz9131_read(dev, PHY_KSZ9131_LPBK_REG, &reg_val);
+		if (ret < 0) {
+			return ret;
+		}
+
+		reg_val |= PHY_KSZ9131_LPBK_LED_ERRATA_BIT;
+		ret = ksz9131_write(dev, PHY_KSZ9131_LPBK_REG, reg_val);
+	}
+
+	return ret;
+}
+
 static int phy_mchp_ksz9131_init(const struct device *dev)
 {
 	const struct mchp_ksz9131_config *const cfg = dev->config;
@@ -561,6 +628,11 @@ static int phy_mchp_ksz9131_init(const struct device *dev)
 	}
 
 	ret = ksz9131_init_int_gpios(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = ksz9131_led_errata(dev);
 	if (ret < 0) {
 		return ret;
 	}
