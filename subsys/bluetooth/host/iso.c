@@ -1166,6 +1166,37 @@ void bt_iso_cleanup_acl(struct bt_conn *iso)
 	}
 }
 
+static void log_cis_info(const struct bt_conn_iso *iso_conn)
+{
+	const struct bt_iso_info *info = &iso_conn->info;
+	const struct bt_iso_unicast_info *unicast_info = &info->unicast;
+	const struct bt_iso_unicast_tx_info *peripheral = &unicast_info->peripheral;
+	const struct bt_iso_unicast_tx_info *central = &unicast_info->central;
+	const struct bt_iso_chan *chan = iso_conn->chan;
+	const struct bt_iso_chan_io_qos *tx = chan->qos->tx;
+	const struct bt_iso_chan_io_qos *rx = chan->qos->rx;
+
+	LOG_DBG("iso_chan %p established: tx %p, rx %p, iso_interval 0x%04X, max_subevent 0x%02X, "
+		"cig_id 0x%02X, cis_id 0x%02X, cig_sync_delay 0x%06X, cis_sync_delay 0x%06X, "
+		"subinterval 0x%08X%s",
+		chan, tx, rx, info->iso_interval, info->max_subevent, unicast_info->cig_id,
+		unicast_info->cis_id, unicast_info->cig_sync_delay, unicast_info->cis_sync_delay,
+		unicast_info->subinterval,
+		unicast_info->subinterval == BT_ISO_SUBINTERVAL_UNKNOWN ? " (unknown)" : "");
+
+	LOG_DBG("\tC to P: latency 0x%06X, flush_timeout 0x%06X, max_pdu 0x%04X, phy 0x%02X, "
+		"bn 0x%02X, max_sdu 0x%04X, sdu_interval 0x%06X%s",
+		central->latency, central->flush_timeout, central->max_pdu, central->phy,
+		central->bn, central->max_sdu, central->sdu_interval,
+		central->sdu_interval == BT_ISO_SDU_INTERVAL_UNKNOWN ? " (unknown)" : "");
+
+	LOG_DBG("\tP to C: latency 0x%06X, flush_timeout 0x%06X, max_pdu 0x%04X, phy 0x%02X, "
+		"bn 0x%02X, max_sdu 0x%04X, sdu_interval 0x%06X%s",
+		peripheral->latency, peripheral->flush_timeout, peripheral->max_pdu,
+		peripheral->phy, peripheral->bn, peripheral->max_sdu, peripheral->sdu_interval,
+		peripheral->sdu_interval == BT_ISO_SDU_INTERVAL_UNKNOWN ? " (unknown)" : "");
+}
+
 static void store_cis_info(const struct bt_hci_evt_le_cis_established *evt, struct bt_conn *iso)
 {
 	struct bt_conn_iso *iso_conn = &iso->iso;
@@ -1183,8 +1214,6 @@ static void store_cis_info(const struct bt_hci_evt_le_cis_established *evt, stru
 	chan = iso_conn->chan;
 	rx = chan->qos->rx;
 	tx = chan->qos->tx;
-
-	LOG_DBG("iso_chan %p tx %p rx %p", chan, tx, rx);
 
 	if (iso->role == BT_HCI_ROLE_PERIPHERAL) {
 		/* As of BT Core 6.0, we can only get the SDU size if the controller
@@ -1370,6 +1399,7 @@ void hci_le_cis_established(struct net_buf *buf)
 
 	if (evt->status == BT_HCI_ERR_SUCCESS) {
 		store_cis_info(evt, iso);
+		log_cis_info(&iso->iso);
 		bt_conn_set_state(iso, BT_CONN_CONNECTED);
 	} else if (iso->role == BT_HCI_ROLE_PERIPHERAL ||
 		   evt->status != BT_HCI_ERR_OP_CANCELLED_BY_HOST) {
@@ -1404,6 +1434,7 @@ void hci_le_cis_established_v2(struct net_buf *buf)
 
 	if (evt->status == BT_HCI_ERR_SUCCESS) {
 		store_cis_info_v2(evt, iso);
+		log_cis_info(&iso->iso);
 		bt_conn_set_state(iso, BT_CONN_CONNECTED);
 	} else if (iso->role == BT_HCI_ROLE_PERIPHERAL ||
 		   evt->status != BT_HCI_ERR_OP_CANCELLED_BY_HOST) {
@@ -3141,6 +3172,8 @@ static void store_bis_broadcaster_info(const struct bt_hci_evt_le_big_complete *
 	struct bt_conn_iso *iso_conn = &iso->iso;
 	struct bt_iso_info *info = &iso_conn->info;
 	struct bt_iso_broadcaster_info *broadcaster_info = &info->broadcaster;
+	const struct bt_iso_chan *chan = iso_conn->chan;
+	const struct bt_iso_chan_io_qos *tx = chan->qos->tx;
 
 	info->iso_interval = sys_le16_to_cpu(evt->iso_interval);
 	info->max_subevent = evt->nse;
@@ -3158,6 +3191,14 @@ static void store_bis_broadcaster_info(const struct bt_hci_evt_le_big_complete *
 
 	info->can_send = true;
 	info->can_recv = false;
+
+	LOG_DBG("iso_chan %p established: tx %p, big_handle 0x%02X, bis_number 0x%02X, "
+		"iso_interval 0x%04X, max_subevent 0x%02X, sync_delay 0x%06X, latency 0x%06X, "
+		"phy 0x%02X, bn 0x%02X, irc 0x%02X, pto 0x%06X, max_pdu 0x%04X",
+		chan, tx, broadcaster_info->big_handle, broadcaster_info->bis_number,
+		info->iso_interval, info->max_subevent, broadcaster_info->sync_delay,
+		broadcaster_info->latency, broadcaster_info->phy, broadcaster_info->bn,
+		broadcaster_info->irc, broadcaster_info->pto, broadcaster_info->max_pdu);
 }
 
 void hci_le_big_complete(struct net_buf *buf)
@@ -3342,6 +3383,8 @@ static void store_bis_sync_receiver_info(const struct bt_hci_evt_le_big_sync_est
 	struct bt_conn_iso *iso_conn = &iso->iso;
 	struct bt_iso_info *info = &iso_conn->info;
 	struct bt_iso_sync_receiver_info *receiver_info = &info->sync_receiver;
+	const struct bt_iso_chan *chan = iso_conn->chan;
+	const struct bt_iso_chan_io_qos *rx = chan->qos->rx;
 
 	info->max_subevent = evt->nse;
 	info->iso_interval = sys_le16_to_cpu(evt->iso_interval);
@@ -3357,6 +3400,13 @@ static void store_bis_sync_receiver_info(const struct bt_hci_evt_le_big_sync_est
 
 	info->can_send = false;
 	info->can_recv = true;
+
+	LOG_DBG("iso_chan %p established: rx %p, big_handle 0x%02X, bis_number 0x%02X, "
+		"iso_interval 0x%04X, max_subevent 0x%02X, latency 0x%06X, bn 0x%02X, irc 0x%02X, "
+		"pto 0x%06X, max_pdu 0x%04X",
+		chan, rx, receiver_info->big_handle, receiver_info->bis_number, info->iso_interval,
+		info->max_subevent, receiver_info->latency, receiver_info->bn, receiver_info->irc,
+		receiver_info->pto, receiver_info->max_pdu);
 }
 
 void hci_le_big_sync_established(struct net_buf *buf)
