@@ -672,6 +672,28 @@ static int flash_npcx_nor_ex_op(const struct device *dev, uint16_t code,
 
 	return ret;
 }
+
+void npcx_lock_flash_control_register(const struct device *dev)
+{
+	struct npcx_ex_ops_uma_in op_in = {
+		.opcode = SPI_NOR_CMD_WRDI,
+		.tx_count = 0,
+		.addr_count = 0,
+	};
+
+	flash_npcx_nor_ex_op(dev, FLASH_NPCX_EX_OP_EXEC_UMA, (uintptr_t)&op_in, NULL);
+}
+
+void npcx_unlock_flash_control_register(const struct device *dev)
+{
+	struct npcx_ex_ops_uma_in op_in = {
+		.opcode = SPI_NOR_CMD_WREN,
+		.tx_count = 0,
+		.addr_count = 0,
+	};
+
+	flash_npcx_nor_ex_op(dev, FLASH_NPCX_EX_OP_EXEC_UMA, (uintptr_t)&op_in, NULL);
+}
 #endif
 
 static DEVICE_API(flash, flash_npcx_nor_driver_api) = {
