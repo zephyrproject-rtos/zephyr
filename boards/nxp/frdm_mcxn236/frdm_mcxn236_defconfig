@@ -1,5 +1,5 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024, 2026 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -15,3 +15,6 @@ CONFIG_HW_STACK_PROTECTION=y
 
 # Enable TrustZone-M
 CONFIG_TRUSTED_EXECUTION_SECURE=y
+
+# Allow wwdt callback
+CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG=512

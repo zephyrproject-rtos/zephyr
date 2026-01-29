@@ -1,5 +1,5 @@
 #
-# Copyright 2024-2025 NXP
+# Copyright 2024-2026 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -18,3 +18,6 @@ CONFIG_TRUSTED_EXECUTION_SECURE=y
 # Nocache memory options
 CONFIG_NOCACHE_MEMORY=y
 CONFIG_IMX_USDHC_DMA_SUPPORT=n
+
+# Allow wwdt callback
+CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG=512

@@ -1,6 +1,6 @@
 #
 # Copyright (c) 2020 Lemonbeat GmbH
-# Copyright 2024 NXP
+# Copyright 2024, 2026 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -16,3 +16,6 @@ CONFIG_HW_STACK_PROTECTION=y
 CONFIG_RUNTIME_NMI=y
 
 CONFIG_BUILD_OUTPUT_HEX=y
+
+# Allow wwdt callback
+CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG=512

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2024, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -536,6 +536,7 @@
 	wwdt0: watchdog@e000 {
 		compatible = "nxp,lpc-wwdt";
 		reg = <0xe000 0x1000>;
+		clocks = <&clkctl0 MCUX_WWDT0_CLK>;
 		interrupts = <0 0>;
 		status = "disabled";
 		clk-divider = <1>;
@@ -544,6 +545,7 @@
 	wwdt1: watchdog@2e000 {
 		compatible = "nxp,lpc-wwdt";
 		reg = <0x2e000 0x1000>;
+		clocks = <&clkctl0 MCUX_WWDT1_CLK>;
 		interrupts = <52 0>;
 		status = "disabled";
 		clk-divider = <1>;

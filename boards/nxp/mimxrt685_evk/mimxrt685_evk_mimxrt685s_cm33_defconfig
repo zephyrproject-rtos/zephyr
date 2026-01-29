@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, NXP
+# Copyright 2020, 2026 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -14,3 +14,6 @@ CONFIG_TRUSTED_EXECUTION_SECURE=y
 
 CONFIG_ARM_MPU=y
 CONFIG_HW_STACK_PROTECTION=y
+
+# Allow wwdt callback
+CONFIG_WDT_MCUX_WWDT_WARNING_INTERRUPT_CFG=512
