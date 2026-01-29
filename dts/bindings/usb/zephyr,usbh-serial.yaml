@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+ USB Host Vendor class serial support.
+
+compatible: "zephyr,usbh-serial"
+
+include: base.yaml
