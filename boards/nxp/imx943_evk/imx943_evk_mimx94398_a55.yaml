@@ -15,6 +15,7 @@ ram: 10240
 supported:
   - counter
   - gpio
+  - i2c
   - net
   - uart
   - watchdog
