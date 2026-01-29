@@ -1,0 +1,5 @@
+tests:
+  kernel.timer.deferrable_timeout:
+    tags:
+      - kernel
+      - timer
