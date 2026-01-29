@@ -52,7 +52,6 @@ struct eth_nxp_s32_config {
 struct eth_nxp_s32_data {
 	struct net_if *iface;
 	uint8_t mac_addr[ETH_NXP_S32_MAC_ADDR_LEN];
-	uint8_t	if_suspended;
 	struct k_sem rx_sem;
 	struct k_sem tx_sem;
 	struct k_thread rx_thread;
@@ -117,13 +116,6 @@ static void phy_link_state_changed(const struct device *pdev,
 		Gmac_Ip_SetSpeed(cfg->instance, gmac_cfg.Speed);
 
 		cfg->base->MAC_CONFIGURATION |= GMAC_MAC_CONFIGURATION_DM(gmac_cfg.Duplex);
-
-		/* net iface should be down even if PHY link state is up
-		 * till the upper network layers have suspended the iface.
-		 */
-		if (ctx->if_suspended) {
-			return;
-		}
 
 		LOG_DBG("Link up");
 		net_eth_carrier_on(ctx->iface);
@@ -228,32 +220,11 @@ static int eth_nxp_s32_init(const struct device *dev)
 static int eth_nxp_s32_start(const struct device *dev)
 {
 	const struct eth_nxp_s32_config *cfg = dev->config;
-	struct eth_nxp_s32_data *ctx = dev->data;
-	struct phy_link_state state;
 
 	Gmac_Ip_EnableController(cfg->instance);
 
 	irq_enable(cfg->rx_irq);
 	irq_enable(cfg->tx_irq);
-
-	/* If upper layers enable the net iface then mark it as
-	 * not suspended so that PHY Link changes can have the impact
-	 */
-	ctx->if_suspended = false;
-
-	if (cfg->phy_dev) {
-		phy_get_link_state(cfg->phy_dev, &state);
-
-		/* Enable net_iface only when Ethernet PHY link is up or else
-		 * if net_iface is enabled when link is down and tx happens
-		 * in this state then the used tx buffers will never be recovered back.
-		 */
-		if (state.is_up == true) {
-			net_eth_carrier_on(ctx->iface);
-		}
-	} else {
-		net_eth_carrier_on(ctx->iface);
-	}
 
 	LOG_DBG("GMAC%d started", cfg->instance);
 
@@ -263,19 +234,11 @@ static int eth_nxp_s32_start(const struct device *dev)
 static int eth_nxp_s32_stop(const struct device *dev)
 {
 	const struct eth_nxp_s32_config *cfg = dev->config;
-	struct eth_nxp_s32_data *ctx = dev->data;
 	Gmac_Ip_StatusType status;
 	int err = 0;
 
 	irq_disable(cfg->rx_irq);
 	irq_disable(cfg->tx_irq);
-
-	/* If upper layers disable the net iface then mark it as suspended
-	 * in order to save it from the PHY link state changes
-	 */
-	ctx->if_suspended = true;
-
-	net_eth_carrier_off(ctx->iface);
 
 	status = Gmac_Ip_DisableController(cfg->instance);
 	if (status != GMAC_STATUS_SUCCESS) {
@@ -306,16 +269,13 @@ static void eth_nxp_s32_iface_init(struct net_if *iface)
 		ctx->mac_addr[0], ctx->mac_addr[1], ctx->mac_addr[2],
 		ctx->mac_addr[3], ctx->mac_addr[4], ctx->mac_addr[5]);
 
-	/* Make sure that the net iface state is not suspended unless
-	 * upper layers explicitly stop the iface
-	 */
-	ctx->if_suspended = false;
-
 	/* No PHY available, link is always up and MAC speed/duplex settings are fixed */
 	if (cfg->phy_dev == NULL) {
 		net_if_carrier_on(iface);
 		return;
 	}
+
+	net_eth_carrier_off(iface);
 
 	/*
 	 * GMAC controls the PHY. If PHY is configured either as fixed
