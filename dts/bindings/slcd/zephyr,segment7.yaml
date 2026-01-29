@@ -1,0 +1,8 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: 7-segment LCD panel device
+
+compatible: "zephyr,segment7"
+
+include: slcd-panel.yaml

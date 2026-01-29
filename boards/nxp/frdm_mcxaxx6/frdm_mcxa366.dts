@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025,2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,3 +63,17 @@ zephyr_udc0: &usb {
 	status = "okay";
 	num-bidir-endpoints = <8>;
 };
+
+/* SLCD configuration */
+&slcd0 {
+	status = "okay";
+	num-front-pins = <12>;
+	front-plane-pins = <16 17 18 19 20 21 22 23 24 25 26 27>;
+	num-back-coms = <4>;
+	back-plane-pins = <28 29 30 31>;
+	blink-rate = <1>;
+	pinctrl-0 = <&pinmux_slcd0>;
+	pinctrl-names = "default";
+};
+
+slcd_controller: &slcd0 {};
