@@ -1,4 +1,4 @@
-.. _bcm958401m2:
+.. zephyr:board:: bcm958401m2
 
 Broadcom BCM958401M2
 ####################
@@ -18,21 +18,8 @@ The BCM958401M2 is a PCIe card with the following physical features:
 
 Supported Features
 ==================
-The Broadcom BCM958401M2 board configuration supports the following hardware
-features:
 
-+-----------+------------+--------------------------------------+
-| Interface | Controller | Driver/Component                     |
-+===========+============+======================================+
-| NVIC      | on-chip    | nested vectored interrupt controller |
-+-----------+------------+--------------------------------------+
-| UART      | on-chip    | serial port                          |
-+-----------+------------+--------------------------------------+
-
-Other hardware features have not been enabled yet for this board.
-
-The default configuration can be found in
-:zephyr_file:`boards/brcm/bcm958401m2/bcm958401m2_defconfig`
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================

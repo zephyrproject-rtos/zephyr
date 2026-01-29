@@ -18,7 +18,7 @@ Requirements
 ************
 
 This sample uses the LSM6DSL sensor controlled using the I2C or SPI interface.
-It has been tested on both :ref:`96b_argonkey` and disco_l475_iot1 board.
+It has been tested on both :zephyr:board:`96b_argonkey` and :zephyr:board:`disco_l475_iot1`.
 
 References
 **********
@@ -28,8 +28,8 @@ References
 Building and Running
 ********************
 
- This project outputs sensor data to the console. It requires an LSM6DSL
- sensor, which is present on both the :ref:`96b_argonkey` and disco_l475_iot1 board.
+ This project outputs sensor data to the console. It requires an LSM6DSL sensor, which is
+ present on both the :zephyr:board:`96b_argonkey` and :zephyr:board:`disco_l475_iot1` boards.
 
 Building on ArgonKey board
 ==========================

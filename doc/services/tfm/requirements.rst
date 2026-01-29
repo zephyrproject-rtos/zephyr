@@ -22,7 +22,7 @@ The following are some of the boards that can be used with TF-M:
      - ``bl5340_dvk/nrf5340/cpuapp/ns``
    * - :zephyr:board:`lpcxpresso55s69`
      - ``lpcxpresso55s69_ns``
-   * - :ref:`nrf9160dk_nrf9160`
+   * - :zephyr:board:`nrf9160dk_nrf9160 <nrf9160dk>`
      - ``nrf9160dk/nrf9160/ns``
    * - :zephyr:board:`nrf5340dk`
      - ``nrf5340dk/nrf5340/cpuapp/ns``

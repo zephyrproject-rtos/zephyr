@@ -25,33 +25,7 @@ is 16 MHz.
 Supported Features
 ==================
 
-- CPU:
-	+ Nordic nRF51822: ARM |reg| Cortex |trade| M0 32bit.
-	+ *Bluetooth Low Energy interface.*
-	+ 256KB Flash, 32KB RAM.
-	+ UART(1), I2C(2), SPI(1), PWM(3), SWD, Timer 16bit(3).
-	+ 21 digital channels, 6 ADC 10bit channels.
-	+ 1 Led and 1 Button onboard.
-	+ GPIO Voltage: 0 - 3.3V.
-- DAPLink (CMSIS-DAP) interface for program and debug:
-	+ USB MSD: Drag and Drop programming flash memory.
-	+ USB HID (DAP): CMSIS-DAP compliant debug channel.
-	+ USB CDC: Virtual COM port for log, trace and terminal emulation.
-
-- Supports hardware flow control features (RTS/CTS).
-- *Energy monitoring for BLE module by current measurement (Only VBLUno51_EM)*
-- FOTA (Firmware over the air): Upgrade firmware over BLE interface.
-- Build good applications with:
-	+ Compiler and IDE: GCC, Keil MDK, IAR, Eclipse, Qt Creator.
-	+ Frameworks: Arduino, ARM mbed-OS, Zephyr-OS, Nordic SDK, RIOT-OS, MyNewt-OS, ChibiOS, NuttX RTOS
-	+ A lot of tutorials for Arduino, mbed-os and more.
-- Pinout: Arduino Uno Rev3 compliant.
-- Power:
-	+ USB port.
-	+ Power adapter: +9 -> +12V.
-	+ 3V Battery: CR20xx holder
-	+ Rechargeable battery jump: +3.7 -> +12V
-- Open source: Hardware design, firmware, packages, tutorial and example codes
+.. zephyr:board-supported-hw::
 
 See `VBLUno51 wiki page`_ for full documents and tutorials about the VBLUno51 board.
 

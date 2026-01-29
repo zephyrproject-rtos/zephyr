@@ -14,7 +14,7 @@ Requirements
 ************
 
 This sample requires a supported board and CFB-supporting
-display, such as the :ref:`reel_board`.
+display, such as the :zephyr:board:`reel_board`.
 
 Building and Running
 ********************
@@ -27,4 +27,4 @@ Build this sample application with the following commands:
    :goals: build
    :compact:
 
-See :ref:`reel_board` on how to flash the build.
+See :zephyr:board:`reel_board` on how to flash the build.
