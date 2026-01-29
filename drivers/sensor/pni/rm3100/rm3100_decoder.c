@@ -219,9 +219,10 @@ static int rm3100_decoder_decode(const uint8_t *buffer,
 	return -1;
 }
 
-static bool rm3100_decoder_has_trigger(const uint8_t *buffer,
-					enum sensor_trigger_type trigger)
+static bool rm3100_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger,
+				       struct sensor_chan_spec chan_spec)
 {
+	ARG_UNUSED(chan_spec);
 	const struct rm3100_encoded_data *edata = (const struct rm3100_encoded_data *)buffer;
 
 	return edata->header.events.drdy && trigger == SENSOR_TRIG_DATA_READY;

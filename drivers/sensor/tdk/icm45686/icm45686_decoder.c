@@ -567,8 +567,10 @@ static int icm45686_decoder_decode(const uint8_t *buffer,
 	}
 }
 
-static bool icm45686_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger)
+static bool icm45686_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger,
+					 struct sensor_chan_spec chan_spec)
 {
+	ARG_UNUSED(chan_spec);
 	struct icm45686_encoded_data *edata = (struct icm45686_encoded_data *)buffer;
 
 	switch (trigger) {

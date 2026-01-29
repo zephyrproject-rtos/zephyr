@@ -24,9 +24,9 @@ static const struct device *const sensors[] = { LISTIFY(10, STREAMDEV_DEVICE, ()
 #define STREAM_IODEV_SYM(id) CONCAT(stream_iodev, id)
 #define STREAM_IODEV_PTR(id, _) &STREAM_IODEV_SYM(id)
 
-#define STREAM_TRIGGERS					   \
-	{ SENSOR_TRIG_FIFO_FULL, SENSOR_STREAM_DATA_NOP }, \
-	{ SENSOR_TRIG_FIFO_WATERMARK, SENSOR_STREAM_DATA_INCLUDE }
+#define STREAM_TRIGGERS                                                                            \
+	(SENSOR_TRIG_FIFO_FULL, SENSOR_STREAM_DATA_NOP),                                           \
+		(SENSOR_TRIG_FIFO_WATERMARK, SENSOR_STREAM_DATA_INCLUDE)
 
 #define STREAM_DEFINE_IODEV(id, _)    \
 	SENSOR_DT_STREAM_IODEV(	      \
@@ -131,7 +131,8 @@ static void print_stream(void *p1, void *p2, void *p3)
 		frame_count += rot_vect_count + gravity_count + gbias_count;
 
 		/* If a tap has occurred lets print it out */
-		if (decoder->has_trigger(buf, SENSOR_TRIG_TAP)) {
+		if (decoder->has_trigger(buf, SENSOR_TRIG_TAP),
+		    (struct sensor_chan_spec){SENSOR_CHAN_ALL, 0}) {
 			printk("Tap! Sensor %s\n", dev->name);
 		}
 
