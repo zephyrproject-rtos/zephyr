@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2025 Qingdao IotPi Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+#include <sifli/sf32lb58_lpsys.dtsi>
+
+/ {
+    cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		lcpu: cpu@3 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33f";
+			reg = <0>;
+			cpu-power-states = <&stop0 &stop1 &stop2>;
+		};
+    };
+
+    sram-lcpu: memory@20400000 {
+		compatible = "mmio-sram";
+		reg = <0x20400000 DT_SIZE_K(512)>;
+	};
+};

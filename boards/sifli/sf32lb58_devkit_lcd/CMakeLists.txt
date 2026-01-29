@@ -1,0 +1,3 @@
+# Copyright (c) 2025 Qingdao IotPi Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
