@@ -1,0 +1,178 @@
+/*
+ * Copyright (c) 2025 Benjamin Schilling <benjamin.schilling33@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32s3/esp32s3_wroom_n16r8.dtsi>
+#include <espressif/partitions_0x0_amp_16M.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/led/led.h>
+#include "esp32s3_eth_8di_8ro-base-pinctrl.dtsi"
+
+/ {
+	buzzer {
+		compatible = "gpio-leds";
+
+		buzzer: buzzer_0 {
+			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	button {
+		compatible = "gpio-keys";
+
+		boot_btn: button_0 {
+			gpios = <&gpio0 0 GPIO_PULL_UP>;
+		};
+	};
+
+	digital-input {
+		compatible = "gpio-keys";
+
+		di1: di_1 {
+			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+		};
+
+		di2: di_2 {
+			gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+		};
+
+		di3: di_3 {
+			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+		};
+
+		di4: di_4 {
+			gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+		};
+
+		di5: di_5 {
+			gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+		};
+
+		di6: di_6 {
+			gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+		};
+
+		di7: di_7 {
+			gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+		};
+
+		di8: di_8 {
+			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+};
+
+&wifi {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&spi2 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+	clock-frequency = <DT_FREQ_M(8)>;
+
+	eth_w5500: w5500@0 {
+		compatible = "wiznet,w5500";
+		reg = <0x0>;
+		spi-max-frequency = <6400000>;
+		int-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+		local-mac-address = [00 00 00 01 02 03];
+		status = "okay";
+	};
+};
+
+&spi3 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&spim3_default>;
+	pinctrl-names = "default";
+	/* Workaround to support WS2812 driver */
+	line-idle-low;
+
+	led_strip: ws2812@0 {
+		compatible = "worldsemi,ws2812-spi";
+		reg = <0>; /* ignored, but necessary for SPI bindings */
+		spi-max-frequency = <6400000>;
+		chain-length = <1>; /* arbitrary; change at will */
+		spi-cpha;
+		spi-one-frame = <0xf0>; /* 11110000: 625 ns high and 625 ns low */
+		spi-zero-frame = <0xc0>; /* 11000000: 312.5 ns high and 937.5 ns low */
+		color-mapping = <LED_COLOR_ID_GREEN
+				 LED_COLOR_ID_RED
+				 LED_COLOR_ID_BLUE>;
+	};
+};
+
+&usb_serial {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
+
+&sdhc {
+	status = "okay";
+
+	sdhc1: sdhc@1 {
+		status = "okay";
+		pinctrl-0 = <&sdhc1_default>;
+		pinctrl-names = "default";
+		max-bus-freq = <52000000>;
+		bus-width = <1>;
+		power-delay-ms = <1000>;
+
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
+			status = "okay";
+		};
+	};
+};
+
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	clock-frequency = <400000>;
+
+	rtc: rtc@51 {
+		status = "okay";
+		compatible = "nxp,pcf85063a";
+		reg = <0x51>;
+	};
+
+	tca: tca@20 {
+		status = "okay";
+		compatible = "ti,tca9538";
+		reg = <0x20>;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+		gpio-controller;
+	};
+};
