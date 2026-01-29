@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Microchip Technology Inc.
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,5 +25,9 @@
 #if CONFIG_CLOCK_CONTROL_MCHP_PIC32CM_JH
 #include <zephyr/drivers/clock_control/mchp_clock_pic32cm_jh.h>
 #endif /* CONFIG_CLOCK_CONTROL_MCHP_PIC32CM_JH */
+
+#if CONFIG_CLOCK_CONTROL_MCHP_PIC32CZ_CA
+#include <zephyr/drivers/clock_control/mchp_clock_pic32cz_ca.h>
+#endif /* CONFIG_CLOCK_CONTROL_MCHP_PIC32CZ_CA */
 
 #endif /* INCLUDE_ZEPHYR_DRIVERS_CLOCK_CONTROL_MCHP_CLOCK_CONTROL_H_ */
