@@ -64,11 +64,13 @@ Naming Conventions
      because one can filter by a scope keyword.
 
 * When the enabling symbol is dependent on a devicetree node, consider
-  depending on the automatically created ``DT_HAS_<node>_ENABLED`` symbol.
+  depending on the :ref:`automatically created <auto-dts-kconfig>`
+  ``DT_HAS_<node>_ENABLED`` symbol.
 
 * When building complex expressions based on devicetree node compatibles,
-  use the automatically defined :samp:`DT_COMPAT_{VND_DEVICE}` instead
-  of defining a variable equal to :samp:`{vnd,device}` manually.
+  use the :ref:`automatically defined <auto-dts-kconfig>`
+  :samp:`DT_COMPAT_{VND_DEVICE}` instead of defining a variable equal to
+  :samp:`{vnd,device}` manually.
 
 The specific formats by subtree:
 
