@@ -228,6 +228,26 @@ enum sensor_channel {
 	SENSOR_CHAN_GRAVITY_VECTOR,
 	/** Gyroscope bias (X/Y/Z components in radians/s) */
 	SENSOR_CHAN_GBIAS_XYZ,
+	/** Game Rotation Vector (unit quaternion components X/Y/Z/W) */
+	SENSOR_CHAN_GAME_ROTATION_VECTOR_X,
+	SENSOR_CHAN_GAME_ROTATION_VECTOR_Y,
+	SENSOR_CHAN_GAME_ROTATION_VECTOR_Z,
+	SENSOR_CHAN_GAME_ROTATION_VECTOR_W,
+	/** Rotation Vector (unit quaternion components X/Y/Z/W). Compared to
+	 * Game Rotation Vector, this one takes magnetometer into consideration and
+	 * provides absolute orientation */
+	SENSOR_CHAN_ROTATION_VECTOR_X,
+	SENSOR_CHAN_ROTATION_VECTOR_Y,
+	SENSOR_CHAN_ROTATION_VECTOR_Z,
+	SENSOR_CHAN_ROTATION_VECTOR_W,
+	SENSOR_CHAN_ROTATION_VECTOR,
+	/** Euler angles (Heading, Roll and Pitch, in degrees) */
+	SENSOR_CHAN_EULER_HEADING,
+	SENSOR_CHAN_EULER_ROLL,
+	SENSOR_CHAN_EULER_PITCH,
+	SENSOR_CHAN_EULER,
+	/** Step count */
+	SENSOR_CHAN_STEP_COUNT,
 
 	/** Raw quadrature decoder count, in counts */
 	SENSOR_CHAN_ENCODER_COUNT,
