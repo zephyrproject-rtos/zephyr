@@ -32,6 +32,10 @@ properties:
       Attribute or set of attributes (bitmask) for the memory region. See
       'include/zephyr/dt-bindings/memory-attr/memory-attr.h' for a
       comprehensive list with description of possible values.
+      Used by MMU/MPU systems to configure memory regions with specific
+      attributes. This property should only be used on nodes with
+      compatible = "zephyr,memory-region" to define separate memory-region
+      nodes rather than annotating device nodes directly.
 
   reg:
     required: true
