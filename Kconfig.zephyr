@@ -629,6 +629,37 @@ config TOOLCHAIN_SUPPORTS_VLA_IN_STATEMENTS
 	  Hidden symbol to state if the toolchain can handle vla in
 	  statements.
 
+menu "Code Generation"
+
+choice COMPILER_CODEGEN_VLIW
+	prompt "VLIW (Very Long Instruction Word)"
+	default COMPILER_CODEGEN_VLIW_AUTO
+	help
+	  This option instructs the compiler whether to use VLIW
+	  (Very Long Instruction Word) instructions. VLIW allows
+	  the compiler to fuse instructions for parallel execution.
+
+config COMPILER_CODEGEN_VLIW_AUTO
+	bool "Auto"
+	help
+	  Let the compiler decide whether to generate VLIW instructions.
+
+	  This usually means using the compiler defaults.
+
+config COMPILER_CODEGEN_VLIW_ENABLED
+	bool "Generate VLIW"
+	help
+	  Explicitly instructs the compiler to generate VLIW instructions if possible.
+
+config COMPILER_CODEGEN_VLIW_DISABLED
+	bool "DO NOT generate VLIW"
+	help
+	  Explicitly instructs the compiler to NEVER generate VLIW instructions.
+
+endchoice # COMPILER_CODEGEN_VLIW
+
+endmenu # Code Generation
+
 endmenu
 
 choice
