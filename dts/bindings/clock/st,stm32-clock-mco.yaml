@@ -28,8 +28,13 @@ properties:
 
   clocks:
     required: true
+    description: |
+      Two clocks can be configured depending on SoC
+        * "clksel" for selecting the MCO multiplexer
+        * "clken" (optional) dedicated MCO enable bit
 
   clock-names:
+    enum: ["clksel", "clken"]
     required: true
 
   prescaler:
