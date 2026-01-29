@@ -82,7 +82,7 @@ static void sys_event_irq_latency(void)
 	}
 
 	cyc /= rpt;
-	printf("Alarm set for %d us, execution took:%d\n", delay, cyc);
+	printf("Alarm set for %d us, execution took:%d (event registered)\n", delay, cyc);
 }
 #endif /* CONFIG_NRF_SYS_EVENT_IRQ_LATENCY */
 
@@ -119,6 +119,8 @@ int main(void)
 
 #ifdef CONFIG_NRF_SYS_EVENT_IRQ_LATENCY
 	sys_event_irq_latency();
+
+	printf("All done\n");
 #endif
 	return 0;
 }
