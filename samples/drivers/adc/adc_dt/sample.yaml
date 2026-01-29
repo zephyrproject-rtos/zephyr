@@ -50,6 +50,7 @@ tests:
       - frdm_mcxa346
       - frdm_mcxa266
       - frdm_mcxa366
+      - frdm_mcxa344
       - frdm_mcxe247
       - s32k148_evb
       - raytac_an54lq_db_15/nrf54l15/cpuapp
