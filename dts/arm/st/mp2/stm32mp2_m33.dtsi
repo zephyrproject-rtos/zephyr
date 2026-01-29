@@ -179,6 +179,39 @@
 			};
 		};
 
+		fdcan1: can@402d0000 {
+			compatible = "st,stm32h7-fdcan";
+			reg = <0x402d0000 0x400>, <0x40310000 0xd50>;
+			reg-names = "m_can", "message_ram";
+			clocks = <&rcc STM32_CLOCK(FDCAN, STM32_CLK)>;
+			interrupts = <91 0>, <94 0>, <90 0>;
+			interrupt-names = "int0", "int1", "calib";
+			bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
+			status = "disabled";
+		};
+
+		fdcan2: can@402e0000 {
+			compatible = "st,stm32h7-fdcan";
+			reg = <0x402e0000 0x400>, <0x40310000 0x1aa0>;
+			reg-names = "m_can", "message_ram";
+			clocks = <&rcc STM32_CLOCK(FDCAN, STM32_CLK)>;
+			interrupts = <92 0>, <95 0>;
+			interrupt-names = "int0", "int1";
+			bosch,mram-cfg = <0xd50 28 8 3 3 0 3 3>;
+			status = "disabled";
+		};
+
+		fdcan3: can@402f0000 {
+			compatible = "st,stm32h7-fdcan";
+			reg = <0x402f0000 0x400>, <0x40310000 0x2800>;
+			reg-names = "m_can", "message_ram";
+			clocks = <&rcc STM32_CLOCK(FDCAN, STM32_CLK)>;
+			interrupts = <93 0>, <96 0>;
+			interrupt-names = "int0", "int1";
+			bosch,mram-cfg = <0x1aa0 28 8 3 3 0 3 3>;
+			status = "disabled";
+		};
+
 		spi1: spi@40230000 {
 			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
 			reg = <0x40230000 DT_SIZE_K(1)>;

@@ -12,6 +12,7 @@ supported:
   - i2c
   - i3c
   - spi
+  - fdcan
 testing:
   ignore_tags:
     - cmsis_rtos_v2
