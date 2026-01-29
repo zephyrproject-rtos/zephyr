@@ -1555,6 +1555,8 @@ flagged.
         # with older versions of the ICMsg.
         "IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS",
         "LIBGCC_RTLIB",
+        "LLEXT_EXPORT_SYMBOL_GROUP_",  # Used in regexp by
+        # scripts/build/llext_inspect_discarded_groups.py
         "LLVM_USE_LD",  # Both LLVM_USE_* are in cmake/toolchain/llvm/Kconfig
         # which are only included if LLVM is selected but
         # not other toolchains. Compliance check would complain,
