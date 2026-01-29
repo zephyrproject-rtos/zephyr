@@ -13,26 +13,22 @@ menuconfig NET_TCP
 
 if NET_TCP
 
-if NET_TCP
 module = NET_TCP
 module-dep = NET_LOG
 module-str = Log level for TCP
 module-help = Enables TCP handler output debug messages
 source "subsys/net/Kconfig.template.log_config.net"
-endif # NET_TCP
 
 config NET_TCP_WORKQ_STACK_SIZE
 	int "TCP work queue thread stack size"
 	default 1200 if X86
 	default 1024
-	depends on NET_TCP
 	help
 	  Set the TCP work queue thread stack size in bytes.
 
 config NET_TCP_WORKER_PRIO
 	int "Priority of the TCP work queue"
 	default 2
-	depends on NET_TCP
 	help
 	  Set the priority of the TCP worker queue, that handles all
 	  transmission and maintenance within the TCP stack.
@@ -47,7 +43,6 @@ config NET_TCP_WORKER_PRIO
 
 config NET_TCP_TIME_WAIT_DELAY
 	int "How long to wait in TIME_WAIT state (in milliseconds)"
-	depends on NET_TCP
 	default 1500
 	help
 	  To avoid a (low-probability) issue when delayed packets from
@@ -67,7 +62,6 @@ config NET_TCP_TIME_WAIT_DELAY
 
 config NET_TCP_INIT_RETRANSMISSION_TIMEOUT
 	int "Initial value of Retransmission Timeout (RTO) (in milliseconds)"
-	depends on NET_TCP
 	default 200
 	range 100 60000
 	help
@@ -77,7 +71,6 @@ config NET_TCP_INIT_RETRANSMISSION_TIMEOUT
 config NET_TCP_RANDOMIZED_RTO
 	bool "Use a randomized retransmission time"
 	default y
-	depends on NET_TCP
 	help
 	  It can happen that two similar stacks enter a retransmission cycle
 	  due to a packet collision. If the transmission timeout is the same
@@ -88,7 +81,6 @@ config NET_TCP_RANDOMIZED_RTO
 
 config NET_TCP_RETRY_COUNT
 	int "Maximum number of TCP segment retransmissions"
-	depends on NET_TCP
 	default 9
 	help
 	  The following formula can be used to determine the time (in ms)
@@ -107,7 +99,6 @@ config NET_TCP_RETRY_COUNT
 
 config NET_TCP_MAX_SEND_WINDOW_SIZE
 	int "Maximum sending window size to use"
-	depends on NET_TCP
 	default 0
 	range 0 $(UINT16_MAX)
 	help
@@ -117,7 +108,6 @@ config NET_TCP_MAX_SEND_WINDOW_SIZE
 
 config NET_TCP_MAX_RECV_WINDOW_SIZE
 	int "Maximum receive window size to use"
-	depends on NET_TCP
 	default 0
 	range 0 $(UINT16_MAX)
 	help
@@ -129,7 +119,6 @@ config NET_TCP_MAX_RECV_WINDOW_SIZE
 
 config NET_TCP_RECV_QUEUE_TIMEOUT
 	int "How long to queue received data (in ms)"
-	depends on NET_TCP
 	default 2000
 	range 0 10000
 	help
@@ -146,7 +135,6 @@ config NET_TCP_RECV_QUEUE_TIMEOUT
 
 config NET_TCP_PKT_ALLOC_TIMEOUT
 	int "How long to wait for a TCP packet allocation (in ms)"
-	depends on NET_TCP
 	default 100
 	range 10 1000
 	help
@@ -158,14 +146,12 @@ config NET_TCP_PKT_ALLOC_TIMEOUT
 config NET_TCP_CHECKSUM
 	bool "Check TCP checksum"
 	default y
-	depends on NET_TCP
 	help
 	  Enables TCP handler to check TCP checksum. If the checksum is invalid,
 	  then the packet is discarded.
 
 config NET_TCP_FAST_RETRANSMIT
 	bool "Fast-retry algorithm based on the number of duplicated ACKs"
-	depends on NET_TCP
 	default y
 	help
 	  When a packet is lost, the receiver will keep acknowledging the
@@ -177,7 +163,6 @@ config NET_TCP_FAST_RETRANSMIT
 
 config NET_TCP_CONGESTION_AVOIDANCE
 	bool "Implement a congestion avoidance algorithm in TCP"
-	depends on NET_TCP
 	default y
 	help
 	  To avoid overstressing a link reduce the transmission rate as soon as
@@ -185,7 +170,6 @@ config NET_TCP_CONGESTION_AVOIDANCE
 
 config NET_TCP_KEEPALIVE
 	bool "TCP keep-alive support"
-	depends on NET_TCP
 	help
 	  Enabling this option allows the TCP stack to send periodic TCP
 	  keep-alive probes. Enables SO_KEEPALIVE, TCP_KEEPIDLE, TCP_KEEPINTVL
@@ -218,7 +202,6 @@ config NET_TCP_KEEPCNT_DEFAULT
 config NET_TCP_ISN_RFC6528
 	bool "Use ISN algorithm from RFC 6528"
 	default y
-	depends on NET_TCP
 	depends on PSA_WANT_ALG_SHA_256
 	help
 	  Implement Initial Sequence Number calculation as described in
@@ -234,11 +217,26 @@ config NET_TCP_REJECT_CONN_WITH_RST
 
 config NET_TCP_IPV6_ND_REACHABILITY_HINT
 	bool "Provide a reachability hint for IPv6 Neighbor Discovery"
-	depends on NET_TCP
 	depends on NET_IPV6_ND
 	help
 	  If enabled, TCP stack will inform the IPv6 Neighbor Discovery process
 	  about the active link to a specific neighbor by signaling recent
 	  "forward progress" event as described in RFC 4861.
+
+config NET_TCP_PRESERVE_CONTEXT_STATE_ON_IFACE_DOWN
+	bool "Keep the TCP connection contexts open when interface goes down"
+	help
+	  Zephyr by default closes all TCP contexts associated with a given
+	  network interface when the interface goes down. This leads to
+	  reporting an error on the associated network socket, allowing the
+	  application to reopen sockets (for example in case of a network or
+	  an IP address change).
+	  It's been reported however that in certain cases this behavior is
+	  undesirable. If this option is enabled, the TCP stack won't
+	  close any TCP contexts when the network interface is going down.
+	  Therefore, it is the application's responsibility to monitor the IP
+	  address or network interface state changes, and restart the TCP
+	  sockets when needed. Enable this option only if you can guarantee that
+	  the application handles that properly.
 
 endif # NET_TCP

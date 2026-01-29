@@ -4746,6 +4746,25 @@ struct k_sem *net_tcp_conn_sem_get(struct net_context *context)
 	return &conn->connect_sem;
 }
 
+static bool is_bind_addr_unspecified(struct net_context *context)
+{
+	struct net_sockaddr_storage local = { 0 };
+	net_socklen_t addrlen = sizeof(local);
+	bool ret = true;
+
+	if (net_tcp_endpoint_copy(context, net_sad(&local), 0, &addrlen) != 0) {
+		return ret;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && local.ss_family == NET_AF_INET) {
+		ret = net_ipv4_is_addr_unspecified(&net_sin(net_sad(&local))->sin_addr);
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) && local.ss_family == NET_AF_INET6) {
+		ret = net_ipv6_is_addr_unspecified(&net_sin6(net_sad(&local))->sin6_addr);
+	}
+
+	return ret;
+}
+
 static void close_tcp_conn(struct tcp *conn, void *user_data)
 {
 	struct net_if *iface = user_data;
@@ -4756,6 +4775,10 @@ static void close_tcp_conn(struct tcp *conn, void *user_data)
 	}
 
 	if (net_context_get_iface(context) != iface) {
+		return;
+	}
+
+	if (is_bind_addr_unspecified(context)) {
 		return;
 	}
 
@@ -4785,6 +4808,11 @@ static void close_tcp_conn(struct tcp *conn, void *user_data)
 
 void net_tcp_close_all_for_iface(struct net_if *iface)
 {
+	if (IS_ENABLED(CONFIG_NET_TCP_PRESERVE_CONTEXT_STATE_ON_IFACE_DOWN)) {
+		NET_INFO("Not closing TCP connections at interface down");
+		return;
+	}
+
 	net_tcp_foreach(close_tcp_conn, iface);
 }
 
