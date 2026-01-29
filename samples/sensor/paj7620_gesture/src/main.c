@@ -1,14 +1,29 @@
 /*
  * Copyright (c) 2025 Paul Timke <ptimkec@live.com>
+ * Copyright (c) 2025  Mohamed Haggouna <mohamed.haggouna@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor/paj7620.h>
 
+#ifdef CONFIG_PM_DEVICE
+#include <zephyr/pm/device.h>
+#endif
+
 #define GESTURE_POLL_TIME_MS 100
+
+#ifdef CONFIG_PM_DEVICE
+#define SW0_NODE DT_ALIAS(sw0)
+
+static atomic_t current_state = ATOMIC_INIT(PM_DEVICE_STATE_ACTIVE); /* global system state*/
+static struct gpio_callback button_cb_data;
+#endif
+
+static const struct device *dev = DEVICE_DT_GET_ONE(pixart_paj7620);
 
 #ifdef CONFIG_PAJ7620_TRIGGER
 K_SEM_DEFINE(sem, 0, 1); /* starts off "not available" */
@@ -86,21 +101,76 @@ static void polling_main_loop(const struct device *dev)
 }
 #endif
 
+#ifdef CONFIG_PM_DEVICE
+/* Start button handler*/
+void paj7620_button_work_handler(struct k_work *work)
+{
+	int ret;
+
+	if (atomic_get(&current_state) == PM_DEVICE_STATE_ACTIVE) {
+		ret = pm_device_action_run(dev, PM_DEVICE_ACTION_SUSPEND);
+		if (ret == 0) {
+			atomic_set(&current_state, PM_DEVICE_STATE_SUSPENDED);
+			printf("Device in Sleep Mode\n");
+		}
+
+	} else {
+		ret = pm_device_action_run(dev, PM_DEVICE_ACTION_RESUME);
+		if (ret == 0) {
+			atomic_set(&current_state, PM_DEVICE_STATE_ACTIVE);
+			printf("Device in Normal Mode\n");
+		}
+	}
+}
+
+K_WORK_DEFINE(button_work, paj7620_button_work_handler);
+/*Button pressed callback function*/
+
+void paj7620_button_pressed(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
+{
+	k_work_submit(&button_work);
+}
+/* End button handler*/
+#endif
+
 int main(void)
 {
-	const struct device *dev = DEVICE_DT_GET_ONE(pixart_paj7620);
 
 	if (!device_is_ready(dev)) {
 		printf("Device %s is not ready\n", dev->name);
 		return -ENODEV;
 	}
+#ifdef CONFIG_PM_DEVICE
+	int ret;
+	const struct gpio_dt_spec button = GPIO_DT_SPEC_GET(SW0_NODE, gpios);
+
+	if (!device_is_ready(button.port)) {
+		printf("Device %s is not ready\n", button.port->name);
+		return -ENODEV;
+	}
+	ret = gpio_pin_configure_dt(&button, GPIO_INPUT);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = gpio_pin_interrupt_configure_dt(&button, GPIO_INT_EDGE_TO_ACTIVE);
+	if (ret < 0) {
+		return ret;
+	}
+
+	gpio_init_callback(&button_cb_data, paj7620_button_pressed, BIT(button.pin));
+
+	gpio_add_callback(button.port, &button_cb_data);
+#endif
 
 #ifdef CONFIG_PAJ7620_TRIGGER
 	struct sensor_trigger trig = {
 		.type = SENSOR_TRIG_MOTION,
 		.chan = (enum sensor_channel)SENSOR_CHAN_PAJ7620_GESTURES,
 	};
+#ifndef CONFIG_PM_DEVICE
 	int ret;
+#endif
 
 	printf("PAJ7620 gesture sensor sample - trigger mode\n");
 
