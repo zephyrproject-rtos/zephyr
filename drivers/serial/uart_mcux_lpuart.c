@@ -468,19 +468,37 @@ static void async_evt_rx_rdy(const struct device *dev)
 {
 	struct mcux_lpuart_data *data = dev->data;
 	struct mcux_lpuart_rx_dma_params *dma_params = &data->async.rx_dma_params;
+	unsigned int key;
+	uint8_t *buf;
+	size_t counter;
+	size_t offset;
+	size_t len;
+
+	/*
+	 * Snapshot buf/counter/offset under irq_lock() (ISR + workqueue update rx_dma_params).
+	 * Locals ensure len = counter - offset uses a consistent view (prevents underflow).
+	 * Keep lock short: snapshot + offset update only; log/callback outside critical section.
+	 */
+	key = irq_lock();
+	buf = dma_params->buf;
+	counter = dma_params->counter;
+	offset = dma_params->offset;
+
+	len = counter - offset;
+
+	/* Update the current pos for new data */
+	dma_params->offset = counter;
+	irq_unlock(key);
 
 	struct uart_event event = {
 		.type = UART_RX_RDY,
-		.data.rx.buf = dma_params->buf,
-		.data.rx.len = dma_params->counter - dma_params->offset,
-		.data.rx.offset = dma_params->offset
+		.data.rx.buf = buf,
+		.data.rx.len = len,
+		.data.rx.offset = offset
 	};
 
-	LOG_DBG("RX Ready: (len: %d off: %d buf: %x)", event.data.rx.len, event.data.rx.offset,
-		(uint32_t)event.data.rx.buf);
-
-	/* Update the current pos for new data */
-	dma_params->offset = dma_params->counter;
+	LOG_DBG("RX Ready: (len: %zu off: %zu buf: %p)", event.data.rx.len,
+		event.data.rx.offset, event.data.rx.buf);
 
 	/* Only send event for new data */
 	if (event.data.rx.len > 0) {
@@ -500,16 +518,33 @@ static void async_evt_rx_buf_request(const struct device *dev)
 static void async_evt_rx_buf_release(const struct device *dev)
 {
 	struct mcux_lpuart_data *data = (struct mcux_lpuart_data *)dev->data;
+	unsigned int key;
+	uint8_t *released_buf;
+
+	/* Snapshot the buffer pointer atomically for the event payload. */
+	key = irq_lock();
+	released_buf = data->async.rx_dma_params.buf;
+	irq_unlock(key);
+
 	struct uart_event evt = {
 		.type = UART_RX_BUF_RELEASED,
-		.data.rx_buf.buf = data->async.rx_dma_params.buf,
+		.data.rx_buf.buf = released_buf,
 	};
 
 	async_user_callback(dev, &evt);
-	data->async.rx_dma_params.buf = NULL;
-	data->async.rx_dma_params.buf_len = 0U;
-	data->async.rx_dma_params.offset = 0U;
-	data->async.rx_dma_params.counter = 0U;
+
+	/*
+	 * Clear RX state, but avoid clobbering a new buffer if RX was restarted or
+	 * swapped concurrently.
+	 */
+	key = irq_lock();
+	if (data->async.rx_dma_params.buf == released_buf) {
+		data->async.rx_dma_params.buf = NULL;
+		data->async.rx_dma_params.buf_len = 0U;
+		data->async.rx_dma_params.offset = 0U;
+		data->async.rx_dma_params.counter = 0U;
+	}
+	irq_unlock(key);
 }
 
 static void mcux_lpuart_async_rx_flush(const struct device *dev)
@@ -523,11 +558,34 @@ static void mcux_lpuart_async_rx_flush(const struct device *dev)
 						     &status);
 
 	if (get_status_result == 0) {
-		const size_t rx_rcv_len = data->async.rx_dma_params.buf_len -
-					  status.pending_length;
+		size_t buf_len;
+		size_t counter;
+		size_t rx_rcv_len;
+		bool notify = false;
+		unsigned int key;
 
-		if (rx_rcv_len > data->async.rx_dma_params.counter && status.pending_length) {
-			data->async.rx_dma_params.counter = rx_rcv_len;
+		key = irq_lock();
+		buf_len = data->async.rx_dma_params.buf_len;
+		counter = data->async.rx_dma_params.counter;
+		irq_unlock(key);
+
+		if (buf_len >= status.pending_length) {
+			rx_rcv_len = buf_len - status.pending_length;
+
+			if (status.pending_length && rx_rcv_len > counter) {
+				key = irq_lock();
+				if (rx_rcv_len > data->async.rx_dma_params.counter) {
+					data->async.rx_dma_params.counter = rx_rcv_len;
+					notify = true;
+				}
+				irq_unlock(key);
+			}
+		} else {
+			LOG_WRN("RX DMA status pending_length > buf_len (%u > %zu)",
+				status.pending_length, buf_len);
+		}
+
+		if (notify) {
 			async_evt_rx_rdy(dev);
 		}
 		LPUART_ClearStatusFlags(config->base, kLPUART_RxOverrunFlag);
@@ -842,15 +900,23 @@ static int mcux_lpuart_rx_enable(const struct device *dev, uint8_t *buf, const s
 						     config->rx_dma_config.dma_channel,
 						     &status);
 
-	if (get_status_result < 0 || status.busy) {
-		LOG_ERR("Unable to start receive on UART.");
+	if (get_status_result < 0) {
 		irq_unlock(key);
-		return get_status_result < 0 ? get_status_result : -EBUSY;
+		LOG_ERR("Failed to get DMA(Rx) status (%d)", get_status_result);
+		return get_status_result;
+	}
+
+	if (status.busy) {
+		irq_unlock(key);
+		LOG_DBG("UART RX busy (DMA ch %u)", config->rx_dma_config.dma_channel);
+		return -EBUSY;
 	}
 
 	rx_dma_params->timeout_us = timeout_us;
 	rx_dma_params->buf = buf;
 	rx_dma_params->buf_len = len;
+	rx_dma_params->offset = 0U;
+	rx_dma_params->counter = 0U;
 	data->async.next_rx_buffer = NULL;
 	data->async.next_rx_buffer_len = 0U;
 
