@@ -1,0 +1,20 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+&tsi0 {
+	status = "okay";
+	num-channels = <4>;
+	channel-mask = <0x08>;
+
+	input-codes = <INPUT_BTN_3>;
+
+	touch-threshold = <60>;
+	release-threshold = <30>;
+	scan-period-ms = <50>;
+	continuous-scan;
+};
