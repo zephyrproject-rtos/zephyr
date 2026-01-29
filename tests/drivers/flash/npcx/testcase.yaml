@@ -1,0 +1,12 @@
+common:
+  tags:
+    - drivers
+    - flash
+tests:
+  drivers.flash.npcx:
+    platform_allow:
+      - google_quincy
+    extra_configs:
+      - CONFIG_FLASH_NPCX_FIU_QSPI=y
+      - CONFIG_FLASH_NPCX_FIU_NOR=y
+      - CONFIG_FLASH_NPCX_FIU_NOR_INIT=y
