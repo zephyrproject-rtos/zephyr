@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2025 NXP
+ * Copyright 2020-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -196,6 +196,12 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(hscmp2))
 	if ((uint32_t)sub_system == MCUX_HSCMP2_CLK) {
 		CLOCK_EnableClock(kCLOCK_Hscmp2);
+	}
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(tsi0))
+	if ((uint32_t)sub_system == MCUX_TSI_CLK) {
+		CLOCK_EnableClock(kCLOCK_Tsi);
 	}
 #endif
 

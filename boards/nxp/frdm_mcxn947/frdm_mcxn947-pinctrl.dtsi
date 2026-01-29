@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -343,6 +343,15 @@
 			slew-rate = "slow";
 			drive-strength = "low";
 			input-enable;
+			bias-pull-up;
+		};
+	};
+
+	pinmux_tsi: pinmux_tsi {
+		group0 {
+			pinmux = <TSI0_CH3_PIO1_3>;
+			slew-rate = "fast";
+			drive-strength = "low";
 			bias-pull-up;
 		};
 	};
