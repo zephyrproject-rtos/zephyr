@@ -24,16 +24,16 @@ struct stm32_mco_config {
 	uint32_t prescaler;
 #endif
 	/* clock subsystem driving this peripheral */
-	const struct stm32_pclken pclken[1];
+	const struct stm32_pclken clksel;
 };
 
 static int stm32_mco_init(const struct device *dev)
 {
 	const struct stm32_mco_config *config = dev->config;
-	const struct stm32_pclken *pclken = &config->pclken[0];
+	const struct stm32_pclken *clksel = &config->clksel;
 	int err;
 
-	err = enabled_clock(pclken->bus);
+	err = enabled_clock(clksel->bus);
 	if (err < 0) {
 		/* Attempt to configure a src clock not available or not valid */
 		return err;
@@ -41,16 +41,16 @@ static int stm32_mco_init(const struct device *dev)
 
 	/* MCO source */
 	sys_clear_bits(
-		DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
-		STM32_DT_CLKSEL_MASK_GET(pclken->enr) <<
-			STM32_DT_CLKSEL_SHIFT_GET(pclken->enr));
+		DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(clksel->enr),
+		STM32_DT_CLKSEL_MASK_GET(clksel->enr) <<
+			STM32_DT_CLKSEL_SHIFT_GET(clksel->enr));
 	sys_set_bits(
-		DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
-		STM32_DT_CLKSEL_VAL_GET(pclken->enr) <<
-			STM32_DT_CLKSEL_SHIFT_GET(pclken->enr));
+		DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(clksel->enr),
+		STM32_DT_CLKSEL_VAL_GET(clksel->enr) <<
+			STM32_DT_CLKSEL_SHIFT_GET(clksel->enr));
 
 #if defined(MCOX_ON)
-	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
+	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(clksel->enr),
 		     MCOX_ON);
 #endif
 
@@ -74,7 +74,7 @@ static int stm32_mco_init(const struct device *dev)
 											\
 	const static struct stm32_mco_config stm32_mco_config_##inst = {		\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),				\
-		.pclken = STM32_DT_INST_CLOCKS(inst),					\
+		.clksel = STM32_DT_INST_CLOCK_INFO_BY_NAME(inst, clksel),		\
 		IF_ENABLED(HAS_PRESCALER,						\
 			   (.prescaler = DT_PROP(DT_DRV_INST(inst), prescaler),))	\
 	};										\
