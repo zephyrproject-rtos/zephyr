@@ -54,12 +54,12 @@ static inline uint32_t hal_radio_phy_mode_get(uint8_t phy, uint8_t flags)
 	uint32_t mode;
 
 	switch (phy) {
-	case BIT(0):
+	case PHY_1M:
 	default:
 		mode = RADIO_MODE_MODE_Ble_1Mbit;
 		break;
 
-	case BIT(1):
+	case PHY_2M:
 		mode = RADIO_MODE_MODE_Nrf_2Mbit;
 		break;
 	}
