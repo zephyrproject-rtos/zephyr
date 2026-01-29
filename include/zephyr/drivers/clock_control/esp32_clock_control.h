@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_ESP32_CLOCK_CONTROL_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_ESP32_CLOCK_CONTROL_H_
 
+#include <stdint.h>
+
 #if defined(CONFIG_SOC_SERIES_ESP32)
 #include <zephyr/dt-bindings/clock/esp32_clock.h>
 #elif defined(CONFIG_SOC_SERIES_ESP32S2)
