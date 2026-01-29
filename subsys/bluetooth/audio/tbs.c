@@ -2976,11 +2976,10 @@ static void set_bearer_uri_schemes_supported_list_changed_cb(struct tbs_flags *f
 	flags->bearer_uri_schemes_supported_list_dirty = true;
 }
 
-int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list, uint8_t uri_count)
+int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char *uri_scheme_list)
 {
-	char uri_scheme_list[CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH];
-	size_t len = 0;
 	struct tbs_inst *inst = inst_lookup_index(bearer_index);
+	size_t uri_scheme_list_len;
 	int err;
 
 	if (inst == NULL) {
@@ -2988,35 +2987,18 @@ int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list, uint
 		return -EINVAL;
 	}
 
-	(void)memset(uri_scheme_list, 0, sizeof(uri_scheme_list));
+	if (uri_scheme_list == NULL) {
+		LOG_DBG("uri_scheme_list is NULL");
 
-	for (int i = 0; i < uri_count; i++) {
-		if (strlen(uri_scheme_list) > 0) {
-			if ((len + 1) > sizeof(uri_scheme_list) - 1) {
-				return -ENOMEM;
-			}
-
-			strcat(uri_scheme_list, ",");
-		}
-
-		len += strlen(uri_list[i]);
-
-		if (len > sizeof(uri_scheme_list) - 1) {
-			return -ENOMEM;
-		} else {
-			if (is_tbs_uri_unique(inst->uri_scheme_list, uri_list[i])) {
-				len -= strlen(uri_list[i]);
-			}
-
-			/* Store list in temp list */
-			strcat(uri_scheme_list, uri_list[i]);
-		}
+		return -EINVAL;
 	}
 
-	if ((len == 0) && (strlen(inst->uri_scheme_list) == strlen(uri_scheme_list))) {
-		/* no new uri-scheme added; don't update or notify */
-		LOG_DBG("All requested uri prefix are already in TBS uri-scheme list");
-		return 0;
+	uri_scheme_list_len = strlen(uri_scheme_list);
+	if (uri_scheme_list_len >= sizeof(inst->uri_scheme_list)) {
+		LOG_DBG("Cannot store uri_scheme_list of size %zu in buffer of size %zu",
+			uri_scheme_list_len, sizeof(inst->uri_scheme_list));
+
+		return -ENOMEM;
 	}
 
 	err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
@@ -3025,19 +3007,30 @@ int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list, uint
 		return -EBUSY;
 	}
 
-	/* Store final result */
-	(void)utf8_lcpy(inst->uri_scheme_list, uri_scheme_list, sizeof(inst->uri_scheme_list));
+	if (strcmp(inst->uri_scheme_list, uri_scheme_list) == 0) {
+		/* No URI scheme changes */
+		LOG_DBG("URI scheme \"%s\" was identical to existing for %p", uri_scheme_list,
+			inst);
+	} else {
 
-	set_value_changed(inst, set_bearer_uri_schemes_supported_list_changed_cb,
-			  BT_UUID_TBS_URI_LIST);
+		/* Store final result */
+		(void)memcpy(inst->uri_scheme_list, uri_scheme_list, uri_scheme_list_len);
+		inst->uri_scheme_list[uri_scheme_list_len] = '\0';
 
-	LOG_DBG("TBS instance %u uri prefix list is updated to {%s}", bearer_index,
-		 inst->uri_scheme_list);
-
-	if (!inst_is_gtbs(inst)) {
-		/* If the instance is different than GTBS notify on the GTBS instance as well */
-		set_value_changed(&gtbs_inst, set_bearer_uri_schemes_supported_list_changed_cb,
+		set_value_changed(inst, set_bearer_uri_schemes_supported_list_changed_cb,
 				  BT_UUID_TBS_URI_LIST);
+
+		LOG_DBG("TBS instance %u uri prefix list is updated to {%s}", bearer_index,
+			inst->uri_scheme_list);
+
+		if (!inst_is_gtbs(inst)) {
+			/* If the instance is different than GTBS notify on the GTBS instance as
+			 * well
+			 */
+			set_value_changed(&gtbs_inst,
+					  set_bearer_uri_schemes_supported_list_changed_cb,
+					  BT_UUID_TBS_URI_LIST);
+		}
 	}
 
 	err = k_mutex_unlock(&inst->mutex);
