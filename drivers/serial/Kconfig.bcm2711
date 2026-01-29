@@ -5,6 +5,7 @@ config UART_BCM2711_MU
 	bool "bcm2711_mu"
 	default y
 	depends on DT_HAS_BRCM_BCM2711_AUX_UART_ENABLED
+	select PINCTRL
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	help

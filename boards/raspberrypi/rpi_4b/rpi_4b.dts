@@ -1,5 +1,6 @@
 /*
  * Copyright 2023 honglin leng <a909204013@gmail.com>
+ * Copyright (c) 2025 Muhammad Waleed Badar
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +9,8 @@
 
 #include <broadcom/bcm2711.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+
+#include "rpi_4b-pinctrl.dtsi"
 
 / {
 	model = "Raspberry Pi 4 Model B";
@@ -40,6 +43,8 @@
 };
 
 &uart1 {
-	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart1_gpio14>;
 	current-speed = <115200>;
+	status = "okay";
 };
