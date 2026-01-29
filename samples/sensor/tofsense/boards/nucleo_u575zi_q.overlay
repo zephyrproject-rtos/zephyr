@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2025 Alex Fabre
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/sensor/tofsense.h>
+
+/ {
+	aliases {
+		tof = &tofsense;
+	};
+};
+
+&usart2 {
+	current-speed = <115200>;
+	tofsense: tofsense {
+		compatible = "nooploop,tofsense";
+		status = "okay";
+		id = <0>;
+		operating-mode = <TOFSENSE_MODE_ACTIVE>;
+		active-mode-frequency = <30>;
+	};
+};
