@@ -18,6 +18,7 @@
 		zephyr,sram = &sram0;
 		zephyr,console = &qvm_console;
 		zephyr,shell-uart = &qvm_console;
+		zephyr,entropy = &virtio_entropy;
 	};
 
 	cpus {
@@ -80,6 +81,30 @@
 			clocks = <&uartclk>;
 			current-speed = <115200>;
 			status = "okay";
+		};
+
+		virtio_mmio@20000000 {
+			compatible = "virtio,mmio";
+			reg = <0x0 0x20000000 0x0 0x1000>;
+			interrupts = <GIC_SPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "okay";
+
+			virtio_console: virtio-console {
+				compatible = "virtio,console";
+				status = "okay";
+			};
+		};
+
+		virtio_mmio@1c0e0000 {
+			compatible = "virtio,mmio";
+			reg = <0x0 0x1c0e0000 0x0 0x1000>;
+			interrupts = <GIC_SPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "okay";
+
+			virtio_entropy: virtio-entropy {
+				compatible = "virtio,device4";
+				status = "okay";
+			};
 		};
 	};
 };
