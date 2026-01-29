@@ -22,6 +22,8 @@ vendor: st
 variants:
   nucleo_n657x0_q/stm32n657xx:
     twister: false
+  nucleo_n657x0_q/stm32n657xx/fsbl:
+    twister: false
   nucleo_n657x0_q/stm32n657xx/sb:
     toolchain:
       - zephyr

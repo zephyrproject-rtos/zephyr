@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 STMicroelectronics
+ * Copyright (c) 2026 Gaiaochos
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,9 +9,5 @@
 
 / {
 	model = "STMicroelectronics STM32N657X0-Q-NUCLEO board";
-	compatible = "st,stm32n657x0-q-nucleo";
-
-	chosen {
-		zephyr,sram = &axisram1;
-	};
+	compatible = "st,stm32n657x0-q-nucleo-fsbl";
 };
