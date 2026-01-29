@@ -71,3 +71,11 @@ properties:
     description: |
       Force 4 I/O lines for addressing even when using PP_1_1_4 writes.
       This is mostly useful for Microchip NOR flash which require this quirk.
+
+  read-id-dummy-cycles:
+    type: int
+    default: 0
+    description: |
+      The number of dummy-cycles required when reading jedec id. Default value is zero, which
+      matches most parts, but this can be set for parts that require any dummy bytes before the
+      response is sent.
