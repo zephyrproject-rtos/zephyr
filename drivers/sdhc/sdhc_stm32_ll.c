@@ -6,7 +6,7 @@
  */
 
 /*
- * This file is derived from STM32Cube HAL (stm32XXxx_hal_sdio.c)
+ * This file is derived from STM32Cube HAL (stm32XXxx_hal_sd.c and stm32XXxx_hal_sdio.c)
  * with refactoring to align with Zephyr coding style and architecture.
  */
 
@@ -32,6 +32,11 @@ LOG_MODULE_REGISTER(sdhc_stm32_ll, CONFIG_SDHC_LOG_LEVEL);
 #define SDMMC_WAIT_TX_FLAGS                                                                        \
 	(SDMMC_FLAG_TXUNDERR | SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_DTIMEOUT | SDMMC_FLAG_DATAEND)
 
+/* SDMMC wait flags for RX with DBCKEND */
+#define SDMMC_WAIT_RX_DBCKEND_FLAGS                                                                \
+	(SDMMC_FLAG_RXOVERR | SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_DTIMEOUT | SDMMC_FLAG_DBCKEND |     \
+	 SDMMC_FLAG_DATAEND)
+
 /**
  * @brief Read multiple words from FIFO (FIFO half-full condition)
  *
@@ -47,6 +52,25 @@ static void sdhc_stm32_ll_read_fifo_block(SDMMC_TypeDef *Instance, uint8_t **pBu
 	for (uint32_t count = 0U; count < (SDMMC_FIFO_SIZE / sizeof(uint32_t)); count++) {
 		data = SDMMC_ReadFIFO(Instance);
 		UNALIGNED_PUT(data, (uint32_t *)buf);
+		buf += 4;
+	}
+	*pBuf = buf;
+}
+
+/**
+ * @brief Write multiple words to FIFO (FIFO half-empty condition)
+ *
+ * @param Instance Pointer to SDMMC register base
+ * @param pBuf Pointer to source buffer pointer (updated after write)
+ */
+static void sdhc_stm32_ll_write_fifo_block(SDMMC_TypeDef *Instance, const uint8_t **pBuf)
+{
+	uint32_t data;
+	const uint8_t *buf = *pBuf;
+
+	for (uint32_t count = 0U; count < (SDMMC_FIFO_SIZE / sizeof(uint32_t)); count++) {
+		data = UNALIGNED_GET((const uint32_t *)buf);
+		SDMMC_WriteFIFO(Instance, &data);
 		buf += 4;
 	}
 	*pBuf = buf;
@@ -81,8 +105,8 @@ static void sdhc_stm32_ll_disable_data_interrupts(SDMMC_TypeDef *Instance)
 {
 	__SDMMC_DISABLE_IT(Instance, SDMMC_IT_DATAEND | SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT |
 					     SDMMC_IT_TXUNDERR | SDMMC_IT_RXOVERR |
-					     SDMMC_IT_TXFIFOHE | SDMMC_IT_RXFIFOHF);
-	__SDMMC_DISABLE_IT(Instance, SDMMC_IT_IDMABTC);
+					     SDMMC_IT_IDMABTC | SDMMC_IT_TXFIFOHE |
+					     SDMMC_IT_RXFIFOHF);
 }
 
 /**
@@ -264,6 +288,691 @@ static void sdhc_stm32_ll_write_remaining_bytes(SDMMC_TypeDef *Instance, uint8_t
 		}
 		Instance->FIFO = data;
 	}
+}
+
+int sdhc_stm32_ll_erase(struct sdhc_stm32_data *dev_data, SDMMC_TypeDef *Instance, uint32_t address)
+{
+	uint32_t errorstate;
+
+	dev_data->error_code = SDMMC_ERROR_NONE;
+
+	/* Check if the card command class supports erase command */
+	if (((dev_data->card_class) & SDMMC_CCCC_ERASE) == 0U) {
+		/* Clear all the static flags */
+		__SDMMC_CLEAR_FLAG(Instance, SDMMC_STATIC_FLAGS);
+		dev_data->error_code |= SDMMC_ERROR_REQUEST_NOT_APPLICABLE;
+		return -ENOTSUP;
+	}
+
+	if ((SDMMC_GetResponse(Instance, SDMMC_RESP1) & SDMMC_CARD_LOCKED) == SDMMC_CARD_LOCKED) {
+		/* Clear all the static flags */
+		__SDMMC_CLEAR_FLAG(Instance, SDMMC_STATIC_FLAGS);
+		dev_data->error_code |= SDMMC_ERROR_LOCK_UNLOCK_FAILED;
+		return -EIO;
+	}
+
+	/* Send CMD38 ERASE */
+	errorstate = SDMMC_CmdErase(Instance, address);
+	if (errorstate != 0) {
+		/* Clear all the static flags */
+		__SDMMC_CLEAR_FLAG(Instance, SDMMC_STATIC_FLAGS);
+		dev_data->error_code |= errorstate;
+		return -EIO;
+	}
+
+	return 0;
+}
+
+int sdhc_stm32_ll_erase_block_start(struct sdhc_stm32_data *dev_data, SDMMC_TypeDef *Instance,
+				    uint32_t BlockStartAdd)
+{
+	uint32_t errorstate;
+
+	dev_data->error_code = SDMMC_ERROR_NONE;
+
+	/* Check if the card command class supports erase command */
+	if (((dev_data->card_class) & SDMMC_CCCC_ERASE) == 0U) {
+		/* Clear all the static flags */
+		__SDMMC_CLEAR_FLAG(Instance, SDMMC_STATIC_FLAGS);
+		dev_data->error_code |= SDMMC_ERROR_REQUEST_NOT_APPLICABLE;
+		return -ENOTSUP;
+	}
+
+	if ((SDMMC_GetResponse(Instance, SDMMC_RESP1) & SDMMC_CARD_LOCKED) == SDMMC_CARD_LOCKED) {
+		/* Clear all the static flags */
+		__SDMMC_CLEAR_FLAG(Instance, SDMMC_STATIC_FLAGS);
+		dev_data->error_code |= SDMMC_ERROR_LOCK_UNLOCK_FAILED;
+		return -EIO;
+	}
+
+	/* Send CMD32 SD_ERASE_GRP_START with argument as addr  */
+	errorstate = SDMMC_CmdSDEraseStartAdd(Instance, BlockStartAdd);
+	if (errorstate != 0) {
+		/* Clear all the static flags */
+		__SDMMC_CLEAR_FLAG(Instance, SDMMC_STATIC_FLAGS);
+		dev_data->error_code |= errorstate;
+		return -EIO;
+	}
+
+	return 0;
+}
+
+int sdhc_stm32_ll_erase_block_end(struct sdhc_stm32_data *dev_data, SDMMC_TypeDef *Instance,
+				  uint32_t BlockEndAdd)
+{
+	uint32_t errorstate;
+
+	dev_data->error_code = SDMMC_ERROR_NONE;
+
+	/* Check if the card command class supports erase command */
+	if (((dev_data->card_class) & SDMMC_CCCC_ERASE) == 0U) {
+		/* Clear all the static flags */
+		__SDMMC_CLEAR_FLAG(Instance, SDMMC_STATIC_FLAGS);
+		dev_data->error_code |= SDMMC_ERROR_REQUEST_NOT_APPLICABLE;
+		return -ENOTSUP;
+	}
+
+	if ((SDMMC_GetResponse(Instance, SDMMC_RESP1) & SDMMC_CARD_LOCKED) == SDMMC_CARD_LOCKED) {
+		/* Clear all the static flags */
+		__SDMMC_CLEAR_FLAG(Instance, SDMMC_STATIC_FLAGS);
+		dev_data->error_code |= SDMMC_ERROR_LOCK_UNLOCK_FAILED;
+		return -EIO;
+	}
+
+	/* Send CMD33 SD_ERASE_GRP_END with argument as addr  */
+	errorstate = SDMMC_CmdSDEraseEndAdd(Instance, BlockEndAdd);
+	if (errorstate != 0) {
+		/* Clear all the static flags */
+		__SDMMC_CLEAR_FLAG(Instance, SDMMC_STATIC_FLAGS);
+		dev_data->error_code |= errorstate;
+		return -EIO;
+	}
+
+	return 0;
+}
+
+uint32_t sdhc_stm32_ll_send_status(SDMMC_TypeDef *Instance, struct sdhc_stm32_data *dev_data,
+				   uint32_t card_rca, uint32_t *pCardStatus)
+{
+	uint32_t errorstate;
+
+	if (pCardStatus == NULL) {
+		return SDMMC_ERROR_INVALID_PARAMETER;
+	}
+
+	/* Send Status command */
+	errorstate = SDMMC_CmdSendStatus(Instance, card_rca);
+	if (errorstate != SDMMC_ERROR_NONE) {
+		return errorstate;
+	}
+
+	/* Get SD card status */
+	*pCardStatus = SDMMC_GetResponse(Instance, SDMMC_RESP1);
+
+	return SDMMC_ERROR_NONE;
+}
+
+/**
+ * @brief  Sends SD SWITCH command (CMD6) and retrieves switch status.
+ *         This function handles the data transfer for CMD6 and returns
+ *         the 64-byte switch status.
+ * @param  Instance Pointer to SDMMC register base
+ * @param  switch_arg CMD6 argument containing mode and function settings
+ * @param  status Pointer to buffer for 64-byte switch status response
+ * @param  block_size Size of the data block
+ * @param  dev_data Pointer to the STM32 SDHC data structure
+ * @retval SD Card error state
+ */
+uint32_t sdhc_stm32_ll_switch_speed(SDMMC_TypeDef *Instance, uint32_t switch_arg, uint8_t *status,
+				    uint32_t block_size, struct sdhc_stm32_data *dev_data)
+{
+	uint32_t errorstate = SDMMC_ERROR_NONE;
+	SDMMC_DataInitTypeDef sdmmc_datainitstructure;
+	uint32_t SD_hs[16] = {0};
+	uint32_t count;
+	uint32_t loop = 0;
+	int ret;
+
+	/* Initialize the Data control register */
+	Instance->DCTRL = 0;
+
+	/* Configure the SD DPSM (Data Path State Machine) */
+	sdmmc_datainitstructure.DataTimeOut = SDMMC_DATATIMEOUT;
+	sdmmc_datainitstructure.DataLength = block_size;
+	sdmmc_datainitstructure.DataBlockSize = SDMMC_DATABLOCK_SIZE_64B;
+	sdmmc_datainitstructure.TransferDir = SDMMC_TRANSFER_DIR_TO_SDMMC;
+	sdmmc_datainitstructure.TransferMode = SDMMC_TRANSFER_MODE_BLOCK;
+	sdmmc_datainitstructure.DPSM = SDMMC_DPSM_ENABLE;
+
+	(void)SDMMC_ConfigData(Instance, &sdmmc_datainitstructure);
+
+	errorstate = SDMMC_CmdSwitch(Instance, switch_arg);
+	if (errorstate != SDMMC_ERROR_NONE) {
+		return errorstate;
+	}
+
+	ret = WAIT_FOR(__SDMMC_GET_FLAG(Instance, SDMMC_WAIT_RX_DBCKEND_FLAGS),
+		       SDMMC_SWDATATIMEOUT * USEC_PER_MSEC, ({
+			if (__SDMMC_GET_FLAG(Instance, SDMMC_FLAG_RXFIFOHF)) {
+				sdhc_stm32_ll_read_fifo_block(Instance,
+								(uint8_t **)&SD_hs[loop]);
+				loop++;
+			}
+			k_yield();
+		       }));
+
+	if (ret == 0) {
+		dev_data->error_code = SDMMC_ERROR_TIMEOUT;
+		return SDMMC_ERROR_TIMEOUT;
+	}
+
+	if (__SDMMC_GET_FLAG(Instance, SDMMC_FLAG_DTIMEOUT)) {
+		__SDMMC_CLEAR_FLAG(Instance, SDMMC_FLAG_DTIMEOUT);
+
+		return SDMMC_ERROR_DATA_TIMEOUT;
+	} else if (__SDMMC_GET_FLAG(Instance, SDMMC_FLAG_DCRCFAIL)) {
+		__SDMMC_CLEAR_FLAG(Instance, SDMMC_FLAG_DCRCFAIL);
+
+		return SDMMC_ERROR_DATA_CRC_FAIL;
+	} else if (__SDMMC_GET_FLAG(Instance, SDMMC_FLAG_RXOVERR)) {
+		__SDMMC_CLEAR_FLAG(Instance, SDMMC_FLAG_RXOVERR);
+
+		return SDMMC_ERROR_RX_OVERRUN;
+	}
+
+	/* Clear all the static flags */
+	__SDMMC_CLEAR_FLAG(Instance, SDMMC_STATIC_DATA_FLAGS);
+
+	/* Copy switch status to output buffer */
+	if (status != NULL) {
+		memcpy(status, SD_hs, sizeof(SD_hs));
+	}
+
+	return errorstate;
+}
+
+uint32_t sdhc_stm32_ll_find_scr(SDMMC_TypeDef *Instance, struct sdhc_stm32_data *dev_data,
+				uint32_t *scr, uint32_t block_size)
+{
+	SDMMC_DataInitTypeDef config;
+	uint32_t errorstate;
+	uint32_t index = 0U;
+	uint32_t tempscr[2U] = {0UL, 0UL};
+	int ret;
+
+	config.DataTimeOut = SDMMC_DATATIMEOUT;
+	config.DataLength = block_size;
+	config.DataBlockSize = SDMMC_DATABLOCK_SIZE_8B;
+	config.TransferDir = SDMMC_TRANSFER_DIR_TO_SDMMC;
+	config.TransferMode = SDMMC_TRANSFER_MODE_BLOCK;
+	config.DPSM = SDMMC_DPSM_ENABLE;
+	(void)SDMMC_ConfigData(Instance, &config);
+
+	/* Send ACMD51 SD_APP_SEND_SCR with argument as 0 */
+	errorstate = SDMMC_CmdSendSCR(Instance);
+	if (errorstate != SDMMC_ERROR_NONE) {
+		return errorstate;
+	}
+
+	ret = WAIT_FOR(__SDMMC_GET_FLAG(Instance, SDMMC_WAIT_RX_DBCKEND_FLAGS),
+		       SDMMC_SWDATATIMEOUT * USEC_PER_MSEC, ({
+				if ((!__SDMMC_GET_FLAG(Instance, SDMMC_FLAG_RXFIFOE)) &&
+				    (index == 0U)) {
+					tempscr[0] = SDMMC_ReadFIFO(Instance);
+					tempscr[1] = SDMMC_ReadFIFO(Instance);
+					index++;
+				}
+				k_yield();
+		       }));
+
+	if (ret == 0) {
+		return SDMMC_ERROR_TIMEOUT;
+	}
+
+	if (__SDMMC_GET_FLAG(Instance, SDMMC_FLAG_DTIMEOUT)) {
+		__SDMMC_CLEAR_FLAG(Instance, SDMMC_FLAG_DTIMEOUT);
+
+		return SDMMC_ERROR_DATA_TIMEOUT;
+	} else if (__SDMMC_GET_FLAG(Instance, SDMMC_FLAG_DCRCFAIL)) {
+		__SDMMC_CLEAR_FLAG(Instance, SDMMC_FLAG_DCRCFAIL);
+
+		return SDMMC_ERROR_DATA_CRC_FAIL;
+	} else if (__SDMMC_GET_FLAG(Instance, SDMMC_FLAG_RXOVERR)) {
+		__SDMMC_CLEAR_FLAG(Instance, SDMMC_FLAG_RXOVERR);
+
+		return SDMMC_ERROR_RX_OVERRUN;
+	}
+	/* No error flag set */
+	/* Clear all the static flags */
+	__SDMMC_CLEAR_FLAG(Instance, SDMMC_STATIC_DATA_FLAGS);
+
+	*scr = (((tempscr[1] & SDMMC_0TO7BITS) << 24U) | ((tempscr[1] & SDMMC_8TO15BITS) << 8U) |
+		((tempscr[1] & SDMMC_16TO23BITS) >> 8U) | ((tempscr[1] & SDMMC_24TO31BITS) >> 24U));
+	scr++;
+	*scr = (((tempscr[0] & SDMMC_0TO7BITS) << 24U) | ((tempscr[0] & SDMMC_8TO15BITS) << 8U) |
+		((tempscr[0] & SDMMC_16TO23BITS) >> 8U) | ((tempscr[0] & SDMMC_24TO31BITS) >> 24U));
+
+	return SDMMC_ERROR_NONE;
+}
+
+/**
+ * @brief Poll for data transfer in read mode
+ *
+ * @param Instance Pointer to SDMMC register base
+ * @param tempbuff Pointer to buffer pointer (updated as data is read)
+ * @param dataremaining Pointer to remaining data count (updated as data is read)
+ * @param tickstart Start tick for timeout calculation
+ * @param Timeout Timeout value in milliseconds
+ * @param data Pointer to the STM32 SDHC data structure
+ * @return int 0 on success, negative errno on failure
+ */
+static int sdhc_stm32_ll_poll_read_transfer(SDMMC_TypeDef *Instance, uint8_t **tempbuff,
+					    uint32_t *dataremaining, uint32_t Timeout,
+					    struct sdhc_stm32_data *data)
+{
+	int ret;
+
+	ret = WAIT_FOR(__SDMMC_GET_FLAG(Instance, SDMMC_WAIT_RX_FLAGS), Timeout * USEC_PER_MSEC, ({
+				if (__SDMMC_GET_FLAG(Instance, SDMMC_FLAG_RXFIFOHF) &&
+				    (*dataremaining >= SDMMC_FIFO_SIZE)) {
+					/* Read data from SDMMC Rx FIFO */
+					sdhc_stm32_ll_read_fifo_block(Instance, tempbuff);
+					*dataremaining -= SDMMC_FIFO_SIZE;
+				}
+				k_yield();
+		       }));
+
+	if (ret == 0) {
+		/* Clear all the static flags */
+		__SDMMC_CLEAR_FLAG(Instance, SDMMC_STATIC_FLAGS);
+		data->error_code |= SDMMC_ERROR_TIMEOUT;
+		data->Context = SDMMC_CONTEXT_NONE;
+		return -ETIMEDOUT;
+	}
+	return 0;
+}
+
+/**
+ * @brief Poll for data transfer in write mode
+ *
+ * @param Instance Pointer to SDMMC register base
+ * @param tempbuff Pointer to buffer pointer (updated as data is written)
+ * @param dataremaining Pointer to remaining data count (updated as data is written)
+ * @param tickstart Start tick for timeout calculation
+ * @param Timeout Timeout value in milliseconds
+ * @param data Pointer to the STM32 SDHC data structure
+ * @return int 0 on success, negative errno on failure
+ */
+static int sdhc_stm32_ll_poll_write_transfer(SDMMC_TypeDef *Instance, const uint8_t **tempbuff,
+					     uint32_t *dataremaining, uint32_t Timeout,
+					     struct sdhc_stm32_data *data)
+{
+	int ret;
+
+	ret = WAIT_FOR(__SDMMC_GET_FLAG(Instance, SDMMC_WAIT_TX_FLAGS), Timeout * USEC_PER_MSEC, ({
+				if (__SDMMC_GET_FLAG(Instance, SDMMC_FLAG_TXFIFOHE) &&
+				    (*dataremaining >= SDMMC_FIFO_SIZE)) {
+					/* Write data to SDMMC Tx FIFO */
+					sdhc_stm32_ll_write_fifo_block(Instance, tempbuff);
+					*dataremaining -= SDMMC_FIFO_SIZE;
+				}
+				k_yield();
+		       }));
+
+	if (ret == 0) {
+		/* Clear all the static flags */
+		__SDMMC_CLEAR_FLAG(Instance, SDMMC_STATIC_FLAGS);
+		data->error_code |= SDMMC_ERROR_TIMEOUT;
+		data->Context = SDMMC_CONTEXT_NONE;
+		return -ETIMEDOUT;
+	}
+	return 0;
+}
+
+/**
+ * @brief Send stop transmission command for multi-block transfers
+ *
+ * @param Instance Pointer to SDMMC register base
+ * @param NumberOfBlocks Number of blocks transferred
+ * @param data Pointer to the STM32 SDHC data structure
+ * @return int 0 on success, negative errno on failure
+ */
+static int sdhc_stm32_ll_send_stop_cmd(SDMMC_TypeDef *Instance, uint32_t NumberOfBlocks,
+				       struct sdhc_stm32_data *data)
+{
+	uint32_t errorstate;
+
+	if (!__SDMMC_GET_FLAG(Instance, SDMMC_FLAG_DATAEND) || (NumberOfBlocks <= 1U)) {
+		return 0;
+	}
+
+	/* Send stop transmission command */
+	errorstate = SDMMC_CmdStopTransfer(Instance);
+	if (errorstate != SDMMC_ERROR_NONE) {
+		/* Clear all the static flags */
+		__SDMMC_CLEAR_FLAG(Instance, SDMMC_STATIC_FLAGS);
+		data->error_code |= errorstate;
+		data->Context = SDMMC_CONTEXT_NONE;
+		return -EIO;
+	}
+
+	return 0;
+}
+
+/**
+ * @brief  Reads block(s) from a specified address in a card. The Data transfer
+ *         is managed by polling mode.
+ * @param  Instance Pointer to SDMMC register base
+ * @param  pData: pointer to the buffer that will contain the received data
+ * @param  BlockAdd: Block Address from where data is to be read
+ * @param  NumberOfBlocks: Number of SD blocks to read
+ * @param  Timeout: Specify timeout value
+ * @param  data Pointer to the STM32 SDHC data structure
+ * @return int 0 on success, negative errno on failure
+ */
+int sdhc_stm32_ll_read_blocks(SDMMC_TypeDef *Instance, uint8_t *pData, uint32_t BlockAdd,
+			      uint32_t NumberOfBlocks, uint32_t Timeout,
+			      struct sdhc_stm32_data *data)
+{
+	SDMMC_DataInitTypeDef config;
+	uint32_t errorstate;
+	uint32_t dataremaining;
+	uint8_t *tempbuff = pData;
+
+	if (pData == NULL) {
+		data->error_code |= SDMMC_ERROR_INVALID_PARAMETER;
+		return -EINVAL;
+	}
+
+	data->error_code = SDMMC_ERROR_NONE;
+
+	/* Initialize data control register */
+	Instance->DCTRL = 0U;
+
+	/* Configure the SD DPSM (Data Path State Machine) */
+	config.DataTimeOut = SDMMC_DATATIMEOUT;
+	config.DataLength = NumberOfBlocks * BLOCKSIZE;
+	config.DataBlockSize = SDMMC_DATABLOCK_SIZE_512B;
+	config.TransferDir = SDMMC_TRANSFER_DIR_TO_SDMMC;
+	config.TransferMode = SDMMC_TRANSFER_MODE_BLOCK;
+	config.DPSM = SDMMC_DPSM_DISABLE;
+	(void)SDMMC_ConfigData(Instance, &config);
+	__SDMMC_CMDTRANS_ENABLE(Instance);
+
+	/* Read block(s) in polling mode */
+	if (NumberOfBlocks > 1U) {
+		data->Context = SDMMC_CONTEXT_READ_MULTIPLE_BLOCK;
+
+		/* Read Multi Block command */
+		errorstate = SDMMC_CmdReadMultiBlock(Instance, BlockAdd);
+	} else {
+		data->Context = SDMMC_CONTEXT_READ_SINGLE_BLOCK;
+		/* Read Single Block command */
+		errorstate = SDMMC_CmdReadSingleBlock(Instance, BlockAdd);
+	}
+
+	if (errorstate != 0) {
+		/* Clear all the static flags */
+		__SDMMC_CLEAR_FLAG(Instance, SDMMC_STATIC_FLAGS);
+		data->error_code |= errorstate;
+		data->Context = SDMMC_CONTEXT_NONE;
+		return -EIO;
+	}
+
+	/* Poll on SDMMC flags */
+	dataremaining = config.DataLength;
+	int res = sdhc_stm32_ll_poll_read_transfer(Instance, &tempbuff, &dataremaining, Timeout,
+						   data);
+	if (res != 0) {
+		return res;
+	}
+
+	__SDMMC_CMDTRANS_DISABLE(Instance);
+
+	/* Send stop transmission command in case of multiblock read */
+	res = sdhc_stm32_ll_send_stop_cmd(Instance, NumberOfBlocks, data);
+	if (res != 0) {
+		return res;
+	}
+
+	/* Check for data transfer errors */
+	errorstate = sdhc_stm32_ll_check_data_errors(Instance);
+	if (errorstate != SDMMC_ERROR_NONE) {
+		data->Context = SDMMC_CONTEXT_NONE;
+		return sdhc_stm32_ll_handle_data_error(Instance, errorstate, data);
+	}
+
+	/* Clear all the static flags */
+	__SDMMC_CLEAR_FLAG(Instance, SDMMC_STATIC_DATA_FLAGS);
+	return 0;
+}
+
+/**
+ * @brief  Allows to write block(s) to a specified address in a card. The Data
+ *         transfer is managed by polling mode.
+ * @param  Instance Pointer to SDMMC register base
+ * @param  pData: pointer to the buffer that will contain the data to transmit
+ * @param  BlockAdd: Block Address where data will be written
+ * @param  NumberOfBlocks: Number of SD blocks to write
+ * @param  Timeout: Specify timeout value
+ * @param  data Pointer to the STM32 SDHC data structure
+ * @retval SDMMC status
+ */
+int sdhc_stm32_ll_write_blocks(SDMMC_TypeDef *Instance, const uint8_t *pData, uint32_t BlockAdd,
+			       uint32_t NumberOfBlocks, uint32_t Timeout,
+			       struct sdhc_stm32_data *data)
+{
+	SDMMC_DataInitTypeDef config;
+	uint32_t errorstate;
+	uint32_t dataremaining;
+	const uint8_t *tempbuff = pData;
+
+	if (pData == NULL) {
+		data->error_code |= SDMMC_ERROR_INVALID_PARAMETER;
+		return -EINVAL;
+	}
+
+	data->error_code = SDMMC_ERROR_NONE;
+
+	/* Initialize data control register */
+	Instance->DCTRL = 0U;
+
+	/* Configure the SD DPSM (Data Path State Machine) */
+	config.DataTimeOut = SDMMC_DATATIMEOUT;
+	config.DataLength = NumberOfBlocks * BLOCKSIZE;
+	config.DataBlockSize = SDMMC_DATABLOCK_SIZE_512B;
+	config.TransferDir = SDMMC_TRANSFER_DIR_TO_CARD;
+	config.TransferMode = SDMMC_TRANSFER_MODE_BLOCK;
+	config.DPSM = SDMMC_DPSM_DISABLE;
+	(void)SDMMC_ConfigData(Instance, &config);
+	__SDMMC_CMDTRANS_ENABLE(Instance);
+
+	/* Write Blocks in Polling mode */
+	if (NumberOfBlocks > 1U) {
+		data->Context = SDMMC_CONTEXT_WRITE_MULTIPLE_BLOCK;
+		errorstate = SDMMC_CmdWriteMultiBlock(Instance, BlockAdd);
+	} else {
+		data->Context = SDMMC_CONTEXT_WRITE_SINGLE_BLOCK;
+		errorstate = SDMMC_CmdWriteSingleBlock(Instance, BlockAdd);
+	}
+
+	if (errorstate != 0) {
+		__SDMMC_CLEAR_FLAG(Instance, SDMMC_STATIC_FLAGS);
+		data->error_code |= errorstate;
+		data->Context = SDMMC_CONTEXT_NONE;
+		return -EIO;
+	}
+
+	/* Write block(s) in polling mode */
+	dataremaining = config.DataLength;
+	int res = sdhc_stm32_ll_poll_write_transfer(Instance, &tempbuff, &dataremaining, Timeout,
+						    data);
+	if (res != 0) {
+		return res;
+	}
+
+	__SDMMC_CMDTRANS_DISABLE(Instance);
+
+	/* Send stop transmission command in case of multiblock write */
+	res = sdhc_stm32_ll_send_stop_cmd(Instance, NumberOfBlocks, data);
+	if (res != 0) {
+		return res;
+	}
+
+	/* Check for data transfer errors */
+	errorstate = sdhc_stm32_ll_check_data_errors(Instance);
+	if (errorstate != SDMMC_ERROR_NONE) {
+		data->Context = SDMMC_CONTEXT_NONE;
+		return sdhc_stm32_ll_handle_data_error(Instance, errorstate, data);
+	}
+
+	/* Clear all the static flags */
+	__SDMMC_CLEAR_FLAG(Instance, SDMMC_STATIC_DATA_FLAGS);
+
+	return 0;
+}
+
+/**
+ * @brief  Writes block(s) to a specified address in a card. The Data transfer
+ *         is managed by DMA mode.
+ * @note   You could also check the DMA transfer process through the SD Tx
+ *         interrupt event.
+ * @param  Instance Pointer to SDMMC register base
+ * @param  pData: Pointer to the buffer that will contain the data to transmit
+ * @param  BlockAdd: Block Address where data will be written
+ * @param  NumberOfBlocks: Number of blocks to write
+ * @param  dev_data Pointer to the STM32 SDHC data structure
+ * @retval SDMMC status
+ */
+int sdhc_stm32_ll_write_blocks_dma(SDMMC_TypeDef *Instance, const uint8_t *pData, uint32_t BlockAdd,
+				   uint32_t NumberOfBlocks, struct sdhc_stm32_data *dev_data)
+{
+	SDMMC_DataInitTypeDef config;
+	uint32_t errorstate;
+
+	if (pData == NULL) {
+		dev_data->error_code |= SDMMC_ERROR_INVALID_PARAMETER;
+		return -EINVAL;
+	}
+
+	dev_data->error_code = SDMMC_ERROR_NONE;
+
+	/* Initialize data control register */
+	Instance->DCTRL = 0U;
+
+	dev_data->pTxBuffPtr = pData;
+	dev_data->TxXferSize = BLOCKSIZE * NumberOfBlocks;
+
+	/* Configure the SD DPSM (Data Path State Machine) */
+	config.DataTimeOut = SDMMC_DATATIMEOUT;
+	config.DataLength = BLOCKSIZE * NumberOfBlocks;
+	config.DataBlockSize = SDMMC_DATABLOCK_SIZE_512B;
+	config.TransferDir = SDMMC_TRANSFER_DIR_TO_CARD;
+	config.TransferMode = SDMMC_TRANSFER_MODE_BLOCK;
+	config.DPSM = SDMMC_DPSM_DISABLE;
+	(void)SDMMC_ConfigData(Instance, &config);
+
+	__SDMMC_CMDTRANS_ENABLE(Instance);
+
+	Instance->IDMABASE0 = (uint32_t)pData;
+	Instance->IDMACTRL = SDMMC_ENABLE_IDMA_SINGLE_BUFF;
+
+	/* Write Blocks in Polling mode */
+	if (NumberOfBlocks > 1U) {
+		dev_data->Context = (SDMMC_CONTEXT_WRITE_MULTIPLE_BLOCK | SDMMC_CONTEXT_DMA);
+
+		/* Write Multi Block command */
+		errorstate = SDMMC_CmdWriteMultiBlock(Instance, BlockAdd);
+	} else {
+		dev_data->Context = (SDMMC_CONTEXT_WRITE_SINGLE_BLOCK | SDMMC_CONTEXT_DMA);
+
+		/* Write Single Block command */
+		errorstate = SDMMC_CmdWriteSingleBlock(Instance, BlockAdd);
+	}
+	if (errorstate != SDMMC_ERROR_NONE) {
+		/* Clear all the static flags */
+		__SDMMC_CLEAR_FLAG(Instance, SDMMC_STATIC_FLAGS);
+		dev_data->error_code |= errorstate;
+		dev_data->Context = SDMMC_CONTEXT_NONE;
+		return -EIO;
+	}
+
+	/* Enable transfer interrupts */
+	__SDMMC_ENABLE_IT(Instance, (SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT | SDMMC_IT_TXUNDERR |
+				     SDMMC_IT_DATAEND));
+
+	return 0;
+}
+
+/**
+ * @brief  Reads block(s) from a specified address in a card. The Data transfer
+ *         is managed by DMA mode.
+ * @note   You could also check the DMA transfer process through the SD Rx
+ *         interrupt event.
+ * @param  Instance Pointer to SDMMC register base
+ * @param  pData: Pointer to the buffer that will contain the received data
+ * @param  BlockAdd: Block Address from where data is to be read
+ * @param  NumberOfBlocks: Number of blocks to read
+ * @param  dev_data Pointer to the STM32 SDHC data structure
+ * @retval SDMMC status
+ */
+int sdhc_stm32_ll_read_blocks_dma(SDMMC_TypeDef *Instance, uint8_t *pData, uint32_t BlockAdd,
+				  uint32_t NumberOfBlocks, struct sdhc_stm32_data *dev_data)
+{
+	SDMMC_DataInitTypeDef config;
+	uint32_t errorstate;
+
+	if (pData == NULL) {
+		dev_data->error_code |= SDMMC_ERROR_INVALID_PARAMETER;
+		return -EINVAL;
+	}
+
+	dev_data->error_code = SDMMC_ERROR_NONE;
+
+	/* Initialize data control register */
+	Instance->DCTRL = 0U;
+
+	dev_data->pRxBuffPtr = pData;
+	dev_data->RxXferSize = BLOCKSIZE * NumberOfBlocks;
+
+	/* Configure the SD DPSM (Data Path State Machine) */
+	config.DataTimeOut = SDMMC_DATATIMEOUT;
+	config.DataLength = BLOCKSIZE * NumberOfBlocks;
+	config.DataBlockSize = SDMMC_DATABLOCK_SIZE_512B;
+	config.TransferDir = SDMMC_TRANSFER_DIR_TO_SDMMC;
+	config.TransferMode = SDMMC_TRANSFER_MODE_BLOCK;
+	config.DPSM = SDMMC_DPSM_DISABLE;
+	(void)SDMMC_ConfigData(Instance, &config);
+
+	__SDMMC_CMDTRANS_ENABLE(Instance);
+	Instance->IDMABASE0 = (uint32_t)pData;
+	Instance->IDMACTRL = SDMMC_ENABLE_IDMA_SINGLE_BUFF;
+
+	/* Read Blocks in DMA mode */
+	if (NumberOfBlocks > 1U) {
+		dev_data->Context = (SDMMC_CONTEXT_READ_MULTIPLE_BLOCK | SDMMC_CONTEXT_DMA);
+
+		/* Read Multi Block command */
+		errorstate = SDMMC_CmdReadMultiBlock(Instance, BlockAdd);
+	} else {
+		dev_data->Context = (SDMMC_CONTEXT_READ_SINGLE_BLOCK | SDMMC_CONTEXT_DMA);
+
+		/* Read Single Block command */
+		errorstate = SDMMC_CmdReadSingleBlock(Instance, BlockAdd);
+	}
+	if (errorstate != 0) {
+		/* Clear all the static flags */
+		__SDMMC_CLEAR_FLAG(Instance, SDMMC_STATIC_FLAGS);
+		dev_data->error_code |= errorstate;
+		dev_data->Context = SDMMC_CONTEXT_NONE;
+		return -EIO;
+	}
+
+	/* Enable transfer interrupts */
+	__SDMMC_ENABLE_IT(Instance, (SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT | SDMMC_IT_RXOVERR |
+				     SDMMC_IT_DATAEND));
+
+	return 0;
 }
 
 /**
@@ -457,6 +1166,29 @@ int sdhc_stm32_ll_deinit(SDMMC_TypeDef *Instance, struct sdhc_stm32_data *data)
 	LOG_DBG("SDMMC peripheral deinitialized");
 
 	return 0;
+}
+
+int sdhc_stm32_ll_sdmmc_rw_direct(SDMMC_TypeDef *Instance, uint32_t arg, uint32_t *response,
+				  struct sdhc_stm32_data *dev_data)
+{
+	bool direction = arg >> SDIO_CMD_ARG_RW_SHIFT;
+	bool raw_flag = arg >> SDIO_DIRECT_CMD_ARG_RAW_SHIFT;
+	uint8_t func = (arg >> SDIO_CMD_ARG_FUNC_NUM_SHIFT) & 0x7;
+	uint32_t reg_addr = (arg >> SDIO_CMD_ARG_REG_ADDR_SHIFT) & SDIO_CMD_ARG_REG_ADDR_MASK;
+
+	sdhc_stm32_sdio_direct_cmd_t cmd_arg = {
+		.Reg_Addr = reg_addr,
+		.ReadAfterWrite = raw_flag,
+		.IOFunctionNbr = func,
+	};
+
+	if (direction == SDIO_IO_WRITE) {
+		uint8_t data_in = arg & SDIO_DIRECT_CMD_DATA_MASK;
+
+		return sdhc_stm32_ll_sdio_write_direct(Instance, &cmd_arg, data_in, dev_data);
+	}
+
+	return sdhc_stm32_ll_sdio_read_direct(Instance, &cmd_arg, (uint8_t *)response, dev_data);
 }
 
 /**

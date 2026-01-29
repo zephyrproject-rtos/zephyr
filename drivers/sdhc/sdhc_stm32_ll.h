@@ -6,7 +6,7 @@
  */
 
 /*
- * This file is derived from STM32Cube HAL (stm32XXxx_hal_sdio.h)
+ * This file is derived from STM32Cube HAL (stm32XXxx_hal_sd.h and stm32XXxx_hal_sdio.h)
  * with refactoring to align with Zephyr coding style and architecture.
  */
 
@@ -74,6 +74,12 @@ struct sdhc_stm32_data {
 	uint32_t sdmmc_clk;            /* Specifies the clock*/
 	uint32_t block_size;           /* Block size for SDIO data transfer */
 
+	const uint8_t *pTxBuffPtr;     /* Pointer to SD Tx transfer Buffer */
+	uint8_t *pRxBuffPtr;           /* Pointer to SD Rx transfer Buffer */
+	uint32_t card_class;           /* Specifies the card class */
+	uint32_t RxXferSize;           /* SD Rx Transfer size */
+	uint32_t TxXferSize;           /* SD Tx Transfer size */
+
 	uint32_t error_code; /* SD Card Error codes */
 	uint32_t Context;   /* SD transfer context */
 
@@ -88,9 +94,36 @@ struct sdhc_stm32_data {
 /**
  * @brief SD/MMC Functions Prototypes
  */
+int sdhc_stm32_ll_sdmmc_rw_direct(SDMMC_TypeDef *Instance, uint32_t arg,
+				  uint32_t *response, struct sdhc_stm32_data *dev_data);
+int sdhc_stm32_ll_write_blocks_dma(SDMMC_TypeDef *Instance, const uint8_t *pData, uint32_t BlockAdd,
+				   uint32_t NumberOfBlocks, struct sdhc_stm32_data *dev_data);
+int sdhc_stm32_ll_write_blocks(SDMMC_TypeDef *Instance, const uint8_t *pData, uint32_t BlockAdd,
+			       uint32_t NumberOfBlocks, uint32_t Timeout,
+			       struct sdhc_stm32_data *data);
+int sdhc_stm32_ll_read_blocks_dma(SDMMC_TypeDef *Instance, uint8_t *pData, uint32_t BlockAdd,
+				  uint32_t NumberOfBlocks, struct sdhc_stm32_data *dev_data);
+int sdhc_stm32_ll_read_blocks(SDMMC_TypeDef *Instance, uint8_t *pData, uint32_t BlockAdd,
+			      uint32_t NumberOfBlocks, uint32_t Timeout,
+			      struct sdhc_stm32_data *data);
+int sdhc_stm32_ll_erase(struct sdhc_stm32_data *dev_data, SDMMC_TypeDef *Instance,
+			uint32_t address);
+int sdhc_stm32_ll_erase_block_start(struct sdhc_stm32_data *dev_data, SDMMC_TypeDef *Instance,
+				    uint32_t BlockStartAdd);
+int sdhc_stm32_ll_erase_block_end(struct sdhc_stm32_data *dev_data, SDMMC_TypeDef *Instance,
+				  uint32_t BlockEndAdd);
+uint32_t sdhc_stm32_ll_switch_speed(SDMMC_TypeDef *Instance, uint32_t switch_arg, uint8_t *status,
+				    uint32_t block_size, struct sdhc_stm32_data *dev_data);
+uint32_t sdhc_stm32_ll_find_scr(SDMMC_TypeDef *Instance, struct sdhc_stm32_data *dev_data,
+				uint32_t *scr, uint32_t block_size);
+uint32_t sdhc_stm32_ll_send_status(SDMMC_TypeDef *Instance, struct sdhc_stm32_data *dev_data,
+				   uint32_t card_rca, uint32_t *pCardStatus);
 void sdhc_stm32_ll_irq_handler(SDMMC_TypeDef *Instance, struct sdhc_stm32_data *data);
+int sdhc_stm32_ll_config_freq(SDMMC_TypeDef *Instance, uint32_t ClockSpeed,
+			      struct sdhc_stm32_data *data);
 int sdhc_stm32_ll_init(SDMMC_TypeDef *Instance, struct sdhc_stm32_data *data);
 int sdhc_stm32_ll_deinit(SDMMC_TypeDef *Instance, struct sdhc_stm32_data *data);
+
 /**
  * @brief SDIO Functions Prototypes
  */

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT st_stm32_sdio
+#define DT_DRV_COMPAT st_stm32_sdhc
 
 #include "sdhc_stm32_ll.h"
 #include <zephyr/drivers/clock_control.h>
@@ -27,10 +27,10 @@ struct sdhc_stm32_config {
 	bool support_1_8_v;                /* flag indicating support for 1.8V signaling */
 	unsigned int max_freq;             /* Max bus frequency in Hz */
 	unsigned int min_freq;             /* Min bus frequency in Hz */
-	uint8_t bus_width;                 /* Width of the SDIO bus */
-	uint16_t clk_div;                  /* Clock divider value to configure SDIO clock speed */
+	uint8_t bus_width;                 /* Width of the SDMMC bus */
+	uint16_t clk_div;                  /* Clock divider value to configure SDMMC clock speed */
 	uint32_t power_delay_ms;           /* power delay prop for the host in milliseconds */
-	SDMMC_TypeDef *Instance;           /* Base address of the SDIO peripheral */
+	SDMMC_TypeDef *Instance;           /* Base address of the SDMMC peripheral */
 	const struct stm32_pclken *pclken; /* Pointer to peripheral clock configuration */
 	const struct pinctrl_dev_config *pcfg; /* Pointer to pin control configuration */
 	struct gpio_dt_spec sdhi_on_gpio;  /* Power pin to control the regulators used by card.*/
@@ -98,6 +98,7 @@ static void sdhc_stm32_log_err_type(struct sdhc_stm32_data *dev_data)
 		{SDMMC_ERROR_INVALID_VOLTRANGE, "Unsupported voltage range requested"},
 		{SDMMC_ERROR_UNSUPPORTED_FEATURE, "Requested card feature is not supported"},
 		{SDMMC_ERROR_DMA, "DMA transfer error occurred"},
+		{SDMMC_ERROR_CID_CSD_OVERWRITE, "CID/CSD register overwrite attempted"},
 
 		{SDMMC_ERROR_GENERAL_UNKNOWN_ERR | SDMMC_ERROR_REQUEST_NOT_APPLICABLE,
 		 "General SDHC error or invalid operation"},
@@ -113,6 +114,14 @@ static void sdhc_stm32_log_err_type(struct sdhc_stm32_data *dev_data)
 
 		{SDMMC_ERROR_WRITE_PROT_VIOLATION | SDMMC_ERROR_LOCK_UNLOCK_FAILED,
 		 "Access violation: write-protect or lock/unlock failure"},
+
+		{SDMMC_ERROR_ERASE_RESET | SDMMC_ERROR_AKE_SEQ_ERR,
+		 "Card error: erase reset or authentication sequence failure"},
+
+		{SDMMC_ERROR_BLOCK_LEN_ERR | SDMMC_ERROR_ERASE_SEQ_ERR |
+			 SDMMC_ERROR_BAD_ERASE_PARAM | SDMMC_ERROR_WP_ERASE_SKIP,
+		 "Block or erase sequence error"},
+
 	};
 
 	for (size_t i = 0; i < ARRAY_SIZE(sdmmc_errors); i++) {
@@ -128,13 +137,13 @@ static void sdhc_stm32_log_err_type(struct sdhc_stm32_data *dev_data)
 }
 
 /**
- * Initializes the SDIO peripheral with the configuration specified.
+ * Initializes the SDHC peripheral with the configuration specified.
  *
  * This includes deinitializing any previous configuration, and applying
  * parameters like clock edge, power saving, clock divider, hardware
  * flow control and bus width.
  *
- * @param dev Pointer to the device structure for the SDIO peripheral.
+ * @param dev Pointer to the device structure for the SDHC peripheral.
  *
  * @return 0 on success, err code on failure.
  */
@@ -230,28 +239,10 @@ static uint32_t sdhc_stm32_go_idle_state(const struct device *dev)
 
 static int sdhc_stm32_rw_direct(const struct device *dev, struct sdhc_command *cmd)
 {
-	int res;
 	const struct sdhc_stm32_config *config = dev->config;
 	struct sdhc_stm32_data *dev_data = dev->data;
-	bool direction = cmd->arg >> SDIO_CMD_ARG_RW_SHIFT;
-	bool raw_flag = cmd->arg >> SDIO_DIRECT_CMD_ARG_RAW_SHIFT;
 
-	uint8_t func = (cmd->arg >> SDIO_CMD_ARG_FUNC_NUM_SHIFT) & 0x7;
-	uint32_t reg_addr = (cmd->arg >> SDIO_CMD_ARG_REG_ADDR_SHIFT) & SDIO_CMD_ARG_REG_ADDR_MASK;
-
-	sdhc_stm32_sdio_direct_cmd_t arg = {
-		.Reg_Addr = reg_addr, .ReadAfterWrite = raw_flag, .IOFunctionNbr = func};
-
-	if (direction == SDIO_IO_WRITE) {
-		uint8_t data_in = cmd->arg & SDIO_DIRECT_CMD_DATA_MASK;
-
-		res = sdhc_stm32_ll_sdio_write_direct(config->Instance, &arg, data_in, dev_data);
-	} else {
-		res = sdhc_stm32_ll_sdio_read_direct(config->Instance, &arg,
-						     (uint8_t *)&cmd->response, dev_data);
-	}
-
-	return res;
+	return sdhc_stm32_ll_sdmmc_rw_direct(config->Instance, cmd->arg, cmd->response, dev_data);
 }
 
 static int sdhc_stm32_rw_extended(const struct device *dev, struct sdhc_command *cmd,
@@ -350,7 +341,10 @@ static int sdhc_stm32_switch_to_1_8v(const struct device *dev)
 		return -ENOTSUP;
 	}
 
-	res = SDMMC_CmdVoltageSwitch(config->hsd->Instance);
+	/* Start switching procedue */
+	config->Instance->POWER |= SDMMC_POWER_VSWITCHEN;
+
+	res = SDMMC_CmdVoltageSwitch(config->Instance);
 	if (res != 0) {
 		LOG_ERR("CMD11 failed: %#x", res);
 		return -EIO;
@@ -390,6 +384,120 @@ static uint32_t sdhc_stm32_select_card(const struct sdhc_stm32_config *config,
 	cmd->response[0] = SDMMC_GetResponse(config->Instance, SDMMC_RESP1);
 
 	return sdmmc_res;
+}
+
+static int sdhc_stm32_write_blocks(const struct device *dev, struct sdhc_data *data)
+{
+	int ret;
+	const struct sdhc_stm32_config *config = dev->config;
+	struct sdhc_stm32_data *dev_data = dev->data;
+
+	if (!IS_ENABLED(CONFIG_SDHC_STM32_POLLING_MODE)) {
+		sys_cache_data_flush_range(data->data, data->blocks * data->block_size);
+
+		ret = sdhc_stm32_ll_write_blocks_dma(config->Instance, data->data, data->block_addr,
+						     data->blocks, dev_data);
+	} else {
+		ret = sdhc_stm32_ll_write_blocks(config->Instance, data->data, data->block_addr,
+						 data->blocks, data->timeout_ms, dev_data);
+	}
+
+	if (!IS_ENABLED(CONFIG_SDHC_STM32_POLLING_MODE)) {
+		if (k_sem_take(&dev_data->device_sync_sem, K_MSEC(data->timeout_ms)) != 0) {
+			LOG_ERR("Failed to acquire Semaphore");
+			return -ETIMEDOUT;
+		}
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Read blocks from SD card
+ * This function handles both DMA and polling modes based on configuration
+ *
+ * @param dev SDHC device instance
+ * @param data Data descriptor containing buffer, address, and block count
+ * @return int 0 on success, negative errno on failure
+ *
+ */
+static int sdhc_stm32_read_blocks(const struct device *dev, struct sdhc_data *data)
+{
+	int ret;
+	const struct sdhc_stm32_config *config = dev->config;
+	struct sdhc_stm32_data *dev_data = dev->data;
+
+	if (!IS_ENABLED(CONFIG_SDHC_STM32_POLLING_MODE)) {
+		sys_cache_data_flush_range(data->data, data->blocks * data->block_size);
+
+		ret = sdhc_stm32_ll_read_blocks_dma(config->Instance, data->data, data->block_addr,
+						    data->blocks, dev_data);
+	} else {
+		ret = sdhc_stm32_ll_read_blocks(config->Instance, data->data, data->block_addr,
+						data->blocks, data->timeout_ms, dev_data);
+	}
+
+	if (!IS_ENABLED(CONFIG_SDHC_STM32_POLLING_MODE)) {
+		if (k_sem_take(&dev_data->device_sync_sem, K_MSEC(data->timeout_ms)) != 0) {
+			LOG_ERR("Failed to acquire Semaphore");
+			return -ETIMEDOUT;
+		}
+		sys_cache_data_invd_range(data->data, data->blocks * data->block_size);
+	}
+
+	return ret;
+}
+
+static int sdhc_stm32_send_csd_and_save_card_configs(const struct sdhc_stm32_config *config,
+						     struct sdhc_command *cmd,
+						     struct sdhc_stm32_data *dev_data)
+{
+	int res = 0;
+
+	res = SDMMC_CmdSendCSD(config->Instance, cmd->arg);
+	if (res == 0U) {
+		cmd->response[1] = SDMMC_GetResponse(config->Instance, SDMMC_RESP2);
+		cmd->response[2] = SDMMC_GetResponse(config->Instance, SDMMC_RESP3);
+		dev_data->card_class = (SDMMC_GetResponse(config->Instance, SDMMC_RESP2) >> 20U);
+	}
+
+	return res;
+}
+
+static uint32_t sdhc_stm32_send_op_cond(const struct sdhc_stm32_config *config,
+					struct sdhc_command *cmd, struct sdhc_stm32_data *dev_data)
+{
+	uint32_t res;
+
+	res = SDMMC_CmdAppOperCommand(config->Instance, cmd->arg);
+	if (res == 0U) {
+		cmd->response[0] = SDMMC_GetResponse(config->Instance, SDMMC_RESP1);
+	}
+
+	return res;
+}
+
+static uint32_t sdhc_stm32_send_cid(const struct sdhc_stm32_config *config,
+				    struct sdhc_command *cmd)
+{
+	uint32_t res;
+
+	res = SDMMC_CmdSendCID(config->Instance);
+	if (res == 0U) {
+		cmd->response[0] = SDMMC_GetResponse(config->Instance, SDMMC_RESP1);
+		cmd->response[1] = SDMMC_GetResponse(config->Instance, SDMMC_RESP2);
+		cmd->response[2] = SDMMC_GetResponse(config->Instance, SDMMC_RESP3);
+		cmd->response[3] = SDMMC_GetResponse(config->Instance, SDMMC_RESP4);
+	}
+
+	return res;
+}
+
+static bool sdhc_stm32_is_read_write_opcode(struct sdhc_command *cmd)
+{
+	return ((cmd->opcode == SD_READ_SINGLE_BLOCK) || (cmd->opcode == SD_READ_MULTIPLE_BLOCK) ||
+		(cmd->opcode == SD_WRITE_SINGLE_BLOCK) ||
+		(cmd->opcode == SD_WRITE_MULTIPLE_BLOCK) || (cmd->opcode == SDIO_RW_EXTENDED));
 }
 
 static int sdhc_stm32_card_busy(const struct device *dev)
@@ -445,6 +553,50 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 		sdmmc_res = sdhc_stm32_go_idle_state(dev);
 		break;
 
+	case SD_SEND_IF_COND:
+		sdmmc_res = SDMMC_CmdOperCond(config->Instance);
+		if (sdmmc_res == 0U) {
+			cmd->response[0] = SDMMC_GetResponse(config->Instance, SDMMC_RESP1);
+		}
+		break;
+
+	case SD_SEND_CSD:
+		res = sdhc_stm32_send_csd_and_save_card_configs(config, cmd, dev_data);
+		break;
+
+	case SD_ERASE_BLOCK_START:
+		res = sdhc_stm32_ll_erase_block_start(dev_data, config->Instance, cmd->arg);
+		break;
+
+	case SD_ERASE_BLOCK_END:
+		res = sdhc_stm32_ll_erase_block_end(dev_data, config->Instance, cmd->arg);
+		break;
+
+	case SD_ERASE_BLOCK_OPERATION:
+		res = sdhc_stm32_ll_erase(dev_data, config->Instance, cmd->arg);
+		break;
+
+	case SD_SWITCH:
+		__ASSERT_NO_MSG(data != NULL);
+		sdmmc_res = sdhc_stm32_ll_switch_speed(config->Instance, cmd->arg, data->data,
+						       data->block_size, dev_data);
+		break;
+
+	case SD_APP_CMD:
+		sdmmc_res = SDMMC_CmdAppCommand(config->Instance, cmd->arg);
+		if (sdmmc_res == 0U) {
+			cmd->response[0] = SDMMC_GetResponse(config->Instance, SDMMC_RESP1);
+		}
+		break;
+
+	case SD_APP_SEND_OP_COND:
+		sdmmc_res = sdhc_stm32_send_op_cond(config, cmd, dev_data);
+		break;
+
+	case SD_ALL_SEND_CID:
+		sdmmc_res = sdhc_stm32_send_cid(config, cmd);
+		break;
+
 	case SD_SELECT_CARD:
 		sdmmc_res = sdhc_stm32_select_card(config, cmd);
 		break;
@@ -458,6 +610,18 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 							    (uint32_t *)&cmd->response);
 		break;
 
+	case SD_WRITE_SINGLE_BLOCK:
+	case SD_WRITE_MULTIPLE_BLOCK:
+		__ASSERT_NO_MSG(data != NULL);
+		res = sdhc_stm32_write_blocks(dev, data);
+		break;
+
+	case SD_READ_SINGLE_BLOCK:
+	case SD_READ_MULTIPLE_BLOCK:
+		__ASSERT_NO_MSG(data != NULL);
+		res = sdhc_stm32_read_blocks(dev, data);
+		break;
+
 	case SDIO_RW_DIRECT:
 		res = sdhc_stm32_rw_direct(dev, cmd);
 		break;
@@ -467,8 +631,22 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 		res = sdhc_stm32_rw_extended(dev, cmd, data);
 		break;
 
+	case SD_APP_SEND_SCR:
+		res = sdhc_stm32_ll_find_scr(config->Instance, dev_data, data->data,
+					     data->block_size);
+		break;
+
+	case SD_SET_BLOCK_SIZE:
+		sdmmc_res = SDMMC_CmdBlockLength(config->Instance, (uint32_t)cmd->arg);
+		break;
+
 	case SD_VOL_SWITCH:
 		res = sdhc_stm32_switch_to_1_8v(dev);
+		break;
+
+	case SD_SEND_STATUS:
+		sdmmc_res = sdhc_stm32_ll_send_status(config->Instance, dev_data, cmd->arg,
+						      &cmd->response[0]);
 		break;
 
 	default:
@@ -486,10 +664,10 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 	}
 
 	/*
-	 * Defer PM release to ISR only for successful DMA-based SDIO_RW_EXTENDED.
-	 * Release PM here for all other cases (polling mode, other commands, or errors).
+	 * Defer PM release to ISR only for successful DMA-based read/write commands.
+	 * Release PM here for all other cases (polling mode, non-read/write opcodes, errors).
 	 */
-	if (IS_ENABLED(CONFIG_SDHC_STM32_POLLING_MODE) || cmd->opcode != SDIO_RW_EXTENDED ||
+	if (IS_ENABLED(CONFIG_SDHC_STM32_POLLING_MODE) || !sdhc_stm32_is_read_write_opcode(cmd) ||
 	    res != 0) {
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 		(void)pm_device_runtime_put(dev);
@@ -714,12 +892,12 @@ static int sdhc_stm32_init(const struct device *dev)
 
 	ret = sdhc_stm32_sd_init(dev);
 	if (ret != 0) {
-		LOG_ERR("SDIO Init Failed");
-		sdhc_stm32_log_err_type(config->hsd);
+		LOG_ERR("SDHC init failed");
+		sdhc_stm32_log_err_type(data);
 		return ret;
 	}
 
-	LOG_INF("SDIO Init Passed Successfully");
+	LOG_INF("SDHC Init Passed Successfully");
 
 	sdhc_stm32_init_props(dev);
 
