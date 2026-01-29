@@ -6,6 +6,8 @@
 
 #define DT_DRV_COMPAT voltage_divider
 
+#include <inttypes.h>
+
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/adc/voltage_divider.h>
 #include <zephyr/drivers/gpio.h>
@@ -63,7 +65,6 @@ static int get(const struct device *dev, enum sensor_channel chan, struct sensor
 	const struct voltage_config *config = dev->config;
 	struct voltage_data *data = dev->data;
 	int32_t raw_val;
-	int32_t v_mv;
 	int ret;
 
 	__ASSERT_NO_MSG(val != NULL);
@@ -78,23 +79,20 @@ static int get(const struct device *dev, enum sensor_channel chan, struct sensor
 		raw_val = data->raw;
 	}
 
-	ret = adc_raw_to_millivolts_dt(&config->voltage.port, &raw_val);
+	ret = adc_raw_to_microvolts_dt(&config->voltage.port, &raw_val);
 	if (ret != 0) {
-		LOG_ERR("raw_to_mv: %d", ret);
+		LOG_ERR("raw_to_uv: %d", ret);
 		return ret;
 	}
 
-	v_mv = raw_val;
+	int64_t voltage_uv = raw_val;
 
 	/* Note if full_ohms is not specified then unscaled voltage is returned */
-	(void)voltage_divider_scale_dt(&config->voltage, &v_mv);
+	(void)voltage_divider_scale64_dt(&config->voltage, &voltage_uv);
 
-	LOG_DBG("%d of %d, %dmV, voltage:%dmV", data->raw,
-		(1 << data->sequence.resolution) - 1, raw_val, v_mv);
-	val->val1 = v_mv / 1000;
-	val->val2 = (v_mv * 1000) % 1000000;
-
-	return ret;
+	LOG_DBG("%" PRIu16 " of %lu, %" PRIi32 "uV, voltage:%" PRIi64 "uV", data->raw,
+		BIT_MASK(data->sequence.resolution), raw_val, voltage_uv);
+	return sensor_value_from_micro(val, voltage_uv);
 }
 
 static DEVICE_API(sensor, voltage_api) = {

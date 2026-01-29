@@ -88,6 +88,16 @@ static int test_task_voltage_divider(void)
 	zassert_within(calculated_voltage, input_mv * 2, MV_OUTPUT_EPS,
 		       "%u != %u should have set value", calculated_voltage, input_mv * 2);
 
+	/* test case: voltage_divider_scale64_dt */
+	const int32_t divider_gain = 2;
+	const int32_t expected_output_uv = input_mv * 1000 * divider_gain;
+	int64_t output_uv = calculated_microvolts;
+
+	ret = voltage_divider_scale64_dt(&adc_node_0, &output_uv);
+	zassert_ok(ret, "voltage_divider_scale64_dt() failed with code %d", ret);
+	zassert_within(output_uv, expected_output_uv, divider_gain * 1000,
+		       "%lld != %d should have set value", output_uv, expected_output_uv);
+
 	return TC_PASS;
 }
 
