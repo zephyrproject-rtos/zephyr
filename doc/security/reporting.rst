@@ -6,14 +6,20 @@ Security Vulnerability Reporting
 Introduction
 ============
 
-Vulnerabilities to the Zephyr project may be reported via email to the
-vulnerabilities@zephyrproject.org mailing list.  These reports will be
-acknowledged and analyzed by the security response team within 1 week.
-Each vulnerability will be entered into the Zephyr Project security
-advisory GitHub_.  The original submitter will be granted permission to
-view the issues that they have reported.
+Vulnerabilities in the Zephyr project should preferably be reported by opening
+a draft `security advisory`_ on the Zephyr repository's
+`security advisories page`_.
+Alternatively, reports may be submitted to the project security incident
+response team via email to vulnerabilities@zephyrproject.org.
+These reports will be acknowledged and analyzed by the security response team
+within 1 week.
 
-.. _GitHub: https://github.com/zephyrproject-rtos/zephyr/security
+All vulnerabilities are tracked and managed through the Zephyr project's
+`security advisories page`_ on GitHub, where the original submitter will be
+granted access to view the issues that they have reported.
+
+.. _security advisory: https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing/privately-reporting-a-security-vulnerability#privately-reporting-a-security-vulnerability
+.. _security advisories page: https://github.com/zephyrproject-rtos/zephyr/security/advisories
 
 Security Issue Management
 =========================
