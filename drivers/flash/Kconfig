@@ -217,6 +217,7 @@ source "drivers/flash/Kconfig.stm32"
 source "drivers/flash/Kconfig.stm32_ospi"
 source "drivers/flash/Kconfig.stm32_qspi"
 source "drivers/flash/Kconfig.stm32_xspi"
+source "drivers/flash/Kconfig.ti_mspm0"
 source "drivers/flash/Kconfig.xmc4xxx"
 # zephyr-keep-sorted-stop
 
