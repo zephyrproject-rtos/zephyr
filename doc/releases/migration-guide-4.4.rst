@@ -694,6 +694,27 @@ Video
 * The :dtcompatible:`ovti,ov2640` reset pin handling has been corrected, resulting in an inverted
   active level compared to before, to match the active level expected by the sensor.
 
+Watchdog
+========
+
+  * The semantics of :kconfig:option:`CONFIG_WDT_DISABLE_AT_BOOT` have been clarified: the expected
+    behavior when ``CONFIG_WDT_DISABLE_AT_BOOT=n``, which was unclear and implemented inconsistently
+    across drivers, is now explicitly documented in :kconfig:option:`CONFIG_WDT_DISABLE_AT_BOOT`'s
+    description (refer to it for more details).
+
+    All in-tree watchdog drivers have been updated to follow the now documented semantics.
+
+    Notably, ``CONFIG_WDT_DISABLE_AT_BOOT=n`` can no longer be used to have watchdog(s) enabled at
+    boot "*automatically*". Users which relied on this behavior must update their application to
+    explicitly configure a watchdog, as done in the :zephyr:code-sample:`watchdog`. The following
+    Kconfig options related to this incorrect usage have been removed:
+
+      * ``CONFIG_IWDG_STM32_INITIAL_TIMEOUT``
+      * ``CONFIG_WDT_RPI_PICO_INITIAL_TIMEOUT``
+      * ``CONFIG_WDT_CC13XX_CC26XX_INITIAL_TIMEOUT``
+      * ``CONFIG_WDT_CC23X0_INITIAL_TIMEOUT``
+      * ``CONFIG_WDT_CC32XX_INITIAL_TIMEOUT``
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
