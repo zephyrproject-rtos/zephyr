@@ -7,3 +7,13 @@ config SPI_SF32LB
 	depends on DT_HAS_SIFLI_SF32LB_SPI_ENABLED
 	help
 	  Enable SPI driver for SF32LB MCUs
+
+if SPI_SF32LB
+
+config SPI_SF32LB_DMA
+	bool "SF32LB MCU SPI DMA Support"
+	select DMA
+	help
+	  Enable DMA support for SF32LB MCU SPI driver.
+
+endif # SPI_SF32LB
