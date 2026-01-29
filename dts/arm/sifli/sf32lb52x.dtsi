@@ -332,6 +332,15 @@
 			};
 		};
 
+		efuse: otp@5000c000 {
+			compatible = "sifli,sf32lb-efuse";
+			reg = <0x5000c000 0x100>;
+			sifli,pmuc = <&pmuc>;
+			sifli,bank-size = <32>;
+			sifli,bank-offsets = <0x30 0x50 0x70 0x90>;
+			status = "disabled";
+		};
+
 		cfg: syscon@5000b000 {
 			compatible = "sifli,sf32lb-cfg", "syscon";
 			reg = <0x5000b000 0x1000>;
