@@ -1,0 +1,177 @@
+/*
+ * Copyright (c) 2023 Antmicro
+ * Copyright (c) 2024 Silicon Laboratories Inc.
+ * Copyright (c) 2026 Ezurio
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/siwg917m111mgtba.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pinctrl/silabs/siwx91x-pinctrl.h>
+#include <freq.h>
+
+/ {
+	model = "Ezurio Veda SL917 SoC Explorer Board";
+	compatible = "silabs,siwg917";
+
+	chosen {
+		zephyr,bt-hci = &bt_hci0;
+		zephyr,code-partition = &code_partition;
+		zephyr,console = &ulpuart;
+		zephyr,shell-uart = &ulpuart;
+		zephyr,sram = &sram0;
+		zephyr,uart-pipe = &ulpuart;
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &button0;
+		sw1 = &button1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpioa 10 GPIO_ACTIVE_HIGH>;
+		};
+
+		led1: led_1 {
+			gpios = <&ulpgpio 2 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&uulpgpio 2 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&gpioa 11 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&pinctrl0 {
+	psram_default: psram_default {
+		group {
+			pinmux = <PSRAM_CLK_HP52>,
+				 <PSRAM_D0_HP53>,
+				 <PSRAM_D1_HP54>,
+				 <PSRAM_D2_HP56>,
+				 <PSRAM_D3_HP57>,
+				 <PSRAM_CSN0_HP55>;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group {
+			pinmux = <I2C0_SDA_HP6>, <I2C0_SCL_HP7>;
+		};
+	};
+
+	ulpuart_default: ulpuart_default {
+		out {
+			pinmux = <ULPUART_TX_ULP11>;
+		};
+
+		in {
+			pinmux = <ULPUART_RX_ULP9>;
+		};
+	};
+
+	spi0_default: spi0_default {
+		out {
+			pinmux = <GSPI_CLK_HP25>, <GSPI_MOSI_HP27>;
+		};
+
+		in {
+			pinmux = <GSPI_MISO_HP26>;
+		};
+	};
+};
+
+&spi0 {
+	status = "okay";
+	cs-gpios = <&gpiob 12 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+
+	dmas = <&gpdma 0 11>, <&gpdma 1 10>;
+	dma-names = "tx", "rx";
+};
+
+&gpdma {
+	status = "okay";
+};
+
+&cpu0 {
+	clock-frequency = <180000000>;
+};
+
+&ulpuart {
+	pinctrl-0 = <&ulpuart_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c0 {
+	clock-frequency = <DT_FREQ_K(100)>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		code_partition: partition@202000 {
+			reg = <0x00202000 DT_SIZE_K(2008)>;
+			label = "code_partition";
+		};
+
+		storage_partition: partition@3f8000 {
+			reg = <0x003f8000 DT_SIZE_K(32)>;
+			label = "storage";
+		};
+	};
+};
+
+&sysrtc0 {
+	status = "okay";
+};
+
+&memc {
+	status = "okay";
+	clocks = <&clock0 SIWX91X_CLK_QSPI>;
+	pinctrl-0 = <&psram_default>;
+	pinctrl-names = "default";
+	device-id = [0d 5d 00 00 00 00 00 00];
+	fast-freq = <DT_FREQ_M(144)>;
+	normal-freq = <DT_FREQ_M(33)>;
+
+	psram: psram@a000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xa000000 DT_SIZE_M(8)>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+		zephyr,memory-region = "psram";
+	};
+};
+
+&bt_hci0 {
+	status = "okay";
+};
+
+&wifi0 {
+	status = "okay";
+};

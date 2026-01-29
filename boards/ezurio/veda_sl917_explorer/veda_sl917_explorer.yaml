@@ -1,0 +1,26 @@
+identifier: veda_sl917_explorer
+name: Ezurio Veda SL917 Wi-Fi 6 and Bluetooth LE SoC Explorer Board
+type: mcu
+arch: arm
+ram: 319
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - bluetooth
+  - dma
+  - entropy
+  - flash
+  - gpio
+  - i2c
+  - pwm
+  - watchdog
+  - spi
+  - uart
+  - i2s
+  - adc
+  - wifi
+  - rtc
+  - counter
+vendor: ezurio

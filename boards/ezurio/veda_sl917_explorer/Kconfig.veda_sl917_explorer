@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Ezurio LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_VEDA_SL917_EXPLORER
+	select SOC_SIWG917M111MGTBA
+
+config SIWX917_PSRAM_PRESENT
+	bool "Enable PSRAM support for SiWx917 SoC"
+	default n
+	select MEMC
+
+if SIWX917_PSRAM_PRESENT
+
+config CLOCK_CONTROL_INIT_PRIORITY
+	int
+	default 28
+
+config MEMC_INIT_PRIORITY
+	int
+	default 29
+
+endif
