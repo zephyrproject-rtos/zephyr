@@ -57,6 +57,10 @@ config BT_TBS_BEARER_COUNT
 	int
 	default 1
 
+config BT_TBS_MAX_SCHEME_LIST_LENGTH
+	int
+	default 100
+
 # Include Zephyr's Kconfig.
 source "Kconfig"
 source "subsys/bluetooth/audio/Kconfig"
