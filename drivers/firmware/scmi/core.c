@@ -8,7 +8,6 @@
 #include <zephyr/drivers/firmware/scmi/transport.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/device.h>
-#include "mailbox.h"
 
 LOG_MODULE_REGISTER(scmi_core);
 
@@ -87,129 +86,24 @@ static int scmi_core_setup_chan(const struct device *transport,
 	return 0;
 }
 
-static int scmi_interrupt_enable(struct scmi_channel *chan, bool enable)
+static int scmi_core_wait_reply(struct scmi_protocol *proto, bool use_polling)
 {
-	struct scmi_mbox_channel *mbox_chan;
-	struct mbox_dt_spec *tx_reply;
-	bool comp_int;
-
-	mbox_chan = chan->data;
-	comp_int = enable ? SCMI_SHMEM_CHAN_FLAG_IRQ_BIT : 0;
-
-	if (mbox_chan->tx_reply.dev) {
-		tx_reply = &mbox_chan->tx_reply;
-	} else {
-		tx_reply = &mbox_chan->tx;
+	if (!use_polling) {
+		return k_sem_take(&proto->tx->sem,
+				  K_USEC(CONFIG_ARM_SCMI_CHAN_SEM_TIMEOUT_USEC));
 	}
 
-	/* re-set completion interrupt */
-	scmi_shmem_update_flags(mbox_chan->shmem, SCMI_SHMEM_CHAN_FLAG_IRQ_BIT, comp_int);
-
-	return mbox_set_enabled_dt(tx_reply, enable);
-}
-
-static int scmi_send_message_polling(struct scmi_protocol *proto,
-					struct scmi_message *msg,
-					struct scmi_message *reply)
-{
-	int ret;
-	int status;
-
-	/* wait for channel to be free */
-	if (!k_is_pre_kernel() && k_mutex_lock(&proto->tx->lock, K_NO_WAIT)) {
-		LOG_ERR("failed to acquire chan lock");
-		return -EBUSY;
-	}
-
-	/*
-	 * SCMI communication interrupt is enabled by default during setup_chan
-	 * to support interrupt-driven communication. When using polling mode
-	 * it must be disabled to avoid unnecessary interrupts and
-	 * ensure proper polling behavior.
-	 */
-	status = scmi_interrupt_enable(proto->tx, false);
-
-	ret = scmi_transport_send_message(proto->transport, proto->tx, msg);
-	if (ret < 0) {
-		goto cleanup;
-	}
-
-	/* no kernel primitives, we're forced to poll here.
-	 *
-	 * Cortex-M quirk: no interrupts at this point => no timer =>
-	 * no timeout mechanism => this can block the whole system.
-	 *
-	 * Polling mode repeatedly checks the chan_status field in share memory
-	 * to detect whether the remote side have completed message processing
-	 *
-	 * TODO: is there a better way to handle this?
-	 */
 	while (!scmi_transport_channel_is_free(proto->transport, proto->tx)) {
 	}
 
-	ret = scmi_transport_read_message(proto->transport, proto->tx, reply);
-	if (ret < 0) {
-		return ret;
-	}
-
-cleanup:
-	/* restore scmi interrupt enable status when disable it pass */
-	if (status >= 0) {
-		scmi_interrupt_enable(proto->tx, true);
-	}
-
-	if (!k_is_pre_kernel()) {
-		k_mutex_unlock(&proto->tx->lock);
-	}
-
-	return ret;
-}
-
-static int scmi_send_message_interrupt(struct scmi_protocol *proto,
-					 struct scmi_message *msg,
-					 struct scmi_message *reply)
-{
-	int ret = 0;
-
-	if (!proto->tx) {
-		return -ENODEV;
-	}
-
-	/* wait for channel to be free */
-	ret = k_mutex_lock(&proto->tx->lock, K_USEC(SCMI_CHAN_LOCK_TIMEOUT_USEC));
-	if (ret < 0) {
-		LOG_ERR("failed to acquire chan lock");
-		return ret;
-	}
-
-	ret = scmi_transport_send_message(proto->transport, proto->tx, msg);
-	if (ret < 0) {
-		LOG_ERR("failed to send message");
-		goto out_release_mutex;
-	}
-
-	/* only one protocol instance can wait for a message reply at a time */
-	ret = k_sem_take(&proto->tx->sem, K_USEC(CONFIG_ARM_SCMI_CHAN_SEM_TIMEOUT_USEC));
-	if (ret < 0) {
-		LOG_ERR("failed to wait for msg reply");
-		goto out_release_mutex;
-	}
-
-	ret = scmi_transport_read_message(proto->transport, proto->tx, reply);
-	if (ret < 0) {
-		LOG_ERR("failed to read reply");
-		goto out_release_mutex;
-	}
-
-out_release_mutex:
-	k_mutex_unlock(&proto->tx->lock);
-
-	return ret;
+	return 0;
 }
 
 int scmi_send_message(struct scmi_protocol *proto, struct scmi_message *msg,
 		      struct scmi_message *reply, bool use_polling)
 {
+	int ret;
+
 	if (!proto->tx) {
 		return -ENODEV;
 	}
@@ -218,11 +112,47 @@ int scmi_send_message(struct scmi_protocol *proto, struct scmi_message *msg,
 		return -EINVAL;
 	}
 
-	if (use_polling) {
-		return scmi_send_message_polling(proto, msg, reply);
-	} else {
-		return scmi_send_message_interrupt(proto, msg, reply);
+	/*
+	 * while in PRE_KERNEL, interrupt-based messaging is forbidden
+	 * because of the lack of kernel primitives (i.e. semaphores)
+	 * (and potentially even interrupts, based on the architecture).
+	 * Because of this, we ignore the caller's request and forcibly
+	 * enable polling.
+	 */
+	use_polling = k_is_pre_kernel() ? true : use_polling;
+
+	if (!k_is_pre_kernel()) {
+		ret = k_mutex_lock(&proto->tx->lock, K_USEC(SCMI_CHAN_LOCK_TIMEOUT_USEC));
+		if (ret < 0) {
+			LOG_ERR("failed to acquire TX channel lock: %d", ret);
+			return ret;
+		}
 	}
+
+	ret = scmi_transport_send_message(proto->transport, proto->tx, msg, use_polling);
+	if (ret < 0) {
+		LOG_ERR("failed to send message at transport layer: %d", ret);
+		goto out_release_mutex;
+	}
+
+	ret = scmi_core_wait_reply(proto, use_polling);
+	if (ret < 0) {
+		LOG_ERR("failed to wait for message reply: %d", ret);
+		goto out_release_mutex;
+	}
+
+	ret = scmi_transport_read_message(proto->transport, proto->tx, reply);
+	if (ret < 0) {
+		LOG_ERR("failed to read message reply: %d", ret);
+		goto out_release_mutex;
+	}
+
+out_release_mutex:
+	if (!k_is_pre_kernel()) {
+		k_mutex_unlock(&proto->tx->lock);
+	}
+
+	return ret;
 }
 
 static int scmi_core_protocol_negotiate(struct scmi_protocol *proto)
