@@ -51,6 +51,26 @@ whenever an incoming data has been received. Data received this way can be
 marked as processed by returning 0 or using
 :c:func:`bt_l2cap_chan_recv_complete` API if processing is asynchronous.
 
+For channels that support segmentation, the ``seg_recv`` callback can be
+provided in :c:struct:`bt_l2cap_chan_ops`. This callback is called for each
+received L2CAP segment. Each segment is passed to the application as it is
+received, regardless of whether the SDU fits in a single segment or spans
+multiple segments.
+
+The ``seg_recv`` callback allows applications to process large or streaming
+data incrementally without waiting for full reassembly. It is an alternative
+to the ``recv`` callback, and both must not be used at the same time on the
+same channel instance.
+
+When using ``seg_recv``, the application is responsible for managing flow
+control explicitly by giving credits to the channel, for example with
+:c:func:`bt_l2cap_chan_give_credits`. Failing to grant sufficient credits
+will prevent further segments from being delivered.
+Since :c:member:`bt_l2cap_chan_ops.seg_recv` is a ``void`` callback, it
+cannot report errors using a return value. If an unrecoverable error occurs
+When using ``seg_recv``, the application should handle unrecoverable errors
+explicitly, for example by triggering a channel disconnect using
+:c:func:`bt_l2cap_chan_disconnect`, potentially deferred outside the callback.
 .. note::
   The ``recv`` callback is called directly from RX Thread thus it is not
   recommended to block for long periods of time.
