@@ -1585,6 +1585,15 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 #define VIDEO_PIX_FMT_XYUV32 VIDEO_FOURCC('X', 'Y', 'U', 'V')
 
 /**
+ * 24 bit YUV format with 8 bit per component
+ *
+ * @code{.unparsed}
+ * | Yyyyyyyy Uuuuuuuu Vvvvvvvv | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_YUV24 VIDEO_FOURCC('Y', 'U', 'V', '3')
+
+/**
  * Planar formats
  */
 /**
