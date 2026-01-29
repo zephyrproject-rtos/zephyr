@@ -1,0 +1,31 @@
+# Copyright (c) 2026 Roman Leonov <jam_roma@yahoo.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config UHC_DWC2
+	bool "UHC DWC2 USB device controller driver"
+	depends on DT_HAS_SNPS_DWC2_ENABLED
+	default n
+	select EVENTS
+	help
+		DWC2 USB host controller driver.
+
+config UHC_DWC2_DMA
+	bool "UHC DWC2 DMA"
+	depends on UHC_DWC2
+	default y
+	help
+		Enable Buffer DMA if DWC2 USB controller supports Internal DMA.
+
+config UHC_DWC2_STACK_SIZE
+	int "UHC DWC2 driver thread stack size"
+	depends on UHC_DWC2
+	default 512
+	help
+		DWC2 driver thread stack size.
+
+config UHC_DWC2_THREAD_PRIORITY
+	int "UDC DWC2 driver thread priority"
+	depends on UHC_DWC2
+	default 8
+	help
+		DWC2 driver thread priority.
