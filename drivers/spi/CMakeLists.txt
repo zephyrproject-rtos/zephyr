@@ -81,6 +81,7 @@ zephyr_library_sources_ifdef(CONFIG_SPI_WCH spi_wch.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_XEC_QMSPI spi_xec_qmspi.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_XEC_QMSPI_LDMA spi_xec_qmspi_ldma.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_XLNX_AXI_QUADSPI spi_xlnx_axi_quadspi.c)
+zephyr_library_sources_ifdef(CONFIG_SPI_XLNX_ZYNQMP_GQSPI spi_xlnx_zynqmp_gqspi.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_XMC4XXX spi_xmc4xxx.c)
 # zephyr-keep-sorted-stop
 
