@@ -10,3 +10,9 @@ config SOC_XILINX_ZYNQMP_RPU
 	select CPU_HAS_ARM_MPU
 	select ARM_MPU
 	select VFP_DP_D16
+
+config SOC_XILINX_ZYNQMP_APU
+    bool
+    select ARM64
+    select ARM_ARCH_TIMER
+    select CPU_CORTEX_A53
