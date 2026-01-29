@@ -22,6 +22,8 @@ elseif(CONFIG_SOC_SERIES_AM6X_M4)
 elseif(CONFIG_SOC_SERIES_AM6X_R5)
   zephyr_sources(r5/soc.c)
   zephyr_sources_ifdef(CONFIG_ARM_MPU r5/arm_mpu_regions.c)
+  zephyr_sources_ifdef(CONFIG_PM_DEVICE_RUNTIME r5/power.c)
+  zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_TISCI r5/tisci_clock.c)
 
   zephyr_include_directories(r5)
 
