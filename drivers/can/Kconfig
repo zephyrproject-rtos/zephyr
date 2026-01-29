@@ -123,6 +123,7 @@ source "drivers/can/transceiver/Kconfig"
 # zephyr-keep-sorted-start
 source "drivers/can/Kconfig.esp32"
 source "drivers/can/Kconfig.fake"
+source "drivers/can/Kconfig.ifx"
 source "drivers/can/Kconfig.kvaser"
 source "drivers/can/Kconfig.loopback"
 source "drivers/can/Kconfig.max32"
