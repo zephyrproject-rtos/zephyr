@@ -282,8 +282,9 @@ static void uart_cc13xx_cc26xx_irq_tx_disable(const struct device *dev)
 static int uart_cc13xx_cc26xx_irq_tx_ready(const struct device *dev)
 {
 	const struct uart_cc13xx_cc26xx_config *config = dev->config;
+	uint32_t status = UARTIntStatus(config->reg, true);
 
-	return UARTSpaceAvail(config->reg) ? 1 : 0;
+	return (status & UART_INT_TX) ? 1 : 0;
 }
 
 static void uart_cc13xx_cc26xx_irq_rx_enable(const struct device *dev)
