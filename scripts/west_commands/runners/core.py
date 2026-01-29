@@ -583,7 +583,8 @@ class ZephyrBinaryRunner(abc.ABC):
                                 help="path to binary file")
             parser.add_argument('-t', '--file-type',
                                 dest='file_type',
-                                help="type of binary file")
+                                help="type of binary file. If --file is not given, "
+                                     "selects the build artifact (hex, bin, elf)")
         else:
             parser.add_argument('-f', '--file', help=argparse.SUPPRESS)
             parser.add_argument('-t', '--file-type', help=argparse.SUPPRESS)
@@ -702,6 +703,8 @@ class ZephyrBinaryRunner(abc.ABC):
             _missing_cap(cls, '--file')
         if args.file_type and not caps.file:
             _missing_cap(cls, '--file-type')
+        if args.file_type and not args.file:
+            raise ValueError("--file-type requires --file")
         if args.rtt_address and not caps.rtt:
             _missing_cap(cls, '--rtt-address')
         if args.dry_run and not caps.dry_run:

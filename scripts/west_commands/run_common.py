@@ -705,6 +705,14 @@ def get_runner_config(build_dir, yaml_path, runners_yaml, args=None):
         # OTHER and let the runner deal with it
         return FileType.OTHER
 
+    file_path = config('file')
+    file_type_arg = getattr(args, 'file_type', None)
+    if file_type_arg and not file_path:
+        file_path = output_file(file_type_arg.lower())
+        if file_path:
+            log.inf(f'--file not specified, using build artifact: {file_path}')
+            args.file = file_path
+
     return RunnerConfig(build_dir,
                         yaml_config['board_dir'],
                         output_file('elf'),
@@ -713,7 +721,7 @@ def get_runner_config(build_dir, yaml_path, runners_yaml, args=None):
                         output_file('bin'),
                         output_file('uf2'),
                         output_file('mot'),
-                        config('file'),
+                        file_path,
                         filetype('file_type'),
                         config('gdb'),
                         config('openocd'),
