@@ -14,6 +14,10 @@ supported:
   - gpio
   - hwinfo
   - i2c
+  - pico_gpio
+  - pico_i2c
+  - pico_serial
+  - pico_spi
   - pwm
   - spi
   - usbd
