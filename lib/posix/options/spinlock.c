@@ -11,17 +11,7 @@
 #include <zephyr/posix/pthread.h>
 #include <zephyr/sys/bitarray.h>
 
-union _spinlock_storage {
-	struct k_spinlock lock;
-	uint8_t byte;
-};
-#if !defined(CONFIG_CPP) && !defined(CONFIG_SMP) && !defined(CONFIG_SPIN_VALIDATE)
-BUILD_ASSERT(sizeof(struct k_spinlock) == 0,
-	     "please remove the _spinlock_storage workaround if, at some point, k_spinlock is no "
-	     "longer zero bytes when CONFIG_SMP=n && CONFIG_SPIN_VALIDATE=n");
-#endif
-
-static union _spinlock_storage posix_spinlock_pool[CONFIG_MAX_PTHREAD_SPINLOCK_COUNT];
+static struct k_spinlock posix_spinlock_pool[CONFIG_MAX_PTHREAD_SPINLOCK_COUNT];
 static k_spinlock_key_t posix_spinlock_key[CONFIG_MAX_PTHREAD_SPINLOCK_COUNT];
 SYS_BITARRAY_DEFINE_STATIC(posix_spinlock_bitarray, CONFIG_MAX_PTHREAD_SPINLOCK_COUNT);
 
@@ -35,7 +25,7 @@ BUILD_ASSERT(CONFIG_MAX_PTHREAD_SPINLOCK_COUNT < PTHREAD_OBJ_MASK_INIT,
 
 static inline size_t posix_spinlock_to_offset(struct k_spinlock *l)
 {
-	return (union _spinlock_storage *)l - posix_spinlock_pool;
+	return l - posix_spinlock_pool;
 }
 
 static inline size_t to_posix_spinlock_idx(pthread_spinlock_t lock)
