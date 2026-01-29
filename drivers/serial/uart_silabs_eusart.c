@@ -312,11 +312,6 @@ static int eusart_irq_is_pending(const struct device *dev)
 	return eusart_irq_tx_ready(dev) || eusart_irq_rx_ready(dev);
 }
 
-static int eusart_irq_update(const struct device *dev)
-{
-	return 1;
-}
-
 static void eusart_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
 				    void *cb_data)
 {
@@ -1170,7 +1165,6 @@ static DEVICE_API(uart, eusart_driver_api) = {
 	.irq_err_enable = eusart_irq_err_enable,
 	.irq_err_disable = eusart_irq_err_disable,
 	.irq_is_pending = eusart_irq_is_pending,
-	.irq_update = eusart_irq_update,
 	.irq_callback_set = eusart_irq_callback_set,
 #endif
 #ifdef CONFIG_UART_SILABS_EUSART_ASYNC

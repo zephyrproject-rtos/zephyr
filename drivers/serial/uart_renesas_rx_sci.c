@@ -385,11 +385,6 @@ static int uart_rx_irq_is_pending(const struct device *dev)
 	return tx_pending || rx_pending;
 }
 
-static int uart_rx_irq_update(const struct device *dev)
-{
-	return 1;
-}
-
 static void uart_rx_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
 				     void *cb_data)
 {
@@ -890,7 +885,6 @@ static DEVICE_API(uart, uart_rx_driver_api) = {
 	.irq_err_enable = uart_rx_irq_err_enable,
 	.irq_err_disable = uart_rx_irq_err_disable,
 	.irq_is_pending = uart_rx_irq_is_pending,
-	.irq_update = uart_rx_irq_update,
 	.irq_callback_set = uart_rx_irq_callback_set,
 #endif
 #ifdef CONFIG_UART_ASYNC_API
