@@ -55,4 +55,6 @@ source "drivers/dac/Kconfig.stm32"
 source "drivers/dac/Kconfig.test"
 # zephyr-keep-sorted-stop
 
+source "drivers/dac/Kconfig.mspm0"
+
 endif # DAC
