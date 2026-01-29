@@ -784,7 +784,7 @@ class FilterBuilder(CMake):
         if self.instance.sysbuild and not filter_stages:
             # Load domain yaml to get default domain build directory
             domain_path = os.path.join(self.build_dir, "domains.yaml")
-            domains = Domains.from_file(domain_path)
+            domains = Domains.from_file(domain_path, self.build_dir)
             logger.debug(f"Loaded sysbuild domain data from {domain_path}")
             self.instance.domains = domains
             domain_build = domains.get_default_domain().build_dir
