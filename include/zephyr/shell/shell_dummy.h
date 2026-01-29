@@ -20,11 +20,20 @@ extern const struct shell_transport_api shell_dummy_transport_api;
 struct shell_dummy {
 	bool initialized;
 
-	/** current number of bytes in buffer (0 if no output) */
+	/** current number of bytes in output buffer (0 if no output) */
 	size_t len;
 
 	/** output buffer to collect shell output */
 	char buf[CONFIG_SHELL_BACKEND_DUMMY_BUF_SIZE];
+
+	/** current number of bytes in input buffer */
+	size_t input_len;
+
+	/** current read position in input buffer */
+	size_t input_pos;
+
+	/** input buffer for simulating user input */
+	char input_buf[CONFIG_SHELL_BACKEND_DUMMY_BUF_SIZE];
 };
 
 #define SHELL_DUMMY_DEFINE(_name)					\
@@ -63,6 +72,26 @@ const char *shell_backend_dummy_get_output(const struct shell *sh,
  * @param sh	Shell pointer
  */
 void shell_backend_dummy_clear_output(const struct shell *sh);
+
+/**
+ * @brief Push input data to the dummy shell backend.
+ *
+ * This function queues input data that will be returned by subsequent
+ * read operations. Useful for testing shell input handling.
+ *
+ * @param sh	Shell pointer
+ * @param data	Input data to push
+ * @param len	Length of input data
+ * @returns 0 on success, -ENOMEM if buffer is full
+ */
+int shell_backend_dummy_push_input(const struct shell *sh, const char *data, size_t len);
+
+/**
+ * @brief Clear the input buffer in the shell backend.
+ *
+ * @param sh	Shell pointer
+ */
+void shell_backend_dummy_clear_input(const struct shell *sh);
 
 #ifdef __cplusplus
 }

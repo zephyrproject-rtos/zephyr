@@ -80,12 +80,22 @@ static int read(const struct shell_transport *transport,
 		void *data, size_t length, size_t *cnt)
 {
 	struct shell_dummy *sh_dummy = (struct shell_dummy *)transport->ctx;
+	size_t available;
 
 	if (!sh_dummy->initialized) {
+		*cnt = 0;
 		return -ENODEV;
 	}
 
-	*cnt = 0;
+	available = sh_dummy->input_len - sh_dummy->input_pos;
+	if (available == 0) {
+		*cnt = 0;
+		return 0;
+	}
+
+	*cnt = MIN(length, available);
+	memcpy(data, sh_dummy->input_buf + sh_dummy->input_pos, *cnt);
+	sh_dummy->input_pos += *cnt;
 
 	return 0;
 }
@@ -135,4 +145,28 @@ void shell_backend_dummy_clear_output(const struct shell *sh)
 
 	sh_dummy->buf[0] = '\0';
 	sh_dummy->len = 0;
+}
+
+int shell_backend_dummy_push_input(const struct shell *sh, const char *data, size_t len)
+{
+	struct shell_dummy *sh_dummy = (struct shell_dummy *)sh->iface->ctx;
+	size_t space;
+
+	space = sizeof(sh_dummy->input_buf) - sh_dummy->input_len;
+	if (len > space) {
+		return -ENOMEM;
+	}
+
+	memcpy(sh_dummy->input_buf + sh_dummy->input_len, data, len);
+	sh_dummy->input_len += len;
+
+	return 0;
+}
+
+void shell_backend_dummy_clear_input(const struct shell *sh)
+{
+	struct shell_dummy *sh_dummy = (struct shell_dummy *)sh->iface->ctx;
+
+	sh_dummy->input_len = 0;
+	sh_dummy->input_pos = 0;
 }
