@@ -103,10 +103,6 @@ void soc_early_init_hook(void)
 	LL_PWR_EnableVddIO4();
 	LL_PWR_EnableVddIO5();
 
-	/* Set Vdd IO2 and IO3 to 1.8V */
-	LL_PWR_SetVddIO2VoltageRange(LL_PWR_VDDIO_VOLTAGE_RANGE_1V8);
-	LL_PWR_SetVddIO3VoltageRange(LL_PWR_VDDIO_VOLTAGE_RANGE_1V8);
-
 	/* RIF configuration */
 	if (IS_ENABLED(CONFIG_STM32N6_RIF_OPEN)) {
 		soc_rif_config();
