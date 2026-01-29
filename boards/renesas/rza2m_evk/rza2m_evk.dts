@@ -94,3 +94,9 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&i2c3 {
+	pinctrl-0 = <&i2c3_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
