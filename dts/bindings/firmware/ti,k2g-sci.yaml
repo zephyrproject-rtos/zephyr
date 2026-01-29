@@ -1,7 +1,9 @@
 # Copyright 2025 Texas Instruments Incorporated.
 # SPDX-License-Identifier: Apache-2.0
 
-description: TISCI Client Driver
+title: TI SCI (Texas Instruments System Control Interface) client
+
+description: Client interface to TI SCI firmware using mailbox channels.
 
 compatible: "ti,k2g-sci"
 

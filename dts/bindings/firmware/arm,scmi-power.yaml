@@ -1,7 +1,9 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: SCMI (System Control and Management Interface) power domain protocol
+title: SCMI (System Control and Management Interface) power domain
+
+description: SCMI power domain controller for agent-requested power state changes.
 
 compatible: "arm,scmi-power"
 

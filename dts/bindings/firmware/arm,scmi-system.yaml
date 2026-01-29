@@ -1,7 +1,9 @@
 # Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: SCMI (System Control and Management Interface) system power protocol
+title: SCMI (System Control and Management Interface) system power
+
+description: SCMI interface for requesting system-wide power state changes.
 
 compatible: "arm,scmi-system"
 

@@ -1,7 +1,9 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: SCMI (System Control and Management Interface) SHMEM (shared memory)
+title: SCMI (System Control and Management Interface) shared memory
+
+description: Shared memory region used for SCMI message payload exchange.
 
 compatible: "arm,scmi-shmem"
 
