@@ -11,6 +11,9 @@
 
 #include "did_internal.h"
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(bt_did);
+
 #define DID_VER_1_3 (0x0103u)
 
 #define BLUETOOTH_DEVICE_IDENTIFY_SPEC_VERSION 0x0103
