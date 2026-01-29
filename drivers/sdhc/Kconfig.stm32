@@ -1,17 +1,20 @@
 # Copyright (c) 2025 EXALT Technologies.
 # SPDX-License-Identifier: Apache-2.0
 
-config SDHC_STM32_SDIO
-	bool "STM32 SDMMC driver support for SDIO"
-	depends on DT_HAS_ST_STM32_SDIO_ENABLED
+config SDHC_STM32_SDMMC
+	bool "STM32 SDMMC driver (SD/SDIO)"
+	depends on DT_HAS_ST_STM32_SDMMC_ENABLED
+	# Legacy SDMMC and SDHC STM32 drivers share the same DT binding.
+	# Keep them mutually exclusive so only one is built.
+	depends on !SDMMC_STM32
 	select USE_STM32_LL_SDMMC
 	select SDHC_SUPPORTS_NATIVE_MODE
 	select PINCTRL
 	default y
 	help
-	  Enable support for SDMMC on STM32 platforms for SDIO devices.
+	  Enables support for SD/SDIO devices using SDMMC peripheral on STM32.
 
-if SDHC_STM32_SDIO
+if SDHC_STM32_SDMMC
 
 config SDHC_BUFFER_ALIGNMENT
 	default 32
@@ -23,4 +26,4 @@ config SDHC_STM32_DMA_MODE
 	help
 	  Enable DMA for data transfers. Disable to use polling mode.
 
-endif # SDHC_STM32_SDIO
+endif # SDHC_STM32_SDMMC
