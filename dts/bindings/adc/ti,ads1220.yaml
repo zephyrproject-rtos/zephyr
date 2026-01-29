@@ -1,0 +1,122 @@
+# Copyright (c) 2025 Baumer Group
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments ADS1220 24-bit, 4-channel, low-power Delta-Sigma ADC
+  with integrated PGA, VREF, SPI interface, and two IDACs.
+
+  The ADS1220 is a precision ADC designed for high-resolution measurements
+  in sensor applications such as temperature, pressure, and strain sensing.
+
+  Features:
+  - 24-bit resolution
+  - 4 multiplexed input channels
+  - Integrated programmable gain amplifier (1 to 128)
+  - Internal 2.048V reference
+  - Two matched excitation current sources (IDACs)
+  - SPI interface with data ready signal
+
+compatible: "ti,ads1220"
+
+include: [adc-controller.yaml, spi-device.yaml]
+
+on-bus: spi
+
+properties:
+  drdy-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO for data ready signal.
+      This pin becomes active low when a conversion result is ready
+      for reading.
+      (Note: DRDY/DOUT pin is currently only used as DOUT.)
+
+  idac-magnitude-microamp:
+    type: int
+    enum:
+      - 0     # IDAC off
+      - 10    # 10 µA
+      - 50    # 50 µA
+      - 100   # 100 µA
+      - 250   # 250 µA
+      - 500   # 500 µA
+      - 1000  # 1000 µA
+      - 1500  # 1500 µA
+    default: 0
+    description: |
+      IDAC current magnitude in microamperes.
+      Both IDACs share the same current magnitude setting.
+
+  idac1-routing:
+    type: int
+    enum:
+      - 0  # IDAC1 disabled
+      - 1  # IDAC1 connected to AIN0/REFP0
+      - 2  # IDAC1 connected to AIN1/REFN0
+      - 3  # IDAC1 connected to AIN2/REFP1
+      - 4  # IDAC1 connected to AIN3/REFN1
+      - 5  # IDAC1 connected to REFP
+      - 6  # IDAC1 connected to REFN
+    default: 0
+    description: |
+      These bits select the channel where IDAC1 is routed to.
+
+  idac2-routing:
+    type: int
+    enum:
+      - 0  # IDAC2 disabled
+      - 1  # IDAC2 connected to AIN0/REFP0
+      - 2  # IDAC2 connected to AIN1/REFN0
+      - 3  # IDAC2 connected to AIN2/REFP1
+      - 4  # IDAC2 connected to AIN3/REFN1
+      - 5  # IDAC2 connected to REFP
+      - 6  # IDAC2 connected to REFN
+    default: 0
+    description: |
+      These bits select the channel where IDAC2 is routed to
+
+  pga-bypass:
+    type: boolean
+    description: |
+      Bypass the programmable gain amplifier (PGA).
+      When enabled, the PGA is bypassed and the gain is fixed at 1.
+      This can reduce noise and power consumption for high-level signals.
+
+  data-rate:
+    type: int
+    enum:  # Normal Mode | Duty-Cycle Mode | Turbo Mode
+      - 0  # 20 SPS      | 5 SPS           | 40 SPS
+      - 1  # 45 SPS      | 11.25 SPS       | 90 SPS
+      - 2  # 90 SPS      | 22.5 SPS        | 180 SPS
+      - 3  # 175 SPS     | 44 SPS          | 350 SPS
+      - 4  # 330 SPS     | 82.5 SPS        | 660 SPS
+      - 5  # 600 SPS     | 150 SPS         | 1200 SPS
+      - 6  # 1000 SPS    | 250 SPS         | 2000 SPS
+    default: 0
+    description: |
+      Data rate setting (samples per second).
+      Higher data rates provide faster conversions but may reduce
+      noise performance.
+      This corresponds with the zephyr,acquisition-time.
+
+  operating-mode:
+    type: int
+    enum:
+      - 0  # Normal mode (256kHz modulator)
+      - 1  # Duty-cycle mode
+      - 2  # Turbo mode (512kHz modulator)
+    default: 0
+    description: |
+      These bits control the operating mode the device operates in.
+      - Normal: Standard operation with 256kHz modulator
+      - Duty-cycle: Power-saving mode with reduced current
+      - Turbo: High-speed mode with 512kHz modulator
+
+  continuous-convert:
+    type: boolean
+    description: |
+      This feature is currently not implemented!
+      In continuous conversion mode, the device continuously performs
+      conversions. When a conversion completes, the device places the result
+      in the output buffer and immediately begins another conversion.
