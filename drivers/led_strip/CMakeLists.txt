@@ -13,4 +13,5 @@ zephyr_library_sources_ifdef(CONFIG_WS2812_STRIP_I2S ws2812_i2s.c)
 zephyr_library_sources_ifdef(CONFIG_WS2812_STRIP_RPI_PICO_PIO ws2812_rpi_pico_pio.c)
 zephyr_library_sources_ifdef(CONFIG_WS2812_STRIP_SPI ws2812_spi.c)
 zephyr_library_sources_ifdef(CONFIG_WS2812_STRIP_UART ws2812_uart.c)
+zephyr_library_sources_ifdef(CONFIG_FAKE_LED_STRIP      led_strip_fake.c)
 # zephyr-keep-sorted-stop

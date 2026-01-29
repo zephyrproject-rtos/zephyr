@@ -1,0 +1,11 @@
+# Fake LED strip configuration options
+
+# Copyright (c) 2025 Gielen De Maesschalck <gielen.de.maesschalck@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config FAKE_LED_STRIP
+	bool "Fake LED strip driver"
+	default y
+	depends on DT_HAS_ZEPHYR_FAKE_LED_STRIP_ENABLED
+	help
+	  Enable support for the FFF-based fake led strip driver.
