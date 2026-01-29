@@ -9,9 +9,4 @@
 	soc {
 		compatible = "st,stm32wba52", "st,stm32wba", "simple-bus";
 	};
-
-	die_temp: dietemp {
-		ts-cal1-addr = <0x0bf90710>;
-		ts-cal2-addr = <0x0bf90742>;
-	};
 };
