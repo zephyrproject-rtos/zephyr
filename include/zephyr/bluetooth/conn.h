@@ -2124,6 +2124,8 @@ struct bt_conn_cb {
 	 *
 	 * This callback notifies the application that it might be able to
 	 * allocate a connection object. No guarantee, first come, first serve.
+	 * Only connections that are configurable by @kconfig{CONFIG_BT_MAX_CONN} trigger this
+	 * callback, i.e. connections of type @ref BT_CONN_TYPE_LE or @ref BT_CONN_TYPE_BR.
 	 *
 	 * The maximum number of simultaneous connections is configured
 	 * by @kconfig{CONFIG_BT_MAX_CONN}.
