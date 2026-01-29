@@ -21,15 +21,6 @@ config USBD_VIDEO_MAX_FORMATS
 	  aims a compromise between enough descriptors for most devices, but not too much memory
 	  being used.
 
-config USBD_VIDEO_MAX_FRMIVAL
-	int "Max number of video output stream per USB Video interface"
-	range 1 255
-	default 8
-	help
-	  Max number of Frame Interval listed on a frame descriptor. The
-	  default value is selected arbitrarily to fit most situations without
-	  requiring too much RAM.
-
 config USBD_VIDEO_NUM_BUFS
 	int "Max number of buffers the UVC class can allocate"
 	default 16

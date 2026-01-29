@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  USB Video Class (UVC) host instance.
+
+  Each UVC instance added to the USB Host Controller (UHC) node will be visible
+  as a new camera from Zephyr point of view.
+
+  as soon as a camera is connected to USB this device will be usable by the application as a
+  video device, following the video API.
+
+compatible: "zephyr,uvc-host"
+
+include: base.yaml

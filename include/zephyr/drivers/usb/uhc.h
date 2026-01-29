@@ -54,7 +54,11 @@ enum usb_device_speed {
 #define UHC_INTERFACES_MAX 32
 
 struct usb_host_interface {
+	/** Pointer to descriptor header */
 	struct usb_desc_header *dhp;
+	/** Interface Association Descriptor */
+	struct usb_association_descriptor *iad;
+	/** Alternate setting number */
 	uint8_t alternate;
 };
 
