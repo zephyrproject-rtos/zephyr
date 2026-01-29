@@ -3425,7 +3425,10 @@ static void iface_status_work_cb(struct k_work *work)
 	if ((iface_ctx.iface && !net_if_is_up(iface_ctx.iface)) ||
 	    (iface_ctx.low_power_mode == HL7800_LPM_PSM && state == HL7800_OUT_OF_COVERAGE)) {
 		hl7800_stop_rssi_work();
+		/* Avoid deadlock: closing sockets can re-enter hl7800. */
+		hl7800_unlock();
 		notify_all_tcp_sockets_closed();
+		hl7800_lock();
 	} else if (iface_ctx.iface && net_if_is_up(iface_ctx.iface)) {
 		hl7800_start_rssi_work();
 		/* get IP address info */
@@ -3981,6 +3984,11 @@ static bool on_cmd_sock_notif(struct net_buf **buf, uint16_t len)
 		trigger_sem = false;
 		err = true;
 		sock->error = -ENOTCONN;
+		break;
+	case HL7800_TCP_CONN:
+		/* Connection failed/refused on this socket; do NOT drop network. */
+		err = true;
+		sock->error = -ECONNREFUSED;
 		break;
 	default:
 		iface_ctx.network_dropped = true;
