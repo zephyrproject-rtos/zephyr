@@ -38,6 +38,16 @@ properties:
   "#io-channel-cells":
     const: 1
 
+  io-injected-channels:
+    type: phandle-array
+    description: |
+      Similar to io-channels property. It can define a second sequence of channels,
+      different from the one defined by io-channels, typically as injected channels, if available.
+
+  "#io-injected-channel-cells":
+    type: int
+    const: 1
+
   st,adc-clock-source:
     type: string
     required: true
@@ -157,4 +167,7 @@ properties:
       If present, it indicates that the ADC instance supports differential channel inputs.
 
 io-channel-cells:
+  - input
+
+io-injected-channel-cells:
   - input

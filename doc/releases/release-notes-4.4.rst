@@ -114,6 +114,8 @@ New APIs and options
   * :c:macro:`ADC_DT_SPEC_INST_GET_BY_IDX_OR`
   * :c:macro:`ADC_DT_SPEC_INST_GET_BY_NAME_OR`
   * :c:macro:`ADC_DT_SPEC_INST_GET_OR`
+  * :c:member:`adc_sequence.injected_mode`
+  * :kconfig:option:`CONFIG_ADC_INJECTED_CHANNELS`
 
 * Architectures
 
@@ -357,6 +359,8 @@ DeviceTree
 
 * :c:macro:`DT_CHILD_BY_UNIT_ADDR_INT`
 * :c:macro:`DT_INST_CHILD_BY_UNIT_ADDR_INT`
+* :dtcompatible:`st,stm32-adc` has a new optional property ``io-injected-channels``
+  to define ADC channels to be possibly used in injected mode.
 
 Libraries / Subsystems
 **********************
