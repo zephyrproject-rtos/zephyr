@@ -1,0 +1,8 @@
+# Copyright (c) 2026 James Walmsley <james@fullfat-fs.co.uk>
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI ADS7961-Q1 SPI ADC
+
+compatible: "ti,ads7961"
+
+include: ti,ads79xx-base.yaml
