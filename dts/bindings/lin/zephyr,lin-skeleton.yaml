@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Skeleton for LIN controller
+
+compatible: "zephyr,lin-skeleton"
+
+include: lin-controller.yaml

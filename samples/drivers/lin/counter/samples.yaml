@@ -1,0 +1,10 @@
+sample:
+  name: LIN driver counter sample
+tests:
+  sample.drivers.lin.counter:
+    tags: lin
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "LIN DUT started in RESPONDER mode"

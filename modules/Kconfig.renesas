@@ -293,6 +293,11 @@ config USE_RA_FSP_RTC
 	help
 	  Enable RA FSP RTC driver
 
+config USE_RA_FSP_SCI_B_LIN
+	bool
+	help
+	  Enable RA FSP SCI-B LIN driver
+
 endif # HAS_RENESAS_RA_FSP
 
 if HAS_RENESAS_RZ_FSP
