@@ -463,9 +463,10 @@ bool hl78xx_is_registered(struct hl78xx_data *data);
  *
  * @param dev Pointer to the device structure.
  * @param hard_reset Boolean indicating if a hard reset is required.
+ * @return int 0 on success, negative errno code on failure.
  * Should be used internally to handle DNS resolution events.
  */
-void dns_work_cb(const struct device *dev, bool hard_reset);
+int dns_work_cb(const struct device *dev, bool hard_reset);
 
 /**
  * @brief Callback to update and handle network interface status.

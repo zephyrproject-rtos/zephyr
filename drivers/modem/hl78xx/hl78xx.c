@@ -1495,6 +1495,8 @@ static int hl78xx_on_carrier_on_state_enter(struct hl78xx_data *data)
 
 static void hl78xx_carrier_on_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
 {
+	int ret = 0;
+
 	switch (evt) {
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
 		hl78xx_start_timer(data, K_SECONDS(2));
@@ -1505,7 +1507,15 @@ static void hl78xx_carrier_on_event_handler(struct hl78xx_data *data, enum hl78x
 		break;
 
 	case MODEM_HL78XX_EVENT_TIMEOUT:
-		dns_work_cb(data->dev, true);
+		ret = dns_work_cb(data->dev, true);
+		if (ret == -EAGAIN) {
+			LOG_ERR("DNS work callback failed: rescheduling... %d", ret);
+			hl78xx_start_timer(data, K_SECONDS(2));
+			break;
+		}
+		if (ret < 0) {
+			LOG_ERR("DNS work callback failed: %d", ret);
+		}
 		break;
 
 	case MODEM_HL78XX_EVENT_DEREGISTERED:
