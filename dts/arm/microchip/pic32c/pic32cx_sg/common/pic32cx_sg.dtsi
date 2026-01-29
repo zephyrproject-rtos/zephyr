@@ -376,6 +376,16 @@
 			status = "disabled";
 		};
 
+		trng: random@42002800 {
+			compatible = "microchip,trng-g1-entropy";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_TRNG>;
+			clock-names = "mclk";
+			reg = <0x42002800 0x24>;
+			interrupts = <131 0>;
+			interrupt-names = "datardy";
+			status = "disabled";
+		};
+
 		sercom4: sercom@43000000 {
 			compatible = "microchip,sercom-g1";
 			reg = <0x43000000 0x29>;
