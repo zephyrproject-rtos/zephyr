@@ -104,6 +104,14 @@ struct llext {
 	struct k_mem_partition mem_parts[LLEXT_MEM_PARTITIONS];
 #endif
 
+#if !defined(CONFIG_LLEXT_COMPRESSION_NONE)
+	void *decompressed_storage;
+	struct llext_loader *decompression_loader;
+#if defined(CONFIG_LLEXT_COMPRESSION_LZ4)
+	void *decompression_context_lz4;
+#endif /* CONFIG_LLEXT_COMPRESSION_LZ4 */
+#endif /* !CONFIG_LLEXT_COMPRESSION_NONE */
+
 	/** @endcond */
 
 	/** Name of the llext */
@@ -161,11 +169,25 @@ static inline unsigned int llext_section_count(const struct llext *ext)
 }
 
 /**
+ * @brief List of supported compression algorithms.
+ *
+ */
+enum llext_compression_type {
+	LLEXT_COMPRESSION_TYPE_NONE,  /**< no compression for this llext */
+	LLEXT_COMPRESSION_TYPE_LZ4,   /**< LZ4 compression for this llext */
+	LLEXT_COMPRESSION_TYPE_COUNT, /**< Number compression algorithms */
+};
+
+/**
  * @brief Advanced llext_load parameters
  *
  * This structure contains advanced parameters for @ref llext_load.
  */
 struct llext_load_param {
+#if !defined(CONFIG_LLEXT_COMPRESSION_NONE)
+	/** Type of compression used for this llext or LLEXT_COMPRESSION_TYPE_NONE */
+	enum llext_compression_type compression_type;
+#endif
 	/** Perform local relocation */
 	bool relocate_local;
 

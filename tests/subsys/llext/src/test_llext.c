@@ -125,6 +125,18 @@ static void threads_objects_test_setup(struct llext *, struct k_thread *llext_th
 #define threads_objects_test_setup NULL
 #endif /* CONFIG_USERSPACE */
 
+#ifdef CONFIG_LLEXT_COMPRESSION_LZ4
+#define LLEXT_COMPRESSION_USED LLEXT_COMPRESSION_TYPE_LZ4
+#else
+#define LLEXT_COMPRESSION_USED LLEXT_COMPRESSION_TYPE_NONE
+#endif
+
+#ifdef CONFIG_LLEXT_COMPRESSION_LZ4
+#define LOADER_PARAM_SET_COMPRESSION(_prm) _prm.compression_type = LLEXT_COMPRESSION_USED
+#else
+#define LOADER_PARAM_SET_COMPRESSION(_prm)
+#endif
+
 void load_call_unload(const struct llext_test *test_case)
 {
 	struct llext_buf_loader buf_loader =
@@ -133,7 +145,19 @@ void load_call_unload(const struct llext_test *test_case)
 	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
 	struct llext *ext = NULL;
 
+#if !defined(CONFIG_LLEXT_COMPRESSION_NONE)
+	LOADER_PARAM_SET_COMPRESSION(ldr_parm);
+#endif
+
 	int res = llext_load(loader, test_case->name, &ext, &ldr_parm);
+
+#if !defined(CONFIG_LLEXT_COMPRESSION_NONE)
+	/* a crude end-to-end check to ensure compression is doing *something* */
+	zassert_not_null(ext->decompression_loader);
+	zassert_true(((struct llext_buf_loader *)ext->decompression_loader)->len >
+			     test_case->buf_len,
+		     "Compression should have decreased buffer size!");
+#endif
 
 	zassert_ok(res, "load should succeed");
 
@@ -387,10 +411,17 @@ ZTEST(llext, test_inspect)
 	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
 	struct llext *ext = NULL;
 	size_t max_alloc_bytes;
+	LOADER_PARAM_SET_COMPRESSION(ldr_parm);
 
 	ldr_parm.keep_section_info = true;
 	res = llext_load(ldr, "inspect", &ext, &ldr_parm);
 	zassert_ok(res, "load should succeed");
+
+#if !defined(CONFIG_LLEXT_COMPRESSION_NONE)
+	/* decompression silently inserts a new loader... */
+	ldr = ext->decompression_loader;
+	zassert_not_null(ldr);
+#endif
 
 	/* MWDT puts variables that are supposed to go into .bss into .data,
 	 * and, when Harvard / CCM is enabled, puts rodata in data-type sections.
@@ -460,9 +491,13 @@ ZTEST(llext, test_inter_ext)
 		LLEXT_BUF_LOADER(dependent_buf, sizeof(export_dependent_ext));
 	struct llext_loader *loader_dependency = &buf_loader_dependency.loader;
 	struct llext_loader *loader_dependent = &buf_loader_dependent.loader;
-	const struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
+	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
 	struct llext *ext_dependency = NULL, *ext_dependent = NULL;
-	int ret = llext_load(loader_dependency, "inter_ext_dependency", &ext_dependency, &ldr_parm);
+	int ret;
+
+	LOADER_PARAM_SET_COMPRESSION(ldr_parm);
+
+	ret = llext_load(loader_dependency, "inter_ext_dependency", &ext_dependency, &ldr_parm);
 
 	zassert_ok(ret, "dependency load should succeed");
 
@@ -497,6 +532,7 @@ ZTEST(llext, test_pre_located)
 
 	/* load the extension trying to respect the addresses in the ELF */
 	ldr_parm.pre_located = true;
+	LOADER_PARAM_SET_COMPRESSION(ldr_parm);
 	res = llext_load(loader, "pre_located", &ext, &ldr_parm);
 	zassert_ok(res, "load should succeed");
 
@@ -530,8 +566,16 @@ ZTEST(llext, test_find_section)
 	struct llext *ext = NULL;
 	elf_shdr_t shdr;
 
+	LOADER_PARAM_SET_COMPRESSION(ldr_parm);
+
 	res = llext_load(loader, "find_section", &ext, &ldr_parm);
 	zassert_ok(res, "load should succeed");
+
+#if !defined(CONFIG_LLEXT_COMPRESSION_NONE)
+	/* decompression silently inserts a new loader... */
+	loader = ext->decompression_loader;
+	zassert_not_null(loader);
+#endif
 
 	section_ofs = llext_find_section(loader, ".data");
 	zassert_true(section_ofs > 0, "find_section returned %zd", section_ofs);
@@ -543,7 +587,12 @@ ZTEST(llext, test_find_section)
 		     (uint64_t)shdr.sh_offset);
 
 	uintptr_t symbol_ptr = (uintptr_t)llext_find_sym(&ext->exp_tab, "number");
+#if defined(CONFIG_LLEXT_COMPRESSION_NONE)
 	uintptr_t section_ptr = (uintptr_t)find_section_ext + section_ofs;
+#else
+	/* data were decompressed elsewhere */
+	uintptr_t section_ptr = (uintptr_t)ext->decompressed_storage + section_ofs;
+#endif
 
 	/*
 	 * FIXME on RISC-V, at least for GCC, the symbols aren't always at the beginning
@@ -592,6 +641,8 @@ ZTEST(llext, test_detached)
 
 	ldr_parm.section_detached = test_section_detached;
 	detached_loader = &buf_loader.loader;
+
+	LOADER_PARAM_SET_COMPRESSION(ldr_parm);
 
 	res = llext_load(detached_loader, "test_detached", &detached_llext, &ldr_parm);
 	zassert_ok(res, "load should succeed");
@@ -659,6 +710,7 @@ ZTEST(llext, test_fs_loader)
 	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
 	struct llext *ext = NULL;
 
+	LOADER_PARAM_SET_COMPRESSION(ldr_parm);
 	res = llext_load(loader, "hello_world", &ext, &ldr_parm);
 	zassert_ok(res, "load should succeed");
 
