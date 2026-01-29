@@ -54,6 +54,22 @@ static int stm32_mco_init(const struct device *dev)
 		     MCOX_ON);
 #endif
 
+#if defined(CONFIG_SOC_SERIES_STM32N6X)
+	/* STM32N6 requires additional enable bit */
+	if (STM32_DT_CLKSEL_SHIFT_GET(pclken->enr) == 0) {
+		/* MCO 1 */
+		sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_CLOCK_BUS_MISC,
+			     RCC_MISCENR_MCO1EN);
+	} else if (STM32_DT_CLKSEL_SHIFT_GET(pclken->enr) == 8) {
+		/* MCO 2 */
+		sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_CLOCK_BUS_MISC,
+			     RCC_MISCENR_MCO2EN);
+	} else {
+		/* Unexpected value */
+		return -EINVAL;
+	}
+#endif /* defined(CONFIG_SOC_SERIES_STM32N6X) */
+
 #if defined(HAS_PRESCALER)
 	/* MCO prescaler */
 	sys_clear_bits(
