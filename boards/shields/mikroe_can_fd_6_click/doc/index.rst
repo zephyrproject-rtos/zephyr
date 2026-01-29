@@ -13,7 +13,7 @@ and a integrated high-speed CAN FD transceiver with up to 5 Mbps.
 More information about the shield can be found at
 `Mikroe CAN FD 6 click`_.
 
-.. figure:: canfd6_click.webp
+.. figure:: mikroe_can_fd_6_click.webp
    :align: center
    :alt: MikroElektronika CAN FD 6 Click
 
