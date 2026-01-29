@@ -8,8 +8,29 @@
 
 #if defined(_POSIX_C_SOURCE) || defined(__DOXYGEN__)
 
+#include <zephyr/posix/posix_features.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/posix/posix_types.h>
+
+#if defined(CONFIG_PICOLIBC) || defined(__PICOLIBC__)
+#include <signal.h>
+/* Mark libc-provided types as declared to avoid redefinition errors. */
+#define _SIGVAL_DECLARED
+#define __sigval_defined
+#define _SIGEVENT_DECLARED
+#define __sigevent_defined
+#define _PTHREAD_T_DECLARED
+#define __pthread_t_defined
+#define _PTHREAD_ATTR_T_DECLARED
+#define __pthread_attr_t_defined
+#define _SIGINFO_T_DECLARED
+#define __siginfo_t_defined
+#define _SIGACTION_DECLARED
+#define __sigaction_defined
+#define _STACK_T_DECLARED
+#define __stack_t_defined
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -122,9 +143,15 @@ struct sigevent {
 #define __sigevent_defined
 #endif
 
+#ifndef SIGEV_NONE
 #define SIGEV_NONE   1
+#endif
+#ifndef SIGEV_SIGNAL
 #define SIGEV_SIGNAL 2
+#endif
+#ifndef SIGEV_THREAD
 #define SIGEV_THREAD 3
+#endif
 
 /* Signal constants are defined below */
 
@@ -172,20 +199,42 @@ struct sigaction {
 #define SIG_SETMASK 0
 
 #if defined(_XOPEN_SOURCE) || defined(__DOXYGEN__)
+#ifndef SA_NOCLDSTOP
 #define SA_NOCLDSTOP 0x00000001
+#endif
+#ifndef SA_ONSTACK
 #define SA_ONSTACK   0x00000002
 #endif
+#endif
+#ifndef SA_RESETHAND
 #define SA_RESETHAND 0x00000004
+#endif
+#ifndef SA_RESTART
 #define SA_RESTART   0x00000008
+#endif
+#ifndef SA_SIGINFO
 #define SA_SIGINFO   0x00000010
+#endif
 #if defined(_XOPEN_SOURCE) || defined(__DOXYGEN__)
+#ifndef SA_NOCLDWAIT
 #define SA_NOCLDWAIT 0x00000020
 #endif
+#endif
+#ifndef SA_NODEFER
 #define SA_NODEFER  0x00000040
+#endif
+#ifndef SS_ONSTACK
 #define SS_ONSTACK  0x00000001
+#endif
+#ifndef SS_DISABLE
 #define SS_DISABLE  0x00000002
+#endif
+#ifndef MINSIGSTKSZ
 #define MINSIGSTKSZ 4096
+#endif
+#ifndef SIGSTKSZ
 #define SIGSTKSZ    4096
+#endif
 
 #if !defined(_MCONTEXT_T_DECLARED) && !defined(__mcontext_t_defined)
 typedef struct {
@@ -282,49 +331,93 @@ int sigwaitinfo(const sigset_t *ZRESTRICT set, siginfo_t *ZRESTRICT info);
 
 /* Note: only ANSI / ISO C signals are guarded below */
 
+#if !defined(SIGHUP) || defined(__DOXYGEN__)
 #define SIGHUP 1 /**< Hangup */
+#endif
 #if !defined(SIGINT) || defined(__DOXYGEN__)
 #define SIGINT 2 /**< Interrupt */
 #endif
+#if !defined(SIGQUIT) || defined(__DOXYGEN__)
 #define SIGQUIT 3 /**< Quit */
+#endif
 #if !defined(SIGILL) || defined(__DOXYGEN__)
 #define SIGILL 4 /**< Illegal instruction */
 #endif
+#if !defined(SIGTRAP) || defined(__DOXYGEN__)
 #define SIGTRAP 5 /**< Trace/breakpoint trap */
+#endif
 #if !defined(SIGABRT) || defined(__DOXYGEN__)
 #define SIGABRT 6 /**< Aborted */
 #endif
+#if !defined(SIGBUS) || defined(__DOXYGEN__)
 #define SIGBUS 7 /**< Bus error */
+#endif
 #if !defined(SIGFPE) || defined(__DOXYGEN__)
 #define SIGFPE 8 /**< Arithmetic exception */
 #endif
+#if !defined(SIGKILL) || defined(__DOXYGEN__)
 #define SIGKILL 9  /**< Killed */
+#endif
+#if !defined(SIGUSR1) || defined(__DOXYGEN__)
 #define SIGUSR1 10 /**< User-defined signal 1 */
+#endif
 #if !defined(SIGSEGV) || defined(__DOXYGEN__)
 #define SIGSEGV 11 /**< Invalid memory reference */
 #endif
+#if !defined(SIGUSR2) || defined(__DOXYGEN__)
 #define SIGUSR2 12 /**< User-defined signal 2 */
+#endif
+#if !defined(SIGPIPE) || defined(__DOXYGEN__)
 #define SIGPIPE 13 /**< Broken pipe */
+#endif
+#if !defined(SIGALRM) || defined(__DOXYGEN__)
 #define SIGALRM 14 /**< Alarm clock */
+#endif
 #if !defined(SIGTERM) || defined(__DOXYGEN__)
 #define SIGTERM 15 /**< Terminated */
 #endif
 /* 16 not used */
+#if !defined(SIGCHLD) || defined(__DOXYGEN__)
 #define SIGCHLD   17 /**< Child status changed */
+#endif
+#if !defined(SIGCONT) || defined(__DOXYGEN__)
 #define SIGCONT   18 /**< Continued */
+#endif
+#if !defined(SIGSTOP) || defined(__DOXYGEN__)
 #define SIGSTOP   19 /**< Stop executing */
+#endif
+#if !defined(SIGTSTP) || defined(__DOXYGEN__)
 #define SIGTSTP   20 /**< Stopped */
+#endif
+#if !defined(SIGTTIN) || defined(__DOXYGEN__)
 #define SIGTTIN   21 /**< Stopped (read) */
+#endif
+#if !defined(SIGTTOU) || defined(__DOXYGEN__)
 #define SIGTTOU   22 /**< Stopped (write) */
+#endif
+#if !defined(SIGURG) || defined(__DOXYGEN__)
 #define SIGURG    23 /**< Urgent I/O condition */
+#endif
+#if !defined(SIGXCPU) || defined(__DOXYGEN__)
 #define SIGXCPU   24 /**< CPU time limit exceeded */
+#endif
+#if !defined(SIGXFSZ) || defined(__DOXYGEN__)
 #define SIGXFSZ   25 /**< File size limit exceeded */
+#endif
+#if !defined(SIGVTALRM) || defined(__DOXYGEN__)
 #define SIGVTALRM 26 /**< Virtual timer expired */
+#endif
+#if !defined(SIGPROF) || defined(__DOXYGEN__)
 #define SIGPROF   27 /**< Profiling timer expired */
+#endif
 /* 28 not used */
+#if !defined(SIGPOLL) || defined(__DOXYGEN__)
 #define SIGPOLL   29 /**< Pollable event occurred */
+#endif
 /* 30 not used */
+#if !defined(SIGSYS) || defined(__DOXYGEN__)
 #define SIGSYS    31 /**< Bad system call */
+#endif
 
 #if defined(_POSIX_REALTIME_SIGNALS) || defined(__DOXYGEN__)
 
@@ -382,11 +475,21 @@ int sigwaitinfo(const sigset_t *ZRESTRICT set, siginfo_t *ZRESTRICT info);
 #endif
 
 /* Any */
+#if !defined(SI_USER) || defined(__DOXYGEN__)
 #define SI_USER    37 /**< Signal sent by kill() */
+#endif
+#if !defined(SI_QUEUE) || defined(__DOXYGEN__)
 #define SI_QUEUE   38 /**< Signal sent by sigqueue() */
+#endif
+#if !defined(SI_TIMER) || defined(__DOXYGEN__)
 #define SI_TIMER   39 /**< Signal generated by expiration of a timer set by timer_settime() */
+#endif
+#if !defined(SI_ASYNCIO) || defined(__DOXYGEN__)
 #define SI_ASYNCIO 40 /**< Signal generated by completion of an asynchronous I/O request */
+#endif
+#if !defined(SI_MESGQ) || defined(__DOXYGEN__)
 #define SI_MESGQ   41 /**< Signal generated by arrival of a message on an empty message queue */
+#endif
 
 #endif
 
