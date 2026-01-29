@@ -78,7 +78,7 @@ int main(void)
 	audio_cfg.dai_cfg.i2s.word_size = 16;
 	audio_cfg.dai_cfg.i2s.channels =  2;
 	audio_cfg.dai_cfg.i2s.format = I2S_FMT_DATA_FORMAT_I2S;
-	audio_cfg.dai_cfg.i2s.options = I2S_OPT_FRAME_CLK_MASTER;
+	audio_cfg.dai_cfg.i2s.options = I2S_OPT_FRAME_CLK_CONTROLLER;
 	audio_cfg.dai_cfg.i2s.frame_clk_freq = 48000;
 	audio_cfg.dai_cfg.i2s.mem_slab = &tx_0_mem_slab;
 	audio_cfg.dai_cfg.i2s.block_size = BLOCK_SIZE;
@@ -98,8 +98,8 @@ int main(void)
 	i2s_cfg.block_size = BLOCK_SIZE;
 	i2s_cfg.timeout = 2000;
 	/* Configure the Transmit port as Master */
-	i2s_cfg.options = I2S_OPT_FRAME_CLK_MASTER
-			| I2S_OPT_BIT_CLK_MASTER;
+	i2s_cfg.options = I2S_OPT_FRAME_CLK_CONTROLLER
+			| I2S_OPT_BIT_CLK_CONTROLLER;
 	i2s_cfg.mem_slab = &tx_0_mem_slab;
 	ret = i2s_configure(dev_i2s, I2S_DIR_TX, &i2s_cfg);
 	if (ret < 0) {

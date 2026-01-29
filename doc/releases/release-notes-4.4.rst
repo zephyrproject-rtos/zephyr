@@ -85,10 +85,21 @@ Deprecated APIs and options
       :c:member:`bt_conn_le_info.interval_us` instead. Note that the units have changed:
       ``interval`` was in units of 1.25 milliseconds, while ``interval_us`` is in microseconds.
 
+* I2S
+
+  * The following macros have been deprecated and are replaced with equivalent macros whose names
+    are aligned with the `latest revision of the I2S specification`_.
+
+    * :c:macro:`I2S_OPT_BIT_CLK_MASTER` -> :c:macro:`I2S_OPT_BIT_CLK_CONTROLLER`
+    * :c:macro:`I2S_OPT_FRAME_CLK_MASTER` -> :c:macro:`I2S_OPT_FRAME_CLK_CONTROLLER`
+    * :c:macro:`I2S_OPT_BIT_CLK_SLAVE` -> :c:macro:`I2S_OPT_BIT_CLK_TARGET`
+    * :c:macro:`I2S_OPT_FRAME_CLK_SLAVE` -> :c:macro:`I2S_OPT_FRAME_CLK_TARGET`
+
+.. _latest revision of the I2S specification: https://www.nxp.com/docs/en/user-manual/UM11732.pdf
+
 * POSIX
 
   * :kconfig:option:`CONFIG_XOPEN_STREAMS` was deprecated. Instead, use :kconfig:option:`CONFIG_XSI_STREAMS`
-
 * Sensors
 
   * NXP

@@ -487,8 +487,8 @@ static int i2s_stm32_sai_configure(const struct device *dev, enum i2s_dir dir,
 	memcpy(&stream->i2s_cfg, i2s_cfg, sizeof(struct i2s_config));
 
 	stream->master = true;
-	if (i2s_cfg->options & I2S_OPT_FRAME_CLK_SLAVE ||
-	    i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE) {
+	if (i2s_cfg->options & I2S_OPT_FRAME_CLK_TARGET ||
+	    i2s_cfg->options & I2S_OPT_BIT_CLK_TARGET) {
 		stream->master = false;
 	}
 

@@ -405,11 +405,11 @@ static int i2s_nrfx_configure(const struct device *dev, enum i2s_dir dir,
 		return -EINVAL;
 	}
 
-	if ((i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE) &&
-	    (i2s_cfg->options & I2S_OPT_FRAME_CLK_SLAVE)) {
+	if ((i2s_cfg->options & I2S_OPT_BIT_CLK_TARGET) &&
+	    (i2s_cfg->options & I2S_OPT_FRAME_CLK_TARGET)) {
 		nrfx_cfg.mode = NRF_I2S_MODE_SLAVE;
-	} else if (!(i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE) &&
-		   !(i2s_cfg->options & I2S_OPT_FRAME_CLK_SLAVE)) {
+	} else if (!(i2s_cfg->options & I2S_OPT_BIT_CLK_TARGET) &&
+		   !(i2s_cfg->options & I2S_OPT_FRAME_CLK_TARGET)) {
 		nrfx_cfg.mode = NRF_I2S_MODE_MASTER;
 	} else {
 		LOG_ERR("Unsupported operation mode: 0x%02x", i2s_cfg->options);

@@ -46,7 +46,7 @@ static void init(void)
 	i2s_rx_cfg.word_size = AUDIO_SAMPLE_BIT_WIDTH;
 	i2s_rx_cfg.channels = AUDIO_NUM_CHANNELS;
 	i2s_rx_cfg.format = I2S_FMT_DATA_FORMAT_I2S;
-	i2s_rx_cfg.options = I2S_OPT_FRAME_CLK_SLAVE;
+	i2s_rx_cfg.options = I2S_OPT_FRAME_CLK_TARGET;
 	i2s_rx_cfg.frame_clk_freq = AUDIO_SAMPLE_FREQ;
 	i2s_rx_cfg.block_size = AUDIO_FRAME_BUF_BYTES;
 	i2s_rx_cfg.mem_slab = &i2s_rx_mem_slab;
@@ -71,7 +71,7 @@ static void init(void)
 	i2s_tx_cfg.word_size = AUDIO_SAMPLE_BIT_WIDTH;
 	i2s_tx_cfg.channels = AUDIO_NUM_CHANNELS;
 	i2s_tx_cfg.format = I2S_FMT_DATA_FORMAT_I2S;
-	i2s_tx_cfg.options = I2S_OPT_FRAME_CLK_SLAVE;
+	i2s_tx_cfg.options = I2S_OPT_FRAME_CLK_TARGET;
 	i2s_tx_cfg.frame_clk_freq = AUDIO_SAMPLE_FREQ;
 	i2s_tx_cfg.block_size = AUDIO_FRAME_BUF_BYTES;
 	i2s_tx_cfg.mem_slab = &i2s_tx_mem_slab;

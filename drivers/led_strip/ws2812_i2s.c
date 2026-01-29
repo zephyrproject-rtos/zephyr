@@ -172,7 +172,7 @@ static int ws2812_i2s_init(const struct device *dev)
 	config.word_size = 16;
 	config.channels = 2;
 	config.format = I2S_FMT_DATA_FORMAT_I2S;
-	config.options = I2S_OPT_BIT_CLK_MASTER | I2S_OPT_FRAME_CLK_MASTER;
+	config.options = I2S_OPT_BIT_CLK_CONTROLLER | I2S_OPT_FRAME_CLK_CONTROLLER;
 	config.frame_clk_freq = lrck_hz; /* WS (or LRCK) */
 	config.mem_slab = cfg->mem_slab;
 	config.block_size = cfg->tx_buf_bytes;
