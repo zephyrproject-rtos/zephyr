@@ -70,3 +70,18 @@ set(ubx_evk_iris_w1_fidelex/rw612_DEPRECATED
 set(it51xxx_evb_DEPRECATED
     it515xx_evb/it51526aw
 )
+set(qemu_riscv32_DEPRECATED
+    qemu_riscv/qemu_virt_riscv/rv32
+)
+set(qemu_riscv32/qemu_virt_riscv32/smp_DEPRECATED
+    qemu_riscv/qemu_virt_riscv/rv32/smp
+)
+set(qemu_riscv32e_DEPRECATED
+    qemu_riscv/qemu_virt_riscv/rv32e
+)
+set(qemu_riscv64_DEPRECATED
+    qemu_riscv/qemu_virt_riscv/rv64
+)
+set(qemu_riscv64/qemu_virt_riscv64/smp_DEPRECATED
+    qemu_riscv/qemu_virt_riscv/rv64/smp
+)

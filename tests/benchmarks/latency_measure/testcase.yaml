@@ -15,7 +15,7 @@ tests:
     integration_platforms:
       - qemu_x86
       - qemu_arc/qemu_arc_em
-      - qemu_riscv64/qemu_virt_riscv64/smp
+      - qemu_riscv/qemu_virt_riscv/rv64/smp
     harness_config:
       type: one_line
       record:
@@ -74,7 +74,7 @@ tests:
     integration_platforms:
       - qemu_x86
       - qemu_arc/qemu_arc_em
-      - qemu_riscv64/qemu_virt_riscv64/smp
+      - qemu_riscv/qemu_virt_riscv/rv64/smp
     harness_config:
       type: one_line
       record:

@@ -1,15 +1,10 @@
 # Copyright (c) 2024 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_FAMILY_QEMU_VIRT_RISCV
+config SOC_QEMU_VIRT_RISCV
 	select INCLUDE_RESET_VECTOR
 	select RISCV
 	select RISCV_PRIVILEGED
+	select RISCV_HAS_PLIC
 	select RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
 	imply XIP
-
-if SOC_FAMILY_QEMU_VIRT_RISCV
-
-rsource "*/Kconfig"
-
-endif # SOC_FAMILY_QEMU_VIRT_RISCV

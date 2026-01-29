@@ -10,8 +10,8 @@ common:
   platform_allow:
     - native_sim
     - qemu_cortex_m0
-    - qemu_riscv64
-    - qemu_riscv64/qemu_virt_riscv64/smp
+    - qemu_riscv/qemu_virt_riscv/rv64
+    - qemu_riscv/qemu_virt_riscv/rv64/smp
     - qemu_malta
     - qemu_arc/qemu_arc_hs6x
     - qemu_leon3

@@ -11,11 +11,11 @@ common:
   platform_allow:
     - mps2/an385
     - qemu_cortex_a53
-    - qemu_riscv32
-    - qemu_riscv64
+    - qemu_riscv/qemu_virt_riscv/rv32
+    - qemu_riscv/qemu_virt_riscv/rv64
     - qemu_x86_64
   integration_platforms:
-    - qemu_riscv64
+    - qemu_riscv/qemu_virt_riscv/rv64
 tests:
   thrift.ThriftTest.binaryProtocol: {}
   thrift.ThriftTest.compactProtocol:

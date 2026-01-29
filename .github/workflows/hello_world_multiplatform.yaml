@@ -77,7 +77,8 @@ jobs:
             EXTRA_TWISTER_FLAGS="--exclude-platform native_sim/native"
           fi
           west twister \
-              -p native_sim -p qemu_cortex_m0 -p qemu_riscv32 -p qemu_riscv64 \
+              -p native_sim -p qemu_cortex_m0 -p qemu_riscv/qemu_virt_riscv/rv32 \
+              -p qemu_riscv/qemu_virt_riscv/rv64 \
               --runtime-artifact-cleanup \
               --force-color \
               --inline-logs \

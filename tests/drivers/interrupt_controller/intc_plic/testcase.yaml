@@ -1,5 +1,5 @@
 common:
-  platform_allow: qemu_riscv64
+  platform_allow: qemu_riscv/qemu_virt_riscv/rv64
   tags:
     - drivers
     - interrupt

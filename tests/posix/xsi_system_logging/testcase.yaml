@@ -7,7 +7,7 @@ common:
     - arch
     - simulation
   integration_platforms:
-    - qemu_riscv64
+    - qemu_riscv/qemu_virt_riscv/rv64
   min_flash: 64
   min_ram: 32
 tests:
