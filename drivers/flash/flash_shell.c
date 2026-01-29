@@ -66,8 +66,9 @@ static int parse_helper(const struct shell *sh, size_t *argc, char **argv[],
 		}
 	} else if (zephyr_flash_controller != NULL) {
 		/* default to zephyr,flash-controller */
-		if (!device_is_ready(zephyr_flash_controller)) {
-			shell_error(sh, "Default flash driver not ready");
+		if (!device_is_ready(zephyr_flash_controller) ||
+		    zephyr_flash_controller->api == NULL) {
+			shell_error(sh, "Default flash driver not ready or unsupported");
 			return -ENODEV;
 		}
 		*flash_dev = zephyr_flash_controller;
