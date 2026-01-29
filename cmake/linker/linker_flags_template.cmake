@@ -57,3 +57,9 @@ set_property(TARGET linker PROPERTY lto_arguments_st)
 # Linker flag for defining specs. Defined only by gcc, when gcc is used as
 # front-end for ld.
 set_compiler_property(PROPERTY specs)
+
+define_property(TARGET PROPERTY no_optimization INHERITED FULL_DOCS "INHERIT")
+define_property(TARGET PROPERTY optimization_debug INHERITED BRIEF_DOCS "INHERIT")
+define_property(TARGET PROPERTY optimization_speed INHERITED BRIEF_DOCS "INHERIT")
+define_property(TARGET PROPERTY optimization_size INHERITED BRIEF_DOCS "INHERIT")
+define_property(TARGET PROPERTY optimization_size_aggressive INHERITED BRIEF_DOCS "INHERIT")

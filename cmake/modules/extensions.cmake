@@ -2572,6 +2572,14 @@ function(set_compiler_property)
 
   set_property(TARGET compiler ${APPEND} PROPERTY ${COMPILER_PROPERTY_PROPERTY})
   set_property(TARGET compiler-cpp ${APPEND} PROPERTY ${COMPILER_PROPERTY_PROPERTY})
+
+  list(GET COMPILER_PROPERTY_PROPERTY 0 prop_name)
+  # Brief docs is used to inform if inheritance is set for the property.
+  # When inheritance is set, then the value must also be set on directory to ensure inheritance.
+  get_property(inherit TARGET NONE PROPERTY ${prop_name} BRIEF_DOCS)
+  if(inherit STREQUAL "INHERIT")
+    set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY ${COMPILER_PROPERTY_PROPERTY})
+  endif()
 endfunction()
 
 # 'check_set_compiler_property' is a function that check the provided compiler
