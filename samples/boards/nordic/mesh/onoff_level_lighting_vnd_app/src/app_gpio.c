@@ -68,9 +68,6 @@ void app_gpio_init(void)
 	}
 
 	/* Buttons configuration & setting */
-
-	k_work_init(&button_work, publish);
-
 	for (i = 0; i < ARRAY_SIZE(button_device); i++) {
 		if (!gpio_is_ready_dt(&button_device[i])) {
 			return;
