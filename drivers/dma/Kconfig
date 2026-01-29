@@ -67,6 +67,7 @@ source "drivers/dma/Kconfig.stm32"
 source "drivers/dma/Kconfig.ti_cc23x0"
 source "drivers/dma/Kconfig.wch"
 source "drivers/dma/Kconfig.xec"
+source "drivers/dma/Kconfig.xilinx_adma"
 source "drivers/dma/Kconfig.xilinx_axi_dma"
 source "drivers/dma/Kconfig.xmc4xxx"
 # zephyr-keep-sorted-stop
