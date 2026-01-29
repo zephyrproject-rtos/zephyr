@@ -620,6 +620,59 @@ static void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, u
 	modem_cellular_emit_reg_state(data, registration_status);
 }
 
+static void modem_cellular_chat_on_cgev(struct modem_chat *chat, char **argv, uint16_t argc,
+					void *user_data)
+{
+	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
+	bool connected;
+
+	if (strcmp(argv[0], "+CGEV: ") != 0) {
+		return;
+	}
+	/* See 3GPP TS 27.007 for +CGEV syntax
+	 *
+	 * Any of the following means PDN connected:
+	 * +CGEV: NW PDN ACT <cid>
+	 * +CGEV: ME PDN ACT <cid>[,<reason>[,<cid_other>]]
+	 * +CGEV: NW ACT <p_cid>, <cid>, <event_type>
+	 * +CGEV: ME ACT <p_cid>, <cid>, <event_type>
+	 *
+	 * Any of the following means PDN disconnected:
+	 * +CGEV: NW DETACH
+	 * +CGEV: ME DETACH
+	 * +CGEV: NW DEACT <PDP_type>, <PDP_addr>, [<cid>]
+	 * +CGEV: ME DEACT <PDP_type>, <PDP_addr>, [<cid>]
+	 * +CGEV: NW PDN DEACT <cid>
+	 * +CGEV: ME PDN DEACT <cid>
+	 * +CGEV: NW DEACT <p_cid>, <cid>, <event_type>
+	 * +CGEV: ME DEACT <p_cid>, <cid>, <event_type>
+	 */
+
+	if (strstr(argv[0], " ACT")) {
+		connected = true;
+	} else if ((strstr(argv[0], "DETACH")) ||
+		   (strstr(argv[0], "DEACT"))) {
+		connected = false;
+	} else {
+		return;
+	}
+
+	/* Only notify the event if the registration status does not
+	 * match what our state machine expects.
+	 * For example, we might stay registered while losing the PDN connection, and it
+	 * might be resumed later without deregistering first.
+	 */
+	if (modem_cellular_is_registered(data)) {
+		if (!connected) {
+			modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_DEREGISTERED);
+		}
+	} else {
+		if (connected) {
+			modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_REGISTERED);
+		}
+	}
+}
+
 MODEM_CHAT_MATCH_DEFINE(ok_match, "OK", "", NULL);
 MODEM_CHAT_MATCHES_DEFINE(allow_match,
 			  MODEM_CHAT_MATCH("OK", "", NULL),
@@ -640,6 +693,7 @@ MODEM_CHAT_MATCHES_DEFINE(unsol_matches,
 			  MODEM_CHAT_MATCH("+CREG: ", ",", modem_cellular_chat_on_cxreg),
 			  MODEM_CHAT_MATCH("+CEREG: ", ",", modem_cellular_chat_on_cxreg),
 			  MODEM_CHAT_MATCH("+CGREG: ", ",", modem_cellular_chat_on_cxreg),
+			  MODEM_CHAT_MATCH("+CGEV: ", ",", modem_cellular_chat_on_cgev),
 			  MODEM_CHAT_MATCH("APP RDY", "", modem_cellular_chat_on_modem_ready));
 
 MODEM_CHAT_MATCHES_DEFINE(abort_matches, MODEM_CHAT_MATCH("ERROR", "", NULL));
