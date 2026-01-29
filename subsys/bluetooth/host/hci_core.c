@@ -49,6 +49,7 @@
 
 #include "addr_internal.h"
 #include "adv.h"
+#include "classic/br.h"
 #include "common/hci_common_internal.h"
 #include "common/bt_str.h"
 #include "common/rpa.h"
@@ -66,10 +67,6 @@
 #include "scan.h"
 #include "settings.h"
 #include "smp.h"
-
-#if defined(CONFIG_BT_CLASSIC)
-#include "classic/br.h"
-#endif
 
 #if defined(CONFIG_BT_DF)
 #include "direction_internal.h"
@@ -3975,10 +3972,9 @@ static int le_init(void)
 	return  le_set_event_mask();
 }
 
-#if !defined(CONFIG_BT_CLASSIC)
-static int bt_br_init(void)
+static int br_hci_init(void)
 {
-#if defined(CONFIG_BT_CONN)
+#if !defined(CONFIG_BT_CLASSIC) && defined(CONFIG_BT_CONN)
 	struct net_buf *rsp;
 	int err;
 
@@ -3994,11 +3990,10 @@ static int bt_br_init(void)
 
 	read_buffer_size_complete(rsp);
 	net_buf_unref(rsp);
-#endif /* CONFIG_BT_CONN */
+#endif /* !CONFIG_BT_CLASSIC && CONFIG_BT_CONN */
 
 	return 0;
 }
-#endif /* !defined(CONFIG_BT_CLASSIC) */
 
 static int set_event_mask(void)
 {
@@ -4298,7 +4293,7 @@ static int hci_init(void)
 	}
 
 	if (BT_FEAT_BREDR(bt_dev.features)) {
-		err = bt_br_init();
+		err = br_hci_init();
 		if (err) {
 			return err;
 		}
@@ -4863,6 +4858,14 @@ int bt_set_name(const char *name)
 		err = bt_settings_store_name(bt_dev.name, len);
 		if (err) {
 			LOG_WRN("Unable to store name");
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
+		err = bt_br_write_local_name(bt_dev.name);
+		if (err) {
+			LOG_WRN("Unable to set local name");
+			return err;
 		}
 	}
 
