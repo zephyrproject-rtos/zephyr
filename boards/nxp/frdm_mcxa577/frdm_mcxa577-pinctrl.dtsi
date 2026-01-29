@@ -15,4 +15,14 @@
 			input-enable;
 		};
 	};
+
+	pinmux_lpuart1: pinmux_lpuart1 {
+		group0 {
+			pinmux = <LPUART1_RXD_P1_8>,
+				 <LPUART1_TXD_P1_9>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
 };
