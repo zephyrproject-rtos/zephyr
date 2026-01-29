@@ -23,6 +23,10 @@
 		zephyr,ipc_shm = &ddr0;
 	};
 
+	aliases {
+		watchdog0 = &mcu_rti0;
+	};
+
 	cpus {
 		cpu@0 {
 			status = "okay";
@@ -61,5 +65,9 @@
 };
 
 &systick_timer {
+	status = "okay";
+};
+
+&mcu_rti0 {
 	status = "okay";
 };
