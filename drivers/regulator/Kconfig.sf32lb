@@ -1,0 +1,20 @@
+# Copyright (c) 2025 SiFli Technologies(Nanjing) Co., Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+config REGULATOR_SF32LB_LDO
+	bool "SiFli SF32LB series internal LDO regulator driver"
+	default y
+	depends on DT_HAS_SIFLI_SF32LB52X_LDO_ENABLED
+	help
+	  Enable support for the SF32LB52x internal peripheral LDOs:
+	  - LDO18: 1.8V for PSRAM (VDDSIP)
+	  - LDO2_3V3: 3.3V for peripherals
+	  - LDO3_3V3: 3.3V for peripherals
+
+config REGULATOR_SF32LB_LDO_INIT_PRIORITY
+	int "SF32LB LDO regulator init priority"
+	default 20
+	depends on REGULATOR_SF32LB_LDO
+	help
+	  Init priority for SF32LB LDO regulator. Must be lower than
+	  drivers that depend on it (like PSRAM).
