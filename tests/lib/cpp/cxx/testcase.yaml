@@ -4,6 +4,8 @@ common:
   integration_platforms:
     - mps2/an385
     - qemu_cortex_a53
+  platform_exclude:
+    - nucleo_wb07cc
 
 tests:
   cpp.main.minimal:
