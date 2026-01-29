@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Synaptics, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SYNA_AON_EVENT_GPIO
+	bool "Synaptics AON LP GPIO event driver"
+	default y
+	depends on DT_HAS_SYNA_AON_EVENT_GPIO_ENABLED
+	depends on PINCTRL
+	depends on GPIO
+	help
+	  Enable AON LP GPIO event driver for Synaptics SR1XX SoCs.
