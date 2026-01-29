@@ -9,7 +9,7 @@
  * RX and TX pins wired together to provide loopback functionality. A large number of bytes
  * containing a sequence of pseudo random numbers are then transmitted, received, and validated.
  *
- * The test suite repeats three times, opening and clsoing the modem_pipe attached to the
+ * The test suite repeats three times, opening and closing the modem_pipe attached to the
  * modem_backend_uart instance before and after the tests respectively.
  */
 

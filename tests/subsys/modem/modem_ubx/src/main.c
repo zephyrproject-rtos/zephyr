@@ -433,7 +433,7 @@ ZTEST(modem_ubx, test_rsp_filters_out_non_matches)
 	uint8_t buf[256];
 	size_t buf_len = 0;
 
-	/** We're passing a valid packet, but not what we're expecing. We
+	/** We're passing a valid packet, but not what we're expecting. We
 	 * should not get an event out of this one.
 	 */
 	memcpy(buf, &test_rsp_non_match, UBX_FRAME_SZ(test_rsp_non_match.payload_size));
@@ -481,7 +481,7 @@ ZTEST(modem_ubx, test_rsp_match_with_payload)
 	uint8_t buf[256];
 	size_t buf_len = 0;
 
-	/** We're passing a valid packet, but not what we're expecing. We
+	/** We're passing a valid packet, but not what we're expecting. We
 	 * should not get an event out of this one.
 	 */
 	memcpy(buf, &test_rsp_non_match, UBX_FRAME_SZ(test_rsp_non_match.payload_size));

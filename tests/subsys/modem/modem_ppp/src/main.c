@@ -341,7 +341,7 @@ ZTEST(modem_ppp, test_ppp_frame_receive)
 	net_pkt_read(pkt, buffer, pkt_len);
 
 	zassert_true(memcmp(buffer, ppp_frame_unwrapped, pkt_len) == 0,
-		     "Recevied net pkt data incorrect");
+		     "Received net pkt data incorrect");
 }
 
 ZTEST(modem_ppp, test_corrupt_start_end_ppp_frame_receive)
@@ -368,7 +368,7 @@ ZTEST(modem_ppp, test_corrupt_start_end_ppp_frame_receive)
 	net_pkt_cursor_init(pkt);
 	net_pkt_read(pkt, buffer, pkt_len);
 	zassert_true(memcmp(buffer, ppp_frame_unwrapped, pkt_len) == 0,
-		     "Recevied net pkt data incorrect");
+		     "Received net pkt data incorrect");
 }
 
 ZTEST(modem_ppp, test_ppp_frame_send)
@@ -486,7 +486,7 @@ ZTEST(modem_ppp, test_ip_frame_receive)
 	net_pkt_cursor_init(pkt);
 	net_pkt_read(pkt, buffer, pkt_len);
 	zassert_true(memcmp(buffer, ip_frame_unwrapped_with_protocol, pkt_len) == 0,
-		     "Recevied net pkt data incorrect");
+		     "Received net pkt data incorrect");
 }
 
 ZTEST(modem_ppp, test_ip_frame_send)
