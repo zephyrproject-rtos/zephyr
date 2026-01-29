@@ -51,7 +51,7 @@ def main():
     with open(args.input) as f:
         data = json.load(f)
 
-    totalsize = data.get('total_size')
+    totalsize = data.get('total_size', 0)
     ids = []
     labels = []
     parents = []
@@ -75,7 +75,9 @@ def main():
         parents.append(parent)
         values.append(node.get('size', 0))
 
-        details = [f'percentage: {node.get("size") / totalsize:.2%}']
+        details = []
+        if totalsize > 0:
+            details.append(f'percentage: {node.get("size") / totalsize:.2%}')
         if 'address' in node:
             details.append(f'address: 0x{node.get("address"):08x}')
         if 'section' in node:
