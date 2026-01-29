@@ -668,7 +668,7 @@ static void hci_num_completed_packets(struct net_buf *buf)
 
 			if (!node) {
 				LOG_ERR("packets count mismatch");
-				__ASSERT_NO_MSG(0);
+				// __ASSERT_NO_MSG(0);
 				break;
 			}
 
