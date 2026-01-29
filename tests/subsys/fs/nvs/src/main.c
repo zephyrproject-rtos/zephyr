@@ -774,6 +774,109 @@ ZTEST_F(nvs, test_nvs_gc_corrupt_ate)
 	err = nvs_mount(&fixture->fs);
 	zassert_true(err == 0,  "nvs_mount call failure: %d", err);
 }
+
+/*
+ * Test that nvs_startup() correctly handles a sector that becomes
+ * logically full due to a power loss during the last ATE write.
+ *
+ * In this scenario, no erased space remains between data_wra and ate_wra,
+ * but the sector should be treated as closed and garbage collection
+ * should be triggered on the next write.
+ */
+ZTEST_F(nvs, test_nvs_startup_full_sector_after_ate_power_loss)
+{
+	struct nvs_ate valid_gc_ate, valid_ate, corrupt_ate;
+	int err;
+	off_t sector_end = fixture->fs.offset + fixture->fs.sector_size;
+	off_t data_size = fixture->fs.sector_size - 5 * sizeof(struct nvs_ate);
+	uint32_t simple_data = 0xaa55aa55U;
+	size_t offset = 0U;
+	uint8_t data[32];
+
+	fixture->fs.sector_count = 2;
+
+	/* Valid GC ATE */
+	valid_gc_ate.id = 0xffff;
+	valid_gc_ate.offset = 0;
+	valid_gc_ate.len = 0;
+	valid_gc_ate.part = 0xff;
+	valid_gc_ate.crc8 = crc8_ccitt(0xff, &valid_gc_ate,
+				       offsetof(struct nvs_ate, crc8));
+
+	/* A valid data ATE */
+	valid_ate.id = 0x0001;
+	valid_ate.offset = 0x0000;
+	valid_ate.len = data_size / 2;
+	valid_ate.part = 0xff;
+	valid_ate.crc8 = crc8_ccitt(0xff, &valid_ate,
+				    offsetof(struct nvs_ate, crc8));
+
+	/* Corrupt ATE simulating power loss during ATE programming */
+	corrupt_ate.id = 0x0002;
+	corrupt_ate.offset = valid_ate.len;
+	corrupt_ate.len = data_size / 2;
+	corrupt_ate.part = 0xff;
+	corrupt_ate.crc8 = 0xff; /* Invalid CRC */
+
+	/*
+	 * Sector layout after simulated power loss:
+	 *
+	 * [ Data #1 ][ Data #2 ][ ATE RSV ][ ATE #2 (corrupt) ][ ATE #1 ][ ATE GC ][ATE Close]
+	 *
+	 * data_wra catches up to ate_wra, leaving no erased space for data,
+	 * but the sector should still be mountable.
+	 */
+
+	/* Write valid GC ATE */
+	err = flash_write(fixture->fs.flash_device,
+			  sector_end - 2 * sizeof(struct nvs_ate),
+			  &valid_gc_ate, sizeof(valid_gc_ate));
+	zassert_ok(err, "flash_write failed: %d", err);
+
+	for (int i = 0; i < sizeof(data); i++) {
+		data[i] = ~(fixture->fs.flash_parameters->erase_value);
+	}
+
+	/* Write data #1 #2 */
+	while (data_size) {
+		size_t wr = MIN(data_size, sizeof(data));
+
+		err = flash_write(fixture->fs.flash_device,
+				  fixture->fs.offset + offset,
+				  &data, wr);
+		zassert_ok(err, "flash_write failed: %d", err);
+
+		data_size -= wr;
+		offset    += wr;
+	}
+
+	/* Write valid data ATE */
+	err = flash_write(fixture->fs.flash_device,
+			  sector_end - 3 * sizeof(struct nvs_ate),
+			  &valid_ate, sizeof(valid_ate));
+	zassert_ok(err, "flash_write failed: %d", err);
+
+	/* Write corrupt ATE (simulating power loss) */
+	err = flash_write(fixture->fs.flash_device,
+			  sector_end - 4 * sizeof(struct nvs_ate),
+			  &corrupt_ate, sizeof(corrupt_ate));
+	zassert_ok(err, "flash_write failed: %d", err);
+
+	/* nvs_mount() must succeed */
+	err = nvs_mount(&fixture->fs);
+	zassert_ok(err, "nvs_mount failed: %d", err);
+
+	/* nvs_write() must succeed and trigger garbage collection.
+	 * GC is verified by checking that the active write address
+	 * moves back to sector 1 after the write.
+	 */
+	err = nvs_write(&fixture->fs, 0x0003, &simple_data, sizeof(simple_data));
+	zassert_equal(err, sizeof(simple_data), "nvs_write call failure: %d", err);
+
+	/* After GC, the active ATE write address should be in sector 1 */
+	zassert_equal((fixture->fs.ate_wra & ADDR_SECT_MASK) >> ADDR_SECT_SHIFT,
+		      1, "nvs_gc() not trigger");
+}
 #endif /* CONFIG_TEST_NVS_SIMULATOR */
 
 #ifdef CONFIG_NVS_LOOKUP_CACHE
