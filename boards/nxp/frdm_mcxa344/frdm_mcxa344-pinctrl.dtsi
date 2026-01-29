@@ -6,6 +6,14 @@
 #include <nxp/mcx/MCXA344VLL-pinctrl.h>
 
 &pinctrl {
+	pinmux_lpadc0: pinmux_lpadc0 {
+		group0 {
+			pinmux = <ADC0_A7_P2_7>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
+
 	pinmux_lpi2c0: pinmux_lpi2c0 {
 		group0 {
 			pinmux = <LPI2C0_SDA_P1_8>,
