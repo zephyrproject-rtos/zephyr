@@ -83,6 +83,7 @@ zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_TELINK_B91 soc_flash_b91.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_XMC4XXX soc_flash_xmc4xxx.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_FLASH_AT25XV021A spi_flash_at25xv021a.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_FLASH_AT45 spi_flash_at45.c)
+zephyr_library_sources_ifdef(CONFIG_SPI_NAND spi_nand.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_NOR spi_nor.c)
 # zephyr-keep-sorted-stop
 
