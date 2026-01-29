@@ -229,35 +229,11 @@ The Zephyr community is a diverse group of individuals, with different levels of
 commitment and priorities. As such, reviewers and maintainers may not get to a
 PR right away.
 
-The `Zephyr Dev Meeting`_ performs a triage of PRs missing reviewer approval,
-following this process:
-
-#. Identify and update PRs missing an Assignee.
-#. Identify PRs without any comments or reviews, ping the PR Assignee to start a
-   review or assign to a different maintainer.
-#. For PRs that have otherwise stalled, the Zephyr Dev Meeting pings the
-   Assignee and any reviewers that have left comments on the PR.
-
-Contributors may request PRs to be reviewed outside of the Zephyr Dev Meeting
-triage process as follows:
-
 - After 1 week of inactivity, ping the Assignee or reviewers on the PR by adding
   a comment to the PR.
 
 - After 2 weeks of inactivity, post a message on the `#pr-help`_ channel on
   Discord linking to the PR.
-
-- After 2 weeks of inactivity, add the `dev-review`_ label to the PR. This
-  explicitly adds the PR to the agenda for the next `Zephyr Dev Meeting`_
-  independent of the triage process. Not all contributors have the required
-  privileges to add labels to PRs, in this case the contributor should request
-  help on Discord or send an email to the `Zephyr devel mailing list`_.
-
-Note that for new PRs, contributors should generally wait for at least one
-Zephyr Dev Meeting before making a request themselves.
-
-.. _Zephyr devel mailing list: https://lists.zephyrproject.org/g/devel
-
 
 .. _pr_technical_escalation:
 
@@ -272,12 +248,6 @@ Before escalation of technical disagreements, follow the steps below:
 - Resolve in the PR among assignee, maintainers and reviewer.
 
   - Assignee to act as moderator if applicable.
-
-- Optionally resolve in the next `Zephyr Dev Meeting`_  meeting with more
-  Maintainers and project stakeholders.
-
-  - The involved parties and the Assignee to be present when the  issue is
-    discussed.
 
 - If no progress is made, the assignee (maintainer) has the right to dismiss
   stale, unrelated or irrelevant change requests by reviewers giving the
@@ -310,10 +280,6 @@ the steps below:
   outcome is documented in the related pull request or issues on Github.
 
 .. _#pr-help: https://discord.com/channels/720317445772017664/997527108844798012
-
-.. _dev-review: https://github.com/zephyrproject-rtos/zephyr/labels/dev-review
-
-.. _Zephyr Dev Meeting: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Groups#zephyr-dev-meeting
 
 .. _Architecture Project: https://github.com/zephyrproject-rtos/zephyr/projects/18
 
