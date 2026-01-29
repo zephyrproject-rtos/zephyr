@@ -20,4 +20,5 @@ supported:
   - gpio
   - i2c
   - spi
+  - gint
 vendor: nxp

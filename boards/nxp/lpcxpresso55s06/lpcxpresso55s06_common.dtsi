@@ -171,3 +171,11 @@
 		max-bitrate = <5000000>;
 	};
 };
+
+&gint0 {
+	status = "okay";
+};
+
+&gint1 {
+	status = "okay";
+};

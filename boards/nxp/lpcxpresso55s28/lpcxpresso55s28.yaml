@@ -24,4 +24,5 @@ supported:
   - spi
   - usb_device
   - watchdog
+  - gint
 vendor: nxp

@@ -24,4 +24,5 @@ supported:
   - pwm
   - spi
   - dma
+  - gint
 vendor: nxp

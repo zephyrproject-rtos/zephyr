@@ -22,4 +22,5 @@ supported:
   - spi
   - watchdog
   - rtc
+  - gint
 vendor: nxp
