@@ -1,0 +1,11 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SLCD_NXP_MCUX
+	bool "NXP MCUX SLCD driver"
+	default y
+	depends on DT_HAS_NXP_SLCD_ENABLED
+	help
+	  Enable NXP MCUX SLCD (Segmented LCD) controller driver.
+	  This driver provides support for NXP's SLCD IP block found
+	  in MCX microcontrollers.
