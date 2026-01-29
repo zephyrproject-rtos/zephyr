@@ -1,0 +1,23 @@
+# Copyright (C) 2025-2026 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: Microchip G1 AES Controller Driver
+
+description: |
+  Microchip SAM Advanced Encryption Standard (AES).
+
+  Group G1 AES driver supports following hardware peripherals:
+    - module name="AES" id="6149" version="702"
+
+compatible: "microchip,aes-g1-crypto"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
