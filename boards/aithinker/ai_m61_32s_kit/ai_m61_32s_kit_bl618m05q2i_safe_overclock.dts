@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "ai_m61_32s.dtsi"
+#include "ai_m61_32s_kit_common.dtsi"
+
+&clk_root {
+	/* Increased PLL speed used as FCLK */
+	clocks = <&clk_wifipll BL61X_WIFIPLL_OC_480MHz>;
+};
+
+&clk_bclk {
+	/* 120 MHz BCLK and so Flash clock at this FCLK works for both revisions */
+	divider = <4>;
+};
+
+&clk_flash {
+	/* 0 Units of delay for GD Flash but inverted RX */
+	read-delay = <0>;
+	rx-clock-invert;
+	divider = <1>;
+};

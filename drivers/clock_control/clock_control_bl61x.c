@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+ * Copyright (c) 2025-2026 MASSDRIVER EI (massdriver.space)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,7 +42,24 @@ LOG_MODULE_REGISTER(clock_control_bl61x, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #define CRYSTAL_ID_FREQ_40000000 3
 #define CRYSTAL_ID_FREQ_26000000 4
 
+#define WIFIPLL_OVERCLOCK_NONE	0
+#define WIFIPLL_OVERCLOCK_480M	0x10
+#define WIFIPLL_OVERCLOCK_640M	0x20
+#define WIFIPLL_OVERCLOCK_MASK	0x30
+
 #define CRYSTAL_FREQ_TO_ID(freq) CONCAT(CRYSTAL_ID_FREQ_, freq)
+
+#if CLK_SRC_IS(root, wifipll_320)
+#if DT_CLOCKS_CELL(DT_INST_CLOCKS_CTLR_BY_NAME(0, root), select) & WIFIPLL_OVERCLOCK_480M
+#define CLK_AT_LEAST_MUL 48
+#elif DT_CLOCKS_CELL(DT_INST_CLOCKS_CTLR_BY_NAME(0, root), select) & WIFIPLL_OVERCLOCK_640M
+#define CLK_AT_LEAST_MUL 64
+#else
+#define CLK_AT_LEAST_MUL 32
+#endif
+#else
+#define CLK_AT_LEAST_MUL 32
+#endif
 
 enum bl61x_clkid {
 	bl61x_clkid_clk_root = BL61X_CLKID_CLK_ROOT,
@@ -56,7 +73,7 @@ enum bl61x_clkid {
 
 struct clock_control_bl61x_pll_config {
 	enum bl61x_clkid	source;
-	bool			overclock;
+	uint8_t			overclock;
 };
 
 struct clock_control_bl61x_root_config {
@@ -205,6 +222,7 @@ static const bl61x_pll_config wifipll_26M = {
 	.aupllPostDiv = 0,
 };
 
+/* XCLK is 32M, Sigma Delta minimum for 480MHz OC */
 static const bl61x_pll_config wifipll_32M_O480M = {
 	.pllRefdivRatio = 2,
 	.pllIntFracSw = 0,
@@ -223,24 +241,7 @@ static const bl61x_pll_config wifipll_32M_O480M = {
 	.aupllPostDiv = 0,
 };
 
-static const bl61x_pll_config wifipll_40M_O480M = {
-	.pllRefdivRatio = 2,
-	.pllIntFracSw = 0,
-	.pllIcp1u = 0,
-	.pllIcp5u = 2,
-	.pllRz = 3,
-	.pllCz = 1,
-	.pllC3 = 2,
-	.pllR4Short = 1,
-	.pllC4En = 0,
-	.pllSelSampleClk = 1,
-	.pllVcoSpeed = 5,
-	.pllSdmCtrlHw = 1,
-	.pllSdmBypass = 1,
-	.pllSdmin = 0x2400000,
-	.aupllPostDiv = 0,
-};
-
+/* XCLK is 38.4M, Sigma Delta minimum for 480MHz OC */
 static const bl61x_pll_config wifipll_38P4M_O480M = {
 	.pllRefdivRatio = 2,
 	.pllIntFracSw = 0,
@@ -259,6 +260,26 @@ static const bl61x_pll_config wifipll_38P4M_O480M = {
 	.aupllPostDiv = 0,
 };
 
+/* XCLK is 40M, Sigma Delta minimum for 480MHz OC */
+static const bl61x_pll_config wifipll_40M_O480M = {
+	.pllRefdivRatio = 2,
+	.pllIntFracSw = 0,
+	.pllIcp1u = 0,
+	.pllIcp5u = 2,
+	.pllRz = 3,
+	.pllCz = 1,
+	.pllC3 = 2,
+	.pllR4Short = 1,
+	.pllC4En = 0,
+	.pllSelSampleClk = 1,
+	.pllVcoSpeed = 5,
+	.pllSdmCtrlHw = 1,
+	.pllSdmBypass = 1,
+	.pllSdmin = 0x2400000,
+	.aupllPostDiv = 0,
+};
+
+/* XCLK is 38.4M, Sigma Delta minimum for 480MHz OC */
 static const bl61x_pll_config wifipll_24M_O480M = {
 	.pllRefdivRatio = 1,
 	.pllIntFracSw = 0,
@@ -277,6 +298,7 @@ static const bl61x_pll_config wifipll_24M_O480M = {
 	.aupllPostDiv = 0,
 };
 
+/* XCLK is 26M, Sigma Delta minimum for 480MHz OC */
 static const bl61x_pll_config wifipll_26M_O480M = {
 	.pllRefdivRatio = 1,
 	.pllIntFracSw = 1,
@@ -295,19 +317,116 @@ static const bl61x_pll_config wifipll_26M_O480M = {
 	.aupllPostDiv = 0,
 };
 
+/* XCLK is 32M, Sigma Delta minimum for 640MHz OC, maximum VCO speed */
+static const bl61x_pll_config wifipll_32M_O640M = {
+	.pllRefdivRatio = 2,
+	.pllIntFracSw = 0,
+	.pllIcp1u = 0,
+	.pllIcp5u = 2,
+	.pllRz = 3,
+	.pllCz = 1,
+	.pllC3 = 2,
+	.pllR4Short = 1,
+	.pllC4En = 0,
+	.pllSelSampleClk = 1,
+	.pllVcoSpeed = 7,
+	.pllSdmCtrlHw = 1,
+	.pllSdmBypass = 1,
+	.pllSdmin = 0x3C00000,
+	.aupllPostDiv = 0,
+};
+
+/* XCLK is 38.4M, Sigma Delta minimum for 640MHz OC, maximum VCO speed */
+static const bl61x_pll_config wifipll_38P4M_O640M = {
+	.pllRefdivRatio = 2,
+	.pllIntFracSw = 0,
+	.pllIcp1u = 0,
+	.pllIcp5u = 2,
+	.pllRz = 3,
+	.pllCz = 1,
+	.pllC3 = 2,
+	.pllR4Short = 1,
+	.pllC4En = 0,
+	.pllSelSampleClk = 1,
+	.pllVcoSpeed = 7,
+	.pllSdmCtrlHw = 1,
+	.pllSdmBypass = 1,
+	.pllSdmin = 0x3200000,
+	.aupllPostDiv = 0,
+};
+
+/* XCLK is 40M, Sigma Delta minimum for 640MHz OC, maximum VCO speed */
+static const bl61x_pll_config wifipll_40M_O640M = {
+	.pllRefdivRatio = 2,
+	.pllIntFracSw = 0,
+	.pllIcp1u = 0,
+	.pllIcp5u = 2,
+	.pllRz = 3,
+	.pllCz = 1,
+	.pllC3 = 2,
+	.pllR4Short = 1,
+	.pllC4En = 0,
+	.pllSelSampleClk = 1,
+	.pllVcoSpeed = 7,
+	.pllSdmCtrlHw = 1,
+	.pllSdmBypass = 1,
+	.pllSdmin = 0x3000000,
+	.aupllPostDiv = 0,
+};
+
+/* XCLK is 24M, Sigma Delta minimum for 640MHz OC, maximum VCO speed */
+static const bl61x_pll_config wifipll_24M_O640M = {
+	.pllRefdivRatio = 1,
+	.pllIntFracSw = 0,
+	.pllIcp1u = 0,
+	.pllIcp5u = 2,
+	.pllRz = 3,
+	.pllCz = 1,
+	.pllC3 = 2,
+	.pllR4Short = 1,
+	.pllC4En = 0,
+	.pllSelSampleClk = 1,
+	.pllVcoSpeed = 7,
+	.pllSdmCtrlHw = 1,
+	.pllSdmBypass = 1,
+	.pllSdmin = 0x2800000,
+	.aupllPostDiv = 0,
+};
+
+/* XCLK is 26M, Sigma Delta minimum for 640MHz OC, maximum VCO speed */
+static const bl61x_pll_config wifipll_26M_O640M = {
+	.pllRefdivRatio = 1,
+	.pllIntFracSw = 1,
+	.pllIcp1u = 1,
+	.pllIcp5u = 0,
+	.pllRz = 5,
+	.pllCz = 2,
+	.pllC3 = 2,
+	.pllR4Short = 0,
+	.pllC4En = 1,
+	.pllSelSampleClk = 1,
+	.pllVcoSpeed = 7,
+	.pllSdmCtrlHw = 0,
+	.pllSdmBypass = 0,
+	.pllSdmin = 0x24EC4EC,
+	.aupllPostDiv = 0,
+};
+
 static const bl61x_pll_config *const bl61x_pll_configs[6] = {
 &wifipll_32M, &wifipll_24M, &wifipll_38P4M, &wifipll_40M, &wifipll_26M
 };
-
 
 static const bl61x_pll_config *const bl61x_pll_configs_O480M[6] = {
 &wifipll_32M_O480M, &wifipll_24M_O480M, &wifipll_38P4M_O480M, &wifipll_40M_O480M, &wifipll_26M_O480M
 };
 
-/* this imagines we are at 320M clock */
+static const bl61x_pll_config *const bl61x_pll_configs_O640M[6] = {
+&wifipll_32M_O640M, &wifipll_24M_O640M, &wifipll_38P4M_O640M, &wifipll_40M_O640M, &wifipll_26M_O640M
+};
+
 static void clock_control_bl61x_clock_at_least_us(uint32_t us)
 {
-	for (uint32_t i = 0; i < us * 32; i++) {
+	for (uint32_t i = 0; i < us * CLK_AT_LEAST_MUL; i++) {
 		clock_bflb_settle();
 	}
 }
@@ -464,7 +583,7 @@ static void clock_control_bl61x_set_wifipll_source(uint32_t source)
 }
 
 static void clock_control_bl61x_init_wifipll_setup(const bl61x_pll_config *const config,
-						   bool overclock)
+						   uint8_t overclock)
 {
 	uint32_t tmp;
 
@@ -516,20 +635,33 @@ static void clock_control_bl61x_init_wifipll_setup(const bl61x_pll_config *const
 
 	/* We need to overclock those as well for USB to work for some reason */
 	tmp = sys_read32(GLB_BASE + GLB_WIFI_PLL_CFG10_OFFSET);
-	if (overclock) {
+	switch (overclock) {
+	case WIFIPLL_OVERCLOCK_640M:
+		tmp = (tmp & GLB_USBPLL_SDMIN_UMSK)
+			| (0x50000 << GLB_USBPLL_SDMIN_POS);
+		break;
+	case WIFIPLL_OVERCLOCK_480M:
 		tmp = (tmp & GLB_USBPLL_SDMIN_UMSK)
 			| (0x3C000 << GLB_USBPLL_SDMIN_POS);
-	} else {
+		break;
+
+	default:
 		tmp = (tmp & GLB_USBPLL_SDMIN_UMSK)
 			| (0x28000 << GLB_USBPLL_SDMIN_POS);
 	}
 	sys_write32(tmp, GLB_BASE + GLB_WIFI_PLL_CFG10_OFFSET);
 
 	tmp = sys_read32(GLB_BASE + GLB_WIFI_PLL_CFG12_OFFSET);
-	if (overclock) {
+	switch (overclock) {
+	case WIFIPLL_OVERCLOCK_640M:
+		tmp = (tmp & GLB_SSCDIV_SDMIN_UMSK)
+			| (0x50000 << GLB_SSCDIV_SDMIN_POS);
+		break;
+	case WIFIPLL_OVERCLOCK_480M:
 		tmp = (tmp & GLB_SSCDIV_SDMIN_UMSK)
 			| (0x3C000 << GLB_SSCDIV_SDMIN_POS);
-	} else {
+		break;
+	default:
 		tmp = (tmp & GLB_SSCDIV_SDMIN_UMSK)
 			| (0x28000 << GLB_SSCDIV_SDMIN_POS);
 	}
@@ -607,10 +739,11 @@ static void clock_control_bl61x_init_wifipll_setup(const bl61x_pll_config *const
 }
 
 static void clock_control_bl61x_init_wifipll(const bl61x_pll_config *const *config,
-					     enum bl61x_clkid source, uint32_t crystal_id)
+					     enum bl61x_clkid source, uint32_t crystal_id,
+					     uint8_t overclock)
 {
 	uint32_t tmp;
-	uint32_t old_rootclk = 0;
+	uint32_t old_rootclk;
 
 	old_rootclk = clock_bflb_get_root_clock();
 
@@ -624,14 +757,10 @@ static void clock_control_bl61x_init_wifipll(const bl61x_pll_config *const *conf
 
 	if (source == BL61X_CLKID_CLK_CRYSTAL) {
 		clock_control_bl61x_set_wifipll_source(1);
-		if (config == bl61x_pll_configs_O480M) {
-			clock_control_bl61x_init_wifipll_setup(config[crystal_id], true);
-		} else {
-			clock_control_bl61x_init_wifipll_setup(config[crystal_id], false);
-		}
+		clock_control_bl61x_init_wifipll_setup(config[crystal_id], overclock);
 	} else {
 		clock_control_bl61x_set_wifipll_source(0);
-		clock_control_bl61x_init_wifipll_setup(config[CRYSTAL_ID_FREQ_32000000], false);
+		clock_control_bl61x_init_wifipll_setup(config[CRYSTAL_ID_FREQ_32000000], overclock);
 	}
 
 	/* enable PLL clock */
@@ -676,7 +805,7 @@ static void clock_control_bl61x_ungate_pll(uint8_t pll)
 	uint32_t tmp;
 
 	tmp = sys_read32(PDS_BASE + GLB_CGEN_CFG3_OFFSET);
-	tmp |= (1 << pll);
+	tmp |= (1U << pll);
 	sys_write32(tmp, PDS_BASE + GLB_CGEN_CFG3_OFFSET);
 }
 
@@ -767,15 +896,21 @@ static uint32_t clock_control_bl61x_get_fclk(const struct device *dev)
 	tmp = sys_read32(PDS_BASE + PDS_CPU_CORE_CFG1_OFFSET);
 	tmp = (tmp & PDS_REG_PLL_SEL_MSK) >> PDS_REG_PLL_SEL_POS;
 	if (tmp == 3) {
-		if (data->wifipll.overclock) {
+		switch (data->wifipll.overclock) {
+		case WIFIPLL_OVERCLOCK_640M:
+			return MHZ(640);
+		case WIFIPLL_OVERCLOCK_480M:
 			return MHZ(480);
-		} else {
+		default:
 			return MHZ(320);
 		}
 	} else if (tmp == 2) {
-		if (data->wifipll.overclock) {
+		switch (data->wifipll.overclock) {
+		case WIFIPLL_OVERCLOCK_640M:
+			return MHZ(480);
+		case WIFIPLL_OVERCLOCK_480M:
 			return MHZ(360);
-		} else {
+		default:
 			return MHZ(240);
 		}
 	} else if (tmp == 1) {
@@ -839,23 +974,25 @@ static void clock_control_bl61x_init_root_as_wifipll(const struct device *dev)
 {
 	struct clock_control_bl61x_data *data = dev->data;
 	const struct clock_control_bl61x_config *config = dev->config;
+	const bl61x_pll_config *const *pll_configs = bl61x_pll_configs;
 
-	if (data->wifipll.overclock) {
-		clock_control_bl61x_init_wifipll(bl61x_pll_configs_O480M,
-						 data->wifipll.source, config->crystal_id);
-	} else {
-		clock_control_bl61x_init_wifipll(bl61x_pll_configs,
-						 data->wifipll.source, config->crystal_id);
+	if (data->wifipll.overclock == WIFIPLL_OVERCLOCK_640M) {
+		pll_configs = bl61x_pll_configs_O640M;
+	} else if (data->wifipll.overclock == WIFIPLL_OVERCLOCK_480M) {
+		pll_configs = bl61x_pll_configs_O480M;
 	}
+
+	clock_control_bl61x_init_wifipll(pll_configs, data->wifipll.source,
+					 config->crystal_id, data->wifipll.overclock);
 
 	clock_control_bl61x_select_PLL(data->root.pll_select);
 
 	/* 2T rom access goes here */
 
 	if (data->root.pll_select == 1) {
-		clock_control_bl61x_ungate_pll(14);
+		clock_control_bl61x_ungate_pll(GLB_CGEN_TOP_WIFIPLL_320M_POS);
 	} else if (data->root.pll_select == 2) {
-		clock_control_bl61x_ungate_pll(13);
+		clock_control_bl61x_ungate_pll(GLB_CGEN_TOP_WIFIPLL_240M_POS);
 	}
 
 	if (data->wifipll.source == bl61x_clkid_clk_crystal) {
@@ -1277,7 +1414,10 @@ static struct clock_control_bl61x_data clock_control_bl61x_data = {
 		.source = bl61x_clkid_clk_rc32m,
 #endif
 #if CLK_SRC_IS(root, wifipll_320)
-		.overclock = DT_CLOCKS_CELL(DT_INST_CLOCKS_CTLR_BY_NAME(0, root), select) & 0x10,
+		.overclock = DT_CLOCKS_CELL(DT_INST_CLOCKS_CTLR_BY_NAME(0, root), select)
+			& WIFIPLL_OVERCLOCK_MASK,
+#else
+		.overclock = 0,
 #endif
 	},
 
@@ -1287,6 +1427,7 @@ static struct clock_control_bl61x_data clock_control_bl61x_data = {
 #else
 		.source = bl61x_clkid_clk_rc32m,
 #endif
+		.overclock = 0,
 	},
 
 	.bclk = {

@@ -11,3 +11,7 @@ e24/soc_irq_privileged.c
 e24/soc.c
 )
 endif()
+
+zephyr_sources(
+power.c
+)

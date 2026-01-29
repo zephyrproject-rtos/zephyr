@@ -151,13 +151,17 @@
 				 <&clk_wifipll BL61X_WIFIPLL_240MHz>,
 				 <&clk_wifipll BL61X_WIFIPLL_OC_480MHz>,
 				 <&clk_wifipll BL61X_WIFIPLL_OC_360MHz>,
+				 <&clk_wifipll BL61X_WIFIPLL_OCMAX_640MHz>,
+				 <&clk_wifipll BL61X_WIFIPLL_OCMAX_480MHz>,
 				 <&clk_aupll BL61X_AUPLL_DIV1>, <&clk_aupll BL61X_AUPLL_DIV2>,
 				 <&clk_root>, <&clk_bclk>, <&clk_flash>;
 			clock-names = "rc32m", "crystal",
 				      "wifipll_320",
 				      "wifipll_240",
-				      "wifipll_480",
-				      "wifipll_360",
+				      "wifipll_oc_480",
+				      "wifipll_oc_360",
+				      "wifipll_ocmax_640",
+				      "wifipll_ocmax_480",
 				      "aupll_div1", "aupll_div2",
 				      "root", "bclk", "flash";
 		};
@@ -274,6 +278,35 @@
 
 			interrupts = <31 1>;
 			interrupt-parent = <&clic>;
+		};
+
+		powerctrl: power-controller@2000f000 {
+			compatible = "bflb,power-controller";
+			reg = <0x2000f000 0x1000>, <0x2000f000 0x1000>;
+			reg-names = "hbn", "aon";
+			status = "okay";
+
+			interrupts = <67 1>, <68 1>, <69 1>;
+			interrupt-parent = <&clic>;
+			interrupt-names = "hbn0", "hbn1", "bor";
+		};
+
+		reg_soc: regulator-soc@2000f000 {
+			compatible = "bflb,soc-regulator";
+			reg = <0x2000f000 0x1000>;
+			status = "okay";
+		};
+
+		reg_rt: regulator-rt@2000f000 {
+			compatible = "bflb,rt-regulator";
+			reg = <0x2000f000 0x1000>;
+			status = "okay";
+		};
+
+		reg_aon: regulator-aon@2000f000 {
+			compatible = "bflb,aon-regulator";
+			reg = <0x2000f000 0x1000>;
+			status = "okay";
 		};
 
 		retram: memory@20010000 {
