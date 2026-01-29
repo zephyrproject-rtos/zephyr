@@ -939,12 +939,12 @@ enum ethernet_hw_caps net_eth_get_hw_capabilities(struct net_if *iface)
 	const struct ethernet_api *api = (struct ethernet_api *)dev->api;
 	enum ethernet_hw_caps caps = (enum ethernet_hw_caps)0;
 #if defined(CONFIG_NET_DSA) && !defined(CONFIG_NET_DSA_DEPRECATED)
-	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
+	struct ethernet_context *eth_ctx = (struct ethernet_context*)net_if_l2_data(iface);
 
 	if (eth_ctx->dsa_port == DSA_CONDUIT_PORT) {
-		caps |= ETHERNET_DSA_CONDUIT_PORT;
+		caps = (enum ethernet_hw_caps)( caps | ETHERNET_DSA_CONDUIT_PORT);
 	} else if (eth_ctx->dsa_port == DSA_USER_PORT) {
-		caps |= ETHERNET_DSA_USER_PORT;
+		caps = (enum ethernet_hw_caps)( caps | ETHERNET_DSA_USER_PORT);
 	}
 #endif
 	if (api == NULL || api->get_capabilities == NULL) {
