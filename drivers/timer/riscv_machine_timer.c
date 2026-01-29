@@ -14,13 +14,23 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/irq.h>
 
+#define CYC_PER_TICK_CUSTOM_EXPANSION
+
+#ifdef ARCH_RISCV_HAS_CUSTOM
+#include <riscv_custom.h>
+#endif
+
+/* clang-format off */
+
 #define DT_DRV_COMPAT riscv_machine_timer
 
 #define MTIME_REG    DT_INST_REG_ADDR_BY_NAME(0, mtime)
 #define MTIMECMP_REG DT_INST_REG_ADDR_BY_NAME(0, mtimecmp)
 #define TIMER_IRQN   DT_INST_IRQN(0)
 
-#define CYC_PER_TICK (uint32_t)(sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#define CYC_PER_TICK								\
+		(uint32_t)(sys_clock_hw_cycles_per_sec() /	\
+				CONFIG_SYS_CLOCK_TICKS_PER_SEC CYC_PER_TICK_CUSTOM_EXPANSION)
 
 /* the unsigned long cast limits divisions to native CPU register width */
 #define cycle_diff_t   unsigned long
@@ -59,6 +69,8 @@ static uint32_t last_elapsed;
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = TIMER_IRQN;
 #endif
+
+/* clang-format on */
 
 static uintptr_t get_hart_mtimecmp(void)
 {

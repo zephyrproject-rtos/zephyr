@@ -1,0 +1,9 @@
+# Copyright (c) 2019 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_XIAOHUI_C908
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 50000000
+
+endif # BOARD_XIAOHUI_C908

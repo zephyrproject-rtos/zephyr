@@ -1,0 +1,240 @@
+# riscv SOC family supporting the riscv privileged architecture spec
+
+# Copyright (c) 2017 Jean-Paul Etienne <fractalclone@gmail.com>
+# Copyright (C) 2017-2024 Alibaba Group Holding Limited
+# SPDX-License-Identifier: Apache-2.0
+
+
+config SOC_SERIES_XIAOHUI_C9XX
+	bool "xiaohui(FPGA) c9xx"
+
+	select RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
+
+	select RISCV_HAS_PLIC
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	select RISCV_ALWAYS_SWITCH_THROUGH_ECALL
+
+	select RISCV_SOC_CONTEXT_SAVE if RISCV_ISA_EXT_V
+	select CPU_XUANTIE_DOUBLE_FPU if (RISCV_ISA_EXT_F && RISCV_ISA_EXT_D)
+
+	select SOC_FAMILY_XIAOHUI
+
+config CPU_XUANTIE_C906
+	bool "xuantie CPU c906 (I,M,A,C)"
+	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+
+config CPU_XUANTIE_C906FD
+	bool "xuantie CPU c906fdv (I,M,A,F,D,C)"
+	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D
+	select RISCV_ISA_EXT_C
+
+config CPU_XUANTIE_C906FDV
+	bool "xuantie CPU c906fdv (I,M,A,F,D,C,V)"
+	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D
+	select RISCV_ISA_EXT_C
+#     select RISCV_ISA_EXT_V
+
+config CPU_XUANTIE_C907
+	bool "xuantie CPU c907 (I,M,A,C)"
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+
+config CPU_XUANTIE_C907FD
+	bool "xuantie CPU c907fd (I,M,A,F,D,C)"
+	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D
+	select RISCV_ISA_EXT_C
+
+config CPU_XUANTIE_C907FDV
+	bool "xuantie CPU c907fdv (I,M,A,F,D,C,V)"
+	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D
+	select RISCV_ISA_EXT_C
+#     select RISCV_ISA_EXT_V
+
+config CPU_XUANTIE_C907FDVM
+	bool "xuantie CPU c907fdvm (I,M,A,F,D,C,V)"
+	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D
+	select RISCV_ISA_EXT_C
+#     select RISCV_ISA_EXT_V
+
+
+config CPU_XUANTIE_C907_RV32
+	bool "xuantie CPU c907-rv32 (I,M,A,C)"
+	select 32BIT
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+
+config CPU_XUANTIE_C907FD_RV32
+	bool "xuantie CPU c907fd-rv32 (I,M,A,F,D,C)"
+	select 32BIT
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D
+
+config CPU_XUANTIE_C907FDV_RV32
+	bool "xuantie CPU c907fdv-rv32 (I,M,A,F,D,C,V)"
+	select 32BIT
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D
+# 	select RISCV_ISA_EXT_V
+
+config CPU_XUANTIE_C907FDVM_RV32
+	bool "xuantie CPU c907fdvm-rv32 (I,M,A,F,D,C,V)"
+	select 32BIT
+	select RISCV_ISA_RV32I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D
+# 	select RISCV_ISA_EXT_V
+
+
+
+config CPU_XUANTIE_C908
+	bool "xuantie CPU c908 (I,M,A,F,D,C)"
+	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D
+	select RISCV_ISA_EXT_C
+
+config CPU_XUANTIE_C908I
+	bool "xuantie CPU c908i (I,M,A,C)"
+	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+
+config CPU_XUANTIE_C908V
+	bool "xuantie CPU c908v (I,M,A,F,D,C,V)"
+	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D
+	select RISCV_ISA_EXT_C
+#     select RISCV_ISA_EXT_V
+
+config CPU_XUANTIE_C910
+	bool "xuantie CPU c910 (I,M,A,C,F,D)"
+	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D
+
+config CPU_XUANTIE_C910V2
+	bool "xuantie CPU c910v2 (I,M,A,C,F,D)"
+	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D
+
+config CPU_XUANTIE_C910V3
+	bool "xuantie CPU c910v3 (I,M,A,C,F,D)"
+	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D
+
+config CPU_XUANTIE_C910V3_CP
+	bool "xuantie CPU c910v3cp (I,M,A,C,F,D)"
+	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D
+
+config CPU_XUANTIE_C920
+	bool "xuantie CPU c920 (I,M,A,C,F,D)"
+	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D
+
+config CPU_XUANTIE_C920V2
+	bool "xuantie CPU c920v2 (I,M,A,C,F,D)"
+	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D
+
+config CPU_XUANTIE_C920V3
+	bool "xuantie CPU c920v3 (I,M,A,C,F,D)"
+	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D
+
+config CPU_XUANTIE_C920V3_CP
+	bool "xuantie CPU c920v3_cp (I,M,A,C,F,D)"
+	select 64BIT
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_A
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_D

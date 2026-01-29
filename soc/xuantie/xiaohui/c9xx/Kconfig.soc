@@ -1,0 +1,105 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES
+	default "c9xx" if SOC_SERIES_XIAOHUI_C9XX
+
+config SOC
+	default "c906"      if CPU_XUANTIE_C906
+	default "c906fd"    if CPU_XUANTIE_C906FD
+	default "c906fdv"   if CPU_XUANTIE_C906FDV
+
+	default "c907"      if CPU_XUANTIE_C907
+	default "c907fd"    if CPU_XUANTIE_C907FD
+	default "c907fdv"   if CPU_XUANTIE_C907FDV
+	default "c907fdvm"  if CPU_XUANTIE_C907FDVM
+
+	default "c907-rv32"     if CPU_XUANTIE_C907_RV32
+	default "c907fd-rv32"   if CPU_XUANTIE_C907FD_RV32
+	default "c907fdv-rv32"  if CPU_XUANTIE_C907FDV_RV32
+	default "c907fdvm-rv32" if CPU_XUANTIE_C907FDVM_RV32
+
+	default "c908"      if CPU_XUANTIE_C908
+	default "c908i"     if CPU_XUANTIE_C908I
+	default "c908v"     if CPU_XUANTIE_C908V
+
+	default "c910"      if CPU_XUANTIE_C910
+	default "c910v2"    if CPU_XUANTIE_C910V2
+	default "c910v3"    if CPU_XUANTIE_C910V3
+	default "c910v3_cp" if CPU_XUANTIE_C910V3_CP
+
+	default "c920"      if CPU_XUANTIE_C920
+	default "c920v2"    if CPU_XUANTIE_C920V2
+	default "c920v3"    if CPU_XUANTIE_C920V3
+	default "c920v3_cp" if CPU_XUANTIE_C920V3_CP
+
+
+
+config SOC_SERIES_XIAOHUI_C9XX
+	bool "xiaohui(FPGA) c9xx"
+
+config CPU_XUANTIE_C906
+	bool "xuantie CPU c906 (I,M,A,C)"
+
+config CPU_XUANTIE_C906FD
+	bool "xuantie CPU c906fdv (I,M,A,F,D,C)"
+
+config CPU_XUANTIE_C906FDV
+	bool "xuantie CPU c906fdv (I,M,A,F,D,C,V)"
+
+config CPU_XUANTIE_C907
+	bool "xuantie CPU c907 (I,M,A,C)"
+
+config CPU_XUANTIE_C907FD
+	bool "xuantie CPU c907fd (I,M,A,F,D,C)"
+
+config CPU_XUANTIE_C907FDV
+	bool "xuantie CPU c907fdv (I,M,A,F,D,C,V)"
+
+config CPU_XUANTIE_C907FDVM
+	bool "xuantie CPU c907fdvm (I,M,A,F,D,C,V)"
+
+config CPU_XUANTIE_C907_RV32
+	bool "xuantie CPU c907-rv32 (I,M,A,C)"
+
+config CPU_XUANTIE_C907FD_RV32
+	bool "xuantie CPU c907fd-rv32 (I,M,A,F,D,C)"
+
+config CPU_XUANTIE_C907FDV_RV32
+	bool "xuantie CPU c907fdv-rv32 (I,M,A,F,D,C,V)"
+
+config CPU_XUANTIE_C907FDVM_RV32
+	bool "xuantie CPU c907fdvm-rv32 (I,M,A,F,D,C,V)"
+
+config CPU_XUANTIE_C908
+	bool "xuantie CPU c908 (I,M,A,F,D,C)"
+
+config CPU_XUANTIE_C908I
+	bool "xuantie CPU c908i (I,M,A,C)"
+
+config CPU_XUANTIE_C908V
+	bool "xuantie CPU c908v (I,M,A,F,D,C,V)"
+
+config CPU_XUANTIE_C910
+	bool "xuantie CPU c910 (I,M,A,C,F,D)"
+
+config CPU_XUANTIE_C910V2
+	bool "xuantie CPU c910v2 (I,M,A,C,F,D)"
+
+config CPU_XUANTIE_C910V3
+	bool "xuantie CPU c910v3 (I,M,A,C,F,D)"
+
+config CPU_XUANTIE_C910V3_CP
+	bool "xuantie CPU c910v3cp (I,M,A,C,F,D)"
+
+config CPU_XUANTIE_C920
+	bool "xuantie CPU c920 (I,M,A,C,F,D)"
+
+config CPU_XUANTIE_C920V2
+	bool "xuantie CPU c920v2 (I,M,A,C,F,D)"
+
+config CPU_XUANTIE_C920V3
+	bool "xuantie CPU c920v3 (I,M,A,C,F,D)"
+
+config CPU_XUANTIE_C920V3_CP
+	bool "xuantie CPU c920v3_cp (I,M,A,C,F,D)"

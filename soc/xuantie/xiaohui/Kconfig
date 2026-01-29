@@ -1,0 +1,78 @@
+# riscv SOC family supporting the riscv privileged architecture spec
+
+# Copyright (c) 2017 Jean-Paul Etienne <fractalclone@gmail.com>
+# Copyright (C) 2017-2024 Alibaba Group Holding Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_XIAOHUI
+	bool
+	select ATOMIC_OPERATIONS_BUILTIN
+	select INCLUDE_RESET_VECTOR
+	select RISCV
+	select RISCV_PRIVILEGED
+	select RISCV_MACHINE_TIMER
+
+# if SOC_FAMILY_XIAOHUI
+
+config KERNEL_ENTRY
+	default "__xuantie_start"
+
+config SOC_FAMILY
+	default "xiaohui" if SOC_FAMILY_XIAOHUI
+
+config XUANTIE_CPU_NAME
+	string "the cpu name of xuantie"
+	default "unknown"
+
+config RISCV_HAS_PLIC
+	bool "Does the SOC provide support for a Platform Level Interrupt Controller (PLIC)"
+	depends on SOC_FAMILY_XIAOHUI
+	help
+	  Does the SOC provide support for a Platform Level Interrupt Controller (PLIC).
+
+config RISCV_HAS_CLIC
+	bool "Does the SOC provide support for a Core-Local Interrupt Controller (CLIC)"
+	depends on SOC_FAMILY_XIAOHUI
+	help
+	  Does the SOC provide support for a Core-Local Interrupt Controller (CLIC).
+
+config PLIC_BASE
+	hex "the base addr of Platform Level Interrupt Controller (PLIC) for csi components in yocopen"
+	default $(dt_nodelabel_reg_addr_hex,plic)
+
+config RISCV_VECTORED_MODE
+	bool "Should the SOC use mtvec in vectored mode"
+	depends on SOC_FAMILY_XIAOHUI
+	help
+	  Should the SOC use mtvec in vectored mode
+
+config XUANTIE_RISCV_VLENB_LEN
+	int "Size(bits) of vector register."
+	default 256
+	depends on RISCV_SOC_CONTEXT_SAVE
+	help
+	  This option sets the vlen size that vector extension will be used
+
+config XUANTIE_RISCV_RLENB_LEN
+	int "Row Size(bits, actually means xmlenb) of matrix register."
+	default 256
+	depends on RISCV_SOC_CONTEXT_SAVE
+	help
+	  This option sets the mlenb size that matrix extension will be used
+
+
+config CPU_XUANTIE_FPU
+	bool "CPU FPU support"
+	select FPU
+	select FPU_SHARING
+	select CPU_HAS_FPU
+
+config CPU_XUANTIE_DOUBLE_FPU
+	bool "CPU double FPU support"
+	select FPU
+	select FPU_SHARING
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+
+rsource "*/Kconfig"
+
+# endif # SOC_FAMILY_XIAOHUI

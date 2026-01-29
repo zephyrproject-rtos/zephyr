@@ -289,6 +289,10 @@ manifest:
       path: modules/hal/xtensa
       groups:
         - hal
+    - name: hal_xuantie
+      path: modules/hal/xuantie
+      groups:
+        - hal
     - name: hostap
       path: modules/lib/hostap
       revision: 7c5d886f4b1afd6d00192e346268f03f5f44354c

@@ -16,6 +16,10 @@
 #include <zephyr/drivers/interrupt_controller/riscv_imsic.h>
 #endif
 
+#if CONFIG_ARCH_RISCV_HAS_CUSTOM
+#include <riscv_custom.h>
+#endif
+
 volatile struct {
 	arch_cpustart_t fn;
 	void *arg;
