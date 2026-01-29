@@ -1,0 +1,11 @@
+tests:
+  kernel.threads.thread_stack_validate:
+    tags:
+      - kernel
+      - security
+      - userspace
+    ignore_faults: true
+    arch_allow:
+      - arm
+      - arm64
+      - riscv
