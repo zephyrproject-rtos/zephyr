@@ -1,0 +1,39 @@
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+choice TEST_GAP_ROLE
+	prompt "GAP Role"
+	default TEST_GAP_PERIPHERAL
+	help
+	  Select the GAP role for testing
+
+config TEST_GAP_PERIPHERAL
+	bool "GAP Role Peripheral"
+	help
+	  Test GAP role as peripheral device
+
+config TEST_GAP_CENTRAL
+	bool "GAP Role Central"
+	help
+	  Test GAP role as central device
+
+endchoice
+
+config TEST_GAP_CENTRAL_ADDRESS
+	string "Central Device Address"
+	default "00:11:22:33:44:55"
+	help
+	  GAP central device Bluetooth address in format XX:XX:XX:XX:XX:XX
+
+config TEST_GAP_PERIPHERAL_ADDRESS
+	string "Peripheral Device Address"
+	default "AA:BB:CC:DD:EE:FF"
+	help
+	  GAP peripheral device Bluetooth address in format XX:XX:XX:XX:XX:XX
+
+module = TEST_GAP_DISCOVERY
+module-str = test_gap_discovery
+source "subsys/logging/Kconfig.template.log_config"
