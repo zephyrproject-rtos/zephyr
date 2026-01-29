@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright 2025 NXP
+ * SPDX-FileCopyrightText: Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,71 @@
 LOG_MODULE_REGISTER(net_eth_bridge_input, CONFIG_NET_ETHERNET_BRIDGE_LOG_LEVEL);
 
 #include <zephyr/net/ethernet_bridge.h>
+
+#if defined(CONFIG_NET_ETHERNET_BRIDGE_FDB)
+#include <zephyr/net/ethernet_bridge_fdb.h>
+
+struct eth_bridge_fdb_forward_data {
+	struct net_if *bridge;
+	struct net_if *orig_iface;
+	struct net_pkt *pkt;
+	bool match;
+};
+
+static void eth_bridge_fdb_forward_handler(struct eth_bridge_fdb_entry *entry, void *user_data)
+{
+	struct eth_bridge_fdb_forward_data *data = (struct eth_bridge_fdb_forward_data *)user_data;
+	struct net_if *bridge = data->bridge;
+	struct net_if *orig_iface = data->orig_iface;
+	struct net_pkt *pkt = data->pkt;
+	struct net_eth_addr *dst_addr = (struct net_eth_addr *)(net_pkt_lladdr_dst(pkt)->addr);
+	struct net_pkt *out_pkt;
+
+	/* Check if the entry is matched */
+	if (memcmp(&entry->mac, dst_addr, sizeof(struct net_eth_addr)) != 0) {
+		return;
+	}
+
+	if (net_eth_get_bridge(net_if_l2_data(entry->iface)) != bridge) {
+		return;
+	}
+
+	data->match = true;
+
+	/* Forward per FDB entry */
+	if (!net_if_flag_is_set(entry->iface, NET_IF_UP)) {
+		return;
+	}
+
+	out_pkt = net_pkt_clone(pkt, K_NO_WAIT);
+	if (out_pkt == NULL) {
+		NET_ERR("No enough memory for pkt clone");
+		return;
+	}
+
+	NET_DBG("FDB forwarding pkt %p (orig %p): iface %d -> iface %d", out_pkt, pkt,
+		net_if_get_by_iface(orig_iface), net_if_get_by_iface(entry->iface));
+
+	net_pkt_set_l2_bridged(out_pkt, true);
+	net_pkt_set_iface(out_pkt, entry->iface);
+	net_pkt_set_orig_iface(out_pkt, orig_iface);
+	net_if_queue_tx(entry->iface, out_pkt);
+}
+
+static bool eth_bridge_fdb_forward(struct net_if *bridge, struct net_if *orig_iface,
+				   struct net_pkt *pkt)
+{
+	struct eth_bridge_fdb_forward_data data = {0};
+
+	data.bridge = bridge;
+	data.orig_iface = orig_iface;
+	data.pkt = pkt;
+
+	eth_bridge_fdb_foreach(&eth_bridge_fdb_forward_handler, (void *)&data);
+
+	return data.match;
+}
+#endif /* CONFIG_NET_ETHERNET_BRIDGE_FDB */
 
 static int eth_bridge_forward(struct net_if *bridge, struct net_if *orig_iface, struct net_pkt *pkt)
 {
@@ -22,11 +87,11 @@ static int eth_bridge_forward(struct net_if *bridge, struct net_if *orig_iface, 
 	net_pkt_set_iface(out_pkt, bridge);
 	net_pkt_set_orig_iface(out_pkt, orig_iface);
 
-	net_if_queue_tx(bridge, out_pkt);
-
 	NET_DBG("Passing rx pkt %p (orig %p) to bridge %d tx path from %d",
 		out_pkt, pkt, net_if_get_by_iface(bridge),
 		net_if_get_by_iface(orig_iface));
+
+	net_if_queue_tx(bridge, out_pkt);
 
 	return 0;
 }
@@ -39,16 +104,16 @@ static int eth_bridge_handle_locally(struct net_if *bridge, struct net_if *orig_
 	net_pkt_set_iface(pkt, bridge);
 	net_pkt_set_orig_iface(pkt, orig_iface);
 
+	NET_DBG("Passing rx pkt %p to bridge %d rx path from %d",
+		pkt, net_if_get_by_iface(bridge),
+		net_if_get_by_iface(orig_iface));
+
 	if (net_if_l2(bridge)->recv != NULL) {
 		verdict = net_if_l2(bridge)->recv(bridge, pkt);
 		if (verdict == NET_DROP) {
 			return -EIO;
 		}
 	}
-
-	NET_DBG("Passing rx pkt %p to bridge %d rx path from %d",
-		pkt, net_if_get_by_iface(bridge),
-		net_if_get_by_iface(orig_iface));
 
 	return 0;
 }
@@ -74,6 +139,13 @@ enum net_verdict eth_bridge_input_process(struct net_if *iface, struct net_pkt *
 	struct net_eth_addr *dst_addr = (struct net_eth_addr *)(net_pkt_lladdr_dst(pkt)->addr);
 	struct net_eth_addr *bridge_addr =
 		(struct net_eth_addr *)(net_if_get_link_addr(bridge)->addr);
+
+	/* Lookup FDB table to forward */
+#if defined(CONFIG_NET_ETHERNET_BRIDGE_FDB)
+	if (eth_bridge_fdb_forward(bridge, iface, pkt)) {
+		return NET_DROP;
+	}
+#endif
 
 	/* Drop all link-local packets for now. */
 	if (is_link_local_addr(dst_addr)) {

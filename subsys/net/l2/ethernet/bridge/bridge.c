@@ -14,6 +14,9 @@ LOG_MODULE_REGISTER(net_eth_bridge, CONFIG_NET_ETHERNET_BRIDGE_LOG_LEVEL);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/virtual.h>
 #include <zephyr/net/ethernet_bridge.h>
+#if defined(CONFIG_NET_ETHERNET_BRIDGE_FDB)
+#include <zephyr/net/ethernet_bridge_fdb.h>
+#endif
 #include <zephyr/sys/slist.h>
 #include <zephyr/random/random.h>
 
@@ -198,6 +201,11 @@ int eth_bridge_iface_remove(struct net_if *br, struct net_if *iface)
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_NET_ETHERNET_BRIDGE_FDB)
+	if (eth_bridge_fdb_del_iface(iface) != 0) {
+		return -EINVAL;
+	}
+#endif
 	lock_bridge(ctx);
 
 	ARRAY_FOR_EACH(ctx->eth_iface, i) {

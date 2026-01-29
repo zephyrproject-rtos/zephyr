@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2021 BayLibre SAS
+ * SPDX-FileCopyrightText: Copyright (c) 2021 BayLibre SAS
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +9,9 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet_bridge.h>
+#if defined(CONFIG_NET_ETHERNET_BRIDGE_FDB)
+#include <zephyr/net/ethernet_bridge_fdb.h>
+#endif
 #include <zephyr/sys/slist.h>
 
 static int get_idx(const struct shell *sh, char *index_str)
@@ -190,19 +194,143 @@ static int cmd_bridge_show(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_bridge_fdb_add(const struct shell *sh, size_t argc, char *argv[])
+{
+#if defined(CONFIG_NET_ETHERNET_BRIDGE_FDB)
+	struct net_eth_addr mac;
+	struct net_if *iface;
+	int iface_idx;
+	int ret;
+
+	/* Parse MAC address */
+	ret = net_bytes_from_str(mac.addr, sizeof(mac.addr), argv[1]);
+	if (ret != 0) {
+		shell_error(sh, "Wrong mac address format");
+		return -EINVAL;
+	}
+
+	/* Parse interface */
+	iface_idx = shell_strtol(argv[2], 10, &ret);
+	if (ret < 0) {
+		return ret;
+	}
+
+	iface = net_if_get_by_index(iface_idx);
+	if (iface == NULL) {
+		shell_error(sh, "Invalid interface: %d", iface_idx);
+		return -EINVAL;
+	}
+
+	ret = eth_bridge_fdb_add(&mac, iface);
+	if (ret != 0) {
+		return ret;
+	}
+
+	shell_print(sh, "Add FDB entry successfully");
+	return 0;
+#else
+	shell_warn(sh, "Set CONFIG_NET_ETHERNET_BRIDGE_FDB to enable Ethernet bridge FDB support.");
+	return -ENOTSUP;
+#endif /* CONFIG_NET_ETHERNET_BRIDGE_FDB */
+}
+
+static int cmd_bridge_fdb_del(const struct shell *sh, size_t argc, char *argv[])
+{
+#if defined(CONFIG_NET_ETHERNET_BRIDGE_FDB)
+	struct net_eth_addr mac;
+	struct net_if *iface;
+	int iface_idx;
+	int ret;
+
+	/* Parse MAC address */
+	ret = net_bytes_from_str(mac.addr, sizeof(mac.addr), argv[1]);
+	if (ret != 0) {
+		shell_error(sh, "Wrong mac address format");
+		return -EINVAL;
+	}
+
+	/* Parse interface */
+	iface_idx = shell_strtol(argv[2], 10, &ret);
+	if (ret < 0) {
+		return ret;
+	}
+
+	iface = net_if_get_by_index(iface_idx);
+	if (iface == NULL) {
+		shell_error(sh, "Invalid interface: %d", iface_idx);
+		return -EINVAL;
+	}
+
+	ret = eth_bridge_fdb_del(&mac, iface);
+	if (ret != 0) {
+		return ret;
+	}
+
+	shell_print(sh, "Delete FDB entry successfully");
+	return 0;
+#else
+	shell_warn(sh, "Set CONFIG_NET_ETHERNET_BRIDGE_FDB to enable Ethernet bridge FDB support.");
+	return -ENOTSUP;
+#endif /* CONFIG_NET_ETHERNET_BRIDGE_FDB */
+}
+
+#if defined(CONFIG_NET_ETHERNET_BRIDGE_FDB)
+static void cmd_bridge_fdb_handler(struct eth_bridge_fdb_entry *entry, void *user_data)
+{
+	const struct shell *sh = (const struct shell *)user_data;
+
+	shell_print(sh, "%02x:%02x:%02x:%02x:%02x:%02x  %-8d  %s",
+		 entry->mac.addr[0], entry->mac.addr[1],
+		 entry->mac.addr[2], entry->mac.addr[3],
+		 entry->mac.addr[4], entry->mac.addr[5],
+		 net_if_get_by_iface(entry->iface),
+		 (entry->flags & ETHERNET_BRIDGE_FDB_FLAG_STATIC) ? "static" : "dynamic");
+}
+#endif
+
+static int cmd_bridge_fdb_show(const struct shell *sh, size_t argc, char *argv[])
+{
+#if defined(CONFIG_NET_ETHERNET_BRIDGE_FDB)
+	shell_print(sh, "FDB Table:");
+	shell_print(sh, "MAC Address        Interface  Flags");
+	shell_print(sh, "-------------------------------------------");
+
+	eth_bridge_fdb_foreach(&cmd_bridge_fdb_handler, (void *)sh);
+	return 0;
+#else
+	shell_warn(sh, "Set CONFIG_NET_ETHERNET_BRIDGE_FDB to enable Ethernet bridge FDB support.");
+	return -ENOTSUP;
+#endif /* CONFIG_NET_ETHERNET_BRIDGE_FDB */
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(bridge_fdb_commands,
+	SHELL_CMD_ARG(add, NULL,
+		SHELL_HELP("Add fdb table entry", "<mac address> <interface index>"),
+		cmd_bridge_fdb_add, 3, 0),
+	SHELL_CMD_ARG(del, NULL,
+		SHELL_HELP("Delete fdb table entry", "<mac address> <interface index>"),
+		cmd_bridge_fdb_del, 3, 0),
+	SHELL_CMD_ARG(show, NULL,
+		SHELL_HELP("Show fdb table", ""),
+		cmd_bridge_fdb_show, 1, 0),
+	SHELL_SUBCMD_SET_END
+);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(bridge_commands,
 	SHELL_CMD_ARG(addif, NULL,
-		  "Add a network interface to a bridge.\n"
-		  "'bridge addif <bridge_index> <one or more interface index>'",
-		  cmd_bridge_addif, 3, 5),
+		SHELL_HELP("Add a network interface to a bridge.",
+			"<bridge_index> <one or more interface index>"),
+		cmd_bridge_addif, 3, 5),
 	SHELL_CMD_ARG(delif, NULL,
-		  "Delete a network interface from a bridge.\n"
-		  "'bridge delif <bridge_index> <one or more interface index>'",
-		  cmd_bridge_delif, 3, 5),
+		SHELL_HELP("Delete a network interface from a bridge.",
+			"<bridge_index> <one or more interface index>"),
+		cmd_bridge_delif, 3, 5),
 	SHELL_CMD_ARG(show, NULL,
-		  "Show bridge information.\n"
-		  "'bridge show [<bridge_index>]'",
-		  cmd_bridge_show, 1, 1),
+		SHELL_HELP("Show bridge information.", "<bridge_index>"),
+		cmd_bridge_show, 1, 1),
+	SHELL_CMD_ARG(fdb, &bridge_fdb_commands,
+		SHELL_HELP("Manage FDB table. Check usage with -h.", NULL),
+		NULL, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
 
