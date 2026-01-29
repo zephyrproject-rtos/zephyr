@@ -1,0 +1,29 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+ * SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&mikrobus_spi {
+	cs-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
+
+	mcp25625_mikroe_mcp25625_click: mcp25625@0 {
+		compatible = "microchip,mcp2515";
+		status = "okay";
+
+		spi-max-frequency = <10000000>;
+		int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
+		reg = <0x0>;
+		osc-freq = <20000000>;
+
+		can-transceiver {
+			max-bitrate = <1000000>;
+		};
+	};
+};
+
+/ {
+	chosen {
+		zephyr,canbus = &mcp25625_mikroe_mcp25625_click;
+	};
+};
