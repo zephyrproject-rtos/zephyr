@@ -928,7 +928,6 @@
 			clock-names = "clksrc0";
 			clk-source = <0>;
 			number-of-mb = <64>;
-			number-of-mb-fd = <14>;
 			status = "disabled";
 		};
 
@@ -941,7 +940,6 @@
 			clock-names = "clksrc0";
 			clk-source = <0>;
 			number-of-mb = <64>;
-			number-of-mb-fd = <14>;
 			status = "disabled";
 		};
 
@@ -954,7 +952,6 @@
 			clock-names = "clksrc0";
 			clk-source = <0>;
 			number-of-mb = <64>;
-			number-of-mb-fd = <14>;
 			status = "disabled";
 		};
 

@@ -562,7 +562,6 @@
 			interrupt-names = "common";
 			clocks = <&syscon MCUX_FLEXCAN0_CLK>;
 			number-of-mb = <32>;
-			number-of-mb-fd = <7>;
 			status = "disabled";
 		};
 
@@ -573,7 +572,6 @@
 			interrupt-names = "common";
 			clocks = <&syscon MCUX_FLEXCAN1_CLK>;
 			number-of-mb = <32>;
-			number-of-mb-fd = <7>;
 			status = "disabled";
 		};
 

@@ -176,8 +176,8 @@ Controller Area Network (CAN)
   * :kconfig:option:`CONFIG_CAN_XMC4XXX_MAX_FILTERS` for :dtcompatible:`infineon,xmc4xxx-can-node`
 
 * Replaced Kconfig option ``CONFIG_CAN_MAX_MB`` for :dtcompatible:`nxp,flexcan` and
-  :dtcompatible:`nxp,flexcan-fd` with per-instance ``number-of-mb`` and
-  ``number-of-mb-fd`` devicetree properties (:github:`99483`).
+  :dtcompatible:`nxp,flexcan-fd` with per-instance a ``number-of-mb`` devicetree property
+  (:github:`99483`).
 
 * The :dtcompatible:`nxp,flexcan` ``clk-source`` devicetree property, if present, now automatically
   selects between the named input clocks ``clksrc0`` and ``clksrc1`` for use as the CAN protocol

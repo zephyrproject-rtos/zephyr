@@ -1498,10 +1498,11 @@ static DEVICE_API(can, mcux_flexcan_fd_driver_api) = {
 #define FLEXCAN_DRIVER_API(id) mcux_flexcan_driver_api
 #endif /* !CONFIG_CAN_MCUX_FLEXCAN_FD */
 
+/* Each 512-byte RAM region can contain up to 32 x 8-byte MBs or 7 x 64-byte MBs (CAN FD). */
 #define FLEXCAN_INST_NUMBER_OF_MB(id)						\
 	COND_CODE_1(UTIL_AND(IS_ENABLED(CONFIG_CAN_MCUX_FLEXCAN_FD),		\
 			DT_INST_NODE_HAS_COMPAT(id, FLEXCAN_FD_DRV_COMPAT)),	\
-		(DT_INST_PROP(id, number_of_mb_fd)),				\
+		((DT_INST_PROP(id, number_of_mb) * 7U) / 32U),			\
 		(DT_INST_PROP(id, number_of_mb)))
 
 /*

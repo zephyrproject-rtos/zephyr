@@ -756,7 +756,6 @@
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
 			number-of-mb = <128>;
-			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -772,7 +771,6 @@
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
 			number-of-mb = <128>;
-			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -788,7 +786,6 @@
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
 			number-of-mb = <128>;
-			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -804,7 +801,6 @@
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
 			number-of-mb = <128>;
-			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -820,7 +816,6 @@
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
 			number-of-mb = <128>;
-			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -836,7 +831,6 @@
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
 			number-of-mb = <128>;
-			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -852,7 +846,6 @@
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
 			number-of-mb = <128>;
-			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -868,7 +861,6 @@
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
 			number-of-mb = <128>;
-			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -884,7 +876,6 @@
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
 			number-of-mb = <128>;
-			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -900,7 +891,6 @@
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
 			number-of-mb = <128>;
-			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -916,7 +906,6 @@
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
 			number-of-mb = <128>;
-			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -932,7 +921,6 @@
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
 			number-of-mb = <128>;
-			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -948,7 +936,6 @@
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
 			number-of-mb = <128>;
-			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -964,7 +951,6 @@
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
 			number-of-mb = <128>;
-			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -980,7 +966,6 @@
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
 			number-of-mb = <128>;
-			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -996,7 +981,6 @@
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
 			number-of-mb = <128>;
-			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -1012,7 +996,6 @@
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
 			number-of-mb = <128>;
-			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -1028,7 +1011,6 @@
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
 			number-of-mb = <128>;
-			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -1044,7 +1026,6 @@
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
 			number-of-mb = <128>;
-			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -1060,7 +1041,6 @@
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
 			number-of-mb = <128>;
-			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -1076,7 +1056,6 @@
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
 			number-of-mb = <128>;
-			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -1092,7 +1071,6 @@
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
 			number-of-mb = <128>;
-			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -1108,7 +1086,6 @@
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
 			number-of-mb = <128>;
-			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
@@ -1124,7 +1101,6 @@
 					  "ored_64_95_mb", "ored_96_127_mb";
 			clocks = <&clock NXP_S32_P3_CAN_PE_CLK>;
 			number-of-mb = <128>;
-			number-of-mb-fd = <28>;
 			status = "disabled";
 		};
 
