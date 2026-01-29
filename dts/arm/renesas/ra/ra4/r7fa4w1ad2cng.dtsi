@@ -88,6 +88,11 @@
 			reg = <0x40078800 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec8: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 	};
 

@@ -135,6 +135,11 @@
 			reg = <0x40078d00 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec13: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		option_setting_ofs0: option-setting-ofs0@400 {
