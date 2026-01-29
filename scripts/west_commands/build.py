@@ -470,6 +470,7 @@ class Build(Forceable):
             "source_dir": str(source_dir),
             "app": app,
             "board": board,
+            "normalized_board": board.replace('/', '_') if board else None,
         }
         if source_dir.is_relative_to(west_top_dir):
             context['source_dir_workspace'] = str(source_dir.relative_to(west_top_dir))
