@@ -21,6 +21,13 @@ config ADC_SHELL
 	help
 	  Enable ADC Shell for testing.
 
+config ADC_EMUL_SHELL
+	bool "ADC emulator shell"
+	depends on SHELL
+	depends on ADC_EMUL
+	help
+	  Enable ADC emulator (zephyr,adc-emul) shell commands.
+
 # By selecting or not this option particular ADC drivers indicate if it is
 # required to explicitly specify analog inputs when configuring channels or
 # just the channel identifier is sufficient.
