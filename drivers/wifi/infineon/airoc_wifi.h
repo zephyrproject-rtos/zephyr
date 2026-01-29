@@ -6,6 +6,7 @@
  */
 
 #include <whd_buffer_api.h>
+#include <whd_chip_constants.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/net/wifi_mgmt.h>
 
