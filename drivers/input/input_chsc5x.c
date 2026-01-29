@@ -57,6 +57,9 @@ enum {
 #define CHSC5X_OFFSET_XY_COORDINATE 0x05
 #define CHSC5X_OFFSET_TOUCH_EVENT   0x06
 
+#define CHSC5X_EVENT_TYPE_TOUCH     0xFF
+#define CHSC5X_EVENT_TYPE_GESTURE   0xFE /* Not supported */
+
 static void chsc5x_work_handler(struct k_work *work)
 {
 	struct chsc5x_data *data = CONTAINER_OF(work, struct chsc5x_data, work);
@@ -77,6 +80,10 @@ static void chsc5x_work_handler(struct k_work *work)
 				sizeof(read_buffer));
 	if (ret < 0) {
 		LOG_ERR("Could not read data: %i", ret);
+		return;
+	}
+
+	if (read_buffer[CHSC5X_OFFSET_EVENT_TYPE] != CHSC5X_EVENT_TYPE_TOUCH) {
 		return;
 	}
 
