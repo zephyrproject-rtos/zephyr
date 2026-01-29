@@ -76,7 +76,7 @@
 	 * or nxp_rt118x_cm7.dtsi. The base addresses on cm33 core differ
 	 * between non-secure (0x40000000) and secure modes (0x50000000).
 	 */
-	iomuxc: pinctrl@2A10000 {
+	iomuxc: pinctrl@2a10000 {
 		compatible = "nxp,imx-iomuxc";
 		reg = <0x2A10000 0x4000>;
 
@@ -86,7 +86,7 @@
 		};
 	};
 
-	iomuxc_aon: pinctrl@43C0000 {
+	iomuxc_aon: pinctrl@43c0000 {
 		compatible = "nxp,mcux-rt-pinctrl";
 		reg = <0x43C0000 0x4000>;
 		status = "okay";
@@ -168,7 +168,7 @@
 		status = "disabled";
 	};
 
-	lpuart6: serial@25A0000 {
+	lpuart6: serial@25a0000 {
 		compatible = "nxp,lpuart";
 		reg = <0x25A0000 0x4000>;
 		interrupts = <71 0>;
@@ -188,7 +188,7 @@
 		status = "disabled";
 	};
 
-	lpuart8: serial@2DA0000 {
+	lpuart8: serial@2da0000 {
 		compatible = "nxp,lpuart";
 		reg = <0x2DA0000 0x4000>;
 		interrupts = <197 0>;
@@ -198,7 +198,7 @@
 		status = "disabled";
 	};
 
-	lpuart9: serial@2D70000 {
+	lpuart9: serial@2d70000 {
 		compatible = "nxp,lpuart";
 		reg = <0x2D70000 0x4000>;
 		interrupts = <156 0>;
@@ -208,7 +208,7 @@
 		status = "disabled";
 	};
 
-	lpuart10: serial@2D80000 {
+	lpuart10: serial@2d80000 {
 		compatible = "nxp,lpuart";
 		reg = <0x2D80000 0x4000>;
 		interrupts = <157 0>;
@@ -218,7 +218,7 @@
 		status = "disabled";
 	};
 
-	lpuart11: serial@2D90000 {
+	lpuart11: serial@2d90000 {
 		compatible = "nxp,lpuart";
 		reg = <0x2D90000 0x4000>;
 		interrupts = <158 0>;
@@ -1182,7 +1182,7 @@
 		#pwm-cells = <3>;
 	};
 
-	tpm3: pwm@24E0000 {
+	tpm3: pwm@24e0000 {
 		compatible = "nxp,kinetis-tpm";
 		reg = <0x24E0000 0x88>;
 		interrupts = <75 0>;
@@ -1192,7 +1192,7 @@
 		#pwm-cells = <3>;
 	};
 
-	tpm4: pwm@24F0000 {
+	tpm4: pwm@24f0000 {
 		compatible = "nxp,kinetis-tpm";
 		reg = <0x24F0000 0x88>;
 		interrupts = <76 0>;

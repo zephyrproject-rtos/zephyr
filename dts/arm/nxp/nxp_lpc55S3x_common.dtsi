@@ -293,7 +293,7 @@
 		#size-cells = <0>;
 	};
 
-	adc0: adc@A0000 {
+	adc0: adc@a0000 {
 		compatible = "nxp,lpc-lpadc";
 		reg = <0xA0000 0x1000>;
 		interrupts = <22 0>;
@@ -410,7 +410,7 @@
 		status = "disabled";
 	};
 
-	flexpwm0: flexpwm@400C3000 {
+	flexpwm0: flexpwm@400c3000 {
 		compatible = "nxp,flexpwm";
 		reg = <0x400C3000 0x1000>;
 		interrupt-names = "INPUT-CAPTURE", "FAULT", "RELOAD-ERROR";
@@ -465,7 +465,7 @@
 		};
 	};
 
-	flexpwm1: flexpwm@400C5000 {
+	flexpwm1: flexpwm@400c5000 {
 		compatible = "nxp,flexpwm";
 		reg = <0x400C5000 0x1000>;
 		interrupt-names = "INPUT-CAPTURE", "FAULT", "RELOAD-ERROR";

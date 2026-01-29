@@ -145,7 +145,7 @@
 		nxp,kinetis-port = <&porta>;
 	};
 
-	gpio1: gpio@4A000 {
+	gpio1: gpio@4a000 {
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x4A000 0x1000>;
@@ -155,7 +155,7 @@
 		nxp,kinetis-port = <&portb>;
 	};
 
-	gpio2: gpio@4C000 {
+	gpio2: gpio@4c000 {
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x4C000 0x1000>;
@@ -165,7 +165,7 @@
 		nxp,kinetis-port = <&portc>;
 	};
 
-	gpio3: gpio@4E000 {
+	gpio3: gpio@4e000 {
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x4E000 0x1000>;
