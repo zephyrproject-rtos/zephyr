@@ -553,6 +553,10 @@ static int cdc_ecm_set_config(const struct device *dev,
 		       sizeof(data->mac_addr));
 
 		return 0;
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+	} else if (type == ETHERNET_CONFIG_TYPE_PROMISC_MODE) {
+		return 0;
+#endif
 	}
 
 	return -ENOTSUP;
@@ -561,8 +565,14 @@ static int cdc_ecm_set_config(const struct device *dev,
 static enum ethernet_hw_caps cdc_ecm_get_capabilities(const struct device *dev)
 {
 	ARG_UNUSED(dev);
+	enum ethernet_hw_caps caps;
 
-	return ETHERNET_LINK_10BASE;
+	caps = ETHERNET_LINK_10BASE;
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
+	caps |= ETHERNET_PROMISC_MODE;
+#endif
+
+	return caps;
 }
 
 static int cdc_ecm_iface_start(const struct device *dev)
