@@ -169,6 +169,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_MCHP_G1_TCC
 	DEVS_FOR_DT_COMPAT(microchip_tcc_g1_counter)
 #endif
+#ifdef CONFIG_COUNTER_MCHP_RTC_G1
+	DEVS_FOR_DT_COMPAT(microchip_rtc_g1_counter)
+#endif
 };
 
 static const struct device *const period_devs[] = {
@@ -189,7 +192,20 @@ static const struct device *const period_devs[] = {
 #endif
 };
 
+#ifdef CONFIG_COUNTER_MCHP_RTC_G1
+#define GUARD_PERIOD_US 16000
+#else
+#define GUARD_PERIOD_US 200
+#endif
+
+#ifdef CONFIG_COUNTER_MCHP_RTC_G1
+#define PROCESSING_LIMIT_US 20000
+#else
+#define PROCESSING_LIMIT_US 1000
+#endif
+
 /* clang-format on */
+
 typedef void (*counter_test_func_t)(const struct device *dev);
 typedef bool (*counter_capability_func_t)(const struct device *dev);
 
@@ -404,7 +420,7 @@ static void alarm_handler(const struct device *dev, uint8_t chan_id,
 	/* Arbitrary limit for alarm processing - time between hw expiration
 	 * and read-out from counter in the handler.
 	 */
-	static const uint64_t processing_limit_us = 1000;
+	static const uint64_t processing_limit_us = PROCESSING_LIMIT_US;
 	uint32_t now;
 	int err;
 	uint32_t top;
@@ -889,7 +905,7 @@ static void test_late_alarm_instance(const struct device *dev)
 	int err;
 	uint32_t cnt;
 	uint32_t tick_us = (uint32_t)counter_ticks_to_us(dev, 1);
-	uint32_t guard = counter_us_to_ticks(dev, 200);
+	uint32_t guard = counter_us_to_ticks(dev, GUARD_PERIOD_US);
 	struct counter_alarm_cfg alarm_cfg = {
 		.callback = alarm_handler,
 		.flags = COUNTER_ALARM_CFG_ABSOLUTE |
@@ -944,7 +960,7 @@ static void test_late_alarm_error_instance(const struct device *dev)
 {
 	int err;
 	uint32_t tick_us = (uint32_t)counter_ticks_to_us(dev, 1);
-	uint32_t guard = counter_us_to_ticks(dev, 200);
+	uint32_t guard = counter_us_to_ticks(dev, GUARD_PERIOD_US);
 	struct counter_alarm_cfg alarm_cfg = {
 		.callback = alarm_handler,
 		.flags = COUNTER_ALARM_CFG_ABSOLUTE,
