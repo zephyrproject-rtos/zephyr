@@ -2,7 +2,7 @@
 
 /*
  * Copyright (c) 2016 Intel Corporation
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -223,8 +223,8 @@ static void br_tx_buf_destroy(struct net_buf *buf)
 
 /* Pool for outgoing BR/EDR signaling packets, min MTU is 48 */
 NET_BUF_POOL_FIXED_DEFINE(br_tx_pool, CONFIG_BT_L2CAP_TX_BUF_COUNT,
-			  BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_MPS), CONFIG_BT_CONN_TX_USER_DATA_SIZE,
-			  br_tx_buf_destroy);
+			  BT_L2CAP_RT_FC_MAX_SDU_BUF_SIZE(CONFIG_BT_L2CAP_MPS),
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, br_tx_buf_destroy);
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
 /* BR/EDR L2CAP signalling channel specific context */
@@ -979,7 +979,7 @@ static void l2cap_br_chan_send_req(struct bt_l2cap_br_chan *chan,
 }
 
 #if defined(CONFIG_BT_L2CAP_RET_FC)
-static uint16_t get_pdu_len(struct bt_l2cap_br_chan *br_chan, struct net_buf *buf, bool start_seg)
+static uint16_t get_pdu_len(struct bt_l2cap_br_chan *br_chan, struct net_buf *buf)
 {
 	uint16_t pdu_len = buf->len;
 	uint16_t actual_mps;
@@ -988,27 +988,11 @@ static uint16_t get_pdu_len(struct bt_l2cap_br_chan *br_chan, struct net_buf *bu
 		return pdu_len;
 	}
 
-	/* MPS is Max PDU Size.
-	 * PDU of I-frame includes the Control, L2CAP SDU Length (when present),
-	 * Information Payload, and frame check sequence (FCS) (when present) fields.
-	 */
-	actual_mps = br_chan->tx.mps - BT_L2CAP_RT_FC_SDU_HDR_SIZE(br_chan) -
-		     BT_L2CAP_RT_FC_SDU_TAIL_SIZE(br_chan);
-
-	/* To get the max available space,
-	 * assume SDU field is no present.
-	 */
-	actual_mps += BT_L2CAP_RT_FC_SDU_LEN_SIZE;
+	/* MPS is Max PDU Size. */
+	actual_mps = br_chan->tx.mps;
 
 	if (pdu_len <= actual_mps) {
 		return pdu_len;
-	}
-
-	if (start_seg) {
-		/* The max mps length cannot meet the requirement.
-		 * Deduct the SDU length field for Max length could be used for seg.
-		 */
-		return actual_mps - BT_L2CAP_RT_FC_SDU_LEN_SIZE;
 	}
 
 	return actual_mps;
@@ -1428,7 +1412,7 @@ send_i_frame:
 
 			net_buf_simple_save(&pdu->b, &tx_win->sdu_state);
 
-			pdu_len = get_pdu_len(br_chan, pdu, start_seg);
+			pdu_len = get_pdu_len(br_chan, pdu);
 
 			actual_pdu_len = pdu_len + BT_L2CAP_RT_FC_SDU_HDR_SIZE(br_chan) +
 					 BT_L2CAP_RT_FC_SDU_TAIL_SIZE(br_chan);
@@ -2070,6 +2054,41 @@ static void l2cap_br_conf_add_opt(struct net_buf *buf, const struct bt_l2cap_con
 }
 
 #if defined(CONFIG_BT_L2CAP_RET_FC)
+static uint16_t l2cap_br_get_rx_mtu(struct bt_l2cap_br_chan *br_chan)
+{
+	uint16_t rx_mtu;
+
+	rx_mtu = BT_L2CAP_RX_MTU;
+
+	if ((br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_BASIC) && !br_chan->rx.optional) {
+		return rx_mtu;
+	}
+
+	/* Discount the overhead of the I-frame for non-basic modes. */
+	if (IS_ENABLED(CONFIG_BT_L2CAP_ENH_RET) || IS_ENABLED(CONFIG_BT_L2CAP_STREAM)) {
+		/* Due to the extended_control being used if any one side of the L2CAP entities
+		 * supports Extended Window Size option, discount the maximum size of control
+		 * field to avoid the issue that the MTU exceeding the maximum payload of the
+		 * I-frame.
+		 */
+		rx_mtu -= BT_L2CAP_EXT_CONTROL_SIZE;
+	} else {
+		rx_mtu -= BT_L2CAP_STD_CONTROL_SIZE;
+	}
+
+	/* Due to the FCS field being used if any one side of the L2CAP entities does not
+	 * support the FCS option, discount the FCS size to avoid the issue that the MTU
+	 * exceeding the maximum payload of the I-frame.
+	 */
+	rx_mtu -= BT_L2CAP_FCS_SIZE;
+
+	__ASSERT(rx_mtu >= L2CAP_BR_MIN_MTU,
+		 "Invalid MTU (%u < %u). Please increase CONFIG_BT_BUF_ACL_RX_SIZE.", rx_mtu,
+		 L2CAP_BR_MIN_MTU);
+
+	return rx_mtu;
+}
+
 static int l2cap_br_check_chan_config(struct bt_conn *conn, struct bt_l2cap_br_chan *br_chan)
 {
 	struct bt_l2cap_chan *chan_sig;
@@ -2087,8 +2106,8 @@ static int l2cap_br_check_chan_config(struct bt_conn *conn, struct bt_l2cap_br_c
 
 	br_chan_sig = CONTAINER_OF(chan_sig, struct bt_l2cap_br, chan.chan);
 
-	/* Disable segment/reassemble of l2cap rx pdu */
-	br_chan->rx.mtu = MIN(br_chan->rx.mtu, BT_L2CAP_RX_MTU);
+	br_chan->rx.mtu = MIN(br_chan->rx.mtu, l2cap_br_get_rx_mtu(br_chan));
+	/* Disable segment/reassemble of l2cap rx pdu by default. */
 	br_chan->rx.mps = br_chan->rx.mtu;
 
 	br_chan->tx.mps = CONFIG_BT_L2CAP_MPS;
@@ -6039,6 +6058,7 @@ static void bt_l2cap_br_ret_fc_recv(struct bt_l2cap_br_chan *br_chan, struct net
 	uint16_t control;
 	uint32_t ext_control;
 	uint8_t type;
+	uint8_t sar = BT_L2CAP_CONTROL_SAR_UNSEG;
 	struct net_buf_simple_state state;
 
 	hdr = (struct bt_l2cap_hdr *)buf->data;
@@ -6065,26 +6085,44 @@ static void bt_l2cap_br_ret_fc_recv(struct bt_l2cap_br_chan *br_chan, struct net
 	/* Pull L2CAP Header from received frame */
 	net_buf_pull_mem(buf, sizeof(*hdr));
 
-	if (buf->len > br_chan->rx.mps) {
-		LOG_WRN("PDU size > MPS (%u > %u)", buf->len, br_chan->rx.mps);
-		bt_l2cap_chan_disconnect(&br_chan->chan);
-		return;
-	}
-
 	net_buf_simple_save(&buf->b, &state);
 	if ((br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_ERET) ||
 	    (br_chan->rx.mode == BT_L2CAP_BR_LINK_MODE_STREAM)) {
 		if (br_chan->rx.extended_control) {
 			ext_control = net_buf_pull_le32(buf);
 			type = (uint8_t)BT_L2CAP_S_FRAME_EXT_CONTROL_GET_TYPE(ext_control);
+			if (type == BT_L2CAP_CONTROL_TYPE_I) {
+				sar = (uint8_t)BT_L2CAP_I_FRAME_EXT_CONTROL_GET_SAR(ext_control);
+			}
 		} else {
 			control = net_buf_pull_le16(buf);
 			type = (uint8_t)BT_L2CAP_S_FRAME_ENH_CONTROL_GET_TYPE(control);
+			if (type == BT_L2CAP_CONTROL_TYPE_I) {
+				sar = (uint8_t)BT_L2CAP_I_FRAME_ENH_CONTROL_GET_SAR(control);
+			}
 		}
 	} else {
 		control = net_buf_pull_le16(buf);
 		type = (uint8_t)BT_L2CAP_S_FRAME_STD_CONTROL_GET_TYPE(control);
+		if (type == BT_L2CAP_CONTROL_TYPE_I) {
+			sar = (uint8_t)BT_L2CAP_I_FRAME_STD_CONTROL_GET_SAR(control);
+		}
 	}
+
+	if (sar == BT_L2CAP_CONTROL_SAR_START) {
+		__maybe_unused uint16_t sdu_length;
+
+		sdu_length = net_buf_pull_le16(buf);
+
+		LOG_DBG("New segment i-frame arrived (SDU Len %u)", sdu_length);
+	}
+
+	if (buf->len > br_chan->rx.mps) {
+		LOG_WRN("PDU size > MPS (%u > %u)", buf->len, br_chan->rx.mps);
+		bt_l2cap_chan_disconnect(&br_chan->chan);
+		return;
+	}
+
 	net_buf_simple_restore(&buf->b, &state);
 
 	if (type == BT_L2CAP_CONTROL_TYPE_S) {
