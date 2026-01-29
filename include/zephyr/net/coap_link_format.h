@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Intel Corporation
+ * Copyright (c) 2026 Siemens AG
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,6 +30,12 @@ extern "C" {
  */
 #define COAP_WELL_KNOWN_CORE_PATH \
 	((const char * const[]) { ".well-known", "core", NULL })
+
+/**
+ * EDHOC uses ".well-known/edhoc" as CoAP URI (RFC9528, Section 10.7)
+ */
+#define COAP_WELL_KNOWN_EDHOC_PATH \
+	((const char * const[]) { ".well-known", "edhoc", NULL })
 
 /**
  * @brief Build a CoAP response for a .well-known/core CoAP request.

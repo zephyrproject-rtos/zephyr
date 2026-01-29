@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018 Intel Corporation
  * Copyright (c) 2021 Nordic Semiconductor
+ * Copyright (c) 2026 Siemens AG
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -51,6 +52,7 @@ enum coap_option_num {
 	COAP_OPTION_OBSERVE = 6,         /**< Observe (RFC 7641) */
 	COAP_OPTION_URI_PORT = 7,        /**< Uri-Port */
 	COAP_OPTION_LOCATION_PATH = 8,   /**< Location-Path */
+	COAP_OPTION_OSCORE = 9,          /**< OSCORE (RFC 8613) */
 	COAP_OPTION_URI_PATH = 11,       /**< Uri-Path */
 	COAP_OPTION_CONTENT_FORMAT = 12, /**< Content-Format */
 	COAP_OPTION_MAX_AGE = 14,        /**< Max-Age */
@@ -221,7 +223,8 @@ enum coap_content_format {
 	COAP_CONTENT_FORMAT_APP_JSON = 50,              /**< application/json */
 	COAP_CONTENT_FORMAT_APP_JSON_PATCH_JSON = 51,   /**< application/json-patch+json */
 	COAP_CONTENT_FORMAT_APP_MERGE_PATCH_JSON = 52,  /**< application/merge-patch+json */
-	COAP_CONTENT_FORMAT_APP_CBOR = 60               /**< application/cbor */
+	COAP_CONTENT_FORMAT_APP_CBOR = 60,              /**< application/cbor */
+	COAP_CONTENT_FORMAT_APP_EDHOC_CBOR_SEQ = 64,    /**< application/edhoc+cbor-seq */
 };
 
 /**
@@ -369,6 +372,8 @@ struct coap_transmission_parameters {
 	uint16_t coap_backoff_percent;
 	/** Maximum number of retransmissions. */
 	uint8_t max_retransmission;
+	/** Indicates if the transaction is encrypted with OSCORE */
+	bool is_oscore;
 };
 
 /**
