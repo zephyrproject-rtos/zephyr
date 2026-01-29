@@ -168,7 +168,9 @@ static int clock_mspm0_init(const struct device *dev)
 
 #if MSPM0_SYSPLL_ENABLED
 #if DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_NODELABEL(syspll))
-	clock_mspm0_cfg_syspll.sysPLLMCLK = DL_SYSCTL_SYSPLL_MCLK_CLK0;
+	if (clock_mspm0_cfg_syspll.enableCLK0 == DL_SYSCTL_SYSPLL_CLK0_ENABLE) {
+		clock_mspm0_cfg_syspll.sysPLLMCLK = DL_SYSCTL_SYSPLL_MCLK_CLK0;
+	}
 #endif
 #if DT_SAME_NODE(DT_SYSPLL_CLOCKS_CTRL, DT_NODELABEL(hfclk))
 	clock_mspm0_cfg_syspll.sysPLLRef = DL_SYSCTL_SYSPLL_REF_HFCLK;
