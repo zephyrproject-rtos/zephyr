@@ -1,0 +1,17 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: frdm_imxrt1186/mimxrt1186/cm7
+name: FRDM-iMXRT1186 CM7
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 256
+flash: 256
+supported:
+  - gpio
+  - uart
+vendor: nxp
