@@ -635,6 +635,7 @@ ssize_t z_vrfy_zsock_recvmsg(int sock, struct net_msghdr *msg, int flags)
 			K_OOPS(k_usermode_to_copy(msg->msg_name,
 						  msg_copy.msg_name,
 						  msg_copy.msg_namelen));
+			msg->msg_namelen = msg_copy.msg_namelen;
 		}
 
 		if (msg->msg_controllen > 0 &&
