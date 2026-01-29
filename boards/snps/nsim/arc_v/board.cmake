@@ -14,3 +14,6 @@ board_runner_args(arc-nsim "--props=${NSIM_PROPS}")
 board_finalize_runner_args(arc-nsim)
 include(${ZEPHYR_BASE}/boards/common/mdb-nsim.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/mdb-hw.board.cmake)
+
+board_runner_args(lldbac "--nsim-props=${NSIM_PROPS}")
+board_finalize_runner_args(lldbac)
