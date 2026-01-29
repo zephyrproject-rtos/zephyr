@@ -140,6 +140,11 @@ void openthread_border_router_post_message(struct otbr_msg_ctx *msg_context);
  */
 bool openthread_border_router_check_packet_forwarding_rules(struct net_pkt *pkt);
 
+/**
+ * @brief Returns if OpenThread Border Router has IPV4 connectivity established.
+ */
+bool openthread_border_router_has_ipv4_connectivity(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -489,6 +489,14 @@ config OPENTHREAD_ZEPHYR_BORDER_ROUTER_MDNS_BUFFER_THRESHOLD
 	  number of available OT message buffers will drop under a certain
 	  threshold if the mDNS packet is accepted and processed.
 
+config OPENTHREAD_ZEPHYR_BORDER_ROUTER_IPV4
+	bool "Border Router has IPV4 capabilities"
+	default y
+	select NET_DHCPV4
+	depends on NET_IPV4 && NET_UDP
+	help
+	  This configuration enables IPV4 communication.
+
 config OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR
 	bool "Border Router NAT64 translator"
 	default y
@@ -496,7 +504,7 @@ config OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR
 	select OPENTHREAD_NAT64_BORDER_ROUTING
 	select NET_PKT_FILTER
 	select NET_PKT_FILTER_IPV4_HOOK
-	depends on NET_IPV4
+	depends on OPENTHREAD_ZEPHYR_BORDER_ROUTER_IPV4
 	help
 	  This configuration enables NAT64 translator from OpenThread.
 
