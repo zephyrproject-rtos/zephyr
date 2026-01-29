@@ -178,7 +178,15 @@ static int siwx91x_gpdma_desc_config(struct siwx19x_gpdma_data *data,
 			 * early termination of the DMA Rx won't hurt.
 			 */
 			if (config->channel_direction == PERIPHERAL_TO_MEMORY) {
+				/* No actual RX data is required for this SPI transfer. Avoid
+				 * touching the SPI RX FIFO and instead perform a dummy single-byte
+				 * DMA transfer using the DMA memory-fill feature. This safely
+				 * drains the peripheral side without storing RX data, ensuring
+				 * the transfer completes cleanly.
+				 */
 				desc->chnlCtrlConfig.transSize = 1;
+				desc->miscChnlCtrlConfig.memoryFillEn = 1;
+				desc->miscChnlCtrlConfig.memoryOneFill = 0;
 				if (block->next_block &&
 				    block->next_block->dest_addr_adj != DMA_ADDR_ADJ_NO_CHANGE) {
 					/* ... however, it is not possible to receive a real buffer
