@@ -29,6 +29,11 @@ static void clock_off(void)
 {
 	struct onoff_manager *mgr = get_mgr();
 
+#if defined(CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC)
+	while (z_nrf_clock_calibration_is_in_progress()) {
+		/* empty */
+	}
+#endif
 	do {
 		(void)onoff_release(mgr);
 
