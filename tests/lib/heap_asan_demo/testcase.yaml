@@ -1,0 +1,6 @@
+tests:
+  libraries.heap.asan_demo:
+    tags: heap asan
+    platform_allow: native_sim
+    integration_platforms:
+      - native_sim
