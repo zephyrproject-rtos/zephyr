@@ -29,14 +29,20 @@
 
 	mcos {
 		mco1: mco1 {
+			#clock-cells = <2>;
 			compatible = "st,stm32-clock-mco";
-			clock-names = "clksel";
+			clocks = <&rcc MCO1CFGR_REG BIT(12)>,
+				 <&rcc STM32_SRC_HSI MCO1_SEL(MCO1_SEL_HSI)>;
+			clock-names = "clken", "clksel";
 			status = "disabled";
 		};
 
 		mco2: mco2 {
+			#clock-cells = <2>;
 			compatible = "st,stm32-clock-mco";
-			clock-names = "clksel";
+			clocks = <&rcc MCO2CFGR_REG BIT(12)>,
+				 <&rcc STM32_SRC_HSI MCO2_SEL(MCO2_SEL_HSI)>;
+			clock-names = "clken", "clksel";
 			status = "disabled";
 		};
 	};
