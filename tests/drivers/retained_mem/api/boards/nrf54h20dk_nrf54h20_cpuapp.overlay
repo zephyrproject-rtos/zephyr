@@ -15,8 +15,3 @@
 		retainedmemtestdevice = &retainedmem0;
 	};
 };
-
-&cpuapp_ram0 {
-	reg = <0x22000000 DT_SIZE_K(16)>;
-	ranges = <0x0 0x22000000 0x4000>;
-};

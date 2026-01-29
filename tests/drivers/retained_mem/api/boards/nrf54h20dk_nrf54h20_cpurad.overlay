@@ -15,8 +15,3 @@
 		retainedmemtestdevice = &retainedmem0;
 	};
 };
-
-&cpurad_ram0 {
-	reg = <0x23000000 DT_SIZE_K(176)>;
-	ranges = <0x0 0x23000000 0x2c000>;
-};
