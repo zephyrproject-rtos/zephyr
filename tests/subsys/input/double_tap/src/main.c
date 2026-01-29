@@ -75,4 +75,43 @@ ZTEST(double_tap, test_double_tap_test)
 	zassert_equal(last_events[0].value, 0);
 }
 
+ZTEST(double_tap, test_single_tap_timeout)
+{
+	/* Test that single tap timeout resets first_tap via double_tap_deferred */
+	event_count = 0;
+
+	/* Single tap - should start double tap sequence */
+	input_report_key(fake_dev, INPUT_KEY_0, 1, true, K_FOREVER);
+	k_sleep(K_MSEC(50));
+	input_report_key(fake_dev, INPUT_KEY_0, 0, true, K_FOREVER);
+	zassert_equal(event_count, 0, "No event should be generated for single tap");
+
+	/* Wait for timeout to expire (double_tap_delay_ms is 300ms) */
+	/* Add extra buffer to ensure work handler executes */
+	k_sleep(K_MSEC(350));
+	zassert_equal(event_count, 0, "No event should be generated after timeout");
+
+	/* Another single tap - should start a new sequence (not trigger double tap) */
+	input_report_key(fake_dev, INPUT_KEY_0, 1, true, K_FOREVER);
+	k_sleep(K_MSEC(50));
+	input_report_key(fake_dev, INPUT_KEY_0, 0, true, K_FOREVER);
+	zassert_equal(event_count, 0, "No event should be generated for single tap");
+
+	/* Now perform double tap - should work normally */
+	input_report_key(fake_dev, INPUT_KEY_0, 1, true, K_FOREVER);
+	k_sleep(K_MSEC(50));
+	input_report_key(fake_dev, INPUT_KEY_0, 0, true, K_FOREVER);
+	k_sleep(K_MSEC(50));
+	input_report_key(fake_dev, INPUT_KEY_0, 1, true, K_FOREVER);
+	k_sleep(K_MSEC(50));
+	input_report_key(fake_dev, INPUT_KEY_0, 0, true, K_FOREVER);
+	zassert_equal(event_count, 2, "Double tap should be detected after timeout reset");
+	zassert_equal(last_events[1].type, INPUT_EV_KEY);
+	zassert_equal(last_events[1].code, INPUT_KEY_X);
+	zassert_equal(last_events[1].value, 1);
+	zassert_equal(last_events[0].type, INPUT_EV_KEY);
+	zassert_equal(last_events[0].code, INPUT_KEY_X);
+	zassert_equal(last_events[0].value, 0);
+}
+
 ZTEST_SUITE(double_tap, NULL, NULL, NULL, NULL, NULL);
