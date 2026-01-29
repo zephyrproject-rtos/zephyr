@@ -1,0 +1,30 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config NXP_XBAR
+	bool "NXP Crossbar Switch (XBAR/XBARA/XBARB) driver"
+	default y
+	depends on DT_HAS_NXP_XBAR_ENABLED
+	help
+	  Enable the NXP Crossbar Switch (XBAR/XBARA/XBARB) driver.
+	  The XBAR allows routing of signals between peripherals.
+
+if NXP_XBAR
+
+config NXP_XBAR_INIT_PRIORITY
+	int "NXP XBAR driver initialization priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  Initialization priority for the XBAR driver.
+
+config NXP_XBAR_WRITE_PROTECT
+	bool "Write protection support"
+	help
+	  Enable support for write-protecting XBAR SEL and CTRL registers.
+	  This feature is only available on certain SoCs with 32-bit XBAR registers.
+
+module = NXP_XBAR
+module-str = nxp_xbar
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # NXP_XBAR
