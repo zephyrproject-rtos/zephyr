@@ -32,6 +32,10 @@ $defs:
           type: string
         variants:
           $ref: "#/$defs/variantSchema" # Recursive definition
+        include-parent-kconfig:
+          type: boolean
+        include-parent-dts:
+          type: boolean
       required:
         - name
       additionalProperties: false
