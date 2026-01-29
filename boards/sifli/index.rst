@@ -1,7 +1,7 @@
 .. _boards-sifli:
 
-SiFli Technologies(Nanjing) Co., Ltd
-####################################
+SiFli Technologies
+##################
 
 .. toctree::
    :maxdepth: 1

@@ -633,7 +633,7 @@ si-en	Si-En Technology Ltd.
 si-linux	Silicon Linux Corporation
 siemens	Siemens AG
 sifive	SiFive, Inc.
-sifli	SiFli Technologies(Nanjing) Co., Ltd
+sifli	SiFli Technologies
 sigma	Sigma Designs, Inc.
 sii	Seiko Instruments, Inc.
 sil	Silicon Image
