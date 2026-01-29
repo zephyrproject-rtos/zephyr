@@ -20,6 +20,23 @@ properties:
   reg:
     required: true
 
+  port-id:
+    type: int
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    description: |
+      - 0 #porta
+      - 1 #portb
+      - 2 #portc
+      - 3 #portd
+      The port id is an identification number used for
+      identifying which port is the enabled port from the driver file.
+      It is mainly used by interrupt controller driver. It is not to be
+      changed as part of user configuration.
+
   "#gpio-cells":
     const: 2
 
