@@ -166,13 +166,12 @@ static int event_register(union nrf_sys_evt_us us, bool force, bool abs)
 
 	LOCKED() {
 		if ((CONFIG_NRF_SYS_EVENT_GRTC_CHAN_CNT > 0) &&
-		    ((abs == false) && ((us.rel >= NVM_WAKEUP_US) || !NVM_MANUAL_SUPPORT)) &&
+		    ((abs == true) || ((us.rel >= NVM_WAKEUP_US) || !NVM_MANUAL_SUPPORT)) &&
 		    (chan_mask != 0)) {
 			rv = __builtin_ctz(chan_mask);
 			chan_mask &= ~BIT(rv);
 			if (abs) {
-				nrfy_grtc_sys_counter_cc_set(NRF_GRTC, rv,
-							us.abs - NVM_WAKEUP_US);
+				nrfy_grtc_sys_counter_cc_set(NRF_GRTC, rv, us.abs - NVM_WAKEUP_US);
 			} else {
 				uint32_t val = (NVM_MANUAL_SUPPORT || (us.rel >= NVM_WAKEUP_US)) ?
 					(us.rel - NVM_WAKEUP_US) : 1;
