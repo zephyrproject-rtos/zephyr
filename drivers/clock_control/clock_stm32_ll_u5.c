@@ -823,9 +823,10 @@ static void set_up_fixed_clock_sources(void)
 
 		LL_RCC_MSIS_SetRange(STM32_MSIS_RANGE << RCC_ICSCR1_MSISRANGE_Pos);
 
+		BUILD_ASSERT(IS_ENABLED(STM32_LSE_ENABLED) || !IS_ENABLED(STM32_MSIS_PLL_MODE),
+			     "MSIS Hardware auto calibration needs LSE clock activation");
+
 		if (IS_ENABLED(STM32_MSIS_PLL_MODE)) {
-			__ASSERT(STM32_LSE_ENABLED,
-				"MSIS Hardware auto calibration needs LSE clock activation");
 			/* Enable MSI hardware auto calibration */
 			LL_RCC_SetMSIPLLMode(LL_RCC_PLLMODE_MSIS);
 			LL_RCC_MSI_EnablePLLMode();
@@ -845,9 +846,10 @@ static void set_up_fixed_clock_sources(void)
 
 		LL_RCC_MSIK_SetRange(STM32_MSIK_RANGE << RCC_ICSCR1_MSIKRANGE_Pos);
 
+		BUILD_ASSERT(IS_ENABLED(STM32_LSE_ENABLED) || !IS_ENABLED(STM32_MSIK_PLL_MODE),
+			     "MSIK Hardware auto calibration needs LSE clock activation");
+
 		if (IS_ENABLED(STM32_MSIK_PLL_MODE)) {
-			__ASSERT(STM32_LSE_ENABLED,
-				"MSIK Hardware auto calibration needs LSE clock activation");
 			/* Enable MSI hardware auto calibration */
 			LL_RCC_SetMSIPLLMode(LL_RCC_PLLMODE_MSIK);
 			LL_RCC_MSI_EnablePLLMode();

@@ -542,7 +542,6 @@
 #define STM32_LSE_DRIVING	DT_PROP(DT_NODELABEL(clk_lse), driving_capability)
 #define STM32_LSE_BYPASS	DT_PROP(DT_NODELABEL(clk_lse), lse_bypass)
 #else
-#define STM32_LSE_ENABLED	0
 #define STM32_LSE_FREQ		0
 #define STM32_LSE_DRIVING	0
 #define STM32_LSE_BYPASS	0
@@ -559,7 +558,7 @@
 #define STM32_MSI_PLL_MODE	DT_PROP(DT_NODELABEL(clk_msi), msi_pll_mode)
 #endif
 
-#if defined(CONFIG_SOC_SERIES_STM32L4X) && STM32_MSI_PLL_MODE && !STM32_LSE_ENABLED
+#if defined(CONFIG_SOC_SERIES_STM32L4X) && STM32_MSI_PLL_MODE && !defined(STM32_LSE_ENABLED)
 #error "On STM32L4 series, MSI PLL mode requires LSE to be enabled"
 #endif
 
@@ -569,7 +568,6 @@
 #define STM32_MSIS_RANGE	DT_PROP(DT_NODELABEL(clk_msis), msi_range)
 #define STM32_MSIS_PLL_MODE	DT_PROP(DT_NODELABEL(clk_msis), msi_pll_mode)
 #else
-#define STM32_MSIS_ENABLED	0
 #define STM32_MSIS_RANGE	0
 #define STM32_MSIS_PLL_MODE	0
 #endif
@@ -580,7 +578,6 @@
 #define STM32_MSIK_RANGE	DT_PROP(DT_NODELABEL(clk_msik), msi_range)
 #define STM32_MSIK_PLL_MODE	DT_PROP(DT_NODELABEL(clk_msik), msi_pll_mode)
 #else
-#define STM32_MSIK_ENABLED	0
 #define STM32_MSIK_RANGE	0
 #define STM32_MSIK_PLL_MODE	0
 #endif
