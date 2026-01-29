@@ -35,7 +35,7 @@ Here is an example for building the :zephyr:code-sample:`hello_world` sample app
 Flashing
 ========
 
-The KIT_XMC72_EVK includes an onboard programmer/debugger (`KitProg3`_) to provide debugging, flash programming, and serial communication over USB. Flash and debug commands use OpenOCD and require a custom Infineon OpenOCD version, that supports KitProg3, to be installed.
+The CY8CPROTO-041TP includes an onboard programmer/debugger (`KitProg3`_) to provide debugging, flash programming, and serial communication over USB. Flash and debug commands use OpenOCD and require a custom Infineon OpenOCD version, that supports KitProg3, to be installed.
 
 Infineon OpenOCD Installation
 =============================
