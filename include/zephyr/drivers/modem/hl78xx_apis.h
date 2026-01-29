@@ -130,6 +130,58 @@ enum nmea_output_port {
 	NMEA_OUTPUT_CMUX_DLC4 = 0x08
 };
 
+#if defined(CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE) || defined(__DOXYGEN__)
+/**
+ * @brief A-GNSS assistance data validity mode
+ *
+ * Mode value returned by AT+GNSSAD? read command or used by write command
+ */
+enum hl78xx_agnss_mode {
+	/** Data is not valid (read) / Delete data (write) */
+	HL78XX_AGNSS_MODE_INVALID = 0,
+	/** Data is valid (read) / Download data (write) */
+	HL78XX_AGNSS_MODE_VALID = 1,
+};
+
+/**
+ * @brief Number of days of predicted assistance data to download (write command)
+ * or number of days before it expires (read command)
+ *
+ * Only these values are accepted by the AT+GNSSAD=1,\<days\> command
+ */
+enum hl78xx_agnss_days {
+	/** Request 1 day of A-GNSS assistance data */
+	HL78XX_AGNSS_DAYS_1 = 1,
+	/** Request 2 days of A-GNSS assistance data */
+	HL78XX_AGNSS_DAYS_2 = 2,
+	/** Request 3 days of A-GNSS assistance data */
+	HL78XX_AGNSS_DAYS_3 = 3,
+	/** Request 7 days of A-GNSS assistance data */
+	HL78XX_AGNSS_DAYS_7 = 7,
+	/** Request 14 days of A-GNSS assistance data */
+	HL78XX_AGNSS_DAYS_14 = 14,
+	/** Request 28 days of A-GNSS assistance data */
+	HL78XX_AGNSS_DAYS_28 = 28,
+};
+
+/**
+ * @brief A-GNSS assistance data status structure
+ *
+ * Contains the parsed response from AT+GNSSAD? command.
+ * When mode is VALID, the expiry fields indicate time remaining.
+ */
+struct hl78xx_agnss_status {
+	/** Validity mode: 0 = invalid/empty, 1 = valid */
+	enum hl78xx_agnss_mode mode;
+	/** Days remaining before expiry (1-28), valid only when mode=1 */
+	uint8_t days;
+	/** Hours remaining before expiry (0-23), valid only when mode=1 */
+	uint8_t hours;
+	/** Minutes remaining before expiry (0-59), valid only when mode=1 */
+	uint8_t minutes;
+};
+#endif /* CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE */
+
 /** Cellular network structure */
 struct hl78xx_network {
 	/** Cellular access technology */
@@ -791,6 +843,45 @@ int hl78xx_gnss_set_search_timeout(const struct device *dev, uint32_t timeout_ms
  * @return 0 on success, -EBUSY if another script is running, other negative errno on failure
  */
 int hl78xx_gnss_get_latest_known_fix(const struct device *dev);
+
+#ifdef CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE
+/**
+ * @brief Get A-GNSS assistance data status
+ *
+ * Queries the modem for A-GNSS assistance data validity and expiry
+ * using AT+GNSSAD? command.
+ *
+ * @param dev Pointer to the GNSS device
+ * @param status Pointer to structure to receive the status
+ * @return 0 on success, negative errno on failure
+ */
+int hl78xx_gnss_assist_data_get_status(const struct device *dev,
+				       struct hl78xx_agnss_status *status);
+
+/**
+ * @brief Download A-GNSS assistance data
+ *
+ * Initiates download of predicted assistance data from the network
+ * using AT+GNSSAD=1,\<days\> command. Requires active network connection.
+ *
+ * @param dev Pointer to the GNSS device
+ * @param days Number of days of prediction data to download.
+ *             Valid values: 1, 2, 3, 7, 14, 28
+ * @return 0 on success, -EINVAL for invalid days value, negative errno on failure
+ */
+int hl78xx_gnss_assist_data_download(const struct device *dev, enum hl78xx_agnss_days days);
+
+/**
+ * @brief Delete A-GNSS assistance data
+ *
+ * Deletes any stored assistance data from the modem
+ * using AT+GNSSAD=0 command.
+ *
+ * @param dev Pointer to the GNSS device
+ * @return 0 on success, negative errno on failure
+ */
+int hl78xx_gnss_assist_data_delete(const struct device *dev);
+#endif /* CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE */
 
 #endif /* CONFIG_HL78XX_GNSS */
 

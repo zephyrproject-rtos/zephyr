@@ -100,6 +100,11 @@ struct hl78xx_gnss_data {
 	/* Enter GNSS mode pending flag - set when GNSS mode is requested before modem is ready */
 	bool gnss_mode_enter_pending;
 
+#ifdef CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE
+	/* A-GNSS assistance data status - updated by AT+GNSSAD? queries */
+	struct hl78xx_agnss_status agnss_status;
+#endif /* CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE */
+
 	/* Lock for thread-safe API access */
 	struct k_sem lock;
 	k_timepoint_t pm_deadline;

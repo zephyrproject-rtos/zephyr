@@ -703,6 +703,76 @@ void hl78xx_on_gnssconf_enabledfilter(struct modem_chat *chat, char **argv, uint
 	LOG_DBG("Static filter: %d", static_filter);
 }
 
+#ifdef CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE
+/**
+ * @brief Handler for +GNSSAD response (A-GNSS assistance data status)
+ *
+ * Format: +GNSSAD: <mode>[,<days>,<hours>,<minutes>]
+ *
+ * <mode>:
+ *   0 = Data is not valid / empty
+ *   1 = Data is valid
+ *
+ * When mode=1, additional fields indicate time until expiry:
+ *   <days>    = Days remaining (1-28)
+ *   <hours>   = Hours remaining (0-23)
+ *   <minutes> = Minutes remaining (0-59)
+ */
+void hl78xx_on_gnssad(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
+{
+	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
+	struct gnss_nmea0183_match_data *data_nmea;
+	struct hl78xx_gnss_data *data_gnss;
+	int mode;
+
+	if (data == NULL || data->gnss_dev == NULL) {
+		LOG_ERR("GNSS device not available");
+		return;
+	}
+
+	data_nmea = data->gnss_dev->data;
+	if (data_nmea == NULL || data_nmea->gnss == NULL) {
+		LOG_ERR("GNSS NMEA data not available");
+		return;
+	}
+
+	data_gnss = data_nmea->gnss->data;
+	if (data_gnss == NULL) {
+		LOG_ERR("GNSS data structure not available");
+		return;
+	}
+
+	if (argc < 2) {
+		LOG_WRN("GNSSAD: insufficient arguments (%d)", argc);
+		return;
+	}
+
+	/* Parse mode (validity indicator) */
+	mode = ATOI(argv[1], 0, "gnssad_mode");
+	data_gnss->agnss_status.mode = (enum hl78xx_agnss_mode)mode;
+
+	if (mode == HL78XX_AGNSS_MODE_VALID && argc >= 5) {
+		/* Parse expiry time fields */
+		data_gnss->agnss_status.days = (uint8_t)ATOI(argv[2], 0, "gnssad_days");
+		data_gnss->agnss_status.hours = (uint8_t)ATOI(argv[3], 0, "gnssad_hours");
+		data_gnss->agnss_status.minutes = (uint8_t)ATOI(argv[4], 0, "gnssad_minutes");
+
+		LOG_INF("A-GNSS data valid, expires in: %d days, %d hours, %d minutes",
+			data_gnss->agnss_status.days, data_gnss->agnss_status.hours,
+			data_gnss->agnss_status.minutes);
+	} else if (mode == HL78XX_AGNSS_MODE_INVALID) {
+		/* Data not valid - clear expiry fields */
+		data_gnss->agnss_status.days = 0;
+		data_gnss->agnss_status.hours = 0;
+		data_gnss->agnss_status.minutes = 0;
+
+		LOG_INF("A-GNSS data not valid or empty");
+	} else {
+		LOG_WRN("GNSSAD: unexpected mode=%d with argc=%d", mode, argc);
+	}
+}
+#endif /* CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE */
+
 /**
  * @brief Handler for +GNSSEV URC (GNSS event notifications)
  *
