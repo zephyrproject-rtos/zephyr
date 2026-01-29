@@ -1,4 +1,4 @@
-.. _circuitdojo_feather_nrf9160:
+.. zephyr:board:: circuitdojo_feather
 
 nRF9160 Feather
 ###############

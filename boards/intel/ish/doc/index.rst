@@ -1,4 +1,4 @@
-.. _intel_ish:
+.. zephyr:board:: intel_ish_5_4_1
 
 Intel Integrated Sensor Hub (ISH)
 #################################

@@ -1,4 +1,4 @@
-.. _sparkfun_thing_plus_nrf9160:
+.. zephyr:board:: sparkfun_thing_plus
 
 nRF9160 Thing Plus
 ##################

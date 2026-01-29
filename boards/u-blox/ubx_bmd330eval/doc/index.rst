@@ -1,4 +1,4 @@
-.. _ubx_bmd330eval_nrf52810:
+.. zephyr:board:: ubx_bmd330eval
 
 u-blox EVK-BMD-330: BMD-330-EVAL
 ################################

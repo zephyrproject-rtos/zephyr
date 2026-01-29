@@ -1,4 +1,4 @@
-.. _phyboard_nash:
+.. zephyr:board:: phyboard_nash
 
 phyBOARD-Nash i.MX93
 ####################

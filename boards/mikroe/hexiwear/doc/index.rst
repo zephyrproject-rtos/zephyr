@@ -1,4 +1,4 @@
-.. _hexiwear:
+.. zephyr:board:: hexiwear
 
 Hexiwear
 ########

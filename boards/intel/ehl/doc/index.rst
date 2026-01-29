@@ -1,4 +1,4 @@
-.. _intel_ehl_crb:
+.. zephyr:board:: intel_ehl_crb
 
 Elkhart Lake CRB
 ################

@@ -1,4 +1,4 @@
-.. _zybo:
+.. zephyr:board:: zybo
 
 Digilent Zybo
 #############

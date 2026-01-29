@@ -1,4 +1,4 @@
-.. _intel_rpl_crb:
+.. zephyr:board:: intel_rpl_p_crb
 
 Raptor Lake CRB
 ###############

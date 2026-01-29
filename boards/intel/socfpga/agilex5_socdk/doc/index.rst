@@ -1,4 +1,4 @@
-.. _intel_socfpga_agilex5_socdk:
+.. zephyr:board:: intel_socfpga_agilex5_socdk
 
 Intel® Agilex™ 5 SoC FPGA Development Kit
 #########################################

@@ -1,4 +1,4 @@
-.. _ubx_bmd345eval_nrf52840:
+.. zephyr:board:: ubx_bmd345eval
 
 u-blox EVK-BMD-34/38: BMD-345-EVAL
 ##################################

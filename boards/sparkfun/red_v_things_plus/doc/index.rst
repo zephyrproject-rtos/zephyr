@@ -1,4 +1,4 @@
-.. _sparkfun_red_v_things_plus:
+.. zephyr:board:: sparkfun_red_v_things_plus
 
 SparkFun RED-V Things Plus
 ##########################

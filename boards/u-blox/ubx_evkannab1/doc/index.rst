@@ -1,4 +1,4 @@
-.. _ubx_evkannab1_nrf52832:
+.. zephyr:board:: ubx_evkannab1
 
 u-blox EVK-ANNA-B11x
 ####################

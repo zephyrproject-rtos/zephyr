@@ -1,4 +1,4 @@
-.. _ubx_bmd380eval_nrf52840:
+.. zephyr:board:: ubx_bmd380eval
 
 u-blox EVK-BMD-34/48: BMD-380-EVAL
 ##################################

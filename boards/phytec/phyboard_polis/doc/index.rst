@@ -1,4 +1,4 @@
-.. _phyboard_polis:
+.. zephyr:board:: phyboard_polis
 
 phyBOARD-Polis i.MX8M Mini
 ##########################

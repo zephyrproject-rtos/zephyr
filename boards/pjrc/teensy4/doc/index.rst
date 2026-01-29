@@ -1,4 +1,4 @@
-.. _teensy40:
+.. zephyr:board:: teensy40
 
 PJRC TEENSY 4
 #############
