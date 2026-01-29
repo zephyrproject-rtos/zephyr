@@ -18,17 +18,14 @@ extern "C" {
 struct tty_serial {
 	const struct device *uart_dev;
 
-	struct k_sem rx_sem;
-	uint8_t *rx_ringbuf;
-	uint32_t rx_ringbuf_sz;
-	uint16_t rx_get, rx_put;
+	struct k_event signal_event;
+
+	struct ring_buf rx_buf;
 	k_timeout_t rx_timeout;
 
-	struct k_sem tx_sem;
-	uint8_t *tx_ringbuf;
-	uint32_t tx_ringbuf_sz;
-	uint16_t tx_get, tx_put;
+	struct ring_buf tx_buf;
 	k_timeout_t tx_timeout;
+	atomic_t tx_busy;
 };
 
 /**
