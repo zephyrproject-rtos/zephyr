@@ -91,6 +91,10 @@ const struct modem_chat_match *hl78xx_get_ktcp_state_match(void);
 const struct modem_chat_match *hl78xx_get_gnssnmea_match(void);
 const struct modem_chat_match *hl78xx_get_gnssconf_enabledsys_match(void);
 const struct modem_chat_match *hl78xx_get_gnssconf_enabledfilter_match(void);
+#ifdef CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE
+/* A-GNSS assistance data match */
+const struct modem_chat_match *hl78xx_get_gnssad_match(void);
+#endif /* CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE */
 
 #endif /* CONFIG_HL78XX_GNSS */
 

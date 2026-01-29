@@ -125,6 +125,9 @@ void hl78xx_on_gnssconf_enabledsys(struct modem_chat *chat, char **argv, uint16_
 				   void *user_data);
 void hl78xx_on_gnssconf_enabledfilter(struct modem_chat *chat, char **argv, uint16_t argc,
 				      void *user_data);
+#ifdef CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE
+void hl78xx_on_gnssad(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
+#endif /* CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE */
 
 #endif /* CONFIG_HL78XX_GNSS */
 
@@ -221,6 +224,9 @@ MODEM_CHAT_MATCH_DEFINE(hl78xx_gnssconf_enabledsys_match, "+GNSSCONF: 10,", "",
 			hl78xx_on_gnssconf_enabledsys);
 MODEM_CHAT_MATCH_DEFINE(hl78xx_gnssconf_enabledfilter_match, "+GNSSCONF: 4,", "",
 			hl78xx_on_gnssconf_enabledfilter);
+#ifdef CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE
+MODEM_CHAT_MATCH_DEFINE(hl78xx_gnssad_match, "+GNSSAD: ", ",", hl78xx_on_gnssad);
+#endif /* CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE */
 #endif /* CONFIG_HL78XX_GNSS */
 /* Chat script matches / definitions */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_periodic_chat_script_cmds,
@@ -535,6 +541,13 @@ const struct modem_chat_match *hl78xx_get_gnssconf_enabledfilter_match(void)
 {
 	return &hl78xx_gnssconf_enabledfilter_match;
 }
+
+#ifdef CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE
+const struct modem_chat_match *hl78xx_get_gnssad_match(void)
+{
+	return &hl78xx_gnssad_match;
+}
+#endif /* CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE */
 
 #endif /* CONFIG_HL78XX_GNSS */
 /* Run the predefined init script for the given device */

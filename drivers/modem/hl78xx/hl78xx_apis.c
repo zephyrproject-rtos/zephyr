@@ -518,6 +518,134 @@ int hl78xx_gnss_get_latest_known_fix(const struct device *dev)
 	return hl78xx_run_gnss_gnssloc_script(data_modem);
 }
 
-	return hl78xx_run_gnss_gnssloc_script(data_gnss->parent_data);
+#ifdef CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE
+/**
+ * @brief Validate that days value is one of the allowed values
+ */
+static bool hl78xx_agnss_validate_days(enum hl78xx_agnss_days days)
+{
+	switch (days) {
+	case HL78XX_AGNSS_DAYS_1:
+	case HL78XX_AGNSS_DAYS_2:
+	case HL78XX_AGNSS_DAYS_3:
+	case HL78XX_AGNSS_DAYS_7:
+	case HL78XX_AGNSS_DAYS_14:
+	case HL78XX_AGNSS_DAYS_28:
+		return true;
+	default:
+		return false;
+	}
 }
+
+int hl78xx_gnss_assist_data_get_status(const struct device *dev, struct hl78xx_agnss_status *status)
+{
+	int ret;
+	const char *cmd = "AT+GNSSAD?";
+	struct hl78xx_gnss_data *data_gnss = NULL;
+	struct hl78xx_data *data_modem = NULL;
+
+	if (hl78xx_get_gnss_context(dev, &data_gnss, &data_modem) < 0) {
+		return -EINVAL;
+	}
+
+	if (status == NULL) {
+		return -EINVAL;
+	}
+
+	if (data_modem == NULL) {
+		return -EINVAL;
+	}
+
+	/* Send the query command - response is parsed by hl78xx_on_gnssad handler */
+	ret = hl78xx_send_cmd(data_modem, cmd, NULL, hl78xx_get_gnssad_match(), 1);
+
+	if (ret < 0) {
+		LOG_ERR("Failed to query A-GNSS status: %d", ret);
+		return ret;
+	}
+
+	/* Copy the parsed status to caller */
+	status->mode = data_gnss->agnss_status.mode;
+	status->days = data_gnss->agnss_status.days;
+	status->hours = data_gnss->agnss_status.hours;
+	status->minutes = data_gnss->agnss_status.minutes;
+
+	return 0;
+}
+
+int hl78xx_gnss_assist_data_download(const struct device *dev, enum hl78xx_agnss_days days)
+{
+	int ret;
+	char cmd[32];
+	struct hl78xx_gnss_data *data_gnss = NULL;
+	struct hl78xx_data *data_modem = NULL;
+
+	if (hl78xx_get_gnss_context(dev, &data_gnss, &data_modem) < 0) {
+		return -EINVAL;
+	}
+	ARG_UNUSED(data_gnss);
+
+	/* Validate days parameter */
+	if (!hl78xx_agnss_validate_days(days)) {
+		LOG_ERR("Invalid days value for A-GNSS download: %d", days);
+		return -EINVAL;
+	}
+
+	if (data_modem == NULL) {
+		return -EINVAL;
+	}
+
+	/* Build the download command: AT+GNSSAD=1,<days> */
+	ret = snprintf(cmd, sizeof(cmd), "AT+GNSSAD=1,%d", (int)days);
+	if (ret < 0 || ret >= (int)sizeof(cmd)) {
+		return -ENOMEM;
+	}
+
+	/* Send the download command */
+	ret = hl78xx_send_cmd(data_modem, cmd, NULL, hl78xx_get_ok_match(),
+			      hl78xx_get_ok_match_size());
+
+	if (ret < 0) {
+		LOG_ERR("Failed to download A-GNSS data: %d", ret);
+		return ret;
+	}
+
+	LOG_INF("A-GNSS data download initiated for %d days", (int)days);
+	return 0;
+}
+
+int hl78xx_gnss_assist_data_delete(const struct device *dev)
+{
+	int ret;
+	const char *cmd = "AT+GNSSAD=0";
+	struct hl78xx_gnss_data *data_gnss = NULL;
+	struct hl78xx_data *data_modem = NULL;
+
+	if (hl78xx_get_gnss_context(dev, &data_gnss, &data_modem) < 0) {
+		return -EINVAL;
+	}
+
+	if (data_modem == NULL) {
+		return -EINVAL;
+	}
+
+	/* Send the delete command */
+	ret = hl78xx_send_cmd(data_modem, cmd, NULL, hl78xx_get_ok_match(),
+			      hl78xx_get_ok_match_size());
+
+	if (ret < 0) {
+		LOG_ERR("Failed to delete A-GNSS data: %d", ret);
+		return ret;
+	}
+
+	/* Clear local status */
+	data_gnss->agnss_status.mode = HL78XX_AGNSS_MODE_INVALID;
+	data_gnss->agnss_status.days = 0;
+	data_gnss->agnss_status.hours = 0;
+	data_gnss->agnss_status.minutes = 0;
+
+	LOG_INF("A-GNSS data deleted");
+	return 0;
+}
+#endif /* CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE */
 #endif /* CONFIG_HL78XX_GNSS */

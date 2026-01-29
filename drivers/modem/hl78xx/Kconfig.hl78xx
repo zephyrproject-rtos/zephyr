@@ -228,6 +228,14 @@ config HL78XX_GNSS
 
 if HL78XX_GNSS
 
+config HL78XX_GNSS_SUPPORT_ASSISTED_MODE
+	bool "Support Assisted GNSS (A-GNSS) mode"
+	depends on MODEM_HL78XX_12
+	help
+	  Enable support for Assisted GNSS (A-GNSS) mode using AT+GNSSAD commands.
+	  A-GNSS can improve time-to-first-fix and accuracy by utilizing
+	  assistance data from the cellular network.
+
 choice HL78XX_GNSS_SOURCE
 	bool "GNSS Source Selection"
 	default HL78XX_GNSS_SOURCE_NMEA
