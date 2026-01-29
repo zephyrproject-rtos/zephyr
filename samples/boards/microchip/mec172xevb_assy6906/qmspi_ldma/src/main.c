@@ -12,52 +12,52 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
 
-#define W25Q128_JEDEC_ID				0x001840efU
-#define W25Q128JV_JEDEC_ID				0x001870efU
-#define SST26VF016B_JEDEC_ID				0x004126bfU
-#define SPI_FLASH_JEDEC_ID_MSK				0x00ffffffu
+#define W25Q128_JEDEC_ID       0x001840efU
+#define W25Q128JV_JEDEC_ID     0x001870efU
+#define SST26VF016B_JEDEC_ID   0x004126bfU
+#define SPI_FLASH_JEDEC_ID_MSK 0x00ffffffu
 
-#define SPI_FLASH_READ_JEDEC_ID_OPCODE			0x9fu
+#define SPI_FLASH_READ_JEDEC_ID_OPCODE 0x9fu
 
-#define SPI_FLASH_READ_STATUS1_OPCODE			0x05u
-#define SPI_FLASH_READ_STATUS2_OPCODE			0x35u
-#define SPI_FLASH_READ_STATUS3_OPCODE			0x15u
+#define SPI_FLASH_READ_STATUS1_OPCODE 0x05u
+#define SPI_FLASH_READ_STATUS2_OPCODE 0x35u
+#define SPI_FLASH_READ_STATUS3_OPCODE 0x15u
 
-#define SPI_FLASH_WRITE_STATUS1_OPCODE			0x01u
-#define SPI_FLASH_WRITE_STATUS2_OPCODE			0x31u
-#define SPI_FLASH_WRITE_STATUS3_OPCODE			0x11u
+#define SPI_FLASH_WRITE_STATUS1_OPCODE 0x01u
+#define SPI_FLASH_WRITE_STATUS2_OPCODE 0x31u
+#define SPI_FLASH_WRITE_STATUS3_OPCODE 0x11u
 
-#define SPI_FLASH_WRITE_ENABLE_OPCODE			0x06u
-#define SPI_FLASH_WRITE_DISABLE_OPCODE			0x04u
-#define SPI_FLASH_WRITE_ENABLE_VOLATILE_STS_OPCODE	0x50u
+#define SPI_FLASH_WRITE_ENABLE_OPCODE              0x06u
+#define SPI_FLASH_WRITE_DISABLE_OPCODE             0x04u
+#define SPI_FLASH_WRITE_ENABLE_VOLATILE_STS_OPCODE 0x50u
 
-#define SPI_FLASH_READ_SFDP_CMD				0x5au
+#define SPI_FLASH_READ_SFDP_CMD 0x5au
 
-#define SPI_FLASH_READ_SLOW_OPCODE			0x03u
-#define SPI_FLASH_READ_FAST_OPCODE			0x0bu
-#define SPI_FLASH_READ_DUAL_OPCODE			0x3bu
-#define SPI_FLASH_READ_QUAD_OPCODE			0x6bu
+#define SPI_FLASH_READ_SLOW_OPCODE 0x03u
+#define SPI_FLASH_READ_FAST_OPCODE 0x0bu
+#define SPI_FLASH_READ_DUAL_OPCODE 0x3bu
+#define SPI_FLASH_READ_QUAD_OPCODE 0x6bu
 
-#define SPI_FLASH_ERASE_SECTOR_OPCODE			0x20u
-#define SPI_FLASH_ERASE_BLOCK1_OPCODE			0x52u
-#define SPI_FLASH_ERASE_BLOCK2_OPCODE			0xd8u
-#define SPI_FLASH_ERASE_CHIP_OPCODE			0xc7u
+#define SPI_FLASH_ERASE_SECTOR_OPCODE 0x20u
+#define SPI_FLASH_ERASE_BLOCK1_OPCODE 0x52u
+#define SPI_FLASH_ERASE_BLOCK2_OPCODE 0xd8u
+#define SPI_FLASH_ERASE_CHIP_OPCODE   0xc7u
 
-#define SPI_FLASH_PAGE_PROG_OPCODE			0x02u
+#define SPI_FLASH_PAGE_PROG_OPCODE 0x02u
 
-#define SPI_FLASH_PAGE_SIZE		256
-#define SPI_FLASH_SECTOR_SIZE		4096
-#define SPI_FLASH_BLOCK1_SIZE		(32 * 1024)
-#define SPI_FLASH_BLOCK2_SIZE		(64 * 1024)
+#define SPI_FLASH_PAGE_SIZE   256
+#define SPI_FLASH_SECTOR_SIZE 4096
+#define SPI_FLASH_BLOCK1_SIZE (32 * 1024)
+#define SPI_FLASH_BLOCK2_SIZE (64 * 1024)
 
-#define SPI_FLASH_STATUS1_BUSY_POS	0
-#define SPI_FLASH_STATUS1_WEL_POS	1
+#define SPI_FLASH_STATUS1_BUSY_POS 0
+#define SPI_FLASH_STATUS1_WEL_POS  1
 
-#define SPI_FLASH_STATUS2_SRL_POS	0
-#define SPI_FLASH_STATUS2_QE_POS	1
-#define SPI_FLASH_STATUS2_SUS_STS_POS	7
+#define SPI_FLASH_STATUS2_SRL_POS     0
+#define SPI_FLASH_STATUS2_QE_POS      1
+#define SPI_FLASH_STATUS2_SUS_STS_POS 7
 
-#define SPI0_NODE			DT_NODELABEL(spi0)
+#define SPI0_NODE DT_NODELABEL(qspi0)
 
 struct spi_address {
 	uint32_t addr;
@@ -88,7 +88,7 @@ static uint8_t buf1[SPI_TEST_BUF1_SIZE];
 
 #define SPI_TEST_ADDR1 0xc10000u
 
-#define SPI_FILL_VAL 0x69u
+#define SPI_FILL_VAL         0x69u
 #define SPI_TEST_BUFFER_SIZE (36 * 1024)
 
 struct test_buf {
@@ -245,8 +245,8 @@ static int spi_flash_read_fd_sync(const struct device *dev, struct spi_config *s
 		if (spi_addr->byte_len > 4) {
 			return -EINVAL;
 		}
-		err = spi_flash_format_addr(spi_addr->addr, spi_addr->byte_len,
-					    &txdata[1], sizeof(txdata)-1);
+		err = spi_flash_format_addr(spi_addr->addr, spi_addr->byte_len, &txdata[1],
+					    sizeof(txdata) - 1);
 		if (err) {
 			return err;
 		}
@@ -290,14 +290,14 @@ static int spi_flash_read_hd_sync(const struct device *dev, struct spi_config *s
 	struct spi_buf spi_bufs[3] = {0};
 	int err = 0;
 
-	if (!dev || !spi_cfg_cmd || !spi_cfg_data || !data || !datasz
-	    || !spi_addr || (spi_addr->byte_len > 4)) {
+	if (!dev || !spi_cfg_cmd || !spi_cfg_data || !data || !datasz || !spi_addr ||
+	    (spi_addr->byte_len > 4)) {
 		return -EINVAL;
 	}
 
 	txdata[0] = opcode;
-	err = spi_flash_format_addr(spi_addr->addr, spi_addr->byte_len,
-				    &txdata[1], sizeof(txdata)-1);
+	err = spi_flash_format_addr(spi_addr->addr, spi_addr->byte_len, &txdata[1],
+				    sizeof(txdata) - 1);
 	if (err) {
 		return err;
 	}
@@ -341,14 +341,14 @@ static int spi_flash_erase_region(const struct device *dev, struct spi_config *s
 		return -EINVAL;
 	}
 
-	err = spi_flash_format_addr(spi_addr->addr, spi_addr->byte_len,
-				    cmdparams, sizeof(cmdparams));
+	err = spi_flash_format_addr(spi_addr->addr, spi_addr->byte_len, cmdparams,
+				    sizeof(cmdparams));
 	if (err) {
 		return err;
 	}
 
-	err = spi_flash_fd_wr_cpd(dev, spi_cfg, erase_opcode, cmdparams,
-				  spi_addr->byte_len, NULL, 0);
+	err = spi_flash_fd_wr_cpd(dev, spi_cfg, erase_opcode, cmdparams, spi_addr->byte_len, NULL,
+				  0);
 	if (err) {
 		return err;
 	}
@@ -393,8 +393,8 @@ static int spi_flash_read_fd_async(const struct device *dev, struct spi_config *
 		if (spi_addr->byte_len > 4) {
 			return -EINVAL;
 		}
-		err = spi_flash_format_addr(spi_addr->addr, spi_addr->byte_len,
-					    &spi_async_txbuf[1], sizeof(spi_async_txbuf)-1);
+		err = spi_flash_format_addr(spi_addr->addr, spi_addr->byte_len, &spi_async_txbuf[1],
+					    sizeof(spi_async_txbuf) - 1);
 		if (err) {
 			return err;
 		}
@@ -475,8 +475,7 @@ int main(void)
 	}
 
 	spi_status1 = 0xffu;
-	err = spi_flash_read_status(spi_dev, &spi_cfg, SPI_FLASH_READ_STATUS1_OPCODE,
-				    &spi_status1);
+	err = spi_flash_read_status(spi_dev, &spi_cfg, SPI_FLASH_READ_STATUS1_OPCODE, &spi_status1);
 	if (err) {
 		printf("Read SPI flash Status1 error: %d\n", err);
 		return err;
@@ -485,8 +484,7 @@ int main(void)
 	printf("SPI Flash Status1 = 0x%02x\n", spi_status1);
 
 	spi_status2 = 0xffu;
-	err = spi_flash_read_status(spi_dev, &spi_cfg, SPI_FLASH_READ_STATUS2_OPCODE,
-				    &spi_status2);
+	err = spi_flash_read_status(spi_dev, &spi_cfg, SPI_FLASH_READ_STATUS2_OPCODE, &spi_status2);
 	if (err) {
 		printf("Read SPI flash STATUS2 error: %d\n", err);
 		return err;
@@ -515,8 +513,8 @@ int main(void)
 
 	for (int i = 0; i < num_sectors; i++) {
 		printf("Transmit SPI flash Write-Enable\n");
-		err = spi_flash_fd_wr_cpd(spi_dev, &spi_cfg, SPI_FLASH_WRITE_ENABLE_OPCODE,
-					  NULL, 0, NULL, 0);
+		err = spi_flash_fd_wr_cpd(spi_dev, &spi_cfg, SPI_FLASH_WRITE_ENABLE_OPCODE, NULL, 0,
+					  NULL, 0);
 		if (err) {
 			printf("ERROR: transmit SPI flash Write-Enable: error %d\n", err);
 			return err;
@@ -557,7 +555,6 @@ int main(void)
 		spi_addr.addr += SPI_FLASH_SECTOR_SIZE;
 	}
 
-
 	printf("Fill buffers for %d sectors and program flash region\n", num_sectors);
 
 	for (int i = 0; i < SPI_TEST_BUFFER_SIZE; i++) {
@@ -580,17 +577,17 @@ int main(void)
 		}
 
 		printf("Page at 0x%08x: Transmit SPI flash Write-Enable, "
-			"Page-Program, and poll status\n", spi_addr.addr);
-		err = spi_flash_fd_wr_cpd(spi_dev, &spi_cfg, SPI_FLASH_WRITE_ENABLE_OPCODE,
-					  NULL, 0, NULL, 0);
+		       "Page-Program, and poll status\n",
+		       spi_addr.addr);
+		err = spi_flash_fd_wr_cpd(spi_dev, &spi_cfg, SPI_FLASH_WRITE_ENABLE_OPCODE, NULL, 0,
+					  NULL, 0);
 		if (err) {
 			printf("ERROR: transmit SPI flash Write-Enable: %d\n", err);
 			return err;
 		}
 
-		err = spi_flash_fd_wr_cpd(spi_dev, &spi_cfg, SPI_FLASH_PAGE_PROG_OPCODE,
-					  buf1, spi_addr.byte_len, &tb1.b[offset],
-					  SPI_FLASH_PAGE_SIZE);
+		err = spi_flash_fd_wr_cpd(spi_dev, &spi_cfg, SPI_FLASH_PAGE_PROG_OPCODE, buf1,
+					  spi_addr.byte_len, &tb1.b[offset], SPI_FLASH_PAGE_SIZE);
 		if (err) {
 			printf("ERROR: transmit SPI Page-Program: %d\n", err);
 			return err;

@@ -4,12 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&spi0 {
+&qspi0 {
 	status = "okay";
 	compatible = "microchip,xec-qmspi-ldma";
 	clock-frequency = <24000000>;
-	lines = <4>;
-	chip-select = <0>;
 
 	pinctrl-0 = <&shd_cs0_n_gpio055
 		     &shd_clk_gpio056
