@@ -218,9 +218,9 @@ Deprecated
 The following are the requirements for deprecating an existing API:
 
 - Deprecation Time (stable APIs): 2 Releases
-  The API needs to be marked as deprecated in at least two full releases.
-  For example, if an API was first deprecated in release 4.0,
-  it will be ready to be removed in 4.2 at the earliest.
+  The API needs to be marked as deprecated in at least one full release.
+  For example, if an API was first deprecated in release 4.4,
+  it will be ready to be removed in 4.5 at the earliest.
   There may be special circumstances, determined by the Architecture working group,
   where an API is deprecated sooner.
 - What is required when deprecating:
