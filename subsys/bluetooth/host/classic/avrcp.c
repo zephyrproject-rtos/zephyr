@@ -513,14 +513,19 @@ static void avrcp_connected(struct bt_avctp *session)
 static void avrcp_disconnected(struct bt_avctp *session)
 {
 	struct bt_avrcp *avrcp = AVRCP_AVCTP(session);
+	struct bt_avrcp_ct *ct = get_avrcp_ct(avrcp);
+	struct bt_avrcp_tg *tg = get_avrcp_tg(avrcp);
 
 	if ((avrcp_ct_cb != NULL) && (avrcp_ct_cb->disconnected != NULL)) {
-		avrcp_ct_cb->disconnected(get_avrcp_ct(avrcp));
+		avrcp_ct_cb->disconnected(ct);
 	}
 
 	if ((avrcp_tg_cb != NULL) && (avrcp_tg_cb->disconnected != NULL)) {
-		avrcp_tg_cb->disconnected(get_avrcp_tg(avrcp));
+		avrcp_tg_cb->disconnected(tg);
 	}
+
+	memset(&ct->ct_notify, 0, sizeof(ct->ct_notify));
+	memset(&tg->tg_notify, 0, sizeof(tg->tg_notify));
 
 	if (avrcp->acl_conn != NULL) {
 		bt_conn_unref(avrcp->acl_conn);
