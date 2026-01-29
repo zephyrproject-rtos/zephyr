@@ -16,7 +16,7 @@
 #define LOG_LEVEL	CONFIG_LWM2M_LOG_LEVEL
 
 #include <zephyr/logging/log.h>
-#include <zephyr/sys/ring_buffer.h>
+#include <zephyr/sys/fifo.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "lwm2m_engine.h"
@@ -1627,7 +1627,7 @@ int lwm2m_enable_cache(const struct lwm2m_obj_path *path, struct lwm2m_time_seri
 		return -ENODATA;
 	}
 
-	ring_buf_init(&cache_entry->rb, cache_entry_size * cache_len, (uint8_t *)data_cache);
+	fifo_init(&cache_entry->rb, data_cache, cache_entry_size, cache_len);
 
 	return 0;
 #else
@@ -1664,7 +1664,6 @@ int lwm2m_cache_free_slots_get(const struct lwm2m_obj_path *path)
 {
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
 	struct lwm2m_time_series_resource *cache_entry;
-	uint32_t free_bytes;
 
 	if (path == NULL) {
 		return -EINVAL;
@@ -1675,9 +1674,7 @@ int lwm2m_cache_free_slots_get(const struct lwm2m_obj_path *path)
 		return -ENOENT;
 	}
 
-	free_bytes = ring_buf_space_get(&cache_entry->rb);
-
-	return (int)(free_bytes / sizeof(struct lwm2m_time_series_elem));
+	return fifo_space(&cache_entry->rb);
 #else
 	ARG_UNUSED(path);
 	return -ENOTSUP;
@@ -1703,31 +1700,19 @@ bool lwm2m_cache_write(struct lwm2m_time_series_resource *cache_entry,
 		       struct lwm2m_time_series_elem *buf)
 {
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
-	uint32_t length;
-	uint8_t *buf_ptr;
-	uint32_t element_size = sizeof(struct lwm2m_time_series_elem);
 
-	if (ring_buf_space_get(&cache_entry->rb) < element_size) {
+	if (fifo_size(&cache_entry->rb) == 0) {
+		struct lwm2m_time_series_elem tmp;
+
 		/* No space  */
 		if (IS_ENABLED(CONFIG_LWM2M_CACHE_DROP_LATEST)) {
 			return false;
 		}
 		/* Free entry */
-		length = ring_buf_get_claim(&cache_entry->rb, &buf_ptr, element_size);
-		ring_buf_get_finish(&cache_entry->rb, length);
+		fifo_get(&cache_entry->rb, &tmp);
 	}
 
-	length = ring_buf_put_claim(&cache_entry->rb, &buf_ptr, element_size);
-
-	if (length != element_size) {
-		ring_buf_put_finish(&cache_entry->rb, 0);
-		LOG_ERR("Allocation failed %u", length);
-		return false;
-	}
-
-	ring_buf_put_finish(&cache_entry->rb, length);
-	/* Store data */
-	memcpy(buf_ptr, buf, element_size);
+	fifo_put(&cache_entry->rb, buf);
 	return true;
 #else
 	return NULL;
@@ -1738,44 +1723,17 @@ bool lwm2m_cache_read(struct lwm2m_time_series_resource *cache_entry,
 		      struct lwm2m_time_series_elem *buf)
 {
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
-	uint32_t length;
-	uint8_t *buf_ptr;
-	uint32_t element_size = sizeof(struct lwm2m_time_series_elem);
-
-	if (ring_buf_is_empty(&cache_entry->rb)) {
-		return false;
-	}
-
-	length = ring_buf_get_claim(&cache_entry->rb, &buf_ptr, element_size);
-
-	if (length != element_size) {
-		LOG_ERR("Cache read fail %u", length);
-		ring_buf_get_finish(&cache_entry->rb, 0);
-		return false;
-	}
-
-	/* Read Data */
-	memcpy(buf, buf_ptr, element_size);
-	ring_buf_get_finish(&cache_entry->rb, length);
-	return true;
+	return fifo_get(&cache_entry->rb, buf) == 0;
 
 #else
-	return NULL;
+	return false;
 #endif
 }
 
 size_t lwm2m_cache_size(const struct lwm2m_time_series_resource *cache_entry)
 {
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
-	uint32_t bytes_available;
-
-	if (ring_buf_is_empty(&cache_entry->rb)) {
-		return 0;
-	}
-
-	bytes_available = ring_buf_size_get(&cache_entry->rb);
-
-	return (bytes_available / sizeof(struct lwm2m_time_series_elem));
+	return fifo_size(&cache_entry->rb);
 #else
 	return 0;
 #endif
