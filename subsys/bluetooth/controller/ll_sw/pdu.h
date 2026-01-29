@@ -14,6 +14,7 @@
 #define PDU_HEADER_SIZE        2
 #define PDU_MIC_SIZE           4
 #define PDU_CRC_SIZE           3
+#define PDU_CRCINIT_SIZE       3  /* CRC initialization value size */
 #define PDU_OVERHEAD_SIZE(phy) (PDU_PREAMBLE_SIZE(phy) + \
 				PDU_ACCESS_ADDR_SIZE + \
 				PDU_HEADER_SIZE + \
