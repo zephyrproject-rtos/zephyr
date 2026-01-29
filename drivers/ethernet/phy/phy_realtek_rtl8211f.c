@@ -13,6 +13,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net/phy.h>
 #include <zephyr/net/mii.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/drivers/mdio.h>
 #include <string.h>
 #include <zephyr/sys/util_macro.h>
@@ -604,6 +605,69 @@ skip_int_gpio:
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int phy_realtek_rtl8211f_pm_action(const struct device *dev,
+					enum pm_device_action action)
+{
+	int ret;
+	struct rt_rtl8211f_data *data = dev->data;
+	const struct rt_rtl8211f_config *config = dev->config;
+
+	LOG_INF("PHY: PM action %d", action);
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		k_work_cancel_delayable(&data->phy_monitor_work);
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+		if (config->interrupt_gpio.port) {
+			ret = gpio_pin_interrupt_configure_dt(&config->interrupt_gpio,
+							      GPIO_INT_DISABLE);
+			if (ret) {
+				return ret;
+			}
+		}
+#endif
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		/* Re-configure link speeds */
+		ret = phy_rt_rtl8211f_cfg_link(dev, config->default_speeds, 0);
+		if (ret) {
+			return ret;
+		}
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
+		if (config->interrupt_gpio.port) {
+			/* Clear any pending interrupts */
+			ret = phy_rt_rtl8211f_clear_interrupt(data);
+			if (ret) {
+				return ret;
+			}
+
+			/* Re-enable interrupt */
+			ret = gpio_pin_interrupt_configure_dt(&config->interrupt_gpio,
+							      GPIO_INT_EDGE_TO_ACTIVE);
+			if (ret) {
+				return ret;
+			}
+		} else {
+			phy_rt_rtl8211f_monitor_work_handler(&data->phy_monitor_work.work);
+		}
+#else
+		phy_rt_rtl8211f_monitor_work_handler(&data->phy_monitor_work.work);
+#endif
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static DEVICE_API(ethphy, rt_rtl8211f_phy_api) = {
 	.get_link = phy_rt_rtl8211f_get_link,
 	.cfg_link = phy_rt_rtl8211f_cfg_link,
@@ -637,7 +701,9 @@ static DEVICE_API(ethphy, rt_rtl8211f_phy_api) = {
 										\
 	static struct rt_rtl8211f_data rt_rtl8211f_##n##_data;			\
 										\
-	DEVICE_DT_INST_DEFINE(n, &phy_rt_rtl8211f_init, NULL,			\
+	PM_DEVICE_DT_INST_DEFINE(n, phy_realtek_rtl8211f_pm_action);		\
+	DEVICE_DT_INST_DEFINE(n, &phy_rt_rtl8211f_init,				\
+			PM_DEVICE_DT_INST_GET(n),				\
 			&rt_rtl8211f_##n##_data, &rt_rtl8211f_##n##_config,	\
 			POST_KERNEL, CONFIG_PHY_INIT_PRIORITY,			\
 			&rt_rtl8211f_phy_api);
