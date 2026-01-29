@@ -29,6 +29,12 @@ struct flash_stm32_priv {
 	struct stm32_pclken pclken;
 #endif
 	struct k_sem sem;
+#if defined(CONFIG_FLASH_STM32_ASYNC)
+	struct k_sem async_sem;
+	bool async_complete;
+	bool async_error;
+	uint32_t async_ret;
+#endif /* CONFIG_FLASH_STM32_ASYNC */
 };
 
 #if DT_PROP(DT_INST(0, soc_nv_flash), write_block_size)
@@ -310,6 +316,9 @@ static inline void _flash_stm32_sem_give(const struct device *dev)
 #define flash_stm32_sem_init(dev) k_sem_init(&FLASH_STM32_PRIV(dev)->sem, 1, 1)
 #define flash_stm32_sem_take(dev) _flash_stm32_sem_take(dev)
 #define flash_stm32_sem_give(dev) _flash_stm32_sem_give(dev)
+#if defined(CONFIG_FLASH_STM32_ASYNC)
+#define flash_stm32_async_sem_init(dev) k_sem_init(&FLASH_STM32_PRIV(dev)->async_sem, 0, 1)
+#endif /* CONFIG_FLASH_STM32_ASYNC */
 #else
 #define flash_stm32_sem_init(dev)
 #define flash_stm32_sem_take(dev)
