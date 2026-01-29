@@ -787,7 +787,8 @@ DT_INST_FOREACH_STATUS_OKAY(PL011_INIT)
 	                                                                                           \
 	static struct pl011_config pl011_cfg_sbsa_##n = {                                          \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
-		IRQ_CONFIG_FUNC_INIT(n)                                                            \
+		IF_ENABLED(PL011_NODE_USE_IRQ(n),                                                  \
+			   (.irq_config_func = pl011_irq_config_func_sbsa_##n,))		   \
 	};
 
 #define PL011_SBSA_INIT(n)					\
