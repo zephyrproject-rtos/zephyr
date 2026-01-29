@@ -243,9 +243,9 @@ zephyr_udc0: &usbotg_fs {
 			reg = <0x000f8000 DT_SIZE_K(24)>;
 		};
 
-		storage_partition: partition@fc000 {
+		storage_partition: partition@fe000 {
 			label = "storage";
-			reg = <0x000fc000 DT_SIZE_K(24)>;
+			reg = <0x000fe000 DT_SIZE_K(16)>;
 		};
 	};
 };

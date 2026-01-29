@@ -102,5 +102,10 @@ zephyr_udc0: &usb {
 			label = "image-0";
 			reg = <0x0000c000 DT_SIZE_K(400)>;
 		};
+
+		slot1_partition: partition@70000 {
+			label = "image-1";
+			reg = <0x0070000 DT_SIZE_K(404)>;
+		};
 	};
 };

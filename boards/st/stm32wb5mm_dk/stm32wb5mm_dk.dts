@@ -157,13 +157,10 @@ zephyr_udc0: &usb {
 
 		slot1_partition: partition@70000 {
 			label = "image-1";
-			reg = <0x00070000 DT_SIZE_K(400)>;
+			reg = <0x00070000 DT_SIZE_K(404)>;
 		};
 
-		scratch_partition: partition@d4000 {
-			label = "image-scratch";
-			reg = <0x000d4000 DT_SIZE_K(16)>;
-		};
+		/* Area [0xd5000..0xd7fff] is unused */
 
 		storage_partition: partition@d8000 {
 			label = "storage";
