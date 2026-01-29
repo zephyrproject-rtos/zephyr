@@ -112,6 +112,12 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_NRF_SYS_EVENT_IRQ_LATENCY_MANUAL) ||
 static uint32_t event_ref_cnt;
 static uint32_t chan_mask;
 
+/* Handle returned by the registering function can be a GRTC channel that was used which indicates
+ * that PPI RRAMC wake up is used. If manual mode is used (changing RRAMC power mode) than that
+ * handle value is used which exceeds any potential GRTC channel number.
+ */
+#define NRF_SYS_EVENT_MANUAL_HANDLE 32
+
 #define NVM_HW_WAKEUP_US 16
 #define NVM_MANUAL_SUPPORT IS_ENABLED(CONFIG_NRF_SYS_EVENT_IRQ_LATENCY_MANUAL)
 /* Due to software performance and risk of waking up too early (then RRAMC may go
@@ -154,7 +160,7 @@ union nrf_sys_evt_us {
 	uint64_t abs;
 };
 
-int event_register(union nrf_sys_evt_us us, bool force, bool abs)
+static int event_register(union nrf_sys_evt_us us, bool force, bool abs)
 {
 	int rv;
 
@@ -181,7 +187,7 @@ int event_register(union nrf_sys_evt_us us, bool force, bool abs)
 				irq_low_latency_on(true);
 			}
 			event_ref_cnt++;
-			rv = 32;
+			rv = NRF_SYS_EVENT_MANUAL_HANDLE;
 		}
 	}
 
@@ -203,11 +209,12 @@ int nrf_sys_event_unregister(int handle, bool cancel)
 	__ASSERT_NO_MSG(handle >= 0);
 	int rv = 0;
 
-	if (handle < 32) {
+	if (handle != NRF_SYS_EVENT_MANUAL_HANDLE) {
 		if (cancel) {
 			nrf_grtc_sys_counter_compare_event_disable(NRF_GRTC, handle);
 		}
 		atomic_or((atomic_t *)&chan_mask, BIT(handle));
+		return rv;
 	}
 
 	LOCKED() {
