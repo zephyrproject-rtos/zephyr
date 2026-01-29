@@ -1,0 +1,272 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <renesas/ra/ra0/ra0xx.dtsi>
+#include <zephyr/dt-bindings/clock/ra_clock.h>
+
+/ {
+	soc {
+		sram0: memory@20004000 {
+			compatible = "mmio-sram";
+			reg = <0x20004000 DT_SIZE_K(12)>;
+		};
+	};
+
+	clocks: clocks {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		xtal: clock-main-osc {
+			compatible = "renesas,ra-cgc-external-clock";
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		hoco: clock-hoco {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(32)>;
+			#clock-cells = <0>;
+		};
+
+		moco: clock-moco {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(4)>;
+			#clock-cells = <0>;
+		};
+
+		loco: clock-loco {
+			compatible = "fixed-clock";
+			clock-frequency = <32768>;
+			#clock-cells = <0>;
+		};
+
+		subclk: clock-subclock {
+			compatible = "renesas,ra-cgc-subclk";
+			clock-frequency = <32768>;
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		xtaldiv_clk: xtaldiv-clk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&xtal>;
+			clock-div = <1>;
+		};
+
+		hocodiv_clk: hocodiv-clk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&hoco>;
+			clock-div = <1>;
+		};
+
+		mocodiv_clk: mocodiv-clk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&moco>;
+			clock-div = <1>;
+		};
+
+		fsxp: fsxp {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		pclk: pclk {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&hocodiv_clk>;
+		};
+
+		pclkblock: pclkblock@4001ec02 {
+			compatible = "renesas,ra-cgc-pclk-block";
+			reg = <0x4001ec02 2>, <0x40047000 4>,
+			      <0x40047004 4>, <0x40047008 4>;
+			reg-names = "MSTPA", "MSTPB",
+				    "MSTPC", "MSTPD";
+			#clock-cells = <0>;
+			status = "okay";
+
+			pclkb: iclk: iclk {
+				compatible = "renesas,ra-cgc-pclk";
+				clocks = <&pclk>;
+				clock-frequency = <DT_FREQ_M(32)>;
+				#clock-cells = <2>;
+				div = <1>;
+				status = "okay";
+			};
+
+			tau_ck00: tau-ck00 {
+				compatible = "renesas,ra-cgc-pclk";
+				clocks = <&pclk>;
+				#clock-cells = <2>;
+				div = <1>;
+				status = "okay";
+			};
+
+			tau_ck01: tau-ck01 {
+				compatible = "renesas,ra-cgc-pclk";
+				clocks = <&pclk>;
+				#clock-cells = <2>;
+				div = <1>;
+				status = "okay";
+			};
+
+			tau_ck02: tau-ck02 {
+				compatible = "renesas,ra-cgc-pclk";
+				clocks = <&pclk>;
+				#clock-cells = <2>;
+				div = <2>;
+				status = "okay";
+			};
+
+			tau_ck03: tau-ck03 {
+				compatible = "renesas,ra-cgc-pclk";
+				clocks = <&pclk>;
+				#clock-cells = <2>;
+				div = <256>;
+				status = "okay";
+			};
+
+			sau_ck00: sau-ck00 {
+				compatible = "renesas,ra-cgc-pclk";
+				clocks = <&pclk>;
+				#clock-cells = <2>;
+				div = <2>;
+				status = "okay";
+			};
+
+			sau_ck01: sau-ck01 {
+				compatible = "renesas,ra-cgc-pclk";
+				clocks = <&pclk>;
+				#clock-cells = <2>;
+				div = <1>;
+				status = "okay";
+			};
+
+			sau_ck10: sau-ck10 {
+				compatible = "renesas,ra-cgc-pclk";
+				clocks = <&pclk>;
+				#clock-cells = <2>;
+				div = <2>;
+				status = "okay";
+			};
+
+			sau_ck11: sau-ck11 {
+				compatible = "renesas,ra-cgc-pclk";
+				clocks = <&pclk>;
+				#clock-cells = <2>;
+				div = <1>;
+				status = "okay";
+			};
+
+			clkout: clkout {
+				compatible = "renesas,ra-cgc-pclk";
+				#clock-cells = <2>;
+				div = <1>;
+				status = "disabled";
+			};
+
+			uarta0: uarta0 {
+				compatible = "renesas,ra-cgc-pclk";
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+
+			tml_fitl0: tml-fitl0 {
+				compatible = "renesas,ra-cgc-pclk";
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+
+			tml_fitl1: tml-fitl1 {
+				compatible = "renesas,ra-cgc-pclk";
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+
+			tml_fitl2: tml-fitl2 {
+				compatible = "renesas,ra-cgc-pclk";
+				#clock-cells = <2>;
+				status = "disabled";
+			};
+		};
+	};
+};
+
+&ioport0 {
+	gpio-reserved-ranges = <0 8>;
+	port-irqs = <&port_irq1>;
+	port-irq-names = "port-irq1";
+	port-irq1-pins = <15>;
+};
+
+&ioport1 {
+	gpio-reserved-ranges = <4 4>, <11 1>, <13 3>;
+	port-irqs = <&port_irq2 &port_irq3
+		     &port_irq4 &port_irq5>;
+	port-irq-names = "port-irq2",
+			 "port-irq3",
+			 "port-irq4",
+			 "port-irq5";
+	port-irq2-pins = <0 12>;
+	port-irq3-pins = <1 10>;
+	port-irq4-pins = <2 9>;
+	port-irq5-pins = <3>;
+};
+
+&ioport2 {
+	gpio-reserved-ranges = <2 4>, <9 3>;
+	port-irqs = <&port_irq0 &port_irq1 &port_irq2
+		     &port_irq3 &port_irq5>;
+	port-irq-names = "port-irq0",
+			 "port-irq1",
+			 "port-irq2",
+			 "port-irq3",
+			 "port-irq5";
+	port-irq0-pins = <0 13>;
+	port-irq1-pins = <12>;
+	port-irq2-pins = <7>;
+	port-irq3-pins = <8>;
+	port-irq5-pins = <1>;
+};
+
+&ioport3 {
+	gpio-reserved-ranges = <1 15>;
+};
+
+&ioport4 {
+	gpio-reserved-ranges = <0 7>, <8 8>;
+	port-irqs = <&port_irq4>;
+	port-irq-names = "port-irq4";
+	port-irq4-pins = <7>;
+};
+
+&ioport9 {
+	gpio-reserved-ranges = <0 13>, <15 1>;
+};
+
+&flash {
+	flash-hardware-version = <3>;
+	#erase-block-cells = <2>;
+
+	flash0: flash@0 {
+		compatible = "renesas,ra-nv-code-flash";
+		write-block-size = <4>;
+		erase-block-size = <2048>;
+		programming-enable;
+	};
+
+	flash1: flash@40100000 {
+		compatible = "renesas,ra-nv-data-flash";
+		reg = <0x40100000 DT_SIZE_K(1)>;
+		write-block-size = <1>;
+		erase-block-size = <256>;
+		programming-enable;
+	};
+};

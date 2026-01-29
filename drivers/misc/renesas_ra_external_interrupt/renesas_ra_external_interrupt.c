@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Renesas Electronics Corporation
+ * Copyright (c) 2024-2026 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -130,10 +130,14 @@ void gpio_ra_interrupt_unset(const struct device *dev, uint8_t port_num, uint8_t
 void gpio_ra_isr(const struct device *dev)
 {
 	const struct gpio_ra_irq_data *data = dev->data;
-	const struct gpio_ra_irq_config *config = dev->config;
 
 	data->callback.isr(data->callback.port, data->callback.pin);
+
+#ifdef CONFIG_SOC_RA_DYNAMIC_INTERRUPT_NUMBER
+	const struct gpio_ra_irq_config *config = dev->config;
+
 	R_BSP_IrqStatusClear(config->irq);
+#endif /* CONFIG_SOC_RA_DYNAMIC_INTERRUPT_NUMBER */
 }
 
 static int gpio_ra_interrupt_init(const struct device *dev)
@@ -151,6 +155,14 @@ static int gpio_ra_interrupt_init(const struct device *dev)
 
 #define EVENT_ICU_IRQ(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_ICU_IRQ, channel))
 
+#ifdef CONFIG_SOC_RA_DYNAMIC_INTERRUPT_NUMBER
+
+#define GPIO_INT_ASSIGN_DYNAMIC_INTERRUPT_NUMBER(index)                                            \
+	R_ICU->IELSR[DT_INST_IRQ(index, irq)] = EVENT_ICU_IRQ(DT_INST_PROP(index, channel));
+#else
+#define GPIO_INT_ASSIGN_DYNAMIC_INTERRUPT_NUMBER(index)
+#endif /* CONFIG_SOC_RA_DYNAMIC_INTERRUPT_NUMBER */
+
 #define GPIO_INTERRUPT_INIT(index)                                                                 \
 	static const struct gpio_ra_irq_config gpio_ra_irq_config##index = {                       \
 		.reg = DT_INST_REG_ADDR(index),                                                    \
@@ -165,8 +177,7 @@ static int gpio_ra_interrupt_init(const struct device *dev)
 	static struct gpio_ra_irq_data gpio_ra_irq_data##index;                                    \
 	static int gpio_ra_irq_init##index(const struct device *dev)                               \
 	{                                                                                          \
-		R_ICU->IELSR[DT_INST_IRQ(index, irq)] =                                            \
-			EVENT_ICU_IRQ(DT_INST_PROP(index, channel));                               \
+		GPIO_INT_ASSIGN_DYNAMIC_INTERRUPT_NUMBER(index)                                    \
                                                                                                    \
 		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_ICU_IRQ(DT_INST_PROP(index, channel)));     \
                                                                                                    \

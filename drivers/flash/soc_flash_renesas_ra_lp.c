@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Renesas Electronics Corporation
+ * Copyright (c) 2025-2026 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -287,11 +287,19 @@ static int flash_ra_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_SOC_RA_DYNAMIC_INTERRUPT_NUMBER
+
+#define FLASH_ASSIGN_DYNAMIC_INTERRUPT_NUMBER                                                      \
+	R_ICU->IELSR[DT_IRQ_BY_NAME(DT_DRV_INST(0), frdyi, irq)] =                                 \
+		BSP_PRV_IELS_ENUM(EVENT_FCU_FRDYI);
+#else
+#define FLASH_ASSIGN_DYNAMIC_INTERRUPT_NUMBER
+#endif /* CONFIG_SOC_RA_DYNAMIC_INTERRUPT_NUMBER */
+
 #if defined(CONFIG_FLASH_RENESAS_RA_LP_BGO)
 #define FLASH_CONTROLLER_RA_IRQ_INIT                                                               \
 	{                                                                                          \
-		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_DRV_INST(0), frdyi, irq)] =                         \
-			BSP_PRV_IELS_ENUM(EVENT_FCU_FRDYI);                                        \
+		FLASH_ASSIGN_DYNAMIC_INTERRUPT_NUMBER                                              \
                                                                                                    \
 		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_DRV_INST(0), frdyi, irq),                            \
 			    DT_IRQ_BY_NAME(DT_DRV_INST(0), frdyi, priority), fcu_frdyi_isr,        \

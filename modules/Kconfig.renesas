@@ -1,6 +1,6 @@
 # Renesas FSP HAL config
 
-# Copyright (c) 2024-2025 Renesas Electronics Corporation
+# Copyright (c) 2024-2026 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 config HAS_RENESAS_RA_FSP
@@ -74,6 +74,11 @@ config USE_RA_FSP_MRAM
 	bool
 	help
 	  Enable RA FSP MRAM driver
+
+config USE_RA_FSP_SAU_UART
+	bool
+	help
+	  Enable RA FSP SAU UART driver
 
 if USE_RA_FSP_SCE
 
