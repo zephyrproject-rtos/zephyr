@@ -9,3 +9,12 @@
 	status = "reserved";
 	interrupt-parent = <&cpuppr_clic>;
 };
+
+&spi120 {
+	status = "reserved";
+	interrupt-parent = <&cpuflpr_clic>;
+};
+
+&uart120 {
+	status = "disabled";
+};
