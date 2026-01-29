@@ -84,11 +84,9 @@ static inline uint32_t ll_func_dma_get_reg_addr(SPI_TypeDef *spi, uint32_t locat
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	if (location == SPI_STM32_DMA_TX) {
-		/* use direct register location until the LL_SPI_DMA_GetTxRegAddr exists */
-		return (uint32_t)&(spi->TXDR);
+		return LL_SPI_DMA_GetTxRegAddr(spi);
 	}
-	/* use direct register location until the LL_SPI_DMA_GetRxRegAddr exists */
-	return (uint32_t)&(spi->RXDR);
+	return LL_SPI_DMA_GetRxRegAddr(spi);
 #else
 	ARG_UNUSED(location);
 	return (uint32_t)LL_SPI_DMA_GetRegAddr(spi);

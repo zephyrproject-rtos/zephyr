@@ -188,38 +188,36 @@ static uint8_t bits2bytes(spi_operation_t operation)
 static __aligned(32) uint32_t dummy_rx_tx_buffer __nocache;
 
 /* This function is executed in the interrupt context */
-static void dma_callback(const struct device *dma_dev, void *arg,
-			 uint32_t channel, int status)
+static void dma_callback(const struct device *dma_dev, void *arg, uint32_t channel, int status)
 {
 	ARG_UNUSED(dma_dev);
 
 	/* arg holds SPI DMA data
 	 * Passed in spi_stm32_dma_tx/rx_load()
 	 */
-	struct spi_stm32_data *spi_dma_data = arg;
+	struct spi_stm32_data *data = arg;
 
 	if (status < 0) {
 		LOG_ERR("DMA callback error with channel %d.", channel);
-		spi_dma_data->status_flags |= SPI_STM32_DMA_ERROR_FLAG;
+		data->status_flags |= SPI_STM32_DMA_ERROR_FLAG;
 	} else {
 		/* identify the origin of this callback */
-		if (channel == spi_dma_data->dma_tx.channel) {
+		if (channel == data->dma_tx.channel) {
 			/* this part of the transfer ends */
-			spi_dma_data->status_flags |= SPI_STM32_DMA_TX_DONE_FLAG;
-		} else if (channel == spi_dma_data->dma_rx.channel) {
+			data->status_flags |= SPI_STM32_DMA_TX_DONE_FLAG;
+		} else if (channel == data->dma_rx.channel) {
 			/* this part of the transfer ends */
-			spi_dma_data->status_flags |= SPI_STM32_DMA_RX_DONE_FLAG;
+			data->status_flags |= SPI_STM32_DMA_RX_DONE_FLAG;
 		} else {
 			LOG_ERR("DMA callback channel %d is not valid.", channel);
-			spi_dma_data->status_flags |= SPI_STM32_DMA_ERROR_FLAG;
+			data->status_flags |= SPI_STM32_DMA_ERROR_FLAG;
 		}
 	}
 
-	k_sem_give(&spi_dma_data->status_sem);
+	k_sem_give(&data->status_sem);
 }
 
-static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf,
-				 size_t len)
+static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf, size_t len)
 {
 	const struct spi_stm32_config *cfg = dev->config;
 	struct spi_stm32_data *data = dev->data;
@@ -269,8 +267,7 @@ static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf,
 	/* give the dma channel data as arg, as the callback comes from the dma */
 	stream->dma_cfg.user_data = data;
 	/* pass our client origin to the dma: data->dma_tx.dma_channel */
-	ret = dma_config(data->dma_tx.dma_dev, data->dma_tx.channel,
-			&stream->dma_cfg);
+	ret = dma_config(data->dma_tx.dma_dev, data->dma_tx.channel, &stream->dma_cfg);
 	/* the channel is the actual stream from 0 */
 	if (ret != 0) {
 		return ret;
@@ -280,8 +277,7 @@ static int spi_stm32_dma_tx_load(const struct device *dev, const uint8_t *buf,
 	return dma_start(data->dma_tx.dma_dev, data->dma_tx.channel);
 }
 
-static int spi_stm32_dma_rx_load(const struct device *dev, uint8_t *buf,
-				 size_t len)
+static int spi_stm32_dma_rx_load(const struct device *dev, uint8_t *buf, size_t len)
 {
 	const struct spi_stm32_config *cfg = dev->config;
 	struct spi_stm32_data *data = dev->data;
@@ -328,8 +324,7 @@ static int spi_stm32_dma_rx_load(const struct device *dev, uint8_t *buf,
 
 
 	/* pass our client origin to the dma: data->dma_rx.channel */
-	ret = dma_config(data->dma_rx.dma_dev, data->dma_rx.channel,
-			&stream->dma_cfg);
+	ret = dma_config(data->dma_rx.dma_dev, data->dma_rx.channel, &stream->dma_cfg);
 	/* the channel is the actual stream from 0 */
 	if (ret != 0) {
 		return ret;
@@ -370,23 +365,35 @@ static int spi_dma_move_buffers(const struct device *dev, size_t len)
 	return spi_dma_move_tx_buffers(dev, len);
 }
 
+static void spi_dma_enable_requests(SPI_TypeDef *spi)
+{
+	uint32_t transfer_dir = LL_SPI_GetTransferDirection(spi);
+
+	if (transfer_dir == LL_SPI_FULL_DUPLEX) {
+		LL_SPI_EnableDMAReq_RX(spi);
+		LL_SPI_EnableDMAReq_TX(spi);
+	} else if (transfer_dir == LL_SPI_HALF_DUPLEX_TX) {
+		LL_SPI_EnableDMAReq_TX(spi);
+	} else {
+		LL_SPI_EnableDMAReq_RX(spi);
+	}
+}
 #endif /* CONFIG_SPI_STM32_DMA */
 
 /* Value to shift out when no application data needs transmitting. */
 #define SPI_STM32_TX_NOP 0x00
 
-static void spi_stm32_send_next_frame(SPI_TypeDef *spi,
-		struct spi_stm32_data *data)
+static void spi_stm32_send_next_frame(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
-	const uint8_t frame_size = bits2bytes(data->ctx.config->operation);
+	const uint8_t dfs = bits2bytes(data->ctx.config->operation);
 	uint32_t tx_frame = SPI_STM32_TX_NOP;
 
-	if (frame_size == 1U) {
+	if (dfs == 1U) {
 		if (spi_context_tx_buf_on(&data->ctx)) {
 			tx_frame = UNALIGNED_GET((uint8_t *)(data->ctx.tx_buf));
 		}
 		LL_SPI_TransmitData8(spi, tx_frame);
-	} else if (frame_size == 2U) {
+	} else if (dfs == 2U) {
 		if (spi_context_tx_buf_on(&data->ctx)) {
 			tx_frame = UNALIGNED_GET((uint16_t *)(data->ctx.tx_buf));
 		}
@@ -399,21 +406,20 @@ static void spi_stm32_send_next_frame(SPI_TypeDef *spi,
 		LL_SPI_TransmitData32(spi, tx_frame);
 #endif
 	}
-	spi_context_update_tx(&data->ctx, frame_size, 1);
+	spi_context_update_tx(&data->ctx, dfs, 1);
 }
 
-static void spi_stm32_read_next_frame(SPI_TypeDef *spi,
-		struct spi_stm32_data *data)
+static void spi_stm32_read_next_frame(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
-	const uint8_t frame_size = bits2bytes(data->ctx.config->operation);
+	const uint8_t dfs = bits2bytes(data->ctx.config->operation);
 	uint32_t rx_frame = 0;
 
-	if (frame_size == 1U) {
+	if (dfs == 1U) {
 		rx_frame = LL_SPI_ReceiveData8(spi);
 		if (spi_context_rx_buf_on(&data->ctx)) {
 			UNALIGNED_PUT(rx_frame, (uint8_t *)data->ctx.rx_buf);
 		}
-	} else if (frame_size == 2U) {
+	} else if (dfs == 2U) {
 		rx_frame = LL_SPI_ReceiveData16(spi);
 		if (spi_context_rx_buf_on(&data->ctx)) {
 			UNALIGNED_PUT(rx_frame, (uint16_t *)data->ctx.rx_buf);
@@ -426,7 +432,7 @@ static void spi_stm32_read_next_frame(SPI_TypeDef *spi,
 		}
 #endif
 	}
-	spi_context_update_rx(&data->ctx, frame_size, 1);
+	spi_context_update_rx(&data->ctx, dfs, 1);
 }
 
 static bool spi_stm32_transfer_ongoing(struct spi_stm32_data *data)
@@ -439,8 +445,7 @@ static int spi_stm32_get_err(SPI_TypeDef *spi)
 	uint32_t sr = stm32_reg_read(&spi->SR);
 
 	if ((sr & SPI_STM32_ERR_MSK) != 0U) {
-		LOG_ERR("%s: err=%d", __func__,
-			sr & (uint32_t)SPI_STM32_ERR_MSK);
+		LOG_ERR("%s: err=%d", __func__, sr & (uint32_t)SPI_STM32_ERR_MSK);
 
 		/* OVR error must be explicitly cleared */
 		if (LL_SPI_IsActiveFlag_OVR(spi)) {
@@ -469,8 +474,7 @@ static void spi_stm32_shift_fifo(SPI_TypeDef *spi, struct spi_stm32_data *data)
 }
 
 /* Shift a SPI frame as master. */
-static void spi_stm32_shift_m(const struct spi_stm32_config *cfg,
-			      struct spi_stm32_data *data)
+static void spi_stm32_shift_m(const struct spi_stm32_config *cfg, struct spi_stm32_data *data)
 {
 	if (cfg->fifo_enabled) {
 		spi_stm32_shift_fifo(cfg->spi, data);
@@ -498,55 +502,22 @@ static void spi_stm32_shift_m(const struct spi_stm32_config *cfg,
 /* Shift a SPI frame as slave. */
 static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
-	uint8_t frame_size = bits2bytes(data->ctx.config->operation);
-
 	if (ll_func_tx_is_not_full(spi) && spi_context_tx_on(&data->ctx)) {
-		uint32_t tx_frame;
-
-		if (frame_size == 1U) {
-			tx_frame = UNALIGNED_GET((uint8_t *)(data->ctx.tx_buf));
-			LL_SPI_TransmitData8(spi, tx_frame);
-		} else if (frame_size == 2U) {
-			tx_frame = UNALIGNED_GET((uint16_t *)(data->ctx.tx_buf));
-			LL_SPI_TransmitData16(spi, tx_frame);
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-		} else {
-			tx_frame = UNALIGNED_GET((uint32_t *)(data->ctx.tx_buf));
-			LL_SPI_TransmitData32(spi, tx_frame);
-#endif
-		}
-		spi_context_update_tx(&data->ctx, frame_size, 1);
+		spi_stm32_send_next_frame(spi, data);
 	} else {
 		ll_func_disable_int_tx_empty(spi);
 	}
 
 	if (ll_func_rx_is_not_empty(spi) && spi_context_rx_buf_on(&data->ctx)) {
-		uint32_t rx_frame;
-
-		if (frame_size == 1U) {
-			rx_frame = LL_SPI_ReceiveData8(spi);
-			UNALIGNED_PUT(rx_frame, (uint8_t *)data->ctx.rx_buf);
-		} else if (frame_size == 2U) {
-			rx_frame = LL_SPI_ReceiveData16(spi);
-			UNALIGNED_PUT(rx_frame, (uint16_t *)data->ctx.rx_buf);
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-		} else {
-			rx_frame = LL_SPI_ReceiveData32(spi);
-			UNALIGNED_PUT(rx_frame, (uint32_t *)data->ctx.rx_buf);
-#endif
-		}
-		spi_context_update_rx(&data->ctx, frame_size, 1);
+		spi_stm32_read_next_frame(spi, data);
 	}
 }
 
 /*
  * Without a FIFO, we can only shift out one frame's worth of SPI
  * data, and read the response back.
- *
- * TODO: support 16-bit data frames.
  */
-static int spi_stm32_shift_frames(const struct spi_stm32_config *cfg,
-	struct spi_stm32_data *data)
+static int spi_stm32_shift_frames(const struct spi_stm32_config *cfg, struct spi_stm32_data *data)
 {
 	spi_operation_t operation = data->ctx.config->operation;
 
@@ -895,26 +866,18 @@ static void spi_stm32_isr(const struct device *dev)
 
 	if (spi_stm32_transfer_ongoing(data)) {
 		err = spi_stm32_shift_frames(cfg, data);
-	}
-
-	if (err) {
-		spi_stm32_complete(dev, err);
+		if (err) {
+			spi_stm32_complete(dev, err);
+			return;
+		}
 	}
 
 	uint32_t transfer_dir = LL_SPI_GetTransferDirection(spi);
 
-	if (transfer_dir == LL_SPI_FULL_DUPLEX) {
-		if (!spi_stm32_transfer_ongoing(data)) {
-			spi_stm32_complete(dev, err);
-		}
-	} else if (transfer_dir == LL_SPI_HALF_DUPLEX_TX) {
-		if (!spi_context_tx_on(&data->ctx)) {
-			spi_stm32_complete(dev, err);
-		}
-	} else {
-		if (!spi_context_rx_on(&data->ctx)) {
-			spi_stm32_complete(dev, err);
-		}
+	if (((transfer_dir == LL_SPI_FULL_DUPLEX) && !spi_stm32_transfer_ongoing(data)) ||
+	    ((transfer_dir == LL_SPI_HALF_DUPLEX_TX) && !spi_context_tx_on(&data->ctx)) ||
+	    ((transfer_dir == LL_SPI_HALF_DUPLEX_RX) && !spi_context_rx_on(&data->ctx))) {
+		spi_stm32_complete(dev, err);
 	}
 }
 #endif /* CONFIG_SPI_STM32_INTERRUPT */
@@ -1102,8 +1065,7 @@ static int spi_stm32_configure(const struct device *dev,
 	return 0;
 }
 
-static int spi_stm32_release(const struct device *dev,
-			     const struct spi_config *config)
+static int spi_stm32_release(const struct device *dev, const struct spi_config *config)
 {
 	struct spi_stm32_data *data = dev->data;
 	const struct spi_stm32_config *cfg = dev->config;
@@ -1130,13 +1092,13 @@ static int32_t spi_stm32_count_bufset_frames(const struct spi_config *config,
 		num_bytes += bufs->buffers[i].len;
 	}
 
-	uint8_t bytes_per_frame = bits2bytes(config->operation);
+	uint8_t dfs = bits2bytes(config->operation);
 
-	if ((num_bytes % bytes_per_frame) != 0) {
+	if ((num_bytes % dfs) != 0) {
 		return -EINVAL;
 	}
 
-	int frames = num_bytes / bytes_per_frame;
+	int frames = num_bytes / dfs;
 
 	if (frames > UINT16_MAX) {
 		return -EMSGSIZE;
@@ -1163,6 +1125,31 @@ static int32_t spi_stm32_count_total_frames(const struct spi_config *config,
 
 	return MAX(rx_frames, tx_frames);
 }
+
+static int32_t spi_stm32_set_transfer_size(SPI_TypeDef *spi,
+					   const struct spi_config *config,
+					   const struct spi_buf_set *tx_bufs,
+					   const struct spi_buf_set *rx_bufs)
+{
+	uint32_t transfer_dir = LL_SPI_GetTransferDirection(spi);
+	int32_t frames;
+
+	if (transfer_dir == LL_SPI_FULL_DUPLEX) {
+		frames = spi_stm32_count_total_frames(config, tx_bufs, rx_bufs);
+	} else if (transfer_dir == LL_SPI_HALF_DUPLEX_TX) {
+		frames = spi_stm32_count_bufset_frames(config, tx_bufs);
+	} else {
+		frames = spi_stm32_count_bufset_frames(config, rx_bufs);
+	}
+
+	if (frames < 0) {
+		return frames;
+	}
+
+	LL_SPI_SetTransferSize(spi, (uint32_t)frames);
+
+	return 0;
+}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
 static int spi_stm32_half_duplex_switch_to_receive(const struct spi_stm32_config *cfg,
@@ -1183,13 +1170,13 @@ static int spi_stm32_half_duplex_switch_to_receive(const struct spi_stm32_config
 
 		if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
 			int num_bytes = spi_context_total_rx_len(&data->ctx);
-			uint8_t bytes_per_frame = bits2bytes(config->operation);
+			uint8_t dfs = bits2bytes(config->operation);
 
-			if ((num_bytes % bytes_per_frame) != 0) {
+			if ((num_bytes % dfs) != 0) {
 				return -EINVAL;
 			}
 
-			LL_SPI_SetTransferSize(spi, (uint32_t) num_bytes / bytes_per_frame);
+			LL_SPI_SetTransferSize(spi, (uint32_t) num_bytes / dfs);
 		}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
@@ -1283,21 +1270,11 @@ static int transceive(const struct device *dev,
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	if (cfg->fifo_enabled && SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
-		int total_frames;
+		ret = spi_stm32_set_transfer_size(spi, config, tx_bufs, rx_bufs);
 
-		if (transfer_dir == LL_SPI_FULL_DUPLEX) {
-			total_frames = spi_stm32_count_total_frames(config, tx_bufs, rx_bufs);
-		} else if (transfer_dir == LL_SPI_HALF_DUPLEX_TX) {
-			total_frames = spi_stm32_count_bufset_frames(config, tx_bufs);
-		} else {
-			total_frames = spi_stm32_count_bufset_frames(config, rx_bufs);
-		}
-
-		if (total_frames < 0) {
-			ret = total_frames;
+		if (ret < 0) {
 			goto end;
 		}
-		LL_SPI_SetTransferSize(spi, (uint32_t)total_frames);
 	}
 
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
@@ -1389,8 +1366,7 @@ static bool spi_buf_set_in_nocache(const struct spi_buf_set *bufs)
 	for (size_t i = 0; i < bufs->count; i++) {
 		const struct spi_buf *buf = &bufs->buffers[i];
 
-		if (!is_dummy_buffer(buf) &&
-		    !stm32_buf_in_nocache((uintptr_t)buf->buf, buf->len)) {
+		if (!is_dummy_buffer(buf) && !stm32_buf_in_nocache((uintptr_t)buf->buf, buf->len)) {
 			return false;
 		}
 	}
@@ -1443,14 +1419,11 @@ static int transceive_dma(const struct device *dev,
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	if (transfer_dir == LL_SPI_HALF_DUPLEX_RX) {
-		int frames = spi_stm32_count_bufset_frames(config, rx_bufs);
+		ret = spi_stm32_set_transfer_size(spi, config, tx_bufs, rx_bufs);
 
-		if (frames < 0) {
-			ret = frames;
+		if (ret < 0) {
 			goto end;
 		}
-
-		LL_SPI_SetTransferSize(cfg->spi, frames);
 	}
 #endif /* st_stm32h7_spi */
 
@@ -1459,22 +1432,14 @@ static int transceive_dma(const struct device *dev,
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	/* set request before enabling (else SPI CFG1 reg is write protected) */
-	if (transfer_dir == LL_SPI_FULL_DUPLEX) {
-		LL_SPI_EnableDMAReq_RX(spi);
-		LL_SPI_EnableDMAReq_TX(spi);
-	} else if (transfer_dir == LL_SPI_HALF_DUPLEX_TX) {
-		LL_SPI_EnableDMAReq_TX(spi);
-	} else {
-		LL_SPI_EnableDMAReq_RX(spi);
-	}
+	spi_dma_enable_requests(spi);
 
 	LL_SPI_Enable(spi);
 
 	/* In half-duplex rx mode, start transfer after
 	 * setting DMA configurations
 	 */
-	if (transfer_dir != LL_SPI_HALF_DUPLEX_RX &&
-	    LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
+	if (transfer_dir != LL_SPI_HALF_DUPLEX_RX && LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
 		LL_SPI_StartMasterTransfer(spi);
 	}
 #else
@@ -1484,13 +1449,13 @@ static int transceive_dma(const struct device *dev,
 	/* This is turned off in spi_stm32_complete(). */
 	spi_stm32_cs_control(dev, true);
 
-	uint8_t word_size_bytes = bits2bytes(config->operation);
+	uint8_t dfs = bits2bytes(config->operation);
 	struct dma_config *rx_cfg = &data->dma_rx.dma_cfg, *tx_cfg = &data->dma_tx.dma_cfg;
 
-	rx_cfg->source_data_size = rx_cfg->source_burst_length = word_size_bytes;
-	rx_cfg->dest_data_size = rx_cfg->dest_burst_length = word_size_bytes;
-	tx_cfg->source_data_size = tx_cfg->source_burst_length = word_size_bytes;
-	tx_cfg->dest_data_size = tx_cfg->dest_burst_length = word_size_bytes;
+	rx_cfg->source_data_size = rx_cfg->source_burst_length = dfs;
+	rx_cfg->dest_data_size = rx_cfg->dest_burst_length = dfs;
+	tx_cfg->source_data_size = tx_cfg->source_burst_length = dfs;
+	tx_cfg->dest_data_size = tx_cfg->dest_burst_length = dfs;
 
 	while (data->ctx.rx_len > 0 || data->ctx.tx_len > 0) {
 		size_t dma_len;
@@ -1499,7 +1464,6 @@ static int transceive_dma(const struct device *dev,
 
 		if (transfer_dir == LL_SPI_FULL_DUPLEX) {
 			dma_len = spi_context_max_continuous_chunk(&data->ctx);
-
 			ret = spi_dma_move_buffers(dev, dma_len);
 		} else if (transfer_dir == LL_SPI_HALF_DUPLEX_TX) {
 			dma_len = data->ctx.tx_len;
@@ -1521,16 +1485,8 @@ static int transceive_dma(const struct device *dev,
 		}
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-
 		/* toggle the DMA request to restart the transfer */
-		if (transfer_dir == LL_SPI_FULL_DUPLEX) {
-			LL_SPI_EnableDMAReq_RX(spi);
-			LL_SPI_EnableDMAReq_TX(spi);
-		} else if (transfer_dir == LL_SPI_HALF_DUPLEX_TX) {
-			LL_SPI_EnableDMAReq_TX(spi);
-		} else {
-			LL_SPI_EnableDMAReq_RX(spi);
-		}
+		spi_dma_enable_requests(spi);
 #endif /* ! st_stm32h7_spi */
 
 		ret = wait_dma_rx_tx_done(dev);
@@ -1544,9 +1500,7 @@ static int transceive_dma(const struct device *dev,
 #endif /* SPI_SR_FTLVL */
 
 #ifdef CONFIG_SPI_STM32_ERRATA_BUSY
-		WAIT_FOR(!ll_func_spi_dma_busy(spi),
-			 CONFIG_SPI_STM32_BUSY_FLAG_TIMEOUT,
-			 k_yield());
+		WAIT_FOR(!ll_func_spi_dma_busy(spi), CONFIG_SPI_STM32_BUSY_FLAG_TIMEOUT, k_yield());
 #else
 		/* wait until spi is no more busy (spi TX fifo is really empty) */
 		while (ll_func_spi_dma_busy(spi) && LL_SPI_IsEnabled(spi)) {
@@ -1569,15 +1523,13 @@ static int transceive_dma(const struct device *dev,
 		LL_SPI_DisableDMAReq_RX(spi);
 #endif /* ! st_stm32h7_spi */
 
-		uint8_t frame_size_bytes = bits2bytes(config->operation);
-
 		if (transfer_dir == LL_SPI_FULL_DUPLEX) {
-			spi_context_update_tx(&data->ctx, frame_size_bytes, dma_len);
-			spi_context_update_rx(&data->ctx, frame_size_bytes, dma_len);
+			spi_context_update_tx(&data->ctx, dfs, dma_len);
+			spi_context_update_rx(&data->ctx, dfs, dma_len);
 		} else if (transfer_dir == LL_SPI_HALF_DUPLEX_TX) {
-			spi_context_update_tx(&data->ctx, frame_size_bytes, dma_len);
+			spi_context_update_tx(&data->ctx, dfs, dma_len);
 		} else {
-			spi_context_update_rx(&data->ctx, frame_size_bytes, dma_len);
+			spi_context_update_rx(&data->ctx, dfs, dma_len);
 		}
 
 		if (transfer_dir == LL_SPI_HALF_DUPLEX_TX &&
@@ -1589,16 +1541,13 @@ static int transceive_dma(const struct device *dev,
 			transfer_dir = LL_SPI_HALF_DUPLEX_RX;
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-			int frames = spi_stm32_count_bufset_frames(config, rx_bufs);
+			ret = spi_stm32_set_transfer_size(spi, config, tx_bufs, rx_bufs);
 
-			if (frames < 0) {
-				ret = frames;
+			if (ret < 0) {
 				break;
 			}
 
-			LL_SPI_SetTransferSize(cfg->spi, frames);
-
-			LL_SPI_EnableDMAReq_RX(spi);
+			spi_dma_enable_requests(spi);
 #endif /* st_stm32h7_spi */
 
 			LL_SPI_Enable(spi);
@@ -1706,8 +1655,7 @@ static int spi_stm32_pinctrl_apply(const struct device *dev, uint8_t id)
 	return err;
 }
 
-static int spi_stm32_pm_action(const struct device *dev,
-			       enum pm_device_action action)
+static int spi_stm32_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	__maybe_unused struct spi_stm32_data *data = dev->data;
 	const struct spi_stm32_config *config = dev->config;
