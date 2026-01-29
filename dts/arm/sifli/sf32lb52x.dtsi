@@ -376,7 +376,7 @@
 		};
 
 		pmuc: syscon@500ca000 {
-			compatible = "sifli,sf32lb-pmuc", "syscon";
+			compatible = "sifli,sf32lb52x-pmuc", "syscon";
 			reg = <0x500ca000 0x1000>;
 		};
 
