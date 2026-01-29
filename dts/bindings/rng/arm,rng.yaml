@@ -1,0 +1,13 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+
+# This is a CPU functionality and not associated with any device. The Zephyr
+# driver model forces us to bind this to a device tree entry in order to use it
+# as entropy source. Therefore, as a workaround, we define this as a
+# "zephyr,arm64-rng"-compatible device.
+#
+# Add a corresponding node under "cpus" in your device tree and choose this
+# as "zephyr,entropy".
+description: ARM64 FEAT_RNG entropy
+
+compatible: "zephyr,arm64-rng"
