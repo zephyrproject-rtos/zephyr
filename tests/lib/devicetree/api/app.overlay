@@ -714,6 +714,89 @@
 			};
 		};
 
+		test_children_on_bus: controller@ccccdddd {
+			compatible = "vnd,controller";
+			reg = <0xccccdddd 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* Child number 1 of the controller */
+			test_child_on_bus_a: test-child-a@0 {
+				compatible = "vnd,device";
+				reg = <0x0 0x100>;
+				status = "okay";
+			};
+
+			/* Child number 2 of the controller */
+			test_child_on_bus_b: test-child-b@100 {
+				compatible = "vnd,device";
+				reg = <0x100 0x100>;
+				status = "okay";
+			};
+
+			/* Child number 3 of the controller */
+			test_child_on_bus_c: test-child-c@200 {
+				compatible = "vnd,device";
+				reg = <0x200 0x100>;
+				status = "disabled";
+			};
+
+			test_child_on_bus_d: test-child-on-bus-d {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges;
+
+				/* Child number 4 of the controller */
+				test_child_dd: test-child-dd@300 {
+					compatible = "vnd,device";
+					reg = <0x300 0x100>;
+					status = "okay";
+				};
+
+				/* Child number 5 of the controller */
+				test_child_ee: test-child-ee@400 {
+					compatible = "vnd,device";
+					reg = <0x400 0x100>;
+					status = "disabled";
+				};
+			};
+
+			/* Child number 6 of the controller */
+			test_child_on_bus_ext: test-child-on-bus-ext@500 {
+				compatible = "vnd,device-extender";
+				reg = <0x500 0x300>;
+				ranges = <0x0 0x600 0x200>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				/* Child number 1 of the extender */
+				test_child_a_on_ext: test-child-a-on-ext@0 {
+					compatible = "vnd,device";
+					reg = <0x0 0x100>;
+					status = "okay";
+				};
+
+				/* Child number 2 of the extender */
+				test_child_b_on_ext: test-child-b-on-ext@100 {
+					compatible = "vnd,device";
+					reg = <0x100 0x100>;
+					status = "disabled";
+				};
+			};
+
+			/* Not a phyiscal child node of the controller */
+			controller_dev_setting_a: setting-a {
+				compatible = "vnd,controller-device-setting";
+				val1 = <1>;
+			};
+
+			/* Not a phyiscal child node of the controller */
+			controller_dev_setting_b: setting-b {
+				compatible = "vnd,controller-device-setting";
+				val1 = <2>;
+			};
+		};
+
 		test-ranges {
 			#address-cells = <2>;
 			#size-cells = <1>;
