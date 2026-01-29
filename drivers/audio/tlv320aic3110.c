@@ -42,7 +42,7 @@ static void codec_update_reg(const struct device *dev, struct reg_addr reg, uint
 static void codec_soft_reset(const struct device *dev);
 static int codec_configure_dai(const struct device *dev, audio_dai_cfg_t *cfg);
 static int codec_configure_clocks(const struct device *dev, struct audio_codec_cfg *cfg);
-static int codec_configure_filters(const struct device *dev, audio_dai_cfg_t *cfg);
+static void codec_configure_filters(const struct device *dev, audio_dai_cfg_t *cfg);
 static void codec_configure_output(const struct device *dev);
 static void codec_configure_input(const struct device *dev);
 static int codec_set_output_volume(const struct device *dev, audio_channel_t channel, int vol);
@@ -77,11 +77,7 @@ static int codec_configure(const struct device *dev, struct audio_codec_cfg *cfg
 		return ret;
 	}
 
-	ret = codec_configure_filters(dev, &cfg->dai_cfg);
-	if (ret) {
-		LOG_ERR("Failed to configure filters: %d", ret);
-		return ret;
-	}
+	codec_configure_filters(dev, &cfg->dai_cfg);
 
 	codec_configure_input(dev);
 	codec_configure_output(dev);
@@ -353,7 +349,7 @@ static int codec_configure_clocks(const struct device *dev, struct audio_codec_c
 	return 0;
 }
 
-static int codec_configure_filters(const struct device *dev, audio_dai_cfg_t *cfg)
+static void codec_configure_filters(const struct device *dev, audio_dai_cfg_t *cfg)
 {
 	enum dac_proc_block dac_proc_blk;
 	enum adc_proc_block adc_proc_blk;
@@ -375,7 +371,6 @@ static int codec_configure_filters(const struct device *dev, audio_dai_cfg_t *cf
 
 	codec_write_reg(dev, DAC_PROC_BLK_SEL_ADDR, dac_proc_blk);
 	codec_write_reg(dev, ADC_PROC_BLK_SEL_ADDR, adc_proc_blk);
-	return 0;
 }
 
 static void codec_configure_output(const struct device *dev)
