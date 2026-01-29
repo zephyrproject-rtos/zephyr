@@ -382,7 +382,7 @@
 			alarms-count = <1>;
 			status = "disabled";
 
-			backup-registers@30 {
+			rtc_backup: backup-registers@30 {
 				compatible = "sifli,sf32lb-rtc-backup";
 				reg = <0x30 0x28>;
 				status = "disabled";
