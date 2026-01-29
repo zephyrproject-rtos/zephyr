@@ -127,8 +127,9 @@ Glossary of Terms
       executing on the processor.
 
    kernel
-      The set of Zephyr-supplied files that implement the Zephyr kernel,
-      including its core services, device drivers, network stack, and so on.
+      The :term:`software component` in Zephyr that provides the
+      hardware-agnostic core of the RTOS, including booting, threading,
+      scheduling, synchronization, user mode, memory management and more.
 
    power domain
       A power domain is a collection of devices for which power is
@@ -169,9 +170,9 @@ Glossary of Terms
       features, and that the vendor typically names and markets together.
 
    software component
-      A software component is a self-contained, modular, and replaceable part of
-      the Zephyr source code. A driver, a subsystem or an applications are all
-      examples of software components present in Zephyr.
+      A software component is a well-defined and modular part of
+      the Zephyr source code. The kernel, a driver, a library, a subsystem or a
+      sample are all examples of software components present in Zephyr.
 
    subsystem
        A subsystem refers to a logically distinct part of the operating system
