@@ -15,7 +15,7 @@
 		};
 
 		group1 {
-			pins = <EUSART1_RX_PC2>;
+			pins = <EUSART1_RX_PA5>;
 			input-enable;
 		};
 	};
