@@ -63,7 +63,7 @@
 					SRAM1_IRAM_START)
 
 /* Set bootloader segments size */
-#define BOOTLOADER_DRAM_SEG_LEN        0x7a00
+#define BOOTLOADER_DRAM_SEG_LEN        0x8000
 #define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x4000
 #define BOOTLOADER_IRAM_SEG_LEN        0xa000
 
