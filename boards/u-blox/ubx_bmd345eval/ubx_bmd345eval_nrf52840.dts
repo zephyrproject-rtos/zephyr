@@ -132,6 +132,8 @@
 		ctx-settle-time-us = <1>;
 		crx-gpios = <&gpio1 6 0>;
 		crx-settle-time-us = <1>;
+		tx-gain-db = <24>;
+		rx-gain-db = <10>;
 	};
 
 	/* These aliases are provided for compatibility with samples */
