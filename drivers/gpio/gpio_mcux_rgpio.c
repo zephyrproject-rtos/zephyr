@@ -98,7 +98,7 @@ static int mcux_rgpio_configure(const struct device *dev,
 		reg &= ~IOMUXC_SW_PAD_CTL_PAD_ODE_MASK;
 	}
 
-	if (config->pin_muxes[pin].pue_mux) {
+	if (config->pin_muxes[cfg_idx].pue_mux) {
 		if (flags & GPIO_PULL_UP) {
 			reg |= (IOMUXC_SW_PAD_CTL_PAD_PUS_MASK | IOMUXC_SW_PAD_CTL_PAD_PUE_MASK);
 		} else if (flags & GPIO_PULL_DOWN) {
