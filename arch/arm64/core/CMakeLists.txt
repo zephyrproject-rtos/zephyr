@@ -31,6 +31,7 @@ endif()
 
 zephyr_library_sources_ifdef(CONFIG_LLEXT elf.c)
 zephyr_library_sources_ifdef(CONFIG_FPU_SHARING fpu.c fpu.S)
+zephyr_library_sources_ifdef(CONFIG_ARM_PAC_PER_THREAD pac.c)
 zephyr_library_sources_ifdef(CONFIG_ARM_MMU mmu.c mmu.S)
 zephyr_library_sources_ifdef(CONFIG_ARM_MPU cortex_r/arm_mpu.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.S)

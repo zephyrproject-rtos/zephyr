@@ -728,6 +728,13 @@ static uint64_t get_region_desc(uint32_t attrs)
 			desc |= PTE_BLOCK_DESC_UXN;
 		}
 
+#ifdef CONFIG_ARM_BTI
+		/* Set GP (Guarded Page) bit for executable pages to enable BTI */
+		if (!(desc & PTE_BLOCK_DESC_PXN)) {
+			desc |= PTE_BLOCK_DESC_GP;
+		}
+#endif
+
 		if (mem_type == MT_NORMAL) {
 			desc |= PTE_BLOCK_DESC_INNER_SHARE;
 		} else {
@@ -988,6 +995,16 @@ static sys_slist_t domain_list;
  * This function provides the default configuration mechanism for the Memory
  * Management Unit (MMU).
  */
+#ifdef CONFIG_ARM_PAC
+/*
+ * Disable PAC protection for MMU activation to prevent authentication
+ * failures. When PAC is enabled, return address authentication can fail
+ * during MMU activation because memory mapping changes affect the return address
+ * stored on the stack, causing the PAC authentication to fail on function
+ * return. This attribute ensures the MMU init can complete safely.
+ */
+__attribute__((target("branch-protection=none")))
+#endif
 void z_arm64_mm_init(bool is_primary_core)
 {
 	unsigned int flags = 0U;

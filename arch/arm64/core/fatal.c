@@ -25,6 +25,9 @@
 #include <zephyr/arch/exception.h>
 
 #include "paging.h"
+#ifdef CONFIG_ARM_PAC
+#include <zephyr/arch/arm64/pac.h>
+#endif
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -175,6 +178,9 @@ static void dump_esr(uint64_t esr, bool *dump_far)
 		break;
 	case 0b111100: /* 0x3c */
 		err = "BRK instruction execution in AArch64 state.";
+		break;
+	case 0b011100: /* 0x1c */
+		err = "FPAC - Pointer Authentication failure";
 		break;
 	default:
 		err = "Unknown";
@@ -363,6 +369,79 @@ static bool z_arm64_stack_corruption_check(struct arch_esf *esf, uint64_t esr, u
 }
 #endif
 
+/**
+ * @brief Check if exception is a BTI violation
+ */
+static bool is_bti_violation(uint64_t esr)
+{
+#ifdef CONFIG_ARM_BTI
+	/* BTI violations have Exception Class 0x0d */
+	return (GET_ESR_EC(esr) == 0x0d);
+#else
+	ARG_UNUSED(esr);
+	return false;
+#endif
+}
+
+/**
+ * @brief Check if exception is a PAC authentication failure
+ *
+ * PAC authentication failures typically manifest as FPAC exceptions
+ * with Exception Class (EC) 0x1c.
+ */
+static bool is_pac_failure(uint64_t esr, uint64_t far)
+{
+#ifdef CONFIG_ARM_PAC
+	uint64_t ec = GET_ESR_EC(esr);
+
+	/* Check for FPAC exception (EC 0x1c) - dedicated PAC authentication failure */
+	if (ec == 0x1c) {
+		return true;
+	}
+#else
+	ARG_UNUSED(esr);
+	ARG_UNUSED(far);
+#endif
+	return false;
+}
+
+/**
+ * @brief Handle PACBTI-related exceptions
+ *
+ * @param esf Exception stack frame
+ * @param esr Exception syndrome register value
+ * @param far Fault address register value
+ * @return true if this was a PACBTI exception and was handled, false otherwise
+ */
+static bool z_arm64_handle_pacbti_exception(struct arch_esf *esf, uint64_t esr, uint64_t far)
+{
+	ARG_UNUSED(esf);
+
+	if (is_pac_failure(esr, far)) {
+		EXCEPTION_DUMP("PAC AUTHENTICATION FAILURE");
+		EXCEPTION_DUMP("This indicates a potential ROP/JOP attack or corrupted pointer");
+#ifdef CONFIG_THREAD_NAME
+		EXCEPTION_DUMP("Thread: %s", _current ? _current->name : "unknown");
+#else
+		EXCEPTION_DUMP("Thread: %p", _current);
+#endif
+		return true;  /* Treat as fatal */
+	}
+
+	if (is_bti_violation(esr)) {
+		EXCEPTION_DUMP("BTI VIOLATION - Indirect branch to invalid target");
+		EXCEPTION_DUMP("This indicates a potential JOP attack or software bug");
+#ifdef CONFIG_THREAD_NAME
+		EXCEPTION_DUMP("Thread: %s", _current ? _current->name : "unknown");
+#else
+		EXCEPTION_DUMP("Thread: %p", _current);
+#endif
+		return true;  /* Treat as fatal */
+	}
+
+	return false;
+}
+
 static bool is_recoverable(struct arch_esf *esf, uint64_t esr, uint64_t far,
 			   uint64_t elr)
 {
@@ -420,6 +499,11 @@ void z_arm64_fatal_error(unsigned int reason, struct arch_esf *esf)
 			reason = K_ERR_STACK_CHK_FAIL;
 		}
 #endif
+
+		/* Check for PACBTI-related exceptions */
+		if (z_arm64_handle_pacbti_exception(esf, esr, far)) {
+			reason = K_ERR_CPU_EXCEPTION;
+		}
 
 		if (IS_ENABLED(CONFIG_DEMAND_PAGING) &&
 		    reason != K_ERR_STACK_CHK_FAIL &&
