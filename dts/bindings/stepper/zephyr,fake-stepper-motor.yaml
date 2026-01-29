@@ -4,4 +4,4 @@
 description: |
     A fake stepper controller for use as either a stub or a mock in testing.
 
-compatible: "zephyr,fake-stepper"
+compatible: "zephyr,fake-stepper-motor"

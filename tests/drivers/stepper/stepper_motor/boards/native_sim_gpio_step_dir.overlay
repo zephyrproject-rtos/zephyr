@@ -11,7 +11,7 @@
 	};
 
 	gpio_step_dir_controller: gpio_step_dir_controller {
-		compatible = "zephyr,gpio-step-dir-stepper";
+		compatible = "zephyr,gpio-step-dir-stepper-motor";
 		step-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
 		dir-gpios = <&gpio2 0 GPIO_ACTIVE_HIGH>;
 		counter = <&counter0>;
