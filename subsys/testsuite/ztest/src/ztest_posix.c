@@ -16,6 +16,7 @@
 static const char *test_args;
 static bool list_tests;
 
+#if !defined(CONFIG_ZTEST_SHELL)
 static void add_test_filter_option(void)
 {
 	static struct args_struct_t test_filter_s[] = {
@@ -39,6 +40,7 @@ static void add_test_filter_option(void)
 }
 
 NATIVE_TASK(add_test_filter_option, PRE_BOOT_1, 10);
+#endif
 
 /**
  * @brief Try to shorten a filename by removing the current directory
@@ -84,6 +86,20 @@ void ztest_set_list_test(bool value)
 bool z_ztest_get_list_test(void)
 {
 	return list_tests;
+}
+
+void ztest_reset_test_args(void)
+{
+	if (test_args != NULL) {
+		nsi_host_free((void *)test_args);
+	}
+	test_args = NULL;
+}
+
+void ztest_set_test_args(char *args)
+{
+	ztest_reset_test_args();
+	test_args = nsi_host_strdup(args);
 }
 
 /**
