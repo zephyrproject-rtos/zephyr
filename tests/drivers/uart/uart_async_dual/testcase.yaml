@@ -15,6 +15,7 @@ tests:
       - nrf54h20dk/nrf54h20/cpuppr
       - nrf9160dk/nrf9160
       - nrf52_bsim
+      - xg24_rb4187c
   drivers.uart.async_dual.busy_sim:
     harness: ztest
     harness_config:

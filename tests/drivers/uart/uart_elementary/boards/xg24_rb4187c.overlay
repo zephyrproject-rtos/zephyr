@@ -13,7 +13,7 @@
 };
 
 /*
- * Connect EXP4 (PC1) and EXP6 (PC2) of the Expansion Pin header
+ * Connect EXP4 (PC1) and EXP7 (PA5) of the Expansion Pin header
  */
 
 &pinctrl {
@@ -39,7 +39,7 @@
 		};
 
 		group1 {
-			pins = <USART0_RX_PC2>; /* WPK EXP6 (PC2) */
+			pins = <USART0_RX_PA5>; /* WPK EXP7 (PA5) */
 			input-enable;
 			silabs,input-filter;
 		};

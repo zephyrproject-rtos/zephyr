@@ -489,6 +489,7 @@ __maybe_unused static void eusart_dma_rx_cb(const struct device *dma_dev, void *
 		dma_stop(data->dma_rx.dma_dev, data->dma_rx.dma_channel);
 		data->dma_rx.enabled = false;
 		eusart_async_evt_rx_buf_release(data);
+		eusart_pm_lock_put(uart_dev, EUSART_PM_LOCK_RX);
 		eusart_async_user_callback(data, &disabled_event);
 	}
 }
@@ -617,12 +618,16 @@ static int eusart_async_rx_enable(const struct device *dev, uint8_t *rx_buf, siz
 		return -EINVAL;
 	}
 
+	data->dma_rx.enabled = true;
+	eusart_pm_lock_get(dev, EUSART_PM_LOCK_RX);
+
 	if (dma_start(data->dma_rx.dma_dev, data->dma_rx.dma_channel)) {
 		LOG_ERR("UART ERR: RX DMA start failed!");
+		data->dma_rx.enabled = false;
+		eusart_pm_lock_put(dev, EUSART_PM_LOCK_RX);
 		return -EFAULT;
 	}
 
-	eusart_pm_lock_get(dev, EUSART_PM_LOCK_RX);
 	EUSART_IntClear(config->eusart, EUSART_IF_RXOF);
 	EUSART_IntEnable(config->eusart, EUSART_IF_RXOF);
 
@@ -633,8 +638,6 @@ static int eusart_async_rx_enable(const struct device *dev, uint8_t *rx_buf, siz
 		/* Use pure polling via timeout work instead of RXTO interrupt.*/
 		eusart_async_timer_start(&data->dma_rx.timeout_work, data->dma_rx.timeout);
 	}
-
-	data->dma_rx.enabled = true;
 
 	eusart_async_evt_rx_buf_request(data);
 
