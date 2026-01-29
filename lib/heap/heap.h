@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Intel Corporation
+ * Copyright (c) 2026 Qualcomm Technologies, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -65,6 +66,85 @@ struct z_heap_bucket {
 	chunkid_t next;
 };
 
+#ifdef CONFIG_SYS_HEAP_CANARIES
+
+/**
+ * @brief Compute a 64-bit header guard for heap chunk integrity checking.
+ *
+ * XOR-based mixing widened to 64 bits. Inputs are folded in 16-bit lanes
+ * and placed into the 64-bit word to preserve information from:
+ *  - Zephyr chunk header (16-bit)
+ *  - Chunk memory address (all bits on 32/64-bit)
+ *  - Magic number (16-bit)
+ *
+ * On 64-bit targets, we use all four 16-bit address lanes.
+ * On 32-bit targets, we reuse/fold lanes to populate the upper 32 bits.
+ *
+ * This is NON-CRYPTOGRAPHIC and intended to detect accidental corruption.
+ *
+ * @param zephyr_hdr  Zephyr chunk header field (16-bit)
+ * @param addr        Chunk memory address
+ * @param magic       Magic number for used/free state (16-bit)
+ *
+ * @return 64-bit guard value
+ */
+static inline uint64_t compute_header_guard
+(uint16_t zephyr_hdr, const void *addr, uint16_t magic)
+{
+	uintptr_t a = (uintptr_t)addr;
+
+	/* Extract 16-bit address lanes (low to high). */
+	uint16_t a0 = (uint16_t)(a & 0xFFFFU);
+	uint16_t a1 = (uint16_t)((a >> 16) & 0xFFFFU);
+#if UINTPTR_MAX > 0xFFFFFFFFUL /* 64-bit systems */
+	uint16_t a2 = (uint16_t)((a >> 32) & 0xFFFFU);
+	uint16_t a3 = (uint16_t)((a >> 48) & 0xFFFFU);
+#endif
+
+	/* Build 4 x 16-bit words by XOR-ing inputs, then place them in 64-bit. */
+	uint64_t g = 0;
+
+	/* Lower 16 bits: zephyr_hdr ^ a0 */
+	g ^= (uint64_t)((uint16_t)(zephyr_hdr ^ a0));
+
+	/* Next 16 bits: magic ^ a1 */
+	g ^= (uint64_t)((uint64_t)((uint16_t)(magic ^ a1)) << 16);
+
+#if UINTPTR_MAX > 0xFFFFFFFFUL
+	/* 64-bit: use remaining address lanes directly for better diffusion. */
+	g ^= (uint64_t)((uint64_t)((uint16_t)(zephyr_hdr ^ a2)) << 32);
+	g ^= (uint64_t)((uint64_t)((uint16_t)(magic ^ a3)) << 48);
+#else
+	/* 32-bit: fold/reuse lanes to populate upper half deterministically. */
+	uint16_t w2 = (uint16_t)(zephyr_hdr ^ a1);
+	uint16_t w3 = (uint16_t)(magic ^ a0);
+
+	g ^= (uint64_t)((uint64_t)w2 << 32);
+	g ^= (uint64_t)((uint64_t)w3 << 48);
+#endif
+
+	return g;
+}
+
+#define COMPUTE_HEADER_GUARD(zephyr_hdr, addr, magic) \
+	compute_header_guard((zephyr_hdr), (addr), (magic))
+
+/** @brief Size of the custom header added to each heap chunk. */
+#define Z_HEAP_CUSTOM_HEADER_BYTES sizeof(struct z_heap_custom_header)
+#define Z_HEAP_MAGIC_NUM_USED 0xABCD
+#define Z_HEAP_MAGIC_NUM_FREE 0xDCBA
+
+/**
+ * @brief Custom header placed in front of each heap chunk.
+ */
+struct __aligned(sizeof(void *)) z_heap_custom_header
+{
+	uint64_t header_guard;
+};
+#else
+#define Z_HEAP_CUSTOM_HEADER_BYTES 0U
+#endif
+
 struct z_heap {
 	chunkid_t chunk0_hdr[2];
 	chunkid_t end_chunk;
@@ -73,6 +153,10 @@ struct z_heap {
 	size_t free_bytes;
 	size_t allocated_bytes;
 	size_t max_allocated_bytes;
+#endif
+#ifdef CONFIG_SYS_HEAP_CANARIES
+	uint16_t magic_num_used;
+	uint16_t magic_num_free;
 #endif
 	struct z_heap_bucket buckets[];
 };
@@ -110,6 +194,12 @@ static inline chunkid_t chunk_field(struct z_heap *h, chunkid_t c,
 	chunk_unit_t *buf = chunk_buf(h);
 	void *cmem = &buf[c];
 
+#ifdef CONFIG_SYS_HEAP_CANARIES
+	if (c != 0U && c != h->end_chunk) {
+		cmem = ((uint8_t *)cmem) + Z_HEAP_CUSTOM_HEADER_BYTES;
+	}
+#endif
+
 	if (big_heap(h)) {
 		return ((uint32_t *)cmem)[f];
 	} else {
@@ -124,6 +214,12 @@ static inline void chunk_set(struct z_heap *h, chunkid_t c,
 
 	chunk_unit_t *buf = chunk_buf(h);
 	void *cmem = &buf[c];
+
+#ifdef CONFIG_SYS_HEAP_CANARIES
+	if (c != 0U && c != h->end_chunk) {
+		cmem = ((uint8_t *)cmem) + Z_HEAP_CUSTOM_HEADER_BYTES;
+	}
+#endif
 
 	if (big_heap(h)) {
 		CHECK(val == (uint32_t)val);
@@ -148,6 +244,12 @@ static inline void set_chunk_used(struct z_heap *h, chunkid_t c, bool used)
 {
 	chunk_unit_t *buf = chunk_buf(h);
 	void *cmem = &buf[c];
+
+#ifdef CONFIG_SYS_HEAP_CANARIES
+	if (c != 0 && c != h->end_chunk) {
+		cmem = ((uint8_t *)cmem) + Z_HEAP_CUSTOM_HEADER_BYTES;
+	}
+#endif
 
 	if (big_heap(h)) {
 		if (used) {
@@ -212,14 +314,37 @@ static inline void set_left_chunk_size(struct z_heap *h, chunkid_t c,
 	chunk_set(h, c, LEFT_SIZE, size);
 }
 
+#ifdef CONFIG_SYS_HEAP_CANARIES
+/* Size (bytes) of Zephyr base header fields (LEFT_SIZE, SIZE_AND_USED). */
+static inline size_t zephyr_base_header_bytes(struct z_heap *h)
+{
+	return big_heap(h) ? 8U : 4U;
+}
+
+/* Size (bytes) of the free list pointers (FREE_PREV, FREE_NEXT) in header. */
+static inline size_t zephyr_free_list_pointers_bytes(struct z_heap *h)
+{
+	return big_heap(h) ? (2U * sizeof(uint32_t)) : (2U * sizeof(uint16_t));
+}
+#endif
+
 static inline bool solo_free_header(struct z_heap *h, chunkid_t c)
 {
+#ifdef CONFIG_SYS_HEAP_CANARIES
+	return false;
+#else
 	return big_heap(h) && (chunk_size(h, c) == 1U);
+#endif
 }
 
 static inline size_t chunk_header_bytes(struct z_heap *h)
 {
-	return big_heap(h) ? 8 : 4;
+#ifdef CONFIG_SYS_HEAP_CANARIES
+	return Z_HEAP_CUSTOM_HEADER_BYTES + zephyr_base_header_bytes(h) +
+	       zephyr_free_list_pointers_bytes(h);
+#else
+	return big_heap(h) ? 8U : 4U;
+#endif
 }
 
 static inline size_t heap_footer_bytes(size_t size)
