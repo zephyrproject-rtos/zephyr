@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_SAM_QSPI
+	bool "Microchip Quad SPI Flash driver"
+	default y
+	depends on DT_HAS_MICROCHIP_SAMA7G5_QSPI_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
+	select FLASH_JESD216
+	select DMA if $(dt_compat_any_has_prop,$(DT_COMPAT_MICROCHIP_SAMA7G5_QSPI),dmas)
+	help
+	  Enable Microchip QUAD SPI flash driver.

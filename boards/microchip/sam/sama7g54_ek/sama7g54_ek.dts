@@ -361,6 +361,37 @@
 			bias-pull-up;
 		};
 	};
+
+	pinctrl_qspi0_default: qspi0_default {
+		group1 {
+			pinmux = <PIN_PB12__QSPI0_IO0>,
+				 <PIN_PB11__QSPI0_IO1>,
+				 <PIN_PB10__QSPI0_IO2>,
+				 <PIN_PB9__QSPI0_IO3>,
+				 <PIN_PB16__QSPI0_IO4>,
+				 <PIN_PB17__QSPI0_IO5>,
+				 <PIN_PB18__QSPI0_IO6>,
+				 <PIN_PB19__QSPI0_IO7>,
+				 <PIN_PB13__QSPI0_CS>,
+				 <PIN_PB14__QSPI0_SCK>,
+				 <PIN_PB15__QSPI0_SCKN>,
+				 <PIN_PB20__QSPI0_DQS>,
+				 <PIN_PB21__QSPI0_INT>;
+			bias-pull-up;
+		};
+	};
+
+	pinctrl_qspi1_default: qspi1_default {
+		group1 {
+			pinmux = <PIN_PB25__QSPI1_IO0>,
+				 <PIN_PB24__QSPI1_IO1>,
+				 <PIN_PB23__QSPI1_IO2>,
+				 <PIN_PB22__QSPI1_IO3>,
+				 <PIN_PB26__QSPI1_CS>,
+				 <PIN_PB27__QSPI1_SCK>;
+			bias-pull-up;
+		};
+	};
 };
 
 &pit64b0 {
@@ -416,5 +447,23 @@
 };
 
 &trng {
+	status = "okay";
+};
+
+&qspi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_qspi0_default>;
+	dmas = <&dma0 0 0>;
+	dma-names = "qspi_dma";
+	skip-sfdp;
+	size = <DT_SIZE_M(128)>; /* 128 MBytes */
+};
+
+&qspi1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_qspi1_default>;
+	dmas = <&dma0 0 0>;
+	dma-names = "qspi_dma";
+	requires-ulbpr;
 	status = "okay";
 };
