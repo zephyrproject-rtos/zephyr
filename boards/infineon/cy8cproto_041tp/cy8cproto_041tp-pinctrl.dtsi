@@ -23,3 +23,7 @@
 	drive-open-drain;
 	input-enable;
 };
+
+&p5_5_pwm0_1 {
+	drive-push-pull;
+};

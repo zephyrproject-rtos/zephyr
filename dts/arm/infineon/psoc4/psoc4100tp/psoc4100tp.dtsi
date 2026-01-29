@@ -167,6 +167,7 @@
 			tcpwm0_1: tcpwm0_1@40200140 {
 				compatible = "infineon,tcpwm";
 				reg = <0x40200140 0x40>;
+				interrupts = <17 3>;
 				resolution = <16>;
 				clk-dst = <0x6>;
 				status = "disabled";
