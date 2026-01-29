@@ -578,6 +578,11 @@
 			interrupts = <24 0>;
 			clocks = <&scg KINETIS_SCG_BUS_CLK>;
 		};
+
+		smc: smc@4007e000 {
+			compatible = "nxp,smc";
+			reg = <0x4007e000 0x1000>;
+		};
 	};
 };
 

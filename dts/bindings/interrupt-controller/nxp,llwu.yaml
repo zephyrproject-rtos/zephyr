@@ -1,0 +1,12 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Low-Leakage Wakeup Unit (LLWU)
+
+compatible: "nxp,llwu"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
