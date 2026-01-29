@@ -203,6 +203,8 @@ struct modem_cellular_config {
 	bool autostarts;
 	bool cmux_enable_runtime_power_save;
 	bool cmux_close_pipe_on_power_save;
+	bool use_default_pdp_context;
+	bool use_default_apn;
 	k_timeout_t cmux_idle_timeout;
 	const struct modem_chat_script *init_chat_script;
 	const struct modem_chat_script *dial_chat_script;
@@ -356,9 +358,15 @@ static bool modem_cellular_gpio_is_enabled(const struct gpio_dt_spec *gpio)
 	return gpio->port != NULL;
 }
 
-static bool modem_cellular_has_apn(const struct modem_cellular_data *data)
+static bool modem_cellular_needs_apn(const struct modem_cellular_data *data)
 {
-	return data->apn[0] != '\0';
+	const struct modem_cellular_config *config =
+		(const struct modem_cellular_config *)data->dev->config;
+
+	if (config->use_default_apn) {
+		return false;
+	}
+	return data->apn[0] == '\0';
 }
 
 static void modem_cellular_notify_user_pipes_connected(struct modem_cellular_data *data)
@@ -739,14 +747,20 @@ static int append_apn_cmd(struct modem_cellular_data *data, uint8_t *steps, cons
 
 static void modem_cellular_build_apn_script(struct modem_cellular_data *data)
 {
+	const struct modem_cellular_config *config =
+		(const struct modem_cellular_config *)data->dev->config;
 	uint8_t steps = 0;
+	const char *apn_value = data->apn;
 
-	/* Mandatory PDP context */
-	append_apn_cmd(data, &steps, "AT+CGDCONT=1,\"IP\",\"%s\"", data->apn);
+	if (config->use_default_apn) {
+		/* Omit the APN name AT+CGDCONT=1,"IP","" */
+		apn_value = "";
+	}
+	append_apn_cmd(data, &steps, "AT+CGDCONT=1,\"IP\",\"%s\"", apn_value);
 
 	/* Vendor‑specific extras */
 #if DT_HAS_COMPAT_STATUS_OKAY(swir_hl7800)
-	append_apn_cmd(data, &steps, "AT+KCNXCFG=1,\"GPRS\",\"%s\",,,\"IPV4\"", data->apn);
+	append_apn_cmd(data, &steps, "AT+KCNXCFG=1,\"GPRS\",\"%s\",,,\"IPV4\"", apn_value);
 #endif
 
 	/* Glue the array into the script object */
@@ -1283,10 +1297,16 @@ static int modem_cellular_on_open_dlci2_state_enter(struct modem_cellular_data *
 static void modem_cellular_open_dlci2_event_handler(struct modem_cellular_data *data,
 						    enum modem_cellular_event evt)
 {
+	const struct modem_cellular_config *config =
+		(const struct modem_cellular_config *)data->dev->config;
+
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_DLCI2_OPENED:
 		data->cmd_pipe = data->dlci2_pipe;
-		if (modem_cellular_has_apn(data)) {
+
+		if (config->use_default_pdp_context) {
+			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
+		} else if (!modem_cellular_needs_apn(data)) {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_APN_SCRIPT);
 		} else {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_WAIT_FOR_APN);
@@ -3172,6 +3192,8 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 			DT_INST_PROP_OR(inst, cmux_enable_runtime_power_save, 0),                  \
 		.cmux_close_pipe_on_power_save =                                                   \
 			DT_INST_PROP_OR(inst, cmux_close_pipe_on_power_save, 0),                   \
+		.use_default_pdp_context = DT_INST_PROP_OR(inst, zephyr_use_default_pdp_ctx, 0),   \
+		.use_default_apn = DT_INST_PROP_OR(inst, zephyr_use_default_apn, 0),               \
 		.cmux_idle_timeout = K_MSEC(DT_INST_PROP_OR(inst, cmux_idle_timeout_ms, 0)),       \
 		.set_baudrate_chat_script = (set_baudrate_script),                                 \
 		.init_chat_script = (init_script),                                                 \
