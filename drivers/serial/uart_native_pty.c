@@ -34,6 +34,10 @@
  * if set so from command line.
  */
 
+struct native_pty_config {
+	bool on_stdinout; /* Requested on stdin/out from DT */
+};
+
 struct native_pty_status {
 	int out_fd;       /* File descriptor used for output */
 	int in_fd;        /* File descriptor used for input */
@@ -137,10 +141,14 @@ static DEVICE_API(uart, np_uart_driver_api) = {
 };
 
 #define NATIVE_PTY_INSTANCE(inst)                                        \
+	static struct native_pty_config native_pty_##inst##_cfg = {      \
+		.on_stdinout = DT_INST_PROP(inst, on_stdinout),          \
+	};                                                               \
 	static struct native_pty_status native_pty_status_##inst;        \
 								         \
 	DEVICE_DT_INST_DEFINE(inst, np_uart_init, NULL,                  \
-			      (void *)&native_pty_status_##inst, NULL,   \
+			      (void *)&native_pty_status_##inst,         \
+			      &native_pty_##inst##_cfg,                  \
 			      PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY, \
 			      &np_uart_driver_api);
 
@@ -158,6 +166,7 @@ static int np_uart_init(const struct device *dev)
 
 	static bool stdinout_used;
 	struct native_pty_status *d;
+	const struct native_pty_config *dt_config = (const struct native_pty_config *)dev->config;
 
 	d = (struct native_pty_status *)dev->data;
 
@@ -170,7 +179,7 @@ static int np_uart_init(const struct device *dev)
 		first_node = false;
 	}
 
-	if (d->cmd_request_stdinout) {
+	if (d->cmd_request_stdinout || dt_config->on_stdinout) {
 		if (stdinout_used) {
 			nsi_print_warning("%s requested to connect to STDIN/OUT, but another UART"
 					  " is already connected to it => ignoring request.\n",
