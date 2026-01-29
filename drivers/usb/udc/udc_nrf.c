@@ -1235,7 +1235,7 @@ static void udc_event_xfer_in(const struct device *dev, const uint8_t ep)
 
 	buf = udc_buf_get(ep_cfg);
 	if (buf == NULL) {
-		LOG_ERR("ep 0x%02x queue is empty", ep);
+		LOG_WRN("ep 0x%02x queue is empty", ep);
 		__ASSERT_NO_MSG(false);
 		return;
 	}
