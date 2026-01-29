@@ -91,3 +91,7 @@
 &pit64b0 {
 	clock-frequency = <DT_FREQ_M(10)>;
 };
+
+&rtc {
+	status = "okay";
+};

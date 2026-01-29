@@ -16,6 +16,7 @@ supported:
   - entropy
   - hwinfo
   - pwm
+  - rtc
   - sdhc
   - shell
   - uart
