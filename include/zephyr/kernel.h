@@ -23,6 +23,7 @@
 #include <zephyr/sys/mem_stats.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/ring_buffer.h>
+#include <zephyr/cleanup.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -6866,6 +6867,37 @@ void k_sys_runtime_stats_enable(void);
  * threads.
  */
 void k_sys_runtime_stats_disable(void);
+
+#if defined(CONFIG_CLEANUP_CLASSES)
+
+/** @cond INTERNAL_HIDDEN */
+
+/**
+ * Common kernel cleanup classes to guard a resource.
+ */
+
+/* zephyr-keep-sorted-start */
+DEFINE_GUARD(k_mutex, struct k_mutex *, (void)k_mutex_lock(_T, K_FOREVER),
+	     (void)k_mutex_unlock(_T));
+DEFINE_GUARD(k_sem, struct k_sem *, (void)k_sem_take(_T, K_FOREVER), k_sem_give(_T));
+/* zephyr-keep-sorted-stop */
+
+/**
+ * Common kernel cleanup classes to defer a function.
+ */
+
+/* zephyr-keep-sorted-start */
+DEFINE_DEFER(k_free, void *);
+DEFINE_DEFER(k_heap_free, struct k_heap *, void *);
+DEFINE_DEFER(k_mem_slab_free, struct k_mem_slab *, void *);
+DEFINE_DEFER(k_mutex_unlock, struct k_mutex *);
+DEFINE_DEFER(k_sched_unlock);
+DEFINE_DEFER(k_sem_give, struct k_sem *);
+/* zephyr-keep-sorted-stop */
+
+/** @endcond */
+
+#endif /* defined(CONFIG_CLEANUP_CLASSES) */
 
 #ifdef __cplusplus
 }
