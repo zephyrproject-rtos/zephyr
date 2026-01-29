@@ -19,7 +19,7 @@
  * @brief Interfaces for video devices.
  * @defgroup video_interface Video
  * @since 2.1
- * @version 1.1.0
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @{
  */
