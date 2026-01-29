@@ -4,7 +4,7 @@
 
 /*
  * Copyright (c) 2015-2025 Intel Corporation
- * Copyright (c) 2017-2025 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -920,6 +920,28 @@ extern "C" {
  * @ingroup bt_assigned_numbers
  * @{
  */
+
+/** Enum for valid bearer technology values */
+enum bt_bearer_tech {
+	/** 3G */
+	BT_BEARER_TECH_3G = 0x01,
+	/** 4G */
+	BT_BEARER_TECH_4G = 0x02,
+	/** Long-term evolution (LTE) */
+	BT_BEARER_TECH_LTE = 0x03,
+	/** Wifi */
+	BT_BEARER_TECH_WIFI = 0x04,
+	/** 5G */
+	BT_BEARER_TECH_5G = 0x05,
+	/** Global System for Mobile Communications (GSM) */
+	BT_BEARER_TECH_GSM = 0x06,
+	/** Code-Division Multiple Access (CDMA) */
+	BT_BEARER_TECH_CDMA = 0x07,
+	/** 2G */
+	BT_BEARER_TECH_2G = 0x08,
+	/** Wideband Code-Division Multiple Access (WCDMA) */
+	BT_BEARER_TECH_WCDMA = 0x09,
+};
 
 /**
  * @brief Codec capability types
