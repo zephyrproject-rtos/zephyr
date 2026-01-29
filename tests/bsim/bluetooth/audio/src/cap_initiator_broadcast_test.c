@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
@@ -181,7 +182,7 @@ static void init(void)
 			.uri_schemes_supported = "tel,skype",
 			.gtbs = true,
 			.authorization_required = false,
-			.technology = BT_TBS_TECHNOLOGY_3G,
+			.technology = BT_BEARER_TECH_3G,
 			.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
 		};
 

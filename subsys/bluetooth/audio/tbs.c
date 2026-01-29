@@ -1,7 +1,7 @@
 /* Bluetooth TBS - Telephone Bearer Service
  *
  * Copyright (c) 2020 Bose Corporation
- * Copyright (c) 2021-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2026 Nordic Semiconductor ASA
  * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -16,6 +16,7 @@
 #include <sys/types.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/audio/ccid.h>
 #include <zephyr/bluetooth/audio/tbs.h>
@@ -75,7 +76,7 @@ struct tbs_inst {
 	 */
 	char provider_name[CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH];
 	char uci[BT_TBS_MAX_UCI_SIZE];
-	uint8_t technology;
+	enum bt_bearer_tech technology;
 	uint8_t signal_strength;
 	uint8_t signal_strength_interval;
 	uint8_t ccid;
@@ -843,11 +844,12 @@ static void notify_handler_cb(struct bt_conn *conn, void *data)
 	}
 
 	if (flags->bearer_technology_changed) {
-		LOG_DBG("Notifying Bearer Technology: %s (0x%02x)",
-			bt_tbs_technology_str(inst->technology), inst->technology);
+		const uint8_t tech = (uint8_t)inst->technology;
 
-		err = notify(conn, BT_UUID_TBS_TECHNOLOGY, inst->attrs, &inst->technology,
-			     sizeof(inst->technology));
+		LOG_DBG("Notifying Bearer Technology: %s (0x%02x)",
+			bt_bearer_tech_str(inst->technology), tech);
+
+		err = notify(conn, BT_UUID_TBS_TECHNOLOGY, inst->attrs, &tech, sizeof(tech));
 		if (err == 0) {
 			flags->bearer_technology_changed = false;
 		} else {
@@ -1076,11 +1078,11 @@ static ssize_t read_technology(struct bt_conn *conn, const struct bt_gatt_attr *
 			       uint16_t len, uint16_t offset)
 {
 	const struct tbs_inst *inst = BT_AUDIO_CHRC_USER_DATA(attr);
+	const uint8_t tech = (uint8_t)inst->technology;
 
-	LOG_DBG("Index %u: Technology 0x%02x", inst_index(inst), inst->technology);
+	LOG_DBG("Index %u: Technology 0x%02x", inst_index(inst), tech);
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->technology,
-				 sizeof(inst->technology));
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &tech, sizeof(tech));
 }
 
 static void technology_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
@@ -2232,7 +2234,7 @@ static bool valid_register_param(const struct bt_tbs_register_param *param)
 		return false;
 	}
 
-	if (!IN_RANGE(param->technology, BT_TBS_TECHNOLOGY_3G, BT_TBS_TECHNOLOGY_WCDMA)) {
+	if (!IN_RANGE(param->technology, BT_BEARER_TECH_3G, BT_BEARER_TECH_WCDMA)) {
 		LOG_DBG("Invalid technology: %u", param->technology);
 
 		return false;
@@ -2874,12 +2876,12 @@ static void set_bearer_technology_changed_cb(struct tbs_flags *flags)
 	flags->bearer_technology_changed = true;
 }
 
-int bt_tbs_set_bearer_technology(uint8_t bearer_index, uint8_t new_technology)
+int bt_tbs_set_bearer_technology(uint8_t bearer_index, enum bt_bearer_tech new_technology)
 {
 	struct tbs_inst *inst = inst_lookup_index(bearer_index);
 	int err;
 
-	if (new_technology < BT_TBS_TECHNOLOGY_3G || new_technology > BT_TBS_TECHNOLOGY_WCDMA) {
+	if (new_technology < BT_BEARER_TECH_3G || new_technology > BT_BEARER_TECH_WCDMA) {
 		return -EINVAL;
 	} else if (inst == NULL) {
 		return -EINVAL;
