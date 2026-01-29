@@ -89,7 +89,7 @@ static void select_gpio_mode(uint8_t gpio_idx)
 	/* Clear fsel settings */
 	mci_iomux->FSEL &= ~IOMUX_GET_FSEL_CLR_MASK(gpio_setting);
 	/* Clear CTimer in/out, if required */
-	if (IOMUX_GET_SCTIMER_IN_CLR_ENABLE(gpio_setting)) {
+	if (IOMUX_GET_CTIMER_CLR_ENABLE(gpio_setting)) {
 		mci_iomux->C_TIMER_IN &=
 			~(0x1 << IOMUX_GET_CTIMER_CLR_OFFSET(gpio_setting));
 		mci_iomux->C_TIMER_OUT &=
