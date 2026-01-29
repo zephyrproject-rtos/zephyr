@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: xen-troops
+      url-base: https://github.com/xen-troops
 
   group-filter: [-babblesim, -optional, -testing]
 
@@ -396,6 +398,10 @@ manifest:
     - name: zcbor
       revision: 9164bd18dcd88ff9d9ef98279501fc1093571017
       path: modules/lib/zcbor
+    - name: zephyr-xenlib
+      revision: pull/104/head
+      path: modules/lib/zephyr-xenlib
+      remote: xen-troops
   # zephyr-keep-sorted-stop
 
   self:
