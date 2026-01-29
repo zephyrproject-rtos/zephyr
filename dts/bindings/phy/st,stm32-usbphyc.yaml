@@ -11,5 +11,19 @@ properties:
   reg:
     required: true
 
+  clocks:
+    required: true
+    description: |
+      Clock configuration of USBPHYC
+
+      The first cell is mandatory and corresponds
+      to the clock gate of the USBPHYC. The second
+      cell is optional and corresponds to the mux
+      configuration.
+
+      For example, on STM32N6 series:
+        clocks = <&rcc STM32_CLOCK(AHB5, 27)>,
+                 <&rcc STM32_SRC_HSE OTGPHY1CKREF_SEL(1)>;
+
   "#phy-cells":
     const: 0
