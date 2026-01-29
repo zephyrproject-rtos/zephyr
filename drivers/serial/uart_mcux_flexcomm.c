@@ -165,13 +165,17 @@ static void mcux_flexcomm_poll_out(const struct device *dev,
 					     unsigned char c)
 {
 	const struct mcux_flexcomm_config *config = dev->config;
+	uint16_t timeout;
+
+	timeout = 0;
 
 	/* Wait until space is available in TX FIFO, as per API description:
 	 * This routine checks if the transmitter is full.
 	 * When the transmitter is not full, it writes a character to the data register.
 	 * It waits and blocks the calling thread otherwise.
 	 */
-	while (!(USART_GetStatusFlags(config->base) & kUSART_TxFifoNotFullFlag)) {
+	while ((!(USART_GetStatusFlags(config->base) & kUSART_TxFifoNotFullFlag)) || timeout < 1000) {
+		timeout++;
 	}
 
 	USART_WriteByte(config->base, c);
