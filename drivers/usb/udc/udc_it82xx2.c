@@ -1358,6 +1358,7 @@ static void it82xx2_usb_dc_isr(const void *arg)
 			it82xx2_enable_sof_int(dev, false);
 		} else {
 			usb_regs->dc_interrupt_status = DC_SOF_RECEIVED;
+			udc_update_sof_stamp(dev, 0);
 			udc_submit_sof_event(dev);
 		}
 		it82xx2_enable_resume_int(dev, false);
