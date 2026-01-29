@@ -25,6 +25,8 @@ to :code:`0` which is the GTBS bearer.
      set_bearer_name  : Set bearer name [index] <name>
      get_bearer_name  : Get bearer name [index]
      get_bearer_uci   : Get bearer UCI [index]
+     set_bearer_tech  : Set bearer technology [index] <technology>
+     get_bearer_tech  : Get bearer technology [index]
 
 
 Example Usage
@@ -69,6 +71,17 @@ Getting the bearer UCI
    uart:~$ ccp_call_control_server get_bearer_uci 1
    Bearer[1] UCI: skype
 
+
+Setting and getting the bearer technology
+-----------------------------------------
+
+.. code-block:: console
+
+   uart:~$ ccp_call_control_server get_bearer_tech
+   Bearer[0] technology: 3G (0x01)
+   uart:~$ ccp_call_control_server set_bearer_tech 0x02
+   Bearer[0] new technology: 4G (0x02)
+
 Call Control Client
 *******************
 The Call Control Client is a role that typically resides on resource constrained devices such as
@@ -100,3 +113,7 @@ Example Usage when connected
    Bearer 0x20046254 name: Generic TBS
    uart:~$ ccp_call_control_client read_bearer_name 1
    Bearer 0x20046256 name: Telephone Bearer #1
+   uart:~$ ccp_call_control_client read_bearer_uci
+   Bearer 0x20046254 UCI: un999
+   uart:~$ ccp_call_control_client read_bearer_uci 1
+   Bearer 0x20046256 UCI: skype
