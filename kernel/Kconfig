@@ -867,6 +867,7 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config SYS_CLOCK_EXISTS
 	bool "System clock exists and is enabled"
 	default y
+	select MIN_HEAP
 	help
 	  This option specifies that the kernel has timer support.
 
@@ -884,6 +885,18 @@ config TIMEOUT_64BIT
 	  of overflowing the 32 bit word.  This feature also gates the
 	  availability of absolute timeout values (which require the
 	  extra precision).
+
+config MAX_TIMEOUTS
+	int "Maximum number of concurrent timeouts"
+	default 256
+	range 8 4096
+	help
+	  Maximum number of timeouts that can be active simultaneously in the
+	  timeout heap. This includes timers, delayed work, thread sleeps, and
+	  any other kernel object using the timeout subsystem. If this limit is
+	  exceeded, the system will assert. Increase this value if you have many
+	  concurrent timers or delayed operations. Each timeout entry consumes
+	  memory proportional to this value.
 
 config SYS_CLOCK_MAX_TIMEOUT_DAYS
 	int "Max timeout (in days) used in conversions"

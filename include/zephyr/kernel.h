@@ -1839,7 +1839,7 @@ struct k_timer_observer {
 #define Z_TIMER_INITIALIZER(obj, expiry, stop) \
 	{ \
 	.timeout = { \
-		.node = {},\
+		.heap_idx = 0, \
 		.fn = z_timer_expiration_handler, \
 		.dticks = 0, \
 	}, \
@@ -4545,6 +4545,11 @@ struct k_work_delayable {
 	.work = { \
 		.handler = (work_handler), \
 		.flags = K_WORK_DELAYABLE, \
+	}, \
+	.timeout = { \
+		.heap_idx = 0, \
+		.fn = NULL, \
+		.dticks = 0, \
 	}, \
 }
 
