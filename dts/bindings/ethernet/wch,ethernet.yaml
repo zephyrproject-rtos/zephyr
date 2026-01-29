@@ -1,0 +1,63 @@
+# Copyright (c) 2025 James Bennion-Pedley <james@bojit.org>
+# SPDX-License-Identifier: Apache-2.0
+
+include: [ethernet-controller.yaml, pinctrl-device.yaml]
+
+description: |
+  Ethernet MAC Controller for WCH CH32 series MCUs
+
+compatible: "wch,ethernet"
+
+properties:
+  interrupts:
+    required: true
+  pinctrl-0:
+    required: true
+  pinctrl-names:
+    required: true
+  phy-connection-type:
+    required: true
+  phy-handle:
+    required: true
+  internal-phy-pllmul:
+    type: int
+    description: |
+      PLL Multiplier of the Internal PHY PLL (PLL3). Adjust so PHY clocks at 60 MHz
+    enum:
+      - 2.5
+      - 12.5
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15
+      - 16
+      - 20
+  internal-phy-prediv:
+    type: int
+    description: |
+      Pre-Divisor of the Internal PHY PLL (PREDIV2). Adjust so PHY clocks at 60 MHz
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15
+      - 16
