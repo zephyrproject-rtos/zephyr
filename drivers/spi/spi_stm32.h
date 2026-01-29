@@ -34,6 +34,8 @@ struct spi_stm32_config {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	int midi_clocks;
 	int mssi_clocks;
+	uint8_t fifo_size;
+	uint32_t max_transfer_size;
 #endif
 	size_t pclk_len;
 	const struct stm32_pclken *pclken;
@@ -70,6 +72,9 @@ struct spi_stm32_data {
 	struct spi_rtio *rtio_ctx;
 #endif /* CONFIG_SPI_RTIO */
 	struct spi_context ctx;
+	uint8_t fifo_threshold;
+	uint32_t tx_len;
+	uint32_t rx_len;
 #ifdef CONFIG_SPI_STM32_DMA
 	struct k_sem status_sem;
 	volatile uint32_t status_flags;
@@ -84,11 +89,9 @@ static inline uint32_t ll_func_dma_get_reg_addr(SPI_TypeDef *spi, uint32_t locat
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	if (location == SPI_STM32_DMA_TX) {
-		/* use direct register location until the LL_SPI_DMA_GetTxRegAddr exists */
-		return (uint32_t)&(spi->TXDR);
+		return LL_SPI_DMA_GetTxRegAddr(spi);
 	}
-	/* use direct register location until the LL_SPI_DMA_GetRxRegAddr exists */
-	return (uint32_t)&(spi->RXDR);
+	return LL_SPI_DMA_GetRxRegAddr(spi);
 #else
 	ARG_UNUSED(location);
 	return (uint32_t)LL_SPI_DMA_GetRegAddr(spi);
@@ -215,29 +218,6 @@ static inline uint32_t ll_func_spi_is_busy(SPI_TypeDef *spi)
 	return LL_SPI_IsActiveFlag_BSY(spi);
 #endif /* st_stm32h7_spi */
 }
-
-/* Header is compiled first, this switch avoid the compiler to lookup for
- * non-existing LL FIFO functions for SoC without SPI FIFO
- */
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
-static inline void ll_func_set_fifo_threshold_8bit(SPI_TypeDef *spi)
-{
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	LL_SPI_SetFIFOThreshold(spi, LL_SPI_FIFO_TH_01DATA);
-#else
-	LL_SPI_SetRxFIFOThreshold(spi, LL_SPI_RX_FIFO_TH_QUARTER);
-#endif /* st_stm32h7_spi */
-}
-
-static inline void ll_func_set_fifo_threshold_16bit(SPI_TypeDef *spi)
-{
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	LL_SPI_SetFIFOThreshold(spi, LL_SPI_FIFO_TH_02DATA);
-#else
-	LL_SPI_SetRxFIFOThreshold(spi, LL_SPI_RX_FIFO_TH_HALF);
-#endif /* st_stm32h7_spi */
-}
-#endif /* st_stm32_spi_fifo */
 
 static inline void ll_func_disable_spi(SPI_TypeDef *spi)
 {
