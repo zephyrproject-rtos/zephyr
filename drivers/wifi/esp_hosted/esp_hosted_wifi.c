@@ -6,7 +6,12 @@
 
 #include <pb_encode.h>
 #include <pb_decode.h>
+
+#if defined(CONFIG_WIFI_ESP_HOSTED_LEGACY)
 #include <esp_hosted_legacy.pb.h>
+#else
+#include <esp_hosted_latest.pb.h>
+#endif
 
 #include <esp_hosted_wifi.h>
 #include <esp_hosted_hal.h>
@@ -204,7 +209,7 @@ static void esp_hosted_event_task(const struct device *dev, void *p2, void *p3)
 			continue;
 		}
 
-#if CONFIG_WIFI_ESP_HOSTED_DEBUG
+#if defined(CONFIG_WIFI_ESP_HOSTED_DEBUG)
 		esp_hosted_frame_dump(&frame);
 #endif
 
@@ -220,6 +225,14 @@ static void esp_hosted_event_task(const struct device *dev, void *p2, void *p3)
 		case CtrlMsgId_Event_Heartbeat:
 			data->last_hb_ms = k_uptime_get();
 			continue;
+#if !defined(CONFIG_WIFI_ESP_HOSTED_LEGACY)
+		case CtrlMsgId_Event_StationConnectedToAP: {
+			data->state[ESP_HOSTED_STA_IF] = WIFI_STATE_COMPLETED;
+			net_if_dormant_off(data->iface[ESP_HOSTED_STA_IF]);
+			wifi_mgmt_raise_connect_result_event(data->iface[ESP_HOSTED_STA_IF], 0);
+			continue;
+		}
+#endif /* CONFIG_WIFI_ESP_HOSTED_LEGACY */
 		case CtrlMsgId_Event_StationDisconnectFromAP:
 			data->state[ESP_HOSTED_STA_IF] = WIFI_STATE_DISCONNECTED;
 			net_if_dormant_on(data->iface[ESP_HOSTED_STA_IF]);
@@ -236,16 +249,6 @@ static void esp_hosted_event_task(const struct device *dev, void *p2, void *p3)
 				sta_info.mac);
 			wifi_mgmt_raise_ap_sta_disconnected_event(data->iface[ESP_HOSTED_SAP_IF],
 								  &sta_info);
-			continue;
-		}
-		case CtrlMsgId_Resp_ConnectAP: {
-			int ret = esp_hosted_ctrl_response(&ctrl_msg);
-
-			if (!ret) {
-				data->state[ESP_HOSTED_STA_IF] = WIFI_STATE_COMPLETED;
-				net_if_dormant_off(data->iface[ESP_HOSTED_STA_IF]);
-			}
-			wifi_mgmt_raise_connect_result_event(data->iface[ESP_HOSTED_STA_IF], ret);
 			continue;
 		}
 		default: /* Unhandled events/responses will be queued. */
@@ -298,9 +301,18 @@ static int esp_hosted_connect(const struct device *dev, struct wifi_connect_req_
 	strncpy(ctrl_msg.req_connect_ap.ssid, params->ssid, ESP_HOSTED_MAX_SSID_LEN);
 	esp_hosted_mac_to_str(params->bssid, ctrl_msg.req_connect_ap.bssid.bytes);
 
-	if (esp_hosted_ctrl(dev, CtrlMsgId_Req_ConnectAP, &ctrl_msg, 0)) {
+	if (esp_hosted_ctrl(dev, CtrlMsgId_Req_ConnectAP, &ctrl_msg, ESP_HOSTED_SYNC_TIMEOUT)) {
 		return -EAGAIN;
 	}
+
+#if defined(CONFIG_WIFI_ESP_HOSTED_LEGACY)
+	esp_hosted_data_t *data = dev->data;
+
+	/* Legacy connect response is synchronous */
+	data->state[ESP_HOSTED_STA_IF] = WIFI_STATE_COMPLETED;
+	net_if_dormant_off(data->iface[ESP_HOSTED_STA_IF]);
+	wifi_mgmt_raise_connect_result_event(data->iface[ESP_HOSTED_STA_IF], 0);
+#endif /* CONFIG_WIFI_ESP_HOSTED_LEGACY */
 	return 0;
 }
 
@@ -601,6 +613,21 @@ static int esp_hosted_dev_init(const struct device *dev)
 	if (esp_hosted_ctrl(dev, CtrlMsgId_Event_ESPInit, &ctrl_msg, ESP_HOSTED_SYNC_TIMEOUT)) {
 		return -EIO;
 	}
+
+	/* Read firmware version */
+#if defined(CONFIG_WIFI_ESP_HOSTED_LEGACY)
+	LOG_INF("firmware version: v0.0.5 (legacy)");
+#else
+	ctrl_msg = (CtrlMsg)CtrlMsg_init_zero;
+	if (esp_hosted_ctrl(dev, CtrlMsgId_Req_GetFwVersion, &ctrl_msg, ESP_HOSTED_SYNC_TIMEOUT)) {
+		return -EIO;
+	}
+
+	CtrlMsg_Resp_GetFwVersion * fw = &ctrl_msg.resp_get_fw_version;
+
+	LOG_INF("firmware version: v%u.%u.%u.%u.%u", fw->major1, fw->major2, fw->minor,
+		fw->rev_patch1, fw->rev_patch2);
+#endif /* CONFIG_WIFI_ESP_HOSTED_LEGACY */
 
 	/* Set MAC addresses. */
 	for (size_t i = 0; i < 2; i++) {
