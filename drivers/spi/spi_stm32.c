@@ -1420,11 +1420,17 @@ static int transceive_dma(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	// We need this for creating clocks on spi line internally to support supposedly simplex mode at higher layers.
-	if((tx_bufs == NULL) && (rx_bufs != NULL)) {
-		tx_bufs = rx_bufs;
-	} else if((tx_bufs != NULL) && (rx_bufs == NULL)) {
-		rx_bufs = tx_bufs;
+	/**
+	 * We need this for creating clocks on spi line 
+	 * internally to support supposedly simplex mode 
+	 * at higher layers.
+	 * */
+	if(LL_SPI_GetTransferDirection(spi) == SPI_FULL_DUPLEX) {
+		if((tx_bufs == NULL) && (rx_bufs != NULL)) {
+			tx_bufs = rx_bufs;
+		} else if((tx_bufs != NULL) && (rx_bufs == NULL)) {
+			rx_bufs = tx_bufs;
+		}
 	}
 
 #ifdef CONFIG_DCACHE
