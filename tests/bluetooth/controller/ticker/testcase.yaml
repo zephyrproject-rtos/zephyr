@@ -1,0 +1,8 @@
+common:
+  tags:
+    - bluetooth
+    - bt_controller
+    - ticker
+tests:
+  bluetooth.controller.ticker.test:
+    type: unit
