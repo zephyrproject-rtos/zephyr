@@ -25,12 +25,18 @@ struct stm32_mco_config {
 #endif
 	/* clock subsystem driving this peripheral */
 	const struct stm32_pclken clksel;
+#if defined(CONFIG_CLOCK_STM32_MCO_HAS_ENABLE_BIT)
+	const struct stm32_pclken clken;
+#endif
 };
 
 static int stm32_mco_init(const struct device *dev)
 {
 	const struct stm32_mco_config *config = dev->config;
 	const struct stm32_pclken *clksel = &config->clksel;
+#if defined(CONFIG_CLOCK_STM32_MCO_HAS_ENABLE_BIT)
+	const struct stm32_pclken *clken = &config->clken;
+#endif
 	int err;
 
 	err = enabled_clock(clksel->bus);
@@ -49,10 +55,10 @@ static int stm32_mco_init(const struct device *dev)
 		STM32_DT_CLKSEL_VAL_GET(clksel->enr) <<
 			STM32_DT_CLKSEL_SHIFT_GET(clksel->enr));
 
-#if defined(MCOX_ON)
-	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(clksel->enr),
-		     MCOX_ON);
-#endif
+#if defined(CONFIG_CLOCK_STM32_MCO_HAS_ENABLE_BIT)
+	/* MCO enable */
+	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + clken->bus, clken->enr);
+#endif /* defined(CONFIG_CLOCK_STM32_MCO_HAS_ENABLE_BIT) */
 
 #if defined(HAS_PRESCALER)
 	/* MCO prescaler */
@@ -75,6 +81,8 @@ static int stm32_mco_init(const struct device *dev)
 	const static struct stm32_mco_config stm32_mco_config_##inst = {		\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),				\
 		.clksel = STM32_DT_INST_CLOCK_INFO_BY_NAME(inst, clksel),		\
+		IF_ENABLED(CONFIG_CLOCK_STM32_MCO_HAS_ENABLE_BIT,			\
+			   (.clken = STM32_DT_INST_CLOCK_INFO_BY_NAME(inst, clken),))	\
 		IF_ENABLED(HAS_PRESCALER,						\
 			   (.prescaler = DT_PROP(DT_DRV_INST(inst), prescaler),))	\
 	};										\
