@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2025 EXALT Technologies.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		sdhc0 = &sdhc;
+	};
+};
+
+sdhc: &sdmmc1 {
+	compatible = "st,stm32-sdhc";
+	interrupts = <49 0>;
+	interrupt-names = "event";
+	hw-flow-control;
+	bus-width = <4>;
+	status = "okay";
+	min-bus-freq = <DT_FREQ_K(400)>;
+	max-bus-freq = <DT_FREQ_M(208)>;
+	/delete-property/ disk-name;
+};
