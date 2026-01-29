@@ -103,6 +103,8 @@ int bt_ccp_call_control_server_unregister_bearer(struct bt_ccp_call_control_serv
  * @retval -EINVAL @p bearer or @p name is NULL, or @p name is the empty string or @p name is larger
  *                 than @kconfig{CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH}
  * @retval -EFAULT @p bearer is not registered
+ * @retval -EBUSY The TBS instance of @p bearer is busy
+ * @retval -ENOEXEC The TBS instance of @p bearer returned unexpected error
  */
 int bt_ccp_call_control_server_set_bearer_provider_name(
 	struct bt_ccp_call_control_server_bearer *bearer, const char *name);
