@@ -192,17 +192,16 @@ static int cmd_bridge_show(const struct shell *sh, size_t argc, char *argv[])
 
 SHELL_STATIC_SUBCMD_SET_CREATE(bridge_commands,
 	SHELL_CMD_ARG(addif, NULL,
-		  "Add a network interface to a bridge.\n"
-		  "'bridge addif <bridge_index> <one or more interface index>'",
-		  cmd_bridge_addif, 3, 5),
+		SHELL_HELP("Add a network interface to a bridge.",
+			"<bridge_index> <one or more interface index>"),
+		cmd_bridge_addif, 3, 5),
 	SHELL_CMD_ARG(delif, NULL,
-		  "Delete a network interface from a bridge.\n"
-		  "'bridge delif <bridge_index> <one or more interface index>'",
-		  cmd_bridge_delif, 3, 5),
+		SHELL_HELP("Delete a network interface from a bridge.",
+			"<bridge_index> <one or more interface index>"),
+		cmd_bridge_delif, 3, 5),
 	SHELL_CMD_ARG(show, NULL,
-		  "Show bridge information.\n"
-		  "'bridge show [<bridge_index>]'",
-		  cmd_bridge_show, 1, 1),
+		SHELL_HELP("Show bridge information.", "<bridge_index>"),
+		cmd_bridge_show, 1, 1),
 	SHELL_SUBCMD_SET_END
 );
 
