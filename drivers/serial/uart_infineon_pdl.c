@@ -1360,6 +1360,7 @@ static int ifx_cat1_uart_init(const struct device *dev)
 		data->async.dma_rx.dma_cfg.head_block = &data->async.dma_rx.blk_cfg;
 		data->async.dma_rx.dma_cfg.user_data = (void *)dev;
 		data->async.dma_rx.dma_cfg.dma_callback = dma_callback_rx_rdy;
+		data->async.dma_rx.dma_cfg.source_handshake = 0;
 
 #if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 		Cy_TrigMux_Connect(
@@ -1385,6 +1386,7 @@ static int ifx_cat1_uart_init(const struct device *dev)
 		data->async.dma_tx.dma_cfg.head_block = &data->async.dma_tx.blk_cfg;
 		data->async.dma_tx.dma_cfg.user_data = (void *)dev;
 		data->async.dma_tx.dma_cfg.dma_callback = dma_callback_tx_done;
+		data->async.dma_tx.dma_cfg.source_handshake = 1;
 
 #if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 		Cy_TrigMux_Connect(
@@ -1452,7 +1454,7 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 		.channel_direction = ch_dir,                                                       \
 		.source_data_size = src_data_size,                                                 \
 		.dest_data_size = dst_data_size,                                                   \
-		.source_burst_length = 0,                                                          \
+		.source_burst_length = 1,                                                          \
 		.dest_burst_length = 0,                                                            \
 		.block_count = 1,                                                                  \
 		.complete_callback_en = 0,                                                         \
