@@ -5,7 +5,7 @@
 #include <zephyr/ztest.h>
 #include <errno.h>
 #include <zephyr/settings/settings.h>
-#include <zephyr/fs/nvs.h>
+#include <zephyr/kvss/nvs.h>
 
 ZTEST(settings_functional, test_setting_storage_get)
 {

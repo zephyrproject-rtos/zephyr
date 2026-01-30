@@ -3,7 +3,7 @@
  */
 #include <zephyr/secure_storage/its/store.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/fs/zms.h>
+#include <zephyr/kvss/zms.h>
 #include <zephyr/storage/flash_map.h>
 
 LOG_MODULE_DECLARE(secure_storage, CONFIG_SECURE_STORAGE_LOG_LEVEL);
