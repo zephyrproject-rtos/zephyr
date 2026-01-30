@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Google Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config BBRAM_RETAINED_MEM
+	bool "Battery-backed RAM driver based on retained memmory"
+	default y
+	depends on DT_HAS_ZEPHYR_BBRAM_RETAINED_MEM_ENABLED
+	select RETAINED_MEM
+	help
+	  This option enables the BBRAM driver that uses retained memory
+	  feature. The retained memory doesn't have additional source of
+	  power so it works as BBRAM without Battery-backed voltage.

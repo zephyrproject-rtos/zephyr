@@ -1,0 +1,38 @@
+# Copyright (c) 2026 Google Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Battery Backed RAM based on retained memory feature.
+
+compatible: "zephyr,bbram-retained-mem"
+
+include: base.yaml
+
+properties:
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 1
+
+examples:
+  - |
+    memory@100 {
+      compatible = "zephyr,memory-region", "mmio-sram";
+      reg = <0x100 256>;
+      zephyr,memory-region = "RetainedMem";
+      status = "okay";
+
+      retained-ram {
+        compatible = "zephyr,retained-ram";
+        status = "okay";
+        #address-cells = <1>;
+        #size-cells = <1>;
+
+        retained - bbram: bbram@0 {
+          compatible = "zephyr,bbram-retained-mem";
+          status = "okay";
+          reg = <0x0 256>;
+        };
+      };
+    };
