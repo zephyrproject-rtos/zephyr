@@ -1,0 +1,54 @@
+# Copyright (c) 2024, Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon ASCLIN Uart
+
+compatible: "infineon,asclin-uart"
+
+include: [uart-controller.yaml,  pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  oversampling:
+    type: int
+    default: 16
+    description: |
+      Number of samples per bit. Valid range is 4-16.
+      Higher values provide better noise immunity but limit maximum baud rate.
+
+  samplepoint:
+    type: int
+    default: 8
+    description: |
+      Sample point position within the oversampling period.
+      Should be between 1 and oversampling-1. Typically set to oversampling/2.
+
+  median-filter:
+    type: boolean
+    description: |
+      Enable median filter for improved noise immunity.
+      When enabled, uses 3-sample majority voting at the sample point.
+
+  prescaler:
+    type: int
+    default: 1
+    description: |
+      Clock prescaler value. Valid range is 1-4096.
+      Used to divide the input clock for baud rate generation.
