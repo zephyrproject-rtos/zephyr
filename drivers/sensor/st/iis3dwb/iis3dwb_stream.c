@@ -50,7 +50,7 @@ void iis3dwb_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iode
 	const struct iis3dwb_config *config = dev->config;
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
 	struct trigger_config trig_cfg = {0};
-	bool cfg_changed = 0;
+	bool cfg_changed = false;
 
 	gpio_pin_interrupt_configure_dt(iis3dwb->drdy_gpio, GPIO_INT_DISABLE);
 
@@ -79,13 +79,13 @@ void iis3dwb_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iode
 
 		/* enable/disable the FIFO */
 		iis3dwb_config_fifo(dev, trig_cfg);
-		cfg_changed = 1;
+		cfg_changed = true;
 	}
 
 	/* if any change in trig_cfg for DRDY triggers */
 	if (trig_cfg.int_drdy != iis3dwb->trig_cfg.int_drdy) {
 		iis3dwb->trig_cfg.int_drdy = trig_cfg.int_drdy;
-		cfg_changed = 1;
+		cfg_changed = true;
 	}
 
 	if (!cfg_changed) {
