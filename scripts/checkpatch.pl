@@ -14,6 +14,7 @@ use File::Basename;
 use Cwd 'abs_path';
 use Term::ANSIColor qw(:constants);
 use Encode qw(decode encode);
+use Text::CharWidth qw(mbswidth);
 
 my $P = $0;
 my $D = dirname(abs_path($P));
@@ -1278,7 +1279,7 @@ sub line_stats {
 	# Pick the indent from the front of the line.
 	my ($white) = ($line =~ /^(\s*)/);
 
-	return (length($line), length($white));
+	return (mbswidth($line), mbswidth($white));
 }
 
 my $sanitise_quote = '';
@@ -2312,7 +2313,7 @@ sub pos_last_openparen {
 		}
 	}
 
-	return length(expand_tabs(substr($line, 0, $last_openparen))) + 1;
+	return mbswidth(expand_tabs(substr($line, 0, $last_openparen))) + 1;
 }
 
 sub process {
@@ -3249,7 +3250,7 @@ sub process {
 			# logging functions that end in a string that starts
 			# before $max_line_length
 			if ($line =~ /^\+\s*$logFunctions\s*\(\s*(?:(?:KERN_\S+\s*|[^"]*))?($String\s*(?:|,|\)\s*;)\s*)$/ &&
-			    length(expand_tabs(substr($line, 1, length($line) - length($1) - 1))) <= $max_line_length) {
+			    mbswidth(expand_tabs(substr($line, 1, length($line) - length($1) - 1))) <= $max_line_length) {
 				$msg_type = "";
 
 			# lines with only strings (w/ possible termination)
@@ -3271,12 +3272,12 @@ sub process {
 
 			# a comment starts before $max_line_length
 			} elsif ($line =~ /($;[\s$;]*)$/ &&
-				 length(expand_tabs(substr($line, 1, length($line) - length($1) - 1))) <= $max_line_length) {
+				 mbswidth(expand_tabs(substr($line, 1, length($line) - length($1) - 1))) <= $max_line_length) {
 				$msg_type = "LONG_LINE_COMMENT"
 
 			# a quoted string starts before $max_line_length
 			} elsif ($sline =~ /\s*($String(?:\s*(?:\\|,\s*|\)\s*;\s*))?)$/ &&
-				 length(expand_tabs(substr($line, 1, length($line) - length($1) - 1))) <= $max_line_length) {
+				 mbswidth(expand_tabs(substr($line, 1, length($line) - length($1) - 1))) <= $max_line_length) {
 				$msg_type = "LONG_LINE_STRING"
 			}
 
@@ -3481,7 +3482,7 @@ sub process {
 			$rawline =~ m@^\+([ \t]*)\*@;
 			my $newindent = $1;
 			$newindent = expand_tabs($newindent);
-			if (length($oldindent) ne length($newindent)) {
+			if (mbswidth($oldindent) ne mbswidth($newindent)) {
 				WARN("BLOCK_COMMENT_STYLE",
 				     "Block comments should align the * on each line\n" . $hereprev);
 			}
