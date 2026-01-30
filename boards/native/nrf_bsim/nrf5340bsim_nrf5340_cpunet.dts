@@ -55,11 +55,13 @@
 
 &flash1 {
 	reg = <0x01000000 DT_SIZE_K(256)>;
+	ranges = <0x0 0x01000000 DT_SIZE_K(256)>;
 
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		storage_partition: partition@0 {
 			label = "storage";
