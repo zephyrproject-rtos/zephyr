@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	spi2_default: spi2_default {
+		group1 {
+			pinmux = <PA37_SPI2_DIO>, <PA39_SPI2_CLK>, <PA40_SPI2_CS>;
+			input-enable;
+			input-schmitt-enable;
+		};
+
+		group2 {
+			pinmux = <PA38_SPI2_DI>;
+			input-enable;
+			input-schmitt-enable;
+			bias-pull-down;
+		};
+	};
+};
+
+&spi1 {
+	status = "okay";
+
+	dut_spi_dt: test-spi-dev@0 {
+		compatible = "vnd,spi-device";
+		spi-max-frequency = <DT_FREQ_M(8)>;
+		reg = <0>;
+	};
+};
+
+dut_spis: &spi2 {
+	status = "okay";
+	pinctrl-0 = <&spi2_default>;
+	pinctrl-names = "default";
+};
