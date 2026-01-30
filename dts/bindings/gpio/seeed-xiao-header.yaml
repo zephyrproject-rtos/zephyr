@@ -12,20 +12,22 @@ description: |
     Proceeding counter-clockwise:
     * A 7-pin Digital/Analog Input header.  This has input signals
       labeled from 0 at the top through 6 at the bottom.
-    * An 7-pin header Power and Digital/Analog Input header.  This
+    * A 7-pin header Power and Digital/Analog Input header.  This
       has three power pins, followed by four inputs labeled 10 at the
       top through 7 at the bottom.
 
-    This binding provides a nexus mapping for 10 pins where parent pins 0
+    This binding provides a nexus mapping for 11 pins where parent pins 0
     through 10 correspond to D0 through D10, as depicted below:
 
-        0 D0                     5V   -
-        1 D1                     GND  -
-        2 D2                     3V3  -
-        3 D3                     D10 10
-        4 A4                     D9   9
-        5 D5                     D8   8
-        6 D6                     D7   7
+        0 D0 (A0/DAC)                5V   -
+        1 D1 (A1)                    GND  -
+        2 D2 (A2)                    3V3  -
+        3 D3 (A3/CS0n)   (MOSI0/A10) D10 10
+        4 D4 (A4/SDA0)    (MISO0/A9) D9   9
+        5 D5 (A5/SCL0)     (SCK0/A8) D8   8
+        6 D6 (A6/TX0)  (RX0/CS0n/A7) D7   7
+
+    https://github.com/Seeed-Studio/OSHW-XIAO-Series
 
 
 compatible: "seeed,xiao-gpio"
