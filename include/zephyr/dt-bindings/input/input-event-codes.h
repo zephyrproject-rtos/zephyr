@@ -38,6 +38,7 @@
  */
 #define INPUT_KEY_RESERVED 0            /**< Reserved, do not use */
 
+/* zephyr-keep-sorted-start */
 #define INPUT_KEY_0 11                  /**< 0 Key */
 #define INPUT_KEY_1 2                   /**< 1 Key */
 #define INPUT_KEY_2 3                   /**< 2 Key */
@@ -177,6 +178,7 @@
 #define INPUT_KEY_X 45                  /**< X Key */
 #define INPUT_KEY_Y 21                  /**< Y Key */
 #define INPUT_KEY_Z 44                  /**< Z Key */
+/* zephyr-keep-sorted-stop */
 /** @} */
 
 
@@ -185,6 +187,7 @@
  * @anchor INPUT_BTN_CODES
  * @{
  */
+/* zephyr-keep-sorted-start */
 #define INPUT_BTN_0 0x100               /**< 0 button */
 #define INPUT_BTN_1 0x101               /**< 1 button */
 #define INPUT_BTN_2 0x102               /**< 2 button */
@@ -229,6 +232,7 @@
 #define INPUT_BTN_X INPUT_BTN_NORTH     /**< X button */
 #define INPUT_BTN_Y INPUT_BTN_WEST      /**< Y button */
 #define INPUT_BTN_Z 0x135               /**< Z button */
+/* zephyr-keep-sorted-stop */
 /** @} */
 
 /**
@@ -236,6 +240,7 @@
  * @anchor INPUT_ABS_CODES
  * @{
  */
+/* zephyr-keep-sorted-start */
 #define INPUT_ABS_BRAKE 0x0a            /**< Absolute brake position */
 #define INPUT_ABS_GAS 0x09              /**< Absolute gas position */
 #define INPUT_ABS_MT_SLOT 0x2f          /**< Absolute multitouch slot identifier */
@@ -248,6 +253,7 @@
 #define INPUT_ABS_X 0x00                /**< Absolute X coordinate */
 #define INPUT_ABS_Y 0x01                /**< Absolute Y coordinate */
 #define INPUT_ABS_Z 0x02                /**< Absolute Z coordinate */
+/* zephyr-keep-sorted-stop */
 /** @} */
 
 /**
@@ -255,6 +261,7 @@
  * @anchor INPUT_REL_CODES
  * @{
  */
+/* zephyr-keep-sorted-start */
 #define INPUT_REL_DIAL 0x07             /**< Relative dial coordinate */
 #define INPUT_REL_HWHEEL 0x06           /**< Relative horizontal wheel coordinate */
 #define INPUT_REL_MISC 0x09             /**< Relative misc coordinate */
@@ -265,6 +272,7 @@
 #define INPUT_REL_X 0x00                /**< Relative X coordinate */
 #define INPUT_REL_Y 0x01                /**< Relative Y coordinate */
 #define INPUT_REL_Z 0x02                /**< Relative Z coordinate */
+/* zephyr-keep-sorted-stop */
 /** @} */
 
 /**
@@ -272,7 +280,9 @@
  * @anchor INPUT_MSC_CODES
  * @{
  */
+/* zephyr-keep-sorted-start */
 #define INPUT_MSC_SCAN 0x04             /**< Scan code */
+/* zephyr-keep-sorted-stop */
 /** @} */
 
 /** @} */
