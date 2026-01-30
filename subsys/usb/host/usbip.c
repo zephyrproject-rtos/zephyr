@@ -146,6 +146,11 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 		goto usbip_req_cb_error;
 	}
 
+	if (!k_event_wait(&dev_ctx->event, USBIP_EXPORTED, false, K_NO_WAIT)) {
+		LOG_WRN("Connection closed, drop completed seqnum %u", cmd->hdr.seqnum);
+		goto usbip_req_cb_error;
+	}
+
 	if (xfer->err == -EPIPE) {
 		LOG_INF("RET_SUBMIT status is EPIPE");
 	}
@@ -406,7 +411,6 @@ static void usbip_thread_cmd(void *const a, void *const b, void *const c)
 			zsock_close(dev_ctx->connfd);
 			LOG_INF("CMD connection closed, errno %d", ret);
 			k_event_set_masked(&dev_ctx->event, 0, USBIP_EXPORTED);
-			dev_ctx->udev = NULL;
 		}
 	}
 }
@@ -550,10 +554,6 @@ static struct usbip_dev_ctx *get_free_dev_ctx(struct usbip_bus_ctx *const bus_ct
 
 		if (k_event_wait(&dev_ctx->event, USBIP_EXPORTED, false, K_NO_WAIT)) {
 			continue;
-		}
-
-		if (dev_ctx->udev != NULL) {
-			LOG_WRN("USB device pointer is not cleaned");
 		}
 
 		return &bus_ctx->devs[i];
