@@ -336,6 +336,12 @@
                         /omit-if-no-ref/ p16_1_tdm_i2s0_tx_sd: p16_1_tdm_i2s0_tx_sd {
                                 pinmux = <DT_CAT1_PINMUX(16, 1, HSIOM_SEL_ACT_4)>;
 				drive-push-pull;
+			};
+
+                        /omit-if-no-ref/ p4_1_tc0_28_tr: p4_1_tc0_28_tr {
+				pinmux = <DT_CAT1_PINMUX(4, 1, HSIOM_SEL_ACT_2)>;
+				drive-push-pull;
+				input-enable;
                         };
 		};
 	};

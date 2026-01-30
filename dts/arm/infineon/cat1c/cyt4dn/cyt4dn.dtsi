@@ -611,6 +611,12 @@
 					#pwm-cells = <3>;
 					status = "disabled";
 				};
+
+				tgpio0_0: tgpio0_0 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <552 4>;
+					status = "disabled";
+        			};
 			};
 
 		tcpwm0_1: tcpwm0_1@40380080 {
@@ -629,6 +635,12 @@
 				compatible = "infineon,cat1-pwm";
 				system-interrupts = <553 4>;
 				#pwm-cells = <3>;
+				status = "disabled";
+			};
+
+			tgpio0_1: tgpio0_1 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <553 4>;
 				status = "disabled";
 			};
 		};
@@ -651,6 +663,12 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+
+			tgpio0_2: tgpio0_2 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <554 4>;
+				status = "disabled";
+			};
 		};
 
 		tcpwm0_3: tcpwm0_3@40380180 {
@@ -669,6 +687,12 @@
 				compatible = "infineon,cat1-pwm";
 				system-interrupts = <555 4>;
 				#pwm-cells = <3>;
+				status = "disabled";
+			};
+
+			tgpio0_3: tgpio0_3 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <555 4>;
 				status = "disabled";
 			};
 		};
@@ -691,6 +715,12 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+
+			tgpio0_4: tgpio0_4 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <556 4>;
+				status = "disabled";
+			};
 		};
 
 		tcpwm0_5: tcpwm0_5@40380280 {
@@ -709,6 +739,12 @@
 				compatible = "infineon,cat1-pwm";
 				system-interrupts = <557 4>;
 				#pwm-cells = <3>;
+				status = "disabled";
+			};
+
+			tgpio0_5: tgpio0_5 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <557 4>;
 				status = "disabled";
 			};
 		};
@@ -731,6 +767,12 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+
+			tgpio0_6: tgpio0_6 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <558 4>;
+				status = "disabled";
+			};
 		};
 
 		tcpwm0_7: tcpwm0_7@40380380 {
@@ -749,6 +791,12 @@
 				compatible = "infineon,cat1-pwm";
 				system-interrupts = <559 4>;
 				#pwm-cells = <3>;
+				status = "disabled";
+			};
+
+			tgpio0_7: tgpio0_7 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <559 4>;
 				status = "disabled";
 			};
 		};
@@ -771,6 +819,12 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+
+			tgpio0_8: tgpio0_8 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <560 4>;
+				status = "disabled";
+			};
 		};
 
 		tcpwm0_9: tcpwm0_9@40380480 {
@@ -789,6 +843,12 @@
 				compatible = "infineon,cat1-pwm";
 				system-interrupts = <561 4>;
 				#pwm-cells = <3>;
+				status = "disabled";
+			};
+
+			tgpio0_9: tgpio0_9 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <561 4>;
 				status = "disabled";
 			};
 		};
@@ -811,6 +871,12 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+
+			tgpio0_10: tgpio0_10 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <562 4>;
+				status = "disabled";
+			};
 		};
 
 		tcpwm0_11: tcpwm0_11@40380580 {
@@ -829,6 +895,12 @@
 				compatible = "infineon,cat1-pwm";
 				system-interrupts = <563 4>;
 				#pwm-cells = <3>;
+				status = "disabled";
+			};
+
+			tgpio0_11: tgpio0_11 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <563 4>;
 				status = "disabled";
 			};
 		};
@@ -851,6 +923,12 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+
+			tgpio0_12: tgpio0_12 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <564 4>;
+				status = "disabled";
+			};
 		};
 
 		tcpwm0_13: tcpwm0_13@40380680 {
@@ -869,6 +947,12 @@
 				compatible = "infineon,cat1-pwm";
 				system-interrupts = <565 4>;
 				#pwm-cells = <3>;
+				status = "disabled";
+			};
+
+			tgpio0_13: tgpio0_13 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <565 4>;
 				status = "disabled";
 			};
 		};
@@ -891,6 +975,12 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+
+			tgpio0_14: tgpio0_14 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <566 4>;
+				status = "disabled";
+			};
 		};
 
 		tcpwm0_15: tcpwm0_15@40380780 {
@@ -909,6 +999,12 @@
 				compatible = "infineon,cat1-pwm";
 				system-interrupts = <567 4>;
 				#pwm-cells = <3>;
+				status = "disabled";
+			};
+
+			tgpio0_15: tgpio0_15 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <567 4>;
 				status = "disabled";
 			};
 		};
@@ -931,6 +1027,12 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+
+			tgpio0_16: tgpio0_16 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <568 4>;
+				status = "disabled";
+			};
 		};
 
 		tcpwm0_17: tcpwm0_17@40380880 {
@@ -949,6 +1051,12 @@
 				compatible = "infineon,cat1-pwm";
 				system-interrupts = <569 4>;
 				#pwm-cells = <3>;
+				status = "disabled";
+			};
+
+			tgpio0_17: tgpio0_17 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <569 4>;
 				status = "disabled";
 			};
 		};
@@ -971,6 +1079,12 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+
+			tgpio0_18: tgpio0_18 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <570 4>;
+				status = "disabled";
+			};
 		};
 
 		tcpwm0_19: tcpwm0_19@40380980 {
@@ -989,6 +1103,12 @@
 				compatible = "infineon,cat1-pwm";
 				system-interrupts = <571 4>;
 				#pwm-cells = <3>;
+				status = "disabled";
+			};
+
+			tgpio0_19: tgpio0_19 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <571 4>;
 				status = "disabled";
 			};
 		};
@@ -1011,6 +1131,12 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+
+			tgpio0_20: tgpio0_20 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <572 4>;
+				status = "disabled";
+			};
 		};
 
 		tcpwm0_21: tcpwm0_21@40380A80 {
@@ -1029,6 +1155,12 @@
 				compatible = "infineon,cat1-pwm";
 				system-interrupts = <573 4>;
 				#pwm-cells = <3>;
+				status = "disabled";
+			};
+
+			tgpio0_21: tgpio0_21 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <573 4>;
 				status = "disabled";
 			};
 		};
@@ -1051,6 +1183,12 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+
+			tgpio0_22: tgpio0_22 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <574 4>;
+				status = "disabled";
+			};
 		};
 
 		tcpwm0_23: tcpwm0_23@40380B80 {
@@ -1069,6 +1207,12 @@
 				compatible = "infineon,cat1-pwm";
 				system-interrupts = <575 4>;
 				#pwm-cells = <3>;
+				status = "disabled";
+			};
+
+			tgpio0_23: tgpio0_23 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <575 4>;
 				status = "disabled";
 			};
 		};
@@ -1091,6 +1235,12 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+
+			tgpio0_24: tgpio0_24 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <576 4>;
+				status = "disabled";
+			};
 		};
 
 		tcpwm0_25: tcpwm0_25@40380C80 {
@@ -1109,6 +1259,12 @@
 				compatible = "infineon,cat1-pwm";
 				system-interrupts = <577 4>;
 				#pwm-cells = <3>;
+				status = "disabled";
+			};
+
+			tgpio0_25: tgpio0_25 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <577 4>;
 				status = "disabled";
 			};
 		};
@@ -1131,6 +1287,12 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+
+			tgpio0_26: tgpio0_26 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <578 4>;
+				status = "disabled";
+			};
 		};
 
 		tcpwm0_27: tcpwm0_27@40380D80 {
@@ -1149,6 +1311,12 @@
 				compatible = "infineon,cat1-pwm";
 				system-interrupts = <579 4>;
 				#pwm-cells = <3>;
+				status = "disabled";
+			};
+
+			tgpio0_27: tgpio0_27 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <579 4>;
 				status = "disabled";
 			};
 		};
@@ -1171,6 +1339,12 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+
+			tgpio0_28: tgpio0_28 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <580 4>;
+				status = "disabled";
+			};
 		};
 
 		tcpwm0_29: tcpwm0_29@40380E80 {
@@ -1189,6 +1363,12 @@
 				compatible = "infineon,cat1-pwm";
 				system-interrupts = <581 4>;
 				#pwm-cells = <3>;
+				status = "disabled";
+			};
+
+			tgpio0_29: tgpio0_29 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <581 4>;
 				status = "disabled";
 			};
 		};
@@ -1211,6 +1391,12 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+
+			tgpio0_30: tgpio0_30 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <582 4>;
+				status = "disabled";
+			};
 		};
 
 		tcpwm0_31: tcpwm0_31@40380F80 {
@@ -1229,6 +1415,12 @@
 				compatible = "infineon,cat1-pwm";
 				system-interrupts = <583 4>;
 				#pwm-cells = <3>;
+				status = "disabled";
+			};
+
+			tgpio0_31: tgpio0_31 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <583 4>;
 				status = "disabled";
 			};
 		};
@@ -1251,6 +1443,12 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+
+			tgpio0_32: tgpio0_32 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <584 4>;
+				status = "disabled";
+			};
 		};
 
 		tcpwm0_33: tcpwm0_33@40381080 {
@@ -1269,6 +1467,12 @@
 				compatible = "infineon,cat1-pwm";
 				system-interrupts = <585 4>;
 				#pwm-cells = <3>;
+				status = "disabled";
+			};
+
+			tgpio0_33: tgpio0_33 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <585 4>;
 				status = "disabled";
 			};
 		};
@@ -1291,6 +1495,12 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+
+			tgpio0_34: tgpio0_34 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <586 4>;
+				status = "disabled";
+			};
 		};
 
 		tcpwm0_35: tcpwm0_35@40381180 {
@@ -1309,6 +1519,12 @@
 				compatible = "infineon,cat1-pwm";
 				system-interrupts = <587 4>;
 				#pwm-cells = <3>;
+				status = "disabled";
+			};
+
+			tgpio0_35: tgpio0_35 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <587 4>;
 				status = "disabled";
 			};
 		};
@@ -1331,6 +1547,12 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+
+			tgpio0_36: tgpio0_36 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <588 4>;
+				status = "disabled";
+			};
 		};
 
 		tcpwm0_37: tcpwm0_37@40381280 {
@@ -1349,6 +1571,12 @@
 				compatible = "infineon,cat1-pwm";
 				system-interrupts = <589 4>;
 				#pwm-cells = <3>;
+				status = "disabled";
+			};
+
+			tgpio0_37: tgpio0_37 {
+				compatible = "infineon,tcpwm-tgpio";
+				system-interrupts = <589 4>;
 				status = "disabled";
 			};
 		};
@@ -1377,6 +1605,12 @@
 					#pwm-cells = <3>;
 					status = "disabled";
 				};
+
+				tgpio1_0: tgpio1_0 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <616 4>;
+					status = "disabled";
+				};
 			};
 
 			tcpwm1_1: tcpwm1_1@40388080 {
@@ -1395,6 +1629,12 @@
 					compatible = "infineon,cat1-pwm";
 					system-interrupts = <617 4>;
 					#pwm-cells = <3>;
+					status = "disabled";
+				};
+
+				tgpio1_1: tgpio1_1 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <617 4>;
 					status = "disabled";
 				};
 			};
@@ -1417,6 +1657,12 @@
 					#pwm-cells = <3>;
 					status = "disabled";
 				};
+
+				tgpio1_2: tgpio1_2 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <618 4>;
+					status = "disabled";
+				};
 			};
 
 			tcpwm1_3: tcpwm1_3@40388180 {
@@ -1435,6 +1681,12 @@
 					compatible = "infineon,cat1-pwm";
 					system-interrupts = <619 4>;
 					#pwm-cells = <3>;
+					status = "disabled";
+				};
+
+				tgpio1_3: tgpio1_3 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <619 4>;
 					status = "disabled";
 				};
 			};
@@ -1457,6 +1709,12 @@
 					#pwm-cells = <3>;
 					status = "disabled";
 				};
+
+				tgpio1_4: tgpio1_4 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <620 4>;
+					status = "disabled";
+				};
 			};
 
 			tcpwm1_5: tcpwm1_5@40388280 {
@@ -1475,6 +1733,12 @@
 					compatible = "infineon,cat1-pwm";
 					system-interrupts = <621 4>;
 					#pwm-cells = <3>;
+					status = "disabled";
+				};
+
+				tgpio1_5: tgpio1_5 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <621 4>;
 					status = "disabled";
 				};
 			};
@@ -1497,6 +1761,12 @@
 					#pwm-cells = <3>;
 					status = "disabled";
 				};
+
+				tgpio1_6: tgpio1_6 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <622 4>;
+					status = "disabled";
+				};
 			};
 
 			tcpwm1_7: tcpwm1_7@40388380 {
@@ -1515,6 +1785,12 @@
 					compatible = "infineon,cat1-pwm";
 					system-interrupts = <623 4>;
 					#pwm-cells = <3>;
+					status = "disabled";
+				};
+
+				tgpio1_7: tgpio1_7 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <623 4>;
 					status = "disabled";
 				};
 			};
@@ -1537,6 +1813,12 @@
 					#pwm-cells = <3>;
 					status = "disabled";
 				};
+
+				tgpio1_8: tgpio1_8 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <624 4>;
+					status = "disabled";
+				};
 			};
 
 			tcpwm1_9: tcpwm1_9@40388480 {
@@ -1555,6 +1837,12 @@
 					compatible = "infineon,cat1-pwm";
 					system-interrupts = <625 4>;
 					#pwm-cells = <3>;
+					status = "disabled";
+				};
+
+				tgpio1_9: tgpio1_9 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <625 4>;
 					status = "disabled";
 				};
 			};
@@ -1577,6 +1865,12 @@
 					#pwm-cells = <3>;
 					status = "disabled";
 				};
+
+				tgpio1_10: tgpio1_10 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <626 4>;
+					status = "disabled";
+				};
 			};
 
 			tcpwm1_11: tcpwm1_11@40388580 {
@@ -1595,6 +1889,12 @@
 					compatible = "infineon,cat1-pwm";
 					system-interrupts = <627 4>;
 					#pwm-cells = <3>;
+					status = "disabled";
+				};
+
+				tgpio1_11: tgpio1_11 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <627 4>;
 					status = "disabled";
 				};
 			};
@@ -1624,6 +1924,12 @@
 					#pwm-cells = <3>;
 					status = "disabled";
 				};
+
+				tgpio2_0: tgpio2_0 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <680 4>;
+					status = "disabled";
+				};
 			};
 
 			tcpwm2_1: tcpwm2_1@40390080 {
@@ -1642,6 +1948,12 @@
 					compatible = "infineon,cat1-pwm";
 					system-interrupts = <681 4>;
 					#pwm-cells = <3>;
+					status = "disabled";
+				};
+
+				tgpio2_1: tgpio2_1 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <681 4>;
 					status = "disabled";
 				};
 			};
@@ -1664,6 +1976,12 @@
 					#pwm-cells = <3>;
 					status = "disabled";
 				};
+
+				tgpio2_2: tgpio2_2 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <682 4>;
+					status = "disabled";
+				};
 			};
 
 			tcpwm2_3: tcpwm2_3@40390180 {
@@ -1682,6 +2000,12 @@
 					compatible = "infineon,cat1-pwm";
 					system-interrupts = <683 4>;
 					#pwm-cells = <3>;
+					status = "disabled";
+				};
+
+				tgpio2_3: tgpio2_3 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <683 4>;
 					status = "disabled";
 				};
 			};
@@ -1704,6 +2028,12 @@
 					#pwm-cells = <3>;
 					status = "disabled";
 				};
+
+				tgpio2_4: tgpio2_4 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <684 4>;
+					status = "disabled";
+				};
 			};
 
 			tcpwm2_5: tcpwm2_5@40390280 {
@@ -1722,6 +2052,12 @@
 					compatible = "infineon,cat1-pwm";
 					system-interrupts = <685 4>;
 					#pwm-cells = <3>;
+					status = "disabled";
+				};
+
+				tgpio2_5: tgpio2_5 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <685 4>;
 					status = "disabled";
 				};
 			};
@@ -1744,6 +2080,12 @@
 					#pwm-cells = <3>;
 					status = "disabled";
 				};
+
+				tgpio2_6: tgpio2_6 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <686 4>;
+					status = "disabled";
+				};
 			};
 
 			tcpwm2_7: tcpwm2_7@40390380 {
@@ -1762,6 +2104,12 @@
 					compatible = "infineon,cat1-pwm";
 					system-interrupts = <687 4>;
 					#pwm-cells = <3>;
+					status = "disabled";
+				};
+
+				tgpio2_7: tgpio2_7 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <687 4>;
 					status = "disabled";
 				};
 			};
@@ -1784,6 +2132,12 @@
 					#pwm-cells = <3>;
 					status = "disabled";
 				};
+
+				tgpio2_8: tgpio2_8 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <688 4>;
+					status = "disabled";
+				};
 			};
 
 			tcpwm2_9: tcpwm2_9@40390480 {
@@ -1802,6 +2156,12 @@
 					compatible = "infineon,cat1-pwm";
 					system-interrupts = <689 4>;
 					#pwm-cells = <3>;
+					status = "disabled";
+				};
+
+				tgpio2_9: tgpio2_9 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <689 4>;
 					status = "disabled";
 				};
 			};
@@ -1824,6 +2184,12 @@
 					#pwm-cells = <3>;
 					status = "disabled";
 				};
+
+				tgpio2_10: tgpio2_10 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <690 4>;
+					status = "disabled";
+				};
 			};
 
 			tcpwm2_11: tcpwm2_11@40390580 {
@@ -1842,6 +2208,12 @@
 					compatible = "infineon,cat1-pwm";
 					system-interrupts = <691 4>;
 					#pwm-cells = <3>;
+					status = "disabled";
+				};
+
+				tgpio2_11: tgpio2_11 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <691 4>;
 					status = "disabled";
 				};
 			};
@@ -1864,6 +2236,12 @@
 					#pwm-cells = <3>;
 					status = "disabled";
 				};
+
+				tgpio2_12: tgpio2_12 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <692 4>;
+					status = "disabled";
+				};
 			};
 
 			tcpwm2_13: tcpwm2_13@40390680 {
@@ -1882,6 +2260,12 @@
 					compatible = "infineon,cat1-pwm";
 					system-interrupts = <693 4>;
 					#pwm-cells = <3>;
+					status = "disabled";
+				};
+
+				tgpio2_13: tgpio2_13 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <693 4>;
 					status = "disabled";
 				};
 			};
@@ -1904,6 +2288,12 @@
 					#pwm-cells = <3>;
 					status = "disabled";
 				};
+
+				tgpio2_14: tgpio2_14 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <694 4>;
+					status = "disabled";
+				};
 			};
 
 			tcpwm2_15: tcpwm2_15@40390780 {
@@ -1922,6 +2312,12 @@
 					compatible = "infineon,cat1-pwm";
 					system-interrupts = <695 4>;
 					#pwm-cells = <3>;
+					status = "disabled";
+				};
+
+				tgpio2_15: tgpio2_15 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <695 4>;
 					status = "disabled";
 				};
 			};
@@ -1944,6 +2340,12 @@
 					#pwm-cells = <3>;
 					status = "disabled";
 				};
+
+				tgpio2_16: tgpio2_16 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <696 4>;
+					status = "disabled";
+				};
 			};
 
 			tcpwm2_17: tcpwm2_17@40390880 {
@@ -1962,6 +2364,12 @@
 					compatible = "infineon,cat1-pwm";
 					system-interrupts = <697 4>;
 					#pwm-cells = <3>;
+					status = "disabled";
+				};
+
+				tgpio2_17: tgpio2_17 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <697 4>;
 					status = "disabled";
 				};
 			};
@@ -1984,6 +2392,12 @@
 					#pwm-cells = <3>;
 					status = "disabled";
 				};
+
+				tgpio2_18: tgpio2_18 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <698 4>;
+					status = "disabled";
+				};
 			};
 
 			tcpwm2_19: tcpwm2_19@40390980 {
@@ -2002,6 +2416,12 @@
 					compatible = "infineon,cat1-pwm";
 					system-interrupts = <699 4>;
 					#pwm-cells = <3>;
+					status = "disabled";
+				};
+
+				tgpio2_19: tgpio2_19 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <699 4>;
 					status = "disabled";
 				};
 			};
@@ -2024,6 +2444,12 @@
 					#pwm-cells = <3>;
 					status = "disabled";
 				};
+
+				tgpio2_20: tgpio2_20 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <700 4>;
+					status = "disabled";
+				};
 			};
 
 			tcpwm2_21: tcpwm2_21@40390A80 {
@@ -2042,6 +2468,12 @@
 					compatible = "infineon,cat1-pwm";
 					system-interrupts = <701 4>;
 					#pwm-cells = <3>;
+					status = "disabled";
+				};
+
+				tgpio2_21: tgpio2_21 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <701 4>;
 					status = "disabled";
 				};
 			};
@@ -2064,6 +2496,12 @@
 					#pwm-cells = <3>;
 					status = "disabled";
 				};
+
+				tgpio2_22: tgpio2_22 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <702 4>;
+					status = "disabled";
+				};
 			};
 
 			tcpwm2_23: tcpwm2_23@40390B80 {
@@ -2082,6 +2520,12 @@
 					compatible = "infineon,cat1-pwm";
 					system-interrupts = <703 4>;
 					#pwm-cells = <3>;
+					status = "disabled";
+				};
+
+				tgpio2_23: tgpio2_23 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <703 4>;
 					status = "disabled";
 				};
 			};
@@ -2104,6 +2548,12 @@
 					#pwm-cells = <3>;
 					status = "disabled";
 				};
+
+				tgpio2_24: tgpio2_24 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <704 4>;
+					status = "disabled";
+				};
 			};
 
 			tcpwm2_25: tcpwm2_25@40390C80 {
@@ -2122,6 +2572,12 @@
 					compatible = "infineon,cat1-pwm";
 					system-interrupts = <705 4>;
 					#pwm-cells = <3>;
+					status = "disabled";
+				};
+
+				tgpio2_25: tgpio2_25 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <705 4>;
 					status = "disabled";
 				};
 			};
@@ -2144,6 +2600,12 @@
 					#pwm-cells = <3>;
 					status = "disabled";
 				};
+
+				tgpio2_26: tgpio2_26 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <706 4>;
+					status = "disabled";
+				};
 			};
 
 			tcpwm2_27: tcpwm2_27@40390D80 {
@@ -2162,6 +2624,12 @@
 					compatible = "infineon,cat1-pwm";
 					system-interrupts = <707 4>;
 					#pwm-cells = <3>;
+					status = "disabled";
+				};
+
+				tgpio2_27: tgpio2_27 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <707 4>;
 					status = "disabled";
 				};
 			};
@@ -2184,6 +2652,12 @@
 					#pwm-cells = <3>;
 					status = "disabled";
 				};
+
+				tgpio2_28: tgpio2_28 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <708 4>;
+					status = "disabled";
+				};
 			};
 
 			tcpwm2_29: tcpwm2_29@40390E80 {
@@ -2202,6 +2676,12 @@
 					compatible = "infineon,cat1-pwm";
 					system-interrupts = <709 4>;
 					#pwm-cells = <3>;
+					status = "disabled";
+				};
+
+				tgpio2_29: tgpio2_29 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <709 4>;
 					status = "disabled";
 				};
 			};
@@ -2224,6 +2704,12 @@
 					#pwm-cells = <3>;
 					status = "disabled";
 				};
+
+				tgpio2_30: tgpio2_30 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <710 4>;
+					status = "disabled";
+				};
 			};
 
 			tcpwm2_31: tcpwm2_31@40390F80 {
@@ -2242,6 +2728,12 @@
 					compatible = "infineon,cat1-pwm";
 					system-interrupts = <711 4>;
 					#pwm-cells = <3>;
+					status = "disabled";
+				};
+
+				tgpio2_31: tgpio2_31 {
+					compatible = "infineon,tcpwm-tgpio";
+					system-interrupts = <711 4>;
 					status = "disabled";
 				};
 			};
