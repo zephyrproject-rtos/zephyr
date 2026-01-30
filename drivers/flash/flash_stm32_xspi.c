@@ -1190,8 +1190,8 @@ erase_end:
 static int flash_stm32_xspi_read(const struct device *dev, off_t addr,
 				 void *data, size_t size)
 {
-	const struct flash_stm32_xspi_config *dev_cfg = dev->config;
-	struct flash_stm32_xspi_data *dev_data = dev->data;
+	__maybe_unused const struct flash_stm32_xspi_config *dev_cfg = dev->config;
+	__maybe_unused struct flash_stm32_xspi_data *dev_data = dev->data;
 	int ret = 0;
 
 	if (!xspi_address_is_valid(dev, addr, size)) {
@@ -1206,8 +1206,6 @@ static int flash_stm32_xspi_read(const struct device *dev, off_t addr,
 	}
 
 #if defined(CONFIG_STM32_MEMMAP) || (defined(CONFIG_STM32_APP_IN_EXT_FLASH) && defined(CONFIG_XIP))
-	ARG_UNUSED(dev_cfg);
-	ARG_UNUSED(dev_data);
 	/*
 	 * When the call is made by an app executing in external flash,
 	 * skip the memory-mapped mode check
@@ -2412,14 +2410,16 @@ static int flash_stm32_xspi_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_STM32_MEMMAP
-	ret = stm32_xspi_set_memorymap(dev);
-	if (ret != 0) {
-		LOG_ERR("Failed to enable memory-mapped mode: %d", ret);
-		return ret;
+	if (dev_cfg->memory_mapped) {
+		ret = stm32_xspi_set_memorymap(dev);
+		if (ret != 0) {
+			LOG_ERR("Failed to enable memory-mapped mode: %d", ret);
+			return ret;
+		}
+		LOG_INF("Memory-mapped NOR-flash at 0x%x (0x%x bytes)",
+			dev_cfg->mem_map_based_address,
+			dev_cfg->flash_size);
 	}
-	LOG_INF("Memory-mapped NOR-flash at 0x%x (0x%x bytes)",
-		dev_cfg->mem_map_based_address,
-		dev_cfg->flash_size);
 #else
 	LOG_INF("NOR external-flash at 0x%x (0x%x bytes)",
 		dev_cfg->mem_map_based_address,
@@ -2501,6 +2501,7 @@ static int flash_stm32_xspi_init(const struct device *dev)
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(STM32_XSPI_NODE(inst)),			\
 		.irq_config = flash_stm32_xspi_irq_config_func_##inst,				\
 		.mem_map_based_address = DT_REG_ADDR_BY_IDX(STM32_XSPI_NODE(inst), 1),		\
+		.memory_mapped = DT_NODE_HAS_PROP(STM32_XSPI_NODE(inst), memory_mapped),	\
 												\
 		/* Properties of the flash device */						\
 		.flash_size = DT_INST_PROP(inst, size) / 8,			/* In Bytes */	\
