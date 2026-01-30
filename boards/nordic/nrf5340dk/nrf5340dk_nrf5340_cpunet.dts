@@ -80,6 +80,7 @@ arduino_spi: &spi0 {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		boot_partition: partition@0 {
 			label = "mcuboot";

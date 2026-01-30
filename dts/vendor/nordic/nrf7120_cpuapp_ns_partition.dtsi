@@ -51,6 +51,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* This static layout needs to be the same with the upstream TF-M layout in the
 		 * header flash_layout.h of the relevant platform. Any updates in the layout

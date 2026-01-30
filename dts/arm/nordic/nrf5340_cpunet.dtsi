@@ -317,6 +317,8 @@
 				compatible = "soc-nv-flash";
 				erase-block-size = <2048>;
 				write-block-size = <4>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 

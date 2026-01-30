@@ -39,6 +39,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* 48K */
 		boot_partition: partition@0 {

@@ -17,10 +17,13 @@ config ROM_START_OFFSET
 
 if !USE_DT_CODE_PARTITION
 
+DT_CHOSEN_Z_FLASH := zephyr,flash
+
 # Application core firmware must start at this offset when not using MCUboot.
 # However, the default 'zephyr,code-partition' in DT is set for MCUboot.
 config FLASH_LOAD_OFFSET
-	default $(dt_nodelabel_reg_addr_hex,cpuapp_boot_partition)
+	default $(sub_hex, $(dt_nodelabel_reg_addr_hex,cpuapp_boot_partition), \
+		$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH)))
 
 # This is meant to span 'cpuapp_boot_partition' and 'cpuapp_slot0_partition'
 # in the default memory map.
