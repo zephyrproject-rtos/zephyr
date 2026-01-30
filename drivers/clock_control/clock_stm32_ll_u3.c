@@ -332,11 +332,21 @@ static void enable_epod_booster(void)
 
 #if STM32_MSIK_PLL_MODE || STM32_MSIS_PLL_MODE
 
-/* Use two asserts for more precise error messages */
-BUILD_ASSERT(IS_ENABLED(STM32_LSE_ENABLED) || !STM32_MSIK_PLL_MODE,
-	"MSIK PLL mode requires LSE clock to be enabled for auto-calibration");
-BUILD_ASSERT(IS_ENABLED(STM32_LSE_ENABLED) || !STM32_MSIS_PLL_MODE,
-	"MSIS PLL mode requires LSE clock to be enabled for auto-calibration");
+/* MSIS and MSIK in PLL mode depends on LSE at 32768Hz (mandatory if present)
+ * or HSE at 16MHz or 32MHz.
+ *
+ * Note: STM32_xSE_FREQ is 0 when related xSE clock is disable.
+ * Use two asserts for more precise error messages.
+ */
+#define MSI_PLL_SOURCE_CLOCK_IS_VALID	((STM32_LSE_FREQ == 32768) || \
+					 (STM32_HSE_FREQ == 32000000) || \
+					 (STM32_HSE_FREQ == 16000000))
+
+BUILD_ASSERT(MSI_PLL_SOURCE_CLOCK_IS_VALID || !STM32_MSIK_PLL_MODE,
+	"MSIK PLL mode requires LSE or HSE clock to be enabled for auto-calibration");
+
+BUILD_ASSERT(MSI_PLL_SOURCE_CLOCK_IS_VALID || !STM32_MSIS_PLL_MODE,
+	"MSIS PLL mode requires LSE or HSE clock to be enabled for auto-calibration");
 
 static void configure_clock_with_calibration(int range)
 {
