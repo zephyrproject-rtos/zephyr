@@ -23,8 +23,9 @@ LOG_MODULE_REGISTER(usbip, CONFIG_USBIP_LOG_LEVEL);
 /* For now, we will use the Zephyr default controller. */
 USBH_CONTROLLER_DEFINE(usbip_uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
 
-#define USBIP_MAX_PKT_SIZE	2048
-NET_BUF_POOL_DEFINE(usbip_pool, 32, USBIP_MAX_PKT_SIZE, 0, NULL);
+NET_BUF_POOL_VAR_DEFINE(usbip_pool,
+			CONFIG_USBIP_BUF_COUNT, CONFIG_USBIP_BUF_POOL_SIZE,
+			0, NULL);
 
 K_THREAD_STACK_DEFINE(usbip_thread_stack, CONFIG_USBIP_THREAD_STACK_SIZE);
 K_THREAD_STACK_ARRAY_DEFINE(dev_thread_stacks, CONFIG_USBIP_DEVICES_COUNT,
@@ -262,13 +263,12 @@ static int usbip_handle_submit(struct usbip_dev_ctx *const dev_ctx,
 
 	ep = cmd->hdr.ep;
 	if (cmd->submit.length != 0) {
-		if (cmd->submit.length > USBIP_MAX_PKT_SIZE) {
-			LOG_ERR("Buffer size %u too small, requested length %zu",
-				USBIP_MAX_PKT_SIZE, cmd->submit.length);
-			return -ENOMEM;
+		if (USB_EP_GET_IDX(ep) == 0U) {
+			buf = usbh_xfer_buf_alloc(dev_ctx->udev, cmd->submit.length);
+		} else {
+			buf = net_buf_alloc_len(&usbip_pool, cmd->submit.length, K_NO_WAIT);
 		}
 
-		buf = net_buf_alloc(&usbip_pool, K_NO_WAIT);
 		if (buf == NULL) {
 			LOG_ERR("Failed to allocate net_buf");
 			return -ENOMEM;
