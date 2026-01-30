@@ -12,12 +12,33 @@
 #ifdef CONFIG_MSAN
 #include <sanitizer/msan_interface.h>
 #endif
+#ifdef CONFIG_SYS_HEAP_CANARIES
+#include <zephyr/random/random.h>
+#endif
 
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 static inline void increase_allocated_bytes(struct z_heap *h, size_t num_bytes)
 {
 	h->allocated_bytes += num_bytes;
 	h->max_allocated_bytes = max(h->max_allocated_bytes, h->allocated_bytes);
+}
+#endif
+
+#ifdef CONFIG_SYS_HEAP_CANARIES
+static void canary_fail(void)
+{
+	__ASSERT_PRINT("corrupted heap canary");
+	k_panic();
+}
+
+static inline void verify_chunk_canary(struct z_heap *h, chunkid_t c, bool used)
+{
+	chunk_unit_t *buf = chunk_buf(h);
+	uint32_t *cmem = ((uint32_t *)&buf[c]);
+
+	if (cmem[0] != compute_canary(h, c, used)) {
+		canary_fail();
+	}
 }
 #endif
 
@@ -33,6 +54,8 @@ static void *chunk_mem(struct z_heap *h, chunkid_t c)
 
 static void free_list_remove_bidx(struct z_heap *h, chunkid_t c, int bidx)
 {
+	IF_ENABLED(CONFIG_SYS_HEAP_CANARIES, (verify_chunk_canary(h, c, false)));
+
 	struct z_heap_bucket *b = &h->buckets[bidx];
 
 	CHECK(!chunk_used(h, c));
@@ -117,6 +140,7 @@ static void split_chunks(struct z_heap *h, chunkid_t lc, chunkid_t rc)
 
 	set_chunk_size(h, lc, lsz);
 	set_chunk_size(h, rc, rsz);
+	set_chunk_used(h, rc, false);
 	set_left_chunk_size(h, rc, lsz);
 	set_left_chunk_size(h, right_chunk(h, rc), rsz);
 }
@@ -167,6 +191,7 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 	}
 	struct z_heap *h = heap->heap;
 	chunkid_t c = mem_to_chunkid(h, mem);
+	IF_ENABLED(CONFIG_SYS_HEAP_CANARIES, (verify_chunk_canary(h, c, true)));
 
 	/*
 	 * This should catch many double-free cases.
@@ -183,6 +208,8 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 	__ASSERT(left_chunk(h, right_chunk(h, c)) == c,
 		 "corrupted heap bounds (buffer overflow?) for memory at %p",
 		 mem);
+	__ASSERT(right_chunk(h, left_chunk(h, c)) == c,
+		 "corrupted heap bounds (buffer overflow?) for memory at %p", mem);
 
 	set_chunk_used(h, c, false);
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
@@ -389,6 +416,7 @@ static bool inplace_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 	struct z_heap *h = heap->heap;
 
 	chunkid_t c = mem_to_chunkid(h, ptr);
+	IF_ENABLED(CONFIG_SYS_HEAP_CANARIES, (verify_chunk_canary(h, c, true)));
 	size_t align_gap = (uint8_t *)ptr - (uint8_t *)chunk_mem(h, c);
 
 	chunksz_t chunks_need = bytes_to_chunksz(h, bytes, align_gap);
@@ -571,6 +599,11 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 		h->buckets[i].next = 0;
 	}
 
+#ifdef CONFIG_SYS_HEAP_CANARIES
+	sys_rand_get(&h->canary_used, sizeof(h->canary_used));
+	sys_rand_get(&h->canary_free, sizeof(h->canary_free));
+#endif
+
 	/* chunk containing our struct z_heap */
 	set_chunk_size(h, 0, chunk0_size);
 	set_left_chunk_size(h, 0, 0);
@@ -579,6 +612,7 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 	/* chunk containing the free heap */
 	set_chunk_size(h, chunk0_size, heap_sz - chunk0_size);
 	set_left_chunk_size(h, chunk0_size, chunk0_size);
+	set_chunk_used(h, chunk0_size, false);
 
 	/* the end marker chunk */
 	set_chunk_size(h, heap_sz, 0);
