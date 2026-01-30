@@ -51,7 +51,7 @@ static volatile uint8_t g_aics_input_type;
 static volatile uint8_t g_aics_units;
 static volatile uint8_t g_aics_gain_max;
 static volatile uint8_t g_aics_gain_min;
-static volatile bool g_aics_active = 1;
+static volatile bool g_aics_active = true;
 static char g_aics_desc[AICS_DESC_SIZE];
 static volatile bool g_cb;
 
