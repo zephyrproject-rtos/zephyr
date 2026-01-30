@@ -1,0 +1,14 @@
+# Copyright 2024 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: kit_a2g_tc397xa_3v3_tft
+  full_name: Application Kit TC397 ADAS
+  vendor: infineon
+  revision:
+    format: major.minor.patch
+    default: "2.0.0"
+    revisions:
+      - name: "2.0.0"
+  socs:
+    - name: tc397xp
