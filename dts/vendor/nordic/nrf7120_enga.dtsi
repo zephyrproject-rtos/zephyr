@@ -883,7 +883,7 @@
 				 * not defined yet
 				 */
 				nordic,ficrs = <&ficr 0>;
-				nordic,out-div = <NRF_AUXPLL_OUT_DIV_12>;
+				nordic,out-div = <12>;
 				nordic,out-drive = <0>;
 				nordic,current-tune = <9>;
 				nordic,sdm-disable;
