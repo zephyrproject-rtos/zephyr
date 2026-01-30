@@ -114,8 +114,11 @@
 		mram1x: mram@e000000 {
 			compatible = "nordic,mram";
 			reg = <0xe000000 DT_SIZE_K(8192)>;
+			ranges = <0x0 0xe000000 DT_SIZE_K(8192)>;
 			erase-block-size = <4096>;
 			write-block-size = <16>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 
 		uicr: uicr@fff8000 {
