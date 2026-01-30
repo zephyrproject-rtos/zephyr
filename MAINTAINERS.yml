@@ -5033,7 +5033,7 @@ Storage ZMS:
     - rghaddab
   files:
     - subsys/kvss/zms/
-    - include/zephyr/fs/zms.h
+    - include/zephyr/kvss/zms.h
     - samples/subsys/kvss/zms/
     - tests/subsys/kvss/zms/
     - doc/services/storage/zms/zms.rst

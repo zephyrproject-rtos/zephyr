@@ -9,7 +9,7 @@
 #include <string.h>
 #include <errno.h>
 #include <inttypes.h>
-#include <zephyr/fs/zms.h>
+#include <zephyr/kvss/zms.h>
 #include <zephyr/sys/crc.h>
 #include "zms_priv.h"
 #ifdef CONFIG_ZMS_LOOKUP_CACHE_FOR_SETTINGS
