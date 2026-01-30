@@ -60,6 +60,17 @@ LOG_MODULE_REGISTER(gpio_bflb_bl61x);
 #define GPIO_BFLB_GET_INST_PORTS(n) \
 	DT_INST_FOREACH_CHILD_STATUS_OKAY(n, GPIO_BFLB_GET_INST_PORTS_IMPL)
 
+#ifdef CONFIG_GPIO_BL61X_WO
+#include <zephyr/drivers/clock_control.h>
+
+#include <zephyr/drivers/gpio/gpio_bl61x_wo.h>
+#include <zephyr/dt-bindings/clock/bflb_clock_common.h>
+#include <zephyr/drivers/clock_control/clock_control_bflb_common.h>
+
+void gpio_bflb_common_bl61x_wo_isr(void);
+void gpio_bflb_common_init_bl61x_wo(void);
+#endif
+
 struct gpio_bflb_bl61x_parent_config {
 	const struct device **children;
 	size_t child_cnt;
@@ -420,6 +431,9 @@ void gpio_bflb_init_parent(const struct device *dev)
 
 	/* Only do initialization once, this is functionally a single peripheral */
 	if (!cfg->p_data->initialized) {
+#ifdef CONFIG_GPIO_BL61X_WO
+		gpio_bflb_common_init_bl61x_wo();
+#endif
 		cfg->p_config->irq_config_func();
 		cfg->p_data->initialized = true;
 	}
@@ -489,6 +503,17 @@ static DEVICE_API(gpio, gpio_bflb_api) = {
 #define GPIO_BFLB_IRQ_DECL(n)						\
 	static void gpio_bflb_bl61x_##n##_irq_config_func(void)
 
+#define GPIO_BFLB_IRQ_FUNC_IMPL_WO_IMPL(n)				\
+	IF_DISABLED(n, (						\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, fifo, irq),		\
+			    DT_INST_IRQ_BY_NAME(n, fifo, priority),	\
+			    gpio_bflb_common_bl61x_wo_isr,		\
+			    NULL, 0);))					\
+	irq_enable(DT_INST_IRQ_BY_NAME(n, fifo, irq));
+
+#define GPIO_BFLB_IRQ_FUNC_IMPL_WO(n) \
+	IF_ENABLED(CONFIG_GPIO_BL61X_WO, (GPIO_BFLB_IRQ_FUNC_IMPL_WO_IMPL(n)))
+
 #define GPIO_BFLB_IRQ_FUNC(n, cfg)					\
 	static void gpio_bflb_bl61x_##n##_irq_config_func(void)		\
 	{								\
@@ -499,26 +524,27 @@ static DEVICE_API(gpio, gpio_bflb_api) = {
 			    cfg, 0);))					\
 									\
 		irq_enable(DT_INST_IRQ_BY_NAME(n, gpio, irq));		\
+		GPIO_BFLB_IRQ_FUNC_IMPL_WO(n)				\
 	}
 
-#define GPIO_BFLB_INIT(n, _p_data, _p_config)					\
-										\
-	static const struct gpio_bflb_config port_##n##_bflb_config = {		\
-		.common = GPIO_COMMON_CONFIG_FROM_DT_NODE(n),			\
-		.base = DT_REG_ADDR(DT_PARENT(n)),				\
-		.section = DT_REG_ADDR(n),					\
-		.ngpios = DT_PROP(n, ngpios),					\
-		.drive_strength = DT_PROP(n, drive_strength),			\
-		.p_data = _p_data,						\
-		.p_config = _p_config,						\
-	};									\
-										\
-	static struct gpio_bflb_data port_##n##_bflb_data;			\
-										\
-	DEVICE_DT_DEFINE(n, gpio_bflb_init, NULL,				\
-			    &port_##n##_bflb_data,				\
-			    &port_##n##_bflb_config, PRE_KERNEL_1,		\
-			    CONFIG_GPIO_INIT_PRIORITY,				\
+#define GPIO_BFLB_INIT(n, _p_data, _p_config)				\
+									\
+	static const struct gpio_bflb_config port_##n##_bflb_config = {	\
+		.common = GPIO_COMMON_CONFIG_FROM_DT_NODE(n),		\
+		.base = DT_REG_ADDR(DT_PARENT(n)),			\
+		.section = DT_REG_ADDR(n),				\
+		.ngpios = DT_PROP(n, ngpios),				\
+		.drive_strength = DT_PROP(n, drive_strength),		\
+		.p_data = _p_data,					\
+		.p_config = _p_config,					\
+	};								\
+									\
+	static struct gpio_bflb_data port_##n##_bflb_data;		\
+									\
+	DEVICE_DT_DEFINE(n, gpio_bflb_init, NULL,			\
+			    &port_##n##_bflb_data,			\
+			    &port_##n##_bflb_config, PRE_KERNEL_1,	\
+			    CONFIG_GPIO_INIT_PRIORITY,			\
 			    &gpio_bflb_api);
 
 #define GPIO_BFLB_INIT_PARENT(n)								  \
@@ -541,3 +567,395 @@ DT_INST_FOREACH_STATUS_OKAY(GPIO_BFLB_INIT_PARENT)
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "Only one instance of " STRINGIFY(DT_DRV_COMPAT) " is allowed and it must be okay");
+
+#ifdef CONFIG_GPIO_BL61X_WO
+
+struct bl61x_wo_data {
+	struct k_sem					lock;
+	/* Async data */
+	bl61x_wo_callback_t			async_cb;
+	void						*cb_data;
+	/* ISR data */
+	const uint16_t					*data;
+	size_t						len;
+	size_t						left;
+	const struct gpio_bflb_bl61x_parent_config	*p_config;
+};
+
+/* Global data structure */
+static struct bl61x_wo_data wo_data = {
+	.lock = Z_SEM_INITIALIZER(wo_data.lock, 1, 1),
+	.async_cb = NULL,
+	.cb_data = NULL,
+	.p_config = &gpio_bflb_bl61x_0_parent_config,
+};
+
+static int bl61x_wo_get_port_for_pin(const uint8_t p, const struct device **out)
+{
+	uint8_t sect = p / GPIO_BFLB_PIN_PER_PIN_SET_REG;
+	uint8_t p_local = p - (sect * GPIO_BFLB_PIN_PER_PIN_SET_REG);
+	const struct gpio_bflb_config *cfg;
+
+	for (size_t i = 0; i < wo_data.p_config->child_cnt; i++) {
+		cfg = wo_data.p_config->children[i]->config;
+		if (cfg->section == sect) {
+			if (p_local < cfg->ngpios) {
+				*out = wo_data.p_config->children[i];
+				return p_local;
+			} else {
+				return -EINVAL;
+			}
+		}
+	}
+
+	return -EINVAL;
+}
+
+static uint32_t bl61x_wo_frequency_get_clk(void)
+{
+	uint32_t clk;
+	const struct device *clock_ctrl = DEVICE_DT_GET_ANY(bflb_clock_controller);
+	uint32_t main_clock = clock_bflb_get_root_clock();
+
+	if (main_clock == BFLB_MAIN_CLOCK_RC32M || main_clock == BFLB_MAIN_CLOCK_PLL_RC32M) {
+		clk = BFLB_RC32M_FREQUENCY;
+	} else {
+		clock_control_get_rate(clock_ctrl, (void *)BFLB_CLKID_CLK_CRYSTAL, &clk);
+	}
+
+	return clk;
+}
+
+uint16_t bl61x_wo_frequency_to_cycles(const uint32_t frequency, const bool exact)
+{
+	uint32_t clk = bl61x_wo_frequency_get_clk();
+
+	if (frequency == 0 || frequency > clk) {
+		return 0;
+	}
+
+	if (exact && ((clk % frequency) != 0)) {
+		return 0;
+	}
+
+	return clk / frequency;
+}
+
+uint16_t bl61x_wo_time_to_cycles(const uint32_t time, const bool exact)
+{
+	uint64_t t = bl61x_wo_frequency_get_clk() * (uint64_t)time;
+
+	if (exact && ((t % Z_HZ_ns) != 0)) {
+		return 0;
+	}
+
+	return t / Z_HZ_ns;
+}
+
+/* Reset pins previously used for FIFO to avoid overlap */
+static void bl61x_wo_clear_pins(void)
+{
+	uint32_t tmp;
+
+	for (int i = 0; i < wo_data.p_config->ngpios; i++) {
+		tmp = sys_read32(GPIO_BFLB_PIN_REG(GLB_BASE, i, 0));
+		if (((tmp & GLB_REG_GPIO_0_MODE_MSK) >> GLB_REG_GPIO_0_MODE_POS)
+			== GPIO_BFLB_MODE_FIFO_VALUE) {
+			tmp &= GLB_REG_GPIO_0_MODE_UMSK;
+		}
+		sys_write32(tmp, GPIO_BFLB_PIN_REG(GLB_BASE, i, 0));
+	}
+}
+
+static void bl61x_wo_configure_fifo(const struct bl61x_wo_config *const config)
+{
+	uint32_t tmp;
+
+	tmp = sys_read32(GLB_BASE + GLB_GPIO_CFG142_OFFSET);
+	tmp &= GLB_CR_GPIO_TX_EN_UMSK;
+	sys_write32(tmp, GLB_BASE + GLB_GPIO_CFG142_OFFSET);
+
+	tmp = sys_read32(GLB_BASE + GLB_GPIO_CFG142_OFFSET);
+	tmp &= GLB_CR_CODE_TOTAL_TIME_UMSK;
+	tmp &= GLB_CR_CODE0_HIGH_TIME_UMSK;
+	tmp &= GLB_CR_CODE1_HIGH_TIME_UMSK;
+	tmp |= (config->total_cycles << GLB_CR_CODE_TOTAL_TIME_POS);
+	tmp |= (config->set_cycles << GLB_CR_CODE1_HIGH_TIME_POS);
+	tmp |= (config->unset_cycles << GLB_CR_CODE0_HIGH_TIME_POS);
+	if (config->set_invert) {
+		tmp |= GLB_CR_INVERT_CODE1_HIGH_MSK;
+	} else {
+		tmp &= GLB_CR_INVERT_CODE1_HIGH_UMSK;
+	}
+	if (config->unset_invert) {
+		tmp |= GLB_CR_INVERT_CODE0_HIGH_MSK;
+	} else {
+		tmp &= GLB_CR_INVERT_CODE0_HIGH_UMSK;
+	}
+	sys_write32(tmp, GLB_BASE + GLB_GPIO_CFG142_OFFSET);
+
+	tmp = sys_read32(GLB_BASE + GLB_GPIO_CFG143_OFFSET);
+	if (config->park_high) {
+		tmp |= GLB_CR_GPIO_DMA_PARK_VALUE_MSK;
+	} else {
+		tmp &= GLB_CR_GPIO_DMA_PARK_VALUE_UMSK;
+	}
+	tmp |= (GLB_GPIO_TX_FIFO_CLR_MSK
+		| GLB_GPIO_TX_END_CLR_MSK);
+	sys_write32(tmp, GLB_BASE + GLB_GPIO_CFG143_OFFSET);
+}
+
+void gpio_bflb_common_init_bl61x_wo(void)
+{
+	uint32_t tmp;
+
+	tmp = sys_read32(GLB_BASE + GLB_GPIO_CFG142_OFFSET);
+	tmp &= GLB_CR_GPIO_TX_EN_UMSK;
+	sys_write32(tmp, GLB_BASE + GLB_GPIO_CFG142_OFFSET);
+
+	tmp = sys_read32(GLB_BASE + GLB_GPIO_CFG143_OFFSET);
+	tmp &= GLB_CR_GPIO_TX_FIFO_TH_UMSK;
+	/* For DMA */
+	tmp |= GPIO_BFLB_FIFO_THRES << GLB_CR_GPIO_TX_FIFO_TH_POS;
+	tmp &= GLB_CR_GPIO_DMA_OUT_SEL_LATCH_UMSK;
+	tmp |= (GLB_CR_GPIO_TX_END_MASK_MSK
+		| GLB_CR_GPIO_TX_FIFO_MASK_MSK
+		| GLB_CR_GPIO_TX_FER_MASK_MSK);
+	tmp |= (GLB_CR_GPIO_TX_END_EN_MSK
+		| GLB_CR_GPIO_TX_FIFO_EN_MSK
+		| GLB_CR_GPIO_TX_FER_EN_MSK);
+	tmp |= (GLB_GPIO_TX_FIFO_CLR_MSK
+		| GLB_GPIO_TX_END_CLR_MSK);
+	tmp &= GLB_CR_GPIO_DMA_TX_EN_UMSK;
+	sys_write32(tmp, GLB_BASE + GLB_GPIO_CFG143_OFFSET);
+}
+
+static void bl61x_wo_enable(const bool enabled)
+{
+	uint32_t tmp;
+
+	tmp = sys_read32(GLB_BASE + GLB_GPIO_CFG142_OFFSET);
+	if (enabled) {
+		tmp |= GLB_CR_GPIO_TX_EN_MSK;
+	} else {
+		tmp &= GLB_CR_GPIO_TX_EN_UMSK;
+	}
+	sys_write32(tmp, GLB_BASE + GLB_GPIO_CFG142_OFFSET);
+}
+
+static void bl61x_wo_tx_int_enable(const bool enabled)
+{
+	uint32_t tmp;
+
+	tmp = sys_read32(GLB_BASE + GLB_GPIO_CFG143_OFFSET);
+	if (enabled) {
+		tmp &= GLB_CR_GPIO_TX_FIFO_MASK_UMSK;
+	} else {
+		tmp |= GLB_CR_GPIO_TX_FIFO_MASK_MSK;
+	}
+	sys_write32(tmp, GLB_BASE + GLB_GPIO_CFG143_OFFSET);
+}
+
+static inline uint32_t bl61x_wo_free(void)
+{
+	return (sys_read32(GLB_BASE + GLB_GPIO_CFG143_OFFSET)
+		& GLB_GPIO_TX_FIFO_CNT_MSK) >> GLB_GPIO_TX_FIFO_CNT_POS;
+}
+
+int bl61x_wo_configure(const struct bl61x_wo_config *const config,
+			    const uint8_t *pins, const gpio_flags_t *flags, const size_t pin_cnt)
+{
+	int ret;
+	const struct device *port;
+	gpio_pin_t p_local;
+	gpio_pin_t p_check_overlap[BL61X_WO_PIN_CNT];
+
+	if (pin_cnt > BL61X_WO_PIN_CNT) {
+		LOG_ERR("Too many pins");
+		return -EINVAL;
+	}
+
+	ret = k_sem_take(&wo_data.lock, K_FOREVER);
+	if (ret != 0) {
+		return ret;
+	}
+
+	bl61x_wo_enable(false);
+
+	bl61x_wo_clear_pins();
+
+	for (size_t i = 0; i < pin_cnt; i++) {
+		if (pins[i] < wo_data.p_config->ngpios) {
+			ret = bl61x_wo_get_port_for_pin(pins[i], &port);
+			if (ret < 0) {
+				LOG_ERR("No port for pin %u", pins[i]);
+				goto end;
+			}
+			p_local = ret;
+			p_check_overlap[i] = p_local % BL61X_WO_PIN_CNT;
+
+			for (size_t j = 0; j < i; j++) {
+				if (p_check_overlap[i] == p_check_overlap[j]) {
+					LOG_ERR("Pin %u overlaps with pin %u", pins[i], pins[j]);
+					goto end;
+				}
+			}
+			gpio_bflb_common_config_internal(port, p_local, flags[i] | GPIO_OUTPUT,
+							 GPIO_BFLB_MODE_FIFO_VALUE);
+		} else {
+			ret = -EINVAL;
+			LOG_ERR("No port for pin %u", pins[i]);
+			goto end;
+		}
+	}
+
+	ret = 0;
+
+	bl61x_wo_configure_fifo(config);
+
+	/* Free run */
+	bl61x_wo_enable(true);
+
+end:
+	k_sem_give(&wo_data.lock);
+
+	return ret;
+}
+
+int bl61x_wo_configure_dt(const struct bl61x_wo_config *const config,
+			       const struct gpio_dt_spec *pins,  const size_t pin_cnt)
+{
+	int ret;
+	gpio_pin_t p_check_overlap[BL61X_WO_PIN_CNT];
+
+	if (pin_cnt > BL61X_WO_PIN_CNT) {
+		LOG_ERR("Too many pins");
+		return -EINVAL;
+	}
+
+	ret = k_sem_take(&wo_data.lock, K_FOREVER);
+	if (ret != 0) {
+		return ret;
+	}
+
+	bl61x_wo_enable(false);
+
+	bl61x_wo_clear_pins();
+
+	for (size_t i = 0; i < pin_cnt; i++) {
+		if (pins[i].port != NULL) {
+			p_check_overlap[i] = pins[i].pin % BL61X_WO_PIN_CNT;
+			for (size_t j = 0; j < i; j++) {
+				if (p_check_overlap[i] == p_check_overlap[j]) {
+					LOG_ERR("Pin %u overlaps with pin %u",
+						pins[i].pin, pins[j].pin);
+					goto end;
+				}
+			}
+			gpio_bflb_common_config_internal(pins[i].port, pins[i].pin,
+							 pins[i].dt_flags | GPIO_OUTPUT,
+							 GPIO_BFLB_MODE_FIFO_VALUE);
+		} else {
+			ret = -EINVAL;
+			LOG_ERR("Invalid port");
+			goto end;
+		}
+	}
+
+	bl61x_wo_configure_fifo(config);
+
+	/* Free run */
+	bl61x_wo_enable(true);
+
+end:
+	k_sem_give(&wo_data.lock);
+
+	return ret;
+}
+
+int bl61x_wo_write(const uint16_t *const data, const size_t len)
+{
+	uint32_t freesp = bl61x_wo_free() - GPIO_BFLB_FIFO_THRES_MARGIN;
+	size_t left = len;
+	int ret;
+
+	ret = k_sem_take(&wo_data.lock, K_FOREVER);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* Avoid querying the space left too often, it causes peripheral to hiccup */
+	while (left) {
+		for (size_t i = 0; i < freesp && left; i++) {
+			sys_write32((uint32_t)data[len - left], GLB_BASE + GLB_GPIO_CFG144_OFFSET);
+			left--;
+		}
+		if (left) {
+			/* Wait a fraction of the time needed to process all toggles at max speed */
+			k_busy_wait(1);
+			freesp = bl61x_wo_free() - GPIO_BFLB_FIFO_THRES_MARGIN;
+		}
+	}
+
+	k_sem_give(&wo_data.lock);
+
+	return 0;
+}
+
+static void bl61x_wo_write_async_fill(void)
+{
+	uint32_t freesp = bl61x_wo_free() - GPIO_BFLB_FIFO_THRES_MARGIN;
+
+	while (freesp > GPIO_BFLB_FIFO_THRES_F && wo_data.left) {
+		for (size_t i = 0; i < freesp && wo_data.left; i++) {
+			sys_write32((uint32_t)wo_data.data[wo_data.len - wo_data.left],
+				GLB_BASE + GLB_GPIO_CFG144_OFFSET);
+			wo_data.left--;
+		}
+		freesp = bl61x_wo_free() - GPIO_BFLB_FIFO_THRES_MARGIN;
+	}
+}
+
+int bl61x_wo_write_async(const uint16_t *const data, const size_t len,
+			      bl61x_wo_callback_t cb, void *user_data)
+{
+	int ret;
+
+	ret = k_sem_take(&wo_data.lock, K_FOREVER);
+	if (ret != 0) {
+		return ret;
+	}
+
+	wo_data.async_cb = cb;
+	wo_data.cb_data = user_data;
+	wo_data.data = data;
+	wo_data.len = len;
+	wo_data.left = len;
+
+	bl61x_wo_write_async_fill();
+
+	bl61x_wo_tx_int_enable(true);
+
+	return 0;
+}
+
+void gpio_bflb_common_bl61x_wo_isr(void)
+{
+	uint32_t tmp;
+
+	if (wo_data.left) {
+		bl61x_wo_write_async_fill();
+	} else {
+		bl61x_wo_tx_int_enable(false);
+		k_sem_give(&wo_data.lock);
+		if (wo_data.async_cb) {
+			wo_data.async_cb(wo_data.cb_data);
+		}
+	}
+
+	tmp = sys_read32(GLB_BASE + GLB_GPIO_CFG143_OFFSET);
+	tmp |= GLB_GPIO_TX_END_CLR_MSK;
+	sys_write32(tmp, GLB_BASE + GLB_GPIO_CFG143_OFFSET);
+}
+
+#endif /* CONFIG_GPIO_BL61X_WO */
