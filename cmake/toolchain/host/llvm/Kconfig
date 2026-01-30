@@ -3,6 +3,8 @@
 
 choice LLVM_LINKER
 	prompt "LLVM Linker"
+	depends on "${ZEPHYR_TOOLCHAIN_VARIANT}" = "llvm"
+	default LLVM_USE_LLD if ARCH = "tricore"
 	default LLVM_USE_LD
 
 config LLVM_USE_LD
