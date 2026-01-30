@@ -36,4 +36,22 @@ struct usbd_context *sample_usbd_init_device(usbd_msg_cb_t msg_cb);
  */
 struct usbd_context *sample_usbd_setup_device(usbd_msg_cb_t msg_cb);
 
+/*
+ * Get the number of UDC devices discovered via zephyr,udc compatible.
+ * This enables auto-discovery of all UDC devices in the system.
+ */
+size_t sample_usbd_get_device_count(void);
+
+/*
+ * Get a USBD context by index.
+ * Returns NULL if index is out of range.
+ */
+struct usbd_context *sample_usbd_get_context(size_t idx);
+
+/*
+ * Initialize all UDC devices discovered via zephyr,udc compatible.
+ * Returns the number of successfully initialized devices.
+ */
+int sample_usbd_init_all_devices(usbd_msg_cb_t msg_cb);
+
 #endif /* ZEPHYR_SAMPLES_SUBSYS_USB_COMMON_SAMPLE_USBD_H */

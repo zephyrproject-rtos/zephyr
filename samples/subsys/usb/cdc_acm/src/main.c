@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Intel Corporation
+ * Copyright (c) 2026 Leica Geosystems AG
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,7 +40,6 @@ static inline void print_baudrate(const struct device *dev)
 	}
 }
 
-static struct usbd_context *sample_usbd;
 K_SEM_DEFINE(dtr_sem, 0, 1);
 
 static void sample_msg_cb(struct usbd_context *const ctx, const struct usbd_msg *msg)
@@ -76,19 +76,32 @@ static void sample_msg_cb(struct usbd_context *const ctx, const struct usbd_msg 
 
 static int enable_usb_device_next(void)
 {
-	int err;
+	int initialized;
+	size_t device_count = sample_usbd_get_device_count();
 
-	sample_usbd = sample_usbd_init_device(sample_msg_cb);
-	if (sample_usbd == NULL) {
-		LOG_ERR("Failed to initialize USB device");
+	LOG_INF("Discovered %zu UDC device(s) via zephyr,udc compatible",
+		device_count);
+
+	initialized = sample_usbd_init_all_devices(sample_msg_cb);
+	if (initialized == 0) {
+		LOG_ERR("Failed to initialize any USB device");
 		return -ENODEV;
 	}
 
-	if (!usbd_can_detect_vbus(sample_usbd)) {
-		err = usbd_enable(sample_usbd);
-		if (err) {
-			LOG_ERR("Failed to enable device support");
-			return err;
+	LOG_INF("Initialized %d USB device(s)", initialized);
+
+	/* Enable devices that cannot detect VBUS */
+	for (size_t i = 0; i < device_count; i++) {
+		struct usbd_context *ctx = sample_usbd_get_context(i);
+
+		if (ctx != NULL && !usbd_can_detect_vbus(ctx)) {
+			int err = usbd_enable(ctx);
+
+			if (err) {
+				LOG_ERR("Failed to enable device %zu", i);
+			} else {
+				LOG_INF("Enabled USB device %zu", i);
+			}
 		}
 	}
 

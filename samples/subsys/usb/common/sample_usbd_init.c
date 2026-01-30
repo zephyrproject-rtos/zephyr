@@ -13,6 +13,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbd_sample_config);
 
+/* Use zephyr_udc compatible for auto-discovery */
+#define DT_DRV_COMPAT zephyr_udc
+
 /* By default, do not register the USB DFU class DFU mode instance. */
 static const char *const blocklist[] = {
 	"dfu_dfu",
@@ -21,13 +24,44 @@ static const char *const blocklist[] = {
 
 /* doc device instantiation start */
 /*
- * Instantiate a context named sample_usbd using the default USB device
- * controller, the Zephyr project vendor ID, and the sample product ID.
- * Zephyr project vendor ID must not be used outside of Zephyr samples.
+ * Instantiate a USBD context for each device with zephyr,udc compatible.
+ * This enables auto-discovery of all UDC devices in the system.
  */
-USBD_DEVICE_DEFINE(sample_usbd,
+#define USBD_DEVICE_DEFINE_INST(inst)					\
+	USBD_DEVICE_DEFINE(sample_usbd_##inst,				\
+			   DEVICE_DT_INST_GET(inst),			\
+			   CONFIG_SAMPLE_USBD_VID,			\
+			   CONFIG_SAMPLE_USBD_PID);
+
+DT_INST_FOREACH_STATUS_OKAY(USBD_DEVICE_DEFINE_INST)
+
+/*
+ * Backward compatibility: Add zephyr_udc0 nodelabel device if it exists
+ * but does NOT have zephyr,udc compatible (legacy boards).
+ */
+#if DT_NODE_EXISTS(DT_NODELABEL(zephyr_udc0)) && \
+    !DT_NODE_HAS_COMPAT(DT_NODELABEL(zephyr_udc0), zephyr_udc)
+USBD_DEVICE_DEFINE(sample_usbd_fallback,
 		   DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0)),
-		   CONFIG_SAMPLE_USBD_VID, CONFIG_SAMPLE_USBD_PID);
+		   CONFIG_SAMPLE_USBD_VID,
+		   CONFIG_SAMPLE_USBD_PID);
+#define USBD_FALLBACK_CTX_PTR &sample_usbd_fallback,
+#else
+#define USBD_FALLBACK_CTX_PTR
+#endif
+
+/* Array of pointers to all USBD contexts */
+#define USBD_CTX_PTR_INST(inst) &sample_usbd_##inst,
+
+static struct usbd_context *const sample_usbd_contexts[] = {
+	DT_INST_FOREACH_STATUS_OKAY(USBD_CTX_PTR_INST)
+	USBD_FALLBACK_CTX_PTR
+};
+
+#define SAMPLE_USBD_DEVICE_COUNT ARRAY_SIZE(sample_usbd_contexts)
+
+/* For backward compatibility, reference first device as sample_usbd */
+#define sample_usbd (*sample_usbd_contexts[0])
 /* doc device instantiation end */
 
 /* doc string instantiation start */
@@ -207,4 +241,130 @@ struct usbd_context *sample_usbd_init_device(usbd_msg_cb_t msg_cb)
 	/* doc device init end */
 
 	return &sample_usbd;
+}
+
+/*
+ * Get the number of UDC devices discovered via zephyr,udc compatible.
+ */
+size_t sample_usbd_get_device_count(void)
+{
+	return SAMPLE_USBD_DEVICE_COUNT;
+}
+
+/*
+ * Get a USBD context by index.
+ */
+struct usbd_context *sample_usbd_get_context(size_t idx)
+{
+	if (idx >= SAMPLE_USBD_DEVICE_COUNT) {
+		return NULL;
+	}
+
+	return sample_usbd_contexts[idx];
+}
+
+/*
+ * Setup and initialize all UDC devices discovered via zephyr,udc compatible.
+ * Returns the number of successfully initialized devices.
+ */
+static int sample_usbd_setup_single(struct usbd_context *ctx, usbd_msg_cb_t msg_cb)
+{
+	int err;
+
+	err = usbd_add_descriptor(ctx, &sample_lang);
+	if (err) {
+		LOG_ERR("Failed to add language descriptor (%d)", err);
+		return err;
+	}
+
+	err = usbd_add_descriptor(ctx, &sample_mfr);
+	if (err) {
+		LOG_ERR("Failed to add manufacturer descriptor (%d)", err);
+		return err;
+	}
+
+	err = usbd_add_descriptor(ctx, &sample_product);
+	if (err) {
+		LOG_ERR("Failed to add product descriptor (%d)", err);
+		return err;
+	}
+
+	IF_ENABLED(CONFIG_HWINFO, (
+		err = usbd_add_descriptor(ctx, &sample_sn);
+		if (err) {
+			LOG_ERR("Failed to add SN descriptor (%d)", err);
+			return err;
+		}
+	))
+
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_caps_speed(ctx) == USBD_SPEED_HS) {
+		err = usbd_add_configuration(ctx, USBD_SPEED_HS,
+					     &sample_hs_config);
+		if (err) {
+			LOG_ERR("Failed to add HS configuration (%d)", err);
+			return err;
+		}
+
+		err = usbd_register_all_classes(ctx, USBD_SPEED_HS, 1,
+						blocklist);
+		if (err) {
+			LOG_ERR("Failed to register HS classes (%d)", err);
+			return err;
+		}
+
+		sample_fix_code_triple(ctx, USBD_SPEED_HS);
+	}
+
+	err = usbd_add_configuration(ctx, USBD_SPEED_FS, &sample_fs_config);
+	if (err) {
+		LOG_ERR("Failed to add FS configuration (%d)", err);
+		return err;
+	}
+
+	err = usbd_register_all_classes(ctx, USBD_SPEED_FS, 1, blocklist);
+	if (err) {
+		LOG_ERR("Failed to register FS classes (%d)", err);
+		return err;
+	}
+
+	sample_fix_code_triple(ctx, USBD_SPEED_FS);
+	usbd_self_powered(ctx, attributes & USB_SCD_SELF_POWERED);
+
+	if (msg_cb != NULL) {
+		err = usbd_msg_register_cb(ctx, msg_cb);
+		if (err) {
+			LOG_ERR("Failed to register message callback (%d)", err);
+			return err;
+		}
+	}
+
+	return 0;
+}
+
+int sample_usbd_init_all_devices(usbd_msg_cb_t msg_cb)
+{
+	int initialized = 0;
+	int err;
+
+	for (size_t i = 0; i < SAMPLE_USBD_DEVICE_COUNT; i++) {
+		struct usbd_context *ctx = sample_usbd_contexts[i];
+
+		err = sample_usbd_setup_single(ctx, msg_cb);
+		if (err) {
+			LOG_ERR("Failed to setup device %zu (%d)", i, err);
+			continue;
+		}
+
+		err = usbd_init(ctx);
+		if (err) {
+			LOG_ERR("Failed to init device %zu (%d)", i, err);
+			continue;
+		}
+
+		LOG_INF("Initialized UDC device %zu", i);
+		initialized++;
+	}
+
+	return initialized;
 }
