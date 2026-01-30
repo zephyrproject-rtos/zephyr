@@ -1,0 +1,14 @@
+/* Copyright (c) 2025 Infineon Technologies AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <infineon/tc4x/tc4d7xp.dtsi>
+#include "kit_a3g_tc4d7_lite.dtsi"
+
+/ {
+	model = "Infineon A3G TC4D7 Lite Kit";
+	compatible = "infineon,kit_a3g_tc4d7_lite",
+		     "infineon,tc4d7xp",
+		     "infineon,tc4x";
+};
