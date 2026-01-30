@@ -1,0 +1,22 @@
+# Copyright (c) 2024 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: TC3x System Timer Module (STM)
+
+compatible: "infineon,tc3x-stm"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  freeze:
+    type: boolean
+    description: Stops the timer when the chip enters Debug mode.
