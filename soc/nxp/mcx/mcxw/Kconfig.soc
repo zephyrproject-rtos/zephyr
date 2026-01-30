@@ -1,10 +1,10 @@
 # Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-rsource "*/Kconfig.soc"
-
 config SOC_FAMILY_MCXW
 	bool
 
 config SOC_FAMILY
 	default "mcxw" if SOC_FAMILY_MCXW
+
+rsource "*/Kconfig.soc"
