@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Leica Geosystems AG
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: USB VBUS Detection Sample
+  description: Demonstrates USB VBUS detection using GPIO
+
+common:
+  tags:
+    - usb
+    - vbus
+    - gpio
+
+tests:
+  sample.drivers.usb.vbus_detect:
+    platform_allow:
+      - disco_l475_iot1
+    build_only: true
