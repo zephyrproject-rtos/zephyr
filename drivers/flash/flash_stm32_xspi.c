@@ -2507,9 +2507,6 @@ static const struct flash_stm32_xspi_config flash_stm32_xspi_cfg = {
 #if STM32_XSPI_RESET_GPIO
 	.reset = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
 #endif /* STM32_XSPI_RESET_GPIO */
-#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_ospi_nor), sfdp_bfp)
-	.sfdp_bfp = DT_INST_PROP(0, sfdp_bfp),
-#endif /* sfdp_bfp */
 };
 
 static struct flash_stm32_xspi_data flash_stm32_xspi_dev_data = {
