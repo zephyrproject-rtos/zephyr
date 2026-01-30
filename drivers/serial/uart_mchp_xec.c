@@ -632,7 +632,7 @@ static int uart_xec_irq_tx_complete(const struct device *dev)
 	/* TX FIFO holding register empty interrupt enabled OR
 	 * both TX holding and shift registers are empty.
 	 */
-	if (((ier & XEC_UART_IER_ETHREI) != 0) || ((lsr & lsr_msk) == lsr_msk)) {
+	if (((ier & XEC_UART_IER_ETHREI) != 0) || ((lsr & lsr_msk) != lsr_msk)) {
 		ret = 0;
 	} else {
 		ret = 1;
