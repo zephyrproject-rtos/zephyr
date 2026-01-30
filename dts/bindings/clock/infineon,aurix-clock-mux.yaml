@@ -1,0 +1,21 @@
+# Copyright (c) Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: Aurix Soc Clock Mux
+
+compatible: "infineon,aurix-clock-mux"
+
+include: clock-controller.yaml
+
+properties:
+
+  clocks:
+    type: phandle-array
+    description: input clock source
+
+  clock-names:
+    type: string-array
+    description: name of each clock
+
+  "#clock-cells":
+    const: 0
