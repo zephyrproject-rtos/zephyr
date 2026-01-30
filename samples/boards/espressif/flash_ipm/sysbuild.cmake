@@ -4,7 +4,7 @@
 
 # Prepare the full board name to be used for the remote target
 string(REPLACE "procpu" "appcpu" REMOTE_CPU "${BOARD_QUALIFIERS}")
-string(CONFIGURE "${BOARD}${REMOTE_CPU}" IPM_REMOTE_BOARD)
+string(CONFIGURE "${BOARD}/${REMOTE_CPU}" IPM_REMOTE_BOARD)
 
 if(${REMOTE_CPU} STREQUAL ${BOARD_QUALIFIERS})
   # Make sure the remote build is using different target than host CPU
