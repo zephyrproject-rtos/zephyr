@@ -59,6 +59,12 @@
 #define _OCM_BSS_SECTION_NAME		.ocm_bss
 #endif
 
+#if defined(CONFIG_TRICORE)
+#undef _IRQ_VECTOR_TABLE_SECTION_NAME
+#define _TRAP_VECOTR_TABLE_SECTION_NAME	.vectors.trap
+#define _IRQ_VECTOR_TABLE_SECTION_NAME	.vectors.irq
+#endif
+
 #define _IMX_BOOT_CONF_SECTION_NAME	.boot_hdr.conf
 #define _IMX_BOOT_DATA_SECTION_NAME	.boot_hdr.data
 #define _IMX_BOOT_IVT_SECTION_NAME	.boot_hdr.ivt
