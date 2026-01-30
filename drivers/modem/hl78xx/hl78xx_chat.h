@@ -18,6 +18,61 @@
 #include <stddef.h>
 #include <zephyr/modem/chat.h>
 
+/**
+ * @defgroup hl78xx_cmd_timeouts AT Command Timeout Values
+ * @brief Recommended timeouts from HL78xx AT Command Reference Guide (Table A-1)
+ *
+ * These timeout values are grouped by command categories:
+ * - FAST (2s): Basic queries, echo, flow control, simple settings
+ * - SHORT (5s): SIM access (CSIM, CCHO, CCHC, CRSM), KSREP, CGDCONT, KNWSCANCFG
+ * - MEDIUM (10s): KSRAT
+ * - LONG (30s): CFUN, NVM writes, COPN, KCELL, SMS operations, KTCPCNX, KCARRIERCFG
+ * - VERY_LONG (60s): CPIN, CGATT, CGACT, CGCMOD, socket send/receive/close
+ * - EXTENDED (120s): COPS, CPOF, CPWROFF, CFUN for NB-IoT NTN
+ * @{
+ */
+
+/** 2 seconds - Basic AT commands, queries, simple settings */
+#define HL78XX_CMD_TIMEOUT_FAST      2
+/** 5 seconds - SIM access, KSREP, CGDCONT, CEDRXRDP */
+#define HL78XX_CMD_TIMEOUT_SHORT     5
+/** 10 seconds - KSRAT */
+#define HL78XX_CMD_TIMEOUT_MEDIUM    10
+/** 30 seconds - CFUN, NVM writes, network info, SMS, TCP connect */
+#define HL78XX_CMD_TIMEOUT_LONG      30
+/** 60 seconds - PDP operations, CPIN, socket data transfer */
+#define HL78XX_CMD_TIMEOUT_VERY_LONG 60
+/** 120 seconds - COPS, power off, NB-IoT NTN operations */
+#define HL78XX_CMD_TIMEOUT_EXTENDED  120
+
+/** @} */
+
+/**
+ * @defgroup hl78xx_script_timeouts Chat Script Timeout Groups
+ * @brief Composite timeouts for multi-command chat scripts
+ *
+ * When a script contains multiple commands with different timeouts,
+ * use the maximum timeout from that command group plus margin.
+ * @{
+ */
+
+/** Init script timeout - contains CFUN, NVM commands */
+#define HL78XX_SCRIPT_TIMEOUT_INIT         100
+/** Post-restart script timeout - waiting for +KSUP */
+#define HL78XX_SCRIPT_TIMEOUT_POST_RESTART 12
+/** Periodic script timeout - basic queries */
+#define HL78XX_SCRIPT_TIMEOUT_PERIODIC     4
+/** Network registration script timeout */
+#define HL78XX_SCRIPT_TIMEOUT_NETWORK      10
+/** Power off script timeout - CPWROFF */
+#define HL78XX_SCRIPT_TIMEOUT_POWEROFF     HL78XX_CMD_TIMEOUT_EXTENDED
+/** GNSS script timeout */
+#define HL78XX_SCRIPT_TIMEOUT_GNSS         10
+/** Socket operations default timeout */
+#define HL78XX_SCRIPT_TIMEOUT_SOCKET       HL78XX_CMD_TIMEOUT_VERY_LONG
+
+/** @} */
+
 /* Forward declare driver data type to keep this header lightweight and avoid
  * circular includes. The implementation file (hl78xx_chat.c) includes
  * hl78xx.h for full driver visibility.
