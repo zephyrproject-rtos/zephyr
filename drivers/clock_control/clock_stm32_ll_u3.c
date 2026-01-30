@@ -333,9 +333,9 @@ static void enable_epod_booster(void)
 #if STM32_MSIK_PLL_MODE || STM32_MSIS_PLL_MODE
 
 /* Use two asserts for more precise error messages */
-BUILD_ASSERT(STM32_LSE_ENABLED || !STM32_MSIK_PLL_MODE,
+BUILD_ASSERT(IS_ENABLED(STM32_LSE_ENABLED) || !STM32_MSIK_PLL_MODE,
 	"MSIK PLL mode requires LSE clock to be enabled for auto-calibration");
-BUILD_ASSERT(STM32_LSE_ENABLED || !STM32_MSIS_PLL_MODE,
+BUILD_ASSERT(IS_ENABLED(STM32_LSE_ENABLED) || !STM32_MSIS_PLL_MODE,
 	"MSIS PLL mode requires LSE clock to be enabled for auto-calibration");
 
 static void configure_clock_with_calibration(int range)
