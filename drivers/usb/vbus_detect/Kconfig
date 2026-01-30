@@ -1,0 +1,32 @@
+# Copyright (c) 2026 Leica Geosystems AG
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig USB_VBUS_DETECT
+	bool "USB VBUS Detection Drivers"
+	default y if DT_HAS_ZEPHYR_USB_VBUS_DETECT_GPIO_ENABLED
+	depends on UDC_DRIVER
+	help
+	  Enable USB VBUS detection driver support. Automatically enabled
+	  when a VBUS detect node is present in the devicetree.
+
+if USB_VBUS_DETECT
+
+module = USB_VBUS_DETECT
+module-str = usb_vbus_detect
+source "subsys/logging/Kconfig.template.log_config"
+
+config USB_VBUS_DETECT_INIT_PRIORITY
+	int "USB VBUS detect driver init priority"
+	default 80
+	help
+	  USB VBUS detection driver initialization priority.
+
+config USB_VBUS_DETECT_GPIO
+	bool "GPIO-based VBUS detector"
+	default y
+	depends on DT_HAS_ZEPHYR_USB_VBUS_DETECT_GPIO_ENABLED
+	depends on GPIO
+	help
+	  Enable GPIO-based USB VBUS detection driver.
+
+endif # USB_VBUS_DETECT

@@ -421,6 +421,21 @@ static inline struct udc_device_caps udc_caps(const struct device *dev)
 }
 
 /**
+ * @brief Set external VBUS detection capability
+ *
+ * Called by external VBUS detection drivers to indicate that VBUS
+ * detection is available for this controller.
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ */
+static inline void udc_set_can_detect_vbus(const struct device *dev)
+{
+	struct udc_data *data = (struct udc_data *)dev->data;
+
+	data->caps.can_detect_vbus = true;
+}
+
+/**
  * @brief Get actual USB device speed
  *
  * The function should be called after the reset event to determine
