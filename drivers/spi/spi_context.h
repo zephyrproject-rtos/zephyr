@@ -16,6 +16,7 @@
 #include <zephyr/drivers/spi.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/sys/clock.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -204,7 +205,6 @@ static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 		 */
 		if (IS_ENABLED(CONFIG_SPI_SLAVE) && spi_context_is_slave(ctx)) {
 			timeout = K_FOREVER;
-			timeout_ms = UINT32_MAX;
 		} else {
 			uint32_t tx_len = spi_context_total_tx_len(ctx);
 			uint32_t rx_len = spi_context_total_rx_len(ctx);
@@ -221,7 +221,7 @@ static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 			return -ETIMEDOUT;
 		}
 #else
-		if (timeout_ms == UINT32_MAX) {
+		if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
 			/* In slave mode, we wait indefinitely, so we can go idle. */
 			unsigned int key = irq_lock();
 
@@ -233,15 +233,14 @@ static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 			ctx->ready = 0;
 			irq_unlock(key);
 		} else {
-			const uint32_t tms = k_uptime_get_32();
+			k_timepoint_t end = sys_timepoint_calc(timeout);
 
-			while (!atomic_get(&ctx->ready) && (k_uptime_get_32() - tms < timeout_ms)) {
+			while (!atomic_get(&ctx->ready)) {
+				if (sys_timepoint_expired(end)) {
+					LOG_ERR("Timeout waiting for transfer complete");
+					return -ETIMEDOUT;
+				}
 				k_busy_wait(1);
-			}
-
-			if (!ctx->ready) {
-				LOG_ERR("Timeout waiting for transfer complete");
-				return -ETIMEDOUT;
 			}
 
 			ctx->ready = 0;
