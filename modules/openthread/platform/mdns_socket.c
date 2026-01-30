@@ -42,7 +42,15 @@ static otError mdns_socket_init_v4(uint32_t ail_iface_idx);
 static otError mdns_socket_deinit(void);
 static otError set_listening_enable(otInstance *instance, bool enable, uint32_t ail_iface_idx);
 static void mdns_send_multicast(otMessage *message, uint32_t ail_iface_idx);
-static void mdns_send_unicast(otMessage *message, const otPlatMdnsAddressInfo *aAddress);
+static void mdns_send_unicast(otMessage *message, const otPlatMdnsAddressInfo *address);
+static void mdns_send_multicast_v6(uint8_t *message, uint16_t length);
+static void mdns_send_unicast_v6(uint8_t *message, uint16_t length,
+				 const otPlatMdnsAddressInfo *address);
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_IPV4)
+static void mdns_send_multicast_v4(uint8_t *message, uint16_t length);
+static void mdns_send_unicast_v4(uint8_t *message, uint16_t length,
+				 const otPlatMdnsAddressInfo *address);
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_IPV4 */
 static void mdns_receive_handler(struct net_socket_service_event *evt);
 static void process_mdns_message(struct otbr_msg_ctx *msg_ctx_ptr);
 
@@ -107,10 +115,12 @@ static otError mdns_socket_init_v6(uint32_t ail_iface_idx)
 	int on = 1;
 	int mcast_join_ret = 0;
 
-	struct net_sockaddr_in6 addr = {.sin6_family = NET_AF_INET6,
-					.sin6_port = net_htons(MULTICAST_PORT),
-					.sin6_addr = {{{0}}},
-					.sin6_scope_id = 0};
+	struct net_sockaddr_in6 addr = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_port = net_htons(MULTICAST_PORT),
+		.sin6_addr = {{{0}}},
+		.sin6_scope_id = 0,
+	};
 
 	mdns_sock_v6 = zsock_socket(NET_AF_INET6, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 	VerifyOrExit(mdns_sock_v6 >= 0, error = OT_ERROR_FAILED);
@@ -173,9 +183,11 @@ static otError mdns_socket_init_v4(uint32_t ail_iface_idx)
 	int on = 1;
 	int mcast_join_ret = 0;
 
-	struct net_sockaddr_in addr = {.sin_family = NET_AF_INET,
-				       .sin_port = net_htons(MULTICAST_PORT),
-				       .sin_addr = {{{0}}}};
+	struct net_sockaddr_in addr = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(MULTICAST_PORT),
+		.sin_addr = {{{0}}},
+	};
 
 	mdns_sock_v4 = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 	VerifyOrExit(mdns_sock_v4 >= 0, error = OT_ERROR_FAILED);
@@ -254,34 +266,16 @@ static void mdns_send_multicast(otMessage *message, uint32_t ail_iface_idx)
 {
 	uint16_t length = otMessageGetLength(message);
 	struct otbr_msg_ctx *req = NULL;
-	struct net_sockaddr_in6 addr_v6 = {.sin6_family = NET_AF_INET6,
-					   .sin6_port = net_htons(MULTICAST_PORT),
-					   .sin6_addr = NET_IN6ADDR_ANY_INIT,
-					   .sin6_scope_id = 0};
-#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_IPV4)
-	struct net_sockaddr_in addr_v4 = {.sin_family = NET_AF_INET,
-					  .sin_port = net_htons(MULTICAST_PORT),
-					  .sin_addr = NET_INADDR_ANY_INIT};
-#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_IPV4 */
 
 	VerifyOrExit(length <= OTBR_MESSAGE_SIZE);
 	VerifyOrExit(openthread_border_router_allocate_message((void **)&req) == OT_ERROR_NONE);
 	VerifyOrExit(otMessageRead(message, 0, req->buffer, length) == length);
 
-	net_ipv6_addr_create(&addr_v6.sin6_addr, 0xff02, 0, 0, 0, 0, 0, 0, 0x00fb);
-
-	VerifyOrExit(zsock_sendto(mdns_sock_v6, req->buffer, length, 0,
-				  (struct net_sockaddr *)&addr_v6,
-				  sizeof(addr_v6)) > 0);
-
+	mdns_send_multicast_v6(req->buffer, length);
 #if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_IPV4)
-	if (openthread_border_router_has_ipv4_connectivity()) {
-		addr_v4.sin_addr.s_addr = net_htonl(0xE00000FB);
-		VerifyOrExit(zsock_sendto(mdns_sock_v4, req->buffer, length, 0,
-					  (struct net_sockaddr *)&addr_v4,
-					  sizeof(addr_v4)) > 0);
-	}
+	mdns_send_multicast_v4(req->buffer, length);
 #endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_IPV4 */
+
 exit:
 	otMessageFree(message);
 	if (req != NULL) {
@@ -289,44 +283,107 @@ exit:
 	}
 }
 
-static void mdns_send_unicast(otMessage *message, const otPlatMdnsAddressInfo *aAddress)
+static void mdns_send_multicast_v6(uint8_t *message, uint16_t length)
+{
+	struct net_sockaddr_in6 addr_v6 = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_port = net_htons(MULTICAST_PORT),
+		.sin6_addr = NET_IN6ADDR_ANY_INIT,
+		.sin6_scope_id = 0,
+	};
+
+	net_ipv6_addr_create(&addr_v6.sin6_addr, 0xff02, 0, 0, 0, 0, 0, 0, 0x00fb);
+
+	VerifyOrExit(zsock_sendto(mdns_sock_v6, message, length, 0,
+		     (struct net_sockaddr *)&addr_v6, sizeof(addr_v6)) == length);
+
+exit:
+	return;
+}
+
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_IPV4)
+static void mdns_send_multicast_v4(uint8_t *message, uint16_t length)
+{
+	if (openthread_border_router_has_ipv4_connectivity()) {
+		struct net_sockaddr_in addr_v4 = {
+			.sin_family = NET_AF_INET,
+			.sin_port = net_htons(MULTICAST_PORT),
+			.sin_addr = NET_INADDR_ANY_INIT,
+		};
+
+		addr_v4.sin_addr.s_addr = net_htonl(0xE00000FB);
+		VerifyOrExit(zsock_sendto(mdns_sock_v4, message, length, 0,
+			     (struct net_sockaddr *)&addr_v4, sizeof(addr_v4)) == length);
+	}
+
+exit:
+	return;
+}
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_IPV4 */
+
+static void mdns_send_unicast(otMessage *message, const otPlatMdnsAddressInfo *address)
 {
 	uint16_t length = otMessageGetLength(message);
 	struct otbr_msg_ctx *req = NULL;
 #if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_IPV4)
-	struct net_sockaddr_in addr_v4 = {0};
-	otIp4Address ot_ipv4_addr = {0};
+
 #endif /* CONFIG_NET_IPV4*/
-	struct net_sockaddr_in6 addr_v6 = {.sin6_family = NET_AF_INET6,
-					   .sin6_port = net_htons(aAddress->mPort),
-					   .sin6_addr = NET_IN6ADDR_ANY_INIT,
-					   .sin6_scope_id = 0};
 
 	VerifyOrExit(length <= OTBR_MESSAGE_SIZE);
 	VerifyOrExit(openthread_border_router_allocate_message((void **)&req) == OT_ERROR_NONE);
-
-#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_IPV4)
-	if (openthread_border_router_has_ipv4_connectivity() &&
-	    otIp4FromIp4MappedIp6Address(&aAddress->mAddress, &ot_ipv4_addr) == OT_ERROR_NONE) {
-		addr_v4.sin_family = NET_AF_INET;
-		addr_v4.sin_port = net_htons(aAddress->mPort);
-		memcpy(&addr_v4.sin_addr.s_addr, &ot_ipv4_addr, sizeof(otIp4Address));
-		VerifyOrExit(zsock_sendto(mdns_sock_v4, req->buffer, length, 0,
-					  (struct net_sockaddr *)&addr_v4,
-					  sizeof(addr_v4)) > 0);
-	}
-#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_IPV4 */
-	memcpy(&addr_v6.sin6_addr, &aAddress->mAddress, sizeof(otIp6Address));
 	VerifyOrExit(otMessageRead(message, 0, req->buffer, length) == length);
-	VerifyOrExit(zsock_sendto(mdns_sock_v6, req->buffer, length, 0,
-				  (struct net_sockaddr *)&addr_v6,
-				  sizeof(addr_v6)) > 0);
+
+	mdns_send_unicast_v6(req->buffer, length, address);
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_IPV4)
+	mdns_send_unicast_v4(req->buffer, length, address);
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_IPV4 */
+
 exit:
 	otMessageFree(message);
 	if (req != NULL) {
 		openthread_border_router_deallocate_message((void *)req);
 	}
 }
+
+static void mdns_send_unicast_v6(uint8_t *message, uint16_t length,
+				 const otPlatMdnsAddressInfo *address)
+{
+	struct net_sockaddr_in6 addr_v6 = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_port = net_htons(address->mPort),
+		.sin6_addr = NET_IN6ADDR_ANY_INIT,
+		.sin6_scope_id = 0,
+	};
+
+	memcpy(&addr_v6.sin6_addr, &address->mAddress, sizeof(otIp6Address));
+
+	VerifyOrExit(zsock_sendto(mdns_sock_v6, message, length, 0,
+		     (struct net_sockaddr *)&addr_v6, sizeof(addr_v6)) == length);
+
+exit:
+	return;
+}
+
+#if defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_IPV4)
+static void mdns_send_unicast_v4(uint8_t *message, uint16_t length,
+				 const otPlatMdnsAddressInfo *address)
+{
+	struct net_sockaddr_in addr_v4 = {0};
+	otIp4Address ot_ipv4_addr = {0};
+
+	if (openthread_border_router_has_ipv4_connectivity() &&
+	    otIp4FromIp4MappedIp6Address(&address->mAddress, &ot_ipv4_addr) == OT_ERROR_NONE) {
+		addr_v4.sin_family = NET_AF_INET;
+		addr_v4.sin_port = net_htons(address->mPort);
+		memcpy(&addr_v4.sin_addr.s_addr, &ot_ipv4_addr, sizeof(otIp4Address));
+		VerifyOrExit(zsock_sendto(mdns_sock_v4, message, length, 0,
+			     (struct net_sockaddr *)&addr_v4, sizeof(addr_v4)) == length);
+	}
+
+exit:
+	return;
+}
+#endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_IPV4 */
 
 static void mdns_receive_handler(struct net_socket_service_event *evt)
 {
