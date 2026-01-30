@@ -17,28 +17,64 @@
 extern "C" {
 #endif
 
-/* Magic constants */
-#define CSQ_RSSI_UNKNOWN        (99)
-#define CESQ_RSRP_UNKNOWN       (255)
-#define CESQ_RSRQ_UNKNOWN       (255)
-/* Magic numbers to units conversions */
-#define CSQ_RSSI_TO_DB(v)       (-113 + (2 * (v)))
-#define CESQ_RSRP_TO_DB(v)      (-140 + (v))
-#define CESQ_RSRQ_TO_DB(v)      (-20 + ((v) / 2))
-/** Monitor is paused. */
-#define PAUSED                  1
+/**
+ * @defgroup hl78xx_constants HL78xx Constants and Macros
+ * @{
+ */
+
+/** Unknown RSSI value returned by AT+CSQ command */
+#define CSQ_RSSI_UNKNOWN         (99)
+/** Unknown RSRP value returned by AT+CESQ command */
+#define CESQ_RSRP_UNKNOWN        (255)
+/** Unknown RSRQ value returned by AT+CESQ command */
+#define CESQ_RSRQ_UNKNOWN        (255)
+
+/**
+ * Convert CSQ RSSI value to dBm
+ * @param v RSSI value (0-31)
+ * @return Signal strength in dBm (-113 to -51)
+ */
+#define CSQ_RSSI_TO_DB(v)        (-113 + (2 * (v)))
+/**
+ * Convert CESQ RSRP value to dBm
+ * @param v RSRP value (0-97)
+ * @return Reference signal received power in dBm (-140 to -44)
+ */
+#define CESQ_RSRP_TO_DB(v)       (-140 + (v))
+/**
+ * Convert CESQ RSRQ value to dB
+ * @param v RSRQ value (0-34)
+ * @return Reference signal received quality in dB (-20 to -3)
+ */
+#define CESQ_RSRQ_TO_DB(v)       (-20 + ((v) / 2))
+
+/** Monitor is paused */
+#define PAUSED                   1
 /** Monitor is active, default */
-#define ACTIVE                  0
-#define MDM_MANUFACTURER_LENGTH 20
-#define MDM_MODEL_LENGTH        32
-#define MDM_REVISION_LENGTH     64
-#define MDM_IMEI_LENGTH         16
-#define MDM_IMSI_LENGTH         23
-#define MDM_ICCID_LENGTH        22
-#define MDM_APN_MAX_LENGTH      64
-#define MDM_MAX_CERT_LENGTH     4096
-#define MDM_MAX_HOSTNAME_LEN    128
+#define ACTIVE                   0
+
+/** Maximum length of modem manufacturer string */
+#define MDM_MANUFACTURER_LENGTH  20
+/** Maximum length of modem model string */
+#define MDM_MODEL_LENGTH         32
+/** Maximum length of modem revision string */
+#define MDM_REVISION_LENGTH      64
+/** Maximum length of modem IMEI string */
+#define MDM_IMEI_LENGTH          16
+/** Maximum length of modem IMSI string */
+#define MDM_IMSI_LENGTH          23
+/** Maximum length of modem ICCID string */
+#define MDM_ICCID_LENGTH         22
+/** Maximum length of APN string */
+#define MDM_APN_MAX_LENGTH       64
+/** Maximum length of certificate */
+#define MDM_MAX_CERT_LENGTH      4096
+/** Maximum length of hostname */
+#define MDM_MAX_HOSTNAME_LEN     128
+/** Maximum length of serial number string */
 #define MDM_SERIAL_NUMBER_LENGTH 32
+
+/** @} */
 
 /**
  * @brief Define an Event monitor to receive notifications in the system workqueue thread.
@@ -55,62 +91,93 @@ extern "C" {
 		.flags.direct = false,                                                             \
 		COND_CODE_1(__VA_ARGS__, (.flags.paused = __VA_ARGS__,), ()) }
 
-/** Cellular radio access technologies */
+/**
+ * @brief Cellular radio access technologies
+ *
+ * Supported radio access technology modes for HL78xx modem
+ */
 enum hl78xx_cell_rat_mode {
+	/** LTE Cat-M1 radio access technology */
 	HL78XX_RAT_CAT_M1 = 0,
+	/** NB-IoT radio access technology */
 	HL78XX_RAT_NB1,
 #ifdef CONFIG_MODEM_HL78XX_12
+	/** GSM radio access technology (HL7812 only) */
 	HL78XX_RAT_GSM,
 #ifdef CONFIG_MODEM_HL78XX_12_FW_R6
+	/** NB-IoT Non-Terrestrial Network (HL7812 FW R6+) */
 	HL78XX_RAT_NBNTN,
 #endif
 #endif
 #ifdef CONFIG_MODEM_HL78XX_AUTORAT
+	/** Automatic RAT selection mode */
 	HL78XX_RAT_MODE_AUTO,
 #endif
+	/** No RAT mode */
 	HL78XX_RAT_MODE_NONE,
+	/** Number of valid RAT modes */
 	HL78XX_RAT_COUNT = HL78XX_RAT_MODE_NONE
 };
 
-/** Phone functionality modes */
+/**
+ * @brief Phone functionality modes
+ *
+ * AT+CFUN command modes for controlling modem operational state
+ */
 enum hl78xx_phone_functionality {
+	/** SIM and modem powered off (minimum functionality) */
 	HL78XX_SIM_POWER_OFF,
+	/** Full functionality, modem operational */
 	HL78XX_FULLY_FUNCTIONAL,
+	/** Airplane mode, RF transmitters disabled */
 	HL78XX_AIRPLANE = 4,
 };
-/** Module status codes */
+
+/**
+ * @brief Module status codes
+ *
+ * Status codes returned by AT+CPIN? indicating SIM and module state
+ */
 enum hl78xx_module_status {
 	/** Module is ready to receive commands for the TE. No access code is required. */
 	HL78XX_MODULE_READY = 0,
 	/** Module is waiting for an access code. Use AT+CPIN? to determine it. */
 	HL78XX_MODULE_WAITING_FOR_ACCESS_CODE,
-	/** SIM card is not present. */
+	/** SIM card is not present */
 	HL78XX_MODULE_SIM_NOT_PRESENT,
-	/** Module is in “SIMlock” state. */
+	/** Module is in "SIMlock" state */
 	HL78XX_MODULE_SIMLOCK,
-	/** Unrecoverable error. */
+	/** Unrecoverable error */
 	HL78XX_MODULE_UNRECOVERABLE_ERROR,
-	/** Unknown state. */
+	/** Unknown state */
 	HL78XX_MODULE_UNKNOWN_STATE,
-	/** Inactive SIM. */
+	/** Inactive SIM */
 	HL78XX_MODULE_INACTIVE_SIM
 };
 
-/** Cellular modem info type */
+/**
+ * @brief Cellular modem info type
+ *
+ * Types of modem information that can be queried
+ */
 enum hl78xx_modem_info_type {
 	/** Access Point Name */
 	HL78XX_MODEM_INFO_APN,
-	/** Current RAT */
+	/** Current Radio Access Technology */
 	HL78XX_MODEM_INFO_CURRENT_RAT,
-	/** Network Operator */
+	/** Network Operator name */
 	HL78XX_MODEM_INFO_NETWORK_OPERATOR,
-	/** Serial Number */
+	/** Modem Serial Number */
 	HL78XX_MODEM_INFO_SERIAL_NUMBER,
 	/** Current Baud Rate */
 	HL78XX_MODEM_INFO_CURRENT_BAUD_RATE,
 };
 
-/** NMEA output port options. */
+/**
+ * @brief NMEA output port options
+ *
+ * Port selection for GNSS NMEA sentence output from the modem
+ */
 enum nmea_output_port {
 	/** 0x00 — NMEA frames are not output */
 	NMEA_OUTPUT_NONE = 0x00,
@@ -182,30 +249,50 @@ struct hl78xx_agnss_status {
 };
 #endif /* CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE */
 
-/** Cellular network structure */
+/**
+ * @brief Cellular network structure
+ *
+ * Configuration for cellular network technology and band selection
+ */
 struct hl78xx_network {
 	/** Cellular access technology */
 	enum hl78xx_cell_rat_mode technology;
 	/**
+	 * List of bands to enable.
 	 * List of bands, as defined by the specified cellular access technology,
 	 * to enables. All supported bands are enabled if none are provided.
 	 */
 	uint16_t *bands;
-	/** Size of bands */
+	/** Size of bands array */
 	uint16_t size;
 };
 
+/**
+ * @brief HL78xx event types
+ *
+ * Asynchronous event notifications from the HL78xx modem
+ */
 enum hl78xx_evt_type {
+	/** LTE Radio Access Technology changed */
 	HL78XX_LTE_RAT_UPDATE,
+	/** LTE network registration status changed */
 	HL78XX_LTE_REGISTRATION_STAT_UPDATE,
+	/** SIM registration status changed */
 	HL78XX_LTE_SIM_REGISTRATION,
+	/** Modem startup completed */
 	HL78XX_LTE_MODEM_STARTUP,
+	/** FOTA update status changed */
 	HL78XX_LTE_FOTA_UPDATE_STATUS,
 #ifdef CONFIG_HL78XX_GNSS
+	/** GNSS engine initialized and ready */
 	HL78XX_GNSS_ENGINE_READY,
+	/** GNSS engine initialization event */
 	HL78XX_GNSS_EVENT_INIT,
+	/** GNSS search started */
 	HL78XX_GNSS_EVENT_START,
+	/** GNSS search stopped */
 	HL78XX_GNSS_EVENT_STOP,
+	/** GNSS position fix obtained */
 	HL78XX_GNSS_EVENT_POSITION,
 	/** GNSS start failed because LTE is active (shared RF path) */
 	HL78XX_GNSS_EVENT_START_BLOCKED,
@@ -217,7 +304,9 @@ enum hl78xx_evt_type {
 };
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 /**
- * Enum representing Device Services Indications (+WDSI)
+ * @brief Device Services Indications (+WDSI)
+ *
+ * Enum representing AirVantage Device Services Indications
  */
 enum wdsi_indication {
 	/** Raised at startup if credentials for Bootstrap Server are present */
@@ -256,26 +345,43 @@ enum wdsi_indication {
 	WDSI_FIRMWARE_UPDATE_SUCCESS = 16,
 	/** Download in progress, percentage indicated */
 	WDSI_DOWNLOAD_IN_PROGRESS = 18,
-	/** Session started with Bootstrap server +WDSI: 23,0*/
-	/** Session started with DM server +WDSI: 23,1*/
+	/** Session started with Bootstrap server (+WDSI: 23,0) or DM server (+WDSI: 23,1) */
 	WDSI_SESSION_STARTED = 23
 };
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 
 #ifdef CONFIG_HL78XX_GNSS
+/**
+ * @brief GNSS event type
+ *
+ * Types of GNSS events reported by the modem
+ */
 enum hl78xx_gnss_event_type {
+	/** GNSS engine initialization event */
 	HL78XX_GNSSEV_INITIALISATION = 0,
+	/** GNSS search start event */
 	HL78XX_GNSSEV_START = 1,
+	/** GNSS search stop event */
 	HL78XX_GNSSEV_STOP = 2,
+	/** GNSS position fix event */
 	HL78XX_GNSSEV_POSITION = 3
 };
-/** GNSS position events */
+/**
+ * @brief GNSS event status
+ *
+ * Status codes for GNSS operations
+ */
 enum hl78xx_event_status {
-	/* This event specifies the status of internal GNSS context initialization. */
+	/** Operation failed */
 	HL78XX_STATUS_FAILED = 0,
+	/** Operation succeeded */
 	HL78XX_STATUS_SUCCESS = 1
 };
-/** GNSS position events (eventType = 3). */
+/**
+ * @brief GNSS position events (eventType = 3)
+ *
+ * Position fix status reported by the modem
+ */
 enum gnss_position_events {
 	/** 0 — The GNSS fix is lost or not available yet */
 	GNSS_FIX_LOST_OR_UNAVAILABLE = 0,
@@ -290,20 +396,35 @@ enum gnss_position_events {
 };
 #endif /* CONFIG_HL78XX_GNSS */
 
+/**
+ * @brief HL78xx event structure
+ *
+ * Container for asynchronous events from the HL78xx modem.
+ * The type field indicates which union member is valid.
+ */
 struct hl78xx_evt {
+	/** Event type */
 	enum hl78xx_evt_type type;
 
+	/** Event content (depends on type) */
 	union {
+		/** Network registration status (for HL78XX_LTE_REGISTRATION_STAT_UPDATE) */
 		enum cellular_registration_status reg_status;
+		/** Radio access technology mode (for HL78XX_LTE_RAT_UPDATE) */
 		enum hl78xx_cell_rat_mode rat_mode;
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
+		/** AirVantage device service indication */
 		enum wdsi_indication wdsi_indication;
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 #ifdef CONFIG_HL78XX_GNSS
+		/** GNSS event status */
 		enum hl78xx_event_status event_status;
+		/** GNSS position event type */
 		enum gnss_position_events position_event;
 #endif /* CONFIG_HL78XX_GNSS */
+		/** Boolean status value */
 		bool status;
+		/** Integer value */
 		int value;
 	} content;
 };
@@ -400,16 +521,26 @@ struct hl78xx_gnss_nmea_aux_data {
 	struct nmea_match_epu_data epu;
 };
 
-/** Template for GNSS satellites callback */
+/**
+ * @brief GNSS auxiliary data callback function type
+ *
+ * @param dev Pointer to the GNSS device
+ * @param aux_data Pointer to auxiliary NMEA data structure
+ * @param size Size of the auxiliary data
+ */
 typedef void (*hl78xx_gnss_aux_data_callback_t)(const struct device *dev,
 						const struct hl78xx_gnss_nmea_aux_data *aux_data,
 						uint16_t size);
 
-/** GNSS callback structure */
+/**
+ * @brief GNSS auxiliary data callback structure
+ *
+ * Registers a callback to receive GNSS auxiliary data
+ */
 struct hl78xx_gnss_aux_data_callback {
 	/** Filter callback to GNSS data from this device if not NULL */
 	const struct device *dev;
-	/** Callback called when GNSS satellites is published */
+	/** Callback called when GNSS auxiliary data is published */
 	hl78xx_gnss_aux_data_callback_t callback;
 };
 
@@ -454,11 +585,25 @@ struct hl78xx_gnss_aux_data_callback {
  */
 #define GNSS_DT_AUX_DATA_CALLBACK_DEFINE(_node_id, _callback)
 #endif
-/** API for configuring networks */
+/**
+ * @brief API function pointer for configuring networks
+ *
+ * @param dev Cellular network device instance
+ * @param networks Array of network configurations
+ * @param size Number of networks in array
+ * @return 0 on success, negative errno on failure
+ */
 typedef int (*hl78xx_api_configure_networks)(const struct device *dev,
 					     const struct hl78xx_network *networks, uint8_t size);
 
-/** API for getting supported networks */
+/**
+ * @brief API function pointer for getting supported networks
+ *
+ * @param dev Cellular network device instance
+ * @param networks Pointer to receive network array
+ * @param size Pointer to receive array size
+ * @return 0 on success, negative errno on failure
+ */
 typedef int (*hl78xx_api_get_supported_networks)(const struct device *dev,
 						 const struct hl78xx_network **networks,
 						 uint8_t *size);
@@ -467,7 +612,15 @@ typedef int (*hl78xx_api_get_supported_networks)(const struct device *dev,
 typedef int (*hl78xx_api_get_signal)(const struct device *dev, const enum cellular_signal_type type,
 				     int16_t *value);
 
-/** API for getting modem information */
+/**
+ * @brief API function pointer for getting modem information
+ *
+ * @param dev Cellular network device instance
+ * @param type Type of modem information
+ * @param info Buffer to store information string
+ * @param size Size of info buffer
+ * @return 0 on success, negative errno on failure
+ */
 typedef int (*hl78xx_api_get_modem_info)(const struct device *dev,
 					 const enum cellular_modem_info_type type, char *info,
 					 size_t size);
@@ -477,10 +630,14 @@ typedef int (*hl78xx_api_get_registration_status)(const struct device *dev,
 						  enum cellular_access_technology tech,
 						  enum cellular_registration_status *status);
 
-/** API for setting apn */
-typedef int (*hl78xx_api_set_apn)(const struct device *dev, const char *apn, uint16_t size);
-
-/** API for set phone functionality */
+/**
+ * @brief API function pointer for setting phone functionality
+ *
+ * @param dev Cellular network device instance
+ * @param functionality Phone functionality mode
+ * @param reset Whether to reset modem
+ * @return 0 on success, negative errno on failure
+ */
 typedef int (*hl78xx_api_set_phone_functionality)(const struct device *dev,
 						  enum hl78xx_phone_functionality functionality,
 						  bool reset);
@@ -494,70 +651,120 @@ typedef int (*hl78xx_api_send_at_cmd)(const struct device *dev, const char *cmd,
 				      const struct modem_chat_match *response_matches,
 				      uint16_t matches_size);
 
-/**< Event monitor entry */
-struct hl78xx_evt_monitor_entry; /* forward declaration */
-/* Event monitor dispatcher */
+/**
+ * @brief Event monitor entry structure (forward declaration)
+ */
+struct hl78xx_evt_monitor_entry;
+
+/**
+ * @brief Event monitor dispatcher function type
+ *
+ * Called to dispatch events to registered monitors
+ *
+ * @param notif Pointer to the event notification
+ */
 typedef void (*hl78xx_evt_monitor_dispatcher_t)(struct hl78xx_evt *notif);
-/* Event monitor handler */
+
+/**
+ * @brief Event monitor handler function type
+ *
+ * User callback for receiving event notifications
+ *
+ * @param notif Pointer to the event notification
+ * @param mon Pointer to the monitor entry that received the event
+ */
 typedef void (*hl78xx_evt_monitor_handler_t)(struct hl78xx_evt *notif,
 					     struct hl78xx_evt_monitor_entry *mon);
 
+/**
+ * @brief Event monitor entry structure
+ *
+ * Represents a registered event monitor with callback and state
+ */
 struct hl78xx_evt_monitor_entry {
-	/** Monitor callback. */
+	/** Monitor callback function */
 	const hl78xx_evt_monitor_handler_t handler;
-	/* link for runtime list */
+	/** Link for runtime list */
 	struct hl78xx_evt_monitor_entry *next;
+	/** Monitor flags */
 	struct {
-		uint8_t paused: 1; /* Monitor is paused. */
-		uint8_t direct: 1; /* Dispatch in ISR. */
+		/** Monitor is paused */
+		uint8_t paused: 1;
+		/** Dispatch in ISR context */
+		uint8_t direct: 1;
 	} flags;
 };
+
 /**
- * @brief hl78xx_api_func_set_phone_functionality
+ * @brief Set phone functionality mode (internal implementation)
+ *
+ * Internal function to set the modem's phone functionality mode.
+ * Users should call hl78xx_set_phone_functionality() instead.
+ *
  * @param dev Cellular network device instance
- * @param functionality phone functionality mode to set
+ * @param functionality Phone functionality mode to set
  * @param reset If true, the modem will be reset as part of applying the functionality change.
- * @return 0 if successful.
+ * @return 0 if successful, negative errno on failure
  */
 int hl78xx_api_func_set_phone_functionality(const struct device *dev,
 					    enum hl78xx_phone_functionality functionality,
 					    bool reset);
+
 /**
- * @brief hl78xx_api_func_get_phone_functionality
+ * @brief Get phone functionality mode (internal implementation)
+ *
+ * Internal function to query the modem's phone functionality mode.
+ * Users should call hl78xx_get_phone_functionality() instead.
+ *
  * @param dev Cellular network device instance
  * @param functionality Pointer to store the current phone functionality mode
- * @return 0 if successful.
+ * @return 0 if successful, negative errno on failure
  */
 int hl78xx_api_func_get_phone_functionality(const struct device *dev,
 					    enum hl78xx_phone_functionality *functionality);
+
 /**
- * @brief hl78xx_api_func_get_signal - Brief description of the function.
+ * @brief Get network signal strength (internal implementation)
+ *
+ * Internal function to retrieve cellular signal strength metrics.
+ * Users should use the standard cellular API instead.
+ *
  * @param dev Cellular network device instance
- * @param type Type of the signal to retrieve
+ * @param type Type of the signal to retrieve (RSSI, RSRP, RSRQ, etc.)
  * @param value Pointer to store the signal value
- * @return 0 if successful.
+ * @return 0 if successful, negative errno on failure
  */
 int hl78xx_api_func_get_signal(const struct device *dev, const enum cellular_signal_type type,
 			       int16_t *value);
+
 /**
- * @brief hl78xx_api_func_get_modem_info_vendor - Brief description of the function.
+ * @brief Get vendor-specific modem information (internal implementation)
+ *
+ * Internal function to retrieve HL78xx-specific modem information.
+ * Users should call hl78xx_get_modem_info() instead.
+ *
  * @param dev Cellular network device instance
  * @param type Type of the modem info to retrieve
  * @param info Pointer to store the modem info
  * @param size Size of the info buffer
- * @return 0 if successful.
+ * @return 0 if successful, negative errno on failure
  */
 int hl78xx_api_func_get_modem_info_vendor(const struct device *dev,
 					  enum hl78xx_modem_info_type type, void *info,
 					  size_t size);
+
 /**
- * @brief hl78xx_api_func_modem_dynamic_cmd_send - Brief description of the function.
+ * @brief Send dynamic AT command (internal implementation)
+ *
+ * Internal function to send arbitrary AT commands to the modem.
+ * Users should call hl78xx_modem_cmd_send() instead.
+ *
  * @param dev Cellular network device instance
  * @param cmd AT command to send
  * @param cmd_size Size of the AT command
  * @param response_matches Expected response patterns
- * @param matches_size Size of the response patterns
- * @return 0 if successful.
+ * @param matches_size Number of response patterns
+ * @return 0 if successful, negative errno on failure
  */
 int hl78xx_api_func_modem_dynamic_cmd_send(const struct device *dev, const char *cmd,
 					   uint16_t cmd_size,
@@ -765,22 +972,58 @@ static inline void hl78xx_evt_monitor_resume(struct hl78xx_evt_monitor_entry *mo
  * @retval -EINVAL if the handler parameter is invalid.
  */
 int hl78xx_evt_notif_handler_set(hl78xx_evt_monitor_dispatcher_t handler);
+
 /**
- * @brief Register an event monitor to receive HL78xx modem event notifications.
+ * @brief Register an event monitor to receive HL78xx modem event notifications
+ *
+ * Adds a monitor to the list of registered event monitors. Once registered,
+ * the monitor will receive all modem events unless paused.
+ *
+ * @param mon Pointer to the monitor entry to register
+ * @return 0 on success, negative errno on failure
  */
 int hl78xx_evt_monitor_register(struct hl78xx_evt_monitor_entry *mon);
+
 /**
- * @brief Unregister an event monitor from receiving HL78xx modem event notifications.
+ * @brief Unregister an event monitor from receiving HL78xx modem event notifications
+ *
+ * Removes a monitor from the list of registered event monitors.
+ *
+ * @param mon Pointer to the monitor entry to unregister
+ * @return 0 on success, negative errno on failure
  */
 int hl78xx_evt_monitor_unregister(struct hl78xx_evt_monitor_entry *mon);
+
 /**
- * @brief Convert HL78xx RAT mode to standard cellular API.
+ * @brief Convert HL78xx RAT mode to standard cellular API
+ *
+ * Maps HL78xx-specific radio access technology enum to the
+ * standard Zephyr cellular API access technology enum.
+ *
+ * @param rat_mode HL78xx RAT mode
+ * @return Corresponding cellular_access_technology value
  */
 enum cellular_access_technology hl78xx_rat_to_access_tech(enum hl78xx_cell_rat_mode rat_mode);
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
-/** Start a AirVantage Device Management (DM) session. */
+/**
+ * @brief Start an AirVantage Device Management (DM) session
+ *
+ * Initiates a connection to the Sierra Wireless AirVantage server
+ * for device management operations.
+ *
+ * @param dev Pointer to the modem device
+ * @return 0 on success, negative errno on failure
+ */
 int hl78xx_start_airvantage_dm_session(const struct device *dev);
-/** Stop a AirVantage Device Management (DM) session. */
+
+/**
+ * @brief Stop an AirVantage Device Management (DM) session
+ *
+ * Terminates the active connection to the AirVantage server.
+ *
+ * @param dev Pointer to the modem device
+ * @return 0 on success, negative errno on failure
+ */
 int hl78xx_stop_airvantage_dm_session(const struct device *dev);
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 
@@ -813,6 +1056,15 @@ int hl78xx_enter_gnss_mode(const struct device *dev);
  */
 int hl78xx_exit_gnss_mode(const struct device *dev);
 
+/**
+ * @brief Queue a GNSS position search
+ *
+ * Starts GNSS satellite search to obtain a position fix.
+ * Must be called after hl78xx_enter_gnss_mode().
+ *
+ * @param dev Pointer to the GNSS device
+ * @return 0 on success, negative errno on failure
+ */
 int hl78xx_queue_gnss_search(const struct device *dev);
 
 /**
