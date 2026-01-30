@@ -55,6 +55,8 @@
 #define SPI_FLASH_COMPAT st_stm32_xspi_nor
 #elif DT_HAS_COMPAT_STATUS_OKAY(nordic_qspi_nor)
 #define SPI_FLASH_COMPAT nordic_qspi_nor
+#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_imx_flexspi_nor)
+#define SPI_FLASH_COMPAT nxp_imx_flexspi_nor
 #elif DT_HAS_COMPAT_STATUS_OKAY(renesas_ra_ospi_b_nor)
 #define SPI_FLASH_COMPAT renesas_ra_ospi_b_nor
 #elif DT_HAS_COMPAT_STATUS_OKAY(renesas_ra_qspi_nor)
