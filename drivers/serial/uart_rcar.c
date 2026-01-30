@@ -20,7 +20,11 @@ struct uart_rcar_cfg {
 	DEVICE_MMIO_ROM; /* Must be first */
 	const struct device *clock_dev;
 	rcar_generic_clk_t mod_clk;
+#ifdef CONFIG_UART_RCAR_BUS_CLK_RATE_BY_DT
+	uint32_t sys_clk_freq;
+#else
 	rcar_generic_clk_t bus_clk;
+#endif
 	const struct pinctrl_dev_config *pcfg;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(const struct device *dev);
@@ -302,12 +306,16 @@ static int uart_rcar_init(const struct device *dev)
 		return ret;
 	}
 
+#ifdef CONFIG_UART_RCAR_BUS_CLK_RATE_BY_DT
+	data->clk_rate = config->sys_clk_freq;
+#else
 	ret = clock_control_get_rate(config->clock_dev,
 				     RCAR_CLOCK_SUBSYS(config->bus_clk),
 				     &data->clk_rate);
 	if (ret < 0) {
 		return ret;
 	}
+#endif
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 
@@ -538,6 +546,14 @@ static DEVICE_API(uart, uart_rcar_driver_api) = {
 #endif  /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
+#ifdef CONFIG_UART_RCAR_BUS_CLK_RATE_BY_DT
+#define UART_RCAR_GET_BUS_CLOCK_RATE(n)	\
+	.sys_clk_freq = DT_INST_PROP(n, clock_frequency)
+#else
+#define UART_RCAR_GET_BUS_CLOCK_RATE(n)	\
+	.bus_clk = RCAR_DT_INST_CLOCKS_CELL_BY_IDX(n, 1)
+#endif
+
 /* Device Instantiation */
 #define UART_RCAR_DECLARE_CFG(n, IRQ_FUNC_INIT, compat)					\
 	PINCTRL_DT_INST_DEFINE(n);							\
@@ -545,7 +561,7 @@ static DEVICE_API(uart, uart_rcar_driver_api) = {
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),					\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),			\
 		.mod_clk = RCAR_DT_INST_CLOCKS_CELL_BY_IDX(n, 0),			\
-		.bus_clk = RCAR_DT_INST_CLOCKS_CELL_BY_IDX(n, 1),			\
+		UART_RCAR_GET_BUS_CLOCK_RATE(n),					\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
 		.is_hscif = DT_INST_NODE_HAS_COMPAT(n, renesas_rcar_hscif),		\
 		IRQ_FUNC_INIT								\

@@ -12,3 +12,12 @@ config UART_RCAR
 	select PINCTRL
 	help
 	  Enable Renesas R-Car UART Driver.
+
+config UART_RCAR_BUS_CLK_RATE_BY_DT
+	bool "Use the DT to set the Renesas R-Car UART bus clock rate"
+	depends on UART_RCAR
+	help
+	  If enabled, the bus clock rate must be configured through the device-tree
+	  clock-frequency property, instead of using the bus clock ID. This may be
+	  needed, for instance, when a SCMI platform is not able to return a clock
+	  rate for some clock ID.
