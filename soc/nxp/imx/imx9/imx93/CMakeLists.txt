@@ -5,6 +5,7 @@ if(CONFIG_SOC_MIMX9352_A55)
   zephyr_include_directories(a55)
 
   zephyr_sources_ifdef(CONFIG_ARM_MMU a55/mmu_regions.c)
+  zephyr_sources_ifdef(CONFIG_MEMC_MCUX_FLEXSPI a55/flexspi.c)
 
   zephyr_sources(common_clock_set.c)
   zephyr_sources(a55/soc.c)
