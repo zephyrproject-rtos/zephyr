@@ -61,6 +61,12 @@ extern "C" {
 #define WIFI_MGMT_SCAN_MAX_BSS_CNT 65535
 
 #define WIFI_MGMT_SKIP_INACTIVITY_POLL IS_ENABLED(CONFIG_WIFI_MGMT_AP_STA_SKIP_INACTIVITY_POLL)
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+#define WIFI_NAN_MAX_SSI_LEN            255
+#define WIFI_NAN_MAX_SERVICE_NAME_LEN   256
+#define WIFI_NAN_RESP_SIZE              64
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
 /** @endcond */
 
 /** @brief Wi-Fi management commands */
@@ -113,6 +119,8 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_CONFIG_PARAM,
 	/** DPP actions */
 	NET_REQUEST_WIFI_CMD_DPP,
+	/** NAN actions */
+	NET_REQUEST_WIFI_CMD_NAN,
 	/** BSS transition management query */
 	NET_REQUEST_WIFI_CMD_BTM_QUERY,
 	/** Flush PMKSA cache entries */
@@ -289,6 +297,14 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_CONFIG_PARAM);
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_DPP);
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+/** Request a Wi-Fi NAN operation */
+#define NET_REQUEST_WIFI_NAN			\
+	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_NAN)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_NAN);
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
+
 /** Request a Wi-Fi BTM query */
 #define NET_REQUEST_WIFI_BTM_QUERY (NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_BTM_QUERY)
 
@@ -367,6 +383,12 @@ enum {
 	NET_EVENT_WIFI_CMD_AP_STA_DISCONNECTED_VAL,
 	NET_EVENT_WIFI_CMD_SUPPLICANT_VAL,
 	NET_EVENT_WIFI_CMD_P2P_DEVICE_FOUND_VAL,
+	NET_EVENT_WIFI_CMD_NAN_DISCOVERY_RESULT_VAL,
+	NET_EVENT_WIFI_CMD_NAN_REPLIED_VAL,
+	NET_EVENT_WIFI_CMD_NAN_PUBLISH_TERMINATED_VAL,
+	NET_EVENT_WIFI_CMD_NAN_SUBSCRIBE_TERMINATED_VAL,
+	NET_EVENT_WIFI_CMD_NAN_RECEIVE_VAL,
+
 	NET_EVENT_WIFI_CMD_MAX,
 };
 
@@ -415,6 +437,18 @@ enum net_event_wifi_cmd {
 	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_SUPPLICANT),
 	/** P2P device found */
 	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_P2P_DEVICE_FOUND),
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+	/** Supplicant specific event */
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_NAN_DISCOVERY_RESULT),
+	/** Supplicant specific event */
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_NAN_REPLIED),
+	/** Supplicant specific event */
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_NAN_PUBLISH_TERMINATED),
+	/** Supplicant specific event */
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_NAN_SUBSCRIBE_TERMINATED),
+	/** Supplicant specific event */
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_NAN_RECEIVE),
+#endif
 };
 
 /** Event emitted for Wi-Fi scan result */
@@ -521,6 +555,28 @@ struct wifi_p2p_device_info {
 	char model_name[WIFI_P2P_MODEL_NAME_MAX_LEN + 1];
 };
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+/** Event emitted when NAN discovery result (subscriber found publisher) */
+#define NET_EVENT_WIFI_NAN_DISCOVERY_RESULT			\
+	(NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_NAN_DISCOVERY_RESULT)
+
+/** Event emitted when NAN publisher received subscribe request */
+#define NET_EVENT_WIFI_NAN_REPLIED				\
+	(NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_NAN_REPLIED)
+
+/** Event emitted when NAN publish is terminated */
+#define NET_EVENT_WIFI_NAN_PUBLISH_TERMINATED			\
+	(NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_NAN_PUBLISH_TERMINATED)
+
+/** Event emitted when NAN subscribe is terminated */
+#define NET_EVENT_WIFI_NAN_SUBSCRIBE_TERMINATED			\
+	(NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_NAN_SUBSCRIBE_TERMINATED)
+
+/** Event emitted NAN follow-up message is received */
+#define NET_EVENT_WIFI_NAN_RECEIVE				\
+	(NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_NAN_RECEIVE)
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
 
 /** @brief Wi-Fi version */
 struct wifi_version {
@@ -1156,6 +1212,66 @@ struct wifi_ap_sta_info {
 	bool twt_capable;
 };
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+/** @brief NAN discovery result event structure (subscriber found publisher) */
+struct wifi_nan_discovery_result_event {
+	/** Subscribe ID */
+	uint8_t subscribe_id;
+	/** Peer publish ID */
+	uint8_t publish_id;
+	/** Peer MAC address */
+	uint8_t peer_addr[6];
+	/** FSD (Further Service Discovery) */
+	bool fsd;
+	/** FSD GAS (Generic Advertisement Service) */
+	bool fsd_gas;
+	/** Service protocol type */
+	uint8_t srv_proto_type;
+	/** Service Specific Info length */
+	size_t ssi_len;
+	/** Service Specific Info data */
+	uint8_t ssi[WIFI_NAN_MAX_SSI_LEN];
+};
+
+/** @brief NAN replied event structure (publisher received subscribe request) */
+struct wifi_nan_replied_event {
+	/** Publish ID */
+	uint8_t publish_id;
+	/** Peer MAC address */
+	uint8_t peer_addr[6];
+	/** Peer subscribe ID */
+	uint8_t subscribe_id;
+	/** Service protocol type */
+	uint8_t srv_proto_type;
+	/** Service Specific Info length */
+	size_t ssi_len;
+	/** Service Specific Info data */
+	uint8_t ssi[WIFI_NAN_MAX_SSI_LEN];
+};
+
+/** @brief NAN publish/subscribe terminated event structure */
+struct wifi_nan_terminated_event {
+	/** Publish/Subscribe ID */
+	uint8_t id;
+	/** Reason string */
+	char reason[32];
+};
+
+/** @brief NAN receive event - follow-up message details */
+struct wifi_nan_receive_event {
+	/** Publish/Subscribe ID */
+	uint8_t id;
+	/** Peer instance ID */
+	uint8_t peer_instance_id;
+	/** Peer MAC address */
+	uint8_t peer_addr[WIFI_MAC_ADDR_LEN];
+	/** Service Specific Info data */
+	uint8_t ssi[WIFI_NAN_MAX_SSI_LEN];
+	/** Service Specific Info length */
+	size_t ssi_len;
+};
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
+
 /** @cond INTERNAL_HIDDEN */
 
 /* for use in max info size calculations */
@@ -1171,6 +1287,13 @@ union wifi_mgmt_events {
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
 	struct wifi_p2p_device_info p2p_device_info;
 #endif
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+	struct wifi_nan_discovery_result_event nan_discovery_result;
+	struct wifi_nan_replied_event nan_replied;
+	struct wifi_nan_terminated_event nan_publish_terminated;
+	struct wifi_nan_terminated_event nan_subscribe_terminated;
+	struct wifi_nan_receive_event nan_receive;
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
 };
 
 /** @endcond */
@@ -1433,6 +1556,112 @@ struct wifi_dpp_params {
 	};
 };
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+/* NAN operation */
+enum wifi_nan_operation {
+	WIFI_NAN_OP_PUBLISH,
+	WIFI_NAN_OP_CANCEL_PUBLISH,
+	WIFI_NAN_OP_UPDATE_PUBLISH,
+	WIFI_NAN_OP_SUBSCRIBE,
+	WIFI_NAN_OP_CANCEL_SUBSCRIBE,
+	WIFI_NAN_OP_TRANSMIT,
+};
+
+/** NAN service protocol types */
+enum wifi_nan_service_protocol_type {
+	/* Bonjour */
+	WIFI_NAN_SRV_PROTO_BONJOUR = 1,
+	/* Generic */
+	WIFI_NAN_SRV_PROTO_GENERIC = 2,
+	/* CSA Matter */
+	WIFI_NAN_SRV_PROTO_CSA_MATTER = 3,
+};
+
+/** This structure is used to configure wlan nan publish parameters */
+struct wifi_nan_publish_params {
+	/* Service name for NAN */
+	char service_name[WIFI_NAN_MAX_SERVICE_NAME_LEN];
+	/* NAN service protocol type */
+	enum wifi_nan_service_protocol_type srv_proto_type;
+	/* Time to live (in seconds); 0 = one TX only */
+	uint32_t ttl;
+	/* Default frequency in MHz (defaultPublishChannel) */
+	uint32_t freq;
+	/* Multi-channel frequencies */
+	char freq_list[64];
+	/* Service specific information (binary data) */
+	uint8_t ssi[WIFI_NAN_MAX_SSI_LEN];
+	/* Actual length of SSI data */
+	uint8_t ssi_len;
+	/* Unsolicited transmission (true by default) */
+	bool unsolicited;
+	/* Solicited transmission (true by default) */
+	bool solicited;
+	/* Further Service Discovery (true by default) */
+	bool fsd;
+};
+
+/* This structure is used to configure nan update publish parameters */
+struct wifi_nan_update_publish_params {
+	uint8_t publish_id;
+	/* Service specific information (binary data) */
+	uint8_t ssi[WIFI_NAN_MAX_SSI_LEN];
+	/* Actual length of SSI data */
+	uint8_t ssi_len;
+};
+
+/** This structure is used to configure wlan nan subscribe parameters */
+struct wifi_nan_subscribe_params {
+	/* Service name for NAN */
+	char service_name[WIFI_NAN_MAX_SERVICE_NAME_LEN];
+	/* NAN service protocol type */
+	enum wifi_nan_service_protocol_type srv_proto_type;
+	/* Subscribe type */
+	bool active;
+	/* Time to live (in seconds); 0 = until first result */
+	unsigned int ttl;
+	/* Selected frequency in MHz */
+	unsigned int freq;
+	/* Service specific information (binary data) */
+	uint8_t ssi[WIFI_NAN_MAX_SSI_LEN];
+	/* Actual length of SSI data */
+	uint8_t ssi_len;
+};
+
+/** This structure is used to configure nan transmit parameters */
+struct wifi_nan_transmit_params {
+	/* publish_id or subscribe_id */
+	uint8_t handle;
+	/* peer publish_id or subscribe_id */
+	uint8_t req_instance_id;
+	/* peer MAC address */
+	uint8_t peer_addr[6];
+	/* Service specific information (binary data) */
+	uint8_t ssi[WIFI_NAN_MAX_SSI_LEN];
+	/* Actual length of SSI data */
+	uint8_t ssi_len;
+};
+
+/* nan parameters */
+struct wifi_nan_params {
+	enum wifi_nan_operation op;
+
+	union {
+		struct wifi_nan_publish_params publish;
+		struct wifi_nan_update_publish_params update_publish;
+		struct wifi_nan_subscribe_params subscribe;
+		struct wifi_nan_transmit_params transmit;
+		/* For cancel operations */
+		uint8_t cancel_id;
+	};
+
+	/* Save the returned ID */
+	char resp[WIFI_NAN_RESP_SIZE];
+};
+
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
+
 
 #define WIFI_WPS_PIN_MAX_LEN 8
 
@@ -1901,6 +2130,17 @@ struct wifi_mgmt_ops {
 	 */
 	int (*dpp_dispatch)(const struct device *dev, struct wifi_dpp_params *params);
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+	/** Dispatch NAN operations by action enum, with or without arguments in string format
+	 *
+	 * @param dev Pointer to the device structure for the driver instance
+	 * @param params NAN action enum and parameters in string
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*nan_cfg)(const struct device *dev, struct wifi_nan_params *params);
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
+
 	/** Flush PMKSA cache entries
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.

@@ -634,6 +634,12 @@ zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
   ${HOSTAP_SRC_BASE}/tls/asn1.c
 )
 
+zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+  ${WIFI_NM_WPA_SUPPLICANT_BASE}/nan_usd.c
+  ${HOSTAP_SRC_BASE}/ap/nan_usd_ap.c
+  ${HOSTAP_SRC_BASE}/common/nan_de.c
+)
+
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
   ${HOSTAP_SRC_BASE}/eap_server/eap_server_tls_common.c
 )

@@ -433,6 +433,12 @@ config WIFI_NM_WPA_SUPPLICANT_DPP
 	select MBEDTLS_X509_CSR_WRITE_C
 	select MBEDTLS_X509_CSR_PARSE_C
 
+config WIFI_NM_WPA_SUPPLICANT_NAN
+	bool "NAN (Neighbor Awareness Networking) support"
+	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
+	select NAN
+	select NAN_USD
+
 config WIFI_NM_WPA_SUPPLICANT_11AC
 	bool "IEEE 802.11ac VHT support"
 	depends on WIFI_NM_WPA_SUPPLICANT_AP || WIFI_NM_HOSTAPD_AP
@@ -753,5 +759,11 @@ config WIFI_NM_WPA_SUPPLICANT_BTM_PRE_SCAN_CHECK
 	  When no candidate is found, a new scan is performed.
 	  Disable this if the chip takes too long to perform a scan causing
 	  disassociations in WFA QT tests.
+
+config NAN
+	bool "Neighbor Awareness Networking Support"
+
+config NAN_USD
+	bool "Neighbor Awareness Networking Unsynchronized Service Discovery Support"
 
 endif # WIFI_NM_WPA_SUPPLICANT

@@ -1331,6 +1331,28 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_DPP, wifi_dpp);
 
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+static int wifi_nan(uint64_t mgmt_request, struct net_if *iface,
+		    void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_nan_params *params = data;
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->nan_cfg == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
+	return wifi_mgmt_api->nan_cfg(dev, params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_NAN, wifi_nan);
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
+
 static int wifi_pmksa_flush(uint64_t mgmt_request, struct net_if *iface,
 					   void *data, size_t len)
 {

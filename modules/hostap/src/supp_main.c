@@ -95,6 +95,9 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 	.dpp_dispatch = supplicant_dpp_dispatch,
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+	.nan_cfg = supplicant_nan_cfg,
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
 	.pmksa_flush = supplicant_pmksa_flush,
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	.enterprise_creds = supplicant_add_enterprise_creds,
@@ -254,6 +257,34 @@ static void zephyr_wpa_supplicant_msg(void *ctx, const char *txt, size_t len)
 						(void *)txt, len);
 #endif
 	}
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+	else if (strncmp(txt, "NAN-DISCOVERY-RESULT", 20) == 0) {
+		/* NAN discovery result (subscriber found publisher) */
+		supplicant_send_wifi_mgmt_event(wpa_s->ifname,
+			NET_EVENT_WIFI_CMD_NAN_DISCOVERY_RESULT,
+			(void *)txt, len);
+	} else if (strncmp(txt, "NAN-REPLIED", 11) == 0) {
+		/* NAN replied (publisher received subscribe request) */
+		supplicant_send_wifi_mgmt_event(wpa_s->ifname,
+			NET_EVENT_WIFI_CMD_NAN_REPLIED,
+			(void *)txt, len);
+	} else if (strncmp(txt, "NAN-PUBLISH-TERMINATED", 22) == 0) {
+		/* NAN publish terminated */
+		supplicant_send_wifi_mgmt_event(wpa_s->ifname,
+			NET_EVENT_WIFI_CMD_NAN_PUBLISH_TERMINATED,
+			(void *)txt, len);
+	} else if (strncmp(txt, "NAN-SUBSCRIBE-TERMINATED", 24) == 0) {
+		/* NAN subscribe terminated */
+		supplicant_send_wifi_mgmt_event(wpa_s->ifname,
+			NET_EVENT_WIFI_CMD_NAN_SUBSCRIBE_TERMINATED,
+			(void *)txt, len);
+	} else if (strncmp(txt, "NAN-RECEIVE", 11) == 0) {
+		/* NAN follow-up received event */
+		supplicant_send_wifi_mgmt_event(wpa_s->ifname,
+			NET_EVENT_WIFI_CMD_NAN_RECEIVE,
+			(void *)txt, len);
+	}
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
 }
 
 static const char *zephyr_hostap_msg_ifname_cb(void *ctx)
