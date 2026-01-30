@@ -30,8 +30,6 @@ if(CONFIG_FILE_SYSTEM_LIB_LINK)
 endif()
 
 add_subdirectory_ifdef(CONFIG_FCB  ./fcb)
-add_subdirectory_ifdef(CONFIG_NVS  ./nvs)
-add_subdirectory_ifdef(CONFIG_ZMS  ./zms)
 
 if(CONFIG_FUSE_FS_ACCESS)
   zephyr_library_named(FS_FUSE)

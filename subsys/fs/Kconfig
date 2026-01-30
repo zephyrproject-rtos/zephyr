@@ -154,7 +154,5 @@ rsource "virtiofs/Kconfig"
 endif # FILE_SYSTEM_LIB_LINK
 
 rsource "fcb/Kconfig"
-rsource "nvs/Kconfig"
-rsource "zms/Kconfig"
 
 endmenu

@@ -36,7 +36,7 @@ The sample can be built for several platforms, but for the moment it has been te
 on native_sim target
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/fs/zms
+   :zephyr-app: samples/subsys/kvss/zms
    :goals: build
    :compact:
 
