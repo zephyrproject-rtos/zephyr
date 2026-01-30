@@ -61,13 +61,10 @@
 
 		slot1_partition: partition@78000 {
 			label = "image-1";
-			reg = <0x00078000 DT_SIZE_K(416)>;
+			reg = <0x00078000 DT_SIZE_K(420)>;
 		};
 
-		scratch_partition: partition@e0000 {
-			label = "image-scratch";
-			reg = <0x000e0000 DT_SIZE_K(64)>;
-		};
+		/* Unused range [0xe1000..0xeffff] */
 
 		storage_partition: partition@f0000 {
 			label = "storage";

@@ -256,11 +256,17 @@ zephyr_udc0: &usbotg_fs {
 			read-only;
 		};
 
-		/* storage: 128KB for settings */
-		storage_partition: partition@20000 {
-			label = "storage";
-			reg = <0x00020000 DT_SIZE_K(128)>;
-		};
+		/* storage: 128KB for settings
+		 *
+		 * NVS needs at least 2 sectors of 32kB each max
+		 * which does not match H743x internal flash whose
+		 * sectors are all 128kB.
+		 *
+		 * storage_partition: partition@20000 {
+		 *	label = "storage";
+		 *	reg = <0x00020000 DT_SIZE_K(128)>;
+		 * };
+		 */
 
 		/* application image slot: 256KB */
 		slot0_partition: partition@40000 {
