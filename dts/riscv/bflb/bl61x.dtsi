@@ -128,15 +128,33 @@
 			#size-cells = <1>;
 			status = "okay";
 
-			gpio0: gpio@20000000 {
+			gpio0: gpio0@20000000 {
 				compatible = "bflb,bl61x-gpio";
 				reg = <0x20000000 0x1000>;
 				#gpio-cells = <2>;
 				#bflb,pin-cells = <2>;
+				section = <0>;
+				ngpios = <32>;
 				status = "disabled";
 
 				gpio-controller;
-				interrupts = <60 1>;
+				interrupts = <60 1>, <47 1>;
+				interrupt-names = "gpio", "fifo";
+				interrupt-parent = <&clic>;
+			};
+
+			gpio1: gpio1@20000000 {
+				compatible = "bflb,bl61x-gpio";
+				reg = <0x20000000 0x1000>;
+				#gpio-cells = <2>;
+				#bflb,pin-cells = <2>;
+				section = <1>;
+				ngpios = <3>;
+				status = "disabled";
+
+				gpio-controller;
+				interrupts = <60 1>, <47 2>;
+				interrupt-names = "gpio", "fifo";
 				interrupt-parent = <&clic>;
 			};
 		};

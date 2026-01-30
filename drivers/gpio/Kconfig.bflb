@@ -14,3 +14,15 @@ config GPIO_BFLB_BL61X
 	default y
 	help
 	  Bouffalo Lab BL61X GPIO driver
+
+if GPIO_BFLB_BL61X
+
+config GPIO_BFLB_BL61X_CACHE_WRITE
+	bool "Cache BL61x GPIO writes"
+	depends on DT_HAS_BFLB_BL61X_GPIO_ENABLED
+	default y
+	help
+	  Cache last written value to GPIO register, this doubles GPIO toggle speed by
+	  avoiding a nonrequired read operation on the speed-limited peripheral.
+
+endif # GPIO_BFLB_BL61X
