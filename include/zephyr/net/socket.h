@@ -843,6 +843,38 @@ int zsock_getnameinfo(const struct net_sockaddr *addr, net_socklen_t addrlen,
 		      char *serv, net_socklen_t servlen, int flags);
 
 /**
+ * @brief Send data to an arbitrary network address. The function will try
+ *        to send all the data requested, blocking if necessary. User can set
+ *        a limit on the time spent in the function using socket send timeout.
+ *
+ * @details
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/sendto.html
+ * for normative description of the parameters. The function differs from
+ * zsock_send() by trying to send all the data requested, blocking
+ * if necessary until all data is sent or timeout occurs.
+ * Note that this is only applicable for stream sockets like TCP.
+ */
+int zsock_send_all(int sock, const void *buf, size_t len, int flags,
+		   k_timeout_t timeout);
+
+/**
+ * @brief Send data to an arbitrary network address. The function will try
+ *       to send all the data requested, blocking if necessary. User can set
+ *       a limit on the time spent in the function using socket send timeout.
+ *
+ * @details
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/sendmsg.html
+ * for normative description of the parameters. The function differs from
+ * zsock_sendmsg() by trying to send all the data requested, blocking
+ * if necessary until all data is sent or timeout occurs.
+ * Note that this is only applicable for stream sockets like TCP.
+ */
+int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
+		      k_timeout_t timeout);
+
+/**
  * @name Socket level options (ZSOCK_SOL_SOCKET)
  * @{
  */
