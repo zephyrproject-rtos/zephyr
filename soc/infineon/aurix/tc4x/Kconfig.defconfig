@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_TC4X
+
+config NUM_IRQS
+	default 2048
+
+endif

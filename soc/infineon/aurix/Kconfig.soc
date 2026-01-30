@@ -1,0 +1,11 @@
+# Copyright 2024 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+
+config SOC_FAMILY_AURIX
+	bool
+
+config SOC_FAMILY
+	default "aurix" if SOC_FAMILY_AURIX
+
+rsource "*/Kconfig.soc"

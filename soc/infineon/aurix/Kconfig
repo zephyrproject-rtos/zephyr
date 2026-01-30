@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_AURIX
+	bool
+
+if SOC_FAMILY_AURIX
+
+rsource "*/Kconfig"
+
+config AURIX_STARTUP_CPU
+	bool "AURIX Startup CPU"
+	help
+	  This option is used to select the startup CPU for the SoC.  The startup CPU is
+	  responsible the initial setup of some of the shared resources like Safety Watchdog,
+	  PLLs, etc.
+
+endif # SOC_FAMILY_AURIX

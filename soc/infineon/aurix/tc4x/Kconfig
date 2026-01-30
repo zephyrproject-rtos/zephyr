@@ -1,0 +1,25 @@
+# Copyright (c) 2024 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_TC4X
+	select TRICORE
+	select CPU_TC18
+	select AURIX_IR
+	select HAS_INFINEON_TC4X_HAL
+
+config TC4X_CPU
+	bool
+	depends on SOC_SERIES_TC4X
+	select CPU_HAS_FPU
+	select CPU_HAS_FPU_DOUBLE_PRECISION
+	select CPU_HAS_TRICORE_VIRTUALIZATION
+	imply FPU
+	default y if !SOC_TC4D7XP_CPUCS
+
+config TC4X_CPUCS
+	bool
+	depends on SOC_SERIES_TC4X
+	default y if SOC_TC4D7XP_CPUCS
+
+config SOC_TC4D7XP_CPU0
+	imply AURIX_STARTUP_CPU

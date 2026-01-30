@@ -1,0 +1,27 @@
+# Copyright 2024 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+family:
+- name: aurix
+  series:
+  - name: tc3x
+    socs:
+    - name: tc397xp
+      cpuclusters:
+      - name: cpu0
+      - name: cpu1
+      - name: cpu2
+      - name: cpu3
+      - name: cpu4
+      - name: cpu5
+  - name: tc4x
+    socs:
+    - name: tc4d7xp
+      cpuclusters:
+      - name: cpu0
+      - name: cpu1
+      - name: cpu2
+      - name: cpu3
+      - name: cpu4
+      - name: cpu5
+      - name: cpucs
