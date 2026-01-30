@@ -2476,11 +2476,17 @@ static int flash_stm32_xspi_init(const struct device *dev)
 			     DT_STRING_TOKEN(DT_DRV_INST(inst), quad_enable_requirements))),	\
 		    ((default_value)))
 
-static void flash_stm32_xspi_irq_config_func(const struct device *dev);
-
 PINCTRL_DT_DEFINE(STM32_XSPI_NODE);
 
+static void flash_stm32_xspi_irq_config_func(const struct device *dev)
+{
+	IRQ_CONNECT(DT_IRQN(STM32_XSPI_NODE), DT_IRQ(STM32_XSPI_NODE, priority),
+		    flash_stm32_xspi_isr, DEVICE_DT_INST_GET(0), 0);
+	irq_enable(DT_IRQN(STM32_XSPI_NODE));
+}
+
 static const struct flash_stm32_xspi_config flash_stm32_xspi_cfg = {
+	/* Properties of the controller */
 	.pclken = STM32_CLOCK_INFO_BY_NAME(STM32_XSPI_NODE, xspix),
 #if DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE, xspi_ker)
 	.pclken_ker = STM32_CLOCK_INFO_BY_NAME(STM32_XSPI_NODE, xspi_ker),
@@ -2488,15 +2494,17 @@ static const struct flash_stm32_xspi_config flash_stm32_xspi_cfg = {
 #if DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE, xspi_mgr)
 	.pclken_mgr = STM32_CLOCK_INFO_BY_NAME(STM32_XSPI_NODE, xspi_mgr),
 #endif /* xspi_mgr */
+	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(STM32_XSPI_NODE),
 	.irq_config = flash_stm32_xspi_irq_config_func,
 	.mem_map_based_address = DT_REG_ADDR_BY_IDX(STM32_XSPI_NODE, 1),
+
+	/* Properties of the flash device */
 	.flash_size = DT_INST_PROP(0, size) / 8, /* In Bytes */
 	.max_frequency = DT_INST_PROP(0, ospi_max_frequency),
 	.data_mode = DT_INST_PROP(0, spi_bus_width), /* SPI or OPI */
 	.data_rate = DT_INST_PROP(0, data_rate), /* DTR or STR */
 	.four_byte_opcodes = DT_INST_PROP_OR(0, four_byte_opcodes, 0),
 	.requires_ulbpr = DT_INST_PROP_OR(0, requires_ulbpr, 0),
-	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(STM32_XSPI_NODE),
 #if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	.reset = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
 	.reset_gpios_duration = DT_INST_PROP(0, reset_gpios_duration),
@@ -2543,13 +2551,6 @@ static struct flash_stm32_xspi_data flash_stm32_xspi_dev_data = {
 	XSPI_DMA_CHANNEL(STM32_XSPI_NODE, tx, TX, MEMORY, PERIPHERAL)
 	XSPI_DMA_CHANNEL(STM32_XSPI_NODE, rx, RX, PERIPHERAL, MEMORY)
 };
-
-static void flash_stm32_xspi_irq_config_func(const struct device *dev)
-{
-	IRQ_CONNECT(DT_IRQN(STM32_XSPI_NODE), DT_IRQ(STM32_XSPI_NODE, priority),
-		    flash_stm32_xspi_isr, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_IRQN(STM32_XSPI_NODE));
-}
 
 DEVICE_DT_INST_DEFINE(0, &flash_stm32_xspi_init, NULL,
 		      &flash_stm32_xspi_dev_data, &flash_stm32_xspi_cfg,
