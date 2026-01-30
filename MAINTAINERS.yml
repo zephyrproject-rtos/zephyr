@@ -3712,6 +3712,13 @@ NXP Platforms (MCU):
         - boards/nxp/vmu*/
         - boards/nxp/rddrone_fmuk66/
         - tests/boards/vmu_rt1170/
+    - name: NXP MCU k32l
+      collaborators:
+        - iia
+      files:
+        - boards/nxp/frdm_k32l2b3/
+        - dts/arm/nxp/nxp_k32l2b3.dtsi
+        - soc/nxp/kinetis/k32lx/
   labels:
     - "platform: NXP MCU"
     - "platform: NXP"
