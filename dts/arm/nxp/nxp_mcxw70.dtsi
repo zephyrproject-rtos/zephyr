@@ -83,13 +83,37 @@
 		};
 
 		stcm: sram@30000000 {
-			ranges = <0x0 0x30000000 0x1E580>;
+			compatible = "mmio-sram";
+			reg = <0x30000000 DT_SIZE_K(128)>;
+			/* Map both secure and non-secure address ranges since the shared stcm must be
+			 * referenced with non-secure address range. */
+			ranges = <0x0 0x30000000 DT_SIZE_K(120)>,  /* Secure range for first 120K */
+					 <0x1e000 0x2001e000 DT_SIZE_K(8)>; /* Non-secure range for last 8K */
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			stcm0: system_memory@0 {
-				reg = <0x0 0x1E580>;
+				/* Use secure address range */
+				reg = <0x0 DT_SIZE_K(120)>;
 				compatible = "mmio-sram";
+			};
+
+			stcm_shared: stcm_shared@1e000 {
+				/* Use non-secure address range */
+				ranges = <0x0 0x2001e000 DT_SIZE_K(8)>;
+				reg = <0x1e000 DT_SIZE_K(8)>;
+				compatible = "zephyr,memory-region", "mmio-sram";
+				zephyr,memory-region = "STCM_SHARED";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				shmem_rpmsg: memory@0 {
+					reg = <0x0 0xa00>;
+				};
+
+				shmem_data: memory@a00 {
+					reg = <0xa00 0x100>;
+				};
 			};
 		};
 
@@ -467,9 +491,9 @@
 		reg = <0x24000 0x140>;
 		clocks = <&scg_0 SCG_K4_EDMA_CLK 0xf0>;
 		interrupts = <2 0>, <3 0>, <4 0>, <5 0>,
-			     <6 0>, <7 0>, <8 0>, <9 0>,
-			     <10 0>, <11 0>, <12 0>, <13 0>,
-			     <14 0>, <15 0>, <16 0>, <17 0>;
+				 <6 0>, <7 0>, <8 0>, <9 0>,
+				 <10 0>, <11 0>, <12 0>, <13 0>,
+				 <14 0>, <15 0>, <16 0>, <17 0>;
 		status = "disabled";
 	};
 
