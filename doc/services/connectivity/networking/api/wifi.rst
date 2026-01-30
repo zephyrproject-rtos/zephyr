@@ -244,6 +244,20 @@ To enable and build with Wi-Fi P2P support:
 
     $ west build -p -b <board> samples/net/wifi/shell -- -DCONFIG_WIFI_NM_WPA_SUPPLICANT_P2P=y
 
+Wi-Fi NAN (Neighbor Awareness Networking)
+*****************************************
+
+Wi-Fi NAN (Neighbor Awareness Networking), also known as Wi-Fi Aware, enables devices to discover
+services and communicate with nearby devices without requiring a traditional access point or Internet
+connection. This feature uses a publish-subscribe model where devices can publish services or
+subscribe to discover services from nearby peers.
+
+To enable and build with Wi-Fi NAN support:
+
+.. code-block:: bash
+
+    $ west build -p -b <board> samples/net/wifi/shell -- -DCONFIG_WIFI_NM_WPA_SUPPLICANT_NAN=y
+
 API Reference
 *************
 
