@@ -60,6 +60,7 @@
 #define INPUT_KEY_BRIGHTNESSUP 225      /**< Brightneess Down Key */
 #define INPUT_KEY_C 46                  /**< C Key */
 #define INPUT_KEY_CAPSLOCK 58           /**< Caps Lock Key */
+#define INPUT_KEY_CLOSECD 160           /**< Close CD Key */
 #define INPUT_KEY_COFFEE 152            /**< Screen Saver Key */
 #define INPUT_KEY_COMMA 51              /**< Comma Key */
 #define INPUT_KEY_COMPOSE 127           /**< Compose Key */
@@ -69,6 +70,8 @@
 #define INPUT_KEY_DOT 52                /**< Dot Key */
 #define INPUT_KEY_DOWN 108              /**< Down Key */
 #define INPUT_KEY_E 18                  /**< E Key */
+#define INPUT_KEY_EJECTCD 161           /**< Eject CD Key */
+#define INPUT_KEY_EJECTCLOSECD 162      /**< Eject/Close CD Toggle Key */
 #define INPUT_KEY_END 107               /**< End Key */
 #define INPUT_KEY_ENTER 28              /**< Enter Key */
 #define INPUT_KEY_EQUAL 13              /**< Equal Key */
@@ -99,6 +102,7 @@
 #define INPUT_KEY_F8 66                 /**< F8 Key */
 #define INPUT_KEY_F9 67                 /**< F9 Key */
 #define INPUT_KEY_FASTFORWARD 208       /**< Fast Forward Key */
+#define INPUT_KEY_FAVORITES 364         /**< Favorites Key */
 #define INPUT_KEY_FORWARD 159           /**< Forward Key */
 #define INPUT_KEY_G 34                  /**< G Key */
 #define INPUT_KEY_GRAVE 41              /**< Grave (backtick) Key */
@@ -139,6 +143,7 @@
 #define INPUT_KEY_MINUS 12              /**< Minus Key */
 #define INPUT_KEY_MUTE 113              /**< Mute Key */
 #define INPUT_KEY_N 49                  /**< N Key */
+#define INPUT_KEY_NEXTSONG 163          /**< Next Song Key */
 #define INPUT_KEY_NUMLOCK 69            /**< Num Lock Key */
 #define INPUT_KEY_O 24                  /**< O Key */
 #define INPUT_KEY_P 25                  /**< P Key */
@@ -146,10 +151,14 @@
 #define INPUT_KEY_PAGEUP 104            /**< Page UpKey */
 #define INPUT_KEY_PAUSE 119             /**< Pause Key */
 #define INPUT_KEY_PLAY 207              /**< Play Key */
+#define INPUT_KEY_PLAYPAUSE 164         /**< Play/Pause Toggle Key */
 #define INPUT_KEY_POWER 116             /**< Power Key */
+#define INPUT_KEY_PREVIOUSSONG 165      /**< Previous Song Key */
 #define INPUT_KEY_PRINT 210             /**< Print Key */
 #define INPUT_KEY_Q 16                  /**< Q Key */
 #define INPUT_KEY_R 19                  /**< R Key */
+#define INPUT_KEY_RECORD 167            /**< Record Key */
+#define INPUT_KEY_REWIND 168            /**< Rewind Key */
 #define INPUT_KEY_RIGHT 106             /**< Right Key */
 #define INPUT_KEY_RIGHTALT 100          /**< Right Alt Key */
 #define INPUT_KEY_RIGHTBRACE 27         /**< Right Brace Key */
@@ -163,6 +172,7 @@
 #define INPUT_KEY_SLASH 53              /**< Slash Key */
 #define INPUT_KEY_SLEEP 142             /**< System Sleep Key */
 #define INPUT_KEY_SPACE 57              /**< Space Key */
+#define INPUT_KEY_STOPCD 166            /**< Stop CD Key */
 #define INPUT_KEY_SYSRQ 99              /**< SysReq Key */
 #define INPUT_KEY_T 20                  /**< T Key */
 #define INPUT_KEY_TAB 15                /**< Tab Key*/
