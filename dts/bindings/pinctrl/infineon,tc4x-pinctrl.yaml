@@ -1,0 +1,69 @@
+# Copyright (c) 2024 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: TC4X Pinmux description
+
+compatible: "infineon,tc4x-pinctrl"
+
+include: base.yaml
+
+properties:
+  "#address-cells":
+    required: true
+    const: 1
+  "#size-cells":
+    required: true
+    const: 1
+
+child-binding:
+  child-binding:
+    description: Each child node defines the configuration for a particular state.
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-pull-down
+          - bias-pull-up
+          - drive-push-pull
+          - drive-open-drain
+          - input-disable
+          - output-enable
+          - output-high
+          - output-low
+
+    properties:
+      pinmux:
+        type: array
+        required: true
+
+      slew-rate:
+        description: Slew rate of the output pin
+        type: string
+        default: "sharp"
+        enum:
+          - "sharp"
+          - "medium"
+
+      drive-strength:
+        description: |
+          Drive strength of the output pin.
+        default: "medium"
+        type: string
+        enum:
+          - "strong"
+          - "medium"
+          - "rgmii"
+
+      input-level:
+        type: string
+        description: |
+          Input level of the input pin
+        default: "automotive"
+        enum:
+          - "automotive"
+          - "ttl_5v"
+          - "ttl_3v3"
+
+      output-select:
+        type: boolean
+        description: Use advanced output select function (e.g. RGMII, SCR, SMU)
