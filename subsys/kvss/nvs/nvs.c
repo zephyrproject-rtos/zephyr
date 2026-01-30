@@ -9,7 +9,7 @@
 #include <string.h>
 #include <errno.h>
 #include <inttypes.h>
-#include <zephyr/fs/nvs.h>
+#include <zephyr/kvss/nvs.h>
 #include <zephyr/sys/crc.h>
 #include "nvs_priv.h"
 
