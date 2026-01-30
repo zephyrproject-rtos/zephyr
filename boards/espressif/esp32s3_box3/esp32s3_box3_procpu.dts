@@ -8,6 +8,7 @@
 
 #include <espressif/esp32s3/esp32s3_wroom_n16.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/input/esp32-touch-sensor-input.h>
 #include <espressif/partitions_0x0_amp_16M.dtsi>
 #include "esp32s3_box3-pinctrl.dtsi"
 
@@ -27,6 +28,7 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,display = &esp32_lcd;
+		zephyr,keyboard-scan = &gt911;
 	};
 
 	buttons {
@@ -61,6 +63,24 @@
 	status = "okay";
 };
 
+&i2c1 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+
+	gt911: gt911@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		alt-addr = <0x14>;
+		irq-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		screen-width = <320>;
+		screen-height = <240>;
+		status = "okay";
+	};
+};
+
 &spi2 {
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -80,6 +100,18 @@
 		reset-gpios = <&gpio1 16 GPIO_ACTIVE_LOW>; 
 		status = "okay";
 	};
+};
+
+&touch {
+	debounce-interval-ms = <30>;
+	href-microvolt = <2700000>;
+	lref-microvolt = <500000>;
+	href-atten-microvolt = <1000000>;
+	filter-mode = <ESP32_TOUCH_FILTER_MODE_IIR_16>;
+	filter-debounce-cnt = <1>;
+	filter-noise-thr = <ESP32_TOUCH_FILTER_NOISE_THR_4_8TH>;
+	filter-jitter-step = <4>;
+	filter-smooth-level = <ESP32_TOUCH_FILTER_SMOOTH_MODE_IIR_2>;
 };
 
 &wdt0 {
