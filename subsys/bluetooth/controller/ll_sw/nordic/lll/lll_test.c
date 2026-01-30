@@ -213,7 +213,7 @@ static void isr_rx(void *param)
 
 #if defined(CONFIG_BT_CTLR_DF_CTE_RX)
 	bool cte_ready;
-	bool cte_ok = 0;
+	bool cte_ok = false;
 #endif /* CONFIG_BT_CTLR_DF_CTE_RX */
 
 	/* Read radio status and events */
