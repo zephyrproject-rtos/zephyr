@@ -1,0 +1,9 @@
+# XIAO RP2350 board configuration
+
+# SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+# SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_XIAO_RP2350
+	select SOC_RP2350A_HAZARD3 if BOARD_XIAO_RP2350_RP2350A_HAZARD3
+	select SOC_RP2350A_M33 if BOARD_XIAO_RP2350_RP2350A_M33
