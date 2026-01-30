@@ -22,5 +22,6 @@ config TIMEAWARE_GPIO_INIT_PRIORITY
 	  System initialization priority for timeaware GPIO drivers.
 
 source "drivers/misc/timeaware_gpio/Kconfig.timeaware_gpio_intel"
+source "drivers/misc/timeaware_gpio/Kconfig.timeaware_gpio_ifx"
 
 endif # TIMEAWARE_GPIO

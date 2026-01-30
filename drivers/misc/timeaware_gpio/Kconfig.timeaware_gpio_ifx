@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config TIMEAWARE_GPIO_IFX
+	bool "IFX cat1 cyt4dn Time aware GPIO driver"
+	default y
+	depends on DT_HAS_INFINEON_TCPWM_TGPIO_ENABLED
+	select USE_INFINEON_TIMER
+	help
+	  CAT1 IFX device tgpio functionality found on tcpwm block
