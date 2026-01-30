@@ -33,6 +33,10 @@ Build System
   :kconfig:option:`CONFIG_BOARD_QUALIFIERS` so that it is no longer prefixed with a ``/``.
   This means that any use of ``${BOARD}${BOARD_QUALIFIERS}`` must be updated to include ``/``, like
   this: ``${BOARD}/${BOARD_QUALIFIERS}``.
+* ``SNIPPET_ROOT`` has been aligned with other Zephyr ``<type>_ROOT`` settings which doesn't include
+  the application source dir per-default. Samples requiring application source dir to be added to
+  ``SNIPPET_ROOT`` must instead add the application source dir using ``snippet_root = <dir>`` entry
+  in :file:`zephyr/module.yml` or manually append the folder to the CMake variable ``SNIPPET_ROOT``.
 
 Kernel
 ******

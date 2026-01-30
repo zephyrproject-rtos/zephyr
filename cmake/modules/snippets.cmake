@@ -47,7 +47,6 @@ function(zephyr_process_snippets)
   set(snippets_generated ${CMAKE_BINARY_DIR}/zephyr/snippets_generated.cmake)
   set_ifndef(SNIPPET_NAMESPACE SNIPPET)
   set_ifndef(SNIPPET_PYTHON_EXTRA_ARGS "")
-  set_ifndef(SNIPPET_APP_DIR "${APPLICATION_SOURCE_DIR}")
 
   # Set SNIPPET_AS_LIST, removing snippets_generated.cmake if we are
   # running cmake again and snippets are no longer requested.
@@ -61,7 +60,6 @@ function(zephyr_process_snippets)
 
   # Set SNIPPET_ROOT.
   zephyr_get(SNIPPET_ROOT MERGE SYSBUILD GLOBAL)
-  list(APPEND SNIPPET_ROOT ${SNIPPET_APP_DIR})
   list(APPEND SNIPPET_ROOT ${ZEPHYR_BASE})
   unset(real_snippet_root)
   foreach(snippet_dir ${SNIPPET_ROOT})
