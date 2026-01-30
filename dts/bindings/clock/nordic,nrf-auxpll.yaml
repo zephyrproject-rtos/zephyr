@@ -48,14 +48,14 @@ properties:
   nordic,out-div:
     type: int
     enum:
-      - 1 # Division of 1
-      - 2 # Division of 2
-      - 3 # Division of 3
-      - 4 # Division of 4
-      - 5 # Division of 6
-      - 6 # Division of 8
-      - 7 # Division of 12
-      - 8 # Division of 16
+      - 1
+      - 2
+      - 3
+      - 4
+      - 6
+      - 8
+      - 12
+      - 16
     description: PLL output divider. Valid values shown in dt-bindings/clock/nrf-auxpll.h.
 
   nordic,out-drive:
