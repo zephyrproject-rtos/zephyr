@@ -22,20 +22,11 @@
 #include <stm32_backup_domain.h>
 
 /* Macros to fill up prescaler values */
-#define z_hsi_divider(v) LL_RCC_HSI_DIV_ ## v
-#define hsi_divider(v) z_hsi_divider(v)
-
-#define z_ahb_prescaler(v) LL_RCC_SYSCLK_DIV_ ## v
-#define ahb_prescaler(v) z_ahb_prescaler(v)
-
-#define z_apb1_prescaler(v) LL_RCC_APB1_DIV_ ## v
-#define apb1_prescaler(v) z_apb1_prescaler(v)
-
-#define z_apb2_prescaler(v) LL_RCC_APB2_DIV_ ## v
-#define apb2_prescaler(v) z_apb2_prescaler(v)
-
-#define z_apb3_prescaler(v) LL_RCC_APB3_DIV_ ## v
-#define apb3_prescaler(v) z_apb3_prescaler(v)
+#define hsi_divider(v) CONCAT(LL_RCC_HSI_DIV_, v)
+#define ahb_prescaler(v) CONCAT(LL_RCC_SYSCLK_DIV_, v)
+#define apb1_prescaler(v) CONCAT(LL_RCC_APB1_DIV_, v)
+#define apb2_prescaler(v) CONCAT(LL_RCC_APB2_DIV_, v)
+#define apb3_prescaler(v) CONCAT(LL_RCC_APB3_DIV_, v)
 
 #define PLL1_ID		1
 #define PLL2_ID		2

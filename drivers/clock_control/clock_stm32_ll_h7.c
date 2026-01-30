@@ -22,32 +22,18 @@
 
 /* Macros to fill up prescaler values */
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
-#define z_hsi_divider(v) LL_RCC_HSI_DIV_ ## v
+#define hsi_divider(v) CONCAT(LL_RCC_HSI_DIV_, v)
 #else
-#define z_hsi_divider(v) LL_RCC_HSI_DIV ## v
+#define hsi_divider(v) CONCAT(LL_RCC_HSI_DIV, v)
 #endif
-#define hsi_divider(v) z_hsi_divider(v)
 
-#define z_sysclk_prescaler(v) LL_RCC_SYSCLK_DIV_ ## v
-#define sysclk_prescaler(v) z_sysclk_prescaler(v)
-
-#define z_ahb_prescaler(v) LL_RCC_AHB_DIV_ ## v
-#define ahb_prescaler(v) z_ahb_prescaler(v)
-
-#define z_apb1_prescaler(v) LL_RCC_APB1_DIV_ ## v
-#define apb1_prescaler(v) z_apb1_prescaler(v)
-
-#define z_apb2_prescaler(v) LL_RCC_APB2_DIV_ ## v
-#define apb2_prescaler(v) z_apb2_prescaler(v)
-
-#define z_apb3_prescaler(v) LL_RCC_APB3_DIV_ ## v
-#define apb3_prescaler(v) z_apb3_prescaler(v)
-
-#define z_apb4_prescaler(v) LL_RCC_APB4_DIV_ ## v
-#define apb4_prescaler(v) z_apb4_prescaler(v)
-
-#define z_apb5_prescaler(v) LL_RCC_APB5_DIV_ ## v
-#define apb5_prescaler(v) z_apb5_prescaler(v)
+#define sysclk_prescaler(v) CONCAT(LL_RCC_SYSCLK_DIV_, v)
+#define ahb_prescaler(v) CONCAT(LL_RCC_AHB_DIV_, v)
+#define apb1_prescaler(v) CONCAT(LL_RCC_APB1_DIV_, v)
+#define apb2_prescaler(v) CONCAT(LL_RCC_APB2_DIV_, v)
+#define apb3_prescaler(v) CONCAT(LL_RCC_APB3_DIV_, v)
+#define apb4_prescaler(v) CONCAT(LL_RCC_APB4_DIV_, v)
+#define apb5_prescaler(v) CONCAT(LL_RCC_APB5_DIV_, v)
 
 /* PLLx fractional ratio is 2^13 */
 #define PLL_FRACN_DIVISOR 8192

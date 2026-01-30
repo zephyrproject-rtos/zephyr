@@ -19,29 +19,14 @@
 #include <stm32_backup_domain.h>
 
 /* Macros to fill up prescaler values */
-#define z_ic_src_pll(v) LL_RCC_ICCLKSOURCE_PLL ## v
-#define ic_src_pll(v) z_ic_src_pll(v)
-
-#define z_hsi_divider(v) LL_RCC_HSI_DIV_ ## v
-#define hsi_divider(v) z_hsi_divider(v)
-
-#define z_ahb_prescaler(v) LL_RCC_AHB_DIV_ ## v
-#define ahb_prescaler(v) z_ahb_prescaler(v)
-
-#define z_apb1_prescaler(v) LL_RCC_APB1_DIV_ ## v
-#define apb1_prescaler(v) z_apb1_prescaler(v)
-
-#define z_apb2_prescaler(v) LL_RCC_APB2_DIV_ ## v
-#define apb2_prescaler(v) z_apb2_prescaler(v)
-
-#define z_apb4_prescaler(v) LL_RCC_APB4_DIV_ ## v
-#define apb4_prescaler(v) z_apb4_prescaler(v)
-
-#define z_apb5_prescaler(v) LL_RCC_APB5_DIV_ ## v
-#define apb5_prescaler(v) z_apb5_prescaler(v)
-
-#define z_timg_prescaler(v) LL_RCC_TIM_PRESCALER_ ## v
-#define timg_prescaler(v) z_timg_prescaler(v)
+#define ic_src_pll(v) CONCAT(LL_RCC_ICCLKSOURCE_PLL, v)
+#define hsi_divider(v) CONCAT(LL_RCC_HSI_DIV_, v)
+#define ahb_prescaler(v) CONCAT(LL_RCC_AHB_DIV_, v)
+#define apb1_prescaler(v) CONCAT(LL_RCC_APB1_DIV_, v)
+#define apb2_prescaler(v) CONCAT(LL_RCC_APB2_DIV_, v)
+#define apb4_prescaler(v) CONCAT(LL_RCC_APB4_DIV_, v)
+#define apb5_prescaler(v) CONCAT(LL_RCC_APB5_DIV_, v)
+#define timg_prescaler(v) CONCAT(LL_RCC_TIM_PRESCALER_, v)
 
 #define PLL1_ID		1
 #define PLL2_ID		2
