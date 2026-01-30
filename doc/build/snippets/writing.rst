@@ -104,6 +104,32 @@ The build system looks for snippets in these places:
    automatically be discovered by the build system, just as if
    the path to ``baz`` had appeared in :makevar:`SNIPPET_ROOT`.
 
+Application-local snippets
+==========================
+
+You can define snippets specific to your application by placing them in a
+:file:`snippets/` subdirectory of your application source directory:
+
+.. code-block:: none
+
+   <app>/
+   ├── CMakeLists.txt
+   ├── prj.conf
+   ├── src/
+   │   └── main.c
+   └── snippets/
+       └── my-snippet/
+           ├── snippet.yml
+           └── my-snippet.conf
+
+These application-local snippets are automatically discovered and can be used
+like any other snippet. See :ref:`using-snippets` for usage examples.
+
+When using :ref:`sysbuild <sysbuild>` to build multiple images (for example,
+an application with a bootloader), application-local snippets are only
+available to the application that defines them. Other images in the build
+cannot access the application's :file:`snippets/` directory.
+
 Processing order
 ****************
 
