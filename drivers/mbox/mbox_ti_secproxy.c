@@ -214,7 +214,7 @@ static int secproxy_mailbox_send(const struct device *dev, uint32_t channel,
 	mem_addr_t data_reg;
 	k_spinlock_key_t key;
 
-	if (!dev || !msg || !msg->data) {
+	if (msg == NULL || msg->data == NULL) {
 		LOG_ERR("Invalid parameters");
 		return -EINVAL;
 	}
