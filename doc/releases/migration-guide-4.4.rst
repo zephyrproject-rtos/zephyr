@@ -694,6 +694,12 @@ Video
 * The :dtcompatible:`ovti,ov2640` reset pin handling has been corrected, resulting in an inverted
   active level compared to before, to match the active level expected by the sensor.
 
+WiFi
+====
+
+* The ESP-Hosted WiFi driver has been updated to support the latest firmware (>= v1.0.0). Boards
+  running legacy (<= v0.0.5) firmware should enable :kconfig:option:`CONFIG_WIFI_ESP_HOSTED_LEGACY`.
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
