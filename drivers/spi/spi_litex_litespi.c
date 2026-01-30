@@ -168,8 +168,6 @@ static void spi_litex_spi_do_tx(const struct device *dev)
 
 	LOG_DBG("txd: 0x%x", txd);
 	litex_write32(txd, dev_config->master_rxtx_addr);
-
-	spi_context_update_tx(ctx, 1U, len);
 }
 
 static void spi_litex_spi_do_rx(const struct device *dev)
@@ -186,6 +184,7 @@ static void spi_litex_spi_do_rx(const struct device *dev)
 		litex_spi_rx_put(data->len, &rxd, ctx->rx_buf);
 	}
 
+	spi_context_update_tx(ctx, 1U, data->len);
 	spi_context_update_rx(ctx, 1U, data->len);
 }
 
