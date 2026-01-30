@@ -1292,9 +1292,8 @@ static int flash_stm32_xspi_read(const struct device *dev, off_t addr,
 		}
 	}
 
-	LOG_DBG("XSPI: read %zu data at 0x%lx",
-		size,
-		(long)(dev_cfg->mem_map_based_address + addr));
+	LOG_DBG("XSPI: read %zu data at 0x%x",
+		size, dev_cfg->mem_map_based_address + addr);
 	xspi_lock_thread(dev);
 
 	ret = xspi_read_access(dev, &cmd, data, size);
@@ -1384,9 +1383,8 @@ static int flash_stm32_xspi_write(const struct device *dev, off_t addr,
 	cmd_pp.AddressWidth = stm32_xspi_hal_address_size(dev);
 	cmd_pp.DummyCycles = 0U;
 
-	LOG_DBG("XSPI: write %zu data at 0x%lx",
-		size,
-		(long)(dev_cfg->mem_map_based_address + addr));
+	LOG_DBG("XSPI: write %zu data at 0x%x",
+		size, dev_cfg->mem_map_based_address + addr);
 
 	ret = stm32_xspi_mem_ready(dev,
 				   dev_cfg->data_mode, dev_cfg->data_rate);
@@ -2420,12 +2418,12 @@ static int flash_stm32_xspi_init(const struct device *dev)
 		LOG_ERR("Failed to enable memory-mapped mode: %d", ret);
 		return ret;
 	}
-	LOG_INF("Memory-mapped NOR-flash at 0x%lx (0x%x bytes)",
-		(long)(dev_cfg->mem_map_based_address),
+	LOG_INF("Memory-mapped NOR-flash at 0x%x (0x%x bytes)",
+		dev_cfg->mem_map_based_address,
 		dev_cfg->flash_size);
 #else
-	LOG_INF("NOR external-flash at 0x%lx (0x%x bytes)",
-		(long)(dev_cfg->mem_map_based_address),
+	LOG_INF("NOR external-flash at 0x%x (0x%x bytes)",
+		dev_cfg->mem_map_based_address,
 		dev_cfg->flash_size);
 #endif /* CONFIG_STM32_MEMMAP*/
 	return 0;
