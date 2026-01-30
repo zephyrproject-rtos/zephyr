@@ -19,20 +19,11 @@
 #include <stm32_hsem.h>
 
 /* Macros to fill up prescaler values */
-#define fn_ahb_prescaler(v) LL_RCC_SYSCLK_DIV_ ## v
-#define ahb_prescaler(v) fn_ahb_prescaler(v)
-
-#define fn_ahb5_prescaler(v) LL_RCC_AHB5_DIV_ ## v
-#define ahb5_prescaler(v) fn_ahb5_prescaler(v)
-
-#define fn_apb1_prescaler(v) LL_RCC_APB1_DIV_ ## v
-#define apb1_prescaler(v) fn_apb1_prescaler(v)
-
-#define fn_apb2_prescaler(v) LL_RCC_APB2_DIV_ ## v
-#define apb2_prescaler(v) fn_apb2_prescaler(v)
-
-#define fn_apb7_prescaler(v) LL_RCC_APB7_DIV_ ## v
-#define apb7_prescaler(v) fn_apb7_prescaler(v)
+#define ahb_prescaler(v) CONCAT(LL_RCC_SYSCLK_DIV_, v)
+#define ahb5_prescaler(v) CONCAT(LL_RCC_AHB5_DIV_, v)
+#define apb1_prescaler(v) CONCAT(LL_RCC_APB1_DIV_, v)
+#define apb2_prescaler(v) CONCAT(LL_RCC_APB2_DIV_, v)
+#define apb7_prescaler(v) CONCAT(LL_RCC_APB7_DIV_, v)
 
 #define RCC_CALC_FLASH_FREQ __LL_RCC_CALC_HCLK_FREQ
 #define GET_CURRENT_FLASH_PRESCALER LL_RCC_GetAHBPrescaler

@@ -23,23 +23,18 @@
 #include "clock_stm32_ll_common.h"
 
 /* Macros to fill up prescaler values */
-#define z_hsi_divider(v) LL_RCC_HSI_DIV_ ## v
-#define hsi_divider(v) z_hsi_divider(v)
+#define hsi_divider(v) CONCAT(LL_RCC_HSI_DIV_, v)
 
 #if defined(LL_RCC_HCLK_DIV_1)
-#define fn_ahb_prescaler(v) LL_RCC_HCLK_DIV_ ## v
-#define ahb_prescaler(v) fn_ahb_prescaler(v)
+#define ahb_prescaler(v) CONCAT(LL_RCC_HCLK_DIV_, v)
 #else
-#define fn_ahb_prescaler(v) LL_RCC_SYSCLK_DIV_ ## v
-#define ahb_prescaler(v) fn_ahb_prescaler(v)
+#define ahb_prescaler(v) CONCAT(LL_RCC_SYSCLK_DIV_, v)
 #endif
 
-#define fn_apb1_prescaler(v) LL_RCC_APB1_DIV_ ## v
-#define apb1_prescaler(v) fn_apb1_prescaler(v)
+#define apb1_prescaler(v) CONCAT(LL_RCC_APB1_DIV_, v)
 
 #if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), apb2_prescaler)
-#define fn_apb2_prescaler(v) LL_RCC_APB2_DIV_ ## v
-#define apb2_prescaler(v) fn_apb2_prescaler(v)
+#define apb2_prescaler(v) CONCAT(LL_RCC_APB2_DIV_, v)
 #endif
 
 #if DT_NODE_HAS_PROP(DT_NODELABEL(rcc), ahb4_prescaler)
