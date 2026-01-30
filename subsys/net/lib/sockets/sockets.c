@@ -1014,3 +1014,141 @@ static inline int z_vrfy_zsock_getsockname(int sock, struct net_sockaddr *addr,
 }
 #include <zephyr/syscalls/zsock_getsockname_mrsh.c>
 #endif /* CONFIG_USERSPACE */
+
+int zsock_send_all(int sock, const void *buf, size_t len, int flags, k_timeout_t timeout,
+		   size_t *sent_len)
+{
+	k_timepoint_t end;
+	int ret, opt;
+
+	if (sent_len != NULL) {
+		*sent_len = 0;
+	}
+
+	/* This function is only meaningful for stream sockets. */
+	ret = zsock_getsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_TYPE,
+			       &opt, &(net_socklen_t){ sizeof(opt) });
+	if (ret < 0) {
+		return -errno;
+	}
+
+	if (opt != NET_SOCK_STREAM) {
+		return -EOPNOTSUPP;
+	}
+
+	end = sys_timepoint_calc(timeout);
+
+	while (len > 0) {
+		ssize_t out_len = zsock_send(sock, buf, len, ZSOCK_MSG_DONTWAIT | flags);
+
+		if ((out_len == 0) || (out_len < 0 && errno == EAGAIN)) {
+			k_ticks_t req_timeout_ticks = sys_timepoint_timeout(end).ticks;
+			int req_timeout_ms = k_ticks_to_ms_floor32(req_timeout_ticks);
+			struct zsock_pollfd pfd;
+			int pollres;
+
+			pfd.fd = sock;
+			pfd.events = ZSOCK_POLLOUT;
+
+			pollres = zsock_poll(&pfd, 1, req_timeout_ms);
+			if (pollres == 0) {
+				return -ETIMEDOUT;
+			} else if (pollres > 0) {
+				continue;
+			} else {
+				return -errno;
+			}
+		} else if (out_len < 0) {
+			return -errno;
+		}
+
+		__ASSERT_NO_MSG(out_len <= len);
+
+		buf = (const char *)buf + out_len;
+		len -= out_len;
+
+		if (sent_len != NULL) {
+			*sent_len += out_len;
+		}
+	}
+
+	return 0;
+}
+
+int zsock_sendmsg_all(int sock, const struct net_msghdr *message, int flags,
+		      k_timeout_t timeout, size_t *sent_len)
+{
+	size_t total_len = 0;
+	size_t offset = 0;
+	k_timepoint_t end;
+	int ret, i, opt;
+
+	if (sent_len != NULL) {
+		*sent_len = 0;
+	}
+
+	/* This function is only meaningful for stream sockets. */
+	ret = zsock_getsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_TYPE,
+			       &opt, &(net_socklen_t){ sizeof(opt) });
+	if (ret < 0) {
+		return -errno;
+	}
+
+	if (opt != NET_SOCK_STREAM) {
+		return -EOPNOTSUPP;
+	}
+
+	for (i = 0; i < message->msg_iovlen; i++) {
+		total_len += message->msg_iov[i].iov_len;
+	}
+
+	end = sys_timepoint_calc(timeout);
+
+	while (offset < total_len) {
+		ret = zsock_sendmsg(sock, message, ZSOCK_MSG_DONTWAIT | flags);
+		if ((ret == 0) || (ret < 0 && errno == EAGAIN)) {
+			k_ticks_t req_timeout_ticks = sys_timepoint_timeout(end).ticks;
+			int req_timeout_ms = k_ticks_to_ms_floor32(req_timeout_ticks);
+			struct zsock_pollfd pfd;
+			int pollres;
+
+			pfd.fd = sock;
+			pfd.events = ZSOCK_POLLOUT;
+
+			pollres = zsock_poll(&pfd, 1, req_timeout_ms);
+			if (pollres == 0) {
+				return -ETIMEDOUT;
+			} else if (pollres > 0) {
+				continue;
+			} else {
+				return -errno;
+			}
+		} else if (ret < 0) {
+			return -errno;
+		}
+
+		if (sent_len != NULL) {
+			*sent_len += ret;
+		}
+
+		offset += ret;
+		if (offset >= total_len) {
+			break;
+		}
+
+		/* Update msghdr for the next iteration. */
+		for (i = 0; i < message->msg_iovlen; i++) {
+			if (ret < message->msg_iov[i].iov_len) {
+				message->msg_iov[i].iov_len -= ret;
+				message->msg_iov[i].iov_base =
+					(uint8_t *)message->msg_iov[i].iov_base + ret;
+				break;
+			}
+
+			ret -= message->msg_iov[i].iov_len;
+			message->msg_iov[i].iov_len = 0;
+		}
+	}
+
+	return 0;
+}
