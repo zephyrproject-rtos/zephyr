@@ -69,6 +69,11 @@ struct usbip_cmd_node {
 K_MEM_SLAB_DEFINE(usbip_slab, sizeof(struct usbip_cmd_node),
 		  CONFIG_USBIP_SUBMIT_BACKLOG_COUNT, sizeof(void *));
 
+static ALWAYS_INLINE int usbip_send(int sock, const void *const buf, const size_t len)
+{
+	return zsock_send_all(sock, buf, len, 0, K_FOREVER, NULL);
+}
+
 static void usbip_ntoh_command(struct usbip_command *const cmd)
 {
 	cmd->hdr.command = net_ntohl(cmd->hdr.command);
@@ -171,20 +176,18 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 		check_ctrl_request(dev_ctx->udev, xfer->ep, xfer->setup_pkt);
 	}
 
-	err = zsock_send(dev_ctx->connfd, &ret, sizeof(ret), 0);
-	if (err != sizeof(ret)) {
+	err = usbip_send(dev_ctx->connfd, &ret, sizeof(ret));
+	if (err != 0) {
 		LOG_ERR("Send RET_SUBMIT failed err %d errno %d", err, errno);
-		err = -errno;
 		goto usbip_req_cb_error;
 	}
 
 	if (USB_EP_DIR_IS_IN(xfer->ep) && ret.submit.actual_length != 0) {
 		LOG_INF("Send RET_SUBMIT transfer_buffer len %u", buf->len);
-		err = zsock_send(dev_ctx->connfd, buf->data, buf->len, 0);
-		if (err != buf->len) {
+		err = usbip_send(dev_ctx->connfd, buf->data, buf->len);
+		if (err != 0) {
 			LOG_ERR("Send transfer_buffer failed err %d errno %d",
 				err, errno);
-			err = -errno;
 			goto usbip_req_cb_error;
 		}
 	}
@@ -372,12 +375,7 @@ static int usbip_handle_unlink(struct usbip_dev_ctx *const dev_ctx,
 	}
 	irq_unlock(key);
 
-	ret = zsock_send(dev_ctx->connfd, &rsp, sizeof(rsp), 0);
-	if (ret != sizeof(rsp)) {
-		return -errno;
-	}
-
-	return 0;
+	return usbip_send(dev_ctx->connfd, &rsp, sizeof(rsp));
 }
 
 static int usbip_handle_cmd(struct usbip_dev_ctx *const dev_ctx)
@@ -433,7 +431,6 @@ static int handle_devlist_device(struct usb_device *const udev,
 	struct usb_cfg_descriptor *c_desc = udev->cfg_desc;
 	static struct usbip_devlist_data devlist;
 	const uint32_t devnum = udev->addr;
-	int err;
 
 	devlist.busnum = net_htonl(busnum);
 	devlist.devnum = net_htonl(devnum);
@@ -462,12 +459,7 @@ static int handle_devlist_device(struct usb_device *const udev,
 	LOG_INF("bmAttributes\t\t%02x", c_desc->bmAttributes);
 	LOG_INF("bMaxPower\t\t%u mA", c_desc->bMaxPower * 2);
 
-	err = zsock_send(connfd, &devlist, sizeof(devlist), 0);
-	if (err != sizeof(devlist)) {
-		return -errno;
-	}
-
-	return 0;
+	return usbip_send(connfd, &devlist, sizeof(devlist));
 }
 
 static int handle_devlist_device_iface(struct usb_device *const udev, int connfd)
@@ -489,10 +481,10 @@ static int handle_devlist_device_iface(struct usb_device *const udev, int connfd
 		iface.bInterfaceProtocol = if_d->bInterfaceProtocol;
 		iface.padding = 0U;
 
-		err = zsock_send(connfd, &iface, sizeof(iface), 0);
-		if (err != sizeof(iface)) {
+		err = usbip_send(connfd, &iface, sizeof(iface));
+		if (err != 0) {
 			LOG_ERR("Failed to send interface info %d", err);
-			return -errno;
+			return err;
 		}
 	}
 
@@ -517,9 +509,9 @@ static int usbip_handle_devlist(struct usbip_bus_ctx *const bus_ctx, int connfd)
 
 	rep_hdr.ndev = net_htonl(ndev);
 	/* Send reply header with the number of USB devices  */
-	err = zsock_send(connfd, &rep_hdr, sizeof(rep_hdr), 0);
-	if (err != sizeof(rep_hdr)) {
-		return -errno;
+	err = usbip_send(connfd, &rep_hdr, sizeof(rep_hdr));
+	if (err != 0) {
+		return err;
 	}
 
 	/* Send device info for each USB devices */
@@ -602,9 +594,9 @@ static int usbip_handle_import(struct usbip_bus_ctx *const bus_ctx, int connfd)
 		}
 	}
 
-	ret = zsock_send(connfd, &rep_hdr, sizeof(rep_hdr), 0);
-	if (ret != sizeof(rep_hdr)) {
-		return -errno;
+	ret = usbip_send(connfd, &rep_hdr, sizeof(rep_hdr));
+	if (ret != 0) {
+		return ret;
 	}
 
 	if (rep_hdr.status || dev_ctx == NULL) {
