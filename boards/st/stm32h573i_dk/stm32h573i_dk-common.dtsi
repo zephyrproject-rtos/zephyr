@@ -261,10 +261,6 @@
 	status = "okay";
 };
 
-&rng {
-	status = "okay";
-};
-
 &mac {
 	status = "okay";
 	pinctrl-0 = <&eth_rxd0_pc4
