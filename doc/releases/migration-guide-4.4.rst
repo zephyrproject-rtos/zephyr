@@ -807,6 +807,11 @@ Networking
   to automatically enable all the dependencies of a given ciphersuite, and more can be added as
   needed following the same pattern.
 
+* Resource-related metadata for CoAP ``.well-known/core`` responses is now configured with a dedicated
+  :c:member:`coap_resource.metadata` pointer instead of :c:member:`coap_resource.user_data`, which
+  should remain for the application to use exclusively. Applications implementing CoAP
+  ``.well-known/core`` handling should be updated to use the new pointer.
+
 Modem
 *****
 
