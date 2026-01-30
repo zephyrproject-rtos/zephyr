@@ -13,6 +13,7 @@
 #include <lvgl.h>
 #include <lvgl_zephyr.h>
 #include <string.h>
+#include "bt.h"
 
 LOG_MODULE_REGISTER(esp32s3_box3_lvgl_touch, LOG_LEVEL_INF);
 
@@ -172,6 +173,16 @@ int main(void)
 {
 	LOG_INF("=== ESP32-S3-BOX-3 LVGL Touch Demo ===");
 	LOG_INF("Board: %s", CONFIG_BOARD);
+
+	/* Initialize Bluetooth beacon */
+	LOG_INF("Initializing Bluetooth beacon...");
+	int bt_ret = init_bluetooth();
+	if (bt_ret) {
+		LOG_ERR("Failed to initialize Bluetooth: %d", bt_ret);
+		/* Continue with LVGL demo even if Bluetooth fails */
+	} else {
+		LOG_INF("Bluetooth beacon initialized successfully");
+	}
 
 	/* Check if GT911 touch is ready */
 	const struct device *gt911_dev = DEVICE_DT_GET(GT911_NODE);

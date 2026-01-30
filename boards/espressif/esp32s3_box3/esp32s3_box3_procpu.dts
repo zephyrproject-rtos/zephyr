@@ -29,6 +29,7 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,display = &esp32_lcd;
 		zephyr,keyboard-scan = &gt911;
+		zephyr,bt-hci = &esp32_bt_hci;
 	};
 
 	buttons {
@@ -115,6 +116,10 @@
 };
 
 &wdt0 {
+	status = "okay";
+};
+
+&esp32_bt_hci {
 	status = "okay";
 };
 
