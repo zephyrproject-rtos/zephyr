@@ -1,0 +1,11 @@
+# Infineon TC4X GPIO configuration options
+
+# Copyright (c) 2024 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_TC3X
+	bool "Infineon TC3X GPIO driver"
+	default y
+	depends on DT_HAS_INFINEON_TC3X_GPIO_ENABLED
+	help
+	  Enable Infineon TC3X GPIO driver.
