@@ -119,7 +119,7 @@ Especially, migration between 1,2,4,8-bytes write block sizes is allowed.
 Sample
 ******
 
-A sample of how NVS can be used is supplied in ``samples/subsys/nvs``.
+A sample of how NVS can be used is supplied in ``samples/subsys/kvss/nvs``.
 
 Troubleshooting
 ***************
