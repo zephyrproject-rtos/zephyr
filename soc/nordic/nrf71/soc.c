@@ -30,6 +30,7 @@
 #include <hal/nrf_glitchdet.h>
 #endif
 
+#include <soc.h>
 #include <nrfx.h>
 #include <lib/nrfx_coredep.h>
 
