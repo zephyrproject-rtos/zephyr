@@ -31,7 +31,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_stm32_xspi, CONFIG_FLASH_LOG_LEVEL);
 
-#define STM32_XSPI_NODE DT_INST_PARENT(0)
+#define STM32_XSPI_NODE(inst) DT_INST_PARENT(inst)
 
 #define STM32_XSPI_RESET_GPIO DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 
@@ -2128,31 +2128,30 @@ static int flash_stm32_xspi_init(const struct device *dev)
 		return -EIO;
 	}
 
-#if DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE, xspi_ker)
-	/* Kernel clock config for peripheral if any */
-	if (clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					(clock_control_subsys_t) &dev_cfg->pclken_ker,
-					NULL) != 0) {
-		LOG_ERR("Could not select XSPI domain clock");
-		return -EIO;
+	if (dev_cfg->has_pclken_ker) {
+		/* Kernel clock config for peripheral if any */
+		if (clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+			(clock_control_subsys_t) &dev_cfg->pclken_ker, NULL) != 0) {
+			LOG_ERR("Could not select XSPI domain clock");
+			return -EIO;
+		}
+
+		if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+			(clock_control_subsys_t) &dev_cfg->pclken_ker,
+								&ahb_clock_freq) < 0) {
+			LOG_ERR("Failed call clock_control_get_rate(pclken_ker)");
+			return -EIO;
+		}
 	}
 
-	if (clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-					(clock_control_subsys_t) &dev_cfg->pclken_ker,
-					&ahb_clock_freq) < 0) {
-		LOG_ERR("Failed call clock_control_get_rate(pclken_ker)");
-		return -EIO;
-	}
-#endif /* xspi_ker */
-
-#if DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE, xspi_mgr)
-	/* Clock domain corresponding to the IO-Mgr (XSPIM) */
-	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+	if (dev_cfg->has_pclken_mgr) {
+		/* Clock domain corresponding to the IO-Mgr (XSPIM) */
+		if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 				(clock_control_subsys_t) &dev_cfg->pclken_mgr) != 0) {
-		LOG_ERR("Could not enable XSPI Manager clock");
-		return -EIO;
+			LOG_ERR("Could not enable XSPI Manager clock");
+			return -EIO;
+		}
 	}
-#endif /* xspi_mgr */
 
 	for (; prescaler <= STM32_XSPI_CLOCK_PRESCALER_MAX; prescaler++) {
 		uint32_t clk = STM32_XSPI_CLOCK_COMPUTE(ahb_clock_freq, prescaler);
@@ -2476,83 +2475,93 @@ static int flash_stm32_xspi_init(const struct device *dev)
 			     DT_STRING_TOKEN(DT_DRV_INST(inst), quad_enable_requirements))),	\
 		    ((default_value)))
 
-PINCTRL_DT_DEFINE(STM32_XSPI_NODE);
+#define XSPI_STM32_INIT(inst)									\
+												\
+	PINCTRL_DT_DEFINE(STM32_XSPI_NODE(inst));						\
+												\
+	static void flash_stm32_xspi_irq_config_func_##inst(const struct device *dev)		\
+	{											\
+		IRQ_CONNECT(DT_IRQN(STM32_XSPI_NODE(inst)),					\
+			    DT_IRQ(STM32_XSPI_NODE(inst), priority),				\
+			    flash_stm32_xspi_isr, DEVICE_DT_INST_GET(inst), 0);			\
+		irq_enable(DT_IRQN(STM32_XSPI_NODE(inst)));					\
+	}											\
+												\
+	static const struct flash_stm32_xspi_config flash_stm32_xspi_cfg_##inst = {		\
+		/* Properties of the controller */						\
+		.pclken = STM32_CLOCK_INFO_BY_NAME(STM32_XSPI_NODE(inst), xspix),		\
+		IF_ENABLED(DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE(inst), xspi_ker),	(		\
+			.has_pclken_ker = true,							\
+			.pclken_ker = STM32_CLOCK_INFO_BY_NAME(STM32_XSPI_NODE(inst), xspi_ker),\
+		))										\
+		IF_ENABLED(DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE(inst),  xspi_mgr), (		\
+			.has_pclken_mgr = true,							\
+			.pclken_mgr = STM32_CLOCK_INFO_BY_NAME(STM32_XSPI_NODE(inst), xspi_mgr),\
+		))										\
+		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(STM32_XSPI_NODE(inst)),			\
+		.irq_config = flash_stm32_xspi_irq_config_func_##inst,				\
+		.mem_map_based_address = DT_REG_ADDR_BY_IDX(STM32_XSPI_NODE(inst), 1),		\
+												\
+		/* Properties of the flash device */						\
+		.flash_size = DT_INST_PROP(inst, size) / 8,			/* In Bytes */	\
+		.max_frequency = DT_INST_PROP(inst, ospi_max_frequency),			\
+		.data_mode = DT_INST_PROP(inst, spi_bus_width),			/* SPI or OPI */\
+		.data_rate = DT_INST_PROP(inst, data_rate),			/* DTR or STR */\
+		.four_byte_opcodes = DT_INST_PROP_OR(inst, four_byte_opcodes, 0),		\
+		.requires_ulbpr = DT_INST_PROP_OR(inst, requires_ulbpr, 0),			\
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, reset_gpios), (				\
+			.reset = GPIO_DT_SPEC_INST_GET(0, reset_gpios),				\
+			.reset_gpios_duration = DT_INST_PROP(inst, reset_gpios_duration),	\
+		))										\
+	};											\
+												\
+	static struct flash_stm32_xspi_data flash_stm32_xspi_dev_data_##inst = {		\
+		.hxspi = {									\
+			.Instance = (XSPI_TypeDef *)DT_REG_ADDR(STM32_XSPI_NODE(inst)),		\
+			.Init = {								\
+				.FifoThresholdByte = STM32_XSPI_FIFO_THRESHOLD,			\
+				.SampleShifting = (DT_PROP(STM32_XSPI_NODE(inst), ssht_enable)	\
+						? HAL_XSPI_SAMPLE_SHIFT_HALFCYCLE		\
+						: HAL_XSPI_SAMPLE_SHIFT_NONE),			\
+				.ChipSelectHighTimeCycle = 2,					\
+				.ClockMode = HAL_XSPI_CLOCK_MODE_0,				\
+				.ChipSelectBoundary = 0,					\
+				.MemoryMode = HAL_XSPI_SINGLE_MEM,				\
+				.FreeRunningClock = HAL_XSPI_FREERUNCLK_DISABLE,		\
+			IF_ENABLED(defined(HAL_XSPIM_IOPORT_1) || defined(HAL_XSPIM_IOPORT_2), (\
+					.MemorySelect = ((DT_INST_PROP(inst, ncs_line) == 1)	\
+								? HAL_XSPI_CSSEL_NCS1		\
+								: HAL_XSPI_CSSEL_NCS2),		\
+			))									\
+			IF_ENABLED(defined(XSPI_DCR1_DLYBYP), (					\
+					.DelayBlockBypass = (DT_PROP(STM32_XSPI_NODE(inst),	\
+										   dlyb_bypass)	\
+								? HAL_XSPI_DELAY_BLOCK_BYPASS	\
+								: HAL_XSPI_DELAY_BLOCK_ON),	\
+			))									\
+			IF_ENABLED(defined(XSPI_DCR3_MAXTRAN), (				\
+					.MaxTran = 0,						\
+			))									\
+			IF_ENABLED(defined(XSPI_DCR4_REFRESH), (				\
+					.Refresh = 0,						\
+			))									\
+			},									\
+		},										\
+												\
+		.qer_type = DT_QER_PROP_OR(inst, JESD216_DW15_QER_VAL_S1B6),			\
+		.write_opcode = DT_WRITEOC_PROP_OR(inst, SPI_NOR_WRITEOC_NONE),			\
+		.page_size = SPI_NOR_PAGE_SIZE, /* by default, to be updated by sfdp */		\
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, jedec_id), (				\
+			.jedec_id = DT_INST_PROP(inst, jedec_id),				\
+		))										\
+												\
+		XSPI_DMA_CHANNEL(STM32_XSPI_NODE(inst), tx, TX, MEMORY, PERIPHERAL)		\
+		XSPI_DMA_CHANNEL(STM32_XSPI_NODE(inst), rx, RX, PERIPHERAL, MEMORY)		\
+	};											\
+												\
+	DEVICE_DT_INST_DEFINE(inst, &flash_stm32_xspi_init, NULL,				\
+			      &flash_stm32_xspi_dev_data_##inst, &flash_stm32_xspi_cfg_##inst,	\
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			\
+			      &flash_stm32_xspi_driver_api);
 
-static void flash_stm32_xspi_irq_config_func(const struct device *dev)
-{
-	IRQ_CONNECT(DT_IRQN(STM32_XSPI_NODE), DT_IRQ(STM32_XSPI_NODE, priority),
-		    flash_stm32_xspi_isr, DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_IRQN(STM32_XSPI_NODE));
-}
-
-static const struct flash_stm32_xspi_config flash_stm32_xspi_cfg = {
-	/* Properties of the controller */
-	.pclken = STM32_CLOCK_INFO_BY_NAME(STM32_XSPI_NODE, xspix),
-#if DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE, xspi_ker)
-	.pclken_ker = STM32_CLOCK_INFO_BY_NAME(STM32_XSPI_NODE, xspi_ker),
-#endif /* xspi_ker */
-#if DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE, xspi_mgr)
-	.pclken_mgr = STM32_CLOCK_INFO_BY_NAME(STM32_XSPI_NODE, xspi_mgr),
-#endif /* xspi_mgr */
-	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(STM32_XSPI_NODE),
-	.irq_config = flash_stm32_xspi_irq_config_func,
-	.mem_map_based_address = DT_REG_ADDR_BY_IDX(STM32_XSPI_NODE, 1),
-
-	/* Properties of the flash device */
-	.flash_size = DT_INST_PROP(0, size) / 8, /* In Bytes */
-	.max_frequency = DT_INST_PROP(0, ospi_max_frequency),
-	.data_mode = DT_INST_PROP(0, spi_bus_width), /* SPI or OPI */
-	.data_rate = DT_INST_PROP(0, data_rate), /* DTR or STR */
-	.four_byte_opcodes = DT_INST_PROP_OR(0, four_byte_opcodes, 0),
-	.requires_ulbpr = DT_INST_PROP_OR(0, requires_ulbpr, 0),
-#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
-	.reset = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
-	.reset_gpios_duration = DT_INST_PROP(0, reset_gpios_duration),
-#endif /* reset_gpios */
-};
-
-static struct flash_stm32_xspi_data flash_stm32_xspi_dev_data = {
-	.hxspi = {
-		.Instance = (XSPI_TypeDef *)DT_REG_ADDR(STM32_XSPI_NODE),
-		.Init = {
-			.FifoThresholdByte = STM32_XSPI_FIFO_THRESHOLD,
-			.SampleShifting = (DT_PROP(STM32_XSPI_NODE, ssht_enable)
-					? HAL_XSPI_SAMPLE_SHIFT_HALFCYCLE
-					: HAL_XSPI_SAMPLE_SHIFT_NONE),
-			.ChipSelectHighTimeCycle = 1,
-			.ClockMode = HAL_XSPI_CLOCK_MODE_0,
-			.ChipSelectBoundary = 0,
-			.MemoryMode = HAL_XSPI_SINGLE_MEM,
-#if defined(HAL_XSPIM_IOPORT_1) || defined(HAL_XSPIM_IOPORT_2)
-			.MemorySelect = ((DT_INST_PROP(0, ncs_line) == 1)
-					? HAL_XSPI_CSSEL_NCS1
-					: HAL_XSPI_CSSEL_NCS2),
-#endif
-			.FreeRunningClock = HAL_XSPI_FREERUNCLK_DISABLE,
-#if defined(XSPI_DCR1_DLYBYP)
-			.DelayBlockBypass = (DT_PROP(STM32_XSPI_NODE, dlyb_bypass)
-					? HAL_XSPI_DELAY_BLOCK_BYPASS
-					: HAL_XSPI_DELAY_BLOCK_ON),
-#endif /* XSPI_DCR1_DLYBYP */
-#if defined(XSPI_DCR3_MAXTRAN)
-			.MaxTran = 0,
-#endif /* XSPI_DCR3_MAXTRAN */
-#if defined(XSPI_DCR4_REFRESH)
-			.Refresh = 0,
-#endif /* XSPI_DCR4_REFRESH */
-		},
-	},
-	.qer_type = DT_QER_PROP_OR(0, JESD216_DW15_QER_VAL_S1B6),
-	.write_opcode = DT_WRITEOC_PROP_OR(0, SPI_NOR_WRITEOC_NONE),
-	.page_size = SPI_NOR_PAGE_SIZE, /* by default, to be updated by sfdp */
-#if DT_INST_NODE_HAS_PROP(0, jedec_id)
-	.jedec_id = DT_INST_PROP(0, jedec_id),
-#endif /* jedec_id */
-	XSPI_DMA_CHANNEL(STM32_XSPI_NODE, tx, TX, MEMORY, PERIPHERAL)
-	XSPI_DMA_CHANNEL(STM32_XSPI_NODE, rx, RX, PERIPHERAL, MEMORY)
-};
-
-DEVICE_DT_INST_DEFINE(0, &flash_stm32_xspi_init, NULL,
-		      &flash_stm32_xspi_dev_data, &flash_stm32_xspi_cfg,
-		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		      &flash_stm32_xspi_driver_api);
+DT_INST_FOREACH_STATUS_OKAY(XSPI_STM32_INIT)
