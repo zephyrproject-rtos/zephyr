@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_TC3X_CCU
+	bool "TC3x Clock Control Unit Driver"
+	default y
+	depends on DT_HAS_INFINEON_TC3X_CCU_ENABLED
+
+config CLOCK_CONTROL_TC4X_CCU
+	bool "TC4x Clock Control Unit Driver"
+	default y
+	depends on DT_HAS_INFINEON_TC4X_CCU_ENABLED
