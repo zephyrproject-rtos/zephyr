@@ -287,6 +287,8 @@ struct coap_resource {
 	const char * const *path;
 	/** User specific opaque data */
 	void *user_data;
+	/** Resource metadata for '.well-known/core' responses */
+	struct coap_core_metadata *metadata;
 	/** List of resource observers */
 	sys_slist_t observers;
 	/** Resource age */

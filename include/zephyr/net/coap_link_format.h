@@ -66,7 +66,7 @@ int coap_well_known_core_get_len(struct coap_resource *resources,
 
 /**
  * In case you want to add attributes to the resources included in the
- * 'well-known/core' "virtual" resource, the 'user_data' field should point
+ * 'well-known/core' "virtual" resource, the 'metadata' field should point
  * to a valid coap_core_metadata structure.
  */
 struct coap_core_metadata {
