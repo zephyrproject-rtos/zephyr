@@ -175,10 +175,10 @@
 			dma-names = "rx", "tx";
 		};
 
-		lpuart1: lpuart@4009a000 {
+		lpuart1: lpuart@400a0000 {
 			compatible = "nxp,lpuart";
 			status = "disabled";
-			reg = <0x4009a000 0x1000>;
+			reg = <0x400a0000 0x1000>;
 			interrupts = <32 0>;
 			clocks = <&syscon MCUX_LPUART1_CLK>;
 			/* DMA channels 2 and 3 muxed to LPUART1 RX and TX */
