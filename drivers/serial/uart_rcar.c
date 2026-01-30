@@ -18,6 +18,7 @@
 
 struct uart_rcar_cfg {
 	DEVICE_MMIO_ROM; /* Must be first */
+	uint32_t sys_clk_freq;
 	const struct device *clock_dev;
 	struct rcar_cpg_clk mod_clk;
 	struct rcar_cpg_clk bus_clk;
@@ -303,11 +304,15 @@ static int uart_rcar_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = clock_control_get_rate(config->clock_dev,
-				     (clock_control_subsys_t)&config->bus_clk,
-				     &data->clk_rate);
-	if (ret < 0) {
-		return ret;
+	if (config->sys_clk_freq > 0) {
+		data->clk_rate = config->sys_clk_freq;
+	} else {
+		ret = clock_control_get_rate(config->clock_dev,
+					     (clock_control_subsys_t)&config->bus_clk,
+					     &data->clk_rate);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
@@ -544,6 +549,7 @@ static DEVICE_API(uart, uart_rcar_driver_api) = {
 	PINCTRL_DT_INST_DEFINE(n);							\
 	static const struct uart_rcar_cfg uart_rcar_cfg_##compat##n = {			\
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),					\
+		.sys_clk_freq = DT_INST_PROP_OR(n, clock_frequency, 0),			\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),			\
 		.mod_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, module),		\
 		.mod_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, domain),		\
