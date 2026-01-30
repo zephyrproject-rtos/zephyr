@@ -55,7 +55,7 @@ config EXT2_SUPERBLOCK_ALIGNMENT
 
 config EXT2_FSTAB_AUTOMOUNT
 	bool "Support for fstab auto-mounting"
-	depends on $(dt_compat_enabled,$(DT_COMPAT_ZEPHYR_FSTAB_EXT2))
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ZEPHYR_FSTAB_EXT2),automount,True)
 	default y
 	help
 	  Enable automatic mounting of Ext2 file system at boot time.
