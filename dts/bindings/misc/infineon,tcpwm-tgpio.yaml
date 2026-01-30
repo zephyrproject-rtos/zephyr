@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Linumiz.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon tgpio
+
+compatible: "infineon,tcpwm-tgpio"
+
+include: [base.yaml, pinctrl-device.yaml, "infineon,system-interrupts.yaml"]
