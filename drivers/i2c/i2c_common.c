@@ -40,7 +40,7 @@ void i2c_dump_msgs_rw(const struct device *dev, const struct i2c_msg *msgs, uint
 		      uint16_t addr, bool dump_read)
 {
 #ifdef CONFIG_I2C_DUMP_MESSAGES_ALLOWLIST
-	bool found_dev = 0;
+	bool found_dev = false;
 
 	for (int a = 0; a < ARRAY_SIZE(messages_allowlist); a++) {
 		struct i2c_dt_spec *allowed = &messages_allowlist[a];
@@ -48,7 +48,7 @@ void i2c_dump_msgs_rw(const struct device *dev, const struct i2c_msg *msgs, uint
 		if (dev != allowed->bus || addr != allowed->addr) {
 			continue;
 		} else {
-			found_dev = 1;
+			found_dev = true;
 			break;
 		}
 	}
