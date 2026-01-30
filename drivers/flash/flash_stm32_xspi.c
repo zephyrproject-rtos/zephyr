@@ -33,15 +33,7 @@ LOG_MODULE_REGISTER(flash_stm32_xspi, CONFIG_FLASH_LOG_LEVEL);
 
 #define STM32_XSPI_NODE DT_INST_PARENT(0)
 
-#define DT_XSPI_IO_PORT_PROP_OR(prop, default_value)					\
-	COND_CODE_1(DT_NODE_HAS_PROP(STM32_XSPI_NODE, prop),				\
-		    (_CONCAT(HAL_XSPIM_, DT_STRING_TOKEN(STM32_XSPI_NODE, prop))),	\
-		    ((default_value)))
-
-/* Get the base address of the flash from the DTS st,stm32-xspi node */
-#define STM32_XSPI_BASE_ADDRESS DT_REG_ADDR_BY_IDX(STM32_XSPI_NODE, 1)
-
-#define STM32_XSPI_RESET_GPIO DT_INST_NODE_HAS_PROP(0, reset_gpios)
+#define STM32_XSPI_RESET_GPIO DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 
 #ifdef CONFIG_FLASH_STM32_XSPI_DMA
 #include <zephyr/drivers/dma/dma_stm32.h>
@@ -799,7 +791,7 @@ static int stm32_xspi_mem_reset(const struct device *dev)
 
 	/* Generate RESETn pulse for the flash memory */
 	gpio_pin_configure_dt(&dev_cfg->reset, GPIO_OUTPUT_ACTIVE);
-	k_msleep(DT_INST_PROP(0, reset_gpios_duration));
+	k_msleep(dev_cfg->reset_gpios_duration);
 	gpio_pin_set_dt(&dev_cfg->reset, 0);
 #else
 
@@ -1236,7 +1228,7 @@ static int flash_stm32_xspi_read(const struct device *dev, off_t addr,
 
 	__ASSERT_NO_MSG(stm32_xspi_is_memorymap(dev));
 #endif /* CONFIG_STM32_MEMMAP */
-	uintptr_t mmap_addr = STM32_XSPI_BASE_ADDRESS + addr;
+	uintptr_t mmap_addr = dev_cfg->mem_map_based_address + addr;
 
 	LOG_DBG("Memory-mapped read from 0x%08lx, len %zu", mmap_addr, size);
 	memcpy(data, (void *)mmap_addr, size);
@@ -1302,7 +1294,7 @@ static int flash_stm32_xspi_read(const struct device *dev, off_t addr,
 
 	LOG_DBG("XSPI: read %zu data at 0x%lx",
 		size,
-		(long)(STM32_XSPI_BASE_ADDRESS + addr));
+		(long)(dev_cfg->mem_map_based_address + addr));
 	xspi_lock_thread(dev);
 
 	ret = xspi_read_access(dev, &cmd, data, size);
@@ -1394,7 +1386,7 @@ static int flash_stm32_xspi_write(const struct device *dev, off_t addr,
 
 	LOG_DBG("XSPI: write %zu data at 0x%lx",
 		size,
-		(long)(STM32_XSPI_BASE_ADDRESS + addr));
+		(long)(dev_cfg->mem_map_based_address + addr));
 
 	ret = stm32_xspi_mem_ready(dev,
 				   dev_cfg->data_mode, dev_cfg->data_rate);
@@ -1958,7 +1950,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 		}
 
 		/* convert 3-Byte opcodes to 4-Byte (if required) */
-		if (IS_ENABLED(DT_INST_PROP(0, four_byte_opcodes))) {
+		if (dev_cfg->four_byte_opcodes) {
 			if (data->address_width != 4U) {
 				LOG_DBG("4-Byte opcodes require 4-Byte address width");
 				return -ENOTSUP;
@@ -2413,7 +2405,7 @@ static int flash_stm32_xspi_init(const struct device *dev)
 	}
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
-	if (IS_ENABLED(DT_INST_PROP(0, requires_ulbpr))) {
+	if (dev_cfg->requires_ulbpr) {
 		ret = xspi_write_unprotect(dev);
 		if (ret != 0) {
 			LOG_ERR("write unprotect failed: %d", ret);
@@ -2429,11 +2421,11 @@ static int flash_stm32_xspi_init(const struct device *dev)
 		return ret;
 	}
 	LOG_INF("Memory-mapped NOR-flash at 0x%lx (0x%x bytes)",
-		(long)(STM32_XSPI_BASE_ADDRESS),
+		(long)(dev_cfg->mem_map_based_address),
 		dev_cfg->flash_size);
 #else
 	LOG_INF("NOR external-flash at 0x%lx (0x%x bytes)",
-		(long)(STM32_XSPI_BASE_ADDRESS),
+		(long)(dev_cfg->mem_map_based_address),
 		dev_cfg->flash_size);
 #endif /* CONFIG_STM32_MEMMAP*/
 	return 0;
@@ -2499,14 +2491,18 @@ static const struct flash_stm32_xspi_config flash_stm32_xspi_cfg = {
 	.pclken_mgr = STM32_CLOCK_INFO_BY_NAME(STM32_XSPI_NODE, xspi_mgr),
 #endif /* xspi_mgr */
 	.irq_config = flash_stm32_xspi_irq_config_func,
+	.mem_map_based_address = DT_REG_ADDR_BY_IDX(STM32_XSPI_NODE, 1),
 	.flash_size = DT_INST_PROP(0, size) / 8, /* In Bytes */
 	.max_frequency = DT_INST_PROP(0, ospi_max_frequency),
 	.data_mode = DT_INST_PROP(0, spi_bus_width), /* SPI or OPI */
 	.data_rate = DT_INST_PROP(0, data_rate), /* DTR or STR */
+	.four_byte_opcodes = DT_INST_PROP_OR(0, four_byte_opcodes, 0),
+	.requires_ulbpr = DT_INST_PROP_OR(0, requires_ulbpr, 0),
 	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(STM32_XSPI_NODE),
-#if STM32_XSPI_RESET_GPIO
+#if DT_INST_NODE_HAS_PROP(0, reset_gpios)
 	.reset = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
-#endif /* STM32_XSPI_RESET_GPIO */
+	.reset_gpios_duration = DT_INST_PROP(0, reset_gpios_duration),
+#endif /* reset_gpios */
 };
 
 static struct flash_stm32_xspi_data flash_stm32_xspi_dev_data = {
@@ -2543,7 +2539,7 @@ static struct flash_stm32_xspi_data flash_stm32_xspi_dev_data = {
 	.qer_type = DT_QER_PROP_OR(0, JESD216_DW15_QER_VAL_S1B6),
 	.write_opcode = DT_WRITEOC_PROP_OR(0, SPI_NOR_WRITEOC_NONE),
 	.page_size = SPI_NOR_PAGE_SIZE, /* by default, to be updated by sfdp */
-#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_ospi_nor), jedec_id)
+#if DT_INST_NODE_HAS_PROP(0, jedec_id)
 	.jedec_id = DT_INST_PROP(0, jedec_id),
 #endif /* jedec_id */
 	XSPI_DMA_CHANNEL(STM32_XSPI_NODE, tx, TX, MEMORY, PERIPHERAL)
