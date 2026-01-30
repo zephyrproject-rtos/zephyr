@@ -38,6 +38,19 @@ tests:
       - xg29_rb4412a
     integration_platforms:
       - robokit1
+  drivers.spi.loopback.rtio_stm32_dma:
+    extra_configs:
+      - CONFIG_SPI_RTIO=y
+      - CONFIG_SPI_RTIO_FALLBACK_MSGS=5
+      - CONFIG_DMA=y
+      - CONFIG_SPI_STM32_DMA=y
+      - CONFIG_SPI_ASYNC=n
+    platform_allow:
+      - nucleo_h723zg
+      - nucleo_wb55rg
+    integration_platforms:
+      - nucleo_h723zg
+      - nucleo_wb55rg
   drivers.spi.mcux_dspi_dma.loopback:
     extra_args:
       - EXTRA_CONF_FILE="overlay-mcux-dspi-dma.conf"
