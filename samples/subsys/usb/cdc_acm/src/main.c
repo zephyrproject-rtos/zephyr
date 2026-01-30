@@ -18,14 +18,48 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(cdc_acm_echo, LOG_LEVEL_INF);
 
-const struct device *const uart_dev = DEVICE_DT_GET_ONE(zephyr_cdc_acm_uart);
-
 #define RING_BUF_SIZE 1024
-uint8_t ring_buffer[RING_BUF_SIZE];
 
-struct ring_buf ringbuf;
+/*
+ * Per-instance data for each CDC-ACM UART device.
+ * This allows supporting multiple CDC-ACM instances simultaneously.
+ * Each instance has its own thread to handle connections independently.
+ */
+struct cdc_acm_instance {
+	const struct device *uart_dev;
+	uint8_t ring_buffer[RING_BUF_SIZE];
+	struct ring_buf ringbuf;
+	struct k_sem dtr_sem;
+	struct k_thread thread;
+	k_thread_stack_t *stack;
+	size_t idx;
+	bool rx_throttled;
+	bool initialized;
+};
 
-static bool rx_throttled;
+#define CDC_ACM_STACK_SIZE 1024
+
+/* Define stack for each instance */
+#define CDC_ACM_STACK_DEFINE(node_id)					\
+	K_THREAD_STACK_DEFINE(cdc_acm_stack_##node_id, CDC_ACM_STACK_SIZE);
+
+DT_FOREACH_STATUS_OKAY(zephyr_cdc_acm_uart, CDC_ACM_STACK_DEFINE)
+
+/* Define instance data for each CDC-ACM UART device */
+#define CDC_ACM_INSTANCE_DEFINE(node_id)				\
+	{								\
+		.uart_dev = DEVICE_DT_GET(node_id),			\
+		.dtr_sem = Z_SEM_INITIALIZER(				\
+			cdc_acm_instances[DT_NODE_CHILD_IDX(node_id)].dtr_sem, 0, 1), \
+		.stack = cdc_acm_stack_##node_id,			\
+		.idx = DT_NODE_CHILD_IDX(node_id),			\
+	},
+
+static struct cdc_acm_instance cdc_acm_instances[] = {
+	DT_FOREACH_STATUS_OKAY(zephyr_cdc_acm_uart, CDC_ACM_INSTANCE_DEFINE)
+};
+
+#define CDC_ACM_INSTANCE_COUNT ARRAY_SIZE(cdc_acm_instances)
 
 static inline void print_baudrate(const struct device *dev)
 {
@@ -40,7 +74,18 @@ static inline void print_baudrate(const struct device *dev)
 	}
 }
 
-K_SEM_DEFINE(dtr_sem, 0, 1);
+/*
+ * Find instance by UART device pointer.
+ */
+static struct cdc_acm_instance *find_instance_by_dev(const struct device *dev)
+{
+	for (size_t i = 0; i < CDC_ACM_INSTANCE_COUNT; i++) {
+		if (cdc_acm_instances[i].uart_dev == dev) {
+			return &cdc_acm_instances[i];
+		}
+	}
+	return NULL;
+}
 
 static void sample_msg_cb(struct usbd_context *const ctx, const struct usbd_msg *msg)
 {
@@ -62,10 +107,12 @@ static void sample_msg_cb(struct usbd_context *const ctx, const struct usbd_msg 
 
 	if (msg->type == USBD_MSG_CDC_ACM_CONTROL_LINE_STATE) {
 		uint32_t dtr = 0U;
+		struct cdc_acm_instance *inst = find_instance_by_dev(msg->dev);
 
 		uart_line_ctrl_get(msg->dev, UART_LINE_CTRL_DTR, &dtr);
-		if (dtr) {
-			k_sem_give(&dtr_sem);
+		if (dtr && inst != NULL) {
+			/* Signal instance semaphore to unblock its thread */
+			k_sem_give(&inst->dtr_sem);
 		}
 	}
 
@@ -112,19 +159,23 @@ static int enable_usb_device_next(void)
 
 static void interrupt_handler(const struct device *dev, void *user_data)
 {
-	ARG_UNUSED(user_data);
+	struct cdc_acm_instance *inst = user_data;
+
+	if (inst == NULL) {
+		return;
+	}
 
 	while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
-		if (!rx_throttled && uart_irq_rx_ready(dev)) {
+		if (!inst->rx_throttled && uart_irq_rx_ready(dev)) {
 			int recv_len, rb_len;
 			uint8_t buffer[64];
-			size_t len = MIN(ring_buf_space_get(&ringbuf),
+			size_t len = MIN(ring_buf_space_get(&inst->ringbuf),
 					 sizeof(buffer));
 
 			if (len == 0) {
 				/* Throttle because ring buffer is full */
 				uart_irq_rx_disable(dev);
-				rx_throttled = true;
+				inst->rx_throttled = true;
 				continue;
 			}
 
@@ -134,7 +185,7 @@ static void interrupt_handler(const struct device *dev, void *user_data)
 				recv_len = 0;
 			};
 
-			rb_len = ring_buf_put(&ringbuf, buffer, recv_len);
+			rb_len = ring_buf_put(&inst->ringbuf, buffer, recv_len);
 			if (rb_len < recv_len) {
 				LOG_ERR("Drop %u bytes", recv_len - rb_len);
 			}
@@ -149,16 +200,16 @@ static void interrupt_handler(const struct device *dev, void *user_data)
 			uint8_t buffer[64];
 			int rb_len, send_len;
 
-			rb_len = ring_buf_get(&ringbuf, buffer, sizeof(buffer));
+			rb_len = ring_buf_get(&inst->ringbuf, buffer, sizeof(buffer));
 			if (!rb_len) {
 				LOG_DBG("Ring buffer empty, disable TX IRQ");
 				uart_irq_tx_disable(dev);
 				continue;
 			}
 
-			if (rx_throttled) {
+			if (inst->rx_throttled) {
 				uart_irq_rx_enable(dev);
-				rx_throttled = false;
+				inst->rx_throttled = false;
 			}
 
 			send_len = uart_fifo_fill(dev, buffer, rb_len);
@@ -171,12 +222,91 @@ static void interrupt_handler(const struct device *dev, void *user_data)
 	}
 }
 
-int main(void)
+static int init_cdc_acm_instance(struct cdc_acm_instance *inst, size_t idx)
 {
 	int ret;
 
-	if (!device_is_ready(uart_dev)) {
-		LOG_ERR("CDC ACM device not ready");
+	if (!device_is_ready(inst->uart_dev)) {
+		LOG_ERR("CDC ACM device %zu not ready", idx);
+		return -ENODEV;
+	}
+
+	ring_buf_init(&inst->ringbuf, sizeof(inst->ring_buffer),
+		      inst->ring_buffer);
+	inst->rx_throttled = false;
+	inst->initialized = true;
+
+	LOG_INF("CDC ACM instance %zu initialized (%s)", idx,
+		inst->uart_dev->name);
+
+	return 0;
+}
+
+static void setup_cdc_acm_instance(struct cdc_acm_instance *inst)
+{
+	int ret;
+
+	/* They are optional, we use them to test the interrupt endpoint */
+	ret = uart_line_ctrl_set(inst->uart_dev, UART_LINE_CTRL_DCD, 1);
+	if (ret) {
+		LOG_WRN("Instance %zu: Failed to set DCD, ret code %d",
+			inst->idx, ret);
+	}
+
+	ret = uart_line_ctrl_set(inst->uart_dev, UART_LINE_CTRL_DSR, 1);
+	if (ret) {
+		LOG_WRN("Instance %zu: Failed to set DSR, ret code %d",
+			inst->idx, ret);
+	}
+
+	uart_irq_callback_user_data_set(inst->uart_dev, interrupt_handler, inst);
+	uart_irq_rx_enable(inst->uart_dev);
+
+	LOG_INF("CDC ACM instance %zu ready for data", inst->idx);
+}
+
+/*
+ * Per-instance thread function.
+ * Each instance waits for its own DTR signal and then sets up the UART.
+ */
+static void cdc_acm_instance_thread(void *p1, void *p2, void *p3)
+{
+	struct cdc_acm_instance *inst = p1;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	LOG_INF("Instance %zu: Waiting for DTR", inst->idx);
+
+	/* Wait for DTR on this instance */
+	k_sem_take(&inst->dtr_sem, K_FOREVER);
+
+	LOG_INF("Instance %zu: DTR set", inst->idx);
+
+	/* Wait 100ms for the host to do all settings */
+	k_msleep(100);
+
+	/* Setup this instance */
+	setup_cdc_acm_instance(inst);
+}
+
+int main(void)
+{
+	int ret;
+	size_t ready_count = 0;
+
+	LOG_INF("CDC ACM Echo sample with %zu instance(s)", CDC_ACM_INSTANCE_COUNT);
+
+	/* Initialize all CDC-ACM instances */
+	for (size_t i = 0; i < CDC_ACM_INSTANCE_COUNT; i++) {
+		ret = init_cdc_acm_instance(&cdc_acm_instances[i], i);
+		if (ret == 0) {
+			ready_count++;
+		}
+	}
+
+	if (ready_count == 0) {
+		LOG_ERR("No CDC ACM devices ready");
 		return 0;
 	}
 
@@ -186,29 +316,24 @@ int main(void)
 		return 0;
 	}
 
-	ring_buf_init(&ringbuf, sizeof(ring_buffer), ring_buffer);
+	/* Spawn a thread for each initialized instance */
+	for (size_t i = 0; i < CDC_ACM_INSTANCE_COUNT; i++) {
+		struct cdc_acm_instance *inst = &cdc_acm_instances[i];
 
-	LOG_INF("Wait for DTR");
-	k_sem_take(&dtr_sem, K_FOREVER);
-	LOG_INF("DTR set");
+		if (!inst->initialized) {
+			continue;
+		}
 
-	/* They are optional, we use them to test the interrupt endpoint */
-	ret = uart_line_ctrl_set(uart_dev, UART_LINE_CTRL_DCD, 1);
-	if (ret) {
-		LOG_WRN("Failed to set DCD, ret code %d", ret);
+		k_thread_create(&inst->thread, inst->stack,
+				CDC_ACM_STACK_SIZE,
+				cdc_acm_instance_thread,
+				inst, NULL, NULL,
+				K_PRIO_COOP(7), 0, K_NO_WAIT);
+
+		k_thread_name_set(&inst->thread, inst->uart_dev->name);
 	}
 
-	ret = uart_line_ctrl_set(uart_dev, UART_LINE_CTRL_DSR, 1);
-	if (ret) {
-		LOG_WRN("Failed to set DSR, ret code %d", ret);
-	}
-
-	/* Wait 100ms for the host to do all settings */
-	k_msleep(100);
-
-	uart_irq_callback_set(uart_dev, interrupt_handler);
-	/* Enable rx interrupts */
-	uart_irq_rx_enable(uart_dev);
+	LOG_INF("All instance threads started");
 
 	return 0;
 }
