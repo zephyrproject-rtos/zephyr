@@ -36,7 +36,7 @@ static void lvgl_keypad_process_event(struct input_event *evt, void *user_data)
 	}
 
 	if (i == cfg->num_codes) {
-		LOG_WRN("Ignored input event: %u", evt->code);
+		LOG_DBG("Ignored input event: %u", evt->code);
 		return;
 	}
 
