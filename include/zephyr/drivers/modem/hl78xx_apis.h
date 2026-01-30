@@ -98,15 +98,15 @@ enum hl78xx_module_status {
 
 /** Cellular modem info type */
 enum hl78xx_modem_info_type {
-	/* <APN> Access Point Name */
+	/** Access Point Name */
 	HL78XX_MODEM_INFO_APN,
-	/* <Current RAT> */
+	/** Current RAT */
 	HL78XX_MODEM_INFO_CURRENT_RAT,
-	/* <Network Operator> */
+	/** Network Operator */
 	HL78XX_MODEM_INFO_NETWORK_OPERATOR,
-	/* <Serial Number> */
+	/** Serial Number */
 	HL78XX_MODEM_INFO_SERIAL_NUMBER,
-	/* Current Baud Rate */
+	/** Current Baud Rate */
 	HL78XX_MODEM_INFO_CURRENT_BAUD_RATE,
 };
 
@@ -663,7 +663,7 @@ static inline int hl78xx_modem_cmd_send(const struct device *dev, const char *cm
  */
 static inline int hl78xx_parse_rssi(uint8_t rssi, int16_t *value)
 {
-	/* AT+CSQ returns a response +CSQ: <rssi>,<ber> where:
+	/* AT+CSQ returns a response +CSQ: \<rssi\>,\<ber\> where:
 	 * - rssi is a integer from 0 to 31 whose values describes a signal strength
 	 *   between -113 dBm for 0 and -51dbM for 31 or unknown for 99
 	 * - ber is an integer from 0 to 7 that describes the error rate, it can also
@@ -692,7 +692,7 @@ static inline int hl78xx_parse_rssi(uint8_t rssi, int16_t *value)
 static inline int hl78xx_parse_rsrp(uint8_t rsrp, int16_t *value)
 {
 	/* AT+CESQ returns a response
-	 * +CESQ: <rxlev>,<ber>,<rscp>,<ecn0>,<rsrq>,<rsrp> where:
+	 * +CESQ: \<rxlev\>,\<ber\>,\<rscp\>,\<ecn0\>,\<rsrq\>,\<rsrp\> where:
 	 * rsrq is a integer from 0 to 34 whose values describes the Reference
 	 * Signal Receive Quality between -20 dB for 0 and -3 dB for 34
 	 * (0.5 dB steps), or unknown for 255
