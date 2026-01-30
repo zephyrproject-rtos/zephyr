@@ -8,6 +8,7 @@
  */
 
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
@@ -428,6 +429,9 @@ static int stm32_clock_control_configure(const struct device *dev,
 					 void *data)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
+	uint32_t enr = pclken->enr;
+	uint32_t reg = STM32_DT_CLKSEL_REG_GET(enr);
+	uint32_t shift = STM32_DT_CLKSEL_SHIFT_GET(enr);
 	int err;
 
 	ARG_UNUSED(dev);
@@ -446,12 +450,9 @@ static int stm32_clock_control_configure(const struct device *dev,
 
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
-	sys_clear_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
-		       STM32_DT_CLKSEL_MASK_GET(pclken->enr) <<
-			STM32_DT_CLKSEL_SHIFT_GET(pclken->enr));
-	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
-		     STM32_DT_CLKSEL_VAL_GET(pclken->enr) <<
-			STM32_DT_CLKSEL_SHIFT_GET(pclken->enr));
+	stm32_reg_modify_bits((uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) + reg),
+			      STM32_DT_CLKSEL_MASK_GET(enr) << shift,
+			      STM32_DT_CLKSEL_VAL_GET(enr) << shift);
 
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 

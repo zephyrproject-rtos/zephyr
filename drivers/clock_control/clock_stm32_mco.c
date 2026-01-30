@@ -4,6 +4,7 @@
  * Copyright (C) 2024, Joakim Andersson
  */
 
+#include <stm32_bitops.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/devicetree.h>
@@ -31,6 +32,12 @@ static int stm32_mco_init(const struct device *dev)
 {
 	const struct stm32_mco_config *config = dev->config;
 	const struct stm32_pclken *pclken = &config->pclken[0];
+	uint32_t enr = pclken->enr;
+	uint32_t reg = STM32_DT_CLKSEL_REG_GET(enr);
+	uint32_t shift = STM32_DT_CLKSEL_SHIFT_GET(enr);
+	uint32_t prescaler = config->prescaler;
+	uint32_t pres_reg = STM32_DT_CLKSEL_REG_GET(prescaler);
+	uint32_t pres_shift = STM32_DT_CLKSEL_SHIFT_GET(prescaler);
 	int err;
 
 	err = enabled_clock(pclken->bus);
@@ -40,14 +47,9 @@ static int stm32_mco_init(const struct device *dev)
 	}
 
 	/* MCO source */
-	sys_clear_bits(
-		DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
-		STM32_DT_CLKSEL_MASK_GET(pclken->enr) <<
-			STM32_DT_CLKSEL_SHIFT_GET(pclken->enr));
-	sys_set_bits(
-		DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
-		STM32_DT_CLKSEL_VAL_GET(pclken->enr) <<
-			STM32_DT_CLKSEL_SHIFT_GET(pclken->enr));
+	stm32_reg_modify_bits((uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) + reg),
+			      STM32_DT_CLKSEL_MASK_GET(enr) << shift,
+			      STM32_DT_CLKSEL_VAL_GET(enr) << shift);
 
 #if defined(MCOX_ON)
 	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
@@ -56,14 +58,9 @@ static int stm32_mco_init(const struct device *dev)
 
 #if defined(HAS_PRESCALER)
 	/* MCO prescaler */
-	sys_clear_bits(
-		DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(config->prescaler),
-		STM32_DT_CLKSEL_MASK_GET(config->prescaler) <<
-			STM32_DT_CLKSEL_SHIFT_GET(config->prescaler));
-	sys_set_bits(
-		DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(config->prescaler),
-		STM32_DT_CLKSEL_VAL_GET(config->prescaler) <<
-			STM32_DT_CLKSEL_SHIFT_GET(config->prescaler));
+	stm32_reg_modify_bits((uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) + pres_reg),
+			      STM32_DT_CLKSEL_MASK_GET(prescaler) << pres_shift,
+			      STM32_DT_CLKSEL_VAL_GET(prescaler) << pres_shift);
 #endif
 
 	return pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
