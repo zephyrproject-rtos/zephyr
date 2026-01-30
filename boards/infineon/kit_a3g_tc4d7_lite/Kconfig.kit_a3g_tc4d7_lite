@@ -1,0 +1,5 @@
+# Copyright 2025 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_KIT_A3G_TC4D7_LITE
+	select SOC_TC4D7XP_CPU0 if BOARD_KIT_A3G_TC4D7_LITE_TC4D7XP_CPU0
