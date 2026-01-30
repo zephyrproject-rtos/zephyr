@@ -165,6 +165,20 @@
 		status = "disabled";
 	};
 
+	flexspi1: spi@425e0000 {
+		compatible = "nxp,imx-flexspi";
+		reg = <0x425e0000 0x10000>, <0x28000000 DT_SIZE_M(64)>;
+		reg-names = "reg_base", "ahb";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 55 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		ahb-bufferable;
+		ahb-cacheable;
+		clocks = <&ccm IMX_CCM_FLEXSPI_CLK 0x0 0x0>;
+		status = "disabled";
+	};
+
 	gpio1: gpio@47400000 {
 		compatible = "nxp,imx-rgpio";
 		reg = <0x47400000 DT_SIZE_K(64)>;
