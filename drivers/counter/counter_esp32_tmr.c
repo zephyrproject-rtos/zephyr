@@ -154,7 +154,7 @@ static int counter_esp32_set_alarm_64(const struct device *dev, uint8_t chan_id,
 	uint64_t target;
 	uint64_t diff;
 	int err = 0;
-	bool irq_on_late = 0;
+	bool irq_on_late = false;
 
 	if (ticks > data->top_data.ticks) {
 		return -EINVAL;

@@ -115,7 +115,7 @@ static int set_cc(const struct device *dev, uint8_t id, uint32_t val, uint32_t f
 	uint32_t now;
 	uint32_t diff;
 	uint32_t max_rel_val = top;
-	bool irq_on_late = 0;
+	bool irq_on_late = false;
 
 	now = MXC_TMR_GetCount(regs);
 	MXC_TMR_ClearFlags(regs);
