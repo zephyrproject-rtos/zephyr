@@ -21,8 +21,13 @@ config SOC_MCXN947_CPU0
 
 config SOC_MCXN947_CPU1
 	select CPU_CORTEX_M33
+	# Secondary core does not have FPU/MPU/SAU/DSP extensions enabled.
+	# Some MCUX CMSIS headers set __DSP_PRESENT=0, so avoid selecting DSP.
 
 config SOC_MCXN547
+	select CPU_CORTEX_M33
+
+config SOC_MCXN547_CPU0
 	select CPU_CORTEX_M33
 	select CPU_HAS_ARM_SAU
 	select CPU_HAS_ARM_MPU
@@ -35,6 +40,8 @@ config SOC_MCXN547
 
 config SOC_MCXN547_CPU1
 	select CPU_CORTEX_M33
+	# Secondary core does not have FPU/MPU/SAU/DSP extensions enabled.
+	# Some MCUX CMSIS headers set __DSP_PRESENT=0, so avoid selecting DSP.
 
 config SOC_MCXN236
 	select CPU_CORTEX_M33
