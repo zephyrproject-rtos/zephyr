@@ -346,4 +346,19 @@
 			input-enable;
 		};
 	};
+
+	pinmux_flexspi: pinmux_flexspi {
+		group0 {
+			pinmux = <&iomuxc1_sd1_strobe_flexspi_a_dqs_flexspi1_a_dqs>,
+				 <&iomuxc1_sd3_clk_flexspi_a_sclk_flexspi1_a_sclk>,
+				 <&iomuxc1_sd3_cmd_flexspi_a_ss_b_flexspi1_a_ss0_b>,
+				 <&iomuxc1_sd3_data0_flexspi_a_data_flexspi1_a_data00>,
+				 <&iomuxc1_sd3_data1_flexspi_a_data_flexspi1_a_data01>,
+				 <&iomuxc1_sd3_data2_flexspi_a_data_flexspi1_a_data02>,
+				 <&iomuxc1_sd3_data3_flexspi_a_data_flexspi1_a_data03>;
+			bias-pull-down;
+			slew-rate = "fast";
+			drive-strength = "x5";
+		};
+	};
 };
