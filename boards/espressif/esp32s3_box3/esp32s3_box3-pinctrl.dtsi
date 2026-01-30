@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 NotioNext Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
+#include <zephyr/dt-bindings/pinctrl/esp32s3-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp32s3-gpio-sigmap.h>
+
+&pinctrl {
+	spim2_default: spim2_default {
+		group1 {
+			pinmux = <SPIM2_SCLK_GPIO7>,
+				 <SPIM2_CSEL_GPIO5>;
+		};
+
+		group2 {
+			pinmux = <SPIM2_MOSI_GPIO6>;
+			output-low;
+		};
+	};
+};

@@ -1,0 +1,46 @@
+# Copyright (c) 2026 NotioNext LTD.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ESP32-S3 LCD display driver
+
+compatible: "espressif,esp32-lcd"
+
+include: [display-controller.yaml, spi-device.yaml]
+
+properties:
+  width:
+    type: int
+    required: true
+    description: Display width in pixels
+
+  height:
+    type: int
+    required: true
+    description: Display height in pixels
+
+  pixel-format:
+    type: int
+    default: 0
+    enum:
+      - 0  # RGB565
+    description: Display pixel format (only RGB565 supported)
+
+  rotation:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 90
+      - 180
+      - 270
+    description: Display rotation in degrees
+
+  dc-gpios:
+    type: phandle-array
+    required: true
+    description: Data/Command GPIO
+
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: Reset GPIO
