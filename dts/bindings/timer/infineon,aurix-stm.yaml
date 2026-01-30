@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: AURIX System Timer Module (STM)
+
+compatible: "infineon,aurix-stm"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  freeze:
+    type: boolean
+    description: Stops the timer when the chip enters Debug mode.
