@@ -3889,6 +3889,23 @@ Networking:
   tests:
     - net.socket
 
+"Networking: Bridge":
+  status: maintained
+  maintainers:
+    - yangbolu1991
+    - JiafeiPan
+  files:
+    - subsys/net/l2/ethernet/bridge/
+    - include/zephyr/net/ethernet_bridge*.h
+    - samples/net/ethernet/bridge/
+    - tests/net/bridge/
+    - doc/connectivity/networking/eth_bridge*
+  labels:
+    - "area: Networking"
+    - "area: Bridge"
+  tests:
+    - sample.net.bridge
+
 "Networking: CoAP":
   status: maintained
   maintainers:
