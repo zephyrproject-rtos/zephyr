@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/init.h>
+#include <zephyr/sys/util.h>
 
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_event.h>
@@ -33,6 +34,7 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 #include "net_shell_private.h"
 #include <math.h>
 
+#include <ctype.h>
 #ifdef CONFIG_WIFI_CERTIFICATE_LIB
 #include <zephyr/net/wifi_certs.h>
 #endif
@@ -50,6 +52,15 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 				NET_EVENT_WIFI_SIGNAL_CHANGE      |\
 				NET_EVENT_WIFI_NEIGHBOR_REP_COMP  |\
 				NET_EVENT_WIFI_P2P_DEVICE_FOUND)
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+#define WIFI_SHELL_NAN_EVENTS (                        \
+				NET_EVENT_WIFI_NAN_DISCOVERY_RESULT |\
+				NET_EVENT_WIFI_NAN_REPLIED          |\
+				NET_EVENT_WIFI_NAN_PUBLISH_TERMINATED |\
+				NET_EVENT_WIFI_NAN_SUBSCRIBE_TERMINATED |\
+				NET_EVENT_WIFI_NAN_RECEIVE)
+#endif
 
 #ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS_ONLY
 #define WIFI_SHELL_SCAN_EVENTS (                   \
@@ -567,6 +578,190 @@ static void handle_wifi_p2p_device_found(struct net_mgmt_event_callback *cb)
 }
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+/* Rate limiting for frequent NAN events */
+#define NAN_EVENT_PRINT_INTERVAL_MS 1000
+#define NAN_EVENT_CACHE_SIZE 10
+
+struct nan_event_ratelimit_entry {
+	uint8_t subscribe_id;
+	uint8_t publish_id;
+	int64_t last_print_time;
+};
+
+static struct nan_event_ratelimit_entry nan_discovery_cache[NAN_EVENT_CACHE_SIZE];
+static struct nan_event_ratelimit_entry nan_replied_cache[NAN_EVENT_CACHE_SIZE];
+
+static bool should_print_nan_discovery_event(uint8_t subscribe_id, uint8_t publish_id)
+{
+	int64_t now = k_uptime_get();
+	int i;
+	int oldest_idx = 0;
+	int64_t oldest_time = now;
+
+	/* Find matching entry or oldest entry */
+	for (i = 0; i < NAN_EVENT_CACHE_SIZE; i++) {
+		if (nan_discovery_cache[i].subscribe_id == subscribe_id &&
+		    nan_discovery_cache[i].publish_id == publish_id) {
+			int64_t elapsed = now - nan_discovery_cache[i].last_print_time;
+
+			if (elapsed >= NAN_EVENT_PRINT_INTERVAL_MS) {
+				nan_discovery_cache[i].last_print_time = now;
+				return true;
+			}
+			return false;
+		}
+
+		if (nan_discovery_cache[i].last_print_time < oldest_time) {
+			oldest_time = nan_discovery_cache[i].last_print_time;
+			oldest_idx = i;
+		}
+	}
+
+	/* New ID pair - replace oldest entry */
+	nan_discovery_cache[oldest_idx].subscribe_id = subscribe_id;
+	nan_discovery_cache[oldest_idx].publish_id = publish_id;
+	nan_discovery_cache[oldest_idx].last_print_time = now;
+	return true;
+}
+
+static bool should_print_nan_replied_event(uint8_t publish_id, uint8_t subscribe_id)
+{
+	int64_t now = k_uptime_get();
+	int i;
+	int oldest_idx = 0;
+	int64_t oldest_time = now;
+
+	/* Find matching entry or oldest entry */
+	for (i = 0; i < NAN_EVENT_CACHE_SIZE; i++) {
+		if (nan_replied_cache[i].publish_id == publish_id &&
+		    nan_replied_cache[i].subscribe_id == subscribe_id) {
+			int64_t elapsed = now - nan_replied_cache[i].last_print_time;
+
+			if (elapsed >= NAN_EVENT_PRINT_INTERVAL_MS) {
+				nan_replied_cache[i].last_print_time = now;
+				return true;
+			}
+			return false;
+		}
+
+		if (nan_replied_cache[i].last_print_time < oldest_time) {
+			oldest_time = nan_replied_cache[i].last_print_time;
+			oldest_idx = i;
+		}
+	}
+
+	/* New ID pair - replace oldest entry */
+	nan_replied_cache[oldest_idx].publish_id = publish_id;
+	nan_replied_cache[oldest_idx].subscribe_id = subscribe_id;
+	nan_replied_cache[oldest_idx].last_print_time = now;
+	return true;
+}
+
+static void handle_wifi_nan_discovery_result(struct net_mgmt_event_callback *cb)
+{
+	const struct wifi_nan_discovery_result_event *event =
+		(const struct wifi_nan_discovery_result_event *)cb->info;
+	const struct shell *sh = context.sh;
+
+	/* Rate limit per (subscribe_id, publish_id) pair */
+	if (should_print_nan_discovery_event(event->subscribe_id, event->publish_id)) {
+		PR_INFO("\n");
+		PR_INFO("NAN Discovery Result (rate limited per ID)\n");
+		PR_INFO("Subscribe ID:      %u\n", event->subscribe_id);
+		PR_INFO("Publish ID:        %u\n", event->publish_id);
+		PR_INFO("Peer Address:      %02x:%02x:%02x:%02x:%02x:%02x\n",
+			event->peer_addr[0], event->peer_addr[1],
+			event->peer_addr[2], event->peer_addr[3],
+			event->peer_addr[4], event->peer_addr[5]);
+		if (event->srv_proto_type > 0) {
+			PR_INFO("Service Type:      %u\n", event->srv_proto_type);
+		}
+		if (event->ssi_len > 0) {
+			PR_INFO("SSI Length:        %zu bytes\n", event->ssi_len);
+		}
+		PR_INFO("\n");
+	}
+}
+
+static void handle_wifi_nan_replied(struct net_mgmt_event_callback *cb)
+{
+	const struct wifi_nan_replied_event *event =
+		(const struct wifi_nan_replied_event *)cb->info;
+	const struct shell *sh = context.sh;
+
+	/* Rate limit per (publish_id, subscribe_id) pair */
+	if (should_print_nan_replied_event(event->publish_id, event->subscribe_id)) {
+		PR_INFO("\n");
+		PR_INFO("NAN Replied (rate limited per ID)\n");
+		PR_INFO("Publish ID:        %u\n", event->publish_id);
+		PR_INFO("Subscribe ID:      %u\n", event->subscribe_id);
+		PR_INFO("Peer Address:      %02x:%02x:%02x:%02x:%02x:%02x\n",
+			event->peer_addr[0], event->peer_addr[1],
+			event->peer_addr[2], event->peer_addr[3],
+			event->peer_addr[4], event->peer_addr[5]);
+		if (event->srv_proto_type > 0) {
+			PR_INFO("Service Type:      %u\n", event->srv_proto_type);
+		}
+		if (event->ssi_len > 0) {
+			PR_INFO("SSI Length:        %zu bytes\n", event->ssi_len);
+		}
+		PR_INFO("\n");
+	}
+}
+
+static void handle_wifi_nan_publish_terminated(struct net_mgmt_event_callback *cb)
+{
+	const struct wifi_nan_terminated_event *event =
+		(const struct wifi_nan_terminated_event *)cb->info;
+	const struct shell *sh = context.sh;
+
+	PR_INFO("\n");
+	PR_INFO("NAN Publish Terminated\n");
+	PR_INFO("Publish ID:        %d\n", event->id);
+	PR_INFO("Reason:            %s\n", event->reason);
+	PR_INFO("\n");
+}
+
+static void handle_wifi_nan_subscribe_terminated(struct net_mgmt_event_callback *cb)
+{
+	const struct wifi_nan_terminated_event *event =
+		(const struct wifi_nan_terminated_event *)cb->info;
+	const struct shell *sh = context.sh;
+
+	PR_INFO("\n");
+	PR_INFO("NAN Subscribe Terminated\n");
+	PR_INFO("Subscribe ID:      %d\n", event->id);
+	PR_INFO("Reason:            %s\n", event->reason);
+	PR_INFO("\n");
+}
+
+static void handle_wifi_nan_receive(struct net_mgmt_event_callback *cb)
+{
+	const struct wifi_nan_receive_event *event =
+		(const struct wifi_nan_receive_event *)cb->info;
+	const struct shell *sh = context.sh;
+
+	PR_INFO("\n");
+	PR_INFO("NAN Follow-up Received\n");
+	PR_INFO("ID:                %d\n", event->id);
+	PR_INFO("Peer Instance ID:  %d\n", event->peer_instance_id);
+	PR_INFO("Peer Address:      %02x:%02x:%02x:%02x:%02x:%02x\n",
+		event->peer_addr[0], event->peer_addr[1],
+		event->peer_addr[2], event->peer_addr[3],
+		event->peer_addr[4], event->peer_addr[5]);
+	PR_INFO("SSI Length:        %zu bytes\n", event->ssi_len);
+
+	if (event->ssi_len > 0) {
+		PR_INFO("SSI Data:\n");
+		for (size_t i = 0; i < event->ssi_len; i++) {
+			PR_INFO(" %02x", event->ssi[i]);
+		}
+	}
+	PR_INFO("\n");
+}
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
+
 static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 				    uint64_t mgmt_event, struct net_if *iface)
 {
@@ -605,6 +800,23 @@ static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 		handle_wifi_p2p_device_found(cb);
 		break;
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+	case NET_EVENT_WIFI_NAN_DISCOVERY_RESULT:
+		handle_wifi_nan_discovery_result(cb);
+		break;
+	case NET_EVENT_WIFI_NAN_REPLIED:
+		handle_wifi_nan_replied(cb);
+		break;
+	case NET_EVENT_WIFI_NAN_PUBLISH_TERMINATED:
+		handle_wifi_nan_publish_terminated(cb);
+		break;
+	case NET_EVENT_WIFI_NAN_SUBSCRIBE_TERMINATED:
+		handle_wifi_nan_subscribe_terminated(cb);
+		break;
+	case NET_EVENT_WIFI_NAN_RECEIVE:
+		handle_wifi_nan_receive(cb);
+		break;
+#endif
 	default:
 		break;
 	}
@@ -4205,6 +4417,479 @@ static int cmd_wifi_p2p_power_save(const struct shell *sh, size_t argc, char *ar
 }
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+/* Validate service protocol type */
+static int validate_srv_proto_type(int type)
+{
+	if (type < WIFI_NAN_SRV_PROTO_BONJOUR ||
+	    type > WIFI_NAN_SRV_PROTO_CSA_MATTER) {
+		return -EINVAL;
+	}
+	return 0;
+}
+
+/* Parse NAN publish arguments */
+static int parse_nan_args_publish(const struct shell *sh, size_t argc, char *argv[],
+				  struct wifi_nan_params *params)
+{
+	int opt;
+	int opt_index = 0;
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"service_name", sys_getopt_required_argument, 0, 's'},
+		{"srv_proto_type", sys_getopt_required_argument, 0, 'p'},
+		{"ttl", sys_getopt_required_argument, 0, 't'},
+		{"freq", sys_getopt_required_argument, 0, 'f'},
+		{"freq_list", sys_getopt_required_argument, 0, 'l'},
+		{"ssi", sys_getopt_required_argument, 0, 'd'},
+		{"unsolicited", sys_getopt_required_argument, 0, 'u'},
+		{"solicited", sys_getopt_required_argument, 0, 'o'},
+		{"fsd", sys_getopt_required_argument, 0, 'g'},
+		{0, 0, 0, 0}
+	};
+	int ret = 0;
+
+	while ((opt = sys_getopt_long(argc, argv, "s:p:t:f:l:d:u:o:g:",
+				  long_options, &opt_index)) != -1) {
+		state = sys_getopt_state_get();
+		switch (opt) {
+		case 's':
+			strncpy(params->publish.service_name, state->optarg,
+				WIFI_NAN_MAX_SERVICE_NAME_LEN - 1);
+			params->publish.service_name[WIFI_NAN_MAX_SERVICE_NAME_LEN - 1] = '\0';
+			break;
+		case 'p':
+			params->publish.srv_proto_type = shell_strtol(state->optarg, 10, &ret);
+			if (validate_srv_proto_type(params->publish.srv_proto_type) != 0) {
+				PR_ERROR("srv_proto_type must be 1 (Bonjour), "
+					 "2 (Generic), or 3 (Matter)\n");
+				return -EINVAL;
+			}
+			break;
+		case 't':
+			params->publish.ttl = shell_strtoul(state->optarg, 10, &ret);
+			break;
+		case 'f':
+			params->publish.freq = shell_strtoul(state->optarg, 10, &ret);
+			break;
+		case 'l': {
+			strncpy(params->publish.freq_list, state->optarg,
+				sizeof(params->publish.freq_list) - 1);
+			params->publish.freq_list[sizeof(params->publish.freq_list) - 1] = '\0';
+			break;
+		}
+		case 'd': {
+			int ssi_len = hex2bin(state->optarg, strlen(state->optarg),
+					      params->publish.ssi,
+					      sizeof(params->publish.ssi));
+			if (ssi_len < 0) {
+				PR_ERROR("Invalid SSI hex string\n");
+				return -EINVAL;
+			}
+			params->publish.ssi_len = ssi_len;
+			break;
+		}
+		case 'u':
+			params->publish.unsolicited = shell_strtol(state->optarg, 10, &ret) != 0;
+			break;
+		case 'o':
+			params->publish.solicited = shell_strtol(state->optarg, 10, &ret) != 0;
+			break;
+		case 'g':
+			params->publish.fsd = shell_strtol(state->optarg, 10, &ret) != 0;
+			break;
+		default:
+			PR_ERROR("Invalid option %c\n", state->optopt);
+			return -EINVAL;
+		}
+		if (ret) {
+			PR_ERROR("Invalid argument %d ret %d\n", opt_index, ret);
+			return -EINVAL;
+		}
+	}
+
+	if (strlen(params->publish.service_name) == 0) {
+		PR_ERROR("Service name is required\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+/* Parse NAN cancel publish arguments */
+static int parse_nan_args_cancel_publish(const struct shell *sh, size_t argc, char *argv[],
+					 struct wifi_nan_params *params)
+{
+	int opt;
+	int opt_index = 0;
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"publish_id", sys_getopt_required_argument, 0, 'n'},
+		{0, 0, 0, 0}
+	};
+	int ret = 0;
+
+	while ((opt = sys_getopt_long(argc, argv, "n:", long_options, &opt_index)) != -1) {
+		state = sys_getopt_state_get();
+		if (opt == 'n') {
+			params->cancel_id = shell_strtol(state->optarg, 10, &ret);
+		} else {
+			PR_ERROR("Invalid option %c\n", state->optopt);
+			return -EINVAL;
+		}
+		if (ret) {
+			PR_ERROR("Invalid argument %d ret %d\n", opt_index, ret);
+			return -EINVAL;
+		}
+	}
+
+	if (params->cancel_id == 0) {
+		PR_ERROR("Publish ID is required\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+/* Parse NAN update publish arguments */
+static int parse_nan_args_update_publish(const struct shell *sh, size_t argc, char *argv[],
+					 struct wifi_nan_params *params)
+{
+	int opt;
+	int opt_index = 0;
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"publish_id", sys_getopt_required_argument, 0, 'n'},
+		{"ssi", sys_getopt_required_argument, 0, 'd'},
+		{0, 0, 0, 0}
+	};
+	int ret = 0;
+
+	while ((opt = sys_getopt_long(argc, argv, "n:d:", long_options, &opt_index)) != -1) {
+		state = sys_getopt_state_get();
+		switch (opt) {
+		case 'n':
+			params->update_publish.publish_id = shell_strtol(state->optarg, 10, &ret);
+			break;
+		case 'd': {
+			int ssi_len = hex2bin(state->optarg, strlen(state->optarg),
+					      params->update_publish.ssi,
+					      sizeof(params->update_publish.ssi));
+			if (ssi_len < 0) {
+				PR_ERROR("Invalid SSI hex string\n");
+				return -EINVAL;
+			}
+			params->update_publish.ssi_len = ssi_len;
+			break;
+		}
+		default:
+			PR_ERROR("Invalid option %c\n", state->optopt);
+			return -EINVAL;
+		}
+		if (ret) {
+			PR_ERROR("Invalid argument %d ret %d\n", opt_index, ret);
+			return -EINVAL;
+		}
+	}
+
+	if (params->update_publish.publish_id == 0) {
+		PR_ERROR("Publish ID is required\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+/* Parse NAN subscribe arguments */
+static int parse_nan_args_subscribe(const struct shell *sh, size_t argc, char *argv[],
+				    struct wifi_nan_params *params)
+{
+	int opt;
+	int opt_index = 0;
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"service_name", sys_getopt_required_argument, 0, 's'},
+		{"srv_proto_type", sys_getopt_required_argument, 0, 'p'},
+		{"active", sys_getopt_required_argument, 0, 'a'},
+		{"ttl", sys_getopt_required_argument, 0, 't'},
+		{"freq", sys_getopt_required_argument, 0, 'f'},
+		{"ssi", sys_getopt_required_argument, 0, 'd'},
+		{0, 0, 0, 0}
+	};
+	int ret = 0;
+
+	while ((opt = sys_getopt_long(argc, argv, "s:p:a:t:f:d:",
+				      long_options, &opt_index)) != -1) {
+		state = sys_getopt_state_get();
+		switch (opt) {
+		case 's':
+			strncpy(params->subscribe.service_name, state->optarg,
+				WIFI_NAN_MAX_SERVICE_NAME_LEN - 1);
+			params->subscribe.service_name[WIFI_NAN_MAX_SERVICE_NAME_LEN - 1] = '\0';
+			break;
+		case 'p':
+			params->subscribe.srv_proto_type = shell_strtol(state->optarg, 10, &ret);
+			if (validate_srv_proto_type(params->subscribe.srv_proto_type) != 0) {
+				PR_ERROR("srv_proto_type must be 1 (Bonjour), "
+					 "2 (Generic), or 3 (Matter)\n");
+				return -EINVAL;
+			}
+			break;
+		case 'a':
+			params->subscribe.active = shell_strtol(state->optarg, 10, &ret) != 0;
+			break;
+		case 't':
+			params->subscribe.ttl = shell_strtoul(state->optarg, 10, &ret);
+			break;
+		case 'f':
+			params->subscribe.freq = shell_strtoul(state->optarg, 10, &ret);
+			break;
+		case 'd': {
+			int ssi_len = hex2bin(state->optarg, strlen(state->optarg),
+					      params->subscribe.ssi,
+					      sizeof(params->subscribe.ssi));
+			if (ssi_len < 0) {
+				PR_ERROR("Invalid SSI hex string\n");
+				return -EINVAL;
+			}
+			params->subscribe.ssi_len = ssi_len;
+			break;
+		}
+		default:
+			PR_ERROR("Invalid option %c\n", state->optopt);
+			return -EINVAL;
+		}
+		if (ret) {
+			PR_ERROR("Invalid argument %d ret %d\n", opt_index, ret);
+			return -EINVAL;
+		}
+	}
+
+	if (strlen(params->subscribe.service_name) == 0) {
+		PR_ERROR("Service name is required\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+/* Parse NAN cancel subscribe arguments */
+static int parse_nan_args_cancel_subscribe(const struct shell *sh, size_t argc, char *argv[],
+					   struct wifi_nan_params *params)
+{
+	int opt;
+	int opt_index = 0;
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"subscribe_id", sys_getopt_required_argument, 0, 'n'},
+		{0, 0, 0, 0}
+	};
+	int ret = 0;
+
+	while ((opt = sys_getopt_long(argc, argv, "n:", long_options, &opt_index)) != -1) {
+		state = sys_getopt_state_get();
+		if (opt == 'n') {
+			params->cancel_id = shell_strtol(state->optarg, 10, &ret);
+		} else {
+			PR_ERROR("Invalid option %c\n", state->optopt);
+			return -EINVAL;
+		}
+		if (ret) {
+			PR_ERROR("Invalid argument %d ret %d\n", opt_index, ret);
+			return -EINVAL;
+		}
+	}
+
+	if (params->cancel_id == 0) {
+		PR_ERROR("Subscribe ID is required\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+/* Parse NAN transmit arguments */
+static int parse_nan_args_transmit(const struct shell *sh, size_t argc, char *argv[],
+				   struct wifi_nan_params *params)
+{
+	int opt;
+	int opt_index = 0;
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"handle", sys_getopt_required_argument, 0, 'n'},
+		{"req_instance_id", sys_getopt_required_argument, 0, 'r'},
+		{"address", sys_getopt_required_argument, 0, 'a'},
+		{"ssi", sys_getopt_required_argument, 0, 'd'},
+		{0, 0, 0, 0}
+	};
+	int ret = 0;
+
+	while ((opt = sys_getopt_long(argc, argv, "n:r:a:d:",
+				  long_options, &opt_index)) != -1) {
+		state = sys_getopt_state_get();
+		switch (opt) {
+		case 'n':
+			params->transmit.handle = shell_strtol(state->optarg, 10, &ret);
+			break;
+		case 'r':
+			params->transmit.req_instance_id = shell_strtol(state->optarg, 10, &ret);
+			break;
+		case 'a':
+			if (net_bytes_from_str(params->transmit.peer_addr, 6, state->optarg) < 0) {
+				PR_ERROR("Invalid MAC address\n");
+				return -EINVAL;
+			}
+			break;
+		case 'd': {
+			int ssi_len = hex2bin(state->optarg, strlen(state->optarg),
+					      params->transmit.ssi,
+					      sizeof(params->transmit.ssi));
+			if (ssi_len < 0) {
+				PR_ERROR("Invalid SSI hex string\n");
+				return -EINVAL;
+			}
+			params->transmit.ssi_len = ssi_len;
+			break;
+		}
+		default:
+			PR_ERROR("Invalid option %c\n", state->optopt);
+			return -EINVAL;
+		}
+		if (ret) {
+			PR_ERROR("Invalid argument %d ret %d\n", opt_index, ret);
+			return -EINVAL;
+		}
+	}
+
+	if (params->transmit.handle == 0) {
+		PR_ERROR("Handle is required\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+/* Common NAN command dispatcher */
+static int cmd_wifi_nan_exec(const struct shell *sh, size_t argc, char *argv[],
+			     struct wifi_nan_params *params,
+			     int (*parse_fn)(const struct shell *, size_t, char **,
+					     struct wifi_nan_params *),
+			     const char *parse_err_msg,
+			     const char *exec_err_msg,
+			     const char *success_msg,
+			     bool print_resp)
+{
+	struct net_if *iface;
+	int ret;
+
+	ret = parse_fn(sh, argc, argv, params);
+	if (ret) {
+		PR_ERROR("%s\n", parse_err_msg);
+		return -EINVAL;
+	}
+
+	iface = net_if_get_wifi_sta();
+	if (!iface) {
+		PR_ERROR("No WiFi STA interface found\n");
+		return -ENODEV;
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_NAN, iface, params, sizeof(*params))) {
+		PR_WARNING("%s\n", exec_err_msg);
+		return -ENOEXEC;
+	}
+
+	if (print_resp) {
+		PR_INFO("%s%s\n", success_msg, params->resp);
+	} else {
+		PR_INFO("%s\n", success_msg);
+	}
+
+	return 0;
+}
+
+static int cmd_wifi_nan_publish(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct wifi_nan_params params = {0};
+
+	params.op = WIFI_NAN_OP_PUBLISH;
+	params.publish.unsolicited = true;
+	params.publish.solicited = true;
+	params.publish.fsd = true;
+	return cmd_wifi_nan_exec(sh, argc, argv, &params,
+				 parse_nan_args_publish,
+				 "parse NAN publish args fail",
+				 "Failed to request NAN publish",
+				 "NAN publish ID: ", true);
+}
+
+/* NAN CANCEL_PUBLISH command */
+static int cmd_wifi_nan_cancel_publish(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct wifi_nan_params params = {0};
+
+	params.op = WIFI_NAN_OP_CANCEL_PUBLISH;
+	return cmd_wifi_nan_exec(sh, argc, argv, &params,
+				 parse_nan_args_cancel_publish,
+				 "parse NAN cancel publish args fail",
+				 "Failed to cancel NAN publish",
+				 "NAN cancel publish command sent", false);
+}
+
+/* NAN UPDATE_PUBLISH command */
+static int cmd_wifi_nan_update_publish(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct wifi_nan_params params = {0};
+
+	params.op = WIFI_NAN_OP_UPDATE_PUBLISH;
+	return cmd_wifi_nan_exec(sh, argc, argv, &params,
+				 parse_nan_args_update_publish,
+				 "parse NAN update publish args fail",
+				 "Failed to update NAN publish",
+				 "NAN publish updated", false);
+}
+
+/* NAN SUBSCRIBE command */
+static int cmd_wifi_nan_subscribe(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct wifi_nan_params params = {0};
+
+	params.op = WIFI_NAN_OP_SUBSCRIBE;
+	return cmd_wifi_nan_exec(sh, argc, argv, &params,
+				 parse_nan_args_subscribe,
+				 "parse NAN subscribe args fail",
+				 "Failed to request NAN subscribe",
+				 "NAN subscribe ID: ", true);
+}
+
+/* NAN CANCEL_SUBSCRIBE command */
+static int cmd_wifi_nan_cancel_subscribe(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct wifi_nan_params params = {0};
+
+	params.op = WIFI_NAN_OP_CANCEL_SUBSCRIBE;
+	return cmd_wifi_nan_exec(sh, argc, argv, &params,
+				 parse_nan_args_cancel_subscribe,
+				 "parse NAN cancel subscribe args fail",
+				 "Failed to cancel NAN subscribe",
+				 "NAN cancel subscribe command sent", false);
+}
+
+/* NAN TRANSMIT command */
+static int cmd_wifi_nan_transmit(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct wifi_nan_params params = {0};
+
+	params.op = WIFI_NAN_OP_TRANSMIT;
+	return cmd_wifi_nan_exec(sh, argc, argv, &params,
+				 parse_nan_args_transmit,
+				 "parse NAN transmit args fail",
+				 "Failed to send NAN transmit",
+				 "NAN transmit command sent", false);
+}
+
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
+
 static int cmd_wifi_pmksa_flush(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
@@ -4723,6 +5408,60 @@ SHELL_SUBCMD_ADD((wifi), dpp, &wifi_cmd_dpp,
 		 0, 0);
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	wifi_cmd_nan,
+	SHELL_CMD_ARG(publish, NULL,
+		      SHELL_HELP(" Start NAN publisher",
+				 "-s --service_name <name>: Service name (required)\n"
+				 "[-p --srv_proto_type <1/2/3>]: Protocol type (1:Bonjour, 2:Generic, 3:Matter)\n"
+				 "[-t, --ttl=<time-to-live-in-sec>] : time-to-live-in-sec\n"
+				 "[-f, --freq=<freq in MHz>] : freq in MHz\n"
+				 "[-l, --freq_list=<comma separate list of MHz>] : freq list\n"
+				 "[-d, --ssi=<service specific information (hexdump)>] : service specific information\n"
+				 "[-u --unsolicited <0/1>]: Unsolicited transmission (default 1)\n"
+				 "[-o --solicited <0/1>]: Solicited transmission (default 1)\n"
+				 "[-g --fsd <0/1>]: Further service discovery (default 1)"),
+		      cmd_wifi_nan_publish, 3, 16),
+	SHELL_CMD_ARG(cancel_publish, NULL,
+		      SHELL_HELP("Cancel NAN publish",
+				 "-n --publish_id <id>: Publish ID (required)"),
+		      cmd_wifi_nan_cancel_publish, 3, 0),
+	SHELL_CMD_ARG(update_publish, NULL,
+		      SHELL_HELP("Update NAN publish",
+				 "-n --publish_id <id>: Publish ID (required)\n"
+				 "-d --ssi <hex_string>: Service specific info"),
+		      cmd_wifi_nan_update_publish, 5, 0),
+	SHELL_CMD_ARG(subscribe, NULL,
+		      SHELL_HELP("Start NAN subscriber",
+				 "-s, --service_name=<service_name> : Service name\n"
+				 "[-p --srv_proto_type <1/2/3>]: Protocol type (1:Bonjour, 2:Generic, 3:Matter)\n"
+				 "[-a, --active=<0/1>] : Active subscriber\n"
+				 "[-t, --ttl=<time-to-live-in-sec>] : Time to live\n"
+				 "[-f, --freq=<freq in MHz>] : freq in MHz\n"
+				 "[-d, --ssi=<service specific information (hexdump)>]"
+				 " : service specific information"),
+		      cmd_wifi_nan_subscribe, 3, 10),
+	SHELL_CMD_ARG(cancel_subscribe, NULL,
+		      SHELL_HELP("Cancel NAN subscribe",
+				 "-n --subscribe_id <id>: Subscribe ID (required)"),
+		      cmd_wifi_nan_cancel_subscribe, 3, 0),
+	SHELL_CMD_ARG(transmit, NULL,
+		      SHELL_HELP("NAN transmit followup",
+				 "-n --handle <id>: Publish/Subscribe ID\n"
+				 "-r --req_instance_id <id>: Peer instance ID\n"
+				 "-a --address <MAC>: Peer MAC address\n"
+				 "-d --ssi <hex_string>: Service specific info"),
+		      cmd_wifi_nan_transmit, 9, 0),
+	SHELL_SUBCMD_SET_END
+);
+
+SHELL_SUBCMD_ADD((wifi), nan, &wifi_cmd_nan,
+		 "NAN operations.",
+		 NULL,
+		 0, 0);
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
+
 SHELL_SUBCMD_ADD((wifi), mode, NULL,
 		 SHELL_HELP("Mode operational setting",
 			    "This command may be used to set the Wi-Fi device into a specific "
@@ -5058,7 +5797,9 @@ static int wifi_shell_init(void)
 
 	net_mgmt_init_event_callback(&wifi_shell_mgmt_cb,
 				     wifi_mgmt_event_handler,
-				     WIFI_SHELL_MGMT_EVENTS);
+				     WIFI_SHELL_MGMT_EVENTS
+				     IF_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN,
+						(|WIFI_SHELL_NAN_EVENTS)));
 
 	net_mgmt_add_event_callback(&wifi_shell_mgmt_cb);
 
