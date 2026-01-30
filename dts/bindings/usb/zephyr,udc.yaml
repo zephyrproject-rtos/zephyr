@@ -1,0 +1,24 @@
+# Copyright (c) 2026 Leica Geosystems AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Generic USB Device Controller (UDC) marker.
+
+  This compatible can be added as a secondary compatible to any USB device
+  controller to enable auto-discovery via DT_FOREACH_STATUS_OKAY(zephyr_udc, fn).
+
+  Example usage in devicetree:
+    zephyr_udc0: &usbotg_hs {
+      compatible = "st,stm32-otghs", "zephyr,udc";
+      ...
+    };
+
+  Example iteration in C code:
+    #define UDC_DEVICE_GET(node_id) DEVICE_DT_GET(node_id),
+    static const struct device *const all_udc_devices[] = {
+      DT_FOREACH_STATUS_OKAY(zephyr_udc, UDC_DEVICE_GET)
+    };
+
+compatible: "zephyr,udc"
+
+include: base.yaml
