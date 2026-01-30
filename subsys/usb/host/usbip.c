@@ -24,7 +24,9 @@ LOG_MODULE_REGISTER(usbip, CONFIG_USBIP_LOG_LEVEL);
 USBH_CONTROLLER_DEFINE(usbip_uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
 
 #define USBIP_MAX_PKT_SIZE	2048
-NET_BUF_POOL_DEFINE(usbip_pool, 32, USBIP_MAX_PKT_SIZE, 0, NULL);
+#define USBIP_BUF_COUNT		64
+#define USBIP_BUF_POOL_SIZE	65536
+NET_BUF_POOL_VAR_DEFINE(usbip_pool, USBIP_BUF_COUNT, USBIP_BUF_POOL_SIZE, 0, NULL);
 
 K_THREAD_STACK_DEFINE(usbip_thread_stack, CONFIG_USBIP_THREAD_STACK_SIZE);
 K_THREAD_STACK_ARRAY_DEFINE(dev_thread_stacks, CONFIG_USBIP_DEVICES_COUNT,
@@ -268,7 +270,7 @@ static int usbip_handle_submit(struct usbip_dev_ctx *const dev_ctx,
 			return -ENOMEM;
 		}
 
-		buf = net_buf_alloc(&usbip_pool, K_NO_WAIT);
+		buf = net_buf_alloc_len(&usbip_pool, cmd->submit.length, K_NO_WAIT);
 		if (buf == NULL) {
 			LOG_ERR("Failed to allocate net_buf");
 			return -ENOMEM;
