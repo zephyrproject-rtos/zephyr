@@ -364,6 +364,24 @@ config COAP_OSCORE_MAX_PLAINTEXT_LEN
 	  This includes the CoAP options and payload that will be encrypted.
 	  Adjust based on your application's message size requirements.
 
+config COAP_OSCORE_EXCHANGE_CACHE_SIZE
+	int "OSCORE exchange cache size per service"
+	default 8
+	help
+	  Number of OSCORE exchange entries to cache per service endpoint.
+	  This tracks which ongoing exchanges require OSCORE-protected responses.
+	  Each entry stores client address and token information to match
+	  responses to OSCORE requests per RFC 8613 Section 8.3.
+
+config COAP_OSCORE_EXCHANGE_LIFETIME_MS
+	int "OSCORE exchange lifetime in milliseconds"
+	default 60000
+	help
+	  Time in milliseconds for which an OSCORE exchange entry remains valid.
+	  After this time, the exchange is considered expired and will be removed.
+	  This applies to non-Observe exchanges; Observe exchanges are kept until
+	  the observation is cancelled.
+
 endif # COAP_OSCORE
 
 module = COAP
