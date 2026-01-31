@@ -75,7 +75,7 @@ properties:
     description: |
       Target 48-bit Provisioned ID.
       array[0]: PID[47:33] MIPI manufacturer ID.
-                PID[32] ID type selector (i'b1 ramdom value, 1'b0 vendor fixed).
+                PID[32] ID type selector (i'b1 random value, 1'b0 vendor fixed).
       array[1]: PID[31:0] Random value or vendor fixed value.
 
   bcr:
