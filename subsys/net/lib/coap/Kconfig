@@ -272,7 +272,72 @@ config COAP_SERVER_SHELL
 	help
 	  Enable CoAP service shell commands.
 
-endif
+config COAP_SERVER_ECHO
+	bool "CoAP server Echo option support (RFC 9175)"
+	help
+	  Enable server-side Echo option support for request freshness
+	  verification and amplification mitigation per RFC 9175.
+
+if COAP_SERVER_ECHO
+
+config COAP_SERVER_ECHO_MAX_LEN
+	int "Maximum Echo option value length"
+	default 8
+	range 1 40
+	help
+	  Maximum length of Echo option values in bytes. RFC 9175 allows
+	  values from 1 to 40 bytes. Smaller values use less memory but
+	  may be less secure.
+
+config COAP_SERVER_ECHO_LIFETIME_MS
+	int "Echo option value lifetime in milliseconds"
+	default 60000
+	help
+	  Time in milliseconds for which an Echo option value remains valid.
+	  After this time, the client must obtain a new Echo value.
+
+config COAP_SERVER_ECHO_CACHE_SIZE
+	int "Echo cache size per service"
+	default 8
+	help
+	  Number of Echo entries to cache per service endpoint. This limits
+	  how many different clients can be tracked simultaneously.
+
+config COAP_SERVER_ECHO_REQUIRE_FOR_UNSAFE
+	bool "Require Echo for unsafe methods"
+	help
+	  When enabled, unsafe methods (PUT, POST, DELETE, PATCH, IPATCH)
+	  require Echo option verification per RFC 9175 Section 2.3.
+	  This ensures request freshness for state-changing operations.
+
+config COAP_SERVER_ECHO_AMPLIFICATION_MITIGATION
+	bool "Use Echo for amplification mitigation"
+	default y
+	help
+	  Apply RFC 9175 Section 2.4 item 3 and Section 2.6 behavior for
+	  high-amplification responses. Challenges unauthenticated clients
+	  before sending large responses like /.well-known/core.
+
+config COAP_SERVER_ECHO_AMPLIFICATION_FACTOR
+	int "Maximum amplification factor"
+	default 3
+	depends on COAP_SERVER_ECHO_AMPLIFICATION_MITIGATION
+	help
+	  Maximum ratio between response size and request size before
+	  requiring Echo verification. Value of 3 follows RFC 9000 guidance.
+
+config COAP_SERVER_ECHO_MAX_INITIAL_RESPONSE_BYTES
+	int "Maximum initial response bytes without verification"
+	default 136
+	depends on COAP_SERVER_ECHO_AMPLIFICATION_MITIGATION
+	help
+	  Maximum response size in bytes to send to unverified clients.
+	  Default of 136 bytes follows RFC 9175 Section 2.4 item 3 guidance
+	  for Ethernet MTU with IP/UDP/CoAP headers.
+
+endif # COAP_SERVER_ECHO
+
+endif # COAP_SERVER
 
 module = COAP
 module-dep = NET_LOG

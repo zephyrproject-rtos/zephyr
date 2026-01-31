@@ -43,10 +43,25 @@ extern "C" {
 
 /** @cond INTERNAL_HIDDEN */
 
+#if defined(CONFIG_COAP_SERVER_ECHO)
+/** Echo cache entry for tracking client verification state */
+struct coap_echo_entry {
+	struct net_sockaddr addr;         /**< Client address */
+	net_socklen_t addr_len;           /**< Address length */
+	uint8_t echo_value[CONFIG_COAP_SERVER_ECHO_MAX_LEN]; /**< Echo value */
+	uint8_t echo_len;                 /**< Echo value length */
+	int64_t timestamp;                /**< Creation timestamp */
+	int64_t verified_until;           /**< Address verified until (for amplification) */
+};
+#endif
+
 struct coap_service_data {
 	int sock_fd;
 	struct coap_observer observers[CONFIG_COAP_SERVICE_OBSERVERS];
 	struct coap_pending pending[CONFIG_COAP_SERVICE_PENDING_MESSAGES];
+#if defined(CONFIG_COAP_SERVER_ECHO)
+	struct coap_echo_entry echo_cache[CONFIG_COAP_SERVER_ECHO_CACHE_SIZE];
+#endif
 };
 
 struct coap_service {

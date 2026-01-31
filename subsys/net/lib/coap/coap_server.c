@@ -18,6 +18,7 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <zephyr/net/coap_service.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/zvfs/eventfd.h>
+#include <zephyr/random/random.h>
 
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 /* Lowest priority cooperative thread */
@@ -81,6 +82,363 @@ static inline void coap_server_free(void *ptr)
 	ARG_UNUSED(ptr);
 #endif
 }
+
+#if defined(CONFIG_COAP_SERVER_ECHO)
+
+/* Compare two socket addresses for equality */
+static bool sockaddr_equal(const struct net_sockaddr *a, net_socklen_t a_len,
+			   const struct net_sockaddr *b, net_socklen_t b_len)
+{
+	if (a_len != b_len || a->sa_family != b->sa_family) {
+		return false;
+	}
+
+	if (a->sa_family == NET_AF_INET) {
+		const struct net_sockaddr_in *a4 = (const struct net_sockaddr_in *)a;
+		const struct net_sockaddr_in *b4 = (const struct net_sockaddr_in *)b;
+
+		return a4->sin_port == b4->sin_port &&
+		       net_ipv4_addr_cmp(&a4->sin_addr, &b4->sin_addr);
+	} else if (a->sa_family == NET_AF_INET6) {
+		const struct net_sockaddr_in6 *a6 = (const struct net_sockaddr_in6 *)a;
+		const struct net_sockaddr_in6 *b6 = (const struct net_sockaddr_in6 *)b;
+
+		return a6->sin6_port == b6->sin6_port &&
+		       net_ipv6_addr_cmp(&a6->sin6_addr, &b6->sin6_addr);
+	}
+
+	return false;
+}
+
+/* Find Echo cache entry for a given address */
+#if defined(CONFIG_ZTEST)
+struct coap_echo_entry *coap_echo_cache_find(struct coap_echo_entry *cache,
+					     const struct net_sockaddr *addr,
+					     net_socklen_t addr_len);
+#endif
+
+static struct coap_echo_entry *echo_cache_find(struct coap_echo_entry *cache,
+					       const struct net_sockaddr *addr,
+					       net_socklen_t addr_len)
+{
+	for (int i = 0; i < CONFIG_COAP_SERVER_ECHO_CACHE_SIZE; i++) {
+		if (cache[i].addr_len > 0 &&
+		    sockaddr_equal(&cache[i].addr, cache[i].addr_len, addr, addr_len)) {
+			return &cache[i];
+		}
+	}
+
+	return NULL;
+}
+
+#if defined(CONFIG_ZTEST)
+struct coap_echo_entry *coap_echo_cache_find(struct coap_echo_entry *cache,
+					     const struct net_sockaddr *addr,
+					     net_socklen_t addr_len)
+{
+	return echo_cache_find(cache, addr, addr_len);
+}
+#endif
+
+/* Find or allocate Echo cache entry (LRU eviction) */
+static struct coap_echo_entry *echo_cache_get_entry(struct coap_echo_entry *cache,
+						    const struct net_sockaddr *addr,
+						    net_socklen_t addr_len)
+{
+	struct coap_echo_entry *entry;
+	struct coap_echo_entry *oldest = NULL;
+	int64_t oldest_time = INT64_MAX;
+
+	/* Try to find existing entry */
+	entry = echo_cache_find(cache, addr, addr_len);
+	if (entry != NULL) {
+		return entry;
+	}
+
+	/* Find empty or oldest entry */
+	for (int i = 0; i < CONFIG_COAP_SERVER_ECHO_CACHE_SIZE; i++) {
+		if (cache[i].addr_len == 0) {
+			return &cache[i];
+		}
+		if (cache[i].timestamp < oldest_time) {
+			oldest_time = cache[i].timestamp;
+			oldest = &cache[i];
+		}
+	}
+
+	/* Evict oldest entry */
+	if (oldest != NULL) {
+		memset(oldest, 0, sizeof(*oldest));
+	}
+
+	return oldest;
+}
+
+/* Generate a new Echo option value */
+static int echo_generate_value(uint8_t *buf, size_t len)
+{
+	if (len > CONFIG_COAP_SERVER_ECHO_MAX_LEN) {
+		return -EINVAL;
+	}
+
+	/* Generate random bytes for the Echo value */
+	return sys_csrand_get(buf, len);
+}
+
+/* Create and store a new Echo challenge for a client */
+#if defined(CONFIG_ZTEST)
+int coap_echo_create_challenge(struct coap_echo_entry *cache,
+			       const struct net_sockaddr *addr,
+			       net_socklen_t addr_len,
+			       uint8_t *echo_value, size_t *echo_len);
+#endif
+
+static int echo_create_challenge(struct coap_echo_entry *cache,
+				 const struct net_sockaddr *addr,
+				 net_socklen_t addr_len,
+				 uint8_t *echo_value, size_t *echo_len)
+{
+	struct coap_echo_entry *entry;
+	int ret;
+
+	entry = echo_cache_get_entry(cache, addr, addr_len);
+	if (entry == NULL) {
+		return -ENOMEM;
+	}
+
+	/* Generate new Echo value */
+	ret = echo_generate_value(entry->echo_value, CONFIG_COAP_SERVER_ECHO_MAX_LEN);
+	if (ret < 0) {
+		return ret;
+	}
+
+	entry->echo_len = CONFIG_COAP_SERVER_ECHO_MAX_LEN;
+	entry->timestamp = k_uptime_get();
+	entry->verified_until = 0; /* Not verified yet */
+
+	/* Copy address */
+	memcpy(&entry->addr, addr, addr_len);
+	entry->addr_len = addr_len;
+
+	/* Return the Echo value to caller */
+	memcpy(echo_value, entry->echo_value, entry->echo_len);
+	*echo_len = entry->echo_len;
+
+	return 0;
+}
+
+#if defined(CONFIG_ZTEST)
+int coap_echo_create_challenge(struct coap_echo_entry *cache,
+			       const struct net_sockaddr *addr,
+			       net_socklen_t addr_len,
+			       uint8_t *echo_value, size_t *echo_len)
+{
+	return echo_create_challenge(cache, addr, addr_len, echo_value, echo_len);
+}
+#endif
+
+/* Verify an Echo option value from a request */
+#if defined(CONFIG_ZTEST)
+int coap_echo_verify_value(struct coap_echo_entry *cache,
+			   const struct net_sockaddr *addr,
+			   net_socklen_t addr_len,
+			   const uint8_t *echo_value, size_t echo_len);
+#endif
+
+static int echo_verify_value(struct coap_echo_entry *cache,
+			     const struct net_sockaddr *addr,
+			     net_socklen_t addr_len,
+			     const uint8_t *echo_value, size_t echo_len)
+{
+	struct coap_echo_entry *entry;
+	int64_t now = k_uptime_get();
+
+	/* RFC 9175 Section 2.2.1: Echo length must be 1-40 bytes */
+	if (echo_len == 0 || echo_len > 40) {
+		return -EINVAL;
+	}
+
+	entry = echo_cache_find(cache, addr, addr_len);
+	if (entry == NULL) {
+		/* No cached Echo value for this client */
+		return -ENOENT;
+	}
+
+	/* Check if Echo value has expired */
+	if ((now - entry->timestamp) > CONFIG_COAP_SERVER_ECHO_LIFETIME_MS) {
+		return -ETIMEDOUT;
+	}
+
+	/* Verify Echo value matches */
+	if (entry->echo_len != echo_len ||
+	    memcmp(entry->echo_value, echo_value, echo_len) != 0) {
+		return -EINVAL;
+	}
+
+	/* Mark address as verified for amplification mitigation */
+	entry->verified_until = now + CONFIG_COAP_SERVER_ECHO_LIFETIME_MS;
+
+	return 0;
+}
+
+#if defined(CONFIG_ZTEST)
+int coap_echo_verify_value(struct coap_echo_entry *cache,
+			   const struct net_sockaddr *addr,
+			   net_socklen_t addr_len,
+			   const uint8_t *echo_value, size_t echo_len)
+{
+	return echo_verify_value(cache, addr, addr_len, echo_value, echo_len);
+}
+#endif
+
+/* Check if a client address is verified for amplification mitigation */
+#if defined(CONFIG_ZTEST)
+bool coap_echo_is_address_verified(struct coap_echo_entry *cache,
+				   const struct net_sockaddr *addr,
+				   net_socklen_t addr_len);
+#endif
+
+static bool echo_is_address_verified(struct coap_echo_entry *cache,
+				     const struct net_sockaddr *addr,
+				     net_socklen_t addr_len)
+{
+	struct coap_echo_entry *entry;
+	int64_t now = k_uptime_get();
+
+	entry = echo_cache_find(cache, addr, addr_len);
+	if (entry == NULL) {
+		return false;
+	}
+
+	return entry->verified_until > now;
+}
+
+#if defined(CONFIG_ZTEST)
+bool coap_echo_is_address_verified(struct coap_echo_entry *cache,
+				   const struct net_sockaddr *addr,
+				   net_socklen_t addr_len)
+{
+	return echo_is_address_verified(cache, addr, addr_len);
+}
+#endif
+
+/* Build a 4.01 Unauthorized response with Echo option */
+#if defined(CONFIG_ZTEST)
+int coap_echo_build_challenge_response(struct coap_packet *response,
+				       const struct coap_packet *request,
+				       const uint8_t *echo_value,
+				       size_t echo_len,
+				       uint8_t *buf, size_t buf_len);
+#endif
+
+static int echo_build_challenge_response(struct coap_packet *response,
+					 const struct coap_packet *request,
+					 const uint8_t *echo_value,
+					 size_t echo_len,
+					 uint8_t *buf, size_t buf_len)
+{
+	uint8_t token[COAP_TOKEN_MAX_LEN];
+	uint8_t tkl = coap_header_get_token(request, token);
+	uint16_t id = coap_header_get_id(request);
+	uint8_t type = coap_header_get_type(request);
+	int ret;
+
+	/* RFC 9175 Section 2.4 item 3: must be piggybacked or NON, never separate */
+	if (type == COAP_TYPE_CON) {
+		type = COAP_TYPE_ACK;
+	} else {
+		type = COAP_TYPE_NON_CON;
+		id = coap_next_id();
+	}
+
+	ret = coap_packet_init(response, buf, buf_len, COAP_VERSION_1, type,
+			       tkl, token, COAP_RESPONSE_CODE_UNAUTHORIZED, id);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = coap_packet_append_option(response, COAP_OPTION_ECHO,
+					echo_value, echo_len);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
+}
+
+#if defined(CONFIG_ZTEST)
+int coap_echo_build_challenge_response(struct coap_packet *response,
+				       const struct coap_packet *request,
+				       const uint8_t *echo_value,
+				       size_t echo_len,
+				       uint8_t *buf, size_t buf_len)
+{
+	return echo_build_challenge_response(response, request, echo_value,
+					    echo_len, buf, buf_len);
+}
+#endif
+
+/* Check if method is unsafe (requires freshness) */
+#if defined(CONFIG_ZTEST)
+bool coap_is_unsafe_method(uint8_t code);
+#endif
+
+static bool is_unsafe_method(uint8_t code)
+{
+	return code == COAP_METHOD_POST ||
+	       code == COAP_METHOD_PUT ||
+	       code == COAP_METHOD_DELETE ||
+	       code == COAP_METHOD_PATCH ||
+	       code == COAP_METHOD_IPATCH;
+}
+
+#if defined(CONFIG_ZTEST)
+bool coap_is_unsafe_method(uint8_t code)
+{
+	return is_unsafe_method(code);
+}
+#endif
+
+/* Extract Echo option from request */
+#if defined(CONFIG_ZTEST)
+int coap_echo_extract_from_request(const struct coap_packet *request,
+				   uint8_t *echo_value, size_t *echo_len);
+#endif
+
+static int echo_extract_from_request(const struct coap_packet *request,
+				     uint8_t *echo_value, size_t *echo_len)
+{
+	struct coap_option option;
+	int ret;
+
+	ret = coap_find_options(request, COAP_OPTION_ECHO, &option, 1);
+	if (ret < 0) {
+		return ret;
+	}
+	if (ret == 0) {
+		return -ENOENT;
+	}
+
+	if (option.len > 40 || option.len == 0) {
+		/* Invalid Echo length per RFC 9175 Section 2.2.1 */
+		return -EINVAL;
+	}
+
+	memcpy(echo_value, option.value, option.len);
+	*echo_len = option.len;
+
+	return 0;
+}
+
+#if defined(CONFIG_ZTEST)
+int coap_echo_extract_from_request(const struct coap_packet *request,
+				   uint8_t *echo_value, size_t *echo_len)
+{
+	return echo_extract_from_request(request, echo_value, echo_len);
+}
+#endif
+
+#endif /* CONFIG_COAP_SERVER_ECHO */
 
 static int coap_service_remove_observer(const struct coap_service *service,
 					struct coap_resource *resource,
@@ -269,6 +627,116 @@ static int coap_server_process(int sock_fd)
 		ret = -EINVAL;
 		goto unlock;
 	}
+
+#if defined(CONFIG_COAP_SERVER_ECHO)
+	/* Echo option processing per RFC 9175 */
+	{
+		uint8_t echo_value[40];
+		size_t echo_len = 0;
+		uint8_t code = coap_header_get_code(&request);
+		bool needs_echo = false;
+		bool echo_verified = false;
+		int echo_ret;
+
+		/* Try to extract and verify Echo option from request */
+		echo_ret = echo_extract_from_request(&request, echo_value, &echo_len);
+		if (echo_ret == 0) {
+			/* Echo present - verify it */
+			echo_ret = echo_verify_value(service->data->echo_cache,
+						     &client_addr, client_addr_len,
+						     echo_value, echo_len);
+			if (echo_ret == 0) {
+				echo_verified = true;
+			} else {
+				/* Echo verification failed - send new challenge */
+				LOG_DBG("Echo verification failed (%d), sending new challenge",
+					echo_ret);
+				needs_echo = true;
+			}
+		} else if (echo_ret == -EINVAL) {
+			/* Invalid Echo option - treat as unverifiable per RFC 9175 */
+			LOG_DBG("Invalid Echo option, sending new challenge");
+			needs_echo = true;
+		}
+
+		/* Check if we need Echo for unsafe methods */
+		if (!needs_echo && IS_ENABLED(CONFIG_COAP_SERVER_ECHO_REQUIRE_FOR_UNSAFE) &&
+		    is_unsafe_method(code) && !echo_verified) {
+			/* RFC 9175 Section 2.3: MUST NOT process further */
+			LOG_DBG("Unsafe method requires Echo, sending challenge");
+			needs_echo = true;
+		}
+
+		/* Check amplification mitigation for well-known/core */
+		if (!needs_echo &&
+		    IS_ENABLED(CONFIG_COAP_SERVER_ECHO_AMPLIFICATION_MITIGATION) &&
+		    IS_ENABLED(CONFIG_COAP_SERVER_WELL_KNOWN_CORE) &&
+		    code == COAP_METHOD_GET &&
+		    coap_uri_path_match(COAP_WELL_KNOWN_CORE_PATH, options, opt_num)) {
+			/* Check if address is verified */
+			if (!echo_is_address_verified(service->data->echo_cache,
+						      &client_addr, client_addr_len)) {
+				/* Estimate response size for well-known/core */
+				size_t est_response_size = 0;
+
+				COAP_SERVICE_FOREACH_RESOURCE(service, res) {
+					/* Rough estimate: path + attributes */
+					if (res->path != NULL) {
+						for (const char * const *p = res->path; *p; p++) {
+							est_response_size += strlen(*p) + 3;
+						}
+					}
+				}
+
+				/* Add CoAP header overhead */
+				est_response_size += 20;
+
+				/* Check if response exceeds threshold */
+				if (est_response_size >
+				    CONFIG_COAP_SERVER_ECHO_MAX_INITIAL_RESPONSE_BYTES) {
+					LOG_DBG("Well-known/core response too large (%zu bytes), "
+						"sending Echo challenge", est_response_size);
+					needs_echo = true;
+				}
+			}
+		}
+
+		/* Send Echo challenge if needed */
+		if (needs_echo) {
+			uint8_t challenge_buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+			struct coap_packet challenge_response;
+			uint8_t new_echo_value[CONFIG_COAP_SERVER_ECHO_MAX_LEN];
+			size_t new_echo_len;
+
+			/* Create new Echo challenge */
+			ret = echo_create_challenge(service->data->echo_cache,
+						    &client_addr, client_addr_len,
+						    new_echo_value, &new_echo_len);
+			if (ret < 0) {
+				LOG_ERR("Failed to create Echo challenge (%d)", ret);
+				goto unlock;
+			}
+
+			/* Build 4.01 Unauthorized response with Echo */
+			ret = echo_build_challenge_response(&challenge_response, &request,
+							   new_echo_value, new_echo_len,
+							   challenge_buf,
+							   sizeof(challenge_buf));
+			if (ret < 0) {
+				LOG_ERR("Failed to build Echo challenge response (%d)", ret);
+				goto unlock;
+			}
+
+			/* Send the challenge */
+			ret = coap_service_send(service, &challenge_response,
+					       &client_addr, client_addr_len, NULL);
+			if (ret < 0) {
+				LOG_ERR("Failed to send Echo challenge (%d)", ret);
+			}
+			goto unlock;
+		}
+	}
+#endif /* CONFIG_COAP_SERVER_ECHO */
 
 	if (IS_ENABLED(CONFIG_COAP_SERVER_WELL_KNOWN_CORE) &&
 	    coap_header_get_code(&request) == COAP_METHOD_GET &&
