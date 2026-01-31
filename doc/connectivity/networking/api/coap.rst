@@ -488,6 +488,27 @@ Per RFC 8613 Section 2, OSCORE uses option number **9** to indicate protected me
 **Important**: A CoAP message with the OSCORE option but no payload is malformed and
 MUST be rejected (RFC 8613 Section 2). The Zephyr implementation enforces this rule.
 
+Handling OSCORE When Not Supported
+-----------------------------------
+
+When OSCORE support is not enabled (:kconfig:option:`CONFIG_COAP_OSCORE` is not set),
+the Zephyr CoAP stack implements fail-closed behavior for the OSCORE option per
+RFC 7252 Section 5.4.1:
+
+**Server behavior** (when ``CONFIG_COAP_OSCORE=n``):
+
+- **CON requests** with OSCORE option: Returns **4.02 (Bad Option)** response
+- **NON requests** with OSCORE option: Silently rejects (drops) the message
+- **Responses** with OSCORE option: Sends RST for CON, silently drops NON/ACK
+
+**Client behavior** (when ``CONFIG_COAP_OSCORE=n``):
+
+- **Responses** with OSCORE option: Rejects the response, sends RST for CON responses,
+  does not deliver to application callback
+
+This ensures that CoAP messages containing the OSCORE option are never processed as
+plaintext when OSCORE support is unavailable, preventing security violations.
+
 Inner vs Outer Options
 ======================
 

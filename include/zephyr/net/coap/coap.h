@@ -1324,6 +1324,25 @@ struct coap_transmission_parameters coap_get_transmission_parameters(void);
 void coap_set_transmission_parameters(const struct coap_transmission_parameters *params);
 
 /**
+ * @brief Check if a CoAP packet contains unsupported critical options.
+ *
+ * This function checks if a parsed CoAP packet contains any critical options
+ * that this build does not support. Per RFC 7252 Section 5.4.1, unrecognized
+ * critical options must cause the message to be rejected.
+ *
+ * Currently checks for:
+ * - OSCORE option (9) when CONFIG_COAP_OSCORE is not enabled
+ *
+ * @param cpkt Parsed CoAP packet to check
+ * @param opt Pointer to store the option number of the first unsupported critical option found
+ *
+ * @retval 0 No unsupported critical options found
+ * @retval -ENOTSUP Unsupported critical option found, option number stored in *opt
+ * @retval -EINVAL Invalid input parameters
+ */
+int coap_check_unsupported_critical_options(const struct coap_packet *cpkt, uint16_t *opt);
+
+/**
  * @brief Check if a response should be suppressed based on the No-Response option.
  *
  * This function evaluates the No-Response option (RFC 7967) in a CoAP request

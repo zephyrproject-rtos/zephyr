@@ -985,6 +985,32 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 		return 0;
 	}
 
+	/* RFC 7252 Section 5.4.1: Check for unsupported critical options in response.
+	 * This must happen before OSCORE verification to ensure we don't process
+	 * responses with unsupported critical options even if they're OSCORE-protected.
+	 */
+	uint16_t unsupported_opt;
+
+	ret = coap_check_unsupported_critical_options(response, &unsupported_opt);
+	if (ret == -ENOTSUP) {
+		/* RFC 7252 Section 5.4.1: Unrecognized critical option in response
+		 * MUST cause the response to be rejected.
+		 */
+		LOG_ERR("Response contains unsupported critical option %u, rejecting",
+			unsupported_opt);
+
+		/* Send RST for CON response per RFC 7252 Section 4.2 */
+		if (response_type == COAP_TYPE_CON) {
+			ret = send_rst(client, response);
+			if (ret < 0) {
+				LOG_ERR("Failed to send RST for rejected response");
+			}
+		}
+
+		/* Do not deliver response to application */
+		return 0;
+	}
+
 #if defined(CONFIG_COAP_OSCORE)
 	/* RFC 8613 Section 8.4: Verify OSCORE-protected responses.
 	 * This implements fail-closed behavior: if the request was OSCORE-protected,

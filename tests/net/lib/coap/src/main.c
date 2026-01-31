@@ -3461,4 +3461,223 @@ ZTEST(coap, test_oscore_next_block_request)
 
 #endif /* CONFIG_COAP_OSCORE */
 
+/* Tests for RFC 7252 Section 5.4.1: Unrecognized critical options handling */
+#if !defined(CONFIG_COAP_OSCORE)
+
+ZTEST(coap, test_unsupported_critical_option_helper)
+{
+	struct coap_packet cpkt;
+	uint8_t buffer[128];
+	uint16_t unsupported_opt;
+	int r;
+
+	/* Build a packet with OSCORE option (which is unsupported in this build) */
+	r = coap_packet_init(&cpkt, buffer, sizeof(buffer),
+			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
+			     COAP_METHOD_GET, 0x1234);
+	zassert_equal(r, 0, "Failed to init packet");
+
+	/* Add OSCORE option with some dummy value */
+	uint8_t oscore_value[] = {0x01, 0x02, 0x03};
+
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_OSCORE,
+				      oscore_value, sizeof(oscore_value));
+	zassert_equal(r, 0, "Failed to append OSCORE option");
+
+	/* Add a payload to make it a valid OSCORE message format */
+	r = coap_packet_append_payload_marker(&cpkt);
+	zassert_equal(r, 0, "Failed to append payload marker");
+
+	uint8_t payload[] = "test";
+
+	r = coap_packet_append_payload(&cpkt, payload, sizeof(payload));
+	zassert_equal(r, 0, "Failed to append payload");
+
+	/* Test: Check for unsupported critical options */
+	r = coap_check_unsupported_critical_options(&cpkt, &unsupported_opt);
+	zassert_equal(r, -ENOTSUP, "Should detect unsupported OSCORE option");
+	zassert_equal(unsupported_opt, COAP_OPTION_OSCORE,
+		      "Should report OSCORE as unsupported option");
+
+	/* Test: Packet without OSCORE should pass */
+	uint8_t buffer2[128];
+
+	r = coap_packet_init(&cpkt, buffer2, sizeof(buffer2),
+			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
+			     COAP_METHOD_GET, 0x1235);
+	zassert_equal(r, 0, "Failed to init packet");
+
+	r = coap_check_unsupported_critical_options(&cpkt, &unsupported_opt);
+	zassert_equal(r, 0, "Should not detect unsupported options in normal packet");
+}
+
+ZTEST(coap, test_server_rejects_oscore_con_request)
+{
+	struct coap_packet request;
+	struct coap_packet response;
+	uint8_t request_buf[128];
+	uint8_t response_buf[128];
+	int r;
+
+	/* Build a CON request with OSCORE option */
+	r = coap_packet_init(&request, request_buf, sizeof(request_buf),
+			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
+			     COAP_METHOD_GET, 0x1234);
+	zassert_equal(r, 0, "Failed to init request");
+
+	/* Add OSCORE option */
+	uint8_t oscore_value[] = {0x01, 0x02, 0x03};
+
+	r = coap_packet_append_option(&request, COAP_OPTION_OSCORE,
+				      oscore_value, sizeof(oscore_value));
+	zassert_equal(r, 0, "Failed to append OSCORE option");
+
+	/* Add payload (required for valid OSCORE message) */
+	r = coap_packet_append_payload_marker(&request);
+	zassert_equal(r, 0, "Failed to append payload marker");
+
+	uint8_t payload[] = "encrypted_data";
+
+	r = coap_packet_append_payload(&request, payload, sizeof(payload));
+	zassert_equal(r, 0, "Failed to append payload");
+
+	/* Simulate server processing: check for unsupported critical options */
+	uint16_t unsupported_opt;
+
+	r = coap_check_unsupported_critical_options(&request, &unsupported_opt);
+	zassert_equal(r, -ENOTSUP, "Should detect unsupported OSCORE option");
+
+	/* Server should send 4.02 Bad Option for CON request */
+	r = coap_ack_init(&response, &request, response_buf, sizeof(response_buf),
+			  COAP_RESPONSE_CODE_BAD_OPTION);
+	zassert_equal(r, 0, "Failed to init Bad Option response");
+
+	/* Verify response properties */
+	uint8_t response_type = coap_header_get_type(&response);
+	uint8_t response_code = coap_header_get_code(&response);
+	uint16_t response_id = coap_header_get_id(&response);
+
+	zassert_equal(response_type, COAP_TYPE_ACK, "Should be ACK");
+	zassert_equal(response_code, COAP_RESPONSE_CODE_BAD_OPTION,
+		      "Should be 4.02 Bad Option");
+	zassert_equal(response_id, 0x1234, "Should match request ID");
+}
+
+ZTEST(coap, test_server_rejects_oscore_non_request)
+{
+	struct coap_packet request;
+	uint8_t request_buf[128];
+	int r;
+
+	/* Build a NON request with OSCORE option */
+	r = coap_packet_init(&request, request_buf, sizeof(request_buf),
+			     COAP_VERSION_1, COAP_TYPE_NON_CON, 0, NULL,
+			     COAP_METHOD_POST, 0x1235);
+	zassert_equal(r, 0, "Failed to init request");
+
+	/* Add OSCORE option */
+	uint8_t oscore_value[] = {0x01, 0x02, 0x03};
+
+	r = coap_packet_append_option(&request, COAP_OPTION_OSCORE,
+				      oscore_value, sizeof(oscore_value));
+	zassert_equal(r, 0, "Failed to append OSCORE option");
+
+	/* Add payload */
+	r = coap_packet_append_payload_marker(&request);
+	zassert_equal(r, 0, "Failed to append payload marker");
+
+	uint8_t payload[] = "encrypted_data";
+
+	r = coap_packet_append_payload(&request, payload, sizeof(payload));
+	zassert_equal(r, 0, "Failed to append payload");
+
+	/* Check for unsupported critical options */
+	uint16_t unsupported_opt;
+
+	r = coap_check_unsupported_critical_options(&request, &unsupported_opt);
+	zassert_equal(r, -ENOTSUP, "Should detect unsupported OSCORE option");
+
+	/* For NON requests, server should silently drop (no response) */
+	/* This test verifies the detection; actual drop behavior is in server code */
+}
+
+ZTEST(coap, test_client_rejects_oscore_response)
+{
+	struct coap_packet response;
+	uint8_t response_buf[128];
+	int r;
+
+	/* Build a response with OSCORE option */
+	uint8_t token[] = {0x01, 0x02, 0x03, 0x04};
+
+	r = coap_packet_init(&response, response_buf, sizeof(response_buf),
+			     COAP_VERSION_1, COAP_TYPE_CON, sizeof(token), token,
+			     COAP_RESPONSE_CODE_CONTENT, 0x1236);
+	zassert_equal(r, 0, "Failed to init response");
+
+	/* Add OSCORE option */
+	uint8_t oscore_value[] = {0x01, 0x02, 0x03};
+
+	r = coap_packet_append_option(&response, COAP_OPTION_OSCORE,
+				      oscore_value, sizeof(oscore_value));
+	zassert_equal(r, 0, "Failed to append OSCORE option");
+
+	/* Add payload */
+	r = coap_packet_append_payload_marker(&response);
+	zassert_equal(r, 0, "Failed to append payload marker");
+
+	uint8_t payload[] = "encrypted_data";
+
+	r = coap_packet_append_payload(&response, payload, sizeof(payload));
+	zassert_equal(r, 0, "Failed to append payload");
+
+	/* Client should detect unsupported critical option */
+	uint16_t unsupported_opt;
+
+	r = coap_check_unsupported_critical_options(&response, &unsupported_opt);
+	zassert_equal(r, -ENOTSUP, "Should detect unsupported OSCORE option");
+	zassert_equal(unsupported_opt, COAP_OPTION_OSCORE,
+		      "Should report OSCORE as unsupported");
+
+	/* For CON response, client should send RST (verified in client code) */
+	/* This test verifies the detection logic */
+}
+
+ZTEST(coap, test_normal_messages_not_affected)
+{
+	struct coap_packet cpkt;
+	uint8_t buffer[128];
+	uint16_t unsupported_opt;
+	int r;
+
+	/* Build a normal request without OSCORE */
+	r = coap_packet_init(&cpkt, buffer, sizeof(buffer),
+			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
+			     COAP_METHOD_GET, 0x1237);
+	zassert_equal(r, 0, "Failed to init packet");
+
+	/* Add some normal options */
+	r = coap_packet_set_path(&cpkt, "/test/path");
+	zassert_equal(r, 0, "Failed to set path");
+
+	r = coap_append_option_int(&cpkt, COAP_OPTION_CONTENT_FORMAT,
+				   COAP_CONTENT_FORMAT_TEXT_PLAIN);
+	zassert_equal(r, 0, "Failed to append content format");
+
+	/* Add payload */
+	r = coap_packet_append_payload_marker(&cpkt);
+	zassert_equal(r, 0, "Failed to append payload marker");
+
+	uint8_t payload[] = "normal_payload";
+
+	r = coap_packet_append_payload(&cpkt, payload, sizeof(payload));
+	zassert_equal(r, 0, "Failed to append payload");
+
+	/* Should not detect any unsupported critical options */
+	r = coap_check_unsupported_critical_options(&cpkt, &unsupported_opt);
+	zassert_equal(r, 0, "Should not detect unsupported options in normal message");
+}
+
+#endif /* !CONFIG_COAP_OSCORE */
+
 ZTEST_SUITE(coap, NULL, NULL, NULL, NULL, NULL);

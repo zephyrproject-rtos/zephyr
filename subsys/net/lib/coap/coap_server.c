@@ -703,6 +703,84 @@ static int coap_server_process(int sock_fd)
 		return ret;
 	}
 
+	/* RFC 7252 Section 5.4.1: Check for unsupported critical options before processing.
+	 * This must happen before any OSCORE-specific logic to ensure fail-closed behavior.
+	 */
+	uint16_t unsupported_opt;
+
+	ret = coap_check_unsupported_critical_options(&request, &unsupported_opt);
+	if (ret == -ENOTSUP) {
+		/* RFC 7252 Section 5.4.1: Handle unrecognized critical option */
+		uint8_t msg_type = coap_header_get_type(&request);
+
+		LOG_WRN("Unsupported critical option %u in message", unsupported_opt);
+
+		if (coap_packet_is_request(&request)) {
+			if (msg_type == COAP_TYPE_CON) {
+				/* RFC 7252 Section 5.4.1: CON request with unrecognized critical
+				 * option MUST return 4.02 (Bad Option) response.
+				 */
+				struct coap_packet response;
+				uint8_t response_buf[COAP_TOKEN_MAX_LEN + 4U];
+
+				ret = coap_ack_init(&response, &request, response_buf,
+						    sizeof(response_buf),
+						    COAP_RESPONSE_CODE_BAD_OPTION);
+				if (ret < 0) {
+					LOG_ERR("Failed to init Bad Option response (%d)", ret);
+					return ret;
+				}
+
+				ret = zsock_sendto(sock_fd, response.data, response.offset, 0,
+						   &client_addr, client_addr_len);
+				if (ret < 0) {
+					LOG_ERR("Failed to send Bad Option response (%d)", -errno);
+					return -errno;
+				}
+
+				LOG_DBG("Sent 4.02 Bad Option for unsupported critical option %u",
+					unsupported_opt);
+				return 0;
+			} else {
+				/* RFC 7252 Section 5.4.1: NON request with unrecognized critical
+				 * option MUST be rejected (silently dropped, optionally send RST).
+				 * We choose to silently drop as per RFC 7252 Section 4.3.
+				 */
+				LOG_DBG("Rejected NON request with unsupported critical option %u",
+					unsupported_opt);
+				return 0;
+			}
+		} else {
+			/* RFC 7252 Section 5.4.1: Response with unrecognized critical option
+			 * MUST be rejected. Since this is the server, we shouldn't normally
+			 * receive responses, but handle it defensively.
+			 */
+			if (msg_type == COAP_TYPE_CON) {
+				/* Send RST for CON response */
+				struct coap_packet rst;
+				uint8_t rst_buf[COAP_FIXED_HEADER_SIZE + COAP_TOKEN_MAX_LEN];
+
+				ret = coap_rst_init(&rst, &request, rst_buf, sizeof(rst_buf));
+				if (ret < 0) {
+					LOG_ERR("Failed to init RST (%d)", ret);
+					return ret;
+				}
+
+				ret = zsock_sendto(sock_fd, rst.data, rst.offset, 0,
+						   &client_addr, client_addr_len);
+				if (ret < 0) {
+					LOG_ERR("Failed to send RST (%d)", -errno);
+					return -errno;
+				}
+
+				LOG_DBG("Sent RST for response with unsupported critical option %u",
+					unsupported_opt);
+			}
+			/* For NON/ACK responses, silently drop */
+			return 0;
+		}
+	}
+
 	(void)k_mutex_lock(&lock, K_FOREVER);
 	/* Find the active service */
 	COAP_SERVICE_FOREACH(svc) {
