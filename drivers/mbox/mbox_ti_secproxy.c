@@ -2,6 +2,7 @@
  * Copyright (c) 2025 Texas Instruments Incorporated.
  *
  * TI Secureproxy Mailbox driver for Zephyr's MBOX model.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/spinlock.h>
