@@ -59,6 +59,16 @@ int coap_oscore_verify(const uint8_t *oscore_msg, uint32_t oscore_msg_len,
 		       uint8_t *coap_msg, uint32_t *coap_msg_len,
 		       struct context *ctx, uint8_t *error_code);
 
+/**
+ * @brief Wrapper for OSCORE verification (can be overridden in tests)
+ *
+ * This is a weak symbol that tests can override to inject test behavior.
+ * By default, it calls the real coap_oscore_verify implementation.
+ */
+int coap_oscore_verify_wrapper(const uint8_t *oscore_msg, uint32_t oscore_msg_len,
+				uint8_t *coap_msg, uint32_t *coap_msg_len,
+				struct context *ctx, uint8_t *error_code);
+
 #if defined(CONFIG_COAP_TEST_API_ENABLE)
 /* Forward declaration for OSCORE exchange structure */
 struct coap_oscore_exchange;

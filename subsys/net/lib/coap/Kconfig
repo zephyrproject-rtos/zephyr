@@ -382,6 +382,16 @@ config COAP_OSCORE_EXCHANGE_LIFETIME_MS
 	  This applies to non-Observe exchanges; Observe exchanges are kept until
 	  the observation is cancelled.
 
+config COAP_OSCORE_MAX_UNFRAGMENTED_SIZE
+	int "Maximum OSCORE unfragmented message size"
+	default 4096
+	help
+	  Maximum size in bytes for reassembled OSCORE messages when using
+	  Outer Block-wise transfers (RFC 8613 Section 4.1.3.4.2). If the
+	  cumulative size of outer blocks exceeds this limit, the message
+	  is discarded per RFC 8613 security requirements. This prevents
+	  memory exhaustion attacks via fragmented OSCORE messages.
+
 endif # COAP_OSCORE
 
 module = COAP

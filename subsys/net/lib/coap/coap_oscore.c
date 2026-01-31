@@ -161,3 +161,17 @@ int coap_oscore_verify(const uint8_t *oscore_msg, uint32_t oscore_msg_len,
 	LOG_DBG("OSCORE verified message: %u -> %u bytes", oscore_msg_len, *coap_msg_len);
 	return 0;
 }
+
+/**
+ * @brief Wrapper for OSCORE verification (weak symbol for test overrides)
+ *
+ * This allows tests to intercept OSCORE verification calls without modifying
+ * the production code. By default, it just calls the real implementation.
+ */
+__weak int coap_oscore_verify_wrapper(const uint8_t *oscore_msg, uint32_t oscore_msg_len,
+				       uint8_t *coap_msg, uint32_t *coap_msg_len,
+				       struct context *ctx, uint8_t *error_code)
+{
+	return coap_oscore_verify(oscore_msg, oscore_msg_len, coap_msg, coap_msg_len,
+				  ctx, error_code);
+}

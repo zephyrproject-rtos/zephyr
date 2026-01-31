@@ -172,9 +172,12 @@ struct coap_client_internal_request {
 	bool oscore_enabled_for_exchange; /**< True if request was OSCORE-protected */
 	uint8_t oscore_wire_buf[MAX_COAP_MSG_LEN]; /**< OSCORE-protected wire message */
 	uint8_t oscore_plaintext_buf[MAX_COAP_MSG_LEN]; /**< Decrypted response buffer */
-	/* For Block2 with OSCORE: reassemble ciphertext before verification */
-	uint8_t oscore_ciphertext_buf[MAX_COAP_MSG_LEN];
-	size_t oscore_ciphertext_len; /**< Accumulated ciphertext length */
+	/* RFC 8613 Section 8.4.1: Outer Block2 reassembly before OSCORE verification */
+	struct coap_block_context oscore_outer_recv_blk_ctx; /**< Outer Block2 context */
+	uint8_t oscore_outer_reassembly_buf[CONFIG_COAP_OSCORE_MAX_UNFRAGMENTED_SIZE];
+	size_t oscore_outer_reassembly_len; /**< Accumulated outer message length */
+	uint8_t oscore_outer_header_buf[MAX_COAP_MSG_LEN]; /**< First block header template */
+	size_t oscore_outer_header_len; /**< Length of header template */
 #endif
 };
 
