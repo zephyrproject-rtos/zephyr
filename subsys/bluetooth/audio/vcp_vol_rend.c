@@ -30,7 +30,6 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/time_units.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -437,17 +436,17 @@ int bt_vcp_vol_rend_register(struct bt_vcp_vol_rend_register_param *param)
 	static bool registered;
 	int err;
 
-	CHECKIF(param == NULL) {
+	if (param == NULL) {
 		LOG_DBG("param is NULL");
 		return -EINVAL;
 	}
 
-	CHECKIF(param->mute > BT_VCP_STATE_MUTED) {
+	if (param->mute > BT_VCP_STATE_MUTED) {
 		LOG_DBG("Invalid mute value: %u", param->mute);
 		return -EINVAL;
 	}
 
-	CHECKIF(param->step == 0) {
+	if (param->step == 0) {
 		LOG_DBG("Invalid step value: %u", param->step);
 		return -EINVAL;
 	}
