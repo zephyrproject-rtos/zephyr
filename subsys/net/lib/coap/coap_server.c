@@ -180,7 +180,40 @@ static int coap_server_process(int sock_fd)
 		uint8_t token[COAP_TOKEN_MAX_LEN];
 		uint8_t tkl = coap_header_get_token(&request, token);
 		uint16_t id = coap_header_get_id(&request);
+		bool suppress = false;
 
+		/* Check if response should be suppressed per RFC 7967 */
+		ret = coap_no_response_check(&request, COAP_RESPONSE_CODE_REQUEST_TOO_LARGE,
+					     &suppress);
+		if (ret < 0 && ret != -ENOENT) {
+			/* Invalid No-Response option - send 4.02 Bad Option */
+			LOG_WRN("Invalid No-Response option in truncated request");
+			suppress = false;
+		}
+
+		if (suppress) {
+			/* Response suppressed, but send empty ACK for CON requests */
+			if (type == COAP_TYPE_CON) {
+				ret = coap_packet_init(&response, buf, sizeof(buf),
+						       COAP_VERSION_1, COAP_TYPE_ACK, tkl,
+						       token, COAP_CODE_EMPTY, id);
+				if (ret < 0) {
+					LOG_ERR("Failed to init empty ACK (%d)", ret);
+					goto unlock;
+				}
+
+				ret = coap_service_send(service, &response, &client_addr,
+							client_addr_len, NULL);
+				if (ret < 0) {
+					LOG_ERR("Failed to send empty ACK (%d)", ret);
+					goto unlock;
+				}
+			}
+			/* For NON requests, send nothing */
+			goto unlock;
+		}
+
+		/* Response not suppressed, send error response */
 		if (type == COAP_TYPE_CON) {
 			type = COAP_TYPE_ACK;
 		} else {
@@ -242,7 +275,45 @@ static int coap_server_process(int sock_fd)
 	    coap_uri_path_match(COAP_WELL_KNOWN_CORE_PATH, options, opt_num)) {
 		uint8_t well_known_buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
 		struct coap_packet response;
+		bool suppress = false;
 
+		/* Check if response should be suppressed per RFC 7967 */
+		ret = coap_no_response_check(&request, COAP_RESPONSE_CODE_CONTENT, &suppress);
+		if (ret < 0 && ret != -ENOENT) {
+			/* Invalid No-Response option - send 4.02 Bad Option */
+			LOG_WRN("Invalid No-Response option in well-known/core request");
+			suppress = false;
+		}
+
+		if (suppress) {
+			/* Response suppressed, but send empty ACK for CON requests */
+			if (type == COAP_TYPE_CON) {
+				uint8_t token[COAP_TOKEN_MAX_LEN];
+				uint8_t tkl = coap_header_get_token(&request, token);
+				uint16_t id = coap_header_get_id(&request);
+
+				ret = coap_packet_init(&response, well_known_buf,
+						       sizeof(well_known_buf),
+						       COAP_VERSION_1, COAP_TYPE_ACK, tkl,
+						       token, COAP_CODE_EMPTY, id);
+				if (ret < 0) {
+					LOG_ERR("Failed to init empty ACK (%d)", ret);
+					goto unlock;
+				}
+
+				ret = coap_service_send(service, &response, &client_addr,
+							client_addr_len, NULL);
+				if (ret < 0) {
+					LOG_ERR("Failed to send empty ACK (%d)", ret);
+					goto unlock;
+				}
+			}
+			/* For NON requests, send nothing */
+			ret = 0;
+			goto unlock;
+		}
+
+		/* Response not suppressed, build and send well-known/core response */
 		ret = coap_well_known_core_get_len(service->res_begin,
 						   COAP_SERVICE_RESOURCE_COUNT(service),
 						   &request, &response,
@@ -272,18 +343,76 @@ static int coap_server_process(int sock_fd)
 		}
 
 		/* Shortcut for replying a code without a body */
-		if (ret > 0 && type == COAP_TYPE_CON) {
-			/* Minimal sized ack buffer */
-			uint8_t ack_buf[COAP_TOKEN_MAX_LEN + 4U];
-			struct coap_packet ack;
+		if (ret > 0) {
+			uint8_t response_code = (uint8_t)ret;
+			bool suppress = false;
+			int check_ret;
 
-			ret = coap_ack_init(&ack, &request, ack_buf, sizeof(ack_buf), (uint8_t)ret);
-			if (ret < 0) {
-				LOG_ERR("Failed to init ACK (%d)", ret);
-				goto unlock;
+			/* Check if response should be suppressed per RFC 7967 */
+			check_ret = coap_no_response_check(&request, response_code, &suppress);
+			if (check_ret < 0 && check_ret != -ENOENT) {
+				/* Invalid No-Response option - do not suppress,
+				 * send 4.02 Bad Option instead
+				 */
+				LOG_WRN("Invalid No-Response option, sending Bad Option");
+				response_code = COAP_RESPONSE_CODE_BAD_OPTION;
+				suppress = false;
 			}
 
-			ret = coap_service_send(service, &ack, &client_addr, client_addr_len, NULL);
+			if (suppress) {
+				/* Response suppressed, but send empty ACK for CON requests */
+				if (type == COAP_TYPE_CON) {
+					uint8_t ack_buf[COAP_TOKEN_MAX_LEN + 4U];
+					struct coap_packet ack;
+
+					ret = coap_ack_init(&ack, &request, ack_buf,
+							    sizeof(ack_buf), COAP_CODE_EMPTY);
+					if (ret < 0) {
+						LOG_ERR("Failed to init empty ACK (%d)", ret);
+						goto unlock;
+					}
+
+					ret = coap_service_send(service, &ack, &client_addr,
+								client_addr_len, NULL);
+				}
+				/* For NON requests, send nothing */
+			} else {
+				/* Response not suppressed, send response */
+				if (type == COAP_TYPE_CON) {
+					/* Send ACK with response code */
+					uint8_t ack_buf[COAP_TOKEN_MAX_LEN + 4U];
+					struct coap_packet ack;
+
+					ret = coap_ack_init(&ack, &request, ack_buf,
+							    sizeof(ack_buf), response_code);
+					if (ret < 0) {
+						LOG_ERR("Failed to init ACK (%d)", ret);
+						goto unlock;
+					}
+
+					ret = coap_service_send(service, &ack, &client_addr,
+								client_addr_len, NULL);
+				} else {
+					/* Send NON response for NON requests per RFC 7967 */
+					uint8_t response_buf[COAP_TOKEN_MAX_LEN + 4U];
+					struct coap_packet response;
+					uint8_t token[COAP_TOKEN_MAX_LEN];
+					uint8_t tkl = coap_header_get_token(&request, token);
+					uint16_t id = coap_next_id();
+
+					ret = coap_packet_init(&response, response_buf,
+							       sizeof(response_buf),
+							       COAP_VERSION_1, COAP_TYPE_NON_CON,
+							       tkl, token, response_code, id);
+					if (ret < 0) {
+						LOG_ERR("Failed to init NON response (%d)", ret);
+						goto unlock;
+					}
+
+					ret = coap_service_send(service, &response, &client_addr,
+								client_addr_len, NULL);
+				}
+			}
 		}
 	}
 

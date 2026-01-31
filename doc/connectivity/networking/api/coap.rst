@@ -33,6 +33,7 @@ Supported RFCs:
 - :rfc:`6690` - Constrained RESTful Environments (CoRE) Link Format
 - :rfc:`7959` - Block-Wise Transfers in the Constrained Application Protocol (CoAP)
 - :rfc:`7641` - Observing Resources in the Constrained Application Protocol (CoAP)
+- :rfc:`7967` - Constrained Application Protocol (CoAP) Option for No Server Response
 
 .. note:: Not all parts of these RFCs are supported. Features are supported based on Zephyr requirements.
 
@@ -97,6 +98,56 @@ but returns -ENOENT for /led/1, /test/21, /test/1.
 
 This option is enabled by default, disable it to avoid unexpected behaviour
 with resource path like '/some_resource/+/#'.
+
+No-Response Option (RFC 7967)
+==============================
+
+The No-Response option allows CoAP clients to express disinterest in receiving
+responses from the server for certain response classes (2.xx, 4.xx, 5.xx). This
+can be useful for reducing network traffic in scenarios such as frequent sensor
+updates where the client doesn't need confirmation of successful operations.
+
+When a server receives a request with the No-Response option, it should check
+whether the response it would send should be suppressed based on the option value.
+The Zephyr CoAP library provides the :c:func:`coap_no_response_check` function
+to help with this decision.
+
+Server applications should use this function before sending responses:
+
+.. code-block:: c
+
+    bool suppress = false;
+    int ret;
+
+    /* Check if response should be suppressed */
+    ret = coap_no_response_check(request, response_code, &suppress);
+    if (ret < 0 && ret != -ENOENT) {
+        /* Invalid No-Response option - do not suppress */
+        suppress = false;
+    }
+
+    if (suppress) {
+        /* Response should be suppressed */
+        if (request_type == COAP_TYPE_CON) {
+            /* For CON requests, send an empty ACK */
+            ret = coap_ack_init(&response, request, data, sizeof(data), COAP_CODE_EMPTY);
+            if (ret < 0) {
+                return ret;
+            }
+            return coap_resource_send(resource, &response, addr, addr_len, NULL);
+        }
+        /* For NON requests, send nothing */
+        return 0;
+    }
+
+    /* Response not suppressed, send normal response */
+    /* ... build and send response ... */
+
+The built-in CoAP server in Zephyr automatically handles the No-Response option
+for responses generated internally (such as error responses and .well-known/core
+responses). Applications using the :ref:`coap_server_interface` subsystem or
+implementing custom resource handlers should check for No-Response suppression
+before sending responses.
 
 CoAP Client
 ===========

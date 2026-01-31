@@ -1276,6 +1276,30 @@ struct coap_transmission_parameters coap_get_transmission_parameters(void);
  */
 void coap_set_transmission_parameters(const struct coap_transmission_parameters *params);
 
+/**
+ * @brief Check if a response should be suppressed based on the No-Response option.
+ *
+ * This function evaluates the No-Response option (RFC 7967) in a CoAP request
+ * to determine if a response with the given response code should be suppressed.
+ *
+ * The No-Response option allows clients to express disinterest in responses of
+ * certain classes (2.xx, 4.xx, 5.xx). This function checks if the response code
+ * class is marked for suppression in the option value.
+ *
+ * @param request The CoAP request packet to check for No-Response option
+ * @param response_code The response code that would be sent (e.g., COAP_RESPONSE_CODE_CONTENT)
+ * @param suppress Pointer to a boolean that will be set to true if the response
+ *                 should be suppressed, false otherwise
+ *
+ * @retval 0 Success. The suppress parameter has been set appropriately.
+ * @retval -EINVAL The No-Response option has invalid length (> 1 byte).
+ *                 This should be mapped to 4.02 Bad Option by the caller.
+ * @retval -ENOENT No No-Response option found in the request.
+ * @retval <0 Other negative error codes on failure.
+ */
+int coap_no_response_check(const struct coap_packet *request, uint8_t response_code,
+			   bool *suppress);
+
 #ifdef __cplusplus
 }
 #endif

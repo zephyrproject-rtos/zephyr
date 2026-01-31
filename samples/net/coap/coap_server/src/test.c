@@ -25,6 +25,7 @@ static int piggyback_get(struct coap_resource *resource,
 	uint8_t code;
 	uint8_t type;
 	uint8_t tkl;
+	bool suppress = false;
 	int r;
 
 	code = coap_header_get_code(request);
@@ -36,6 +37,30 @@ static int piggyback_get(struct coap_resource *resource,
 	LOG_INF("type: %u code %u id %u", type, code, id);
 	LOG_INF("*******");
 
+	/* Check if response should be suppressed per RFC 7967 */
+	r = coap_no_response_check(request, COAP_RESPONSE_CODE_CONTENT, &suppress);
+	if (r < 0 && r != -ENOENT) {
+		/* Invalid No-Response option - do not suppress */
+		suppress = false;
+	}
+
+	if (suppress) {
+		/* Response suppressed, but send empty ACK for CON requests */
+		if (type == COAP_TYPE_CON) {
+			r = coap_packet_init(&response, data, sizeof(data),
+					     COAP_VERSION_1, COAP_TYPE_ACK, tkl, token,
+					     COAP_CODE_EMPTY, id);
+			if (r < 0) {
+				return r;
+			}
+
+			r = coap_resource_send(resource, &response, addr, addr_len, NULL);
+		}
+		/* For NON requests, send nothing */
+		return 0;
+	}
+
+	/* Response not suppressed, send normal response */
 	if (type == COAP_TYPE_CON) {
 		type = COAP_TYPE_ACK;
 	} else {
@@ -89,6 +114,7 @@ static int test_del(struct coap_resource *resource,
 	uint8_t code;
 	uint8_t type;
 	uint16_t id;
+	bool suppress = false;
 	int r;
 
 	code = coap_header_get_code(request);
@@ -100,6 +126,30 @@ static int test_del(struct coap_resource *resource,
 	LOG_INF("type: %u code %u id %u", type, code, id);
 	LOG_INF("*******");
 
+	/* Check if response should be suppressed per RFC 7967 */
+	r = coap_no_response_check(request, COAP_RESPONSE_CODE_DELETED, &suppress);
+	if (r < 0 && r != -ENOENT) {
+		/* Invalid No-Response option - do not suppress */
+		suppress = false;
+	}
+
+	if (suppress) {
+		/* Response suppressed, but send empty ACK for CON requests */
+		if (type == COAP_TYPE_CON) {
+			r = coap_packet_init(&response, data, sizeof(data),
+					     COAP_VERSION_1, COAP_TYPE_ACK, tkl, token,
+					     COAP_CODE_EMPTY, id);
+			if (r < 0) {
+				return r;
+			}
+
+			r = coap_resource_send(resource, &response, addr, addr_len, NULL);
+		}
+		/* For NON requests, send nothing */
+		return 0;
+	}
+
+	/* Response not suppressed, send normal response */
 	if (type == COAP_TYPE_CON) {
 		type = COAP_TYPE_ACK;
 	} else {
@@ -131,6 +181,7 @@ static int test_put(struct coap_resource *resource,
 	uint8_t type;
 	uint8_t tkl;
 	uint16_t id;
+	bool suppress = false;
 	int r;
 
 	code = coap_header_get_code(request);
@@ -147,6 +198,30 @@ static int test_put(struct coap_resource *resource,
 		net_hexdump("PUT Payload", payload, payload_len);
 	}
 
+	/* Check if response should be suppressed per RFC 7967 */
+	r = coap_no_response_check(request, COAP_RESPONSE_CODE_CHANGED, &suppress);
+	if (r < 0 && r != -ENOENT) {
+		/* Invalid No-Response option - do not suppress */
+		suppress = false;
+	}
+
+	if (suppress) {
+		/* Response suppressed, but send empty ACK for CON requests */
+		if (type == COAP_TYPE_CON) {
+			r = coap_packet_init(&response, data, sizeof(data),
+					     COAP_VERSION_1, COAP_TYPE_ACK, tkl, token,
+					     COAP_CODE_EMPTY, id);
+			if (r < 0) {
+				return r;
+			}
+
+			r = coap_resource_send(resource, &response, addr, addr_len, NULL);
+		}
+		/* For NON requests, send nothing */
+		return 0;
+	}
+
+	/* Response not suppressed, send normal response */
 	if (type == COAP_TYPE_CON) {
 		type = COAP_TYPE_ACK;
 	} else {
@@ -183,6 +258,7 @@ static int test_post(struct coap_resource *resource,
 	uint8_t type;
 	uint8_t tkl;
 	uint16_t id;
+	bool suppress = false;
 	int r;
 
 	code = coap_header_get_code(request);
@@ -199,6 +275,30 @@ static int test_post(struct coap_resource *resource,
 		net_hexdump("POST Payload", payload, payload_len);
 	}
 
+	/* Check if response should be suppressed per RFC 7967 */
+	r = coap_no_response_check(request, COAP_RESPONSE_CODE_CREATED, &suppress);
+	if (r < 0 && r != -ENOENT) {
+		/* Invalid No-Response option - do not suppress */
+		suppress = false;
+	}
+
+	if (suppress) {
+		/* Response suppressed, but send empty ACK for CON requests */
+		if (type == COAP_TYPE_CON) {
+			r = coap_packet_init(&response, data, sizeof(data),
+					     COAP_VERSION_1, COAP_TYPE_ACK, tkl, token,
+					     COAP_CODE_EMPTY, id);
+			if (r < 0) {
+				return r;
+			}
+
+			r = coap_resource_send(resource, &response, addr, addr_len, NULL);
+		}
+		/* For NON requests, send nothing */
+		return 0;
+	}
+
+	/* Response not suppressed, send normal response */
 	if (type == COAP_TYPE_CON) {
 		type = COAP_TYPE_ACK;
 	} else {

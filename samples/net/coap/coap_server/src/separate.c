@@ -23,6 +23,7 @@ static int separate_get(struct coap_resource *resource,
 	uint8_t code;
 	uint8_t type;
 	uint8_t tkl;
+	bool suppress = false;
 	int r;
 
 	code = coap_header_get_code(request);
@@ -38,6 +39,14 @@ static int separate_get(struct coap_resource *resource,
 		return 0;
 	}
 
+	/* Check if response should be suppressed per RFC 7967 */
+	r = coap_no_response_check(request, COAP_RESPONSE_CODE_CONTENT, &suppress);
+	if (r < 0 && r != -ENOENT) {
+		/* Invalid No-Response option - do not suppress */
+		suppress = false;
+	}
+
+	/* Always send empty ACK for separate response */
 	r = coap_ack_init(&response, request, data, sizeof(data), 0);
 	if (r < 0) {
 		return r;
@@ -48,6 +57,12 @@ static int separate_get(struct coap_resource *resource,
 		return r;
 	}
 
+	/* If response is suppressed, don't send the separate response */
+	if (suppress) {
+		return 0;
+	}
+
+	/* Response not suppressed, send separate response */
 	if (type == COAP_TYPE_CON) {
 		type = COAP_TYPE_CON;
 	} else {

@@ -26,6 +26,7 @@ static int location_query_post(struct coap_resource *resource,
 	uint8_t code;
 	uint8_t type;
 	uint8_t tkl;
+	bool suppress = false;
 	int r;
 
 	code = coap_header_get_code(request);
@@ -37,6 +38,30 @@ static int location_query_post(struct coap_resource *resource,
 	LOG_INF("type: %u code %u id %u", type, code, id);
 	LOG_INF("*******");
 
+	/* Check if response should be suppressed per RFC 7967 */
+	r = coap_no_response_check(request, COAP_RESPONSE_CODE_CREATED, &suppress);
+	if (r < 0 && r != -ENOENT) {
+		/* Invalid No-Response option - do not suppress */
+		suppress = false;
+	}
+
+	if (suppress) {
+		/* Response suppressed, but send empty ACK for CON requests */
+		if (type == COAP_TYPE_CON) {
+			r = coap_packet_init(&response, data, sizeof(data),
+					     COAP_VERSION_1, COAP_TYPE_ACK, tkl, token,
+					     COAP_CODE_EMPTY, id);
+			if (r < 0) {
+				return r;
+			}
+
+			r = coap_resource_send(resource, &response, addr, addr_len, NULL);
+		}
+		/* For NON requests, send nothing */
+		return 0;
+	}
+
+	/* Response not suppressed, send normal response */
 	if (type == COAP_TYPE_CON) {
 		type = COAP_TYPE_ACK;
 	} else {

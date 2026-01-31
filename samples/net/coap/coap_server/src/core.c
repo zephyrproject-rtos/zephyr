@@ -22,11 +22,38 @@ static int core_get(struct coap_resource *resource,
 	uint8_t token[COAP_TOKEN_MAX_LEN];
 	uint16_t id;
 	uint8_t tkl;
+	uint8_t type;
+	bool suppress = false;
 	int r;
 
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
+	type = coap_header_get_type(request);
 
+	/* Check if response should be suppressed per RFC 7967 */
+	r = coap_no_response_check(request, COAP_RESPONSE_CODE_CONTENT, &suppress);
+	if (r < 0 && r != -ENOENT) {
+		/* Invalid No-Response option - do not suppress */
+		suppress = false;
+	}
+
+	if (suppress) {
+		/* Response suppressed, but send empty ACK for CON requests */
+		if (type == COAP_TYPE_CON) {
+			r = coap_packet_init(&response, data, sizeof(data),
+					     COAP_VERSION_1, COAP_TYPE_ACK, tkl, token,
+					     COAP_CODE_EMPTY, id);
+			if (r < 0) {
+				return r;
+			}
+
+			r = coap_resource_send(resource, &response, addr, addr_len, NULL);
+		}
+		/* For NON requests, send nothing */
+		return 0;
+	}
+
+	/* Response not suppressed, send normal response */
 	r = coap_packet_init(&response, data, sizeof(data),
 			     COAP_VERSION_1, COAP_TYPE_ACK, tkl, token,
 			     COAP_RESPONSE_CODE_CONTENT, id);

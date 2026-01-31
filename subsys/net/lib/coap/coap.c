@@ -2136,3 +2136,67 @@ void coap_set_transmission_parameters(const struct coap_transmission_parameters 
 {
 	coap_transmission_params = *params;
 }
+
+int coap_no_response_check(const struct coap_packet *request, uint8_t response_code,
+			   bool *suppress)
+{
+	struct coap_option option;
+	int ret;
+	uint8_t response_class;
+	uint8_t no_response_value;
+
+	if (request == NULL || suppress == NULL) {
+		return -EINVAL;
+	}
+
+	/* Default: do not suppress */
+	*suppress = false;
+
+	/* Try to find the No-Response option */
+	ret = coap_find_options(request, COAP_OPTION_NO_RESPONSE, &option, 1);
+	if (ret <= 0) {
+		/* No No-Response option found, or error - do not suppress */
+		return (ret < 0) ? ret : -ENOENT;
+	}
+
+	/* Check option length - must be 0 or 1 byte per RFC 7967 */
+	if (option.len > 1) {
+		/* Invalid option length - caller should map this to 4.02 Bad Option */
+		return -EINVAL;
+	}
+
+	/* If option is empty (len 0), client is interested in all responses */
+	if (option.len == 0) {
+		*suppress = false;
+		return 0;
+	}
+
+	/* Extract the No-Response value (1 byte) */
+	no_response_value = option.value[0];
+
+	/* Extract response class from response_code (class = response_code >> 5) */
+	response_class = response_code >> 5;
+
+	/* Map response class to suppression bit per RFC 7967 Table 2:
+	 * - 2.xx responses: bit 1 (0x02)
+	 * - 4.xx responses: bit 3 (0x08)
+	 * - 5.xx responses: bit 4 (0x10)
+	 */
+	switch (response_class) {
+	case 2:
+		*suppress = (no_response_value & COAP_NO_RESPONSE_SUPPRESS_2_XX) != 0;
+		break;
+	case 4:
+		*suppress = (no_response_value & COAP_NO_RESPONSE_SUPPRESS_4_XX) != 0;
+		break;
+	case 5:
+		*suppress = (no_response_value & COAP_NO_RESPONSE_SUPPRESS_5_XX) != 0;
+		break;
+	default:
+		/* For other response classes (e.g., 0.xx for empty ACK), do not suppress */
+		*suppress = false;
+		break;
+	}
+
+	return 0;
+}

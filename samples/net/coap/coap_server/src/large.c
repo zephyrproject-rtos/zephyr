@@ -28,6 +28,7 @@ static int large_get(struct coap_resource *resource,
 	uint8_t code;
 	uint8_t type;
 	uint8_t tkl;
+	bool suppress = false;
 	int r;
 
 	if (ctx.total_size == 0) {
@@ -48,6 +49,30 @@ static int large_get(struct coap_resource *resource,
 	LOG_INF("type: %u code %u id %u", type, code, id);
 	LOG_INF("*******");
 
+	/* Check if response should be suppressed per RFC 7967 */
+	r = coap_no_response_check(request, COAP_RESPONSE_CODE_CONTENT, &suppress);
+	if (r < 0 && r != -ENOENT) {
+		/* Invalid No-Response option - do not suppress */
+		suppress = false;
+	}
+
+	if (suppress) {
+		/* Response suppressed, but send empty ACK for CON requests */
+		if (type == COAP_TYPE_CON) {
+			r = coap_packet_init(&response, data, sizeof(data),
+					     COAP_VERSION_1, COAP_TYPE_ACK, tkl, token,
+					     COAP_CODE_EMPTY, id);
+			if (r < 0) {
+				return -EINVAL;
+			}
+
+			r = coap_resource_send(resource, &response, addr, addr_len, NULL);
+		}
+		/* For NON requests, send nothing */
+		return 0;
+	}
+
+	/* Response not suppressed, send normal response */
 	r = coap_packet_init(&response, data, sizeof(data),
 			     COAP_VERSION_1, COAP_TYPE_ACK, tkl, token,
 			     COAP_RESPONSE_CODE_CONTENT, id);
@@ -156,6 +181,32 @@ static int large_update_put(struct coap_resource *resource,
 		code = COAP_RESPONSE_CODE_CHANGED;
 	}
 
+	/* Check if response should be suppressed per RFC 7967 */
+	bool suppress = false;
+
+	r = coap_no_response_check(request, code, &suppress);
+	if (r < 0 && r != -ENOENT) {
+		/* Invalid No-Response option - do not suppress */
+		suppress = false;
+	}
+
+	if (suppress) {
+		/* Response suppressed, but send empty ACK for CON requests */
+		if (type == COAP_TYPE_CON) {
+			r = coap_packet_init(&response, data, sizeof(data),
+					     COAP_VERSION_1, COAP_TYPE_ACK, tkl, token,
+					     COAP_CODE_EMPTY, id);
+			if (r < 0) {
+				return r;
+			}
+
+			r = coap_resource_send(resource, &response, addr, addr_len, NULL);
+		}
+		/* For NON requests, send nothing */
+		return 0;
+	}
+
+	/* Response not suppressed, send normal response */
 	r = coap_ack_init(&response, request, data, sizeof(data), code);
 	if (r < 0) {
 		return r;
@@ -228,6 +279,32 @@ static int large_create_post(struct coap_resource *resource,
 		code = COAP_RESPONSE_CODE_CREATED;
 	}
 
+	/* Check if response should be suppressed per RFC 7967 */
+	bool suppress = false;
+
+	r = coap_no_response_check(request, code, &suppress);
+	if (r < 0 && r != -ENOENT) {
+		/* Invalid No-Response option - do not suppress */
+		suppress = false;
+	}
+
+	if (suppress) {
+		/* Response suppressed, but send empty ACK for CON requests */
+		if (type == COAP_TYPE_CON) {
+			r = coap_packet_init(&response, data, sizeof(data),
+					     COAP_VERSION_1, COAP_TYPE_ACK, tkl, token,
+					     COAP_CODE_EMPTY, id);
+			if (r < 0) {
+				return r;
+			}
+
+			r = coap_resource_send(resource, &response, addr, addr_len, NULL);
+		}
+		/* For NON requests, send nothing */
+		return 0;
+	}
+
+	/* Response not suppressed, send normal response */
 	r = coap_ack_init(&response, request, data, sizeof(data), code);
 	if (r < 0) {
 		return r;

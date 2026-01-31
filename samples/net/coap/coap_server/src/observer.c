@@ -94,9 +94,11 @@ static int obs_get(struct coap_resource *resource,
 	uint8_t code;
 	uint8_t type;
 	uint8_t tkl;
+	bool suppress = false;
 	int r;
+	int observe_result;
 
-	r = coap_resource_parse_observe(resource, request, addr);
+	observe_result = coap_resource_parse_observe(resource, request, addr);
 
 	code = coap_header_get_code(request);
 	type = coap_header_get_type(request);
@@ -107,8 +109,35 @@ static int obs_get(struct coap_resource *resource,
 	LOG_INF("type: %u code %u id %u", type, code, id);
 	LOG_INF("*******");
 
+	/* Check if response should be suppressed per RFC 7967 */
+	r = coap_no_response_check(request, COAP_RESPONSE_CODE_CONTENT, &suppress);
+	if (r < 0 && r != -ENOENT) {
+		/* Invalid No-Response option - do not suppress */
+		suppress = false;
+	}
+
+	if (suppress) {
+		/* Response suppressed, but send empty ACK for CON requests */
+		if (type == COAP_TYPE_CON) {
+			uint8_t data[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+			struct coap_packet response;
+
+			r = coap_packet_init(&response, data, sizeof(data),
+					     COAP_VERSION_1, COAP_TYPE_ACK, tkl, token,
+					     COAP_CODE_EMPTY, id);
+			if (r < 0) {
+				return r;
+			}
+
+			return coap_resource_send(resource, &response, addr, addr_len, NULL);
+		}
+		/* For NON requests, send nothing */
+		return 0;
+	}
+
+	/* Response not suppressed, send normal response */
 	return send_notification_packet(resource, addr, addr_len,
-					r == 0 ? resource->age : 0,
+					observe_result == 0 ? resource->age : 0,
 					id, token, tkl, true);
 }
 
