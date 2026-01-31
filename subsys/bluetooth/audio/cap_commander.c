@@ -246,11 +246,6 @@ static bool valid_broadcast_reception_start_param(
 			return false;
 		}
 
-		CHECKIF(start_param->subgroups == NULL) {
-			LOG_DBG("param->param[%zu]->subgroup is NULL", i);
-			return false;
-		}
-
 		total_bis_sync = 0U;
 		for (size_t j = 0U; j < start_param->num_subgroups; j++) {
 			const struct bt_bap_bass_subgroup *param_subgroups =
