@@ -51,6 +51,14 @@ enum coap_option_num {
 	COAP_OPTION_OBSERVE = 6,         /**< Observe (RFC 7641) */
 	COAP_OPTION_URI_PORT = 7,        /**< Uri-Port */
 	COAP_OPTION_LOCATION_PATH = 8,   /**< Location-Path */
+	/**
+	 * OSCORE (RFC 8613)
+	 *
+	 * Critical option indicating the message is OSCORE-protected.
+	 * A CoAP message with the OSCORE option present but no payload
+	 * is malformed and SHALL be rejected (RFC 8613 Section 2).
+	 */
+	COAP_OPTION_OSCORE = 9,          /**< OSCORE (RFC 8613) */
 	COAP_OPTION_URI_PATH = 11,       /**< Uri-Path */
 	COAP_OPTION_CONTENT_FORMAT = 12, /**< Content-Format */
 	COAP_OPTION_MAX_AGE = 14,        /**< Max-Age */

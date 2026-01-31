@@ -339,6 +339,33 @@ endif # COAP_SERVER_ECHO
 
 endif # COAP_SERVER
 
+config COAP_OSCORE
+	bool "OSCORE support for CoAP (RFC 8613)"
+	depends on UOSCORE
+	help
+	  Enable Object Security for Constrained RESTful Environments (OSCORE)
+	  support for CoAP client and server. OSCORE provides end-to-end
+	  protection of CoAP messages using COSE (CBOR Object Signing and
+	  Encryption).
+
+	  This option requires the uoscore-uedhoc module and PSA Crypto support.
+	  When enabled, CoAP messages can be protected with OSCORE by attaching
+	  a security context to the client or service.
+
+	  See RFC 8613 for details.
+
+if COAP_OSCORE
+
+config COAP_OSCORE_MAX_PLAINTEXT_LEN
+	int "Maximum OSCORE plaintext length"
+	default 1024
+	help
+	  Maximum length of OSCORE plaintext (CoAP message before encryption).
+	  This includes the CoAP options and payload that will be encrypted.
+	  Adjust based on your application's message size requirements.
+
+endif # COAP_OSCORE
+
 module = COAP
 module-dep = NET_LOG
 module-str = Log level for CoAP

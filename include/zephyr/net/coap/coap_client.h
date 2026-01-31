@@ -28,6 +28,11 @@
 extern "C" {
 #endif
 
+#if defined(CONFIG_COAP_OSCORE)
+/* Forward declaration for OSCORE context */
+struct context;
+#endif
+
 /** Maximum size of a CoAP message */
 #define MAX_COAP_MSG_LEN (CONFIG_COAP_CLIENT_MESSAGE_HEADER_SIZE + \
 			  CONFIG_COAP_CLIENT_MESSAGE_SIZE)
@@ -172,6 +177,13 @@ struct coap_client {
 	struct coap_client_internal_request requests[CONFIG_COAP_CLIENT_MAX_REQUESTS];
 	struct coap_option echo_option;
 	bool send_echo;
+#if defined(CONFIG_COAP_OSCORE)
+	/**
+	 * OSCORE security context for protecting requests and verifying responses.
+	 * Set to NULL to disable OSCORE for this client.
+	 */
+	struct context *oscore_ctx;
+#endif
 };
 /** @endcond */
 

@@ -20,6 +20,10 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <zephyr/zvfs/eventfd.h>
 #include <zephyr/random/random.h>
 
+#if defined(CONFIG_COAP_OSCORE)
+#include "coap_oscore.h"
+#endif
+
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 /* Lowest priority cooperative thread */
 #define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
@@ -82,6 +86,44 @@ static inline void coap_server_free(void *ptr)
 	ARG_UNUSED(ptr);
 #endif
 }
+
+#if defined(CONFIG_COAP_OSCORE)
+/**
+ * @brief Send a simple CoAP error response
+ *
+ * Helper function to reduce code duplication when sending error responses.
+ *
+ * @param service CoAP service
+ * @param request Original request packet
+ * @param code CoAP response code
+ * @param client_addr Client address
+ * @param client_addr_len Client address length
+ * @return 0 on success, negative errno on error
+ */
+static int send_error_response(const struct coap_service *service,
+			       const struct coap_packet *request,
+			       uint8_t code,
+			       const struct net_sockaddr *client_addr,
+			       net_socklen_t client_addr_len)
+{
+	uint8_t buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+	struct coap_packet response;
+	uint8_t token[COAP_TOKEN_MAX_LEN];
+	uint8_t tkl = coap_header_get_token(request, token);
+	uint16_t id = coap_header_get_id(request);
+	uint8_t type = (coap_header_get_type(request) == COAP_TYPE_CON)
+		       ? COAP_TYPE_ACK : COAP_TYPE_NON_CON;
+	int ret;
+
+	ret = coap_packet_init(&response, buf, sizeof(buf),
+			       COAP_VERSION_1, type, tkl, token, code, id);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return coap_service_send(service, &response, client_addr, client_addr_len, NULL);
+}
+#endif /* CONFIG_COAP_OSCORE */
 
 #if defined(CONFIG_COAP_SERVER_ECHO)
 
@@ -529,6 +571,64 @@ static int coap_server_process(int sock_fd)
 		ret = -ENOENT;
 		goto unlock;
 	}
+
+#if defined(CONFIG_COAP_OSCORE)
+	/* RFC 8613 Section 2: Validate OSCORE message format */
+	ret = coap_oscore_validate_msg(&request);
+	if (ret < 0) {
+		/* Malformed OSCORE message - reject per RFC 8613 Section 2 */
+		LOG_ERR("Malformed OSCORE message");
+		ret = -EBADMSG;
+		goto unlock;
+	}
+
+	/* RFC 8613 Section 8.2: Verify and decrypt OSCORE-protected requests */
+	if (service->data->oscore_ctx != NULL && coap_oscore_msg_has_oscore(&request)) {
+		static uint8_t decrypted_buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+		uint32_t decrypted_len = sizeof(decrypted_buf);
+		uint8_t error_code = COAP_RESPONSE_CODE_BAD_REQUEST;
+
+		/* Decrypt the OSCORE message */
+		ret = coap_oscore_verify(buf, received, decrypted_buf, &decrypted_len,
+					 service->data->oscore_ctx, &error_code);
+		if (ret < 0) {
+			/* RFC 8613 Section 8.2: OSCORE errors are sent as simple CoAP
+			 * responses without OSCORE processing
+			 */
+			LOG_ERR("OSCORE verification failed (%d), sending error %d", ret,
+				error_code);
+			(void)send_error_response(service, &request, error_code,
+						  &client_addr, client_addr_len);
+			ret = -EACCES;
+			goto unlock;
+		}
+
+		/* Re-parse the decrypted CoAP message */
+		ret = coap_packet_parse(&request, decrypted_buf, decrypted_len, options, opt_num);
+		if (ret < 0) {
+			LOG_ERR("Failed to parse decrypted CoAP message (%d)", ret);
+			goto unlock;
+		}
+
+		/* Copy decrypted message back to buf for further processing */
+		memcpy(buf, decrypted_buf, decrypted_len);
+		received = decrypted_len;
+
+		LOG_DBG("OSCORE request verified and decrypted");
+	} else if (service->data->oscore_ctx == NULL && coap_oscore_msg_has_oscore(&request)) {
+		/* OSCORE message received but no context configured */
+		LOG_WRN("OSCORE message received but no context configured");
+		ret = -ENOTSUP;
+		goto unlock;
+	} else if (service->data->require_oscore && !coap_oscore_msg_has_oscore(&request)) {
+		/* Service requires OSCORE but request is not protected */
+		LOG_WRN("Service requires OSCORE but request is not protected");
+		(void)send_error_response(service, &request, COAP_RESPONSE_CODE_UNAUTHORIZED,
+					  &client_addr, client_addr_len);
+		ret = -EACCES;
+		goto unlock;
+	}
+#endif /* CONFIG_COAP_OSCORE */
 
 	type = coap_header_get_type(&request);
 

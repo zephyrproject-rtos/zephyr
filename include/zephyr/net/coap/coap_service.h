@@ -21,6 +21,11 @@
 extern "C" {
 #endif
 
+#if defined(CONFIG_COAP_OSCORE)
+/* Forward declaration for OSCORE context */
+struct context;
+#endif
+
 /**
  * @brief CoAP Service API
  * @defgroup coap_service CoAP service API
@@ -61,6 +66,18 @@ struct coap_service_data {
 	struct coap_pending pending[CONFIG_COAP_SERVICE_PENDING_MESSAGES];
 #if defined(CONFIG_COAP_SERVER_ECHO)
 	struct coap_echo_entry echo_cache[CONFIG_COAP_SERVER_ECHO_CACHE_SIZE];
+#endif
+#if defined(CONFIG_COAP_OSCORE)
+	/**
+	 * OSCORE security context for verifying requests and protecting responses.
+	 * Set to NULL to disable OSCORE for this service.
+	 */
+	struct context *oscore_ctx;
+	/**
+	 * If true, require OSCORE for all requests to this service.
+	 * Requests without OSCORE will be rejected with 4.01 Unauthorized.
+	 */
+	bool require_oscore;
 #endif
 };
 
