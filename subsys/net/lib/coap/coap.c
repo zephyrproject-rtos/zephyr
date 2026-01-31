@@ -56,6 +56,12 @@ LOG_MODULE_REGISTER(net_coap, CONFIG_COAP_LOG_LEVEL);
 /* The CoAP message ID that is incremented each time coap_next_id() is called. */
 static uint16_t message_id;
 
+/* Token generator state (RFC9175-compliant sequence-based) */
+static struct {
+	atomic_t sequence;  /* 32-bit sequence counter */
+	uint32_t prefix;    /* 32-bit random prefix */
+} token_generator;
+
 static struct coap_transmission_parameters coap_transmission_params = {
 	.max_retransmission = CONFIG_COAP_MAX_RETRANSMIT,
 	.ack_timeout = CONFIG_COAP_INIT_ACK_TIMEOUT_MS,
@@ -447,8 +453,18 @@ int coap_packet_append_payload(struct coap_packet *cpkt, const uint8_t *payload,
 uint8_t *coap_next_token(void)
 {
 	static uint8_t token[COAP_TOKEN_MAX_LEN];
+	uint32_t seq;
 
-	sys_rand_get(token, COAP_TOKEN_MAX_LEN);
+	/* Get current sequence number and increment atomically (thread-safe)
+	 * We use a loop with atomic_cas to ensure we get the value before increment
+	 */
+	do {
+		seq = atomic_get(&token_generator.sequence);
+	} while (!atomic_cas(&token_generator.sequence, seq, seq + 1));
+
+	/* Encode token as: prefix (4 bytes) || sequence (4 bytes) in big-endian */
+	sys_put_be32(token_generator.prefix, &token[0]);
+	sys_put_be32(seq, &token[4]);
 
 	return token;
 }
@@ -2130,6 +2146,12 @@ void net_coap_init(void)
 {
 	/* Initialize message_id to a random number */
 	message_id = (uint16_t)sys_rand32_get();
+
+	/* Initialize token generator with random prefix and sequence starting at 0
+	 * (RFC9175 §4.2: "starting at zero for each new or rekeyed secure connection")
+	 */
+	token_generator.prefix = sys_rand32_get();
+	atomic_set(&token_generator.sequence, 0);
 }
 
 uint16_t coap_next_id(void)
@@ -2209,4 +2231,18 @@ int coap_no_response_check(const struct coap_packet *request, uint8_t response_c
 	}
 
 	return 0;
+}
+
+void coap_token_generator_reset(uint32_t prefix)
+{
+	/* Reset sequence to 0 and set new prefix (RFC9175 §4.2) */
+	token_generator.prefix = prefix;
+	atomic_set(&token_generator.sequence, 0);
+}
+
+void coap_token_generator_rekey(void)
+{
+	/* Reset sequence to 0 and generate new random prefix (RFC9175 §4.2) */
+	token_generator.prefix = sys_rand32_get();
+	atomic_set(&token_generator.sequence, 0);
 }

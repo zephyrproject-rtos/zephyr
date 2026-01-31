@@ -577,12 +577,43 @@ int coap_ack_init(struct coap_packet *cpkt, const struct coap_packet *req,
 int coap_rst_init(struct coap_packet *cpkt, const struct coap_packet *req,
 		  uint8_t *data, uint16_t max_len);
 /**
- * @brief Returns a randomly generated array of 8 bytes, that can be
- * used as a message's token.
+ * @brief Returns a sequence-based token that can be used as a message's token.
  *
- * @return a 8-byte pseudo-random token.
+ * This function generates an 8-byte token using a sequence-based approach
+ * as recommended by RFC9175 §4.2. The token consists of a 4-byte prefix
+ * and a 4-byte monotonically increasing sequence number, ensuring tokens
+ * are never reused within a connection lifetime.
+ *
+ * The token generator is thread-safe and guarantees unique tokens across
+ * concurrent calls.
+ *
+ * @note Applications using secure connections (DTLS/TLS/OSCORE) should call
+ * coap_token_generator_rekey() when connections are created or rekeyed to
+ * comply with RFC9175 §4.2.
+ *
+ * @return Pointer to an 8-byte sequence-based token.
  */
 uint8_t *coap_next_token(void);
+
+/**
+ * @brief Reset the token generator with a specific prefix.
+ *
+ * This function resets the token sequence counter to 0 and sets a new prefix.
+ * It should be called when a new secure connection is established or when
+ * a connection is rekeyed, as recommended by RFC9175 §4.2.
+ *
+ * @param prefix The 32-bit prefix to use for token generation.
+ */
+void coap_token_generator_reset(uint32_t prefix);
+
+/**
+ * @brief Reset the token generator with a random prefix.
+ *
+ * This function resets the token sequence counter to 0 and generates a new
+ * random prefix. It should be called when a new secure connection is
+ * established or when a connection is rekeyed, as recommended by RFC9175 §4.2.
+ */
+void coap_token_generator_rekey(void);
 
 /**
  * @brief Helper to generate message ids

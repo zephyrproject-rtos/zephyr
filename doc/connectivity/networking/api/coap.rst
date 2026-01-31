@@ -34,6 +34,7 @@ Supported RFCs:
 - :rfc:`7959` - Block-Wise Transfers in the Constrained Application Protocol (CoAP)
 - :rfc:`7641` - Observing Resources in the Constrained Application Protocol (CoAP)
 - :rfc:`7967` - Constrained Application Protocol (CoAP) Option for No Server Response
+- :rfc:`9175` - CoAP: Echo, Request-Tag, and Token Processing
 
 .. note:: Not all parts of these RFCs are supported. Features are supported based on Zephyr requirements.
 
@@ -186,6 +187,36 @@ the ``.well-known/core`` CoAP message.
                                sizeof(payload) - 1);
 
     /* send over sockets */
+
+Token Generation (RFC 9175)
+============================
+
+The Zephyr CoAP library implements RFC 9175 compliant token generation using a
+sequence-based approach. This ensures that tokens are never reused within a
+connection lifetime, preventing response-to-request binding issues.
+
+The :c:func:`coap_next_token` function generates 8-byte tokens consisting of:
+
+- A 4-byte random prefix (initialized at startup)
+- A 4-byte monotonically increasing sequence number
+
+This design guarantees token uniqueness and is thread-safe for concurrent use.
+
+For applications using secure connections (DTLS, TLS, or OSCORE), the token
+generator should be reset when connections are established or rekeyed:
+
+.. code-block:: c
+
+    /* When establishing a new secure connection or rekeying */
+    coap_token_generator_rekey();
+
+    /* Or with a specific prefix */
+    uint32_t my_prefix = get_connection_specific_prefix();
+    coap_token_generator_reset(my_prefix);
+
+The sequence-based token generation also applies to Request-Tag options used in
+blockwise transfers, ensuring that Request-Tags are never recycled as required
+by RFC 9175 §3.4.
 
 Testing
 *******
