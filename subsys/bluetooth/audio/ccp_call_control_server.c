@@ -14,7 +14,6 @@
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_utf8.h>
 
@@ -49,7 +48,7 @@ int bt_ccp_call_control_server_register_bearer(const struct bt_tbs_register_para
 	struct bt_ccp_call_control_server_bearer *free_bearer;
 	int ret;
 
-	CHECKIF(bearer == NULL) {
+	if (bearer == NULL) {
 		LOG_DBG("bearer is NULL");
 
 		return -EINVAL;
@@ -86,7 +85,7 @@ int bt_ccp_call_control_server_unregister_bearer(struct bt_ccp_call_control_serv
 {
 	int err;
 
-	CHECKIF(bearer == NULL) {
+	if (bearer == NULL) {
 		LOG_DBG("bearer is NULL");
 
 		return -EINVAL;
@@ -118,13 +117,13 @@ int bt_ccp_call_control_server_set_bearer_provider_name(
 {
 	size_t len;
 
-	CHECKIF(bearer == NULL) {
+	if (bearer == NULL) {
 		LOG_DBG("bearer is NULL");
 
 		return -EINVAL;
 	}
 
-	CHECKIF(name == NULL) {
+	if (name == NULL) {
 		LOG_DBG("name is NULL");
 
 		return -EINVAL;
@@ -155,13 +154,13 @@ int bt_ccp_call_control_server_set_bearer_provider_name(
 int bt_ccp_call_control_server_get_bearer_provider_name(
 	struct bt_ccp_call_control_server_bearer *bearer, const char **name)
 {
-	CHECKIF(bearer == NULL) {
+	if (bearer == NULL) {
 		LOG_DBG("bearer is NULL");
 
 		return -EINVAL;
 	}
 
-	CHECKIF(name == NULL) {
+	if (name == NULL) {
 		LOG_DBG("name is NULL");
 
 		return -EINVAL;
@@ -181,13 +180,13 @@ int bt_ccp_call_control_server_get_bearer_provider_name(
 int bt_ccp_call_control_server_get_bearer_uci(struct bt_ccp_call_control_server_bearer *bearer,
 					      const char **uci)
 {
-	CHECKIF(bearer == NULL) {
+	if (bearer == NULL) {
 		LOG_DBG("bearer is NULL");
 
 		return -EINVAL;
 	}
 
-	CHECKIF(uci == NULL) {
+	if (uci == NULL) {
 		LOG_DBG("uci is NULL");
 
 		return -EINVAL;
