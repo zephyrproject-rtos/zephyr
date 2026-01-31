@@ -13,6 +13,17 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <errno.h>
 #include <string.h>
 
+#if defined(CONFIG_UOSCORE)
+#include <oscore/security_context.h>
+
+/* Internal fixed pool for OSCORE contexts
+ * RFC 9668 Section 3.3.1: Server derives OSCORE contexts from EDHOC.
+ * Pool size matches CONFIG_COAP_OSCORE_CTX_CACHE_SIZE.
+ */
+K_MEM_SLAB_DEFINE_STATIC(oscore_ctx_pool, sizeof(struct context),
+			 CONFIG_COAP_OSCORE_CTX_CACHE_SIZE, 4);
+#endif
+
 struct coap_oscore_ctx_cache_entry *coap_oscore_ctx_cache_find(
 	struct coap_oscore_ctx_cache_entry *cache,
 	size_t cache_size,
@@ -101,6 +112,12 @@ void coap_oscore_ctx_cache_remove(
 
 	entry = coap_oscore_ctx_cache_find(cache, cache_size, kid, kid_len);
 	if (entry != NULL) {
+#if defined(CONFIG_UOSCORE)
+		/* Free the OSCORE context back to the pool */
+		if (entry->oscore_ctx != NULL) {
+			coap_oscore_ctx_free(entry->oscore_ctx);
+		}
+#endif
 		memset(entry, 0, sizeof(*entry));
 	}
 }
@@ -121,6 +138,12 @@ int coap_oscore_ctx_cache_evict_expired(
 		if (cache[i].active && (now - cache[i].timestamp) > lifetime_ms) {
 			LOG_DBG("Evicting expired OSCORE context (age %lld ms)",
 				now - cache[i].timestamp);
+#if defined(CONFIG_UOSCORE)
+			/* Free the OSCORE context back to the pool */
+			if (cache[i].oscore_ctx != NULL) {
+				coap_oscore_ctx_free(cache[i].oscore_ctx);
+			}
+#endif
 			memset(&cache[i], 0, sizeof(cache[i]));
 			evicted++;
 		}
@@ -128,3 +151,34 @@ int coap_oscore_ctx_cache_evict_expired(
 
 	return evicted;
 }
+
+#if defined(CONFIG_UOSCORE)
+struct context *coap_oscore_ctx_alloc(void)
+{
+	struct context *ctx;
+	int ret;
+
+	ret = k_mem_slab_alloc(&oscore_ctx_pool, (void **)&ctx, K_NO_WAIT);
+	if (ret < 0) {
+		LOG_ERR("Failed to allocate OSCORE context from pool (%d)", ret);
+		return NULL;
+	}
+
+	/* Zeroize the context before use */
+	memset(ctx, 0, sizeof(*ctx));
+
+	return ctx;
+}
+
+void coap_oscore_ctx_free(struct context *ctx)
+{
+	if (ctx == NULL) {
+		return;
+	}
+
+	/* Zeroize the context before returning to pool (security best practice) */
+	memset(ctx, 0, sizeof(*ctx));
+
+	k_mem_slab_free(&oscore_ctx_pool, (void *)ctx);
+}
+#endif

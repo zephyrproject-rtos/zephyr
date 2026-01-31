@@ -37,11 +37,20 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 extern int coap_edhoc_msg3_process_wrapper(const uint8_t *edhoc_msg3,
 					   size_t edhoc_msg3_len,
 					   void *resp_ctx,
-					   void *runtime_ctx);
-extern int coap_edhoc_exporter_wrapper(void *resp_ctx,
+					   void *runtime_ctx,
+					   void *cred_i_array,
+					   uint8_t *prk_out,
+					   size_t *prk_out_len,
+					   uint8_t *initiator_pk,
+					   size_t *initiator_pk_len,
+					   uint8_t *c_i,
+					   size_t *c_i_len);
+extern int coap_edhoc_exporter_wrapper(const uint8_t *prk_out,
+				       size_t prk_out_len,
+				       int app_hash_alg,
 				       uint8_t label,
 				       uint8_t *output,
-				       size_t output_len);
+				       size_t *output_len);
 extern int coap_oscore_context_init_wrapper(void *ctx,
 					     const uint8_t *master_secret,
 					     size_t master_secret_len,
@@ -50,7 +59,9 @@ extern int coap_oscore_context_init_wrapper(void *ctx,
 					     const uint8_t *sender_id,
 					     size_t sender_id_len,
 					     const uint8_t *recipient_id,
-					     size_t recipient_id_len);
+					     size_t recipient_id_len,
+					     int aead_alg,
+					     int hkdf_alg);
 #endif
 
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
@@ -703,7 +714,8 @@ static int oscore_exchange_add(
 			       net_socklen_t addr_len,
 			       const uint8_t *token,
 			       uint8_t tkl,
-			       bool is_observe)
+			       bool is_observe,
+			       struct context *oscore_ctx)
 {
 	struct coap_oscore_exchange *entry;
 	struct coap_oscore_exchange *oldest = NULL;
@@ -752,6 +764,7 @@ static int oscore_exchange_add(
 	entry->tkl = tkl;
 	entry->timestamp = now;
 	entry->is_observe = is_observe;
+	entry->oscore_ctx = oscore_ctx;
 
 	return 0;
 }
@@ -1075,11 +1088,27 @@ static int coap_server_process(int sock_fd)
 			goto unlock;
 		}
 
-		/* Process EDHOC message_3 per RFC 9528 Section 5.4.3 */
+		/* RFC 9668 Section 3.3.1 Step 4: Process EDHOC message_3 per RFC 9528 Section 5.4.3
+		 * This derives PRK_out and extracts C_I from the EDHOC handshake.
+		 */
+		uint8_t prk_out[64]; /* Max hash size */
+		size_t prk_out_len = sizeof(prk_out);
+		uint8_t initiator_pk[64]; /* Max public key size */
+		size_t initiator_pk_len = sizeof(initiator_pk);
+		uint8_t c_i[16]; /* Connection identifier C_I */
+		size_t c_i_len = sizeof(c_i);
+
+		/* Note: For testing without CONFIG_UEDHOC, the wrapper will return -ENOTSUP.
+		 * Tests can override the wrapper to inject test behavior.
+		 */
 		ret = coap_edhoc_msg3_process_wrapper(
 			edhoc_msg3.ptr, edhoc_msg3.len,
 			edhoc_session->resp_ctx,
-			edhoc_session->runtime_ctx);
+			edhoc_session->runtime_ctx,
+			NULL, /* cred_i_array - application provides trust anchors */
+			prk_out, &prk_out_len,
+			initiator_pk, &initiator_pk_len,
+			c_i, &c_i_len);
 
 		if (ret < 0) {
 			LOG_ERR("EDHOC message_3 processing failed (%d)", ret);
@@ -1100,19 +1129,34 @@ static int coap_server_process(int sock_fd)
 			goto unlock;
 		}
 
-		LOG_DBG("EDHOC message_3 processed successfully");
+		LOG_DBG("EDHOC message_3 processed successfully, C_I extracted (%zu bytes)", c_i_len);
 
-		/* Step 5: Derive OSCORE Security Context per RFC 9528 Appendix A.1 */
+		/* RFC 9668 Section 3.3.1 Step 5: Derive OSCORE Security Context per RFC 9528 Appendix A.1
+		 * "The EDHOC Exporter Labels for deriving the OSCORE Master Secret and OSCORE Master Salt
+		 * are the uints 0 and 1, respectively." (RFC 9528 Appendix A.1)
+		 * "The context parameter is h'' (0x40), the empty CBOR byte string." (RFC 9528 Appendix A.1)
+		 */
 		uint8_t master_secret[32];
 		uint8_t master_salt[16];
-		size_t master_secret_len = sizeof(master_secret);
-		size_t master_salt_len = sizeof(master_salt);
+		size_t master_secret_len = 16; /* Default OSCORE key length */
+		size_t master_salt_len = 8;    /* Default OSCORE salt length (RFC 9528 Appendix A.1) */
 
-		/* Derive master secret using EDHOC exporter with label 0 */
-		ret = coap_edhoc_exporter_wrapper(edhoc_session->resp_ctx, 0,
-						  master_secret, master_secret_len);
+		/* Get application hash algorithm from EDHOC suite for exporter */
+		int app_hash_alg = -16; /* SHA-256 (default) */
+#if defined(CONFIG_UEDHOC)
+		if (edhoc_session->runtime_ctx != NULL) {
+			struct runtime_context *rc = (struct runtime_context *)edhoc_session->runtime_ctx;
+			app_hash_alg = rc->suite.app_hash;
+		}
+#endif
+
+		/* RFC 9528 Appendix A.1: Derive master secret using EDHOC exporter with label 0 */
+		ret = coap_edhoc_exporter_wrapper(prk_out, prk_out_len, app_hash_alg, 0,
+						  master_secret, &master_secret_len);
 		if (ret < 0) {
 			LOG_ERR("Failed to derive OSCORE master secret (%d)", ret);
+			/* Zeroize secrets */
+			memset(prk_out, 0, sizeof(prk_out));
 			coap_edhoc_session_remove(service->data->edhoc_session_cache,
 						  CONFIG_COAP_EDHOC_SESSION_CACHE_SIZE,
 						  c_r, c_r_len);
@@ -1122,12 +1166,16 @@ static int coap_server_process(int sock_fd)
 			goto unlock;
 		}
 
-		/* Derive master salt using EDHOC exporter with label 1 */
-		ret = coap_edhoc_exporter_wrapper(edhoc_session->resp_ctx, 1,
-						  master_salt, master_salt_len);
+		/* RFC 9528 Appendix A.1: Derive master salt using EDHOC exporter with label 1 */
+		ret = coap_edhoc_exporter_wrapper(prk_out, prk_out_len, app_hash_alg, 1,
+						  master_salt, &master_salt_len);
+
+		/* Zeroize PRK_out after deriving keying material */
+		memset(prk_out, 0, sizeof(prk_out));
+
 		if (ret < 0) {
 			LOG_ERR("Failed to derive OSCORE master salt (%d)", ret);
-			/* Zeroize master secret before returning */
+			/* Zeroize master secret */
 			memset(master_secret, 0, sizeof(master_secret));
 			coap_edhoc_session_remove(service->data->edhoc_session_cache,
 						  CONFIG_COAP_EDHOC_SESSION_CACHE_SIZE,
@@ -1138,7 +1186,7 @@ static int coap_server_process(int sock_fd)
 			goto unlock;
 		}
 
-		/* Initialize OSCORE context and store in cache */
+		/* Allocate OSCORE context cache entry (keyed by C_R for lookup) */
 		struct coap_oscore_ctx_cache_entry *ctx_entry;
 
 		ctx_entry = coap_oscore_ctx_cache_insert(
@@ -1161,13 +1209,29 @@ static int coap_server_process(int sock_fd)
 			goto unlock;
 		}
 
-		/* Allocate OSCORE context if needed */
+		/* Allocate OSCORE context from internal pool */
+#if defined(CONFIG_UOSCORE)
 		if (ctx_entry->oscore_ctx == NULL) {
-			/* In a real implementation, this would allocate a struct context
-			 * from uoscore-uedhoc. For now, we just note that it needs to be
-			 * allocated by the application or test.
-			 */
-			LOG_ERR("OSCORE context not allocated (application must provide)");
+			ctx_entry->oscore_ctx = coap_oscore_ctx_alloc();
+			if (ctx_entry->oscore_ctx == NULL) {
+				LOG_ERR("Failed to allocate OSCORE context from pool");
+				/* Zeroize keying material */
+				memset(master_secret, 0, sizeof(master_secret));
+				memset(master_salt, 0, sizeof(master_salt));
+				coap_edhoc_session_remove(service->data->edhoc_session_cache,
+							  CONFIG_COAP_EDHOC_SESSION_CACHE_SIZE,
+							  c_r, c_r_len);
+				(void)send_error_response(service, &request,
+							  COAP_RESPONSE_CODE_INTERNAL_ERROR,
+							  &client_addr, client_addr_len);
+				ret = -ENOMEM;
+				goto unlock;
+			}
+		}
+#else
+		/* When CONFIG_UOSCORE=n, tests must provide a mock context */
+		if (ctx_entry->oscore_ctx == NULL) {
+			LOG_ERR("OSCORE context not allocated (tests must provide)");
 			/* Zeroize keying material */
 			memset(master_secret, 0, sizeof(master_secret));
 			memset(master_salt, 0, sizeof(master_salt));
@@ -1180,18 +1244,49 @@ static int coap_server_process(int sock_fd)
 			ret = -ENOMEM;
 			goto unlock;
 		}
+#endif
 
-		/* Initialize OSCORE context with derived keying material
-		 * Per RFC 9528 Appendix A.1:
-		 * - Sender ID = C_R (for server/responder)
-		 * - Recipient ID = C_I (for client/initiator, extracted from context)
+		/* RFC 9528 Appendix A.1 Table 14: Initialize OSCORE context with correct ID mapping
+		 * "EDHOC Responder: OSCORE Sender ID = C_I; OSCORE Recipient ID = C_R"
+		 * This is the FIX for the non-compliance issue!
 		 */
+		int aead_alg = 10;  /* AES-CCM-16-64-128 (default) */
+		int hkdf_alg = 5;   /* HKDF-SHA-256 (default) */
+#if defined(CONFIG_UEDHOC)
+		if (edhoc_session->runtime_ctx != NULL) {
+			struct runtime_context *rc = (struct runtime_context *)edhoc_session->runtime_ctx;
+			aead_alg = rc->suite.app_aead;
+			/* RFC 9528 Appendix A.1: HKDF based on application hash algorithm
+			 * Map COSE hash algorithm to HKDF algorithm:
+			 * -16 (SHA-256) -> 5 (HKDF-SHA-256)
+			 * -43 (SHA-384) -> 6 (HKDF-SHA-384)
+			 * -44 (SHA-512) -> 7 (HKDF-SHA-512)
+			 */
+			switch (rc->suite.app_hash) {
+			case -16:
+				hkdf_alg = 5; /* HKDF-SHA-256 */
+				break;
+			case -43:
+				hkdf_alg = 6; /* HKDF-SHA-384 */
+				break;
+			case -44:
+				hkdf_alg = 7; /* HKDF-SHA-512 */
+				break;
+			default:
+				hkdf_alg = 5; /* Default to HKDF-SHA-256 */
+				break;
+			}
+		}
+#endif
+
 		ret = coap_oscore_context_init_wrapper(
 			ctx_entry->oscore_ctx,
 			master_secret, master_secret_len,
 			master_salt, master_salt_len,
-			c_r, c_r_len,  /* Sender ID (server) */
-			NULL, 0);      /* Recipient ID (client C_I, needs to be provided) */
+			c_i, c_i_len,  /* Sender ID = C_I (RFC 9528 Table 14) */
+			c_r, c_r_len,  /* Recipient ID = C_R (RFC 9528 Table 14) */
+			aead_alg,
+			hkdf_alg);
 
 		/* Zeroize keying material after initialization */
 		memset(master_secret, 0, sizeof(master_secret));
@@ -1208,7 +1303,7 @@ static int coap_server_process(int sock_fd)
 			goto unlock;
 		}
 
-		LOG_DBG("OSCORE context derived and cached");
+		LOG_DBG("OSCORE context derived and cached (Sender ID=C_I, Recipient ID=C_R)");
 
 		/* EDHOC session complete, remove it */
 		coap_edhoc_session_remove(service->data->edhoc_session_cache,
@@ -1296,14 +1391,17 @@ static int coap_server_process(int sock_fd)
 
 		LOG_DBG("EDHOC+OSCORE combined request processed successfully");
 
-		/* Track OSCORE exchange for response protection */
+		/* RFC 9668 Section 3.3.1: Track OSCORE exchange for response protection
+		 * RFC 8613 Section 8.3: Response MUST be OSCORE-protected using derived context
+		 */
 		uint8_t token[COAP_TOKEN_MAX_LEN];
 		uint8_t tkl = coap_header_get_token(&request, token);
 		bool is_observe = coap_request_is_observe(&request);
 
 		ret = oscore_exchange_add(service->data->oscore_exchange_cache,
 					  &client_addr, client_addr_len,
-					  token, tkl, is_observe);
+					  token, tkl, is_observe,
+					  ctx_entry->oscore_ctx);
 		if (ret < 0) {
 			LOG_WRN("Failed to add OSCORE exchange entry (%d)", ret);
 			/* Continue processing - this is not a fatal error */
@@ -1388,7 +1486,8 @@ static int coap_server_process(int sock_fd)
 
 		ret = oscore_exchange_add(service->data->oscore_exchange_cache,
 					  &client_addr, client_addr_len,
-					  token, tkl, is_observe);
+					  token, tkl, is_observe,
+					  oscore_ctx);
 		if (ret < 0) {
 			LOG_WRN("Failed to add OSCORE exchange entry (%d)", ret);
 			/* Continue processing - this is not a fatal error */
@@ -2092,33 +2191,46 @@ int coap_service_send(const struct coap_service *service, const struct coap_pack
 	}
 
 #if defined(CONFIG_COAP_OSCORE)
-	/* RFC 8613 Section 8.3: Protect responses for OSCORE exchanges */
-	if (service->data->oscore_ctx != NULL) {
-		uint8_t token[COAP_TOKEN_MAX_LEN];
-		uint8_t tkl = coap_header_get_token(cpkt, token);
+	/* RFC 8613 Section 8.3: Protect responses for OSCORE exchanges
+	 * RFC 9668 Section 3.3.1: Use per-exchange OSCORE context for derived contexts
+	 */
+	uint8_t token[COAP_TOKEN_MAX_LEN];
+	uint8_t tkl = coap_header_get_token(cpkt, token);
 
-		/* Look up exchange to see if this response needs OSCORE protection */
-		exchange = oscore_exchange_find(service->data->oscore_exchange_cache,
-						addr, addr_len, token, tkl);
-		if (exchange != NULL) {
-			/* This response must be OSCORE-protected */
-			/* Protect the response */
-			ret = coap_oscore_protect(cpkt->data, cpkt->offset,
-						  oscore_buf, &oscore_len,
-						  service->data->oscore_ctx);
-			if (ret < 0) {
-				/* RFC 8613: Fail closed - do not send plaintext */
-				LOG_ERR("OSCORE protection failed (%d), not sending response", ret);
-				(void)k_mutex_unlock(&lock);
-				return ret;
-			}
+	/* Look up exchange to see if this response needs OSCORE protection */
+	exchange = oscore_exchange_find(service->data->oscore_exchange_cache,
+					addr, addr_len, token, tkl);
+	if (exchange != NULL) {
+		struct context *oscore_ctx = exchange->oscore_ctx;
 
-			/* Use protected message for sending */
-			send_data = oscore_buf;
-			send_len = oscore_len;
-
-			LOG_DBG("OSCORE protected response: %zu -> %zu bytes", cpkt->offset, send_len);
+		/* If exchange doesn't have a context, fall back to service context */
+		if (oscore_ctx == NULL) {
+			oscore_ctx = service->data->oscore_ctx;
 		}
+
+		if (oscore_ctx == NULL) {
+			/* RFC 8613: Fail closed - do not send plaintext response */
+			LOG_ERR("OSCORE exchange found but no context available");
+			(void)k_mutex_unlock(&lock);
+			return -ENOTSUP;
+		}
+
+		/* This response must be OSCORE-protected */
+		ret = coap_oscore_protect(cpkt->data, cpkt->offset,
+					  oscore_buf, &oscore_len,
+					  oscore_ctx);
+		if (ret < 0) {
+			/* RFC 8613: Fail closed - do not send plaintext */
+			LOG_ERR("OSCORE protection failed (%d), not sending response", ret);
+			(void)k_mutex_unlock(&lock);
+			return ret;
+		}
+
+		/* Use protected message for sending */
+		send_data = oscore_buf;
+		send_len = oscore_len;
+
+		LOG_DBG("OSCORE protected response: %zu -> %zu bytes", cpkt->offset, send_len);
 	}
 #endif
 

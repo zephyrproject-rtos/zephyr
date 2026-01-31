@@ -965,23 +965,49 @@ The current implementation provides:
 **Server-side EDHOC+OSCORE Combined Request Processing**:
 
 When :kconfig:option:`CONFIG_COAP_EDHOC_COMBINED_REQUEST` is enabled, the server implements
-RFC 9668 Section 3.3.1 and 3.3.2 processing:
+RFC 9668 Section 3.3.1 processing with full RFC 9528 Appendix A.1 compliance:
 
 1. **Step 1**: Validates EDHOC option and OSCORE option presence
 2. **Step 2**: Extracts EDHOC message_3 from combined payload (CBOR parsing)
 3. **Step 3**: Extracts C_R from OSCORE option 'kid' field
-4. **Step 4**: Retrieves EDHOC session by C_R and processes message_3
-5. **Step 5**: Derives OSCORE Security Context using EDHOC exporter
+4. **Step 4**: Retrieves EDHOC session by C_R and processes message_3 (derives PRK_out, extracts C_I)
+5. **Step 5**: Derives OSCORE Security Context per RFC 9528 Appendix A.1:
+
+   - Uses EDHOC_Exporter with labels 0 (master secret) and 1 (master salt)
+   - Context parameter: h'' (empty CBOR byte string)
+   - **Sender ID = C_I** (connection identifier for initiator, extracted from EDHOC context)
+   - **Recipient ID = C_R** (connection identifier for responder, from OSCORE option)
+   - AEAD and HKDF algorithms from EDHOC suite
+
 6. **Step 6-7**: Rebuilds OSCORE request without EDHOC option
 7. **Step 8**: Verifies and decrypts OSCORE message using derived context
 8. **Step 9**: Dispatches decrypted request to resource handlers
+
+**Response Protection**:
+
+Per RFC 9668 Section 3.3.1, responses to EDHOC+OSCORE combined requests **MUST** be
+OSCORE-protected using the derived context. The server automatically:
+
+- Tracks the per-exchange OSCORE context
+- Protects all responses (including Observe notifications) with the derived context
+- Fails closed if OSCORE protection fails (does not send plaintext)
+
+**OSCORE Context Management**:
+
+The server manages OSCORE contexts internally:
+
+- Allocates contexts from an internal fixed pool (sized by :kconfig:option:`CONFIG_COAP_OSCORE_CTX_CACHE_SIZE`)
+- Caches contexts keyed by C_R for subsequent requests
+- Evicts contexts based on age (lifetime: :kconfig:option:`CONFIG_COAP_OSCORE_CTX_LIFETIME_MS`)
+- Zeroizes contexts on eviction (security best practice)
 
 **Requirements for combined request processing**:
 
 - EDHOC session must be pre-provisioned in the service's ``edhoc_session_cache``
 - Application profile must NOT require EDHOC message_4
 - OSCORE context cache must have available entries
-- Full uoscore-uedhoc module integration for EDHOC processing
+- When :kconfig:option:`CONFIG_UEDHOC` is enabled: Full uoscore-uedhoc module integration
+- When :kconfig:option:`CONFIG_UEDHOC` is disabled: Test wrappers must be provided
 
 **Fail-closed behavior**:
 
@@ -990,6 +1016,15 @@ RFC 9668 Section 3.3.1 and 3.3.2 processing:
 - EDHOC message_3 processing failure → EDHOC error message (ERR_CODE=1, Content-Format 64, EDHOC session aborted)
 - message_4 required → EDHOC error message (ERR_CODE=1, Content-Format 64, EDHOC session aborted)
 - OSCORE verification failure → appropriate OSCORE error code
+- Context allocation failure → 5.00 Internal Server Error
+
+**RFC 9528 Table 14 Compliance**:
+
+The implementation correctly maps connection identifiers to OSCORE IDs per RFC 9528 Appendix A.1 Table 14:
+
+- **EDHOC Responder (Server)**: OSCORE Sender ID = C_I, OSCORE Recipient ID = C_R
+
+This ensures proper bidirectional OSCORE communication after EDHOC key exchange.
 
 **Not yet implemented**:
 
@@ -997,9 +1032,8 @@ RFC 9668 Section 3.3.1 and 3.3.2 processing:
 - Client-side EDHOC+OSCORE combined request generation
 - Outer Block-wise transfer support for combined requests (RFC 9668 Section 3.3.2)
 
-The current implementation provides server-side processing of EDHOC+OSCORE combined requests
-and requires application-level integration with the uoscore-uedhoc module for EDHOC session
-management and key derivation.
+The current implementation provides fully RFC-compliant server-side processing of EDHOC+OSCORE
+combined requests with automatic OSCORE context derivation and response protection.
 
 API Reference
 *************

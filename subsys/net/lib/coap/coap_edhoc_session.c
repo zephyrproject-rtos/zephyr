@@ -128,3 +128,22 @@ int coap_edhoc_session_evict_expired(
 
 	return evicted;
 }
+
+int coap_edhoc_session_set_ci(
+	struct coap_edhoc_session *session,
+	const uint8_t *c_i,
+	uint8_t c_i_len)
+{
+	if (session == NULL || c_i == NULL || c_i_len == 0 || c_i_len > 16) {
+		return -EINVAL;
+	}
+
+	if (!session->active) {
+		return -ENOENT;
+	}
+
+	memcpy(session->c_i, c_i, c_i_len);
+	session->c_i_len = c_i_len;
+
+	return 0;
+}

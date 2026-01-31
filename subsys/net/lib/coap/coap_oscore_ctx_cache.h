@@ -83,6 +83,27 @@ int coap_oscore_ctx_cache_evict_expired(
 	int64_t now,
 	int64_t lifetime_ms);
 
+#if defined(CONFIG_UOSCORE)
+/**
+ * @brief Allocate an OSCORE context from the internal pool
+ *
+ * Allocates a struct context (uoscore) from the internal fixed pool.
+ * The pool is sized by CONFIG_COAP_OSCORE_CTX_CACHE_SIZE.
+ *
+ * @return Pointer to allocated context, NULL if pool is exhausted
+ */
+struct context *coap_oscore_ctx_alloc(void);
+
+/**
+ * @brief Free an OSCORE context back to the internal pool
+ *
+ * Zeroizes the context and returns it to the pool.
+ *
+ * @param ctx Context to free
+ */
+void coap_oscore_ctx_free(struct context *ctx);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

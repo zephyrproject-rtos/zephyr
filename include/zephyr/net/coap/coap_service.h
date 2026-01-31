@@ -74,6 +74,7 @@ struct coap_oscore_exchange {
 	uint8_t tkl;                      /**< Token length */
 	int64_t timestamp;                /**< Creation timestamp */
 	bool is_observe;                  /**< True if this is an Observe exchange */
+	struct context *oscore_ctx;       /**< OSCORE context to use for response (NULL = use service ctx) */
 };
 #endif
 
@@ -90,6 +91,8 @@ struct runtime_context;
 struct coap_edhoc_session {
 	uint8_t c_r[16];                              /**< Connection identifier C_R (max 16 bytes) */
 	uint8_t c_r_len;                              /**< Length of C_R */
+	uint8_t c_i[16];                              /**< Connection identifier C_I (max 16 bytes) */
+	uint8_t c_i_len;                              /**< Length of C_I */
 	struct edhoc_responder_context *resp_ctx;     /**< EDHOC responder context (from uoscore-uedhoc) */
 	struct runtime_context *runtime_ctx;          /**< Runtime context (from uoscore-uedhoc) */
 	bool message_4_required;                      /**< True if application profile requires message_4 */

@@ -83,6 +83,22 @@ int coap_edhoc_session_evict_expired(
 	int64_t now,
 	int64_t lifetime_ms);
 
+/**
+ * @brief Set C_I (connection identifier for initiator) on an existing EDHOC session
+ *
+ * Used to store C_I after it's extracted from EDHOC message_1 or message_2.
+ * Required for RFC 9528 Appendix A.1 Table 14 ID mapping.
+ *
+ * @param session Session entry to update
+ * @param c_i Connection identifier C_I
+ * @param c_i_len Length of C_I
+ * @return 0 on success, negative errno on error
+ */
+int coap_edhoc_session_set_ci(
+	struct coap_edhoc_session *session,
+	const uint8_t *c_i,
+	uint8_t c_i_len);
+
 #ifdef __cplusplus
 }
 #endif

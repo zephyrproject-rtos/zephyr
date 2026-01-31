@@ -91,7 +91,8 @@ int oscore_exchange_add(struct coap_oscore_exchange *cache,
 			net_socklen_t addr_len,
 			const uint8_t *token,
 			uint8_t tkl,
-			bool is_observe);
+			bool is_observe,
+			struct context *oscore_ctx);
 
 /**
  * @brief Remove OSCORE exchange entry (for testing)
