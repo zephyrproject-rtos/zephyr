@@ -19,7 +19,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -195,13 +194,13 @@ int bt_ccp_call_control_client_discover(struct bt_conn *conn,
 	struct bt_ccp_call_control_client *client;
 	int err;
 
-	CHECKIF(conn == NULL) {
+	if (conn == NULL) {
 		LOG_DBG("conn is NULL");
 
 		return -EINVAL;
 	}
 
-	CHECKIF(out_client == NULL) {
+	if (out_client == NULL) {
 		LOG_DBG("client is NULL");
 
 		return -EINVAL;
@@ -241,7 +240,7 @@ int bt_ccp_call_control_client_discover(struct bt_conn *conn,
 
 int bt_ccp_call_control_client_register_cb(struct bt_ccp_call_control_client_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		LOG_DBG("cb is NULL");
 
 		return -EINVAL;
@@ -258,7 +257,7 @@ int bt_ccp_call_control_client_register_cb(struct bt_ccp_call_control_client_cb 
 
 int bt_ccp_call_control_client_unregister_cb(struct bt_ccp_call_control_client_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		LOG_DBG("cb is NULL");
 		return -EINVAL;
 	}
@@ -273,12 +272,12 @@ int bt_ccp_call_control_client_unregister_cb(struct bt_ccp_call_control_client_c
 int bt_ccp_call_control_client_get_bearers(struct bt_ccp_call_control_client *client,
 					   struct bt_ccp_call_control_client_bearers *bearers)
 {
-	CHECKIF(client == NULL) {
+	if (client == NULL) {
 		LOG_DBG("client is NULL");
 		return -EINVAL;
 	}
 
-	CHECKIF(bearers == NULL) {
+	if (bearers == NULL) {
 		LOG_DBG("bearers is NULL");
 		return -EINVAL;
 	}
@@ -326,7 +325,7 @@ static void tbs_client_read_bearer_provider_name_cb(struct bt_conn *conn, int er
 static int validate_bearer_and_get_client(const struct bt_ccp_call_control_client_bearer *bearer,
 					  struct bt_ccp_call_control_client **client)
 {
-	CHECKIF(bearer == NULL) {
+	if (bearer == NULL) {
 		LOG_DBG("bearer is NULL");
 
 		return -EINVAL;
