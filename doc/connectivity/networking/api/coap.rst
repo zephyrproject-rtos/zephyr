@@ -34,6 +34,7 @@ Supported RFCs:
 - :rfc:`7959` - Block-Wise Transfers in the Constrained Application Protocol (CoAP)
 - :rfc:`7641` - Observing Resources in the Constrained Application Protocol (CoAP)
 - :rfc:`7967` - Constrained Application Protocol (CoAP) Option for No Server Response
+- :rfc:`8768` - Constrained Application Protocol (CoAP) Hop-Limit Option
 - :rfc:`9175` - CoAP: Echo, Request-Tag, and Token Processing
 - :rfc:`8613` - Object Security for Constrained RESTful Environments (OSCORE)
 - :rfc:`9668` - EDHOC and OSCORE profile of ACE (EDHOC with CoAP and OSCORE)
@@ -1034,6 +1035,114 @@ This ensures proper bidirectional OSCORE communication after EDHOC key exchange.
 
 The current implementation provides fully RFC-compliant server-side processing of EDHOC+OSCORE
 combined requests with automatic OSCORE context derivation and response protection.
+
+Hop-Limit Option (RFC 8768)
+============================
+
+The Hop-Limit option indicates the maximum number of hops a request may traverse. It is used
+to prevent infinite request loops in proxy chains and to limit the scope of requests.
+
+**Option Details**:
+
+- **Option Number**: 16 (``COAP_OPTION_HOP_LIMIT``)
+- **Format**: uint (unsigned integer)
+- **Length**: 1 byte
+- **Valid Range**: 1-255
+- **Default**: 16 (when inserted by proxy)
+
+**Response Code**:
+
+- **5.08 Hop Limit Reached** (``COAP_RESPONSE_CODE_HOP_LIMIT_REACHED``): Returned by a proxy
+  when the Hop-Limit reaches 0 and the request cannot be forwarded further.
+
+**Validation Rules** (RFC 8768 Section 3):
+
+1. Requests with Hop-Limit value 0 **MUST** be rejected with 4.00 (Bad Request)
+2. Requests with Hop-Limit length != 1 byte **MUST** be rejected with 4.00 (Bad Request)
+3. If multiple Hop-Limit options are present, only the first is processed (supernumerary
+   options are treated as unrecognized per RFC 7252 Section 5.4.5)
+
+**Endpoint Behavior**:
+
+Endpoints (clients and servers) that are not proxies:
+
+- **MAY** insert a Hop-Limit option in requests
+- **MUST** validate Hop-Limit if present (reject invalid values with 4.00)
+- Do not need to decrement or modify the Hop-Limit
+
+**Proxy Behavior**:
+
+Proxies that understand Hop-Limit:
+
+- **MUST** decrement Hop-Limit by 1 before forwarding
+- **MUST NOT** forward if Hop-Limit becomes 0 (return 5.08 instead)
+- **MAY** insert Hop-Limit with default value 16 if absent and policy requires
+
+**API Functions**:
+
+.. code-block:: c
+
+   /* Append Hop-Limit option to a request */
+   int coap_append_hop_limit(struct coap_packet *cpkt, uint8_t hop_limit);
+
+   /* Get Hop-Limit value from a request */
+   int coap_get_hop_limit(const struct coap_packet *cpkt, uint8_t *hop_limit);
+
+   /* Update Hop-Limit for proxy forwarding (decrement or insert) */
+   int coap_hop_limit_proxy_update(struct coap_packet *cpkt, uint8_t default_initial);
+
+**Example Usage - Endpoint**:
+
+.. code-block:: c
+
+   /* Client: Add Hop-Limit to limit request scope */
+   struct coap_packet request;
+   /* ... initialize request ... */
+   ret = coap_append_hop_limit(&request, 10);  /* Max 10 hops */
+
+   /* Server: Validate Hop-Limit in request */
+   uint8_t hop_limit;
+   ret = coap_get_hop_limit(&request, &hop_limit);
+   if (ret == 0) {
+       /* Hop-Limit present and valid */
+       LOG_INF("Request has Hop-Limit: %u", hop_limit);
+   } else if (ret == -EINVAL) {
+       /* Invalid Hop-Limit - reject with 4.00 */
+       /* (Server implementation does this automatically) */
+   }
+   /* ret == -ENOENT means Hop-Limit absent, which is valid */
+
+**Example Usage - Proxy**:
+
+.. code-block:: c
+
+   /* Proxy: Update Hop-Limit before forwarding */
+   ret = coap_hop_limit_proxy_update(&request, 16);  /* Use default 16 if absent */
+   if (ret == -EHOSTUNREACH) {
+       /* Hop-Limit reached 0 - send 5.08 response, do not forward */
+       send_hop_limit_reached_response(&request);
+       return;
+   } else if (ret == 0) {
+       /* Hop-Limit decremented successfully - forward request */
+       forward_request(&request);
+   }
+
+**Server-Side Automatic Validation**:
+
+The CoAP server automatically validates Hop-Limit options in all requests:
+
+- Invalid Hop-Limit (length != 1 or value == 0) → 4.00 (Bad Request)
+- Valid or absent Hop-Limit → request processed normally
+
+This validation occurs on the outer message before OSCORE/EDHOC processing,
+ensuring fail-closed behavior for all requests.
+
+**Security Considerations**:
+
+- Hop-Limit is an **elective** option (even option number), so unrecognized instances
+  are silently ignored per RFC 7252 Section 5.4.1
+- Malicious clients cannot cause infinite loops by omitting Hop-Limit (proxies insert it)
+- Malicious clients cannot bypass Hop-Limit by setting high values (proxies decrement it)
 
 API Reference
 *************

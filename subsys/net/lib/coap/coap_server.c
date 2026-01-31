@@ -127,7 +127,7 @@ static inline void coap_server_free(void *ptr)
 #endif
 }
 
-#if defined(CONFIG_COAP_OSCORE)
+#if defined(CONFIG_COAP_OSCORE) || defined(CONFIG_COAP_EDHOC_COMBINED_REQUEST)
 /**
  * @brief Send a simple CoAP error response
  *
@@ -163,7 +163,7 @@ static int send_error_response(const struct coap_service *service,
 
 	return coap_service_send(service, &response, client_addr, client_addr_len, NULL);
 }
-#endif /* CONFIG_COAP_OSCORE */
+#endif /* CONFIG_COAP_OSCORE || CONFIG_COAP_EDHOC_COMBINED_REQUEST */
 
 #if defined(CONFIG_COAP_EDHOC_COMBINED_REQUEST)
 /**
@@ -962,6 +962,40 @@ static int coap_server_process(int sock_fd)
 			/* For NON/ACK responses, silently drop */
 			return 0;
 		}
+	}
+
+	/* RFC 8768 Section 3: Validate Hop-Limit option if present.
+	 * This validation must happen on the outer message before OSCORE/EDHOC processing.
+	 * Requests with invalid Hop-Limit MUST be rejected with 4.00 (Bad Request).
+	 */
+	{
+		uint8_t hop_limit;
+		int hop_ret = coap_get_hop_limit(&request, &hop_limit);
+
+		if (hop_ret < 0 && hop_ret != -ENOENT) {
+			/* RFC 8768 Section 3: Invalid Hop-Limit (wrong length or value 0) */
+			uint8_t msg_type = coap_header_get_type(&request);
+
+			LOG_ERR("Invalid Hop-Limit option in request");
+
+			if (coap_packet_is_request(&request) && msg_type == COAP_TYPE_CON) {
+				struct coap_packet response;
+				uint8_t response_buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+				uint8_t token[COAP_TOKEN_MAX_LEN];
+				uint8_t tkl = coap_header_get_token(&request, token);
+				uint16_t id = coap_header_get_id(&request);
+
+				ret = coap_packet_init(&response, response_buf, sizeof(response_buf),
+						       COAP_VERSION_1, COAP_TYPE_ACK, tkl, token,
+						       COAP_RESPONSE_CODE_BAD_REQUEST, id);
+				if (ret == 0) {
+					(void)zsock_sendto(sock_fd, response.data, response.offset, 0,
+							   &client_addr, client_addr_len);
+				}
+			}
+			return -EINVAL;
+		}
+		/* If hop_ret == -ENOENT, Hop-Limit is absent, which is valid for endpoints */
 	}
 
 	(void)k_mutex_lock(&lock, K_FOREVER);

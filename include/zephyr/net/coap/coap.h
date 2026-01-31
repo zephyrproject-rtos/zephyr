@@ -63,6 +63,15 @@ enum coap_option_num {
 	COAP_OPTION_CONTENT_FORMAT = 12, /**< Content-Format */
 	COAP_OPTION_MAX_AGE = 14,        /**< Max-Age */
 	COAP_OPTION_URI_QUERY = 15,      /**< Uri-Query */
+	/**
+	 * Hop-Limit (RFC 8768)
+	 *
+	 * Indicates the maximum number of hops a request may traverse.
+	 * Format: uint, Length: 1 byte, Range: 1-255.
+	 * Requests with Hop-Limit 0 or >255 MUST be rejected with 4.00.
+	 * Proxies MUST decrement by 1 before forwarding.
+	 */
+	COAP_OPTION_HOP_LIMIT = 16,      /**< Hop-Limit (RFC 8768) */
 	COAP_OPTION_ACCEPT = 17,         /**< Accept */
 	COAP_OPTION_LOCATION_QUERY = 20, /**< Location-Query */
 	/**
@@ -212,7 +221,9 @@ enum coap_response_code {
 	COAP_RESPONSE_CODE_GATEWAY_TIMEOUT = COAP_MAKE_RESPONSE_CODE(5, 4),
 	/** 5.05 - Proxying Not Supported */
 	COAP_RESPONSE_CODE_PROXYING_NOT_SUPPORTED =
-						COAP_MAKE_RESPONSE_CODE(5, 5)
+						COAP_MAKE_RESPONSE_CODE(5, 5),
+	/** 5.08 - Hop Limit Reached (RFC 8768) */
+	COAP_RESPONSE_CODE_HOP_LIMIT_REACHED = COAP_MAKE_RESPONSE_CODE(5, 8)
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -1381,6 +1392,58 @@ int coap_check_unsupported_critical_options(const struct coap_packet *cpkt, uint
  */
 int coap_no_response_check(const struct coap_packet *request, uint8_t response_code,
 			   bool *suppress);
+
+/**
+ * @brief Append Hop-Limit option to a CoAP packet.
+ *
+ * Per RFC 8768 Section 3, the Hop-Limit option indicates the maximum number
+ * of hops a request may traverse. The value MUST be in the range 1-255.
+ *
+ * @param cpkt CoAP packet to append the option to
+ * @param hop_limit Hop limit value (1-255)
+ *
+ * @retval 0 Success
+ * @retval -EINVAL Invalid hop_limit (0 or >255) or packet is NULL
+ * @retval <0 Other negative error codes on failure
+ */
+int coap_append_hop_limit(struct coap_packet *cpkt, uint8_t hop_limit);
+
+/**
+ * @brief Get Hop-Limit option value from a CoAP packet.
+ *
+ * Per RFC 8768 Section 3, validates that the Hop-Limit option has length 1
+ * and value in range 1-255.
+ *
+ * @param cpkt CoAP packet to extract the option from
+ * @param hop_limit Pointer to store the hop limit value
+ *
+ * @retval 0 Success, hop_limit contains the value
+ * @retval -ENOENT Hop-Limit option not present
+ * @retval -EINVAL Invalid option length or value (0 or >255)
+ * @retval <0 Other negative error codes on failure
+ */
+int coap_get_hop_limit(const struct coap_packet *cpkt, uint8_t *hop_limit);
+
+/**
+ * @brief Update Hop-Limit option for proxy forwarding.
+ *
+ * Per RFC 8768 Section 3, a proxy that understands Hop-Limit:
+ * - If absent and policy requires insertion: inserts with default_initial (or 16 if 0)
+ * - If present: decrements by 1; if result is 0, returns error (proxy MUST NOT forward)
+ *
+ * This function processes only the first Hop-Limit option if multiple are present
+ * (supernumerary options are treated as unrecognized per RFC 7252 Section 5.4.5).
+ *
+ * @param cpkt CoAP packet to update
+ * @param default_initial Default initial value to insert if absent (use 0 for RFC default of 16)
+ *
+ * @retval 0 Success, hop limit was decremented or inserted
+ * @retval -ENOENT Hop-Limit option not present and insertion not requested
+ * @retval -EINVAL Invalid option length or value
+ * @retval -EHOSTUNREACH Hop limit reached 0 after decrement (proxy MUST NOT forward)
+ * @retval <0 Other negative error codes on failure
+ */
+int coap_hop_limit_proxy_update(struct coap_packet *cpkt, uint8_t default_initial);
 
 #ifdef __cplusplus
 }

@@ -396,16 +396,17 @@ int coap_append_option_int(struct coap_packet *cpkt, uint16_t code,
 {
 	uint8_t data[4], len;
 
+	/* RFC 7252 Section 3.2: uint encoding must use minimal number of bytes */
 	if (val == 0U) {
 		data[0] = 0U;
 		len = 0U;
-	} else if (val < 0xFF) {
+	} else if (val <= 0xFF) {
 		data[0] = (uint8_t) val;
 		len = 1U;
-	} else if (val < 0xFFFF) {
+	} else if (val <= 0xFFFF) {
 		sys_put_be16(val, data);
 		len = 2U;
-	} else if (val < 0xFFFFFF) {
+	} else if (val <= 0xFFFFFF) {
 		sys_put_be16(val, &data[1]);
 		data[0] = val >> 16;
 		len = 3U;
@@ -1077,6 +1078,7 @@ uint8_t coap_header_get_code(const struct coap_packet *cpkt)
 	case COAP_RESPONSE_CODE_SERVICE_UNAVAILABLE:
 	case COAP_RESPONSE_CODE_GATEWAY_TIMEOUT:
 	case COAP_RESPONSE_CODE_PROXYING_NOT_SUPPORTED:
+	case COAP_RESPONSE_CODE_HOP_LIMIT_REACHED:
 	case COAP_CODE_EMPTY:
 		return code;
 	default:
@@ -2284,4 +2286,89 @@ int coap_check_unsupported_critical_options(const struct coap_packet *cpkt, uint
 #endif
 
 	return 0;
+}
+
+int coap_append_hop_limit(struct coap_packet *cpkt, uint8_t hop_limit)
+{
+	/* RFC 8768 Section 3: Hop-Limit value MUST be 1-255 */
+	if (cpkt == NULL || hop_limit == 0) {
+		return -EINVAL;
+	}
+
+	/* Encode as 1-byte uint per RFC 8768 Section 3 */
+	return coap_append_option_int(cpkt, COAP_OPTION_HOP_LIMIT, hop_limit);
+}
+
+int coap_get_hop_limit(const struct coap_packet *cpkt, uint8_t *hop_limit)
+{
+	struct coap_option option;
+	int ret;
+
+	if (cpkt == NULL || hop_limit == NULL) {
+		return -EINVAL;
+	}
+
+	/* RFC 8768 Section 3: Process only the first Hop-Limit option.
+	 * Supernumerary options are treated as unrecognized per RFC 7252 Section 5.4.5.
+	 */
+	ret = coap_find_options(cpkt, COAP_OPTION_HOP_LIMIT, &option, 1);
+	if (ret <= 0) {
+		return -ENOENT;
+	}
+
+	/* RFC 8768 Section 3: Hop-Limit length MUST be 1 byte */
+	if (option.len != 1) {
+		return -EINVAL;
+	}
+
+	/* RFC 8768 Section 3: Value MUST be 1-255 (0 is invalid) */
+	if (option.value[0] == 0) {
+		return -EINVAL;
+	}
+
+	*hop_limit = option.value[0];
+	return 0;
+}
+
+int coap_hop_limit_proxy_update(struct coap_packet *cpkt, uint8_t default_initial)
+{
+	uint8_t hop_limit;
+	int ret;
+
+	if (cpkt == NULL) {
+		return -EINVAL;
+	}
+
+	ret = coap_get_hop_limit(cpkt, &hop_limit);
+	if (ret == -ENOENT) {
+		/* RFC 8768 Section 3: If absent and policy requires insertion,
+		 * insert with default_initial (use 16 if caller passes 0).
+		 */
+		if (default_initial == 0) {
+			default_initial = 16; /* RFC 8768 Section 3 default */
+		}
+		return coap_append_hop_limit(cpkt, default_initial);
+	} else if (ret < 0) {
+		/* Invalid Hop-Limit option */
+		return ret;
+	}
+
+	/* RFC 8768 Section 3: Decrement by 1 */
+	if (hop_limit == 1) {
+		/* RFC 8768 Section 3: Proxy MUST NOT forward if it becomes 0.
+		 * Return distinct error so caller can generate 5.08 response.
+		 */
+		return -EHOSTUNREACH;
+	}
+
+	/* Remove old Hop-Limit option and add decremented value.
+	 * Note: This is a simplified implementation. A more efficient approach
+	 * would modify the option in-place, but that requires more complex logic.
+	 */
+	ret = coap_packet_remove_option(cpkt, COAP_OPTION_HOP_LIMIT);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return coap_append_hop_limit(cpkt, hop_limit - 1);
 }
