@@ -27,10 +27,14 @@ extern "C" {
  * @brief Extract OSCORE Sender ID (kid) from OSCORE option value
  *
  * Per RFC 8613 Section 6.1, the OSCORE option value uses a custom binary format:
- *   - Flag byte with bits: n (Partial IV present), k (kid present), h (kid context present)
- *   - Partial IV (length-prefixed, if n=1)
- *   - kid context (length-prefixed, if h=1)
- *   - kid (length-prefixed, if k=1)
+ *   - Flag byte with bits 0-2: n (Partial IV length, 0-5 valid, 6-7 reserved)
+ *                    bit 3: k (kid present flag)
+ *                    bit 4: h (kid context present flag)
+ *                    bits 5-7: reserved (must be 0)
+ *   - n bytes: Partial IV (if n > 0)
+ *   - 1 byte: kid context length s (if h=1)
+ *   - s bytes: kid context (if h=1)
+ *   - remaining bytes: kid (if k=1, NOT length-prefixed)
  *
  * This function extracts the 'kid' field which is used as C_R in
  * RFC 9668 Section 3.3.1 Step 3.
@@ -39,8 +43,9 @@ extern "C" {
  * @param kid Output buffer for kid bytes
  * @param kid_len On input: size of kid buffer; on output: actual kid length
  * @return 0 on success, negative errno on error
- *         -ENOENT if OSCORE option not present or kid not present
- *         -EINVAL if OSCORE option value is malformed
+ *         -ENOENT if OSCORE option not present or kid not present (k=0)
+ *         -EINVAL if OSCORE option value is malformed (reserved bits set,
+ *                 reserved n value, or truncated)
  *         -ENOMEM if kid buffer too small
  */
 int coap_oscore_option_extract_kid(const struct coap_packet *cpkt,

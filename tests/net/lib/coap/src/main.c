@@ -3942,22 +3942,26 @@ ZTEST(coap, test_oscore_option_extract_kid)
 	int r;
 
 	/* Build a CoAP packet with OSCORE option per RFC 8613 Section 6.1:
-	 * OSCORE option value format (length-prefixed fields):
-	 *   - Flag byte: n (bit 0), k (bit 1), h (bit 2)
-	 *   - Partial IV (if n=1): length byte + data
-	 *   - kid context (if h=1): length byte + data
-	 *   - kid (if k=1): length byte + data
+	 * OSCORE option value format:
+	 *   - Flag byte: bits 0-2: n (Partial IV length, 0-5 valid)
+	 *                bit 3: k (kid present flag)
+	 *                bit 4: h (kid context present flag)
+	 *                bits 5-7: reserved (must be 0)
+	 *   - n bytes: Partial IV (if n > 0)
+	 *   - 1 byte: kid context length s (if h=1)
+	 *   - s bytes: kid context (if h=1)
+	 *   - remaining bytes: kid (if k=1, NOT length-prefixed)
 	 *
-	 * Test case: flag=0x02 (k=1 only), kid length=1, kid value=0x42
-	 * OSCORE option value: 0x020142
+	 * Test case: flag=0x08 (k=1, h=0, n=0), kid value=0x42
+	 * OSCORE option value: 0x0842
 	 */
 	r = coap_packet_init(&cpkt, buffer, sizeof(buffer),
 			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
 			     COAP_METHOD_POST, 0);
 	zassert_equal(r, 0, "Failed to initialize packet");
 
-	/* Add OSCORE option: flag=0x02 (k=1), kid_len=0x01, kid=0x42 */
-	uint8_t oscore_value[] = { 0x02, 0x01, 0x42 };
+	/* Add OSCORE option: flag=0x08 (k=1, h=0, n=0), kid=0x42 */
+	uint8_t oscore_value[] = { 0x08, 0x42 };
 
 	r = coap_packet_append_option(&cpkt, COAP_OPTION_OSCORE,
 				      oscore_value, sizeof(oscore_value));
@@ -3975,6 +3979,161 @@ ZTEST(coap, test_oscore_option_extract_kid)
 	zassert_equal(r, 0, "Failed to extract kid");
 	zassert_equal(kid_len, 1, "kid length should be 1");
 	zassert_equal(kid[0], 0x42, "kid value should be 0x42");
+}
+
+/* Test OSCORE option with reserved bits set must fail */
+ZTEST(coap, test_oscore_option_reserved_bits)
+{
+	uint8_t buffer[128];
+	struct coap_packet cpkt;
+	int r;
+
+	/* RFC 8613 §6.1: Reserved bits (5-7) must be zero */
+	r = coap_packet_init(&cpkt, buffer, sizeof(buffer),
+			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
+			     COAP_METHOD_POST, 0);
+	zassert_equal(r, 0, "Failed to initialize packet");
+
+	/* Add OSCORE option with reserved bit 7 set: 0x88 (bit 7 set, k=1) */
+	uint8_t oscore_value[] = { 0x88, 0x42 };
+
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_OSCORE,
+				      oscore_value, sizeof(oscore_value));
+	zassert_equal(r, 0, "Failed to add OSCORE option");
+
+	/* Extract kid - should fail due to reserved bits */
+	uint8_t kid[16];
+	size_t kid_len = sizeof(kid);
+
+	extern int coap_oscore_option_extract_kid(const struct coap_packet *cpkt,
+						  uint8_t *kid, size_t *kid_len);
+
+	r = coap_oscore_option_extract_kid(&cpkt, kid, &kid_len);
+	zassert_equal(r, -EINVAL, "Should fail with reserved bits set");
+}
+
+/* Test OSCORE option with reserved Partial IV length must fail */
+ZTEST(coap, test_oscore_option_reserved_piv_length)
+{
+	uint8_t buffer[128];
+	struct coap_packet cpkt;
+	int r;
+
+	/* RFC 8613 §6.1: n=6 and n=7 are reserved */
+	r = coap_packet_init(&cpkt, buffer, sizeof(buffer),
+			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
+			     COAP_METHOD_POST, 0);
+	zassert_equal(r, 0, "Failed to initialize packet");
+
+	/* Add OSCORE option with n=6 and k=1: 0x0E (bits 0-2: n=6, bit 3: k=1) */
+	uint8_t oscore_value[] = { 0x0E, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x42 };
+
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_OSCORE,
+				      oscore_value, sizeof(oscore_value));
+	zassert_equal(r, 0, "Failed to add OSCORE option");
+
+	/* Extract kid - should fail due to reserved n value */
+	uint8_t kid[16];
+	size_t kid_len = sizeof(kid);
+
+	extern int coap_oscore_option_extract_kid(const struct coap_packet *cpkt,
+						  uint8_t *kid, size_t *kid_len);
+
+	r = coap_oscore_option_extract_kid(&cpkt, kid, &kid_len);
+	zassert_equal(r, -EINVAL, "Should fail with reserved Partial IV length");
+}
+
+/* Test OSCORE option truncated at kid context length must fail */
+ZTEST(coap, test_oscore_option_truncated_kid_context_length)
+{
+	uint8_t buffer[128];
+	struct coap_packet cpkt;
+	int r;
+
+	/* h=1 but missing s byte */
+	r = coap_packet_init(&cpkt, buffer, sizeof(buffer),
+			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
+			     COAP_METHOD_POST, 0);
+	zassert_equal(r, 0, "Failed to initialize packet");
+
+	/* Add OSCORE option with h=1 but no s byte: 0x10 (bit 4: h=1) */
+	uint8_t oscore_value[] = { 0x10 };
+
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_OSCORE,
+				      oscore_value, sizeof(oscore_value));
+	zassert_equal(r, 0, "Failed to add OSCORE option");
+
+	/* Extract kid - should fail due to truncation */
+	uint8_t kid[16];
+	size_t kid_len = sizeof(kid);
+
+	extern int coap_oscore_option_extract_kid(const struct coap_packet *cpkt,
+						  uint8_t *kid, size_t *kid_len);
+
+	r = coap_oscore_option_extract_kid(&cpkt, kid, &kid_len);
+	zassert_equal(r, -EINVAL, "Should fail with truncated kid context");
+}
+
+/* Test OSCORE option with kid context length exceeding remaining data must fail */
+ZTEST(coap, test_oscore_option_invalid_kid_context_length)
+{
+	uint8_t buffer[128];
+	struct coap_packet cpkt;
+	int r;
+
+	/* h=1 with s that exceeds remaining length */
+	r = coap_packet_init(&cpkt, buffer, sizeof(buffer),
+			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
+			     COAP_METHOD_POST, 0);
+	zassert_equal(r, 0, "Failed to initialize packet");
+
+	/* Add OSCORE option with h=1, s=10 but only 2 bytes follow: 0x10, 0x0A, 0x01, 0x02 */
+	uint8_t oscore_value[] = { 0x10, 0x0A, 0x01, 0x02 };
+
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_OSCORE,
+				      oscore_value, sizeof(oscore_value));
+	zassert_equal(r, 0, "Failed to add OSCORE option");
+
+	/* Extract kid - should fail due to invalid kid context length */
+	uint8_t kid[16];
+	size_t kid_len = sizeof(kid);
+
+	extern int coap_oscore_option_extract_kid(const struct coap_packet *cpkt,
+						  uint8_t *kid, size_t *kid_len);
+
+	r = coap_oscore_option_extract_kid(&cpkt, kid, &kid_len);
+	zassert_equal(r, -EINVAL, "Should fail with invalid kid context length");
+}
+
+/* Test OSCORE option with no kid flag must return -ENOENT */
+ZTEST(coap, test_oscore_option_no_kid_flag)
+{
+	uint8_t buffer[128];
+	struct coap_packet cpkt;
+	int r;
+
+	/* k=0 (no kid present) */
+	r = coap_packet_init(&cpkt, buffer, sizeof(buffer),
+			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
+			     COAP_METHOD_POST, 0);
+	zassert_equal(r, 0, "Failed to initialize packet");
+
+	/* Add OSCORE option with k=0: 0x00 (all flags clear) */
+	uint8_t oscore_value[] = { 0x00 };
+
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_OSCORE,
+				      oscore_value, sizeof(oscore_value));
+	zassert_equal(r, 0, "Failed to add OSCORE option");
+
+	/* Extract kid - should return -ENOENT since k=0 */
+	uint8_t kid[16];
+	size_t kid_len = sizeof(kid);
+
+	extern int coap_oscore_option_extract_kid(const struct coap_packet *cpkt,
+						  uint8_t *kid, size_t *kid_len);
+
+	r = coap_oscore_option_extract_kid(&cpkt, kid, &kid_len);
+	zassert_equal(r, -ENOENT, "Should return -ENOENT when kid flag not set");
 }
 
 /* Test EDHOC option validation: at most once */

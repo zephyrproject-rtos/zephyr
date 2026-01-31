@@ -36,23 +36,22 @@ int coap_oscore_option_extract_kid(const struct coap_packet *cpkt,
 	oscore_value = option.value;
 	oscore_len = option.len;
 
-	/* RFC 8613 Section 6.1: OSCORE option value format (Figure 5):
-	 *   0 1 2 3 4 5 6 7  Bit number
-	 *  +-+-+-+-+-+-+-+-+
-	 *  |0 0 0|h|k|n|   |  Flag byte
-	 *  +-+-+-+-+-+-+-+-+
-	 *  |  Partial IV   |  (if n=1, length-prefixed)
-	 *  +-+-+-+-+-+-+-+-+
-	 *  | kid context   |  (if h=1, length-prefixed)
-	 *  +-+-+-+-+-+-+-+-+
-	 *  |     kid       |  (if k=1, length-prefixed)
-	 *  +-+-+-+-+-+-+-+-+
+	/* RFC 8613 Section 6.1: OSCORE option value format (Figure 10):
+	 *   0 1 2 3 4 5 6 7 <------------- n bytes -------------->
+	 *  +-+-+-+-+-+-+-+-+--------------------------------------
+	 *  |0 0 0|h|k|  n  |       Partial IV (if any) ...
+	 *  +-+-+-+-+-+-+-+-+--------------------------------------
+	 *
+	 *   <- 1 byte -> <----- s bytes ------>
+	 *  +------------+----------------------+------------------+
+	 *  | s (if any) | kid context (if any) | kid (if any) ... |
+	 *  +------------+----------------------+------------------+
 	 *
 	 * Flag byte bits (LSB first):
-	 *   - Bit 0: n (Partial IV present)
-	 *   - Bit 1: k (kid present)
-	 *   - Bit 2: h (kid context present)
-	 *   - Bits 3-7: reserved (must be 0)
+	 *   - Bits 0-2: n (Partial IV length, 0-5 valid, 6-7 reserved)
+	 *   - Bit 3: k (kid present flag)
+	 *   - Bit 4: h (kid context present flag)
+	 *   - Bits 5-7: reserved (must be 0)
 	 */
 
 	if (oscore_len == 0) {
@@ -61,62 +60,62 @@ int coap_oscore_option_extract_kid(const struct coap_packet *cpkt,
 	}
 
 	/* Parse flag byte */
-	uint8_t flag_byte = oscore_value[pos++];
-	bool n_present = (flag_byte & 0x01) != 0;  /* Partial IV */
-	bool k_present = (flag_byte & 0x02) != 0;  /* kid */
-	bool h_present = (flag_byte & 0x04) != 0;  /* kid context */
+	uint8_t flags = oscore_value[pos++];
+	uint8_t n = flags & 0x07;        /* Partial IV length (bits 0-2) */
+	bool k = (flags & 0x08) != 0;    /* kid flag (bit 3) */
+	bool h = (flags & 0x10) != 0;    /* kid context flag (bit 4) */
+	uint8_t reserved = flags & 0xE0; /* Reserved bits (bits 5-7) */
 
-	/* Skip Partial IV if present */
-	if (n_present) {
-		if (pos >= oscore_len) {
-			LOG_ERR("OSCORE option truncated at Partial IV");
-			return -EINVAL;
-		}
-		uint8_t piv_len = oscore_value[pos++];
-		if (pos + piv_len > oscore_len) {
-			LOG_ERR("OSCORE option Partial IV length invalid");
-			return -EINVAL;
-		}
-		pos += piv_len;
+	/* RFC 8613 §6.1: Reserved bits must be zero */
+	if (reserved != 0) {
+		LOG_ERR("OSCORE option has reserved bits set (0x%02x)", flags);
+		return -EINVAL;
 	}
 
+	/* RFC 8613 §6.1: n=6 and n=7 are reserved */
+	if (n == 6 || n == 7) {
+		LOG_ERR("OSCORE option has reserved Partial IV length (%u)", n);
+		return -EINVAL;
+	}
+
+	/* Check we have enough bytes for Partial IV */
+	if (pos + n > oscore_len) {
+		LOG_ERR("OSCORE option too short for Partial IV");
+		return -EINVAL;
+	}
+
+	/* Skip n bytes of Partial IV */
+	pos += n;
+
 	/* Skip kid context if present */
-	if (h_present) {
+	if (h) {
 		if (pos >= oscore_len) {
-			LOG_ERR("OSCORE option truncated at kid context");
+			LOG_ERR("OSCORE option truncated at kid context length");
 			return -EINVAL;
 		}
-		uint8_t kid_ctx_len = oscore_value[pos++];
-		if (pos + kid_ctx_len > oscore_len) {
+		uint8_t s = oscore_value[pos++];
+		if (pos + s > oscore_len) {
 			LOG_ERR("OSCORE option kid context length invalid");
 			return -EINVAL;
 		}
-		pos += kid_ctx_len;
+		pos += s;
 	}
 
 	/* Extract kid if present */
-	if (!k_present) {
+	if (!k) {
 		return -ENOENT;
 	}
 
-	if (pos >= oscore_len) {
-		LOG_ERR("OSCORE option truncated at kid");
-		return -EINVAL;
-	}
+	/* RFC 8613 §6.1: kid is the remaining bytes (not length-prefixed) */
+	size_t kid_len_on_wire = oscore_len - pos;
 
-	uint8_t kid_field_len = oscore_value[pos++];
-	if (pos + kid_field_len > oscore_len) {
-		LOG_ERR("OSCORE option kid length invalid");
-		return -EINVAL;
-	}
-
-	if (kid_field_len > max_kid_len) {
-		LOG_ERR("kid too large (%u > %zu)", kid_field_len, max_kid_len);
+	if (kid_len_on_wire > max_kid_len) {
+		LOG_ERR("kid too large (%zu > %zu)", kid_len_on_wire, max_kid_len);
 		return -ENOMEM;
 	}
 
-	memcpy(kid, &oscore_value[pos], kid_field_len);
-	*kid_len = kid_field_len;
+	memcpy(kid, &oscore_value[pos], kid_len_on_wire);
+	*kid_len = kid_len_on_wire;
 
 	return 0;
 }
