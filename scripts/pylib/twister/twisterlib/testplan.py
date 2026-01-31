@@ -889,6 +889,10 @@ class TestPlan:
             for itoolchain, plat in itertools.product(
                 ts.integration_toolchains or [None], platform_scope
             ):
+                if (plat.arch == "unit") != (ts.type == "unit"):
+                    # Discard silently
+                    continue
+
                 if itoolchain:
                     toolchain = itoolchain
                 elif plat.arch in ['posix', 'unit']:
@@ -908,10 +912,6 @@ class TestPlan:
 
                 if not force_platform and self.check_platform(plat,exclude_platform):
                     instance.add_filter("Platform is excluded on command line.", Filters.CMD_LINE)
-
-                if (plat.arch == "unit") != (ts.type == "unit"):
-                    # Discard silently
-                    continue
 
                 if ts.modules and self.modules and not set(ts.modules).issubset(set(self.modules)):
                     instance.add_filter(
