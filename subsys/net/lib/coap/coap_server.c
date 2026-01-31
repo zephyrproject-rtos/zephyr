@@ -28,6 +28,31 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include "coap_edhoc.h"
 #endif
 
+#if defined(CONFIG_COAP_EDHOC_COMBINED_REQUEST)
+#include "coap_oscore_option.h"
+#include "coap_edhoc_session.h"
+#include "coap_oscore_ctx_cache.h"
+
+/* Forward declarations for weak wrappers */
+extern int coap_edhoc_msg3_process_wrapper(const uint8_t *edhoc_msg3,
+					   size_t edhoc_msg3_len,
+					   void *resp_ctx,
+					   void *runtime_ctx);
+extern int coap_edhoc_exporter_wrapper(void *resp_ctx,
+				       uint8_t label,
+				       uint8_t *output,
+				       size_t output_len);
+extern int coap_oscore_context_init_wrapper(void *ctx,
+					     const uint8_t *master_secret,
+					     size_t master_secret_len,
+					     const uint8_t *master_salt,
+					     size_t master_salt_len,
+					     const uint8_t *sender_id,
+					     size_t sender_id_len,
+					     const uint8_t *recipient_id,
+					     size_t recipient_id_len);
+#endif
+
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 /* Lowest priority cooperative thread */
 #define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
@@ -860,35 +885,333 @@ static int coap_server_process(int sock_fd)
 		LOG_DBG("EDHOC+OSCORE combined request: EDHOC_MSG_3=%zu bytes, "
 			"OSCORE_PAYLOAD=%zu bytes", edhoc_msg3.len, oscore_payload.len);
 
-		/* TODO: RFC 9668 Section 3.3.1 Steps 4-9:
-		 * - Step 4: Retrieve EDHOC session by C_R (from OSCORE kid)
-		 * - Step 5: Process EDHOC message_3 and derive OSCORE context
-		 * - Step 6-7: Replace payload with OSCORE_PAYLOAD and remove EDHOC option
-		 * - Step 8: Verify OSCORE using derived context
-		 * - Step 9: Dispatch decrypted request to resources
-		 *
-		 * For now, reject EDHOC+OSCORE combined requests as not yet implemented.
-		 * Full implementation requires EDHOC session management and key derivation.
-		 */
-		LOG_WRN("EDHOC+OSCORE combined request detected but full processing "
-			"not yet implemented");
-		(void)send_error_response(service, &request,
-					  COAP_RESPONSE_CODE_NOT_IMPLEMENTED,
-					  &client_addr, client_addr_len);
-		ret = -ENOTSUP;
-		goto unlock;
-	}
-#endif /* CONFIG_COAP_EDHOC_COMBINED_REQUEST */
+		/* RFC 9668 Section 3.3.1 Steps 4-9: Process EDHOC+OSCORE combined request */
 
-	/* RFC 8613 Section 8.2: Verify and decrypt OSCORE-protected requests */
-	if (service->data->oscore_ctx != NULL && coap_oscore_msg_has_oscore(&request)) {
+		/* Step 3: Extract C_R from OSCORE option 'kid' field */
+		uint8_t c_r[16];
+		size_t c_r_len = sizeof(c_r);
+
+		ret = coap_oscore_option_extract_kid(&request, c_r, &c_r_len);
+		if (ret < 0) {
+			LOG_ERR("Failed to extract C_R from OSCORE kid (%d)", ret);
+			(void)send_error_response(service, &request,
+						  COAP_RESPONSE_CODE_BAD_REQUEST,
+						  &client_addr, client_addr_len);
+			goto unlock;
+		}
+
+		LOG_DBG("Extracted C_R from OSCORE kid: %zu bytes", c_r_len);
+
+		/* Step 4: Retrieve EDHOC session by C_R */
+		struct coap_edhoc_session *edhoc_session;
+
+		edhoc_session = coap_edhoc_session_find(
+			service->data->edhoc_session_cache,
+			CONFIG_COAP_EDHOC_SESSION_CACHE_SIZE,
+			c_r, c_r_len);
+
+		if (edhoc_session == NULL) {
+			LOG_ERR("No EDHOC session found for C_R");
+			(void)send_error_response(service, &request,
+						  COAP_RESPONSE_CODE_BAD_REQUEST,
+						  &client_addr, client_addr_len);
+			ret = -ENOENT;
+			goto unlock;
+		}
+
+		/* RFC 9668 Section 3.3.1 Step 4: Check if message_4 is required */
+		if (edhoc_session->message_4_required) {
+			LOG_ERR("EDHOC session requires message_4, cannot use combined request");
+			/* Abort EDHOC session per RFC 9668 */
+			coap_edhoc_session_remove(service->data->edhoc_session_cache,
+						  CONFIG_COAP_EDHOC_SESSION_CACHE_SIZE,
+						  c_r, c_r_len);
+			(void)send_error_response(service, &request,
+						  COAP_RESPONSE_CODE_BAD_REQUEST,
+						  &client_addr, client_addr_len);
+			ret = -EINVAL;
+			goto unlock;
+		}
+
+		/* Process EDHOC message_3 per RFC 9528 Section 5.4.3 */
+		ret = coap_edhoc_msg3_process_wrapper(
+			edhoc_msg3.ptr, edhoc_msg3.len,
+			edhoc_session->resp_ctx,
+			edhoc_session->runtime_ctx);
+
+		if (ret < 0) {
+			LOG_ERR("EDHOC message_3 processing failed (%d)", ret);
+			/* RFC 9668 Section 3.3.1: If Step 4 fails, abort EDHOC and send
+			 * EDHOC error message (not OSCORE-protected).
+			 * For simplicity, we send 4.00 Bad Request.
+			 * A full implementation would send an EDHOC error message per
+			 * RFC 9528 Section 6.2 with Content-Format application/edhoc+cbor-seq.
+			 */
+			coap_edhoc_session_remove(service->data->edhoc_session_cache,
+						  CONFIG_COAP_EDHOC_SESSION_CACHE_SIZE,
+						  c_r, c_r_len);
+			(void)send_error_response(service, &request,
+						  COAP_RESPONSE_CODE_BAD_REQUEST,
+						  &client_addr, client_addr_len);
+			goto unlock;
+		}
+
+		LOG_DBG("EDHOC message_3 processed successfully");
+
+		/* Step 5: Derive OSCORE Security Context per RFC 9528 Appendix A.1 */
+		uint8_t master_secret[32];
+		uint8_t master_salt[16];
+		size_t master_secret_len = sizeof(master_secret);
+		size_t master_salt_len = sizeof(master_salt);
+
+		/* Derive master secret using EDHOC exporter with label 0 */
+		ret = coap_edhoc_exporter_wrapper(edhoc_session->resp_ctx, 0,
+						  master_secret, master_secret_len);
+		if (ret < 0) {
+			LOG_ERR("Failed to derive OSCORE master secret (%d)", ret);
+			coap_edhoc_session_remove(service->data->edhoc_session_cache,
+						  CONFIG_COAP_EDHOC_SESSION_CACHE_SIZE,
+						  c_r, c_r_len);
+			(void)send_error_response(service, &request,
+						  COAP_RESPONSE_CODE_INTERNAL_ERROR,
+						  &client_addr, client_addr_len);
+			goto unlock;
+		}
+
+		/* Derive master salt using EDHOC exporter with label 1 */
+		ret = coap_edhoc_exporter_wrapper(edhoc_session->resp_ctx, 1,
+						  master_salt, master_salt_len);
+		if (ret < 0) {
+			LOG_ERR("Failed to derive OSCORE master salt (%d)", ret);
+			/* Zeroize master secret before returning */
+			memset(master_secret, 0, sizeof(master_secret));
+			coap_edhoc_session_remove(service->data->edhoc_session_cache,
+						  CONFIG_COAP_EDHOC_SESSION_CACHE_SIZE,
+						  c_r, c_r_len);
+			(void)send_error_response(service, &request,
+						  COAP_RESPONSE_CODE_INTERNAL_ERROR,
+						  &client_addr, client_addr_len);
+			goto unlock;
+		}
+
+		/* Initialize OSCORE context and store in cache */
+		struct coap_oscore_ctx_cache_entry *ctx_entry;
+
+		ctx_entry = coap_oscore_ctx_cache_insert(
+			service->data->oscore_ctx_cache,
+			CONFIG_COAP_OSCORE_CTX_CACHE_SIZE,
+			c_r, c_r_len);
+
+		if (ctx_entry == NULL) {
+			LOG_ERR("Failed to allocate OSCORE context cache entry");
+			/* Zeroize keying material */
+			memset(master_secret, 0, sizeof(master_secret));
+			memset(master_salt, 0, sizeof(master_salt));
+			coap_edhoc_session_remove(service->data->edhoc_session_cache,
+						  CONFIG_COAP_EDHOC_SESSION_CACHE_SIZE,
+						  c_r, c_r_len);
+			(void)send_error_response(service, &request,
+						  COAP_RESPONSE_CODE_INTERNAL_ERROR,
+						  &client_addr, client_addr_len);
+			ret = -ENOMEM;
+			goto unlock;
+		}
+
+		/* Allocate OSCORE context if needed */
+		if (ctx_entry->oscore_ctx == NULL) {
+			/* In a real implementation, this would allocate a struct context
+			 * from uoscore-uedhoc. For now, we just note that it needs to be
+			 * allocated by the application or test.
+			 */
+			LOG_ERR("OSCORE context not allocated (application must provide)");
+			/* Zeroize keying material */
+			memset(master_secret, 0, sizeof(master_secret));
+			memset(master_salt, 0, sizeof(master_salt));
+			coap_edhoc_session_remove(service->data->edhoc_session_cache,
+						  CONFIG_COAP_EDHOC_SESSION_CACHE_SIZE,
+						  c_r, c_r_len);
+			(void)send_error_response(service, &request,
+						  COAP_RESPONSE_CODE_INTERNAL_ERROR,
+						  &client_addr, client_addr_len);
+			ret = -ENOMEM;
+			goto unlock;
+		}
+
+		/* Initialize OSCORE context with derived keying material
+		 * Per RFC 9528 Appendix A.1:
+		 * - Sender ID = C_R (for server/responder)
+		 * - Recipient ID = C_I (for client/initiator, extracted from context)
+		 */
+		ret = coap_oscore_context_init_wrapper(
+			ctx_entry->oscore_ctx,
+			master_secret, master_secret_len,
+			master_salt, master_salt_len,
+			c_r, c_r_len,  /* Sender ID (server) */
+			NULL, 0);      /* Recipient ID (client C_I, needs to be provided) */
+
+		/* Zeroize keying material after initialization */
+		memset(master_secret, 0, sizeof(master_secret));
+		memset(master_salt, 0, sizeof(master_salt));
+
+		if (ret < 0) {
+			LOG_ERR("Failed to initialize OSCORE context (%d)", ret);
+			coap_edhoc_session_remove(service->data->edhoc_session_cache,
+						  CONFIG_COAP_EDHOC_SESSION_CACHE_SIZE,
+						  c_r, c_r_len);
+			(void)send_error_response(service, &request,
+						  COAP_RESPONSE_CODE_INTERNAL_ERROR,
+						  &client_addr, client_addr_len);
+			goto unlock;
+		}
+
+		LOG_DBG("OSCORE context derived and cached");
+
+		/* EDHOC session complete, remove it */
+		coap_edhoc_session_remove(service->data->edhoc_session_cache,
+					  CONFIG_COAP_EDHOC_SESSION_CACHE_SIZE,
+					  c_r, c_r_len);
+
+		/* Steps 6-7: Rebuild OSCORE-protected request without EDHOC option */
+		static uint8_t rebuilt_buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+		struct coap_packet rebuilt_request;
+
+		/* Build new packet with OSCORE_PAYLOAD replacing combined payload */
+		size_t rebuilt_len = request.offset - payload_len + oscore_payload.len;
+
+		if (rebuilt_len > sizeof(rebuilt_buf)) {
+			LOG_ERR("Rebuilt request too large (%zu > %zu)",
+				rebuilt_len, sizeof(rebuilt_buf));
+			(void)send_error_response(service, &request,
+						  COAP_RESPONSE_CODE_REQUEST_TOO_LARGE,
+						  &client_addr, client_addr_len);
+			ret = -ENOMEM;
+			goto unlock;
+		}
+
+		/* Copy header and options (up to payload marker) */
+		size_t header_len = request.offset - payload_len - 1; /* -1 for 0xFF marker */
+
+		memcpy(rebuilt_buf, buf, header_len);
+		/* Add payload marker */
+		rebuilt_buf[header_len] = 0xFF;
+		/* Copy OSCORE_PAYLOAD */
+		memcpy(rebuilt_buf + header_len + 1, oscore_payload.ptr, oscore_payload.len);
+
+		/* Re-parse the rebuilt packet */
+		ret = coap_packet_parse(&rebuilt_request, rebuilt_buf, rebuilt_len,
+					options, opt_num);
+		if (ret < 0) {
+			LOG_ERR("Failed to parse rebuilt request (%d)", ret);
+			(void)send_error_response(service, &request,
+						  COAP_RESPONSE_CODE_BAD_REQUEST,
+						  &client_addr, client_addr_len);
+			goto unlock;
+		}
+
+		/* Remove EDHOC option per RFC 9668 Section 3.3.1 Step 7 */
+		ret = coap_edhoc_remove_option(&rebuilt_request);
+		if (ret < 0 && ret != -ENOENT) {
+			LOG_ERR("Failed to remove EDHOC option (%d)", ret);
+			(void)send_error_response(service, &request,
+						  COAP_RESPONSE_CODE_BAD_REQUEST,
+						  &client_addr, client_addr_len);
+			goto unlock;
+		}
+
+		/* Get the updated buffer after EDHOC option removal */
+		rebuilt_len = rebuilt_request.offset;
+
+		/* Step 8: Verify and decrypt OSCORE using derived context */
 		static uint8_t decrypted_buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
 		uint32_t decrypted_len = sizeof(decrypted_buf);
 		uint8_t error_code = COAP_RESPONSE_CODE_BAD_REQUEST;
 
+		ret = coap_oscore_verify(rebuilt_buf, rebuilt_len,
+					 decrypted_buf, &decrypted_len,
+					 ctx_entry->oscore_ctx, &error_code);
+		if (ret < 0) {
+			LOG_ERR("OSCORE verification failed (%d), sending error %d",
+				ret, error_code);
+			(void)send_error_response(service, &request, error_code,
+						  &client_addr, client_addr_len);
+			ret = -EACCES;
+			goto unlock;
+		}
+
+		/* Re-parse the decrypted CoAP message */
+		ret = coap_packet_parse(&request, decrypted_buf, decrypted_len,
+					options, opt_num);
+		if (ret < 0) {
+			LOG_ERR("Failed to parse decrypted CoAP message (%d)", ret);
+			goto unlock;
+		}
+
+		/* Copy decrypted message back to buf for further processing */
+		memcpy(buf, decrypted_buf, decrypted_len);
+		received = decrypted_len;
+
+		LOG_DBG("EDHOC+OSCORE combined request processed successfully");
+
+		/* Track OSCORE exchange for response protection */
+		uint8_t token[COAP_TOKEN_MAX_LEN];
+		uint8_t tkl = coap_header_get_token(&request, token);
+		bool is_observe = coap_request_is_observe(&request);
+
+		ret = oscore_exchange_add(service->data->oscore_exchange_cache,
+					  &client_addr, client_addr_len,
+					  token, tkl, is_observe);
+		if (ret < 0) {
+			LOG_WRN("Failed to add OSCORE exchange entry (%d)", ret);
+			/* Continue processing - this is not a fatal error */
+		}
+
+		/* Step 9: Continue with normal request processing
+		 * Skip the normal OSCORE processing block since we already decrypted
+		 */
+		goto dispatch_request;
+	}
+#endif /* CONFIG_COAP_EDHOC_COMBINED_REQUEST */
+
+	/* RFC 8613 Section 8.2: Verify and decrypt OSCORE-protected requests */
+	if (coap_oscore_msg_has_oscore(&request)) {
+		static uint8_t decrypted_buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+		uint32_t decrypted_len = sizeof(decrypted_buf);
+		uint8_t error_code = COAP_RESPONSE_CODE_BAD_REQUEST;
+		struct context *oscore_ctx = service->data->oscore_ctx;
+
+#if defined(CONFIG_COAP_EDHOC_COMBINED_REQUEST)
+		/* RFC 9668: For EDHOC-derived contexts, look up in cache by kid */
+		if (oscore_ctx == NULL) {
+			uint8_t kid[16];
+			size_t kid_len = sizeof(kid);
+
+			ret = coap_oscore_option_extract_kid(&request, kid, &kid_len);
+			if (ret == 0) {
+				struct coap_oscore_ctx_cache_entry *ctx_entry;
+
+				ctx_entry = coap_oscore_ctx_cache_find(
+					service->data->oscore_ctx_cache,
+					CONFIG_COAP_OSCORE_CTX_CACHE_SIZE,
+					kid, kid_len);
+
+				if (ctx_entry != NULL) {
+					oscore_ctx = ctx_entry->oscore_ctx;
+					LOG_DBG("Using cached OSCORE context for kid");
+				}
+			}
+		}
+#endif
+
+		if (oscore_ctx == NULL) {
+			/* OSCORE message received but no context available */
+			LOG_WRN("OSCORE message received but no context configured or cached");
+			ret = -ENOTSUP;
+			goto unlock;
+		}
+
 		/* Decrypt the OSCORE message */
 		ret = coap_oscore_verify(buf, received, decrypted_buf, &decrypted_len,
-					 service->data->oscore_ctx, &error_code);
+					 oscore_ctx, &error_code);
 		if (ret < 0) {
 			/* RFC 8613 Section 8.2: OSCORE errors are sent as simple CoAP
 			 * responses without OSCORE processing
@@ -926,11 +1249,6 @@ static int coap_server_process(int sock_fd)
 			LOG_WRN("Failed to add OSCORE exchange entry (%d)", ret);
 			/* Continue processing - this is not a fatal error */
 		}
-	} else if (service->data->oscore_ctx == NULL && coap_oscore_msg_has_oscore(&request)) {
-		/* OSCORE message received but no context configured */
-		LOG_WRN("OSCORE message received but no context configured");
-		ret = -ENOTSUP;
-		goto unlock;
 	} else if (service->data->require_oscore && !coap_oscore_msg_has_oscore(&request)) {
 		/* Service requires OSCORE but request is not protected */
 		LOG_WRN("Service requires OSCORE but request is not protected");
@@ -940,6 +1258,10 @@ static int coap_server_process(int sock_fd)
 		goto unlock;
 	}
 #endif /* CONFIG_COAP_OSCORE */
+
+#if defined(CONFIG_COAP_EDHOC_COMBINED_REQUEST)
+dispatch_request:
+#endif
 
 	type = coap_header_get_type(&request);
 

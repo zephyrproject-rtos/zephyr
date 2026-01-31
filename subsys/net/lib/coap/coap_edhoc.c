@@ -15,7 +15,7 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 
 bool coap_edhoc_msg_has_edhoc(const struct coap_packet *cpkt)
 {
-	struct coap_option option;
+	struct coap_option option[2];
 	int ret;
 
 	if (cpkt == NULL) {
@@ -25,8 +25,16 @@ bool coap_edhoc_msg_has_edhoc(const struct coap_packet *cpkt)
 	/* RFC 9668 Section 3.1: EDHOC option MUST occur at most once and MUST be empty.
 	 * If any value is sent, the recipient MUST ignore it.
 	 */
-	ret = coap_find_options(cpkt, COAP_OPTION_EDHOC, &option, 1);
-	return ret > 0;
+	ret = coap_find_options(cpkt, COAP_OPTION_EDHOC, option, 2);
+	
+	/* If more than one EDHOC option is present, treat as malformed */
+	if (ret > 1) {
+		LOG_ERR("Multiple EDHOC options present (%d), violates RFC 9668 Section 3.1", ret);
+		return false;
+	}
+
+	/* Return true if exactly one EDHOC option is present (value is ignored per RFC 9668) */
+	return ret == 1;
 }
 
 int coap_edhoc_split_comb_payload(const uint8_t *payload, size_t payload_len,

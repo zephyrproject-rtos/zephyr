@@ -78,18 +78,40 @@ struct coap_oscore_exchange {
 #endif
 
 #if defined(CONFIG_COAP_EDHOC)
+/* Forward declarations for uoscore-uedhoc types */
+struct edhoc_responder_context;
+struct runtime_context;
+
 /**
  * EDHOC session entry for tracking ongoing EDHOC handshakes.
  * Sessions are keyed by C_R (connection identifier for responder role).
+ * Used for RFC 9668 Section 3.3.1 Step 4 processing.
  */
 struct coap_edhoc_session {
-	uint8_t c_r[16];                  /**< Connection identifier C_R (max 16 bytes) */
-	uint8_t c_r_len;                  /**< Length of C_R */
-	struct edhoc_context *edhoc_ctx;  /**< EDHOC context for this session */
-	int64_t timestamp;                /**< Creation timestamp */
-	bool active;                      /**< True if session is active */
+	uint8_t c_r[16];                              /**< Connection identifier C_R (max 16 bytes) */
+	uint8_t c_r_len;                              /**< Length of C_R */
+	struct edhoc_responder_context *resp_ctx;     /**< EDHOC responder context (from uoscore-uedhoc) */
+	struct runtime_context *runtime_ctx;          /**< Runtime context (from uoscore-uedhoc) */
+	bool message_4_required;                      /**< True if application profile requires message_4 */
+	int64_t timestamp;                            /**< Creation timestamp */
+	bool active;                                  /**< True if session is active */
 };
-#endif
+
+#if defined(CONFIG_COAP_EDHOC_COMBINED_REQUEST)
+/**
+ * OSCORE context cache entry for derived contexts from EDHOC.
+ * Keyed by OSCORE Sender ID (kid) which corresponds to C_R.
+ * Used for RFC 9668 Section 3.3.1 Step 5 and subsequent OSCORE operations.
+ */
+struct coap_oscore_ctx_cache_entry {
+	uint8_t kid[16];                  /**< OSCORE Sender ID (kid) / C_R (max 16 bytes) */
+	uint8_t kid_len;                  /**< Length of kid */
+	struct context *oscore_ctx;       /**< Derived OSCORE security context */
+	int64_t timestamp;                /**< Creation timestamp */
+	bool active;                      /**< True if entry is active */
+};
+#endif /* CONFIG_COAP_EDHOC_COMBINED_REQUEST */
+#endif /* CONFIG_COAP_EDHOC */
 
 struct coap_service_data {
 	int sock_fd;
@@ -123,6 +145,14 @@ struct coap_service_data {
 	 * Used for EDHOC+OSCORE combined requests per RFC 9668 Section 3.3.1.
 	 */
 	struct coap_edhoc_session edhoc_session_cache[CONFIG_COAP_EDHOC_SESSION_CACHE_SIZE];
+#if defined(CONFIG_COAP_EDHOC_COMBINED_REQUEST)
+	/**
+	 * OSCORE context cache for derived contexts from EDHOC handshakes.
+	 * Keyed by OSCORE Sender ID (kid) which corresponds to C_R.
+	 * Used for RFC 9668 Section 3.3.1 Step 5 and subsequent OSCORE operations.
+	 */
+	struct coap_oscore_ctx_cache_entry oscore_ctx_cache[CONFIG_COAP_OSCORE_CTX_CACHE_SIZE];
+#endif
 #endif
 };
 

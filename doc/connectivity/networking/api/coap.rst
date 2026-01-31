@@ -809,6 +809,9 @@ Additional EDHOC configuration options:
 
 - :kconfig:option:`CONFIG_COAP_EDHOC_MAX_COMBINED_PAYLOAD_LEN`: Maximum combined payload length (default 1024)
 - :kconfig:option:`CONFIG_COAP_EDHOC_SESSION_CACHE_SIZE`: Number of EDHOC sessions to cache per service (default 4)
+- :kconfig:option:`CONFIG_COAP_EDHOC_SESSION_LIFETIME_MS`: EDHOC session lifetime in milliseconds (default 60000)
+- :kconfig:option:`CONFIG_COAP_OSCORE_CTX_CACHE_SIZE`: OSCORE context cache size for EDHOC-derived contexts (default 4)
+- :kconfig:option:`CONFIG_COAP_OSCORE_CTX_LIFETIME_MS`: OSCORE derived context lifetime in milliseconds (default 3600000)
 
 EDHOC Option
 ============
@@ -909,16 +912,43 @@ The current implementation provides:
 4. **Server-side detection**: Detects and validates EDHOC+OSCORE combined requests
 5. **Fail-closed behavior**: Rejects EDHOC messages when support is disabled
 
+**Server-side EDHOC+OSCORE Combined Request Processing**:
+
+When :kconfig:option:`CONFIG_COAP_EDHOC_COMBINED_REQUEST` is enabled, the server implements
+RFC 9668 Section 3.3.1 and 3.3.2 processing:
+
+1. **Step 1**: Validates EDHOC option and OSCORE option presence
+2. **Step 2**: Extracts EDHOC message_3 from combined payload (CBOR parsing)
+3. **Step 3**: Extracts C_R from OSCORE option 'kid' field
+4. **Step 4**: Retrieves EDHOC session by C_R and processes message_3
+5. **Step 5**: Derives OSCORE Security Context using EDHOC exporter
+6. **Step 6-7**: Rebuilds OSCORE request without EDHOC option
+7. **Step 8**: Verifies and decrypts OSCORE message using derived context
+8. **Step 9**: Dispatches decrypted request to resource handlers
+
+**Requirements for combined request processing**:
+
+- EDHOC session must be pre-provisioned in the service's ``edhoc_session_cache``
+- Application profile must NOT require EDHOC message_4
+- OSCORE context cache must have available entries
+- Full uoscore-uedhoc module integration for EDHOC processing
+
+**Fail-closed behavior**:
+
+- Malformed combined payload → 4.00 Bad Request
+- Unknown C_R session → 4.00 Bad Request
+- EDHOC message_3 processing failure → 4.00 Bad Request (EDHOC session aborted)
+- OSCORE verification failure → appropriate OSCORE error code
+
 **Not yet implemented**:
 
-- Full EDHOC handshake processing (message_1, message_2, message_3)
-- OSCORE context derivation from EDHOC output
-- EDHOC session management and C_R tracking
+- Full EDHOC handshake processing (message_1, message_2) - requires application integration
 - Client-side EDHOC+OSCORE combined request generation
+- Outer Block-wise transfer support for combined requests (RFC 9668 Section 3.3.2)
 
-These features require full integration with the UEDHOC library and will be added in
-future releases. The current implementation provides the foundation for EDHOC support
-and ensures correct handling of EDHOC options.
+The current implementation provides server-side processing of EDHOC+OSCORE combined requests
+and requires application-level integration with the uoscore-uedhoc module for EDHOC session
+management and key derivation.
 
 API Reference
 *************

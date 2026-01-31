@@ -3933,4 +3933,101 @@ ZTEST(coap, test_edhoc_option_class_u_oscore)
 
 #endif /* CONFIG_COAP_EDHOC */
 
+#if defined(CONFIG_COAP_EDHOC_COMBINED_REQUEST)
+/* Test OSCORE option kid extraction per RFC 9668 Section 3.3.1 Step 3 */
+ZTEST(coap, test_oscore_option_extract_kid)
+{
+	uint8_t buffer[128];
+	struct coap_packet cpkt;
+	int r;
+
+	/* Build a CoAP packet with OSCORE option per RFC 8613 Section 6.1:
+	 * OSCORE option value format (length-prefixed fields):
+	 *   - Flag byte: n (bit 0), k (bit 1), h (bit 2)
+	 *   - Partial IV (if n=1): length byte + data
+	 *   - kid context (if h=1): length byte + data
+	 *   - kid (if k=1): length byte + data
+	 *
+	 * Test case: flag=0x02 (k=1 only), kid length=1, kid value=0x42
+	 * OSCORE option value: 0x020142
+	 */
+	r = coap_packet_init(&cpkt, buffer, sizeof(buffer),
+			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
+			     COAP_METHOD_POST, 0);
+	zassert_equal(r, 0, "Failed to initialize packet");
+
+	/* Add OSCORE option: flag=0x02 (k=1), kid_len=0x01, kid=0x42 */
+	uint8_t oscore_value[] = { 0x02, 0x01, 0x42 };
+
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_OSCORE,
+				      oscore_value, sizeof(oscore_value));
+	zassert_equal(r, 0, "Failed to add OSCORE option");
+
+	/* Extract kid */
+	uint8_t kid[16];
+	size_t kid_len = sizeof(kid);
+
+	/* Need to include the helper header */
+	extern int coap_oscore_option_extract_kid(const struct coap_packet *cpkt,
+						  uint8_t *kid, size_t *kid_len);
+
+	r = coap_oscore_option_extract_kid(&cpkt, kid, &kid_len);
+	zassert_equal(r, 0, "Failed to extract kid");
+	zassert_equal(kid_len, 1, "kid length should be 1");
+	zassert_equal(kid[0], 0x42, "kid value should be 0x42");
+}
+
+/* Test EDHOC option validation: at most once */
+ZTEST(coap, test_edhoc_option_at_most_once)
+{
+	uint8_t buffer[128];
+	struct coap_packet cpkt;
+	int r;
+
+	/* Build a packet with two EDHOC options (invalid per RFC 9668 Section 3.1) */
+	r = coap_packet_init(&cpkt, buffer, sizeof(buffer),
+			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
+			     COAP_METHOD_POST, 0);
+	zassert_equal(r, 0, "Failed to initialize packet");
+
+	/* Add first EDHOC option */
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_EDHOC, NULL, 0);
+	zassert_equal(r, 0, "Failed to add first EDHOC option");
+
+	/* Add second EDHOC option */
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_EDHOC, NULL, 0);
+	zassert_equal(r, 0, "Failed to add second EDHOC option");
+
+	/* Verify that coap_edhoc_msg_has_edhoc returns false for multiple options */
+	zassert_false(coap_edhoc_msg_has_edhoc(&cpkt),
+		      "Multiple EDHOC options should be treated as malformed");
+}
+
+/* Test EDHOC option validation: ignore non-empty value */
+ZTEST(coap, test_edhoc_option_ignore_value)
+{
+	uint8_t buffer[128];
+	struct coap_packet cpkt;
+	int r;
+
+	/* Build a packet with EDHOC option containing a value (should be ignored) */
+	r = coap_packet_init(&cpkt, buffer, sizeof(buffer),
+			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
+			     COAP_METHOD_POST, 0);
+	zassert_equal(r, 0, "Failed to initialize packet");
+
+	/* Add EDHOC option with a value (RFC 9668 says recipient MUST ignore it) */
+	uint8_t edhoc_value[] = { 0x01, 0x02, 0x03 };
+
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_EDHOC,
+				      edhoc_value, sizeof(edhoc_value));
+	zassert_equal(r, 0, "Failed to add EDHOC option");
+
+	/* Verify that EDHOC option is still detected (value is ignored) */
+	zassert_true(coap_edhoc_msg_has_edhoc(&cpkt),
+		     "EDHOC option should be detected even with non-empty value");
+}
+
+#endif /* CONFIG_COAP_EDHOC_COMBINED_REQUEST */
+
 ZTEST_SUITE(coap, NULL, NULL, NULL, NULL, NULL);

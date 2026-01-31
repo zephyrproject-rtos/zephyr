@@ -392,6 +392,30 @@ config COAP_OSCORE_MAX_UNFRAGMENTED_SIZE
 	  is discarded per RFC 8613 security requirements. This prevents
 	  memory exhaustion attacks via fragmented OSCORE messages.
 
+config COAP_OSCORE_CTX_CACHE_SIZE
+	int "OSCORE context cache size per service"
+	default 4
+	depends on COAP_EDHOC_COMBINED_REQUEST
+	help
+	  Number of OSCORE security contexts to cache per CoAP service endpoint.
+	  Each cached context is keyed by the OSCORE Sender ID (kid) from the
+	  client. This cache is used for RFC 9668 EDHOC+OSCORE combined requests
+	  to store derived OSCORE contexts after EDHOC message_3 processing.
+
+	  This limits how many concurrent EDHOC-derived OSCORE contexts can be
+	  active simultaneously. Contexts are evicted based on age when the
+	  cache is full.
+
+config COAP_OSCORE_CTX_LIFETIME_MS
+	int "OSCORE derived context lifetime in milliseconds"
+	default 3600000
+	depends on COAP_EDHOC_COMBINED_REQUEST
+	help
+	  Time in milliseconds for which a derived OSCORE context remains valid
+	  in the cache. After this time, the context is considered expired and
+	  will be evicted. Default is 1 hour (3600000 ms). This prevents memory
+	  exhaustion from unused contexts.
+
 endif # COAP_OSCORE
 
 config COAP_EDHOC
@@ -447,6 +471,15 @@ config COAP_EDHOC_SESSION_CACHE_SIZE
 	  This limits how many concurrent EDHOC handshakes can be in
 	  progress simultaneously. Sessions are removed after successful
 	  completion or timeout.
+
+config COAP_EDHOC_SESSION_LIFETIME_MS
+	int "EDHOC session lifetime in milliseconds"
+	default 60000
+	help
+	  Time in milliseconds for which an EDHOC session remains valid.
+	  After this time, the session is considered expired and will be
+	  evicted from the cache. This prevents memory exhaustion from
+	  abandoned EDHOC handshakes.
 
 endif # COAP_EDHOC
 
