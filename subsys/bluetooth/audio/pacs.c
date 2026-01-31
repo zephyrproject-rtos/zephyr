@@ -32,7 +32,6 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -1346,7 +1345,7 @@ void bt_pacs_cap_foreach(enum bt_audio_dir dir, bt_pacs_cap_foreach_func_t func,
 {
 	sys_slist_t *pac;
 
-	CHECKIF(func == NULL) {
+	if (func == NULL) {
 		LOG_ERR("func is NULL");
 		return;
 	}
@@ -1622,7 +1621,7 @@ enum bt_audio_context bt_pacs_get_available_contexts(enum bt_audio_dir dir)
 enum bt_audio_context bt_pacs_get_available_contexts_for_conn(struct bt_conn *conn,
 							      enum bt_audio_dir dir)
 {
-	CHECKIF(conn == NULL) {
+	if (conn == NULL) {
 		LOG_ERR("NULL conn");
 		return BT_AUDIO_CONTEXT_TYPE_NONE;
 	}
