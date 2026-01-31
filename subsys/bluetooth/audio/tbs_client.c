@@ -31,7 +31,6 @@
 #include <zephyr/sys/util_utf8.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
-#include <zephyr/sys/check.h>
 
 #include "tbs_internal.h"
 
@@ -2472,7 +2471,7 @@ int bt_tbs_client_discover(struct bt_conn *conn)
 
 int bt_tbs_client_register_cb(struct bt_tbs_client_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		LOG_DBG("cb is NULL");
 
 		return -EINVAL;
@@ -2500,7 +2499,7 @@ struct bt_tbs_instance *bt_tbs_client_get_by_ccid(const struct bt_conn *conn,
 {
 	struct bt_tbs_server_inst *server;
 
-	CHECKIF(conn == NULL) {
+	if (conn == NULL) {
 		LOG_DBG("conn was NULL");
 		return NULL;
 	}
