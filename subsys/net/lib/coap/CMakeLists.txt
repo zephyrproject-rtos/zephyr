@@ -22,3 +22,7 @@ zephyr_sources_ifdef(CONFIG_COAP_SERVER_SHELL
 zephyr_sources_ifdef(CONFIG_COAP_OSCORE
   coap_oscore.c
 )
+
+zephyr_sources_ifdef(CONFIG_COAP_EDHOC
+  coap_edhoc.c
+)

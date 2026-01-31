@@ -24,6 +24,10 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include "coap_oscore.h"
 #endif
 
+#if defined(CONFIG_COAP_EDHOC)
+#include "coap_edhoc.h"
+#endif
+
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 /* Lowest priority cooperative thread */
 #define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
@@ -803,6 +807,78 @@ static int coap_server_process(int sock_fd)
 		ret = -EBADMSG;
 		goto unlock;
 	}
+
+#if defined(CONFIG_COAP_EDHOC_COMBINED_REQUEST)
+	/* RFC 9668 Section 3.3.1: Handle EDHOC+OSCORE combined requests */
+	if (coap_edhoc_msg_has_edhoc(&request)) {
+		/* RFC 9668 Section 3.3.1 Step 1: EDHOC option requires OSCORE option */
+		if (!coap_oscore_msg_has_oscore(&request)) {
+			LOG_ERR("EDHOC option present without OSCORE option");
+			(void)send_error_response(service, &request,
+						  COAP_RESPONSE_CODE_BAD_REQUEST,
+						  &client_addr, client_addr_len);
+			ret = -EINVAL;
+			goto unlock;
+		}
+
+		/* RFC 9668 Section 3.3.1 Steps 2-3: Split combined payload */
+		uint16_t payload_len;
+		const uint8_t *payload = coap_packet_get_payload(&request, &payload_len);
+
+		if (payload == NULL || payload_len == 0) {
+			LOG_ERR("EDHOC+OSCORE request missing combined payload");
+			(void)send_error_response(service, &request,
+						  COAP_RESPONSE_CODE_BAD_REQUEST,
+						  &client_addr, client_addr_len);
+			ret = -EINVAL;
+			goto unlock;
+		}
+
+		/* Check combined payload size limit */
+		if (payload_len > CONFIG_COAP_EDHOC_MAX_COMBINED_PAYLOAD_LEN) {
+			LOG_ERR("EDHOC+OSCORE combined payload too large (%u > %d)",
+				payload_len, CONFIG_COAP_EDHOC_MAX_COMBINED_PAYLOAD_LEN);
+			(void)send_error_response(service, &request,
+						  COAP_RESPONSE_CODE_BAD_REQUEST,
+						  &client_addr, client_addr_len);
+			ret = -EINVAL;
+			goto unlock;
+		}
+
+		struct coap_edhoc_span edhoc_msg3, oscore_payload;
+
+		ret = coap_edhoc_split_comb_payload(payload, payload_len,
+						    &edhoc_msg3, &oscore_payload);
+		if (ret < 0) {
+			LOG_ERR("Failed to split EDHOC+OSCORE combined payload (%d)", ret);
+			(void)send_error_response(service, &request,
+						  COAP_RESPONSE_CODE_BAD_REQUEST,
+						  &client_addr, client_addr_len);
+			goto unlock;
+		}
+
+		LOG_DBG("EDHOC+OSCORE combined request: EDHOC_MSG_3=%zu bytes, "
+			"OSCORE_PAYLOAD=%zu bytes", edhoc_msg3.len, oscore_payload.len);
+
+		/* TODO: RFC 9668 Section 3.3.1 Steps 4-9:
+		 * - Step 4: Retrieve EDHOC session by C_R (from OSCORE kid)
+		 * - Step 5: Process EDHOC message_3 and derive OSCORE context
+		 * - Step 6-7: Replace payload with OSCORE_PAYLOAD and remove EDHOC option
+		 * - Step 8: Verify OSCORE using derived context
+		 * - Step 9: Dispatch decrypted request to resources
+		 *
+		 * For now, reject EDHOC+OSCORE combined requests as not yet implemented.
+		 * Full implementation requires EDHOC session management and key derivation.
+		 */
+		LOG_WRN("EDHOC+OSCORE combined request detected but full processing "
+			"not yet implemented");
+		(void)send_error_response(service, &request,
+					  COAP_RESPONSE_CODE_NOT_IMPLEMENTED,
+					  &client_addr, client_addr_len);
+		ret = -ENOTSUP;
+		goto unlock;
+	}
+#endif /* CONFIG_COAP_EDHOC_COMBINED_REQUEST */
 
 	/* RFC 8613 Section 8.2: Verify and decrypt OSCORE-protected requests */
 	if (service->data->oscore_ctx != NULL && coap_oscore_msg_has_oscore(&request)) {

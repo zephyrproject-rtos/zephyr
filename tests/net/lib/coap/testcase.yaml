@@ -9,3 +9,9 @@ tests:
     min_ram: 16
     tags: net
     depends_on: netif
+  net.coap.edhoc_oscore_combined:
+    extra_conf_files:
+      - prj_edhoc.conf
+    min_ram: 16
+    tags: net
+    depends_on: netif

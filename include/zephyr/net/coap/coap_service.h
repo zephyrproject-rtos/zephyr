@@ -26,6 +26,11 @@ extern "C" {
 struct context;
 #endif
 
+#if defined(CONFIG_COAP_EDHOC)
+/* Forward declaration for EDHOC context */
+struct edhoc_context;
+#endif
+
 /**
  * @brief CoAP Service API
  * @defgroup coap_service CoAP service API
@@ -72,6 +77,20 @@ struct coap_oscore_exchange {
 };
 #endif
 
+#if defined(CONFIG_COAP_EDHOC)
+/**
+ * EDHOC session entry for tracking ongoing EDHOC handshakes.
+ * Sessions are keyed by C_R (connection identifier for responder role).
+ */
+struct coap_edhoc_session {
+	uint8_t c_r[16];                  /**< Connection identifier C_R (max 16 bytes) */
+	uint8_t c_r_len;                  /**< Length of C_R */
+	struct edhoc_context *edhoc_ctx;  /**< EDHOC context for this session */
+	int64_t timestamp;                /**< Creation timestamp */
+	bool active;                      /**< True if session is active */
+};
+#endif
+
 struct coap_service_data {
 	int sock_fd;
 	struct coap_observer observers[CONFIG_COAP_SERVICE_OBSERVERS];
@@ -96,6 +115,14 @@ struct coap_service_data {
 	 * Used to determine if responses must be OSCORE-protected (RFC 8613 Section 8.3).
 	 */
 	struct coap_oscore_exchange oscore_exchange_cache[CONFIG_COAP_OSCORE_EXCHANGE_CACHE_SIZE];
+#endif
+#if defined(CONFIG_COAP_EDHOC)
+	/**
+	 * EDHOC session cache for tracking ongoing EDHOC handshakes.
+	 * Sessions are keyed by C_R (connection identifier for responder role).
+	 * Used for EDHOC+OSCORE combined requests per RFC 9668 Section 3.3.1.
+	 */
+	struct coap_edhoc_session edhoc_session_cache[CONFIG_COAP_EDHOC_SESSION_CACHE_SIZE];
 #endif
 };
 

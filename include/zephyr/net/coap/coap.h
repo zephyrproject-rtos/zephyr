@@ -65,6 +65,15 @@ enum coap_option_num {
 	COAP_OPTION_URI_QUERY = 15,      /**< Uri-Query */
 	COAP_OPTION_ACCEPT = 17,         /**< Accept */
 	COAP_OPTION_LOCATION_QUERY = 20, /**< Location-Query */
+	/**
+	 * EDHOC (RFC 9668)
+	 *
+	 * Critical, Safe-to-Forward, Cache-Key, Class U for OSCORE.
+	 * Indicates that the request is an EDHOC+OSCORE combined request.
+	 * MUST occur at most once and MUST be empty. If any value is sent,
+	 * the recipient MUST ignore it.
+	 */
+	COAP_OPTION_EDHOC = 21,          /**< EDHOC (RFC 9668) */
 	COAP_OPTION_BLOCK2 = 23,         /**< Block2 (RFC 7959) */
 	COAP_OPTION_BLOCK1 = 27,         /**< Block1 (RFC 7959) */
 	COAP_OPTION_SIZE2 = 28,          /**< Size2 (RFC 7959) */
@@ -229,7 +238,14 @@ enum coap_content_format {
 	COAP_CONTENT_FORMAT_APP_JSON = 50,              /**< application/json */
 	COAP_CONTENT_FORMAT_APP_JSON_PATCH_JSON = 51,   /**< application/json-patch+json */
 	COAP_CONTENT_FORMAT_APP_MERGE_PATCH_JSON = 52,  /**< application/merge-patch+json */
-	COAP_CONTENT_FORMAT_APP_CBOR = 60               /**< application/cbor */
+	COAP_CONTENT_FORMAT_APP_CBOR = 60,              /**< application/cbor */
+	/**
+	 * EDHOC content formats (RFC 9528)
+	 *
+	 * Used for EDHOC messages and error responses.
+	 */
+	COAP_CONTENT_FORMAT_APP_EDHOC_CBOR_SEQ = 64,    /**< application/edhoc+cbor-seq */
+	COAP_CONTENT_FORMAT_APP_CID_EDHOC_CBOR_SEQ = 65 /**< application/cid-edhoc+cbor-seq */
 };
 
 /**

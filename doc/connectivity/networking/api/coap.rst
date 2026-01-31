@@ -36,6 +36,8 @@ Supported RFCs:
 - :rfc:`7967` - Constrained Application Protocol (CoAP) Option for No Server Response
 - :rfc:`9175` - CoAP: Echo, Request-Tag, and Token Processing
 - :rfc:`8613` - Object Security for Constrained RESTful Environments (OSCORE)
+- :rfc:`9668` - EDHOC and OSCORE profile of ACE (EDHOC with CoAP and OSCORE)
+- :rfc:`9528` - Ephemeral Diffie-Hellman Over COSE (EDHOC)
 
 .. note:: Not all parts of these RFCs are supported. Features are supported based on Zephyr requirements.
 
@@ -755,6 +757,168 @@ Security Considerations
 
 5. **Token binding**: OSCORE maintains request-response binding through tokens and
    security context association (RFC 8613 Section 8).
+
+EDHOC Support (RFC 9668)
+*************************
+
+The Zephyr CoAP library provides support for Ephemeral Diffie-Hellman Over COSE (EDHOC)
+as specified in :rfc:`9528` and its integration with CoAP and OSCORE as specified in
+:rfc:`9668`. EDHOC provides lightweight authenticated key exchange for constrained devices,
+enabling secure session establishment with minimal overhead.
+
+Overview
+========
+
+EDHOC is a key exchange protocol that:
+
+1. **Establishes shared secrets**: Uses Diffie-Hellman key exchange with authentication
+2. **Derives OSCORE contexts**: Produces master secret and salt for OSCORE
+3. **Minimizes round trips**: Can complete in 3 messages (1.5 round trips)
+4. **Supports various authentication methods**: Pre-shared keys, raw public keys, certificates
+
+When combined with OSCORE, EDHOC provides a complete security solution for CoAP:
+
+- **EDHOC**: Establishes the security context (key exchange + authentication)
+- **OSCORE**: Protects subsequent application messages (encryption + integrity)
+
+Configuration
+=============
+
+Enable EDHOC support with :kconfig:option:`CONFIG_COAP_EDHOC`. This option depends on
+CBOR support:
+
+.. code-block:: kconfig
+
+   CONFIG_COAP_EDHOC=y
+   CONFIG_ZCBOR=y
+
+Full EDHOC handshake processing requires the uoscore-uedhoc module:
+
+.. code-block:: kconfig
+
+   CONFIG_UEDHOC=y
+
+For EDHOC+OSCORE combined request support (RFC 9668 Section 3), also enable:
+
+.. code-block:: kconfig
+
+   CONFIG_COAP_EDHOC_COMBINED_REQUEST=y
+   CONFIG_COAP_OSCORE=y
+
+Additional EDHOC configuration options:
+
+- :kconfig:option:`CONFIG_COAP_EDHOC_MAX_COMBINED_PAYLOAD_LEN`: Maximum combined payload length (default 1024)
+- :kconfig:option:`CONFIG_COAP_EDHOC_SESSION_CACHE_SIZE`: Number of EDHOC sessions to cache per service (default 4)
+
+EDHOC Option
+============
+
+Per RFC 9668 Section 3.1, EDHOC uses option number **21** to indicate EDHOC+OSCORE
+combined requests:
+
+- **Option Number**: 21
+- **Properties**: Critical, safe-to-forward, part of cache key, Class U for OSCORE
+- **Value**: MUST be empty (0 bytes)
+
+**Important**: The EDHOC option MUST occur at most once and MUST be empty. If any value
+is sent, the recipient MUST ignore it (RFC 9668 Section 3.1).
+
+EDHOC Content-Formats
+======================
+
+EDHOC messages use specific content-formats (RFC 9528 Section 10.9):
+
+- **64** (``application/edhoc+cbor-seq``): EDHOC messages and error responses
+- **65** (``application/cid-edhoc+cbor-seq``): EDHOC messages with connection identifiers
+
+Handling EDHOC When Not Supported
+----------------------------------
+
+When EDHOC support is not enabled (:kconfig:option:`CONFIG_COAP_EDHOC` is not set),
+the Zephyr CoAP stack implements fail-closed behavior for the EDHOC option per
+RFC 7252 Section 5.4.1:
+
+**Server behavior** (when ``CONFIG_COAP_EDHOC=n``):
+
+- **CON requests** with EDHOC option: Returns **4.02 (Bad Option)** response
+- **NON requests** with EDHOC option: Silently rejects (drops) the message
+
+This ensures that CoAP messages containing the EDHOC option are never processed
+incorrectly when EDHOC support is unavailable.
+
+EDHOC+OSCORE Combined Request (RFC 9668 Section 3)
+===================================================
+
+The EDHOC+OSCORE combined request optimization allows a client to send EDHOC message_3
+and the first OSCORE-protected application request in a single CoAP message, reducing
+round trips from 3 to 2.
+
+**Combined Payload Format** (RFC 9668 Section 3.2.1):
+
+.. code-block:: text
+
+   COMB_PAYLOAD = EDHOC_MSG_3 / OSCORE_PAYLOAD
+
+Where:
+
+- ``EDHOC_MSG_3``: CBOR byte string containing the final EDHOC message
+- ``OSCORE_PAYLOAD``: OSCORE-protected CoAP request
+
+**Message Structure**:
+
+.. code-block:: text
+
+   POST coap://server/resource
+   EDHOC option: (empty)
+   OSCORE option: (kid = C_R)
+   Payload: EDHOC_MSG_3 / OSCORE_PAYLOAD
+
+**Processing Flow** (RFC 9668 Section 3.3.1):
+
+1. Server receives request with EDHOC option and OSCORE option
+2. Validates combined payload format (must contain both EDHOC_MSG_3 and OSCORE_PAYLOAD)
+3. Extracts C_R (connection identifier) from OSCORE option kid field
+4. Retrieves EDHOC session by C_R
+5. Processes EDHOC message_3 and derives OSCORE security context
+6. Removes EDHOC option from request
+7. Replaces payload with OSCORE_PAYLOAD
+8. Verifies OSCORE using derived context
+9. Dispatches decrypted request to resource handlers
+
+**Error Handling**:
+
+- **Malformed combined payload**: 4.00 Bad Request (not 4.02 Bad Option)
+- **EDHOC processing failure**: Unprotected EDHOC error message with content-format 64
+- **OSCORE verification failure**: Standard OSCORE error handling
+
+**Security Considerations**:
+
+1. **Fail-closed**: If EDHOC fails, no OSCORE context is established
+2. **Payload size limit**: Enforced via :kconfig:option:`CONFIG_COAP_EDHOC_MAX_COMBINED_PAYLOAD_LEN`
+   to prevent resource exhaustion
+3. **Session tracking**: EDHOC sessions are cached per C_R with LRU eviction
+
+Current Implementation Status
+==============================
+
+The current implementation provides:
+
+1. **EDHOC option definition**: Option number 21 with proper classification
+2. **Content-format IDs**: 64 and 65 for EDHOC messages
+3. **Combined payload parsing**: Splits EDHOC_MSG_3 and OSCORE_PAYLOAD
+4. **Server-side detection**: Detects and validates EDHOC+OSCORE combined requests
+5. **Fail-closed behavior**: Rejects EDHOC messages when support is disabled
+
+**Not yet implemented**:
+
+- Full EDHOC handshake processing (message_1, message_2, message_3)
+- OSCORE context derivation from EDHOC output
+- EDHOC session management and C_R tracking
+- Client-side EDHOC+OSCORE combined request generation
+
+These features require full integration with the UEDHOC library and will be added in
+future releases. The current implementation provides the foundation for EDHOC support
+and ensures correct handling of EDHOC options.
 
 API Reference
 *************

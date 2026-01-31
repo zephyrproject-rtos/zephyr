@@ -394,6 +394,62 @@ config COAP_OSCORE_MAX_UNFRAGMENTED_SIZE
 
 endif # COAP_OSCORE
 
+config COAP_EDHOC
+	bool "EDHOC support for CoAP (RFC 9668)"
+	depends on ZCBOR
+	help
+	  Enable Ephemeral Diffie-Hellman Over COSE (EDHOC) support for CoAP.
+	  EDHOC provides lightweight authenticated key exchange for constrained
+	  devices, enabling secure session establishment with minimal overhead.
+
+	  This option enables EDHOC option (21) handling and combined payload
+	  parsing per RFC 9668. Full EDHOC handshake processing requires the
+	  uoscore-uedhoc module (CONFIG_UEDHOC) which provides the EDHOC protocol
+	  implementation.
+
+	  See RFC 9668 for details on using EDHOC with CoAP and OSCORE.
+
+if COAP_EDHOC
+
+config COAP_EDHOC_COMBINED_REQUEST
+	bool "EDHOC+OSCORE combined request support (RFC 9668)"
+	depends on COAP_OSCORE
+	help
+	  Enable support for EDHOC+OSCORE combined requests per RFC 9668 Section 3.
+	  This allows clients to send EDHOC message_3 and the first OSCORE-protected
+	  application request in a single CoAP message, reducing round trips.
+
+	  The combined request includes the EDHOC option (21) and a combined payload
+	  containing both the EDHOC message_3 and the OSCORE ciphertext.
+
+	  Requires both COAP_EDHOC and COAP_OSCORE to be enabled.
+
+config COAP_EDHOC_MAX_COMBINED_PAYLOAD_LEN
+	int "Maximum EDHOC+OSCORE combined payload length"
+	default 1024
+	depends on COAP_EDHOC_COMBINED_REQUEST
+	help
+	  Maximum length in bytes for the combined payload in EDHOC+OSCORE
+	  combined requests. This includes EDHOC message_3 and the OSCORE
+	  ciphertext. If a request exceeds this limit, it will be rejected
+	  with 4.00 Bad Request per RFC 9668 Section 3.3.1.
+
+	  This is a fail-closed security measure to prevent resource exhaustion.
+
+config COAP_EDHOC_SESSION_CACHE_SIZE
+	int "EDHOC session cache size per service"
+	default 4
+	help
+	  Number of EDHOC sessions to cache per CoAP service endpoint.
+	  Each session stores the EDHOC state keyed by the connection
+	  identifier C_R (for responder role).
+
+	  This limits how many concurrent EDHOC handshakes can be in
+	  progress simultaneously. Sessions are removed after successful
+	  completion or timeout.
+
+endif # COAP_EDHOC
+
 module = COAP
 module-dep = NET_LOG
 module-str = Log level for CoAP

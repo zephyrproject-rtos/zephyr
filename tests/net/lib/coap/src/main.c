@@ -30,6 +30,10 @@ LOG_MODULE_REGISTER(net_test, LOG_LEVEL_DBG);
 #include <oscore/security_context.h>
 #endif
 
+#if defined(CONFIG_COAP_EDHOC)
+#include "coap_edhoc.h"
+#endif
+
 #define COAP_BUF_SIZE 128
 
 #define NUM_PENDINGS 3
@@ -3679,5 +3683,254 @@ ZTEST(coap, test_normal_messages_not_affected)
 }
 
 #endif /* !CONFIG_COAP_OSCORE */
+
+/* RFC 9668: EDHOC option and content-format tests */
+ZTEST(coap, test_edhoc_option_number)
+{
+	/* RFC 9668 Section 3.1 / IANA Section 8.1: EDHOC option number is 21 */
+	zassert_equal(COAP_OPTION_EDHOC, 21, "EDHOC option number must be 21");
+}
+
+ZTEST(coap, test_edhoc_content_formats)
+{
+	/* RFC 9528 Section 10.9 Table 13: EDHOC content-format IDs */
+	zassert_equal(COAP_CONTENT_FORMAT_APP_EDHOC_CBOR_SEQ, 64,
+		      "application/edhoc+cbor-seq content-format must be 64");
+	zassert_equal(COAP_CONTENT_FORMAT_APP_CID_EDHOC_CBOR_SEQ, 65,
+		      "application/cid-edhoc+cbor-seq content-format must be 65");
+}
+
+#if !defined(CONFIG_COAP_EDHOC)
+/* Test that EDHOC option is rejected when EDHOC support is disabled */
+ZTEST(coap, test_edhoc_unsupported_critical_option)
+{
+	uint8_t buffer[128];
+	struct coap_packet cpkt;
+	uint16_t unsupported_opt;
+	int r;
+
+	/* Build a request with EDHOC option */
+	r = coap_packet_init(&cpkt, buffer, sizeof(buffer),
+			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
+			     COAP_METHOD_POST, 0x1234);
+	zassert_equal(r, 0, "Failed to init packet");
+
+	/* Add EDHOC option (empty as per RFC 9668) */
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_EDHOC, NULL, 0);
+	zassert_equal(r, 0, "Failed to append EDHOC option");
+
+	/* Should detect EDHOC as unsupported critical option */
+	r = coap_check_unsupported_critical_options(&cpkt, &unsupported_opt);
+	zassert_equal(r, -ENOTSUP, "Should detect EDHOC as unsupported");
+	zassert_equal(unsupported_opt, COAP_OPTION_EDHOC,
+		      "Should report EDHOC option as unsupported");
+}
+#endif /* !CONFIG_COAP_EDHOC */
+
+#if defined(CONFIG_COAP_EDHOC)
+/* Test EDHOC option detection */
+ZTEST(coap, test_edhoc_msg_has_edhoc)
+{
+	uint8_t buffer[128];
+	struct coap_packet cpkt;
+	int r;
+
+	/* Build a request without EDHOC option */
+	r = coap_packet_init(&cpkt, buffer, sizeof(buffer),
+			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
+			     COAP_METHOD_POST, 0x1234);
+	zassert_equal(r, 0, "Failed to init packet");
+
+	/* Should not detect EDHOC option */
+	zassert_false(coap_edhoc_msg_has_edhoc(&cpkt),
+		      "Should not detect EDHOC in message without option");
+
+	/* Add EDHOC option (empty as per RFC 9668) */
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_EDHOC, NULL, 0);
+	zassert_equal(r, 0, "Failed to append EDHOC option");
+
+	/* Should detect EDHOC option */
+	zassert_true(coap_edhoc_msg_has_edhoc(&cpkt),
+		     "Should detect EDHOC option in message");
+}
+
+/* Test EDHOC combined payload parsing - RFC 9668 Figure 4 example */
+ZTEST(coap, test_edhoc_split_comb_payload)
+{
+	/* Example from RFC 9668 Section 3.2.1:
+	 * EDHOC_MSG_3 is a CBOR bstr containing some data
+	 * For this test, we'll use a simple example:
+	 * - CBOR bstr with 10 bytes of data: 0x4a (header) + 10 bytes
+	 * - Followed by OSCORE payload
+	 */
+	uint8_t combined_payload[] = {
+		/* CBOR bstr header: major type 2, length 10 */
+		0x4a,
+		/* EDHOC_MSG_3 data (10 bytes) */
+		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a,
+		/* OSCORE_PAYLOAD (5 bytes) */
+		0xaa, 0xbb, 0xcc, 0xdd, 0xee
+	};
+
+	struct coap_edhoc_span edhoc_msg3, oscore_payload;
+	int r;
+
+	r = coap_edhoc_split_comb_payload(combined_payload, sizeof(combined_payload),
+					  &edhoc_msg3, &oscore_payload);
+	zassert_equal(r, 0, "Failed to split combined payload");
+
+	/* Check EDHOC_MSG_3 span (header + data) */
+	zassert_equal(edhoc_msg3.len, 11, "EDHOC_MSG_3 length incorrect");
+	zassert_equal(edhoc_msg3.ptr, combined_payload, "EDHOC_MSG_3 pointer incorrect");
+
+	/* Check OSCORE_PAYLOAD span */
+	zassert_equal(oscore_payload.len, 5, "OSCORE_PAYLOAD length incorrect");
+	zassert_equal(oscore_payload.ptr, combined_payload + 11,
+		      "OSCORE_PAYLOAD pointer incorrect");
+	zassert_equal(oscore_payload.ptr[0], 0xaa, "OSCORE_PAYLOAD data incorrect");
+}
+
+/* Test EDHOC combined payload parsing with 1-byte length encoding */
+ZTEST(coap, test_edhoc_split_comb_payload_1byte_len)
+{
+	/* CBOR bstr with 1-byte length encoding (additional info = 24)
+	 * 0x58 0x1e (30 bytes) + data + OSCORE payload
+	 */
+	uint8_t combined_payload[2 + 30 + 5];
+
+	combined_payload[0] = 0x58; /* major type 2, additional info 24 */
+	combined_payload[1] = 30;   /* length = 30 */
+	memset(&combined_payload[2], 0xaa, 30); /* EDHOC data */
+	memset(&combined_payload[32], 0xbb, 5); /* OSCORE payload */
+
+	struct coap_edhoc_span edhoc_msg3, oscore_payload;
+	int r;
+
+	r = coap_edhoc_split_comb_payload(combined_payload, sizeof(combined_payload),
+					  &edhoc_msg3, &oscore_payload);
+	zassert_equal(r, 0, "Failed to split combined payload with 1-byte length");
+
+	zassert_equal(edhoc_msg3.len, 32, "EDHOC_MSG_3 length incorrect");
+	zassert_equal(oscore_payload.len, 5, "OSCORE_PAYLOAD length incorrect");
+}
+
+/* Test EDHOC combined payload parsing with 2-byte length encoding */
+ZTEST(coap, test_edhoc_split_comb_payload_2byte_len)
+{
+	/* CBOR bstr with 2-byte length encoding (additional info = 25)
+	 * 0x59 0x01 0x00 (256 bytes) + data + OSCORE payload
+	 */
+	uint8_t combined_payload[3 + 256 + 5];
+
+	combined_payload[0] = 0x59; /* major type 2, additional info 25 */
+	combined_payload[1] = 0x01; /* length high byte */
+	combined_payload[2] = 0x00; /* length low byte = 256 */
+	memset(&combined_payload[3], 0xcc, 256); /* EDHOC data */
+	memset(&combined_payload[259], 0xdd, 5); /* OSCORE payload */
+
+	struct coap_edhoc_span edhoc_msg3, oscore_payload;
+	int r;
+
+	r = coap_edhoc_split_comb_payload(combined_payload, sizeof(combined_payload),
+					  &edhoc_msg3, &oscore_payload);
+	zassert_equal(r, 0, "Failed to split combined payload with 2-byte length");
+
+	zassert_equal(edhoc_msg3.len, 259, "EDHOC_MSG_3 length incorrect");
+	zassert_equal(oscore_payload.len, 5, "OSCORE_PAYLOAD length incorrect");
+}
+
+/* Test EDHOC combined payload parsing error cases */
+ZTEST(coap, test_edhoc_split_comb_payload_errors)
+{
+	uint8_t payload[] = { 0x4a, 0x01, 0x02, 0x03, 0x04, 0x05,
+			      0x06, 0x07, 0x08, 0x09, 0x0a };
+	struct coap_edhoc_span edhoc_msg3, oscore_payload;
+	int r;
+
+	/* Test NULL parameters */
+	r = coap_edhoc_split_comb_payload(NULL, sizeof(payload),
+					  &edhoc_msg3, &oscore_payload);
+	zassert_equal(r, -EINVAL, "Should reject NULL payload");
+
+	r = coap_edhoc_split_comb_payload(payload, sizeof(payload),
+					  NULL, &oscore_payload);
+	zassert_equal(r, -EINVAL, "Should reject NULL edhoc_msg3");
+
+	r = coap_edhoc_split_comb_payload(payload, sizeof(payload),
+					  &edhoc_msg3, NULL);
+	zassert_equal(r, -EINVAL, "Should reject NULL oscore_payload");
+
+	/* Test empty payload */
+	r = coap_edhoc_split_comb_payload(payload, 0,
+					  &edhoc_msg3, &oscore_payload);
+	zassert_equal(r, -EINVAL, "Should reject empty payload");
+
+	/* Test wrong CBOR major type (not byte string) */
+	uint8_t wrong_type[] = { 0x01, 0x02, 0x03 }; /* major type 0 (unsigned int) */
+
+	r = coap_edhoc_split_comb_payload(wrong_type, sizeof(wrong_type),
+					  &edhoc_msg3, &oscore_payload);
+	zassert_equal(r, -EINVAL, "Should reject non-bstr major type");
+
+	/* Test missing OSCORE payload (EDHOC_MSG_3 takes entire payload) */
+	uint8_t no_oscore[] = { 0x43, 0x01, 0x02, 0x03 }; /* bstr of length 3 */
+
+	r = coap_edhoc_split_comb_payload(no_oscore, sizeof(no_oscore),
+					  &edhoc_msg3, &oscore_payload);
+	zassert_equal(r, -EINVAL, "Should reject payload without OSCORE part");
+}
+
+/* Test EDHOC option removal */
+ZTEST(coap, test_edhoc_remove_option)
+{
+	uint8_t buffer[128];
+	struct coap_packet cpkt;
+	int r;
+
+	/* Build a request with EDHOC option */
+	r = coap_packet_init(&cpkt, buffer, sizeof(buffer),
+			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
+			     COAP_METHOD_POST, 0x1234);
+	zassert_equal(r, 0, "Failed to init packet");
+
+	/* Add EDHOC option */
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_EDHOC, NULL, 0);
+	zassert_equal(r, 0, "Failed to append EDHOC option");
+
+	/* Verify EDHOC option is present */
+	zassert_true(coap_edhoc_msg_has_edhoc(&cpkt), "EDHOC option should be present");
+
+	/* Remove EDHOC option */
+	r = coap_edhoc_remove_option(&cpkt);
+	zassert_equal(r, 0, "Failed to remove EDHOC option");
+
+	/* Re-parse the packet to ensure option removal is reflected */
+	struct coap_option options[10];
+	uint8_t opt_num = 10;
+
+	r = coap_packet_parse(&cpkt, buffer, cpkt.offset, options, opt_num);
+	zassert_equal(r, 0, "Failed to re-parse packet");
+
+	/* Verify EDHOC option is removed */
+	zassert_false(coap_edhoc_msg_has_edhoc(&cpkt), "EDHOC option should be removed");
+}
+
+#if defined(CONFIG_COAP_OSCORE)
+/* Test that EDHOC option is Class U (unprotected) for OSCORE */
+ZTEST(coap, test_edhoc_option_class_u_oscore)
+{
+	/* This test verifies that the EDHOC option (21) is treated as Class U
+	 * (unprotected) by OSCORE, as required by RFC 9668 Section 3.1.
+	 * This is implemented in the uoscore-uedhoc library's is_class_e() function.
+	 *
+	 * We can't directly test the uoscore library here, but we verify that
+	 * the EDHOC option number is correctly defined.
+	 */
+	zassert_equal(COAP_OPTION_EDHOC, 21,
+		      "EDHOC option must be 21 for Class U classification");
+}
+#endif /* CONFIG_COAP_OSCORE */
+
+#endif /* CONFIG_COAP_EDHOC */
 
 ZTEST_SUITE(coap, NULL, NULL, NULL, NULL, NULL);
