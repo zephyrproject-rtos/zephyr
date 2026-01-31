@@ -156,6 +156,12 @@ mapping:
           doc-url:
             required: false
             type: str
+          fetcher:
+            required: false
+            type: str
+          size:
+            required: false
+            type: int
   security:
      required: false
      type: map

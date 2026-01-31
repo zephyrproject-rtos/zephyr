@@ -55,12 +55,14 @@ class Blobs(WestCommand):
             - status: short status (A: present, M: hash failure, D: not present)
             - path: blob local path from <module>/zephyr/blobs/
             - sha256: blob SHA256 hash in hex
+            - size: blob size in bytes
             - type: type of blob
             - version: version string
             - license_path: path to the license file for the blob
             - license-abspath: absolute path to the license file for the blob
             - click-through: need license click-through or not
-            - uri: URI to the remote location of the blob
+            - url: URI to the remote location of the blob
+            - fetcher: method to use to fetch the blob
             - description: blob text description
             - doc-url: URL to the documentation for this blob
             '''),
@@ -194,7 +196,7 @@ class Blobs(WestCommand):
     def download_blob(self, blob, path):
         '''Download a blob from its url to a given path.'''
         url = blob['url']
-        scheme = urlparse(url).scheme
+        scheme = blob.get('fetcher') or urlparse(url).scheme
         self.dbg(f'Fetching blob from url {url} with {scheme} to path: {path}')
         import fetchers
 
@@ -202,7 +204,7 @@ class Blobs(WestCommand):
         self.dbg(f'Found fetcher: {fetcher}')
         inst = fetcher()
         self.ensure_folder(path)
-        inst.fetch(url, path)
+        inst.fetch(self, blob, path)
 
     def fetch_blob(self, args, blob):
         """
