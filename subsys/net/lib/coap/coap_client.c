@@ -79,6 +79,10 @@ static void reset_internal_request(struct coap_client_internal_request *request)
 	*request = (struct coap_client_internal_request){
 		.last_response_id = -1,
 		.request_tag_len = 0,
+#if defined(CONFIG_COAP_OSCORE)
+		.oscore_enabled_for_exchange = false,
+		.oscore_ciphertext_len = 0,
+#endif
 	};
 }
 
@@ -442,6 +446,53 @@ out:
 	return ret;
 }
 
+#if defined(CONFIG_COAP_OSCORE)
+/**
+ * Helper to OSCORE-protect a request after coap_client_init_request().
+ * This must be called for initial requests, retransmissions, blockwise follow-ups,
+ * and echo option resends to ensure all requests are protected.
+ * RFC 8613 Section 8.1: Client SHALL protect all requests when oscore_ctx is set.
+ */
+static int oscore_protect_request(struct coap_client *client,
+				  struct coap_client_internal_request *internal_req)
+{
+	if (client->oscore_ctx == NULL) {
+		return 0;
+	}
+
+	uint32_t oscore_len = sizeof(internal_req->oscore_wire_buf);
+	int ret;
+
+	/* Protect the plaintext request into the wire buffer */
+	ret = coap_oscore_protect(internal_req->request.data,
+				  internal_req->request.offset,
+				  internal_req->oscore_wire_buf,
+				  &oscore_len,
+				  client->oscore_ctx);
+	if (ret < 0) {
+		/* RFC 8613: Fail closed - do not send plaintext on protection failure */
+		LOG_ERR("OSCORE protection failed (%d), aborting request", ret);
+		return ret;
+	}
+
+	/* Re-parse the protected message so MID/type/token reflect the outer message.
+	 * This is critical for retransmissions and response matching.
+	 */
+	ret = coap_packet_parse(&internal_req->request, internal_req->oscore_wire_buf,
+				oscore_len, NULL, 0);
+	if (ret < 0) {
+		LOG_ERR("Failed to parse OSCORE-protected message (%d)", ret);
+		return ret;
+	}
+
+	/* Mark this exchange as OSCORE-protected for response verification */
+	internal_req->oscore_enabled_for_exchange = true;
+
+	LOG_DBG("Request OSCORE-protected: %u bytes", oscore_len);
+	return 0;
+}
+#endif
+
 int coap_client_req(struct coap_client *client, int sock, const struct net_sockaddr *addr,
 		    struct coap_client_request *req, struct coap_transmission_parameters *params)
 {
@@ -538,15 +589,10 @@ int coap_client_req(struct coap_client *client, int sock, const struct net_socka
 	LOG_DBG("Request is_observe %d", internal_req->is_observe);
 
 #if defined(CONFIG_COAP_OSCORE)
-	/* TODO: RFC 8613 Section 8.1: Protect request with OSCORE if client->oscore_ctx is set
-	 * This requires:
-	 * 1. Allocating a buffer for the protected message
-	 * 2. Calling coap_oscore_protect() to encrypt the request
-	 * 3. Sending the protected message instead of the original
-	 * 4. Tracking that this request is OSCORE-protected for response verification
-	 */
-	if (client->oscore_ctx != NULL) {
-		LOG_WRN("OSCORE protection not yet implemented for client requests");
+	/* RFC 8613 Section 8.1: Protect request with OSCORE if client->oscore_ctx is set */
+	ret = oscore_protect_request(client, internal_req);
+	if (ret < 0) {
+		goto release;
 	}
 #endif
 
@@ -883,19 +929,10 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 	bool blockwise_transfer = false;
 	bool last_block = false;
 	struct coap_client_internal_request *internal_req;
+	const struct coap_packet *response_to_process = response;
 
 #if defined(CONFIG_COAP_OSCORE)
-	/* TODO: RFC 8613 Section 8.4: Verify OSCORE-protected responses
-	 * This requires:
-	 * 1. Checking if the response has the OSCORE option
-	 * 2. If the original request was OSCORE-protected, verify the response
-	 * 3. Calling coap_oscore_verify() to decrypt the response
-	 * 4. Re-parsing the decrypted CoAP message
-	 * 5. Handling verification errors per RFC 8613 Section 8.4
-	 */
-	if (client->oscore_ctx != NULL && coap_oscore_msg_has_oscore(response)) {
-		LOG_WRN("OSCORE verification not yet implemented for client responses");
-	}
+	struct coap_packet decrypted_response;
 #endif
 
 	/* Handle different types, ACK might be separate or piggybacked
@@ -908,7 +945,7 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 	/* CON, NON_CON and piggybacked ACK need to match the token with original request */
 	uint16_t payload_len;
 	uint8_t response_type = coap_header_get_type(response);
-	uint8_t response_code = coap_header_get_code(response);
+	uint8_t response_code; /* Will be set from processed response after OSCORE verification */
 	uint16_t response_id = coap_header_get_id(response);
 	const uint8_t *payload = coap_packet_get_payload(response, &payload_len);
 
@@ -923,9 +960,9 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 		return 0;
 	}
 
-	/* Separate response coming */
+	/* Separate response coming (empty ACK) - check outer message code */
 	if (payload_len == 0 && response_type == COAP_TYPE_ACK &&
-	    response_code == COAP_CODE_EMPTY) {
+	    coap_header_get_code(response) == COAP_CODE_EMPTY) {
 		internal_req = get_request_with_mid(client, response_id);
 		if (!internal_req) {
 			LOG_WRN("No matching request for ACK");
@@ -947,8 +984,172 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 		return 0;
 	}
 
-	/* Received echo option */
-	if (find_echo_option(response, &client->echo_option)) {
+#if defined(CONFIG_COAP_OSCORE)
+	/* RFC 8613 Section 8.4: Verify OSCORE-protected responses.
+	 * This implements fail-closed behavior: if the request was OSCORE-protected,
+	 * the response MUST also be OSCORE-protected, otherwise we stop processing.
+	 */
+	if (internal_req->oscore_enabled_for_exchange) {
+		bool response_has_oscore = coap_oscore_msg_has_oscore(response);
+
+		if (!response_has_oscore) {
+			/* RFC 8613 Section 8.4: Client SHALL stop processing the response
+			 * if it expected OSCORE but didn't receive it (fail-closed).
+			 */
+			LOG_ERR("OSCORE-protected request received plaintext response, dropping");
+
+			/* Still send ACK for CON to stop retransmissions */
+			if (response_type == COAP_TYPE_CON) {
+				(void)send_ack(client, response, COAP_CODE_EMPTY);
+			}
+
+			/* Do not call user callback - security violation */
+			return 0;
+		}
+
+		/* RFC 8613 Section 2: Validate OSCORE message format */
+		ret = coap_oscore_validate_msg(response);
+		if (ret < 0) {
+			LOG_ERR("Malformed OSCORE response (RFC 8613 Section 2)");
+
+			/* Still send ACK for CON */
+			if (response_type == COAP_TYPE_CON) {
+				(void)send_ack(client, response, COAP_CODE_EMPTY);
+			}
+
+			/* RFC 8613 Section 8.4 step 8: stop processing */
+			return 0;
+		}
+
+		/* RFC 8613 Section 8.4.1: If Block-wise is present, reassemble outer blocks
+		 * before OSCORE verification. Check for Block2 in the outer message.
+		 */
+		int outer_block2 = coap_get_option_int(response, COAP_OPTION_BLOCK2);
+		bool has_more_blocks = (outer_block2 > 0) && GET_MORE(outer_block2);
+
+		if (has_more_blocks) {
+			/* RFC 8613 Section 8.4.1: Buffer ciphertext payload until all blocks
+			 * are received, then verify once.
+			 */
+			uint16_t payload_len;
+			const uint8_t *payload = coap_packet_get_payload(response, &payload_len);
+
+			if (payload != NULL && payload_len > 0) {
+				/* Accumulate ciphertext blocks */
+				if (internal_req->oscore_ciphertext_len + payload_len >
+				    sizeof(internal_req->oscore_ciphertext_buf)) {
+					LOG_ERR("OSCORE ciphertext buffer overflow");
+
+					/* Still send ACK for CON */
+					if (response_type == COAP_TYPE_CON) {
+						(void)send_ack(client, response, COAP_CODE_EMPTY);
+					}
+
+					return 0;
+				}
+
+				memcpy(internal_req->oscore_ciphertext_buf +
+				       internal_req->oscore_ciphertext_len,
+				       payload, payload_len);
+				internal_req->oscore_ciphertext_len += payload_len;
+			}
+
+			/* Send ACK for CON and request next block */
+			if (response_type == COAP_TYPE_CON) {
+				ret = send_ack(client, response, COAP_CODE_EMPTY);
+				if (ret < 0) {
+					LOG_ERR("Failed to send ACK");
+					return ret;
+				}
+			}
+
+			/* Don't verify yet - wait for all blocks */
+			LOG_DBG("OSCORE Block2: buffered %zu bytes, waiting for more",
+				internal_req->oscore_ciphertext_len);
+			return 1;
+		}
+
+		/* Either no Block2, or this is the last block. Verify now. */
+		const uint8_t *oscore_msg_to_verify = response->data;
+		uint32_t oscore_msg_len = response->offset;
+
+		/* RFC 8613 Section 8.4.1: Full Block2 reassembly before verification.
+		 * Current limitation: We buffer ciphertext blocks but verify only the last
+		 * block's OSCORE message. Full RFC compliance would require reconstructing
+		 * the complete OSCORE message (header + options + reassembled ciphertext
+		 * payload) before verification. This works for many servers that send the
+		 * complete OSCORE message in the last block, but may fail with servers
+		 * that split the OSCORE payload across blocks differently.
+		 */
+		if (internal_req->oscore_ciphertext_len > 0) {
+			LOG_WRN("OSCORE Block2: %zu bytes buffered, verifying last block only",
+				internal_req->oscore_ciphertext_len);
+			/* Note: A full implementation would reconstruct the OSCORE message here */
+		}
+
+		/* Verify and decrypt the response */
+		uint32_t plaintext_len = sizeof(internal_req->oscore_plaintext_buf);
+		uint8_t error_code = COAP_RESPONSE_CODE_BAD_REQUEST;
+
+		ret = coap_oscore_verify(oscore_msg_to_verify, oscore_msg_len,
+					 internal_req->oscore_plaintext_buf,
+					 &plaintext_len,
+					 client->oscore_ctx,
+					 &error_code);
+
+		/* Reset ciphertext accumulation for next exchange */
+		internal_req->oscore_ciphertext_len = 0;
+
+		if (ret < 0) {
+			/* RFC 8613 Section 8.4 step 8: Client SHALL stop processing
+			 * the response on verification failure.
+			 */
+			LOG_ERR("OSCORE verification failed (%d), dropping response", ret);
+
+			/* Still send ACK for CON */
+			if (response_type == COAP_TYPE_CON) {
+				(void)send_ack(client, response, COAP_CODE_EMPTY);
+			}
+
+			/* RFC 8613 Section 8.4.2: For Observe, do not cancel the observation
+			 * on verification errors, just drop this notification.
+			 */
+			if (internal_req->is_observe) {
+				LOG_DBG("Observe notification verification failed, waiting for next");
+				return 0;
+			}
+
+			/* For non-Observe, stop processing */
+			return 0;
+		}
+
+		/* Re-parse the decrypted message */
+		ret = coap_packet_parse(&decrypted_response,
+					internal_req->oscore_plaintext_buf,
+					plaintext_len, NULL, 0);
+		if (ret < 0) {
+			LOG_ERR("Failed to parse decrypted response (%d)", ret);
+
+			/* Still send ACK for CON */
+			if (response_type == COAP_TYPE_CON) {
+				(void)send_ack(client, response, COAP_CODE_EMPTY);
+			}
+
+			return 0;
+		}
+
+		/* Use the decrypted response for the rest of processing */
+		response_to_process = &decrypted_response;
+
+		LOG_DBG("OSCORE response verified: %u bytes", plaintext_len);
+	}
+#endif
+
+	/* Extract response code from the processed response (inner for OSCORE) */
+	response_code = coap_header_get_code(response_to_process);
+
+	/* Received echo option - check in the processed response (inner for OSCORE) */
+	if (find_echo_option(response_to_process, &client->echo_option)) {
 		 /* Resend request with echo option */
 		if (response_code == COAP_RESPONSE_CODE_UNAUTHORIZED) {
 			ret = coap_client_init_request(client, &internal_req->coap_request,
@@ -966,6 +1167,14 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 				LOG_ERR("Failed to append echo option");
 				goto fail;
 			}
+
+#if defined(CONFIG_COAP_OSCORE)
+			/* Protect the request with OSCORE if enabled */
+			ret = oscore_protect_request(client, internal_req);
+			if (ret < 0) {
+				goto fail;
+			}
+#endif
 
 			if (coap_header_get_type(&internal_req->request) == COAP_TYPE_CON) {
 				struct coap_transmission_parameters params =
@@ -1026,8 +1235,8 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 		coap_pending_clear(&internal_req->pending);
 	}
 
-	/* Check if block2 exists */
-	block_option = coap_get_option_int(response, COAP_OPTION_BLOCK2);
+	/* Check if block2 exists - use processed response (inner for OSCORE) */
+	block_option = coap_get_option_int(response_to_process, COAP_OPTION_BLOCK2);
 	if (block_option > 0 || response_truncated) {
 		blockwise_transfer = true;
 		last_block = response_truncated ? false : !GET_MORE(block_option);
@@ -1040,11 +1249,11 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 			internal_req->offset = 0;
 		}
 
-		ret = coap_update_from_block(response, &internal_req->recv_blk_ctx);
+		ret = coap_update_from_block(response_to_process, &internal_req->recv_blk_ctx);
 		if (ret < 0) {
 			LOG_ERR("Error updating block context");
 		}
-		coap_next_block(response, &internal_req->recv_blk_ctx);
+		coap_next_block(response_to_process, &internal_req->recv_blk_ctx);
 	} else {
 		internal_req->offset = 0;
 		last_block = true;
@@ -1062,7 +1271,7 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 			last_block = false;
 		}
 
-		block1_option = coap_get_option_int(response, COAP_OPTION_BLOCK1);
+		block1_option = coap_get_option_int(response_to_process, COAP_OPTION_BLOCK1);
 		if (block1_option > 0) {
 			int block_size = GET_BLOCK_SIZE(block1_option);
 
@@ -1079,12 +1288,12 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 		payload_len = MIN(payload_len, CONFIG_COAP_CLIENT_BLOCK_SIZE);
 	}
 
-	/* Call user callback */
+	/* Call user callback - pass the processed (decrypted for OSCORE) response */
 	if (internal_req->coap_request.cb != NULL) {
 		if (!atomic_set(&internal_req->in_callback, 1)) {
 			const struct coap_client_response_data resp_data = {
 				.result_code = response_code,
-				.packet = response,
+				.packet = response_to_process,
 				.offset = internal_req->offset,
 				.payload = payload,
 				.payload_len = payload_len,
@@ -1114,6 +1323,14 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 			LOG_ERR("Error creating a CoAP request");
 			goto fail;
 		}
+
+#if defined(CONFIG_COAP_OSCORE)
+		/* Protect the request with OSCORE if enabled */
+		ret = oscore_protect_request(client, internal_req);
+		if (ret < 0) {
+			goto fail;
+		}
+#endif
 
 		struct coap_transmission_parameters params = internal_req->pending.params;
 		ret = coap_pending_init(&internal_req->pending, &internal_req->request,

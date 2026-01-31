@@ -26,6 +26,8 @@ LOG_MODULE_REGISTER(net_test, LOG_LEVEL_DBG);
 #if defined(CONFIG_COAP_OSCORE)
 #include "coap_oscore.h"
 #include <zephyr/net/coap/coap_service.h>
+#include <oscore.h>
+#include <oscore/security_context.h>
 #endif
 
 #define COAP_BUF_SIZE 128
@@ -3166,6 +3168,80 @@ ZTEST(coap, test_oscore_exchange_cache_eviction)
 	entry = oscore_exchange_find(cache, (struct net_sockaddr *)&first_addr,
 				     sizeof(first_addr), token, sizeof(token));
 	zassert_is_null(entry, "Oldest entry should be evicted");
+}
+
+/* Test OSCORE client request protection (RFC 8613 Section 8.1) */
+ZTEST(coap, test_oscore_client_request_protection)
+{
+#if defined(CONFIG_COAP_CLIENT) && defined(CONFIG_COAP_OSCORE)
+	/* TODO: Implement end-to-end test with OSCORE client and server.
+	 * This test should verify that:
+	 * 1. When client->oscore_ctx is set, requests are automatically OSCORE-protected
+	 * 2. The sent message has the OSCORE option
+	 * 3. The server can decrypt and process the request
+	 */
+	ztest_test_skip();
+#else
+	ztest_test_skip();
+#endif
+}
+
+/* Test OSCORE client response verification (RFC 8613 Section 8.4) */
+ZTEST(coap, test_oscore_client_response_verification)
+{
+#if defined(CONFIG_COAP_CLIENT) && defined(CONFIG_COAP_OSCORE)
+	/* TODO: Implement test verifying automatic OSCORE response verification.
+	 * Should test that decrypted inner response is passed to the callback.
+	 */
+	ztest_test_skip();
+#else
+	ztest_test_skip();
+#endif
+}
+
+/* Test OSCORE client fail-closed behavior */
+ZTEST(coap, test_oscore_client_fail_closed)
+{
+#if defined(CONFIG_COAP_CLIENT) && defined(CONFIG_COAP_OSCORE)
+	/* TODO: Implement fail-closed behavior tests:
+	 * 1. OSCORE protection failure prevents sending
+	 * 2. Plaintext response to OSCORE request is rejected
+	 * 3. OSCORE verification failure drops response
+	 */
+	ztest_test_skip();
+#else
+	ztest_test_skip();
+#endif
+}
+
+/* Test OSCORE client with Block2 (RFC 8613 Section 8.4.1) */
+ZTEST(coap, test_oscore_client_block2)
+{
+#if defined(CONFIG_COAP_CLIENT) && defined(CONFIG_COAP_OSCORE)
+	/* TODO: Implement Block2 + OSCORE test verifying:
+	 * 1. Ciphertext blocks are buffered
+	 * 2. OSCORE verification after last block
+	 * 3. Decrypted payload delivered to application
+	 */
+	ztest_test_skip();
+#else
+	ztest_test_skip();
+#endif
+}
+
+/* Test OSCORE client with Observe (RFC 8613 Section 8.4.2) */
+ZTEST(coap, test_oscore_client_observe)
+{
+#if defined(CONFIG_COAP_CLIENT) && defined(CONFIG_COAP_OSCORE)
+	/* TODO: Implement Observe + OSCORE test verifying:
+	 * 1. Notifications are OSCORE-verified
+	 * 2. Verification failures don't cancel observation
+	 * 3. Client waits for next notification
+	 */
+	ztest_test_skip();
+#else
+	ztest_test_skip();
+#endif
 }
 
 #endif /* CONFIG_COAP_OSCORE */

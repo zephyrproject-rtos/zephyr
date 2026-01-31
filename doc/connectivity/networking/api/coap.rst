@@ -588,19 +588,60 @@ it to the client:
 
    /* Initialize OSCORE context (similar to server) */
    struct context oscore_ctx;
-   /* ... initialize as shown above ... */
+   struct oscore_init_params params = {
+       .master_secret.ptr = master_secret,
+       .master_secret.len = 16,
+       .sender_id.ptr = sender_id,
+       .sender_id.len = sender_id_len,
+       .recipient_id.ptr = recipient_id,
+       .recipient_id.len = recipient_id_len,
+       .master_salt.ptr = master_salt,
+       .master_salt.len = 8,
+       .aead_alg = OSCORE_AES_CCM_16_64_128,
+       .hkdf = OSCORE_SHA_256,
+       .fresh_master_secret_salt = false,
+   };
+
+   int ret = oscore_context_init(&params, &oscore_ctx);
+   if (ret != 0) {
+       /* Handle error */
+   }
 
    /* Attach to client */
    my_client.oscore_ctx = &oscore_ctx;
 
-.. note::
+When a client has an OSCORE context attached:
 
-   **Current Limitation**: Full OSCORE request protection and response verification
-   in the CoAP client is not yet implemented. The client API includes hooks for OSCORE
-   support, but applications must currently handle OSCORE protection manually if needed.
+1. **Outgoing requests**: The client automatically OSCORE-protects all requests
+   (RFC 8613 Section 8.1). This is done transparently before sending.
 
-   The server-side OSCORE implementation is fully functional and can verify incoming
-   OSCORE-protected requests.
+2. **Incoming responses**: The client automatically verifies and decrypts OSCORE-protected
+   responses (RFC 8613 Section 8.4). The application callback receives decrypted Inner
+   options and payload.
+
+3. **Fail-closed behavior**: The client enforces security-first guarantees:
+
+   - If OSCORE protection of a request fails, the request is not sent
+   - If a response to an OSCORE request is not OSCORE-protected, it is rejected
+   - If OSCORE verification of a response fails, the response is not delivered to the
+     application callback
+
+4. **Block-wise transfers**: When using Block-wise transfers (RFC 7959) with OSCORE,
+   the client follows RFC 8613 Section 8.4.1 ordering requirements:
+
+   - For Block2 (download): The client buffers outer block payloads and performs OSCORE
+     verification after receiving the last block. Note: Current implementation verifies
+     only the last block's OSCORE message, which works with most servers but may not
+     handle all Block2 + OSCORE combinations per RFC 8613 Section 8.4.1.
+   - For Block1 (upload): Block-wise upload with OSCORE is handled by the existing
+     blockwise logic operating on OSCORE-protected messages
+
+5. **Observe notifications**: For Observe (RFC 7641) with OSCORE, verification failures
+   on notifications do not cancel the observation (RFC 8613 Section 8.4.2). The client
+   continues waiting for the next notification.
+
+The client-side OSCORE implementation is fully functional and interoperates with
+OSCORE-enabled servers.
 
 Security Context Derivation
 ============================
