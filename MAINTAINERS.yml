@@ -4443,7 +4443,6 @@ Raspberry Pi Pico Platforms:
   maintainers:
     - soburi
   collaborators:
-    - yonsch
     - threeeights
     - ajf58
   files:
@@ -5912,7 +5911,6 @@ West:
   maintainers:
     - soburi
   collaborators:
-    - yonsch
     - threeeights
     - ajf58
   files:
