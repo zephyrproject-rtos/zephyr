@@ -9,8 +9,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_NET_COAP_CLIENT_H_
-#define ZEPHYR_INCLUDE_NET_COAP_CLIENT_H_
+#ifndef ZEPHYR_INCLUDE_NET_COAP_COAP_CLIENT_H_
+#define ZEPHYR_INCLUDE_NET_COAP_COAP_CLIENT_H_
 
 /**
  * @brief CoAP client API
@@ -21,7 +21,7 @@
  * @{
  */
 
-#include <zephyr/net/coap.h>
+#include <zephyr/net/coap/coap.h>
 #include <zephyr/kernel.h>
 
 #ifdef __cplusplus
@@ -274,4 +274,4 @@ bool coap_client_has_ongoing_exchange(struct coap_client *client);
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_NET_COAP_CLIENT_H_ */
+#endif /* ZEPHYR_INCLUDE_NET_COAP_COAP_CLIENT_H_ */

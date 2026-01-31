@@ -2298,4 +2298,123 @@ ZTEST(coap, test_no_response_option_invalid_length)
 	zassert_equal(r, -EINVAL, "Should return -EINVAL for invalid option length");
 }
 
+ZTEST(coap, test_packet_init_invalid_token_len)
+{
+	struct coap_packet cpkt;
+	uint8_t data[COAP_BUF_SIZE];
+	uint8_t token[COAP_TOKEN_MAX_LEN] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+	int r;
+
+	/* Test with token_len = 9 (reserved per RFC 7252 Section 3) */
+	r = coap_packet_init(&cpkt, data, sizeof(data),
+			     COAP_VERSION_1, COAP_TYPE_CON, 9, token,
+			     COAP_METHOD_GET, 0);
+	zassert_equal(r, -EINVAL, "Should reject token_len = 9");
+
+	/* Test with token_len = 15 (reserved per RFC 7252 Section 3) */
+	r = coap_packet_init(&cpkt, data, sizeof(data),
+			     COAP_VERSION_1, COAP_TYPE_CON, 15, token,
+			     COAP_METHOD_GET, 0);
+	zassert_equal(r, -EINVAL, "Should reject token_len = 15");
+
+	/* Test with token_len > 15 */
+	r = coap_packet_init(&cpkt, data, sizeof(data),
+			     COAP_VERSION_1, COAP_TYPE_CON, 255, token,
+			     COAP_METHOD_GET, 0);
+	zassert_equal(r, -EINVAL, "Should reject token_len = 255");
+}
+
+ZTEST(coap, test_packet_init_null_token_with_nonzero_len)
+{
+	struct coap_packet cpkt;
+	uint8_t data[COAP_BUF_SIZE];
+	int r;
+
+	/* Test with token_len > 0 but token = NULL */
+	r = coap_packet_init(&cpkt, data, sizeof(data),
+			     COAP_VERSION_1, COAP_TYPE_CON, 4, NULL,
+			     COAP_METHOD_GET, 0);
+	zassert_equal(r, -EINVAL, "Should reject token_len > 0 with NULL token");
+
+	/* Test with token_len = 1 but token = NULL */
+	r = coap_packet_init(&cpkt, data, sizeof(data),
+			     COAP_VERSION_1, COAP_TYPE_CON, 1, NULL,
+			     COAP_METHOD_GET, 0);
+	zassert_equal(r, -EINVAL, "Should reject token_len = 1 with NULL token");
+
+	/* Test with token_len = 8 but token = NULL */
+	r = coap_packet_init(&cpkt, data, sizeof(data),
+			     COAP_VERSION_1, COAP_TYPE_CON, 8, NULL,
+			     COAP_METHOD_GET, 0);
+	zassert_equal(r, -EINVAL, "Should reject token_len = 8 with NULL token");
+}
+
+ZTEST(coap, test_packet_init_valid_token_len)
+{
+	struct coap_packet cpkt;
+	uint8_t data[COAP_BUF_SIZE];
+	uint8_t token[COAP_TOKEN_MAX_LEN] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+	int r;
+
+	/* Test with token_len = 0 and token = NULL (valid) */
+	r = coap_packet_init(&cpkt, data, sizeof(data),
+			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
+			     COAP_METHOD_GET, 0);
+	zassert_equal(r, 0, "Should accept token_len = 0 with NULL token");
+
+	/* Test with token_len = 0 and token != NULL (valid, token is ignored) */
+	r = coap_packet_init(&cpkt, data, sizeof(data),
+			     COAP_VERSION_1, COAP_TYPE_CON, 0, token,
+			     COAP_METHOD_GET, 0);
+	zassert_equal(r, 0, "Should accept token_len = 0 with non-NULL token");
+
+	/* Test with token_len = 1 and valid token */
+	r = coap_packet_init(&cpkt, data, sizeof(data),
+			     COAP_VERSION_1, COAP_TYPE_CON, 1, token,
+			     COAP_METHOD_GET, 0);
+	zassert_equal(r, 0, "Should accept token_len = 1 with valid token");
+
+	/* Test with token_len = 8 and valid token */
+	r = coap_packet_init(&cpkt, data, sizeof(data),
+			     COAP_VERSION_1, COAP_TYPE_CON, 8, token,
+			     COAP_METHOD_GET, 0);
+	zassert_equal(r, 0, "Should accept token_len = 8 with valid token");
+
+	/* Test with token_len = 4 and valid token */
+	r = coap_packet_init(&cpkt, data, sizeof(data),
+			     COAP_VERSION_1, COAP_TYPE_CON, 4, token,
+			     COAP_METHOD_GET, 0);
+	zassert_equal(r, 0, "Should accept token_len = 4 with valid token");
+}
+
+ZTEST(coap, test_packet_parse_rejects_invalid_tkl)
+{
+	/* Test that parsing a packet with TKL=9 returns -EBADMSG */
+	uint8_t pdu_with_tkl_9[] = {
+		0x49, /* Ver=1, Type=CON, TKL=9 (reserved) */
+		0x01, /* Code=GET */
+		0x12, 0x34 /* Message ID */
+	};
+	struct coap_packet cpkt;
+	uint8_t data[COAP_BUF_SIZE];
+	int r;
+
+	memcpy(data, pdu_with_tkl_9, sizeof(pdu_with_tkl_9));
+
+	r = coap_packet_parse(&cpkt, data, sizeof(pdu_with_tkl_9), NULL, 0);
+	zassert_equal(r, -EBADMSG, "Should reject packet with TKL=9");
+
+	/* Test with TKL=15 (also reserved) */
+	uint8_t pdu_with_tkl_15[] = {
+		0x4F, /* Ver=1, Type=CON, TKL=15 (reserved) */
+		0x01, /* Code=GET */
+		0x12, 0x34 /* Message ID */
+	};
+
+	memcpy(data, pdu_with_tkl_15, sizeof(pdu_with_tkl_15));
+
+	r = coap_packet_parse(&cpkt, data, sizeof(pdu_with_tkl_15), NULL, 0);
+	zassert_equal(r, -EBADMSG, "Should reject packet with TKL=15");
+}
+
 ZTEST_SUITE(coap, NULL, NULL, NULL, NULL, NULL);

@@ -10,8 +10,8 @@
  * @brief CoAP implementation for Zephyr.
  */
 
-#ifndef ZEPHYR_INCLUDE_NET_COAP_LINK_FORMAT_H_
-#define ZEPHYR_INCLUDE_NET_COAP_LINK_FORMAT_H_
+#ifndef ZEPHYR_INCLUDE_NET_COAP_COAP_LINK_FORMAT_H_
+#define ZEPHYR_INCLUDE_NET_COAP_COAP_LINK_FORMAT_H_
 
 /**
  * @addtogroup coap COAP Library
@@ -84,4 +84,4 @@ struct coap_core_metadata {
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_NET_COAP_LINK_FORMAT_H_ */
+#endif /* ZEPHYR_INCLUDE_NET_COAP_COAP_LINK_FORMAT_H_ */

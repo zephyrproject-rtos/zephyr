@@ -9,8 +9,8 @@
  * @brief CoAP Events code public header
  */
 
-#ifndef ZEPHYR_INCLUDE_NET_COAP_MGMT_H_
-#define ZEPHYR_INCLUDE_NET_COAP_MGMT_H_
+#ifndef ZEPHYR_INCLUDE_NET_COAP_COAP_MGMT_H_
+#define ZEPHYR_INCLUDE_NET_COAP_COAP_MGMT_H_
 
 #include <zephyr/net/net_mgmt.h>
 
@@ -113,4 +113,4 @@ struct net_event_coap_observer {
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_NET_COAP_MGMT_H_ */
+#endif /* ZEPHYR_INCLUDE_NET_COAP_COAP_MGMT_H_ */

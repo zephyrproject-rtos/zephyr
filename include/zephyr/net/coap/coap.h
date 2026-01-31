@@ -11,8 +11,8 @@
  * @brief CoAP implementation for Zephyr.
  */
 
-#ifndef ZEPHYR_INCLUDE_NET_COAP_H_
-#define ZEPHYR_INCLUDE_NET_COAP_H_
+#ifndef ZEPHYR_INCLUDE_NET_COAP_COAP_H_
+#define ZEPHYR_INCLUDE_NET_COAP_COAP_H_
 
 /**
  * @brief COAP library
@@ -524,12 +524,20 @@ int coap_packet_set_path(struct coap_packet *cpkt, const char *path);
  * @param max_len Maximum allowable length of data
  * @param ver CoAP header version
  * @param type CoAP header type
- * @param token_len CoAP header token length
- * @param token CoAP header token
+ * @param token_len CoAP header token length. Must be in the range 0-8 bytes
+ *                  as per RFC 7252 Section 3. Values 9-15 are reserved and
+ *                  must not be used.
+ * @param token CoAP header token. Must be non-NULL if @a token_len > 0, and
+ *              must point to at least @a token_len bytes of valid memory.
+ *              May be NULL if @a token_len is 0.
  * @param code CoAP header code
  * @param id CoAP header message id
  *
- * @return 0 in case of success or negative in case of error.
+ * @retval 0 Success.
+ * @retval -EINVAL Invalid input parameters:
+ *                 - @a cpkt, @a data, or @a max_len is invalid
+ *                 - @a token_len > 8 (violates RFC 7252)
+ *                 - @a token_len > 0 but @a token is NULL
  */
 int coap_packet_init(struct coap_packet *cpkt, uint8_t *data, uint16_t max_len,
 		     uint8_t ver, uint8_t type, uint8_t token_len,
@@ -1308,4 +1316,4 @@ int coap_no_response_check(const struct coap_packet *request, uint8_t response_c
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_NET_COAP_H_ */
+#endif /* ZEPHYR_INCLUDE_NET_COAP_COAP_H_ */

@@ -177,6 +177,16 @@ int coap_packet_init(struct coap_packet *cpkt, uint8_t *data, uint16_t max_len,
 		return -EINVAL;
 	}
 
+	/* RFC 7252 Section 3: Token Length must be 0-8 bytes */
+	if (token_len > COAP_TOKEN_MAX_LEN) {
+		return -EINVAL;
+	}
+
+	/* If token_len > 0, token pointer must be valid */
+	if (token_len > 0 && token == NULL) {
+		return -EINVAL;
+	}
+
 	memset(cpkt, 0, sizeof(*cpkt));
 
 	cpkt->data = data;
@@ -186,7 +196,7 @@ int coap_packet_init(struct coap_packet *cpkt, uint8_t *data, uint16_t max_len,
 
 	hdr = (ver & 0x3) << 6;
 	hdr |= (type & 0x3) << 4;
-	hdr |= token_len & 0xF;
+	hdr |= token_len;
 
 	res = append_u8(cpkt, hdr);
 	if (!res) {
