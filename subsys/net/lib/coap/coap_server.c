@@ -154,6 +154,147 @@ static int send_error_response(const struct coap_service *service,
 }
 #endif /* CONFIG_COAP_OSCORE */
 
+#if defined(CONFIG_COAP_EDHOC_COMBINED_REQUEST)
+/**
+ * @brief Build an EDHOC error response (unprotected)
+ *
+ * Per RFC 9668 Section 3.3.1 and RFC 9528 Section 6/Appendix A.2.3,
+ * when EDHOC processing fails in a combined request, the server responds
+ * with an unprotected CoAP error response containing an EDHOC error message.
+ *
+ * The response:
+ * - Uses response code 4.00 (Bad Request) for client errors
+ * - Contains Content-Format option set to application/edhoc+cbor-seq (64)
+ * - Has payload with EDHOC error CBOR sequence: (ERR_CODE, ERR_INFO)
+ * - MUST NOT be protected with OSCORE
+ *
+ * @param response Output CoAP packet
+ * @param request Original request packet
+ * @param code CoAP response code (typically 4.00 or 5.00)
+ * @param err_code EDHOC error code (typically 1 for Unspecified Error)
+ * @param diag_msg Diagnostic message (ERR_INFO as tstr)
+ * @param buf Buffer for response
+ * @param buf_len Buffer length
+ * @return 0 on success, negative errno on error
+ */
+static int build_edhoc_error_response(struct coap_packet *response,
+				       const struct coap_packet *request,
+				       uint8_t code,
+				       int err_code,
+				       const char *diag_msg,
+				       uint8_t *buf, size_t buf_len)
+{
+	uint8_t token[COAP_TOKEN_MAX_LEN];
+	uint8_t tkl = coap_header_get_token(request, token);
+	uint16_t id = coap_header_get_id(request);
+	uint8_t type = (coap_header_get_type(request) == COAP_TYPE_CON)
+		       ? COAP_TYPE_ACK : COAP_TYPE_NON_CON;
+	int ret;
+
+	/* Encode EDHOC error payload */
+	uint8_t error_payload[256];
+	size_t error_len = sizeof(error_payload);
+
+	ret = coap_edhoc_encode_error(err_code, diag_msg, error_payload, &error_len);
+	if (ret < 0) {
+		LOG_ERR("Failed to encode EDHOC error (%d)", ret);
+		return ret;
+	}
+
+	/* Build CoAP response */
+	ret = coap_packet_init(response, buf, buf_len,
+			       COAP_VERSION_1, type, tkl, token, code, id);
+	if (ret < 0) {
+		LOG_ERR("Failed to init EDHOC error response (%d)", ret);
+		return ret;
+	}
+
+	/* Add Content-Format option: application/edhoc+cbor-seq (64) */
+	ret = coap_append_option_int(response, COAP_OPTION_CONTENT_FORMAT,
+				     COAP_CONTENT_FORMAT_APP_EDHOC_CBOR_SEQ);
+	if (ret < 0) {
+		LOG_ERR("Failed to add Content-Format option (%d)", ret);
+		return ret;
+	}
+
+	/* Add payload */
+	ret = coap_packet_append_payload_marker(response);
+	if (ret < 0) {
+		LOG_ERR("Failed to add payload marker (%d)", ret);
+		return ret;
+	}
+
+	ret = coap_packet_append_payload(response, error_payload, error_len);
+	if (ret < 0) {
+		LOG_ERR("Failed to add EDHOC error payload (%d)", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+/**
+ * @brief Send an EDHOC error response (unprotected)
+ *
+ * @param service CoAP service
+ * @param request Original request packet
+ * @param code CoAP response code (typically 4.00 or 5.00)
+ * @param err_code EDHOC error code (typically 1 for Unspecified Error)
+ * @param diag_msg Diagnostic message (ERR_INFO as tstr)
+ * @param client_addr Client address
+ * @param client_addr_len Client address length
+ * @return 0 on success, negative errno on error
+ */
+static int send_edhoc_error_response(const struct coap_service *service,
+				      const struct coap_packet *request,
+				      uint8_t code,
+				      int err_code,
+				      const char *diag_msg,
+				      const struct net_sockaddr *client_addr,
+				      net_socklen_t client_addr_len)
+{
+	uint8_t buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+	struct coap_packet response;
+	int ret;
+
+	ret = build_edhoc_error_response(&response, request, code, err_code, diag_msg,
+					 buf, sizeof(buf));
+	if (ret < 0) {
+		return ret;
+	}
+
+	LOG_DBG("Sending EDHOC error response: code=%d, err_code=%d, diag=\"%s\"",
+		code, err_code, diag_msg);
+
+	return coap_service_send(service, &response, client_addr, client_addr_len, NULL);
+}
+
+#if defined(CONFIG_ZTEST)
+/**
+ * @brief Build an EDHOC error response for testing
+ *
+ * Test wrapper that exposes the internal build function for unit tests.
+ */
+int coap_edhoc_build_error_response(struct coap_packet *response,
+				     const struct coap_packet *request,
+				     uint8_t code,
+				     int err_code,
+				     const char *diag_msg,
+				     uint8_t *buf, size_t buf_len);
+
+int coap_edhoc_build_error_response(struct coap_packet *response,
+				     const struct coap_packet *request,
+				     uint8_t code,
+				     int err_code,
+				     const char *diag_msg,
+				     uint8_t *buf, size_t buf_len)
+{
+	return build_edhoc_error_response(response, request, code, err_code, diag_msg,
+					  buf, buf_len);
+}
+#endif /* CONFIG_ZTEST */
+#endif /* CONFIG_COAP_EDHOC_COMBINED_REQUEST */
+
 #if defined(CONFIG_COAP_SERVER_ECHO)
 
 /* Compare two socket addresses for equality */
@@ -922,13 +1063,14 @@ static int coap_server_process(int sock_fd)
 		/* RFC 9668 Section 3.3.1 Step 4: Check if message_4 is required */
 		if (edhoc_session->message_4_required) {
 			LOG_ERR("EDHOC session requires message_4, cannot use combined request");
-			/* Abort EDHOC session per RFC 9668 */
+			/* RFC 9668 Section 3.3.1: Abort EDHOC and send EDHOC error message */
 			coap_edhoc_session_remove(service->data->edhoc_session_cache,
 						  CONFIG_COAP_EDHOC_SESSION_CACHE_SIZE,
 						  c_r, c_r_len);
-			(void)send_error_response(service, &request,
-						  COAP_RESPONSE_CODE_BAD_REQUEST,
-						  &client_addr, client_addr_len);
+			(void)send_edhoc_error_response(service, &request,
+							COAP_RESPONSE_CODE_BAD_REQUEST,
+							1, "EDHOC error",
+							&client_addr, client_addr_len);
 			ret = -EINVAL;
 			goto unlock;
 		}
@@ -941,18 +1083,20 @@ static int coap_server_process(int sock_fd)
 
 		if (ret < 0) {
 			LOG_ERR("EDHOC message_3 processing failed (%d)", ret);
-			/* RFC 9668 Section 3.3.1: If Step 4 fails, abort EDHOC and send
-			 * EDHOC error message (not OSCORE-protected).
-			 * For simplicity, we send 4.00 Bad Request.
-			 * A full implementation would send an EDHOC error message per
-			 * RFC 9528 Section 6.2 with Content-Format application/edhoc+cbor-seq.
+			/* RFC 9668 Section 3.3.1: If Step 4 (EDHOC processing) fails,
+			 * abort EDHOC and send EDHOC error message (not OSCORE-protected).
+			 * Per RFC 9528 Section 6.2 and Appendix A.2.3:
+			 * - Response code: 4.00 (Bad Request) for client error
+			 * - Content-Format: application/edhoc+cbor-seq (64)
+			 * - Payload: CBOR Sequence with ERR_CODE=1, ERR_INFO=tstr
 			 */
 			coap_edhoc_session_remove(service->data->edhoc_session_cache,
 						  CONFIG_COAP_EDHOC_SESSION_CACHE_SIZE,
 						  c_r, c_r_len);
-			(void)send_error_response(service, &request,
-						  COAP_RESPONSE_CODE_BAD_REQUEST,
-						  &client_addr, client_addr_len);
+			(void)send_edhoc_error_response(service, &request,
+							COAP_RESPONSE_CODE_BAD_REQUEST,
+							1, "EDHOC error",
+							&client_addr, client_addr_len);
 			goto unlock;
 		}
 

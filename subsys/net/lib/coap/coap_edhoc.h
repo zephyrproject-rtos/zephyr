@@ -73,6 +73,29 @@ int coap_edhoc_split_comb_payload(const uint8_t *payload, size_t payload_len,
  */
 int coap_edhoc_remove_option(struct coap_packet *cpkt);
 
+/**
+ * @brief Encode an EDHOC error message as a CBOR Sequence
+ *
+ * Per RFC 9528 Section 6, an EDHOC error message is a CBOR Sequence:
+ *   error = (ERR_CODE : int, ERR_INFO : any)
+ *
+ * Per RFC 9528 Section 6.2, for ERR_CODE = 1 (Unspecified Error),
+ * ERR_INFO MUST be a tstr (text string).
+ *
+ * This function encodes the error message for use in CoAP error responses
+ * per RFC 9668 Section 3.3.1 and RFC 9528 Appendix A.2.3.
+ *
+ * @param err_code EDHOC error code (e.g., 1 for Unspecified Error)
+ * @param diag_msg Diagnostic message as a null-terminated string (ERR_INFO)
+ * @param out_buf Output buffer for the CBOR Sequence
+ * @param inout_len Input: size of out_buf; Output: actual encoded length
+ * @return 0 on success, negative errno on error
+ *         -EINVAL if parameters are invalid
+ *         -ENOMEM if buffer is too small
+ */
+int coap_edhoc_encode_error(int err_code, const char *diag_msg,
+			     uint8_t *out_buf, size_t *inout_len);
+
 #ifdef __cplusplus
 }
 #endif

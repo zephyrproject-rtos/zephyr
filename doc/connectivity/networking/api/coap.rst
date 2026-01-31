@@ -891,8 +891,58 @@ Where:
 **Error Handling**:
 
 - **Malformed combined payload**: 4.00 Bad Request (not 4.02 Bad Option)
-- **EDHOC processing failure**: Unprotected EDHOC error message with content-format 64
+- **EDHOC processing failure**: Unprotected EDHOC error message (see below)
 - **OSCORE verification failure**: Standard OSCORE error handling
+
+EDHOC Error Messages (RFC 9668 Section 3.3.1 & RFC 9528 Section 6)
+-------------------------------------------------------------------
+
+When EDHOC processing fails in a combined request, the server responds with an
+**unprotected** CoAP error response containing an EDHOC error message per RFC 9528
+Section 6 and Appendix A.2.3.
+
+**Error Response Format**:
+
+- **Response Code**: 4.00 (Bad Request) for client errors, 5.00 (Internal Server Error) for server errors
+- **Content-Format**: application/edhoc+cbor-seq (64)
+- **Payload**: CBOR Sequence ``(ERR_CODE : int, ERR_INFO : any)``
+- **MUST NOT** be protected with OSCORE (RFC 9668 Section 3.3.1)
+
+**EDHOC Error Codes** (RFC 9528 Section 6.2):
+
+- **ERR_CODE = 1**: Unspecified Error (used for combined request failures)
+- **ERR_INFO**: MUST be a text string (tstr) for ERR_CODE = 1
+
+**Example CBOR Sequence** (ERR_CODE=1, ERR_INFO="EDHOC error"):
+
+.. code-block:: text
+
+   0x01 0x6B 45 44 48 4F 43 20 65 72 72 6F 72
+   |    |    |-- "EDHOC error" (11 bytes UTF-8)
+   |    |-- CBOR tstr header (major type 3, length 11)
+   |-- CBOR unsigned int 1
+
+**Security Considerations**:
+
+Per RFC 9528 Section 9.5 and RFC 9668 Section 3.3.1, diagnostic messages in
+ERR_INFO SHOULD be generic to avoid leaking sensitive information about the
+EDHOC session or server state. The Zephyr implementation uses "EDHOC error"
+as a deliberately non-specific diagnostic message.
+
+**When EDHOC Error Messages Are Sent**:
+
+1. **EDHOC message_3 processing failure**: When the EDHOC library rejects message_3
+   (e.g., authentication failure, invalid MAC, protocol violation)
+2. **message_4 required**: When the EDHOC session requires message_4 but the client
+   sent a combined request (RFC 9668 Section 3.3.1 Step 4)
+
+**Response Type**:
+
+- For CON requests: ACK with error payload
+- For NON requests: NON with error payload
+
+This ensures the error response follows standard CoAP message type rules while
+remaining unprotected as required by RFC 9668.
 
 **Security Considerations**:
 
@@ -937,7 +987,8 @@ RFC 9668 Section 3.3.1 and 3.3.2 processing:
 
 - Malformed combined payload → 4.00 Bad Request
 - Unknown C_R session → 4.00 Bad Request
-- EDHOC message_3 processing failure → 4.00 Bad Request (EDHOC session aborted)
+- EDHOC message_3 processing failure → EDHOC error message (ERR_CODE=1, Content-Format 64, EDHOC session aborted)
+- message_4 required → EDHOC error message (ERR_CODE=1, Content-Format 64, EDHOC session aborted)
 - OSCORE verification failure → appropriate OSCORE error code
 
 **Not yet implemented**:

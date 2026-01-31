@@ -144,3 +144,74 @@ int coap_edhoc_remove_option(struct coap_packet *cpkt)
 	/* Use existing CoAP option removal function */
 	return coap_packet_remove_option(cpkt, COAP_OPTION_EDHOC);
 }
+
+int coap_edhoc_encode_error(int err_code, const char *diag_msg,
+			     uint8_t *out_buf, size_t *inout_len)
+{
+	if (out_buf == NULL || inout_len == NULL || diag_msg == NULL) {
+		return -EINVAL;
+	}
+
+	size_t diag_len = strlen(diag_msg);
+	size_t offset = 0;
+	size_t tstr_header_len;
+
+	/* RFC 9528 Section 6: error = (ERR_CODE : int, ERR_INFO : any)
+	 * This is a CBOR Sequence (concatenation of two CBOR data items).
+	 *
+	 * First item: ERR_CODE as CBOR integer
+	 * Second item: ERR_INFO as CBOR text string (tstr)
+	 */
+
+	/* Encode ERR_CODE as CBOR integer
+	 * For err_code = 1, this is a single byte: 0x01
+	 * CBOR encoding for small positive integers (0-23): major type 0, value in low 5 bits
+	 */
+	if (err_code < 0 || err_code > 23) {
+		/* For simplicity, only support error codes 0-23 (single-byte encoding) */
+		LOG_ERR("Error code %d not supported (must be 0-23)", err_code);
+		return -EINVAL;
+	}
+
+	/* Calculate required buffer size based on diagnostic message length */
+	if (diag_len < 24) {
+		tstr_header_len = 1;
+	} else if (diag_len < 256) {
+		tstr_header_len = 2;
+	} else if (diag_len < 65536) {
+		tstr_header_len = 3;
+	} else {
+		LOG_ERR("Diagnostic message too long (%zu bytes)", diag_len);
+		return -EINVAL;
+	}
+
+	if (*inout_len < 1 + tstr_header_len + diag_len) {
+		LOG_ERR("Buffer too small (%zu < %zu)", *inout_len, 1 + tstr_header_len + diag_len);
+		return -ENOMEM;
+	}
+
+	/* Encode ERR_CODE: CBOR major type 0 (unsigned integer), value in low 5 bits */
+	out_buf[offset++] = (uint8_t)err_code;
+
+	/* Encode ERR_INFO as CBOR text string (major type 3) */
+	if (diag_len < 24) {
+		/* Length 0-23 encoded in additional info */
+		out_buf[offset++] = 0x60 | (uint8_t)diag_len;
+	} else if (diag_len < 256) {
+		/* 1-byte length follows */
+		out_buf[offset++] = 0x78;
+		out_buf[offset++] = (uint8_t)diag_len;
+	} else {
+		/* 2-byte length follows (big-endian) */
+		out_buf[offset++] = 0x79;
+		out_buf[offset++] = (uint8_t)(diag_len >> 8);
+		out_buf[offset++] = (uint8_t)(diag_len & 0xFF);
+	}
+
+	/* Copy diagnostic message */
+	memcpy(out_buf + offset, diag_msg, diag_len);
+	offset += diag_len;
+
+	*inout_len = offset;
+	return 0;
+}

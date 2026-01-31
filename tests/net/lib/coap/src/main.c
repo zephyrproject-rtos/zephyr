@@ -4187,6 +4187,357 @@ ZTEST(coap, test_edhoc_option_ignore_value)
 		     "EDHOC option should be detected even with non-empty value");
 }
 
+/* Test EDHOC error encoding: basic case with ERR_CODE=1 */
+ZTEST(coap, test_edhoc_encode_error_basic)
+{
+	uint8_t buffer[128];
+	size_t buffer_len = sizeof(buffer);
+	int r;
+
+	/* Encode EDHOC error: ERR_CODE=1, ERR_INFO="EDHOC error" */
+	extern int coap_edhoc_encode_error(int err_code, const char *diag_msg,
+					   uint8_t *out_buf, size_t *inout_len);
+
+	r = coap_edhoc_encode_error(1, "EDHOC error", buffer, &buffer_len);
+	zassert_equal(r, 0, "Failed to encode EDHOC error");
+
+	/* Verify CBOR Sequence encoding:
+	 * - First item: CBOR unsigned int 1 = 0x01
+	 * - Second item: CBOR text string "EDHOC error" (11 bytes)
+	 *   - Major type 3 (text string), length 11 in additional info
+	 *   - Header: 0x6B (0x60 | 11)
+	 *   - Followed by 11 bytes of UTF-8 text
+	 */
+	zassert_equal(buffer_len, 1 + 1 + 11, "Encoded length should be 13 bytes");
+	zassert_equal(buffer[0], 0x01, "ERR_CODE should be 0x01");
+	zassert_equal(buffer[1], 0x6B, "ERR_INFO header should be 0x6B (tstr, len=11)");
+	zassert_mem_equal(&buffer[2], "EDHOC error", 11, "ERR_INFO should be 'EDHOC error'");
+}
+
+/* Test EDHOC error encoding: short diagnostic message */
+ZTEST(coap, test_edhoc_encode_error_short_diag)
+{
+	uint8_t buffer[128];
+	size_t buffer_len = sizeof(buffer);
+	int r;
+
+	extern int coap_edhoc_encode_error(int err_code, const char *diag_msg,
+					   uint8_t *out_buf, size_t *inout_len);
+
+	r = coap_edhoc_encode_error(1, "err", buffer, &buffer_len);
+	zassert_equal(r, 0, "Failed to encode EDHOC error");
+
+	/* Verify encoding:
+	 * - ERR_CODE: 0x01
+	 * - ERR_INFO: 0x63 (tstr, len=3) + "err"
+	 */
+	zassert_equal(buffer_len, 1 + 1 + 3, "Encoded length should be 5 bytes");
+	zassert_equal(buffer[0], 0x01, "ERR_CODE should be 0x01");
+	zassert_equal(buffer[1], 0x63, "ERR_INFO header should be 0x63 (tstr, len=3)");
+	zassert_mem_equal(&buffer[2], "err", 3, "ERR_INFO should be 'err'");
+}
+
+/* Test EDHOC error encoding: longer diagnostic message (>23 bytes) */
+ZTEST(coap, test_edhoc_encode_error_long_diag)
+{
+	uint8_t buffer[128];
+	size_t buffer_len = sizeof(buffer);
+	int r;
+
+	extern int coap_edhoc_encode_error(int err_code, const char *diag_msg,
+					   uint8_t *out_buf, size_t *inout_len);
+
+	/* 30-byte diagnostic message */
+	const char *diag = "EDHOC processing failed here";
+
+	r = coap_edhoc_encode_error(1, diag, buffer, &buffer_len);
+	zassert_equal(r, 0, "Failed to encode EDHOC error");
+
+	size_t diag_len = strlen(diag);
+
+	/* Verify encoding:
+	 * - ERR_CODE: 0x01
+	 * - ERR_INFO: 0x78 (tstr, 1-byte length follows) + length byte + text
+	 */
+	zassert_equal(buffer_len, 1 + 2 + diag_len, "Encoded length incorrect");
+	zassert_equal(buffer[0], 0x01, "ERR_CODE should be 0x01");
+	zassert_equal(buffer[1], 0x78, "ERR_INFO header should be 0x78 (tstr, 1-byte len)");
+	zassert_equal(buffer[2], diag_len, "Length byte should match diagnostic length");
+	zassert_mem_equal(&buffer[3], diag, diag_len, "ERR_INFO text incorrect");
+}
+
+/* Test EDHOC error encoding: buffer too small */
+ZTEST(coap, test_edhoc_encode_error_buffer_too_small)
+{
+	uint8_t buffer[5];
+	size_t buffer_len = sizeof(buffer);
+	int r;
+
+	extern int coap_edhoc_encode_error(int err_code, const char *diag_msg,
+					   uint8_t *out_buf, size_t *inout_len);
+
+	/* Try to encode "EDHOC error" (12 bytes) into 5-byte buffer */
+	r = coap_edhoc_encode_error(1, "EDHOC error", buffer, &buffer_len);
+	zassert_equal(r, -ENOMEM, "Should fail with -ENOMEM for small buffer");
+}
+
+/* Test EDHOC error encoding: invalid parameters */
+ZTEST(coap, test_edhoc_encode_error_invalid_params)
+{
+	uint8_t buffer[128];
+	size_t buffer_len = sizeof(buffer);
+	int r;
+
+	extern int coap_edhoc_encode_error(int err_code, const char *diag_msg,
+					   uint8_t *out_buf, size_t *inout_len);
+
+	/* NULL buffer */
+	r = coap_edhoc_encode_error(1, "test", NULL, &buffer_len);
+	zassert_equal(r, -EINVAL, "Should fail with NULL buffer");
+
+	/* NULL length pointer */
+	r = coap_edhoc_encode_error(1, "test", buffer, NULL);
+	zassert_equal(r, -EINVAL, "Should fail with NULL length pointer");
+
+	/* NULL diagnostic message */
+	r = coap_edhoc_encode_error(1, NULL, buffer, &buffer_len);
+	zassert_equal(r, -EINVAL, "Should fail with NULL diagnostic message");
+
+	/* Invalid error code (>23) */
+	r = coap_edhoc_encode_error(100, "test", buffer, &buffer_len);
+	zassert_equal(r, -EINVAL, "Should fail with error code > 23");
+
+	/* Negative error code */
+	r = coap_edhoc_encode_error(-1, "test", buffer, &buffer_len);
+	zassert_equal(r, -EINVAL, "Should fail with negative error code");
+}
+
+/* Test EDHOC error encoding: empty diagnostic message */
+ZTEST(coap, test_edhoc_encode_error_empty_diag)
+{
+	uint8_t buffer[128];
+	size_t buffer_len = sizeof(buffer);
+	int r;
+
+	extern int coap_edhoc_encode_error(int err_code, const char *diag_msg,
+					   uint8_t *out_buf, size_t *inout_len);
+
+	r = coap_edhoc_encode_error(1, "", buffer, &buffer_len);
+	zassert_equal(r, 0, "Should succeed with empty diagnostic message");
+
+	/* Verify encoding:
+	 * - ERR_CODE: 0x01
+	 * - ERR_INFO: 0x60 (tstr, len=0)
+	 */
+	zassert_equal(buffer_len, 2, "Encoded length should be 2 bytes");
+	zassert_equal(buffer[0], 0x01, "ERR_CODE should be 0x01");
+	zassert_equal(buffer[1], 0x60, "ERR_INFO header should be 0x60 (tstr, len=0)");
+}
+
+/* Test EDHOC error response formatting: basic case */
+ZTEST(coap, test_edhoc_error_response_format)
+{
+	uint8_t req_buffer[128];
+	uint8_t resp_buffer[256];
+	struct coap_packet request;
+	struct coap_packet response;
+	int r;
+
+	/* Build a CON request */
+	uint8_t token[] = { 0x12, 0x34 };
+
+	r = coap_packet_init(&request, req_buffer, sizeof(req_buffer),
+			     COAP_VERSION_1, COAP_TYPE_CON, sizeof(token), token,
+			     COAP_METHOD_POST, 0x5678);
+	zassert_equal(r, 0, "Failed to initialize request");
+
+	/* Build EDHOC error response */
+	extern int coap_edhoc_build_error_response(struct coap_packet *response,
+						   const struct coap_packet *request,
+						   uint8_t code,
+						   int err_code,
+						   const char *diag_msg,
+						   uint8_t *buf, size_t buf_len);
+
+	r = coap_edhoc_build_error_response(&response, &request,
+					    COAP_RESPONSE_CODE_BAD_REQUEST,
+					    1, "EDHOC error",
+					    resp_buffer, sizeof(resp_buffer));
+	zassert_equal(r, 0, "Failed to build EDHOC error response");
+
+	/* Verify response properties */
+	zassert_equal(coap_header_get_type(&response), COAP_TYPE_ACK,
+		      "Response should be ACK for CON request");
+	zassert_equal(coap_header_get_code(&response), COAP_RESPONSE_CODE_BAD_REQUEST,
+		      "Response code should be 4.00");
+	zassert_equal(coap_header_get_id(&response), 0x5678,
+		      "Response ID should match request ID");
+
+	uint8_t resp_token[COAP_TOKEN_MAX_LEN];
+	uint8_t resp_tkl = coap_header_get_token(&response, resp_token);
+
+	zassert_equal(resp_tkl, sizeof(token), "Token length should match");
+	zassert_mem_equal(resp_token, token, sizeof(token), "Token should match");
+
+	/* Verify Content-Format option */
+	int content_format = coap_get_option_int(&response, COAP_OPTION_CONTENT_FORMAT);
+
+	zassert_equal(content_format, COAP_CONTENT_FORMAT_APP_EDHOC_CBOR_SEQ,
+		      "Content-Format should be application/edhoc+cbor-seq (64)");
+
+	/* Verify payload contains EDHOC error CBOR sequence */
+	uint16_t payload_len;
+	const uint8_t *payload = coap_packet_get_payload(&response, &payload_len);
+
+	zassert_not_null(payload, "Response should have payload");
+	zassert_true(payload_len > 0, "Payload should not be empty");
+
+	/* Verify CBOR sequence structure:
+	 * - First byte: ERR_CODE = 0x01
+	 * - Second byte: tstr header for "EDHOC error" (11 bytes) = 0x6B
+	 * - Remaining bytes: "EDHOC error"
+	 */
+	zassert_equal(payload[0], 0x01, "ERR_CODE should be 0x01");
+	zassert_equal(payload[1], 0x6B, "ERR_INFO header should be 0x6B");
+	zassert_mem_equal(&payload[2], "EDHOC error", 11, "ERR_INFO should be 'EDHOC error'");
+}
+
+/* Test EDHOC error response: NON request should get NON response */
+ZTEST(coap, test_edhoc_error_response_non)
+{
+	uint8_t req_buffer[128];
+	uint8_t resp_buffer[256];
+	struct coap_packet request;
+	struct coap_packet response;
+	int r;
+
+	/* Build a NON request */
+	r = coap_packet_init(&request, req_buffer, sizeof(req_buffer),
+			     COAP_VERSION_1, COAP_TYPE_NON_CON, 0, NULL,
+			     COAP_METHOD_POST, 0x1234);
+	zassert_equal(r, 0, "Failed to initialize request");
+
+	extern int coap_edhoc_build_error_response(struct coap_packet *response,
+						   const struct coap_packet *request,
+						   uint8_t code,
+						   int err_code,
+						   const char *diag_msg,
+						   uint8_t *buf, size_t buf_len);
+
+	r = coap_edhoc_build_error_response(&response, &request,
+					    COAP_RESPONSE_CODE_BAD_REQUEST,
+					    1, "EDHOC error",
+					    resp_buffer, sizeof(resp_buffer));
+	zassert_equal(r, 0, "Failed to build EDHOC error response");
+
+	/* Verify response type is NON for NON request */
+	zassert_equal(coap_header_get_type(&response), COAP_TYPE_NON_CON,
+		      "Response should be NON for NON request");
+}
+
+/* Test EDHOC error response: no OSCORE option present */
+ZTEST(coap, test_edhoc_error_response_no_oscore)
+{
+	uint8_t req_buffer[128];
+	uint8_t resp_buffer[256];
+	struct coap_packet request;
+	struct coap_packet response;
+	int r;
+
+	/* Build request */
+	r = coap_packet_init(&request, req_buffer, sizeof(req_buffer),
+			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
+			     COAP_METHOD_POST, 0x1234);
+	zassert_equal(r, 0, "Failed to initialize request");
+
+	extern int coap_edhoc_build_error_response(struct coap_packet *response,
+						   const struct coap_packet *request,
+						   uint8_t code,
+						   int err_code,
+						   const char *diag_msg,
+						   uint8_t *buf, size_t buf_len);
+
+	r = coap_edhoc_build_error_response(&response, &request,
+					    COAP_RESPONSE_CODE_BAD_REQUEST,
+					    1, "EDHOC error",
+					    resp_buffer, sizeof(resp_buffer));
+	zassert_equal(r, 0, "Failed to build EDHOC error response");
+
+	/* Verify OSCORE option is NOT present in error response
+	 * Per RFC 9668 Section 3.3.1, EDHOC error responses MUST NOT be OSCORE-protected
+	 */
+	struct coap_option option;
+
+	r = coap_find_options(&response, COAP_OPTION_OSCORE, &option, 1);
+	zassert_equal(r, 0, "OSCORE option should NOT be present in EDHOC error response");
+}
+
+/* Test EDHOC error response: different error codes */
+ZTEST(coap, test_edhoc_error_response_different_codes)
+{
+	uint8_t req_buffer[128];
+	uint8_t resp_buffer[256];
+	struct coap_packet request;
+	struct coap_packet response;
+	int r;
+
+	r = coap_packet_init(&request, req_buffer, sizeof(req_buffer),
+			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
+			     COAP_METHOD_POST, 0x1234);
+	zassert_equal(r, 0, "Failed to initialize request");
+
+	extern int coap_edhoc_build_error_response(struct coap_packet *response,
+						   const struct coap_packet *request,
+						   uint8_t code,
+						   int err_code,
+						   const char *diag_msg,
+						   uint8_t *buf, size_t buf_len);
+
+	/* Test with 5.00 Internal Server Error */
+	r = coap_edhoc_build_error_response(&response, &request,
+					    COAP_RESPONSE_CODE_INTERNAL_ERROR,
+					    1, "Server error",
+					    resp_buffer, sizeof(resp_buffer));
+	zassert_equal(r, 0, "Failed to build EDHOC error response");
+	zassert_equal(coap_header_get_code(&response), COAP_RESPONSE_CODE_INTERNAL_ERROR,
+		      "Response code should be 5.00");
+
+	/* Verify payload still has correct EDHOC error structure */
+	uint16_t payload_len;
+	const uint8_t *payload = coap_packet_get_payload(&response, &payload_len);
+
+	zassert_not_null(payload, "Response should have payload");
+	zassert_equal(payload[0], 0x01, "ERR_CODE should be 0x01");
+}
+
+/* Test EDHOC error response: buffer too small */
+ZTEST(coap, test_edhoc_error_response_buffer_too_small)
+{
+	uint8_t req_buffer[128];
+	uint8_t resp_buffer[10];  /* Too small - need at least ~25 bytes */
+	struct coap_packet request;
+	struct coap_packet response;
+	int r;
+
+	r = coap_packet_init(&request, req_buffer, sizeof(req_buffer),
+			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
+			     COAP_METHOD_POST, 0x1234);
+	zassert_equal(r, 0, "Failed to initialize request");
+
+	extern int coap_edhoc_build_error_response(struct coap_packet *response,
+						   const struct coap_packet *request,
+						   uint8_t code,
+						   int err_code,
+						   const char *diag_msg,
+						   uint8_t *buf, size_t buf_len);
+
+	r = coap_edhoc_build_error_response(&response, &request,
+					    COAP_RESPONSE_CODE_BAD_REQUEST,
+					    1, "EDHOC error",
+					    resp_buffer, sizeof(resp_buffer));
+	zassert_true(r < 0, "Should fail with buffer too small");
+}
+
 #endif /* CONFIG_COAP_EDHOC_COMBINED_REQUEST */
 
 ZTEST_SUITE(coap, NULL, NULL, NULL, NULL, NULL);
