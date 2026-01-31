@@ -218,6 +218,35 @@ The sequence-based token generation also applies to Request-Tag options used in
 blockwise transfers, ensuring that Request-Tags are never recycled as required
 by RFC 9175 §3.4.
 
+Request-Tag Option Support (RFC 9175)
+======================================
+
+The Zephyr CoAP client implements RFC 9175 Request-Tag option support for
+blockwise transfers. The Request-Tag option (Option 292) allows the server to
+match block-wise message fragments belonging to the same request operation.
+
+**Key Features**:
+
+- **Automatic Request-Tag generation**: When a Block1 (upload) transfer is
+  initiated, the client automatically generates a Request-Tag using the same
+  secure token generation mechanism.
+
+- **Block1 + Block2 continuity**: Per RFC 9175 §3.4, when Block1 and Block2
+  are combined in an operation (e.g., a large PUT request followed by a large
+  response), the Request-Tag from the Block1 phase is automatically carried
+  into the Block2 phase. This ensures the server can recognize all messages
+  as part of the same operation.
+
+- **Request-only**: The Request-Tag option is never sent in response messages,
+  as required by RFC 9175 §3.4.
+
+- **Format compliance**: Request-Tag values are 0-8 bytes of opaque data, as
+  specified in RFC 9175 §3.2.1.
+
+Applications using the :ref:`coap_client_interface` benefit from Request-Tag
+support automatically without code changes, as the client library handles
+Request-Tag generation and propagation internally.
+
 Testing
 *******
 
