@@ -3466,6 +3466,18 @@ Microchip SAM Platforms:
   labels:
     - "platform: Microchip SAM"
 
+Microchip Standalone Devices:
+  status: odd fixes
+  files:
+    - drivers/bbram/*microchip*
+    - drivers/ethernet/phy/*microchip*
+    - drivers/sensor/microchip/mcp9600/
+    - drivers/sensor/microchip/mcp970x/
+    - drivers/sensor/microchip/mtch9010/
+    - drivers/sensor/microchip/tcn75a/
+  labels:
+    - "platform: Microchip"
+
 Modbus:
   status: maintained
   maintainers:
