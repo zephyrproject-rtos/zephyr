@@ -3413,6 +3413,18 @@ Microchip MEC Platforms:
   labels:
     - "platform: Microchip MEC"
 
+Microchip PIC32 Platforms:
+  status: maintained
+  maintainers:
+    - nandojve
+  collaborators:
+    - ArunMCHP
+    - NhMchp
+  files:
+    - boards/microchip/pic32c/
+  labels:
+    - "platform: Microchip PIC32"
+
 Microchip RISC-V Platforms:
   status: maintained
   maintainers:
