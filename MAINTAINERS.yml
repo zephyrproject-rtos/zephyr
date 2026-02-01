@@ -3482,6 +3482,14 @@ Microchip Standalone Devices:
     - drivers/sensor/microchip/mcp970x/
     - drivers/sensor/microchip/mtch9010/
     - drivers/sensor/microchip/tcn75a/
+    - dts/bindings/*/microchip,cap*
+    - dts/bindings/*/microchip,enc*
+    - dts/bindings/*/microchip,mcp*
+    - dts/bindings/*/microchip,tcn*
+    - dts/bindings/**/microchip,ksz*
+    - dts/bindings/**/microchip,lan*
+    - dts/bindings/**/microchip,t1s*
+    - dts/bindings/**/microchip,vsc*
   labels:
     - "platform: Microchip"
 
