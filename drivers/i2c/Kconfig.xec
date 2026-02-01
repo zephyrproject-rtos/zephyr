@@ -18,3 +18,11 @@ config I2C_XEC_V2
 	select PINCTRL
 	help
 	  Enable the Microchip XEC I2C V2 driver.
+
+config I2C_XEC_V3
+	bool "XEC Microchip I2C version 3 driver"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_I2C_V3_ENABLED
+	select PINCTRL
+	help
+	  Enable the Microchip XEC I2C V3 byte mode driver.
