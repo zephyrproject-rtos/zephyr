@@ -833,34 +833,49 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 	entry->subcmd = &dsub_device_name;
 }
 
+#define HELP_COPY                                                                                  \
+	SHELL_HELP("Copy data from one flash device to another",                                   \
+		   "<src_device> <dst_device> <src_offset> <dst_offset> <size>")
+#define HELP_ERASE SHELL_HELP("Erase pages on a flash device", "<device> <page address> [<size>]")
+#define HELP_READ  /**/                                                                            \
+	SHELL_HELP("Read data from a flash device", "[<device>] <address> [<byte count>]")
+#define HELP_TEST SHELL_HELP("Test flash device", "[<device>] <address> <size> <repeat count>")
+#define HELP_WRITE                                                                                 \
+	SHELL_HELP("Write data to a flash device", "<device> <address> <dword> [<dword>...]")
+#define HELP_LOAD      SHELL_HELP("Load data into a flash device", "[<device>] <address> <size>")
+#define HELP_PAGE_INFO SHELL_HELP("Get information about a flash page", "[<device>] <address>")
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
-	flash_cmds,
-	SHELL_CMD_ARG(copy, &dsub_device_name,
-		      "<src_device> <dst_device> <src_offset> <dst_offset> <size>", cmd_copy, 5, 5),
-	SHELL_CMD_ARG(erase, &dsub_device_name, "<device> <page address> [<size>]", cmd_erase, 2,
-		      2),
-	SHELL_CMD_ARG(read, &dsub_device_name, "[<device>] <address> [<byte count>]", cmd_read, 2,
-		      2),
-	SHELL_CMD_ARG(test, &dsub_device_name, "[<device>] <address> <size> <repeat count>",
-		      cmd_test, 4, 1),
-	SHELL_CMD_ARG(write, &dsub_device_name, "<device> <address> <dword> [<dword>...]",
-		      cmd_write, 3, BUF_ARRAY_CNT),
-	SHELL_CMD_ARG(load, &dsub_device_name, "[<device>] <address> <size>", cmd_load, 3, 1),
-	SHELL_CMD_ARG(page_info, &dsub_device_name, "[<device>] <address>", cmd_page_info, 2, 1),
+	flash_cmds, /**/
+	SHELL_CMD_ARG(copy, &dsub_device_name, HELP_COPY, cmd_copy, 5, 5),
+	SHELL_CMD_ARG(erase, &dsub_device_name, HELP_ERASE, cmd_erase, 2, 2),
+	SHELL_CMD_ARG(read, &dsub_device_name, HELP_READ, cmd_read, 2, 2),
+	SHELL_CMD_ARG(test, &dsub_device_name, HELP_TEST, cmd_test, 4, 1),
+	SHELL_CMD_ARG(write, &dsub_device_name, HELP_WRITE, cmd_write, 3, BUF_ARRAY_CNT),
+	SHELL_CMD_ARG(load, &dsub_device_name, HELP_LOAD, cmd_load, 3, 1),
+	SHELL_CMD_ARG(page_info, &dsub_device_name, HELP_PAGE_INFO, cmd_page_info, 2, 1),
 
 #if DT_HAS_COMPAT_STATUS_OKAY(fixed_partitions)
-	SHELL_CMD_ARG(partitions, &dsub_device_name, "", cmd_partitions, 0, 0),
+#define HELP_PARTITIONS SHELL_HELP("Get partitionsformation", "")
+	SHELL_CMD_ARG(partitions, &dsub_device_name, HELP_PARTITIONS, cmd_partitions, 0, 0),
 #endif
 
 #ifdef CONFIG_FLASH_SHELL_TEST_COMMANDS
-	SHELL_CMD_ARG(read_test, &dsub_device_name, "[<device>] <address> <size> <repeat count>",
-		      cmd_read_test, 4, 1),
-	SHELL_CMD_ARG(write_test, &dsub_device_name, "[<device>] <address> <size> <repeat count>",
-		      cmd_write_test, 4, 1),
-	SHELL_CMD_ARG(erase_test, &dsub_device_name, "[<device>] <address> <size> <repeat count>",
-		      cmd_erase_test, 4, 1),
-	SHELL_CMD_ARG(erase_write_test, &dsub_device_name,
-		      "[<device>] <address> <size> <repeat count>", cmd_erase_write_test, 4, 1),
+#define HELP_READ_TEST                                                                             \
+	SHELL_HELP("Read test on a flash device", "[<device>] <address> <size> <repeat count>")
+#define HELP_WRITE_TEST                                                                            \
+	SHELL_HELP("Write test on a flash device", "[<device>] <address> <size> <repeat count>")
+#define HELP_ERASE_TEST                                                                            \
+	SHELL_HELP("Erase test on a flash device", "[<device>] <address> <size> <repeat count>")
+#define HELP_ERASE_WRITE_TEST                                                                      \
+	SHELL_HELP("Erase and write test on a flash device",                                       \
+		   "[<device>] <address> <size> <repeat count>")
+
+	SHELL_CMD_ARG(read_test, &dsub_device_name, HELP_READ_TEST, cmd_read_test, 4, 1),
+	SHELL_CMD_ARG(write_test, &dsub_device_name, HELP_WRITE_TEST, cmd_write_test, 4, 1),
+	SHELL_CMD_ARG(erase_test, &dsub_device_name, HELP_ERASE_TEST, cmd_erase_test, 4, 1),
+	SHELL_CMD_ARG(erase_write_test, &dsub_device_name, HELP_ERASE_WRITE_TEST,
+		      cmd_erase_write_test, 4, 1),
 #endif
 
 	SHELL_SUBCMD_SET_END);
