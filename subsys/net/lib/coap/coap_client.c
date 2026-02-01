@@ -1071,15 +1071,23 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 			return 0;
 		}
 
-		/* RFC 8613 Section 2: Validate OSCORE message format */
+		/* RFC 8613 Section 2 + RFC 7252 Section 5.4.5: Validate OSCORE message format
+		 * This includes checking for repeated OSCORE options.
+		 */
 		ret = coap_oscore_validate_msg(response);
 		if (ret < 0) {
 			LOG_ERR("Malformed OSCORE response (RFC 8613 Section 2)");
 
-			/* Still send ACK for CON */
+			/* RFC 7252 Section 5.4.1: Reject responses with repeated critical options
+			 * For CON responses, send RST per RFC 7252 Section 4.2
+			 */
 			if (response_type == COAP_TYPE_CON) {
-				(void)send_ack(client, response, COAP_CODE_EMPTY);
+				ret = send_rst(client, response);
+				if (ret < 0) {
+					LOG_ERR("Failed to send RST for malformed OSCORE response");
+				}
 			}
+			/* For NON/ACK responses: silently drop */
 
 			/* RFC 8613 Section 8.4 step 8: stop processing */
 			return 0;

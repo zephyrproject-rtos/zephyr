@@ -1020,6 +1020,7 @@ ZTEST(coap, test_oscore_option_extract_kid)
 	 * Test case: flag=0x08 (k=1, h=0, n=0), kid value=0x42
 	 * OSCORE option value: 0x0842
 	 */
+	memset(buffer, 0xFF, sizeof(buffer));
 	r = coap_packet_init(&cpkt, buffer, sizeof(buffer),
 			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
 			     COAP_METHOD_POST, 0);
@@ -1054,6 +1055,7 @@ ZTEST(coap, test_oscore_option_reserved_bits)
 	int r;
 
 	/* RFC 8613 §6.1: Reserved bits (5-7) must be zero */
+	memset(buffer, 0xFF, sizeof(buffer));
 	r = coap_packet_init(&cpkt, buffer, sizeof(buffer),
 			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
 			     COAP_METHOD_POST, 0);
@@ -1202,6 +1204,7 @@ ZTEST(coap, test_oscore_option_no_kid_flag)
 ZTEST(coap, test_oscore_option_parser_flags_zero_nonempty)
 {
 	uint8_t buffer[128];
+	uint8_t buffer2[128];
 	struct coap_packet cpkt;
 	uint8_t kid[16];
 	size_t kid_len;
@@ -1211,6 +1214,7 @@ ZTEST(coap, test_oscore_option_parser_flags_zero_nonempty)
 						  uint8_t *kid, size_t *kid_len);
 
 	/* Test 1: OSCORE option with value {0x00} (length 1) should return -EINVAL */
+	memset(buffer, 0xFF, sizeof(buffer));
 	r = coap_packet_init(&cpkt, buffer, sizeof(buffer),
 			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
 			     COAP_METHOD_POST, 0);
@@ -1229,7 +1233,8 @@ ZTEST(coap, test_oscore_option_parser_flags_zero_nonempty)
 		      "Should return -EINVAL for flags=0x00 with length>0 (RFC 8613 Section 2)");
 
 	/* Test 2: Empty OSCORE option (length 0) should return -ENOENT (valid, no kid) */
-	r = coap_packet_init(&cpkt, buffer, sizeof(buffer),
+	memset(buffer2, 0xFF, sizeof(buffer2));
+	r = coap_packet_init(&cpkt, buffer2, sizeof(buffer2),
 			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
 			     COAP_METHOD_POST, 0);
 	zassert_equal(r, 0, "Failed to initialize packet");
@@ -1385,4 +1390,106 @@ ZTEST(coap, test_oscore_error_response_format)
 
 	zassert_equal(max_age, 0, "Max-Age should be 0 for OSCORE error responses");
 }
+/**
+ * @brief Test OSCORE option not repeatable (RFC 8613 Section 2 + RFC 7252 Section 5.4.5)
+ *
+ * RFC 8613 Section 2: "The OSCORE option is critical... and not repeatable."
+ * RFC 7252 Section 5.4.5: Non-repeatable options MUST NOT appear more than once.
+ */
+ZTEST(coap, test_oscore_option_not_repeatable)
+{
+	struct coap_packet cpkt;
+	uint8_t buf[COAP_BUF_SIZE];
+	bool has_oscore;
+	int r;
+
+	/* Build a packet with two OSCORE options */
+	memset(buf, 0xFF, sizeof(buf));
+	r = coap_packet_init(&cpkt, buf, sizeof(buf),
+			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
+			     COAP_METHOD_GET, coap_next_id());
+	zassert_equal(r, 0, "Should init packet");
+
+	/* Add first OSCORE option */
+	uint8_t oscore_value1[] = { 0x08, 0x42 };
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_OSCORE,
+				      oscore_value1, sizeof(oscore_value1));
+	zassert_equal(r, 0, "Should append first OSCORE option");
+
+	/* Add second OSCORE option (supernumerary) */
+	uint8_t oscore_value2[] = { 0x08, 0x43 };
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_OSCORE,
+				      oscore_value2, sizeof(oscore_value2));
+	zassert_equal(r, 0, "Should append second OSCORE option");
+
+	/* Add payload marker and payload to satisfy RFC 8613 Section 2 */
+	r = coap_packet_append_payload_marker(&cpkt);
+	zassert_equal(r, 0, "Should append payload marker");
+
+	const uint8_t payload[] = "test";
+	r = coap_packet_append_payload(&cpkt, payload, sizeof(payload) - 1);
+	zassert_equal(r, 0, "Should append payload");
+
+	/* Test: coap_oscore_validate_option() should detect repeated OSCORE options */
+	r = coap_oscore_validate_option(&cpkt, &has_oscore);
+	zassert_equal(r, -EBADMSG,
+		      "Should return -EBADMSG for repeated OSCORE options (RFC 8613 Section 2), got %d",
+		      r);
+	zassert_false(has_oscore,
+		      "has_oscore should be false when validation fails");
+
+	/* Test: coap_oscore_validate_msg() should also fail */
+	r = coap_oscore_validate_msg(&cpkt);
+	zassert_equal(r, -EBADMSG,
+		      "coap_oscore_validate_msg() should fail for repeated OSCORE options, got %d",
+		      r);
+}
+
+/**
+ * @brief Test OSCORE kid extraction rejects duplicate OSCORE options
+ *
+ * RFC 8613 Section 2 + RFC 7252 Section 5.4.5: The OSCORE option is not repeatable.
+ * The kid extraction function must fail closed and reject packets with multiple
+ * OSCORE options to prevent ambiguity (which option's kid should be used?).
+ */
+ZTEST(coap, test_oscore_option_extract_kid_rejects_duplicate_oscore)
+{
+	struct coap_packet cpkt;
+	uint8_t buf[COAP_BUF_SIZE];
+	uint8_t kid[16];
+	size_t kid_len;
+	int r;
+
+	extern int coap_oscore_option_extract_kid(const struct coap_packet *cpkt,
+						  uint8_t *kid, size_t *kid_len);
+
+	/* Build a packet with two OSCORE options (first with valid kid encoding) */
+	memset(buf, 0xFF, sizeof(buf));
+	r = coap_packet_init(&cpkt, buf, sizeof(buf),
+			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
+			     COAP_METHOD_POST, coap_next_id());
+	zassert_equal(r, 0, "Should init packet");
+
+	/* Add first OSCORE option: flag=0x08 (k=1, h=0, n=0), kid=0x42 */
+	uint8_t oscore_value1[] = { 0x08, 0x42 };
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_OSCORE,
+				      oscore_value1, sizeof(oscore_value1));
+	zassert_equal(r, 0, "Should append first OSCORE option");
+
+	/* Add second OSCORE option: flag=0x08 (k=1, h=0, n=0), kid=0x43 */
+	uint8_t oscore_value2[] = { 0x08, 0x43 };
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_OSCORE,
+				      oscore_value2, sizeof(oscore_value2));
+	zassert_equal(r, 0, "Should append second OSCORE option");
+
+	/* Attempt to extract kid - should fail with -EBADMSG (not "first wins") */
+	kid_len = sizeof(kid);
+	r = coap_oscore_option_extract_kid(&cpkt, kid, &kid_len);
+	zassert_equal(r, -EBADMSG,
+		      "Should return -EBADMSG for duplicate OSCORE options, got %d", r);
+
+	/* Verify no "first wins" ambiguity - kid should not be extracted */
+	/* (kid_len may be modified, but return value indicates failure) */
+}
+
 #endif /* CONFIG_COAP_OSCORE && CONFIG_COAP_TEST_API_ENABLE */

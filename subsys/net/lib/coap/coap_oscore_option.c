@@ -9,6 +9,7 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 
 #include <zephyr/net/coap.h>
 #include "coap_oscore_option.h"
+#include "coap_oscore.h"
 
 #include <errno.h>
 #include <string.h>
@@ -22,14 +23,36 @@ int coap_oscore_option_extract_kid(const struct coap_packet *cpkt,
 	size_t oscore_len;
 	size_t pos = 0;
 	size_t max_kid_len = *kid_len;
+	bool has_oscore;
 
 	if (cpkt == NULL || kid == NULL || kid_len == NULL) {
 		return -EINVAL;
 	}
 
-	/* Find OSCORE option */
+	/* RFC 8613 Section 2 + RFC 7252 Section 5.4.5: Validate OSCORE option occurrence
+	 * Fail closed: reject packets with multiple OSCORE options before extracting kid
+	 */
+	ret = coap_oscore_validate_option(cpkt, &has_oscore);
+	if (ret == -EBADMSG) {
+		/* Multiple OSCORE options detected - reject per RFC 8613 Section 2 */
+		LOG_ERR("Cannot extract kid: multiple OSCORE options detected");
+		return -EBADMSG;
+	} else if (ret < 0) {
+		/* Other error (e.g., malformed option encoding) - propagate it
+		 * Don't call this "multiple options" since it's a different error
+		 */
+		return ret;
+	}
+
+	if (!has_oscore) {
+		/* No OSCORE option present */
+		return -ENOENT;
+	}
+
+	/* Find OSCORE option (we know it exists and is unique from validation above) */
 	ret = coap_find_options(cpkt, COAP_OPTION_OSCORE, &option, 1);
 	if (ret <= 0) {
+		/* Should not happen since validation returned has_oscore=true */
 		return -ENOENT;
 	}
 

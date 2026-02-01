@@ -23,6 +23,18 @@
 bool coap_oscore_msg_has_oscore(const struct coap_packet *cpkt);
 
 /**
+ * @brief Validate OSCORE option occurrence (RFC 8613 Section 2 + RFC 7252 Section 5.4.5)
+ *
+ * RFC 8613 Section 2: "The OSCORE option is critical... and not repeatable."
+ * RFC 7252 Section 5.4.5: Non-repeatable options MUST NOT appear more than once.
+ *
+ * @param cpkt CoAP packet to validate
+ * @param present Output parameter set to true if OSCORE option is present (exactly once)
+ * @return 0 if valid (0 or 1 occurrence), -EBADMSG if repeated (>1 occurrence)
+ */
+int coap_oscore_validate_option(const struct coap_packet *cpkt, bool *present);
+
+/**
  * @brief Validate OSCORE message according to RFC 8613 Section 2
  *
  * @param cpkt CoAP packet to validate

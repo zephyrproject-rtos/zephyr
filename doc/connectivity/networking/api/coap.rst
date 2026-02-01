@@ -751,11 +751,27 @@ OSCORE Option
 Per RFC 8613 Section 2, OSCORE uses option number **9** to indicate protected messages:
 
 - **Option Number**: 9
-- **Properties**: Critical, not safe-to-forward, part of cache key, not repeatable
+- **Properties**: Critical, not safe-to-forward, part of cache key, **not repeatable**
 - **Value**: Compressed COSE object (0-255 bytes)
 
 **Important**: A CoAP message with the OSCORE option but no payload is malformed and
 MUST be rejected (RFC 8613 Section 2). The Zephyr implementation enforces this rule.
+
+**Non-Repeatable Constraint** (RFC 8613 Section 2 + RFC 7252 Section 5.4.5):
+
+The OSCORE option is **not repeatable** and MUST NOT appear more than once in a message.
+Per RFC 7252 Section 5.4.5, each supernumerary occurrence of a non-repeatable critical
+option MUST be treated like an unrecognized critical option, causing the message to be
+rejected:
+
+- **Server behavior**: CON requests with multiple OSCORE options are rejected with
+  **4.02 (Bad Option)** response. NON requests are silently dropped.
+- **Client behavior**: Responses with multiple OSCORE options are rejected. For CON
+  responses, the client sends **RST**. For NON/ACK responses, the message is silently
+  dropped and not delivered to the application.
+
+The Zephyr implementation enforces this constraint automatically in both client and
+server, ensuring RFC compliance and fail-closed security behavior.
 
 Handling OSCORE When Not Supported
 -----------------------------------

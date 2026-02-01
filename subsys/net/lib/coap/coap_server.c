@@ -1186,14 +1186,34 @@ static int coap_server_process(int sock_fd)
 #endif /* CONFIG_COAP_EDHOC_COMBINED_REQUEST */
 
 #if defined(CONFIG_COAP_OSCORE)
-	/* RFC 8613 Section 2: Validate OSCORE message format */
+	/* RFC 8613 Section 2 + RFC 7252 Section 5.4.5: Validate OSCORE message format
+	 * This includes checking for repeated OSCORE options.
+	 * This must happen before any OSCORE/EDHOC processing.
+	 */
 	ret = coap_oscore_validate_msg(&request);
 	if (ret < 0) {
-		/* Malformed OSCORE message - reject per RFC 8613 Section 2 */
+		/* Malformed OSCORE message (including repeated OSCORE options) - reject */
 		LOG_ERR("Malformed OSCORE message");
-		ret = -EBADMSG;
+
+		/* RFC 7252 Section 5.4.1 + 5.4.5: Reject packets with repeated critical options */
+		if (coap_packet_is_request(&request)) {
+			uint8_t msg_type = coap_header_get_type(&request);
+
+			if (msg_type == COAP_TYPE_CON) {
+				/* CON request: send 4.02 Bad Option response */
+				(void)k_mutex_unlock(&lock);
+				(void)send_error_response(service, &request,
+							  COAP_RESPONSE_CODE_BAD_OPTION,
+							  &client_addr, client_addr_len);
+				return -EBADMSG;
+			}
+			/* NON request: silently drop per RFC 7252 Section 5.4.1 */
+		}
+		/* For responses or other message types, just drop */
+		ret = 0;
 		goto unlock;
 	}
+#endif /* CONFIG_COAP_OSCORE */
 
 #if defined(CONFIG_COAP_EDHOC_COMBINED_REQUEST)
 	/* RFC 9668 Section 3.1 + RFC 7252 Section 5.4.5: Validate EDHOC option occurrences

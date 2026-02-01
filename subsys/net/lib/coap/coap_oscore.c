@@ -30,6 +30,61 @@ bool coap_oscore_msg_has_oscore(const struct coap_packet *cpkt)
 }
 
 /**
+ * @brief Validate OSCORE option occurrence (RFC 8613 Section 2 + RFC 7252 Section 5.4.5)
+ *
+ * RFC 8613 Section 2: "The OSCORE option is critical... and not repeatable."
+ * RFC 7252 Section 5.4.5: Non-repeatable options MUST NOT appear more than once;
+ * each supernumerary occurrence MUST be treated like an unrecognized option.
+ *
+ * @param cpkt CoAP packet to validate
+ * @param present Output parameter set to true if OSCORE option is present (exactly once)
+ * @return 0 if valid (0 or 1 occurrence), -EBADMSG if repeated (>1 occurrence),
+ *         negative errno for other errors
+ */
+int coap_oscore_validate_option(const struct coap_packet *cpkt, bool *present)
+{
+	struct coap_option options[2] = {0};
+	int ret;
+
+	if (cpkt == NULL || present == NULL) {
+		return -EINVAL;
+	}
+
+	/* Try to find up to 2 OSCORE options to detect repetition
+	 * Note: coap_find_options() may return -EINVAL if option parsing fails,
+	 * which is different from finding multiple options. We only check for
+	 * repetition if parsing succeeds.
+	 */
+	ret = coap_find_options(cpkt, COAP_OPTION_OSCORE, options, 2);
+
+	if (ret < 0) {
+		/* Error parsing options - propagate the error
+		 * This could be due to malformed option encoding, not repetition
+		 */
+		*present = false;
+		return ret;
+	} else if (ret == 0) {
+		/* No OSCORE option present */
+		*present = false;
+		return 0;
+	} else if (ret == 1) {
+		/* Exactly one OSCORE option - valid */
+		*present = true;
+		return 0;
+	} else {
+		/* ret > 1: Multiple OSCORE options detected
+		 * RFC 7252 Section 5.4.5: Supernumerary occurrences of non-repeatable
+		 * critical options MUST be treated like unrecognized options.
+		 * RFC 7252 Section 5.4.1: Unrecognized critical options cause rejection.
+		 */
+		LOG_ERR("Multiple OSCORE options detected (%d occurrences), violates RFC 8613 Section 2",
+			ret);
+		*present = false;
+		return -EBADMSG;
+	}
+}
+
+/**
  * @brief Validate OSCORE message according to RFC 8613 Section 2
  *
  * RFC 8613 Section 2: "An endpoint receiving a CoAP message without payload
@@ -46,12 +101,28 @@ int coap_oscore_validate_msg(const struct coap_packet *cpkt)
 	struct coap_option option;
 	uint16_t payload_len;
 	const uint8_t *payload;
+	bool has_oscore;
 	int ret;
 
-	ret = coap_find_options(cpkt, COAP_OPTION_OSCORE, &option, 1);
-	if (ret <= 0) {
+	/* RFC 8613 Section 2 + RFC 7252 Section 5.4.5: Validate OSCORE option occurrence */
+	ret = coap_oscore_validate_option(cpkt, &has_oscore);
+	if (ret < 0) {
+		/* Multiple OSCORE options detected - reject per RFC 8613 Section 2 */
+		return ret;
+	}
+
+	if (!has_oscore) {
 		/* Not an OSCORE message, no validation needed */
 		return 0;
+	}
+
+	/* Get the OSCORE option for further validation
+	 * We know it exists and is unique from validation above
+	 */
+	ret = coap_find_options(cpkt, COAP_OPTION_OSCORE, &option, 1);
+	if (ret != 1) {
+		/* Should not happen since coap_oscore_validate_option() returned has_oscore=true */
+		return -EINVAL;
 	}
 
 	/* RFC 8613 Section 2: If flags are all zero, option value must be empty */
