@@ -128,7 +128,12 @@ int coap_edhoc_encode_error(int err_code, const char *diag_msg,
 static inline void coap_edhoc_secure_memzero(void *ptr, size_t len)
 {
 	__ASSERT_NO_MSG(ptr != NULL);
-	memset_s(ptr, len, 0, len);
+	/* Use volatile to prevent compiler optimization */
+	volatile uint8_t *p = (volatile uint8_t *)ptr;
+
+	while (len--) {
+		*p++ = 0;
+	}
 }
 
 #ifdef __cplusplus

@@ -189,37 +189,78 @@ static bool has_edhoc_resource(struct coap_resource *resources, size_t resources
 	return false;
 }
 
-/* Match query against synthetic EDHOC resource attributes */
+/* Match query against synthetic EDHOC resource attributes
+ * RFC 9668 Section 6: ed-r, ed-comb-req, and ed-i are valueless attributes
+ * whose values MUST be ignored when present in discovery requests.
+ */
 static bool match_queries_edhoc(const struct coap_option *query, int num_queries)
 {
-	const int href_len = strlen("href");
-	const int rt_len = strlen("rt");
+	const char *query_str;
+	uint16_t query_name_len;
+	const char *equals_pos;
 
 	if (num_queries == 0) {
 		return true;
 	}
 
-	/* Check href query */
-	if (query->len > href_len + 1 &&
-	    !strncmp((char *)query->value, "href", href_len)) {
-		const char *uri = (char *)query->value + href_len + 1;
-		uint16_t uri_len = query->len - (href_len + 1);
+	/* Parse query attribute name (before '=' if present) */
+	query_str = (char *)query->value;
+	query_name_len = query->len;
+	equals_pos = memchr(query_str, '=', query->len);
 
-		return match_path_uri(COAP_WELL_KNOWN_EDHOC_PATH, uri, uri_len);
+	if (equals_pos != NULL) {
+		query_name_len = equals_pos - query_str;
+	}
+
+	/* Check href=<uri> query */
+	if (query_name_len == 4 && !strncmp(query_str, "href", 4)) {
+		if (query->len > 5 && query_str[4] == '=') {
+			const char *uri = query_str + 5;
+			uint16_t uri_len = query->len - 5;
+
+			return match_path_uri(COAP_WELL_KNOWN_EDHOC_PATH, uri, uri_len);
+		}
+		return false;
 	}
 
 	/* Check rt=core.edhoc query */
-	if (query->len > rt_len + 1 &&
-	    !strncmp((char *)query->value, "rt", rt_len)) {
-		const char *rt_value = (char *)query->value + rt_len + 1;
-		uint16_t rt_value_len = query->len - (rt_len + 1);
+	if (query_name_len == 2 && !strncmp(query_str, "rt", 2)) {
+		if (query->len > 3 && query_str[2] == '=') {
+			const char *rt_value = query_str + 3;
+			uint16_t rt_value_len = query->len - 3;
 
-		if (rt_value_len == strlen("core.edhoc") &&
-		    !strncmp(rt_value, "core.edhoc", strlen("core.edhoc"))) {
-			return true;
+			if (rt_value_len == 10 &&
+			    !strncmp(rt_value, "core.edhoc", 10)) {
+				return true;
+			}
 		}
+		return false;
 	}
 
+	/* Check ed-r query (RFC 9668 Section 6: valueless, ignore any value) */
+	if (query_name_len == 4 && !strncmp(query_str, "ed-r", 4)) {
+		return true;
+	}
+
+	/* Check ed-comb-req query (RFC 9668 Section 6: valueless, ignore any value)
+	 * Only match if CONFIG_COAP_EDHOC_COMBINED_REQUEST is enabled
+	 */
+	if (query_name_len == 11 && !strncmp(query_str, "ed-comb-req", 11)) {
+#if defined(CONFIG_COAP_EDHOC_COMBINED_REQUEST)
+		return true;
+#else
+		return false;
+#endif
+	}
+
+	/* Check ed-i query (RFC 9668 Section 6: valueless, ignore any value)
+	 * Not supported yet (reverse-flow EDHOC not implemented)
+	 */
+	if (query_name_len == 4 && !strncmp(query_str, "ed-i", 4)) {
+		return false;
+	}
+
+	/* Unknown query parameter */
 	return false;
 }
 
@@ -595,7 +636,10 @@ int coap_well_known_core_get_len(struct coap_resource *resources,
 			goto skip_edhoc;
 		}
 
-		/* Format: </.well-known/edhoc>;rt=core.edhoc;ed-r[;ed-comb-req] */
+		/* Format: </.well-known/edhoc>;rt=core.edhoc;ed-r[;ed-comb-req]
+		 * RFC 9668 Section 6: ed-r and ed-comb-req are valueless attributes
+		 * (values are ignored in discovery requests)
+		 */
 		r = format_uri(COAP_WELL_KNOWN_EDHOC_PATH, response, &remaining,
 			       &offset, ctx.current, &more);
 		if (r < 0) {
@@ -829,7 +873,10 @@ int coap_well_known_core_get_len(struct coap_resource *resources,
 			}
 		}
 
-		/* Format: </.well-known/edhoc>;rt=core.edhoc;ed-r[;ed-comb-req] */
+		/* Format: </.well-known/edhoc>;rt=core.edhoc;ed-r[;ed-comb-req]
+		 * RFC 9668 Section 6: ed-r and ed-comb-req are valueless attributes
+		 * (values are ignored in discovery requests)
+		 */
 		r = format_uri(COAP_WELL_KNOWN_EDHOC_PATH, response);
 		if (r < 0) {
 			return r;

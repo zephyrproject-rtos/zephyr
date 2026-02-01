@@ -7446,6 +7446,95 @@ ZTEST(coap, test_well_known_core_edhoc_no_duplicate)
 			 "Should contain custom attribute, got: %s", payload_str);
 }
 
+/* Helper function for EDHOC query filter tests (RFC 9668 Section 6) */
+static void test_edhoc_query_filter(const char *query_str, const char *expected_attr)
+{
+	uint8_t request_buf[128];
+	uint8_t response_buf[512];
+	struct coap_packet request;
+	struct coap_packet response;
+	const uint8_t *payload;
+	uint16_t payload_len;
+	char payload_str[512];
+	int r;
+
+	/* Build GET request to /.well-known/core with query */
+	r = coap_packet_init(&request, request_buf, sizeof(request_buf),
+			     COAP_VERSION_1, COAP_TYPE_CON, 8, (uint8_t *)"token123",
+			     COAP_METHOD_GET, coap_next_id());
+	zassert_equal(r, 0, "Failed to init request");
+
+	/* Add Uri-Path options */
+	r = coap_packet_append_option(&request, COAP_OPTION_URI_PATH,
+				      ".well-known", strlen(".well-known"));
+	zassert_equal(r, 0, "Failed to add Uri-Path .well-known");
+
+	r = coap_packet_append_option(&request, COAP_OPTION_URI_PATH,
+				      "core", strlen("core"));
+	zassert_equal(r, 0, "Failed to add Uri-Path core");
+
+	/* Add Uri-Query option */
+	r = coap_packet_append_option(&request, COAP_OPTION_URI_QUERY,
+				      query_str, strlen(query_str));
+	zassert_equal(r, 0, "Failed to add Uri-Query");
+
+	/* Call with resources that don't match the query */
+	struct coap_resource resources[] = {
+		{ .path = (const char * const[]){"test", NULL} },
+		{ .path = NULL }
+	};
+
+	r = coap_well_known_core_get_len(resources, 1, &request, &response,
+					 response_buf, sizeof(response_buf));
+	zassert_equal(r, 0, "coap_well_known_core_get_len failed");
+
+	/* Get and convert payload to string */
+	payload = coap_packet_get_payload(&response, &payload_len);
+	zassert_not_null(payload, "Payload should be present");
+	zassert_true(payload_len > 0, "Payload should not be empty");
+	zassert_true(payload_len < sizeof(payload_str), "Payload too large for buffer");
+	memcpy(payload_str, payload, payload_len);
+	payload_str[payload_len] = '\0';
+
+	/* Verify EDHOC link is present */
+	zassert_not_null(strstr(payload_str, "</.well-known/edhoc>"),
+			 "Should contain EDHOC link, got: %s", payload_str);
+	zassert_not_null(strstr(payload_str, expected_attr),
+			 "Should contain %s attribute, got: %s", expected_attr, payload_str);
+
+	/* Verify test resource is NOT present (doesn't match query) */
+	zassert_is_null(strstr(payload_str, "</test>"),
+			"Should not contain </test> resource, got: %s", payload_str);
+}
+
+/* Test that /.well-known/core?ed-r filters correctly (RFC 9668 Section 6) */
+ZTEST(coap, test_well_known_core_edhoc_ed_r_filter)
+{
+	test_edhoc_query_filter("ed-r", ";ed-r");
+}
+
+/* Test that /.well-known/core?ed-r=<value> ignores value (RFC 9668 Section 6) */
+ZTEST(coap, test_well_known_core_edhoc_ed_r_value_ignored)
+{
+	test_edhoc_query_filter("ed-r=1", ";ed-r");
+}
+
+#if defined(CONFIG_COAP_EDHOC_COMBINED_REQUEST)
+
+/* Test that /.well-known/core?ed-comb-req filters correctly (RFC 9668 Section 6) */
+ZTEST(coap, test_well_known_core_edhoc_ed_comb_req_filter)
+{
+	test_edhoc_query_filter("ed-comb-req", ";ed-comb-req");
+}
+
+/* Test that /.well-known/core?ed-comb-req=<value> ignores value (RFC 9668 Section 6) */
+ZTEST(coap, test_well_known_core_edhoc_ed_comb_req_value_ignored)
+{
+	test_edhoc_query_filter("ed-comb-req=1", ";ed-comb-req");
+}
+
+#endif /* CONFIG_COAP_EDHOC_COMBINED_REQUEST */
+
 #endif /* CONFIG_COAP_SERVER_WELL_KNOWN_EDHOC */
 
 #if defined(CONFIG_COAP_EDHOC_COMBINED_REQUEST) && defined(CONFIG_COAP_CLIENT)
