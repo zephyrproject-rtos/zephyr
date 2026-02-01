@@ -1161,14 +1161,61 @@ The implementation correctly maps connection identifiers to OSCORE IDs per RFC 9
 
 This ensures proper bidirectional OSCORE communication after EDHOC key exchange.
 
+**Outer Block-wise Transfer Support (RFC 9668 Section 3.3.2)**:
+
+The server now supports outer Block1 transfers for EDHOC+OSCORE combined requests per
+RFC 9668 Section 3.3.2. This allows clients to send large combined payloads using
+block-wise transfers before OSCORE/EDHOC processing.
+
+When a combined request uses outer Block1 (RFC 7959), the server implements **Step 0**
+processing:
+
+1. **Detection**: Block1 option present AND (EDHOC option present OR matching cache entry)
+2. **Reassembly**: Server buffers blocks until all received, then reconstructs full request
+3. **Intermediate responses**: Server sends **2.31 Continue** for non-final blocks
+4. **Final processing**: After last block, removes outer Block1/Size1 options and proceeds
+   with normal EDHOC+OSCORE processing (RFC 9668 Section 3.3.1)
+
+**Configuration Options**:
+
+- :kconfig:option:`CONFIG_COAP_EDHOC_COMBINED_OUTER_BLOCK_CACHE_SIZE`: Number of concurrent
+  reassemblies per service (default 4)
+- :kconfig:option:`CONFIG_COAP_EDHOC_COMBINED_OUTER_BLOCK_LIFETIME_MS`: Reassembly timeout
+  in milliseconds (default 60000)
+- :kconfig:option:`CONFIG_COAP_EDHOC_COMBINED_OUTER_BLOCK_MAX_LEN`: Maximum reassembled
+  payload length (default: same as ``CONFIG_COAP_EDHOC_MAX_COMBINED_PAYLOAD_LEN``)
+
+**Security Considerations**:
+
+- **DoS resistance**: Limited concurrent reassemblies, lifetime timeout, size limit
+- **Fail-closed**: Malformed blocks or size violations abort reassembly and clear state
+- **Token requirement**: Block1 requires token for tracking (per RFC 7959)
+- **Zeroization**: Reassembly buffers are zeroized on eviction/completion
+
+**Error Handling**:
+
+- Missing token → 4.00 Bad Request
+- Out-of-order blocks → 4.00 Bad Request
+- Inconsistent block size → 4.00 Bad Request
+- Size limit exceeded → 4.13 Request Entity Too Large (with Size1 option)
+- Expired reassembly → Entry evicted, client must restart
+
+**Example Flow**:
+
+1. Client sends Block1 NUM=0, M=1 with EDHOC option → Server responds 2.31 Continue
+2. Client sends Block1 NUM=1, M=1 (no EDHOC option) → Server responds 2.31 Continue
+3. Client sends Block1 NUM=2, M=0 (last block) → Server reassembles and processes combined request
+4. Server proceeds with EDHOC+OSCORE processing on full payload
+
 **Not yet implemented**:
 
 - Full EDHOC handshake processing (message_1, message_2) - requires application integration
 - Client-side EDHOC+OSCORE combined request generation
-- Outer Block-wise transfer support for combined requests (RFC 9668 Section 3.3.2)
+- Client-side outer Block1 generation for combined requests
 
 The current implementation provides fully RFC-compliant server-side processing of EDHOC+OSCORE
-combined requests with automatic OSCORE context derivation and response protection.
+combined requests with automatic OSCORE context derivation, response protection, and outer
+Block1 reassembly support.
 
 Hop-Limit Option (RFC 8768)
 ============================

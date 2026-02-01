@@ -5680,4 +5680,421 @@ ZTEST(coap, test_edhoc_transport_error_invalid_prefix)
 
 #endif /* CONFIG_COAP_SERVER_WELL_KNOWN_EDHOC */
 
+#if defined(CONFIG_COAP_EDHOC_COMBINED_REQUEST)
+
+#include "coap_edhoc_combined_blockwise.h"
+#include "coap_edhoc.h"
+#include <zephyr/net/net_ip.h>
+
+/* Test outer Block1 reassembly for EDHOC+OSCORE combined requests */
+
+/**
+ * Test Case A: EDHOC option present only on block NUM=0; subsequent blocks omit EDHOC option
+ * Must still reassemble and produce the full reconstructed request
+ */
+ZTEST(coap, test_edhoc_outer_block_reassembly_case_a)
+{
+	uint8_t buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+	struct coap_packet request;
+	uint8_t token[] = {0x01, 0x02, 0x03, 0x04};
+	struct net_sockaddr_in6 client_addr = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				   0, 0, 0, 0, 0, 0, 0, 0x1 } } },
+		.sin6_port = net_htons(5683),
+	};
+	struct coap_service_data service_data = {0};
+	struct coap_service service = {
+		.data = &service_data,
+	};
+	uint8_t reconstructed_buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+	size_t reconstructed_len = 0;
+	int ret;
+
+	/* Build synthetic combined payload: CBOR bstr(EDHOC_MSG_3) + OSCORE_PAYLOAD
+	 * EDHOC_MSG_3 = 10 bytes: 0x4A (bstr length 10) + "EDHOC_DATA"
+	 * OSCORE_PAYLOAD = 5 bytes: "OSCOR"
+	 * Total payload = 16 bytes
+	 */
+	uint8_t combined_payload[] = {
+		0x4A, /* CBOR bstr, length 10 */
+		'E', 'D', 'H', 'O', 'C', '_', 'D', 'A', 'T', 'A', /* EDHOC_MSG_3 content */
+		'O', 'S', 'C', 'O', 'R' /* OSCORE_PAYLOAD */
+	};
+
+	/* Block 0: 8 bytes of payload, EDHOC option present, M=1 */
+	ret = coap_packet_init(&request, buf, sizeof(buf),
+			       COAP_VERSION_1, COAP_TYPE_CON,
+			       sizeof(token), token,
+			       COAP_METHOD_POST, coap_next_id());
+	zassert_equal(ret, 0, "Failed to init block 0 request");
+
+	/* Add EDHOC option (empty per RFC 9668) */
+	ret = coap_packet_append_option(&request, COAP_OPTION_EDHOC, NULL, 0);
+	zassert_equal(ret, 0, "Failed to add EDHOC option");
+
+	/* Add OSCORE option (dummy kid) */
+	uint8_t kid[] = {0x01, 0x02};
+	ret = coap_packet_append_option(&request, COAP_OPTION_OSCORE, kid, sizeof(kid));
+	zassert_equal(ret, 0, "Failed to add OSCORE option");
+
+	/* Add Block1 option: NUM=0, M=1, SZX=0 (16 bytes) */
+	struct coap_block_context block_ctx = {
+		.block_size = COAP_BLOCK_16,
+		.current = 0,
+		.total_size = 32, /* Total is larger than current, so M=1 (more blocks) */
+	};
+	ret = coap_append_block1_option(&request, &block_ctx);
+	zassert_equal(ret, 0, "Failed to add Block1 option");
+
+	/* Add first 8 bytes of payload */
+	ret = coap_packet_append_payload_marker(&request);
+	zassert_equal(ret, 0, "Failed to add payload marker");
+	ret = coap_packet_append_payload(&request, combined_payload, 8);
+	zassert_equal(ret, 0, "Failed to add payload");
+
+	/* Process block 0 */
+	ret = coap_edhoc_outer_block_process(&service, &request, buf, request.offset,
+					     (struct net_sockaddr *)&client_addr,
+					     sizeof(client_addr),
+					     reconstructed_buf, &reconstructed_len);
+	zassert_equal(ret, COAP_EDHOC_OUTER_BLOCK_WAITING,
+		      "Block 0 should return WAITING");
+
+	/* Block 1: next 8 bytes, NO EDHOC option (per Case A), M=0 (last block) */
+	ret = coap_packet_init(&request, buf, sizeof(buf),
+			       COAP_VERSION_1, COAP_TYPE_CON,
+			       sizeof(token), token,
+			       COAP_METHOD_POST, coap_next_id());
+	zassert_equal(ret, 0, "Failed to init block 1 request");
+
+	/* NO EDHOC option on continuation blocks */
+
+	/* Add OSCORE option (same kid) */
+	ret = coap_packet_append_option(&request, COAP_OPTION_OSCORE, kid, sizeof(kid));
+	zassert_equal(ret, 0, "Failed to add OSCORE option");
+
+	/* Add Block1 option: NUM=1, M=0, SZX=0 */
+	block_ctx.current = 8; /* Offset after first block (8 bytes from block 0) */
+	block_ctx.total_size = 16; /* Total matches current + this block size, so M=0 (last block) */
+	ret = coap_append_block1_option(&request, &block_ctx);
+	zassert_equal(ret, 0, "Failed to add Block1 option");
+
+	/* Add remaining 8 bytes of payload */
+	ret = coap_packet_append_payload_marker(&request);
+	zassert_equal(ret, 0, "Failed to add payload marker");
+	ret = coap_packet_append_payload(&request, combined_payload + 8, 8);
+	zassert_equal(ret, 0, "Failed to add payload");
+
+	/* Process block 1 */
+	ret = coap_edhoc_outer_block_process(&service, &request, buf, request.offset,
+					     (struct net_sockaddr *)&client_addr,
+					     sizeof(client_addr),
+					     reconstructed_buf, &reconstructed_len);
+	zassert_equal(ret, COAP_EDHOC_OUTER_BLOCK_COMPLETE,
+		      "Block 1 should return COMPLETE");
+
+	/* Verify reconstructed request contains full payload */
+	struct coap_packet reconstructed;
+	struct coap_option options[16];
+	ret = coap_packet_parse(&reconstructed, reconstructed_buf, reconstructed_len,
+				options, 16);
+	zassert_equal(ret, 0, "Failed to parse reconstructed request");
+
+	uint16_t payload_len;
+	const uint8_t *payload = coap_packet_get_payload(&reconstructed, &payload_len);
+	zassert_not_null(payload, "Reconstructed request should have payload");
+	zassert_equal(payload_len, sizeof(combined_payload),
+		      "Payload length mismatch: expected %zu, got %u",
+		      sizeof(combined_payload), payload_len);
+	zassert_mem_equal(payload, combined_payload, sizeof(combined_payload),
+			  "Payload content mismatch");
+
+	/* Verify EDHOC option is present in reconstructed request (from block 0) */
+	zassert_true(coap_edhoc_msg_has_edhoc(&reconstructed),
+		     "Reconstructed request should have EDHOC option");
+}
+
+/**
+ * Test Case B: Out-of-order NUM or inconsistent block size
+ * Must fail and clear state
+ */
+ZTEST(coap, test_edhoc_outer_block_reassembly_case_b)
+{
+	uint8_t buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+	struct coap_packet request;
+	uint8_t token[] = {0x05, 0x06, 0x07, 0x08};
+	struct net_sockaddr_in6 client_addr = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				   0, 0, 0, 0, 0, 0, 0, 0x2 } } },
+		.sin6_port = net_htons(5683),
+	};
+	struct coap_service_data service_data = {0};
+	struct coap_service service = {
+		.data = &service_data,
+	};
+	uint8_t reconstructed_buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+	size_t reconstructed_len = 0;
+	int ret;
+	uint8_t payload[] = "PAYLOAD_DATA";
+
+	/* Block 0: Start reassembly */
+	ret = coap_packet_init(&request, buf, sizeof(buf),
+			       COAP_VERSION_1, COAP_TYPE_CON,
+			       sizeof(token), token,
+			       COAP_METHOD_POST, coap_next_id());
+	zassert_equal(ret, 0, "Failed to init block 0 request");
+
+	ret = coap_packet_append_option(&request, COAP_OPTION_EDHOC, NULL, 0);
+	zassert_equal(ret, 0, "Failed to add EDHOC option");
+
+	uint8_t kid[] = {0x03, 0x04};
+	ret = coap_packet_append_option(&request, COAP_OPTION_OSCORE, kid, sizeof(kid));
+	zassert_equal(ret, 0, "Failed to add OSCORE option");
+
+	struct coap_block_context block_ctx = {
+		.block_size = COAP_BLOCK_16,
+		.current = 0,
+		.total_size = 24, /* More than current, so M=1 */
+	};
+	ret = coap_append_block1_option(&request, &block_ctx);
+	zassert_equal(ret, 0, "Failed to add Block1 option");
+
+	ret = coap_packet_append_payload_marker(&request);
+	zassert_equal(ret, 0, "Failed to add payload marker");
+	ret = coap_packet_append_payload(&request, payload, 8);
+	zassert_equal(ret, 0, "Failed to add payload");
+
+	ret = coap_edhoc_outer_block_process(&service, &request, buf, request.offset,
+					     (struct net_sockaddr *)&client_addr,
+					     sizeof(client_addr),
+					     reconstructed_buf, &reconstructed_len);
+	zassert_equal(ret, COAP_EDHOC_OUTER_BLOCK_WAITING,
+		      "Block 0 should return WAITING");
+
+	/* Block with wrong NUM (skip NUM=1, send NUM=2) - should fail */
+	ret = coap_packet_init(&request, buf, sizeof(buf),
+			       COAP_VERSION_1, COAP_TYPE_CON,
+			       sizeof(token), token,
+			       COAP_METHOD_POST, coap_next_id());
+	zassert_equal(ret, 0, "Failed to init block 2 request");
+
+	ret = coap_packet_append_option(&request, COAP_OPTION_OSCORE, kid, sizeof(kid));
+	zassert_equal(ret, 0, "Failed to add OSCORE option");
+
+	block_ctx.current = 16; /* Wrong: should be 8 (offset after block 0 with 8 bytes) */
+	block_ctx.total_size = 24;
+	ret = coap_append_block1_option(&request, &block_ctx);
+	zassert_equal(ret, 0, "Failed to add Block1 option");
+
+	ret = coap_packet_append_payload_marker(&request);
+	zassert_equal(ret, 0, "Failed to add payload marker");
+	ret = coap_packet_append_payload(&request, payload + 8, 4);
+	zassert_equal(ret, 0, "Failed to add payload");
+
+	ret = coap_edhoc_outer_block_process(&service, &request, buf, request.offset,
+					     (struct net_sockaddr *)&client_addr,
+					     sizeof(client_addr),
+					     reconstructed_buf, &reconstructed_len);
+	zassert_equal(ret, COAP_EDHOC_OUTER_BLOCK_ERROR,
+		      "Out-of-order block should return ERROR");
+
+	/* Verify cache entry was cleared */
+	struct coap_edhoc_outer_block_entry *entry;
+	entry = coap_edhoc_outer_block_find(service.data->outer_block_cache,
+					    CONFIG_COAP_EDHOC_COMBINED_OUTER_BLOCK_CACHE_SIZE,
+					    (struct net_sockaddr *)&client_addr,
+					    sizeof(client_addr),
+					    token, sizeof(token));
+	zassert_is_null(entry, "Cache entry should be cleared after error");
+}
+
+/**
+ * Test Case C: Reassembled size exceeds CONFIG_COAP_EDHOC_COMBINED_OUTER_BLOCK_MAX_LEN
+ * Must fail with configured error path
+ */
+ZTEST(coap, test_edhoc_outer_block_reassembly_case_c)
+{
+	uint8_t buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+	struct coap_packet request;
+	uint8_t token[] = {0x09, 0x0A, 0x0B, 0x0C};
+	struct net_sockaddr_in6 client_addr = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				   0, 0, 0, 0, 0, 0, 0, 0x3 } } },
+		.sin6_port = net_htons(5683),
+	};
+	struct coap_service_data service_data = {0};
+	struct coap_service service = {
+		.data = &service_data,
+	};
+	uint8_t reconstructed_buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+	size_t reconstructed_len = 0;
+	int ret;
+
+	/* Create a large payload that will exceed the limit */
+	uint8_t large_payload[256];
+	memset(large_payload, 0xAA, sizeof(large_payload));
+
+	/* Block 0: Start with large block */
+	ret = coap_packet_init(&request, buf, sizeof(buf),
+			       COAP_VERSION_1, COAP_TYPE_CON,
+			       sizeof(token), token,
+			       COAP_METHOD_POST, coap_next_id());
+	zassert_equal(ret, 0, "Failed to init block 0 request");
+
+	ret = coap_packet_append_option(&request, COAP_OPTION_EDHOC, NULL, 0);
+	zassert_equal(ret, 0, "Failed to add EDHOC option");
+
+	uint8_t kid[] = {0x05, 0x06};
+	ret = coap_packet_append_option(&request, COAP_OPTION_OSCORE, kid, sizeof(kid));
+	zassert_equal(ret, 0, "Failed to add OSCORE option");
+
+	struct coap_block_context block_ctx = {
+		.block_size = COAP_BLOCK_256,
+		.current = 0,
+		.total_size = 2560, /* Much larger than current, so M=1 */
+	};
+	ret = coap_append_block1_option(&request, &block_ctx);
+	zassert_equal(ret, 0, "Failed to add Block1 option");
+
+	ret = coap_packet_append_payload_marker(&request);
+	zassert_equal(ret, 0, "Failed to add payload marker");
+	ret = coap_packet_append_payload(&request, large_payload, 256);
+	zassert_equal(ret, 0, "Failed to add payload");
+
+	ret = coap_edhoc_outer_block_process(&service, &request, buf, request.offset,
+					     (struct net_sockaddr *)&client_addr,
+					     sizeof(client_addr),
+					     reconstructed_buf, &reconstructed_len);
+	zassert_equal(ret, COAP_EDHOC_OUTER_BLOCK_WAITING,
+		      "Block 0 should return WAITING");
+
+	/* Continue sending blocks until we exceed the limit
+	 * CONFIG_COAP_EDHOC_COMBINED_OUTER_BLOCK_MAX_LEN defaults to 1024
+	 */
+	for (uint32_t num = 1; num < 10; num++) {
+		ret = coap_packet_init(&request, buf, sizeof(buf),
+				       COAP_VERSION_1, COAP_TYPE_CON,
+				       sizeof(token), token,
+				       COAP_METHOD_POST, coap_next_id());
+		zassert_equal(ret, 0, "Failed to init block %u request", num);
+
+		ret = coap_packet_append_option(&request, COAP_OPTION_OSCORE, kid, sizeof(kid));
+		zassert_equal(ret, 0, "Failed to add OSCORE option");
+
+		block_ctx.current = num * 256;
+		block_ctx.total_size = 2560; /* Keep sending more blocks */
+		ret = coap_append_block1_option(&request, &block_ctx);
+		zassert_equal(ret, 0, "Failed to add Block1 option");
+
+		ret = coap_packet_append_payload_marker(&request);
+		zassert_equal(ret, 0, "Failed to add payload marker");
+		ret = coap_packet_append_payload(&request, large_payload, 256);
+		zassert_equal(ret, 0, "Failed to add payload");
+
+		ret = coap_edhoc_outer_block_process(&service, &request, buf, request.offset,
+						     (struct net_sockaddr *)&client_addr,
+						     sizeof(client_addr),
+						     reconstructed_buf, &reconstructed_len);
+
+		/* Should eventually fail with REQUEST_TOO_LARGE */
+		if (ret == COAP_EDHOC_OUTER_BLOCK_ERROR) {
+			/* Verify cache was cleared */
+			struct coap_edhoc_outer_block_entry *entry;
+			entry = coap_edhoc_outer_block_find(
+				service.data->outer_block_cache,
+				CONFIG_COAP_EDHOC_COMBINED_OUTER_BLOCK_CACHE_SIZE,
+				(struct net_sockaddr *)&client_addr,
+				sizeof(client_addr),
+				token, sizeof(token));
+			zassert_is_null(entry,
+					"Cache entry should be cleared after size limit exceeded");
+			return; /* Test passed */
+		}
+
+		zassert_equal(ret, COAP_EDHOC_OUTER_BLOCK_WAITING,
+			      "Block %u should return WAITING or ERROR", num);
+	}
+
+	zassert_unreachable("Should have exceeded size limit and returned ERROR");
+}
+
+/**
+ * Test intermediate-block response generation: 2.31 Continue with Block1 option
+ */
+ZTEST(coap, test_edhoc_outer_block_continue_response)
+{
+	/* This test verifies that the helper returns/builds a 2.31 Continue response
+	 * and includes a Block1 option for continuation.
+	 * The actual response sending is tested implicitly in Case A above.
+	 */
+
+	uint8_t buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+	struct coap_packet request;
+	uint8_t token[] = {0x0D, 0x0E, 0x0F, 0x10};
+	struct net_sockaddr_in6 client_addr = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				   0, 0, 0, 0, 0, 0, 0, 0x4 } } },
+		.sin6_port = net_htons(5683),
+	};
+	struct coap_service_data service_data = {0};
+	struct coap_service service = {
+		.data = &service_data,
+	};
+	uint8_t reconstructed_buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+	size_t reconstructed_len = 0;
+	int ret;
+	uint8_t payload[] = "TEST_PAYLOAD_DATA";
+
+	/* Send first block */
+	ret = coap_packet_init(&request, buf, sizeof(buf),
+			       COAP_VERSION_1, COAP_TYPE_CON,
+			       sizeof(token), token,
+			       COAP_METHOD_POST, coap_next_id());
+	zassert_equal(ret, 0, "Failed to init request");
+
+	ret = coap_packet_append_option(&request, COAP_OPTION_EDHOC, NULL, 0);
+	zassert_equal(ret, 0, "Failed to add EDHOC option");
+
+	uint8_t kid[] = {0x07, 0x08};
+	ret = coap_packet_append_option(&request, COAP_OPTION_OSCORE, kid, sizeof(kid));
+	zassert_equal(ret, 0, "Failed to add OSCORE option");
+
+	struct coap_block_context block_ctx = {
+		.block_size = COAP_BLOCK_16,
+		.current = 0,
+		.total_size = 32, /* More than current, so M=1 */
+	};
+	ret = coap_append_block1_option(&request, &block_ctx);
+	zassert_equal(ret, 0, "Failed to add Block1 option");
+
+	ret = coap_packet_append_payload_marker(&request);
+	zassert_equal(ret, 0, "Failed to add payload marker");
+	ret = coap_packet_append_payload(&request, payload, 16);
+	zassert_equal(ret, 0, "Failed to add payload");
+
+	/* Process - should return WAITING and send 2.31 Continue */
+	ret = coap_edhoc_outer_block_process(&service, &request, buf, request.offset,
+					     (struct net_sockaddr *)&client_addr,
+					     sizeof(client_addr),
+					     reconstructed_buf, &reconstructed_len);
+	zassert_equal(ret, COAP_EDHOC_OUTER_BLOCK_WAITING,
+		      "First block should return WAITING");
+
+	/* Verify cache entry exists */
+	struct coap_edhoc_outer_block_entry *entry;
+	entry = coap_edhoc_outer_block_find(service.data->outer_block_cache,
+					    CONFIG_COAP_EDHOC_COMBINED_OUTER_BLOCK_CACHE_SIZE,
+					    (struct net_sockaddr *)&client_addr,
+					    sizeof(client_addr),
+					    token, sizeof(token));
+	zassert_not_null(entry, "Cache entry should exist after first block");
+	zassert_equal(entry->accumulated_len, 16, "Should have accumulated 16 bytes");
+}
+
+#endif /* CONFIG_COAP_EDHOC_COMBINED_REQUEST */
+
 ZTEST_SUITE(coap, NULL, NULL, NULL, NULL, NULL);

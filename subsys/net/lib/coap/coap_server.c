@@ -42,6 +42,7 @@ extern int coap_edhoc_transport_handle_request(const struct coap_service *servic
 #include "coap_oscore_option.h"
 #include "coap_edhoc_session.h"
 #include "coap_oscore_ctx_cache.h"
+#include "coap_edhoc_combined_blockwise.h"
 
 /* Forward declarations for weak wrappers */
 extern int coap_edhoc_msg3_process_wrapper(const uint8_t *edhoc_msg3,
@@ -1065,6 +1066,83 @@ static int coap_server_process(int sock_fd)
 		ret = -ENOENT;
 		goto unlock;
 	}
+
+#if defined(CONFIG_COAP_EDHOC_COMBINED_REQUEST)
+	/* RFC 9668 Section 3.3.2 Step 0: Handle outer Block1 for EDHOC+OSCORE combined requests
+	 * This must happen BEFORE OSCORE/EDHOC processing to reassemble the full payload.
+	 *
+	 * Detection:
+	 * - Start condition: EDHOC option present AND Block1 option present
+	 * - Continuation condition: Block1 present AND matching cache entry (even without EDHOC option)
+	 */
+	{
+		struct coap_option block1_opt;
+		int block1_ret = coap_find_options(&request, COAP_OPTION_BLOCK1, &block1_opt, 1);
+
+		if (block1_ret == 1) {
+			/* Block1 option present - check if this is a combined request reassembly */
+			uint8_t reconstructed_buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+			size_t reconstructed_len = 0;
+
+			ret = coap_edhoc_outer_block_process(service, &request, buf, received,
+							     &client_addr, client_addr_len,
+							     reconstructed_buf, &reconstructed_len);
+
+			if (ret == COAP_EDHOC_OUTER_BLOCK_WAITING) {
+				/* Waiting for more blocks - 2.31 Continue already sent */
+				LOG_DBG("Waiting for more outer Block1 blocks");
+				ret = 0;
+				goto unlock;
+			} else if (ret == COAP_EDHOC_OUTER_BLOCK_ERROR) {
+				/* Error occurred - error response already sent or not a combined request */
+				/* Check if this was actually a combined request that failed */
+				bool has_edhoc = coap_edhoc_msg_has_edhoc(&request);
+				if (has_edhoc) {
+					/* Was a combined request - error already handled */
+					LOG_DBG("Outer Block1 processing failed for combined request");
+					ret = -EINVAL;
+					goto unlock;
+				}
+				/* Not a combined request - continue with normal processing */
+				LOG_DBG("Not an outer Block1 combined request, continuing");
+			} else if (ret == COAP_EDHOC_OUTER_BLOCK_COMPLETE) {
+				/* Reassembly complete - replace request with reconstructed buffer */
+				LOG_DBG("Outer Block1 reassembly complete, processing full request");
+
+				/* Re-parse the reconstructed request */
+				struct coap_option options_reparse[MAX_OPTIONS] = { 0 };
+				ret = coap_packet_parse(&request, reconstructed_buf, reconstructed_len,
+							options_reparse, MAX_OPTIONS);
+				if (ret < 0) {
+					LOG_ERR("Failed to parse reconstructed request (%d)", ret);
+					(void)send_error_response(service, &request,
+								  COAP_RESPONSE_CODE_BAD_REQUEST,
+								  &client_addr, client_addr_len);
+					goto unlock;
+				}
+
+				/* Copy reconstructed buffer to main buffer for further processing */
+				memcpy(buf, reconstructed_buf, reconstructed_len);
+				received = reconstructed_len;
+
+				/* Remove outer Block1 and Size1 options per RFC 9668 Section 3.3.2 */
+				ret = coap_packet_remove_option(&request, COAP_OPTION_BLOCK1);
+				if (ret < 0 && ret != -ENOENT) {
+					LOG_WRN("Failed to remove Block1 option (%d)", ret);
+					/* Continue anyway - not fatal */
+				}
+				ret = coap_packet_remove_option(&request, COAP_OPTION_SIZE1);
+				if (ret < 0 && ret != -ENOENT) {
+					LOG_WRN("Failed to remove Size1 option (%d)", ret);
+					/* Continue anyway - not fatal */
+				}
+
+				/* Continue with normal EDHOC+OSCORE processing below */
+				LOG_DBG("Proceeding with EDHOC+OSCORE processing on reassembled request");
+			}
+		}
+	}
+#endif /* CONFIG_COAP_EDHOC_COMBINED_REQUEST */
 
 #if defined(CONFIG_COAP_OSCORE)
 	/* RFC 8613 Section 2: Validate OSCORE message format */

@@ -460,6 +460,42 @@ config COAP_EDHOC_MAX_COMBINED_PAYLOAD_LEN
 
 	  This is a fail-closed security measure to prevent resource exhaustion.
 
+config COAP_EDHOC_COMBINED_OUTER_BLOCK_CACHE_SIZE
+	int "EDHOC+OSCORE combined request outer Block1 cache size"
+	default 4
+	depends on COAP_EDHOC_COMBINED_REQUEST
+	help
+	  Number of concurrent outer Block1 reassemblies to support for
+	  EDHOC+OSCORE combined requests per service endpoint. Each entry
+	  tracks an in-progress blockwise transfer keyed by client address
+	  and token. When the cache is full, the oldest entry is evicted.
+
+	  This limits DoS exposure from clients sending incomplete blockwise
+	  transfers per RFC 9668 Section 3.3.2.
+
+config COAP_EDHOC_COMBINED_OUTER_BLOCK_LIFETIME_MS
+	int "EDHOC+OSCORE outer Block1 reassembly lifetime in milliseconds"
+	default 60000
+	depends on COAP_EDHOC_COMBINED_REQUEST
+	help
+	  Time in milliseconds for which an incomplete outer Block1 reassembly
+	  remains valid. After this time, the reassembly is considered expired
+	  and will be evicted from the cache. This prevents memory exhaustion
+	  from abandoned blockwise transfers.
+
+config COAP_EDHOC_COMBINED_OUTER_BLOCK_MAX_LEN
+	int "Maximum EDHOC+OSCORE outer Block1 reassembled payload length"
+	default COAP_EDHOC_MAX_COMBINED_PAYLOAD_LEN
+	depends on COAP_EDHOC_COMBINED_REQUEST
+	help
+	  Maximum total length in bytes for reassembled outer Block1 payloads
+	  in EDHOC+OSCORE combined requests. If a reassembly would exceed this
+	  limit, it is aborted and the client receives 4.13 Request Entity Too
+	  Large per RFC 7959.
+
+	  This is a fail-closed security measure to prevent resource exhaustion
+	  from malicious blockwise transfers.
+
 config COAP_EDHOC_SESSION_CACHE_SIZE
 	int "EDHOC session cache size per service"
 	default 4

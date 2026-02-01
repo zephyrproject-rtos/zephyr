@@ -113,6 +113,25 @@ struct coap_oscore_ctx_cache_entry {
 	int64_t timestamp;                /**< Creation timestamp */
 	bool active;                      /**< True if entry is active */
 };
+
+/**
+ * Outer Block1 reassembly entry for EDHOC+OSCORE combined requests.
+ * Tracks in-progress blockwise transfers keyed by client address and token.
+ * Used for RFC 9668 Section 3.3.2 Step 0 processing.
+ */
+struct coap_edhoc_outer_block_entry {
+	struct net_sockaddr addr;                /**< Client address */
+	net_socklen_t addr_len;                  /**< Address length */
+	uint8_t token[COAP_TOKEN_MAX_LEN];       /**< Token from block 0 */
+	uint8_t tkl;                             /**< Token length */
+	struct coap_block_context block_ctx;     /**< Block context for tracking */
+	uint8_t header_template[128];            /**< Header/options from block 0 (up to payload marker) */
+	size_t header_template_len;              /**< Length of header template */
+	uint8_t reassembly_buf[CONFIG_COAP_EDHOC_COMBINED_OUTER_BLOCK_MAX_LEN]; /**< Reassembly buffer */
+	size_t accumulated_len;                  /**< Current accumulated payload length */
+	int64_t timestamp;                       /**< Creation timestamp */
+	bool active;                             /**< True if entry is active */
+};
 #endif /* CONFIG_COAP_EDHOC_COMBINED_REQUEST */
 #endif /* CONFIG_COAP_EDHOC */
 
@@ -155,6 +174,12 @@ struct coap_service_data {
 	 * Used for RFC 9668 Section 3.3.1 Step 5 and subsequent OSCORE operations.
 	 */
 	struct coap_oscore_ctx_cache_entry oscore_ctx_cache[CONFIG_COAP_OSCORE_CTX_CACHE_SIZE];
+	/**
+	 * Outer Block1 reassembly cache for EDHOC+OSCORE combined requests.
+	 * Tracks in-progress blockwise transfers keyed by client address and token.
+	 * Used for RFC 9668 Section 3.3.2 Step 0 processing.
+	 */
+	struct coap_edhoc_outer_block_entry outer_block_cache[CONFIG_COAP_EDHOC_COMBINED_OUTER_BLOCK_CACHE_SIZE];
 #endif
 #endif
 };
