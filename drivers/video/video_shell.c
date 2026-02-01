@@ -73,7 +73,7 @@ static const struct device *video_shell_get_dev_by_num(int num)
 	size_t n = z_device_get_all_static(&dev_list);
 
 	for (size_t i = 0; i < n; i++) {
-		if (!DEVICE_API_IS(video, (&dev_list[i]))) {
+		if (!device_is_video_and_ready(&dev_list[i])) {
 			continue;
 		}
 		if (num == 0) {
@@ -862,7 +862,7 @@ static void complete_video_ctrl_name_dev(size_t idx, struct shell_static_entry *
 
 	/* Check which device was selected */
 	dev = video_shell_dev = video_shell_get_dev_by_num(devn);
-	if (!device_is_ready(dev)) {
+	if (dev == NULL) {
 		return;
 	}
 
@@ -911,8 +911,12 @@ static void complete_video_ctrl_dev(size_t idx, struct shell_static_entry *entry
 	entry->help = NULL;
 	entry->subcmd = NULL;
 
+	if (idx >= ARRAY_SIZE(dsub_video_ctrl_name_dev)) {
+		return;
+	}
+
 	dev = video_shell_get_dev_by_num(idx);
-	if (!device_is_ready(dev) || idx >= ARRAY_SIZE(dsub_video_ctrl_name_dev)) {
+	if (dev == NULL) {
 		return;
 	}
 
@@ -989,7 +993,7 @@ static void complete_video_format_dir_dev(size_t idx, struct shell_static_entry 
 	/* Check which device was selected */
 
 	dev = video_shell_dev = video_shell_get_dev_by_num(devn);
-	if (!device_is_ready(dev)) {
+	if (dev == NULL) {
 		return;
 	}
 
@@ -1028,8 +1032,12 @@ static void complete_video_format_dev(size_t idx, struct shell_static_entry *ent
 	entry->help = NULL;
 	entry->subcmd = NULL;
 
+	if (idx >= ARRAY_SIZE(dsub_video_format_dir_dev)) {
+		return;
+	}
+
 	dev = video_shell_get_dev_by_num(idx);
-	if (!device_is_ready(dev) || idx >= ARRAY_SIZE(dsub_video_format_dir_dev)) {
+	if (dev == NULL) {
 		return;
 	}
 
@@ -1233,8 +1241,12 @@ static void complete_video_selection_dev(size_t idx, struct shell_static_entry *
 	entry->help = NULL;
 	entry->subcmd = NULL;
 
-	dev = video_shell_get_dev_by_num(idx);
 	if (idx >= ARRAY_SIZE(dsub_video_format_dir_dev)) {
+		return;
+	}
+
+	dev = video_shell_get_dev_by_num(idx);
+	if (dev == NULL) {
 		return;
 	}
 
