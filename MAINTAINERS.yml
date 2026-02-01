@@ -3407,6 +3407,7 @@ Microchip MEC Platforms:
     - soc/microchip/mec/
     - drivers/*/*xec*
     - drivers/sensor/microchip/mchp_tach_xec/
+    - include/zephyr/*/*/*xec*
     - tests/boards/mec15xxevb_assy6853/
     - tests/boards/mec172xevb_assy6906/
     - dts/bindings/*/microchip,mec*
@@ -3459,6 +3460,7 @@ Microchip RISC-V Platforms:
     - drivers/*/*mchp*mss*
     - dts/bindings/*/microchip,mpfs*
     - dts/bindings/*/microchip,coreuart*
+    - include/zephyr/dt-bindings/reset/mchp_mss*
   labels:
     - "platform: Microchip RISC-V"
 
@@ -3476,6 +3478,8 @@ Microchip SAM Platforms:
     - soc/microchip/sam/sama*/
     - drivers/*/*sam*
     - dts/bindings/*/atmel,*
+    - include/zephyr/*/*/*sam*
+    - include/zephyr/*/*/*atmel*
   labels:
     - "platform: Microchip SAM"
 
