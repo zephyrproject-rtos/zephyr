@@ -3404,7 +3404,6 @@ Microchip MEC Platforms:
     - boards/microchip/mec*/
     - dts/arm/microchip/
     - soc/microchip/mec/
-    - drivers/*/*mchp*.c
     - tests/boards/mec15xxevb_assy6853/
     - tests/boards/mec172xevb_assy6906/
     - dts/bindings/*/microchip,mec*
@@ -3446,6 +3445,7 @@ Microchip SAM Platforms:
     - soc/atmel/
     - soc/microchip/sam/
     - drivers/*/*sam*.c
+    - drivers/*/*mchp*
     - dts/bindings/*/atmel,*
   labels:
     - "platform: Microchip SAM"
