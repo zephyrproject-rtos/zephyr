@@ -27,6 +27,19 @@
 
 #include "flash_stm32.h"
 
+#if !CONFIG_FLASH_STM32WBA_BYTE_WRITE_EMULATION
+#define BYTE_WRITE_EMULATE 0
+#else
+#define BYTE_WRITE_EMULATE 1
+#endif
+
+
+#ifdef BYTE_WRITE_EMULATE
+#define BYTE_WRITE_EMULATE_MAX 1024
+static uint8_t middle_workbuf[BYTE_WRITE_EMULATE_MAX] __aligned(4);
+#endif
+
+
 LOG_MODULE_REGISTER(flash_stm32, CONFIG_FLASH_LOG_LEVEL);
 
 /* Let's wait for double the max erase time to be sure that the operation is
@@ -203,37 +216,267 @@ static int flash_stm32_erase(const struct device *dev, off_t offset,
 	return rc;
 }
 
+static uint8_t num_write_blocks(size_t write_len)
+{
+	const uint8_t mod_16 = write_len % 16U;
+	uint8_t rc = 0;
+
+	if (write_len == 0) {
+		LOG_DBG("Write ready.");
+		rc = 1;
+	} else {
+		if (mod_16 == 0) {
+			rc = 2;
+		} else if (mod_16 > 0) {
+			if (write_len > 16) {
+				rc = 3;
+			} else {
+				rc = 4;
+			}
+		} else {
+			LOG_ERR("Invalid write length. ");
+			return -EINVAL;
+		}
+	}
+
+	return rc;
+}
+
+
 static int flash_stm32_write(const struct device *dev, off_t offset,
 			     const void *data, size_t len)
 {
 	int rc;
 
+	bool unaligned_flag = 0;
+
 	if (!flash_stm32_valid_range(dev, offset, len, true)) {
-		LOG_ERR("Write range invalid. Offset: %ld, len: %zu",
-			(long int) offset, len);
+#if !BYTE_WRITE_EMULATE
+		LOG_ERR("Write range invalid. Offset: %p, len: %zu",
+			(void *)offset, len);
 		return -EINVAL;
+#else
+		unaligned_flag = 1;
+#endif
 	}
 
 	if (!len) {
 		return 0;
 	}
 
-	flash_stm32_sem_take(dev);
+	if (!unaligned_flag) {
 
-	LOG_DBG("Write offset: %ld, len: %zu", (long int) offset, len);
+		flash_stm32_sem_take(dev);
 
-	rc = flash_stm32_cr_lock(dev, false);
-	if (rc == 0) {
-		rc = flash_stm32_write_range(dev, offset, data, len);
+		LOG_DBG("Write offset: %ld, len: %zu", (long int) offset, len);
+
+		rc = flash_stm32_cr_lock(dev, false);
+		if (rc == 0) {
+			rc = flash_stm32_write_range(dev, offset, data, len);
+		}
+
+		int rc2 = flash_stm32_cr_lock(dev, true);
+
+		if (!rc) {
+			rc = rc2;
+		}
+
+		flash_stm32_sem_give(dev);
 	}
 
-	int rc2 = flash_stm32_cr_lock(dev, true);
+	if (unaligned_flag == 1) {
+		uint8_t start_buffer[16];
+		uint8_t end_buffer[16];
 
-	if (!rc) {
-		rc = rc2;
+		size_t current_write_length = 0;
+		size_t middle_block_length = 0;
+		size_t final_block_length = 0;
+
+		off_t first_block_start_address = 0;
+		off_t middle_block_start_address = 0;
+		off_t final_block_start_address = 0;
+		uint8_t offset_in_block = 0;
+
+		size_t data_buffer_ctr = 0;
+		uint8_t write_counter = 0;
+		size_t final_buffer_ctr = 0;
+
+		uint8_t remaining_bytes = 0;
+
+		uint8_t *middle_block_data_buffer = NULL;
+
+		int retval = 0;
+
+		/* 1. Start address of first block to write */
+		first_block_start_address = offset & ~0xF;
+
+		/* 1.b. Calculate offset within the first block */
+		offset_in_block = offset & 0xF;
+
+		/* 1.c. Calculate present length. */
+		current_write_length = len;
+
+		/* 1.d. Calculate remaining bytes before hitting next block */
+		remaining_bytes = 16 - offset_in_block;
+
+		if (remaining_bytes > len) {
+			remaining_bytes = len;
+		}
+
+		LOG_DBG("First block address : %p, rem bytes = %d and local offset: %d",
+			(void *)first_block_start_address, remaining_bytes, offset_in_block);
+
+		/* 2. Read the first block of memory. */
+		retval = flash_stm32_read(dev, first_block_start_address,
+					  (void *)start_buffer, 16);
+		if (retval != 0) {
+			LOG_ERR("Failed to read target region into SRAM - Write will not continue.");
+			return -EINVAL;
+		}
+
+		/* 3. Modify buffer with user data. */
+		for (uint8_t i = offset_in_block;
+		     i < (remaining_bytes + offset_in_block); i++) {
+			/* Fill start buffer and maintain metadata */
+			start_buffer[i] = ((const uint8_t *)data)[data_buffer_ctr];
+			data_buffer_ctr++;
+			current_write_length--;
+		}
+
+		/* 4. Use local helper function to decide which write logic to use. */
+		write_counter = num_write_blocks(current_write_length);
+
+		switch (write_counter) {
+		case 1:
+		{
+			middle_block_length = 0;
+			final_block_length = 0;
+			goto write_op;
+		}
+		break;
+
+		case 2:
+		{
+			middle_block_start_address = first_block_start_address + 16;
+			middle_block_length = current_write_length;
+			final_block_length = 0;
+		}
+		break;
+
+		case 3:
+		{
+			middle_block_start_address = first_block_start_address + 16;
+			middle_block_length = (current_write_length & ~0xF);
+
+			final_block_length = current_write_length - middle_block_length;
+			final_block_start_address =
+				middle_block_start_address + middle_block_length;
+
+			/* 4.b. Read the final 16 bytes to write into SRAM. */
+			retval = flash_stm32_read(dev, final_block_start_address,
+						  (void *)end_buffer, 16);
+			if (retval != 0) {
+				LOG_ERR("Failed to read target region into SRAM - Write will not continue.");
+				return -EINVAL;
+			}
+		}
+		break;
+
+		case 4:
+		{
+			middle_block_length = 0;
+
+			final_block_length = current_write_length;
+			final_block_start_address = first_block_start_address + 16;
+
+			/* 4.b. Read the final 16 bytes to write into SRAM. */
+			retval = flash_stm32_read(dev, final_block_start_address,
+						  (void *)end_buffer, 16);
+			if (retval != 0) {
+				LOG_ERR("Failed to read target region into SRAM - Write will not continue.");
+				return -EINVAL;
+			}
+		}
+		break;
+
+		default:
+			LOG_ERR("Invalid length input. Cannot peform write.");
+			return -EINVAL;
+		break;
+
+			LOG_DBG("First block: %d, Middle block: %d, FInal Block: %d",
+				data_buffer_ctr, middle_block_length, final_block_length);
+		}
+
+		/* 5. Driver is limiting unaligned writes to 1KB for safety. */
+		if (middle_block_length > 0) {
+			if (middle_block_length > BYTE_WRITE_EMULATE_MAX) {
+				LOG_ERR("Write size too large :%zu > %d."
+					"Use 16-byte aligned writes for large transfers.",
+					middle_block_length, BYTE_WRITE_EMULATE_MAX);
+
+				return -EINVAL;
+			}
+
+			middle_block_data_buffer =
+				(const uint8_t *)data + data_buffer_ctr;
+
+			/* 5.a In case source buffer is not 16-byte aligned, move it to a different buffer. */
+			if (((uintptr_t)middle_block_data_buffer & 0x3) != 0) {
+				memcpy(middle_workbuf, middle_block_data_buffer,
+				       middle_block_length);
+				middle_block_data_buffer = middle_workbuf;
+			}
+		}
+
+		/* 5.b. Modify the final write buffer if used. */
+		if (final_block_length > 0) {
+			final_buffer_ctr = data_buffer_ctr + middle_block_length;
+
+			for (uint8_t i = 0; i < final_block_length; i++) {
+				end_buffer[i] =
+					((const uint8_t *)data)[final_buffer_ctr];
+				final_buffer_ctr++;
+			}
+		}
+
+write_op:
+		flash_stm32_sem_take(dev);
+		/* 6. Perform the write operations depending on the offset passed. */
+		rc = flash_stm32_cr_lock(dev, false);
+		if (rc == 0) {
+			rc = flash_stm32_write_range(dev, first_block_start_address, (void *)&start_buffer[0],(size_t)16U);
+		} else {
+			LOG_ERR("Write operation rejected, first time. err = %d",
+				rc);
+		}
+
+		if (middle_block_length > 0) {
+			if (rc == 0) {
+				rc = flash_stm32_write_range(dev, middle_block_start_address, (void *)middle_block_data_buffer, (size_t) middle_block_length);
+			} else {
+				LOG_ERR("Write operation rejected, second time. err = %d",
+				rc);
+			}
+		}
+
+		if (final_block_length > 0) {
+			if (rc == 0) {
+				rc = flash_stm32_write_range(dev, final_block_start_address, (void *)&end_buffer[0], (size_t) 16U);
+			} else {
+				LOG_ERR("Write operation rejected, third time. err = %d",
+				rc);
+			}
+		}
+
+		int rc2 = flash_stm32_cr_lock(dev, true);
+
+		if (!rc) {
+			rc = rc2;
+		}
+
+		flash_stm32_sem_give(dev);
 	}
-
-	flash_stm32_sem_give(dev);
 
 	return rc;
 }
