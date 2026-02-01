@@ -1077,6 +1077,55 @@ Per RFC 9528 Appendix A.2 and RFC 9175, the Echo option provides:
 **Session management**: EDHOC sessions are cached with configurable lifetime and
 automatic eviction of expired sessions.
 
+Resource Discovery (RFC 9668 Section 6)
+----------------------------------------
+
+When :kconfig:option:`CONFIG_COAP_SERVER_WELL_KNOWN_EDHOC` is enabled, the server
+automatically advertises the ``/.well-known/edhoc`` resource in ``/.well-known/core``
+responses using CoRE Link Format (RFC 6690).
+
+**Link-Value Format**:
+
+.. code-block:: text
+
+   </.well-known/edhoc>;rt=core.edhoc;ed-r[;ed-comb-req]
+
+**Attributes**:
+
+- ``rt=core.edhoc``: Resource type registered in RFC 9528 Section 10.10
+- ``ed-r``: Valueless hint indicating EDHOC Responder role support (forward flow)
+- ``ed-comb-req``: Valueless hint indicating EDHOC+OSCORE combined request support
+  (only present when :kconfig:option:`CONFIG_COAP_EDHOC_COMBINED_REQUEST` is enabled)
+
+Per RFC 9668 Section 6, the ``ed-r`` and ``ed-comb-req`` attributes are valueless
+(no ``=`` sign) and any present value MUST be ignored by clients.
+
+**Example Discovery Request**:
+
+.. code-block:: text
+
+   GET /.well-known/core
+
+   Response:
+   </test>;if=sensor,
+   </.well-known/edhoc>;rt=core.edhoc;ed-r;ed-comb-req
+
+**Filtered Discovery**:
+
+Clients can filter for EDHOC resources using query parameters:
+
+.. code-block:: text
+
+   GET /.well-known/core?rt=core.edhoc
+
+   Response:
+   </.well-known/edhoc>;rt=core.edhoc;ed-r;ed-comb-req
+
+**Duplicate Prevention**:
+
+If an application defines its own ``/.well-known/edhoc`` resource in the resource
+array, the synthetic EDHOC link-value is not added, preventing duplication.
+
 Limitations
 -----------
 

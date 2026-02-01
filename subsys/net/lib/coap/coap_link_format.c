@@ -21,6 +21,10 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <zephyr/net/coap.h>
 #include <zephyr/net/coap_link_format.h>
 
+#if defined(CONFIG_COAP_SERVER_WELL_KNOWN_EDHOC)
+#include <zephyr/net/coap/coap_edhoc_transport.h>
+#endif
+
 static inline bool append_u8(struct coap_packet *cpkt, uint8_t data)
 {
 	if (!cpkt) {
@@ -170,6 +174,56 @@ static bool match_queries_resource(const struct coap_resource *resource,
 
 	return match_attributes(attributes, query);
 }
+
+#if defined(CONFIG_COAP_SERVER_WELL_KNOWN_EDHOC)
+
+/* Check if EDHOC resource already exists in the resource array */
+static bool has_edhoc_resource(struct coap_resource *resources, size_t resources_len)
+{
+	for (size_t i = 0; i < resources_len; i++) {
+		if (match_path_uri(resources[i].path, "/.well-known/edhoc",
+				   strlen("/.well-known/edhoc"))) {
+			return true;
+		}
+	}
+	return false;
+}
+
+/* Match query against synthetic EDHOC resource attributes */
+static bool match_queries_edhoc(const struct coap_option *query, int num_queries)
+{
+	const int href_len = strlen("href");
+	const int rt_len = strlen("rt");
+
+	if (num_queries == 0) {
+		return true;
+	}
+
+	/* Check href query */
+	if (query->len > href_len + 1 &&
+	    !strncmp((char *)query->value, "href", href_len)) {
+		const char *uri = (char *)query->value + href_len + 1;
+		uint16_t uri_len = query->len - (href_len + 1);
+
+		return match_path_uri(COAP_WELL_KNOWN_EDHOC_PATH, uri, uri_len);
+	}
+
+	/* Check rt=core.edhoc query */
+	if (query->len > rt_len + 1 &&
+	    !strncmp((char *)query->value, "rt", rt_len)) {
+		const char *rt_value = (char *)query->value + rt_len + 1;
+		uint16_t rt_value_len = query->len - (rt_len + 1);
+
+		if (rt_value_len == strlen("core.edhoc") &&
+		    !strncmp(rt_value, "core.edhoc", strlen("core.edhoc"))) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+#endif /* CONFIG_COAP_SERVER_WELL_KNOWN_EDHOC */
 
 #if defined(CONFIG_COAP_WELL_KNOWN_BLOCK_WISE)
 
@@ -517,6 +571,82 @@ int coap_well_known_core_get_len(struct coap_resource *resources,
 		}
 	}
 
+#if defined(CONFIG_COAP_SERVER_WELL_KNOWN_EDHOC)
+	/* Add synthetic EDHOC link-value if not already present */
+	if (!has_edhoc_resource(resources, resources_len) &&
+	    match_queries_edhoc(&query, num_queries)) {
+		if (!remaining) {
+			more = true;
+			goto skip_edhoc;
+		}
+
+		if (first) {
+			first = false;
+		} else {
+			r = append_to_coap_pkt(response, ",", 1, &remaining,
+					       &offset, ctx.current);
+			if (!r) {
+				goto end;
+			}
+		}
+
+		if (!remaining) {
+			more = true;
+			goto skip_edhoc;
+		}
+
+		/* Format: </.well-known/edhoc>;rt=core.edhoc;ed-r[;ed-comb-req] */
+		r = format_uri(COAP_WELL_KNOWN_EDHOC_PATH, response, &remaining,
+			       &offset, ctx.current, &more);
+		if (r < 0) {
+			goto end;
+		}
+
+		if (!remaining) {
+			more = true;
+			goto skip_edhoc;
+		}
+
+		/* Add rt=core.edhoc */
+		r = append_to_coap_pkt(response, ";rt=core.edhoc", strlen(";rt=core.edhoc"),
+				       &remaining, &offset, ctx.current);
+		if (!r) {
+			goto end;
+		}
+
+		if (!remaining) {
+			more = true;
+			goto skip_edhoc;
+		}
+
+		/* Add ed-r (valueless) */
+		r = append_to_coap_pkt(response, ";ed-r", strlen(";ed-r"),
+				       &remaining, &offset, ctx.current);
+		if (!r) {
+			goto end;
+		}
+
+		if (!remaining) {
+			more = true;
+			goto skip_edhoc;
+		}
+
+#if defined(CONFIG_COAP_EDHOC_COMBINED_REQUEST)
+		/* Add ed-comb-req (valueless) */
+		r = append_to_coap_pkt(response, ";ed-comb-req", strlen(";ed-comb-req"),
+				       &remaining, &offset, ctx.current);
+		if (!r) {
+			goto end;
+		}
+
+		if (!remaining) {
+			more = true;
+		}
+#endif
+	}
+skip_edhoc:
+#endif /* CONFIG_COAP_SERVER_WELL_KNOWN_EDHOC */
+
 	/* Offset is the total size now, but block2 option is already
 	 * appended. So update only 'more' flag.
 	 */
@@ -685,6 +815,47 @@ int coap_well_known_core_get_len(struct coap_resource *resources,
 			return r;
 		}
 	}
+
+#if defined(CONFIG_COAP_SERVER_WELL_KNOWN_EDHOC)
+	/* Add synthetic EDHOC link-value if not already present */
+	if (!has_edhoc_resource(resources, resources_len) &&
+	    match_queries_edhoc(&query, num_queries)) {
+		if (first) {
+			first = false;
+		} else {
+			r = append_u8(response, (uint8_t)',');
+			if (!r) {
+				return -ENOMEM;
+			}
+		}
+
+		/* Format: </.well-known/edhoc>;rt=core.edhoc;ed-r[;ed-comb-req] */
+		r = format_uri(COAP_WELL_KNOWN_EDHOC_PATH, response);
+		if (r < 0) {
+			return r;
+		}
+
+		/* Add rt=core.edhoc */
+		r = append(response, (uint8_t *)";rt=core.edhoc", strlen(";rt=core.edhoc"));
+		if (!r) {
+			return -ENOMEM;
+		}
+
+		/* Add ed-r (valueless) */
+		r = append(response, (uint8_t *)";ed-r", strlen(";ed-r"));
+		if (!r) {
+			return -ENOMEM;
+		}
+
+#if defined(CONFIG_COAP_EDHOC_COMBINED_REQUEST)
+		/* Add ed-comb-req (valueless) */
+		r = append(response, (uint8_t *)";ed-comb-req", strlen(";ed-comb-req"));
+		if (!r) {
+			return -ENOMEM;
+		}
+#endif
+	}
+#endif /* CONFIG_COAP_SERVER_WELL_KNOWN_EDHOC */
 
 	return 0;
 }
