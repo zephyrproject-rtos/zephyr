@@ -3491,6 +3491,29 @@ Microchip MEC Platforms:
   labels:
     - "platform: Microchip MEC"
 
+Microchip PIC32 Platforms:
+  status: maintained
+  maintainers:
+    - ArunMCHP
+    - NhMchp
+  collaborators:
+    - fabin-mchp
+    - Farsin-Nasar-Microchip
+    - mchp-asif
+    - sunil-abraham
+    - AzharMCHP
+    - nandojve
+  files:
+    - boards/microchip/pic32*/
+    - dts/bindings/*/microchip/pic32*/
+    - dts/arm/microchip/pic32*/
+    - drivers/*/*mchp*
+    - include/zephyr/**/mchp*
+    - soc/microchip/pic32*/
+    - tests/**/boards/pic32*
+  labels:
+    - "platform: Microchip PIC32"
+
 Microchip RISC-V Platforms:
   status: maintained
   maintainers:
@@ -3522,11 +3545,9 @@ Microchip SAM Platforms:
     - stephanosio
   files:
     - boards/atmel/
-    - boards/microchip/sam/
     - dts/arm/atmel/
-    - dts/arm/microchip/sam/
     - soc/atmel/
-    - soc/microchip/sam/
+    - soc/microchip/sam/sama*/
     - drivers/*/*sam*.c
     - dts/bindings/*/atmel,*
   labels:
