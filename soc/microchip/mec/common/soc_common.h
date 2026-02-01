@@ -30,6 +30,7 @@
 #include <soc_ecia.h>
 #include <soc_espi_channels.h>
 #include <soc_gpio.h>
+#include <soc_i2c.h>
 #include <soc_misc.h>
 #include <soc_mmcr.h>
 #include <soc_pcr.h>
