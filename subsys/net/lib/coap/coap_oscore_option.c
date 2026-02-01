@@ -61,6 +61,12 @@ int coap_oscore_option_extract_kid(const struct coap_packet *cpkt,
 
 	/* Parse flag byte */
 	uint8_t flags = oscore_value[pos++];
+
+	/* RFC 8613 Section 2: If flags are all zero, option value must be empty */
+	if (flags == 0x00) {
+		LOG_ERR("OSCORE option with flags=0x00 must be empty (RFC 8613 Section 2)");
+		return -EINVAL;
+	}
 	uint8_t n = flags & 0x07;        /* Partial IV length (bits 0-2) */
 	bool k = (flags & 0x08) != 0;    /* kid flag (bit 3) */
 	bool h = (flags & 0x10) != 0;    /* kid context flag (bit 4) */

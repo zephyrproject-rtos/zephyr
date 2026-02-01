@@ -35,17 +35,29 @@ bool coap_oscore_msg_has_oscore(const struct coap_packet *cpkt)
  * RFC 8613 Section 2: "An endpoint receiving a CoAP message without payload
  * that also contains an OSCORE option SHALL treat it as malformed and reject it."
  *
+ * RFC 8613 Section 2: "If the OSCORE flag bits are all zero (0x00), the option
+ * value SHALL be empty (Option Length = 0)."
+ *
  * @param cpkt CoAP packet to validate
  * @return 0 if valid, -EBADMSG if malformed
  */
 int coap_oscore_validate_msg(const struct coap_packet *cpkt)
 {
+	struct coap_option option;
 	uint16_t payload_len;
 	const uint8_t *payload;
+	int ret;
 
-	if (!coap_oscore_msg_has_oscore(cpkt)) {
+	ret = coap_find_options(cpkt, COAP_OPTION_OSCORE, &option, 1);
+	if (ret <= 0) {
 		/* Not an OSCORE message, no validation needed */
 		return 0;
+	}
+
+	/* RFC 8613 Section 2: If flags are all zero, option value must be empty */
+	if (option.len > 0 && option.value[0] == 0x00) {
+		LOG_ERR("OSCORE option with flags=0x00 must be empty (RFC 8613 Section 2)");
+		return -EBADMSG;
 	}
 
 	payload = coap_packet_get_payload(cpkt, &payload_len);

@@ -2890,6 +2890,43 @@ ZTEST(coap, test_oscore_malformed_validation)
 	zassert_equal(r, 0, "Should accept OSCORE with payload, got %d", r);
 }
 
+/* Test RFC 8613 Section 2: OSCORE option with flags=0x00 must be empty */
+ZTEST(coap, test_oscore_malformed_flags_zero_nonempty)
+{
+	struct coap_packet cpkt;
+	uint8_t buf[COAP_BUF_SIZE];
+	int r;
+
+	/* RFC 8613 Section 2: "If the OSCORE flag bits are all zero (0x00),
+	 * the option value SHALL be empty (Option Length = 0)."
+	 */
+	r = coap_packet_init(&cpkt, buf, sizeof(buf),
+			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
+			     COAP_METHOD_GET, coap_next_id());
+	zassert_equal(r, 0, "Should init packet");
+
+	/* Add OSCORE option with value {0x00} (length 1) - this is malformed */
+	uint8_t oscore_value[] = { 0x00 };
+
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_OSCORE,
+				      oscore_value, sizeof(oscore_value));
+	zassert_equal(r, 0, "Should append OSCORE option");
+
+	/* Add payload marker and payload to avoid the "no payload" rule */
+	r = coap_packet_append_payload_marker(&cpkt);
+	zassert_equal(r, 0, "Should append payload marker");
+
+	const uint8_t payload[] = "test";
+	r = coap_packet_append_payload(&cpkt, payload, sizeof(payload) - 1);
+	zassert_equal(r, 0, "Should append payload");
+
+	/* Validate - should fail because flags=0x00 but option length > 0 */
+	r = coap_oscore_validate_msg(&cpkt);
+	zassert_equal(r, -EBADMSG,
+		      "Should reject OSCORE with flags=0x00 and length>0 (RFC 8613 Section 2), got %d",
+		      r);
+}
+
 /* Test OSCORE message detection */
 ZTEST(coap, test_oscore_message_detection)
 {
@@ -4333,20 +4370,17 @@ ZTEST(coap, test_oscore_option_no_kid_flag)
 	struct coap_packet cpkt;
 	int r;
 
-	/* k=0 (no kid present) */
+	/* k=0 (no kid present) - use empty OSCORE option per RFC 8613 Section 2 */
 	r = coap_packet_init(&cpkt, buffer, sizeof(buffer),
 			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
 			     COAP_METHOD_POST, 0);
 	zassert_equal(r, 0, "Failed to initialize packet");
 
-	/* Add OSCORE option with k=0: 0x00 (all flags clear) */
-	uint8_t oscore_value[] = { 0x00 };
-
-	r = coap_packet_append_option(&cpkt, COAP_OPTION_OSCORE,
-				      oscore_value, sizeof(oscore_value));
+	/* RFC 8613 Section 2: If all flag bits are zero, option value must be empty */
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_OSCORE, NULL, 0);
 	zassert_equal(r, 0, "Failed to add OSCORE option");
 
-	/* Extract kid - should return -ENOENT since k=0 */
+	/* Extract kid - should return -ENOENT since option is empty (no kid present) */
 	uint8_t kid[16];
 	size_t kid_len = sizeof(kid);
 
@@ -4354,7 +4388,51 @@ ZTEST(coap, test_oscore_option_no_kid_flag)
 						  uint8_t *kid, size_t *kid_len);
 
 	r = coap_oscore_option_extract_kid(&cpkt, kid, &kid_len);
-	zassert_equal(r, -ENOENT, "Should return -ENOENT when kid flag not set");
+	zassert_equal(r, -ENOENT, "Should return -ENOENT when option is empty");
+}
+
+/* Test OSCORE option parser rejects flags=0x00 with length>0 (RFC 8613 Section 2) */
+ZTEST(coap, test_oscore_option_parser_flags_zero_nonempty)
+{
+	uint8_t buffer[128];
+	struct coap_packet cpkt;
+	uint8_t kid[16];
+	size_t kid_len;
+	int r;
+
+	extern int coap_oscore_option_extract_kid(const struct coap_packet *cpkt,
+						  uint8_t *kid, size_t *kid_len);
+
+	/* Test 1: OSCORE option with value {0x00} (length 1) should return -EINVAL */
+	r = coap_packet_init(&cpkt, buffer, sizeof(buffer),
+			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
+			     COAP_METHOD_POST, 0);
+	zassert_equal(r, 0, "Failed to initialize packet");
+
+	/* RFC 8613 Section 2: flags=0x00 requires empty option value */
+	uint8_t oscore_value_invalid[] = { 0x00 };
+
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_OSCORE,
+				      oscore_value_invalid, sizeof(oscore_value_invalid));
+	zassert_equal(r, 0, "Failed to add OSCORE option");
+
+	kid_len = sizeof(kid);
+	r = coap_oscore_option_extract_kid(&cpkt, kid, &kid_len);
+	zassert_equal(r, -EINVAL,
+		      "Should return -EINVAL for flags=0x00 with length>0 (RFC 8613 Section 2)");
+
+	/* Test 2: Empty OSCORE option (length 0) should return -ENOENT (valid, no kid) */
+	r = coap_packet_init(&cpkt, buffer, sizeof(buffer),
+			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
+			     COAP_METHOD_POST, 0);
+	zassert_equal(r, 0, "Failed to initialize packet");
+
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_OSCORE, NULL, 0);
+	zassert_equal(r, 0, "Failed to add OSCORE option");
+
+	kid_len = sizeof(kid);
+	r = coap_oscore_option_extract_kid(&cpkt, kid, &kid_len);
+	zassert_equal(r, -ENOENT, "Should return -ENOENT for empty option (valid, no kid)");
 }
 
 /* Test EDHOC error encoding: basic case with ERR_CODE=1 */
