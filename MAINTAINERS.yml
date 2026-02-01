@@ -3457,7 +3457,7 @@ Microchip SAM Platforms:
     - dts/arm/microchip/sam/
     - soc/atmel/
     - soc/microchip/sam/
-    - drivers/*/*sam*.c
+    - drivers/*/*sam*
     - drivers/*/*mchp*
     - dts/bindings/*/atmel,*
   labels:
