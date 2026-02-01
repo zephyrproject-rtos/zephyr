@@ -3415,6 +3415,7 @@ Microchip MEC Platforms:
     - dts/bindings/*/microchip,dmec*
     - include/zephyr/*/*/*xec*
     - samples/boards/microchip/
+    - samples/**/boards/*mec*
   labels:
     - "platform: Microchip MEC"
 
@@ -3477,6 +3478,7 @@ Microchip SAM Platforms:
     - include/zephyr/*/*/*atmel*
     - tests/drivers/pinctrl/microchip/
     - tests/**/boards/*sam*
+    - samples/**/boards/*sam*
   labels:
     - "platform: Microchip SAM"
 
