@@ -481,6 +481,27 @@ config COAP_EDHOC_SESSION_LIFETIME_MS
 	  evicted from the cache. This prevents memory exhaustion from
 	  abandoned EDHOC handshakes.
 
+config COAP_SERVER_WELL_KNOWN_EDHOC
+	bool "CoAP server support for /.well-known/edhoc (RFC 9528 Appendix A.2)"
+	depends on COAP_SERVER && COAP_EDHOC && COAP_EDHOC_COMBINED_REQUEST
+	help
+	  Enable support for EDHOC message transfer over CoAP per RFC 9528
+	  Appendix A.2 ("Transferring EDHOC over CoAP"). When enabled, the
+	  CoAP server will handle POST requests to the /.well-known/edhoc
+	  resource for EDHOC message_1 and message_3 processing.
+
+	  This implements the forward flow (message_1 -> message_2,
+	  message_3 -> message_4) as specified in RFC 9528 Appendix A.2.1.
+	  OSCORE contexts are automatically derived and cached after successful
+	  EDHOC completion per RFC 9528 Appendix A.1 and Table 14.
+
+	  Note: This feature requires CONFIG_COAP_EDHOC_COMBINED_REQUEST as it
+	  shares the same EDHOC session management and OSCORE context infrastructure.
+
+	  Security recommendation: Enable CONFIG_COAP_SERVER_ECHO_REQUIRE_FOR_UNSAFE
+	  to enforce Echo option verification for EDHOC POST requests, providing
+	  DoS mitigation per RFC 9528 Appendix A.2 and RFC 9175.
+
 endif # COAP_EDHOC
 
 module = COAP

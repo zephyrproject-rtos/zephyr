@@ -28,6 +28,16 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include "coap_edhoc.h"
 #endif
 
+#if defined(CONFIG_COAP_SERVER_WELL_KNOWN_EDHOC)
+#include <zephyr/net/coap/coap_edhoc_transport.h>
+
+/* Forward declaration for EDHOC transport handler */
+extern int coap_edhoc_transport_handle_request(const struct coap_service *service,
+					       const struct coap_packet *request,
+					       const struct net_sockaddr *client_addr,
+					       net_socklen_t client_addr_len);
+#endif
+
 #if defined(CONFIG_COAP_EDHOC_COMBINED_REQUEST)
 #include "coap_oscore_option.h"
 #include "coap_edhoc_session.h"
@@ -1795,6 +1805,15 @@ dispatch_request:
 		}
 	}
 #endif /* CONFIG_COAP_SERVER_ECHO */
+
+#if defined(CONFIG_COAP_SERVER_WELL_KNOWN_EDHOC)
+	/* RFC 9528 Appendix A.2: Handle EDHOC-over-CoAP requests to /.well-known/edhoc */
+	if (coap_uri_path_match(COAP_WELL_KNOWN_EDHOC_PATH, options, opt_num)) {
+		ret = coap_edhoc_transport_handle_request(service, &request,
+							  &client_addr, client_addr_len);
+		goto unlock;
+	}
+#endif /* CONFIG_COAP_SERVER_WELL_KNOWN_EDHOC */
 
 	if (IS_ENABLED(CONFIG_COAP_SERVER_WELL_KNOWN_CORE) &&
 	    coap_header_get_code(&request) == COAP_METHOD_GET &&

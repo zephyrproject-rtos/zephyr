@@ -850,6 +850,140 @@ RFC 7252 Section 5.4.1:
 This ensures that CoAP messages containing the EDHOC option are never processed
 incorrectly when EDHOC support is unavailable.
 
+EDHOC over CoAP (``/.well-known/edhoc``) (RFC 9528 Appendix A.2)
+==================================================================
+
+The Zephyr CoAP library provides support for EDHOC message transfer over CoAP
+as specified in RFC 9528 Appendix A.2 ("Transferring EDHOC over CoAP"). This
+implements the forward flow for EDHOC handshakes using POST requests to the
+``/.well-known/edhoc`` resource.
+
+Configuration
+-------------
+
+Enable EDHOC-over-CoAP transport support with:
+
+.. code-block:: kconfig
+
+   CONFIG_COAP_SERVER_WELL_KNOWN_EDHOC=y
+   CONFIG_COAP_EDHOC=y
+   CONFIG_COAP_SERVER=y
+
+This enables the server to handle POST requests to ``/.well-known/edhoc`` for
+EDHOC message_1 and message_3 processing.
+
+Protocol Flow
+-------------
+
+Per RFC 9528 Appendix A.2.1, EDHOC messages are transferred via POST requests:
+
+**Message_1 Request** (Initiator → Responder):
+
+- **Method**: POST
+- **Uri-Path**: ``/.well-known/edhoc``
+- **Content-Format**: 65 (``application/cid-edhoc+cbor-seq``)
+- **Payload**: CBOR ``true`` (0xF5) followed by EDHOC message_1
+
+**Message_2 Response** (Responder → Initiator):
+
+- **Code**: 2.04 (Changed)
+- **Content-Format**: 64 (``application/edhoc+cbor-seq``)
+- **Payload**: EDHOC message_2
+
+**Message_3 Request** (Initiator → Responder):
+
+- **Method**: POST
+- **Uri-Path**: ``/.well-known/edhoc``
+- **Content-Format**: 65 (``application/cid-edhoc+cbor-seq``)
+- **Payload**: C_R (connection identifier) followed by EDHOC message_3
+
+**Message_4 Response** (Responder → Initiator):
+
+- **Code**: 2.04 (Changed)
+- **Content-Format**: 64 (``application/edhoc+cbor-seq``)
+- **Payload**: EDHOC message_4 (if required) or empty
+
+Connection Identifier Encoding
+-------------------------------
+
+Per RFC 9528 Section 3.3.2, connection identifiers (C_R, C_I) use special encoding:
+
+- **One-byte CBOR integers** (major type 0 or 1, values 0-23): Encoded as a single byte
+- **Other values**: Encoded as CBOR byte strings (major type 2)
+
+This optimization reduces overhead for common connection identifier values.
+
+OSCORE Context Derivation
+--------------------------
+
+When ``CONFIG_COAP_EDHOC_COMBINED_REQUEST=y`` is enabled, after successful EDHOC
+message_3 processing, the server automatically derives an OSCORE security context
+per RFC 9528 Appendix A.1:
+
+1. **Derive PRK_out**: From EDHOC handshake
+2. **Derive master secret**: Using EDHOC_Exporter with label 0
+3. **Derive master salt**: Using EDHOC_Exporter with label 1
+4. **Map connection identifiers** (RFC 9528 Table 14):
+
+   - Responder OSCORE Sender ID = C_I (initiator's connection identifier)
+   - Responder OSCORE Recipient ID = C_R (responder's connection identifier)
+
+5. **Initialize OSCORE context**: With derived keying material
+6. **Cache context**: Keyed by C_R for subsequent OSCORE requests
+
+Note: OSCORE context caching requires ``CONFIG_COAP_EDHOC_COMBINED_REQUEST=y``.
+
+Error Handling
+--------------
+
+Per RFC 9528 Appendix A.2.3, EDHOC errors over CoAP are carried in the payload:
+
+**Error Response Format**:
+
+- **Code**: 4.00 (Bad Request) or 5.00 (Internal Server Error)
+- **Content-Format**: 64 (``application/edhoc+cbor-seq``)
+- **Payload**: CBOR Sequence ``(ERR_CODE, ERR_INFO)``
+
+**Common Error Cases**:
+
+- Invalid message_1 prefix → 4.00 with ERR_CODE=1
+- Missing Content-Format → 4.00 with ERR_CODE=1
+- Wrong HTTP method → 4.05 (Method Not Allowed)
+- Session not found → 4.00 with ERR_CODE=1
+- EDHOC processing failure → 5.00 with ERR_CODE=1
+
+Security Considerations
+-----------------------
+
+**DoS Mitigation**: Enable Echo option support to mitigate denial-of-service attacks
+on the EDHOC endpoint:
+
+.. code-block:: kconfig
+
+   CONFIG_COAP_SERVER_ECHO=y
+   CONFIG_COAP_SERVER_ECHO_REQUIRE_FOR_UNSAFE=y
+
+Per RFC 9528 Appendix A.2 and RFC 9175, the Echo option provides:
+
+- **Request freshness verification**: Ensures requests are not replayed
+- **Amplification mitigation**: Prevents using the server to amplify attacks
+- **Client verification**: Confirms client can receive responses at claimed address
+
+**Fail-closed behavior**: If EDHOC processing fails, no OSCORE context is established.
+
+**Session management**: EDHOC sessions are cached with configurable lifetime and
+automatic eviction of expired sessions.
+
+Limitations
+-----------
+
+The current implementation:
+
+- Supports the forward flow (message_1 → message_2, message_3 → message_4)
+- Does not support the reverse flow (message_2 → message_1, message_4 → message_3)
+- Assumes message_4 is not required (most common case)
+- Requires uoscore-uedhoc module for full EDHOC processing
+
 EDHOC+OSCORE Combined Request (RFC 9668 Section 3)
 ===================================================
 

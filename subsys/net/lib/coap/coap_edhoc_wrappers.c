@@ -30,6 +30,85 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 /* These are weak symbols that can be overridden in tests */
 
 /**
+ * @brief Wrapper for EDHOC message_2 generation
+ *
+ * Processes EDHOC message_1 and generates message_2 per RFC 9528 Appendix A.2.1.
+ * When CONFIG_UEDHOC=y, uses real uoscore-uedhoc implementation.
+ * When CONFIG_UEDHOC=n, provides weak stub for testing.
+ *
+ * @param resp_ctx EDHOC responder context
+ * @param runtime_ctx Runtime context
+ * @param msg1 EDHOC message_1 buffer
+ * @param msg1_len Length of message_1
+ * @param msg2 Output buffer for message_2
+ * @param msg2_len Length of msg2 buffer (input: buffer size, output: actual length)
+ * @param c_r Output buffer for C_R (connection identifier for responder)
+ * @param c_r_len Length of c_r buffer (input: buffer size, output: actual length)
+ * @return 0 on success, negative errno on error
+ */
+__weak int coap_edhoc_msg2_gen_wrapper(void *resp_ctx,
+					void *runtime_ctx,
+					const uint8_t *msg1,
+					size_t msg1_len,
+					uint8_t *msg2,
+					size_t *msg2_len,
+					uint8_t *c_r,
+					size_t *c_r_len)
+{
+#if defined(CONFIG_UEDHOC)
+	struct edhoc_responder_context *c = (struct edhoc_responder_context *)resp_ctx;
+	struct runtime_context *rc = (struct runtime_context *)runtime_ctx;
+	struct byte_array msg1_ba = { .ptr = (uint8_t *)msg1, .len = msg1_len };
+	struct byte_array msg2_ba = { .ptr = msg2, .len = *msg2_len };
+	enum err result;
+
+	if (c == NULL || rc == NULL) {
+		return -EINVAL;
+	}
+
+	/* RFC 9528 Appendix A.2.1: Initialize runtime context and generate message_2 */
+	result = runtime_context_init(rc);
+	if (result != ok) {
+		LOG_ERR("runtime_context_init failed: %d", result);
+		return -EACCES;
+	}
+
+	result = msg2_gen(c, rc, &msg1_ba, &msg2_ba);
+	if (result != ok) {
+		LOG_ERR("msg2_gen failed: %d", result);
+		return -EACCES;
+	}
+
+	*msg2_len = msg2_ba.len;
+
+	/* Extract C_R from responder context for session keying */
+	if (c->c_r.len > 0 && c->c_r.len <= *c_r_len) {
+		memcpy(c_r, c->c_r.ptr, c->c_r.len);
+		*c_r_len = c->c_r.len;
+	} else {
+		LOG_ERR("C_R not available or buffer too small (need %zu, have %zu)",
+			c->c_r.len, *c_r_len);
+		return -EINVAL;
+	}
+
+	return 0;
+#else
+	ARG_UNUSED(resp_ctx);
+	ARG_UNUSED(runtime_ctx);
+	ARG_UNUSED(msg1);
+	ARG_UNUSED(msg1_len);
+	ARG_UNUSED(msg2);
+	ARG_UNUSED(msg2_len);
+	ARG_UNUSED(c_r);
+	ARG_UNUSED(c_r_len);
+
+	/* Default implementation: not supported without uoscore-uedhoc */
+	LOG_ERR("EDHOC msg2_gen not available (override in tests or link uoscore-uedhoc)");
+	return -ENOTSUP;
+#endif
+}
+
+/**
  * @brief Wrapper for EDHOC message_3 processing
  *
  * Processes EDHOC message_3 and derives PRK_out per RFC 9528 Section 5.4.3.
@@ -113,6 +192,69 @@ __weak int coap_edhoc_msg3_process_wrapper(const uint8_t *edhoc_msg3,
 	/* Default implementation: not supported without uoscore-uedhoc */
 	LOG_ERR("EDHOC msg3_process not available (override in tests or link uoscore-uedhoc)");
 	return -ENOTSUP;
+#endif
+}
+
+/**
+ * @brief Wrapper for EDHOC message_4 generation
+ *
+ * Generates EDHOC message_4 if required by the application profile.
+ * When CONFIG_UEDHOC=y, uses real uoscore-uedhoc implementation.
+ * When CONFIG_UEDHOC=n, provides weak stub for testing.
+ *
+ * @param resp_ctx EDHOC responder context
+ * @param runtime_ctx Runtime context
+ * @param msg4 Output buffer for message_4
+ * @param msg4_len Length of msg4 buffer (input: buffer size, output: actual length)
+ * @param msg4_required Output: true if message_4 is required, false otherwise
+ * @return 0 on success, negative errno on error
+ */
+__weak int coap_edhoc_msg4_gen_wrapper(void *resp_ctx,
+					void *runtime_ctx,
+					uint8_t *msg4,
+					size_t *msg4_len,
+					bool *msg4_required)
+{
+#if defined(CONFIG_UEDHOC)
+	struct edhoc_responder_context *c = (struct edhoc_responder_context *)resp_ctx;
+	struct runtime_context *rc = (struct runtime_context *)runtime_ctx;
+	struct byte_array msg4_ba = { .ptr = msg4, .len = *msg4_len };
+	enum err result;
+
+	if (c == NULL || rc == NULL || msg4_required == NULL) {
+		return -EINVAL;
+	}
+
+	/* Check if message_4 is required based on application profile
+	 * For now, assume message_4 is not required (most common case)
+	 */
+	*msg4_required = false;
+
+	/* If message_4 is required, generate it */
+	if (*msg4_required) {
+		result = msg4_gen(c, rc, &msg4_ba);
+		if (result != ok) {
+			LOG_ERR("msg4_gen failed: %d", result);
+			return -EACCES;
+		}
+		*msg4_len = msg4_ba.len;
+	} else {
+		*msg4_len = 0;
+	}
+
+	return 0;
+#else
+	ARG_UNUSED(resp_ctx);
+	ARG_UNUSED(runtime_ctx);
+	ARG_UNUSED(msg4);
+	ARG_UNUSED(msg4_len);
+
+	if (msg4_required != NULL) {
+		*msg4_required = false;
+	}
+
+	/* Default implementation: message_4 not required */
+	return 0;
 #endif
 }
 

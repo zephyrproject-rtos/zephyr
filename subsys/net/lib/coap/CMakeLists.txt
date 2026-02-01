@@ -33,3 +33,7 @@ zephyr_sources_ifdef(CONFIG_COAP_EDHOC_COMBINED_REQUEST
   coap_oscore_ctx_cache.c
   coap_edhoc_wrappers.c
 )
+
+zephyr_sources_ifdef(CONFIG_COAP_SERVER_WELL_KNOWN_EDHOC
+  coap_edhoc_transport.c
+)
