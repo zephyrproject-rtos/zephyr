@@ -868,7 +868,7 @@ static void complete_video_ctrl_menu_name(size_t idx, struct shell_static_entry 
 	}
 
 }
-LISTIFY(10, VIDEO_SHELL_COMPLETE_DEFINE, (;), video_ctrl_menu_name);
+LISTIFY(20, VIDEO_SHELL_COMPLETE_DEFINE, (;), video_ctrl_menu_name);
 
 static const union shell_cmd_entry *dsub_video_ctrl_menu_name[] = {
 	&dsub_video_ctrl_menu_name0, &dsub_video_ctrl_menu_name1,
@@ -876,6 +876,11 @@ static const union shell_cmd_entry *dsub_video_ctrl_menu_name[] = {
 	&dsub_video_ctrl_menu_name4, &dsub_video_ctrl_menu_name5,
 	&dsub_video_ctrl_menu_name6, &dsub_video_ctrl_menu_name7,
 	&dsub_video_ctrl_menu_name8, &dsub_video_ctrl_menu_name9,
+	&dsub_video_ctrl_menu_name10, &dsub_video_ctrl_menu_name11,
+	&dsub_video_ctrl_menu_name12, &dsub_video_ctrl_menu_name13,
+	&dsub_video_ctrl_menu_name14, &dsub_video_ctrl_menu_name15,
+	&dsub_video_ctrl_menu_name16, &dsub_video_ctrl_menu_name17,
+	&dsub_video_ctrl_menu_name18, &dsub_video_ctrl_menu_name19,
 };
 
 static void complete_video_ctrl_name_dev(size_t idx, struct shell_static_entry *entry, int devn)
@@ -921,7 +926,7 @@ static void complete_video_ctrl_name_dev(size_t idx, struct shell_static_entry *
 		break;
 	}
 }
-LISTIFY(10, VIDEO_SHELL_COMPLETE_DEFINE, (;), video_ctrl_name_dev);
+LISTIFY(20, VIDEO_SHELL_COMPLETE_DEFINE, (;), video_ctrl_name_dev);
 
 static const union shell_cmd_entry *dsub_video_ctrl_name_dev[] = {
 	&dsub_video_ctrl_name_dev0, &dsub_video_ctrl_name_dev1,
@@ -929,6 +934,11 @@ static const union shell_cmd_entry *dsub_video_ctrl_name_dev[] = {
 	&dsub_video_ctrl_name_dev4, &dsub_video_ctrl_name_dev5,
 	&dsub_video_ctrl_name_dev6, &dsub_video_ctrl_name_dev7,
 	&dsub_video_ctrl_name_dev8, &dsub_video_ctrl_name_dev9,
+	&dsub_video_ctrl_name_dev10, &dsub_video_ctrl_name_dev11,
+	&dsub_video_ctrl_name_dev12, &dsub_video_ctrl_name_dev13,
+	&dsub_video_ctrl_name_dev14, &dsub_video_ctrl_name_dev15,
+	&dsub_video_ctrl_name_dev16, &dsub_video_ctrl_name_dev17,
+	&dsub_video_ctrl_name_dev18, &dsub_video_ctrl_name_dev19,
 };
 
 static void complete_video_ctrl_dev(size_t idx, struct shell_static_entry *entry)
@@ -1042,7 +1052,7 @@ static void complete_video_format_dir_dev(size_t idx, struct shell_static_entry 
 		break;
 	}
 }
-LISTIFY(10, VIDEO_SHELL_COMPLETE_DEFINE, (;), video_format_dir_dev);
+LISTIFY(20, VIDEO_SHELL_COMPLETE_DEFINE, (;), video_format_dir_dev);
 
 static const union shell_cmd_entry *dsub_video_format_dir_dev[] = {
 	&dsub_video_format_dir_dev0, &dsub_video_format_dir_dev1,
@@ -1050,6 +1060,11 @@ static const union shell_cmd_entry *dsub_video_format_dir_dev[] = {
 	&dsub_video_format_dir_dev4, &dsub_video_format_dir_dev5,
 	&dsub_video_format_dir_dev6, &dsub_video_format_dir_dev7,
 	&dsub_video_format_dir_dev8, &dsub_video_format_dir_dev9,
+	&dsub_video_format_dir_dev10, &dsub_video_format_dir_dev11,
+	&dsub_video_format_dir_dev12, &dsub_video_format_dir_dev13,
+	&dsub_video_format_dir_dev14, &dsub_video_format_dir_dev15,
+	&dsub_video_format_dir_dev16, &dsub_video_format_dir_dev17,
+	&dsub_video_format_dir_dev18, &dsub_video_format_dir_dev19,
 };
 
 static void complete_video_format_dev(size_t idx, struct shell_static_entry *entry)
