@@ -855,14 +855,12 @@ static void complete_video_ctrl_name_dev(size_t idx, struct shell_static_entry *
 	struct video_ctrl_query *cq = &video_shell_cq;
 	int ret;
 
-
 	entry->handler = NULL;
 	entry->help = NULL;
 	entry->subcmd = NULL;
 	entry->syntax = NULL;
 
 	/* Check which device was selected */
-
 	dev = video_shell_dev = video_shell_get_dev_by_num(devn);
 	if (!device_is_ready(dev)) {
 		return;
@@ -1171,6 +1169,80 @@ static int cmd_video_selection(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
+static void complete_video_selection_target(size_t idx, struct shell_static_entry *entry)
+{
+	entry->syntax = NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = NULL;
+	video_shell_dev = NULL;
+
+	switch (idx) {
+	case 0:
+		entry->syntax = "crop";
+		break;
+	case 1:
+		entry->syntax = "crop_bound";
+		break;
+	case 2:
+		entry->syntax = "native_size";
+		break;
+	case 3:
+		entry->syntax = "compose";
+		break;
+	case 4:
+		entry->syntax = "compose_bound";
+		break;
+	default:
+		entry->syntax = NULL;
+		break;
+	}
+}
+SHELL_DYNAMIC_CMD_CREATE(dsub_video_selection_target, complete_video_selection_target);
+
+static void complete_video_selection_dir(size_t idx, struct shell_static_entry *entry)
+{
+	entry->syntax = NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = NULL;
+	video_shell_dev = NULL;
+
+	switch (idx) {
+	case 0:
+		entry->subcmd = &dsub_video_selection_target;
+		entry->syntax = "in";
+		break;
+	case 1:
+		entry->subcmd = &dsub_video_selection_target;
+		entry->syntax = "out";
+		break;
+	default:
+		entry->syntax = NULL;
+		break;
+	}
+}
+SHELL_DYNAMIC_CMD_CREATE(dsub_video_selection_dir, complete_video_selection_dir);
+
+static void complete_video_selection_dev(size_t idx, struct shell_static_entry *entry)
+{
+	const struct device *dev;
+
+	entry->syntax = NULL;
+	entry->handler = NULL;
+	entry->help = NULL;
+	entry->subcmd = NULL;
+
+	dev = video_shell_get_dev_by_num(idx);
+	if (idx >= ARRAY_SIZE(dsub_video_format_dir_dev)) {
+		return;
+	}
+
+	entry->syntax = dev->name;
+	entry->subcmd = &dsub_video_selection_dir;
+}
+SHELL_DYNAMIC_CMD_CREATE(dsub_video_selection_dev, complete_video_selection_dev);
+
 /* Video shell commands declaration */
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_video_cmds,
@@ -1196,7 +1268,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_video_cmds,
 		SHELL_HELP("Query or set video controls of a device",
 			   "<device> [<ctrl> <value>]"),
 		cmd_video_ctrl, 2, 2),
-	SHELL_CMD_ARG(selection, &dsub_video_format_dev,
+	SHELL_CMD_ARG(selection, &dsub_video_selection_dev,
 		SHELL_HELP("Query or set the video selection of a device",
 			   "<device> <dir> <target> [<left> <top> <width>x<height>]"),
 		cmd_video_selection, 4, 3),
