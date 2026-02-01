@@ -4310,6 +4310,8 @@ Peregrine Platforms:
     - nandojve
   files:
     - boards/peregrine/
+    - boards/shields/atmel_rf2xx/
+    - drivers/ieee802154/*rf2xx*
   labels:
     - "platform: Peregrine"
 
