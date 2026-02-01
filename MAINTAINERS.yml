@@ -3444,6 +3444,8 @@ Microchip RISC-V Platforms:
     - soc/microchip/miv/
     - soc/microchip/pic64/
     - drivers/*/*mchp*mss*
+    - dts/bindings/*/microchip,mpfs*
+    - dts/bindings/*/microchip,coreuart*
   labels:
     - "platform: Microchip RISC-V"
 
