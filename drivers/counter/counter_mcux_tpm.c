@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 NXP
+ * Copyright 2023-2024, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -243,6 +243,17 @@ static int mcux_tpm_init(const struct device *dev)
 	for (uint8_t chan = 0; chan < DEV_CFG(dev)->info.channels; chan++) {
 		data->channels[chan].alarm_callback = NULL;
 		data->channels[chan].alarm_user_data = NULL;
+	}
+
+	int err = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
+
+	if (err) {
+		/* Check if error is due to lack of support */
+		if (err != -ENOSYS) {
+			/* Real error occurred */
+			LOG_ERR("Failed to configure clock: %d", err);
+			return err;
+		}
 	}
 
 	if (clock_control_on(config->clock_dev, config->clock_subsys)) {
