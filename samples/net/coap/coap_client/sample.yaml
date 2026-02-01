@@ -13,3 +13,23 @@ tests:
   sample.net.sockets.coap_client.802154.subg:
     extra_args: EXTRA_CONF_FILE="overlay-802154-subg.conf"
     platform_allow: beagleconnect_freedom
+  sample.net.sockets.coap_client.oscore:
+    harness: net
+    extra_args: EXTRA_CONF_FILE="overlay-oscore.conf"
+    tags:
+      - net
+      - socket
+      - oscore
+    platform_allow:
+      - native_sim
+      - qemu_x86
+  sample.net.sockets.coap_client.oscore.ipv4:
+    harness: net
+    extra_args: EXTRA_CONF_FILE="overlay-oscore-ipv4.conf"
+    tags:
+      - net
+      - socket
+      - oscore
+    platform_allow:
+      - native_sim
+      - qemu_x86

@@ -162,15 +162,27 @@ static int send_error_response_internal(const struct coap_service *service,
 	uint8_t buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
 	struct coap_packet response;
 	uint8_t token[COAP_TOKEN_MAX_LEN];
-	uint8_t tkl = coap_header_get_token(request, token);
-	uint16_t id = coap_header_get_id(request);
-	uint8_t type = (coap_header_get_type(request) == COAP_TYPE_CON)
-		       ? COAP_TYPE_ACK : COAP_TYPE_NON_CON;
+	uint8_t tkl;
+	uint16_t id;
+	uint8_t type;
 	int ret;
+
+	if (service == NULL || request == NULL || client_addr == NULL) {
+		return -EINVAL;
+	}
+
+	tkl = coap_header_get_token(request, token);
+	id = coap_header_get_id(request);
+	type = (coap_header_get_type(request) == COAP_TYPE_CON)
+	       ? COAP_TYPE_ACK : COAP_TYPE_NON_CON;
+
+	LOG_DBG("Sending error response %d.%02d (tkl=%d, id=%u, type=%d, max_age_zero=%d)",
+		code >> 5, code & 0x1F, tkl, id, type, add_max_age_zero);
 
 	ret = coap_packet_init(&response, buf, sizeof(buf),
 			       COAP_VERSION_1, type, tkl, token, code, id);
 	if (ret < 0) {
+		LOG_ERR("Failed to init error response packet: %d", ret);
 		return ret;
 	}
 
@@ -183,7 +195,26 @@ static int send_error_response_internal(const struct coap_service *service,
 		}
 	}
 
-	return coap_service_send(service, &response, client_addr, client_addr_len, NULL);
+	/* NOTE: This function is called AFTER unlocking the mutex in error paths,
+	 * so we need to be careful about accessing service->data safely.
+	 * We read sock_fd without the lock which is generally safe for read-only access.
+	 */
+	int sock_fd = service->data->sock_fd;
+	
+	if (sock_fd < 0) {
+		LOG_ERR("Service socket not open");
+		return -EBADF;
+	}
+
+	ret = zsock_sendto(sock_fd, response.data, response.offset, 0,
+			   client_addr, client_addr_len);
+	if (ret < 0) {
+		LOG_ERR("Failed to send error response (%d)", ret);
+		return ret;
+	}
+
+	LOG_DBG("Sent error response: %zu bytes", response.offset);
+	return 0;
 }
 
 /**
@@ -362,7 +393,7 @@ int coap_edhoc_build_error_response(struct coap_packet *response,
 #endif /* CONFIG_ZTEST */
 #endif /* CONFIG_COAP_EDHOC_COMBINED_REQUEST */
 
-#if defined(CONFIG_COAP_SERVER_ECHO)
+#if defined(CONFIG_COAP_SERVER_ECHO) || defined(CONFIG_COAP_OSCORE)
 
 /* Compare two socket addresses for equality */
 static bool sockaddr_equal(const struct net_sockaddr *a, net_socklen_t a_len,
@@ -388,6 +419,10 @@ static bool sockaddr_equal(const struct net_sockaddr *a, net_socklen_t a_len,
 
 	return false;
 }
+
+#endif /* CONFIG_COAP_SERVER_ECHO || CONFIG_COAP_OSCORE */
+
+#if defined(CONFIG_COAP_SERVER_ECHO)
 
 /* Find Echo cache entry for a given address */
 #if defined(CONFIG_ZTEST)
@@ -733,7 +768,13 @@ static struct coap_oscore_exchange *oscore_exchange_find(
 	const uint8_t *token,
 	uint8_t tkl)
 {
-	int64_t now = k_uptime_get();
+	int64_t now;
+
+	if (cache == NULL || addr == NULL || token == NULL || tkl == 0) {
+		return NULL;
+	}
+
+	now = k_uptime_get();
 
 	for (int i = 0; i < CONFIG_COAP_OSCORE_EXCHANGE_CACHE_SIZE; i++) {
 		if (cache[i].addr_len == 0) {
@@ -1532,17 +1573,32 @@ static int coap_server_process(int sock_fd)
 		uint32_t decrypted_len = sizeof(decrypted_buf);
 		uint8_t error_code = COAP_RESPONSE_CODE_BAD_REQUEST;
 
-		ret = coap_oscore_verify_wrapper(rebuilt_buf, rebuilt_len,
-						 decrypted_buf, &decrypted_len,
-						 ctx_entry->oscore_ctx, &error_code);
-		if (ret < 0) {
-			LOG_ERR("OSCORE verification failed (%d), sending error %d",
-				ret, error_code);
-			(void)send_oscore_error_response(service, &request, error_code,
-							 &client_addr, client_addr_len);
-			ret = -EACCES;
-			goto unlock;
+	ret = coap_oscore_verify_wrapper(rebuilt_buf, rebuilt_len,
+					 decrypted_buf, &decrypted_len,
+					 ctx_entry->oscore_ctx, &error_code);
+	if (ret < 0) {
+		/* RFC 8613 Section 8.2: OSCORE errors are sent as simple CoAP
+		 * responses without OSCORE processing. Remove exchange first to
+		 * prevent re-protection of the error response.
+		 */
+		uint8_t error_token[COAP_TOKEN_MAX_LEN];
+		uint8_t error_tkl = coap_header_get_token(&request, error_token);
+		
+		if (error_tkl > 0) {
+			oscore_exchange_remove(service->data->oscore_exchange_cache,
+					       &client_addr, client_addr_len,
+					       error_token, error_tkl);
 		}
+		
+		LOG_ERR("OSCORE verification failed (%d), sending error %d",
+			ret, error_code);
+		
+		/* Unlock before sending to avoid holding lock during network I/O */
+		(void)k_mutex_unlock(&lock);
+		(void)send_oscore_error_response(service, &request, error_code,
+						 &client_addr, client_addr_len);
+		return -EACCES;
+	}
 
 		/* Re-parse the decrypted CoAP message */
 		ret = coap_packet_parse(&request, decrypted_buf, decrypted_len,
@@ -1611,30 +1667,44 @@ static int coap_server_process(int sock_fd)
 		}
 #endif
 
-		if (oscore_ctx == NULL) {
-			/* RFC 8613 Section 8.2 step 2 bullet 2: Security context not found => 4.01 */
-			LOG_WRN("OSCORE message received but no context configured or cached");
-			(void)send_oscore_error_response(service, &request,
-							 COAP_RESPONSE_CODE_UNAUTHORIZED,
-							 &client_addr, client_addr_len);
-			ret = -ENOTSUP;
-			goto unlock;
-		}
+	if (oscore_ctx == NULL) {
+		/* RFC 8613 Section 8.2 step 2 bullet 2: Security context not found => 4.01 */
+		LOG_WRN("OSCORE message received but no context configured or cached");
+		
+		/* Unlock before sending to avoid holding lock during network I/O */
+		(void)k_mutex_unlock(&lock);
+		(void)send_oscore_error_response(service, &request,
+						 COAP_RESPONSE_CODE_UNAUTHORIZED,
+						 &client_addr, client_addr_len);
+		return -ENOTSUP;
+	}
 
 		/* Decrypt the OSCORE message */
-		ret = coap_oscore_verify_wrapper(buf, received, decrypted_buf, &decrypted_len,
-						 oscore_ctx, &error_code);
-		if (ret < 0) {
-			/* RFC 8613 Section 8.2: OSCORE errors are sent as simple CoAP
-			 * responses without OSCORE processing
-			 */
-			LOG_ERR("OSCORE verification failed (%d), sending error %d", ret,
-				error_code);
-			(void)send_oscore_error_response(service, &request, error_code,
-							 &client_addr, client_addr_len);
-			ret = -EACCES;
-			goto unlock;
+	ret = coap_oscore_verify_wrapper(buf, received, decrypted_buf, &decrypted_len,
+					 oscore_ctx, &error_code);
+	if (ret < 0) {
+		/* RFC 8613 Section 8.2: OSCORE errors are sent as simple CoAP
+		 * responses without OSCORE processing. Remove exchange first to
+		 * prevent re-protection of the error response.
+		 */
+		uint8_t error_token[COAP_TOKEN_MAX_LEN];
+		uint8_t error_tkl = coap_header_get_token(&request, error_token);
+		
+		if (error_tkl > 0) {
+			oscore_exchange_remove(service->data->oscore_exchange_cache,
+					       &client_addr, client_addr_len,
+					       error_token, error_tkl);
 		}
+		
+		LOG_ERR("OSCORE verification failed (%d), sending error %d", ret,
+			error_code);
+		
+		/* Unlock before sending to avoid holding lock during network I/O */
+		(void)k_mutex_unlock(&lock);
+		(void)send_oscore_error_response(service, &request, error_code,
+						 &client_addr, client_addr_len);
+		return -EACCES;
+	}
 
 		/* Re-parse the decrypted CoAP message */
 		ret = coap_packet_parse(&request, decrypted_buf, decrypted_len, options, opt_num);

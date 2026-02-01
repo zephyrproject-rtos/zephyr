@@ -11,6 +11,12 @@ LOG_MODULE_REGISTER(net_coap_service_sample, LOG_LEVEL_DBG);
 
 #include "net_sample_common.h"
 
+#if defined(CONFIG_COAP_OSCORE)
+#include <oscore.h>
+#include <oscore/security_context.h>
+#include <psa/crypto.h>
+#endif
+
 #ifdef CONFIG_NET_IPV6
 #include <zephyr/net/mld.h>
 
@@ -19,6 +25,30 @@ LOG_MODULE_REGISTER(net_coap_service_sample, LOG_LEVEL_DBG);
 #endif
 
 static uint16_t coap_port = CONFIG_NET_SAMPLE_COAP_SERVER_SERVICE_PORT;
+
+#if defined(CONFIG_COAP_OSCORE)
+/* OSCORE context - matches libcoap configuration */
+static struct context oscore_ctx;
+
+/* Master secret (shared with client) */
+static const uint8_t master_secret[] = {
+	0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+	0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10
+};
+
+/* Master salt (optional, shared with client) */
+static const uint8_t master_salt[] = {
+	0x9e, 0x7c, 0xa9, 0x22, 0x23, 0x78, 0x63, 0x40
+};
+
+/* Sender ID (this device is the server) */
+static const uint8_t sender_id[] = "server";
+
+/* Recipient ID (remote peer is the client) */
+static const uint8_t recipient_id[] = "client";
+
+COAP_SERVICE_DEFINE(coap_server, NULL, &coap_port, COAP_SERVICE_AUTOSTART);
+#else
 
 #ifndef CONFIG_NET_SAMPLE_COAPS_SERVICE
 
@@ -39,6 +69,7 @@ COAPS_SERVICE_DEFINE(coap_server, NULL, &coap_port, 0,
 		     sec_tag_list_verify_none, sizeof(sec_tag_list_verify_none));
 
 #endif /* CONFIG_NET_SAMPLE_COAPS_SERVICE */
+#endif /* CONFIG_COAP_OSCORE */
 
 static int setup_dtls(void)
 {
@@ -153,11 +184,78 @@ static int join_coap_multicast_group(uint16_t port)
 
 #endif /* CONFIG_NET_IPV6 */
 
+static int setup_oscore(void)
+{
+#if defined(CONFIG_COAP_OSCORE)
+	psa_status_t psa_status;
+	
+	/* Initialize PSA Crypto */
+	LOG_DBG("Initializing PSA Crypto");
+	psa_status = psa_crypto_init();
+	if (psa_status != PSA_SUCCESS) {
+		LOG_ERR("PSA Crypto initialization failed: %d", psa_status);
+		return -ENODEV;
+	}
+	LOG_DBG("PSA Crypto initialized");
+
+	struct oscore_init_params params = {
+		.master_secret.ptr = (uint8_t *)master_secret,
+		.master_secret.len = sizeof(master_secret),
+		.sender_id.ptr = (uint8_t *)sender_id,
+		.sender_id.len = sizeof(sender_id) - 1, /* Exclude null terminator */
+		.recipient_id.ptr = (uint8_t *)recipient_id,
+		.recipient_id.len = sizeof(recipient_id) - 1, /* Exclude null terminator */
+		.id_context.ptr = NULL,  /* No ID context */
+		.id_context.len = 0,
+		.master_salt.ptr = (uint8_t *)master_salt,
+		.master_salt.len = sizeof(master_salt),
+		.aead_alg = OSCORE_AES_CCM_16_64_128,
+		.hkdf = OSCORE_SHA_256,
+		.fresh_master_secret_salt = true,  /* Fixed test keys, OK to reset SSN on reboot */
+	};
+
+	LOG_DBG("Initializing OSCORE context");
+	LOG_DBG("  master_secret: %p, len: %d", (void *)params.master_secret.ptr, params.master_secret.len);
+	LOG_DBG("  sender_id: %p, len: %d", (void *)params.sender_id.ptr, params.sender_id.len);
+	LOG_DBG("  recipient_id: %p, len: %d", (void *)params.recipient_id.ptr, params.recipient_id.len);
+	LOG_DBG("  master_salt: %p, len: %d", (void *)params.master_salt.ptr, params.master_salt.len);
+	
+	int ret = oscore_context_init(&params, &oscore_ctx);
+	if (ret != 0) {
+		LOG_ERR("Failed to initialize OSCORE context: %d (%s)", ret, 
+			ret == -ENOMEM ? "Out of memory" :
+			ret == -EINVAL ? "Invalid parameter" :
+			ret == -ENOTSUP ? "Not supported" :
+			ret == -ENOENT ? "Not found" :
+			ret == -ENOSPC ? "No space (check heap/PSA key slots)" :
+			"Unknown error");
+		return ret;
+	}
+
+	/* Attach OSCORE context to the service */
+	coap_server.data->oscore_ctx = &oscore_ctx;
+	coap_server.data->require_oscore = true; /* Require OSCORE for all requests */
+
+	LOG_INF("OSCORE enabled (server/client, AES-CCM-16-64-128)");
+	LOG_DBG("  Sender ID: %s", sender_id);
+	LOG_DBG("  Recipient ID: %s", recipient_id);
+	LOG_DBG("  Master secret: %d bytes, Master salt: %d bytes", 
+		sizeof(master_secret), sizeof(master_salt));
+#endif /* CONFIG_COAP_OSCORE */
+	return 0;
+}
+
 int main(void)
 {
 	int ret;
 
 	wait_for_network();
+
+	ret = setup_oscore();
+	if (ret < 0) {
+		LOG_ERR("Failed to setup OSCORE (%d)", ret);
+		return ret;
+	}
 
 	ret = setup_dtls();
 	if (ret < 0) {
