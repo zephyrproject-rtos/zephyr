@@ -3405,6 +3405,7 @@ Microchip MEC Platforms:
     - boards/microchip/ev11l78a/
     - dts/arm/microchip/
     - soc/microchip/mec/
+    - drivers/*/*xec*
     - tests/boards/mec15xxevb_assy6853/
     - tests/boards/mec172xevb_assy6906/
     - dts/bindings/*/microchip,mec*
