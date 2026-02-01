@@ -1375,15 +1375,97 @@ If a continuation block has a different Request-Tag list than the first block, t
 treats it as a different operation and responds with **4.00 Bad Request**, clearing the
 original reassembly state (fail-closed policy).
 
+**Client-side EDHOC+OSCORE Combined Request (RFC 9668 Section 3.2)**:
+
+The CoAP client library now supports generating EDHOC+OSCORE combined requests per RFC 9668
+Section 3.2.1, allowing clients to send EDHOC message_3 and the first OSCORE-protected
+application request in a single CoAP message.
+
+**API Usage**:
+
+.. code-block:: c
+
+   #include <zephyr/net/coap_client.h>
+
+   /* Prepare EDHOC message_3 (CBOR bstr encoding per RFC 9528 Section 5.4.2) */
+   uint8_t edhoc_msg3[256];
+   size_t edhoc_msg3_len = sizeof(edhoc_msg3);
+   /* ... generate EDHOC message_3 using EDHOC library ... */
+
+   /* Configure combined request parameters */
+   struct coap_client_edhoc_params edhoc_params = {
+       .edhoc_msg3 = edhoc_msg3,
+       .edhoc_msg3_len = edhoc_msg3_len,
+       .combined_request_enabled = true,
+   };
+
+   /* Send combined request */
+   ret = coap_client_req_edhoc_oscore_combined(&client, sock, &server_addr,
+                                                &request, &edhoc_params, NULL);
+   if (ret == -EMSGSIZE) {
+       /* Combined payload exceeds MAX_UNFRAGMENTED_SIZE */
+       /* Fall back to sequential workflow (send message_3 separately) */
+   }
+
+**Combined Request Construction** (RFC 9668 Section 3.2.1):
+
+1. **Step 1**: Client builds normal CoAP request
+2. **Step 2**: OSCORE protects the request (encryption + OSCORE option)
+3. **Step 3**: Builds ``COMB_PAYLOAD = EDHOC_MSG_3 || OSCORE_PAYLOAD``
+4. **Step 4**: Constructs outer message with:
+
+   - Same header fields (version/type/token/code/MID)
+   - All outer options from OSCORE-protected message
+   - **EDHOC option (21) with empty value** (added in correct numeric order)
+   - Combined payload
+
+5. **Step 5**: Sends combined request
+
+**Block-wise Constraints** (RFC 9668 Section 3.2.2):
+
+Per RFC 9668 Section 3.2.2, the EDHOC option is only included for the **first inner Block1**
+(NUM == 0):
+
+- **First block (NUM=0)**: EDHOC option present, combined payload
+- **Continuation blocks (NUM>0)**: Normal OSCORE-protected request (no EDHOC option)
+
+**MAX_UNFRAGMENTED_SIZE Constraint** (RFC 9668 Section 3.2.2 Step 3.1):
+
+If ``edhoc_msg3_len + oscore_payload_len > CONFIG_COAP_OSCORE_MAX_UNFRAGMENTED_SIZE``,
+the function returns ``-EMSGSIZE`` and does not send anything. The application must fall
+back to the sequential workflow (send EDHOC message_3 separately via ``/.well-known/edhoc``).
+
+**Error Handling**:
+
+- ``-EMSGSIZE``: Combined payload exceeds MAX_UNFRAGMENTED_SIZE (per RFC 8613 Section 4.1.3.4.2)
+- ``-EINVAL``: Invalid parameters (NULL pointers, missing EDHOC_MSG_3, etc.)
+- Other negative values: OSCORE protection failure, socket errors, etc.
+
+**Security Considerations**:
+
+1. **Fail-closed**: If combined request construction fails, nothing is sent
+2. **OSCORE kid = C_R**: Per RFC 9668 Section 3.2.1 Step 4, the OSCORE option 'kid' field
+   carries C_R (connection identifier for responder)
+3. **EDHOC_MSG_3 not protected**: Per RFC 9668 Section 3.2.1 Step 2 note, EDHOC message_3
+   is not encrypted by OSCORE (only the original CoAP request is protected)
+
+**Requirements**:
+
+- :kconfig:option:`CONFIG_COAP_CLIENT` must be enabled
+- :kconfig:option:`CONFIG_COAP_OSCORE` must be enabled
+- :kconfig:option:`CONFIG_COAP_EDHOC_COMBINED_REQUEST` must be enabled
+- Client must have an OSCORE context attached (``client.oscore_ctx``)
+- EDHOC message_3 must be provided as CBOR bstr encoding (per RFC 9528 Section 5.4.2)
+
 **Not yet implemented**:
 
 - Full EDHOC handshake processing (message_1, message_2) - requires application integration
-- Client-side EDHOC+OSCORE combined request generation
-- Client-side outer Block1 generation for combined requests
+- Client-side outer Block1 generation for combined requests (automatic fragmentation)
 
-The current implementation provides fully RFC-compliant server-side processing of EDHOC+OSCORE
-combined requests with automatic OSCORE context derivation, response protection, and outer
-Block1 reassembly support.
+The current implementation provides RFC-compliant client-side generation of EDHOC+OSCORE
+combined requests with automatic Block1 detection and MAX_UNFRAGMENTED_SIZE enforcement.
+Server-side processing is fully implemented with automatic OSCORE context derivation,
+response protection, and outer Block1 reassembly support.
 
 Hop-Limit Option (RFC 8768)
 ============================

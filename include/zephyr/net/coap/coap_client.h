@@ -294,6 +294,57 @@ struct coap_client_option coap_client_option_initial_block2(void);
  */
 bool coap_client_has_ongoing_exchange(struct coap_client *client);
 
+#if defined(CONFIG_COAP_CLIENT) && defined(CONFIG_COAP_OSCORE) && \
+	defined(CONFIG_COAP_EDHOC_COMBINED_REQUEST)
+/**
+ * @brief Parameters for EDHOC+OSCORE combined request (RFC 9668)
+ *
+ * This structure contains the EDHOC message_3 and flags needed to construct
+ * an EDHOC+OSCORE combined request per RFC 9668 Section 3.2.1.
+ */
+struct coap_client_edhoc_params {
+	/** EDHOC message_3 as CBOR bstr encoding (RFC 9528 Section 5.4.2) */
+	const uint8_t *edhoc_msg3;
+	/** Length of EDHOC message_3 */
+	size_t edhoc_msg3_len;
+	/** Enable combined request mode (true = combine EDHOC_MSG_3 with OSCORE payload) */
+	bool combined_request_enabled;
+};
+
+/**
+ * @brief Send CoAP request with EDHOC+OSCORE combined mode (RFC 9668)
+ *
+ * This function sends a CoAP request with EDHOC+OSCORE combined mode per RFC 9668.
+ * The request is first OSCORE-protected, then EDHOC message_3 is prepended to the
+ * OSCORE ciphertext, and the EDHOC option (21) is added to the outer message.
+ *
+ * RFC 9668 Section 3.2.1: The combined payload format is:
+ *   COMB_PAYLOAD = EDHOC_MSG_3 || OSCORE_PAYLOAD
+ *
+ * RFC 9668 Section 3.2.2: Block-wise constraints:
+ * - Combined mode is only used for the first inner Block1 (NUM == 0)
+ * - If COMB_PAYLOAD exceeds MAX_UNFRAGMENTED_SIZE, the function returns -EMSGSIZE
+ * - Subsequent blocks (NUM > 0) are sent as normal OSCORE-protected requests
+ *
+ * @param client Client instance
+ * @param sock Open socket file descriptor
+ * @param addr Destination address of the request, NULL if socket is already connected
+ * @param req CoAP request structure
+ * @param edhoc_params EDHOC parameters for combined request
+ * @param params Pointer to transmission parameters structure or NULL to use default values
+ *
+ * @return 0 on success, negative error code otherwise:
+ *         -EMSGSIZE if combined payload exceeds CONFIG_COAP_OSCORE_MAX_UNFRAGMENTED_SIZE
+ *         -EINVAL if parameters are invalid
+ *         Other negative values for other errors
+ */
+int coap_client_req_edhoc_oscore_combined(struct coap_client *client, int sock,
+					   const struct net_sockaddr *addr,
+					   struct coap_client_request *req,
+					   struct coap_client_edhoc_params *edhoc_params,
+					   struct coap_transmission_parameters *params);
+#endif /* CONFIG_COAP_CLIENT && CONFIG_COAP_OSCORE && CONFIG_COAP_EDHOC_COMBINED_REQUEST */
+
 #if defined(CONFIG_COAP_TEST_API_ENABLE)
 /**
  * @brief Test-only API to inject a response into the client response handler.

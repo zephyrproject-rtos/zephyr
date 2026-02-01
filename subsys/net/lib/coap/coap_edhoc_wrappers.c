@@ -427,3 +427,193 @@ __weak int coap_oscore_context_init_wrapper(void *ctx,
 	return -ENOTSUP;
 #endif
 }
+
+/**
+ * @brief Wrapper for EDHOC message_1 generation (initiator-side)
+ *
+ * Generates EDHOC message_1 per RFC 9528 Appendix A.2.1.
+ * When CONFIG_UEDHOC=y, uses real uoscore-uedhoc implementation.
+ * When CONFIG_UEDHOC=n, provides weak stub for testing.
+ *
+ * @param init_ctx EDHOC initiator context
+ * @param runtime_ctx Runtime context
+ * @param method EDHOC method (e.g., 3 for STAT-STAT)
+ * @param corr EDHOC correlation (e.g., 1 for correlation 1)
+ * @param msg1 Output buffer for message_1
+ * @param msg1_len Length of msg1 buffer (input: buffer size, output: actual length)
+ * @return 0 on success, negative errno on error
+ */
+__weak int coap_edhoc_msg1_gen_wrapper(void *init_ctx,
+					void *runtime_ctx,
+					int method,
+					int corr,
+					uint8_t *msg1,
+					size_t *msg1_len)
+{
+#if defined(CONFIG_UEDHOC)
+	struct edhoc_initiator_context *c = (struct edhoc_initiator_context *)init_ctx;
+	struct runtime_context *rc = (struct runtime_context *)runtime_ctx;
+	struct byte_array msg1_ba = { .ptr = msg1, .len = *msg1_len };
+	enum err result;
+
+	if (c == NULL || rc == NULL) {
+		return -EINVAL;
+	}
+
+	/* RFC 9528 Appendix A.2.1: Initialize runtime context and generate message_1 */
+	result = runtime_context_init(rc);
+	if (result != ok) {
+		LOG_ERR("runtime_context_init failed: %d", result);
+		return -EACCES;
+	}
+
+	result = msg1_gen(c, (enum method_type)method, (enum corr)corr, rc, &msg1_ba);
+	if (result != ok) {
+		LOG_ERR("msg1_gen failed: %d", result);
+		return -EACCES;
+	}
+
+	*msg1_len = msg1_ba.len;
+	return 0;
+#else
+	ARG_UNUSED(init_ctx);
+	ARG_UNUSED(runtime_ctx);
+	ARG_UNUSED(method);
+	ARG_UNUSED(corr);
+	ARG_UNUSED(msg1);
+	ARG_UNUSED(msg1_len);
+
+	/* Default implementation: not supported without uoscore-uedhoc */
+	LOG_ERR("EDHOC msg1_gen not available (override in tests or link uoscore-uedhoc)");
+	return -ENOTSUP;
+#endif
+}
+
+/**
+ * @brief Wrapper for EDHOC message_2 processing (initiator-side)
+ *
+ * Processes EDHOC message_2 and extracts C_R per RFC 9528 Appendix A.2.1.
+ * When CONFIG_UEDHOC=y, uses real uoscore-uedhoc implementation.
+ * When CONFIG_UEDHOC=n, provides weak stub for testing.
+ *
+ * @param init_ctx EDHOC initiator context
+ * @param runtime_ctx Runtime context
+ * @param msg2 EDHOC message_2 buffer
+ * @param msg2_len Length of message_2
+ * @param cred_r_array Array of trusted responder credentials
+ * @param c_r Output buffer for C_R (connection identifier for responder)
+ * @param c_r_len Length of c_r buffer (input: buffer size, output: actual length)
+ * @return 0 on success, negative errno on error
+ */
+__weak int coap_edhoc_msg2_process_wrapper(void *init_ctx,
+					    void *runtime_ctx,
+					    const uint8_t *msg2,
+					    size_t msg2_len,
+					    void *cred_r_array,
+					    uint8_t *c_r,
+					    size_t *c_r_len)
+{
+#if defined(CONFIG_UEDHOC)
+	struct edhoc_initiator_context *c = (struct edhoc_initiator_context *)init_ctx;
+	struct runtime_context *rc = (struct runtime_context *)runtime_ctx;
+	struct cred_array *creds = (struct cred_array *)cred_r_array;
+	struct byte_array msg2_ba = { .ptr = (uint8_t *)msg2, .len = msg2_len };
+	enum err result;
+
+	if (c == NULL || rc == NULL || creds == NULL) {
+		return -EINVAL;
+	}
+
+	/* RFC 9528 Appendix A.2.1: Process message_2 */
+	result = msg2_process(c, rc, creds, &msg2_ba);
+	if (result != ok) {
+		LOG_ERR("msg2_process failed: %d", result);
+		return -EACCES;
+	}
+
+	/* RFC 9528 Table 14: Extract C_R from runtime context for OSCORE kid mapping
+	 * After msg2_process, C_R is available in rc->c_r
+	 */
+	if (rc->c_r.len > 0 && rc->c_r.len <= *c_r_len) {
+		memcpy(c_r, rc->c_r.ptr, rc->c_r.len);
+		*c_r_len = rc->c_r.len;
+	} else {
+		LOG_ERR("C_R not available or buffer too small (need %zu, have %zu)",
+			rc->c_r.len, *c_r_len);
+		return -EINVAL;
+	}
+
+	return 0;
+#else
+	ARG_UNUSED(init_ctx);
+	ARG_UNUSED(runtime_ctx);
+	ARG_UNUSED(msg2);
+	ARG_UNUSED(msg2_len);
+	ARG_UNUSED(cred_r_array);
+	ARG_UNUSED(c_r);
+	ARG_UNUSED(c_r_len);
+
+	/* Default implementation: not supported without uoscore-uedhoc */
+	LOG_ERR("EDHOC msg2_process not available (override in tests or link uoscore-uedhoc)");
+	return -ENOTSUP;
+#endif
+}
+
+/**
+ * @brief Wrapper for EDHOC message_3 generation (initiator-side)
+ *
+ * Generates EDHOC message_3 and derives PRK_out per RFC 9528 Section 5.4.2.
+ * Returns EDHOC_MSG_3 as CBOR bstr encoding (required by RFC 9668 Section 3.2.1).
+ * When CONFIG_UEDHOC=y, uses real uoscore-uedhoc implementation.
+ * When CONFIG_UEDHOC=n, provides weak stub for testing.
+ *
+ * @param init_ctx EDHOC initiator context
+ * @param runtime_ctx Runtime context
+ * @param msg3 Output buffer for message_3 (CBOR bstr encoding)
+ * @param msg3_len Length of msg3 buffer (input: buffer size, output: actual length)
+ * @param prk_out Output buffer for PRK_out (derived shared secret)
+ * @param prk_out_len Length of prk_out buffer (input: buffer size, output: actual length)
+ * @return 0 on success, negative errno on error
+ */
+__weak int coap_edhoc_msg3_gen_wrapper(void *init_ctx,
+					void *runtime_ctx,
+					uint8_t *msg3,
+					size_t *msg3_len,
+					uint8_t *prk_out,
+					size_t *prk_out_len)
+{
+#if defined(CONFIG_UEDHOC)
+	struct edhoc_initiator_context *c = (struct edhoc_initiator_context *)init_ctx;
+	struct runtime_context *rc = (struct runtime_context *)runtime_ctx;
+	struct byte_array msg3_ba = { .ptr = msg3, .len = *msg3_len };
+	struct byte_array prk_out_ba = { .ptr = prk_out, .len = *prk_out_len };
+	enum err result;
+
+	if (c == NULL || rc == NULL) {
+		return -EINVAL;
+	}
+
+	/* RFC 9528 Section 5.4.2: Generate message_3 and derive PRK_out */
+	result = msg3_gen(c, rc, &prk_out_ba, &msg3_ba);
+	if (result != ok) {
+		LOG_ERR("msg3_gen failed: %d", result);
+		return -EACCES;
+	}
+
+	*msg3_len = msg3_ba.len;
+	*prk_out_len = prk_out_ba.len;
+
+	return 0;
+#else
+	ARG_UNUSED(init_ctx);
+	ARG_UNUSED(runtime_ctx);
+	ARG_UNUSED(msg3);
+	ARG_UNUSED(msg3_len);
+	ARG_UNUSED(prk_out);
+	ARG_UNUSED(prk_out_len);
+
+	/* Default implementation: not supported without uoscore-uedhoc */
+	LOG_ERR("EDHOC msg3_gen not available (override in tests or link uoscore-uedhoc)");
+	return -ENOTSUP;
+#endif
+}

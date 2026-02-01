@@ -7448,4 +7448,233 @@ ZTEST(coap, test_well_known_core_edhoc_no_duplicate)
 
 #endif /* CONFIG_COAP_SERVER_WELL_KNOWN_EDHOC */
 
+#if defined(CONFIG_COAP_EDHOC_COMBINED_REQUEST) && defined(CONFIG_COAP_CLIENT)
+/* Include internal header for testing */
+#include "coap_edhoc_client_combined.h"
+
+/**
+ * @brief Test EDHOC+OSCORE combined request construction
+ *
+ * Tests RFC 9668 Section 3.2.1 combined request construction:
+ * - EDHOC option (21) is present exactly once and has zero length
+ * - Payload begins with EDHOC_MSG_3 (CBOR bstr) followed by OSCORE payload
+ */
+ZTEST(coap, test_edhoc_oscore_combined_request_construction)
+{
+	uint8_t oscore_pkt_buf[256];
+	struct coap_packet oscore_pkt;
+	uint8_t combined_buf[512];
+	size_t combined_len;
+	int ret;
+
+	/* Build a synthetic OSCORE-protected packet
+	 * Header: CON POST, token=0x42, MID=0x1234
+	 * Options: OSCORE option (9) with value 0x09 (kid=empty, PIV=empty, kid context=empty)
+	 * Payload: OSCORE ciphertext "OSCORE_CIPHERTEXT"
+	 */
+	uint8_t token[] = { 0x42 };
+	ret = coap_packet_init(&oscore_pkt, oscore_pkt_buf, sizeof(oscore_pkt_buf),
+			       COAP_VERSION_1, COAP_TYPE_CON, sizeof(token), token,
+			       COAP_METHOD_POST, 0x1234);
+	zassert_equal(ret, 0, "Failed to init OSCORE packet");
+
+	/* Add OSCORE option (simplified: just flag byte 0x09) */
+	uint8_t oscore_opt[] = { 0x09 };
+	ret = coap_packet_append_option(&oscore_pkt, COAP_OPTION_OSCORE,
+					oscore_opt, sizeof(oscore_opt));
+	zassert_equal(ret, 0, "Failed to add OSCORE option");
+
+	/* Add OSCORE payload (ciphertext) */
+	const char *oscore_payload = "OSCORE_CIPHERTEXT";
+	ret = coap_packet_append_payload_marker(&oscore_pkt);
+	zassert_equal(ret, 0, "Failed to add payload marker");
+	ret = coap_packet_append_payload(&oscore_pkt, (const uint8_t *)oscore_payload,
+					 strlen(oscore_payload));
+	zassert_equal(ret, 0, "Failed to add OSCORE payload");
+
+	/* Build EDHOC_MSG_3 as CBOR bstr encoding
+	 * For testing, use a simple CBOR bstr: 0x4D (bstr of length 13) + "EDHOC_MSG_3!!"
+	 */
+	uint8_t edhoc_msg3[] = { 0x4D, 'E', 'D', 'H', 'O', 'C', '_', 'M', 'S', 'G', '_', '3', '!', '!' };
+	size_t edhoc_msg3_len = sizeof(edhoc_msg3);
+
+	/* Build combined request */
+	ret = coap_edhoc_client_build_combined_request(
+		oscore_pkt.data, oscore_pkt.offset,
+		edhoc_msg3, edhoc_msg3_len,
+		combined_buf, sizeof(combined_buf),
+		&combined_len);
+	zassert_equal(ret, 0, "Failed to build combined request");
+
+	/* Parse combined request */
+	struct coap_packet combined_pkt;
+	ret = coap_packet_parse(&combined_pkt, combined_buf, combined_len, NULL, 0);
+	zassert_equal(ret, 0, "Failed to parse combined request");
+
+	/* RFC 9668 Section 3.1: EDHOC option MUST occur at most once and MUST be empty */
+	struct coap_option edhoc_opts[2];
+	int num_edhoc = coap_find_options(&combined_pkt, COAP_OPTION_EDHOC,
+					  edhoc_opts, ARRAY_SIZE(edhoc_opts));
+	zassert_equal(num_edhoc, 1, "EDHOC option should appear exactly once, got %d", num_edhoc);
+	zassert_equal(edhoc_opts[0].len, 0, "EDHOC option should be empty, got len=%u",
+		      edhoc_opts[0].len);
+
+	/* RFC 9668 Section 3.2.1 Step 3: Payload should be EDHOC_MSG_3 || OSCORE_PAYLOAD */
+	uint16_t payload_len;
+	const uint8_t *payload = coap_packet_get_payload(&combined_pkt, &payload_len);
+	zassert_not_null(payload, "Combined request should have payload");
+
+	/* Check payload starts with EDHOC_MSG_3 */
+	zassert_true(payload_len >= edhoc_msg3_len,
+		     "Payload too short (%u < %zu)", payload_len, edhoc_msg3_len);
+	zassert_mem_equal(payload, edhoc_msg3, edhoc_msg3_len,
+			  "Payload should start with EDHOC_MSG_3");
+
+	/* Check OSCORE payload follows */
+	const uint8_t *oscore_part = payload + edhoc_msg3_len;
+	size_t oscore_part_len = payload_len - edhoc_msg3_len;
+	zassert_equal(oscore_part_len, strlen(oscore_payload),
+		      "OSCORE part length mismatch");
+	zassert_mem_equal(oscore_part, oscore_payload, strlen(oscore_payload),
+			  "OSCORE payload mismatch");
+
+	/* Verify header fields are preserved */
+	zassert_equal(coap_header_get_type(&combined_pkt), COAP_TYPE_CON,
+		      "Type should be preserved");
+	zassert_equal(coap_header_get_code(&combined_pkt), COAP_METHOD_POST,
+		      "Code should be preserved");
+	zassert_equal(coap_header_get_id(&combined_pkt), 0x1234,
+		      "MID should be preserved");
+	uint8_t combined_token[COAP_TOKEN_MAX_LEN];
+	uint8_t combined_tkl = coap_header_get_token(&combined_pkt, combined_token);
+	zassert_equal(combined_tkl, 1, "Token length should be preserved");
+	zassert_equal(combined_token[0], 0x42, "Token should be preserved");
+}
+
+/**
+ * @brief Test combined request with Block1 NUM != 0
+ *
+ * Tests RFC 9668 Section 3.2.2 Step 2.1:
+ * - EDHOC option should NOT be included for non-first inner Block1
+ */
+ZTEST(coap, test_edhoc_oscore_combined_request_block1_continuation)
+{
+	uint8_t plaintext_buf[256];
+	struct coap_packet plaintext_pkt;
+	bool is_first_block;
+	int ret;
+
+	/* Build plaintext request with Block1 NUM=1 (continuation block) */
+	uint8_t token[] = { 0x42 };
+	ret = coap_packet_init(&plaintext_pkt, plaintext_buf, sizeof(plaintext_buf),
+			       COAP_VERSION_1, COAP_TYPE_CON, sizeof(token), token,
+			       COAP_METHOD_POST, 0x1234);
+	zassert_equal(ret, 0, "Failed to init plaintext packet");
+
+	/* Add Block1 option with NUM=1, M=1, SZX=6 (1024 bytes)
+	 * Block1 value encoding: NUM(variable bits) | M(1 bit) | SZX(3 bits)
+	 * For NUM=1, M=1, SZX=6: (1 << 4) | (1 << 3) | 6 = 0x1E
+	 */
+	struct coap_block_context block_ctx = {
+		.block_size = COAP_BLOCK_1024,
+		.current = 1024,  /* Second block */
+		.total_size = 0
+	};
+	ret = coap_append_block1_option(&plaintext_pkt, &block_ctx);
+	zassert_equal(ret, 0, "Failed to add Block1 option");
+
+	/* Check if this is first block */
+	ret = coap_edhoc_client_is_first_inner_block(plaintext_pkt.data,
+						      plaintext_pkt.offset,
+						      &is_first_block);
+	zassert_equal(ret, 0, "Failed to check first block");
+	zassert_false(is_first_block, "Block1 NUM=1 should not be first block");
+
+	/* Build another request with Block1 NUM=0 (first block) */
+	ret = coap_packet_init(&plaintext_pkt, plaintext_buf, sizeof(plaintext_buf),
+			       COAP_VERSION_1, COAP_TYPE_CON, sizeof(token), token,
+			       COAP_METHOD_POST, 0x1235);
+	zassert_equal(ret, 0, "Failed to init plaintext packet");
+
+	block_ctx.current = 0;  /* First block */
+	ret = coap_append_block1_option(&plaintext_pkt, &block_ctx);
+	zassert_equal(ret, 0, "Failed to add Block1 option");
+
+	ret = coap_edhoc_client_is_first_inner_block(plaintext_pkt.data,
+						      plaintext_pkt.offset,
+						      &is_first_block);
+	zassert_equal(ret, 0, "Failed to check first block");
+	zassert_true(is_first_block, "Block1 NUM=0 should be first block");
+
+	/* Build request without Block1 option (treated as NUM=0) */
+	ret = coap_packet_init(&plaintext_pkt, plaintext_buf, sizeof(plaintext_buf),
+			       COAP_VERSION_1, COAP_TYPE_CON, sizeof(token), token,
+			       COAP_METHOD_POST, 0x1236);
+	zassert_equal(ret, 0, "Failed to init plaintext packet");
+
+	ret = coap_edhoc_client_is_first_inner_block(plaintext_pkt.data,
+						      plaintext_pkt.offset,
+						      &is_first_block);
+	zassert_equal(ret, 0, "Failed to check first block");
+	zassert_true(is_first_block, "No Block1 should be treated as first block");
+}
+
+/**
+ * @brief Test MAX_UNFRAGMENTED_SIZE constraint for EDHOC+OSCORE combined request
+ *
+ * Tests RFC 9668 Section 3.2.2 Step 3.1:
+ * - If COMB_PAYLOAD exceeds MAX_UNFRAGMENTED_SIZE, function returns -EMSGSIZE
+ * - No packet is sent (fail-closed)
+ */
+ZTEST(coap, test_edhoc_oscore_combined_request_max_unfragmented_size)
+{
+	/* Use a larger buffer to accommodate the large payload */
+	static uint8_t oscore_pkt_buf[CONFIG_COAP_OSCORE_MAX_UNFRAGMENTED_SIZE + 128];
+	struct coap_packet oscore_pkt;
+	uint8_t combined_buf[CONFIG_COAP_OSCORE_MAX_UNFRAGMENTED_SIZE + 256];
+	size_t combined_len;
+	int ret;
+
+	/* Build OSCORE-protected packet with large payload */
+	uint8_t token[] = { 0x42 };
+	ret = coap_packet_init(&oscore_pkt, oscore_pkt_buf, sizeof(oscore_pkt_buf),
+			       COAP_VERSION_1, COAP_TYPE_CON, sizeof(token), token,
+			       COAP_METHOD_POST, 0x1234);
+	zassert_equal(ret, 0, "Failed to init OSCORE packet");
+
+	/* Add OSCORE option */
+	uint8_t oscore_opt[] = { 0x09 };
+	ret = coap_packet_append_option(&oscore_pkt, COAP_OPTION_OSCORE,
+					oscore_opt, sizeof(oscore_opt));
+	zassert_equal(ret, 0, "Failed to add OSCORE option");
+
+	/* Add large OSCORE payload that will exceed MAX_UNFRAGMENTED_SIZE when combined
+	 * We use MAX_UNFRAGMENTED_SIZE - 10 to leave room for headers, then add EDHOC_MSG_3
+	 * which will push it over the limit
+	 */
+	size_t oscore_payload_size = CONFIG_COAP_OSCORE_MAX_UNFRAGMENTED_SIZE - 10;
+	static uint8_t large_payload[CONFIG_COAP_OSCORE_MAX_UNFRAGMENTED_SIZE];
+	memset(large_payload, 0xAA, oscore_payload_size);
+	ret = coap_packet_append_payload_marker(&oscore_pkt);
+	zassert_equal(ret, 0, "Failed to add payload marker");
+	ret = coap_packet_append_payload(&oscore_pkt, large_payload, oscore_payload_size);
+	zassert_equal(ret, 0, "Failed to add OSCORE payload");
+
+	/* Build EDHOC_MSG_3 (large enough to exceed MAX_UNFRAGMENTED_SIZE when combined) */
+	uint8_t edhoc_msg3[20];
+	memset(edhoc_msg3, 0x42, sizeof(edhoc_msg3));
+	size_t edhoc_msg3_len = sizeof(edhoc_msg3);
+
+	/* Attempt to build combined request - should fail with -EMSGSIZE */
+	ret = coap_edhoc_client_build_combined_request(
+		oscore_pkt.data, oscore_pkt.offset,
+		edhoc_msg3, edhoc_msg3_len,
+		combined_buf, sizeof(combined_buf),
+		&combined_len);
+	zassert_equal(ret, -EMSGSIZE,
+		      "Should fail with -EMSGSIZE when exceeding MAX_UNFRAGMENTED_SIZE, got %d", ret);
+}
+
+#endif /* CONFIG_COAP_EDHOC_COMBINED_REQUEST && CONFIG_COAP_CLIENT */
+
 ZTEST_SUITE(coap, NULL, NULL, NULL, NULL, NULL);

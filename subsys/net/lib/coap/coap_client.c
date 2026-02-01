@@ -20,6 +20,10 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include "coap_oscore.h"
 #endif
 
+#if defined(CONFIG_COAP_EDHOC_COMBINED_REQUEST)
+#include "coap_edhoc_client_combined.h"
+#endif
+
 #define COAP_VERSION 1
 #define COAP_SEPARATE_TIMEOUT 6000
 #define COAP_PERIODIC_TIMEOUT 500
@@ -1835,6 +1839,245 @@ int coap_client_test_inject_response(struct coap_client *client,
 	return ret;
 }
 #endif /* CONFIG_COAP_TEST_API_ENABLE */
+
+#if defined(CONFIG_COAP_CLIENT) && defined(CONFIG_COAP_OSCORE) && \
+	defined(CONFIG_COAP_EDHOC_COMBINED_REQUEST)
+/**
+ * @brief OSCORE-protect request and optionally build EDHOC+OSCORE combined request
+ *
+ * This helper extends oscore_protect_request() to support RFC 9668 combined requests.
+ * When edhoc_params is provided and combined_request_enabled is true:
+ * 1. Checks if this is the first inner Block1 (NUM == 0)
+ * 2. If yes, builds combined request with EDHOC option and COMB_PAYLOAD
+ * 3. If no, sends normal OSCORE-protected request
+ *
+ * @param client CoAP client instance
+ * @param internal_req Internal request structure
+ * @param edhoc_params EDHOC parameters (NULL for normal OSCORE-only request)
+ * @return 0 on success, negative errno on error
+ */
+static int oscore_protect_request_with_edhoc(struct coap_client *client,
+					      struct coap_client_internal_request *internal_req,
+					      struct coap_client_edhoc_params *edhoc_params)
+{
+	int ret;
+	uint32_t oscore_len;
+
+	if (client->oscore_ctx == NULL) {
+		return 0;
+	}
+
+	/* Step 1: OSCORE-protect the plaintext request */
+	oscore_len = sizeof(internal_req->oscore_wire_buf);
+	ret = coap_oscore_protect(internal_req->request.data,
+				  internal_req->request.offset,
+				  internal_req->oscore_wire_buf,
+				  &oscore_len,
+				  client->oscore_ctx);
+	if (ret < 0) {
+		LOG_ERR("OSCORE protection failed (%d), aborting request", ret);
+		return ret;
+	}
+
+	/* Step 2: Check if we should build combined request */
+	bool build_combined = false;
+	if (edhoc_params != NULL && edhoc_params->combined_request_enabled &&
+	    edhoc_params->edhoc_msg3 != NULL && edhoc_params->edhoc_msg3_len > 0) {
+		/* RFC 9668 Section 3.2.2 Step 2.1: Only for first inner Block1 (NUM == 0) */
+		bool is_first_block = false;
+		ret = coap_edhoc_client_is_first_inner_block(internal_req->request.data,
+							      internal_req->request.offset,
+							      &is_first_block);
+		if (ret < 0) {
+			LOG_ERR("Failed to check inner Block1 (%d)", ret);
+			return ret;
+		}
+
+		build_combined = is_first_block;
+		if (!is_first_block) {
+			LOG_DBG("Non-first inner Block1 - sending normal OSCORE request");
+		}
+	}
+
+	/* Step 3: Build combined request if needed */
+	if (build_combined) {
+		/* Use send_buf as temporary buffer for combined request */
+		size_t combined_len = 0;
+		ret = coap_edhoc_client_build_combined_request(
+			internal_req->oscore_wire_buf, oscore_len,
+			edhoc_params->edhoc_msg3, edhoc_params->edhoc_msg3_len,
+			internal_req->send_buf, sizeof(internal_req->send_buf),
+			&combined_len);
+		if (ret < 0) {
+			/* RFC 9668 Section 3.2.2 Step 3.1: If combined payload exceeds
+			 * MAX_UNFRAGMENTED_SIZE, fail and do not send anything
+			 */
+			if (ret == -EMSGSIZE) {
+				LOG_ERR("Combined payload exceeds MAX_UNFRAGMENTED_SIZE, "
+					"must fall back to sequential workflow");
+			} else {
+				LOG_ERR("Failed to build combined request (%d)", ret);
+			}
+			return ret;
+		}
+
+		/* Copy combined request back to oscore_wire_buf for sending */
+		if (combined_len > sizeof(internal_req->oscore_wire_buf)) {
+			LOG_ERR("Combined request too large (%zu > %zu)",
+				combined_len, sizeof(internal_req->oscore_wire_buf));
+			return -EMSGSIZE;
+		}
+		memcpy(internal_req->oscore_wire_buf, internal_req->send_buf, combined_len);
+		oscore_len = combined_len;
+
+		LOG_DBG("Built EDHOC+OSCORE combined request (%zu bytes)", combined_len);
+	}
+
+	/* Step 4: Re-parse the (possibly combined) message for sending */
+	ret = coap_packet_parse(&internal_req->request, internal_req->oscore_wire_buf,
+				oscore_len, NULL, 0);
+	if (ret < 0) {
+		LOG_ERR("Failed to parse protected message (%d)", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+int coap_client_req_edhoc_oscore_combined(struct coap_client *client, int sock,
+					   const struct net_sockaddr *addr,
+					   struct coap_client_request *req,
+					   struct coap_client_edhoc_params *edhoc_params,
+					   struct coap_transmission_parameters *params)
+{
+	int ret;
+	struct coap_client_internal_request *internal_req;
+	size_t pathlen;
+
+	/* Validate EDHOC-specific parameters */
+	if (edhoc_params == NULL) {
+		return -EINVAL;
+	}
+
+	if (edhoc_params->combined_request_enabled) {
+		if (edhoc_params->edhoc_msg3 == NULL || edhoc_params->edhoc_msg3_len == 0) {
+			LOG_ERR("Combined request enabled but EDHOC_MSG_3 not provided");
+			return -EINVAL;
+		}
+	}
+
+	/* Validate common parameters */
+	if (client == NULL || sock < 0 || req == NULL) {
+		return -EINVAL;
+	}
+
+	pathlen = strnlen(req->path, MAX_PATH_SIZE);
+	if (pathlen == 0 || pathlen == MAX_PATH_SIZE || req->num_options > MAX_EXTRA_OPTIONS) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&client->lock, K_FOREVER);
+
+	internal_req = get_free_request(client);
+	if (internal_req == NULL) {
+		LOG_DBG("No more free requests");
+		ret = -EAGAIN;
+		goto out;
+	}
+
+	/* Don't allow changing to a different socket if there is already request ongoing */
+	if (client->fd != sock && has_ongoing_request(client)) {
+		ret = -EALREADY;
+		goto release;
+	}
+
+	/* Don't allow changing to a different address if there is already request ongoing */
+	if (addr != NULL) {
+		if (memcmp(&client->address, addr, sizeof(*addr)) != 0) {
+			if (has_ongoing_request(client)) {
+				LOG_WRN("Can't change to a different socket, request ongoing.");
+				ret = -EALREADY;
+				goto release;
+			}
+			memcpy(&client->address, addr, sizeof(*addr));
+			client->socklen = sizeof(client->address);
+		}
+	} else {
+		if (client->socklen != 0) {
+			if (has_ongoing_request(client)) {
+				LOG_WRN("Can't change to a different socket, request ongoing.");
+				ret = -EALREADY;
+				goto release;
+			}
+			memset(&client->address, 0, sizeof(client->address));
+			client->socklen = 0;
+		}
+	}
+
+	reset_internal_request(internal_req);
+
+	ret = coap_client_init_request(client, req, internal_req, false);
+	if (ret < 0) {
+		LOG_ERR("Failed to initialize coap request");
+		goto release;
+	}
+
+	if (client->send_echo) {
+		ret = coap_packet_append_option(&internal_req->request, COAP_OPTION_ECHO,
+						client->echo_option.value, client->echo_option.len);
+		if (ret < 0) {
+			LOG_ERR("Failed to append echo option");
+			goto release;
+		}
+		client->send_echo = false;
+	}
+
+	ret = coap_client_schedule_poll(client, sock, req, internal_req);
+	if (ret < 0) {
+		LOG_ERR("Failed to schedule polling");
+		goto release;
+	}
+
+	ret = coap_pending_init(&internal_req->pending, &internal_req->request,
+				&client->address, params);
+	if (ret < 0) {
+		LOG_ERR("Failed to initialize pending struct");
+		goto release;
+	}
+
+	/* Non-Confirmable messages are not retried */
+	if (coap_header_get_type(&internal_req->request) == COAP_TYPE_NON_CON) {
+		internal_req->pending.retries = 0;
+	}
+	coap_pending_cycle(&internal_req->pending);
+	internal_req->is_observe = coap_request_is_observe(&internal_req->request);
+	LOG_DBG("Request is_observe %d", internal_req->is_observe);
+
+	/* RFC 9668: Protect request with OSCORE and optionally build combined request */
+	ret = oscore_protect_request_with_edhoc(client, internal_req, edhoc_params);
+	if (ret < 0) {
+		goto release;
+	}
+
+	ret = send_request(sock, internal_req->request.data, internal_req->request.offset, 0,
+			  &client->address, client->socklen);
+	if (ret < 0) {
+		ret = -errno;
+	}
+
+release:
+	if (ret < 0) {
+		LOG_ERR("Failed to send EDHOC+OSCORE combined request: %d", ret);
+		reset_internal_request(internal_req);
+	} else {
+		/* Do not return the number of bytes sent */
+		ret = 0;
+	}
+out:
+	k_mutex_unlock(&client->lock);
+	return ret;
+}
+#endif /* CONFIG_COAP_CLIENT && CONFIG_COAP_OSCORE && CONFIG_COAP_EDHOC_COMBINED_REQUEST */
 
 #define COAP_CLIENT_THREAD_PRIORITY CLAMP(CONFIG_COAP_CLIENT_THREAD_PRIORITY, \
 					  K_HIGHEST_APPLICATION_THREAD_PRIO, \
