@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(net_test, LOG_LEVEL_DBG);
 #include <zephyr/sys/util.h>
 #include <zephyr/net/coap.h>
 #include <zephyr/net/coap_client.h>
+#include <zephyr/net/coap/coap_link_format.h>
 
 #include <zephyr/tc_util.h>
 #include <zephyr/ztest.h>
@@ -5449,6 +5450,9 @@ ZTEST(coap, test_oscore_error_response_format)
 #if defined(CONFIG_COAP_SERVER_WELL_KNOWN_EDHOC)
 /* Test wrappers for EDHOC transport */
 
+/* Forward declaration for test-only helper */
+extern int coap_edhoc_transport_validate_content_format(const struct coap_packet *request);
+
 /* Mock EDHOC message_2 generation */
 int coap_edhoc_msg2_gen_wrapper(void *resp_ctx,
 				void *runtime_ctx,
@@ -5809,6 +5813,168 @@ ZTEST(coap, test_edhoc_transport_error_invalid_prefix)
 	retrieved_payload = coap_packet_get_payload(&request, &payload_len);
 	zassert_not_null(retrieved_payload, "Payload should be present");
 	zassert_not_equal(retrieved_payload[0], 0xF5, "Prefix should not be 0xF5");
+}
+
+ZTEST(coap, test_edhoc_transport_content_format_missing)
+{
+	/* Test that EDHOC requests without Content-Format are rejected */
+	uint8_t request_buf[128];
+	struct coap_packet request;
+	int r;
+
+	/* Build POST request to /.well-known/edhoc */
+	r = coap_packet_init(&request, request_buf, sizeof(request_buf),
+			     COAP_VERSION_1, COAP_TYPE_CON, 8, (uint8_t *)"token001",
+			     COAP_METHOD_POST, coap_next_id());
+	zassert_equal(r, 0, "Failed to init request");
+
+	/* Add Uri-Path options */
+	r = coap_packet_append_option(&request, COAP_OPTION_URI_PATH,
+				      ".well-known", strlen(".well-known"));
+	zassert_equal(r, 0, "Failed to add Uri-Path .well-known");
+
+	r = coap_packet_append_option(&request, COAP_OPTION_URI_PATH,
+				      "edhoc", strlen("edhoc"));
+	zassert_equal(r, 0, "Failed to add Uri-Path edhoc");
+
+	/* Do NOT add Content-Format option */
+
+	/* Add payload: CBOR true (0xF5) + dummy message_1 */
+	uint8_t payload[] = {0xF5, 0x01, 0x02, 0x03, 0x04};
+
+	r = coap_packet_append_payload_marker(&request);
+	zassert_equal(r, 0, "Failed to add payload marker");
+
+	r = coap_packet_append_payload(&request, payload, sizeof(payload));
+	zassert_equal(r, 0, "Failed to add payload");
+
+	/* Validate Content-Format - should fail with -ENOENT (missing) */
+	r = coap_edhoc_transport_validate_content_format(&request);
+	zassert_equal(r, -ENOENT, "Should reject request without Content-Format, got %d", r);
+}
+
+ZTEST(coap, test_edhoc_transport_content_format_wrong_value)
+{
+	/* Test that EDHOC requests with Content-Format 64 are rejected */
+	uint8_t request_buf[128];
+	struct coap_packet request;
+	int r;
+
+	/* Build POST request to /.well-known/edhoc */
+	r = coap_packet_init(&request, request_buf, sizeof(request_buf),
+			     COAP_VERSION_1, COAP_TYPE_CON, 8, (uint8_t *)"token002",
+			     COAP_METHOD_POST, coap_next_id());
+	zassert_equal(r, 0, "Failed to init request");
+
+	/* Add Uri-Path options */
+	r = coap_packet_append_option(&request, COAP_OPTION_URI_PATH,
+				      ".well-known", strlen(".well-known"));
+	zassert_equal(r, 0, "Failed to add Uri-Path .well-known");
+
+	r = coap_packet_append_option(&request, COAP_OPTION_URI_PATH,
+				      "edhoc", strlen("edhoc"));
+	zassert_equal(r, 0, "Failed to add Uri-Path edhoc");
+
+	/* Add Content-Format: 64 (wrong - should be 65 for client requests) */
+	r = coap_append_option_int(&request, COAP_OPTION_CONTENT_FORMAT, 64);
+	zassert_equal(r, 0, "Failed to add Content-Format");
+
+	/* Add payload: CBOR true (0xF5) + dummy message_1 */
+	uint8_t payload[] = {0xF5, 0x01, 0x02, 0x03, 0x04};
+
+	r = coap_packet_append_payload_marker(&request);
+	zassert_equal(r, 0, "Failed to add payload marker");
+
+	r = coap_packet_append_payload(&request, payload, sizeof(payload));
+	zassert_equal(r, 0, "Failed to add payload");
+
+	/* Validate Content-Format - should fail with -EBADMSG (wrong value) */
+	r = coap_edhoc_transport_validate_content_format(&request);
+	zassert_equal(r, -EBADMSG, "Should reject request with Content-Format 64, got %d", r);
+}
+
+ZTEST(coap, test_edhoc_transport_content_format_correct)
+{
+	/* Test that EDHOC requests with Content-Format 65 are accepted */
+	uint8_t request_buf[128];
+	struct coap_packet request;
+	int r;
+
+	/* Build POST request to /.well-known/edhoc */
+	r = coap_packet_init(&request, request_buf, sizeof(request_buf),
+			     COAP_VERSION_1, COAP_TYPE_CON, 8, (uint8_t *)"token003",
+			     COAP_METHOD_POST, coap_next_id());
+	zassert_equal(r, 0, "Failed to init request");
+
+	/* Add Uri-Path options */
+	r = coap_packet_append_option(&request, COAP_OPTION_URI_PATH,
+				      ".well-known", strlen(".well-known"));
+	zassert_equal(r, 0, "Failed to add Uri-Path .well-known");
+
+	r = coap_packet_append_option(&request, COAP_OPTION_URI_PATH,
+				      "edhoc", strlen("edhoc"));
+	zassert_equal(r, 0, "Failed to add Uri-Path edhoc");
+
+	/* Add Content-Format: 65 (correct for client requests) */
+	r = coap_append_option_int(&request, COAP_OPTION_CONTENT_FORMAT, 65);
+	zassert_equal(r, 0, "Failed to add Content-Format");
+
+	/* Add payload: CBOR true (0xF5) + dummy message_1 */
+	uint8_t payload[] = {0xF5, 0x01, 0x02, 0x03, 0x04};
+
+	r = coap_packet_append_payload_marker(&request);
+	zassert_equal(r, 0, "Failed to add payload marker");
+
+	r = coap_packet_append_payload(&request, payload, sizeof(payload));
+	zassert_equal(r, 0, "Failed to add payload");
+
+	/* Validate Content-Format - should succeed */
+	r = coap_edhoc_transport_validate_content_format(&request);
+	zassert_equal(r, 0, "Should accept request with Content-Format 65, got %d", r);
+}
+
+ZTEST(coap, test_edhoc_transport_content_format_duplicate)
+{
+	/* Test that EDHOC requests with duplicate Content-Format options are rejected */
+	uint8_t request_buf[128];
+	struct coap_packet request;
+	int r;
+
+	/* Build POST request to /.well-known/edhoc */
+	r = coap_packet_init(&request, request_buf, sizeof(request_buf),
+			     COAP_VERSION_1, COAP_TYPE_CON, 8, (uint8_t *)"token004",
+			     COAP_METHOD_POST, coap_next_id());
+	zassert_equal(r, 0, "Failed to init request");
+
+	/* Add Uri-Path options */
+	r = coap_packet_append_option(&request, COAP_OPTION_URI_PATH,
+				      ".well-known", strlen(".well-known"));
+	zassert_equal(r, 0, "Failed to add Uri-Path .well-known");
+
+	r = coap_packet_append_option(&request, COAP_OPTION_URI_PATH,
+				      "edhoc", strlen("edhoc"));
+	zassert_equal(r, 0, "Failed to add Uri-Path edhoc");
+
+	/* Add Content-Format option twice (duplicate) */
+	r = coap_append_option_int(&request, COAP_OPTION_CONTENT_FORMAT, 65);
+	zassert_equal(r, 0, "Failed to add first Content-Format");
+
+	r = coap_append_option_int(&request, COAP_OPTION_CONTENT_FORMAT, 65);
+	zassert_equal(r, 0, "Failed to add second Content-Format");
+
+	/* Add payload: CBOR true (0xF5) + dummy message_1 */
+	uint8_t payload[] = {0xF5, 0x01, 0x02, 0x03, 0x04};
+
+	r = coap_packet_append_payload_marker(&request);
+	zassert_equal(r, 0, "Failed to add payload marker");
+
+	r = coap_packet_append_payload(&request, payload, sizeof(payload));
+	zassert_equal(r, 0, "Failed to add payload");
+
+	/* Validate Content-Format - should fail with -EMSGSIZE (duplicate) */
+	r = coap_edhoc_transport_validate_content_format(&request);
+	zassert_equal(r, -EMSGSIZE, "Should reject request with duplicate Content-Format, got %d",
+		      r);
 }
 
 #endif /* CONFIG_COAP_SERVER_WELL_KNOWN_EDHOC */

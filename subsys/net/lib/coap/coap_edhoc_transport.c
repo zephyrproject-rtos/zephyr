@@ -76,6 +76,14 @@ extern int coap_oscore_context_init_wrapper(void *ctx,
 					     int aead_alg,
 					     int hkdf_alg);
 
+/* Forward declaration */
+#if defined(CONFIG_ZTEST)
+/* Make function non-static for testing */
+int coap_edhoc_transport_validate_content_format(const struct coap_packet *request);
+#else
+static int coap_edhoc_transport_validate_content_format(const struct coap_packet *request);
+#endif
+
 /**
  * @brief Parse CBOR connection identifier per RFC 9528 Section 3.3.2
  *
@@ -607,7 +615,6 @@ int coap_edhoc_transport_handle_request(const struct coap_service *service,
 	uint8_t code = coap_header_get_code(request);
 	const uint8_t *payload;
 	uint16_t payload_len;
-	uint16_t content_format;
 	int ret;
 
 	/* RFC 9528 Appendix A.2: Only POST method is allowed */
@@ -642,19 +649,34 @@ int coap_edhoc_transport_handle_request(const struct coap_service *service,
 						 client_addr, client_addr_len);
 	}
 
-	/* Check Content-Format */
-	ret = coap_find_options(request, COAP_OPTION_CONTENT_FORMAT, NULL, 0);
-	if (ret > 0) {
-		content_format = coap_get_option_int(request, COAP_OPTION_CONTENT_FORMAT);
-		/* RFC 9528 Appendix A.2: Content-Format 65 for messages with prepended indicator */
-		if (content_format != COAP_CONTENT_FORMAT_CID_EDHOC_CBOR_SEQ &&
-		    content_format != COAP_CONTENT_FORMAT_EDHOC_CBOR_SEQ) {
-			LOG_ERR("Invalid Content-Format for EDHOC: %d", content_format);
-			return send_edhoc_error_response(service, request, 1,
-							 "Invalid Content-Format",
-							 COAP_RESPONSE_CODE_BAD_REQUEST,
-							 client_addr, client_addr_len);
+	/* RFC 9528 Appendix A.2: Validate Content-Format option */
+	ret = coap_edhoc_transport_validate_content_format(request);
+	if (ret < 0) {
+		const char *error_msg;
+		
+		switch (ret) {
+		case -ENOENT:
+			error_msg = "Missing Content-Format";
+			LOG_ERR("EDHOC request missing required Content-Format option");
+			break;
+		case -EMSGSIZE:
+			error_msg = "Duplicate Content-Format";
+			LOG_ERR("EDHOC request has duplicate Content-Format options");
+			break;
+		case -EBADMSG:
+			error_msg = "Invalid Content-Format";
+			LOG_ERR("Invalid Content-Format for EDHOC request (expected %d)",
+				COAP_CONTENT_FORMAT_CID_EDHOC_CBOR_SEQ);
+			break;
+		default:
+			error_msg = "Malformed Content-Format";
+			LOG_ERR("Failed to parse Content-Format option (%d)", ret);
+			break;
 		}
+		
+		return send_edhoc_error_response(service, request, 1, error_msg,
+						 COAP_RESPONSE_CODE_BAD_REQUEST,
+						 client_addr, client_addr_len);
 	}
 
 	/* Determine message type by inspecting payload prefix */
@@ -667,4 +689,60 @@ int coap_edhoc_transport_handle_request(const struct coap_service *service,
 		return process_edhoc_message_3(service, request, payload, payload_len,
 					       client_addr, client_addr_len);
 	}
+}
+
+/**
+ * @brief Validate EDHOC request Content-Format per RFC 9528 Appendix A.2
+ *
+ * RFC 9528 Appendix A.2: Client requests MUST use Content-Format 65
+ * (application/cid-edhoc+cbor-seq) for messages with prepended indicators.
+ *
+ * @param request CoAP request packet
+ * @return 0 on success, -ENOENT if missing, -EMSGSIZE if duplicate,
+ *         -EBADMSG if wrong value, negative errno on other errors
+ */
+#if defined(CONFIG_ZTEST)
+int coap_edhoc_transport_validate_content_format(const struct coap_packet *request)
+#else
+static int coap_edhoc_transport_validate_content_format(const struct coap_packet *request)
+#endif
+{
+	struct coap_option opt[2];
+	int opt_count;
+	int ret;
+	uint16_t content_format;
+
+	if (request == NULL) {
+		return -EINVAL;
+	}
+
+	/* Check for Content-Format option */
+	opt_count = coap_find_options(request, COAP_OPTION_CONTENT_FORMAT, opt, 2);
+	if (opt_count < 0) {
+		return -EINVAL;
+	}
+
+	/* Content-Format MUST be present */
+	if (opt_count == 0) {
+		return -ENOENT;
+	}
+
+	/* Reject duplicate Content-Format options */
+	if (opt_count > 1) {
+		return -EMSGSIZE;
+	}
+
+	/* Extract and validate Content-Format value */
+	ret = coap_get_option_int(request, COAP_OPTION_CONTENT_FORMAT);
+	if (ret < 0) {
+		return ret;
+	}
+	content_format = (uint16_t)ret;
+
+	/* Client requests MUST use Content-Format 65 */
+	if (content_format != COAP_CONTENT_FORMAT_CID_EDHOC_CBOR_SEQ) {
+		return -EBADMSG;
+	}
+
+	return 0;
 }
