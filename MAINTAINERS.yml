@@ -3409,6 +3409,7 @@ Microchip MEC Platforms:
     - drivers/sensor/microchip/mchp_tach_xec/
     - tests/boards/mec15xxevb_assy6853/
     - tests/boards/mec172xevb_assy6906/
+    - tests/**/boards/*mec*
     - dts/bindings/*/microchip,mec*
     - dts/bindings/*/microchip,xec*
     - dts/bindings/*/microchip,dmec*
@@ -3474,6 +3475,8 @@ Microchip SAM Platforms:
     - dts/bindings/clock/microchip/
     - include/zephyr/*/*/*sam*
     - include/zephyr/*/*/*atmel*
+    - tests/drivers/pinctrl/microchip/
+    - tests/**/boards/*sam*
   labels:
     - "platform: Microchip SAM"
 
