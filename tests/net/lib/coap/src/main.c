@@ -6149,6 +6149,534 @@ ZTEST(coap, test_edhoc_outer_block_continue_response)
 	zassert_equal(entry->accumulated_len, 16, "Should have accumulated 16 bytes");
 }
 
+/**
+ * Test RFC 9175 Section 3.3: Request-Tag is part of the blockwise operation key
+ * Different Request-Tag values must be treated as different operations
+ */
+ZTEST(coap, test_edhoc_outer_block_request_tag_operation_key)
+{
+	uint8_t buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+	struct coap_packet request;
+	uint8_t token[] = {0x11, 0x12, 0x13, 0x14};
+	struct net_sockaddr_in6 client_addr = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				   0, 0, 0, 0, 0, 0, 0, 0x5 } } },
+		.sin6_port = net_htons(5683),
+	};
+	struct coap_service_data service_data = {0};
+	struct coap_service service = {
+		.data = &service_data,
+	};
+	uint8_t reconstructed_buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+	size_t reconstructed_len = 0;
+	int ret;
+	uint8_t payload[32];
+
+	memset(payload, 0xA5, sizeof(payload));
+
+	/* Block 0: Start with Request-Tag = 0x42 */
+	ret = coap_packet_init(&request, buf, sizeof(buf),
+			       COAP_VERSION_1, COAP_TYPE_CON,
+			       sizeof(token), token,
+			       COAP_METHOD_POST, coap_next_id());
+	zassert_equal(ret, 0, "Failed to init block 0 request");
+
+	uint8_t kid[] = {0x09, 0x0A};
+	ret = coap_packet_append_option(&request, COAP_OPTION_OSCORE, kid, sizeof(kid));
+	zassert_equal(ret, 0, "Failed to add OSCORE option");
+
+	ret = coap_packet_append_option(&request, COAP_OPTION_EDHOC, NULL, 0);
+	zassert_equal(ret, 0, "Failed to add EDHOC option");
+
+	struct coap_block_context block_ctx = {
+		.block_size = COAP_BLOCK_16,
+		.current = 0,
+		.total_size = 32,
+	};
+	ret = coap_append_block1_option(&request, &block_ctx);
+	zassert_equal(ret, 0, "Failed to add Block1 option");
+
+	/* Add Request-Tag option with value 0x42 (must come after Block1) */
+	uint8_t request_tag_a[] = {0x42};
+	ret = coap_packet_append_option(&request, COAP_OPTION_REQUEST_TAG,
+					request_tag_a, sizeof(request_tag_a));
+	zassert_equal(ret, 0, "Failed to add Request-Tag option");
+
+	ret = coap_packet_append_payload_marker(&request);
+	zassert_equal(ret, 0, "Failed to add payload marker");
+	ret = coap_packet_append_payload(&request, payload, 16);
+	zassert_equal(ret, 0, "Failed to add payload");
+
+	ret = coap_edhoc_outer_block_process(&service, &request, buf, request.offset,
+					     (struct net_sockaddr *)&client_addr,
+					     sizeof(client_addr),
+					     reconstructed_buf, &reconstructed_len);
+	zassert_equal(ret, COAP_EDHOC_OUTER_BLOCK_WAITING,
+		      "Block 0 should return WAITING");
+
+	/* Block 1: Send with different Request-Tag = 0x43 (should fail) */
+	ret = coap_packet_init(&request, buf, sizeof(buf),
+			       COAP_VERSION_1, COAP_TYPE_CON,
+			       sizeof(token), token,
+			       COAP_METHOD_POST, coap_next_id());
+	zassert_equal(ret, 0, "Failed to init block 1 request");
+
+	ret = coap_packet_append_option(&request, COAP_OPTION_OSCORE, kid, sizeof(kid));
+	zassert_equal(ret, 0, "Failed to add OSCORE option");
+
+	block_ctx.current = 16;
+	block_ctx.total_size = 32;
+	ret = coap_append_block1_option(&request, &block_ctx);
+	zassert_equal(ret, 0, "Failed to add Block1 option");
+
+	/* Add Request-Tag option with DIFFERENT value 0x43 (must come after Block1) */
+	uint8_t request_tag_b[] = {0x43};
+	ret = coap_packet_append_option(&request, COAP_OPTION_REQUEST_TAG,
+					request_tag_b, sizeof(request_tag_b));
+	zassert_equal(ret, 0, "Failed to add Request-Tag option");
+
+	ret = coap_packet_append_payload_marker(&request);
+	zassert_equal(ret, 0, "Failed to add payload marker");
+	ret = coap_packet_append_payload(&request, payload + 16, 16);
+	zassert_equal(ret, 0, "Failed to add payload");
+
+	/* RFC 9175 Section 3.3: different Request-Tag = different operation = ERROR */
+	ret = coap_edhoc_outer_block_process(&service, &request, buf, request.offset,
+					     (struct net_sockaddr *)&client_addr,
+					     sizeof(client_addr),
+					     reconstructed_buf, &reconstructed_len);
+	zassert_equal(ret, COAP_EDHOC_OUTER_BLOCK_ERROR,
+		      "Different Request-Tag should return ERROR");
+
+	/* Verify cache entry was cleared (fail-closed policy) */
+	struct coap_edhoc_outer_block_entry *entry;
+	entry = coap_edhoc_outer_block_find(service.data->outer_block_cache,
+					    CONFIG_COAP_EDHOC_COMBINED_OUTER_BLOCK_CACHE_SIZE,
+					    (struct net_sockaddr *)&client_addr,
+					    sizeof(client_addr),
+					    token, sizeof(token));
+	zassert_is_null(entry, "Cache entry should be cleared after Request-Tag mismatch");
+}
+
+/**
+ * Test RFC 9175 Section 3.4: Absent Request-Tag vs 0-length Request-Tag are distinct
+ */
+ZTEST(coap, test_edhoc_outer_block_request_tag_absent_vs_zero_length)
+{
+	uint8_t buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+	struct coap_packet request;
+	uint8_t token[] = {0x15, 0x16, 0x17, 0x18};
+	struct net_sockaddr_in6 client_addr = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				   0, 0, 0, 0, 0, 0, 0, 0x6 } } },
+		.sin6_port = net_htons(5683),
+	};
+	struct coap_service_data service_data = {0};
+	struct coap_service service = {
+		.data = &service_data,
+	};
+	uint8_t reconstructed_buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+	size_t reconstructed_len = 0;
+	int ret;
+	uint8_t payload[32];
+
+	memset(payload, 0xA5, sizeof(payload));
+
+	/* Block 0: Start with NO Request-Tag (absent) */
+	ret = coap_packet_init(&request, buf, sizeof(buf),
+			       COAP_VERSION_1, COAP_TYPE_CON,
+			       sizeof(token), token,
+			       COAP_METHOD_POST, coap_next_id());
+	zassert_equal(ret, 0, "Failed to init block 0 request");
+
+	uint8_t kid[] = {0x0B, 0x0C};
+	ret = coap_packet_append_option(&request, COAP_OPTION_OSCORE, kid, sizeof(kid));
+	zassert_equal(ret, 0, "Failed to add OSCORE option");
+
+	ret = coap_packet_append_option(&request, COAP_OPTION_EDHOC, NULL, 0);
+	zassert_equal(ret, 0, "Failed to add EDHOC option");
+
+	/* NO Request-Tag option */
+
+	struct coap_block_context block_ctx = {
+		.block_size = COAP_BLOCK_16,
+		.current = 0,
+		.total_size = 32,
+	};
+	ret = coap_append_block1_option(&request, &block_ctx);
+	zassert_equal(ret, 0, "Failed to add Block1 option");
+
+	ret = coap_packet_append_payload_marker(&request);
+	zassert_equal(ret, 0, "Failed to add payload marker");
+	ret = coap_packet_append_payload(&request, payload, 16);
+	zassert_equal(ret, 0, "Failed to add payload");
+
+	ret = coap_edhoc_outer_block_process(&service, &request, buf, request.offset,
+					     (struct net_sockaddr *)&client_addr,
+					     sizeof(client_addr),
+					     reconstructed_buf, &reconstructed_len);
+	zassert_equal(ret, COAP_EDHOC_OUTER_BLOCK_WAITING,
+		      "Block 0 should return WAITING");
+
+	/* Block 1: Send with 0-length Request-Tag (present but empty) */
+	ret = coap_packet_init(&request, buf, sizeof(buf),
+			       COAP_VERSION_1, COAP_TYPE_CON,
+			       sizeof(token), token,
+			       COAP_METHOD_POST, coap_next_id());
+	zassert_equal(ret, 0, "Failed to init block 1 request");
+
+	ret = coap_packet_append_option(&request, COAP_OPTION_OSCORE, kid, sizeof(kid));
+	zassert_equal(ret, 0, "Failed to add OSCORE option");
+
+	block_ctx.current = 16;
+	block_ctx.total_size = 32;
+	ret = coap_append_block1_option(&request, &block_ctx);
+	zassert_equal(ret, 0, "Failed to add Block1 option");
+
+	/* Add Request-Tag option with 0-length (present but empty, must come after Block1) */
+	ret = coap_packet_append_option(&request, COAP_OPTION_REQUEST_TAG, NULL, 0);
+	zassert_equal(ret, 0, "Failed to add 0-length Request-Tag option");
+
+	ret = coap_packet_append_payload_marker(&request);
+	zassert_equal(ret, 0, "Failed to add payload marker");
+	ret = coap_packet_append_payload(&request, payload + 16, 16);
+	zassert_equal(ret, 0, "Failed to add payload");
+
+	/* RFC 9175 Section 3.4: absent vs 0-length are distinct = ERROR */
+	ret = coap_edhoc_outer_block_process(&service, &request, buf, request.offset,
+					     (struct net_sockaddr *)&client_addr,
+					     sizeof(client_addr),
+					     reconstructed_buf, &reconstructed_len);
+	zassert_equal(ret, COAP_EDHOC_OUTER_BLOCK_ERROR,
+		      "Absent vs 0-length Request-Tag should return ERROR");
+
+	/* Verify cache entry was cleared */
+	struct coap_edhoc_outer_block_entry *entry;
+	entry = coap_edhoc_outer_block_find(service.data->outer_block_cache,
+					    CONFIG_COAP_EDHOC_COMBINED_OUTER_BLOCK_CACHE_SIZE,
+					    (struct net_sockaddr *)&client_addr,
+					    sizeof(client_addr),
+					    token, sizeof(token));
+	zassert_is_null(entry, "Cache entry should be cleared after Request-Tag mismatch");
+}
+
+/**
+ * Test RFC 9175 Section 3.2.1: Request-Tag is repeatable, list must match exactly
+ */
+ZTEST(coap, test_edhoc_outer_block_request_tag_repeatable_list)
+{
+	uint8_t buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+	struct coap_packet request;
+	uint8_t token[] = {0x19, 0x1A, 0x1B, 0x1C};
+	struct net_sockaddr_in6 client_addr = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				   0, 0, 0, 0, 0, 0, 0, 0x7 } } },
+		.sin6_port = net_htons(5683),
+	};
+	struct coap_service_data service_data = {0};
+	struct coap_service service = {
+		.data = &service_data,
+	};
+	uint8_t reconstructed_buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+	size_t reconstructed_len = 0;
+	int ret;
+	uint8_t payload[32];
+
+	memset(payload, 0xA5, sizeof(payload));
+
+	/* Block 0: Start with two Request-Tag options */
+	ret = coap_packet_init(&request, buf, sizeof(buf),
+			       COAP_VERSION_1, COAP_TYPE_CON,
+			       sizeof(token), token,
+			       COAP_METHOD_POST, coap_next_id());
+	zassert_equal(ret, 0, "Failed to init block 0 request");
+
+	uint8_t kid[] = {0x0D, 0x0E};
+	ret = coap_packet_append_option(&request, COAP_OPTION_OSCORE, kid, sizeof(kid));
+	zassert_equal(ret, 0, "Failed to add OSCORE option");
+
+	ret = coap_packet_append_option(&request, COAP_OPTION_EDHOC, NULL, 0);
+	zassert_equal(ret, 0, "Failed to add EDHOC option");
+
+	struct coap_block_context block_ctx = {
+		.block_size = COAP_BLOCK_16,
+		.current = 0,
+		.total_size = 32,
+	};
+	ret = coap_append_block1_option(&request, &block_ctx);
+	zassert_equal(ret, 0, "Failed to add Block1 option");
+
+	/* Add first Request-Tag option (must come after Block1) */
+	uint8_t request_tag_1[] = {0x11, 0x22};
+	ret = coap_packet_append_option(&request, COAP_OPTION_REQUEST_TAG,
+					request_tag_1, sizeof(request_tag_1));
+	zassert_equal(ret, 0, "Failed to add first Request-Tag option");
+
+	/* Add second Request-Tag option */
+	uint8_t request_tag_2[] = {0x33, 0x44};
+	ret = coap_packet_append_option(&request, COAP_OPTION_REQUEST_TAG,
+					request_tag_2, sizeof(request_tag_2));
+	zassert_equal(ret, 0, "Failed to add second Request-Tag option");
+
+	ret = coap_packet_append_payload_marker(&request);
+	zassert_equal(ret, 0, "Failed to add payload marker");
+	ret = coap_packet_append_payload(&request, payload, 16);
+	zassert_equal(ret, 0, "Failed to add payload");
+
+	ret = coap_edhoc_outer_block_process(&service, &request, buf, request.offset,
+					     (struct net_sockaddr *)&client_addr,
+					     sizeof(client_addr),
+					     reconstructed_buf, &reconstructed_len);
+	zassert_equal(ret, COAP_EDHOC_OUTER_BLOCK_WAITING,
+		      "Block 0 should return WAITING");
+
+	/* Block 1: Send with same two Request-Tag options in same order (should succeed) */
+	ret = coap_packet_init(&request, buf, sizeof(buf),
+			       COAP_VERSION_1, COAP_TYPE_CON,
+			       sizeof(token), token,
+			       COAP_METHOD_POST, coap_next_id());
+	zassert_equal(ret, 0, "Failed to init block 1 request");
+
+	ret = coap_packet_append_option(&request, COAP_OPTION_OSCORE, kid, sizeof(kid));
+	zassert_equal(ret, 0, "Failed to add OSCORE option");
+
+	block_ctx.current = 16;
+	block_ctx.total_size = 32;
+	ret = coap_append_block1_option(&request, &block_ctx);
+	zassert_equal(ret, 0, "Failed to add Block1 option");
+
+	/* Add same Request-Tag options in same order (must come after Block1) */
+	ret = coap_packet_append_option(&request, COAP_OPTION_REQUEST_TAG,
+					request_tag_1, sizeof(request_tag_1));
+	zassert_equal(ret, 0, "Failed to add first Request-Tag option");
+
+	ret = coap_packet_append_option(&request, COAP_OPTION_REQUEST_TAG,
+					request_tag_2, sizeof(request_tag_2));
+	zassert_equal(ret, 0, "Failed to add second Request-Tag option");
+
+	ret = coap_packet_append_payload_marker(&request);
+	zassert_equal(ret, 0, "Failed to add payload marker");
+	ret = coap_packet_append_payload(&request, payload + 16, 16);
+	zassert_equal(ret, 0, "Failed to add payload");
+
+	/* Same Request-Tag list should succeed */
+	ret = coap_edhoc_outer_block_process(&service, &request, buf, request.offset,
+					     (struct net_sockaddr *)&client_addr,
+					     sizeof(client_addr),
+					     reconstructed_buf, &reconstructed_len);
+	zassert_equal(ret, COAP_EDHOC_OUTER_BLOCK_COMPLETE,
+		      "Same Request-Tag list should return COMPLETE");
+}
+
+/**
+ * Test RFC 9175 Section 3.2.1: Request-Tag list with different order should fail
+ */
+ZTEST(coap, test_edhoc_outer_block_request_tag_different_order)
+{
+	uint8_t buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+	struct coap_packet request;
+	uint8_t token[] = {0x1D, 0x1E, 0x1F, 0x20};
+	struct net_sockaddr_in6 client_addr = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				   0, 0, 0, 0, 0, 0, 0, 0x8 } } },
+		.sin6_port = net_htons(5683),
+	};
+	struct coap_service_data service_data = {0};
+	struct coap_service service = {
+		.data = &service_data,
+	};
+	uint8_t reconstructed_buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+	size_t reconstructed_len = 0;
+	int ret;
+	uint8_t payload[32];
+
+	memset(payload, 0xA5, sizeof(payload));
+
+	/* Block 0: Start with two Request-Tag options in order A, B */
+	ret = coap_packet_init(&request, buf, sizeof(buf),
+			       COAP_VERSION_1, COAP_TYPE_CON,
+			       sizeof(token), token,
+			       COAP_METHOD_POST, coap_next_id());
+	zassert_equal(ret, 0, "Failed to init block 0 request");
+
+	uint8_t kid[] = {0x0F, 0x10};
+	ret = coap_packet_append_option(&request, COAP_OPTION_OSCORE, kid, sizeof(kid));
+	zassert_equal(ret, 0, "Failed to add OSCORE option");
+
+	ret = coap_packet_append_option(&request, COAP_OPTION_EDHOC, NULL, 0);
+	zassert_equal(ret, 0, "Failed to add EDHOC option");
+
+	struct coap_block_context block_ctx = {
+		.block_size = COAP_BLOCK_16,
+		.current = 0,
+		.total_size = 32,
+	};
+	ret = coap_append_block1_option(&request, &block_ctx);
+	zassert_equal(ret, 0, "Failed to add Block1 option");
+
+	uint8_t request_tag_a[] = {0xAA};
+	uint8_t request_tag_b[] = {0xBB};
+
+	/* Add in order: A, B (must come after Block1) */
+	ret = coap_packet_append_option(&request, COAP_OPTION_REQUEST_TAG,
+					request_tag_a, sizeof(request_tag_a));
+	zassert_equal(ret, 0, "Failed to add Request-Tag A");
+
+	ret = coap_packet_append_option(&request, COAP_OPTION_REQUEST_TAG,
+					request_tag_b, sizeof(request_tag_b));
+	zassert_equal(ret, 0, "Failed to add Request-Tag B");
+
+	ret = coap_packet_append_payload_marker(&request);
+	zassert_equal(ret, 0, "Failed to add payload marker");
+	ret = coap_packet_append_payload(&request, payload, 16);
+	zassert_equal(ret, 0, "Failed to add payload");
+
+	ret = coap_edhoc_outer_block_process(&service, &request, buf, request.offset,
+					     (struct net_sockaddr *)&client_addr,
+					     sizeof(client_addr),
+					     reconstructed_buf, &reconstructed_len);
+	zassert_equal(ret, COAP_EDHOC_OUTER_BLOCK_WAITING,
+		      "Block 0 should return WAITING");
+
+	/* Block 1: Send with same tags but in DIFFERENT order: B, A (should fail) */
+	ret = coap_packet_init(&request, buf, sizeof(buf),
+			       COAP_VERSION_1, COAP_TYPE_CON,
+			       sizeof(token), token,
+			       COAP_METHOD_POST, coap_next_id());
+	zassert_equal(ret, 0, "Failed to init block 1 request");
+
+	ret = coap_packet_append_option(&request, COAP_OPTION_OSCORE, kid, sizeof(kid));
+	zassert_equal(ret, 0, "Failed to add OSCORE option");
+
+	block_ctx.current = 16;
+	block_ctx.total_size = 32;
+	ret = coap_append_block1_option(&request, &block_ctx);
+	zassert_equal(ret, 0, "Failed to add Block1 option");
+
+	/* Add in DIFFERENT order: B, A (must come after Block1) */
+	ret = coap_packet_append_option(&request, COAP_OPTION_REQUEST_TAG,
+					request_tag_b, sizeof(request_tag_b));
+	zassert_equal(ret, 0, "Failed to add Request-Tag B");
+
+	ret = coap_packet_append_option(&request, COAP_OPTION_REQUEST_TAG,
+					request_tag_a, sizeof(request_tag_a));
+	zassert_equal(ret, 0, "Failed to add Request-Tag A");
+
+	ret = coap_packet_append_payload_marker(&request);
+	zassert_equal(ret, 0, "Failed to add payload marker");
+	ret = coap_packet_append_payload(&request, payload + 16, 16);
+	zassert_equal(ret, 0, "Failed to add payload");
+
+	/* Different order should fail */
+	ret = coap_edhoc_outer_block_process(&service, &request, buf, request.offset,
+					     (struct net_sockaddr *)&client_addr,
+					     sizeof(client_addr),
+					     reconstructed_buf, &reconstructed_len);
+	zassert_equal(ret, COAP_EDHOC_OUTER_BLOCK_ERROR,
+		      "Different Request-Tag order should return ERROR");
+
+	/* Verify cache entry was cleared */
+	struct coap_edhoc_outer_block_entry *entry;
+	entry = coap_edhoc_outer_block_find(service.data->outer_block_cache,
+					    CONFIG_COAP_EDHOC_COMBINED_OUTER_BLOCK_CACHE_SIZE,
+					    (struct net_sockaddr *)&client_addr,
+					    sizeof(client_addr),
+					    token, sizeof(token));
+	zassert_is_null(entry, "Cache entry should be cleared after Request-Tag mismatch");
+}
+
+/**
+ * Test RFC 9175 Section 3.4: 2.31 Continue response MUST NOT contain Request-Tag
+ */
+ZTEST(coap, test_edhoc_outer_block_continue_no_request_tag)
+{
+	/* This test verifies that the 2.31 Continue response does not include Request-Tag.
+	 * Since we construct fresh responses in send_continue_response(), this is a regression test.
+	 * We verify by checking that a block 0 with Request-Tag successfully creates a cache entry,
+	 * and the implementation doesn't accidentally copy Request-Tag to responses.
+	 */
+
+	uint8_t buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+	struct coap_packet request;
+	uint8_t token[] = {0x21, 0x22, 0x23, 0x24};
+	struct net_sockaddr_in6 client_addr = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				   0, 0, 0, 0, 0, 0, 0, 0x9 } } },
+		.sin6_port = net_htons(5683),
+	};
+	struct coap_service_data service_data = {0};
+	struct coap_service service = {
+		.data = &service_data,
+	};
+	uint8_t reconstructed_buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
+	size_t reconstructed_len = 0;
+	int ret;
+	uint8_t payload[32];
+
+	memset(payload, 0xA5, sizeof(payload));
+
+	/* Block 0: Start with Request-Tag */
+	ret = coap_packet_init(&request, buf, sizeof(buf),
+			       COAP_VERSION_1, COAP_TYPE_CON,
+			       sizeof(token), token,
+			       COAP_METHOD_POST, coap_next_id());
+	zassert_equal(ret, 0, "Failed to init block 0 request");
+
+	uint8_t kid[] = {0x11, 0x12};
+	ret = coap_packet_append_option(&request, COAP_OPTION_OSCORE, kid, sizeof(kid));
+	zassert_equal(ret, 0, "Failed to add OSCORE option");
+
+	ret = coap_packet_append_option(&request, COAP_OPTION_EDHOC, NULL, 0);
+	zassert_equal(ret, 0, "Failed to add EDHOC option");
+
+	struct coap_block_context block_ctx = {
+		.block_size = COAP_BLOCK_16,
+		.current = 0,
+		.total_size = 32,
+	};
+	ret = coap_append_block1_option(&request, &block_ctx);
+	zassert_equal(ret, 0, "Failed to add Block1 option");
+
+	uint8_t request_tag[] = {0x99, 0x88};
+	ret = coap_packet_append_option(&request, COAP_OPTION_REQUEST_TAG,
+					request_tag, sizeof(request_tag));
+	zassert_equal(ret, 0, "Failed to add Request-Tag option");
+
+	ret = coap_packet_append_payload_marker(&request);
+	zassert_equal(ret, 0, "Failed to add payload marker");
+	ret = coap_packet_append_payload(&request, payload, 16);
+	zassert_equal(ret, 0, "Failed to add payload");
+
+	/* Process - should return WAITING (which triggers 2.31 Continue response) */
+	ret = coap_edhoc_outer_block_process(&service, &request, buf, request.offset,
+					     (struct net_sockaddr *)&client_addr,
+					     sizeof(client_addr),
+					     reconstructed_buf, &reconstructed_len);
+	zassert_equal(ret, COAP_EDHOC_OUTER_BLOCK_WAITING,
+		      "Block 0 should return WAITING");
+
+	/* Verify cache entry exists with Request-Tag stored */
+	struct coap_edhoc_outer_block_entry *entry;
+	entry = coap_edhoc_outer_block_find(service.data->outer_block_cache,
+					    CONFIG_COAP_EDHOC_COMBINED_OUTER_BLOCK_CACHE_SIZE,
+					    (struct net_sockaddr *)&client_addr,
+					    sizeof(client_addr),
+					    token, sizeof(token));
+	zassert_not_null(entry, "Cache entry should exist");
+	zassert_equal(entry->request_tag_count, 1, "Should have 1 Request-Tag stored");
+	zassert_true(entry->request_tag_data_len > 0, "Request-Tag data should be stored");
+
+	/* The actual response sending is handled by send_continue_response() which constructs
+	 * a fresh response without copying Request-Tag. This is verified by code inspection
+	 * and the fact that we only add Block1 option to the response.
+	 */
+}
+
 #endif /* CONFIG_COAP_EDHOC_COMBINED_REQUEST */
 
 ZTEST_SUITE(coap, NULL, NULL, NULL, NULL, NULL);

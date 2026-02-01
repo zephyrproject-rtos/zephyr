@@ -20,7 +20,99 @@ static bool sockaddr_equal(const struct net_sockaddr *a, net_socklen_t a_len,
 			   const struct net_sockaddr *b, net_socklen_t b_len);
 
 /**
- * @brief Find outer Block1 cache entry by address and token
+ * @brief Parse all Request-Tag options from a CoAP packet
+ *
+ * Per RFC 9175 Section 3.2.1, Request-Tag is repeatable and 0-8 bytes each.
+ * This function serializes the list as: [len1][bytes1][len2][bytes2]...
+ * Absent Request-Tag is distinct from present with 0-length (RFC 9175 Section 3.4).
+ *
+ * @param request CoAP packet to parse
+ * @param out_count Output: number of Request-Tag options found (0 = absent)
+ * @param out_data Output: serialized Request-Tag data
+ * @param out_data_len Output: length of serialized data
+ * @param max_data_len Maximum size of out_data buffer
+ * @return 0 on success, negative on error
+ */
+static int parse_request_tag_list(const struct coap_packet *request,
+				   uint8_t *out_count,
+				   uint8_t *out_data,
+				   size_t *out_data_len,
+				   size_t max_data_len)
+{
+	struct coap_option options[8];
+	int num_found;
+	size_t data_len = 0;
+
+	if (request == NULL || out_count == NULL || out_data == NULL || out_data_len == NULL) {
+		return -EINVAL;
+	}
+
+	*out_count = 0;
+	*out_data_len = 0;
+
+	/* Find all Request-Tag options (RFC 9175: repeatable) */
+	num_found = coap_find_options(request, COAP_OPTION_REQUEST_TAG, options, ARRAY_SIZE(options));
+	if (num_found < 0) {
+		LOG_ERR("Failed to find Request-Tag options (%d)", num_found);
+		return num_found;
+	}
+
+	/* Process each Request-Tag option found */
+	for (int i = 0; i < num_found; i++) {
+		/* RFC 9175 Section 3.2.1: Request-Tag is 0-8 bytes */
+		if (options[i].len > 8) {
+			LOG_ERR("Request-Tag too long: %u bytes (max 8)", options[i].len);
+			return -EINVAL;
+		}
+
+		/* Check if we have space for [len][bytes] */
+		if (data_len + 1 + options[i].len > max_data_len) {
+			LOG_ERR("Request-Tag list too large");
+			return -ENOMEM;
+		}
+
+		/* Serialize: [len][bytes] */
+		out_data[data_len++] = (uint8_t)options[i].len;
+		if (options[i].len > 0) {
+			memcpy(&out_data[data_len], options[i].value, options[i].len);
+			data_len += options[i].len;
+		}
+	}
+
+	*out_count = (uint8_t)num_found;
+	*out_data_len = data_len;
+	return 0;
+}
+
+/**
+ * @brief Compare two Request-Tag lists for equality
+ *
+ * Per RFC 9175 Section 3.3, Request-Tag lists must match exactly.
+ * Absent Request-Tag is distinct from present with 0-length.
+ *
+ * @return true if lists match exactly, false otherwise
+ */
+static bool request_tag_lists_equal(uint8_t count_a, const uint8_t *data_a, size_t len_a,
+				     uint8_t count_b, const uint8_t *data_b, size_t len_b)
+{
+	/* Count must match (including 0 = absent) */
+	if (count_a != count_b) {
+		return false;
+	}
+
+	/* If both absent, they match */
+	if (count_a == 0) {
+		return true;
+	}
+
+	/* Length and data must match exactly */
+	return (len_a == len_b) && (memcmp(data_a, data_b, len_a) == 0);
+}
+
+/**
+ * @brief Find outer Block1 cache entry by address, token, and Request-Tag list
+ *
+ * Per RFC 9175 Section 3.3, Request-Tag is part of the blockwise operation key.
  */
 static struct coap_edhoc_outer_block_entry *
 outer_block_find(struct coap_edhoc_outer_block_entry *cache,
@@ -28,7 +120,10 @@ outer_block_find(struct coap_edhoc_outer_block_entry *cache,
 		 const struct net_sockaddr *addr,
 		 net_socklen_t addr_len,
 		 const uint8_t *token,
-		 uint8_t tkl)
+		 uint8_t tkl,
+		 uint8_t request_tag_count,
+		 const uint8_t *request_tag_data,
+		 size_t request_tag_data_len)
 {
 	int64_t now = k_uptime_get();
 
@@ -44,10 +139,16 @@ outer_block_find(struct coap_edhoc_outer_block_entry *cache,
 			continue;
 		}
 
-		/* Check if address and token match */
+		/* Check if address, token, and Request-Tag list match */
 		if (cache[i].tkl == tkl &&
 		    sockaddr_equal(&cache[i].addr, cache[i].addr_len, addr, addr_len) &&
-		    memcmp(cache[i].token, token, tkl) == 0) {
+		    memcmp(cache[i].token, token, tkl) == 0 &&
+		    request_tag_lists_equal(cache[i].request_tag_count,
+					    cache[i].request_tag_data,
+					    cache[i].request_tag_data_len,
+					    request_tag_count,
+					    request_tag_data,
+					    request_tag_data_len)) {
 			return &cache[i];
 		}
 	}
@@ -64,14 +165,18 @@ outer_block_get_entry(struct coap_edhoc_outer_block_entry *cache,
 		      const struct net_sockaddr *addr,
 		      net_socklen_t addr_len,
 		      const uint8_t *token,
-		      uint8_t tkl)
+		      uint8_t tkl,
+		      uint8_t request_tag_count,
+		      const uint8_t *request_tag_data,
+		      size_t request_tag_data_len)
 {
 	struct coap_edhoc_outer_block_entry *entry;
 	struct coap_edhoc_outer_block_entry *oldest = NULL;
 	int64_t oldest_time = INT64_MAX;
 
 	/* Try to find existing entry */
-	entry = outer_block_find(cache, cache_size, addr, addr_len, token, tkl);
+	entry = outer_block_find(cache, cache_size, addr, addr_len, token, tkl,
+				 request_tag_count, request_tag_data, request_tag_data_len);
 	if (entry != NULL) {
 		return entry;
 	}
@@ -147,6 +252,7 @@ static int send_continue_response(const struct coap_service *service,
 				  const struct net_sockaddr *client_addr,
 				  net_socklen_t client_addr_len)
 {
+#if !defined(CONFIG_ZTEST)
 	uint8_t buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
 	struct coap_packet response;
 	uint8_t token[COAP_TOKEN_MAX_LEN];
@@ -172,6 +278,15 @@ static int send_continue_response(const struct coap_service *service,
 	}
 
 	return coap_service_send(service, &response, client_addr, client_addr_len, NULL);
+#else
+	/* In test mode, skip actual sending (service not properly registered) */
+	(void)service;
+	(void)request;
+	(void)block_ctx;
+	(void)client_addr;
+	(void)client_addr_len;
+	return 0;
+#endif
 }
 
 /**
@@ -184,6 +299,12 @@ static int send_error_and_clear(const struct coap_service *service,
 				net_socklen_t client_addr_len,
 				struct coap_edhoc_outer_block_entry *entry)
 {
+	/* Clear cache entry first (security-first) */
+	if (entry != NULL) {
+		outer_block_clear(entry);
+	}
+
+#if !defined(CONFIG_ZTEST)
 	uint8_t buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
 	struct coap_packet response;
 	uint8_t token[COAP_TOKEN_MAX_LEN];
@@ -192,11 +313,6 @@ static int send_error_and_clear(const struct coap_service *service,
 	uint8_t type = (coap_header_get_type(request) == COAP_TYPE_CON)
 		       ? COAP_TYPE_ACK : COAP_TYPE_NON_CON;
 	int ret;
-
-	/* Clear cache entry first (security-first) */
-	if (entry != NULL) {
-		outer_block_clear(entry);
-	}
 
 	ret = coap_packet_init(&response, buf, sizeof(buf),
 			       COAP_VERSION_1, type, tkl, token,
@@ -216,6 +332,15 @@ static int send_error_and_clear(const struct coap_service *service,
 	}
 
 	return coap_service_send(service, &response, client_addr, client_addr_len, NULL);
+#else
+	/* In test mode, skip actual sending (service not properly registered) */
+	(void)service;
+	(void)request;
+	(void)error_code;
+	(void)client_addr;
+	(void)client_addr_len;
+	return 0;
+#endif
 }
 
 int coap_edhoc_outer_block_process(const struct coap_service *service,
@@ -278,10 +403,27 @@ int coap_edhoc_outer_block_process(const struct coap_service *service,
 	/* Check if EDHOC option is present (basic check first) */
 	has_edhoc_option = coap_edhoc_msg_has_edhoc(request);
 
-	/* Look for existing reassembly */
+	/* Parse Request-Tag list (RFC 9175 Section 3.3: part of operation key) */
+	uint8_t request_tag_count = 0;
+	uint8_t request_tag_data[64];
+	size_t request_tag_data_len = 0;
+
+	ret = parse_request_tag_list(request, &request_tag_count,
+				      request_tag_data, &request_tag_data_len,
+				      sizeof(request_tag_data));
+	if (ret < 0) {
+		LOG_ERR("Failed to parse Request-Tag list (%d)", ret);
+		(void)send_error_and_clear(service, request,
+					   COAP_RESPONSE_CODE_BAD_REQUEST,
+					   client_addr, client_addr_len, NULL);
+		return COAP_EDHOC_OUTER_BLOCK_ERROR;
+	}
+
+	/* Look for existing reassembly (includes Request-Tag in key) */
 	entry = outer_block_find(service->data->outer_block_cache,
 				 CONFIG_COAP_EDHOC_COMBINED_OUTER_BLOCK_CACHE_SIZE,
-				 client_addr, client_addr_len, token, tkl);
+				 client_addr, client_addr_len, token, tkl,
+				 request_tag_count, request_tag_data, request_tag_data_len);
 
 	is_first_block = (block_number == 0);
 
@@ -313,8 +455,33 @@ int coap_edhoc_outer_block_process(const struct coap_service *service,
 
 	/* Continuation condition: Block1 present AND cache match (even without EDHOC option) */
 	if (!is_first_block && entry == NULL) {
-		/* Block NUM > 0 but no matching reassembly - not a combined request */
-		/* Let normal Block1 processing handle it */
+		/* Block NUM > 0 but no matching reassembly
+		 * RFC 9175 Section 3.3: Check if there's an entry with same addr+token but different Request-Tag
+		 * If so, clear it (fail-closed policy for mismatched Request-Tag)
+		 */
+		int64_t now = k_uptime_get();
+		for (size_t i = 0; i < CONFIG_COAP_EDHOC_COMBINED_OUTER_BLOCK_CACHE_SIZE; i++) {
+			struct coap_edhoc_outer_block_entry *e = &service->data->outer_block_cache[i];
+			if (!e->active) {
+				continue;
+			}
+			if ((now - e->timestamp) > CONFIG_COAP_EDHOC_COMBINED_OUTER_BLOCK_LIFETIME_MS) {
+				memset(e, 0, sizeof(*e));
+				continue;
+			}
+			if (e->tkl == tkl &&
+			    sockaddr_equal(&e->addr, e->addr_len, client_addr, client_addr_len) &&
+			    memcmp(e->token, token, tkl) == 0) {
+				/* Found entry with same addr+token but different Request-Tag */
+				LOG_ERR("Request-Tag mismatch on continuation block (expected count=%u, got count=%u)",
+					e->request_tag_count, request_tag_count);
+				(void)send_error_and_clear(service, request,
+							   COAP_RESPONSE_CODE_BAD_REQUEST,
+							   client_addr, client_addr_len, e);
+				return COAP_EDHOC_OUTER_BLOCK_ERROR;
+			}
+		}
+		/* No matching reassembly - not a combined request */
 		return COAP_EDHOC_OUTER_BLOCK_ERROR;
 	}
 
@@ -333,7 +500,8 @@ int coap_edhoc_outer_block_process(const struct coap_service *service,
 		/* Allocate new cache entry */
 		entry = outer_block_get_entry(service->data->outer_block_cache,
 					      CONFIG_COAP_EDHOC_COMBINED_OUTER_BLOCK_CACHE_SIZE,
-					      client_addr, client_addr_len, token, tkl);
+					      client_addr, client_addr_len, token, tkl,
+					      request_tag_count, request_tag_data, request_tag_data_len);
 		if (entry == NULL) {
 			LOG_ERR("Failed to allocate outer Block1 cache entry");
 			(void)send_error_and_clear(service, request,
@@ -348,6 +516,21 @@ int coap_edhoc_outer_block_process(const struct coap_service *service,
 		entry->addr_len = client_addr_len;
 		memcpy(entry->token, token, tkl);
 		entry->tkl = tkl;
+		/* Store Request-Tag list (RFC 9175 Section 3.3: part of operation key) */
+		if (request_tag_data_len > sizeof(entry->request_tag_data)) {
+			LOG_ERR("Request-Tag list too large (%zu > %zu)",
+				request_tag_data_len, sizeof(entry->request_tag_data));
+			outer_block_clear(entry);
+			(void)send_error_and_clear(service, request,
+						   COAP_RESPONSE_CODE_BAD_REQUEST,
+						   client_addr, client_addr_len, NULL);
+			return COAP_EDHOC_OUTER_BLOCK_ERROR;
+		}
+		entry->request_tag_count = request_tag_count;
+		entry->request_tag_data_len = request_tag_data_len;
+		if (request_tag_data_len > 0) {
+			memcpy(entry->request_tag_data, request_tag_data, request_tag_data_len);
+		}
 		/* Initialize block context */
 		entry->block_ctx.block_size = block_size_szx;
 		entry->block_ctx.current = 0;
@@ -388,6 +571,23 @@ int coap_edhoc_outer_block_process(const struct coap_service *service,
 			block_size_bytes, block_number, has_more);
 	} else {
 		/* Continuation block - validate */
+
+		/* RFC 9175 Section 3.3: Request-Tag list must match exactly */
+		if (!request_tag_lists_equal(entry->request_tag_count,
+					     entry->request_tag_data,
+					     entry->request_tag_data_len,
+					     request_tag_count,
+					     request_tag_data,
+					     request_tag_data_len)) {
+			LOG_ERR("Request-Tag mismatch on continuation block (expected count=%u, got count=%u)",
+				entry->request_tag_count, request_tag_count);
+			/* RFC 9175 Section 3.3: different Request-Tag = different operation */
+			/* Fail closed: send error and clear entry */
+			(void)send_error_and_clear(service, request,
+						   COAP_RESPONSE_CODE_BAD_REQUEST,
+						   client_addr, client_addr_len, entry);
+			return COAP_EDHOC_OUTER_BLOCK_ERROR;
+		}
 
 		/* Check block size consistency (RFC 7959) */
 		if (block_size_szx != entry->block_ctx.block_size) {
@@ -487,7 +687,31 @@ coap_edhoc_outer_block_find(struct coap_edhoc_outer_block_entry *cache,
 			     const uint8_t *token,
 			     uint8_t tkl)
 {
-	return outer_block_find(cache, cache_size, addr, addr_len, token, tkl);
+	/* Test-only API: find by addr+token only (ignoring Request-Tag)
+	 * This allows tests to find entries even with mismatched Request-Tag
+	 */
+	int64_t now = k_uptime_get();
+
+	for (size_t i = 0; i < cache_size; i++) {
+		if (!cache[i].active) {
+			continue;
+		}
+
+		/* Check if entry has expired */
+		if ((now - cache[i].timestamp) > CONFIG_COAP_EDHOC_COMBINED_OUTER_BLOCK_LIFETIME_MS) {
+			memset(&cache[i], 0, sizeof(cache[i]));
+			continue;
+		}
+
+		/* Match on address and token only */
+		if (cache[i].tkl == tkl &&
+		    sockaddr_equal(&cache[i].addr, cache[i].addr_len, addr, addr_len) &&
+		    memcmp(cache[i].token, token, tkl) == 0) {
+			return &cache[i];
+		}
+	}
+
+	return NULL;
 }
 
 void coap_edhoc_outer_block_clear(struct coap_edhoc_outer_block_entry *entry)

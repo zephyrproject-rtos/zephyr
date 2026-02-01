@@ -116,8 +116,9 @@ struct coap_oscore_ctx_cache_entry {
 
 /**
  * Outer Block1 reassembly entry for EDHOC+OSCORE combined requests.
- * Tracks in-progress blockwise transfers keyed by client address and token.
+ * Tracks in-progress blockwise transfers keyed by client address, token, and Request-Tag list.
  * Used for RFC 9668 Section 3.3.2 Step 0 processing.
+ * Per RFC 9175 Section 3.3, Request-Tag is part of the blockwise operation key.
  */
 struct coap_edhoc_outer_block_entry {
 	struct net_sockaddr addr;                /**< Client address */
@@ -131,6 +132,10 @@ struct coap_edhoc_outer_block_entry {
 	size_t accumulated_len;                  /**< Current accumulated payload length */
 	int64_t timestamp;                       /**< Creation timestamp */
 	bool active;                             /**< True if entry is active */
+	/* Request-Tag list storage (RFC 9175 Section 3.3) */
+	uint8_t request_tag_count;               /**< Number of Request-Tag options (0 = absent) */
+	uint8_t request_tag_data[64];            /**< Serialized Request-Tag list: [len][bytes]... */
+	size_t request_tag_data_len;             /**< Total length of serialized Request-Tag data */
 };
 #endif /* CONFIG_COAP_EDHOC_COMBINED_REQUEST */
 #endif /* CONFIG_COAP_EDHOC */

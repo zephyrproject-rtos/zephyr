@@ -1207,6 +1207,22 @@ processing:
 3. Client sends Block1 NUM=2, M=0 (last block) → Server reassembles and processes combined request
 4. Server proceeds with EDHOC+OSCORE processing on full payload
 
+**Request-Tag Processing (RFC 9175)**:
+
+Per RFC 9175 Section 3.3, the server-side Block1 reassembly for EDHOC+OSCORE combined
+requests treats **Request-Tag as part of the blockwise operation key**. This ensures that
+blocks from different operations are not incorrectly associated:
+
+- **Operation key**: Blocks are keyed by (client address, token, **Request-Tag list**)
+- **Absent vs present**: Absent Request-Tag is distinct from present with 0-length
+- **Repeatable**: Multiple Request-Tag options must match exactly (same values, same order)
+- **Opaque**: Request-Tag values are treated as opaque byte strings (per RFC 9175 Section 3.3)
+- **Responses**: Request-Tag is **never present in responses** (per RFC 9175 Section 3.4)
+
+If a continuation block has a different Request-Tag list than the first block, the server
+treats it as a different operation and responds with **4.00 Bad Request**, clearing the
+original reassembly state (fail-closed policy).
+
 **Not yet implemented**:
 
 - Full EDHOC handshake processing (message_1, message_2) - requires application integration
