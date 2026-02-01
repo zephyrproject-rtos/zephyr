@@ -36,6 +36,7 @@ Supported RFCs:
 - :rfc:`7967` - Constrained Application Protocol (CoAP) Option for No Server Response
 - :rfc:`8768` - Constrained Application Protocol (CoAP) Hop-Limit Option
 - :rfc:`9175` - CoAP: Echo, Request-Tag, and Token Processing
+- :rfc:`9177` - Constrained Application Protocol (CoAP) Block-Wise Transfer Options Supporting Robust Transmission
 - :rfc:`8613` - Object Security for Constrained RESTful Environments (OSCORE)
 - :rfc:`9668` - EDHOC and OSCORE profile of ACE (EDHOC with CoAP and OSCORE)
 - :rfc:`9528` - Ephemeral Diffie-Hellman Over COSE (EDHOC)
@@ -347,12 +348,174 @@ in each Block2 response:
   callback receives an error (-EBADMSG) and does not receive the mismatched
   block payload.
 
-- **State cleanup**: On ETag errors, the client clears all blockwise state
-  (block context, offsets, stored ETag) to prevent state confusion.
+Q-Block: Robust Block-wise Transfer (RFC 9177)
+===============================================
 
-Applications using the :ref:`coap_client_interface` benefit from ETag validation
-automatically without code changes, as the client library handles ETag tracking
-and comparison internally.
+The Zephyr CoAP library provides support for Q-Block1 and Q-Block2 options per
+:rfc:`9177`, which enable robust block-wise transfers with recovery from missing
+blocks. This is particularly useful for unreliable transports like UDP where
+packets may be lost.
+
+**Overview**:
+
+Q-Block extends the basic Block1/Block2 mechanism from RFC 7959 with:
+
+- **Missing block recovery**: Servers can respond with 4.08 (Request Entity Incomplete)
+  containing a CBOR Sequence of missing block numbers
+- **Multiple block requests**: Clients can request multiple missing blocks in a single
+  request using multiple Q-Block2 options
+- **Non-confirmable (NON) support**: Optimized for NON messages where ACKs are not used
+
+**Key Differences from Block1/Block2**:
+
++-------------------+---------------------------+--------------------------------+
+| Feature           | Block1/Block2 (RFC 7959)  | Q-Block1/Q-Block2 (RFC 9177)   |
++===================+===========================+================================+
+| Recovery          | Restart from beginning    | Request only missing blocks    |
++-------------------+---------------------------+--------------------------------+
+| Required options  | None                      | Request-Tag + Size1 (Q-Block1) |
+|                   |                           | Size2 + ETag (Q-Block2)        |
++-------------------+---------------------------+--------------------------------+
+| Multiple blocks   | One per request           | Multiple Q-Block2 in request   |
++-------------------+---------------------------+--------------------------------+
+| Missing blocks    | Not specified             | 4.08 with CBOR Sequence        |
++-------------------+---------------------------+--------------------------------+
+
+**Configuration**:
+
+Enable Q-Block support with:
+
+.. code-block:: kconfig
+
+   CONFIG_COAP_Q_BLOCK=y
+   CONFIG_ZCBOR=y  # Required for CBOR encoding/decoding
+
+**API Functions**:
+
+The following functions are available when ``CONFIG_COAP_Q_BLOCK`` is enabled:
+
+.. code-block:: c
+
+   /* Append Q-Block options */
+   int coap_append_q_block1_option(struct coap_packet *cpkt,
+                                   uint32_t block_number,
+                                   bool has_more,
+                                   enum coap_block_size block_size);
+
+   int coap_append_q_block2_option(struct coap_packet *cpkt,
+                                   uint32_t block_number,
+                                   bool has_more,
+                                   enum coap_block_size block_size);
+
+   /* Parse Q-Block options */
+   int coap_get_q_block1_option(const struct coap_packet *cpkt,
+                                bool *has_more,
+                                uint32_t *block_number);
+
+   int coap_get_q_block2_option(const struct coap_packet *cpkt,
+                                bool *has_more,
+                                uint32_t *block_number);
+
+   /* Validate Block/Q-Block mixing */
+   int coap_validate_block_q_block_mixing(const struct coap_packet *cpkt);
+
+   /* CBOR Sequence encoding for missing blocks */
+   int coap_encode_missing_blocks_cbor_seq(uint8_t *payload,
+                                           size_t payload_len,
+                                           const uint32_t *missing_blocks,
+                                           size_t missing_blocks_count,
+                                           size_t *encoded_len);
+
+   int coap_decode_missing_blocks_cbor_seq(const uint8_t *payload,
+                                           size_t payload_len,
+                                           uint32_t *missing_blocks,
+                                           size_t max_blocks,
+                                           size_t *decoded_count);
+
+**Important Constraints**:
+
+Per RFC 9177 §4.1:
+
+- **Cannot mix Block and Q-Block**: A packet MUST NOT contain both Block1/Block2
+  and Q-Block1/Q-Block2 options. Use ``coap_validate_block_q_block_mixing()`` to
+  check for violations.
+
+- **OSCORE separation**: When using OSCORE, the mixing constraint applies separately
+  to outer and inner packets. Both layers must be validated independently.
+
+**Q-Block1 Requirements** (RFC 9177 §4.3):
+
+When using Q-Block1 for request payloads:
+
+- **Request-Tag MUST be present** in all payloads with the same value
+- **Size1 MUST be present** in all payloads with the same value
+- Missing either option results in 4.00 (Bad Request)
+
+**Q-Block2 Requirements** (RFC 9177 §4.4, §4.6):
+
+When using Q-Block2 for response payloads:
+
+- **Size2 MUST be present** in all blocks with the same value
+- **ETag MUST be constant** across all blocks of the same body
+- **Multiple Q-Block2 options** in missing-block requests must be strictly increasing
+  with no duplicates
+
+**Missing Blocks Payload** (RFC 9177 §5):
+
+The 4.08 (Request Entity Incomplete) response uses:
+
+- **Content-Format**: 272 (application/missing-blocks+cbor-seq)
+- **Payload**: CBOR Sequence (not array) of unsigned integers
+- **Order**: Missing block numbers in ascending order, no duplicates
+- **Client behavior**: Ignores duplicates if present
+
+**Example: Encoding Missing Blocks**:
+
+.. code-block:: c
+
+   /* Server detected missing blocks 2, 5, 7 */
+   uint32_t missing[] = {2, 5, 7};
+   uint8_t payload[64];
+   size_t encoded_len;
+
+   ret = coap_encode_missing_blocks_cbor_seq(payload, sizeof(payload),
+                                             missing, ARRAY_SIZE(missing),
+                                             &encoded_len);
+   if (ret == 0) {
+       /* Add to 4.08 response */
+       coap_packet_append_option_int(&response,
+                                     COAP_OPTION_CONTENT_FORMAT,
+                                     COAP_CONTENT_FORMAT_APP_MISSING_BLOCKS_CBOR_SEQ);
+       coap_packet_append_payload_marker(&response);
+       coap_packet_append_payload(&response, payload, encoded_len);
+   }
+
+**Example: Decoding Missing Blocks**:
+
+.. code-block:: c
+
+   /* Client received 4.08 response */
+   const uint8_t *payload;
+   uint16_t payload_len;
+   uint32_t missing[16];
+   size_t decoded_count;
+
+   payload = coap_packet_get_payload(&response, &payload_len);
+   ret = coap_decode_missing_blocks_cbor_seq(payload, payload_len,
+                                             missing, ARRAY_SIZE(missing),
+                                             &decoded_count);
+   if (ret == 0) {
+       /* Retransmit missing blocks */
+       for (size_t i = 0; i < decoded_count; i++) {
+           /* Send block missing[i] */
+       }
+   }
+
+**Congestion Control** (RFC 9177 §7.2):
+
+The ``CONFIG_COAP_Q_BLOCK_MAX_PAYLOADS`` option (default 10) controls the maximum
+number of Q-Block payloads in flight for NON transfers. This prevents network
+congestion when multiple blocks are sent without waiting for acknowledgments.
 
 Testing
 *******

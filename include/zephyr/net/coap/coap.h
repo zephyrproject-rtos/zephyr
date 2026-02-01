@@ -73,6 +73,15 @@ enum coap_option_num {
 	 */
 	COAP_OPTION_HOP_LIMIT = 16,      /**< Hop-Limit (RFC 8768) */
 	COAP_OPTION_ACCEPT = 17,         /**< Accept */
+	/**
+	 * Q-Block1 (RFC 9177)
+	 *
+	 * Critical, Unsafe option for robust block-wise transfer of request payloads.
+	 * Enables missing-block recovery via 4.08 responses with CBOR-encoded lists.
+	 * MUST be used with Request-Tag and Size1. Cannot be mixed with Block1/Block2
+	 * in the same packet (or same OSCORE layer).
+	 */
+	COAP_OPTION_Q_BLOCK1 = 19,       /**< Q-Block1 (RFC 9177) */
 	COAP_OPTION_LOCATION_QUERY = 20, /**< Location-Query */
 	/**
 	 * EDHOC (RFC 9668)
@@ -86,6 +95,15 @@ enum coap_option_num {
 	COAP_OPTION_BLOCK2 = 23,         /**< Block2 (RFC 7959) */
 	COAP_OPTION_BLOCK1 = 27,         /**< Block1 (RFC 7959) */
 	COAP_OPTION_SIZE2 = 28,          /**< Size2 (RFC 7959) */
+	/**
+	 * Q-Block2 (RFC 9177)
+	 *
+	 * Critical, Safe-to-Forward option for robust block-wise transfer of response payloads.
+	 * Supports missing-block requests with multiple Q-Block2 options (strictly increasing).
+	 * MUST be used with Size2 and constant ETag across all blocks. Cannot be mixed with
+	 * Block1/Block2 in the same packet (or same OSCORE layer).
+	 */
+	COAP_OPTION_Q_BLOCK2 = 31,       /**< Q-Block2 (RFC 9177) */
 	COAP_OPTION_PROXY_URI = 35,      /**< Proxy-Uri */
 	COAP_OPTION_PROXY_SCHEME = 39,   /**< Proxy-Scheme */
 	COAP_OPTION_SIZE1 = 60,          /**< Size1 */
@@ -256,7 +274,15 @@ enum coap_content_format {
 	 * Used for EDHOC messages and error responses.
 	 */
 	COAP_CONTENT_FORMAT_APP_EDHOC_CBOR_SEQ = 64,    /**< application/edhoc+cbor-seq */
-	COAP_CONTENT_FORMAT_APP_CID_EDHOC_CBOR_SEQ = 65 /**< application/cid-edhoc+cbor-seq */
+	COAP_CONTENT_FORMAT_APP_CID_EDHOC_CBOR_SEQ = 65, /**< application/cid-edhoc+cbor-seq */
+	/**
+	 * Missing blocks CBOR sequence (RFC 9177)
+	 *
+	 * Used in 4.08 Request Entity Incomplete responses to indicate which
+	 * Q-Block1 or Q-Block2 blocks are missing. Payload is a CBOR Sequence
+	 * of unsigned integers representing missing block numbers in ascending order.
+	 */
+	COAP_CONTENT_FORMAT_APP_MISSING_BLOCKS_CBOR_SEQ = 272 /**< application/missing-blocks+cbor-seq */
 };
 
 /**
@@ -1368,6 +1394,124 @@ void coap_set_transmission_parameters(const struct coap_transmission_parameters 
  * @retval -EINVAL Invalid input parameters
  */
 int coap_check_unsupported_critical_options(const struct coap_packet *cpkt, uint16_t *opt);
+
+/**
+ * @brief Append Q-Block1 option to the packet.
+ *
+ * Adds a Q-Block1 option for robust block-wise transfer per RFC 9177.
+ * Q-Block1 MUST be used with Request-Tag and Size1 options.
+ *
+ * @param cpkt Packet to be updated
+ * @param block_number Block number to encode
+ * @param has_more Whether more blocks follow
+ * @param block_size Block size to encode
+ *
+ * @return 0 in case of success or negative in case of error.
+ */
+int coap_append_q_block1_option(struct coap_packet *cpkt, uint32_t block_number,
+				bool has_more, enum coap_block_size block_size);
+
+/**
+ * @brief Append Q-Block2 option to the packet.
+ *
+ * Adds a Q-Block2 option for robust block-wise transfer per RFC 9177.
+ * Q-Block2 MUST be used with Size2 option and constant ETag across all blocks.
+ *
+ * @param cpkt Packet to be updated
+ * @param block_number Block number to encode
+ * @param has_more Whether more blocks follow
+ * @param block_size Block size to encode
+ *
+ * @return 0 in case of success or negative in case of error.
+ */
+int coap_append_q_block2_option(struct coap_packet *cpkt, uint32_t block_number,
+				bool has_more, enum coap_block_size block_size);
+
+/**
+ * @brief Get the block size, more flag and block number from the
+ * CoAP Q-Block1 option.
+ *
+ * @param cpkt Packet to be inspected
+ * @param has_more Is set to the value of the more flag
+ * @param block_number Is set to the number of the block
+ *
+ * @return Integer value of the block size in case of success
+ * or negative in case of error.
+ */
+int coap_get_q_block1_option(const struct coap_packet *cpkt, bool *has_more,
+			     uint32_t *block_number);
+
+/**
+ * @brief Get values from CoAP Q-Block2 option.
+ *
+ * Decode block number, more flag and block size from option.
+ *
+ * @param cpkt Packet to be inspected
+ * @param has_more Is set to the value of the more flag
+ * @param block_number Is set to the number of the block
+ *
+ * @return Integer value of the block size in case of success
+ * or negative in case of error.
+ */
+int coap_get_q_block2_option(const struct coap_packet *cpkt, bool *has_more,
+			     uint32_t *block_number);
+
+/**
+ * @brief Validate that Block and Q-Block options are not mixed in a packet.
+ *
+ * Per RFC 9177 §4.1, a CoAP packet MUST NOT contain both Block1/Block2 and
+ * Q-Block1/Q-Block2 options. This function checks for such invalid mixing.
+ * When OSCORE is used, this validation must be applied separately to both
+ * outer and inner packets.
+ *
+ * @param cpkt Parsed CoAP packet to validate
+ *
+ * @retval 0 No mixing detected, packet is valid
+ * @retval -EINVAL Block and Q-Block options are mixed (invalid per RFC 9177)
+ */
+int coap_validate_block_q_block_mixing(const struct coap_packet *cpkt);
+
+/**
+ * @brief Encode missing block numbers as CBOR Sequence for 4.08 responses.
+ *
+ * Per RFC 9177 §5, encodes a list of missing block numbers as a CBOR Sequence
+ * (not a CBOR array) of unsigned integers. The missing blocks must be provided
+ * in ascending order with no duplicates.
+ *
+ * @param payload Buffer to write the CBOR Sequence
+ * @param payload_len Size of the payload buffer
+ * @param missing_blocks Array of missing block numbers (must be ascending, unique)
+ * @param missing_blocks_count Number of missing blocks
+ * @param encoded_len Output: number of bytes written to payload
+ *
+ * @retval 0 Success
+ * @retval -EINVAL Invalid parameters or blocks not in ascending order
+ * @retval -ENOMEM Payload buffer too small
+ */
+int coap_encode_missing_blocks_cbor_seq(uint8_t *payload, size_t payload_len,
+					const uint32_t *missing_blocks,
+					size_t missing_blocks_count, size_t *encoded_len);
+
+/**
+ * @brief Decode missing block numbers from CBOR Sequence in 4.08 responses.
+ *
+ * Per RFC 9177 §5, decodes a CBOR Sequence of unsigned integers representing
+ * missing block numbers. Duplicates are ignored as specified in RFC 9177.
+ *
+ * @param payload CBOR Sequence payload to decode
+ * @param payload_len Length of the payload
+ * @param missing_blocks Output buffer for decoded block numbers
+ * @param max_blocks Maximum number of blocks the output buffer can hold
+ * @param decoded_count Output: number of blocks decoded (after removing duplicates)
+ *
+ * @retval 0 Success
+ * @retval -EINVAL Invalid parameters
+ * @retval -EILSEQ Malformed CBOR data
+ * @retval -ENOMEM Too many missing blocks for output buffer
+ */
+int coap_decode_missing_blocks_cbor_seq(const uint8_t *payload, size_t payload_len,
+					uint32_t *missing_blocks, size_t max_blocks,
+					size_t *decoded_count);
 
 /**
  * @brief Check if a response should be suppressed based on the No-Response option.

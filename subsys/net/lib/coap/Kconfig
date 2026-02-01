@@ -101,6 +101,36 @@ config COAP_KEEP_USER_DATA
 	help
 	  This option enables keeping application-specific user data
 
+config COAP_Q_BLOCK
+	bool "Q-Block1/Q-Block2 support (RFC 9177)"
+	depends on ZCBOR
+	help
+	  Enable support for Q-Block1 and Q-Block2 options for robust
+	  block-wise transfer per RFC 9177. Q-Block provides recovery
+	  from missing blocks via 4.08 responses with CBOR-encoded
+	  missing-block lists.
+
+	  Q-Block1 is used for request payloads and requires Request-Tag
+	  and Size1 options. Q-Block2 is used for response payloads and
+	  requires Size2 and constant ETag across all blocks.
+
+	  This feature requires ZCBOR for encoding/decoding CBOR Sequence
+	  payloads in 4.08 Request Entity Incomplete responses.
+
+if COAP_Q_BLOCK
+
+config COAP_Q_BLOCK_MAX_PAYLOADS
+	int "Maximum number of payloads in flight for Q-Block transfers"
+	default 10
+	range 1 255
+	help
+	  Maximum number of Q-Block payloads that can be in flight
+	  simultaneously per RFC 9177 §7.2. This is used for congestion
+	  control in NON (Non-confirmable) transfers. Lower values reduce
+	  network load but may slow down transfers.
+
+endif # COAP_Q_BLOCK
+
 config COAP_CLIENT
 	bool "CoAP client support [EXPERIMENTAL]"
 	select EXPERIMENTAL

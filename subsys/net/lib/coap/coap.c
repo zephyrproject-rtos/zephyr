@@ -1416,6 +1416,198 @@ int coap_get_block2_option(const struct coap_packet *cpkt, bool *has_more,
 	return ret;
 }
 
+#if defined(CONFIG_COAP_Q_BLOCK)
+int coap_append_q_block1_option(struct coap_packet *cpkt, uint32_t block_number,
+				bool has_more, enum coap_block_size block_size)
+{
+	unsigned int val = 0U;
+
+	SET_BLOCK_SIZE(val, block_size);
+	SET_MORE(val, has_more);
+	SET_NUM(val, block_number);
+
+	return coap_append_option_int(cpkt, COAP_OPTION_Q_BLOCK1, val);
+}
+
+int coap_append_q_block2_option(struct coap_packet *cpkt, uint32_t block_number,
+				bool has_more, enum coap_block_size block_size)
+{
+	unsigned int val = 0U;
+
+	SET_BLOCK_SIZE(val, block_size);
+	SET_MORE(val, has_more);
+	SET_NUM(val, block_number);
+
+	return coap_append_option_int(cpkt, COAP_OPTION_Q_BLOCK2, val);
+}
+
+int coap_get_q_block1_option(const struct coap_packet *cpkt, bool *has_more,
+			     uint32_t *block_number)
+{
+	int ret = coap_get_option_int(cpkt, COAP_OPTION_Q_BLOCK1);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	*has_more = GET_MORE(ret);
+	*block_number = GET_NUM(ret);
+	ret = 1 << (GET_BLOCK_SIZE(ret) + 4);
+	return ret;
+}
+
+int coap_get_q_block2_option(const struct coap_packet *cpkt, bool *has_more,
+			     uint32_t *block_number)
+{
+	int ret = coap_get_option_int(cpkt, COAP_OPTION_Q_BLOCK2);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	*has_more = GET_MORE(ret);
+	*block_number = GET_NUM(ret);
+	ret = 1 << (GET_BLOCK_SIZE(ret) + 4);
+	return ret;
+}
+
+int coap_validate_block_q_block_mixing(const struct coap_packet *cpkt)
+{
+	struct coap_option option = {};
+	bool has_block;
+	bool has_q_block;
+
+	if (cpkt == NULL) {
+		return -EINVAL;
+	}
+
+	/* Check for Block1 or Block2 */
+	has_block = (coap_find_options(cpkt, COAP_OPTION_BLOCK1, &option, 1) > 0) ||
+		    (coap_find_options(cpkt, COAP_OPTION_BLOCK2, &option, 1) > 0);
+
+	/* Check for Q-Block1 or Q-Block2 */
+	has_q_block = (coap_find_options(cpkt, COAP_OPTION_Q_BLOCK1, &option, 1) > 0) ||
+		      (coap_find_options(cpkt, COAP_OPTION_Q_BLOCK2, &option, 1) > 0);
+
+	/* RFC 9177 §4.1: MUST NOT mix Block and Q-Block in the same packet */
+	if (has_block && has_q_block) {
+		LOG_ERR("Block and Q-Block options cannot be mixed (RFC 9177 §4.1)");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+#if defined(CONFIG_ZCBOR)
+#include <zcbor_encode.h>
+#include <zcbor_decode.h>
+
+int coap_encode_missing_blocks_cbor_seq(uint8_t *payload, size_t payload_len,
+					const uint32_t *missing_blocks,
+					size_t missing_blocks_count, size_t *encoded_len)
+{
+	zcbor_state_t states[2];
+	bool ok;
+
+	if (payload == NULL || encoded_len == NULL) {
+		return -EINVAL;
+	}
+
+	if (missing_blocks_count == 0) {
+		*encoded_len = 0;
+		return 0;
+	}
+
+	if (missing_blocks == NULL) {
+		return -EINVAL;
+	}
+
+	if (payload_len == 0) {
+		return -EINVAL;
+	}
+
+	/* Initialize CBOR encoder for sequence (not array) */
+	zcbor_new_encode_state(states, ARRAY_SIZE(states), payload, payload_len, 0);
+
+	/* Encode each missing block number as a separate CBOR uint (CBOR Sequence) */
+	for (size_t i = 0; i < missing_blocks_count; i++) {
+		/* RFC 9177 §5: missing blocks must be in ascending order */
+		if (i > 0 && missing_blocks[i] <= missing_blocks[i - 1]) {
+			LOG_ERR("Missing blocks not in ascending order");
+			return -EINVAL;
+		}
+
+		ok = zcbor_uint32_put(states, missing_blocks[i]);
+		if (!ok) {
+			LOG_ERR("Failed to encode missing block %u", missing_blocks[i]);
+			return -ENOMEM;
+		}
+	}
+
+	*encoded_len = (size_t)(states[0].payload - payload);
+	return 0;
+}
+
+int coap_decode_missing_blocks_cbor_seq(const uint8_t *payload, size_t payload_len,
+					uint32_t *missing_blocks, size_t max_blocks,
+					size_t *decoded_count)
+{
+	zcbor_state_t states[2];
+	uint32_t block_num;
+	uint32_t last_block_num = 0;
+	size_t count = 0;
+	bool ok;
+
+	if (missing_blocks == NULL || decoded_count == NULL) {
+		return -EINVAL;
+	}
+
+	*decoded_count = 0;
+
+	if (payload == NULL || payload_len == 0) {
+		return 0;
+	}
+
+	/* Initialize CBOR decoder for sequence (elem_count = max_blocks for all elements) */
+	zcbor_new_decode_state(states, ARRAY_SIZE(states), payload, payload_len, max_blocks,
+			       NULL, 0);
+
+	/* Decode CBOR Sequence of uints */
+	while (states[0].payload < states[0].payload_end) {
+		ok = zcbor_uint32_decode(states, &block_num);
+		if (!ok) {
+			LOG_ERR("Failed to decode missing block number");
+			return -EILSEQ;
+		}
+
+		/* RFC 9177 §5: client ignores duplicates */
+		if (count > 0 && block_num == last_block_num) {
+			LOG_DBG("Ignoring duplicate block number %u", block_num);
+			continue;
+		}
+
+		/* RFC 9177 §5: blocks should be in ascending order */
+		if (count > 0 && block_num < last_block_num) {
+			LOG_WRN("Missing blocks not in ascending order: %u after %u",
+				block_num, last_block_num);
+		}
+
+		if (count >= max_blocks) {
+			LOG_ERR("Too many missing blocks (max %zu)", max_blocks);
+			return -ENOMEM;
+		}
+
+		missing_blocks[count++] = block_num;
+		last_block_num = block_num;
+	}
+
+	*decoded_count = count;
+	return 0;
+}
+#endif /* CONFIG_ZCBOR */
+
+#endif /* CONFIG_COAP_Q_BLOCK */
+
 int insert_option(struct coap_packet *cpkt, uint16_t code, const uint8_t *value, uint16_t len)
 {
 	uint16_t offset = cpkt->hdr_len;
