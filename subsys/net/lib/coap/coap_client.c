@@ -79,6 +79,7 @@ static void reset_internal_request(struct coap_client_internal_request *request)
 	*request = (struct coap_client_internal_request){
 		.last_response_id = -1,
 		.request_tag_len = 0,
+		.block2_etag_len = 0,
 #if defined(CONFIG_COAP_OSCORE)
 		.oscore_enabled_for_exchange = false,
 		.oscore_outer_reassembly_len = 0,
@@ -921,6 +922,38 @@ static bool find_echo_option(const struct coap_packet *response, struct coap_opt
 	return coap_find_options(response, COAP_OPTION_ECHO, option, 1);
 }
 
+/**
+ * Extract and validate ETag option from a response per RFC 7252 §5.10.6.1.
+ *
+ * @param response The CoAP response packet to extract ETag from
+ * @param etag Buffer to store the ETag value (must be at least 8 bytes)
+ * @param etag_len Pointer to store the ETag length
+ * @return 0 on success, -ENOENT if no ETag present, -EINVAL if invalid
+ */
+static int extract_etag(const struct coap_packet *response, uint8_t *etag, uint8_t *etag_len)
+{
+	struct coap_option options[2];
+	int count;
+
+	count = coap_find_options(response, COAP_OPTION_ETAG, options, ARRAY_SIZE(options));
+
+	if (count == 0) {
+		*etag_len = 0;
+		return -ENOENT;
+	}
+
+	if (count > 1 || options[0].len < 1 || options[0].len > 8) {
+		LOG_ERR("Invalid ETag: count=%d, len=%u", count, options[0].len);
+		*etag_len = 0;
+		return -EINVAL;
+	}
+
+	memcpy(etag, options[0].value, options[0].len);
+	*etag_len = options[0].len;
+
+	return 0;
+}
+
 static int handle_response(struct coap_client *client, const struct coap_packet *response,
 			   bool response_truncated)
 {
@@ -1472,13 +1505,57 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 						 coap_client_default_block_size(),
 						 0);
 			internal_req->offset = 0;
+			/* RFC 7959 §2.4: Clear any previous ETag state on first block */
+			internal_req->block2_etag_len = 0;
 		}
+
+		/* RFC 7959 §2.4: Extract and validate ETag for Block2 transfers */
+		uint8_t current_etag[8];
+		uint8_t current_etag_len;
+		int etag_ret = extract_etag(response_to_process, current_etag, &current_etag_len);
+
+		if (block_num == 0) {
+			/* First block: store ETag if present and valid */
+			if (etag_ret == 0) {
+				memcpy(internal_req->block2_etag, current_etag, current_etag_len);
+				internal_req->block2_etag_len = current_etag_len;
+			} else if (etag_ret != -ENOENT) {
+				/* Invalid ETag (multiple or wrong length) - abort */
+				LOG_ERR("Block2: invalid ETag in block 0");
+				goto etag_error;
+			}
+		} else if (internal_req->block2_etag_len > 0) {
+			/* Subsequent blocks: enforce ETag comparison if ETag was in first block */
+			if (etag_ret != 0 ||
+			    current_etag_len != internal_req->block2_etag_len ||
+			    memcmp(current_etag, internal_req->block2_etag, current_etag_len) != 0) {
+				LOG_ERR("Block2: ETag mismatch in block %d", block_num);
+				goto etag_error;
+			}
+		}
+
+		goto etag_ok;
+
+etag_error:
+		internal_req->recv_blk_ctx = (struct coap_block_context){0};
+		internal_req->offset = 0;
+		internal_req->block2_etag_len = 0;
+		report_callback_error(internal_req, -EBADMSG);
+		release_internal_request(internal_req);
+		return -EBADMSG;
+
+etag_ok:
 
 		ret = coap_update_from_block(response_to_process, &internal_req->recv_blk_ctx);
 		if (ret < 0) {
 			LOG_ERR("Error updating block context");
 		}
 		coap_next_block(response_to_process, &internal_req->recv_blk_ctx);
+
+		/* RFC 7959 §2.4: Clear ETag state on last block */
+		if (last_block) {
+			internal_req->block2_etag_len = 0;
+		}
 	} else {
 		internal_req->offset = 0;
 		last_block = true;

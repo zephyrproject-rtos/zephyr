@@ -251,6 +251,109 @@ Applications using the :ref:`coap_client_interface` benefit from Request-Tag
 support automatically without code changes, as the client library handles
 Request-Tag generation and propagation internally.
 
+Block-wise Transfer ETag Validation (RFC 7959 §2.4)
+====================================================
+
+The Zephyr CoAP client implements RFC 7959 §2.4 ETag validation for Block2
+(download) transfers to prevent silent reassembly of mixed representations.
+
+**Overview**:
+
+When a server sends a Block2 response with an ETag option, the client tracks
+that ETag and enforces that all subsequent blocks of the same transfer use
+the same ETag value. This ensures the client doesn't accidentally reassemble
+blocks from different versions of a resource.
+
+**Key Features**:
+
+- **Automatic ETag tracking**: When the first block (block 0) of a Block2
+  transfer contains an ETag option, the client stores the ETag value.
+
+- **Mandatory comparison**: Per RFC 7959 §2.4, if an ETag is present in the
+  first block, all subsequent blocks MUST include the same ETag. Mismatches
+  or missing ETags abort the transfer.
+
+- **Optional enforcement**: If no ETag is present in the first block, the
+  client does not enforce ETag comparison for that transfer (per RFC 7959,
+  comparison is only mandatory "if an ETag Option is available").
+
+- **RFC 7252 compliance**: The client enforces RFC 7252 §5.10.6.1 which
+  requires that "The ETag Option MUST NOT occur more than once in a response."
+  Responses with multiple ETags are rejected.
+
+- **OSCORE integration**: ETag validation operates on the decrypted inner
+  response for OSCORE-protected transfers, ensuring it works correctly with
+  inner Block2 transfers.
+
+**Behavior**:
+
+1. **First block (block 0)**:
+
+   - If ETag present and valid (1-8 bytes, single option): Store ETag
+   - If ETag absent: No ETag enforcement for this transfer
+   - If ETag invalid (multiple options or wrong length): Abort transfer with
+     error callback
+
+2. **Subsequent blocks (block 1+)**:
+
+   - If ETag was stored from block 0:
+
+     - Current block MUST have matching ETag (same length and value)
+     - Missing or mismatched ETag: Abort transfer, clear state, report error
+       (-EBADMSG) to application callback
+
+   - If no ETag was stored: No enforcement
+
+3. **Last block**:
+
+   - After successful delivery of the last block, ETag state is cleared
+
+**Server Requirements**:
+
+Per RFC 7959 §2.4 and RFC 9175 §3.8, servers SHOULD include an ETag option
+in each Block2 response:
+
+- Use a stable ETag for a given representation
+- Change the ETag when the representation changes
+- Include the same ETag in all blocks of a transfer
+
+**Example Server Implementation**:
+
+.. code-block:: c
+
+   /* In Block2 response handler */
+   static const uint8_t etag_value[] = {0x01, 0x02, 0x03, 0x04};
+
+   /* ETag must come before Content-Format and Block2 (option ordering) */
+   ret = coap_packet_append_option(&response, COAP_OPTION_ETAG,
+                                   etag_value, sizeof(etag_value));
+   if (ret < 0) {
+       return ret;
+   }
+
+   ret = coap_append_option_int(&response, COAP_OPTION_CONTENT_FORMAT,
+                                COAP_CONTENT_FORMAT_TEXT_PLAIN);
+   /* ... */
+
+   ret = coap_append_block2_option(&response, &ctx);
+   /* ... */
+
+**Security Considerations**:
+
+- **Fail-closed**: Invalid ETags or mismatches cause the transfer to abort
+  rather than silently accepting potentially inconsistent data.
+
+- **No partial delivery**: When an ETag mismatch is detected, the application
+  callback receives an error (-EBADMSG) and does not receive the mismatched
+  block payload.
+
+- **State cleanup**: On ETag errors, the client clears all blockwise state
+  (block context, offsets, stored ETag) to prevent state confusion.
+
+Applications using the :ref:`coap_client_interface` benefit from ETag validation
+automatically without code changes, as the client library handles ETag tracking
+and comparison internally.
+
 Testing
 *******
 

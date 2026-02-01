@@ -80,6 +80,19 @@ static int large_get(struct coap_resource *resource,
 		return -EINVAL;
 	}
 
+	/* RFC 7959 §2.4 + RFC 9175 §3.8: Include ETag in Block2 responses.
+	 * Use a stable ETag for this representation. If the representation changes,
+	 * the ETag MUST also change (RFC 9175 §3.8).
+	 * ETag option (4) must come before Content-Format (12) and Block2 (23).
+	 */
+	static const uint8_t etag_value[] = {0x01, 0x02, 0x03, 0x04};
+
+	r = coap_packet_append_option(&response, COAP_OPTION_ETAG,
+				      etag_value, sizeof(etag_value));
+	if (r < 0) {
+		return r;
+	}
+
 	r = coap_append_option_int(&response, COAP_OPTION_CONTENT_FORMAT,
 				   COAP_CONTENT_FORMAT_TEXT_PLAIN);
 	if (r < 0) {

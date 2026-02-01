@@ -161,6 +161,8 @@ struct coap_client_internal_request {
 	struct coap_packet request;
 	uint8_t request_tag[COAP_TOKEN_MAX_LEN];
 	uint8_t request_tag_len; /**< RFC9175 Request-Tag length (0=unset, 1-8=set) */
+	uint8_t block2_etag[8]; /**< RFC7959 Block2 ETag for response validation */
+	uint8_t block2_etag_len; /**< ETag length (0=no ETag tracked, 1-8=ETag set) */
 	uint8_t send_buf[MAX_COAP_MSG_LEN];
 
 	/* For GETs with observe option set */
