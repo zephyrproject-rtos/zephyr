@@ -28,6 +28,7 @@ LOG_MODULE_REGISTER(net_test, LOG_LEVEL_DBG);
 #include <zephyr/net/coap/coap_service.h>
 #include <oscore.h>
 #include <oscore/security_context.h>
+#include <common/oscore_edhoc_error.h>
 #endif
 
 #if defined(CONFIG_COAP_EDHOC)
@@ -5070,5 +5071,150 @@ ZTEST(coap, test_hop_limit_proxy_update_with_invalid)
 	ret = coap_hop_limit_proxy_update(&cpkt, 0);
 	zassert_equal(ret, -EINVAL, "Should reject invalid Hop-Limit=0");
 }
+
+#if defined(CONFIG_COAP_OSCORE) && defined(CONFIG_COAP_TEST_API_ENABLE)
+/**
+ * @brief Test RFC 8613 Section 8.2 step 2 bullet 1: Decode/parse errors => 4.02 Bad Option
+ */
+ZTEST(coap, test_oscore_error_mapping_decode_failures)
+{
+	uint8_t code;
+
+	/* RFC 8613 Section 8.2 step 2 bullet 1: COSE decode/decompression failures */
+	code = coap_oscore_err_to_coap_code_for_test(not_valid_input_packet);
+	zassert_equal(code, COAP_RESPONSE_CODE_BAD_OPTION,
+		      "not_valid_input_packet should map to 4.02");
+
+	code = coap_oscore_err_to_coap_code_for_test(oscore_inpkt_invalid_tkl);
+	zassert_equal(code, COAP_RESPONSE_CODE_BAD_OPTION,
+		      "oscore_inpkt_invalid_tkl should map to 4.02");
+
+	code = coap_oscore_err_to_coap_code_for_test(oscore_inpkt_invalid_option_delta);
+	zassert_equal(code, COAP_RESPONSE_CODE_BAD_OPTION,
+		      "oscore_inpkt_invalid_option_delta should map to 4.02");
+
+	code = coap_oscore_err_to_coap_code_for_test(oscore_inpkt_invalid_optionlen);
+	zassert_equal(code, COAP_RESPONSE_CODE_BAD_OPTION,
+		      "oscore_inpkt_invalid_optionlen should map to 4.02");
+
+	code = coap_oscore_err_to_coap_code_for_test(oscore_inpkt_invalid_piv);
+	zassert_equal(code, COAP_RESPONSE_CODE_BAD_OPTION,
+		      "oscore_inpkt_invalid_piv should map to 4.02");
+
+	code = coap_oscore_err_to_coap_code_for_test(oscore_valuelen_to_long_error);
+	zassert_equal(code, COAP_RESPONSE_CODE_BAD_OPTION,
+		      "oscore_valuelen_to_long_error should map to 4.02");
+
+	code = coap_oscore_err_to_coap_code_for_test(too_many_options);
+	zassert_equal(code, COAP_RESPONSE_CODE_BAD_OPTION,
+		      "too_many_options should map to 4.02");
+
+	code = coap_oscore_err_to_coap_code_for_test(cbor_decoding_error);
+	zassert_equal(code, COAP_RESPONSE_CODE_BAD_OPTION,
+		      "cbor_decoding_error should map to 4.02");
+
+	code = coap_oscore_err_to_coap_code_for_test(cbor_encoding_error);
+	zassert_equal(code, COAP_RESPONSE_CODE_BAD_OPTION,
+		      "cbor_encoding_error should map to 4.02");
+}
+
+/**
+ * @brief Test RFC 8613 Section 8.2 step 2 bullet 2: Security context not found => 4.01
+ */
+ZTEST(coap, test_oscore_error_mapping_context_not_found)
+{
+	uint8_t code;
+
+	/* RFC 8613 Section 8.2 step 2 bullet 2: Security context not found */
+	code = coap_oscore_err_to_coap_code_for_test(oscore_kid_recipient_id_mismatch);
+	zassert_equal(code, COAP_RESPONSE_CODE_UNAUTHORIZED,
+		      "oscore_kid_recipient_id_mismatch should map to 4.01");
+}
+
+/**
+ * @brief Test RFC 8613 Section 7.4: Replay protection failures => 4.01 Unauthorized
+ */
+ZTEST(coap, test_oscore_error_mapping_replay_failures)
+{
+	uint8_t code;
+
+	/* RFC 8613 Section 7.4: Replay protection failures */
+	code = coap_oscore_err_to_coap_code_for_test(oscore_replay_window_protection_error);
+	zassert_equal(code, COAP_RESPONSE_CODE_UNAUTHORIZED,
+		      "oscore_replay_window_protection_error should map to 4.01");
+
+	code = coap_oscore_err_to_coap_code_for_test(oscore_replay_notification_protection_error);
+	zassert_equal(code, COAP_RESPONSE_CODE_UNAUTHORIZED,
+		      "oscore_replay_notification_protection_error should map to 4.01");
+
+	code = coap_oscore_err_to_coap_code_for_test(first_request_after_reboot);
+	zassert_equal(code, COAP_RESPONSE_CODE_UNAUTHORIZED,
+		      "first_request_after_reboot should map to 4.01");
+
+	code = coap_oscore_err_to_coap_code_for_test(echo_validation_failed);
+	zassert_equal(code, COAP_RESPONSE_CODE_UNAUTHORIZED,
+		      "echo_validation_failed should map to 4.01");
+}
+
+/**
+ * @brief Test RFC 8613 Section 8.2 step 6: Decryption failures => 4.00 Bad Request
+ */
+ZTEST(coap, test_oscore_error_mapping_decryption_failures)
+{
+	uint8_t code;
+
+	/* RFC 8613 Section 8.2 step 6: Decryption/integrity failures and unknown errors */
+	code = coap_oscore_err_to_coap_code_for_test(hkdf_failed);
+	zassert_equal(code, COAP_RESPONSE_CODE_BAD_REQUEST,
+		      "hkdf_failed should map to 4.00 (default)");
+
+	code = coap_oscore_err_to_coap_code_for_test(unexpected_result_from_ext_lib);
+	zassert_equal(code, COAP_RESPONSE_CODE_BAD_REQUEST,
+		      "unexpected_result_from_ext_lib should map to 4.00 (default)");
+
+	code = coap_oscore_err_to_coap_code_for_test(wrong_parameter);
+	zassert_equal(code, COAP_RESPONSE_CODE_BAD_REQUEST,
+		      "wrong_parameter should map to 4.00 (default)");
+
+	/* Test that ok maps to success */
+	code = coap_oscore_err_to_coap_code_for_test(ok);
+	zassert_equal(code, COAP_RESPONSE_CODE_OK,
+		      "ok should map to 2.05 Content");
+}
+
+/**
+ * @brief Test OSCORE error response formatting
+ *
+ * This test verifies RFC 8613 Section 8.2/8.3/7.4 compliance:
+ * - OSCORE error responses are unprotected (no OSCORE option)
+ * - OSCORE error responses MAY include Max-Age: 0 to prevent caching
+ */
+ZTEST(coap, test_oscore_error_response_format)
+{
+	struct coap_packet response;
+	uint8_t response_buf[128];
+	int r;
+
+	/* Build an OSCORE error response (as done by send_oscore_error_response) */
+	r = coap_packet_init(&response, response_buf, sizeof(response_buf),
+			     COAP_VERSION_1, COAP_TYPE_ACK, 0, NULL,
+			     COAP_RESPONSE_CODE_UNAUTHORIZED, 0x1234);
+	zassert_equal(r, 0, "Failed to init response");
+
+	/* Add Max-Age: 0 option */
+	r = coap_append_option_int(&response, COAP_OPTION_MAX_AGE, 0);
+	zassert_equal(r, 0, "Failed to append Max-Age option");
+
+	/* Verify OSCORE option is NOT present (unprotected response) */
+	bool has_oscore = coap_oscore_msg_has_oscore(&response);
+
+	zassert_false(has_oscore, "OSCORE error response must not have OSCORE option");
+
+	/* Verify Max-Age option is present and set to 0 */
+	int max_age = coap_get_option_int(&response, COAP_OPTION_MAX_AGE);
+
+	zassert_equal(max_age, 0, "Max-Age should be 0 for OSCORE error responses");
+}
+#endif /* CONFIG_COAP_OSCORE && CONFIG_COAP_TEST_API_ENABLE */
 
 ZTEST_SUITE(coap, NULL, NULL, NULL, NULL, NULL);

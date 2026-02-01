@@ -138,13 +138,15 @@ static inline void coap_server_free(void *ptr)
  * @param code CoAP response code
  * @param client_addr Client address
  * @param client_addr_len Client address length
+ * @param add_max_age_zero If true, add Max-Age: 0 option (for OSCORE errors per RFC 8613)
  * @return 0 on success, negative errno on error
  */
-static int send_error_response(const struct coap_service *service,
-			       const struct coap_packet *request,
-			       uint8_t code,
-			       const struct net_sockaddr *client_addr,
-			       net_socklen_t client_addr_len)
+static int send_error_response_internal(const struct coap_service *service,
+					const struct coap_packet *request,
+					uint8_t code,
+					const struct net_sockaddr *client_addr,
+					net_socklen_t client_addr_len,
+					bool add_max_age_zero)
 {
 	uint8_t buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
 	struct coap_packet response;
@@ -161,8 +163,51 @@ static int send_error_response(const struct coap_service *service,
 		return ret;
 	}
 
+	/* RFC 8613 Section 8.2/7.4: OSCORE error responses MAY include Max-Age: 0 */
+	if (add_max_age_zero) {
+		ret = coap_append_option_int(&response, COAP_OPTION_MAX_AGE, 0);
+		if (ret < 0) {
+			LOG_WRN("Failed to add Max-Age option to OSCORE error response (%d)", ret);
+			/* Continue anyway - Max-Age is optional */
+		}
+	}
+
 	return coap_service_send(service, &response, client_addr, client_addr_len, NULL);
 }
+
+/**
+ * @brief Send a simple CoAP error response (without Max-Age)
+ *
+ * Wrapper for send_error_response_internal for non-OSCORE errors.
+ */
+static int send_error_response(const struct coap_service *service,
+			       const struct coap_packet *request,
+			       uint8_t code,
+			       const struct net_sockaddr *client_addr,
+			       net_socklen_t client_addr_len)
+{
+	return send_error_response_internal(service, request, code,
+					    client_addr, client_addr_len, false);
+}
+
+#if defined(CONFIG_COAP_OSCORE)
+/**
+ * @brief Send an OSCORE error response with Max-Age: 0
+ *
+ * Per RFC 8613 Section 8.2/8.3/7.4, OSCORE error responses are sent as
+ * simple CoAP responses (without OSCORE processing) and MAY include
+ * Max-Age: 0 to prevent caching.
+ */
+static int send_oscore_error_response(const struct coap_service *service,
+				      const struct coap_packet *request,
+				      uint8_t code,
+				      const struct net_sockaddr *client_addr,
+				      net_socklen_t client_addr_len)
+{
+	return send_error_response_internal(service, request, code,
+					    client_addr, client_addr_len, true);
+}
+#endif /* CONFIG_COAP_OSCORE */
 #endif /* CONFIG_COAP_OSCORE || CONFIG_COAP_EDHOC_COMBINED_REQUEST */
 
 #if defined(CONFIG_COAP_EDHOC_COMBINED_REQUEST)
@@ -1399,14 +1444,14 @@ static int coap_server_process(int sock_fd)
 		uint32_t decrypted_len = sizeof(decrypted_buf);
 		uint8_t error_code = COAP_RESPONSE_CODE_BAD_REQUEST;
 
-		ret = coap_oscore_verify(rebuilt_buf, rebuilt_len,
-					 decrypted_buf, &decrypted_len,
-					 ctx_entry->oscore_ctx, &error_code);
+		ret = coap_oscore_verify_wrapper(rebuilt_buf, rebuilt_len,
+						 decrypted_buf, &decrypted_len,
+						 ctx_entry->oscore_ctx, &error_code);
 		if (ret < 0) {
 			LOG_ERR("OSCORE verification failed (%d), sending error %d",
 				ret, error_code);
-			(void)send_error_response(service, &request, error_code,
-						  &client_addr, client_addr_len);
+			(void)send_oscore_error_response(service, &request, error_code,
+							 &client_addr, client_addr_len);
 			ret = -EACCES;
 			goto unlock;
 		}
@@ -1479,23 +1524,26 @@ static int coap_server_process(int sock_fd)
 #endif
 
 		if (oscore_ctx == NULL) {
-			/* OSCORE message received but no context available */
+			/* RFC 8613 Section 8.2 step 2 bullet 2: Security context not found => 4.01 */
 			LOG_WRN("OSCORE message received but no context configured or cached");
+			(void)send_oscore_error_response(service, &request,
+							 COAP_RESPONSE_CODE_UNAUTHORIZED,
+							 &client_addr, client_addr_len);
 			ret = -ENOTSUP;
 			goto unlock;
 		}
 
 		/* Decrypt the OSCORE message */
-		ret = coap_oscore_verify(buf, received, decrypted_buf, &decrypted_len,
-					 oscore_ctx, &error_code);
+		ret = coap_oscore_verify_wrapper(buf, received, decrypted_buf, &decrypted_len,
+						 oscore_ctx, &error_code);
 		if (ret < 0) {
 			/* RFC 8613 Section 8.2: OSCORE errors are sent as simple CoAP
 			 * responses without OSCORE processing
 			 */
 			LOG_ERR("OSCORE verification failed (%d), sending error %d", ret,
 				error_code);
-			(void)send_error_response(service, &request, error_code,
-						  &client_addr, client_addr_len);
+			(void)send_oscore_error_response(service, &request, error_code,
+							 &client_addr, client_addr_len);
 			ret = -EACCES;
 			goto unlock;
 		}

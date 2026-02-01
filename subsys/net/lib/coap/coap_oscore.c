@@ -61,26 +61,50 @@ int coap_oscore_validate_msg(const struct coap_packet *cpkt)
 /**
  * @brief Map uoscore error codes to CoAP response codes
  *
- * Based on RFC 8613 Section 8.2:
- * - COSE decode/decompression fail => may respond 4.02 Bad Option
- * - Security context not found => may respond 4.01 Unauthorized
- * - Decryption fail => must stop processing; may respond 4.00 Bad Request
+ * Implements RFC 8613 Section 8.2 and Section 7.4 error code mapping:
+ * - Decode/decompression/parse failures => 4.02 Bad Option (RFC 8613 §8.2 step 2 bullet 1)
+ * - Security context not found => 4.01 Unauthorized (RFC 8613 §8.2 step 2 bullet 2)
+ * - Replay protection failures => 4.01 Unauthorized (RFC 8613 §7.4)
+ * - Decryption/integrity failures => 4.00 Bad Request (RFC 8613 §8.2 step 6)
+ * - Unknown errors => 4.00 Bad Request (safe default)
  *
  * @param oscore_err Error code from uoscore library
  * @return CoAP response code
  */
 static uint8_t oscore_err_to_coap_code(enum err oscore_err)
 {
-	/* Since we don't have access to all uoscore error codes at compile time,
-	 * we use a simple mapping: ok => success, anything else => Bad Request.
-	 * The uoscore library will log specific error details.
-	 */
-	if (oscore_err == ok) {
+	switch (oscore_err) {
+	case ok:
 		return COAP_RESPONSE_CODE_OK;
-	}
 
-	/* For any error, return Bad Request as the default per RFC 8613 Section 8.2 */
-	return COAP_RESPONSE_CODE_BAD_REQUEST;
+	/* RFC 8613 Section 8.2 step 2 bullet 1: Decode/decompression/parse failures => 4.02 */
+	case not_valid_input_packet:
+	case oscore_inpkt_invalid_tkl:
+	case oscore_inpkt_invalid_option_delta:
+	case oscore_inpkt_invalid_optionlen:
+	case oscore_inpkt_invalid_piv:
+	case oscore_valuelen_to_long_error:
+	case too_many_options:
+	case cbor_decoding_error:
+	case cbor_encoding_error:
+		return COAP_RESPONSE_CODE_BAD_OPTION;
+
+	/* RFC 8613 Section 8.2 step 2 bullet 2: Security context not found => 4.01 */
+	case oscore_kid_recipient_id_mismatch:
+		return COAP_RESPONSE_CODE_UNAUTHORIZED;
+
+	/* RFC 8613 Section 7.4: Replay protection failures => 4.01 */
+	case oscore_replay_window_protection_error:
+	case oscore_replay_notification_protection_error:
+	case first_request_after_reboot:
+	case echo_validation_failed:
+		return COAP_RESPONSE_CODE_UNAUTHORIZED;
+
+	/* RFC 8613 Section 8.2 step 6: Decryption/integrity failures => 4.00 */
+	/* All other errors default to 4.00 Bad Request (safe default) */
+	default:
+		return COAP_RESPONSE_CODE_BAD_REQUEST;
+	}
 }
 
 /**
@@ -175,3 +199,20 @@ __weak int coap_oscore_verify_wrapper(const uint8_t *oscore_msg, uint32_t oscore
 	return coap_oscore_verify(oscore_msg, oscore_msg_len, coap_msg, coap_msg_len,
 				  ctx, error_code);
 }
+
+#if defined(CONFIG_COAP_TEST_API_ENABLE)
+/**
+ * @brief Test-only helper to expose OSCORE error to CoAP code mapping
+ *
+ * This function is only available when CONFIG_COAP_TEST_API_ENABLE is set.
+ * It allows unit tests to verify the RFC 8613 error code mapping without
+ * needing to construct actual OSCORE packets.
+ *
+ * @param oscore_err uOSCORE error code
+ * @return Mapped CoAP response code
+ */
+uint8_t coap_oscore_err_to_coap_code_for_test(enum err oscore_err)
+{
+	return oscore_err_to_coap_code(oscore_err);
+}
+#endif /* CONFIG_COAP_TEST_API_ENABLE */

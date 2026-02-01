@@ -102,6 +102,17 @@ void oscore_exchange_remove(struct coap_oscore_exchange *cache,
 			    net_socklen_t addr_len,
 			    const uint8_t *token,
 			    uint8_t tkl);
+
+/**
+ * @brief Test-only helper to expose OSCORE error to CoAP code mapping
+ *
+ * This function allows unit tests to verify the RFC 8613 error code mapping
+ * without needing to construct actual OSCORE packets.
+ *
+ * @param oscore_err uOSCORE error code (enum err)
+ * @return Mapped CoAP response code
+ */
+uint8_t coap_oscore_err_to_coap_code_for_test(enum err oscore_err);
 #endif /* CONFIG_COAP_TEST_API_ENABLE */
 
 #endif /* CONFIG_COAP_OSCORE */
