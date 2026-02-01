@@ -1213,14 +1213,9 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 
 		if (internal_req->oscore_outer_reassembly_len > 0) {
 			/* RFC 8613 Section 8.4.1: Reconstruct the complete OSCORE message.
-			 * The OSCORE payload (ciphertext) has been reassembled. Now we need
-			 * to build a complete CoAP message with the OSCORE option and the
-			 * reassembled payload, without the Block2/Size2 transport options.
-			 *
-			 * Note: Per RFC 8613, Block2/Size2 are "Outer" options that are not
-			 * part of the OSCORE-protected message. The OSCORE verification only
-			 * processes the OSCORE option and its payload. However, we still need
-			 * to provide a well-formed CoAP message structure.
+			 * Per RFC 8613 Section 4.1.3.4.2, the reconstructed message MUST NOT
+			 * contain Outer Block options (Block2/Size2). These are transport-layer
+			 * options that must be processed and removed before OSCORE verification.
 			 */
 			struct coap_packet template_pkt;
 
@@ -1236,7 +1231,26 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 				return 0;
 			}
 
-			/* Find where the payload starts in the template */
+			/* RFC 8613 Section 4.1.3.4.2: Remove Outer Block2 and Size2 options
+			 * from the template before reconstructing the OSCORE message.
+			 */
+			ret = coap_packet_remove_option(&template_pkt, COAP_OPTION_BLOCK2);
+			if (ret < 0 && ret != -ENOENT) {
+				LOG_ERR("Failed to remove Block2 option");
+				internal_req->oscore_outer_reassembly_len = 0;
+				internal_req->oscore_outer_header_len = 0;
+				return 0;
+			}
+
+			ret = coap_packet_remove_option(&template_pkt, COAP_OPTION_SIZE2);
+			if (ret < 0 && ret != -ENOENT) {
+				LOG_ERR("Failed to remove Size2 option");
+				internal_req->oscore_outer_reassembly_len = 0;
+				internal_req->oscore_outer_header_len = 0;
+				return 0;
+			}
+
+			/* Find where the payload starts in the modified template */
 			uint16_t template_payload_len;
 			const uint8_t *template_payload =
 				coap_packet_get_payload(&template_pkt, &template_payload_len);
@@ -1245,21 +1259,19 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 			if (template_payload != NULL) {
 				/* Calculate length up to (but not including) payload marker */
 				header_and_options_len =
-					template_payload - internal_req->oscore_outer_header_buf - 1;
+					template_payload - template_pkt.data - 1;
 			} else {
 				/* No payload marker in template, shouldn't happen but handle it */
 				header_and_options_len = template_pkt.hdr_len +
 							 template_pkt.opt_len;
 			}
 
-			/* Build reconstructed message: header + options + reassembled payload.
-			 * Note: This includes Block2/Size2 options from the first block,
-			 * which is not ideal but acceptable since OSCORE verification
-			 * ignores these outer options per RFC 8613 Section 4.1.
+			/* Build reconstructed message: header + options (without Block2/Size2)
+			 * + payload marker + reassembled payload.
 			 */
 			size_t recon_len = 0;
 
-			/* Copy header and all options from first block */
+			/* Copy header and remaining options from modified template */
 			if (header_and_options_len > sizeof(internal_req->oscore_wire_buf)) {
 				LOG_ERR("OSCORE header+options too large");
 				internal_req->oscore_outer_reassembly_len = 0;
@@ -1268,7 +1280,7 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 			}
 
 			memcpy(internal_req->oscore_wire_buf,
-			       internal_req->oscore_outer_header_buf,
+			       template_pkt.data,
 			       header_and_options_len);
 			recon_len = header_and_options_len;
 
@@ -1290,7 +1302,8 @@ static int handle_response(struct coap_client *client, const struct coap_packet 
 			oscore_msg_to_verify = internal_req->oscore_wire_buf;
 			oscore_msg_len = recon_len;
 
-			LOG_DBG("OSCORE outer Block2: reconstructed %u bytes from %zu payload bytes",
+			LOG_DBG("OSCORE outer Block2: reconstructed %u bytes from %zu payload bytes "
+				"(Block2/Size2 options removed per RFC 8613 Section 4.1.3.4.2)",
 				oscore_msg_len, internal_req->oscore_outer_reassembly_len);
 
 			/* Clear reassembly state */
@@ -1711,6 +1724,40 @@ bool coap_client_has_ongoing_exchange(struct coap_client *client)
 
 	return has_ongoing_exchange(client);
 }
+
+#if defined(CONFIG_COAP_TEST_API_ENABLE)
+int coap_client_test_inject_response(struct coap_client *client,
+				      const uint8_t *data, size_t len)
+{
+	struct coap_packet response;
+	int ret;
+
+	if (client == NULL || data == NULL || len == 0) {
+		return -EINVAL;
+	}
+
+	if (len > sizeof(client->recv_buf)) {
+		return -EMSGSIZE;
+	}
+
+	/* Copy data to client's receive buffer (non-const for parsing) */
+	memcpy(client->recv_buf, data, len);
+
+	/* Parse the response (coap_packet_parse requires non-const buffer) */
+	ret = coap_packet_parse(&response, client->recv_buf, (uint16_t)len, NULL, 0);
+	if (ret < 0) {
+		LOG_ERR("Failed to parse injected response");
+		return ret;
+	}
+
+	/* Process the response through the normal handler */
+	k_mutex_lock(&client->lock, K_FOREVER);
+	ret = handle_response(client, &response, false);
+	k_mutex_unlock(&client->lock);
+
+	return ret;
+}
+#endif /* CONFIG_COAP_TEST_API_ENABLE */
 
 #define COAP_CLIENT_THREAD_PRIORITY CLAMP(CONFIG_COAP_CLIENT_THREAD_PRIORITY, \
 					  K_HIGHEST_APPLICATION_THREAD_PRIO, \

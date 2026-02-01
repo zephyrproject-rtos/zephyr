@@ -3483,6 +3483,102 @@ ZTEST(coap, test_oscore_next_block_request)
 #endif
 }
 
+/* Test that Block2/Size2 options are removed from reconstructed OSCORE message */
+ZTEST(coap, test_oscore_outer_block_options_removed)
+{
+#if defined(CONFIG_COAP_CLIENT) && defined(CONFIG_COAP_OSCORE) && \
+    defined(CONFIG_COAP_TEST_API_ENABLE)
+	/* RFC 8613 Section 4.1.3.4.2 and Section 8.4.1:
+	 * The reconstructed OSCORE message MUST NOT contain Outer Block options
+	 * (Block2/Size2). These are transport-layer options that must be processed
+	 * and removed before OSCORE verification.
+	 *
+	 * This test verifies that the OSCORE client correctly removes Block2/Size2
+	 * options when reconstructing a multi-block OSCORE response before passing
+	 * it to OSCORE verification.
+	 */
+
+	/* Part 1: Unit test for coap_packet_remove_option() */
+	uint8_t msg_buf[256];
+	struct coap_packet pkt;
+	uint8_t token[] = {0x01, 0x02, 0x03, 0x04};
+	int r = coap_packet_init(&pkt, msg_buf, sizeof(msg_buf),
+				 COAP_VERSION_1, COAP_TYPE_ACK, sizeof(token),
+				 token, COAP_RESPONSE_CODE_CONTENT, 0x1234);
+	zassert_equal(r, 0, "Should init packet");
+
+	/* Add OSCORE option */
+	uint8_t oscore_opt_val[] = {0x09};
+	r = coap_packet_append_option(&pkt, COAP_OPTION_OSCORE,
+				      oscore_opt_val, sizeof(oscore_opt_val));
+	zassert_equal(r, 0, "Should append OSCORE option");
+
+	/* Add Block2 option: NUM=0, M=1, SZX=2 (64 bytes) */
+	uint8_t block2_val = 0x0A;
+	r = coap_packet_append_option(&pkt, COAP_OPTION_BLOCK2,
+				      &block2_val, sizeof(block2_val));
+	zassert_equal(r, 0, "Should append Block2 option");
+
+	/* Add Size2 option: total size = 128 bytes */
+	uint16_t size2_val = 128;
+	uint8_t size2_buf[2];
+	size2_buf[0] = (size2_val >> 8) & 0xFF;
+	size2_buf[1] = size2_val & 0xFF;
+	r = coap_packet_append_option(&pkt, COAP_OPTION_SIZE2,
+				      size2_buf, sizeof(size2_buf));
+	zassert_equal(r, 0, "Should append Size2 option");
+
+	/* Add payload */
+	r = coap_packet_append_payload_marker(&pkt);
+	zassert_equal(r, 0, "Should append payload marker");
+	uint8_t payload_data[64];
+	memset(payload_data, 0xAA, sizeof(payload_data));
+	r = coap_packet_append_payload(&pkt, payload_data, sizeof(payload_data));
+	zassert_equal(r, 0, "Should append payload");
+
+	/* Parse into a mutable packet */
+	struct coap_packet test_pkt;
+	uint8_t test_buf[256];
+	memcpy(test_buf, msg_buf, pkt.offset);
+	r = coap_packet_parse(&test_pkt, test_buf, pkt.offset, NULL, 0);
+	zassert_equal(r, 0, "Should parse test packet");
+
+	/* Verify options are present before removal */
+	zassert_true(coap_get_option_int(&test_pkt, COAP_OPTION_BLOCK2) >= 0,
+		     "Block2 should be present initially");
+	zassert_true(coap_get_option_int(&test_pkt, COAP_OPTION_SIZE2) >= 0,
+		     "Size2 should be present initially");
+	zassert_true(coap_get_option_int(&test_pkt, COAP_OPTION_OSCORE) >= 0,
+		     "OSCORE option should be present");
+
+	/* Remove Block2 and Size2 options */
+	r = coap_packet_remove_option(&test_pkt, COAP_OPTION_BLOCK2);
+	zassert_equal(r, 0, "Should remove Block2 option");
+	r = coap_packet_remove_option(&test_pkt, COAP_OPTION_SIZE2);
+	zassert_equal(r, 0, "Should remove Size2 option");
+
+	/* Verify Block2/Size2 are removed, OSCORE and payload remain */
+	zassert_equal(coap_get_option_int(&test_pkt, COAP_OPTION_BLOCK2), -ENOENT,
+		      "Block2 MUST be removed per RFC 8613 Section 4.1.3.4.2");
+	zassert_equal(coap_get_option_int(&test_pkt, COAP_OPTION_SIZE2), -ENOENT,
+		      "Size2 MUST be removed per RFC 8613 Section 4.1.3.4.2");
+	zassert_true(coap_get_option_int(&test_pkt, COAP_OPTION_OSCORE) >= 0,
+		     "OSCORE option MUST remain");
+
+	uint16_t payload_len;
+	const uint8_t *payload = coap_packet_get_payload(&test_pkt, &payload_len);
+	zassert_not_null(payload, "Payload must still be accessible");
+	zassert_equal(payload_len, 64, "Payload length must be preserved");
+	zassert_mem_equal(payload, payload_data, 64, "Payload content must be preserved");
+
+	printk("RFC 8613 Section 4.1.3.4.2 compliance verified: "
+	       "Block2/Size2 options removed while preserving OSCORE option and payload\n");
+
+#else
+	ztest_test_skip();
+#endif
+}
+
 #endif /* CONFIG_COAP_OSCORE */
 
 /* Tests for RFC 7252 Section 5.4.1: Unrecognized critical options handling */

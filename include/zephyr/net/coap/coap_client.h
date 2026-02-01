@@ -292,6 +292,24 @@ struct coap_client_option coap_client_option_initial_block2(void);
  */
 bool coap_client_has_ongoing_exchange(struct coap_client *client);
 
+#if defined(CONFIG_COAP_TEST_API_ENABLE)
+/**
+ * @brief Test-only API to inject a response into the client response handler.
+ *
+ * This function is only available when CONFIG_COAP_TEST_API_ENABLE is set.
+ * It allows tests to directly inject response data into the client's response
+ * processing path, bypassing the socket layer.
+ *
+ * @param client Pointer to the CoAP client instance.
+ * @param data Raw CoAP response data to inject.
+ * @param len Length of the response data.
+ *
+ * @return 0 on success, negative errno on error.
+ */
+int coap_client_test_inject_response(struct coap_client *client,
+				      const uint8_t *data, size_t len);
+#endif /* CONFIG_COAP_TEST_API_ENABLE */
+
 #ifdef __cplusplus
 }
 #endif
