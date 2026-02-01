@@ -3429,8 +3429,10 @@ Microchip PIC32 Platforms:
     - nandojve
   files:
     - boards/microchip/pic32*/
-    - dts/bindings/*/microchip/pic32*/
     - dts/arm/microchip/pic32*/
+    - dts/bindings/*/microchip/pic32*/
+    - dts/bindings/*/microchip,sam*
+    - dts/bindings/*/microchip,*-g*
     - drivers/*/*mchp*
     - include/zephyr/**/mchp*
     - soc/microchip/pic32*/
