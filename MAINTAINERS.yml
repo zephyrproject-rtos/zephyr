@@ -3464,6 +3464,9 @@ Microchip SAM Platforms:
     - drivers/*/*sam*
     - drivers/*/*mchp*
     - dts/bindings/*/atmel,*
+    - dts/bindings/*/microchip,sam*
+    - dts/bindings/*/microchip,*-g1*
+    - dts/bindings/clock/microchip/
   labels:
     - "platform: Microchip SAM"
 
