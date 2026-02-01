@@ -3424,6 +3424,7 @@ Microchip PIC32 Platforms:
     - NhMchp
   files:
     - boards/microchip/pic32c/
+    - soc/microchip/pic32c/
   labels:
     - "platform: Microchip PIC32"
 
