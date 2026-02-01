@@ -12,12 +12,9 @@ SERVER_ADDR="${SERVER_ADDR:-[2001:db8::1]}"
 SERVER_PORT="5683"
 OSCORE_CONF="$SCRIPT_DIR/oscore.conf"
 # Use sequence file to maintain replay protection state across requests
-OSCORE_SEQ="/tmp/oscore_seq_$(date +%s).dat"
+OSCORE_SEQ="/tmp/oscore_seq.dat"
 COAP_CLIENT="coap-client-openssl"
 VERBOSE="-v 4"
-
-# Trap to ensure cleanup on exit/interrupt
-trap 'rm -f "$OSCORE_SEQ"' EXIT INT TERM
 
 # Check if coap-client is available
 if ! command -v $COAP_CLIENT &> /dev/null; then
