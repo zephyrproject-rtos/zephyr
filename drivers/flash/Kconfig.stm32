@@ -102,4 +102,12 @@ config USE_MICROCHIP_QSPI_FLASH_WITH_STM32
 	  Set to use Microchip QSPI flash memories which use the PP_1_1_4 opcode
 	  (32H) for the PP_1_4_4 operation (usually 38H).
 
+config FLASH_STM32WBA_BYTE_WRITE_EMULATION
+	bool "Extended operation for STM32WBA to emulate byte writes in flash."
+	depends on SOC_STM32WBA65XX
+	default n
+	help
+	  Enables flash handling of unaligned length and address offset inputs for
+	  STM32WBA65.
+
 endif # SOC_FLASH_STM32
