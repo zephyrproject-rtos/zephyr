@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 NXP
+ * Copyright 2023-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -10,10 +10,14 @@
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/dt-bindings/regulator/nxp_vref.h>
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/linear_range.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/logging/log.h>
 
 #include <fsl_device_registers.h>
+
+LOG_MODULE_REGISTER(nxp_vref, CONFIG_REGULATOR_LOG_LEVEL);
 
 static const struct linear_range utrim_range = LINEAR_RANGE_INIT(1000000, 100000U, 0x0U, 0xBU);
 
@@ -29,6 +33,8 @@ struct regulator_nxp_vref_config {
 	bool current_compensation_en;
 	bool chop_oscillator_en;
 	bool internal_voltage_regulator_en;
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 };
 
 static int regulator_nxp_vref_enable(const struct device *dev)
@@ -63,8 +69,8 @@ static int regulator_nxp_vref_disable(const struct device *dev)
 	 * Disable HC Bandgap, LP Bandgap, Buf21, and Lp Bandgap Buffer
 	 * to achieve "Off" mode of VREF
 	 */
-	base->CSR &= ~(VREF_CSR_BUF21EN_MASK | VREF_CSR_HCBGEN_MASK |
-					VREF_CSR_LPBGEN_MASK | VREF_CSR_LPBG_BUF_EN_MASK);
+	base->CSR &= ~(VREF_CSR_BUF21EN_MASK | VREF_CSR_HCBGEN_MASK | VREF_CSR_LPBGEN_MASK |
+		       VREF_CSR_LPBG_BUF_EN_MASK);
 
 	return 0;
 }
@@ -116,14 +122,13 @@ static inline unsigned int regulator_nxp_vref_count_voltages(const struct device
 	return linear_range_values_count(&utrim_range);
 }
 
-static int regulator_nxp_vref_list_voltage(const struct device *dev,
-						unsigned int idx, int32_t *volt_uv)
+static int regulator_nxp_vref_list_voltage(const struct device *dev, unsigned int idx,
+					   int32_t *volt_uv)
 {
 	return linear_range_get_value(&utrim_range, idx, volt_uv);
 }
 
-static int regulator_nxp_vref_set_voltage(const struct device *dev,
-					int32_t min_uv, int32_t max_uv)
+static int regulator_nxp_vref_set_voltage(const struct device *dev, int32_t min_uv, int32_t max_uv)
 {
 	const struct regulator_nxp_vref_config *config = dev->config;
 	VREF_Type *const base = config->base;
@@ -141,8 +146,7 @@ static int regulator_nxp_vref_set_voltage(const struct device *dev,
 	return 0;
 }
 
-static int regulator_nxp_vref_get_voltage(const struct device *dev,
-						int32_t *volt_uv)
+static int regulator_nxp_vref_get_voltage(const struct device *dev, int32_t *volt_uv)
 {
 	const struct regulator_nxp_vref_config *config = dev->config;
 	VREF_Type *const base = config->base;
@@ -176,6 +180,29 @@ static int regulator_nxp_vref_init(const struct device *dev)
 
 	regulator_common_data_init(dev);
 
+	if (config->clock_dev) {
+		if (!device_is_ready(config->clock_dev)) {
+			LOG_ERR("clock device not ready");
+			return -ENODEV;
+		}
+
+		ret = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
+		if (ret) {
+			/* Check if error is due to lack of support */
+			if (ret != -ENOSYS) {
+				/* Real error occurred */
+				LOG_ERR("Failed to configure clock: %d", ret);
+				return ret;
+			}
+		}
+
+		ret = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (ret) {
+			LOG_ERR("Failed to enable clock: %d", ret);
+			return ret;
+		}
+	}
+
 	ret = regulator_nxp_vref_disable(dev);
 	if (ret < 0) {
 		return ret;
@@ -199,26 +226,27 @@ static int regulator_nxp_vref_init(const struct device *dev)
 	return regulator_common_init(dev, false);
 }
 
-#define REGULATOR_NXP_VREF_DEFINE(inst)						\
-	static struct regulator_nxp_vref_data data_##inst;			\
-										\
-	static const struct regulator_nxp_vref_config config_##inst = {		\
-		.common = REGULATOR_DT_INST_COMMON_CONFIG_INIT(inst),		\
-		.base = (VREF_Type *) DT_INST_REG_ADDR(inst),			\
-		.buf_start_delay = DT_INST_PROP(inst,				\
-				nxp_buffer_startup_delay_us),			\
-		.bg_start_time = DT_INST_PROP(inst,				\
-				nxp_bandgap_startup_time_us),			\
-		.current_compensation_en = DT_INST_PROP(inst,			\
-				nxp_current_compensation_en),			\
-		.chop_oscillator_en = DT_INST_PROP(inst,			\
-				nxp_chop_oscillator_en),			\
-		.internal_voltage_regulator_en = DT_INST_PROP(inst,		\
-				nxp_internal_voltage_regulator_en),		\
-	};									\
-										\
-	DEVICE_DT_INST_DEFINE(inst, regulator_nxp_vref_init, NULL, &data_##inst,\
-				&config_##inst, POST_KERNEL,			\
-				CONFIG_REGULATOR_NXP_VREF_INIT_PRIORITY, &api);	\
+#define REGULATOR_NXP_VREF_DEFINE(inst)                                                            \
+	static struct regulator_nxp_vref_data data_##inst;                                         \
+                                                                                                   \
+	static const struct regulator_nxp_vref_config config_##inst = {                            \
+		.common = REGULATOR_DT_INST_COMMON_CONFIG_INIT(inst),                              \
+		.base = (VREF_Type *)DT_INST_REG_ADDR(inst),                                       \
+		.buf_start_delay = DT_INST_PROP(inst, nxp_buffer_startup_delay_us),                \
+		.bg_start_time = DT_INST_PROP(inst, nxp_bandgap_startup_time_us),                  \
+		.current_compensation_en = DT_INST_PROP(inst, nxp_current_compensation_en),        \
+		.chop_oscillator_en = DT_INST_PROP(inst, nxp_chop_oscillator_en),                  \
+		.internal_voltage_regulator_en =                                                   \
+			DT_INST_PROP(inst, nxp_internal_voltage_regulator_en),                     \
+		.clock_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clocks), \
+				(DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst))), \
+				(NULL)),                        \
+			 .clock_subsys = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clocks), \
+				((clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, name)), \
+				((clock_control_subsys_t)0)),                                    \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, regulator_nxp_vref_init, NULL, &data_##inst, &config_##inst,   \
+			      POST_KERNEL, CONFIG_REGULATOR_NXP_VREF_INIT_PRIORITY, &api);
 
 DT_INST_FOREACH_STATUS_OKAY(REGULATOR_NXP_VREF_DEFINE)
