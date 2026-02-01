@@ -168,7 +168,6 @@ void nrf_wifi_event_proc_scan_done_zep(void *vif_ctx,
 				       struct nrf_wifi_umac_event_trigger_scan *scan_done_event,
 				       unsigned int event_len)
 {
-	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = vif_ctx;
 
 	if (!vif_ctx_zep) {
@@ -195,15 +194,11 @@ void nrf_wifi_event_proc_scan_done_zep(void *vif_ctx,
 		LOG_ERR("%s: Scan type = %d not supported yet", __func__, vif_ctx_zep->scan_type);
 		return;
 	}
-
-	status = NRF_WIFI_STATUS_SUCCESS;
 }
 
 void nrf_wifi_scan_timeout_work(struct k_work *work)
 {
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
-	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
-	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
 
 	vif_ctx_zep = CONTAINER_OF(work, struct nrf_wifi_vif_ctx_zep, scan_timeout_work.work);
 
@@ -211,9 +206,6 @@ void nrf_wifi_scan_timeout_work(struct k_work *work)
 		LOG_INF("%s: Scan not in progress", __func__);
 		return;
 	}
-
-	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
-	fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
 
 #ifdef CONFIG_NET_L2_WIFI_MGMT
 	if (vif_ctx_zep->disp_scan_cb) {
@@ -272,7 +264,6 @@ static void nrf_wifi_process_rssi_from_rx(void *vif_ctx,
 {
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = vif_ctx;
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
-	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
 
 	if (!vif_ctx_zep) {
 		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
@@ -285,8 +276,6 @@ static void nrf_wifi_process_rssi_from_rx(void *vif_ctx,
 		LOG_ERR("%s: rpu_ctx_zep is NULL", __func__);
 		return;
 	}
-
-	fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
 
 	vif_ctx_zep->rssi = MBM_TO_DBM(signal);
 	vif_ctx_zep->rssi_record_timestamp_us =
@@ -427,16 +416,11 @@ void nrf_wifi_event_proc_cookie_rsp(void *vif_ctx,
 				    unsigned int event_len)
 {
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = vif_ctx;
-	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
-	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
 
 	if (!vif_ctx_zep) {
 		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
 		return;
 	}
-
-	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
-	fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
 
 	LOG_DBG("%s: cookie_rsp_event->cookie = %llx", __func__, cookie_rsp_event->cookie);
 	LOG_DBG("%s: host_cookie = %llx", __func__, cookie_rsp_event->host_cookie);
