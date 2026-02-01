@@ -1,0 +1,32 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ST7586S
+	bool "ST7586S display controller"
+	default y
+	depends on DT_HAS_SITRONIX_ST7586S_ENABLED
+	select MIPI_DBI
+	help
+	  Enable driver for ST7586S display controller.
+
+if ST7586S
+
+config ST7586S_DEFAULT_CONTRAST
+	int "ST7586S default contrast"
+	default 152
+	range 0 255
+	help
+	  ST7586S default contrast.
+
+config ST7586S_DEFAULT_GRAYSCALE
+	bool "ST7586S default mode is grayscale"
+	default y
+	help
+	  Sets greyscale mode as default mode
+
+config ST7586S_CONV_BUFFER_LINES
+	int "How many lines can the conversion buffer hold"
+	default 16
+	range 1 162
+
+endif # ST7586S
