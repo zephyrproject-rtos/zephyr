@@ -3402,6 +3402,7 @@ Microchip MEC Platforms:
     - albertofloyd
   files:
     - boards/microchip/mec*/
+    - boards/microchip/ev11l78a/
     - dts/arm/microchip/
     - soc/microchip/mec/
     - tests/boards/mec15xxevb_assy6853/
