@@ -3411,6 +3411,7 @@ Microchip MEC Platforms:
     - tests/boards/mec172xevb_assy6906/
     - dts/bindings/*/microchip,mec*
     - dts/bindings/*/microchip,xec*
+    - dts/bindings/*/microchip,dmec*
     - samples/boards/microchip/
   labels:
     - "platform: Microchip MEC"
