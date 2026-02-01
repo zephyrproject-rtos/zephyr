@@ -3406,6 +3406,7 @@ Microchip MEC Platforms:
     - dts/arm/microchip/
     - soc/microchip/mec/
     - drivers/*/*xec*
+    - drivers/sensor/microchip/mchp_tach_xec/
     - tests/boards/mec15xxevb_assy6853/
     - tests/boards/mec172xevb_assy6906/
     - dts/bindings/*/microchip,mec*
