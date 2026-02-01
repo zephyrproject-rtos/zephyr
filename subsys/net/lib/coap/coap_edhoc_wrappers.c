@@ -19,6 +19,8 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <stdint.h>
 #include <string.h>
 
+#include "coap_edhoc.h"
+
 #if defined(CONFIG_UEDHOC)
 #include <edhoc.h>
 #include <edhoc_internal.h>
@@ -302,7 +304,7 @@ __weak int coap_edhoc_exporter_wrapper(const uint8_t *prk_out,
 	if (result != ok) {
 		LOG_ERR("prk_out2exporter failed: %d", result);
 		/* Zeroize intermediate secret */
-		memset(prk_exporter_buf, 0, sizeof(prk_exporter_buf));
+		coap_edhoc_secure_memzero(prk_exporter_buf, sizeof(prk_exporter_buf));
 		return -EACCES;
 	}
 
@@ -310,7 +312,7 @@ __weak int coap_edhoc_exporter_wrapper(const uint8_t *prk_out,
 	result = edhoc_exporter(hash_alg, export_label, &prk_exporter_ba, &output_ba);
 
 	/* Zeroize intermediate secret */
-	memset(prk_exporter_buf, 0, sizeof(prk_exporter_buf));
+	coap_edhoc_secure_memzero(prk_exporter_buf, sizeof(prk_exporter_buf));
 
 	if (result != ok) {
 		LOG_ERR("edhoc_exporter failed: %d", result);

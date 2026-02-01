@@ -135,7 +135,7 @@ outer_block_find(struct coap_edhoc_outer_block_entry *cache,
 		/* Check if entry has expired */
 		if ((now - cache[i].timestamp) > CONFIG_COAP_EDHOC_COMBINED_OUTER_BLOCK_LIFETIME_MS) {
 			/* Entry expired, clear it (zeroize for security) */
-			memset(&cache[i], 0, sizeof(cache[i]));
+			coap_edhoc_secure_memzero(&cache[i], sizeof(cache[i]));
 			continue;
 		}
 
@@ -194,7 +194,7 @@ outer_block_get_entry(struct coap_edhoc_outer_block_entry *cache,
 
 	/* Evict oldest entry (zeroize for security) */
 	if (oldest != NULL) {
-		memset(oldest, 0, sizeof(*oldest));
+		coap_edhoc_secure_memzero(oldest, sizeof(*oldest));
 	}
 
 	return oldest;
@@ -210,7 +210,7 @@ static void outer_block_clear(struct coap_edhoc_outer_block_entry *entry)
 	}
 
 	/* Zeroize entry (security-first) */
-	memset(entry, 0, sizeof(*entry));
+	coap_edhoc_secure_memzero(entry, sizeof(*entry));
 }
 
 /**
@@ -466,7 +466,7 @@ int coap_edhoc_outer_block_process(const struct coap_service *service,
 				continue;
 			}
 			if ((now - e->timestamp) > CONFIG_COAP_EDHOC_COMBINED_OUTER_BLOCK_LIFETIME_MS) {
-				memset(e, 0, sizeof(*e));
+				coap_edhoc_secure_memzero(e, sizeof(*e));
 				continue;
 			}
 			if (e->tkl == tkl &&
@@ -511,7 +511,7 @@ int coap_edhoc_outer_block_process(const struct coap_service *service,
 		}
 
 		/* Initialize entry */
-		memset(entry, 0, sizeof(*entry));
+		coap_edhoc_secure_memzero(entry, sizeof(*entry));
 		memcpy(&entry->addr, client_addr, client_addr_len);
 		entry->addr_len = client_addr_len;
 		memcpy(entry->token, token, tkl);
@@ -699,7 +699,7 @@ coap_edhoc_outer_block_find(struct coap_edhoc_outer_block_entry *cache,
 
 		/* Check if entry has expired */
 		if ((now - cache[i].timestamp) > CONFIG_COAP_EDHOC_COMBINED_OUTER_BLOCK_LIFETIME_MS) {
-			memset(&cache[i], 0, sizeof(cache[i]));
+			coap_edhoc_secure_memzero(&cache[i], sizeof(cache[i]));
 			continue;
 		}
 

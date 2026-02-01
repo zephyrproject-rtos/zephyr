@@ -9,6 +9,7 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
 #include "coap_oscore_ctx_cache.h"
+#include "coap_edhoc.h"
 
 #include <errno.h>
 #include <string.h>
@@ -86,7 +87,7 @@ struct coap_oscore_ctx_cache_entry *coap_oscore_ctx_cache_insert(
 			LOG_DBG("Evicting oldest OSCORE context (age %lld ms)",
 				now - oldest->timestamp);
 			entry = oldest;
-			memset(entry, 0, sizeof(*entry));
+			coap_edhoc_secure_memzero(entry, sizeof(*entry));
 		} else {
 			return NULL;
 		}
@@ -118,7 +119,7 @@ void coap_oscore_ctx_cache_remove(
 			coap_oscore_ctx_free(entry->oscore_ctx);
 		}
 #endif
-		memset(entry, 0, sizeof(*entry));
+		coap_edhoc_secure_memzero(entry, sizeof(*entry));
 	}
 }
 
@@ -144,7 +145,7 @@ int coap_oscore_ctx_cache_evict_expired(
 				coap_oscore_ctx_free(cache[i].oscore_ctx);
 			}
 #endif
-			memset(&cache[i], 0, sizeof(cache[i]));
+			coap_edhoc_secure_memzero(&cache[i], sizeof(cache[i]));
 			evicted++;
 		}
 	}
@@ -165,7 +166,7 @@ struct context *coap_oscore_ctx_alloc(void)
 	}
 
 	/* Zeroize the context before use */
-	memset(ctx, 0, sizeof(*ctx));
+	coap_edhoc_secure_memzero(ctx, sizeof(*ctx));
 
 	return ctx;
 }
@@ -177,7 +178,7 @@ void coap_oscore_ctx_free(struct context *ctx)
 	}
 
 	/* Zeroize the context before returning to pool (security best practice) */
-	memset(ctx, 0, sizeof(*ctx));
+	coap_edhoc_secure_memzero(ctx, sizeof(*ctx));
 
 	k_mem_slab_free(&oscore_ctx_pool, (void *)ctx);
 }

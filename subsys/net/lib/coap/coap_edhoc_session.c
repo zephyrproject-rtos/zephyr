@@ -9,6 +9,7 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
 #include "coap_edhoc_session.h"
+#include "coap_edhoc.h"
 
 #include <errno.h>
 #include <string.h>
@@ -75,7 +76,7 @@ struct coap_edhoc_session *coap_edhoc_session_insert(
 			LOG_DBG("Evicting oldest EDHOC session (age %lld ms)",
 				now - oldest->timestamp);
 			entry = oldest;
-			memset(entry, 0, sizeof(*entry));
+			coap_edhoc_secure_memzero(entry, sizeof(*entry));
 		} else {
 			return NULL;
 		}
@@ -101,7 +102,7 @@ void coap_edhoc_session_remove(
 
 	entry = coap_edhoc_session_find(cache, cache_size, c_r, c_r_len);
 	if (entry != NULL) {
-		memset(entry, 0, sizeof(*entry));
+		coap_edhoc_secure_memzero(entry, sizeof(*entry));
 	}
 }
 
@@ -121,7 +122,7 @@ int coap_edhoc_session_evict_expired(
 		if (cache[i].active && (now - cache[i].timestamp) > lifetime_ms) {
 			LOG_DBG("Evicting expired EDHOC session (age %lld ms)",
 				now - cache[i].timestamp);
-			memset(&cache[i], 0, sizeof(cache[i]));
+			coap_edhoc_secure_memzero(&cache[i], sizeof(cache[i]));
 			evicted++;
 		}
 	}

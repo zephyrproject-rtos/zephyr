@@ -115,6 +115,22 @@ int coap_edhoc_remove_option(struct coap_packet *cpkt);
 int coap_edhoc_encode_error(int err_code, const char *diag_msg,
 			     uint8_t *out_buf, size_t *inout_len);
 
+/**
+ * @brief Securely clear sensitive data from memory
+ *
+ * This function zeroes memory in a way that prevents compiler optimizations
+ * from removing the operation. It should be used to clear sensitive
+ * cryptographic material such as keys, secrets, and PRK values.
+ *
+ * @param ptr Pointer to the memory to clear
+ * @param len Number of bytes to clear
+ */
+static inline void coap_edhoc_secure_memzero(void *ptr, size_t len)
+{
+	__ASSERT_NO_MSG(ptr != NULL);
+	memset_s(ptr, len, 0, len);
+}
+
 #ifdef __cplusplus
 }
 #endif

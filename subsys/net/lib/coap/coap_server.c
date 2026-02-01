@@ -1387,7 +1387,7 @@ static int coap_server_process(int sock_fd)
 		if (ret < 0) {
 			LOG_ERR("Failed to derive OSCORE master secret (%d)", ret);
 			/* Zeroize secrets */
-			memset(prk_out, 0, sizeof(prk_out));
+			coap_edhoc_secure_memzero(prk_out, sizeof(prk_out));
 			coap_edhoc_session_remove(service->data->edhoc_session_cache,
 						  CONFIG_COAP_EDHOC_SESSION_CACHE_SIZE,
 						  c_r, c_r_len);
@@ -1402,12 +1402,12 @@ static int coap_server_process(int sock_fd)
 						  master_salt, &master_salt_len);
 
 		/* Zeroize PRK_out after deriving keying material */
-		memset(prk_out, 0, sizeof(prk_out));
+		coap_edhoc_secure_memzero(prk_out, sizeof(prk_out));
 
 		if (ret < 0) {
 			LOG_ERR("Failed to derive OSCORE master salt (%d)", ret);
 			/* Zeroize master secret */
-			memset(master_secret, 0, sizeof(master_secret));
+			coap_edhoc_secure_memzero(master_secret, sizeof(master_secret));
 			coap_edhoc_session_remove(service->data->edhoc_session_cache,
 						  CONFIG_COAP_EDHOC_SESSION_CACHE_SIZE,
 						  c_r, c_r_len);
@@ -1428,8 +1428,8 @@ static int coap_server_process(int sock_fd)
 		if (ctx_entry == NULL) {
 			LOG_ERR("Failed to allocate OSCORE context cache entry");
 			/* Zeroize keying material */
-			memset(master_secret, 0, sizeof(master_secret));
-			memset(master_salt, 0, sizeof(master_salt));
+			coap_edhoc_secure_memzero(master_secret, sizeof(master_secret));
+			coap_edhoc_secure_memzero(master_salt, sizeof(master_salt));
 			coap_edhoc_session_remove(service->data->edhoc_session_cache,
 						  CONFIG_COAP_EDHOC_SESSION_CACHE_SIZE,
 						  c_r, c_r_len);
@@ -1447,8 +1447,8 @@ static int coap_server_process(int sock_fd)
 			if (ctx_entry->oscore_ctx == NULL) {
 				LOG_ERR("Failed to allocate OSCORE context from pool");
 				/* Zeroize keying material */
-				memset(master_secret, 0, sizeof(master_secret));
-				memset(master_salt, 0, sizeof(master_salt));
+				coap_edhoc_secure_memzero(master_secret, sizeof(master_secret));
+				coap_edhoc_secure_memzero(master_salt, sizeof(master_salt));
 				coap_edhoc_session_remove(service->data->edhoc_session_cache,
 							  CONFIG_COAP_EDHOC_SESSION_CACHE_SIZE,
 							  c_r, c_r_len);
@@ -1464,8 +1464,8 @@ static int coap_server_process(int sock_fd)
 		if (ctx_entry->oscore_ctx == NULL) {
 			LOG_ERR("OSCORE context not allocated (tests must provide)");
 			/* Zeroize keying material */
-			memset(master_secret, 0, sizeof(master_secret));
-			memset(master_salt, 0, sizeof(master_salt));
+			coap_edhoc_secure_memzero(master_secret, sizeof(master_secret));
+			coap_edhoc_secure_memzero(master_salt, sizeof(master_salt));
 			coap_edhoc_session_remove(service->data->edhoc_session_cache,
 						  CONFIG_COAP_EDHOC_SESSION_CACHE_SIZE,
 						  c_r, c_r_len);
@@ -1520,8 +1520,8 @@ static int coap_server_process(int sock_fd)
 			hkdf_alg);
 
 		/* Zeroize keying material after initialization */
-		memset(master_secret, 0, sizeof(master_secret));
-		memset(master_salt, 0, sizeof(master_salt));
+		coap_edhoc_secure_memzero(master_secret, sizeof(master_secret));
+		coap_edhoc_secure_memzero(master_salt, sizeof(master_salt));
 
 		if (ret < 0) {
 			LOG_ERR("Failed to initialize OSCORE context (%d)", ret);

@@ -545,9 +545,9 @@ static int process_edhoc_message_3(const struct coap_service *service,
 	}
 
 	/* Zeroize sensitive material */
-	memset(prk_out, 0, sizeof(prk_out));
-	memset(master_secret, 0, sizeof(master_secret));
-	memset(master_salt, 0, sizeof(master_salt));
+	coap_edhoc_secure_memzero(prk_out, sizeof(prk_out));
+	coap_edhoc_secure_memzero(master_secret, sizeof(master_secret));
+	coap_edhoc_secure_memzero(master_salt, sizeof(master_salt));
 
 send_response:
 #endif /* CONFIG_COAP_EDHOC_COMBINED_REQUEST */
