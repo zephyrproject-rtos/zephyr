@@ -166,7 +166,7 @@ class TestOutput:
     )
     def test_output_levels(self, capfd, out_path, flags):
         test_path = os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic')
-        args = ['--outdir', out_path, '-T', test_path, *flags]
+        args = ['--outdir', out_path, '-T', test_path, '-p', 'qemu_x86', *flags]
 
         with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
             pytest.raises(SystemExit) as sys_exit:
