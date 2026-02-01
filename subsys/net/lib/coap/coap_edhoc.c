@@ -13,6 +13,45 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <errno.h>
 #include <string.h>
 
+int coap_edhoc_validate_option(const struct coap_packet *cpkt, bool *present)
+{
+	struct coap_option option[2];
+	int ret;
+
+	if (cpkt == NULL || present == NULL) {
+		return -EINVAL;
+	}
+
+	/* RFC 9668 Section 3.1: EDHOC option MUST occur at most once.
+	 * RFC 7252 Section 5.4.5: Supernumerary occurrences MUST be treated
+	 * as unrecognized critical options.
+	 */
+	ret = coap_find_options(cpkt, COAP_OPTION_EDHOC, option, 2);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (ret == 0) {
+		/* No EDHOC option present */
+		*present = false;
+		return 0;
+	}
+
+	/* At least one EDHOC option is present */
+	*present = true;
+
+	if (ret > 1) {
+		/* Multiple EDHOC options - RFC 7252 Section 5.4.5 violation */
+		LOG_ERR("Multiple EDHOC options present (%d), violates RFC 9668 Section 3.1", ret);
+		return -EBADMSG;
+	}
+
+	/* Exactly one EDHOC option present - valid
+	 * Note: Option value is ignored per RFC 9668 Section 3.1
+	 */
+	return 0;
+}
+
 bool coap_edhoc_msg_has_edhoc(const struct coap_packet *cpkt)
 {
 	struct coap_option option[2];
@@ -24,17 +63,14 @@ bool coap_edhoc_msg_has_edhoc(const struct coap_packet *cpkt)
 
 	/* RFC 9668 Section 3.1: EDHOC option MUST occur at most once and MUST be empty.
 	 * If any value is sent, the recipient MUST ignore it.
+	 *
+	 * This function returns true if at least one EDHOC option is present,
+	 * even if repeated (validation is done separately by coap_edhoc_validate_option).
 	 */
 	ret = coap_find_options(cpkt, COAP_OPTION_EDHOC, option, 2);
 	
-	/* If more than one EDHOC option is present, treat as malformed */
-	if (ret > 1) {
-		LOG_ERR("Multiple EDHOC options present (%d), violates RFC 9668 Section 3.1", ret);
-		return false;
-	}
-
-	/* Return true if exactly one EDHOC option is present (value is ignored per RFC 9668) */
-	return ret == 1;
+	/* Return true if at least one EDHOC option is present (value is ignored per RFC 9668) */
+	return ret >= 1;
 }
 
 int coap_edhoc_split_comb_payload(const uint8_t *payload, size_t payload_len,

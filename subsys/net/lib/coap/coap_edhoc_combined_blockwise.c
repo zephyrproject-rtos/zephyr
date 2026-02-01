@@ -275,7 +275,7 @@ int coap_edhoc_outer_block_process(const struct coap_service *service,
 		return COAP_EDHOC_OUTER_BLOCK_ERROR;
 	}
 
-	/* Check if this is a combined request (EDHOC option present) */
+	/* Check if EDHOC option is present (basic check first) */
 	has_edhoc_option = coap_edhoc_msg_has_edhoc(request);
 
 	/* Look for existing reassembly */
@@ -289,6 +289,26 @@ int coap_edhoc_outer_block_process(const struct coap_service *service,
 	if (is_first_block && !has_edhoc_option) {
 		/* Not a combined request with Block1 - let normal processing handle it */
 		return COAP_EDHOC_OUTER_BLOCK_ERROR;
+	}
+
+	/* RFC 9668 Section 3.1 + RFC 7252 Section 5.4.5: Validate EDHOC option occurrences
+	 * Only validate if this is a combined request (EDHOC option present on first block)
+	 */
+	if (is_first_block && has_edhoc_option) {
+		bool edhoc_present;
+		ret = coap_edhoc_validate_option(request, &edhoc_present);
+		if (ret < 0) {
+			/* Multiple EDHOC options - RFC 7252 Section 5.4.5 + 5.4.1 violation */
+			LOG_ERR("Repeated EDHOC option in Block1 request");
+			
+			/* Send 4.02 Bad Option for CON, silently drop for NON */
+			if (coap_header_get_type(request) == COAP_TYPE_CON) {
+				(void)send_error_and_clear(service, request,
+							   COAP_RESPONSE_CODE_BAD_OPTION,
+							   client_addr, client_addr_len, NULL);
+			}
+			return COAP_EDHOC_OUTER_BLOCK_ERROR;
+		}
 	}
 
 	/* Continuation condition: Block1 present AND cache match (even without EDHOC option) */

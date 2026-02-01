@@ -43,6 +43,25 @@ struct coap_edhoc_span {
 bool coap_edhoc_msg_has_edhoc(const struct coap_packet *cpkt);
 
 /**
+ * @brief Validate EDHOC option occurrences in a CoAP packet
+ *
+ * Per RFC 9668 Section 3.1, the EDHOC option MUST occur at most once.
+ * Per RFC 7252 Section 5.4.5, supernumerary option occurrences MUST be
+ * treated as unrecognized critical options.
+ *
+ * This function validates that:
+ * - The EDHOC option appears at most once
+ * - Sets present flag if at least one EDHOC option is found
+ * - Returns error if more than one EDHOC option is present
+ * - Ignores option value per RFC 9668 Section 3.1
+ *
+ * @param cpkt CoAP packet to validate
+ * @param present Output: set to true if EDHOC option is present, false otherwise
+ * @return 0 on success (0 or 1 occurrence), -EBADMSG if multiple occurrences
+ */
+int coap_edhoc_validate_option(const struct coap_packet *cpkt, bool *present);
+
+/**
  * @brief Split EDHOC+OSCORE combined payload into EDHOC message_3 and OSCORE payload
  *
  * Per RFC 9668 Section 3.2.1, the combined payload format is:

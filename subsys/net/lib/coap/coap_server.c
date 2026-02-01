@@ -1196,8 +1196,31 @@ static int coap_server_process(int sock_fd)
 	}
 
 #if defined(CONFIG_COAP_EDHOC_COMBINED_REQUEST)
+	/* RFC 9668 Section 3.1 + RFC 7252 Section 5.4.5: Validate EDHOC option occurrences
+	 * This must happen early, before combined request processing.
+	 */
+	bool has_edhoc = false;
+	ret = coap_edhoc_validate_option(&request, &has_edhoc);
+	if (ret < 0) {
+		/* Multiple EDHOC options - RFC 7252 Section 5.4.5 + 5.4.1 violation */
+		LOG_ERR("Repeated EDHOC option detected");
+		
+		if (coap_packet_is_request(&request) &&
+		    coap_header_get_type(&request) == COAP_TYPE_CON) {
+			/* CON request: send 4.02 Bad Option response */
+			(void)k_mutex_unlock(&lock);
+			(void)send_error_response(service, &request,
+						  COAP_RESPONSE_CODE_BAD_OPTION,
+						  &client_addr, client_addr_len);
+			return -EINVAL;
+		}
+		/* NON request or response: silently drop */
+		ret = 0;
+		goto unlock;
+	}
+
 	/* RFC 9668 Section 3.3.1: Handle EDHOC+OSCORE combined requests */
-	if (coap_edhoc_msg_has_edhoc(&request)) {
+	if (has_edhoc) {
 		/* RFC 9668 Section 3.3.1 Step 1: EDHOC option requires OSCORE option */
 		if (!coap_oscore_msg_has_oscore(&request)) {
 			LOG_ERR("EDHOC option present without OSCORE option");

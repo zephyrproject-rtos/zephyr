@@ -4031,6 +4031,111 @@ ZTEST(coap, test_edhoc_remove_option)
 	zassert_false(coap_edhoc_msg_has_edhoc(&cpkt), "EDHOC option should be removed");
 }
 
+/* Test EDHOC option validation: at most once */
+ZTEST(coap, test_edhoc_option_at_most_once)
+{
+	uint8_t buffer[128];
+	struct coap_packet cpkt;
+	bool present;
+	int r;
+
+	/* Build a packet with two EDHOC options (invalid per RFC 9668 Section 3.1) */
+	r = coap_packet_init(&cpkt, buffer, sizeof(buffer),
+			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
+			     COAP_METHOD_POST, 0);
+	zassert_equal(r, 0, "Failed to initialize packet");
+
+	/* Add first EDHOC option */
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_EDHOC, NULL, 0);
+	zassert_equal(r, 0, "Failed to add first EDHOC option");
+
+	/* Add second EDHOC option */
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_EDHOC, NULL, 0);
+	zassert_equal(r, 0, "Failed to add second EDHOC option");
+
+	/* RFC 9668 Section 3.1 + RFC 7252 Section 5.4.5:
+	 * coap_edhoc_msg_has_edhoc() should return true (at least one EDHOC option present)
+	 */
+	zassert_true(coap_edhoc_msg_has_edhoc(&cpkt),
+		     "coap_edhoc_msg_has_edhoc() should return true when EDHOC option present");
+
+	/* coap_edhoc_validate_option() should detect the violation and return error */
+	r = coap_edhoc_validate_option(&cpkt, &present);
+	zassert_equal(r, -EBADMSG, "Should return -EBADMSG for multiple EDHOC options");
+	zassert_true(present, "present flag should be true when EDHOC option exists");
+}
+
+/* Test EDHOC option validation: ignore non-empty value */
+ZTEST(coap, test_edhoc_option_ignore_value)
+{
+	uint8_t buffer[128];
+	struct coap_packet cpkt;
+	bool present;
+	int r;
+
+	/* Build a packet with EDHOC option containing a value (should be ignored) */
+	r = coap_packet_init(&cpkt, buffer, sizeof(buffer),
+			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
+			     COAP_METHOD_POST, 0);
+	zassert_equal(r, 0, "Failed to initialize packet");
+
+	/* Add EDHOC option with a value (RFC 9668 says recipient MUST ignore it) */
+	uint8_t edhoc_value[] = { 0x01, 0x02, 0x03 };
+
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_EDHOC,
+				      edhoc_value, sizeof(edhoc_value));
+	zassert_equal(r, 0, "Failed to add EDHOC option");
+
+	/* Verify that EDHOC option is still detected (value is ignored) */
+	zassert_true(coap_edhoc_msg_has_edhoc(&cpkt),
+		     "EDHOC option should be detected even with non-empty value");
+
+	/* RFC 9668 Section 3.1: Validator should accept non-empty value (must be ignored) */
+	r = coap_edhoc_validate_option(&cpkt, &present);
+	zassert_equal(r, 0, "Should return success even with non-empty EDHOC option value");
+	zassert_true(present, "present flag should be true");
+}
+
+/* Test server rejection of repeated EDHOC options in CON request
+ * RFC 9668 Section 3.1 + RFC 7252 Section 5.4.5 + 5.4.1
+ */
+ZTEST(coap, test_edhoc_repeated_option_server_rejection)
+{
+	uint8_t buffer[128];
+	struct coap_packet cpkt;
+	bool present;
+	int r;
+
+	/* Build a CON request with two EDHOC options */
+	uint8_t token[] = { 0xAB, 0xCD };
+	r = coap_packet_init(&cpkt, buffer, sizeof(buffer),
+			     COAP_VERSION_1, COAP_TYPE_CON,
+			     sizeof(token), token,
+			     COAP_METHOD_POST, 0x1234);
+	zassert_equal(r, 0, "Failed to initialize packet");
+
+	/* Add first EDHOC option */
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_EDHOC, NULL, 0);
+	zassert_equal(r, 0, "Failed to add first EDHOC option");
+
+	/* Add second EDHOC option (violation) */
+	r = coap_packet_append_option(&cpkt, COAP_OPTION_EDHOC, NULL, 0);
+	zassert_equal(r, 0, "Failed to add second EDHOC option");
+
+	/* Verify validator detects the violation */
+	r = coap_edhoc_validate_option(&cpkt, &present);
+	zassert_equal(r, -EBADMSG, "Validator should return -EBADMSG for repeated options");
+	zassert_true(present, "present flag should be true");
+
+	/* Per RFC 7252 Section 5.4.1:
+	 * - CON request with unrecognized critical option MUST return 4.02 (Bad Option)
+	 * - NON request with unrecognized critical option MUST be rejected (dropped)
+	 *
+	 * This test verifies that the validator correctly identifies the violation.
+	 * The actual server response handling is tested in integration tests.
+	 */
+}
+
 #if defined(CONFIG_COAP_OSCORE)
 /* Test that EDHOC option is Class U (unprotected) for OSCORE */
 ZTEST(coap, test_edhoc_option_class_u_oscore)
@@ -4250,57 +4355,6 @@ ZTEST(coap, test_oscore_option_no_kid_flag)
 
 	r = coap_oscore_option_extract_kid(&cpkt, kid, &kid_len);
 	zassert_equal(r, -ENOENT, "Should return -ENOENT when kid flag not set");
-}
-
-/* Test EDHOC option validation: at most once */
-ZTEST(coap, test_edhoc_option_at_most_once)
-{
-	uint8_t buffer[128];
-	struct coap_packet cpkt;
-	int r;
-
-	/* Build a packet with two EDHOC options (invalid per RFC 9668 Section 3.1) */
-	r = coap_packet_init(&cpkt, buffer, sizeof(buffer),
-			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
-			     COAP_METHOD_POST, 0);
-	zassert_equal(r, 0, "Failed to initialize packet");
-
-	/* Add first EDHOC option */
-	r = coap_packet_append_option(&cpkt, COAP_OPTION_EDHOC, NULL, 0);
-	zassert_equal(r, 0, "Failed to add first EDHOC option");
-
-	/* Add second EDHOC option */
-	r = coap_packet_append_option(&cpkt, COAP_OPTION_EDHOC, NULL, 0);
-	zassert_equal(r, 0, "Failed to add second EDHOC option");
-
-	/* Verify that coap_edhoc_msg_has_edhoc returns false for multiple options */
-	zassert_false(coap_edhoc_msg_has_edhoc(&cpkt),
-		      "Multiple EDHOC options should be treated as malformed");
-}
-
-/* Test EDHOC option validation: ignore non-empty value */
-ZTEST(coap, test_edhoc_option_ignore_value)
-{
-	uint8_t buffer[128];
-	struct coap_packet cpkt;
-	int r;
-
-	/* Build a packet with EDHOC option containing a value (should be ignored) */
-	r = coap_packet_init(&cpkt, buffer, sizeof(buffer),
-			     COAP_VERSION_1, COAP_TYPE_CON, 0, NULL,
-			     COAP_METHOD_POST, 0);
-	zassert_equal(r, 0, "Failed to initialize packet");
-
-	/* Add EDHOC option with a value (RFC 9668 says recipient MUST ignore it) */
-	uint8_t edhoc_value[] = { 0x01, 0x02, 0x03 };
-
-	r = coap_packet_append_option(&cpkt, COAP_OPTION_EDHOC,
-				      edhoc_value, sizeof(edhoc_value));
-	zassert_equal(r, 0, "Failed to add EDHOC option");
-
-	/* Verify that EDHOC option is still detected (value is ignored) */
-	zassert_true(coap_edhoc_msg_has_edhoc(&cpkt),
-		     "EDHOC option should be detected even with non-empty value");
 }
 
 /* Test EDHOC error encoding: basic case with ERR_CODE=1 */
