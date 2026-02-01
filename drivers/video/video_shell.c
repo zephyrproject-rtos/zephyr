@@ -15,6 +15,7 @@
 #include <zephyr/sys/byteorder.h>
 
 #include "video_ctrls.h"
+#include "video_device.h"
 
 #define VIDEO_FRMIVAL_FPS(frmival)  DIV_ROUND_CLOSEST((frmival)->denominator, (frmival)->numerator)
 #define VIDEO_FRMIVAL_MSEC(frmival) (MSEC_PER_SEC * (frmival)->numerator / (frmival)->denominator)
@@ -109,6 +110,34 @@ static int video_shell_parse_on_off(const struct shell *sh, char const *arg_on_o
 	} else {
 		shell_error(sh, "Endpoint direction must be 'on' or 'off', not '%s'", arg_on_off);
 		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int cmd_video_tree(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	char *arg_device = argv[1];
+	struct video_device *vdev;
+	int ret;
+
+	dev = device_get_binding(arg_device);
+	ret = video_shell_check_device(sh, dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	for (int level = 0; dev != NULL; level++) {
+		vdev = video_find_vdev(dev);
+		if (vdev == NULL) {
+			shell_error(sh, "%s is not a valid video device", dev->name);
+			return -EINVAL;
+		}
+
+		shell_print(sh, "%*s +- %s", level * 2, "", dev->name);
+
+		dev = vdev->src_dev;
 	}
 
 	return 0;
@@ -1258,6 +1287,10 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_video_selection_dev, complete_video_selection_dev)
 /* Video shell commands declaration */
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_video_cmds,
+	SHELL_CMD_ARG(tree, &dsub_video_dev,
+		SHELL_HELP("Show the device topology following the source endpoints",
+			   "<device>"),
+		cmd_video_tree, 2, 0),
 	SHELL_CMD_ARG(start, &dsub_video_dev,
 		SHELL_HELP("Start a video device and its sources", "<device>"),
 		cmd_video_start, 2, 0),
