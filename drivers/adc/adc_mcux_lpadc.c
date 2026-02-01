@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 NXP
+ * Copyright 2023-2024, 2026 NXP
  * Copyright (c) 2020 Toby Firth
  *
  * Based on adc_mcux_adc16.c and adc_mcux_adc12.c, which are:
@@ -771,6 +771,18 @@ static int mcux_lpadc_init(const struct device *dev)
 		if (err) {
 			return err;
 		}
+	}
+
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("clock device not ready");
+		return -ENODEV;
+	}
+
+	err = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
+	if (err && err != -ENOSYS) {
+		/* Real error occurred */
+		LOG_ERR("Failed to configure clock: %d", err);
+		return err;
 	}
 
 	LPADC_GetDefaultConfig(&adc_config);
