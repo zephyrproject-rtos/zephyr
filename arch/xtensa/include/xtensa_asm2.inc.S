@@ -578,14 +578,14 @@ _do_call_\@:
 	s32i a0, a3, \NEST_OFF
 
 	/* Last trick: the called function returned the "next" handle
-	 * to restore to in A6 (the call4'd function's A2).  If this
-	 * is not the same handle as we started with, we need to do a
-	 * register spill before restoring, for obvious reasons.
+	 * to restore to in A2. If this is not the same handle as we
+	 * started with, we need to do a register spill before restoring,
+	 * for obvious reasons.
 	 * Remember to restore the A1 stack pointer as it existed at
 	 * interrupt time so the caller of the interrupted function
 	 * spills to the right place.
 	 */
-	beq a6, a1, _restore_\@
+	beq a2, a1, _restore_\@
 
 #if !defined(CONFIG_KERNEL_COHERENCE) || \
     (defined(CONFIG_KERNEL_COHERENCE) && defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY))
@@ -609,9 +609,9 @@ _do_call_\@:
 	 * flush the cached data in stack.
 	 */
 
-	movi a2, 0
-	xsr.ZSR_FLUSH a2
-	beqz a2, _excint_noflush_\@
+	movi a4, 0
+	xsr.ZSR_FLUSH a4
+	beqz a4, _excint_noflush_\@
 
 	rsr.ZSR_CPU a3
 	l32i a3, a3, \NEST_OFF
@@ -622,13 +622,13 @@ _do_call_\@:
 _excint_flushloop_\@:
 	dhwb a3, 0
 	addi a3, a3, XCHAL_DCACHE_LINESIZE
-	blt a3, a2, _excint_flushloop_\@
+	blt a3, a4, _excint_flushloop_\@
 
 _excint_noflush_\@:
 #endif /* CONFIG_KERNEL_COHERENCE && CONFIG_USERSPACE && !CONFIG_SCHED_CPU_MASK_PIN_ONLY */
 
 	/* Restore A1 stack pointer from "next" handle. */
-	mov a1, a6
+	mov a1, a2
 
 #ifdef CONFIG_INSTRUMENT_THREAD_SWITCHING
 	call4 z_thread_mark_switched_in
