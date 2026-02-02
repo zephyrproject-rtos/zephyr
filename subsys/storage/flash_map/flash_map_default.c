@@ -13,14 +13,14 @@
 #if CONFIG_FLASH_MAP_LABELS
 #define FLASH_AREA_FOO(part, mtd_from_partition)				\
 	{.fa_id = DT_FIXED_PARTITION_ID(part),					\
-	 .fa_off = DT_REG_ADDR(part),						\
+	 .fa_off = FIXED_PARTITION_NODE_OFFSET(part),				\
 	 .fa_dev = DEVICE_DT_GET(mtd_from_partition(part)),		        \
 	 .fa_size = DT_REG_SIZE(part),						\
 	 .fa_label = DT_PROP_OR(part, label, NULL),	},
 #else
 #define FLASH_AREA_FOO(part, mtd_from_partition)				\
 	{.fa_id = DT_FIXED_PARTITION_ID(part),					\
-	 .fa_off = DT_REG_ADDR(part),						\
+	 .fa_off = FIXED_PARTITION_NODE_OFFSET(part),				\
 	 .fa_dev = DEVICE_DT_GET(mtd_from_partition(part)),		        \
 	 .fa_size = DT_REG_SIZE(part), },
 #endif
@@ -56,7 +56,7 @@ const struct flash_area *flash_map = default_flash_map;
 #define DEFINE_PARTITION_0(part, ord)								\
 	const struct flash_area DT_CAT(global_fixed_partition_ORD_, ord) = {			\
 		.fa_id = DT_FIXED_PARTITION_ID(part),						\
-		.fa_off = DT_REG_ADDR(part),							\
+		.fa_off = FIXED_PARTITION_NODE_OFFSET(part),					\
 		.fa_dev = DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(part)),			\
 		.fa_size = DT_REG_SIZE(part),							\
 	};
@@ -71,7 +71,7 @@ DT_FOREACH_STATUS_OKAY(fixed_partitions, FOR_EACH_PARTITION_TABLE)
 #define DEFINE_SUBPARTITION_0(part, ord)							\
 	const struct flash_area DT_CAT(global_fixed_subpartition_ORD_, ord) = {			\
 		.fa_id = DT_FIXED_PARTITION_ID(part),						\
-		.fa_off = DT_REG_ADDR(part),							\
+		.fa_off = FIXED_PARTITION_NODE_OFFSET(part),					\
 		.fa_dev = DEVICE_DT_GET(DT_MTD_FROM_FIXED_SUBPARTITION(part)),			\
 		.fa_size = DT_REG_SIZE(part),							\
 	};

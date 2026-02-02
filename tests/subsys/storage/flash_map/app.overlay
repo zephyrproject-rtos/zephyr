@@ -8,13 +8,17 @@
  */
 
 / {
-	disabled_flash@0 {
+	disabled_flash@4000 {
 		compatible = "vnd,flash";
-		reg = <0x00 0x1000>;
+		reg = <0x4000 0x1000>;
+		ranges = <0x0 0x4000 0x1000>;
 		status = "disabled";
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		partitions {
 			compatible = "fixed-partitions";
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
