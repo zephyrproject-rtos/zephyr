@@ -42,7 +42,7 @@ static int cmd_ccp_call_control_server_init(const struct shell *sh, size_t argc,
 		.gtbs = true,
 		.authorization_required = false,
 		.technology = BT_BEARER_TECH_3G,
-		.supported_features = BT_TBS_FEATURE_HOLD | BT_TBS_FEATURE_JOIN,
+		.optional_opcodes = BT_TBS_OPTIONAL_OPCODE_HOLD | BT_TBS_OPTIONAL_OPCODE_JOIN,
 	};
 	int err;
 
@@ -65,7 +65,8 @@ static int cmd_ccp_call_control_server_init(const struct shell *sh, size_t argc,
 			.authorization_required = false,
 			/* Set different technologies per bearer */
 			.technology = (i % BT_BEARER_TECH_WCDMA) + 1,
-			.supported_features = BT_TBS_FEATURE_HOLD | BT_TBS_FEATURE_JOIN,
+			.optional_opcodes =
+				BT_TBS_OPTIONAL_OPCODE_HOLD | BT_TBS_OPTIONAL_OPCODE_JOIN,
 		};
 
 		snprintf(prov_name, sizeof(prov_name), "Telephone Bearer #%d", i);
