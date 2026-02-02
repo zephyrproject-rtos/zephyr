@@ -64,6 +64,7 @@ tests:
     arch_allow: riscv
     platform_exclude:
       - it8xxx2_evb
+    filter: CONFIG_ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
     extra_configs:
       - CONFIG_ISR_TABLES_LOCAL_DECLARATION=y
 
