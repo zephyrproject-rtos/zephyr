@@ -193,10 +193,6 @@ stm32_lp_tick_source: &lptim1 {
 	};
 };
 
-&rng {
-	status = "okay";
-};
-
 &spi1 {
 	pinctrl-0 = <&spi1_sck_pg2 &spi1_miso_pg3 &spi1_mosi_pg4>;
 	pinctrl-names = "default";
