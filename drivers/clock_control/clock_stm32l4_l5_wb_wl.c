@@ -327,15 +327,6 @@ void config_pllsai2(void)
 #if STM32_PLLSAI2_R_ENABLED
 #if defined(RCC_CCIPR2_PLLSAI2DIVR)
 	/* STM32L4+ */
-#if STM32_PLLSAI2_DIVR_ENABLED
-	LL_RCC_PLLSAI2_ConfigDomain_LTDC(get_pllsai2_source(),
-					 pllsai2m(STM32_PLLSAI2_M_DIVISOR),
-					 STM32_PLLSAI2_N_MULTIPLIER,
-					 pllsai2r(STM32_PLLSAI2_R_DIVISOR),
-					 pllsai2divr(STM32_PLLSAI2_DIVR_DIVISOR));
-
-	LL_RCC_PLLSAI2_EnableDomain_LTDC();
-#elif STM32_PLLSAI2_POST_R_ENABLED
 	LL_RCC_PLLSAI2_ConfigDomain_LTDC(get_pllsai2_source(),
 					 pllsai2m(STM32_PLLSAI2_M_DIVISOR),
 					 STM32_PLLSAI2_N_MULTIPLIER,
@@ -343,7 +334,6 @@ void config_pllsai2(void)
 					 pllsai2divr(STM32_PLLSAI2_POST_R_DIVISOR));
 
 	LL_RCC_PLLSAI2_EnableDomain_LTDC();
-#endif /* STM32_PLLSAI2_POST_R_ENABLED */
 #elif defined(CONFIG_SOC_SERIES_STM32L4X) /* RCC_CCIPR2_PLLSAI2DIVR */
 	/* Other L4 */
 	LL_RCC_PLLSAI2_ConfigDomain_ADC(get_pllsai2_source(),
