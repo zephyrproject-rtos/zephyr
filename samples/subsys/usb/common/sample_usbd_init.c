@@ -22,6 +22,18 @@ static const char *const blocklist[] = {
 	NULL,
 };
 
+/*
+ * Check if a UDC device has USB class children (e.g., cdc-acm).
+ */
+#define UDC_HAS_CLASS_CHILDREN(inst) \
+	(DT_INST_CHILD_NUM_STATUS_OKAY(inst) > 0)
+
+#define UDC_HAS_CLASSES_INST(inst) UDC_HAS_CLASS_CHILDREN(inst),
+
+static const bool udc_has_classes[] = {
+	DT_INST_FOREACH_STATUS_OKAY(UDC_HAS_CLASSES_INST)
+};
+
 /* doc device instantiation start */
 /*
  * Instantiate a USBD context for each device with zephyr,udc compatible.
@@ -65,6 +77,38 @@ static struct usbd_context *const sample_usbd_contexts[] = {
 /* doc device instantiation end */
 
 /* doc string instantiation start */
+/*
+ * Per-device descriptors - each UDC context needs its own descriptor instances
+ * because USBD descriptors can only be attached to one context at a time.
+ */
+#define USBD_DESC_DEFINE_INST(inst)						\
+	USBD_DESC_LANG_DEFINE(sample_lang_##inst);				\
+	USBD_DESC_MANUFACTURER_DEFINE(sample_mfr_##inst,			\
+				      CONFIG_SAMPLE_USBD_MANUFACTURER);		\
+	USBD_DESC_PRODUCT_DEFINE(sample_product_##inst,				\
+				 CONFIG_SAMPLE_USBD_PRODUCT);			\
+	IF_ENABLED(CONFIG_HWINFO,						\
+		   (USBD_DESC_SERIAL_NUMBER_DEFINE(sample_sn_##inst)));		\
+	USBD_DESC_CONFIG_DEFINE(fs_cfg_desc_##inst, "FS Configuration");	\
+	USBD_DESC_CONFIG_DEFINE(hs_cfg_desc_##inst, "HS Configuration");	\
+	USBD_CONFIGURATION_DEFINE(sample_fs_config_##inst,			\
+				  (IS_ENABLED(CONFIG_SAMPLE_USBD_SELF_POWERED) ?	\
+				   USB_SCD_SELF_POWERED : 0) |			\
+				  (IS_ENABLED(CONFIG_SAMPLE_USBD_REMOTE_WAKEUP) ? \
+				   USB_SCD_REMOTE_WAKEUP : 0),			\
+				  CONFIG_SAMPLE_USBD_MAX_POWER,			\
+				  &fs_cfg_desc_##inst);				\
+	USBD_CONFIGURATION_DEFINE(sample_hs_config_##inst,			\
+				  (IS_ENABLED(CONFIG_SAMPLE_USBD_SELF_POWERED) ?	\
+				   USB_SCD_SELF_POWERED : 0) |			\
+				  (IS_ENABLED(CONFIG_SAMPLE_USBD_REMOTE_WAKEUP) ? \
+				   USB_SCD_REMOTE_WAKEUP : 0),			\
+				  CONFIG_SAMPLE_USBD_MAX_POWER,			\
+				  &hs_cfg_desc_##inst);
+
+DT_INST_FOREACH_STATUS_OKAY(USBD_DESC_DEFINE_INST)
+
+/* Legacy shared descriptors for backward compatibility with sample_usbd_setup_device() */
 USBD_DESC_LANG_DEFINE(sample_lang);
 USBD_DESC_MANUFACTURER_DEFINE(sample_mfr, CONFIG_SAMPLE_USBD_MANUFACTURER);
 USBD_DESC_PRODUCT_DEFINE(sample_product, CONFIG_SAMPLE_USBD_PRODUCT);
@@ -74,6 +118,34 @@ IF_ENABLED(CONFIG_HWINFO, (USBD_DESC_SERIAL_NUMBER_DEFINE(sample_sn)));
 
 USBD_DESC_CONFIG_DEFINE(fs_cfg_desc, "FS Configuration");
 USBD_DESC_CONFIG_DEFINE(hs_cfg_desc, "HS Configuration");
+
+/*
+ * Per-device descriptor references for sample_usbd_init_all_devices().
+ * Each UDC device gets its own set of descriptors.
+ */
+struct sample_usbd_desc_set {
+	struct usbd_desc_node *lang;
+	struct usbd_desc_node *mfr;
+	struct usbd_desc_node *product;
+#if defined(CONFIG_HWINFO)
+	struct usbd_desc_node *sn;
+#endif
+	struct usbd_config_node *fs_config;
+	struct usbd_config_node *hs_config;
+};
+
+#define USBD_DESC_SET_INST(inst) {					\
+	.lang = &sample_lang_##inst,					\
+	.mfr = &sample_mfr_##inst,					\
+	.product = &sample_product_##inst,				\
+	IF_ENABLED(CONFIG_HWINFO, (.sn = &sample_sn_##inst,))		\
+	.fs_config = &sample_fs_config_##inst,				\
+	.hs_config = &sample_hs_config_##inst,				\
+},
+
+static struct sample_usbd_desc_set sample_desc_sets[] = {
+	DT_INST_FOREACH_STATUS_OKAY(USBD_DESC_SET_INST)
+};
 
 /* doc configuration instantiation start */
 static const uint8_t attributes = (IS_ENABLED(CONFIG_SAMPLE_USBD_SELF_POWERED) ?
@@ -264,8 +336,107 @@ struct usbd_context *sample_usbd_get_context(size_t idx)
 }
 
 /*
+ * Setup a single UDC device with per-device descriptors.
+ * Each device gets its own descriptor instances to avoid conflicts.
+ * Class registration is skipped for devices without USB class children
+ * defined.
+ */
+static int sample_usbd_setup_single_indexed(struct usbd_context *ctx,
+					    size_t idx,
+					    usbd_msg_cb_t msg_cb)
+{
+	struct sample_usbd_desc_set *desc = &sample_desc_sets[idx];
+	bool has_classes = (idx < ARRAY_SIZE(udc_has_classes)) ?
+			   udc_has_classes[idx] : false;
+	int err;
+
+	err = usbd_add_descriptor(ctx, desc->lang);
+	if (err) {
+		LOG_ERR("Failed to add language descriptor (%d)", err);
+		return err;
+	}
+
+	err = usbd_add_descriptor(ctx, desc->mfr);
+	if (err) {
+		LOG_ERR("Failed to add manufacturer descriptor (%d)", err);
+		return err;
+	}
+
+	err = usbd_add_descriptor(ctx, desc->product);
+	if (err) {
+		LOG_ERR("Failed to add product descriptor (%d)", err);
+		return err;
+	}
+
+#if defined(CONFIG_HWINFO)
+	err = usbd_add_descriptor(ctx, desc->sn);
+	if (err) {
+		LOG_ERR("Failed to add SN descriptor (%d)", err);
+		return err;
+	}
+#endif
+
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_caps_speed(ctx) == USBD_SPEED_HS) {
+		err = usbd_add_configuration(ctx, USBD_SPEED_HS,
+					     desc->hs_config);
+		if (err) {
+			LOG_ERR("Failed to add HS configuration (%d)", err);
+			return err;
+		}
+
+		/* Only register classes for UDCs that have class children */
+		if (has_classes) {
+			err = usbd_register_all_classes(ctx, USBD_SPEED_HS, 1,
+							blocklist);
+			if (err) {
+				LOG_ERR("Failed to register HS classes (%d)", err);
+				return err;
+			}
+		} else {
+			LOG_INF("Device %zu: Skipping HS class registration "
+				"(no USB class children in devicetree)", idx);
+		}
+
+		sample_fix_code_triple(ctx, USBD_SPEED_HS);
+	}
+
+	err = usbd_add_configuration(ctx, USBD_SPEED_FS, desc->fs_config);
+	if (err) {
+		LOG_ERR("Failed to add FS configuration (%d)", err);
+		return err;
+	}
+
+	/* Only register classes for UDCs that have class children */
+	if (has_classes) {
+		err = usbd_register_all_classes(ctx, USBD_SPEED_FS, 1, blocklist);
+		if (err) {
+			LOG_ERR("Failed to register FS classes (%d)", err);
+			return err;
+		}
+	} else {
+		LOG_INF("Device %zu: Skipping FS class registration "
+			"(no USB class children in devicetree)", idx);
+	}
+
+	sample_fix_code_triple(ctx, USBD_SPEED_FS);
+	usbd_self_powered(ctx, attributes & USB_SCD_SELF_POWERED);
+
+	if (msg_cb != NULL) {
+		err = usbd_msg_register_cb(ctx, msg_cb);
+		if (err) {
+			LOG_ERR("Failed to register message callback (%d)", err);
+			return err;
+		}
+	}
+
+	return 0;
+}
+
+/*
  * Setup and initialize all UDC devices discovered via zephyr,udc compatible.
  * Returns the number of successfully initialized devices.
+ * Note: This legacy function uses shared descriptors, use sample_usbd_init_all_devices() instead.
  */
 static int sample_usbd_setup_single(struct usbd_context *ctx, usbd_msg_cb_t msg_cb)
 {
@@ -350,7 +521,8 @@ int sample_usbd_init_all_devices(usbd_msg_cb_t msg_cb)
 	for (size_t i = 0; i < SAMPLE_USBD_DEVICE_COUNT; i++) {
 		struct usbd_context *ctx = sample_usbd_contexts[i];
 
-		err = sample_usbd_setup_single(ctx, msg_cb);
+		/* Use per-device descriptors to avoid conflicts */
+		err = sample_usbd_setup_single_indexed(ctx, i, msg_cb);
 		if (err) {
 			LOG_ERR("Failed to setup device %zu (%d)", i, err);
 			continue;
