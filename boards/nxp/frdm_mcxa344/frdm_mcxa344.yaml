@@ -16,6 +16,7 @@ toolchain:
 supported:
   - adc
   - arduino_gpio
+  - can
   - counter
   - flash
   - gpio
