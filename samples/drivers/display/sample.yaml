@@ -136,11 +136,13 @@ tests:
     extra_args:
       - platform:apollo510_evb/apollo510:SHIELD=ap510_disp
       - platform:apollo510b_evb/apollo510b:SHIELD=ap510_disp
+      - platform:apollo510L_eb/apollo510L:SHIELD=apollo5_eb_display_card
   sample.display.shield.test.spi:
     <<: *display-shield-test
     extra_args:
       - platform:apollo510_evb/apollo510:SHIELD=ap510_disp_spi
       - platform:apollo510b_evb/apollo510b:SHIELD=ap510_disp_spi
+      - platform:apollo510L_eb/apollo510L:SHIELD=apollo5_eb_display_card_spi
   sample.display.shield.test.jdi:
     <<: *display-shield-test
     extra_args:
