@@ -32,6 +32,7 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &lpuart2;
 		zephyr,shell-uart = &lpuart2;
+		zephyr,canbus = &flexcan0;
 	};
 
 	leds {
@@ -138,6 +139,12 @@
 			reg = <0x00036000 DT_SIZE_K(28)>;
 		};
 	};
+};
+
+&flexcan0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexcan0>;
+	pinctrl-names = "default";
 };
 
 &gpio0 {
