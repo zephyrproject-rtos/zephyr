@@ -743,6 +743,9 @@ skip_checks:
 	}
 #endif /* CONFIG_XTENSA_MMU */
 
+#if defined(CONFIG_EXCEPTION_DUMP_HOOK)
+	arch_exception_call_drain_hook(false);
+#endif
 	return return_to(interrupted_stack);
 
 #if defined(CONFIG_XTENSA_MMU) && defined(CONFIG_USERSPACE)
@@ -751,6 +754,9 @@ return_to_interrupted:
 		XTENSA_WSR(ZSR_DEPC_SAVE_STR, 0);
 	}
 
+#if defined(CONFIG_EXCEPTION_DUMP_HOOK)
+	arch_exception_call_drain_hook(false);
+#endif
 	return interrupted_stack;
 #endif /* CONFIG_XTENSA_MMU && CONFIG_USERSPACE */
 }
