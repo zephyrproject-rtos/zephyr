@@ -115,11 +115,23 @@
 	filter-smooth-level = <ESP32_TOUCH_FILTER_SMOOTH_MODE_IIR_2>;
 };
 
+&timer0 {
+	status = "okay";
+};
+
+&timer1 {
+	status = "okay";
+};
+
 &wdt0 {
 	status = "okay";
 };
 
 &esp32_bt_hci {
+	status = "okay";
+};
+
+&wifi {
 	status = "okay";
 };
 
