@@ -82,6 +82,7 @@ set(protectedmem_args)
 set(periphconf_args)
 set(wdtstart_args)
 set(periphconf_elfs)
+set(policy_args)
 set(merged_hex_file ${APPLICATION_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.hex)
 set(secondary_periphconf_elfs)
 set(uicr_hex_file ${APPLICATION_BINARY_DIR}/zephyr/uicr.hex)
@@ -267,6 +268,10 @@ if(CONFIG_GEN_UICR_SECONDARY)
   endif()
 endif()
 
+if(CONFIG_GEN_UICR_POLICY_PERIPHCONF_STAGE_INIT OR CONFIG_GEN_UICR_POLICY_PERIPHCONF_STAGE_NORMAL)
+  list(APPEND policy_args --policy-periphconf-stage ${CONFIG_GEN_UICR_POLICY_PERIPHCONF_STAGE_VALUE})
+endif()
+
 # Generate hex files (merged, uicr-only, periphconf-only, and secondary-periphconf-only)
 add_custom_command(
   OUTPUT ${merged_hex_file} ${uicr_hex_file} ${periphconf_hex_file} ${secondary_periphconf_hex_file}
@@ -285,6 +290,7 @@ add_custom_command(
           ${securestorage_args}
           ${protectedmem_args}
           ${secondary_args}
+          ${policy_args}
   DEPENDS ${periphconf_elfs} ${secondary_periphconf_elfs}
   WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
   COMMENT "Using gen_uicr.py to generate ${merged_hex_file}, ${uicr_hex_file}, ${periphconf_hex_file}, and ${secondary_periphconf_hex_file} from ${periphconf_elfs} ${secondary_periphconf_elfs}"
