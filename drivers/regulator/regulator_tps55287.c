@@ -58,11 +58,16 @@ static unsigned int regulator_tps55287_count_voltages(const struct device *dev)
 static int regulator_tps55287_list_voltage(const struct device *dev, unsigned int idx,
 					   int32_t *volt_uv)
 {
+	uint32_t count;
+
 	for (uint8_t i = 0U; i < ARRAY_SIZE(core_ranges); i++) {
-		if (linear_range_get_value(&core_ranges[i], idx, volt_uv) == 0) {
+		count = linear_range_values_count(&core_ranges[i]);
+
+		if (idx < count) {
+			*volt_uv = core_ranges[i].min + (int32_t)(core_ranges[i].step * idx);
 			return 0;
 		}
-		idx -= linear_range_values_count(&core_ranges[i]);
+		idx -= count;
 	}
 
 	return -EINVAL;
