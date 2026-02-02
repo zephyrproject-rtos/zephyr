@@ -60,10 +60,19 @@
 		status = "okay";
 	};
 
-	pinctrl: pinctrl@f4000 {
-		compatible = "ti,k3-pinctrl";
-		reg = <0x000f4000 0x2ac>;
-		status = "okay";
+	main_padcfg0: syscon@f0000 {
+		compatible = "ti,control-module";
+		reg = <0xf0000 DT_SIZE_K(32)>;
+		ranges = <0x00 0xf0000 DT_SIZE_K(32)>;
+		ti,unlock-offsets = <0x1008 0x5008>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		pinctrl: pinctrl@4000 {
+			compatible = "ti,k3-pinctrl";
+			reg = <0x4000 0x2ac>;
+			status = "okay";
+		};
 	};
 
 	mbox0: mailbox0@29000000 {
