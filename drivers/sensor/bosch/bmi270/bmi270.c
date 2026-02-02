@@ -19,11 +19,6 @@
 
 LOG_MODULE_REGISTER(bmi270, CONFIG_SENSOR_LOG_LEVEL);
 
-#define BMI270_WR_LEN                           256
-#define BMI270_CONFIG_FILE_RETRIES              15
-#define BMI270_CONFIG_FILE_POLL_PERIOD_US       10000
-#define BMI270_INTER_WRITE_DELAY_US             1000
-
 static inline int bmi270_bus_check(const struct device *dev)
 {
 	const struct bmi270_config *cfg = dev->config;
