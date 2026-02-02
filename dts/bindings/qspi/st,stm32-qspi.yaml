@@ -60,6 +60,13 @@ properties:
       For example
          dma-names = "tx_rx";
 
+  ssht-enable:
+    type: boolean
+    description: |
+      Enables Sample Shifting half-cycle.
+
+      It is recommended to be enabled in STR mode and disabled in DTR mode.
+
   dual-flash:
     type: boolean
     description: |
