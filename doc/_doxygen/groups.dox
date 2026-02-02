@@ -36,6 +36,12 @@
 @{
 @}
 
+@brief Interfaces for interrupt controller devices.
+@defgroup intc_interfaces Interrupt Controller Devices
+@ingroup io_interfaces
+@{
+@}
+
 @brief Testing
 @defgroup testing Testing
 @{
