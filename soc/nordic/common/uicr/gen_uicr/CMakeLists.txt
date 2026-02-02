@@ -169,6 +169,12 @@ if(CONFIG_GEN_UICR_GENERATE_PERIPHCONF)
     endif()
 
     if(EXISTS ${_dir}/zephyr/zephyr.dts)
+      # If the PERIPHCONF is configured to remain in the firmware, do not include it here.
+      parse_kconfig_value(${_dir}/zephyr/.config CONFIG_NRF_PERIPHCONF_SECTION_STRIP strip_periphconf)
+      if(NOT (strip_periphconf STREQUAL "y"))
+        continue()
+      endif()
+
       # Read CONFIG_KERNEL_BIN_NAME from the sibling's .config file
       parse_kconfig_value(${_dir}/zephyr/.config CONFIG_KERNEL_BIN_NAME kernel_bin_name)
       set(kernel_elf_path ${_dir}/zephyr/${kernel_bin_name}.elf)
