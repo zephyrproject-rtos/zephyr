@@ -17,7 +17,7 @@
 	clocks {
 		pllsai2: pllsai2 {
 			#clock-cells = <0>;
-			compatible = "st,stm32l4-pllsai-clock";
+			compatible = "st,stm32l4-pll-clock";
 			status = "disabled";
 		};
 	};
