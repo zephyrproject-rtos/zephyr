@@ -76,16 +76,16 @@ struct flash_stm32_xspi_config {
 	int data_mode; /* SPI or QSPI or OSPI */
 	int data_rate; /* DTR or STR */
 	const struct pinctrl_dev_config *pcfg;
-	bool four_byte_opcodes;
-	bool requires_ulbpr;
-	bool memory_mapped;
 	uint32_t mem_map_based_address;
 #if STM32_XSPI_RESET_GPIO
 	const struct gpio_dt_spec reset;
 	int reset_gpios_duration;
 #endif /* STM32_XSPI_RESET_GPIO */
-	bool has_pclken_ker;
-	bool has_pclken_mgr;
+	bool four_byte_opcodes	:1;
+	bool requires_ulbpr	:1;
+	bool memory_mapped	:1;
+	bool has_pclken_ker	:1;
+	bool has_pclken_mgr	:1;
 };
 
 struct flash_stm32_xspi_data {
