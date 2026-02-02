@@ -118,16 +118,6 @@
 	};
 };
 
-&port_irq12 {
-	interrupts = <21 1>;
-	status = "okay";
-};
-
-&port_irq13 {
-	interrupts = <22 1>;
-	status = "okay";
-};
-
 &crc {
 	status = "okay";
 };
