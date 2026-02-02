@@ -1210,7 +1210,7 @@ static uint8_t tbs_register_bearer(const void *cmd, uint16_t cmd_len, void *rsp,
 		.uri_schemes_supported = uri_scheme_list,
 		.gtbs = cp->gtbs == 1U ? true : false,
 		.technology = cp->technology,
-		.supported_features  = sys_le16_to_cpu(cp->optional_opcodes),
+		.optional_opcodes = sys_le16_to_cpu(cp->optional_opcodes),
 	};
 
 	int index = bt_tbs_register_bearer(&param);
