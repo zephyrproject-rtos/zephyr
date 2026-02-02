@@ -19,6 +19,11 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
 
+#define BMI270_WR_LEN                           32
+#define BMI270_CONFIG_FILE_RETRIES              15
+#define BMI270_CONFIG_FILE_POLL_PERIOD_US       10000
+#define BMI270_INTER_WRITE_DELAY_US             1000
+
 #define BMI270_REG_CHIP_ID         0x00
 #define BMI270_REG_ERROR           0x02
 #define BMI270_REG_STATUS          0x03
