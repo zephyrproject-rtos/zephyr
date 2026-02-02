@@ -53,4 +53,24 @@
 			slew-rate = "slow";
 		};
 	};
+
+	pinmux_slcd: pinmux_slcd {
+		group0 {
+			/* slcd_design.txt mapping: COM0..3 and D0..7 */
+			pinmux = <LCD_P59_PTE20>, /* COM0 */
+				 <LCD_P60_PTE21>, /* COM1 */
+				 <LCD_P14_PTB18>, /* COM2 */
+				 <LCD_P15_PTB19>, /* COM3 */
+				 <LCD_P20_PTC0>,  /* D0 */
+				 <LCD_P24_PTC4>,  /* D1 */
+				 <LCD_P26_PTC6>,  /* D2 */
+				 <LCD_P27_PTC7>,  /* D3 */
+				 <LCD_P40_PTD0>,  /* D4 */
+				 <LCD_P42_PTD2>,  /* D5 */
+				 <LCD_P43_PTD3>,  /* D6 */
+				 <LCD_P44_PTD4>;  /* D7 */
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
 };

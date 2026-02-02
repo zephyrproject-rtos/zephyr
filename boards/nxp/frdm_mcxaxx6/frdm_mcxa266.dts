@@ -52,3 +52,21 @@ zephyr_udc0: &usb {
 	status = "okay";
 	num-bidir-endpoints = <8>;
 };
+
+auxdisplay0: &slcd {
+	status = "okay";
+
+	/* 6 digits, 1 row */
+	columns = <6>;
+	rows = <1>;
+	low-power-wf;
+	clk-cfg-div = <1>;
+	clk-cfg-prescaler = <0>;
+	slcd-duty-cycle = "kSLCD_1Div4DutyCycle";
+
+	com-pins = /bits/ 8 <28 29 30 31>;
+	d-pins = /bits/ 8 <16 17 18 19 20 21 22 23 24 25 26 27>;
+
+	pinctrl-0 = <&pinmux_slcd>;
+	pinctrl-names = "default";
+};
