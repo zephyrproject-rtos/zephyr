@@ -98,11 +98,30 @@ config USE_DT_CODE_PARTITION
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
+DT_CHOSEN_Z_FLASH := zephyr,flash
+
+config FLASH_CODE_PARTITION_ADDRESS_INVALID
+	bool
+	default y if XIP && $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) < FLASH_BASE_ADDRESS
+	select DEPRECATED
+	help
+	  If this item is selected, it is likely selected because your board/SoC/base DTS files
+	  are wrong and have a flash memory that does not start at absolute address 0x0 and:
+	    * Do not have a ``ranges <>;`` property in the flash node passing down the address
+	      and size to child nodes
+	    * Do not have a ``ranges;`` property in the partitions node passing down the previous
+	      ranges to child nodes
+
+	  Support for this will be removed and required that your files be updated correctly for
+	  a future release, check the Zephyr 4.4 migration notes.
 
 config FLASH_LOAD_OFFSET
 	# Only user-configurable when USE_DT_CODE_PARTITION is disabled
 	hex "Kernel load offset" if !USE_DT_CODE_PARTITION
-	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if USE_DT_CODE_PARTITION
+	default $(sub_hex, $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION)), \
+		$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))) if USE_DT_CODE_PARTITION && \
+		!FLASH_CODE_PARTITION_ADDRESS_INVALID
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH)) if USE_DT_CODE_PARTITION
 	default 0
 	help
 	  This option specifies the byte offset from the beginning of flash that
