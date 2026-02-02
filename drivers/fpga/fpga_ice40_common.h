@@ -27,7 +27,7 @@
 #define FPGA_ICE40_LEADING_CLOCKS_MIN  8
 #define FPGA_ICE40_TRAILING_CLOCKS_MIN 49
 
-#define FPGA_ICE40_CONFIG_DEFINE(inst, derived_config_)                                            \
+#define FPGA_ICE40_CONFIG_DEFINE(inst, load_handler_, derived_config_)                             \
 	BUILD_ASSERT(DT_INST_PROP(inst, spi_max_frequency) >= FPGA_ICE40_SPI_HZ_MIN);              \
 	BUILD_ASSERT(DT_INST_PROP(inst, spi_max_frequency) <= FPGA_ICE40_SPI_HZ_MAX);              \
 	BUILD_ASSERT(DT_INST_PROP(inst, config_delay_us) >= FPGA_ICE40_CONFIG_DELAY_US_MIN);       \
@@ -38,19 +38,29 @@
 	BUILD_ASSERT(DT_INST_PROP(inst, leading_clocks) <= UINT8_MAX);                             \
 	BUILD_ASSERT(DT_INST_PROP(inst, trailing_clocks) >= FPGA_ICE40_TRAILING_CLOCKS_MIN);       \
 	BUILD_ASSERT(DT_INST_PROP(inst, trailing_clocks) <= UINT8_MAX);                            \
-	                                                                                           \
+                                                                                                   \
 	static const struct fpga_ice40_config fpga_ice40_config_##inst = {                         \
-		.bus = SPI_DT_SPEC_INST_GET(inst,                                                  \
-					    SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA |   \
-						    SPI_WORD_SET(8) | SPI_TRANSFER_MSB),           \
+		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER | SPI_MODE_CPOL |             \
+							  SPI_MODE_CPHA | SPI_WORD_SET(8) |        \
+							  SPI_TRANSFER_MSB),                       \
 		.creset = GPIO_DT_SPEC_INST_GET(inst, creset_gpios),                               \
 		.cdone = GPIO_DT_SPEC_INST_GET(inst, cdone_gpios),                                 \
 		.config_delay_us = DT_INST_PROP(inst, config_delay_us),                            \
 		.creset_delay_us = DT_INST_PROP(inst, creset_delay_us),                            \
 		.leading_clocks = DT_INST_PROP(inst, leading_clocks),                              \
 		.trailing_clocks = DT_INST_PROP(inst, trailing_clocks),                            \
+		.load_handler = load_handler_,                                                     \
 		.derived_config = derived_config_,                                                 \
 	}
+
+struct fpga_ice40_work_item {
+	struct k_work work;
+	const struct device *dev;
+	uint32_t *image_ptr;
+	uint32_t image_size;
+	struct k_sem finished;
+	int result;
+};
 
 struct fpga_ice40_data {
 	uint32_t crc;
@@ -58,7 +68,8 @@ struct fpga_ice40_data {
 	char info[2 * sizeof(uint32_t) + 1];
 	bool on;
 	bool loaded;
-	struct k_spinlock lock;
+	struct k_mutex lock;
+	struct fpga_ice40_work_item work_item;
 };
 
 struct fpga_ice40_config {
@@ -69,6 +80,7 @@ struct fpga_ice40_config {
 	uint16_t config_delay_us;
 	uint8_t leading_clocks;
 	uint8_t trailing_clocks;
+	k_work_handler_t load_handler;
 	const void *derived_config;
 };
 
@@ -79,5 +91,6 @@ int fpga_ice40_off(const struct device *dev);
 int fpga_ice40_reset(const struct device *dev);
 const char *fpga_ice40_get_info(const struct device *dev);
 int fpga_ice40_init(const struct device *dev);
+int fpga_ice40_load(const struct device *dev, uint32_t *image_ptr, uint32_t img_size);
 
 #endif /* ZEPHYR_SUBSYS_FPGA_FPGA_ICE40_COMMON_H_ */
