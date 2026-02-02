@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 NXP
+ * Copyright 2023-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,29 +42,21 @@ struct hci_data {
 LOG_MODULE_REGISTER(bt_driver);
 
 /* Vendor specific commands */
-#define HCI_CMD_STORE_BT_CAL_DATA_OCF                   0x61U
-#define HCI_CMD_STORE_BT_CAL_DATA_PARAM_LENGTH          32U
-#define HCI_CMD_STORE_BT_CAL_DATA_ANNEX100_OCF          0xFFU
-#define HCI_CMD_STORE_BT_CAL_DATA_PARAM_ANNEX100_LENGTH 16U
-#define HCI_CMD_SET_BT_SLEEP_MODE_OCF                   0x23U
-#define HCI_CMD_SET_BT_SLEEP_MODE_PARAM_LENGTH          3U
-#define HCI_CMD_BT_HOST_SLEEP_CONFIG_OCF                0x59U
-#define HCI_CMD_BT_HOST_SLEEP_CONFIG_PARAM_LENGTH       2U
-#define HCI_CMD_BT_HOST_SET_MAC_ADDR_PARAM_LENGTH       8U
-#define HCI_BT_MAC_ADDR_CRC_SEED                        0xFFFFFFFFU
-#define HCI_SET_MAC_ADDR_CMD                            0x0022U
-#define BT_USER_BD                                      254
-#define BD_ADDR_OUI                                     0x37U, 0x60U, 0x00U
-#define BD_ADDR_OUI_PART_SIZE                           3U
-#define BD_ADDR_UUID_PART_SIZE                          3U
-
-#if !defined(CONFIG_HCI_NXP_SET_CAL_DATA)
-#define bt_nxp_set_calibration_data() 0
-#endif
-
-#if !defined(CONFIG_HCI_NXP_SET_CAL_DATA_ANNEX100)
-#define bt_nxp_set_calibration_data_annex100() 0
-#endif
+#define HCI_CMD_STORE_BT_CAL_DATA_OCF                0x61U
+#define HCI_CMD_STORE_BT_CAL_DATA_PARAM_LENGTH       32U
+#define HCI_CMD_STORE_BT_CAL_DATA_ANNEX100_OCF       0xFFU
+#define HCI_CMD_STORE_BT_CAL_DATA_PARAM_ANNEX100_LEN 16U
+#define HCI_CMD_SET_BT_SLEEP_MODE_OCF                0x23U
+#define HCI_CMD_SET_BT_SLEEP_MODE_PARAM_LENGTH       3U
+#define HCI_CMD_BT_HOST_SLEEP_CONFIG_OCF             0x59U
+#define HCI_CMD_BT_HOST_SLEEP_CONFIG_PARAM_LENGTH    2U
+#define HCI_CMD_BT_HOST_SET_MAC_ADDR_PARAM_LENGTH    8U
+#define HCI_BT_MAC_ADDR_CRC_SEED                     0xFFFFFFFFU
+#define HCI_SET_MAC_ADDR_CMD                         0x0022U
+#define BT_USER_BD                                   254
+#define BD_ADDR_OUI                                  0x37U, 0x60U, 0x00U
+#define BD_ADDR_OUI_PART_SIZE                        3U
+#define BD_ADDR_UUID_PART_SIZE                       3U
 
 #if !defined(CONFIG_HCI_NXP_ENABLE_AUTO_SLEEP)
 #define nxp_bt_set_host_sleep_config()       0
@@ -80,9 +72,117 @@ LOG_MODULE_REGISTER(bt_driver);
 #define HCI_NXP_LOCK_STANDBY_BEFORE_SEND
 #endif
 
+#if defined(CONFIG_HCI_NXP_SET_CAL_DATA)
+#if defined(CONFIG_HCI_NXP_SET_CAL_DATA_ANNEX100)
+/* For share antenna case or diversty case(ble only case) */
+#define BT_CAL_DATA_ANNEX_FRONT_END_LOSS 0x03U
+#if defined(CONFIG_HCI_NXP_ANT_DIVERSITY_ANT1) || defined(CONFIG_HCI_NXP_ANT_DIVERSITY_ANT2)
+/* For share antenna case or ant2 with external FEM(ble only case) */
+#define BT_CAL_DATA_ANNEX_100_EPA_FEM_MASK_LOW_BYTE 0x02U
+#define BT_CAL_DATA_ANNEX_100_LNA_FEM_MASK_LOW_BYTE 0x02U
+#elif defined(CONFIG_HCI_NXP_ANT_DIVERSITY_ANT3)
+/* divesity case(enable ant3) */
+#define BT_CAL_DATA_ANNEX_100_EPA_FEM_MASK_LOW_BYTE 0x0AU
+#define BT_CAL_DATA_ANNEX_100_LNA_FEM_MASK_LOW_BYTE 0x0AU
+#elif defined(CONFIG_HCI_NXP_ANT_DIVERSITY_ANT4)
+/* diversity case(enable ant4) */
+#define BT_CAL_DATA_ANNEX_100_EPA_FEM_MASK_LOW_BYTE 0x06U
+#define BT_CAL_DATA_ANNEX_100_LNA_FEM_MASK_LOW_BYTE 0x06U
+#else
+#error "Missing calibration data for annex100"
+#endif /* HCI_NXP_ANT_DIVERSITY_ANTx */
+#else
+#define bt_nxp_set_calibration_data_annex100() 0
+/* For dual ant case */
+#define BT_CAL_DATA_ANNEX_FRONT_END_LOSS       0x02U
+#endif /* CONFIG_HCI_NXP_SET_CAL_DATA_ANNEX100 */
+#else
+#define bt_nxp_set_calibration_data()          0
+#define bt_nxp_set_calibration_data_annex100() 0
+#endif /* CONFIG_HCI_NXP_SET_CAL_DATA */
+
 /* -------------------------------------------------------------------------- */
-/*                              Public prototypes                             */
+/*                               Private memory                               */
 /* -------------------------------------------------------------------------- */
+#if defined(CONFIG_HCI_NXP_SET_CAL_DATA)
+/* clang-format off */
+static const uint8_t hci_cal_data_params[HCI_CMD_STORE_BT_CAL_DATA_PARAM_LENGTH] = {
+	0x00U,                            /*  Sequence Number : 0x00 */
+	0x00U,                            /*  Action : 0x00 */
+	0x01U,                            /*  Type : Not use CheckSum */
+	0x1CU,                            /*  File Length : 0x1C */
+	0x37U,                            /*  BT Annex Type : BT CFG */
+	0x71U,                            /*  Checksum : 0x71 */
+	0x1CU,                            /*  Annex Length LSB: 0x001C */
+	0x00U,                            /*  Annex Length MSB: 0x001C */
+	0xFFU,                            /*  Pointer For Next Annex[0] : 0xFFFFFFFF */
+	0xFFU,                            /*  Pointer For Next Annex[1] : 0xFFFFFFFF */
+	0xFFU,                            /*  Pointer For Next Annex[2] : 0xFFFFFFFF */
+	0xFFU,                            /*  Pointer For Next Annex[3] : 0xFFFFFFFF */
+	0x01U,                            /*  Annex Version : 0x01 */
+	0x7CU,                            /*  External Xtal Calibration Value : 0x7C */
+	0x04U,                            /*  Initial TX Power : 0x04 */
+	BT_CAL_DATA_ANNEX_FRONT_END_LOSS, /*  Front End Loss : 0x02 or 0x03 */
+	/*
+	 * BT Options :
+	 * BIT[0]] Force Class 2 operation = 0
+	 * BIT[1]] Disable Pwr Control for class 2= 0
+	 * BIT[2]] MiscFlag(to indicagte external XTAL) = 0
+	 * BIT[3] Used Internal Sleep Clock = 1
+	 * BIT[4] BT AOA localtion support = 0
+	 * BIT[5] Force Class 1 mode = 1
+	 * BIT[7:6] Reserved
+	 */
+	0x28U,
+	0x00U, /*  AOANumberOfAntennas: 0x00 */
+	0x00U, /*  RSSI Golden Low : 0 */
+	0x00U, /*  RSSI Golden High : 0 */
+	0xC0U, /*  UART Baud Rate[0] : 0x002DC6C0(3000000) */
+	0xC6U, /*  UART Baud Rate[1] : 0x002DC6C0(3000000) */
+	0x2DU, /*  UART Baud Rate[2] : 0x002DC6C0(3000000) */
+	0x00U, /*  UART Baud Rate[3] : 0x002DC6C0(3000000) */
+	0x00U, /*  BdAddress[0] : 0x000000000000 */
+	0x00U, /*  BdAddress[1] : 0x000000000000 */
+	0x00U, /*  BdAddress[2] : 0x000000000000 */
+	0x00U, /*  BdAddress[3] : 0x000000000000 */
+	0x00U, /*  BdAddress[4] : 0x000000000000 */
+	0x00U, /*  BdAddress[5] : 0x000000000000 */
+	/*
+	 * Encr_Key_Len[3:0]: MinEncrKeyLen = 0x0
+	 * Encr_Key_Len[7:4]: MaxEncrKeyLen = 0xF
+	 */
+	0xF0U,
+	0x00U, /*  RegionCode : 0x00 */
+};
+/* clang-format on */
+
+#if defined(CONFIG_HCI_NXP_SET_CAL_DATA_ANNEX100)
+/*
+ * a.The following parameters are used in three cases,
+ *    1.For share antenna case or ant2 with external FEM(ble only case).
+ *    2.diversity case(enable ant3)
+ *    3.diversity case(enable ant4)
+ */
+static const uint8_t hci_cal_data_annex100_params[HCI_CMD_STORE_BT_CAL_DATA_PARAM_ANNEX100_LEN] = {
+	0x64U, /*  Annex Type : 0x64 */
+	0x00U, /*  CheckSum: Annex100 ignores checksum */
+	0x10U, /*  Length-In-Byte : 0x0010 */
+	0x00U, /*  Length-In-Byte : 0x0010 */
+	0xFFU, /* Pointer for next annex structure : 0xFFFFFFFF */
+	0xFFU, /* Pointer for next annex structure : 0xFFFFFFFF */
+	0xFFU, /* Pointer for next annex structure : 0xFFFFFFFF */
+	0xFFU, /* Pointer for next annex structure : 0xFFFFFFFF */
+	0x01U, /* Ext_PA Gain : Bit[7:1]   Ext_PA Present : Bit[0] */
+	0x00U, /* Ext_Ant Gain : Bit[4:1]   Ext_Ant Present : Bit[0] */
+	BT_CAL_DATA_ANNEX_100_EPA_FEM_MASK_LOW_BYTE, /* BT_HW_INFO_EPA_FEM_Mask */
+	0x00U,                                       /* BT_HW_INFO_EPA_FEM_Mask */
+	0x01U, /* Ext_LNA Present : Bit[0]   Ext_LNA Gain : Bit[7:1] */
+	0x00U, /* multipurpose mask */
+	BT_CAL_DATA_ANNEX_100_LNA_FEM_MASK_LOW_BYTE, /* BT / LE ext LNA FEM BITMASK */
+	0x00U,                                       /* BT / LE ext LNA FEM BITMASK */
+};
+#endif /* CONFIG_HCI_NXP_SET_CAL_DATA_ANNEX100 */
+#endif /* CONFIG_HCI_NXP_SET_CAL_DATA */
 
 /* -------------------------------------------------------------------------- */
 /*                             Private functions                              */
@@ -144,7 +244,6 @@ static int nxp_bt_set_host_sleep_config(void)
 static int bt_nxp_set_calibration_data(void)
 {
 	uint16_t opcode = BT_OP(BT_OGF_VS, HCI_CMD_STORE_BT_CAL_DATA_OCF);
-	extern const uint8_t hci_cal_data_params[HCI_CMD_STORE_BT_CAL_DATA_PARAM_LENGTH];
 
 	/* Send the command */
 	return nxp_bt_send_vs_command(opcode, hci_cal_data_params,
@@ -156,12 +255,9 @@ static int bt_nxp_set_calibration_data_annex100(void)
 {
 	uint16_t opcode = BT_OP(BT_OGF_VS, HCI_CMD_STORE_BT_CAL_DATA_ANNEX100_OCF);
 
-	extern const uint8_t
-		hci_cal_data_annex100_params[HCI_CMD_STORE_BT_CAL_DATA_PARAM_ANNEX100_LENGTH];
-
 	/* Send the command */
 	return nxp_bt_send_vs_command(opcode, hci_cal_data_annex100_params,
-				      HCI_CMD_STORE_BT_CAL_DATA_PARAM_ANNEX100_LENGTH);
+				      HCI_CMD_STORE_BT_CAL_DATA_PARAM_ANNEX100_LEN);
 }
 #endif /* CONFIG_HCI_NXP_SET_CAL_DATA_ANNEX100 */
 
