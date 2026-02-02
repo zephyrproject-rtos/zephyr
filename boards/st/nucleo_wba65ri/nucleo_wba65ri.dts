@@ -198,8 +198,6 @@ stm32_lp_tick_source: &lptim1 {
 zephyr_udc0: &usbotg_hs {
 	clocks = <&rcc STM32_CLOCK(AHB2, 14)>,
 		 <&rcc STM32_SRC_HSE OTGHS_SEL(0)>;
-	pinctrl-0 = <&usb_otg_hs_dm_pd7 &usb_otg_hs_dp_pd6>;
-	pinctrl-names = "default";
 	status = "okay";
 };
 

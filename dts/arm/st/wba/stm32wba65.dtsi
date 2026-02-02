@@ -108,7 +108,7 @@
 		};
 
 		usbotg_hs: usb@42040000 {
-			compatible = "st,stm32-otghs";
+			compatible = "st,stm32n6-otghs", "st,stm32-otghs";
 			reg = <0x42040000 DT_SIZE_K(128)>;
 			interrupts = <76 0>;
 			interrupt-names = "otghs";
@@ -125,16 +125,6 @@
 		clocks = <&rcc STM32_CLOCK(AHB2, 15)>;
 		#phy-cells = <0>;
 		status = "disabled";
-	};
-
-	/*
-	 * Temporary revert of pinctrl-0 definition for stm3wba65
-	 * to fix issue on stm32wba5x based boards
-	 */
-	swj_port: swj_port {
-		pinctrl-0 = <&debug_jtms_swdio_pa13 &debug_jtck_swclk_pa14
-			     &debug_jtdi_pa15 &debug_jtdo_swo_pb3
-			     &debug_njtrst_pb4>;
 	};
 
 	die_temp: dietemp {
