@@ -136,6 +136,11 @@ Bluetooth Audio
   requirements of BAP before doing any discovery. In most cases this requires a call to
   :c:func:`bt_conn_set_security` for new devices. Bonded devices that reconnect should not require
   anything.
+* Optional CSIS characteristics have been made configurable via Kconfig and must be enabled explicitly:
+
+  * Coordinated Set Size → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT`
+  * Set Member Lock → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT`
+  * Set Member Rank → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT`
 
 Bluetooth HCI
 =============
