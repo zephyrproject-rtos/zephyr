@@ -119,8 +119,25 @@ def main():
 
         if node.props:
             for item in node.props:
-                # We currently do not support phandles for edt -> cmake conversion.
-                if "phandle" not in node.props[item].type:
+                # We currently do not support phandle-arrays for edt -> cmake conversion.
+                # The code below supports the following phandle types:
+                # - phandle: which specifies a reference to a single node
+                # - phandles: which specifies a bare list of references to other nodes
+                if "phandle" in node.props[item].type:
+                    if "array" in node.props[item].type:
+                        continue  # phandle-array not supported
+                    # Convert array to CMake list
+                    if isinstance(node.props[item].val, list):
+                        cmake_value = ';'.join(phandle.path for phandle in node.props[item].val)
+                    else:
+                        cmake_value = node.props[item].val.path
+
+                    # Encode node's property 'item' as a CMake target property
+                    # with a name like 'DT_PROP|<path>|<property>'.
+                    cmake_prop = f'DT_PROP|{node.path}|{item}'
+                    cmake_props.append(f'"{cmake_prop}" "{escape(cmake_value)}"')
+
+                else:
                     if "array" in node.props[item].type:
                         # Convert array to CMake list
                         cmake_value = ';'.join(str(val) for val in node.props[item].val)
