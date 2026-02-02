@@ -49,7 +49,13 @@
 #else
 #define MDM_CHAT_ARGV_BUFFER_SIZE 32
 #endif /* CONFIG_HL78XX_GNSS */
+#ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
 
+#define NTN_POSITION_METHOD_IGSS         "IGSS"
+#define NTN_POSITION_METHOD_MANUAL       "MANUAL"
+#define NTN_POSITION_METHOD_TEXT_MAX_LEN sizeof(NTN_POSITION_METHOD_MANUAL)
+
+#endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
 #define MDM_MAX_DATA_LENGTH CONFIG_MODEM_HL78XX_UART_BUFFER_SIZES
 
 #define MDM_MAX_SOCKETS           CONFIG_MODEM_HL78XX_NUM_SOCKETS
@@ -66,7 +72,11 @@
 #define ADDRESS_FAMILY_IPV4V6     "IPV4V6"
 #define MDM_HL78XX_SOCKET_AF_IPV4 0
 #define MDM_HL78XX_SOCKET_AF_IPV6 1
-#if defined(CONFIG_MODEM_HL78XX_ADDRESS_FAMILY_IPV4V6)
+#if defined(CONFIG_MODEM_HL78XX_ADDRESS_FAMILY_IP)
+#define MODEM_HL78XX_ADDRESS_FAMILY ADDRESS_FAMILY_IP
+#define MODEM_HL78XX_ADDRESS_FAMILY_FORMAT "###.###.###.###"
+#define MODEM_HL78XX_ADDRESS_FAMILY_FORMAT_LEN sizeof(MODEM_HL78XX_ADDRESS_FAMILY_FORMAT)
+#elif defined(CONFIG_MODEM_HL78XX_ADDRESS_FAMILY_IPV4V6)
 #define MODEM_HL78XX_ADDRESS_FAMILY        ADDRESS_FAMILY_IPV4V6
 #define MODEM_HL78XX_ADDRESS_FAMILY_FORMAT "####:####:####:####:####:####:####:####"
 #define MODEM_HL78XX_ADDRESS_FAMILY_FORMAT_LEN                                                     \
@@ -190,6 +200,9 @@ enum hl78xx_event {
 	/* Modem unexpected restart event */
 	MODEM_HL78XX_EVENT_MDM_RESTART,
 	MODEM_HL78XX_EVENT_SOCKET_READY,
+#ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
+	MODEM_HL78XX_EVENT_NTN_POSREQ,
+#endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
 	MODEM_HL78XX_EVENT_PHONE_FUNCTIONALITY_CHANGED,
 #ifdef CONFIG_HL78XX_GNSS
 	MODEM_HL78XX_EVENT_GNSS_START_REQUESTED,
@@ -326,6 +339,14 @@ struct hl78xx_network_operator {
 	char operator[MDM_MODEL_LENGTH];
 	uint8_t format;
 };
+#ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
+
+struct ntn_rat_state {
+	char pos_mode[NTN_POSITION_METHOD_TEXT_MAX_LEN];
+	bool is_dynamic;
+};
+
+#endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
 
 struct hl78xx_modem_boot_status {
 	bool is_booted_previously;
@@ -385,6 +406,9 @@ struct modem_status {
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 	struct hl78xx_wdsi_status wdsi;
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
+#ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
+	struct ntn_rat_state ntn_rat;
+#endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
 	struct hl78xx_modem_uart_status uart;
 };
 

@@ -104,11 +104,17 @@ int hl78xx_run_init_fail_script_async(struct hl78xx_data *data);
 int hl78xx_run_enable_ksup_urc_script_async(struct hl78xx_data *data);
 int hl78xx_run_pwroff_script_async(struct hl78xx_data *data);
 int hl78xx_run_post_restart_script_async(struct hl78xx_data *data);
-#if defined(CONFIG_MODEM_HL78XX_12) && defined(CONFIG_MODEM_HL78XX_RAT_GSM) ||                     \
+#ifdef CONFIG_MODEM_HL78XX_12
+#if defined(CONFIG_MODEM_HL78XX_RAT_GSM) ||                     \
 	defined(CONFIG_MODEM_HL78XX_AUTORAT)
 /* Run the LTE disable GSM enable registration status script */
 int hl78xx_run_lte_dis_gsm_en_reg_status_script(struct hl78xx_data *data);
 #endif /* CONFIG_MODEM_HL78XX_RAT_GSM */
+#ifdef CONFIG_NTN_POSITION_SOURCE_MANUAL
+/* Run the NTN position setting script */
+int hl78xx_run_ntn_pos_script_async(struct hl78xx_data *data);
+#endif /* CONFIG_NTN_POSITION_SOURCE_MANUAL */
+#endif /* CONFIG_MODEM_HL78XX_12 */
 /* Run the GSM disable LTE enable registration status script */
 int hl78xx_run_gsm_dis_lte_en_reg_status_script(struct hl78xx_data *data);
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE

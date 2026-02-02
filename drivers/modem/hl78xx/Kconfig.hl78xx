@@ -449,10 +449,12 @@ endif # HL78XX_GNSS
 
 choice MODEM_HL78XX_ADDRESS_FAMILY
 	prompt "IP Address family"
-	default MODEM_HL78XX_ADDRESS_FAMILY_IPV4V6
+	default MODEM_HL78XX_ADDRESS_FAMILY_IP if MODEM_HL78XX_RAT_NBNTN
+	default MODEM_HL78XX_ADDRESS_FAMILY_IPV4V6 if !MODEM_HL78XX_RAT_NBNTN
 	help
 	  The address family for IP connections.
-
+config MODEM_HL78XX_ADDRESS_FAMILY_IP
+	bool "IP"
 config MODEM_HL78XX_ADDRESS_FAMILY_IPV4
 	bool "IPv4"
 
@@ -902,6 +904,31 @@ config NTN_DYNAMIC_POSREQ_UPDATE
 	  If enabled, the UE position must be updated after receiving unsolicited +KNTNEV:
 	  'POSREQ' indication, before any outgoing network operation in dynamic mode.
 
+if NTN_POSITION_SOURCE_MANUAL
+
+config NTN_MANUAL_LATITUDE
+	string "Manual Latitude (degrees)"
+	default "0.0"
+	depends on NTN_POSITION_SOURCE_MANUAL
+	help
+	  Latitude in degrees for manual position entry. Positive for North, negative for South.
+	  in WGS84 ("-90.0" - "90.0")
+config NTN_MANUAL_LONGITUDE
+	string "Manual Longitude (degrees)"
+	default "0.0"
+	depends on NTN_POSITION_SOURCE_MANUAL
+	help
+	  Longitude in degrees for manual position entry. Positive for East, negative for West.
+	  in WGS84 ("-180.0" - "180.0")
+config NTN_MANUAL_ALTITUDE
+	string "Manual Altitude (meters)"
+	default "0.0"
+	depends on NTN_POSITION_SOURCE_MANUAL
+	help
+	  Altitude in meters for manual position entry.
+	  in meters from earth surface ("-5000.0" - "40000000.0")
+
+endif # NTN_POSITION_SOURCE_MANUAL
 endif # MODEM_HL78XX_NBNTN_POSITIONING
 endif # MODEM_HL78XX_RAT_NBNTN
 
