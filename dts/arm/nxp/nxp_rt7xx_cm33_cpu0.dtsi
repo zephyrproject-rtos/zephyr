@@ -1127,6 +1127,21 @@
 		compatible = "nxp,lpc-uid";
 		reg = <0x2bc0 0x10>;
 	};
+
+	jpegdec: jpegdec@a6000 {
+		compatible = "nxp,jpegdec";
+		reg = <0x500a6000 0x1000>,
+		      <0x500a6100 0x100>;
+		interrupts = <139 0>;
+		status = "disabled";
+	};
+
+	pngdec: pngdec@a7000 {
+		compatible = "nxp,pngdec";
+		reg = <0x500a7000 0x1000>;
+		interrupts = <140 0>;
+		status = "disabled";
+	};
 };
 
 &xspi0 {
