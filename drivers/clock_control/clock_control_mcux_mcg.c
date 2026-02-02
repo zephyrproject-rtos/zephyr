@@ -61,6 +61,13 @@ static DEVICE_API(clock_control, mcux_mcg_driver_api) = {
 	.get_rate = mcux_mcg_get_rate,
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, PRE_KERNEL_1,
+static int mcux_mcg_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	MCG->C1 |= MCG_C1_IRCLKEN_MASK;
+	return 0;
+}
+
+DEVICE_DT_INST_DEFINE(0, mcux_mcg_init, NULL, NULL, NULL, PRE_KERNEL_1,
 		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
 		      &mcux_mcg_driver_api);

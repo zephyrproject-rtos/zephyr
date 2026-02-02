@@ -405,7 +405,7 @@
 		slcd: slcd@40053000 {
 			compatible = "nxp,slcd";
 			reg = <0x40053000 0x1000>;
-			clocks = <&sim KINETIS_SIM_SLCD0_CLK 0x1038 19>;
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_SLCD0_CLK, 0x1038, 19)>;
 			interrupts = <29 0>;
 			status = "disabled";
 		};

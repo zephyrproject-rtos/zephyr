@@ -66,7 +66,6 @@ static int mcux_sim_off(const struct device *dev,
 	uint32_t clk = mcux_sim_subsys_id(sub_system);
 	uint32_t gate_offset = KINETIS_SIM_CLOCK_DECODE_GATE_OFFSET(clk);
 	uint32_t gate_bit = KINETIS_SIM_CLOCK_DECODE_GATE_BIT(clk);
-
 	int ret;
 
 	ARG_UNUSED(dev);
