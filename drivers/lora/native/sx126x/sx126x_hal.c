@@ -7,7 +7,6 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/sys/byteorder.h>
 
 #include "sx126x.h"
 
@@ -18,40 +17,13 @@ LOG_MODULE_REGISTER(sx126x_hal, CONFIG_LORA_LOG_LEVEL);
 #define SX126X_RESET_PULSE_MS       5
 #define SX126X_RESET_WAIT_MS        5
 #define SX126X_BUSY_DEFAULT_TIMEOUT 1000
+#define SX126X_FREQ_400MHZ         400000000
 
 static inline struct sx126x_hal_data *get_hal_data(const struct device *dev)
 {
 	struct sx126x_data *data = dev->data;
 
 	return &data->hal;
-}
-
-static int spi_transfer(const struct spi_dt_spec *spi,
-			const uint8_t *hdr, size_t hdr_len,
-			uint8_t *data, size_t data_len, bool read)
-{
-	uint8_t rx_hdr[4];
-
-	__ASSERT_NO_MSG(hdr_len <= sizeof(rx_hdr));
-
-	struct spi_buf tx_bufs[] = {
-		{ .buf = (uint8_t *)hdr, .len = hdr_len },
-		{ .buf = data, .len = data_len },
-	};
-	struct spi_buf rx_bufs[] = {
-		{ .buf = rx_hdr, .len = hdr_len },
-		{ .buf = data, .len = data_len },
-	};
-	struct spi_buf_set tx_set = {
-		.buffers = tx_bufs,
-		.count = (read || (data_len == 0)) ? 1 : 2,
-	};
-	struct spi_buf_set rx_set = {
-		.buffers = rx_bufs,
-		.count = read ? 2 : 1,
-	};
-
-	return spi_transceive_dt(spi, &tx_set, &rx_set);
 }
 
 int sx126x_hal_reset(const struct device *dev)
@@ -99,18 +71,6 @@ bool sx126x_hal_is_busy(const struct device *dev)
 	return gpio_pin_get_dt(&config->busy) != 0;
 }
 
-int sx126x_hal_wait_busy(const struct device *dev, uint32_t timeout_ms)
-{
-	if (!WAIT_FOR(!sx126x_hal_is_busy(dev),
-		      timeout_ms * 1000,
-		      k_msleep(1))) {
-		LOG_WRN("Busy timeout after %u ms", timeout_ms);
-		return -ETIMEDOUT;
-	}
-
-	return 0;
-}
-
 static void dio1_isr(const struct device *gpio, struct gpio_callback *cb,
 		     uint32_t pins)
 {
@@ -141,186 +101,10 @@ int sx126x_hal_set_dio1_callback(const struct device *dev,
 	return ret;
 }
 
-void sx126x_hal_set_antenna_enable(const struct device *dev, bool enable)
+void sx126x_hal_dio1_irq_enable(const struct device *dev)
 {
-	const struct sx126x_hal_config *config = dev->config;
-
-	if (config->antenna_enable.port != NULL) {
-		gpio_pin_set_dt(&config->antenna_enable, enable);
-	}
-}
-
-void sx126x_hal_set_rf_switch(const struct device *dev, bool tx)
-{
-	const struct sx126x_hal_config *config = dev->config;
-
-	if (config->tx_enable.port != NULL) {
-		gpio_pin_set_dt(&config->tx_enable, tx);
-	}
-
-	if (config->rx_enable.port != NULL) {
-		gpio_pin_set_dt(&config->rx_enable, !tx);
-	}
-}
-
-int sx126x_hal_configure_gpio(const struct gpio_dt_spec *gpio,
-			      gpio_flags_t flags, const char *name)
-{
-	int ret;
-
-	if (gpio->port == NULL) {
-		return 0;
-	}
-
-	if (!gpio_is_ready_dt(gpio)) {
-		LOG_ERR("%s GPIO not ready", name);
-		return -ENODEV;
-	}
-
-	ret = gpio_pin_configure_dt(gpio, flags);
-	if (ret < 0) {
-		LOG_ERR("Failed to configure %s: %d", name, ret);
-		return ret;
-	}
-
-	return 0;
-}
-
-int sx126x_hal_write_cmd(const struct device *dev, uint8_t opcode,
-			 const uint8_t *data, size_t len)
-{
-	const struct sx126x_hal_config *config = dev->config;
-	uint8_t hdr[1] = { opcode };
-	int ret;
-
-	ret = sx126x_hal_wait_busy(dev, SX126X_BUSY_DEFAULT_TIMEOUT);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = spi_transfer(&config->spi, hdr, sizeof(hdr), (uint8_t *)data, len, false);
-	if (ret < 0) {
-		LOG_ERR("SPI write failed: %d", ret);
-		return ret;
-	}
-
-	if (opcode != SX126X_CMD_SET_SLEEP) {
-		ret = sx126x_hal_wait_busy(dev, SX126X_BUSY_DEFAULT_TIMEOUT);
-	}
-
-	return ret;
-}
-
-int sx126x_hal_read_cmd(const struct device *dev, uint8_t opcode,
-			uint8_t *data, size_t len)
-{
-	const struct sx126x_hal_config *config = dev->config;
-	uint8_t hdr[2] = { opcode, 0x00 };
-	int ret;
-
-	ret = sx126x_hal_wait_busy(dev, SX126X_BUSY_DEFAULT_TIMEOUT);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = spi_transfer(&config->spi, hdr, sizeof(hdr), data, len, true);
-	if (ret < 0) {
-		LOG_ERR("SPI transceive failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
-int sx126x_hal_write_regs(const struct device *dev, uint16_t address,
-			  const uint8_t *data, size_t len)
-{
-	const struct sx126x_hal_config *config = dev->config;
-	uint8_t hdr[3];
-	int ret;
-
-	ret = sx126x_hal_wait_busy(dev, SX126X_BUSY_DEFAULT_TIMEOUT);
-	if (ret < 0) {
-		return ret;
-	}
-
-	hdr[0] = SX126X_CMD_WRITE_REGISTER;
-	sys_put_be16(address, &hdr[1]);
-
-	ret = spi_transfer(&config->spi, hdr, sizeof(hdr), (uint8_t *)data, len, false);
-	if (ret < 0) {
-		LOG_ERR("SPI write regs failed: %d", ret);
-		return ret;
-	}
-
-	return sx126x_hal_wait_busy(dev, SX126X_BUSY_DEFAULT_TIMEOUT);
-}
-
-int sx126x_hal_read_regs(const struct device *dev, uint16_t address,
-			 uint8_t *data, size_t len)
-{
-	const struct sx126x_hal_config *config = dev->config;
-	uint8_t hdr[4];
-	int ret;
-
-	ret = sx126x_hal_wait_busy(dev, SX126X_BUSY_DEFAULT_TIMEOUT);
-	if (ret < 0) {
-		return ret;
-	}
-
-	hdr[0] = SX126X_CMD_READ_REGISTER;
-	sys_put_be16(address, &hdr[1]);
-	hdr[3] = 0x00;
-
-	ret = spi_transfer(&config->spi, hdr, sizeof(hdr), data, len, true);
-	if (ret < 0) {
-		LOG_ERR("SPI read regs failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
-int sx126x_hal_write_buffer(const struct device *dev, uint8_t offset,
-			    const uint8_t *data, size_t len)
-{
-	const struct sx126x_hal_config *config = dev->config;
-	uint8_t hdr[2] = { SX126X_CMD_WRITE_BUFFER, offset };
-	int ret;
-
-	ret = sx126x_hal_wait_busy(dev, SX126X_BUSY_DEFAULT_TIMEOUT);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = spi_transfer(&config->spi, hdr, sizeof(hdr), (uint8_t *)data, len, false);
-	if (ret < 0) {
-		LOG_ERR("SPI write buffer failed: %d", ret);
-		return ret;
-	}
-
-	return sx126x_hal_wait_busy(dev, SX126X_BUSY_DEFAULT_TIMEOUT);
-}
-
-int sx126x_hal_read_buffer(const struct device *dev, uint8_t offset,
-			   uint8_t *data, size_t len)
-{
-	const struct sx126x_hal_config *config = dev->config;
-	uint8_t hdr[3] = { SX126X_CMD_READ_BUFFER, offset, 0x00 };
-	int ret;
-
-	ret = sx126x_hal_wait_busy(dev, SX126X_BUSY_DEFAULT_TIMEOUT);
-	if (ret < 0) {
-		return ret;
-	}
-
-	ret = spi_transfer(&config->spi, hdr, sizeof(hdr), data, len, true);
-	if (ret < 0) {
-		LOG_ERR("SPI read buffer failed: %d", ret);
-		return ret;
-	}
-
-	return 0;
+	/* GPIO interrupts auto re-arm after being serviced, no action needed */
+	ARG_UNUSED(dev);
 }
 
 int sx126x_hal_init(const struct device *dev)
@@ -401,4 +185,53 @@ int sx126x_hal_init(const struct device *dev)
 
 	LOG_DBG("HAL initialized");
 	return 0;
+}
+
+static int sx126x_hal_set_pa_config(const struct device *dev, uint8_t pa_duty_cycle,
+				    uint8_t hp_max, uint8_t device_sel, uint8_t pa_lut)
+{
+	uint8_t buf[4] = { pa_duty_cycle, hp_max, device_sel, pa_lut };
+
+	return sx126x_hal_write_cmd(dev, SX126X_CMD_SET_PA_CONFIG, buf, 4);
+}
+
+int sx126x_hal_configure_tx_params(const struct device *dev, int8_t power,
+				   uint32_t frequency, uint8_t ramp_time)
+{
+	const struct sx126x_hal_config *config = dev->config;
+	uint8_t pa_duty_cycle;
+	int8_t tx_power;
+	int ret;
+
+	if (config->is_sx1261) {
+		/*
+		 * SX1261: Low power PA, up to +15 dBm
+		 * For +15 dBm at >400 MHz, use higher paDutyCycle.
+		 * For lower power, use lower paDutyCycle for efficiency.
+		 */
+		pa_duty_cycle = (power >= SX1261_MAX_POWER && frequency >= SX126X_FREQ_400MHZ)
+				? SX1261_PA_DUTY_CYCLE_HIGH
+				: SX1261_PA_DUTY_CYCLE_LOW;
+		ret = sx126x_hal_set_pa_config(dev, pa_duty_cycle, SX1261_HP_MAX,
+					       SX126X_DEVICE_SEL_SX1261,
+					       SX126X_PA_LUT);
+		if (ret < 0) {
+			return ret;
+		}
+		tx_power = CLAMP(power, SX1261_MIN_POWER, SX1261_MAX_POWER_TX_PARAM);
+	} else {
+		/* SX1262: High power PA, up to +22 dBm */
+		ret = sx126x_hal_set_pa_config(dev, SX1262_PA_DUTY_CYCLE,
+					       SX1262_HP_MAX,
+					       SX126X_DEVICE_SEL_SX1262,
+					       SX126X_PA_LUT);
+		if (ret < 0) {
+			return ret;
+		}
+		tx_power = CLAMP(power, SX1262_MIN_POWER, SX1262_MAX_POWER);
+	}
+
+	uint8_t buf[2] = { (uint8_t)tx_power, ramp_time };
+
+	return sx126x_hal_write_cmd(dev, SX126X_CMD_SET_TX_PARAMS, buf, 2);
 }
