@@ -6,6 +6,7 @@
  */
 
 #include <arm/armv6-m.dtsi>
+#include <freq.h>
 
 / {
 	cpus {
@@ -16,7 +17,13 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m0+";
 			reg = <0>;
-			clock-frequency = <48000000>;
+			/*
+			 * Frequency set to 24 MHz (CPU supports up to 48 MHz)
+			 * for accurate kernel timing
+			 *
+			 * Reference: PSOC4 TRM, Section 1.3.1
+			 */
+			clock-frequency = <DT_FREQ_M(24)>;
 		};
 	};
 
