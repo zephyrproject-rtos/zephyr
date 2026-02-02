@@ -8,6 +8,7 @@
 
 #include <nxp/nxp_rt118x_cm7.dtsi>
 #include "mimxrt1180_evk.dtsi"
+#include <freq.h>
 
 / {
 	model = "NXP MIMXRT1180-EVK board";
@@ -51,6 +52,10 @@
 		 */
 		status = "disabled";
 	};
+};
+
+&cpu1 {
+	clock-frequency = <DT_FREQ_M(792)>;
 };
 
 &lpuart12 {

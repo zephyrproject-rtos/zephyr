@@ -8,6 +8,7 @@
 
 #include <nxp/nxp_rt118x_cm33.dtsi>
 #include "mimxrt1180_evk.dtsi"
+#include <freq.h>
 
 / {
 	model = "NXP MIMXRT1180-EVK board";
@@ -61,6 +62,10 @@
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
 		status = "okay";
 	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(240)>;
 };
 
 &lpuart1 {

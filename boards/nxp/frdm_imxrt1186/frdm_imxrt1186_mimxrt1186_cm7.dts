@@ -9,6 +9,7 @@
 #include <nxp/nxp_rt118x_cm7.dtsi>
 #include <nxp/nxp_rt1186.dtsi>
 #include "frdm_imxrt1186.dtsi"
+#include <freq.h>
 
 / {
 	model = "NXP FRDM-iMXRT1186 board";
@@ -22,6 +23,10 @@
 		zephyr,shell-uart = &lpuart3;
 		zephyr,flash = &itcm;
 	};
+};
+
+&cpu1 {
+	clock-frequency = <DT_FREQ_M(792)>;
 };
 
 &lpuart3 {
