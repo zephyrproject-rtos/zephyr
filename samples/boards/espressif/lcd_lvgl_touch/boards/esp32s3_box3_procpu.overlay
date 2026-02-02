@@ -1,0 +1,85 @@
+/*
+ * Copyright (c) 2026 NotioNext Ltd.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flash0 {
+	/delete-node/ partitions;
+	
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(64)>;
+		};
+
+		sys_partition: partition@10000 {
+			label = "sys";
+			reg = <0x10000 DT_SIZE_K(64)>;
+		};
+
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x20000 DT_SIZE_K(4096)>;  /* Reduced from 5952KB to 4096KB */
+		};
+
+		slot1_partition: partition@420000 {
+			label = "image-1";
+			reg = <0x420000 DT_SIZE_K(4096)>; /* Reduced from 5952KB to 4096KB */
+		};
+
+		slot0_appcpu_partition: partition@820000 {
+			label = "image-0-appcpu";
+			reg = <0x820000 DT_SIZE_K(1024)>; /* Reduced from 1984KB to 1024KB */
+		};
+
+		slot1_appcpu_partition: partition@920000 {
+			label = "image-1-appcpu";
+			reg = <0x920000 DT_SIZE_K(1024)>; /* Reduced from 1984KB to 1024KB */
+		};
+
+		slot0_lpcore_partition: partition@a20000 {
+			label = "image-0-lpcore";
+			reg = <0xA20000 DT_SIZE_K(32)>;
+		};
+
+		slot1_lpcore_partition: partition@a28000 {
+			label = "image-1-lpcore";
+			reg = <0xA28000 DT_SIZE_K(32)>;
+		};
+
+		/* 2MB NVS Storage Partition */
+		storage_partition: partition@a30000 {
+			label = "storage";
+			reg = <0xA30000 DT_SIZE_K(2048)>; /* 2MB = 2048KB */
+		};
+
+		scratch_partition: partition@c30000 {
+			label = "image-scratch";
+			reg = <0xC30000 DT_SIZE_K(3776)>; /* Use remaining space for scratch */
+		};
+
+		coredump_partition: partition@fff000 {
+			label = "coredump";
+			reg = <0xFFF000 DT_SIZE_K(4)>;
+		};
+	};
+};
+
+/* Configure NVS to use the 2MB storage partition */
+/ {
+	fstab {
+		compatible = "zephyr,fstab";
+		nvs: nvs {
+			compatible = "zephyr,fstab,nvs";
+			mount-point = "/nvs";
+			partition = <&storage_partition>;
+			automount;
+			nvs-sector-size = <4096>;
+			nvs-sector-count = <512>; /* 2MB / 4KB = 512 sectors */
+		};
+	};
+};
