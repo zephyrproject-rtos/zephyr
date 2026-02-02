@@ -16,11 +16,9 @@ config SOC_MCXW727C
 	select HAS_PM
 
 config SOC_MCXW70AC
-	select NXP_MULTICORE if NXP_NBU
-
-config SOC_MCXW70AC
 	bool
 	select NXP_MCXW7XX_BOOT_HEADER if !BOOTLOADER_MCUBOOT
+	select NXP_MULTICORE if NXP_NBU
 
 config NXP_MCXW7XX_BOOT_HEADER
 	bool "Create boot header"
