@@ -1,0 +1,133 @@
+/*
+ * Copyright (c) 2023-2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <adi/max32/max32690-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Analog Devices MAX32690EVKIT";
+	compatible = "adi,max32690evkit";
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &m4_partition;
+	};
+
+	soc {
+		/*
+		 * Concatenate SRAM0 through SRAM7 for the M4
+		 */
+		m4_sram: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_M(1)>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		red_led: led_0 {
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+			label = "LED0";
+		};
+
+		green_led: led_1 {
+			gpios = <&gpio2 12 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		pb0: pb0 {
+			gpios = <&gpio4 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW2";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&clk_ipo {
+	status = "okay";
+};
+
+&clk_ibro {
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0a_scl_p2_8 &i2c0a_sda_p2_7>;
+	pinctrl-names = "default";
+};
+
+&rtc_counter {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		m4_partition: partition@0 {
+			label = "image-m4";
+			reg = <0x0 DT_SIZE_M(1)>;
+		};
+
+		storage_partition: partition@100000 {
+			label = "storage";
+			reg = <0x100000 DT_SIZE_K(64)>;
+		};
+	};
+};
+
+&flash1 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		rv32_partition: rv32_partition@0 {
+			label = "image-rv32";
+			reg = <0x0 DT_SIZE_K(192)>;
+		};
+
+		rv32_storage_partition: rv32_partition@30000 {
+			label = "rv32-storage";
+			reg = <0x30000 DT_SIZE_K(64)>;
+		};
+	};
+};
