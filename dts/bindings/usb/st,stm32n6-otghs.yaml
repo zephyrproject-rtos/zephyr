@@ -2,11 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  STM32N6 OTGHS controller
+  STM32 OTGHS controller without pinmux
 
-  In the STM32N6 series, the `pinctrl-0` and `pinctrl-names` properties are not required
-  for the USB OTG HS peripheral configuration. This is because the pin multiplexing
-  for the USB OTG HS peripheral are handled automatically by the hardware.
+  On series such as STM32N6, the `pinctrl-0` and `pinctrl-names` properties
+  are not needed as dedicated pins are reserved for USB communication.
 
 compatible: "st,stm32n6-otghs"
 
