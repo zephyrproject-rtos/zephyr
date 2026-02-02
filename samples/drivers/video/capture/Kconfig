@@ -78,6 +78,10 @@ config VIDEO_TRANSFORM
 	  If set, the video frame will go through some m2m transforms defined in
 	  transform_${CONFIG_VIDEO_TRANSFORM}.c
 
+if VIDEO_MCUX_JPEGDEC
+rsource "boards/Kconfig.nxp_jpegdec"
+endif
+
 endmenu
 
 source "Kconfig.zephyr"

@@ -1,0 +1,10 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_NXP_JPEGDEC_CSC
+	bool "Convert pixel format NV12 to RGB565"
+	default y
+	help
+	   Use software implemented CSC function to convert
+	   the NV12 pixel format to RGB565 for the display driver
+	   to use
