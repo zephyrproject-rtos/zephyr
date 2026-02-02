@@ -424,6 +424,23 @@
 				spi-max-frequency = <0>;
 				#io-channel-cells = <1>;
 			};
+
+			test_spi_ads1220: ads1220@24 {
+				compatible = "ti,ads1220";
+				reg = <0x24>;
+				spi-max-frequency = <4000000>;
+				drdy-gpios = <&test_gpio 0 0>;
+				#io-channel-cells = <1>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				channel@0 {
+					reg = <0>;
+					zephyr,gain = "ADC_GAIN_1";
+					zephyr,reference = "ADC_REF_INTERNAL";
+					zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+				};
+			};
 		};
 	};
 };
