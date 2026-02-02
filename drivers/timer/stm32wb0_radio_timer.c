@@ -32,10 +32,6 @@ LOG_MODULE_REGISTER(radio_timer_driver);
 BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(clk_lsi), disabled),
 	     "LSI is not supported yet");
 
-#if (defined(CONFIG_SOC_STM32WB06XX) || defined(CONFIG_SOC_STM32WB07XX)) && defined(CONFIG_PM)
-#error "PM is not supported yet for WB06/WB07"
-#endif /* (CONFIG_SOC_STM32WB06XX || CONFIG_SOC_STM32WB06XX) && CONFIG_PM */
-
 /* This value is only valid for the LSE with a frequency of 32768 Hz.
  * The implementation for the LSI will be done in the future.
  */

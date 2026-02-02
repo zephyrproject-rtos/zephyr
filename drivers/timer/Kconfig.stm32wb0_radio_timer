@@ -7,6 +7,7 @@ config STM32WB0_RADIO_TIMER
 	bool "STM32 Radio Timer for WB0x"
 	default y if PM || BT
 	depends on SOC_SERIES_STM32WB0X
+	depends on !((SOC_STM32WB06XX || SOC_STM32WB07XX) && PM) # Not supported yet
 	select USE_STM32_HAL_RADIO_TIMER
 	select HAS_STM32LIB
 	select TICKLESS_CAPABLE
