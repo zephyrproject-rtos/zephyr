@@ -38,6 +38,12 @@ config SOC_RA_SECOND_CORE_BUILD
 	help
 	  Indicates the image is built for the secondary core when enabled
 
+config SOC_RA_DYNAMIC_INTERRUPT_NUMBER
+	bool "Indicates the SoC supports dynamic interrupt number assignment"
+	help
+	  Indicates that the interrupt numbers are not fixed and can be assigned dynamically
+	  when the SoC selects this configuration
+
 config RENESAS_RA_BATTERY_BACKUP_MANUAL_CONFIGURE
 	bool "VBAT switching manual"
 	default y

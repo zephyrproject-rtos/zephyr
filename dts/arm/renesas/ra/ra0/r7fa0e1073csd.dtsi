@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <renesas/ra/ra0/r7fa0e10x.dtsi>
+
+/delete-node/ &ioport4;
+/delete-node/ &ioport9;
+
+&flash0 {
+	reg = <0x0 DT_SIZE_K(64)>;
+	erase-blocks = <&flash 32 2048>;
+};
+
+&ioport0 {
+	gpio-reserved-ranges = <0 10>, <14 2>;
+};
+
+&ioport1 {
+	gpio-reserved-ranges = <3 5>, <11 1>, <13 3>;
+};
+
+&ioport2 {
+	gpio-reserved-ranges = <2 4>, <7 5>, <14 2>;
+};
