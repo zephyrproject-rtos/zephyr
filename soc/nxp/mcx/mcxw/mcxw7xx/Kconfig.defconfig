@@ -69,4 +69,11 @@ config NXP_RF_IMU
 
 endif # IEEE802154
 
+if NXP_MCXW7XX_BOOT_HEADER
+
+config ROM_START_OFFSET
+	default 0x40 if SOC_MCXW70AC
+
+endif # NXP_MCXW7XX_BOOT_HEADER
+
 endif

@@ -1,4 +1,4 @@
-# Copyright 2025 NXP
+# Copyright 2025-2026 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -14,3 +14,14 @@ config SOC_MCXW716C
 config SOC_MCXW727C
 	bool
 	select NXP_MULTICORE if NXP_NBU
+
+config SOC_MCXW70AC
+	bool
+	select NXP_MCXW7XX_BOOT_HEADER if !BOOTLOADER_MCUBOOT
+
+config NXP_MCXW7XX_BOOT_HEADER
+	bool "Create boot header"
+	depends on !BOOTLOADER_MCUBOOT
+	help
+	  Create data structures required by the boot ROM to boot the
+	  application from flash.
