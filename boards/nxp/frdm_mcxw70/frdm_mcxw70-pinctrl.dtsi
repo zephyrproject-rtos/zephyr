@@ -22,6 +22,27 @@
 		};
 	};
 
+	pinmux_nbu_hdi: pinmux_nbu_hdi {
+		group0 {
+			pinmux = <HDI_PTB0>,
+					<HDI_PTB1>,
+					<HDI_PTB2>,
+					<HDI_PTB3>,
+					<HDI_PTB4>,
+					<HDI_PTB5>,
+					<HDI_PTC0>,
+					<HDI_PTC1>,
+					<HDI_PTC2>,
+					<HDI_PTC3>,
+					<HDI_PTC4>,
+					<HDI_PTC5>,
+					<HDI_PTC6>,
+					<HDI_PTC7>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
+
 	pinmux_tpm0: pinmux_tpm0 {
 		group0 {
 			pinmux = <TPM0_CH2_PTC7>;

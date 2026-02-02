@@ -40,6 +40,7 @@ config BT_BUF_EVT_RX_COUNT
 
 config BT_BUF_ACL_TX_COUNT
 	default 12 if SOC_MCXW727C
+	default 12 if SOC_MCXW70AC
 	default 8 if SOC_MCXW716C
 
 if SHELL

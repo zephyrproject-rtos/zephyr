@@ -184,6 +184,9 @@ __weak void clock_init(void)
 	CLOCK_SetIpSrc(kCLOCK_Flexio0, kCLOCK_IpSrcFro192M);
 	CLOCK_SetIpSrcDiv(kCLOCK_Flexio0, kSCG_SysClkDivBy6);
 #endif
+#ifdef CONFIG_SOC_MCXW70AC
+	CLOCK_EnableClock(kCLOCK_Tstmr0);
+#endif
 
 	/* Ungate clocks if the peripheral is enabled in devicetree */
 	if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpioa), nxp_kinetis_gpio, okay)) {

@@ -11,7 +11,11 @@
 
 #define PORT_MUX_GPIO kPORT_MuxAsGpio
 
+#if CONFIG_SOC_MCXW70AC
+#define nbu_handler MU0_IRQHandler
+#else
 #define nbu_handler RF_IMU0_IRQHandler
+#endif
 
 #undef NXP_ENABLE_WAKEUP_SIGNAL
 void mcxw7xx_set_wakeup(int32_t sig);

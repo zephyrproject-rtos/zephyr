@@ -451,14 +451,14 @@
 
 	nbu: nbu {
 		compatible = "nxp,nbu";
-		status = "disabled";
+		status = "okay";
 		interrupts = <92 2>;
 		interrupt-names = "nbu_rx_int";
 	};
 
 	hci: hci_ble {
 		compatible = "nxp,hci-ble";
-		status = "disabled";
+		status = "okay";
 	};
 
 	ieee802154: ieee802154 {

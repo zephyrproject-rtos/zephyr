@@ -15,3 +15,7 @@ config SOC_MCXW716C
 config SOC_MCXW727C_CPU0
 	bool
 	select NXP_MULTICORE if NXP_NBU
+
+config SOC_MCXW70AC
+	bool
+	select NXP_MULTICORE if NXP_NBU

@@ -46,6 +46,7 @@ if(CONFIG_SOC_SERIES_MCXW7XX)
         set(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.ot ON)
         set_variable_ifdef(CONFIG_SOC_MCXW727C_CPU0 CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.kw47_mcxw72)
         set_variable_ifdef(CONFIG_SOC_MCXW716C CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.kw45_k32w1_mcxw71)
+        set_variable_ifdef(CONFIG_SOC_MCXW70AC CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.kw43_mcxw70)
         zephyr_compile_definitions(
             gPlatformIcsUseWorkqueueRxProcessing_d=0
             gPlatformUseTimerManager_d=0
