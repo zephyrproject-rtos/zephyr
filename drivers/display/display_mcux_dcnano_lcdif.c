@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 NXP
+ * Copyright 2023-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -141,19 +141,54 @@ static void mcux_dcnano_lcdif_get_capabilities(const struct device *dev,
 
 	capabilities->y_resolution = config->dpi_config.panelHeight;
 	capabilities->x_resolution = config->dpi_config.panelWidth;
+#if DT_ENUM_IDX_OR(DT_NODELABEL(lcdif), version, 0) == 1
+	capabilities->supported_pixel_formats = (PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_ARGB_8888 |
+		PIXEL_FORMAT_RGB_888 | PIXEL_FORMAT_BGR_888 | PIXEL_FORMAT_ABGR_8888 |
+		PIXEL_FORMAT_RGBA_8888 | PIXEL_FORMAT_BGRA_8888);
+#else
 	capabilities->supported_pixel_formats = (PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_ARGB_8888);
+#endif
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
+
 	switch (data->fb_config.format) {
 	case kLCDIF_PixelFormatRGB565:
 		capabilities->current_pixel_format = PIXEL_FORMAT_RGB_565;
 		break;
 #if DT_ENUM_IDX_OR(DT_NODELABEL(lcdif), version, 0) == 1
+	case kLCDIF_PixelFormatRGB888:
+		switch (data->fb_config.inOrder) {
+		case kLCDIF_PixelInputOrderARGB:
+			capabilities->current_pixel_format = PIXEL_FORMAT_RGB_888;
+			break;
+		case kLCDIF_PixelInputOrderABGR:
+			capabilities->current_pixel_format = PIXEL_FORMAT_BGR_888;
+			break;
+		default:
+			/* Other LCDIF formats don't have a Zephyr enum yet */
+			break;
+		}
+		break;
 	case kLCDIF_PixelFormatARGB8888:
+		switch (data->fb_config.inOrder) {
+		case kLCDIF_PixelInputOrderABGR:
+			capabilities->current_pixel_format = PIXEL_FORMAT_ABGR_8888;
+			break;
+		case kLCDIF_PixelInputOrderRGBA:
+			capabilities->current_pixel_format = PIXEL_FORMAT_RGBA_8888;
+			break;
+		case kLCDIF_PixelInputOrderBGRA:
+			capabilities->current_pixel_format = PIXEL_FORMAT_BGRA_8888;
+			break;
+		default:
+			/* Other LCDIF formats don't have a Zephyr enum yet */
+			break;
+		}
+		break;
 #else
 	case kLCDIF_PixelFormatXRGB8888:
-#endif
 		capabilities->current_pixel_format = PIXEL_FORMAT_ARGB_8888;
 		break;
+#endif
 	default:
 		/* Other LCDIF formats don't have a Zephyr enum yet */
 		return;
@@ -196,11 +231,39 @@ static int mcux_dcnano_lcdif_set_pixel_format(const struct device *dev,
 	case PIXEL_FORMAT_ARGB_8888:
 #if DT_ENUM_IDX_OR(DT_NODELABEL(lcdif), version, 0) == 1
 		data->fb_config.format = kLCDIF_PixelFormatARGB8888;
+		data->fb_config.inOrder = kLCDIF_PixelInputOrderARGB;
 #else
 		data->fb_config.format = kLCDIF_PixelFormatXRGB8888;
 #endif
 		data->pixel_bytes = 4;
 		break;
+#if DT_ENUM_IDX_OR(DT_NODELABEL(lcdif), version, 0) == 1
+	case PIXEL_FORMAT_RGB_888:
+		data->fb_config.format = kLCDIF_PixelFormatRGB888;
+		data->fb_config.inOrder = kLCDIF_PixelInputOrderARGB;
+		data->pixel_bytes = 3;
+		break;
+	case PIXEL_FORMAT_BGR_888:
+		data->fb_config.format = kLCDIF_PixelFormatRGB888;
+		data->fb_config.inOrder = kLCDIF_PixelInputOrderABGR;
+		data->pixel_bytes = 3;
+		break;
+	case PIXEL_FORMAT_ABGR_8888:
+		data->fb_config.format = kLCDIF_PixelFormatARGB8888;
+		data->fb_config.inOrder = kLCDIF_PixelInputOrderABGR;
+		data->pixel_bytes = 4;
+		break;
+	case PIXEL_FORMAT_RGBA_8888:
+		data->fb_config.format = kLCDIF_PixelFormatARGB8888;
+		data->fb_config.inOrder = kLCDIF_PixelInputOrderRGBA;
+		data->pixel_bytes = 4;
+		break;
+	case PIXEL_FORMAT_BGRA_8888:
+		data->fb_config.format = kLCDIF_PixelFormatARGB8888;
+		data->fb_config.inOrder = kLCDIF_PixelInputOrderBGRA;
+		data->pixel_bytes = 4;
+		break;
+#endif
 	default:
 		return -ENOTSUP;
 	}
@@ -212,6 +275,9 @@ static int mcux_dcnano_lcdif_set_pixel_format(const struct device *dev,
 	data->pitch_bytes = ROUND_UP((config->dpi_config.panelWidth * data->pixel_bytes),
 						MCUX_DCNANO_LCDIF_FB_PITCH_ALIGN);
 	data->fb_bytes = data->pitch_bytes * config->dpi_config.panelHeight;
+
+	/* Clear the framebuffer since the frame size may be larger. */
+	memset(config->fb_ptr, 0, data->fb_bytes * CONFIG_MCUX_DCNANO_LCDIF_FB_NUM);
 
 	return 0;
 }
