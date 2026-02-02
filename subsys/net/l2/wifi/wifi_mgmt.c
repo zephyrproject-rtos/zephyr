@@ -412,7 +412,8 @@ static int wifi_connect(uint64_t mgmt_request, struct net_if *iface,
 	}
 
 	if (params->sae_password_length &&
-	    (params->sae_password_length < 8 || params->sae_password_length > 64)) {
+	    (params->sae_password_length < 8 ||
+	     params->sae_password_length > WIFI_SAE_PSWD_MAX_LEN)) {
 		return -EINVAL;
 	}
 
