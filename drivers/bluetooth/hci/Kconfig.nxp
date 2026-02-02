@@ -34,6 +34,7 @@ config HCI_NXP_SET_CAL_DATA
 config HCI_NXP_SET_CAL_DATA_ANNEX100
 	bool "Bluetooth Controller calibration data annex 100"
 	default y if BT_NXP_NW612 || BT_NXP_IW416
+	depends on HCI_NXP_SET_CAL_DATA
 	help
 	  If enabled, the Host will send calibration data annex 100 to the Bluetooth Controller during HCI
 	  init.
@@ -60,6 +61,24 @@ config HEAP_MEM_POOL_ADD_SIZE_BT_NXP_RX_THREAD
 	default 768
 
 endif
+
+choice HCI_NXP_ANT_DIVERSITY
+	bool "Antenna diversity configuration"
+	default HCI_NXP_ANT_DIVERSITY_ANT1
+	depends on HCI_NXP_SET_CAL_DATA_ANNEX100
+
+	config HCI_NXP_ANT_DIVERSITY_ANT1
+		bool "ANT1 diversity (shared with annex100)"
+
+	config HCI_NXP_ANT_DIVERSITY_ANT2
+		bool "ANT2 diversity with external FEM (ble only case)"
+
+	config HCI_NXP_ANT_DIVERSITY_ANT3
+		bool "ANT3 diversity (with annex100)"
+
+	config HCI_NXP_ANT_DIVERSITY_ANT4
+		bool "ANT4 diversity (with annex100)"
+endchoice
 
 if BT_NXP
 
