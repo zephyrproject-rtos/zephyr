@@ -183,6 +183,9 @@
 /* TX Clamp Config (workaround for SX1262) */
 #define SX126X_REG_TX_CLAMP_CFG             0x08D8
 
+/* Over Current Protection */
+#define SX126X_REG_OCP                      0x08E7
+
 /* IQ Polarity (workaround) */
 #define SX126X_REG_IQ_POLARITY              0x0736
 
