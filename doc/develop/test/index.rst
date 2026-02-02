@@ -13,3 +13,4 @@ Testing
    pytest
    coverage
    BabbleSim<bsim>
+   bluetooth_classic_sim
