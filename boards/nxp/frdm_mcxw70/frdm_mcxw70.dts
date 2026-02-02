@@ -26,8 +26,8 @@
 		zephyr,flash-controller = &fmu;
 		zephyr,code-partition = &code_partition;
 		zephyr,sram = &stcm0;
-		zephyr,console = &lpuart1;
-		zephyr,shell-uart = &lpuart1;
+		zephyr,console = &lpuart0;
+		zephyr,shell-uart = &lpuart0;
 		zephyr,uart-pipe = &lpuart0;
 		zephyr,bt-c2h-uart = &lpuart0;
 	};
@@ -109,8 +109,13 @@ lpuart0: &lpuart_0 {
 
 lpuart1: &lpuart_1 {
 	current-speed = <115200>;
-	status = "okay";
+	status = "disabled";
 	pinctrl-0 = <&pinmux_lpuart1>;
+	pinctrl-names = "default";
+};
+
+nbu: &nbu {
+	pinctrl-0 = <&pinmux_nbu_hdi>;
 	pinctrl-names = "default";
 };
 
