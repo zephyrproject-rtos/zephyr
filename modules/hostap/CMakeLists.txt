@@ -394,6 +394,10 @@ zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
   CONFIG_OFFCHANNEL
 )
 
+zephyr_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+  MAX_PROV_DISC_REQ_RETRIES=${CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P_PROV_DISC_REQ_RETRIES}
+)
+
 zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_WPS
   CONFIG_WPS
   EAP_WSC
