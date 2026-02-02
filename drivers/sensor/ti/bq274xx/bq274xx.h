@@ -16,6 +16,7 @@
 #define BQ274XX_UNSEAL_KEY_B 0x8000 /* Unseal code two on BQ27441-G1A and similar */
 #define BQ27421_DEVICE_ID  0x0421
 #define BQ27427_DEVICE_ID  0x0427
+#define BQ27426_DEVICE_ID  0x0426
 
 /*** Standard Commands ***/
 #define BQ274XX_CMD_CONTROL        0x00 /* Control() register */

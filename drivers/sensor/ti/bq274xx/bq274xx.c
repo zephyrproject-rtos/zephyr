@@ -411,6 +411,10 @@ static int bq274xx_gauge_configure(const struct device *dev)
 			data->regs = &bq27421_regs;
 		} else if (id == BQ27427_DEVICE_ID) {
 			data->regs = &bq27427_regs;
+        } else if (id == BQ27426_DEVICE_ID) {
+			/* BQ27426 shares the same DM layout as BQ27427 */
+			LOG_INF("Detected BQ27426, using BQ27427 register map");
+			data->regs = &bq27427_regs;
 		} else {
 			LOG_ERR("Unsupported device ID: 0x%04x", id);
 			return -ENOTSUP;
