@@ -1,0 +1,24 @@
+# Copyright NXP 2026
+# SPDX-License-Identifier: Apache-2.0
+
+config AUXDISPLAY_MCUX_SLCD
+	bool "NXP MCUX SLCD segment LCD"
+	default y
+	depends on DT_HAS_NXP_SLCD_ENABLED
+	select PINCTRL
+
+if AUXDISPLAY_MCUX_SLCD
+
+choice
+	prompt "MCUX SLCD LCD design"
+	default AUXDISPLAY_MCUX_SLCD_LCD_S401M16KR
+
+config AUXDISPLAY_MCUX_SLCD_LCD_S401M16KR
+	bool "LCD-S401M16KR"
+
+config AUXDISPLAY_MCUX_SLCD_LCD_OD_6010
+	bool "OD-6010"
+
+endchoice
+
+endif # AUXDISPLAY_MCUX_SLCD

@@ -125,7 +125,11 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 #endif
 	}
 #endif
-
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(auxdisplay0), okay)
+	if ((uint32_t)sub_system == MCUX_SLCD0_CLK) {
+		CLOCK_EnableClock(kCLOCK_GateSLCD0);
+	}
+#endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(rtc), okay)
 #if defined(CONFIG_SOC_SERIES_IMXRT5XX) || defined(CONFIG_SOC_SERIES_IMXRT6XX)
 	CLOCK_EnableOsc32K(true);
@@ -704,6 +708,12 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(micfil))
 	case MCUX_MICFIL_CLK:
 		*rate = CLOCK_GetMicfilClkFreq();
+		break;
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(auxdisplay0))
+	case MCUX_SLCD0_CLK:
+		*rate = CLOCK_GetFreq(kCLOCK_Fro16K);
 		break;
 #endif
 	}
