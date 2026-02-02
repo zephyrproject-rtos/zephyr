@@ -3,6 +3,8 @@
 
 if(CONFIG_SOC_R7KA8D2KFLCAC_CM85)
  board_runner_args(jlink "--device=R7KA8D2KF_CPU0" "--reset-after-load")
+else()
+ board_runner_args(jlink "--device=R7KA8D2KF_CPU1")
 endif()
 
 board_runner_args(pyocd "--target=R7KA8D2KF")
