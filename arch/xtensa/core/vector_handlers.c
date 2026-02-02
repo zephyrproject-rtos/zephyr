@@ -33,7 +33,6 @@ extern void xtensa_lazy_hifi_load(uint8_t *regs);
 static struct k_spinlock coprocessor_lock;
 #endif
 
-
 bool xtensa_is_outside_stack_bounds(uintptr_t addr, size_t sz, uint32_t ps)
 {
 	uintptr_t start, end;
@@ -242,6 +241,8 @@ static void print_fatal_exception(void *print_stack, bool is_dblexc, uint32_t de
 	 */
 	if (xtensa_is_outside_stack_bounds((uintptr_t)bsa, sizeof(*bsa), UINT32_MAX)) {
 		EXCEPTION_DUMP(" ** VADDR %p Invalid SP %p", (void *)bsa->excvaddr, print_stack);
+		/* Do not waste hook bandwidth on broken records. */
+		call_exception_drain_hook(false);
 		return;
 	}
 
@@ -690,6 +691,8 @@ skip_checks:
 		if (reason != K_ERR_KERNEL_OOPS) {
 			print_fatal_exception(print_stack, is_dblexc, depc);
 		}
+
+
 #ifdef CONFIG_XTENSA_EXCEPTION_ENTER_GDB
 		extern void z_gdb_isr(struct arch_esf *esf);
 		z_gdb_isr((void *)print_stack);

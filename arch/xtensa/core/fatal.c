@@ -106,6 +106,7 @@ void xtensa_fatal_error(unsigned int reason, const struct arch_esf *esf)
 	}
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
+	call_exception_drain_hook(false);
 	z_fatal_error(reason, esf);
 }
 
