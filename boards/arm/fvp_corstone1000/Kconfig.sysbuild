@@ -1,0 +1,25 @@
+# Copyright (c) 2026 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_FVP_CORSTONE1000
+
+config CORSTONE1000_TFM_DEBUG
+	bool "Build TF-M in debug mode"
+	default y
+	help
+	  Build TF-M with debug configuration.
+
+config CORSTONE1000_TFM_LOG_LEVEL
+	int "TF-M log level (0=NONE, 1=ERROR, 2=WARNING, 3=INFO, 4=DEBUG)"
+	default 3
+	range 0 4
+	help
+	  Set the log level for TF-M BL1 and MCUboot BL2.
+	  DEBUG is very verbose and significantly slows boot.
+
+config CORSTONE1000_TFA_DEBUG
+	bool "Build TF-A in debug mode"
+	help
+	  Build TF-A with debug configuration.
+
+endif # BOARD_FVP_CORSTONE1000
