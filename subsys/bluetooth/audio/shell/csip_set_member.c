@@ -289,6 +289,7 @@ static int cmd_csip_set_member_get_info(const struct shell *sh, size_t argc, cha
 	return 0;
 }
 
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT)
 static int cmd_csip_set_member_lock(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
@@ -330,6 +331,7 @@ static int cmd_csip_set_member_release(const struct shell *sh, size_t argc,
 
 	return 0;
 }
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT */
 
 static int cmd_csip_set_member_sirk_rsp(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -362,8 +364,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Initialize the service and register callbacks "
 		      "[size <int>] [rank <int>] [not-lockable] [sirk <data>]",
 		      cmd_csip_set_member_register, 1, 4),
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT)
 	SHELL_CMD_ARG(lock, NULL, "Lock the set", cmd_csip_set_member_lock, 1, 0),
 	SHELL_CMD_ARG(release, NULL, "Release the set [force]", cmd_csip_set_member_release, 1, 1),
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT */
 	SHELL_CMD_ARG(sirk, NULL, "Set the currently used SIRK <sirk>", cmd_csip_set_member_sirk, 2,
 		      0),
 	SHELL_CMD_ARG(set_size_and_rank, NULL, "Set the currently used size and rank <size> <rank>",
