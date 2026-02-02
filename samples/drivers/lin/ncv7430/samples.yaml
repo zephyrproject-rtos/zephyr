@@ -1,0 +1,13 @@
+sample:
+  name: LIN driver NCV7430 sample
+tests:
+  sample.drivers.lin.ncv7430:
+    tags: lin
+    depends_on: lin
+    integration_platforms:
+      - ek_ra8m1/r7fa8m1ahecbd
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "NCV7430 sample started"

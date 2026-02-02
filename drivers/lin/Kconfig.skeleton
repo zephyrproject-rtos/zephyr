@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config LIN_SKELETON
+	bool "LIN Skeleton Driver"
+	default y
+	depends on DT_HAS_ZEPHYR_LIN_SKELETON_ENABLED
+	help
+	  Enable the LIN Skeleton driver for testing and development purposes.
+	  This is a minimal implementation that does not interact with real hardware.
+	  It is intended for use in simulation or as a template for developing new LIN drivers.
