@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		adc = &adc0;
+	};
+};
+
+&adc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	/* ADC clock = GCLK / prescaler (60 MHz / 16 = 3.75 MHz) */
+	prescaler = <16>;
+	status = "okay";
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <MCHP_ADC_AIN1>; /* J501 Pin - 1 (ADC+) */
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <2400>;
+	};
+};
