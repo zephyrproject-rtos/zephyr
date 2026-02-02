@@ -44,10 +44,6 @@ zephyr_library_sources_ifdef(
   tbs_client.c
   )
 zephyr_library_sources_ifdef(
-  CONFIG_BT_MPL
-  mpl.c
-  )
-zephyr_library_sources_ifdef(
   CONFIG_BT_MCC
   mcc.c
   )
