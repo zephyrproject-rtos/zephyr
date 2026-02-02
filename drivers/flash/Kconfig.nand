@@ -1,0 +1,24 @@
+# Copyright (c) 2025 Embeint Pty Ltd
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SPI_NAND
+	bool "SPI NAND Flash"
+	default y
+	depends on DT_HAS_JEDEC_SPI_NAND_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
+	select FLASH_HAS_PAGE_LAYOUT
+	select SPI
+	select CRC
+
+if SPI_NAND
+
+config SPI_NAND_INIT_PRIORITY
+	int "Init priority"
+	default 80
+	help
+	  Device driver initialization priority. Device is connected to
+	  SPI bus, it has to be initialized after SPI driver.
+
+endif # SPI_NAND
