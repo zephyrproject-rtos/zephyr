@@ -302,6 +302,12 @@ Bluetooth Audio
     ``BT_TBS_TECHNOLOGY`` to ``BT_BEARER_TECH``. Additionally the values are now defined in
     :zephyr_file:`include/zephyr/bluetooth/assigned_numbers.h` instead of
     :zephyr_file:`include/zephyr/bluetooth/audio/tbs.h`. (:github:`102430`)
+  * ``bt_tbs_register_param.supported_features`` has been renamed to
+    :c:member:`bt_tbs_register_param.optional_opcodes`. Applications can do a simple
+    search-and-replace for ``supported_features`` to ``optional_opcodes``.
+    Additionally the ``BT_TBS_FEATURE_*`` macros have been changed to ``BT_TBS_OPTIONAL_OPCODE_*``.
+    Applications can do a simple search-and-replace for ``BT_TBS_FEATURE_`` to
+    ``BT_TBS_OPTIONAL_OPCODE_``. (:github:`103350`)
 
 * CSIP
 
