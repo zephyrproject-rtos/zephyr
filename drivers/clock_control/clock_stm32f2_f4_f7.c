@@ -60,27 +60,27 @@ BUILD_ASSERT(STM32_PLLI2S_M_DIVISOR == STM32_PLLSAI_M_DIVISOR,
  */
 #if defined(STM32_PLL_ENABLED) && defined(RCC_DCKCFGR_PLLDIVR)
 BUILD_ASSERT(STM32_PLL_R_ENABLED == STM32_PLL_POST_R_ENABLED,
-	     "For the PLL, both div-r and post-divr must be present if one of them is present");
+	     "For the PLL, both div-r and post-div-r must be present if one of them is present");
 #endif /* STM32_PLL_ENABLED && RCC_DCKCFGR_PLLDIVR */
 
 #if defined(STM32_PLLI2S_ENABLED) && defined(RCC_DCKCFGR_PLLI2SDIVQ)
 BUILD_ASSERT(STM32_PLLI2S_Q_ENABLED == STM32_PLLI2S_POST_Q_ENABLED,
-	     "For the PLLI2S, both div-q and post-divq must be present if one of them is present");
+	     "For the PLLI2S, both div-q and post-div-q must be present if one of them is present");
 #endif /* STM32_PLLI2S_ENABLED && RCC_DCKCFGR_PLLI2SDIVQ */
 
 #if defined(STM32_PLLI2S_ENABLED) && defined(RCC_DCKCFGR_PLLI2SDIVR)
 BUILD_ASSERT(STM32_PLLI2S_R_ENABLED == STM32_PLLI2S_POST_R_ENABLED,
-	     "For the PLLI2S, both div-r and post-divr must be present if one of them is present");
+	     "For the PLLI2S, both div-r and post-div-r must be present if one of them is present");
 #endif /* STM32_PLLI2S_ENABLED && RCC_DCKCFGR_PLLI2SDIVR */
 
 #if defined(STM32_PLLSAI_ENABLED)
 BUILD_ASSERT(STM32_PLLSAI_Q_ENABLED == STM32_PLLSAI_POST_Q_ENABLED,
-	     "For the PLLSAI, both div-q and post-divq must be present if one of them is present");
+	     "For the PLLSAI, both div-q and post-div-q must be present if one of them is present");
 #endif /* STM32_PLLSAI_ENABLED */
 
 #if defined(STM32_PLLSAI_ENABLED) && defined(RCC_PLLSAICFGR_PLLSAIR)
 BUILD_ASSERT(STM32_PLLSAI_R_ENABLED == STM32_PLLSAI_POST_R_ENABLED,
-	     "For the PLLSAI, both div-r and post-divr must be present if one of them is present");
+	     "For the PLLSAI, both div-r and post-div-r must be present if one of them is present");
 #endif /* STM32_PLLSAI_ENABLED && RCC_PLLSAICFGR_PLLSAIR */
 
 #ifdef STM32_PLL_ENABLED
