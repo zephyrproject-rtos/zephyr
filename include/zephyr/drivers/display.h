@@ -143,6 +143,76 @@ enum display_pixel_format {
 	 * @endcode
 	 */
 	PIXEL_FORMAT_AL_88		= BIT(7), /**< 8-bit Grayscale/Luminance with alpha */
+
+	/**
+	 * 24-bit BGR format with 8 bits per component.
+	 *
+	 * Below shows how data are organized in memory.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   Byte 1   Byte 2
+	 *   7......0 15.....8 23....16
+	 * | Rrrrrrrr Gggggggg Bbbbbbbb | ...
+	 * @endcode
+	 *
+	 */
+	PIXEL_FORMAT_BGR_888		= BIT(8), /**< 24-bit BGR */
+
+	/**
+	 * 32-bit RGB format with 8 bits per component and 8 bits for padding.
+	 *
+	 * Below shows how data are organized in memory.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   Byte 1   Byte 2   Byte 3
+	 *   7......0 15.....8 23....16 31....24
+	 * | Bbbbbbbb Gggggggg Rrrrrrrr Xxxxxxxx | ...
+	 * @endcode
+	 *
+	 */
+	PIXEL_FORMAT_XRGB_8888		= BIT(9), /**< 32-bit XRGB */
+
+	/**
+	 * 32-bit BGR format with 8 bits per component and 8 bits for alpha.
+	 *
+	 * Below shows how data are organized in memory.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   Byte 1   Byte 2   Byte 3
+	 *   7......0 15.....8 23....16 31....24
+	 * | Rrrrrrrr Gggggggg Bbbbbbbb Aaaaaaaa | ...
+	 * @endcode
+	 *
+	 */
+	PIXEL_FORMAT_ABGR_8888		= BIT(10), /**< 32-bit ABGR */
+
+	/**
+	 * 32-bit RGB format with 8 bits per component and 8 bits for alpha.
+	 *
+	 * Below shows how data are organized in memory.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   Byte 1   Byte 2   Byte 3
+	 *   7......0 15.....8 23....16 31....24
+	 * | Aaaaaaaa Bbbbbbbb Gggggggg Rrrrrrrr | ...
+	 * @endcode
+	 *
+	 */
+	PIXEL_FORMAT_RGBA_8888		= BIT(11), /**< 32-bit RGBA */
+
+	/**
+	 * 32-bit BGR format with 8 bits per component and 8 bits for alpha.
+	 *
+	 * Below shows how data are organized in memory.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   Byte 1   Byte 2   Byte 3
+	 *   7......0 15.....8 23....16 31....24
+	 * | Aaaaaaaa Rrrrrrrr Gggggggg Bbbbbbbb | ...
+	 * @endcode
+	 *
+	 */
+	PIXEL_FORMAT_BGRA_8888		= BIT(12), /**< 32-bit BGRA */
 };
 
 /**
