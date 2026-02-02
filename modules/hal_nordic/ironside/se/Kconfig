@@ -50,12 +50,26 @@ endif # IRONSIDE_SE_DVFS
 menuconfig NRF_PERIPHCONF_SECTION
 	bool "Global peripheral initialization section"
 	depends on LINKER_DEVNULL_SUPPORT
-	imply LINKER_DEVNULL_MEMORY
 	help
 	  Include static global domain peripheral initialization values from the
-	  build in a dedicated section in the devnull region.
+	  build in a dedicated section. The section is either stripped from the
+	  firmware binary or kept as constant data, depending on how it will be
+	  loaded at runtime.
 
 if NRF_PERIPHCONF_SECTION
+
+config NRF_PERIPHCONF_SECTION_STRIP
+	bool "Strip the section from the binary"
+	default y if !NRF_PERIPHCONF_SECTION_KEEP_BY_DEFAULT
+	imply LINKER_DEVNULL_MEMORY
+	help
+	  Strip the PERIPHCONF section from the firmware binary.
+	  If the UICR generator image is enabled, it will include the stripped section
+	  in the generated UICR PERIPHCONF blob.
+
+	  When this is disabled, the PERIPHCONF section will remain as data in the binary,
+	  and will not included in the UICR PERIPHCONF blob. Instead, it is expected that
+	  it will be loaded via the ironside_se_periphconf_write() API.
 
 config NRF_PERIPHCONF_GENERATE_ENTRIES
 	bool "Generate PERIPHCONF entries source file"
@@ -73,5 +87,12 @@ config NRF_PERIPHCONF_GENERATE_ENTRIES_LOCK
 	  Disable this to allow the registers to be reconfigured after boot.
 
 endif # NRF_PERIPHCONF_SECTION
+
+config NRF_PERIPHCONF_SECTION_KEEP_BY_DEFAULT
+	bool "Keep the PERIPHCONF section by default (set by build system)"
+	help
+	  This is set from Sysbuild to change the default behavior for the image so that
+	  CONFIG_NRF_PERIPHCONF_SECTION_STRIP=n unless explicitly configured otherwise.
+	  To override this behavior, set CONFIG_NRF_PERIPHCONF_SECTION_STRIP=y directly.
 
 endmenu # IronSide SE
