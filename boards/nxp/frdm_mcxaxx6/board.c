@@ -320,6 +320,10 @@ void board_early_init_hook(void)
 	CLOCK_EnableUsbfsClock();
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_slcd)
+	CLOCK_SetupFRO16KClocking(kCLKE_16K_COREMAIN);
+	RESET_PeripheralReset(kSLCD0_RST_SHIFT_RSTn);
+#endif
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 }

@@ -15,6 +15,7 @@ toolchain:
   - gnuarmemb
 supported:
   - adc
+  - auxdisplay
   - counter
   - flash
   - gpio
@@ -26,6 +27,7 @@ supported:
   - watchdog
   - dma
   - dac
+  - slcd
 testing:
   ignore_tags:
     - net

@@ -136,4 +136,28 @@
 			input-enable;
 		};
 	};
+
+	pinmux_slcd: pinmux_slcd {
+		group0 {
+			/* slcd_design.txt mapping: COM0..3 and D0..7 */
+			pinmux = <LCD_P28_P0_24>, /* COM1 */
+				 <LCD_P29_P0_25>, /* COM2 */
+				 <LCD_P30_P0_26>, /* COM3 */
+				 <LCD_P31_P0_27>, /* COM4 */
+				 <LCD_P16_P0_12>,  /* D0 */
+				 <LCD_P17_P0_13>,  /* D1 */
+				 <LCD_P18_P0_14>,  /* D2 */
+				 <LCD_P19_P0_15>,  /* D3 */
+				 <LCD_P20_P0_16>,  /* D4 */
+				 <LCD_P21_P0_17>,  /* D5 */
+				 <LCD_P22_P0_18>,  /* D6 */
+				 <LCD_P23_P0_19>,  /* D7 */
+				 <LCD_P24_P0_20>,  /* D8 */
+				 <LCD_P25_P0_21>,  /* D9 */
+				 <LCD_P26_P0_22>,  /* D10 */
+				 <LCD_P27_P0_23>;  /* D11 */
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
 };
