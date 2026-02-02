@@ -2511,7 +2511,7 @@ static int flash_stm32_xspi_init(const struct device *dev)
 		.requires_ulbpr = DT_INST_PROP_OR(inst, requires_ulbpr, 0),			\
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, reset_gpios), (				\
 			.reset = GPIO_DT_SPEC_INST_GET(0, reset_gpios),				\
-			.reset_gpios_duration = DT_INST_PROP(inst, reset_gpios_duration),	\
+			.reset_gpios_duration = DT_INST_PROP_OR(inst, reset_gpios_duration, 1),	\
 		))										\
 	};											\
 												\
