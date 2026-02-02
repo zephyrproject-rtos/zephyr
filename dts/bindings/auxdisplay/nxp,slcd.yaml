@@ -1,0 +1,227 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP MCUX Segment LCD (SLCD) controller used as segment-style
+  auxiliary display.
+
+compatible: "nxp,slcd"
+
+include:
+  - auxdisplay-device.yaml
+  - pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  com-pins:
+    type: uint8-array
+    required: true
+    description: LCD pin indices for COM0..COM7 (backplanes).
+
+  d-pins:
+    type: uint8-array
+    required: true
+    description: LCD pin indices for D0..D62 (frontplanes).
+
+  clk-cfg-src:
+    type: string
+    description: |
+      clk src selection(depends on SOC):
+        - SLCD_CLK_ERCLK32K map to kSLCD_DefaultClk
+        - SLCD_CLK_MCGIRCLK map to kSLCD_AlternateClk1
+        - TBD map to 2
+        - SLCD_CLK_OSCERCLK map to kSLCD_AlternateClk2
+    enum:
+      - "SLCD_CLK_ERCLK32K"
+      - "SLCD_CLK_MCGIRCLK"
+      - "TBD"
+      - "SLCD_CLK_OSCERCLK"
+
+  low-power-wf:
+    type: boolean
+    description: LCD Low Power WaveformLCD(depends on SOC)
+
+  clk-cfg-div:
+    type: int
+    description: |
+      LCD clock divider
+    enum: [1, 64, 256, 512]
+
+  clk-cfg-prescaler:
+    type: int
+    required: true
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    default: 0
+    description: |
+      LCD clock prescaler 0-7
+
+  clk-cfg-fastrate:
+    type: boolean
+    description: |
+      LCD fastrate enable
+
+  slcd-duty-cycle:
+    type: string
+    required: true
+    description: |
+      slcd duty cycle:
+        - kSLCD_1Div1DutyCycle
+        - kSLCD_1Div2DutyCycle
+        - kSLCD_1Div3DutyCycle
+        - kSLCD_1Div4DutyCycle
+        - kSLCD_1Div5DutyCycle
+        - kSLCD_1Div6DutyCycle
+        - kSLCD_1Div7DutyCycle
+        - kSLCD_1Div8DutyCycle
+    enum:
+      - "kSLCD_1Div1DutyCycle"
+      - "kSLCD_1Div2DutyCycle"
+      - "kSLCD_1Div3DutyCycle"
+      - "kSLCD_1Div4DutyCycle"
+      - "kSLCD_1Div5DutyCycle"
+      - "kSLCD_1Div6DutyCycle"
+      - "kSLCD_1Div7DutyCycle"
+      - "kSLCD_1Div8DutyCycle"
+
+  load-adjust-mode:
+    type: string
+    description: |
+      LCD glass capacitance or
+      configure the LCD charge pump clock source:
+        - kSLCD_LowLoadOrFastestClkSrc
+        - kSLCD_LowLoadOrIntermediateClkSrc
+        - kSLCD_HighLoadOrIntermediateClkSrc
+        - kSLCD_HighLoadOrSlowestClkSrc
+    enum:
+      - "kSLCD_LowLoadOrFastestClkSrc"
+      - "kSLCD_LowLoadOrIntermediateClkSrc"
+      - "kSLCD_HighLoadOrIntermediateClkSrc"
+      - "kSLCD_HighLoadOrSlowestClkSrc"
+
+  display-mode:
+    type: string
+    description: |
+      Display mode
+      configure the LCD display mode:
+        - kSLCD_NormalMode (default)
+        - kSLCD_AlternateMode
+        - kSLCD_BlankMode
+    enum:
+      - "kSLCD_NormalMode"
+      - "kSLCD_AlternateMode"
+      - "kSLCD_BlankMode"
+
+  low-power-behavior:
+    type: string
+    description: |
+      SLCD behavior
+      configure SLCD behavior in low power(SOC depends):
+        - kSLCD_EnabledInWaitStop
+        - kSLCD_EnabledInWaitOnly
+        - kSLCD_EnabledInStopOnly
+        - kSLCD_DisabledInWaitStop
+    enum:
+      - "kSLCD_EnabledInWaitStop"
+      - "kSLCD_EnabledInWaitOnly"
+      - "kSLCD_EnabledInStopOnly"
+      - "kSLCD_DisabledInWaitStop"
+
+  voltage-trim-vll1:
+    type: string
+    description: |
+      SLCD regulated voltage trim parameter
+      SLCD regulated voltage trim parameter(SOC depends):
+        - kSLCD_VolatgeTrimNo
+        - kSLCD_VolatgeTrimIncrease50mV
+        - kSLCD_VolatgeTrimIncrease100mV
+        - kSLCD_VolatgeTrimIncrease150mV
+        - kSLCD_VolatgeTrimIncrease200mV
+        - kSLCD_VolatgeTrimIncrease250mV
+        - kSLCD_VolatgeTrimIncrease300mV
+        - kSLCD_VolatgeTrimIncrease350mV
+        - kSLCD_VolatgeTrimDecrease400mV
+        - kSLCD_VolatgeTrimDecrease350mV
+        - kSLCD_VolatgeTrimDecrease300mV
+        - kSLCD_VolatgeTrimDecrease250mV
+        - kSLCD_VolatgeTrimDecrease200mV
+        - kSLCD_VolatgeTrimDecrease150mV
+        - kSLCD_VolatgeTrimDecrease100mV
+        - kSLCD_VolatgeTrimDecrease50mV
+    enum:
+      - "kSLCD_VolatgeTrimNo"
+      - "kSLCD_VolatgeTrimIncrease50mV"
+      - "kSLCD_VolatgeTrimIncrease100mV"
+      - "kSLCD_VolatgeTrimIncrease150mV"
+      - "kSLCD_VolatgeTrimIncrease200mV"
+      - "kSLCD_VolatgeTrimIncrease250mV"
+      - "kSLCD_VolatgeTrimIncrease300mV"
+      - "kSLCD_VolatgeTrimIncrease350mV"
+      - "kSLCD_VolatgeTrimDecrease400mV"
+      - "kSLCD_VolatgeTrimDecrease350mV"
+      - "kSLCD_VolatgeTrimDecrease300mV"
+      - "kSLCD_VolatgeTrimDecrease250mV"
+      - "kSLCD_VolatgeTrimDecrease200mV"
+      - "kSLCD_VolatgeTrimDecrease150mV"
+      - "kSLCD_VolatgeTrimDecrease100mV"
+      - "kSLCD_VolatgeTrimDecrease50mV"
+
+  voltage-trim-vll2:
+    type: string
+    description: |
+      SLCD regulated voltage trim parameter
+      SLCD regulated voltage trim parameter(SOC depends):
+        - kSLCD_VolatgeTrimNo
+        - kSLCD_VolatgeTrimIncrease50mV
+        - kSLCD_VolatgeTrimIncrease100mV
+        - kSLCD_VolatgeTrimIncrease150mV
+        - kSLCD_VolatgeTrimIncrease200mV
+        - kSLCD_VolatgeTrimIncrease250mV
+        - kSLCD_VolatgeTrimIncrease300mV
+        - kSLCD_VolatgeTrimIncrease350mV
+        - kSLCD_VolatgeTrimDecrease400mV
+        - kSLCD_VolatgeTrimDecrease350mV
+        - kSLCD_VolatgeTrimDecrease300mV
+        - kSLCD_VolatgeTrimDecrease250mV
+        - kSLCD_VolatgeTrimDecrease200mV
+        - kSLCD_VolatgeTrimDecrease150mV
+        - kSLCD_VolatgeTrimDecrease100mV
+        - kSLCD_VolatgeTrimDecrease50mV
+    enum:
+      - "kSLCD_VolatgeTrimNo"
+      - "kSLCD_VolatgeTrimIncrease50mV"
+      - "kSLCD_VolatgeTrimIncrease100mV"
+      - "kSLCD_VolatgeTrimIncrease150mV"
+      - "kSLCD_VolatgeTrimIncrease200mV"
+      - "kSLCD_VolatgeTrimIncrease250mV"
+      - "kSLCD_VolatgeTrimIncrease300mV"
+      - "kSLCD_VolatgeTrimIncrease350mV"
+      - "kSLCD_VolatgeTrimDecrease400mV"
+      - "kSLCD_VolatgeTrimDecrease350mV"
+      - "kSLCD_VolatgeTrimDecrease300mV"
+      - "kSLCD_VolatgeTrimDecrease250mV"
+      - "kSLCD_VolatgeTrimDecrease200mV"
+      - "kSLCD_VolatgeTrimDecrease150mV"
+      - "kSLCD_VolatgeTrimDecrease100mV"
+      - "kSLCD_VolatgeTrimDecrease50mV"
+
+  sample-hold:
+    type: string
+    description: |
+      SLCD sample hold
+      configure SLCD sample hold(SOC depends):
+        - kSLCD_EnabledInWaitStop
+        - kSLCD_EnabledInWaitOnly
+        - kSLCD_EnabledInStopOnly
+        - kSLCD_DisabledInWaitStop
+    enum:
+      - "kSLCD_EnabledInWaitStop"
+      - "kSLCD_EnabledInWaitOnly"
+      - "kSLCD_EnabledInStopOnly"
+      - "kSLCD_DisabledInWaitStop"
