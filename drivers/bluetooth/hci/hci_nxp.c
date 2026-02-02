@@ -67,7 +67,7 @@ LOG_MODULE_REGISTER(bt_driver);
 #define bt_nxp_set_mac_address(public_addr) 0
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(standby), okay) && defined(CONFIG_PM) &&\
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(standby), okay) && defined(CONFIG_PM) &&                       \
 	defined(CONFIG_HCI_NXP_ENABLE_AUTO_SLEEP)
 #define HCI_NXP_LOCK_STANDBY_BEFORE_SEND
 #endif
@@ -188,7 +188,7 @@ static const uint8_t hci_cal_data_annex100_params[HCI_CMD_STORE_BT_CAL_DATA_PARA
 /*                             Private functions                              */
 /* -------------------------------------------------------------------------- */
 
-#if defined(CONFIG_HCI_NXP_ENABLE_AUTO_SLEEP) || defined(CONFIG_HCI_NXP_SET_CAL_DATA) ||\
+#if defined(CONFIG_HCI_NXP_ENABLE_AUTO_SLEEP) || defined(CONFIG_HCI_NXP_SET_CAL_DATA) ||           \
 	defined(CONFIG_BT_HCI_SET_PUBLIC_ADDR)
 static int nxp_bt_send_vs_command(uint16_t opcode, const uint8_t *params, uint8_t params_len)
 {
@@ -277,10 +277,7 @@ static int bt_nxp_set_mac_address(const bt_addr_t *public_addr)
 	uint8_t uid[16] = {0};
 	uint8_t uuidLen;
 	uint32_t unique_val_crc = 0;
-	uint8_t params[HCI_CMD_BT_HOST_SET_MAC_ADDR_PARAM_LENGTH] = {
-		BT_USER_BD,
-		0x06U
-	};
+	uint8_t params[HCI_CMD_BT_HOST_SET_MAC_ADDR_PARAM_LENGTH] = {BT_USER_BD, 0x06U};
 
 	/* If no public address is provided by the user, use a unique address made
 	 * from the device's UID (unique ID)
@@ -295,7 +292,7 @@ static int bt_nxp_set_mac_address(const bt_addr_t *public_addr)
 			unique_val_crc = crc32_ieee_update(HCI_BT_MAC_ADDR_CRC_SEED, uid, uuidLen);
 			/* Copy the lower 3 bytes (24 bits) of the CRC result */
 			memcpy((void *)bleDeviceAddress, (const void *)&unique_val_crc,
-					BD_ADDR_UUID_PART_SIZE);
+			       BD_ADDR_UUID_PART_SIZE);
 		} else {
 			LOG_ERR("UUID is empty, cannot generate address.");
 			return -EFAULT;
@@ -309,11 +306,10 @@ static int bt_nxp_set_mac_address(const bt_addr_t *public_addr)
 	}
 
 	memcpy(&params[2], (const void *)bleDeviceAddress,
-		BD_ADDR_UUID_PART_SIZE + BD_ADDR_OUI_PART_SIZE);
+	       BD_ADDR_UUID_PART_SIZE + BD_ADDR_OUI_PART_SIZE);
 
 	/* Send the command */
-	return nxp_bt_send_vs_command(opcode, params,
-					HCI_CMD_BT_HOST_SET_MAC_ADDR_PARAM_LENGTH);
+	return nxp_bt_send_vs_command(opcode, params, HCI_CMD_BT_HOST_SET_MAC_ADDR_PARAM_LENGTH);
 }
 #endif /* CONFIG_BT_HCI_SET_PUBLIC_ADDR */
 
@@ -331,14 +327,13 @@ static bool is_hci_event_discardable(const uint8_t *evt_data)
 			ret = true;
 			break;
 #if defined(CONFIG_BT_EXT_ADV)
-		case BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT:
-		{
+		case BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT: {
 			const struct bt_hci_evt_le_ext_advertising_report *ext_adv =
 				(void *)&evt_data[3];
 
 			return (ext_adv->num_reports == 1) &&
-				   ((ext_adv->adv_info[0].evt_type &
-					 BT_HCI_LE_ADV_EVT_TYPE_LEGACY) != 0);
+			       ((ext_adv->adv_info[0].evt_type & BT_HCI_LE_ADV_EVT_TYPE_LEGACY) !=
+				0);
 		}
 #endif
 		default:
@@ -659,11 +654,10 @@ static int bt_nxp_init(const struct device *dev)
 	return ret;
 }
 
-#define HCI_DEVICE_INIT(inst) \
-	static struct bt_nxp_data hci_data_##inst = { \
-	}; \
-	DEVICE_DT_INST_DEFINE(inst, bt_nxp_init, NULL, &hci_data_##inst, NULL, \
-			      POST_KERNEL, CONFIG_BT_HCI_INIT_PRIORITY, &drv)
+#define HCI_DEVICE_INIT(inst)                                                                      \
+	static struct bt_nxp_data hci_data_##inst = {};                                            \
+	DEVICE_DT_INST_DEFINE(inst, bt_nxp_init, NULL, &hci_data_##inst, NULL, POST_KERNEL,        \
+			      CONFIG_BT_HCI_INIT_PRIORITY, &drv)
 
 /* Only one instance supported right now */
 HCI_DEVICE_INIT(0)
