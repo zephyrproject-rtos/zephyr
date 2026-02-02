@@ -108,7 +108,7 @@
 		};
 
 		usbotg_hs: usb@42040000 {
-			compatible = "st,stm32-otghs";
+			compatible = "st,stm32n6-otghs", "st,stm32-otghs";
 			reg = <0x42040000 DT_SIZE_K(128)>;
 			interrupts = <76 0>;
 			interrupt-names = "otghs";
