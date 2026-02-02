@@ -5548,6 +5548,21 @@
 #define DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY_(inst, name)	\
 	IF_ENABLED(DT_INST_REG_HAS_NAME(inst, name), (1,))
 
+/** @brief Helper for DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY
+ *
+ * This macro generates token "1," for instance of a device,
+ * identified by index @p idx, if instance has named register
+ * @p prop.
+ *
+ * @param idx instance number
+ * @param prop property to check for
+ *
+ * @return Macro evaluates to `1,` if instance property value is 1,
+ * otherwise it evaluates to literal nothing.
+ */
+#define DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY_(idx, name)	\
+	IF_ENABLED(DT_INST_REG_HAS_NAME(idx, name), (1,))
+
 /** @brief Helper for DT_ALL_INST_HAS_PROP_STATUS_OKAY
  *
  * This macro generates token "1," for instance of a device,
@@ -5591,6 +5606,21 @@
  */
 #define DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY_(inst, name)	\
 	IF_DISABLED(DT_INST_REG_HAS_NAME(inst, name), (1,))
+
+/** @brief Helper for DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY
+ *
+ * This macro generates token "1," for instance of a device,
+ * identified by index @p idx, if instance has no boolean property
+ * @p prop with value 1.
+ *
+ * @param idx instance number
+ * @param prop property to check for
+ *
+ * @return Macro evaluates to `1,` if instance property value is 0,
+ * otherwise it evaluates to literal nothing.
+ */
+#define DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY_(idx, name)	\
+	IF_DISABLED(DT_INST_REG_HAS_NAME(idx, name), (1,))
 
 #define DT_PATH_INTERNAL(...) \
 	UTIL_CAT(DT_ROOT, MACRO_MAP_CAT(DT_S_PREFIX, __VA_ARGS__))
