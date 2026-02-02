@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Advanced Micro Devices, Inc.
+ * Copyright (c) 2025-2026 Advanced Micro Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -496,6 +496,7 @@ static inline bool cdns_is_fifo_hold_quirk(const struct cdns_i2c_data *i2c_bus, 
 static void cdns_i2c_set_mode(const struct device *dev, enum cdns_i2c_mode mode)
 {
 	struct cdns_i2c_data *i2c_bus = dev->data;
+	uint32_t ctrl_reg;
 
 	/* Disable all interrupts */
 	cdns_i2c_writereg(dev, CDNS_I2C_IXR_ALL_INTR_MASK, CDNS_I2C_IDR_OFFSET);
@@ -509,15 +510,26 @@ static void cdns_i2c_set_mode(const struct device *dev, enum cdns_i2c_mode mode)
 
 	if (mode == CDNS_I2C_MODE_MASTER) {
 		/* Enable i2c master */
-		cdns_i2c_writereg(dev, i2c_bus->ctrl_reg_diva_divb | CDNS_I2C_CR_MASTER_EN_MASK,
-				  CDNS_I2C_CR_OFFSET);
+		ctrl_reg = i2c_bus->ctrl_reg_diva_divb | CDNS_I2C_CR_MASTER_EN_MASK;
+		cdns_i2c_writereg(dev, ctrl_reg, CDNS_I2C_CR_OFFSET);
 
 		/* Allow time for master mode to stabilize */
 		(void)k_usleep(120);
 	} else {
+		/* Prepare target control register */
+		ctrl_reg = i2c_bus->ctrl_reg_diva_divb & CDNS_I2C_CR_TARGET_EN_MASK;
+
+		/* Handle 10-bit addressing for target mode */
+		if (i2c_bus->target->flags & I2C_TARGET_FLAGS_ADDR_10_BITS) {
+			/* Clear NEA bit for 10-bit addressing */
+			ctrl_reg &= ~CDNS_I2C_CR_NEA;
+		} else {
+			/* Set NEA bit for 7-bit addressing */
+			ctrl_reg |= CDNS_I2C_CR_NEA;
+		}
+
 		/* Enable i2c target */
-		cdns_i2c_writereg(dev, i2c_bus->ctrl_reg_diva_divb & CDNS_I2C_CR_TARGET_EN_MASK,
-				  CDNS_I2C_CR_OFFSET);
+		cdns_i2c_writereg(dev, ctrl_reg, CDNS_I2C_CR_OFFSET);
 
 		/* Configure the target address */
 		cdns_i2c_writereg(dev, ((uint32_t)(i2c_bus->target->address) & CDNS_I2C_ADDR_MASK),
@@ -1339,11 +1351,6 @@ static int32_t cdns_i2c_target_register(const struct device *dev,
 		return -EBUSY;
 	}
 
-	/* Check for unsupported 10-bit address mode */
-	if ((target_cfg->flags & I2C_TARGET_FLAGS_ADDR_10_BITS) == I2C_TARGET_FLAGS_ADDR_10_BITS) {
-		return -EAFNOSUPPORT;
-	}
-
 	(void)k_mutex_lock(&i2c_bus->bus_mutex, K_FOREVER);
 
 	/* Store the target configuration */
@@ -1401,7 +1408,7 @@ static int32_t cdns_i2c_init(const struct device *dev)
 	k_event_init(&i2c_bus->xfer_done);
 
 #if defined(CONFIG_I2C_TARGET)
-	/* Set initial mode to master and confligure target states */
+	/* Set initial mode to master and configure target states */
 	i2c_bus->dev_mode = CDNS_I2C_MODE_MASTER;
 	i2c_bus->target_state = CDNS_I2C_TARGET_STATE_IDLE;
 	i2c_bus->target = NULL;
