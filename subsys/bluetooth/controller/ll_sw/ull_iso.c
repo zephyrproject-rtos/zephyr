@@ -1482,15 +1482,12 @@ void ull_iso_lll_ack_enqueue(uint16_t handle, struct node_tx_iso *node_tx)
 			return;
 		}
 
-#if defined(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)
-		/* Possible race with Data Path remove - handle release in vendor
-		 * function.
-		 */
-		ll_data_path_tx_pdu_release(handle, node_tx);
-		return;
-#else
+		if (IS_ENABLED(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)) {
+			ll_data_path_tx_pdu_release(handle, node_tx);
+			return;
+		}
+
 		/* No datapath and no vendor datapath - fall through to MFIFO */
-#endif /* CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH */
 	} else if (IS_ENABLED(CONFIG_BT_CTLR_ADV_ISO) && IS_ADV_ISO_HANDLE(handle)) {
 		struct lll_adv_iso_stream *stream;
 		struct ll_iso_datapath *dp;
@@ -1500,17 +1497,17 @@ void ull_iso_lll_ack_enqueue(uint16_t handle, struct node_tx_iso *node_tx)
 		stream = ull_adv_iso_stream_get(stream_handle);
 		dp = stream->dp;
 
-		if (dp) {
+		if (dp != NULL) {
 			isoal_tx_pdu_release(dp->source_hdl, node_tx);
 			return;
 		}
 
-#if defined(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)
-		ll_data_path_tx_pdu_release(handle, node_tx);
-		return;
-#else
+		if (IS_ENABLED(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)) {
+			ll_data_path_tx_pdu_release(handle, node_tx);
+			return;
+		}
+
 		/* No datapath and no vendor datapath - fall through to MFIFO */
-#endif /* CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH */
 	} else {
 		LL_ASSERT_DBG(0);
 		return;
@@ -2001,10 +1998,12 @@ static void iso_tx_ack_demux(void *param)
 static void ull_iso_tx_ack_sched(void)
 {
 	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, iso_tx_ack_demux};
+	static struct mayfly mfy = {0U, 0U, &link, NULL, iso_tx_ack_demux};
 
-	/* Kick the ULL (using the mayfly, tailchain it) */
-	mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_ULL_HIGH, 1, &mfy);
+	/* Kick the ULL (using the mayfly, tailchain it), already being enqueued is ok, hence ignore
+	 * the return value.
+	 */
+	(void)mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_ULL_HIGH, 1U, &mfy);
 }
 #endif /* CONFIG_BT_CTLR_ADV_ISO || CONFIG_BT_CTLR_CONN_ISO */
 
