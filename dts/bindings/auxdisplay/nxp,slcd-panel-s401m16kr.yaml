@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Panel (glass) wiring for NXP SLCD: S401M16KR.
+
+  This is a child node of an "nxp,slcd" controller.
+
+compatible: "nxp,slcd-panel-s401m16kr"
+
+include:
+  - nxp,slcd-panel.yaml
+
+properties:
+  panel-name:
+    default: "s401m16kr"
+
+  max-digits:
+    default: 4
+    const: 4

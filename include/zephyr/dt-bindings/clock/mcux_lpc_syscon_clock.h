@@ -156,6 +156,11 @@
 /** SEMA42 peripheral clock identifier. */
 #define MCUX_SEMA42_CLK MCUX_LPC_CLK_ID(0x23, 0x00)
 
+/**
+ * @brief SLCD0 clock selector for MCUX LPC SYSCON clock control.
+ */
+#define MCUX_SLCD0_CLK  MCUX_LPC_CLK_ID(0x10, 0x11)
+
 #define MCUX_FLEXSPI_CLK  MCUX_LPC_CLK_ID(0x24, 0x00)
 #define MCUX_FLEXSPI2_CLK MCUX_LPC_CLK_ID(0x24, 0x01)
 

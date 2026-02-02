@@ -1,0 +1,69 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Common child-node properties for NXP SLCD panel (glass) wiring.
+
+  A panel node is a child node of an "nxp,slcd" controller node.
+
+  Specific panel compatibles (e.g. nxp,slcd-panel-od-6010) may further
+  constrain required property values (e.g. fixed max-digits and required
+  com-pins/d-pins array lengths).
+
+include: base.yaml
+
+properties:
+  panel-name:
+    type: string
+    description: |
+      Panel identifier string.
+
+      The SLCD controller driver uses this to select a matching
+      mcux_slcd_panel_api backend (by comparing to mcux_slcd_panel_api.name).
+
+  max-digits:
+    type: int
+    description: |
+      Maximum number of digits supported by this panel wiring.
+
+      If not specified in devicetree, the panel-specific binding may provide a
+      default.
+
+  com-pins:
+    type: uint8-array
+    required: true
+    description: LCD pin indices for COM0..COM7 (backplanes).
+
+  d-pins:
+    type: uint8-array
+    required: true
+    description: LCD pin indices for D0..D62 (frontplanes).
+
+  dot-pos:
+    type: uint8-array
+    description: |
+      List of digit indices (0-based) where a decimal point '.' is supported.
+
+  colon-pos:
+    type: uint8-array
+    description: |
+      List of digit indices (0-based) where a ':' separator is supported.
+
+  colon-routing:
+    type: uint8-array
+    description: |
+      Routing information for ':' separator segments.
+
+      This is a list of 3-tuples:
+        <pos d_idx0 d_idx1>
+
+      Where:
+        - pos is the colon position (0-based digit index)
+        - d_idx0/d_idx1 are indices into the panel's d-pins[] list
+
+      Use 255 for d_idx1 if the colon is a single segment.
+
+  rotate-180:
+    type: boolean
+    description: |
+      If set, the panel driver applies a 180-degree rotation remap to the
+      internal 7-seg encoding before mapping to frontplane pins.

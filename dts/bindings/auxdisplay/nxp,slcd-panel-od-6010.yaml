@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Panel (glass) wiring for NXP SLCD: OD-6010.
+
+  This is a child node of an "nxp,slcd" controller.
+
+compatible: "nxp,slcd-panel-od-6010"
+
+include:
+  - nxp,slcd-panel.yaml
+
+properties:
+  panel-name:
+    default: "od-6010"
+
+  max-digits:
+    default: 6
+    const: 6
