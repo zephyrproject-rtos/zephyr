@@ -687,6 +687,10 @@ STM32
   Besides, when applicable to the SoC, these properties need to be defined if the corresponding
   ``div-q`` or ``div-r`` properties are used.
 
+* For STM32L4x, the :dtcompatible:`st,stm32l4-pllsai-clock` binding has been replaced by the
+  existing :dtcompatible:`st,stm32l4-pll-clock`. This replacement brings a renaming of the
+  ``div-divr`` property to ``post-div-r``.
+
 * The MAC address generation in :zephyr_file:`drivers/ethernet/eth_stm32_hal_common.c` for STM32
   platforms now use :c:struct:`net_eth_mac_config` when one of these properties are used in the MAC
   device-tree node:
