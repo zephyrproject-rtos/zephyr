@@ -1,0 +1,6 @@
+board:
+  name: fvp_corstone1000
+  full_name: Arm Corstone-1000-A320 Fixed Virtual Platform
+  vendor: arm
+  socs:
+  - name: a320
