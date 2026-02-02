@@ -90,7 +90,7 @@ static void register_default_bearer(struct ccp_call_control_server_test_suite_fi
 		.gtbs = true,
 		.authorization_required = false,
 		.technology = BT_BEARER_TECH_3G,
-		.supported_features = 0,
+		.optional_opcodes = 0,
 	};
 	int err;
 
@@ -120,7 +120,7 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 			.gtbs = false,
 			.authorization_required = false,
 			.technology = BT_BEARER_TECH_3G,
-			.supported_features = 0,
+			.optional_opcodes = 0,
 		};
 		int err;
 
@@ -149,7 +149,7 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 		.gtbs = true,
 		.authorization_required = false,
 		.technology = BT_BEARER_TECH_3G,
-		.supported_features = 0,
+		.optional_opcodes = 0,
 	};
 	int err;
 
@@ -167,7 +167,7 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 		.gtbs = false,
 		.authorization_required = false,
 		.technology = BT_BEARER_TECH_3G,
-		.supported_features = 0,
+		.optional_opcodes = 0,
 	};
 	int err;
 
@@ -185,7 +185,7 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 		.gtbs = true,
 		.authorization_required = false,
 		.technology = BT_BEARER_TECH_3G,
-		.supported_features = 0,
+		.optional_opcodes = 0,
 	};
 	int err;
 
@@ -209,7 +209,7 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 		.gtbs = false,
 		.authorization_required = false,
 		.technology = BT_BEARER_TECH_3G,
-		.supported_features = 0,
+		.optional_opcodes = 0,
 	};
 	int err;
 
