@@ -63,6 +63,9 @@ tests:
       - bg29_rb4420a
       - slwrb4180a
       - ek_ra4c1
+      - pic32cx_sg41_cult
+    extra_args:
+      - platform:pic32cx_sg41_cult/pic32cx1025sg41128:"DTC_OVERLAY_FILE="boards/pic32cx_sg41_cult_ref.overlay"
     integration_platforms:
       - frdm_kl25z
       - nrf54l15dk/nrf54l15/cpuapp
