@@ -63,10 +63,14 @@
 			clock-frequency = <32768>;
 		};
 
-		hfxo64m: hfxo64m {
-			compatible = "fixed-clock";
+		hfxo: hfxo {
+			compatible = "nordic,nrf71-hfxo";
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(64)>;
+			/* TODO: Estimated based on fixed delays in IP, will update once we can
+			 * measure with the real SOC
+			 */
+			startup-time-us = <1210>;
 		};
 
 		hfpll: hfpll {
