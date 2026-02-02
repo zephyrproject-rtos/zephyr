@@ -15,8 +15,8 @@ config GPIO
 if CORTEX_M_SYSTICK
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 240000000 if CPU_CORTEX_M33
-	default 792000000 if CPU_CORTEX_M7
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CPU_CORTEX_M33
+	default $(dt_node_int_prop_int,/cpus/cpu@1,clock-frequency) if CPU_CORTEX_M7
 
 endif # CORTEX_M_SYSTICK
 
