@@ -518,6 +518,7 @@ int bt_ots_client_register(struct bt_ots_client *otc_inst)
 int bt_ots_client_unregister(uint8_t index)
 {
 	if (index < ARRAY_SIZE(otc_insts)) {
+		bt_gatt_ots_l2cap_unregister(&otc_insts[index].l2cap_ctx);
 		memset(&otc_insts[index], 0, sizeof(otc_insts[index]));
 	} else {
 		return -EINVAL;
