@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI-K3 device level control register module
+
+compatible: "ti,control-module"
+
+include: syscon.yaml
+
+properties:
+  ti,unlock-offsets:
+    type: array
+    description: |
+      Unlock configuration consisting of offsets to the KICK0 registers for
+      the partitions that require unlocking. Two 32-bit magic numbers will
+      be written at this location to unlock the partition.
+
+      Example:
+        ti,unlock-offsets = <0x1008   /* Partition 1  */
+                             0x5008>; /* Partition 2 */
