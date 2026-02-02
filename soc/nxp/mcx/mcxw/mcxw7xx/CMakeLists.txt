@@ -11,6 +11,9 @@ zephyr_sources_ifdef(CONFIG_PM power.c)
 
 zephyr_include_directories(./)
 
+zephyr_linker_sources_ifdef(CONFIG_SOC_MCXW70AC
+  ROM_START SORT_KEY 0 boot_header.ld)
+
 set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")
 
 if(CONFIG_NXP_NBU)

@@ -19,6 +19,51 @@
 extern uint32_t SystemCoreClock;
 extern void nxp_nbu_init(void);
 
+#ifdef CONFIG_SOC_MCXW70AC
+extern char z_main_stack[];
+extern char _flash_used[];
+
+extern void z_arm_reset(void);
+extern void z_arm_nmi(void);
+extern void z_arm_hard_fault(void);
+extern void z_arm_mpu_fault(void);
+extern void z_arm_bus_fault(void);
+extern void z_arm_usage_fault(void);
+extern void z_arm_secure_fault(void);
+extern void z_arm_svc(void);
+extern void z_arm_debug_monitor(void);
+extern void z_arm_pendsv(void);
+extern void sys_clock_isr(void);
+extern void z_arm_exc_spurious(void);
+
+__imx_boot_ivt_section void (*const image_vector_table[])(void) = {
+	(void (*)())(z_main_stack + CONFIG_MAIN_STACK_SIZE), /* 0x00 */
+	z_arm_reset,                                         /* 0x04 */
+	z_arm_nmi,                                           /* 0x08 */
+	z_arm_hard_fault,                                    /* 0x0C */
+	z_arm_mpu_fault,                                     /* 0x10 */
+	z_arm_bus_fault,                                     /* 0x14 */
+	z_arm_usage_fault,                                   /* 0x18 */
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+	z_arm_secure_fault, /* 0x1C */
+#else
+	z_arm_exc_spurious,
+#endif                                  /* CONFIG_ARM_SECURE_FIRMWARE */
+	(void (*)())((uintptr_t)_flash_used),        /* 0x20, imageLength. */
+	0,                              /* 0x24, imageType (Plain Image) */
+	0,                              /* 0x28, authBlockOffset/crcChecksum */
+	z_arm_svc,                      /* 0x2C */
+	z_arm_debug_monitor,            /* 0x30 */
+	(void (*)())image_vector_table, /* 0x34, imageLoadAddress. */
+	z_arm_pendsv,                   /* 0x38 */
+#if defined(CONFIG_SYS_CLOCK_EXISTS) && defined(CONFIG_CORTEX_M_SYSTICK_INSTALL_ISR)
+	sys_clock_isr, /* 0x3C */
+#else
+	z_arm_exc_spurious,
+#endif
+};
+#endif /* CONFIG_SOC_MCXW70AC */
+
 __weak void clock_init(void)
 {
 #if !defined(FPGA_TARGET) || (FPGA_TARGET == 0)
