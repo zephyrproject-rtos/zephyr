@@ -1,0 +1,49 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &boot_partition;
+/delete-node/ &slot0_partition;
+/delete-node/ &slot1_partition;
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Immutable bootloader, MCUboot in direct-xip mode */
+		immutable_boot_partition: partition@0 {
+			label = "mcuboot-immutable";
+			reg = <0x00000000 0x0000C000>;
+		};
+
+		/*
+		 * Mutable (upgradeable) bootloader, 2 slots, uses 2 more slots to allow
+		 * application to update bootloader e.g. using MCUmgr. This MCUboot build can be
+		 * built in any supported MCUboot mode e.g. swap, direct-xip, RAM load, etc.
+		 */
+		boot_partition: slot2_partition: partition@c000 {
+			label = "mcuboot-mutable-1";
+			reg = <0x0000c000 0x0000C000>;
+		};
+
+		boot_2_partition: slot3_partition: partition@18000 {
+			label = "mcuboot-mutable-2";
+			reg = <0x00018000 0x0000C000>;
+		};
+
+		/* Normal application slots */
+		slot0_partition: partition@24000 {
+			label = "image-0";
+			reg = <0x00024000 0x0006a000>;
+		};
+
+		slot1_partition: partition@8e000 {
+			label = "image-1";
+			reg = <0x0008e000 0x0006a000>;
+		};
+	};
+};
