@@ -27,6 +27,9 @@
 
 &flash0 {
 	reg = <0x8000000 DT_SIZE_M(1)>;
+	ranges = <0x0 0x8000000 DT_SIZE_M(1)>;
+	#address-cells = <1>;
+	#size-cells = <1>;
 
 	pages_layout: pages_layout {
 		pages_layout_16k: pages_layout_16k {
