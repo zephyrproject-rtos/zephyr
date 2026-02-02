@@ -71,3 +71,17 @@ config RISCV_CUSTOM_CSR_ANDES_PMA_NAPOT_GRANULARITY
 	help
 	  Minimum size (and alignment) of an PMA region. Use this symbol
 	  to guarantee minimum size and alignment of PMA regions.
+
+config CPU_HAS_ANDES_HSP
+	bool
+	help
+	  The AndesCore supports Hardware Stack Protection (HSP).
+
+config RISCV_CUSTOM_CSR_ANDES_HSP
+	bool "Andes V5 Hardware Stack Protection (HSP)"
+	depends on CPU_HAS_ANDES_HSP
+	select ARCH_HAS_STACK_PROTECTION
+	select CPU_HAS_BUILTIN_STACK_GUARD
+	help
+	  This option enables the Andes V5 Hardware Stack Protection (HSP),
+	  in order to support built-in thread/interrupt stack guard.
