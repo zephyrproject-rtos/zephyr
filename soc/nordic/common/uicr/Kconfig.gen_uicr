@@ -285,4 +285,35 @@ config GEN_UICR_SECONDARY_PROTECTEDMEM_SIZE_BYTES
 
 endif # GEN_UICR_SECONDARY
 
+choice GEN_UICR_POLICY_PERIPHCONF_STAGE
+	bool "UICR.POLICY_PERIPHCONFSTAGE"
+	default GEN_UICR_POLICY_PERIPHCONF_STAGE_NORMAL
+	help
+	  Sets the behavior of the IronSide SE PERIPHCONF service APIs at boot.
+
+config GEN_UICR_POLICY_PERIPHCONF_STAGE_NORMAL
+	bool "Normal operation stage"
+	help
+	  The API starts in the normal operation stage, meaning that no explicit
+	  API call is needed to finish initialization.
+
+config GEN_UICR_POLICY_PERIPHCONF_STAGE_INIT
+	bool "Initialization stage"
+	help
+	  The API starts in the initialization stage, which gives permission
+	  to write any register supported by the UICR PERIPHCONF blob without CPU based
+	  restrictions. To finish initialization, the application must notify IronSide SE
+	  via the ironside_se_periphconf_finish_init() API.
+
+	  Enabling this policy option causes the generated UICR format version to be set
+	  to >= 2.1, which requires IronSide SE v23.3.0+26 or higher to be installed.
+
+endchoice
+
+config GEN_UICR_POLICY_PERIPHCONF_STAGE_VALUE
+	hex
+	default 0xBD2328A8 if GEN_UICR_POLICY_PERIPHCONF_STAGE_INIT
+	default 0x1730C77F if GEN_UICR_POLICY_PERIPHCONF_STAGE_NORMAL
+	default 0
+
 endmenu
