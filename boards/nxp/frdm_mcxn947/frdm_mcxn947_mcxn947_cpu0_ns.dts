@@ -54,6 +54,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/*
 		 * All partition sizes must be aligned to the flash memory sector size (8 KB).

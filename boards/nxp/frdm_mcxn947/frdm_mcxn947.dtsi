@@ -263,6 +263,7 @@ arduino_serial: &flexcomm2_lpuart2 {};
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/*
 		 * Partition sizes must be aligned
