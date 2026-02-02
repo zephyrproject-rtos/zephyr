@@ -163,3 +163,9 @@ tests:
     platform_allow:
       - frdm_mcxw23
       - mcxw23_evk
+  drivers.watchdog.pm_enabled:
+    platform_allow:
+      - siwx917_rb4338a
+    extra_configs:
+      - CONFIG_PM=y
+      - CONFIG_PM_DEVICE=y
