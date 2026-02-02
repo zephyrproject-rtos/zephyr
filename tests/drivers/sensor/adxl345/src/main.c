@@ -4,21 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef SENSOR_G
-#define SENSOR_G 9806650LL
-#endif
-
 #include <zephyr/ztest.h>
 
-#include "../../../../../drivers/sensor/adi/adxl345/adxl345_convert.h"
+#include <zephyr/drivers/sensor.h>
 
-/* Define struct sensor_value here to avoid including include/zepyhr/drivers/sensor.h */
-struct sensor_value {
-	/** Integer part of the value. */
-	int32_t val1;
-	/** Fractional part of the value (in one-millionth parts). */
-	int32_t val2;
-};
+#include "adxl345_features.h"
+
+extern void adxl345_accel_convert(struct sensor_value *val, int16_t sample, uint8_t selected_range);
 
 ZTEST(adxl345_accel_convert, test_convert_10bit_right_justified_2g_mode)
 {

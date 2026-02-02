@@ -4,17 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_SENSOR_ADX345_ADXL345_ACCEL_CONVERT_H_
-#define ZEPHYR_DRIVERS_SENSOR_ADX345_ADXL345_ACCEL_CONVERT_H_
-
 #include <stdint.h>
 
-#include <zephyr/drivers/sensor_value.h>
+#include <zephyr/drivers/sensor.h>
 
 #include "adxl345_features.h"
 
-static inline void adxl345_accel_convert(struct sensor_value *val, int16_t sample,
-					 uint8_t selected_range)
+void adxl345_accel_convert(struct sensor_value *val, int16_t sample, uint8_t selected_range)
 {
 	const int32_t sensitivity[] = {
 		[ADXL345_RANGE_2G] = INT32_C(SENSOR_G / 256),
@@ -30,5 +26,3 @@ static inline void adxl345_accel_convert(struct sensor_value *val, int16_t sampl
 	val->val1 = (sample * sensitivity[selected_range]) / 1000000;
 	val->val2 = (sample * sensitivity[selected_range]) % 1000000;
 }
-
-#endif /* ZEPHYR_DRIVERS_SENSOR_ADX345_ADXL345_ACCEL_CONVERT_H_ */

@@ -15,9 +15,10 @@
 #include <zephyr/sys/__assert.h>
 
 #include "adxl345.h"
-#include "adxl345_convert.h"
 
 LOG_MODULE_REGISTER(ADXL345, CONFIG_SENSOR_LOG_LEVEL);
+
+extern void adxl345_accel_convert(struct sensor_value *val, int16_t sample, uint8_t selected_range);
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 static bool adxl345_bus_is_ready_i2c(const union adxl345_bus *bus)
