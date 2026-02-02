@@ -482,6 +482,9 @@ static int set_config(const struct device *dev,
 
 		memcpy(context->mac_addr, config->mac_address.addr,
 		       sizeof(context->mac_addr));
+		ret = net_if_set_link_addr(context->iface, context->mac_addr,
+					   sizeof(context->mac_addr),
+					   NET_LINK_ETHERNET);
 	}
 
 	return ret;
