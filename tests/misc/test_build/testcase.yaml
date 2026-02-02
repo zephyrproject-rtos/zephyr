@@ -26,6 +26,9 @@ tests:
     tags: kconfig
     integration_platforms:
       - native_sim
+    platform_exclude:
+      - fvp_corstone1000/a320
+      - fvp_corstone1000/a320/smp
     extra_configs:
       - CONFIG_KERNEL_BIN_NAME="A_kconfig_value_with_a_utf8_char_in_it_Bøe_"
   buildsystem.lto.picolibc_module:
