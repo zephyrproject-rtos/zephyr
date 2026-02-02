@@ -1,109 +1,220 @@
-.. raw:: html
+Zephyr RTOS Port for ESP32-S3-BOX-3 🚀
+=========================================
 
-   <a href="https://www.zephyrproject.org">
-     <p align="center">
-       <picture>
-         <source media="(prefers-color-scheme: dark)" srcset="doc/_static/images/logo-readme-dark.svg">
-         <source media="(prefers-color-scheme: light)" srcset="doc/_static/images/logo-readme-light.svg">
-         <img src="doc/_static/images/logo-readme-light.svg">
-       </picture>
-     </p>
-   </a>
+This repository branch provides board support and reference samples for
+running Zephyr RTOS on the **ESP32-S3-BOX-3** platform.
 
-   <a href="https://bestpractices.coreinfrastructure.org/projects/74"><img src="https://bestpractices.coreinfrastructure.org/projects/74/badge"></a>
-   <a href="https://scorecard.dev/viewer/?uri=github.com/zephyrproject-rtos/zephyr"><img src="https://api.securityscorecards.dev/projects/github.com/zephyrproject-rtos/zephyr/badge"></a>
-   <a href="https://github.com/zephyrproject-rtos/zephyr/actions/workflows/twister.yaml?query=branch%3Amain"><img src="https://github.com/zephyrproject-rtos/zephyr/actions/workflows/twister.yaml/badge.svg?event=push"></a>
+The port focuses on enabling display, touch, Wi-Fi, Bluetooth, persistent
+storage, and LVGL-based user interfaces on the ESP32-S3-BOX-3 while keeping
+all changes aligned with upstream Zephyr design principles.
 
+Branch 🌿
+--------
 
-The Zephyr Project is a scalable real-time operating system (RTOS) supporting
-multiple hardware architectures, optimized for resource constrained devices,
-and built with security in mind.
+- **Branch name:** ``zephyr-esp32s3-box-3``
+- **Base:** Upstream Zephyr ``main``
 
-The Zephyr OS is based on a small-footprint kernel designed for use on
-resource-constrained systems: from simple embedded environmental sensors and
-LED wearables to sophisticated smart watches and IoT wireless gateways.
+All changes are maintained on top of upstream Zephyr with minimal
+divergence and clear separation between board, driver, and sample code.
 
-The Zephyr kernel supports multiple architectures, including ARM (Cortex-A,
-Cortex-R, Cortex-M), Intel x86, ARC, Tensilica Xtensa, and RISC-V,
-SPARC, MIPS, and a large number of `supported boards`_.
+Hardware Overview 🔧
+-------------------
 
-.. below included in doc/introduction/introduction.rst
+ESP32-S3-BOX-3 features:
 
+- 🖥️ ESP32-S3 dual-core MCU
+- 📺 SPI-connected LCD panel
+- 👆 Capacitive touch controller
+- 📶 Wi-Fi (802.11 b/g/n)
+- 📡 Bluetooth Low Energy (BLE)
+- 💾 External flash with MCUboot support
 
-Getting Started
-***************
+Supported Features ✅
+--------------------
 
-Welcome to Zephyr! See the `Introduction to Zephyr`_ for a high-level overview,
-and the documentation's `Getting Started Guide`_ to start developing.
+The following functionality is enabled and validated in this port:
 
-.. start_include_here
+- 📋 ESP32-S3-BOX-3 board definition
+- 🎨 LVGL graphics stack
+- 📺 SPI LCD display support
+- 👆 Capacitive touch controller integration
+- 📡 Bluetooth Low Energy (BLE)
+- 📶 Wi-Fi station mode
+- 🔗 BLE-based Wi-Fi provisioning
+- 💾 NVS-backed persistent storage
+- 🥾 MCUboot-compatible flash partitioning
+- ⚙️ Application CPU and LP core partition layout
 
-Community Support
-*****************
-
-Community support is provided via mailing lists and Discord; see the Resources
-below for details.
-
-.. _project-resources:
-
-Resources
-*********
-
-Here's a quick summary of resources to help you find your way around:
-
-Getting Started
+Board Support 🛠️
 ---------------
 
-  | 📖 `Zephyr Documentation`_
-  | 🚀 `Getting Started Guide`_
-  | 🙋🏽 `Tips when asking for help`_
-  | 💻 `Code samples`_
+Board files are located under:
 
-Code and Development
+::
+
+  boards/espressif/esp32s3_box3/
+
+Board documentation is available in:
+
+::
+
+  boards/espressif/esp32s3_box3/README.md
+
+Custom devicetree overlays are used by samples to enable additional
+features such as custom flash partitioning and NVS storage without
+modifying the base board devicetree.
+
+Flash Partitioning 💾
 --------------------
 
-  | 🌐 `Source Code Repository`_
-  | 📦 `Releases`_
-  | 🤝 `Contribution Guide`_
+Some samples use a custom flash layout provided via devicetree overlay:
 
-Community and Support
----------------------
+- 🥾 MCUboot boot partition
+- 🔄 Dual application image slots
+- ⚙️ App CPU and LP core partitions
+- 💾 Dedicated NVS storage partition
+- 🔄 Scratch partition for image swap
+- 🐛 Coredump partition
 
-  | 💬 `Discord Server`_ for real-time community discussions
-  | 📧 `User mailing list (users@lists.zephyrproject.org)`_
-  | 📧 `Developer mailing list (devel@lists.zephyrproject.org)`_
-  | 📬 `Other project mailing lists`_
-  | 📚 `Project Wiki`_
+The NVS partition is automatically mounted at ``/nvs`` using Zephyr's
+``fstab`` mechanism for persistent application data.
 
-Issue Tracking and Security
----------------------------
-
-  | 🐛 `GitHub Issues`_
-  | 🔒 `Security documentation`_
-  | 🛡️ `Security Advisories Repository`_
-  | ⚠️ Report security vulnerabilities at vulnerabilities@zephyrproject.org
-
-Additional Resources
+Build Instructions 🔨
 --------------------
-  | 🌐 `Zephyr Project Website`_
-  | 📺 `Zephyr Tech Talks`_
 
-.. _Zephyr Project Website: https://www.zephyrproject.org
-.. _Discord Server: https://chat.zephyrproject.org
-.. _supported boards: https://docs.zephyrproject.org/latest/boards/index.html
-.. _Zephyr Documentation: https://docs.zephyrproject.org
-.. _Introduction to Zephyr: https://docs.zephyrproject.org/latest/introduction/index.html
-.. _Getting Started Guide: https://docs.zephyrproject.org/latest/develop/getting_started/index.html
-.. _Contribution Guide: https://docs.zephyrproject.org/latest/contribute/index.html
-.. _Source Code Repository: https://github.com/zephyrproject-rtos/zephyr
-.. _GitHub Issues: https://github.com/zephyrproject-rtos/zephyr/issues
-.. _Releases: https://github.com/zephyrproject-rtos/zephyr/releases
-.. _Project Wiki: https://github.com/zephyrproject-rtos/zephyr/wiki
-.. _User mailing list (users@lists.zephyrproject.org): https://lists.zephyrproject.org/g/users
-.. _Developer mailing list (devel@lists.zephyrproject.org): https://lists.zephyrproject.org/g/devel
-.. _Other project mailing lists: https://lists.zephyrproject.org/g/main/subgroups
-.. _Code samples: https://docs.zephyrproject.org/latest/samples/index.html
-.. _Security documentation: https://docs.zephyrproject.org/latest/security/index.html
-.. _Security Advisories Repository: https://github.com/zephyrproject-rtos/zephyr/security
-.. _Tips when asking for help: https://docs.zephyrproject.org/latest/develop/getting_started/index.html#asking-for-help
-.. _Zephyr Tech Talks: https://www.zephyrproject.org/tech-talks
+Prerequisites:
+
+- 🛠️ Zephyr SDK installed
+- 🌿 West tool initialized
+- 🔧 ESP32 toolchain available
+- 🐍 Python 3.x
+
+Initialize the workspace:
+
+::
+
+  west init -m https://github.com/notionext/zephyr
+  west update
+
+Build a sample:
+
+::
+
+  west build -b esp32s3_box3 samples/boards/espressif/wifi_ble_lvgl
+
+Flash to device:
+
+::
+
+  west flash
+
+Monitor the output:
+
+::
+
+  west espressif monitor
+
+Usage Instructions 📋
+******************
+
+**Device Operation:**
+
+1. **Power On** 🔌: Device shows "WiFi BLE Provisioning Ready" on white background
+
+2. **Auto-Connect** 🔄: If credentials are stored, device automatically connects to WiFi
+
+3. **Manual Provisioning** 📱:
+
+   - Connect to device via BLE (advertised as "ESP32_S3_BOX3_BLE")
+   - Write to WiFi credentials characteristic (UUID: `12345678-1234-1234-1234-123456789abd`)
+   - Send JSON format:
+
+   .. code-block:: json
+
+      {
+        "ssid": "YourWiFiSSID",
+        "password": "YourWiFiPassword", 
+        "save_credentials": true
+      }
+
+**Service UUIDs:**
+
+- 🔧 Service: `12345678-1234-1234-1234-123456789abc`
+- 🔑 Credentials Characteristic: `12345678-1234-1234-1234-123456789abd`
+- 📊 Status Characteristic: `12345678-1234-1234-1234-123456789abe`
+
+   .. raw:: html
+
+      <img src="doc/_static/images/wifi_ble_lvgl_3.png" alt="WiFi BLE LVGL Success State" width="400">
+
+**Python Provisioning Script** 🐍
+
+The included `provision_wifi.py` script provides a complete provisioning solution:
+
+**Installation:**
+
+::
+
+   pip install bleak
+
+**Usage:**
+
+::
+
+   # Basic usage
+   python3 provision_wifi.py --ssid "MyNetwork" --password "MyPassword"
+   
+   # Don't save credentials to device storage
+   python3 provision_wifi.py --ssid "MyNetwork" --password "MyPassword" --no-save
+   
+   # Scan for devices only
+   python3 provision_wifi.py --scan-only
+
+4. **Success State** ✅: "WiFi Connected Successfully!" appears in green with "DEVICE IP" button
+
+   .. raw:: html
+
+      <img src="doc/_static/images/wifi_ble_lvgl.png" alt="WiFi BLE LVGL Success State" width="400">
+
+
+5. **View IP** 🌐: Touch "DEVICE IP" to see the assigned IP address
+
+   .. raw:: html
+
+      <img src="doc/_static/images/wifi_ble_lvgl_2.png" alt="WiFi BLE LVGL Success State" width="400">
+
+6. **Navigation** ⬅️: Use "BACK" button to return to main screen
+
+Notes on Bluetooth and Wi-Fi 📡
+------------------------------
+
+- 📡 BLE is used for provisioning and control-plane communication
+- 📶 Wi-Fi operates in station mode
+- 🔐 Credentials are stored securely in NVS
+- 🔄 BLE and Wi-Fi can operate concurrently with LVGL UI
+
+Status 📊
+--------
+
+This port is intended for:
+
+- 🔍 Platform evaluation
+- ✅ Feature validation
+- 🚀 Product prototyping
+- 📖 Reference implementation for ESP32-S3-BOX-3
+
+Some components may still be under active development and are not yet
+submitted upstream.
+
+References 📊
+--------
+- samples/boards/espressif/lcd_lvgl
+- samples/boards/espressif/lcd_lvgl_touch
+- samples/boards/espressif/wifi_ble_lvgl
+
+License 📄
+---------
+
+This project is licensed under the Apache License, Version 2.0.
+See the ``LICENSE`` file for details.
+
