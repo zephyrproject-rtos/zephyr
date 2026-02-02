@@ -112,3 +112,7 @@
 	st,adc-prescaler = <4>;
 	status = "okay";
 };
+
+&rng {
+	status = "okay";
+};
