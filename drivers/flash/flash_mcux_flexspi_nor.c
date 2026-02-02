@@ -1,5 +1,5 @@
 /*
- * Copyright 2020,2023-2025 NXP
+ * Copyright 2020,2023-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1021,6 +1021,12 @@ static int flash_flexspi_nor_config_flash(struct flash_flexspi_nor_data *data,
 					kFLEXSPI_Command_SDR, kFLEXSPI_1PAD,
 					SPI_NOR_CMD_BE, kFLEXSPI_Command_RADDR_SDR,
 					kFLEXSPI_1PAD, addr_width);
+			/* Update LUT for page program to use 32 bit addr and 4byte page program
+			 * command.
+			 */
+			flexspi_lut[PAGE_PROGRAM][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_PP_4B,
+				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, addr_width);
 		}
 	}
 	/* Extract the read command.
@@ -1055,6 +1061,25 @@ static int flash_flexspi_nor_config_flash(struct flash_flexspi_nor_data *data,
 			flexspi_lut[READ][2] =
 				FLEXSPI_LUT_SEQ(kFLEXSPI_Command_READ_SDR, kFLEXSPI_8PAD, 0x04,
 						kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
+
+			if (addr_width == 32) {
+				/* Update LUT for page program with 1S-8S-8S command */
+				flexspi_lut[PAGE_PROGRAM][0] = FLEXSPI_LUT_SEQ(
+					kFLEXSPI_Command_SDR, kFLEXSPI_1PAD,
+					SPI_NOR_CMD_PP_1_8_8_4B, kFLEXSPI_Command_RADDR_SDR,
+					kFLEXSPI_8PAD, addr_width);
+				flexspi_lut[PAGE_PROGRAM][1] = FLEXSPI_LUT_SEQ(
+					kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_8PAD, 0x4,
+					kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
+			} else {
+				/* Update LUT for page program with 1S-8S-8S command */
+				flexspi_lut[PAGE_PROGRAM][0] = FLEXSPI_LUT_SEQ(
+					kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_PP_1_8_8,
+					kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_8PAD, addr_width);
+				flexspi_lut[PAGE_PROGRAM][1] = FLEXSPI_LUT_SEQ(
+					kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_8PAD, 0x4,
+					kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
+			}
 			return 0;
 		}
 	}
