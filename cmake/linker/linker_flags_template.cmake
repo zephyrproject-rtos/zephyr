@@ -58,8 +58,18 @@ set_property(TARGET linker PROPERTY lto_arguments_st)
 # front-end for ld.
 set_compiler_property(PROPERTY specs)
 
-define_property(TARGET PROPERTY no_optimization INHERITED FULL_DOCS "INHERIT")
-define_property(TARGET PROPERTY optimization_debug INHERITED BRIEF_DOCS "INHERIT")
-define_property(TARGET PROPERTY optimization_speed INHERITED BRIEF_DOCS "INHERIT")
-define_property(TARGET PROPERTY optimization_size INHERITED BRIEF_DOCS "INHERIT")
-define_property(TARGET PROPERTY optimization_size_aggressive INHERITED BRIEF_DOCS "INHERIT")
+define_property(TARGET PROPERTY no_optimization INHERITED
+    BRIEF_DOCS "Target property for no optimization level"
+    FULL_DOCS "Target property for no optimization level")
+define_property(TARGET PROPERTY optimization_debug INHERITED
+    BRIEF_DOCS "Target property for debug optimization level"
+    FULL_DOCS "Target property for debug optimization level")
+define_property(TARGET PROPERTY optimization_speed INHERITED
+    BRIEF_DOCS "Target property for speed optimization level"
+    FULL_DOCS "Target property for speed optimization level")
+define_property(TARGET PROPERTY optimization_size INHERITED
+    BRIEF_DOCS "Target property for size optimization level"
+    FULL_DOCS "Target property for size optimization level")
+define_property(TARGET PROPERTY optimization_size_aggressive INHERITED
+    BRIEF_DOCS "Target property for aggressive size optimization level"
+    FULL_DOCS "Target property for aggressive size optimization level")
