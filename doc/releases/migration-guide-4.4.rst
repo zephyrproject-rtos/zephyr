@@ -688,6 +688,11 @@ Bluetooth Audio
 * :kconfig:option:`CONFIG_BT_AUDIO` now depends on :kconfig:option:`CONFIG_UTF8`.
   Applications that enable :kconfig:option:`CONFIG_BT_AUDIO` must also have
   :kconfig:option:`CONFIG_UTF8` enabled. (:github:`102350`)
+* Optional CSIS characteristics have been made configurable via Kconfig and must be enabled explicitly:
+
+  - Coordinated Set Size → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT`
+  - Set Member Lock → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT`
+  - Set Member Rank → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT`
 
 Bluetooth Mesh
 ==============
