@@ -450,6 +450,21 @@ static int gspi_siwx91x_burst_size(struct spi_context *ctx)
 
 	return burst_len;
 }
+
+static void gspi_siwx91x_gspi_fifo_reset_sync(uint32_t frequency)
+{
+	int loops = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / frequency;
+
+	/* GSPI FIFO reset requires the RESET bits to be held high
+	 * for at least one GSPI bus clock cycle.
+	 * Since there is no explicit hardware status indicating
+	 * completion of the FIFO reset, insert a short, frequency-
+	 * dependent delay to guarantee the minimum reset pulse width.
+	 */
+	while (loops-- > 0) {
+		arch_nop();
+	}
+}
 #endif /* CONFIG_SPI_SILABS_SIWX91X_GSPI_DMA */
 
 static int gspi_siwx91x_transceive_dma(const struct device *dev, const struct spi_config *config)
@@ -491,6 +506,8 @@ static int gspi_siwx91x_transceive_dma(const struct device *dev, const struct sp
 
 	cfg->reg->GSPI_FIFO_THRLD_b.RFIFO_RESET = 1;
 	cfg->reg->GSPI_FIFO_THRLD_b.WFIFO_RESET = 1;
+	/* Hold FIFO reset asserted for at least one GSPI clock cycle */
+	gspi_siwx91x_gspi_fifo_reset_sync(config->frequency);
 	cfg->reg->GSPI_FIFO_THRLD = 0;
 	cfg->reg->GSPI_FIFO_THRLD_b.FIFO_AEMPTY_THRLD = burst_size - 1;
 	cfg->reg->GSPI_FIFO_THRLD_b.FIFO_AFULL_THRLD = burst_size - 1;
