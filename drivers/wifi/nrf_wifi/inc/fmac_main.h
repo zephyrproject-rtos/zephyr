@@ -31,11 +31,7 @@
 #else
 #include <radio_test/fmac_api.h>
 #endif /* !CONFIG_NRF70_RADIO_TEST */
-#ifdef CONFIG_NRF71_ON_IPC
-#include <nrf71_wifi_ctrl.h>
-#else
 #include <host_rpu_umac_if.h>
-#endif /* CONFIG_NRF71_ON_IPC */
 
 #define NRF70_DRIVER_VERSION "1."KERNEL_VERSION_STRING
 

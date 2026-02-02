@@ -25,9 +25,7 @@
 #include <util.h>
 #include "common/fmac_util.h"
 #include <fmac_main.h>
-#ifndef CONFIG_NRF71_ON_IPC
 #include <zephyr/drivers/wifi/nrf_wifi/bus/rpu_hw_if.h>
-#endif /* !CONFIG_NRF71_ON_IPC */
 
 #ifndef CONFIG_NRF70_RADIO_TEST
 #ifdef CONFIG_NRF70_STA_MODE
@@ -68,10 +66,8 @@ BUILD_ASSERT(CONFIG_NRF70_MAX_TX_TOKENS >= 1,
 	"At least one TX token is required");
 BUILD_ASSERT(CONFIG_NRF70_MAX_TX_AGGREGATION <= 15,
 	"Max TX aggregation is 15");
-#ifndef CONFIG_NRF71_ON_IPC
 BUILD_ASSERT(RPU_PKTRAM_SIZE - TOTAL_RX_SIZE >= TOTAL_TX_SIZE,
 	"Packet RAM overflow: not enough memory for TX");
-#endif /* CONFIG_NRF71_ON_IPC */
 BUILD_ASSERT(CONFIG_NRF70_TX_MAX_DATA_SIZE >= MAX_TX_FRAME_SIZE,
 	"TX buffer size must be at least as big as the MTU and headroom");
 
@@ -491,7 +487,6 @@ void reg_change_callbk_fn(void *vif_ctx,
 }
 #endif /* !CONFIG_NRF70_RADIO_TEST */
 
-#ifndef CONFIG_NRF71_ON_IPC
 /* DTS uses 1dBm as the unit for TX power, while the RPU uses 0.25dBm */
 #define MAX_TX_PWR(label) DT_PROP(DT_NODELABEL(nrf70), label) * 4
 
@@ -572,25 +567,12 @@ void configure_board_dep_params(struct nrf_wifi_board_params *board_params)
 	board_params->pcb_loss_5g_band3 = CONFIG_NRF70_PCB_LOSS_5G_BAND3;
 #endif /* CONFIG_NRF70_2_4G_ONLY */
 }
-#endif /* CONFIG_NRF71_ON_IPC */
 
 static enum op_band get_nrf_wifi_op_band(void)
 {
 	if (IS_ENABLED(CONFIG_NRF_WIFI_2G_BAND)) {
 		return BAND_24G;
 	}
-#ifdef CONFIG_NRF71_ON_IPC
-	if (IS_ENABLED(CONFIG_NRF_WIFI_5G_BAND)) {
-		return BAND_5G;
-	}
-
-	if (IS_ENABLED(CONFIG_NRF_WIFI_6G_BAND)) {
-		return BAND_6G;
-	}
-	if (IS_ENABLED(CONFIG_NRF_WIFI_DUAL_BAND)) {
-		return BAND_DUAL;
-	}
-#endif /* CONFIG_NRF71_ON_IPC */
 	return BAND_ALL;
 }
 
@@ -659,12 +641,10 @@ enum nrf_wifi_status nrf_wifi_fmac_dev_add_zep(struct nrf_wifi_drv_priv_zep *drv
 		NRF_WIFI_UMAC_VER_MIN(fw_ver),
 		NRF_WIFI_UMAC_VER_EXTRA(fw_ver));
 
-#ifndef CONFIG_NRF71_ON_IPC
 	configure_tx_pwr_settings(&tx_pwr_ctrl_params,
 				  &tx_pwr_ceil_params);
 
 	configure_board_dep_params(&board_params);
-#endif /* CONFIG_NRF71_ON_IPC */
 
 #if defined(CONFIG_NRF70_SR_COEX_SLEEP_CTRL_GPIO_CTRL) && \
 	defined(CONFIG_NRF70_SYSTEM_MODE)
@@ -773,7 +753,6 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 		return 0;
 	}
 
-#ifndef CONFIG_NRF71_ON_IPC
 	int ret;
 
 	/* Configure all nRF70 GPIO pins to OUTPUT_INACTIVE state early
@@ -788,7 +767,6 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 			__func__, ret);
 		return ret;
 	}
-#endif /* !CONFIG_NRF71_ON_IPC */
 
 #ifdef CONFIG_NRF70_DATA_TX
 	data_config.aggregation = aggregation;
@@ -879,14 +857,9 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 	struct nrf_wifi_sys_fmac_priv *sys_fpriv = NULL;
 
 	sys_fpriv = wifi_fmac_priv(rpu_drv_priv_zep.fmac_priv);
-#ifdef CONFIG_NRF71_ON_IPC
-	/* TODO: Revisit this */
-	sys_fpriv->max_ampdu_len_per_token = 8192;
-#else
 	sys_fpriv->max_ampdu_len_per_token =
 		(RPU_PKTRAM_SIZE - (CONFIG_NRF70_RX_NUM_BUFS * CONFIG_NRF70_RX_MAX_DATA_SIZE)) /
 		CONFIG_NRF70_MAX_TX_TOKENS;
-#endif /* CONFIG_NRF71_ON_IPC */
 	/* Align to 4-byte */
 	sys_fpriv->max_ampdu_len_per_token &= ~0x3;
 
