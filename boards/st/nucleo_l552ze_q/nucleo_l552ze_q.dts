@@ -26,3 +26,7 @@
 		sw0 = &user_button;
 	};
 };
+
+&rng {
+	status = "okay";
+};
