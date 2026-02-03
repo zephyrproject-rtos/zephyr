@@ -54,12 +54,6 @@ static int memc_stm32_init(const struct device *dev)
 
 	/* enable FMC peripheral clock */
 	clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-
-	if (!device_is_ready(clk)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
 	r = clock_control_on(clk, (clock_control_subsys_t)&config->pclken[0]);
 	if (r < 0) {
 		LOG_ERR("Could not initialize FMC clock (%d)", r);

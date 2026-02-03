@@ -136,12 +136,6 @@ static int stm32_exti_enable_clocks(void)
 
 #if DT_NODE_HAS_PROP(EXTI_NODE, clocks)
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-
-	if (!device_is_ready(clk)) {
-		LOG_ERR("Clock control device not ready");
-		return -ENODEV;
-	}
-
 	const struct stm32_pclken pclken = STM32_CLOCK_INFO(0, EXTI_NODE);
 
 	ret = clock_control_on(clk, (clock_control_subsys_t) &pclken);

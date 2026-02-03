@@ -437,11 +437,6 @@ static int stm32_flash_init(const struct device *dev)
 	}
 #endif
 
-	if (!device_is_ready(clk)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
 	/* enable clock */
 	if (clock_control_on(clk, (clock_control_subsys_t)&p->pclken) != 0) {
 		LOG_ERR("Failed to enable clock");

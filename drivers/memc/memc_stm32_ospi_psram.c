@@ -286,11 +286,6 @@ static int memc_stm32_ospi_psram_init(const struct device *dev)
 		return ret;
 	}
 
-	if (!device_is_ready(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE))) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
 	if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 			     (clock_control_subsys_t)&dev_cfg->pclken) != 0) {
 		LOG_ERR("Could not enable OSPI clock");

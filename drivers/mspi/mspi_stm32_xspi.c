@@ -1458,10 +1458,6 @@ static int mspi_stm32_xspi_activate(const struct device *dev)
 	const struct mspi_stm32_conf *config = (struct mspi_stm32_conf *)dev->config;
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
-	if (!device_is_ready(clk)) {
-		return -ENODEV;
-	}
-
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
 		return ret;

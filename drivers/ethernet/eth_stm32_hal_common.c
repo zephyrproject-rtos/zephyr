@@ -117,11 +117,6 @@ static int eth_initialize(const struct device *dev)
 	ETH_HandleTypeDef *heth = &dev_data->heth;
 	int ret = 0;
 
-	if (!device_is_ready(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE))) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
 	/* Enable clocks */
 	for (size_t n = 0; n < cfg->pclken_cnt; n++) {
 		if (n == cfg->kclk_sel_idx) {

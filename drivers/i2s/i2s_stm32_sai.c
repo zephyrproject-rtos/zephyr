@@ -272,12 +272,6 @@ static int stm32_sai_enable_clock(const struct device *dev)
 	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	int err;
 
-	if (!device_is_ready(clk)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-	LOG_DBG("Clock Control Device: <OK>");
-
 	/* Turn on SAI peripheral clock */
 	err = clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]);
 	if (err != 0) {

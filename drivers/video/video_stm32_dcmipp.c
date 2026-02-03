@@ -1680,11 +1680,6 @@ static int stm32_dcmipp_enable_clock(const struct device *dev)
 	const struct device *cc_node = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	int err;
 
-	if (!device_is_ready(cc_node)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
 	/* Turn on DCMIPP peripheral clock */
 	err = clock_control_configure(cc_node, (clock_control_subsys_t)&config->dcmipp_pclken_ker,
 				      NULL);

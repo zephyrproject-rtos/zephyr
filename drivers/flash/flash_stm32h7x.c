@@ -934,11 +934,6 @@ static int stm32h7_flash_init(const struct device *dev)
 	struct flash_stm32_priv *p = FLASH_STM32_PRIV(dev);
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
-	if (!device_is_ready(clk)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
 	/* enable clock : enable the RCC_AHB3ENR_FLASHEN bit */
 	if (clock_control_on(clk, (clock_control_subsys_t)&p->pclken) != 0) {
 		LOG_ERR("Failed to enable clock");
