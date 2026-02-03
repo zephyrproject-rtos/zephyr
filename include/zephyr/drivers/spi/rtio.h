@@ -21,6 +21,7 @@ extern "C" {
 struct spi_rtio {
 	struct k_spinlock lock;
 	struct rtio *r;
+	struct k_sem r_lock;
 	struct mpsc io_q;
 	struct rtio_iodev iodev;
 	struct rtio_iodev_sqe *txn_head;
