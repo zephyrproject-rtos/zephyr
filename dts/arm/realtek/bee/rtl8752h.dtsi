@@ -172,6 +172,86 @@
 			interrupts = <31 0>;
 			status = "disabled";
 		};
+
+		/* basic timers */
+		timer2: timer@40002028 {
+			compatible = "realtek,bee-timer", "realtek,bee-basic-timer";
+			reg = <0x40002028 0x10>;
+			clocks = <&cctl APB_CLK(TIMER)>;
+			interrupts = <4 0>;
+			status = "disabled";
+
+			counter {
+				compatible = "realtek,bee-counter-timer";
+				status = "disabled";
+			};
+		};
+
+		timer3: timer@4000203c {
+			compatible = "realtek,bee-timer", "realtek,bee-basic-timer";
+			reg = <0x4000203c 0x10>;
+			clocks = <&cctl APB_CLK(TIMER)>;
+			interrupts = <3 0>;
+			status = "disabled";
+
+			counter {
+				compatible = "realtek,bee-counter-timer";
+				status = "disabled";
+			};
+		};
+
+		timer4: timer@40002050 {
+			compatible = "realtek,bee-timer", "realtek,bee-basic-timer";
+			reg = <0x40002050 0x10>;
+			clocks = <&cctl APB_CLK(TIMER)>;
+			interrupts = <8 0>;
+			status = "disabled";
+
+			counter {
+				compatible = "realtek,bee-counter-timer";
+				status = "disabled";
+			};
+		};
+
+		timer5: timer@40002064 {
+			compatible = "realtek,bee-timer", "realtek,bee-basic-timer";
+			reg = <0x40002064 0x10>;
+			clocks = <&cctl APB_CLK(TIMER)>;
+			interrupts = <8 0>;
+			status = "disabled";
+
+			counter {
+				compatible = "realtek,bee-counter-timer";
+				status = "disabled";
+			};
+		};
+
+		/* enhanced timers */
+		timer6: timer@40003000 {
+			compatible = "realtek,bee-timer", "realtek,bee-enhanced-timer";
+			reg = <0x40003000 0x400>;
+			clocks = <&cctl APB_CLK(ENHTIMER)>;
+			interrupts = <24 0>;
+			status = "disabled";
+
+			counter {
+				compatible = "realtek,bee-counter-timer";
+				status = "disabled";
+			};
+		};
+
+		timer7: timer@40003024 {
+			compatible = "realtek,bee-timer", "realtek,bee-enhanced-timer";
+			reg = <0x40003024 0x400>;
+			clocks = <&cctl APB_CLK(ENHTIMER)>;
+			interrupts = <25 0>;
+			status = "disabled";
+
+			counter {
+				compatible = "realtek,bee-counter-timer";
+				status = "disabled";
+			};
+		};
 	};
 
 	clocks {

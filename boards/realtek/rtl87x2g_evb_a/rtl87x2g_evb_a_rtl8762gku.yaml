@@ -11,6 +11,7 @@ supported:
   - pinctrl
   - gpio
   - uart
+  - counter
 testing:
   ignore_tags:
     - pm
