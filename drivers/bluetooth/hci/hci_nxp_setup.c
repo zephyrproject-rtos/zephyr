@@ -1227,7 +1227,12 @@ static int bt_nxp_ctlr_init(void)
 
 	uart_irq_rx_enable(uart_dev);
 
+#if defined(CONFIG_WIFI_NXP) && (defined(CONFIG_NXP_IW61X) || defined(CONFIG_NXP_IW416) || defined(CONFIG_NXP_IW610))
+	/* We must skip Bluetooth firmware uploading here, since Wi-Fi driver is enabled
+	   and already loaded `sduart` firmware for both Wi-Fi and Bluetooth parts of the modules. */
+#else /* defined(CONFIG_NXP_IW61X) || defined(CONFIG_NXP_IW416) || defined(CONFIG_NXP_IW610) */
 	err = fw_uploading(bt_fw_bin, bt_fw_bin_len);
+#endif /* defined(CONFIG_NXP_IW61X) || defined(CONFIG_NXP_IW416) || defined(CONFIG_NXP_IW610) */
 
 	if (err) {
 		LOG_ERR("Fail to upload firmware");
