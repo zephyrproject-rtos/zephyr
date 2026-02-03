@@ -107,16 +107,22 @@
 #define __builtin_unreachable() __builtin_trap()
 #endif
 
-#if defined(CONFIG_ARCH_POSIX) && !defined(_ASMLANGUAGE)
+#if defined(__COVERITY__)
+/*
+ * Coverity may report "structurally dead code" around CODE_UNREACHABLE usage.
+ * Make it a no-op under Coverity analysis to avoid false positives.
+ */
+#define CODE_UNREACHABLE do { } while (0)
+
+#elif defined(CONFIG_ARCH_POSIX) && !defined(_ASMLANGUAGE)
 #include <zephyr/arch/posix/posix_trace.h>
 
 /*let's not segfault if this were to happen for some reason*/
-#define CODE_UNREACHABLE \
-{\
-	posix_print_error_and_exit("CODE_UNREACHABLE reached from %s:%d\n",\
-		__FILE__, __LINE__);\
+#define CODE_UNREACHABLE do { \
+	posix_print_error_and_exit("CODE_UNREACHABLE reached from %s:%d\n", \
+				   __FILE__, __LINE__); \
 	__builtin_unreachable(); \
-}
+} while (false)
 #else
 #define CODE_UNREACHABLE __builtin_unreachable()
 #endif

@@ -141,14 +141,13 @@ static int acquire_mutex(pthread_mutex_t *mu, k_timeout_t timeout)
 			if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 				LOG_DBG("Timeout locking mutex %p", m);
 				ret = EBUSY;
-				break;
+			} else {
+				/* On most POSIX systems, this usually results in an infinite loop */
+				LOG_DBG("Attempt to relock non-recursive mutex %p", m);
+				for (;;) {
+					(void)k_sleep(K_FOREVER);
+				}
 			}
-			/* On most POSIX systems, this usually results in an infinite loop */
-			LOG_DBG("Attempt to relock non-recursive mutex %p", m);
-			do {
-				(void)k_sleep(K_FOREVER);
-			} while (true);
-			CODE_UNREACHABLE;
 			break;
 		case PTHREAD_MUTEX_RECURSIVE:
 			if (lock_count >= MUTEX_MAX_REC_LOCK) {
