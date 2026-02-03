@@ -184,6 +184,8 @@ const void *usbh_desc_get_next_function(const void *const desc)
 	/* Skip all interfaces the Association descriptor contains */
 	if (usbh_desc_is_valid_association(head)) {
 		skip_num = ass_d->bInterfaceCount;
+	} else if (usbh_desc_is_valid_interface(head)) {
+		skip_num = 1;
 	}
 
 	/* Skip the interface if the head is interface */
