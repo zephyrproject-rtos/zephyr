@@ -12,8 +12,10 @@
  */
 
 #include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <zephyr/app_memory/app_memdomain.h>
 #include <mbedtls/platform_time.h>
+#include <errno.h>
 
 #include <mbedtls/debug.h>
 

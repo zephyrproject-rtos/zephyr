@@ -5,14 +5,15 @@
  */
 
 #include <zephyr/random/random.h>
-#include <mbedtls/entropy.h>
 #include <psa/crypto.h>
+#include <mbedtls/platform.h>
 
 
-#if defined(CONFIG_MBEDTLS_ENTROPY_POLL_ZEPHYR) || defined(CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG)
+#if defined(CONFIG_MBEDTLS_PSA_DRIVER_GET_ENTROPY) || \
+    defined(CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG)
 static int get_random_data(uint8_t *output, size_t output_size, bool allow_non_cs)
 {
-	int ret = MBEDTLS_ERR_ENTROPY_NO_SOURCES_DEFINED;
+	int ret = -EINVAL;
 
 #if defined(CONFIG_CSPRNG_ENABLED)
 	ret = sys_csrand_get(output, output_size);
@@ -28,31 +29,24 @@ static int get_random_data(uint8_t *output, size_t output_size, bool allow_non_c
 
 	return ret;
 }
-#endif /* CONFIG_MBEDTLS_ENTROPY_POLL_ZEPHYR || CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG */
+#endif /* CONFIG_MBEDTLS_PSA_DRIVER_GET_ENTROPY || CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG */
 
-#if defined(CONFIG_MBEDTLS_ENTROPY_POLL_ZEPHYR)
-int mbedtls_hardware_poll(void *data, unsigned char *output, size_t len,
-			  size_t *olen)
+#if defined(CONFIG_MBEDTLS_PSA_DRIVER_GET_ENTROPY)
+int mbedtls_platform_get_entropy(psa_driver_get_entropy_flags_t flags,
+				 size_t *estimate_bits,
+				 unsigned char *output, size_t output_size)
 {
-	int ret;
-	uint16_t request_len = len > UINT16_MAX ? UINT16_MAX : len;
+	ARG_UNUSED(flags);
 
-	ARG_UNUSED(data);
-
-	if (output == NULL || olen == NULL || len == 0) {
-		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
+	if (get_random_data(output, output_size, true) < 0) {
+		return -EIO;
 	}
 
-	ret = get_random_data(output, len, true);
-	if (ret < 0) {
-		return MBEDTLS_ERR_ENTROPY_SOURCE_FAILED;
-	}
-
-	*olen = request_len;
+	*estimate_bits = 8 * output_size;
 
 	return 0;
 }
-#endif /* CONFIG_MBEDTLS_ENTROPY_POLL_ZEPHYR */
+#endif /* CONFIG_MBEDTLS_PSA_DRIVER_GET_ENTROPY */
 
 #if defined(CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG)
 psa_status_t mbedtls_psa_external_get_random(
