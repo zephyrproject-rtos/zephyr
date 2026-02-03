@@ -94,6 +94,28 @@
 				status = "disabled";
 			};
 		};
+
+		sercom0: sercom@42000400 {
+			compatible = "microchip,sercom-g1";
+			reg = <0x42000400 0x31>;
+			interrupts = <7 0>;
+			interrupt-names = "source-0-7";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_SERCOM0>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM0_CORE>;
+			clock-names = "mclk", "gclk";
+			status = "disabled";
+		};
+
+		sercom1: sercom@42000800 {
+			compatible = "microchip,sercom-g1";
+			reg = <0x42000800 0x31>;
+			interrupts = <8 0>;
+			interrupt-names = "source-0-7";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_SERCOM1>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM1_CORE>;
+			clock-names = "mclk", "gclk";
+			status = "disabled";
+		};
 	};
 };
 
