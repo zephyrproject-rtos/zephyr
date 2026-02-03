@@ -352,6 +352,18 @@ static inline void spi_spin_unlock(struct spi_rtio *ctx, k_spinlock_key_t key)
 	k_spin_unlock(&ctx->lock, key);
 }
 
+/** Lock the shared rtio context used for fallback implementations */
+static inline void spi_r_lock(struct spi_rtio *ctx)
+{
+	(void)k_sem_take(&ctx->r_lock, K_FOREVER);
+}
+
+/** Unlock the shared rtio context used for fallback implementations */
+static inline void spi_r_unlock(struct spi_rtio *ctx)
+{
+	k_sem_give(&ctx->r_lock);
+}
+
 void spi_rtio_init(struct spi_rtio *ctx,
 		   const struct device *dev)
 {
@@ -361,6 +373,7 @@ void spi_rtio_init(struct spi_rtio *ctx,
 	ctx->dt_spec.bus = dev;
 	ctx->iodev.data = &ctx->dt_spec;
 	ctx->iodev.api = &spi_iodev_api;
+	k_sem_init(&ctx->r_lock, 1, 1);
 }
 
 /**
@@ -435,10 +448,13 @@ int spi_rtio_transceive(struct spi_rtio *ctx,
 		return -EINVAL;
 	}
 
+	spi_r_lock(ctx);
+
 	dt_spec->config = *config;
 
 	ret = spi_rtio_copy(ctx->r, &ctx->iodev, tx_bufs, rx_bufs, &sqe);
 	if (ret < 0) {
+		spi_r_unlock(ctx);
 		return ret;
 	}
 
@@ -460,5 +476,6 @@ int spi_rtio_transceive(struct spi_rtio *ctx,
 		ret--;
 	}
 
+	spi_r_unlock(ctx);
 	return err;
 }
