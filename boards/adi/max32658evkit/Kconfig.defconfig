@@ -45,4 +45,13 @@ endif # BOARD_MAX32658EVKIT_MAX32658_NS
 config I3C
 	default y if ADXL367
 
+if PM_DEVICE_RUNTIME && LOG_BACKEND_UART
+
+# Increase the default buffer size for the UART log backend to avoid excessive
+# pm_device_runtime_get/put calls when deferred logging is enabled.
+config LOG_BACKEND_UART_BUFFER_SIZE
+	default 256
+
+endif # PM_DEVICE_RUNTIME && LOG_BACKEND_UART
+
 endif # BOARD_MAX32658EVKIT
