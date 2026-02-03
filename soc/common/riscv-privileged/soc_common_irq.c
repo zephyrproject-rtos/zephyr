@@ -14,6 +14,7 @@
 
 #include <zephyr/drivers/interrupt_controller/riscv_clic.h>
 #include <zephyr/drivers/interrupt_controller/riscv_plic.h>
+#include <zephyr/drivers/interrupt_controller/riscv_aia.h>
 
 #if defined(CONFIG_RISCV_HAS_CLIC)
 
@@ -59,6 +60,16 @@ void arch_irq_enable(unsigned int irq)
 		riscv_plic_irq_enable(irq);
 		return;
 	}
+#elif defined(CONFIG_RISCV_HAS_AIA)
+	/*
+	 * AIA: Check if this is an APLIC source (determined from DT).
+	 * APLIC sources go through AIA, local interrupts use mie CSR.
+	 */
+	if (riscv_aia_is_aplic_source(irq)) {
+		riscv_aia_irq_enable(irq);
+		return;
+	}
+	/* Fall through to enable local interrupts in mie CSR */
 #endif
 
 	/*
@@ -77,6 +88,11 @@ void arch_irq_disable(unsigned int irq)
 
 	if (level == 2) {
 		riscv_plic_irq_disable(irq);
+		return;
+	}
+#elif defined(CONFIG_RISCV_HAS_AIA)
+	if (riscv_aia_is_aplic_source(irq)) {
+		riscv_aia_irq_disable(irq);
 		return;
 	}
 #endif
@@ -98,6 +114,10 @@ int arch_irq_is_enabled(unsigned int irq)
 	if (level == 2) {
 		return riscv_plic_irq_is_enabled(irq);
 	}
+#elif defined(CONFIG_RISCV_HAS_AIA)
+	if (riscv_aia_is_aplic_source(irq)) {
+		return riscv_aia_irq_is_enabled(irq);
+	}
 #endif
 
 	mie = csr_read(mie);
@@ -114,7 +134,24 @@ void z_riscv_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flag
 		riscv_plic_set_priority(irq, prio);
 	}
 }
+#elif defined(CONFIG_RISCV_HAS_AIA)
+void z_riscv_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
+{
+	/* Only configure APLIC sources */
+	if (!riscv_aia_is_aplic_source(irq)) {
+		return;
+	}
+
+	/* Configure APLIC source mode (trigger type) from DT flags */
+	if (flags != 0) {
+		riscv_aia_config_source(irq, flags);
+	}
+
+	/* AIA priority is handled via IMSIC EITHRESHOLD or EIID ordering */
+	riscv_aia_set_priority(irq, prio);
+}
 #endif /* CONFIG_RISCV_HAS_PLIC */
+
 #endif /* CONFIG_RISCV_HAS_CLIC */
 
 #if defined(CONFIG_RISCV_SOC_INTERRUPT_INIT)

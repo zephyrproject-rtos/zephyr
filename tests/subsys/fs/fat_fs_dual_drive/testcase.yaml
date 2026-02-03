@@ -4,7 +4,7 @@ tests:
       - qemu_x86
       - native_sim
       - qemu_leon3
-      - qemu_riscv32
+      - qemu_riscv32/qemu_virt_riscv32
       - qemu_riscv64
     tags: filesystem
     integration_platforms:

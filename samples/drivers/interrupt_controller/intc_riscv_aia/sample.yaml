@@ -1,0 +1,25 @@
+sample:
+  description: UART echo demonstrating RISC-V AIA (APLIC + IMSIC)
+  name: UART Echo AIA
+
+common:
+  tags:
+    - riscv
+    - interrupt
+  integration_platforms:
+    - qemu_riscv32/qemu_virt_riscv32_aia
+  harness: console
+  harness_config:
+    type: multi_line
+    regex:
+      - "RISC-V AIA UART Echo Demo"
+      - "Type characters to see interrupt-driven echo"
+
+tests:
+  sample.drivers.uart_echo_aia:
+    tags:
+      - riscv
+      - interrupt
+    filter: >
+      CONFIG_RISCV_APLIC_MSI and
+      CONFIG_RISCV_IMSIC
