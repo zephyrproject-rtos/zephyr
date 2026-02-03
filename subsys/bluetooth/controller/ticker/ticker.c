@@ -981,10 +981,13 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes,
 			 */
 			uint8_t curr_has_ticks_slot_window =
 					TICKER_HAS_SLOT_WINDOW(ticker) &&
-					((acc_ticks_to_expire +
-					  ticker_next->ticks_slot) <=
-					 (ticker->ext_data->ticks_slot_window -
-					  ticker->ticks_slot));
+					((ticker->ticks_slot == 0U) ||
+					 ((acc_ticks_to_expire < ticker->ticks_slot) &&
+					  (ticker->ext_data->ticks_slot_window >=
+					   (ticker->ext_data->ticks_drift + ticker->ticks_slot)) &&
+					  ((acc_ticks_to_expire + ticker_next->ticks_slot) <=
+					   (ticker->ext_data->ticks_slot_window -
+					    ticker->ext_data->ticks_drift - ticker->ticks_slot))));
 
 #else /* !CONFIG_BT_TICKER_EXT_SLOT_WINDOW_YIELD */
 #if defined(CONFIG_BT_TICKER_PRIORITY_SET)
