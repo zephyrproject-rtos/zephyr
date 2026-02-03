@@ -58,33 +58,33 @@ struct wifi_credentials {
 static void wifi_connect_work_handler(struct k_work *work)
 {
     int ret;
-    
+
     LOG_INF("WiFi work handler: Starting connection process");
-    
+
     /* Validate input parameters */
     if (strlen(pending_ssid) == 0) {
         LOG_ERR("Invalid SSID");
         ui_send_event(UI_EVENT_WIFI_FAILED, NULL);
         return;
     }
-    
+
     if (strlen(pending_password) == 0) {
         LOG_ERR("Invalid password");
         ui_send_event(UI_EVENT_WIFI_FAILED, NULL);
         return;
     }
-    
+
     LOG_INF("WiFi work handler: Attempting connection to SSID: %s", pending_ssid);
-    
+
     /* Send connecting event to UI */
     ui_send_event(UI_EVENT_WIFI_CONNECTING, NULL);
-    
+
     /* Try to connect to WiFi - this is now non-blocking */
     ret = wifi_connect(pending_ssid, pending_password);
     if (ret != 0) {
         LOG_ERR("WiFi connection request failed with error: %d", ret);
         ui_send_event(UI_EVENT_WIFI_FAILED, NULL);
-        
+
         /* Send failure notification */
         const char *response = "{\"status\":\"failed\",\"message\":\"WiFi connection request failed\"}";
         ret = ble_send_notification(response, strlen(response));
@@ -93,9 +93,9 @@ static void wifi_connect_work_handler(struct k_work *work)
         }
         return;
     }
-    
+
     LOG_INF("WiFi connection request submitted successfully");
-    
+
     /* Save credentials if requested - do this immediately since connection is async */
     if (pending_save_credentials) {
         ret = nvs_save_wifi_credentials(pending_ssid, pending_password);
@@ -105,7 +105,7 @@ static void wifi_connect_work_handler(struct k_work *work)
             LOG_INF("Credentials saved to NVS successfully");
         }
     }
-    
+
     LOG_INF("WiFi work handler: Completed - waiting for connection result");
 }
 
@@ -179,16 +179,16 @@ static ssize_t write_wifi_creds(struct bt_conn *conn,
     /* Store credentials for work queue processing */
     memset(pending_ssid, 0, sizeof(pending_ssid));
     memset(pending_password, 0, sizeof(pending_password));
-    
+
     strncpy(pending_ssid, creds.ssid, sizeof(pending_ssid) - 1);
     pending_ssid[sizeof(pending_ssid) - 1] = '\0';
-    
+
     strncpy(pending_password, creds.password, sizeof(pending_password) - 1);
     pending_password[sizeof(pending_password) - 1] = '\0';
-    
+
     pending_save_credentials = creds.save_credentials;
 
-    LOG_INF("Stored credentials - SSID: %s, Password length: %d", 
+    LOG_INF("Stored credentials - SSID: %s, Password length: %d",
             pending_ssid, (int)strlen(pending_password));
 
     /* Submit work to dedicated work queue - no UI calls from here */
@@ -215,7 +215,7 @@ static ssize_t read_wifi_status(struct bt_conn *conn,
     }
 
     strcpy(status_buf, status_msg);
-    
+
     return bt_gatt_attr_read(conn, attr, buf, len, offset, status_buf, strlen(status_buf));
 }
 
@@ -228,13 +228,13 @@ static void wifi_status_ccc_cfg_changed(const struct bt_gatt_attr *attr, uint16_
 /* WiFi Provisioning Service Definition */
 BT_GATT_SERVICE_DEFINE(wifi_prov_svc,
     BT_GATT_PRIMARY_SERVICE(BT_UUID_WIFI_PROV_SERVICE),
-    
+
     /* WiFi Credentials Characteristic - Support both write types */
     BT_GATT_CHARACTERISTIC(BT_UUID_WIFI_CREDS_CHAR,
                           BT_GATT_CHRC_WRITE | BT_GATT_CHRC_WRITE_WITHOUT_RESP,
                           BT_GATT_PERM_WRITE,
                           NULL, write_wifi_creds, NULL),
-    
+
     /* WiFi Status Characteristic */
     BT_GATT_CHARACTERISTIC(BT_UUID_WIFI_STATUS_CHAR,
                           BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY,
@@ -267,21 +267,20 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
     LOG_INF("Connected %s", addr);
     current_conn = bt_conn_ref(conn);
-    
+
     /* Log connection parameters */
     struct bt_conn_info info;
     if (bt_conn_get_info(conn, &info) == 0) {
         LOG_INF("Connection info - Type: %d, Role: %d", info.type, info.role);
         if (info.type == BT_CONN_TYPE_LE) {
-            LOG_INF("LE connection - Latency: %d, Timeout: %d", 
+            LOG_INF("LE connection - Latency: %d, Timeout: %d",
                     info.le.latency, info.le.timeout);
         }
     }
-    
+
     /* Try to get MTU information */
-    uint16_t mtu = bt_gatt_get_mtu(conn);
-    LOG_INF("Current GATT MTU: %d bytes", mtu);
-    
+    LOG_INF("Current GATT MTU: %d bytes", bt_gatt_get_mtu(conn));
+
     LOG_INF("BLE connected - ready to receive credentials");
 }
 
@@ -314,10 +313,10 @@ int ble_gatt_init(void)
     k_work_queue_start(&wifi_work_q, wifi_work_stack,
                        K_THREAD_STACK_SIZEOF(wifi_work_stack),
                        K_PRIO_COOP(3), NULL);
-    
-    LOG_INF("WiFi work queue initialized with stack size %d", 
+
+    LOG_INF("WiFi work queue initialized with stack size %d",
             (int)K_THREAD_STACK_SIZEOF(wifi_work_stack));
-    
+
     /* Initialize work item */
     k_work_init(&wifi_connect_work, wifi_connect_work_handler);
 

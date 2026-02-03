@@ -27,7 +27,7 @@ static const struct device *display_dev = DEVICE_DT_GET(DISPLAY_NODE);
 void enable_backlight(void)
 {
 	LOG_INF("Configuring backlight...");
-	
+
 	if (!gpio_is_ready_dt(&backlight)) {
 		LOG_ERR("Backlight GPIO not ready");
 		return;
@@ -46,7 +46,7 @@ void enable_backlight(void)
 void create_hello_world_ui(void)
 {
 	LOG_INF("Creating LVGL Hello world UI...");
-	
+
 	/* Get active screen */
 	lv_obj_t *scr = lv_scr_act();
 	LOG_INF("Got active screen: %p", scr);
@@ -56,26 +56,26 @@ void create_hello_world_ui(void)
 	lv_obj_set_style_bg_color(scr, green_color, LV_PART_MAIN);
 	lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, LV_PART_MAIN);
 	LOG_INF("Set background color to green with BGR handling");
-	
+
 	/* Create a label for "Hello world" */
 	lv_obj_t *label = lv_label_create(scr);
 	LOG_INF("Created label: %p", label);
-	
+
 	if (label) {
 		lv_label_set_text(label, "Hello World!");
 		LOG_INF("Set label text");
-		
+
 		/* Set text color to white */
 		lv_obj_set_style_text_color(label, lv_color_make(255, 255, 255), LV_PART_MAIN);
 		LOG_INF("Set text color to white");
-		
+
 		/* Center the label */
 		lv_obj_center(label);
 		LOG_INF("Centered label");
 	} else {
 		LOG_ERR("Failed to create label");
 	}
-	
+
 	LOG_INF("LVGL Hello World UI created successfully");
 }
 
@@ -105,11 +105,11 @@ int main(void)
 
 	/* Manually initialize LVGL since we disabled automatic init */
 	LOG_INF("Manually initializing LVGL...");
-	
+
 	/* Initialize LVGL */
 	lv_init();
 	LOG_INF("LVGL core initialized");
-	
+
 	/* Initialize LVGL display driver */
 	int ret = lvgl_init();
 	if (ret != 0) {
@@ -120,7 +120,7 @@ int main(void)
 
 	/* Test basic LVGL functionality */
 	LOG_INF("Testing basic LVGL...");
-	
+
 	/* Try to get active screen - this is the first LVGL call */
 	lv_obj_t *scr = lv_scr_act();
 	if (!scr) {
@@ -132,7 +132,7 @@ int main(void)
 	/* Create the Hello world UI */
 	LOG_INF("Creating LVGL UI...");
 	create_hello_world_ui();
-	
+
 	LOG_INF("LVGL demo started - entering main loop");
 
 	/* Main loop - handle LVGL tasks */

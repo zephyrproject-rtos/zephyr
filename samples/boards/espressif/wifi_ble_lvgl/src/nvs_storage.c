@@ -29,8 +29,8 @@ int nvs_storage_init(void)
     fs.sector_size = 4096; /* Standard flash sector size */
     fs.sector_count = FIXED_PARTITION_SIZE(storage_partition) / fs.sector_size;
 
-    LOG_INF("NVS: offset=0x%lx, size=%d, sector_size=%d, sector_count=%d", 
-            (unsigned long)fs.offset, FIXED_PARTITION_SIZE(storage_partition), 
+    LOG_INF("NVS: offset=0x%lx, size=%d, sector_size=%d, sector_count=%d",
+            (unsigned long)fs.offset, FIXED_PARTITION_SIZE(storage_partition),
             fs.sector_size, fs.sector_count);
 
     rc = nvs_mount(&fs);
@@ -117,7 +117,7 @@ bool nvs_has_wifi_credentials(void)
 {
     uint8_t valid = 0;
     int rc = nvs_read(&fs, WIFI_CREDENTIALS_VALID_KEY, &valid, sizeof(valid));
-    
+
     if (rc < 0) {
         LOG_DBG("No valid credentials flag found: %d", rc);
         return false;

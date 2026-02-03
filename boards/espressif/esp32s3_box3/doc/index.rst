@@ -3,12 +3,12 @@
 Overview
 ********
 
-The ESP32-S3-BOX-3 is a next-generation development tool designed for AIoT, Edge AI, and IIoT applications. 
-It is based on the powerful ESP32-S3 SoC and features a compact and beautiful enclosure with rich assemblies, 
+The ESP32-S3-BOX-3 is a next-generation development tool designed for AIoT, Edge AI, and IIoT applications.
+It is based on the powerful ESP32-S3 SoC and features a compact and beautiful enclosure with rich assemblies,
 empowering developers to easily customize and expand its functionality.
 
-The ESP32-S3-BOX-3 is equipped with ESP32-S3-WROOM-1 module, which offers 2.4 GHz Wi-Fi + Bluetooth 5 (LE) 
-wireless capability as well as AI acceleration capabilities. On top of 512 KB SRAM provided by the ESP32-S3 SoC, 
+The ESP32-S3-BOX-3 is equipped with ESP32-S3-WROOM-1 module, which offers 2.4 GHz Wi-Fi + Bluetooth 5 (LE)
+wireless capability as well as AI acceleration capabilities. On top of 512 KB SRAM provided by the ESP32-S3 SoC,
 the module comes with additional 16 MB Quad flash and 16 MB Octal PSRAM.
 
 Hardware

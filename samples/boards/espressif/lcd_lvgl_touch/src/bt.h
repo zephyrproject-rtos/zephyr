@@ -9,7 +9,7 @@
 
 /**
  * @brief Initialize Bluetooth beacon functionality
- * 
+ *
  * @return 0 on success, negative error code on failure
  */
 int init_bluetooth(void);

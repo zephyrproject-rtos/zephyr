@@ -88,17 +88,17 @@
 	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
-	
+
 	esp32_lcd: esp32_lcd@0 {
 		compatible = "espressif,esp32-lcd";
 		reg = <0>;
 		spi-max-frequency = <20000000>; /* 20 MHz */
 		width = <320>;
 		height = <240>;
-		pixel-format = <0>; 
+		pixel-format = <0>;
 		rotation = <0>;
 		dc-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
-		reset-gpios = <&gpio1 16 GPIO_ACTIVE_LOW>; 
+		reset-gpios = <&gpio1 16 GPIO_ACTIVE_LOW>;
 		status = "okay";
 	};
 };

@@ -88,7 +88,7 @@ static int init_button(void)
 static void factory_reset(void)
 {
     LOG_WRN("Performing factory reset...");
-    
+
     /* Clear WiFi credentials */
     int ret = nvs_clear_wifi_credentials();
     if (ret < 0) {
@@ -111,7 +111,7 @@ static void status_thread(void)
 {
     char ip_str[16];
     bool last_wifi_status = false;
-    
+
     while (1) {
         if (factory_reset_requested) {
             factory_reset();
@@ -126,10 +126,8 @@ static void status_thread(void)
         }
 
         /* Update IP address if connected */
-        if (current_wifi_status) {
-            if (wifi_get_ip_address(ip_str, sizeof(ip_str)) == 0) {
-                /* IP address update is handled by WiFi manager callbacks */
-            }
+        if (current_wifi_status && wifi_get_ip_address(ip_str, sizeof(ip_str)) == 0) {
+            /* IP address update is handled by WiFi manager callbacks */
         }
 
         k_sleep(K_SECONDS(5)); /* Check less frequently to reduce conflicts */
@@ -218,7 +216,7 @@ int main(void)
         } else {
             LOG_INF("WiFi Status: Disconnected - BLE provisioning active");
         }
-        
+
         k_sleep(K_SECONDS(30));
     }
 

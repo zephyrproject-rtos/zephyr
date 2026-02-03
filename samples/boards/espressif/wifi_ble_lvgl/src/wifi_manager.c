@@ -32,7 +32,7 @@ static void handle_wifi_connect_result(struct net_mgmt_event_callback *cb)
         LOG_ERR("Connection request failed (%d)", status->status);
         is_connected = false;
         ui_send_event(UI_EVENT_WIFI_FAILED, NULL);
-        
+
         /* Send failure notification via BLE */
         const char *response = "{\"status\":\"failed\",\"message\":\"WiFi connection failed\"}";
         ble_send_notification(response, strlen(response));
@@ -40,11 +40,11 @@ static void handle_wifi_connect_result(struct net_mgmt_event_callback *cb)
         LOG_INF("Connected to WiFi");
         is_connected = true;
         ui_send_event(UI_EVENT_WIFI_CONNECTED, NULL);
-        
+
         /* Send success notification via BLE */
         const char *response = "{\"status\":\"connected\",\"message\":\"WiFi connected successfully\"}";
         ble_send_notification(response, strlen(response));
-        
+
         LOG_INF("WiFi connected - UI event sent");
     }
     k_sem_give(&wifi_connected);
@@ -80,7 +80,7 @@ static void handle_ipv4_result(struct net_if *iface)
         net_addr_ntop(AF_INET, &unicast->ipv4.address.in_addr, buf, sizeof(buf));
         strncpy(device_ip, buf, sizeof(device_ip) - 1);
         device_ip[sizeof(device_ip) - 1] = '\0';
-        
+
         LOG_INF("IPv4 address: %s", device_ip);
         ui_update_ip_address(device_ip);
         LOG_INF("IP address obtained and UI updated");
@@ -145,7 +145,7 @@ int wifi_connect(const char *ssid, const char *password)
     wifi_params.mfp = WIFI_MFP_OPTIONAL;
 
     LOG_INF("Connecting to WiFi SSID: %s", ssid);
-    
+
     /* Set the SSID in UI manager for display */
     ui_set_wifi_ssid(ssid);
 

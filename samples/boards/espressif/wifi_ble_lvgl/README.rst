@@ -11,10 +11,10 @@ Features
 
 * **Minimalistic LVGL UI**: Clean white interface with modern design principles
 * **Two-Screen Navigation**:
-  
+
   - **Main Screen**: Status display with centered "Device IP" button
   - **IP Display Screen**: Shows device IP address with back navigation
-  
+
 * **BLE WiFi Provisioning**: Receive WiFi credentials via BLE in JSON format
 * **NVS Persistent Storage**: Store and retrieve WiFi credentials across reboots
 * **Real-time Status Updates**: Color-coded visual feedback for connection status
@@ -32,13 +32,13 @@ UI Design
   - Default: Black (#000000)
 
 **Screen Flow:**
-1. **Main Screen**: 
+1. **Main Screen**:
    - Clean white background
    - Centered status text with color-coded feedback
    - Modern blue "DEVICE IP" button (appears after WiFi connection)
    - All content perfectly centered for optimal user experience
 
-2. **IP Display Screen**: 
+2. **IP Display Screen**:
    - Shows device IP address in black text
    - Blue "BACK" button for navigation
    - Minimalistic layout with centered content
@@ -126,7 +126,7 @@ The included `provision_wifi.py` script provides an easy way to provision the de
 
       {
         "ssid": "YourWiFiSSID",
-        "password": "YourWiFiPassword", 
+        "password": "YourWiFiPassword",
         "save_credentials": true
       }
 
@@ -152,10 +152,10 @@ The included `provision_wifi.py` script provides a complete provisioning solutio
 
    # Basic usage
    python3 provision_wifi.py --ssid "MyNetwork" --password "MyPassword"
-   
+
    # Don't save credentials to device storage
    python3 provision_wifi.py --ssid "MyNetwork" --password "MyPassword" --no-save
-   
+
    # Scan for devices only
    python3 provision_wifi.py --scan-only
 
@@ -208,7 +208,7 @@ Sample Output
    SSID: MyNetwork
    Password: **********
    Save credentials: True
-   
+
    Scanning for ESP32_S3_BOX3_BLE...
    Found device: ESP32_S3_BOX3_BLE (XX:XX:XX:XX:XX:XX)
    Connecting to XX:XX:XX:XX:XX:XX...
@@ -223,11 +223,11 @@ Sample Output
    Attempting to write credentials...
    Credentials sent successfully!
    Check the device display for connection status
-   
+
    Waiting for connection result...
    Device status: {'status': 'connected', 'message': 'WiFi connected successfully'}
    ✅ WiFi provisioning successful!
-   
+
    ✅ Provisioning completed!
    Check the device display for the final status and IP address.
 
@@ -285,15 +285,15 @@ Key configuration options in `prj.conf`:
    CONFIG_LV_Z_MEM_POOL_SIZE=16384
    CONFIG_LV_Z_VDB_SIZE=32
    CONFIG_LV_COLOR_DEPTH_16=y
-   
+
    # Memory Configuration
    CONFIG_HEAP_MEM_POOL_SIZE=71680
    CONFIG_MAIN_STACK_SIZE=4096
-   
+
    # BLE Configuration
    CONFIG_BT_DEVICE_NAME="ESP32_S3_BOX3_BLE"
    CONFIG_BT_L2CAP_TX_MTU=247
-   
+
    # WiFi Configuration
    CONFIG_WIFI_ESP32=y
    CONFIG_NET_DHCPV4=y

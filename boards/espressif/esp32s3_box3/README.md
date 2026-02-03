@@ -1,3 +1,8 @@
+<!--
+Copyright (c) 2026 NotioNext Ltd.
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # ESP32-S3-BOX-3 Board Configuration for Zephyr
 
 This board configuration enables Zephyr OS support for the ESP32-S3-BOX-3 development kit, a comprehensive IoT development platform with display, touch and wireless capabilities.
@@ -9,7 +14,7 @@ This board configuration enables Zephyr OS support for the ESP32-S3-BOX-3 develo
 - **PSRAM**: 16MB Octal PSRAM
 - **Display**: 2.4" ILI9342C LCD with ESP32 LCD driver (320x240 resolution)
 - **Touch**: GT911 capacitive touch controller
-- **Interfaces**: 
+- **Interfaces**:
   - USB Type-C (power, programming, debugging)
   - SPI2 for display communication
   - I2C1 for touch controller and sensors

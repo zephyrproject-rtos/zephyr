@@ -92,7 +92,7 @@ static void input_callback(struct input_event *evt, void *user_data)
 		if (lv_scr_act() == screen1 && next_btn) {
 			lv_area_t btn_area;
 			lv_obj_get_coords(next_btn, &btn_area);
-			
+
 			if (touch_x >= btn_area.x1 && touch_x <= btn_area.x2 &&
 			    touch_y >= btn_area.y1 && touch_y <= btn_area.y2) {
 				LOG_INF("Next button clicked! Switching to Screen 2");

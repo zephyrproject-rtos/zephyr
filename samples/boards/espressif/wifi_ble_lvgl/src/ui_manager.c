@@ -80,7 +80,7 @@ static bool touch_handled = false;
 static void enable_backlight(void)
 {
     LOG_INF("Configuring backlight...");
-    
+
     if (!gpio_is_ready_dt(&backlight)) {
         LOG_ERR("Backlight GPIO not ready");
         return;
@@ -102,11 +102,11 @@ static void input_callback(struct input_event *evt, void *user_data)
     case INPUT_ABS_X:
         touch_x = evt->value;
         break;
-        
+
     case INPUT_ABS_Y:
         touch_y = evt->value;
         break;
-        
+
     case INPUT_BTN_TOUCH:
         if (evt->value == 1) {
             touch_pressed = true;
@@ -117,32 +117,32 @@ static void input_callback(struct input_event *evt, void *user_data)
             touch_y = -1;
         }
         break;
-        
+
     default:
         break;
     }
-    
+
     /* Handle touch events with debouncing */
     if (evt->sync && touch_pressed && touch_x >= 0 && touch_y >= 0 && !touch_handled) {
         int64_t current_time = k_uptime_get();
-        
+
         /* Check debounce time */
         if (current_time - last_touch_time < TOUCH_DEBOUNCE_MS) {
             return;  /* Ignore touch within debounce period */
         }
-        
+
         LOG_INF("Touch detected at (%d, %d)", touch_x, touch_y);
         last_touch_time = current_time;
         touch_handled = true;  /* Mark this touch as handled */
-        
+
         /* Check which screen is active and handle touch accordingly */
         if (current_screen == UI_SCREEN_MAIN && btn_device_ip && wifi_connected) {
             lv_area_t btn_area;
             lv_obj_get_coords(btn_device_ip, &btn_area);
-            
-            LOG_INF("Device IP button area: (%d,%d) to (%d,%d)", 
+
+            LOG_INF("Device IP button area: (%d,%d) to (%d,%d)",
                     btn_area.x1, btn_area.y1, btn_area.x2, btn_area.y2);
-            
+
             if (touch_x >= btn_area.x1 && touch_x <= btn_area.x2 &&
                 touch_y >= btn_area.y1 && touch_y <= btn_area.y2) {
                 LOG_INF("Device IP button touched!");
@@ -151,15 +151,17 @@ static void input_callback(struct input_event *evt, void *user_data)
         } else if (current_screen == UI_SCREEN_IP_DISPLAY && btn_back) {
             lv_area_t btn_area;
             lv_obj_get_coords(btn_back, &btn_area);
-            
-            LOG_INF("Back button area: (%d,%d) to (%d,%d)", 
+
+            LOG_INF("Back button area: (%d,%d) to (%d,%d)",
                     btn_area.x1, btn_area.y1, btn_area.x2, btn_area.y2);
-            
+
             if (touch_x >= btn_area.x1 && touch_x <= btn_area.x2 &&
                 touch_y >= btn_area.y1 && touch_y <= btn_area.y2) {
                 LOG_INF("Back button touched!");
                 show_screen(UI_SCREEN_MAIN);
             }
+        } else {
+            /* No action needed for other screens or conditions */
         }
     }
 }
@@ -191,7 +193,7 @@ static void create_main_screen(void)
     screen_main = lv_obj_create(NULL);
     lv_obj_set_style_bg_color(screen_main, COLOR_WHITE, 0);
     lv_obj_set_style_bg_opa(screen_main, LV_OPA_COVER, 0);
-    
+
     /* Status label - centered */
     label_status = lv_label_create(screen_main);
     lv_label_set_text(label_status, "WiFi BLE Provisioning Ready\n\nUse provision_wifi.py to send\nWiFi credentials via Bluetooth\n\n(Check README.rst for details)");
@@ -200,7 +202,7 @@ static void create_main_screen(void)
     lv_obj_set_style_text_align(label_status, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_set_width(label_status, 280);
     lv_obj_align(label_status, LV_ALIGN_CENTER, 0, 0);
-    
+
     /* Device IP button (initially hidden) - centered */
     btn_device_ip = lv_btn_create(screen_main);
     lv_obj_set_size(btn_device_ip, 160, 50);
@@ -213,14 +215,14 @@ static void create_main_screen(void)
     lv_obj_set_style_shadow_opa(btn_device_ip, LV_OPA_20, 0);
     lv_obj_add_event_cb(btn_device_ip, device_ip_btn_event_handler, LV_EVENT_CLICKED, NULL);
     lv_obj_add_flag(btn_device_ip, LV_OBJ_FLAG_HIDDEN);
-    
+
     /* Device IP button label - centered */
     label_device_ip = lv_label_create(btn_device_ip);
     lv_label_set_text(label_device_ip, "DEVICE IP");
     lv_obj_set_style_text_color(label_device_ip, COLOR_BUTTON_TEXT, 0);
     lv_obj_set_style_text_font(label_device_ip, &lv_font_montserrat_16, 0);
     lv_obj_center(label_device_ip);
-    
+
     LOG_INF("Main screen created");
 }
 
@@ -230,7 +232,7 @@ static void create_ip_display_screen(void)
     screen_ip_display = lv_obj_create(NULL);
     lv_obj_set_style_bg_color(screen_ip_display, COLOR_WHITE, 0);
     lv_obj_set_style_bg_opa(screen_ip_display, LV_OPA_COVER, 0);
-    
+
     /* IP title label - centered */
     label_ip_title = lv_label_create(screen_ip_display);
     lv_label_set_text(label_ip_title, "Device IP Address");
@@ -238,7 +240,7 @@ static void create_ip_display_screen(void)
     lv_obj_set_style_text_font(label_ip_title, &lv_font_montserrat_16, 0);
     lv_obj_set_style_text_align(label_ip_title, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_align(label_ip_title, LV_ALIGN_CENTER, 0, -50);
-    
+
     /* IP address label - centered */
     label_ip_address = lv_label_create(screen_ip_display);
     lv_label_set_text(label_ip_address, device_ip_str);
@@ -246,7 +248,7 @@ static void create_ip_display_screen(void)
     lv_obj_set_style_text_font(label_ip_address, &lv_font_montserrat_16, 0);
     lv_obj_set_style_text_align(label_ip_address, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_align(label_ip_address, LV_ALIGN_CENTER, 0, -10);
-    
+
     /* Back button - centered */
     btn_back = lv_btn_create(screen_ip_display);
     lv_obj_set_size(btn_back, 120, 45);
@@ -258,14 +260,14 @@ static void create_ip_display_screen(void)
     lv_obj_set_style_shadow_color(btn_back, lv_color_hex(0x000000), 0);
     lv_obj_set_style_shadow_opa(btn_back, LV_OPA_20, 0);
     lv_obj_add_event_cb(btn_back, back_btn_event_handler, LV_EVENT_CLICKED, NULL);
-    
+
     /* Back button label - centered */
     lv_obj_t *label_back = lv_label_create(btn_back);
     lv_label_set_text(label_back, "BACK");
     lv_obj_set_style_text_color(label_back, COLOR_BUTTON_TEXT, 0);
     lv_obj_set_style_text_font(label_back, &lv_font_montserrat_14, 0);
     lv_obj_center(label_back);
-    
+
     LOG_INF("IP display screen created");
 }
 
@@ -277,7 +279,7 @@ static void show_screen(ui_screen_t screen)
         current_screen = UI_SCREEN_MAIN;
         LOG_INF("Showing main screen");
         break;
-        
+
     case UI_SCREEN_IP_DISPLAY:
         /* Update IP address label before showing the screen */
         if (label_ip_address) {
@@ -286,6 +288,10 @@ static void show_screen(ui_screen_t screen)
         lv_scr_load(screen_ip_display);
         current_screen = UI_SCREEN_IP_DISPLAY;
         LOG_INF("Showing IP display screen with IP: %s", device_ip_str);
+        break;
+
+    default:
+        LOG_WRN("Unknown screen requested: %d", screen);
         break;
     }
 }
@@ -297,7 +303,7 @@ static void handle_ui_event(ui_event_t event)
         LOG_INF("Handling DEVICE_IP_PRESSED event");
         show_screen(UI_SCREEN_IP_DISPLAY);
         break;
-        
+
 
     case UI_EVENT_RESET_STATUS:
         LOG_INF("Handling RESET_STATUS event");
@@ -306,7 +312,7 @@ static void handle_ui_event(ui_event_t event)
             lv_obj_set_style_text_color(label_status, COLOR_BLACK, 0);
         }
         break;
-        
+
     case UI_EVENT_WIFI_CONNECTING:
         LOG_INF("Handling WIFI_CONNECTING event");
         if (current_screen == UI_SCREEN_MAIN) {
@@ -316,7 +322,7 @@ static void handle_ui_event(ui_event_t event)
             lv_obj_align(label_status, LV_ALIGN_CENTER, 0, 0);
         }
         break;
-        
+
     case UI_EVENT_WIFI_CONNECTED:
         LOG_INF("Handling WIFI_CONNECTED event");
         wifi_connected = true;
@@ -335,7 +341,7 @@ static void handle_ui_event(ui_event_t event)
             LOG_INF("Device IP button is now visible");
         }
         break;
-        
+
     case UI_EVENT_WIFI_FAILED:
         LOG_INF("Handling WIFI_FAILED event");
         if (current_screen == UI_SCREEN_MAIN) {
@@ -345,7 +351,7 @@ static void handle_ui_event(ui_event_t event)
             lv_obj_align(label_status, LV_ALIGN_CENTER, 0, 0);
         }
         break;
-        
+
     default:
         LOG_WRN("Unknown UI event: %d", event);
         break;
@@ -355,18 +361,18 @@ static void handle_ui_event(ui_event_t event)
 static void ui_thread_entry(void *p1, void *p2, void *p3)
 {
     ui_event_t event;
-    
+
     LOG_INF("UI thread started");
-    
+
     while (1) {
         /* Process UI events */
         if (k_msgq_get(&ui_event_queue, &event, K_NO_WAIT) == 0) {
             handle_ui_event(event);
         }
-        
+
         /* Handle LVGL tasks */
         lv_timer_handler();
-        
+
         /* Small delay to prevent busy waiting */
         k_sleep(K_MSEC(10));
     }
@@ -376,9 +382,9 @@ int ui_manager_init(void)
 {
     const struct device *display_dev;
     const struct device *gt911_dev;
-    
+
     LOG_INF("Initializing UI manager");
-    
+
     /* Check if GT911 touch is ready */
     gt911_dev = DEVICE_DT_GET(GT911_NODE);
     if (!device_is_ready(gt911_dev)) {
@@ -386,7 +392,7 @@ int ui_manager_init(void)
         return -ENODEV;
     }
     LOG_INF("GT911 touch controller ready");
-    
+
     /* Get display device */
     display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
     if (!device_is_ready(display_dev)) {
@@ -394,22 +400,22 @@ int ui_manager_init(void)
         return -ENODEV;
     }
     LOG_INF("Display device is ready");
-    
+
     /* Enable backlight */
     enable_backlight();
-    
+
     /* Turn on display */
     LOG_INF("Turning on display...");
     display_blanking_off(display_dev);
-    
+
     /* Wait for display to stabilize */
     k_sleep(K_MSEC(200));
-    
+
     /* Initialize LVGL */
     LOG_INF("Initializing LVGL...");
     lv_init();
     LOG_INF("LVGL core initialized");
-    
+
     /* Initialize LVGL display driver */
     int ret = lvgl_init();
     if (ret != 0) {
@@ -417,25 +423,25 @@ int ui_manager_init(void)
         return ret;
     }
     LOG_INF("LVGL display driver initialized successfully");
-    
+
     /* Initialize event queue */
     k_msgq_init(&ui_event_queue, ui_event_buffer, sizeof(ui_event_t), UI_EVENT_QUEUE_SIZE);
     ui_initialized = true;
-    
+
     /* Create all screens */
     create_main_screen();
     create_ip_display_screen();
-    
+
     /* Show initial screen */
     show_screen(UI_SCREEN_MAIN);
-    
+
     /* Start UI thread */
     k_thread_create(&ui_thread, ui_thread_stack,
                     K_THREAD_STACK_SIZEOF(ui_thread_stack),
                     ui_thread_entry, NULL, NULL, NULL,
                     K_PRIO_COOP(7), 0, K_NO_WAIT);
     k_thread_name_set(&ui_thread, "ui_thread");
-    
+
     LOG_INF("UI manager initialized successfully");
     return 0;
 }
@@ -446,7 +452,7 @@ void ui_send_event(ui_event_t event, void *data)
         LOG_WRN("UI not initialized, ignoring event %d", event);
         return;
     }
-    
+
     int ret = k_msgq_put(&ui_event_queue, &event, K_NO_WAIT);
     if (ret != 0) {
         LOG_WRN("Failed to send UI event %d: %d", event, ret);
@@ -461,19 +467,19 @@ void ui_update_ip_address(const char *ip_address)
     } else {
         strcpy(device_ip_str, "Not Connected");
     }
-    
+
     /* Always update IP display label if it exists */
     if (label_ip_address) {
         lv_label_set_text(label_ip_address, device_ip_str);
     }
-    
+
     LOG_INF("IP address updated: %s", device_ip_str);
 }
 
 void ui_set_wifi_status(bool connected)
 {
     wifi_connected = connected;
-    
+
     if (connected) {
         LOG_INF("WiFi connected - sending UI event");
         ui_send_event(UI_EVENT_WIFI_CONNECTED, NULL);

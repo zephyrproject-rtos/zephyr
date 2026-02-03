@@ -133,7 +133,7 @@ Usage Instructions 📋
 
       {
         "ssid": "YourWiFiSSID",
-        "password": "YourWiFiPassword", 
+        "password": "YourWiFiPassword",
         "save_credentials": true
       }
 
@@ -163,10 +163,10 @@ The included `provision_wifi.py` script provides a complete provisioning solutio
 
    # Basic usage
    python3 provision_wifi.py --ssid "MyNetwork" --password "MyPassword"
-   
+
    # Don't save credentials to device storage
    python3 provision_wifi.py --ssid "MyNetwork" --password "MyPassword" --no-save
-   
+
    # Scan for devices only
    python3 provision_wifi.py --scan-only
 
@@ -217,4 +217,3 @@ License 📄
 
 This project is licensed under the Apache License, Version 2.0.
 See the ``LICENSE`` file for details.
-

@@ -5,7 +5,7 @@
 
 &flash0 {
 	/delete-node/ partitions;
-	
+
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;

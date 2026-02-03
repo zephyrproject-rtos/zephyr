@@ -1,3 +1,8 @@
+<!--
+Copyright (c) 2026 NotioNext Ltd.
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # ESP32-S3-BOX-3 LVGL Touch Demo with Bluetooth Beacon
 
 This sample demonstrates LVGL GUI with GT911 touch navigation and Bluetooth beacon functionality on the ESP32-S3-BOX-3 board.
