@@ -48,12 +48,20 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
-TPM
+PWM(TPM)
 ---
 
-TPM2 is enabled for PWM for M33 core. Signals can be observerd with
-oscilloscope or logic analyzer.
-Connect J1005-3 and J1005-7(GND) to Oscilloscope or logic analyzer
+For M33 Core, TPM2 is enabled. Signals can be observerd with
+oscilloscope or logic analyzer. Connect J1005-3 and J1005-7(GND) to Oscilloscope or logic analyzer
+
+For A55 Core, TPM3 is enabled for :zephyr:code-sample:`pwm-blinky` application,
+the green led on the board will blink with different frequency.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky_pwm
+   :host-os: unix
+   :board: imx93_evk/mimx9352/a55
+   :goals: build
 
 ADC
 ---
