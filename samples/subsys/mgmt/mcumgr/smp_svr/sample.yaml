@@ -49,7 +49,9 @@ tests:
     build_only: true
   sample.mcumgr.smp_svr.udp.802154.subg:
     extra_args: EXTRA_CONF_FILE="udp.conf;802154-subg.conf"
-    platform_allow: beagleconnect_freedom
+    platform_allow:
+      - beagleconnect_freedom@C5/cc1352p
+      - beagleconnect_freedom@C7/cc1352p7
   sample.mcumgr.smp_svr.cdc:
     extra_args:
       - EXTRA_CONF_FILE="cdc.conf"
