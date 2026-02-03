@@ -119,6 +119,7 @@ static int emul_bq40z50_reg_read(const struct emul *target, int reg, uint16_t *v
 		break;
 	case BQ40Z50_RELATIVESTATEOFCHARGE:
 	case BQ40Z50_ABSOLUTESTATEOFCHARGE:
+	case BQ40Z50_STATEOFHEALTH:
 		*val = 100;
 		break;
 	case BQ40Z50_CHARGINGVOLTAGE:
