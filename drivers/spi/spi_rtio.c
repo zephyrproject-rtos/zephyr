@@ -262,11 +262,19 @@ int spi_rtio_copy(struct rtio *r,
 				tx_len = 0;
 			}
 		} else if (tx_len > rx_len) {
-			rtio_sqe_prep_transceive(sqe, iodev, RTIO_PRIO_NORM,
-						 (uint8_t *)tx_buf,
-						 (uint8_t *)rx_buf,
-						 (uint32_t)rx_len,
-						 NULL);
+			if (rx_buf) {
+				rtio_sqe_prep_transceive(sqe, iodev, RTIO_PRIO_NORM,
+							 (uint8_t *)tx_buf,
+							 (uint8_t *)rx_buf,
+							 (uint32_t)rx_len,
+							 NULL);
+			} else {
+				rtio_sqe_prep_write(sqe, iodev, RTIO_PRIO_NORM,
+						    (uint8_t *)tx_buf,
+						    (uint32_t)rx_len,
+						    NULL);
+			}
+
 			tx_len -= rx_len;
 			tx_buf += rx_len;
 			rx++;
@@ -278,11 +286,19 @@ int spi_rtio_copy(struct rtio *r,
 				rx_len = tx_len;
 			}
 		} else if (rx_len > tx_len) {
-			rtio_sqe_prep_transceive(sqe, iodev, RTIO_PRIO_NORM,
-						 (uint8_t *)tx_buf,
-						 (uint8_t *)rx_buf,
-						 (uint32_t)tx_len,
-						 NULL);
+			if (tx_buf) {
+				rtio_sqe_prep_transceive(sqe, iodev, RTIO_PRIO_NORM,
+							 (uint8_t *)tx_buf,
+							 (uint8_t *)rx_buf,
+							 (uint32_t)tx_len,
+							 NULL);
+			} else {
+				rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_NORM,
+						   (uint8_t *)rx_buf,
+						   (uint32_t)tx_len,
+						   NULL);
+			}
+
 			rx_len -= tx_len;
 			rx_buf += tx_len;
 			tx++;
