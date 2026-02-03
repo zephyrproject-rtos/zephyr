@@ -1,16 +1,17 @@
 # ARM9 platform configuration options
 
-# Copyright (C) 2025-2026 Microchip Technology Inc. and its subsidiaries
+# Copyright (C) 2025-2026 Microchip Technology Inc.
 
 # SPDX-License-Identifier: Apache-2.0
 
 config CPU_ARM926EJ_S
 	bool
-	select ARMV5TEJ
 	select CPU_AARCH32_ARM9
-	select CPU_HAS_MMU
+	select ARMV5TEJ
 	help
 	  This option signifies the use of a ARM926EJ-S CPU.
+
+if CPU_AARCH32_ARM9
 
 config ARMV5TEJ
 	bool
@@ -34,6 +35,8 @@ config ARMV5
 	bool
 	help
 	  This option signifies the use of a ARMv5 CPU.
+
+endif # CPU_AARCH32_ARM9
 
 if ARMV5
 
