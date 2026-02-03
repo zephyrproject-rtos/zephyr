@@ -318,6 +318,7 @@ def process_blobs(module, meta):
         blob['abspath'] = blobs_path / Path(blob['path'])
         blob['license-abspath'] = Path(module) / Path(blob['license-path'])
         blob['status'] = get_blob_status(blob['abspath'], blob['sha256'])
+        blob['click-through'] = blob.get('click-through', False)
         blobs.append(blob)
 
     return blobs
