@@ -27,7 +27,8 @@
 #if defined(CONFIG_CPU_CORTEX_M)
 #include <cortex_m/stack.h>
 #include <cortex_m/exception.h>
-#elif defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
+#elif defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A) || \
+	defined(CONFIG_CPU_AARCH32_ARM9)
 #include <cortex_a_r/stack.h>
 #include <cortex_a_r/exception.h>
 #endif
