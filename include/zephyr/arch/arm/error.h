@@ -24,7 +24,9 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_CPU_CORTEX_M)
+#if defined(CONFIG_CPU_ARM9)
+/* TODO: error handling is not implemented yet for ARMv5 */
+#elif defined(CONFIG_CPU_CORTEX_M)
 /* ARMv6 will hard-fault if SVC is called with interrupts locked. Just
  * force them unlocked, the thread is in an undefined state anyway
  *
