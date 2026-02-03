@@ -18,6 +18,12 @@ config UDC_STM32
 
 if UDC_STM32
 
+# Temporary workaround for an incompatibility between
+# the STM32 UDC driver and MSC in double buffered mode.
+# The core issue should be fixed and this quirk dropped!
+configdefault USBD_MSC_DOUBLE_BUFFERING
+	default n
+
 config UDC_STM32_STACK_SIZE
 	int "UDC controller driver internal thread stack size"
 	default 512
