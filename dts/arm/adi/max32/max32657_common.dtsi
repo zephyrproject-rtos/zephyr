@@ -176,6 +176,7 @@
 		clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 		interrupts = <11 0>;
 		status = "disabled";
+		zephyr,pm-device-runtime-auto;
 	};
 
 	trng: trng@4d000 {
