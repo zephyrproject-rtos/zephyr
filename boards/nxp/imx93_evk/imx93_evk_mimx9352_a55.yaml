@@ -20,6 +20,7 @@ supported:
   - can
   - net
   - watchdog
+  - pwm
 testing:
   ignore_tags:
     - bluetooth

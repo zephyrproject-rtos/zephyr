@@ -260,3 +260,9 @@
 &wdog4 {
 	status = "okay";
 };
+
+&pwm3 {
+	pinctrl-0 = <&tpm3_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
