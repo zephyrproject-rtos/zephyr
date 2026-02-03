@@ -36,7 +36,6 @@ static int cmd_uart_write(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-
 static int cmd_uart_read(const struct shell *sh, size_t argc, char **argv)
 {
 	char *s_dev_name = argv[1];
@@ -71,13 +70,38 @@ static int cmd_uart_read(const struct shell *sh, size_t argc, char **argv)
 			shell_error(sh, "Failed to read from UART (%d)", ret);
 			return ret;
 		}
+		ret = uart_err_check(dev);
+		if (ret != 0 && != -ENOSYS) {
+			switch (ret) {
+			case UART_ERROR_OVERRUN:
+				shell_error(sh, "Overrun error");
+				break;
+			case UART_ERROR_PARITY:
+				shell_error(sh, "Parity error");
+				break;
+			case UART_ERROR_FRAMING:
+				shell_error(sh, "Framing error");
+				break;
+			case UART_BREAK:
+				shell_error(sh, "Break interrupt");
+				break;
+			case UART_ERROR_COLLISION:
+				shell_error(sh, "Collision error");
+				break;
+			case UART_ERROR_NOISE:
+				shell_error(sh, "Noise error");
+				break;
+			default:
+				shell_error(sh, "Unknown error (%d)", ret);
+			}
+			return ret;
+		}
 	}
 
 	shell_fprintf_normal(sh, "\n");
 
 	return 0;
 }
-
 
 static int cmd_uart_baudrate(const struct shell *sh, size_t argc, char **argv)
 {
@@ -156,6 +180,47 @@ static int cmd_uart_flow_control(const struct shell *sh, size_t argc, char **arg
 	return 0;
 }
 
+static int cmd_uart_info(const struct shell *sh, size_t argc, char **argv)
+{
+	char *s_dev_name = argv[1];
+	const struct device *dev;
+	struct uart_config cfg;
+	int ret;
+
+	dev = shell_device_get_binding(s_dev_name);
+	if (!dev || !device_is_uart(dev)) {
+		shell_error(sh, "UART: Device driver %s not found.", s_dev_name);
+		return -ENODEV;
+	}
+
+	ret = uart_config_get(dev, &cfg);
+	if (ret < 0) {
+		shell_error(sh, "UART: Failed to get current configuration: %d", ret);
+		return ret;
+	}
+
+	shell_print(sh, "Baudrate: %d", cfg.baudrate);
+
+	switch (cfg.flow_ctrl) {
+	case UART_CFG_FLOW_CTRL_NONE:
+		shell_print(sh, "Flow control: none");
+		break;
+	case UART_CFG_FLOW_CTRL_RTS_CTS:
+		shell_print(sh, "Flow control: rtscts");
+		break;
+	case UART_CFG_FLOW_CTRL_DTR_DSR:
+		shell_print(sh, "Flow control: dtrdsr");
+		break;
+	case UART_CFG_FLOW_CTRL_RS485:
+		shell_print(sh, "Flow control: rs485");
+		break;
+	default:
+		shell_print(sh, "Flow control: unknown");
+	}
+
+	return 0;
+}
+
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
 	const struct device *dev = shell_device_filter(idx, device_is_uart);
@@ -185,6 +250,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_uart_cmds,
 		      SHELL_HELP("Configure the UART device flow control",
 				 "<device> <none|rtscts|dtrdsr|rs485>"),
 		      cmd_uart_flow_control, 3, 0),
+	SHELL_CMD_ARG(info, &dsub_device_name,
+		      SHELL_HELP("Display UART device settings",
+				 "<device>"),
+		      cmd_uart_info, 2, 0),
 	SHELL_SUBCMD_SET_END     /* Array terminated. */
 );
 
