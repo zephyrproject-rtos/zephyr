@@ -120,7 +120,7 @@ static int cmd_erase(const struct shell *sh, size_t argc, char *argv[])
 		return result;
 	}
 	if (argc > 2) {
-		size = strtoul(argv[2], NULL, 16);
+		size = strtoul(argv[2], NULL, 0);
 	} else {
 		struct flash_pages_info info;
 
