@@ -1,0 +1,21 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	aliases {
+		pwm-led0 = &pwm_led0;
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm3 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+};
