@@ -22,7 +22,7 @@
 	};
 
 	chosen {
-		zephyr,flash = &flash;
+		zephyr,flash = &flw;
 		zephyr,flash-controller = &fmu;
 		zephyr,code-partition = &code_partition;
 		zephyr,sram = &stcm0;
@@ -125,17 +125,25 @@ nbu: &nbu {
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		storage_partition: partition@17a000 {
+			reg = <0x17a000 DT_SIZE_K(16)>;
+		};
+
+		hw_params_partition: partition@17e000 {
+			label = "hw-parameters";
+			reg = <0x17e000 DT_SIZE_K(8)>;
+		};
+	};
+};
+
+&flw {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
 		code_partition: partition@800000 {
 			reg = <0x800000 DT_SIZE_K(1160)>;
-		};
-
-		storage_partition: partition@922000 {
-			reg = <0x922000 DT_SIZE_K(16)>;
-		};
-
-		hw_params_partition: partition@926000 {
-			label = "hw-parameters";
-			reg = <0x926000 DT_SIZE_K(8)>;
 		};
 	};
 };

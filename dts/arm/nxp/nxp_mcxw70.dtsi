@@ -66,7 +66,11 @@
 
 	soc {
 		fmu_0: memory-controller@50017000 {
-			ranges = <0x800000 0x10800000 0x128000>;
+			/* Map both physical internal flash and Flash Logical Window (FLW)
+			 * FLW is used for address translation, the main core image should link to FLW.
+			 * Physical flash should be used only for storage */
+			ranges = <0x0 0x10000000 0x180000>, /* physical internal flash */
+					 <0x800000 0x10800000 0x128000>; /* Flash Logic Window (FLW) */
 			#address-cells = <1>;
 			#size-cells = <1>;
 			compatible = "nxp,msf1";
@@ -74,7 +78,14 @@
 			interrupts = <27 0>;
 			status = "disabled";
 
-			flash: flash@800000 {
+			flash: flash@0 {
+				reg = <0x0 0x180000>;
+				compatible = "soc-nv-flash";
+				write-block-size = <16>;
+				erase-block-size = <DT_SIZE_K(8)>;
+			};
+
+			flw: flw@800000 {
 				reg = <0x800000 0x128000>;
 				compatible = "soc-nv-flash";
 				write-block-size = <16>;
