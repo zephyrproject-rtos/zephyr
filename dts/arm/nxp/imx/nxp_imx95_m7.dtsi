@@ -156,6 +156,7 @@
 		flexspi: spi@425e0000 {
 			compatible = "nxp,imx-flexspi";
 			reg = <0x425e0000 0x4000>, <0x28000000 DT_SIZE_M(128)>;
+			reg-names = "reg_base", "ahb";
 			interrupts = <48 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;

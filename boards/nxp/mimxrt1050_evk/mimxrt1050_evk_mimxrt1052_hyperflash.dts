@@ -26,6 +26,7 @@
 	combination-mode;
 	rx-clock-source = <3>;
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(64)>;
+	reg-names = "reg_base", "ahb";
 
 	s26ks512s0: s26ks512s@0 {
 		compatible = "nxp,imx-flexspi-hyperflash";

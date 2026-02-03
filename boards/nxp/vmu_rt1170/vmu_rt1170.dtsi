@@ -199,6 +199,7 @@
 	ahb-read-addr-opt;
 	rx-clock-source = <1>;
 	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(64)>;
+	reg-names = "reg_base", "ahb";
 
 	mx25um51345g: mx25um51345g@0 {
 		compatible = "nxp,imx-flexspi-mx25um51345g";
