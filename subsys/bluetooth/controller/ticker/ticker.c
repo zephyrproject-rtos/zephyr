@@ -839,7 +839,6 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes,
 
 #endif /* !CONFIG_BT_TICKER_PRIORITY_SET */
 
-		uint16_t lazy_current = ticker->lazy_current;
 		uint32_t ticker_ticks_slot;
 
 		if (TICKER_HAS_SLOT_WINDOW(ticker) && !ticker->ticks_slot) {
@@ -848,18 +847,21 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes,
 			ticker_ticks_slot = ticker->ticks_slot;
 		}
 
+		uint16_t lazy_current = ticker->lazy_current;
+
 		/* Check if this ticker node will starve next node which has
 		 * latency or higher priority
 		 */
 		if (lazy_current >= ticker->lazy_periodic) {
 			lazy_current -= ticker->lazy_periodic;
 		}
-		uint8_t  id_head = ticker->next;
-		uint32_t acc_ticks_to_expire = 0U;
 
 		/* Age is time since last expiry */
 		uint32_t current_age = ticker->ticks_periodic +
 				    (lazy_current * ticker->ticks_periodic);
+
+		uint8_t  id_head = ticker->next;
+		uint32_t acc_ticks_to_expire = 0U;
 
 		while (id_head != TICKER_NULL) {
 			struct ticker_node *ticker_next = &nodes[id_head];
@@ -1404,7 +1406,6 @@ void ticker_worker(void *param)
 		if (ticker->ext_data) {
 			/* Pick the drift, to give it in the ticker_cb */
 			ticks_drift = ticker->ext_data->ticks_drift;
-			ticker->ext_data->ticks_drift = 0U;
 
 			/* Revert back drift so that next expiry maintains the
 			 * average periodic interval.
@@ -1766,11 +1767,14 @@ static inline uint32_t ticker_job_node_update(struct ticker_instance *instance,
 	 */
 	struct ticker_ext *ext_data = ticker->ext_data;
 
-	if (ext_data && ext_data->ticks_slot_window &&
-	    !ext_data->is_jitter_in_window) {
-		ext_data->ticks_drift =
-			user_op->params.update.ticks_drift_plus -
-			user_op->params.update.ticks_drift_minus;
+	if (ext_data && ext_data->ticks_slot_window) {
+		if (ext_data->is_jitter_in_window == 0U) {
+			ext_data->ticks_drift =
+				user_op->params.update.ticks_drift_plus -
+				user_op->params.update.ticks_drift_minus;
+		} else {
+			/* Retain any ticks_drift value */
+		}
 	}
 #endif /* CONFIG_BT_TICKER_EXT && !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 
@@ -2249,6 +2253,12 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 				ticker->lazy_current += (lazy_periodic + lazy);
 			}
 
+#if defined(CONFIG_BT_TICKER_EXT) && !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
+			if (ticker->ext_data) {
+				ticker->ext_data->ticks_drift = 0U;
+			}
+#endif /* CONFIG_BT_TICKER_EXT && !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
+
 			ticks_to_expire_prep(ticker, instance->ticks_current,
 					     ((ticks_previous + ticks_expired) &
 					      HAL_TICKER_CNTR_MASK));
@@ -2338,7 +2348,7 @@ static inline uint32_t ticker_job_op_start(struct ticker_instance *instance,
 #if defined(CONFIG_BT_TICKER_LOW_LAT)
 	/* Must expire is not supported in compatibility mode */
 	LL_ASSERT_DBG(start->lazy < TICKER_LAZY_MUST_EXPIRE_KEEP);
-#else
+#else /* !CONFIG_BT_TICKER_LOW_LAT */
 #if !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
 	if (start->lazy != TICKER_LAZY_MUST_EXPIRE_KEEP) {
 		/* Update the must_expire state */
@@ -2346,10 +2356,15 @@ static inline uint32_t ticker_job_op_start(struct ticker_instance *instance,
 			(start->lazy == TICKER_LAZY_MUST_EXPIRE) ? 1U : 0U;
 	}
 #endif /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
-#endif /* CONFIG_BT_TICKER_LOW_LAT */
 
 #if defined(CONFIG_BT_TICKER_EXT)
 	ticker->ext_data = start->ext_data;
+
+#if !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
+	if (ticker->ext_data) {
+		ticker->ext_data->ticks_drift = 0U;
+	}
+#endif /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 
 #if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 	if (ticker->ext_data) {
@@ -2371,6 +2386,7 @@ static inline uint32_t ticker_job_op_start(struct ticker_instance *instance,
 #else /* !CONFIG_BT_TICKER_EXT */
 	ARG_UNUSED(instance);
 #endif /* !CONFIG_BT_TICKER_EXT */
+#endif /* CONFIG_BT_TICKER_LOW_LAT */
 
 	ticker->ticks_periodic = start->ticks_periodic;
 
