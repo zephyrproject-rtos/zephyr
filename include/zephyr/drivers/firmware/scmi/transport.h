@@ -51,19 +51,6 @@ typedef void (*scmi_channel_cb)(struct scmi_channel *chan);
  * channels is represented by a `struct scmi_channel`.
  */
 struct scmi_channel {
-	/**
-	 * channel lock. This is meant to be initialized
-	 * and used only by the SCMI core to assure that
-	 * only one protocol can send/receive messages
-	 * through a channel at a given moment.
-	 */
-	struct k_mutex lock;
-	/**
-	 * binary semaphore. This is meant to be initialized
-	 * and used only by the SCMI core. Its purpose is to
-	 * signal that a reply has been received.
-	 */
-	struct k_sem sem;
 	/** channel private data */
 	void *data;
 	/**
@@ -73,8 +60,25 @@ struct scmi_channel {
 	 * been received.
 	 */
 	scmi_channel_cb cb;
+	/** @cond INTERNAL_HIDDEN */
+	/**
+	 * channel lock. This is meant to be initialized
+	 * and used only by the SCMI core to assure that
+	 * only one protocol can send/receive messages
+	 * through a channel at a given moment.
+	 */
+	struct k_mutex lock;
+
+	/**
+	 * binary semaphore. This is meant to be initialized
+	 * and used only by the SCMI core. Its purpose is to
+	 * signal that a reply has been received.
+	 */
+	struct k_sem sem;
+
 	/** is the channel ready to be used by a protocol? */
 	bool ready;
+	/** @endcond */
 };
 
 struct scmi_transport_api {
