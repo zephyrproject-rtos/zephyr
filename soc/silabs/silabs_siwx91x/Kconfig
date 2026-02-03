@@ -18,6 +18,7 @@ rsource "*/Kconfig"
 config SILABS_SIWX91X_NWP
 	bool "Silabs Network Coprocessor"
 	depends on DT_HAS_SILABS_SIWX91X_NWP_ENABLED
+	select CODE_DATA_RELOCATION_SRAM
 	select CMSIS_RTOS_V2
 	select POLL
 	select DYNAMIC_THREAD
