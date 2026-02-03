@@ -21,6 +21,7 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/flash.h>
+#include <zephyr/drivers/flash/spi_nor.h>
 #include <zephyr/drivers/flash/stm32_flash_api_extensions.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_stm32.h>
@@ -47,7 +48,6 @@
 
 #include <stm32_ll_dma.h>
 
-#include "spi_nor.h"
 #include "jesd216.h"
 
 #include <zephyr/logging/log.h>

@@ -15,13 +15,13 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/cache.h>
+#include <zephyr/drivers/flash/spi_nor.h>
 #include <zephyr/drivers/flash/andes_flash_xip_api_ex.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 
 #include "flash_andes_qspi.h"
-#include "spi_nor.h"
 
 LOG_MODULE_REGISTER(flash_andes_xip, CONFIG_FLASH_LOG_LEVEL);
 

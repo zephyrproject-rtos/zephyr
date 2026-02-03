@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(flash_rts5912);
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/flash.h>
+#include <zephyr/drivers/flash/spi_nor.h>
 #ifdef CONFIG_FLASH_EX_OP_ENABLED
 #include <zephyr/drivers/flash/rts5912_flash_api_ex.h>
 #endif
@@ -25,7 +26,6 @@ LOG_MODULE_REGISTER(flash_rts5912);
 #include <soc.h>
 #include <string.h>
 
-#include "spi_nor.h"
 #include "reg/reg_spic.h"
 
 #define FLASH_CMD_RDSFDP         0x5A /* Read SFDP */

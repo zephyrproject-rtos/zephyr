@@ -12,6 +12,7 @@
 
 #include <errno.h>
 #include <zephyr/drivers/flash.h>
+#include <zephyr/drivers/flash/spi_nor.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/init.h>
@@ -21,7 +22,6 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 
-#include "spi_nor.h"
 #include "jesd216.h"
 #include "flash_priv.h"
 
