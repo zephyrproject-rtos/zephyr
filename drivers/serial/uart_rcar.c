@@ -20,8 +20,13 @@ struct uart_rcar_cfg {
 	DEVICE_MMIO_ROM; /* Must be first */
 	uint32_t sys_clk_freq;
 	const struct device *clock_dev;
+#ifdef CONFIG_SOC_SERIES_RCAR_GEN5
+	clock_control_subsys_t mod_clk;
+	clock_control_subsys_t bus_clk;
+#else
 	struct rcar_cpg_clk mod_clk;
 	struct rcar_cpg_clk bus_clk;
+#endif
 	const struct pinctrl_dev_config *pcfg;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(const struct device *dev);
@@ -298,8 +303,12 @@ static int uart_rcar_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+#ifdef CONFIG_SOC_SERIES_RCAR_GEN5
+	ret = clock_control_on(config->clock_dev, config->mod_clk);
+#else
 	ret = clock_control_on(config->clock_dev,
 			       (clock_control_subsys_t)&config->mod_clk);
+#endif
 	if (ret < 0) {
 		return ret;
 	}
@@ -307,9 +316,14 @@ static int uart_rcar_init(const struct device *dev)
 	if (config->sys_clk_freq > 0) {
 		data->clk_rate = config->sys_clk_freq;
 	} else {
+#ifdef CONFIG_SOC_SERIES_RCAR_GEN5
+		ret = clock_control_get_rate(config->clock_dev, config->bus_clk,
+					     &data->clk_rate);
+#else
 		ret = clock_control_get_rate(config->clock_dev,
 					     (clock_control_subsys_t)&config->bus_clk,
 					     &data->clk_rate);
+#endif
 		if (ret < 0) {
 			return ret;
 		}
@@ -545,19 +559,28 @@ static DEVICE_API(uart, uart_rcar_driver_api) = {
 };
 
 /* Device Instantiation */
-#define UART_RCAR_DECLARE_CFG(n, IRQ_FUNC_INIT, compat)					\
-	PINCTRL_DT_INST_DEFINE(n);							\
-	static const struct uart_rcar_cfg uart_rcar_cfg_##compat##n = {			\
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),					\
-		.sys_clk_freq = DT_INST_PROP_OR(n, clock_frequency, 0),			\
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),			\
-		.mod_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, module),		\
-		.mod_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, domain),		\
-		.bus_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, module),		\
-		.bus_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, domain),		\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
-		.is_hscif = DT_INST_NODE_HAS_COMPAT(n, renesas_rcar_hscif),	        \
-		IRQ_FUNC_INIT								\
+#ifdef CONFIG_SOC_SERIES_RCAR_GEN5
+#define UART_RCAR_INIT_CLOCKS(n)							\
+	.mod_clk = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_IDX(n, 0, name),	\
+	.bus_clk = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_IDX(n, 1, name)
+#else
+#define UART_RCAR_INIT_CLOCKS(n)					\
+	.mod_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, module),	\
+	.mod_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, domain),	\
+	.bus_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, module),	\
+	.bus_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, domain)
+#endif
+
+#define UART_RCAR_DECLARE_CFG(n, IRQ_FUNC_INIT, compat)				\
+	PINCTRL_DT_INST_DEFINE(n);						\
+	static const struct uart_rcar_cfg uart_rcar_cfg_##compat##n = {		\
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),				\
+		.sys_clk_freq = DT_INST_PROP_OR(n, clock_frequency, 0),		\
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
+		UART_RCAR_INIT_CLOCKS(n),					\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
+		.is_hscif = DT_INST_NODE_HAS_COMPAT(n, renesas_rcar_hscif),	\
+		IRQ_FUNC_INIT							\
 	}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
