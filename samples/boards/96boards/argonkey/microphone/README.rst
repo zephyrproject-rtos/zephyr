@@ -26,7 +26,7 @@ in either one of the following two ways:
 References
 **********
 
-- :ref:`96b_argonkey`
+- :zephyr:board:`96b_argonkey`
 
 Building and Running
 ********************

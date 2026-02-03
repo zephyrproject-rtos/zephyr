@@ -214,11 +214,11 @@ Build Blinky
 Let's build the :zephyr:code-sample:`blinky` sample application.
 
 Zephyr applications are built to run on specific hardware, called a
-"board"\ [#board_misnomer]_. We'll use the Phytec :ref:`reel_board
-<reel_board>` here, but you can change the ``reel_board`` build target
-to another value if you have a different board. See :ref:`boards` or run
-``west boards`` from anywhere inside the ``zephyrproject`` directory for
-a list of supported boards.
+"board"\ [#board_misnomer]_. We'll use the Phytec
+:zephyr:board:`reel_board<reel_board>` here, but you can change the
+``reel_board`` build target to another value if you have a different
+board. See :ref:`boards` or run ``west boards`` from anywhere inside
+the ``zephyrproject`` directory for a list of supported boards.
 
 #. Go to the zephyr repository:
 

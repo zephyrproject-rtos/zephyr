@@ -1,4 +1,4 @@
-.. _ubx_evkannab1_nrf52832:
+.. zephyr:board:: ubx_evkannab1
 
 u-blox EVK-ANNA-B11x
 ####################
@@ -36,44 +36,7 @@ can be found at `ANNA-B1 product page`_ and
 Supported Features
 ==================
 
-The ubx_evkannab1_nrf52832 board configuration supports the
-following hardware features:
-
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| ADC       | on-chip    | adc                  |
-+-----------+------------+----------------------+
-| CLOCK     | on-chip    | clock_control        |
-+-----------+------------+----------------------+
-| FLASH     | on-chip    | flash                |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
-| I2C(M)    | on-chip    | i2c                  |
-+-----------+------------+----------------------+
-| MPU       | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
-+-----------+------------+----------------------+
-| RADIO     | on-chip    | Bluetooth Low Energy |
-+-----------+------------+----------------------+
-| RTC       | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| RTT       | Segger     | console              |
-+-----------+------------+----------------------+
-| SPI(M/S)  | on-chip    | spi                  |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial               |
-+-----------+------------+----------------------+
-| WDT       | on-chip    | watchdog             |
-+-----------+------------+----------------------+
-
-Other hardware features have not been enabled yet for this board.
-See `EVK-ANNA-B1 product page`_ and `ANNA-B1 Data Sheet`_
-for a complete list of EVK ANNA-B1 hardware features.
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
