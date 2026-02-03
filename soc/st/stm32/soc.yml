@@ -201,6 +201,9 @@ family:
     - name: stm32mp135fxx
   - name: stm32mp2x
     socs:
+    - name: stm32mp215fxx
+      cpuclusters:
+      - name: m33
     - name: stm32mp257fxx
       cpuclusters:
       - name: m33

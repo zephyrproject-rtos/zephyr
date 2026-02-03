@@ -12,7 +12,15 @@ config SOC_SERIES
 
 config SOC_STM32MP2X_M33
 	bool
+
+config SOC_STM32MP215FXX_M33
+	bool
+	select SOC_SERIES_STM32MP2X
+
+config SOC_STM32MP257FXX_M33
+	bool
 	select SOC_SERIES_STM32MP2X
 
 config SOC
-	default "stm32mp257fxx" if SOC_STM32MP2X_M33
+	default "stm32mp215fxx" if SOC_STM32MP215FXX_M33
+	default "stm32mp257fxx" if SOC_STM32MP257FXX_M33
