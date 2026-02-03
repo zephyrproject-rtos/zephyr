@@ -49,7 +49,7 @@ void usbh_class_remove_all(struct usb_device *const udev)
 	STRUCT_SECTION_FOREACH(usbh_class_node, c_node) {
 		struct usbh_class_data *const c_data = c_node->c_data;
 
-		if (c_data->udev == udev) {
+		if (c_data->udev != udev) {
 			continue;
 		}
 
