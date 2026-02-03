@@ -264,6 +264,19 @@ static inline void vendor_specific_start_dma_xfer(const struct device *dev)
 		}
 	}
 
+	/* The wrapper uses formatting registers regardless of whether it is driving a display
+	 * or not in order to format the data when the amount of data is unaligned with 32-bits.
+	 */
+
+	preg->FORMAT.BPP = 8;
+	/* Set to same value as core DFS register + 1 */
+	preg->FORMAT.DFS = (dev_data->ctrlr0 & CTRLR0_DFS_MASK) + 1;
+	/* Number of pixels following the command in units of BPP (which is always 8 for now) */
+	preg->FORMAT.PIXELS = packet->num_bytes;
+	/* Command and address length (in 32-bit words)*/
+	preg->FORMAT.CILEN = CEIL_DIV_32(dev_data->xfer.addr_length) +
+			     CEIL_DIV_32(dev_data->xfer.cmd_length);
+
 	/*
 	 * In slave mode, a tmod register in the wrapper also needs to be set. Currently
 	 * the address not in MDK so this is a temporary fix.
