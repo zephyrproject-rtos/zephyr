@@ -94,6 +94,8 @@ struct scmi_transport_api {
 						uint32_t proto, bool tx);
 };
 
+/** @cond INTERNAL_HIDDEN */
+
 /**
  * @brief Request an SCMI channel dynamically
  *
@@ -278,6 +280,8 @@ static inline bool scmi_transport_channel_is_free(const struct device *transport
  * @retval negative errno code if failure
  */
 int scmi_core_transport_init(const struct device *transport);
+
+/** @endcond */
 
 /**
  * @}
