@@ -460,6 +460,7 @@ static int pinctrl_configure_pin(const pinctrl_soc_pin_t pin)
 		ret = rza2m_set_output_current_ckio(pin.drive_strength);
 	} else if (pin.port == PORT_PPOC) {
 		ret = rza2m_set_ppoc(pin);
+		return ret;
 	}
 
 	if (ret) {
