@@ -34,6 +34,8 @@ extern "C" {
  * @brief Non-Volatile Memory cell representation.
  */
 struct nvmem_cell {
+	/* @cond INTERNAL_HIDDEN */
+
 	/** NVMEM parent controller device instance. */
 	const struct device *dev;
 	/** Offset of the NVMEM cell relative to the parent controller's base address */
@@ -42,6 +44,8 @@ struct nvmem_cell {
 	size_t size;
 	/** Indicator if the NVMEM cell is read-write or read-only */
 	bool read_only;
+
+	/* @endcond */
 };
 
 /**
@@ -358,6 +362,18 @@ int nvmem_cell_write(const struct nvmem_cell *cell, const void *data, off_t off,
 static inline bool nvmem_cell_is_ready(const struct nvmem_cell *cell)
 {
 	return cell != NULL && device_is_ready(cell->dev);
+}
+
+/**
+ * @brief Check if an NVMEM cell is read-only.
+ *
+ * @param cell NVMEM cell to check. Can't be NULL.
+ *
+ * @return True if the NVMEM cell is read-only and false otherwise.
+ */
+static inline bool nvmem_cell_is_read_only(const struct nvmem_cell *cell)
+{
+	return cell->read_only;
 }
 
 #ifdef __cplusplus
