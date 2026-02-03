@@ -1,0 +1,11 @@
+# Copyright 2026 Silicon Labs
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_SILABS_PROTIMER
+	bool "Silicon Labs Counter driver"
+    default y
+	depends on SOC_FAMILY_SILABS_S2
+	depends on DT_HAS_SILABS_PROTIMER_ENABLED
+	select SOC_SILABS_TIMER
+	help
+	  Enable counter driver for Silicon Labs chips.

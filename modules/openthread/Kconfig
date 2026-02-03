@@ -405,6 +405,15 @@ config OPENTHREAD_PLATFORM_USEC_TIMER
 	help
 	  Enable microsecond backoff timer implemented in platform.
 
+DT_CHOSEN_ZEPHYR_OPENTHREAD_COUNTER := zephyr,ot-alarm
+
+config OPENTHREAD_ALARM_COUNTER
+  bool
+  default y
+  depends on $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_OPENTHREAD_COUNTER))
+  select COUNTER
+  help
+  	Enable counter driver APIs for microsecond precision for timers in alarm implemented in platform.
 menu "OpenThread Border Router"
 
 config OPENTHREAD_ZEPHYR_BORDER_ROUTER

@@ -1,0 +1,8 @@
+# Copyright 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Silabs counter driver
+
+compatible: "silabs,protimer"
+
+include: base.yaml
