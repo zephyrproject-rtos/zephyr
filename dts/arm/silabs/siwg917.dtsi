@@ -76,7 +76,6 @@
 
 	nwp: nwp {
 		compatible = "silabs,siwx91x-nwp";
-		power-profile = "deep-sleep-with-ram-retention";
 		stack-size = <10240>;
 		interrupt-parent = <&nvic>;
 		interrupts = <30 0>, <74 0>;
@@ -134,6 +133,7 @@
 		siwx91x_soc_pd: siwx91x-soc-pd {
 			compatible = "silabs,siwx91x-power-domain";
 			#power-domain-cells = <0>;
+			zephyr,disabling-power-states = <&pstate_ps4_sleep>;
 			zephyr,pm-device-runtime-auto;
 			status = "okay";
 		};

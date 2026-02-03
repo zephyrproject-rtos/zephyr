@@ -27,6 +27,9 @@ configdefault PM_DEVICE_RUNTIME
 configdefault POWER_DOMAIN
 	default y
 
+configdefault PM_POLICY_DEVICE_CONSTRAINTS
+	default y
+
 endif # PM_DEVICE
 
 if SILABS_SIWX91X_NWP
