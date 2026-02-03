@@ -78,25 +78,61 @@
 		ostm0: timer@e803b000 {
 			compatible = "renesas,rza2m-ostm";
 			reg = <0xe803b000 0x30>;
+			channel = <0>;
 			interrupts = <GIC_SPI 88 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "overflow";
 			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_OSTM0, RZA2M_CLK_P1C)>;
 			status = "disabled";
+
+			os_timer {
+				compatible = "renesas,rza2m-ostm-timer";
+				status = "disabled";
+			};
+
+			counter {
+				compatible = "renesas,rza2m-ostm-counter";
+				status = "disabled";
+			};
 		};
 
 		ostm1: timer@e803c000 {
 			compatible = "renesas,rza2m-ostm";
 			reg = <0xe803c000 0x30>;
+			channel = <1>;
 			interrupts = <GIC_SPI 89 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "overflow";
 			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_OSTM1, RZA2M_CLK_P1C)>;
 			status = "disabled";
+
+			os_timer {
+				compatible = "renesas,rza2m-ostm-timer";
+				status = "disabled";
+			};
+
+			counter {
+				compatible = "renesas,rza2m-ostm-counter";
+				status = "disabled";
+			};
 		};
 
 		ostm2: timer@e803d000 {
 			compatible = "renesas,rza2m-ostm";
 			reg = <0xe803d000 0x30>;
+			channel = <2>;
 			interrupts = <GIC_SPI 90 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "overflow";
 			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_OSTM2, RZA2M_CLK_P1C)>;
 			status = "disabled";
+
+			os_timer {
+				compatible = "renesas,rza2m-ostm-timer";
+				status = "disabled";
+			};
+
+			counter {
+				compatible = "renesas,rza2m-ostm-counter";
+				status = "disabled";
+			};
 		};
 
 		pinctrl: pin-controller@fcffe000 {

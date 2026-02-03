@@ -721,6 +721,13 @@ STM32
   .. note:: This change aligns STM32 platforms' behavior with the generic Zephyr one. Previous
             implementation wasn't product-ready so this shouldn't cause much trouble.
 
+Timer
+=====
+
+* :dtcompatible:`renesas,rza2m-ostm` name has been replaced by :dtcompatible:`renesas,rza2m-ostm-timer`.
+  The choice :kconfig:option:`DT_HAS_RENESAS_RZA2M_OSTM_ENABLED` has been replaced with
+  :kconfig:option:`DT_HAS_RENESAS_RZA2M_OSTM_TIMER_ENABLED` (:github:`100934`)
+
 USB
 ===
 
