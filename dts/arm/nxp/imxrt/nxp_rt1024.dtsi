@@ -41,6 +41,7 @@
 &flexspi {
 	status = "okay";
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(4)>;
+	reg-names = "reg_base", "ahb";
 
 	/* 32 megabit internal flash present on chip */
 	w25q32jvwj0: w25q32jvwj@0 {

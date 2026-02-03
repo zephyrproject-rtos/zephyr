@@ -130,6 +130,7 @@
 
 	flexspi: spi@134000 {
 		reg = <0x134000 0x1000>, <0x18000000 DT_SIZE_M(128)>;
+		reg-names = "reg_base", "ahb";
 	};
 
 	clkctl0: clkctl@1000 {

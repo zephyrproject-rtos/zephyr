@@ -103,7 +103,9 @@
 
 		flexspi: spi@400a0000 {
 			compatible = "nxp,imx-flexspi";
-			reg = <0x400a0000 0x4000>;
+			/* ahb address and size need to be updated by board */
+			reg = <0x400a0000 0x4000>, <0x0 DT_SIZE_M(1)>;
+			reg-names = "reg_base", "ahb";
 			interrupts = <26 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
