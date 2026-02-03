@@ -855,7 +855,7 @@ static int cmd_send_media(const struct shell *sh, int32_t argc, char *argv[])
 {
 #if defined(CONFIG_BT_A2DP_SOURCE)
 	struct net_buf *buf;
-	int ret;
+	int err;
 	size_t data_len;
 
 	if (check_cb_registration(sh) != 0) {
@@ -879,9 +879,9 @@ static int cmd_send_media(const struct shell *sh, int32_t argc, char *argv[])
 	bt_shell_print("data: %d, %d, %d, %d, %d, %d ......", media_data[0],
 		media_data[1], media_data[2], media_data[3], media_data[4], media_data[5]);
 
-	ret = bt_a2dp_stream_send(&sbc_stream, buf, 0U, 0U);
-	if (ret < 0) {
-		bt_shell_error("  Failed to send SBC audio data on streams(%d)\n", ret);
+	err = bt_a2dp_stream_send(&sbc_stream, buf, 0U, 0U);
+	if (err < 0) {
+		bt_shell_error("  Failed to send SBC audio data on streams(%d)\n", err);
 		net_buf_unref(buf);
 	}
 #endif
