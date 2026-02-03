@@ -156,6 +156,8 @@
 			compatible = "renesas,ra-iic";
 			channel = <2>;
 			reg = <0x40053200 0x100>;
+			clocks = <&pclkb MSTPB 7>;
+			max-bitrate-supported = <I2C_BITRATE_FAST>;
 			status = "disabled";
 		};
 
