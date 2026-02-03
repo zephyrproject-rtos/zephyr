@@ -433,6 +433,18 @@
 			status = "disabled";
 		};
 
+		i3c2: i3c@401a0000 {
+			compatible = "st,stm32-i3c";
+			reg = <0x401a0000 DT_SIZE_K(1)>;
+			#address-cells = <3>;
+			#size-cells = <0>;
+			resets = <&rctl STM32_RESET(I3C2, STM32_RST)>;
+			clocks = <&rcc STM32_CLOCK(I3C2, STM32_CLK)>;
+			interrupts = <111 0>;
+			interrupt-names = "combined";
+			status = "disabled";
+		};
+
 		i3c4: i3c@46080000 {
 			compatible = "st,stm32-i3c";
 			reg = <0x46080000 DT_SIZE_K(1)>;
