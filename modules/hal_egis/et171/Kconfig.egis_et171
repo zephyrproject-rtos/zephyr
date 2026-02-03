@@ -1,0 +1,25 @@
+# Egis ET171 MCU
+
+# Copyright 2025 Egis Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config HAS_EGIS_ET171_HAL
+	bool
+	default y
+	depends on SOC_EGIS_ET171
+
+if HAS_EGIS_ET171_HAL
+
+config HAS_EGIS_ET171_SXSMCRYPT
+	bool "Using hardware crypt lib"
+	select CACHE_ANDES if DCACHE
+	select CACHE_MANAGEMENT if DCACHE
+	select CACHE if DCACHE
+
+config HAS_EGIS_ET171_USBCORE
+	bool "Using usb lib"
+	select CACHE_ANDES if DCACHE
+	select CACHE_MANAGEMENT if DCACHE
+	select CACHE if DCACHE
+
+endif # HAS_EGIS_ET171_HAL

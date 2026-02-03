@@ -2703,6 +2703,19 @@ EC Host Commands:
   tests:
     - mgmt.ec_host_cmd
 
+EgisTec Platforms:
+  status: maintained
+  maintainers:
+    - jackylee-go
+  files:
+    - boards/egis/
+    - drivers/*/*et171*
+    - dts/bindings/*/*et171*
+    - dts/riscv/egis/
+    - soc/egis/
+  labels:
+    - "platform: et171"
+
 Emulation:
   status: maintained
   maintainers:
@@ -5726,6 +5739,15 @@ West:
     - modules/Kconfig.cypress
   labels:
     - "platform: Infineon"
+
+"West project: hal_egis":
+  status: maintained
+  maintainers:
+    - jackylee-go
+  files:
+    - modules/hal_egis/
+  labels:
+    - "platform: et171"
 
 "West project: hal_espressif":
   status: maintained

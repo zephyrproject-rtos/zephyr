@@ -168,6 +168,12 @@ manifest:
       revision: 6236ecf4224ffb5fe1e3542c0380db951bb14540
       groups:
         - hal
+    - name: hal_egis
+      url: https://github.com/EgisMCU/hal_egis.git
+      revision: 9fafe7d5c0d8cb2e1b4d9775e0a0b413826eceed
+      path: modules/hal/egis
+      groups:
+        - hal
     - name: hal_espressif
       revision: 2e6348fd9534226fc0829915e0c15d780855a012
       path: modules/hal/espressif
