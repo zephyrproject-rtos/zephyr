@@ -37,7 +37,8 @@
 #include <zephyr/arch/arm/cortex_m/cpu.h>
 #include <zephyr/arch/arm/cortex_m/memory_map.h>
 #include <zephyr/arch/common/sys_io.h>
-#elif defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
+#elif defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A) \
+	|| defined(CONFIG_CPU_ARM9)
 #include <zephyr/arch/arm/cortex_a_r/cpu.h>
 #include <zephyr/arch/arm/cortex_a_r/sys_io.h>
 #if defined(CONFIG_AARCH32_ARMV8_R) || defined(CONFIG_CPU_CORTEX_A7)
