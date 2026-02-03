@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Microchip Technology Inc.
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/drivers/clock_control/mchp_clock_control.h>
 #include <string.h>
+#include <zephyr/logging/log.h>
 
 /******************************************************************************
  * @brief Devicetree definitions
@@ -32,6 +33,9 @@
 /******************************************************************************
  * @brief Macro definitions
  *****************************************************************************/
+LOG_MODULE_REGISTER(uart_mchp_sercom_g1, CONFIG_UART_LOG_LEVEL);
+#define TIMEOUT_VALUE_US       1000
+#define DELAY_US               2
 #define UART_SUCCESS           0
 #define BITSHIFT_FOR_BAUD_CALC 20
 
@@ -139,7 +143,7 @@ typedef struct uart_mchp_dev_cfg {
 	sercom_registers_t *regs;
 
 	/* Flag indicating if the clock is external. */
-	bool clock_external;
+	bool is_clock_external;
 
 	/* defines the functionality in standby sleep mode */
 	uint8_t run_in_standby_en;
@@ -265,16 +269,15 @@ static void uart_mchp_dma_rx_done(const struct device *dma_dev, void *arg, uint3
  * @brief Wait for synchronization of the UART.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  */
-static void uart_wait_sync(sercom_registers_t *regs, bool clock_external)
+static void uart_wait_sync(sercom_registers_t *regs, bool is_clock_external)
 {
-	if (clock_external == false) {
-		while ((regs->USART_INT.SERCOM_SYNCBUSY & SERCOM_USART_INT_SYNCBUSY_Msk) != 0) {
-		}
-	} else {
-		while ((regs->USART_EXT.SERCOM_SYNCBUSY & SERCOM_USART_EXT_SYNCBUSY_Msk) != 0) {
-		}
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
+
+	if (WAIT_FOR(((usart->SERCOM_SYNCBUSY & SERCOM_USART_SYNCBUSY_Msk) == 0), TIMEOUT_VALUE_US,
+		     k_busy_wait(DELAY_US)) == false) {
+		LOG_ERR("Timeout waiting for UART SYNCBUSY clear");
 	}
 }
 
@@ -282,154 +285,86 @@ static void uart_wait_sync(sercom_registers_t *regs, bool clock_external)
  * @brief Disable UART interrupts.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  */
-static inline void uart_disable_interrupts(sercom_registers_t *regs, bool clock_external)
+static inline void uart_disable_interrupts(sercom_registers_t *regs, bool is_clock_external)
 {
-	if (clock_external == false) {
-		regs->USART_INT.SERCOM_INTENCLR = SERCOM_USART_INT_INTENCLR_Msk;
-	} else {
-		regs->USART_EXT.SERCOM_INTENCLR = SERCOM_USART_EXT_INTENCLR_Msk;
-	}
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
+
+	usart->SERCOM_INTENCLR = SERCOM_USART_INTENCLR_Msk;
 }
 
 /**
  * @brief Configure the number of data bits for the UART.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  * @param count Number of data bits (5 to 9).
  * @return 0 on success, -1 on invalid count.
  */
-static int uart_config_data_bits(sercom_registers_t *regs, bool clock_external, unsigned int count)
+static int uart_config_data_bits(sercom_registers_t *regs, bool is_clock_external,
+				 unsigned int count)
 {
 	uint32_t value;
-	int retval = UART_SUCCESS;
 
-	do {
-		if (clock_external == false) {
-			switch (count) {
-			case UART_CFG_DATA_BITS_5:
-				value = SERCOM_USART_INT_CTRLB_CHSIZE_5_BIT;
-				break;
-			case UART_CFG_DATA_BITS_6:
-				value = SERCOM_USART_INT_CTRLB_CHSIZE_6_BIT;
-				break;
-			case UART_CFG_DATA_BITS_7:
-				value = SERCOM_USART_INT_CTRLB_CHSIZE_7_BIT;
-				break;
-			case UART_CFG_DATA_BITS_8:
-				value = SERCOM_USART_INT_CTRLB_CHSIZE_8_BIT;
-				break;
-			case UART_CFG_DATA_BITS_9:
-				value = SERCOM_USART_INT_CTRLB_CHSIZE_9_BIT;
-				break;
-			default:
-				retval = -ENOTSUP;
-			}
-		} else {
-			switch (count) {
-			case UART_CFG_DATA_BITS_5:
-				value = SERCOM_USART_EXT_CTRLB_CHSIZE_5_BIT;
-				break;
-			case UART_CFG_DATA_BITS_6:
-				value = SERCOM_USART_EXT_CTRLB_CHSIZE_6_BIT;
-				break;
-			case UART_CFG_DATA_BITS_7:
-				value = SERCOM_USART_EXT_CTRLB_CHSIZE_7_BIT;
-				break;
-			case UART_CFG_DATA_BITS_8:
-				value = SERCOM_USART_EXT_CTRLB_CHSIZE_8_BIT;
-				break;
-			case UART_CFG_DATA_BITS_9:
-				value = SERCOM_USART_EXT_CTRLB_CHSIZE_9_BIT;
-				break;
-			default:
-				retval = -ENOTSUP;
-			}
-		}
-		if (retval != UART_SUCCESS) {
-			break;
-		}
+	switch (count) {
+	case UART_CFG_DATA_BITS_5:
+		value = SERCOM_USART_CTRLB_CHSIZE_5_BIT;
+		break;
+	case UART_CFG_DATA_BITS_6:
+		value = SERCOM_USART_CTRLB_CHSIZE_6_BIT;
+		break;
+	case UART_CFG_DATA_BITS_7:
+		value = SERCOM_USART_CTRLB_CHSIZE_7_BIT;
+		break;
+	case UART_CFG_DATA_BITS_8:
+		value = SERCOM_USART_CTRLB_CHSIZE_8_BIT;
+		break;
+	case UART_CFG_DATA_BITS_9:
+		value = SERCOM_USART_CTRLB_CHSIZE_9_BIT;
+		break;
+	default:
+		return -ENOTSUP;
+	}
 
-		/* Writing to the CTRLB register requires synchronization */
-		if (clock_external == false) {
-			regs->USART_INT.SERCOM_CTRLB &= ~SERCOM_USART_INT_CTRLB_CHSIZE_Msk;
-			regs->USART_INT.SERCOM_CTRLB |= value;
-		} else {
-			regs->USART_EXT.SERCOM_CTRLB &= ~SERCOM_USART_EXT_CTRLB_CHSIZE_Msk;
-			regs->USART_EXT.SERCOM_CTRLB |= value;
-		}
-		uart_wait_sync(regs, clock_external);
-	} while (0);
+	/* Writing to the CTRLB register requires synchronization */
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
 
-	return retval;
+	usart->SERCOM_CTRLB &= ~SERCOM_USART_CTRLB_CHSIZE_Msk;
+	usart->SERCOM_CTRLB |= value;
+	uart_wait_sync(regs, is_clock_external);
+
+	return UART_SUCCESS;
 }
 
 /**
  * @brief Configure the parity mode for the UART.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  * @param parity Parity mode to configure.
  */
-static void uart_config_parity(sercom_registers_t *regs, bool clock_external,
+static void uart_config_parity(sercom_registers_t *regs, bool is_clock_external,
 			       enum uart_config_parity parity)
 {
-	if (clock_external == false) {
-		regs->USART_INT.SERCOM_CTRLA &= ~SERCOM_USART_INT_CTRLA_FORM_Msk;
-		switch (parity) {
-		case UART_CFG_PARITY_ODD: {
-			regs->USART_INT.SERCOM_CTRLA |=
-				SERCOM_USART_INT_CTRLA_FORM_USART_FRAME_WITH_PARITY;
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
 
-			/* Writing to the CTRLB register requires synchronization */
-			regs->USART_INT.SERCOM_CTRLB |= SERCOM_USART_INT_CTRLB_PMODE_Msk;
-			uart_wait_sync(regs, clock_external);
-			break;
-		}
-		case UART_CFG_PARITY_EVEN: {
-			regs->USART_INT.SERCOM_CTRLA |=
-				SERCOM_USART_INT_CTRLA_FORM_USART_FRAME_WITH_PARITY;
+	usart->SERCOM_CTRLA &= ~SERCOM_USART_CTRLA_FORM_Msk;
 
-			/* Writing to the CTRLB register requires synchronization */
-			regs->USART_INT.SERCOM_CTRLB &= ~SERCOM_USART_INT_CTRLB_PMODE_Msk;
-			uart_wait_sync(regs, clock_external);
-			break;
-		}
-		default: {
-			regs->USART_INT.SERCOM_CTRLA |=
-				SERCOM_USART_INT_CTRLA_FORM_USART_FRAME_NO_PARITY;
-			break;
-		}
-		}
-	} else {
-		regs->USART_EXT.SERCOM_CTRLA &= ~SERCOM_USART_EXT_CTRLA_FORM_Msk;
-		switch (parity) {
-		case UART_CFG_PARITY_ODD: {
-			regs->USART_EXT.SERCOM_CTRLA |=
-				SERCOM_USART_EXT_CTRLA_FORM_USART_FRAME_WITH_PARITY;
-
-			/* Writing to the CTRLB register requires synchronization */
-			regs->USART_EXT.SERCOM_CTRLB |= SERCOM_USART_EXT_CTRLB_PMODE_Msk;
-			uart_wait_sync(regs, clock_external);
-			break;
-		}
-		case UART_CFG_PARITY_EVEN: {
-			regs->USART_EXT.SERCOM_CTRLA |=
-				SERCOM_USART_EXT_CTRLA_FORM_USART_FRAME_WITH_PARITY;
-
-			/* Writing to the CTRLB register requires synchronization */
-			regs->USART_EXT.SERCOM_CTRLB &= ~SERCOM_USART_EXT_CTRLB_PMODE_Msk;
-			uart_wait_sync(regs, clock_external);
-			break;
-		}
-		default: {
-			regs->USART_EXT.SERCOM_CTRLA |=
-				SERCOM_USART_EXT_CTRLA_FORM_USART_FRAME_NO_PARITY;
-			break;
-		}
-		}
+	switch (parity) {
+	case UART_CFG_PARITY_ODD:
+		usart->SERCOM_CTRLA |= SERCOM_USART_CTRLA_FORM_USART_FRAME_WITH_PARITY;
+		usart->SERCOM_CTRLB |= SERCOM_USART_CTRLB_PMODE_Msk;
+		uart_wait_sync(regs, is_clock_external);
+		break;
+	case UART_CFG_PARITY_EVEN:
+		usart->SERCOM_CTRLA |= SERCOM_USART_CTRLA_FORM_USART_FRAME_WITH_PARITY;
+		usart->SERCOM_CTRLB &= ~SERCOM_USART_CTRLB_PMODE_Msk;
+		uart_wait_sync(regs, is_clock_external);
+		break;
+	default:
+		usart->SERCOM_CTRLA |= SERCOM_USART_CTRLA_FORM_USART_FRAME_NO_PARITY;
+		break;
 	}
 }
 
@@ -437,90 +372,63 @@ static void uart_config_parity(sercom_registers_t *regs, bool clock_external,
  * @brief Configure the number of stop bits for the UART.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  * @param count Number of stop bits (1 or 2).
  * @return 0 on success, -1 on invalid count.
  */
-static int uart_config_stop_bits(sercom_registers_t *regs, bool clock_external, unsigned int count)
+static int uart_config_stop_bits(sercom_registers_t *regs, bool is_clock_external,
+				 unsigned int count)
 {
-	int retval = UART_SUCCESS;
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
 
-	do {
-		if (clock_external == false) {
-			if (count == UART_CFG_STOP_BITS_1) {
-				regs->USART_INT.SERCOM_CTRLB &= ~SERCOM_USART_INT_CTRLB_SBMODE_Msk;
-			} else if (count == UART_CFG_STOP_BITS_2) {
-				regs->USART_INT.SERCOM_CTRLB |= SERCOM_USART_INT_CTRLB_SBMODE_Msk;
-			} else {
-				retval = -ENOTSUP;
-				break;
-			}
-		} else {
-			if (count == UART_CFG_STOP_BITS_1) {
-				regs->USART_EXT.SERCOM_CTRLB &= ~SERCOM_USART_EXT_CTRLB_SBMODE_Msk;
-			} else if (count == UART_CFG_STOP_BITS_2) {
-				regs->USART_EXT.SERCOM_CTRLB |= SERCOM_USART_EXT_CTRLB_SBMODE_Msk;
-			} else {
-				retval = -ENOTSUP;
-				break;
-			}
-		}
-		uart_wait_sync(regs, clock_external);
-	} while (0);
+	if (count == UART_CFG_STOP_BITS_1) {
+		usart->SERCOM_CTRLB &= ~SERCOM_USART_CTRLB_SBMODE_Msk;
+	} else if (count == UART_CFG_STOP_BITS_2) {
+		usart->SERCOM_CTRLB |= SERCOM_USART_CTRLB_SBMODE_Msk;
+	} else {
+		return -ENOTSUP;
+	}
 
-	return retval;
+	uart_wait_sync(regs, is_clock_external);
+	return UART_SUCCESS;
 }
-
 /**
  * @brief Configure the UART pinout.
  *
- * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param regs Pointer to the uart_mchp_dev_cfg_t structure.
+ * @param is_clock_external Boolean to indicate external or internal clock
  */
 static void uart_config_pinout(const uart_mchp_dev_cfg_t *const cfg)
 {
-	uint32_t reg_value;
-
 	sercom_registers_t *regs = cfg->regs;
 	uint32_t rxpo = cfg->rxpo;
 	uint32_t txpo = cfg->txpo;
+	bool is_clock_external = cfg->is_clock_external;
 
-	if (cfg->clock_external == false) {
-		reg_value = regs->USART_INT.SERCOM_CTRLA;
-		reg_value &= ~(SERCOM_USART_INT_CTRLA_RXPO_Msk | SERCOM_USART_INT_CTRLA_TXPO_Msk);
-		reg_value |=
-			(SERCOM_USART_INT_CTRLA_RXPO(rxpo) | SERCOM_USART_INT_CTRLA_TXPO(txpo));
-		cfg->regs->USART_INT.SERCOM_CTRLA = reg_value;
-	} else {
-		reg_value = regs->USART_EXT.SERCOM_CTRLA;
-		reg_value &= ~(SERCOM_USART_EXT_CTRLA_RXPO_Msk | SERCOM_USART_EXT_CTRLA_TXPO_Msk);
-		reg_value |=
-			(SERCOM_USART_EXT_CTRLA_RXPO(rxpo) | SERCOM_USART_EXT_CTRLA_TXPO(txpo));
-		regs->USART_EXT.SERCOM_CTRLA = reg_value;
-	}
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
+	uint32_t reg_value = usart->SERCOM_CTRLA;
+
+	reg_value &= ~(SERCOM_USART_CTRLA_RXPO_Msk | SERCOM_USART_CTRLA_TXPO_Msk);
+	reg_value |= (SERCOM_USART_CTRLA_RXPO(rxpo) | SERCOM_USART_CTRLA_TXPO(txpo));
+	usart->SERCOM_CTRLA = reg_value;
 }
 
 /**
  * @brief Set clock polarity for UART.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  * @param tx_rising transmit on rising edge
  */
-static void uart_set_clock_polarity(sercom_registers_t *regs, bool clock_external, bool tx_rising)
+static void uart_set_clock_polarity(sercom_registers_t *regs, bool is_clock_external,
+				    bool tx_rising)
 {
-	if (clock_external == false) {
-		if (tx_rising == true) {
-			regs->USART_INT.SERCOM_CTRLA &= ~SERCOM_USART_INT_CTRLA_CPOL_Msk;
-		} else {
-			regs->USART_INT.SERCOM_CTRLA |= SERCOM_USART_INT_CTRLA_CPOL_Msk;
-		}
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
+
+	if (tx_rising == true) {
+		usart->SERCOM_CTRLA &= ~SERCOM_USART_CTRLA_CPOL_Msk;
 	} else {
-		if (tx_rising == true) {
-			regs->USART_EXT.SERCOM_CTRLA &= ~SERCOM_USART_EXT_CTRLA_CPOL_Msk;
-		} else {
-			regs->USART_EXT.SERCOM_CTRLA |= SERCOM_USART_EXT_CTRLA_CPOL_Msk;
-		}
+		usart->SERCOM_CTRLA |= SERCOM_USART_CTRLA_CPOL_Msk;
 	}
 }
 
@@ -528,21 +436,19 @@ static void uart_set_clock_polarity(sercom_registers_t *regs, bool clock_externa
  * @brief Set the clock source for the UART.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  */
-static void uart_set_clock_source(sercom_registers_t *regs, bool clock_external)
+static void uart_set_clock_source(sercom_registers_t *regs, bool is_clock_external)
 {
-	uint32_t reg_value;
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
+	uint32_t reg_value = usart->SERCOM_CTRLA;
 
-	reg_value = regs->USART_INT.SERCOM_CTRLA;
-	reg_value &= ~SERCOM_USART_INT_CTRLA_MODE_Msk;
+	reg_value &= ~SERCOM_USART_CTRLA_MODE_Msk;
 
-	if (clock_external == true) {
-		regs->USART_INT.SERCOM_CTRLA =
-			reg_value | SERCOM_USART_INT_CTRLA_MODE_USART_EXT_CLK;
+	if (is_clock_external == true) {
+		usart->SERCOM_CTRLA = reg_value | SERCOM_USART_CTRLA_MODE_USART_EXT;
 	} else {
-		regs->USART_INT.SERCOM_CTRLA =
-			reg_value | SERCOM_USART_INT_CTRLA_MODE_USART_INT_CLK;
+		usart->SERCOM_CTRLA = reg_value | SERCOM_USART_CTRLA_MODE_USART_INT;
 	}
 }
 
@@ -550,23 +456,17 @@ static void uart_set_clock_source(sercom_registers_t *regs, bool clock_external)
  * @brief Set the data order for the UART.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  * @param lsb_first Boolean to set the data order.
  */
-static void uart_set_lsb_first(sercom_registers_t *regs, bool clock_external, bool lsb_first)
+static void uart_set_lsb_first(sercom_registers_t *regs, bool is_clock_external, bool lsb_first)
 {
-	if (clock_external == false) {
-		if (lsb_first == true) {
-			regs->USART_INT.SERCOM_CTRLA |= SERCOM_USART_INT_CTRLA_DORD_Msk;
-		} else {
-			regs->USART_INT.SERCOM_CTRLA &= ~SERCOM_USART_INT_CTRLA_DORD_Msk;
-		}
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
+
+	if (lsb_first == true) {
+		usart->SERCOM_CTRLA |= SERCOM_USART_CTRLA_DORD_Msk;
 	} else {
-		if (lsb_first == true) {
-			regs->USART_EXT.SERCOM_CTRLA |= SERCOM_USART_EXT_CTRLA_DORD_Msk;
-		} else {
-			regs->USART_EXT.SERCOM_CTRLA &= ~SERCOM_USART_EXT_CTRLA_DORD_Msk;
-		}
+		usart->SERCOM_CTRLA &= ~SERCOM_USART_CTRLA_DORD_Msk;
 	}
 }
 
@@ -574,54 +474,40 @@ static void uart_set_lsb_first(sercom_registers_t *regs, bool clock_external, bo
  * @brief Enable or disable the UART receiver.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  * @param enable Boolean to enable or disable the receiver.
  */
-static void uart_rx_on_off(sercom_registers_t *regs, bool clock_external, bool enable)
+static void uart_rx_on_off(sercom_registers_t *regs, bool is_clock_external, bool enable)
 {
-	if (clock_external == false) {
-		if (enable == true) {
-			regs->USART_INT.SERCOM_CTRLB |= SERCOM_USART_INT_CTRLB_RXEN_Msk;
-		} else {
-			regs->USART_INT.SERCOM_CTRLB &= ~SERCOM_USART_INT_CTRLB_RXEN_Msk;
-		}
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
+
+	if (enable == true) {
+		usart->SERCOM_CTRLB |= SERCOM_USART_CTRLB_RXEN_Msk;
 	} else {
-		if (enable == true) {
-			regs->USART_EXT.SERCOM_CTRLB |= SERCOM_USART_EXT_CTRLB_RXEN_Msk;
-		} else {
-			regs->USART_EXT.SERCOM_CTRLB &= ~SERCOM_USART_EXT_CTRLB_RXEN_Msk;
-		}
+		usart->SERCOM_CTRLB &= ~SERCOM_USART_CTRLB_RXEN_Msk;
 	}
 
-	/* Writing to the CTRLB register requires synchronization */
-	uart_wait_sync(regs, clock_external);
+	uart_wait_sync(regs, is_clock_external);
 }
 
 /**
  * @brief Enable or disable the UART transmitter.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  * @param enable Boolean to enable or disable the transmitter.
  */
-static void uart_tx_on_off(sercom_registers_t *regs, bool clock_external, bool enable)
+static void uart_tx_on_off(sercom_registers_t *regs, bool is_clock_external, bool enable)
 {
-	if (clock_external == false) {
-		if (enable == true) {
-			regs->USART_INT.SERCOM_CTRLB |= SERCOM_USART_INT_CTRLB_TXEN_Msk;
-		} else {
-			regs->USART_INT.SERCOM_CTRLB &= ~SERCOM_USART_INT_CTRLB_TXEN_Msk;
-		}
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
+
+	if (enable == true) {
+		usart->SERCOM_CTRLB |= SERCOM_USART_CTRLB_TXEN_Msk;
 	} else {
-		if (enable == true) {
-			regs->USART_EXT.SERCOM_CTRLB |= SERCOM_USART_EXT_CTRLB_TXEN_Msk;
-		} else {
-			regs->USART_EXT.SERCOM_CTRLB &= ~SERCOM_USART_EXT_CTRLB_TXEN_Msk;
-		}
+		usart->SERCOM_CTRLB &= ~SERCOM_USART_CTRLB_TXEN_Msk;
 	}
 
-	/* Writing to the CTRLB register requires synchronization */
-	uart_wait_sync(regs, clock_external);
+	uart_wait_sync(regs, is_clock_external);
 }
 
 /**
@@ -630,81 +516,63 @@ static void uart_tx_on_off(sercom_registers_t *regs, bool clock_external, bool e
  * This function sets the baud rate for the specified UART instance.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  * @param baudrate Desired baud rate.
  * @param clk_freq_hz Clock frequency in Hz.
  * @return 0 on success, -ERANGE if the calculated baud rate is out of range.
  * @retval -EINVAL for invalid argument.
  */
-static int uart_set_baudrate(sercom_registers_t *regs, bool clock_external, uint32_t baudrate,
+static int uart_set_baudrate(sercom_registers_t *regs, bool is_clock_external, uint32_t baudrate,
 			     uint32_t clk_freq_hz)
 {
 	uint64_t tmp;
 	uint16_t baud;
 
-	int retval = UART_SUCCESS;
+	if (clk_freq_hz == 0) {
+		return -EINVAL;
+	}
 
-	do {
-		if (clk_freq_hz == 0) {
-			retval = -EINVAL;
-			break;
-		}
-		tmp = (uint64_t)baudrate << BITSHIFT_FOR_BAUD_CALC;
-		tmp = (tmp + (clk_freq_hz >> 1)) / clk_freq_hz;
+	tmp = (uint64_t)baudrate << BITSHIFT_FOR_BAUD_CALC;
+	tmp = (tmp + (clk_freq_hz >> 1)) / clk_freq_hz;
 
-		/* Verify that the calculated result is within range */
-		if ((tmp < 1) || (tmp > UINT16_MAX)) {
-			retval = -ERANGE;
-			break;
-		}
+	/* Verify that the calculated result is within range */
+	if ((tmp < 1) || (tmp > UINT16_MAX)) {
+		return -ERANGE;
+	}
 
-		baud = (UINT16_MAX + 1) - (uint16_t)tmp;
+	baud = (UINT16_MAX + 1) - (uint16_t)tmp;
 
-		if (clock_external == false) {
-			regs->USART_INT.SERCOM_CTRLA &= ~SERCOM_USART_INT_CTRLA_SAMPR_Msk;
-			regs->USART_INT.SERCOM_BAUD = baud;
-		} else {
-			regs->USART_EXT.SERCOM_CTRLA &= ~SERCOM_USART_EXT_CTRLA_SAMPR_Msk;
-			regs->USART_EXT.SERCOM_BAUD = baud;
-		}
-	} while (0);
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
 
-	return retval;
+	usart->SERCOM_CTRLA &= ~SERCOM_USART_CTRLA_SAMPR_Msk;
+	usart->SERCOM_BAUD = baud;
+
+	return UART_SUCCESS;
 }
 
 /**
  * @brief Enable or disable the UART.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  * @param run_in_standby Boolean to enable UART operation in standby mode.
  * @param enable Boolean to enable or disable the UART.
  */
-static void uart_enable(sercom_registers_t *regs, bool clock_external, bool run_in_standby,
+static void uart_enable(sercom_registers_t *regs, bool is_clock_external, bool run_in_standby,
 			bool enable)
 {
-	if (clock_external == false) {
-		if (enable == true) {
-			if (run_in_standby == true) {
-				regs->USART_INT.SERCOM_CTRLA |= SERCOM_USART_INT_CTRLA_RUNSTDBY_Msk;
-			}
-			regs->USART_INT.SERCOM_CTRLA |= SERCOM_USART_INT_CTRLA_ENABLE_Msk;
-		} else {
-			regs->USART_INT.SERCOM_CTRLA &= ~SERCOM_USART_INT_CTRLA_ENABLE_Msk;
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
+
+	if (enable == true) {
+		if (run_in_standby == true) {
+			usart->SERCOM_CTRLA |= SERCOM_USART_CTRLA_RUNSTDBY_Msk;
 		}
+		usart->SERCOM_CTRLA |= SERCOM_USART_CTRLA_ENABLE_Msk;
 	} else {
-		if (enable == true) {
-			if (run_in_standby == true) {
-				regs->USART_EXT.SERCOM_CTRLA |= SERCOM_USART_EXT_CTRLA_RUNSTDBY_Msk;
-			}
-			regs->USART_EXT.SERCOM_CTRLA |= SERCOM_USART_EXT_CTRLA_ENABLE_Msk;
-		} else {
-			regs->USART_EXT.SERCOM_CTRLA &= ~SERCOM_USART_EXT_CTRLA_ENABLE_Msk;
-		}
+		usart->SERCOM_CTRLA &= ~SERCOM_USART_CTRLA_ENABLE_Msk;
 	}
 
-	/* Enabling and disabling the SERCOM (CTRLA.ENABLE) requires synchronization */
-	uart_wait_sync(regs, clock_external);
+	uart_wait_sync(regs, is_clock_external);
 }
 
 /**
@@ -713,20 +581,14 @@ static void uart_enable(sercom_registers_t *regs, bool clock_external, bool run_
  * This function checks if the receive operation is complete for the specified UART instance.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  * @return True if receive is complete, false otherwise.
  */
-static bool uart_is_rx_complete(sercom_registers_t *regs, bool clock_external)
+static bool uart_is_rx_complete(sercom_registers_t *regs, bool is_clock_external)
 {
-	bool retval;
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
 
-	if (clock_external == false) {
-		retval = ((regs->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_RXC_Msk) != 0);
-	} else {
-		retval = ((regs->USART_EXT.SERCOM_INTFLAG & SERCOM_USART_EXT_INTFLAG_RXC_Msk) != 0);
-	}
-
-	return retval;
+	return ((usart->SERCOM_INTFLAG & SERCOM_USART_INTFLAG_RXC_Msk) != 0);
 }
 
 /**
@@ -735,20 +597,14 @@ static bool uart_is_rx_complete(sercom_registers_t *regs, bool clock_external)
  * This function retrieves the received character from the specified UART instance.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  * @return The received character.
  */
-static inline unsigned char uart_get_received_char(sercom_registers_t *regs, bool clock_external)
+static inline unsigned char uart_get_received_char(sercom_registers_t *regs, bool is_clock_external)
 {
-	unsigned char retval;
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
 
-	if (clock_external == false) {
-		retval = (unsigned char)regs->USART_INT.SERCOM_DATA;
-	} else {
-		retval = (unsigned char)regs->USART_EXT.SERCOM_DATA;
-	}
-
-	return retval;
+	return (unsigned char)(usart->SERCOM_DATA);
 }
 
 /**
@@ -757,20 +613,14 @@ static inline unsigned char uart_get_received_char(sercom_registers_t *regs, boo
  * This function checks if the TX operation is ready for the specified UART instance.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  * @return True if TX is ready, false otherwise.
  */
-static bool uart_is_tx_ready(sercom_registers_t *regs, bool clock_external)
+static bool uart_is_tx_ready(sercom_registers_t *regs, bool is_clock_external)
 {
-	bool retval;
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
 
-	if (clock_external == false) {
-		retval = ((regs->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_DRE_Msk) != 0);
-	} else {
-		retval = ((regs->USART_EXT.SERCOM_INTFLAG & SERCOM_USART_EXT_INTFLAG_DRE_Msk) != 0);
-	}
-
-	return retval;
+	return ((usart->SERCOM_INTFLAG & SERCOM_USART_INTFLAG_DRE_Msk) != 0);
 }
 
 /**
@@ -779,16 +629,15 @@ static bool uart_is_tx_ready(sercom_registers_t *regs, bool clock_external)
  * This function transmits a character via the specified UART instance.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  * @param data The character to transmit.
  */
-static inline void uart_tx_char(sercom_registers_t *regs, bool clock_external, unsigned char data)
+static inline void uart_tx_char(sercom_registers_t *regs, bool is_clock_external,
+				unsigned char data)
 {
-	if (clock_external == false) {
-		regs->USART_INT.SERCOM_DATA = data;
-	} else {
-		regs->USART_EXT.SERCOM_DATA = data;
-	}
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
+
+	usart->SERCOM_DATA = data;
 }
 
 /**
@@ -797,22 +646,14 @@ static inline void uart_tx_char(sercom_registers_t *regs, bool clock_external, u
  * This function checks if there is a buffer overflow error for the specified UART instance.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  * @return True if there is a buffer overflow error, false otherwise.
  */
-static bool uart_is_err_buffer_overflow(sercom_registers_t *regs, bool clock_external)
+static bool uart_is_err_buffer_overflow(sercom_registers_t *regs, bool is_clock_external)
 {
-	bool retval;
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
 
-	if (clock_external == false) {
-		retval =
-			((regs->USART_INT.SERCOM_STATUS & SERCOM_USART_INT_STATUS_BUFOVF_Msk) != 0);
-	} else {
-		retval =
-			((regs->USART_EXT.SERCOM_STATUS & SERCOM_USART_EXT_STATUS_BUFOVF_Msk) != 0);
-	}
-
-	return retval;
+	return ((usart->SERCOM_STATUS & SERCOM_USART_STATUS_BUFOVF_Msk) != 0);
 }
 
 /**
@@ -821,20 +662,14 @@ static bool uart_is_err_buffer_overflow(sercom_registers_t *regs, bool clock_ext
  * This function checks if there is a frame error for the specified UART instance.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  * @return True if there is a frame error, false otherwise.
  */
-static bool uart_is_err_frame(sercom_registers_t *regs, bool clock_external)
+static bool uart_is_err_frame(sercom_registers_t *regs, bool is_clock_external)
 {
-	bool retval;
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
 
-	if (clock_external == false) {
-		retval = ((regs->USART_INT.SERCOM_STATUS & SERCOM_USART_INT_STATUS_FERR_Msk) != 0);
-	} else {
-		retval = ((regs->USART_EXT.SERCOM_STATUS & SERCOM_USART_EXT_STATUS_FERR_Msk) != 0);
-	}
-
-	return retval;
+	return ((usart->SERCOM_STATUS & SERCOM_USART_STATUS_FERR_Msk) != 0);
 }
 
 /**
@@ -843,20 +678,14 @@ static bool uart_is_err_frame(sercom_registers_t *regs, bool clock_external)
  * This function checks if there is a parity error for the specified UART instance.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  * @return True if there is a parity error, false otherwise.
  */
-static bool uart_is_err_parity(sercom_registers_t *regs, bool clock_external)
+static bool uart_is_err_parity(sercom_registers_t *regs, bool is_clock_external)
 {
-	bool retval;
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
 
-	if (clock_external == false) {
-		retval = ((regs->USART_INT.SERCOM_STATUS & SERCOM_USART_INT_STATUS_PERR_Msk) != 0);
-	} else {
-		retval = ((regs->USART_EXT.SERCOM_STATUS & SERCOM_USART_EXT_STATUS_PERR_Msk) != 0);
-	}
-
-	return retval;
+	return ((usart->SERCOM_STATUS & SERCOM_USART_STATUS_PERR_Msk) != 0);
 }
 
 /**
@@ -866,20 +695,14 @@ static bool uart_is_err_parity(sercom_registers_t *regs, bool clock_external)
  * instance.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  * @return True if there is an autobaud synchronization error, false otherwise.
  */
-static bool uart_is_err_autobaud_sync(sercom_registers_t *regs, bool clock_external)
+static bool uart_is_err_autobaud_sync(sercom_registers_t *regs, bool is_clock_external)
 {
-	bool retval;
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
 
-	if (clock_external == false) {
-		retval = ((regs->USART_INT.SERCOM_STATUS & SERCOM_USART_INT_STATUS_ISF_Msk) != 0);
-	} else {
-		retval = ((regs->USART_EXT.SERCOM_STATUS & SERCOM_USART_EXT_STATUS_ISF_Msk) != 0);
-	}
-
-	return retval;
+	return ((usart->SERCOM_STATUS & SERCOM_USART_STATUS_ISF_Msk) != 0);
 }
 
 /**
@@ -888,20 +711,14 @@ static bool uart_is_err_autobaud_sync(sercom_registers_t *regs, bool clock_exter
  * This function checks if there is a collision error for the specified UART instance.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  * @return True if there is a collision error, false otherwise.
  */
-static bool uart_is_err_collision(sercom_registers_t *regs, bool clock_external)
+static bool uart_is_err_collision(sercom_registers_t *regs, bool is_clock_external)
 {
-	bool retval;
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
 
-	if (clock_external == false) {
-		retval = ((regs->USART_INT.SERCOM_STATUS & SERCOM_USART_INT_STATUS_COLL_Msk) != 0);
-	} else {
-		retval = ((regs->USART_EXT.SERCOM_STATUS & SERCOM_USART_EXT_STATUS_COLL_Msk) != 0);
-	}
-
-	return retval;
+	return ((usart->SERCOM_STATUS & SERCOM_USART_STATUS_COLL_Msk) != 0);
 }
 
 /**
@@ -910,21 +727,15 @@ static bool uart_is_err_collision(sercom_registers_t *regs, bool clock_external)
  * This function clears all error flags for the specified UART instance.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  */
-static void uart_err_clear_all(sercom_registers_t *regs, bool clock_external)
+static void uart_err_clear_all(sercom_registers_t *regs, bool is_clock_external)
 {
-	if (clock_external == false) {
-		regs->USART_INT.SERCOM_STATUS |=
-			SERCOM_USART_INT_STATUS_BUFOVF_Msk | SERCOM_USART_INT_STATUS_FERR_Msk |
-			SERCOM_USART_INT_STATUS_PERR_Msk | SERCOM_USART_INT_STATUS_ISF_Msk |
-			SERCOM_USART_INT_STATUS_COLL_Msk;
-	} else {
-		regs->USART_EXT.SERCOM_STATUS |=
-			SERCOM_USART_EXT_STATUS_BUFOVF_Msk | SERCOM_USART_EXT_STATUS_FERR_Msk |
-			SERCOM_USART_EXT_STATUS_PERR_Msk | SERCOM_USART_EXT_STATUS_ISF_Msk |
-			SERCOM_USART_EXT_STATUS_COLL_Msk;
-	}
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
+
+	usart->SERCOM_STATUS |= (SERCOM_USART_STATUS_BUFOVF_Msk | SERCOM_USART_STATUS_FERR_Msk |
+				 SERCOM_USART_STATUS_PERR_Msk | SERCOM_USART_STATUS_ISF_Msk |
+				 SERCOM_USART_STATUS_COLL_Msk);
 }
 
 /**
@@ -939,25 +750,25 @@ static uint32_t uart_get_err(const struct device *dev)
 	const uart_mchp_dev_cfg_t *const cfg = dev->config;
 	uint32_t err = 0U;
 	sercom_registers_t *regs = cfg->regs;
-	bool clock_external = cfg->clock_external;
+	bool is_clock_external = cfg->is_clock_external;
 
-	if (uart_is_err_buffer_overflow(regs, clock_external) == true) {
+	if (uart_is_err_buffer_overflow(regs, is_clock_external) == true) {
 		err |= UART_ERROR_OVERRUN;
 	}
 
-	if (uart_is_err_frame(regs, clock_external) == true) {
+	if (uart_is_err_frame(regs, is_clock_external) == true) {
 		err |= UART_ERROR_FRAMING;
 	}
 
-	if (uart_is_err_parity(regs, clock_external) == true) {
+	if (uart_is_err_parity(regs, is_clock_external) == true) {
 		err |= UART_ERROR_PARITY;
 	}
 
-	if (uart_is_err_autobaud_sync(regs, clock_external) == true) {
+	if (uart_is_err_autobaud_sync(regs, is_clock_external) == true) {
 		err |= UART_BREAK;
 	}
 
-	if (uart_is_err_collision(regs, clock_external) == true) {
+	if (uart_is_err_collision(regs, is_clock_external) == true) {
 		err |= UART_ERROR_COLLISION;
 	}
 
@@ -971,20 +782,14 @@ static uint32_t uart_get_err(const struct device *dev)
  * This function checks if the TX operation is complete for the specified UART instance.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  * @return True if TX is complete, false otherwise.
  */
-static bool uart_is_tx_complete(sercom_registers_t *regs, bool clock_external)
+static bool uart_is_tx_complete(sercom_registers_t *regs, bool is_clock_external)
 {
-	bool retval;
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
 
-	if (clock_external == false) {
-		retval = ((regs->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_TXC_Msk) != 0);
-	} else {
-		retval = ((regs->USART_EXT.SERCOM_INTFLAG & SERCOM_USART_EXT_INTFLAG_TXC_Msk) != 0);
-	}
-
-	return retval;
+	return ((usart->SERCOM_INTFLAG & SERCOM_USART_INTFLAG_TXC_Msk) != 0);
 }
 #endif
 
@@ -995,22 +800,14 @@ static bool uart_is_tx_complete(sercom_registers_t *regs, bool clock_external)
  * This function checks if transmit interrupt is enabled for the specified UART instance.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  * @return True if interrupt is enabled, false otherwise.
  */
-static bool uart_is_tx_interrupt_enabled(sercom_registers_t *regs, bool clock_external)
+static bool uart_is_tx_interrupt_enabled(sercom_registers_t *regs, bool is_clock_external)
 {
-	bool retval;
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
 
-	if (clock_external == false) {
-		retval = ((regs->USART_INT.SERCOM_INTENSET & SERCOM_USART_INT_INTENSET_DRE_Msk) !=
-			  0);
-	} else {
-		retval = ((regs->USART_EXT.SERCOM_INTENSET & SERCOM_USART_EXT_INTENSET_DRE_Msk) !=
-			  0);
-	}
-
-	return retval;
+	return ((usart->SERCOM_INTENSET & SERCOM_USART_INTENSET_DRE_Msk) != 0);
 }
 
 /**
@@ -1019,20 +816,14 @@ static bool uart_is_tx_interrupt_enabled(sercom_registers_t *regs, bool clock_ex
  * This function checks if any interrupt is pending for the specified UART instance.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  * @return True if any interrupt is pending, false otherwise.
  */
-static bool uart_is_interrupt_pending(sercom_registers_t *regs, bool clock_external)
+static bool uart_is_interrupt_pending(sercom_registers_t *regs, bool is_clock_external)
 {
-	bool retval;
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
 
-	if (clock_external == false) {
-		retval = ((regs->USART_INT.SERCOM_INTENSET & regs->USART_INT.SERCOM_INTFLAG) != 0);
-	} else {
-		retval = ((regs->USART_EXT.SERCOM_INTENSET & regs->USART_EXT.SERCOM_INTFLAG) != 0);
-	}
-
-	return retval;
+	return ((usart->SERCOM_INTENSET & usart->SERCOM_INTFLAG) != 0);
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
@@ -1043,20 +834,14 @@ static bool uart_is_interrupt_pending(sercom_registers_t *regs, bool clock_exter
  * This function retrieves the DMA destination address for the specified UART instance.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  * @return The DMA destination address.
  */
-static inline void *uart_get_dma_dest_addr(sercom_registers_t *regs, bool clock_external)
+static inline void *uart_get_dma_dest_addr(sercom_registers_t *regs, bool is_clock_external)
 {
-	void *retval;
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
 
-	if (clock_external == false) {
-		retval = ((void *)&(regs->USART_INT.SERCOM_DATA));
-	} else {
-		retval = ((void *)&(regs->USART_EXT.SERCOM_DATA));
-	}
-
-	return retval;
+	return (void *)&usart->SERCOM_DATA;
 }
 
 /**
@@ -1065,20 +850,14 @@ static inline void *uart_get_dma_dest_addr(sercom_registers_t *regs, bool clock_
  * This function retrieves the DMA source address for the specified UART instance.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  * @return The DMA source address.
  */
-static inline void *uart_get_dma_source_addr(sercom_registers_t *regs, bool clock_external)
+static inline void *uart_get_dma_source_addr(sercom_registers_t *regs, bool is_clock_external)
 {
-	void *retval;
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
 
-	if (clock_external == false) {
-		retval = ((void *)&(regs->USART_INT.SERCOM_DATA));
-	} else {
-		retval = ((void *)&(regs->USART_EXT.SERCOM_DATA));
-	}
-
-	return retval;
+	return (void *)&usart->SERCOM_DATA;
 }
 #endif /* CONFIG_UART_MCHP_ASYNC */
 
@@ -1089,23 +868,17 @@ static inline void *uart_get_dma_source_addr(sercom_registers_t *regs, bool cloc
  * This function enables or disables the RX interrupt for the specified UART instance.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  * @param enable True to enable the interrupt, false to disable.
  */
-static void uart_enable_rx_interrupt(sercom_registers_t *regs, bool clock_external, bool enable)
+static void uart_enable_rx_interrupt(sercom_registers_t *regs, bool is_clock_external, bool enable)
 {
-	if (clock_external == false) {
-		if (enable == true) {
-			regs->USART_INT.SERCOM_INTENSET = SERCOM_USART_INT_INTENSET_RXC_Msk;
-		} else {
-			regs->USART_INT.SERCOM_INTENCLR = SERCOM_USART_INT_INTENCLR_RXC_Msk;
-		}
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
+
+	if (enable == true) {
+		usart->SERCOM_INTENSET = SERCOM_USART_INTENSET_RXC_Msk;
 	} else {
-		if (enable == true) {
-			regs->USART_EXT.SERCOM_INTENSET = SERCOM_USART_EXT_INTENSET_RXC_Msk;
-		} else {
-			regs->USART_EXT.SERCOM_INTENCLR = SERCOM_USART_EXT_INTENCLR_RXC_Msk;
-		}
+		usart->SERCOM_INTENCLR = SERCOM_USART_INTENCLR_RXC_Msk;
 	}
 }
 
@@ -1115,24 +888,18 @@ static void uart_enable_rx_interrupt(sercom_registers_t *regs, bool clock_extern
  * This function enables or disables the TX complete interrupt for the specified UART instance.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  * @param enable True to enable the interrupt, false to disable.
  */
-static void uart_enable_tx_complete_interrupt(sercom_registers_t *regs, bool clock_external,
+static void uart_enable_tx_complete_interrupt(sercom_registers_t *regs, bool is_clock_external,
 					      bool enable)
 {
-	if (clock_external == false) {
-		if (enable == true) {
-			regs->USART_INT.SERCOM_INTENSET = SERCOM_USART_INT_INTENSET_TXC_Msk;
-		} else {
-			regs->USART_INT.SERCOM_INTENCLR = SERCOM_USART_INT_INTENCLR_TXC_Msk;
-		}
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
+
+	if (enable == true) {
+		usart->SERCOM_INTENSET = SERCOM_USART_INTENSET_TXC_Msk;
 	} else {
-		if (enable == true) {
-			regs->USART_EXT.SERCOM_INTENSET = SERCOM_USART_EXT_INTENSET_TXC_Msk;
-		} else {
-			regs->USART_EXT.SERCOM_INTENCLR = SERCOM_USART_EXT_INTENCLR_TXC_Msk;
-		}
+		usart->SERCOM_INTENCLR = SERCOM_USART_INTENCLR_TXC_Msk;
 	}
 }
 
@@ -1142,23 +909,17 @@ static void uart_enable_tx_complete_interrupt(sercom_registers_t *regs, bool clo
  * This function enables or disables the error interrupt for the specified UART instance.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  * @param enable True to enable the interrupt, false to disable.
  */
-static void uart_enable_err_interrupt(sercom_registers_t *regs, bool clock_external, bool enable)
+static void uart_enable_err_interrupt(sercom_registers_t *regs, bool is_clock_external, bool enable)
 {
-	if (clock_external == false) {
-		if (enable == true) {
-			regs->USART_INT.SERCOM_INTENSET = SERCOM_USART_INT_INTENSET_ERROR_Msk;
-		} else {
-			regs->USART_INT.SERCOM_INTENCLR = SERCOM_USART_INT_INTENCLR_ERROR_Msk;
-		}
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
+
+	if (enable == true) {
+		usart->SERCOM_INTENSET = SERCOM_USART_INTENSET_ERROR_Msk;
 	} else {
-		if (enable == true) {
-			regs->USART_EXT.SERCOM_INTENSET = SERCOM_USART_EXT_INTENSET_ERROR_Msk;
-		} else {
-			regs->USART_EXT.SERCOM_INTENCLR = SERCOM_USART_EXT_INTENCLR_ERROR_Msk;
-		}
+		usart->SERCOM_INTENCLR = SERCOM_USART_INTENCLR_ERROR_Msk;
 	}
 }
 
@@ -1168,21 +929,15 @@ static void uart_enable_err_interrupt(sercom_registers_t *regs, bool clock_exter
  * This function clears all interrupts for the specified UART instance.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  */
-static void uart_clear_interrupts(sercom_registers_t *regs, bool clock_external)
+static void uart_clear_interrupts(sercom_registers_t *regs, bool is_clock_external)
 {
-	if (clock_external == false) {
-		regs->USART_INT.SERCOM_INTFLAG =
-			SERCOM_USART_INT_INTFLAG_ERROR_Msk | SERCOM_USART_INT_INTFLAG_RXBRK_Msk |
-			SERCOM_USART_INT_INTFLAG_CTSIC_Msk | SERCOM_USART_INT_INTFLAG_RXS_Msk |
-			SERCOM_USART_INT_INTFLAG_TXC_Msk;
-	} else {
-		regs->USART_EXT.SERCOM_INTFLAG =
-			SERCOM_USART_EXT_INTFLAG_ERROR_Msk | SERCOM_USART_EXT_INTFLAG_RXBRK_Msk |
-			SERCOM_USART_EXT_INTFLAG_CTSIC_Msk | SERCOM_USART_EXT_INTFLAG_RXS_Msk |
-			SERCOM_USART_EXT_INTFLAG_TXC_Msk;
-	}
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
+
+	usart->SERCOM_INTFLAG = (SERCOM_USART_INTFLAG_ERROR_Msk | SERCOM_USART_INTFLAG_RXBRK_Msk |
+				 SERCOM_USART_INTFLAG_CTSIC_Msk | SERCOM_USART_INTFLAG_RXS_Msk |
+				 SERCOM_USART_INTFLAG_TXC_Msk);
 }
 
 /**
@@ -1203,10 +958,10 @@ static void uart_mchp_isr(const struct device *dev)
 #ifdef CONFIG_UART_MCHP_ASYNC
 	const uart_mchp_dev_cfg_t *const cfg = dev->config;
 	sercom_registers_t *regs = cfg->regs;
-	bool clock_external = cfg->clock_external;
+	bool is_clock_external = cfg->is_clock_external;
 
-	if ((dev_data->tx_len != 0) && (0 != uart_is_tx_complete(regs, clock_external))) {
-		uart_enable_tx_complete_interrupt(regs, clock_external, false);
+	if ((dev_data->tx_len != 0) && (0 != uart_is_tx_complete(regs, is_clock_external))) {
+		uart_enable_tx_complete_interrupt(regs, is_clock_external, false);
 		k_work_cancel_delayable(&dev_data->tx_timeout_work);
 
 		unsigned int key = irq_lock();
@@ -1241,17 +996,17 @@ static void uart_mchp_isr(const struct device *dev)
 				dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
 			}
 
-			uart_clear_interrupts(regs, clock_external);
-			uart_err_clear_all(regs, clock_external);
+			uart_clear_interrupts(regs, is_clock_external);
+			uart_err_clear_all(regs, is_clock_external);
 
 			/* Once the error is processed, nothing more to do for RX */
 			return;
 		}
 
-		if ((uart_is_rx_complete(regs, clock_external) == true) &&
+		if ((uart_is_rx_complete(regs, is_clock_external) == true) &&
 		    (dev_data->rx_waiting_for_irq == true)) {
 			dev_data->rx_waiting_for_irq = false;
-			uart_enable_rx_interrupt(regs, clock_external, false);
+			uart_enable_rx_interrupt(regs, is_clock_external, false);
 
 			/* Receive started, so request the next buffer */
 			if ((dev_data->rx_next_len == 0U) && (dev_data->async_cb != NULL)) {
@@ -1294,7 +1049,7 @@ static int uart_mchp_init(const struct device *dev)
 	const uart_mchp_dev_cfg_t *const cfg = dev->config;
 	uart_mchp_dev_data_t *const dev_data = dev->data;
 	sercom_registers_t *regs = cfg->regs;
-	bool clock_external = cfg->clock_external;
+	bool is_clock_external = cfg->is_clock_external;
 	int retval = UART_SUCCESS;
 
 	/* Enable the GCLK and MCLK*/
@@ -1308,29 +1063,29 @@ static int uart_mchp_init(const struct device *dev)
 		return retval;
 	}
 
-	uart_disable_interrupts(regs, clock_external);
+	uart_disable_interrupts(regs, is_clock_external);
 
 	dev_data->config_cache.flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
 
-	retval = uart_config_data_bits(regs, clock_external, cfg->data_bits);
+	retval = uart_config_data_bits(regs, is_clock_external, cfg->data_bits);
 	if (retval != UART_SUCCESS) {
 		return retval;
 	}
 	dev_data->config_cache.data_bits = cfg->data_bits;
 
-	uart_config_parity(regs, clock_external, cfg->parity);
+	uart_config_parity(regs, is_clock_external, cfg->parity);
 	dev_data->config_cache.parity = cfg->parity;
 
-	retval = uart_config_stop_bits(regs, clock_external, cfg->stop_bits);
+	retval = uart_config_stop_bits(regs, is_clock_external, cfg->stop_bits);
 	if (retval != UART_SUCCESS) {
 		return retval;
 	}
 	dev_data->config_cache.stop_bits = cfg->stop_bits;
 
 	uart_config_pinout(cfg);
-	uart_set_clock_polarity(regs, clock_external, false);
-	uart_set_clock_source(regs, clock_external);
-	uart_set_lsb_first(regs, clock_external, true);
+	uart_set_clock_polarity(regs, is_clock_external, false);
+	uart_set_clock_source(regs, is_clock_external);
+	uart_set_lsb_first(regs, is_clock_external, true);
 
 	/* Enable PINMUX based on PINCTRL */
 	retval = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
@@ -1339,14 +1094,14 @@ static int uart_mchp_init(const struct device *dev)
 	}
 
 	/* Enable receiver and transmitter */
-	uart_rx_on_off(regs, clock_external, true);
-	uart_tx_on_off(regs, clock_external, true);
+	uart_rx_on_off(regs, is_clock_external, true);
+	uart_tx_on_off(regs, is_clock_external, true);
 
 	uint32_t clock_rate;
 
 	clock_control_get_rate(cfg->uart_clock.clock_dev, cfg->uart_clock.gclk_sys, &clock_rate);
 
-	retval = uart_set_baudrate(regs, clock_external, cfg->baudrate, clock_rate);
+	retval = uart_set_baudrate(regs, is_clock_external, cfg->baudrate, clock_rate);
 	if (retval != UART_SUCCESS) {
 		return retval;
 	}
@@ -1384,7 +1139,7 @@ static int uart_mchp_init(const struct device *dev)
 		dma_cfg.dma_slot = cfg->uart_dma.tx_dma_request;
 
 		dma_blk.block_size = 1;
-		dma_blk.dest_address = (uint32_t)(uart_get_dma_dest_addr(regs, clock_external));
+		dma_blk.dest_address = (uint32_t)(uart_get_dma_dest_addr(regs, is_clock_external));
 		dma_blk.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 
 		retval = dma_config(cfg->uart_dma.dma_dev, cfg->uart_dma.tx_dma_channel, &dma_cfg);
@@ -1411,7 +1166,8 @@ static int uart_mchp_init(const struct device *dev)
 		dma_cfg.dma_slot = cfg->uart_dma.rx_dma_request;
 
 		dma_blk.block_size = 1;
-		dma_blk.source_address = (uint32_t)(uart_get_dma_source_addr(regs, clock_external));
+		dma_blk.source_address =
+			(uint32_t)(uart_get_dma_source_addr(regs, is_clock_external));
 		dma_blk.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 
 		retval = dma_config(cfg->uart_dma.dma_dev, cfg->uart_dma.rx_dma_channel, &dma_cfg);
@@ -1421,7 +1177,7 @@ static int uart_mchp_init(const struct device *dev)
 	}
 #endif /* CONFIG_UART_MCHP_ASYNC */
 
-	uart_enable(regs, clock_external, (cfg->run_in_standby_en == 1) ? true : false, true);
+	uart_enable(regs, is_clock_external, (cfg->run_in_standby_en == 1) ? true : false, true);
 
 	return retval;
 }
@@ -1440,12 +1196,12 @@ static int uart_mchp_configure(const struct device *dev, const struct uart_confi
 	const uart_mchp_dev_cfg_t *const cfg = dev->config;
 	uart_mchp_dev_data_t *const dev_data = dev->data;
 	sercom_registers_t *regs = cfg->regs;
-	bool clock_external = cfg->clock_external;
+	bool is_clock_external = cfg->is_clock_external;
 	int retval = UART_SUCCESS;
 
 	do {
 		/* Forcefully disable UART before configuring. run_in_standby is ignored here */
-		uart_enable(regs, clock_external, false, false);
+		uart_enable(regs, is_clock_external, false, false);
 
 		if (new_cfg->flow_ctrl != UART_CFG_FLOW_CTRL_NONE) {
 			/* Flow control not yet supported though in principle possible
@@ -1460,7 +1216,7 @@ static int uart_mchp_configure(const struct device *dev, const struct uart_confi
 		case UART_CFG_PARITY_NONE:
 		case UART_CFG_PARITY_ODD:
 		case UART_CFG_PARITY_EVEN:
-			uart_config_parity(regs, clock_external, new_cfg->parity);
+			uart_config_parity(regs, is_clock_external, new_cfg->parity);
 			break;
 		default:
 			retval = -ENOTSUP;
@@ -1470,13 +1226,13 @@ static int uart_mchp_configure(const struct device *dev, const struct uart_confi
 		}
 		dev_data->config_cache.parity = new_cfg->parity;
 
-		retval = uart_config_stop_bits(regs, clock_external, new_cfg->stop_bits);
+		retval = uart_config_stop_bits(regs, is_clock_external, new_cfg->stop_bits);
 		if (retval != UART_SUCCESS) {
 			break;
 		}
 		dev_data->config_cache.stop_bits = new_cfg->stop_bits;
 
-		retval = uart_config_data_bits(regs, clock_external, new_cfg->data_bits);
+		retval = uart_config_data_bits(regs, is_clock_external, new_cfg->data_bits);
 		if (retval != UART_SUCCESS) {
 			break;
 		}
@@ -1487,13 +1243,13 @@ static int uart_mchp_configure(const struct device *dev, const struct uart_confi
 		clock_control_get_rate(cfg->uart_clock.clock_dev, cfg->uart_clock.gclk_sys,
 				       &clock_rate);
 
-		retval = uart_set_baudrate(regs, clock_external, new_cfg->baudrate, clock_rate);
+		retval = uart_set_baudrate(regs, is_clock_external, new_cfg->baudrate, clock_rate);
 		if (retval != UART_SUCCESS) {
 			break;
 		}
 		dev_data->config_cache.baudrate = new_cfg->baudrate;
 
-		uart_enable(regs, clock_external, (cfg->run_in_standby_en == 1) ? true : false,
+		uart_enable(regs, is_clock_external, (cfg->run_in_standby_en == 1) ? true : false,
 			    true);
 	} while (0);
 
@@ -1529,7 +1285,7 @@ static int uart_mchp_poll_in(const struct device *dev, unsigned char *data)
 {
 	const uart_mchp_dev_cfg_t *const cfg = dev->config;
 	sercom_registers_t *regs = cfg->regs;
-	bool clock_external = cfg->clock_external;
+	bool is_clock_external = cfg->is_clock_external;
 	int retval = UART_SUCCESS;
 
 	do {
@@ -1542,12 +1298,12 @@ static int uart_mchp_poll_in(const struct device *dev, unsigned char *data)
 		}
 #endif /* CONFIG_UART_MCHP_ASYNC */
 
-		if (uart_is_rx_complete(regs, clock_external) == false) {
+		if (uart_is_rx_complete(regs, is_clock_external) == false) {
 			retval = -EBUSY;
 			break;
 		}
 
-		*data = uart_get_received_char(regs, clock_external);
+		*data = uart_get_received_char(regs, is_clock_external);
 	} while (0);
 
 	return retval;
@@ -1563,13 +1319,13 @@ static void uart_mchp_poll_out(const struct device *dev, unsigned char data)
 {
 	const uart_mchp_dev_cfg_t *const cfg = dev->config;
 	sercom_registers_t *regs = cfg->regs;
-	bool clock_external = cfg->clock_external;
+	bool is_clock_external = cfg->is_clock_external;
 
-	while (uart_is_tx_ready(regs, clock_external) == false) {
+	while (uart_is_tx_ready(regs, is_clock_external) == false) {
 	}
 
 	/* send a character */
-	uart_tx_char(regs, clock_external, data);
+	uart_tx_char(regs, is_clock_external, data);
 }
 
 /**
@@ -1582,12 +1338,12 @@ static int uart_mchp_err_check(const struct device *dev)
 {
 	const uart_mchp_dev_cfg_t *const cfg = dev->config;
 	sercom_registers_t *regs = cfg->regs;
-	bool clock_external = cfg->clock_external;
+	bool is_clock_external = cfg->is_clock_external;
 
 	uint32_t err = uart_get_err(dev);
 
 	/* Clear all errors */
-	uart_err_clear_all(regs, clock_external);
+	uart_err_clear_all(regs, is_clock_external);
 
 	return err;
 }
@@ -1600,24 +1356,18 @@ static int uart_mchp_err_check(const struct device *dev)
  * This function enables or disables the TX ready interrupt for the specified UART instance.
  *
  * @param regs Pointer to the sercom_registers_t structure.
- * @param clock_external Boolean to check external or internal clock
+ * @param is_clock_external Boolean to indicate external or internal clock
  * @param enable True to enable the interrupt, false to disable.
  */
-static void uart_enable_tx_ready_interrupt(sercom_registers_t *regs, bool clock_external,
+static void uart_enable_tx_ready_interrupt(sercom_registers_t *regs, bool is_clock_external,
 					   bool enable)
 {
-	if (clock_external == false) {
-		if (enable == true) {
-			regs->USART_INT.SERCOM_INTENSET = SERCOM_USART_INT_INTENSET_DRE_Msk;
-		} else {
-			regs->USART_INT.SERCOM_INTENCLR = SERCOM_USART_INT_INTENCLR_DRE_Msk;
-		}
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
+
+	if (enable == true) {
+		usart->SERCOM_INTENSET = SERCOM_USART_INTENSET_DRE_Msk;
 	} else {
-		if (enable == true) {
-			regs->USART_EXT.SERCOM_INTENSET = SERCOM_USART_EXT_INTENSET_DRE_Msk;
-		} else {
-			regs->USART_EXT.SERCOM_INTENCLR = SERCOM_USART_EXT_INTENCLR_DRE_Msk;
-		}
+		usart->SERCOM_INTENCLR = SERCOM_USART_INTENCLR_DRE_Msk;
 	}
 }
 /**
@@ -1631,11 +1381,11 @@ static void uart_mchp_irq_tx_enable(const struct device *dev)
 {
 	const uart_mchp_dev_cfg_t *const cfg = dev->config;
 	sercom_registers_t *regs = cfg->regs;
-	bool clock_external = cfg->clock_external;
+	bool is_clock_external = cfg->is_clock_external;
 	unsigned int key = irq_lock();
 
-	uart_enable_tx_ready_interrupt(regs, clock_external, true);
-	uart_enable_tx_complete_interrupt(regs, clock_external, true);
+	uart_enable_tx_ready_interrupt(regs, is_clock_external, true);
+	uart_enable_tx_complete_interrupt(regs, is_clock_external, true);
 	irq_unlock(key);
 }
 
@@ -1653,11 +1403,12 @@ static int uart_mchp_fifo_fill(const struct device *dev, const uint8_t *tx_data,
 {
 	const uart_mchp_dev_cfg_t *const cfg = dev->config;
 	sercom_registers_t *regs = cfg->regs;
-	bool clock_external = cfg->clock_external;
+	bool is_clock_external = cfg->is_clock_external;
 	int retval = 0;
 
-	if ((uart_is_tx_ready(regs, clock_external) == true) && (len >= 1)) {
-		uart_tx_char(regs, clock_external, tx_data[0]); /* Transmit the first character */
+	if ((uart_is_tx_ready(regs, is_clock_external) == true) && (len >= 1)) {
+		uart_tx_char(regs, is_clock_external,
+			     tx_data[0]); /* Transmit the first character */
 		retval = 1;
 	}
 
@@ -1675,10 +1426,10 @@ static void uart_mchp_irq_tx_disable(const struct device *dev)
 {
 	const uart_mchp_dev_cfg_t *const cfg = dev->config;
 	sercom_registers_t *regs = cfg->regs;
-	bool clock_external = cfg->clock_external;
+	bool is_clock_external = cfg->is_clock_external;
 
-	uart_enable_tx_ready_interrupt(regs, clock_external, false);
-	uart_enable_tx_complete_interrupt(regs, clock_external, false);
+	uart_enable_tx_ready_interrupt(regs, is_clock_external, false);
+	uart_enable_tx_complete_interrupt(regs, is_clock_external, false);
 }
 
 /**
@@ -1693,10 +1444,10 @@ static int uart_mchp_irq_tx_ready(const struct device *dev)
 {
 	const uart_mchp_dev_cfg_t *const cfg = dev->config;
 	sercom_registers_t *regs = cfg->regs;
-	bool clock_external = cfg->clock_external;
+	bool is_clock_external = cfg->is_clock_external;
 
-	return (uart_is_tx_ready(regs, clock_external) &&
-		uart_is_tx_interrupt_enabled(regs, clock_external));
+	return (uart_is_tx_ready(regs, is_clock_external) &&
+		uart_is_tx_interrupt_enabled(regs, is_clock_external));
 }
 
 /**
@@ -1730,7 +1481,7 @@ static void uart_mchp_irq_rx_enable(const struct device *dev)
 {
 	const uart_mchp_dev_cfg_t *const cfg = dev->config;
 
-	uart_enable_rx_interrupt(cfg->regs, cfg->clock_external, true);
+	uart_enable_rx_interrupt(cfg->regs, cfg->is_clock_external, true);
 }
 
 /**
@@ -1744,7 +1495,7 @@ static void uart_mchp_irq_rx_disable(const struct device *dev)
 {
 	const uart_mchp_dev_cfg_t *const cfg = dev->config;
 
-	uart_enable_rx_interrupt(cfg->regs, cfg->clock_external, false);
+	uart_enable_rx_interrupt(cfg->regs, cfg->is_clock_external, false);
 }
 
 /**
@@ -1760,7 +1511,7 @@ static int uart_mchp_irq_rx_ready(const struct device *dev)
 	int retval = 0;
 	const uart_mchp_dev_cfg_t *const cfg = dev->config;
 
-	if (uart_is_rx_complete(cfg->regs, cfg->clock_external) == true) {
+	if (uart_is_rx_complete(cfg->regs, cfg->is_clock_external) == true) {
 		retval = 1;
 	}
 
@@ -1782,13 +1533,13 @@ static int uart_mchp_fifo_read(const struct device *dev, uint8_t *rx_data, const
 {
 	const uart_mchp_dev_cfg_t *const cfg = dev->config;
 	sercom_registers_t *regs = cfg->regs;
-	bool clock_external = cfg->clock_external;
+	bool is_clock_external = cfg->is_clock_external;
 	int retval = 0;
 
-	if (uart_is_rx_complete(regs, clock_external) == true) {
+	if (uart_is_rx_complete(regs, is_clock_external) == true) {
 		uint8_t ch = uart_get_received_char(
 			/* Get the received character */
-			regs, clock_external);
+			regs, is_clock_external);
 
 		if (size >= 1) {
 			/* Store the received character in the buffer */
@@ -1815,7 +1566,7 @@ static int uart_mchp_irq_is_pending(const struct device *dev)
 	const uart_mchp_dev_cfg_t *const cfg = dev->config;
 	int retval = 0;
 
-	if (uart_is_interrupt_pending(cfg->regs, cfg->clock_external) == true) {
+	if (uart_is_interrupt_pending(cfg->regs, cfg->is_clock_external) == true) {
 		retval = 1;
 	}
 
@@ -1833,7 +1584,7 @@ static void uart_mchp_irq_err_enable(const struct device *dev)
 {
 	const uart_mchp_dev_cfg_t *const cfg = dev->config;
 
-	uart_enable_err_interrupt(cfg->regs, cfg->clock_external, true);
+	uart_enable_err_interrupt(cfg->regs, cfg->is_clock_external, true);
 }
 
 /**
@@ -1847,7 +1598,7 @@ static void uart_mchp_irq_err_disable(const struct device *dev)
 {
 	const uart_mchp_dev_cfg_t *const cfg = dev->config;
 
-	uart_enable_err_interrupt(cfg->regs, cfg->clock_external, false);
+	uart_enable_err_interrupt(cfg->regs, cfg->is_clock_external, false);
 }
 
 /**
@@ -1864,15 +1615,15 @@ static int uart_mchp_irq_update(const struct device *dev)
 	const uart_mchp_dev_cfg_t *const cfg = dev->config;
 	uart_mchp_dev_data_t *const dev_data = dev->data;
 	sercom_registers_t *regs = cfg->regs;
-	bool clock_external = cfg->clock_external;
+	bool is_clock_external = cfg->is_clock_external;
 
 	/*
 	 * Cache the TXC flag, and use this cached value to clear the interrupt
 	 * if we do not use the cached value, there is a chance TXC will set
 	 * after caching...this will cause TXC to never be cached.
 	 */
-	dev_data->is_tx_completed_cache = uart_is_tx_complete(regs, clock_external);
-	uart_clear_interrupts(regs, clock_external);
+	dev_data->is_tx_completed_cache = uart_is_tx_complete(regs, is_clock_external);
+	uart_clear_interrupts(regs, is_clock_external);
 
 	return 1;
 }
@@ -2016,7 +1767,7 @@ static void uart_mchp_rx_timeout(struct k_work *work)
 	uart_mchp_dev_data_t *dev_data = CONTAINER_OF(dwork, uart_mchp_dev_data_t, rx_timeout_work);
 	const uart_mchp_dev_cfg_t *const cfg = dev_data->cfg;
 	sercom_registers_t *regs = cfg->regs;
-	bool clock_external = cfg->clock_external;
+	bool is_clock_external = cfg->is_clock_external;
 	struct dma_status dma_stat;
 	unsigned int key = irq_lock();
 
@@ -2050,11 +1801,11 @@ static void uart_mchp_rx_timeout(struct k_work *work)
 		 * empty buffer, so always restart the transfer.
 		 */
 		dma_reload(cfg->uart_dma.dma_dev, cfg->uart_dma.rx_dma_channel,
-			   (uint32_t)(uart_get_dma_source_addr(regs, clock_external)),
+			   (uint32_t)(uart_get_dma_source_addr(regs, is_clock_external)),
 			   (uint32_t)rx_dma_start, dev_data->rx_len - rx_processed);
 
 		dev_data->rx_waiting_for_irq = true;
-		uart_enable_rx_interrupt(regs, clock_external, true);
+		uart_enable_rx_interrupt(regs, is_clock_external, true);
 
 		/*
 		 * Never do a notify on a timeout started from the ISR: timing
@@ -2116,7 +1867,7 @@ static void uart_mchp_dma_tx_done(const struct device *dma_dev, void *arg, uint3
 	uart_mchp_dev_data_t *const dev_data = (uart_mchp_dev_data_t *const)arg;
 	const uart_mchp_dev_cfg_t *const cfg = dev_data->cfg;
 
-	uart_enable_tx_complete_interrupt(cfg->regs, cfg->clock_external, true);
+	uart_enable_tx_complete_interrupt(cfg->regs, cfg->is_clock_external, true);
 }
 
 /**
@@ -2183,7 +1934,7 @@ static void uart_mchp_dma_rx_done(const struct device *dma_dev, void *arg, uint3
 		dev_data->rx_processed_len = 0U;
 
 		dma_reload(cfg->uart_dma.dma_dev, cfg->uart_dma.rx_dma_channel,
-			   (uint32_t)(uart_get_dma_source_addr(cfg->regs, cfg->clock_external)),
+			   (uint32_t)(uart_get_dma_source_addr(cfg->regs, cfg->is_clock_external)),
 			   (uint32_t)dev_data->rx_buf, dev_data->rx_len);
 
 		/*
@@ -2194,7 +1945,7 @@ static void uart_mchp_dma_rx_done(const struct device *dma_dev, void *arg, uint3
 		 */
 		if (dev_data->rx_timeout_time != SYS_FOREVER_US) {
 			dev_data->rx_waiting_for_irq = true;
-			uart_enable_rx_interrupt(cfg->regs, cfg->clock_external, true);
+			uart_enable_rx_interrupt(cfg->regs, cfg->is_clock_external, true);
 			break;
 		}
 
@@ -2285,7 +2036,7 @@ static int uart_mchp_tx(const struct device *dev, const uint8_t *buf, size_t len
 
 		retval = dma_reload(
 			cfg->uart_dma.dma_dev, cfg->uart_dma.tx_dma_channel, (uint32_t)buf,
-			(uint32_t)(uart_get_dma_dest_addr(cfg->regs, cfg->clock_external)), len);
+			(uint32_t)(uart_get_dma_dest_addr(cfg->regs, cfg->is_clock_external)), len);
 		if (retval != 0U) {
 			break;
 		}
@@ -2394,7 +2145,7 @@ static int uart_mchp_rx_enable(const struct device *dev, uint8_t *buf, size_t le
 	uart_mchp_dev_data_t *const dev_data = dev->data;
 	const uart_mchp_dev_cfg_t *const cfg = dev->config;
 	sercom_registers_t *regs = cfg->regs;
-	bool clock_external = cfg->clock_external;
+	bool is_clock_external = cfg->is_clock_external;
 	int retval = UART_SUCCESS;
 
 	do {
@@ -2417,17 +2168,17 @@ static int uart_mchp_rx_enable(const struct device *dev, uint8_t *buf, size_t le
 			}
 
 			/* Read off anything that was already there */
-			while (uart_is_rx_complete(regs, clock_external) == true) {
-				char discard = uart_get_received_char(regs, clock_external);
+			while (uart_is_rx_complete(regs, is_clock_external) == true) {
+				char discard = uart_get_received_char(regs, is_clock_external);
 				(void)discard;
 			}
 
 			/* Enable error interrupt */
-			uart_enable_err_interrupt(cfg->regs, cfg->clock_external, true);
+			uart_enable_err_interrupt(cfg->regs, cfg->is_clock_external, true);
 
 			retval = dma_reload(
 				cfg->uart_dma.dma_dev, cfg->uart_dma.rx_dma_channel,
-				(uint32_t)(uart_get_dma_source_addr(regs, clock_external)),
+				(uint32_t)(uart_get_dma_source_addr(regs, is_clock_external)),
 				(uint32_t)buf, len);
 			if (retval != 0) {
 				break;
@@ -2441,7 +2192,7 @@ static int uart_mchp_rx_enable(const struct device *dev, uint8_t *buf, size_t le
 			dev_data->rx_timeout_time = timeout;
 			dev_data->rx_timeout_chunk = MAX(timeout / 4U, 1);
 
-			uart_enable_rx_interrupt(regs, clock_external, true);
+			uart_enable_rx_interrupt(regs, is_clock_external, true);
 		} while (0);
 		irq_unlock(key);
 
@@ -2476,8 +2227,8 @@ static int uart_mchp_rx_disable(const struct device *dev)
 			break;
 		}
 
-		uart_enable_rx_interrupt(cfg->regs, cfg->clock_external, false);
-		uart_enable_err_interrupt(cfg->regs, cfg->clock_external, false);
+		uart_enable_rx_interrupt(cfg->regs, cfg->is_clock_external, false);
+		uart_enable_err_interrupt(cfg->regs, cfg->is_clock_external, false);
 		dma_stop(cfg->uart_dma.dma_dev, cfg->uart_dma.rx_dma_channel);
 
 		if ((dma_get_status(cfg->uart_dma.dma_dev, cfg->uart_dma.rx_dma_channel,
@@ -2610,7 +2361,7 @@ static DEVICE_API(uart, uart_mchp_driver_api) = {
 		.regs = (sercom_registers_t *)DT_INST_REG_ADDR(n),                                 \
 		.rxpo = (DT_INST_PROP(n, rxpo)),                                                   \
 		.txpo = (DT_INST_PROP(n, txpo)),                                                   \
-		.clock_external = DT_INST_PROP(n, clock_external),                                 \
+		.is_clock_external = DT_INST_PROP(n, clock_external),                              \
 		.run_in_standby_en = DT_INST_PROP(n, run_in_standby_en),                           \
 		UART_MCHP_IRQ_HANDLER_FUNC(n) UART_MCHP_DMA_CHANNELS(n) UART_MCHP_CLOCK_DEFN(n)}
 
