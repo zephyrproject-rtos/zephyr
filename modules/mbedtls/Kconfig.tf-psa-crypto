@@ -269,7 +269,6 @@ comment "Random number generators"
 config MBEDTLS_CTR_DRBG_C
 	bool "CTR_DRBG AES-256-based random generator"
 	depends on MBEDTLS_CIPHER_AES_ENABLED
-	default y
 
 config MBEDTLS_HMAC_DRBG_C
 	bool "HMAC_DRBG random generator"
@@ -349,13 +348,14 @@ config MBEDTLS_HAVE_ASM
 
 config MBEDTLS_ENTROPY_C
 	bool "Mbed TLS entropy accumulator"
-	depends on MBEDTLS_SHA256 || MBEDTLS_SHA384 || MBEDTLS_SHA512
+	select PSA_WANT_ALG_SHA_256 if !PSA_WANT_ALG_SHA_512
 	help
 	  This module gathers entropy data from enabled entropy sources. It's
 	  mostly used in conjunction with CTR_DRBG or HMAC_DRBG to create
 	  a deterministic random number generator.
+	  It requires either PSA_WANT_ALG_SHA_256 or PSA_WANT_ALG_SHA_512.
 
-config MBEDTLS_ENTROPY_POLL_ZEPHYR
+config MBEDTLS_PSA_DRIVER_GET_ENTROPY
 	bool "Provide entropy data to Mbed TLS through entropy driver or random generator"
 	default y
 	depends on MBEDTLS_ENTROPY_C
