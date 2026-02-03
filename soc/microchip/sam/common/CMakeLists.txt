@@ -3,10 +3,10 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if(CONFIG_SOC_FAMILY_MICROCHIP_SAMA7)
+if(CONFIG_SOC_FAMILY_MICROCHIP_SAMA7 OR CONFIG_SOC_FAMILY_MICROCHIP_SAM9)
   zephyr_include_directories(.)
 
-  zephyr_sources(
+  zephyr_sources_ifdef(CONFIG_SOC_FAMILY_MICROCHIP_SAMA7
     clk-generated.c
     clk-main.c
     clk-master.c
