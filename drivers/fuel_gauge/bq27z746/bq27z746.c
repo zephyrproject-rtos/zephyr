@@ -193,6 +193,10 @@ static int bq27z746_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		rc = bq27z746_read16(dev, BQ27Z746_DESIGNCAPACITY, &tmp_val);
 		val->design_cap = tmp_val;
 		break;
+	case FUEL_GAUGE_STATE_OF_HEALTH:
+		rc = bq27z746_read16(dev, BQ27Z746_STATEOFHEALTH, &tmp_val);
+		val->state_of_health = tmp_val;
+		break;
 	default:
 		rc = -ENOTSUP;
 	}
