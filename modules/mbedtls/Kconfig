@@ -55,6 +55,7 @@ endif # MBEDTLS_LIBRARY
 endchoice # MBEDTLS_IMPLEMENTATION
 
 rsource "Kconfig.mbedtls"
+rsource "Kconfig.tf-psa-crypto"
 rsource "Kconfig.ciphersuites"
 rsource "Kconfig.deprecated"
 
