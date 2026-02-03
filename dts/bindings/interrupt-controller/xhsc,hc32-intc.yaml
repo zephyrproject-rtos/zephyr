@@ -1,0 +1,20 @@
+# Copyright (C) 2024-2025, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: XHSC HC32 family Interrupt Controller
+
+compatible: "xhsc,hc32-intc"
+
+include: [base.yaml, interrupt-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#interrupt-cells":
+    const: 3
+
+interrupt-cells:
+  - irq
+  - priority
+  - int_src

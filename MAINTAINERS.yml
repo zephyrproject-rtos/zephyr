@@ -6022,6 +6022,15 @@ West:
   files:
     - modules/Kconfig.wurthelektronik
 
+"West project: hal_xhsc":
+  status: maintained
+  maintainers:
+    - XH-YongbingLiu
+  files:
+    - modules/Kconfig.xhsc
+  labels:
+    - "platform: XHSC"
+
 "West project: hal_xtensa":
   status: maintained
   maintainers:

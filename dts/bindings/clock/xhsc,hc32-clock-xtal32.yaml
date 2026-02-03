@@ -1,0 +1,19 @@
+# Copyright (C) 2024-2025, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: HC32 XTAL32 Clock
+
+compatible: "xhsc,hc32-clock-xtal32"
+
+include: [fixed-clock.yaml]
+
+properties:
+  drive-strength:
+    type: int
+    required: true
+    enum:
+      - 0   # Medium drive strength, equals to DDL macro CLK_XTAL32_DRV_MID
+      - 1   # High drive strength, equals to DDL macro CLK_XTAL32_DRV_HIGH
+    description: |
+        Configure the driving current of the external low-speed crystal
+        based on varying capacitances.

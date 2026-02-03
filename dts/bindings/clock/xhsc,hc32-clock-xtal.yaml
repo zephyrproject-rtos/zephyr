@@ -1,0 +1,8 @@
+# Copyright (C) 2024-2025, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: HC32 XTAL Clock
+
+compatible: "xhsc,hc32-clock-xtal"
+
+include: [fixed-clock.yaml]

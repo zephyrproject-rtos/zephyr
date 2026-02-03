@@ -1,0 +1,8 @@
+# Copyright (C) 2024-2025, Xiaohua Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: HC32 Mrc Clock
+
+compatible: "xhsc,hc32-clock-mrc"
+
+include: [fixed-clock.yaml]
