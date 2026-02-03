@@ -377,6 +377,12 @@ static int bq40z50_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		val->sbs_remaining_time_alarm = tmp_val;
 		break;
 
+	case FUEL_GAUGE_STATE_OF_HEALTH:
+		ret = bq40z50_i2c_read(dev, BQ40Z50_STATEOFHEALTH, (uint8_t *)&tmp_val,
+				       BQ40Z50_LEN_BYTE);
+		val->state_of_health = tmp_val;
+		break;
+
 	default:
 		ret = -ENOTSUP;
 		break;
