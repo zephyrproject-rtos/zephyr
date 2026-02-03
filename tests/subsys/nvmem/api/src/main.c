@@ -20,12 +20,12 @@ ZTEST(nvmem_api, test_nvmem_api)
 	zexpect_equal_ptr(cell0.dev, DEVICE_DT_GET(nvmem0));
 	zexpect_equal(cell0.offset, 0);
 	zexpect_equal(cell0.size, 0x10);
-	zexpect_false(cell0.read_only);
+	zexpect_false(nvmem_cell_is_read_only(&cell0));
 
 	zexpect_equal_ptr(cell10.dev, DEVICE_DT_GET(nvmem0));
 	zexpect_equal(cell10.offset, 0x10);
 	zexpect_equal(cell10.size, 0x10);
-	zexpect_true(cell10.read_only);
+	zexpect_true(nvmem_cell_is_read_only(&cell10));
 
 	for (size_t i = 0; i < sizeof(buf); ++i) {
 		buf[i] = 2 * i;
