@@ -22,7 +22,9 @@
 
 #include <kernel_arch_data.h>
 
-#if defined(CONFIG_CPU_CORTEX_M)
+#if defined(CONFIG_CPU_ARM9)
+#include <arm9/kernel_arch_func.h>
+#elif defined(CONFIG_CPU_CORTEX_M)
 #include <cortex_m/kernel_arch_func.h>
 #else
 #include <cortex_a_r/kernel_arch_func.h>
