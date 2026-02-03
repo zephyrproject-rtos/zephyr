@@ -191,11 +191,6 @@ static int stm32_dcmi_enable_clock(const struct device *dev)
 	const struct video_stm32_dcmi_config *config = dev->config;
 	const struct device *dcmi_clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
-	if (!device_is_ready(dcmi_clock)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
 	/* Turn on DCMI peripheral clock */
 	return clock_control_on(dcmi_clock, (clock_control_subsys_t)&config->pclken);
 }

@@ -641,11 +641,6 @@ static int pwm_stm32_init(const struct device *dev)
 	uint32_t tim_clk;
 	int r;
 
-	if (!device_is_ready(clk)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
 	/* Enable clock and store its speed */
 	r = clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]);
 	if (r < 0) {

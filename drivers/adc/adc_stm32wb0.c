@@ -1074,11 +1074,6 @@ int adc_stm32wb0_init(const struct device *dev)
 	ADC_TypeDef *adc = config->reg;
 	int err;
 
-	if (!device_is_ready(clk)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
 	/* Turn on ADC digital clock (always on) */
 	err = clock_control_on(clk,
 		(clock_control_subsys_t)&config->dig_clk);

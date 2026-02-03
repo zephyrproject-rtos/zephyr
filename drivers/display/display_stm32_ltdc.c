@@ -409,11 +409,6 @@ static int stm32_ltdc_init(const struct device *dev)
 		}
 	}
 
-	if (!device_is_ready(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE))) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
 	/* Turn on LTDC peripheral clock */
 	err = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 				(clock_control_subsys_t) &config->pclken[0]);

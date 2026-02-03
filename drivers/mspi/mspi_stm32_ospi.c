@@ -1387,11 +1387,6 @@ static int mspi_stm32_ospi_activate(const struct device *dev)
 	int ret;
 	const struct mspi_stm32_conf *config = (const struct mspi_stm32_conf *)dev->config;
 
-	if (!device_is_ready(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE))) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
 		return ret;

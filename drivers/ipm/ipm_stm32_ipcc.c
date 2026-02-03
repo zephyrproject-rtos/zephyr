@@ -249,11 +249,6 @@ static int stm32_ipcc_mailbox_init(const struct device *dev)
 #if DT_INST_NUM_CLOCKS(0) != 0
 	clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
-	if (!device_is_ready(clk)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
 	/* enable clock */
 	if (clock_control_on(clk,
 			     (clock_control_subsys_t)&cfg->pclken) != 0) {

@@ -2223,11 +2223,6 @@ static int uart_stm32_clocks_enable(const struct device *dev)
 	const struct uart_stm32_config *config = dev->config;
 	int err;
 
-	if (!device_is_ready(config->clock)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
 	/* enable clock */
 	err = clock_control_on(config->clock, (clock_control_subsys_t)&config->pclken[0]);
 	if (err != 0) {

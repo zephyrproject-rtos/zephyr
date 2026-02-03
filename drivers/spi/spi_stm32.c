@@ -1708,11 +1708,6 @@ static int spi_stm32_init(const struct device *dev)
 	const struct spi_stm32_config *cfg = dev->config;
 	int err;
 
-	if (!device_is_ready(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE))) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
 	if (IS_ENABLED(STM32_SPI_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
 		err = clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 					      (clock_control_subsys_t) &cfg->pclken[1],
