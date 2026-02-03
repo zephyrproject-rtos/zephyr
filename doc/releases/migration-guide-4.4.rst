@@ -148,6 +148,17 @@ Boards
 
 * ITE ``it515xx_evb`` is renamed to ``it51xxx_evb``.
 
+* Boards that have NVM devices must now correctly have their addresses set or inheritied when they
+  do not start at address 0x0. In previous zephyr releases, a ``partitions`` entry in DTS was
+  wrongly interpreted as starting in the flash device's address range even though the DTS file
+  does not describe this and instead describes flash partitions starting at absolute addresses
+  e.g. 0x0. If you build and get the deprecated Kconfig
+  :kconfig:option:`CONFIG_FLASH_CODE_PARTITION_ADDRESS_INVALID` being set then this means your
+  board, SoC or DTS files are wrong and need updating, a ``ranges <>;`` property should be used
+  by the flash nodes to specify the base address and size for child nodes, and
+  ``fixed-partitions``/``fixed-subpartitions`` nodes must have a ``ranges;`` property to pass the
+  parent's ranges on to child nodes.
+
 Device Drivers and Devicetree
 *****************************
 
