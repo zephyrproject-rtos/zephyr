@@ -8,7 +8,8 @@
 
 #include <zephyr/types.h>
 
-#if defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R)
+#if defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R) || \
+	defined(CONFIG_CPU_AARCH32_ARM9)
 /* Per CPU architecture specifics */
 struct _cpu_arch {
 	int8_t exc_depth;
