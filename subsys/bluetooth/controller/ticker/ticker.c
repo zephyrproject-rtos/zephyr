@@ -1398,7 +1398,6 @@ void ticker_worker(void *param)
 #if defined(CONFIG_BT_TICKER_EXT)
 		if (ticker->ext_data) {
 			ticks_drift = ticker->ext_data->ticks_drift;
-			ticker->ext_data->ticks_drift = 0U;
 			/* Mark node as not re-scheduling */
 			ticker->ext_data->reschedule_state = TICKER_RESCHEDULE_STATE_NONE;
 		} else {
@@ -2180,6 +2179,12 @@ static inline void ticker_job_worker_bh(struct ticker_instance *instance,
 				/* If not skipped, apply lazy_periodic */
 				if (!ticker->lazy_current) {
 					lazy_periodic = ticker->lazy_periodic;
+
+#if defined(CONFIG_BT_TICKER_EXT) && !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
+					if (ticker->ext_data) {
+						ticker->ext_data->ticks_drift = 0U;
+					}
+#endif /* CONFIG_BT_TICKER_EXT && !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 				} else {
 					lazy_periodic = 0U;
 
@@ -2326,7 +2331,7 @@ static inline uint32_t ticker_job_op_start(struct ticker_instance *instance,
 #if defined(CONFIG_BT_TICKER_LOW_LAT)
 	/* Must expire is not supported in compatibility mode */
 	LL_ASSERT_DBG(start->lazy < TICKER_LAZY_MUST_EXPIRE_KEEP);
-#else
+#else /* !CONFIG_BT_TICKER_LOW_LAT */
 #if !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
 	if (start->lazy != TICKER_LAZY_MUST_EXPIRE_KEEP) {
 		/* Update the must_expire state */
@@ -2334,10 +2339,15 @@ static inline uint32_t ticker_job_op_start(struct ticker_instance *instance,
 			(start->lazy == TICKER_LAZY_MUST_EXPIRE) ? 1U : 0U;
 	}
 #endif /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
-#endif /* CONFIG_BT_TICKER_LOW_LAT */
 
 #if defined(CONFIG_BT_TICKER_EXT)
 	ticker->ext_data = start->ext_data;
+
+#if !defined(CONFIG_BT_TICKER_SLOT_AGNOSTIC)
+	if (ticker->ext_data) {
+		ticker->ext_data->ticks_drift = 0U;
+	}
+#endif /* !CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 
 #if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
 	if (ticker->ext_data) {
@@ -2359,6 +2369,7 @@ static inline uint32_t ticker_job_op_start(struct ticker_instance *instance,
 #else /* !CONFIG_BT_TICKER_EXT */
 	ARG_UNUSED(instance);
 #endif /* !CONFIG_BT_TICKER_EXT */
+#endif /* !CONFIG_BT_TICKER_LOW_LAT */
 
 	ticker->ticks_periodic = start->ticks_periodic;
 
