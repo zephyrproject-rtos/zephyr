@@ -59,6 +59,29 @@ Example building for NXP's MCXW72 FRDM (host).
    :goals: build
    :compact:
 
+Example building for Silicon Labs xG24 radio board (e.g. with Silabs EFR32 802.15.4 driver):
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/openthread/shell
+   :board: xg24_rb4187c
+   :conf: "prj.conf"
+   :goals: build
+   :compact:
+
+When building for ``xg24_rb4187c``, the build system automatically applies
+``boards/xg24_rb4187c.overlay`` (settings partition) and ``boards/xg24_rb4187c.conf`` (stack size,
+early console) so the serial console comes up reliably.
+
+If the console does not come up after flashing:
+
+1. **Check serial connection**: 115200 8N1, no hardware flow control, correct USB/COM port.
+2. **Verify console with a minimal app**: ``west build -b xg24_rb4187c samples/hello_world && west flash``.
+   If hello_world also has no output, the issue is board/connection, not OpenThread.
+3. **Power cycle** the board after flashing (some boards need a reset to run the new image).
+
+After the shell prompt appears, use ``ot state`` (should show ``disabled`` until you form/join a
+network) and ``ot deviceinfo`` to confirm the radio device is present and the driver is in use.
+
 
 Sample console interaction
 ==========================

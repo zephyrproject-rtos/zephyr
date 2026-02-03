@@ -39,3 +39,8 @@ tests:
     platform_allow:
       - esp32c6_devkitc/esp32c6/hpcore
       - esp32h2_devkitm
+  sample.net.openthread.shell.xg24:
+    build_only: true
+    platform_allow:
+      - xg24_rb4187c
+      - xg24_rb4186c
