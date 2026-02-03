@@ -8,6 +8,7 @@
 #include "kit_t2g_c2d6m_lite_common.dtsi"
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <dt-bindings/adc/adc.h>
+#include <common/freq.h>
 
 / {
 
@@ -99,16 +100,13 @@ spi0: &scb0 {
 	ifx,peri-div = <1>; /* 16-bit divider */
 	ifx,peri-div-inst = <3>;
 
-	slow@0 {
-		compatible = "test-spi-loopback-slow";
+	w25q128jvsq2449_spi: spi-nor-flash@0 {
+		compatible = "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <3000000>;
-	};
-
-	fast@0 {
-		compatible = "test-spi-loopback-fast";
-		reg = <0>;
-		spi-max-frequency = <3000000>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
+		size = <DT_SIZE_M(128)>; /* 64 Mbits */
+		status = "disabled";
+		jedec-id = [ef 40 18];
 	};
 };
 
@@ -176,5 +174,9 @@ spi0: &scb0 {
 };
 
 &clk_hf5 {
+        status = "okay";
+};
+
+&gpio_prt11 {
         status = "okay";
 };
