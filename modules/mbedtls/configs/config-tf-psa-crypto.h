@@ -43,20 +43,6 @@
 #define MBEDTLS_PLATFORM_MS_TIME_ALT
 #endif
 
-#if defined(CONFIG_MBEDTLS_ECDSA_DETERMINISTIC)
-#define MBEDTLS_ECDSA_DETERMINISTIC
-#endif
-
-#if defined(CONFIG_MBEDTLS_HKDF_C)
-#define MBEDTLS_HKDF_C
-#endif
-
-/* Supported cipher modes */
-
-#if defined(CONFIG_MBEDTLS_CIPHER_AES_ENABLED)
-#define MBEDTLS_AES_C
-#endif
-
 #if defined(CONFIG_MBEDTLS_AES_ROM_TABLES)
 #define MBEDTLS_AES_ROM_TABLES
 #endif
@@ -65,150 +51,12 @@
 #define MBEDTLS_AES_FEWER_TABLES
 #endif
 
-#if defined(CONFIG_MBEDTLS_CIPHER_CAMELLIA_ENABLED)
-#define MBEDTLS_CAMELLIA_C
-#endif
-
-#if defined(CONFIG_MBEDTLS_CIPHER_DES_ENABLED)
-#define MBEDTLS_DES_C
-#endif
-
-#if defined(CONFIG_MBEDTLS_CIPHER_CHACHA20_ENABLED)
-#define MBEDTLS_CHACHA20_C
-#endif
-
-#if defined(CONFIG_MBEDTLS_CIPHER_CCM_ENABLED)
-#define MBEDTLS_CCM_C
-#endif
-
-#if defined(CONFIG_MBEDTLS_CIPHER_GCM_ENABLED)
-#define MBEDTLS_GCM_C
-#endif
-
-#if defined(CONFIG_MBEDTLS_CIPHER_MODE_XTS_ENABLED)
-#define MBEDTLS_CIPHER_MODE_XTS
-#endif
-
-#if defined(CONFIG_MBEDTLS_CIPHER_MODE_CBC_ENABLED)
-#define MBEDTLS_CIPHER_MODE_CBC
-#endif
-
-#if defined(CONFIG_MBEDTLS_CIPHER_MODE_CTR_ENABLED)
-#define MBEDTLS_CIPHER_MODE_CTR
-#endif
-
-/* Supported elliptic curve libraries */
-
-#if defined(CONFIG_MBEDTLS_ECDH_C)
-#define MBEDTLS_ECDH_C
-#endif
-
-#if defined(CONFIG_MBEDTLS_ECDSA_C)
-#define MBEDTLS_ECDSA_C
-#endif
-
-#if defined(CONFIG_MBEDTLS_ECJPAKE_C)
-#define MBEDTLS_ECJPAKE_C
-#endif
-
-#if defined(CONFIG_MBEDTLS_ECP_C)
-#define MBEDTLS_ECP_C
-#endif
-
-/* Supported elliptic curves */
-
-#if defined(CONFIG_MBEDTLS_ECP_DP_SECP192R1_ENABLED)
-#define MBEDTLS_ECP_DP_SECP192R1_ENABLED
-#endif
-
-#if defined(CONFIG_MBEDTLS_ECP_DP_SECP224R1_ENABLED)
-#define MBEDTLS_ECP_DP_SECP224R1_ENABLED
-#endif
-
-#if defined(CONFIG_MBEDTLS_ECP_DP_SECP256R1_ENABLED)
-#define MBEDTLS_ECP_DP_SECP256R1_ENABLED
-#endif
-
-#if defined(CONFIG_MBEDTLS_ECP_DP_SECP384R1_ENABLED)
-#define MBEDTLS_ECP_DP_SECP384R1_ENABLED
-#endif
-
-#if defined(CONFIG_MBEDTLS_ECP_DP_SECP521R1_ENABLED)
-#define MBEDTLS_ECP_DP_SECP521R1_ENABLED
-#endif
-
-#if defined(CONFIG_MBEDTLS_ECP_DP_SECP192K1_ENABLED)
-#define MBEDTLS_ECP_DP_SECP192K1_ENABLED
-#endif
-
-#if defined(CONFIG_MBEDTLS_ECP_DP_SECP224K1_ENABLED)
-#define MBEDTLS_ECP_DP_SECP224K1_ENABLED
-#endif
-
-#if defined(CONFIG_MBEDTLS_ECP_DP_SECP256K1_ENABLED)
-#define MBEDTLS_ECP_DP_SECP256K1_ENABLED
-#endif
-
-#if defined(CONFIG_MBEDTLS_ECP_DP_BP256R1_ENABLED)
-#define MBEDTLS_ECP_DP_BP256R1_ENABLED
-#endif
-
-#if defined(CONFIG_MBEDTLS_ECP_DP_BP384R1_ENABLED)
-#define MBEDTLS_ECP_DP_BP384R1_ENABLED
-#endif
-
-#if defined(CONFIG_MBEDTLS_ECP_DP_BP512R1_ENABLED)
-#define MBEDTLS_ECP_DP_BP512R1_ENABLED
-#endif
-
-#if defined(CONFIG_MBEDTLS_ECP_DP_CURVE25519_ENABLED)
-#define MBEDTLS_ECP_DP_CURVE25519_ENABLED
-#endif
-
-#if defined(CONFIG_MBEDTLS_ECP_DP_CURVE448_ENABLED)
-#define MBEDTLS_ECP_DP_CURVE448_ENABLED
-#endif
-
 #if defined(CONFIG_MBEDTLS_ECP_NIST_OPTIM)
 #define MBEDTLS_ECP_NIST_OPTIM
 #endif
 
-/* Supported hash algorithms */
-
-#if defined(CONFIG_MBEDTLS_MD5)
-#define MBEDTLS_MD5_C
-#endif
-
-#if defined(CONFIG_MBEDTLS_SHA1)
-#define MBEDTLS_SHA1_C
-#endif
-
-#if defined(CONFIG_MBEDTLS_SHA224)
-#define MBEDTLS_SHA224_C
-#endif
-
-#if defined(CONFIG_MBEDTLS_SHA256)
-#define MBEDTLS_SHA256_C
-#endif
-
 #if defined(CONFIG_MBEDTLS_SHA256_SMALLER)
 #define MBEDTLS_SHA256_SMALLER
-#endif
-
-#if defined(CONFIG_MBEDTLS_SHA384)
-#define MBEDTLS_SHA384_C
-#endif
-
-#if defined(CONFIG_MBEDTLS_SHA512)
-#define MBEDTLS_SHA512_C
-#endif
-
-#if defined(CONFIG_MBEDTLS_POLY1305)
-#define MBEDTLS_POLY1305_C
-#endif
-
-#if defined(CONFIG_MBEDTLS_CMAC)
-#define MBEDTLS_CMAC_C
 #endif
 
 #if defined(CONFIG_MBEDTLS_CTR_DRBG_C)
@@ -223,41 +71,8 @@
 #define MBEDTLS_MEMORY_DEBUG
 #endif
 
-#if defined(CONFIG_MBEDTLS_CHACHAPOLY_AEAD_ENABLED)
-#define MBEDTLS_CHACHAPOLY_C
-#endif
-
-#if defined(CONFIG_MBEDTLS_GENPRIME_ENABLED)
-#define MBEDTLS_GENPRIME
-#endif
-
-#if defined(CONFIG_MBEDTLS_ENTROPY_C)
-#define MBEDTLS_ENTROPY_C
-#endif
-
-#if defined(CONFIG_MBEDTLS_CIPHER)
-#define MBEDTLS_CIPHER_C
-#endif
-
 #if defined(CONFIG_MBEDTLS_MD_C)
 #define MBEDTLS_MD_C
-#endif
-
-#if defined(CONFIG_MBEDTLS_RSA_C)
-#define MBEDTLS_RSA_C
-#endif
-
-#if defined(CONFIG_MBEDTLS_PKCS1_V15)
-#define MBEDTLS_PKCS1_V15
-#endif
-
-#if defined(CONFIG_MBEDTLS_PKCS1_V21)
-#define MBEDTLS_PKCS1_V21
-#endif
-
-#if defined(MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED) || \
-    defined(MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED)
-#define MBEDTLS_DHM_C
 #endif
 
 #if defined(CONFIG_MBEDTLS_BASE64_C)
@@ -270,19 +85,6 @@
 
 #if defined(CONFIG_MBEDTLS_PEM_WRITE_C)
 #define MBEDTLS_PEM_WRITE_C
-#endif
-
-#if defined(MBEDTLS_DHM_C) || \
-    defined(MBEDTLS_ECP_C) || \
-    defined(MBEDTLS_RSA_C) || \
-    defined(MBEDTLS_X509_USE_C) || \
-    defined(MBEDTLS_GENPRIME)
-#define MBEDTLS_BIGNUM_C
-#endif
-
-#if defined(MBEDTLS_RSA_C) || \
-    defined(MBEDTLS_X509_USE_C)
-#define MBEDTLS_OID_C
 #endif
 
 #if defined(MBEDTLS_X509_USE_C)
@@ -314,7 +116,6 @@
 #define MBEDTLS_MPI_MAX_SIZE              32 /**< Maximum number of bytes for usable MPIs. */
 #define MBEDTLS_ECP_WINDOW_SIZE            2 /**< Maximum window size used */
 #define MBEDTLS_ECP_FIXED_POINT_OPTIM      0 /**< Enable fixed-point speed-up */
-#define MBEDTLS_ENTROPY_MAX_SOURCES        1 /**< Maximum number of sources supported */
 #endif
 
 #if defined(CONFIG_MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG)
@@ -342,10 +143,6 @@
 #define MBEDTLS_PSA_KEY_SLOT_COUNT CONFIG_MBEDTLS_PSA_KEY_SLOT_COUNT
 #endif
 
-#if defined(CONFIG_MBEDTLS_USE_PSA_CRYPTO)
-#define MBEDTLS_USE_PSA_CRYPTO
-#endif
-
 #if defined(CONFIG_MBEDTLS_PSA_CRYPTO_BUILTIN_KEYS)
 #define MBEDTLS_PSA_CRYPTO_BUILTIN_KEYS
 #endif
@@ -353,15 +150,10 @@
 #if defined(CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT)
 #define MBEDTLS_PSA_CRYPTO_CLIENT
 #define MBEDTLS_PSA_CRYPTO_CONFIG
-#define MBEDTLS_PSA_CRYPTO_CONFIG_FILE "config-psa.h"
 #endif
 
 #if defined(CONFIG_MBEDTLS_NIST_KW_C)
 #define MBEDTLS_NIST_KW_C
-#endif
-
-#if defined(CONFIG_MBEDTLS_DHM_C)
-#define MBEDTLS_DHM_C
 #endif
 
 #endif /* TF_PSA_CRYPTO_CONFIG_H */
