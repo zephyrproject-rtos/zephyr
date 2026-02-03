@@ -509,7 +509,6 @@ static int xilinx_axienet_probe(const struct device *dev)
 	const struct xilinx_axienet_config *config = dev->config;
 	struct xilinx_axienet_data *data = dev->data;
 	uint32_t status;
-	int err;
 
 	status = xilinx_axienet_read_register(
 		config, XILINX_AXIENET_RECEIVER_CONFIGURATION_WORD_1_REG_OFFSET);
