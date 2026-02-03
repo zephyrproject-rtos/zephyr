@@ -48,7 +48,8 @@ properties:
       - 128
     required: true
     description: |
-      Number of 8-byte sized message buffers supported by this FlexCAN instance.
+      Number of 8-byte sized message buffers (MBs) supported by this FlexCAN instance. CAN FD mode,
+      if supported, uses 64-byte sized MBs, resulting in fewer available MBs.
 
 examples:
   - |

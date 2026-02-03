@@ -29,14 +29,15 @@ config CAN_MCUX_FLEXCAN_WAIT_TIMEOUT
 	  freeze mode.
 
 config CAN_MCUX_FLEXCAN_MAX_FILTERS
-	int "Maximum number of concurrent active RX filters"
+	int "Maximum number of concurrently active RX filters"
+	range 0 128
 	default 5 if CAN_MCUX_FLEXCAN_FD
 	default 13
 	help
-	  Defines maximum number of concurrent active RX filters
-	  The maximum value depends on the number of available message
-	  buffers for each FlexCAN instance. CAN FD mode uses larger
-	  message buffers, resulting in fewer available filters.
+	  Defines maximum number of concurrently active RX filters. The maximum value depends on the
+	  number of available message buffers for each FlexCAN instance.
+
+	  CAN FD mode uses larger message buffers, resulting in fewer available filters.
 
 endif # CAN_MCUX_FLEXCAN
 

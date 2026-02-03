@@ -1537,8 +1537,6 @@ static DEVICE_API(can, mcux_flexcan_fd_driver_api) = {
 			"FlexCAN instance " STRINGIFY(id) " clk-source without named clock")))
 
 #define FLEXCAN_CHECK_MAX_FILTER(id)						\
-	BUILD_ASSERT(CONFIG_CAN_MCUX_FLEXCAN_MAX_FILTERS > 0,			\
-		"Maximum number of RX filters should greater than 0");		\
 	BUILD_ASSERT(FLEXCAN_INST_NUMBER_OF_MB(id) > FLEXCAN_INST_RX_MB(id),	\
 		     "FlexCAN instance " STRINGIFY(id) " number-of-mb ("	\
 		     STRINGIFY(FLEXCAN_INST_NUMBER_OF_MB(id))			\
