@@ -330,6 +330,7 @@
 		counter {
 			compatible = "adi,max32-wut";
 			status = "disabled";
+			zephyr,pm-device-runtime-auto;
 		};
 	};
 
@@ -343,6 +344,7 @@
 		counter {
 			compatible = "adi,max32-wut";
 			status = "disabled";
+			zephyr,pm-device-runtime-auto;
 		};
 	};
 
