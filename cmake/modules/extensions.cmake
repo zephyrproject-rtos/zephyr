@@ -6027,6 +6027,21 @@ function(add_llext_target target_name)
     set(gnu_strip_for_mwdt_cmd ${CMAKE_COMMAND} -E true)
   endif()
 
+  # Optional compression
+  # The very last thing that is done to the output .llext file, after stripping etc.
+  # Turns the output file into a compressed archive.
+  if(CONFIG_LLEXT_COMPRESSION_LZ4)
+    # output verbosity for LZ4: full statistics or nothing, depending on user choice
+    if(CONFIG_LLEXT_COMPRESSION_LZ4_QUIET)
+      set(compress_quiet -q)
+    endif()
+    # in-place compression using wrapper script
+    message(STATUS "LZ4 compression active - overwriting llext ${llext_pkg_output} with lz4 archive!")
+    set(compress_cmd  ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/compress_lz4.py -c ${CONFIG_LLEXT_COMPRESSION_LZ4_RATIO} ${compress_quiet} ${llext_pkg_output})
+  else()
+    set(compress_cmd ${CMAKE_COMMAND} -E true)
+  endif()
+
   # Remove sections that are unused by the llext loader
   add_custom_command(
     OUTPUT ${llext_pkg_output}
@@ -6040,6 +6055,7 @@ function(add_llext_target target_name)
             $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${llext_pkg_output}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
     COMMAND ${slid_inject_cmd}
+    COMMAND ${compress_cmd}
     DEPENDS ${llext_pkg_input}
     COMMAND_EXPAND_LISTS
   )

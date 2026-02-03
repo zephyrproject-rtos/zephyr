@@ -1,0 +1,24 @@
+sample:
+  name: lz4 sample
+  description: lz4 data compression library
+common:
+  tags:
+    - compression
+    - lz4
+  min_ram: 64
+  filter: CONFIG_FULL_LIBC_SUPPORTED
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Validation done. (.*)"
+  modules:
+    - lz4
+tests:
+  sample.compression.lz4:
+    integration_platforms:
+      - mps2/an385
+      - qemu_riscv64
+    tags:
+      - compression
+      - lz4

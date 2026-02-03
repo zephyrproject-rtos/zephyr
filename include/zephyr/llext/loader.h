@@ -127,6 +127,16 @@ struct llext_loader {
 	void *(*peek)(struct llext_loader *ldr, size_t pos);
 
 	/**
+	 * @brief Optional function to get the total size of the input extension.
+	 * Returns total available number of bytes.
+	 *
+	 * @param[in] ldr Loader
+	 *
+	 * @returns total number of bytes or 0 if not supported / error
+	 */
+	size_t (*get_size)(struct llext_loader *ldr);
+
+	/**
 	 * @brief Optional function to clean after the extension has been loaded or error occurred.
 	 *
 	 * @param[in] ldr Loader
@@ -172,6 +182,14 @@ static inline void *llext_peek(struct llext_loader *l, size_t pos)
 	}
 
 	return NULL;
+}
+
+static inline size_t llext_get_size(struct llext_loader *l)
+{
+	if (l->get_size) {
+		return l->get_size(l);
+	}
+	return 0;
 }
 
 static inline void llext_finalize(struct llext_loader *l)

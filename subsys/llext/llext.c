@@ -208,6 +208,11 @@ out:
 
 #include <zephyr/logging/log_ctrl.h>
 
+__weak void llext_decompress_free_ext_buffer(struct llext *ext)
+{
+	ARG_UNUSED(ext);
+}
+
 int llext_unload(struct llext **ext)
 {
 	__ASSERT(*ext, "Expected non-null extension");
@@ -244,6 +249,7 @@ int llext_unload(struct llext **ext)
 	llext_free_regions(tmp);
 	llext_free(tmp->sym_tab.syms);
 	llext_free(tmp->exp_tab.syms);
+	llext_decompress_free_ext_buffer(tmp);
 	llext_free(tmp);
 
 	return 0;

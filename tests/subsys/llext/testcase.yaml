@@ -153,3 +153,56 @@ tests:
     extra_conf_files: ['no_mem_protection.conf']
     extra_configs:
       - CONFIG_LLEXT_HEAP_DYNAMIC=y
+
+  # compression with writable storage
+  llext.writable_compressed_lz4:
+    arch_allow:
+      - arm
+      - xtensa
+      - riscv
+      - arc
+      - x86
+    integration_platforms:
+      - qemu_xtensa/dc233c
+    filter: not CONFIG_MPU and not CONFIG_MMU
+    extra_conf_files: ['no_mem_protection.conf']
+    extra_configs:
+      - CONFIG_LLEXT_STORAGE_WRITABLE=y
+      - CONFIG_LLEXT_COMPRESSION_LZ4=y
+      # most boards: allocate from llext heap (which needs to be sufficiently big)
+      - CONFIG_LLEXT_HEAP_SIZE=102400
+      # memory-limited boards: allocate from system heap instead
+      - platform:mps2/an521/cpu0:CONFIG_LLEXT_HEAP_SIZE=128
+      - platform:mps2/an521/cpu0:CONFIG_LLEXT_COMPRESSION_LZ4_USE_SYSTEM_HEAP=y
+      - platform:mps2/an385:CONFIG_LLEXT_HEAP_SIZE=128
+      - platform:mps2/an385:CONFIG_LLEXT_COMPRESSION_LZ4_USE_SYSTEM_HEAP=y
+      - platform:qemu_xtensa/dc233c:CONFIG_LLEXT_HEAP_SIZE=128
+      - platform:qemu_xtensa/dc233c:CONFIG_LLEXT_COMPRESSION_LZ4_USE_SYSTEM_HEAP=y
+      - CONFIG_LLEXT_COMPRESSION_LZ4_QUIET=n # to gauge efficiency
+      - CONFIG_LLEXT_COMPRESSION_LZ4_RATIO=12 # maximum compression
+      - CONFIG_LZ4=y
+      - CONFIG_LZ4_FRAME_SUPPORT=y
+  llext.readonly_compressed_lz4:
+    arch_allow:
+      - arm
+      - riscv
+      - arc
+      - x86
+    filter: not CONFIG_MPU and not CONFIG_MMU
+    extra_conf_files: ['no_mem_protection.conf']
+    extra_configs:
+      - CONFIG_LLEXT_STORAGE_WRITABLE=n
+      - CONFIG_LLEXT_COMPRESSION_LZ4=y
+      # most boards: allocate from llext heap (which needs to be sufficiently big)
+      - CONFIG_LLEXT_HEAP_SIZE=102400
+      # memory-limited boards: allocate from system heap instead
+      - platform:mps2/an521/cpu0:CONFIG_LLEXT_HEAP_SIZE=128
+      - platform:mps2/an521/cpu0:CONFIG_LLEXT_COMPRESSION_LZ4_USE_SYSTEM_HEAP=y
+      - platform:mps2/an385:CONFIG_LLEXT_HEAP_SIZE=128
+      - platform:mps2/an385:CONFIG_LLEXT_COMPRESSION_LZ4_USE_SYSTEM_HEAP=y
+      - platform:qemu_xtensa/dc233c:CONFIG_LLEXT_HEAP_SIZE=128
+      - platform:qemu_xtensa/dc233c:CONFIG_LLEXT_COMPRESSION_LZ4_USE_SYSTEM_HEAP=y
+      - CONFIG_LLEXT_COMPRESSION_LZ4_QUIET=n # to gauge efficiency
+      - CONFIG_LLEXT_COMPRESSION_LZ4_RATIO=12 # maximum compression
+      - CONFIG_LZ4=y
+      - CONFIG_LZ4_FRAME_SUPPORT=y
