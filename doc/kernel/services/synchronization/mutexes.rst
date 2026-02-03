@@ -73,7 +73,9 @@ that mutex.
 .. note::
     The :kconfig:option:`CONFIG_PRIORITY_CEILING` configuration option limits
     how high the kernel can raise a thread's priority due to priority
-    inheritance. The default value of 0 permits unlimited elevation.
+    inheritance. The default value of -128 permits unlimited. Setting this
+    to a priority level that is at or lower than the priority of the idle
+    thread disables it.
 
 The owning thread's base priority is saved in the mutex when it obtains the
 lock. Each time a higher priority thread waits on a mutex, the kernel adjusts
