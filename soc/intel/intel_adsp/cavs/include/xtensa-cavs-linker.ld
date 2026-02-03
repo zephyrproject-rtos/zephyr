@@ -307,10 +307,6 @@ SECTIONS {
     *(.dynamic)
     *(.gnu.version_d)
     _image_ram_start = .;
-    _bss_table_start = .;
-    LONG(_bss_start)
-    LONG(_bss_end)
-    _bss_table_end = .;
     __rodata_region_end = .;
   } >RAM
 
@@ -405,7 +401,7 @@ SECTIONS {
 
   .bss SEGSTART_UNCACHED (NOLOAD) :
   {
-    _bss_start = .;
+    __bss_start = .;
     *(.dynsbss)
     *(.sbss)
     *(.sbss.*)
@@ -423,7 +419,7 @@ SECTIONS {
 #include <linker_sram_bss_relocate.ld>
 #endif
     . = ALIGN(8);
-    _bss_end = .;
+    __bss_end = .;
   } >ucram
 
   /* Heap start and end markers.  Mostly unused, though newlib likes them */
