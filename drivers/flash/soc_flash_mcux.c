@@ -126,6 +126,10 @@ static void clear_flash_caches(void)
 {
 	FLASH_CacheClear();
 }
+#elif CONFIG_SOC_MCXW70AC
+/* cache is managed by flash driver */
+#undef SOC_FLASH_NEED_CLEAR_CACHES
+#define clear_flash_caches(...)
 #else
 static void clear_flash_caches(void)
 {
