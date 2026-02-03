@@ -8,163 +8,39 @@ config TF_PSA_CRYPTO_CFG_FILE
 	  Specify the configuration header file to be used when building
 	  TF-PSA-Crypto. The default one can be tweaked with Kconfig.
 
-config MBEDTLS_RSA_C
-	bool "RSA base support"
-
-if MBEDTLS_RSA_C
-
-config MBEDTLS_PKCS1_V15
-	bool "RSA PKCS1 v1.5"
-
-config MBEDTLS_PKCS1_V21
-	bool "RSA PKCS1 v2.1"
-
-config MBEDTLS_GENPRIME_ENABLED
-	bool "Prime number generation code"
-
-endif # MBEDTLS_RSA_C
-
-config MBEDTLS_RSA_ENABLE_LEGACY_APIS
-	bool
-	imply MBEDTLS_RSA_C
-	imply MBEDTLS_PKCS1_V15
-	default y if MBEDTLS_CIPHERSUITE_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
-	help
-	  Promptless Kconfig to automatically enable legacy RSA crypto support
-	  when RSA based ciphersuites are enabled.
-	  This is required because TLS/X.509 code still relies on these legacy
-	  symbols to guard parts of the code.
-	  In theory this fix is only necessary when TF-M is enabled, because
-	  otherwise when Mbed TLS uses its own implementation of PSA Crypto
-	  it automatically does this internally. On the other hand it doesn't hurt to
-	  always enable it.
-	  This fix is very likely to be removed with Mbed TLS 4.x.
-
-config MBEDTLS_ECDSA_DETERMINISTIC
-	bool "Deterministic ECDSA (RFC 6979)"
-
-config MBEDTLS_HKDF_C
-	bool "HMAC-based Extract-and-Expand Key Derivation Function"
-
-comment "Elliptic curve libraries"
-
-config MBEDTLS_ECDH_C
-	bool "Elliptic curve Diffie-Hellman library"
-	depends on MBEDTLS_ECP_C
-
-config MBEDTLS_ECDSA_C
-	bool "Elliptic curve DSA library"
-	depends on MBEDTLS_ECP_C
-	select MBEDTLS_ASN1_PARSE_C
-
-config MBEDTLS_ECJPAKE_C
-	bool "Elliptic curve J-PAKE library"
-	depends on MBEDTLS_ECP_C
-
-config MBEDTLS_ECP_C
-	bool "Elliptic curve over GF(p) library"
-
-if MBEDTLS_ECP_C
-
-comment "Supported elliptic curves"
-
-config MBEDTLS_ECP_ALL_ENABLED
-	bool "All available elliptic curves"
-	select MBEDTLS_ECP_DP_SECP192R1_ENABLED
-	select MBEDTLS_ECP_DP_SECP192R1_ENABLED
-	select MBEDTLS_ECP_DP_SECP224R1_ENABLED
-	select MBEDTLS_ECP_DP_SECP256R1_ENABLED
-	select MBEDTLS_ECP_DP_SECP384R1_ENABLED
-	select MBEDTLS_ECP_DP_SECP521R1_ENABLED
-	select MBEDTLS_ECP_DP_SECP192K1_ENABLED
-	select MBEDTLS_ECP_DP_SECP224K1_ENABLED
-	select MBEDTLS_ECP_DP_SECP256K1_ENABLED
-	select MBEDTLS_ECP_DP_BP256R1_ENABLED
-	select MBEDTLS_ECP_DP_BP384R1_ENABLED
-	select MBEDTLS_ECP_DP_BP512R1_ENABLED
-	select MBEDTLS_ECP_DP_CURVE25519_ENABLED
-	select MBEDTLS_ECP_DP_CURVE448_ENABLED
-	select MBEDTLS_ECP_NIST_OPTIM
-
-config MBEDTLS_ECP_DP_SECP192R1_ENABLED
-	bool "SECP192R1 elliptic curve"
-
-config MBEDTLS_ECP_DP_SECP224R1_ENABLED
-	bool "SECP224R1 elliptic curve"
-
-config MBEDTLS_ECP_DP_SECP256R1_ENABLED
-	bool "SECP256R1 elliptic curve"
-
-config MBEDTLS_ECP_DP_SECP384R1_ENABLED
-	bool "SECP384R1 elliptic curve"
-
-config MBEDTLS_ECP_DP_SECP521R1_ENABLED
-	bool "SECP521R1 elliptic curve"
-
-config MBEDTLS_ECP_DP_SECP192K1_ENABLED
-	bool "SECP192K1 elliptic curve"
-
-config MBEDTLS_ECP_DP_SECP224K1_ENABLED
-	bool "SECP224K1 elliptic curve"
-
-config MBEDTLS_ECP_DP_SECP256K1_ENABLED
-	bool "SECP256K1 elliptic curve"
-
-config MBEDTLS_ECP_DP_BP256R1_ENABLED
-	bool "BP256R1 elliptic curve"
-
-config MBEDTLS_ECP_DP_BP384R1_ENABLED
-	bool "BP384R1 elliptic curve"
-
-config MBEDTLS_ECP_DP_BP512R1_ENABLED
-	bool "BP512R1 elliptic curve"
-
-config MBEDTLS_ECP_DP_CURVE25519_ENABLED
-	bool "CURVE25519 elliptic curve"
-
-config MBEDTLS_ECP_DP_CURVE448_ENABLED
-	bool "CURVE448 elliptic curve"
-
 config MBEDTLS_ECP_NIST_OPTIM
 	bool "NSIT curves optimization"
-
-endif
+	depends on PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
 
 comment "Supported ciphers and cipher modes"
 
 config MBEDTLS_CIPHER_ALL_ENABLED
 	bool "All available ciphers and modes"
-	select MBEDTLS_CIPHER_AES_ENABLED
-	select MBEDTLS_CIPHER_CAMELLIA_ENABLED
-	select MBEDTLS_CIPHER_DES_ENABLED
-	select MBEDTLS_CIPHER_CHACHA20_ENABLED
-	select MBEDTLS_CIPHER_CCM_ENABLED
-	select MBEDTLS_CIPHER_GCM_ENABLED
-	select MBEDTLS_CIPHER_MODE_XTS_ENABLED
-	select MBEDTLS_CIPHER_MODE_CBC_ENABLED
-	select MBEDTLS_CIPHER_MODE_CTR_ENABLED
-	select MBEDTLS_CHACHAPOLY_AEAD_ENABLED
+	select PSA_WANT_KEY_TYPE_AES
+	select PSA_WANT_KEY_TYPE_CAMELLIA
+	select PSA_WANT_KEY_TYPE_CHACHA20
+	select PSA_WANT_ALG_GCM
+	select PSA_WANT_ALG_CCM
+	select PSA_WANT_ALG_CBC_NO_PADDING
+	select PSA_WANT_ALG_CBC_PKCS7
+	select PSA_WANT_ALG_CTR
+	select PSA_WANT_ALG_CHACHA20_POLY1305
 
 config MBEDTLS_SOME_AEAD_CIPHER_ENABLED
 	bool
 	default y
 	depends on \
-		MBEDTLS_CIPHER_AES_ENABLED || \
-		MBEDTLS_CIPHER_CAMELLIA_ENABLED
+		PSA_WANT_KEY_TYPE_AES || \
+		PSA_WANT_KEY_TYPE_CAMELLIA
 
 config MBEDTLS_SOME_CIPHER_ENABLED
 	bool
 	default y
 	depends on \
 		MBEDTLS_SOME_AEAD_CIPHER_ENABLED || \
-		MBEDTLS_CIPHER_DES_ENABLED || \
-		MBEDTLS_CIPHER_CHACHA20_ENABLED
+		PSA_WANT_KEY_TYPE_CHACHA20
 
-config MBEDTLS_CIPHER_AES_ENABLED
-	bool "AES block cipher"
-	default y if PSA_WANT_KEY_TYPE_AES && MBEDTLS_PSA_CRYPTO_C
-
-if MBEDTLS_CIPHER_AES_ENABLED
+if PSA_WANT_KEY_TYPE_AES
 
 config MBEDTLS_AES_ROM_TABLES
 	bool "Use precomputed AES tables stored in ROM"
@@ -179,96 +55,31 @@ config MBEDTLS_AES_FEWER_TABLES
 	  lookups are converted to 1 table lookup, 3 additions
 	  and 6 bit shifts.
 
-config MBEDTLS_CIPHER_MODE_XTS_ENABLED
-	bool "Xor-encrypt-xor with ciphertext stealing mode (XTS) for AES"
-
-endif # MBEDTLS_CIPHER_AES_ENABLED
-
-config MBEDTLS_CIPHER_CAMELLIA_ENABLED
-	bool "Camellia block cipher"
-
-config MBEDTLS_CIPHER_DES_ENABLED
-	bool "DES block cipher"
-
-config MBEDTLS_CIPHER_CHACHA20_ENABLED
-	bool "ChaCha20 stream cipher"
-
-if MBEDTLS_SOME_AEAD_CIPHER_ENABLED
-
-config MBEDTLS_CIPHER_CCM_ENABLED
-	bool "Counter with CBC-MAC (CCM) mode for 128-bit block cipher"
-
-config MBEDTLS_CIPHER_GCM_ENABLED
-	bool "Galois/Counter Mode (GCM) for symmetric ciphers"
-
-endif # MBEDTLS_SOME_AEAD_CIPHER_ENABLED
-
-if MBEDTLS_SOME_CIPHER_ENABLED
-
-config MBEDTLS_CIPHER_MODE_CBC_ENABLED
-	bool "Cipher Block Chaining mode (CBC) for symmetric ciphers"
-	default y if !NET_L2_OPENTHREAD
-
-config MBEDTLS_CIPHER_MODE_CTR_ENABLED
-	bool "Counter Block Cipher mode (CTR) for symmetric ciphers"
-
-endif # MBEDTLS_SOME_CIPHER_ENABLED
-
-config MBEDTLS_CHACHAPOLY_AEAD_ENABLED
-	bool "ChaCha20-Poly1305 AEAD algorithm"
-	depends on MBEDTLS_CIPHER_CHACHA20_ENABLED && MBEDTLS_POLY1305
-
-config MBEDTLS_CMAC
-	bool "CMAC (Cipher-based Message Authentication Code) mode for block ciphers"
-	depends on MBEDTLS_CIPHER_AES_ENABLED || MBEDTLS_CIPHER_DES_ENABLED
+endif # PSA_WANT_KEY_TYPE_AES
 
 comment "Supported hash algorithms"
 
 config MBEDTLS_HASH_ALL_ENABLED
 	bool "All available MAC methods"
-	select MBEDTLS_MD5
-	select MBEDTLS_SHA1
-	select MBEDTLS_SHA224
-	select MBEDTLS_SHA256
-	select MBEDTLS_SHA384
-	select MBEDTLS_SHA512
-	select MBEDTLS_POLY1305
-
-config MBEDTLS_MD5
-	bool "MD5 hash algorithm"
-
-config MBEDTLS_SHA1
-	bool "SHA-1 hash algorithm"
-
-config MBEDTLS_SHA224
-	bool "SHA-224 hash algorithm"
-
-config MBEDTLS_SHA256
-	bool "SHA-256 hash algorithm"
-	default y
+	select PSA_WANT_ALG_MD5
+	select PSA_WANT_ALG_SHA_1
+	select PSA_WANT_ALG_SHA_224
+	select PSA_WANT_ALG_SHA_256
+	select PSA_WANT_ALG_SHA_384
+	select PSA_WANT_ALG_SHA_512
 
 config MBEDTLS_SHA256_SMALLER
 	bool "Smaller SHA-256 implementation"
-	depends on MBEDTLS_SHA256
+	depends on PSA_WANT_ALG_SHA_256
 	default y
 	help
 	  Enable an implementation of SHA-256 that has a
 	  smaller ROM footprint but also lower performance.
 
-config MBEDTLS_SHA384
-	bool "SHA-384 hash algorithm"
-
-config MBEDTLS_SHA512
-	bool "SHA-512 hash algorithm"
-
-config MBEDTLS_POLY1305
-	bool "Poly1305 hash family"
-
 comment "Random number generators"
 
 config MBEDTLS_CTR_DRBG_C
 	bool "CTR_DRBG AES-256-based random generator"
-	depends on MBEDTLS_CIPHER_AES_ENABLED
 
 config MBEDTLS_HMAC_DRBG_C
 	bool "HMAC_DRBG random generator"
@@ -448,13 +259,6 @@ config MBEDTLS_PSA_CRYPTO_C
 	depends on !BUILD_WITH_TFM
 	select CSPRNG_NEEDED
 
-config MBEDTLS_USE_PSA_CRYPTO
-	bool "Use PSA APIs instead of legacy MbedTLS when possible"
-	default y if MBEDTLS_PSA_CRYPTO_CLIENT
-	help
-	  Use PSA APIs instead of legacy MbedTLS functions in TLS/DTLS and other
-	  "intermediate" modules such as PK, MD and Cipher.
-
 config MBEDTLS_PSA_CRYPTO_CLIENT
 	bool
 	default y
@@ -464,7 +268,6 @@ config MBEDTLS_PSA_CRYPTO_CLIENT
 config MBEDTLS_LMS_C
 	bool "Support LMS signature schemes"
 	depends on MBEDTLS_PSA_CRYPTO_CLIENT
-	depends on MBEDTLS_SHA256
 	select PSA_WANT_ALG_SHA_256
 
 if MBEDTLS_PSA_CRYPTO_C
@@ -527,13 +330,7 @@ endif # MBEDTLS_PSA_CRYPTO_C
 
 config MBEDTLS_NIST_KW_C
 	bool "NIST key wrap"
-	depends on MBEDTLS_CIPHER_AES_ENABLED
+	depends on PSA_WANT_KEY_TYPE_AES
 	help
 	  Key Wrapping mode for 128-bit block ciphers,
 	  as defined in NIST SP 800-38F.
-
-config MBEDTLS_DHM_C
-	bool "Diffie-Hellman-Merkle mode"
-	help
-	  Used by the following key exchanges,
-	  DHE-RSA, DHE-PSK
