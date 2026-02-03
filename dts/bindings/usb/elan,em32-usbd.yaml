@@ -1,0 +1,13 @@
+# Copyright (c) 2025 ELAN Microelectronics Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ELAN 967 USB device controller
+
+compatible: "elan,em32-usbd"
+
+include: [usb-ep.yaml]
+
+properties:
+  reg:
+    required: true
+

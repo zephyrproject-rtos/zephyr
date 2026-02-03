@@ -136,7 +136,7 @@
 		};
 
 		usbd: usbd@40038000 {
-			compatible = "elan,elandev-usbd";
+			compatible = "elan,em32-usbd";
 			reg = <0x40038000 0x1000>;
 			num-bidir-endpoints = <5>;
 			status = "disabled";

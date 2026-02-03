@@ -61,7 +61,7 @@
 };
 
 zephyr_udc0: &usbd {
-	status = "disabled";
+	status = "okay";
 };
 
 &uid {

@@ -14,5 +14,7 @@
 #include "soc_sysctrl.h"
 #include "soc_pwrctrl.h"
 #include "soc_clkctrl.h"
+#include "soc_usbctrl.h"
+
 
 #endif /* ZEPHYR_SOC_ELAN_EM32F967_SOC_H_ */
