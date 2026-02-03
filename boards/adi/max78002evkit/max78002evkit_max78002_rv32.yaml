@@ -1,0 +1,12 @@
+identifier: max78002evkit/max78002/rv32
+name: max78002evkit rv32
+vendor: adi
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - serial
+ram: 112
+flash: 1024

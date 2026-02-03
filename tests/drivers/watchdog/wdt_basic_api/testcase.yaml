@@ -11,7 +11,7 @@ tests:
        or dt_compat_enabled("st,stm32-window-watchdog")
        or dt_compat_enabled("st,stm32-watchdog") or CONFIG_SOC_FAMILY_LPC or
        CONFIG_SOC_SERIES_IMXRT6XX or CONFIG_SOC_SERIES_IMXRT5XX or
-       CONFIG_SOC_FAMILY_GD_GD32 or SOC_SERIES_GD32VF103)
+       CONFIG_SOC_FAMILY_GD_GD32 or SOC_SERIES_GD32VF103 or CONFIG_SOC_MAX32655)
     platform_exclude:
       - mec15xxevb_assy6853
       - s32z2xxdc2/s32z270/rtu0
@@ -170,6 +170,14 @@ tests:
     platform_allow:
       - frdm_mcxw23
       - mcxw23_evk
+  drivers.watchdog.max32:
+    filter: dt_compat_enabled("adi,max32-watchdog")
+    extra_args: DTC_OVERLAY_FILE="zephyr_sram3.overlay"
+    platform_allow:
+      - max32655evkit/max32655/m4
+      - max32655fthr/max32655/m4
+      - max32690evkit/max32690/m4
+      - max78002evkit/max78002/m4
   drivers.watchdog.pm_enabled:
     platform_allow:
       - siwx917_rb4338a

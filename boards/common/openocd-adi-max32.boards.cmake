@@ -5,7 +5,7 @@
 
 if(CONFIG_ARCH STREQUAL "riscv")
   set(MAX32_TARGET_CFG "${CONFIG_SOC}_riscv.cfg")
-  set(MAX32_INTERFACE_CFG "olimex-arm-usb-ocd-h.cfg")
+  set(MAX32_INTERFACE_CFG "ftdi/olimex-arm-usb-ocd-h.cfg")
 else()
   set(MAX32_TARGET_CFG "${CONFIG_SOC}.cfg")
   set(MAX32_INTERFACE_CFG "cmsis-dap.cfg")

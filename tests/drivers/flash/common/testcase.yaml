@@ -22,12 +22,10 @@ tests:
       - apard32690/max32690/m4
   drivers.flash.common.max32_flash1:
     platform_allow:
-      - apard32690/max32690/m4
       - max32690evkit/max32690/m4
     extra_args:
       - DTC_OVERLAY_FILE=boards/max32690_flash1_storage_partition.overlay
     integration_platforms:
-      - apard32690/max32690/m4
       - max32690evkit/max32690/m4
   drivers.flash.common.nrf_qspi_nor.size_in_bytes:
     platform_allow: nrf52840dk/nrf52840

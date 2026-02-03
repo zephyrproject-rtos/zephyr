@@ -13,4 +13,12 @@ if(CONFIG_SOC_MAX78000 OR CONFIG_SOC_MAX78002)
   zephyr_linker_sources(SECTIONS max7800x.ld)
 endif()
 
-set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
+if(CONFIG_ARM)
+  set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
+elseif(CONFIG_RISCV)
+  set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/riscv/common/linker.ld CACHE INTERNAL "")
+  zephyr_sources(
+    soc_irq_rv32.S
+    vector_rv32.S
+  )
+endif()

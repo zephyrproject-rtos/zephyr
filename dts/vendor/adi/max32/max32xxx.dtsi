@@ -29,6 +29,14 @@
 			cpu-power-states = <&idle &suspend>;
 		};
 
+		cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "adi,max32-rv32", "riscv";
+			riscv,isa-extensions = "i", "m", "c", "zicsr", "zifencei";
+			riscv,isa-base = "rv32i";
+			reg = <1>;
+		};
+
 		power-states {
 			/* Sleep Mode */
 			idle: idle {
@@ -95,10 +103,8 @@
 	};
 
 	soc {
-		sram0: memory@20000000 {
-			compatible = "mmio-sram";
-			reg = <0x20000000 DT_SIZE_K(32)>;
-		};
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		flc0: flash_controller@40029000 {
 			compatible = "adi,max32-flash-controller";
@@ -106,7 +112,7 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
-			status = "okay";
+			status = "disabled";
 
 			flash0: flash@10000000 {
 				compatible = "soc-nv-flash";
@@ -132,7 +138,6 @@
 			#size-cells = <0>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 13>;
-			interrupts = <13 0>;
 			status = "disabled";
 		};
 
@@ -143,7 +148,6 @@
 			#size-cells = <0>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 28>;
-			interrupts = <36 0>;
 			status = "disabled";
 		};
 
@@ -154,7 +158,6 @@
 			#size-cells = <0>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 24>;
-			interrupts = <62 0>;
 			status = "disabled";
 		};
 
@@ -170,7 +173,6 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				clocks = <&gcr ADI_MAX32_CLOCK_BUS0 0>;
-				interrupts = <24 0>;
 				status = "disabled";
 			};
 
@@ -179,10 +181,17 @@
 				compatible = "adi,max32-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
-				interrupts = <25 0>;
 				clocks = <&gcr ADI_MAX32_CLOCK_BUS0 1>;
 				status = "disabled";
 			};
+		};
+
+		mbox: mbox@4003e000 {
+			compatible = "adi,mbox-max32-semaphore";
+			reg = <0x4003e000 0x1000>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 9>;
+			#mbox-cells = <1>;
+			status = "disabled";
 		};
 
 		uart0: serial@40042000 {
@@ -190,7 +199,6 @@
 			reg = <0x40042000 0x1000>;
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 9>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
-			interrupts = <14 0>;
 			status = "disabled";
 		};
 
@@ -199,7 +207,6 @@
 			reg = <0x40043000 0x1000>;
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 10>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
-			interrupts = <15 0>;
 			status = "disabled";
 		};
 
@@ -208,7 +215,6 @@
 			reg = <0x40044000 0x1000>;
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 1>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
-			interrupts = <34 0>;
 			status = "disabled";
 		};
 
@@ -222,7 +228,6 @@
 		wdt0: watchdog@40003000 {
 			compatible = "adi,max32-watchdog";
 			reg = <0x40003000 0x400>;
-			interrupts = <1 0>;
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 27>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 			status = "disabled";
@@ -234,7 +239,6 @@
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 23>;
 			channel-count = <17>;
 			#io-channel-cells = <1>;
-			interrupts = <20 0>;
 			resolution = <10>;
 			vref-mv = <1220>;
 			status = "disabled";
@@ -243,7 +247,6 @@
 		timer0: timer@40010000 {
 			compatible = "adi,max32-timer";
 			reg = <0x40010000 0x1000>;
-			interrupts = <5 0>;
 			status = "disabled";
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 15>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
@@ -264,7 +267,6 @@
 		timer1: timer@40011000 {
 			compatible = "adi,max32-timer";
 			reg = <0x40011000 0x1000>;
-			interrupts = <6 0>;
 			status = "disabled";
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 16>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
@@ -285,7 +287,6 @@
 		timer2: timer@40012000 {
 			compatible = "adi,max32-timer";
 			reg = <0x40012000 0x1000>;
-			interrupts = <7 0>;
 			status = "disabled";
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 17>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
@@ -306,7 +307,6 @@
 		timer3: timer@40013000 {
 			compatible = "adi,max32-timer";
 			reg = <0x40013000 0x1000>;
-			interrupts = <8 0>;
 			status = "disabled";
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 18>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
@@ -327,12 +327,7 @@
 		rtc_counter: rtc_counter@40006000 {
 			compatible = "adi,max32-rtc-counter";
 			reg = <0x40006000 0x400>;
-			interrupts = <3 0>;
 			status = "disabled";
 		};
 	};
-};
-
-&nvic {
-	arm,num-irq-priority-bits = <3>;
 };
