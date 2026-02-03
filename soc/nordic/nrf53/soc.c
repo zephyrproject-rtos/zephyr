@@ -399,10 +399,14 @@ static int rtc_pretick_cpuapp_init(void)
 	uint32_t task_ipc = nrf_ipc_task_address_get(NRF_IPC, ipc_task);
 	uint32_t evt_ipc = nrf_ipc_event_address_get(NRF_IPC, ipc_event);
 
+	nrf_ipc_publish_clear(NRF_IPC, ipc_event);
+	nrf_ipc_subscribe_clear(NRF_IPC, ipc_task);
+
 	nrf_ipc_receive_config_set(NRF_IPC, CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_FROM_NET,
 				   BIT(CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_FROM_NET));
 	nrf_ipc_send_config_set(NRF_IPC, CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_TO_NET,
 				   BIT(CONFIG_SOC_NRF53_RTC_PRETICK_IPC_CH_TO_NET));
+
 	err = nrfx_gppi_conn_alloc(evt_ipc, task_ipc, &handle);
 	if (err < 0) {
 		return err;

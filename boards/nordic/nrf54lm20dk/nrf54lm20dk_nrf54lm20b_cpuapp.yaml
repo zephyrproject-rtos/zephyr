@@ -1,8 +1,8 @@
-# Copyright (c) 2025 Nordic Semiconductor ASA
+# Copyright (c) 2026 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: nrf54lm20dk/nrf54lm20a/cpuapp
-name: nRF54LM20-DK-nRF54LM20A-Application
+identifier: nrf54lm20dk/nrf54lm20b/cpuapp
+name: nRF54LM20-DK-nRF54LM20B-Application
 type: mcu
 arch: arm
 toolchain:

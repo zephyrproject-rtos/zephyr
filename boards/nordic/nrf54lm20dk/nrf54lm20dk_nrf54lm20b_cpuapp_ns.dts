@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,12 +8,12 @@
 
 #define USE_NON_SECURE_ADDRESS_MAP 1
 
-#include <nordic/nrf54lm20a_cpuapp.dtsi>
+#include <nordic/nrf54lm20b_cpuapp.dtsi>
 #include "nrf54lm20_a_b_cpuapp_common.dtsi"
 
 / {
-	compatible = "nordic,nrf54lm20dk_nrf54lm20a-cpuapp-ns";
-	model = "Nordic nRF54LM20 DK nRF54LM20A Application MCU Non-Secure";
+	compatible = "nordic,nrf54lm20dk_nrf54lm20b-cpuapp-ns";
+	model = "Nordic nRF54LM20 DK nRF54LM20B Application MCU Non-Secure";
 
 	chosen {
 		zephyr,code-partition = &slot0_ns_partition;
@@ -38,4 +38,4 @@
 };
 
 /* Include default memory partition configuration file */
-#include <vendor/nordic/nrf54lm20a_cpuapp_ns_partition.dtsi>
+#include <vendor/nordic/nrf54lm20b_cpuapp_ns_partition.dtsi>

@@ -1,5 +1,5 @@
-identifier: nrf54lm20dk/nrf54lm20a/cpuapp/ns
-name: nRF54lm20-DK-nRF54lm20a-Application-Non-Secure
+identifier: nrf54lm20dk/nrf54lm20b/cpuapp/ns
+name: nRF54lm20-DK-nRF54lm20b-Application-Non-Secure
 type: mcu
 arch: arm
 toolchain:
