@@ -179,11 +179,13 @@ const void *usbh_desc_get_next_function(const void *const desc)
 	const struct usb_desc_header *head = desc;
 	const struct usb_association_descriptor *const ass_d = desc;
 	const struct usb_if_descriptor *if_d;
-	uint8_t skip_num = 1;
+	uint8_t skip_num = 0;
 
 	/* Skip all interfaces the Association descriptor contains */
 	if (usbh_desc_is_valid_association(head)) {
 		skip_num = ass_d->bInterfaceCount;
+	} else if (usbh_desc_is_valid_interface(head)) {
+		skip_num = 1;
 	}
 
 	while (true) {
