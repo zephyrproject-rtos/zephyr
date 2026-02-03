@@ -982,6 +982,7 @@ static uint8_t ticker_resolve_collision(struct ticker_node *nodes,
 			uint8_t curr_has_ticks_slot_window =
 					TICKER_HAS_SLOT_WINDOW(ticker) &&
 					((ticker->ticks_slot == 0U) ||
+					 (ticker->ext_data->is_drift_in_window == 0U) ||
 					 ((acc_ticks_to_expire < ticker->ticks_slot) &&
 					  (ticker->ext_data->ticks_slot_window >=
 					   (ticker->ext_data->ticks_drift + ticker->ticks_slot)) &&
