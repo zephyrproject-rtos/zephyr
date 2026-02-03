@@ -3,6 +3,9 @@
 
 if SOC_EGIS_ET171
 
+config HAS_EGIS_ET171_HAL
+	default y
+
 config SYS_CLOCK_TICKS_PER_SEC
 	default 100 if (!ICACHE || XIP)
 
