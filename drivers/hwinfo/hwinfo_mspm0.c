@@ -9,7 +9,6 @@
 #include <ti/driverlib/driverlib.h>
 #include <string.h>
 
-static uint32_t reset_cause;
 ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 	struct mspm0_device_id {
@@ -40,15 +39,9 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 
 int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 {
-	uint32_t reason;
+	uint32_t reset_cause = DL_SYSCTL_getResetCause();
 
-	if (reset_cause != 0) {
-		*cause = reset_cause;
-		return 0;
-	}
-
-	reason = DL_SYSCTL_getResetCause();
-	switch (reason) {
+	switch (reset_cause) {
 	case DL_SYSCTL_RESET_CAUSE_POR_HW_FAILURE:
 		*cause = RESET_POR;
 		break;
@@ -100,17 +93,23 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 		*cause = RESET_DEBUG;
 		break;
 	default:
+		*cause = 0x00U;
 		break;
 	}
-
-	reset_cause = *cause;
 
 	return 0;
 }
 
 int z_impl_hwinfo_clear_reset_cause(void)
 {
-	reset_cause = 0;
+	/* the reset cause in MSPM0 is considered self-clearing upon a read,
+	 * thus we simply return 0 for a success in this case.
+	 *
+	 * See MSPM0 TRM for more information.
+	 *
+	 * This is due to expected call sequence being a read then clear, which
+	 * for MSP is redundant.
+	 */
 
 	return 0;
 }
