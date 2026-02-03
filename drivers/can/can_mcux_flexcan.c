@@ -1555,10 +1555,10 @@ static DEVICE_API(can, mcux_flexcan_fd_driver_api) = {
 	static void mcux_flexcan_irq_disable_##id(void); \
 									\
 	static struct mcux_flexcan_rx_callback flexcan_rx_cbs_##id	\
-			[FLEXCAN_INST_RX_MB(id)] = {0};			\
+			[FLEXCAN_INST_RX_MB(id)];			\
 									\
 	static struct mcux_flexcan_tx_callback flexcan_tx_cbs_##id	\
-			[FLEXCAN_INST_TX_MB(id)] = {0};			\
+			[FLEXCAN_INST_TX_MB(id)];			\
 									\
 	static ATOMIC_DEFINE(flexcan_rx_allocs_##id, FLEXCAN_INST_RX_MB(id));	\
 									\
