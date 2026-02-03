@@ -413,11 +413,6 @@ static int can_stm32fd_get_core_clock(const struct device *dev, uint32_t *rate)
 	const struct can_stm32fd_config *stm32fd_cfg = mcan_cfg->custom;
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
-	ARG_UNUSED(dev);
-	if (!device_is_ready(clk)) {
-		return -ENODEV;
-	}
-
 	if (IS_ENABLED(STM32_CANFD_DOMAIN_CLOCK_SUPPORT) && (stm32fd_cfg->pclk_len > 1)) {
 		if (clock_control_get_rate(clk,
 			 (clock_control_subsys_t) &stm32fd_cfg->pclken[1],
@@ -449,10 +444,6 @@ static int can_stm32fd_clock_enable(const struct device *dev)
 	const struct can_mcan_config *mcan_cfg = dev->config;
 	const struct can_stm32fd_config *stm32fd_cfg = mcan_cfg->custom;
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-
-	if (!device_is_ready(clk)) {
-		return -ENODEV;
-	}
 
 	if (IS_ENABLED(STM32_CANFD_DOMAIN_CLOCK_SUPPORT) && (stm32fd_cfg->pclk_len > 1)) {
 		ret = clock_control_configure(clk,

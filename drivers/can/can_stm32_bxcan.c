@@ -598,7 +598,7 @@ static int can_stm32_init(const struct device *dev)
 	struct can_stm32_data *data = dev->data;
 	CAN_TypeDef *can = cfg->can;
 	struct can_timing timing = { 0 };
-	const struct device *clock;
+	const struct device *clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	int ret;
 
 	k_mutex_init(&filter_mutex);
@@ -610,12 +610,6 @@ static int can_stm32_init(const struct device *dev)
 			LOG_ERR("CAN transceiver not ready");
 			return -ENODEV;
 		}
-	}
-
-	clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	if (!device_is_ready(clock)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
 	}
 
 	ret = clock_control_on(clock, (clock_control_subsys_t) &cfg->pclken);

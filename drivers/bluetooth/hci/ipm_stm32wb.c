@@ -575,11 +575,6 @@ static int c2_reset(void)
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	int err;
 
-	if (!device_is_ready(clk)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
 	err = clock_control_configure(clk, (clock_control_subsys_t) &clk_cfg[1],
 					NULL);
 	if (err < 0) {

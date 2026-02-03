@@ -739,10 +739,6 @@ __maybe_unused static int gpio_stm32_init(const struct device *dev)
 
 	data->dev = dev;
 
-	if (!device_is_ready(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE))) {
-		return -ENODEV;
-	}
-
 #if (defined(PWR_CR2_IOSV) || defined(PWR_SVMCR_IO2SV)) && \
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpiog))
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);

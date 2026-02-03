@@ -1239,11 +1239,6 @@ static int udc_stm32_clock_enable(const struct device *dev)
 	const struct udc_stm32_config *cfg = dev->config;
 	int err;
 
-	if (!device_is_ready(clk)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
 	if (cfg->num_clocks > 1) {
 		if (clock_control_configure(clk, &cfg->pclken[1], NULL) != 0) {
 			LOG_ERR("Could not select USB domain clock");
