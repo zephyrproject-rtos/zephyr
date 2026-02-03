@@ -24,7 +24,9 @@
 #include <zephyr/linker/sections.h>
 #include <zephyr/arch/cpu.h>
 
-#if defined(CONFIG_CPU_CORTEX_M)
+#if defined(CONFIG_CPU_ARM9)
+#include <arm9/exception.h>
+#elif defined(CONFIG_CPU_CORTEX_M)
 #include <cortex_m/stack.h>
 #include <cortex_m/exception.h>
 #elif defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
