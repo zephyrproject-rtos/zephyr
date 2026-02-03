@@ -2171,7 +2171,7 @@ static int flash_stm32_xspi_init(const struct device *dev)
 	/* Initialize XSPI HAL structure completely */
 	dev_data->hxspi.Init.ClockPrescaler = prescaler;
 	/* The stm32 hal_xspi driver does not reduce DEVSIZE before writing the DCR1 */
-	dev_data->hxspi.Init.MemorySize = find_lsb_set(dev_cfg->flash_size) - 2;
+	dev_data->hxspi.Init.MemorySize = find_msb_set(dev_cfg->flash_size) - 2;
 #if defined(XSPI_DCR2_WRAPSIZE)
 	dev_data->hxspi.Init.WrapSize = HAL_XSPI_WRAP_NOT_SUPPORTED;
 #endif /* XSPI_DCR2_WRAPSIZE */
