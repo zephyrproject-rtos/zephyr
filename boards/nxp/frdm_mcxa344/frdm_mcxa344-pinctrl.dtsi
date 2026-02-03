@@ -14,6 +14,15 @@
 		};
 	};
 
+	pinmux_lpcmp0: pinmux_lpcmp0 {
+		group0 {
+			pinmux = <CMP0_IN1_P1_3>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			bias-pull-up;
+		};
+	};
+
 	pinmux_lpi2c0: pinmux_lpi2c0 {
 		group0 {
 			pinmux = <LPI2C0_SDA_P1_8>,
