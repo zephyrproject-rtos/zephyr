@@ -10,6 +10,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/gnss.h>
 #include <zephyr/drivers/gnss/gnss_publish.h>
 
@@ -21,8 +22,11 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ubx_m8, CONFIG_GNSS_LOG_LEVEL);
 
+#define RESET_PULSE_MS 100
+
 struct ubx_m8_config {
 	const struct device *bus;
+	struct gpio_dt_spec reset_gpio;
 	uint16_t fix_rate_ms;
 	struct {
 		uint32_t initial;
@@ -319,12 +323,33 @@ static inline int init_match(const struct device *dev)
 	return 0;
 }
 
+
+#if CONFIG_GNSS_U_BLOX_M8_RESET_ON_INIT
+static int reset_modem(const struct device *dev)
+{
+	const struct ubx_m8_config *cfg = dev->config;
+
+	if (cfg->reset_gpio.port == NULL) {
+		return 0;
+	}
+
+	(void)gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
+	k_sleep(K_MSEC(RESET_PULSE_MS));
+	(void)gpio_pin_set_dt(&cfg->reset_gpio, 0);
+
+	return 0;
+}
+#endif
+
 static int ubx_m8_init(const struct device *dev)
 {
 	int err = 0;
 	const struct ubx_m8_config *cfg = dev->config;
 
 	(void)init_match(dev);
+#if CONFIG_GNSS_U_BLOX_M8_RESET_ON_INIT
+	(void)reset_modem(dev);
+#endif
 
 	err = init_modem(dev);
 	if (err < 0) {
@@ -589,6 +614,7 @@ static DEVICE_API(gnss, gnss_api) = {
 												   \
 	static const struct ubx_m8_config ubx_m8_cfg_##inst = {					   \
 		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),					   \
+		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {}),			   \
 		.baudrate = {									   \
 			.initial = DT_INST_PROP(inst, initial_baudrate),			   \
 			.desired = DT_PROP(DT_INST_BUS(inst), current_speed),			   \

@@ -28,4 +28,7 @@ config GNSS_U_BLOX_M8_SATELLITES_COUNT
 	  device is actually tracking, just how many of those can be reported
 	  in the satellites callback.
 
+config GNSS_U_BLOX_M8_RESET_ON_INIT
+	bool "Reset GNSS on init using reset pin"
+
 endif
