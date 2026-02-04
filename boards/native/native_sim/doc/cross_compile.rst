@@ -61,7 +61,7 @@ In this example, building the ``hello_world`` sample for ``aarch64`` would be:
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :host-os: unix
-   :board: native_sim//64
+   :board: native_sim/64
    :goals: build
    :gen-args: -DNATIVE_TARGET_HOST=aarch64 -DZEPHYR_TOOLCHAIN_VARIANT=cross-compile -DCROSS_COMPILE=/usr/bin/aarch64-linux-gnu-
    :compact:
