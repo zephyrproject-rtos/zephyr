@@ -177,6 +177,24 @@ static inline void ring_buf_internal_reset(struct ring_buf *buf, ring_buf_idx_t 
 #define RING_BUF_ITEM_SIZEOF(expr) DIV_ROUND_UP(sizeof(expr), sizeof(uint32_t))
 
 /**
+ * @brief Capture a snapshot of a ring buffer's current state.
+ *
+ * Intended for advanced callers that want to inspect or reserve a region of
+ * the buffer and then decide later how much to actually commit or consume.
+ * This generalises the previous "claim / finish" pattern:
+ * take a snapshot, compute against the frozen indices and @p rb->buffer / @p rb->size,
+ * then advance the real buffer with @ref ring_buf_commit or @ref ring_buf_consume.
+ *
+ * @param rb Address of ring buffer.
+ *
+ * @return Snapshot whose fields mirror @p rb at the moment of capture.
+ */
+static inline struct ring_buf ring_buf_snapshot(const struct ring_buf *rb)
+{
+	return *rb;
+}
+
+/**
  * @brief Initialize a ring buffer for byte data.
  *
  * This routine initializes a ring buffer, prior to its first use. It is only
@@ -295,6 +313,56 @@ static inline uint32_t ring_buf_size_get(const struct ring_buf *buf)
 }
 
 /**
+ * @brief Get address of region for writing data to a ring buffer.
+ *
+ * This routine returns the address of a region for writing data to a ring buffer.
+ * With this routine, memory copying can be reduced since internal ring buffer
+ * can be used directly by the user. Once data is written to allocated area
+ * number of bytes written must be confirmed (see @ref ring_buf_commit).
+ *
+ * @return Number of bytes available for writing to the ring buffer. This can be smaller than the
+ *	total free space in the ring buffer if the free space wraps around the end of the buffer.
+ */
+static inline uint32_t ring_buf_put_ptr(struct ring_buf *buf, uint8_t **data)
+{
+	struct ring_buf_index *ring = &buf->put;
+	ring_buf_idx_t head_offset, wrap_size, space;
+
+	head_offset = ring->head - ring->base;
+	if (unlikely(head_offset >= buf->size)) {
+		head_offset -= buf->size;
+	}
+
+	space = ring_buf_space_get(buf);
+	wrap_size = buf->size - head_offset;
+	*data = &buf->buffer[head_offset];
+	return MIN(space, wrap_size);
+}
+
+/**
+ * @brief Indicate number of bytes written to a ring buffer.
+ *
+ * The number of bytes must be equal to or lower than the total free space in the ring buffer.
+ *
+ * @param  buf  Address of ring buffer.
+ * @param  size Number of bytes that has been written.
+ */
+static inline void ring_buf_commit(struct ring_buf *buf, size_t size)
+{
+	ring_buf_idx_t tail_offset;
+	struct ring_buf_index *ring = &buf->put;
+
+	ring->tail += size;
+	ring->head = ring->tail;
+
+	tail_offset = ring->tail - ring->base;
+	if (unlikely(tail_offset >= buf->size)) {
+		/* we wrapped: adjust ring->base */
+		ring->base += buf->size;
+	}
+}
+
+/**
  * @brief Allocate buffer for writing data to a ring buffer.
  *
  * With this routine, memory copying can be reduced since internal ring buffer
@@ -375,6 +443,61 @@ static inline int ring_buf_put_finish(struct ring_buf *buf, uint32_t size)
  * @return Number of bytes written.
  */
 uint32_t ring_buf_put(struct ring_buf *buf, const uint8_t *data, uint32_t size);
+
+/**
+ * @brief Get address of a valid data in a ring buffer.
+ *
+ * This routine returns the address of a valid data in a ring buffer.
+ * With this routine, memory copying can be reduced since internal ring buffer
+ * can be used directly by the user. Once data is processed it must be consumed using
+ * @ref ring_buf_consume to free the ring buffer space.
+ *
+ * @param[in]  buf  Address of ring buffer.
+ * @param[out] data Pointer to the address. It is set to a location within
+ *		    ring buffer.
+ *
+ * @return Number of valid bytes in the ring_buffer. This can be smaller than the total size of
+ *	valid data if the valid data wraps around the end of the buffer.
+ */
+static inline uint32_t ring_buf_get_ptr(struct ring_buf *buf, uint8_t **data)
+{
+	struct ring_buf_index *ring = &buf->get;
+	ring_buf_idx_t head_offset, wrap_size, size;
+
+	head_offset = ring->head - ring->base;
+	if (unlikely(head_offset >= buf->size)) {
+		head_offset -= buf->size;
+	}
+
+	size = ring_buf_size_get(buf);
+	wrap_size = buf->size - head_offset;
+	*data = &buf->buffer[head_offset];
+	return MIN(size, wrap_size);
+}
+
+/**
+ * @brief Indicate number of bytes consumed from a ring buffer.
+ *
+ * The number of bytes must be equal to or lower than the total size of valid data in the ring
+ * buffer.
+ *
+ * @param  buf  Address of ring buffer.
+ * @param  size Number of bytes that has been consumed.
+ */
+static inline void ring_buf_consume(struct ring_buf *buf, size_t size)
+{
+	ring_buf_idx_t tail_offset;
+	struct ring_buf_index *ring = &buf->get;
+
+	ring->tail += size;
+	ring->head = ring->tail;
+
+	tail_offset = ring->tail - ring->base;
+	if (unlikely(tail_offset >= buf->size)) {
+		/* we wrapped: adjust ring->base */
+		ring->base += buf->size;
+	}
+}
 
 /**
  * @brief Get address of a valid data in a ring buffer.
