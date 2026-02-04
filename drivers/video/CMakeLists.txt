@@ -7,6 +7,7 @@ zephyr_library_sources(video_ctrls.c)
 zephyr_library_sources(video_device.c)
 
 # zephyr-keep-sorted-start
+add_subdirectory_ifdef(CONFIG_VIDEO_PHY phy)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_EMUL_IMAGER video_emul_imager.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_EMUL_RX video_emul_rx.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_ESP32 video_esp32_dvp.c)

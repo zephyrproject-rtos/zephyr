@@ -1,0 +1,15 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig VIDEO_PHY
+	bool "Video PHY drivers"
+	help
+	  Enable support for Video PHY drivers.
+
+if VIDEO_PHY
+
+module = VIDEO_PHY
+module-str = video_phy
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # VIDEO_PHY

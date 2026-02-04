@@ -104,4 +104,6 @@ source "drivers/video/Kconfig.sw_generator"
 source "drivers/video/Kconfig.ov5642"
 source "drivers/video/Kconfig.ov767x"
 
+rsource "phy/Kconfig"
+
 endif # VIDEO
