@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: hexagon
+      url-base: https://github.com/hexagon-geo-surv
 
   group-filter: [-babblesim, -optional, -testing]
 
@@ -321,7 +323,8 @@ manifest:
       revision: 94ae6c0535aa6ac4b08a75f4ae2c3a08cacb5c41
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: c5b06d89c9c498d8fc8659ce31f7e53137b6270f
+      revision: 651dc2f1b11e8c3a333566dbb9d3d87d96216a02 # z_fix_x509_policy_parsing_as_per_rfc_5280
+      remote: hexagon
       path: modules/crypto/mbedtls
       groups:
         - crypto
