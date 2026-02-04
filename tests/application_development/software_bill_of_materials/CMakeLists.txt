@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 project(sbom_spdx)
-target_sources(app PRIVATE ${ZEPHYR_BASE}/misc/empty_file.c)
+target_sources(app PRIVATE src/main.c)
 
 enable_testing()
 include(CTest)
@@ -41,4 +41,19 @@ foreach(spdx_version ${SPDX_VERSIONS_TO_TEST})
       PROPERTIES DEPENDS spdx_gen_${version_suffix}
     )
   endforeach()
+
+  add_test(
+    NAME spdx_content_validate_${version_suffix}
+    COMMAND ${PYTHON_EXECUTABLE} -m pytest
+      ${CMAKE_CURRENT_SOURCE_DIR}/verify_spdx_content.py
+      --build-dir ${CMAKE_BINARY_DIR}
+      --spdx-version ${spdx_version}
+      --source-dir ${CMAKE_CURRENT_SOURCE_DIR}
+      -v
+  )
+
+  set_tests_properties(
+    spdx_content_validate_${version_suffix}
+    PROPERTIES DEPENDS spdx_gen_${version_suffix}
+  )
 endforeach()
