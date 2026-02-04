@@ -10,6 +10,8 @@ tests:
       - native_sim/native/64
       - adafruit_qt_py_rp2040/rp2040
       - frdm_mcxn947/mcxn947/cpu0
+      - frdm_imxrt1186/mimxrt1186/cm33
+      - frdm_imxrt1186/mimxrt1186/cm7
     integration_platforms:
       - native_sim/native/64
     extra_args:

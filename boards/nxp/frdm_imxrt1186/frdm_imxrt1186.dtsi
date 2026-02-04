@@ -14,6 +14,7 @@
 		led1 = &red_led;
 		led2 = &green_led;
 		sw0 = &user_button;
+		eeprom-0 = &eeprom0;
 	};
 
 	chosen {
@@ -78,6 +79,22 @@
 	pinctrl-0 = <&pinmux_lpuart3>;
 	pinctrl-1 = <&pinmux_lpuart3_sleep>;
 	pinctrl-names = "default", "sleep";
+};
+
+&lpi2c3 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c3>;
+	pinctrl-1 = <&pinmux_lpi2c3_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	eeprom0: eeprom@50 {
+		compatible = "atmel,at24";
+		reg = <0x50>;
+		size = <4096>;
+		pagesize = <32>;
+		address-width = <16>;
+		timeout = <5>;
+	};
 };
 
 &gpio1 {
