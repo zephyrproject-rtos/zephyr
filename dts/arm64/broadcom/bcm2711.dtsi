@@ -61,6 +61,12 @@
 			status = "okay";
 		};
 
+		rng: rng@fe104000 {
+			compatible = "brcm,iproc-rng200";
+			reg = <0xfe104000 0x28>;
+			status = "okay";
+		};
+
 		pinctrl: pin-controller@fe200000 {
 			compatible = "brcm,bcm2711-pinctrl";
 			reg = <0xfe200000 0xf4>;
