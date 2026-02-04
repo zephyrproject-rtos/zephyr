@@ -13,51 +13,78 @@
 // SPDX-License-Identifier: Apache-2.0
 
 virtual report
+virtual patch
 
-// Rule 10.1: Boolean initialization with integer literal
-// Detect: bool var = 0; or bool var = 1;
+// Rule 10.1: bool initialization or assignment with integer literal 0/1
 // Note: Coccinelle matches type regardless of storage class specifiers
-@rule1_init@
+@r depends on report@
 identifier v;
 position p;
 @@
 (
-bool v@p = 0;
+  bool v@p = 0;
 |
-bool v@p = 1;
+  bool v@p = 1;
+|
+  bool v;
+  ...
+  v@p = 0;
+|
+  bool v;
+  ...
+  v@p = 1;
+|
+  bool v = ...;
+  ...
+  v@p = 0;
+|
+  bool v = ...;
+  ...
+  v@p = 1;
 )
 
-@ script:python @
-p << rule1_init.p;
+@script:python depends on report@
+p << r.p;
 @@
-
-msg = "WARNING: Violation to rule 10.1 (Boolean variable initialized with integer literal, use true/false)"
+msg = "WARNING: Violation to rule 10.1 (Boolean variable initialized/assigned with integer literal, use true/false)"
 coccilib.report.print_report(p[0], msg)
 
-// Rule 10.1: Boolean assignment with integer literal
-// Detect: bool_var = 0; or bool_var = 1;
-@rule2_assign_base@
+// Auto-fix
+@patch_r depends on patch@
 identifier v;
 @@
 (
-bool v;
+  bool v =
+  (
+-   0
++   false
+  |
+-   1
++   true
+  )
+  ;
 |
-bool v = ...;
-)
-
-@rule2_assign@
-identifier rule2_assign_base.v;
-position p;
-@@
-(
-v@p = 0;
+  bool v;
+  ...
+  v =
+  (
+-   0
++   false
+  |
+-   1
++   true
+  )
+  ;
 |
-v@p = 1;
+  bool v = ...;
+  ...
+  v =
+  (
+-   0
++   false
+  |
+-   1
++   true
+  )
+  ;
 )
-
-@ script:python @
-p << rule2_assign.p;
-@@
-
-msg = "WARNING: Violation to rule 10.1 (Boolean variable assigned integer literal, use true/false)"
-coccilib.report.print_report(p[0], msg)
