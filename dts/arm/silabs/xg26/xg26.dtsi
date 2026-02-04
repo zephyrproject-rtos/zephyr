@@ -593,7 +593,7 @@
 		usart1: usart@500a4000 {
 			compatible = "silabs,usart-uart";
 			reg = <0x500a4000 0x4000>;
-			clocks = <&cmu CLOCK_USART1 CLOCK_BRANCH_INVALID>;
+			clocks = <&cmu CLOCK_USART1 CLOCK_BRANCH_PCLK>;
 			interrupt-names = "rx", "tx";
 			interrupts = <16 2>, <17 2>;
 			status = "disabled";
@@ -602,7 +602,7 @@
 		usart2: usart@500a8000 {
 			compatible = "silabs,usart-uart";
 			reg = <0x500a8000 0x4000>;
-			clocks = <&cmu CLOCK_USART2 CLOCK_BRANCH_INVALID>;
+			clocks = <&cmu CLOCK_USART2 CLOCK_BRANCH_PCLK>;
 			interrupt-names = "rx", "tx";
 			interrupts = <18 2>, <19 2>;
 			status = "disabled";

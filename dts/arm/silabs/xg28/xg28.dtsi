@@ -571,7 +571,7 @@
 			#address-cells = <1>;
 			#io-channel-cells = <1>;
 			#size-cells = <0>;
-			clocks = <&cmu CLOCK_VDAC0 CLOCK_BRANCH_INVALID>;
+			clocks = <&cmu CLOCK_VDAC0 CLOCK_BRANCH_VDAC0CLK>;
 			interrupt-names = "vdac0";
 			interrupts = <55 2>;
 			status = "disabled";

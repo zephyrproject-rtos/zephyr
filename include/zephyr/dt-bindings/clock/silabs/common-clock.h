@@ -1,4 +1,10 @@
-/*
+/**
+ * @file
+ * @brief Clock branch macros for use on Silicon Labs Series 2 devices.
+ * @ingroup clock_control_silabs
+ */
+
+ /*
  * Copyright (c) 2024 Silicon Laboratories Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -6,6 +12,20 @@
 
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_SILABS_COMMON_CLOCK_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_SILABS_COMMON_CLOCK_H_
+
+/**
+ * @defgroup clock_control_silabs Silicon Labs Series 2 Devicetree helpers
+ * @ingroup clock_control_interface
+ *
+ * @details Devicetree macros for clock enables and clock branches on Silicon Labs Series 2 devices,
+ * for use with the <tt>silabs,series-clock</tt> binding.
+ *
+ * @c CLOCK_BRANCH_* macros represent clock branches, while @c CLOCK_* macros represent clock
+ * enables.
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
 
 /*
  * DT macros for clock branches.
@@ -47,9 +67,16 @@
 #define CLOCK_BRANCH_VDAC1CLK     32
 #define CLOCK_BRANCH_USB0CLK      33
 #define CLOCK_BRANCH_FLPLLREFCLK  34
-#define CLOCK_BRANCH_INVALID      35
+#define CLOCK_BRANCH_PDM0CLK      35
+#define CLOCK_BRANCH_INVALID      36
 
 #define CLOCK_BIT_MASK 0x03FUL
 #define CLOCK_REG_MASK 0x1C0UL
+
+/** @endcond INTERNAL_HIDDEN */
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_SILABS_COMMON_CLOCK_H_ */

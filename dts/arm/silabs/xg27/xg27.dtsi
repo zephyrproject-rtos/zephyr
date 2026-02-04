@@ -478,7 +478,7 @@
 		buram: retained-memory@50080000 {
 			compatible = "silabs,buram";
 			reg = <0x50080000 0x80>;
-			clocks = <&cmu CLOCK_BURAM CLOCK_BRANCH_PCLK>;
+			clocks = <&cmu CLOCK_BURAM CLOCK_BRANCH_INVALID>;
 			status = "disabled";
 		};
 
