@@ -16,4 +16,5 @@ supported:
   - octospi
   - usbd
   - memc
+  - rtc
 vendor: st
