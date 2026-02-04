@@ -378,7 +378,7 @@ void z_impl_test_arm_user_interrupt_syscall(void)
 	if (first_call == 1) {
 
 		/* First time the syscall is invoked */
-		first_call = 0;
+		first_call = false;
 
 		/* Lock IRQs in supervisor mode */
 		unsigned int key = irq_lock();
