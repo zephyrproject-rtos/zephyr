@@ -1,0 +1,16 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,console = &lpuart3;
+		zephyr,shell-uart = &lpuart3;
+	};
+};
+
+&lpuart3 {
+	status = "okay";
+};
