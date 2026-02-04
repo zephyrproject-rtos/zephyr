@@ -421,6 +421,16 @@ config PMP_NO_LOCK_GLOBAL
 	  features. This allows application to dynamically reconfigure PMP
 	  entries without requiring hard reset.
 
+config PMP_UNLOCK_ROM_FOR_DEBUG
+	bool "Unlock ROM region for debugger access"
+	default n
+	help
+	  When enabled, the ROM region PMP entry is configured without
+	  the lock bit (L=0), allowing debuggers running in machine mode
+	  to set breakpoints and read instructions. NULL pointer guards
+	  and stack guards remain locked to catch critical bugs during
+	  development. Only enable for debug builds.
+
 endif #RISCV_PMP
 
 config PMP_STACK_GUARD
