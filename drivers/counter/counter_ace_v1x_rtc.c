@@ -21,6 +21,7 @@ static int counter_ace_v1x_rtc_get_value_32(const struct device *dev,
 	return 0;
 }
 
+#ifdef CONFIG_COUNTER_64BITS_TICKS
 static int counter_ace_v1x_rtc_get_value(const struct device *dev,
 		uint64_t *value)
 {
@@ -37,6 +38,7 @@ static int counter_ace_v1x_rtc_get_value(const struct device *dev,
 
 	return 0;
 }
+#endif /* CONFIG_COUNTER_64BITS_TICKS */
 
 int counter_ace_v1x_rtc_init(const struct device *dev)
 {
