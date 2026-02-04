@@ -242,6 +242,7 @@ static inline int reattach_modem(const struct device *dev)
 
 	(void)modem_ubx_release(&data->ubx.inst);
 	(void)modem_pipe_close(data->backend.pipe, K_SECONDS(1));
+	(void)k_sleep(K_MSEC(10));
 
 	err = modem_pipe_open(data->backend.pipe, K_SECONDS(1));
 	if (err != 0) {
