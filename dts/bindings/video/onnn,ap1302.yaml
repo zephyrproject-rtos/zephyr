@@ -1,0 +1,49 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: ONNN AP1302 Camera ISP
+
+compatible: "onnn,ap1302"
+
+include: [i2c-device.yaml, pinctrl-device.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO connected to reset pin
+
+  isp-en-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO isp enable pin
+
+  standby-gpios:
+    type: phandle-array
+    required: false
+    description: GPIO connected to standby pin
+
+  power-supplies:
+    type: phandles
+    required: false
+    description: Power supply regulators in sequence
+
+  firmware-address:
+    type: int
+    required: true
+    description: Firmware binary address in memory
+
+  mipi-data-lanes:
+    type: int
+    required: true
+    description: Number of MIPI CSI-2 data lanes (1-4)
+
+  clocks:
+    type: phandle-array
+    required: false
+    description: Clock phandle for MCLK
+
+  clock-names:
+    type: string-array
+    required: false
+    description: Clock names

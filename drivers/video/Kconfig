@@ -76,6 +76,7 @@ config VIDEO_ENCODER_JPEG
 	bool "JPEG video encoder support"
 
 # zephyr-keep-sorted-start
+source "drivers/video/Kconfig.ap1302"
 source "drivers/video/Kconfig.emul_imager"
 source "drivers/video/Kconfig.emul_rx"
 source "drivers/video/Kconfig.esp32_dvp"
