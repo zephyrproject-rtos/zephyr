@@ -16,6 +16,10 @@
 		sw0 = &user_button;
 	};
 
+	chosen {
+		zephyr,canbus = &flexcan1;
+	};
+
 	leds {
 		compatible = "gpio-leds";
 
@@ -83,6 +87,12 @@
 
 &gpio6 {
 	status = "okay";
+};
+
+&flexcan1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexcan1>;
+	pinctrl-names = "default";
 };
 
 &systick {
