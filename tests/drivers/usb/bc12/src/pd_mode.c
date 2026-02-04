@@ -173,7 +173,7 @@ static void bc12_before(void *data)
 	struct bc12_pd_mode_fixture *fixture = data;
 
 	fixture->callback_count = 0;
-	fixture->disconnect_detected = 0;
+	fixture->disconnect_detected = false;
 	memset(&fixture->partner_state, 0, sizeof(struct bc12_partner_state));
 
 	bc12_set_result_cb(fixture->bc12_dev, &bc12_test_result_cb, fixture);

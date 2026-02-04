@@ -2183,7 +2183,7 @@ static int test_gpio_init(const struct device *dev)
 {
 	struct test_gpio_data *data = dev->data;
 
-	data->init_called = 1;
+	data->init_called = true;
 	return 0;
 }
 
