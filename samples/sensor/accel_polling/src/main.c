@@ -26,15 +26,11 @@ static const struct device *const sensors[] = {LISTIFY(10, ACCELEROMETER_DEVICE,
 #define ACCEL_IODEV_SYM(id) CONCAT(accel_iodev, id)
 #define ACCEL_IODEV_PTR(id, _) &ACCEL_IODEV_SYM(id)
 
-#define ACCEL_TRIGGERS                                   \
-	{SENSOR_TRIG_FIFO_FULL, SENSOR_STREAM_DATA_INCLUDE}, \
-	{SENSOR_TRIG_FIFO_WATERMARK, SENSOR_STREAM_DATA_INCLUDE}
-
-#define ACCEL_DEFINE_IODEV(id, _)         \
-	SENSOR_DT_STREAM_IODEV(               \
+#define ACCEL_DEFINE_IODEV(id, _)                 \
+	SENSOR_DT_READ_IODEV(                     \
 		ACCEL_IODEV_SYM(id),              \
 		ACCEL_ALIAS(id),                  \
-		ACCEL_TRIGGERS);
+		{SENSOR_CHAN_ACCEL_XYZ, 0});
 
 LISTIFY(NUM_SENSORS, ACCEL_DEFINE_IODEV, (;));
 
@@ -47,80 +43,37 @@ static int print_accels_stream(const struct device *dev, struct rtio_iodev *iode
 	int rc = 0;
 	struct sensor_three_axis_data accel_data = {0};
 	const struct sensor_decoder_api *decoder;
-	struct rtio_cqe *cqe;
-	uint8_t *buf;
-	uint32_t buf_len;
-	struct rtio_sqe *handles[NUM_SENSORS];
-
-	/* Start the streams */
-	for (int i = 0; i < NUM_SENSORS; i++) {
-		printk("sensor_stream\n");
-		sensor_stream(iodevs[i], &accel_ctx, NULL, &handles[i]);
-	}
 
 	while (1) {
-		cqe = rtio_cqe_consume_block(&accel_ctx);
+		for (size_t i = 0; i < ARRAY_SIZE(sensors); i++) {
+			uint8_t buf[128];
 
-		if (cqe->result != 0) {
-			printk("async read failed %d\n", cqe->result);
-			return cqe->result;
-		}
+			rc = sensor_read(iodevs[i], &accel_ctx, buf, 128);
 
-		rc = rtio_cqe_get_mempool_buffer(&accel_ctx, cqe, &buf, &buf_len);
+			if (rc != 0) {
+				printk("%s: sensor_read() failed: %d\n", dev->name, rc);
+				return rc;
+			}
 
-		if (rc != 0) {
-			printk("get mempool buffer failed %d\n", rc);
-			return rc;
-		}
+			rc = sensor_get_decoder(dev, &decoder);
 
-		const struct device *sensor = dev;
+			if (rc != 0) {
+				printk("%s: sensor_get_decode() failed: %d\n", dev->name, rc);
+				return rc;
+			}
 
-		rtio_cqe_release(&accel_ctx, cqe);
+			uint32_t accel_fit = 0;
 
-		rc = sensor_get_decoder(sensor, &decoder);
-
-		if (rc != 0) {
-			printk("sensor_get_decoder failed %d\n", rc);
-			return rc;
-		}
-
-		/* Frame iterator values when data comes from a FIFO */
-		uint32_t accel_fit = 0;
-
-		/* Number of accelerometer data frames */
-		uint16_t frame_count;
-
-		rc = decoder->get_frame_count(buf,
-				(struct sensor_chan_spec) {SENSOR_CHAN_ACCEL_XYZ, 0}, &frame_count);
-
-		if (rc != 0) {
-			printk("sensor_get_decoder failed %d\n", rc);
-			return rc;
-		}
-
-		/* If a tap has occurred lets print it out */
-		if (decoder->has_trigger(buf, SENSOR_TRIG_TAP)) {
-			printk("Tap! Sensor %s\n", dev->name);
-		}
-
-		/* Decode all available accelerometer sample frames */
-		for (int i = 0; i < frame_count; i++) {
+			/* decode and print Accelerometer FIFO frames */
 			decoder->decode(buf, (struct sensor_chan_spec) {SENSOR_CHAN_ACCEL_XYZ, 0},
-					&accel_fit, 1, &accel_data);
+				&accel_fit, 8, &accel_data);
 
-			printk("Accel data for %s (%" PRIq(6) ", %" PRIq(6)
-					", %" PRIq(6) ") %lluns\n", dev->name,
-			PRIq_arg(accel_data.readings[0].x, 6, accel_data.shift),
-			PRIq_arg(accel_data.readings[0].y, 6, accel_data.shift),
-			PRIq_arg(accel_data.readings[0].z, 6, accel_data.shift),
-			(accel_data.header.base_timestamp_ns
-			+ accel_data.readings[0].timestamp_delta));
+			printk("XL data for %s %lluns (%" PRIq(6) ", %" PRIq(6)
+			       ", %" PRIq(6) ")\n", dev->name,
+			       PRIsensor_three_axis_data_arg(accel_data, 0));
 		}
-
-		rtio_release_buffer(&accel_ctx, buf, buf_len);
+		k_msleep(500);
 	}
-
-	return rc;
 }
 #else
 
