@@ -22,24 +22,26 @@ typedef void (*irq_config_func_t)(const struct device *port);
 struct spi_stm32_config {
 	SPI_TypeDef *spi;
 	const struct pinctrl_dev_config *pcfg;
+	const struct stm32_pclken *pclken;
+	size_t pclk_len;
+	int datawidth;
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	irq_config_func_t irq_config;
 #ifdef CONFIG_SOC_SERIES_STM32H7X
 	uint32_t irq_line;
 #endif /* CONFIG_SOC_SERIES_STM32H7X */
 #endif
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
-	bool use_subghzspi_nss;
-#endif
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	int midi_clocks;
 	int mssi_clocks;
+	uint32_t fifo_max_transfer_size;
+	uint8_t fifo_size;
 #endif
-	size_t pclk_len;
-	const struct stm32_pclken *pclken;
-	int datawidth;
 	bool fifo_enabled: 1;
 	bool ioswp: 1;
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
+	bool use_subghzspi_nss: 1;
+#endif
 };
 
 #ifdef CONFIG_SPI_STM32_DMA
@@ -70,11 +72,16 @@ struct spi_stm32_data {
 	struct spi_rtio *rtio_ctx;
 #endif /* CONFIG_SPI_RTIO */
 	struct spi_context ctx;
+	uint32_t tx_len;
+	uint32_t rx_len;
+	uint8_t fifo_threshold;
 #ifdef CONFIG_SPI_STM32_DMA
 	struct k_sem status_sem;
 	volatile uint32_t status_flags;
 	struct stream dma_rx;
 	struct stream dma_tx;
+	bool tx_dma_done;
+	bool rx_dma_done;
 #endif /* CONFIG_SPI_STM32_DMA */
 	bool pm_policy_state_on;
 };
@@ -213,29 +220,6 @@ static inline uint32_t ll_func_spi_is_busy(SPI_TypeDef *spi)
 	return LL_SPI_IsActiveFlag_BSY(spi);
 #endif /* st_stm32h7_spi */
 }
-
-/* Header is compiled first, this switch avoid the compiler to lookup for
- * non-existing LL FIFO functions for SoC without SPI FIFO
- */
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
-static inline void ll_func_set_fifo_threshold_8bit(SPI_TypeDef *spi)
-{
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	LL_SPI_SetFIFOThreshold(spi, LL_SPI_FIFO_TH_01DATA);
-#else
-	LL_SPI_SetRxFIFOThreshold(spi, LL_SPI_RX_FIFO_TH_QUARTER);
-#endif /* st_stm32h7_spi */
-}
-
-static inline void ll_func_set_fifo_threshold_16bit(SPI_TypeDef *spi)
-{
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	LL_SPI_SetFIFOThreshold(spi, LL_SPI_FIFO_TH_02DATA);
-#else
-	LL_SPI_SetRxFIFOThreshold(spi, LL_SPI_RX_FIFO_TH_HALF);
-#endif /* st_stm32h7_spi */
-}
-#endif /* st_stm32_spi_fifo */
 
 static inline void ll_func_disable_spi(SPI_TypeDef *spi)
 {

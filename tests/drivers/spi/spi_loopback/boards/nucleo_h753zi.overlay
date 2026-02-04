@@ -18,6 +18,7 @@
 	dmas = <&dmamux1 0 38 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
 	       <&dmamux1 1 37 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
 	dma-names = "tx", "rx";
+	fifo-enable;
 
 	slow@0 {
 		compatible = "test-spi-loopback-slow";
