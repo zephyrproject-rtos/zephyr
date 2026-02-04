@@ -1,0 +1,98 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+include: sensor-device.yaml
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      The INT signal connection for interrupt-driven operation.
+      The signal is active-high by default.
+
+  accel-div:
+    type: int
+    default: 22
+    description: |
+      Specify the default sample rate in mHz (samples per thousand seconds).
+      Valid range is calculated as 1125 / (1 + divider), where divider is 0-4095.
+      This corresponds to a range of approximately 0.27 Hz to 1125 Hz. Default
+      value of 22 corresponds to 48.9 Hz.
+
+  accel-fs:
+    type: int
+    default: 0
+    description: |
+      Specify the accelerometer full-scale range in g.
+      Default is 2g.
+    enum:
+      - 0 # ICM20948_DT_ACCEL_FS_2 (2g)
+      - 1 # ICM20948_DT_ACCEL_FS_4 (4g)
+      - 2 # ICM20948_DT_ACCEL_FS_8 (8g)
+      - 3 # ICM20948_DT_ACCEL_FS_16 (16g)
+
+  gyro-div:
+    type: int
+    default: 8
+    description: |
+      Specify the default sample rate in mHz (samples per thousand seconds).
+      Valid range is calculated as 1100 / (1 + divider), where divider is 0-255.
+      This corresponds to a range of approximately 4.3 Hz to 1100 Hz. Default
+      value of 8 corresponds to 125.0 Hz.
+
+  gyro-fs:
+    type: int
+    default: 0
+    description: |
+      Specify the gyro full-scale range in degrees per second.
+      Default is 250 DPS.
+    enum:
+      - 0 # ICM20948_DT_GYRO_FS_250 (250 dps)
+      - 1 # ICM20948_DT_GYRO_FS_500 (500 dps)
+      - 2 # ICM20948_DT_GYRO_FS_1000 (1000 dps)
+      - 3 # ICM20948_DT_GYRO_FS_2000 (2000 dps)
+
+  accel-dlpf:
+    type: int
+    default: 0
+    description: |
+      Accelerometer digital low-pass filter (DLPF) configuration.
+      Filters out high-frequency noise. Default is 246Hz.
+    enum:
+      - 0 # ICM20948_DT_ACCEL_FILTER_246HZ
+      - 1 # ICM20948_DT_ACCEL_FILTER_246HZ_DUP (duplicate of 246Hz)
+      - 2 # ICM20948_DT_ACCEL_FILTER_111HZ
+      - 3 # ICM20948_DT_ACCEL_FILTER_50HZ
+      - 4 # ICM20948_DT_ACCEL_FILTER_24HZ
+      - 5 # ICM20948_DT_ACCEL_FILTER_12HZ
+      - 6 # ICM20948_DT_ACCEL_FILTER_6HZ
+      - 7 # ICM20948_DT_ACCEL_FILTER_473HZ
+      - 8 # ICM20948_DT_ACCEL_FILTER_1209HZ_NOLPF (no low-pass filter)
+
+  gyro-dlpf:
+    type: int
+    default: 0
+    description: |
+      Gyroscope digital low-pass filter (DLPF) configuration.
+      Filters out high-frequency noise. Default is 197Hz.
+    enum:
+      - 0 # ICM20948_DT_GYRO_FILTER_197HZ
+      - 1 # ICM20948_DT_GYRO_FILTER_152HZ
+      - 2 # ICM20948_DT_GYRO_FILTER_120HZ
+      - 3 # ICM20948_DT_GYRO_FILTER_51HZ
+      - 4 # ICM20948_DT_GYRO_FILTER_24HZ
+      - 5 # ICM20948_DT_GYRO_FILTER_12HZ
+      - 6 # ICM20948_DT_GYRO_FILTER_6HZ
+      - 7 # ICM20948_DT_GYRO_FILTER_361HZ
+      - 8 # ICM20948_DT_GYRO_FILTER_12106HZ_NOLPF (no low-pass filter)
+
+  mag-mode:
+    type: int
+    default: 0
+    description: Either disables magnetometer or chooses the output data rate.
+    enum:
+      - 0 # ICM20948_DT_MAG_MODE_DISABLED
+      - 2 # ICM20948_DT_MAG_MODE_10HZ
+      - 4 # ICM20948_DT_MAG_MODE_20HZ
+      - 6 # ICM20948_DT_MAG_MODE_50HZ
+      - 8 # ICM20948_DT_MAG_MODE_100HZ

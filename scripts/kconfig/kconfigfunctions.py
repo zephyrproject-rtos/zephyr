@@ -1210,6 +1210,7 @@ functions = {
         "dt_compat_enabled": (dt_compat_enabled, 1, 1),
         "dt_compat_enabled_num": (dt_compat_enabled_num, 1, 1),
         "dt_compat_on_bus": (dt_compat_on_bus, 2, 2),
+        "dt_compat_any_on_bus": (dt_compat_on_bus, 2, 2),
         "dt_compat_all_has_prop": (dt_compat_all_has_prop, 2, 3),
         "dt_compat_any_has_prop": (dt_compat_any_has_prop, 2, 3),
         "dt_compat_any_not_has_prop": (dt_compat_any_not_has_prop, 2, 2),

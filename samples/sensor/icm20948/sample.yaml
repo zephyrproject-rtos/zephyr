@@ -1,0 +1,12 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: ICM-20948 Sensor Sample
+tests:
+  sample.sensor.icm20948:
+    build_only: true
+    platform_allow: nrf52840dk/nrf52840
+    tags: sensors
+    integration_platforms:
+      - nrf52840dk/nrf52840
