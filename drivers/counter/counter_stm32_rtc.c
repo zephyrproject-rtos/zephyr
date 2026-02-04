@@ -641,7 +641,7 @@ out_disable_bkup_access:
 	 */
 	now = rtc_stm32_read(dev);
 	if ((ticks - now < 2) || (now > ticks)) {
-		data->irq_on_late = 1;
+		data->irq_on_late = true;
 		rtc_stm32_set_int_pending();
 	}
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
@@ -718,7 +718,7 @@ void rtc_stm32_isr(const struct device *dev)
 		LL_RTC_EnableWriteProtection(RTC);
 		stm32_backup_domain_disable_access();
 #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
-		data->irq_on_late = 0;
+		data->irq_on_late = false;
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 
 		if (alarm_callback != NULL) {
