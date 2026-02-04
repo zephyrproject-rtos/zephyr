@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2025 NXP
+ * Copyright 2020-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -258,6 +258,29 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 #endif
 	}
 #endif
+
+#if CONFIG_WDT_MCUX_WWDT
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt0))
+	if ((uint32_t)sub_system == MCUX_WWDT0_CLK) {
+#if defined(CONFIG_SOC_FAMILY_MCXA)
+		CLOCK_EnableClock(kCLOCK_GateWWDT0);
+#elif defined(CONFIG_SOC_SERIES_MCXW2XX) || defined(CONFIG_SOC_FAMILY_LPC)
+		CLOCK_EnableClock(kCLOCK_Wwdt);
+#else
+		CLOCK_EnableClock(kCLOCK_Wwdt0);
+#endif
+	}
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt1))
+	if ((uint32_t)sub_system == MCUX_WWDT1_CLK) {
+#if defined(CONFIG_SOC_FAMILY_MCXA)
+		CLOCK_EnableClock(kCLOCK_GateWWDT1);
+#else
+		CLOCK_EnableClock(kCLOCK_Wwdt1);
+#endif
+	}
+#endif
+#endif /* defined(CONFIG_WDT_MCUX_WWDT) */
 
 	return 0;
 }
@@ -705,6 +728,38 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 	case MCUX_MICFIL_CLK:
 		*rate = CLOCK_GetMicfilClkFreq();
 		break;
+#endif
+
+#if defined(CONFIG_WDT_MCUX_WWDT)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt0))
+	case MCUX_WWDT0_CLK:
+#if defined(CONFIG_SOC_MIMXRT685S_CM33) || defined(CONFIG_SOC_MIMXRT595S_CM33) ||                  \
+	defined(CONFIG_SOC_FAMILY_MCXN) || defined(CONFIG_SOC_MIMXRT798S_CM33_CPU0) ||             \
+	defined(CONFIG_SOC_MIMXRT798S_CM33_CPU1)
+		*rate = CLOCK_GetWdtClkFreq(0);
+#elif defined(CONFIG_SOC_MCXA577)
+		*rate = CLOCK_GetWwdt0ClkFreq();
+#elif defined(CONFIG_SOC_FAMILY_MCXA)
+		*rate = CLOCK_GetWwdtClkFreq();
+#else
+		*rate = CLOCK_GetWdtClkFreq();
+#endif
+		break;
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt1))
+	case MCUX_WWDT1_CLK:
+#if defined(CONFIG_SOC_MIMXRT685S_CM33) || defined(CONFIG_SOC_MIMXRT595S_CM33) ||                  \
+	defined(CONFIG_SOC_FAMILY_MCXN) || defined(CONFIG_SOC_MIMXRT798S_CM33_CPU0) ||             \
+	defined(CONFIG_SOC_MIMXRT798S_CM33_CPU1)
+		*rate = CLOCK_GetWdtClkFreq(1);
+#elif defined(CONFIG_SOC_MCXA577)
+		*rate = CLOCK_GetWwdt1ClkFreq();
+#else
+		*rate = 0;
+		return -EINVAL;
+#endif
+		break;
+#endif
 #endif
 	}
 
