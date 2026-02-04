@@ -305,7 +305,7 @@ static int intel_sha_device_free(const struct device *dev, struct hash_ctx *ctx)
 	(void)memset((void *)self->dfsha, 0, sizeof(struct sha_hw_regs));
 	(void)memset(&session->sha_ctx, 0, sizeof(struct sha_context));
 	(void)memset(&session->state, 0, sizeof(union sha_state));
-	session->in_use = 0;
+	session->in_use = false;
 	session->algo = 0;
 	return 0;
 }
