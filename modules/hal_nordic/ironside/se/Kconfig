@@ -55,12 +55,23 @@ menuconfig NRF_PERIPHCONF_SECTION
 	  Include static global domain peripheral initialization values from the
 	  build in a dedicated section in the devnull region.
 
+if NRF_PERIPHCONF_SECTION
+
 config NRF_PERIPHCONF_GENERATE_ENTRIES
 	bool "Generate PERIPHCONF entries source file"
 	default y
-	depends on NRF_PERIPHCONF_SECTION
 	help
 	  Generate a C file containing PERIPHCONF entries based on the
 	  device configuration in the devicetree.
+
+config NRF_PERIPHCONF_GENERATE_ENTRIES_LOCK
+	bool "Lock registers in PERIPHCONF"
+	default y
+	depends on NRF_PERIPHCONF_GENERATE_ENTRIES
+	help
+	  Set the lock bit in registers that support it.
+	  Disable this to allow the registers to be reconfigured after boot.
+
+endif # NRF_PERIPHCONF_SECTION
 
 endmenu # IronSide SE
