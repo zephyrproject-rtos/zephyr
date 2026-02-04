@@ -32,6 +32,7 @@
 #define SL_CLOCK_MANAGER_LFXO_MODE (DT_ENUM_IDX(DT_NODELABEL(lfxo), mode) << _LFXO_CFG_MODE_SHIFT)
 
 #define SL_CLOCK_MANAGER_LFXO_CTUNE     DT_PROP(DT_NODELABEL(lfxo), ctune)
+#define SL_CLOCK_MANAGER_LFXO_GAIN      DT_PROP(DT_NODELABEL(lfxo), gain)
 #define SL_CLOCK_MANAGER_LFXO_PRECISION DT_PROP(DT_NODELABEL(lfxo), precision)
 #define SL_CLOCK_MANAGER_LFXO_TIMEOUT                                                              \
 	(DT_ENUM_IDX(DT_NODELABEL(lfxo), timeout) << _LFXO_CFG_TIMEOUT_SHIFT)
