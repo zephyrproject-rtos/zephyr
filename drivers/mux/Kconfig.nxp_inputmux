@@ -1,0 +1,8 @@
+# Copyright NXP 2025
+# SPDX-License-Identifier: Apache-2.0
+
+config MUX_NXP_INPUTMUX
+        bool "NXP inputmux driver"
+        default y
+        depends on DT_HAS_NXP_INPUTMUX_ENABLED
+	select RESET
