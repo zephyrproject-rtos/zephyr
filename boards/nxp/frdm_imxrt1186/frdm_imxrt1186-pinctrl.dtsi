@@ -7,6 +7,28 @@
 #include <nxp/nxp_imx/rt/mimxrt1186cvj8c-pinctrl.dtsi>
 
 &pinctrl {
+	pinmux_lpspi2: pinmux_lpspi2 {
+		group0 {
+			pinmux = <&iomuxc_aon_gpio_aon_16_lpspi2_pcs0>,
+				 <&iomuxc_aon_gpio_aon_17_lpspi2_sin>,
+				 <&iomuxc_aon_gpio_aon_18_lpspi2_sout>,
+				 <&iomuxc_aon_gpio_aon_19_lpspi2_sck>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_lpspi2_sleep: pinmux_lpspi2_sleep {
+		group0 {
+			pinmux = <&iomuxc_aon_gpio_aon_16_lpspi2_pcs0>,
+				 <&iomuxc_aon_gpio_aon_17_lpspi2_sin>,
+				 <&iomuxc_aon_gpio_aon_18_lpspi2_sout>,
+				 <&iomuxc_aon_gpio_aon_19_lpspi2_sck>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
 	pinmux_lpuart1: pinmux_lpuart1 {
 		group0 {
 			pinmux = <&iomuxc_aon_gpio_aon_09_lpuart1_rxd>,
