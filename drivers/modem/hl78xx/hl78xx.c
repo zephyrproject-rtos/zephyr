@@ -613,12 +613,12 @@ void hl78xx_on_kselacq(struct modem_chat *chat, char **argv, uint16_t argc, void
 		return;
 	}
 	if (argc > 3) {
-		data->kselacq_data.mode = 0;
+		data->kselacq_data.mode = false;
 		data->kselacq_data.rat1 = ATOI(argv[1], 0, "rat1");
 		data->kselacq_data.rat2 = ATOI(argv[2], 0, "rat2");
 		data->kselacq_data.rat3 = ATOI(argv[3], 0, "rat3");
 	} else {
-		data->kselacq_data.mode = 0;
+		data->kselacq_data.mode = false;
 		data->kselacq_data.rat1 = 0;
 		data->kselacq_data.rat2 = 0;
 		data->kselacq_data.rat3 = 0;
