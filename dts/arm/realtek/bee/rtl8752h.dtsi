@@ -11,6 +11,7 @@
 #include <dt-bindings/clock/rtl8752h-clocks.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	chosen {
@@ -210,6 +211,12 @@
 				compatible = "realtek,bee-counter-timer";
 				status = "disabled";
 			};
+
+			pwm {
+				compatible = "realtek,bee-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
 		timer3: timer@4000203c {
@@ -222,6 +229,12 @@
 			counter {
 				compatible = "realtek,bee-counter-timer";
 				status = "disabled";
+			};
+
+			pwm {
+				compatible = "realtek,bee-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -236,6 +249,12 @@
 				compatible = "realtek,bee-counter-timer";
 				status = "disabled";
 			};
+
+			pwm {
+				compatible = "realtek,bee-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
 		timer5: timer@40002064 {
@@ -248,6 +267,12 @@
 			counter {
 				compatible = "realtek,bee-counter-timer";
 				status = "disabled";
+			};
+
+			pwm {
+				compatible = "realtek,bee-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -263,6 +288,12 @@
 				compatible = "realtek,bee-counter-timer";
 				status = "disabled";
 			};
+
+			pwm {
+				compatible = "realtek,bee-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
 		timer7: timer@40003024 {
@@ -275,6 +306,12 @@
 			counter {
 				compatible = "realtek,bee-counter-timer";
 				status = "disabled";
+			};
+
+			pwm {
+				compatible = "realtek,bee-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
 			};
 		};
 
