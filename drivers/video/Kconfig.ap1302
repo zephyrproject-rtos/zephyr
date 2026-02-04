@@ -1,0 +1,41 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_AP1302
+	bool "ONNN AP1302 Camera ISP driver"
+	select I2C
+	select GPIO
+	select REGULATOR
+	depends on DT_HAS_ONNN_AP1302_ENABLED
+	help
+	  Enable driver for AP1302 Camera ISP.
+
+	  Firmware loading:
+	  The AP1302 requires a firmware binary blob provided by ON Semiconductor.
+	  The blob is publicly downloadable from:
+	    https://github.com/ONSemiconductor/ap1302_binaries
+
+	  The firmware is distributed under the "AP1302 Software License Agreement"
+	  (see the PDF in that repository). Due to its licensing terms, the firmware
+	  is NOT shipped as part of Zephyr.
+
+	  Users must download the firmware separately and place it in a location
+	  accessible to the driver (see the devicetree binding property
+	  firmware-partition) and ensure they comply with the license terms.
+
+if VIDEO_AP1302
+
+config VIDEO_AP1302_INIT_PRIORITY
+	int "AP1302 driver initialization priority"
+	default 76
+	help
+	  Initialization priority for AP1302 driver.
+
+config VIDEO_AP1302_BUILTIN_FIRMWARE
+	bool "Embed AP1302 firmware binary into the Zephyr image"
+	default n
+	help
+	  If enabled, the AP1302 firmware binary is embedded into the final Zephyr
+	  image at build time and loaded from memory at runtime.
+
+endif # VIDEO_AP1302
