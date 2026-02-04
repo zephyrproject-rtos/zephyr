@@ -22,7 +22,26 @@ config SPI_NRFX_SPI
 config SPI_NRFX_SPIM
 	def_bool y
 	depends on DT_HAS_NORDIC_NRF_SPIM_ENABLED
+	depends on !SPI_RTIO
 	select NRFX_SPIM
+
+config SPI_NRFX_SPIM_RTIO
+	def_bool y
+	depends on DT_HAS_NORDIC_NRF_SPIM_ENABLED
+	depends on SPI_RTIO
+	select NRFX_SPIM
+
+if SPI_NRFX_SPIM_RTIO
+
+config SPI_NRFX_SPIM_RTIO_SQE_POOL_SIZE
+	int "Size of SQE pool size for NRFX SPIM RTIO context"
+	default 8
+
+config SPI_NRFX_SPIM_RTIO_CQE_POOL_SIZE
+	int "Size of SQE pool size for NRFX SPIM RTIO context"
+	default 8
+
+endif # SPI_NRFX_SPIM_RTIO
 
 config SPI_NRFX_SPIS
 	def_bool y
