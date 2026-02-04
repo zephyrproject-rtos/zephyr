@@ -1,0 +1,26 @@
+# Copyright (c) 2026 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RCAR_GEN5
+
+config NUM_IRQS
+	default 1216 # 960 SPI + 256 LPI
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,$(dt_nodelabel_path,arch_timer),clock-frequency)
+
+# Mailbox and SCMI depend on GIC. Set their init priority to GIC's.
+# They will be initialized in order according to dts dependencies.
+config MBOX_INIT_PRIORITY
+	default INTC_INIT_PRIORITY
+
+config ARM_SCMI_SHMEM_INIT_PRIORITY
+	default INTC_INIT_PRIORITY
+
+config ARM_SCMI_TRANSPORT_INIT_PRIORITY
+	default INTC_INIT_PRIORITY
+
+config CLOCK_CONTROL_INIT_PRIORITY
+	default INTC_INIT_PRIORITY
+
+endif # SOC_SERIES_RCAR_GEN5

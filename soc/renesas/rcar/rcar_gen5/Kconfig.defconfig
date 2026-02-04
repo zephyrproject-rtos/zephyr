@@ -1,0 +1,10 @@
+# Renesas R-Car Gen5 SoC line
+
+# Copyright (c) 2026 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RCAR_GEN5
+
+rsource "Kconfig.defconfig.r8a780*"
+
+endif # SOC_SERIES_RCAR_GEN5
