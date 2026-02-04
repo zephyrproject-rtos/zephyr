@@ -100,6 +100,10 @@ if PM_DEVICE
 config POWER_DOMAIN
 	default y
 
+choice CACHE_TYPE
+	default EXTERNAL_CACHE
+endchoice
+
 endif # PM_DEVICE
 
 endif # SOC_SERIES_RW6XX

@@ -45,6 +45,11 @@ config HAS_MCUX_LMEM_CACHE
 	help
 	  Set if the LMEM Cache module is present on the SoC.
 
+config HAS_MCUX_CACHE64
+	bool
+	help
+	  Set if the Cache64 module is present on the SoC.
+
 config HAS_MCUX_SYSCON_LPCAC
 	bool
 	help
