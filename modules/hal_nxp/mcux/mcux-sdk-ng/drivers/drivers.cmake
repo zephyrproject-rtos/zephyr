@@ -152,6 +152,8 @@ set_variable_ifdef(CONFIG_DISPLAY_MCUX_DCNANO_LCDIF CONFIG_MCUX_COMPONENT_driver
 set_variable_ifdef(CONFIG_MIPI_DBI_NXP_DCNANO_LCDIF CONFIG_MCUX_COMPONENT_driver.lcdif)
 set_variable_ifdef(CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF CONFIG_MCUX_COMPONENT_driver.flexio_mculcd)
 set_variable_ifdef(CONFIG_VIDEO_MCUX_MIPI_CSI2RX    CONFIG_MCUX_COMPONENT_driver.mipi_csi2rx)
+set_variable_ifdef(CONFIG_VIDEO_MCUX_JPEGDEC        CONFIG_MCUX_COMPONENT_driver.jpegdec)
+set_variable_ifdef(CONFIG_VIDEO_MCUX_PNGDEC         CONFIG_MCUX_COMPONENT_driver.pngdec)
 set_variable_ifdef(CONFIG_ETH_NXP_IMX_NETC          CONFIG_MCUX_COMPONENT_driver.netc)
 set_variable_ifdef(CONFIG_NXP_TMPSNS                CONFIG_MCUX_COMPONENT_driver.tempsensor)
 set_variable_ifdef(CONFIG_OPAMP_MCUX_OPAMP          CONFIG_MCUX_COMPONENT_driver.opamp)

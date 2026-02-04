@@ -504,3 +504,11 @@ p3t1755dp_ard_i2c_interface: &flexcomm8_lpi2c8 {};
 &pca9422 {
 	status = "okay";
 };
+
+&jpegdec {
+	status = "okay";
+};
+
+&pngdec {
+	status = "okay";
+};

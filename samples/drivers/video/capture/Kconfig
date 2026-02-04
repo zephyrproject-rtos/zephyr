@@ -65,6 +65,23 @@ config VIDEO_SHELL_AND_CAPTURE
 	help
 	  If set, the video capture is enabled even if the video shell is also enabled.
 
+config VIDEO_CAM_NUM_BUFS
+	int "Number of video buffers used for the camera"
+	default 2
+	help
+	  Number of buffers in the video buffer pool used for the camera device.
+	  The rest of the buffer pool will be used for other purposes such as transformation.
+
+config VIDEO_TRANSFORM
+	string "Name of the transformation file used to transform the video frame"
+	help
+	  If set, the video frame will go through some m2m transforms defined in
+	  transform_${CONFIG_VIDEO_TRANSFORM}.c
+
+if VIDEO_MCUX_JPEGDEC
+rsource "boards/Kconfig.nxp_jpegdec"
+endif
+
 endmenu
 
 source "Kconfig.zephyr"
