@@ -5,7 +5,7 @@ config QDEC_MCUX
 	bool "NXP QDEC MCUX driver"
 	default y
 	depends on DT_HAS_NXP_MCUX_QDEC_ENABLED
-	select MCUX_XBARA
+	select NXP_XBAR if DT_HAS_NXP_XBAR_ENABLED
 	select PINCTRL
 	help
 	  Enable support for NXP MCUX Quadrature Encoder driver.

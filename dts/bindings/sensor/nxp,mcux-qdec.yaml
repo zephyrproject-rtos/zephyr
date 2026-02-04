@@ -47,8 +47,12 @@ properties:
       frequency. Turning on the input filter introduces a latency of:
       ((FILT_CNT + 3) * FILT_PER) FILT clock cycles + 2 IPBus clock periods.
 
-  xbar:
-    type: phandle
-    required: true
+  xbars:
+    type: phandle-array
     description: |
-      The xbar phandle.
+      XBAR connections for encoder inputs. Each entry contains a phandle to
+      the XBAR device and two cells: output signal index and input signal index.
+
+      Example:
+        xbars = <&xbar1 66 21>,  /* Output 66 <- Input 21 (Phase A) */
+                <&xbar1 67 22>;  /* Output 67 <- Input 22 (Phase B) */

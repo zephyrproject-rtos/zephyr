@@ -1,5 +1,5 @@
 /*
- * Copyright 2017, 2024-2025 NXP
+ * Copyright 2017, 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -115,6 +115,13 @@ static const clock_ip_name_t flexcan_clk_root[] = {
 };
 #endif
 
+#ifdef CONFIG_NXP_XBAR
+static const clock_ip_name_t xbar_clocks[] = {
+	kCLOCK_Xbar1,
+	kCLOCK_Xbar2,
+};
+#endif
+
 static int mcux_ccm_on(const struct device *dev,
 			      clock_control_subsys_t sub_system)
 {
@@ -168,6 +175,13 @@ static int mcux_ccm_on(const struct device *dev,
 		return 0;
 #endif
 #endif /* CONFIG_DAI_NXP_ESAI */
+
+#ifdef CONFIG_NXP_XBAR
+	case IMX_CCM_XBAR1_CLK:
+	case IMX_CCM_XBAR2_CLK:
+		CLOCK_EnableClock(xbar_clocks[instance]);
+		return 0;
+#endif
 
 #if defined(CONFIG_SOC_MIMX8QM6_ADSP) || defined(CONFIG_SOC_MIMX8QX6_ADSP)
 	case IMX_CCM_AUD_PLL_DIV_CLK0:
@@ -231,6 +245,13 @@ static int mcux_ccm_off(const struct device *dev,
 		return 0;
 #endif
 #endif /* CONFIG_DAI_NXP_ESAI */
+
+#ifdef CONFIG_NXP_XBAR
+	case IMX_CCM_XBAR1_CLK:
+	case IMX_CCM_XBAR2_CLK:
+		CLOCK_DisableClock(xbar_clocks[instance]);
+		return 0;
+#endif
 
 #if defined(CONFIG_SOC_MIMX8QM6_ADSP) || defined(CONFIG_SOC_MIMX8QX6_ADSP)
 	case IMX_CCM_AUD_PLL_DIV_CLK0:

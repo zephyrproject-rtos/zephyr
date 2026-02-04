@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, Prevas A/S
+ * Copyright 2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -9,7 +10,10 @@
 #include <stdint.h>
 
 #include <fsl_enc.h>
-#include <fsl_xbara.h>
+
+#ifdef CONFIG_NXP_XBAR
+#include <zephyr/drivers/misc/interconn/nxp_xbar/nxp_xbar.h>
+#endif
 
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/sensor.h>
@@ -22,9 +26,6 @@ LOG_MODULE_REGISTER(qdec_mcux, CONFIG_SENSOR_LOG_LEVEL);
 struct qdec_mcux_config {
 	ENC_Type *base;
 	const struct pinctrl_dev_config *pincfg;
-	XBARA_Type *xbar;
-	size_t xbar_maps_len;
-	int xbar_maps[];
 };
 
 struct qdec_mcux_data {
@@ -139,15 +140,17 @@ static void init_inputs(const struct device *dev)
 	i = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	assert(i == 0);
 
-	/* Quadrature Encoder inputs are only accessible via crossbar */
-	XBARA_Init(config->xbar);
-	for (i = 0; i < config->xbar_maps_len; i += 2) {
-		XBARA_SetSignalsConnection(config->xbar, config->xbar_maps[i],
-					   config->xbar_maps[i + 1]);
-	}
 }
 
-#define XBAR_PHANDLE(n)	DT_INST_PHANDLE(n, xbar)
+#define QDEC_XBAR_CONNECT(idx, n)                                                                  \
+	do {                                                                                       \
+		const struct device *xbar_dev = NXP_XBAR_DT_INST_DEVICE_GET_BY_IDX(n, idx);        \
+		__ASSERT(xbar_dev != NULL, "Failed to get device binding");                        \
+		__ASSERT(device_is_ready(xbar_dev), "Device xbar is not ready");                   \
+                                                                                                   \
+		nxp_xbar_set_connection(xbar_dev, NXP_XBAR_DT_INST_OUTPUT_GET_BY_IDX(n, idx),      \
+					NXP_XBAR_DT_INST_INPUT_GET_BY_IDX(n, idx));                \
+	} while (0)
 
 #define QDEC_CHECK_COND(n, p, min, max)						\
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, p), (				\
@@ -159,8 +162,6 @@ static void init_inputs(const struct device *dev)
 
 #define QDEC_MCUX_INIT(n)							\
 										\
-	BUILD_ASSERT((DT_PROP_LEN(XBAR_PHANDLE(n), xbar_maps) % 2) == 0,	\
-			"xbar_maps length must be an even number");		\
 	QDEC_CHECK_COND(n, counts_per_revolution, 1, UINT16_MAX);		\
 	QDEC_CHECK_COND(n, filter_sample_period, 0, UINT8_MAX);			\
 										\
@@ -172,9 +173,6 @@ static void init_inputs(const struct device *dev)
 										\
 	static const struct qdec_mcux_config qdec_mcux_##n##_config = {		\
 		.base = (ENC_Type *)DT_INST_REG_ADDR(n),			\
-		.xbar = (XBARA_Type *)DT_REG_ADDR(XBAR_PHANDLE(n)),		\
-		.xbar_maps_len = DT_PROP_LEN(XBAR_PHANDLE(n), xbar_maps),	\
-		.xbar_maps = DT_PROP(XBAR_PHANDLE(n), xbar_maps),		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	};									\
 										\
@@ -186,6 +184,12 @@ static void init_inputs(const struct device *dev)
 		LOG_DBG("Initializing %s", dev->name);				\
 										\
 		init_inputs(dev);						\
+										\
+		/* Initialize XBAR connections from devicetree */		\
+		IF_ENABLED(CONFIG_NXP_XBAR, (					\
+			LISTIFY(DT_INST_PROP_LEN(n, xbars),			\
+				QDEC_XBAR_CONNECT, (;), n);			\
+		))								\
 										\
 		ENC_GetDefaultConfig(&data->qdec_config);			\
 		data->qdec_config.decoderWorkMode = int_to_work_mode(		\
