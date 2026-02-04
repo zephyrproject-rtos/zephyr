@@ -712,6 +712,10 @@ MODEM_CHAT_MATCHES_DEFINE(dial_abort_matches,
 MODEM_CHAT_MATCH_DEFINE(connect_match, "CONNECT", "", NULL);
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(quectel_bg95) || DT_HAS_COMPAT_STATUS_OKAY(quectel_bg96)
+MODEM_CHAT_MATCH_DEFINE(powerdown_match, "POWERED DOWN", "", NULL);
+#endif
+
 
 static int append_apn_cmd(struct modem_cellular_data *data, uint8_t *steps, const char *fmt,
 			  const char *apn_value)
@@ -2544,11 +2548,11 @@ MODEM_CHAT_SCRIPT_DEFINE(quectel_bg9x_periodic_chat_script,
 			 modem_cellular_chat_callback_handler, 4);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_bg9x_shutdown_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+QPOWD=1", ok_match));
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+QPOWD=1", powerdown_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(quectel_bg9x_shutdown_chat_script,
 			 quectel_bg9x_shutdown_chat_script_cmds, abort_matches,
-			 modem_cellular_chat_callback_handler, 10);
+			 modem_cellular_chat_callback_handler, 1);
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(quectel_eg25_g)
@@ -3202,7 +3206,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 						  (user_pipe_0, 3),                                \
 						  (user_pipe_1, 4))                                \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 100, 10000, 5000, false,                        \
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 500, 1000, 5000, 2000, false,                         \
 				       NULL,                                                       \
 				       &quectel_bg9x_init_chat_script,                             \
 				       &quectel_bg9x_dial_chat_script,                             \
