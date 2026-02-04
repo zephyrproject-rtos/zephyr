@@ -42,6 +42,7 @@ zephyr_library_sources_ifdef(CONFIG_NET_SHELL_VIRTUAL_SUPPORTED virtual.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SHELL_VLAN_SUPPORTED vlan.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SHELL_WEBSOCKET_SUPPORTED websocket.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SHELL_QBV_SUPPORTED qbv_shell.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_QUIC_SUPPORTED quic_shell.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SHELL_WIREGUARD_SUPPORTED wg_shell.c)
 
 if(CONFIG_NET_SHELL_HTTP_CLIENT_HAS_CERTIFICATE)
