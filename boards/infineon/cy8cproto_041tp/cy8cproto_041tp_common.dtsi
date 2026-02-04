@@ -75,7 +75,10 @@ uart0: &scb0 {
 
 &gpio_prt5 {
 	status = "okay";
-	interrupts = <4 4>;
+};
+
+&gpio_prt6 {
+	status = "okay";
 };
 
 &watchdog0 {
