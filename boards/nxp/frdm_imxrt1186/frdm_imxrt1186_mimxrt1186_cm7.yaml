@@ -13,4 +13,5 @@ ram: 512
 flash: 512
 supported:
   - gpio
+  - can
   - uart

@@ -68,4 +68,14 @@
 			slew-rate = "fast";
 		};
 	};
+
+	pinmux_flexcan1: pinmux_flexcan1 {
+		group0 {
+			pinmux = <&iomuxc_aon_gpio_aon_06_flexcan1_tx>,
+				 <&iomuxc_aon_gpio_aon_07_flexcan1_rx>;
+			slew-rate = "fast";
+			drive-strength = "normal";
+			input-enable;
+		};
+	};
 };
