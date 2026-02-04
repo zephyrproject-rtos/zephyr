@@ -1,0 +1,11 @@
+# WeActStudio CAN485 DevBoard V1 ESP32 configuration
+
+# SPDX-FileCopyrightText: Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+# SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+# SPDX-License-Identifier: Apache-2.0
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 4096 if BOARD_CAN485DBV1_ESP32_PROCPU
+	default 256 if BOARD_CAN485DBV1_ESP32_APPCPU
