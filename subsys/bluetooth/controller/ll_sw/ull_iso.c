@@ -1483,8 +1483,12 @@ void ull_iso_lll_ack_enqueue(uint16_t handle, struct node_tx_iso *node_tx)
 		}
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)) {
-			ll_data_path_tx_pdu_release(handle, node_tx);
-			return;
+			int err;
+
+			err = ll_data_path_tx_pdu_release(handle, node_tx);
+			if (err == 0) {
+				return;
+			}
 		}
 
 		/* No datapath and no vendor datapath - fall through to MFIFO */
@@ -1503,8 +1507,12 @@ void ull_iso_lll_ack_enqueue(uint16_t handle, struct node_tx_iso *node_tx)
 		}
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_ISO_VENDOR_DATA_PATH)) {
-			ll_data_path_tx_pdu_release(handle, node_tx);
-			return;
+			int err;
+
+			err = ll_data_path_tx_pdu_release(handle, node_tx);
+			if (err == 0) {
+				return;
+			}
 		}
 
 		/* No datapath and no vendor datapath - fall through to MFIFO */

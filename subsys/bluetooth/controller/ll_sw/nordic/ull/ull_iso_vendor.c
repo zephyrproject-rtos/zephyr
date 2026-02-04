@@ -7,6 +7,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <errno.h>
+
 #include <zephyr/bluetooth/hci_types.h>
 
 #include "util/util.h"
@@ -70,7 +72,7 @@ uint8_t ll_configure_data_path(uint8_t data_path_dir, uint8_t data_path_id,
 	return 0;
 }
 
-void ll_data_path_tx_pdu_release(uint16_t handle, struct node_tx_iso *node_tx)
+int ll_data_path_tx_pdu_release(uint16_t handle, struct node_tx_iso *node_tx)
 {
 	/* Process as TX ack, we are in LLL execution context here.
 	 *
@@ -78,7 +80,7 @@ void ll_data_path_tx_pdu_release(uint16_t handle, struct node_tx_iso *node_tx)
 	 *   ull_iso_lll_ack_enqueue() --> ll_data_path_tx_pdu_release()
 	 *   (this function).
 	 *
-	 * Use MFIFO to safely transition from LLL to ULL context.
+	 * Fallback to using MFIFO to safely transition from LLL to ULL context.
 	 */
-	ull_iso_lll_tx_ack_enqueue(handle, node_tx);
+	return -ENOTSUP;
 }
