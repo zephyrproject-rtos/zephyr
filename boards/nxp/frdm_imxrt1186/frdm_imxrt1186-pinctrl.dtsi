@@ -55,6 +55,27 @@
 		};
 	};
 
+	pinmux_lpi2c3: pinmux_lpi2c3 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_18_lpi2c3_scl>,
+				 <&iomuxc_gpio_ad_19_lpi2c3_sda>;
+			drive-strength = "high";
+			slew-rate = "fast";
+			bias-pull-up;
+			input-enable;
+		};
+	};
+
+	pinmux_lpi2c3_sleep: pinmux_lpi2c3_sleep {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_18_lpi2c3_scl>,
+				 <&iomuxc_gpio_ad_19_lpi2c3_sda>;
+			drive-strength = "high";
+			slew-rate = "fast";
+			bias-pull-up;
+		};
+	};
+
 	/* QSPI Flash on FlexSPI2 - GPIO_AON_22/23/24/25/26/27 */
 	pinmux_flexspi2: pinmux_flexspi2 {
 		group0 {

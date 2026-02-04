@@ -61,6 +61,13 @@
 	pinctrl-names = "default", "sleep";
 };
 
+&lpi2c3 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c3>;
+	pinctrl-1 = <&pinmux_lpi2c3_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
 &gpio1 {
 	status = "okay";
 };

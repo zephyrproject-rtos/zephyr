@@ -14,3 +14,4 @@ flash: 512
 supported:
   - gpio
   - uart
+  - i2c
