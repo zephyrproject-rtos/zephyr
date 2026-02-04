@@ -231,7 +231,7 @@ static int start_read_stream(const struct device *dev, const struct adc_sequence
 		return -EINVAL;
 	}
 
-	data->ctx.asynchronous = 1;
+	data->ctx.asynchronous = true;
 	data->sample_channels = seq->channels;
 
 	/* Here we use regular cb that does nothing, it should be
