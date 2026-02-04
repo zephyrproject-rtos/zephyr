@@ -47,6 +47,21 @@
 	};
 };
 
+&edma3 {
+	status = "okay";
+};
+
+&edma4 {
+	status = "okay";
+};
+
+&lpspi2 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpspi2>;
+	pinctrl-1 = <&pinmux_lpspi2_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
 &lpuart1 {
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart1>;
