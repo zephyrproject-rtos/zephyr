@@ -37,6 +37,10 @@ if(CONFIG_BT_A2DP)
     target_sources(app PRIVATE src/btp_a2dp.c)
 endif()
 
+if(CONFIG_BT_AVDTP)
+    target_sources(app PRIVATE src/btp_avdtp.c)
+endif()
+
 zephyr_library_include_directories(src src/btp src/audio/btp)
 add_subdirectory_ifdef(CONFIG_BT_AUDIO src/audio)
 
