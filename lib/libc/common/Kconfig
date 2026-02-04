@@ -139,6 +139,12 @@ config COMMON_LIBC_FPUTC
 	help
 	  Common implementation of fputc().
 
+config COMMON_LIBC_FREAD
+	bool "Common C library fread"
+	default y if ZVFS
+	help
+	  Common implementation of fread().
+
 config COMMON_LIBC_FSEEK
 	bool "Common C library fseek"
 	default y if ZVFS
