@@ -42,8 +42,25 @@ config FLASH_HAS_EXPLICIT_ERASE
 	  optimized-out by compiler in case where there is no such device in
 	  a system.
 
+config FLASH_HAS_SAFE_INPLACE_WRITE
+	bool
+	help
+	  Indicates that this flash device can safely perform in-place writes
+	  to a location that has already been programmed, without requiring
+	  a full erase.
+
+	  On devices without this capability, rewriting a partially programmed
+	  location (e.g., a close ATE in NVS) may fail or result in undefined
+	  behavior. NVS and other layers should guard such operations with
+	  this flag to avoid mount failures or data corruption.
+
+	  Drivers for devices that allow safe in-place updates should select
+	  this option. Platforms where rewrites are unsafe should leave it
+	  disabled.
+
 config FLASH_HAS_NO_EXPLICIT_ERASE
 	bool
+	select FLASH_HAS_SAFE_INPLACE_WRITE
 	help
 	  Device does not require explicit erase before programming
 	  a new random value at any location that has been previously
