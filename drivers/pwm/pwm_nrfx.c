@@ -358,7 +358,7 @@ static int pwm_suspend(const struct device *dev)
 	data->period_cycles = 0;
 	data->pwm_needed = 0;
 	data->prescaler = 0;
-	data->stop_requested = 0;
+	data->stop_requested = false;
 	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_SLEEP);
 
 	return 0;
