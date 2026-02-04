@@ -15,21 +15,21 @@
 
 / {
 	clocks {
-		/* Internal main oscillator (IMO) */
-		clk_imo: clk-imo {
-			#clock-cells = <0>;
-			compatible = "infineon,fixed-clock";
-			clock-frequency = <DT_FREQ_M(24)>;
-			system-clock = <IFX_IMO>;
-			status = "okay";
-		};
-
 		/* Internal low-speed oscillator (ILO) */
 		clk_ilo: clk-ilo {
 			#clock-cells = <0>;
 			compatible = "infineon,fixed-clock";
 			clock-frequency = <DT_FREQ_K(40)>;
 			system-clock = <IFX_ILO>;
+			status = "okay";
+		};
+
+		/* Internal main oscillator (IMO) */
+		clk_imo: clk-imo {
+			#clock-cells = <0>;
+			compatible = "infineon,fixed-clock";
+			clock-frequency = <DT_FREQ_M(48)>;
+			system-clock = <IFX_IMO>;
 			status = "okay";
 		};
 
@@ -47,6 +47,7 @@
 			#clock-cells = <0>;
 			compatible = "infineon,fixed-clock";
 			system-clock = <IFX_WCO>;
+			clock-frequency = <32768>;
 			status = "okay";
 		};
 
@@ -57,7 +58,7 @@
 			source-path = <IFX_PATH_PSOC4_IMO>;
 			system-clock = <IFX_HF>;
 			instance = <0>;
-			status = "disabled";
+			status = "okay";
 		};
 
 		clk_pump: clk-pump {
@@ -66,7 +67,7 @@
 			system-clock = <IFX_PUMP>;
 			source-path = <IFX_PATH_PSOC4_PUMP_GND>;
 			instance = <0>;
-			status = "disabled";
+			status = "okay";
 		};
 	};
 

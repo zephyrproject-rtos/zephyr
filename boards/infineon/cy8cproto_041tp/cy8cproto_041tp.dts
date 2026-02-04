@@ -47,8 +47,3 @@
 		};
 	};
 };
-
-&clk_wco {
-	status = "okay";
-	clock-frequency = <32000>; /* 32 kHz */
-};
