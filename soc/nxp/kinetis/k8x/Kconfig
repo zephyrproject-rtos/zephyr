@@ -4,7 +4,7 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_KINETIS_K8X
+config SOC_SERIES_K8X
 	select ARM
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_DWT
@@ -18,7 +18,7 @@ config SOC_SERIES_KINETIS_K8X
 	select SOC_RESET_HOOK
 	select SOC_EARLY_INIT_HOOK
 
-if SOC_SERIES_KINETIS_K8X
+if SOC_SERIES_K8X
 
 config K8X_CORE_CLOCK_DIVIDER
 	int "Freescale K8x core clock divider"
@@ -48,4 +48,4 @@ config K8X_FLASH_CLOCK_DIVIDER
 	  This option specifies the divide value for the K8x flash clock from the
 	  system clock.
 
-endif # SOC_SERIES_KINETIS_K8X
+endif # SOC_SERIES_K8X
