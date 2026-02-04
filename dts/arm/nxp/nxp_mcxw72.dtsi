@@ -20,7 +20,7 @@
 		};
 
 		shmem_rpmsg: memory@220 {
-			reg = <0x220 0xA00>;
+			reg = <0x220 0xa00>;
 		};
 	};
 };
