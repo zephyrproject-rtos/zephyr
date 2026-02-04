@@ -1,0 +1,12 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_BEE
+	bool "Realtek Bee series PWM driver"
+	default y
+	depends on DT_HAS_REALTEK_BEE_PWM_ENABLED
+	select HAL_REALTEK_BEE_TIM if DT_HAS_REALTEK_BEE_BASIC_TIMER_ENABLED
+	select HAL_REALTEK_BEE_ENHTIM if DT_HAS_REALTEK_BEE_ENHANCED_TIMER_ENABLED
+	select PINCTRL
+	help
+	  This option enables the PWM driver for Realtek Bee SoCs.
