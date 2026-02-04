@@ -1530,3 +1530,9 @@ test_i2c_ltr553: ltr553@c9 {
 	compatible = "liteon,ltr553";
 	reg = <0xc9>;
 };
+
+test_i2c_adxl355: adxl55@ca {
+	compatible = "adi,adxl355";
+	reg = <0xca>;
+	int1-gpios = <&test_gpio 0 0>;
+};
