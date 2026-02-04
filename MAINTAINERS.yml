@@ -263,11 +263,11 @@ ARM arch:
     - arch.arm
 
 ARM64 arch:
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - wearyzen
   collaborators:
     - npitre
-    - wearyzen
-    - ithinuel
     - JiafeiPan
   files:
     - arch/arm64/
