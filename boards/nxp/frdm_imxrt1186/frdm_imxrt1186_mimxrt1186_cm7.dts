@@ -1,0 +1,35 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rt118x_cm7.dtsi>
+#include <nxp/nxp_rt1186.dtsi>
+#include "frdm_imxrt1186.dtsi"
+#include <freq.h>
+
+/ {
+	model = "NXP FRDM-iMXRT1186 board";
+	compatible = "nxp,mimxrt1186";
+
+	chosen {
+		zephyr,sram = &dtcm;
+		zephyr,dtcm = &dtcm;
+		zephyr,itcm = &itcm;
+		zephyr,console = &lpuart3;
+		zephyr,shell-uart = &lpuart3;
+		zephyr,flash = &itcm;
+	};
+};
+
+&cpu1 {
+	clock-frequency = <DT_FREQ_M(792)>;
+};
+
+&lpuart3 {
+	status = "okay";
+	current-speed = <115200>;
+};

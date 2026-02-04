@@ -1,0 +1,64 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rt118x_cm33.dtsi>
+#include <nxp/nxp_rt1186.dtsi>
+#include "frdm_imxrt1186.dtsi"
+#include <freq.h>
+
+/ {
+	model = "NXP FRDM-IMXRT1186 board";
+	compatible = "nxp,mimxrt1186";
+
+	chosen {
+		zephyr,sram = &hyperram0;
+		zephyr,dtcm = &dtcm;
+		zephyr,itcm = &itcm;
+		zephyr,flash-controller = &w25q128jv;
+		zephyr,flash = &w25q128jv;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+	};
+
+	hyperram0: memory@38000000 {
+		/* Winbond W957A8MFYA5K */
+		device_type = "memory";
+		reg = <0x38000000 DT_SIZE_M(8)>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+		/*
+		 * HyperRAM on FRDM-IMXRT1186 is initialized by ROM bootloader
+		 * reading the XMCD configuration from xip/frdmimxrt1186_flexspi_nor_config.c
+		 */
+		status = "okay";
+	};
+
+	qspi_flash: memory@14000000 {
+		device_type = "memory";
+		reg = <0x14000000 DT_SIZE_M(16)>;
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
+		status = "okay";
+	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(240)>;
+};
+
+&lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&flexspi2 {
+	status = "okay";
+};
+
+&systick {
+	status = "okay";
+};
