@@ -1,0 +1,59 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP TSI V6 Touch Sensing Input Device
+
+compatible: "nxp,tsi-input"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  num-channels:
+    type: int
+    description: Number of TSI channels to use
+
+  channel-mask:
+    type: int
+    description: Bitmask of enabled TSI channels (bit N = channel N)
+
+  input-codes:
+    type: array
+    description: |
+      Array of input codes corresponding to each channel.
+      Use INPUT_KEY_* or INPUT_BTN_* codes from dt-bindings/input/input-event-codes.h
+
+  touch-threshold:
+    type: int
+    default: 100
+    description: Touch detection threshold (delta counts from baseline)
+
+  release-threshold:
+    type: int
+    description: |
+      Release detection threshold (delta counts from baseline).
+      If not specified, defaults to touch-threshold / 2.
+      Should be less than touch-threshold to provide hysteresis.
+
+  scan-period-ms:
+    type: int
+    default: 50
+    description: Scan period in milliseconds
+
+  continuous-scan:
+    type: boolean
+    description: Enable continuous scanning mode
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
