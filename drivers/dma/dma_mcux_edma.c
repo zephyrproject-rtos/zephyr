@@ -208,7 +208,7 @@ static void nxp_edma_callback(edma_handle_t *handle, void *param, bool transferD
 	if (data->transfer_settings.cyclic) {
 		data->transfer_settings.empty_tcds++;
 		/*In loop mode, DMA is always busy*/
-		data->busy = 1;
+		data->busy = true;
 		ret = DMA_STATUS_COMPLETE;
 	} else if (transferDone) {
 		/* DMA is no longer busy when there are no remaining TCDs to transfer */
