@@ -61,7 +61,7 @@
 #define SCMI_TRANSPORT_CHAN_NAME(proto, idx) CONCAT(scmi_channel_, proto, _, idx)
 
 /**
- * @brief Declare a TX SCMI channel
+ * @brief Declare TX SCMI channel
  *
  * Given a node_id for a protocol, this macro declares the SCMI
  * TX channel statically bound to said protocol via the "extern"
@@ -79,19 +79,40 @@
 		     SCMI_TRANSPORT_CHAN_NAME(SCMI_PROTOCOL_BASE, 0);))		\
 
 /**
+ * @brief Declare RX SCMI channel
+ *
+ * Given a node_id for a protocol, this macro declares the SCMI
+ * RX channel statically bound to said protocol via the "extern" qualifier.
+ * The declaration depends on both the current protocol node
+ * and the SCMI parent node. The logic follows this priority:
+ * 1. First check if RX channel exists in the current protocol node
+ * 2. If not found, check the parent SCMI node for RX channel
+ * 3. If neither the current protocol node nor parent node has RX channel,
+ *    set it to NULL
+ *
+ * @param node_id protocol node identifier
+ */
+#define DT_SCMI_TRANSPORT_RX_CHAN_DECLARE(node_id)					\
+	COND_CODE_1(DT_SCMI_TRANSPORT_PROTO_HAS_CHAN(node_id, 1),			\
+		    (extern struct scmi_channel						\
+		     SCMI_TRANSPORT_CHAN_NAME(DT_REG_ADDR_RAW(node_id), 1);),		\
+		     (COND_CODE_1(DT_PROP_HAS_IDX(DT_PARENT(node_id), shmem, 1),	\
+				  (extern struct scmi_channel				\
+				   SCMI_TRANSPORT_CHAN_NAME(SCMI_PROTOCOL_BASE, 1);),	\
+				   (/* no decl when NULL */))))
+
+/**
  * @brief Declare SCMI TX/RX channels
  *
  * Given a node_id for a protocol, this macro declares the
  * SCMI TX and RX channels statically bound to said protocol via
- * the "extern" qualifier. Since RX channels are currently not
- * supported, this is equivalent to DT_SCMI_TRANSPORT_TX_CHAN_DECLARE().
- * Despite this, users should opt for this macro instead of the TX-specific
- * one.
+ * the "extern" qualifier.
  *
  * @param node_id protocol node identifier
  */
 #define DT_SCMI_TRANSPORT_CHANNELS_DECLARE(node_id)				\
 	DT_SCMI_TRANSPORT_TX_CHAN_DECLARE(node_id)				\
+	DT_SCMI_TRANSPORT_RX_CHAN_DECLARE(node_id)				\
 
 /**
  * @brief Declare SCMI TX/RX channels using node instance number
@@ -120,6 +141,25 @@
 	COND_CODE_1(DT_SCMI_TRANSPORT_PROTO_HAS_CHAN(node_id, 0),		\
 		    (&SCMI_TRANSPORT_CHAN_NAME(DT_REG_ADDR_RAW(node_id), 0)),	\
 		    (&SCMI_TRANSPORT_CHAN_NAME(SCMI_PROTOCOL_BASE, 0)))
+
+/**
+ * @brief Get a reference to a protocol's SCMI RX channel
+ *
+ * Given a node_id for a protocol, this macro returns a
+ * reference to an SCMI RX channel statically bound to said
+ * protocol.
+ *
+ * @param node_id protocol node identifier
+ *
+ * @return reference to the struct scmi_channel of the RX channel
+ * bound to the protocol identifier by node_id
+ */
+#define DT_SCMI_TRANSPORT_RX_CHAN(node_id)						\
+	COND_CODE_1(DT_SCMI_TRANSPORT_PROTO_HAS_CHAN(node_id, 1),			\
+		    (&SCMI_TRANSPORT_CHAN_NAME(DT_REG_ADDR_RAW(node_id), 1)),		\
+			(COND_CODE_1(DT_PROP_HAS_IDX(DT_PARENT(node_id), shmem, 1),	\
+				(&SCMI_TRANSPORT_CHAN_NAME(SCMI_PROTOCOL_BASE, 1)),	\
+				(NULL))))
 
 /**
  * @brief Define an SCMI channel for a protocol
@@ -154,13 +194,15 @@
  * @param proto protocol ID in decimal format
  * @param pdata protocol private data
  */
-#define DT_SCMI_PROTOCOL_DATA_DEFINE(node_id, proto, pdata, version_val)	\
-	STRUCT_SECTION_ITERABLE(scmi_protocol, SCMI_PROTOCOL_NAME(proto)) =	\
-	{									\
-		.id = proto,							\
-		.tx = DT_SCMI_TRANSPORT_TX_CHAN(node_id),			\
-		.data = pdata,							\
-		.version = version_val						\
+#define DT_SCMI_PROTOCOL_DATA_DEFINE(node_id, proto, pdata, version_val, pevents)	\
+	STRUCT_SECTION_ITERABLE(scmi_protocol, SCMI_PROTOCOL_NAME(proto)) =		\
+	{										\
+		.id = proto,								\
+		.tx = DT_SCMI_TRANSPORT_TX_CHAN(node_id),				\
+		.rx = DT_SCMI_TRANSPORT_RX_CHAN(node_id),				\
+		.data = pdata,								\
+		.version = version_val,							\
+		.events = pevents							\
 	}
 
 #else /* CONFIG_ARM_SCMI_TRANSPORT_HAS_STATIC_CHANNELS */
@@ -218,10 +260,10 @@
  * @param prio protocol's priority within its initialization level
  */
 #define DT_SCMI_PROTOCOL_DEFINE(node_id, init_fn, pm, data, config,		\
-				level, prio, api, version_val)			\
+				level, prio, api, version_val, events)		\
 	DT_SCMI_TRANSPORT_CHANNELS_DECLARE(node_id)				\
 	DT_SCMI_PROTOCOL_DATA_DEFINE(node_id, DT_REG_ADDR_RAW(node_id), data,	\
-			version_val);						\
+			version_val, events);					\
 	DEVICE_DT_DEFINE(node_id, init_fn, pm,					\
 			 &SCMI_PROTOCOL_NAME(DT_REG_ADDR_RAW(node_id)),		\
 					     config, level, prio, api)
@@ -239,10 +281,10 @@
  * @param level protocol initialization level
  * @param prio protocol's priority within its initialization level
  */
-#define DT_INST_SCMI_PROTOCOL_DEFINE(inst, init_fn, pm, data, config,		\
-				     level, prio, api, version)			\
-	DT_SCMI_PROTOCOL_DEFINE(DT_INST(inst, DT_DRV_COMPAT), init_fn, pm,	\
-				data, config, level, prio, api, version)
+#define DT_INST_SCMI_PROTOCOL_DEFINE(inst, init_fn, pm, data, config,			\
+				     level, prio, api, version, events)			\
+	DT_SCMI_PROTOCOL_DEFINE(DT_INST(inst, DT_DRV_COMPAT), init_fn, pm,		\
+				data, config, level, prio, api, version, events)	\
 
 /**
  * @brief Define an SCMI protocol with no device
@@ -255,10 +297,10 @@
  * @param node_id protocol node identifier
  * @param data protocol private data
  */
-#define DT_SCMI_PROTOCOL_DEFINE_NODEV(node_id, data, version)			\
+#define DT_SCMI_PROTOCOL_DEFINE_NODEV(node_id, data, version, events_ptr)	\
 	DT_SCMI_TRANSPORT_CHANNELS_DECLARE(node_id)				\
 	DT_SCMI_PROTOCOL_DATA_DEFINE(node_id, DT_REG_ADDR_RAW(node_id), data,	\
-			version)						\
+			version, events_ptr)					\
 
 /**
  * @brief Create an SCMI message field
@@ -274,6 +316,16 @@
  */
 #define SCMI_FIELD_MAKE(x, mask, shift)\
 	(((uint32_t)(x) & (mask)) << (shift))
+
+/**
+ * @brief Extract an SCMI message field
+ *
+ * @param x value to encode
+ * @param mask value to perform bitwise-and with `x`
+ * @param shift value to left-shift masked `x`
+ */
+#define SCMI_FIELD_TAKE(x, mask, shift) \
+	((((uint32_t)(x)) >> (shift)) & (uint32_t)(mask))
 
 /**
  * @brief SCMI protocol IDs

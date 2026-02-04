@@ -9,7 +9,7 @@
 #include <zephyr/kernel.h>
 
 DT_SCMI_PROTOCOL_DEFINE_NODEV(DT_INST(0, arm_scmi_system), NULL,
-		SCMI_SYSTEM_POWER_PROTOCOL_SUPPORTED_VERSION);
+		SCMI_SYSTEM_POWER_PROTOCOL_SUPPORTED_VERSION, NULL);
 
 int scmi_system_protocol_version(uint32_t *version)
 {
