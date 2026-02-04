@@ -876,6 +876,32 @@
 				status = "disabled";
 			};
 
+			power: power@10e000 {
+				compatible = "nordic,nrf-power";
+				reg = <0x10e000 0x1000>;
+				ranges = <0x0 0x10e000 0x1000>;
+				interrupts = <261 NRF_DEFAULT_IRQ_PRIORITY>;
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				gpregret1: gpregret1@500 {
+					#address-cells = <1>;
+					#size-cells = <1>;
+					compatible = "nordic,nrf-gpregret";
+					reg = <0x500 0x1>;
+					status = "disabled";
+				};
+
+				gpregret2: gpregret2@504 {
+					#address-cells = <1>;
+					#size-cells = <1>;
+					compatible = "nordic,nrf-gpregret";
+					reg = <0x504 0x1>;
+					status = "disabled";
+				};
+			};
+
 			audio_auxpll: auxpll@130000 {
 				compatible = "nordic,nrf-auxpll";
 				reg = <0x130000 0x1000>;
