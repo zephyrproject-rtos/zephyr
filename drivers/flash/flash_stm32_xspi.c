@@ -2130,6 +2130,15 @@ static int flash_stm32_xspi_init(const struct device *dev)
 		return -EIO;
 	}
 
+	if (dev_cfg->has_pclken_xspix_alt) {
+		/* Kernel clock config for peripheral if any */
+		if (clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
+				     (clock_control_subsys_t) &dev_cfg->pclken_xspix_alt) != 0) {
+			LOG_ERR("Could not enable XSPI-Alt clock");
+			return -EIO;
+		}
+	}
+
 	if (dev_cfg->has_pclken_ker) {
 		/* Kernel clock config for peripheral if any */
 		if (clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
@@ -2527,6 +2536,10 @@ static int flash_stm32_xspi_init(const struct device *dev)
 		IF_ENABLED(DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE(inst), xspi_ker),	(		\
 			.has_pclken_ker = true,							\
 			.pclken_ker = STM32_CLOCK_INFO_BY_NAME(STM32_XSPI_NODE(inst), xspi_ker),\
+		))										\
+		IF_ENABLED(DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE(inst),  xspix_alt),	 (		\
+			.has_pclken_xspix_alt = true,							\
+			.pclken_xspix_alt = STM32_CLOCK_INFO_BY_NAME(STM32_XSPI_NODE(inst), xspix_alt),	\
 		))										\
 		IF_ENABLED(DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE(inst),  xspi_mgr), (		\
 			.has_pclken_mgr = true,							\

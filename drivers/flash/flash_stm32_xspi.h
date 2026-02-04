@@ -70,6 +70,7 @@ struct flash_stm32_xspi_config {
 	const struct stm32_pclken pclken;
 	const struct stm32_pclken pclken_ker;
 	const struct stm32_pclken pclken_mgr;
+	const struct stm32_pclken pclken_xspix_alt;
 	irq_config_func_t irq_config;
 	size_t flash_size;
 	uint32_t max_frequency;
@@ -86,6 +87,7 @@ struct flash_stm32_xspi_config {
 #endif /* STM32_XSPI_RESET_GPIO */
 	bool has_pclken_ker;
 	bool has_pclken_mgr;
+	bool has_pclken_xspix_alt;
 };
 
 struct flash_stm32_xspi_data {

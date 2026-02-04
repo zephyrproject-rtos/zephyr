@@ -1262,8 +1262,9 @@
 			compatible = "st,stm32-xspi";
 			reg = <0x5802a000 0x1000>, <0x70000000 DT_SIZE_M(256)>;
 			interrupts = <171 0>;
-			clock-names = "xspix", "xspi-ker";
+			clock-names = "xspix", "xspix-alt", "xspi-ker";
 			clocks = <&rcc STM32_CLOCK(AHB5, 12)>,
+				 <&rcc STM32_CLOCK(AHB5, 5)>,
 				 <&rcc STM32_SRC_HCLK5 XSPI2_SEL(0)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
