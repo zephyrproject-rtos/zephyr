@@ -136,7 +136,7 @@
 		regulator-boot-on;
 	};
 
-	psram: memory@0x38000000 {
+	psram: memory@38000000 {
 		compatible = "zephyr,memory-region";
 		device_type = "memory";
 		reg = <0x38000000 0x8000000>;
