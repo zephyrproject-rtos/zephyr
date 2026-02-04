@@ -114,13 +114,13 @@
 
 		disp_mix: power-domain@d {
 			compatible = "arm,scmi-power-domain";
-			reg = <13>;
+			reg = <0xd>;
 			#power-domain-cells = <0>;
 		};
 
 		netc_mix: power-domain@12 {
 			compatible = "arm,scmi-power-domain";
-			reg = <18>;
+			reg = <0x12>;
 			#power-domain-cells = <0>;
 		};
 	};
