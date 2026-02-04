@@ -182,7 +182,7 @@
 	};
 
 	hwinfo: hwinfo {
-		compatible = "silabs,gecko-hwinfo";
+		compatible = "silabs,series2-hwinfo";
 		status = "disabled";
 	};
 
