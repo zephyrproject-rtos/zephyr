@@ -1058,7 +1058,6 @@ static int modem_cellular_on_await_power_on_state_enter(struct modem_cellular_da
 
 	modem_cellular_start_timer(data, K_MSEC(config->startup_time_ms));
 	modem_pipe_attach(data->uart_pipe, modem_cellular_bus_pipe_handler, data);
-	modem_chat_attach(&data->chat, data->uart_pipe);
 	return modem_pipe_open_async(data->uart_pipe);
 }
 
@@ -1069,6 +1068,9 @@ static void modem_cellular_await_power_on_event_handler(struct modem_cellular_da
 		(const struct modem_cellular_config *)data->dev->config;
 
 	switch (evt) {
+	case MODEM_CELLULAR_EVENT_BUS_OPENED:
+		modem_chat_attach(&data->chat, data->uart_pipe);
+		break;
 	case MODEM_CELLULAR_EVENT_MODEM_READY:
 		/* disable the timer and fall through, as we are ready to proceed */
 		modem_cellular_stop_timer(data);
