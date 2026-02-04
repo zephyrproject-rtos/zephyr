@@ -83,7 +83,7 @@ ZTEST_BMEM volatile k_tid_t valid_assert_tid;
 static inline void reset_stored_assert_status(void)
 {
 	valid_assert_tid = NULL;
-	assert_in_isr = 0;
+	assert_in_isr = false;
 }
 
 void z_impl_ztest_set_assert_valid(bool valid)
