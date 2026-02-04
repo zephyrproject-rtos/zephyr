@@ -377,6 +377,38 @@ static int sdhc_stm32_switch_to_1_8v(const struct device *dev)
 	return 0;
 }
 
+static uint32_t sdhc_stm32_send_relative_addr(const struct sdhc_stm32_config *config,
+					      struct sdhc_command *cmd,
+					      struct sdhc_stm32_data *dev_data)
+{
+	uint32_t sdmmc_res = SDMMC_CmdSetRelAdd(config->Instance, (uint16_t *)&cmd->response);
+
+	if (sdmmc_res != 0U) {
+		return sdmmc_res;
+	}
+	/*
+	 * Restore RCA by reversing the double 16-bit right shift from
+	 * Zephyr subsys and SDMMC_CmdSetRelAdd
+	 */
+	cmd->response[0] = cmd->response[0] << 16;
+
+	return sdmmc_res;
+}
+
+static uint32_t sdhc_stm32_select_card(const struct sdhc_stm32_config *config,
+				       struct sdhc_command *cmd)
+{
+	uint32_t sdmmc_res = SDMMC_CmdSelDesel(config->Instance, cmd->arg);
+
+	if (sdmmc_res != 0U) {
+		return sdmmc_res;
+	}
+
+	cmd->response[0] = SDMMC_GetResponse(config->Instance, SDMMC_RESP1);
+
+	return sdmmc_res;
+}
+
 /**
  * @brief Send command to SD/MMC card
  *
@@ -416,27 +448,12 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 		break;
 
 	case SD_SELECT_CARD:
-		sdmmc_res = SDMMC_CmdSelDesel(config->hsd->Instance, cmd->arg);
-		if (sdmmc_res != 0U) {
-			res = -EIO;
-			break;
-		}
-		/* Clear unused flags to avoid SDIO card identification issues */
-		cmd->response[0U] &=
-			~(SD_R1_ERASE_SKIP | SD_R1_CSD_OVERWRITE | SD_R1_ERASE_PARAM);
+		sdmmc_res = sdhc_stm32_select_card(config, cmd);
 		break;
 
 	case SD_SEND_RELATIVE_ADDR:
-		sdmmc_res = SDMMC_CmdSetRelAdd(config->hsd->Instance, (uint16_t *)&cmd->response);
-		if (sdmmc_res != 0U) {
-			res = -EIO;
-			break;
-		}
-		/*
-		 * Restore RCA by reversing the double 16-bit right shift from
-		 * Zephyr subsys and SDMMC_CmdSetRelAdd
-		 */
-		cmd->response[0] = cmd->response[0] << 16;		break;
+		sdmmc_res = sdhc_stm32_send_relative_addr(config, cmd, dev_data);
+		break;
 
 	case SDIO_SEND_OP_COND:
 		sdmmc_res = SDMMC_CmdSendOperationcondition(config->Instance, cmd->arg,
