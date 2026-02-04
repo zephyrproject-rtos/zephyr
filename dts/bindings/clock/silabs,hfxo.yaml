@@ -9,13 +9,18 @@ include: fixed-clock.yaml
 
 properties:
   ctune:
-    type: int
+    type: array
     required: true
-    description: Load capacitance configuration
+    description: |
+      Load capacitance configuration. If two values are set, they are used for
+      XI and XO respectively. If a single value is set, it is used for both.
   precision:
     type: int
     required: true
     description: Precision configuration
+  internal-bias:
+    type: boolean
+    description: Enable XI internal DC bias with an external clock. Ignored in xtal mode.
   mode:
     type: string
     description: |
