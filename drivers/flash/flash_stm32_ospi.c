@@ -20,6 +20,7 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/dt-bindings/flash_controller/ospi.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/irq.h>
 
 #include "spi_nor.h"
@@ -2677,7 +2678,26 @@ static struct flash_stm32_ospi_data flash_stm32_ospi_dev_data = {
 	OSPI_DMA_CHANNEL(STM32_OSPI_NODE, tx_rx)
 };
 
-DEVICE_DT_INST_DEFINE(0, &flash_stm32_ospi_init, NULL,
+#ifdef CONFIG_PM_DEVICE
+static int flash_stm32_ospi_pm_action(const struct device *dev,
+				      enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		ospi_lock_thread(dev);
+		return 0;
+	case PM_DEVICE_ACTION_RESUME:
+		ospi_unlock_thread(dev);
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+#endif /* CONFIG_PM_DEVICE */
+
+PM_DEVICE_DT_INST_DEFINE(0, flash_stm32_ospi_pm_action);
+
+DEVICE_DT_INST_DEFINE(0, &flash_stm32_ospi_init, PM_DEVICE_DT_INST_GET(0),
 		      &flash_stm32_ospi_dev_data, &flash_stm32_ospi_cfg,
 		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		      &flash_stm32_ospi_driver_api);
