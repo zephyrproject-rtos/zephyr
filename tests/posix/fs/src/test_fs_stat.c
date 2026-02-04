@@ -102,8 +102,7 @@ ZTEST(posix_fs_stat_test, test_fs_stat_dir)
 	zassert_equal(0, buf.st_size);
 	zassert_equal(S_IFDIR, buf.st_mode);
 
-	/* note: for posix compatibility should should actually work */
-	zassert_not_equal(0, stat(TEST_ROOT, &buf));
+	zassert_equal(0, stat(TEST_ROOT, &buf));
 }
 
 /**
