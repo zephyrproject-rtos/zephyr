@@ -37,7 +37,7 @@
 		compatible = "gpio-leds";
 
 		led_0: led0 {
-			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
 			label = "User LED";
 		};
 	};
@@ -47,7 +47,7 @@
 
 		button_0: button0 {
 			label = "User Button";
-			gpios = <&gpioa 0 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+			gpios = <&gpioa 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
