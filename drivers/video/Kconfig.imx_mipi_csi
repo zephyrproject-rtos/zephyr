@@ -1,0 +1,21 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_IMX_MIPI_CSI
+	bool "i.MX MIPI CSI Host Controller"
+	default y
+	depends on DT_HAS_IMX_MIPI_CSI_ENABLED
+	select VIDEO_PHY
+	help
+	  Enable driver for DesignWare MIPI CSI Host Controller.
+	  This controller is used in NXP i.MX9 series SoCs.
+
+if VIDEO_IMX_MIPI_CSI
+
+config VIDEO_IMX_MIPI_CSI_INIT_PRIORITY
+	int "i.MX MIPI CSI initialization priority"
+	default 80
+	help
+	  Initialization priority for IMX MIPI CSI driver.
+
+endif # VIDEO_IMX_MIPI_CSI
