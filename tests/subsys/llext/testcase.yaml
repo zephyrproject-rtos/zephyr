@@ -76,6 +76,7 @@ tests:
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU
+    min_ram: 300
     extra_conf_files: ['no_mem_protection.conf']
     extra_configs:
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
@@ -94,6 +95,7 @@ tests:
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU
+    min_ram: 300
     extra_conf_files: ['no_mem_protection.conf']
     extra_configs:
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
@@ -111,6 +113,7 @@ tests:
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU
+    min_ram: 300
     extra_conf_files: ['no_mem_protection.conf']
     extra_configs:
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
@@ -130,6 +133,7 @@ tests:
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU
+    min_ram: 300
     extra_conf_files: ['no_mem_protection.conf']
     extra_configs:
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
