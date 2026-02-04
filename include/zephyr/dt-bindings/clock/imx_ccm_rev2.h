@@ -1,5 +1,5 @@
 /*
- * Copyright 2021,2024-2025 NXP
+ * Copyright 2021,2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -162,6 +162,9 @@
 /* USB */
 #define IMX_CCM_USB_CLK                0x2500UL
 #define IMX_CCM_USB_PHY_CLK            0x2600UL
+
+/* eQDC */
+#define IMX_CCM_EQDC_CLK               0x2700UL
 
 /* QTMR */
 #define IMX_CCM_QTMR_CLK               0x6000UL

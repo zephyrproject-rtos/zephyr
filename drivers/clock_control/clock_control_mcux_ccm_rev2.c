@@ -1,5 +1,5 @@
 /*
- * Copyright 2021,2024-2025 NXP
+ * Copyright 2021,2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -357,6 +357,12 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 #ifdef CONFIG_INPUT_MCUX_KPP
 	case IMX_CCM_KPP_CLK:
 		clock_root = kCLOCK_CpuClk;
+		break;
+#endif
+
+#ifdef CONFIG_MCUX_EQDC
+	case IMX_CCM_EQDC_CLK:
+		clock_root = kCLOCK_Root_Bus_Wakeup;
 		break;
 #endif
 

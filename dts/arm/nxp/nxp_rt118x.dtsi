@@ -684,6 +684,38 @@
 		};
 	};
 
+	eqdc1: eqdc@2710000 {
+		compatible = "nxp,mcux-eqdc";
+		reg = <0x2710000 0x4000>;
+		interrupts = <185 0>;
+		clocks = <&ccm IMX_CCM_EQDC_CLK 0 0>;
+		status = "disabled";
+	};
+
+	eqdc2: eqdc@2720000 {
+		compatible = "nxp,mcux-eqdc";
+		reg = <0x2720000 0x4000>;
+		interrupts = <186 0>;
+		clocks = <&ccm IMX_CCM_EQDC_CLK 0 0>;
+		status = "disabled";
+	};
+
+	eqdc3: eqdc@2730000 {
+		compatible = "nxp,mcux-eqdc";
+		reg = <0x2730000 0x4000>;
+		interrupts = <187 0>;
+		clocks = <&ccm IMX_CCM_EQDC_CLK 0 0>;
+		status = "disabled";
+	};
+
+	eqdc4: eqdc@2740000 {
+		compatible = "nxp,mcux-eqdc";
+		reg = <0x2740000 0x4000>;
+		interrupts = <188 0>;
+		clocks = <&ccm IMX_CCM_EQDC_CLK 0 0>;
+		status = "disabled";
+	};
+
 	netc: ethernet {
 		compatible = "nxp,imx-netc";
 		#address-cells = <1>;
