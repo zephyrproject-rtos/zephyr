@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,37 @@
 		zephyr,flash-controller = &mt35xu01gbba;
 		zephyr,console = &lpuart3;
 		zephyr,shell-uart = &lpuart3;
+		zephyr,camera = &ap1302;
+	};
+
+	/* ADP5585_PWREN2 */
+	/* Camera power regulators */
+	reg_cam_dvdd: regulator-cam-dvdd {
+		compatible = "regulator-fixed";
+		regulator-name = "CAM_DVDD_1V2";
+		enable-gpios = <&adp5585_gpio 9 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+
+	reg_cam_vddio: regulator-cam-vddio {
+		compatible = "regulator-fixed";
+		regulator-name = "CAM_VDDIO_1V8";
+		enable-gpios = <&adp5585_gpio 8 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+
+	reg_cam_avdd: regulator-cam-avdd {
+		compatible = "regulator-fixed";
+		regulator-name = "CAM_AVDD_2V8";
+		enable-gpios = <&adp5585_gpio 10 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+
+	reg_cam_vddio_hmisc: regulator-cam-vddio-hmisc {
+		compatible = "regulator-fixed";
+		regulator-name = "CAM_VDDIO_HMISC_1V8";
+		enable-gpios = <&adp5585_gpio 12 GPIO_ACTIVE_HIGH>;
+		status = "okay";
 	};
 };
 
@@ -96,6 +127,57 @@
 				reg = <0x00E20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
 			};
 		};
+	};
+};
+
+/* LPI2C3 for camera sensor and ADP5585 IO expander */
+&lpi2c3 {
+	status = "okay";
+	pinctrl-0 = <&lpi2c3_default>;
+	pinctrl-names = "default";
+
+	/* ADP5585 MFD device for camera power control */
+	mfd_adp5585: adp5585@34 {
+		compatible = "adi,adp5585";
+		reg = <0x34>;
+		status = "okay";
+
+		/* GPIO child node */
+		adp5585_gpio: adp5585_gpio {
+			compatible = "adi,adp5585-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <13>;
+			gpio-reserved-ranges = <5 3>;
+			status = "okay";
+		};
+	};
+
+	pcal6408: gpio@20 {
+		compatible = "nxp,pcal6408a";
+		reg = <0x20>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+		status = "okay";
+	};
+
+	ap1302: camera@3c {
+		compatible = "onnn,ap1302";
+		reg = <0x3c>;
+		reset-gpios = <&pcal6408 2 GPIO_ACTIVE_HIGH>;
+		isp-en-gpios = <&adp5585_gpio 2 GPIO_ACTIVE_HIGH>;
+		power-supplies = <&reg_cam_dvdd>,
+				 <&reg_cam_vddio>,
+				 <&reg_cam_avdd>,
+				 <&reg_cam_vddio_hmisc>;
+		clock-names = "mclk";
+		clocks = <&scmi_clk IMX95_CLK_CCMCKO1>;
+		pinctrl-0 = <&cmmclk1_default>;
+		pinctrl-names = "default";
+		firmware-address = <0x87000000>;
+		mipi-data-lanes = <2>;
+		status = "okay";
 	};
 };
 
