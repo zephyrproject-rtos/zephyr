@@ -163,7 +163,7 @@ static int put_basename(struct lwm2m_output_context *out, struct lwm2m_obj_path 
 
 	record->record_bn.record_bn.value = basename;
 	record->record_bn.record_bn.len = len;
-	record->record_bn_present = 1;
+	record->record_bn_present = true;
 
 	if ((len < sizeof("/0/0") - 1) || (len >= SENML_MAX_NAME_SIZE)) {
 		__ASSERT_NO_MSG(false);
@@ -260,7 +260,7 @@ static int put_begin_r(struct lwm2m_output_context *out, struct lwm2m_obj_path *
 
 	record->record_n.record_n.value = name;
 	record->record_n.record_n.len = len;
-	record->record_n_present = 1;
+	record->record_n_present = true;
 
 	/* Makes possible to use same slot for storing r/ri name combination.
 	 * No need to increase the name count if an existing name has been used
@@ -288,11 +288,11 @@ static int put_data_timestamp(struct lwm2m_output_context *out, time_t value)
 
 	if (fd->basetime) {
 		out_record->record_t.record_t = value - fd->basetime;
-		out_record->record_t_present = 1;
+		out_record->record_t_present = true;
 	} else {
 		fd->basetime = value;
 		out_record->record_bt.record_bt = value;
-		out_record->record_bt_present = 1;
+		out_record->record_bt_present = true;
 	}
 
 	return 0;
@@ -334,7 +334,7 @@ static int put_begin_ri(struct lwm2m_output_context *out, struct lwm2m_obj_path 
 	/* Tell CBOR encoder where to find the name */
 	record->record_n.record_n.value = name;
 	record->record_n.record_n.len = len;
-	record->record_n_present = 1;
+	record->record_n_present = true;
 
 	/* No need to increase the name count if an existing name has been used */
 	if (name == GET_CBOR_FD_NAME(fd)) {
@@ -379,7 +379,7 @@ static int put_value(struct lwm2m_output_context *out, struct lwm2m_obj_path *pa
 	/* Write the value */
 	record->record_union.record_union_choice = union_vi_c;
 	record->record_union.union_vi = value;
-	record->record_union_present = 1;
+	record->record_union_present = true;
 
 	return 0;
 }
@@ -417,7 +417,7 @@ static int put_time(struct lwm2m_output_context *out, struct lwm2m_obj_path *pat
 	/* Write the value */
 	record->record_union.record_union_choice = union_vi_c;
 	record->record_union.union_vi = (int64_t)value;
-	record->record_union_present = 1;
+	record->record_union_present = true;
 
 	return 0;
 }
@@ -435,7 +435,7 @@ static int put_float(struct lwm2m_output_context *out, struct lwm2m_obj_path *pa
 	/* Write the value */
 	record->record_union.record_union_choice = union_vf_c;
 	record->record_union.union_vf = *value;
-	record->record_union_present = 1;
+	record->record_union_present = true;
 
 	return 0;
 }
@@ -455,7 +455,7 @@ static int put_string(struct lwm2m_output_context *out, struct lwm2m_obj_path *p
 	record->record_union.record_union_choice = union_vs_c;
 	record->record_union.union_vs.value = buf;
 	record->record_union.union_vs.len = buflen;
-	record->record_union_present = 1;
+	record->record_union_present = true;
 
 	return 0;
 }
@@ -473,7 +473,7 @@ static int put_bool(struct lwm2m_output_context *out, struct lwm2m_obj_path *pat
 	/* Write the value */
 	record->record_union.record_union_choice = union_vb_c;
 	record->record_union.union_vb = value;
-	record->record_union_present = 1;
+	record->record_union_present = true;
 
 	return 0;
 }
@@ -493,7 +493,7 @@ static int put_opaque(struct lwm2m_output_context *out, struct lwm2m_obj_path *p
 	record->record_union.record_union_choice = union_vd_c;
 	record->record_union.union_vd.value = buf;
 	record->record_union.union_vd.len = buflen;
-	record->record_union_present = 1;
+	record->record_union_present = true;
 
 	return 0;
 }
@@ -530,7 +530,7 @@ static int put_objlnk(struct lwm2m_output_context *out, struct lwm2m_obj_path *p
 	record->record_union.record_union_choice = union_vlo_c;
 	record->record_union.union_vlo.value = objlink_buf;
 	record->record_union.union_vlo.len = objlnk_len;
-	record->record_union_present = 1;
+	record->record_union_present = true;
 
 	fd->objlnk_cnt++;
 
