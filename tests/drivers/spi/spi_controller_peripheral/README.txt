@@ -1,4 +1,4 @@
-In this test suite two instances of the SPI peripheral are connected together.
+In this test suite, two instances of the SPI peripheral are connected together on the same device (i.e. loopback mode).
 One SPI instance works as a controller, second one is configured as a peripheral.
 In each test, both instances get identical configuration (CPOL, CPHA, bitrate, etc.).
 
