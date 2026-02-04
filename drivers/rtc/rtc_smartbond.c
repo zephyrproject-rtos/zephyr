@@ -514,7 +514,7 @@ static int rtc_smartbond_alarm_is_pending(const struct device *dev, uint16_t id)
 	key = DA1469X_IRQ_DISABLE();
 	status = data->is_alarm_pending;
 	/* After reading, the alarm status should be cleared. */
-	data->is_alarm_pending = 0;
+	data->is_alarm_pending = false;
 	DA1469X_IRQ_ENABLE(key);
 
 	return status;
