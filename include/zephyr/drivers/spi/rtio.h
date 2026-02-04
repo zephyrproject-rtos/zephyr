@@ -27,6 +27,9 @@ struct spi_rtio {
 	struct rtio_iodev_sqe *txn_head;
 	struct rtio_iodev_sqe *txn_curr;
 	struct spi_dt_spec dt_spec;
+#if CONFIG_SPI_ASYNC
+	spi_callback_t async_cb;
+#endif /* CONFIG_SPI_ASYNC */
 };
 
 /**
@@ -49,6 +52,7 @@ struct spi_rtio {
  * @param[in] iodev iodev to transceive with
  * @param[in] tx_bufs transmit buffer set
  * @param[in] rx_bufs receive buffer set
+ * @param[in] no_response do not generate any CQEs, useful if last SQE is a callback
  * @param[out] last_sqe last sqe submitted, NULL if not enough memory
  *
  * @retval Number of submission queue entries
@@ -58,6 +62,7 @@ int spi_rtio_copy(struct rtio *r,
 		  struct rtio_iodev *iodev,
 		  const struct spi_buf_set *tx_bufs,
 		  const struct spi_buf_set *rx_bufs,
+		  bool no_response,
 		  struct rtio_sqe **last_sqe);
 
 /**
@@ -98,6 +103,20 @@ int spi_rtio_transceive(struct spi_rtio *ctx,
 			const struct spi_config *config,
 			const struct spi_buf_set *tx_bufs,
 			const struct spi_buf_set *rx_bufs);
+
+/**
+ * @brief Perform a SPI Transfer (transceive) in an async call
+ *
+ * Provides a compatible API for the existing spi_transceive_async API calling
+ * the caller once the operation is complete.
+ * For details see @ref spi_transceive_async.
+ */
+int spi_rtio_transceive_async(struct spi_rtio *ctx,
+			      const struct spi_config *config,
+			      const struct spi_buf_set *tx_bufs,
+			      const struct spi_buf_set *rx_bufs,
+			      spi_callback_t cb,
+			      void *userdata);
 
 /**
  * @brief Fallback SPI RTIO submit implementation.

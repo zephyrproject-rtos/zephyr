@@ -167,6 +167,7 @@ int spi_rtio_copy(struct rtio *r,
 		  struct rtio_iodev *iodev,
 		  const struct spi_buf_set *tx_bufs,
 		  const struct spi_buf_set *rx_bufs,
+		  bool no_response,
 		  struct rtio_sqe **last_sqe)
 {
 	int ret = 0;
@@ -314,10 +315,14 @@ int spi_rtio_copy(struct rtio *r,
 		}
 
 		sqe->flags = RTIO_SQE_TRANSACTION;
+
+		if (no_response) {
+			sqe->flags |= RTIO_SQE_NO_RESPONSE;
+		}
 	}
 
 	if (sqe != NULL) {
-		sqe->flags = 0;
+		sqe->flags = no_response ? RTIO_SQE_NO_RESPONSE : 0;
 		*last_sqe = sqe;
 	}
 
@@ -452,7 +457,7 @@ int spi_rtio_transceive(struct spi_rtio *ctx,
 
 	dt_spec->config = *config;
 
-	ret = spi_rtio_copy(ctx->r, &ctx->iodev, tx_bufs, rx_bufs, &sqe);
+	ret = spi_rtio_copy(ctx->r, &ctx->iodev, tx_bufs, rx_bufs, false, &sqe);
 	if (ret < 0) {
 		spi_r_unlock(ctx);
 		return ret;
@@ -479,3 +484,75 @@ int spi_rtio_transceive(struct spi_rtio *ctx,
 	spi_r_unlock(ctx);
 	return err;
 }
+
+#if CONFIG_SPI_ASYNC
+static void transceive_async_callback(struct rtio *r,
+				      const struct rtio_sqe *sqe,
+				      int res,
+				      void *arg0)
+{
+	struct spi_rtio *ctx = arg0;
+	spi_callback_t cb = ctx->async_cb;
+	struct spi_dt_spec *dt_spec = &ctx->dt_spec;
+	const struct device *dev = dt_spec->bus;
+	void *userdata = sqe->userdata;
+
+	/*
+	 * We have stored the context data needed for the callback so
+	 * we can unlock the context here
+	 */
+	spi_r_unlock(ctx);
+
+	if (cb == NULL) {
+		return;
+	}
+
+	cb(dev, res, userdata);
+}
+
+int spi_rtio_transceive_async(struct spi_rtio *ctx,
+			      const struct spi_config *config,
+			      const struct spi_buf_set *tx_bufs,
+			      const struct spi_buf_set *rx_bufs,
+			      spi_callback_t cb,
+			      void *userdata)
+{
+	struct spi_dt_spec *dt_spec = &ctx->dt_spec;
+	struct rtio_sqe *sqe;
+	int ret = 0;
+
+	if (tx_bufs == NULL && rx_bufs == NULL) {
+		return -EINVAL;
+	}
+
+	spi_r_lock(ctx);
+
+	dt_spec->config = *config;
+
+	ret = spi_rtio_copy(ctx->r, &ctx->iodev, tx_bufs, rx_bufs, true, &sqe);
+	if (ret < 0) {
+		spi_r_unlock(ctx);
+		return ret;
+	}
+
+	sqe->flags |= RTIO_SQE_CHAINED;
+
+	sqe = rtio_sqe_acquire(ctx->r);
+	if (sqe == NULL) {
+		rtio_sqe_drop_all(ctx->r);
+		spi_r_unlock(ctx);
+		return ret;
+	}
+
+	ctx->async_cb = cb;
+
+	rtio_sqe_prep_callback_no_cqe(sqe,
+				      transceive_async_callback,
+				      ctx,
+				      userdata);
+
+	rtio_submit(ctx->r, 0);
+
+	return 0;
+}
+#endif /* CONFIG_SPI_ASYNC */
