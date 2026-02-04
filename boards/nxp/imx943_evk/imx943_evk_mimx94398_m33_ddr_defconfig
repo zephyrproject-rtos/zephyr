@@ -22,5 +22,11 @@ CONFIG_ARM_SCMI_NXP_VENDOR_EXTENSIONS=y
 # kernel-related configurations
 CONFIG_XIP=n
 
+# i2c multiplexer related configurations
+CONFIG_I2C_TCA954X_CHANNEL_INIT_PRIO=51
+
+# i2s related configurations
+CONFIG_I2S_HAS_PLL_SETTING=n
+
 # nocache section related configurations
 CONFIG_NOCACHE_MEMORY=y
