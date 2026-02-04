@@ -1,0 +1,19 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SLCD_PANEL_SEGMENT7
+	bool "7-Segment SLCD Panel Device Driver"
+	help
+	  Enable the 7-segment SLCD panel device driver. This driver supports
+	  segmented LCD panels with 7-segment displays (segments A through G),
+	  typically used for numeric and alphanumeric display units.
+
+	  The driver provides APIs to display:
+	  - Numbers (0-9) at specific positions
+	  - Letters (A-Z, a-z) at specific positions
+	  - Special icons at designated locations
+
+	  The driver reads the segment-mux and icon-mux properties from the
+	  device tree to determine which pin and COM lines correspond to
+	  each segment and icon, then uses the parent SLCD controller's
+	  to control the display.

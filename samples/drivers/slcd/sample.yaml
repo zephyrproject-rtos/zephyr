@@ -1,0 +1,18 @@
+sample:
+  description: SLCD sample
+  name: SLCD sample
+tests:
+  sample.display.shield:
+    # This test case is intended to verify support for shields on boards
+    # known to support them. It is not intended to cover all combinations
+    # of boards and shields, but rather serve as a method to test each
+    # display shield within Zephyr
+    filter: dt_chosen_enabled("zephyr,slcd_panel")
+    harness: console
+    harness_config:
+      fixture: fixture_display
+      type: one_line
+      regex:
+        - "SLCD sample started on device (.*)"
+    extra_args:
+      - platform:frdm_mcxa366/mcxa366:SHIELD=od_6010

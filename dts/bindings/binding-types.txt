@@ -115,6 +115,7 @@ sent	SENT (Single Edge Nibble Transmission)
 serial	Serial controller
 shi	SHI (Serial Host Interface)
 sip_svc	Service in Platform
+slcd	SLCD (Segemt LCD)
 smbus	SMbus (System Management Bus)
 sound	Sound
 spi	SPI (Serial Peripheral Interface)

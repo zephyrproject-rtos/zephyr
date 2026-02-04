@@ -320,6 +320,10 @@ void board_early_init_hook(void)
 	CLOCK_EnableUsbfsClock();
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(slcd0))
+	RESET_ReleasePeripheralReset(kSLCD0_RST_SHIFT_RSTn);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 }

@@ -1,0 +1,83 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* OD-6010 SLCD Panel Shield Device Tree Overlay
+ *
+ * The OD-6010 is a 6-digit 7-segment LCD panel with 6 icons.
+ * Hardware Configuration:
+ * - 6 Display Positions (positions 1-6)
+ * - 7 Segments per Position (A-G)
+ * - 4 COM lines (COM0-COM3)
+ * - 12 Pins (Pin 0-11 for front plane)
+ * - 6 Icons (P1-P6 indicators)
+ *
+ * Pin and COM Mapping (from OD-6010.txt):
+ * COM0: Pins 0-11 for Segment A and Icons
+ * COM1: Pins 0-11 for Segments B, F
+ * COM2: Pins 0-11 for Segments C, G
+ * COM3: Pins 0-11 for Segments D, E
+ */
+
+/ {
+	chosen {
+		zephyr,slcd-panel = &od_6010;
+	};
+};
+
+&slcd_controller {
+	od_6010: slcd_panel {
+		compatible = "zephyr,segment7";
+		status = "okay";
+
+		segment-type = "7-segment";
+		num-positions = <6>;
+		num-icons = <6>;
+
+		/* segment-mux: 6 positions × 7 segments = 42 elements
+		 * Format: 0xPPCC where PP = pin number (hex), CC = COM mask (0x01-0x08 for COM0-COM3)
+		 *
+		 * Position 1 (Index 0-6):
+		 *   Seg A: Pin 0, COM0 → 0x0001
+		 *   Seg B: Pin 0, COM1 → 0x0002
+		 *   Seg C: Pin 0, COM2 → 0x0004
+		 *   Seg D: Pin 0, COM3 → 0x0008
+		 *   Seg E: Pin 1, COM3 → 0x0108
+		 *   Seg F: Pin 1, COM1 → 0x0102
+		 *   Seg G: Pin 1, COM2 → 0x0104
+		 *
+		 * Position 2-6 follow same pattern with different pins
+		 *
+		 */
+		segment-mux = <
+			/* Position 1 */
+			0x0001 0x0002 0x0004 0x0008 0x0108 0x0102 0x0104
+			/* Position 2 */
+			0x0201 0x0202 0x0204 0x0208 0x0308 0x0302 0x0304
+			/* Position 3 */
+			0x0401 0x0402 0x0404 0x0408 0x0508 0x0502 0x0504
+			/* Position 4 */
+			0x0601 0x0602 0x0604 0x0608 0x0708 0x0702 0x0704
+			/* Position 5 */
+			0x0801 0x0802 0x0804 0x0808 0x0908 0x0902 0x0904
+			/* Position 6 */
+			0x0a01 0x0a02 0x0a04 0x0a08 0x0b08 0x0b02 0x0b04
+		>;
+
+		/* icon-mux: 6 icons (P1-P6)
+		 * Format: 0xPPCC where PP = pin number, CC = COM mask
+		 *
+		 * From OD-6010.txt:
+		 * Icon P1 (Pin 7, COM0): 0x0701
+		 * Icon P2 (Pin 5, COM0): 0x0501
+		 * Icon P3 (Pin 3, COM0): 0x0301
+		 * Icon P4 (Pin 9, COM0): 0x0901
+		 * Icon P5 (Pin 11, COM0): 0x0b01
+		 * Icon P6 (Pin 1, COM0): 0x0101
+		 */
+		icon-mux = <0x0701 0x0501 0x0301 0x0901 0x0b01 0x0101>;
+	};
+};
+

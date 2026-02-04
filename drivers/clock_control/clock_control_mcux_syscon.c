@@ -259,6 +259,12 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	}
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(slcd0))
+	if ((uint32_t)sub_system == MCUX_SLCD_CLK) {
+		CLOCK_EnableClock(kCLOCK_GateSLCD0);
+	}
+#endif
+
 	return 0;
 }
 
@@ -704,6 +710,12 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(micfil))
 	case MCUX_MICFIL_CLK:
 		*rate = CLOCK_GetMicfilClkFreq();
+		break;
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(slcd0))
+	case MCUX_SLCD_CLK:
+		*rate = 16384U; /* Fix 16.384kHz */
 		break;
 #endif
 	}
