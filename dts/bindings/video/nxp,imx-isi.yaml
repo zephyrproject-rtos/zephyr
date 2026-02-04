@@ -1,0 +1,24 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP i.MX Image Sensing Interface (ISI)
+
+compatible: "nxp,imx-isi"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  input-port:
+    type: int
+    default: 0
+    description: ISI input port number
+
+  ports:
+    type: compound
+    description: Video port connections
