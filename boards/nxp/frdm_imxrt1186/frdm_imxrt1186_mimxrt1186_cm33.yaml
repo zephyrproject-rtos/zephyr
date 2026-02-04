@@ -17,5 +17,6 @@ flash: 16384
 supported:
   - adc
   - gpio
+  - can
   - uart
 vendor: nxp
