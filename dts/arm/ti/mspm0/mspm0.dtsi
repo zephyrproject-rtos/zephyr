@@ -115,6 +115,12 @@
 			clocks = <&sysosc>;
 			status = "disabled";
 		};
+
+		canclk: canclk {
+			#clock-cells = <1>;
+			compatible = "ti,mspm0-clk";
+			status = "disabled";
+		};
 	};
 
 	oscillators: oscillators {
