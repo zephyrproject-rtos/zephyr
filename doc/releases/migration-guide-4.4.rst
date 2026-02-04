@@ -818,10 +818,17 @@ Networking
   to automatically enable all the dependencies of a given ciphersuite, and more can be added as
   needed following the same pattern.
 
+CoAP
+====
+
 * Resource-related metadata for CoAP ``.well-known/core`` responses is now configured with a dedicated
   :c:member:`coap_resource.metadata` pointer instead of :c:member:`coap_resource.user_data`, which
   should remain for the application to use exclusively. Applications implementing CoAP
   ``.well-known/core`` handling should be updated to use the new pointer.
+
+* ``COAP_RESPONSE_CODE_OK`` 2.00 response code definition has been removed as it's not a valid
+  response code - it's not defined in :rfc:`7252` and is not assigned in the IANA registry
+  (https://www.iana.org/assignments/core-parameters/core-parameters.xhtml#response-codes).
 
 Modem
 *****
