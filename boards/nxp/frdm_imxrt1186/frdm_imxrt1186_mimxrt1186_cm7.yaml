@@ -19,4 +19,5 @@ supported:
   - can
   - uart
   - mbox
+  - i2c
 vendor: nxp
