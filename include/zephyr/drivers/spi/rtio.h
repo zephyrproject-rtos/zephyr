@@ -119,6 +119,14 @@ int spi_rtio_transceive_async(struct spi_rtio *ctx,
 			      void *userdata);
 
 /**
+ * @brief Stub spi_release implementation
+ *
+ * Provides a stub implementation of the spi_release API returning -ENOTSUP as SPI_LOCKED
+ * is not supported with RTIO. RTIO transactions with RTIO_OP_AWAIT can be used instead.
+ */
+int spi_rtio_release(const struct device *dev, const struct spi_config *config);
+
+/**
  * @brief Fallback SPI RTIO submit implementation.
  *
  * Default RTIO SPI implementation for drivers who do no yet have

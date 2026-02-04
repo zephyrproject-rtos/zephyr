@@ -453,6 +453,10 @@ int spi_rtio_transceive(struct spi_rtio *ctx,
 		return -EINVAL;
 	}
 
+	if (config->operation & SPI_LOCK_ON) {
+		return -EINVAL;
+	}
+
 	spi_r_lock(ctx);
 
 	dt_spec->config = *config;
@@ -525,6 +529,10 @@ int spi_rtio_transceive_async(struct spi_rtio *ctx,
 		return -EINVAL;
 	}
 
+	if (config->operation & SPI_LOCK_ON) {
+		return -EINVAL;
+	}
+
 	spi_r_lock(ctx);
 
 	dt_spec->config = *config;
@@ -556,3 +564,10 @@ int spi_rtio_transceive_async(struct spi_rtio *ctx,
 	return 0;
 }
 #endif /* CONFIG_SPI_ASYNC */
+
+int spi_rtio_release(const struct device *dev, const struct spi_config *config)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(config);
+	return -ENOTSUP;
+}
