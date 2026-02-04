@@ -7,3 +7,5 @@ board:
   vendor: amd
   socs:
   - name: amd_versal2_apu
+    variants:
+    - name: smp
