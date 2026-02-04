@@ -114,7 +114,7 @@ int instr_init(void)
 	 * infinite recursion in the handler since instr_initialized() will return 0 and
 	 * instr_init() will be called again.
 	 */
-	_instr_initialized = 1;
+	_instr_initialized = true;
 
 	if (retention_is_valid(instrumentation_triggers)) {
 		/* Retained mem is already initialized, load trigger and stopper addresses */
@@ -345,7 +345,7 @@ void push_callee_timestamp(void *callee)
 	/* Find callee in the discovered function array */
 	for (curr_func = 0; curr_func < num_disco_func; curr_func++) {
 		if (disco_func[curr_func].addr == callee) {
-			found = 1;
+			found = true;
 			break;
 		}
 	}
@@ -570,7 +570,7 @@ void instr_event_handler(enum instr_event_types type, void *callee, void *caller
 
 		if (!IS_ENABLED(CONFIG_INSTRUMENTATION_MODE_CALLGRAPH_BUFFER_OVERWRITE) &&
 				instr_buffer_space_get() < sizeof(struct instr_record)) {
-			_instr_tracing_disabled = 1;
+			_instr_tracing_disabled = true;
 			return;
 		}
 
