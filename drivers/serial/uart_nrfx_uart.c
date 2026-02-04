@@ -477,7 +477,7 @@ static int uart_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 		return -EBUSY;
 	}
 
-	uart0_cb.rx_enabled = 1;
+	uart0_cb.rx_enabled = true;
 	uart0_cb.rx_buffer = buf;
 	uart0_cb.rx_buffer_length = len;
 	uart0_cb.rx_counter = 0;
@@ -522,7 +522,7 @@ static int uart_nrfx_rx_disable(const struct device *dev)
 		return -EFAULT;
 	}
 
-	uart0_cb.rx_enabled = 0;
+	uart0_cb.rx_enabled = false;
 	if (uart0_cb.rx_timeout != SYS_FOREVER_US) {
 		k_timer_stop(&uart0_cb.rx_timeout_timer);
 	}
@@ -570,7 +570,7 @@ static void rx_reset_state(void)
 			     NRF_UART_INT_MASK_ERROR |
 			     NRF_UART_INT_MASK_RXTO);
 	uart0_cb.rx_buffer_length = 0;
-	uart0_cb.rx_enabled = 0;
+	uart0_cb.rx_enabled = false;
 	uart0_cb.rx_counter = 0;
 	uart0_cb.rx_offset = 0;
 	uart0_cb.rx_secondary_buffer_length = 0;
@@ -612,7 +612,7 @@ static void rx_isr(const struct device *dev)
 		unsigned int key = irq_lock();
 
 		if (uart0_cb.rx_secondary_buffer_length == 0) {
-			uart0_cb.rx_enabled = 0;
+			uart0_cb.rx_enabled = false;
 		}
 		irq_unlock(key);
 
