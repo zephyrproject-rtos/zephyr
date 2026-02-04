@@ -13,6 +13,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/sys/util.h>
 
 #ifdef CONFIG_I2C_OMAP_BUS_RECOVERY
 #include "i2c_bitbang.h"
@@ -26,6 +27,8 @@ LOG_MODULE_REGISTER(omap_i2c, CONFIG_I2C_LOG_LEVEL);
 #define RETRY                -1
 #define I2C_BITRATE_FAST     400000
 #define I2C_BITRATE_STANDARD 100000
+#define I2C_BUFSTAT_RX_MASK  GENMASK(13, 8)
+#define I2C_BUFSTAT_TX_MASK  GENMASK(5, 0)
 
 /* I2C Registers */
 typedef struct {
@@ -277,6 +280,7 @@ static void i2c_omap_transmit_receive_data(const struct device *dev, uint8_t num
 		} else {
 			i2c_base_addr->DATA = *(buf_ptr++);
 		}
+		data->current_msg.len--;
 	}
 }
 
@@ -451,7 +455,8 @@ static int i2c_omap_transfer_message_ll(const struct device *dev)
 {
 	struct i2c_omap_data *data = DEV_DATA(dev);
 	volatile i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
-	uint16_t stat = i2c_base_addr->STAT, result = 0;
+	uint32_t stat = i2c_base_addr->STAT, result = 0;
+	uint8_t num_bytes;
 
 	if (data->receiver) {
 		stat &= ~(I2C_OMAP_STAT_XDR | I2C_OMAP_STAT_XRDY);
@@ -479,9 +484,10 @@ static int i2c_omap_transfer_message_ll(const struct device *dev)
 
 	/* Handle receive logic */
 	if (stat & (I2C_OMAP_STAT_RRDY | I2C_OMAP_STAT_RDR)) {
-		int buffer =
-			(stat & I2C_OMAP_STAT_RRDY) ? i2c_base_addr->BUF : i2c_base_addr->BUFSTAT;
-		i2c_omap_transmit_receive_data(dev, buffer);
+		num_bytes = FIELD_GET(I2C_BUFSTAT_RX_MASK, i2c_base_addr->BUFSTAT);
+		if (num_bytes > 0) {
+			i2c_omap_transmit_receive_data(dev, num_bytes);
+		}
 		i2c_base_addr->STAT |=
 			(stat & I2C_OMAP_STAT_RRDY) ? I2C_OMAP_STAT_RRDY : I2C_OMAP_STAT_RDR;
 		return RETRY;
@@ -489,9 +495,10 @@ static int i2c_omap_transfer_message_ll(const struct device *dev)
 
 	/* Handle transmit logic */
 	if (stat & (I2C_OMAP_STAT_XRDY | I2C_OMAP_STAT_XDR)) {
-		int buffer =
-			(stat & I2C_OMAP_STAT_XRDY) ? i2c_base_addr->BUF : i2c_base_addr->BUFSTAT;
-		i2c_omap_transmit_receive_data(dev, buffer);
+		num_bytes = FIELD_GET(I2C_BUFSTAT_TX_MASK, i2c_base_addr->BUFSTAT);
+		if (num_bytes > 0) {
+			i2c_omap_transmit_receive_data(dev, num_bytes);
+		}
 		i2c_base_addr->STAT |=
 			(stat & I2C_OMAP_STAT_XRDY) ? I2C_OMAP_STAT_XRDY : I2C_OMAP_STAT_XDR;
 		return RETRY;
