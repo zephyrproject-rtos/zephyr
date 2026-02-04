@@ -12,4 +12,6 @@ module = VIDEO_PHY
 module-str = video_phy
 source "subsys/logging/Kconfig.template.log_config"
 
+source "drivers/video/phy/Kconfig.imx_dphy"
+
 endif # VIDEO_PHY
