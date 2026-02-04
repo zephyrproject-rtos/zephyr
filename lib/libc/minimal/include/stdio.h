@@ -88,6 +88,17 @@ int fclose(FILE *stream);
 int feof(FILE *stream);
 int fputc(int c, FILE *stream);
 /**
+ * @brief Read data from stream.
+ *
+ * @param ptr Destination buffer for elements read
+ * @param size Size of each element
+ * @param nmemb Total number of elements
+ * @param stream Source stream
+ *
+ * @return Number of elements successfully read; EOF with errno set otherwise
+ */
+size_t fread(void *ZRESTRICT ptr, size_t size, size_t nmemb, FILE *ZRESTRICT stream);
+/**
  * @brief Place file position indicator.
  *
  * @param stream Stream to work on
