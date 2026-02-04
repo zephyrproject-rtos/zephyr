@@ -62,8 +62,15 @@ struct zms_fs {
 	/** Size of an Allocation Table Entry */
 	size_t ate_size;
 #if CONFIG_ZMS_LOOKUP_CACHE
+#if CONFIG_ZMS_LOOKUP_CACHE_MANUAL
+	/** Lookup table used to cache ATE addresses of written IDs */
+	uint64_t *lookup_cache;
+	/** Size of the lookup cache */
+	size_t lookup_cache_size;
+#else
 	/** Lookup table used to cache ATE addresses of written IDs */
 	uint64_t lookup_cache[CONFIG_ZMS_LOOKUP_CACHE_SIZE];
+#endif
 #endif
 };
 
@@ -256,6 +263,23 @@ ssize_t zms_active_sector_free_space(struct zms_fs *fs);
  * @retval -EINVAL if `fs` is NULL.
  */
 int zms_sector_use_next(struct zms_fs *fs);
+
+#if CONFIG_ZMS_LOOKUP_CACHE_MANUAL
+/**
+ * @brief Assign a buffer for the lookup cache for a ZMS instance.
+ *
+ * This must be called before zms_mount(). If not called, the cache
+ * will be disabled for this file system instance.
+ *
+ * @param fs Pointer to the file system.
+ * @param buffer Pointer to the buffer to be used for the cache.
+ * @param size The number of entries in the buffer.
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL if `fs` or `buffer` are NULL.
+ */
+int zms_set_lookup_cache(struct zms_fs *fs, uint64_t *buffer, size_t size);
+#endif
 
 /**
  * @}
