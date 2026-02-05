@@ -502,6 +502,12 @@ File System
   :dtcompatible:`zephyr,fstab,fatfs` with the ``automount`` property are present in the devicetree.
   Applications that do not want this behavior need to explicitly disable this option.
 
+* NVS and ZMS have been moved to the new Key-Value Storage System (kvss); the move
+  has affected NVS and ZMS interface header paths that have been moved from
+  ``zephyr/fs/`` to ``zephyr/kvss/``.
+  Kconfig options for NVS and ZMS have been moved from underneath "File Systems" menu to
+  "Key-Value Storage Systems" menu, no Kconfigs have been affected.
+
 GPIO
 ====
 
