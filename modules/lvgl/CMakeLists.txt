@@ -194,6 +194,7 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/draw/vg_lite/lv_draw_vg_lite_vector.c
     ${LVGL_DIR}/src/draw/vg_lite/lv_draw_vg_lite_mask_rect.c
     ${LVGL_DIR}/src/draw/vg_lite/lv_draw_buf_vg_lite.c
+    ${LVGL_DIR}/src/draw/vg_lite/lv_vg_lite_bitmap_font_cache.c
 
     ${LVGL_DIR}/src/font/binfont_loader/lv_binfont_loader.c
     ${LVGL_DIR}/src/font/font_manager/lv_font_manager.c

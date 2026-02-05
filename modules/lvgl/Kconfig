@@ -234,6 +234,14 @@ config LV_Z_VG_LITE_INTERRUPT_PRIORITY
 	help
 	  Sets the interrupt priority for VG-Lite driver.
 
+config LV_Z_VGLITE_HEAP_SIZE
+	int "VG Lite driver internal heap bytes"
+	depends on LV_USE_DRAW_VG_LITE
+	default 65356
+	help
+	  Sets the internal heap for VG Lite driver allocations
+	  This area is separated from LVGL heap.
+
 rsource "Kconfig.memory"
 rsource "Kconfig.input"
 rsource "Kconfig.shell"
