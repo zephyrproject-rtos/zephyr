@@ -647,6 +647,9 @@ void *xtensa_excint1_c(void *esf)
 	default:
 		reason = K_ERR_CPU_EXCEPTION;
 
+		/* Default for exception */
+		is_fatal_error = true;
+
 		/* If the BSA area is invalid, we cannot trust anything coming out of it. */
 		if (xtensa_is_outside_stack_bounds((uintptr_t)bsa, sizeof(*bsa), UINT32_MAX)) {
 			goto skip_checks;
@@ -654,9 +657,6 @@ void *xtensa_excint1_c(void *esf)
 
 		ps = bsa->ps;
 		pc = (void *)bsa->pc;
-
-		/* Default for exception */
-		is_fatal_error = true;
 
 		/* We need to distinguish between an ill in xtensa_arch_except,
 		 * e.g for k_panic, and any other ill. For exceptions caused by
