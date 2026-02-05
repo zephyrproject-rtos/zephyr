@@ -123,7 +123,8 @@
 			flash0: flash@8000000 {
 				compatible = "st,stm32l0-nv-flash", "st,stm32-nv-flash",
 					     "soc-nv-flash";
-
+				#address-cells = <1>;
+				#size-cells = <1>;
 				write-block-size = <4>;
 				/* maximum erase time(ms) for a 128B page */
 				max-erase-time = <4>;
