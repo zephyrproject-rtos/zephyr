@@ -10,26 +10,34 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		boot_partition: partition@0 {
-			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
-			/* MCUBoot partition is set to 62k to allow FPROTECT
-			 * to be enabled by default.
-			 */
-			reg = <0x0 DT_SIZE_K(62)>;
-		};
-
 #ifdef WITH_FLPR_PARTITIONS
-		slot0_partition: partition@10000 {
-			compatible = "zephyr,mapped-partition";
-			label = "image-0";
-			reg = <0x10000 DT_SIZE_K(664)>;
-		};
+		without_bootloader_partition: partition@0 {
+			compatible = "fixed-subpartitions";
+			reg = <0x0 0x15c000>;
+			ranges = <0x0 0x0 0x15c000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-		slot1_partition: partition@b6000 {
-			compatible = "zephyr,mapped-partition";
-			label = "image-1";
-			reg = <0xb6000 DT_SIZE_K(664)>;
+			boot_partition: partition@0 {
+				compatible = "zephyr,mapped-partition";
+				label = "mcuboot";
+				/* MCUBoot partition is set to 62k to allow FPROTECT
+				 * to be enabled by default.
+				 */
+				reg = <0x0 DT_SIZE_K(62)>;
+			};
+
+			slot0_partition: partition@10000 {
+				compatible = "zephyr,mapped-partition";
+				label = "image-0";
+				reg = <0x10000 DT_SIZE_K(664)>;
+			};
+
+			slot1_partition: partition@b6000 {
+				compatible = "zephyr,mapped-partition";
+				label = "image-1";
+				reg = <0xb6000 DT_SIZE_K(664)>;
+			};
 		};
 
 		storage_partition: partition@15c000 {
@@ -38,16 +46,33 @@
 			reg = <0x15c000 DT_SIZE_K(36)>;
 		};
 #else
-		slot0_partition: partition@10000 {
-			compatible = "zephyr,mapped-partition";
-			label = "image-0";
-			reg = <0x10000 DT_SIZE_K(712)>;
-		};
+		without_bootloader_partition: partition@0 {
+			compatible = "fixed-subpartitions";
+			reg = <0x0 0x174000>;
+			ranges = <0x0 0x0 0x174000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-		slot1_partition: partition@c2000 {
-			compatible = "zephyr,mapped-partition";
-			label = "image-1";
-			reg = <0xc2000 DT_SIZE_K(712)>;
+			boot_partition: partition@0 {
+				compatible = "zephyr,mapped-partition";
+				label = "mcuboot";
+				/* MCUBoot partition is set to 62k to allow FPROTECT
+				 * to be enabled by default.
+				 */
+				reg = <0x0 DT_SIZE_K(62)>;
+			};
+
+			slot0_partition: partition@10000 {
+				compatible = "zephyr,mapped-partition";
+				label = "image-0";
+				reg = <0x10000 DT_SIZE_K(712)>;
+			};
+
+			slot1_partition: partition@c2000 {
+				compatible = "zephyr,mapped-partition";
+				label = "image-1";
+				reg = <0xc2000 DT_SIZE_K(712)>;
+			};
 		};
 
 		storage_partition: partition@174000 {
