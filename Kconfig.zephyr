@@ -103,6 +103,7 @@ DT_CHOSEN_Z_FLASH := zephyr,flash
 config FLASH_CODE_PARTITION_ADDRESS_INVALID
 	bool
 	default y if XIP && $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) < FLASH_BASE_ADDRESS
+	depends on USE_DT_CODE_PARTITION
 	select DEPRECATED
 	help
 	  If this item is selected, it is likely selected because your board/SoC/base DTS files
