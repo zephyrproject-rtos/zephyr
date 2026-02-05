@@ -963,8 +963,8 @@
 
 			cpuapp_mram: mram@0 {
 				compatible = "soc-nv-flash";
-				reg = <0 DT_SIZE_K(4084)>;
-				ranges = <0x0 0 DT_SIZE_K(4084)>;
+				reg = <0 DT_SIZE_K(4076)>;
+				ranges = <0x0 0 DT_SIZE_K(4076)>;
 				erase-block-size = <4096>;
 				write-block-size = <4>;
 				#address-cells = <1>;
