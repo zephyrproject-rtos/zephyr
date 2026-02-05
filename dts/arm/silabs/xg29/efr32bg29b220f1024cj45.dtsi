@@ -26,6 +26,22 @@
 	reg = <0x08000000 DT_SIZE_K(1024)>;
 };
 
+&gpioa {
+	ngpios = <7>;
+};
+
+&gpiob {
+	ngpios = <3>;
+};
+
+&gpioc {
+	ngpios = <7>;
+};
+
+&gpiod {
+	ngpios = <2>;
+};
+
 &sram0 {
 	reg = <0x20000000 DT_SIZE_K(256)>;
 };

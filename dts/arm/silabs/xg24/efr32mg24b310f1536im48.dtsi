@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Steven Lemaire
+ * Copyright (c) 2026 Silicon Laboratories Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +17,22 @@
 
 &flash0 {
 	reg = <0x08000000 DT_SIZE_K(1536)>;
+};
+
+&gpioa {
+	ngpios = <8>;
+};
+
+&gpiob {
+	ngpios = <4>;
+};
+
+&gpioc {
+	ngpios = <10>;
+};
+
+&gpiod {
+	ngpios = <6>;
 };
 
 &sram0 {
