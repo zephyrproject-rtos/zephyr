@@ -4,6 +4,7 @@
 
 import argparse
 import os
+import shlex
 from unittest.mock import call, patch
 
 from conftest import RC_KERNEL_HEX
@@ -17,6 +18,8 @@ TEST_RFP_INTERFACE = 'swd'
 TEST_RFP_DEVICE = 'RA'
 TEST_RFP_USR_LOCAL_RFP_CLI = '/usr/local/bin/rfp-cli'
 TEST_RFP_RPD_FILE = 'test-zephyr.rpd'
+TEST_RFP_TOOL_OPT = '-auth id FFFF -osc 20'
+TEST_RFP_TOOL_OPT_L = shlex.split(TEST_RFP_TOOL_OPT)
 
 EXPECTED_COMMANDS = [
     [
@@ -125,6 +128,22 @@ EXPECTED_COMMANDS_WITH_PARTITION_DATA = [
         'boundary-file',
         TEST_RFP_RPD_FILE,
         '-p',
+    ],
+]
+
+EXPECTED_COMMANDS_WITH_TOOL_OPT = [
+    [
+        'rfp-cli',
+        '-port',
+        TEST_RFP_PORT,
+        '-device',
+        TEST_RFP_DEVICE,
+        *TEST_RFP_TOOL_OPT_L,
+        '-run',
+        '-noerase',
+        '-p',
+        '-file',
+        RC_KERNEL_HEX,
     ],
 ]
 
@@ -366,3 +385,33 @@ def test_rfp_create_with_partition_data(dr, cc, req, runner_config, tmpdir):
     print(cc.call_args_list)
     assert [cc.call_args_list[0]] == [call(x) for x in EXPECTED_COMMANDS_WITH_PARTITION_DATA]
     assert [cc.call_args_list[1]] == [call(x) for x in EXPECTED_COMMANDS_WITH_JLINK_HARDWARE]
+
+
+@patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
+@patch('runners.core.ZephyrBinaryRunner.check_call')
+@patch('runners.rfp.RfpBinaryRunner.default_rfp')
+def test_rfp_create_with_tool_opt(dr, cc, req, runner_config, tmpdir):
+    """
+    Test commands using a runner created from command line parameters.
+
+    Input:
+        --tool-opt TOOL_OPT
+
+    Output:
+        TOOL_OPT
+    """
+    args = [
+        '--port',
+        str(TEST_RFP_PORT),
+        "--device",
+        str(TEST_RFP_DEVICE),
+        "--tool-opt",
+        TEST_RFP_TOOL_OPT,
+    ]
+    parser = argparse.ArgumentParser(allow_abbrev=False)
+    RfpBinaryRunner.add_parser(parser)
+    arg_namespace = parser.parse_args(args)
+    runner = RfpBinaryRunner.create(runner_config, arg_namespace)
+    with patch('os.path.isfile', side_effect=os_path_isfile_patch):
+        runner.run('flash')
+    assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS_WITH_TOOL_OPT]
