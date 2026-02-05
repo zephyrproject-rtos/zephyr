@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/init.h>
@@ -304,6 +304,14 @@ void board_early_init_hook(void)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt1))
 	CLOCK_SetClockDiv(kCLOCK_DivWWDT1, 1u);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet))
+	CLOCK_AttachClk(kNONE_to_ENETRMII);
+	CLOCK_EnableClock(kCLOCK_GateENET0);
+	RESET_PeripheralReset(kENET0_RST_SHIFT_RSTn);
+	/* Connect ENET to external PHY over RMII */
+	SYSCON->ENET_CTRL = SYSCON_ENET_CTRL_PHY_SEL(0) | SYSCON_ENET_CTRL_PHY_INTF(1);
 #endif
 
 	/* Set SystemCoreClock variable. */

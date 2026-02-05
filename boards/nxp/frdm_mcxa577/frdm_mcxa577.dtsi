@@ -198,3 +198,26 @@
 		};
 	};
 };
+
+&enet {
+	status = "okay";
+	pinctrl-0 = <&pinmux_enet_qos>;
+	pinctrl-names = "default";
+};
+
+&enet_mac {
+	status = "okay";
+	phy-connection-type = "rmii";
+	zephyr,random-mac-address;
+	phy-handle = <&phy>;
+};
+
+&enet_mdio {
+	status = "okay";
+
+	phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0>;
+		status = "okay";
+	};
+};
