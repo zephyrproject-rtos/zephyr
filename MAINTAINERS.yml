@@ -1536,6 +1536,8 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - teburd
+  collaborators:
+    - mcxuted
   files:
     - drivers/dma/
     - tests/drivers/dma/
