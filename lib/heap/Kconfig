@@ -78,6 +78,19 @@ config HEAP_LISTENER
 	  listeners of certain events related to a heap usage,
 	  such as the heap resize.
 
+config SYS_HEAP_CANARIES
+	bool "Heap canaries for corruption detection"
+	help
+	  Enable canary values at the end of each heap allocation to detect
+	  memory corruption. The canary is validated when memory is freed,
+	  catching buffer overflows (writing past allocation) and double-free
+	  errors.
+
+	  This adds 8 bytes of memory overhead per allocation and a
+	  canary computation on alloc and validation on free. It is
+	  useful for hardening against memory corruption as well as
+	  for chasing bugs during development.
+
 choice
 	prompt "Supported heap sizes"
 	depends on !64BIT
