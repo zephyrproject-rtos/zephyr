@@ -2973,6 +2973,8 @@ Input:
   status: maintained
   maintainers:
     - fabiobaltieri
+  collaborators:
+    - mcxuted
   files:
     - doc/services/input/
     - drivers/input/
