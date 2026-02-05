@@ -27,9 +27,9 @@
 			reg = <0x202c0000 DT_SIZE_K(512)>;
 		};
 
-		gpu2d: gpu2d@40240000 {
+		gpu2d: gpu2d@41800000 {
 			compatible = "nxp,gpu2d";
-			reg = <0x40240000 0x4000>;
+			reg = <0x41800000 0x4000>;
 			interrupts = <60 0>;
 			status = "disabled";
 		};
