@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2023,2025 Nordic Semiconductor ASA
- *
+ * SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -285,7 +284,14 @@ static int parse_configuration_descriptor(struct usb_device *const udev)
 	dhp = (void *)((uint8_t *)udev->cfg_desc + cfg_desc->bLength);
 	desc_end = (void *)((uint8_t *)udev->cfg_desc + cfg_desc->wTotalLength);
 
-	while ((void *)dhp < desc_end && (dhp->bDescriptorType != 0 || dhp->bLength != 0)) {
+	while ((void *)dhp < desc_end) {
+		if ((uint8_t *)dhp + sizeof(struct usb_desc_header) > (uint8_t *)desc_end ||
+		    (uint8_t *)dhp + dhp->bLength > (uint8_t *)desc_end ||
+		    dhp->bLength <= sizeof(struct usb_desc_header)) {
+			LOG_ERR("Invalid descriptor size %d.", dhp->bLength);
+			return -EINVAL;
+		}
+
 		if (dhp->bDescriptorType == USB_DESC_INTERFACE_ASSOC) {
 			iad = (struct usb_association_descriptor *)dhp;
 			LOG_DBG("bFirstInterface %u", iad->bFirstInterface);
@@ -303,6 +309,11 @@ static int parse_configuration_descriptor(struct usb_device *const udev)
 				}
 
 				udev->ifaces[tmp_nif].dhp = dhp;
+				if (iad != NULL &&
+				    iad->bFirstInterface == if_desc->bInterfaceNumber) {
+					udev->ifaces[tmp_nif].iad = iad;
+				}
+
 				tmp_nif++;
 			}
 		}
@@ -397,7 +408,7 @@ int usbh_device_set_configuration(struct usb_device *const udev, const uint8_t n
 	}
 
 	udev->cfg_desc = k_heap_alloc(&usb_device_heap,
-				      cfg_desc.wTotalLength,
+				      cfg_desc.wTotalLength + sizeof(struct usb_desc_header),
 				      K_NO_WAIT);
 	if (udev->cfg_desc == NULL) {
 		LOG_ERR("Failed to allocate memory for configuration descriptor");
@@ -411,14 +422,15 @@ int usbh_device_set_configuration(struct usb_device *const udev, const uint8_t n
 		goto error;
 	}
 
-	memset(udev->cfg_desc, 0, cfg_desc.wTotalLength);
+	memset(udev->cfg_desc, 0, cfg_desc.wTotalLength + sizeof(struct usb_desc_header));
 	if (udev->state == USB_STATE_CONFIGURED) {
 		reset_configuration(udev);
 	}
 
 	err = usbh_req_desc_cfg(udev, idx, cfg_desc.wTotalLength, udev->cfg_desc);
 	if (err) {
-		LOG_ERR("Failed to read configuration descriptor");
+		LOG_ERR("Failed to read configuration descriptor of %u bytes: %d",
+			cfg_desc.wTotalLength, err);
 		k_heap_free(&usb_device_heap, udev->cfg_desc);
 		goto error;
 	}
@@ -487,18 +499,6 @@ int usbh_device_init(struct usb_device *const udev)
 		goto error;
 	}
 
-	err = usbh_req_desc_dev(udev, sizeof(udev->dev_desc), &udev->dev_desc);
-	if (err) {
-		LOG_ERR("Failed to read device descriptor");
-		goto error;
-	}
-
-	if (!udev->dev_desc.bNumConfigurations) {
-		LOG_ERR("Device has no configurations, bNumConfigurations %d",
-			udev->dev_desc.bNumConfigurations);
-		goto error;
-	}
-
 	err = alloc_device_address(udev, &new_addr);
 	if (err) {
 		LOG_ERR("Failed to allocate device address");
@@ -517,6 +517,18 @@ int usbh_device_init(struct usb_device *const udev)
 	udev->state = USB_STATE_ADDRESSED;
 
 	LOG_INF("New device with address %u state %u", udev->addr, udev->state);
+
+	err = usbh_req_desc_dev(udev, sizeof(udev->dev_desc), &udev->dev_desc);
+	if (err) {
+		LOG_ERR("Failed to read device descriptor");
+		goto error;
+	}
+
+	if (!udev->dev_desc.bNumConfigurations) {
+		LOG_ERR("Device has no configurations, bNumConfigurations %d",
+			udev->dev_desc.bNumConfigurations);
+		goto error;
+	}
 
 	err = usbh_device_set_configuration(udev, 1);
 	if (err) {

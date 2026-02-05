@@ -55,6 +55,7 @@ enum usb_device_speed {
 
 struct usb_host_interface {
 	struct usb_desc_header *dhp;
+	struct usb_association_descriptor *iad;
 	uint8_t alternate;
 };
 
