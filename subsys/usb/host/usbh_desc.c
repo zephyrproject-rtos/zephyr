@@ -13,8 +13,8 @@
 
 LOG_MODULE_REGISTER(usbh_desc, CONFIG_USBH_LOG_LEVEL);
 
-bool usbh_desc_is_valid(const void *const desc,
-			const size_t size, const uint8_t type)
+const bool usbh_desc_is_valid(const void *const desc,
+			      const size_t size, const uint8_t type)
 {
 	const struct usb_desc_header *const head = desc;
 
