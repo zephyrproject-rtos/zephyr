@@ -62,6 +62,7 @@ enum nxp_wifi_ret {
 	NXP_WIFI_RET_NOT_READY,
 	NXP_WIFI_RET_TIMEOUT,
 	NXP_WIFI_RET_BAD_PARAM,
+	NXP_WIFI_RET_NOT_SUPPORTED,
 };
 
 enum nxp_wifi_state {
