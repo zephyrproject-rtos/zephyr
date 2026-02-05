@@ -23,4 +23,11 @@ config SDHC_STM32_POLLING_SUPPORT
 	help
 	  Enables support for SDHC Polling mode on STM32 microcontrollers.
 
+config SDHC_STM32_SDIO_INTERRUPT
+	bool "STM32 SDHC SDIO interrupt support"
+	help
+	  Enable support for SDIO card interrupt signaling via the D1 line
+	  on STM32 SDMMC. This allows SDIO cards to asynchronously notify
+	  the host of pending events as defined in the SDIO specification.
+
 endif # SDHC_STM32_SDIO
