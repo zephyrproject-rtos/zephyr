@@ -888,7 +888,7 @@ release:
 * :github:`22245` - STM32G4xx: Wrong SystemCoreClock variable
 * :github:`22243` - stm32g431rb: PLL setting result to slow exccution
 * :github:`22210` - Bluetooth -  bt_gatt_get_value_attr_by_uuid
-* :github:`22207` - Bluetooth ：Mesh：Provison init should after proxy
+* :github:`22207` - Bluetooth: Mesh: Provison init should after proxy
 * :github:`22204` - CONFIG_BT_DEBUG_LOG vs atomic operations
 * :github:`22202` - bt_rand() is called over HCI when BT_HOST_CRYPTO=y, even if BT_CTLR_LE_ENC=n
 * :github:`22197` - dts: gen_defines.py bails out on new path property type

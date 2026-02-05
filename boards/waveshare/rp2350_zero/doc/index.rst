@@ -32,7 +32,7 @@ Pin Mapping
 
 The peripherals of the RP2350 SoC can be routed to various pins on the board. The configuration of these routes can be modified through DTS. Please refer to the datasheet to see the possible routings for each peripheral.
 
-For detailed hardware information, see the `RP2350-Zero – Waveshare Wiki <https://www.waveshare.com/wiki/RP2350-Zero>`_.
+For detailed hardware information, see the `RP2350-Zero - Waveshare Wiki <https://www.waveshare.com/wiki/RP2350-Zero>`_.
 
 
 Default Zephyr Peripheral Mapping:
@@ -70,7 +70,7 @@ Here is an example of building the sample for driving the built-in RGB led.
    :goals: build
    :compact:
 
-You can flash the RP2350-Zero with an UF2 file. One option is to use West (Zephyr’s meta-tool). To enter the UF2 flashing mode just keep the ``BOOT`` button pressed while you connect the USB port, it will appear on the host as a mass storage device. Alternatively, with the board already connected via USB you can keep the ``BOOT`` button pressed, press and release ``RESET``, release ``BOOT``. At this point you can flash the image file by running:
+You can flash the RP2350-Zero with an UF2 file. One option is to use West (Zephyr's meta-tool). To enter the UF2 flashing mode just keep the ``BOOT`` button pressed while you connect the USB port, it will appear on the host as a mass storage device. Alternatively, with the board already connected via USB you can keep the ``BOOT`` button pressed, press and release ``RESET``, release ``BOOT``. At this point you can flash the image file by running:
 
 .. code-block:: bash
 

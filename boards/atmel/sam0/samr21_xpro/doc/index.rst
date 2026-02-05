@@ -6,7 +6,7 @@ Overview
 The SAM R21 Xplained Pro is a compact evaluation board by Atmel featuring a
 SAMR21G18A SoC. The SoC includes a SAMR21 ARM Cortex-M0+ micro-controller
 bundled with Atmel's AT86RF233, a 2.4GHz IEEE802.15.4 compatible radio.
-The kit includes Atmel’s Embedded Debugger (EDBG), which provides a full
+The kit includes Atmel's Embedded Debugger (EDBG), which provides a full
 debug interface without the need for additional hardware.
 
 Hardware

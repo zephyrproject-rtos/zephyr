@@ -2269,7 +2269,7 @@ Addressed issues
 * :github:`47204` - CAN filter with RTR mask causes infinite loop in MCAN driver on filtered message arrival
 * :github:`47197` - BLE latency decreasing and increasing over time (possibly GPIO issue)
 * :github:`47146` - STM32F103:  USB clock prescaler isn't set during USB initialisation
-* :github:`47127` - twister : frdm_k64f ：Non-existent tests appear and fail on tests/lib/cmsis_dsp/transform
+* :github:`47127` - twister : frdm_k64f: Non-existent tests appear and fail on tests/lib/cmsis_dsp/transform
 * :github:`47126` - New ztest API: build failure on qemu_cortex_m3 when CONFIG_CMAKE_LINKER_GENERATOR=y
 * :github:`47119` - ADC_DT_SPEC_GET not working for channels >= 10
 * :github:`47114` - ``check_compliance.py`` crash on Ubuntu 22.04
@@ -2381,7 +2381,7 @@ Addressed issues
 * :github:`46378` - CONFIG_SYS_CLOCK_TICKS_PER_SEC affects app code speed with tickless kernel
 * :github:`46372` - Intel-ADSP: sporadic core boot
 * :github:`46369` - LE Audio: Bidirectional stream is not created
-* :github:`46368` - twister  : frdm_k64f ：the test case tests/subsys/logging/log_switch_format/logger.syst.v2.immediate/ blocks
+* :github:`46368` - twister  : frdm_k64f : the test case tests/subsys/logging/log_switch_format/logger.syst.v2.immediate/ blocks
 * :github:`46366` - test_thread_stats_usage fail on arm64 fvp
 * :github:`46363` - Initial Setup: Ubuntu 20.04: ensurepip is not available
 * :github:`46355` - Sample wifi_station not building for esp32: No SOURCES given to Zephyr library: drivers__ethernet
@@ -2417,10 +2417,10 @@ Addressed issues
 * :github:`46170` - ipc_service: open-amp backend may never leave
 * :github:`46167` - esp32: Unable to select GPIO for PWM LED driver channel
 * :github:`46164` - scripts: release: ci checks for issues associated with backport prs
-* :github:`46158` - frdm_k64f：failed to run test case tests/subsys/modbus/modbus.rtu/server_setup_low_none
+* :github:`46158` - frdm_k64f: failed to run test case tests/subsys/modbus/modbus.rtu/server_setup_low_none
 * :github:`46157` - ACRN: some cases still failed because of the log missing
 * :github:`46124` - stm32g071 ADC drivers apply errata during sampling config
-* :github:`46117` - Kernel events can’t be manipulated without race conditions
+* :github:`46117` - Kernel events can't be manipulated without race conditions
 * :github:`46100` - lib: posix: support for perror()
 * :github:`46099` - libc: minimal: add strerror() function
 * :github:`46075` - BT HCI Raw on STM32WB55RG
@@ -2437,7 +2437,7 @@ Addressed issues
 * :github:`45938` - Unable to combine USB CDC-ACM and Modbus Serial due to dependecy on uart_configure().
 * :github:`45934` - ipc_service: nocopy tx buffer allocation works unexpectedly with RPMSG backend
 * :github:`45933` - webusb sample code linking error for esp32 board
-* :github:`45929` - up_squared：failed to run test case tests/posix/common
+* :github:`45929` - up_squared: failed to run test case tests/posix/common
 * :github:`45914` - test: tests/kernel/usage/thread_runtime_stats/ test fail
 * :github:`45866` - drivers/entropy: stm32: non-compliant RNG configuration on some MCUs
 * :github:`45848` - tests: console harness: inaccuracy testcases report

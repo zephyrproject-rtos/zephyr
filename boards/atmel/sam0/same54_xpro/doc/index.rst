@@ -5,7 +5,7 @@ Overview
 
 The `SAM E54 Xplained Pro Evaluation Kit`_ is ideal for evaluation and
 prototyping with the SAM E54 Cortex®-M4F processor-based
-microcontrollers. The kit includes Atmel’s Embedded Debugger (EDBG),
+microcontrollers. The kit includes Atmel's Embedded Debugger (EDBG),
 which provides a full debug interface without the need for additional
 hardware.
 

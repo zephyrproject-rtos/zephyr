@@ -9,12 +9,12 @@ is typically stored in the driver configuration and initialized with
 :c:macro:`NET_ETH_MAC_DT_CONFIG_INIT` or :c:macro:`NET_ETH_MAC_DT_INST_CONFIG_INIT`,
 which translate the devicetree properties into one of the following behaviors:
 
-* :c:enumerator:`NET_ETH_MAC_STATIC` – use the full ``local-mac-address`` property.
-* :c:enumerator:`NET_ETH_MAC_RANDOM` – generate a random locally administered MAC address,
+* :c:enumerator:`NET_ETH_MAC_STATIC` - use the full ``local-mac-address`` property.
+* :c:enumerator:`NET_ETH_MAC_RANDOM` - generate a random locally administered MAC address,
   optionally using the bytes provided in ``zephyr,mac-address-prefix`` as the first octets.
-* :c:enumerator:`NET_ETH_MAC_NVMEM` – read the remaining bytes from the ``"mac-address"``
+* :c:enumerator:`NET_ETH_MAC_NVMEM` - read the remaining bytes from the ``"mac-address"``
   :ref:`NVMEM<nvmem>` cell, again optionally prefixed by ``zephyr,mac-address-prefix``.
-* :c:enumerator:`NET_ETH_MAC_DEFAULT` – fall back to the driver's default logic (for
+* :c:enumerator:`NET_ETH_MAC_DEFAULT` - fall back to the driver's default logic (for
   example, a factory-programmed MAC address stored in peripheral registers).
 
 Driver integration

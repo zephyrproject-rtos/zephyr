@@ -129,7 +129,7 @@ Flashing
 To flash, disable the existing driver that ties up the serial port and use
 the customized BSL Python script.
 
-1. Ensure the bcfserial or gb-beagleplay driver isn’t blocking the serial port. This can be done by
+1. Ensure the bcfserial or gb-beagleplay driver isn't blocking the serial port. This can be done by
    loading :file: ``/overlays/k3-am625-beagleplay-bcfserial-no-firmware.dtbo`` or selecting uboot
    entry which disables bcfserial/gb-beagleplay.
 

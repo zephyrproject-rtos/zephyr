@@ -14,7 +14,7 @@ and network certifications and End Device carrier approvals.
 Develop your application directly on the integrated Cortex M4F microcontroller using Zephyr RTOS,
 enabling your application development with a secure, open source RTOS with more than just kernel
 services. Remotely debug your fleet of devices with the `Memfault Platform`_. Take advantage of the
-Zephyr community and Ezurio’s `Canvas Software Suite`_ to accelerate your development.
+Zephyr community and Ezurio's `Canvas Software Suite`_ to accelerate your development.
 covering all aspects of the product's capabilities and hardware interfaces. The MG100 also delivers
 complete antenna flexibility with internal or external antenna options available, and the optional
 battery backup provides uninterrupted reporting of remote Bluetooth sensor data.

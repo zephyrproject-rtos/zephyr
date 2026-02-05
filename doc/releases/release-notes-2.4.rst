@@ -1597,7 +1597,7 @@ release:
 * :github:`25076` - Remove potential I2C deadlock on NRFX implementation
 * :github:`25063` - USB Console + USB CDC_ACM co-existing
 * :github:`25051` - tests/drivers/gpio/gpio_api_1pin failed on reel_board.
-* :github:`25022` - hsdk:There is no case’s information in serial log for ARC(R) HS Development Kit after one case was been flashed into the board.
+* :github:`25022` - hsdk:There is no case's information in serial log for ARC(R) HS Development Kit after one case was been flashed into the board.
 * :github:`25021` - Problems getting open62541 to run on Zephyr
 * :github:`24960` - The example "blinky" didn't work on MIMXRT1050-EVK
 * :github:`24939` - LSPI of NXP i.MX RT timing delay issue

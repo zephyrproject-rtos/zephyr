@@ -173,7 +173,7 @@ Key points:
 Provisioning and node allocation
 ================================
 
-When you add new devices to the mesh, their addresses, device keys, and basic metadata must be recorded consistently in the provisioner’s database.
+When you add new devices to the mesh, their addresses, device keys, and basic metadata must be recorded consistently in the provisioner's database.
 Automatic node allocation during PB‑ADV/PB‑GATT provisioning keeps CDB and the actual network in sync.
 When provisioning a new device, the CDB automatically allocates the node during the provisioning process.
 
@@ -759,7 +759,7 @@ Working with device keys
 ========================
 
 Device keys are sensitive information and often handled through secure key storage (for example, PSA crypto).
-The CDB’s key import/export APIs abstract how keys are stored, allowing the application to use device keys when needed (for configuration or external tooling) without breaking the security model or relying on direct pointers into key storage.
+The CDB's key import/export APIs abstract how keys are stored, allowing the application to use device keys when needed (for configuration or external tooling) without breaking the security model or relying on direct pointers into key storage.
 
 Import and export device keys using the key management API:
 

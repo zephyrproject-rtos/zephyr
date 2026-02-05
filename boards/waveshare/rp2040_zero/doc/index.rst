@@ -71,7 +71,7 @@ Here is an example of building the sample for driving the built-in RGB led.
    :goals: build
    :compact:
 
-You must flash the RP2040-Zero with an UF2 file. One option is to use West (Zephyr’s meta-tool). To enter the UF2 flashing mode just keep the ``BOOT`` button pressed while you connect the USB port, it will appear on the host as a mass storage device. In alternative with the board already connected via USB you can keep the ``RESET`` button pressed, press and release ``BOOT``, release ``RESET``. At this point you can flash the image file by running:
+You must flash the RP2040-Zero with an UF2 file. One option is to use West (Zephyr's meta-tool). To enter the UF2 flashing mode just keep the ``BOOT`` button pressed while you connect the USB port, it will appear on the host as a mass storage device. In alternative with the board already connected via USB you can keep the ``RESET`` button pressed, press and release ``BOOT``, release ``RESET``. At this point you can flash the image file by running:
 
 .. code-block:: bash
 

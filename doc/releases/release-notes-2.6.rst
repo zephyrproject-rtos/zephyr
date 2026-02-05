@@ -1286,7 +1286,7 @@ release:
 * :github:`34969` - Documentation still mentions deprecated macro DT_INST_FOREACH_STATUS_OKAY
 * :github:`34964` - net regression: Connection to Zephyr server non-deterministically leads to client timeout, ENOTCONN on server side
 * :github:`34962` - tfm: cmake: Toolchain not being passed into psa-arch-tests
-* :github:`34950` - xtensa arch ：The source code version is too old
+* :github:`34950` - xtensa arch: The source code version is too old
 * :github:`34948` - SoF module is not pointing at Zehpyr repo
 * :github:`34935` - LwM2M: Block transfer with TLV format does not work
 * :github:`34932` - drvers/flash/nrf_qspi_nor: high power consumption on nrf52840

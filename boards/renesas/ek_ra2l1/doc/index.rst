@@ -32,7 +32,7 @@ EK-RA2L1 has following features.
 
 - Native pin access through 1 x 40-pin and 3 x 20-pin male headers
 - MCU current measurement points for precision current consumption measurement
-- Multiple clock sources – Low-precision clocks are available internal to the MCU.
+- Multiple clock sources - Low-precision clocks are available internal to the MCU.
   Additionally, MCU oscillator and sub-clock oscillator crystals,
   20.000 MHz and 32,768 Hz, are provided for precision
 - SEGGER J-Link on-board programmer and debugger

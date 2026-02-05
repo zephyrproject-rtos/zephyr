@@ -3154,7 +3154,7 @@ Addressed issues
 * :github:`52857` - Adafruit WINC1500 Wifi Shield doesn't work on nRF528XX
 * :github:`52855` - Improve artifact generation for split build/test operation of twister
 * :github:`52854` - twister build fails but returns exit code of 0
-* :github:`52838` - Bluetooth: audio：invalid ase state transition
+* :github:`52838` - Bluetooth: audio: invalid ase state transition
 * :github:`52833` - Bluetooth Controller assertion on sys_reboot() with active connections (lll_preempt_calc: Actual EVENT_OVERHEAD_START_US)
 * :github:`52829` - kernel/sched: Fix SMP race on pend
 * :github:`52818` - samples: subsys: usb: shell: sample.usbd.shell  fails - no output from console

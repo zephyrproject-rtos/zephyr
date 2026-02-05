@@ -1386,7 +1386,7 @@ release:
 * :github:`29951` - ieee802154: cc13xx_cc26xx: raw mode support
 * :github:`29945` - Missing error check of function sensor_sample_fetch() and sensor_channel_get()
 * :github:`29943` - Missing error check of function isotp_send()
-* :github:`29937` - XCC Build offsets.c ：FAILED
+* :github:`29937` - XCC Build offsets.c: FAILED
 * :github:`29936` - XCC Build isr_tables.c fail
 * :github:`29925` - pinctrl error for disco_l475_iot1 board:
 * :github:`29921` - USB DFU with nrf52840dk (PCA10056)

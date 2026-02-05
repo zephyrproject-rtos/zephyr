@@ -7,7 +7,7 @@ Overview
 ********
 
 The X-NUCLEO-53L0A1 expansion board features the VL53L0X ranging and gesture
-detection sensor, based on ST’s FlightSense™, Time-of-Flight technology. It is
+detection sensor, based on ST's FlightSense™, Time-of-Flight technology. It is
 an evaluation board that provides an introduction to the ranging and gesture
 detection capabilities of the VL53L0X module.
 

@@ -72,7 +72,7 @@ VS Code Support
 Here is to go through VS Code instead of command line.
 
 Please install Nuvoton NuMicro Cortex-M Pack and follow getting start guide of this pack.
-This pack is a complete development toolkit for Nuvoton’s NuMicro Cortex-M microcontrollers
+This pack is a complete development toolkit for Nuvoton's NuMicro Cortex-M microcontrollers
 in Visual Studio Code.
 URL of this pack is
 https://marketplace.visualstudio.com/items?itemName=Nuvoton.nuvoton-numicro-cortex-m-pack

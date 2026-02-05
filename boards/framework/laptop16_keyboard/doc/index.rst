@@ -59,7 +59,7 @@ Here is an example of building the sample for driving the built-in led.
    :goals: build
    :compact:
 
-You must flash the keyboard with an UF2 file. One option is to use West (Zephyr’s meta-tool). To
+You must flash the keyboard with an UF2 file. One option is to use West (Zephyr's meta-tool). To
 enter the UF2 flashing mode, remove the module and hold down the both ALT keys (or ``1`` and ``6``
 on the numpad) while assembling (powering) it again. It will appear on the host as a mass storage
 device. At this point you can flash the image file by running:

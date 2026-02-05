@@ -7,7 +7,7 @@ The EVK-NINA-B5 is a compact and scalable development board for rapid
 prototyping of the NINA-B5 wireless module. It offers easy evaluation of the
 NINA-B5's multiprotocol wireless support for Bluetooth LE, Zigbee, Thread and
 Matter. The board includes an on-board J-link-Link debugger and industry
-standard headers for easy access to the MCU’s I/Os.
+standard headers for easy access to the MCU's I/Os.
 
 The NINA-B5 module is built on the MCX W71x 96 MHz Arm® Cortex®-M33 from NXP.
 

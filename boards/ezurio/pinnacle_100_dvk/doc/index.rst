@@ -3,7 +3,7 @@
 Overview
 ********
 The Pinnacle™ 100 cellular modem seamlessly incorporates a powerful Cortex M4F
-controller, full Bluetooth 5 and LTE-M/NB-IoT capabilities – all with full
+controller, full Bluetooth 5 and LTE-M/NB-IoT capabilities - all with full
 regulatory certifications and LTE carrier approvals. The Pinnacle 100 also
 delivers complete antenna flexibility, with pre-integrated internal or external
 antenna options such as the Revie Flex family of LTE and NB-IoT
@@ -11,12 +11,12 @@ internal antennas.
 
 Develop your application directly on the M4F controller using Zephyr RTOS to
 cut BOM costs and power consumption. Take advantage of the Zephyr community,
-Ezurio’s sample code (cellular, Bluetooth) and hardware interfaces,
+Ezurio's sample code (cellular, Bluetooth) and hardware interfaces,
 or use our hosted mode AT commands set firmware.
 
 Extremely power conscious, the Pinnacle 100 is ideal for battery-powered
 devices operating at the edge of your IoT networks, seamlessly bridging the
-cellular WAN to BLE. It’s never been easier to bridge wireless
+cellular WAN to BLE. It's never been easier to bridge wireless
 Bluetooth 5 sensor data to cloud services like AWS IoT over a
 low-power LTE connection.
 

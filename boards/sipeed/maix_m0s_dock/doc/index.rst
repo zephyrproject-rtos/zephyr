@@ -7,11 +7,11 @@ The M0S is a very small module measuring 10x11mm using the BL616 SoC as the main
 the following features:
 
 - Tri-Mode Wireless: WiFi6 / BT 5.2 / Zigbee
-- High Frequency：320MHz default
-- Ultra-low Power Consumption：Wifi6 low power consumption feature
-- High speed USB：Support USB2.0 HS OTG，up to 480Mbps
-- Rich peripheral ports：Support RGB LCD，DVP Camera，Ethernet RMII and SDIO
-- Tiny Size：Place ceramic antenna on 10x11 mm tiny size, and route all IO out
+- High Frequency: 320MHz default
+- Ultra-low Power Consumption: Wifi6 low power consumption feature
+- High speed USB: Support USB2.0 HS OTG, up to 480Mbps
+- Rich peripheral ports: Support RGB LCD, DVP Camera, Ethernet RMII and SDIO
+- Tiny Size: Place ceramic antenna on 10x11 mm tiny size, and route all IO out
 
 The M0S Dock is a carrier board for the M0S module and pushes out some of its I/O pins.
 

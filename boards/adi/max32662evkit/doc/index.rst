@@ -28,7 +28,7 @@ Hardware
     - Internal High-Speed 100MHz
     - Internal Low-Power 7.3728MHz
     - Ultra-Low-Power 80kHz
-    - 16MHz–32MHz (External Crystal Required)
+    - 16MHz-32MHz (External Crystal Required)
     - 32.768kHz (External Crystal Required)
     - External Clock Inputs for CPU and Low-PowerTimer
 

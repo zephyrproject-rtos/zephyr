@@ -52,7 +52,7 @@ It provides the following hardware capabilities:
 
   - Frequency range: 150 MHz to 960 MHz
   - Modulation: LoRa®, (G)FSK, (G)MSK and BPSK
-  - RX sensitivity: –123 dBm for 2-FSK(at 1.2 Kbit/s), –148 dBm for LoRa®
+  - RX sensitivity: -123 dBm for 2-FSK(at 1.2 Kbit/s), -148 dBm for LoRa®
     (at 10.4 kHz, spreading factor 12)
   - Transmitter high output power, programmable up to +22 dBm
   - Transmitter low output power, programmable up to +15 dBm

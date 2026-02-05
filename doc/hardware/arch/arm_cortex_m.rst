@@ -468,7 +468,7 @@ For more details on key generation sources and configuration, refer to the Kconf
 
 - Only builds targeting Armv8.1-M Mainline processors with PACBTI hardware support (e.g.,
   Cortex-M85) are able to fully use this feature.
-- Zephyr’s integrated SDK currently includes GCC 12.2 which does not support PACBTI so external GCC
+- Zephyr's integrated SDK currently includes GCC 12.2 which does not support PACBTI so external GCC
   toolchains (14.3 or later recommended) must be used for PACBTI support.
   Refer to `this document <https://docs.zephyrproject.org/latest/develop/toolchains/index.html>`_ on how to set up
   toolchains.

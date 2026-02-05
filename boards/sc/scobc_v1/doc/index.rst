@@ -9,13 +9,13 @@ processing. It is built around an AMD Versal Adaptive SoC and a Microchip
 IGLOO2 FPGA, and is designed for harsh environments such as Earth orbit and
 lunar missions.
 
-On the Versal side, the SC-OBC V1 leverages the device’s heterogeneous
+On the Versal side, the SC-OBC V1 leverages the device's heterogeneous
 architecture, combining general-purpose processors, programmable logic, and a
 vector processor, to run on-orbit workloads such as object detection, image
 compression/segmentation, and high-speed signal processing, while keeping
-flight-critical tasks under Zephyr RTOS’s predictable scheduling model.
+flight-critical tasks under Zephyr RTOS's predictable scheduling model.
 
-On the IGLOO2 side, the SC-OBC V1 uses the device as the board’s safety
+On the IGLOO2 side, the SC-OBC V1 uses the device as the board's safety
 processor, supervising the main system, providing independent watchdog and
 fault-management paths, and coordinating safe-mode transitions to improve fault
 tolerance.
@@ -35,7 +35,7 @@ System Clock
 This board provides a 50 MHz reference oscillator for clock generation. The RPU
 (Cortex-R5F) runs at 600 MHz by default on this board.
 
-In Zephyr, the "system clock" is the kernel’s tick base. By default it’s 100 Hz
+In Zephyr, the "system clock" is the kernel's tick base. By default it's 100 Hz
 for periodic-tick builds and 10 kHz (10000 Hz) for tickless builds.  See
 :kconfig:option:`CONFIG_SYS_CLOCK_TICKS_PER_SEC` for more details.
 

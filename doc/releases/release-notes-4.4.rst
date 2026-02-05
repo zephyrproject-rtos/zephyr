@@ -43,7 +43,7 @@ Security Vulnerability Related
 
 The following CVEs are addressed by this release:
 
-* :cve:`2025-53022` `(TF-M) FWU does not check the length of the TLV’s payload
+* :cve:`2025-53022` `(TF-M) FWU does not check the length of the TLV's payload
   <https://trustedfirmware-m.readthedocs.io/en/latest/security/security_advisories/fwu_tlv_payload_out_of_bounds_vulnerability.html>`_
 
 API Changes

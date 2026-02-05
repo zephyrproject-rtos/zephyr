@@ -1255,7 +1255,7 @@ Known bugs
 - :github:`45848` - tests: console harness: inaccuracy testcases report
 - :github:`45866` - drivers/entropy: stm32: non-compliant RNG configuration on some MCUs
 - :github:`45914` - test: tests/kernel/usage/thread_runtime_stats/ test fail
-- :github:`45929` - up_squared：failed to run test case tests/posix/common
+- :github:`45929` - up_squared: failed to run test case tests/posix/common
 - :github:`45951` - modem: ublox-sara-r4: outgoing datagrams are truncated if they do not fit MTU
 - :github:`45953` - modem: simcom-sim7080: sendmsg() should result in single outgoing datagram
 - :github:`46008` - stm32h7: gptp sample does not work at all
@@ -1267,7 +1267,7 @@ Known bugs
 - :github:`46124` - stm32g071 ADC drivers apply errata during sampling config
 - :github:`46126` - pm_device causes assertion error in sched.c with lis2dh
 - :github:`46157` - ACRN: some cases still failed because of the log missing
-- :github:`46158` - frdm_k64f：failed to run test case tests/subsys/modbus/modbus.rtu/server_setup_low_none
+- :github:`46158` - frdm_k64f: failed to run test case tests/subsys/modbus/modbus.rtu/server_setup_low_none
 - :github:`46167` - esp32: Unable to select GPIO for PWM LED driver channel
 - :github:`46170` - ipc_service: open-amp backend may never leave
 - :github:`46173` - nRF UART callback is not passed correct index via evt->data.rx.offset sometimes
@@ -1312,7 +1312,7 @@ Addressed issues
 * :github:`45916` - USART on STM32: Using same name for different remapping configurations
 * :github:`45911` - LVGL sample cannot be built with CONFIG_LEGACY_INCLUDE_PATH=n
 * :github:`45904` - All tests require full timeout period to pass after twister overhaul when executed on HW platform
-* :github:`45894` - up_squared：the test shows pass in the twister.log it but does not seem to finish
+* :github:`45894` - up_squared: the test shows pass in the twister.log it but does not seem to finish
 * :github:`45893` - MCUboot authentication failure with RSA-3072 key on i.MX RT 1160 EVK
 * :github:`45886` - ESP32: PWM parameter renaming broke compilation
 * :github:`45883` - Bluetooth: Controller: CCM reads data before Radio stores them when DF enabled on PHY 1M
@@ -1478,7 +1478,7 @@ Addressed issues
 * :github:`44874` - error log for locking a mutex in an ISR
 * :github:`44872` - k_timer callback timing incorrect with multiple lightly loaded cores
 * :github:`44871` - mcumgr endless loop in mgmt_find_handler
-* :github:`44864` - tcp server tls error：server has no certificate
+* :github:`44864` - tcp server tls error: server has no certificate
 * :github:`44856` - Various kernel timing-related tests fail on hifive1 board
 * :github:`44837` - drivers: can: mcp2515: can_set_timing() performs a soft-reset of the MCP2515, discarding configured mode
 * :github:`44834` - Add support for gpio expandeux NXP PCAL95xx
@@ -1905,7 +1905,7 @@ Addressed issues
 * :github:`40679` - libc/minimal: static variable of gmtime() does not located to z_libc_partition at usermode.
 * :github:`40657` - Cannot enable secondary pwm out channels on stm32f3
 * :github:`40635` - gen_app_partitions.py may not include all object files produced by build system
-* :github:`40620` - zephyr with cadence xtensa core dsp LX7 ，helloworld program  cannot be entered after the program is executed
+* :github:`40620` - zephyr with cadence xtensa core dsp LX7, helloworld program  cannot be entered after the program is executed
 * :github:`40593` - tests: lib: cmsis_dsp: Overflows in libraries.cmsis_dsp.matrix
 * :github:`40591` - RFC: Replace TinyCBOR with ZCBOR within Zephyr
 * :github:`40588` - mgmg/mcumg/lib: Replace TinyCBOR with zcbor

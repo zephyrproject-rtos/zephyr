@@ -43,7 +43,7 @@ Specs Summary
     - Bluetooth/BLE 5.4
   - Camera
 
-    - Up to 2x MIPI CSI – CMOS Serial camera Interface 4 lanes
+    - Up to 2x MIPI CSI - CMOS Serial camera Interface 4 lanes
     - 375 Mpixel/s HDR ISP (Image Sensor Processor)
   - Audio
 

@@ -32,9 +32,9 @@ ElemRV-N integrates a VexRiscv RISC-V core featuring a 5-stage pipeline and the 
 
 It also includes the following general-purpose ``Z`` extensions:
 
-* Zicntr – Base Counter and Timer extensions
-* Zicsr – Control and Status Register operations
-* Zifencei – Instruction-fetch fence
+* Zicntr - Base Counter and Timer extensions
+* Zicsr - Control and Status Register operations
+* Zifencei - Instruction-fetch fence
 
 The complete ISA string for this CPU is: ``RV32IMC_Zicntr_Zicsr_Zifencei``
 

@@ -17,7 +17,7 @@ which is capable of processing up to eight 32x16 MACs per instruction cycle. It 
 high-performance numerical tasks such as audio and image processing and supports both fixed-point and
 floating-point operations.
 
-The i.MX RT700 also features NXP’s eIQ Neutron NPU, enabled with the eIQ machine learning software
+The i.MX RT700 also features NXP's eIQ Neutron NPU, enabled with the eIQ machine learning software
 development environment.
 
 Hardware
