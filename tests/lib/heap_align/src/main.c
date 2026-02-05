@@ -49,7 +49,8 @@ static void check_heap_align(struct sys_heap *h,
 			     size_t prefix, size_t align, size_t size)
 {
 	void *p, *q, *r, *s;
-	size_t suffix;
+	uint8_t *r_end;
+	ptrdiff_t suffix;
 
 	p = sys_heap_alloc(h, prefix);
 	zassert_true(prefix == 0 || p != NULL, "prefix allocation failed");
@@ -65,8 +66,10 @@ static void check_heap_align(struct sys_heap *h,
 	/* Make sure ALL the split memory goes back into the heap and
 	 * we can allocate the full remaining suffix
 	 */
-	suffix = (heap_end - (uint8_t *)ROUND_UP((uintptr_t)r + size, CHUNK_UNIT))
-		- heap_chunk_header_size;
+	r_end = (uint8_t *)ROUND_UP((uintptr_t)r + size + CHUNK_TRAILER_SIZE * CHUNK_UNIT,
+				    CHUNK_UNIT);
+	suffix = (heap_end - r_end) - heap_chunk_header_size - CHUNK_TRAILER_SIZE * CHUNK_UNIT;
+	zassert_true(suffix > 0, "bad suffix size: %td", suffix);
 	s = sys_heap_alloc(h, suffix);
 	zassert_true(s != NULL, "suffix allocation failed (%zd/%zd/%zd)",
 				prefix, align, size);
@@ -79,7 +82,7 @@ static void check_heap_align(struct sys_heap *h,
 
 	/* Make sure it's still valid, and empty */
 	zassert_true(sys_heap_validate(h), "heap invalid");
-	p = sys_heap_alloc(h, heap_end - heap_start);
+	p = sys_heap_alloc(h, heap_end - heap_start - CHUNK_TRAILER_SIZE * CHUNK_UNIT);
 	zassert_true(p != NULL, "heap not empty");
 	q = sys_heap_alloc(h, 1);
 	zassert_true(q == NULL, "heap not full");

@@ -53,7 +53,7 @@
 #define _CHUNKSZ(n) (((n) + CHUNK_UNIT - 1U) / CHUNK_UNIT)
 
 /* min_chunk_size: smallest allocatable chunk (in chunk units) */
-#define _MINC  _CHUNKSZ(_HDR + 1)
+#define _MINC  (_CHUNKSZ(_HDR + 1) + CHUNK_TRAILER_SIZE)
 
 /* --- emit symbols into offsets.h --- */
 
@@ -69,6 +69,9 @@ GEN_ABSOLUTE_SYM(___z_heap_chunk_unit_SIZEOF, CHUNK_UNIT);
 GEN_ABSOLUTE_SYM(___z_heap_hdr_SIZEOF, (unsigned int)_HDR);
 
 GEN_ABSOLUTE_SYM(___z_heap_ftr_SIZEOF, (unsigned int)_FTR);
+
+GEN_ABSOLUTE_SYM(___z_heap_trailer_SIZEOF,
+	(unsigned int)(CHUNK_TRAILER_SIZE * CHUNK_UNIT));
 
 GEN_ABSOLUTE_SYM(___z_heap_min_chunk_SIZEOF, (unsigned int)_MINC);
 
