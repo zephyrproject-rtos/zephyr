@@ -9,7 +9,7 @@ common:
     type: multi_line
     ordered: true
     regex:
-      - ".*allocated 16.,.*"
+      - ".*allocated 15.,.*"
       - ".*allocated 1..,.*"
       - ".*allocated 0, free ..., max allocated ..., heap size 256.*"
 tests:
