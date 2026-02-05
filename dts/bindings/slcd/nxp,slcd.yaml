@@ -1,0 +1,48 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP SLCD (Segmented Liquid Crystal Display) controller
+
+compatible: "nxp,slcd"
+
+include: [base.yaml, slcd-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  front-plane-pins:
+    required: true
+    type: array
+    description: |
+      Array of front-plane pin indices used for LCD segment display.
+      Each index represents an LCD pin number (0-63) that is configured
+      as a front-plane segment driver. These pins drive the individual
+      segments of the LCD display.
+      Example: <16 17 18 19 20 21 22 23 24 25 26 27>
+
+  back-plane-pins:
+    required: true
+    type: array
+    description: |
+      Array of back-plane pin indices used as LCD common lines.
+      Each index represents an LCD pin number (0-63) that is configured
+      as a back-plane common driver. These pins provide the timing/common
+      signals for multiplexing the LCD display (COM0, COM1, COM2, etc.).
+      Example: <28 29 30 31>
+
+  blink-rate:
+    type: int
+    default: 1
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      SLCD blink rate selection (0-7). Maps to slcd_blink_rate_t values.
+      - 0: kSLCD_BlinkRate00 - LCD clock/((2^11)) or LCD clock/((2^12))
+      - 1: kSLCD_BlinkRate01 - LCD clock/((2^12)) or LCD clock/((2^13))
+      - 2: kSLCD_BlinkRate02 - LCD clock/((2^13)) or LCD clock/((2^14))
+      - 3: kSLCD_BlinkRate03 - LCD clock/((2^14)) or LCD clock/((2^15))
+      - 4: kSLCD_BlinkRate04 - LCD clock/((2^15)) or LCD clock/((2^16))
+      - 5: kSLCD_BlinkRate05 - LCD clock/((2^16)) or LCD clock/((2^17))
+      - 6: kSLCD_BlinkRate06 - LCD clock/((2^17)) or LCD clock/((2^18))
+      - 7: kSLCD_BlinkRate07 - LCD clock/((2^18)) or LCD clock/((2^19))
+      Default is 1 (kSLCD_BlinkRate01).
