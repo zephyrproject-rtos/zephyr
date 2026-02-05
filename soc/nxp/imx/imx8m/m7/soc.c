@@ -11,6 +11,7 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
+#include <zephyr/cache.h>
 
 #include <zephyr/dt-bindings/rdc/imx_rdc.h>
 
@@ -213,4 +214,12 @@ void soc_early_init_hook(void)
 	SOC_ClockInit();
 
 	gpio_init();
+}
+
+void soc_late_init_hook(void)
+{
+#ifdef CONFIG_CACHE_MANAGEMENT
+	sys_cache_data_enable();
+	sys_cache_instr_enable();
+#endif /* CONFIG_CACHE_MANAGEMENT */
 }

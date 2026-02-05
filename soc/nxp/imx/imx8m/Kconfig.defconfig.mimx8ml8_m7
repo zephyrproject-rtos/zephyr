@@ -41,3 +41,6 @@ config NUM_IRQS
 	default 159
 
 endif # SOC_MIMX8ML8_M7
+
+config CACHE_MANAGEMENT
+	default y
