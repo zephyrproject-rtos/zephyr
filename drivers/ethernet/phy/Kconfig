@@ -18,6 +18,7 @@ source "drivers/ethernet/phy/Kconfig.tja11xx"
 source "drivers/ethernet/phy/Kconfig.tja1103"
 source "drivers/ethernet/phy/Kconfig.dm8806"
 source "drivers/ethernet/phy/Kconfig.microchip_t1s"
+source "drivers/ethernet/phy/Kconfig.nxp_t1s"
 
 config PHY_INIT_PRIORITY
 	int "Ethernet PHY driver init priority"
