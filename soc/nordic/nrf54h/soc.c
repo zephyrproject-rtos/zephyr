@@ -197,12 +197,15 @@ void soc_late_init_hook(void)
 
 #if DT_NODE_EXISTS(DT_NODELABEL(cpurad_slot1_partition))
 	if (FIXED_PARTITION_IS_RUNNING_APP_PARTITION(cpuapp_slot1_partition)) {
-		radiocore_address = (void *)(FIXED_PARTITION_ADDRESS(cpurad_slot1_partition));
+		radiocore_address = (void *)(FIXED_PARTITION_ADDRESS(cpurad_slot1_partition) +
+					     CONFIG_ROM_START_OFFSET);
 	} else {
-		radiocore_address = (void *)(FIXED_PARTITION_ADDRESS(cpurad_slot0_partition));
+		radiocore_address = (void *)(FIXED_PARTITION_ADDRESS(cpurad_slot0_partition) +
+					     CONFIG_ROM_START_OFFSET);
 	}
 #else
-	radiocore_address = (void *)(FIXED_PARTITION_ADDRESS(cpurad_slot0_partition));
+	radiocore_address =
+		(void *)(FIXED_PARTITION_ADDRESS(cpurad_slot0_partition) + CONFIG_ROM_START_OFFSET);
 #endif
 
 	if (IS_ENABLED(CONFIG_SOC_NRF54H20_CPURAD_ENABLE_CHECK_VTOR) &&
