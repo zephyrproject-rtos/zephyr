@@ -41,3 +41,11 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&main_uart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_rx_default>,
+		    <&uart1_tx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
