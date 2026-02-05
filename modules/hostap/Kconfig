@@ -333,6 +333,19 @@ config WIFI_NM_WPA_SUPPLICANT_WPA3
 	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
 	default y
 
+config WIFI_MGMT_WILDCARD_SECURITY
+	bool "Wildcard security type auto-detection"
+	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
+	help
+	  Enable automatic security type detection when connecting with
+	  WIFI_SECURITY_TYPE_WILDCARD. The system queries the vendor driver's
+	  cached scan results to determine the actual security type.
+
+	  Supported: OPEN, WPA2-PSK, WPA2-PSK-SHA256, WPA3-SAE.
+	  Enterprise/802.1X authentication is NOT supported.
+
+	  Note: A scan must be performed before using wildcard security.
+
 config WIFI_NM_WPA_SUPPLICANT_AP
 	bool "SoftAP mode support based on WPA supplicant"
 	default y if WIFI_USAGE_MODE_AP || WIFI_USAGE_MODE_STA_AP
