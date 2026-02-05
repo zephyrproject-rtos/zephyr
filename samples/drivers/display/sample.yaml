@@ -1,12 +1,13 @@
 sample:
   description: Sample application for displays
   name: display_sample
+common:
+  tags: display
 tests:
   sample.display.sdl:
     build_only: true
     platform_allow:
       - native_sim/native/64
-    tags: display
   sample.display.dummy:
     platform_allow:
       - native_sim
@@ -14,7 +15,6 @@ tests:
     extra_configs:
       - CONFIG_SDL_DISPLAY=n
       - CONFIG_TEST=y
-    tags: display
     harness: console
     harness_config:
       fixture: fixture_display
@@ -25,7 +25,6 @@ tests:
     platform_allow:
       - mimxrt595_evk/mimxrt595s/cm33
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
-    tags: display
     harness: console
     extra_args: SHIELD=g1120b0mipi
     extra_configs:
@@ -47,13 +46,11 @@ tests:
     harness: console
     harness_config:
       fixture: fixture_display
-    tags: display
   sample.display.st_b_lcd40_dsi1_mb1166_a09:
     filter: dt_compat_enabled("frida,nt35510")
     platform_allow: stm32h747i_disco/stm32h747xx/m7
     extra_args: SHIELD=st_b_lcd40_dsi1_mb1166_a09
     tags:
-      - display
       - shield
     harness: console
     harness_config:
@@ -68,7 +65,6 @@ tests:
       - mimxrt1040_evk
     integration_platforms:
       - mimxrt1040_evk
-    tags: display
     harness: console
     extra_args: SHIELD=rk043fn02h_ct
     harness_config:
