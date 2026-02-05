@@ -166,15 +166,14 @@ static int i2c_omap_reset(const struct device *dev)
 {
 	struct i2c_omap_data *data = DEV_DATA(dev);
 	volatile i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
-	uint64_t timeout;
-	uint16_t sysc;
+	uint32_t timeout, sysc;
 
 	sysc = i2c_base_addr->SYSC;
 	i2c_base_addr->CON &= ~I2C_OMAP_CON_EN;
-	timeout = k_uptime_get() + I2C_OMAP_TIMEOUT;
+	timeout = k_uptime_get_32() + I2C_OMAP_TIMEOUT;
 	i2c_base_addr->CON = I2C_OMAP_CON_EN;
 	while (!(i2c_base_addr->SYSS & SYSS_RESETDONE_MASK)) {
-		if (k_uptime_get() > timeout) {
+		if (k_uptime_get_32() > timeout) {
 			LOG_WRN("timeout waiting for controller reset");
 			return -ETIMEDOUT;
 		}
@@ -540,8 +539,7 @@ static int i2c_omap_transfer_message(const struct device *dev, struct i2c_msg *m
 {
 	struct i2c_omap_data *data = DEV_DATA(dev);
 	volatile i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
-	uint32_t timeout;
-	uint16_t control_reg;
+	uint32_t timeout, control_reg;
 	int result = 0;
 	/* Determine message direction (read or write) and update the receiver flag */
 	data->receiver = msg->flags & I2C_MSG_READ;
