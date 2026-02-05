@@ -14,6 +14,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/init.h>
+#include <zephyr/sys/sys_heap.h>
 
 #include <libs/vg_lite_driver/VGLiteKernel/vg_lite_kernel.h>
 #include <libs/vg_lite_driver/VGLiteKernel/vg_lite_hal.h>
@@ -24,6 +26,10 @@
 #define VGLITE_GPU_NODE		DT_PHANDLE(VGLITE_NODE, gpu)
 #define VGLITE_GPU_BASE		DT_REG_ADDR(VGLITE_GPU_NODE)
 #define VGLITE_GPU_IRQN		DT_IRQN(VGLITE_GPU_NODE)
+
+static char vg_lite_heap_mem[CONFIG_LV_Z_VGLITE_HEAP_SIZE] __aligned(64);
+static struct sys_heap vg_lite_heap;
+static struct k_spinlock vg_lite_heap_lock;
 
 typedef void (*irq_config_func_t)(const struct device *dev);
 
@@ -50,8 +56,11 @@ static struct vg_lite_device_runtime *vglite_dev;
 vg_lite_error_t vg_lite_hal_allocate(uint32_t size, void **memory)
 {
 	vg_lite_error_t error = VG_LITE_SUCCESS;
+	k_spinlock_key_t key;
 
-	*memory = lv_malloc(size);
+	key = k_spin_lock(&vg_lite_heap_lock);
+	*memory = sys_heap_alloc(&vg_lite_heap, size);
+	k_spin_unlock(&vg_lite_heap_lock, key);
 	if (*memory == NULL) {
 		error = VG_LITE_OUT_OF_MEMORY;
 	}
@@ -61,7 +70,11 @@ vg_lite_error_t vg_lite_hal_allocate(uint32_t size, void **memory)
 
 vg_lite_error_t vg_lite_hal_free(void *memory)
 {
-	lv_free(memory);
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&vg_lite_heap_lock);
+	sys_heap_free(&vg_lite_heap, memory);
+	k_spin_unlock(&vg_lite_heap_lock, key);
 
 	return VG_LITE_SUCCESS;
 }
@@ -157,6 +170,8 @@ static int z_vg_lite_init(const struct device *dev)
 	const struct z_vglite_config *cfg = dev->config;
 	struct z_vglite_data *data = dev->data;
 	vg_lite_error_t err;
+
+	sys_heap_init(&vg_lite_heap, &vg_lite_heap_mem[0], CONFIG_LV_Z_VGLITE_HEAP_SIZE);
 
 	err = vg_lite_hal_allocate(sizeof(*vglite_dev), (void **)&vglite_dev);
 	if (err != VG_LITE_SUCCESS || vglite_dev == NULL) {
