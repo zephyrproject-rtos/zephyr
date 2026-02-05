@@ -6,6 +6,11 @@ menuconfig NVMEM
 
 if NVMEM
 
+config NVMEM_BBRAM
+	bool "NVMEM support for Battery Backed RAM"
+	default y
+	depends on BBRAM
+
 config NVMEM_EEPROM
 	bool "NVMEM support for EEPROM devices"
 	default y
