@@ -75,6 +75,12 @@ struct scmi_channel {
 	scmi_channel_cb cb;
 	/** is the channel ready to be used by a protocol? */
 	bool ready;
+	/**
+	 * polling_only mode flag. Set to true by transports that don't
+	 * support completion interrupts (e.g., SMC transport).
+	 * When true, core will always use polling mode for this channel.
+	 */
+	bool polling_only;
 };
 
 struct scmi_transport_api {
@@ -92,6 +98,8 @@ struct scmi_transport_api {
 				struct scmi_channel *chan);
 	struct scmi_channel *(*request_channel)(const struct device *transport,
 						uint32_t proto, bool tx);
+	int (*interrupt_enable)(const struct device *transport, struct scmi_channel *chan,
+				bool enable);
 };
 
 /**
@@ -266,6 +274,33 @@ static inline bool scmi_transport_channel_is_free(const struct device *transport
 	}
 
 	return api->channel_is_free(transport, chan);
+}
+
+/**
+ * @brief Enable or disable channel interrupts
+ *
+ * Optional operation for transports that support interrupt control.
+ * Transports that don't support this.
+ *
+ * @param transport pointer to the device structure for
+ * the transport layer
+ * @param chan pointer to SCMI channel
+ * @param enable true to enable interrupts, false to disable
+ *
+ * @retval 0 if successful
+ * @retval -ENOTSUP if operation not supported
+ * @retval negative errno code if failure
+ */
+static inline int scmi_transport_interrupt_enable(const struct device *transport,
+						  struct scmi_channel *chan, bool enable)
+{
+	const struct scmi_transport_api *api = (const struct scmi_transport_api *)transport->api;
+
+	if (!api || !api->interrupt_enable) {
+		return -ENOTSUP;
+	}
+
+	return api->interrupt_enable(transport, chan, enable);
 }
 
 /**
