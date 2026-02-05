@@ -1,0 +1,19 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_MCUX_ISI
+	bool "MCUX ISI driver"
+	default y
+	depends on DT_HAS_NXP_IMX_ISI_ENABLED
+	help
+	  Enable support for MCUX Image Sensing Interface (ISI) driver.
+
+if VIDEO_MCUX_ISI
+
+config VIDEO_MCUX_ISI_INIT_PRIORITY
+	int "ISI driver initialization priority"
+	default 80
+	help
+	  ISI device driver initialization priority.
+
+endif # VIDEO_MCUX_ISI
