@@ -1,15 +1,13 @@
+common:
+  tags:
+    - kernel
+    - interrupt
 tests:
   arch.interrupt:
     platform_exclude: qemu_cortex_m0
-    tags:
-      - kernel
-      - interrupt
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
   arch.interrupt.qemu_cortex_m0:
     platform_allow: qemu_cortex_m0
-    tags:
-      - kernel
-      - interrupt
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
     extra_configs:
       - CONFIG_QEMU_ICOUNT=y
@@ -17,8 +15,6 @@ tests:
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE and CONFIG_MINIMAL_LIBC_SUPPORTED
     platform_exclude: qemu_cortex_m0
     tags:
-      - kernel
-      - interrupt
       - libc
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
@@ -26,8 +22,6 @@ tests:
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE and CONFIG_MINIMAL_LIBC_SUPPORTED
     platform_allow: qemu_cortex_m0
     tags:
-      - kernel
-      - interrupt
       - libc
     extra_configs:
       - CONFIG_QEMU_ICOUNT=y
@@ -44,9 +38,6 @@ tests:
       - xtensa
       # TODO: make test work on this arch
       - mips
-    tags:
-      - kernel
-      - interrupt
     extra_configs:
       - CONFIG_SHARED_INTERRUPTS=y
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
@@ -62,8 +53,6 @@ tests:
       # TODO: make test work on this arch
       - mips
     tags:
-      - kernel
-      - interrupt
       - lto
     extra_configs:
       - CONFIG_SHARED_INTERRUPTS=y
