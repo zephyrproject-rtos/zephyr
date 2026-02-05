@@ -102,4 +102,15 @@
 			input-enable;
 		};
 	};
+
+	pinmux_t1s: pinmux_t1s {
+		pmd_group {
+			pinmux = <TENBASET1S_TX_P1_2>,
+				 <TENBASET1S_RX_P1_0>,
+				 <TENBASET1S_ED_P1_1>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
 };

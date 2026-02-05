@@ -1,0 +1,56 @@
+/*
+ * Copyright 2025-2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/mcx/nxp_mcxa5x.dtsi>
+#include "frdm_mcxa577.dtsi"
+
+/ {
+	model = "NXP FRDM_MCXA577 board";
+	compatible = "nxp,mcxa577", "nxp,mcx";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash;
+		zephyr,flash-controller = &fmu;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+	};
+};
+
+/* Disable external MDIO bus and PHY as using internal 10BASE-T1S PHY */
+&enet_mdio {
+	status = "disabled";
+};
+
+&phy {
+	status = "disabled";
+};
+
+&enet {
+	status = "okay";
+	pinctrl-0 = <&pinmux_t1s>;
+	pinctrl-names = "default";
+};
+
+&enet_mac {
+	status = "okay";
+	phy-connection-type = "internal";
+	zephyr,random-mac-address;
+	phy-handle = <&t1s>;
+};
+
+&t1s {
+	plca-enable;
+	plca-node-id = <1>;
+	plca-node-count = <8>;
+	plca-burst-count = <0>;
+	plca-burst-timer = <0x80>;
+	plca-to-timer = <0x20>;
+	status = "okay";
+};

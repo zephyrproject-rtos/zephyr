@@ -310,8 +310,18 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kNONE_to_ENETRMII);
 	CLOCK_EnableClock(kCLOCK_GateENET0);
 	RESET_PeripheralReset(kENET0_RST_SHIFT_RSTn);
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(t1s))
+	/* TENBASET_PHY needs 100 MHz clock */
+	CLOCK_AttachClk(kPll1Clk_to_TENBASET_PHY);
+	CLOCK_SetClockDiv(kCLOCK_DivTENBASET_PHY0, 2);
+	CLOCK_EnableClock(kCLOCK_GateTENBASET_PHY0);
+	RESET_PeripheralReset(kT1S0_RST_SHIFT_RSTn);
+	/* Connect ENET to internal TENBASET_PHY0 */
+	SYSCON->ENET_CTRL = SYSCON_ENET_CTRL_PHY_SEL(1) | SYSCON_ENET_CTRL_PHY_INTF(0);
+#else
 	/* Connect ENET to external PHY over RMII */
 	SYSCON->ENET_CTRL = SYSCON_ENET_CTRL_PHY_SEL(0) | SYSCON_ENET_CTRL_PHY_INTF(1);
+#endif
 #endif
 
 	/* Set SystemCoreClock variable. */
