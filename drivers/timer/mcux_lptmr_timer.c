@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nxp_lptmr
+#define DT_DRV_COMPAT nxp_lptmr_hw_timer
 
 #include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
