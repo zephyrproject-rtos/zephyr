@@ -27,6 +27,9 @@ config TIMESLICE_SIZE
 config INIT_STACKS
 	default y
 
+config FPU
+	default y if CPU_HAS_FPU
+
 if BT
 
 config NUM_METAIRQ_PRIORITIES

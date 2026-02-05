@@ -23,6 +23,27 @@
 		};
 	};
 
+	rom {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		rom_s: memory@0 {
+			/* secure rom code region */
+			reg = <0x0 DT_SIZE_K(116)>;
+		};
+
+		rom_ns: memory@1d000 {
+			/* non-secure rom code region */
+			reg = <0x1d000 DT_SIZE_K(100)>;
+		};
+
+		bee_bt_controller: memory@36000 {
+			/* bt controller code region */
+			reg = <0x36000 DT_SIZE_K(296)>;
+		};
+	};
+
 	tcm {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -41,8 +62,15 @@
 		tcm1: memory@119c00 {
 			/* TCM1, used as zephyr-itcm */
 			compatible = "zephyr,memory-region", "arm,itcm";
-			reg = <0x119c00 DT_SIZE_K(140)>;
+			reg = <0x119c00 DT_SIZE_K(104)>;
 			zephyr,memory-region = "ITCM";
+		};
+
+		tcm_heap: memory@133c00 {
+			/* Reserved memory for realtek osif heap manangement,
+			 * which is used in realtek internal module.
+			 */
+			reg = <0x133c00 DT_SIZE_K(36)>;
 		};
 
 		tcm_reserved1: memory@13cc00 {
