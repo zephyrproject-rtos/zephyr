@@ -756,6 +756,8 @@ static int airoc_mgmt_ap_enable(const struct device *dev, struct wifi_connect_re
 	case WIFI_FREQ_BANDWIDTH_80MHZ:
 		chanspec |= GET_C_VAR(airoc_ap_if->whd_driver, CHANSPEC_BW_80);
 		break;
+	default:
+		break;
 	}
 
 	switch (params->security) {
