@@ -190,6 +190,11 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 
 	is_user_mode = true;
 
+#ifdef CONFIG_CUSTOM_STACK_GUARD
+	/* disable custom stack guard before enter user mode */
+	z_riscv_custom_stack_guard_disable();
+#endif /* CONFIG_CUSTOM_STACK_GUARD */
+
 	register void *a0 __asm__("a0") = user_entry;
 	register void *a1 __asm__("a1") = p1;
 	register void *a2 __asm__("a2") = p2;
@@ -248,6 +253,19 @@ FUNC_NORETURN void z_riscv_switch_to_main_no_multithreading(k_thread_entry_t mai
 	main_stack = (K_THREAD_STACK_BUFFER(z_main_stack) +
 		      K_THREAD_STACK_SIZEOF(z_main_stack));
 
+#ifdef CONFIG_CUSTOM_STACK_GUARD
+	z_riscv_custom_stack_guard_disable();
+
+	irq_unlock(MSTATUS_IEN);
+
+	__asm__ volatile (
+	"mv sp, %0\n"
+	"call z_riscv_custom_stack_guard_enable\n"
+	"jalr ra, %1, 0\n"
+	:
+	: "r" (main_stack), "r" (main_entry)
+	: "memory");
+#else
 	irq_unlock(MSTATUS_IEN);
 
 	__asm__ volatile (
@@ -255,6 +273,7 @@ FUNC_NORETURN void z_riscv_switch_to_main_no_multithreading(k_thread_entry_t mai
 	:
 	: "r" (main_stack), "r" (main_entry)
 	: "memory");
+#endif /* CONFIG_CUSTOM_STACK_GUARD */
 
 	/* infinite loop */
 	irq_lock();

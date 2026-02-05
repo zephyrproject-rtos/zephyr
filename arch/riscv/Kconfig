@@ -438,7 +438,7 @@ config PMP_UNLOCK_ROM_FOR_DEBUG
 endif #RISCV_PMP
 
 config PMP_STACK_GUARD
-	def_bool y
+	bool
 	depends on HW_STACK_PROTECTION
 	select PMP_KERNEL_MODE_DYNAMIC if MULTITHREADING
 
@@ -503,6 +503,46 @@ config RISCV_SMRNMI_ENABLE_NMI_DELIVERY
 	  This option only enables NMI delivery. It does not provide RNMI
 	  handlers or mnret instruction support. Proper RNMI handlers must
 	  be implemented in SoC-specific code to handle NMI events.
+
+config RISCV_HAS_CUSTOM_STACK_GUARD
+	bool
+	help
+	  Selected when the hardware provides a custom stack guard.
+
+config CUSTOM_STACK_GUARD
+	bool "Thread Stack Guards based on custom stack guard"
+	depends on RISCV_HAS_CUSTOM_STACK_GUARD
+	select THREAD_STACK_INFO
+	help
+	  Enable Thread/Interrupt Stack Guards via custom stack guard.
+	  The functionality must be supported by HW.
+
+config CUSTOM_STACK_GUARD_RESERVED_SIZE
+	int "Custom stack guard reserved area size"
+	depends on CUSTOM_STACK_GUARD
+	default 1024 if 64BIT
+	default 768
+	help
+	  This is the size of the custom stack guard reserved area.
+	  This should be large enough to catch any sudden jump in stack pointer
+	  decrement, plus some wiggle room to accommodate the eventual overflow
+	  exception stack usage.
+
+config RISCV_STACK_PROTECTION
+	bool
+	default y if HW_STACK_PROTECTION
+	imply CUSTOM_STACK_GUARD if RISCV_HAS_CUSTOM_STACK_GUARD
+	select PMP_STACK_GUARD if (!CUSTOM_STACK_GUARD && RISCV_PMP)
+	help
+	  This option enables either:
+	  - The custom stack guard, or
+	  - the PMP-based stack guard
+	  to cause a system fatal error
+	  if the bounds of the current process stack are overflowed.
+	  The two stack guard options are mutually exclusive. The
+	  selection of the custom stack guard is prioritized over the
+	  PMP-based stack guard. The developer still has the option to
+	  manually select the PMP-based stack guard, if this is desired.
 
 endmenu
 
