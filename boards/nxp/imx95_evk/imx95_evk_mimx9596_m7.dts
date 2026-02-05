@@ -149,3 +149,7 @@
 &edma2 {
 	status = "okay";
 };
+
+&isi {
+	status = "okay";
+};
