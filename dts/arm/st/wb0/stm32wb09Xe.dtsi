@@ -11,6 +11,9 @@
 		flash: flash-controller@40001000 {
 			flash0: flash@10040000 {
 				reg = <0x10040000 DT_SIZE_K(512)>;
+				ranges = <0x0 0x10040000 DT_SIZE_K(512)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 	};

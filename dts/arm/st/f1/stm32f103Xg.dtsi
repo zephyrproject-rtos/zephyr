@@ -24,6 +24,9 @@
 				 * otherwise a non-issue.
 				 */
 				reg = <0x08000000 DT_SIZE_K(1024)>;
+				ranges = <0x0 0x8000000 DT_SIZE_K(1024)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				erase-block-size = <DT_SIZE_K(2)>;
 			};
 		};
