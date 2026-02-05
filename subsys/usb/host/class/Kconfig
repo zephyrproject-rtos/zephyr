@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+rsource "Kconfig.hub_host"
