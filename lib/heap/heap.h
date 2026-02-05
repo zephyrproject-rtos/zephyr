@@ -61,6 +61,20 @@ typedef struct { char bytes[CHUNK_UNIT]; } chunk_unit_t;
 typedef uint32_t chunkid_t;
 typedef uint32_t chunksz_t;
 
+#ifdef CONFIG_SYS_HEAP_CANARIES
+
+struct z_heap_chunk_trailer {
+	uint64_t canary;
+} __aligned(CHUNK_UNIT);
+
+#define CHUNK_TRAILER_SIZE (sizeof(struct z_heap_chunk_trailer) / CHUNK_UNIT)
+
+#else
+
+#define CHUNK_TRAILER_SIZE 0
+
+#endif /* CONFIG_SYS_HEAP_CANARIES */
+
 struct z_heap_bucket {
 	chunkid_t next;
 };
@@ -240,12 +254,12 @@ static ALWAYS_INLINE chunksz_t bytes_to_chunksz(struct z_heap *h, size_t bytes, 
 	size_t oddments = ((bytes % CHUNK_UNIT) + (extra % CHUNK_UNIT) +
 			   chunk_header_bytes(h) + CHUNK_UNIT - 1U) / CHUNK_UNIT;
 
-	return (chunksz_t)min(chunks + oddments, h->end_chunk);
+	return (chunksz_t)min(chunks + oddments + CHUNK_TRAILER_SIZE, h->end_chunk);
 }
 
 static inline chunksz_t min_chunk_size(struct z_heap *h)
 {
-	return chunksz(chunk_header_bytes(h) + 1);
+	return chunksz(chunk_header_bytes(h) + 1) + CHUNK_TRAILER_SIZE;
 }
 
 /*
@@ -254,17 +268,19 @@ static inline chunksz_t min_chunk_size(struct z_heap *h)
  * 1) they would be too small to be allocatable anyway, and
  * 2) they might be too small to store free list pointers.
  * It happens that min_chunk_size() is always >= the free pointer storage size.
- * The big_heap() condition short-circuits the comparison with a build-time
- * constant when undersized chunks cannot occur.
+ * The initial conditions short-circuit the comparison with build-time constants
+ * when undersized chunks cannot occur.
  */
 static inline bool undersized_chunk(struct z_heap *h, chunkid_t c)
 {
-	return big_heap(h) && chunk_size(h, c) < min_chunk_size(h);
+	return (CHUNK_TRAILER_SIZE != 0 || big_heap(h)) &&
+		chunk_size(h, c) < min_chunk_size(h);
 }
 
 static inline size_t chunk_usable_bytes(struct z_heap *h, chunkid_t c)
 {
-	return chunk_size(h, c) * CHUNK_UNIT - chunk_header_bytes(h);
+	return chunk_size(h, c) * CHUNK_UNIT - chunk_header_bytes(h)
+	       - CHUNK_TRAILER_SIZE * CHUNK_UNIT;
 }
 
 static inline size_t mem_align_gap(struct z_heap *h, void *mem)
@@ -297,5 +313,19 @@ static inline void get_alloc_info(struct z_heap *h, size_t *alloc_bytes,
 		}
 	}
 }
+
+#ifdef CONFIG_SYS_HEAP_CANARIES
+
+/* Returns pointer to the chunk trailer (at the end of the chunk) */
+static inline struct z_heap_chunk_trailer *chunk_trailer(struct z_heap *h,
+							 chunkid_t c)
+{
+	chunk_unit_t *buf = chunk_buf(h);
+
+	return (struct z_heap_chunk_trailer *)&buf[c + chunk_size(h, c)
+						   - CHUNK_TRAILER_SIZE];
+}
+
+#endif /* CONFIG_SYS_HEAP_CANARIES */
 
 #endif /* ZEPHYR_INCLUDE_LIB_OS_HEAP_H_ */
