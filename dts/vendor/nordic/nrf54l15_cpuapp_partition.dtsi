@@ -10,19 +10,27 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		boot_partition: partition@0 {
-			label = "mcuboot";
-			reg = <0x0 DT_SIZE_K(64)>;
-		};
+		without_bootloader_partition: partition@0 {
+			compatible = "fixed-subpartitions";
+			reg = <0x0 0x15c000>;
+			ranges = <0x0 0x0 0x15c000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-		slot0_partition: partition@10000 {
-			label = "image-0";
-			reg = <0x10000 DT_SIZE_K(664)>;
-		};
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x0 DT_SIZE_K(64)>;
+			};
 
-		slot1_partition: partition@b6000 {
-			label = "image-1";
-			reg = <0xb6000 DT_SIZE_K(664)>;
+			slot0_partition: partition@10000 {
+				label = "image-0";
+				reg = <0x10000 DT_SIZE_K(664)>;
+			};
+
+			slot1_partition: partition@b6000 {
+				label = "image-1";
+				reg = <0xb6000 DT_SIZE_K(664)>;
+			};
 		};
 
 		storage_partition: partition@15c000 {
