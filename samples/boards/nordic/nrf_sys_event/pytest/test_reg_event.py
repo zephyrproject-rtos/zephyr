@@ -16,7 +16,7 @@ def test_rramc_wakeup(dut: DeviceAdapter):
     - sample.boards.nordic.nrf_sys_event.rramc_wakeup.ppi.
     Parse logs from serial port. If the Register Event API was used correctly,
     code execution shall be faster by ~14 us when event was registered.
-    If the API works correctly, RRAMC is woken up just before event occures.
+    If the API works correctly, RRAMC is woken up just before event occurs.
     Thus, there is no delay resulting from RRAMC getting ready.
     """
 
