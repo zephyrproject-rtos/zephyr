@@ -742,6 +742,7 @@ int udc_stm32_init(const struct device *dev)
 	priv->pcd.Init.ep0_mps = UDC_STM32_EP0_MAX_PACKET_SIZE;
 	priv->pcd.Init.phy_itface = cfg->selected_phy;
 	priv->pcd.Init.speed = cfg->selected_speed;
+	priv->pcd.Init.Sof_enable = IS_ENABLED(CONFIG_UDC_ENABLE_SOF);
 
 	status = HAL_PCD_Init(&priv->pcd);
 	if (status != HAL_OK) {
