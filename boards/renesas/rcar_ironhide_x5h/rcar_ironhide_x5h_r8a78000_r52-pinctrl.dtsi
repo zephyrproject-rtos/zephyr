@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2026 BayLibre, SAS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-r8a78000.h>
+
+&pfc {
+	hscif1_data_tx_default: hscif1_data_tx_default {
+		pin = <PIN_HTX1 FUNC_HTX1>;
+	};
+
+	hscif1_data_rx_default: hscif1_data_rx_default {
+		pin = <PIN_HRX1 FUNC_HRX1>;
+	};
+
+	gpio0_3_default: gpio0_3_default {
+		pin = <PIN_STPWT_EXTFXR>;
+		bias-disable;
+	};
+
+	gpio9_1_default: gpio9_1_default {
+		pin = <PIN_ETHES0_CAPTURE>;
+		bias-disable;
+	};
+
+	gpio9_2_default: gpio9_2_default {
+		pin = <PIN_ETHES0_MATCH>;
+		bias-disable;
+	};
+
+	gpio9_3_default: gpio9_3_default {
+		pin = <PIN_ETHES4_PPS>;
+		bias-disable;
+	};
+
+	gpio9_4_default: gpio9_4_default {
+		pin = <PIN_ETHES4_CAPTURE>;
+		bias-disable;
+	};
+
+	gpio9_5_default: gpio9_5_default {
+		pin = <PIN_ETHES4_MATCH>;
+		bias-disable;
+	};
+};
