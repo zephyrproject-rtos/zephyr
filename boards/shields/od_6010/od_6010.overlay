@@ -1,0 +1,66 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* OD-6010 SLCD Panel Shield Device Tree Overlay
+ *
+ * The OD-6010 is a 6-digit 7-segment LCD panel with 6 icons.
+ * Hardware Configuration:
+ * - 6 Display Positions (positions 1-6)
+ * - 7 Segments per Position (A-G)
+ * - 4 COM lines (COM0-COM3)
+ * - 12 Pins (Pin 0-11)
+ * - 6 Icons (P1-P6 indicators)
+ */
+
+&slcd_controller {
+	auxdisplay_0: od_6010 {
+		compatible = "slcd-7segment";
+		status = "okay";
+		columns = <6>;
+		rows = <1>;
+		/* Which pin controls which segment. 6 positions × 7 segments = 42 elements */
+		segment-pins = <
+			/* Position 1 A to G */
+			0 0 0 0 1 1 1
+			/* Position 2 A to G */
+			2 2 2 2 3 3 3
+			/* Position 3 A to G */
+			4 4 4 4 5 5 5
+			/* Position 4 A to G */
+			6 6 6 6 7 7 7
+			/* Position 5 A to G */
+			8 8 8 8 9 9 9
+			/* Position 6 A to G */
+			10 10 10 10 11 11 11
+		>;
+
+		/* Which com controls which segment. 6 positions × 7 segments = 42 elements */
+		segment-coms = <
+			/* Position 1 A to G */
+			0 1 2 3 3 1 2
+			/* Position 2 A to G */
+			0 1 2 3 3 1 2
+			/* Position 3 A to G */
+			0 1 2 3 3 1 2
+			/* Position 4 A to G */
+			0 1 2 3 3 1 2
+			/* Position 5 A to G */
+			0 1 2 3 3 1 2
+			/* Position 6 A to G */
+			0 1 2 3 3 1 2
+		>;
+
+		/* 6 special icons. */
+		num-icons = <6>;
+
+		/* Which pin controls which segment. 6 elements for 6 icons */
+		icon-pins = <0x07 0x05 0x03 0x09 0x0b 0x01>;
+
+		/* Which com controls which segment. 6 elements for 6 icons */
+		icon-coms = <0 0 0 0 0 0>;
+	};
+};
+
