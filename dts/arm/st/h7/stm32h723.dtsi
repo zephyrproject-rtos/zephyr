@@ -17,6 +17,8 @@
 		flash-controller@52002000 {
 			flash0: flash@8000000 {
 				compatible = "st,stm32-nv-flash", "soc-nv-flash";
+				#address-cells = <1>;
+				#size-cells = <1>;
 				write-block-size = <32>;
 				erase-block-size = <DT_SIZE_K(128)>;
 				/* maximum erase time for a 128K sector */
