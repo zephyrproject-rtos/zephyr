@@ -39,7 +39,7 @@ static void heap_print_info(struct z_heap *h, bool dump_chunks)
 		if (count) {
 			printk("%9d %12d %12d %12d %12zd\n",
 			       i, (1 << i) - 1 + min_chunk_size(h), count,
-			       largest, chunksz_to_bytes(h, largest));
+			       largest, (size_t)largest * CHUNK_UNIT);
 		}
 	}
 
