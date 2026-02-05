@@ -4,7 +4,9 @@ sample:
 
 common:
   sysbuild: true
-  tags: ipc ipc_sessions
+  tags:
+    - ipc
+    - ipc_sessions
   harness: ztest
 
 tests:
