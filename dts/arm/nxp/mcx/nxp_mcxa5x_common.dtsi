@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -712,6 +712,26 @@
 		interrupts = <116 0>;
 		clocks = <&syscon MCUX_LPI2C4_CLK>;
 		status = "disabled";
+	};
+
+	enet: ethernet@1c000 {
+		compatible = "nxp,enet-qos";
+		reg = <0x1c000 0x1000>;
+		clocks = <&syscon MCUX_ENET_QOS_CLK>;
+
+		enet_mac: ethernet {
+			compatible = "nxp,enet-qos-mac";
+			status = "disabled";
+			interrupts = <90 0>, <91 0>;
+			interrupt-names = "mac", "power";
+		};
+
+		enet_mdio: mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "nxp,enet-qos-mdio";
+			status = "disabled";
+		};
 	};
 };
 

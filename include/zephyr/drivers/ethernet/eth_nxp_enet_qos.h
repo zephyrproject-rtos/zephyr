@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +11,7 @@
 #include <zephyr/drivers/clock_control.h>
 
 /* Different platforms named the peripheral different in the register definitions */
-#ifdef CONFIG_SOC_FAMILY_MCXN
+#if defined(CONFIG_SOC_FAMILY_MCXN) || defined(CONFIG_SOC_FAMILY_MCXA)
 #undef ENET
 #define ENET_QOS_NAME ENET
 #define ENET_QOS_ALIGNMENT 4

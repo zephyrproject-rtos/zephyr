@@ -513,17 +513,21 @@ static inline void enet_qos_mtl_config_init(enet_qos_t *base)
 		;
 	}
 
+#if defined(ENET_MTL_QUEUE_MTL_TXQX_OP_MODE_TQS) && defined(ENET_MTL_QUEUE_MTL_TXQX_OP_MODE_TXQEN)
 	/* Enable only Transmit Queue 0 (optimization/configuration pending) with maximum size */
 	base->MTL_QUEUE[0].MTL_TXQX_OP_MODE =
 		/* Sets the size */
 		ENET_QOS_REG_PREP(MTL_QUEUE_MTL_TXQX_OP_MODE, TQS, 0b111) |
 		/* Sets it to on */
 		ENET_QOS_REG_PREP(MTL_QUEUE_MTL_TXQX_OP_MODE, TXQEN, 0b10);
+#endif
 
 	/* Enable only Receive Queue 0 (optimization/configuration pending) with maximum size */
 	base->MTL_QUEUE[0].MTL_RXQX_OP_MODE |=
+#ifdef ENET_MTL_QUEUE_MTL_RXQX_OP_MODE_RQS
 		/* Sets the size */
 		ENET_QOS_REG_PREP(MTL_QUEUE_MTL_RXQX_OP_MODE, RQS, 0b111) |
+#endif
 		/* Keep small packets */
 		ENET_QOS_REG_PREP(MTL_QUEUE_MTL_RXQX_OP_MODE, FUP, 0b1);
 }
@@ -548,10 +552,12 @@ static inline void enet_qos_mac_config_init(enet_qos_t *base, struct nxp_enet_qo
 		base->MAC_PACKET_FILTER |= ENET_MAC_PACKET_FILTER_PM_MASK;
 	}
 
+#ifdef ENET_MAC_ONEUS_TIC_COUNTER_TIC_1US_CNTR
 	/* Set the reference for 1 microsecond of ENET QOS CSR clock cycles */
 	base->MAC_ONEUS_TIC_COUNTER =
 		ENET_QOS_REG_PREP(MAC_ONEUS_TIC_COUNTER, TIC_1US_CNTR,
 					(clk_rate / USEC_PER_SEC) - 1);
+#endif
 
 	base->MAC_CONFIGURATION |=
 		/* For 10/100 Mbps operation */
@@ -563,9 +569,11 @@ static inline void enet_qos_mac_config_init(enet_qos_t *base, struct nxp_enet_qo
 		/* Don't talk unless no one else is talking */
 		ENET_QOS_REG_PREP(MAC_CONFIGURATION, ECRSFD, 0b1);
 
+#ifdef ENET_MAC_RXQ_CTRL_RXQ0EN
 	/* Enable the MAC RX channel 0 */
 	base->MAC_RXQ_CTRL[0] |=
 		ENET_QOS_REG_PREP(MAC_RXQ_CTRL, RXQ0EN, 0b1);
+#endif
 }
 
 static inline void enet_qos_start(enet_qos_t *base)
