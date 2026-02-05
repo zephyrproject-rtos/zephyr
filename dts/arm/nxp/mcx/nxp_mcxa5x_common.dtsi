@@ -733,6 +733,14 @@
 			status = "disabled";
 		};
 	};
+
+	t1s: ethernet-phy@2d000 {
+		compatible = "nxp,t1s-phy";
+		reg = <0x2d000 0x200>;
+		status = "disabled";
+		interrupts = <93 0>;
+		interrupt-names = "t1s";
+	};
 };
 
 &systick {

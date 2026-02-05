@@ -6,3 +6,4 @@ board:
   - name: mcxa577
     variants:
     - name: ns
+    - name: t1s
