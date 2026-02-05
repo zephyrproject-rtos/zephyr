@@ -167,7 +167,7 @@ static int i2c_omap_reset(const struct device *dev)
 	struct i2c_omap_data *data = DEV_DATA(dev);
 	volatile i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
 	uint64_t timeout;
-	uint16_t sysc;
+	uint32_t sysc;
 
 	sysc = i2c_base_addr->SYSC;
 	i2c_base_addr->CON &= ~I2C_OMAP_CON_EN;
@@ -456,7 +456,7 @@ static int i2c_omap_transfer_message_ll(const struct device *dev)
 {
 	struct i2c_omap_data *data = DEV_DATA(dev);
 	volatile i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
-	uint16_t stat = i2c_base_addr->STAT, result = 0;
+	uint32_t stat = i2c_base_addr->STAT, result = 0;
 	uint8_t num_bytes;
 
 	if (data->receiver) {
