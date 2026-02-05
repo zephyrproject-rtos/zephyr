@@ -104,6 +104,11 @@ GDATA(_k_syscall_table)
 GTEXT(__soc_handle_all_irqs)
 #endif
 
+#ifdef CONFIG_CUSTOM_STACK_GUARD
+GTEXT(z_riscv_custom_stack_guard_enable)
+GTEXT(z_riscv_custom_stack_guard_disable)
+#endif /* CONFIG_CUSTOM_STACK_GUARD */
+
 /* exports */
 GTEXT(_isr_wrapper)
 
@@ -361,6 +366,21 @@ no_fp:	/* increment _current->arch.exception_depth */
 	beq t0, t1, is_kernel_syscall
 
 #ifdef CONFIG_USERSPACE
+
+#ifdef CONFIG_CUSTOM_STACK_GUARD
+	/*
+	 * Enable custom stack guard when entering from user mode
+	 * to protect the privileged stack.
+	 */
+	csrr t1, mstatus
+	li t2, MSTATUS_MPP
+	and t1, t1, t2
+	bnez t1, 1f
+	lr a0, ___cpu_t_current_OFFSET(s0)
+	call z_riscv_custom_stack_guard_enable
+1:
+#endif /* CONFIG_CUSTOM_STACK_GUARD */
+
 	/*
 	 * If mcause == RISCV_EXC_ECALLU, handle system call
 	 * for user mode thread.
@@ -498,6 +518,11 @@ do_irq_offload:
 	sw t2, ___cpu_t_nested_OFFSET(s0)
 	bnez t1, 1f
 
+#ifdef CONFIG_CUSTOM_STACK_GUARD
+	/* Disable custom stack guard */
+	call z_riscv_custom_stack_guard_disable
+#endif /* CONFIG_CUSTOM_STACK_GUARD */
+
 	/* Switch to interrupt stack */
 	mv t0, sp
 	lr sp, ___cpu_t_irq_stack_OFFSET(s0)
@@ -505,6 +530,20 @@ do_irq_offload:
 	/* Save thread stack pointer on interrupt stack */
 	addi sp, sp, -16
 	sr t0, 0(sp)
+
+#ifdef CONFIG_CUSTOM_STACK_GUARD
+	/* Enable the custom stack guard for interrupt stack */
+	lr a0, ___cpu_t_current_OFFSET(s0)
+	call z_riscv_custom_stack_guard_enable
+	/*
+	 * Reload the routine and argument from the stack, since the custom
+	 * stack guard hook clobbers a0 and a1.
+	 */
+	lr t0, 0(sp)
+	lr a1, __struct_arch_esf_a0_OFFSET(t0)
+	lr a0, __struct_arch_esf_a1_OFFSET(t0)
+#endif /* CONFIG_CUSTOM_STACK_GUARD */
+
 1:
 	/* Execute provided routine (argument is in a0 already). */
 	jalr ra, a1, 0
@@ -614,6 +653,11 @@ is_interrupt:
 	sw t2, ___cpu_t_nested_OFFSET(s0)
 	bnez t1, on_irq_stack
 
+#ifdef CONFIG_CUSTOM_STACK_GUARD
+	/* Disable the custom stack guard */
+	call z_riscv_custom_stack_guard_disable
+#endif /* CONFIG_CUSTOM_STACK_GUARD */
+
 	/* Switch to interrupt stack */
 	mv t0, sp
 	lr sp, ___cpu_t_irq_stack_OFFSET(s0)
@@ -624,6 +668,12 @@ is_interrupt:
 	 */
 	addi sp, sp, -16
 	sr t0, 0(sp)
+
+#ifdef CONFIG_CUSTOM_STACK_GUARD
+	/* Enable the custom stack guard for interrupt stack */
+	lr a0, ___cpu_t_current_OFFSET(s0)
+	call z_riscv_custom_stack_guard_enable
+#endif /* CONFIG_CUSTOM_STACK_GUARD */
 
 on_irq_stack:
 
@@ -683,8 +733,19 @@ irq_done:
 	sw t2, ___cpu_t_nested_OFFSET(s0)
 	bnez t2, no_reschedule
 
+#ifdef CONFIG_CUSTOM_STACK_GUARD
+	/* Disable the custom stack guard for interrupt stack */
+	call z_riscv_custom_stack_guard_disable
+#endif /* CONFIG_CUSTOM_STACK_GUARD */
+
 	/* nested count is back to 0: Return to thread stack */
 	lr sp, 0(sp)
+
+#ifdef CONFIG_CUSTOM_STACK_GUARD
+	/* Enable the custom stack guard for thread stack */
+	lr a0, ___cpu_t_current_OFFSET(s0)
+	call z_riscv_custom_stack_guard_enable
+#endif /* CONFIG_CUSTOM_STACK_GUARD */
 
 #ifdef CONFIG_STACK_SENTINEL
 	call z_check_stack_sentinel
@@ -775,6 +836,11 @@ fp_trap_exit:
 	lr a0, ___cpu_t_current_OFFSET(s0)
 	call z_riscv_pmp_usermode_enable
 #endif
+
+#ifdef CONFIG_CUSTOM_STACK_GUARD
+	/* Disable the custom stack guard in user mode */
+	call z_riscv_custom_stack_guard_disable
+#endif /* CONFIG_CUSTOM_STACK_GUARD */
 
 	/* Set our per-thread usermode flag */
 	li t1, 1
