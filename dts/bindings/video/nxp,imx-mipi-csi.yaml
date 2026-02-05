@@ -1,0 +1,37 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP iMX MIPI CSI Host Controller
+
+compatible: "imx,mipi-csi"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  phys:
+    type: phandle
+    required: true
+    description: PHY device phandle
+
+  sensor:
+    type: phandle
+    description: |
+      Sensor device phandle. If specified, the CSI controller will
+      control the sensor's streaming state and format configuration.
+
+  data-lanes:
+    type: int
+    required: true
+    description: Number of data lanes (1-4)
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+
+  ports:
+    type: compound
+    description: Video port connections

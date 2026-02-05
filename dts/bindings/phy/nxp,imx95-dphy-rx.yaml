@@ -1,0 +1,40 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP i.MX95 MIPI DPHY Receiver
+
+compatible: "nxp,imx95-dphy-rx"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Register regions for DPHY CSR and CSI-2 interface registers.
+      First region is the D-PHY CSR registers.
+      Second region is the CSI-2 host registers used for PHY control.
+
+  reg-names:
+    required: true
+
+  clocks:
+    type: phandle-array
+    description: |
+      PHY configuration clock. This is typically a 24MHz reference clock.
+
+  clock-names:
+    type: string-array
+    description: |
+      Clock names.
+
+  power-domains:
+    type: phandle-array
+    description: |
+      Power domain for the DPHY.
+
+  "#phy-cells":
+    type: int
+    const: 0
+    description: |
+      Number of cells in a PHY specifier.

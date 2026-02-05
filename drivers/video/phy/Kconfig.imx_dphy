@@ -1,0 +1,21 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_IMX_DPHY_RX
+	bool "i.MX MIPI DPHY RX driver"
+	default y
+	depends on DT_HAS_NXP_IMX95_DPHY_RX_ENABLED
+	help
+	  Enable support for i.MX95 MIPI DPHY RX driver.
+	  This driver provides PHY support for MIPI CSI-2 receivers.
+
+if VIDEO_IMX_DPHY_RX
+
+config IMX_DPHY_INIT_PRIORITY
+	int "i.MX DPHY initialization priority"
+	default 80
+	help
+	  Initialization priority for i.MX DPHY driver.
+	  Must be initialized after clock control driver.
+
+endif # VIDEO_IMX_DPHY_RX

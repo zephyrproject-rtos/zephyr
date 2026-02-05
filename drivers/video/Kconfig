@@ -83,6 +83,7 @@ source "drivers/video/Kconfig.gc2145"
 source "drivers/video/Kconfig.hm01b0"
 source "drivers/video/Kconfig.hm0360"
 source "drivers/video/Kconfig.imx335"
+source "drivers/video/Kconfig.imx_mipi_csi"
 source "drivers/video/Kconfig.mcux_csi"
 source "drivers/video/Kconfig.mcux_mipi_csi2rx"
 source "drivers/video/Kconfig.mcux_sdma"
@@ -103,5 +104,7 @@ source "drivers/video/Kconfig.sw_generator"
 
 source "drivers/video/Kconfig.ov5642"
 source "drivers/video/Kconfig.ov767x"
+
+rsource "phy/Kconfig"
 
 endif # VIDEO
