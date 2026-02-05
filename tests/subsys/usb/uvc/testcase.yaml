@@ -1,0 +1,11 @@
+tests:
+  usb.uvc:
+    tags:
+      - usb
+      - video
+    platform_allow:
+      - native_sim/native
+    integration_platforms:
+      - native_sim/native
+    extra_args:
+      - platform:native_sim/native:SNIPPET="video-sw-generator"

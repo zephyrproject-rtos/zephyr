@@ -10,9 +10,10 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/usb/usbh.h>
 
-#include "usbh_internal.h"
 #include "usbh_device.h"
+#include "usbh_internal.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uhs, CONFIG_USBH_LOG_LEVEL);
@@ -46,39 +47,28 @@ static int usbh_event_carrier(const struct device *dev,
 static void dev_connected_handler(struct usbh_context *const ctx,
 				  const struct uhc_event *const event)
 {
-
-	LOG_DBG("Device connected event");
-	if (ctx->root != NULL) {
-		LOG_ERR("Device already connected");
-		usbh_device_free(ctx->root);
-		ctx->root = NULL;
-	}
-
-	ctx->root = usbh_device_alloc(ctx);
-	if (ctx->root == NULL) {
-		LOG_ERR("Failed allocate new device");
-		return;
-	}
-
-	ctx->root->state = USB_STATE_DEFAULT;
+	struct usb_device *udev;
+	uint8_t speed;
 
 	if (event->type == UHC_EVT_DEV_CONNECTED_HS) {
-		ctx->root->speed = USB_SPEED_SPEED_HS;
+		speed = USB_SPEED_SPEED_HS;
 	} else {
-		ctx->root->speed = USB_SPEED_SPEED_FS;
+		speed = USB_SPEED_SPEED_FS;
 	}
 
-	if (usbh_device_init(ctx->root)) {
-		LOG_ERR("Failed to reset new USB device");
+	udev = usbh_connect_device(ctx, speed);
+	if (udev == NULL) {
+		return;
 	}
 }
 
 static void dev_removed_handler(struct usbh_context *const ctx)
 {
-	if (ctx->root != NULL) {
-		usbh_device_free(ctx->root);
-		ctx->root = NULL;
-		LOG_DBG("Device removed");
+	struct usb_device *udev = NULL;
+
+	udev = usbh_device_get_root(ctx);
+	if (udev) {
+		usbh_disconnect_device(ctx, udev);
 	} else {
 		LOG_DBG("Spurious device removed event");
 	}
@@ -194,13 +184,7 @@ int usbh_init_device_intl(struct usbh_context *const uhs_ctx)
 
 	sys_dlist_init(&uhs_ctx->udevs);
 
-	STRUCT_SECTION_FOREACH(usbh_class_data, cdata) {
-		/*
-		 * For now, we have not implemented any class drivers,
-		 * so just keep it as placeholder.
-		 */
-		break;
-	}
+	usbh_class_init_all(uhs_ctx);
 
 	return 0;
 }

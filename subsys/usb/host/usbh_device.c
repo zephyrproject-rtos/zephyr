@@ -9,6 +9,8 @@
 
 #include "usbh_device.h"
 #include "usbh_ch9.h"
+#include "usbh_class.h"
+#include "usbh_class_api.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbh_dev, CONFIG_USBH_LOG_LEVEL);
@@ -447,11 +449,81 @@ error:
 	return err;
 }
 
+struct usb_device *usbh_device_get_root(struct usbh_context *const ctx)
+{
+	sys_dnode_t *node;
+
+	if (ctx == NULL) {
+		return NULL;
+	}
+
+	node = sys_dlist_peek_head(&ctx->udevs);
+	if (node == NULL) {
+		/* No devices in the list */
+		return NULL;
+	}
+
+	/* Get the usb_device structure from the node */
+	return CONTAINER_OF(node, struct usb_device, node);
+}
+
+bool usbh_device_is_root(struct usbh_context *const ctx,
+			struct usb_device *const udev)
+{
+	if (ctx == NULL || udev == NULL) {
+		return false;
+	}
+
+	return sys_dlist_peek_head(&ctx->udevs) == &udev->node;
+}
+
+struct usb_device *usbh_connect_device(struct usbh_context *const ctx,
+					    uint8_t speed)
+{
+	struct usb_device *udev;
+
+	LOG_DBG("Device connected event");
+
+	/* Allocate new device */
+	udev = usbh_device_alloc(ctx);
+	if (udev == NULL) {
+		LOG_ERR("Failed allocate new device");
+		return NULL;
+	}
+
+	udev->state = USB_STATE_DEFAULT;
+	udev->speed = speed;
+
+	if (usbh_device_init(udev)) {
+		LOG_ERR("Failed to init new USB device");
+		usbh_device_free(udev);
+		return NULL;
+	}
+
+	usbh_class_probe_device(udev);
+
+	return udev;
+}
+
+void usbh_disconnect_device(struct usbh_context *ctx, struct usb_device *udev)
+{
+	if (!ctx || !udev) {
+		return;
+	}
+
+	usbh_class_remove_all(udev);
+
+	usbh_device_free(udev);
+
+	LOG_DBG("Device removed");
+}
+
 int usbh_device_init(struct usb_device *const udev)
 {
 	struct usbh_context *const uhs_ctx = udev->ctx;
 	uint8_t new_addr;
 	int err;
+	uint8_t device_count = 0;
 
 	if (udev->state != USB_STATE_DEFAULT) {
 		LOG_ERR("USB device is not in default state");
@@ -464,11 +536,17 @@ int usbh_device_init(struct usb_device *const udev)
 		return err;
 	}
 
-	/* FIXME: The port to which the device is connected should be reset. */
-	err = uhc_bus_reset(uhs_ctx->dev);
-	if (err) {
-		LOG_ERR("Failed to signal bus reset");
-		return err;
+	k_mutex_lock(&uhs_ctx->mutex, K_FOREVER);
+	device_count = sys_dlist_len(&uhs_ctx->udevs);
+	k_mutex_unlock(&uhs_ctx->mutex);
+
+	/* Only reset bus if this is the root device. */
+	if (device_count == 1U) {
+		err = uhc_bus_reset(uhs_ctx->dev);
+		if (err) {
+			LOG_ERR("Failed to signal bus reset");
+			return err;
+		}
 	}
 
 	/*
@@ -484,18 +562,6 @@ int usbh_device_init(struct usb_device *const udev)
 
 	err = validate_device_mps0(udev);
 	if (err) {
-		goto error;
-	}
-
-	err = usbh_req_desc_dev(udev, sizeof(udev->dev_desc), &udev->dev_desc);
-	if (err) {
-		LOG_ERR("Failed to read device descriptor");
-		goto error;
-	}
-
-	if (!udev->dev_desc.bNumConfigurations) {
-		LOG_ERR("Device has no configurations, bNumConfigurations %d",
-			udev->dev_desc.bNumConfigurations);
 		goto error;
 	}
 
@@ -517,6 +583,18 @@ int usbh_device_init(struct usb_device *const udev)
 	udev->state = USB_STATE_ADDRESSED;
 
 	LOG_INF("New device with address %u state %u", udev->addr, udev->state);
+
+	err = usbh_req_desc_dev(udev, sizeof(udev->dev_desc), &udev->dev_desc);
+	if (err) {
+		LOG_ERR("Failed to read device descriptor");
+		goto error;
+	}
+
+	if (!udev->dev_desc.bNumConfigurations) {
+		LOG_ERR("Device has no configurations, bNumConfigurations %d",
+			udev->dev_desc.bNumConfigurations);
+		goto error;
+	}
 
 	err = usbh_device_set_configuration(udev, 1);
 	if (err) {
