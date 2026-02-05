@@ -22,6 +22,7 @@
 LOG_MODULE_REGISTER(omap_i2c, CONFIG_I2C_LOG_LEVEL);
 
 #define I2C_OMAP_TIMEOUT     100U
+#define I2C_OMAP_TRANSFER_TIMEOUT 1000U
 /* OCP_SYSSTATUS bit definitions */
 #define SYSS_RESETDONE_MASK  BIT(0)
 #define RETRY                -1
@@ -539,7 +540,7 @@ static int i2c_omap_transfer_message(const struct device *dev, struct i2c_msg *m
 {
 	struct i2c_omap_data *data = DEV_DATA(dev);
 	volatile i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
-	unsigned long time_left = 1000;
+	uint32_t timeout;
 	uint16_t control_reg;
 	int result = 0;
 	/* Determine message direction (read or write) and update the receiver flag */
@@ -579,10 +580,10 @@ static int i2c_omap_transfer_message(const struct device *dev, struct i2c_msg *m
 	i2c_base_addr->CON = control_reg;
 	/* Poll for status until the transfer is complete */
 	/* Call a lower-level function to continue the transfer */
+	timeout = k_uptime_get_32() + I2C_OMAP_TRANSFER_TIMEOUT;
 	do {
 		result = i2c_omap_transfer_message_ll(dev);
-		time_left--;
-	} while (result == RETRY && time_left);
+	} while (result == RETRY && k_uptime_get_32() < timeout);
 
 	/* If no errors occurred, return success */
 	if (!result) {
