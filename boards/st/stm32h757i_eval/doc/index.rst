@@ -30,7 +30,7 @@ Additionally, the board features:
 - SAI audio DAC
 - ST-MEMS digital microphones
 - 8-Gbyte (or more) SDIO 3.0 interface microSD card
-- 8 M×32bit SDRAM, 1 M×16bit SDRAM and 8 M×16bit NOR flash memory
+- 8 Mx32bit SDRAM, 1 Mx16bit SDRAM and 8 Mx16bit NOR flash memory
 - 1-Gbit twin Quad-SPI NOR flash memory or two 512-Mbit Quad-SPI NOR flash memories
 - Potentiometer
 - 4 color user LEDs

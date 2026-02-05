@@ -17,7 +17,7 @@ The main hardware features are:
 - ESP32-S3FN8 low-power MCU-based SoC (dual-core Xtensa® 32-bit LX7 microprocessor, five stage pipeline rack Structure, main frequency up to 240 MHz).
 - Semtech SX1262 LoRa node chip
 - UC6580 GNSS chip with L1 + L5/L2 dual-frequency multi-system support (GPS, GLONASS, BDS, Galileo, NAVIC, QZSS)
-- 0.96-inch 160×80 dot matrix LCD display (ST7735) for debugging information, battery power, and other information
+- 0.96-inch 160x80 dot matrix LCD display (ST7735) for debugging information, battery power, and other information
 - Type-C USB interface with a complete voltage regulator, ESD protection, short circuit protection, RF shielding, and other protection measures
 - Onboard SH1.25-2 battery interface, integrated lithium battery management system (charge and discharge management, overcharge protection, battery power detection, USB / battery power automatic switching)
 - Integrated WiFi and Bluetooth interfaces with 2.4GHz metal spring antenna and reserved IPEX (U.FL) interface for LoRa and GNSS use
@@ -249,7 +249,7 @@ Specifications
    +----------------------------+---------------------------------------------------------------------------------------+
    | Operating Temperature      | -20 ~ 70 degrees C                                                                    |
    +----------------------------+---------------------------------------------------------------------------------------+
-   | Dimensions                 | 65.48 × 28.06 × 13.52mm                                                               |
+   | Dimensions                 | 65.48 x 28.06 x 13.52mm                                                               |
    +----------------------------+---------------------------------------------------------------------------------------+
 
 References

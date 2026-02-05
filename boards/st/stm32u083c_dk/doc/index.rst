@@ -26,7 +26,7 @@ board:
 
   - ST-LINK USB VBUS, USB connector, or external sources
 
-- 4×24-segment LCD
+- 4x24-segment LCD
 - Three user LEDs
 - Reset push-button
 - User joystick

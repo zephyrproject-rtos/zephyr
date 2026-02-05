@@ -26,7 +26,7 @@ Zephyr OS is ported to run on the Cortex®-A7 core.
 - USB Host 4-port hub
 - USB Type-C® DRP based on an STM32G0 device
 - 4 user LEDs
-- 4 push-buttons (2× user, tamper, and reset)
+- 4 push-buttons (2x user, tamper, and reset)
 - 1 wake-up button
 - Board connectors:
 
