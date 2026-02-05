@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 - 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config USBH_CDC_ECM_CLASS
+	bool "USB Communication Device Class - Ethernet Control Mode (CDC-ECM) implementation [EXPERIMENTAL]"
+	depends on DT_HAS_ZEPHYR_CDC_ECM_HOST_ENABLED
+	select EXPERIMENTAL
+	select NET_L2_ETHERNET
+	help
+	  USB Host Communication Device Class - Ethernet Control Mode (CDC-ECM) implementation.
+
+if USBH_CDC_ECM_CLASS
+
+config USBH_CDC_ECM_DATA_BUF_POOL_SIZE
+	int "USB CDC-ECM buffer pool size"
+	default 1514
+	range 60 9000
+	help
+	  USB CDC-ECM buffer pool size in bytes.
+
+config USBH_CDC_ECM_DATA_TX_CONCURRENT_NUM
+	int "USB CDC-ECM maximum concurrent transmissions"
+	default 4
+	help
+		Number of USB CDC-ECM maximum concurrent transmissions.
+
+config USBH_CDC_ECM_HARDWARE_NETWORK_STATISTICS_INTERVAL
+	int "CDC-ECM hardware network statistics interval"
+	default 10
+	help
+	  CDC-ECM hardware network statistics collection interval in seconds.
+
+module = USBH_CDC_ECM
+module-str = "usbh cdc_ecm"
+default-count = 1
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # USBH_CDC_ECM_CLASS
