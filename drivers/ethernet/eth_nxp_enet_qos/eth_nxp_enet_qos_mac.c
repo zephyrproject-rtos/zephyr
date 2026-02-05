@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -67,7 +67,7 @@ static void eth_nxp_enet_qos_phy_cb(const struct device *phy,
 
 	LOG_INF("Link is %s", state->is_up ? "up" : "down");
 
-	/* handle link speed in MAC configuration register */
+	/* handle link speed and duplex in MAC configuration register */
 	if (state->is_up) {
 		const struct nxp_enet_qos_mac_config *config = dev->config;
 		struct nxp_enet_qos_config *module_cfg = ENET_QOS_MODULE_CFG(config->enet_dev);
@@ -79,6 +79,14 @@ static void eth_nxp_enet_qos_phy_cb(const struct device *phy,
 		} else {
 			LOG_DBG("Link Speed 100MBit or higher");
 			base->MAC_CONFIGURATION |= ENET_QOS_REG_PREP(MAC_CONFIGURATION, FES, 0b1);
+		}
+
+		if (PHY_LINK_IS_FULL_DUPLEX(state->speed)) {
+			LOG_DBG("Link Full Duplex");
+			base->MAC_CONFIGURATION |= ENET_QOS_REG_PREP(MAC_CONFIGURATION, DM, 0b1);
+		} else {
+			LOG_DBG("Link Half Duplex");
+			base->MAC_CONFIGURATION &= ~ENET_QOS_REG_PREP(MAC_CONFIGURATION, DM, 0b1);
 		}
 	}
 }
@@ -548,7 +556,7 @@ static inline void enet_qos_mac_config_init(enet_qos_t *base, struct nxp_enet_qo
 	base->MAC_CONFIGURATION |=
 		/* For 10/100 Mbps operation */
 		ENET_QOS_REG_PREP(MAC_CONFIGURATION, PS, 0b1) |
-		/* Full duplex mode */
+		/* Full duplex mode, adjust duplex in phy callback if needed */
 		ENET_QOS_REG_PREP(MAC_CONFIGURATION, DM, 0b1) |
 		/* 100 Mbps mode, adjust link speed in phy callback if needed */
 		ENET_QOS_REG_PREP(MAC_CONFIGURATION, FES, 0b1) |
