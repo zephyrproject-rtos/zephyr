@@ -89,8 +89,7 @@ int usbh_desc_fill_filter(const struct usb_desc_header *desc,
  * @return true if the descriptor size and type are correct
  * @return false if the descriptor size or type is wrong
  */
-const bool usbh_desc_is_valid(const void *const desc,
-			      const size_t size, const uint8_t type);
+bool usbh_desc_is_valid(const void *const desc, const size_t size, const uint8_t type);
 
 /**
  * @brief Checks that the pointed descriptor is an interface descriptor.
