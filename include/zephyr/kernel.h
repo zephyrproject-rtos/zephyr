@@ -6121,9 +6121,10 @@ void k_heap_free(struct k_heap *h, void *mem) __attribute_nonnull(1);
 	ROUND_UP(___z_heap_struct_SIZEOF + \
 		 (nb) * ___z_heap_bucket_SIZEOF, ___z_heap_chunk_unit_SIZEOF)
 
-/* Allocation chunk size in bytes */
+/* Allocation chunk size in bytes (header + data rounded up, plus trailer) */
 #define _Z_HEAP_AC(ab) \
-	ROUND_UP(___z_heap_hdr_SIZEOF + (ab), ___z_heap_chunk_unit_SIZEOF)
+	(ROUND_UP(___z_heap_hdr_SIZEOF + (ab), ___z_heap_chunk_unit_SIZEOF) + \
+	 ___z_heap_trailer_SIZEOF)
 
 /* Total heap size in chunk units */
 #define _Z_HEAP_SZ(nb, ab) \

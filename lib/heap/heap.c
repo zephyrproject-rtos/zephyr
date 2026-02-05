@@ -22,6 +22,55 @@ static inline void increase_allocated_bytes(struct z_heap *h, size_t num_bytes)
 }
 #endif
 
+#ifdef CONFIG_SYS_HEAP_CANARIES
+#define HEAP_CANARY_MAGIC 0x5A6B7C8D9EAFB0C1ULL
+#define HEAP_CANARY_POISON 0xDEADBEEFDEADBEEFULL
+
+/*
+ * Compute a per-chunk canary from its address and size.  This is
+ * sufficient to detect accidental corruption but is not cryptographically
+ * secure — a determined attacker who knows the heap layout could forge
+ * a valid canary.  A stronger scheme (e.g. SipHash with a random key)
+ * could replace this if needed.
+ */
+static inline uint64_t compute_canary(struct z_heap *h, chunkid_t c)
+{
+	uintptr_t addr = (uintptr_t)&chunk_buf(h)[c];
+	chunksz_t size = chunk_size(h, c);
+
+	return (addr ^ size) ^ HEAP_CANARY_MAGIC;
+}
+
+static inline void set_chunk_canary(struct z_heap *h, chunkid_t c)
+{
+	chunk_trailer(h, c)->canary = compute_canary(h, c);
+}
+
+static inline void verify_chunk_canary(struct z_heap *h, chunkid_t c, void *mem)
+{
+	uint64_t expected = compute_canary(h, c);
+	uint64_t found = chunk_trailer(h, c)->canary;
+
+	if (found != expected) {
+		if (found == HEAP_CANARY_POISON) {
+			__ASSERT(false, "double free detected for %p", mem);
+		} else {
+			__ASSERT(false, "heap corruption detected for %p", mem);
+		}
+		k_panic();
+	}
+}
+
+static inline void poison_chunk_canary(struct z_heap *h, chunkid_t c)
+{
+	chunk_trailer(h, c)->canary = HEAP_CANARY_POISON;
+}
+#else
+#define set_chunk_canary(h, c) do { } while (false)
+#define verify_chunk_canary(h, c, mem) do { } while (false)
+#define poison_chunk_canary(h, c) do { } while (false)
+#endif /* CONFIG_SYS_HEAP_CANARIES */
+
 static void *chunk_mem(struct z_heap *h, chunkid_t c)
 {
 	chunk_unit_t *buf = chunk_buf(h);
@@ -185,6 +234,9 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 		 "corrupted heap bounds (buffer overflow?) for memory at %p",
 		 mem);
 
+	verify_chunk_canary(h, c, mem);
+	poison_chunk_canary(h, c);
+
 	set_chunk_used(h, c, false);
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 	h->allocated_bytes -= chunk_usable_bytes(h, c);
@@ -202,6 +254,8 @@ size_t sys_heap_usable_size(struct sys_heap *heap, void *mem)
 {
 	struct z_heap *h = heap->heap;
 	chunkid_t c = mem_to_chunkid(h, mem);
+
+	verify_chunk_canary(h, c, mem);
 
 	return chunk_usable_bytes(h, c) - mem_align_gap(h, mem);
 }
@@ -281,6 +335,7 @@ void *sys_heap_alloc(struct sys_heap *heap, size_t bytes)
 	}
 
 	set_chunk_used(h, c, true);
+	set_chunk_canary(h, c);
 
 	mem = chunk_mem(h, c);
 
@@ -352,7 +407,7 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 
 	/* Get corresponding chunks */
 	chunkid_t c = mem_to_chunkid(h, mem);
-	chunkid_t c_end = end - chunk_buf(h);
+	chunkid_t c_end = end - chunk_buf(h) + CHUNK_TRAILER_SIZE;
 	CHECK(c >= c0 && c  < c_end && c_end <= c0 + padded_sz);
 
 	/* Split and free unused prefix */
@@ -368,6 +423,7 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 	}
 
 	set_chunk_used(h, c, true);
+	set_chunk_canary(h, c);
 
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 	increase_allocated_bytes(h, chunk_usable_bytes(h, c));
@@ -391,6 +447,8 @@ static bool inplace_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 
 	chunksz_t chunks_need = bytes_to_chunksz(h, bytes, align_gap);
 
+	verify_chunk_canary(h, c, ptr);
+
 	if (chunk_size(h, c) == chunks_need) {
 		/* We're good already */
 		return true;
@@ -409,6 +467,7 @@ static bool inplace_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 
 		split_chunks(h, c, c + chunks_need);
 		set_chunk_used(h, c, true);
+		set_chunk_canary(h, c);
 		free_chunk(h, c + chunks_need);
 
 #ifdef CONFIG_SYS_HEAP_LISTENER
@@ -445,6 +504,7 @@ static bool inplace_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 
 		merge_chunks(h, c, rc);
 		set_chunk_used(h, c, true);
+		set_chunk_canary(h, c);
 
 #ifdef CONFIG_SYS_HEAP_LISTENER
 		heap_listener_notify_alloc(HEAP_ID_FROM_POINTER(heap), ptr,
