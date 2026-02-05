@@ -4,6 +4,10 @@
 
 # Include MCUboot if enabled.
 if(SB_CONFIG_BOOTLOADER_MCUBOOT)
+  set(${DEFAULT_IMAGE}_SNIPPET mcuboot;${${DEFAULT_IMAGE}_SNIPPET}
+    CACHE INTERNAL "Application snippet" FORCE
+  )
+
   set(image mcuboot)
   ExternalZephyrProject_Add(
     APPLICATION ${image}
