@@ -27,4 +27,11 @@ config TIMESLICE_SIZE
 config INIT_STACKS
 	default y
 
+if BT
+
+config NUM_METAIRQ_PRIORITIES
+	default 1
+
+endif
+
 endif # SOC_SERIES_RTL87X2G

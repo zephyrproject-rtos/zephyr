@@ -6,3 +6,4 @@ if(ZEPHYR_HAL_REALTEK_MODULE_DIR)
 endif()
 
 add_subdirectory_ifdef(CONFIG_SOC_FAMILY_REALTEK_AMEBA ameba)
+add_subdirectory_ifdef(CONFIG_SOC_FAMILY_REALTEK_BEE bee)
