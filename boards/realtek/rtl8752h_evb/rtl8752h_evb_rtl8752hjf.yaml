@@ -11,6 +11,7 @@ supported:
   - pinctrl
   - uart
   - gpio
+  - rtc
 testing:
   ignore_tags:
     - pm

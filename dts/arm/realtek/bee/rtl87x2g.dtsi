@@ -242,6 +242,14 @@
 			interrupts = <39 0>;
 			status = "disabled";
 		};
+
+		rtc: rtc@40001800 {
+			compatible = "realtek,bee-rtc";
+			reg = <0x40001800 0x40>;
+			interrupts = <8 0>;
+			alarms-count = <4>;
+			status = "disabled";
+		};
 	};
 };
 

@@ -1,0 +1,10 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_BEE
+	bool "Realtek Bee series RTC driver"
+	default n
+	depends on DT_HAS_REALTEK_BEE_RTC_ENABLED
+	select HAL_REALTEK_BEE_RTC
+	help
+	  This option enables the RTC driver for Realtek Bee SoCs.
