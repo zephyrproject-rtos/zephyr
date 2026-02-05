@@ -1523,6 +1523,7 @@ Documentation Infrastructure:
     - iuliana-prodan
     - dbaluta
     - abonislawski
+    - serhiy-katsyuba-intel
   files:
     - drivers/dai/
     - doc/hardware/peripherals/audio/dai.rst
@@ -3072,6 +3073,7 @@ Intel Platforms (Xtensa):
     - marcinszkudlinski
     - nashif
     - abonislawski
+    - serhiy-katsyuba-intel
   files:
     - boards/intel/adsp/
     - soc/intel/intel_adsp/
