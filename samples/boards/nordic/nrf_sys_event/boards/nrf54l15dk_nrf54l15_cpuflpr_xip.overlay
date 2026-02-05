@@ -1,6 +1,0 @@
-/*
- * Copyright (c) 2025 Nordic Semiconductor ASA
- * SPDX-License-Identifier: Apache-2.0
- */
-
-#include "nrf54l15dk_nrf54l15_common.dtsi"
