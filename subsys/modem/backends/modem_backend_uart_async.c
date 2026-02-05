@@ -288,7 +288,6 @@ static int modem_backend_uart_async_close(void *data)
 		LOG_ERR("Failed to power off UART: %d", ret);
 		return ret;
 	}
-	modem_pipe_notify_closed(&backend->pipe);
 	return 0;
 }
 
