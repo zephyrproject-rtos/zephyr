@@ -36,6 +36,9 @@ int usbh_device_interface_set(struct usb_device *const udev,
 			      const uint8_t iface, const uint8_t alt,
 			      const bool dry);
 
+/* Parse the configuration descriptor */
+int usbh_device_parse_cfg_desc(struct usb_device *const udev);
+
 /* Wrappers around to avoid glue UHC calls. */
 static inline struct uhc_transfer *usbh_xfer_alloc(struct usb_device *udev,
 						   const uint8_t ep,
