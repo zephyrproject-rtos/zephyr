@@ -44,3 +44,10 @@ if(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
   zephyr_include_directories(${ZEPHYR_BASE}/subsys/net/l2/openthread)
   zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/lib/dns)
 endif()
+
+if(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
+  zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_WEB_SERVER web_server.c)
+  zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_WEB_SERVER rest_api.c)
+
+  zephyr_linker_sources(SECTIONS sections-rom.ld)
+endif()

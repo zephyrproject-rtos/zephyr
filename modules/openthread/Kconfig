@@ -507,6 +507,17 @@ config OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR
 	help
 	  This configuration enables NAT64 translator from OpenThread.
 
+config OPENTHREAD_ZEPHYR_BORDER_ROUTER_WEB_SERVER
+	bool "Border Router Web Server [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select HTTP_SERVER
+	select HTTP_SERVER_RESOURCE_WILDCARD
+	#select HTTP_SERVER_WEBSOCKET
+	select JSON_LIBRARY
+	help
+	  Enable Web Server feature for Border Router.
+
+
 endif # OPENTHREAD_ZEPHYR_BORDER_ROUTER
 
 endmenu # "OpenThread Border Router"
