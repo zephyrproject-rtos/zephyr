@@ -291,9 +291,6 @@ struct uarte_nrfx_data {
 /* If enabled then UARTE peripheral is using memory which is cacheable. */
 #define UARTE_CFG_FLAG_CACHEABLE BIT(2)
 
-/* Indicates that workaround for spurious RXTO during restart shall be applied. */
-#define UARTE_CFG_FLAG_SPURIOUS_RXTO BIT(3)
-
 /* Indicates that UARTE/TIMER interrupt priority differs from system clock (GRTC/RTC). */
 #define UARTE_CFG_FLAG_VAR_IRQ BIT(4)
 
@@ -2183,17 +2180,6 @@ static void endrx_isr(const struct device *dev, bool rxstarted, bool rxto)
 		unsigned int key = irq_lock();
 
 		if (async_rx->buf) {
-
-#if CONFIG_UART_NRFX_UARTE_SPURIOUS_RXTO_WORKAROUND
-			/* Check for spurious RXTO event. */
-			const struct uarte_nrfx_config *config = dev->config;
-
-			if ((config->flags & UARTE_CFG_FLAG_SPURIOUS_RXTO) &&
-			    nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXTO)) {
-				nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXTO);
-			}
-#endif
-
 			/* Remove the short until the subsequent next buffer is setup */
 			nrf_uarte_shorts_disable(uarte, NRF_UARTE_SHORT_ENDRX_STARTRX);
 
@@ -3322,9 +3308,6 @@ static int uarte_instance_deinit(const struct device *dev)
 			(!IS_ENABLED(CONFIG_HAS_NORDIC_DMM) ? 0 :	       \
 			  (UARTE_IS_CACHEABLE(idx) ?			       \
 				UARTE_CFG_FLAG_CACHEABLE : 0)) |	       \
-			(IS_ENABLED(CONFIG_UART_NRFX_UARTE_SPURIOUS_RXTO_WORKAROUND) && \
-			 INSTANCE_IS_HIGH_SPEED(_, /*empty*/, idx, _) ?	       \
-			 UARTE_CFG_FLAG_SPURIOUS_RXTO : 0) |		       \
 			((IS_ENABLED(UARTE_BAUDRATE_RETENTION_WORKAROUND) &&   \
 			  UARTE_IS_CACHEABLE(idx)) ?			       \
 			   UARTE_CFG_FLAG_VOLATILE_BAUDRATE : 0) |	       \
