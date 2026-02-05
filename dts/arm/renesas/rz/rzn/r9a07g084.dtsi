@@ -79,11 +79,15 @@
 		xspi0_cs0: memory@60000000 {
 			compatible = "mmio-sram";
 			reg = <0x60000000 DT_SIZE_M(64)>;
+			ranges = <0x0 0x60000000 DT_SIZE_M(64)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 
 			partitions {
 				compatible = "fixed-partitions";
 				#address-cells = <1>;
 				#size-cells = <1>;
+				ranges;
 
 				loader_param: partition@0 {
 					label = "loader-param";
