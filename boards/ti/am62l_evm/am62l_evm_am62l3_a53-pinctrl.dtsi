@@ -14,4 +14,14 @@
 	uart0_tx_default: uart0_tx_default {
 		pinmux = <K3_PINMUX(0x1b8, PIN_OUTPUT, MUX_MODE_0)>; /* (C13) UART0_TXD */
 	};
+
+	uart1_rx_default: uart1_rx_default {
+		/* (C11) MCASP0_AFSR.UART1_RXD */
+		pinmux = <K3_PINMUX(0x0198, PIN_INPUT, MUX_MODE_2)>;
+	};
+
+	uart1_tx_default: uart1_tx_default {
+		/* (A12) MCASP0_ACLKR.UART1_TXD */
+		pinmux = <K3_PINMUX(0x019c, PIN_OUTPUT, MUX_MODE_2)>;
+	};
 };
