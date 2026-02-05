@@ -4,8 +4,7 @@ sample:
 tests:
   samples.boards.nxp.adsp.rtxxx.amp_talk:
     filter: dt_chosen_enabled("zephyr,ipc") and dt_chosen_enabled("zephyr,ipc_shm")
-      and not (CONFIG_SOC_ESP32_APPCPU or CONFIG_SOC_ESP32S3_APPCPU)
-    integration_platforms:
+    platform_allow:
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
     tags:
       - ipm
