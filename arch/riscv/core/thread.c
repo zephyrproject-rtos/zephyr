@@ -11,6 +11,10 @@
 #include <stdio.h>
 #include <pmp.h>
 
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+#include <builtin_stack_guard.h>
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
+
 #ifdef CONFIG_USERSPACE
 /*
  * Per-thread (TLS) variable indicating whether execution is in user mode.
@@ -189,6 +193,23 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	arch_curr_cpu()->arch.user_exc_sp = top_of_priv_stack;
 
 	is_user_mode = true;
+
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+	/*
+	 * Set thread.arch.priv_stack_start as bottom of privileged stack
+	 *
+	 * +------------+
+	 * | Reserved   | } K_KERNEL_STACK_RESERVED
+	 * +------------+ <- thread.arch.priv_stack_start
+	 * | Priv Stack | } CONFIG_PRIVILEGED_STACK_SIZE
+	 * +------------+ <- thread.arch.priv_stack_start +
+	 *                   CONFIG_PRIVILEGED_STACK_SIZE +
+	 */
+	_current->arch.priv_stack_start += K_KERNEL_STACK_RESERVED;
+
+	/* disable built-in stack guard before enter user mode */
+	z_riscv_builtin_stack_guard_disable();
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
 
 	register void *a0 __asm__("a0") = user_entry;
 	register void *a1 __asm__("a1") = p1;

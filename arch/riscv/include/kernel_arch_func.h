@@ -20,6 +20,10 @@
 
 #include <zephyr/platform/hooks.h>
 
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+#include <builtin_stack_guard.h>
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -55,6 +59,9 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 #ifdef CONFIG_RISCV_PMP
 	z_riscv_pmp_init();
 #endif
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+	z_riscv_builtin_stack_guard_init();
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
 	soc_per_core_init_hook();
 }
 

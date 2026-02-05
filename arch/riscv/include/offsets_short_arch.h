@@ -74,4 +74,23 @@
 
 #endif
 
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+
+#define _thread_offset_to_thread_state \
+	(___thread_t_base_OFFSET + ___thread_base_t_thread_state_OFFSET)
+
+#ifdef CONFIG_THREAD_STACK_INFO
+#define _thread_offset_to_stack_info_start \
+	(___thread_t_stack_info_OFFSET + ___thread_stack_info_t_start_OFFSET)
+
+#define _thread_offset_to_stack_info_size \
+	(___thread_t_stack_info_OFFSET + ___thread_stack_info_t_size_OFFSET)
+#endif
+
+#ifdef CONFIG_USERSPACE
+#define _thread_offset_to_priv_stack_start \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_priv_stack_start_OFFSET)
+#endif
+#endif
+
 #endif /* ZEPHYR_ARCH_RISCV_INCLUDE_OFFSETS_SHORT_ARCH_H_ */

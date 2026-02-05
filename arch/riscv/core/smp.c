@@ -16,6 +16,10 @@
 #include <zephyr/drivers/interrupt_controller/riscv_imsic.h>
 #endif
 
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+#include <builtin_stack_guard.h>
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
+
 volatile struct {
 	arch_cpustart_t fn;
 	void *arg;
@@ -75,6 +79,9 @@ void arch_secondary_cpu_init(int hartid)
 #ifdef CONFIG_RISCV_PMP
 	z_riscv_pmp_init();
 #endif
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+	z_riscv_builtin_stack_guard_init();
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
 #ifdef CONFIG_SMP
 	irq_enable(RISCV_IRQ_MSOFT);
 #endif /* CONFIG_SMP */

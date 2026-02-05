@@ -142,4 +142,19 @@ GEN_OFFSET_SYM(_cpu_arch_t, user_exc_tmp0);
 GEN_OFFSET_SYM(_cpu_arch_t, user_exc_tmp1);
 #endif
 
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+
+GEN_OFFSET_SYM(_thread_base_t, thread_state);
+
+#ifdef CONFIG_THREAD_STACK_INFO
+GEN_OFFSET_SYM(_thread_stack_info_t, start);
+GEN_OFFSET_SYM(_thread_stack_info_t, size);
+#endif /* CONFIG_THREAD_STACK_INFO */
+
+#ifdef CONFIG_USERSPACE
+GEN_OFFSET_SYM(_thread_arch_t, priv_stack_start);
+#endif /* CONFIG_USERSPACE */
+
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
+
 GEN_ABS_SYM_END
