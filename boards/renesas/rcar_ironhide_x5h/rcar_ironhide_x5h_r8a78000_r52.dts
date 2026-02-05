@@ -1,0 +1,100 @@
+/*
+ * Copyright (c) 2026 BayLibre, SAS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/dts-v1/;
+#include <arm/renesas/rcar/gen5/r8a78000.dtsi>
+#include "rcar_ironhide_x5h_r8a78000_r52-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Renesas Ironhide board";
+	compatible = "renesas,ironhide-x5h-r52";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &hscif1;
+		zephyr,shell-uart = &hscif1;
+	};
+
+	aliases {
+		led0 = &user_led_0;
+		led1 = &user_led_1;
+		led2 = &user_led_2;
+		sw0 = &user_button_0;
+		sw1 = &user_button_1;
+		sw2 = &user_button_2;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		user_led_0: led47 {
+			gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+			label = "User LED 47";
+		};
+
+		user_led_1: led48 {
+			gpios = <&gpio9 4 GPIO_ACTIVE_HIGH>;
+			label = "User LED 48";
+		};
+
+		user_led_2: led49 {
+			gpios = <&gpio9 5 GPIO_ACTIVE_HIGH>;
+			label = "User LED 49";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		/*
+		 * In the current boot process, u-boot configures GPIO9_01 and GPIO9_02
+		 * for ethernet after booting Zephyr on Cortex-R52. So, let's disable
+		 * sw45 and sw46 buttons by default even if they are present on the board.
+		 */
+		user_button_0: sw45 {
+			gpios = <&gpio9 1 GPIO_ACTIVE_LOW>;
+			label = "User switch 45";
+			zephyr,code = <INPUT_KEY_0>;
+			status = "disabled";
+		};
+
+		user_button_1: sw46 {
+			gpios = <&gpio9 2 GPIO_ACTIVE_LOW>;
+			label = "User switch 46";
+			zephyr,code = <INPUT_KEY_1>;
+			status = "disabled";
+		};
+
+		user_button_2: sw47 {
+			gpios = <&gpio9 3 GPIO_ACTIVE_LOW>;
+			label = "User switch 47";
+			zephyr,code = <INPUT_KEY_2>;
+		};
+	};
+};
+
+&hscif1 {
+	pinctrl-0 = <&hscif1_data_tx_default
+		     &hscif1_data_rx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gpio0 {
+	pinctrl-0 = <&gpio0_3_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gpio9 {
+	pinctrl-0 = <&gpio9_3_default
+		     &gpio9_4_default
+		     &gpio9_5_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
