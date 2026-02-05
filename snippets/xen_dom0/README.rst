@@ -86,6 +86,14 @@ Device tree nodes, that should be added by application overlay for provided exam
         reg = <0x00 0x60000000 0x00 DT_SIZE_M(256)>;
     };
 
+Xen extended regions notice
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default, support for Xen extended regions is disabled. Therefore, after
+specifying the extended regions in the hypervisor node in the device tree,
+it is also required to set the XEN_REGIONS config to 'yes' in the application
+overlay file.
+
 Start the example
 ^^^^^^^^^^^^^^^^^
 
