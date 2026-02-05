@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include <lvgl.h>
+#include <libs/vg_lite_driver/inc/vg_lite.h>
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
@@ -26,6 +27,11 @@
 #define VGLITE_GPU_NODE		DT_PHANDLE(VGLITE_NODE, gpu)
 #define VGLITE_GPU_BASE		DT_REG_ADDR(VGLITE_GPU_NODE)
 #define VGLITE_GPU_IRQN		DT_IRQN(VGLITE_GPU_NODE)
+
+#define VGLITE_TESS_H		1280
+#define VGLITE_TESS_W		128
+#define VGLITE_COMMAND_BUF_SIZE (256 * 1024)
+#define IS_AXI_BUS_ERR(x)	((x)&(1U << 31))
 
 static char vg_lite_heap_mem[CONFIG_LV_Z_VGLITE_HEAP_SIZE] __aligned(64);
 static struct sys_heap vg_lite_heap;
@@ -101,6 +107,27 @@ vg_lite_error_t vg_lite_hal_allocate_contiguous(unsigned long size,
 	*physical = (uint32_t)(uintptr_t)(*logical);
 
 	return VG_LITE_SUCCESS;
+}
+
+void *vg_lite_os_malloc(uint32_t size)
+{
+	k_spinlock_key_t key;
+	void *ret;
+
+	key = k_spin_lock(&vg_lite_heap_lock);
+	ret = sys_heap_alloc(&vg_lite_heap, size);
+	k_spin_unlock(&vg_lite_heap_lock, key);
+
+	return ret;
+}
+
+void vg_lite_os_free(void *memory)
+{
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&vg_lite_heap_lock);
+	sys_heap_free(&vg_lite_heap, memory);
+	k_spin_unlock(&vg_lite_heap_lock, key);
 }
 
 void vg_lite_hal_delay(uint32_t ms)
@@ -187,6 +214,9 @@ static int z_vg_lite_init(const struct device *dev)
 	data->vglite_device = vglite_dev;
 
 	cfg->irq_config(dev);
+
+	vg_lite_init(VGLITE_TESS_W, VGLITE_TESS_H);
+	vg_lite_set_command_buffer_size(VGLITE_COMMAND_BUF_SIZE);
 
 	return 0;
 }
