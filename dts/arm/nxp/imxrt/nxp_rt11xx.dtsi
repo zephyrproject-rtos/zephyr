@@ -385,6 +385,13 @@
 			nxp,pxp = <&pxp>;
 		};
 
+		lcdifv2: display-controller@40808000 {
+			compatible = "nxp,imx-lcdifv2";
+			reg = <0x40808000 0x4000>;
+			interrupts = <55 0>;
+			status = "disabled";
+		};
+
 		mipi_dsi: mipi-dsi@4080c000 {
 			compatible = "nxp,imx-mipi-dsi";
 			#address-cells = <1>;
