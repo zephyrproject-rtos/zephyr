@@ -38,6 +38,9 @@
 #define UVC_GET_RES_ALL					0x94
 #define UVC_GET_DEF_ALL					0x97
 
+/* Control data size limits */
+#define UVC_MAX_CTRL_SIZE				4
+
 /* Flags announcing which controls are supported */
 #define UVC_INFO_SUPPORTS_GET				BIT(0)
 #define UVC_INFO_SUPPORTS_SET				BIT(1)
