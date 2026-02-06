@@ -1571,6 +1571,7 @@ static uint8_t mcs_next_track_obj_id_get(const void *cmd, uint16_t cmd_len, void
 					 uint16_t *rsp_len)
 {
 	struct btp_mcs_next_track_obj_id_rp *rp = rsp;
+	uint64_t id;
 	int err;
 
 	ARG_UNUSED(cmd);
@@ -1578,12 +1579,12 @@ static uint8_t mcs_next_track_obj_id_get(const void *cmd, uint16_t cmd_len, void
 
 	LOG_DBG("MCS Read Next Track Obj Id");
 
-	err = media_proxy_ctrl_get_next_track_id(mcs_media_player);
+	err = bt_mcp_media_control_server_get_next_track_id(&id);
 	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
-	sys_put_le48(next_track_obj_id, rp->id);
+	sys_put_le48(id, rp->id);
 
 	*rsp_len = sizeof(*rp);
 
@@ -1594,6 +1595,7 @@ static uint8_t mcs_current_track_obj_id_get(const void *cmd, uint16_t cmd_len, v
 					    uint16_t *rsp_len)
 {
 	struct btp_mcs_current_track_obj_id_rp *rp = rsp;
+	uint64_t id;
 	int err;
 
 	ARG_UNUSED(cmd);
@@ -1601,12 +1603,12 @@ static uint8_t mcs_current_track_obj_id_get(const void *cmd, uint16_t cmd_len, v
 
 	LOG_DBG("MCS Read Current Track Obj Id");
 
-	err = media_proxy_ctrl_get_current_track_id(mcs_media_player);
+	err = bt_mcp_media_control_server_get_current_track_id(&id);
 	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
-	sys_put_le48(current_track_obj_id, rp->id);
+	sys_put_le48(id, rp->id);
 
 	*rsp_len = sizeof(*rp);
 
@@ -1617,6 +1619,8 @@ static uint8_t mcs_current_track_obj_id_get(const void *cmd, uint16_t cmd_len, v
 static uint8_t mcs_parent_group_set(const void *cmd, uint16_t cmd_len, void *rsp,
 				    uint16_t *rsp_len)
 {
+	uint64_t current_id;
+	uint64_t parent_id;
 	int err;
 
 	ARG_UNUSED(cmd);
@@ -1626,7 +1630,7 @@ static uint8_t mcs_parent_group_set(const void *cmd, uint16_t cmd_len, void *rsp
 
 	LOG_DBG("MCS Set Current Group to be it's own parent");
 
-	err = media_proxy_ctrl_get_current_group_id(mcs_media_player);
+	err = bt_mcp_media_control_server_get_current_group_id(&current_id);
 	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
@@ -1634,7 +1638,7 @@ static uint8_t mcs_parent_group_set(const void *cmd, uint16_t cmd_len, void *rsp
 	/* Setting current group to be it's own parent */
 	bt_mcp_media_control_server_test_unset_parent_group();
 
-	err = media_proxy_ctrl_get_parent_group_id(mcs_media_player);
+	err = bt_mcp_media_control_server_get_parent_group_id(&parent_id);
 	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
