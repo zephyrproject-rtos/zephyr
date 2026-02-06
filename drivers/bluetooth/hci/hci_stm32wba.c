@@ -402,25 +402,23 @@ static int bt_hci_stm32wba_open(const struct device *dev, bt_hci_recv_t recv)
 
 static int bt_hci_stm32wba_close(const struct device *dev)
 {
-	struct aci_reset *param;
-	struct net_buf *buf;
-	int err;
+	int err = 0;
+	uint8_t aci_reset_cmd[9];
 
 	ARG_UNUSED(dev);
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
-	if (!buf) {
-		return -ENOBUFS;
-	}
+	aci_reset_cmd[0] = BT_HCI_H4_CMD;
+	aci_reset_cmd[1] = (uint8_t)ACI_RESET;
+	aci_reset_cmd[2] = (uint8_t)(ACI_RESET >> 8);
+	aci_reset_cmd[3] = 5;
+	aci_reset_cmd[4] = 0;
+	aci_reset_cmd[5] = (uint8_t)CFG_BLE_OPTIONS;
+	aci_reset_cmd[6] = (uint8_t)(CFG_BLE_OPTIONS >> 8);
+	aci_reset_cmd[7] = (uint8_t)(CFG_BLE_OPTIONS >> 16);
+	aci_reset_cmd[8] = (uint8_t)(CFG_BLE_OPTIONS >> 24);
 
-	param = net_buf_add(buf, sizeof(*param));
-	param->mode = 0;
-	param->options = CFG_BLE_OPTIONS;
+	BleStack_Request(aci_reset_cmd);
 
-	err = bt_hci_cmd_send_sync(ACI_RESET, buf, NULL);
-	if (err) {
-		return err;
-	}
 	bt_hci_state = BT_HCI_STATE_CLOSED;
 
 #if !defined(CONFIG_IEEE802154_STM32WBA)
@@ -488,36 +486,45 @@ static int bt_hci_stm32wba_setup(const struct device *dev,
 				 const struct bt_hci_setup_params *params)
 {
 	bt_addr_t *uid_addr;
-	struct aci_set_ble_addr *param;
-	struct net_buf *buf;
-	int err;
+	uint8_t aci_set_ble_addr_cmd[12];
+	uint16_t event_length;
+
+	ARG_UNUSED(dev);
 
 	uid_addr = bt_get_ble_addr();
 	if (!uid_addr) {
 		return -ENOMSG;
 	}
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	param = net_buf_add(buf, sizeof(*param));
-	param->config_offset = HCI_CONFIG_DATA_PUBADDR_OFFSET;
-	param->length = 6;
+	aci_set_ble_addr_cmd[0] = BT_HCI_H4_CMD;
+	aci_set_ble_addr_cmd[1] = (uint8_t)ACI_HAL_WRITE_CONFIG_DATA;
+	aci_set_ble_addr_cmd[2] = (uint8_t)(ACI_HAL_WRITE_CONFIG_DATA >> 8);
+	aci_set_ble_addr_cmd[3] = 8;
+	aci_set_ble_addr_cmd[4] = HCI_CONFIG_DATA_PUBADDR_OFFSET;
+	aci_set_ble_addr_cmd[5] = 6;
 
 	if (bt_addr_eq(&params->public_addr, BT_ADDR_ANY)) {
-		bt_addr_copy((bt_addr_t *)param->value, uid_addr);
+		memcpy(&aci_set_ble_addr_cmd[6], uid_addr, 6);
 	} else {
-		bt_addr_copy((bt_addr_t *)param->value, &(params->public_addr));
+		memcpy(&aci_set_ble_addr_cmd[6], &(params->public_addr), 6);
 	}
 
-	err = bt_hci_cmd_send_sync(ACI_HAL_WRITE_CONFIG_DATA, buf, NULL);
-	if (err) {
-		return err;
+	event_length = BleStack_Request(aci_set_ble_addr_cmd);
+	if (event_length) {
+		/* Get the return status from the event */
+		uint8_t evt_status;
+
+		evt_status = aci_set_ble_addr_cmd[6];
+		if (evt_status != 0) {
+			LOG_ERR("Failed to set BLE address, status: 0x%02X", evt_status);
+			return -EIO;
+		}
+	} else {
+		LOG_ERR("No response received for setting BLE address");
+		return -EIO;
 	}
 
-	return err;
+	return 0;
 }
 #endif /* CONFIG_BT_HCI_SETUP */
 
