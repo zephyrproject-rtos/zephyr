@@ -29,6 +29,8 @@
  * and the latter placed on more powerful devices like phones and PCs.
  */
 
+#include <zephyr/bluetooth/audio/mcs.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -49,6 +51,18 @@ extern "C" {
  * @retval -ENOMEM Could not allocate any more content control services
  */
 int bt_mcp_media_control_server_register(void);
+
+/**
+ * @brief Execute Command
+ *
+ * Execute a command in the Media Control Server.
+ * Commands may cause the media player to change its state
+ *
+ * @param command     The command to execute
+ *
+ * @return 0 if success, errno on failure.
+ */
+int bt_mcp_media_control_server_command(const struct bt_mcs_cmd *command);
 
 /** @} */ /* End of group bt_mcp_media_control_server */
 #ifdef __cplusplus
