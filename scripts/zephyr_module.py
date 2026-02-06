@@ -24,10 +24,9 @@ import re
 import subprocess
 import sys
 import yaml
-import jsonschema
-from collections import namedtuple
-from jsonschema.exceptions import best_match
+import pykwalify.core
 from pathlib import Path, PurePath, PurePosixPath
+from collections import namedtuple
 
 try:
     from yaml import CSafeLoader as SafeLoader
@@ -35,124 +34,159 @@ except ImportError:
     from yaml import SafeLoader
 
 METADATA_SCHEMA = '''
-## A JSON Schema (Draft 2020-12) for basic validation of the structure of a
+## A pykwalify schema for basic validation of the structure of a
 ## metadata YAML file.
 ##
-$schema: "https://json-schema.org/draft/2020-12/schema"
-type: object
-properties:
+# The zephyr/module.yml file is a simple list of key value pairs to be used by
+# the build system.
+type: map
+mapping:
   name:
-    type: string
+    required: false
+    type: str
   build:
-    type: object
-    properties:
+    required: false
+    type: map
+    mapping:
       cmake:
-        type: string
+        required: false
+        type: str
       kconfig:
-        type: string
+        required: false
+        type: str
       cmake-ext:
-        type: boolean
+        required: false
+        type: bool
+        default: false
       kconfig-ext:
-        type: boolean
+        required: false
+        type: bool
+        default: false
       sysbuild-cmake:
-        type: string
+        required: false
+        type: str
       sysbuild-kconfig:
-        type: string
+        required: false
+        type: str
       sysbuild-cmake-ext:
-        type: boolean
+        required: false
+        type: bool
+        default: false
       sysbuild-kconfig-ext:
-        type: boolean
+        required: false
+        type: bool
+        default: false
       depends:
-        type: array
-        items:
-          type: string
+        required: false
+        type: seq
+        sequence:
+          - type: str
       settings:
-        type: object
-        properties:
+        required: false
+        type: map
+        mapping:
           board_root:
-            type: string
+            required: false
+            type: str
           dts_root:
-            type: string
+            required: false
+            type: str
           snippet_root:
-            type: string
+            required: false
+            type: str
           soc_root:
-            type: string
+            required: false
+            type: str
           arch_root:
-            type: string
+            required: false
+            type: str
           module_ext_root:
-            type: string
+            required: false
+            type: str
           sca_root:
-            type: string
+            required: false
+            type: str
   tests:
-    type: array
-    items:
-      type: string
+    required: false
+    type: seq
+    sequence:
+      - type: str
   samples:
-    type: array
-    items:
-      type: string
+    required: false
+    type: seq
+    sequence:
+      - type: str
   boards:
-    type: array
-    items:
-      type: string
+    required: false
+    type: seq
+    sequence:
+      - type: str
   blobs:
-    type: array
-    items:
-      type: object
-      properties:
-        path:
-          type: string
-        sha256:
-          type: string
-        type:
-          type: string
-          enum: ['img', 'lib']
-        version:
-          type: string
-        license-path:
-          type: string
-        click-through:
-          type: boolean
-        url:
-          type: string
-        description:
-          type: string
-        doc-url:
-          type: string
-      required:
-        - path
-        - sha256
-        - type
-        - version
-        - license-path
-        - url
-        - description
+    required: false
+    type: seq
+    sequence:
+      - type: map
+        mapping:
+          path:
+            required: true
+            type: str
+          sha256:
+            required: true
+            type: str
+          type:
+            required: true
+            type: str
+            enum: ['img', 'lib']
+          version:
+            required: true
+            type: str
+          license-path:
+            required: true
+            type: str
+          click-through:
+            required: false
+            type: bool
+            default: false
+          url:
+            required: true
+            type: str
+          description:
+            required: true
+            type: str
+          doc-url:
+            required: false
+            type: str
   security:
-    type: object
-    properties:
-      external-references:
-        type: array
-        items:
-          type: string
+     required: false
+     type: map
+     mapping:
+       external-references:
+         required: false
+         type: seq
+         sequence:
+            - type: str
   package-managers:
-    type: object
-    properties:
+    required: false
+    type: map
+    mapping:
       pip:
-        type: object
-        properties:
+        required: false
+        type: map
+        mapping:
           requirement-files:
-            type: array
-            items:
-              type: string
+            required: false
+            type: seq
+            sequence:
+              - type: str
   runners:
-    type: array
-    items:
-      type: object
-      properties:
-        file:
-          type: string
-      required:
-        - file
+    required: false
+    type: seq
+    sequence:
+      - type: map
+        mapping:
+          file:
+            required: true
+            type: str
 '''
 
 MODULE_YML_PATH = PurePath('zephyr/module.yml')
@@ -162,10 +196,7 @@ BLOB_PRESENT = 'A'
 BLOB_NOT_PRESENT = 'D'
 BLOB_OUTDATED = 'M'
 
-SCHEMA = yaml.load(METADATA_SCHEMA, Loader=SafeLoader)
-VALIDATOR_CLASS = jsonschema.validators.validator_for(SCHEMA)
-VALIDATOR_CLASS.check_schema(SCHEMA)
-VALIDATOR = VALIDATOR_CLASS(SCHEMA)
+schema = yaml.load(METADATA_SCHEMA, Loader=SafeLoader)
 
 
 def validate_setting(setting, module_path, filename=None):
@@ -188,17 +219,15 @@ def process_module(module):
     for module_yml in [module_path / MODULE_YML_PATH,
                        module_path / MODULE_YML_PATH.with_suffix('.yaml')]:
         if Path(module_yml).is_file():
-            with Path(module_yml).open('rb') as f:
+            with Path(module_yml).open('r', encoding='utf-8') as f:
                 meta = yaml.load(f.read(), Loader=SafeLoader)
 
-            errors = list(VALIDATOR.iter_errors(meta))
-
-            if errors:
-                sys.exit(
-                    'ERROR: Malformed module YAML file: '
-                    f'{module_yml.as_posix()}\n'
-                    f'{best_match(errors).message} in {best_match(errors).json_path}'
-                )
+            try:
+                pykwalify.core.Core(source_data=meta, schema_data=schema)\
+                    .validate()
+            except pykwalify.errors.SchemaError as e:
+                sys.exit('ERROR: Malformed "build" section in file: {}\n{}'
+                        .format(module_yml.as_posix(), e))
 
             meta['name'] = meta.get('name', module_path.name)
             meta['name-sanitized'] = re.sub('[^a-zA-Z0-9]', '_', meta['name'])
