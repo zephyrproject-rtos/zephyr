@@ -3749,6 +3749,14 @@ NXP Platforms (MCU):
       files:
         - boards/shields/p3t1755dp_ard_i2c/
         - boards/shields/p3t1755dp_ard_i3c/
+    - name: NXP MCU LPC11U6x
+      collaborators:
+        - mbittan
+      files:
+        - boards/nxp/lpcxpresso11u68/
+        - soc/nxp/lpc/lpc11u6x/
+      files-regex:
+        - .*lpc11u6.*
     - name: NXP MCU k32l
       collaborators:
         - iia
