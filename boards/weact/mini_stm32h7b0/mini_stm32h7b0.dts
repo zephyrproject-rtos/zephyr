@@ -170,7 +170,7 @@ zephyr_udc0: &usbotg_hs {
 			ranges;
 
 			slot0_partition: partition@0 {
-				reg = <0x00000000 DT_SIZE_M(64)>;
+				reg = <0x00000000 DT_SIZE_M(8)>;
 			};
 		};
 	};
