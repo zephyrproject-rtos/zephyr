@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <string.h>
 #include <zephyr/drivers/flash.h>
+#include <zephyr/storage/flash_map.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/ztest.h>
 #include <zephyr/logging/log.h>
@@ -26,7 +27,7 @@ LOG_MODULE_REGISTER(test_flash);
 #endif
 
 #define TEST_FLASH_PART_OFFSET \
-	DT_REG_ADDR(TEST_FLASH_PART_NODE)
+	FIXED_PARTITION_NODE_OFFSET(TEST_FLASH_PART_NODE)
 
 #define TEST_FLASH_PART_SIZE \
 	DT_REG_SIZE(TEST_FLASH_PART_NODE)
