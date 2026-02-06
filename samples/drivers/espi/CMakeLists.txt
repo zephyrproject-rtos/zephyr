@@ -5,6 +5,18 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(samples_driver_espi)
 
 FILE(GLOB app_sources src/*.c)
-target_sources(app PRIVATE ${app_sources})
+target_sources(app PRIVATE src/main.c)
+
+if(CONFIG_ESPI_OOB_CHANNEL)
+target_sources(app PRIVATE src/espi_oob_handler.c)
+endif()
+
+if(CONFIG_ESPI_FLASH_CHANNEL)
+target_sources(app PRIVATE src/espi_flash_caf_sample.c)
+endif()
+
+if(CONFIG_ESPI_TAF)
+target_sources(app PRIVATE src/espi_taf_sample.c)
+endif()
 
 zephyr_compile_options(-Werror)
