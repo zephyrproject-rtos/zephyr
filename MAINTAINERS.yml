@@ -3788,6 +3788,11 @@ NXP Platforms (MCU):
         - boards/nxp/frdm_k32l2b3/
         - dts/arm/nxp/kinetis/nxp_k32l2b3.dtsi
         - soc/nxp/kinetis/k32lx/
+    - name: NXP Shield frdm_stbc_agm01
+      collaborators:
+        - hollerdawg
+      files:
+        - boards/shields/frdm_stbc_agm01/
   labels:
     - "platform: NXP MCU"
     - "platform: NXP"
