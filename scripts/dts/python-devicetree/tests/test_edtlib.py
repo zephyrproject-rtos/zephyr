@@ -126,7 +126,7 @@ def test_interrupts():
         edtlib.ControllerAndData(node=node, controller=controller_2, data={'one': 0, 'two': 0, 'three': 5}, name=None, basename=None)
     ]
 
-    node = edt.get_node("/interrupt-map-bitops-test/node@70000000E")
+    node = edt.get_node("/interrupt-map-bitops-test/node@70000000e")
     assert node.interrupts == [
         edtlib.ControllerAndData(node=node, controller=edt.get_node('/interrupt-map-bitops-test/controller'), data={'one': 3, 'two': 2}, name=None, basename=None)
     ]
