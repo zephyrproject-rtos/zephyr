@@ -326,11 +326,8 @@ static int qspi_send_cmd(const struct device *dev, const QSPI_CommandTypeDef *cm
 static int qspi_read_access(const struct device *dev, QSPI_CommandTypeDef *cmd,
 			    uint8_t *data, size_t size)
 {
-	const struct flash_stm32_qspi_config *dev_cfg = dev->config;
 	struct flash_stm32_qspi_data *dev_data = dev->data;
 	HAL_StatusTypeDef hal_ret;
-
-	ARG_UNUSED(dev_cfg);
 
 	cmd->NbData = size;
 
