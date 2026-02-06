@@ -31,6 +31,7 @@
 #define VGLITE_TESS_H		1280
 #define VGLITE_TESS_W		128
 #define VGLITE_COMMAND_BUF_SIZE (256 * 1024)
+#define VGLITE_CONTIGUOUS_AREA_ALIGN 64
 
 static char __nocache vg_lite_heap_mem[CONFIG_LV_Z_VGLITE_HEAP_SIZE] __aligned(32);
 static struct sys_heap vg_lite_heap;
@@ -94,12 +95,17 @@ vg_lite_error_t vg_lite_hal_allocate_contiguous(unsigned long size,
 	ARG_UNUSED(pool);
 	ARG_UNUSED(node);
 
+	k_spinlock_key_t key;
+
 	/* Align the size to 64 bytes. */
 	uint32_t aligned_size = (uint32_t)((size + 63U) & ~63U);
-	vg_lite_error_t ret = vg_lite_hal_allocate(aligned_size, logical);
 
-	if (ret != VG_LITE_SUCCESS) {
-		return ret;
+	key = k_spin_lock(&vg_lite_heap_lock);
+	*logical = sys_heap_aligned_alloc(&vg_lite_heap, VGLITE_CONTIGUOUS_AREA_ALIGN, aligned_size);
+	k_spin_unlock(&vg_lite_heap_lock, key);
+
+	if(*logical == NULL) {
+		return VG_LITE_OUT_OF_MEMORY;
 	}
 
 	*klogical = *logical;
