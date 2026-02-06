@@ -60,7 +60,7 @@ static void free_list_remove_bidx(struct z_heap *h, chunkid_t c, int bidx)
 
 static void free_list_remove(struct z_heap *h, chunkid_t c)
 {
-	if (!solo_free_header(h, c)) {
+	if (!undersized_chunk(h, c)) {
 		int bidx = bucket_idx(h, chunk_size(h, c));
 		free_list_remove_bidx(h, c, bidx);
 	}
@@ -98,7 +98,7 @@ static void free_list_add_bidx(struct z_heap *h, chunkid_t c, int bidx)
 
 static void free_list_add(struct z_heap *h, chunkid_t c)
 {
-	if (!solo_free_header(h, c)) {
+	if (!undersized_chunk(h, c)) {
 		int bidx = bucket_idx(h, chunk_size(h, c));
 		free_list_add_bidx(h, c, bidx);
 	}
