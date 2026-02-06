@@ -281,6 +281,7 @@ struct adc_stm32_cfg {
 	bool has_channel_preselection	:1;
 	bool has_differential_support	:1;
 	bool differential_channels_used	:1;
+	bool has_injected_support	:1;
 };
 
 #ifdef CONFIG_ADC_STM32_DMA
@@ -1439,10 +1440,16 @@ static int adc_stm32_read(const struct device *dev,
 	int (*read_fn)(const struct device *dev, const struct adc_sequence *sequence);
 
 #ifdef CONFIG_ADC_STM32_INJECTED_CHANNELS
+	const struct adc_stm32_cfg *config = (const struct adc_stm32_cfg *)dev->config;
 	bool is_injected;
+
 	if (sequence->priority == STM32_REG_SEQ_PRIORITY) {
 		is_injected = false;
 	} else if (sequence->priority == STM32_INJ_SEQ_PRIORITY) {
+		if (!config->has_injected_support) {
+			LOG_ERR("Injected channels are not available on this ADC instance");
+			return -ENOTSUP;
+		}
 		is_injected = true;
 	} else {
 		LOG_ERR("Sequence priority %d is invalid", sequence->priority);
@@ -2373,6 +2380,7 @@ DT_INST_FOREACH_STATUS_OKAY(GENERATE_ISR)
 			DT_INST_PROP(index, st_adc_has_channel_preselection),			\
 		.has_differential_support =							\
 			DT_INST_PROP(index, st_adc_has_differential_support),			\
+		.has_injected_support = DT_INST_PROP(index, st_adc_has_injected_support),	\
 		.sampling_time_table = DT_INST_PROP(index, sampling_times),			\
 		.num_sampling_time_common_channels =						\
 			DT_INST_PROP_OR(index, num_sampling_time_common_channels, 0),		\
