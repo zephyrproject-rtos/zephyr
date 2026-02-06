@@ -120,6 +120,13 @@
 			health-test-config = <0x92f3>;
 			noise-source-control = <0x1609>;
 		};
+
+		dma2d: dma@4002b000 {
+			compatible = "st,stm32-dma2d";
+			reg = <0x4002b000 0x1000>;
+			interrupts = <118 0>;
+			status = "disabled";
+		};
 	};
 
 	smbus5: smbus5 {
