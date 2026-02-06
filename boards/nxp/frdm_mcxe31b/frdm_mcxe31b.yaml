@@ -14,7 +14,6 @@ supported:
   - arduino_gpio
   - can
   - gpio
-  - rtc
   - dma
   - watchdog
   - adc

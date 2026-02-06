@@ -21,7 +21,6 @@
 		led1 = &green_led;
 		led2 = &blue_led;
 		sw0 = &user_button;
-		rtc = &counter_rtc;
 		watchdog0 = &swt_0;
 	};
 
@@ -215,11 +214,7 @@
 	prescaler = <1>;
 };
 
-&rtc {
-	status = "okay";
-};
-
-&counter_rtc {
+&rtc_jdp_timer {
 	status = "okay";
 };
 
