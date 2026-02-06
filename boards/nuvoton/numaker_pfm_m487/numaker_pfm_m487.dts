@@ -64,6 +64,21 @@
 	};
 };
 
+&clk_lirc  {
+	status = "okay";
+};
+
+&clk_hxt {
+	clock-frequency = <DT_FREQ_M(12)>;
+	status = "okay";
+};
+
+&pll {
+	clocks = <&clk_hxt>;
+	status = "okay";
+};
+
+
 &flash0 {
 	reg = <0x0 DT_SIZE_K(512)>;
 };

@@ -1,0 +1,30 @@
+# Copyright (c) 2026, Fiona Behrens
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nuvoton NuMicro SCC (System Clock Controller).
+
+compatible: "nuvoton,numicro-m4-scc"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  flash-access-cycles:
+    type: int
+    description: |
+      Specifies the flash CPU access wait cycles. If left undefined a default is caluclated from the HCLK speed.
+
+      See FMC_CYCTL register for more informations about optimal values
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8

@@ -1,0 +1,10 @@
+# Copyright (c) 2026, Fiona Behrens
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton M4 LXT Clock
+
+compatible: "nuvoton,m4-lxt-clock"
+
+include: [fixed-clock.yaml]
+
+# TODO: Clock detector enable
