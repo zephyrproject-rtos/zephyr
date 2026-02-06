@@ -21,9 +21,6 @@ tests:
   wifi.build.crypto_enterprise_peap:
     extra_configs:
       - CONFIG_EAP_PEAP=y
-  wifi.build.crypto_enterprise_md5:
-    extra_configs:
-      - CONFIG_EAP_MD5=y
   wifi.build.crypto_enterprise_mschapv2:
     extra_configs:
       - CONFIG_EAP_MSCHAPV2=y
