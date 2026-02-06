@@ -80,21 +80,9 @@ extern "C" {
 #define SEARCH_PARAM_MAX 62
 
 /**
- * @brief Media player command
- */
-struct bt_mcp_cmd {
-	/** The opcode. See the MEDIA_PROXY_OP_* values */
-	uint8_t  opcode;
-	/** Whether or not the @ref bt_mcp_cmd.param is used */
-	bool  use_param;
-	/** A 32-bit signed parameter. The parameter value depends on the @ref bt_mcp_cmd.opcode */
-	int32_t param;
-};
-
-/**
  * @brief Media command notification
  */
-struct bt_mcp_cmd_ntf {
+struct bt_mcs_cmd_ntf {
 	/** The opcode that was sent */
 	uint8_t requested_opcode;
 	/** The result of the operation  */
@@ -425,6 +413,9 @@ struct bt_mcp_search {
  * @brief Opaque media player instance
  */
 struct media_player;
+
+/* Temporary forward declaration to avoid circular dependency */
+struct bt_mcs_cmd;
 
 /* PUBLIC API FOR CONTROLLERS */
 
@@ -764,7 +755,7 @@ struct media_proxy_ctrl_cbs {
 	 *                 or errno on negative value.
 	 * @param cmd      The command sent
 	 */
-	void (*command_send)(struct media_player *player, int err, const struct bt_mcp_cmd *cmd);
+	void (*command_send)(struct media_player *player, int err, const struct bt_mcs_cmd *cmd);
 
 	/**
 	 * @brief Command result receive callback
@@ -778,7 +769,7 @@ struct media_proxy_ctrl_cbs {
 	 * @param result   The result received
 	 */
 	void (*command_recv)(struct media_player *player, int err,
-			     const struct bt_mcp_cmd_ntf *result);
+			     const struct bt_mcs_cmd_ntf *result);
 
 	/**
 	 * @brief Commands supported receive callback
@@ -1189,7 +1180,7 @@ int media_proxy_ctrl_get_media_state(struct media_player *player);
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_send_command(struct media_player *player, const struct bt_mcp_cmd *command);
+int media_proxy_ctrl_send_command(struct media_player *player, const struct bt_mcs_cmd *command);
 
 /**
  * @brief Read Commands Supported
@@ -1523,7 +1514,7 @@ struct media_proxy_pl_calls {
 	 *
 	 * @param command	The command to send
 	 */
-	void (*send_command)(const struct bt_mcp_cmd *command);
+	void (*send_command)(const struct bt_mcs_cmd *command);
 
 	/**
 	 * @brief Read Commands Supported

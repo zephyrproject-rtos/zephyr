@@ -13,6 +13,7 @@
 #include <stdint.h>
 
 #include <zephyr/bluetooth/audio/mcc.h>
+#include <zephyr/bluetooth/audio/mcs.h>
 #include <zephyr/bluetooth/audio/media_proxy.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/kernel.h>
@@ -32,7 +33,7 @@ static void mcc_discover_mcs_cb(struct bt_conn *conn, int err)
 	k_sem_give(&sem_discovery_done);
 }
 
-static void mcc_send_command_cb(struct bt_conn *conn, int err, const struct bt_mcp_cmd *cmd)
+static void mcc_send_command_cb(struct bt_conn *conn, int err, const struct bt_mcs_cmd *cmd)
 {
 	if (err != 0) {
 		printk("MCP: Command send failed (%d) - opcode: %u, param: %d\n",
@@ -69,7 +70,7 @@ int mcp_ctlr_init(struct bt_conn *conn)
 int mcp_send_cmd(uint8_t mcp_opcode)
 {
 	int err;
-	struct bt_mcp_cmd cmd;
+	struct bt_mcs_cmd cmd;
 
 	cmd.opcode = mcp_opcode;
 	cmd.use_param = false;
