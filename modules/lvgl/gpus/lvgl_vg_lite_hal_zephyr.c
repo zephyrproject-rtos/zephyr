@@ -31,9 +31,8 @@
 #define VGLITE_TESS_H		1280
 #define VGLITE_TESS_W		128
 #define VGLITE_COMMAND_BUF_SIZE (256 * 1024)
-#define IS_AXI_BUS_ERR(x)	((x)&(1U << 31))
 
-static char vg_lite_heap_mem[CONFIG_LV_Z_VGLITE_HEAP_SIZE] __aligned(64);
+static char __nocache vg_lite_heap_mem[CONFIG_LV_Z_VGLITE_HEAP_SIZE] __aligned(32);
 static struct sys_heap vg_lite_heap;
 static struct k_spinlock vg_lite_heap_lock;
 
@@ -149,13 +148,17 @@ int32_t vg_lite_hal_wait_interrupt(uint32_t timeout, uint32_t mask, uint32_t *va
 {
 	int ret = k_sem_take(&vglite_dev->sync, K_MSEC(timeout));
 
-	if (value != NULL) {
-		*value = vglite_dev->int_flags & mask;
+	if (!ret) {
+		if (value != NULL) {
+			*value = vglite_dev->int_flags & mask;
+		}
+
+		vglite_dev->int_flags = 0U;
+
+		return 1;
 	}
 
-	vglite_dev->int_flags = 0U;
-
-	return ret;
+	return 0;
 }
 
 vg_lite_error_t vg_lite_hal_map_memory(vg_lite_kernel_map_memory_t *node)
