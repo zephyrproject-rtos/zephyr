@@ -57,6 +57,7 @@ const char *vg_lite_hal_Status2Name(vg_lite_error_t status)
 
 void vg_lite_hal_barrier(void)
 {
+	__asm("DSB");
 }
 
 void vg_lite_hal_initialize(void)
