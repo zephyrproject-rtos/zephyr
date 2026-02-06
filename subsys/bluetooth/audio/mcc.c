@@ -837,7 +837,7 @@ static void mcs_write_cp_cb(struct bt_conn *conn, uint8_t err,
 {
 	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, write_params);
 	int cb_err = err;
-	struct bt_mcp_cmd cmd = {0};
+	struct bt_mcs_cmd cmd = {0};
 
 	atomic_clear_bit(mcs_inst->flags, MCC_FLAG_BUSY);
 
@@ -1111,7 +1111,7 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 	} else if (handle == mcs_inst->cp_handle) {
 		/* The control point is a special case - only */
 		/* writable and notifiable.  Handle directly here. */
-		struct bt_mcp_cmd_ntf ntf = {0};
+		struct bt_mcs_cmd_ntf ntf = {0};
 		int cb_err = 0;
 
 		LOG_DBG("Control Point notification");
@@ -3052,7 +3052,7 @@ int bt_mcc_read_media_state(struct bt_conn *conn)
 #endif /* defined(CONFIG_BT_MCC_READ_MEDIA_STATE) */
 
 #if defined(CONFIG_BT_MCC_SET_MEDIA_CONTROL_POINT)
-int bt_mcc_send_cmd(struct bt_conn *conn, const struct bt_mcp_cmd *cmd)
+int bt_mcc_send_cmd(struct bt_conn *conn, const struct bt_mcs_cmd *cmd)
 {
 	struct mcs_instance_t *mcs_inst;
 	size_t length;
