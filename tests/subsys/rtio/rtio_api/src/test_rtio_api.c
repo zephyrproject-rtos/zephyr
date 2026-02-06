@@ -689,6 +689,8 @@ ZTEST(rtio_api, test_rtio_cqe_count_overflow)
 	}
 }
 
+
+#ifdef CONFIG_RTIO_OP_DELAY
 #define RTIO_DELAY_NUM_ELEMS 10
 
 RTIO_DEFINE(r_delay, RTIO_DELAY_NUM_ELEMS, RTIO_DELAY_NUM_ELEMS);
@@ -745,6 +747,7 @@ ZTEST(rtio_api, test_rtio_delay)
 		zassert_is_null(cqe, "There should not be a cqe since next delay has not expired");
 	}
 }
+#endif /* CONFIG_RTIO_OP_DELAY */
 
 #define THROUGHPUT_ITERS 100000
 RTIO_DEFINE(r_throughput, SQE_POOL_SIZE, CQE_POOL_SIZE);

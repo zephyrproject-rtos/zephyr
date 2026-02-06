@@ -346,11 +346,13 @@ struct rtio_sqe {
 			uint8_t *rx_buf; /**< Buffer to read into */
 		} txrx;
 
+#ifdef CONFIG_RTIO_OP_DELAY
 		/** OP_DELAY */
 		struct {
 			k_timeout_t timeout; /**< Delay timeout. */
 			struct _timeout to; /**< Timeout struct. Used internally. */
 		} delay;
+#endif
 
 		/** OP_I2C_CONFIGURE */
 		uint32_t i2c_config;
@@ -805,6 +807,7 @@ static inline void rtio_sqe_prep_await_executor(struct rtio_sqe *sqe, int8_t pri
 	rtio_sqe_prep_await(sqe, NULL, prio, userdata);
 }
 
+#ifdef CONFIG_RTIO_OP_DELAY
 static inline void rtio_sqe_prep_delay(struct rtio_sqe *sqe,
 				       k_timeout_t timeout,
 				       void *userdata)
@@ -816,6 +819,10 @@ static inline void rtio_sqe_prep_delay(struct rtio_sqe *sqe,
 	sqe->delay.timeout = timeout;
 	sqe->userdata = userdata;
 }
+#else
+#define rtio_sqe_prep_delay(_sqe, _timeout, _userdata) \
+	BUILD_ASSERT(false, "CONFIG_RTIO_OP_DELAY not enabled")
+#endif
 
 static inline struct rtio_iodev_sqe *rtio_sqe_pool_alloc(struct rtio_sqe_pool *pool)
 {
