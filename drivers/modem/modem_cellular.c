@@ -3189,6 +3189,66 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 			      &MODEM_CELLULAR_INST_NAME(config, inst), POST_KERNEL,                \
 			      CONFIG_MODEM_CELLULAR_INIT_PRIORITY, &modem_cellular_api);
 
+#define CHAT_CMD_FROM_DT(node_id, prop, idx) \
+	MODEM_CHAT_SCRIPT_CMD_RESP(DT_PROP_BY_IDX(node_id, prop, idx), ok_match),
+
+#define MODEM_CHAT_SCRIPT_CMDS_FROM_DT(inst, name, prop)               \
+	MODEM_CHAT_SCRIPT_CMDS_DEFINE(MODEM_CELLULAR_INST_NAME(name, inst), DT_INST_FOREACH_PROP_ELEM(inst, prop, CHAT_CMD_FROM_DT));
+
+#define MODEM_CHAT_SCRIPT_FROM_DT(inst, name, prop) \
+	MODEM_CHAT_SCRIPT_CMDS_FROM_DT(inst, name ## cmds, prop) \
+	MODEM_CHAT_SCRIPT_DEFINE(MODEM_CELLULAR_INST_NAME(name, inst), MODEM_CELLULAR_INST_NAME(name ## cmds, inst), dial_abort_matches, modem_cellular_chat_callback_handler, 10);
+
+#define MODEM_INST_INIT_SCRIPT(inst) \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, zephyr_init_chat_script), (&MODEM_CELLULAR_INST_NAME(init_cmds, inst)), (NULL))
+
+#define MODEM_INST_DEFINE_INIT_SCRIPT_FROM_DT(inst) \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, zephyr_init_chat_script), (MODEM_CHAT_SCRIPT_FROM_DT(inst, init_cmds, zephyr_init_chat_script)), ())
+
+#define MODEM_INST_PERIODIC_SCRIPT(inst) \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, zephyr_periodic_chat_script), (&MODEM_CELLULAR_INST_NAME(periodic_cmds, inst)), (NULL))
+
+#define MODEM_INST_DEFINE_PERIODIC_SCRIPT_FROM_DT(inst) \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, zephyr_periodic_chat_script), (MODEM_CHAT_SCRIPT_FROM_DT(inst, periodic_cmds, zephyr_periodic_chat_script)), ())
+
+#define MODEM_INST_DIAL_SCRIPT(inst) \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, zephyr_dial_chat_script), (&MODEM_CELLULAR_INST_NAME(dial_cmds, inst)), (NULL))
+
+#define MODEM_INST_DEFINE_DIAL_SCRIPT_FROM_DT(inst) \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, zephyr_dial_chat_script), (MODEM_CHAT_SCRIPT_FROM_DT(inst, dial_cmds, zephyr_dial_chat_script)), ())
+
+#define MODEM_INST_SHUTDOWN_SCRIPT(inst) \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, zephyr_shutdown_chat_script), (&MODEM_CELLULAR_INST_NAME(shutdown_cmds, inst)), (NULL))
+
+#define MODEM_INST_DEFINE_SHUTDOWN_SCRIPT_FROM_DT(inst) \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, zephyr_shutdown_chat_script), (MODEM_CHAT_SCRIPT_FROM_DT(inst, shutdown_cmds, zephyr_shutdown_chat_script)), ())
+
+#define MODEM_CELLULAR_DEVICE_GENERIC(inst)                                                   \
+	MODEM_INST_DEFINE_INIT_SCRIPT_FROM_DT(inst)                  \
+	MODEM_INST_DEFINE_PERIODIC_SCRIPT_FROM_DT(inst) \
+	MODEM_INST_DEFINE_DIAL_SCRIPT_FROM_DT(inst) \
+	MODEM_INST_DEFINE_SHUTDOWN_SCRIPT_FROM_DT(inst) \
+												   \
+												   \
+	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);   \
+                                                                                                   \
+	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst) = {                 \
+		.chat_delimiter = "\r",                                                            \
+		.chat_filter = "\n",                                                               \
+		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
+	};                                                                                         \
+                                                                                                   \
+	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst,                                            \
+						  (user_pipe_0, 3),                                \
+						  (user_pipe_1, 4))                                \
+                                                                                                   \
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 500, 1000, 5000, 2000, false,                         \
+				       NULL,                                                       \
+				       MODEM_INST_INIT_SCRIPT(inst),                             \
+				       MODEM_INST_DIAL_SCRIPT(inst),                             \
+				       MODEM_INST_PERIODIC_SCRIPT(inst),                         \
+				       MODEM_INST_SHUTDOWN_SCRIPT(inst))
+
 #define MODEM_CELLULAR_DEVICE_QUECTEL_BG9X(inst)                                                   \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);   \
                                                                                                    \
@@ -3492,4 +3552,8 @@ DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_NORDIC_NRF91_SLM)
 
 #define DT_DRV_COMPAT sqn_gm02s
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_SQN_GM02S)
+#undef DT_DRV_COMPAT
+
+#define DT_DRV_COMPAT zephyr_cellular_modem
+DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_GENERIC)
 #undef DT_DRV_COMPAT
