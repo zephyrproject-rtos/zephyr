@@ -1,0 +1,71 @@
+/*
+ * Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * ADC Channel Configuration for adc_sequence Sample
+ * This overlay configures multiple ADC channels for sequential sampling.
+ *
+ * Test Setup:
+ * - Connect P2.0 to a test voltage (e.g., 3.3V or variable)
+ * - Connect P2.2 and P2.3 for differential measurement
+ * - Connect GND for reference
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/pinctrl/ifx_cat1-pinctrl.h>
+
+/ {
+	aliases {
+		adc0 = &adc0;
+	};
+};
+
+&pinctrl {
+	p2_0_adc: p2_0_adc {
+		pinmux = <DT_CAT1_PINMUX(2, 0, HSIOM_SEL_GPIO)>;
+	};
+
+	p2_2_adc: p2_2_adc {
+		pinmux = <DT_CAT1_PINMUX(2, 2, HSIOM_SEL_GPIO)>;
+	};
+
+	p2_3_adc: p2_3_adc {
+		pinmux = <DT_CAT1_PINMUX(2, 3, HSIOM_SEL_GPIO)>;
+	};
+};
+
+&adc0 {
+	status = "okay";
+	vref-src = "vdda"; /* Hardware divides VDDA by 2 → 1.65V reference */
+	vref-mv = <3300>; /* VDDA voltage (driver divides by 2 at line 606 for PDL) */
+	pinctrl-0 = <&p2_0_adc &p2_2_adc &p2_3_adc>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,vref-mv = <3300>;
+		zephyr,input-positive = <0>;  /* P2.0 - SARMUX direct */
+		zephyr,resolution = <12>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+	};
+
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,vref-mv = <3300>;
+		zephyr,differential;
+		zephyr,input-positive = <2>;  /* P2.2 */
+		zephyr,input-negative = <3>;  /* P2.3 */
+		zephyr,resolution = <12>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+	};
+};

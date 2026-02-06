@@ -1,0 +1,23 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Infineon PSOC4 SAR ADC configuration options
+
+config ADC_INFINEON_PSOC4
+	bool "Infineon PSOC4 ADC driver"
+	default y
+	depends on DT_HAS_INFINEON_PSOC4_ADC_ENABLED
+	select ADC_CONFIGURABLE_INPUTS
+	select USE_INFINEON_ADC
+	help
+	  Enable ADC driver for Infineon PSOC4 family.
+
+config ADC_INFINEON_PSOC4_SARSEQ_SWITCHING
+	bool "Use SARSEQ hardware switch control"
+	default y
+	depends on ADC_INFINEON_PSOC4
+	help
+	  Enable SARSEQ (hardware sequencer) control of SAR ADC input switches.
+	  If disabled, the driver relies on firmware-controlled switches only.
