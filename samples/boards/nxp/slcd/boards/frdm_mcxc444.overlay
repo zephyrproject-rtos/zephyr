@@ -1,0 +1,21 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright 2026 NXP
+ */
+
+/*
+ * FRDM-MCXC444 SLCD sample overlay
+ *
+ * The board DTS enables ADC0 by default, and its pinctrl claims PTE20
+ * (ADC0_SE0), which conflicts with the SLCD glass wiring using LCD_P59
+ * on PTE20 (COM0). Disable ADC0 for this sample so the SLCD pinmux wins.
+ */
+
+&adc0 {
+	status = "disabled";
+};
+
+&auxdisplay0 {
+	status = "okay";
+};
