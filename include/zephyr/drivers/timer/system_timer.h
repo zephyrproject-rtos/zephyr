@@ -163,6 +163,37 @@ uint32_t sys_clock_cycle_get_32(void);
  */
 uint64_t sys_clock_cycle_get_64(void);
 
+#if defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE) || defined(__DOXYGEN__)
+/**
+ * @brief Update the system timer frequency at runtime.
+ *
+ * @kconfig_dep{CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE}
+ *
+ * Publish a new system timer clock frequency.
+ *
+ * Platforms that can change the system timer clock rate at runtime must
+ * call this function after the clock change has been applied.
+ *
+ * The kernel provides a weak default implementation that only updates the
+ * stored frequency value used by sys_clock_hw_cycles_per_sec().
+ *
+ * System timer drivers that cache derived constants or need to reprogram
+ * hardware on a frequency change should provide a strong override of this
+ * function. Driver overrides must also ensure the stored frequency returned
+ * by sys_clock_hw_cycles_per_sec() is updated.
+ *
+ * @note This is a kernel/platform hook. Application code must not call it.
+ *
+ * Notes:
+ * - @p new_hz is the frequency of the system timer's clock source.
+ * - If @p new_hz is 0, the update is ignored.
+ * - If @p new_hz is unchanged from the previous value, this function is a no-op.
+ *
+ * @param[in] new_hz New system timer clock frequency, in Hz.
+ */
+void z_sys_clock_hw_cycles_per_sec_update(uint32_t new_hz);
+#endif /* defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE) || defined(__DOXYGEN__) */
+
 /**
  * @}
  */
