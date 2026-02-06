@@ -622,6 +622,7 @@ static void clock_control_bl61x_init_wifipll_setup(const bl61x_pll_config *const
 	tmp = sys_read32(GLB_BASE + GLB_WIFI_PLL_CFG5_OFFSET);
 	tmp = (tmp & GLB_WIFIPLL_VCO_SPEED_UMSK)
 		| (config->pllVcoSpeed << GLB_WIFIPLL_VCO_SPEED_POS);
+	tmp &= GLB_WIFIPLL_VCO_DIV2_EN_UMSK;
 	sys_write32(tmp, GLB_BASE + GLB_WIFI_PLL_CFG5_OFFSET);
 
 	tmp = sys_read32(GLB_BASE + GLB_WIFI_PLL_CFG6_OFFSET);
