@@ -97,19 +97,37 @@
 #define TEST_RANGES_EMPTY DT_NODELABEL(test_ranges_empty)
 
 #define TEST_MTD_0 DT_PATH(test, test_mtd_ffeeddcc)
-#define TEST_MTD_1 DT_PATH(test, test_mtd_33221100)
 
-#define TEST_MEM_0 DT_CHILD(TEST_MTD_0, flash_20000000)
+#define TEST_MTD_1_DEPRECATED DT_PATH(test, test_mtd_33221100)
 
-#define TEST_PARTITION_0 DT_PATH(test, test_mtd_ffeeddcc, flash_20000000, partitions, partition_0)
-#define TEST_PARTITION_1 DT_PATH(test, test_mtd_ffeeddcc, flash_20000000, partitions, partition_c0)
-#define TEST_PARTITION_2 DT_PATH(test, test_mtd_33221100, partitions, partition_6ff80)
+#define TEST_MEM_0_DEPRECATED DT_CHILD(TEST_MTD_0, flash_20000000)
 
-#define TEST_SUBPARTITION_COMBINED DT_PATH(test, test_mtd_ffeeddcc, flash_20000000, partitions, \
+#define TEST_PARTITION_0_DEPRECATED DT_PATH(test, test_mtd_ffeeddcc, flash_20000000, partitions, \
+						partition_0)
+#define TEST_PARTITION_1_DEPRECATED DT_PATH(test, test_mtd_ffeeddcc, flash_20000000, partitions, \
+						partition_c0)
+#define TEST_PARTITION_2_DEPRECATED DT_PATH(test, test_mtd_33221100, partitions, partition_6ff80)
+
+#define TEST_SUBPARTITION_COMBINED_DEPRECATED DT_PATH(test, test_mtd_ffeeddcc, flash_20000000, \
+						partitions, partition_100)
+#define TEST_SUBPARTITION_0_DEPRECATED DT_PATH(test, test_mtd_ffeeddcc, flash_20000000, \
+						partitions, partition_100, partition_0)
+#define TEST_SUBPARTITION_1_DEPRECATED DT_PATH(test, test_mtd_ffeeddcc, flash_20000000, \
+						partitions, partition_100, partition_40)
+
+#define TEST_MTD_1 DT_PATH(test, test_mtd_33291100)
+
+#define TEST_MEM_0 DT_CHILD(TEST_MTD_0, flash_20001000)
+
+#define TEST_PARTITION_0 DT_PATH(test, test_mtd_ffeeddcc, flash_20001000, partitions, partition_0)
+#define TEST_PARTITION_1 DT_PATH(test, test_mtd_ffeeddcc, flash_20001000, partitions, partition_c0)
+#define TEST_PARTITION_2 DT_PATH(test, test_mtd_33291100, partitions, partition_6ff80)
+
+#define TEST_SUBPARTITION_COMBINED DT_PATH(test, test_mtd_ffeeddcc, flash_20001000, partitions, \
 					   partition_100)
-#define TEST_SUBPARTITION_0 DT_PATH(test, test_mtd_ffeeddcc, flash_20000000, partitions, \
+#define TEST_SUBPARTITION_0 DT_PATH(test, test_mtd_ffeeddcc, flash_20001000, partitions, \
 				    partition_100, partition_0)
-#define TEST_SUBPARTITION_1 DT_PATH(test, test_mtd_ffeeddcc, flash_20000000, partitions, \
+#define TEST_SUBPARTITION_1 DT_PATH(test, test_mtd_ffeeddcc, flash_20001000, partitions, \
 				    partition_100, partition_40)
 
 #define TEST_GPIO_CONNECTOR  DT_PATH(gpio_map_test, connector)
@@ -3282,13 +3300,107 @@ ZTEST(devicetree_api, test_mbox)
 				  DT_NODELABEL(test_mbox_zero_cell)), "");
 }
 
+/*
+ * Tests that invalid but accidentally working behaviour does not break out of tree users, to be
+ * removed in Zephyr 4.6 or newer
+ */
+ZTEST(devicetree_api, test_fixed_partitions_deprecated)
+{
+	/* Test finding fixed partitions by the 'label' property. */
+	zassert_true(DT_HAS_FIXED_PARTITION_LABEL(test_partition_0_deprecated));
+	zassert_true(DT_HAS_FIXED_PARTITION_LABEL(test_partition_1_deprecated));
+	zassert_true(DT_HAS_FIXED_PARTITION_LABEL(test_partition_2_deprecated));
+	zassert_true(DT_SAME_NODE(TEST_PARTITION_0_DEPRECATED,
+				  DT_NODE_BY_FIXED_PARTITION_LABEL(test_partition_0_deprecated)));
+	zassert_true(DT_SAME_NODE(TEST_PARTITION_1_DEPRECATED,
+				  DT_NODE_BY_FIXED_PARTITION_LABEL(test_partition_1_deprecated)));
+	zassert_true(DT_SAME_NODE(TEST_PARTITION_2_DEPRECATED,
+				  DT_NODE_BY_FIXED_PARTITION_LABEL(test_partition_2_deprecated)));
+
+	zassert_true(DT_FIXED_PARTITION_EXISTS(TEST_PARTITION_0_DEPRECATED));
+	zassert_true(DT_FIXED_PARTITION_EXISTS(TEST_PARTITION_1_DEPRECATED));
+	zassert_true(DT_FIXED_PARTITION_EXISTS(TEST_PARTITION_2_DEPRECATED));
+
+	/* There should not be a node with `label = "test_partition_3_deprecated"`. */
+	zassert_false(DT_HAS_FIXED_PARTITION_LABEL(test_partition_3_deprecated));
+	zassert_false(DT_NODE_EXISTS(
+		DT_NODE_BY_FIXED_PARTITION_LABEL(test_partition_3_deprecated)));
+
+	/* Test DT_MTD_FROM_FIXED_PARTITION. */
+	zassert_true(DT_NODE_EXISTS(DT_MTD_FROM_FIXED_PARTITION(TEST_PARTITION_0_DEPRECATED)));
+	zassert_true(DT_NODE_EXISTS(DT_MTD_FROM_FIXED_PARTITION(TEST_PARTITION_1_DEPRECATED)));
+	zassert_true(DT_NODE_EXISTS(DT_MTD_FROM_FIXED_PARTITION(TEST_PARTITION_2_DEPRECATED)));
+
+	zassert_true(DT_SAME_NODE(TEST_MTD_0, DT_MTD_FROM_FIXED_PARTITION(
+		TEST_PARTITION_0_DEPRECATED)));
+	zassert_true(DT_SAME_NODE(TEST_MTD_0, DT_MTD_FROM_FIXED_PARTITION(
+		TEST_PARTITION_1_DEPRECATED)));
+	zassert_true(DT_SAME_NODE(TEST_MTD_1_DEPRECATED, DT_MTD_FROM_FIXED_PARTITION(
+		TEST_PARTITION_2_DEPRECATED)));
+
+	/* Test DT_MEM_FROM_FIXED_PARTITION. */
+	zassert_true(DT_NODE_EXISTS(DT_MEM_FROM_FIXED_PARTITION(TEST_PARTITION_0_DEPRECATED)));
+	zassert_true(DT_NODE_EXISTS(DT_MEM_FROM_FIXED_PARTITION(TEST_PARTITION_1_DEPRECATED)));
+	zassert_false(DT_NODE_EXISTS(DT_MEM_FROM_FIXED_PARTITION(TEST_PARTITION_2_DEPRECATED)));
+
+	zassert_true(DT_SAME_NODE(TEST_MEM_0_DEPRECATED, DT_MEM_FROM_FIXED_PARTITION(
+		TEST_PARTITION_0_DEPRECATED)));
+	zassert_true(DT_SAME_NODE(TEST_MEM_0_DEPRECATED, DT_MEM_FROM_FIXED_PARTITION(
+		TEST_PARTITION_1_DEPRECATED)));
+
+	/* Test DT_FIXED_PARTITION_ADDR. */
+	zassert_equal(DT_FIXED_PARTITION_ADDR(TEST_PARTITION_0_DEPRECATED), 0x20000000);
+	zassert_equal(DT_FIXED_PARTITION_ADDR(TEST_PARTITION_1_DEPRECATED), 0x200000c0);
+	zassert_equal(DT_FIXED_PARTITION_ADDR(TEST_PARTITION_2_DEPRECATED), 0x33291080);
+}
+
+ZTEST(devicetree_api, test_fixed_subpartitions_deprecated)
+{
+	zassert_true(DT_FIXED_PARTITION_EXISTS(TEST_SUBPARTITION_COMBINED_DEPRECATED));
+	zassert_true(DT_FIXED_SUBPARTITION_EXISTS(TEST_SUBPARTITION_0_DEPRECATED));
+	zassert_true(DT_FIXED_SUBPARTITION_EXISTS(TEST_SUBPARTITION_1_DEPRECATED));
+
+	/* Test DT_MEM_FROM_FIXED_SUBPARTITION. */
+	zassert_true(DT_NODE_EXISTS(DT_MEM_FROM_FIXED_PARTITION(
+		TEST_SUBPARTITION_COMBINED_DEPRECATED)));
+	zassert_true(DT_NODE_EXISTS(DT_MEM_FROM_FIXED_SUBPARTITION(
+		TEST_SUBPARTITION_0_DEPRECATED)));
+	zassert_true(DT_NODE_EXISTS(DT_MEM_FROM_FIXED_SUBPARTITION(
+		TEST_SUBPARTITION_1_DEPRECATED)));
+
+	/* Test DT_MTD_FROM_FIXED_SUBPARTITION. */
+	zassert_true(DT_NODE_EXISTS(DT_MTD_FROM_FIXED_PARTITION(
+		TEST_SUBPARTITION_COMBINED_DEPRECATED)));
+	zassert_true(DT_NODE_EXISTS(DT_MTD_FROM_FIXED_SUBPARTITION(
+		TEST_SUBPARTITION_0_DEPRECATED)));
+	zassert_true(DT_NODE_EXISTS(DT_MTD_FROM_FIXED_SUBPARTITION(
+		TEST_SUBPARTITION_1_DEPRECATED)));
+	zassert_true(DT_SAME_NODE(
+		DT_MTD_FROM_FIXED_PARTITION(TEST_SUBPARTITION_COMBINED_DEPRECATED),
+		DT_MTD_FROM_FIXED_SUBPARTITION(TEST_SUBPARTITION_1_DEPRECATED)));
+
+	/* Test DT_FIXED_SUBPARTITION_ADDR. */
+	zassert_equal(DT_FIXED_PARTITION_ADDR(TEST_SUBPARTITION_COMBINED_DEPRECATED), 0x20000100);
+	zassert_equal(DT_FIXED_SUBPARTITION_ADDR(TEST_SUBPARTITION_0_DEPRECATED),
+		      DT_FIXED_PARTITION_ADDR(TEST_SUBPARTITION_COMBINED_DEPRECATED));
+	zassert_equal(DT_FIXED_SUBPARTITION_ADDR(TEST_SUBPARTITION_0_DEPRECATED), 0x20000100);
+	zassert_equal(DT_FIXED_SUBPARTITION_ADDR(TEST_SUBPARTITION_1_DEPRECATED), 0x20000140);
+
+	/* Check sizes match */
+	zassert_equal(DT_REG_SIZE(TEST_SUBPARTITION_COMBINED_DEPRECATED),
+		      (DT_REG_SIZE(TEST_SUBPARTITION_0_DEPRECATED) +
+			DT_REG_SIZE(TEST_SUBPARTITION_1_DEPRECATED)));
+	zassert_equal(DT_REG_SIZE(TEST_SUBPARTITION_COMBINED_DEPRECATED),
+		      (DT_REG_SIZE(TEST_SUBPARTITION_0_DEPRECATED) +
+			DT_REG_SIZE(TEST_SUBPARTITION_1_DEPRECATED)));
+}
+
 ZTEST(devicetree_api, test_fixed_partitions)
 {
 	/* Test finding fixed partitions by the 'label' property. */
 	zassert_true(DT_HAS_FIXED_PARTITION_LABEL(test_partition_0));
 	zassert_true(DT_HAS_FIXED_PARTITION_LABEL(test_partition_1));
 	zassert_true(DT_HAS_FIXED_PARTITION_LABEL(test_partition_2));
-
 	zassert_true(DT_SAME_NODE(TEST_PARTITION_0,
 				  DT_NODE_BY_FIXED_PARTITION_LABEL(test_partition_0)));
 	zassert_true(DT_SAME_NODE(TEST_PARTITION_1,
@@ -3326,15 +3438,17 @@ ZTEST(devicetree_api, test_fixed_partitions)
 	zassert_true(DT_SAME_NODE(TEST_MEM_0, DT_MEM_FROM_FIXED_PARTITION(TEST_PARTITION_1)));
 
 	/* Test DT_FIXED_PARTITION_ADDR. */
-	zassert_equal(DT_FIXED_PARTITION_ADDR(TEST_PARTITION_0), 0x20000000);
-	zassert_equal(DT_FIXED_PARTITION_ADDR(TEST_PARTITION_1), 0x200000c0);
-	zassert_equal(DT_FIXED_PARTITION_ADDR(TEST_PARTITION_2), 0x33291080);
+	zassert_equal(DT_FIXED_PARTITION_ADDR(TEST_PARTITION_0), 0x20001000);
+	zassert_equal(DT_FIXED_PARTITION_ADDR(TEST_PARTITION_1), 0x200010c0);
+	zassert_equal(DT_FIXED_PARTITION_ADDR(TEST_PARTITION_2), 0x33301080);
 
 	/* Test that all DT_FIXED_PARTITION_ID are defined and unique. */
 #define FIXED_PARTITION_ID_COMMA(node_id) DT_FIXED_PARTITION_ID(node_id),
 
 	static const int ids[] = {
 		DT_FOREACH_STATUS_OKAY_VARGS(fixed_partitions, DT_FOREACH_CHILD,
+					     FIXED_PARTITION_ID_COMMA)
+		DT_FOREACH_STATUS_OKAY_VARGS(fixed_subpartitions, DT_FOREACH_CHILD,
 					     FIXED_PARTITION_ID_COMMA)
 	};
 	bool found[ARRAY_SIZE(ids)] = { false };
@@ -3368,13 +3482,15 @@ ZTEST(devicetree_api, test_fixed_subpartitions)
 		DT_MTD_FROM_FIXED_SUBPARTITION(TEST_SUBPARTITION_1)));
 
 	/* Test DT_FIXED_SUBPARTITION_ADDR. */
-	zassert_equal(DT_FIXED_PARTITION_ADDR(TEST_SUBPARTITION_COMBINED), 0x20000100);
+	zassert_equal(DT_FIXED_PARTITION_ADDR(TEST_SUBPARTITION_COMBINED), 0x20001100);
 	zassert_equal(DT_FIXED_SUBPARTITION_ADDR(TEST_SUBPARTITION_0),
 		      DT_FIXED_PARTITION_ADDR(TEST_SUBPARTITION_COMBINED));
-	zassert_equal(DT_FIXED_SUBPARTITION_ADDR(TEST_SUBPARTITION_0), 0x20000100);
-	zassert_equal(DT_FIXED_SUBPARTITION_ADDR(TEST_SUBPARTITION_1), 0x20000140);
+	zassert_equal(DT_FIXED_SUBPARTITION_ADDR(TEST_SUBPARTITION_0), 0x20001100);
+	zassert_equal(DT_FIXED_SUBPARTITION_ADDR(TEST_SUBPARTITION_1), 0x20001140);
 
 	/* Check sizes match */
+	zassert_equal(DT_REG_SIZE(TEST_SUBPARTITION_COMBINED),
+		      (DT_REG_SIZE(TEST_SUBPARTITION_0) + DT_REG_SIZE(TEST_SUBPARTITION_1)));
 	zassert_equal(DT_REG_SIZE(TEST_SUBPARTITION_COMBINED),
 		      (DT_REG_SIZE(TEST_SUBPARTITION_0) + DT_REG_SIZE(TEST_SUBPARTITION_1)));
 }

@@ -5,6 +5,7 @@
 
 /*
  * Copyright (c) 2020, Linaro Ltd.
+ * Copyright (c) 2026, Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -105,9 +106,15 @@ extern "C" {
  *     &flash_controller {
  *             flash@1000000 {
  *                     compatible = "soc-nv-flash";
+ *                     reg = <0x1000000 0x50000>
+ *                     ranges = <0x0 0x1000000 0x50000>
+ *
  *                     partitions {
  *                             compatible = "fixed-partitions";
+ *                             ranges;
+ *
  *                             storage_partition: partition@3a000 {
+ *                                     reg = <0x3a000 0x8000>
  *                                     label = "storage";
  *                             };
  *                     };
@@ -130,8 +137,20 @@ extern "C" {
  * @return the partition's offset plus the base address of the flash
  * node containing it.
  */
-#define DT_FIXED_PARTITION_ADDR(node_id)                                                           \
-	(DT_REG_ADDR(node_id) + DT_REG_ADDR(DT_GPARENT(node_id)))
+
+/*
+ * The COND_CODE_0 ranges part handles invalid devices where they wrongly do not inherit the
+ * parent's address and wrongly start at address 0x0 which was a bug that was fixed post Zephyr
+ * 4.3, this extra handling can be removed in Zephyr 4.6 or newer
+ */
+#define DT_FIXED_PARTITION_ADDR(node_id)						\
+	COND_CODE_0(DT_NODE_HAS_COMPAT(DT_PARENT(node_id), fixed_subpartitions),	\
+		(COND_CODE_0(DT_NUM_RANGES(DT_GPARENT(node_id)),			\
+			(DT_REG_ADDR(node_id) + DT_REG_ADDR(DT_GPARENT(node_id))),	\
+			(DT_REG_ADDR(node_id)))),					\
+		(COND_CODE_0(DT_NUM_RANGES(DT_GPARENT(DT_PARENT(node_id))),		\
+			(DT_REG_ADDR(node_id) + DT_REG_ADDR(DT_GPARENT(node_id))),	\
+			(DT_REG_ADDR(node_id)))))
 
 /**
  * @brief Test if fixed-subpartitions compatible node exists
@@ -170,9 +189,12 @@ extern "C" {
  *     &flash_controller {
  *             flash@1000000 {
  *                     compatible = "soc-nv-flash";
+ *                     reg = <0x1000000 0x50000>
+ *                     ranges = <0x0 0x1000000 0x50000>
  *
  *                     partitions {
  *                             compatible = "fixed-partitions";
+ *                             ranges;
  *
  *                             slot0_partition: partition@10000 {
  *                                     compatible = "fixed-subpartitions";
@@ -206,8 +228,16 @@ extern "C" {
  * @return the subpartition's offset plus the base address of the flash
  * node containing it.
  */
-#define DT_FIXED_SUBPARTITION_ADDR(node_id)                                                        \
-	(DT_REG_ADDR(node_id) + DT_REG_ADDR(DT_GPARENT(DT_PARENT(node_id))))
+
+/*
+ * The COND_CODE_0 part handles invalid devices where they wrongly do not inherit the parent's
+ * address and wrongly start at address 0x0 which was a bug that was fixed post Zephyr 4.3, this
+ * extra handling can be removed in Zephyr 4.6 or newer
+ */
+#define DT_FIXED_SUBPARTITION_ADDR(node_id)						\
+	COND_CODE_0(DT_NUM_RANGES(DT_GPARENT(DT_PARENT(node_id))),			\
+		(DT_REG_ADDR(node_id) + DT_REG_ADDR(DT_GPARENT(DT_PARENT(node_id)))),	\
+		(DT_REG_ADDR(node_id)))
 
 /**
  * @}
