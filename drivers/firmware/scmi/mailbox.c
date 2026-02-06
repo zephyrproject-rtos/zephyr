@@ -104,11 +104,34 @@ static int scmi_mbox_setup_chan(const struct device *transport,
 	return 0;
 }
 
+static int scmi_mbox_interrupt_enable(const struct device *transport, struct scmi_channel *chan,
+				      bool enable)
+{
+	struct scmi_mbox_channel *mbox_chan;
+	struct mbox_dt_spec *tx_reply;
+	uint32_t comp_int;
+
+	mbox_chan = chan->data;
+	comp_int = enable ? SCMI_SHMEM_CHAN_FLAG_IRQ_BIT : 0;
+
+	if (mbox_chan->tx_reply.dev) {
+		tx_reply = &mbox_chan->tx_reply;
+	} else {
+		tx_reply = &mbox_chan->tx;
+	}
+
+	/* re-set completion interrupt */
+	scmi_shmem_update_flags(mbox_chan->shmem, SCMI_SHMEM_CHAN_FLAG_IRQ_BIT, comp_int);
+
+	return mbox_set_enabled_dt(tx_reply, enable);
+}
+
 static struct scmi_transport_api scmi_mbox_api = {
 	.setup_chan = scmi_mbox_setup_chan,
 	.send_message = scmi_mbox_send_message,
 	.read_message = scmi_mbox_read_message,
 	.channel_is_free = scmi_mbox_channel_is_free,
+	.interrupt_enable = scmi_mbox_interrupt_enable,
 };
 
 DT_INST_SCMI_MAILBOX_DEFINE(0, PRE_KERNEL_1,

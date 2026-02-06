@@ -1,0 +1,59 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+        SCMI (System Control and Management Interface) with arm-smc as doorbell
+        and SHMEM (shared memory) transport.
+
+        Devicetree example:
+            #include <mem.h>
+
+            scmi_res0: memory@44611000 {
+                compatible = "arm,scmi-shmem";
+                reg = <0x44611000 0x80>;
+            };
+
+            scmi {
+                  compatible = "arm,scmi-smc";
+                  arm,smc-id = <0x82004000>;
+                  shmem = <&scmi_shmem>;
+
+                  #address-cells = <1>;
+                  #size-cells = <0>;
+
+                  scmi_pds: protocol@11 {
+                    compatible = "arm,scmi-power";
+                    reg = <0x11>;
+                    #power-domain-cells = <1>;
+                  };
+
+                  scmi_clk: protocol@14 {
+                    compatible = "arm,scmi-clock";
+                    reg = <0x14>;
+                    #clock-cells = <1>;
+                  };
+            };
+
+compatible: "arm,scmi-smc"
+
+include: [base.yaml]
+
+properties:
+  shmem:
+    type: phandle
+    required: true
+    description: |
+      Phandle to node describing TX channel shared memory area.
+      This translates to a **single** SCMI transmit channel.
+
+  arm,smc-id:
+    required: true
+    type: int
+    description:
+      SMC id required when using smc or hvc transports
+
+  '#address-cells':
+    const: 1
+
+  '#size-cells':
+    const: 0

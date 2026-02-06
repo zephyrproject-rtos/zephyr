@@ -6,11 +6,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "am62l_power_domains.dtsi"
+
 / {
 	main_uart0: serial@2800000 {
 		compatible = "ns16550";
 		reg = <0x02800000 0x100>;
-		clock-frequency = <48000000>;
+		clock-frequency = <DT_FREQ_M(48)>;
+		clocks = <&scmi_clk 358>;
+		power-domains = <&main_uart0_pd>;
 		current-speed = <115200>;
 		reg-shift = <2>;
 		status = "disabled";
@@ -19,7 +23,9 @@
 	main_uart1: serial@2810000 {
 		compatible = "ns16550";
 		reg = <0x02810000 0x100>;
-		clock-frequency = <48000000>;
+		clock-frequency = <DT_FREQ_M(48)>;
+		clocks = <&scmi_clk 312>;
+		power-domains = <&main_uart1_pd>;
 		current-speed = <115200>;
 		reg-shift = <2>;
 		status = "disabled";
@@ -28,7 +34,9 @@
 	main_uart2: serial@2820000 {
 		compatible = "ns16550";
 		reg = <0x02820000 0x100>;
-		clock-frequency = <48000000>;
+		clock-frequency = <DT_FREQ_M(48)>;
+		clocks = <&scmi_clk 314>;
+		power-domains = <&main_uart2_pd>;
 		current-speed = <115200>;
 		reg-shift = <2>;
 		status = "disabled";
@@ -37,7 +45,9 @@
 	main_uart3: serial@2830000 {
 		compatible = "ns16550";
 		reg = <0x02830000 0x100>;
-		clock-frequency = <48000000>;
+		clock-frequency = <DT_FREQ_M(48)>;
+		clocks = <&scmi_clk 316>;
+		power-domains = <&main_uart3_pd>;
 		current-speed = <115200>;
 		reg-shift = <2>;
 		status = "disabled";
@@ -46,7 +56,9 @@
 	main_uart4: serial@2840000 {
 		compatible = "ns16550";
 		reg = <0x02840000 0x100>;
-		clock-frequency = <48000000>;
+		clock-frequency = <DT_FREQ_M(48)>;
+		clocks = <&scmi_clk 318>;
+		power-domains = <&main_uart4_pd>;
 		current-speed = <115200>;
 		reg-shift = <2>;
 		status = "disabled";
@@ -55,7 +67,9 @@
 	main_uart5: serial@2850000 {
 		compatible = "ns16550";
 		reg = <0x02850000 0x100>;
-		clock-frequency = <48000000>;
+		clock-frequency = <DT_FREQ_M(48)>;
+		clocks = <&scmi_clk 320>;
+		power-domains = <&main_uart5_pd>;
 		current-speed = <115200>;
 		reg-shift = <2>;
 		status = "disabled";
@@ -64,7 +78,9 @@
 	main_uart6: serial@2860000 {
 		compatible = "ns16550";
 		reg = <0x02860000 0x100>;
-		clock-frequency = <48000000>;
+		clock-frequency = <DT_FREQ_M(48)>;
+		clocks = <&scmi_clk 322>;
+		power-domains = <&main_uart6_pd>;
 		current-speed = <115200>;
 		reg-shift = <2>;
 		status = "disabled";
@@ -74,6 +90,8 @@
 		compatible = "ti,omap-i2c";
 		reg = <0x20000000 0x100>;
 		clock-frequency = <100000>;
+		clocks = <&scmi_clk 246>;
+		power-domains = <&main_i2c0_pd>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 		status = "disabled";
@@ -83,6 +101,8 @@
 		compatible = "ti,omap-i2c";
 		reg = <0x20010000 0x100>;
 		clock-frequency = <100000>;
+		clocks = <&scmi_clk 250>;
+		power-domains = <&main_i2c1_pd>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 		status = "disabled";
@@ -92,6 +112,8 @@
 		compatible = "ti,omap-i2c";
 		reg = <0x20020000 0x100>;
 		clock-frequency = <100000>;
+		clocks = <&scmi_clk 254>;
+		power-domains = <&main_i2c2_pd>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 		status = "disabled";
@@ -101,6 +123,8 @@
 		compatible = "ti,omap-i2c";
 		reg = <0x20030000 0x100>;
 		clock-frequency = <100000>;
+		clocks = <&scmi_clk 258>;
+		power-domains = <&main_i2c3_pd>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 		status = "disabled";
@@ -232,7 +256,7 @@
 		interrupt-parent = <&gic>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		power-domains = <&scmi_pds 72>;
+		power-domains = <&main_spi0_pd>;
 		clock-frequency = <DT_FREQ_M(50)>;
 		clocks = <&scmi_clk 299>;
 		ti,spi-num-cs = <4>;
@@ -246,7 +270,7 @@
 		interrupt-parent = <&gic>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		power-domains = <&scmi_pds 73>;
+		power-domains = <&main_spi1_pd>;
 		clock-frequency = <DT_FREQ_M(50)>;
 		clocks = <&scmi_clk 302>;
 		ti,spi-num-cs = <4>;
@@ -260,7 +284,7 @@
 		interrupt-parent = <&gic>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		power-domains = <&scmi_pds 74>;
+		power-domains = <&main_spi2_pd>;
 		clock-frequency = <DT_FREQ_M(50)>;
 		clocks = <&scmi_clk 305>;
 		ti,spi-num-cs = <4>;
@@ -274,7 +298,7 @@
 		interrupt-parent = <&gic>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		power-domains = <&scmi_pds 75>;
+		power-domains = <&main_spi3_pd>;
 		clock-frequency = <DT_FREQ_M(50)>;
 		clocks = <&scmi_clk 308>;
 		ti,spi-num-cs = <4>;
