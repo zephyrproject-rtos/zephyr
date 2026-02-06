@@ -54,8 +54,8 @@ static int prepare_cb_common(struct lll_prepare_param *p);
 static void isr_tx_create(void *param);
 static void isr_tx_normal(void *param);
 static void isr_tx_common(void *param,
-			  			radio_isr_cb_t isr_tx,
-			  			radio_isr_cb_t isr_done);
+			  radio_isr_cb_t isr_tx,
+			  radio_isr_cb_t isr_done);
 #if defined(CONFIG_BT_CTLR_ADV_ISO_SEQUENTIAL)
 static void next_chan_calc_seq(struct lll_adv_iso *lll, uint16_t event_counter,
 			       uint16_t data_chan_id);
@@ -487,8 +487,8 @@ static void isr_tx_normal(void *param)
 }
 
 static void isr_tx_common(void *param,
-		  radio_isr_cb_t isr_tx,
-		  radio_isr_cb_t isr_done)
+			  radio_isr_cb_t isr_tx,
+			  radio_isr_cb_t isr_done)
 {
 	struct pdu_bis *pdu = NULL;
 	uint8_t data_chan_use = 0;
