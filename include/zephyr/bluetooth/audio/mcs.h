@@ -38,6 +38,18 @@ extern "C" {
 #endif
 
 /**
+ * @brief Media player command
+ */
+struct bt_mcs_cmd {
+	/** The opcode. See the MEDIA_PROXY_OP_* values */
+	uint8_t opcode;
+	/** Whether or not the @ref bt_mcs_cmd.param is used */
+	bool use_param;
+	/** A 32-bit signed parameter. The parameter value depends on the @ref bt_mcs_cmd.opcode */
+	int32_t param;
+};
+
+/**
  * A characteristic value has changed while a Read Long Value Characteristic sub-procedure is in
  * progress.
  */
@@ -350,9 +362,8 @@ extern "C" {
 struct bt_ots *bt_mcs_get_ots(void);
 
 /* Temporary forward declaration to avoid circular dependency */
-struct bt_mcp_cmd;
 struct bt_mcp_search;
-struct bt_mcp_cmd_ntf;
+struct bt_mcs_cmd_ntf;
 
 /** @brief Callbacks when information about the player is requested via MCS */
 struct bt_mcs_cb {
@@ -623,9 +634,14 @@ struct bt_mcs_cb {
 	 * For command opcodes (play, pause, ...) - see the MEDIA_PROXY_OP_*
 	 * defines.
 	 *
+	 * bt_mcs_command_complete() shall be called when the command has been handled, otherwise
+	 * further Media Control Point writes from the client are rejected.
+	 *
 	 * @param command	The command to send
+	 *
+	 * @return 0 if the command was accepted, negative errno to reject the command
 	 */
-	void (*send_command)(const struct bt_mcp_cmd *command);
+	int (*send_command)(const struct bt_mcs_cmd *command);
 
 	/**
 	 * @brief Read Commands Supported
@@ -827,7 +843,7 @@ void bt_mcs_search_results_id_changed(void);
  *
  * @param cmd_ntf	The result of the command
  */
-void bt_mcs_command_complete(const struct bt_mcp_cmd_ntf *cmd_ntf);
+void bt_mcs_command_complete(const struct bt_mcs_cmd_ntf *cmd_ntf);
 
 /**
  * @brief Search callback
