@@ -14,13 +14,7 @@ config ADC_STM32
 	depends on DT_HAS_ST_STM32_ADC_ENABLED
 	select PINCTRL
 	select ADC_HAS_SEQUENCE_PRIORITY if \
-		!SOC_SERIES_STM32C0X && \
-		!SOC_SERIES_STM32F0X && \
-		!SOC_SERIES_STM32G0X && \
-		!SOC_SERIES_STM32L0X && \
-		!SOC_SERIES_STM32U0X && \
-		!SOC_SERIES_STM32WBAX && \
-		!SOC_SERIES_STM32WLX
+		$(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_ADC),has-injected-support)
 	help
 	  Enable the driver implementation for the stm32xx ADC
 
