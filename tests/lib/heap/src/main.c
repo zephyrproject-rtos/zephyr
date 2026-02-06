@@ -44,8 +44,12 @@
 /* With enabling SYS_HEAP_RUNTIME_STATS, the size of struct z_heap
  * will increase 16 bytes on 64 bit CPU.
  */
-#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
+#if defined(CONFIG_SYS_HEAP_RUNTIME_STATS) && defined(CONFIG_SYS_HEAP_CANARIES)
+#define UNDERSIZED_CHUNK_HEAP_SZ (88)
+#elif defined(CONFIG_SYS_HEAP_RUNTIME_STATS)
 #define UNDERSIZED_CHUNK_HEAP_SZ (80)
+#elif defined(CONFIG_SYS_HEAP_CANARIES)
+#define UNDERSIZED_CHUNK_HEAP_SZ (72)
 #else
 #define UNDERSIZED_CHUNK_HEAP_SZ (64)
 #endif
