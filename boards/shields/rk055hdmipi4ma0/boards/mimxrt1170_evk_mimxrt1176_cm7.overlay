@@ -8,3 +8,7 @@
 	/* Raise the DSI clock frequency */
 	phy-clock = <792000000>;
 };
+
+&zephyr_lcdif {
+	data-bus-width = "24-bit";
+};
