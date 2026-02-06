@@ -1593,13 +1593,6 @@ struct bt_mcs_cb;
  */
 int media_proxy_pl_register(struct bt_mcs_cb *pl_calls);
 
-/**
- * @brief Initialize player
- *
- * TODO: Move to player header file
- */
-int media_proxy_pl_init(void);
-
 #ifdef __cplusplus
 }
 #endif
