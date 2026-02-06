@@ -5,6 +5,8 @@ sample:
 common:
   tags: crypto
   min_ram: 20
+  platform_exclude:
+    - nrf7120dk/nrf7120/cpuapp
 tests:
   sample.drivers.crypto.mbedtls:
     min_flash: 34

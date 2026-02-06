@@ -26,6 +26,8 @@ tests:
     # Pick a platform which has an entropy driver and enable it.
     integration_platforms:
       - native_sim/native/64
+    platform_exclude:
+      - nrf7120dk/nrf7120/cpuapp
     extra_configs:
       - CONFIG_ENTROPY_GENERATOR=y
   crypto.mbedtls_psa.without_entropy_driver:

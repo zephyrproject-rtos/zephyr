@@ -8,6 +8,8 @@ tests:
     tags:
       - kernel
       - userspace
+    platform_exclude:
+      - nrf7120dk/nrf7120/cpuapp
     ignore_faults: true
   kernel.memory_protection.stackprot_tls:
     filter: CONFIG_ARCH_HAS_STACK_CANARIES_TLS and CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE

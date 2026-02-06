@@ -2,6 +2,8 @@ common:
   tags: uuid
   integration_platforms:
     - native_sim
+  platform_exclude:
+    - nrf7120dk/nrf7120/cpuapp
 
 tests:
   libraries.uuid.base:

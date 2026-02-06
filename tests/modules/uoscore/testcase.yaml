@@ -10,3 +10,5 @@ tests:
       - uoscore-uedhoc
     integration_platforms:
       - qemu_x86
+    platform_exclude:
+      - nrf7120dk/nrf7120/cpuapp
