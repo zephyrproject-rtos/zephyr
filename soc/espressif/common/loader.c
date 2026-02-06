@@ -101,6 +101,11 @@ esp_image_header_t WORD_ALIGNED_ATTR bootloader_image_hdr;
 extern uint32_t _image_irom_start, _image_irom_size, _image_irom_vaddr;
 extern uint32_t _image_drom_start, _image_drom_size, _image_drom_vaddr;
 
+#ifdef CONFIG_MCUBOOT
+extern uint32_t _loader_bss_start[];
+extern uint32_t _loader_bss_end[];
+#endif
+
 #ifndef CONFIG_MCUBOOT
 
 extern uint32_t _libc_heap_size;
@@ -316,6 +321,12 @@ void __start(void)
 	__asm__ __volatile__("wsr %0, " ZSR_CPU_STR "; rsync" : : "r"(&_kernel.cpus[0]));
 
 #endif /* CONFIG_RISCV_GP */
+
+#ifdef CONFIG_MCUBOOT
+	memset(&_loader_bss_start, 0,
+	       ((uintptr_t *)&_loader_bss_end - (uintptr_t *)&_loader_bss_start) *
+		       sizeof(uintptr_t));
+#endif
 
 /* Initialize hardware only during 1st boot  */
 #if defined(CONFIG_MCUBOOT) || defined(CONFIG_ESP_SIMPLE_BOOT)

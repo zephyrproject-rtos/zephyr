@@ -20,10 +20,15 @@
 #define RODATA_REGION     dram_seg
 #define ROMABLE_REGION    dram_seg
 
+_bootloader_iram_loader_seg_start = BOOTLOADER_IRAM_LOADER_SEG_START;
+_bootloader_dram_loader_seg_start = BOOTLOADER_DRAM_LOADER_SEG_START;
+
 MEMORY
 {
   iram_loader_seg (RWX) : org = BOOTLOADER_IRAM_LOADER_SEG_START,
                           len = BOOTLOADER_IRAM_LOADER_SEG_LEN
+  dram_loader_seg (RW) :  org = BOOTLOADER_DRAM_LOADER_SEG_START,
+                          len = BOOTLOADER_DRAM_LOADER_SEG_LEN
   iram_seg        (RWX) : org = BOOTLOADER_IRAM_SEG_START,
                           len = BOOTLOADER_IRAM_SEG_LEN
   dram_seg        (RW)  : org = BOOTLOADER_DRAM_SEG_START,
@@ -38,8 +43,9 @@ ENTRY(CONFIG_KERNEL_ENTRY)
 
 SECTIONS
 {
-  .iram0.loader_text :
+  .iram_loader.text :
   {
+    . = ALIGN (16);
     _loader_text_start = ABSOLUTE(.);
     *(.stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
 
@@ -47,14 +53,21 @@ SECTIONS
     *libarch__common.a:dynamic_isr.*(.literal .text .literal.* .text.*)
     *libarch__common.a:sw_isr_common.*(.literal .text .literal.* .text.*)
 
-    *libapp.a:flash_map_extended.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:cbprintf_nano.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:cpu.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:mmu_hal.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:flash_map.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:esp_rom_spiflash.*(.literal .text .literal.* .text.*)
-    *libkernel.a:device.*(.literal .text .literal.* .text.*)
-    *libzephyr.a:esp_loader.*(.literal .text .literal.* .text.*)
+    *libapp.a:flash_map_extended.*(.literal .text .literal.* .text.* .iram0 .iram0.* .iram1 .iram1.*)
+    *libzephyr.a:flash_map_default.*(.literal .text .literal.* .text.* .iram0 .iram0.* .iram1 .iram1.*)
+    *libzephyr.a:cbprintf_nano.*(.literal .text .literal.* .text.* .iram0 .iram0.* .iram1 .iram1.*)
+    *libzephyr.a:cpu.*(.literal .text .literal.* .text.* .iram0 .iram0.* .iram1 .iram1.*)
+    *libzephyr.a:mmu_hal.*(.literal .text .literal.* .text.* .iram0 .iram0.* .iram1 .iram1.*)
+    *libzephyr.a:flash_map.*(.literal .text .literal.* .text.* .iram0 .iram0.* .iram1 .iram1.*)
+    *libzephyr.a:esp_rom_spiflash.*(.literal .text .literal.* .text.* .iram0 .iram0.* .iram1 .iram1.*)
+    *libzephyr.a:esp_image_loader.*(.literal .text .literal.* .text.* .iram0 .iram0.* .iram1 .iram1.*)
+    *libzephyr.a:bootloader_flash.*(.literal .text .literal.* .text.* .iram0 .iram0.* .iram1 .iram1.*)
+    *libzephyr.a:cache_hal.*(.literal .text .literal.* .text.* .iram0 .iram0.* .iram1 .iram1.*)
+    *libkernel.a:device.*(.literal .text .literal.* .text.* .iram0 .iram0.* .iram1 .iram1.*)
+    *libzephyr.a:printk.*(.literal .text .literal.* .text.* .iram0 .iram0.* .iram1 .iram1.*)
+    *liblib__libc__common.a:abort.*(.literal .text .literal.* .text.* .iram0 .iram0.* .iram1 .iram1.*)
+    *liblib__libc__picolibc.a:assert.*(.literal .text .literal.* .text.* .iram0 .iram0.* .iram1 .iram1.*)
+    *libc.a:libc_tinystdio_vfmprintf.*(.literal .text .literal.* .text.* .iram0 .iram0.* .iram1 .iram1.*)
 
     *(.literal.esp_intr_disable .literal.esp_intr_disable.* .text.esp_intr_disable .text.esp_intr_disable.*)
     *(.literal.default_intr_handler .text.default_intr_handler .iram1.*.default_intr_handler)
@@ -80,6 +93,59 @@ SECTIONS
     _iram_text_end = ABSOLUTE(.);
     _iram_end = ABSOLUTE(.);
   } > iram_loader_seg
+
+  /* Ensure the iram_loader_seg is large enough */
+  ASSERT((_loader_text_end - ORIGIN(iram_loader_seg)) <= BOOTLOADER_IRAM_LOADER_SEG_LEN,
+    "iram_loader_seg overflow: increase BOOTLOADER_IRAM_LOADER_SEG_LEN")
+
+  .dram_loader.bss (NOLOAD) :
+  {
+    . = ALIGN (8);
+    _dram_loader_start = ABSOLUTE(.);
+    _loader_bss_start = ABSOLUTE(.);
+
+    *libapp.a:flash_map_extended.*(.sbss .sbss.* .sbss2 .sbss2.* .bss .bss.*)
+    *libzephyr.a:flash_map.*(.sbss .sbss.* .sbss2 .sbss2.* .bss .bss.*)
+    *libzephyr.a:flash_map_default.*(.sbss .sbss.* .sbss2 .sbss2.* .bss .bss.*)
+    *libzephyr.a:cache_hal.*(.sbss .sbss.* .sbss2 .sbss2.* .bss .bss.*)
+    *libzephyr.a:mmu_hal.*(.sbss .sbss.* .sbss2 .sbss2.* .bss .bss.*)
+    *libzephyr.a:esp_rom_spiflash.*(.sbss .sbss.* .sbss2 .sbss2.* .bss .bss.*)
+    *libzephyr.a:esp_image_loader.*(.sbss .sbss.* .sbss2 .sbss2.* .bss .bss.*)
+    *libzephyr.a:bootloader_flash.*(.sbss .sbss.* .sbss2 .sbss2.* .bss .bss.*)
+    *libzephyr.a:log.*(.sbss .sbss.* .sbss2 .sbss2.* .bss .bss.*)
+    *libkernel.a:device.*(.sbss .sbss.* .sbss2 .sbss2.* .bss .bss.*)
+    *libzephyr.a:printk.*(.sbss .sbss.* .sbss2 .sbss2.* .bss .bss.*)
+
+    . = ALIGN (8);
+    _loader_bss_end = ABSOLUTE(.);
+  } > dram_loader_seg
+
+  .dram_loader.data :
+  {
+    . = ALIGN(16);
+
+    *libapp.a:flash_map_extended.*(.data .data.* .rodata .rodata.* .sdata .sdata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:flash_map.*(.data .data.* .rodata .rodata.* .sdata .sdata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:flash_map_default.*(.data .data.* .rodata .rodata.* .sdata .sdata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:cache_hal.*(.data .data.* .rodata .rodata.* .sdata .sdata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:mmu_hal.*(.data .data.* .rodata .rodata.* .sdata .sdata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:esp_rom_spiflash.*(.data .data.* .rodata .rodata.* .sdata .sdata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:esp_image_loader.*(.data .data.* .rodata .rodata.* .sdata .sdata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:bootloader_flash.*(.data .data.* .rodata .rodata.* .sdata .sdata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:log.*(.data .data.* .rodata .rodata.* .sdata .sdata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libkernel.a:device.*(.data .data.* .rodata .rodata.* .sdata .sdata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:printk.*(.data .data.* .rodata .rodata.* .sdata .sdata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *liblib__libc__common.a:abort.*(.data .data.* .rodata .rodata.* .sdata .sdata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *liblib__libc__picolibc.a:assert.*(.data .data.* .rodata .rodata.* .sdata .sdata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libc.a:libc_tinystdio_vfmprintf.*(.data .data.* .rodata .rodata.* .sdata .sdata.* .sdata2 .sdata2.* .srodata .srodata.*)
+
+    . = ALIGN(16);
+    _dram_loader_end = ABSOLUTE(.);
+  } > dram_loader_seg
+
+  /* Ensure the dram_loader_seg is large enough */
+  ASSERT((_dram_loader_end - ORIGIN(dram_loader_seg)) <= BOOTLOADER_DRAM_LOADER_SEG_LEN,
+    "dram_loader_seg overflow: increase BOOTLOADER_DRAM_LOADER_SEG_LEN")
 
   .iram0.vectors : ALIGN(4)
   {

@@ -17,8 +17,9 @@
 #define SRAM1_SIZE            DT_REG_SIZE(DT_NODELABEL(sram1))
 #define SRAM1_DRAM_END        (SRAM1_DRAM_START + SRAM1_SIZE)
 #define SRAM1_RESERVED_SIZE   0x8000
-#define SRAM1_DRAM_USER_START (SRAM1_DRAM_START + SRAM1_RESERVED_SIZE)
-#define SRAM1_DRAM_USER_SIZE  (0x40000000 - SRAM1_DRAM_USER_START)
+/* SRAM1_DRAM_USER_START and SRAM1_DRAM_USER_SIZE are defined below
+ * as they depend on bootloader loader segments map
+ */
 
 /* SRAM2 (200kB) data memory */
 #define SRAM2_DRAM_START      DT_REG_ADDR(DT_NODELABEL(sram2))
@@ -64,33 +65,34 @@
 #define SRAM1_DRAM_IRAM_CALC(addr_dram) (SRAM1_SIZE - (addr_dram - SRAM1_DRAM_START) + \
 					SRAM1_IRAM_START)
 
+#define BOOTLOADER_DRAM_LOADER_SEG_LEN 0x1800
+
 /* Bootloader segment start addresses (fixed by physical bank layout) */
-#define BOOTLOADER_DRAM_SEG_START        0x3ffe8000
 #define BOOTLOADER_IRAM_LOADER_SEG_START 0x40078000
 #define BOOTLOADER_IRAM_SEG_START        ALIGN_UP(SRAM1_IRAM_START, 0x400)
 
-#ifdef CONFIG_MCUBOOT_ESPRESSIF
-/* Match MCUboot Espressif Port esp32 defaults */
-#define BOOTLOADER_DRAM_SEG_LEN        0xB900
-#define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x6500
-#define BOOTLOADER_IRAM_SEG_LEN        0x9000
-#else
+#define BOOTLOADER_DRAM_LOADER_SEG_START (SRAM1_DRAM_START + SRAM1_RESERVED_SIZE)
+#define BOOTLOADER_DRAM_SEG_START \
+	(BOOTLOADER_DRAM_LOADER_SEG_START + BOOTLOADER_DRAM_LOADER_SEG_LEN)
+
 /* Bootloader segment sizes (computed from bank boundaries) */
-#define BOOTLOADER_DRAM_SEG_LEN \
-	(SRAM1_DRAM_END - BOOTLOADER_DRAM_SEG_START)
-#define BOOTLOADER_DRAM_SEG_END \
-	(BOOTLOADER_DRAM_SEG_START + BOOTLOADER_DRAM_SEG_LEN)
 #define BOOTLOADER_IRAM_LOADER_SEG_LEN \
 	((SRAM0_IRAM_START + SRAM0_CACHE_SIZE) - BOOTLOADER_IRAM_LOADER_SEG_START)
-#define BOOTLOADER_IRAM_SEG_LEN         SRAM1_SIZE
-#endif
+#define BOOTLOADER_IRAM_SEG_LEN    SRAM1_SIZE
+#define BOOTLOADER_DRAM_SEG_LEN    (SRAM1_DRAM_END - BOOTLOADER_DRAM_SEG_START)
 
-/* The `USER_IRAM_END` represents the end of staticaly allocated memory.
- * This address is where 2nd stage bootloader starts allocating memory.
- * The `iram_loader_seg` which is the last memory the bootloader runs from
- * resides in the SRAM0 'cache' area, the `user_iram_end` applies for
- * all build cases - Simple boot and the MCUboot application.
+/* The `iram_loader_seg` which is the last memory the bootloader runs from
+ * resides in the SRAM0 'cache' area and its counterpart data segment is
+ * `dram_loader_seg` allocated at the beginning of SRAM1.
+ * Since bootloader loader segments must not be overlapped by user
+ * application static allocated memory, the end of `dram_loader_seg` will
+ * set the limit boundary for user memory.
+ * The `user_iram_end` applies for all build cases - Simple boot and the
+ *  MCUboot application.
  */
+#define SRAM1_DRAM_USER_START (BOOTLOADER_DRAM_LOADER_SEG_START + BOOTLOADER_DRAM_LOADER_SEG_LEN)
+#define SRAM1_DRAM_USER_SIZE  (0x40000000 - SRAM1_DRAM_USER_START)
+
 #if defined(CONFIG_SOC_ENABLE_APPCPU) || defined(CONFIG_SOC_ESP32_APPCPU)
 #define USER_IRAM_END SRAM1_DRAM_IRAM_CALC(DRAM1_AMP_SHM_BUFFERS_END)
 #else
