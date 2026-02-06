@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		led0 = &led1;  /* LED1 is on gpio1 pin 10 */
+		sw0 = &button0; /* Button0 is on gpio1 pin 13 */
+	};
+};
+
+&gpio1 {
+	status = "okay";
+	gpiote-instance = <&gpiote20>;
+};
+
+&gpiote20 {
+	status = "okay";
+	owned-channels = <0 1>;
+};
