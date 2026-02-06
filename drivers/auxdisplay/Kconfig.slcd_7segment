@@ -1,0 +1,8 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config AUXDISPLAY_SLCD_7SEGMENT
+	bool "Common 7-Segment SLCD Display Panel"
+	default y
+	depends on DT_HAS_SLCD_7SEGMENT_ENABLED
+	select SLCD

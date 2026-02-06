@@ -1,0 +1,85 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Segment LCD Panel Device
+
+  Represents a SLCD(segment LCD) panel connected to an SLCD controller.
+  The SLCD panel defines the characteristics of the display including
+  segment type, how many positions of numbers, letters and icons, the
+  front plane pins and back plane COMs used by this panel, and the
+  multiplexing configuration.
+
+include: auxdisplay-device.yaml
+
+on-bus: slcd
+
+properties:
+  pin-list:
+    type: array
+    description: |
+      The list of front plane pins used to control the segments/icons. Each pin
+      number cannot exceed the slcd controller's total pin count minus 1.
+      This is used to support one SLCD controller controlling multiple panels, since
+      the pins that control different panels cannot overlap.
+      For example, if the controller has 16 front plane pins  and controls 2 panels,
+      the list can be <0 1 2 3 4 5 6 7> for one panel, and <8 9 10 11 12 13 14 15> for
+      another.
+
+  com-list:
+    type: array
+    description: |
+      The list of back plane coms used to control the segments/icons. Each com
+      number cannot exceed the slcd controller's total com count minus 1.
+      This is used to support one SLCD controller controlling multiple panels, since
+      the coms that control different panels cannot overlap.
+      For example, if the controller has 8 back plane COMs and controls 2 panels, the
+      com list can be <4 5 6 7> for one panel, and <0 1 2 3> for another.
+
+  segment-pins:
+    type: array
+    description: |
+      2-D array of the pins that controls each segment.
+
+      Array dimensions: num-positions x num-segments
+      For a 7-segment(segment A to G) display with 6 positions, array size
+      is 6 x 7 = 42 elements
+
+      Example: If segment A (first segment) of position 1 (zero based index) is
+      controlled by pin 8 com 3, then the (1,0) element of this array is 8.
+
+  segment-coms:
+    type: array
+    description: |
+      2-D array of the coms that controls each segment.
+
+      Array dimensions: num-positions x num-segments
+      For a 7-segment(segment A to G) display with 6 positions, array size
+      is 6 x 7 = 42 elements
+
+      Example: If segment A (first segment) of position 1 (zero based index) is
+      controlled by pin 8 com 3, then the (1,0) element of this array is 3.
+
+  num-icons:
+    type: int
+    description: |
+      Number of special icons or indicators on the display.
+      Icons are individual segments that are not part of standard character positions.
+      For example, a colon, decimal point, or status indicator would count as one icon.
+      These icons are treated as custom characters.
+
+  icon-pins:
+    type: array
+    description: |
+      1-D array of the pins that controls each icon.
+
+      Example: if icon 0 controlled by pin 15, COM4, the first element of
+      this array is 15.
+
+  icon-coms:
+    type: array
+    description: |
+      1-D array of the coms that controls each icon.
+
+      Example: if icon 0 controlled by pin 15, COM4, the first element of
+      this array is 4.
