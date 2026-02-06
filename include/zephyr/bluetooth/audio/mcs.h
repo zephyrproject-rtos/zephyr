@@ -352,9 +352,9 @@ extern "C" {
 struct bt_ots *bt_mcs_get_ots(void);
 
 /* Temporary forward declaration to avoid circular dependency */
-struct mpl_cmd;
-struct mpl_search;
-struct mpl_cmd_ntf;
+struct bt_mcp_cmd;
+struct bt_mcp_search;
+struct bt_mcp_cmd_ntf;
 
 /** @brief Callbacks when information about the player is requested via MCS */
 struct bt_mcs_cb {
@@ -620,7 +620,7 @@ struct bt_mcs_cb {
 	 *
 	 * @param command	The command to send
 	 */
-	void (*send_command)(const struct mpl_cmd *command);
+	void (*send_command)(const struct bt_mcp_cmd *command);
 
 	/**
 	 * @brief Read Commands Supported
@@ -642,7 +642,7 @@ struct bt_mcs_cb {
 	 *
 	 * @param search	The search to write
 	 */
-	void (*send_search)(const struct mpl_search *search);
+	void (*send_search)(const struct bt_mcp_search *search);
 
 	/**
 	 * @brief Read Search Results Object ID
@@ -822,7 +822,7 @@ void bt_mcs_search_results_id_changed(void);
  *
  * @param cmd_ntf	The result of the command
  */
-void bt_mcs_command_complete(const struct mpl_cmd_ntf *cmd_ntf);
+void bt_mcs_command_complete(const struct bt_mcp_cmd_ntf *cmd_ntf);
 
 /**
  * @brief Search callback
