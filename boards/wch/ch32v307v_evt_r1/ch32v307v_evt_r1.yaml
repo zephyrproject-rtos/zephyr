@@ -1,0 +1,12 @@
+identifier: ch32v307v_evt_r1
+name: WCH CH32V307V-EVT-R1 Evaluation Board
+type: mcu
+arch: riscv
+toolchain:
+  - cross-compile
+  - zephyr
+ram: 32
+flash: 256
+supported:
+  - gpio
+  - i2c
