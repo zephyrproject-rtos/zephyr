@@ -1,0 +1,50 @@
+/*
+ * Copyright (c) 2024 MASSDRIVER EI (massdriver.space)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * UF2 flash layout for Heltec T114 nRF52840
+ * App starts at 0x26000 to match original Arduino project linker
+ * [nrf52840_s140_v6.ld](https://github.com/HelTecAutomation/Heltec_nRF52/blob/main/cores/nRF5/linker/nrf52840_s140_v6.ld)
+ * MEMORY
+ * {
+ *   FLASH (rx)     : ORIGIN = 0x26000, LENGTH = 0xED000 - 0x26000
+ */
+
+/ {
+	chosen {
+		zephyr,code-partition = &code_partition;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* 0x00000-0x26000: MBR + SoftDevice S140 6.1.1 */
+		sd_partition: partition@0 {
+			label = "mbr_sd";
+			reg = <0x00000000 0x00026000>;
+			read-only;
+		};
+
+		code_partition: partition@26000 {
+			label = "code_partition";
+			reg = <0x00026000 0x000c7000>;
+		};
+
+		storage_partition: partition@ed000 {
+			label = "storage";
+			reg = <0x000ed000 0x0000f000>;
+		};
+
+		boot_partition: partition@fc000 {
+			label = "bootloader";
+			reg = <0x000fc000 0x00004000>;
+			read-only;
+		};
+	};
+};
