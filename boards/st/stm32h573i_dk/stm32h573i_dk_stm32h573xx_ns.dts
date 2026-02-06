@@ -94,6 +94,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		partition@0 {
 			label = "nor";

@@ -288,12 +288,19 @@ zephyr_udc0: &usbotg_hs1 {
 		spi-bus-width = <XSPI_OCTO_MODE>;
 		data-rate = <XSPI_DTR_TRANSFER>;
 		four-byte-opcodes;
+
+		/* XSPI external flash mapping */
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x70000000 DT_SIZE_M(64)>;
+
 		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			storage_partition: partition@3ff0000 {
 				label = "storage";

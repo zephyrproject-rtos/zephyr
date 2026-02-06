@@ -178,10 +178,10 @@ stm32_lp_tick_source: &lptim1 {
 		four-byte-opcodes;
 		status = "okay";
 
+		/* QSPI external flash mapping */
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		ranges = <0x0 0x70000000 DT_SIZE_M(64)>; /* Ext Flash mem-mapped to 0x70000000 */
+		ranges = <0x0 0x70000000 DT_SIZE_M(64)>;
 
 		ext_flash: mx25lm51245: ext-flash@0 {
 			compatible = "soc-nv-flash";
