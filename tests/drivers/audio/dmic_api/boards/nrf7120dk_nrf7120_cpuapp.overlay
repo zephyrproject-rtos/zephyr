@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Test requires loopbacks:
+ * - between P1.14 and P1.0,
+ * For best performance, PDM_CLK shall be on 'Clock pin'.
+ */
+
+/ {
+	aliases {
+		dmic-dev = &pdm20;
+	};
+};
+
+&pinctrl {
+	pdm20_default_test: pdm20_default_test {
+		group1 {
+			psels = <NRF_PSEL(PDM_CLK, 1, 14)>,
+				<NRF_PSEL(PDM_DIN, 1, 0)>;
+		};
+	};
+};
+
+&pdm20 {
+	status = "okay";
+	pinctrl-0 = <&pdm20_default_test>;
+	pinctrl-names = "default";
+	clock-source = "PCLK32M";
+};

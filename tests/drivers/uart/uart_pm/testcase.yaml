@@ -12,6 +12,7 @@ common:
     - nrf54l15bsim/nrf54l15/cpuapp
     - nrf54lm20dk/nrf54lm20a/cpuapp
     - nrf54lm20bsim/nrf54lm20a/cpuapp
+    - nrf7120dk/nrf7120/cpuapp
     - ophelia4ev/nrf54l15/cpuapp
   harness_config:
     fixture: gpio_loopback
@@ -39,6 +40,7 @@ tests:
       - nrf54l15bsim/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - nrf54lm20bsim/nrf54lm20a/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
 
   drivers.uart.pm.enhanced_poll:
@@ -50,6 +52,7 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
 
   drivers.uart.pm.int_driven:
@@ -88,4 +91,5 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp

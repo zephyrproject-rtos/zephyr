@@ -16,6 +16,8 @@ tests:
       - nrf54l15dk/nrf54l15/cpuflpr
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuflpr
+      - nrf7120dk/nrf7120/cpuapp
+      - nrf7120dk/nrf7120/cpuflpr
       - nrf5340dk/nrf5340/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
       - ophelia4ev/nrf54l15/cpuflpr
@@ -74,6 +76,8 @@ tests:
       - nrf54l15dk/nrf54l15/cpuflpr
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuflpr
+      - nrf7120dk/nrf7120/cpuapp
+      - nrf7120dk/nrf7120/cpuflpr
       - ophelia4ev/nrf54l15/cpuapp
       - ophelia4ev/nrf54l15/cpuflpr
     extra_args:
@@ -81,6 +85,8 @@ tests:
       - platform:nrf54l15dk/nrf54l15/cpuflpr:"DTC_OVERLAY_FILE=boards/nrf54l15dk_nrf54l15_dual_uart.overlay"
       - platform:nrf54lm20dk/nrf54lm20a/cpuapp:"DTC_OVERLAY_FILE=boards/nrf54lm20dk_nrf54lm20a_dual_uart.overlay"
       - platform:nrf54lm20dk/nrf54lm20a/cpuflpr:"DTC_OVERLAY_FILE=boards/nrf54lm20dk_nrf54lm20a_dual_uart.overlay"
+      - platform:nrf7120dk/nrf7120/cpuapp:"DTC_OVERLAY_FILE=boards/nrf7120dk_nrf7120_dual_uart.overlay"
+      - platform:nrf7120dk/nrf7120/cpuflpr:"DTC_OVERLAY_FILE=boards/nrf7120dk_nrf7120_dual_uart.overlay"
       - platform:ophelia4ev/nrf54l15/cpuapp:"DTC_OVERLAY_FILE=boards/nrf54l15dk_nrf54l15_dual_uart.overlay"
       - platform:ophelia4ev/nrf54l15/cpuflpr:"DTC_OVERLAY_FILE=boards/nrf54l15dk_nrf54l15_dual_uart.overlay"
     extra_configs:
@@ -92,6 +98,8 @@ tests:
       - nrf54l15dk/nrf54l15/cpuflpr
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuflpr
+      - nrf7120dk/nrf7120/cpuapp
+      - nrf7120dk/nrf7120/cpuflpr
       - ophelia4ev/nrf54l15/cpuapp
       - ophelia4ev/nrf54l15/cpuflpr
     extra_args:
@@ -99,6 +107,8 @@ tests:
       - platform:nrf54l15dk/nrf54l15/cpuflpr:"DTC_OVERLAY_FILE=boards/nrf54l15dk_nrf54l15_dual_uart.overlay"
       - platform:nrf54lm20dk/nrf54lm20a/cpuapp:"DTC_OVERLAY_FILE=boards/nrf54lm20dk_nrf54lm20a_dual_uart.overlay"
       - platform:nrf54lm20dk/nrf54lm20a/cpuflpr:"DTC_OVERLAY_FILE=boards/nrf54lm20dk_nrf54lm20a_dual_uart.overlay"
+      - platform:nrf7120dk/nrf7120/cpuapp:"DTC_OVERLAY_FILE=boards/nrf7120dk_nrf7120_dual_uart.overlay"
+      - platform:nrf7120dk/nrf7120/cpuflpr:"DTC_OVERLAY_FILE=boards/nrf7120dk_nrf7120_dual_uart.overlay"
       - platform:ophelia4ev/nrf54l15/cpuapp:"DTC_OVERLAY_FILE=boards/nrf54l15dk_nrf54l15_dual_uart.overlay"
       - platform:ophelia4ev/nrf54l15/cpuflpr:"DTC_OVERLAY_FILE=boards/nrf54l15dk_nrf54l15_dual_uart.overlay"
     extra_configs:
@@ -110,6 +120,7 @@ tests:
       fixture: uart_p1_p2_loopback
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
     extra_args: DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_cross_domain.overlay"
     extra_configs:
       - CONFIG_NRF_SYS_EVENT=y

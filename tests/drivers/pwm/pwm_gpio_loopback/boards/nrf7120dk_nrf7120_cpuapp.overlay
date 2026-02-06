@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Test requires wire connection between:
+ *  - PWM22 OUT[0] at P1.14 <-> GPIO input at P1.00
+ *  - PWM22 OUT[1] at P1.02 <-> GPIO input at P1.03
+ */
+
+/ {
+	zephyr,user {
+		pwms = <&pwm22 0 160000 PWM_POLARITY_NORMAL>,
+		       <&pwm22 1 160000 PWM_POLARITY_NORMAL>;
+
+		gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>,
+			<&gpio1 3 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&pinctrl {
+	pwm22_alt: pwm22_alt {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 1, 14)>,
+				<NRF_PSEL(PWM_OUT1, 1, 2)>;
+		};
+	};
+
+	pwm22_alt_sleep: pwm22_alt_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 1, 14)>,
+				<NRF_PSEL(PWM_OUT1, 1, 2)>;
+			low-power-enable;
+		};
+	};
+};
+
+&pwm22 {
+	pinctrl-0 = <&pwm22_alt>;
+	pinctrl-1 = <&pwm22_alt_sleep>;
+	pinctrl-names = "default", "sleep";
+	status = "okay";
+};
