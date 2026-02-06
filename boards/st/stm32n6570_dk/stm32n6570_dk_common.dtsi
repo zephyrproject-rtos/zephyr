@@ -402,6 +402,7 @@ zephyr_udc0: &usbotg_hs1 {
 		four-byte-opcodes;
 		status = "okay";
 
+		/* XSPI external flash mapping */
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges = <0x0 0x70000000 DT_SIZE_M(128)>;
@@ -411,11 +412,13 @@ zephyr_udc0: &usbotg_hs1 {
 			reg = <0x0 DT_SIZE_M(128)>;
 			write-block-size = <1>;
 			erase-block-size = <DT_SIZE_K(4)>;
+			ranges;
 
 			partitions {
 				compatible = "fixed-partitions";
 				#address-cells = <1>;
 				#size-cells = <1>;
+				ranges;
 
 				boot_partition: partition@0 {
 					label = "mcuboot";

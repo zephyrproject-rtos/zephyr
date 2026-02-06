@@ -39,6 +39,8 @@
 	status = "okay";
 
 	partitions {
+		ranges;
+
 		slot0_partition: partition@0 {
 			label = "image-0";
 			reg = <0x0 DT_SIZE_M(60)>; /* 60MB */
