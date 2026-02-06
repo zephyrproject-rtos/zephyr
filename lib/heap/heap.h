@@ -212,11 +212,6 @@ static inline void set_left_chunk_size(struct z_heap *h, chunkid_t c,
 	chunk_set(h, c, LEFT_SIZE, size);
 }
 
-static inline bool solo_free_header(struct z_heap *h, chunkid_t c)
-{
-	return big_heap(h) && (chunk_size(h, c) == 1U);
-}
-
 static inline size_t chunk_header_bytes(struct z_heap *h)
 {
 	return big_heap(h) ? 8 : 4;
@@ -253,6 +248,20 @@ static inline chunksz_t min_chunk_size(struct z_heap *h)
 	return chunksz(chunk_header_bytes(h) + 1);
 }
 
+/*
+ * Return true if chunk is undersized, i.e. smaller than min_chunk_size().
+ * Such chunks are not added to the free list because:
+ * 1) they would be too small to be allocatable anyway, and
+ * 2) they might be too small to store free list pointers.
+ * It happens that min_chunk_size() is always >= the free pointer storage size.
+ * The big_heap() condition short-circuits the comparison with a build-time
+ * constant when undersized chunks cannot occur.
+ */
+static inline bool undersized_chunk(struct z_heap *h, chunkid_t c)
+{
+	return big_heap(h) && chunk_size(h, c) < min_chunk_size(h);
+}
+
 static inline size_t chunk_usable_bytes(struct z_heap *h, chunkid_t c)
 {
 	return chunk_size(h, c) * CHUNK_UNIT - chunk_header_bytes(h);
@@ -283,7 +292,7 @@ static inline void get_alloc_info(struct z_heap *h, size_t *alloc_bytes,
 	for (c = right_chunk(h, 0); c < h->end_chunk; c = right_chunk(h, c)) {
 		if (chunk_used(h, c)) {
 			*alloc_bytes += chunk_usable_bytes(h, c);
-		} else if (!solo_free_header(h, c)) {
+		} else if (!undersized_chunk(h, c)) {
 			*free_bytes += chunk_usable_bytes(h, c);
 		}
 	}
