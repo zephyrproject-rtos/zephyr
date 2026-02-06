@@ -3749,6 +3749,14 @@ NXP Platforms (MCU):
       files:
         - boards/shields/p3t1755dp_ard_i2c/
         - boards/shields/p3t1755dp_ard_i3c/
+    - name: NXP MCU KE1xF
+      collaborators:
+        - henrikbrixandersen
+      files:
+        - boards/nxp/twr_ke18f/
+        - soc/nxp/kinetis/ke1xf/
+      files-regex:
+        - .*ke1*f.*
     - name: NXP MCU LPC11U6x
       collaborators:
         - mbittan
