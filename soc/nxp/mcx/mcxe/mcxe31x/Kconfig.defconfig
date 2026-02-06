@@ -6,11 +6,18 @@ if SOC_SERIES_MCXE31X
 config NUM_IRQS
 	default 240
 
+config MCUX_RTC_JDP_TIMER
+	default y
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000 if MCUX_RTC_JDP_TIMER
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_nodelabel_int_prop,rtc_jdp_timer,clock-frequency) if MCUX_RTC_JDP_TIMER
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
 
 config CORTEX_M_SYSTICK
-	default n if (MCUX_LPTMR_TIMER || MCUX_OS_TIMER)
+	default n if MCUX_RTC_JDP_TIMER
 
 config ROM_START_OFFSET
 	default 0x1000
