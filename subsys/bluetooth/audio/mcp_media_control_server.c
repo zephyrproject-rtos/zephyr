@@ -32,7 +32,7 @@
 
 #include "media_proxy_internal.h"
 #include "mcs_internal.h"
-#include "mpl_internal.h"
+#include "mcp_internal.h"
 
 LOG_MODULE_REGISTER(bt_mpl, CONFIG_BT_MPL_LOG_LEVEL);
 
