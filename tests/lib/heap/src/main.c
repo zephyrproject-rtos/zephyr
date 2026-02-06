@@ -45,9 +45,9 @@
  * will increase 16 bytes on 64 bit CPU.
  */
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
-#define SOLO_FREE_HEADER_HEAP_SZ (80)
+#define UNDERSIZED_CHUNK_HEAP_SZ (80)
 #else
-#define SOLO_FREE_HEADER_HEAP_SZ (64)
+#define UNDERSIZED_CHUNK_HEAP_SZ (64)
 #endif
 
 #define SCRATCH_SZ (sizeof(heapmem) / 2)
@@ -238,28 +238,28 @@ ZTEST(lib_heap, test_big_heap)
 	log_result(BIG_HEAP_SZ, &result);
 }
 
-/* Test a heap with a solo free header.  A solo free header can exist
+/* Test a heap with an undersized chunk.  An undersized chunk can exist
  * only on a heap with 64 bit CPU (or chunk_header_bytes() == 8).
  * With 64 bytes heap and 1 byte allocation on a big heap, we get:
  *
  *   0   1   2   3   4   5   6   7
- * | h | h | b | b | c | 1 | s | f |
+ * | h | h | b | b | c | 1 | u | f |
  *
  * where
  * - h: chunk0 header
  * - b: buckets in chunk0
  * - c: chunk header for the first allocation
  * - 1: chunk mem
- * - s: solo free header
+ * - u: undersized chunk
  * - f: end marker / footer
  */
-ZTEST(lib_heap, test_solo_free_header)
+ZTEST(lib_heap, test_undersized_chunk)
 {
 	struct sys_heap heap;
 
-	TC_PRINT("Testing solo free header in a heap\n");
+	TC_PRINT("Testing undersized chunk in a heap\n");
 
-	sys_heap_init(&heap, heapmem, SOLO_FREE_HEADER_HEAP_SZ);
+	sys_heap_init(&heap, heapmem, UNDERSIZED_CHUNK_HEAP_SZ);
 	if (sizeof(void *) > 4U) {
 		sys_heap_alloc(&heap, 1);
 		zassert_true(sys_heap_validate(&heap), "");

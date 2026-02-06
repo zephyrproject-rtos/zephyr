@@ -36,11 +36,11 @@ static bool valid_chunk(struct z_heap *h, chunkid_t c)
 	VALIDATE(right_chunk(h, left_chunk(h, c)) == c);
 	VALIDATE(left_chunk(h, right_chunk(h, c)) == c);
 	if (chunk_used(h, c)) {
-		VALIDATE(!solo_free_header(h, c));
+		VALIDATE(!undersized_chunk(h, c));
 	} else {
 		VALIDATE(chunk_used(h, left_chunk(h, c)));
 		VALIDATE(chunk_used(h, right_chunk(h, c)));
-		if (!solo_free_header(h, c)) {
+		if (!undersized_chunk(h, c)) {
 			VALIDATE(in_bounds(h, prev_free_chunk(h, c)));
 			VALIDATE(in_bounds(h, next_free_chunk(h, c)));
 		}
@@ -135,14 +135,14 @@ bool sys_heap_validate(struct sys_heap *heap)
 
 	/*
 	 * Walk through the chunks linearly again, verifying that all chunks
-	 * but solo headers are now USED (i.e. all free blocks were found
-	 * during enumeration).  Mark all such blocks UNUSED and solo headers
-	 * USED.
+	 * but undersized ones are now USED (i.e. all free blocks were found
+	 * during enumeration).  Mark all such blocks UNUSED and undersized
+	 * chunks USED.
 	 */
 	chunkid_t prev_chunk = 0;
 
 	for (c = right_chunk(h, 0); c < h->end_chunk; c = right_chunk(h, c)) {
-		if (!chunk_used(h, c) && !solo_free_header(h, c)) {
+		if (!chunk_used(h, c) && !undersized_chunk(h, c)) {
 			return false;
 		}
 		if (left_chunk(h, c) != prev_chunk) {
@@ -150,7 +150,7 @@ bool sys_heap_validate(struct sys_heap *heap)
 		}
 		prev_chunk = c;
 
-		set_chunk_used(h, c, solo_free_header(h, c));
+		set_chunk_used(h, c, undersized_chunk(h, c));
 	}
 	if (c != h->end_chunk) {
 		return false;  /* Should have exactly consumed the buffer */
