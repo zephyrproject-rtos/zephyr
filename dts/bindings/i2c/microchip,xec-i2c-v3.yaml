@@ -1,0 +1,66 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip XEC I2C-SMB V3 controller byte mode driver
+
+compatible: "microchip,xec-i2c-v3"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  port-sel:
+    type: int
+    required: true
+    description: |
+      XEC I2C controller has a hardware MUX to select among
+      multiple I2C ports. I2C pins must be set to their I2C
+      mode using PINCTRL. The driver can then select the pins
+      by programming the port select register field in the
+      controller's configuration register.
+
+  girqs:
+    type: array
+    required: true
+    description: array of GIRQ numbers [8:26] and bit positions [0:31]
+
+  pcr-scr:
+    type: int
+    required: true
+    description: |
+      I2C controller PCR register index and bit position encoded
+      in an integer.
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  sda-gpios:
+    type: phandle-array
+    description: |
+      I2C controller versions older than v3.8 do not make pin
+      state monitoring visible in the bit-bang register without
+      switching the pins from I2C control to bit-bang control.
+      This can cause disruption of an open I2C session. For older
+      hardware use access pin state using the GPIO driver.
+
+  scl-gpios:
+    type: phandle-array
+    description: |
+      Refer to the description of sda-gpios.
+
+  target-buf-write-req-buffer-size:
+    type: int
+    default: 8
+    description: |
+      The property allows each instance of the driver to have
+      a unique target buffer write request buffer size in bytes.
+      This property is only used if the driver is built with
+      I2C target buffer mode enabled.
