@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Henrik Brix Andersen <henrik@brixandersen.dk>
+ * Copyright (c) 2021-2026 Henrik Brix Andersen <henrik@brixandersen.dk>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,20 +13,20 @@
 #include <zephyr/irq.h>
 #include <zephyr/drivers/reset.h>
 
-LOG_MODULE_REGISTER(can_mcux_mcan, CONFIG_CAN_LOG_LEVEL);
+LOG_MODULE_REGISTER(can_nxp_lpc_mcan, CONFIG_CAN_LOG_LEVEL);
 
 #define DT_DRV_COMPAT nxp_lpc_mcan
 
 /* Message RAM Base Address register */
-#define MCUX_MCAN_MRBA    0x200
-#define MCUX_MCAN_MRBA_BA GENMASK(31, 16)
+#define NXP_LPC_MCAN_MRBA    0x200
+#define NXP_LPC_MCAN_MRBA_BA GENMASK(31, 16)
 
 /* External timestamp counter configuration register */
-#define MCUX_MCAN_ETSCC      0x400
-#define MCUX_MCAN_ETSCC_ETCP GENMASK(10, 0)
-#define MCUX_MCAN_ETSCC_ETCE BIT(31)
+#define NXP_LPC_MCAN_ETSCC      0x400
+#define NXP_LPC_MCAN_ETSCC_ETCP GENMASK(10, 0)
+#define NXP_LPC_MCAN_ETSCC_ETCE BIT(31)
 
-struct mcux_mcan_config {
+struct nxp_lpc_mcan_config {
 	mm_reg_t base;
 	mem_addr_t mram;
 	const struct device *clock_dev;
@@ -40,95 +40,95 @@ struct mcux_mcan_config {
 #endif /* CONFIG_CAN_RX_TIMESTAMP */
 };
 
-static int mcux_mcan_read_reg(const struct device *dev, uint16_t reg, uint32_t *val)
+static int nxp_lpc_mcan_read_reg(const struct device *dev, uint16_t reg, uint32_t *val)
 {
 	const struct can_mcan_config *mcan_config = dev->config;
-	const struct mcux_mcan_config *mcux_config = mcan_config->custom;
+	const struct nxp_lpc_mcan_config *nxp_lpc_config = mcan_config->custom;
 
-	return can_mcan_sys_read_reg(mcux_config->base, reg, val);
+	return can_mcan_sys_read_reg(nxp_lpc_config->base, reg, val);
 }
 
-static int mcux_mcan_write_reg(const struct device *dev, uint16_t reg, uint32_t val)
+static int nxp_lpc_mcan_write_reg(const struct device *dev, uint16_t reg, uint32_t val)
 {
 	const struct can_mcan_config *mcan_config = dev->config;
-	const struct mcux_mcan_config *mcux_config = mcan_config->custom;
+	const struct nxp_lpc_mcan_config *nxp_lpc_config = mcan_config->custom;
 
-	return can_mcan_sys_write_reg(mcux_config->base, reg, val);
+	return can_mcan_sys_write_reg(nxp_lpc_config->base, reg, val);
 }
 
-static int mcux_mcan_read_mram(const struct device *dev, uint16_t offset, void *dst, size_t len)
+static int nxp_lpc_mcan_read_mram(const struct device *dev, uint16_t offset, void *dst, size_t len)
 {
 	const struct can_mcan_config *mcan_config = dev->config;
-	const struct mcux_mcan_config *mcux_config = mcan_config->custom;
+	const struct nxp_lpc_mcan_config *nxp_lpc_config = mcan_config->custom;
 
-	return can_mcan_sys_read_mram(mcux_config->mram, offset, dst, len);
+	return can_mcan_sys_read_mram(nxp_lpc_config->mram, offset, dst, len);
 }
 
-static int mcux_mcan_write_mram(const struct device *dev, uint16_t offset, const void *src,
-				size_t len)
+static int nxp_lpc_mcan_write_mram(const struct device *dev, uint16_t offset, const void *src,
+				   size_t len)
 {
 	const struct can_mcan_config *mcan_config = dev->config;
-	const struct mcux_mcan_config *mcux_config = mcan_config->custom;
+	const struct nxp_lpc_mcan_config *nxp_lpc_config = mcan_config->custom;
 
-	return can_mcan_sys_write_mram(mcux_config->mram, offset, src, len);
+	return can_mcan_sys_write_mram(nxp_lpc_config->mram, offset, src, len);
 }
 
-static int mcux_mcan_clear_mram(const struct device *dev, uint16_t offset, size_t len)
+static int nxp_lpc_mcan_clear_mram(const struct device *dev, uint16_t offset, size_t len)
 {
 	const struct can_mcan_config *mcan_config = dev->config;
-	const struct mcux_mcan_config *mcux_config = mcan_config->custom;
+	const struct nxp_lpc_mcan_config *nxp_lpc_config = mcan_config->custom;
 
-	return can_mcan_sys_clear_mram(mcux_config->mram, offset, len);
+	return can_mcan_sys_clear_mram(nxp_lpc_config->mram, offset, len);
 }
 
-static int mcux_mcan_get_core_clock(const struct device *dev, uint32_t *rate)
+static int nxp_lpc_mcan_get_core_clock(const struct device *dev, uint32_t *rate)
 {
 	const struct can_mcan_config *mcan_config = dev->config;
-	const struct mcux_mcan_config *mcux_config = mcan_config->custom;
+	const struct nxp_lpc_mcan_config *nxp_lpc_config = mcan_config->custom;
 
-	return clock_control_get_rate(mcux_config->clock_dev, mcux_config->clock_subsys,
+	return clock_control_get_rate(nxp_lpc_config->clock_dev, nxp_lpc_config->clock_subsys,
 				      rate);
 }
 
-static int mcux_mcan_init(const struct device *dev)
+static int nxp_lpc_mcan_init(const struct device *dev)
 {
 	const struct can_mcan_config *mcan_config = dev->config;
-	const struct mcux_mcan_config *mcux_config = mcan_config->custom;
-	const uintptr_t mrba = mcux_config->mram & MCUX_MCAN_MRBA_BA;
+	const struct nxp_lpc_mcan_config *nxp_lpc_config = mcan_config->custom;
+	const uintptr_t mrba = nxp_lpc_config->mram & NXP_LPC_MCAN_MRBA_BA;
 	int err;
 
-	if (!device_is_ready(mcux_config->clock_dev)) {
+	if (!device_is_ready(nxp_lpc_config->clock_dev)) {
 		LOG_ERR("clock control device not ready");
 		return -ENODEV;
 	}
 
-	if (!device_is_ready(mcux_config->reset.dev)) {
+	if (!device_is_ready(nxp_lpc_config->reset.dev)) {
 		LOG_ERR("Reset device not ready");
 		return -ENODEV;
 	}
 
-	err = reset_line_toggle(mcux_config->reset.dev, mcux_config->reset.id);
+	err = reset_line_toggle(nxp_lpc_config->reset.dev, nxp_lpc_config->reset.id);
 	if (err) {
 		return err;
 	}
 
-	err = pinctrl_apply_state(mcux_config->pincfg, PINCTRL_STATE_DEFAULT);
+	err = pinctrl_apply_state(nxp_lpc_config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err) {
 		return err;
 	}
 
-	err = clock_control_on(mcux_config->clock_dev, mcux_config->clock_subsys);
+	err = clock_control_on(nxp_lpc_config->clock_dev, nxp_lpc_config->clock_subsys);
 	if (err) {
 		LOG_ERR("failed to enable clock (err %d)", err);
 		return -EINVAL;
 	}
 
-	err = can_mcan_write_reg(dev, MCUX_MCAN_MRBA, (uint32_t)mrba);
+	err = can_mcan_write_reg(dev, NXP_LPC_MCAN_MRBA, (uint32_t)mrba);
 	if (err != 0) {
 		return -EIO;
 	}
 
-	err = can_mcan_configure_mram(dev, mrba, mcux_config->mram);
+	err = can_mcan_configure_mram(dev, mrba, nxp_lpc_config->mram);
 	if (err != 0) {
 		return -EIO;
 	}
@@ -140,13 +140,13 @@ static int mcux_mcan_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_CAN_RX_TIMESTAMP
-	if (mcux_config->use_exteral_timestamp) {
+	if (nxp_lpc_config->use_exteral_timestamp) {
 		uint32_t reg;
 
 		/* Configure external timestamp counter prescaler and enable it */
-		reg = FIELD_PREP(MCUX_MCAN_ETSCC_ETCP, mcux_config->timestamp_prescaler - 1U) |
-			MCUX_MCAN_ETSCC_ETCE;
-		err = can_mcan_write_reg(dev, MCUX_MCAN_ETSCC, reg);
+		reg = FIELD_PREP(NXP_LPC_MCAN_ETSCC_ETCP, nxp_lpc_config->timestamp_prescaler - 1U)|
+			NXP_LPC_MCAN_ETSCC_ETCE;
+		err = can_mcan_write_reg(dev, NXP_LPC_MCAN_ETSCC, reg);
 		if (err != 0) {
 			return -EIO;
 		}
@@ -159,12 +159,12 @@ static int mcux_mcan_init(const struct device *dev)
 	}
 #endif /* CONFIG_CAN_RX_TIMESTAMP */
 
-	mcux_config->irq_config_func(dev);
+	nxp_lpc_config->irq_config_func(dev);
 
 	return 0;
 }
 
-static DEVICE_API(can, mcux_mcan_driver_api) = {
+static DEVICE_API(can, nxp_lpc_mcan_driver_api) = {
 	.get_capabilities = can_mcan_get_capabilities,
 	.start = can_mcan_start,
 	.stop = can_mcan_stop,
@@ -178,10 +178,10 @@ static DEVICE_API(can, mcux_mcan_driver_api) = {
 #endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 	.get_state = can_mcan_get_state,
 	.set_state_change_callback = can_mcan_set_state_change_callback,
-	.get_core_clock = mcux_mcan_get_core_clock,
+	.get_core_clock = nxp_lpc_mcan_get_core_clock,
 	.get_max_filters = can_mcan_get_max_filters,
 	/*
-	 * MCUX MCAN timing limits are specified in the "Nominal bit timing and
+	 * NXP LPC MCAN timing limits are specified in the "Nominal bit timing and
 	 * prescaler register (NBTP)" table in the SoC reference manual.
 	 *
 	 * Note that the values here are the "physical" timing limits, whereas
@@ -197,7 +197,7 @@ static DEVICE_API(can, mcux_mcan_driver_api) = {
 #ifdef CONFIG_CAN_FD_MODE
 	.set_timing_data = can_mcan_set_timing_data,
 	/*
-	 * MCUX MCAN data timing limits are specified in the "Data bit timing
+	 * NXP LPC MCAN data timing limits are specified in the "Data bit timing
 	 * and prescaler register (DBTP)" table in the SoC reference manual.
 	 *
 	 * Note that the values here are the "physical" timing limits, whereas
@@ -213,30 +213,30 @@ static DEVICE_API(can, mcux_mcan_driver_api) = {
 #endif /* CONFIG_CAN_FD_MODE */
 };
 
-static const struct can_mcan_ops mcux_mcan_ops = {
-	.read_reg = mcux_mcan_read_reg,
-	.write_reg = mcux_mcan_write_reg,
-	.read_mram = mcux_mcan_read_mram,
-	.write_mram = mcux_mcan_write_mram,
-	.clear_mram = mcux_mcan_clear_mram,
+static const struct can_mcan_ops nxp_lpc_mcan_ops = {
+	.read_reg = nxp_lpc_mcan_read_reg,
+	.write_reg = nxp_lpc_mcan_write_reg,
+	.read_mram = nxp_lpc_mcan_read_mram,
+	.write_mram = nxp_lpc_mcan_write_mram,
+	.clear_mram = nxp_lpc_mcan_clear_mram,
 };
 
-#define MCUX_MCAN_INIT(n)						\
+#define NXP_LPC_MCAN_INIT(n)						\
 	CAN_MCAN_DT_INST_BUILD_ASSERT_MRAM_CFG(n);			\
 	PINCTRL_DT_INST_DEFINE(n);					\
 									\
-	static void mcux_mcan_irq_config_##n(const struct device *dev); \
+	static void nxp_lpc_mcan_irq_config_##n(const struct device *dev); \
 									\
-	CAN_MCAN_DT_INST_CALLBACKS_DEFINE(n, mcux_mcan_cbs_##n);	\
-	CAN_MCAN_DT_INST_MRAM_DEFINE(n, mcux_mcan_mram_##n);	\
+	CAN_MCAN_DT_INST_CALLBACKS_DEFINE(n, nxp_lpc_mcan_cbs_##n);	\
+	CAN_MCAN_DT_INST_MRAM_DEFINE(n, nxp_lpc_mcan_mram_##n);	\
 									\
-	static const struct mcux_mcan_config mcux_mcan_config_##n = {	\
+	static const struct nxp_lpc_mcan_config nxp_lpc_mcan_config_##n = {	\
 		.base = CAN_MCAN_DT_INST_MCAN_ADDR(n),			\
-		.mram = (mem_addr_t)POINTER_TO_UINT(&mcux_mcan_mram_##n), \
+		.mram = (mem_addr_t)POINTER_TO_UINT(&nxp_lpc_mcan_mram_##n), \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
 		.clock_subsys = (clock_control_subsys_t)		\
 			DT_INST_CLOCKS_CELL(n, name),			\
-		.irq_config_func = mcux_mcan_irq_config_##n,		\
+		.irq_config_func = nxp_lpc_mcan_irq_config_##n,		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
 		.reset = RESET_DT_SPEC_INST_GET(n),			\
 		COND_CODE_1(IS_ENABLED(CONFIG_CAN_RX_TIMESTAMP),        \
@@ -245,21 +245,21 @@ static const struct can_mcan_ops mcux_mcan_ops = {
 	};								\
 									\
 	static const struct can_mcan_config can_mcan_config_##n =	\
-		CAN_MCAN_DT_CONFIG_INST_GET(n, &mcux_mcan_config_##n,	\
-					    &mcux_mcan_ops,		\
-					    &mcux_mcan_cbs_##n);	\
+		CAN_MCAN_DT_CONFIG_INST_GET(n, &nxp_lpc_mcan_config_##n,	\
+					    &nxp_lpc_mcan_ops,		\
+					    &nxp_lpc_mcan_cbs_##n);	\
 									\
 	static struct can_mcan_data can_mcan_data_##n =			\
 		CAN_MCAN_DATA_INITIALIZER(NULL);			\
 									\
-	CAN_DEVICE_DT_INST_DEFINE(n, mcux_mcan_init, NULL,		\
+	CAN_DEVICE_DT_INST_DEFINE(n, nxp_lpc_mcan_init, NULL,		\
 				  &can_mcan_data_##n,			\
 				  &can_mcan_config_##n,			\
 				  POST_KERNEL,				\
 				  CONFIG_CAN_INIT_PRIORITY,		\
-				  &mcux_mcan_driver_api);		\
+				  &nxp_lpc_mcan_driver_api);		\
 									\
-	static void mcux_mcan_irq_config_##n(const struct device *dev)	\
+	static void nxp_lpc_mcan_irq_config_##n(const struct device *dev)	\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, int0, irq),		\
 			    DT_INST_IRQ_BY_NAME(n, int0, priority),	\
@@ -274,4 +274,4 @@ static const struct can_mcan_ops mcux_mcan_ops = {
 		irq_enable(DT_INST_IRQ_BY_NAME(n, int1, irq));		\
 	}
 
-DT_INST_FOREACH_STATUS_OKAY(MCUX_MCAN_INIT)
+DT_INST_FOREACH_STATUS_OKAY(NXP_LPC_MCAN_INIT)
