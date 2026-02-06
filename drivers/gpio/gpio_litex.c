@@ -277,6 +277,9 @@ static int gpio_litex_pin_interrupt_configure(const struct device *dev,
 			break;
 		}
 
+		/* Clear any pending events for this pin, before enabling it */
+		litex_write32(BIT(pin), gpio_config->ev_pending_addr);
+
 		litex_write32(ev_enabled | BIT(pin), gpio_config->ev_enable_addr);
 
 		return 0;
