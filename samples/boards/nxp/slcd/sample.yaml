@@ -1,0 +1,18 @@
+sample:
+  description: SLCD (Segment LCD) 4-digit demo
+  name: NXP SLCD
+common:
+  tags:
+    - pytest
+    - auxdisplay
+    - slcd
+tests:
+  sample.boards.nxp.slcd:
+    depends_on:
+      - auxdisplay
+      - slcd
+    filter: CONFIG_AUXDISPLAY_MCUX_SLCD and dt_compat_enabled("nxp,slcd")
+    integration_platforms:
+      - frdm_mcxc444
+      - frdm_mcxa266
+    harness: pytest
