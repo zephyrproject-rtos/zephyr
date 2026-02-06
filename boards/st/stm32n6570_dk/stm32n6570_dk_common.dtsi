@@ -554,6 +554,10 @@ zephyr_jpegenc: &jpeg {
 	status = "okay";
 };
 
+&dma2d {
+	status = "okay";
+};
+
 &rng {
 	status = "okay";
 };
