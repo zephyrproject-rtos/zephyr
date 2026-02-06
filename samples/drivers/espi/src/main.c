@@ -99,7 +99,7 @@ struct saf_addr_info {
 	uintptr_t saf_struct_addr;
 	uintptr_t saf_exp_addr;
 };
-static const struct device *const qspi_dev = DEVICE_DT_GET(DT_NODELABEL(spi0));
+static const struct device *const qspi_dev = DEVICE_DT_GET(DT_NODELABEL(qspi0));
 static const struct device *const espi_saf_dev = DEVICE_DT_GET(DT_NODELABEL(espi_saf0));
 static uint8_t safbuf[SAF_TEST_BUF_SIZE] __aligned(4);
 static uint8_t safbuf2[SAF_TEST_BUF_SIZE] __aligned(4);

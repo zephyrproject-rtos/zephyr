@@ -39,11 +39,9 @@
 	reset-source = "ESPI_RESET";
 };
 
-&spi0 {
+&qspi0 {
 	status = "okay";
 	clock-frequency = <24000000>;
-	chip-select = <0>;
-	lines = <4>;
 };
 
 /* Disable unwanted VWs notifications
