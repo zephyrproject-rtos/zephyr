@@ -117,6 +117,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* Reserve the final 16 KiB for file system partition */
 		storage_partition: partition@7c000 {

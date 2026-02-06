@@ -137,6 +137,7 @@ zephyr_udc0: &usb {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/*
 		 * Configure partitions while leaving space for M0 BLE f/w
