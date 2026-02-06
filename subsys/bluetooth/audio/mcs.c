@@ -85,7 +85,7 @@ static struct mcs_inst {
 	/* Client states. Access and modification of these shall be guarded by the mutex */
 	struct client_state {
 		struct mcs_flags flags;
-		struct bt_mcp_cmd_ntf cmd_ntf;
+		struct bt_mcs_cmd_ntf cmd_ntf;
 #if defined(CONFIG_BT_OTS)
 		uint8_t search_control_point_result;
 #endif /* CONFIG_BT_OTS */
@@ -1030,7 +1030,7 @@ static ssize_t write_control_point(struct bt_conn *conn, const struct bt_gatt_at
 		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
-	struct bt_mcp_cmd command;
+	struct bt_mcs_cmd command;
 
 	ARG_UNUSED(attr);
 	ARG_UNUSED(write_flags);
@@ -1841,7 +1841,7 @@ void bt_mcs_media_state_changed(void)
 
 static void defer_media_control_point_ntf(struct bt_conn *conn, void *data)
 {
-	const struct bt_mcp_cmd_ntf *cmd_ntf = data;
+	const struct bt_mcs_cmd_ntf *cmd_ntf = data;
 	struct client_state *client;
 	struct mcs_flags *flags;
 	struct bt_conn_info info;
@@ -1882,7 +1882,7 @@ static void defer_media_control_point_ntf(struct bt_conn *conn, void *data)
 	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 }
 
-void bt_mcs_command_complete(const struct bt_mcp_cmd_ntf *cmd_ntf)
+void bt_mcs_command_complete(const struct bt_mcs_cmd_ntf *cmd_ntf)
 {
 	/* FIXME: Control Point notification shall be sent to operation initiator only */
 	bt_conn_foreach(BT_CONN_TYPE_LE, defer_media_control_point_ntf, (void *)cmd_ntf);

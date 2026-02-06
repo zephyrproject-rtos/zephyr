@@ -692,7 +692,7 @@ int media_proxy_ctrl_get_media_state(struct media_player *player)
 	return -EINVAL;
 }
 
-int media_proxy_ctrl_send_command(struct media_player *player, const struct bt_mcp_cmd *cmd)
+int media_proxy_ctrl_send_command(struct media_player *player, const struct bt_mcs_cmd *cmd)
 {
 	CHECKIF(player == NULL || cmd == NULL) {
 		LOG_DBG("NULL pointer");
