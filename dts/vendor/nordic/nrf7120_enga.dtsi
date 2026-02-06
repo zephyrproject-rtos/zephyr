@@ -63,10 +63,14 @@
 			clock-frequency = <32768>;
 		};
 
-		hfxo64m: hfxo64m {
-			compatible = "fixed-clock";
+		hfxo: hfxo {
+			compatible = "nordic,nrf71-hfxo";
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(64)>;
+			/* TODO: Estimated based on fixed delays in IP, will update once we can
+			 * measure with the real SOC
+			 */
+			startup-time-us = <1210>;
 		};
 
 		hfpll: hfpll {
@@ -883,7 +887,7 @@
 				 * not defined yet
 				 */
 				nordic,ficrs = <&ficr 0>;
-				nordic,out-div = <NRF_AUXPLL_OUT_DIV_12>;
+				nordic,out-div = <12>;
 				nordic,out-drive = <0>;
 				nordic,current-tune = <9>;
 				nordic,sdm-disable;
@@ -934,8 +938,11 @@
 			cpuapp_mram: mram@0 {
 				compatible = "soc-nv-flash";
 				reg = <0 DT_SIZE_K(4084)>;
+				ranges = <0x0 0 DT_SIZE_K(4084)>;
 				erase-block-size = <4096>;
 				write-block-size = <4>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 	};

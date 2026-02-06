@@ -5,7 +5,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_mcxw71.dtsi>
+#include <nxp/mcx/nxp_mcxw71.dtsi>
 #include "ubx_evkninab5_mcxw716c-pinctrl.dtsi"
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -124,12 +124,12 @@
 			reg = <0x10000 DT_SIZE_K(424)>;
 		};
 
-		slot1_partition: partition@7A000 {
-			reg = <0x7A000 DT_SIZE_K(424)>;
+		slot1_partition: partition@7a000 {
+			reg = <0x7a000 DT_SIZE_K(424)>;
 		};
 
-		storage_partition: partition@E4000 {
-			reg = <0xE4000 DT_SIZE_K(112)>;
+		storage_partition: partition@e4000 {
+			reg = <0xe4000 DT_SIZE_K(112)>;
 		};
 	};
 };

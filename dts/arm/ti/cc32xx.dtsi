@@ -118,7 +118,7 @@
 
 		adc0: adc@4402e800 {
 			compatible = "ti,cc32xx-adc";
-			reg = <0x4402E800 0x100>;
+			reg = <0x4402e800 0x100>;
 			interrupts = <EXP_ADCCH0 3>, <EXP_ADCCH1 3>, <EXP_ADCCH2 3>, <EXP_ADCCH3 3>;
 			status = "disabled";
 			#io-channel-cells = <1>;

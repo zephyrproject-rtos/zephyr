@@ -13,7 +13,7 @@
 
 		feature-volume;
 		volume-max = <0x0500>;
-		volume-min = <0xBA00>;
+		volume-min = <0xba00>;
 		volume-res = <0x100>;
 	};
 

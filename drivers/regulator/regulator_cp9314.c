@@ -577,7 +577,7 @@ static int regulator_cp9314_init(const struct device *dev)
 			return ret;
 		}
 	} else {
-		data->allow_hw_i2c_lock = 0;
+		data->allow_hw_i2c_lock = false;
 	}
 
 	ret = cp9314_do_soft_reset(dev);

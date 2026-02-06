@@ -12,4 +12,4 @@
 
 __aligned(DMA_DATA_ALIGNMENT) char tx_data[TEST_BUF_SIZE] =
 	"It is harder to be kind than to be wise........";
-__aligned(DMA_DATA_ALIGNMENT) char rx_data[TEST_BUF_SIZE] = {0};
+__aligned(DMA_DATA_ALIGNMENT) char rx_data[TEST_BUF_SIZE + GUARD_BUF_SIZE] = {0};

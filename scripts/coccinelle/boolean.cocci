@@ -1,5 +1,15 @@
-// Check violations for rule 14.4
+// Check violations for MISRA C:2012 Rule 14.4
 // https://gitlab.com/MISRA/MISRA-C/MISRA-C-2012/Example-Suite/-/blob/master/R_14_04.c
+//
+// Rule 14.4: Controlling expression shall have essentially Boolean type
+//
+// NOTE: This script is NOT enabled in CI (guideline_check.py) because it
+// causes timeouts on large files due to expensive type resolution needed
+// to check if variables in if/while conditions are boolean-typed.
+// See: https://github.com/zephyrproject-rtos/zephyr/pull/34773
+//
+// For Rule 10.1 (bool = 0/1), use boolean_strict_init.cocci instead,
+// which uses simple pattern matching and is fast enough for CI.
 //
 // Confidence: Moderate
 // Copyright: (C) 2021 Intel Corporation

@@ -156,7 +156,7 @@ change the UART by changing the ``zephyr,console`` and ``zephyr,shell-uart`` in 
 GPIO
 ----
 
-All the GPIO banks available are enabled in the :zephyr_file:`dts/arm/nxp/nxp_imx8ml_m7.dtsi`.
+All the GPIO banks available are enabled in the :zephyr_file:`dts/arm/nxp/imx/nxp_imx8ml_m7.dtsi`.
 
 System Clock
 ============

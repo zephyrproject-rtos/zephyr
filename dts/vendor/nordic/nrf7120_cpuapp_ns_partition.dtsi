@@ -51,6 +51,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* This static layout needs to be the same with the upstream TF-M layout in the
 		 * header flash_layout.h of the relevant platform. Any updates in the layout
@@ -77,14 +78,14 @@
 			reg = <0x00088000 DT_SIZE_K(8)>;
 		};
 
-		slot0_ns_partition: partition@8A000 {
+		slot0_ns_partition: partition@8a000 {
 			label = "image-0-nonsecure";
-			reg = <0x0008A000 DT_SIZE_K(844)>;
+			reg = <0x0008a000 DT_SIZE_K(844)>;
 		};
 
-		storage_partition: partition@15D000 {
+		storage_partition: partition@15d000 {
 			label = "storage";
-			reg = <0x00015D000 DT_SIZE_K(32)>;
+			reg = <0x00015d000 DT_SIZE_K(32)>;
 		};
 	};
 };

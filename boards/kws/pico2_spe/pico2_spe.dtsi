@@ -86,7 +86,7 @@
 		rst-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
 		status = "okay";
 
-		local-mac-address = [CA 2F B7 10 23 79];
+		local-mac-address = [ca 2f b7 10 23 79];
 
 		lan865x_mdio: lan865x_mdio {
 			compatible = "microchip,lan865x-mdio";

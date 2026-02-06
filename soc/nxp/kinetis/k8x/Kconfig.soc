@@ -4,20 +4,20 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_KINETIS_K8X
+config SOC_SERIES_K8X
 	bool
 	select SOC_FAMILY_KINETIS
 
 config SOC_SERIES
-	default "k8x" if SOC_SERIES_KINETIS_K8X
+	default "k8x" if SOC_SERIES_K8X
 
 config SOC_MK80F25615
 	bool
-	select SOC_SERIES_KINETIS_K8X
+	select SOC_SERIES_K8X
 
 config SOC_MK82F25615
 	bool
-	select SOC_SERIES_KINETIS_K8X
+	select SOC_SERIES_K8X
 
 config SOC
 	default "mk80f25615" if SOC_MK80F25615

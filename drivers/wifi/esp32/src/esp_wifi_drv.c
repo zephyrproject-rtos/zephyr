@@ -224,76 +224,65 @@ pkt_unref:
 
 static void scan_done_handler(void)
 {
-	uint16_t aps = 0;
-	wifi_ap_record_t *ap_list_buffer;
+	esp_err_t ret;
+	wifi_ap_record_t ap_record;
 	struct wifi_scan_result res = { 0 };
 
-	esp_wifi_scan_get_ap_num(&aps);
-	if (!aps) {
-		LOG_INF("No Wi-Fi AP found");
-		goto out;
-	}
+	while ((ret = esp_wifi_scan_get_ap_record(&ap_record)) == ESP_OK) {
+		memset(&res, 0, sizeof(struct wifi_scan_result));
 
-	ap_list_buffer = k_malloc(aps * sizeof(wifi_ap_record_t));
-	if (ap_list_buffer == NULL) {
-		LOG_INF("Failed to malloc buffer to print scan results");
-		goto out;
-	}
+		int ssid_len = strnlen(ap_record.ssid, WIFI_SSID_MAX_LEN);
 
-	if (esp_wifi_scan_get_ap_records(&aps, (wifi_ap_record_t *)ap_list_buffer) == ESP_OK) {
-		for (int k = 0; k < aps; k++) {
-			memset(&res, 0, sizeof(struct wifi_scan_result));
-			int ssid_len = strnlen(ap_list_buffer[k].ssid, WIFI_SSID_MAX_LEN);
+		res.ssid_length = ssid_len;
+		strncpy(res.ssid, ap_record.ssid, ssid_len);
+		res.rssi = ap_record.rssi;
+		res.channel = ap_record.primary;
 
-			res.ssid_length = ssid_len;
-			strncpy(res.ssid, ap_list_buffer[k].ssid, ssid_len);
-			res.rssi = ap_list_buffer[k].rssi;
-			res.channel = ap_list_buffer[k].primary;
+		memcpy(res.mac, ap_record.bssid, WIFI_MAC_ADDR_LEN);
+		res.mac_length = WIFI_MAC_ADDR_LEN;
 
-			memcpy(res.mac, ap_list_buffer[k].bssid, WIFI_MAC_ADDR_LEN);
-			res.mac_length = WIFI_MAC_ADDR_LEN;
-
-			switch (ap_list_buffer[k].authmode) {
-			case WIFI_AUTH_OPEN:
-				res.security = WIFI_SECURITY_TYPE_NONE;
-				break;
-			case WIFI_AUTH_WPA2_PSK:
-				res.security = WIFI_SECURITY_TYPE_PSK;
-				break;
-			case WIFI_AUTH_WPA3_PSK:
-				res.security = WIFI_SECURITY_TYPE_SAE;
-				break;
-			case WIFI_AUTH_WAPI_PSK:
-				res.security = WIFI_SECURITY_TYPE_WAPI;
-				break;
-			case WIFI_AUTH_WPA2_ENTERPRISE:
-				res.security = WIFI_SECURITY_TYPE_EAP;
-				break;
-			case WIFI_AUTH_WEP:
-				res.security = WIFI_SECURITY_TYPE_WEP;
-				break;
-			case WIFI_AUTH_WPA_PSK:
-				res.security = WIFI_SECURITY_TYPE_WPA_PSK;
-				break;
-			default:
-				res.security = WIFI_SECURITY_TYPE_UNKNOWN;
-				break;
-			}
-
-			if (esp32_data.scan_cb) {
-				esp32_data.scan_cb(esp32_wifi_iface, 0, &res);
-
-				/* ensure notifications get delivered */
-				k_yield();
-			}
+		switch (ap_record.authmode) {
+		case WIFI_AUTH_OPEN:
+			res.security = WIFI_SECURITY_TYPE_NONE;
+			break;
+		case WIFI_AUTH_WPA2_PSK:
+			res.security = WIFI_SECURITY_TYPE_PSK;
+			break;
+		case WIFI_AUTH_WPA3_PSK:
+			res.security = WIFI_SECURITY_TYPE_SAE;
+			break;
+		case WIFI_AUTH_WAPI_PSK:
+			res.security = WIFI_SECURITY_TYPE_WAPI;
+			break;
+		case WIFI_AUTH_WPA2_ENTERPRISE:
+			res.security = WIFI_SECURITY_TYPE_EAP;
+			break;
+		case WIFI_AUTH_WEP:
+			res.security = WIFI_SECURITY_TYPE_WEP;
+			break;
+		case WIFI_AUTH_WPA_PSK:
+			res.security = WIFI_SECURITY_TYPE_WPA_PSK;
+			break;
+		default:
+			res.security = WIFI_SECURITY_TYPE_UNKNOWN;
+			break;
 		}
-	} else {
-		LOG_INF("Unable to retrieve AP records");
+
+		if (esp32_data.scan_cb) {
+			esp32_data.scan_cb(esp32_wifi_iface, 0, &res);
+
+			/* ensure notifications get delivered */
+			k_yield();
+		}
 	}
 
-	k_free(ap_list_buffer);
+	if (ret != ESP_FAIL) {
+		LOG_WRN("scan fetch failed unexpectedly: %d", ret);
+	}
 
-out:
+	/* Ensure the hardware releases any records we didn't fetch */
+	esp_wifi_clear_ap_list();
+
 	/* report end of scan event */
 	esp32_data.scan_cb(esp32_wifi_iface, 0, NULL);
 	esp32_data.scan_cb = NULL;

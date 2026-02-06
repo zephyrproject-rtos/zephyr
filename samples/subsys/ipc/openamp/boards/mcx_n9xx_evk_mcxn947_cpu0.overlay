@@ -20,7 +20,7 @@
 	soc {
 		mailbox0: mailbox@400b2000 {
 			compatible = "nxp,lpc-mailbox";
-			reg = <0x400b2000 0xEC>;
+			reg = <0x400b2000 0xec>;
 			interrupts = <54 0>;
 			resets = <&reset NXP_SYSCON_RESET(0, 26)>;
 			status = "okay";

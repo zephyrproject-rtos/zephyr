@@ -331,8 +331,8 @@ int pat9136_encode(const struct device *dev,
 	int err;
 
 	edata->header.channels = 0;
-	edata->header.events.drdy = 0;
-	edata->header.events.motion = 0;
+	edata->header.events.drdy = false;
+	edata->header.events.motion = false;
 
 	for (size_t i = 0 ; i < num_channels; i++) {
 		edata->header.channels |= pat9136_encode_channel(channels[i].chan_type);

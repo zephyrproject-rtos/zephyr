@@ -36,8 +36,10 @@
  *
  */
 
+#if defined(CONFIG_INSTRUMENTATION_DYNAMIC_TRIGGER)
 const struct device *instrumentation_triggers =
 	DEVICE_DT_GET(DT_NODELABEL(instrumentation_triggers));
+#endif
 
 static bool _instr_initialized;
 static bool _instr_enabled;
@@ -46,6 +48,7 @@ static bool _instr_tracing_disabled;
 static bool _instr_profiling_disabled;
 static bool _instr_tracing_supported = IS_ENABLED(CONFIG_INSTRUMENTATION_MODE_CALLGRAPH);
 static bool _instr_profiling_supported = IS_ENABLED(CONFIG_INSTRUMENTATION_MODE_STATISTICAL);
+static bool _instr_dynamic_trigger_supported = IS_ENABLED(CONFIG_INSTRUMENTATION_DYNAMIC_TRIGGER);
 
 #if defined(CONFIG_INSTRUMENTATION_MODE_STATISTICAL)
 /*
@@ -100,6 +103,11 @@ bool instr_profiling_supported(void)
 	return _instr_profiling_supported;
 }
 
+bool instr_dynamic_trigger_supported(void)
+{
+	return _instr_dynamic_trigger_supported;
+}
+
 __no_instrumentation__
 int instr_init(void)
 {
@@ -114,8 +122,9 @@ int instr_init(void)
 	 * infinite recursion in the handler since instr_initialized() will return 0 and
 	 * instr_init() will be called again.
 	 */
-	_instr_initialized = 1;
+	_instr_initialized = true;
 
+#if defined(CONFIG_INSTRUMENTATION_DYNAMIC_TRIGGER)
 	if (retention_is_valid(instrumentation_triggers)) {
 		/* Retained mem is already initialized, load trigger and stopper addresses */
 		retention_read(instrumentation_triggers, 0, (uint8_t *)&trigger_callee,
@@ -131,6 +140,10 @@ int instr_init(void)
 		retention_write(instrumentation_triggers, sizeof(trigger_callee),
 				(const uint8_t *)&stopper_callee, sizeof(stopper_callee));
 	}
+#else
+	trigger_callee = k_trigger_callee;
+	stopper_callee = k_stopper_callee;
+#endif
 
 #if defined(CONFIG_INSTRUMENTATION_MODE_CALLGRAPH)
 	/* Initialize ring buffer */
@@ -246,8 +259,10 @@ void instr_set_trigger_func(void *callee)
 	/* Update trigger_callee before updating retained mem */
 	trigger_callee = callee;
 
+#if defined(CONFIG_INSTRUMENTATION_DYNAMIC_TRIGGER)
 	retention_write(instrumentation_triggers, 0, (const uint8_t *)&trigger_callee,
 			sizeof(trigger_callee));
+#endif
 }
 
 __no_instrumentation__
@@ -256,8 +271,10 @@ void instr_set_stop_func(void *callee)
 	/* Update stopper_callee before updating retained mem */
 	stopper_callee = callee;
 
+#if defined(CONFIG_INSTRUMENTATION_DYNAMIC_TRIGGER)
 	retention_write(instrumentation_triggers, sizeof(trigger_callee),
 			(const uint8_t *)&stopper_callee, sizeof(stopper_callee));
+#endif
 }
 
 __no_instrumentation__
@@ -345,7 +362,7 @@ void push_callee_timestamp(void *callee)
 	/* Find callee in the discovered function array */
 	for (curr_func = 0; curr_func < num_disco_func; curr_func++) {
 		if (disco_func[curr_func].addr == callee) {
-			found = 1;
+			found = true;
 			break;
 		}
 	}
@@ -570,7 +587,7 @@ void instr_event_handler(enum instr_event_types type, void *callee, void *caller
 
 		if (!IS_ENABLED(CONFIG_INSTRUMENTATION_MODE_CALLGRAPH_BUFFER_OVERWRITE) &&
 				instr_buffer_space_get() < sizeof(struct instr_record)) {
-			_instr_tracing_disabled = 1;
+			_instr_tracing_disabled = true;
 			return;
 		}
 

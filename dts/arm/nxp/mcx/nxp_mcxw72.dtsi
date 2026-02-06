@@ -1,0 +1,78 @@
+/*
+ * Copyright 2024-2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nxp_mcxw7x_common.dtsi"
+
+&fast_peripheral1 {
+	smu2: smu2@1c0000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "SMU2";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+		reg = <0x1c0000 DT_SIZE_K(64)>;
+
+		shmem_fwk: memory@200 {
+			reg = <0x200 0x20>;
+		};
+
+		shmem_rpmsg: memory@220 {
+			reg = <0x220 0xa00>;
+		};
+	};
+};
+
+&fmu {
+	ranges = <0x0 0x10000000 DT_SIZE_M(2)>;
+};
+
+&flash {
+	reg = <0x0 DT_SIZE_M(2)>;
+};
+
+&ctcm {
+	ranges = <0x0 0x14000000 DT_SIZE_K(32)>;
+};
+
+&ctcm0 {
+	reg = <0x0 DT_SIZE_K(32)>;
+};
+
+&stcm {
+	ranges = <0x0 0x30000000 DT_SIZE_K(232)>;
+};
+
+&stcm0 {
+	reg = <0x0 DT_SIZE_K(232)>;
+};
+
+&pbridge2 {
+	reg = <0x0 0x54000>;
+};
+
+&porta {
+	reg = <0x42000 0xf0>;
+};
+
+&portb {
+	reg = <0x43000 0xf0>;
+};
+
+&portc {
+	reg = <0x44000 0xf0>;
+};
+
+&portd {
+	reg = <0x45000 0xf0>;
+};
+
+&smu2 {
+	ranges = <0x0 0x1c0000 DT_SIZE_K(80)>;
+};
+
+&rtc {
+	reg = <0x4002c000 0x60>;
+};

@@ -9,7 +9,7 @@
 		nvme0: nvme0 {
 			compatible = "nvme-controller";
 
-			vendor-id = <0x1B36>; /* Subject to change based on hardware used */
+			vendor-id = <0x1b36>; /* Subject to change based on hardware used */
 			device-id = <0x0010>; /* Subject to change based on hardware used */
 
 			status = "okay";

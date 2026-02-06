@@ -1,8 +1,12 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /dts-v1/;
 
-#include <nxp/nxp_kw41z.dtsi>
+#include <nxp/kinetis/nxp_kw41z.dtsi>
 #include "frdm_kw41z-pinctrl.dtsi"
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>

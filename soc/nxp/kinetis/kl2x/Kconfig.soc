@@ -3,16 +3,16 @@
 # Copyright 2017,2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_KINETIS_KL2X
+config SOC_SERIES_KL2X
 	bool
 	select SOC_FAMILY_KINETIS
 
 config SOC_SERIES
-	default "kl2x" if SOC_SERIES_KINETIS_KL2X
+	default "kl2x" if SOC_SERIES_KL2X
 
 config SOC_MKL25Z4
 	bool
-	select SOC_SERIES_KINETIS_KL2X
+	select SOC_SERIES_KL2X
 
 config SOC
 	default "mkl25z4" if SOC_MKL25Z4

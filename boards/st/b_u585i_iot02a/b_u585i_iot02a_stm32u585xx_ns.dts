@@ -33,6 +33,12 @@
 		zephyr,sram = &sram3;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_ns_partition;
+		zephyr,entropy = &psa_rng;
+	};
+
+	psa_rng: psa-rng {
+		compatible = "zephyr,psa-crypto-rng";
+		status = "okay";
 	};
 
 	aliases {

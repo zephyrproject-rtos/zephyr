@@ -8,7 +8,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if SOC_SERIES_KINETIS_K2X
+if SOC_SERIES_K2X
 
 config GPIO
 	default y if SOC_MK22F51212
@@ -29,4 +29,4 @@ config KINETIS_FLASH_CONFIG_FOPT
 	default 0xF9
 	depends on KINETIS_FLASH_CONFIG
 
-endif # SOC_SERIES_KINETIS_K2X
+endif # SOC_SERIES_K2X

@@ -271,8 +271,11 @@
 		mram1x: mram@e000000 {
 			compatible = "nordic,mram";
 			reg = <0xe000000 DT_SIZE_K(2048)>;
+			ranges = <0x0 0xe000000 DT_SIZE_K(2048)>;
 			erase-block-size = <4096>;
 			write-block-size = <16>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 
 		uicr: uicr@fff8000 {
@@ -596,28 +599,28 @@
 					reg = <0x9000 0x1000>;
 				};
 
-				atbreplicator212: atbreplicator@A000 {
-					reg = <0xA000 0x1000>;
+				atbreplicator212: atbreplicator@a000 {
+					reg = <0xa000 0x1000>;
 				};
 
-				atbreplicator213: atbreplicator@B000 {
-					reg = <0xB000 0x1000>;
+				atbreplicator213: atbreplicator@b000 {
+					reg = <0xb000 0x1000>;
 				};
 
-				atbfunnel210: atbfunnel@C000 {
-					reg = <0xC000 0x1000>;
+				atbfunnel210: atbfunnel@c000 {
+					reg = <0xc000 0x1000>;
 				};
 
-				atbfunnel211: atbfunnel@D000 {
-					reg = <0xD000 0x1000>;
+				atbfunnel211: atbfunnel@d000 {
+					reg = <0xd000 0x1000>;
 				};
 
-				atbfunnel212: atbfunnel@E000 {
-					reg = <0xE000 0x1000>;
+				atbfunnel212: atbfunnel@e000 {
+					reg = <0xe000 0x1000>;
 				};
 
-				atbfunnel213: atbfunnel@F000 {
-					reg = <0xF000 0x1000>;
+				atbfunnel213: atbfunnel@f000 {
+					reg = <0xf000 0x1000>;
 				};
 			};
 		};
@@ -681,7 +684,7 @@
 				#clock-cells = <0>;
 				nordic,ficrs = <&ficr NRF_FICR_TRIM_GLOBAL_CANPLL_TRIM_CTUNE>;
 				nordic,frequency = <NRF_AUXPLL_FREQ_DIV_MIN>;
-				nordic,out-div = <NRF_AUXPLL_OUT_DIV_2>;
+				nordic,out-div = <2>;
 				nordic,out-drive = <0>;
 				nordic,current-tune = <6>;
 				nordic,sdm-disable;

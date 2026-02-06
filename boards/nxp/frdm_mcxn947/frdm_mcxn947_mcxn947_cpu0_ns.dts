@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_mcxn94x_ns.dtsi>
+#include <nxp/mcx/nxp_mcxn94x_ns.dtsi>
 #include "frdm_mcxn947.dtsi"
 
 / {
@@ -54,6 +54,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/*
 		 * All partition sizes must be aligned to the flash memory sector size (8 KB).
@@ -88,9 +89,9 @@
 		};
 
 		/* Non-secure image - secondary */
-		slot1_ns_partition: partition@E0000 {
+		slot1_ns_partition: partition@e0000 {
 			label = "image-1-non-secure";
-			reg = <0x000E0000 DT_SIZE_K(256)>;  /* 256 KB */
+			reg = <0x000e0000 DT_SIZE_K(256)>;  /* 256 KB */
 		};
 
 		/* Protected Storage (PS) */

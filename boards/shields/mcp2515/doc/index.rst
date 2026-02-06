@@ -336,12 +336,104 @@ For more information about the Adafruit PiCowbell CAN Bus shield:
 - `MCP2515 Datasheet`_
 - `TJA1051 Datasheet`_
 
+Seeed Studio XIAO CAN Bus Shield
+********************************
+
+Overview
+--------
+
+The Seeed Studio XIAO CAN Bus Shield is specifically designed to work with
+`Seeed Studio XIAO series`_ development boards. It uses the Microchip MCP2515
+CAN controller with an SN65HVD230 high speed CAN transceiver. The shield has
+an Seeed Studio XIAO compatible hardware interface.
+
+.. figure:: seeed_xiao_can.jpg
+   :align: center
+   :alt: Seeed Studio XIAO CAN Bus Shield
+
+   Seeed Studio XIAO CAN Bus Shield
+
+Hardware
+--------
+
+The Seeed Studio XIAO CAN Bus Shield requires the SPI chip-select and interrupt
+line on Seeed Studio XIAO header pins that are not standardized for Zephyr.
+They conflict with the standardized use of the first UART on pin D6 (TX) and
+D7 (RX). The shield resolves this conflict by disabling the UART.
+
+This means that the Zephyr console can no longer be accessed via the serial
+interface, an alternative such as the USB CDC/ACM class must be used instead,
+e.g. with ``--snippet cdc-acm-console`` when you invoke ``west build``.
+
+- MCP2515
+
+        - Stand-Alone CAN 2.0B Controller
+        - Up to 1Mb/s baud rate
+        - Standard and extended data and remote frames
+        - 3x Tx Buffers
+        - 2x Rx Buffers
+        - 6x 29-bit Filters
+        - 2x 29-bit Masks
+        - Interrupt output
+        - One shot mode
+        - High speed SPI interface (10 MHz)
+
+- SN65HVD230
+
+        - Fully compatible with the “ISO 11898” standard
+        - High speed (up to 1 Mbaud)
+
+- Connectivity
+
+        - Screw terminal block - 3-pin 3.5mm (CAN)
+        - Solder pad for CAN bus termination
+        - Seeed Studio XIAO compatible (SPI)
+
++-------+-----------------------+---------------------------+
+| Name  | Function (original)   | Usage                     |
++=======+=======================+===========================+
+| D0    | None                  |                           |
++-------+-----------------------+---------------------------+
+| D1    | None                  |                           |
++-------+-----------------------+---------------------------+
+| D2    | None                  |                           |
++-------+-----------------------+---------------------------+
+| D3    | None                  |                           |
++-------+-----------------------+---------------------------+
+| D4    | None (I2C-SDA)        |                           |
++-------+-----------------------+---------------------------+
+| D5    | None (I2C-SCL)        |                           |
++-------+-----------------------+---------------------------+
+| D6    | GPIO_ACTIVE_LOW (TX)  | MCP2515 - INT             |
++-------+-----------------------+---------------------------+
+| D7    | SPI-CS (RX)           | MCP2515                   |
++-------+-----------------------+---------------------------+
+| D8    | SPI-CLK               | MCP2515                   |
++-------+-----------------------+---------------------------+
+| D9    | SPI-MOSI              | MCP2515                   |
++-------+-----------------------+---------------------------+
+| D10   | SPI-MISO              | MCP2515                   |
++-------+-----------------------+---------------------------+
+
+
+- Power Supply
+
+        - 3.3V ~ 5V
+
+For more information about the Seeed Studio XIAO CAN Bus shield:
+
+- `Seeed Studio Website`_
+- `Seeed Studio Wiki`_
+- `MCP2515 Datasheet`_
+- `SN65HVD230 Datasheet`_
+
 Programming
 ***********
 
 Set ``--shield dfrobot_can_bus_v2_0`` or ``--shield keyestudio_can_bus_ks0411``
-or ``--shield adafruit_can_picowbell`` when you invoke ``west build`` or ``cmake`` in your Zephyr application. For
-example:
+or ``--shield adafruit_can_picowbell`` or ``--shield seeed_xiao_can``
+when you invoke ``west build`` or ``cmake`` in your Zephyr application.
+For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/can/counter
@@ -362,6 +454,14 @@ example:
    :tool: all
    :board: rpi_pico
    :shield: adafruit_can_picowbell
+   :goals: build
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/can/counter
+   :tool: all
+   :board: xiao_rp2040
+   :shield: seeed_xiao_can
+   :snippets: cdc-acm-console
    :goals: build
 
 .. _DFRobot Website:
@@ -393,3 +493,15 @@ example:
 
 .. _TJA1051 Datasheet:
    https://www.nxp.com/docs/en/data-sheet/TJA1051.pdf
+
+.. _Seeed Studio XIAO series:
+   https://wiki.seeedstudio.com/SeeedStudio_XIAO_Series_Introduction
+
+.. _Seeed Studio Website:
+   https://www.seeedstudio.com/Seeed-Studio-CAN-Bus-Breakout-Board-for-XIAO-and-QT-Py-p-5702.html
+
+.. _Seeed Studio Wiki:
+   https://wiki.seeedstudio.com/xiao-can-bus-expansion
+
+.. _SN65HVD230 Datasheet:
+   https://www.ti.com/lit/ds/symlink/sn65hvd230.pdf

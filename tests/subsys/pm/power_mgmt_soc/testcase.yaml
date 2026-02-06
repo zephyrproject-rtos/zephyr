@@ -32,6 +32,11 @@ tests:
       - frdm_mcxn236
       - mcxw23_evk
       - frdm_mcxw23
+      - frdm_mcxa153
+      - frdm_mcxa156
+      - frdm_mcxa266
+      - frdm_mcxa346
+      - frdm_mcxa366
     tags: pm
     integration_platforms:
       - mec15xxevb_assy6853

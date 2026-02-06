@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_mcxa5x.dtsi>
+#include <nxp/mcx/nxp_mcxa5x.dtsi>
 #include "frdm_mcxa577-pinctrl.dtsi"
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -169,9 +169,9 @@
 			reg = <0x00100000 DT_SIZE_K(896)>;
 		};
 
-		storage_partition: partition@1E0000 {
+		storage_partition: partition@1e0000 {
 			label = "storage";
-			reg = <0x001E0000 DT_SIZE_K(128)>;
+			reg = <0x001e0000 DT_SIZE_K(128)>;
 		};
 	};
 };

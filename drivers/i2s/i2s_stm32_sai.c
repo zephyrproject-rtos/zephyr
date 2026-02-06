@@ -474,6 +474,53 @@ static void dma_callback(const struct device *dma_dev, void *arg, uint32_t chann
 	HAL_DMA_IRQHandler(hdma);
 }
 
+#if defined(CONFIG_SOC_SERIES_STM32F4X)
+static int i2s_stm32_sai_f4_clock_source_configure(const struct device *dev)
+{
+	const struct i2s_stm32_sai_cfg *const cfg = dev->config;
+	struct i2s_stm32_sai_data *const dev_data = dev->data;
+	SAI_HandleTypeDef *hsai = &dev_data->hsai;
+	uint32_t clock_source = 0U;
+
+	if (cfg->pclk_len > 1) {
+		clock_source = cfg->pclken[1].bus;
+	}
+
+	switch (clock_source) {
+#if defined(STM32F413xx) || defined(STM32F423xx)
+	case STM32_SRC_PLLI2S_POST_R:
+		hsai->Init.ClockSource = SAI_CLKSOURCE_PLLI2S;
+		break;
+
+	case STM32_SRC_PLL_POST_R:
+		hsai->Init.ClockSource = SAI_CLKSOURCE_PLLR;
+		break;
+
+	case STM32_SRC_HSI:
+		hsai->Init.ClockSource = SAI_CLKSOURCE_HS;
+		break;
+#else /* STM32F413xx || STM32F423xx */
+	case STM32_SRC_PLLSAI_POST_Q:
+		hsai->Init.ClockSource = SAI_CLKSOURCE_PLLSAI;
+		break;
+
+	case STM32_SRC_PLLI2S_POST_Q:
+		hsai->Init.ClockSource = SAI_CLKSOURCE_PLLI2S;
+		break;
+#endif /* STM32F413xx || STM32F423xx */
+	case 0U:
+		/* No source clock defined. Do nothing. */
+		break;
+
+	default:
+		LOG_ERR("Wrong source clock defined.");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_SOC_SERIES_STM32F4X */
+
 static int i2s_stm32_sai_configure(const struct device *dev, enum i2s_dir dir,
 				   const struct i2s_config *i2s_cfg)
 {
@@ -491,6 +538,18 @@ static int i2s_stm32_sai_configure(const struct device *dev, enum i2s_dir dir,
 	    i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE) {
 		stream->master = false;
 	}
+
+#if defined(CONFIG_SOC_SERIES_STM32F4X)
+	int err;
+
+	/* ON F4x, the HAL modifies the RCC to set the source clock, so it is necessary to define
+	 * the ClockSource Init parameter.
+	 */
+	err = i2s_stm32_sai_f4_clock_source_configure(dev);
+	if (err != 0) {
+		return err;
+	}
+#endif /* CONFIG_SOC_SERIES_STM32F4X */
 
 	hsai->Init.Synchro = SAI_ASYNCHRONOUS;
 

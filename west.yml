@@ -210,7 +210,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 683b4077c6760ece043e55bb2d7dc9d1996c7ffd
+      revision: c6f70690ab1a55c5d7f76f67eca6f0dcfa906e33
       path: modules/hal/nxp
       groups:
         - hal
@@ -245,12 +245,12 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: ea72a5dd0fa0ed5254a27e9181abf42ae21782f7
+      revision: 4db87e248dba7ebcb113c4d9e3d096dd4df22de6
       path: modules/hal/silabs
       groups:
         - hal
     - name: hal_st
-      revision: 6d963459acecfd2f9748ab506385a3188d8768f0
+      revision: 7a792882847223c72944791e0c48eed6101e6569
       path: modules/hal/st
       groups:
         - hal
@@ -291,7 +291,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 7c5d886f4b1afd6d00192e346268f03f5f44354c
+      revision: f5708c522793b0de59f467080a33caac769cd525
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3

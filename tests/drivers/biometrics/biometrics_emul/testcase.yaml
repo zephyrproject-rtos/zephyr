@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Siratul Islam
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.biometrics.biometrics_emul:
+    integration_platforms:
+      - native_sim
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    tags:
+      - biometrics
+      - drivers

@@ -27,32 +27,32 @@
 
 		slot1_partition: partition@fe0000 {
 			label = "image-1";
-			reg = <0xFE0000 DT_SIZE_K(16128)>;
+			reg = <0xfe0000 DT_SIZE_K(16128)>;
 		};
 
 		slot0_lpcore_partition: partition@1fa0000 {
 			label = "image-0-lpcore";
-			reg = <0x1FA0000 DT_SIZE_K(32)>;
+			reg = <0x1fa0000 DT_SIZE_K(32)>;
 		};
 
 		slot1_lpcore_partition: partition@1fa8000 {
 			label = "image-1-lpcore";
-			reg = <0x1FA8000 DT_SIZE_K(32)>;
+			reg = <0x1fa8000 DT_SIZE_K(32)>;
 		};
 
 		storage_partition: partition@1fb0000 {
 			label = "storage";
-			reg = <0x1FB0000 DT_SIZE_K(192)>;
+			reg = <0x1fb0000 DT_SIZE_K(192)>;
 		};
 
 		scratch_partition: partition@1fe0000 {
 			label = "image-scratch";
-			reg = <0x1FE0000 DT_SIZE_K(124)>;
+			reg = <0x1fe0000 DT_SIZE_K(124)>;
 		};
 
 		coredump_partition: partition@1fff000 {
 			label = "coredump";
-			reg = <0x1FFF000 DT_SIZE_K(4)>;
+			reg = <0x1fff000 DT_SIZE_K(4)>;
 		};
 	};
 };

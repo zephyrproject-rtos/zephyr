@@ -191,7 +191,15 @@ void soc_early_init_hook(void)
 	tmp &= ~HBN_REG_EN_AON_CTRL_GPIO_MSK;
 	sys_write32(tmp, HBN_BASE + HBN_PAD_CTRL_0_OFFSET);
 
-	/* TODO: 'em' config for ble goes here */
-
 	irq_unlock(key);
+}
+
+void soc_prep_hook(void)
+{
+	uint32_t tmp;
+
+	/* Disable default EM zone before data relocation happens */
+	tmp = sys_read32(GLB_BASE + GLB_SRAM_CFG3_OFFSET);
+	tmp &= GLB_EM_SEL_UMSK;
+	sys_write32(tmp, GLB_BASE + GLB_SRAM_CFG3_OFFSET);
 }

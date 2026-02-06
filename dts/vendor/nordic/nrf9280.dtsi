@@ -114,8 +114,11 @@
 		mram1x: mram@e000000 {
 			compatible = "nordic,mram";
 			reg = <0xe000000 DT_SIZE_K(8192)>;
+			ranges = <0x0 0xe000000 DT_SIZE_K(8192)>;
 			erase-block-size = <4096>;
 			write-block-size = <16>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 
 		uicr: uicr@fff8000 {
@@ -447,7 +450,7 @@
 				#clock-cells = <0>;
 				nordic,ficrs = <&ficr NRF_FICR_TRIM_GLOBAL_CANPLL_TRIM_CTUNE>;
 				nordic,frequency = <NRF_AUXPLL_FREQ_DIV_MIN>;
-				nordic,out-div = <NRF_AUXPLL_OUT_DIV_2>;
+				nordic,out-div = <2>;
 				nordic,out-drive = <0>;
 				nordic,current-tune = <6>;
 				nordic,sdm-disable;

@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2025 Realtek Semiconductor, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_DRIVERS_WATCHDOG_WDT_RTS_RTS5817_H_
+#define ZEPHYR_DRIVERS_WATCHDOG_WDT_RTS_RTS5817_H_
+
+#define WDOG_EN_OFFSET 0
+#define WDOG_EN_MASK   BIT(0)
+
+#define WDOG_CLR_OFFSET 1
+#define WDOG_CLR_MASK   BIT(1)
+
+#define WDOG_TIME_OFFSET 2
+#define WDOG_TIME_MASK   GENMASK(3, 2)
+
+#define WDOG_REG_RST_EN_OFFSET 4
+#define WDOG_REG_RST_EN_MASK   BIT(4)
+
+#define WDOG_BUS_RST_EN_OFFSET 5
+#define WDOG_BUS_RST_EN_MASK   BIT(5)
+
+#define WDOG_INT_EN_OFFSET 6
+#define WDOG_INT_EN_MASK   BIT(6)
+
+#define WDOG_INT_CLR_OFFSET 7
+#define WDOG_INT_CLR_MASK   BIT(7)
+
+#define WDOG_INT_OFFSET 8
+#define WDOG_INT_MASK   BIT(8)
+
+#define WDOG_INT_SEL_OFFSET 9
+#define WDOG_INT_SEL_MASK   BIT(9)
+
+#define WDOG_CNT_OFFSET 16
+#define WDOG_CNT_MASK   GENMASK(31, 16)
+
+#endif /* ZEPHYR_DRIVERS_WATCHDOG_WDT_RTS_RTS5817_H_ */

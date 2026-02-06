@@ -121,4 +121,6 @@ source "drivers/watchdog/Kconfig.xlnx"
 source "drivers/watchdog/Kconfig.xmc4xxx"
 # zephyr-keep-sorted-stop
 
+source "drivers/watchdog/Kconfig.rts5817"
+
 endif # WATCHDOG

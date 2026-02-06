@@ -614,14 +614,18 @@ int fs_stat(const char *abs_path, struct fs_dirent *entry)
 	size_t path_len;
 
 	if ((abs_path == NULL) || (abs_path[0] != '/')) {
-		path_len = 0;
-	} else {
-		path_len = strlen(abs_path);
-	}
-
-	if (path_len <= 1) {
 		LOG_ERR("invalid file or dir name!!");
 		return -EINVAL;
+	}
+
+	path_len = strlen(abs_path);
+	if (path_len == 1) {
+		/* Stat on the root directory */
+		entry->type = FS_DIR_ENTRY_DIR;
+		entry->name[0] = '/';
+		entry->name[1] = '\0';
+		entry->size = 0;
+		return 0;
 	}
 
 	rc = fs_get_mnt_point(&mp, abs_path, &mp_len);

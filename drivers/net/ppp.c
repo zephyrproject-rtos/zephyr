@@ -94,7 +94,6 @@ struct ppp_driver_context {
 #endif
 
 	uint8_t mac_addr[6];
-	struct net_linkaddr ll_addr;
 
 	/* Flag that tells whether this instance is initialized or not */
 	atomic_t modem_init_done;
@@ -1005,10 +1004,8 @@ use_random_mac:
 	}
 
 	/* The MAC address is not really used, but the network interface expects to find one. */
-	(void)net_linkaddr_set(&ppp->ll_addr, ppp->mac_addr, sizeof(ppp->mac_addr));
 
-	net_if_set_link_addr(iface, ppp->ll_addr.addr, ppp->ll_addr.len,
-			     NET_LINK_ETHERNET);
+	net_if_set_link_addr(iface, ppp->mac_addr, sizeof(ppp->mac_addr), NET_LINK_ETHERNET);
 
 	if (IS_ENABLED(CONFIG_NET_PPP_CAPTURE)) {
 		static bool capture_setup_done;

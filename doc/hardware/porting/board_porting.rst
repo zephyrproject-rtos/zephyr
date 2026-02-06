@@ -448,12 +448,13 @@ respectively. Both boards have NXP SoCs from the same Kinetis SoC family, the
 K6X.
 
 Common devicetree definitions for K6X are stored in :zephyr_file:`nxp_k6x.dtsi
-<dts/arm/nxp/nxp_k6x.dtsi>`, which is included by both board :file:`.dts`
-files. :zephyr_file:`nxp_k6x.dtsi<dts/arm/nxp/nxp_k6x.dtsi>` in turn includes
+<dts/arm/nxp/kinetis/nxp_k6x.dtsi>`, which is included by both board
+:file:`.dts` files. :zephyr_file:`nxp_k6x.dtsi<dts/arm/nxp/kinetis/nxp_k6x.dtsi>`
+in turn includes
 :zephyr_file:`armv7-m.dtsi<dts/arm/armv7-m.dtsi>`, which has common definitions
 for Arm v7-M cores.
 
-Since :zephyr_file:`nxp_k6x.dtsi<dts/arm/nxp/nxp_k6x.dtsi>` is meant to be
+Since :zephyr_file:`nxp_k6x.dtsi<dts/arm/nxp/kinetis/nxp_k6x.dtsi>` is meant to be
 generic across K6X-based boards, it leaves many devices disabled by default
 using ``status`` properties.  For example, there is a CAN controller defined as
 follows (with unimportant parts skipped):

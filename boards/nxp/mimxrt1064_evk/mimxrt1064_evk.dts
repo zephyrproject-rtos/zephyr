@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_rt1064.dtsi>
+#include <nxp/imxrt/nxp_rt1064.dtsi>
 #include "mimxrt1064_evk-pinctrl.dtsi"
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>

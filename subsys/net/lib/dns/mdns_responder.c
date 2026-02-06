@@ -385,9 +385,9 @@ static int create_answer(struct net_buf *query, enum dns_rr_type qtype,
 		return ret;
 	}
 
-	if (qtype == DNS_RR_TYPE_A) {
+	if ((qtype == DNS_RR_TYPE_A) && IS_ENABLED(CONFIG_NET_IPV4)) {
 		net_if_ipv4_addr_foreach(iface, answer_addr_cb, &ctx);
-	} else if (qtype == DNS_RR_TYPE_AAAA) {
+	} else if ((qtype == DNS_RR_TYPE_AAAA) && IS_ENABLED(CONFIG_NET_IPV6)) {
 		net_if_ipv6_addr_foreach(iface, answer_addr_cb, &ctx);
 	} else {
 		return -EINVAL;

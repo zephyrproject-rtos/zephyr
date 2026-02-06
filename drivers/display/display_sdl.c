@@ -61,6 +61,7 @@ struct sdl_display_data {
 	enum display_pixel_format current_pixel_format;
 	uint8_t *buf;
 	uint8_t *read_buf;
+	double angle;
 	struct k_thread sdl_thread;
 
 	K_KERNEL_STACK_MEMBER(sdl_thread_stack, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);
@@ -98,6 +99,7 @@ static void exec_sdl_task(const struct device *dev, const struct sdl_display_tas
 			.frame_incomplete = task->write.desc->frame_incomplete,
 			.color_tint = CONFIG_SDL_DISPLAY_COLOR_TINT,
 			.round_disp_mask = disp_data->round_disp_mask,
+			.angle = disp_data->angle,
 		};
 		sdl_display_write_bottom(&write_params);
 		break;
@@ -109,6 +111,7 @@ static void exec_sdl_task(const struct device *dev, const struct sdl_display_tas
 			.background_texture = disp_data->background_texture,
 			.color_tint = CONFIG_SDL_DISPLAY_COLOR_TINT,
 			.round_disp_mask = disp_data->round_disp_mask,
+			.angle = disp_data->angle,
 		};
 		sdl_display_blanking_off_bottom(&blanking_off_params);
 		break;
@@ -154,6 +157,7 @@ static void sdl_task_thread(void *p1, void *p2, void *p3)
 		.round_disp_mask = COND_CODE_1(CONFIG_SDL_DISPLAY_ROUNDED_MASK,
 						(&disp_data->round_disp_mask), NULL),
 		.mask_color = CONFIG_SDL_DISPLAY_ROUNDED_MASK_COLOR,
+		.angle = 0.0,
 		};
 
 	int rc = sdl_display_init_bottom(&init_params);
@@ -742,6 +746,7 @@ static int sdl_display_read(const struct device *dev, const uint16_t x, const ui
 		.mutex = disp_data->mutex,
 		.texture = disp_data->texture,
 		.read_texture = disp_data->read_texture,
+		.angle = disp_data->angle,
 	};
 
 	err = sdl_display_read_bottom(&read_params);
@@ -908,6 +913,30 @@ static int sdl_display_set_pixel_format(const struct device *dev,
 	}
 }
 
+static int sdl_display_set_orientation(const struct device *dev,
+				       const enum display_orientation orientation)
+{
+	struct sdl_display_data *disp_data = dev->data;
+
+	switch (orientation) {
+	case DISPLAY_ORIENTATION_ROTATED_90:
+		disp_data->angle = 90.0;
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_180:
+		disp_data->angle = 180.0;
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_270:
+		disp_data->angle = 270.0;
+		break;
+	default:
+		disp_data->angle = 0.0;
+		break;
+	}
+
+	LOG_DBG("Display orientation set to %d", orientation);
+	return 0;
+}
+
 static void sdl_display_cleanup(struct sdl_display_data *disp_data)
 {
 	struct sdl_display_cleanup_params cleanup_params = {
@@ -930,6 +959,7 @@ static DEVICE_API(display, sdl_display_api) = {
 	.clear = sdl_display_clear,
 	.get_capabilities = sdl_display_get_capabilities,
 	.set_pixel_format = sdl_display_set_pixel_format,
+	.set_orientation = sdl_display_set_orientation,
 };
 
 #define DISPLAY_SDL_DEFINE(n)                                                                      \

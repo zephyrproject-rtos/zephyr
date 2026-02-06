@@ -1,8 +1,12 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /dts-v1/;
 
-#include <nxp/nxp_kw2xd.dtsi>
+#include <nxp/kinetis/nxp_kw2xd.dtsi>
 #include "usb_kw24d512-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 

@@ -3,7 +3,7 @@
 # Copyright 2017, 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_KINETIS_KL2X
+if SOC_SERIES_KL2X
 
 config NUM_IRQS
 	default 32 if SOC_MKL25Z4
@@ -15,4 +15,4 @@ config KINETIS_FLASH_CONFIG_FOPT
 	default 0x3B
 	depends on KINETIS_FLASH_CONFIG
 
-endif # SOC_SERIES_KINETIS_KL2X
+endif # SOC_SERIES_KL2X

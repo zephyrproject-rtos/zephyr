@@ -359,19 +359,19 @@
 
 		/* SCFG DEVALT C */
 		altc_smb4b_sl: altc4 {
-			alts = <&scfg 0x0C 0x4 0>;
+			alts = <&scfg 0x0c 0x4 0>;
 		};
 
 		altc_smb3b_sl: altc5 {
-			alts = <&scfg 0x0C 0x5 0>;
+			alts = <&scfg 0x0c 0x5 0>;
 		};
 
 		altc_smb2b_sl: altc6 {
-			alts = <&scfg 0x0C 0x6 0>;
+			alts = <&scfg 0x0c 0x6 0>;
 		};
 
 		altc_smb2a_sl: altc7 {
-			alts = <&scfg 0x0C 0x7 0>;
+			alts = <&scfg 0x0c 0x7 0>;
 		};
 
 		/* SCFG DEVALT D */

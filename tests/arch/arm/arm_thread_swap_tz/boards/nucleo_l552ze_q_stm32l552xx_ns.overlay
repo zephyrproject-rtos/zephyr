@@ -45,9 +45,9 @@
 		 * The flash starting at 0x7F000 and ending at
 		 * 0x80000 is reserved for the application.
 		 */
-		storage_partition: partition@7F000 {
+		storage_partition: partition@7f000 {
 			label = "storage";
-			reg = <0x0007F000 DT_SIZE_K(4)>;
+			reg = <0x0007f000 DT_SIZE_K(4)>;
 		};
 	};
 };

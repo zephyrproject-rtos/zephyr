@@ -495,7 +495,7 @@
 
 		emac: ethernet@40012000 {
 			compatible = "nuvoton,numaker-ethernet";
-			reg = <0x40012000 0x105C>;
+			reg = <0x40012000 0x105c>;
 			interrupts = <66 0>;
 			resets = <&rst NUMAKER_EMAC0_RST>;
 			phy-addr = <1>;

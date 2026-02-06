@@ -1024,7 +1024,6 @@ uint8_t coap_header_get_code(const struct coap_packet *cpkt)
 	case COAP_METHOD_IPATCH:
 
 	/* All the defined response codes */
-	case COAP_RESPONSE_CODE_OK:
 	case COAP_RESPONSE_CODE_CREATED:
 	case COAP_RESPONSE_CODE_DELETED:
 	case COAP_RESPONSE_CODE_VALID:

@@ -335,7 +335,7 @@
 			interrupts = <4 1>;
 			interrupt-parent = <&plic0>;
 			dmas = <&dma0 0 0 0x009>,
-			       <&dma0 1 1 0x00A>;
+			       <&dma0 1 1 0x00a>;
 			dma-names = "tx", "rx";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -350,7 +350,7 @@
 			interrupts = <5 1>;
 			interrupt-parent = <&plic0>;
 			dmas = <&dma0 2 2 0x009>,
-			       <&dma0 3 3 0x00A>;
+			       <&dma0 3 3 0x00a>;
 			dma-names = "tx", "rx";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -376,7 +376,7 @@
 			reg = <0xe0100000 0x1000>;
 			interrupts = <19 2>;
 			interrupt-parent = <&plic0>;
-			local-mac-address = [FC 8C EB 9B A6 51];
+			local-mac-address = [fc 8c eb 9b a6 51];
 			status = "disabled";
 		};
 

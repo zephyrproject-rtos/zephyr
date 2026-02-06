@@ -169,6 +169,10 @@ New APIs and options
       generating slot 1 images automatically in sysbuild projects when using MCUboot in
       direct-xip mode.
 
+* CPUFreq
+
+  * :kconfig:option:`CONFIG_CPU_FREQ_POLICY_PRESSURE`
+
 * Display
 
   * :kconfig:option:`SSD1325_DEFAULT_CONTRAST`
@@ -348,6 +352,7 @@ New Samples
 ***********
 
 * :zephyr:code-sample:`ble_peripheral_ans`
+* :zephyr:code-sample:`cpu_freq_pressure`
 
 ..
   Same as above, this will also be recomputed at the time of the release.
@@ -379,6 +384,9 @@ Other notable changes
 
   * https://trustedfirmware-m.readthedocs.io/en/tf-mv2.2.2/releases/2.2.1.html
   * https://trustedfirmware-m.readthedocs.io/en/tf-mv2.2.2/releases/2.2.2.html
+
+* NXP SoC DTSI files have been reorganized by moving them into family-specific
+  subdirectories under ``dts/arm/nxp``.
 
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write

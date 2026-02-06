@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_k66.dtsi>
+#include <nxp/kinetis/nxp_k66.dtsi>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include "rddrone_fmuk66-pinctrl.dtsi"
 #include <freq.h>
@@ -253,14 +253,14 @@ zephyr_udc0: &usbotg {
 			reg = <0x00010000 DT_SIZE_K(932)>;
 		};
 
-		slot1_partition: partition@F9000 {
+		slot1_partition: partition@f9000 {
 			label = "image-1";
-			reg = <0x000F9000 DT_SIZE_K(932)>;
+			reg = <0x000f9000 DT_SIZE_K(932)>;
 		};
 
-		storage_partition: partition@1E2000 {
+		storage_partition: partition@1e2000 {
 			label = "storage";
-			reg = <0x001E2000 DT_SIZE_K(120)>;
+			reg = <0x001e2000 DT_SIZE_K(120)>;
 		};
 	};
 };

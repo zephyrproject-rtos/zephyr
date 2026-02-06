@@ -933,6 +933,19 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		}
 	}
 
+	/* For SAE types, use -p passphrase as SAE password and clear PSK. */
+	if (params->psk != NULL &&
+	    (params->security == WIFI_SECURITY_TYPE_SAE_HNP ||
+	     params->security == WIFI_SECURITY_TYPE_SAE_H2E ||
+	     params->security == WIFI_SECURITY_TYPE_SAE_AUTO ||
+	     params->security == WIFI_SECURITY_TYPE_FT_SAE ||
+	     params->security == WIFI_SECURITY_TYPE_SAE_EXT_KEY)) {
+		params->sae_password = params->psk;
+		params->sae_password_length = params->psk_length;
+		params->psk = NULL;
+		params->psk_length = 0;
+	}
+
 	if (params->psk && !secure_connection) {
 		PR_WARNING("Passphrase provided without security configuration\n");
 	}

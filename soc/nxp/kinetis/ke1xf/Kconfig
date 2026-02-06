@@ -4,7 +4,7 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_KINETIS_KE1XF
+config SOC_SERIES_KE1XF
 	select ARM
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_DWT
@@ -23,7 +23,7 @@ config SOC_MKE16F16
 config SOC_MKE18F16
 	select HAS_MCUX
 
-if SOC_SERIES_KINETIS_KE1XF
+if SOC_SERIES_KE1XF
 
 config WDOG_ENABLE_AT_BOOT
 	bool "Keep watchdog timer enabled at boot"
@@ -47,4 +47,4 @@ config KINETIS_KE1XF_ENABLE_CODE_CACHE
 	bool "Code cache"
 	default y
 
-endif # SOC_SERIES_KINETIS_KE1XF
+endif # SOC_SERIES_KE1XF

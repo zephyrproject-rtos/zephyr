@@ -1,9 +1,8 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 
 #define DT_DRV_COMPAT nxp_flexio_pwm
 
@@ -206,6 +205,17 @@ static int mcux_flexio_pwm_init(const struct device *dev)
 
 	if (!device_is_ready(config->clock_dev)) {
 		return -ENODEV;
+	}
+
+	err = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
+
+	if (err < 0) {
+		/* Check if error is due to lack of support */
+		if (err != -ENOSYS) {
+			/* Real error occurred */
+			LOG_ERR("Failed to configure clock: %d", err);
+			return err;
+		}
 	}
 
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,

@@ -110,10 +110,10 @@
 		/* FLPR/VPR is not used with TF-M so NS can use its memory */
 		cpuapp_sram: memory@20000000 {
 			compatible = "mmio-sram";
-			reg = <0x20000000 0x2007FE40>;
+			reg = <0x20000000 0x7fe40>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x20000000 0x2007FE40>;
+			ranges = <0x0 0x20000000 0x7fe40>;
 		};
 #else
 		cpuapp_sram: memory@20000000 {

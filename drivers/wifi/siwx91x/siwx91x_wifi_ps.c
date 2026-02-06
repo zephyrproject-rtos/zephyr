@@ -38,7 +38,7 @@ static int siwx91x_get_connected_ap_beacon_interval_ms(void)
 int siwx91x_apply_power_save(struct siwx91x_dev *sidev)
 {
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
-	sl_wifi_performance_profile_t sl_ps_profile;
+	sl_wifi_performance_profile_v2_t sl_ps_profile;
 	int beacon_interval;
 	int ret;
 
@@ -52,7 +52,7 @@ int siwx91x_apply_power_save(struct siwx91x_dev *sidev)
 		return -EINVAL;
 	}
 
-	sl_wifi_get_performance_profile(&sl_ps_profile);
+	sl_wifi_get_performance_profile_v2(&sl_ps_profile);
 
 	if (sidev->ps_params.enabled == WIFI_PS_DISABLED) {
 		sl_ps_profile.profile = HIGH_PERFORMANCE;
@@ -89,7 +89,7 @@ int siwx91x_apply_power_save(struct siwx91x_dev *sidev)
 	}
 
 out:
-	ret = sl_wifi_set_performance_profile(&sl_ps_profile);
+	ret = sl_wifi_set_performance_profile_v2(&sl_ps_profile);
 	return ret ? -EIO : 0;
 }
 
@@ -122,8 +122,8 @@ int siwx91x_set_power_save(const struct device *dev, struct wifi_ps_params *para
 		sidev->ps_params.wakeup_mode = params->wakeup_mode;
 		break;
 	case WIFI_PS_PARAM_TIMEOUT:
-		/* 1000ms is arbitrary sane value */
-		if (params->timeout_ms < SLI_DEFAULT_MONITOR_INTERVAL ||
+		/* 50ms and 1000ms is arbitrary sane values */
+		if (params->timeout_ms < 50 ||
 		    params->timeout_ms > 1000) {
 			params->fail_reason = WIFI_PS_PARAM_FAIL_CMD_EXEC_FAIL;
 			return -EINVAL;
@@ -153,7 +153,7 @@ int siwx91x_set_power_save(const struct device *dev, struct wifi_ps_params *para
 int siwx91x_get_power_save_config(const struct device *dev, struct wifi_ps_config *config)
 {
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
-	sl_wifi_performance_profile_t sl_ps_profile;
+	sl_wifi_performance_profile_v2_t sl_ps_profile;
 	struct siwx91x_dev *sidev = dev->data;
 	uint16_t beacon_interval;
 	int ret;
@@ -170,7 +170,7 @@ int siwx91x_get_power_save_config(const struct device *dev, struct wifi_ps_confi
 		return -EINVAL;
 	}
 
-	ret = sl_wifi_get_performance_profile(&sl_ps_profile);
+	ret = sl_wifi_get_performance_profile_v2(&sl_ps_profile);
 	if (ret) {
 		LOG_ERR("Failed to get power save profile: 0x%x", ret);
 		return -EIO;

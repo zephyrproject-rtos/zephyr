@@ -40,6 +40,7 @@ struct spi_stm32_config {
 	int datawidth;
 	bool fifo_enabled: 1;
 	bool ioswp: 1;
+	bool soft_nss: 1;
 };
 
 #ifdef CONFIG_SPI_STM32_DMA

@@ -19,7 +19,7 @@
 		coredump-type = "COREDUMP_TYPE_MEMCPY";
 		status = "okay";
 
-		memory-regions = <0x86000000 0xC>;
+		memory-regions = <0x86000000 0xc>;
 	};
 
 	coredump_devicecb: coredump-device-cb {

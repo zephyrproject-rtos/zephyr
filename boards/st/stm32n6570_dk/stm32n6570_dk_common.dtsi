@@ -29,6 +29,7 @@
 
 	aliases {
 		led0 = &green_led_1;
+		led1 = &red_led_2;
 		sw0 = &user_button;
 	};
 
@@ -53,7 +54,7 @@
 			label = "User LD1";
 		};
 
-		red_led_1: led_2 {
+		red_led_2: led_2 {
 			gpios = <&gpiog 10 GPIO_ACTIVE_LOW>;
 			label = "User LD2";
 		};

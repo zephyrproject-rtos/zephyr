@@ -4,9 +4,9 @@
 
 description: |
   ADI MAX22190 octal industrial Input with advanced diagnostic
-  capabilities like Wire break and over/under volatage.
-  Fiter configuration could be done on per channel bases, which
-  mean WB functionality and filters could be set. Reffering to:
+  capabilities like Wire break and over/under voltage.
+  Filter configuration could be done on per channel bases, which
+  mean WB functionality and filters could be set. Referring to:
   filter-wbes = <CH0 CH1 CH2 ... CH7 >  for wire break
   To enable wire break set 1 else 0. Same principle is followed for:
   filter-fbps and filter-delays.
@@ -49,7 +49,7 @@ properties:
       Wire break is disabled in all channels.
       WBE bit in all Filter registers stand for wire break enable on each
       channel, so to enable WB functionality set 1.
-      If WB on specific channel is disabled , FAULT will not be rised in case
+      If WB on specific channel is disabled , FAULT will not be raised in case
       wire is cut.
       - 1 wire break enable
       - 0 wire break disable

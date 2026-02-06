@@ -18,4 +18,5 @@ supported:
   - usbd
   - memc
   - netif:eth
+  - rtc
 vendor: st

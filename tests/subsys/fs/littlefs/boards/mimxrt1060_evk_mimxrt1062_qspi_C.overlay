@@ -8,19 +8,19 @@
 
 &w25q128jw {
 	partitions {
-		large_partition: partition@C00000 {
+		large_partition: partition@c00000 {
 			label = "large";
-			reg = <0x00C00000 DT_SIZE_M(3)>;
+			reg = <0x00c00000 DT_SIZE_M(3)>;
 		};
 
-		medium_partition: partition@F00000 {
+		medium_partition: partition@f00000 {
 			label = "medium";
-			reg = <0x00F00000 DT_SIZE_K(960)>;
+			reg = <0x00f00000 DT_SIZE_K(960)>;
 		};
 
-		small_partition: partition@FF0000 {
+		small_partition: partition@ff0000 {
 			label = "small";
-			reg = <0x00FF0000 DT_SIZE_K(64)>;
+			reg = <0x00ff0000 DT_SIZE_K(64)>;
 		};
 	};
 };

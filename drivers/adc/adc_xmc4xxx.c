@@ -274,7 +274,7 @@ static int adc_xmc4xxx_init(const struct device *dev)
 		/* global bound register is unused */
 		adc_global_ptr->GLOBBOUND = 0;
 
-		adc_global_init = 1;
+		adc_global_init = true;
 	}
 
 	adc_group->ARBCFG = 0;

@@ -25,7 +25,7 @@
 		pinctrl-names = "default";
 		ti,cc-index = <0>;
 		ti,cc-mode = "PULSE_WIDTH";
-		ti,period = <0xFFFF>;
+		ti,period = <0xffff>;
 		status = "okay";
 	};
 };

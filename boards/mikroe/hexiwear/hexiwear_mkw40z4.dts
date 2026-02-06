@@ -1,8 +1,12 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /dts-v1/;
 
-#include <nxp/nxp_kw40z.dtsi>
+#include <nxp/kinetis/nxp_kw40z.dtsi>
 #include "hexiwear_mkw40z4-pinctrl.dtsi"
 
 / {

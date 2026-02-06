@@ -215,7 +215,7 @@
 			interrupt-names = "scanend";
 			#io-channel-cells = <1>;
 			vref-mv = <1800>;
-			channel-available-mask = <0x01FF>;
+			channel-available-mask = <0x01ff>;
 			status = "disabled";
 		};
 
@@ -391,12 +391,12 @@
 				status = "disabled";
 			};
 
-			gpio18: gpio@A00 {
+			gpio18: gpio@a00 {
 				compatible = "renesas,rz-gpio";
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <6>;
-				reg = <0xA00>;
+				reg = <0xa00>;
 				status = "disabled";
 			};
 		};

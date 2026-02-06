@@ -40,14 +40,14 @@
 		lcd0: lcd@0 {
 			compatible = "sitronix,st7735r";
 			/* Split array values across multiple lines to help readability. */
-			gamctrp1 = [10 0E 02 03
-				    0E 07 02 07
-				    0A 12 27 37
-				    00 0D 0E 10];
-			gamctrn1 = [10 0E 03 03
-				    0F 06 02 08
-				    0A 13 26 36
-				    00 0D 0E 10];
+			gamctrp1 = [10 0e 02 03
+				    0e 07 02 07
+				    0a 12 27 37
+				    00 0d 0e 10];
+			gamctrn1 = [10 0e 03 03
+				    0f 06 02 08
+				    0a 13 26 36
+				    00 0d 0e 10];
 		};
 	};
 };

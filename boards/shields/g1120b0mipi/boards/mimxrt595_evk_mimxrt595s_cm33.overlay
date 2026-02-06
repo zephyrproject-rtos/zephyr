@@ -8,8 +8,8 @@
  * so the SMARTDMA will continue functioning after deep sleep
  */
 &suspend {
-	deep-sleep-config = <0xC800>,
+	deep-sleep-config = <0xc800>,
 			    <0x80030004>,
-			    <0xFFFFFFFF>,
+			    <0xffffffff>,
 			    <0>;
 };

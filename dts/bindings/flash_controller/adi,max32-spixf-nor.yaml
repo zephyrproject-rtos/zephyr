@@ -4,19 +4,6 @@
 description: |
     MAX32 SPIXF NOR Flash controller supporting the JEDEC CFI interface
 
-    Representation of a serial flash on a SPIXF bus:
-
-        mx25u64: mx25u6432f@0 {
-            compatible = "adi,max32-spixf-nor";
-            reg = <0x0 DT_SIZE_M(8)>; /* 64 Mbits */
-            qspi-max-frequency = <80000000>;
-            jedec-id = [c2 37 25];
-            reset-cmd;
-            spi-bus-width = <4>;
-            writeoc = "PP_1_1_4";
-            status = "okay";
-        };
-
 compatible: "adi,max32-spixf-nor"
 
 include: ["flash-controller.yaml", "jedec,jesd216.yaml", "jedec,spi-nor-common.yaml"]
@@ -79,3 +66,16 @@ properties:
       The number of dummy-cycles required when reading jedec id. Default value is zero, which
       matches most parts, but this can be set for parts that require any dummy bytes before the
       response is sent.
+
+examples:
+  - |
+    mx25u64: mx25u6432f@0 {
+        compatible = "adi,max32-spixf-nor";
+        reg = <0x0 DT_SIZE_M(8)>; /* 64 Mbits */
+        qspi-max-frequency = <80000000>;
+        jedec-id = [c2 37 25];
+        reset-cmd;
+        spi-bus-width = <4>;
+        writeoc = "PP_1_1_4";
+        status = "okay";
+    };

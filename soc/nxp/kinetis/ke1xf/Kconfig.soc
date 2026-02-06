@@ -4,24 +4,24 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_KINETIS_KE1XF
+config SOC_SERIES_KE1XF
 	bool
 	select SOC_FAMILY_KINETIS
 
 config SOC_SERIES
-	default "ke1xf" if SOC_SERIES_KINETIS_KE1XF
+	default "ke1xf" if SOC_SERIES_KE1XF
 
 config SOC_MKE14F16
 	bool
-	select SOC_SERIES_KINETIS_KE1XF
+	select SOC_SERIES_KE1XF
 
 config SOC_MKE16F16
 	bool
-	select SOC_SERIES_KINETIS_KE1XF
+	select SOC_SERIES_KE1XF
 
 config SOC_MKE18F16
 	bool
-	select SOC_SERIES_KINETIS_KE1XF
+	select SOC_SERIES_KE1XF
 
 config SOC
 	default "mke14f16" if SOC_MKE14F16

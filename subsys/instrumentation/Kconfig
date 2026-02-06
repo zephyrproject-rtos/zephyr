@@ -6,11 +6,6 @@
 config INSTRUMENTATION
 	bool "Compiler Instrumentation Support"
 	select REBOOT
-	select RETAINED_MEM
-	select RETAINED_MEM_ZEPHYR_RAM
-	select RETAINED_MEM_MUTEX_FORCE_DISABLE
-	select RETENTION
-	select RETENTION_MUTEX_FORCE_DISABLE
 	select UART_INTERRUPT_DRIVEN
 	help
 	  Enable compiler-managed runtime system instrumentation. This requires
@@ -89,16 +84,29 @@ config INSTRUMENTATION_TRIGGER_FUNCTION
 	default "main"
 	help
 	  Sets the trigger function. Instrumentation (tracing and profiling) is
-	  only turned on when the trigger function is called. The trigger
-	  function can be changed at runtime via the 'zaru' CLI tool.
+	  only turned on when the trigger function is called.
 
 config INSTRUMENTATION_STOPPER_FUNCTION
 	string "Default stopper function used to turn off instrumentation"
 	default "main"
 	help
 	  Sets the stopper function. Instrumentation (tracing and profiling) is
-	  only turned off when the trigger function returns. The stopper
-	  function can be changed at runtime via the 'zaru' CLI tool.
+	  only turned off when the stopper function returns.
+
+config INSTRUMENTATION_DYNAMIC_TRIGGER
+	bool "Dynamic trigger/stopper functions configuration"
+	select RETAINED_MEM
+	select RETAINED_MEM_ZEPHYR_RAM
+	select RETAINED_MEM_MUTEX_FORCE_DISABLE
+	select RETENTION
+	select RETENTION_MUTEX_FORCE_DISABLE
+	default y
+	help
+	  Enables configuration of trigger/stopper functions in runtime.
+	  Enabling this option requires configuration of the 'instrumentation_triggers'
+	  retained memory region in the device tree. When enabled, trigger/stopper
+	  functions can be changed at runtime via the 'zaru' CLI tool.
+
 
 config INSTRUMENTATION_EXCLUDE_FUNCTION_LIST
 	string "Exclude function list"

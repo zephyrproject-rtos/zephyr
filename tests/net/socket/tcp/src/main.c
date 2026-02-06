@@ -2794,7 +2794,7 @@ static void test_zsock_send_all_data(int method)
 	struct net_msghdr msg;
 	ssize_t recved;
 	int i, send_len, recv_len, remaining, split_point;
-	size_t sent_len;
+	size_t sent_len = 0;
 
 	prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock, &c_saddr);
 	prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, &s_sock, &s_saddr);

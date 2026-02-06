@@ -170,6 +170,12 @@
 	status = "okay";
 };
 
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB4, 16)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
+};
+
 &timers2 {
 	st,prescaler = <10000>;
 	status = "okay";

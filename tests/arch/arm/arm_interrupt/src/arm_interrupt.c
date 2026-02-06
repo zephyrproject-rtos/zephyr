@@ -373,12 +373,12 @@ void z_impl_test_arm_user_interrupt_syscall(void)
 	zassert_false(__get_PRIMASK(), "PRIMASK is set\n");
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 
-	static bool first_call = 1;
+	static bool first_call = true;
 
 	if (first_call == 1) {
 
 		/* First time the syscall is invoked */
-		first_call = 0;
+		first_call = false;
 
 		/* Lock IRQs in supervisor mode */
 		unsigned int key = irq_lock();

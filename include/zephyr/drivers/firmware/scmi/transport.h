@@ -51,19 +51,6 @@ typedef void (*scmi_channel_cb)(struct scmi_channel *chan);
  * channels is represented by a `struct scmi_channel`.
  */
 struct scmi_channel {
-	/**
-	 * channel lock. This is meant to be initialized
-	 * and used only by the SCMI core to assure that
-	 * only one protocol can send/receive messages
-	 * through a channel at a given moment.
-	 */
-	struct k_mutex lock;
-	/**
-	 * binary semaphore. This is meant to be initialized
-	 * and used only by the SCMI core. Its purpose is to
-	 * signal that a reply has been received.
-	 */
-	struct k_sem sem;
 	/** channel private data */
 	void *data;
 	/**
@@ -73,46 +60,142 @@ struct scmi_channel {
 	 * been received.
 	 */
 	scmi_channel_cb cb;
+	/** @cond INTERNAL_HIDDEN */
+	/**
+	 * channel lock. This is meant to be initialized
+	 * and used only by the SCMI core to assure that
+	 * only one protocol can send/receive messages
+	 * through a channel at a given moment.
+	 */
+	struct k_mutex lock;
+
+	/**
+	 * binary semaphore. This is meant to be initialized
+	 * and used only by the SCMI core. Its purpose is to
+	 * signal that a reply has been received.
+	 */
+	struct k_sem sem;
+
 	/** is the channel ready to be used by a protocol? */
 	bool ready;
+	/** @endcond */
 };
 
+/**
+ * @struct scmi_transport_api
+ * @brief SCMI transport driver operations
+ *
+ * This structure contains the set of operations to be implemented by
+ * all transport drivers.
+ */
 struct scmi_transport_api {
+	/**
+	 * @brief Initialize the transport driver
+	 *
+	 * This operation can be left unimplemented if the driver
+	 * requires no initialization.
+	 *
+	 * @note this operation is optional.
+	 *
+	 * @param transport transport device
+	 *
+	 * @retval 0 is successful
+	 * @retval <0 negative errno code if failure
+	 */
 	int (*init)(const struct device *transport);
+
+	/**
+	 * @brief Send a message to the platform
+	 *
+	 * Used to send a message to the platform over a given TX channel.
+	 *
+	 * @param transport transport device
+	 * @param chan channel used to send the message
+	 * @param msg message to send
+	 *
+	 * @retval 0 if successful
+	 * @retval <0 negative errno code if failure
+	 */
 	int (*send_message)(const struct device *transport,
 			    struct scmi_channel *chan,
 			    struct scmi_message *msg);
+
+	/**
+	 * @brief Prepare a channel for communication
+	 *
+	 * Perform any sort of initialization required by a channel
+	 * to be able to send or receive data.
+	 *
+	 * @param transport transport device
+	 * @param chan channel to prepare
+	 * @param tx true if channel is TX, false if channel is RX
+	 *
+	 * @retval 0 if successful
+	 * @retval <0 negative errno code if failure
+	 */
 	int (*setup_chan)(const struct device *transport,
 			  struct scmi_channel *chan,
 			  bool tx);
+
+	/**
+	 * @brief Read a message from the platform
+	 *
+	 * Used to read/receive a message from the platform over a given
+	 * RX channel.
+	 *
+	 * @param transport transport device
+	 * @param chan channel used to receive the message
+	 * @param msg message to receive
+	 *
+	 * @retval 0 if successful
+	 * @retval <0 negative errno code if failure
+	 */
 	int (*read_message)(const struct device *transport,
 			    struct scmi_channel *chan,
 			    struct scmi_message *msg);
+
+	/**
+	 * @brief Check if a TX channel is free
+	 *
+	 * Used to check if a TX channel allows sending data to the
+	 * platform. If a message was previously sent to the platform,
+	 * it is assumed that this function will indicate the availability
+	 * of the message's reply.
+	 *
+	 * @param transport device
+	 * @param chan TX channel to query
+	 *
+	 * @retval 0 if successful
+	 * @retval <0 negative errno code if failure
+	 */
 	bool (*channel_is_free)(const struct device *transport,
 				struct scmi_channel *chan);
+
+	/**
+	 * @brief Request a channel dynamically
+	 *
+	 * If @kconfig{CONFIG_ARM_SCMI_TRANSPORT_HAS_STATIC_CHANNELS}
+	 * is enabled, this operation will be used to dynamically request
+	 * a channel and bind it to a given protocol. Otherwise, operation
+	 * can be left unimplemented.
+	 *
+	 * @note this operation is optional
+	 *
+	 * @param transport transport device
+	 * @param proto ID of the protocol for which the channel is requested
+	 * @param tx true if channel is TX, false if channel is RX
+	 *
+	 * @retval pointer to the channel bound to given protocol if successful
+	 * @retval NULL if failure
+	 */
 	struct scmi_channel *(*request_channel)(const struct device *transport,
 						uint32_t proto, bool tx);
 };
 
+/** @cond INTERNAL_HIDDEN */
+
 /**
- * @brief Request an SCMI channel dynamically
- *
- * Whenever the SCMI transport layer driver doesn't support
- * static channel allocation, the SCMI core will try to bind
- * a channel to a protocol dynamically using this function.
- * Note that no setup needs to be performed on the channel
- * in this function as the core will also call the channel
- * setup() function.
- *
- * @param transport pointer to the device structure for the
- * transport layer
- * @param proto ID of the protocol for which the core is
- * requesting the channel
- * @param tx true if the channel is TX, false if RX
- *
- * @retval pointer to SCMI channel that's to be bound
- * to the protocol
- * @retval NULL if operation was not successful
+ * See @ref scmi_transport_api::request_channel for more details.
  */
 static inline struct scmi_channel *
 scmi_transport_request_channel(const struct device *transport,
@@ -129,23 +212,7 @@ scmi_transport_request_channel(const struct device *transport,
 }
 
 /**
- * @brief Perform initialization for the transport layer driver
- *
- * The transport layer driver can't be initialized directly
- * (i.e via a call to its init() function) during system initialization.
- * This is because the macro used to define an SCMI transport places
- * `scmi_core_transport_init()` in the init section instead of the
- * driver's init() function. As such, `scmi_core_transport_init()`
- * needs to call this function to perfrom transport layer driver
- * initialization if required.
- *
- * This operation is optional.
- *
- * @param transport pointer to the device structure for the
- * transport layer
- *
- * @retval 0 if successful
- * @retval negative errno code if failure
+ * See @ref scmi_transport_api::init for more details.
  */
 static inline int scmi_transport_init(const struct device *transport)
 {
@@ -160,20 +227,7 @@ static inline int scmi_transport_init(const struct device *transport)
 }
 
 /**
- * @brief Setup an SCMI channel
- *
- * Before being able to send/receive messages, an SCMI channel needs
- * to be prepared, which is what this function does. If it returns
- * successfully, an SCMI protocol will be able to use this channel
- * to send/receive messages.
- *
- * @param transport pointer to the device structure for the
- * transport layer
- * @param chan pointer to SCMI channel to be prepared
- * @param tx true if the channel is TX, false if RX
- *
- * @retval 0 if successful
- * @retval negative errno code if failure
+ * See @ref scmi_transport_api::setup_chan for more details.
  */
 static inline int scmi_transport_setup_chan(const struct device *transport,
 					    struct scmi_channel *chan,
@@ -190,19 +244,7 @@ static inline int scmi_transport_setup_chan(const struct device *transport,
 }
 
 /**
- * @brief Send an SCMI channel
- *
- * Send an SCMI message using given SCMI channel. This function is
- * not allowed to block.
- *
- * @param transport pointer to the device structure for the
- * transport layer
- * @param chan pointer to SCMI channel on which the message
- * is to be sent
- * @param msg pointer to message the caller wishes to send
- *
- * @retval 0 if successful
- * @retval negative errno code if failure
+ * See @ref scmi_transport_api::send_message for more details.
  */
 static inline int scmi_transport_send_message(const struct device *transport,
 					      struct scmi_channel *chan,
@@ -219,16 +261,7 @@ static inline int scmi_transport_send_message(const struct device *transport,
 }
 
 /**
- * @brief Read an SCMI message
- *
- * @param transport pointer to the device structure for the
- * transport layer
- * @param chan pointer to SCMI channel on which the message
- * is to be read
- * @param msg pointer to message the caller wishes to read
- *
- * @retval 0 if successful
- * @retval negative errno code if failure
+ * See @ref scmi_transport_api::read_message for more details.
  */
 static inline int scmi_transport_read_message(const struct device *transport,
 					      struct scmi_channel *chan,
@@ -245,15 +278,7 @@ static inline int scmi_transport_read_message(const struct device *transport,
 }
 
 /**
- * @brief Check if an SCMI channel is free
- *
- * @param transport pointer to the device structure for
- * the transport layer
- * @param chan pointer to SCMI channel the query is to be
- * performed on
- *
- * @retval 0 if successful
- * @retval negative errno code if failure
+ * See @ref scmi_transport_api::channel_is_free for more details.
  */
 static inline bool scmi_transport_channel_is_free(const struct device *transport,
 						  struct scmi_channel *chan)
@@ -278,6 +303,8 @@ static inline bool scmi_transport_channel_is_free(const struct device *transport
  * @retval negative errno code if failure
  */
 int scmi_core_transport_init(const struct device *transport);
+
+/** @endcond */
 
 /**
  * @}

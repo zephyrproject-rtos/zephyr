@@ -10,6 +10,12 @@
 / {
 	chosen {
 		zephyr,code-partition = &slot0_ns_partition;
+		zephyr,entropy = &psa_rng;
+	};
+
+	psa_rng: psa-rng {
+		compatible = "zephyr,psa-crypto-rng";
+		status = "okay";
 	};
 
 	/* SRAM1 (node label sram0) last 64kByte are owned by TF-M */
@@ -49,4 +55,9 @@
 			reg = <0xcc000 (DT_SIZE_M(2) - DT_SIZE_K(48 + 256 + 512))>;
 		};
 	};
+};
+
+/* RNG is owned by TF-M */
+&rng {
+	status = "disabled";
 };

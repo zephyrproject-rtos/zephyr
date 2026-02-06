@@ -148,6 +148,17 @@ Boards
 
 * ITE ``it515xx_evb`` is renamed to ``it51xxx_evb``.
 
+* Boards that have NVM devices must now correctly have their addresses set or inheritied when they
+  do not start at address 0x0. In previous zephyr releases, a ``partitions`` entry in DTS was
+  wrongly interpreted as starting in the flash device's address range even though the DTS file
+  does not describe this and instead describes flash partitions starting at absolute addresses
+  e.g. 0x0. If you build and get the deprecated Kconfig
+  :kconfig:option:`CONFIG_FLASH_CODE_PARTITION_ADDRESS_INVALID` being set then this means your
+  board, SoC or DTS files are wrong and need updating, a ``ranges <>;`` property should be used
+  by the flash nodes to specify the base address and size for child nodes, and
+  ``fixed-partitions``/``fixed-subpartitions`` nodes must have a ``ranges;`` property to pass the
+  parent's ranges on to child nodes.
+
 Device Drivers and Devicetree
 *****************************
 
@@ -571,6 +582,34 @@ MEMC
   Hard-coded default values in drivers, of 320 (:dtcompatible:`st,stm32-xspi-psram`) and 129
   (:dtcompatible:`st,stm32-ospi-psram`), have been removed.
 
+NXP
+===
+
+* NXP DTSI files were moved into family-specific subdirectories under ``dts/arm/nxp``
+  to improve maintainability and discoverability and to match the structure under
+  ``soc/nxp``. Devicetree include paths must be updated for moved files. Update
+  includes of the form ``#include <nxp/nxp_*.dtsi>`` to use the correct family
+  subdirectory. (:github:`101243`).
+
+  Example:
+
+  .. code-block:: dts
+
+    /* Before */
+    #include <nxp/nxp_rt1060.dtsi>
+
+    /* After */
+    #include <nxp/imxrt/nxp_rt1060.dtsi>
+
+  This change only applies to NXP ARM SoC include files that were moved from ``dts/arm/nxp``.
+  Do not change includes for DTSI files that live elsewhere (for example under ``dts/arm64/nxp``).
+
+  To locate affected includes, you can search for the old include prefix:
+
+  .. code-block:: console
+
+    git grep "#include <nxp/nxp_" -- '*.dtsi' '*.dts' '*.overlay'
+
 QSPI
 ====
 
@@ -721,6 +760,11 @@ STM32
   .. note:: This change aligns STM32 platforms' behavior with the generic Zephyr one. Previous
             implementation wasn't product-ready so this shouldn't cause much trouble.
 
+* The Kconfig option ``CONFIG_SPI_STM32_USE_HW_SS`` has been removed. SPI operation mode
+  is now selected automatically based on devicetree configuration: instances with either of
+  the ``cs-gpios`` or new ``st,soft-nss`` property operate in "Soft NSS" mode, while all other
+  instances operate in "Hard NSS" mode.
+
 USB
 ===
 
@@ -818,10 +862,17 @@ Networking
   to automatically enable all the dependencies of a given ciphersuite, and more can be added as
   needed following the same pattern.
 
+CoAP
+====
+
 * Resource-related metadata for CoAP ``.well-known/core`` responses is now configured with a dedicated
   :c:member:`coap_resource.metadata` pointer instead of :c:member:`coap_resource.user_data`, which
   should remain for the application to use exclusively. Applications implementing CoAP
   ``.well-known/core`` handling should be updated to use the new pointer.
+
+* ``COAP_RESPONSE_CODE_OK`` 2.00 response code definition has been removed as it's not a valid
+  response code - it's not defined in :rfc:`7252` and is not assigned in the IANA registry
+  (https://www.iana.org/assignments/core-parameters/core-parameters.xhtml#response-codes).
 
 Modem
 *****

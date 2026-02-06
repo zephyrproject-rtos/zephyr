@@ -56,7 +56,6 @@ struct eth_context {
 	uint8_t recv[NET_ETH_MTU + ETH_HDR_LEN];
 	uint8_t send[NET_ETH_MTU + ETH_HDR_LEN];
 	uint8_t mac_addr[6];
-	struct net_linkaddr ll_addr;
 	struct net_if *iface;
 	const char *if_name;
 	k_tid_t rx_thread;
@@ -201,14 +200,6 @@ static int eth_send(const struct device *dev, struct net_pkt *pkt)
 	return ret < 0 ? ret : 0;
 }
 
-static struct net_linkaddr *eth_get_mac(struct eth_context *ctx)
-{
-	(void)net_linkaddr_set(&ctx->ll_addr, ctx->mac_addr,
-			       sizeof(ctx->mac_addr));
-
-	return &ctx->ll_addr;
-}
-
 static struct net_pkt *prepare_pkt(struct eth_context *ctx,
 				   int count, int *status)
 {
@@ -307,7 +298,6 @@ static void create_rx_handler(struct eth_context *ctx)
 static void eth_iface_init(struct net_if *iface)
 {
 	struct eth_context *ctx = net_if_get_device(iface)->data;
-	struct net_linkaddr *ll_addr;
 #if !defined(CONFIG_ETH_NATIVE_TAP_RANDOM_MAC)
 	const char *mac_addr =
 		mac_addr_cmd_opt ? mac_addr_cmd_opt : CONFIG_ETH_NATIVE_TAP_MAC_ADDR;
@@ -355,8 +345,6 @@ static void eth_iface_init(struct net_if *iface)
 	}
 #endif
 
-	ll_addr = eth_get_mac(ctx);
-
 	/* If we have only one network interface, then use the name
 	 * defined in the Kconfig directly. This way there is no need to
 	 * change the documentation etc. and break things.
@@ -371,8 +359,7 @@ static void eth_iface_init(struct net_if *iface)
 
 	LOG_DBG("Interface %p using \"%s\"", iface, ctx->if_name);
 
-	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len,
-			     NET_LINK_ETHERNET);
+	net_if_set_link_addr(iface, ctx->mac_addr, sizeof(ctx->mac_addr), NET_LINK_ETHERNET);
 
 #ifdef CONFIG_NET_IPV4
 	if (ipv4_addr_cmd_opt != NULL) {
@@ -482,6 +469,9 @@ static int set_config(const struct device *dev,
 
 		memcpy(context->mac_addr, config->mac_address.addr,
 		       sizeof(context->mac_addr));
+		ret = net_if_set_link_addr(context->iface, context->mac_addr,
+					   sizeof(context->mac_addr),
+					   NET_LINK_ETHERNET);
 	}
 
 	return ret;

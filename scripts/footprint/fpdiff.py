@@ -33,6 +33,14 @@ def parse_args():
 
     return parser.parse_args()
 
+def nodesz(n: AnyNode) -> int:
+    # The AnyNode `size` property hides the `size` key
+    # stored in the node's __dict__, which contains the
+    # actual value for the 'size' key in the JSON file.
+    #
+    # Access the dictionary directly as a workaround.
+    return n.__dict__.get("size")
+
 def main():
     colorama.init()
 
@@ -53,11 +61,14 @@ def main():
         print(f"{root1.name}\n+++++++++++++++++++++")
 
         for node in PreOrderIter(root1):
+            n1_size = nodesz(node)
+
             # pylint: disable=undefined-loop-variable
             n = find(root2, lambda node2: node2.identifier == node.identifier)
             if n:
-                if n.size != node.size:
-                    diff = n.size - node.size
+                n2_size = nodesz(n)
+                if n2_size != n1_size:
+                    diff = n2_size - n1_size
                     if diff == 0:
                         continue
                     if not n.children or not n.parent:
@@ -68,13 +79,13 @@ def main():
 
             else:
                 if not node.children:
-                    print(f"{node.identifier} ({Fore.GREEN}-{node.size}{Fore.RESET}) disappeared.")
+                    print(f"{node.identifier} ({Fore.GREEN}-{n1_size}{Fore.RESET}) disappeared.")
 
         for node in PreOrderIter(root2):
             n = find(root1, lambda node2: node2.identifier == node.identifier)
             if not n:
                 if not node.children and node.size != 0:
-                    print(f"{node.identifier} ({Fore.RED}+{node.size}{Fore.RESET}) is new.")
+                    print(f"{node.identifier} ({Fore.RED}+{nodesz(node)}{Fore.RESET}) is new.")
 
 
 if __name__ == "__main__":

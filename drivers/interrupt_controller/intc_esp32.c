@@ -823,7 +823,7 @@ int IRAM_ATTR esp_intr_disable(intr_handle_t handle)
 	}
 	unsigned int key = irq_lock();
 	int source;
-	bool disabled = 1;
+	bool disabled = true;
 
 	if (handle->shared_vector_desc) {
 		handle->shared_vector_desc->disabled = 1;
@@ -834,7 +834,7 @@ int IRAM_ATTR esp_intr_disable(intr_handle_t handle)
 		assert(svd != NULL);
 		while (svd) {
 			if (svd->source == source && svd->disabled == 0) {
-				disabled = 0;
+				disabled = false;
 				break;
 			}
 			svd = svd->next;

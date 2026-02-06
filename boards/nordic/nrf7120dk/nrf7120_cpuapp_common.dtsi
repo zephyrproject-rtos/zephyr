@@ -27,10 +27,10 @@
 		#size-cells = <1>;
 		ranges;
 
-		ipc_shm_area_cpuapp_cpuuma: memory@200C0000 {
+		ipc_shm_area_cpuapp_cpuuma: memory@200c0000 {
 			compatible = "mmio-sram";
-			reg = <0x200C0000 0x2000>;
-			ranges = <0x0 0x200C0000 0x2000>;
+			reg = <0x200c0000 0x2000>;
+			ranges = <0x0 0x200c0000 0x2000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			status = "okay";

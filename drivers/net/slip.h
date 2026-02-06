@@ -31,7 +31,6 @@ struct slip_context {
 	uint8_t state;
 
 	uint8_t mac_addr[6];
-	struct net_linkaddr ll_addr;
 
 #if defined(CONFIG_SLIP_STATISTICS)
 #define SLIP_STATS(statement)

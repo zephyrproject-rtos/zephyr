@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_kv58f1m0vlx24.dtsi>
+#include <nxp/kinetis/nxp_kv58f1m0vlx24.dtsi>
 #include "twr_kv58f220m-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
@@ -137,14 +137,14 @@
 			reg = <0x00010000 DT_SIZE_K(424)>;
 		};
 
-		slot1_partition: partition@7A000 {
+		slot1_partition: partition@7a000 {
 			label = "image-1";
-			reg = <0x0007A000 DT_SIZE_K(424)>;
+			reg = <0x0007a000 DT_SIZE_K(424)>;
 		};
 
-		storage_partition: partition@E4000 {
+		storage_partition: partition@e4000 {
 			label = "storage";
-			reg = <0x000E4000 DT_SIZE_K(112)>;
+			reg = <0x000e4000 DT_SIZE_K(112)>;
 		};
 	};
 };

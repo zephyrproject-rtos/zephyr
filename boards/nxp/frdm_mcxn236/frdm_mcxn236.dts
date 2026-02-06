@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_mcxn23x.dtsi>
+#include <nxp/mcx/nxp_mcxn23x.dtsi>
 #include "frdm_mcxn236-pinctrl.dtsi"
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
@@ -381,9 +381,9 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 			reg = <0x0084000 DT_SIZE_K(440)>;
 		};
 
-		storage_partition: partition@F0000 {
+		storage_partition: partition@f0000 {
 			label = "storage";
-			reg = <0x000F0000 DT_SIZE_K(64)>;
+			reg = <0x000f0000 DT_SIZE_K(64)>;
 		};
 	};
 };

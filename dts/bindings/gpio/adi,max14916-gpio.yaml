@@ -23,7 +23,7 @@ properties:
   fault-gpios:
     description: |
       Fault pin indicates when there is Fault state in either FAULT1 or FAULT2
-      bothe of which are cleaned on read once problem is not persistent
+      both of which are cleaned on read once problem is not persistent
     type: phandle-array
   sync-gpios:
     description: |

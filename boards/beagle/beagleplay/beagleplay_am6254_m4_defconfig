@@ -1,0 +1,19 @@
+# BeagleBoard.org BeaglePlay
+#
+# Copyright (c) 2026 BeagleBoard.org Foundation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Platform Configuration
+CONFIG_CORTEX_M_SYSTICK=y
+
+# XIP is required to place text and data sections in I-RAM and D-RAM
+# respectively.
+CONFIG_XIP=y
+
+# Serial Driver
+CONFIG_SERIAL=y
+
+# Enable Console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
