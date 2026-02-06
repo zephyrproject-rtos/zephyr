@@ -144,8 +144,9 @@ static int nxp_lpc_mcan_init(const struct device *dev)
 		uint32_t reg;
 
 		/* Configure external timestamp counter prescaler and enable it */
-		reg = FIELD_PREP(NXP_LPC_MCAN_ETSCC_ETCP, nxp_lpc_config->timestamp_prescaler - 1U)|
-			NXP_LPC_MCAN_ETSCC_ETCE;
+		reg = FIELD_PREP(NXP_LPC_MCAN_ETSCC_ETCP,
+				 nxp_lpc_config->timestamp_prescaler - 1U) |
+		      NXP_LPC_MCAN_ETSCC_ETCE;
 		err = can_mcan_write_reg(dev, NXP_LPC_MCAN_ETSCC, reg);
 		if (err != 0) {
 			return -EIO;
@@ -221,57 +222,47 @@ static const struct can_mcan_ops nxp_lpc_mcan_ops = {
 	.clear_mram = nxp_lpc_mcan_clear_mram,
 };
 
-#define NXP_LPC_MCAN_INIT(n)						\
-	CAN_MCAN_DT_INST_BUILD_ASSERT_MRAM_CFG(n);			\
-	PINCTRL_DT_INST_DEFINE(n);					\
-									\
-	static void nxp_lpc_mcan_irq_config_##n(const struct device *dev); \
-									\
-	CAN_MCAN_DT_INST_CALLBACKS_DEFINE(n, nxp_lpc_mcan_cbs_##n);	\
-	CAN_MCAN_DT_INST_MRAM_DEFINE(n, nxp_lpc_mcan_mram_##n);	\
-									\
-	static const struct nxp_lpc_mcan_config nxp_lpc_mcan_config_##n = {	\
-		.base = CAN_MCAN_DT_INST_MCAN_ADDR(n),			\
-		.mram = (mem_addr_t)POINTER_TO_UINT(&nxp_lpc_mcan_mram_##n), \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
-		.clock_subsys = (clock_control_subsys_t)		\
-			DT_INST_CLOCKS_CELL(n, name),			\
-		.irq_config_func = nxp_lpc_mcan_irq_config_##n,		\
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
-		.reset = RESET_DT_SPEC_INST_GET(n),			\
-		COND_CODE_1(IS_ENABLED(CONFIG_CAN_RX_TIMESTAMP),        \
-		(.timestamp_prescaler = DT_INST_PROP(n, external_timestamp_counter_prescaler),  \
-		.use_exteral_timestamp = DT_INST_PROP(n, use_external_timestamp_counter),), ()) \
-	};								\
-									\
-	static const struct can_mcan_config can_mcan_config_##n =	\
-		CAN_MCAN_DT_CONFIG_INST_GET(n, &nxp_lpc_mcan_config_##n,	\
-					    &nxp_lpc_mcan_ops,		\
-					    &nxp_lpc_mcan_cbs_##n);	\
-									\
-	static struct can_mcan_data can_mcan_data_##n =			\
-		CAN_MCAN_DATA_INITIALIZER(NULL);			\
-									\
-	CAN_DEVICE_DT_INST_DEFINE(n, nxp_lpc_mcan_init, NULL,		\
-				  &can_mcan_data_##n,			\
-				  &can_mcan_config_##n,			\
-				  POST_KERNEL,				\
-				  CONFIG_CAN_INIT_PRIORITY,		\
-				  &nxp_lpc_mcan_driver_api);		\
-									\
-	static void nxp_lpc_mcan_irq_config_##n(const struct device *dev)	\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, int0, irq),		\
-			    DT_INST_IRQ_BY_NAME(n, int0, priority),	\
-			    can_mcan_line_0_isr,			\
-			    DEVICE_DT_INST_GET(n), 0);			\
-		irq_enable(DT_INST_IRQ_BY_NAME(n, int0, irq));		\
-									\
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, int1, irq),		\
-			    DT_INST_IRQ_BY_NAME(n, int1, priority),	\
-			    can_mcan_line_1_isr,			\
-			    DEVICE_DT_INST_GET(n), 0);			\
-		irq_enable(DT_INST_IRQ_BY_NAME(n, int1, irq));		\
+#define NXP_LPC_MCAN_INIT(n)                                                                       \
+	CAN_MCAN_DT_INST_BUILD_ASSERT_MRAM_CFG(n);                                                 \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
+                                                                                                   \
+	static void nxp_lpc_mcan_irq_config_##n(const struct device *dev);                         \
+                                                                                                   \
+	CAN_MCAN_DT_INST_CALLBACKS_DEFINE(n, nxp_lpc_mcan_cbs_##n);                                \
+	CAN_MCAN_DT_INST_MRAM_DEFINE(n, nxp_lpc_mcan_mram_##n);                                    \
+                                                                                                   \
+	static const struct nxp_lpc_mcan_config nxp_lpc_mcan_config_##n = {                        \
+		.base = CAN_MCAN_DT_INST_MCAN_ADDR(n),                                             \
+		.mram = (mem_addr_t)POINTER_TO_UINT(&nxp_lpc_mcan_mram_##n),                       \
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
+		.irq_config_func = nxp_lpc_mcan_irq_config_##n,                                    \
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+		.reset = RESET_DT_SPEC_INST_GET(n),                                                \
+		COND_CODE_1(IS_ENABLED(CONFIG_CAN_RX_TIMESTAMP),                                   \
+		(.timestamp_prescaler = DT_INST_PROP(n, external_timestamp_counter_prescaler),     \
+		.use_exteral_timestamp = DT_INST_PROP(n, use_external_timestamp_counter),), ()) }; \
+                                                                                                   \
+	static const struct can_mcan_config can_mcan_config_##n = CAN_MCAN_DT_CONFIG_INST_GET(     \
+		n, &nxp_lpc_mcan_config_##n, &nxp_lpc_mcan_ops, &nxp_lpc_mcan_cbs_##n);            \
+                                                                                                   \
+	static struct can_mcan_data can_mcan_data_##n = CAN_MCAN_DATA_INITIALIZER(NULL);           \
+                                                                                                   \
+	CAN_DEVICE_DT_INST_DEFINE(n, nxp_lpc_mcan_init, NULL, &can_mcan_data_##n,                  \
+				  &can_mcan_config_##n, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,     \
+				  &nxp_lpc_mcan_driver_api);                                       \
+                                                                                                   \
+	static void nxp_lpc_mcan_irq_config_##n(const struct device *dev)                          \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, int0, irq),                                     \
+			    DT_INST_IRQ_BY_NAME(n, int0, priority), can_mcan_line_0_isr,           \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQ_BY_NAME(n, int0, irq));                                     \
+                                                                                                   \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(n, int1, irq),                                     \
+			    DT_INST_IRQ_BY_NAME(n, int1, priority), can_mcan_line_1_isr,           \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQ_BY_NAME(n, int1, irq));                                     \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(NXP_LPC_MCAN_INIT)
