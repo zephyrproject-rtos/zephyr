@@ -8,6 +8,7 @@
 #include <mem.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/reset/numicro_m48x_reset.h>
+#include <freq.h>
 
 / {
 	cpus {
@@ -37,6 +38,54 @@
 		#clock-cells = <0>;
 	};
 
+	clocks {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		clk_hirc: clk-hirc {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(12)>;
+			status = "disabled";
+		};
+
+		clk_hxt: clk-hxt {
+			#clock-cells = <0>;
+			compatible = "nuvoton,m4-hxt-clock";
+			status = "disabled";
+		};
+
+		clk_lxt: clk-lxt {
+			#clock-cells = <0>;
+			compatible = "nuvoton,m4-lxt-clock";
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		clk_lirc: clk-licr {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_K(10)>;
+			status = "disabled";
+		};
+
+		pll: pll {
+			#clock-cells = <0>;
+			compatible = "nuvoton,m4-pll-clock";
+			clocks = <&clk_hirc>;
+			status = "disabled";
+		};
+
+		hclk: hclk {
+			#clock-cells = <0>;
+			compatible = "nuvoton,m4-hclk-clock";
+			clock-frequency = <DT_FREQ_M(192)>;
+			clocks = <&pll>;
+			pclk0-div = <2>;
+			pclk1-div = <2>;
+		};
+	};
+
 	soc {
 		pinctrl: pinctrl@40000030 {
 			compatible = "nuvoton,numicro-pinctrl";
@@ -46,11 +95,24 @@
 			status = "okay";
 		};
 
+		scc: scc@40000200 {
+			compatible = "nuvoton,numicro-m4-scc";
+			#clock-cells = <0>;
+			reg = <0x40000200 0xB4>;
+			status = "okay";
+
+			pcc: peripheral-clock-controller {
+				compatible = "nuvoton,numicro-m4-pcc";
+				#clock-cells = <3>;
+			};
+		};
+		
 		rst: reset-controller@40000000 {
 			compatible = "nuvoton,numaker-rst";
 			reg = <0x40000000 0x20>;
 			#reset-cells = <1>;
 			status = "okay";
+
 		};
 
 		gpioa: gpio@40004000 {

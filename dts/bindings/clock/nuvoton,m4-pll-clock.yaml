@@ -1,0 +1,22 @@
+# Copyright (c) 2026, Fiona Behrens
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton M4 PLL Clock
+
+compatible: "nuvoton,m4-pll-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 0
+
+  clocks:
+    type: phandle-array
+    required: true
+
+# TODO: frequency override
+# TODO: Power Down Mode
+# TODO: Stable Counter selection
+# TODO: Bypass controll
+# TODO: outdiv, indiv, fbdiv overrides

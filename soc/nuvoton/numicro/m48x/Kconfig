@@ -10,6 +10,7 @@ config SOC_SERIES_M48X
 	select CPU_HAS_FPU
 	select CPU_HAS_ARM_MPU
 	select RESET
+	select CLOCK_CONTROL
 
 config SOC_M487
 	select HAS_NUMICRO_HAL
