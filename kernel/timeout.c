@@ -26,18 +26,6 @@ static struct k_spinlock timeout_lock;
 /* Ticks left to process in the currently-executing sys_clock_announce() */
 static int announce_remaining;
 
-#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
-unsigned int z_clock_hw_cycles_per_sec = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
-
-#ifdef CONFIG_USERSPACE
-static inline unsigned int z_vrfy_sys_clock_hw_cycles_per_sec_runtime_get(void)
-{
-	return z_impl_sys_clock_hw_cycles_per_sec_runtime_get();
-}
-#include <zephyr/syscalls/sys_clock_hw_cycles_per_sec_runtime_get_mrsh.c>
-#endif /* CONFIG_USERSPACE */
-#endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
-
 static struct _timeout *first(void)
 {
 	sys_dnode_t *t = sys_dlist_peek_head(&timeout_list);
