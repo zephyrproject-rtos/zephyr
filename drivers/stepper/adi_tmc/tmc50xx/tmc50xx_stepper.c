@@ -74,9 +74,9 @@ static int read_vactual(const struct device *dev, int32_t *actual_velocity)
 	}
 
 	*actual_velocity = sign_extend(*actual_velocity, TMC_RAMP_VACTUAL_SHIFT);
-	if (actual_velocity) {
-		LOG_DBG("actual velocity: %d", *actual_velocity);
-	}
+
+	LOG_DBG("actual velocity: %d", *actual_velocity);
+
 	return 0;
 }
 
