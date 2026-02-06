@@ -186,6 +186,7 @@ zephyr_udc0: &usbotg_fs {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* Reserve last 16KiB for property storage */
 		storage_partition: partition@1fb000 {
