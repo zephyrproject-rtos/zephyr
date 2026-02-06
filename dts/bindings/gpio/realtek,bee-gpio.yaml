@@ -1,0 +1,66 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bee GPIO controller.
+  First of all, a Pad of bee series soc refers to the physical pin exposed on the chip package
+  (e.g., P0_0, P0_1). Most Pads can be configured via pinmuxing to function as GPIOs.
+
+  In contrast, the GPIO in the driver refers to the peripheral control logic, which is distinct
+  from the physical Pads. A single GPIO port consists of 32 logical pins (e.g., GPIOA_0...GPIOA_31).
+
+  Typically, a logical GPIO pin (e.g., GPIOA_0) is statically mapped to a fixed Pad (e.g., P0_0).
+  However, certain GPIO pins support flexible mapping, allowing a single logical pin to be routed
+  to different physical Pads.
+
+  Note that only one mapping configuration can be active at any given time. Users must pre-configure
+  the specific GPIO mux in the pinctrl node of the device tree using the correct macro (e.g.,
+  BEE_PSEL_GPIOA_0_P0_0) to prevent the GPIO pin from being routed to the wrong Pad.
+
+  Example Usage
+    &gpioa {
+      pinctrl-0 = <&gpioa_default>;
+      pinctrl-names = "default";
+      status = "okay";
+    };
+
+    &leds {
+        compatible = "gpio-leds";
+        led0: led_0 {
+            /* Logical GPIO pin 0 */
+            gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+        };
+    };
+
+    &pinctrl {
+        gpioa_default: gpioa_default {
+            group1 {
+                /* Pinmux: Mapping GPIOA_0 to Pad P0_0 */
+                psels = <BEE_PSEL_GPIOA_0_P0_0>;
+            };
+        };
+    };
+
+compatible: "realtek,bee-gpio"
+
+include: [gpio-controller.yaml, base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags
