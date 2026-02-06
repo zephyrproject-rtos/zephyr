@@ -18,6 +18,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* Partition 1: Master Boot Record 4kB */
 		mbr_partition: partition@0 {

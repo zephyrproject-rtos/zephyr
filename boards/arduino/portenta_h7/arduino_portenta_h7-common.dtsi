@@ -201,6 +201,12 @@ zephyr_i2c: &i2c1 {
 			    30 b0 30 b0 f7 bd d5 5c 4a be 29 ff e1 d0 ff ff];
 		jedec-id = [66 66 20];
 		spi-bus-width = <4>;
+
+		/* QSPI external flash mapping */
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(16)>;
+
 		status = "okay";
 	};
 };
