@@ -365,6 +365,8 @@ static int stm32wba_802154_set_channel(const struct device *dev, uint16_t channe
 	LOG_DBG("Setting channel %u", channel);
 	stm32wba_802154_ral_set_channel(channel);
 
+	stm32wba_802154_data.channel = channel;
+
 	return 0;
 }
 
@@ -616,6 +618,9 @@ static int stm32wba_802154_start(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
+	/* Set Channel */
+	stm32wba_802154_ral_set_channel(stm32wba_802154_data.channel);
+
 	stm32wba_802154_ral_tx_power_set(stm32wba_802154_data.txpwr);
 
 	/* Configure continuous reception mode */
@@ -671,6 +676,8 @@ static int stm32wba_802154_driver_init(const struct device *dev)
 	stm32wba_802154_data.rx_on_when_idle = false;
 #endif /* CONFIG_NET_L2_CUSTOM_IEEE802154_STM32WBA && CONFIG_NET_L2_OPENTHREAD */
 	stm32wba_802154_ral_set_continuous_reception(stm32wba_802154_data.rx_on_when_idle);
+
+	stm32wba_802154_data.channel = 0;
 
 	k_thread_create(&stm32wba_802154_data.rx_thread, stm32wba_802154_data.rx_stack,
 			CONFIG_IEEE802154_STM32WBA_RX_STACK_SIZE,
