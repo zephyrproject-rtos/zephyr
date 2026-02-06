@@ -1,14 +1,14 @@
 /**
  * @file
- * @brief Internal header for the media player (MPL).
+ * @brief Internal header for the Media Control Profile (MCP).
  *
  * Copyright (c) 2019 - 2021 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_SUBSYS_BLUETOOTH_AUDIO_MPL_INTERNAL_
-#define ZEPHYR_SUBSYS_BLUETOOTH_AUDIO_MPL_INTERNAL_
+#ifndef ZEPHYR_SUBSYS_BLUETOOTH_AUDIO_MCP_INTERNAL_
+#define ZEPHYR_SUBSYS_BLUETOOTH_AUDIO_MCP_INTERNAL_
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -165,4 +165,4 @@ void mpl_debug_dump_state(void);
 }
 #endif
 
-#endif /* ZEPHYR_SUBSYS_BLUETOOTH_AUDIO_MPL_INTERNAL_*/
+#endif /* ZEPHYR_SUBSYS_BLUETOOTH_AUDIO_MCP_INTERNAL_*/

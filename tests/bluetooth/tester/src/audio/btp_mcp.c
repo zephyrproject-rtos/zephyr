@@ -27,7 +27,7 @@
 
 #include "bap_endpoint.h"
 #include "btp/btp.h"
-#include "../../subsys/bluetooth/audio/mpl_internal.h"
+#include "../../subsys/bluetooth/audio/mcp_internal.h"
 #include "../../subsys/bluetooth/audio/mcc_internal.h"
 
 #define LOG_MODULE_NAME bttester_mcp

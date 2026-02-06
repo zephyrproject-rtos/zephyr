@@ -3317,7 +3317,7 @@ void on_obj_selected(struct bt_ots_client *otc_inst,
 }
 
 /* TODO: Merge the object callback functions into one */
-/* Use a notion of the "active" object, as done in mpl.c, for tracking  */
+/* Use a notion of the "active" object, as done in mcp_media_server.c, for tracking  */
 int on_icon_content(struct bt_ots_client *otc_inst, struct bt_conn *conn,
 		    uint32_t offset, uint32_t len, uint8_t *data_p,
 		    bool is_complete)
