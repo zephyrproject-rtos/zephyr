@@ -220,6 +220,7 @@ zephyr_udc0: &usbotg_fs {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/*
 		 * The two sectors 0-1 (32+32 kbytes) are reserved for

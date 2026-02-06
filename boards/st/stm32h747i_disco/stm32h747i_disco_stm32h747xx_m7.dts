@@ -118,6 +118,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* Set 2KB of storage at the end of first 1MB flash */
 		storage_partition: partition@ff800 {
