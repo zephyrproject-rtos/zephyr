@@ -86,7 +86,7 @@ static struct mcs_inst {
 	/* Client states. Access and modification of these shall be guarded by the mutex */
 	struct client_state {
 		struct mcs_flags flags;
-		struct mpl_cmd_ntf cmd_ntf;
+		struct bt_mcp_cmd_ntf cmd_ntf;
 #if defined(CONFIG_BT_OTS)
 		uint8_t search_control_point_result;
 #endif /* CONFIG_BT_OTS */
@@ -760,7 +760,7 @@ static ssize_t read_next_track_id(struct bt_conn *conn,
 
 	sys_put_le48(track_id, track_id_le);
 
-	if (track_id == MPL_NO_TRACK_ID) {
+	if (track_id == BT_MCP_NO_TRACK_ID) {
 		LOG_DBG("Next track read, but it is empty");
 		/* "If the media player has no next track, the length of the */
 		/* characteristic shall be zero." */
@@ -1048,7 +1048,7 @@ static ssize_t write_control_point(struct bt_conn *conn, const struct bt_gatt_at
 		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
 
-	struct mpl_cmd command;
+	struct bt_mcp_cmd command;
 
 	ARG_UNUSED(attr);
 	ARG_UNUSED(write_flags);
@@ -1189,7 +1189,7 @@ static ssize_t write_search_control_point(struct bt_conn *conn, const struct bt_
 		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
 	}
 
-	struct mpl_search search = {0};
+	struct bt_mcp_search search = {0};
 
 	ARG_UNUSED(attr);
 	ARG_UNUSED(write_flags);
@@ -1671,7 +1671,7 @@ static void notify_cb(struct bt_conn *conn, void *data)
 		} else {
 			uint64_t track_id = mcs_cbs->get_next_track_id();
 
-			if (track_id == MPL_NO_TRACK_ID) {
+			if (track_id == BT_MCP_NO_TRACK_ID) {
 				/* "If the media player has no next track, the length of the
 				 * characteristic shall be zero."
 				 */
@@ -2012,7 +2012,7 @@ void bt_mcs_media_state_changed(void)
 
 static void defer_media_control_point_ntf(struct bt_conn *conn, void *data)
 {
-	const struct mpl_cmd_ntf *cmd_ntf = data;
+	const struct bt_mcp_cmd_ntf *cmd_ntf = data;
 	struct client_state *client;
 	struct mcs_flags *flags;
 	struct bt_conn_info info;
@@ -2054,7 +2054,7 @@ static void defer_media_control_point_ntf(struct bt_conn *conn, void *data)
 	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 }
 
-void bt_mcs_command_complete(const struct mpl_cmd_ntf *cmd_ntf)
+void bt_mcs_command_complete(const struct bt_mcp_cmd_ntf *cmd_ntf)
 {
 	if (!mcs_inst.initialized) {
 		LOG_DBG("MCS is not initialized");
