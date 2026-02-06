@@ -127,7 +127,11 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(auxdisplay0), okay)
 	if ((uint32_t)sub_system == MCUX_SLCD0_CLK) {
-		CLOCK_EnableClock(kCLOCK_GateSLCD0);
+#ifdef CONFIG_SOC_FAMILY_MCXA
+		SYSCON->CLKUNLOCK &= ~SYSCON_CLKUNLOCK_UNLOCK_MASK;
+		MRCC0->MRCC_GLB_CC1_SET |= BIT(17);
+		SYSCON->CLKUNLOCK |= SYSCON_CLKUNLOCK_UNLOCK_MASK;
+#endif
 	}
 #endif
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(rtc), okay)
