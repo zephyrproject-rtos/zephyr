@@ -119,10 +119,10 @@ config FLASH_CODE_PARTITION_ADDRESS_INVALID
 config FLASH_LOAD_OFFSET
 	# Only user-configurable when USE_DT_CODE_PARTITION is disabled
 	hex "Kernel load offset" if !USE_DT_CODE_PARTITION
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) \
+		if FLASH_CODE_PARTITION_ADDRESS_INVALID
 	default $(sub_hex, $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION)), \
-		$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))) if USE_DT_CODE_PARTITION && \
-		!FLASH_CODE_PARTITION_ADDRESS_INVALID
-	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) if USE_DT_CODE_PARTITION
+			   $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))) if USE_DT_CODE_PARTITION
 	default 0
 	help
 	  This option specifies the byte offset from the beginning of flash that
