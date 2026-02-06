@@ -3828,6 +3828,12 @@ NXP Platforms (S32):
       files:
         - boards/nxp/mr_canhubk3/
         - boards/nxp/ucans32k1sic/
+    - name: NXP Shield nxp_adtja1101
+      collaborators:
+        - KevShaju
+        - marcin-wierzbicki
+      files:
+        - boards/shields/nxp_adtja1101/
   labels:
     - "platform: NXP S32"
     - "platform: NXP"
