@@ -3757,6 +3757,14 @@ NXP Platforms (MCU):
         - soc/nxp/kinetis/ke1xf/
       files-regex:
         - .*ke1*f.*
+    - name: NXP MCU KV5x
+      collaborators:
+        - fbrozovic
+      files:
+        - boards/nxp/twr_kv58f220m/
+        - soc/nxp/kinetis/kv5x/
+      files-regex:
+        - .*kv5.*
     - name: NXP MCU LPC11U6x
       collaborators:
         - mbittan
