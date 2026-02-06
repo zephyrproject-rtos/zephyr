@@ -120,6 +120,7 @@ def main():
         if node.props:
             for item in node.props:
                 # We currently do not support phandles for edt -> cmake conversion.
+                # And want to change it, thus this PR just to check the CI health on the main.
                 if "phandle" not in node.props[item].type:
                     if "array" in node.props[item].type:
                         # Convert array to CMake list
