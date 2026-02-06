@@ -1,0 +1,98 @@
+/*
+ * Copyright (c) 2025 Thomas Boje
+ * Copyright (c) 2026 Pavel Löbl
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <wch/ch32v307/ch32v307vc.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "ch32v307v_evt_r1-pinctrl.dtsi"
+
+/ {
+	model = "wch_ch32v307v_evt_r1";
+	compatible = "wch,ch32v307";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		user_button0: s2 {
+			label = "user";
+			gpios = <&gpioa 1 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		/*
+		 * To get LEDs on CH32V307V-EVT working, you have to use jumper wires to
+		 * connect them to PD0 and PD1 I/0 pins. And change status to "okay".
+		 */
+		status = "disabled";
+
+		led_1: led1 {
+			gpios = <&gpiod 0 GPIO_ACTIVE_LOW>;
+		};
+
+		led_2: led2 {
+			gpios = <&gpiod 1 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &led_1;
+		led1 = &led_2;
+		sw0 = &user_button0;
+	};
+};
+
+&clk_hse {
+	status = "okay";
+};
+
+&pll {
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&gpioe {
+	status = "okay";
+};
+
+&usart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+};
