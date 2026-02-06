@@ -6,6 +6,7 @@
 
 #include <arm/armv6-m.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/mchp_pic32cm_pl_clock.h>
 
 / {
 	cpus {
@@ -31,6 +32,50 @@
 
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
+		};
+
+		clock: clock@40000800 {
+			compatible = "microchip,pic32cm-pl-clock";
+			reg = <0x40000800 0x20>, <0x40001000 0x30>,
+			      <0x40001400 0x30>, <0x40001c00 0xb4>;
+			reg-names = "mclk", "oscctrl",
+				    "osc32kctrl", "gclk";
+
+			oschf: oschf {
+				compatible = "microchip,pic32cm-pl-oschf";
+			};
+
+			rtcclock: rtcclock {
+				compatible = "microchip,pic32cm-pl-rtc";
+				#clock-cells = <1>;
+			};
+
+			xosc32k: xosc32k {
+				compatible = "microchip,pic32cm-pl-xosc32k";
+			};
+
+			osc32k: osc32k {
+				compatible = "microchip,pic32cm-pl-osc32k";
+			};
+
+			gclkgen: gclkgen {
+				compatible = "microchip,pic32cm-pl-gclkgen";
+			};
+
+			gclkperiph: gclkperiph {
+				compatible = "microchip,pic32cm-pl-gclkperiph";
+				#clock-cells = <1>;
+			};
+
+			mclkcpu: mclkcpu {
+				compatible = "microchip,pic32cm-pl-mclkcpu";
+				mclk-cpu-div = <1>;
+			};
+
+			mclkperiph: mclkperiph {
+				compatible = "microchip,pic32cm-pl-mclkperiph";
+				#clock-cells = <1>;
+			};
 		};
 
 		pinctrl: pinctrl@41000000 {
