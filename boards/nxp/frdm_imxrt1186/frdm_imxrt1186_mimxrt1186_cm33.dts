@@ -57,3 +57,7 @@
 &systick {
 	status = "okay";
 };
+
+&lpadc1 {
+	status = "okay";
+};
