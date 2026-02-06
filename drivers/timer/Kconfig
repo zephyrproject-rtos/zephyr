@@ -21,6 +21,26 @@ config TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	  The drivers select this option automatically when needed. Do not modify
 	  this unless you have a very good reason for it.
 
+config SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE
+	bool "System timer frequency can be updated at runtime"
+	depends on !CPU_FREQ_PER_CPU_SCALING
+	help
+	  Allow the system timer frequency to change at runtime.
+
+	  When enabled, platforms must call z_sys_clock_hw_cycles_per_sec_update()
+	  after applying a system timer clock change. This updates the runtime
+	  value returned by sys_clock_hw_cycles_per_sec() and used by time
+	  conversion helpers.
+
+	  System timer drivers that cache derived constants or need to
+	  reprogram hardware when the clock changes should override
+	  z_sys_clock_hw_cycles_per_sec_update() to keep the driver state
+	  consistent.
+
+	  This option is not compatible with per-CPU frequency scaling
+	  because the system timer frequency is tracked as a single global
+	  value.
+
 config SYSTEM_CLOCK_SLOPPY_IDLE
 	bool "Timer allowed to skew uptime clock during idle"
 	help
