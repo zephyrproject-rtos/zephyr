@@ -20,7 +20,7 @@ the architecture of the kit) as follows:
 - Tamper Detection embedded into J4
 - Segment LCD Board Interface
 - MCU current measurement points for precision current consumption measurement
-- Multiple clock sources – RA MCU oscillator and sub-clock oscillator crystals,
+- Multiple clock sources - RA MCU oscillator and sub-clock oscillator crystals,
   providing precision 8.000 MHz and 32,768 Hz reference clocks. Additional low-precision
   clocks are available internal to the RA MCU
 

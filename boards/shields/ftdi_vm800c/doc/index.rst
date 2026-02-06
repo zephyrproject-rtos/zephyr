@@ -4,7 +4,7 @@ FTDI VM800C Embedded Video Engine Board
 Overview
 ********
 
-The VM800C is a development module for FTDI’s FT800, which is used to develop
+The VM800C is a development module for FTDI's FT800, which is used to develop
 and demonstrate the functionality of the FT800 Embedded Video Engine, EVE. This
 module behaves as an SPI slave, and requires a SPI Master for proper
 microcontroller interfacing and system integration.

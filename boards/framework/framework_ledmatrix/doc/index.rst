@@ -42,7 +42,7 @@ Here is an example of building the sample for enabling USB console.
    :goals: build
    :compact:
 
-You must flash the LED Matrix with an UF2 file. One option is to use West (Zephyr’s meta-tool). To
+You must flash the LED Matrix with an UF2 file. One option is to use West (Zephyr's meta-tool). To
 enter the UF2 flashing mode, remove the module flip the dip switch 2 and assemble it again. It will
 appear on the host as a mass storage device. At this point you can flash the image file by running:
 

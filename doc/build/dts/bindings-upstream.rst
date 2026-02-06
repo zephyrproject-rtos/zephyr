@@ -94,7 +94,7 @@ This ``|`` style prevents YAML parsers from removing the newlines in
 multi-line descriptions. This in turn makes these long strings
 display properly in the :ref:`devicetree_binding_index`.
 
-If using the binding’s properties gets complicated, you can use examples
+If using the binding's properties gets complicated, you can use examples
 to provide a minimal node. e.g.:
 
 .. code-block:: yaml

@@ -8,7 +8,7 @@ Overview
 
 The Canis Labs CANPico shield supports the Microchip MCP2517FD or MCP2518FD
 stand-alone CAN controller and Microchip MCP2562FD high-speed CAN FD
-transceiver. The CANPico is a carrier board in a ‘sock’ format for a
+transceiver. The CANPico is a carrier board in a 'sock' format for a
 Raspberry Pi Pico family.
 
 .. figure:: canis_canpico.webp

@@ -16,7 +16,7 @@ Hardware
 - Gigabit Ethernet
 - 2 USB 3.0 ports; 2 USB 2.0 ports.
 - Raspberry Pi standard 40 pin GPIO header (fully backwards compatible with previous boards)
-- 2 × micro-HDMI® ports (up to 4kp60 supported)
+- 2 x micro-HDMI® ports (up to 4kp60 supported)
 - 2-lane MIPI DSI display port
 - 2-lane MIPI CSI camera port
 - 4-pole stereo audio and composite video port

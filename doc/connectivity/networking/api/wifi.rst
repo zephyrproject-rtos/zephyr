@@ -182,9 +182,9 @@ Any AAA server can be used for testing purposes, for example, ``FreeRADIUS`` or 
 Server certificate domain name verification
 -------------------------------------------
 
-The authentication server’s identity is verified by validating the domain name in the X.509 certificate received from the server, using the ``Common Name`` (CN) field.
+The authentication server's identity is verified by validating the domain name in the X.509 certificate received from the server, using the ``Common Name`` (CN) field.
 
-* Exact domain match — Verifies that the certificate’s CN exactly matches the specified domain.
+* Exact domain match — Verifies that the certificate's CN exactly matches the specified domain.
 
 * Domain suffix match — Allows a certificate whose CN ends with the specified domain suffix.
 

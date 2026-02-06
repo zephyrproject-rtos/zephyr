@@ -4,7 +4,7 @@ Overview
 ********
 
 The MCXW23 EVK base board, combined with a MCXW23 Radio Daughter Module (RDM),
-is an evaluation environment supporting NXP’s MCXW23 wireless processor.
+is an evaluation environment supporting NXP's MCXW23 wireless processor.
 The EVK supports IoT applications and is intended for prototyping, demos,
 software development and measurements (power consumption and RF).
 The MCXW23 EVK constitutes multiple debugging mechanisms, therefore aiding

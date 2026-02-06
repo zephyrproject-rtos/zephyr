@@ -5,7 +5,7 @@ Overview
 
 `Shrike-lite`_ is a low-cost, open-source microcontroller + FPGA development board
 combining an `RP2040`_ MCU and a 1120 LUT FPGA. It features a PMOD connector,
-breadboard-compatible layout, integrated FPGA–MCU IO interface, QSPI flash,
+breadboard-compatible layout, integrated FPGA-MCU IO interface, QSPI flash,
 dual user LEDs, and USB Type-C for power/programming.
 Ideal for learners, hobbyists, and hardware/software co-design prototyping.
 

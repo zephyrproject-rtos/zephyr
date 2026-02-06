@@ -234,10 +234,10 @@ scale based on averaging clocks that count in SI seconds. TAI is a monotonic
 and continuous time scale.
 
 `Universal Time <https://en.wikipedia.org/wiki/Universal_Time>`__ (UT) is a
-time scale based on Earth’s rotation. UT is a discontinuous time scale as it
+time scale based on Earth's rotation. UT is a discontinuous time scale as it
 requires occasional adjustments (`leap seconds
 <https://en.wikipedia.org/wiki/Leap_second>`__) to maintain alignment to
-changes in Earth’s rotation. Thus the difference between TAI and UT varies
+changes in Earth's rotation. Thus the difference between TAI and UT varies
 over time. There are several variants of UT, with `UTC
 <https://en.wikipedia.org/wiki/Coordinated_Universal_Time>`__ being the most
 common.

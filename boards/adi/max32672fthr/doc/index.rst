@@ -40,7 +40,7 @@ Hardware
 
     - Internal High-Speed 100MHz Oscillator
     - Internal Low-Power 7.3728MHz and Ultra-Low-Power 80kHz Oscillators
-    - 16MHz–32MHz Oscillator, 32.768kHz Oscillator(External Crystal Required)
+    - 16MHz-32MHz Oscillator, 32.768kHz Oscillator(External Crystal Required)
     - External Clock Input for CPU, LPUART, LPTMR
 
   - Power Management Maximizes Uptime for Battery Applications

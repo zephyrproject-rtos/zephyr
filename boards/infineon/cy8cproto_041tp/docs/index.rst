@@ -3,7 +3,7 @@
 Overview
 ********
 
-The PSOC™ 4100T Plus evaluation kit enables you to evaluate and develop applications using the PSOC™ 4100T Plus microcontroller, part of Infineon’s PSOC™ 4 family.
+The PSOC™ 4100T Plus evaluation kit enables you to evaluate and develop applications using the PSOC™ 4100T Plus microcontroller, part of Infineon's PSOC™ 4 family.
 The device integrates an Arm Cortex-M0 CPU running up to 48 MHz, combining programmable analog and digital subsystems to support flexible mixed-signal designs. It features up to 128 KB Flash and 16 KB SRAM, and includes a wide range of configurable peripherals such as SAR ADC, comparators, opamps (CTBm), CapSense™ capacitive touch sensing, and TCPWM for timer/counter/PWM functionality.
 
 32-bit MCU subsystem

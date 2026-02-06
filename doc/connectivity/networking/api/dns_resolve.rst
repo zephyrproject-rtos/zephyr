@@ -121,7 +121,7 @@ The above query would return output like this:
     dns: . * wired, technology, culture, business, politics._http._tcp.dns-sd.org
     dns: . * slashdot, news for nerds, stuff that matters._http._tcp.dns-sd.org
     dns: . * bbc, world news._http._tcp.dns-sd.org
-    dns: .stuart’s printer._http._tcp.dns-sd.org
+    dns: .stuart's printer._http._tcp.dns-sd.org
     dns: . * zeroconf._http._tcp.dns-sd.org
     dns: All results received
 

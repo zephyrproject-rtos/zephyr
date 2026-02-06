@@ -20,7 +20,7 @@ CPU1 starts after CPU0 is ready and connects to it using the IPM channel.
 Test Procedure (on CPU1)
 * Erases the first page (4096 bytes) of the storage_partition.
 * Verifies that the page is blank.
-* Writes a simple incremental pattern (0x00–0x7F).
+* Writes a simple incremental pattern (0x00-0x7F).
 * Verifies the written pattern by reading back the same data.
 
 CPU1 prints a success message and terminates.

@@ -147,7 +147,7 @@ Use Case 3: Fast Boot with Known Baud Rate
    CONFIG_MODEM_HL78XX_AUTOBAUD_ONLY_IF_COMMS_FAIL=y
    CONFIG_MODEM_HL78XX_AUTOBAUD_TIMEOUT=2
 
-**Result:** Boot time ~50–100 ms if modem is already at target rate.
+**Result:** Boot time ~50-100 ms if modem is already at target rate.
 
 Use Case 4: Production / Field Deployment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

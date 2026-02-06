@@ -4,7 +4,7 @@ Overview
 ********
 
 The VAR-SOM-MX93 offers a high-performance processing for a low-power System-on-Module.
-The product is based on the i.MX 93 family which represents NXP’s latest power-optimized
+The product is based on the i.MX 93 family which represents NXP's latest power-optimized
 processors for smart home, building control, contactless HMI, IoT edge, and Industrial
 applications.
 

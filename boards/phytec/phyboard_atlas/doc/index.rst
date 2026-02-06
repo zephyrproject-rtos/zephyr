@@ -329,7 +329,7 @@ should see the following message in the terminal:
    Hello World! phyboard_atlas/mimxrt1176/cm7
 
 .. note::
-   Use J-Link version 7.50 or later. Debugging only supports running the CM4 image, since the board’s default boot core is CM7.
+   Use J-Link version 7.50 or later. Debugging only supports running the CM4 image, since the board's default boot core is CM7.
 
 References
 **********

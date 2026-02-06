@@ -28,7 +28,7 @@ The MXChip AZ3166 IoT DevKit has the following physical features:
 * Magnetometer sensor (LIS3MDL)
 * Atmospheric pressure sensor (LPS22HB)
 * Temperature and humidity sensor (HTS221)
-* EMW3166 Wi-Fi module with 256K SRAM，1M+2M Byte SPI Flash
+* EMW3166 Wi-Fi module with 256K SRAM, 1M+2M Byte SPI Flash
 
 
 Supported Features

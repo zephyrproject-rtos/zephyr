@@ -15,12 +15,12 @@ Hardware
 - USB 1.1 with device and host support.
 - Low-power sleep and dormant modes.
 - Drag-and-drop programming using mass storage over USB.
-- 29 × multi-function GPIO pins (20× via edge pinout, others via solder points).
-- 2 × SPI, 2 × I2C, 2 × UART, 4 × 12-bit ADC, 16 × controllable PWM channels.
+- 29 x multi-function GPIO pins (20x via edge pinout, others via solder points).
+- 2 x SPI, 2 x I2C, 2 x UART, 4 x 12-bit ADC, 16 x controllable PWM channels.
 - Accurate clock and timer on-chip.
 - Temperature sensor.
 - Accelerated floating-point libraries on-chip.
-- 8 × Programmable I/O (PIO) state machines for custom peripheral support.
+- 8 x Programmable I/O (PIO) state machines for custom peripheral support.
 
 Supported Features
 ==================
@@ -71,7 +71,7 @@ Here is an example of building the sample for driving the built-in RGB led.
    :goals: build
    :compact:
 
-You must flash the RP2040-Zero with an UF2 file. One option is to use West (Zephyr’s meta-tool). To enter the UF2 flashing mode just keep the ``BOOT`` button pressed while you connect the USB port, it will appear on the host as a mass storage device. In alternative with the board already connected via USB you can keep the ``RESET`` button pressed, press and release ``BOOT``, release ``RESET``. At this point you can flash the image file by running:
+You must flash the RP2040-Zero with an UF2 file. One option is to use West (Zephyr's meta-tool). To enter the UF2 flashing mode just keep the ``BOOT`` button pressed while you connect the USB port, it will appear on the host as a mass storage device. In alternative with the board already connected via USB you can keep the ``RESET`` button pressed, press and release ``BOOT``, release ``RESET``. At this point you can flash the image file by running:
 
 .. code-block:: bash
 

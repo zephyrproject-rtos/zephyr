@@ -17,7 +17,7 @@ Semiconductor nRF52840 ARM Cortex-M4F CPU and the following devices:
 - 32-bit ARM® Cortex® M4F CPU
 - 1MB Flash Memory / 256kB RAM
 - RoHS & Reach Compliant.
-- Dimension：26.2 x 15.1 x 6.8 mm (excluding Type C USB Connector)
+- Dimension: 26.2 x 15.1 x 6.8 mm (excluding Type C USB Connector)
 - Highly flexible multiprotocol SoC ideally suited for Bluetooth® Low Energy,
   ANT+, Zigbee, Thread (802.15.4) ultra low-power wireless applications.
 

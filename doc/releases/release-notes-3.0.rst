@@ -290,7 +290,7 @@ Architectures
 
     * Converted inline assembler calls to using CMSIS provided functions for
       :c:func:`arm_core_mpu_enable` and :c:func:`arm_core_mpu_disable`.
-    * Replaced Kconfig `CONFIG_CPU_CORTEX_R` with `CONFIG_ARMV7_R` to enable
+    * Replaced Kconfig ``CONFIG_CPU_CORTEX_R`` with ``CONFIG_ARMV7_R`` to enable
       differentiation between v7 and v8 Cortex-R.
     * Updated the Cortex-R syscall behavior to match that of the Cortex-M.
 
@@ -574,7 +574,7 @@ Drivers and Sensors
 
 * PWM
 
-  * stm32: DT bindings: `st,prescaler` property was moved from pwm
+  * stm32: DT bindings: ``st,prescaler`` property was moved from pwm
     to parent timer node.
   * stm32: Implemented PWM capture API
   * Added driver for GigaDevice GD32 SoCs. Only PWM output is supported.
@@ -1033,7 +1033,7 @@ release:
 * :github:`41404` - if zsock_connect() fails, tls_context does not get released automatically
 * :github:`41399` - samples: userspace: syscall_perf test cannot be run
 * :github:`41395` - littlefs(external spi flash) + mcuboot can't get right mount area
-* :github:`41392` - arm ：arm-none-eabi  Unable to complete compilation, an error occurred during linking
+* :github:`41392` - arm: arm-none-eabi  Unable to complete compilation, an error occurred during linking
 * :github:`41385` - SHT3xD example does not work on ESP32
 * :github:`41359` - Bluetooth: connection times out when trying to connect from certain centrals
 * :github:`41352` - uart_esp32_poll_in returns incorrect value
@@ -1074,7 +1074,7 @@ release:
 * :github:`41024` - SPI Loopback test fails to build on iMX RT EVKs
 * :github:`41017` - USB string descriptors can be re-ordered causing corruption and out-of-bounds-write
 * :github:`41016` - i2c_sam0.c i2c_sam0_transfer operations do not execute a STOP
-* :github:`41012` - irq_enable() doesn’t support enabling NVIC IRQ number more than 127
+* :github:`41012` - irq_enable() doesn't support enabling NVIC IRQ number more than 127
 * :github:`40999` - Unable to boot smp_svr sample image as documentation suggests, or sign
 * :github:`40974` - Xtensa High priority interrupts cannot be masked during initialization
 * :github:`40965` - Halt on receipt of Google Cloud IoT Core MQTT message sized 648+ bytes

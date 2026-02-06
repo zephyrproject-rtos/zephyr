@@ -854,7 +854,7 @@ Expressions
 
 **Parameters:**
    - ``alias``: The alias (defined in ``aliases`` node) to match.
-   - ``compat``: The parent node’s compatible string to match.
+   - ``compat``: The parent node's compatible string to match.
 
 ``dt_label_with_parent_compat_enabled(label, compat)``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -865,7 +865,7 @@ Expressions
 
 **Parameters:**
    - ``label``: The node label to match.
-   - ``compat``: The parent node’s compatible string to match.
+   - ``compat``: The parent node's compatible string to match.
 
 ``dt_chosen_enabled(chosen)``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -911,7 +911,7 @@ Expressions
 Usage
 -----
 
-These expressions are used in Twister’s test scenarios filtering logic to select boards that match
+These expressions are used in Twister's test scenarios filtering logic to select boards that match
 specific DT conditions. For example:
 
 .. code-block:: yaml
@@ -964,7 +964,7 @@ Ctest
 
 ctest_args: <list of arguments> (default empty)
     Specify a list of additional arguments to pass to ``ctest`` e.g.:
-    ``ctest_args: [‘--repeat until-pass:5’]``. Note that
+    ``ctest_args: ['--repeat until-pass:5']``. Note that
     ``--ctest-args`` can be passed multiple times to pass several arguments
     to the ctest.
 
@@ -1006,7 +1006,7 @@ pytest_root: <list of pytest testpaths> (default pytest)
 
 pytest_args: <list of arguments> (default empty)
     Specify a list of additional arguments to pass to ``pytest`` e.g.:
-    ``pytest_args: [‘-k=test_method’, ‘--log-level=DEBUG’]``. Note that
+    ``pytest_args: ['-k=test_method', '--log-level=DEBUG']``. Note that
     ``--pytest-args`` can be passed multiple times to pass several arguments
     to the pytest.
 
@@ -1177,14 +1177,14 @@ The harness executes the following steps:
         expected_rms_values: [56.0, 4.0, 1.2, 0.26, 140]
         tolerance_percentage: 20
 
-- **elements_to_trim** – Number of samples to discard at the start of measurement to eliminate noise.
-- **min_peak_distance** – Minimum distance between detected current peaks (helps detect distinct transitions).
-- **min_peak_height** – Minimum current threshold to qualify as a peak (in amps).
-- **peak_padding** – Number of samples to extend around each detected peak.
-- **measurement_duration** – Total time (in seconds) to record current data.
-- **num_of_transitions** – Expected number of power state transitions in the DUT during test execution.
-- **expected_rms_values** – Target RMS values for each identified execution phase (in milliamps).
-- **tolerance_percentage** – Allowed deviation percentage from the expected RMS values.
+- **elements_to_trim** - Number of samples to discard at the start of measurement to eliminate noise.
+- **min_peak_distance** - Minimum distance between detected current peaks (helps detect distinct transitions).
+- **min_peak_height** - Minimum current threshold to qualify as a peak (in amps).
+- **peak_padding** - Number of samples to extend around each detected peak.
+- **measurement_duration** - Total time (in seconds) to record current data.
+- **num_of_transitions** - Expected number of power state transitions in the DUT during test execution.
+- **expected_rms_values** - Target RMS values for each identified execution phase (in milliamps).
+- **tolerance_percentage** - Allowed deviation percentage from the expected RMS values.
 
 .. _twister_display_capture_harness:
 

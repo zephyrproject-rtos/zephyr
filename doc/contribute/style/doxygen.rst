@@ -53,7 +53,7 @@ Semantics
 Valid values
   What values are accepted, and how they are interpreted. Specify one or more of the following:
 
-  - Range: minimum/maximum values (for example, the type is ``uint8_t`` but only 0–100 are valid).
+  - Range: minimum/maximum values (for example, the type is ``uint8_t`` but only 0-100 are valid).
   - Discrete set: permitted values, when only a subset is allowed.
   - Enum: whether the value must be a valid member of a given enum (and whether all enumerators are
     allowed or only a subset).

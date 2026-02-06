@@ -7,7 +7,7 @@ Overview
 ********
 The X-NUCLEO-IKS01A1 is a motion MEMS and environmental sensor
 evaluation board system, compatible with the Arduino UNO R3 connector
-layout.  It includes an STMicroelectronics’ LSM6DS0 3-axis accelerometer
+layout.  It includes an STMicroelectronics' LSM6DS0 3-axis accelerometer
 and 3-axis gyroscope, the LIS3MDL 3-axis magnetometer, the HTS221
 humidity and temperature sensor, and the LPS25HB pressure sensor.
 

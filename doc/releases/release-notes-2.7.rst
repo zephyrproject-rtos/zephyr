@@ -1109,7 +1109,7 @@ release:
 * :github:`38688` - bt_gatt_unsubscribe does not remove subscription from internal list/returning BT_GATT_ITER_STOP causes bt_gatt_subscribe to return -ENOMEM / -12
 * :github:`38675` - DTS binding create devicetree_unfixed.h build error at v2.7.0
 * :github:`38673` - DNS-SD library does not support ``_services._dns-sd._udp.local`` meta-query for service enumeration
-* :github:`38668` -  ESP32‘s I2S
+* :github:`38668` -  ESP32's I2S
 * :github:`38667` - ST LSM6DSO polling mode does not work on nRF52dk_nrf52832
 * :github:`38655` - Failing Tests for Regulator API
 * :github:`38653` - drivers: modem: gsm_ppp: Add support for Quectel modems
@@ -1553,7 +1553,7 @@ release:
 * :github:`36782` - drivers: serial: nrfx: Enforced pull-ups on RXD and CTS conflict on many custom boards
 * :github:`36781` - source_periph incorrectly set in dma_stm32
 * :github:`36778` - firmware update using mcumgr displays information for only slot 0 and not slot 1.
-* :github:`36770` - doc：Missing description for deadline scheduling
+* :github:`36770` - doc: Missing description for deadline scheduling
 * :github:`36769` - Zephyr assumes Interrupt Line config space register is RW, while ACRN hardwired it to 0.
 * :github:`36767` - tests-ci :arch.arm.irq_advanced_features.arm_irq_target_state : test failed
 * :github:`36768` - tests-ci :coredump.logging_backend : test failed

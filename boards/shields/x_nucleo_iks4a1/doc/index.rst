@@ -33,7 +33,7 @@ X-NUCLEO-IKS4A1 provides the following key features:
  - SHT40AD1B: High-accuracy, ultra-low-power relative humidity and temperature
    sensor (by Sensirion)
  - STTS22H: Low-voltage, ultralow-power, 0.5 °C accuracy temperature sensor
-   (–40 °C to +125 °C)
+   (-40 °C to +125 °C)
  - LSM6DSV16X: MEMS 3D accelerometer (±2/±4/±8/±16 g) + 3D gyroscope
    (±125/±250/±500/±1000/±2000/±4000 dps) with embedded sensor fusion, AI, Qvar
  - DIL 24-pin socket available for additional MEMS adapters and other sensors

@@ -15,12 +15,12 @@ Hardware
 - USB 1.1 with device and host support
 - Low-power sleep and dormant modes
 - Drag-and-drop programming using mass storage over USB
-- 29 × multi-function GPIO pins (20× via edge pinout, others via solder points)
-- 2 × SPI, 2 × I2C, 2 × UART, 4 × 12-bit ADC, 24 × controllable PWM channels
+- 29 x multi-function GPIO pins (20x via edge pinout, others via solder points)
+- 2 x SPI, 2 x I2C, 2 x UART, 4 x 12-bit ADC, 24 x controllable PWM channels
 - Accurate on-chip clock and timer peripherals
 - Temperature sensor
 - Accelerated floating-point libraries on-chip
-- 12 × Programmable I/O (PIO) state machines for custom peripheral support
+- 12 x Programmable I/O (PIO) state machines for custom peripheral support
 
 Supported Features
 ==================
@@ -32,7 +32,7 @@ Pin Mapping
 
 The peripherals of the RP2350 SoC can be routed to various pins on the board. The configuration of these routes can be modified through DTS. Please refer to the datasheet to see the possible routings for each peripheral.
 
-For detailed hardware information, see the `RP2350-Zero – Waveshare Wiki <https://www.waveshare.com/wiki/RP2350-Zero>`_.
+For detailed hardware information, see the `RP2350-Zero - Waveshare Wiki <https://www.waveshare.com/wiki/RP2350-Zero>`_.
 
 
 Default Zephyr Peripheral Mapping:
@@ -70,7 +70,7 @@ Here is an example of building the sample for driving the built-in RGB led.
    :goals: build
    :compact:
 
-You can flash the RP2350-Zero with an UF2 file. One option is to use West (Zephyr’s meta-tool). To enter the UF2 flashing mode just keep the ``BOOT`` button pressed while you connect the USB port, it will appear on the host as a mass storage device. Alternatively, with the board already connected via USB you can keep the ``BOOT`` button pressed, press and release ``RESET``, release ``BOOT``. At this point you can flash the image file by running:
+You can flash the RP2350-Zero with an UF2 file. One option is to use West (Zephyr's meta-tool). To enter the UF2 flashing mode just keep the ``BOOT`` button pressed while you connect the USB port, it will appear on the host as a mass storage device. Alternatively, with the board already connected via USB you can keep the ``BOOT`` button pressed, press and release ``RESET``, release ``BOOT``. At this point you can flash the image file by running:
 
 .. code-block:: bash
 

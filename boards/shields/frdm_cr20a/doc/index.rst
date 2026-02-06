@@ -32,7 +32,7 @@ Hardware
 - Power Management
 
         - Programmable output power -32 dBm to +8 dBm at the SMA connector, no trap
-        - Receiver sensitivity: –102 dBm, typical
+        - Receiver sensitivity: -102 dBm, typical
 
 - Components
 

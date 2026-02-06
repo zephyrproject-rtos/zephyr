@@ -7,7 +7,7 @@ The FRDM-MCXW71 is a compact and scalable development board for rapid
 prototyping of the MCX W71 wireless MCU. It offers easy evaluation of the MCX
 W71's multiprotocol wireless support for Bluetooth LE, Zigbee, Thread and
 Matter. The board includes an on-board MCU-Link debugger, industry standard
-headers for easy access to the MCU’s I/Os, an accelerometer, a light sensor and
+headers for easy access to the MCU's I/Os, an accelerometer, a light sensor and
 external SPI flash memory.
 
 The MCX W71x family features a 96 MHz Arm® Cortex®-M33 core coupled with a

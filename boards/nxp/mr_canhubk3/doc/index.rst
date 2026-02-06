@@ -324,7 +324,7 @@ Troubleshooting
     Re-sign with --header-size 0x400 and re-flash.
 
     Do not add an IVT to MCUboot-chainloaded applications;
-    it’s only emitted for standalone/XIP images or MCUboot itself.
+    it's only emitted for standalone/XIP images or MCUboot itself.
 
 Debugging
 =========

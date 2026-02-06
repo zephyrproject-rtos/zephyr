@@ -23,12 +23,12 @@ Key Features
 - USB OTG FS
 - SAI audio codec
 - One ST-MEMS digital microphone
-- 2× 512-Mbit Quad-SPI NOR flash memory
+- 2x 512-Mbit Quad-SPI NOR flash memory
 - 128-Mbit SDRAM
 - 4-Gbyte on-board eMMC
 - 1 user and reset push-button
 - Fanout daughterboard
-- 2× CAN FDs
+- 2x CAN FDs
 - Board connectors:
 
  - USB FS Micro-AB connectors

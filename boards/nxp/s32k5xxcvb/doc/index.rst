@@ -41,7 +41,7 @@ Connections and IOs
 The Port columns in the Reference Manual (RM) are organized into ports and pins to ensure consistency with
 the GPIO driver used in this Zephyr port.
 
-The table below summarizes the mapping between the Port columns in the RM and Zephyr’s ports and pins.
+The table below summarizes the mapping between the Port columns in the RM and Zephyr's ports and pins.
 Please consider this mapping when using the GPIO driver or configuring pin multiplexing for device drivers.
 
 +-------------------+--------------------+
@@ -130,7 +130,7 @@ and to the host computer via USB or Ethernet, as supported by the probe.
 NXP S32K5XX-MB Shield
 =====================
 
-This Zephyr shield, :ref:`nxp_s32k5xx_mb` expands the board’s available I/O connectivity
+This Zephyr shield, :ref:`nxp_s32k5xx_mb` expands the board's available I/O connectivity
 
 The shield provides access to the following feature:
 - Serial UART
