@@ -6183,6 +6183,13 @@ sub process {
 			     "sizeof(& should be avoided\n" . $herecurr);
 		}
 
+# check for sizeof(character literal)
+		if ($line =~ /\bsizeof\s*\(\s*'/ &&
+			$line !~ /\bsizeof\s*\(\s*\(\s*[^)]+\s*\)\s*'/) {
+			WARN("SIZEOF_CHAR_LITERAL",
+     			"sizeof(character constant) is sizeof(int) in C; use sizeof((char)'x') (or +1) instead\n" . $herecurr);
+		}
+
 # check for sizeof without parenthesis
 		if ($line =~ /\bsizeof\s+((?:\*\s*|)$Lval|$Type(?:\s+$Lval|))/) {
 			if (WARN("SIZEOF_PARENTHESIS",
