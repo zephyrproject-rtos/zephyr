@@ -2359,7 +2359,7 @@ static void pos_work_cb(struct k_work *work)
 	(void)k_work_schedule(&media_player.pos_work, TRACK_POS_WORK_DELAY);
 }
 
-int media_proxy_pl_init(void)
+int bt_mcp_media_control_server_register(void)
 {
 	static bool initialized;
 	int ret;
@@ -2471,9 +2471,6 @@ int media_proxy_pl_init(void)
 		LOG_ERR("Unable to MCS callbacks");
 		return ret;
 	}
-
-	ret = media_proxy_pl_register(&media_player.calls);
-	__ASSERT(ret == 0, "Unable to register player");
 
 	k_work_init_delayable(&media_player.pos_work, pos_work_cb);
 
