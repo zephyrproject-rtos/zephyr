@@ -12,8 +12,10 @@
 #include <zephyr/cpu_freq/policy.h>
 #include <zephyr/cpu_freq/cpu_freq.h>
 
-BUILD_ASSERT(CONFIG_CPU_FREQ_POLICY_PRESSURE_LOWEST_PRIO <= K_LOWEST_THREAD_PRIO,
-	     "CONFIG_CPU_FREQ_POLICY_PRESSURE_LOWEST_PRIO mustn't be set to below idle priority");
+#define CPU_FREQ_POLICY_PRESSURE_THRESHOLD                                                         \
+	((CONFIG_CPU_FREQ_POLICY_PRESSURE_LOWEST_PRIO <= K_LOWEST_THREAD_PRIO)                     \
+		 ? CONFIG_CPU_FREQ_POLICY_PRESSURE_LOWEST_PRIO                                     \
+		 : K_LOWEST_THREAD_PRIO)
 
 LOG_MODULE_REGISTER(cpu_freq_policy_pressure, CONFIG_CPU_FREQ_LOG_LEVEL);
 
@@ -67,7 +69,7 @@ static void thread_eval_cb(const struct k_thread *thread, void *user_data)
 	LOG_DBG("Evaluating thread: %p with prio: %d status: %d", thread, thread->base.prio,
 		thread->base.thread_state);
 
-	int weight = CONFIG_CPU_FREQ_POLICY_PRESSURE_LOWEST_PRIO - thread->base.prio + 1;
+	int weight = CPU_FREQ_POLICY_PRESSURE_THRESHOLD - thread->base.prio + 1;
 
 	if (weight < 0) {
 		return;
@@ -99,14 +101,13 @@ static int get_normalized_sys_pressure(void)
 }
 
 /*
- * The pressure policy iterates through the threads currently sitting in the ready queue
- * at the time of evaluation and accumulates the sum of their priorities, normalizing them
- * around CONFIG_CPU_FREQ_POLICY_PRESSURE_LOWEST_PRIO, configured by the user. The policy
- * then iterates through the list of available P-states and selects the first P-state where
- * the current normalized system pressure is greater than or equal to the load threshold of
- * the P-state. If the calculated pressure is below all available P-state thresholds, then
- * the last P-state in the array will be selected. P-states must be defined in decreasing
- * threshold order.
+ * The pressure policy iterates through the threads currently sitting in the ready queue at the time
+ * of evaluation and accumulates the sum of their priorities, normalizing them around
+ * CPU_FREQ_POLICY_PRESSURE_THRESHOLD, configured by the user. The policy then iterates through the
+ * list of available P-states and selects the first P-state where the current normalized system
+ * pressure is greater than or equal to the load threshold of the P-state. If the calculated
+ * pressure is below all available P-state thresholds, then the last P-state in the array will be
+ * selected. P-states must be defined in decreasing threshold order.
  */
 int cpu_freq_policy_select_pstate(const struct pstate **pstate_out)
 {
