@@ -1,4 +1,4 @@
-  #compdef west
+#compdef west
 
 # Copyright (c) 2022 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
@@ -6,7 +6,6 @@
 # Ensure this works also when being source-ed
 
 compdef _west west
-
 typeset -A -g _opt_args
 
 _west_cmds() {
@@ -36,6 +35,7 @@ _west_cmds() {
   'debugserver[connect to board and launch a debug server]'
   'attach[interactively debug a board]'
   'rtt[open an rtt shell]'
+  'reset[reset the board to reboot]'
   'zephyr-export[export Zephyr installation as a CMake config package]'
   'spdx[create SPDX bill of materials]'
   'blobs[work with binary blobs]'
@@ -532,7 +532,7 @@ _west_twister() {
   # Directory options
   '(-O --outdir)'{-O,--outdir}'[output directory]:dir:_directories'
   '(-A --board-root)'{-A,--board-root}'[board root directory]:dir:_directories'
-  '(-T --testsuite-root)'{-T,--testsuite-root}'[testsuite root]:dir:_directories'
+  '(--testsuite-root)'{--testsuite-root}'[testsuite root]:dir:_directories'
   '(-o --report-dir)'{-o,--report-dir}'[report directory]:dir:_directories'
   '--alt-config-root[alt config root]:dir:_directories'
   '--coverage-basedir[coverage basedir]:dir:_directories'
@@ -596,6 +596,10 @@ _west_twister() {
 _west_simulate() {
   __comp_west_runner_cmd
   }
+
+_west_reset() {
+  __comp_west_runner_cmd
+}
 
 _west_rtt() {
   local -a opts=(
