@@ -6,8 +6,8 @@
 
 / {
 	aliases {
-		stepper-drv = &tmc2209;
-		stepper = &step_dir_motion_control;
+		stepper-driver = &tmc2209;
+		stepper-motor = &step_dir_motion_control;
 	};
 
 	tmc2209: tmc2209 {
@@ -19,10 +19,10 @@
 	};
 
 	step_dir_motion_control: step_dir_motion_control {
-		compatible = "zephyr,gpio-step-dir-stepper";
+		compatible = "zephyr,gpio-step-dir-stepper-motor";
 		step-gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>; /* D8 */
 		dir-gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>; /* D9 */
 		invert-direction;
-		stepper-drv = <&tmc2209>;
+		stepper = <&tmc2209>;
 	};
 };

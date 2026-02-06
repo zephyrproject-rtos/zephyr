@@ -5,32 +5,32 @@ Steppers
 
 The stepper driver subsystem consists of two device driver APIs:
 
-Stepper-DRV API
+Stepper API
 ***************
 
 The stepper driver API provides a common interface for stepper drivers.
 
-- Configure **micro-stepping resolution** using :c:func:`stepper_drv_set_micro_step_res`
-  and :c:func:`stepper_drv_get_micro_step_res`.
-- **Enable** the stepper driver using :c:func:`stepper_drv_enable`.
-- **Disable** the stepper driver using :c:func:`stepper_drv_disable`.
-- Register an **event callback** using :c:func:`stepper_drv_set_event_cb`.
+- Configure **micro-stepping resolution** using :c:func:`stepper_set_micro_step_res`
+  and :c:func:`stepper_get_micro_step_res`.
+- **Enable** the stepper driver using :c:func:`stepper_enable`.
+- **Disable** the stepper driver using :c:func:`stepper_disable`.
+- Register an **event callback** using :c:func:`stepper_set_event_cb`.
 
-Stepper API
-***********
+Stepper Motor API
+*****************
 
 The stepper API provides a common interface for stepper controllers.
 
-- Configure **reference position** in microsteps using :c:func:`stepper_set_reference_position`
-  and :c:func:`stepper_get_actual_position`.
-- Set **step interval** in nanoseconds between steps using :c:func:`stepper_set_microstep_interval`
-- **Move by** +/- micro-steps also known as **relative movement** using :c:func:`stepper_move_by`.
-- **Move to** a specific position also known as **absolute movement** using :c:func:`stepper_move_to`.
+- Configure **reference position** in microsteps using :c:func:`stepper_motor_set_reference_position`
+  and :c:func:`stepper_motor_get_actual_position`.
+- Set **step interval** in nanoseconds between steps using :c:func:`stepper_motor_set_microstep_interval`
+- **Move by** +/- micro-steps also known as **relative movement** using :c:func:`stepper_motor_move_by`.
+- **Move to** a specific position also known as **absolute movement** using :c:func:`stepper_motor_move_to`.
 - Run continuously with a **constant step interval** in a specific direction until
-  a stop is detected using :c:func:`stepper_run`.
-- **Stop** the stepper using :c:func:`stepper_stop`.
-- Check if the stepper is **moving** using :c:func:`stepper_is_moving`.
-- Register an **event callback** using :c:func:`stepper_set_event_callback`.
+  a stop is detected using :c:func:`stepper_motor_run`.
+- **Stop** the stepper using :c:func:`stepper_motor_stop`.
+- Check if the stepper is **moving** using :c:func:`stepper_motor_is_moving`.
+- Register an **event callback** using :c:func:`stepper_motor_set_event_callback`.
 
 .. _stepper-device-tree:
 
@@ -61,7 +61,7 @@ The stepper API test suite provides a set of tests that can be used to verify th
 stepper drivers.
 
 .. zephyr-app-commands::
-   :zephyr-app: tests/drivers/stepper/stepper_api
+   :zephyr-app: tests/drivers/stepper/api
    :board: <board>
    :west-args: --extra-dtc-overlay <path/to/board.overlay>
    :goals: build flash
@@ -70,7 +70,7 @@ Sample Output
 =============
 
 Below is a snippet of the test output for the tmc50xx stepper driver. Since
-:c:func:`stepper_set_microstep_interval` is not implemented by the driver the corresponding tests
+:c:func:`stepper_motor_set_microstep_interval` is not implemented by the driver the corresponding tests
 have been skipped.
 
 .. code-block:: console
@@ -96,17 +96,17 @@ have been skipped.
 API Reference
 *************
 
-.. _stepper-drv-api-reference:
+.. _stepper-driver-api-reference:
 
 A common set of functions which should be implemented by all stepper drivers.
 
-.. doxygengroup:: stepper_drv_interface
+.. doxygengroup:: stepper_driver_interface
 
-.. _stepper-api-reference:
+.. _stepper-motor-api-reference:
 
 A common set of functions which should be implemented by all stepper controllers.
 
-.. doxygengroup:: stepper_interface
+.. doxygengroup:: stepper_motor_interface
 
 Stepper controller specific APIs
 ********************************

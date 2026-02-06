@@ -4,6 +4,6 @@
 description: |
     A fake stepper driver for use as either a stub or a mock in testing.
 
-compatible: "zephyr,fake-stepper-drv"
+compatible: "zephyr,fake-stepper-driver"
 
 include: stepper-driver.yaml

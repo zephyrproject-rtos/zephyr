@@ -12,23 +12,23 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(tmc51xx, CONFIG_STEPPER_LOG_LEVEL);
 
-#define DT_DRV_COMPAT adi_tmc51xx_stepper_drv
+#define DT_DRV_COMPAT adi_tmc51xx_stepper_driver
 
-struct tmc51xx_stepper_drv_config {
+struct tmc51xx_stepper_driver_config {
 	const uint16_t default_micro_step_res;
 	const int8_t sg_threshold;
 	/* parent controller required for bus communication */
 	const struct device *controller;
 };
 
-struct tmc51xx_stepper_drv_data {
-	stepper_drv_event_cb_t drv_event_cb;
+struct tmc51xx_stepper_driver_data {
+	stepper_event_cb_t drv_event_cb;
 	void *drv_event_cb_user_data;
 };
 
-void tmc51xx_stepper_drv_trigger_cb(const struct device *dev, const enum stepper_drv_event event)
+void tmc51xx_stepper_driver_trigger_cb(const struct device *dev, const enum stepper_event event)
 {
-	struct tmc51xx_stepper_drv_data *data = dev->data;
+	struct tmc51xx_stepper_driver_data *data = dev->data;
 
 	if (!data->drv_event_cb) {
 		LOG_WRN_ONCE("No stepper driver callback registered");
@@ -37,10 +37,10 @@ void tmc51xx_stepper_drv_trigger_cb(const struct device *dev, const enum stepper
 	data->drv_event_cb(dev, event, data->drv_event_cb_user_data);
 }
 
-static int tmc51xx_stepper_drv_set_event_callback(const struct device *stepper,
-						  stepper_drv_event_cb_t callback, void *user_data)
+static int tmc51xx_stepper_driver_set_event_callback(const struct device *stepper,
+						     stepper_event_cb_t callback, void *user_data)
 {
-	struct tmc51xx_stepper_drv_data *data = stepper->data;
+	struct tmc51xx_stepper_driver_data *data = stepper->data;
 
 	data->drv_event_cb = callback;
 	data->drv_event_cb_user_data = user_data;
@@ -48,14 +48,14 @@ static int tmc51xx_stepper_drv_set_event_callback(const struct device *stepper,
 	return 0;
 }
 
-static int tmc51xx_stepper_drv_enable(const struct device *dev)
+static int tmc51xx_stepper_driver_enable(const struct device *dev)
 {
-	const struct tmc51xx_stepper_drv_config *config = dev->config;
+	const struct tmc51xx_stepper_driver_config *config = dev->config;
 	const struct device *controller = config->controller;
 	uint32_t reg_value;
 	int err;
 
-	LOG_DBG("Enabling Stepper motor controller %s", dev->name);
+	LOG_DBG("Enabling Stepper Driver %s", dev->name);
 
 	err = tmc51xx_read(controller, TMC51XX_CHOPCONF, &reg_value);
 	if (err != 0) {
@@ -67,10 +67,10 @@ static int tmc51xx_stepper_drv_enable(const struct device *dev)
 	return tmc51xx_write(controller, TMC51XX_CHOPCONF, reg_value);
 }
 
-static int tmc51xx_stepper_drv_disable(const struct device *dev)
+static int tmc51xx_stepper_driver_disable(const struct device *dev)
 {
-	LOG_DBG("Disabling Stepper motor controller %s", dev->name);
-	const struct tmc51xx_stepper_drv_config *config = dev->config;
+	LOG_DBG("Disabling Stepper Driver %s", dev->name);
+	const struct tmc51xx_stepper_driver_config *config = dev->config;
 	const struct device *controller = config->controller;
 	uint32_t reg_value;
 	int err;
@@ -85,10 +85,10 @@ static int tmc51xx_stepper_drv_disable(const struct device *dev)
 	return tmc51xx_write(controller, TMC51XX_CHOPCONF, reg_value);
 }
 
-static int tmc51xx_stepper_drv_set_micro_step_res(const struct device *dev,
-					      enum stepper_drv_micro_step_resolution res)
+static int tmc51xx_stepper_driver_set_micro_step_res(const struct device *dev,
+						     enum stepper_micro_step_resolution res)
 {
-	const struct tmc51xx_stepper_drv_config *config = dev->config;
+	const struct tmc51xx_stepper_driver_config *config = dev->config;
 	const struct device *controller = config->controller;
 	uint32_t reg_value;
 	int err;
@@ -99,7 +99,7 @@ static int tmc51xx_stepper_drv_set_micro_step_res(const struct device *dev,
 	}
 
 	reg_value &= ~TMC5XXX_CHOPCONF_MRES_MASK;
-	reg_value |= ((MICRO_STEP_RES_INDEX(STEPPER_DRV_MICRO_STEP_256) - LOG2(res))
+	reg_value |= ((MICRO_STEP_RES_INDEX(STEPPER_MICRO_STEP_256) - LOG2(res))
 		      << TMC5XXX_CHOPCONF_MRES_SHIFT);
 
 	err = tmc51xx_write(controller, TMC51XX_CHOPCONF, reg_value);
@@ -112,10 +112,10 @@ static int tmc51xx_stepper_drv_set_micro_step_res(const struct device *dev,
 	return 0;
 }
 
-static int tmc51xx_stepper_drv_get_micro_step_res(const struct device *dev,
-					      enum stepper_drv_micro_step_resolution *res)
+static int tmc51xx_stepper_driver_get_micro_step_res(const struct device *dev,
+						     enum stepper_micro_step_resolution *res)
 {
-	const struct tmc51xx_stepper_drv_config *config = dev->config;
+	const struct tmc51xx_stepper_driver_config *config = dev->config;
 	const struct device *controller = config->controller;
 	uint32_t reg_value;
 	int err;
@@ -126,14 +126,14 @@ static int tmc51xx_stepper_drv_get_micro_step_res(const struct device *dev,
 	}
 	reg_value &= TMC5XXX_CHOPCONF_MRES_MASK;
 	reg_value >>= TMC5XXX_CHOPCONF_MRES_SHIFT;
-	*res = (1 << (MICRO_STEP_RES_INDEX(STEPPER_DRV_MICRO_STEP_256) - reg_value));
+	*res = (1 << (MICRO_STEP_RES_INDEX(STEPPER_MICRO_STEP_256) - reg_value));
 	LOG_DBG("Stepper motor controller %s get micro step resolution: %d", dev->name, *res);
 	return 0;
 }
 
-static int tmc51xx_stepper_drv_init(const struct device *dev)
+static int tmc51xx_stepper_driver_init(const struct device *dev)
 {
-	const struct tmc51xx_stepper_drv_config *config = dev->config;
+	const struct tmc51xx_stepper_driver_config *config = dev->config;
 	const struct device *controller = config->controller;
 	int err;
 
@@ -150,7 +150,7 @@ static int tmc51xx_stepper_drv_init(const struct device *dev)
 		return -EIO;
 	}
 
-	err = tmc51xx_stepper_drv_set_micro_step_res(dev, config->default_micro_step_res);
+	err = tmc51xx_stepper_driver_set_micro_step_res(dev, config->default_micro_step_res);
 	if (err != 0) {
 		return -EIO;
 	}
@@ -158,27 +158,27 @@ static int tmc51xx_stepper_drv_init(const struct device *dev)
 	return 0;
 }
 
-static DEVICE_API(stepper_drv, tmc51xx_stepper_drv_api) = {
-	.enable = tmc51xx_stepper_drv_enable,
-	.disable = tmc51xx_stepper_drv_disable,
-	.set_micro_step_res = tmc51xx_stepper_drv_set_micro_step_res,
-	.get_micro_step_res = tmc51xx_stepper_drv_get_micro_step_res,
-	.set_event_cb = tmc51xx_stepper_drv_set_event_callback,
+static DEVICE_API(stepper, tmc51xx_stepper_driver_api) = {
+	.enable = tmc51xx_stepper_driver_enable,
+	.disable = tmc51xx_stepper_driver_disable,
+	.set_micro_step_res = tmc51xx_stepper_driver_set_micro_step_res,
+	.get_micro_step_res = tmc51xx_stepper_driver_get_micro_step_res,
+	.set_event_cb = tmc51xx_stepper_driver_set_event_callback,
 };
 
-#define TMC51XX_STEPPER_DRV_DEFINE(inst)                                                           \
+#define TMC51XX_STEPPER_DRIVER_DEFINE(inst)                                                        \
 	COND_CODE_1(DT_PROP_EXISTS(inst, stallguard_threshold_velocity),                           \
 	BUILD_ASSERT(DT_PROP(inst, stallguard_threshold_velocity),                                 \
 			"stallguard threshold velocity must be a positive value"), ());            \
-	static const struct tmc51xx_stepper_drv_config tmc51xx_stepper_drv_config_##inst = {       \
+	static const struct tmc51xx_stepper_driver_config tmc51xx_stepper_driver_config_##inst = { \
 		.controller = DEVICE_DT_GET(DT_PARENT(DT_DRV_INST(inst))),                         \
 		.default_micro_step_res = DT_INST_PROP(inst, micro_step_res),                      \
 		.sg_threshold = DT_INST_PROP(inst, stallguard2_threshold),                         \
 	};                                                                                         \
-	static struct tmc51xx_stepper_drv_data tmc51xx_stepper_drv_data_##inst;                    \
-	DEVICE_DT_INST_DEFINE(inst, tmc51xx_stepper_drv_init, NULL,                                \
-			      &tmc51xx_stepper_drv_data_##inst,                                    \
-			      &tmc51xx_stepper_drv_config_##inst, POST_KERNEL,                     \
-			      CONFIG_STEPPER_INIT_PRIORITY, &tmc51xx_stepper_drv_api);
+	static struct tmc51xx_stepper_driver_data tmc51xx_stepper_driver_data_##inst;              \
+	DEVICE_DT_INST_DEFINE(inst, tmc51xx_stepper_driver_init, NULL,                             \
+			      &tmc51xx_stepper_driver_data_##inst,                                 \
+			      &tmc51xx_stepper_driver_config_##inst, POST_KERNEL,                  \
+			      CONFIG_STEPPER_INIT_PRIORITY, &tmc51xx_stepper_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(TMC51XX_STEPPER_DRV_DEFINE)
+DT_INST_FOREACH_STATUS_OKAY(TMC51XX_STEPPER_DRIVER_DEFINE)
