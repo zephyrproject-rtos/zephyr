@@ -82,19 +82,19 @@ extern "C" {
 /**
  * @brief Media player command
  */
-struct mpl_cmd {
+struct bt_mcp_cmd {
 	/** The opcode. See the MEDIA_PROXY_OP_* values */
 	uint8_t  opcode;
-	/** Whether or not the @ref mpl_cmd.param is used */
+	/** Whether or not the @ref bt_mcp_cmd.param is used */
 	bool  use_param;
-	/** A 32-bit signed parameter. The parameter value depends on the @ref mpl_cmd.opcode */
+	/** A 32-bit signed parameter. The parameter value depends on the @ref bt_mcp_cmd.opcode */
 	int32_t param;
 };
 
 /**
  * @brief Media command notification
  */
-struct mpl_cmd_ntf {
+struct bt_mcp_cmd_ntf {
 	/** The opcode that was sent */
 	uint8_t requested_opcode;
 	/** The result of the operation  */
@@ -104,7 +104,7 @@ struct mpl_cmd_ntf {
 /**
  * @brief Search control item
  */
-struct mpl_sci {
+struct bt_mcp_sci {
 	uint8_t len;                     /**< Length of type and parameter */
 	uint8_t type;                    /**< MEDIA_PROXY_SEARCH_TYPE_<...> */
 	char    param[SEARCH_PARAM_MAX]; /**< Search parameter */
@@ -113,8 +113,8 @@ struct mpl_sci {
 /**
  * @brief Search
  */
-struct mpl_search {
-	/** The length of the @ref mpl_search.search value */
+struct bt_mcp_search {
+	/** The length of the @ref bt_mcp_search.search value */
 	uint8_t len;
 	/** Concatenated search control items - (type, length, param) */
 	char search[SEARCH_LEN_MAX];
@@ -764,7 +764,7 @@ struct media_proxy_ctrl_cbs {
 	 *                 or errno on negative value.
 	 * @param cmd      The command sent
 	 */
-	void (*command_send)(struct media_player *player, int err, const struct mpl_cmd *cmd);
+	void (*command_send)(struct media_player *player, int err, const struct bt_mcp_cmd *cmd);
 
 	/**
 	 * @brief Command result receive callback
@@ -778,7 +778,7 @@ struct media_proxy_ctrl_cbs {
 	 * @param result   The result received
 	 */
 	void (*command_recv)(struct media_player *player, int err,
-			     const struct mpl_cmd_ntf *result);
+			     const struct bt_mcp_cmd_ntf *result);
 
 	/**
 	 * @brief Commands supported receive callback
@@ -804,7 +804,8 @@ struct media_proxy_ctrl_cbs {
 	 *                      or errno on negative value.
 	 * @param search        The search sent
 	 */
-	void (*search_send)(struct media_player *player, int err, const struct mpl_search *search);
+	void (*search_send)(struct media_player *player, int err,
+			    const struct bt_mcp_search *search);
 
 	/**
 	 * @brief Search result code receive callback
@@ -1188,7 +1189,7 @@ int media_proxy_ctrl_get_media_state(struct media_player *player);
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_send_command(struct media_player *player, const struct mpl_cmd *command);
+int media_proxy_ctrl_send_command(struct media_player *player, const struct bt_mcp_cmd *command);
 
 /**
  * @brief Read Commands Supported
@@ -1221,7 +1222,7 @@ int media_proxy_ctrl_get_commands_supported(struct media_player *player);
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_send_search(struct media_player *player, const struct mpl_search *search);
+int media_proxy_ctrl_send_search(struct media_player *player, const struct bt_mcp_search *search);
 
 /**
  * @brief Read Search Results Object ID
@@ -1522,7 +1523,7 @@ struct media_proxy_pl_calls {
 	 *
 	 * @param command	The command to send
 	 */
-	void (*send_command)(const struct mpl_cmd *command);
+	void (*send_command)(const struct bt_mcp_cmd *command);
 
 	/**
 	 * @brief Read Commands Supported
@@ -1544,7 +1545,7 @@ struct media_proxy_pl_calls {
 	 *
 	 * @param search	The search to write
 	 */
-	void (*send_search)(const struct mpl_search *search);
+	void (*send_search)(const struct bt_mcp_search *search);
 
 	/**
 	 * @brief Read Search Results Object ID

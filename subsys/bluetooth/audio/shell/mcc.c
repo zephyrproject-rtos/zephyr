@@ -287,7 +287,7 @@ static void mcc_read_next_track_obj_id_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	if (id == MPL_NO_TRACK_ID) {
+	if (id == BT_MCP_NO_TRACK_ID) {
 		bt_shell_print("Next Track Object ID is empty");
 	} else {
 		(void)bt_ots_obj_id_to_str(id, str, sizeof(str));
@@ -428,7 +428,7 @@ static void mcc_read_media_state_cb(struct bt_conn *conn, int err, uint8_t state
 #endif /* defined(CONFIG_BT_MCC_READ_MEDIA_STATE) */
 
 #if defined(CONFIG_BT_MCC_SET_MEDIA_CONTROL_POINT)
-static void mcc_send_cmd_cb(struct bt_conn *conn, int err, const struct mpl_cmd *cmd)
+static void mcc_send_cmd_cb(struct bt_conn *conn, int err, const struct bt_mcp_cmd *cmd)
 {
 	ARG_UNUSED(conn);
 
@@ -442,8 +442,7 @@ static void mcc_send_cmd_cb(struct bt_conn *conn, int err, const struct mpl_cmd 
 }
 #endif /* defined(CONFIG_BT_MCC_SET_MEDIA_CONTROL_POINT) */
 
-static void mcc_cmd_ntf_cb(struct bt_conn *conn, int err,
-			   const struct mpl_cmd_ntf *ntf)
+static void mcc_cmd_ntf_cb(struct bt_conn *conn, int err, const struct bt_mcp_cmd_ntf *ntf)
 {
 	ARG_UNUSED(conn);
 
@@ -473,8 +472,7 @@ static void mcc_read_opcodes_supported_cb(struct bt_conn *conn, int err,
 #endif /* defined(CONFIG_BT_MCC_READ_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED) */
 
 #ifdef CONFIG_BT_MCC_OTS
-static void mcc_send_search_cb(struct bt_conn *conn, int err,
-			       const struct mpl_search *search)
+static void mcc_send_search_cb(struct bt_conn *conn, int err, const struct bt_mcp_search *search)
 {
 	ARG_UNUSED(conn);
 	ARG_UNUSED(search);
@@ -1214,7 +1212,7 @@ static int cmd_mcc_read_media_state(const struct shell *sh, size_t argc,
 #if defined(CONFIG_BT_MCC_SET_MEDIA_CONTROL_POINT)
 static int cmd_mcc_play(const struct shell *sh, size_t argc, char *argv[])
 {
-	const struct mpl_cmd cmd = {
+	const struct bt_mcp_cmd cmd = {
 		.opcode = BT_MCS_OPC_PLAY,
 		.use_param = false,
 		.param = 0,
@@ -1234,7 +1232,7 @@ static int cmd_mcc_play(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_mcc_pause(const struct shell *sh, size_t argc, char *argv[])
 {
-	const struct mpl_cmd cmd = {
+	const struct bt_mcp_cmd cmd = {
 		.opcode = BT_MCS_OPC_PAUSE,
 		.use_param = false,
 		.param = 0,
@@ -1255,7 +1253,7 @@ static int cmd_mcc_pause(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_mcc_fast_rewind(const struct shell *sh, size_t argc,
 			       char *argv[])
 {
-	const struct mpl_cmd cmd = {
+	const struct bt_mcp_cmd cmd = {
 		.opcode = BT_MCS_OPC_FAST_REWIND,
 		.use_param = false,
 		.param = 0,
@@ -1276,7 +1274,7 @@ static int cmd_mcc_fast_rewind(const struct shell *sh, size_t argc,
 static int cmd_mcc_fast_forward(const struct shell *sh, size_t argc,
 				char *argv[])
 {
-	const struct mpl_cmd cmd = {
+	const struct bt_mcp_cmd cmd = {
 		.opcode = BT_MCS_OPC_FAST_FORWARD,
 		.use_param = false,
 		.param = 0,
@@ -1296,7 +1294,7 @@ static int cmd_mcc_fast_forward(const struct shell *sh, size_t argc,
 
 static int cmd_mcc_stop(const struct shell *sh, size_t argc, char *argv[])
 {
-	const struct mpl_cmd cmd = {
+	const struct bt_mcp_cmd cmd = {
 		.opcode = BT_MCS_OPC_STOP,
 		.use_param = false,
 		.param = 0,
@@ -1317,7 +1315,7 @@ static int cmd_mcc_stop(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_mcc_move_relative(const struct shell *sh, size_t argc,
 				 char *argv[])
 {
-	struct mpl_cmd cmd = {
+	struct bt_mcp_cmd cmd = {
 		.opcode = BT_MCS_OPC_MOVE_RELATIVE,
 		.use_param = true,
 	};
@@ -1353,7 +1351,7 @@ static int cmd_mcc_move_relative(const struct shell *sh, size_t argc,
 static int cmd_mcc_prev_segment(const struct shell *sh, size_t argc,
 				char *argv[])
 {
-	const struct mpl_cmd cmd = {
+	const struct bt_mcp_cmd cmd = {
 		.opcode = BT_MCS_OPC_PREV_SEGMENT,
 		.use_param = false,
 		.param = 0,
@@ -1374,7 +1372,7 @@ static int cmd_mcc_prev_segment(const struct shell *sh, size_t argc,
 static int cmd_mcc_next_segment(const struct shell *sh, size_t argc,
 				char *argv[])
 {
-	const struct mpl_cmd cmd = {
+	const struct bt_mcp_cmd cmd = {
 		.opcode = BT_MCS_OPC_NEXT_SEGMENT,
 		.use_param = false,
 		.param = 0,
@@ -1395,7 +1393,7 @@ static int cmd_mcc_next_segment(const struct shell *sh, size_t argc,
 static int cmd_mcc_first_segment(const struct shell *sh, size_t argc,
 				 char *argv[])
 {
-	const struct mpl_cmd cmd = {
+	const struct bt_mcp_cmd cmd = {
 		.opcode = BT_MCS_OPC_FIRST_SEGMENT,
 		.use_param = false,
 		.param = 0,
@@ -1416,7 +1414,7 @@ static int cmd_mcc_first_segment(const struct shell *sh, size_t argc,
 static int cmd_mcc_last_segment(const struct shell *sh, size_t argc,
 				char *argv[])
 {
-	const struct mpl_cmd cmd = {
+	const struct bt_mcp_cmd cmd = {
 		.opcode = BT_MCS_OPC_LAST_SEGMENT,
 		.use_param = false,
 		.param = 0,
@@ -1437,7 +1435,7 @@ static int cmd_mcc_last_segment(const struct shell *sh, size_t argc,
 static int cmd_mcc_goto_segment(const struct shell *sh, size_t argc,
 				char *argv[])
 {
-	struct mpl_cmd cmd = {
+	struct bt_mcp_cmd cmd = {
 		.opcode = BT_MCS_OPC_GOTO_SEGMENT,
 		.use_param = true,
 	};
@@ -1472,7 +1470,7 @@ static int cmd_mcc_goto_segment(const struct shell *sh, size_t argc,
 
 static int cmd_mcc_prev_track(const struct shell *sh, size_t argc, char *argv[])
 {
-	const struct mpl_cmd cmd = {
+	const struct bt_mcp_cmd cmd = {
 		.opcode = BT_MCS_OPC_PREV_TRACK,
 		.use_param = false,
 		.param = 0,
@@ -1492,7 +1490,7 @@ static int cmd_mcc_prev_track(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_mcc_next_track(const struct shell *sh, size_t argc, char *argv[])
 {
-	const struct mpl_cmd cmd = {
+	const struct bt_mcp_cmd cmd = {
 		.opcode = BT_MCS_OPC_NEXT_TRACK,
 		.use_param = false,
 		.param = 0,
@@ -1513,7 +1511,7 @@ static int cmd_mcc_next_track(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_mcc_first_track(const struct shell *sh, size_t argc,
 			       char *argv[])
 {
-	const struct mpl_cmd cmd = {
+	const struct bt_mcp_cmd cmd = {
 		.opcode = BT_MCS_OPC_FIRST_TRACK,
 		.use_param = false,
 		.param = 0,
@@ -1533,7 +1531,7 @@ static int cmd_mcc_first_track(const struct shell *sh, size_t argc,
 
 static int cmd_mcc_last_track(const struct shell *sh, size_t argc, char *argv[])
 {
-	const struct mpl_cmd cmd = {
+	const struct bt_mcp_cmd cmd = {
 		.opcode = BT_MCS_OPC_LAST_TRACK,
 		.use_param = false,
 		.param = 0,
@@ -1553,7 +1551,7 @@ static int cmd_mcc_last_track(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_mcc_goto_track(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct mpl_cmd cmd = {
+	struct bt_mcp_cmd cmd = {
 		.opcode = BT_MCS_OPC_GOTO_TRACK,
 		.use_param = true,
 	};
@@ -1588,7 +1586,7 @@ static int cmd_mcc_goto_track(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_mcc_prev_group(const struct shell *sh, size_t argc, char *argv[])
 {
-	const struct mpl_cmd cmd = {
+	const struct bt_mcp_cmd cmd = {
 		.opcode = BT_MCS_OPC_PREV_GROUP,
 		.use_param = false,
 		.param = 0,
@@ -1608,7 +1606,7 @@ static int cmd_mcc_prev_group(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_mcc_next_group(const struct shell *sh, size_t argc, char *argv[])
 {
-	const struct mpl_cmd cmd = {
+	const struct bt_mcp_cmd cmd = {
 		.opcode = BT_MCS_OPC_NEXT_GROUP,
 		.use_param = false,
 		.param = 0,
@@ -1629,7 +1627,7 @@ static int cmd_mcc_next_group(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_mcc_first_group(const struct shell *sh, size_t argc,
 			       char *argv[])
 {
-	const struct mpl_cmd cmd = {
+	const struct bt_mcp_cmd cmd = {
 		.opcode = BT_MCS_OPC_FIRST_GROUP,
 		.use_param = false,
 		.param = 0,
@@ -1649,7 +1647,7 @@ static int cmd_mcc_first_group(const struct shell *sh, size_t argc,
 
 static int cmd_mcc_last_group(const struct shell *sh, size_t argc, char *argv[])
 {
-	const struct mpl_cmd cmd = {
+	const struct bt_mcp_cmd cmd = {
 		.opcode = BT_MCS_OPC_LAST_GROUP,
 		.use_param = false,
 		.param = 0,
@@ -1669,7 +1667,7 @@ static int cmd_mcc_last_group(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_mcc_goto_group(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct mpl_cmd cmd = {
+	struct bt_mcp_cmd cmd = {
 		.opcode = BT_MCS_OPC_GOTO_GROUP,
 		.use_param = true,
 	};
@@ -1726,7 +1724,7 @@ static int cmd_mcc_send_search_raw(const struct shell *sh, size_t argc,
 {
 	int result;
 	size_t len;
-	struct mpl_search search;
+	struct bt_mcp_search search;
 
 	ARG_UNUSED(argc);
 
@@ -1754,9 +1752,9 @@ static int cmd_mcc_send_search_ioptest(const struct shell *sh, size_t argc,
 
 	/* Implementation follows Media control service testspec 0.9.0r13 */
 	/* Testcase MCS/SR/SCP/BV-01-C [Search Control Point], rounds 1 - 9 */
-	struct mpl_sci sci_1 = {0};
-	struct mpl_sci sci_2 = {0};
-	struct mpl_search search;
+	struct bt_mcp_sci sci_1 = {0};
+	struct bt_mcp_sci sci_2 = {0};
+	struct bt_mcp_search search;
 	unsigned long testround;
 	int result = 0;
 
@@ -1856,7 +1854,7 @@ static int cmd_mcc_test_send_search_iop_invalid_type(const struct shell *sh,
 						     size_t argc, char *argv[])
 {
 	int result;
-	struct mpl_search search;
+	struct bt_mcp_search search;
 
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -1887,7 +1885,7 @@ static int cmd_mcc_test_send_search_invalid_sci_len(const struct shell *sh,
 	/* in IOP testing */
 
 	int result;
-	struct mpl_search search;
+	struct bt_mcp_search search;
 
 	char offending_search[9] = {6, 1, 't', 'r', 'a', 'c', 'k', 0, 1 };
 
