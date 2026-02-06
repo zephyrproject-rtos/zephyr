@@ -22,7 +22,8 @@
 	COND_CODE_1(DT_PROP(DT_NODELABEL(systick), external_clock_source),	\
 		    (0), (SysTick_CTRL_CLKSOURCE_Msk))
 
-#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
+#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) ||			\
+	defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE)
 extern unsigned int z_clock_hw_cycles_per_sec;
 /* CYC_PER_TICK must be inside of systick capacities (<1Ghz) */
 #define CYC_PER_TICK (z_clock_hw_cycles_per_sec/CONFIG_SYS_CLOCK_TICKS_PER_SEC)
@@ -93,6 +94,64 @@ static cycle_t announced_cycles;
  * the overflow_cyc must be reset to zero.
  */
 static volatile uint32_t overflow_cyc;
+
+static uint32_t elapsed(void);
+
+#if defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE)
+void z_sys_clock_hw_cycles_per_sec_update(uint32_t new_hz)
+{
+	uint32_t old_hz = (uint32_t)z_clock_hw_cycles_per_sec;
+
+	if ((old_hz == 0U) || (new_hz == 0U) || (old_hz == new_hz)) {
+		return;
+	}
+
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	/* Publish the new frequency. */
+	z_clock_hw_cycles_per_sec = new_hz;
+	uint32_t load_old = last_load;
+
+	if (load_old != TIMER_STOPPED) {
+		cycle_count += elapsed();
+		overflow_cyc = 0U;
+	}
+
+	/* Rescale internal counters from old cycles to new cycles. */
+	cycle_count = (cycle_t)(((uint64_t)cycle_count * (uint64_t)new_hz) / (uint64_t)old_hz);
+	announced_cycles = (cycle_t)(((uint64_t)announced_cycles * (uint64_t)new_hz) /
+				     (uint64_t)old_hz);
+
+	if (load_old != TIMER_STOPPED) {
+		uint32_t new_load;
+
+		if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+			uint32_t val = SysTick->VAL;
+
+			if (val == 0U) {
+				val = load_old;
+			}
+
+			new_load = (uint32_t)(((uint64_t)val * (uint64_t)new_hz) /
+					      (uint64_t)old_hz);
+		} else {
+			new_load = CYC_PER_TICK;
+		}
+
+		new_load = MAX(new_load, MIN_DELAY);
+		if (new_load > COUNTER_MAX) {
+			new_load = COUNTER_MAX;
+		}
+
+		last_load = new_load;
+		SysTick->LOAD = new_load - 1U;
+		SysTick->VAL = 0U;
+		SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;
+	}
+
+	k_spin_unlock(&lock, key);
+}
+#endif /* CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE */
 
 #if !defined(CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_NONE)
 /* This local variable indicates that the timeout was set right before
