@@ -17,6 +17,13 @@
 	chosen {
 		zephyr,code-partition = &slot0_ns_partition;
 		zephyr,sram = &cpuapp_sram;
+		zephyr,entropy = &psa_rng;
+	};
+
+	/delete-node/ rng;
+
+	psa_rng: psa-rng {
+		status = "okay";
 	};
 };
 
