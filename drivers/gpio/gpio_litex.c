@@ -250,7 +250,7 @@ static int gpio_litex_pin_interrupt_configure(const struct device *dev,
 	}
 
 	if (GPIO_LITEX_HAS_OE(gpio_config) &&
-	    IS_BIT_SET(litex_read32(gpio_config->oe_addr), pin)) {
+	    !IS_BIT_SET(litex_read32(gpio_config->oe_addr), pin)) {
 		return -EINVAL;
 	}
 
