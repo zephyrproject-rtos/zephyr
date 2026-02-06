@@ -17,4 +17,12 @@ config ESPI_USE_BOARD_POWER
 	select GPIO
 	default y
 
+config ESPI_CAF_FLASH_REGION
+	int "eSPI CAF flash test region start address"
+	default 466944
+	help
+	  Starting address in SPI flash memory for eSPI CAF flash test.
+	  Test will perform read/write operations to this region,
+	  so it should be erased and not used for other purposes.
+	  Refer to sample documentation for details.
 source "Kconfig.zephyr"
