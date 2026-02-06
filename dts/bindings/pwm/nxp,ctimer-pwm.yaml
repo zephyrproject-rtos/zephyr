@@ -11,7 +11,7 @@ properties:
   reg:
     required: true
 
-  prescaler:
+  prescale:
     type: int
     default: 1
     description: |
@@ -22,6 +22,54 @@ properties:
     type: int
     required: true
     description: clock to use
+
+  mode:
+    type: int
+    description: |
+      required when CONFIG_PWM_CAPTURE enabled
+      timer mode
+    default: 0
+    enum:
+      - 0 # kCTIMER_TimerMode: TC increments on every rising APB bus clock edge.
+      - 1 # kCTIMER_IncreaseOnRiseEdge: TC increments on rising edge of input signal.
+      - 2 # kCTIMER_IncreaseOnFallEdge: TC increments on falling edge of input signal.
+
+  channel:
+    type: int
+    description: |
+      required when CONFIG_PWM_CAPTURE enabled
+      input channel number
+    default: 0
+    enum:
+      - 0 # kCTIMER_Capture_0
+      - 1 # kCTIMER_Capture_1
+      - 2 # kCTIMER_Capture_2
+      - 3 # kCTIMER_Capture_3
+
+  capture-channel-enable:
+    type: boolean
+    description: |
+      required when CONFIG_PWM_CAPTURE enabled
+      whether to use capture channel register
+      if Set to true, the capture channel will be enabled,
+      timer and prescaler will be cleared when capture-edge event occurs.
+
+  capture-edge:
+    type: int
+    description: |
+      required when CONFIG_PWM_CAPTURE enabled
+      capture event when edge occurs
+    default: 0
+    enum:
+      - 1 # kCTIMER_Capture_RiseEdge
+      - 2 # kCTIMER_Capture_FallEdge
+
+  inputmux:
+    type: int
+    description: |
+      required when CONFIG_PWM_CAPTURE enabled
+      inputmux routing
+      inp0 ~ inp19
 
   "#pwm-cells":
     const: 3
