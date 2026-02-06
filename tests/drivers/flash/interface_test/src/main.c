@@ -7,6 +7,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/storage/flash_map.h>
 
 #ifdef CONFIG_BOOTLOADER_MCUBOOT
 #define TEST_FLASH_PART_NODE DT_NODELABEL(boot_partition)
@@ -14,7 +15,7 @@
 #define TEST_FLASH_PART_NODE DT_NODELABEL(slot1_partition)
 #endif
 
-#define TEST_FLASH_PART_OFFSET DT_REG_ADDR(TEST_FLASH_PART_NODE)
+#define TEST_FLASH_PART_OFFSET FIXED_PARTITION_NODE_OFFSET(TEST_FLASH_PART_NODE)
 #define TEST_FLASH_PART_SIZE   DT_REG_SIZE(TEST_FLASH_PART_NODE)
 
 #define TEST_FLASH_CONTROLLER_NODE DT_MTD_FROM_FIXED_PARTITION(TEST_FLASH_PART_NODE)
