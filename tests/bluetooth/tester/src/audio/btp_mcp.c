@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2023 Codecoup
+ * Copyright (c) 2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,11 +11,12 @@
 #include <string.h>
 
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/audio/media_proxy.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/mcc.h>
+#include <zephyr/bluetooth/audio/mcp.h>
 #include <zephyr/bluetooth/audio/mcs.h>
-#include <zephyr/bluetooth/audio/media_proxy.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/services/ots.h>
 #include <zephyr/kernel.h>
@@ -1634,7 +1636,7 @@ uint8_t tester_init_mcs(void)
 {
 	int err;
 
-	err = media_proxy_pl_init();
+	err = bt_mcp_media_control_server_register();
 	if (err) {
 		LOG_DBG("Failed to initialize Media Player: %d", err);
 		return BTP_STATUS_FAILED;
