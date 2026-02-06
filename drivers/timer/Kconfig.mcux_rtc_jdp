@@ -1,0 +1,34 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MCUX_RTC_JDP_TIMER
+	bool "MCUX RTC_JDP system timer"
+	default n
+	depends on DT_HAS_NXP_RTC_JDP_TIMER_ENABLED
+	depends on !COUNTER_MCUX_RTC_JDP
+	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
+	help
+	  Use the NXP RTC_JDP peripheral as Zephyr's system timer.
+
+	  This driver uses the MCUxpresso SDK RTC_JDP driver (fsl_rtc) directly and
+	  programs the RTCVAL match register for one-shot tickless timeouts.
+
+	  Note: This is a non-default option intended for specific low-power
+	  use-cases and test enablement. It cannot be enabled together with the
+	  RTC_JDP counter driver (COUNTER_MCUX_RTC_JDP) because both would own the
+	  same RTC peripheral and interrupt.
+
+config MCUX_RTC_JDP_TIMER_SAFETY_WINDOW_CYCLES
+	int "RTC_JDP RTCVAL safety window cycles"
+	default 32
+	depends on MCUX_RTC_JDP_TIMER
+	help
+	  Safety window (in RTC counter cycles) used when programming RTCVAL.
+	  If the target compare value is too close to (or behind) the current
+	  counter value, it is pushed forward by this window to reduce races due
+	  to RTCVAL synchronization into the RTC clock domain.
+
+	  This value is platform/clock specific. The default (32) reflects
+	  that common configuration and can be overridden if needed.
