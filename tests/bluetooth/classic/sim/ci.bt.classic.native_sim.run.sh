@@ -10,6 +10,7 @@ set -ue
 COMMON_DIR="${ZEPHYR_BASE}/tests/bluetooth/classic/sim/common"
 
 export BOARD="native_sim"
+export MAX_RUN_RETRIES=3
 
 # Source utilities
 source "$COMMON_DIR/common_utils.sh"

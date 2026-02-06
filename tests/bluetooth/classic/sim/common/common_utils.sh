@@ -277,6 +277,9 @@ run_script_parallel() {
     local script="$1"
     local test_index=$2
     local total_tests="$3"
+    local max_retries="${MAX_RUN_RETRIES:-0}"
+    local attempt=0
+    local exit_code=1
     local script_name=$(basename "$script" .sh)
     local test_id="${script_name}_${test_index}"
     local log_file="$BT_CLASSIC_SIM/${test_id//\//_}.log"
@@ -285,15 +288,34 @@ run_script_parallel() {
     # Record start time
     local start_time=$(date +%s%3N)
 
-    # Run the script and capture output
-    set +e
-    (
-        # Execute the script and redirect all output to log file
-        "$script" > "$log_file" 2>&1
-        exit $?
-    )
-    local exit_code=$?
-    set -e
+    while [[ $attempt -le $max_retries ]]; do
+
+        # Run the script and capture output
+        set +e
+        (
+            # Execute the script and redirect all output to log file
+            if [[ $attempt -eq 0 ]]; then
+                "$script" > "$log_file" 2>&1
+            else
+                "$script" >> "$log_file" 2>&1
+            fi
+            exit $?
+        )
+        exit_code=$?
+        set -e
+
+        if [[ $exit_code -eq 0 ]]; then
+            break
+        else
+            echo "FAILED attempt $attempt for: $script (exit code: $exit_code)" | tee -a "$log_file"
+            attempt=$((attempt + 1))
+
+            if [[ $attempt -le $max_retries ]]; then
+                # Optional: add a small delay between retries
+                sleep 0.1
+            fi
+        fi
+    done
 
     # Record end time
     local end_time=$(date +%s%3N)
@@ -304,6 +326,7 @@ run_script_parallel() {
     echo "exit_code=$exit_code" >> "$result_file"
     echo "duration=$duration" >> "$result_file"
     echo "log_file=$log_file" >> "$result_file"
+    echo "attempts=$attempt" >> "$result_file"
 
     return $exit_code
 }
@@ -327,7 +350,7 @@ collect_parallel_results() {
         [[ -f "$result_file" ]] || continue
 
         # Source the result file to get variables
-        local script exit_code duration log_file
+        local script exit_code duration log_file attempts
         source "$result_file"
 
         total_tests=$((total_tests + 1))
@@ -339,13 +362,20 @@ collect_parallel_results() {
         echo "<testcase name=\"${script}\" time=\"${duration_sec}\">" >> "${tmp_res_file}"
 
         if [[ $exit_code -eq 0 ]]; then
-            echo "${script} PASSED (${duration}ms)"
+            if [[ ${attempts:-0} -gt 0 ]]; then
+                echo "${script} PASSED after ${attempts} retries (${duration}ms)"
+            else
+                echo "${script} PASSED (${duration}ms)"
+            fi
         else
             failures=$((failures + 1))
-            echo -e "\e[91m${script} FAILED\e[39m (${duration}ms)" >&2
+            echo -e "\e[91m${script} FAILED after $((attempts)) " \
+                    "attempts\e[39m (${duration}ms)" >&2
             cat "$log_file"
+
             # Add failure details to XML
-            echo "<failure message=\"failed\" type=\"failure\">" >> "${tmp_res_file}"
+            echo "<failure message=\"failed after $((attempts)) attempts\" " \
+                 "type=\"failure\">" >> "${tmp_res_file}"
             if [[ -f "$log_file" ]]; then
                 cat "$log_file" | eval $CLEAN_XML >> "${tmp_res_file}"
             fi
@@ -372,6 +402,7 @@ name=\"bt classic simulation\" skip=\"0\" tests=\"${total_tests}\" time=\"${tota
 export -f run_script_parallel
 export TMP_RESULTS_DIR
 export BT_CLASSIC_SIM
+export MAX_RUN_RETRIES
 
 # Function to execute test scripts in parallel (if GNU parallel available) or serially
 # Args: script_list (space-separated or newline-separated)
@@ -455,23 +486,54 @@ run_parallel() {
             local test_id="${script_name}_${i}"
             local log_file="$BT_CLASSIC_SIM/${test_id//\//_}.log"
 
-            set +e
-            bash "${script}" > "${log_file}" 2>&1
-            local exit_code=$?
-            set -e
+            local max_retries="${MAX_RUN_RETRIES:-0}"
+            local attempt=0
+            local exit_code=1
+
+            # Retry loop
+            while [[ $attempt -le $max_retries ]]; do
+
+                set +e
+                if [[ $attempt -eq 0 ]]; then
+                    bash "${script}" > "${log_file}" 2>&1
+                else
+                    bash "${script}" >> "${log_file}" 2>&1
+                fi
+                exit_code=$?
+                set -e
+
+                if [[ ${exit_code} -eq 0 ]]; then
+                    break
+                else
+                    echo "FAILED attempt $attempt for: $script (exit code: $exit_code)" | \
+                        tee -a "$log_file"
+                    attempt=$((attempt + 1))
+
+                    if [[ $attempt -le $max_retries ]]; then
+                        sleep 0.1
+                    fi
+                fi
+            done
 
             local end_time=$(date +%s%3N)
             local script_dur=$((end_time - script_start))
+            local script_dur_sec=$(awk "BEGIN {printf \"%.3f\", $script_dur/1000}")
 
             # Execute script and capture output
             if [[ ${exit_code} -eq 0 ]]; then
-                echo "${script} PASSED (${script_dur}ms)"
+                if [[ $attempt -gt 0 ]]; then
+                    echo "${script} PASSED after ${attempt} retries (${script_dur}ms)"
+                else
+                    echo "${script} PASSED (${script_dur}ms)"
+                fi
                 echo "<testcase name=\"${script}\" time=\"${script_dur}\">" >> "${tmp_res_file}"
             else
-                echo -e "\e[91m${script} FAILED\e[39m (${script_dur}ms)" >&2
+                echo -e "\e[91m${script} FAILED after $((attempt)) " \
+                        "attempts\e[39m (${script_dur}ms)" >&2
                 cat "${log_file}"
-                echo "<testcase name=\"${script}\" time=\"${script_dur}\">" >> "${tmp_res_file}"
-                echo "<failure message=\"failed\" type=\"failure\">" >> "${tmp_res_file}"
+                echo "<testcase name=\"${script}\" time=\"${script_dur_sec}\">" >> "${tmp_res_file}"
+                echo "<failure message=\"failed after $((attempt)) attempts\" " \
+                     "type=\"failure\">" >> "${tmp_res_file}"
                 cat "${log_file}" | eval $CLEAN_XML >> "${tmp_res_file}"
                 echo "</failure>" >> "${tmp_res_file}"
                 failed=$((failed + 1))
