@@ -17,11 +17,11 @@
 
 &flash0 {
 	reg = <0x08000000 DT_SIZE_M(8)>;
+	ranges = <0 0x08000000 DT_SIZE_M(8)>;
 
 	partitions {
 		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
+		ranges;
 
 		/* See AN1416: SiWx917 SoC Memory Map, 3.1.4 Memory Map (8 MB) */
 		mbr_nwp_partition: partition@0 {
