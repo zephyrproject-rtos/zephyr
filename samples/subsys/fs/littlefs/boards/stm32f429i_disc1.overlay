@@ -26,6 +26,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* Use second half of flash for the filesystem. */
 		lfs1_partition: partition@100000 {

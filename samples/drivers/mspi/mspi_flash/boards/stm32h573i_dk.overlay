@@ -52,10 +52,15 @@
 				command-length = "INSTR_2_BYTE";
 				jedec-id = [c2 85 3a];
 
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0 0x90000000 DT_SIZE_M(64)>;
+
 				partitions {
 					compatible = "fixed-partitions";
 					#address-cells = <1>;
 					#size-cells = <1>;
+					ranges;
 
 					slot_partition0: partition@0 {
 						label = "nor";

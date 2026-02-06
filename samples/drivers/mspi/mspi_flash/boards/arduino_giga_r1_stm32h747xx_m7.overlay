@@ -58,10 +58,15 @@
 				tx-dummy = <0>;
 				jedec-id = [1f 89 01];
 
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0 0x90000000 DT_SIZE_M(16)>;
+
 				partitions {
 					compatible = "fixed-partitions";
 					#address-cells = <1>;
 					#size-cells = <1>;
+					ranges;
 
 					slot1_partition: partition@0 {
 						label = "image-1";

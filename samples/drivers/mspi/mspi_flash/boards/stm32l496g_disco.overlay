@@ -53,10 +53,15 @@
 				rx-dummy = <6>;
 				jedec-id = [c2 28 17];
 
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0 0x90000000 DT_SIZE_M(64)>;
+
 				partitions {
 					compatible = "fixed-partitions";
 					#address-cells = <1>;
 					#size-cells = <1>;
+					ranges;
 
 					partition@0 {
 						label = "nor";
