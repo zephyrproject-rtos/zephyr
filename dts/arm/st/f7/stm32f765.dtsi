@@ -101,6 +101,13 @@
 			interrupts = <103 0>;
 			status = "disabled";
 		};
+
+		dma2d: dma@4002b000 {
+			compatible = "st,stm32-dma2d";
+			reg = <0x4002b000 0x1000>;
+			interrupts = <90 0>;
+			status = "disabled";
+		};
 	};
 
 	smbus4: smbus4 {
