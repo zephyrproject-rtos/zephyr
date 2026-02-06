@@ -196,6 +196,18 @@
 			clk-div = <1>;
 			status = "disabled";
 		};
+
+		spi0: spi@40468000 {
+			compatible = "ti,mspm0-spi";
+			reg = <0x40468000 0x2000>;
+			status = "disabled";
+		};
+
+		spi1: spi@4046a000 {
+			compatible = "ti,mspm0-spi";
+			reg = <0x4046a000 0x2000>;
+			status = "disabled";
+		};
 	};
 };
 
