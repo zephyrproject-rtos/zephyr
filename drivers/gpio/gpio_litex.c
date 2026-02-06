@@ -260,8 +260,6 @@ static int gpio_litex_pin_interrupt_configure(const struct device *dev,
 		ev_mode = litex_read32(gpio_config->ev_mode_addr);
 		ev_edge = litex_read32(gpio_config->ev_edge_addr);
 
-		litex_write32(ev_enabled | BIT(pin), gpio_config->ev_enable_addr);
-
 		WRITE_BIT(ev_mode, pin, (trig == GPIO_INT_TRIG_BOTH));
 
 		litex_write32(ev_mode, gpio_config->ev_mode_addr);
@@ -278,6 +276,9 @@ static int gpio_litex_pin_interrupt_configure(const struct device *dev,
 		default:
 			break;
 		}
+
+		litex_write32(ev_enabled | BIT(pin), gpio_config->ev_enable_addr);
+
 		return 0;
 	}
 
