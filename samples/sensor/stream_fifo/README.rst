@@ -40,8 +40,8 @@ to be aliased as :samp:`stream{N}` where ``N`` goes from ``0`` to ``9``. For exa
 .. note::
     Note that NUM_SENSORS defined in main.c must match ``N`` and should be set accordingly.
 
-Example devicetree overlays and configurations are already available for sensortile_box_pro,
-nucleo_f401re and nucleo_h503rb in the boards directory:
+A devicetree overlay and configuration are already available for sensortile_box_pro board
+in the boards directory:
 
 - :zephyr_file:`samples/sensor/stream_fifo/boards/sensortile_box_pro.overlay`
 
@@ -51,28 +51,24 @@ nucleo_f401re and nucleo_h503rb in the boards directory:
 
   Configuration file for the sensortile_box_pro board.
 
-- :zephyr_file:`samples/sensor/stream_fifo/boards/nucleo_f401re.overlay`
+Build and run sample for sensortile_box_pro board with:
 
-  DT overlay file for the nucleo_f401re board.
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensor/stream_fifo
+   :board: sensortile_box_pro
+   :goals: build flash
+   :compact:
 
-- :zephyr_file:`samples/sensor/stream_fifo/boards/nucleo_f401re.conf`
-
-  Configuration file for the nucleo_f401re board.
-
-- :zephyr_file:`samples/sensor/stream_fifo/boards/nucleo_h503rb.overlay`
-
-  DT overlay file for the nucleo_h503rb board.
-
-- :zephyr_file:`samples/sensor/stream_fifo/boards/nucleo_h503rb.conf`
-
-  Configuration file for the nucleo_h503rb board.
-
-For example, build and run sample for nucleo_h503rb with:
+There are cases where sensors are on a shield, and you need to specify this when building.
+For example, to build and run the sample for the :zephyr:board:`nucleo_h503rb` board equipped
+with a :zephyr:ref:`x-nucleo-iks4a1` shield, use the following command:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/stream_fifo
    :board: nucleo_h503rb
+   :shield: x_nucleo_iks4a1
    :goals: build flash
+   :gen-args: -DEXTRA_DTC_OVERLAY_FILE="x_nucleo_iks4a1.overlay" -DEXTRA_CONF_FILE="x_nucleo_iks4a1.conf"
    :compact:
 
 Sample Output
