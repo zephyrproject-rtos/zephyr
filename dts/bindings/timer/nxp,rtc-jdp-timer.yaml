@@ -1,0 +1,47 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP RTC JDP (RTC_JDP) used as a Zephyr system timer timebase.
+
+compatible: "nxp,rtc-jdp-timer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      Frequency, in Hz, of the selected RTC clock source before prescaling.
+
+  clock-source:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    description: |
+      Select the RTC clock source (chip-specific mux). No binding-wide default
+      is provided because the hardware reset default differs by SoC. The SoC
+      dtsi must set this to the correct value for each instance.
+
+  prescaler:
+    type: int
+    default: 1
+    enum:
+      - 1
+      - 32
+      - 512
+      - 16384
+    description: |
+      Divider for the RTC clock source. Supported divide values are 1, 32, 512,
+      or 16384.
