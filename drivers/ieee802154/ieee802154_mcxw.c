@@ -785,11 +785,32 @@ static void mcxw_configure_enh_ack_probing(const struct ieee802154_config *confi
 	macToPlmeMessage_t msg;
 
 	uint8_t *header_ie_buf = (uint8_t *)(config->ack_ie.header_ie);
+	uint8_t ie_length = header_ie_buf[0] & 0x7F; /* Bits 0-6 = length */
 
-	ie_param = (header_ie_buf[6] == 0x03 ? IeData_Lqi_c : 0) |
-		   (header_ie_buf[7] == 0x02 ? IeData_LinkMargin_c : 0) |
-		   (header_ie_buf[8] == 0x01 ? IeData_Rssi_c : 0);
+	/* Number of tokens = total length - 4 (OUI=3 bytes + SubType=1 byte) */
+	uint8_t num_tokens = (ie_length > 4) ? (ie_length - 4) : 0;
 
+	/* Parse all tokens present */
+	for (uint8_t i = 0; i < num_tokens; i++) {
+		uint8_t token = header_ie_buf[6 + i];
+
+		switch (token) {
+		case 0x01:
+			/* RSSI */
+			ie_param |= IeData_Rssi_c;
+			break;
+		case 0x02:
+			/* Link Margin */
+			ie_param |= IeData_LinkMargin_c;
+			break;
+		case 0x03:
+			/* LQI */
+			ie_param |= IeData_Lqi_c;
+			break;
+		default:
+			break;
+		}
+	}
 	msg.msgType = gPlmeConfigureAckIeData_c;
 	msg.msgData.AckIeData.param = (ie_param > 0 ? IeData_MSB_VALID_DATA : 0);
 	msg.msgData.AckIeData.param |= ie_param;
