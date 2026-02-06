@@ -2169,6 +2169,12 @@ static uint64_t get_current_track_id(void)
 	return media_player.group->track->id;
 }
 
+int bt_mcp_media_control_server_get_current_track_id(uint64_t *id)
+{
+	*id = get_current_track_id();
+	return 0;
+}
+
 static void set_current_track_id(uint64_t id)
 {
 	struct bt_mcp_group *group;
@@ -2213,6 +2219,12 @@ static uint64_t get_next_track_id(void)
 	return BT_MCP_NO_TRACK_ID;
 }
 
+int bt_mcp_media_control_server_get_next_track_id(uint64_t *id)
+{
+	*id = get_next_track_id();
+	return 0;
+}
+
 static void set_next_track_id(uint64_t id)
 {
 	struct bt_mcp_group *group;
@@ -2237,9 +2249,21 @@ static uint64_t get_parent_group_id(void)
 	return media_player.group->parent->id;
 }
 
+int bt_mcp_media_control_server_get_parent_group_id(uint64_t *id)
+{
+	*id = get_parent_group_id();
+	return 0;
+}
+
 static uint64_t get_current_group_id(void)
 {
 	return media_player.group->id;
+}
+
+int bt_mcp_media_control_server_get_current_group_id(uint64_t *id)
+{
+	*id = get_current_group_id();
+	return 0;
 }
 
 static void set_current_group_id(uint64_t id)
