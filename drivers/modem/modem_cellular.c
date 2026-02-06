@@ -1412,6 +1412,13 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
 		LOG_DBG("RING received!");
 		modem_pipe_open_async(data->uart_pipe);
 		break;
+	case MODEM_CELLULAR_EVENT_REGISTERED:
+		/* Restart immediately, if we are waiting to retry the dial-script */
+		if (!modem_chat_is_running(&data->chat)) {
+			modem_cellular_stop_timer(data);
+			modem_chat_run_script_async(&data->chat, config->dial_chat_script);
+		}
+		break;
 	default:
 		break;
 	}
@@ -1427,6 +1434,11 @@ static int modem_cellular_on_await_registered_state_enter(struct modem_cellular_
 {
 	if (modem_ppp_attach(data->ppp, data->dlci1_pipe) < 0) {
 		return -EAGAIN;
+	}
+
+	/* Check if we are already registered during the dial-script */
+	if (modem_cellular_is_registered(data)) {
+		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_REGISTERED);
 	}
 
 	modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
