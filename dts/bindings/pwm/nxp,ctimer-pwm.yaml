@@ -11,17 +11,62 @@ properties:
   reg:
     required: true
 
-  prescaler:
+  prescale:
     type: int
     default: 1
     description: |
       Specifies the prescale value. Valid range: 0x0 - 0xFFFFFFFF.
-      The clock is divided by (prescaler + 1).
+      The clock is divided by (prescale + 1).
 
   clk-source:
     type: int
     required: true
     description: clock to use
+
+  mode:
+    type: int
+    required: true
+    description: timer mode
+    default: 0
+    enum:
+      - 0 # kCTIMER_TimerMode: TC increments on every rising APB bus clock edge.
+      - 1 # kCTIMER_IncreaseOnRiseEdge: TC increments on rising edge of input signal.
+      - 2 # kCTIMER_IncreaseOnFallEdge: TC increments on falling edge of input signal.
+      - 3 # kCTIMER_IncreaseOnBothEdge: TC increments on both edges of input signal.
+
+  channel:
+    type: int
+    required: true
+    description: input channel number
+    default: 0
+    enum:
+      - 0 # kCTIMER_Capture_0
+      - 1 # kCTIMER_Capture_1
+      - 2 # kCTIMER_Capture_2
+      - 3 # kCTIMER_Capture_3
+
+  capture_channel_enable:
+    type: boolean
+    description: |
+      whether to use capture channel register
+      if Set to true, the capture channel will be enabled, 
+      timer and prescaler will be cleared when capture-edge event occurs.
+
+  capture_edge:
+    type: int
+    required: true
+    description: capture event when edge occurs
+    default: 0
+    enum:
+      - 1 # kCTIMER_Capture_RiseEdge
+      - 2 # kCTIMER_Capture_FallEdge
+      - 3 # kCTIMER_Capture_BothEdge
+
+  inputmux:
+    type: int
+    description: |
+      inputmux routing 
+      inp0 ~ inp19
 
   "#pwm-cells":
     const: 3
