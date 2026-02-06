@@ -9,6 +9,7 @@
 #define ZEPHYR_MODULES_LVGL_LV_CONF_H_
 
 #include <zephyr/toolchain.h>
+#include <zephyr/device.h>
 #include <string.h>
 #include <stdint.h>
 
@@ -56,8 +57,8 @@
 #define LV_VG_LITE_USE_ASSERT 1
 #define LV_VG_LITE_DISABLE_VLC_OP_CLOSE 1
 #define LV_VG_LITE_DISABLE_LINEAR_GRADIENT_EXT 1
-#define LV_VG_LITE_HAL_GPU_SERIES gc355
-#define LV_VG_LITE_HAL_GPU_REVISION 0x0_1216
+#define LV_VG_LITE_HAL_GPU_SERIES DT_PROP(DT_INST(0, zephyr_lvgl_gpu_vglite), variant)
+#define LV_VG_LITE_HAL_GPU_REVISION DT_PROP(DT_INST(0, zephyr_lvgl_gpu_vglite), revision)
 #endif /* CONFIG_LV_USE_GPU_VG_LITE */
 
 #endif /* ZEPHYR_MODULES_LVGL_LV_CONF_H_ */
