@@ -15,6 +15,7 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/ccid.h>
+#include <zephyr/bluetooth/audio/mcp.h>
 #include <zephyr/bluetooth/audio/mcs.h>
 #include <zephyr/bluetooth/audio/media_proxy.h>
 #include <zephyr/bluetooth/bluetooth.h>
@@ -1351,7 +1352,7 @@ static void bt_mcp_set_state(uint8_t state)
 }
 
 /* Command handlers (state machines) */
-static uint8_t inactive_state_command_handler(const struct bt_mcp_cmd *command)
+static uint8_t inactive_state_command_handler(const struct bt_mcs_cmd *command)
 {
 	uint8_t result_code = MEDIA_PROXY_CMD_SUCCESS;
 
@@ -1440,7 +1441,7 @@ static uint8_t inactive_state_command_handler(const struct bt_mcp_cmd *command)
 	return result_code;
 }
 
-static uint8_t playing_state_command_handler(const struct bt_mcp_cmd *command)
+static uint8_t playing_state_command_handler(const struct bt_mcs_cmd *command)
 {
 	uint8_t result_code = MEDIA_PROXY_CMD_SUCCESS;
 
@@ -1564,7 +1565,7 @@ static uint8_t playing_state_command_handler(const struct bt_mcp_cmd *command)
 	return result_code;
 }
 
-static uint8_t paused_state_command_handler(const struct bt_mcp_cmd *command)
+static uint8_t paused_state_command_handler(const struct bt_mcs_cmd *command)
 {
 	uint8_t result_code = MEDIA_PROXY_CMD_SUCCESS;
 
@@ -1712,7 +1713,7 @@ static uint8_t paused_state_command_handler(const struct bt_mcp_cmd *command)
 	return result_code;
 }
 
-static uint8_t seeking_state_command_handler(const struct bt_mcp_cmd *command)
+static uint8_t seeking_state_command_handler(const struct bt_mcs_cmd *command)
 {
 	uint8_t result_code = MEDIA_PROXY_CMD_SUCCESS;
 
@@ -1867,7 +1868,7 @@ static uint8_t seeking_state_command_handler(const struct bt_mcp_cmd *command)
 	return result_code;
 }
 
-static uint8_t (*command_handlers[MEDIA_PROXY_STATE_LAST])(const struct bt_mcp_cmd *command) = {
+static uint8_t (*command_handlers[MEDIA_PROXY_STATE_LAST])(const struct bt_mcs_cmd *command) = {
 	inactive_state_command_handler,
 	playing_state_command_handler,
 	paused_state_command_handler,
@@ -2235,9 +2236,9 @@ static uint8_t get_media_state(void)
 	return media_player.state;
 }
 
-static void send_command(const struct bt_mcp_cmd *command)
+int bt_mcp_media_control_server_command(const struct bt_mcs_cmd *command)
 {
-	struct bt_mcp_cmd_ntf ntf;
+	struct bt_mcs_cmd_ntf ntf;
 
 	if (command->use_param) {
 		LOG_DBG("opcode: %d, param: %d", command->opcode, command->param);
@@ -2253,6 +2254,8 @@ static void send_command(const struct bt_mcp_cmd *command)
 	} else {
 		LOG_DBG("INVALID STATE");
 	}
+
+	return 0;
 }
 
 static uint32_t get_commands_supported(void)
@@ -2458,7 +2461,7 @@ int bt_mcp_media_control_server_register(void)
 	media_player.calls.set_playing_order            = set_playing_order;
 	media_player.calls.get_playing_orders_supported = get_playing_orders_supported;
 	media_player.calls.get_media_state              = get_media_state;
-	media_player.calls.send_command                 = send_command;
+	media_player.calls.send_command = bt_mcp_media_control_server_command;
 	media_player.calls.get_commands_supported       = get_commands_supported;
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
 	media_player.calls.send_search                  = send_search;
