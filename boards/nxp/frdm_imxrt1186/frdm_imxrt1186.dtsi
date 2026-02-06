@@ -1,0 +1,156 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "frdm_imxrt1186-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		led0 = &blue_led;
+		led1 = &red_led;
+		led2 = &green_led;
+		sw0 = &user_button;
+	};
+
+	chosen {
+		zephyr,canbus = &flexcan1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		blue_led: led-1 {
+			gpios = <&gpio3 7 GPIO_ACTIVE_HIGH>;
+			label = "User RGB LED Blue";
+		};
+
+		red_led: led-2 {
+			gpios = <&gpio2 9 GPIO_ACTIVE_HIGH>;
+			label = "User RGB LED Red";
+		};
+
+		green_led: led-3 {
+			gpios = <&gpio2 11 GPIO_ACTIVE_HIGH>;
+			label = "User RGB LED Green";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button: button-1 {
+			status = "okay";
+			label = "User SW4";
+			gpios = <&gpio4 12 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&lpuart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart1>;
+	pinctrl-1 = <&pinmux_lpuart1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&lpuart3 {
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart3>;
+	pinctrl-1 = <&pinmux_lpuart3_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&gpio5 {
+	status = "okay";
+};
+
+&gpio6 {
+	status = "okay";
+};
+
+&flexcan1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexcan1>;
+	pinctrl-names = "default";
+};
+
+&systick {
+	status = "okay";
+};
+
+&flexspi2 {
+	/*
+	 * If booting with XIP from FlexSPI flash, the flash memory will be initialized by the
+	 * bootloader in ROM.
+	 * If not configured by the ROM bootloader, the user must ensure the w25q128jw QSPI device
+	 * is enabled in the DTS, otherwise, the user must set 'status = "disabled";
+	 * Note: mpu_region.c uses the status property from the DTS to configure the
+	 * corresponding MPU settings.
+	 */
+	status = "disabled";
+	ahb-prefetch;
+	ahb-read-addr-opt;
+	rx-clock-source = <1>;
+
+	w25q128jv: w25q128jv@0 {
+		compatible = "nxp,imx-flexspi-nor";
+		size = <DT_SIZE_M(16*8)>;
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(133)>;
+		status = "okay";
+		jedec-id = [ef 60 18];
+		erase-block-size = <DT_SIZE_K(4)>;
+		write-block-size = <1>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/*
+			 * Partition sizes must be aligned
+			 * to the flash memory sector size of 4KB.
+			 */
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x00000000 DT_SIZE_K(128)>;
+			};
+
+			slot0_partition: partition@20000 {
+				label = "image-0";
+				reg = <0x00020000 DT_SIZE_M(7)>;
+			};
+
+			slot1_partition: partition@720000 {
+				label = "image-1";
+				reg = <0x00720000 DT_SIZE_M(7)>;
+			};
+
+			storage_partition: partition@e20000 {
+				label = "storage";
+				reg = <0x00e20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
+			};
+		};
+	};
+};
