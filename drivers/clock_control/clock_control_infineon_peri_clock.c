@@ -39,6 +39,7 @@ struct ifx_peri_clock_data {
 #define IFX_TCPWM0_PCLK_CLOCK0 PCLK_TCPWM_CLOCKS0
 #endif
 #define IFX_SCB0_PCLK_CLOCK PCLK_SCB0_CLOCK
+#define IFX_ADC0_PCLK_CLOCK PCLK_PASS0_CLOCK_SAR
 
 #elif defined(CY_IP_MXSPERI)
 
@@ -107,6 +108,7 @@ static int ifx_cat1_peri_clock_init(const struct device *dev)
 		}
 
 	} else if (data->hw_resource.type == IFX_RSC_TCPWM ||
+		   data->hw_resource.type == IFX_RSC_ADC ||
 		   data->hw_resource.type == IFX_RSC_SDHC) {
 		err = ifx_cat1_utils_peri_pclk_set_divider(clk_dst, &data->clock,
 							   data->divider - 1);
