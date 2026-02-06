@@ -12,5 +12,6 @@ toolchain:
 ram: 512
 flash: 512
 supported:
+  - adc
   - gpio
   - uart

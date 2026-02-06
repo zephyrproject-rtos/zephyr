@@ -68,4 +68,14 @@
 			slew-rate = "fast";
 		};
 	};
+
+	pinmux_lpadc1: pinmux_lpadc1 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_15_adc1_ch1b>,
+				 <&iomuxc_gpio_ad_16_adc1_ch0a>;
+			drive-strength = "high";
+			bias-pull-down;
+			slew-rate = "fast";
+		};
+	};
 };
