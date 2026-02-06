@@ -1,0 +1,20 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/ {
+	aliases {
+		led0 = &led_1;
+		led1 = &led_2;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_1: led1 {
+			gpios = <&gpiod 0 GPIO_ACTIVE_LOW>;
+		};
+
+		led_2: led2 {
+			gpios = <&gpiod 1 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
