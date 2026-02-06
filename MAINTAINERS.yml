@@ -3607,6 +3607,7 @@ NXP Platform Wireless:
       collaborators:
         - MaochenWang1
       files:
+        - boards/shields/nxp_m2_wifi_bt/
         - drivers/wifi/
         - samples/net/
     - name: NXP IEEE802.15.4
@@ -3726,6 +3727,28 @@ NXP Platforms (MCU):
         - boards/nxp/vmu*/
         - boards/nxp/rddrone_fmuk66/
         - tests/boards/vmu_rt1170/
+    - name: NXP Camera Shields
+      collaborators:
+        - ngphibang
+      files:
+        - boards/shields/nxp_btb44_ov5640/
+    - name: NXP Display Shields
+      collaborators:
+        - KATE-WANG-NXP
+      files:
+        - boards/shields/g1120b0mipi/
+        - boards/shields/lcd_par_s035/
+        - boards/shields/rk043fn02h_ct/
+        - boards/shields/rk043fn66hs_ctg/
+        - boards/shields/rk055hdmipi4m
+        - boards/shields/rk055hdmipi4ma0/
+        - boards/shields/zc143ac72mipi/
+    - name: NXP I3C Test Shields
+      collaborators:
+        - hakehuang
+      files:
+        - boards/shields/p3t1755dp_ard_i2c/
+        - boards/shields/p3t1755dp_ard_i3c/
     - name: NXP MCU k32l
       collaborators:
         - iia
