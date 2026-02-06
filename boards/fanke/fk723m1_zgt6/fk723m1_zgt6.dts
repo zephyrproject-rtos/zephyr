@@ -147,12 +147,19 @@ zephyr_udc0: &usbotg_hs {
 		data-rate = <OSPI_STR_TRANSFER>;
 		writeoc = "PP_1_1_4";
 		size = <DT_SIZE_M(64)>;
+
+		/* QSPI external flash mapping */
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(8)>;
+
 		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			storage_partition: partition@0 {
 				reg = <0x00000000 DT_SIZE_M(8)>; /* 64 Mbits */
