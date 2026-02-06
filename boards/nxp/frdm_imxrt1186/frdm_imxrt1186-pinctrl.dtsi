@@ -1,0 +1,92 @@
+/*
+ * Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+#include <nxp/nxp_imx/rt/mimxrt1186cvj8c-pinctrl.dtsi>
+
+&pinctrl {
+	pinmux_lpuart1: pinmux_lpuart1 {
+		group0 {
+			pinmux = <&iomuxc_aon_gpio_aon_09_lpuart1_rxd>,
+				 <&iomuxc_aon_gpio_aon_08_lpuart1_txd>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_lpuart1_sleep: pinmux_lpuart1_sleep {
+		group0 {
+			pinmux = <&iomuxc_aon_gpio_aon_09_lpuart1_rxd>;
+			drive-strength = "high";
+			bias-pull-up;
+			slew-rate = "fast";
+		};
+
+		group1 {
+			pinmux = <&iomuxc_aon_gpio_aon_08_lpuart1_txd>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_lpuart3: pinmux_lpuart3 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_14_lpuart3_rxd>,
+				 <&iomuxc_gpio_ad_13_lpuart3_txd>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_lpuart3_sleep: pinmux_lpuart3_sleep {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_14_lpuart3_rxd>;
+			drive-strength = "high";
+			bias-pull-up;
+			slew-rate = "fast";
+		};
+
+		group1 {
+			pinmux = <&iomuxc_gpio_ad_13_lpuart3_txd>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_lpi2c3: pinmux_lpi2c3 {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_18_lpi2c3_scl>,
+				 <&iomuxc_gpio_ad_19_lpi2c3_sda>;
+			drive-strength = "high";
+			slew-rate = "fast";
+			bias-pull-up;
+			input-enable;
+		};
+	};
+
+	pinmux_lpi2c3_sleep: pinmux_lpi2c3_sleep {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_18_lpi2c3_scl>,
+				 <&iomuxc_gpio_ad_19_lpi2c3_sda>;
+			drive-strength = "high";
+			slew-rate = "fast";
+			bias-pull-up;
+		};
+	};
+
+	/* QSPI Flash on FlexSPI2 - GPIO_AON_22/23/24/25/26/27 */
+	pinmux_flexspi2: pinmux_flexspi2 {
+		group0 {
+			pinmux = <&iomuxc_aon_gpio_aon_22_flexspi2_a_ss0_b>,
+				 <&iomuxc_aon_gpio_aon_23_flexspi2_a_sclk>,
+				 <&iomuxc_aon_gpio_aon_24_flexspi2_a_data0>,
+				 <&iomuxc_aon_gpio_aon_25_flexspi2_a_data1>,
+				 <&iomuxc_aon_gpio_aon_26_flexspi2_a_data2>,
+				 <&iomuxc_aon_gpio_aon_27_flexspi2_a_data3>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+};

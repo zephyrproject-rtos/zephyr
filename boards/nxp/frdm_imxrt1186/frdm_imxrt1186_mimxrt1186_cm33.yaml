@@ -1,0 +1,20 @@
+#
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: frdm_imxrt1186/mimxrt1186/cm33
+name: FRDM-iMXRT1186 CM33
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 128
+flash: 128
+supported:
+  - gpio
+  - uart
+  - i2c
