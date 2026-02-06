@@ -22,6 +22,14 @@ config CLOCK_CONTROL_MCHP_PIC32CM_JH
 	help
 	  Enable clock controller driver for Microchip PIC32CM_JH family.
 
+config CLOCK_CONTROL_MCHP_PIC32CM_PL
+	bool
+	default y
+	depends on DT_HAS_MICROCHIP_PIC32CM_PL_CLOCK_ENABLED
+	select CLOCK_CONTROL_MCHP_COMMON
+	help
+	  Enable clock controller driver for Microchip PIC32CM_PL family.
+
 config CLOCK_CONTROL_MCHP_PIC32CZ_CA
 	bool
 	default y
@@ -64,5 +72,12 @@ config CLOCK_CONTROL_MCHP_SET_RATE
 	help
 	  This option enables set rate API. This may increase
 	  code size, depending on the depth of clock source hierarchy.
+
+config CLOCK_CONTROL_MCHP_GCLK_PINOUT
+	bool "Output the clock on  GCLK IO Pin"
+	default n
+	help
+	  This option enables the feature of outputting the clock on the gclk io pin.
+	  This may increase code size, depending on the depth of clock source hierarchy.
 
 endif # CLOCK_CONTROL_MCHP_COMMON
