@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&ram03_sram {
+	cpuflpr_sram_code_data: sram@0 {
+		compatible = "mmio-sram";
+		reg = <0x0 DT_SIZE_K(116)>;
+		status = "reserved";
+	};
+};
+
+&mram_controller {
+	cpuflpr_mram: mram@3de000 {
+		compatible = "soc-nv-flash";
+		reg = <0x3de000 DT_SIZE_K(116)>;
+		ranges = <0x0 0x3de000 DT_SIZE_K(116)>;
+		erase-block-size = <4096>;
+		write-block-size = <4>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
+};
+
+&uart00 {
+	status = "reserved";
+};
+
+&cpuflpr_vpr {
+	execution-memory = <&cpuflpr_sram_code_data>;
+	source-memory = <&cpuflpr_mram>;
+};
+
+&cpuapp_vevif_tx {
+	status = "okay";
+};
