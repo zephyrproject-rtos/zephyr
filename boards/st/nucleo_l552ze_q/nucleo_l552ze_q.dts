@@ -19,6 +19,8 @@
 		zephyr,shell-uart = &lpuart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,uart-mcumgr = &lpuart1;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	aliases {
@@ -29,4 +31,33 @@
 
 &rng {
 	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x0000c000>;
+		};
+
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000c000 0x00014000>;
+		};
+
+		slot1_partition: partition@20000 {
+			label = "image-1";
+			reg = <0x00020000 0x00014000>;
+		};
+
+		storage_partition: partition@34000 {
+			label = "storage";
+			reg = <0x00034000 0x00008000>;
+		};
+	};
 };
