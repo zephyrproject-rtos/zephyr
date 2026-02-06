@@ -209,7 +209,7 @@ tests:
     build_only: true
     extra_configs:
       - CONFIG_BT_MCS=n
-      - CONFIG_BT_MPL=n
+      - CONFIG_BT_MCP_MEDIA_CONTROL_SERVER=n
     tags: bluetooth
   bluetooth.shell.audio.no_mcc:
     extra_args: CONF_FILE="audio.conf"

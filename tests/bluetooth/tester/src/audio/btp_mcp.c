@@ -331,8 +331,7 @@ static void btp_send_current_track_obj_id_ev(struct bt_conn *conn, uint8_t statu
 	tester_event(BTP_SERVICE_ID_MCP, BTP_MCP_CURRENT_TRACK_OBJ_ID_EV, &ev, sizeof(ev));
 }
 
-static void btp_send_media_cp_ev(struct bt_conn *conn, uint8_t status,
-				 const struct mpl_cmd *cmd)
+static void btp_send_media_cp_ev(struct bt_conn *conn, uint8_t status, const struct bt_mcp_cmd *cmd)
 {
 	struct btp_mcp_media_cp_ev ev;
 
@@ -347,7 +346,7 @@ static void btp_send_media_cp_ev(struct bt_conn *conn, uint8_t status,
 }
 
 static void btp_send_search_cp_ev(struct bt_conn *conn, uint8_t status,
-				  const struct mpl_search *search)
+				  const struct bt_mcp_search *search)
 {
 	struct btp_mcp_search_cp_ev *ev;
 	uint8_t param[SEARCH_LEN_MAX];
@@ -373,7 +372,7 @@ static void btp_send_search_cp_ev(struct bt_conn *conn, uint8_t status,
 }
 
 static void btp_send_command_notifications_ev(struct bt_conn *conn, uint8_t status,
-					      const struct mpl_cmd_ntf *ntf)
+					      const struct bt_mcp_cmd_ntf *ntf)
 {
 	struct btp_mcp_cmd_ntf_ev ev;
 
@@ -598,21 +597,21 @@ static void mcc_current_track_obj_id_set_cb(struct bt_conn *conn, int err, uint6
 	btp_send_current_track_obj_id_ev(conn, err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS, id);
 }
 
-static void mcc_send_cmd_cb(struct bt_conn *conn, int err, const struct mpl_cmd *cmd)
+static void mcc_send_cmd_cb(struct bt_conn *conn, int err, const struct bt_mcp_cmd *cmd)
 {
 	LOG_DBG("MCC Send Command cb (%d)", err);
 
 	btp_send_media_cp_ev(conn, err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS, cmd);
 }
 
-static void mcc_send_search_cb(struct bt_conn *conn, int err, const struct mpl_search *search)
+static void mcc_send_search_cb(struct bt_conn *conn, int err, const struct bt_mcp_search *search)
 {
 	LOG_DBG("MCC Send Search cb (%d)", err);
 
 	btp_send_search_cp_ev(conn, err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS, search);
 }
 
-static void mcc_cmd_ntf_cb(struct bt_conn *conn, int err, const struct mpl_cmd_ntf *ntf)
+static void mcc_cmd_ntf_cb(struct bt_conn *conn, int err, const struct bt_mcp_cmd_ntf *ntf)
 {
 	LOG_DBG("MCC Media Control Point Command Notify cb (%d)", err);
 
@@ -1180,7 +1179,7 @@ static uint8_t mcp_current_track_obj_id_set(const void *cmd, uint16_t cmd_len, v
 static uint8_t mcp_cmd_send(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mcp_send_cmd *cp = cmd;
-	struct mpl_cmd mcp_cmd;
+	struct bt_mcp_cmd mcp_cmd;
 	struct bt_conn *conn;
 	int err;
 
@@ -1207,8 +1206,8 @@ static uint8_t mcp_cmd_send(const void *cmd, uint16_t cmd_len, void *rsp, uint16
 static uint8_t mcp_cmd_search(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mcp_search_cmd *cp = cmd;
-	struct mpl_search search_items;
-	struct mpl_sci scp_cmd;
+	struct bt_mcp_search search_items;
+	struct bt_mcp_sci scp_cmd;
 	struct bt_conn *conn;
 	int err;
 
@@ -1440,7 +1439,7 @@ static uint8_t mcs_supported_commands(const void *cmd, uint16_t cmd_len, void *r
 static uint8_t mcs_cmd_send(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mcs_send_cmd *cp = cmd;
-	struct mpl_cmd mcp_cmd;
+	struct bt_mcp_cmd mcp_cmd;
 	int err;
 
 	LOG_DBG("MCS Send Command");
@@ -1510,7 +1509,7 @@ static uint8_t mcs_parent_group_set(const void *cmd, uint16_t cmd_len, void *rsp
 	}
 
 	/* Setting current group to be it's own parent */
-	mpl_test_unset_parent_group();
+	bt_mcp_media_control_server_test_unset_parent_group();
 
 	err = media_proxy_ctrl_get_parent_group_id(mcs_media_player);
 	if (err) {
@@ -1531,7 +1530,7 @@ static uint8_t mcs_inactive_state_set(const void *cmd, uint16_t cmd_len, void *r
 
 	LOG_DBG("MCS Set Media Player to inactive state");
 
-	mpl_test_media_state_set(MEDIA_PROXY_STATE_INACTIVE);
+	bt_mcp_media_control_server_test_media_state_set(MEDIA_PROXY_STATE_INACTIVE);
 
 	rp->state = media_player_state;
 
@@ -1547,7 +1546,7 @@ static void mcs_player_instance_cb(struct media_player *plr, int err)
 	LOG_DBG("Media PLayer Instance cb");
 }
 
-static void mcs_command_send_cb(struct media_player *player, int err, const struct mpl_cmd *cmd)
+static void mcs_command_send_cb(struct media_player *player, int err, const struct bt_mcp_cmd *cmd)
 {
 	LOG_DBG("Media PLayer Send Command cb");
 }

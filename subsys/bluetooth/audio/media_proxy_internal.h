@@ -13,7 +13,7 @@
 #include <zephyr/bluetooth/audio/media_proxy.h>
 #include <zephyr/sys/util_macro.h>
 
-#define MPL_NO_TRACK_ID 0
+#define BT_MCP_NO_TRACK_ID 0
 
 /* Debug output of 48 bit Object ID value */
 /* (Zephyr does not yet support debug output of more than 32 bit values.) */
