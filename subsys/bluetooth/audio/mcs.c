@@ -85,7 +85,7 @@ static struct mcs_inst {
 	/* Client states. Access and modification of these shall be guarded by the mutex */
 	struct client_state {
 		struct mcs_flags flags;
-		struct bt_mcp_cmd_ntf cmd_ntf;
+		struct bt_mcs_cmd_ntf cmd_ntf;
 #if defined(CONFIG_BT_OTS)
 		uint8_t search_control_point_result;
 #endif /* CONFIG_BT_OTS */
@@ -1036,14 +1036,13 @@ static ssize_t write_control_point(struct bt_conn *conn, const struct bt_gatt_at
 				   const void *buf, uint16_t len, uint16_t offset,
 				   uint8_t write_flags)
 {
+	struct bt_mcs_cmd command;
 	int err;
 
 	if (mcs_cbs == NULL || mcs_cbs->send_command == NULL) {
 		LOG_DBG("Callback not set");
 		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
-
-	struct bt_mcp_cmd command;
 
 	ARG_UNUSED(attr);
 	ARG_UNUSED(write_flags);
@@ -1126,7 +1125,12 @@ static ssize_t write_control_point(struct bt_conn *conn, const struct bt_gatt_at
 		LOG_DBG("Parameter: %d", command.param);
 	}
 
-	mcs_cbs->send_command(&command);
+	/* TODO: Return a more specific ATT error */
+	err = mcs_cbs->send_command(&command);
+	if (err != 0) {
+		LOG_DBG("send_command was rejected with err %d", err);
+		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+	}
 
 	return len;
 }
@@ -1937,7 +1941,7 @@ void bt_mcs_media_state_changed(void)
 
 static void defer_media_control_point_ntf(struct bt_conn *conn, void *data)
 {
-	const struct bt_mcp_cmd_ntf *cmd_ntf = data;
+	const struct bt_mcs_cmd_ntf *cmd_ntf = data;
 	struct client_state *client;
 	struct mcs_flags *flags;
 	struct bt_conn_info info;
@@ -1979,7 +1983,7 @@ static void defer_media_control_point_ntf(struct bt_conn *conn, void *data)
 	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 }
 
-void bt_mcs_command_complete(const struct bt_mcp_cmd_ntf *cmd_ntf)
+void bt_mcs_command_complete(const struct bt_mcs_cmd_ntf *cmd_ntf)
 {
 	/* FIXME: Control Point notification shall be sent to operation initiator only */
 	bt_conn_foreach(BT_CONN_TYPE_LE, defer_media_control_point_ntf, (void *)cmd_ntf);
