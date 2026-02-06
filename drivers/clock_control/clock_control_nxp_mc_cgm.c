@@ -64,7 +64,7 @@ static int mc_cgm_clock_control_on(const struct device *dev, clock_control_subsy
 	case MCUX_FLEXCAN5_CLK:
 		CLOCK_EnableClock(kCLOCK_Flexcan5);
 		break;
-#endif /* defined(CONFIG_CAN_MCUX_MCAN) */
+#endif /* defined(CONFIG_CAN_MCUX_FLEXCAN) */
 
 #if defined(CONFIG_UART_MCUX_LPUART)
 	case MCUX_LPUART0_CLK:

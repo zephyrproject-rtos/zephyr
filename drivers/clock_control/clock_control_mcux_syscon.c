@@ -114,7 +114,7 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	default:
 		break;
 	}
-#endif /* defined(CONFIG_CAN_MCUX_MCAN) */
+#endif /* defined(CONFIG_CAN_MCUX_FLEXCAN) */
 
 #ifdef CONFIG_ETH_NXP_ENET
 	if ((uint32_t)sub_system == MCUX_ENET_CLK) {
