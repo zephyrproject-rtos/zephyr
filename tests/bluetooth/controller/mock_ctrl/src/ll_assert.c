@@ -10,6 +10,6 @@
 
 void bt_ctlr_assert_handle(char *file, uint32_t line)
 {
-	printf("Assertion failed in %s:%d\n", file, line);
+	printf("Assertion failed in %s:%u\n", file, line);
 	exit(-1);
 }
