@@ -377,10 +377,33 @@ struct rtio_sqe {
 	};
 };
 
+
+/**
+ * @brief IO device submission queue entry
+ *
+ * May be cast safely to and from a rtio_sqe as they occupy the same memory provided by the pool
+ */
+struct rtio_iodev_sqe {
+	struct rtio_sqe sqe;
+	struct mpsc_node q;
+	struct rtio_iodev_sqe *next;
+	struct rtio *r;
+};
+
+
 /** @cond ignore */
-/* Ensure the rtio_sqe never grows beyond a common cacheline size of 64 bytes */
-BUILD_ASSERT(sizeof(struct rtio_sqe) <= 64);
+/* Ensure the rtio_iodev_sqe never grows beyond a common cacheline size of 64 bytes */
+#if CONFIG_RTIO_SQE_CACHELINE_CHECK
+#ifdef CONFIG_DCACHE_LINE_SIZE
+#define RTIO_CACHE_LINE_SIZE CONFIG_DCACHE_LINE_SIZE
+#else
+#define RTIO_CACHE_LINE_SIZE 64
+#endif
+BUILD_ASSERT(sizeof(struct rtio_iodev_sqe) <= RTIO_CACHE_LINE_SIZE,
+	"RTIO performs best when the submissions queue entries are less than a cache line")
+#endif
 /** @endcond */
+
 
 /**
  * @brief A completion queue event
@@ -508,18 +531,6 @@ static inline uint16_t __rtio_compute_mempool_block_index(const struct rtio *r, 
 	return (addr - buff) / block_size;
 }
 #endif
-
-/**
- * @brief IO device submission queue entry
- *
- * May be cast safely to and from a rtio_sqe as they occupy the same memory provided by the pool
- */
-struct rtio_iodev_sqe {
-	struct rtio_sqe sqe;
-	struct mpsc_node q;
-	struct rtio_iodev_sqe *next;
-	struct rtio *r;
-};
 
 /**
  * @brief API that an RTIO IO device should implement

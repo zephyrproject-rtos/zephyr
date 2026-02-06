@@ -47,6 +47,13 @@ config RTIO_OP_DELAY
 	  kernel timer. Note this makes the size of the submission queue entries
 	  typically larger than a dcache line and may have performance implications.
 
+config RTIO_SQE_CACHELINE_CHECK
+	bool "SQE Cacheline size check"
+	help
+	  At build time check the size of struct rtio_sqe to ensure it is less than a
+	  cache line otherwise the build will fail. This ensures high performance on
+	  systems that are sensitive to data cache effects.
+
 rsource "Kconfig.workq"
 
 module = RTIO
