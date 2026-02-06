@@ -407,6 +407,7 @@
 			st,adc-sequencer = "programmable";
 			st,adc-oversampler = "none";
 			st,adc-internal-regulator = "none";
+			has-injected-support;
 			status = "disabled";
 		};
 

@@ -450,6 +450,7 @@
 			st,adc-internal-regulator = "none";
 			st,adc-has-deep-powerdown;
 			st,adc-has-channel-preselection;
+			has-injected-support;
 			status = "disabled";
 		};
 
@@ -467,6 +468,7 @@
 			st,adc-internal-regulator = "none";
 			st,adc-has-deep-powerdown;
 			st,adc-has-channel-preselection;
+			has-injected-support;
 			status = "disabled";
 		};
 
