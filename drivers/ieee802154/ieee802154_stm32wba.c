@@ -618,6 +618,10 @@ static int stm32wba_802154_start(const struct device *dev)
 
 	stm32wba_802154_ral_tx_power_set(stm32wba_802154_data.txpwr);
 
+	/* Configure continuous reception mode */
+	stm32wba_802154_ral_set_continuous_reception(stm32wba_802154_data.rx_on_when_idle);
+
+	/* Set the radio in Receive State */
 	if (stm32wba_802154_ral_receive() != STM32WBA_802154_RAL_ERROR_NONE) {
 		LOG_ERR("Failed to enter receive state");
 		return -EIO;
@@ -633,6 +637,10 @@ static int stm32wba_802154_stop(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
+	/* Disable continuous reception mode */
+	stm32wba_802154_ral_set_continuous_reception(false);
+
+	/* Set the radio in Sleep state */
 	if (stm32wba_802154_ral_sleep() != STM32WBA_802154_RAL_ERROR_NONE) {
 		LOG_ERR("Error while stopping radio");
 		return -EIO;
@@ -860,6 +868,8 @@ static int stm32wba_802154_configure(const struct device *dev,
 		break;
 
 	case IEEE802154_CONFIG_RX_ON_WHEN_IDLE:
+		LOG_DBG("Setting IEEE802154_CONFIG_RX_ON_WHEN_IDLE: enabled = %d",
+			config->rx_on_when_idle);
 		stm32wba_802154_data.rx_on_when_idle = config->rx_on_when_idle;
 		stm32wba_802154_ral_set_continuous_reception(config->rx_on_when_idle);
 		break;
