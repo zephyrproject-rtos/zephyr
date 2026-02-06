@@ -91,6 +91,38 @@ enum lora_coding_rate {
 };
 
 /**
+ * @brief Number of symbols used for CAD detection
+ *
+ * More symbols improve detection reliability at the cost of increased time-on-air and power
+ * consumption.
+ */
+enum lora_cad_symbol_num {
+	LORA_CAD_SYMB_1 = 1,	/**< 1 symbol */
+	LORA_CAD_SYMB_2 = 2,	/**< 2 symbols */
+	LORA_CAD_SYMB_4 = 4,	/**< 4 symbols */
+	LORA_CAD_SYMB_8 = 8,	/**< 8 symbols */
+	LORA_CAD_SYMB_16 = 16,	/**< 16 symbols */
+};
+
+/**
+ * @struct lora_cad_config
+ * @brief Configuration for Channel Activity Detection
+ *
+ * Set fields to 0 to let the driver auto-derive sensible defaults from the current modem
+ * configuration (SF, BW).
+ */
+struct lora_cad_config {
+	/** Number of symbols for CAD detection. 0 = driver default. */
+	enum lora_cad_symbol_num symbol_num;
+
+	/** Detection peak threshold. 0 = auto-derive from SF/BW. */
+	uint8_t det_peak;
+
+	/** Minimum detection threshold. 0 = auto-derive from SF/BW. */
+	uint8_t det_min;
+};
+
+/**
  * @struct lora_modem_config
  * Structure containing the configuration of a LoRa modem
  */
@@ -156,6 +188,36 @@ typedef void (*lora_recv_cb)(const struct device *dev, uint8_t *data, uint16_t s
 			     int16_t rssi, int8_t snr, void *user_data);
 
 /**
+ * @typedef lora_cad_cb()
+ * @brief Callback API for channel activity detection asynchronously
+ *
+ * @param dev               LoRa device
+ * @param activity_detected true if LoRa activity was detected on the channel
+ * @param user_data         User data passed to @ref lora_cad_async
+ */
+typedef void (*lora_cad_cb)(const struct device *dev, bool activity_detected,
+			    void *user_data);
+
+/**
+ * @typedef lora_cad_recv_cb()
+ * @brief Callback API for CAD followed by receive asynchronously
+ *
+ * @param dev               LoRa device
+ * @param activity_detected true if LoRa activity was detected on the channel.
+ *                          When false, the remaining parameters are unused.
+ * @param data              Pointer to received data (valid when activity_detected
+ *                          is true and size > 0)
+ * @param size              Length of received data. 0 if activity was detected
+ *                          but no packet was received (RX timeout).
+ * @param rssi              RSSI of received data
+ * @param snr               SNR of received data
+ * @param user_data         User data passed to @ref lora_cad_recv_async
+ */
+typedef void (*lora_cad_recv_cb)(const struct device *dev, bool activity_detected,
+				 uint8_t *data, uint16_t size,
+				 int16_t rssi, int8_t snr, void *user_data);
+
+/**
  * @typedef lora_api_config()
  * @brief Callback API for configuring the LoRa module
  *
@@ -212,6 +274,70 @@ typedef int (*lora_api_recv_async)(const struct device *dev, lora_recv_cb cb,
 			     void *user_data);
 
 /**
+ * @typedef lora_api_cad_config()
+ * @brief Callback API for configuring CAD parameters
+ *
+ * @see lora_cad_config() for argument descriptions.
+ */
+typedef int (*lora_api_cad_config)(const struct device *dev,
+				   struct lora_cad_config *config);
+
+/**
+ * @typedef lora_api_cad()
+ * @brief Callback API for channel activity detection
+ *
+ * @see lora_cad() for argument descriptions.
+ */
+typedef int (*lora_api_cad)(const struct device *dev, k_timeout_t timeout);
+
+/**
+ * @typedef lora_api_cad_async()
+ * @brief Callback API for channel activity detection asynchronously
+ *
+ * @see lora_cad_async() for argument descriptions.
+ */
+typedef int (*lora_api_cad_async)(const struct device *dev, lora_cad_cb cb,
+				  void *user_data);
+
+/**
+ * @typedef lora_api_cad_recv()
+ * @brief Callback API for CAD followed by receive
+ *
+ * @see lora_cad_recv() for argument descriptions.
+ */
+typedef int (*lora_api_cad_recv)(const struct device *dev, uint8_t *data,
+				 uint8_t size, k_timeout_t timeout,
+				 int16_t *rssi, int8_t *snr);
+
+/**
+ * @typedef lora_api_cad_recv_async()
+ * @brief Callback API for CAD followed by receive asynchronously
+ *
+ * @see lora_cad_recv_async() for argument descriptions.
+ */
+typedef int (*lora_api_cad_recv_async)(const struct device *dev,
+				       lora_cad_recv_cb cb, void *user_data);
+
+/**
+ * @typedef lora_api_cad_send()
+ * @brief Callback API for CAD followed by send (Listen Before Talk)
+ *
+ * @see lora_cad_send() for argument descriptions.
+ */
+typedef int (*lora_api_cad_send)(const struct device *dev,
+				 uint8_t *data, uint32_t data_len);
+
+/**
+ * @typedef lora_api_cad_send_async()
+ * @brief Callback API for CAD followed by send asynchronously
+ *
+ * @see lora_cad_send_async() for argument descriptions.
+ */
+typedef int (*lora_api_cad_send_async)(const struct device *dev,
+				       uint8_t *data, uint32_t data_len,
+				       struct k_poll_signal *async);
+
+/**
  * @typedef lora_api_test_cw()
  * @brief Callback API for transmitting a continuous wave
  *
@@ -227,6 +353,13 @@ __subsystem struct lora_driver_api {
 	lora_api_send_async send_async;
 	lora_api_recv recv;
 	lora_api_recv_async recv_async;
+	lora_api_cad_config cad_config;
+	lora_api_cad cad;
+	lora_api_cad_async cad_async;
+	lora_api_cad_recv cad_recv;
+	lora_api_cad_recv_async cad_recv_async;
+	lora_api_cad_send cad_send;
+	lora_api_cad_send_async cad_send_async;
 	lora_api_test_cw test_cw;
 };
 
@@ -355,6 +488,221 @@ static inline int lora_recv_async(const struct device *dev, lora_recv_cb cb,
 		(const struct lora_driver_api *)dev->api;
 
 	return api->recv_async(dev, cb, user_data);
+}
+
+/**
+ * @brief Configure Channel Activity Detection parameters
+ *
+ * Sets the CAD detection parameters. Set struct fields to 0 to use
+ * driver-recommended defaults derived from the current modem configuration
+ * (SF, BW).
+ *
+ * If @p config is NULL, the driver uses its internal defaults. This is
+ * useful for radios that do not expose tunable CAD parameters or when
+ * the application does not need fine-grained control.
+ *
+ * Calling this function is optional. If not called, CAD operations use
+ * driver defaults.
+ *
+ * @param dev     LoRa device
+ * @param config  CAD configuration parameters, or NULL for driver defaults
+ * @return 0 on success, negative on error
+ */
+static inline int lora_cad_config(const struct device *dev,
+				  struct lora_cad_config *config)
+{
+	const struct lora_driver_api *api =
+		(const struct lora_driver_api *)dev->api;
+
+	if (api->cad_config == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->cad_config(dev, config);
+}
+
+/**
+ * @brief Perform Channel Activity Detection
+ *
+ * Checks whether a LoRa signal is present on the channel using the modem
+ * configuration previously set by @ref lora_config and the CAD parameters
+ * optionally set by @ref lora_cad_config.
+ *
+ * @note This is a blocking call.
+ *
+ * @param dev      LoRa device
+ * @param timeout  Maximum time to wait for CAD to complete
+ * @return 0 if no activity detected (channel free)
+ * @return 1 if activity detected (channel busy)
+ * @return -EBUSY if the modem is in use
+ * @return -ETIMEDOUT if the operation timed out
+ * @return negative on other errors
+ */
+static inline int lora_cad(const struct device *dev, k_timeout_t timeout)
+{
+	const struct lora_driver_api *api =
+		(const struct lora_driver_api *)dev->api;
+
+	if (api->cad == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->cad(dev, timeout);
+}
+
+/**
+ * @brief Perform Channel Activity Detection asynchronously
+ *
+ * Starts a single CAD operation using the parameters optionally set by
+ * @ref lora_cad_config. When complete, invokes @p cb with the result.
+ *
+ * Cancel a pending operation by calling this function again with
+ * @p cb = NULL.
+ *
+ * @param dev        LoRa device
+ * @param cb         Callback invoked on completion. NULL to cancel.
+ * @param user_data  User data passed to callback
+ * @return 0 on success, negative on error
+ */
+static inline int lora_cad_async(const struct device *dev, lora_cad_cb cb,
+				 void *user_data)
+{
+	const struct lora_driver_api *api =
+		(const struct lora_driver_api *)dev->api;
+
+	if (api->cad_async == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->cad_async(dev, cb, user_data);
+}
+
+/**
+ * @brief Perform CAD followed by receive if activity is detected
+ *
+ * The radio performs CAD first using the parameters optionally set by
+ * @ref lora_cad_config. If activity is detected, it automatically enters
+ * RX mode to receive the incoming packet. If no activity is detected,
+ * returns immediately.
+ *
+ * @note This is a blocking call.
+ *
+ * @param dev      LoRa device
+ * @param data     Buffer to hold received data
+ * @param size     Size of the receive buffer (max 255)
+ * @param timeout  Maximum time to wait for the complete operation
+ * @param rssi     RSSI of received data (output)
+ * @param snr      SNR of received data (output)
+ * @return Length of received data if activity detected and packet received
+ * @return 0 if no activity detected (channel free)
+ * @return -ETIMEDOUT if the operation timed out
+ * @return negative on other errors
+ */
+static inline int lora_cad_recv(const struct device *dev, uint8_t *data,
+				uint8_t size, k_timeout_t timeout,
+				int16_t *rssi, int8_t *snr)
+{
+	const struct lora_driver_api *api =
+		(const struct lora_driver_api *)dev->api;
+
+	if (api->cad_recv == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->cad_recv(dev, data, size, timeout, rssi, snr);
+}
+
+/**
+ * @brief Perform CAD followed by receive asynchronously
+ *
+ * Starts a CAD operation using the parameters optionally set by
+ * @ref lora_cad_config. If activity is detected, the radio enters RX mode.
+ * The callback reports the outcome: no activity, or the received packet data.
+ *
+ * Cancel a pending operation by calling this function again with
+ * @p cb = NULL.
+ *
+ * @param dev        LoRa device
+ * @param cb         Callback invoked on completion. NULL to cancel.
+ * @param user_data  User data passed to callback
+ * @return 0 on success, negative on error
+ */
+static inline int lora_cad_recv_async(const struct device *dev,
+				      lora_cad_recv_cb cb, void *user_data)
+{
+	const struct lora_driver_api *api =
+		(const struct lora_driver_api *)dev->api;
+
+	if (api->cad_recv_async == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->cad_recv_async(dev, cb, user_data);
+}
+
+/**
+ * @brief Perform CAD followed by send if channel is free (Listen Before Talk)
+ *
+ * The radio performs CAD first using the parameters optionally set by
+ * @ref lora_cad_config. If no activity is detected (channel is free), it
+ * automatically transmits the provided data. If activity is detected, the
+ * data is not sent and the function returns immediately.
+ *
+ * @note This is a blocking call.
+ *
+ * @param dev       LoRa device
+ * @param data      Data to be sent
+ * @param data_len  Length of the data to be sent
+ * @return 0 if channel free and data transmitted successfully
+ * @return 1 if activity detected (channel busy), data NOT transmitted
+ * @return -EBUSY if the modem is in use
+ * @return negative on other errors
+ */
+static inline int lora_cad_send(const struct device *dev,
+				uint8_t *data, uint32_t data_len)
+{
+	const struct lora_driver_api *api =
+		(const struct lora_driver_api *)dev->api;
+
+	if (api->cad_send == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->cad_send(dev, data, data_len);
+}
+
+/**
+ * @brief Perform CAD followed by send asynchronously (Listen Before Talk)
+ *
+ * Starts a CAD operation using the parameters optionally set by
+ * @ref lora_cad_config. If no activity is detected, the radio transmits
+ * the provided data. If activity is detected, the data is not sent.
+ *
+ * The signal result indicates the outcome:
+ *  - 0: channel free, data transmitted
+ *  - 1: channel busy, data NOT transmitted
+ *  - negative: error
+ *
+ * @param dev       LoRa device
+ * @param data      Data to be sent
+ * @param data_len  Length of the data to be sent
+ * @param async     A pointer to a valid and ready to be signaled
+ *                  struct k_poll_signal. (Note: if NULL this function will not
+ *                  notify the end of the operation).
+ * @return 0 on success, negative on error
+ */
+static inline int lora_cad_send_async(const struct device *dev,
+				      uint8_t *data, uint32_t data_len,
+				      struct k_poll_signal *async)
+{
+	const struct lora_driver_api *api =
+		(const struct lora_driver_api *)dev->api;
+
+	if (api->cad_send_async == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->cad_send_async(dev, data, data_len, async);
 }
 
 /**
