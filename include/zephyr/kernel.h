@@ -2116,6 +2116,27 @@ static inline void *z_impl_k_timer_user_data_get(const struct k_timer *timer)
 	return timer->user_data;
 }
 
+/**
+ * @brief Retrieve the kernel timeout list.
+ *
+ * This routine returns a pointer to an kernel timeout list.
+ * Misuse (e.g. modifying the list without the timeout lock) can corrupt the
+ * kernel timeout list. If traversed or modified the returned list, you must
+ * hold the timeout lock returned by k_timeout_lock_get().
+ *
+ * @return Pointer to the timeout list.
+ */
+sys_dlist_t *k_timeout_list_get(void);
+
+/**
+ * @brief Retrieve the kernel timeout lock.
+ *
+ * Returns a pointer to the spinlock that protects the kernel timeout list
+ *
+ * @return Pointer to the timeout spinlock.
+ */
+struct k_spinlock *k_timeout_lock_get(void);
+
 /** @} */
 
 /**

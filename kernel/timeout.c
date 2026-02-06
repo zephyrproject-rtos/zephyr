@@ -52,6 +52,16 @@ static struct _timeout *next(struct _timeout *t)
 	return (n == NULL) ? NULL : CONTAINER_OF(n, struct _timeout, node);
 }
 
+sys_dlist_t *k_timeout_list_get(void)
+{
+	return &timeout_list;
+}
+
+struct k_spinlock *k_timeout_lock_get(void)
+{
+	return &timeout_lock;
+}
+
 static void remove_timeout(struct _timeout *t)
 {
 	if (next(t) != NULL) {
