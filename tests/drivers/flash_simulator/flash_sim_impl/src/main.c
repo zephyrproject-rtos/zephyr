@@ -7,6 +7,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/device.h>
+#include <zephyr/storage/flash_map.h>
 
 /* Warning: The test has been written for testing boards with single
  * instance of Flash Simulator device only.
@@ -18,7 +19,7 @@
 #else
 #define SOC_NV_FLASH_NODE DT_CHILD(DT_INST(0, zephyr_sim_flash), flash_sim_0)
 #endif /* CONFIG_ARCH_POSIX */
-#define FLASH_SIMULATOR_BASE_OFFSET DT_REG_ADDR(SOC_NV_FLASH_NODE)
+#define FLASH_SIMULATOR_BASE_OFFSET FIXED_PARTITION_NODE_OFFSET(SOC_NV_FLASH_NODE)
 #define FLASH_SIMULATOR_ERASE_UNIT DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)
 #define FLASH_SIMULATOR_PROG_UNIT DT_PROP(SOC_NV_FLASH_NODE, write_block_size)
 #define FLASH_SIMULATOR_FLASH_SIZE DT_REG_SIZE(SOC_NV_FLASH_NODE)
