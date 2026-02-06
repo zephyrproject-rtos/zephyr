@@ -10,6 +10,13 @@
 
 #include "memory.h"
 
+bootloader_iram_loader_seg_start = BOOTLOADER_IRAM_LOADER_SEG_START;
+bootloader_dram_loader_seg_start = BOOTLOADER_DRAM_LOADER_SEG_START;
+bootloader_iram_seg_start = BOOTLOADER_IRAM_SEG_START;
+bootloader_dram_seg_start = BOOTLOADER_DRAM_SEG_START;
+
+user_dram_end = USER_DRAM_END;
+
 /* User available SRAM memory segments */
 procpu_iram_end = USER_IRAM_END - APPCPU_SRAM_SIZE;
 procpu_dram_end = USER_DRAM_END - APPCPU_SRAM_SIZE;
