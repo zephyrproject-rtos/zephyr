@@ -52,12 +52,20 @@
 		reset-gpios = <&gpiod 3 GPIO_ACTIVE_LOW>;
 		reset-gpios-duration = <1>;
 		spi-bus-width = <4>;
+
+		/* External flash mapping */
+		ranges = <0x0 0x90000000 DT_SIZE_M(256)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
 		status = "okay";
+
 
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			storage_partition: partition@0 {
 				label = "storage";
