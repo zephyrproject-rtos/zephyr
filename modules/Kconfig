@@ -67,6 +67,9 @@ comment "hal_bouffalolab module not available."
 comment "hal_gigadevice module not available."
 	depends on !ZEPHYR_HAL_GIGADEVICE_MODULE
 
+comment "hal_at32 module not available."
+	depends on !ZEPHYR_HAL_AT32_MODULE
+
 comment "hal_nordic module not available."
 	depends on !ZEPHYR_HAL_NORDIC_MODULE
 

@@ -79,6 +79,7 @@ aries	Aries Embedded GmbH
 arm	ARM Ltd.
 armadeus	ARMadeus Systems SARL
 arrow	Arrow Electronics
+artery	Artery Technology
 artesyn	Artesyn Embedded Technologies Inc.
 asahi-kasei	Asahi Kasei Corp.
 asc	All Sensors Corporation

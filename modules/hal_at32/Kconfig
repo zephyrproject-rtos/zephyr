@@ -1,0 +1,9 @@
+# Copyright (c) 2021 ATL-Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_HAL_AT32_MODULE
+	bool
+
+config HAS_AT32_HAL
+	bool
+	select HAS_CMSIS_CORE if ARM
