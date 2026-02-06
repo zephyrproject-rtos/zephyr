@@ -46,14 +46,6 @@ if SOC_LPC55S06
 
 endif # SOC_LPC55S06
 
-if SOC_LPC55S16
-
-config CAN_MCUX_MCAN
-	default y
-	depends on CAN
-
-endif # SOC_LPC55S16
-
 if SOC_LPC55S36
 
 # Enable cache management features
