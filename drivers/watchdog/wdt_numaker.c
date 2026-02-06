@@ -9,7 +9,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/clock_control/clock_control_numaker.h>
+#include <zephyr/drivers/clock_control/clock_control_numicro.h>
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/logging/log.h>
 #include <soc.h>
@@ -244,7 +244,7 @@ static DEVICE_API(wdt, wdt_numaker_api) = {
 static int wdt_numaker_init(const struct device *dev)
 {
 	const struct wdt_numaker_config *cfg = dev->config;
-	struct numaker_scc_subsys scc_subsys;
+	struct numicro_scc_subsys scc_subsys;
 	int err;
 
 	SYS_UnlockReg();
@@ -257,8 +257,8 @@ static int wdt_numaker_init(const struct device *dev)
 	irq_disable(DT_INST_IRQN(0));
 	/* CLK controller */
 	memset(&scc_subsys, 0x00, sizeof(scc_subsys));
-	scc_subsys.subsys_id = NUMAKER_SCC_SUBSYS_ID_PCC;
-	scc_subsys.pcc.clk_modidx = cfg->clk_modidx;
+	scc_subsys.subsys_id = NUMICRO_SCC_SUBSYS_ID_PCC;
+	scc_subsys.pcc.clk_mod = cfg->clk_modidx;
 	scc_subsys.pcc.clk_src = cfg->clk_src;
 	scc_subsys.pcc.clk_div = cfg->clk_div;
 
