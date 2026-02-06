@@ -11,7 +11,7 @@
 #if !defined(CONFIG_EAP_TLS) && !defined(CONFIG_EAP_TTLS) && \
 	!defined(CONFIG_EAP_PEAP) && !defined(CONFIG_EAP_FAST) && \
 	!defined(CONFIG_EAP_SIM) && !defined(CONFIG_EAP_AKA) && \
-	!defined(CONFIG_EAP_MD5) && !defined(CONFIG_EAP_MSCHAPV2) && \
+	!defined(CONFIG_EAP_MSCHAPV2) && \
 	!defined(CONFIG_EAP_PSK) && !defined(CONFIG_EAP_PAX) && \
 	!defined(CONFIG_EAP_SAKE) && !defined(CONFIG_EAP_GPSK) && \
 	!defined(CONFIG_EAP_PWD) && !defined(CONFIG_EAP_EKE) && \
@@ -21,7 +21,6 @@
 	CONFIG_EAP_TLS    \
 	CONFIG_EAP_TTLS   \
 	CONFIG_EAP_PEAP   \
-	CONFIG_EAP_MD5        \
 	CONFIG_EAP_MSCHAPV2    \
 	CONFIG_EAP_LEAP    \
 	CONFIG_EAP_PSK   \
