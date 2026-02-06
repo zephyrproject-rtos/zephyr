@@ -373,6 +373,14 @@
 				status = "disabled";
 			};
 		};
+
+		keyscan: keyscan@40037000 {
+			compatible = "realtek,bee-keyscan";
+			reg = <0x40037000 0x34>;
+			interrupts = <58 0>;
+			clocks = <&cctl APB_CLK(KEYSCAN)>;
+			status = "disabled";
+		};
 	};
 };
 
