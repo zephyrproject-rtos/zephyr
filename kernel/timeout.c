@@ -361,3 +361,18 @@ void z_vrfy_sys_clock_tick_set(uint64_t tick)
 	z_impl_sys_clock_tick_set(tick);
 }
 #endif /* CONFIG_ZTEST */
+
+struct _timeout *k_get_next_timeout(struct _timeout *to)
+{
+	struct _timeout *t = NULL;
+
+	K_SPINLOCK(&timeout_lock) {
+		if (to == NULL) {
+			t = first();
+		} else {
+			t = sys_dnode_is_linked(&to->node) ? next(to) : NULL;
+		}
+	}
+
+	return t;
+}

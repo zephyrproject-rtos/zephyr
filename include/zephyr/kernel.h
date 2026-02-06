@@ -2116,6 +2116,20 @@ static inline void *z_impl_k_timer_user_data_get(const struct k_timer *timer)
 	return timer->user_data;
 }
 
+/**
+ * @brief Get first/next timeout in expiry order.
+ *
+ * This routine returns the next timeout in the timeout_list. To get
+ * the first timeout pass NULL, pass a previously returned pointer to
+ * get the next. Returns NULL if none. The list may change between calls.
+ * Read-only: do not modify returned nodes.
+ *
+ * @param to Previous timeout or NULL for first.
+ *
+ * @return Next timeout or NULL.
+ */
+struct _timeout *k_get_next_timeout(struct _timeout *to);
+
 /** @} */
 
 /**

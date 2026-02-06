@@ -1,0 +1,5 @@
+tests:
+  kernel.timer.timeout_get:
+    tags:
+      - kernel
+      - timer
