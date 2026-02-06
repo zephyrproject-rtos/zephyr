@@ -521,7 +521,7 @@ DT_INST_FOREACH_STATUS_OKAY(DEFINE_FLASHDISKS_CACHE)
 		.name = DT_INST_PROP(n, disk_name),				\
 	},									\
 	.area_id = DT_FIXED_PARTITION_ID(PARTITION_PHANDLE(n)),			\
-	.offset = DT_REG_ADDR(PARTITION_PHANDLE(n)),				\
+	.offset = FIXED_PARTITION_NODE_OFFSET(PARTITION_PHANDLE(n)),		\
 	.cache = flashdisk##n##_cache,						\
 	.cache_size = sizeof(flashdisk##n##_cache),				\
 	.size = DT_REG_SIZE(PARTITION_PHANDLE(n)),				\
