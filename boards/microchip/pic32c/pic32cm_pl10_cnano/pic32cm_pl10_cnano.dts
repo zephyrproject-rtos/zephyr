@@ -51,7 +51,50 @@
 };
 
 &cpu0 {
-	clock-frequency = <4000000>; /* 4 MHz */
+	clock-frequency = <24000000>; /* 24 MHz */
+};
+
+&clock {
+	compatible = "microchip,pic32cm-pl-clock";
+
+	oschf: oschf {
+		compatible = "microchip,pic32cm-pl-oschf";
+		oschf-frequency = <24000000>;
+	};
+
+	xosc32k: xosc32k {
+		compatible = "microchip,pic32cm-pl-xosc32k";
+		xosc32k-cfd-en = <1>;
+		xosc32k-startup-time = "16K";
+		xosc32k-en = <1>;
+	};
+
+	osc32k: osc32k {
+		compatible = "microchip,pic32cm-pl-osc32k";
+	};
+
+	gclkgen: gclkgen {
+		compatible = "microchip,pic32cm-pl-gclkgen";
+
+		gclkgen0 {
+			subsystem = <CLOCK_MCHP_GCLKGEN_ID_GEN0>;
+			gclkgen-div-factor = <1>;
+			gclkgen-run-in-standby-en = <1>;
+			gclkgen-src = "oschf";
+			gclkgen-en = <1>;
+		};
+	};
+
+	gclkperiph: gclkperiph {
+		compatible = "microchip,pic32cm-pl-gclkperiph";
+		#clock-cells = <1>;
+
+		sercom1 {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_SERCOM1_CORE>;
+			gclkperiph-src = "gclk0";
+			gclkperiph-en = <1>;
+		};
+	};
 };
 
 &portb {
