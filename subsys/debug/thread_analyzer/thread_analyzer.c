@@ -239,29 +239,43 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
 			     CONFIG_ISR_STACK_SIZE);
 
-static void isr_stack(int core)
+static void isr_stack(thread_analyzer_cb cb, int core)
 {
 	const uint8_t *buf = K_KERNEL_STACK_BUFFER(z_interrupt_stacks[core]);
 	size_t size = K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[core]);
 	size_t unused;
 	int err;
 
+#if CONFIG_MP_MAX_NUM_CPUS < 10
+	char name[] = "ISR0";
+
+	name[3] += core;
+#elif CONFIG_MP_MAX_NUM_CPUS < 100
+	char name[] = "ISR00";
+
+	name[3] += core / 10;
+	name[4] += core % 10;
+#else
+#error Too many CPUs
+#endif
 	err = z_stack_space_get(buf, size, &unused);
 	if (err == 0) {
-		THREAD_ANALYZER_PRINT(
-			THREAD_ANALYZER_FMT(
-				" %s%-17d: STACK: unused %zu usage %zu / %zu (%zu %%)"),
-			THREAD_ANALYZER_VSTR("ISR"), core, unused,
-			size - unused, size, (100 * (size - unused)) / size);
+		struct thread_analyzer_info isr_info = {
+			.name = name,
+			.stack_size = size,
+			.stack_used = size - unused,
+		};
+
+		cb(&isr_info);
 	}
 }
 
-static void isr_stacks(void)
+static void isr_stacks(thread_analyzer_cb cb)
 {
 	unsigned int num_cpus = arch_num_cpus();
 
 	for (int i = 0; i < num_cpus; i++) {
-		isr_stack(i);
+		isr_stack(cb, i);
 	}
 }
 
@@ -285,9 +299,9 @@ void thread_analyzer_run(thread_analyzer_cb cb, unsigned int cpu)
 
 	if (IS_ENABLED(CONFIG_THREAD_ANALYZER_ISR_STACK_USAGE)) {
 		if (IS_ENABLED(CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES)) {
-			isr_stack(cpu);
+			isr_stack(cb, cpu);
 		} else {
-			isr_stacks();
+			isr_stacks(cb);
 		}
 	}
 }
