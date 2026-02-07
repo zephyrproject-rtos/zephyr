@@ -8,7 +8,7 @@
 /dts-v1/;
 
 #include <ti/j722s_main_r5.dtsi>
-#include "beagley_ai_j722s_main_r5f0_0-pinctrl.dtsi"
+#include "beagley_ai_j722s_r5f0_0-pinctrl.dtsi"
 #include <freq.h>
 
 / {
