@@ -32,6 +32,11 @@ def pytest_addoption(parser: pytest.Parser):
         type='bool'
     )
     twister_harness_group.addoption(
+        '--twister-config',
+        metavar='PATH',
+        help='File with test parameters in YAML format. Also activates Twister harness plugin.'
+    )
+    twister_harness_group.addoption(
         '--base-timeout',
         type=float,
         default=60.0,
@@ -145,27 +150,25 @@ def pytest_configure(config: pytest.Config):
     if config.getoption('help'):
         return
 
-    if not (config.getoption('twister_harness') or config.getini('twister_harness')):
+    if config.getoption('collectonly'):
+        return
+
+    if not (
+        config.getoption('twister_harness')
+        or config.getini('twister_harness')
+        or config.getoption('twister_config')
+    ):
         return
 
     _normalize_paths(config)
-    _validate_options(config)
 
     config.twister_harness_config = TwisterHarnessConfig.create(config)  # type: ignore
-
-
-def _validate_options(config: pytest.Config) -> None:
-    if not config.option.build_dir:
-        raise Exception('--build-dir has to be provided')
-    if not os.path.isdir(config.option.build_dir):
-        raise Exception(f'Provided --build-dir does not exist: {config.option.build_dir}')
-    if not config.option.device_type:
-        raise Exception('--device-type has to be provided')
 
 
 def _normalize_paths(config: pytest.Config) -> None:
     """Normalize paths provided by user via CLI"""
     config.option.build_dir = _normalize_path(config.option.build_dir)
+    config.option.twister_config = _normalize_path(config.option.twister_config)
     config.option.pre_script = _normalize_path(config.option.pre_script)
     config.option.post_script = _normalize_path(config.option.post_script)
     config.option.post_flash_script = _normalize_path(config.option.post_flash_script)

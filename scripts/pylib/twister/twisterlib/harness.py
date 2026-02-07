@@ -24,7 +24,12 @@ from pytest import ExitCode
 from twisterlib.constants import SUPPORTED_SIMS_IN_PYTEST
 from twisterlib.environment import PYTEST_PLUGIN_INSTALLED, ZEPHYR_BASE
 from twisterlib.error import ConfigurationError, StatusAttributeError
-from twisterlib.handlers import Handler, terminate_process
+from twisterlib.handlers import DeviceHandler, Handler, terminate_process
+from twisterlib.harnessconfig import (
+    TWISTER_PYTEST_CONFIG_FILE,
+    HardwareDataWithCores,
+    HarnessPytestConfig,
+)
 from twisterlib.reports import ReportStatus
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
@@ -378,6 +383,8 @@ class Pytest(Harness):
         self.pytest_log_file_path = os.path.join(self.running_dir, 'twister_harness.log')
         self.reserved_dut = None
         self._output = []
+        self.pytest_config_file = os.path.join(self.running_dir, TWISTER_PYTEST_CONFIG_FILE)
+        self.pytest_params = HarnessPytestConfig(platform=instance.platform.name)
 
     def pytest_run(self, timeout):
         try:
@@ -396,66 +403,64 @@ class Pytest(Harness):
     def generate_command(self):
         config = self.instance.testsuite.harness_config
         handler: Handler = self.instance.handler
-        pytest_root = config.get('pytest_root', ['pytest']) if config else ['pytest']
-        pytest_args_yaml = config.get('pytest_args', []) if config else []
-        pytest_dut_scope = config.get('pytest_dut_scope', None) if config else None
         command = [
-            'pytest',
-            '--twister-harness',
-            '-s', '-v',
-            f'--build-dir={self.running_dir}',
+            'pytest', '-s', '-v',
+            '--log-cli-level=DEBUG',
+            '--log-cli-format=%(levelname)s: %(message)s',
             f'--junit-xml={self.report_file}',
-            f'--platform={self.instance.platform.name}'
+            f'--twister-config={self.pytest_config_file}'
         ]
 
-        command.extend([os.path.normpath(os.path.join(
-            self.source_dir, os.path.expanduser(os.path.expandvars(src)))) for src in pytest_root])
-
+        pytest_dut_scope = config.get('pytest_dut_scope', None) if config else None
         if pytest_dut_scope:
             command.append(f'--dut-scope={pytest_dut_scope}')
 
-        # Always pass output from the pytest test and the test image up to Twister log.
-        command.extend([
-            '--log-cli-level=DEBUG',
-            '--log-cli-format=%(levelname)s: %(message)s'
-        ])
+        pytest_root = config.get('pytest_root', ['pytest']) if config else ['pytest']
+        command.extend([os.path.normpath(os.path.join(
+            self.source_dir, os.path.expanduser(os.path.expandvars(src)))) for src in pytest_root])
+
+        self.pytest_params.device_type = self._get_pytest_device_type(handler.type_str)
 
         # Use the test timeout as the base timeout for pytest
         base_timeout = handler.get_test_timeout()
-        command.append(f'--base-timeout={base_timeout}')
+        self.pytest_params.base_timeout = base_timeout
 
         if handler.type_str == 'device':
-            command.extend(
-                self._generate_parameters_for_hardware(handler)
-            )
-        elif handler.type_str in SUPPORTED_SIMS_IN_PYTEST:
-            command.append(f'--device-type={handler.type_str}')
-        elif handler.type_str == 'build':
-            command.append('--device-type=custom')
+            self._generate_parameters_for_hardware(handler)
         else:
-            raise PytestHarnessException(
-                f'Support for handler {handler.type_str} not implemented yet'
-            )
-
-        for req_build in self.instance.required_build_dirs:
-            command.append(f'--required-build={req_build}')
-
-        if handler.type_str != 'device':
             for fixture in handler.options.fixture:
-                command.append(f'--twister-fixture={fixture}')
+                self.pytest_params.twister_fixtures.append(fixture)
+
+        self.pytest_params.required_builds = self.instance.required_build_dirs
 
         if handler.options.extra_test_args and handler.type_str == 'native':
-            command.append(f'--extra-test-args={shlex.join(handler.options.extra_test_args)}')
+            self.pytest_params.extra_test_args = shlex.join(handler.options.extra_test_args)
 
+        # Add any additional pytest args from YAML or CLI
+        pytest_args_yaml = config.get('pytest_args', []) if config else []
         command.extend(pytest_args_yaml)
-
         if handler.options.pytest_args:
             command.extend(handler.options.pytest_args)
 
+        # Save test parameters to YAML file for pytest-harness
+        self.pytest_params.save_to_yaml(self.pytest_config_file)
+
         return command
 
-    def _generate_parameters_for_hardware(self, handler: Handler):
-        command = ['--device-type=hardware']
+    def _get_pytest_device_type(self, handler_name: str) -> str:
+        """Map handler name to pytest device type."""
+        if handler_name == 'device':
+            return 'hardware'
+        elif handler_name in SUPPORTED_SIMS_IN_PYTEST:
+            return handler_name
+        elif handler_name == 'build':
+            return 'custom'
+        else:
+            raise PytestHarnessException(
+                f'Support for handler {handler_name} not implemented yet'
+            )
+
+    def _generate_parameters_for_hardware(self, handler: DeviceHandler):
         hardware = handler.get_hardware()
         if not hardware:
             raise PytestHarnessException('Hardware is not available')
@@ -463,58 +468,25 @@ class Pytest(Harness):
         self.instance.dut = hardware.id
 
         self.reserved_dut = hardware
-        if hardware.serial_pty:
-            command.append(f'--device-serial-pty={hardware.serial_pty}')
-        else:
-            command.extend([
-                f'--device-serial={hardware.serial}',
-                f'--device-serial-baud={hardware.serial_baud}'
-            ])
-            for extra_serial in handler.get_more_serials_from_device(hardware):
-                command.append(f'--device-serial={extra_serial}')
-
-        if hardware.flash_timeout:
-            command.append(f'--flash-timeout={hardware.flash_timeout}')
 
         options = handler.options
-        if runner := hardware.runner or options.west_runner:
-            command.append(f'--runner={runner}')
-
-        if hardware.runner_params:
-            for param in hardware.runner_params:
-                command.append(f'--runner-params={param}')
+        if options.west_runner:
+            self.pytest_params.west_runner = options.west_runner
 
         if options.west_flash and options.west_flash != []:
-            command.append(f'--west-flash-extra-args={options.west_flash}')
+            self.pytest_params.west_flash_extra_args = str(options.west_flash)
 
         if options.flash_command:
-            command.append(f'--flash-command={options.flash_command}')
+            self.pytest_params.flash_command = str(options.flash_command)
 
-        if board_id := hardware.probe_id or hardware.id:
-            command.append(f'--device-id={board_id}')
-
-        if hardware.product:
-            command.append(f'--device-product={hardware.product}')
-
-        if hardware.pre_script:
-            command.append(f'--pre-script={hardware.pre_script}')
-
-        if hardware.post_flash_script:
-            command.append(f'--post-flash-script={hardware.post_flash_script}')
-
-        if hardware.post_script:
-            command.append(f'--post-script={hardware.post_script}')
-
-        # Check flash_before from both hardware map and platform (board YAML)
         # Platform flash_before is intended for boards with USB reset issues during flashing
-        flash_before = hardware.flash_before or self.instance.platform.flash_before
-        if flash_before:
-            command.append(f'--flash-before={flash_before}')
+        self.pytest_params.flash_before = self.instance.platform.flash_before
 
-        for fixture in hardware.fixtures:
-            command.append(f'--twister-fixture={fixture}')
+        # Prepare DUT configuration for pytest
+        hardware_with_cores = HardwareDataWithCores.from_dict(hardware.to_dict())
+        hardware_with_cores.cores = handler.get_other_duts_with_same_id(hardware)
 
-        return command
+        self.pytest_params.duts.append(hardware_with_cores)
 
     def run_command(self, cmd, timeout):
         cmd, env = self._update_command_with_env_dependencies(cmd)

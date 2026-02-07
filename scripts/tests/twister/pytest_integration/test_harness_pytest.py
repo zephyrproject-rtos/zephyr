@@ -7,6 +7,8 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
+import yaml
+from twisterlib.hardwaredata import HardwareData
 from twisterlib.harness import Pytest
 from twisterlib.platform import Platform
 from twisterlib.testinstance import TestInstance
@@ -14,7 +16,7 @@ from twisterlib.testsuite import TestSuite
 
 
 @pytest.fixture
-def testinstance() -> TestInstance:
+def testinstance(tmp_path: Path) -> TestInstance:
     testsuite = TestSuite('.', 'samples/hello', 'unit.test')
     testsuite.harness_config = {}
     testsuite.harness = 'pytest'
@@ -24,16 +26,24 @@ def testinstance() -> TestInstance:
 
     testinstance = TestInstance(testsuite, platform, 'zephyr', 'outdir')
     testinstance.handler = mock.Mock()
-    testinstance.handler.options = mock.Mock()
-    testinstance.handler.options.verbose = 1
+    testinstance.handler.get_test_timeout = mock.Mock(return_value=60)
+    testinstance.handler.options = mock.Mock(
+        verbose=1,
+        pytest_args=None,
+        extra_test_args=None,
+        west_flash=None,
+        west_runner=None,
+        flash_command=None,
+    )
     testinstance.handler.options.fixture = ['fixture1:option1', 'fixture2']
-    testinstance.handler.options.pytest_args = None
-    testinstance.handler.options.extra_test_args = []
     testinstance.handler.type_str = 'native'
+    testinstance.handler.get_hardware = mock.Mock(return_value=HardwareData())
+    testinstance.handler.get_other_duts_with_same_id = mock.Mock(return_value=[])
+    testinstance.build_dir = tmp_path
     return testinstance
 
 
-@pytest.mark.parametrize('device_type', ['native', 'qemu'])
+@pytest.mark.parametrize('device_type', ['native', 'qemu', 'device'])
 def test_pytest_command(testinstance: TestInstance, device_type):
     pytest_harness = Pytest()
     pytest_harness.configure(testinstance)
@@ -42,16 +52,21 @@ def test_pytest_command(testinstance: TestInstance, device_type):
     ref_command = [
         'pytest',
         'samples/hello/pytest',
-        f'--build-dir={testinstance.build_dir}',
-        f'--junit-xml={testinstance.build_dir}/report.xml',
-        f'--device-type={device_type}',
-        '--twister-fixture=fixture1:option1',
-        '--twister-fixture=fixture2'
+        f'--twister-config={pytest_harness.pytest_config_file}',
+        f'--junit-xml={testinstance.build_dir}/report.xml'
     ]
 
     command = pytest_harness.generate_command()
+    assert Path(pytest_harness.pytest_config_file).exists()
     for c in ref_command:
         assert c in command
+    with open(pytest_harness.pytest_config_file) as f:
+        data = yaml.safe_load(f)
+    assert data['device_type'] == pytest_harness._get_pytest_device_type(device_type)
+    if device_type == 'device':
+        assert 'twister_fixtures' not in data
+    else:
+        assert data['twister_fixtures'] == ['fixture1:option1', 'fixture2']
 
 
 def test_pytest_command_dut_scope(testinstance: TestInstance):
@@ -78,8 +93,8 @@ def test_pytest_command_extra_test_args(testinstance: TestInstance):
     extra_test_args = ['-stop_at=3', '-no-rt']
     testinstance.handler.options.extra_test_args = extra_test_args
     pytest_harness.configure(testinstance)
-    command = pytest_harness.generate_command()
-    assert f'--extra-test-args={extra_test_args[0]} {extra_test_args[1]}' in command
+    pytest_harness.generate_command()
+    assert pytest_harness.pytest_params.extra_test_args == ' '.join(extra_test_args)
 
 
 def test_pytest_command_extra_args_in_options(testinstance: TestInstance):
@@ -102,9 +117,8 @@ def test_pytest_command_required_build_args(testinstance: TestInstance):
     required_builds = ['/req/build/dir', 'another/req/dir']
     testinstance.required_build_dirs = required_builds
     pytest_harness.configure(testinstance)
-    command = pytest_harness.generate_command()
-    for req_dir in required_builds:
-        assert f'--required-build={req_dir}' in command
+    pytest_harness.generate_command()
+    assert pytest_harness.pytest_params.required_builds == required_builds
 
 
 @pytest.mark.parametrize(
