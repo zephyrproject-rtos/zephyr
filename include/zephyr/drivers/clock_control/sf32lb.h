@@ -14,6 +14,15 @@
 #include <zephyr/drivers/clock_control.h>
 
 /**
+ * @brief Check if a clock node is enabled
+ *
+ * @param inst DT instance index
+ * @param name Clock name
+ */
+#define SF32LB_CLOCK_NODE_ENABLED(inst, name)                                                      \
+	DT_NODE_HAS_STATUS(DT_INST_CLOCKS_CTLR_BY_NAME(inst, name), okay)
+
+/**
  * @brief Clock Control (SF32LB specifics)
  * @defgroup clock_control_sf32lb Clock Control (SF32LB specifics)
  * @ingroup clock_control_interface
