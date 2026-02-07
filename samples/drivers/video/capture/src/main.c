@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019 Linaro Limited
- * Copyright 2025 NXP
+ * Copyright 2025,2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,23 @@ LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
 #if !DT_HAS_CHOSEN(zephyr_camera)
 #error No camera chosen in devicetree. Missing "--shield" or "--snippet video-sw-generator" flag?
 #endif
+
+int __weak app_setup_video_transform(const struct device *const transform_dev,
+				     struct video_format in_fmt, struct video_format *const out_fmt,
+				     struct video_buffer **out_buf)
+{
+	*out_fmt = in_fmt;
+
+	return 0;
+}
+
+int __weak app_transform_frame(const struct device *const transform_dev,
+			       struct video_buffer *in_buf, struct video_buffer **out_buf)
+{
+	*out_buf = in_buf;
+
+	return 0;
+}
 
 static inline int app_setup_display(const struct device *const display_dev, const uint32_t pixfmt)
 {
@@ -48,8 +65,12 @@ static inline int app_setup_display(const struct device *const display_dev, cons
 		}
 		break;
 	case VIDEO_PIX_FMT_XRGB32:
-		if (capabilities.current_pixel_format != PIXEL_FORMAT_ARGB_8888) {
-			ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_ARGB_8888);
+		if (capabilities.current_pixel_format != PIXEL_FORMAT_XRGB_8888) {
+			if (display_set_pixel_format(display_dev, PIXEL_FORMAT_XRGB_8888)) {
+				/* If failed with PIXEL_FORMAT_XRGB_8888, PIXEL_FORMAT_ARGB_8888 is
+				 * still applicable */
+				ret = display_set_pixel_format(display_dev, PIXEL_FORMAT_ARGB_8888);
+			}
 		}
 		break;
 	default:
@@ -108,34 +129,6 @@ static int app_setup_video_selection(const struct device *const video_dev,
 		}
 
 		LOG_INF("Crop window set to (%u,%u)/%ux%u",
-			sel.rect.left, sel.rect.top, sel.rect.width, sel.rect.height);
-	}
-
-	/*
-	 * Check (if possible) if targeted size is same as crop
-	 * and if compose is necessary
-	 */
-	sel.target = VIDEO_SEL_TGT_CROP;
-	ret = video_get_selection(video_dev, &sel);
-	if (ret < 0 && ret != -ENOSYS) {
-		LOG_ERR("Unable to get selection crop");
-		return ret;
-	}
-
-	if (ret == 0 && (sel.rect.width != fmt->width || sel.rect.height != fmt->height)) {
-		sel.target = VIDEO_SEL_TGT_COMPOSE;
-		sel.rect.left = 0;
-		sel.rect.top = 0;
-		sel.rect.width = fmt->width;
-		sel.rect.height = fmt->height;
-
-		ret = video_set_selection(video_dev, &sel);
-		if (ret < 0 && ret != -ENOSYS) {
-			LOG_ERR("Unable to set selection compose");
-			return ret;
-		}
-
-		LOG_INF("Compose window set to (%u,%u)/%ux%u",
 			sel.rect.left, sel.rect.top, sel.rect.width, sel.rect.height);
 	}
 
@@ -302,12 +295,12 @@ static int app_setup_video_buffers(const struct device *const video_dev,
 	int ret;
 
 	/* Alloc video buffers and enqueue for capture */
-	if (caps->min_vbuf_count > CONFIG_VIDEO_BUFFER_POOL_NUM_MAX) {
+	if (caps->min_vbuf_count > CONFIG_VIDEO_CAM_NUM_BUFS) {
 		LOG_ERR("Not enough buffers to start streaming");
 		return -EINVAL;
 	}
 
-	for (int i = 0; i < CONFIG_VIDEO_BUFFER_POOL_NUM_MAX; i++) {
+	for (uint8_t i = 0; i < CONFIG_VIDEO_CAM_NUM_BUFS; i++) {
 		struct video_buffer *vbuf;
 
 		/*
@@ -337,20 +330,32 @@ int main(void)
 {
 	const struct device *const video_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_camera));
 	const struct device *const display_dev = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_display));
+	const struct device *transform_dev = NULL;
 	struct video_buffer *vbuf = &(struct video_buffer){};
+	struct video_buffer *tbuf = &(struct video_buffer){};
 	struct video_format fmt = {
+		.type = VIDEO_BUF_TYPE_OUTPUT,
+	};
+	struct video_format transformed_fmt = {
 		.type = VIDEO_BUF_TYPE_OUTPUT,
 	};
 	struct video_caps caps = {
 		.type = VIDEO_BUF_TYPE_OUTPUT,
 	};
 	unsigned int frame = 0;
+	uint32_t last_ts = 0;
 	int ret;
 
 	/* When the video shell is enabled, do not run the capture loop unless requested */
 	if (IS_ENABLED(CONFIG_VIDEO_SHELL) && !IS_ENABLED(CONFIG_VIDEO_SHELL_AND_CAPTURE)) {
 		LOG_INF("Letting the user control the device with the video shell");
 		return 0;
+	}
+
+	if (DT_HAS_CHOSEN(zephyr_videotrans)) {
+		transform_dev = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_videotrans));
+	} else if (DT_HAS_CHOSEN(zephyr_videodec)) {
+		transform_dev = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_videodec));
 	}
 
 	ret = app_query_video_info(video_dev, &caps, &fmt);
@@ -378,8 +383,13 @@ int main(void)
 		goto err;
 	}
 
+	ret = app_setup_video_transform(transform_dev, fmt, &transformed_fmt, &tbuf);
+	if (ret < 0) {
+		goto err;
+	}
+
 	if (DT_HAS_CHOSEN(zephyr_display)) {
-		ret = app_setup_display(display_dev, fmt.pixelformat);
+		ret = app_setup_display(display_dev, transformed_fmt.pixelformat);
 		if (ret < 0) {
 			goto err;
 		}
@@ -398,8 +408,6 @@ int main(void)
 
 	LOG_INF("Capture started");
 
-	uint32_t last_ts = 0;
-
 	vbuf->type = VIDEO_BUF_TYPE_OUTPUT;
 	while (1) {
 		ret = video_dequeue(video_dev, &vbuf, K_FOREVER);
@@ -409,11 +417,17 @@ int main(void)
 		}
 
 		LOG_INF("Got frame %u! size: %u; timestamp %u ms (delta %u ms)",
-			frame++, vbuf->bytesused, vbuf->timestamp, vbuf->timestamp-last_ts);
+			frame++, vbuf->bytesused, vbuf->timestamp, vbuf->timestamp - last_ts);
 		last_ts = vbuf->timestamp;
 
+		ret = app_transform_frame(transform_dev, vbuf, &tbuf);
+		if (ret < 0) {
+			LOG_ERR("Unable to transform video frame");
+			goto err;
+		}
+
 		if (DT_HAS_CHOSEN(zephyr_display)) {
-			ret = app_display_frame(display_dev, vbuf, &fmt);
+			ret = app_display_frame(display_dev, tbuf, &transformed_fmt);
 			if (ret != 0) {
 				LOG_WRN("Failed to display this frame");
 			}
