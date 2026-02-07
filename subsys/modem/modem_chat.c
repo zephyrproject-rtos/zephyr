@@ -313,10 +313,13 @@ static bool modem_chat_send_script_request_part(struct modem_chat *chat)
 static void modem_chat_script_send_handler(struct k_work *item)
 {
 	struct modem_chat *chat = CONTAINER_OF(item, struct modem_chat, script_send_work);
+	const struct modem_chat_script_chat *script_chat;
 
 	if (chat->script == NULL) {
 		return;
 	}
+
+	script_chat = &chat->script->script_chats[chat->script_chat_it];
 
 	switch (chat->script_send_state) {
 	case MODEM_CHAT_SCRIPT_SEND_STATE_IDLE:
@@ -325,6 +328,12 @@ static void modem_chat_script_send_handler(struct k_work *item)
 	case MODEM_CHAT_SCRIPT_SEND_STATE_REQUEST:
 		if (!modem_chat_send_script_request_part(chat)) {
 			return;
+		}
+
+		/* Skip delimiter if no_delimiter flag is set */
+		if (script_chat->no_delimiter) {
+			modem_chat_set_script_send_state(chat, MODEM_CHAT_SCRIPT_SEND_STATE_IDLE);
+			break;
 		}
 
 		modem_chat_set_script_send_state(chat, MODEM_CHAT_SCRIPT_SEND_STATE_DELIMITER);
@@ -1035,6 +1044,12 @@ void modem_chat_script_chat_set_timeout(struct modem_chat_script_chat *script_ch
 					uint16_t timeout)
 {
 	script_chat->timeout = timeout;
+}
+
+void modem_chat_script_chat_set_no_delimiter(struct modem_chat_script_chat *script_chat,
+					     bool no_delimiter)
+{
+	script_chat->no_delimiter = no_delimiter;
 }
 
 void modem_chat_script_init(struct modem_chat_script *script)

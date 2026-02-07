@@ -118,6 +118,8 @@ struct modem_chat_script_chat {
 	uint16_t response_matches_size;
 	/** Timeout before chat script may continue to next step in milliseconds */
 	uint16_t timeout;
+	/** Set if request shall be sent without delimiter */
+	bool no_delimiter;
 };
 
 #define MODEM_CHAT_SCRIPT_CMD_RESP(_request, _response_match)                                      \
@@ -145,6 +147,34 @@ struct modem_chat_script_chat {
 		.response_matches = NULL,                                                          \
 		.response_matches_size = 0,                                                        \
 		.timeout = _timeout_ms,                                                            \
+	}
+
+/**
+ * @brief Send request without delimiter, wait for response
+ * @details Useful for escape sequences like "+++" that must not have trailing delimiter
+ */
+#define MODEM_CHAT_SCRIPT_CMD_RESP_NO_DELIM(_request, _response_match)                             \
+	{                                                                                          \
+		.request = (uint8_t *)(_request),                                                  \
+		.request_size = (uint16_t)(sizeof(_request) - 1),                                  \
+		.response_matches = &_response_match,                                              \
+		.response_matches_size = 1,                                                        \
+		.timeout = 0,                                                                      \
+		.no_delimiter = true,                                                              \
+	}
+
+/**
+ * @brief Send request without delimiter, no response expected
+ * @details Useful for escape sequences like "+++" that must not have trailing delimiter
+ */
+#define MODEM_CHAT_SCRIPT_CMD_RESP_NONE_NO_DELIM(_request, _timeout_ms)                            \
+	{                                                                                          \
+		.request = (uint8_t *)(_request),                                                  \
+		.request_size = (uint16_t)(sizeof(_request) - 1),                                  \
+		.response_matches = NULL,                                                          \
+		.response_matches_size = 0,                                                        \
+		.timeout = _timeout_ms,                                                            \
+		.no_delimiter = true,                                                              \
 	}
 
 #define MODEM_CHAT_SCRIPT_CMDS_DEFINE(_sym, ...)                                                   \
@@ -485,6 +515,15 @@ int modem_chat_script_chat_set_response_matches(struct modem_chat_script_chat *s
  */
 void modem_chat_script_chat_set_timeout(struct modem_chat_script_chat *script_chat,
 					uint16_t timeout_ms);
+
+/**
+ * @brief Set modem chat script chat no_delimiter flag
+ * @param script_chat Modem chat script chat instance
+ * @param no_delimiter If true, request is sent without trailing delimiter
+ * @note Useful for escape sequences like "+++" that must not have trailing delimiter
+ */
+void modem_chat_script_chat_set_no_delimiter(struct modem_chat_script_chat *script_chat,
+						 bool no_delimiter);
 
 /**
  * @brief Initialize modem chat script
