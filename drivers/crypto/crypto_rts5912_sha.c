@@ -228,6 +228,11 @@ static int rts5912_sha256_handler(struct hash_ctx *ctx, struct hash_pkt *pkt, bo
 	int ret_val = 0;
 
 	k_mutex_lock(&(rts5912_sha256_ctx->crypto_rts5912_in_use), K_FOREVER);
+	if (pkt->in_len > ARRAY_SIZE(rts5912_sha256_ctx->sha2_data_in_sram)) {
+		k_mutex_unlock(&(rts5912_sha256_ctx->crypto_rts5912_in_use));
+		LOG_ERR("Pkt len is too big !");
+		return -ENOSPC;
+	}
 	memcpy(rts5912_sha256_ctx->sha2_data_in_sram, pkt->in_buf, pkt->in_len);
 	k_mutex_unlock(&(rts5912_sha256_ctx->crypto_rts5912_in_use));
 	ret_val = rts5912_sha256_update(ctx->device, rts5912_sha256_ctx->sha2_data_in_sram,
