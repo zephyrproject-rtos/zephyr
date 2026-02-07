@@ -1,0 +1,29 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_ARM64_RNG
+	bool "Use ARM64 entropy driver"
+	depends on ARM64_RNG && DT_HAS_ZEPHYR_ARM64_RNG_ENABLED
+	select ENTROPY_HAS_DRIVER
+	default y
+	help
+	  Enables the entropy driver based on the RNDRRS instruction from the ARM
+	  extension FEAT_RNG.
+
+if ENTROPY_ARM64_RNG
+
+config ENTROPY_ARM64_RNG_MAX_RETRIES
+	int "Maximum number of retries for ARM64 entropy driver"
+	default 5
+	help
+	  Maximum number of consecutive RNDRRS instruction failures after which the
+	  driver should return error.
+
+config ENTROPY_ARM64_RNG_RETRY_WAIT_MSEC
+	int "Retry wait time for ARM64 entropy driver"
+	default 100
+	help
+	  Number of milliseconds driver should wait before retrying after RNDRRS
+	  instruction failure.
+
+endif # ENTROPY_ARM64_RNG

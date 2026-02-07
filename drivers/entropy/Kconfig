@@ -22,6 +22,7 @@ config ENTROPY_INIT_PRIORITY
 
 # zephyr-keep-sorted-start
 source "drivers/entropy/Kconfig.ambiq"
+source "drivers/entropy/Kconfig.arm64"
 source "drivers/entropy/Kconfig.b91"
 source "drivers/entropy/Kconfig.bt_hci"
 source "drivers/entropy/Kconfig.cc13xx_cc26xx"

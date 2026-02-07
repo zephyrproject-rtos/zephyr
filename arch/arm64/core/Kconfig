@@ -437,4 +437,10 @@ config ARM64_SVE_VL_MAX
 	  limited to the specified length. Having a larger value than what
 	  the hardware supports will only waste memory.
 
+config ARM64_RNG
+	bool
+	help
+	  This option signifies that the processor has the FEAT_RNG or FEAT_RNG_TRAP
+	  extension.
+
 endif # CPU_CORTEX_A || CPU_AARCH64_CORTEX_R
