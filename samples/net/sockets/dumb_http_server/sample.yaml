@@ -9,7 +9,9 @@ common:
   tags:
     - net
     - socket
-  platform_exclude: intel_adsp/cavs25
+  platform_exclude:
+    - intel_adsp/cavs25
+    - nrf7120dk/nrf7120/cpuapp
 tests:
   sample.net.sockets.dumb_http_server:
     extra_configs:

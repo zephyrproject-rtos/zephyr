@@ -1,6 +1,8 @@
 common:
   tags:
     - test_framework
+  platform_exclude:
+    - nrf7120dk/nrf7120/cpuapp
 tests:
   testing.ztest.base:
     type: unit

@@ -14,6 +14,7 @@ common:
     - nrf54l15dk/nrf54l15/cpuapp
     - nrf54l15dk/nrf54l15/cpuapp/ns
     - nrf54lm20dk/nrf54lm20a/cpuapp
+    - nrf7120dk/nrf7120/cpuapp
     - ophelia4ev/nrf54l15/cpuapp
 
 tests:
@@ -52,6 +53,7 @@ tests:
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
 
   drivers.spi.spi_2M666666Hz:
     extra_configs:
@@ -60,6 +62,7 @@ tests:
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
 
   drivers.spi.spi_4MHz:
     extra_configs:
@@ -84,6 +87,7 @@ tests:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp/ns
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
 
   drivers.spi.spis_fast:
@@ -98,6 +102,7 @@ tests:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp/ns
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
 
   drivers.spi.pm_runtime:
@@ -121,6 +126,7 @@ tests:
       - nrf54h20dk/nrf54h20/cpurad
       - nrf54h20dk/nrf54h20/cpuppr
       - ophelia4ev/nrf54l15/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
 
   drivers.spi.direct_xfer:
     extra_configs:

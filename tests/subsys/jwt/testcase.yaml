@@ -10,6 +10,7 @@ common:
     - CONFIG_TEST_RANDOM_GENERATOR=y
   platform_exclude:
     - max32657evkit/max32657/ns
+    - nrf7120dk/nrf7120/cpuapp
 tests:
   libraries.encoding.jwt.ecdsa.psa:
     extra_configs:

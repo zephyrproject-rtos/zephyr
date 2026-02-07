@@ -16,9 +16,9 @@ clic: &cpuflpr_clic {};
 /delete-node/ &cpuapp_mram;
 
 &mram_controller {
-	cpuflpr_mram: mram@3e0000 {
+	cpuflpr_mram: mram@3de000 {
 		compatible = "soc-nv-flash";
-		reg = <0x3e0000 DT_SIZE_K(116)>;
+		reg = <0x3de000 DT_SIZE_K(116)>;
 		erase-block-size = <4096>;
 		write-block-size = <4>;
 	};

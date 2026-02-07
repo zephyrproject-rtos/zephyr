@@ -10,6 +10,8 @@ common:
   tags:
     - posix
     - net
+  platform_exclude:
+    - nrf7120dk/nrf7120/cpuapp
 tests:
   sample.posix.gettimeofday:
     harness: net

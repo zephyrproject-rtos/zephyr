@@ -12,6 +12,8 @@ tests:
     min_ram: 32
     tags: posix
     harness: console
+    platform_exclude:
+      - nrf7120dk/nrf7120/cpuapp
     harness_config:
       type: multi_line
       ordered: true

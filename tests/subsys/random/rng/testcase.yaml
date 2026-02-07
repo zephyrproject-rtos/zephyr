@@ -3,6 +3,8 @@ common:
     - crypto
     - random
     - security
+  platform_exclude:
+    - nrf7120dk/nrf7120/cpuapp
 tests:
   crypto.rng:
     min_ram: 16

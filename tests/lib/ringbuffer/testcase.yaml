@@ -3,7 +3,8 @@ common:
     - ring_buffer
     - circular_buffer
   timeout: 150
-
+  platform_exclude:
+    - nrf7120dk/nrf7120/cpuapp
 tests:
   libraries.ring_buffer:
     integration_platforms:

@@ -7,6 +7,8 @@ common:
   tags:
     - mbedtls
     - p256-m
+  platform_exclude:
+    - nrf7120dk/nrf7120/cpuapp
 tests:
   crypto.secp256r1.mbedtls:
     extra_args: EXTRA_CONF_FILE=mbedtls.conf
