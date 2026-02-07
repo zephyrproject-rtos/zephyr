@@ -24,18 +24,64 @@
 
 #include "audio/bap_endpoint.h"
 #include "audio/bap_iso.h"
+#include "conn.h"
 
-static struct bt_bap_unicast_client_cb *unicast_client_cb;
+static sys_slist_t unicast_client_cbs = SYS_SLIST_STATIC_INIT(&unicast_client_cbs);
 static struct bt_bap_unicast_group bap_unicast_group;
+
+static struct unicast_client {
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
+	struct bt_bap_ep snks[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
+	struct bt_bap_ep srcs[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
+	struct bt_conn *conn;
+} uni_cli_insts[CONFIG_BT_MAX_CONN];
 
 bool bt_bap_unicast_client_has_ep(const struct bt_bap_ep *ep)
 {
-	return true;
+	ARRAY_FOR_EACH_PTR(uni_cli_insts, uni_cli) {
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
+		if (IS_ARRAY_ELEMENT(uni_cli->snks, ep)) {
+			return true;
+		}
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
+
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
+		if (IS_ARRAY_ELEMENT(uni_cli->srcs, ep)) {
+			return true;
+		}
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
+	}
+
+	return false;
+}
+
+struct bt_conn *bt_bap_unicast_client_ep_get_conn(const struct bt_bap_ep *ep)
+{
+	ARRAY_FOR_EACH_PTR(uni_cli_insts, uni_cli) {
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
+		if (IS_ARRAY_ELEMENT(uni_cli->snks, ep)) {
+			return uni_cli->conn == NULL ? NULL : bt_conn_ref(uni_cli->conn);
+		}
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
+
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
+		if (IS_ARRAY_ELEMENT(uni_cli->srcs, ep)) {
+			return uni_cli->conn == NULL ? NULL : bt_conn_ref(uni_cli->conn);
+		}
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
+	}
+
+	return NULL;
 }
 
 int bt_bap_unicast_client_config(struct bt_bap_stream *stream,
 				 const struct bt_audio_codec_cfg *codec_cfg)
 {
+	struct bt_bap_unicast_client_cb *listener, *next;
+
 	if (stream == NULL || stream->ep == NULL || codec_cfg == NULL) {
 		return -EINVAL;
 	}
@@ -48,9 +94,11 @@ int bt_bap_unicast_client_config(struct bt_bap_stream *stream,
 		return -EINVAL;
 	}
 
-	if (unicast_client_cb != NULL && unicast_client_cb->config != NULL) {
-		unicast_client_cb->config(stream, BT_BAP_ASCS_RSP_CODE_SUCCESS,
-					  BT_BAP_ASCS_REASON_NONE);
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next, _node) {
+		if (listener->config != NULL) {
+			listener->config(stream, BT_BAP_ASCS_RSP_CODE_SUCCESS,
+					 BT_BAP_ASCS_REASON_NONE);
+		}
 	}
 
 	stream->ep->state = BT_BAP_EP_STATE_CODEC_CONFIGURED;
@@ -66,6 +114,7 @@ int bt_bap_unicast_client_config(struct bt_bap_stream *stream,
 
 int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group *group)
 {
+	struct bt_bap_unicast_client_cb *listener, *next;
 	struct bt_bap_stream *stream;
 
 	if (conn == NULL || group == NULL) {
@@ -86,9 +135,12 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, _node) {
 		if (stream->conn == conn) {
-			if (unicast_client_cb != NULL && unicast_client_cb->qos != NULL) {
-				unicast_client_cb->qos(stream, BT_BAP_ASCS_RSP_CODE_SUCCESS,
-						       BT_BAP_ASCS_REASON_NONE);
+			SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next,
+							  _node) {
+				if (listener->qos != NULL) {
+					listener->qos(stream, BT_BAP_ASCS_RSP_CODE_SUCCESS,
+						      BT_BAP_ASCS_REASON_NONE);
+				}
 			}
 
 			stream->ep->state = BT_BAP_EP_STATE_QOS_CONFIGURED;
@@ -105,6 +157,8 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 int bt_bap_unicast_client_enable(struct bt_bap_stream *stream, const uint8_t meta[],
 				 size_t meta_len)
 {
+	struct bt_bap_unicast_client_cb *listener, *next;
+
 	if (stream == NULL) {
 		return -EINVAL;
 	}
@@ -116,9 +170,11 @@ int bt_bap_unicast_client_enable(struct bt_bap_stream *stream, const uint8_t met
 		return -EINVAL;
 	}
 
-	if (unicast_client_cb != NULL && unicast_client_cb->enable != NULL) {
-		unicast_client_cb->enable(stream, BT_BAP_ASCS_RSP_CODE_SUCCESS,
-					  BT_BAP_ASCS_REASON_NONE);
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next, _node) {
+		if (listener->enable != NULL) {
+			listener->enable(stream, BT_BAP_ASCS_RSP_CODE_SUCCESS,
+					 BT_BAP_ASCS_REASON_NONE);
+		}
 	}
 
 	stream->ep->state = BT_BAP_EP_STATE_ENABLING;
@@ -133,6 +189,8 @@ int bt_bap_unicast_client_enable(struct bt_bap_stream *stream, const uint8_t met
 int bt_bap_unicast_client_metadata(struct bt_bap_stream *stream, const uint8_t meta[],
 				   size_t meta_len)
 {
+	struct bt_bap_unicast_client_cb *listener, *next;
+
 	if (stream == NULL) {
 		return -EINVAL;
 	}
@@ -145,9 +203,11 @@ int bt_bap_unicast_client_metadata(struct bt_bap_stream *stream, const uint8_t m
 		return -EINVAL;
 	}
 
-	if (unicast_client_cb != NULL && unicast_client_cb->metadata != NULL) {
-		unicast_client_cb->metadata(stream, BT_BAP_ASCS_RSP_CODE_SUCCESS,
-					    BT_BAP_ASCS_REASON_NONE);
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next, _node) {
+		if (listener->metadata != NULL) {
+			listener->metadata(stream, BT_BAP_ASCS_RSP_CODE_SUCCESS,
+					   BT_BAP_ASCS_REASON_NONE);
+		}
 	}
 
 	if (stream->ops != NULL && stream->ops->metadata_updated != NULL) {
@@ -194,6 +254,8 @@ int bt_bap_unicast_client_connect(struct bt_bap_stream *stream)
 
 int bt_bap_unicast_client_start(struct bt_bap_stream *stream)
 {
+	struct bt_bap_unicast_client_cb *listener, *next;
+
 	/* As per the ASCS spec, only source streams can be started by the client */
 	if (stream == NULL || stream->ep == NULL || stream->ep->dir == BT_AUDIO_DIR_SINK) {
 		return -EINVAL;
@@ -206,9 +268,11 @@ int bt_bap_unicast_client_start(struct bt_bap_stream *stream)
 		return -EINVAL;
 	}
 
-	if (unicast_client_cb != NULL && unicast_client_cb->start != NULL) {
-		unicast_client_cb->start(stream, BT_BAP_ASCS_RSP_CODE_SUCCESS,
-					 BT_BAP_ASCS_REASON_NONE);
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next, _node) {
+		if (listener->start != NULL) {
+			listener->start(stream, BT_BAP_ASCS_RSP_CODE_SUCCESS,
+					BT_BAP_ASCS_REASON_NONE);
+		}
 	}
 
 	stream->ep->state = BT_BAP_EP_STATE_STREAMING;
@@ -222,6 +286,8 @@ int bt_bap_unicast_client_start(struct bt_bap_stream *stream)
 
 int bt_bap_unicast_client_disable(struct bt_bap_stream *stream)
 {
+	struct bt_bap_unicast_client_cb *listener, *next;
+
 	if (stream == NULL || stream->ep == NULL) {
 		return -EINVAL;
 	}
@@ -241,9 +307,11 @@ int bt_bap_unicast_client_disable(struct bt_bap_stream *stream)
 	 * when leaving the streaming state in a non-release manner
 	 */
 
-	if (unicast_client_cb != NULL && unicast_client_cb->disable != NULL) {
-		unicast_client_cb->disable(stream, BT_BAP_ASCS_RSP_CODE_SUCCESS,
-					   BT_BAP_ASCS_REASON_NONE);
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next, _node) {
+		if (listener->disable != NULL) {
+			listener->disable(stream, BT_BAP_ASCS_RSP_CODE_SUCCESS,
+					  BT_BAP_ASCS_REASON_NONE);
+		}
 	}
 
 	/* Disabled sink ASEs go directly to the QoS configured state */
@@ -274,6 +342,8 @@ int bt_bap_unicast_client_disable(struct bt_bap_stream *stream)
 
 int bt_bap_unicast_client_stop(struct bt_bap_stream *stream)
 {
+	struct bt_bap_unicast_client_cb *listener, *next;
+
 	printk("%s %p\n", __func__, stream);
 
 	/* As per the ASCS spec, only source streams can be stopped by the client */
@@ -288,9 +358,11 @@ int bt_bap_unicast_client_stop(struct bt_bap_stream *stream)
 		return -EINVAL;
 	}
 
-	if (unicast_client_cb != NULL && unicast_client_cb->stop != NULL) {
-		unicast_client_cb->stop(stream, BT_BAP_ASCS_RSP_CODE_SUCCESS,
-					BT_BAP_ASCS_REASON_NONE);
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next, _node) {
+		if (listener->stop != NULL) {
+			listener->stop(stream, BT_BAP_ASCS_RSP_CODE_SUCCESS,
+				       BT_BAP_ASCS_REASON_NONE);
+		}
 	}
 
 	stream->ep->state = BT_BAP_EP_STATE_QOS_CONFIGURED;
@@ -332,6 +404,8 @@ int bt_bap_unicast_client_stop(struct bt_bap_stream *stream)
 
 int bt_bap_unicast_client_release(struct bt_bap_stream *stream)
 {
+	struct bt_bap_unicast_client_cb *listener, *next;
+
 	printk("%s %p\n", __func__, stream);
 
 	if (stream == NULL || stream->ep == NULL) {
@@ -349,9 +423,11 @@ int bt_bap_unicast_client_release(struct bt_bap_stream *stream)
 		return -EINVAL;
 	}
 
-	if (unicast_client_cb != NULL && unicast_client_cb->release != NULL) {
-		unicast_client_cb->release(stream, BT_BAP_ASCS_RSP_CODE_SUCCESS,
-					   BT_BAP_ASCS_REASON_NONE);
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next, _node) {
+		if (listener->release != NULL) {
+			listener->release(stream, BT_BAP_ASCS_RSP_CODE_SUCCESS,
+					  BT_BAP_ASCS_REASON_NONE);
+		}
 	}
 
 	stream->ep->state = BT_BAP_EP_STATE_IDLE;
@@ -366,7 +442,28 @@ int bt_bap_unicast_client_release(struct bt_bap_stream *stream)
 
 int bt_bap_unicast_client_register_cb(struct bt_bap_unicast_client_cb *cb)
 {
-	unicast_client_cb = cb;
+	if (cb == NULL) {
+		return -EINVAL;
+	}
+
+	if (sys_slist_find(&unicast_client_cbs, &cb->_node, NULL)) {
+		return -EEXIST;
+	}
+
+	sys_slist_append(&unicast_client_cbs, &cb->_node);
+
+	return 0;
+}
+
+int bt_bap_unicast_client_unregister_cb(struct bt_bap_unicast_client_cb *cb)
+{
+	if (cb == NULL) {
+		return -EINVAL;
+	}
+
+	if (!sys_slist_find_and_remove(&unicast_client_cbs, &cb->_node)) {
+		return -EALREADY;
+	}
 
 	return 0;
 }
@@ -651,6 +748,46 @@ int bt_bap_unicast_group_foreach_stream(struct bt_bap_unicast_group *unicast_gro
 
 		if (stop) {
 			return -ECANCELED;
+		}
+	}
+
+	return 0;
+}
+
+int bt_bap_unicast_client_discover(struct bt_conn *conn, enum bt_audio_dir dir)
+{
+	struct bt_bap_unicast_client_cb *listener, *next;
+	struct unicast_client *client;
+
+	if (conn == NULL) {
+		return -ENOTCONN;
+	}
+
+	client = &uni_cli_insts[conn->index];
+	client->conn = conn;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next, _node) {
+		if (listener->endpoint != NULL) {
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
+			if (dir == BT_AUDIO_DIR_SINK) {
+				ARRAY_FOR_EACH_PTR(client->snks, snk) {
+					snk->dir = BT_AUDIO_DIR_SINK;
+					listener->endpoint(conn, dir, snk);
+				}
+			}
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
+#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
+			if (dir == BT_AUDIO_DIR_SOURCE) {
+				ARRAY_FOR_EACH_PTR(client->srcs, src) {
+					src->dir = BT_AUDIO_DIR_SOURCE;
+					listener->endpoint(conn, dir, src);
+				}
+			}
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
+		}
+
+		if (listener->discover != NULL) {
+			listener->discover(conn, 0, dir);
 		}
 	}
 
