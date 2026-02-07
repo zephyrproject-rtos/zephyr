@@ -49,13 +49,13 @@ int main(void)
 			sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &temperature);
 			ret = sensor_channel_get(dev, SENSOR_CHAN_ALTITUDE, &altitude);
 
-			printk("temp %.2f Cel, pressure %f kPa",
+			printf("temp %.2f Cel, pressure %f kPa",
 			       sensor_value_to_double(&temperature),
 			       sensor_value_to_double(&pressure));
 			if (ret == 0) {
-				printk(", altitude %f m", sensor_value_to_double(&altitude));
+				printf(", altitude %f m", sensor_value_to_double(&altitude));
 			}
-			printk("\n");
+			printf("\n");
 		}
 
 		k_msleep(1000);
