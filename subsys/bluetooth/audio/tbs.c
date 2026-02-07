@@ -1445,7 +1445,7 @@ static uint8_t tbs_hold_call(struct tbs_inst *inst, const struct bt_tbs_call_cp_
 {
 	struct bt_tbs_call *call = lookup_call_in_inst(inst, ccp->call_index);
 
-	if ((inst->optional_opcodes & BT_TBS_FEATURE_HOLD) == 0) {
+	if ((inst->optional_opcodes & BT_TBS_OPTIONAL_OPCODE_HOLD) == 0) {
 		return BT_TBS_RESULT_CODE_OPCODE_NOT_SUPPORTED;
 	}
 
@@ -1470,7 +1470,7 @@ static uint8_t retrieve_call(struct tbs_inst *inst, const struct bt_tbs_call_cp_
 {
 	struct bt_tbs_call *call = lookup_call_in_inst(inst, ccp->call_index);
 
-	if ((inst->optional_opcodes & BT_TBS_FEATURE_HOLD) == 0) {
+	if ((inst->optional_opcodes & BT_TBS_OPTIONAL_OPCODE_HOLD) == 0) {
 		return BT_TBS_RESULT_CODE_OPCODE_NOT_SUPPORTED;
 	}
 
@@ -1528,7 +1528,7 @@ static uint8_t join_calls(struct tbs_inst *inst, const struct bt_tbs_call_cp_joi
 	struct bt_tbs_call *joined_calls[CONFIG_BT_TBS_MAX_CALLS];
 	uint8_t call_state;
 
-	if ((inst->optional_opcodes & BT_TBS_FEATURE_JOIN) == 0) {
+	if ((inst->optional_opcodes & BT_TBS_OPTIONAL_OPCODE_JOIN) == 0) {
 		return BT_TBS_RESULT_CODE_OPCODE_NOT_SUPPORTED;
 	}
 
@@ -2154,7 +2154,7 @@ static int tbs_inst_init_and_register(struct tbs_inst *inst, struct bt_gatt_serv
 	(void)utf8_lcpy(inst->uci, param->uci, sizeof(inst->uci));
 	(void)utf8_lcpy(inst->uri_scheme_list, param->uri_schemes_supported,
 			sizeof(inst->uri_scheme_list));
-	inst->optional_opcodes = param->supported_features;
+	inst->optional_opcodes = param->optional_opcodes;
 	inst->technology = param->technology;
 	inst->attrs = svc->attrs;
 	inst->attr_count = svc->attr_count;
@@ -2238,8 +2238,8 @@ static bool valid_register_param(const struct bt_tbs_register_param *param)
 		return false;
 	}
 
-	if (param->supported_features > BT_TBS_FEATURE_ALL) {
-		LOG_DBG("Invalid supported_features: %u", param->supported_features);
+	if (param->optional_opcodes > BT_TBS_OPTIONAL_OPCODE_ALL) {
+		LOG_DBG("Invalid optional_opcodes: %u", param->optional_opcodes);
 
 		return false;
 	}

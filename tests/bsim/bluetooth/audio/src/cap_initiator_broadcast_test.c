@@ -182,7 +182,8 @@ static void init(void)
 			.gtbs = true,
 			.authorization_required = false,
 			.technology = BT_TBS_TECHNOLOGY_3G,
-			.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
+			.optional_opcodes =
+				BT_TBS_OPTIONAL_OPCODE_HOLD | BT_TBS_OPTIONAL_OPCODE_JOIN,
 		};
 
 		err = bt_tbs_register_bearer(&gtbs_param);

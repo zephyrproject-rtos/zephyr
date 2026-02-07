@@ -809,6 +809,15 @@ Bluetooth Audio
 * :kconfig:option:`CONFIG_BT_AUDIO` now depends on :kconfig:option:`CONFIG_UTF8`.
   Applications that enable :kconfig:option:`CONFIG_BT_AUDIO` must also have
   :kconfig:option:`CONFIG_UTF8` enabled. (:github:`102350`)
+* ``CONFIG_BT_TBS_SUPPORTED_FEATURES`` has been removed. Applications should use the defined macros
+  :c:macro:`BT_TBS_FEATURE_HOLD` and :c:macro:`BT_TBS_FEATURE_JOIN` to set their supported features.
+  (:github:`102666`)
+* ``bt_tbs_register_param.supported_features`` has been renamed to
+  :c:member:`bt_tbs_register_param.optional_opcodes`. Applications can do a simple
+  search-and-replace for ``supported_features`` to ``optional_opcodes``.
+  Additionally the ``BT_TBS_FEATURE_*`` macros have been changed to ``BT_TBS_OPTIONAL_OPCODE_*``.
+  Applications can do a simple search-and-replace for ``BT_TBS_FEATURE_`` to
+  ``BT_TBS_OPTIONAL_OPCODE_``. (:github:`103350`)
 
 Bluetooth Mesh
 ==============
