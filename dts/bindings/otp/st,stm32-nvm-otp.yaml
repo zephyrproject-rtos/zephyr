@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+title: STM32 embedded NVM OTP
+
+description: |
+  The NVM embedded in STM32 SoCs contains one-time-programmable regions
+  in addition to the "regular" region which can be programmed at will.
+  The OTP regions are usually provisioned by STMicroelectronics during
+  manufacturing (which makes them read-only areas). Some products also
+  product an "OTP for user data" area which can be written in the field.
+
+  Refer to your product's Reference Manual and Data Sheet for more details.
+
+compatible: "st,stm32-nvm-otp"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      Start address and size of NVM OTP area
+
+  st,user-otp:
+    type: boolean
+    description: |
+      Indicates the node represents an "OTP for user data" area
+      which is writeable. If this property is not present, the
+      area is assumed to be read-only.
+
+      Note: if "locking bits" are provided at the end of user OTP area,
+      they should not be included in the size inside the `reg` property.

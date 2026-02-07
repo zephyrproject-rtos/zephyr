@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#define FLASH_LAYOUT_STM32WBA6X /* see stm32wba.dtsi */
 #include <st/wba/stm32wba55.dtsi>
 
 / {
@@ -135,11 +136,6 @@
 		pinctrl-0 = <&debug_jtms_swdio_pa13 &debug_jtck_swclk_pa14
 			     &debug_jtdi_pa15 &debug_jtdo_swo_pb3
 			     &debug_njtrst_pb4>;
-	};
-
-	die_temp: dietemp {
-		ts-cal1-addr = <0x0bfa0710>;
-		ts-cal2-addr = <0x0bfa0742>;
 	};
 };
 

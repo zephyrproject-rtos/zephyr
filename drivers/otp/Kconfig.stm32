@@ -8,3 +8,13 @@ config OTP_STM32_BSEC
 	depends on DT_HAS_ST_STM32_BSEC_ENABLED
 	help
 	  Enable OTP fuse access for STM32 SoCs embedding a BSEC peripheral.
+
+config OTP_STM32_NVM
+	bool "STM32 embedded NVM OTP driver"
+	default y
+	depends on DT_HAS_ST_STM32_NVM_OTP_ENABLED
+	help
+	  Enable driver for OTP regions inside embedded non-volatile memory
+	  found in STM32 SoCs.
+
+	  N.B.: the "program" operation is currently not supported.
