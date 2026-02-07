@@ -7,6 +7,9 @@ include(git)
 include(extensions)
 include(west)
 
+# CodeChecker setup for `cppcheck`
+include(${ZEPHYR_BASE}/cmake/sca/codechecker/cppcheck.cmake)
+
 find_program(CODECHECKER_EXE NAMES CodeChecker codechecker REQUIRED)
 message(STATUS "Found SCA: CodeChecker (${CODECHECKER_EXE})")
 
@@ -78,6 +81,7 @@ add_custom_target(codechecker ALL
     --keep-gcc-include-fixed
     --keep-gcc-intrin
     --output ${output_dir}/codechecker.plist
+    --analyzer-config cppcheck:cc-verbatim-args-file=${CPPCHECK_VERBATIM_ARGS_FILE}
     --name ${CODECHECKER_NAME} # Set a default metadata name
     ${CODECHECKER_CONFIG_FILE}
     ${CODECHECKER_ANALYZE_JOBS}
