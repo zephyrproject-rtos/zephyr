@@ -8,10 +8,56 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_EXCEPTION_H_
 #define ZEPHYR_INCLUDE_ARCH_EXCEPTION_H_
 
+#include <stdbool.h>
+#include <stdarg.h>
+
+typedef void(*exception_dump_hook_t)(const char *format, va_list args);
+typedef void(*exception_drain_hook_t)(bool flush);
+
+#if defined(CONFIG_EXCEPTION_DUMP_HOOK)
+
+extern exception_dump_hook_t exception_dump_hook;
+extern exception_drain_hook_t exception_drain_hook;
+
+static inline void set_exception_dump_hook(exception_dump_hook_t dump, exception_drain_hook_t drain)
+{
+	exception_dump_hook = dump;
+	exception_drain_hook = drain;
+}
+
+static inline void call_exception_drain_hook(bool flush)
+{
+	if (exception_drain_hook)
+		exception_drain_hook(flush);
+}
+
+static inline void call_exception_dump_hook(const char *format, ...)
+{
+	va_list args;
+
+	if (exception_dump_hook) {
+		va_start(args, format);
+		exception_dump_hook(format, args);
+		va_end(args);
+	}
+}
+
+#if defined(CONFIG_LOG)
+#define EXCEPTION_DUMP(format, ...) call_exception_dump_hook(format "\n",  ##__VA_ARGS__); \
+	LOG_ERR(format, ##__VA_ARGS__)
+#else
+#define EXCEPTION_DUMP(format, ...) call_exception_dump_hook(format "\n",  ##__VA_ARGS__); \
+	printk(format "\n", ##__VA_ARGS__)
+#endif
+
+#else
+static inline void call_exception_drain_hook(void) { }
+
 #if defined(CONFIG_LOG)
 #define EXCEPTION_DUMP(...) LOG_ERR(__VA_ARGS__)
 #else
 #define EXCEPTION_DUMP(format, ...) printk(format "\n", ##__VA_ARGS__)
+#endif
 #endif
 
 #if defined(CONFIG_X86_64)

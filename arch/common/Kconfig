@@ -33,6 +33,13 @@ config ARCH_SUPPORTS_ROM_OFFSET
 	  script, which will place a block of 0x0 of size
 	  CONFIG_ROM_START_OFFSET at the start of the ROM region.
 
+config EXCEPTION_DUMP_HOOK
+	bool "Enable exceptions printing hooks"
+	default n
+	help
+	  Enables hook for configuring an additional method for delivering
+	  exeption prints through similar interface as printk or LOG.
+
 config ARM_MPU
 	bool "ARM MPU Support"
 	select MPU
