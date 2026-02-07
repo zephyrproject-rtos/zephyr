@@ -51,8 +51,7 @@ static int usbh_uvc_removed(struct usbh_class_data *const c_data)
 	return 0;
 }
 
-static int usbh_uvc_init(struct usbh_class_data *const c_data,
-			 struct usbh_context *const uhs_ctx)
+static int usbh_uvc_init(struct usbh_class_data *const c_data)
 {
 	return 0;
 }

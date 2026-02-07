@@ -198,8 +198,6 @@ int usbh_init_device_intl(struct usbh_context *const uhs_ctx)
 
 	sys_dlist_init(&uhs_ctx->udevs);
 
-	usbh_class_init_all(uhs_ctx);
-
 	return 0;
 }
 
@@ -220,6 +218,8 @@ static int uhs_pre_init(void)
 			K_PRIO_COOP(9), 0, K_NO_WAIT);
 
 	k_thread_name_set(&usbh_bus_thread_data, "usbh_bus");
+
+	usbh_class_init_all();
 
 	return 0;
 }

@@ -98,8 +98,7 @@ struct usbh_class_filter {
  */
 struct usbh_class_api {
 	/** Host initialization handler, before any device is connected */
-	int (*init)(struct usbh_class_data *const c_data,
-		    struct usbh_context *const uhs_ctx);
+	int (*init)(struct usbh_class_data *const c_data);
 	/** Request completion handler */
 	int (*completion_cb)(struct usbh_class_data *const c_data,
 			     struct uhc_transfer *const xfer);
@@ -121,8 +120,6 @@ struct usbh_class_api {
 struct usbh_class_data {
 	/** Name of the USB host class instance */
 	const char *name;
-	/** Pointer to USB host stack context structure */
-	struct usbh_context *uhs_ctx;
 	/** Pointer to USB device this class is used for */
 	struct usb_device *udev;
 	/** First interface number or claimed function */
