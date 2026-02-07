@@ -423,6 +423,75 @@ class ImgtoolSigner(Signer):
 
 class RimageSigner(Signer):
 
+    def check_if_sof_dir(self, maybe_sof_dir):
+        '''
+        Check if a pathlib.Path() object is the root of the SOF tree.
+
+        Returns a Path object if it is indeed the SOF tree, or None if not.
+
+        This checks if the file "versions.json" exists under the path, as
+        this file contains the SOF versioning information.
+        '''
+        versions_json_file = maybe_sof_dir / 'versions.json'
+        if versions_json_file.exists():
+            return maybe_sof_dir
+
+        return None
+
+    def get_sof_src_dir(self):
+        '''
+        Find the SOF tree.
+
+        Returns a Path object if SOF tree is found, or None if not.
+        '''
+        sof_src_dir = None
+
+        # Try to find SOF directory via path to rimage config files pointed to
+        # via CMake cached variable "RIMAGE_CONFIG_PATH" if it exists.
+        # The config files are inside <sof top>/tools/tools/rimage/config in
+        # the SOF tree.
+        conf_dir = self.cmake_cache.get('RIMAGE_CONFIG_PATH')
+        if conf_dir:
+            # Config path is <sof top>/tools/rimage/config/
+            # So need to go up 3 levels to get SOF directory.
+            maybe_sof_dir = pathlib.Path(conf_dir).parent.parent.parent
+
+            # Make sure this is the actual SOF directory as
+            # RIMAGE_CONFIG_PATH may point to somewhere else.
+            sof_src_dir = self.check_if_sof_dir(maybe_sof_dir)
+
+        # Try to find SOF if it is included via manifest as a project
+        # under the main manifest (e.g. included via a sub-manifest).
+        if not sof_src_dir:
+            try:
+                sof_proj = self.command.manifest.get_projects(['sof'], allow_paths=False)
+                sof_src_dir = pathlib.Path(sof_proj[0].abspath)
+
+                # Since SOF is pulled in as a project, we assume it is
+                # the correct one as the manifest has to be modified
+                # manually.
+            except ValueError:
+                pass
+
+        # Try to find SOF as SOF is the top level manifest via west init.
+        if not sof_src_dir:
+            maybe_sof_dir = pathlib.Path(manifest.manifest_path()).parent
+
+            # Make sure this is the actual SOF directory
+            # as the top level manifest may not be SOF.
+            sof_src_dir = self.check_if_sof_dir(maybe_sof_dir)
+
+        # If the above all failed to find the SOF tree, see if the path is specified
+        # via environment variable "SOF_SRC_DIR" as last resort.
+        if not sof_src_dir and os.getenv("SOF_SRC_DIR"):
+            maybe_sof_dir = pathlib.Path(os.getenv("SOF_SRC_DIR"))
+
+            # Make sure this is the actual SOF directory
+            # as the top level manifest may not be SOF.
+            sof_src_dir = self.check_if_sof_dir(maybe_sof_dir)
+
+        return sof_src_dir
+
     def rimage_config_dir(self):
         'Returns the rimage/config/ directory with the highest precedence'
         args = self.command.args
@@ -438,7 +507,11 @@ class RimageSigner(Signer):
     def generate_uuid_registry(self):
         'Runs the uuid-registry.h generator script'
 
-        generate_cmd = [sys.executable, str(self.sof_src_dir / 'scripts' / 'gen-uuid-reg.py'),
+        uuid_script_path = self.sof_src_dir / 'scripts' / 'gen-uuid-reg.py'
+        if not uuid_script_path.exists():
+            self.command.die(f"{uuid_script_path} does not exists.")
+
+        generate_cmd = [sys.executable, str(uuid_script_path),
                         str(self.sof_src_dir / 'uuid-registry.txt'),
                         str(pathlib.Path('zephyr') / 'include' / 'generated' / 'uuid-registry.h')
                        ]
@@ -554,13 +627,11 @@ class RimageSigner(Signer):
         if not args.quiet:
             command.inf('Signing with tool {}'.format(tool_path))
 
-        try:
-            sof_proj = command.manifest.get_projects(['sof'], allow_paths=False)
-            sof_src_dir = pathlib.Path(sof_proj[0].abspath)
-        except ValueError: # sof is the manifest
-            sof_src_dir = pathlib.Path(manifest.manifest_path()).parent
-
-        self.sof_src_dir = sof_src_dir
+        self.sof_src_dir = self.get_sof_src_dir()
+        if self.sof_src_dir:
+            command.inf(f"SOF directory: {self.sof_src_dir}")
+        else:
+            command.die("Cannot find SOF directory.")
 
 
         command.inf('Signing for SOC target ' + target)
@@ -605,7 +676,7 @@ class RimageSigner(Signer):
         if '-k' not in sign_config_extra_args + args.tool_args:
             # rimage requires a key argument even when it does not sign
             cmake_default_key = cache.get('RIMAGE_SIGN_KEY', 'key placeholder from sign.py')
-            extra_ri_args += [ '-k', str(sof_src_dir / 'keys' / cmake_default_key) ]
+            extra_ri_args += [ '-k', str(self.sof_src_dir / 'keys' / cmake_default_key) ]
 
         if args.tool_data and '-c' in args.tool_args:
             command.wrn('--tool-data ' + args.tool_data + ' ignored! Overridden by: -- -c ... ')
