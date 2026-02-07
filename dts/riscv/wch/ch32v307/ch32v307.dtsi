@@ -12,6 +12,10 @@
 #include <zephyr/dt-bindings/clock/ch32v20x_30x-clocks.h>
 
 / {
+	chosen {
+		zephyr,entropy = &rng;
+	};
+
 	clocks {
 		clk_hse: clk-hse {
 			#clock-cells = <0>;
@@ -253,6 +257,13 @@
 			status = "okay";
 		};
 
+		rng: rng@40023c00 {
+			compatible = "wch,rng";
+			reg = <0x40023c00 12>;
+			clocks = <&rcc CH32V20X_V30X_CLOCK_RNG>;
+			status = "disabled";
+		};
+
 		dma1: dma@40020000 {
 			compatible = "wch,wch-dma";
 			reg = <0x40020000 0x90>;
@@ -272,6 +283,31 @@
 			interrupts = <72>, <73>, <74>, <75>, <76>, <98>, <99>, <100>,
 				     <101>, <102>, <103>;
 			dma-channels = <11>;
+		};
+
+		eth: ethernet@40028000 {
+			reg = <0x40028000 0x2000>;
+			compatible = "wch,ethernet-controller";
+			clocks = <&rcc CH32V20X_V30X_CLOCK_ETHMAC>,
+				 <&rcc CH32V20X_V30X_CLOCK_ETHMACTX>,
+				 <&rcc CH32V20X_V30X_CLOCK_ETHMACRX>;
+			clock-names = "mac", "tx", "rx";
+
+			mac: ethernet {
+				compatible = "wch,ethernet";
+				interrupt-parent = <&pfic>;
+				interrupts = <77 78>;
+				internal-phy-pllmul = <15>;
+				internal-phy-prediv = <2>;
+				status = "disabled";
+			};
+
+			mdio: mdio {
+				compatible = "wch,mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 		};
 	};
 };

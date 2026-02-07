@@ -215,6 +215,13 @@
 			reg = <0x40021000 16>;
 			#clock-cells = <1>;
 		};
+
+		rng: rng@40023c00 {
+			compatible = "wch,rng";
+			reg = <0x40023c00 12>;
+			clocks = <&rcc CH32V20X_V30X_CLOCK_RNG>;
+			status = "disabled";
+		};
 	};
 };
 
