@@ -319,8 +319,13 @@ static int commit_settings(void)
 	}
 
 #if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
+	/* If bt_dev name was empty, then the default name needs to be set.
+	 * Otherwise set the name from settings tree.
+	 */
 	if (bt_dev.name[0] == '\0') {
 		bt_set_name(CONFIG_BT_DEVICE_NAME);
+	} else {
+		bt_set_name(bt_dev.name);
 	}
 #endif
 	if (!bt_dev.id_count) {

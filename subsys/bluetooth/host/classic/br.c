@@ -13,6 +13,7 @@
 
 #include "common/bt_str.h"
 
+#include "br.h"
 #include "host/hci_core.h"
 #include "host/conn_internal.h"
 #include "host/keys.h"
@@ -879,7 +880,6 @@ int bt_br_init(void)
 	struct net_buf *buf;
 	struct bt_hci_cp_write_ssp_mode *ssp_cp;
 	struct bt_hci_cp_write_inquiry_mode *inq_cp;
-	struct bt_hci_write_local_name *name_cp;
 	struct bt_hci_rp_read_default_link_policy_settings *rp;
 	struct net_buf *rsp;
 	int err;
@@ -932,18 +932,14 @@ int bt_br_init(void)
 	}
 
 	/* Set local name */
-	buf = bt_hci_cmd_alloc(K_FOREVER);
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	name_cp = net_buf_add(buf, sizeof(*name_cp));
-	strncpy((char *)name_cp->local_name, CONFIG_BT_DEVICE_NAME, sizeof(name_cp->local_name));
-
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_LOCAL_NAME, buf, NULL);
+	err = bt_br_write_local_name(CONFIG_BT_DEVICE_NAME);
 	if (err) {
 		return err;
 	}
+
+#if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
+	strncpy(bt_dev.name, CONFIG_BT_DEVICE_NAME, CONFIG_BT_DEVICE_NAME_MAX);
+#endif
 
 	/* Set Class of device */
 	buf = bt_hci_cmd_alloc(K_FOREVER);
@@ -1625,4 +1621,20 @@ int bt_br_unpair(const bt_addr_t *addr)
 	}
 
 	return 0;
+}
+
+int bt_br_write_local_name(const char *name)
+{
+	struct net_buf *buf;
+	struct bt_hci_write_local_name *name_cp;
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	name_cp = net_buf_add(buf, sizeof(*name_cp));
+	strncpy((char *)name_cp->local_name, name, sizeof(name_cp->local_name));
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_LOCAL_NAME, buf, NULL);
 }
