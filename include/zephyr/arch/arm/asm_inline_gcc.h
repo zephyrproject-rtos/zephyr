@@ -21,7 +21,27 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include <zephyr/arch/exception.h>
+#if defined(CONFIG_CPU_AARCH32_ARM9)
+#include <zephyr/arch/arm/arm9/cpu.h>
+static inline void __enable_irq(void)
+{
+	uint32_t cpsr;
+
+	__asm__ volatile("mrs %0, cpsr" : "=r"(cpsr));
+	__asm__ volatile("msr cpsr_c, %0" :: "r"(cpsr & ~I_BIT));
+}
+
+static inline void __disable_irq(void)
+{
+	uint32_t cpsr;
+
+	__asm__ volatile("mrs %0, cpsr" : "=r"(cpsr));
+	__asm__ volatile("msr cpsr_c, %0" :: "r"(cpsr | I_BIT));
+}
+#include <soc.h> /* align with the including of soc.h in cmsis_core.h */
+#else
 #include <cmsis_core.h>
+#endif
 
 #if defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
 #include <zephyr/arch/arm/cortex_a_r/cpu.h>
@@ -44,6 +64,9 @@ extern "C" {
 static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
 	unsigned int key;
+#if defined(CONFIG_ARMV5)
+	unsigned int tmp;
+#endif
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 #if CONFIG_MP_MAX_NUM_CPUS == 1 || defined(CONFIG_ARMV8_M_BASELINE)
@@ -63,6 +86,15 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 		"and %0, #" STRINGIFY(I_BIT) ";"
 		"cpsid i;"
 		: "=r" (key)
+		:
+		: "memory", "cc");
+#elif defined(CONFIG_ARMV5)
+	__asm__ volatile(
+		"mrs %0, cpsr;"
+		"orr %1, %0, #" STRINGIFY(I_BIT) ";"
+		"and %0, #" STRINGIFY(I_BIT) ";"
+		"msr cpsr, %1;"
+		: "=r" (key), "=r" (tmp)
 		:
 		: "memory", "cc");
 #else
@@ -89,7 +121,7 @@ static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 	__set_BASEPRI(key);
 	__ISB();
 #elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
-	|| defined(CONFIG_ARMV7_A)
+	|| defined(CONFIG_ARMV7_A) || defined(CONFIG_ARMV5)
 	if (key != 0U) {
 		return;
 	}

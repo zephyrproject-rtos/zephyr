@@ -33,7 +33,10 @@
 #include <zephyr/arch/arm/gdbstub.h>
 #endif
 
-#ifdef CONFIG_CPU_CORTEX_M
+#if defined(CONFIG_CPU_ARM9)
+#include <zephyr/arch/arm/arm9/cpu.h>
+#include <zephyr/arch/arm/arm9/sys_io.h>
+#elif defined(CONFIG_CPU_CORTEX_M)
 #include <zephyr/arch/arm/cortex_m/cpu.h>
 #include <zephyr/arch/arm/cortex_m/memory_map.h>
 #include <zephyr/arch/common/sys_io.h>

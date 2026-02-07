@@ -37,7 +37,8 @@ GEN_OFFSET_SYM(_thread_arch_t, swap_return_value);
 GEN_OFFSET_SYM(_thread_arch_t, pac_keys);
 #endif
 
-#if defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R)
+#if defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R) || \
+	defined(CONFIG_CPU_AARCH32_ARM9)
 GEN_OFFSET_SYM(_thread_arch_t, exception_depth);
 GEN_OFFSET_SYM(_cpu_arch_t, exc_depth);
 #endif

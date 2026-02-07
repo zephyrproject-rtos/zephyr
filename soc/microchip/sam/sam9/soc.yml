@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+family:
+- name: microchip_sam9
+  series:
+  - name: sam9x7
+    socs:
+    - name: sam9x70
+    - name: sam9x72
+    - name: sam9x75
+    - name: sam9x75d1g
+    - name: sam9x75d1gn2
+    - name: sam9x75d2g
+    - name: sam9x75d2gn4
+    - name: sam9x75d5m
+    - name: sam9x75d5mn0

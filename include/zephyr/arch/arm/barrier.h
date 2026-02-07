@@ -10,7 +10,13 @@
 #error Please include <zephyr/sys/barrier.h>
 #endif
 
+#if defined(CONFIG_CPU_ARM9)
+#define __DMB() __asm__("" ::: "memory")
+#define __DSB() __asm__("mcr p15, 0, %0, c7, c10, 4" :: "r"(0) : "memory")
+#define __ISB() __asm__("" ::: "memory")
+#else
 #include <cmsis_core.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
