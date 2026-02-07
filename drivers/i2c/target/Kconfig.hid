@@ -1,0 +1,14 @@
+config I2C_HID_TARGET
+       bool "Support HID over I2C target"
+       depends on I2C_TARGET_BUFFER_MODE
+
+if I2C_HID_TARGET
+
+config I2C_HID_TARGET_IN_BUF_COUNT
+	int "Number of buffers in the IN pool"
+	range 1 256
+	default 8
+	help
+	  Number of buffers in the IN pool per HID instance.
+
+endif

@@ -1,0 +1,23 @@
+description: "HID over I2C device (target)"
+compatible: "zephyr,hid-i2c-device"
+include: base.yaml
+
+properties:
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO input connected to the active the interrupt line connected to the host
+
+  hid-descr-addr:
+    type: int
+    required: true
+    description: |
+      The address to use for I2C HID descriptor
+
+  in-report-size:
+    type: int
+    required: true
+    description: |
+      The size of the longest input report that the HID device can generate.
+      This property is used to determine the buffer length used for transfers.
