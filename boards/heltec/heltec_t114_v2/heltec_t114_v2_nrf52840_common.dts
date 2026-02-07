@@ -1,0 +1,233 @@
+/*
+ * Copyright (c) 2024 MASSDRIVER EI (massdriver.space)
+ * Copyright (c) 2018-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+#include "heltec_t114_v2-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+#include <dt-bindings/lora/sx126x.h>
+
+/ {
+	model = "Heltec T114 v2";
+	compatible = "others,heltec-t114-v2";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,ieee802154 = &ieee802154;
+		zephyr,display = &tft_display;  /* ← Add this line */
+	};
+
+	digital_outputs {
+		compatible = "gpio-leds";
+
+		led4: led_4 {
+			gpios = <&gpio1 3 GPIO_ACTIVE_LOW>;
+			label = "Green LED";
+		};
+
+		vext_control:vext_control {
+			gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
+			label = "VEXT Control";
+		};
+
+		adc_control:adc_control {
+			gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+			label = "ADC Control";
+		};
+
+		tft_en:tft_en {
+			gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+			label = "TFT_EN - display enable";
+		};
+
+		tft_led_en:tft_led_en {
+			gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+			label = "TFT_LED_EN - display backlight";
+		};
+
+		gnss_rst: gnss_rst {
+			gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
+			label = "gnss Reset";
+		};
+
+		gnss_wakeup: gnss_wakeup {
+			gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
+			label = "gnss Wake Up";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+			label = "Button 0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	gnss_pps {
+		gnss_pps_pin: gnss_pps {
+			gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;  /* P1.04 */
+			label = "gnss PPS";
+		};
+	};
+
+	led_strip:led_strip {
+		compatible = "worldsemi,ws2812-gpio";
+		label = "SK6812_STRIP";
+		gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+		chain-length = <2>;
+		color-mapping = <LED_COLOR_ID_GREEN
+						LED_COLOR_ID_RED
+						LED_COLOR_ID_BLUE>;
+		status = "okay";
+	};
+
+	mipi_dbi_tft {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&spi1>;
+		write-only;
+		dc-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;  // PIN_TFT_DC = P0.12
+		reset-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>; // PIN_TFT_RST = P0.02
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		tft_display: st7789v@0 {
+			compatible = "sitronix,st7789v";
+			mipi-max-frequency = <40000000>;
+			reg = <0>;
+			width = <135>;
+			height = <240>;
+			x-offset = <52>;
+			y-offset = <40>;
+			vcom = <0x19>;
+			gctrl = <0x35>;
+			vrhs = <0x12>;
+			vdvs = <0x20>;
+			mdac = <0x00>;
+			gamma = <0x01>;
+			colmod = <0x55>;
+			lcm = <0x2c>;
+			porch-param = [0c 0c 00 33 33];
+			cmd2en-param = [5a 69 02 01];
+			pwctrl1-param = [a4 a1];
+			pvgam-param = [D0 04 0D 11 13 2B 3F 54 4C 18 0D 0B 1F 23];
+			nvgam-param = [D0 04 0C 11 13 2C 3F 44 51 2F 1F 1F 20 23];
+			ram-param = [00 F0];
+			rgb-param = [CD 08 14];
+			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			status = "okay";
+		};
+	};
+
+	aliases {
+		led4 = &led4;
+		led0 = &led4;
+		led-strip = &led_strip;
+		button0 = &button0;
+		sw0 = &button0;
+		mcuboot-led4 = &led4;
+		watchdog0 = &wdt0;
+		vext-control = &vext_control;
+		adc-control = &adc_control;
+		tft-en = &tft_en;
+		tft-led-en = &tft_led_en;
+		gnss-rst = &gnss_rst;
+		gnss-wakeup = &gnss_wakeup;
+	};
+};
+
+&adc {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	io-channels = <&adc 2>;
+
+	channel@2 {
+		reg = <2>;                  /* AIN2 */
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_AIN2>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&uicr {
+	nfct-pins-as-gpios;
+	gpio-as-nreset;
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&led_strip {
+	status = "okay";
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&tft_spi_pins>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>; /* PIN_TFT_CS = P0.11 */
+};
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&lora_spi_pins>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+
+	lora: sx1262@0 {
+		compatible = "semtech,sx1262";
+		reg = <0>;
+		spi-max-frequency = <8000000>;
+		reset-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+		busy-gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
+		dio1-gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
+		dio2-tx-enable;
+		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_1V8>;
+		tcxo-power-startup-delay-ms = <5>;
+		status = "okay";
+	};
+};
+
+&uart1 {
+	compatible = "nordic,nrf-uarte";
+	status = "okay";
+	current-speed = <9600>;
+	pinctrl-0 = <&gnss_uart_pins>;
+	pinctrl-names = "default";
+
+	gnss: gnss-nmea-generic {
+		compatible = "gnss-nmea-generic";
+		status = "okay";
+	};
+};
+
+zephyr_udc0: &usbd {
+	status = "okay";
+};
+#include <../boards/common/usb/cdc_acm_serial.dtsi>
