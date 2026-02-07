@@ -451,10 +451,17 @@ static void handle_end_of_packet(struct mspi_dw_data *dev_data)
 static void handle_fifos(const struct device *dev)
 {
 	struct mspi_dw_data *dev_data = dev->data;
-	const struct mspi_xfer_packet *packet =
-		&dev_data->xfer.packets[dev_data->packets_done];
+	const struct mspi_xfer_packet *packet;
 	bool finished = false;
 
+	/* On initialization TXEIS/RXUIS may be raised before any data is
+	 * requested. If packet is NULL we have nothing to process.
+	 */
+	if (!dev_data->xfer.packets) {
+		return;
+	}
+
+	packet = &dev_data->xfer.packets[dev_data->packets_done];
 	if (packet->dir == MSPI_TX) {
 		if (dev_data->buf_pos < dev_data->buf_end) {
 			tx_data(dev);
@@ -1859,10 +1866,11 @@ static int dev_init(const struct device *dev)
 
 	vendor_specific_init(dev);
 
+	/* Make sure controller is disabled. */
+	write_ssienr(dev, 0);
+
 	dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_SSI_IS_MST_BIT,
 				       dev_config->op_mode == MSPI_OP_MODE_CONTROLLER);
-
-	dev_config->irq_config();
 
 #if defined(CONFIG_MULTITHREADING)
 	dev_data->dev = dev;
@@ -1909,8 +1917,7 @@ static int dev_init(const struct device *dev)
 		return rc;
 	}
 
-	/* Make sure controller is disabled. */
-	write_ssienr(dev, 0);
+	dev_config->irq_config();
 
 	return 0;
 }
