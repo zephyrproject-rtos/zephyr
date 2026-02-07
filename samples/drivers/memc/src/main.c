@@ -8,6 +8,8 @@
 #include <string.h>
 #include <zephyr/drivers/mspi.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(main);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(nxp_imx_flexspi)
 /* Use memc API to get AHB base address for the device */
@@ -107,7 +109,7 @@ int main(void)
 			dump_memory(memc_read_buffer, BUF_SIZE);
 			return 0;
 		}
-		printk("Check (%i/%i) passed!\n", j, (MEMC_SIZE / BUF_SIZE) - 1);
+		LOG_INF("Check (%i/%i) passed!", j, (MEMC_SIZE / BUF_SIZE) - 1);
 	}
 	/* Copy any remaining space bytewise */
 	for (; i < MEMC_SIZE; i++) {
