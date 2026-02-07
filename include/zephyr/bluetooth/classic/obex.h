@@ -1,7 +1,7 @@
 /* obex.h - IrDA Oject Exchange Protocol handling */
 
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -598,6 +598,9 @@ struct bt_obex {
 
 	/** @internal OBEX executing client */
 	atomic_ptr_t _active_client;
+
+	/** @internal OBEX last executed client */
+	atomic_ptr_t _last_client;
 
 	/** @internal OBEX executing client */
 	atomic_ptr_t _active_server;
