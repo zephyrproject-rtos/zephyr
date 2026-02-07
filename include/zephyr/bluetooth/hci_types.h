@@ -3601,6 +3601,15 @@ struct bt_hci_evt_le_past_received {
 	uint8_t      clock_accuracy;
 } __packed;
 
+#define BT_HCI_LE_CIG_SYNC_DELAY_MIN           0x0000F2U
+#define BT_HCI_LE_CIG_SYNC_DELAY_MAX           0x7FFFFFU
+#define BT_HCI_LE_CIS_SYNC_DELAY_MIN           0x0000F2U
+#define BT_HCI_LE_CIS_SYNC_DELAY_MAX           0x7FFFFFU
+#define BT_HCI_LE_TRANSPORT_LATENCY_C_TO_P_MIN 0x0000F2U
+#define BT_HCI_LE_TRANSPORT_LATENCY_C_TO_P_MAX 0x7FFFFFU
+#define BT_HCI_LE_TRANSPORT_LATENCY_P_TO_C_MIN 0x0000F2U
+#define BT_HCI_LE_TRANSPORT_LATENCY_P_TO_C_MAX 0x7FFFFFU
+
 #define BT_HCI_EVT_LE_CIS_ESTABLISHED           0x19
 struct bt_hci_evt_le_cis_established {
 	uint8_t  status;
