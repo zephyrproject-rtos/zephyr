@@ -720,6 +720,15 @@ static int eth_nxp_enet_init(const struct device *dev)
 
 	ENET_GetDefaultConfig(&enet_config);
 
+	/* Adjust rxMaxFrameLen to account for DSA tail tag if enabled.
+	 * The FSL SDK defaults to ENET_FRAME_MAX_FRAMELEN (1518), but when DSA
+	 * tail tagging is active, the switch adds an extra tag that must fit within
+	 * the frame length.
+	 */
+#if defined(CONFIG_DSA_TAG_SIZE) && (CONFIG_DSA_TAG_SIZE > 0)
+	enet_config.rxMaxFrameLen = ENET_FRAME_MAX_FRAMELEN + CONFIG_DSA_TAG_SIZE;
+#endif
+
 	if (IS_ENABLED(CONFIG_NET_PROMISCUOUS_MODE)) {
 		enet_config.macSpecialConfig |= kENET_ControlPromiscuousEnable;
 	}
@@ -868,19 +877,27 @@ static const struct ethernet_api api_funcs = {
 #define driver_cache_maintain	true
 #endif
 
-/* Use ENET_FRAME_MAX_VLANFRAMELEN for VLAN frame size
- * Use ENET_FRAME_MAX_FRAMELEN for Ethernet frame size
+/* Compute the maximum Ethernet frame size including all possible tags.
+ *
+ * - ENET_FRAME_MAX_FRAMELEN: 1518 bytes (FSL SDK default, Ethernet + FCS)
+ * - VLAN tag: +4 bytes (when CONFIG_NET_VLAN enabled)
+ * - DSA tag: CONFIG_DSA_TAG_SIZE bytes (when DSA tail tagging enabled)
  */
-#if defined(CONFIG_NET_VLAN)
-#if !defined(ENET_FRAME_MAX_VLANFRAMELEN)
-#define ENET_FRAME_MAX_VLANFRAMELEN (ENET_FRAME_MAX_FRAMELEN + 4)
-#endif
-#define ETH_NXP_ENET_BUFFER_SIZE \
-		ROUND_UP(ENET_FRAME_MAX_VLANFRAMELEN, ENET_BUFF_ALIGNMENT)
+#if defined(CONFIG_DSA_TAG_SIZE)
+#define _ETH_NXP_ENET_DSA_TAG_LEN CONFIG_DSA_TAG_SIZE
 #else
-#define ETH_NXP_ENET_BUFFER_SIZE \
-		ROUND_UP(ENET_FRAME_MAX_FRAMELEN, ENET_BUFF_ALIGNMENT)
+#define _ETH_NXP_ENET_DSA_TAG_LEN 0
+#endif /* CONFIG_DSA_TAG_SIZE */
+
+#if defined(CONFIG_NET_VLAN)
+#define _ETH_NXP_ENET_VLAN_LEN 4
+#else
+#define _ETH_NXP_ENET_VLAN_LEN 0
 #endif /* CONFIG_NET_VLAN */
+
+#define ETH_NXP_ENET_FRAME_MAX_LEN                                                                 \
+	(ENET_FRAME_MAX_FRAMELEN + _ETH_NXP_ENET_VLAN_LEN + _ETH_NXP_ENET_DSA_TAG_LEN)
+#define ETH_NXP_ENET_BUFFER_SIZE ROUND_UP(ETH_NXP_ENET_FRAME_MAX_LEN, ENET_BUFF_ALIGNMENT)
 
 #define NXP_ENET_PHY_MODE(node_id)							\
 	DT_ENUM_HAS_VALUE(node_id, phy_connection_type, mii) ? NXP_ENET_MII_MODE :	\
