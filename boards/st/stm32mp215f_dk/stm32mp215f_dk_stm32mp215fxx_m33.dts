@@ -1,0 +1,108 @@
+/*
+ * Copyright (C) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/mp2/stm32mp215_m33.dtsi>
+#include <st/mp2/stm32mp215fanx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "STMicroelectronics STM32MP215F-DK board";
+	compatible = "st,stm32mp215f-dk", "st,stm32mp215";
+
+	chosen {
+		zephyr,console = &uart4;
+		zephyr,shell-uart = &uart4;
+		zephyr,flash = &ddr_code;
+		zephyr,sram = &ddr_sys;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		orange_led_3: led_3 {
+			gpios = <&gpioh 12 GPIO_ACTIVE_HIGH>;
+			label = "LD3";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		button_user2: button2 {
+			label = "User 2";
+			gpios = <&gpiof 7 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &orange_led_3;
+		sw0 = &button_user2;
+	};
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(40)>;
+	status = "okay";
+};
+
+&rcc {
+	clock-frequency = <DT_FREQ_M(300)>;
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&gpiof {
+	status = "okay";
+};
+
+&gpiog {
+	status = "okay";
+};
+
+&gpioh {
+	status = "okay";
+};
+
+&gpioi {
+	status = "okay";
+};
+
+
+&mailbox {
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_nss_pd2 &spi1_sck_pd11
+		     &spi1_miso_pd1 &spi1_mosi_pi5>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&uart4 {
+	pinctrl-0 = <&uart4_tx_ph7 &uart4_rx_ph8>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i3c2 {
+	pinctrl-0 = <&i3c2_scl_pc12 &i3c2_sda_pg0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
