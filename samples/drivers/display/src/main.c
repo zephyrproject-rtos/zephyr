@@ -30,20 +30,6 @@ typedef void (*fill_buffer)(enum corner corner, uint8_t grey, uint8_t *buf,
 			    size_t buf_size);
 
 
-#ifdef CONFIG_ARCH_POSIX
-static void posix_exit_main(int exit_code)
-{
-#if CONFIG_TEST
-	if (exit_code == 0) {
-		LOG_INF("PROJECT EXECUTION SUCCESSFUL");
-	} else {
-		LOG_INF("PROJECT EXECUTION FAILED");
-	}
-#endif
-	posix_exit(exit_code);
-}
-#endif
-
 static void fill_buffer_argb8888(enum corner corner, uint8_t grey, uint8_t *buf,
 				 size_t buf_size)
 {
@@ -244,17 +230,14 @@ int main(void)
 	struct display_buffer_descriptor buf_desc;
 	size_t buf_size = 0;
 	fill_buffer fill_buffer_fnc = NULL;
-	int ret;
+	int ret = 0;
 
 	display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	if (!device_is_ready(display_dev)) {
 		LOG_ERR("Device %s not found. Aborting sample.",
 			display_dev->name);
-#ifdef CONFIG_ARCH_POSIX
-		posix_exit_main(1);
-#else
-		return 0;
-#endif
+		ret = -ENODEV;
+		goto end;
 	}
 
 	LOG_INF("Display sample for %s", display_dev->name);
@@ -336,11 +319,8 @@ int main(void)
 		break;
 	default:
 		LOG_ERR("Unsupported pixel format. Aborting sample.");
-#ifdef CONFIG_ARCH_POSIX
-		posix_exit_main(1);
-#else
-		return 0;
-#endif
+		ret = -ENOTSUP;
+		goto end;
 	}
 
 	/* Amount of bytes necessary depends on format - ensure to round up, necessary for
@@ -353,11 +333,8 @@ int main(void)
 
 	if (buf == NULL) {
 		LOG_ERR("Could not allocate memory. Aborting sample.");
-#ifdef CONFIG_ARCH_POSIX
-		posix_exit_main(1);
-#else
-		return 0;
-#endif
+		ret = -ENOMEM;
+		goto end;
 	}
 
 	(void)memset(buf, bg_color, buf_size);
@@ -387,11 +364,7 @@ int main(void)
 		ret = display_write(display_dev, 0, idx, &buf_desc, buf);
 		if (ret < 0) {
 			LOG_ERR("Failed to write to display (error %d)", ret);
-#ifdef CONFIG_ARCH_POSIX
-			posix_exit_main(1);
-#else
-			return 0;
-#endif
+			goto end;
 		}
 	}
 
@@ -405,11 +378,7 @@ int main(void)
 	ret = display_write(display_dev, x, y, &buf_desc, buf);
 	if (ret < 0) {
 		LOG_ERR("Failed to write to display (error %d)", ret);
-#ifdef CONFIG_ARCH_POSIX
-		posix_exit_main(1);
-#else
-		return 0;
-#endif
+		goto end;
 	}
 
 	fill_buffer_fnc(TOP_RIGHT, 0, buf, buf_size);
@@ -418,11 +387,7 @@ int main(void)
 	ret = display_write(display_dev, x, y, &buf_desc, buf);
 	if (ret < 0) {
 		LOG_ERR("Failed to write to display (error %d)", ret);
-#ifdef CONFIG_ARCH_POSIX
-		posix_exit_main(1);
-#else
-		return 0;
-#endif
+		goto end;
 	}
 
 	/*
@@ -438,21 +403,13 @@ int main(void)
 	ret = display_write(display_dev, x, y, &buf_desc, buf);
 	if (ret < 0) {
 		LOG_ERR("Failed to write to display (error %d)", ret);
-#ifdef CONFIG_ARCH_POSIX
-		posix_exit_main(1);
-#else
-		return 0;
-#endif
+		goto end;
 	}
 
 	ret = display_blanking_off(display_dev);
 	if (ret < 0 && ret != -ENOSYS) {
 		LOG_ERR("Failed to turn blanking off (error %d)", ret);
-#ifdef CONFIG_ARCH_POSIX
-		posix_exit_main(1);
-#else
-		return 0;
-#endif
+		goto end;
 	}
 
 	grey_count = 0;
@@ -465,11 +422,7 @@ int main(void)
 		ret = display_write(display_dev, x, y, &buf_desc, buf);
 		if (ret < 0) {
 			LOG_ERR("Failed to write to display (error %d)", ret);
-#ifdef CONFIG_ARCH_POSIX
-			posix_exit_main(1);
-#else
-			return 0;
-#endif
+			goto end;
 		}
 
 		++grey_count;
@@ -482,8 +435,16 @@ int main(void)
 #endif
 	}
 
+end:
+#if CONFIG_TEST
+	if (ret == 0) {
+		LOG_INF("PROJECT EXECUTION SUCCESSFUL");
+	} else {
+		LOG_INF("PROJECT EXECUTION FAILED");
+	}
+#endif
 #ifdef CONFIG_ARCH_POSIX
-	posix_exit_main(0);
+	posix_exit(ret == 0 ? 0 : 1);
 #endif
 	return 0;
 }
