@@ -37,6 +37,7 @@
     {%- endfor -%}
     {{- all_compatibles|join(' ') -}}
   "
+  data-maintained="{{ board.maintained | tojson }}"
   tabindex="0">
   <div class="vendor">{{ vendors[board.vendor] }}</div>
   {% if board.image -%}

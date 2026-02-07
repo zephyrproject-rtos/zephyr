@@ -299,9 +299,23 @@ class ConvertBoardNode(SphinxTransform):
             field_list = nodes.field_list()
             sidebar += field_list
 
+            if node.get("maintained", False):
+                status_text = nodes.abbreviation(
+                    "Maintained",
+                    "Maintained",
+                    explanation="At least one active maintainer is looking after this board",
+                )
+            else:
+                status_text = nodes.abbreviation(
+                    "Not actively maintained",
+                    "Not actively maintained",
+                    explanation="No active maintainer on file, but contributions are welcome",
+                )
+
             details = [
                 ("Name", nodes.literal(text=node["id"])),
                 ("Vendor", node["vendor"]),
+                ("Status", status_text),
                 ("Architecture", ", ".join(node["archs"])),
                 ("SoC", ", ".join(node["socs"])),
             ]
@@ -744,6 +758,7 @@ class BoardDirective(SphinxDirective):
             board_node["supported_runners"] = board["supported_runners"]
             board_node["flash_runner"] = board["flash_runner"]
             board_node["debug_runner"] = board["debug_runner"]
+            board_node["maintained"] = board.get("maintained", False)
             return [board_node]
 
 
