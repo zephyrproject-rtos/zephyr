@@ -2115,9 +2115,16 @@ static int flash_stm32_xspi_init(const struct device *dev)
 		return -ENOTSUP;
 	}
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
-	LL_PWR_EnableXSPIM2();
 	__HAL_RCC_SBS_CLK_ENABLE();
-	LL_SBS_EnableXSPI2SpeedOptim();
+	if (dev_data->hxspi.Instance == XSPI1) {
+		LL_PWR_EnableXSPIM1();
+		LL_SBS_EnableXSPI1SpeedOptim();
+	} else if (dev_data->hxspi.Instance == XSPI2) {
+		LL_PWR_EnableXSPIM2();
+		LL_SBS_EnableXSPI2SpeedOptim();
+	} else {
+		__ASSERT(0, "Not an XSPI instance?!");
+	}
 #endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 
 	/* Signals configuration */
