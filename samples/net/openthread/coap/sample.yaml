@@ -17,3 +17,16 @@ tests:
   sample.net.openthread.ftd.coap.server:
     extra_configs:
       - CONFIG_OT_COAP_SAMPLE_SERVER=y
+  sample.net.openthread.fdt.coap.client.ot_rcp_esp32:
+    build_only: true
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-ot-rcp-esp32.conf"
+  sample.net.openthread.fdt.coap.server.ot_rcp_esp32:
+    build_only: true
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu
+    extra_args:
+      - EXTRA_CONF_FILE="overlay-ot-rcp-esp32.conf"
+      - CONFIG_OT_COAP_SAMPLE_SERVER=y
