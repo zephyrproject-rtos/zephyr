@@ -37,17 +37,17 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #endif
 
 #ifdef CONFIG_USE_DT_CODE_PARTITION
-#define FLASH_LOAD_OFFSET DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition))
+#define FLASH_LOAD_ADDRESS DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition))
 #elif defined(CONFIG_FLASH_LOAD_OFFSET)
-#define FLASH_LOAD_OFFSET CONFIG_FLASH_LOAD_OFFSET
+#define FLASH_LOAD_ADDRESS (CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET)
 #endif
 
 #define FIXED_PARTITION_IS_RUNNING_APP_PARTITION(label)                                            \
 	DT_SAME_NODE(FIXED_PARTITION_NODE_MTD(DT_CHOSEN(zephyr_code_partition)),                   \
-		FIXED_PARTITION_MTD(label)) && (FIXED_PARTITION_ADDRESS(label) <=                  \
-				(CONFIG_FLASH_BASE_ADDRESS + FLASH_LOAD_OFFSET) &&                 \
-			FIXED_PARTITION_ADDRESS(label) + FIXED_PARTITION_SIZE(label) >             \
-				(CONFIG_FLASH_BASE_ADDRESS + FLASH_LOAD_OFFSET))
+		     FIXED_PARTITION_MTD(label)) &&                                                \
+		(FIXED_PARTITION_ADDRESS(label) <= FLASH_LOAD_ADDRESS &&                           \
+		 FIXED_PARTITION_ADDRESS(label) + FIXED_PARTITION_SIZE(label) >                    \
+			 FLASH_LOAD_ADDRESS)
 
 sys_snode_t soc_node;
 
@@ -197,12 +197,15 @@ void soc_late_init_hook(void)
 
 #if DT_NODE_EXISTS(DT_NODELABEL(cpurad_slot1_partition))
 	if (FIXED_PARTITION_IS_RUNNING_APP_PARTITION(cpuapp_slot1_partition)) {
-		radiocore_address = (void *)(FIXED_PARTITION_ADDRESS(cpurad_slot1_partition));
+		radiocore_address = (void *)(FIXED_PARTITION_ADDRESS(cpurad_slot1_partition) +
+					     CONFIG_ROM_START_OFFSET);
 	} else {
-		radiocore_address = (void *)(FIXED_PARTITION_ADDRESS(cpurad_slot0_partition));
+		radiocore_address = (void *)(FIXED_PARTITION_ADDRESS(cpurad_slot0_partition) +
+					     CONFIG_ROM_START_OFFSET);
 	}
 #else
-	radiocore_address = (void *)(FIXED_PARTITION_ADDRESS(cpurad_slot0_partition));
+	radiocore_address =
+		(void *)(FIXED_PARTITION_ADDRESS(cpurad_slot0_partition) + CONFIG_ROM_START_OFFSET);
 #endif
 
 	if (IS_ENABLED(CONFIG_SOC_NRF54H20_CPURAD_ENABLE_CHECK_VTOR) &&
