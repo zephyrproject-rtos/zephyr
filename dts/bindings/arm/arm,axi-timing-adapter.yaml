@@ -1,0 +1,134 @@
+# SPDX-FileCopyrightText: <text>Copyright 2025-2026 Arm Limited and/or
+# its affiliates <open-source-office@arm.com></text>
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "arm,axi-timing-adapter"
+
+include: base.yaml
+
+description: |
+  The timing adapter is an AXI-to-AXI bridge for providing well-defined
+  memory timing to allow performance evaluation of an AXI master. The
+  bridge works by delaying the responses from the memory or, when
+  enabled, clock-gating the DUT to simulate faster access times as
+  observed from the DUT, according to run-time configurable parameters
+  that can be set in the timing adapter. Parameters include read and
+  write response latencies, number of outstanding transactions, and a
+  model of interfering traffic.
+
+  - Common tuning parameters (most users will adjust these):
+    - maxr, maxw, maxrw
+    - rlatency, wlatency
+    - pulse-on, pulse-off
+    - bwcap
+
+  - Other parameters are available for completeness or specialized use
+    (e.g. mode, performance counters, histograms). They are typically
+    left at defaults.
+
+  - Performance counter: When measuring from outside the NPU, the
+    performance counter can be used to count DUT clock-off cycles.
+    See timing_adapter_perfctrl_settings in the official driver:
+    https://gitlab.arm.com/artificial-intelligence/ethos-u/
+    ethos-u-core-platform/-/blob/main/drivers/timing_adapter/
+    include/timing_adapter.h
+
+properties:
+  reg:
+    type: array
+    required: true
+    description: TA base address
+
+  # Optional hardware/RTL version (for info/logging)
+  version:
+    type: int
+    description: Optional TA block version (informational).
+
+  # --- Common tuning parameters ---
+  maxr:
+    type: int
+    description: |
+      6-bit. Maximum number of pending read operations allowed.
+      0 is inferred as infinite. [Common tuning parameter]
+
+  maxw:
+    type: int
+    description: |
+      6-bit. Maximum number of pending write operations allowed.
+      0 is inferred as infinite. [Common tuning parameter]
+
+  maxrw:
+    type: int
+    description: |
+      6-bit. Maximum number of pending read and write operations combined.
+      0 is inferred as infinite. [Common tuning parameter]
+
+  rlatency:
+    type: int
+    description: |
+      12-bit. Minimum latency, in cycles, for a read operation.
+      This is the duration between ARVALID and RVALID signals.
+      [Common tuning parameter]
+
+  wlatency:
+    type: int
+    description: |
+      12-bit. Minimum latency, in cycles, for a write operation.
+      This is the duration between WVALID and WLAST, with BVALID being deasserted.
+      [Common tuning parameter]
+
+  pulse-on:
+    type: int
+    description: |
+      Number of cycles where addresses are let through
+      in a pulse window (0-65535). [Common tuning parameter]
+
+  pulse-off:
+    type: int
+    description: |
+      Number of cycles where addresses are blocked
+      in a pulse window (0-65535). [Common tuning parameter]
+
+  bwcap:
+    type: int
+    description: >
+      16-bit. Maximum number of bus words transferred per pulse cycle.
+      A pulse cycle is defined by pulse-on and pulse-off. 0 is inferred as infinite.
+      A bus word is 64 bits on Ethos-U55, and 128 bits on Ethos-U65/U85.
+      [Common tuning parameter]
+
+  # --- Other parameters (typically left at defaults) ---
+  perfctrl:
+    type: int
+    description: |
+      6-bit event selector for the performance counter.
+      Commonly used to count DUT clock-on/off cycles when profiling from
+      outside the NPU. See the official driver's timing_adapter_perfctrl_settings
+      for enumerated values.
+
+  perfcnt:
+    type: int
+    description: |
+      32-bit performance counter preload/reset value.
+      Optional preload before measurement; read back after the run when
+      perfctrl is configured (e.g. to count DUT clock-off cycles).
+
+  mode:
+    type: int
+    description: |
+      Timing adapter operation mode (bits 0-11).
+      On FVP only bit 0 is implemented; other bits are ignored/reserved.
+      Bit 0 controls dynamic clocking:
+        0 = static clocking (no dynamic adjustment).
+        1 = dynamic clocking enabled to avoid underrun (recommended).
+      Bit 1: 1 = enable random AR reordering (0 = default).
+      Bit 2: 1 = enable random R reordering (0 = default).
+      Bit 3: 1 = enable random B reordering (0 = default).
+
+  histbin:
+    type: int
+    description: Histogram bin selector (0-15).
+
+  histcnt:
+    type: int
+    description: Histogram bin value (32-bit).
