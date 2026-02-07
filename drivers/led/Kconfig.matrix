@@ -1,0 +1,65 @@
+# Copyright (c) 2026 Hubert Miś
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LED_MATRIX
+	bool "LED Matrix driver"
+	default y
+	depends on DT_HAS_LED_MATRIX_ENABLED
+	help
+	  Enable LED Matrix driver.
+
+	  This driver is designed to control an LED matrix using two separate LED
+	  drivers: one for the matrix columns and another for the matrix rows.
+
+	  The columns controller is responsible for managing the power sources
+	  or sinks for the LEDs, while the rows controller handles the complementary
+	  power control to complete the circuit.
+
+if LED_MATRIX
+
+config LED_MATRIX_ROWS
+	int "Number of rows in the LED Matrix"
+	default 8
+	help
+	  Define the maximal number of rows in the LED Matrix.
+	  This setting directly impacts the memory consumption of each driver instance.
+
+config LED_MATRIX_COLS
+	int "Number of columns in the LED Matrix"
+	default 8
+	help
+	  Define the maximal number of columns in the LED Matrix.
+	  This setting directly impacts the memory consumption of each driver instance.
+
+config LED_MATRIX_LOG_LEVEL
+	int "LED Matrix log level"
+	default 3
+	help
+	  Specify the log level for the LED Matrix driver.
+
+config LED_MATRIX_USE_LED_WRITE_CHANNELS
+	bool "Use led_write_channels API for columns driver"
+	help
+	  Enable the use of the led_write_channels() API for the columns driver.
+	  This approach is more efficient than falling back to a loop that calls
+	  led_set_brightness() for each column.
+
+config LED_MATRIX_THREAD_STACK_SIZE
+	int "LED Matrix thread stack size"
+	default 1024
+	help
+	  Configure the stack size for the thread used by the LED Matrix driver.
+
+config LED_MATRIX_INIT_PRIORITY
+	int "LED Matrix initialization priority"
+	default 90
+	help
+	  Set the initialization priority for the LED Matrix driver.
+
+config LED_MATRIX_THREAD_PRIORITY
+	int "LED Matrix thread priority"
+	default 5
+	help
+	  Define the priority of the thread used by the LED Matrix driver.
+
+endif
