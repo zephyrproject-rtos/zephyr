@@ -494,7 +494,7 @@ static int nvs_recover_last_ate(struct nvs_fs *fs, uint32_t *addr)
 	*addr -= ate_size;
 	ate_end_addr = *addr;
 	data_end_addr = *addr & ADDR_SECT_MASK;
-	while (ate_end_addr > data_end_addr) {
+	while ((ate_end_addr >= data_end_addr) && (ate_end_addr & ADDR_OFFS_MASK) != 0U) {
 		rc = nvs_flash_ate_rd(fs, ate_end_addr, &end_ate);
 		if (rc) {
 			return rc;
