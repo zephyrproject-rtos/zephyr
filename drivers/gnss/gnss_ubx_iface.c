@@ -12,6 +12,7 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/modem/ubx/protocol.h>
+#include <zephyr/modem/ubx/keys.h>
 
 #include "gnss_ubx_iface.h"
 
@@ -31,11 +32,47 @@ static void init_match(struct ubx_iface_data *data, const struct device *gnss)
 	gnss_ubx_common_init(&data->common_data, &match_config);
 }
 
-static int configure_baudrate(const struct device *dev)
+static void set_baudrate_with_valset(const struct device *dev)
+{
+	const struct ubx_iface_config *cfg = dev->config;
+
+	struct ubx_cfg_val_u32 baudrate = {
+		.hdr = {
+			.ver = UBX_CFG_VAL_VER_SIMPLE,
+			.layer = 1,
+		},
+		.key = UBX_KEY_CFG_UART1_BAUDRATE,
+		.value = cfg->baudrate.desired,
+	};
+
+	(void)ubx_iface_msg_payload_send(dev, UBX_CLASS_ID_CFG, UBX_MSG_ID_CFG_VAL_SET,
+			(const uint8_t *)&baudrate, sizeof(baudrate), true);
+
+}
+
+static void set_baudrate_with_cfg_prt(const struct device *dev)
+{
+	const struct ubx_iface_config *cfg = dev->config;
+
+	struct ubx_cfg_prt port_config = {
+		.port_id = UBX_CFG_PORT_ID_UART,
+		.baudrate = cfg->baudrate.desired,
+		.mode = UBX_CFG_PRT_MODE_CHAR_LEN(UBX_CFG_PRT_PORT_MODE_CHAR_LEN_8) |
+			UBX_CFG_PRT_MODE_PARITY(UBX_CFG_PRT_PORT_MODE_PARITY_NONE) |
+			UBX_CFG_PRT_MODE_STOP_BITS(UBX_CFG_PRT_PORT_MODE_STOP_BITS_1),
+		.in_proto_mask = UBX_CFG_PRT_PROTO_MASK_UBX,
+		.out_proto_mask = UBX_CFG_PRT_PROTO_MASK_UBX,
+	};
+
+	(void)ubx_iface_msg_payload_send(dev, UBX_CLASS_ID_CFG, UBX_MSG_ID_CFG_PRT,
+					 (const uint8_t *)&port_config,
+					 sizeof(port_config), true);
+}
+
+static int configure_baudrate(const struct device *dev, bool valset_supported)
 {
 	int err = 0;
 	const struct ubx_iface_config *cfg = dev->config;
-	struct ubx_iface_data *data = dev->data;
 	struct uart_config uart_cfg;
 
 	err = uart_config_get(cfg->bus, &uart_cfg);
@@ -50,19 +87,11 @@ static int configure_baudrate(const struct device *dev)
 		LOG_ERR("Failed to configure UART: %d", err);
 	}
 
-	struct ubx_cfg_prt port_config = {
-		.port_id = UBX_CFG_PORT_ID_UART,
-		.baudrate = cfg->baudrate.desired,
-		.mode = UBX_CFG_PRT_MODE_CHAR_LEN(UBX_CFG_PRT_PORT_MODE_CHAR_LEN_8) |
-			UBX_CFG_PRT_MODE_PARITY(UBX_CFG_PRT_PORT_MODE_PARITY_NONE) |
-			UBX_CFG_PRT_MODE_STOP_BITS(UBX_CFG_PRT_PORT_MODE_STOP_BITS_1),
-		.in_proto_mask = UBX_CFG_PRT_PROTO_MASK_UBX,
-		.out_proto_mask = UBX_CFG_PRT_PROTO_MASK_UBX,
-	};
-
-	(void)ubx_iface_msg_payload_send(data, UBX_CLASS_ID_CFG, UBX_MSG_ID_CFG_PRT,
-					 (const uint8_t *)&port_config,
-					 sizeof(port_config), true);
+	if (valset_supported) {
+		set_baudrate_with_valset(dev);
+	} else {
+		set_baudrate_with_cfg_prt(dev);
+	}
 
 	uart_cfg.baudrate = cfg->baudrate.desired;
 
@@ -144,7 +173,7 @@ static int reattach_modem(struct ubx_iface_data *data)
 }
 
 int ubx_iface_init(const struct device *dev, const struct modem_ubx_match *unsol,
-		   size_t unsol_size)
+		   size_t unsol_size, bool valset_supported)
 {
 	int err;
 	struct ubx_iface_data *data = dev->data;
@@ -158,7 +187,7 @@ int ubx_iface_init(const struct device *dev, const struct modem_ubx_match *unsol
 		return err;
 	}
 
-	err = configure_baudrate(dev);
+	err = configure_baudrate(dev, valset_supported);
 	if (err < 0) {
 		LOG_ERR("Failed to configure baud-rate: %d", err);
 		return err;

@@ -58,11 +58,13 @@ struct ubx_iface_data {
  * @param[in] unsol		Unsolicited message array, used to initialize the
  *				backend.
  * @param[in] unsol_size	Number of entries in @a unsol.
+ * @param[in] valset_supported	Use UBX-CFG-VALSET when true to configure the baudrate,
+ *				otherwise use the legacy UBX-CFG-PRT.
  *
  * @return 0 on success, negative errno on failure.
  */
 int ubx_iface_init(const struct device *dev, const struct modem_ubx_match *unsol,
-		   size_t unsol_size);
+		   size_t unsol_size, bool valset_supported);
 
 /**
  * @brief Send a UBX formated request and retrieve the response.
