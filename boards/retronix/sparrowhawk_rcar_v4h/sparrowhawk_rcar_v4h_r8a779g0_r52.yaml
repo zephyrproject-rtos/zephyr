@@ -1,0 +1,11 @@
+identifier: sparrowhawk_rcar_v4h/r8a779g0/r52
+name: Retronix Sparrow Hawk with Renesas R-Car V4H Cortex R52
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - clock_control
+  - uart
