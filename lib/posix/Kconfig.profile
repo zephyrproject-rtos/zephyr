@@ -15,6 +15,7 @@ config POSIX_API
 	select POSIX_AEP_REALTIME_MINIMAL # CLOCK_MONOTONIC, pthread_attr_setstack(), etc
 	select POSIX_NETWORKING if NETWORKING # inet_ntoa(), socket(), etc
 	imply EVENTFD # eventfd(), eventfd_read(), eventfd_write()
+	imply TIMERFD # timerfd_create(), timerfd_settime(), timerfd_gettime()
 	imply POSIX_FD_MGMT # open(), close(), read(), write()
 	imply POSIX_MULTI_PROCESS # sleep(), getpid(), etc
 	imply XSI_SINGLE_PROCESS # gettimeofday()

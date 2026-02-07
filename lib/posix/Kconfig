@@ -42,3 +42,6 @@ endmenu
 
 # Eventfd Support (not officially POSIX)
 rsource "eventfd/Kconfig"
+
+# Timerfd Support (not officially POSIX)
+rsource "timerfd/Kconfig"
