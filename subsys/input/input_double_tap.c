@@ -24,19 +24,9 @@ struct double_tap_config {
 
 struct double_tap_data_entry {
 	const struct device *dev;
-	struct k_work_delayable work;
 	uint8_t index;
-	bool first_tap;
+	int64_t first_tap_time;
 };
-
-static void double_tap_deferred(struct k_work *work)
-{
-	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
-	struct double_tap_data_entry *entry =
-		CONTAINER_OF(dwork, struct double_tap_data_entry, work);
-
-	entry->first_tap = false;
-}
 
 static void double_tap_cb(struct input_event *evt, void *user_data)
 {
@@ -62,14 +52,23 @@ static void double_tap_cb(struct input_event *evt, void *user_data)
 	entry = &cfg->entries[i];
 
 	if (evt->value) {
-		if (entry->first_tap) {
-			k_work_cancel_delayable(&entry->work);
-			input_report_key(dev, cfg->double_tap_codes[i], 1, true, K_FOREVER);
-			input_report_key(dev, cfg->double_tap_codes[i], 0, true, K_FOREVER);
-			entry->first_tap = false;
+		int64_t now = k_uptime_get();
+		int64_t elapsed;
+
+		if (entry->first_tap_time >= 0) {
+			elapsed = now - entry->first_tap_time;
+			if (elapsed >= 0 && elapsed < cfg->double_tap_delay_ms) {
+				/* Double tap detected */
+				input_report_key(dev, cfg->double_tap_codes[i], 1, true, K_FOREVER);
+				input_report_key(dev, cfg->double_tap_codes[i], 0, true, K_FOREVER);
+				entry->first_tap_time = -1;
+			} else {
+				/* Timeout expired or clock wrapped, start new sequence */
+				entry->first_tap_time = now;
+			}
 		} else {
-			entry->first_tap = true;
-			k_work_schedule(&entry->work, K_MSEC(cfg->double_tap_delay_ms));
+			/* First tap */
+			entry->first_tap_time = now;
 		}
 	}
 }
@@ -88,8 +87,7 @@ static int double_tap_init(const struct device *dev)
 
 		entry->dev = dev;
 		entry->index = i;
-		entry->first_tap = false;
-		k_work_init_delayable(&entry->work, double_tap_deferred);
+		entry->first_tap_time = -1;
 	}
 
 	return 0;
