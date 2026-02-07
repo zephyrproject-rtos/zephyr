@@ -1926,11 +1926,15 @@ endmacro()
 #                     CMake namespace.
 function(import_kconfig prefix kconfig_fragment)
   cmake_parse_arguments(IMPORT_KCONFIG "" "TARGET" "" ${ARGN})
+  # Pre-filter: only read lines that start with the prefix or are
+  # "# <prefix>... is not set" comments. This avoids iterating over
+  # blank lines and unrelated comments in large .config files.
   file(
     STRINGS
     ${kconfig_fragment}
     DOT_CONFIG_LIST
     ENCODING "UTF-8"
+    REGEX "^(${prefix}|# ${prefix})"
   )
 
   foreach (LINE ${DOT_CONFIG_LIST})
