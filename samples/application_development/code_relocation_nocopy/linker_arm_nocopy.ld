@@ -66,10 +66,13 @@
 
 /*
  * Add another fake portion of FLASH to simulate a secondary or external FLASH
- * that we can do XIP from.
+ * that we can do XIP from. The simulated EXTFLASH starts at an offset of 0x9000
+ * from the start of the main application FLASH area, taking the flash base address
+ * and load offset into account, and extends to the end of the physical FLASH.
  */
-#define EXTFLASH_ADDR	0x7000
-#define EXTFLASH_SIZE	(CONFIG_FLASH_SIZE * 1K - EXTFLASH_ADDR)
+#define EXTFLASH_OFFSET	0x9000
+#define EXTFLASH_ADDR	(CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET + EXTFLASH_OFFSET)
+#define EXTFLASH_SIZE	(CONFIG_FLASH_SIZE * 1K - CONFIG_FLASH_LOAD_OFFSET - EXTFLASH_OFFSET)
 
 #endif
 
