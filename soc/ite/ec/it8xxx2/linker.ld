@@ -176,6 +176,12 @@ SECTIONS
 #ifdef CONFIG_SOC_IT8XXX2_SERIAL_IN_RAM
 			*libdrivers__serial.a:*
 #endif
+#ifdef CONFIG_SOC_IT8XXX2_PIGWEED_IN_RAM
+			*libpw_tokenizer.a:*
+			*libpw_varint.a:*
+			*libpw_base64.a:*
+			*libpw_log_tokenized.a:*
+#endif
 #ifdef CONFIG_SOC_IT8XXX2_KERNEL_IN_RAM
 			*libkernel.a:*
 #endif
@@ -196,6 +202,12 @@ SECTIONS
 #endif
 #ifdef CONFIG_SOC_IT8XXX2_SERIAL_IN_RAM
 			*libdrivers__serial.a:*
+#endif
+#ifdef CONFIG_SOC_IT8XXX2_PIGWEED_IN_RAM
+			*libpw_tokenizer.a:*
+			*libpw_varint.a:*
+			*libpw_base64.a:*
+			*libpw_log_tokenized.a:*
 #endif
 #ifdef CONFIG_SOC_IT8XXX2_KERNEL_IN_RAM
 			*libkernel.a:*
@@ -237,6 +249,20 @@ SECTIONS
 		*libdrivers__serial.a:*(.text .text.*)
 		*libdrivers__serial.a:*(.rodata .rodata.*)
 		*libdrivers__serial.a:*(.srodata .srodata.*)
+#endif
+#ifdef CONFIG_SOC_IT8XXX2_PIGWEED_IN_RAM
+		*libpw_tokenizer.a:*(.text .text.*)
+		*libpw_tokenizer.a:*(.rodata .rodata.*)
+		*libpw_tokenizer.a:*(.srodata .srodata.*)
+		*libpw_varint.a:*(.text .text.*)
+		*libpw_varint.a:*(.rodata .rodata.*)
+		*libpw_varint.a:*(.srodata .srodata.*)
+		*libpw_base64.a:*(.text .text.*)
+		*libpw_base64.a:*(.rodata .rodata.*)
+		*libpw_base64.a:*(.srodata .srodata.*)
+		*libpw_log_tokenized.a:*(.text .text.*)
+		*libpw_log_tokenized.a:*(.rodata .rodata.*)
+		*libpw_log_tokenized.a:*(.srodata .srodata.*)
 #endif
 #ifdef CONFIG_SOC_IT8XXX2_KERNEL_IN_RAM
 		*libkernel.a:*(.text .text.*)
