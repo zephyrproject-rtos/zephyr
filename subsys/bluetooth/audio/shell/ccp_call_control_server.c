@@ -158,7 +158,7 @@ static int cmd_ccp_call_control_server_get_bearer_name(const struct shell *sh, s
 static int cmd_ccp_call_control_server_get_bearer_uci(const struct shell *sh, size_t argc,
 						      char *argv[])
 {
-	const char *uci;
+	char uci[BT_TBS_MAX_UCI_SIZE];
 	int index = 0;
 	int err = 0;
 
@@ -169,7 +169,7 @@ static int cmd_ccp_call_control_server_get_bearer_uci(const struct shell *sh, si
 		}
 	}
 
-	err = bt_ccp_call_control_server_get_bearer_uci(bearers[index], &uci);
+	err = bt_ccp_call_control_server_get_bearer_uci(bearers[index], uci);
 	if (err != 0) {
 		shell_error(sh, "Failed to get bearer[%d] UCI: %d", index, err);
 

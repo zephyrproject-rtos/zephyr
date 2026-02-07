@@ -124,14 +124,15 @@ int bt_ccp_call_control_server_get_bearer_provider_name(
  * @brief Get the bearer UCI.
  *
  * @param[in]  bearer  The bearer to get the UCI for.
- * @param[out] uci     Pointer that will be updated to be the bearer uci.
+ * @param[out] uci Pointer to a buffer of size @ref BT_TBS_MAX_UCI_SIZE that the bearer UCI will be
+ *                 written to.
  *
  * @retval 0 Success
  * @retval -EINVAL @p bearer or @p uci is NULL
  * @retval -EFAULT @p bearer is not registered
  */
 int bt_ccp_call_control_server_get_bearer_uci(struct bt_ccp_call_control_server_bearer *bearer,
-					      const char **uci);
+					      char uci[BT_TBS_MAX_UCI_SIZE]);
 
 /** @} */ /* End of group bt_ccp_call_control_server */
 

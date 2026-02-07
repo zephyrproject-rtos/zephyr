@@ -114,7 +114,7 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 	for (int i = 1; i < CONFIG_BT_CCP_CALL_CONTROL_SERVER_BEARER_COUNT; i++) {
 		struct bt_tbs_register_param register_param = {
 			.provider_name = "test",
-			.uci = "un999",
+			.uci = DEFAULT_BEARER_UCI,
 			.uri_schemes_supported = "tel",
 			.gtbs = false,
 			.authorization_required = false,
@@ -143,7 +143,7 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 {
 	const struct bt_tbs_register_param register_param = {
 		.provider_name = "test",
-		.uci = "un999",
+		.uci = DEFAULT_BEARER_UCI,
 		.uri_schemes_supported = "tel",
 		.gtbs = true,
 		.authorization_required = false,
@@ -161,7 +161,7 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 {
 	const struct bt_tbs_register_param register_param = {
 		.provider_name = "test",
-		.uci = "un999",
+		.uci = DEFAULT_BEARER_UCI,
 		.uri_schemes_supported = "tel",
 		.gtbs = false,
 		.authorization_required = false,
@@ -179,7 +179,7 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 {
 	const struct bt_tbs_register_param register_param = {
 		.provider_name = "test",
-		.uci = "un999",
+		.uci = DEFAULT_BEARER_UCI,
 		.uri_schemes_supported = "tel",
 		.gtbs = true,
 		.authorization_required = false,
@@ -203,7 +203,7 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 {
 	const struct bt_tbs_register_param register_param = {
 		.provider_name = "test",
-		.uci = "un999",
+		.uci = DEFAULT_BEARER_UCI,
 		.uri_schemes_supported = "tel",
 		.gtbs = false,
 		.authorization_required = false,
@@ -412,12 +412,12 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 
 static ZTEST_F(ccp_call_control_server_test_suite, test_bt_ccp_call_control_server_get_bearer_uci)
 {
-	const char *res_bearer_uci;
+	char res_bearer_uci[BT_TBS_MAX_UCI_SIZE];
 	int err;
 
 	register_default_bearer(fixture);
 
-	err = bt_ccp_call_control_server_get_bearer_uci(fixture->bearers[0], &res_bearer_uci);
+	err = bt_ccp_call_control_server_get_bearer_uci(fixture->bearers[0], res_bearer_uci);
 	zassert_equal(err, 0, "Unexpected return value %d", err);
 
 	zassert_str_equal(DEFAULT_BEARER_UCI, res_bearer_uci, "%s != %s", DEFAULT_BEARER_UCI,
@@ -427,7 +427,7 @@ static ZTEST_F(ccp_call_control_server_test_suite, test_bt_ccp_call_control_serv
 static ZTEST_F(ccp_call_control_server_test_suite,
 	       test_bt_ccp_call_control_server_get_bearer_uci_inval_not_registered)
 {
-	const char *res_bearer_uci;
+	char res_bearer_uci[BT_TBS_MAX_UCI_SIZE];
 	int err;
 
 	/* Register and unregister bearer to get a valid pointer but where it is unregistered*/
@@ -435,19 +435,19 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 	err = bt_ccp_call_control_server_unregister_bearer(fixture->bearers[0]);
 	zassert_equal(err, 0, "Unexpected return value %d", err);
 
-	err = bt_ccp_call_control_server_get_bearer_uci(fixture->bearers[0], &res_bearer_uci);
+	err = bt_ccp_call_control_server_get_bearer_uci(fixture->bearers[0], res_bearer_uci);
 	zassert_equal(err, -EFAULT, "Unexpected return value %d", err);
 }
 
 static ZTEST_F(ccp_call_control_server_test_suite,
 	       test_bt_ccp_call_control_server_get_bearer_uci_inval_null_bearer)
 {
-	const char *res_bearer_uci;
+	char res_bearer_uci[BT_TBS_MAX_UCI_SIZE];
 	int err;
 
 	register_default_bearer(fixture);
 
-	err = bt_ccp_call_control_server_get_bearer_uci(NULL, &res_bearer_uci);
+	err = bt_ccp_call_control_server_get_bearer_uci(NULL, res_bearer_uci);
 	zassert_equal(err, -EINVAL, "Unexpected return value %d", err);
 }
 
