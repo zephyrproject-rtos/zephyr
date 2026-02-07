@@ -35,6 +35,7 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &lpuart0;
 		zephyr,shell-uart = &lpuart0;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	leds {
