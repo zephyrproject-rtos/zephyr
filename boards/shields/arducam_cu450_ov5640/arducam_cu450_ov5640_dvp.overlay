@@ -27,6 +27,9 @@
 			ov5640_ep_out: endpoint {
 				remote-endpoint-label = "arducam_ffc_40pin_ep_in";
 				bus-type = <VIDEO_BUS_TYPE_PARALLEL>;
+				hsync-active = <0>;
+				vsync-active = <0>;
+				pclk-sample = <1>;
 			};
 		};
 	};
