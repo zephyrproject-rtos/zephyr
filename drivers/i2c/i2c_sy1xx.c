@@ -6,6 +6,8 @@
 
 #define DT_DRV_COMPAT sensry_sy1xx_i2c
 
+#include "zephyr/sys/byteorder.h"
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(sy1xx_i2c, CONFIG_I2C_LOG_LEVEL);
 
@@ -29,20 +31,18 @@ LOG_MODULE_REGISTER(sy1xx_i2c, CONFIG_I2C_LOG_LEVEL);
 #define SY1XX_I2C_ADDR_WRITE (0x0)
 #define SY1XX_I2C_ADDR_READ  (0x1)
 
+#define SY1XX_I2C_MAX_CTRL_BYTE_SIZE (10)
+#define SY1XX_I2C_MIN_BUFFER_SIZE    (SY1XX_I2C_MAX_CTRL_BYTE_SIZE + 1)
+
+BUILD_ASSERT(CONFIG_I2C_SY1XX_BUFFER_SIZE >= SY1XX_I2C_MIN_BUFFER_SIZE,
+	     "CONFIG_I2C_SY1XX_BUFFER_SIZE too small for control bytes");
+
 enum sy1xx_i2c_speeds {
 	SY1XX_I2C_SPEED_STANDARD = 100000,
 	SY1XX_I2C_SPEED_FAST = 400000,
 	SY1XX_I2C_SPEED_FAST_PLUS = 1000000,
 	SY1XX_I2C_SPEED_HIGH = 3400000,
 	SY1XX_I2C_SPEED_ULTRA = 5000000,
-};
-
-#define DEVICE_MAX_BUFFER_SIZE (512)
-
-enum sy1xx_i2c_mode {
-	UNDEF,
-	READ,
-	WRITE,
 };
 
 struct sy1xx_i2c_dev_config {
@@ -58,8 +58,7 @@ struct sy1xx_i2c_dev_data {
 	bool error_active;
 	uint32_t bitrate;
 
-	uint8_t write[DEVICE_MAX_BUFFER_SIZE];
-	uint8_t read[DEVICE_MAX_BUFFER_SIZE];
+	uint8_t *xfer_buf;
 };
 
 static void sy1xx_i2c_ctrl_init(const struct device *dev)
@@ -67,8 +66,7 @@ static void sy1xx_i2c_ctrl_init(const struct device *dev)
 	const struct sy1xx_i2c_dev_config *const cfg = dev->config;
 	struct sy1xx_i2c_dev_data *const data = dev->data;
 	uint16_t divider;
-	uint32_t idx;
-	uint8_t *buf;
+	uint8_t *ctrl_buf, *data_buf;
 
 	k_sem_take(&data->lock, K_FOREVER);
 
@@ -79,17 +77,18 @@ static void sy1xx_i2c_ctrl_init(const struct device *dev)
 	k_sleep(K_MSEC(10));
 
 	/* prepare udma transfer buffer */
-	buf = data->write;
-	idx = 0;
+	ctrl_buf = data->xfer_buf;
 
 	/* fixed pre-scaler 1:5 */
 	divider = (sy1xx_soc_get_peripheral_clock() / 5) / data->bitrate;
-	buf[idx++] = SY1XX_I2C_CMD_CFG;
-	buf[idx++] = (divider & 0xff00) >> 8;
-	buf[idx++] = (divider & 0x00ff);
+	ctrl_buf[0] = SY1XX_I2C_CMD_CFG;
+	sys_put_be16(divider, &ctrl_buf[1]);
 
-	SY1XX_UDMA_START_RX(cfg->base, (uint32_t)data->read, 3, 0);
-	SY1XX_UDMA_START_TX(cfg->base, (uint32_t)buf, idx, 0);
+	/* use buffer after tx fo rx */
+	data_buf = &data->xfer_buf[3];
+
+	SY1XX_UDMA_START_RX(cfg->base, (uint32_t)data_buf, 3, 0);
+	SY1XX_UDMA_START_TX(cfg->base, (uint32_t)ctrl_buf, 3, 0);
 
 	/* wait for udma run empty */
 	k_sleep(K_MSEC(1));
@@ -184,76 +183,90 @@ static int sy1xx_i2c_initialize(const struct device *dev)
  * and so on.
  *
  */
-static int sy1xx_i2c_read(const struct device *dev, struct i2c_msg *msg, uint16_t addr, bool start,
-			  bool stop)
+static int sy1xx_i2c_read(const struct device *dev, struct i2c_msg *msg, uint16_t addr)
 {
 	const struct sy1xx_i2c_dev_config *const cfg = dev->config;
 	struct sy1xx_i2c_dev_data *const data = dev->data;
-	int ret;
-	uint32_t idx;
-	uint8_t *buf;
+	uint32_t idx = 0;
+	uint8_t *buf, *rx;
 	uint8_t *wait;
 	uint32_t wait_cnt;
+	uint32_t rx_len;
+	uint32_t offs = 0;
 
-	/* prepare udma transfer buffer */
-	buf = data->write;
-	idx = 0;
+	/* prepare udma transfer buffer; use xfer_buf for control and rx data */
+	buf = data->xfer_buf;
+	rx = &data->xfer_buf[SY1XX_I2C_MAX_CTRL_BYTE_SIZE];
 
-	if (start) {
-		buf[idx++] = SY1XX_I2C_CMD_START;
-		buf[idx++] = SY1XX_I2C_CMD_WR;
-		buf[idx++] = ((addr & 0x7F) << 1) | SY1XX_I2C_ADDR_READ;
+	/* we are at the first transfer, so consider sending a start, if enabled  */
+	if (msg->flags & I2C_MSG_RESTART) {
+		buf[idx] = SY1XX_I2C_CMD_START;
+		idx++;
+		buf[idx] = SY1XX_I2C_CMD_WR;
+		idx++;
+		buf[idx] = ((addr & 0x7F) << 1) | SY1XX_I2C_ADDR_READ;
+		idx++;
 	}
 
-	if (msg->len > 1) {
+	while (offs < msg->len) {
+		/* we can use the full receive buffer size to maximize chunk size */
+		rx_len = min(msg->len - offs,
+			     CONFIG_I2C_SY1XX_BUFFER_SIZE - SY1XX_I2C_MAX_CTRL_BYTE_SIZE);
+
 		/* repeat byte reads incl. ackn */
-		buf[idx++] = SY1XX_I2C_CMD_RPT;
-		buf[idx++] = msg->len - 1;
-		buf[idx++] = SY1XX_I2C_CMD_RD_ACK;
+		buf[idx] = SY1XX_I2C_CMD_RPT;
+		idx++;
+		buf[idx] = rx_len - 1;
+		idx++;
+		buf[idx] = SY1XX_I2C_CMD_RD_ACK;
+		idx++;
+
+		/* last read without ack */
+		buf[idx] = SY1XX_I2C_CMD_RD_NACK;
+		idx++;
+
+		if (((offs + rx_len) == msg->len) && (msg->flags & I2C_MSG_STOP)) {
+			/* that will be the last chunk, so if configured, we add a stop */
+			buf[idx] = SY1XX_I2C_CMD_STOP;
+			idx++;
+		}
+
+		/* fill 1st fifo queue with reading cmds */
+		SY1XX_UDMA_START_RX(cfg->base, (uint32_t)rx, rx_len, 0);
+		SY1XX_UDMA_START_TX(cfg->base, (uint32_t)buf, idx, 0);
+
+		/* fill 2nd fifo queue with one waiting cycle */
+		wait = &buf[idx];
+		wait_cnt = 0;
+		wait[wait_cnt] = SY1XX_I2C_CMD_WAIT;
+		wait_cnt++;
+		wait[wait_cnt] = 1;
+		wait_cnt++;
+
+		SY1XX_UDMA_START_TX(cfg->base, (uint32_t)wait, wait_cnt, 0);
+
+		/* finally, wait for the switch from 1st to 2nd queue */
+		SY1XX_UDMA_WAIT_FOR_FINISHED_TX(cfg->base);
+		SY1XX_UDMA_WAIT_FOR_FINISHED_RX(cfg->base);
+
+		/* make sure all is transferred to fifo */
+		if (SY1XX_UDMA_GET_REMAINING_TX(cfg->base)) {
+			LOG_ERR("filling fifo failed");
+			return -EIO;
+		}
+
+		if (SY1XX_UDMA_GET_REMAINING_RX(cfg->base)) {
+			LOG_ERR("missing read bytes, %d bytes left",
+				SY1XX_UDMA_GET_REMAINING_RX(cfg->base));
+			return -EIO;
+		}
+
+		/* copy data back to msg */
+		memcpy(&msg->buf[offs], rx, rx_len);
+
+		offs += rx_len;
+		idx = 0;
 	}
-
-	/* last read without ack */
-	buf[idx++] = SY1XX_I2C_CMD_RD_NACK;
-
-	if (stop) {
-		buf[idx++] = SY1XX_I2C_CMD_STOP;
-	} else {
-		/* add wait cycle for potentially restart condition */
-		buf[idx++] = SY1XX_I2C_CMD_WAIT;
-		buf[idx++] = 1;
-	}
-
-	/* fill 1st fifo queue with reading cmds */
-	SY1XX_UDMA_START_RX(cfg->base, (uint32_t)data->read, msg->len, 0);
-	SY1XX_UDMA_START_TX(cfg->base, (uint32_t)buf, idx, 0);
-
-	/* fill 2nd fifo queue with one waiting cycle */
-	wait = &buf[idx];
-	wait_cnt = 0;
-	wait[wait_cnt++] = SY1XX_I2C_CMD_WAIT;
-	wait[wait_cnt++] = 1;
-
-	SY1XX_UDMA_START_TX(cfg->base, (uint32_t)wait, wait_cnt, 0);
-
-	/* finally wait for the switch from 1st to 2nd queue */
-	SY1XX_UDMA_WAIT_FOR_FINISHED_TX(cfg->base);
-	SY1XX_UDMA_WAIT_FOR_FINISHED_RX(cfg->base);
-
-	/* make sure all is transferred to fifo */
-	if (SY1XX_UDMA_GET_REMAINING_TX(cfg->base)) {
-		LOG_ERR("filling fifo failed");
-		return -EINVAL;
-	}
-
-	if (SY1XX_UDMA_GET_REMAINING_RX(cfg->base)) {
-		LOG_ERR("missing read bytes, %d bytes left",
-			SY1XX_UDMA_GET_REMAINING_RX(cfg->base));
-		return -EINVAL;
-	}
-
-	/* copy data back to msg */
-	memcpy(msg->buf, data->read, msg->len);
-
 	return 0;
 }
 
@@ -265,56 +278,65 @@ static int sy1xx_i2c_read(const struct device *dev, struct i2c_msg *msg, uint16_
  * filling the fifo is done by dma transfer to one of the two available queues
  *
  */
-static int sy1xx_i2c_write(const struct device *dev, struct i2c_msg *msg, uint16_t addr, bool start,
-			   bool stop)
+static int sy1xx_i2c_write(const struct device *dev, struct i2c_msg *msg, uint16_t addr)
 {
 	const struct sy1xx_i2c_dev_config *const cfg = dev->config;
 	struct sy1xx_i2c_dev_data *const data = dev->data;
-	int ret;
-	uint32_t idx;
+	uint32_t idx = 0;
 	uint8_t *buf;
-	uint8_t *wait;
+	uint32_t tx_len;
+	uint32_t offs = 0;
 
-	/* prepare udma transfer buffer */
-	buf = data->write;
-	idx = 0;
+	/* prepare udma transfer buffer, use for ctrl and tx data */
+	buf = data->xfer_buf;
 
-	if (start) {
-		buf[idx++] = SY1XX_I2C_CMD_START;
-		buf[idx++] = SY1XX_I2C_CMD_WR;
-		buf[idx++] = ((addr & 0x7F) << 1) | SY1XX_I2C_ADDR_WRITE;
+	/* consider sending a start condition, if enabled  */
+	if (msg->flags & I2C_MSG_RESTART) {
+		/* start / restart */
+		buf[idx] = SY1XX_I2C_CMD_START;
+		idx++;
+		buf[idx] = SY1XX_I2C_CMD_WR;
+		idx++;
+		buf[idx] = ((addr & 0x7F) << 1) | SY1XX_I2C_ADDR_WRITE;
+		idx++;
 	}
 
-	if (msg->len) {
+	while (offs < msg->len) {
+		tx_len = min(msg->len - offs,
+			     CONFIG_I2C_SY1XX_BUFFER_SIZE - SY1XX_I2C_MAX_CTRL_BYTE_SIZE);
+
 		/* repeat byte write for all given data */
-		buf[idx++] = SY1XX_I2C_CMD_RPT;
-		buf[idx++] = msg->len;
-		buf[idx++] = SY1XX_I2C_CMD_WR;
+		buf[idx] = SY1XX_I2C_CMD_RPT;
+		idx++;
+		buf[idx] = tx_len;
+		idx++;
+		buf[idx] = SY1XX_I2C_CMD_WR;
+		idx++;
 
 		/* add data */
-		for (uint32_t i = 0; i < msg->len; i++) {
-			buf[idx++] = msg->buf[i];
+		memcpy(&buf[idx], &msg->buf[offs], tx_len);
+		idx += tx_len;
+
+		if (((offs + tx_len) == msg->len) && (msg->flags & I2C_MSG_STOP)) {
+			/* this is the last chunk, so consider sending a stop, if enabled */
+			buf[idx] = SY1XX_I2C_CMD_STOP;
+			idx++;
 		}
-	}
 
-	if (stop) {
-		buf[idx++] = SY1XX_I2C_CMD_STOP;
-	} else {
-		/* add wait cycle for potentially restart condition */
-		buf[idx++] = SY1XX_I2C_CMD_WAIT;
-		buf[idx++] = 1;
-	}
+		/* fill next tx fifo queue */
+		SY1XX_UDMA_START_TX(cfg->base, (uint32_t)buf, idx, 0);
 
-	/* fill next tx fifo queue */
-	SY1XX_UDMA_START_TX(cfg->base, (uint32_t)buf, idx, 0);
+		/* wait for udma has filled i2c controller tx fifo */
+		SY1XX_UDMA_WAIT_FOR_FINISHED_TX(cfg->base);
 
-	/* wait for udma has filled i2c controller tx fifo */
-	SY1XX_UDMA_WAIT_FOR_FINISHED_TX(cfg->base);
+		/* make sure all is transferred to fifo */
+		if (SY1XX_UDMA_GET_REMAINING_TX(cfg->base)) {
+			LOG_ERR("filling fifo failed");
+			return -EIO;
+		}
 
-	/* make sure all is transferred to fifo */
-	if (SY1XX_UDMA_GET_REMAINING_TX(cfg->base)) {
-		LOG_ERR("filling fifo failed");
-		return -EINVAL;
+		offs += tx_len;
+		idx = 0;
 	}
 
 	return 0;
@@ -325,50 +347,29 @@ static int sy1xx_i2c_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 {
 	struct sy1xx_i2c_dev_data *const data = dev->data;
 	int ret;
-	bool start_cond, stop_cond;
-	enum sy1xx_i2c_mode prv_xfer, cur_xfer;
 
-	if (num_msgs < 0) {
+	if (num_msgs == 0) {
 		return 0;
 	}
+
+	k_sem_take(&data->lock, K_FOREVER);
 
 	if (data->error_active) {
 		sy1xx_i2c_ctrl_init(dev);
 	}
 
-	k_sem_take(&data->lock, K_FOREVER);
+	/* enforce a start (restart) condition on the first msg */
+	msgs[0].flags |= I2C_MSG_RESTART;
 
-	prv_xfer = UNDEF;
-	for (uint32_t n = 0; n < num_msgs; n++) {
+	for (uint8_t n = 0; n < num_msgs; n++) {
 
 		/* detect transfer type */
 		if ((msgs[n].flags & I2C_MSG_READ) == I2C_MSG_READ) {
 			/* read msg */
-			cur_xfer = READ;
+			ret = sy1xx_i2c_read(dev, &msgs[n], addr);
 		} else {
 			/* write msg */
-			cur_xfer = WRITE;
-		}
-
-		/* transfer switched from read to write; or vice versa */
-		if (prv_xfer != cur_xfer) {
-			prv_xfer = cur_xfer;
-			start_cond = true;
-		} else {
-			start_cond = false;
-		}
-
-		/* stop on last msg */
-		if (n == (num_msgs - 1)) {
-			stop_cond = true;
-		} else {
-			stop_cond = false;
-		}
-
-		if (cur_xfer == READ) {
-			ret = sy1xx_i2c_read(dev, &msgs[n], addr, start_cond, stop_cond);
-		} else {
-			ret = sy1xx_i2c_write(dev, &msgs[n], addr, start_cond, stop_cond);
+			ret = sy1xx_i2c_write(dev, &msgs[n], addr);
 		}
 
 		if (ret) {
@@ -397,8 +398,11 @@ static DEVICE_API(i2c, sy1xx_i2c_driver_api) = {
 		.clock_frequency = DT_INST_PROP_OR(n, clock_frequency, 0),                         \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 	};                                                                                         \
-	static struct sy1xx_i2c_dev_data __attribute__((section(".udma_access")))                  \
-	__aligned(4) sy1xx_i2c_dev_data_##n = {};                                                  \
+	static uint8_t __attribute__((section(".udma_access")))                                    \
+	__aligned(4) sy1xx_i2c_xfer_buf_##n[CONFIG_I2C_SY1XX_BUFFER_SIZE];                         \
+	static struct sy1xx_i2c_dev_data sy1xx_i2c_dev_data_##n = {                                \
+		.xfer_buf = sy1xx_i2c_xfer_buf_##n,                                                \
+	};                                                                                         \
 	I2C_DEVICE_DT_INST_DEFINE(n, sy1xx_i2c_initialize, NULL, &sy1xx_i2c_dev_data_##n,          \
 				  &sy1xx_i2c_dev_config_##n, POST_KERNEL,                          \
 				  CONFIG_I2C_INIT_PRIORITY, &sy1xx_i2c_driver_api);
