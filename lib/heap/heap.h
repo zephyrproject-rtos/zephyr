@@ -20,6 +20,21 @@
 #define CHECK(x) /**/
 #endif
 
+#ifdef CONFIG_SYS_HEAP_CANARIES
+/*
+ * In a small heap, we can fit the 4-byte canary together with the header into
+ * an 8-byte chunk. But big heaps have an 8-byte header, so we reserve 8 bytes
+ * to remain chunk-aligned.
+ */
+#define CANARY_HEADER_BYTES_SMALL 4
+#define CANARY_HEADER_BYTES_BIG   8
+#define CHUNK0_HEADER_SIZE        4
+#else
+#define CANARY_HEADER_BYTES_BIG   0
+#define CANARY_HEADER_BYTES_SMALL 0
+#define CHUNK0_HEADER_SIZE        2
+#endif
+
 /* Chunks are identified by their offset in 8 byte units from the
  * first address in the buffer (a zero-valued chunkid_t is used as a
  * null; that chunk would always point into the metadata at the start
@@ -53,7 +68,7 @@
 
 enum chunk_fields { LEFT_SIZE, SIZE_AND_USED, FREE_PREV, FREE_NEXT };
 
-#define CHUNK_UNIT 8U
+#define CHUNK_UNIT CONFIG_SYS_HEAP_CHUNK_UNIT_SIZE
 
 typedef struct { char bytes[CHUNK_UNIT]; } chunk_unit_t;
 
@@ -66,13 +81,17 @@ struct z_heap_bucket {
 };
 
 struct z_heap {
-	chunkid_t chunk0_hdr[2];
+	chunkid_t chunk0_hdr[CHUNK0_HEADER_SIZE];
 	chunkid_t end_chunk;
 	uint32_t avail_buckets;
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 	size_t free_bytes;
 	size_t allocated_bytes;
 	size_t max_allocated_bytes;
+#endif
+#ifdef CONFIG_SYS_HEAP_CANARIES
+	uint32_t canary_used;
+	uint32_t canary_free;
 #endif
 	struct z_heap_bucket buckets[];
 };
@@ -108,12 +127,14 @@ static inline chunkid_t chunk_field(struct z_heap *h, chunkid_t c,
 				    enum chunk_fields f)
 {
 	chunk_unit_t *buf = chunk_buf(h);
-	void *cmem = &buf[c];
+	uint8_t *cmem = (uint8_t *)&buf[c];
 
 	if (big_heap(h)) {
-		return ((uint32_t *)cmem)[f];
+		uint32_t *header = (uint32_t *)(cmem + CANARY_HEADER_BYTES_BIG);
+		return header[f];
 	} else {
-		return ((uint16_t *)cmem)[f];
+		uint16_t *header = (uint16_t *)(cmem + CANARY_HEADER_BYTES_SMALL);
+		return header[f];
 	}
 }
 
@@ -123,14 +144,16 @@ static inline void chunk_set(struct z_heap *h, chunkid_t c,
 	CHECK(c <= h->end_chunk);
 
 	chunk_unit_t *buf = chunk_buf(h);
-	void *cmem = &buf[c];
+	uint8_t *cmem = (uint8_t *)&buf[c];
 
 	if (big_heap(h)) {
+		uint32_t *header = (uint32_t *)(cmem + CANARY_HEADER_BYTES_BIG);
 		CHECK(val == (uint32_t)val);
-		((uint32_t *)cmem)[f] = val;
+		header[f] = val;
 	} else {
+		uint16_t *header = (uint16_t *)(cmem + CANARY_HEADER_BYTES_SMALL);
 		CHECK(val == (uint16_t)val);
-		((uint16_t *)cmem)[f] = val;
+		header[f] = val;
 	}
 }
 
@@ -144,24 +167,43 @@ static inline chunksz_t chunk_size(struct z_heap *h, chunkid_t c)
 	return chunk_field(h, c, SIZE_AND_USED) >> 1;
 }
 
+#ifdef CONFIG_SYS_HEAP_CANARIES
+static inline uint32_t compute_canary(struct z_heap *h, chunkid_t c, bool used)
+{
+	return (used ? h->canary_used : h->canary_free) ^ c;
+}
+
+static inline void set_chunk_canary(struct z_heap *h, chunkid_t c, bool used)
+{
+	chunk_unit_t *buf = chunk_buf(h);
+	uint32_t *cmem = ((uint32_t *)&buf[c]);
+
+	cmem[0] = compute_canary(h, c, used);
+}
+#endif
+
 static inline void set_chunk_used(struct z_heap *h, chunkid_t c, bool used)
 {
 	chunk_unit_t *buf = chunk_buf(h);
-	void *cmem = &buf[c];
+	uint8_t *cmem = (uint8_t *)&buf[c];
 
 	if (big_heap(h)) {
+		uint32_t *header = (uint32_t *)(cmem + CANARY_HEADER_BYTES_BIG);
 		if (used) {
-			((uint32_t *)cmem)[SIZE_AND_USED] |= 1U;
+			header[SIZE_AND_USED] |= 1U;
 		} else {
-			((uint32_t *)cmem)[SIZE_AND_USED] &= ~1U;
+			header[SIZE_AND_USED] &= ~1U;
 		}
 	} else {
+		uint16_t *header = (uint16_t *)(cmem + CANARY_HEADER_BYTES_SMALL);
 		if (used) {
-			((uint16_t *)cmem)[SIZE_AND_USED] |= 1U;
+			header[SIZE_AND_USED] |= 1U;
 		} else {
-			((uint16_t *)cmem)[SIZE_AND_USED] &= ~1U;
+			header[SIZE_AND_USED] &= ~1U;
 		}
 	}
+
+	IF_ENABLED(CONFIG_SYS_HEAP_CANARIES, (set_chunk_canary(h, c, used)));
 }
 
 /*
@@ -212,19 +254,19 @@ static inline void set_left_chunk_size(struct z_heap *h, chunkid_t c,
 	chunk_set(h, c, LEFT_SIZE, size);
 }
 
-static inline bool solo_free_header(struct z_heap *h, chunkid_t c)
-{
-	return big_heap(h) && (chunk_size(h, c) == 1U);
-}
-
 static inline size_t chunk_header_bytes(struct z_heap *h)
 {
-	return big_heap(h) ? 8 : 4;
+	return (big_heap(h) ? 8 + CANARY_HEADER_BYTES_BIG : 4 + CANARY_HEADER_BYTES_SMALL);
+}
+
+static inline bool solo_free_header(struct z_heap *h, chunkid_t c)
+{
+	return chunk_header_bytes(h) == CHUNK_UNIT && (chunk_size(h, c) == 1U);
 }
 
 static inline size_t heap_footer_bytes(size_t size)
 {
-	return big_heap_bytes(size) ? 8 : 4;
+	return (big_heap_bytes(size) ? 8 + CANARY_HEADER_BYTES_BIG : 4 + CANARY_HEADER_BYTES_SMALL);
 }
 
 static inline chunksz_t chunksz(size_t bytes)

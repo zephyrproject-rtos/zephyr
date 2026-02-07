@@ -16,6 +16,39 @@ config SYS_HEAP_VALIDATE
 
 	  Use for testing and validation only.
 
+choice
+	prompt "Chunk unit size"
+	default SYS_HEAP_CHUNK_UNIT_SIZE_8
+
+config SYS_HEAP_CHUNK_UNIT_SIZE_8
+	bool "8-byte"
+	help
+	  Use 8-byte chunk units
+
+config SYS_HEAP_CHUNK_UNIT_SIZE_16
+	bool "16-byte"
+	help
+	  Use 16-byte chunk units
+
+endchoice
+
+config SYS_HEAP_CHUNK_UNIT_SIZE
+	int
+	default 16 if SYS_HEAP_CHUNK_UNIT_SIZE_16
+	default 8
+
+config SYS_HEAP_CANARIES
+	bool "Heap canaries"
+	depends on SYS_HEAP_SMALL_ONLY || SYS_HEAP_CHUNK_UNIT_SIZE_16
+	help
+	  Add canaries in front of each heap block, check the value before doing
+	  any modification, and panic if the canary has been corrupted. This may
+	  prevent exploitation of vulnerabilities, which rely on heap corruption,
+	  at the cost of some time and space overhead.
+	  In order to avoid issues with aligment and solo free headers, canaries
+	  on big heaps are only supported with 16-byte chunks, so that the header
+	  including the canary always fits within a chunk.
+
 config SYS_HEAP_STRESS
 	bool "General purpose heap stress test"
 	help
