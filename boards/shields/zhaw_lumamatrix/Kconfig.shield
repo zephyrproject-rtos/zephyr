@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Institute of Embedded Systems ZHAW
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_ZHAW_LUMAMATRIX
+	def_bool $(shields_list_contains,zhaw_lumamatrix)

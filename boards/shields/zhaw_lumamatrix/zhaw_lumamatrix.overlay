@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2026, Institute of Embedded Systems ZHAW
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/led/led.h>
+
+/ {
+	chosen {
+		zephyr,display = &led_matrix;
+	};
+
+	aliases {
+		led-strip = &bff_led_strip;
+	};
+
+	led_matrix: led-matrix {
+		compatible = "led-strip-matrix";
+		status = "okay";
+		led-strips = <&bff_led_strip>;
+		width = <8>;
+		height = <8>;
+		circulative;
+	};
+};
