@@ -1,0 +1,6 @@
+boards:
+  - name: sr100_rdk
+    full_name: SR100 RDK
+    vendor: syna
+    socs:
+      - name: sr100_b0

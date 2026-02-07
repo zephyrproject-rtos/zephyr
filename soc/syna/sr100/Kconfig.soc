@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Synaptics, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SR100
+	bool
+
+config SOC_SR100_B0
+	bool
+	select SOC_SERIES_SR100
+
+config SOC_SERIES
+	default "sr100" if SOC_SERIES_SR100
+
+config SOC
+	default "sr100_b0" if SOC_SR100_B0

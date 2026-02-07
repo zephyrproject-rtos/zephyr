@@ -1,0 +1,4 @@
+series:
+- name: sr100
+  socs:
+  - name: sr100_b0
