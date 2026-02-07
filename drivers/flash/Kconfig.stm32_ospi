@@ -23,3 +23,17 @@ config FLASH_STM32_OSPI
 					$(DT_STM32_OCTOSPI_HAS_DMA)
 	help
 	  Enable OSPI-NOR support on the STM32 family of processors.
+
+if FLASH_STM32_OSPI
+
+config FLASH_STM32_ERRATUM_U5_STOP2_3_CORRUPT_READ
+	bool "Workaround for corrupted reads after Stop 2/3 exit"
+	default y if PM
+	depends on SOC_STM32U595XX || SOC_STM32U599XX || SOC_STM32U5A5XX || SOC_STM32U5A9XX
+	help
+	  Enable workaround for erratum "OCTOSPI external memory
+	  read issue after exiting Stop 2 or Stop 3 mode when using
+	  DQS and delay block" documented in section 2.5.13 of errata
+	  sheet ES0553 revision 5.
+
+endif # FLASH_STM32_OSPI
