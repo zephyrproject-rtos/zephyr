@@ -93,6 +93,27 @@
 	};
 };
 
+auxdisplay0: &slcd {
+	status = "disabled"; /* pin reused with ADC0 */
+
+	/* 4 digits, 1 row */
+	columns = <4>;
+	rows = <1>;
+	/* 64 text/Hz settings */
+	/* clock ≈ 32.768 kHz, FFR=0, 1/4 duty, LCLK=0 → 64 Hz */
+	clk-cfg-src = "SLCD_CLK_MCGIRCLK";
+	clk-cfg-div = <1>;
+	clk-cfg-prescaler = <0>;
+	slcd-duty-cycle = "kSLCD_1Div4DutyCycle";
+	load-adjust-mode = "kSLCD_HighLoadOrSlowestClkSrc";
+
+	com-pins = /bits/ 8 <59 60 14 15>;
+	d-pins = /bits/ 8 <20 24 26 27 40 42 43 44>;
+
+	pinctrl-0 = <&pinmux_slcd>;
+	pinctrl-names = "default";
+};
+
 &sim {
 	pllfll-select = <KINETIS_SIM_PLLFLLSEL_MCGPLLCLK>;
 	er32k-select = <KINETIS_SIM_ER32KSEL_OSC32KCLK>;

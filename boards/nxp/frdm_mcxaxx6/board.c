@@ -320,6 +320,10 @@ void board_early_init_hook(void)
 	CLOCK_EnableUsbfsClock();
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(auxdisplay0))
+	CLOCK_SetupFRO16KClocking(kCLKE_16K_COREMAIN);
+	RESET_PeripheralReset(kSLCD0_RST_SHIFT_RSTn);
+#endif
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 }

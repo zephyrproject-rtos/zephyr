@@ -584,6 +584,14 @@
 			status = "disabled";
 			no-voltage-regulator;
 		};
+
+		slcd: slcd@400c2000 {
+			compatible = "nxp,slcd";
+			reg = <0x400c2000 0x1000>;
+			clocks = <&syscon MCUX_SLCD0_CLK>;
+			interrupts = <121 0>;
+			status = "disabled";
+		};
 	};
 };
 

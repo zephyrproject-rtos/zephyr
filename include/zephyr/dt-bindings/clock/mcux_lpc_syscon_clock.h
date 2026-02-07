@@ -156,4 +156,9 @@
 #define MCUX_LPCMP1_CLK MCUX_LPC_CLK_ID(0x22, 0x01)
 #define MCUX_LPCMP2_CLK MCUX_LPC_CLK_ID(0x22, 0x02)
 
+/**
+ * @brief SLCD0 clock selector for MCUX LPC SYSCON clock control.
+ */
+#define MCUX_SLCD0_CLK  MCUX_LPC_CLK_ID(0x10, 0x11)
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_ */

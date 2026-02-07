@@ -47,6 +47,12 @@ static int mcux_sim_on(const struct device *dev,
 	}
 #endif
 
+#ifdef CONFIG_AUXDISPLAY_MCUX_SLCD
+	if ((uint32_t)sub_system == KINETIS_SIM_SLCD0_CLK) {
+		clock_ip_name = kCLOCK_Slcd0;
+	}
+#endif
+
 	CLOCK_EnableClock(clock_ip_name);
 
 	return 0;
@@ -56,6 +62,39 @@ static int mcux_sim_off(const struct device *dev,
 			clock_control_subsys_t sub_system)
 {
 	clock_ip_name_t clock_ip_name = (clock_ip_name_t) sub_system;
+
+#ifdef CONFIG_ETH_NXP_ENET
+	if ((uint32_t)sub_system == KINETIS_SIM_ENET_CLK) {
+		clock_ip_name = kCLOCK_Enet0;
+	}
+#endif
+#ifdef CONFIG_COMPARATOR_NXP_CMP
+	if ((uint32_t)sub_system == KINETIS_SIM_CMP_CLK) {
+		clock_ip_name = kCLOCK_Cmp0;
+	}
+#endif
+
+#ifdef CONFIG_REGULATOR_NXP_VREFV1
+	if ((uint32_t)sub_system == KINETIS_SIM_VREF_CLK) {
+		clock_ip_name = kCLOCK_Vref0;
+	}
+#endif
+
+#ifdef CONFIG_DMA_NXP_4CH_DMA
+	if ((uint32_t)sub_system == KINETIS_SIM_DMA_CLK) {
+		clock_ip_name = kCLOCK_Dma0;
+	}
+
+	if ((uint32_t)sub_system == KINETIS_SIM_DMAMUX_CLK) {
+		clock_ip_name = kCLOCK_Dmamux0;
+	}
+#endif
+
+#ifdef CONFIG_AUXDISPLAY_MCUX_SLCD
+	if ((uint32_t)sub_system == KINETIS_SIM_SLCD0_CLK) {
+		clock_ip_name = kCLOCK_Slcd0;
+	}
+#endif
 
 	CLOCK_DisableClock(clock_ip_name);
 
