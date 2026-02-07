@@ -21,6 +21,10 @@ tests:
       - CONFIG_ZMS_LOOKUP_CACHE=y
       - CONFIG_ZMS_LOOKUP_CACHE_SIZE=64
     platform_allow: native_sim
+  filesystem.zms.cache.manual:
+    extra_configs:
+      - CONFIG_ZMS_LOOKUP_CACHE_MANUAL=y
+    platform_allow: native_sim
   filesystem.zms.data_crc:
     extra_configs:
       - CONFIG_ZMS_DATA_CRC=y

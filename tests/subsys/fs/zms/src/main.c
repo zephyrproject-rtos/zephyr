@@ -693,8 +693,15 @@ static size_t num_matching_cache_entries(uint64_t addr, bool compare_sector_only
 {
 	size_t num = 0;
 	uint64_t mask = compare_sector_only ? ADDR_SECT_MASK : UINT64_MAX;
+	size_t cache_size;
 
-	for (int i = 0; i < CONFIG_ZMS_LOOKUP_CACHE_SIZE; i++) {
+#if defined(CONFIG_ZMS_LOOKUP_CACHE_MANUAL)
+	cache_size = fs->lookup_cache_size;
+#else
+	cache_size = CONFIG_ZMS_LOOKUP_CACHE_SIZE;
+#endif
+
+	for (int i = 0; i < cache_size; i++) {
 		if ((fs->lookup_cache[i] & mask) == addr) {
 			num++;
 		}
@@ -705,8 +712,78 @@ static size_t num_matching_cache_entries(uint64_t addr, bool compare_sector_only
 
 static size_t num_occupied_cache_entries(struct zms_fs *fs)
 {
+#if defined(CONFIG_ZMS_LOOKUP_CACHE_MANUAL)
+	return fs->lookup_cache_size -
+	       num_matching_cache_entries(ZMS_LOOKUP_CACHE_NO_ADDR, false, fs);
+#else
 	return CONFIG_ZMS_LOOKUP_CACHE_SIZE -
 	       num_matching_cache_entries(ZMS_LOOKUP_CACHE_NO_ADDR, false, fs);
+#endif
+}
+#endif
+
+#if defined(CONFIG_ZMS_LOOKUP_CACHE_MANUAL)
+#define MANUAL_CACHE_SIZE 64
+ZTEST_F(zms, test_zms_manual_cache)
+{
+	int err;
+	size_t num;
+	uint64_t ate_addr;
+	uint8_t data = 0;
+	static uint64_t cache_buffer[MANUAL_CACHE_SIZE];
+
+	/* Test cache initialization when the store is empty */
+
+	fixture->fs.sector_count = 3;
+
+	err = zms_set_lookup_cache(&fixture->fs, cache_buffer, ARRAY_SIZE(cache_buffer));
+	zassert_true(err == 0, "zms_set_lookup_cache call failure: %d", err);
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	num = num_occupied_cache_entries(&fixture->fs);
+	zassert_equal(num, 0, "uninitialized cache");
+
+	/* Test cache update after zms_write() */
+
+	ate_addr = fixture->fs.ate_wra;
+	err = zms_write(&fixture->fs, 1, &data, sizeof(data));
+	zassert_equal(err, sizeof(data), "zms_write call failure: %d", err);
+
+	num = num_occupied_cache_entries(&fixture->fs);
+	zassert_equal(num, 1, "cache not updated after write");
+
+	num = num_matching_cache_entries(ate_addr, false, &fixture->fs);
+	zassert_equal(num, 1, "invalid cache entry after write");
+
+	/* Test cache initialization when the store is non-empty */
+
+	memset(fixture->fs.lookup_cache, 0xAA,
+	       fixture->fs.lookup_cache_size * sizeof(uint64_t));
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	num = num_occupied_cache_entries(&fixture->fs);
+	zassert_equal(num, 1, "uninitialized cache after restart");
+
+	num = num_matching_cache_entries(ate_addr, false, &fixture->fs);
+	zassert_equal(num, 1, "invalid cache entry after restart");
+
+	/* Test that cache is disabled when zms_set_lookup_cache() is not called */
+	after(ztest_get_state()->fixture);
+	before(ztest_get_state()->fixture);
+
+	fixture->fs.lookup_cache = NULL;
+	fixture->fs.lookup_cache_size = 0;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	err = zms_write(&fixture->fs, 1, &data, sizeof(data));
+	zassert_equal(err, sizeof(data), "zms_write call failure: %d", err);
+
+	zassert_true(fixture->fs.lookup_cache == NULL, "cache should be disabled");
 }
 #endif
 
