@@ -164,7 +164,7 @@
 	};
 
 	hwinfo: hwinfo {
-		compatible = "silabs,gecko-hwinfo";
+		compatible = "silabs,series2-hwinfo";
 		status = "disabled";
 	};
 
@@ -242,6 +242,7 @@
 			reg = <0x50030000 0x4000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_HCLK>;
 			interrupt-names = "msc";
 			interrupts = <51 2>;
 
