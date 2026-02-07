@@ -172,12 +172,48 @@ static int reattach_modem(struct ubx_iface_data *data)
 	return 0;
 }
 
+static int msg_get(const struct device *dev, const struct ubx_frame *req,
+		   size_t len, void *rsp, size_t min_rsp_size,
+		   k_timeout_t timeout, uint16_t retry_count)
+{
+	struct ubx_iface_data *data = dev->data;
+	struct ubx_frame *rsp_frame = (struct ubx_frame *)data->script.inst.response.buf;
+	int err;
+
+	err = k_sem_take(&data->script.lock, K_SECONDS(3));
+	if (err != 0) {
+		LOG_ERR("Failed to take script lock: %d", err);
+		return err;
+	}
+
+	data->script.inst.timeout = timeout;
+	data->script.inst.retry_count = retry_count;
+	data->script.inst.match.filter.class = req->class;
+	data->script.inst.match.filter.id = req->id;
+	data->script.inst.request.buf = req;
+	data->script.inst.request.len = len;
+
+	err = modem_ubx_run_script(&data->ubx.inst, &data->script.inst);
+	if (err != 0 || (data->script.inst.response.buf_len < UBX_FRAME_SZ(min_rsp_size))) {
+		err = -EIO;
+	} else {
+		memcpy(rsp, rsp_frame->payload_and_checksum, min_rsp_size);
+	}
+
+	k_sem_give(&data->script.lock);
+
+	return err;
+}
+
 int ubx_iface_init(const struct device *dev, const struct modem_ubx_match *unsol,
 		   size_t unsol_size, bool valset_supported)
 {
 	int err;
 	struct ubx_iface_data *data = dev->data;
 	const struct ubx_iface_config *cfg = dev->config;
+	uint8_t mon_ver_buf[UBX_FRAME_SZ(0)];
+	int mon_ver_len;
+	struct ubx_mon_ver ver;
 
 	init_match(data, dev);
 
@@ -185,6 +221,21 @@ int ubx_iface_init(const struct device *dev, const struct modem_ubx_match *unsol
 	if (err < 0) {
 		LOG_ERR("Failed to initialize modem: %d", err);
 		return err;
+	}
+
+	mon_ver_len = ubx_frame_encode(UBX_CLASS_ID_MON, UBX_MSG_ID_MON_VER,
+			NULL, 0, mon_ver_buf, sizeof(mon_ver_buf));
+	if (mon_ver_len < 0) {
+		return mon_ver_len;
+	}
+
+	/* Poll the receiver for the version, if it is successful then the baudrate is
+	 * already the desired one and there is nothing more to do.
+	 */
+	err = msg_get(dev, (struct ubx_frame *)mon_ver_buf, mon_ver_len,
+		      (void *)&ver, sizeof(ver), K_MSEC(200), 0);
+	if (err == 0) {
+		return 0;
 	}
 
 	err = configure_baudrate(dev, valset_supported);
@@ -205,33 +256,7 @@ int ubx_iface_init(const struct device *dev, const struct modem_ubx_match *unsol
 int ubx_iface_msg_get(const struct device *dev, const struct ubx_frame *req,
 		      size_t len, void *rsp, size_t min_rsp_size)
 {
-	struct ubx_iface_data *data = dev->data;
-	struct ubx_frame *rsp_frame = (struct ubx_frame *)data->script.inst.response.buf;
-	int err;
-
-	err = k_sem_take(&data->script.lock, K_SECONDS(3));
-	if (err != 0) {
-		LOG_ERR("Failed to take script lock: %d", err);
-		return err;
-	}
-
-	data->script.inst.timeout = K_SECONDS(3);
-	data->script.inst.retry_count = 2;
-	data->script.inst.match.filter.class = req->class;
-	data->script.inst.match.filter.id = req->id;
-	data->script.inst.request.buf = req;
-	data->script.inst.request.len = len;
-
-	err = modem_ubx_run_script(&data->ubx.inst, &data->script.inst);
-	if (err != 0 || (data->script.inst.response.buf_len < UBX_FRAME_SZ(min_rsp_size))) {
-		err = -EIO;
-	} else {
-		memcpy(rsp, rsp_frame->payload_and_checksum, min_rsp_size);
-	}
-
-	k_sem_give(&data->script.lock);
-
-	return err;
+	return msg_get(dev, req, len, rsp, min_rsp_size, K_SECONDS(3), 2);
 }
 
 int ubx_iface_msg_send(const struct device *dev, const struct ubx_frame *req,
