@@ -16,11 +16,16 @@ extern "C" {
 #define VDEV_START_ADDR		DT_REG_ADDR(DT_CHOSEN(zephyr_ipc_shm))
 #define VDEV_SIZE		DT_REG_SIZE(DT_CHOSEN(zephyr_ipc_shm))
 
+#ifdef CONFIG_RPMSG_SERVICE_LINUX
+#define SHM_START_ADDR (VDEV_START_ADDR)
+#define SHM_SIZE       (VDEV_SIZE)
+#else
 #define VDEV_STATUS_ADDR	VDEV_START_ADDR
 #define VDEV_STATUS_SIZE	0x400
 
 #define SHM_START_ADDR		(VDEV_START_ADDR + VDEV_STATUS_SIZE)
 #define SHM_SIZE		    (VDEV_SIZE - VDEV_STATUS_SIZE)
+#endif
 #define SHM_DEVICE_NAME		"sramx.shm"
 
 /*

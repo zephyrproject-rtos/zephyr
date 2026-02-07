@@ -1,0 +1,22 @@
+# Copyright (c) 2025 Ayush Singh, BeagleBoard.org
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_RPMSG
+	bool "Use RPMSG uart"
+	depends on RPMSG_SERVICE
+	depends on DT_HAS_RPMSG_UART_ENABLED
+	help
+	  Enable uart using RPMSG.
+
+	  This can be used when the application is loaded onto the co-processor
+	  using remoteproc.
+
+if UART_RPMSG
+
+config UART_RPMSG_RX_BUF_SIZE
+	int "Size of internal rx buffer"
+	default 64
+	help
+	  This option can be used to set the size of receive buffer.
+
+endif # UART_RPMSG
