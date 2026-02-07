@@ -222,11 +222,13 @@ static void netc_eth_rx_thread(void *arg1, void *unused1, void *unused2)
 		}
 
 		work = 0;
-		while (netc_eth_rx(dev) != -ENOBUFS) {
-			if (++work == CONFIG_ETH_NXP_IMX_RX_BUDGET) {
-				/* more work to do, reschedule */
-				work = 0;
-				k_yield();
+		if (!atomic_get((&data->turnoff_flag))) {
+			while (netc_eth_rx(dev) != -ENOBUFS) {
+				if (++work == CONFIG_ETH_NXP_IMX_RX_BUDGET) {
+					/* more work to do, reschedule */
+					work = 0;
+					k_yield();
+				}
 			}
 		}
 	}
@@ -421,6 +423,8 @@ int netc_eth_init_common(const struct device *dev)
 	/* Unmask MSIX message interrupt. */
 	EP_MsixSetEntryMask(&data->handle, NETC_TX_MSIX_ENTRY_IDX, false);
 	EP_MsixSetEntryMask(&data->handle, NETC_RX_MSIX_ENTRY_IDX, false);
+
+	atomic_set(&data->turnoff_flag, 0);
 
 	k_sem_init(&data->rx_sem, 0, 1);
 	k_thread_create(&data->rx_thread, data->rx_thread_stack,

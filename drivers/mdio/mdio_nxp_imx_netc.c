@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT nxp_imx_netc_emdio
 
 #include <zephyr/kernel.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/drivers/mdio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
@@ -59,6 +60,41 @@ static int nxp_imx_netc_mdio_write(const struct device *dev, uint8_t prtad, uint
 	return result == kStatus_Success ? 0 : -EIO;
 }
 
+static int eth_nxp_imx_mdio_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct nxp_imx_netc_mdio_data *data = dev->data;
+	const struct nxp_imx_netc_mdio_config *cfg = dev->config;
+	netc_mdio_config_t mdio_config = {0};
+	int ret;
+
+	LOG_INF("mdio pm action, action: %d", action);
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		ret = clock_control_get_rate(cfg->clock_dev, cfg->clock_subsys,
+				&mdio_config.srcClockHz);
+		if (ret) {
+			return ret;
+		}
+
+		ret = NETC_MDIOInit(&data->handle, &mdio_config);
+		if (ret != kStatus_Success) {
+			return -EIO;
+		}
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static int nxp_imx_netc_mdio_initialize(const struct device *dev)
 {
 	struct nxp_imx_netc_mdio_data *data = dev->data;
@@ -87,7 +123,7 @@ static int nxp_imx_netc_mdio_initialize(const struct device *dev)
 		return -EIO;
 	}
 
-	return 0;
+	return pm_device_driver_init(dev, eth_nxp_imx_mdio_pm_action);
 }
 
 static DEVICE_API(mdio, nxp_imx_netc_mdio_api) = {
@@ -105,7 +141,8 @@ static DEVICE_API(mdio, nxp_imx_netc_mdio_api) = {
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, &nxp_imx_netc_mdio_initialize, NULL,                              \
+	PM_DEVICE_DT_INST_DEFINE(n, eth_nxp_imx_mdio_pm_action);				   \
+	DEVICE_DT_INST_DEFINE(n, &nxp_imx_netc_mdio_initialize, PM_DEVICE_DT_INST_GET(n),          \
 			      &nxp_imx_netc_mdio##n##_data, &nxp_imx_netc_mdio##n##_cfg,           \
 			      POST_KERNEL, CONFIG_MDIO_INIT_PRIORITY, &nxp_imx_netc_mdio_api);
 
