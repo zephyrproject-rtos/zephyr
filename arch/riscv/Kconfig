@@ -424,7 +424,7 @@ config PMP_NO_LOCK_GLOBAL
 endif #RISCV_PMP
 
 config PMP_STACK_GUARD
-	def_bool y
+	bool
 	depends on HW_STACK_PROTECTION
 	select PMP_KERNEL_MODE_DYNAMIC if MULTITHREADING
 
@@ -489,6 +489,46 @@ config RISCV_SMRNMI_ENABLE_NMI_DELIVERY
 	  This option only enables NMI delivery. It does not provide RNMI
 	  handlers or mnret instruction support. Proper RNMI handlers must
 	  be implemented in SoC-specific code to handle NMI events.
+
+config CPU_HAS_BUILTIN_STACK_GUARD
+	bool
+	help
+	  This option signifies the CPU has built-in stack guard.
+
+config BUILTIN_STACK_GUARD
+	bool "Thread Stack Guards based on built-in stack guard"
+	depends on CPU_HAS_BUILTIN_STACK_GUARD
+	select THREAD_STACK_INFO
+	help
+	  Enable Thread/Interrupt Stack Guards via built-in stack guard.
+	  The functionality must be supported by HW.
+
+config BUILTIN_STACK_GUARD_RESERVED_SIZE
+	int "Built-in stack guard reserved area size"
+	depends on BUILTIN_STACK_GUARD
+	default 1024 if 64BIT
+	default 768
+	help
+	  This is the size of the built-in stack guard reserved area.
+	  This should be large enough to catch any sudden jump in stack pointer
+	  decrement, plus some wiggle room to accommodate the eventual overflow
+	  exception stack usage.
+
+config RISCV_HW_STACK_PROTECTION
+	bool
+	default y if HW_STACK_PROTECTION
+	imply BUILTIN_STACK_GUARD if CPU_HAS_BUILTIN_STACK_GUARD
+	select PMP_STACK_GUARD if (!BUILTIN_STACK_GUARD && RISCV_PMP)
+	help
+	  This option enables either:
+	  - The built-in stack guard, or
+	  - the PMP-based stack guard
+	  to cause a system fatal error
+	  if the bounds of the current process stack are overflowed.
+	  The two stack guard options are mutually exclusive. The
+	  selection of the built-in stack guard is prioritized over the
+	  PMP-based stack guard. The developer still has the option to
+	  manually select the PMP-based stack guard, if this is desired.
 
 endmenu
 

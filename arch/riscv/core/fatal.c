@@ -185,6 +185,12 @@ static bool bad_stack_pointer(struct arch_esf *esf)
 #endif /* CONFIG_MULTITHREADING */
 #endif /* CONFIG_PMP_STACK_GUARD */
 
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+	if (z_riscv_builtin_stack_guard_is_fault(esf)) {
+		return true;
+	}
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
+
 #ifdef CONFIG_USERSPACE
 	if ((esf->mstatus & MSTATUS_MPP) == 0 &&
 	    (esf->sp < _current->stack_info.start ||

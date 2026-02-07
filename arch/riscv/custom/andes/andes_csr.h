@@ -49,6 +49,11 @@ extern "C" {
 #define NDS_PMAADDR14                0xBDE
 #define NDS_PMAADDR15                0xBDF
 
+/* Control and Status Registers (CSRs) available for Andes V5 HSP */
+#define NDS_MHSP_CTL                 0x7C6
+#define NDS_MSP_BOUND                0x7C7
+#define NDS_MSP_BASE                 0x7C8
+
 #ifdef __cplusplus
 }
 #endif

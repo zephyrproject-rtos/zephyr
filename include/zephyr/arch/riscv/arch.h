@@ -75,6 +75,24 @@
 
 #else /* !CONFIG_PMP_STACK_GUARD */
 #define Z_RISCV_STACK_GUARD_SIZE 0
+
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+/* Kernel-only stacks have the following layout if a built-in stack guard is enabled:
+ *
+ * +------------+ <- thread.stack_obj
+ * | Reserved   | } built-in stack guard reserved area
+ * +------------+ <- thread.stack_info.start
+ * | Kernel     |
+ * | stack      |
+ * |            |
+ * +............|
+ * | TLS        | } thread.stack_info.delta
+ * +------------+ <- thread.stack_info.start + thread.stack_info.size
+ */
+#define ARCH_KERNEL_STACK_RESERVED \
+	ROUND_UP(sizeof(struct arch_esf) + CONFIG_BUILTIN_STACK_GUARD_RESERVED_SIZE, \
+		 ARCH_STACK_PTR_ALIGN)
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
 #endif
 
 #ifdef CONFIG_PMP_POWER_OF_TWO_ALIGNMENT
@@ -114,7 +132,14 @@
  * | TLS        | } thread.stack_info.delta
  * +------------+ <- thread.stack_info.start + thread.stack_info.size
  */
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+#define ARCH_THREAD_STACK_RESERVED \
+	ROUND_UP(sizeof(struct arch_esf) + CONFIG_BUILTIN_STACK_GUARD_RESERVED_SIZE, \
+		 ARCH_STACK_PTR_ALIGN)
+#else /* !CONFIG_BUILTIN_STACK_GUARD */
 #define ARCH_THREAD_STACK_RESERVED Z_RISCV_STACK_GUARD_SIZE
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
+
 #define ARCH_THREAD_STACK_SIZE_ADJUST(size) \
 	Z_POW2_CEIL(MAX(MAX(size, CONFIG_PRIVILEGED_STACK_SIZE), \
 			Z_RISCV_STACK_PMP_ALIGN))

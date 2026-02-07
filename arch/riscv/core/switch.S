@@ -12,6 +12,12 @@
 #include <zephyr/arch/cpu.h>
 #include "asm_macros.inc"
 
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+GTEXT(z_riscv_builtin_stack_guard_enable)
+GTEXT(z_riscv_builtin_stack_guard_disable)
+GTEXT(z_riscv_builtin_stack_guard_config)
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
+
 /* Convenience macros for loading/storing register states. */
 
 #define DO_CALLEE_SAVED(op, reg) \
@@ -46,8 +52,37 @@ SECTION_FUNC(TEXT, z_riscv_switch)
 	/* Set thread->switch_handle = thread to mark completion */
 	sr a1, ___thread_t_switch_handle_OFFSET(a1)
 
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+	/* Disable the built-in stack guard */
+	mv s0, a0
+	call z_riscv_builtin_stack_guard_disable
+	mv a0, s0
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
+
 	/* Get the new thread's stack pointer */
 	lr sp, _thread_offset_to_sp(a0)
+
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+	/*
+	 * Reconfigure built-in stack guard for stack overflow detection
+	 * if the new thread is not running in user mode.
+	 */
+#ifdef CONFIG_USERSPACE
+	lb t0, _thread_offset_to_user_options(a0)
+	andi t0, t0, K_USER
+	bnez t0, 1f
+#endif /* CONFIG_USERSPACE */
+
+	mv s0, a0
+	lr a0, _thread_offset_to_stack_info_start(s0)
+	lr a1, _thread_offset_to_stack_info_size(s0)
+	call z_riscv_builtin_stack_guard_config
+
+	/* Enable the built-in stack guard */
+	call z_riscv_builtin_stack_guard_enable
+	mv a0, s0
+1:
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
 
 #if defined(CONFIG_THREAD_LOCAL_STORAGE)
 	/* Get the new thread's tls pointer */

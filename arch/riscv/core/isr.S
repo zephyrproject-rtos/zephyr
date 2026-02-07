@@ -12,6 +12,7 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 #include <zephyr/syscall.h>
 #include <zephyr/arch/riscv/csr.h>
 #include <zephyr/arch/riscv/irq.h>
@@ -103,6 +104,12 @@ GDATA(_k_syscall_table)
 #ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
 GTEXT(__soc_handle_all_irqs)
 #endif
+
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+GTEXT(z_riscv_builtin_stack_guard_enable)
+GTEXT(z_riscv_builtin_stack_guard_disable)
+GTEXT(z_riscv_builtin_stack_guard_config)
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
 
 /* exports */
 GTEXT(_isr_wrapper)
@@ -498,6 +505,13 @@ do_irq_offload:
 	sw t2, ___cpu_t_nested_OFFSET(s0)
 	bnez t1, 1f
 
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+	/* Disable built-in stack guard */
+	call z_riscv_builtin_stack_guard_disable
+	lr a1, __struct_arch_esf_a0_OFFSET(sp)
+	lr a0, __struct_arch_esf_a1_OFFSET(sp)
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
+
 	/* Switch to interrupt stack */
 	mv t0, sp
 	lr sp, ___cpu_t_irq_stack_OFFSET(s0)
@@ -505,6 +519,26 @@ do_irq_offload:
 	/* Save thread stack pointer on interrupt stack */
 	addi sp, sp, -16
 	sr t0, 0(sp)
+
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+	addi sp, sp, -16
+	sr a0, 0(sp)
+	sr a1, 8(sp)
+
+	/* Reconfigure built-in stack guard for interrupt stack */
+	lr a0, ___cpu_t_irq_stack_OFFSET(s0)
+	li a1, CONFIG_ISR_STACK_SIZE
+	sub a0, a0, a1
+	call z_riscv_builtin_stack_guard_config
+
+	/* Enable built-in stack guard */
+	call z_riscv_builtin_stack_guard_enable
+
+	lr a0, 0(sp)
+	lr a1, 8(sp)
+	addi sp, sp, 16
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
+
 1:
 	/* Execute provided routine (argument is in a0 already). */
 	jalr ra, a1, 0
@@ -524,6 +558,22 @@ is_user_syscall:
 	lr a0, ___cpu_t_current_OFFSET(s0)
 	call z_riscv_pmp_kernelmode_enable
 #endif
+
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+	/*
+	 * We came from userspace and need to reconfigure the
+	 * built-in stack guard.
+	 */
+	call z_riscv_builtin_stack_guard_disable
+
+	lr t1, ___cpu_t_current_OFFSET(s0)
+	lr a0, _thread_offset_to_priv_stack_start(t1)
+	li a1, CONFIG_PRIVILEGED_STACK_SIZE
+	call z_riscv_builtin_stack_guard_config
+
+	/* Enable the built-in stack guard */
+	call z_riscv_builtin_stack_guard_enable
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
 
 	/* It is safe to re-enable IRQs now */
 	csrs mstatus, MSTATUS_IEN
@@ -614,6 +664,11 @@ is_interrupt:
 	sw t2, ___cpu_t_nested_OFFSET(s0)
 	bnez t1, on_irq_stack
 
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+	/* Disable built-in stack guard */
+	call z_riscv_builtin_stack_guard_disable
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
+
 	/* Switch to interrupt stack */
 	mv t0, sp
 	lr sp, ___cpu_t_irq_stack_OFFSET(s0)
@@ -624,6 +679,17 @@ is_interrupt:
 	 */
 	addi sp, sp, -16
 	sr t0, 0(sp)
+
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+	/* Reconfigure built-in stack guard for interrupt stack */
+	lr a0, ___cpu_t_irq_stack_OFFSET(s0)
+	li a1, CONFIG_ISR_STACK_SIZE
+	sub a0, a0, a1
+	call z_riscv_builtin_stack_guard_config
+
+	/* Enable built-in stack guard */
+	call z_riscv_builtin_stack_guard_enable
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
 
 on_irq_stack:
 
@@ -683,8 +749,38 @@ irq_done:
 	sw t2, ___cpu_t_nested_OFFSET(s0)
 	bnez t2, no_reschedule
 
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+	/* Disable built-in stack guard */
+	call z_riscv_builtin_stack_guard_disable
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
+
 	/* nested count is back to 0: Return to thread stack */
 	lr sp, 0(sp)
+
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+	lr t1, ___cpu_t_current_OFFSET(s0)
+
+	/*
+	 * Reconfigure the built-in stack guard for stack overflow detection
+	 * if the thread is neither a dummy thread nor running in user mode.
+	 */
+	lb t0, _thread_offset_to_thread_state(t1)
+	andi t0, t0, _THREAD_DUMMY
+	bnez t0, 1f
+
+#ifdef CONFIG_USERSPACE
+	lb t0, _thread_offset_to_user_options(t1)
+	andi t0, t0, K_USER
+	bnez t0, 1f
+#endif /* CONFIG_USERSPACE */
+
+	lr a0, _thread_offset_to_stack_info_start(t1)
+	lr a1, _thread_offset_to_stack_info_size(t1)
+	call z_riscv_builtin_stack_guard_config
+
+	call z_riscv_builtin_stack_guard_enable
+1:
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
 
 #ifdef CONFIG_STACK_SENTINEL
 	call z_check_stack_sentinel
@@ -775,6 +871,11 @@ fp_trap_exit:
 	lr a0, ___cpu_t_current_OFFSET(s0)
 	call z_riscv_pmp_usermode_enable
 #endif
+
+#ifdef CONFIG_BUILTIN_STACK_GUARD
+	/* Disable built-in stack guard in user mode */
+	call z_riscv_builtin_stack_guard_disable
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
 
 	/* Set our per-thread usermode flag */
 	li t1, 1
