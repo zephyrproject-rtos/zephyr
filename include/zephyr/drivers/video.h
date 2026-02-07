@@ -220,6 +220,8 @@ enum video_signal_result {
 	VIDEO_BUF_DONE,    /**< Buffer is done */
 	VIDEO_BUF_ABORTED, /**< Buffer is aborted */
 	VIDEO_BUF_ERROR,   /**< Buffer is in error */
+	VIDEO_LINK_UP,     /**< Video link up */
+	VIDEO_LINK_DOWN,   /**< Video link down */
 };
 
 /**
