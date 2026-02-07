@@ -660,6 +660,12 @@ class TestPlan:
                 instance_list = []
                 for ts in jtp.get("testsuites", []):
                     logger.debug(f"loading {ts['name']}...")
+
+                    # Skip testsuites marked with "skip":true
+                    if ts.get("skip", False):
+                        logger.debug(f"Skipping {ts['name']}: marked as skip in testlist")
+                        continue
+
                     testsuite = ts["name"]
                     toolchain = ts["toolchain"]
 
