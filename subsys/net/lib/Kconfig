@@ -61,6 +61,8 @@ source "subsys/net/lib/prometheus/Kconfig"
 
 source "subsys/net/lib/wifi_credentials/Kconfig"
 
+source "subsys/net/lib/wireguard/Kconfig"
+
 # Hidden option for VPN usage. Can be selected by the application
 # to setup VPN enablers in the network stack.
 config NET_VPN

@@ -158,6 +158,11 @@ config NET_SHELL_QBV_SUPPORTED
 	  Enable Qbv Shell.
 	  The Qbv shell currently supports set/enable operations.
 
+config NET_SHELL_WIREGUARD_SUPPORTED
+	bool "Wireguard VPN config and status"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || WIREGUARD_SHELL
+
 config NET_SHELL_DYN_CMD_COMPLETION
 	bool "Network shell dynamic command completion"
 	default y
