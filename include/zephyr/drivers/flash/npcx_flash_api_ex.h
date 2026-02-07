@@ -129,6 +129,28 @@ struct npcx_ex_ops_gdma_in {
 #define NPCX_EX_OP_INT_FLASH_WP BIT(1) /**< Issue write protection of internal flash */
 /** @} */
 
+/**
+ * Lock the flash control register.
+ *
+ * If the flash control register has been disabled since the last reset when
+ * this function is called, a bus fault will be generated.
+ *
+ * @kconfig_dep{CONFIG_FLASH_EX_OP_ENABLED}
+ *
+ */
+void npcx_lock_flash_control_register(const struct device *dev);
+
+/**
+ * Unlock the flash control register using the unlock sequence.
+ *
+ * If the flash control register has been disabled since the last reset when
+ * this function is called, a bus fault will be generated.
+ *
+ * @kconfig_dep{CONFIG_FLASH_EX_OP_ENABLED}
+ *
+ */
+void npcx_unlock_flash_control_register(void);
+
 #ifdef __cplusplus
 }
 #endif
