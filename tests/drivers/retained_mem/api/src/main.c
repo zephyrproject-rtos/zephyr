@@ -7,7 +7,7 @@
 #include <zephyr/ztest.h>
 #include <errno.h>
 
-const static struct device *retained_mem_test_device =	DEVICE_DT_GET(DT_ALIAS(
+static const struct device *retained_mem_test_device =	DEVICE_DT_GET(DT_ALIAS(
 									retainedmemtestdevice));
 
 #if CONFIG_RETAINED_MEM_SIZE_LIMITED
