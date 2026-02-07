@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+#include <zephyr/dt-bindings/sensor/ism6hg256x.h>
+#include <zephyr/dt-bindings/sensor/lps2xdf.h>
+
+/ {
+	aliases {
+		accel0 = &ism6hg256x_6a_x_nucleo_iks5a1;
+		pressure-sensor = &ilps22qs_5c_x_nucleo_iks5a1;
+		magn0 = &iis2mdc_1e_x_nucleo_iks5a1;
+	};
+};
+
+&arduino_i2c {
+	ism6hg256x_6a_x_nucleo_iks5a1: ism6hg256x@6a {
+		compatible = "st,ism6hg256x";
+		reg = <0x6a>;
+
+		accel-odr = <ISM6HG256X_HG_XL_ODR_AT_480Hz>;
+		accel-range = <ISM6HG256X_DT_FS_16G>;
+		gyro-odr = <ISM6HG256X_HG_XL_ODR_AT_480Hz>;
+		gyro-range = <ISM6HG256X_DT_FS_500DPS>;
+
+		int1-gpios = <&arduino_header ARDUINO_HEADER_R3_D5 GPIO_ACTIVE_HIGH>;
+		drdy-pin = <1>;
+	};
+
+	iis2mdc_1e_x_nucleo_iks5a1: iis2mdc@1e {
+		compatible = "st,iis2mdc";
+		reg = <0x1e>;
+		drdy-gpios = <&arduino_header ARDUINO_HEADER_R3_A3 GPIO_ACTIVE_HIGH>;
+	};
+
+	ilps22qs_5c_x_nucleo_iks5a1: ilps22qs@5c {
+		compatible = "st,ilps22qs";
+		reg = <0x5c>;
+		odr = <LPS2xDF_DT_ODR_25HZ>;
+	};
+};
