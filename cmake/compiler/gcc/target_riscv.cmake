@@ -67,6 +67,10 @@ if(CONFIG_RISCV_ISA_EXT_ZIFENCEI)
   string(APPEND riscv_march "_zifencei")
 endif()
 
+# If it matches the g extension, replace it. We don't do it based on CONFIG_RISCV_ISA_EXT_G
+# as f and d are only used when CONFIG_FPU is enabled
+string(REGEX REPLACE "(imafd)(.*)(_zicsr_zifencei)" "g\\2" riscv_march ${riscv_march})
+
 # Check whether we already imply Zaamo/Zalrsc by selecting the A extension; if not - check them
 # individually and enable them as needed
 if(NOT CONFIG_RISCV_ISA_EXT_A)
