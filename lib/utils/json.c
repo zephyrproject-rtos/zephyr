@@ -1159,6 +1159,9 @@ static int64_t obj_parse(struct json_obj *obj, const struct json_obj_descr *desc
 	int ret;
 
 	while (!obj_next(obj, &kv)) {
+		bool any_descriptor_matched_name = false;
+		bool field_decoded = false;
+
 		if (kv.value.type == JSON_TOK_OBJECT_END) {
 			return decoded_fields;
 		}
@@ -1181,15 +1184,23 @@ static int64_t obj_parse(struct json_obj *obj, const struct json_obj_descr *desc
 				continue;
 			}
 
+			any_descriptor_matched_name = true;
+
 			/* Store the decoded value */
 			ret = decode_value(obj, &descr[i], &kv.value,
 					   decode_field, val);
 			if (ret < 0) {
-				return ret;
+				continue;
 			}
 
 			decoded_fields |= (int64_t)1<<i;
+			field_decoded = true;
 			break;
+		}
+
+		/* If field name matched but all decode attempts failed, that's an error */
+		if (any_descriptor_matched_name && !field_decoded) {
+			return ret;
 		}
 
 		/* Skip field, if no descriptor was found */
