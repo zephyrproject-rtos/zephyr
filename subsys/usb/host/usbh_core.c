@@ -25,14 +25,11 @@ static struct k_thread usbh_thread_data;
 static K_KERNEL_STACK_DEFINE(usbh_bus_stack, CONFIG_USBH_STACK_SIZE);
 static struct k_thread usbh_bus_thread_data;
 
-K_MSGQ_DEFINE(usbh_msgq, sizeof(struct uhc_event),
-	      CONFIG_USBH_MAX_UHC_MSG, sizeof(uint32_t));
+K_MSGQ_DEFINE(usbh_msgq, sizeof(struct uhc_event), CONFIG_USBH_MAX_UHC_MSG, sizeof(uint32_t));
 
-K_MSGQ_DEFINE(usbh_bus_msgq, sizeof(struct uhc_event),
-	      CONFIG_USBH_MAX_UHC_MSG, sizeof(uint32_t));
+K_MSGQ_DEFINE(usbh_bus_msgq, sizeof(struct uhc_event), CONFIG_USBH_MAX_UHC_MSG, sizeof(uint32_t));
 
-static int usbh_event_carrier(const struct device *dev,
-			      const struct uhc_event *const event)
+static int usbh_event_carrier(const struct device *dev, const struct uhc_event *const event)
 {
 	int err;
 
@@ -72,8 +69,6 @@ static void dev_connected_handler(struct usbh_context *const ctx,
 	if (usbh_device_init(ctx->root)) {
 		LOG_ERR("Failed to reset new USB device");
 	}
-
-	usbh_class_probe_device(ctx->root);
 }
 
 static void dev_removed_handler(struct usbh_context *const ctx)
@@ -88,8 +83,7 @@ static void dev_removed_handler(struct usbh_context *const ctx)
 	}
 }
 
-static int discard_ep_request(struct usbh_context *const ctx,
-			      struct uhc_transfer *const xfer)
+static int discard_ep_request(struct usbh_context *const ctx, struct uhc_transfer *const xfer)
 {
 	const struct device *dev = ctx->dev;
 
@@ -205,18 +199,13 @@ int usbh_init_device_intl(struct usbh_context *const uhs_ctx)
 
 static int uhs_pre_init(void)
 {
-	k_thread_create(&usbh_thread_data, usbh_stack,
-			K_KERNEL_STACK_SIZEOF(usbh_stack),
-			usbh_thread,
-			NULL, NULL, NULL,
-			K_PRIO_COOP(9), 0, K_NO_WAIT);
+	k_thread_create(&usbh_thread_data, usbh_stack, K_KERNEL_STACK_SIZEOF(usbh_stack),
+			usbh_thread, NULL, NULL, NULL, K_PRIO_COOP(9), 0, K_NO_WAIT);
 
 	k_thread_name_set(&usbh_thread_data, "usbh");
 
 	k_thread_create(&usbh_bus_thread_data, usbh_bus_stack,
-			K_KERNEL_STACK_SIZEOF(usbh_bus_stack),
-			usbh_bus_thread,
-			NULL, NULL, NULL,
+			K_KERNEL_STACK_SIZEOF(usbh_bus_stack), usbh_bus_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(9), 0, K_NO_WAIT);
 
 	k_thread_name_set(&usbh_thread_data, "usbh_bus");

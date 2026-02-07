@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
- * SPDX-FileCopyrightText: Copyright 2025 NXP
+ * SPDX-FileCopyrightText: Copyright 2025 - 2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -81,11 +81,11 @@ void usbh_class_remove_all(struct usb_device *const udev)
  * USB functions will have at most one class matching, and calling
  * usbh_class_probe_function() multiple times consequently has no effect.
  */
-static void usbh_class_probe_function(struct usb_device *const udev,
-				      struct usbh_class_filter *const filter_data,
-				      const uint8_t iface)
+static int usbh_class_probe_function(struct usb_device *const udev,
+				     struct usbh_class_filter *const filter_data,
+				     const uint8_t iface)
 {
-	int ret;
+	int ret = -ENOTSUP;
 
 	/* Assumes that udev->mutex is locked */
 
@@ -97,7 +97,7 @@ static void usbh_class_probe_function(struct usb_device *const udev,
 		    c_data->udev == udev && c_data->iface == iface) {
 			LOG_DBG("Interface %u bound to '%s', skipping",
 				iface, c_data->name);
-			return;
+			return 0;
 		}
 	}
 
@@ -130,9 +130,11 @@ static void usbh_class_probe_function(struct usb_device *const udev,
 		c_data->iface = iface;
 		break;
 	}
+
+	return ret;
 }
 
-void usbh_class_probe_device(struct usb_device *const udev)
+int usbh_class_probe_device(struct usb_device *const udev)
 {
 	const struct usb_desc_header *desc = udev->cfg_desc;
 	struct usbh_class_filter filter_data;
@@ -147,7 +149,7 @@ void usbh_class_probe_device(struct usb_device *const udev)
 	filter_data.sub = udev->dev_desc.bDeviceSubClass;
 	filter_data.proto = udev->dev_desc.bDeviceProtocol;
 
-	usbh_class_probe_function(udev, &filter_data, USBH_CLASS_IFNUM_DEVICE);
+	ret = usbh_class_probe_function(udev, &filter_data, USBH_CLASS_IFNUM_DEVICE);
 
 	/* To support multi-function devices, match against each function */
 
@@ -164,8 +166,13 @@ void usbh_class_probe_device(struct usb_device *const udev)
 			continue;
 		}
 
-		usbh_class_probe_function(udev, &filter_data, iface);
+		ret = usbh_class_probe_function(udev, &filter_data, iface);
+		if (ret == 0) {
+			break;
+		}
 	}
+
+	return ret;
 }
 
 bool usbh_class_is_matching(const struct usbh_class_filter *const filter_rules,
