@@ -285,4 +285,11 @@ config GEN_UICR_SECONDARY_PROTECTEDMEM_SIZE_BYTES
 
 endif # GEN_UICR_SECONDARY
 
+config GEN_UICR_EXTRA_ARGS
+	string "Extra arguments to pass to the UICR generator script"
+	default ""
+	help
+	  This configuration can be used to pass extra arguments to the UICR generator
+	  script. Multiple arguments should be separated with spaces.
+
 endmenu
