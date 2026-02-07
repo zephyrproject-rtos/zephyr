@@ -32,6 +32,6 @@ config FLASH_RENESAS_RZ_QSPI_SPIBSC
 config FLASH_RENESAS_RZ_MIRROR_OFFSET
 	hex
 	default 0x0 if SOC_SERIES_RZA3UL
-	default 0x20000000 if SOC_SERIES_RZT2M || SOC_SERIES_RZN2L
+	default 0x20000000 if SOC_SERIES_RZT2M || SOC_SERIES_RZN2L || SOC_SERIES_RZT2L
 	help
 	  Offset of mirror area in flash memory
