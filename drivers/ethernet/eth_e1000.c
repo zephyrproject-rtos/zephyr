@@ -128,6 +128,10 @@ static int e1000_send(const struct device *ddev, struct net_pkt *pkt)
 	struct e1000_dev *dev = ddev->data;
 	size_t len = net_pkt_get_len(pkt);
 
+	if (len > sizeof(dev->txb[dev->next_tx_desc])) {
+		return -EMSGSIZE;
+	}
+
 	if (net_pkt_read(pkt, dev->txb[dev->next_tx_desc], len)) {
 		return -EIO;
 	}
