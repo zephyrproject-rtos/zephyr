@@ -321,6 +321,31 @@ int udc_ep_try_config(const struct device *dev,
 		ep_update_mps(dev, cfg, attributes, mps);
 	}
 
+	/*
+	 * Call driver-specific callback if basic check passed.
+	 * This allows drivers to apply additional restrictions,
+	 * such as reserving high-capacity endpoints for ISO transfers.
+	 */
+	if (ret == true && api->ep_try_config != NULL) {
+		uint8_t saved_attributes = cfg->attributes;
+		uint16_t saved_mps = cfg->mps;
+		uint8_t saved_interval = cfg->interval;
+
+		/* Temporarily fill in request values for callback */
+		cfg->attributes = attributes;
+		cfg->mps = *mps;
+		cfg->interval = interval;
+
+		if (api->ep_try_config(dev, cfg) != 0) {
+			ret = false;
+		}
+
+		/* Restore original values */
+		cfg->attributes = saved_attributes;
+		cfg->mps = saved_mps;
+		cfg->interval = saved_interval;
+	}
+
 	api->unlock(dev);
 
 	return (ret == false) ? -ENOTSUP : 0;
