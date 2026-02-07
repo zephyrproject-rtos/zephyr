@@ -1,0 +1,82 @@
+# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Video pipeline sample application"
+
+menu "Video pipeline configuration"
+
+config VIDEO_SOURCE_CROP_LEFT
+	int "Crop area left value"
+	default 0
+	help
+	   Left value of the crop area within the video source.
+
+config VIDEO_SOURCE_CROP_TOP
+	int "Crop area top value"
+	default 0
+	help
+	   Top value of the crop area within the video source.
+
+config VIDEO_SOURCE_CROP_WIDTH
+	int "Crop area width value"
+	default 0
+	help
+	   Width value of the crop area within the video source.
+	   If set to 0, the crop is not applied.
+
+config VIDEO_SOURCE_CROP_HEIGHT
+	int "Crop area height value"
+	default 0
+	help
+	   Height value of the crop area within the video source.
+	   If set to 0, the crop is not applied.
+
+config VIDEO_FRAME_HEIGHT
+	int "Height of the video frame"
+	default 0
+	help
+	  Height of the video frame. If set to 0, the default height is used.
+
+config VIDEO_FRAME_WIDTH
+	int "Width of the video frame"
+	default 0
+	help
+	  Width of the video frame. If set to 0, the default width is used.
+
+config VIDEO_PIXEL_FORMAT
+	string "Pixel format of the video frame"
+	help
+	  Pixel format of the video frame. If not set, the default pixel format is used.
+
+config VIDEO_CTRL_HFLIP
+	int "Mirror the video frame horizontally"
+	range 0 1
+	default 0
+	help
+	  If set, mirror the video frame horizontally
+
+config VIDEO_CTRL_VFLIP
+	int "Mirror the video frame vertically"
+	range 0 1
+	default 0
+	help
+	  If set, mirror the video frame vertically
+
+config VIDEO_ROTATION_ANGLE
+	int "Rotate the video frame by a specified angle"
+	range 0 270
+	default 0
+	help
+	   Specify one of these values {0, 90, 180, 270} in degree to rotate the video frame
+
+config PROP_NUM_BUFS
+	int "Number of buffers the source provides before stopping"
+	default 0
+	help
+	   If not set or set to 0, the source will run forever
+
+endmenu
+
+source "Kconfig.zephyr"
