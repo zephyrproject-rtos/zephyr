@@ -669,6 +669,21 @@ struct net_buf *udc_ep_buf_alloc(const struct device *dev,
 				 const size_t size);
 
 /**
+ * @brief Allocate UDC control transfer data stage buffer
+ *
+ * Allocate a new buffer from common control transfer buffer pool.
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] ep     Control endpoint address
+ * @param[in] size   Size of the request buffer
+ *
+ * @return pointer to allocated request or NULL on error.
+ */
+struct net_buf *udc_ctrl_data_alloc(const struct device *dev,
+				    const uint8_t ep,
+				    const size_t size);
+
+/**
  * @brief Free UDC request buffer
  *
  * Put the buffer back into the request buffer pool.

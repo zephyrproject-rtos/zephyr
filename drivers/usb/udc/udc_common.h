@@ -370,8 +370,7 @@ int udc_ctrl_submit_s_out_status(const struct device *dev,
 /**
  * @brief Prepare control data IN stage
  *
- * Allocate buffer for data stage IN,
- * submit both setup and data buffer to upper layer.
+ * Submit setup buffer to upper layer for handling control read transfer.
  *
  * @param[in] dev    Pointer to device struct of the driver instance
  *
