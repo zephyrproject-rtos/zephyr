@@ -162,6 +162,15 @@ void z_arm64_el2_init(void)
 		SCTLR_SA_BIT);		/* Enable SP alignment check */
 	write_sctlr_el2(reg);
 
+#if defined(CONFIG_GIC_V3)
+	reg = read_sysreg(ICC_SRE_EL2);
+	reg |= (ICC_SRE_ELx_DFB_BIT |   /* Disable FIQ bypass */
+		ICC_SRE_ELx_DIB_BIT |   /* Disable IRQ bypass */
+		ICC_SRE_ELx_SRE_BIT |   /* System register interface is used */
+		ICC_SRE_EL3_EN_BIT);    /* Enables lower Exception level access to ICC_SRE_EL1 */
+	write_sysreg(reg, ICC_SRE_EL2);
+#endif
+
 	reg = read_hcr_el2();
 	/* when EL2 is enable in current security status:
 	 * Clear TGE bit: All exceptions that would not be routed to EL2;
