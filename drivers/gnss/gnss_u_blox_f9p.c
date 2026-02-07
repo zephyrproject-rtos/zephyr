@@ -23,32 +23,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ubx_f9p, CONFIG_GNSS_LOG_LEVEL);
 
-UBX_FRAME_DEFINE(disable_nmea_gga,
-	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_MSG_OUT_NMEA_GGA_UART1, 0));
-UBX_FRAME_DEFINE(disable_nmea_rmc,
-	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_MSG_OUT_NMEA_RMC_UART1, 0));
-UBX_FRAME_DEFINE(disable_nmea_gsv,
-	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_MSG_OUT_NMEA_GSV_UART1, 0));
-UBX_FRAME_DEFINE(disable_nmea_dtm,
-	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_MSG_OUT_NMEA_DTM_UART1, 0));
-UBX_FRAME_DEFINE(disable_nmea_gbs,
-	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_MSG_OUT_NMEA_GBS_UART1, 0));
-UBX_FRAME_DEFINE(disable_nmea_gll,
-	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_MSG_OUT_NMEA_GLL_UART1, 0));
-UBX_FRAME_DEFINE(disable_nmea_gns,
-	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_MSG_OUT_NMEA_GNS_UART1, 0));
-UBX_FRAME_DEFINE(disable_nmea_grs,
-	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_MSG_OUT_NMEA_GRS_UART1, 0));
-UBX_FRAME_DEFINE(disable_nmea_gsa,
-	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_MSG_OUT_NMEA_GSA_UART1, 0));
-UBX_FRAME_DEFINE(disable_nmea_gst,
-	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_MSG_OUT_NMEA_GST_UART1, 0));
-UBX_FRAME_DEFINE(disable_nmea_vlw,
-	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_MSG_OUT_NMEA_VLW_UART1, 0));
-UBX_FRAME_DEFINE(disable_nmea_vtg,
-	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_MSG_OUT_NMEA_VTG_UART1, 0));
-UBX_FRAME_DEFINE(disable_nmea_zda,
-	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_MSG_OUT_NMEA_ZDA_UART1, 0));
+UBX_FRAME_DEFINE(disable_nmea,
+	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_UART1_PROTO_OUT_NMEA, 0));
 UBX_FRAME_DEFINE(enable_nav,
 	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_MSG_OUT_UBX_NAV_PVT_UART1, 1));
 UBX_FRAME_DEFINE(nav_fix_mode_auto,
@@ -74,10 +50,7 @@ UBX_FRAME_DEFINE(enable_sat,
 #endif
 
 UBX_FRAME_ARRAY_DEFINE(u_blox_f9p_init_seq,
-	&disable_nmea_gga, &disable_nmea_rmc, &disable_nmea_gsv, &disable_nmea_dtm,
-	&disable_nmea_gbs, &disable_nmea_gll, &disable_nmea_gns, &disable_nmea_grs,
-	&disable_nmea_gsa, &disable_nmea_gst, &disable_nmea_vlw, &disable_nmea_vtg,
-	&disable_nmea_zda, &enable_nav, &nav_fix_mode_auto,
+	&disable_nmea, &enable_nav, &nav_fix_mode_auto,
 	&enable_prot_in_ubx, &enable_prot_out_ubx,
 #if CONFIG_GNSS_U_BLOX_F9P_RTK
 	&enable_prot_in_rtcm3,
