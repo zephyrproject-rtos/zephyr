@@ -17,40 +17,11 @@
 #include <zephyr/modem/ubx/keys.h>
 #include <zephyr/modem/backend/uart.h>
 
-#include "gnss_ubx_common.h"
+#include "gnss_ubx_iface.h"
 #include <zephyr/gnss/rtk/rtk.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ubx_f9p, CONFIG_GNSS_LOG_LEVEL);
-
-struct ubx_f9p_config {
-	const struct device *bus;
-	uint16_t fix_rate_ms;
-};
-
-struct ubx_f9p_data {
-	struct gnss_ubx_common_data common_data;
-	struct {
-		struct modem_pipe *pipe;
-		struct modem_backend_uart uart_backend;
-		uint8_t receive_buf[1024];
-		uint8_t transmit_buf[256];
-	} backend;
-	struct {
-		struct modem_ubx inst;
-		uint8_t receive_buf[1024];
-	} ubx;
-	struct {
-		struct modem_ubx_script inst;
-		uint8_t response_buf[512];
-		uint8_t request_buf[256];
-		struct k_sem req_buf_lock;
-		struct k_sem lock;
-	} script;
-#if CONFIG_GNSS_SATELLITES
-	struct gnss_satellite satellites[CONFIG_GNSS_U_BLOX_F9P_SATELLITES_COUNT];
-#endif
-};
 
 UBX_FRAME_DEFINE(disable_nmea_gga,
 	UBX_FRAME_CFG_VAL_SET_U8_INITIALIZER(UBX_KEY_MSG_OUT_NMEA_GGA_UART1, 0));
@@ -126,88 +97,6 @@ MODEM_UBX_MATCH_ARRAY_DEFINE(u_blox_f9p_unsol_messages,
 #endif
 );
 
-static int ubx_f9p_msg_get(const struct device *dev, const struct ubx_frame *req,
-			  size_t len, void *rsp, size_t min_rsp_size)
-{
-	struct ubx_f9p_data *data = dev->data;
-	struct ubx_frame *rsp_frame = (struct ubx_frame *)data->script.inst.response.buf;
-	int err;
-
-	err = k_sem_take(&data->script.lock, K_SECONDS(3));
-	if (err != 0) {
-		LOG_ERR("Failed to take script lock: %d", err);
-		return err;
-	}
-
-	data->script.inst.timeout = K_SECONDS(3);
-	data->script.inst.retry_count = 2;
-	data->script.inst.match.filter.class = req->class;
-	data->script.inst.match.filter.id = req->id;
-	data->script.inst.request.buf = req;
-	data->script.inst.request.len = len;
-
-	err = modem_ubx_run_script(&data->ubx.inst, &data->script.inst);
-	if (err != 0 || (data->script.inst.response.buf_len < UBX_FRAME_SZ(min_rsp_size))) {
-		err = -EIO;
-	} else {
-		memcpy(rsp, rsp_frame->payload_and_checksum, min_rsp_size);
-	}
-
-	k_sem_give(&data->script.lock);
-
-	return err;
-}
-
-static int ubx_f9p_msg_send(const struct device *dev, const struct ubx_frame *req,
-			  size_t len, bool wait_for_ack)
-{
-	struct ubx_f9p_data *data = dev->data;
-	int err;
-
-	err = k_sem_take(&data->script.lock, K_SECONDS(3));
-	if (err != 0) {
-		LOG_ERR("Failed to take script lock: %d", err);
-		return err;
-	}
-
-	data->script.inst.timeout = K_SECONDS(3);
-	data->script.inst.retry_count = wait_for_ack ? 2 : 0;
-	data->script.inst.match.filter.class = wait_for_ack ? UBX_CLASS_ID_ACK : 0;
-	data->script.inst.match.filter.id = UBX_MSG_ID_ACK;
-	data->script.inst.request.buf = (const void *)req;
-	data->script.inst.request.len = len;
-
-	err = modem_ubx_run_script(&data->ubx.inst, &data->script.inst);
-
-	k_sem_give(&data->script.lock);
-
-	return err;
-}
-
-static int ubx_f9p_msg_payload_send(const struct device *dev, uint8_t class, uint8_t id,
-				   const uint8_t *payload, size_t payload_size, bool wait_for_ack)
-{
-	int err;
-	struct ubx_f9p_data *data = dev->data;
-	struct ubx_frame *frame = (struct ubx_frame *)data->script.request_buf;
-
-	err = k_sem_take(&data->script.req_buf_lock, K_SECONDS(3));
-	if (err != 0) {
-		LOG_ERR("Failed to take script lock: %d", err);
-		return err;
-	}
-
-	err = ubx_frame_encode(class, id, payload, payload_size,
-			       (uint8_t *)frame, sizeof(data->script.request_buf));
-	if (err > 0) {
-		err = ubx_f9p_msg_send(dev, frame, err, wait_for_ack);
-	}
-
-	k_sem_give(&data->script.req_buf_lock);
-
-	return err;
-}
-
 #if CONFIG_GNSS_U_BLOX_F9P_RTK
 
 static void f9p_rtk_data_cb(const struct device *dev, const struct gnss_rtk_data *data)
@@ -216,96 +105,28 @@ static void f9p_rtk_data_cb(const struct device *dev, const struct gnss_rtk_data
 	 * it or not depending on the RTCM3 message type and its alignment with what the
 	 * GNSS modem has observed.
 	 */
-	(void)ubx_f9p_msg_send(dev, (const void *)data->data, data->len, false);
+	(void)ubx_iface_msg_send(dev, (const void *)data->data, data->len, false);
 }
 
 #endif /* CONFIG_GNSS_U_BLOX_F9P_RTK */
 
-static inline int init_modem(const struct device *dev)
-{
-	int err;
-	struct ubx_f9p_data *data = dev->data;
-	const struct ubx_f9p_config *cfg = dev->config;
-
-	const struct modem_ubx_config ubx_config = {
-		.user_data = (void *)&data->common_data,
-		.receive_buf = data->ubx.receive_buf,
-		.receive_buf_size = sizeof(data->ubx.receive_buf),
-		.unsol_matches = {
-			.array = u_blox_f9p_unsol_messages,
-			.size = ARRAY_SIZE(u_blox_f9p_unsol_messages),
-		},
-	};
-
-	const struct modem_backend_uart_config uart_backend_config = {
-		.uart = cfg->bus,
-		.receive_buf = data->backend.receive_buf,
-		.receive_buf_size = sizeof(data->backend.receive_buf),
-		.transmit_buf = data->backend.transmit_buf,
-		.transmit_buf_size = sizeof(data->backend.transmit_buf),
-	};
-
-	(void)modem_ubx_init(&data->ubx.inst, &ubx_config);
-
-	data->backend.pipe = modem_backend_uart_init(&data->backend.uart_backend,
-						     &uart_backend_config);
-	err = modem_pipe_open(data->backend.pipe, K_SECONDS(1));
-	if (err != 0) {
-		LOG_ERR("Failed to open Modem pipe: %d", err);
-		return err;
-	}
-
-	err = modem_ubx_attach(&data->ubx.inst, data->backend.pipe);
-	if (err != 0) {
-		LOG_ERR("Failed to attach UBX inst to modem pipe: %d", err);
-		return err;
-	}
-
-	(void)k_sem_init(&data->script.lock, 1, 1);
-	(void)k_sem_init(&data->script.req_buf_lock, 1, 1);
-
-	data->script.inst.response.buf = data->script.response_buf;
-	data->script.inst.response.buf_len = sizeof(data->script.response_buf);
-
-	return err;
-}
-
-static inline int init_match(const struct device *dev)
-{
-	struct ubx_f9p_data *data = dev->data;
-	struct gnss_ubx_common_config match_config = {
-		.gnss = dev,
-#if CONFIG_GNSS_SATELLITES
-		.satellites = {
-			.buf = data->satellites,
-			.size = ARRAY_SIZE(data->satellites),
-		},
-#endif
-	};
-
-	gnss_ubx_common_init(&data->common_data, &match_config);
-
-	return 0;
-}
-
 static int ublox_f9p_init(const struct device *dev)
 {
 	int err = 0;
-	const struct ubx_f9p_config *cfg = dev->config;
+	const struct ubx_iface_config *cfg = dev->config;
 
 	const static struct ubx_frame version_get = UBX_FRAME_GET_INITIALIZER(
 						UBX_CLASS_ID_MON,
 						UBX_MSG_ID_MON_VER);
 	struct ubx_mon_ver ver;
 
-	(void)init_match(dev);
-
-	err = init_modem(dev);
+	err = ubx_iface_init(dev, u_blox_f9p_unsol_messages,
+			     ARRAY_SIZE(u_blox_f9p_unsol_messages), true);
 	if (err < 0) {
-		LOG_ERR("Failed to initialize modem: %d", err);
+		return err;
 	}
 
-	err = ubx_f9p_msg_get(dev, &version_get,
+	err = ubx_iface_msg_get(dev, &version_get,
 			      UBX_FRAME_SZ(version_get.payload_size),
 			      (void *)&ver, sizeof(ver));
 	if (err != 0) {
@@ -321,7 +142,7 @@ static int ublox_f9p_init(const struct device *dev)
 	}
 
 	for (size_t i = 0 ; i < ARRAY_SIZE(u_blox_f9p_init_seq) ; i++) {
-		err = ubx_f9p_msg_send(dev,
+		err = ubx_iface_msg_send(dev,
 				       u_blox_f9p_init_seq[i],
 				       UBX_FRAME_SZ(u_blox_f9p_init_seq[i]->payload_size),
 				       true);
@@ -349,7 +170,7 @@ static int ubx_f9p_set_fix_rate(const struct device *dev, uint32_t fix_interval_
 		return -EINVAL;
 	}
 
-	return ubx_f9p_msg_payload_send(dev, UBX_CLASS_ID_CFG, UBX_MSG_ID_CFG_VAL_SET,
+	return ubx_iface_msg_payload_send(dev, UBX_CLASS_ID_CFG, UBX_MSG_ID_CFG_VAL_SET,
 					(const uint8_t *)&rate, sizeof(rate),
 					true);
 }
@@ -362,7 +183,7 @@ static int ubx_f9p_get_fix_rate(const struct device *dev, uint32_t *fix_interval
 	const static struct ubx_frame get_fix_rate =
 		UBX_FRAME_CFG_VAL_GET_INITIALIZER(UBX_KEY_RATE_MEAS);
 
-	err = ubx_f9p_msg_get(dev, &get_fix_rate,
+	err = ubx_iface_msg_get(dev, &get_fix_rate,
 			      UBX_FRAME_SZ(get_fix_rate.payload_size),
 			      (void *)&rate, sizeof(rate));
 	if (err == 0) {
@@ -422,7 +243,7 @@ static int ubx_f9p_set_navigation_mode(const struct device *dev, enum gnss_navig
 
 	rate.value = nav_model;
 
-	return ubx_f9p_msg_payload_send(dev, UBX_CLASS_ID_CFG, UBX_MSG_ID_CFG_VAL_SET,
+	return ubx_iface_msg_payload_send(dev, UBX_CLASS_ID_CFG, UBX_MSG_ID_CFG_VAL_SET,
 					(const uint8_t *)&rate, sizeof(rate),
 					true);
 }
@@ -435,7 +256,7 @@ static int ubx_f9p_get_navigation_mode(const struct device *dev, enum gnss_navig
 	const static struct ubx_frame get_nav_mode =
 		UBX_FRAME_CFG_VAL_GET_INITIALIZER(UBX_KEY_NAV_CFG_DYN_MODEL);
 
-	err = ubx_f9p_msg_get(dev, &get_nav_mode,
+	err = ubx_iface_msg_get(dev, &get_nav_mode,
 			      UBX_FRAME_SZ(get_nav_mode.payload_size),
 			      (void *)&nav_mode, sizeof(nav_mode));
 	switch (nav_mode.value) {
@@ -476,7 +297,7 @@ static int ubx_f9p_get_enabled_systems(const struct device *dev, gnss_systems_t 
 	struct ubx_mon_gnss gnss_selection;
 	int err;
 
-	err = ubx_f9p_msg_get(dev, &get_enabled_systems,
+	err = ubx_iface_msg_get(dev, &get_enabled_systems,
 			      UBX_FRAME_SZ(get_enabled_systems.payload_size),
 			      (void *)&gnss_selection, sizeof(gnss_selection));
 	if (err != 0) {
@@ -504,7 +325,7 @@ static int ubx_f9p_get_supported_systems(const struct device *dev, gnss_systems_
 	struct ubx_mon_gnss gnss_selection;
 	int err;
 
-	err = ubx_f9p_msg_get(dev, &get_enabled_systems,
+	err = ubx_iface_msg_get(dev, &get_enabled_systems,
 			      UBX_FRAME_SZ(get_enabled_systems.payload_size),
 			      (void *)&gnss_selection, sizeof(gnss_selection));
 	if (err != 0) {
@@ -543,12 +364,17 @@ static DEVICE_API(gnss, ublox_f9p_driver_api) = {
 		     "Invalid fix-rate. Please set it higher than 50-ms"			   \
 		     " and must fit in 16-bits.");						   \
 												   \
-	static const struct ubx_f9p_config ubx_f9p_cfg_##inst = {				   \
+	static const struct ubx_iface_config ubx_f9p_cfg_##inst = {				   \
 		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),					   \
+		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {}),			   \
 		.fix_rate_ms = DT_INST_PROP(inst, fix_rate),					   \
+		.baudrate = {								   \
+			.initial = DT_INST_PROP(inst, initial_baudrate),		   \
+			.desired = DT_PROP(DT_INST_BUS(inst), current_speed),		   \
+		},									   \
 	};											   \
 												   \
-	static struct ubx_f9p_data ubx_f9p_data_##inst;						   \
+	static struct ubx_iface_data ubx_f9p_data_##inst;					   \
 												   \
 	IF_ENABLED(CONFIG_GNSS_U_BLOX_F9P_RTK,							   \
 		   (GNSS_DT_RTK_DATA_CALLBACK_DEFINE(DT_DRV_INST(inst), f9p_rtk_data_cb)));	   \
