@@ -1558,26 +1558,27 @@ static uint8_t join_calls(struct tbs_inst *inst, const struct bt_tbs_call_cp_joi
 		if (call_state == BT_TBS_CALL_STATE_INCOMING) {
 			return BT_TBS_RESULT_CODE_OPERATION_NOT_POSSIBLE;
 		}
-
-		if (call_state != BT_TBS_CALL_STATE_LOCALLY_HELD &&
-		    call_state != BT_TBS_CALL_STATE_LOCALLY_AND_REMOTELY_HELD &&
-		    call_state != BT_TBS_CALL_STATE_ACTIVE) {
-			return BT_TBS_RESULT_CODE_STATE_MISMATCH;
-		}
 	}
 
 	/* Join all calls */
 	for (int i = 0; i < call_index_cnt; i++) {
 		call_state = joined_calls[i]->state;
 
-		if (call_state == BT_TBS_CALL_STATE_LOCALLY_HELD) {
+		if (call_state == BT_TBS_CALL_STATE_ACTIVE) {
+			/* Remain active */
+		} else if (call_state == BT_TBS_CALL_STATE_LOCALLY_HELD) {
 			joined_calls[i]->state = BT_TBS_CALL_STATE_ACTIVE;
+		} else if (call_state == BT_TBS_CALL_STATE_REMOTELY_HELD) {
+			/* Remain remotely held */
 		} else if (call_state == BT_TBS_CALL_STATE_LOCALLY_AND_REMOTELY_HELD) {
 			joined_calls[i]->state = BT_TBS_CALL_STATE_REMOTELY_HELD;
-		} else if (call_state == BT_TBS_CALL_STATE_INCOMING) {
-			joined_calls[i]->state = BT_TBS_CALL_STATE_ACTIVE;
+		} else if (call_state == BT_TBS_CALL_STATE_ALERTING) {
+			/* Implementation specific - Treat as no-op */
+		} else if (call_state == BT_TBS_CALL_STATE_DIALING) {
+			/* Implementation specific - Treat as no-op */
+		} else {
+			__ASSERT(false, "Invalid call state: 0x%02X", call_state);
 		}
-		/* else active => Do nothing */
 	}
 
 	hold_other_calls(inst, call_index_cnt, ccp->call_indexes);
