@@ -17,6 +17,7 @@
 #include <kernel_arch_data.h>
 #include <offsets_short.h>
 #include <cet_asm.inc>
+#include <zephyr/sys/errno_asm.h>
 
 #ifdef CONFIG_X86_CET_SOC_PREPARE_SHADOW_STACK_SWITCH
 #include <soc_cet.h>
@@ -36,7 +37,6 @@
 #if !defined(CONFIG_X86_KPTI) && defined(CONFIG_X86_USERSPACE)
 	GTEXT(z_x86_swap_update_page_tables)
 #endif
-	GDATA(_k_neg_eagain)
 
 /*
  * Given that arch_swap() is called to effect a cooperative context switch,
@@ -102,7 +102,7 @@ SECTION_FUNC(PINNED_TEXT, arch_swap)
 	 * arch_thread_return_value_set().
 	 */
 
-	pushl   _k_neg_eagain
+	pushl   $NEG_EAGAIN
 
 
 	/* save esp into k_thread structure */

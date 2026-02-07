@@ -18,9 +18,10 @@
 /*
  * Define _k_neg_eagain for use in assembly files as errno.h is
  * not assembly language safe.
- * FIXME: wastes 4 bytes
  */
+#if defined(CONFIG_TEST)
 const int _k_neg_eagain = -EAGAIN;
+#endif
 
 #ifdef CONFIG_ERRNO
 
