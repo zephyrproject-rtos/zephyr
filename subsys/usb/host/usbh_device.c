@@ -459,6 +459,27 @@ error:
 	return err;
 }
 
+int usbh_device_set_address(struct usb_device *const udev, const uint8_t new_addr)
+{
+	int err;
+
+	err = usbh_req_set_address(udev, new_addr);
+	if (err) {
+		LOG_ERR("Failed to set device address to 0x%02x", new_addr);
+		return err;
+	}
+
+	udev->addr = new_addr;
+
+	if (new_addr == 0) {
+		udev->state = USB_STATE_DEFAULT;
+	} else {
+		udev->state = USB_STATE_ADDRESSED;
+	}
+
+	return 0;
+}
+
 int usbh_device_init(struct usb_device *const udev)
 {
 	struct usbh_context *const uhs_ctx = udev->ctx;
@@ -517,16 +538,10 @@ int usbh_device_init(struct usb_device *const udev)
 		goto error;
 	}
 
-	err = usbh_req_set_address(udev, new_addr);
+	err = usbh_device_set_address(udev, new_addr);
 	if (err) {
-		LOG_ERR("Failed to set device address");
-		udev->addr = 0;
-
 		goto error;
 	}
-
-	udev->addr = new_addr;
-	udev->state = USB_STATE_ADDRESSED;
 
 	LOG_INF("New device with address %u state %u", udev->addr, udev->state);
 
