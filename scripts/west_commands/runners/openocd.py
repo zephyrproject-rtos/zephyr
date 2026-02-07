@@ -276,6 +276,16 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         (major, minor, rev) = self.read_version()
         return (major, minor, rev) > (0, 11, 0)
 
+    def supports_new_port_syntax(self):
+        (major, minor, rev) = self.read_version()
+        return (major, minor, rev) >= (1, 0, 0)
+
+    def port_commands(self):
+        sep = ' ' if self.supports_new_port_syntax() else '_'
+        return ['-c', f'tcl{sep}port {self.tcl_port}',
+                '-c', f'telnet{sep}port {self.telnet_port}',
+                '-c', f'gdb{sep}port {self.gdb_port}']
+
     def do_run(self, command, **kwargs):
         self.require(self.openocd_cmd[0])
         if globals().get('ELFFile') is None:
@@ -407,9 +417,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             pre_init_cmd.append(rtos_command)
 
         server_cmd = (self.openocd_cmd + self.serial + self.cfg_cmd +
-                      ['-c', f'tcl_port {self.tcl_port}',
-                       '-c', f'telnet_port {self.telnet_port}',
-                       '-c', f'gdb_port {self.gdb_port}'] +
+                      self.port_commands() +
                       pre_init_cmd + self.init_arg + self.targets_arg +
                       self.halt_arg)
 
@@ -505,9 +513,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             pre_init_cmd.append(rtos_command)
 
         cmd = (self.openocd_cmd + self.cfg_cmd +
-               ['-c', f'tcl_port {self.tcl_port}',
-                '-c', f'telnet_port {self.telnet_port}',
-                '-c', f'gdb_port {self.gdb_port}'] +
+               self.port_commands() +
                pre_init_cmd + self.init_arg + self.targets_arg +
                ['-c', self.reset_halt_cmd])
 
