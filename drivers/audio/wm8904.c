@@ -23,6 +23,7 @@ struct wm8904_driver_config {
 	int clock_source;
 	const struct device *mclk_dev;
 	clock_control_subsys_t mclk_name;
+	int fs_ratio;
 };
 
 #define DEV_CFG(dev) ((const struct wm8904_driver_config *const)dev->config)
@@ -482,18 +483,24 @@ static int wm8904_configure(const struct device *dev, struct audio_codec_cfg *cf
 	wm8904_update_reg(dev, WM8904_REG_CLK_RATES_2, (uint16_t)(1UL << 14U),
 			  (uint16_t)(dev_cfg->clock_source));
 
-	if (dev_cfg->clock_source == 0) {
-		int err = clock_control_on(dev_cfg->mclk_dev, dev_cfg->mclk_name);
+	if (dev_cfg->mclk_dev != NULL || dev_cfg->mclk_name != NULL) {
+		if (dev_cfg->clock_source == 0) { /* MCLK */
+			int err = clock_control_on(dev_cfg->mclk_dev, dev_cfg->mclk_name);
 
-		if (err < 0) {
-			LOG_ERR("MCLK clock source enable fail: %d", err);
-		}
+			if (err < 0) {
+				LOG_ERR("MCLK clock source enable fail: %d", err);
+			}
 
-		err = clock_control_get_rate(dev_cfg->mclk_dev, dev_cfg->mclk_name,
-					     &cfg->mclk_freq);
-		if (err < 0) {
-			LOG_ERR("MCLK clock source freq acquire fail: %d", err);
+			err = clock_control_get_rate(dev_cfg->mclk_dev, dev_cfg->mclk_name,
+						     &cfg->mclk_freq);
+			if (err < 0) {
+				LOG_ERR("MCLK clock source freq acquire fail: %d", err);
+			}
 		}
+	} else {
+		cfg->mclk_freq = cfg->dai_cfg.i2s.frame_clk_freq * dev_cfg->fs_ratio;
+		LOG_WRN("Cannot obtain MCLK from DT; using computed MCLK=%u from fs_ratio",
+			cfg->mclk_freq);
 	}
 
 	wm8904_audio_fmt_config(dev, &cfg->dai_cfg, cfg->mclk_freq);
@@ -666,8 +673,12 @@ static const struct audio_codec_api wm8904_driver_api = {
 	static const struct wm8904_driver_config wm8904_device_config_##n = {                      \
 		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
 		.clock_source = DT_INST_ENUM_IDX(n, clock_source),				   \
-		.mclk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(n, mclk)),                   \
-		.mclk_name = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, name)};  \
+		.mclk_dev = COND_CODE_1(DT_INST_CLOCKS_HAS_NAME(n, mclk),                          \
+			(DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(n, mclk))), (NULL)),            \
+		.mclk_name = COND_CODE_1(DT_INST_CLOCKS_HAS_NAME(n, mclk),                         \
+			((clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, name)),      \
+			(NULL)),                                                                   \
+		.fs_ratio = DT_INST_PROP(n, fs_ratio)};                                            \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, &wm8904_device_config_##n,        \
 			      POST_KERNEL, CONFIG_AUDIO_CODEC_INIT_PRIORITY, &wm8904_driver_api);
