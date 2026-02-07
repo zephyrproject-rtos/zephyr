@@ -215,11 +215,11 @@ static inline void fill_buffer_mono10(enum corner corner, uint8_t grey,
 
 int main(void)
 {
-	size_t x;
-	size_t y;
-	size_t rect_w;
-	size_t rect_h;
-	size_t h_step;
+	uint16_t x;
+	uint16_t y;
+	uint16_t rect_w;
+	uint16_t rect_h;
+	uint16_t h_step;
 	size_t scale;
 	size_t grey_count;
 	uint8_t bg_color;
@@ -352,7 +352,7 @@ int main(void)
 	 */
 	buf_desc.frame_incomplete = true;
 
-	for (int idx = 0; idx < capabilities.y_resolution; idx += h_step) {
+	for (uint16_t idx = 0; idx < capabilities.y_resolution; idx += h_step) {
 		/*
 		 * Tweaking the height value not to draw outside of the display.
 		 * It is required when using a monochrome display whose vertical
