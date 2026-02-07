@@ -831,15 +831,20 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 			conn_type |= BT_CONN_TYPE_BR;
 		}
 
-		bt_conn_get_info(conn, &info);
+
 		bt_conn_unref(default_conn);
 		default_conn = NULL;
 
-		/* If we are connected to other devices, set one of them as default */
-		bt_conn_foreach(info.type, disconnected_set_new_default_conn_cb, NULL);
-		if (default_conn == NULL) {
-			bt_conn_foreach(conn_type, disconnected_set_new_default_conn_cb, NULL);
-		}
+        if (bt_conn_get_info(conn, &info) == 0){
+            /* If we are connected to other devices, set one of them as default */
+            bt_conn_foreach(info.type, disconnected_set_new_default_conn_cb, NULL);
+            if (default_conn == NULL) {
+                bt_conn_foreach(conn_type, disconnected_set_new_default_conn_cb, NULL);
+            }
+        } else {
+            bt_shell_error("Unable to get info: conn %p", conn);
+		    return;
+        }
 
 		if (default_conn != NULL) {
 			conn_addr_str(default_conn, addr, sizeof(addr));
