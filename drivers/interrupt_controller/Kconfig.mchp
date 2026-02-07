@@ -1,7 +1,14 @@
-# SAM0 EIC configuration
-
 # Copyright (c) 2019 Derek Hageman <hageman@inthat.cloud>
+# Copyright (C) 2025-2026 Microchip Technology Inc. and its subsidiaries
 # SPDX-License-Identifier: Apache-2.0
+
+config MCHP_AIC_G1
+	bool "Microchip AIC G1 interrupt-controller driver"
+	default y
+	depends on DT_HAS_MICROCHIP_AIC_G1_INTC_ENABLED
+	help
+	  This option enables interrupt-controller driver for group (g1) of
+	  AIC (Advanced Interrupt Controller) peripherals.
 
 config SAM0_EIC
 	bool "External Interrupt Controller (EIC) Driver for SAM0 series devices"

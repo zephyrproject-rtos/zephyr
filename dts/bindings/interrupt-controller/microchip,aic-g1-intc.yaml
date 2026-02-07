@@ -1,0 +1,38 @@
+#
+# Copyright (C) 2025-2026 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: Microchip G1 AIC Controller
+
+description: |
+  Microchip Advanced Interrupt Controller driver.
+
+  Group G1 AIC driver supports following hardware peripherals:
+    - module name="AIC" id="11051" version="K"
+    - module name="AIC" id="11051" version="101"
+
+compatible: "microchip,aic-g1-intc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  type:
+    type: string
+    default: "non-secure"
+    enum:
+      - "non-secure"
+      - "secure"
+    description: |
+      The secure AIC handles the interrupts of the secure embedded peripherals
+      and the non-secure AIC handles the interrupts of the non-secure embedded
+      peripherals.
+
+interrupt-cells:
+  - irq
+  - flags
+  - priority
