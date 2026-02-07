@@ -91,7 +91,7 @@ Reset the board and you should see the following message in the terminal:
 
 
 .. _Seeed Studio XIAO nRF54L15:
-   https://www.seeedstudio.com/XIAO-nRF54L15-Sense-p-6494
+   https://www.seeedstudio.com/XIAO-nRF54L15-p-6493.html
 
 .. _XIAO nRF54L15 Wiki:
    https://wiki.seeedstudio.com/xiao_nrf54l15_sense_getting_started
