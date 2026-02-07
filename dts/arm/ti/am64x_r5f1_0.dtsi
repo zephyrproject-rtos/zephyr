@@ -10,3 +10,15 @@
 	usr-id = <0>;
 	status = "okay";
 };
+
+&dmsc {
+	ti,host-id = <41>;
+	mboxes = <&secure_proxy_main 20>, <&secure_proxy_main 21>;
+};
+
+&secure_proxy_main {
+	interrupt-names = "rx_18", "rx_20";
+	interrupts = <0 64 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+		     <0 65 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&vim>;
+};
