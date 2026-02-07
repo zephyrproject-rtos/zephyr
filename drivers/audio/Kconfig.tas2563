@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_TAS2563
+	bool "TAS2563 audio amplifier support"
+	default y
+	depends on DT_HAS_TI_TAS2563_ENABLED
+	select I2C
+	help
+	  Enable TAS2563 support on the selected board
