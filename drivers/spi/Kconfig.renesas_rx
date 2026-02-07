@@ -29,4 +29,15 @@ config SPI_RENESAS_RX_HIGH_SPEED_READ
 	help
 	  Enable high speed read mode of RX RSPI Driver
 
+config SPI_RENESAS_RX_DTC
+	bool "RSPI DTC activate"
+	default y
+	depends on DT_HAS_RENESAS_RX_DTC_ENABLED
+	select RENESAS_RX_DTC
+	help
+	  Use DTC in RX RSPI transfer
+
+config SPI_RENESAS_RX_16BITS_FRAME
+	bool "Test loopback: 16 bits"
+
 endif # SPI_RENESAS_RX

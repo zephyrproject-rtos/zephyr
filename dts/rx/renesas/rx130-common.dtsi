@@ -804,6 +804,8 @@
 			channel = <0>;
 			interrupts = <246 1>, <247 1>, <248 1>, <249 1>;
 			interrupt-names = "eei", "rxi", "txi", "tei";
+			clocks = <&pclkb MSTPB 21>;
+			dtc = <&dtc>;
 			status = "disabled";
 		};
 
@@ -850,6 +852,7 @@
 			clocks = <&pclkb MSTPB 17>;
 			interrupts = <44 1>, <45 1>, <46 1>, <47 1>;
 			interrupt-names = "spei", "spri", "spti", "spii";
+			dtc = <&dtc>;
 			status = "disabled";
 		};
 
