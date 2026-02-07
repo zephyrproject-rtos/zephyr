@@ -10,8 +10,13 @@
 #include <zephyr/console/tty.h>
 #include <zephyr/sys/clock.h>
 
-static int tty_irq_input_hook(struct tty_serial *tty, uint8_t c);
-static int tty_putchar(struct tty_serial *tty, uint8_t c);
+enum tty_signal {
+	TTY_SIGNAL_RXRDY = BIT(0),
+	TTY_SIGNAL_TXDONE = BIT(1),
+};
+
+static void uart_tx_handle(const struct device *dev, struct tty_serial *tty);
+static void uart_rx_handle(const struct device *dev, struct tty_serial *tty);
 
 static void tty_uart_isr(const struct device *dev, void *user_data)
 {
@@ -20,90 +25,79 @@ static void tty_uart_isr(const struct device *dev, void *user_data)
 	uart_irq_update(dev);
 
 	if (uart_irq_rx_ready(dev)) {
-		uint8_t c;
-
-		while (1) {
-			if (uart_fifo_read(dev, &c, 1) == 0) {
-				break;
-			}
-			tty_irq_input_hook(tty, c);
-		}
+		uart_rx_handle(dev, tty);
 	}
 
 	if (uart_irq_tx_ready(dev)) {
-		if (tty->tx_get == tty->tx_put) {
-			/* Output buffer empty, don't bother
-			 * us with tx interrupts
-			 */
-			uart_irq_tx_disable(dev);
-		} else {
-			uart_fifo_fill(dev, &tty->tx_ringbuf[tty->tx_get++], 1);
-			if (tty->tx_get >= tty->tx_ringbuf_sz) {
-				tty->tx_get = 0U;
+		uart_tx_handle(dev, tty);
+	}
+}
+
+static void uart_rx_handle(const struct device *dev, struct tty_serial *tty)
+{
+	uint8_t *data;
+	uint32_t len;
+	uint32_t rd_len;
+	bool new_data = false;
+	int err;
+
+	do {
+		len = ring_buf_put_claim(&tty->rx_buf, &data, ring_buf_capacity_get(&tty->rx_buf));
+		if (len > 0) {
+			rd_len = uart_fifo_read(dev, data, len);
+
+			if (rd_len > 0) {
+				new_data = true;
 			}
-			k_sem_give(&tty->tx_sem);
+
+			err = ring_buf_put_finish(&tty->rx_buf, rd_len);
+			__ASSERT_NO_MSG(err == 0);
+			ARG_UNUSED(err);
+		} else {
+			uint8_t dummy;
+			const char dummy_char = '~';
+
+			/* Try to give a clue to user that some input was lost */
+			tty_write(tty, &dummy_char, sizeof(dummy_char));
+
+			/* No space in the ring buffer - consume byte. */
+			rd_len = uart_fifo_read(dev, &dummy, 1);
 		}
+	} while (rd_len && (rd_len == len));
+
+	if (new_data) {
+		k_event_post(&tty->signal_event, TTY_SIGNAL_RXRDY);
 	}
 }
 
-static int tty_irq_input_hook(struct tty_serial *tty, uint8_t c)
+static void uart_tx_handle(const struct device *dev, struct tty_serial *tty)
 {
-	int rx_next = tty->rx_put + 1;
+	uint32_t len;
+	uint8_t *data;
+	int err;
 
-	if (rx_next >= tty->rx_ringbuf_sz) {
-		rx_next = 0;
+	len = ring_buf_get_claim(&tty->tx_buf, &data, ring_buf_capacity_get(&tty->tx_buf));
+	if (len > 0) {
+		len = uart_fifo_fill(dev, data, len);
+		err = ring_buf_get_finish(&tty->tx_buf, len);
+		__ASSERT_NO_MSG(err == 0);
+		ARG_UNUSED(err);
+	} else {
+		uart_irq_tx_disable(dev);
+		atomic_clear(&tty->tx_busy);
 	}
 
-	if (rx_next == tty->rx_get) {
-		/* Try to give a clue to user that some input was lost */
-		tty_putchar(tty, '~');
-		return 1;
-	}
-
-	tty->rx_ringbuf[tty->rx_put] = c;
-	tty->rx_put = rx_next;
-	k_sem_give(&tty->rx_sem);
-
-	return 1;
-}
-
-static int tty_putchar(struct tty_serial *tty, uint8_t c)
-{
-	unsigned int key;
-	int tx_next;
-	int res;
-
-	res = k_sem_take(&tty->tx_sem,
-			 k_is_in_isr() ? K_NO_WAIT : tty->tx_timeout);
-	if (res < 0) {
-		return res;
-	}
-
-	key = irq_lock();
-	tx_next = tty->tx_put + 1;
-	if (tx_next >= tty->tx_ringbuf_sz) {
-		tx_next = 0;
-	}
-	if (tx_next == tty->tx_get) {
-		irq_unlock(key);
-		return -ENOSPC;
-	}
-
-	tty->tx_ringbuf[tty->tx_put] = c;
-	tty->tx_put = tx_next;
-
-	irq_unlock(key);
-	uart_irq_tx_enable(tty->uart_dev);
-	return 0;
+	k_event_post(&tty->signal_event, TTY_SIGNAL_TXDONE);
 }
 
 ssize_t tty_write(struct tty_serial *tty, const void *buf, size_t size)
 {
 	const uint8_t *p = buf;
-	size_t out_size = 0;
+	ssize_t out_size = 0;
+	uint32_t write_size;
 	int res = 0;
 
-	if (tty->tx_ringbuf_sz == 0U) {
+	if (ring_buf_capacity_get(&tty->tx_buf) == 0U) {
 		/* Unbuffered operation, implicitly blocking. */
 		out_size = size;
 
@@ -114,49 +108,33 @@ ssize_t tty_write(struct tty_serial *tty, const void *buf, size_t size)
 		return out_size;
 	}
 
-	while (size--) {
-		res = tty_putchar(tty, *p++);
-		if (res < 0) {
-			/* If we didn't transmit anything, return the error. */
-			if (out_size == 0) {
-				errno = -res;
-				return res;
-			}
+	while (size > 0) {
+		write_size = ring_buf_put(&tty->tx_buf, p, size);
 
-			/*
-			 * Otherwise, return how much we transmitted. If error
-			 * was transient (like EAGAIN), on next call user might
-			 * not even get it. And if it's non-transient, they'll
-			 * get it on the next call.
-			 */
-			return out_size;
+		if (atomic_set(&tty->tx_busy, 1) == 0) {
+			uart_irq_tx_enable(tty->uart_dev);
 		}
 
-		out_size++;
+		if (write_size == 0) {
+			/* Output buffer full, wait for space. */
+			res = k_event_wait_safe(&tty->signal_event, TTY_SIGNAL_TXDONE, false,
+						k_is_in_isr() ? K_NO_WAIT : tty->tx_timeout);
+			if (res == 0) {
+				break;
+			}
+		} else {
+			out_size += write_size;
+			p += write_size;
+			size -= write_size;
+		}
+	}
+
+	if (out_size == 0) {
+		errno = -EAGAIN;
+		return -EAGAIN;
 	}
 
 	return out_size;
-}
-
-static int tty_getchar(struct tty_serial *tty)
-{
-	unsigned int key;
-	uint8_t c;
-	int res;
-
-	res = k_sem_take(&tty->rx_sem, tty->rx_timeout);
-	if (res < 0) {
-		return res;
-	}
-
-	key = irq_lock();
-	c = tty->rx_ringbuf[tty->rx_get++];
-	if (tty->rx_get >= tty->rx_ringbuf_sz) {
-		tty->rx_get = 0U;
-	}
-	irq_unlock(key);
-
-	return c;
 }
 
 static ssize_t tty_read_unbuf(struct tty_serial *tty, void *buf, size_t size)
@@ -206,32 +184,33 @@ ssize_t tty_read(struct tty_serial *tty, void *buf, size_t size)
 {
 	uint8_t *p = buf;
 	size_t out_size = 0;
+	uint32_t read_size;
 	int res = 0;
 
-	if (tty->rx_ringbuf_sz == 0U) {
+	if (ring_buf_capacity_get(&tty->rx_buf) == 0U) {
 		return tty_read_unbuf(tty, buf, size);
 	}
 
-	while (size--) {
-		res = tty_getchar(tty);
-		if (res < 0) {
-			/* If we didn't transmit anything, return the error. */
-			if (out_size == 0) {
-				errno = -res;
-				return res;
+	while (size > 0) {
+		read_size = ring_buf_get(&tty->rx_buf, p, size);
+
+		if (read_size == 0) {
+			/* Output buffer full, wait for space. */
+			res = k_event_wait_safe(&tty->signal_event, TTY_SIGNAL_RXRDY, false,
+						k_is_in_isr() ? K_NO_WAIT : tty->rx_timeout);
+			if (res == 0) {
+				break;
 			}
-
-			/*
-			 * Otherwise, return how much we transmitted. If error
-			 * was transient (like EAGAIN), on next call user might
-			 * not even get it. And if it's non-transient, they'll
-			 * get it on the next call.
-			 */
-			return out_size;
+		} else {
+			out_size += read_size;
+			p += read_size;
+			size -= read_size;
 		}
+	}
 
-		*p++ = (uint8_t)res;
-		out_size++;
+	if (out_size == 0) {
+		errno = -EAGAIN;
+		return -EAGAIN;
 	}
 
 	return out_size;
@@ -246,15 +225,14 @@ int tty_init(struct tty_serial *tty, const struct device *uart_dev)
 	tty->uart_dev = uart_dev;
 
 	/* We start in unbuffer mode. */
-	tty->rx_ringbuf = NULL;
-	tty->rx_ringbuf_sz = 0U;
-	tty->tx_ringbuf = NULL;
-	tty->tx_ringbuf_sz = 0U;
-
-	tty->rx_get = tty->rx_put = tty->tx_get = tty->tx_put = 0U;
+	ring_buf_init(&tty->rx_buf, 0, NULL);
+	ring_buf_init(&tty->tx_buf, 0, NULL);
 
 	tty->rx_timeout = K_FOREVER;
 	tty->tx_timeout = K_FOREVER;
+
+	k_event_init(&tty->signal_event);
+	tty->tx_busy = 0;
 
 	uart_irq_callback_user_data_set(uart_dev, tty_uart_isr, tty);
 
@@ -265,11 +243,9 @@ int tty_set_rx_buf(struct tty_serial *tty, void *buf, size_t size)
 {
 	uart_irq_rx_disable(tty->uart_dev);
 
-	tty->rx_ringbuf = buf;
-	tty->rx_ringbuf_sz = size;
+	ring_buf_init(&tty->rx_buf, size, buf);
 
 	if (size > 0) {
-		k_sem_init(&tty->rx_sem, 0, K_SEM_MAX_LIMIT);
 		uart_irq_rx_enable(tty->uart_dev);
 	}
 
@@ -280,10 +256,7 @@ int tty_set_tx_buf(struct tty_serial *tty, void *buf, size_t size)
 {
 	uart_irq_tx_disable(tty->uart_dev);
 
-	tty->tx_ringbuf = buf;
-	tty->tx_ringbuf_sz = size;
-
-	k_sem_init(&tty->tx_sem, size - 1, K_SEM_MAX_LIMIT);
+	ring_buf_init(&tty->tx_buf, size, buf);
 
 	/* New buffer is initially empty, no need to re-enable interrupts,
 	 * it will be done when needed (on first output char).
