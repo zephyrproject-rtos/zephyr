@@ -54,4 +54,12 @@ config IDLE_STACK_SIZE
 
 endif #STM32_USE_STOP3
 
+# Add LVGL HAL include file for SOC supporting DMA2D
+if LVGL && !SOC_STM32U535XX && !SOC_STM32U545XX
+
+config LV_DRAW_DMA2D_HAL_INCLUDE
+	default "stm32u5xx.h"
+
+endif # LVGL
+
 endif # SOC_SERIES_STM32U5X

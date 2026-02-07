@@ -126,4 +126,62 @@ config VIDEO_BUFFER_POOL_ALIGN
 config STM32_BACKUP_PROTECTION
 	default y if !SOC_SERIES_STM32C0X && !SOC_SERIES_STM32WB0X
 
+# Default LVGL configuration, closely linked to how the display (LTDC)
+# interface is being configured
+if DISPLAY && LVGL
+
+config LV_Z_BITS_PER_PIXEL
+	default 16 if STM32_LTDC_RGB565
+	default 24 if STM32_LTDC_RGB888
+	default 32 if STM32_LTDC_ARGB8888
+
+config LV_Z_FLUSH_THREAD
+	default y
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_16 if STM32_LTDC_RGB565
+	default LV_COLOR_DEPTH_24 if STM32_LTDC_RGB888
+	default LV_COLOR_DEPTH_32 if STM32_LTDC_ARGB8888
+endchoice
+
+# In case of using DMA2D, buffer alignment must be ensured
+# for both cache handling as well as DMA2D address registers
+# constraints
+# Keep it simple and always align on cache lines
+if LV_USE_DRAW_DMA2D
+
+# Align buffer provided to DMA2D on 32 bytes boundaries
+config LV_ATTRIBUTE_MEM_ALIGN_SIZE
+	default 32
+
+# Align area width on cache line (32 bytes), depends on format
+config LV_Z_AREA_X_ALIGNMENT_WIDTH
+	default 16 if STM32_LTDC_RGB565
+	default 96 if STM32_LTDC_RGB888
+	default 8 if STM32_LTDC_ARGB8888
+
+config LV_Z_VDB_ALIGN
+	default 32
+
+config LV_DRAW_BUF_ALIGN
+	default 32
+
+# Necessary for the LV_Z_USE_OSAL
+config DYNAMIC_THREAD
+	default y
+config DYNAMIC_THREAD_POOL_SIZE
+	default 1
+config DYNAMIC_THREAD_STACK_SIZE
+	default 8192
+
+config LV_Z_USE_OSAL
+	default y
+
+config LV_USE_DRAW_DMA2D_INTERRUPT
+	default y
+
+endif # LV_USE_DRAW_DMA2D
+
+endif # DISPLAY && LVGL
+
 endif # SOC_FAMILY_STM32

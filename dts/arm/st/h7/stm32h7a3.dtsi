@@ -108,6 +108,13 @@
 			clocks = <&rcc STM32_CLOCK(APB4, 26)>;
 			status = "disabled";
 		};
+
+		dma2d: dma@52001000 {
+			compatible = "st,stm32-dma2d";
+			reg = <0x52001000 0x1000>;
+			interrupts = <90 0>;
+			status = "disabled";
+		};
 	};
 
 	/* System data RAM accessible over AXI bus: AXI SRAM1 in CD domain */

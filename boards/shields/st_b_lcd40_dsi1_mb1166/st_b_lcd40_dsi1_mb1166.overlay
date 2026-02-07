@@ -63,3 +63,7 @@
 		screen-height = <480>;
 	};
 };
+
+&dma2d {
+	status = "okay";
+};

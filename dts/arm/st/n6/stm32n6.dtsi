@@ -1392,6 +1392,13 @@
 			resets = <&rctl STM32_RESET(AHB5, 3)>;
 			status = "disabled";
 		};
+
+		dma2d: dma@58021000 {
+			compatible = "st,stm32-dma2d";
+			reg = <0x58021000 0x1000>;
+			interrupts = <60 0>;
+			status = "disabled";
+		};
 	};
 };
 

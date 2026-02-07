@@ -27,5 +27,12 @@
 			health-test-config = <0xa2b0>;
 			noise-source-control = <0x17cbb>;
 		};
+
+		dma2d: dma@4002b000 {
+			compatible = "st,stm32-dma2d";
+			reg = <0x4002b000 0x1000>;
+			interrupts = <118 0>;
+			status = "disabled";
+		};
 	};
 };

@@ -21,6 +21,29 @@ endif # DISPLAY || VIDEO
 if DISPLAY
 config I2C_STM32_V2_TIMING
 	default y if INPUT
+
+if LVGL
+
+config LV_USE_DRAW_DMA2D
+	default y
+
+config STM32_LTDC_FB_NUM
+	default 0
+
+config LV_Z_DOUBLE_VDB
+	default y
+
+config LV_Z_VDB_ZEPHYR_REGION
+	default y
+
+config LV_Z_VDB_ZEPHYR_REGION_NAME
+	default "PSRAM"
+
+config LV_Z_FULL_REFRESH
+	default y
+
+endif # LVGL
+
 endif # DISPLAY
 
 if VIDEO
