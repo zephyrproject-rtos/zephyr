@@ -411,7 +411,7 @@ static inline uint32_t hal_radio_phy_mode_get(uint8_t phy, uint8_t flags)
 	uint32_t mode;
 
 	switch (phy) {
-	case BIT(0):
+	case PHY_1M:
 	default:
 		mode = RADIO_MODE_MODE_Ble_1Mbit;
 
@@ -424,7 +424,7 @@ static inline uint32_t hal_radio_phy_mode_get(uint8_t phy, uint8_t flags)
 
 		break;
 
-	case BIT(1):
+	case PHY_2M:
 		mode = RADIO_MODE_MODE_Ble_2Mbit;
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
@@ -437,8 +437,8 @@ static inline uint32_t hal_radio_phy_mode_get(uint8_t phy, uint8_t flags)
 		break;
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-	case BIT(2):
-		if (flags & 0x01) {
+	case PHY_CODED:
+		if ((flags & PHY_FLAGS_S8) != 0U) {
 			mode = RADIO_MODE_MODE_Ble_LR125Kbit;
 		} else {
 			mode = RADIO_MODE_MODE_Ble_LR500Kbit;
@@ -586,14 +586,14 @@ static inline uint32_t hal_radio_tx_ready_delay_us_get(uint8_t phy, uint8_t flag
 {
 	switch (phy) {
 	default:
-	case BIT(0):
+	case PHY_1M:
 		return HAL_RADIO_NRF52840_TXEN_TXIDLE_TX_1M_US;
-	case BIT(1):
+	case PHY_2M:
 		return HAL_RADIO_NRF52840_TXEN_TXIDLE_TX_2M_US;
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-	case BIT(2):
-		if (flags & 0x01) {
+	case PHY_CODED:
+		if ((flags & PHY_FLAGS_S8) != 0U) {
 			return HAL_RADIO_NRF52840_TXEN_TXIDLE_TX_S8_US;
 		} else {
 			return HAL_RADIO_NRF52840_TXEN_TXIDLE_TX_S2_US;
@@ -606,14 +606,14 @@ static inline uint32_t hal_radio_rx_ready_delay_us_get(uint8_t phy, uint8_t flag
 {
 	switch (phy) {
 	default:
-	case BIT(0):
+	case PHY_1M:
 		return HAL_RADIO_NRF52840_RXEN_RXIDLE_RX_1M_US;
-	case BIT(1):
+	case PHY_2M:
 		return HAL_RADIO_NRF52840_RXEN_RXIDLE_RX_2M_US;
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-	case BIT(2):
-		if (flags & 0x01) {
+	case PHY_CODED:
+		if ((flags & PHY_FLAGS_S8) != 0U) {
 			return HAL_RADIO_NRF52840_RXEN_RXIDLE_RX_S8_US;
 		} else {
 			return HAL_RADIO_NRF52840_RXEN_RXIDLE_RX_S2_US;
@@ -626,14 +626,14 @@ static inline uint32_t hal_radio_tx_chain_delay_us_get(uint8_t phy, uint8_t flag
 {
 	switch (phy) {
 	default:
-	case BIT(0):
+	case PHY_1M:
 		return HAL_RADIO_NRF52840_TX_CHAIN_DELAY_1M_US;
-	case BIT(1):
+	case PHY_2M:
 		return HAL_RADIO_NRF52840_TX_CHAIN_DELAY_2M_US;
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-	case BIT(2):
-		if (flags & 0x01) {
+	case PHY_CODED:
+		if ((flags & PHY_FLAGS_S8) != 0U) {
 			return HAL_RADIO_NRF52840_TX_CHAIN_DELAY_S8_US;
 		} else {
 			return HAL_RADIO_NRF52840_TX_CHAIN_DELAY_S2_US;
@@ -646,14 +646,14 @@ static inline uint32_t hal_radio_rx_chain_delay_us_get(uint8_t phy, uint8_t flag
 {
 	switch (phy) {
 	default:
-	case BIT(0):
+	case PHY_1M:
 		return HAL_RADIO_NRF52840_RX_CHAIN_DELAY_1M_US;
-	case BIT(1):
+	case PHY_2M:
 		return HAL_RADIO_NRF52840_RX_CHAIN_DELAY_2M_US;
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-	case BIT(2):
-		if (flags & 0x01) {
+	case PHY_CODED:
+		if ((flags & PHY_FLAGS_S8) != 0U) {
 			return HAL_RADIO_NRF52840_RX_CHAIN_DELAY_S8_US;
 		} else {
 			return HAL_RADIO_NRF52840_RX_CHAIN_DELAY_S2_US;
@@ -666,14 +666,14 @@ static inline uint32_t hal_radio_tx_ready_delay_ns_get(uint8_t phy, uint8_t flag
 {
 	switch (phy) {
 	default:
-	case BIT(0):
+	case PHY_1M:
 		return HAL_RADIO_NRF52840_TXEN_TXIDLE_TX_1M_NS;
-	case BIT(1):
+	case PHY_2M:
 		return HAL_RADIO_NRF52840_TXEN_TXIDLE_TX_2M_NS;
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-	case BIT(2):
-		if (flags & 0x01) {
+	case PHY_CODED:
+		if ((flags & PHY_FLAGS_S8) != 0U) {
 			return HAL_RADIO_NRF52840_TXEN_TXIDLE_TX_S8_NS;
 		} else {
 			return HAL_RADIO_NRF52840_TXEN_TXIDLE_TX_S2_NS;
@@ -686,14 +686,14 @@ static inline uint32_t hal_radio_rx_ready_delay_ns_get(uint8_t phy, uint8_t flag
 {
 	switch (phy) {
 	default:
-	case BIT(0):
+	case PHY_1M:
 		return HAL_RADIO_NRF52840_RXEN_RXIDLE_RX_1M_NS;
-	case BIT(1):
+	case PHY_2M:
 		return HAL_RADIO_NRF52840_RXEN_RXIDLE_RX_2M_NS;
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-	case BIT(2):
-		if (flags & 0x01) {
+	case PHY_CODED:
+		if ((flags & PHY_FLAGS_S8) != 0U) {
 			return HAL_RADIO_NRF52840_RXEN_RXIDLE_RX_S8_NS;
 		} else {
 			return HAL_RADIO_NRF52840_RXEN_RXIDLE_RX_S2_NS;
@@ -706,14 +706,14 @@ static inline uint32_t hal_radio_tx_chain_delay_ns_get(uint8_t phy, uint8_t flag
 {
 	switch (phy) {
 	default:
-	case BIT(0):
+	case PHY_1M:
 		return HAL_RADIO_NRF52840_TX_CHAIN_DELAY_1M_NS;
-	case BIT(1):
+	case PHY_2M:
 		return HAL_RADIO_NRF52840_TX_CHAIN_DELAY_2M_NS;
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-	case BIT(2):
-		if (flags & 0x01) {
+	case PHY_CODED:
+		if ((flags & PHY_FLAGS_S8) != 0U) {
 			return HAL_RADIO_NRF52840_TX_CHAIN_DELAY_S8_NS;
 		} else {
 			return HAL_RADIO_NRF52840_TX_CHAIN_DELAY_S2_NS;
@@ -726,14 +726,14 @@ static inline uint32_t hal_radio_rx_chain_delay_ns_get(uint8_t phy, uint8_t flag
 {
 	switch (phy) {
 	default:
-	case BIT(0):
+	case PHY_1M:
 		return HAL_RADIO_NRF52840_RX_CHAIN_DELAY_1M_NS;
-	case BIT(1):
+	case PHY_2M:
 		return HAL_RADIO_NRF52840_RX_CHAIN_DELAY_2M_NS;
 
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
-	case BIT(2):
-		if (flags & 0x01) {
+	case PHY_CODED:
+		if ((flags & PHY_FLAGS_S8) != 0U) {
 			return HAL_RADIO_NRF52840_RX_CHAIN_DELAY_S8_NS;
 		} else {
 			return HAL_RADIO_NRF52840_RX_CHAIN_DELAY_S2_NS;
