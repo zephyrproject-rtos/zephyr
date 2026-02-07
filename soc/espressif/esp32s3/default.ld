@@ -829,8 +829,19 @@ SECTIONS
     *(.sbss2.*)
     *(.gnu.linkonce.sb2.*)
     *(.dynbss)
+
+#if 1 /* #ifdef CONFIG_ESP32_OT_NET_BSS_SPIRAM */
+    *(EXCLUDE_FILE(
+    *libopenthread-ftd.a:*
+    *libopenthread-cli-ftd.a:* ) .bss)
+    *(EXCLUDE_FILE(
+    *libopenthread-ftd.a:*
+    *libopenthread-cli-ftd.a:* ) .bss.*)
+#else
     *(.bss)
     *(.bss.*)
+#endif
+
     *(.share.mem)
     *(.gnu.linkonce.b.*)
     *(COMMON)
@@ -1020,6 +1031,11 @@ SECTIONS
     _ext_ram_bss_start = ABSOLUTE(.);
     *(.ext_ram.bss*)
     . = ALIGN(16);
+
+#if 1 /* #ifdef CONFIG_ESP32_OT_NET_BSS_SPIRAM */
+    KEEP(*libopenthread-ftd.a:(.bss .bss.*))
+    KEEP(*libopenthread-cli-ftd.a:(.bss .bss.*))
+#endif
 
     /* Custom modules sections list */
     KEEP(*(.lvgl_buf*))
