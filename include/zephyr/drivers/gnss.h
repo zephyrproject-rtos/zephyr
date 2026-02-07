@@ -88,6 +88,18 @@ enum gnss_system {
 	GNSS_SYSTEM_SBAS = BIT(6),
 	/** Indoor Messaging System (IMES) */
 	GNSS_SYSTEM_IMES = BIT(7),
+	/** Global Positioning System (GPS) L5 */
+	GNSS_SYSTEM_GPS_L5 = BIT(8),
+	/** Galileo L5 */
+	GNSS_SYSTEM_GALILEO_L5 = BIT(9),
+	/** Quasi-Zenith Satellite System (QZSS) L5 */
+	GNSS_SYSTEM_QZSS_L5 = BIT(10),
+	/** BeiDou Navigation Satellite System B1C */
+	GNSS_SYSTEM_BEIDOU_B1C = BIT(11),
+	/** BeiDou Navigation Satellite System B2a */
+	GNSS_SYSTEM_BEIDOU_B2A = BIT(12),
+	/** Quasi-Zenith Satellite System (QZSS) L1S Augmentation service */
+	GNSS_SYSTEM_QZSS_L1S = BIT(13),
 };
 
 /** Type storing bitmask of GNSS systems */
