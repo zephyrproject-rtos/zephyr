@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2025 Matthias Plöger <matze.ploeger@gmx.de>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "dt-bindings/timer/stm32-timer.h"
+
+&timers3 {
+	/**
+	 * Configure the TRGO output and counter mode of the timer instance.
+	 * TRGO event is generated at timer update event.
+	 * --> Will cause the TRGO event during mid of high AND low time
+	 *     of PWM period.
+	 * The TRGO can be used on other peripherals according to the
+	 * `Interconnect matrix` of the SoC.
+	 */
+	st,countermode = <STM32_TIM_COUNTERMODE_CENTER_UP>;
+	st,mastermode = "UPDATE";
+};
