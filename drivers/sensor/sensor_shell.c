@@ -367,7 +367,8 @@ void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len
 
 	for (int trigger = 0; decoder->has_trigger != NULL && trigger < SENSOR_TRIG_COMMON_COUNT;
 	     ++trigger) {
-		if (!decoder->has_trigger(buf, trigger)) {
+		if (!decoder->has_trigger(buf, trigger,
+					  (struct sensor_chan_spec){SENSOR_CHAN_ALL, 0})) {
 			continue;
 		}
 		shell_info(ctx->sh, "Trigger (%d / %s) detected", trigger,
