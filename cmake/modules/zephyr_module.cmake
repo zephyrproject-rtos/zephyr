@@ -76,11 +76,11 @@ if(WEST OR ZEPHYR_MODULES)
   if(EXISTS ${zephyr_settings_file})
     file(STRINGS ${zephyr_settings_file} zephyr_settings_txt ENCODING UTF-8 REGEX "^[^#]")
     foreach(setting ${zephyr_settings_txt})
-      # Match <key>:<value> for each line of file, each corresponding to
-      # a setting.  The use of quotes is required due to CMake not supporting
-      # lazy regexes (it supports greedy only).
-      string(REGEX REPLACE "\"(.*)\":\".*\"" "\\1" key ${setting})
-      string(REGEX REPLACE "\".*\":\"(.*)\"" "\\1" value ${setting})
+      # Match "<key>":"<value>" for each line of file, each corresponding to
+      # a setting.
+      string(REGEX MATCH "\"(.*)\":\"(.*)\"" _ ${setting})
+      set(key "${CMAKE_MATCH_1}")
+      set(value "${CMAKE_MATCH_2}")
       list(APPEND ${key} ${value})
     endforeach()
   endif()
@@ -91,11 +91,10 @@ if(WEST OR ZEPHYR_MODULES)
 
   set(ZEPHYR_MODULE_NAMES)
   foreach(module ${zephyr_modules_txt})
-    # Match "<name>":"<path>" for each line of file, each corresponding to
-    # one module. The use of quotes is required due to CMake not supporting
-    # lazy regexes (it supports greedy only).
-    string(REGEX REPLACE "\"(.*)\":\".*\":\".*\"" "\\1" module_name ${module})
-    list(APPEND ZEPHYR_MODULE_NAMES ${module_name})
+    # Match "<name>":"<path>":"<cmake_path>" for each line of file, each
+    # corresponding to one module.
+    string(REGEX MATCH "\"(.*)\":\".*\":\".*\"" _ ${module})
+    list(APPEND ZEPHYR_MODULE_NAMES ${CMAKE_MATCH_1})
   endforeach()
 
   if(EXISTS ${cmake_sysbuild_file})
@@ -104,11 +103,10 @@ if(WEST OR ZEPHYR_MODULES)
 
   set(SYSBUILD_MODULE_NAMES)
   foreach(module ${sysbuild_modules_txt})
-    # Match "<name>":"<path>" for each line of file, each corresponding to
-    # one module. The use of quotes is required due to CMake not supporting
-    # lazy regexes (it supports greedy only).
-    string(REGEX REPLACE "\"(.*)\":\".*\":\".*\"" "\\1" module_name ${module})
-    list(APPEND SYSBUILD_MODULE_NAMES ${module_name})
+    # Match "<name>":"<path>":"<cmake_path>" for each line of file, each
+    # corresponding to one module.
+    string(REGEX MATCH "\"(.*)\":\".*\":\".*\"" _ ${module})
+    list(APPEND SYSBUILD_MODULE_NAMES ${CMAKE_MATCH_1})
   endforeach()
 
   # Prepend ZEPHYR_BASE as a default ext root at lowest priority
@@ -127,13 +125,13 @@ if(WEST OR ZEPHYR_MODULES)
   endforeach()
 
   foreach(module ${zephyr_modules_txt})
-    # Match "<name>":"<path>" for each line of file, each corresponding to
-    # one Zephyr module. The use of quotes is required due to CMake not
-    # supporting lazy regexes (it supports greedy only).
+    # Match "<name>":"<path>":"<cmake_path>" for each line of file, each
+    # corresponding to one Zephyr module.
     string(CONFIGURE ${module} module)
-    string(REGEX REPLACE "\"(.*)\":\".*\":\".*\"" "\\1" module_name ${module})
-    string(REGEX REPLACE "\".*\":\"(.*)\":\".*\"" "\\1" module_path ${module})
-    string(REGEX REPLACE "\".*\":\".*\":\"(.*)\"" "\\1" cmake_path ${module})
+    string(REGEX MATCH "\"(.*)\":\"(.*)\":\"(.*)\"" _ ${module})
+    set(module_name "${CMAKE_MATCH_1}")
+    set(module_path "${CMAKE_MATCH_2}")
+    set(cmake_path "${CMAKE_MATCH_3}")
 
     zephyr_string(SANITIZE TOUPPER MODULE_NAME_UPPER ${module_name})
     if(NOT ${MODULE_NAME_UPPER} STREQUAL CURRENT)
@@ -148,13 +146,13 @@ ${MODULE_NAME_UPPER} is a restricted name for Zephyr modules as it is used for \
   endforeach()
 
   foreach(module ${sysbuild_modules_txt})
-    # Match "<name>":"<path>" for each line of file, each corresponding to
-    # one Zephyr module. The use of quotes is required due to CMake not
-    # supporting lazy regexes (it supports greedy only).
+    # Match "<name>":"<path>":"<cmake_path>" for each line of file, each
+    # corresponding to one Zephyr module.
     string(CONFIGURE ${module} module)
-    string(REGEX REPLACE "\"(.*)\":\".*\":\".*\"" "\\1" module_name ${module})
-    string(REGEX REPLACE "\".*\":\"(.*)\":\".*\"" "\\1" module_path ${module})
-    string(REGEX REPLACE "\".*\":\".*\":\"(.*)\"" "\\1" cmake_path ${module})
+    string(REGEX MATCH "\"(.*)\":\"(.*)\":\"(.*)\"" _ ${module})
+    set(module_name "${CMAKE_MATCH_1}")
+    set(module_path "${CMAKE_MATCH_2}")
+    set(cmake_path "${CMAKE_MATCH_3}")
 
     zephyr_string(SANITIZE TOUPPER MODULE_NAME_UPPER ${module_name})
     if(NOT ${MODULE_NAME_UPPER} STREQUAL CURRENT)

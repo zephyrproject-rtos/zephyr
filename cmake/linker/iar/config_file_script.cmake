@@ -855,10 +855,10 @@ function(section_to_string)
 
       # No alphabetical orders on initializers
       # Only alphabetical attribute.
-      string(REGEX REPLACE "with alphabetical order {" " {" INIT_TEMP "${INIT_TEMP}")
+      string(REPLACE "with alphabetical order {" " {" INIT_TEMP "${INIT_TEMP}")
       # Respect other attributes.
       string(REGEX REPLACE "(, alphabetical order|alphabetical order, )" "" INIT_TEMP "${INIT_TEMP}")
-      string(REGEX REPLACE "{ readwrite }" "{ }" INIT_TEMP "${INIT_TEMP}")
+      string(REPLACE "{ readwrite }" "{ }" INIT_TEMP "${INIT_TEMP}")
       set(TEMP "${TEMP}\n${INIT_TEMP}\n")
 
       # If any content is marked as keep, is has to be applied to the init block

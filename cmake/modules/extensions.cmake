@@ -395,9 +395,10 @@ macro(get_property_and_add_prefix result target property prefix)
   endif()
 
   get_property(target_property TARGET ${target} PROPERTY ${property})
-  foreach(x ${target_property})
-    list(APPEND ${result} ${maybe_prefix}${x})
-  endforeach()
+  if(target_property)
+    list(TRANSFORM target_property PREPEND "${maybe_prefix}")
+    list(APPEND ${result} ${target_property})
+  endif()
 endmacro()
 
 # 1.2 zephyr_library_*
@@ -445,13 +446,13 @@ macro(zephyr_library_get_current_dir_lib_name base lib_name)
   get_filename_component(name ${name} DIRECTORY)
 
   # Replace / with __ (driver/serial => driver__serial)
-  string(REGEX REPLACE "/" "__" name ${name})
+  string(REPLACE "/" "__" name "${name}")
 
   # Replace : with __ (C:/zephyrproject => C____zephyrproject)
-  string(REGEX REPLACE ":" "__" name ${name})
+  string(REPLACE ":" "__" name "${name}")
 
   # Replace ~ with - (driver~serial => driver-serial)
-  string(REGEX REPLACE "~" "-" name ${name})
+  string(REPLACE "~" "-" name "${name}")
 
   set(${lib_name} ${name})
 endmacro()
@@ -1925,11 +1926,15 @@ endmacro()
 #                     CMake namespace.
 function(import_kconfig prefix kconfig_fragment)
   cmake_parse_arguments(IMPORT_KCONFIG "" "TARGET" "" ${ARGN})
+  # Pre-filter: only read lines that start with the prefix or are
+  # "# <prefix>... is not set" comments. This avoids iterating over
+  # blank lines and unrelated comments in large .config files.
   file(
     STRINGS
     ${kconfig_fragment}
     DOT_CONFIG_LIST
     ENCODING "UTF-8"
+    REGEX "^(${prefix}|# ${prefix})"
   )
 
   foreach (LINE ${DOT_CONFIG_LIST})
