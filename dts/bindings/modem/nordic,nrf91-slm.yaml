@@ -2,4 +2,18 @@ description: Nordic nRF91 series running the Serial LTE Modem application
 
 compatible: "nordic,nrf91-slm"
 
-include: zephyr,cellular-modem-device.yaml
+include:
+  - name: zephyr,cellular-modem-device.yaml
+    property-blocklist:
+      - zephyr,use-default-pdp-ctx
+
+properties:
+  zephyr,use-default-pdp-ctx:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 1
+    description: |
+      Modem automatically configures and connects the default PDP context (cid=0) when
+      registered to the network. This is used by default in Serial Modem application.
