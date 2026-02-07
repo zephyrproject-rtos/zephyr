@@ -2743,7 +2743,8 @@ static uint8_t att_notify(struct bt_att_chan *chan, struct net_buf *buf)
 
 	LOG_DBG("chan %p handle 0x%04x", chan, handle);
 
-	bt_gatt_notification(chan->att->conn, handle, buf->data, buf->len);
+	bt_gatt_notification(chan->att->conn, handle, buf->data, buf->len,
+			     BT_GATT_NOTIFY_TYPE_NOTIFY);
 
 	return 0;
 }
@@ -2756,7 +2757,8 @@ static uint8_t att_indicate(struct bt_att_chan *chan, struct net_buf *buf)
 
 	LOG_DBG("chan %p handle 0x%04x", chan, handle);
 
-	bt_gatt_notification(chan->att->conn, handle, buf->data, buf->len);
+	bt_gatt_notification(chan->att->conn, handle, buf->data, buf->len,
+			     BT_GATT_NOTIFY_TYPE_INDICATE);
 
 	buf = bt_att_chan_create_pdu(chan, BT_ATT_OP_CONFIRM, 0);
 	if (!buf) {
@@ -2773,7 +2775,8 @@ static uint8_t att_notify_mult(struct bt_att_chan *chan, struct net_buf *buf)
 {
 	LOG_DBG("chan %p", chan);
 
-	bt_gatt_mult_notification(chan->att->conn, buf->data, buf->len);
+	bt_gatt_mult_notification(chan->att->conn, buf->data, buf->len,
+				  BT_GATT_NOTIFY_TYPE_NOTIFY_MULT);
 
 	return 0;
 }

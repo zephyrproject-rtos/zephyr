@@ -2151,6 +2151,9 @@ struct bt_gatt_subscribe_params;
  *  while the @p length will be 0, which is due to the special case where
  *  a @p data NULL pointer means unsubscribed.
  *
+ *  The type of notification (notification vs indication) can be determined
+ *  by reading @p params->received_opcode.
+ *
  *  @param conn Connection object. May be NULL, indicating that the peer is
  *              being unpaired
  *  @param params Subscription parameters.
@@ -2225,6 +2228,23 @@ enum bt_gatt_sub_flag {
 	BT_GATT_SUBSCRIBE_NUM_FLAGS
 };
 
+/** Defined when bt_gatt_subscribe_params has the received_opcode field. */
+#define BT_GATT_SUBSCRIBE_HAS_RECEIVED_OPCODE 1
+
+/** Notification type received by the subscribe callback.
+ *
+ *  Defined by The Bluetooth Core Specification, Version 5.4, Vol 3, Part F,
+ *  Section 3.4.7.
+ */
+enum bt_gatt_notify_type {
+	/** Handle Value Notification (ATT opcode 0x1b) */
+	BT_GATT_NOTIFY_TYPE_NOTIFY = 0x1b,
+	/** Handle Value Indication (ATT opcode 0x1d) */
+	BT_GATT_NOTIFY_TYPE_INDICATE = 0x1d,
+	/** Handle Multiple Value Notification (ATT opcode 0x23) */
+	BT_GATT_NOTIFY_TYPE_NOTIFY_MULT = 0x23,
+};
+
 /** @brief GATT Subscribe parameters */
 struct bt_gatt_subscribe_params {
 	/** Notification value callback */
@@ -2255,6 +2275,15 @@ struct bt_gatt_subscribe_params {
 #endif
 	/** Subscription flags, see @ref bt_gatt_sub_flag */
 	ATOMIC_DEFINE(flags, BT_GATT_SUBSCRIBE_NUM_FLAGS);
+
+	/** @brief Type of last received notification or indication.
+	 *
+	 *  Set by the stack before invoking the @p notify callback.
+	 *  See @ref bt_gatt_notify_type for possible values.
+	 *
+	 *  @note Read-only. Only valid inside the @p notify callback.
+	 */
+	enum bt_gatt_notify_type received_opcode;
 
 	/** @cond INTERNAL_HIDDEN
 	 *  Field used for list handling.
