@@ -312,9 +312,8 @@ typedef void (*can_state_change_callback_t)(const struct device *dev,
 					    void *user_data);
 
 /**
- * @cond INTERNAL_HIDDEN
- *
- * For internal driver use only, skip these in public documentation.
+ * @def_driverbackendgroup{CAN Controller,can_controller}
+ * @{
  */
 
 /**
@@ -506,36 +505,88 @@ typedef int (*can_get_core_clock_t)(const struct device *dev, uint32_t *rate);
  */
 typedef int (*can_get_max_filters_t)(const struct device *dev, bool ide);
 
+/**
+ * @driver_ops{CAN Controller}
+ */
 __subsystem struct can_driver_api {
+	/**
+	 * @driver_ops_mandatory @copybrief can_get_capabilities
+	 */
 	can_get_capabilities_t get_capabilities;
+	/**
+	 * @driver_ops_mandatory @copybrief can_start
+	 */
 	can_start_t start;
+	/**
+	 * @driver_ops_mandatory @copybrief can_stop
+	 */
 	can_stop_t stop;
+	/**
+	 * @driver_ops_mandatory @copybrief can_set_mode
+	 */
 	can_set_mode_t set_mode;
+	/**
+	 * @driver_ops_mandatory @copybrief can_set_timing
+	 */
 	can_set_timing_t set_timing;
+	/**
+	 * @driver_ops_mandatory @copybrief can_send
+	 */
 	can_send_t send;
+	/**
+	 * @driver_ops_mandatory @copybrief can_add_rx_filter
+	 */
 	can_add_rx_filter_t add_rx_filter;
+	/**
+	 * @driver_ops_mandatory @copybrief can_remove_rx_filter
+	 */
 	can_remove_rx_filter_t remove_rx_filter;
 #if defined(CONFIG_CAN_MANUAL_RECOVERY_MODE) || defined(__DOXYGEN__)
+	/**
+	 * @driver_ops_optional @copybrief can_recover
+	 * @kconfig_dep{CONFIG_CAN_MANUAL_RECOVERY_MODE}
+	 */
 	can_recover_t recover;
 #endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
+	/**
+	 * @driver_ops_mandatory @copybrief can_get_state
+	 */
 	can_get_state_t get_state;
+	/**
+	 * @driver_ops_mandatory @copybrief can_set_state_change_callback
+	 */
 	can_set_state_change_callback_t set_state_change_callback;
+	/**
+	 * @driver_ops_mandatory @copybrief can_get_core_clock
+	 */
 	can_get_core_clock_t get_core_clock;
+	/**
+	 * @driver_ops_optional @copybrief can_get_max_filters
+	 */
 	can_get_max_filters_t get_max_filters;
-	/* Min values for the timing registers */
+	/** @driver_ops_mandatory Min values for the timing registers */
 	struct can_timing timing_min;
-	/* Max values for the timing registers */
+	/** @driver_ops_mandatory Max values for the timing registers */
 	struct can_timing timing_max;
 #if defined(CONFIG_CAN_FD_MODE) || defined(__DOXYGEN__)
+	/**
+	 * @driver_ops_optional @copybrief can_set_timing_data
+	 * @kconfig_dep{CONFIG_CAN_FD_MODE}
+	 */
 	can_set_timing_data_t set_timing_data;
-	/* Min values for the timing registers during the data phase */
+	/** Min values for the timing registers during the data phase.
+	 * @driver_ops_mandatory if @ref set_timing_data is implemented
+	 */
 	struct can_timing timing_data_min;
-	/* Max values for the timing registers during the data phase */
+	/** Max values for the timing registers during the data phase.
+	 * @driver_ops_mandatory if @ref set_timing_data is implemented
+	 */
 	struct can_timing timing_data_max;
 #endif /* CONFIG_CAN_FD_MODE */
 };
-
-/** @endcond */
+/**
+ * @}
+ */
 
 #if defined(CONFIG_CAN_STATS) || defined(__DOXYGEN__)
 
