@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip TC (Timer Counter) driver.
+
+description: |
+  Microchip TC (Timer Counter) driver.
+
+  This driver is responsible for configuring
+  and managing the TC peripheral in Microchip microcontrollers. The TC module
+  supports event counting, time interval measurement, and periodic interrupt
+  generation.
+  The supported devices :
+    - tc-u2249 (3.0.0)
+  The supported families are:
+    - same5xd5x
+
+compatible: "microchip,tc-g1-counter"
+
+include: microchip,tc-g1.yaml

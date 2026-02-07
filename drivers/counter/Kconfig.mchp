@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Microchip Technology Inc.
+# Copyright (c) 2025-2026 Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 config COUNTER_MCHP_G1_TCC
@@ -7,3 +7,10 @@ config COUNTER_MCHP_G1_TCC
 	depends on DT_HAS_MICROCHIP_TCC_G1_COUNTER_ENABLED
 	help
 	  This option enables the counter driver for Microchip timer peripherals
+
+config COUNTER_MCHP_TC_G1
+	bool "Microchip TC G1 Counter driver"
+	default y
+	depends on DT_HAS_MICROCHIP_TC_G1_COUNTER_ENABLED
+	help
+	  This option enables the counter driver for Microchip timer peripherals.
