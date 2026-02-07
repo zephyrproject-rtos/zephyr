@@ -395,9 +395,10 @@ macro(get_property_and_add_prefix result target property prefix)
   endif()
 
   get_property(target_property TARGET ${target} PROPERTY ${property})
-  foreach(x ${target_property})
-    list(APPEND ${result} ${maybe_prefix}${x})
-  endforeach()
+  if(target_property)
+    list(TRANSFORM target_property PREPEND "${maybe_prefix}")
+    list(APPEND ${result} ${target_property})
+  endif()
 endmacro()
 
 # 1.2 zephyr_library_*
