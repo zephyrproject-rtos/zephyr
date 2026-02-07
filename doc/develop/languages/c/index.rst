@@ -14,8 +14,8 @@ features.
 
 The ``main()`` function must have the return type of ``int`` as Zephyr
 applications run in a "hosted" environment as defined by the C
-standard. Applications must return zero (0) from main. All non-zero return
-values are reserved.
+standard. Zephyr ignores the return value from main, so applications
+should not return status information and should, instead, return zero.
 
 .. _c_standards:
 
