@@ -26,7 +26,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
@@ -236,7 +235,7 @@ int bt_micp_mic_dev_mute_disable(void)
 
 int bt_micp_mic_dev_included_get(struct bt_micp_included *included)
 {
-	CHECKIF(included == NULL) {
+	if (included == NULL) {
 		LOG_DBG("NULL service pointer");
 		return -EINVAL;
 	}
