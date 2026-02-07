@@ -62,6 +62,17 @@
 		};
 	};
 
+	lpi2c3_default: lpi2c3_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_io01_lpi2c_scl_lpi2c3_scl>,
+				 <&iomuxc_gpio_io00_lpi2c_sda_lpi2c3_sda>;
+			drive-open-drain;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+			input-enable;
+		};
+	};
+
 	lpi2c5_default: lpi2c5_default {
 		group0 {
 			pinmux = <&iomuxc_gpio_io23_lpi2c_scl_lpi2c5_scl>,
@@ -157,6 +168,15 @@
 			slew-rate = "slightly_fast";
 			drive-strength = "x4";
 			input-enable;
+		};
+	};
+
+	cmmclk1_default: cmmclk_default {
+		group0 {
+			pinmux = <&iomuxc_ccm_clko1_ccmsrcgpcmix_clko_ccmsrcgpcmix_clko1>;
+			bias-pull-up;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
 		};
 	};
 };

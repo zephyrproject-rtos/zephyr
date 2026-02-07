@@ -1,0 +1,20 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_AP1302
+	bool "ONNN AP1302 Camera ISP driver"
+	select I2C
+	depends on DT_HAS_ONNN_AP1302_ENABLED
+	default y
+	help
+	  Enable driver for AP1302 Camera ISP.
+
+if VIDEO_AP1302
+
+config VIDEO_AP1302_INIT_PRIORITY
+	int "AP1302 driver initialization priority"
+	default 76
+	help
+	  Initialization priority for AP1302 driver.
+
+endif # VIDEO_AP1302
