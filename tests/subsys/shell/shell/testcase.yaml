@@ -6,6 +6,13 @@ tests:
     min_ram: 32
     integration_platforms:
       - native_sim
+  shell.core.metakeys:
+    min_flash: 64
+    min_ram: 32
+    extra_configs:
+      - CONFIG_SHELL_METAKEYS=y
+    integration_platforms:
+      - native_sim
   # all tests below are just a build test verifying config options, it fails if run
   # and can be covered with one platform.
   shell.min:

@@ -756,6 +756,55 @@ of any other command besides a login command, by means of the
 allows you to set the prompt upon startup, but it can be changed later with the
 ``shell_prompt_change`` function.
 
+.. _shell-readline:
+
+Reading User Input
+******************
+
+The shell provides a :c:func:`shell_readline` function that allows command handlers
+to interactively read a line of input from the user. This is useful for implementing
+commands that need to prompt the user for additional information, such as confirmation
+dialogs, multi-step wizards, or interactive data entry.
+
+The function reads from the shell transport until a newline character is received,
+storing the data in a provided buffer. The newline character itself is not included
+in the buffer. The buffer is automatically null-terminated on success.
+
+.. note::
+
+   The :c:func:`shell_readline` function should be called from the shell thread in a
+   shell command handler and blocks the thread until a result is returned.
+
+Example usage:
+
+.. code-block:: c
+
+   static int cmd_read_secret(const struct shell *sh, size_t argc, char **argv)
+   {
+           uint8_t input_buf[256];
+           int ret;
+
+           shell_fprintf_normal(sh, "Enter your secret: ");
+
+           shell_obscure_set(sh, true);
+           ret = shell_readline(sh, input_buf, sizeof(input_buf), K_SECONDS(10));
+           shell_obscure_set(sh, false);
+
+           if (ret < 0) {
+                   if (ret == -ETIMEDOUT) {
+                           shell_error(sh, "Timeout waiting for input");
+                   } else if (ret == -ECANCELED) {
+                           shell_error(sh, "Input canceled");
+                   } else if (ret == -ENOBUFS) {
+                           shell_error(sh, "Input too long");
+                   }
+                   return ret;
+           }
+
+           shell_print(sh, "Secret input received (%d bytes)", ret);
+           return 0;
+   }
+
 Shell Logger Backend Feature
 ****************************
 
