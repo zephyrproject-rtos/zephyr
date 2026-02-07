@@ -44,6 +44,7 @@ enum bq40z50_regs {
 	BQ40Z50_MANUFACTURERBLOCKACCESS = 0x44, /* R/W */
 	BQ40Z50_BTPDISCHARGE = 0x4A,            /* R/W, Unit: mAh, Range: 150..65535 */
 	BQ40Z50_BTPCHARGE = 0x4B,               /* R/W, Unit: mAh, Range: 175..65535 */
+	BQ40Z50_STATEOFHEALTH = 0x4F,           /* R/O, Unit: percent, Range: 0..100 */
 	BQ40Z50_PFSTATUS = 0x53,                /* Cannot read in Sealed Mode */
 	BQ40Z50_OPERATIONSTATUS = 0x54,         /* Cannot read in Sealed Mode */
 	BQ40Z50_CHARGINGSTATUS = 0x55,          /* Cannot read in Sealed Mode */
