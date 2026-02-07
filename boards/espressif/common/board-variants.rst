@@ -44,7 +44,7 @@ To apply a board variant, use the ``-S`` flag with west build:
 
 .. note::
 
-   These snippets are applicable to boards with compatible hardware support for the selected flash/PSRAM configuration.
+   These snippets are only applicable to boards with compatible hardware support for the selected flash/PSRAM configuration.
 
    - If no FLASH snippet is used, the board default flash size will be used.
    - If no PSRAM snippet is used, the board default psram size will be used.
