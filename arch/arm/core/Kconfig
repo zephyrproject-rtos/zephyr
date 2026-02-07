@@ -215,6 +215,13 @@ config ARM_STACK_PROTECTION
 	  still has the option to manually select the MPU-based
 	  stack guard, if this is desired.
 
+config ARCH_HAS_STACKWALK
+	bool
+	default y if EXTRA_EXCEPTION_INFO
+	help
+	  Internal config to indicate that the arch_stack_walk() API is implemented
+	  and it can be enabled.
+
 config ARM_SECURE_FIRMWARE
 	bool
 	depends on ARMV8_M_SE

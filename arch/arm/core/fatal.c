@@ -18,6 +18,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
+extern void z_arm_unwind_stack(const struct arch_esf *esf);
+
 #ifdef CONFIG_EXCEPTION_DEBUG
 static void esf_dump(const struct arch_esf *esf)
 {
@@ -84,6 +86,10 @@ void z_arm_fatal_error(unsigned int reason, const struct arch_esf *esf)
 	}
 #endif
 
+#ifdef CONFIG_EXCEPTION_STACK_TRACE
+	z_arm_unwind_stack(esf);
+#endif /* CONFIG_EXCEPTION_STACK_TRACE */
+
 	z_fatal_error(reason, esf);
 }
 
@@ -147,6 +153,7 @@ void z_do_kernel_oops(const struct arch_esf *esf, _callee_saved_t *callee_regs, 
 #endif /* CONFIG_EXTRA_EXCEPTION_INFO */
 }
 
+#ifdef CONFIG_USERSPACE
 FUNC_NORETURN void arch_syscall_oops(void *ssf_ptr)
 {
 	uint32_t *ssf_contents = ssf_ptr;
@@ -158,3 +165,4 @@ FUNC_NORETURN void arch_syscall_oops(void *ssf_ptr)
 	z_arm_fatal_error(K_ERR_KERNEL_OOPS, &oops_esf);
 	CODE_UNREACHABLE;
 }
+#endif
