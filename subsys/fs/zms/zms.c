@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(fs_zms, CONFIG_ZMS_LOG_LEVEL);
 
 static int zms_prev_ate(struct zms_fs *fs, uint64_t *addr, struct zms_ate *ate);
 static int zms_ate_valid(struct zms_fs *fs, const struct zms_ate *entry);
+static int zms_add_empty_ate(struct zms_fs *fs, uint64_t addr);
 static int zms_get_sector_cycle(struct zms_fs *fs, uint64_t addr, uint8_t *cycle_cnt);
 static int zms_get_sector_header(struct zms_fs *fs, uint64_t addr, struct zms_ate *empty_ate,
 				 struct zms_ate *close_ate);
@@ -598,6 +599,26 @@ static int zms_flash_write_entry(struct zms_fs *fs, zms_id_t id, const void *dat
 	return 0;
 }
 
+/* zms_wipe_partition erases the whole partition used by ZMS */
+static int zms_wipe_partition(struct zms_fs *fs)
+{
+	int rc;
+	uint64_t addr;
+
+	for (uint32_t i = 0; i < fs->sector_count; i++) {
+		addr = (uint64_t)i << ADDR_SECT_SHIFT;
+		rc = zms_flash_erase_sector(fs, addr);
+		if (rc) {
+			return rc;
+		}
+		rc = zms_add_empty_ate(fs, addr);
+		if (rc) {
+			return rc;
+		}
+	}
+	return 0;
+}
+
 /* end of flash routines */
 
 /* Search for the last valid ATE written in a sector and also update data write address
@@ -1128,7 +1149,6 @@ gc_done:
 int zms_clear(struct zms_fs *fs)
 {
 	int rc;
-	uint64_t addr;
 
 	if (!fs) {
 		LOG_ERR("Invalid fs");
@@ -1141,25 +1161,15 @@ int zms_clear(struct zms_fs *fs)
 	}
 
 	k_mutex_lock(&fs->zms_lock, K_FOREVER);
-	for (uint32_t i = 0; i < fs->sector_count; i++) {
-		addr = (uint64_t)i << ADDR_SECT_SHIFT;
-		rc = zms_flash_erase_sector(fs, addr);
-		if (rc) {
-			goto end;
-		}
-		rc = zms_add_empty_ate(fs, addr);
-		if (rc) {
-			goto end;
-		}
-	}
+
+	rc = zms_wipe_partition(fs);
 
 	/* zms needs to be reinitialized after clearing */
 	fs->ready = false;
 
-end:
 	k_mutex_unlock(&fs->zms_lock);
 
-	return 0;
+	return rc;
 }
 
 static int zms_init(struct zms_fs *fs)
@@ -1459,7 +1469,7 @@ end:
 	return rc;
 }
 
-int zms_mount(struct zms_fs *fs)
+static int zms_mount_internal(struct zms_fs *fs, bool wipe_on_failure)
 {
 	int rc;
 	struct flash_pages_info info;
@@ -1519,6 +1529,13 @@ int zms_mount(struct zms_fs *fs)
 
 	rc = zms_init(fs);
 
+	if (rc && wipe_on_failure) {
+		/* wipe partition and try once more */
+		LOG_WRN("ZMS init failed (%d), wiping partition", rc);
+		zms_wipe_partition(fs);
+		rc = zms_init(fs);
+	}
+
 	if (rc) {
 		return rc;
 	}
@@ -1531,6 +1548,16 @@ int zms_mount(struct zms_fs *fs)
 	LOG_INF("data wra: %llu, %llx", SECTOR_NUM(fs->data_wra), SECTOR_OFFSET(fs->data_wra));
 
 	return 0;
+}
+
+int zms_mount(struct zms_fs *fs)
+{
+	return zms_mount_internal(fs, false);
+}
+
+int zms_mount_force(struct zms_fs *fs)
+{
+	return zms_mount_internal(fs, true);
 }
 
 ssize_t zms_write(struct zms_fs *fs, zms_id_t id, const void *data, size_t len)
