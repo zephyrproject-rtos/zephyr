@@ -424,18 +424,19 @@ static int prepare_cb_common(struct lll_prepare_param *p, uint8_t chan_idx)
 	lll = p->param;
 
 	/* Accumulate window widening */
-	lll->window_widening_prepare_us += lll->window_widening_periodic_us *
-					   (lll->lazy_prepare + 1U);
+	lll->window_widening_prepare_us += lll->window_widening_periodic_us * lll->lazy_prepare;
 	if (lll->window_widening_prepare_us > lll->window_widening_max_us) {
 		lll->window_widening_prepare_us = lll->window_widening_max_us;
 	}
 
 	/* Current window widening */
 	lll->window_widening_event_us += lll->window_widening_prepare_us;
-	lll->window_widening_prepare_us = 0;
 	if (lll->window_widening_event_us > lll->window_widening_max_us) {
 		lll->window_widening_event_us =	lll->window_widening_max_us;
 	}
+
+	/* Pre-increment window widening */
+	lll->window_widening_prepare_us = lll->window_widening_periodic_us;
 
 	/* Reset chain PDU being scheduled by lll_sync context */
 	lll->is_aux_sched = 0U;
@@ -523,6 +524,11 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 	 * shall not use -EAGAIN as return value.
 	 */
 	ARG_UNUSED(resume_cb);
+
+	/* Prepare being cancelled (no resume for periodic sync) */
+	if (next == NULL) {
+		return -ECANCELED;
+	}
 
 	/* Different radio event overlap */
 	if (next != curr) {
@@ -647,7 +653,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	* CONFIG_BT_CTLR_CTEINLINE_SUPPORT
 	*/
 
-	lll_done(param);
+	lll_done(prepare_param->param);
 }
 
 static void isr_aux_setup(void *param)

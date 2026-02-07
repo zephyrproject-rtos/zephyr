@@ -467,6 +467,18 @@ config BT_CTLR_ADV_RESERVE_MAX
 	  corresponding to the Advertising Data present at the time of the
 	  start/enable of Advertising is used.
 
+config BT_CTLR_ADV_SLOT_WINDOW
+	bool "Advertising Primary PDUs within a slot window"
+	depends on BT_TICKER_EXT && \
+		   BT_BROADCASTER && (BT_CONN || BT_CTLR_ADV_EXT)
+	default y
+	help
+	  Place Advertising Primary PDUs within a slot window to avoid
+	  overlapping with other periodically scheduled states/roles; and be
+	  placed after such overlapping states/roles at the end of the slot
+	  window so that it does not take the interval of the overlapped state/
+	  role.
+
 config BT_CTLR_ADV_AUX_SLOT_WINDOW_DRIFT
 	bool "Drift Extended Advertising Auxiliary PDUs within a slot window"
 	depends on BT_TICKER_EXT && \
@@ -615,6 +627,17 @@ config BT_CTLR_SYNC_ISO_RESERVE_MAX
 	  Use maximum ISO Synchronized Receiver event time reservation. If
 	  disabled, then time reservation does not include the pre-transmissions
 	  and any Control subevents.
+
+config BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER
+	bool "Wrap ISO Synchronized Receiver event around overlapping roles"
+	depends on BT_TICKER_EXT && \
+		   BT_CTLR_SYNC_ISO && \
+		   !BT_CTLR_SYNC_ISO_RESERVE_MAX
+	help
+	  Wrap ISO Synchronized Receiver event around overlapping roles using
+	  ticker ticks_slot_window feature with jitter in window.
+	  LLL implementation can use the ticks_drifts value to determine the
+	  correct subevents to setup for reception.
 
 config BT_CTLR_ADV_ENABLE_STRICT
 	bool "Enforce Strict Advertising Enable/Disable"
@@ -1246,6 +1269,17 @@ config BT_CTLR_SCAN_UNRESERVED
 	  Scanner will not use time space reservation for scan window when in
 	  continuous scan mode.
 
+config BT_CTLR_SCAN_SLOT_WINDOW
+	bool "Scan window within a slot window"
+	depends on BT_TICKER_EXT && \
+		   BT_OBSERVER && (BT_CONN || BT_CTLR_ADV_EXT)
+	default y
+	help
+	  Place primary scan window within a slot window to avoid overlapping
+	  with other periodically scheduled states/roles; and be placed after
+	  such overlapping states/roles at the end of the slot window so that it
+	  does not take the interval of the overlapped state/role.
+
 config BT_MAYFLY_YIELD_AFTER_CALL
 	bool "Yield from mayfly thread after first call"
 	default y
@@ -1327,7 +1361,7 @@ config BT_TICKER_NEXT_SLOT_GET_MATCH
 config BT_TICKER_EXT
 	bool "Ticker extensions"
 	depends on !BT_TICKER_LOW_LAT
-	default y if BT_BROADCASTER
+	default y if BT_BROADCASTER && (BT_CONN || BT_CTLR_ADV_EXT)
 	help
 	  This option enables ticker extensions such as re-scheduling of
 	  ticker nodes with slot_window set to non-zero. Ticker extensions

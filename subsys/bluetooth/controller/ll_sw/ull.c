@@ -302,6 +302,9 @@ BUILD_ASSERT(TICKER_NODES <= UINT8_MAX);
 #define TICKER_USER_THREAD_OPS   (1 + TICKER_USER_THREAD_VENDOR_OPS + 1)
 #endif /* !CONFIG_BT_CTLR_LOW_LAT */
 
+/* NOTE: As ticker job will execute as immediate function call in ULL_LOW
+ *       context, no need for extra ULL_LOW operation queue element.
+ */
 #define TICKER_USER_ULL_LOW_OPS  (1 + TICKER_USER_ULL_LOW_VENDOR_OPS + 1)
 
 /* NOTE: Extended Advertising needs one extra ticker operation being enqueued
@@ -313,15 +316,31 @@ BUILD_ASSERT(TICKER_NODES <= UINT8_MAX);
  *       ticker and starting one new ticker for establishing an ACL connection.
  */
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-#define TICKER_USER_ULL_HIGH_OPS (4 + TICKER_USER_ULL_HIGH_VENDOR_OPS + \
+#if !defined(CONFIG_BT_OBSERVER) || defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
+#define TICKER_USER_ULL_HIGH_SCAN_AUX_OPS 1
+#else /* CONFIG_BT_OBSERVER && !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
+#define TICKER_USER_ULL_HIGH_SCAN_AUX_OPS CONFIG_BT_CTLR_SCAN_AUX_SET
+#endif /* CONFIG_BT_OBSERVER && !CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
+#define TICKER_USER_ULL_HIGH_OPS (3 + TICKER_USER_ULL_HIGH_SCAN_AUX_OPS + \
+				  TICKER_USER_ULL_HIGH_VENDOR_OPS + \
 				  TICKER_USER_ULL_HIGH_FLASH_OPS + 1)
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 #define TICKER_USER_ULL_HIGH_OPS (3 + TICKER_USER_ULL_HIGH_VENDOR_OPS + \
 				  TICKER_USER_ULL_HIGH_FLASH_OPS + 1)
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
+#if defined(CONFIG_BT_CTLR_LOW_LAT)
 #define TICKER_USER_LLL_OPS      (3 + TICKER_USER_LLL_VENDOR_OPS + 1)
+#else /* !CONFIG_BT_CTLR_LOW_LAT */
+/* NOTE: The value below covers cases where the scanner has enqueued a stop
+ *       request, the preempt has a start request enqueued and the preemption
+ *       on a new ticker expiry will enqueue addition stop and a new start
+ *       request.
+ */
+#define TICKER_USER_LLL_OPS      (4 + TICKER_USER_LLL_VENDOR_OPS + 1)
+#endif /* !CONFIG_BT_CTLR_LOW_LAT */
 
+/* Total elements for all operation queues */
 #define TICKER_USER_OPS           (TICKER_USER_LLL_OPS + \
 				   TICKER_USER_ULL_HIGH_OPS + \
 				   TICKER_USER_ULL_LOW_OPS + \
@@ -811,6 +830,10 @@ int ll_init(struct k_sem *sem_rx)
 			HAL_TICKER_US_TO_TICKS((TEST_TICKER_INTERVAL_US) +
 						(TEST_TICKER_TICKS_SLOT_US));
 #endif /* !CONFIG_BT_CTLR_JIT_SCHEDULING */
+
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+		test_ticker_ext[ticker_id].expire_info_id = TICKER_NULL;
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
 		ret = ticker_start_ext(
 #else /* !CONFIG_BT_TICKER_EXT */

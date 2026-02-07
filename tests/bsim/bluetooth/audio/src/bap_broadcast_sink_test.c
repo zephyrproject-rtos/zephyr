@@ -570,7 +570,11 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 	memset(&test_stream->last_info, 0, sizeof(test_stream->last_info));
 	test_stream->rx_cnt = 0U;
 	test_stream->valid_rx_cnt = 0U;
+	test_stream->seq_num = 0U;
+	test_stream->tx_cnt = 0U;
+	test_stream->err_rx_cnt = 0U;
 	UNSET_FLAG(test_stream->flag_audio_received);
+	test_stream->last_rx_failed = false;
 
 	err = bt_bap_ep_get_info(stream->ep, &info);
 	if (err != 0) {

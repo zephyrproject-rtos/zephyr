@@ -1072,10 +1072,16 @@ static int prepare_cb(struct lll_prepare_param *p)
 #if defined(CONFIG_BT_PERIPHERAL)
 static int resume_prepare_cb(struct lll_prepare_param *p)
 {
+	uint32_t ticks_offset;
 	struct ull_hdr *ull;
+	uint32_t ticks_now;
 
 	ull = HDR_LLL2ULL(p->param);
-	p->ticks_at_expire = ticker_ticks_now_get() - lll_event_offset_get(ull);
+	ticks_offset = lll_event_offset_get(ull);
+	ticks_offset += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US - EVENT_OVERHEAD_RESUME_US);
+	ticks_now = ticker_ticks_now_get();
+
+	p->ticks_at_expire = ticker_ticks_diff_get(ticks_now, ticks_offset);
 	p->remainder = 0;
 	p->lazy = 0;
 
@@ -1086,8 +1092,15 @@ static int resume_prepare_cb(struct lll_prepare_param *p)
 static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 {
 #if defined(CONFIG_BT_PERIPHERAL)
-	struct lll_adv *lll = curr;
+	struct lll_adv *lll;
 	struct pdu_adv *pdu;
+
+	/* Prepare being cancelled (no resume for directed adv) */
+	if (next == NULL) {
+		return -ECANCELED;
+	}
+
+	lll = curr;
 #endif /* CONFIG_BT_PERIPHERAL */
 
 	/* TODO: prio check */
@@ -1142,7 +1155,7 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	err = lll_hfclock_off();
 	LL_ASSERT_ERR(err >= 0);
 
-	lll_done(param);
+	lll_done(prepare_param->param);
 }
 
 static void isr_tx(void *param)
