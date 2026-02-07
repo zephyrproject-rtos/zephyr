@@ -9,7 +9,7 @@
 #include "mec5.dtsi"
 
 / {
-	flash0: flash@b0000 {
+	flash0: flash@c0000 {
 		reg = <0x000c0000 0x58000>;
 	};
 
