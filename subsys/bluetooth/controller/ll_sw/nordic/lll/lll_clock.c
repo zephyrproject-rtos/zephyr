@@ -12,9 +12,16 @@
 
 #include "hal/debug.h"
 
-/* Clock setup timeouts are unlikely, below values are experimental */
-#define LFCLOCK_TIMEOUT_MS 500
-#define HFCLOCK_TIMEOUT_MS 2
+/* LF (XO, RC) clock setup timeout */
+#define LFCLOCK_TIMEOUT_MS 1000U /* LF source can differ, use an experimental value here */
+
+/* HFXO clock setup timeout */
+#if DT_NODE_HAS_PROP(DT_NODELABEL(hfxo), startup_time_us)
+/* Use value from devicetree plus an additional margin */
+#define HFCLOCK_TIMEOUT_MS (DIV_ROUND_UP(DT_PROP(DT_NODELABEL(hfxo), startup_time_us), 1000U) + 3U)
+#else
+#define HFCLOCK_TIMEOUT_MS 5U /* Use an experimental value */
+#endif
 
 static uint16_t const sca_ppm_lut[] = {500, 250, 150, 100, 75, 50, 30, 20};
 
