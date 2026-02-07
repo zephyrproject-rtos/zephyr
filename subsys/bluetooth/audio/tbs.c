@@ -30,7 +30,6 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/util_utf8.h>
@@ -2257,7 +2256,7 @@ int bt_tbs_register_bearer(const struct bt_tbs_register_param *param)
 {
 	int ret = -ENOEXEC;
 
-	CHECKIF(!valid_register_param(param)) {
+	if (!valid_register_param(param)) {
 		LOG_DBG("Invalid parameters");
 
 		return -EINVAL;
