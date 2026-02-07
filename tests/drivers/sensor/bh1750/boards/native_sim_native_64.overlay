@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2026 Om Srivastava <srivastavaom97714@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	bh1750@23 {
+		compatible = "rohm,bh1750";
+		reg = <0x23>;
+	};
+};
