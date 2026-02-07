@@ -154,7 +154,7 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp23 "-std=c++23"
 set_compiler_property(PROPERTY no_strict_aliasing -fno-strict-aliasing)
 
 # Extra warning options
-set_property(TARGET compiler PROPERTY warnings_as_errors -Werror)
+set_property(TARGET compiler PROPERTY warnings_as_errors -Werror -Wa,--fatal-warnings)
 set_property(TARGET asm PROPERTY warnings_as_errors -Werror -Wa,--fatal-warnings)
 
 # Deprecation warning
