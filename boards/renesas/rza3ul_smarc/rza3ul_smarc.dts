@@ -74,14 +74,18 @@
 	at25ql128a: qspi-nor-flash@20000000 {
 		compatible = "renesas,rz-qspi-spibsc";
 		reg = <0x20000000 DT_SIZE_M(16)>; /* 128 Mbits */
+		ranges = <0x0 0x20000000 DT_SIZE_M(16)>;
 		write-block-size = <1>;
 		erase-block-size = <4096>;
 		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			reserved: partition@0 {
 				reg = <0x00000000 0x20000>;
