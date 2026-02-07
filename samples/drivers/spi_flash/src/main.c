@@ -67,6 +67,8 @@
 #define SPI_FLASH_COMPAT nxp_xspi_nor
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_imx_flexspi_nor)
 #define SPI_FLASH_COMPAT nxp_imx_flexspi_nor
+#elif DT_HAS_COMPAT_STATUS_OKAY(microchip_sama7g5_qspi)
+#define SPI_FLASH_COMPAT microchip_sama7g5_qspi
 #else
 #define SPI_FLASH_COMPAT invalid
 #endif

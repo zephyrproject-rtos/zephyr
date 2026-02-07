@@ -126,6 +126,24 @@
 			clocks = <&clk32k 1>;
 		};
 
+		qspi0: flash-controller@e080c000 {
+			compatible = "microchip,sama7g5-qspi";
+			reg = <0xe080c000 0x400>, <0x20000000 0x10000000>;
+			reg-names = "base", "mmap";
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 78>, <&pmc PMC_TYPE_GCK 78>;
+			clock-names = "hclock", "multclk";
+			status = "disabled";
+		};
+
+		qspi1: flash-controller@e0810000 {
+			compatible = "microchip,sama7g5-qspi";
+			reg = <0xe0810000 0x400>, <0x30000000 0x10000000>;
+			reg-names = "base", "mmap";
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 79>, <&pmc PMC_TYPE_GCK 79>;
+			clock-names = "hclock", "multclk";
+			status = "disabled";
+		};
+
 		mcan0: mcan@e0828000 {
 			compatible = "atmel,sam-can";
 			reg = <0xe0828000 0x100>, <0x100000 0x7800>, <0xe1626030 0x4>;

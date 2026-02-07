@@ -1,0 +1,56 @@
+# Copyright (c) 2025-2026 Microchip Technology  Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip QSPI Flash controller
+
+compatible: "microchip,sama7g5-qspi"
+
+include:
+ - flash-controller.yaml
+ - pinctrl-device.yaml
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  clocks:
+    required: true
+
+  dmas:
+    description: |
+      Optional DMA channel specifier. If DMA should be used, specifier should
+      hold a handle reference to the dma controller and its channel.
+
+  dma-names:
+    description: |
+      Required if the dmas property exists.
+
+  requires-ulbpr:
+    type: boolean
+    description: |
+      Indicates the device requires the ULBPR (0x98) command.
+
+      Some flash chips such as the Microchip SST26VF series have a block
+      protection register that initializes to write-protected. Use this
+      property to indicate that the BPR must be unlocked before write
+      operations can proceed.
+      For example, SST26VF064B on SAMA7G54-CURIOITY board.
+
+  skip-sfdp:
+    type: boolean
+    description: |
+      Indicates the device to skip parsing SFDP( the Serial Flash
+      Discoverable Parameter tables) to obtain flash parameters.
+
+      Some flash chips (such as the MX66LM1G45G on SAMA7G54-EK board)
+      do not support SFDP.
+
+  size:
+    type: int
+    default: 0x0
+    description: |
+      Flash Memory size in bits, required if skip-sfdp is enabled.
