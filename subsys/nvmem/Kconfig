@@ -26,6 +26,10 @@ config NVMEM_FLASH_WRITE
 	  to write to flash devices requiring out-of-bands erase or
 	  taking write-block sizes into account.
 
+config NVMEM_MMIO
+	bool "NVMEM support for memory mapped IO"
+	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_FIXED_LAYOUT),mmio)
+
 config NVMEM_OTP
 	bool "NVMEM (read) support for OTP memory handling devices"
 	default y
