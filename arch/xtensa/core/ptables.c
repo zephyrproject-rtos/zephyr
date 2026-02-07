@@ -1247,7 +1247,9 @@ static void dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos, enum dup
 	k_spinlock_key_t key;
 
 	src_l2_table = (uint32_t *)PTE_PPN_GET(l1_table[l1_pos]);
-
+	if (!src_l2_table) {
+		return;
+	}
 	key = k_spin_lock(&xtensa_counter_lock);
 	if (l2_page_tables_counter[l2_table_to_counter_pos(src_l2_table)] == 1) {
 		/* Only one user of L2 table, no need to duplicate. */
@@ -1256,6 +1258,7 @@ static void dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos, enum dup
 	}
 
 	l2_table = dup_l2_table(src_l2_table, action);
+	__ASSERT(l2_table, "dup_l2_table() failed");
 
 	/* The page table is using kernel ASID because we don't
 	 * user thread manipulate it.
