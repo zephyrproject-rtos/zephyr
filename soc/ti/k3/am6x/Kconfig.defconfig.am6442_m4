@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_AM6442_M4
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 400000000
+
+config NUM_IRQS
+	default 64
+
+endif # SOC_AM6442_M4
