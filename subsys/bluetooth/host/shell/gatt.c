@@ -150,14 +150,14 @@ static struct gatt_op_context {
 	uint16_t read_handles[GATT_READ_MAX_HANDLES];
 	struct bt_gatt_write_params write;
 	uint8_t write_buf[BT_ATT_MAX_ATTRIBUTE_LEN];
+	struct bt_uuid_16 uuid;
 } gatt_ctx[GATT_OP_POOL_SIZE];
-
-static struct bt_uuid_16 uuid = BT_UUID_INIT_16(0);
 
 static struct gatt_op_context *gatt_ctx_discover_alloc(void)
 {
 	for (size_t i = 0U; i < ARRAY_SIZE(gatt_ctx); i++) {
 		if (gatt_ctx[i].discover.func == NULL) {
+			gatt_ctx[i].uuid.uuid.type = BT_UUID_TYPE_16;
 			return &gatt_ctx[i];
 		}
 	}
@@ -168,6 +168,7 @@ static struct gatt_op_context *gatt_ctx_read_alloc(void)
 {
 	for (size_t i = 0U; i < ARRAY_SIZE(gatt_ctx); i++) {
 		if (gatt_ctx[i].read.func == NULL) {
+			gatt_ctx[i].uuid.uuid.type = BT_UUID_TYPE_16;
 			return &gatt_ctx[i];
 		}
 	}
@@ -287,9 +288,9 @@ static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 
 	if (argc > 1) {
 		/* Only set the UUID if the value is valid (non zero) */
-		uuid.val = strtoul(argv[1], NULL, 16);
-		if (uuid.val) {
-			ctx->discover.uuid = &uuid.uuid;
+		ctx->uuid.val = strtoul(argv[1], NULL, 16);
+		if (ctx->uuid.val) {
+			ctx->discover.uuid = &ctx->uuid.uuid;
 		}
 	}
 
@@ -445,9 +446,9 @@ static int cmd_read_uuid(const struct shell *sh, size_t argc, char *argv[])
 	SET_CHAN_OPT_ANY(ctx->read);
 
 	if (argc > 1) {
-		uuid.val = strtoul(argv[1], NULL, 16);
-		if (uuid.val) {
-			ctx->read.by_uuid.uuid = &uuid.uuid;
+		ctx->uuid.val = strtoul(argv[1], NULL, 16);
+		if (ctx->uuid.val) {
+			ctx->read.by_uuid.uuid = &ctx->uuid.uuid;
 		}
 	}
 
