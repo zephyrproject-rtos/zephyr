@@ -105,6 +105,14 @@
 		compatible = "st,lps22hb-press";
 		reg = <0x5c>;
 	};
+
+	/* Sensiron SHTCx humidity and temperature sensor*/
+	shtc3: shtc3@70 {
+		compatible = "sensirion,shtc3", "sensirion,shtcx";
+		reg = <0x70>;
+		measure-mode = "normal";
+		clock-stretching;
+	};
 };
 
 &qspi {
