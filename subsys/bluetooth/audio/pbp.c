@@ -16,7 +16,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/types.h>
 
 LOG_MODULE_REGISTER(bt_pbp, CONFIG_BT_PBP_LOG_LEVEL);
@@ -25,19 +24,19 @@ int bt_pbp_get_announcement(const uint8_t meta[], size_t meta_len,
 			    enum bt_pbp_announcement_feature features,
 			    struct net_buf_simple *pba_data_buf)
 {
-	CHECKIF(pba_data_buf == NULL) {
+	if (pba_data_buf == NULL) {
 		LOG_DBG("No buffer provided for advertising data!\n");
 
 		return -EINVAL;
 	}
 
-	CHECKIF((meta == NULL && meta_len != 0) || (meta != NULL && meta_len == 0)) {
+	if ((meta == NULL && meta_len != 0) || (meta != NULL && meta_len == 0)) {
 		LOG_DBG("Invalid metadata combination: %p %zu", meta, meta_len);
 
 		return -EINVAL;
 	}
 
-	CHECKIF(pba_data_buf->size < (meta_len + BT_PBP_MIN_PBA_SIZE)) {
+	if (pba_data_buf->size < (meta_len + BT_PBP_MIN_PBA_SIZE)) {
 		LOG_DBG("Buffer size needs to be at least %d!\n", meta_len + BT_PBP_MIN_PBA_SIZE);
 
 		return -EINVAL;
@@ -60,7 +59,7 @@ int bt_pbp_parse_announcement(struct bt_data *data, enum bt_pbp_announcement_fea
 	uint8_t meta_len = 0;
 	void *uuid;
 
-	CHECKIF(!data || !features || !meta) {
+	if (!data || !features || !meta) {
 		return -EINVAL;
 	}
 
