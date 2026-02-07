@@ -774,6 +774,85 @@ ZTEST_F(nvs, test_nvs_gc_corrupt_ate)
 	err = nvs_mount(&fixture->fs);
 	zassert_true(err == 0,  "nvs_mount call failure: %d", err);
 }
+
+#if CONFIG_FLASH_SIMULATOR_DOUBLE_WRITES
+/*
+ * Test recovery when a close ATE was interrupted by power loss and later
+ * misread as erased. Although the close ATE appears erased, the sector
+ * layout indicates that a close ATE is expected. A valid data ATE is still
+ * present earlier in the sector and must be recovered to prevent data loss.
+ */
+ZTEST_F(nvs, test_nvs_startup_missing_close_ate)
+{
+	struct nvs_ate ate, close_ate;
+	uint32_t data;
+	int err;
+#ifdef CONFIG_NVS_DATA_CRC
+	uint32_t data_crc;
+#endif
+
+	/* Simulate erased close ATE (all erase_value) */
+	memset(&close_ate, fixture->fs.flash_parameters->erase_value,
+	       sizeof(close_ate));
+
+	/* Valid data ATE located before the close ATE */
+	ate.id = 0x1;
+	ate.offset = 0;
+	ate.len = sizeof(data);
+#ifdef CONFIG_NVS_DATA_CRC
+	ate.len += sizeof(data_crc);
+#endif
+	ate.part = 0xff;
+	ate.crc8 = crc8_ccitt(0xff, &ate,
+			      offsetof(struct nvs_ate, crc8));
+
+	/* Write valid data ATE at -2 */
+	err = flash_write(fixture->fs.flash_device,
+			  fixture->fs.offset + fixture->fs.sector_size -
+			  sizeof(struct nvs_ate) * 2,
+			  &ate, sizeof(ate));
+	zassert_true(err == 0, "flash_write failed: %d", err);
+
+	/* Write data referenced by the valid ATE */
+	data = 0xdeadbeef;
+	err = flash_write(fixture->fs.flash_device,
+			  fixture->fs.offset, &data, sizeof(data));
+	zassert_true(err == 0, "flash_write failed: %d", err);
+#ifdef CONFIG_NVS_DATA_CRC
+	data_crc = crc32_ieee((const uint8_t *)&data, sizeof(data));
+	err = flash_write(fixture->fs.flash_device,
+			  fixture->fs.offset + sizeof(data),
+			  &data_crc, sizeof(data_crc));
+	zassert_true(err == 0, "flash_write for data CRC failed: %d", err);
+#endif
+
+	/* Write a nearly-erased (almost erase_value) invalid close ATE at the end of sector 0 */
+	close_ate.crc8 = ~close_ate.crc8;
+	err = flash_write(fixture->fs.flash_device,
+			  fixture->fs.offset + fixture->fs.sector_size -
+			  sizeof(struct nvs_ate),
+			  &close_ate, sizeof(close_ate));
+	zassert_true(err == 0, "flash_write failed: %d", err);
+
+	fixture->fs.sector_count = 3;
+
+	err = nvs_mount(&fixture->fs);
+	zassert_true(err == 0, "nvs_mount call failure: %d", err);
+
+	zassert_equal((fixture->fs.ate_wra & ADDR_SECT_MASK) >> ADDR_SECT_SHIFT, 1,
+		      "unexpected ate_wra value: %x", fixture->fs.ate_wra);
+
+	err = flash_read(fixture->fs.flash_device,
+			 fixture->fs.offset + fixture->fs.sector_size -
+			 sizeof(struct nvs_ate),
+			 &close_ate, sizeof(close_ate));
+	zassert_true(err == 0, "flash_read failed: %d", err);
+
+	zassert_equal(close_ate.offset,
+		      fixture->fs.sector_size - 2 * sizeof(struct nvs_ate),
+		      "unexpected close ATE offset: %x", close_ate.offset);
+}
+#endif /* CONFIG_FLASH_SIMULATOR_DOUBLE_WRITES */
 #endif /* CONFIG_TEST_NVS_SIMULATOR */
 
 #ifdef CONFIG_NVS_LOOKUP_CACHE

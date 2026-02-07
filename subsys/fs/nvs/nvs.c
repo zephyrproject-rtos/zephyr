@@ -748,13 +748,14 @@ gc_done:
 static int nvs_startup(struct nvs_fs *fs)
 {
 	int rc;
-	struct nvs_ate last_ate;
+	struct nvs_ate last_ate, close_ate;
 	size_t ate_size, empty_len;
 	/* Initialize addr to 0 for the case fs->sector_count == 0. This
 	 * should never happen as this is verified in nvs_mount() but both
 	 * Coverity and GCC believe the contrary.
 	 */
 	uint32_t addr = 0U;
+	uint32_t close_addr = 0U;
 	uint16_t i, closed_sectors = 0;
 	uint8_t erase_value = fs->flash_parameters->erase_value;
 
@@ -767,11 +768,18 @@ static int nvs_startup(struct nvs_fs *fs)
 	for (i = 0; i < fs->sector_count; i++) {
 		addr = (i << ADDR_SECT_SHIFT) +
 		       (uint16_t)(fs->sector_size - ate_size);
-		rc = nvs_flash_cmp_const(fs, addr, erase_value,
-					 sizeof(struct nvs_ate));
+
+		rc = nvs_flash_ate_rd(fs, addr, &close_ate);
+		if (rc) {
+			goto end;
+		}
+
+		rc = nvs_ate_cmp_const(&close_ate, erase_value);
 		if (rc) {
 			/* closed sector */
 			closed_sectors++;
+
+			close_addr = addr;
 			nvs_sector_advance(fs, &addr);
 			rc = nvs_flash_cmp_const(fs, addr, erase_value,
 						 sizeof(struct nvs_ate));
@@ -866,6 +874,49 @@ static int nvs_startup(struct nvs_fs *fs)
 
 		fs->ate_wra -= ate_size;
 	}
+
+#ifdef CONFIG_FLASH_HAS_SAFE_INPLACE_WRITE
+	/*
+	 * Recovery for power loss during close ATE programming.
+	 *
+	 * When the newly selected sector is empty, the sector layout indicates
+	 * that a close ATE should exist in the previously used sector. If such
+	 * a close ATE is present but invalid, this most likely means that power
+	 * was lost while programming the close ATE.
+	 *
+	 * Although the previous closed sector can still be correctly identified
+	 * during this startup, the flash contents of the invalid close ATE are
+	 * not stable. Due to flash charge characteristics, subsequent reads
+	 * may incorrectly return an erased (all erase_value) pattern, causing
+	 * the sector to be misidentified as open and the most recently moved
+	 * data to be treated as obsolete.
+	 *
+	 * To prevent this potential data loss, explicitly reconstruct and
+	 * rewrite a valid close ATE based on the last valid data ATE found in
+	 * the sector.
+	 */
+	if (((fs->ate_wra & ADDR_OFFS_MASK) == (fs->sector_size - 2 * ate_size)) &&
+	    (close_addr != 0U) && !nvs_close_ate_valid(fs, &close_ate)) {
+		addr = close_addr;
+		rc = nvs_recover_last_ate(fs, &addr);
+		if (rc) {
+			goto end;
+		}
+
+		close_ate.id = 0xFFFF;
+		close_ate.len = 0U;
+		close_ate.offset = (uint16_t)(addr & ADDR_OFFS_MASK);
+		close_ate.part = 0xff;
+
+		nvs_ate_crc8_update(&close_ate);
+
+		rc = nvs_flash_al_wrt(fs, close_addr, &close_ate,
+				      sizeof(struct nvs_ate));
+		if (rc) {
+			goto end;
+		}
+	}
+#endif
 
 	/* if the sector after the write sector is not empty gc was interrupted
 	 * we might need to restart gc if it has not yet finished. Otherwise

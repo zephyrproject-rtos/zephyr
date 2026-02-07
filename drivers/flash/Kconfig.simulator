@@ -49,6 +49,7 @@ config FLASH_SIMULATOR_RAMLIKE
 
 config FLASH_SIMULATOR_DOUBLE_WRITES
 	bool "Allow program units to be programmed more than once"
+	select FLASH_HAS_SAFE_INPLACE_WRITE
 	help
 	 If selected, writing to a non-erased program unit will succeed, otherwise, it will return an error.
 	 Keep in mind that write operations can only change value of a bit from erase-value to the
