@@ -39,7 +39,7 @@ tests:
       - bl54l15_dvk/nrf54l15/cpuapp/ns
       - bl54l15u_dvk/nrf54l15/cpuapp/ns
       - frdm_mcxw71
-      - frdm_mcxw72/mcxw727c/cpu0
+      - frdm_mcxw72
       - raytac_an54lq_db_15/nrf54l15/cpuapp/ns
       - frdm_mcxw23
       - mcxw23_evk
@@ -165,7 +165,7 @@ tests:
     extra_args: EXTRA_DTC_OVERLAY_FILE="sram_noecc.overlay"
     platform_allow:
       - frdm_mcxw71
-      - frdm_mcxw72/mcxw727c/cpu0
+      - frdm_mcxw72
   drivers.watchdog.nxp_mcxw2xx_bypass_first_32k:
     extra_args: EXTRA_DTC_OVERLAY_FILE="bypass_first_32k.overlay"
     platform_allow:

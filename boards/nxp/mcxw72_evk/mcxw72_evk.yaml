@@ -1,5 +1,5 @@
-identifier: frdm_mcxw72/mcxw727c/cpu0
-name: NXP FRDM-MCXW72
+identifier: mcxw72_evk
+name: NXP MCXW72-EVK
 type: mcu
 arch: arm
 ram: 264
@@ -11,14 +11,9 @@ supported:
   - adc
   - can
   - counter
-  - dma
   - gpio
-  - flexio
   - i2c
   - pinctrl
   - pwm
   - spi
   - uart
-  - watchdog
-  - netif:openthread
-vendor: nxp

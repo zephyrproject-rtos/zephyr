@@ -64,7 +64,7 @@ tests:
     extra_args: DTC_OVERLAY_FILE="boards/frdm_mcxw7x_flexio_pwm.overlay"
     platform_allow:
       - frdm_mcxw71
-      - frdm_mcxw72/mcxw727c/cpu0
+      - frdm_mcxw72
     filter: dt_alias_exists("pwm-test") and CONFIG_DT_HAS_NXP_FLEXIO_ENABLED
      and CONFIG_DT_HAS_NXP_FLEXIO_PWM_ENABLED
     depends_on: pwm
