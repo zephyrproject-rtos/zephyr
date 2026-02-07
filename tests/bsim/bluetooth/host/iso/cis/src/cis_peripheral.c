@@ -10,12 +10,15 @@
 #include <string.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
+#include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/atomic_types.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 
@@ -25,18 +28,21 @@
 #include "babblekit/flags.h"
 #include "bstests.h"
 #include "common.h"
+#include "syscalls/kernel.h"
 
 extern enum bst_result_t bst_result;
-
-DEFINE_FLAG_STATIC(flag_data_received);
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 };
-static struct bt_iso_chan iso_chan;
+
+static struct iso_test_chan {
+	struct bt_iso_chan iso_chan;
+	size_t iso_recv_cnt;
+	atomic_t flag_data_received;
+} test_chans[CONFIG_BT_ISO_MAX_CHAN];
 
 static size_t disconnect_after_recv_cnt;
-static size_t iso_recv_cnt;
 
 /** Print data as d_0 d_1 d_2 ... d_(n-2) d_(n-1) d_(n) to show the 3 first and 3 last octets
  *
@@ -85,15 +91,34 @@ static void disconnect_device(struct bt_conn *conn, void *data)
 static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,
 		     struct net_buf *buf)
 {
-	iso_recv_cnt++;
+	struct iso_test_chan *test_chan = CONTAINER_OF(chan, struct iso_test_chan, iso_chan);
+
+	test_chan->iso_recv_cnt++;
 	if (info->flags & BT_ISO_FLAGS_VALID) {
-		printk("Incoming data channel %p len %u\n", chan, buf->len);
+		printk("[%zu]: Incoming data channel %p len %u\n", test_chan->iso_recv_cnt, chan,
+		       buf->len);
 		iso_print_data(buf->data, buf->len);
-		SET_FLAG(flag_data_received);
+		SET_FLAG(test_chan->flag_data_received);
 	}
-	if (disconnect_after_recv_cnt && (iso_recv_cnt >= disconnect_after_recv_cnt)) {
-		printk("Disconnecting\n");
-		bt_conn_foreach(BT_CONN_TYPE_LE, disconnect_device, NULL);
+
+	if (disconnect_after_recv_cnt != 0) {
+		bool all_received = true;
+
+		ARRAY_FOR_EACH_PTR(test_chans, tmp_test_chan) {
+			if (tmp_test_chan->iso_chan.iso != NULL &&
+			    tmp_test_chan->iso_recv_cnt < disconnect_after_recv_cnt) {
+				all_received = false;
+				break;
+			}
+		}
+
+		/* If all connected streams have received `disconnect_after_recv_cnt` then we
+		 * disconnect the ACL
+		 */
+		if (all_received) {
+			printk("Disconnecting\n");
+			bt_conn_foreach(BT_CONN_TYPE_LE, disconnect_device, NULL);
+		}
 	}
 }
 
@@ -113,22 +138,34 @@ static void iso_connected(struct bt_iso_chan *chan)
 
 static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
+	struct iso_test_chan *test_chan = CONTAINER_OF(chan, struct iso_test_chan, iso_chan);
+
 	printk("ISO Channel %p disconnected (reason 0x%02x)\n", chan, reason);
+
+	if (!IS_FLAG_SET(test_chan->flag_data_received)) {
+		TEST_FAIL("Test failed: Chan %p did not receive expected data", chan);
+	}
 }
 
 static int iso_accept(const struct bt_iso_accept_info *info, struct bt_iso_chan **chan)
 {
+	int ret;
+
 	printk("Incoming request from %p\n", (void *)info->acl);
 
-	if (iso_chan.iso) {
-		TEST_FAIL("No channels available");
-
-		return -ENOMEM;
+	ret = -ENOMEM;
+	ARRAY_FOR_EACH_PTR(test_chans, test_chan) {
+		if (test_chan->iso_chan.iso == NULL) {
+			*chan = &test_chan->iso_chan;
+			ret = 0;
+		}
 	}
 
-	*chan = &iso_chan;
+	if (ret != 0) {
+		TEST_FAIL("No channels available");
+	}
 
-	return 0;
+	return ret;
 }
 
 static void init(void)
@@ -160,11 +197,13 @@ static void init(void)
 		return;
 	}
 
-	iso_chan.ops = &iso_ops;
-	iso_chan.qos = &iso_qos;
+	ARRAY_FOR_EACH_PTR(test_chans, test_chan) {
+		test_chan->iso_chan.ops = &iso_ops;
+		test_chan->iso_chan.qos = &iso_qos;
 #if defined(CONFIG_BT_SMP)
-	iso_chan.required_sec_level = BT_SECURITY_L2,
+		test_chan->iso_chan.required_sec_level = BT_SECURITY_L2;
 #endif /* CONFIG_BT_SMP */
+	}
 
 	err = bt_iso_server_register(&iso_server);
 	if (err) {
@@ -190,6 +229,24 @@ static void adv_connect(void)
 	WAIT_FOR_FLAG(flag_connected);
 }
 
+static void wait_all_cis_disconnected(void)
+{
+	bool all_cis_disconnected = false;
+
+	while (!all_cis_disconnected) {
+		all_cis_disconnected = true;
+
+		ARRAY_FOR_EACH_PTR(test_chans, test_chan) {
+			if (test_chan->iso_chan.iso != NULL) {
+				all_cis_disconnected = false;
+				break;
+			}
+		}
+
+		k_sleep(K_MSEC(100));
+	}
+}
+
 static void test_main(void)
 {
 	init();
@@ -197,10 +254,9 @@ static void test_main(void)
 	while (true) {
 		adv_connect();
 		bt_testlib_conn_wait_free();
+		wait_all_cis_disconnected();
 
-		if (IS_FLAG_SET(flag_data_received)) {
-			TEST_PASS("Test passed");
-		}
+		TEST_PASS("Test passed");
 	}
 }
 
@@ -213,10 +269,9 @@ static void test_main_early_disconnect(void)
 	while (true) {
 		adv_connect();
 		bt_testlib_conn_wait_free();
+		wait_all_cis_disconnected();
 
-		if (IS_FLAG_SET(flag_data_received)) {
-			TEST_PASS("Test passed");
-		}
+		TEST_PASS("Test passed");
 	}
 }
 
