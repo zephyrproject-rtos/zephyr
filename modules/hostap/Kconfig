@@ -177,7 +177,6 @@ config WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT
 	select MBEDTLS_CIPHER_MODE_CBC_ENABLED
 	select MBEDTLS_CIPHER_AES_ENABLED
 	select MBEDTLS_CIPHER_DES_ENABLED
-	select MBEDTLS_MD5
 	select MBEDTLS_SHA1
 	select MBEDTLS_SHA384
 	select MBEDTLS_ENTROPY_C
@@ -222,7 +221,6 @@ config WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA
 	select PSA_WANT_ALG_HMAC
 	select PSA_WANT_ALG_CCM
 	select PSA_WANT_ALG_CTR
-	select PSA_WANT_ALG_MD5
 	select PSA_WANT_ALG_SHA_1
 	select PSA_WANT_ALG_SHA_256
 	select PSA_WANT_ALG_SHA_224
@@ -267,9 +265,6 @@ config EAP_TTLS
 
 config EAP_PEAP
 	bool "EAP-PEAP support"
-
-config EAP_MD5
-	bool "EAP-MD5 support"
 
 config EAP_GTC
 	bool "EAP-GTC support"
@@ -389,9 +384,6 @@ config EAP_SERVER_TLS
 
 config EAP_SERVER_IDENTITY
 	bool "EAP-IDENTITY server support"
-
-config EAP_SERVER_MD5
-	bool "EAP-MD5 server support"
 
 config EAP_SERVER_MSCHAPV2
 	bool "EAP-MSCHAPV2 server support"
@@ -687,6 +679,9 @@ config IEEE80211AC
 	bool
 
 config HS20
+	bool
+
+config NO_MD5
 	bool
 
 config IEEE80211R
