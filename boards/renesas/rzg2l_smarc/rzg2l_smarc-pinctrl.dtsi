@@ -32,4 +32,11 @@
 			pinmux = <RZG_PINMUX(PORT_43, 0, 3)>; /* GTIOCA */
 		};
 	};
+
+	/omit-if-no-ref/ i2c2_pins: i2c2 {
+		i2c2-pinmux {
+			pinmux = <RZG_PINMUX(PORT_42, 3, 1)>, /* SDA */
+				 <RZG_PINMUX(PORT_42, 4, 1)>; /* SCL */
+		};
+	};
 };
