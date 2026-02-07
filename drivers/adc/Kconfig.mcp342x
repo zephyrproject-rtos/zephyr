@@ -1,0 +1,40 @@
+# Copyright (c) 2025 Axel Utech <utech@sofiha.de>
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_MCP342X
+	bool "Microchip MCP342X 16-Bit, Multi-Channel ΔΣ ADC"
+	default y
+	depends on DT_HAS_MICROCHIP_MCP3428_ENABLED \
+		|| DT_HAS_MICROCHIP_MCP3427_ENABLED \
+		|| DT_HAS_MICROCHIP_MCP3426_ENABLED
+	select I2C
+	help
+	  Microchip MCP342X 16-Bit, Multi-Channel ΔΣ ADC
+
+if ADC_MCP342X
+
+config ADC_MCP342X_INIT_PRIORITY
+	int "Priority for the driver initialization"
+	default 80
+	help
+	  Fine tune the priority for the driver initialization. Make sure it's
+	  higher (-> lower priority) than I2C_INIT_PRIORITY.
+
+if ADC_ASYNC
+
+config ADC_MCP342X_ACQUISITION_THREAD_PRIORITY
+	int "Priority for the data acquisition thread"
+	default 0
+	help
+	  Execution priority for the internal data acquisition thread.
+
+config ADC_MCP342X_ACQUISITION_THREAD_STACK_SIZE
+	int "Stack size for the data acquisition thread"
+	default 512
+	help
+	  Stack size for the internal data acquisition thread. Requires room
+	  for I2C operations.
+
+endif # ADC_ASYNC
+
+endif # ADC_MCP342X
