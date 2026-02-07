@@ -128,7 +128,7 @@ int mpxxdtyy_i2s_configure(const struct device *dev, struct dmic_cfg *cfg)
 	i2s_cfg.channels = cfg->channel.req_num_chan;
 	i2s_cfg.format = I2S_FMT_DATA_FORMAT_LEFT_JUSTIFIED |
 			 I2S_FMT_BIT_CLK_INV;
-	i2s_cfg.options = I2S_OPT_FRAME_CLK_MASTER | I2S_OPT_BIT_CLK_MASTER;
+	i2s_cfg.options = I2S_OPT_FRAME_CLK_CONTROLLER | I2S_OPT_BIT_CLK_CONTROLLER;
 	i2s_cfg.frame_clk_freq = audio_freq * factor / chan_size;
 	i2s_cfg.block_size = data->pcm_mem_size * (factor / chan_size);
 	i2s_cfg.mem_slab = &rx_pdm_i2s_mslab;

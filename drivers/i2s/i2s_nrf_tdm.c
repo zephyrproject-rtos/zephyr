@@ -568,11 +568,11 @@ static int tdm_nrf_configure(const struct device *dev, enum i2s_dir dir,
 	nrfx_cfg.num_of_channels = nrf_tdm_chan_num_get(tdm_cfg->channels + extra_channels);
 	chan_mask = BIT_MASK(tdm_cfg->channels);
 
-	if ((tdm_cfg->options & I2S_OPT_BIT_CLK_SLAVE) &&
-	    (tdm_cfg->options & I2S_OPT_FRAME_CLK_SLAVE)) {
+	if ((tdm_cfg->options & I2S_OPT_BIT_CLK_TARGET) &&
+	    (tdm_cfg->options & I2S_OPT_FRAME_CLK_TARGET)) {
 		nrfx_cfg.mode = NRF_TDM_MODE_SLAVE;
-	} else if (!(tdm_cfg->options & I2S_OPT_BIT_CLK_SLAVE) &&
-		   !(tdm_cfg->options & I2S_OPT_FRAME_CLK_SLAVE)) {
+	} else if (!(tdm_cfg->options & I2S_OPT_BIT_CLK_TARGET) &&
+		   !(tdm_cfg->options & I2S_OPT_FRAME_CLK_TARGET)) {
 		nrfx_cfg.mode = NRF_TDM_MODE_MASTER;
 	} else {
 		LOG_ERR("Unsupported operation mode: 0x%02x", tdm_cfg->options);

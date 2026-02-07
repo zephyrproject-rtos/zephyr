@@ -591,8 +591,8 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 		config.syncMode = dev_cfg->rx_sync_mode;
 	}
 
-	bool frame_clk_slave = i2s_cfg->options & I2S_OPT_FRAME_CLK_SLAVE;
-	bool bit_clk_slave = i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE;
+	bool frame_clk_slave = i2s_cfg->options & I2S_OPT_FRAME_CLK_TARGET;
+	bool bit_clk_slave = i2s_cfg->options & I2S_OPT_BIT_CLK_TARGET;
 
 	if (frame_clk_slave && bit_clk_slave) {
 		config.masterSlave = kSAI_Slave;

@@ -178,14 +178,23 @@ typedef uint8_t i2s_opt_t;
 #define I2S_OPT_BIT_CLK_CONT                (0 << 0)
 /** Run bit clock when sending data only */
 #define I2S_OPT_BIT_CLK_GATED               BIT(0)
-/** I2S driver is bit clock master */
-#define I2S_OPT_BIT_CLK_MASTER              (0 << 1)
-/** I2S driver is bit clock slave */
-#define I2S_OPT_BIT_CLK_SLAVE               BIT(1)
-/** I2S driver is frame clock master */
-#define I2S_OPT_FRAME_CLK_MASTER            (0 << 2)
-/** I2S driver is frame clock slave */
-#define I2S_OPT_FRAME_CLK_SLAVE             BIT(2)
+/** I2S driver is bit clock controller */
+#define I2S_OPT_BIT_CLK_CONTROLLER          (0 << 1)
+/** I2S driver is bit clock target */
+#define I2S_OPT_BIT_CLK_TARGET              BIT(1)
+/** I2S driver is frame clock controller */
+#define I2S_OPT_FRAME_CLK_CONTROLLER        (0 << 2)
+/** I2S driver is frame clock target */
+#define I2S_OPT_FRAME_CLK_TARGET            BIT(2)
+
+/** @deprecated @see I2S_OPT_BIT_CLK_CONTROLLER */
+#define I2S_OPT_BIT_CLK_MASTER              I2S_OPT_BIT_CLK_CONTROLLER __DEPRECATED_MACRO
+/** @deprecated @see I2S_OPT_BIT_CLK_TARGET */
+#define I2S_OPT_BIT_CLK_SLAVE               I2S_OPT_BIT_CLK_TARGET __DEPRECATED_MACRO
+/** @deprecated @see I2S_OPT_FRAME_CLK_CONTROLLER */
+#define I2S_OPT_FRAME_CLK_MASTER            I2S_OPT_FRAME_CLK_CONTROLLER __DEPRECATED_MACRO
+/** @deprecated @see I2S_OPT_FRAME_CLK_TARGET */
+#define I2S_OPT_FRAME_CLK_SLAVE             I2S_OPT_FRAME_CLK_TARGET __DEPRECATED_MACRO
 
 /** @brief Loop back mode.
  *

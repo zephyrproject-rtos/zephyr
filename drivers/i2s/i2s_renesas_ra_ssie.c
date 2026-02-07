@@ -711,14 +711,14 @@ static int i2s_renesas_ra_ssie_configure(const struct device *dev, enum i2s_dir 
 	 * For slave mode, bit clock and frame clock is get from external
 	 */
 	switch (i2s_cfg->options & (I2S_OPT_BIT_CLK_FRAME_CLK_MASK)) {
-	case I2S_OPT_BIT_CLK_MASTER | I2S_OPT_FRAME_CLK_MASTER:
+	case I2S_OPT_BIT_CLK_CONTROLLER | I2S_OPT_FRAME_CLK_CONTROLLER:
 		new_fsp_cfg.operating_mode = I2S_MODE_MASTER;
 		ret = renesas_ra_ssie_set_clock_divider(dev, i2s_cfg, &new_fsp_extend_cfg);
 		if (ret < 0) {
 			return ret;
 		}
 		break;
-	case I2S_OPT_BIT_CLK_SLAVE | I2S_OPT_FRAME_CLK_SLAVE:
+	case I2S_OPT_BIT_CLK_TARGET | I2S_OPT_FRAME_CLK_TARGET:
 		new_fsp_cfg.operating_mode = I2S_MODE_SLAVE;
 		break;
 	default:

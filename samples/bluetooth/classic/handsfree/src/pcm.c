@@ -156,7 +156,7 @@ int pcm_init(uint8_t air_mode)
 	config.word_size = word_size;
 	config.channels = channels;
 	config.format = I2S_FMT_DATA_FORMAT_PCM_SHORT;
-	config.options = I2S_OPT_BIT_CLK_SLAVE | I2S_OPT_FRAME_CLK_SLAVE;
+	config.options = I2S_OPT_BIT_CLK_TARGET | I2S_OPT_FRAME_CLK_TARGET;
 	config.frame_clk_freq = sample_rate;
 	config.block_size = BLOCK_SIZE;
 	config.timeout = TIMEOUT;

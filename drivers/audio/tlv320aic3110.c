@@ -223,11 +223,11 @@ static int codec_configure_dai(const struct device *dev, audio_dai_cfg_t *cfg)
 
 	/* configure I2S interface */
 	val = IF_CTRL_IFTYPE(IF_CTRL_IFTYPE_I2S);
-	if (cfg->i2s.options & I2S_OPT_BIT_CLK_MASTER) {
+	if (cfg->i2s.options & I2S_OPT_BIT_CLK_CONTROLLER) {
 		val |= IF_CTRL_BCLK_OUT;
 	}
 
-	if (cfg->i2s.options & I2S_OPT_FRAME_CLK_MASTER) {
+	if (cfg->i2s.options & I2S_OPT_FRAME_CLK_CONTROLLER) {
 		val |= IF_CTRL_WCLK_OUT;
 	}
 
@@ -313,7 +313,7 @@ static int codec_configure_clocks(const struct device *dev, struct audio_codec_c
 	LOG_DBG("MDAC: %u NDAC: %u DOSR: %u", mdac, ndac, dosr);
 	LOG_DBG("MADC: %u NADC: %u AOSR: %u", madc, nadc, aosr);
 
-	if (i2s->options & I2S_OPT_BIT_CLK_MASTER) {
+	if (i2s->options & I2S_OPT_BIT_CLK_CONTROLLER) {
 		bclk_div = dosr * mdac / (i2s->word_size * 2U); /* stereo */
 		if ((bclk_div * i2s->word_size * 2) != (dosr * mdac)) {
 			LOG_ERR("Unable to generate BCLK %u from MCLK %u",
@@ -339,7 +339,7 @@ static int codec_configure_clocks(const struct device *dev, struct audio_codec_c
 	codec_write_reg(dev, MADC_DIV_ADDR, (uint8_t)(MADC_DIV(madc) | MADC_POWER_UP_MASK));
 	codec_write_reg(dev, AOSR_ADDR, (uint8_t)aosr);
 
-	if (i2s->options & I2S_OPT_BIT_CLK_MASTER) {
+	if (i2s->options & I2S_OPT_BIT_CLK_CONTROLLER) {
 		codec_write_reg(dev, BCLK_DIV_ADDR, BCLK_DIV(bclk_div) | BCLK_DIV_POWER_UP);
 	}
 

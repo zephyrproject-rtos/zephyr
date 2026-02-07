@@ -333,7 +333,7 @@ static int set_rx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 	uint8_t fslen = 0U;
 	uint32_t ssc_rcmr = 0U;
 	uint32_t ssc_rfmr = 0U;
-	bool frame_clk_master = !(i2s_cfg->options & I2S_OPT_FRAME_CLK_SLAVE);
+	bool frame_clk_controller = !(i2s_cfg->options & I2S_OPT_FRAME_CLK_TARGET);
 
 	switch (i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK) {
 
@@ -345,7 +345,7 @@ static int set_rx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 			   | (pin_rf_en ? SSC_RCMR_START_RF_FALLING : 0)
 			   | SSC_RCMR_STTDLY(1);
 
-		ssc_rfmr = (pin_rf_en && frame_clk_master
+		ssc_rfmr = (pin_rf_en && frame_clk_controller
 			    ? SSC_RFMR_FSOS_NEGATIVE : SSC_RFMR_FSOS_NONE);
 		break;
 
@@ -353,7 +353,7 @@ static int set_rx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 		ssc_rcmr = (pin_rf_en ? SSC_RCMR_START_RF_FALLING : 0)
 			   | SSC_RCMR_STTDLY(0);
 
-		ssc_rfmr = (pin_rf_en && frame_clk_master
+		ssc_rfmr = (pin_rf_en && frame_clk_controller
 			    ? SSC_RFMR_FSOS_POSITIVE : SSC_RFMR_FSOS_NONE);
 		break;
 
@@ -363,7 +363,7 @@ static int set_rx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 		ssc_rcmr = (pin_rf_en ? SSC_RCMR_START_RF_RISING : 0)
 			   | SSC_RCMR_STTDLY(0);
 
-		ssc_rfmr = (pin_rf_en && frame_clk_master
+		ssc_rfmr = (pin_rf_en && frame_clk_controller
 			    ? SSC_RFMR_FSOS_POSITIVE : SSC_RFMR_FSOS_NONE);
 		break;
 
@@ -374,7 +374,7 @@ static int set_rx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 			   | (pin_rf_en ? SSC_RCMR_START_RF_RISING : 0)
 			   | SSC_RCMR_STTDLY(0);
 
-		ssc_rfmr = (pin_rf_en && frame_clk_master
+		ssc_rfmr = (pin_rf_en && frame_clk_controller
 			    ? SSC_RFMR_FSOS_POSITIVE : SSC_RFMR_FSOS_NONE);
 		break;
 
@@ -384,7 +384,7 @@ static int set_rx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 	}
 
 	if (pin_rk_en) {
-		ssc_rcmr |= ((i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE)
+		ssc_rcmr |= ((i2s_cfg->options & I2S_OPT_BIT_CLK_TARGET)
 			     ? SSC_RCMR_CKS_RK : SSC_RCMR_CKS_MCK)
 			    | ((i2s_cfg->options & I2S_OPT_BIT_CLK_GATED)
 			       ? SSC_RCMR_CKO_TRANSFER : SSC_RCMR_CKO_CONTINUOUS);
@@ -473,7 +473,7 @@ static int set_tx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 	 * frame period with one bit resolution. In case the required
 	 * frame period is an odd number set it to be one bit longer.
 	 */
-	ssc_tcmr |= ((i2s_cfg->options & I2S_OPT_BIT_CLK_SLAVE)
+	ssc_tcmr |= ((i2s_cfg->options & I2S_OPT_BIT_CLK_TARGET)
 		     ? SSC_TCMR_CKS_TK : SSC_TCMR_CKS_MCK)
 		    | ((i2s_cfg->options & I2S_OPT_BIT_CLK_GATED)
 		       ? SSC_TCMR_CKO_TRANSFER : SSC_TCMR_CKO_CONTINUOUS)
@@ -482,7 +482,7 @@ static int set_tx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 	/* Transmit Clock Mode Register */
 	ssc->SSC_TCMR = ssc_tcmr;
 
-	if (i2s_cfg->options & I2S_OPT_FRAME_CLK_SLAVE) {
+	if (i2s_cfg->options & I2S_OPT_FRAME_CLK_TARGET) {
 		ssc_tfmr &= ~SSC_TFMR_FSOS_Msk;
 		ssc_tfmr |= SSC_TFMR_FSOS_NONE;
 	}

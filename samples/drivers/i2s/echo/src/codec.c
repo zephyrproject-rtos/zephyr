@@ -267,7 +267,7 @@ bool init_max9867_i2c(void)
 		 * 20MHz. Set prescaler, FREQ field is 0 for Normal or PLL mode, < 20MHz.
 		 */
 		{MAX9867_05_SYS_CLK, 0x01 << MAX9867_PSCLK_POS},
-		/* Configure codec to generate 48kHz sampling frequency in master mode */
+		/* Configure codec to generate 48kHz sampling frequency in controller mode */
 		{MAX9867_06_CLK_HIGH, MAX9867_NI_UPPER_44p1KHZ},
 		{MAX9867_07_CLK_LOW, MAX9867_NI_LOWER_44p1KHZ},
 		{MAX9867_09_DAI_CLOCK, MAX9867_BSEL_PCLK_DIV8},
