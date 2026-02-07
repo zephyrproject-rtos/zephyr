@@ -11,8 +11,8 @@
 #include <zephyr/linker/sections.h>
 #include <zephyr/sys/util.h>
 #include <hal/nrf_resetinfo.h>
-#include "pm_s2ram.h"
-#include "power.h"
+#include "haltium_pm_s2ram.h"
+#include "haltium_power.h"
 
 #include <cmsis_core.h>
 
