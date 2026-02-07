@@ -1,0 +1,6 @@
+# Copyright (c) 2026 Panoramix Labs
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_AIPI_EYES_S2
+	select SOC_BL618M65Q2I

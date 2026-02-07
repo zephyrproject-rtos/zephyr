@@ -1,0 +1,6 @@
+board:
+  name: aipi_eyes_s2
+  full_name: AiPi-Eyes-S2 Multi-Functional Development Board
+  vendor: aithinker
+  socs:
+    - name: bl618m65q2i
