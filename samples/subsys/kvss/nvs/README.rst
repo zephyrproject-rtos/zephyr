@@ -24,7 +24,7 @@ The sample can be built for several platforms, the following commands build the
 application for the nrf51dk/nrf51822 board.
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/nvs
+   :zephyr-app: samples/subsys/kvss/nvs
    :board: nrf51dk/nrf51822
    :goals: build flash
    :compact:

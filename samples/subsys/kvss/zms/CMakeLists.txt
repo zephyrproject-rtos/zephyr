@@ -7,4 +7,4 @@ project(zms)
 
 
 target_sources(app PRIVATE src/main.c)
-target_include_directories(app PRIVATE ${ZEPHYR_BASE}/subsys/fs/zms)
+target_include_directories(app PRIVATE ${ZEPHYR_BASE}/subsys/kvss/zms)
