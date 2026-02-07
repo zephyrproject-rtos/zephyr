@@ -35,5 +35,15 @@ config SOC_PART_NUMBER
 	  that you should not set directly. The part number selection choice defines
 	  the default value for this string.
 
+# Hidden helper used to influence a top-level compiler choice default.
+# It must be defined in a Kconfig file that is sourced by both the normal
+# Zephyr Kconfig root (Kconfig) and the sysbuild Kconfig root
+# (share/sysbuild/Kconfig).
+config COMPILER_LARGE_TU_DIAGNOSTICS_DEFAULT_SUPPRESS_MISLEADING_INDENTATION
+	bool
+	help
+	  Hidden helper to allow SoCs/boards to influence the default selection in
+	  COMPILER_LARGE_TU_DIAGNOSTICS without forcing a user choice.
+
 # Source all Kconfig HWMv2 from SoC roots.
 source "$(KCONFIG_BINARY_DIR)/soc/Kconfig.soc"

@@ -418,6 +418,14 @@ if(CONFIG_COMPILER_COLOR_DIAGNOSTICS)
 zephyr_compile_options($<TARGET_PROPERTY:compiler,diagnostic>)
 endif()
 
+if(CONFIG_COMPILER_LARGE_TU_DIAGNOSTICS_ENABLE_FLARGE_SOURCE_FILES)
+  # @Intent: Ask compiler to keep column-tracking enabled longer for large TUs
+  zephyr_cc_option(-flarge-source-files)
+elseif(CONFIG_COMPILER_LARGE_TU_DIAGNOSTICS_SUPPRESS_MISLEADING_INDENTATION)
+  # @Intent: Avoid noisy notes when -Wmisleading-indentation gets auto-disabled
+  zephyr_cc_option(-Wno-misleading-indentation)
+endif()
+
 zephyr_compile_options(
   ${TOOLCHAIN_C_FLAGS}
 )

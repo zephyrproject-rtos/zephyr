@@ -591,6 +591,44 @@ config COMPILER_COLOR_DIAGNOSTICS
 	help
 	  Compiler diagnostic messages are colorized.
 
+# The default selection can be influenced by SoCs/boards via the hidden helper
+# symbols like COMPILER_LARGE_TU_DIAGNOSTICS_DEFAULT_SUPPRESS_MISLEADING_INDENTATION.
+# That helper is defined from the SoC Kconfig entry path (soc/Kconfig.v2) so it
+# is also visible when parsing the sysbuild Kconfig tree.
+choice COMPILER_LARGE_TU_DIAGNOSTICS
+	prompt "Large translation unit diagnostics"
+	default COMPILER_LARGE_TU_DIAGNOSTICS_SUPPRESS_MISLEADING_INDENTATION if COMPILER_LARGE_TU_DIAGNOSTICS_DEFAULT_SUPPRESS_MISLEADING_INDENTATION
+	default COMPILER_LARGE_TU_DIAGNOSTICS_NONE
+	help
+	  For some projects, the combination of large sources and deep include
+	  hierarchies can cause compilers (notably GCC) to disable column-tracking.
+	  This can lead to noisy notes and to auto-disabling warnings which depend
+	  on column information (for example -Wmisleading-indentation).
+
+	  Select a policy here to either keep builds quiet or to request more
+	  diagnostic tracking (which may increase build time and memory usage).
+
+config COMPILER_LARGE_TU_DIAGNOSTICS_NONE
+	bool "Default (no special handling)"
+	help
+	  Do not apply any additional compiler flags.
+
+config COMPILER_LARGE_TU_DIAGNOSTICS_SUPPRESS_MISLEADING_INDENTATION
+	bool "Suppress -Wmisleading-indentation"
+	help
+	  Adds -Wno-misleading-indentation when supported.
+	  This avoids noisy compiler notes when column-tracking gets disabled for
+	  very large sources/headers.
+
+config COMPILER_LARGE_TU_DIAGNOSTICS_ENABLE_FLARGE_SOURCE_FILES
+	bool "Use -flarge-source-files (keep column-tracking longer)"
+	help
+	  Adds -flarge-source-files when supported.
+	  This asks the compiler to keep column-tracking working longer for large
+	  sources/headers, at the expense of compilation time and memory.
+
+endchoice
+
 choice COMPILER_SECURITY_FORTIFY
 	prompt "Detect buffer overflows in libc calls"
 	default FORTIFY_SOURCE_NONE if NO_OPTIMIZATIONS || MINIMAL_LIBC || NATIVE_BUILD
