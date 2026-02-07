@@ -22,10 +22,12 @@ LOG_MODULE_REGISTER(udc_test, LOG_LEVEL_INF);
 #define BULK_IN_EP_ADDR		0x81U
 #define FALSE_EP_ADDR		0x0FU
 
-K_MSGQ_DEFINE(test_msgq, sizeof(struct udc_event), 8, sizeof(uint32_t));
+#define QUEUED_BUFFERS (CONFIG_UDC_BUF_COUNT - 4)
+
+K_MSGQ_DEFINE(test_msgq, sizeof(struct udc_event), QUEUED_BUFFERS, sizeof(uint32_t));
 static K_KERNEL_STACK_DEFINE(test_udc_stack, 512);
 static struct k_thread test_udc_thread_data;
-static K_SEM_DEFINE(ep_queue_sem, 0, 1);
+static K_SEM_DEFINE(ep_queue_sem, 0, QUEUED_BUFFERS);
 static uint8_t last_used_ep;
 static uint8_t test_event_ctx;
 
@@ -325,7 +327,7 @@ static void test_udc_ep_api(const struct device *dev,
 		zassert_ok(err, "Failed to enable endpoint");
 
 		/* It needs a little reserve for memory management overhead. */
-		for (int n = 0; n < (CONFIG_UDC_BUF_COUNT - 4); n++) {
+		for (int n = 0; n < QUEUED_BUFFERS; n++) {
 			buf = udc_ep_buf_alloc(dev, ed->bEndpointAddress,
 				USB_MPS_TO_TPL(sys_le16_to_cpu(ed->wMaxPacketSize)));
 			zassert_not_null(buf,
@@ -344,8 +346,10 @@ static void test_udc_ep_api(const struct device *dev,
 		err = udc_ep_dequeue(dev, ed->bEndpointAddress);
 		zassert_ok(err, "Failed to dequeue endpoint");
 
-		err = k_sem_take(&ep_queue_sem, K_MSEC(100));
-		zassert_ok(err, "Timeout to dequeue endpoint %x %d", last_used_ep, err);
+		for (int n = 0; n < QUEUED_BUFFERS; n++) {
+			err = k_sem_take(&ep_queue_sem, K_MSEC(100));
+			zassert_ok(err, "Timeout to dequeue endpoint %x %d", last_used_ep, err);
+		}
 	}
 }
 

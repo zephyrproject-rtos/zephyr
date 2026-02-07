@@ -740,8 +740,7 @@ static int usbfsotg_ep_dequeue(const struct device *dev,
 	irq_unlock(lock_key);
 
 	cfg->stat.halted = false;
-	buf = udc_buf_get_all(cfg);
-	if (buf) {
+	while ((buf = udc_buf_get(cfg))) {
 		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 	}
 

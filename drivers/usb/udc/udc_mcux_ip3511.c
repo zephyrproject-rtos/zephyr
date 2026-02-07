@@ -595,8 +595,7 @@ static int udc_mcux_ep_dequeue(const struct device *dev,
 	struct net_buf *buf;
 
 	cfg->stat.halted = false;
-	buf = udc_buf_get_all(cfg);
-	if (buf) {
+	while ((buf = udc_buf_get(cfg))) {
 		udc_submit_ep_event(dev, buf, -ECONNABORTED);
 	}
 
