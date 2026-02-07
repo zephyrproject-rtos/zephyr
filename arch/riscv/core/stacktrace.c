@@ -177,12 +177,51 @@ static void walk_stackframe(riscv_stacktrace_cb cb, void *cookie, const struct k
 }
 #else  /* !CONFIG_FRAME_POINTER */
 register uintptr_t current_stack_pointer __asm__("sp");
+
+#define ECALL_OPCODE	0x73
+#define JAL_MASK	0x7f
+#define JAL_OPCODE	0x6f
+#define JALR_MASK	0x7f
+#define JALR_OPCODE	0x67
+#define CJAL_MASK	0xe003
+#define CJAL_OPCODE	0x2001
+#define CJALR_MASK	0xf072
+#define CJALR_OPCODE	0x9002
+
+static inline bool is_func_call(uintptr_t pc)
+{
+	uint32_t insn;
+	uint16_t high, low;
+
+	low = *(uint16_t *)pc;
+	high = *(uint16_t *)(pc + 2);
+	insn = (high << 16) | low;
+
+	if (insn == ECALL_OPCODE) {
+		return true;
+	} else if ((insn & JAL_MASK) == JAL_OPCODE) {
+		return true;
+	} else if ((insn & JALR_MASK) == JALR_OPCODE) {
+		return true;
+	} else if ((low & CJAL_MASK) == CJAL_OPCODE) {
+		return true;
+	} else if ((high & CJAL_MASK) == CJAL_OPCODE) {
+		return true;
+	} else if ((low & CJALR_MASK) == CJALR_OPCODE) {
+		return true;
+	} else if ((high & CJALR_MASK) == CJALR_OPCODE) {
+		return true;
+	}
+
+	return false;
+}
+
 static void walk_stackframe(riscv_stacktrace_cb cb, void *cookie, const struct k_thread *thread,
 			    const struct arch_esf *esf, stack_verify_fn vrfy,
 			    const _callee_saved_t *csf)
 {
 	uintptr_t sp;
-	uintptr_t ra;
+	uintptr_t ra, pc;
 	uintptr_t *ksp, last_ksp = 0;
 
 	if (esf != NULL) {
@@ -203,14 +242,18 @@ static void walk_stackframe(riscv_stacktrace_cb cb, void *cookie, const struct k
 	for (int i = 0; (i < MAX_STACK_FRAMES) && vrfy((uintptr_t)ksp, thread, esf) &&
 			((uintptr_t)ksp > last_ksp);) {
 		if (in_text_region(ra)) {
-			if (!cb(cookie, ra, POINTER_TO_UINT(ksp))) {
-				break;
+			pc = ra - 4;
+			if (!i || (in_text_region(pc) && is_func_call(pc))) {
+				if (!cb(cookie, ra, POINTER_TO_UINT(ksp))) {
+					break;
+				}
+				/*
+				 * Increment the iterator only if `ra` is
+				 * within the text region to get the
+				 * most out of it
+				 */
+				i++;
 			}
-			/*
-			 * Increment the iterator only if `ra` is within the text region to get the
-			 * most out of it
-			 */
-			i++;
 		}
 		last_ksp = (uintptr_t)ksp;
 		/* Unwind to the previous frame */
