@@ -32,6 +32,7 @@
 #include "avctp_internal.h"
 #include "avrcp_internal.h"
 #include "did_internal.h"
+#include "hid_internal.h"
 #include "rfcomm_internal.h"
 #include "sdp_internal.h"
 
