@@ -1,0 +1,256 @@
+/*
+ * Copyright (c) 2024 NXP
+ * Copyright (c) 2025 Croxel Inc.
+ * Copyright (c) 2025 CogniPilot Foundation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <string.h>
+
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/modem/ubx/protocol.h>
+
+#include "gnss_ubx_iface.h"
+
+LOG_MODULE_REGISTER(ubx_iface, CONFIG_GNSS_LOG_LEVEL);
+
+static void init_match(struct ubx_iface_data *data, const struct device *gnss)
+{
+	struct gnss_ubx_common_config match_config = {
+		.gnss = gnss,
+	};
+
+#if CONFIG_GNSS_SATELLITES
+	match_config.satellites.buf = data->satellites;
+	match_config.satellites.size = ARRAY_SIZE(data->satellites);
+#endif
+
+	gnss_ubx_common_init(&data->common_data, &match_config);
+}
+
+static int configure_baudrate(const struct device *dev)
+{
+	int err = 0;
+	const struct ubx_iface_config *cfg = dev->config;
+	struct ubx_iface_data *data = dev->data;
+	struct uart_config uart_cfg;
+
+	err = uart_config_get(cfg->bus, &uart_cfg);
+	if (err < 0) {
+		LOG_ERR("Failed to get UART config: %d", err);
+		return err;
+	}
+
+	uart_cfg.baudrate = cfg->baudrate.initial;
+	err = uart_configure(cfg->bus, &uart_cfg);
+	if (err < 0) {
+		LOG_ERR("Failed to configure UART: %d", err);
+	}
+
+	struct ubx_cfg_prt port_config = {
+		.port_id = UBX_CFG_PORT_ID_UART,
+		.baudrate = cfg->baudrate.desired,
+		.mode = UBX_CFG_PRT_MODE_CHAR_LEN(UBX_CFG_PRT_PORT_MODE_CHAR_LEN_8) |
+			UBX_CFG_PRT_MODE_PARITY(UBX_CFG_PRT_PORT_MODE_PARITY_NONE) |
+			UBX_CFG_PRT_MODE_STOP_BITS(UBX_CFG_PRT_PORT_MODE_STOP_BITS_1),
+		.in_proto_mask = UBX_CFG_PRT_PROTO_MASK_UBX,
+		.out_proto_mask = UBX_CFG_PRT_PROTO_MASK_UBX,
+	};
+
+	(void)ubx_iface_msg_payload_send(data, UBX_CLASS_ID_CFG, UBX_MSG_ID_CFG_PRT,
+					 (const uint8_t *)&port_config,
+					 sizeof(port_config), true);
+
+	uart_cfg.baudrate = cfg->baudrate.desired;
+
+	err = uart_configure(cfg->bus, &uart_cfg);
+	if (err < 0) {
+		LOG_ERR("Failed to configure UART: %d", err);
+	}
+
+	return err;
+}
+
+static int init_modem(struct ubx_iface_data *data, const struct ubx_iface_config *cfg,
+			 const struct modem_ubx_match *unsol, size_t unsol_size)
+{
+	int err;
+
+	const struct modem_ubx_config ubx_config = {
+		.user_data = (void *)&data->common_data,
+		.receive_buf = data->ubx.receive_buf,
+		.receive_buf_size = sizeof(data->ubx.receive_buf),
+		.unsol_matches = {
+			.array = unsol,
+			.size = unsol_size,
+		},
+	};
+
+	const struct modem_backend_uart_config uart_backend_config = {
+		.uart = cfg->bus,
+		.receive_buf = data->backend.receive_buf,
+		.receive_buf_size = sizeof(data->backend.receive_buf),
+		.transmit_buf = data->backend.transmit_buf,
+		.transmit_buf_size = sizeof(data->backend.transmit_buf),
+	};
+
+	(void)modem_ubx_init(&data->ubx.inst, &ubx_config);
+
+	data->backend.pipe = modem_backend_uart_init(&data->backend.uart_backend,
+						     &uart_backend_config);
+	err = modem_pipe_open(data->backend.pipe, K_SECONDS(1));
+	if (err != 0) {
+		LOG_ERR("Failed to open Modem pipe: %d", err);
+		return err;
+	}
+
+	err = modem_ubx_attach(&data->ubx.inst, data->backend.pipe);
+	if (err != 0) {
+		LOG_ERR("Failed to attach UBX inst to modem pipe: %d", err);
+		return err;
+	}
+
+	(void)k_sem_init(&data->script.lock, 1, 1);
+	(void)k_sem_init(&data->script.req_buf_lock, 1, 1);
+
+	data->script.inst.response.buf = data->script.response_buf;
+	data->script.inst.response.buf_len = sizeof(data->script.response_buf);
+
+	return err;
+}
+
+static int reattach_modem(struct ubx_iface_data *data)
+{
+	int err;
+
+	(void)modem_ubx_release(&data->ubx.inst);
+	(void)modem_pipe_close(data->backend.pipe, K_SECONDS(1));
+
+	err = modem_pipe_open(data->backend.pipe, K_SECONDS(1));
+	if (err != 0) {
+		LOG_ERR("Failed to re-open modem pipe: %d", err);
+		return err;
+	}
+
+	err = modem_ubx_attach(&data->ubx.inst, data->backend.pipe);
+	if (err != 0) {
+		LOG_ERR("Failed to re-attach modem pipe to UBX inst: %d", err);
+	}
+
+	return 0;
+}
+
+int ubx_iface_init(const struct device *dev, const struct modem_ubx_match *unsol,
+		   size_t unsol_size)
+{
+	int err;
+	struct ubx_iface_data *data = dev->data;
+	const struct ubx_iface_config *cfg = dev->config;
+
+	init_match(data, dev);
+
+	err = init_modem(data, cfg, unsol, unsol_size);
+	if (err < 0) {
+		LOG_ERR("Failed to initialize modem: %d", err);
+		return err;
+	}
+
+	err = configure_baudrate(dev);
+	if (err < 0) {
+		LOG_ERR("Failed to configure baud-rate: %d", err);
+		return err;
+	}
+
+	err = reattach_modem(data);
+	if (err < 0) {
+		LOG_ERR("Failed to re-attach modem: %d", err);
+		return err;
+	}
+
+	return 0;
+}
+
+int ubx_iface_msg_get(const struct device *dev, const struct ubx_frame *req,
+		      size_t len, void *rsp, size_t min_rsp_size)
+{
+	struct ubx_iface_data *data = dev->data;
+	struct ubx_frame *rsp_frame = (struct ubx_frame *)data->script.inst.response.buf;
+	int err;
+
+	err = k_sem_take(&data->script.lock, K_SECONDS(3));
+	if (err != 0) {
+		LOG_ERR("Failed to take script lock: %d", err);
+		return err;
+	}
+
+	data->script.inst.timeout = K_SECONDS(3);
+	data->script.inst.retry_count = 2;
+	data->script.inst.match.filter.class = req->class;
+	data->script.inst.match.filter.id = req->id;
+	data->script.inst.request.buf = req;
+	data->script.inst.request.len = len;
+
+	err = modem_ubx_run_script(&data->ubx.inst, &data->script.inst);
+	if (err != 0 || (data->script.inst.response.buf_len < UBX_FRAME_SZ(min_rsp_size))) {
+		err = -EIO;
+	} else {
+		memcpy(rsp, rsp_frame->payload_and_checksum, min_rsp_size);
+	}
+
+	k_sem_give(&data->script.lock);
+
+	return err;
+}
+
+int ubx_iface_msg_send(const struct device *dev, const struct ubx_frame *req,
+		       size_t len, bool wait_for_ack)
+{
+	struct ubx_iface_data *data = dev->data;
+	int err;
+
+	err = k_sem_take(&data->script.lock, K_SECONDS(3));
+	if (err != 0) {
+		LOG_ERR("Failed to take script lock: %d", err);
+		return err;
+	}
+
+	data->script.inst.timeout = K_SECONDS(3);
+	data->script.inst.retry_count = wait_for_ack ? 2 : 0;
+	data->script.inst.match.filter.class = wait_for_ack ? UBX_CLASS_ID_ACK : 0;
+	data->script.inst.match.filter.id = UBX_MSG_ID_ACK;
+	data->script.inst.request.buf = (const void *)req;
+	data->script.inst.request.len = len;
+
+	err = modem_ubx_run_script(&data->ubx.inst, &data->script.inst);
+
+	k_sem_give(&data->script.lock);
+
+	return err;
+}
+
+int ubx_iface_msg_payload_send(const struct device *dev, uint8_t class_id, uint8_t msg_id,
+			       const uint8_t *payload, size_t payload_size, bool wait_for_ack)
+{
+	struct ubx_iface_data *data = dev->data;
+	struct ubx_frame *frame = (struct ubx_frame *)data->script.request_buf;
+	int err;
+
+	err = k_sem_take(&data->script.req_buf_lock, K_SECONDS(3));
+	if (err != 0) {
+		LOG_ERR("Failed to take script lock: %d", err);
+		return err;
+	}
+
+	err = ubx_frame_encode(class_id, msg_id, payload, payload_size,
+			       (uint8_t *)frame, sizeof(data->script.request_buf));
+	if (err > 0) {
+		err = ubx_iface_msg_send(dev, frame, err, wait_for_ack);
+	}
+
+	k_sem_give(&data->script.req_buf_lock);
+
+	return err;
+}
