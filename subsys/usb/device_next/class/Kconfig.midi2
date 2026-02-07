@@ -10,6 +10,28 @@ config USBD_MIDI2_CLASS
 
 if USBD_MIDI2_CLASS
 
+config USBD_MIDI2_ALTSETTING_MIDI1
+	bool "Expose USB MIDI 1.0 alternate setting"
+	default y
+	help
+	  Build the legacy USB-MIDI 1.0 alternate setting and related helpers.
+	  Disable this option to remove the MIDI 1.0 descriptors and code paths.
+
+config USBD_MIDI2_ALTSETTING_MIDI2
+	bool "Expose USB MIDI 2.0 alternate setting"
+	default y
+	help
+	  Build the USB-MIDI 2.0 alternate setting. Disable this option to
+	  remove the MIDI 2.0 descriptors and code paths.
+
+config USBD_MIDI2_TX_QUEUE_SIZE
+	int "MIDI 2.0 class transmit queue size"
+	default 64
+	help
+	  Size of the transmit ring buffer. This buffer is used to store
+	  MIDI messages before they are sent to the USB host.
+	  The default is 64 bytes.
+
 module = USBD_MIDI2
 module-str = usbd midi2
 source "subsys/logging/Kconfig.template.log_config"
