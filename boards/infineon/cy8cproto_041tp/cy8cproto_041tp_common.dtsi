@@ -56,6 +56,10 @@ uart0: &scb0 {
 	status = "okay";
 };
 
+&gpio_prt6 {
+	status = "okay";
+};
+
 &watchdog0 {
 	status = "okay";
 };
