@@ -8,6 +8,7 @@
 #include <mem.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/reset/numicro_m48x_reset.h>
+#include <zephyr/dt-bindings/clock/numicro_m48x_clock.h>
 #include <freq.h>
 
 / {
@@ -46,7 +47,7 @@
 			#clock-cells = <0>;
 			compatible = "fixed-clock";
 			clock-frequency = <DT_FREQ_M(12)>;
-			status = "disabled";
+			status = "okay";
 		};
 
 		clk_hxt: clk-hxt {
@@ -199,6 +200,7 @@
 			compatible = "nuvoton,numicro-uart";
 			reg = <0x40070000 0x1000>;
 			resets = <&rst NUMICRO_UART0_RST>;
+			clocks = <&pcc NUMICRO_UART0_MODULE NUMICRO_CLK_CLKSEL1_UART0SEL_HIRC NUMICRO_CLK_CLKDIV0_UART0(1)>;
 			status = "disabled";
 		};
 
@@ -206,6 +208,7 @@
 			compatible = "nuvoton,numicro-uart";
 			reg = <0x40071000 0x1000>;
 			resets = <&rst NUMICRO_UART1_RST>;
+			clocks = <&pcc NUMICRO_UART1_MODULE NUMICRO_CLK_CLKSEL1_UART1SEL_HIRC NUMICRO_CLK_CLKDIV0_UART1(1)>;
 			status = "disabled";
 		};
 
@@ -213,6 +216,7 @@
 			compatible = "nuvoton,numicro-uart";
 			reg = <0x40072000 0x1000>;
 			resets = <&rst NUMICRO_UART2_RST>;
+			clocks = <&pcc NUMICRO_UART2_MODULE NUMICRO_CLK_CLKSEL3_UART2SEL_HIRC NUMICRO_CLK_CLKDIV4_UART2(1)>;
 			status = "disabled";
 		};
 
@@ -220,6 +224,7 @@
 			compatible = "nuvoton,numicro-uart";
 			reg = <0x40073000 0x1000>;
 			resets = <&rst NUMICRO_UART3_RST>;
+			clocks = <&pcc NUMICRO_UART3_MODULE NUMICRO_CLK_CLKSEL3_UART3SEL_HIRC NUMICRO_CLK_CLKDIV4_UART3(1)>;
 			status = "disabled";
 		};
 
@@ -227,6 +232,7 @@
 			compatible = "nuvoton,numicro-uart";
 			reg = <0x40074000 0x1000>;
 			resets = <&rst NUMICRO_UART4_RST>;
+			clocks = <&pcc NUMICRO_UART4_MODULE NUMICRO_CLK_CLKSEL3_UART4SEL_HIRC NUMICRO_CLK_CLKDIV4_UART4(1)>;
 			status = "disabled";
 		};
 
@@ -234,6 +240,7 @@
 			compatible = "nuvoton,numicro-uart";
 			reg = <0x40075000 0x1000>;
 			resets = <&rst NUMICRO_UART5_RST>;
+			clocks = <&pcc NUMICRO_UART5_MODULE NUMICRO_CLK_CLKSEL3_UART5SEL_HIRC NUMICRO_CLK_CLKDIV4_UART5(1)>;
 			status = "disabled";
 		};
 
@@ -241,6 +248,7 @@
 			compatible = "nuvoton,numicro-uart";
 			reg = <0x40076000 0x1000>;
 			resets = <&rst NUMICRO_UART6_RST>;
+			clocks = <&pcc NUMICRO_UART6_MODULE NUMICRO_CLK_CLKSEL3_UART6SEL_HIRC NUMICRO_CLK_CLKDIV4_UART6(1)>;
 			status = "disabled";
 		};
 
@@ -248,6 +256,7 @@
 			compatible = "nuvoton,numicro-uart";
 			reg = <0x40077000 0x1000>;
 			resets = <&rst NUMICRO_UART7_RST>;
+			clocks = <&pcc NUMICRO_UART7_MODULE NUMICRO_CLK_CLKSEL3_UART7SEL_HIRC NUMICRO_CLK_CLKDIV4_UART7(1)>;
 			status = "disabled";
 		};
 	};

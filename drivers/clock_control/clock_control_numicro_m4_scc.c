@@ -6,6 +6,7 @@
  * TODO: move HXTInit from system_M480.c to here using pinctrl or similar.
  */
 
+#include <stdint.h>
 #define DT_DRV_COMPAT nuvoton_numicro_m4_scc
 
 #include <zephyr/devicetree.h>
@@ -82,13 +83,88 @@ static int numicro_scc_off(const struct device *dev, clock_control_subsys_t subs
 	return 0;
 }
 
+static int numicro_scc_get_rate_uart(const struct device *dev,
+				     struct numicro_scc_subsys_pcc *subsys, uint32_t *rate)
+{
+	uint32_t src, div, src_rate;
+	const struct numicro_scc_config *config = dev->config;
+	const struct numicro_scc_data *data = dev->data;
+
+	switch (subsys->clk_mod) {
+	case NUMICRO_UART0_MODULE:
+		src = subsys->clk_src >> NUMICRO_CLK_CLKSEL1_UART0SEL_Pos;
+		div = subsys->clk_div >> NUMICRO_CLK_CLKDIV0_UART0DIV_Pos;
+		break;
+	case NUMICRO_UART1_MODULE:
+		src = subsys->clk_src >> NUMICRO_CLK_CLKSEL1_UART1SEL_Pos;
+		div = subsys->clk_div >> NUMICRO_CLK_CLKDIV0_UART1DIV_Pos;
+		break;
+	case NUMICRO_UART2_MODULE:
+		src = subsys->clk_src >> NUMICRO_CLK_CLKSEL3_UART2SEL_Pos;
+		div = subsys->clk_div >> NUMICRO_CLK_CLKDIV4_UART2DIV_Pos;
+		break;
+	case NUMICRO_UART4_MODULE:
+		src = subsys->clk_src >> NUMICRO_CLK_CLKSEL3_UART4SEL_Pos;
+		div = subsys->clk_div >> NUMICRO_CLK_CLKDIV4_UART4DIV_Pos;
+		break;
+	case NUMICRO_UART5_MODULE:
+		src = subsys->clk_src >> NUMICRO_CLK_CLKSEL3_UART5SEL_Pos;
+		div = subsys->clk_div >> NUMICRO_CLK_CLKDIV4_UART5DIV_Pos;
+		break;
+	case NUMICRO_UART6_MODULE:
+		src = subsys->clk_src >> NUMICRO_CLK_CLKSEL3_UART6SEL_Pos;
+		div = subsys->clk_div >> NUMICRO_CLK_CLKDIV4_UART6DIV_Pos;
+		break;
+	case NUMICRO_UART7_MODULE:
+		src = subsys->clk_src >> NUMICRO_CLK_CLKSEL3_UART7SEL_Pos;
+		div = subsys->clk_div >> NUMICRO_CLK_CLKDIV4_UART7DIV_Pos;
+		break;
+	default:
+	  return -ENOTSUP;
+	}
+
+	switch (src) {
+	case 0:
+		src_rate = DT_PROP_OR(DT_NODELABEL(clk_hxt), clock_frequency, 0);
+		break;
+	case 1:
+		src_rate = data->pll_freq;
+		break;
+	case 3:
+		src_rate = DT_PROP_OR(DT_NODELABEL(clk_hirc), clock_frequency, 0);
+		break;
+	case 2:
+		src_rate = data->hclk_freq / config->pclk0_div;
+		break;
+	default:
+	  return -ENOTSUP;
+	}
+
+	*rate = src_rate / (div + 1);
+	return 0;
+}
+
 static int numicro_scc_get_rate(const struct device *dev, clock_control_subsys_t subsys,
 				uint32_t *rate)
 {
-	ARG_UNUSED(dev);
-	ARG_UNUSED(subsys);
-	ARG_UNUSED(rate);
-	return -ENOTSUP;
+	struct numicro_scc_subsys *scc_subsys = (struct numicro_scc_subsys *)subsys;
+
+	if (scc_subsys->subsys_id != NUMICRO_SCC_SUBSYS_ID_PCC) {
+		return -ENOTSUP;
+	}
+
+	switch (scc_subsys->pcc.clk_mod) {
+	case NUMICRO_UART0_MODULE:
+	case NUMICRO_UART1_MODULE:
+	case NUMICRO_UART2_MODULE:
+	case NUMICRO_UART3_MODULE:
+	case NUMICRO_UART5_MODULE:
+	case NUMICRO_UART6_MODULE:
+	case NUMICRO_UART7_MODULE:
+		return numicro_scc_get_rate_uart(dev, &scc_subsys->pcc, rate);
+	default:
+		return -ENOTSUP;
+	}
 }
 
 static int numicro_scc_set_rate(const struct device *dev, clock_control_subsys_t subsys,
