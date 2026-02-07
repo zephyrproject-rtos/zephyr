@@ -471,6 +471,11 @@ static void modem_cellular_chat_on_modem_ready(struct modem_chat *chat, char **a
 	modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_MODEM_READY);
 }
 
+static void modem_cellular_chat_on_connect(struct modem_chat *chat, char **argv, uint16_t argc,
+					void *user_data)
+{
+	modem_chat_script_stop(chat, MODEM_CHAT_SCRIPT_RESULT_SUCCESS);
+}
 
 static void modem_cellular_chat_on_imei(struct modem_chat *chat, char **argv, uint16_t argc,
 					void *user_data)
@@ -694,7 +699,8 @@ MODEM_CHAT_MATCHES_DEFINE(unsol_matches,
 			  MODEM_CHAT_MATCH("+CEREG: ", ",", modem_cellular_chat_on_cxreg),
 			  MODEM_CHAT_MATCH("+CGREG: ", ",", modem_cellular_chat_on_cxreg),
 			  MODEM_CHAT_MATCH("+CGEV: ", ",", modem_cellular_chat_on_cgev),
-			  MODEM_CHAT_MATCH("APP RDY", "", modem_cellular_chat_on_modem_ready));
+			  MODEM_CHAT_MATCH("APP RDY", "", modem_cellular_chat_on_modem_ready),
+			  MODEM_CHAT_MATCH("CONNECT", "", modem_cellular_chat_on_connect));
 
 MODEM_CHAT_MATCHES_DEFINE(abort_matches, MODEM_CHAT_MATCH("ERROR", "", NULL));
 

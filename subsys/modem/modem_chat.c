@@ -67,7 +67,7 @@ static void modem_chat_log_received_command(struct modem_chat *chat)
 
 #endif
 
-static void modem_chat_script_stop(struct modem_chat *chat, enum modem_chat_script_result result)
+void modem_chat_script_stop(struct modem_chat *chat, enum modem_chat_script_result result)
 {
 	if ((chat == NULL) || (chat->script == NULL)) {
 		return;

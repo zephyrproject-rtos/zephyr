@@ -542,6 +542,19 @@ void modem_chat_script_set_callback(struct modem_chat_script *script,
 void modem_chat_script_set_timeout(struct modem_chat_script *script, uint32_t timeout_s);
 
 /**
+ * @brief Stop currently executing chat script.
+ *
+ * This function can be called from a script match callback to stop the currently executing script.
+ *
+ * @note This is only safe to call from a script match callback,
+ *       and may cause undefined behavior if called from any other context.
+ *
+ * @param chat Modem chat instance
+ * @param result Result to set when stopping the script
+ */
+void modem_chat_script_stop(struct modem_chat *chat, enum modem_chat_script_result result);
+
+/**
  * @}
  */
 
