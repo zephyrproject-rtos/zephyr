@@ -7,7 +7,7 @@
 
 #include <zephyr/ztest.h>
 
-#include <zephyr/posix/unistd.h>
+#include <unistd.h>
 
 ZTEST(posix_single_process, test_posix_sysconf)
 {
@@ -18,7 +18,7 @@ ZTEST(posix_single_process, test_posix_sysconf)
 	zassert_equal(ret, _POSIX_VERSION, "sysconf returned unexpected value %ld", ret);
 
 	/* SC that's not implemented */
-	ret = sysconf(_SC_MEMLOCK_RANGE);
+	ret = sysconf(_SC_ADVISORY_INFO);
 	zassert_equal(ret, -1, "sysconf returned unexpected value %ld", ret);
 
 	/* SC that value depends on target's configuration */

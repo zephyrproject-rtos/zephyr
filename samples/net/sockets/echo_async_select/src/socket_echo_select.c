@@ -6,37 +6,26 @@
 
 #include <stdio.h>
 #include <stdbool.h>
-#include <errno.h>
-#include <stdlib.h>
-
-#if !defined(__ZEPHYR__)
-
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <sys/select.h>
 #include <arpa/inet.h>
-#include <unistd.h>
+#include <errno.h>
 #include <fcntl.h>
+#include <netinet/in.h>
+#include <poll.h>
+#include <stdlib.h>
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
-/* Generic read()/write() is available in POSIX config, so use it. */
-#define READ(fd, buf, sz) read(fd, buf, sz)
-#define WRITE(fd, buf, sz) write(fd, buf, sz)
-
-#else
-
-#include <zephyr/posix/netinet/in.h>
-#include <zephyr/posix/sys/socket.h>
-#include <zephyr/posix/arpa/inet.h>
-#include <zephyr/posix/unistd.h>
-#include <zephyr/posix/fcntl.h>
-#include <zephyr/posix/sys/select.h>
-#include <zephyr/net/socket.h>
+#if defined(__ZEPHYR__)
 #include <zephyr/kernel.h>
 
-/* Generic read()/write() are not defined, so use socket-specific recv(). */
-#define READ(fd, buf, sz) recv(fd, buf, sz, 0)
-#define WRITE(fd, buf, sz) send(fd, buf, sz, 0)
+#include "net_sample_common.h"
 
+#ifdef CONFIG_NET_IPV6
+#define USE_IPV6
+#endif
+#else
+#define USE_IPV6
 #endif
 
 /* For Zephyr, keep max number of fd's in sync with max poll() capacity */
@@ -203,14 +192,14 @@ int main(void)
 				       addr_str, client);
 				if (pollfds_add(client) < 0) {
 					static char msg[] = "Too many connections\n";
-					WRITE(client, msg, sizeof(msg) - 1);
+					write(client, msg, sizeof(msg) - 1);
 					close(client);
 				} else {
 					setblocking(client, false);
 				}
 			} else {
 				char buf[128];
-				int len = READ(fd, buf, sizeof(buf));
+				int len = read(fd, buf, sizeof(buf));
 				if (len <= 0) {
 					if (len < 0) {
 						printf("error: RECV: %d\n",
@@ -233,10 +222,10 @@ error:
 					setblocking(fd, true);
 
 					for (p = buf; len; len -= out_len) {
-						out_len = WRITE(fd, p, len);
+						out_len = write(fd, p, len);
 						if (out_len < 0) {
 							printf("error: "
-							       "WRITE: %d\n",
+							       "write: %d\n",
 							       errno);
 							goto error;
 						}

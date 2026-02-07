@@ -132,6 +132,7 @@ struct sigevent {
 
 /* SIGRTMIN and SIGRTMAX defined above */
 
+/* slightly out of order w.r.t. the specification */
 #if !defined(_SIGINFO_T_DECLARED) && !defined(__siginfo_t_defined)
 typedef struct {
 	void *si_addr;

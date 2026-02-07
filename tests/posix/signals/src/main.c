@@ -8,6 +8,7 @@
 #include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
