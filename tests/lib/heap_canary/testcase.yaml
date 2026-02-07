@@ -1,0 +1,17 @@
+tests:
+  libraries.heap.canary:
+    tags: heap canary
+    filter: CONFIG_SYS_HEAP_CANARIES
+    platform_exclude:
+      - m2gl025_miv
+      - qemu_xtensa/dc233c
+      - esp32s2_saola
+      - esp32s2_lolin_mini
+    integration_platforms:
+      - native_sim
+      - qemu_x86
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "ASSERTION FAIL"
