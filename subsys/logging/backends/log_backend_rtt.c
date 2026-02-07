@@ -282,7 +282,16 @@ static int data_out(uint8_t *data, size_t length, void *ctx)
 	return logging_func(data, length, ctx);
 }
 
-LOG_OUTPUT_DEFINE(log_output_rtt, data_out, char_buf, sizeof(char_buf));
+static int get_available(void *ctx)
+{
+	ARG_UNUSED(ctx);
+
+	return SEGGER_RTT_GetAvailWriteSpace(CONFIG_LOG_BACKEND_RTT_BUFFER);
+}
+
+LOG_OUTPUT_EXT_DEFINE(log_output_rtt, data_out,
+		IS_ENABLED(CONFIG_LOG_BACKEND_RTT_OUTPUT_DICTIONARY_HEX) ? get_available : NULL,
+		char_buf, sizeof(char_buf));
 
 static void log_backend_rtt_cfg(void)
 {
