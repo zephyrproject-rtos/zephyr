@@ -101,12 +101,11 @@ ZTEST(imsic_miselect, test_miselect_race_unprotected)
 	micsr_write(ICSR_EIE0, 0);
 	micsr_write(ICSR_EITHRESH, 0);
 
-	TC_PRINT("Unprotected: %d corruptions in %d iterations\n",
-		 corruption_count, TEST_ITERATIONS);
+	TC_PRINT("Unprotected: %d corruptions in %d iterations\n", corruption_count,
+		 TEST_ITERATIONS);
 
-	zassert_true(corruption_count > 0,
-		     "Expected MISELECT corruption but none detected. "
-		     "Race window may be too small for this platform.");
+	zassert_true(corruption_count > 0, "Expected MISELECT corruption but none detected. "
+					   "Race window may be too small for this platform.");
 }
 
 /*
@@ -164,8 +163,7 @@ ZTEST(imsic_miselect, test_miselect_race_protected)
 	micsr_write(ICSR_EIE0, 0);
 	micsr_write(ICSR_EITHRESH, 0);
 
-	TC_PRINT("Protected: %d corruptions in %d iterations\n",
-		 corruption_count, TEST_ITERATIONS);
+	TC_PRINT("Protected: %d corruptions in %d iterations\n", corruption_count, TEST_ITERATIONS);
 
 	zassert_equal(corruption_count, 0,
 		      "MISELECT corruption detected despite irq_lock protection");

@@ -45,11 +45,11 @@ LOG_MODULE_REGISTER(intc_riscv_aia, CONFIG_LOG_DEFAULT_LEVEL);
  * Helper macro: Check if a node has interrupts property and its interrupt
  * controller is the APLIC. Returns the source bit to OR into bitmap, or 0.
  */
-#define APLIC_SRC_BIT(node_id)                                                   \
-	COND_CODE_1(DT_NODE_HAS_PROP(node_id, interrupts),                       \
-		(COND_CODE_1(DT_SAME_NODE(DT_IRQ_INTC(node_id), APLIC_NODE),      \
-			((1ULL << DT_IRQ(node_id, irq))),                        \
-			(0ULL))),                                                \
+#define APLIC_SRC_BIT(node_id)                                                                     \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, interrupts),                                        \
+		(COND_CODE_1(DT_SAME_NODE(DT_IRQ_INTC(node_id), APLIC_NODE),                      \
+			((1ULL << DT_IRQ(node_id, irq))),                                          \
+			(0ULL))),                                                                  \
 		(0ULL))
 
 /*
@@ -63,8 +63,7 @@ LOG_MODULE_REGISTER(intc_riscv_aia, CONFIG_LOG_DEFAULT_LEVEL);
  * Bit N set = source N is an APLIC source (device wired to APLIC in DT)
  * Bit N clear = not an APLIC source (local interrupt using mie CSR)
  */
-static const uint64_t aplic_sources =
-	0ULL DT_FOREACH_STATUS_OKAY_NODE(BUILD_APLIC_BITMAP);
+static const uint64_t aplic_sources = 0ULL DT_FOREACH_STATUS_OKAY_NODE(BUILD_APLIC_BITMAP);
 
 static int riscv_aia_init(void)
 {
@@ -129,8 +128,8 @@ void riscv_aia_set_priority(uint32_t src, uint32_t prio)
 	 * or implicit EIID ordering (lower EIID = higher priority).
 	 */
 	if (prio != 0) {
-		LOG_WRN("AIA-MSI: per-source priority not supported (src %u, prio %u ignored)",
-			src, prio);
+		LOG_WRN("AIA-MSI: per-source priority not supported (src %u, prio %u ignored)", src,
+			prio);
 	}
 }
 

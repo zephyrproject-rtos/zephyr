@@ -253,8 +253,8 @@ static int aplic_msi_init(const struct device *dev)
 		.base = DT_INST_REG_ADDR(inst),                                                    \
 		.num_sources = DT_INST_PROP(inst, riscv_num_sources),                              \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, aplic_msi_init, NULL, NULL, &aplic_cfg_##inst,                 \
-			      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
+	DEVICE_DT_INST_DEFINE(inst, aplic_msi_init, NULL, NULL, &aplic_cfg_##inst, PRE_KERNEL_1,   \
+			      CONFIG_INTC_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(APLIC_INIT)
 

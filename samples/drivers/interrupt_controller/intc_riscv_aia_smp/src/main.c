@@ -30,10 +30,10 @@
 #define UART_IRQ_FLAGS DT_IRQ_BY_IDX(UART_NODE, 0, flags)
 
 /* 16550 UART register offsets */
-#define UART_RBR  (0x00 << UART_REG_SHIFT)
-#define UART_THR  (0x00 << UART_REG_SHIFT)
-#define UART_IER  (0x01 << UART_REG_SHIFT)
-#define UART_LSR  (0x05 << UART_REG_SHIFT)
+#define UART_RBR (0x00 << UART_REG_SHIFT)
+#define UART_THR (0x00 << UART_REG_SHIFT)
+#define UART_IER (0x01 << UART_REG_SHIFT)
+#define UART_LSR (0x05 << UART_REG_SHIFT)
 
 #define UART_IER_RDI  0x01
 #define UART_LSR_DR   0x01
@@ -96,9 +96,8 @@ int main(void)
 
 	/* Start thread on hart 1 to enable EIID there */
 	k_tid_t tid = k_thread_create(&hart1_thread_data, hart1_stack,
-				      K_THREAD_STACK_SIZEOF(hart1_stack),
-				      hart1_init_thread, NULL, NULL, NULL,
-				      K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_FOREVER);
+				      K_THREAD_STACK_SIZEOF(hart1_stack), hart1_init_thread, NULL,
+				      NULL, NULL, K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_FOREVER);
 	k_thread_cpu_mask_clear(tid);
 	k_thread_cpu_mask_enable(tid, 1);
 	k_thread_start(tid);
@@ -118,8 +117,8 @@ int main(void)
 		k_msleep(100); /* Let routing take effect */
 		riscv_aia_inject_msi(target_hart, UART_IRQ_NUM);
 		k_msleep(500); /* Wait for ISR */
-		printk("  Hart 0 ISR count: %d, Hart 1 ISR count: %d\n",
-		       uart_isr_count[0], uart_isr_count[1]);
+		printk("  Hart 0 ISR count: %d, Hart 1 ISR count: %d\n", uart_isr_count[0],
+		       uart_isr_count[1]);
 	}
 	printk("GENMSI test complete.\n\n");
 
@@ -137,8 +136,8 @@ int main(void)
 	for (int i = 0; i < 5; i++) {
 		int64_t uptime_ms = k_uptime_get();
 
-		printk("Uptime: %lld ms - UART ISRs: Hart0=%d Hart1=%d\n",
-		       uptime_ms, uart_isr_count[0], uart_isr_count[1]);
+		printk("Uptime: %lld ms - UART ISRs: Hart0=%d Hart1=%d\n", uptime_ms,
+		       uart_isr_count[0], uart_isr_count[1]);
 		k_msleep(1000);
 	}
 
