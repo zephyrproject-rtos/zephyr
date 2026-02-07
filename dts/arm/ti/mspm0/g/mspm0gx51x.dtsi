@@ -4,6 +4,27 @@
 
 / {
 	soc {
+		comp0: comp@40008000 {
+			compatible = "ti,mspm0-comparator";
+			reg = <0x40008000 0x2000>;
+			interrupts = <1 0>;
+			status = "disabled";
+		};
+
+		comp1: comp@4000a000 {
+			compatible = "ti,mspm0-comparator";
+			reg = <0x4000a000 0x2000>;
+			interrupts = <1 0>;
+			status = "disabled";
+		};
+
+		comp2: comp@4000c000 {
+			compatible = "ti,mspm0-comparator";
+			reg = <0x4000c000 0x2000>;
+			interrupts = <1 0>;
+			status = "disabled";
+		};
+
 		gpioc: gpio@400a4000 {
 			compatible = "ti,mspm0-gpio";
 			reg = <0x400a4000 0x2000>;
