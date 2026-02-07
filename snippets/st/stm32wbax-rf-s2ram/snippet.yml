@@ -1,0 +1,11 @@
+# Copyright 2025 STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: stm32wbax-rf-s2ram
+
+boards:
+  /.*wba(65|55).*/:
+    append:
+      EXTRA_CONF_FILE: stm32wbax-rf-s2ram.conf
+      EXTRA_DTC_OVERLAY_FILE: stm32wbax-rf-s2ram.overlay
