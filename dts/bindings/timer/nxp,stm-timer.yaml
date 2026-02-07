@@ -1,0 +1,32 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP System Timer Module (STM) used as a Zephyr system timer timebase.
+
+compatible: "nxp,stm-hw-timer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      Effective STM counter clock frequency in Hz (after prescaling).
+
+  prescaler:
+    type: int
+    required: true
+    description: |
+      STM prescaler divide value (0-255). The STM effective counter frequency is
+      expected to be consistent with `clock-frequency`.
