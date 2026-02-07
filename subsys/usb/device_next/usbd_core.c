@@ -139,7 +139,7 @@ static int event_handler_bus_reset(struct usbd_context *const uds_ctx)
 		LOG_ERR("Failed to dequeue control IN");
 	}
 
-	LOG_INF("Actual device speed %u", udc_device_speed(uds_ctx->dev));
+	LOG_DBG("Actual device speed %u", udc_device_speed(uds_ctx->dev));
 	udc_speed = udc_device_speed(uds_ctx->dev);
 	switch (udc_speed) {
 	case UDC_BUS_SPEED_HS:
