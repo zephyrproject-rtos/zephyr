@@ -1,0 +1,27 @@
+# Copyright (c) 2025 Tridonic GmbH & Co KG
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments TLC59116 LED controller
+
+  Driver bindings for I2C TLC59116 devices using a single device tree node.
+  Length of daisy chains in pixels is defined by the chain-length
+  property. Note: chain-length must be a multiple of 16. A single TLC59116 device
+  supports 16 LEDs.
+
+  Example device tree node on I2C address 0x60:
+
+    &i2c0 {
+      led_strip_60: tlc59116@60 {
+        status = "okay";
+        compatible = "ti,tlc59116";
+        reg = <0x60>;
+        label = "led_strip_60";
+        chain-length = <16>;
+        color-mapping = <LED_COLOR_ID_WHITE>;
+      };
+    };
+
+compatible: "ti,tlc59116"
+
+include: [i2c-device.yaml, led-strip.yaml]
