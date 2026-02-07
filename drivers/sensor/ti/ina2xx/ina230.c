@@ -8,8 +8,9 @@
 
 #include "ina230.h"
 
-#include <zephyr/logging/log.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/dt-bindings/sensor/ina230.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(INA230, CONFIG_SENSOR_LOG_LEVEL);
 
@@ -26,6 +27,8 @@ LOG_MODULE_REGISTER(INA230, CONFIG_SENSOR_LOG_LEVEL);
 #define INA232_POWER_SCALING 32
 #define INA236_POWER_SCALING 32
 
+#define INA230_MASK_REG_MASK (INA230_ALERT_POLARITY | INA230_ALERT_LATCH_ENABLE)
+
 INA2XX_REG_DEFINE(ina230_config, INA230_REG_CONFIG, 16);
 INA2XX_REG_DEFINE(ina230_cal, INA230_REG_CALIB, 16);
 
@@ -33,10 +36,12 @@ INA2XX_REG_DEFINE(ina230_cal, INA230_REG_CALIB, 16);
 INA2XX_CHANNEL_DEFINE(ina230_current, INA230_REG_CURRENT, 16, 0, 1, 1);
 INA2XX_CHANNEL_DEFINE(ina230_bus_voltage, INA230_REG_BUS_VOLT, 16, 0, INA230_BUS_VOLTAGE_UV_LSB, 1);
 INA2XX_CHANNEL_DEFINE(ina230_power, INA230_REG_POWER, 16, 0, INA230_POWER_SCALING, 1);
+INA2XX_CHANNEL_DEFINE(ina230_vshunt, INA230_REG_SHUNT_VOLT, 16, 0, 2500, 1);
 
 static struct ina2xx_channels ina230_channels = {
 	.voltage = &ina230_bus_voltage,
 	.current = &ina230_current,
+	.vshunt = &ina230_vshunt,
 	.power = &ina230_power,
 };
 #endif /* ti_ina230 */
@@ -45,10 +50,12 @@ static struct ina2xx_channels ina230_channels = {
 INA2XX_CHANNEL_DEFINE(ina232_current, INA230_REG_CURRENT, 16, 0, 1, 1);
 INA2XX_CHANNEL_DEFINE(ina232_bus_voltage, INA230_REG_BUS_VOLT, 16, 0, INA232_BUS_VOLTAGE_UV_LSB, 1);
 INA2XX_CHANNEL_DEFINE(ina232_power, INA230_REG_POWER, 16, 0, INA232_POWER_SCALING, 1);
+INA2XX_CHANNEL_DEFINE(ina232_vshunt, INA230_REG_SHUNT_VOLT, 16, 0, 2500, 1);
 
 static struct ina2xx_channels ina232_channels = {
 	.voltage = &ina232_bus_voltage,
 	.current = &ina232_current,
+	.vshunt = &ina232_vshunt,
 	.power = &ina232_power,
 };
 #endif /* ti_ina232 */
@@ -57,10 +64,12 @@ static struct ina2xx_channels ina232_channels = {
 INA2XX_CHANNEL_DEFINE(ina236_current, INA230_REG_CURRENT, 16, 0, 1, 1);
 INA2XX_CHANNEL_DEFINE(ina236_bus_voltage, INA230_REG_BUS_VOLT, 16, 0, INA236_BUS_VOLTAGE_UV_LSB, 1);
 INA2XX_CHANNEL_DEFINE(ina236_power, INA230_REG_POWER, 16, 0, INA236_POWER_SCALING, 1);
+INA2XX_CHANNEL_DEFINE(ina236_vshunt, INA230_REG_SHUNT_VOLT, 16, 0, 2500, 1);
 
 static struct ina2xx_channels ina236_channels = {
 	.voltage = &ina236_bus_voltage,
 	.current = &ina236_current,
+	.vshunt = &ina236_vshunt,
 	.power = &ina236_power,
 };
 #endif /* ti_ina236 */
@@ -68,9 +77,19 @@ static struct ina2xx_channels ina236_channels = {
 static int ina230_set_feature_mask(const struct device *dev, const struct sensor_value *val)
 {
 	const struct ina2xx_config *config = dev->config;
+	struct ina230_data *d = dev->data;
 	uint16_t data = val->val1;
+	uint16_t new_val;
+	int ret;
 
-	return ina2xx_reg_write(&config->bus, INA230_REG_MASK, data);
+	new_val = (d->mask & ~INA230_MASK_REG_MASK) | (data & INA230_MASK_REG_MASK);
+
+	ret = ina2xx_reg_write(&config->bus, INA230_REG_MASK, new_val);
+	if (!ret) {
+		d->mask = new_val;
+	}
+
+	return ret;
 }
 
 static int ina230_set_alert(const struct device *dev, const struct sensor_value *val)
@@ -143,16 +162,13 @@ static int ina230_attr_get(const struct device *dev, enum sensor_channel chan,
 	return ina2xx_attr_get(dev, chan, attr, val);
 }
 
+#if defined(CONFIG_INA230_TRIGGER)
 static int ina230_init_trigger(const struct device *dev)
 {
 	if (IS_ENABLED(CONFIG_INA230_TRIGGER)) {
 		const struct ina230_config *const config = dev->config;
 		const struct i2c_dt_spec *bus = &config->common.bus;
 		int ret;
-
-		if (!config->trig_enabled) {
-			return 0;
-		}
 
 		ret = ina230_trigger_mode_init(dev);
 		if (ret < 0) {
@@ -175,6 +191,7 @@ static int ina230_init_trigger(const struct device *dev)
 
 	return 0;
 }
+#endif /* defined(CONFIG_INA230_TRIGGER) */
 
 static int ina230_init(const struct device *dev)
 {
@@ -184,12 +201,12 @@ static int ina230_init(const struct device *dev)
 	if (ret < 0) {
 		return ret;
 	}
-
+#if defined(CONFIG_INA230_TRIGGER)
 	ret = ina230_init_trigger(dev);
 	if (ret < 0) {
 		return ret;
 	}
-
+#endif /* defined(CONFIG_INA230_TRIGGER) */
 	return 0;
 }
 
@@ -205,7 +222,7 @@ static DEVICE_API(sensor, ina230_driver_api) = {
 
 #ifdef CONFIG_INA230_TRIGGER
 #define INA230_CFG_IRQ(inst)                                                                       \
-	.trig_enabled = true, .mask = DT_INST_PROP(inst, mask),                                    \
+	.mask = DT_INST_PROP(inst, mask) & INA230_MASK_REG_MASK,                                   \
 	.alert_limit = DT_INST_PROP(inst, alert_limit),                                            \
 	.alert_gpio = GPIO_DT_SPEC_INST_GET(inst, alert_gpios)
 #else
