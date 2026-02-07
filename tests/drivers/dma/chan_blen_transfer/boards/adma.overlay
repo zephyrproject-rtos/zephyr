@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2025 Advance Micro Devices
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+tst_dma0: &adma0 {};

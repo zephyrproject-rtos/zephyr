@@ -1,0 +1,29 @@
+# ADMA Driver configuration options
+# Copyright (c) 2025 Advanced Micro Devices.
+
+# SPDX-License-Identifier: Apache-2.0
+
+
+config DMA_XILINX_ADMA
+	bool "Using Xilinx ADMA driver"
+	default y
+	depends on DT_HAS_XLNX_ZYNQMP_DMA_1_0_ENABLED || DT_HAS_AMD_VERSAL2_DMA_1_0_ENABLED
+	select CACHE_MANAGEMENT
+	select SYS_MEM_BLOCKS
+	select EVENTS
+	help
+	  DMA driver for Xilinx ADMA.
+
+config DMA_XILINX_ADMA_BURST
+	int "Maximum Burst supported"
+	default 16
+
+config DMA_XILINX_ADMA_SG_BUFFER_COUNT
+	int "Maximum number of Buffer"
+	default 32
+
+config DMA_XILINX_ADMA_DESC_POOL_ALIGNMENT
+	int "DMA descriptor pool alignment in bytes"
+	default 64
+	help
+	  Memory alignment requirement for DMA descriptor pool allocation.
