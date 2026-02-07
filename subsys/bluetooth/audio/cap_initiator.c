@@ -30,7 +30,6 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <sys/errno.h>
@@ -47,12 +46,12 @@ static const struct bt_cap_initiator_cb *cap_cb;
 
 int bt_cap_initiator_register_cb(const struct bt_cap_initiator_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		LOG_DBG("cb is NULL");
 		return -EINVAL;
 	}
 
-	CHECKIF(cap_cb != NULL) {
+	if (cap_cb != NULL) {
 		LOG_DBG("callbacks already registered");
 		return -EALREADY;
 	}
@@ -64,12 +63,12 @@ int bt_cap_initiator_register_cb(const struct bt_cap_initiator_cb *cb)
 
 int bt_cap_initiator_unregister_cb(const struct bt_cap_initiator_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		LOG_DBG("cb is NULL");
 		return -EINVAL;
 	}
 
-	CHECKIF(cap_cb != cb) {
+	if (cap_cb != cb) {
 		LOG_DBG("cb is not registered");
 		return -EINVAL;
 	}
@@ -170,14 +169,14 @@ bool bt_cap_initiator_broadcast_audio_start_valid_param(
 
 		/* Streaming Audio Context shall be present in CAP */
 
-		CHECKIF(codec_cfg == NULL) {
+		if (codec_cfg == NULL) {
 			LOG_DBG("subgroup[%zu]->codec_cfg is NULL", i);
 			return false;
 		}
 
 		valid_metadata = cap_initiator_valid_metadata(codec_cfg->meta, codec_cfg->meta_len);
 
-		CHECKIF(!valid_metadata) {
+		if (!valid_metadata) {
 			LOG_DBG("Invalid metadata supplied for subgroup[%zu]", i);
 			return false;
 		}
@@ -252,7 +251,7 @@ int bt_cap_initiator_broadcast_audio_create(
 	struct bt_bap_broadcast_source_param bap_create_param = {0};
 	int err;
 
-	CHECKIF(broadcast_source == NULL) {
+	if (broadcast_source == NULL) {
 		LOG_DBG("source is NULL");
 		return -EINVAL;
 	}
@@ -353,12 +352,12 @@ int bt_cap_initiator_broadcast_audio_start(struct bt_cap_broadcast_source *broad
 {
 	static bool broadcast_source_cbs_registered;
 
-	CHECKIF(adv == NULL) {
+	if (adv == NULL) {
 		LOG_DBG("adv is NULL");
 		return -EINVAL;
 	}
 
-	CHECKIF(broadcast_source == NULL) {
+	if (broadcast_source == NULL) {
 		LOG_DBG("broadcast_source is NULL");
 		return -EINVAL;
 	}
@@ -384,12 +383,12 @@ int bt_cap_initiator_broadcast_audio_start(struct bt_cap_broadcast_source *broad
 int bt_cap_initiator_broadcast_audio_update(struct bt_cap_broadcast_source *broadcast_source,
 					    const uint8_t meta[], size_t meta_len)
 {
-	CHECKIF(broadcast_source == NULL) {
+	if (broadcast_source == NULL) {
 		LOG_DBG("broadcast_source is NULL");
 		return -EINVAL;
 	}
 
-	CHECKIF(meta == NULL) {
+	if (meta == NULL) {
 		LOG_DBG("meta is NULL");
 		return -EINVAL;
 	}
@@ -405,7 +404,7 @@ int bt_cap_initiator_broadcast_audio_update(struct bt_cap_broadcast_source *broa
 
 int bt_cap_initiator_broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_source)
 {
-	CHECKIF(broadcast_source == NULL) {
+	if (broadcast_source == NULL) {
 		LOG_DBG("broadcast_source is NULL");
 		return -EINVAL;
 	}
@@ -417,7 +416,7 @@ int bt_cap_initiator_broadcast_audio_delete(struct bt_cap_broadcast_source *broa
 {
 	int err;
 
-	CHECKIF(broadcast_source == NULL) {
+	if (broadcast_source == NULL) {
 		LOG_DBG("broadcast_source is NULL");
 		return -EINVAL;
 	}
@@ -433,7 +432,7 @@ int bt_cap_initiator_broadcast_audio_delete(struct bt_cap_broadcast_source *broa
 int bt_cap_initiator_broadcast_get_base(struct bt_cap_broadcast_source *broadcast_source,
 					struct net_buf_simple *base_buf)
 {
-	CHECKIF(broadcast_source == NULL) {
+	if (broadcast_source == NULL) {
 		LOG_DBG("broadcast_source is NULL");
 		return -EINVAL;
 	}
@@ -831,7 +830,7 @@ bt_cap_initiator_discover_complete(struct bt_conn *conn, int err,
 
 int bt_cap_initiator_unicast_discover(struct bt_conn *conn)
 {
-	CHECKIF(conn == NULL) {
+	if (conn == NULL) {
 		LOG_DBG("NULL conn");
 		return -EINVAL;
 	}
@@ -1130,22 +1129,22 @@ bool bt_cap_initiator_valid_unicast_audio_start_param(
 	/* Group can either be a unicast group or a broadcast source (in the case of handover) */
 	void *group = NULL;
 
-	CHECKIF(param == NULL) {
+	if (param == NULL) {
 		LOG_DBG("param is NULL");
 		return false;
 	}
 
-	CHECKIF(param->count == 0) {
+	if (param->count == 0) {
 		LOG_DBG("Invalid param->count: %u", param->count);
 		return false;
 	}
 
-	CHECKIF(param->stream_params == NULL) {
+	if (param->stream_params == NULL) {
 		LOG_DBG("param->stream_params is NULL");
 		return false;
 	}
 
-	CHECKIF(param->count > CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT) {
+	if (param->count > CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT) {
 		LOG_DBG("param->count (%zu) is larger than "
 			"CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT (%d)",
 			param->count, CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT);
@@ -1172,34 +1171,34 @@ bool bt_cap_initiator_valid_unicast_audio_start_param(
 			return false;
 		}
 
-		CHECKIF(stream_param->codec_cfg == NULL) {
+		if (stream_param->codec_cfg == NULL) {
 			LOG_DBG("param->stream_params[%zu].codec_cfg  is NULL", i);
 			return false;
 		}
 
-		CHECKIF(!cap_initiator_valid_metadata(codec_cfg->meta, codec_cfg->meta_len)) {
+		if (!cap_initiator_valid_metadata(codec_cfg->meta, codec_cfg->meta_len)) {
 			LOG_DBG("param->stream_params[%zu].codec_cfg  is invalid", i);
 			return false;
 		}
 
-		CHECKIF(stream_param->ep == NULL) {
+		if (stream_param->ep == NULL) {
 			LOG_DBG("param->stream_params[%zu].ep is NULL", i);
 			return false;
 		}
 
-		CHECKIF(member == NULL) {
+		if (member == NULL) {
 			LOG_DBG("param->stream_params[%zu].member is NULL", i);
 			return false;
 		}
 
-		CHECKIF(cap_stream == NULL) {
+		if (cap_stream == NULL) {
 			LOG_DBG("param->streams[%zu] is NULL", i);
 			return false;
 		}
 
 		bap_stream = &cap_stream->bap_stream;
 
-		CHECKIF(bap_stream->group == NULL) {
+		if (bap_stream->group == NULL) {
 			LOG_DBG("param->streams[%zu] (%p) is not in a unicast group", i,
 				bap_stream);
 			return false;
@@ -1209,7 +1208,7 @@ bool bt_cap_initiator_valid_unicast_audio_start_param(
 		if (group == NULL) {
 			group = bap_stream->group;
 		} else {
-			CHECKIF(bap_stream->group != group) {
+			if (bap_stream->group != group) {
 				LOG_DBG("param->streams[%zu] (%p) is not in this group %p", i,
 					group, bap_stream);
 				return false;
@@ -1941,22 +1940,22 @@ static bool valid_unicast_audio_update_param(const struct bt_cap_unicast_audio_u
 {
 	struct bt_bap_unicast_group *unicast_group = NULL;
 
-	CHECKIF(param == NULL) {
+	if (param == NULL) {
 		LOG_DBG("param is NULL");
 		return false;
 	}
 
-	CHECKIF(param->count == 0) {
+	if (param->count == 0) {
 		LOG_DBG("Invalid param->count: %u", param->count);
 		return false;
 	}
 
-	CHECKIF(param->stream_params == NULL) {
+	if (param->stream_params == NULL) {
 		LOG_DBG("param->stream_params is NULL");
 		return false;
 	}
 
-	CHECKIF(param->count > CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT) {
+	if (param->count > CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT) {
 		LOG_DBG("param->count (%zu) is larger than "
 			"CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT (%d)",
 			param->count, CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT);
@@ -1970,20 +1969,20 @@ static bool valid_unicast_audio_update_param(const struct bt_cap_unicast_audio_u
 		const struct bt_bap_stream *bap_stream;
 		struct bt_conn *conn;
 
-		CHECKIF(cap_stream == NULL) {
+		if (cap_stream == NULL) {
 			LOG_DBG("param->stream_params[%zu] is NULL", i);
 			return false;
 		}
 
 		bap_stream = &cap_stream->bap_stream;
 		conn = bap_stream->conn;
-		CHECKIF(conn == NULL) {
+		if (conn == NULL) {
 			LOG_DBG("param->stream_params[%zu].stream->bap_stream.conn is NULL", i);
 
 			return -EINVAL;
 		}
 
-		CHECKIF(bap_stream->group == NULL) {
+		if (bap_stream->group == NULL) {
 			LOG_DBG("param->stream_params[%zu] is not in a unicast group", i);
 			return false;
 		}
@@ -1992,7 +1991,7 @@ static bool valid_unicast_audio_update_param(const struct bt_cap_unicast_audio_u
 		if (unicast_group == NULL) {
 			unicast_group = bap_stream->group;
 		} else {
-			CHECKIF(bap_stream->group != unicast_group) {
+			if (bap_stream->group != unicast_group) {
 				LOG_DBG("param->stream_params[%zu] is not in this group %p", i,
 					unicast_group);
 				return false;
@@ -2210,22 +2209,22 @@ bool bt_cap_initiator_valid_unicast_audio_stop_param(
 {
 	struct bt_bap_unicast_group *unicast_group = NULL;
 
-	CHECKIF(param == NULL) {
+	if (param == NULL) {
 		LOG_DBG("param is NULL");
 		return false;
 	}
 
-	CHECKIF(param->count == 0) {
+	if (param->count == 0) {
 		LOG_DBG("Invalid param->count: %u", param->count);
 		return false;
 	}
 
-	CHECKIF(param->streams == NULL) {
+	if (param->streams == NULL) {
 		LOG_DBG("param->streams is NULL");
 		return false;
 	}
 
-	CHECKIF(param->count > CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT) {
+	if (param->count > CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT) {
 		LOG_DBG("param->count (%zu) is larger than "
 			"CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT (%d)",
 			param->count, CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT);
@@ -2237,14 +2236,14 @@ bool bt_cap_initiator_valid_unicast_audio_stop_param(
 		const struct bt_bap_stream *bap_stream;
 		struct bt_conn *conn;
 
-		CHECKIF(cap_stream == NULL) {
+		if (cap_stream == NULL) {
 			LOG_DBG("param->streams[%zu] is NULL", i);
 			return false;
 		}
 
 		bap_stream = &cap_stream->bap_stream;
 		conn = bap_stream->conn;
-		CHECKIF(conn == NULL) {
+		if (conn == NULL) {
 			LOG_DBG("param->streams[%zu]->bap_stream.conn is NULL", i);
 
 			return -EINVAL;
@@ -2262,7 +2261,7 @@ bool bt_cap_initiator_valid_unicast_audio_stop_param(
 			}
 		}
 
-		CHECKIF(bap_stream->group == NULL) {
+		if (bap_stream->group == NULL) {
 			LOG_DBG("param->streams[%zu] is not in a unicast group", i);
 			return false;
 		}
@@ -2271,7 +2270,7 @@ bool bt_cap_initiator_valid_unicast_audio_stop_param(
 		if (unicast_group == NULL) {
 			unicast_group = bap_stream->group;
 		} else {
-			CHECKIF(bap_stream->group != unicast_group) {
+			if (bap_stream->group != unicast_group) {
 				LOG_DBG("param->streams[%zu] is not in this group %p", i,
 					unicast_group);
 				return false;
