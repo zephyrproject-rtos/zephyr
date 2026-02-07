@@ -25,6 +25,7 @@
 	aliases {
 		led0 = &ld26;
 		adc0 = &main_adc0;
+		system-timer = &main_timer8;
 	};
 
 	leds: leds {
