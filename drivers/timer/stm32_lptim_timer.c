@@ -521,10 +521,6 @@ static int sys_clock_driver_init(void)
 	uint32_t count_per_tick;
 	int err;
 
-	if (!device_is_ready(clk_ctrl)) {
-		return -ENODEV;
-	}
-
 	/* Reset timer to default state using RCC */
 	(void)reset_line_toggle_dt(&lptim_reset);
 

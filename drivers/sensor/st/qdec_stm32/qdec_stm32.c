@@ -111,11 +111,6 @@ static int qdec_stm32_initialize(const struct device *dev)
 		return retval;
 	}
 
-	if (!device_is_ready(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE))) {
-		LOG_ERR("Clock control device not ready");
-		return -ENODEV;
-	}
-
 	retval = clock_control_on(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 				  (clock_control_subsys_t)&dev_cfg->pclken);
 	if (retval < 0) {

@@ -89,12 +89,6 @@ static int can_stm32h7_get_core_clock(const struct device *dev, uint32_t *rate)
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	uint32_t cdiv;
 
-	ARG_UNUSED(dev);
-	if (!device_is_ready(clk)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
 	if (IS_ENABLED(STM32H7_FDCAN_DOMAIN_CLOCK_SUPPORT) && (stm32h7_cfg->pclk_len > 1)) {
 		if (clock_control_get_rate(clk,
 			 (clock_control_subsys_t) &stm32h7_cfg->pclken[1],
@@ -127,11 +121,6 @@ static int can_stm32h7_clock_enable(const struct device *dev)
 	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	uint32_t fdcan_clock = 0xffffffff;
 	int ret;
-
-	if (!device_is_ready(clk)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
 
 	if (IS_ENABLED(STM32H7_FDCAN_DOMAIN_CLOCK_SUPPORT) && (stm32h7_cfg->pclk_len > 1)) {
 		ret = clock_control_configure(clk,
