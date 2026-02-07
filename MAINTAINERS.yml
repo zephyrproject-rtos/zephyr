@@ -3607,6 +3607,7 @@ NXP Platform Wireless:
       collaborators:
         - MaochenWang1
       files:
+        - boards/shields/nxp_m2_wifi_bt/
         - drivers/wifi/
         - samples/net/
     - name: NXP IEEE802.15.4
@@ -3726,6 +3727,60 @@ NXP Platforms (MCU):
         - boards/nxp/vmu*/
         - boards/nxp/rddrone_fmuk66/
         - tests/boards/vmu_rt1170/
+    - name: NXP Camera Shields
+      collaborators:
+        - ngphibang
+      files:
+        - boards/shields/nxp_btb44_ov5640/
+    - name: NXP Display Shields
+      collaborators:
+        - KATE-WANG-NXP
+      files:
+        - boards/shields/g1120b0mipi/
+        - boards/shields/lcd_par_s035/
+        - boards/shields/rk043fn02h_ct/
+        - boards/shields/rk043fn66hs_ctg/
+        - boards/shields/rk055hdmipi4m
+        - boards/shields/rk055hdmipi4ma0/
+        - boards/shields/zc143ac72mipi/
+    - name: NXP I3C Test Shields
+      collaborators:
+        - hakehuang
+      files:
+        - boards/shields/p3t1755dp_ard_i2c/
+        - boards/shields/p3t1755dp_ard_i3c/
+    - name: NXP MCU KE1xF
+      collaborators:
+        - henrikbrixandersen
+      files:
+        - boards/nxp/twr_ke18f/
+        - soc/nxp/kinetis/ke1xf/
+      files-regex:
+        - .*ke1*f.*
+    - name: NXP MCU KV5x
+      collaborators:
+        - fbrozovic
+      files:
+        - boards/nxp/twr_kv58f220m/
+        - soc/nxp/kinetis/kv5x/
+      files-regex:
+        - .*kv5.*
+    - name: NXP MCU LPC11U6x
+      collaborators:
+        - mbittan
+      files:
+        - boards/nxp/lpcxpresso11u68/
+        - soc/nxp/lpc/lpc11u6x/
+      files-regex:
+        - .*lpc11u6.*
+    - name: NXP MCU LPC51U6x
+      collaborators:
+        - Navin-Sankar
+      files:
+        - boards/nxp/lpcxpresso51u68/
+        - soc/nxp/lpc/lpc51u68/
+      files-regex:
+        - .*lpc51u6.*
     - name: NXP MCU k32l
       collaborators:
         - iia
@@ -3733,6 +3788,11 @@ NXP Platforms (MCU):
         - boards/nxp/frdm_k32l2b3/
         - dts/arm/nxp/kinetis/nxp_k32l2b3.dtsi
         - soc/nxp/kinetis/k32lx/
+    - name: NXP Shield frdm_stbc_agm01
+      collaborators:
+        - hollerdawg
+      files:
+        - boards/shields/frdm_stbc_agm01/
   labels:
     - "platform: NXP MCU"
     - "platform: NXP"
@@ -3789,6 +3849,12 @@ NXP Platforms (S32):
       files:
         - boards/nxp/mr_canhubk3/
         - boards/nxp/ucans32k1sic/
+    - name: NXP Shield nxp_adtja1101
+      collaborators:
+        - KevShaju
+        - marcin-wierzbicki
+      files:
+        - boards/shields/nxp_adtja1101/
   labels:
     - "platform: NXP S32"
     - "platform: NXP"
