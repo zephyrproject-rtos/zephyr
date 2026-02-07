@@ -16,6 +16,7 @@
 
 #include <zephyr/dt-bindings/sensor/adxl345.h>
 
+#include "adxl345_features.h"
 #ifdef CONFIG_ADXL345_STREAM
 #include <zephyr/rtio/rtio.h>
 #endif /* CONFIG_ADXL345_STREAM */
@@ -51,16 +52,11 @@
 
 #define ADXL345_PART_ID            0xe5
 
-#define ADXL345_RANGE_2G           0x0
-#define ADXL345_RANGE_4G           0x1
-#define ADXL345_RANGE_8G           0x2
-#define ADXL345_RANGE_16G          0x3
 #define ADXL345_RATE_25HZ          0x8
 #define ADXL345_ENABLE_MEASURE_BIT (1 << 3)
 #define ADXL345_FIFO_STREAM_MODE   (1 << 7)
 #define ADXL345_FIFO_COUNT_MASK    0x3f
 #define ADXL345_COMPLEMENT_MASK(x) GENMASK(15, (x))
-#define ADXL345_COMPLEMENT         0xfc00
 
 #define ADXL345_MAX_FIFO_SIZE      32
 

@@ -1,0 +1,17 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_DRIVERS_SENSOR_ADX345_ADX345_FEATURES_H_
+#define ZEPHYR_DRIVERS_SENSOR_ADX345_ADX345_FEATURES_H_
+
+#define ADXL345_RANGE_2G  0x0
+#define ADXL345_RANGE_4G  0x1
+#define ADXL345_RANGE_8G  0x2
+#define ADXL345_RANGE_16G 0x3
+
+#define ADXL345_COMPLEMENT 0xfc00
+
+#endif /* ZEPHYR_DRIVERS_SENSOR_ADX345_ADX345_FEATURES_H_ */
