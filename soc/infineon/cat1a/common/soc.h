@@ -14,6 +14,12 @@
 
 #ifndef _ASMLANGUAGE
 #include <cy_device_headers.h>
+#include <cy_sysint.h>
+#if defined(CONFIG_DYNAMIC_INTERRUPTS) && defined(CONFIG_GEN_ISR_TABLES)
+void psoc6_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+		    void (*routine)(const void *parameter),
+		    const void *parameter, uint32_t flags);
+#endif /* defined(CONFIG_DYNAMIC_INTERRUPTS) && defined(CONFIG_GEN_ISR_TABLES) */
 #endif  /* !_ASMLANGUAGE */
 
 #endif  /* _SOC__H_ */

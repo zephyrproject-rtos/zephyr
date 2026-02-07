@@ -73,3 +73,6 @@ tests:
     extra_args:
       - SB_CONFIG_REMOTE_NRF54H20_CPUFLPR_XIP_CORE=y
       - hello_world_SNIPPET=nordic-flpr-xip
+  sample.sysbuild.hello_world.cy8ckit_062s2_ai_m0_m4:
+    platform_allow:
+      - cy8ckit_062s2_ai/cy8c624abzi_s2d44/m0

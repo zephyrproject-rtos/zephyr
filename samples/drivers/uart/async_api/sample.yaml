@@ -12,6 +12,8 @@ tests:
             dt_chosen_enabled("zephyr,shell-uart") and
             not CONFIG_UART_MCUX_LPUART
     harness: keyboard
+    platform_exclude:
+      - cy8ckit_062s2_ai/cy8c624abzi_s2d44/m0
   sample.drivers.uart.async_api.lpuart:
     tags:
       - serial
@@ -38,3 +40,5 @@ tests:
         - "RX is now enabled"
         - "Loop (.*) Sending (.*)"
         - "RX is now disabled"
+    platform_exclude:
+      - cy8ckit_062s2_ai/cy8c624abzi_s2d44/m0

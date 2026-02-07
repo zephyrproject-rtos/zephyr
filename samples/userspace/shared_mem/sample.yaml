@@ -18,7 +18,7 @@ tests:
       - posix
     platform_exclude:
       - twr_ke18f
-      - cy8cproto_062_4343w
+      - cy8cproto_062_4343w/cy8c624abzi_s2d44/m4
       - cy8cproto_063_ble
       - ucans32k1sic
       - mimxrt700_evk/mimxrt798s/cm33_cpu0

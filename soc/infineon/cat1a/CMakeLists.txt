@@ -18,6 +18,16 @@ if(CONFIG_SOC_FAMILY_PSOC6)
 
 endif()
 
+if(CONFIG_SOC_FAMILY_PSOC6_M0 OR CONFIG_SOC_FAMILY_PSOC6_M4)
+  zephyr_include_directories(common)
+  zephyr_sources(common/soc.c)
+
+  # Add sections
+  zephyr_linker_sources(NOINIT common/noinit.ld)
+  zephyr_linker_sources(RAMFUNC_SECTION SORT_KEY 0 common/ram_func.ld)
+  zephyr_linker_sources(RODATA SORT_KEY 0 common/rom.ld)
+endif()
+
 if(CONFIG_SOC_FAMILY_PSOC6_LEGACY)
   zephyr_include_directories(psoc6_legacy)
   zephyr_sources(psoc6_legacy/soc.c)
