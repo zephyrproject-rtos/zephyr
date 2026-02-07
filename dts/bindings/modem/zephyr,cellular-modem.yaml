@@ -1,0 +1,77 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Generic Cellular dial-up modem
+
+    This driver implements a generic cellular dial-up PPP modem using a small subset
+    of AT commands from 3GPP TS 27.007.
+
+    UART is configured into a CMUX (3GPP TS 27.010) mode and one CMUX channel
+    is used for PPP data connection, while another CMUX channel is used for
+    sending AT commands to the modem.
+
+    It can be used with any modem that supports the required AT commands.
+
+compatible: "zephyr,cellular-modem"
+
+include: zephyr,cellular-modem-device.yaml
+
+properties:
+  zephyr,init-chat-script:
+    type: string-array
+    default:
+      - "ATE0"
+      - "AT+CMUX=0,0,5,127"
+    description: |
+      Chat script to run during modem initialization.
+
+      This is executed once during modem initialization, after the modem is powered on
+      and the UART is ready.
+
+      The chat script can be used to configure the modem into a CMUX mode, for example,
+      or to set up other modem features that are required for the modem to operate correctly.
+
+      Each command is expected to reply with "OK".
+
+  zephyr,dial-chat-script:
+    type: string-array
+    default:
+      - "AT+CEREG=1"
+      - "AT+CGEREP=1"
+      - "AT+CFUN=1"
+      - "ATD*99#"
+    description: |
+      Chat script to run when connecting to the network.
+
+      This is executed on the DLCI channel 1 to establish the PPP connection.
+
+      Last command is expected to reply with "CONNECT", while other commands reply with "OK".
+
+  zephyr,periodic-chat-script:
+    type: string-array
+    description: |
+      Chat script to run periodically while the modem is active.
+
+      This is executed repeatedly at a configurable interval while the modem is active
+      and registered to the network.
+      The periodic chat script can be used to monitor the modem's status, for example by
+      querying the network registration status (AT+CREG?) or signal quality (AT+CSQ).
+      This is only required for modems that do not support unsolicited network
+      registration status reports on the second DLCI channel.
+
+      This script runs on the DLCI channel 2.
+
+  zephyr,shutdown-chat-script:
+    type: string-array
+    default:
+    description: |
+      Chat script to run during modem shutdown.
+
+      This is executed when the modem is being shut down, after the CMUX channel is closed
+      and before the modem is powered off.
+
+      Shutdown script is alternative to using modem power control GPIOs, when left empty,
+      modem power control GPIOs are expected to be used for shutting down the modem.
+      When shutdown chat script is provided, modem power control GPIOs are not used for
+      shutting down the modem.
