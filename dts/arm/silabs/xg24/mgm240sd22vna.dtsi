@@ -24,6 +24,22 @@
 	reg = <0x08000000 DT_SIZE_K(1536)>;
 };
 
+&gpioa {
+	ngpios = <10>;
+};
+
+&gpiob {
+	ngpios = <6>;
+};
+
+&gpioc {
+	ngpios = <10>;
+};
+
+&gpiod {
+	ngpios = <6>;
+};
+
 &hfxo {
 	ctune = <140>;
 	precision = <50>;
