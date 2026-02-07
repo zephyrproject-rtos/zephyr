@@ -15,6 +15,7 @@
 #include <zephyr/drivers/led.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/math_extras.h>
 
 LOG_MODULE_REGISTER(sct2024, CONFIG_LED_LOG_LEVEL);
 
@@ -155,9 +156,69 @@ static int sct2024_set_brightness(const struct device *dev, uint32_t led, uint8_
 	return sct2024_write(dev);
 }
 
+static int sct2024_led_write_channels(const struct device *dev, uint32_t start_channel,
+				      uint32_t num_channels, const uint8_t *brightness_values)
+{
+	struct sct2024_data *data = dev->data;
+	uint32_t end_channel;
+	uint16_t led_bitmap[SCT2024_MAX_CHAIN_LENGTH];
+	const size_t led_bitmap_size = MIN(sizeof(led_bitmap), sizeof(data->led_bitmap));
+	int ret = 0;
+
+	__ASSERT(brightness_values != NULL, "Passed NULL as brightness_values array.");
+
+	if (u32_add_overflow(start_channel, num_channels, &end_channel)) {
+		LOG_ERR("Channel range overflow: start=%u, num=%u", start_channel, num_channels);
+		return -EINVAL;
+	}
+
+	if (end_channel > SCT2024_LED_COUNT * SCT2024_MAX_CHAIN_LENGTH) {
+		LOG_ERR("Channel range out of bounds: end=%u, max=%u", end_channel,
+			SCT2024_LED_COUNT * SCT2024_MAX_CHAIN_LENGTH);
+		return -EINVAL;
+	}
+
+	memcpy(led_bitmap, data->led_bitmap, led_bitmap_size);
+
+	for (uint32_t i = 0; i < num_channels; i++) {
+		int led_index = sct2024_get_led_index(dev, start_channel + i);
+		uint32_t mask_index;
+		uint8_t bit_index;
+
+		if (led_index < 0) {
+			LOG_ERR("Invalid LED index for channel %u", start_channel + i);
+			ret = led_index;
+			continue;
+		}
+
+		if (led_index >= SCT2024_MAX_CHAIN_LENGTH * SCT2024_LED_COUNT) {
+			LOG_ERR("LED index out of bounds: index=%d, max=%u", led_index,
+				SCT2024_MAX_CHAIN_LENGTH * SCT2024_LED_COUNT);
+			continue;
+		}
+
+		mask_index = led_index / 16;
+		bit_index = led_index % 16;
+
+		if (brightness_values[i] > 0) {
+			led_bitmap[mask_index] |= BIT(bit_index);
+		} else {
+			led_bitmap[mask_index] &= ~BIT(bit_index);
+		}
+	}
+
+	if (ret == 0) {
+		memcpy(data->led_bitmap, led_bitmap, led_bitmap_size);
+		ret = sct2024_write(dev);
+	}
+
+	return ret;
+}
+
 static DEVICE_API(led, sct2024_led_api) = {
 	.get_info = sct2024_get_info,
 	.set_brightness = sct2024_set_brightness,
+	.write_channels = sct2024_led_write_channels,
 };
 
 static int sct2024_init(const struct device *dev)
