@@ -18,6 +18,7 @@ USB
 
    device_next/usb_device.rst
    device_next/vid_pid.rst
+   device_next/cdc_acm.rst
    device_next/api/index.rst
    host/api/index.rst
    host/usbip.rst
