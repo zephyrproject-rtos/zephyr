@@ -496,7 +496,7 @@ static void generate_alert_threshold(struct ti_hdc302x_data *data, uint8_t *buf,
 {
 	uint16_t tmp;
 
-	tmp = ((data->t_alert & 0xFF10) >> 7) + offset;
+	tmp = ((data->t_alert & 0xFF80) >> 7) + offset;
 	tmp += (data->rh_alert & 0xFE00) + (offset << 9);
 
 	sys_put_be16(tmp, buf);
