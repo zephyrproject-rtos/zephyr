@@ -321,22 +321,26 @@ static void hrs_notify(void)
  * this is only for demo purpose, for more precise synchronization please
  * review clock_settime API implementation.
  */
-static int64_t unix_ms_ref;
+static struct bt_cts_local_time local_time = {
+	.timezone_offset = BT_CTS_TIMEZONE_DEFAULT_VALUE,
+	.dst_offset = BT_CTS_DST_OFFSET_UNKNOWN,
+};
 static bool cts_notification_enabled;
+static int64_t unix_ms_ref;
 
-void bt_cts_notification_changed(bool enabled)
+static void cts_notification_changed_cb(bool enabled)
 {
 	cts_notification_enabled = enabled;
 }
 
-int bt_cts_cts_time_write(struct bt_cts_time_format *cts_time)
+static int cts_time_write_cb(struct bt_cts_time_format *cts_time)
 {
 	int err;
 	int64_t unix_ms;
 
 	if (IS_ENABLED(CONFIG_BT_CTS_HELPER_API)) {
 		err = bt_cts_time_to_unix_ms(cts_time, &unix_ms);
-		if (err) {
+		if (err != 0) {
 			return err;
 		}
 	} else {
@@ -348,7 +352,7 @@ int bt_cts_cts_time_write(struct bt_cts_time_format *cts_time)
 	return 0;
 }
 
-int bt_cts_fill_current_cts_time(struct bt_cts_time_format *cts_time)
+static int cts_fill_current_cts_time_cb(struct bt_cts_time_format *cts_time)
 {
 	int64_t unix_ms = unix_ms_ref + k_uptime_get();
 
@@ -359,10 +363,24 @@ int bt_cts_fill_current_cts_time(struct bt_cts_time_format *cts_time)
 	}
 }
 
+static int cts_local_time_write_cb(const struct bt_cts_local_time *cts_local_time)
+{
+	memcpy(&local_time, cts_local_time, sizeof(local_time));
+	return 0;
+}
+
+static int cts_fill_local_time_cb(struct bt_cts_local_time *cts_local_time)
+{
+	memcpy(cts_local_time, &local_time, sizeof(local_time));
+	return 0;
+}
+
 const struct bt_cts_cb cts_cb = {
-	.notification_changed = bt_cts_notification_changed,
-	.cts_time_write = bt_cts_cts_time_write,
-	.fill_current_cts_time = bt_cts_fill_current_cts_time,
+	.notification_changed = cts_notification_changed_cb,
+	.cts_time_write = cts_time_write_cb,
+	.fill_current_cts_time = cts_fill_current_cts_time_cb,
+	.cts_local_time_write = cts_local_time_write_cb,
+	.fill_current_cts_local_time = cts_fill_local_time_cb,
 };
 
 static int bt_hrs_ctrl_point_write(uint8_t request)
@@ -387,7 +405,7 @@ int main(void)
 	int err;
 
 	err = bt_enable(NULL);
-	if (err) {
+	if (err != 0) {
 		printk("Bluetooth init failed (err %d)\n", err);
 		return 0;
 	}
