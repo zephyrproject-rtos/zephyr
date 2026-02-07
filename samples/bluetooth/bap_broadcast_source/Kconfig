@@ -18,6 +18,11 @@ config BAP_BROADCAST_24_2_1
 	help
 	  Using the BAP_LC3_BROADCAST_PRESET_24_2_1 preset.
 
+config BAP_BROADCAST_48_2_1
+	bool "BAP_LC3_BROADCAST_PRESET_48_2_1 preset"
+	help
+	  Using the BAP_LC3_BROADCAST_PRESET_48_2_1 preset.
+
 endchoice
 
 config ENABLE_LC3
@@ -25,7 +30,11 @@ config ENABLE_LC3
 	# By default let's enable it in the platforms we know are capable of supporting it
 	default y
 	depends on CPU_HAS_FPU && \
-		(ARCH_POSIX || SOC_COMPATIBLE_NRF52X || SOC_COMPATIBLE_NRF5340_CPUAPP || SOC_MIMXRT1062)
+		(ARCH_POSIX || \
+		 SOC_COMPATIBLE_NRF52X || \
+		 SOC_COMPATIBLE_NRF5340_CPUAPP || \
+		 SOC_COMPATIBLE_NRF54LX || \
+		 SOC_MIMXRT1062)
 	select LIBLC3
 	select FPU
 
@@ -61,6 +70,7 @@ config BROADCAST_ID
 	hex "The static broadcast ID to use"
 	range 0x000000 0xFFFFFF
 	depends on STATIC_BROADCAST_ID
+	default 0x123456
 	help
 	   This is the 3-octet broadcast ID advertised if static broadcast IDs are enabled.
 
