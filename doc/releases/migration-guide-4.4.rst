@@ -221,6 +221,10 @@ Controller Area Network (CAN)
   selects between the named input clocks ``clksrc0`` and ``clksrc1`` for use as the CAN protocol
   engine clock.
 
+* Renamed the NXP LPC family MCAN driver Kconfig option ``CONFIG_CAN_MCUX_MCAN`` to
+  :kconfig:option:`CONFIG_CAN_NXP_LPC_MCAN` as this driver is not based on the NXP MCUXpresso HAL
+  (:github:`103679`).
+
 Counter
 =======
 

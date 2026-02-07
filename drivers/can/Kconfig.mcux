@@ -1,4 +1,4 @@
-# MCUX CAN configuration options
+# NXP MCUX CAN configuration options
 
 # Copyright (c) 2019 Vestas Wind Systems A/S
 # SPDX-License-Identifier: Apache-2.0
@@ -39,14 +39,3 @@ config CAN_MCUX_FLEXCAN_MAX_FILTERS
 	  message buffers, resulting in fewer available filters.
 
 endif # CAN_MCUX_FLEXCAN
-
-config CAN_MCUX_MCAN
-	bool "MCUX MCAN driver"
-	default y
-	depends on DT_HAS_NXP_LPC_MCAN_ENABLED
-	depends on CLOCK_CONTROL
-	select CAN_MCAN
-	select PINCTRL
-	select RESET
-	help
-	  Enable support for mcux mcan driver.

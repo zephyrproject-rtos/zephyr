@@ -18,11 +18,11 @@ LOG_MODULE_REGISTER(clock_control);
 static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 					    clock_control_subsys_t sub_system)
 {
-#if defined(CONFIG_CAN_MCUX_MCAN)
+#if defined(CONFIG_CAN_NXP_LPC_MCAN)
 	if ((uint32_t)sub_system == MCUX_MCAN_CLK) {
 		CLOCK_EnableClock(kCLOCK_Mcan);
 	}
-#endif /* defined(CONFIG_CAN_MCUX_MCAN) */
+#endif /* defined(CONFIG_CAN_NXP_LPC_MCAN) */
 #if defined(CONFIG_COUNTER_NXP_MRT)
 	if ((uint32_t)sub_system == MCUX_MRT_CLK) {
 #if defined(CONFIG_SOC_FAMILY_LPC) || defined(CONFIG_SOC_SERIES_RW6XX) ||                          \
@@ -114,7 +114,7 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	default:
 		break;
 	}
-#endif /* defined(CONFIG_CAN_MCUX_MCAN) */
+#endif /* defined(CONFIG_CAN_MCUX_FLEXCAN) */
 
 #ifdef CONFIG_ETH_NXP_ENET
 	if ((uint32_t)sub_system == MCUX_ENET_CLK) {
@@ -441,11 +441,11 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		break;
 #endif
 
-#if defined(CONFIG_CAN_MCUX_MCAN)
+#if defined(CONFIG_CAN_NXP_LPC_MCAN)
 	case MCUX_MCAN_CLK:
 		*rate = CLOCK_GetMCanClkFreq();
 		break;
-#endif /* defined(CONFIG_CAN_MCUX_MCAN) */
+#endif /* defined(CONFIG_CAN_NXP_LPC_MCAN) */
 
 #if defined(CONFIG_COUNTER_MCUX_CTIMER) || defined(CONFIG_PWM_MCUX_CTIMER)
 	case MCUX_CTIMER0_CLK:
