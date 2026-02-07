@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2026 Muhammad Waleed Badar
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,console = &cdc_acm_uart0;
+		zephyr,shell-uart = &cdc_acm_uart0;
+	};
+
+	uart-bridge0 {
+		compatible = "zephyr,uart-bridge";
+		peers = <&cdc_acm_uart1 &usart2>;
+	};
+
+	dp0 {
+		compatible = "zephyr,swdp-gpio";
+		status = "okay";
+		clk-gpios = <&gpioa 3 GPIO_ACTIVE_HIGH>;
+		dio-gpios = <&gpioa 4 GPIO_PULL_UP>;
+		port-write-cycles = <1>;
+	};
+};
+
+&zephyr_udc0 {
+	cdc_acm_uart0: cdc-acm-uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+		label = "Zephyr USB CDC-ACM console";
+	};
+
+	cdc_acm_uart1: cdc-acm-uart1 {
+		compatible = "zephyr,cdc-acm-uart";
+		label = "Zephyr USB CDC-ACM target";
+	};
+};
