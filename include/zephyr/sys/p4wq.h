@@ -64,14 +64,11 @@ struct k_p4wq {
 
 	/* Pending threads waiting for work items
 	 *
-	 * FIXME: a waitq isn't really the right data structure here.
-	 * Wait queues are priority-sorted, but we don't want that
-	 * sorting overhead since we're effectively doing it ourselves
-	 * by directly mutating the priority when a thread is
-	 * unpended.  We just want "blocked threads on a list", but
-	 * there's no clean scheduler API for that.
+	 * Simple FIFO queue for blocked threads. We don't need priority
+	 * sorting here because thread priorities are set explicitly when
+	 * unpended (see set_prio() in p4wq.c).
 	 */
-	_wait_q_t waitq;
+	sys_dlist_t waitq;
 
 	/* Work items waiting for processing */
 	struct rbtree queue;
