@@ -1,0 +1,110 @@
+# Copyright (c) 2025 Lothar Rubusch <l.rubusch@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ADXL313 3-axis accelerometer
+  When setting the accelerometer DTS properties and want to use
+  streaming functionality, make sure to include adxl313.h and
+  use the macros defined there.
+
+  Example:
+  #include <zephyr/dt-bindings/sensor/adxl313.h>
+
+  adxl313: adxl313@0 {
+    compatible = "adi,adxl313";
+    reg = <0>;
+    spi-cpha;
+    spi-cpol;
+    spi-max-frequency = <5000000>;
+    int1-gpios =  <&gpio0 4 GPIO_ACTIVE_HIGH>;
+    drdy-pin = <1>;
+    fifo-watermark = <30>;
+  };
+
+include: sensor-device.yaml
+
+properties:
+  int1-gpios:
+    type: phandle-array
+    description: |
+      Specify if this gpio line is connected and available. None, only one or
+      both interrupt lines can be connected. The pin defaults to active high
+      when produced by the sensor. The property specifies the INT_1 line of
+      the sensor.
+
+  int2-gpios:
+    type: phandle-array
+    description: |
+      Specify if this gpio line is connected and available. None, only one or
+      both interrupt lines can be connected. The pin defaults to active high
+      when produced by the sensor. The property specifies the INT_2 line of
+      the sensor.
+
+  drdy-pin:
+    type: int
+    enum: [1, 2]
+    description: |
+      Specify which of the two interrupt lines (INT_1 or INT_2), if any,
+      actively delivers the data signal.
+      This number represents which of the two interrupt pins
+      (INT1 or INT2) the drdy line is attached to. This property is not
+      mandatory and if not present it defaults to 2.
+      - 1 # INT1
+      - 2 # INT2
+
+  fifo-watermark:
+    default: 0
+    type: int
+    description: |
+      Acceleration samples can be read either directly from the sensor or via
+      the internal FIFO buffer. When FIFO buffering is enabled, an interrupt
+      line must be configured to signal FIFO watermark events. Other events,
+      such as Activity or Inactivity, do not rely on FIFO configuration.
+      Valid range: from 1 to 31. A value of 0 disables FIFO buffering and is the
+      default. The setting thus is optional.
+
+  odr:
+    type: int
+    default: 6
+    description: |
+      Accelerometer output data rate (ODR). The recommended range is between
+      12.5 Hz and 400 Hz. This is an optional setting, defaults to 400 Hz.
+      - 0 # 6_25Hz
+      - 1 # 12.5Hz
+      - 2 # 25Hz
+      - 3 # 50Hz
+      - 4 # 100Hz
+      - 5 # 200Hz
+      - 6 # 400Hz
+      - 7 # 800Hz
+      - 8 # 1600Hz
+      - 9 # 3200Hz
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+
+  range:
+    type: int
+    default: 3
+    description: |
+      Accelerometer g ranges. This is an optional setting, defaults to 4g.
+      - 0 # 0.5g
+      - 1 # 1g
+      - 2 # 2g
+      - 3 # 4g
+      Note, the device is always in full resolution mode, where the output
+      resolution increases with the g range set by the range bits to maintain
+      1024 LSB/g sensitivity.
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
