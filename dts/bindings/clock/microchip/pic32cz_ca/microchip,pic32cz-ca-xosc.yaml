@@ -1,0 +1,126 @@
+# Copyright (c) 2025-2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: PIC32CZ_CA Crystal Oscillator (XOSC)
+
+description: |
+  Supports 4-48 MHz Crystal Oscillators (XOSC).
+
+include: [base.yaml]
+
+compatible: "microchip,pic32cz-ca-xosc"
+
+properties:
+  xosc-usb-ref-clock-div:
+    type: string
+    enum:
+      - "dis"
+      - "div1"
+      - "div2"
+      - "div4"
+    default: "dis"
+    description: |
+      USBHS reference clock division
+
+      Select the XOSC division factor for the USBHS PLL reference clock.
+      dis: USBHSPLL reference XOSC clock is disabled
+      div1: USBHSPLL reference XOSC clock is divided by 1
+      div2: USBHSPLL reference XOSC clock is divided by 2
+      div3: USBHSPLL reference XOSC clock is divided by 4
+
+  xosc-startup-time:
+    type: int
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256
+      - 512
+      - 1024
+      - 2048
+      - 4096
+      - 8192
+      - 16384
+      - 32768
+    default: 1
+    description: |
+      XOSC start-up time. Select number of OSCULP32K oscillator clock cycles.
+
+  xosc-on-demand-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      0: The XOSC is always on.
+      1: The XOSC is running when a peripheral is requesting the XOSC to be used as a clock source.
+
+  xosc-clock-switch-back-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Switch back to the external clock or crystal oscillator for clock recovery
+
+      0: The clock switch back is disabled.
+      1: The clock switch back is enabled.
+
+  xosc-clock-failure-detection-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Clock Failure Detector Enable
+      0: to disable, 1: to enable
+
+  xosc-xtal-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Selects external clock or crystal oscillator
+
+      0: External clock connected on XIN. XOUT can be used as general-purpose I/O.
+      1: Crystal connected to XIN/XOUT.
+
+  xosc-auto-gain-control-loop-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      The oscillator auto gain control loop enable
+
+      0: to disable
+      1: to enable
+         the Primary Oscillator will automatically do a linear search to find the lowest
+         power/gain setting to guarantee stable oscillation with the user’s crystal.
+
+  xosc-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Oscillator Enable
+      0: to disable, 1: to enable
+
+  xosc-frequency:
+    type: int
+    default: 0
+    description: |
+      Crystal/External clock frequency for XOSC Controller
