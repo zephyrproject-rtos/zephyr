@@ -27,10 +27,19 @@
 		status = "disabled";
 	};
 
-	main_pinctrl: pinctrl@f4000 {
-		compatible = "ti,k3-pinctrl";
-		reg = <0xf4000 0x2ac>;
-		status = "disabled";
+	main_padcfg0: syscon@f0000 {
+		compatible = "ti,control-module";
+		reg = <0xf0000 DT_SIZE_K(32)>;
+		ranges = <0x00 0xf0000 DT_SIZE_K(32)>;
+		ti,unlock-offsets = <0x1008 0x5008>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		main_pinctrl: pinctrl@4000 {
+			compatible = "ti,k3-pinctrl";
+			reg = <0x4000 0x2ac>;
+			status = "disabled";
+		};
 	};
 
 	main_timer0: timer@2400000 {
