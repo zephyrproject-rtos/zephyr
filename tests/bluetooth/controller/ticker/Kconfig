@@ -1,0 +1,20 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Ticker unit tests configuration
+
+# Set compatible SoC for BT controller
+config SOC_COMPATIBLE_NRF
+	default y
+
+# Disable entropy sources that may not be available in unit test environment
+config ENTROPY_NRF_FORCE_ALT
+	default n
+
+config ENTROPY_NRF5_RNG
+	default n
+
+source "tests/bluetooth/controller/common/Kconfig"
+
+# Include Zephyr's Kconfig
+source "Kconfig"
