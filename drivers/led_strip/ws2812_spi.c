@@ -126,18 +126,40 @@ static int ws2812_strip_update_rgb(const struct device *dev,
 	const size_t total_bits = num_pixels * cfg->num_colors *
 				  BITS_PER_COLOR_CHANNEL * bits_per_symbol;
 	const size_t buf_len = DIV_ROUND_UP(total_bits, SPI_FRAME_BITS);
-	struct spi_buf buf = {
-		.buf = cfg->px_buf,
-		.len = buf_len,
-	};
+	struct spi_buf buffers[COND_CODE_0(CONFIG_WS2812_STRIP_SPI_RESET_DELAY_SEND_NOP, (1), (3))];
+	struct spi_buf *buf = &buffers[0];
 	const struct spi_buf_set tx = {
-		.buffers = &buf,
-		.count = 1
+		.buffers = buffers,
+		.count = ARRAY_SIZE(buffers),
 	};
+	uint32_t reset_delay_cycles;
 	uint8_t *px_buf = cfg->px_buf;
 	uint8_t bit_mask = BIT(SPI_FRAME_BITS - 1);
 	size_t i;
 	int rc;
+
+	if (IS_ENABLED(CONFIG_WS2812_STRIP_SPI_RESET_DELAY_SEND_NOP)) {
+		/*
+		 * Convert the reset delay from micro seconds to a number of cycles of the SPI
+		 * clock. The bus frequency is a maximum and may not be the actual frequency used.
+		 * In that case, the reset delay will be longer than expected but that should not be
+		 * an issue.
+		 */
+		reset_delay_cycles = cfg->bus.config.frequency * cfg->reset_delay / USEC_PER_SEC;
+
+		/*
+		 * Define dummy buffers that will send zeroes on the MOSI line for the duration of
+		 * the reset delay.
+		 */
+		buffers[0].buf = NULL;
+		buffers[0].len = reset_delay_cycles / 8;
+		buf = &buffers[1];
+		buffers[2].buf = NULL;
+		buffers[2].len = reset_delay_cycles / 8;
+	}
+
+	buf->buf = cfg->px_buf;
+	buf->len = buf_len;
 
 	/*
 	 * Convert pixel data into an SPI bitstream. The bitstream contains
@@ -182,7 +204,9 @@ static int ws2812_strip_update_rgb(const struct device *dev,
 	 * Display the pixel data.
 	 */
 	rc = spi_write_dt(&cfg->bus, &tx);
-	ws2812_reset_delay(cfg->reset_delay);
+	if (!IS_ENABLED(CONFIG_WS2812_STRIP_SPI_RESET_DELAY_SEND_NOP)) {
+		ws2812_reset_delay(cfg->reset_delay);
+	}
 
 	return rc;
 }
