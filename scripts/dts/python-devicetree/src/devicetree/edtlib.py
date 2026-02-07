@@ -2097,6 +2097,10 @@ class Node:
         # byte array.
 
         if not controller._binding:
+            if not data:
+                # As long as the 'controller' has '#<basename>-cells = <0>',
+                # it's not required to have a binding with '<basename>-cells:'.
+                return {}
             _err(f"{basename} controller {controller._node!r} "
                  f"for {self._node!r} lacks binding")
 

@@ -758,7 +758,8 @@ def test_props():
                               "phandle-array-foos",
                               [(edt.get_node('/ctrl-0-1'), {}),
                                None,
-                               (edt.get_node('/ctrl-0-2'), {})])
+                               (edt.get_node('/ctrl-0-2'), {}),
+                               (edt.get_node('/ctrl-no-compat'), {})])
 
     verify_phandle_array_prop(props_node,
                               'foo-gpios',
