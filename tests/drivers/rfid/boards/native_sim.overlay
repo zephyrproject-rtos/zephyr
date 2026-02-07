@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2025 Conny Marco Menebröcker
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/ {
+	spi_emul_bus: spi@200 {
+		compatible = "zephyr,spi-emul-controller";
+		reg = <0x200 4>;
+		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cs-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+
+		cr95hf: cr95hf@0 {
+			compatible = "st,cr95hf";
+			reg = <0>;
+			spi-max-frequency = <1000000>;
+			status = "okay";
+			irq-in-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+			irq-out-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+&{/} {
+	aliases {
+		rfid = &cr95hf;
+	};
+};
