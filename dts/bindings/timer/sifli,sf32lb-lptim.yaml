@@ -1,0 +1,28 @@
+# Copyright (c) 2025, Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sifli SF32LB LPTIM (Low Power Timer)
+
+compatible: "sifli,sf32lb-lptim"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  sifli,prescaler:
+    type: int
+    default: 0
+    required: true
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      Counter prescaler for the low power timer. The clock frequency to the counter
+      is the input frequency divided by 2^(prescaler + 1). Valid values are 0-7,
+      providing division factors from 1 to 128.

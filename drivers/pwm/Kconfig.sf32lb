@@ -16,3 +16,11 @@ config PWM_SF32LB_ATIM
 	help
 	  Enable PWM driver for SF32LB series of MCUs. This driver uses
 	  the advanced timer peripheral to implement PWM functionality.
+
+config PWM_SF32LB_LPTIM
+	bool "LPTIM based PWM driver for SF32LB family of MCUs"
+	default y
+	depends on DT_HAS_SIFLI_SF32LB_LPTIM_PWM_ENABLED
+	help
+	  Enable PWM driver for SF32LB series of MCUs. This driver uses
+	  the low power timer peripheral to implement PWM functionality.
