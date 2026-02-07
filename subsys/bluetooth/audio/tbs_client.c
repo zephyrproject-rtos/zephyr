@@ -1,7 +1,7 @@
 /*  Bluetooth TBS - Telephone Bearer Service - Client
  *
  * Copyright (c) 2020 Bose Corporation
- * Copyright (c) 2021-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,6 +33,7 @@
 #include <zephyr/types.h>
 #include <zephyr/sys/check.h>
 
+#include "common/bt_str.h"
 #include "tbs_internal.h"
 
 LOG_MODULE_REGISTER(bt_tbs_client, CONFIG_BT_TBS_CLIENT_LOG_LEVEL);
@@ -55,7 +56,13 @@ LOG_MODULE_REGISTER(bt_tbs_client, CONFIG_BT_TBS_CLIENT_LOG_LEVEL);
 
 BUILD_ASSERT(CONFIG_BT_ATT_TX_COUNT >= TBS_CLIENT_BUF_COUNT, "Too few ATT buffers");
 
-#include "common/bt_str.h"
+/* The maximum size of all supported string values */
+#define MAX_STR_LEN                                                                             \
+	MAX(CONFIG_BT_TBS_MAX_URI_LENGTH,                                                          \
+	    (MAX(COND_CODE_1(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME,                            \
+			     (CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH), (0U)),                      \
+		 COND_CODE_1(CONFIG_BT_TBS_CLIENT_CALL_FRIENDLY_NAME,                              \
+			     (CONFIG_BT_TBS_MAX_FRIENDLY_NAME_LENGTH), (0U)))))
 
 struct bt_tbs_server_inst {
 #if defined(CONFIG_BT_TBS_CLIENT_TBS)
@@ -354,10 +361,10 @@ static void call_cp_callback_handler(struct bt_conn *conn, int err,
 }
 #endif /* defined(CONFIG_BT_TBS_CLIENT_OPTIONAL_OPCODES) */
 
-const char *parse_string_value(const void *data, uint16_t length,
-				      uint16_t max_len)
+__maybe_unused static const char *parse_string_value(const void *data, uint16_t length,
+						     uint16_t max_len)
 {
-	static char string_val[CONFIG_BT_TBS_MAX_URI_LENGTH + 1];
+	static char string_val[MAX_STR_LEN + 1];
 	const size_t len = MIN(length, max_len);
 
 	if (len != 0) {
@@ -672,8 +679,7 @@ static void friendly_name_notify_handler(struct bt_conn *conn,
 					 const struct bt_tbs_instance *tbs_inst,
 					 const void *data, uint16_t length)
 {
-	const char *name = parse_string_value(data, length,
-					      CONFIG_BT_TBS_MAX_URI_LENGTH);
+	const char *name = parse_string_value(data, length, CONFIG_BT_TBS_MAX_FRIENDLY_NAME_LENGTH);
 
 	LOG_DBG("%s", name);
 
