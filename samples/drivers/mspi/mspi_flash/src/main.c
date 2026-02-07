@@ -8,6 +8,7 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/cache.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -19,18 +20,9 @@
 
 int single_sector_test(const struct device *flash_dev)
 {
-#if CONFIG_DCACHE
-	const uint8_t expected[]__aligned(CONFIG_DCACHE_LINE_SIZE) = {
-#else
-	const uint8_t expected[] = {
-#endif
-					0x55, 0xaa, 0x66, 0x99};
+	const uint8_t expected[] __dcacheline_aligned = {0x55, 0xaa, 0x66, 0x99};
 	const size_t len = sizeof(expected);
-#if CONFIG_DCACHE
-	uint8_t buf[sizeof(expected)]__aligned(CONFIG_DCACHE_LINE_SIZE);
-#else
-	uint8_t buf[sizeof(expected)];
-#endif
+	uint8_t buf[sizeof(expected)] __dcacheline_aligned;
 
 	int rc;
 
@@ -91,18 +83,9 @@ int single_sector_test(const struct device *flash_dev)
 #if defined SPI_FLASH_MULTI_SECTOR_TEST
 int multi_sector_test(const struct device *flash_dev)
 {
-#if CONFIG_DCACHE
-	const uint8_t expected[]__aligned(CONFIG_DCACHE_LINE_SIZE) = {
-#else
-	const uint8_t expected[] = {
-#endif
-					0x55, 0xaa, 0x66, 0x99};
+	const uint8_t expected[] __dcacheline_aligned = {0x55, 0xaa, 0x66, 0x99};
 	const size_t len = sizeof(expected);
-#if CONFIG_DCACHE
-	uint8_t buf[sizeof(expected)]__aligned(CONFIG_DCACHE_LINE_SIZE);
-#else
-	uint8_t buf[sizeof(expected)];
-#endif
+	uint8_t buf[sizeof(expected)] __dcacheline_aligned;
 	int rc;
 
 	printf("\nPerform test on multiple consequtive sectors");
