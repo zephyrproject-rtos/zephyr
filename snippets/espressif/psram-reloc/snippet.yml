@@ -2,6 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-name: psram-reloc
+name: espressif-psram-reloc
 append:
-  EXTRA_CONF_FILE: esp-psram-reloc.conf
+  EXTRA_CONF_FILE: esp_psram_reloc.conf
