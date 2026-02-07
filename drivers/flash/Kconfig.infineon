@@ -9,12 +9,25 @@ config FLASH_INFINEON_CAT1
 	bool "Infineon CAT1 FLASH driver"
 	default y
 	depends on DT_HAS_INFINEON_FLASH_CONTROLLER_ENABLED && DT_HAS_FIXED_PARTITIONS_ENABLED
+	depends on USE_INFINEON_LEGACY_HAL
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
 	select USE_INFINEON_FLASH
 	select FLASH_HAS_EXPLICIT_ERASE
 	help
 	  Enable the Flash driver for Infineon CAT1 family.
+
+config FLASH_INFINEON_PSOC4
+	bool "Infineon FLASH driver"
+	default y
+	depends on DT_HAS_INFINEON_FLASH_CONTROLLER_ENABLED && DT_HAS_FIXED_PARTITIONS_ENABLED
+	depends on !USE_INFINEON_LEGACY_HAL
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_NO_EXPLICIT_ERASE
+	select USE_INFINEON_FLASH
+	help
+	  Enable the Flash driver for Infineon PSoC4 family.
 
 config INFINEON_CAT1_QSPI_FLASH
 	bool "Infineon CAT1 QSPI FLASH driver"
