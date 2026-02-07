@@ -1,0 +1,12 @@
+# ARDUCAM_MEGA
+
+# Copyright (c) 2023 Arducam Technology Co., Ltd. <www.arducam.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_ARDUCAM_MEGA
+	bool "Arducam Mega CMOS digital image sensor"
+	select SPI
+	depends on DT_HAS_ARDUCAM_MEGA_ENABLED
+	default y
+	help
+	  Enable driver for Arducam Mega CMOS digital image sensor device.
