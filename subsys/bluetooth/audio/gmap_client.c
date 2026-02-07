@@ -20,7 +20,6 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/sys/check.h>
 
 #include "audio_internal.h"
 
@@ -647,7 +646,7 @@ int bt_gmap_discover(struct bt_conn *conn)
 	struct bt_gmap_client *gmap_cli;
 	int err;
 
-	CHECKIF(conn == NULL) {
+	if (conn == NULL) {
 		LOG_DBG("NULL conn");
 
 		return -EINVAL;
@@ -685,7 +684,7 @@ int bt_gmap_discover(struct bt_conn *conn)
 
 int bt_gmap_cb_register(const struct bt_gmap_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		LOG_DBG("cb is NULL");
 
 		return -EINVAL;
