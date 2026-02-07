@@ -13,6 +13,7 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/cap.h>
@@ -1292,6 +1293,7 @@ void bt_cap_initiator_cp_cb(struct bt_cap_stream *cap_stream, enum bt_bap_ascs_r
 		/* In the case that the control point write is rejected, we will not get a ASE state
 		 * change notification. This is considered an error that shall abort the current
 		 * procedure.
+		 * In the case of success we use the notification to determine the proc_done_cnt.
 		 */
 		active_proc->proc_done_cnt++;
 
