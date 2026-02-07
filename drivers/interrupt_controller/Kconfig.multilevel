@@ -52,7 +52,7 @@ config 2ND_LVL_ISR_TBL_OFFSET
 
 config NUM_2ND_LEVEL_AGGREGATORS
 	int "Total number of second level interrupt aggregators"
-	range 1 8
+	range 1 20
 	default 1
 	depends on 2ND_LEVEL_INTERRUPTS
 	help
@@ -86,6 +86,32 @@ rsource "Kconfig.multilevel.aggregator_template"
 aggregator = 6
 rsource "Kconfig.multilevel.aggregator_template"
 aggregator = 7
+rsource "Kconfig.multilevel.aggregator_template"
+aggregator = 8
+rsource "Kconfig.multilevel.aggregator_template"
+aggregator = 9
+rsource "Kconfig.multilevel.aggregator_template"
+aggregator = 10
+rsource "Kconfig.multilevel.aggregator_template"
+aggregator = 11
+rsource "Kconfig.multilevel.aggregator_template"
+aggregator = 12
+rsource "Kconfig.multilevel.aggregator_template"
+aggregator = 13
+rsource "Kconfig.multilevel.aggregator_template"
+aggregator = 14
+rsource "Kconfig.multilevel.aggregator_template"
+aggregator = 15
+rsource "Kconfig.multilevel.aggregator_template"
+aggregator = 16
+rsource "Kconfig.multilevel.aggregator_template"
+aggregator = 17
+rsource "Kconfig.multilevel.aggregator_template"
+aggregator = 18
+rsource "Kconfig.multilevel.aggregator_template"
+aggregator = 19
+rsource "Kconfig.multilevel.aggregator_template"
+aggregator = 20
 rsource "Kconfig.multilevel.aggregator_template"
 
 config 3RD_LEVEL_INTERRUPTS
