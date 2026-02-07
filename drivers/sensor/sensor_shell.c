@@ -408,9 +408,21 @@ void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len
 			memset(&accumulator_buffer, 0, sizeof(accumulator_buffer));
 			while (decoder->decode(buf, ch, &fit, 1, decoded_buffer) > 0) {
 				switch (ch.chan_type) {
+				case SENSOR_CHAN_ACCEL_X:
+				case SENSOR_CHAN_ACCEL_Y:
+				case SENSOR_CHAN_ACCEL_Z:
 				case SENSOR_CHAN_ACCEL_XYZ:
+				case SENSOR_CHAN_GYRO_X:
+				case SENSOR_CHAN_GYRO_Y:
+				case SENSOR_CHAN_GYRO_Z:
 				case SENSOR_CHAN_GYRO_XYZ:
+				case SENSOR_CHAN_MAGN_X:
+				case SENSOR_CHAN_MAGN_Y:
+				case SENSOR_CHAN_MAGN_Z:
 				case SENSOR_CHAN_MAGN_XYZ:
+				case SENSOR_CHAN_POS_DX:
+				case SENSOR_CHAN_POS_DY:
+				case SENSOR_CHAN_POS_DZ:
 				case SENSOR_CHAN_POS_DXYZ: {
 					struct sensor_three_axis_data *data =
 						(struct sensor_three_axis_data *)decoded_buffer;
@@ -462,9 +474,21 @@ void sensor_shell_processing_callback(int result, uint8_t *buf, uint32_t buf_len
 
 			/* Print the accumulated value average */
 			switch (ch.chan_type) {
+			case SENSOR_CHAN_ACCEL_X:
+			case SENSOR_CHAN_ACCEL_Y:
+			case SENSOR_CHAN_ACCEL_Z:
 			case SENSOR_CHAN_ACCEL_XYZ:
+			case SENSOR_CHAN_GYRO_X:
+			case SENSOR_CHAN_GYRO_Y:
+			case SENSOR_CHAN_GYRO_Z:
 			case SENSOR_CHAN_GYRO_XYZ:
+			case SENSOR_CHAN_MAGN_X:
+			case SENSOR_CHAN_MAGN_Y:
+			case SENSOR_CHAN_MAGN_Z:
 			case SENSOR_CHAN_MAGN_XYZ:
+			case SENSOR_CHAN_POS_DX:
+			case SENSOR_CHAN_POS_DY:
+			case SENSOR_CHAN_POS_DZ:
 			case SENSOR_CHAN_POS_DXYZ: {
 				struct sensor_three_axis_data *data =
 					(struct sensor_three_axis_data *)decoded_buffer;
