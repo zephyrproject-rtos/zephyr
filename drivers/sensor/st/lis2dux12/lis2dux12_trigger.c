@@ -70,8 +70,9 @@ int lis2dux12_trigger_init(const struct device *dev)
 	const struct lis2dux12_config *cfg = dev->config;
 	int ret;
 
-	data->drdy_gpio = (cfg->drdy_pin == 1) ? (struct gpio_dt_spec *)&cfg->int1_gpio
-							 : (struct gpio_dt_spec *)&cfg->int2_gpio;
+	data->drdy_gpio = ((cfg->drdy_pin == 1) || (cfg->drdy_pin == 3))
+				  ? (struct gpio_dt_spec *)&cfg->int1_gpio
+				  : (struct gpio_dt_spec *)&cfg->int2_gpio;
 
 	/* setup data ready gpio interrupt (INT1 or INT2) */
 	if (!gpio_is_ready_dt(data->drdy_gpio)) {
