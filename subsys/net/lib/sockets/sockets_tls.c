@@ -337,19 +337,6 @@ bool net_socket_is_tls(void *obj)
 	return PART_OF_ARRAY(tls_contexts, (struct tls_context *)obj);
 }
 
-static int tls_ctr_drbg_random(void *ctx, unsigned char *buf, size_t len)
-{
-	ARG_UNUSED(ctx);
-
-#if defined(CONFIG_CSPRNG_ENABLED)
-	return sys_csrand_get(buf, len);
-#else
-	sys_rand_get(buf, len);
-
-	return 0;
-#endif
-}
-
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 /* mbedTLS-defined function for setting timer. */
 static void dtls_timing_set_delay(void *data, uint32_t int_ms, uint32_t fin_ms)
@@ -1447,8 +1434,7 @@ static int tls_set_private_key(struct tls_context *tls,
 	int err;
 
 	err = mbedtls_pk_parse_key(&tls->priv_key, priv_key->buf,
-				   priv_key->len, NULL, 0,
-				   tls_ctr_drbg_random, NULL);
+				   priv_key->len, NULL, 0);
 	if (err != 0) {
 		return -EINVAL;
 	}
@@ -1834,9 +1820,7 @@ static int tls_mbedtls_init(struct tls_context *context, bool is_server)
 
 		/* Configure cookie for DTLS server */
 		if (role == MBEDTLS_SSL_IS_SERVER) {
-			ret = mbedtls_ssl_cookie_setup(&context->cookie,
-						       tls_ctr_drbg_random,
-						       NULL);
+			ret = mbedtls_ssl_cookie_setup(&context->cookie);
 			if (ret != 0) {
 				return -ENOMEM;
 			}
@@ -1860,10 +1844,6 @@ static int tls_mbedtls_init(struct tls_context *context, bool is_server)
 		mbedtls_ssl_conf_authmode(&context->config,
 					  context->options.verify_level);
 	}
-
-	mbedtls_ssl_conf_rng(&context->config,
-			     tls_ctr_drbg_random,
-			     NULL);
 
 	ret = tls_mbedtls_set_credentials(context);
 	if (ret != 0) {
@@ -1961,8 +1941,7 @@ static int tls_check_priv_key(struct tls_credential *priv_key)
 	mbedtls_pk_init(&key_ctx);
 
 	err = mbedtls_pk_parse_key(&key_ctx, priv_key->buf,
-				   priv_key->len, NULL, 0,
-				   tls_ctr_drbg_random, NULL);
+				   priv_key->len, NULL, 0);
 	if (err != 0) {
 		NET_ERR("Failed to parse %s on tag %d, err: -0x%x",
 			"private key", priv_key->tag, -err);
