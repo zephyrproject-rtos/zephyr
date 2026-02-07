@@ -28,7 +28,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
@@ -571,7 +570,7 @@ static int write_common_vcs_cp(struct bt_vcp_vol_ctlr *vol_ctlr)
 
 static int vcp_vol_ctlr_common_vcs_cp(struct bt_vcp_vol_ctlr *vol_ctlr, uint8_t opcode)
 {
-	CHECKIF(vol_ctlr == NULL) {
+	if (vol_ctlr == NULL) {
 		LOG_DBG("NULL ctlr");
 		return -EINVAL;
 	}
@@ -947,12 +946,12 @@ int bt_vcp_vol_ctlr_discover(struct bt_conn *conn, struct bt_vcp_vol_ctlr **out_
 	 * 5) When everything above have been discovered, the callback is called
 	 */
 
-	CHECKIF(conn == NULL) {
+	if (conn == NULL) {
 		LOG_DBG("NULL conn");
 		return -EINVAL;
 	}
 
-	CHECKIF(out_vol_ctlr == NULL) {
+	if (out_vol_ctlr == NULL) {
 		LOG_DBG("NULL ctlr");
 		return -EINVAL;
 	}
@@ -994,7 +993,7 @@ int bt_vcp_vol_ctlr_cb_register(struct bt_vcp_vol_ctlr_cb *cb)
 {
 	struct bt_vcp_vol_ctlr_cb *tmp;
 
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		return -EINVAL;
 	}
 
@@ -1012,7 +1011,7 @@ int bt_vcp_vol_ctlr_cb_register(struct bt_vcp_vol_ctlr_cb *cb)
 
 int bt_vcp_vol_ctlr_cb_unregister(struct bt_vcp_vol_ctlr_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		return -EINVAL;
 	}
 
@@ -1027,7 +1026,7 @@ int bt_vcp_vol_ctlr_cb_unregister(struct bt_vcp_vol_ctlr_cb *cb)
 int bt_vcp_vol_ctlr_included_get(struct bt_vcp_vol_ctlr *vol_ctlr,
 			       struct bt_vcp_included *included)
 {
-	CHECKIF(!included || vol_ctlr == NULL) {
+	if (!included || vol_ctlr == NULL) {
 		return -EINVAL;
 	}
 
@@ -1051,7 +1050,7 @@ struct bt_vcp_vol_ctlr *bt_vcp_vol_ctlr_get_by_conn(const struct bt_conn *conn)
 {
 	struct bt_vcp_vol_ctlr *vol_ctlr;
 
-	CHECKIF(conn == NULL) {
+	if (conn == NULL) {
 		LOG_DBG("NULL conn pointer");
 		return NULL;
 	}
@@ -1068,12 +1067,12 @@ struct bt_vcp_vol_ctlr *bt_vcp_vol_ctlr_get_by_conn(const struct bt_conn *conn)
 
 int bt_vcp_vol_ctlr_conn_get(const struct bt_vcp_vol_ctlr *vol_ctlr, struct bt_conn **conn)
 {
-	CHECKIF(vol_ctlr == NULL) {
+	if (vol_ctlr == NULL) {
 		LOG_DBG("NULL vol_ctlr pointer");
 		return -EINVAL;
 	}
 
-	CHECKIF(conn == NULL) {
+	if (conn == NULL) {
 		LOG_DBG("NULL conn pointer");
 		return -EINVAL;
 	}
@@ -1092,7 +1091,7 @@ int bt_vcp_vol_ctlr_read_state(struct bt_vcp_vol_ctlr *vol_ctlr)
 {
 	int err;
 
-	CHECKIF(vol_ctlr == NULL) {
+	if (vol_ctlr == NULL) {
 		LOG_DBG("NULL ctlr");
 		return -EINVAL;
 	}
@@ -1127,7 +1126,7 @@ int bt_vcp_vol_ctlr_read_flags(struct bt_vcp_vol_ctlr *vol_ctlr)
 {
 	int err;
 
-	CHECKIF(vol_ctlr == NULL) {
+	if (vol_ctlr == NULL) {
 		LOG_DBG("NULL ctlr");
 		return -EINVAL;
 	}
@@ -1198,7 +1197,7 @@ static int write_set_vol_cp(struct bt_vcp_vol_ctlr *vol_ctlr)
 
 int bt_vcp_vol_ctlr_set_vol(struct bt_vcp_vol_ctlr *vol_ctlr, uint8_t volume)
 {
-	CHECKIF(vol_ctlr == NULL) {
+	if (vol_ctlr == NULL) {
 		LOG_DBG("NULL ctlr");
 		return -EINVAL;
 	}
