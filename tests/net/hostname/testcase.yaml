@@ -21,6 +21,15 @@ tests:
     extra_configs:
       - CONFIG_NET_HOSTNAME_UNIQUE=y
       - CONFIG_NET_HOSTNAME_DYNAMIC=y
+  net.hostname.posix_api.unique_update_compatibility:
+    extra_configs:
+      - CONFIG_POSIX_API=y
+      - CONFIG_NET_HOSTNAME_UNIQUE_UPDATE=y
+      - CONFIG_NET_HOSTNAME_UNIQUE=y
+  net.hostname.posix_api.dynamic_hostname:
+    extra_configs:
+      - CONFIG_POSIX_API=y
+      - CONFIG_NET_HOSTNAME_DYNAMIC=y
   net.hostname.event:
     extra_configs:
       - CONFIG_NET_MGMT=y
