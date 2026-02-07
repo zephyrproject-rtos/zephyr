@@ -33,4 +33,25 @@
 			pinmux = <PC21F_TCC0_WO5>;
 		};
 	};
+
+	adc0_default: adc0_default {
+		group1 {
+			pinmux = <PB8B_ADC0_AIN2>,	/* EXT1 pin 3 and EXT2 pin 3 */
+				 <PB9B_ADC0_AIN3>,	/* EXT1 pin 4 and EXT2 pin 4 */
+				 <PA3B_ADC0_AIN1>,	/* J501 pin 1 */
+				 <PA4B_ADC0_AIN4>,	/* J501 pin 4 */
+				 <PB2B_ADC0_AIN14>,	/* J501 pin 5 */
+				 <PB3B_ADC0_AIN15>;	/* J501 pin 6 */
+		};
+	};
+
+	adc1_default: adc1_default {
+		group1 {
+			pinmux = <PB8B_ADC1_AIN0>,	/* EXT1 pin 3 and EXT2 pin 3 */
+				 <PB9B_ADC1_AIN1>,	/* EXT1 pin 4 and EXT2 pin 4 */
+				 <PB6B_ADC1_AIN8>,	/* J501 pin 2 */
+				 <PB7B_ADC1_AIN9>,	/* J501 pin 3 */
+				 <PC3B_ADC1_AIN5>;	/* J900 pin 8 - AN */
+		};
+	};
 };
