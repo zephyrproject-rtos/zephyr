@@ -51,3 +51,55 @@ can be added to that application's ``CMakeLists.txt`` file. For example:
    endif()
 
    find_package(Zephyr ....)
+
+.. _application-local-snippets:
+
+Application-local snippets
+**************************
+
+You can define snippets directly in your application's source directory by
+creating a :file:`snippets/` subdirectory. These application-local snippets
+are used the same way as any other snippet:
+
+.. code-block:: console
+
+   west build -S my-app-snippet app
+
+Or with CMake:
+
+.. code-block:: console
+
+   cmake -Sapp -Bbuild -DSNIPPET="my-app-snippet" [...]
+
+With sysbuild
+=============
+
+When using :ref:`sysbuild <sysbuild>` to build multiple images, application-local
+snippets require the image-specific snippet variable. This is because app-local
+snippets are only visible to the application that defines them, not to other
+images in the build (such as a bootloader).
+
+Use the image name as a prefix for the ``SNIPPET`` variable using west:
+
+.. code-block:: console
+
+   west build -b <board> --sysbuild app -- -Dapp_SNIPPET=my-app-snippet
+
+Or with CMake:
+
+.. code-block:: console
+
+   cmake -Sapp -Bbuild -Dapp_SNIPPET="my-app-snippet" [...]
+
+For example, if your application directory is ``my_app`` and you have a snippet
+called ``debug-console`` in :file:`my_app/snippets/debug-console/snippet.yml`:
+
+.. code-block:: console
+
+   west build -b nrf52840dk/nrf52840 --sysbuild my_app -- -Dmy_app_SNIPPET=debug-console
+
+.. note::
+
+   Using the global ``-S`` or ``-DSNIPPET=`` syntax with application-local
+   snippets in a sysbuild configuration will result in a build error, as the
+   build system will attempt to apply the snippet to all images.
