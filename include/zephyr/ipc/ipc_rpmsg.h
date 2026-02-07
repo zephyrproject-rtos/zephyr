@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+ * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,7 +24,7 @@ extern "C" {
  */
 
 /** Number of endpoints. */
-#define NUM_ENDPOINTS	CONFIG_IPC_SERVICE_BACKEND_RPMSG_NUM_ENDPOINTS_PER_INSTANCE
+#define NUM_ENDPOINTS CONFIG_IPC_SERVICE_RPMSG_NUM_ENDPOINTS_PER_INSTANCE
 
 struct ipc_rpmsg_ept;
 
@@ -105,14 +106,9 @@ struct ipc_rpmsg_instance {
  *  @retval 0 If successful.
  *  @retval Other errno codes depending on the OpenAMP implementation.
  */
-int ipc_rpmsg_init(struct ipc_rpmsg_instance *instance,
-		   unsigned int role,
-		   unsigned int buffer_size,
-		   struct metal_io_region *shm_io,
-		   struct virtio_device *vdev,
-		   void *shb, size_t size,
-		   rpmsg_ns_bind_cb ns_bind_cb);
-
+int ipc_rpmsg_init(struct ipc_rpmsg_instance *instance, unsigned int role, unsigned int buffer_size,
+		   struct metal_io_region *shm_io, struct virtio_device *vdev, void *shb,
+		   size_t size, rpmsg_ns_bind_cb ns_bind_cb);
 
 /** @brief
  *
@@ -124,8 +120,7 @@ int ipc_rpmsg_init(struct ipc_rpmsg_instance *instance,
  * @retval -EINVAL When some parameter is missing
  * @retval 0 If successful
  */
-int ipc_rpmsg_deinit(struct ipc_rpmsg_instance *instance,
-		   unsigned int role);
+int ipc_rpmsg_deinit(struct ipc_rpmsg_instance *instance, unsigned int role);
 
 /** @brief Register an endpoint.
  *
