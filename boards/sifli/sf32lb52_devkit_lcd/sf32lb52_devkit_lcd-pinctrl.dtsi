@@ -39,4 +39,10 @@
 			bias-pull-down;
 		};
 	};
+
+	adc_default: adc_default {
+		group1 {
+			pinmux = <PA34_ANALOG>;
+		};
+	};
 };
