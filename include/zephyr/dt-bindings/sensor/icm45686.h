@@ -5,17 +5,25 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Header file for ICM45686 Devicetree constants
+ * @ingroup icm45686_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_TDK_ICM45686_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_TDK_ICM45686_H_
 
 /**
- * @defgroup ICM45686 Invensense (TDK) ICM45686 DT Options
+ * @brief Invensense (TDK) ICM45686 6-axis motion tracking device
+ * @defgroup icm45686_interface ICM45686
  * @ingroup sensor_interface
  * @{
  */
 
 /**
- * @defgroup ICM45686_ACCEL_POWER_MODES Accelerometer power modes
+ * @defgroup icm45686_accel_power_modes Accelerometer power modes
  * @{
  */
 #define ICM45686_DT_ACCEL_OFF		0
@@ -24,7 +32,7 @@
 /** @} */
 
 /**
- * @defgroup ICM45686_GYRO_POWER_MODES Gyroscope power modes
+ * @defgroup icm45686_gyro_power_modes Gyroscope power modes
  * @{
  */
 #define ICM45686_DT_GYRO_OFF		0
@@ -34,7 +42,7 @@
 /** @} */
 
 /**
- * @defgroup ICM45686_ACCEL_SCALE Accelerometer scale options
+ * @defgroup icm45686_accel_scale Accelerometer scale options
  * @{
  */
 #define ICM45686_DT_ACCEL_FS_32		0
@@ -45,7 +53,7 @@
 /** @} */
 
 /**
- * @defgroup ICM45686_GYRO_SCALE Gyroscope scale options
+ * @defgroup icm45686_gyro_scale Gyroscope scale options
  * @{
  */
 #define ICM45686_DT_GYRO_FS_4000	0
@@ -60,7 +68,7 @@
 /** @} */
 
 /**
- * @defgroup ICM45686_ACCEL_DATA_RATE Accelerometer data rate options
+ * @defgroup icm45686_accel_data_rate Accelerometer data rate options
  * @{
  */
 #define ICM45686_DT_ACCEL_ODR_6400	3 /* LN-mode only */
@@ -79,7 +87,7 @@
 /** @} */
 
 /**
- * @defgroup ICM45686_GYRO_DATA_RATE Gyroscope data rate options
+ * @defgroup icm45686_gyro_data_rate Gyroscope data rate options
  * @{
  */
 #define ICM45686_DT_GYRO_ODR_6400	3 /* LN-mode only */
@@ -98,7 +106,7 @@
 /** @} */
 
 /**
- * @defgroup ICM45686_GYRO_LPF Gyroscope Low-pass Filtering options
+ * @defgroup icm45686_gyro_lpf Gyroscope Low-pass Filtering options
  * @{
  */
 #define ICM45686_DT_GYRO_LPF_BW_OFF	0
@@ -111,7 +119,7 @@
 /** @} */
 
 /**
- * @defgroup ICM45686_ACCEL_LPF Accelerometer Low-pass Filtering options
+ * @defgroup icm45686_accel_lpf Accelerometer Low-pass Filtering options
  * @{
  */
 #define ICM45686_DT_ACCEL_LPF_BW_OFF	0
