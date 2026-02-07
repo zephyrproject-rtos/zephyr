@@ -38,6 +38,11 @@
 				mode = "uart";
 				status = "disabled";
 			};
+
+			protimer: protimer {
+				compatible = "silabs,protimer";
+				status = "disabled";
+			};
 		};
 	};
 };
