@@ -48,7 +48,17 @@ properties:
       - 128
     required: true
     description: |
-      Number of 8-byte sized message buffers supported by this FlexCAN instance.
+      Number of 8-byte sized message buffers (MBs) supported by this FlexCAN instance. CAN FD mode,
+      if supported, uses 64-byte sized MBs, resulting in fewer available MBs.
+
+  max-filters:
+    type: int
+    description: |
+      Maximum number of concurrently active RX filters. The allowed range value depends on the
+      number of available message buffers for the FlexCAN instance.
+
+      If this property is not set, the default maximum number of RX filters set via Kconfig will be
+      used instead.
 
 examples:
   - |
