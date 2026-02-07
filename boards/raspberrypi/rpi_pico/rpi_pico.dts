@@ -8,3 +8,7 @@
 
 #include "rpi_pico-common.dtsi"
 #include "../common/rpi_pico-led.dtsi"
+
+&led0 {
+	status = "okay";
+};
