@@ -97,3 +97,12 @@ tests:
     timeout: 600
     extra_args:
       DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_tcc4.overlay"
+  drivers.counter.basic_api.mchp_rtc:
+    tags:
+      - drivers
+      - counter
+    depends_on: counter
+    platform_allow: sam_e54_xpro
+    timeout: 600
+    extra_args:
+      DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_rtc.overlay"
