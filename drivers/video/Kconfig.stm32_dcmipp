@@ -42,4 +42,13 @@ config VIDEO_STM32_DCMIPP_SENSOR_PIXEL_FORMAT
 	help
 	  Pixel format of the sensor video frame.
 
+# Needs to be manually declared since its not auto-generated
+DT_COMPAT_ST_STM32N6_DCMIPP := st,stm32n6-dcmipp
+
+config VIDEO_STM32_DCMIPP_CSI_ENABLE_IRQ
+	bool "CSI Interrupt"
+	depends on $(dt_compat_enabled,$(DT_COMPAT_ST_STM32N6_DCMIPP))
+	help
+	  Enable the secondary DCMIPP interrupt dedicated to the CSI host.
+
 endif
