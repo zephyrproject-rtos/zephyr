@@ -1509,7 +1509,7 @@ static int i2c_enhance_target_register(const struct device *dev,
 		 * DMA read target address register
 		 * for high order byte
 		 */
-		IT8XXX2_I2C_CMD_ADDH2(base) = out_data_addr >> 16;
+		IT8XXX2_I2C_WM_ADDRH2(base) = out_data_addr >> 16;
 		IT8XXX2_I2C_RAMHA2(base) = out_data_addr >> 8;
 		IT8XXX2_I2C_RAMLA2(base) = out_data_addr;
 
