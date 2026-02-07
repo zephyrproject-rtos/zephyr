@@ -1,0 +1,16 @@
+# Copyright (c) 2025 Ambiq Micro Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Ambiq IOS I2C target (slave) peripheral
+
+compatible: "ambiq,ios-i2c"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  fifo-threshold:
+    type: int
+    required: true
+    default: 16
+    description: |
+        Set the FIFO threshold to the middle by default
