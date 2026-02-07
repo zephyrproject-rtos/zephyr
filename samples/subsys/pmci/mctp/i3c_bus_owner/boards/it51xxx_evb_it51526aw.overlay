@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2026 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	mctp_i3c: mctp_i3c {
+		compatible = "zephyr,mctp-i3c-controller";
+		endpoints = <&mctp_endpoint0>;
+		endpoint-ids = <11>;
+	};
+};
+
+&i3c0 {
+	status = "okay";
+	i3c-scl-hz = <7500000>;
+	i3c-od-scl-hz = <1500000>;
+	i2c-scl-hz = <400000>;
+
+	pinctrl-0 = <&i3c0_clk_gpj3_default &i3c0_data_gpj4_default>;
+	pinctrl-names = "default";
+
+	/* dynamic address assignment: entdaa */
+	mctp_endpoint0: mctp_endpoint0@5fa00000011 {
+		compatible = "zephyr,mctp-i3c-endpoint";
+		reg = <0x00 0x05fa 0x00000011>;
+		status = "okay";
+	};
+};
