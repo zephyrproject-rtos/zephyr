@@ -84,6 +84,7 @@ Deprecated APIs and options
     * :c:member:`bt_conn_le_info.interval` has been deprecated. Use
       :c:member:`bt_conn_le_info.interval_us` instead. Note that the units have changed:
       ``interval`` was in units of 1.25 milliseconds, while ``interval_us`` is in microseconds.
+    * :c:member:`bt_iso_chan_ops.send_failed`
 
 * POSIX
 
