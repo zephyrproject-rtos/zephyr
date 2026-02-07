@@ -81,7 +81,7 @@ class Domains:
         self._flash_order = self.get_domains(data.get('flash_order', []))
 
     @staticmethod
-    def from_file(domains_file):
+    def from_file(domains_file, build_dir):
         '''Load domains from a domains.yaml file.
         '''
         try:
@@ -91,14 +91,17 @@ class Domains:
             logger.critical(f'domains.yaml file not found: {domains_file}')
             exit(1)
 
-        return Domains.from_yaml(domains_yaml)
+        return Domains.from_yaml(domains_yaml, build_dir)
 
     @staticmethod
-    def from_yaml(domains_yaml):
+    def from_yaml(domains_yaml, build_dir):
         '''Load domains from a string with YAML contents.
         '''
         try:
             domains_yaml = yaml.safe_load(domains_yaml)
+            domains_yaml['build_dir'] = build_dir
+            for domain in domains_yaml['domains']:
+                domain['build_dir'] = build_dir + '/' + domain['name']
             return Domains(domains_yaml)
         except yaml.YAMLError as e:
             logger.critical(f'Invalid domains.yaml: {e}')

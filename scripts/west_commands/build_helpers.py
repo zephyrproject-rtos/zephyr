@@ -167,4 +167,4 @@ def load_domains(path):
         }
         return Domains(default_domains)
 
-    return Domains.from_file(domains_file)
+    return Domains.from_file(domains_file, path)
