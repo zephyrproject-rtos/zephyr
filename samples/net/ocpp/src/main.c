@@ -36,7 +36,7 @@ static k_tid_t tid[NO_OF_CONN];
 static char idtag[NO_OF_CONN][25];
 
 static int dns_query(const char *host, uint16_t port, int family, int socktype,
-			  struct sockaddr *addr, socklen_t *addrlen)
+		     struct sockaddr *addr, socklen_t *addrlen)
 {
 	struct addrinfo hints = {
 		.ai_family = family,
@@ -77,8 +77,8 @@ static int ocpp_get_time_from_sntp(void)
 	struct timespec tv;
 	int ret;
 
-	ret = dns_query(CONFIG_NET_SAMPLE_SNTP_SERVER, CONFIG_NET_SAMPLE_SNTP_SERVER_PORT,
-				   AF_INET, SOCK_DGRAM, &addr, &addrlen);
+	ret = dns_query(CONFIG_NET_SAMPLE_SNTP_SERVER, CONFIG_NET_SAMPLE_SNTP_SERVER_PORT, AF_INET,
+			SOCK_DGRAM, &addr, &addrlen);
 	if (ret != 0) {
 		LOG_ERR("Failed to lookup SNTP server (%d)", ret);
 		return ret;
@@ -96,7 +96,7 @@ static int ocpp_get_time_from_sntp(void)
 		return ret;
 	}
 
-	LOG_INF("SNTP success, epoch seconds: %llu\n", stime.seconds);
+	LOG_INF("SNTP success, epoch seconds: %llu", stime.seconds);
 	tv.tv_sec = stime.seconds;
 	clock_settime(CLOCK_REALTIME, &tv);
 	sntp_close(&ctx);
@@ -113,13 +113,12 @@ ZBUS_CHAN_DEFINE(ch_event, /* Name */
 
 ZBUS_SUBSCRIBER_DEFINE(cp_thread0, 5);
 ZBUS_SUBSCRIBER_DEFINE(cp_thread1, 5);
+
 struct zbus_observer *obs[NO_OF_CONN] = {(struct zbus_observer *)&cp_thread0,
 					 (struct zbus_observer *)&cp_thread1};
 
 static void ocpp_cp_entry(void *p1, void *p2, void *p3);
-static int user_notify_cb(enum ocpp_notify_reason reason,
-			  union ocpp_io_value *io,
-			  void *user_data)
+static int user_notify_cb(enum ocpp_notify_reason reason, union ocpp_io_value *io, void *user_data)
 {
 	static int wh = 6 + NO_OF_CONN;
 	int idx;
@@ -128,8 +127,7 @@ static int user_notify_cb(enum ocpp_notify_reason reason,
 	switch (reason) {
 	case OCPP_USR_GET_METER_VALUE:
 		if (OCPP_OMM_ACTIVE_ENERGY_TO_EV == io->meter_val.mes) {
-			snprintf(io->meter_val.val, CISTR50, "%u",
-				 wh + io->meter_val.id_con);
+			snprintf(io->meter_val.val, CISTR50, "%u", wh + io->meter_val.id_con);
 
 			wh++;
 			LOG_DBG("mtr reading val %s con %d", io->meter_val.val,
@@ -156,16 +154,13 @@ static int user_notify_cb(enum ocpp_notify_reason reason,
 		}
 
 		if (tid[idx] == NULL) {
-			LOG_INF("Remote start charging idtag %s connector %d\n",
-				idtag[idx], idx + 1);
+			LOG_INF("Remote start charging idtag %s connector %d", idtag[idx], idx + 1);
 
-			strncpy(idtag[idx], io->start_charge.idtag,
-				sizeof(idtag[0]));
+			strncpy(idtag[idx], io->start_charge.idtag, sizeof(idtag[0]));
 
-			tid[idx] = k_thread_create(&tinfo[idx], cp_stk[idx],
-						   sizeof(cp_stk[idx]), ocpp_cp_entry,
-						   (void *)(uintptr_t)(idx + 1), idtag[idx],
-						   obs[idx], 7, 0, K_NO_WAIT);
+			tid[idx] = k_thread_create(&tinfo[idx], cp_stk[idx], sizeof(cp_stk[idx]),
+						   ocpp_cp_entry, (void *)(uintptr_t)(idx + 1),
+						   idtag[idx], obs[idx], 7, 0, K_NO_WAIT);
 
 			return 0;
 		}
@@ -176,7 +171,7 @@ static int user_notify_cb(enum ocpp_notify_reason reason,
 		return 0;
 
 	case OCPP_USR_UNLOCK_CONNECTOR:
-		LOG_INF("unlock connector %d\n", io->unlock_con.id_con);
+		LOG_INF("Unlock connector %d", io->unlock_con.id_con);
 		return 0;
 	}
 
@@ -195,7 +190,7 @@ static void ocpp_cp_entry(void *p1, void *p2, void *p3)
 
 	ret = ocpp_session_open(&sh);
 	if (ret < 0) {
-		LOG_ERR("ocpp open ses idcon %d> res %d\n", idcon, ret);
+		LOG_ERR("Open ses idcon %d> res %d", idcon, ret);
 		return;
 	}
 
@@ -205,23 +200,17 @@ static void ocpp_cp_entry(void *p1, void *p2, void *p3)
 		 */
 
 		k_sleep(K_SECONDS(5));
-		ret = ocpp_authorize(sh,
-				     idtag,
-				     &status,
-				     timeout_ms);
+		ret = ocpp_authorize(sh, idtag, &status, timeout_ms);
 		if (ret < 0) {
-			LOG_ERR("ocpp auth %d> idcon %d status %d\n",
-				ret, idcon, status);
+			LOG_ERR("Auth %d> sh %p idcon %d status %d", ret, sh, idcon, status);
 		} else {
-			LOG_INF("ocpp auth %d> idcon %d status %d\n",
-				ret, idcon, status);
+			LOG_INF("Auth %d> sh %p idcon %d status %d", ret, sh, idcon, status);
 			break;
 		}
 	}
 
 	if (status != OCPP_AUTH_ACCEPTED) {
-		LOG_ERR("ocpp start idcon %d> not authorized status %d\n",
-			idcon, status);
+		LOG_ERR("Start idcon %d> not authorized status %d", idcon, status);
 		return;
 	}
 
@@ -230,7 +219,7 @@ static void ocpp_cp_entry(void *p1, void *p2, void *p3)
 		const struct zbus_channel *chan;
 		union ocpp_io_value io;
 
-		LOG_INF("ocpp start charging connector id %d\n", idcon);
+		LOG_INF("Start charging connector idcon %d", idcon);
 		memset(&io, 0xff, sizeof(io));
 
 		/* wait for stop charging event from main or remote CS */
@@ -248,11 +237,12 @@ static void ocpp_cp_entry(void *p1, void *p2, void *p3)
 
 	ret = ocpp_stop_transaction(sh, sys_rand32_get(), timeout_ms);
 	if (ret < 0) {
-		LOG_ERR("ocpp stop txn idcon %d> %d\n", idcon, ret);
+		LOG_ERR("Stop txn idcon %d> %d", idcon, ret);
 		return;
 	}
 
-	LOG_INF("ocpp stop charging connector id %d\n", idcon);
+	LOG_INF("Stop charging connector id %d", idcon);
+
 	k_sleep(K_SECONDS(1));
 	ocpp_session_close(sh);
 	tid[idcon - 1] = NULL;
@@ -268,19 +258,16 @@ static int ocpp_getaddrinfo(char *server, int port, char **ip)
 	struct sockaddr_storage b;
 	struct addrinfo *result = NULL;
 	struct addrinfo *addr;
-	struct addrinfo hints = {
-		.ai_family = AF_INET,
-		.ai_socktype = SOCK_STREAM
-	};
+	struct addrinfo hints = {.ai_family = AF_INET, .ai_socktype = SOCK_STREAM};
 
-	LOG_INF("cs server %s %d", server, port);
+	LOG_INF("Server %s %d %s", server, port, CONFIG_NET_SAMPLE_OCPP_WS_PATH);
 	do {
 		ret = getaddrinfo(server, NULL, &hints, &result);
 		if (ret == -EAGAIN) {
-			LOG_ERR("ERROR: getaddrinfo %d, rebind", ret);
+			LOG_ERR("getaddrinfo %d, rebind", ret);
 			k_sleep(K_SECONDS(1));
 		} else if (ret != 0) {
-			LOG_ERR("ERROR: getaddrinfo failed %d", ret);
+			LOG_ERR("getaddrinfo failed %d", ret);
 			return ret;
 		}
 	} while (--retry && ret);
@@ -289,25 +276,21 @@ static int ocpp_getaddrinfo(char *server, int port, char **ip)
 	while (addr != NULL) {
 		/* IPv4 Address. */
 		if (addr->ai_addrlen == sizeof(struct sockaddr_in)) {
-			struct sockaddr_in *broker =
-				((struct sockaddr_in *)&b);
+			struct sockaddr_in *broker = ((struct sockaddr_in *)&b);
 
 			broker->sin_addr.s_addr =
-				((struct sockaddr_in *)addr->ai_addr)
-				->sin_addr.s_addr;
+				((struct sockaddr_in *)addr->ai_addr)->sin_addr.s_addr;
 			broker->sin_family = AF_INET;
 			broker->sin_port = htons(port);
 
-			inet_ntop(AF_INET, &broker->sin_addr, addr_str,
-				  sizeof(addr_str));
+			inet_ntop(AF_INET, &broker->sin_addr, addr_str, sizeof(addr_str));
 
 			*ip = strdup(addr_str);
 			LOG_INF("IPv4 Address %s", addr_str);
 			break;
 		}
 
-		LOG_ERR("error: ai_addrlen = %u should be %u or %u",
-			(unsigned int)addr->ai_addrlen,
+		LOG_ERR("ai_addrlen = %u should be %u or %u", (unsigned int)addr->ai_addrlen,
 			(unsigned int)sizeof(struct sockaddr_in),
 			(unsigned int)sizeof(struct sockaddr_in6));
 
@@ -326,13 +309,16 @@ int main(void)
 	int i;
 	char *ip = NULL;
 
-	struct ocpp_cp_info cpi = { "basic", "zephyr", .num_of_con = NO_OF_CONN };
-	struct ocpp_cs_info csi = {NULL,
-				   CONFIG_NET_SAMPLE_OCPP_WS_PATH,
-				   CONFIG_NET_SAMPLE_OCPP_PORT,
-				   AF_INET};
+	struct ocpp_cp_info cpi = {
+		"basic",   "zephyr",  .num_of_con = NO_OF_CONN,
+		"SNCP001", "SNBX001", "v0.1",
+		"ICCIS",   "IMSI",    "MPMSN001",
+		"MPMTYPE",
+	};
+	struct ocpp_cs_info csi = {NULL, CONFIG_NET_SAMPLE_OCPP_WS_PATH,
+				   CONFIG_NET_SAMPLE_OCPP_PORT, AF_INET};
 
-	printk("OCPP sample %s\n", CONFIG_BOARD);
+	LOG_INF("OCPP sample %s", CONFIG_BOARD);
 
 	wait_for_network();
 
@@ -345,12 +331,9 @@ int main(void)
 
 	ocpp_get_time_from_sntp();
 
-	ret = ocpp_init(&cpi,
-			&csi,
-			user_notify_cb,
-			NULL);
+	ret = ocpp_init(&cpi, &csi, user_notify_cb, NULL);
 	if (ret < 0) {
-		LOG_ERR("ocpp init failed %d\n", ret);
+		LOG_ERR("Init failed %d", ret);
 		return ret;
 	}
 
@@ -358,10 +341,9 @@ int main(void)
 	for (i = 0; i < NO_OF_CONN; i++) {
 		snprintf(idtag[i], sizeof(idtag[0]), "ZepId%02d", i);
 
-		tid[i] = k_thread_create(&tinfo[i], cp_stk[i],
-					 sizeof(cp_stk[i]),
-					 ocpp_cp_entry, (void *)(uintptr_t)(i + 1),
-					 idtag[i], obs[i], 7, 0, K_NO_WAIT);
+		tid[i] = k_thread_create(&tinfo[i], cp_stk[i], sizeof(cp_stk[i]), ocpp_cp_entry,
+					 (void *)(uintptr_t)(i + 1), idtag[i], obs[i], 7, 0,
+					 K_NO_WAIT);
 	}
 
 	/* Active charging session */
