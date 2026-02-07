@@ -167,13 +167,19 @@
 			reg = <0x007e0000 0x1000>;
 
 			code_flash: flash@fff80000 {
+				#address-cells = <1>;
+				#size-cells = <1>;
 				compatible = "renesas,rx-nv-flash";
 				reg = <0xfff80000 DT_SIZE_K(512)>;
+				ranges = <0x0 0xfff80000 DT_SIZE_K(512) >;
 			};
 
 			data_flash: flash@100000 {
+				#address-cells = <1>;
+				#size-cells = <1>;
 				compatible = "renesas,rx-nv-flash";
-				reg = <0x00100000 DT_SIZE_K(16)>;
+				reg = <0x100000 DT_SIZE_K(16)>;
+				ranges = <0x0 0x100000 DT_SIZE_K(16)>;
 			};
 		};
 	};
