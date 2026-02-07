@@ -1200,8 +1200,6 @@ erase_end:
 static int flash_stm32_xspi_read(const struct device *dev, off_t addr,
 				 void *data, size_t size)
 {
-	const struct flash_stm32_xspi_config *dev_cfg = dev->config;
-	struct flash_stm32_xspi_data *dev_data = dev->data;
 	int ret = 0;
 
 	if (!xspi_address_is_valid(dev, addr, size)) {
@@ -1216,8 +1214,6 @@ static int flash_stm32_xspi_read(const struct device *dev, off_t addr,
 	}
 
 #if defined(CONFIG_STM32_MEMMAP) || (defined(CONFIG_STM32_APP_IN_EXT_FLASH) && defined(CONFIG_XIP))
-	ARG_UNUSED(dev_cfg);
-	ARG_UNUSED(dev_data);
 	/*
 	 * When the call is made by an app executing in external flash,
 	 * skip the memory-mapped mode check
@@ -1243,7 +1239,11 @@ static int flash_stm32_xspi_read(const struct device *dev, off_t addr,
 	LOG_DBG("Memory-mapped read from 0x%08lx, len %zu", mmap_addr, size);
 	memcpy(data, (void *)mmap_addr, size);
 	return ret;
-#else
+
+#else /* CONFIG_STM32_MEMMAP || (CONFIG_STM32_APP_IN_EXT_FLASH && CONFIG_XIP) */
+	const struct flash_stm32_xspi_config *dev_cfg = dev->config;
+	struct flash_stm32_xspi_data *dev_data = dev->data;
+
 	XSPI_RegularCmdTypeDef cmd = xspi_prepare_cmd(dev_cfg->data_mode, dev_cfg->data_rate);
 
 	if (dev_cfg->data_mode != XSPI_OCTO_MODE) {
@@ -1337,8 +1337,6 @@ static int flash_stm32_xspi_write(const struct device *dev, off_t addr,
 	xspi_lock_thread(dev);
 
 #ifdef CONFIG_STM32_MEMMAP
-	ARG_UNUSED(dev_data);
-
 	if (stm32_xspi_is_memorymap(dev)) {
 		/* Abort ongoing transfer to force CS high/BUSY deasserted */
 		ret = stm32_xspi_abort(dev);
