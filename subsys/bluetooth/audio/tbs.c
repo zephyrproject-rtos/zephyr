@@ -1,7 +1,7 @@
 /* Bluetooth TBS - Telephone Bearer Service
  *
  * Copyright (c) 2020 Bose Corporation
- * Copyright (c) 2021-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2026 Nordic Semiconductor ASA
  * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -16,6 +16,7 @@
 #include <sys/types.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/audio/ccid.h>
 #include <zephyr/bluetooth/audio/tbs.h>
@@ -75,7 +76,7 @@ struct tbs_inst {
 	 */
 	char provider_name[CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH];
 	char uci[BT_TBS_MAX_UCI_SIZE];
-	uint8_t technology;
+	enum bt_bearer_tech technology;
 	uint8_t signal_strength;
 	uint8_t signal_strength_interval;
 	uint8_t ccid;
@@ -843,11 +844,12 @@ static void notify_handler_cb(struct bt_conn *conn, void *data)
 	}
 
 	if (flags->bearer_technology_changed) {
-		LOG_DBG("Notifying Bearer Technology: %s (0x%02x)",
-			bt_tbs_technology_str(inst->technology), inst->technology);
+		const uint8_t tech = (uint8_t)inst->technology;
 
-		err = notify(conn, BT_UUID_TBS_TECHNOLOGY, inst->attrs, &inst->technology,
-			     sizeof(inst->technology));
+		LOG_DBG("Notifying Bearer Technology: %s (0x%02x)",
+			bt_bearer_tech_str(inst->technology), tech);
+
+		err = notify(conn, BT_UUID_TBS_TECHNOLOGY, inst->attrs, &tech, sizeof(tech));
 		if (err == 0) {
 			flags->bearer_technology_changed = false;
 		} else {
@@ -1076,11 +1078,11 @@ static ssize_t read_technology(struct bt_conn *conn, const struct bt_gatt_attr *
 			       uint16_t len, uint16_t offset)
 {
 	const struct tbs_inst *inst = BT_AUDIO_CHRC_USER_DATA(attr);
+	const uint8_t tech = (uint8_t)inst->technology;
 
-	LOG_DBG("Index %u: Technology 0x%02x", inst_index(inst), inst->technology);
+	LOG_DBG("Index %u: Technology 0x%02x", inst_index(inst), tech);
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->technology,
-				 sizeof(inst->technology));
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &tech, sizeof(tech));
 }
 
 static void technology_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
@@ -2232,7 +2234,7 @@ static bool valid_register_param(const struct bt_tbs_register_param *param)
 		return false;
 	}
 
-	if (!IN_RANGE(param->technology, BT_TBS_TECHNOLOGY_3G, BT_TBS_TECHNOLOGY_WCDMA)) {
+	if (!IN_RANGE(param->technology, BT_BEARER_TECH_3G, BT_BEARER_TECH_WCDMA)) {
 		LOG_DBG("Invalid technology: %u", param->technology);
 
 		return false;
@@ -2874,12 +2876,12 @@ static void set_bearer_technology_changed_cb(struct tbs_flags *flags)
 	flags->bearer_technology_changed = true;
 }
 
-int bt_tbs_set_bearer_technology(uint8_t bearer_index, uint8_t new_technology)
+int bt_tbs_set_bearer_technology(uint8_t bearer_index, enum bt_bearer_tech new_technology)
 {
 	struct tbs_inst *inst = inst_lookup_index(bearer_index);
 	int err;
 
-	if (new_technology < BT_TBS_TECHNOLOGY_3G || new_technology > BT_TBS_TECHNOLOGY_WCDMA) {
+	if (new_technology < BT_BEARER_TECH_3G || new_technology > BT_BEARER_TECH_WCDMA) {
 		return -EINVAL;
 	} else if (inst == NULL) {
 		return -EINVAL;
@@ -2976,11 +2978,10 @@ static void set_bearer_uri_schemes_supported_list_changed_cb(struct tbs_flags *f
 	flags->bearer_uri_schemes_supported_list_dirty = true;
 }
 
-int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list, uint8_t uri_count)
+int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char *uri_scheme_list)
 {
-	char uri_scheme_list[CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH];
-	size_t len = 0;
 	struct tbs_inst *inst = inst_lookup_index(bearer_index);
+	size_t uri_scheme_list_len;
 	int err;
 
 	if (inst == NULL) {
@@ -2988,35 +2989,18 @@ int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list, uint
 		return -EINVAL;
 	}
 
-	(void)memset(uri_scheme_list, 0, sizeof(uri_scheme_list));
+	if (uri_scheme_list == NULL) {
+		LOG_DBG("uri_scheme_list is NULL");
 
-	for (int i = 0; i < uri_count; i++) {
-		if (strlen(uri_scheme_list) > 0) {
-			if ((len + 1) > sizeof(uri_scheme_list) - 1) {
-				return -ENOMEM;
-			}
-
-			strcat(uri_scheme_list, ",");
-		}
-
-		len += strlen(uri_list[i]);
-
-		if (len > sizeof(uri_scheme_list) - 1) {
-			return -ENOMEM;
-		} else {
-			if (is_tbs_uri_unique(inst->uri_scheme_list, uri_list[i])) {
-				len -= strlen(uri_list[i]);
-			}
-
-			/* Store list in temp list */
-			strcat(uri_scheme_list, uri_list[i]);
-		}
+		return -EINVAL;
 	}
 
-	if ((len == 0) && (strlen(inst->uri_scheme_list) == strlen(uri_scheme_list))) {
-		/* no new uri-scheme added; don't update or notify */
-		LOG_DBG("All requested uri prefix are already in TBS uri-scheme list");
-		return 0;
+	uri_scheme_list_len = strlen(uri_scheme_list);
+	if (uri_scheme_list_len >= sizeof(inst->uri_scheme_list)) {
+		LOG_DBG("Cannot store uri_scheme_list of size %zu in buffer of size %zu",
+			uri_scheme_list_len, sizeof(inst->uri_scheme_list));
+
+		return -ENOMEM;
 	}
 
 	err = k_mutex_lock(&inst->mutex, K_NO_WAIT);
@@ -3025,19 +3009,30 @@ int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char **uri_list, uint
 		return -EBUSY;
 	}
 
-	/* Store final result */
-	(void)utf8_lcpy(inst->uri_scheme_list, uri_scheme_list, sizeof(inst->uri_scheme_list));
+	if (strcmp(inst->uri_scheme_list, uri_scheme_list) == 0) {
+		/* No URI scheme changes */
+		LOG_DBG("URI scheme \"%s\" was identical to existing for %p", uri_scheme_list,
+			inst);
+	} else {
 
-	set_value_changed(inst, set_bearer_uri_schemes_supported_list_changed_cb,
-			  BT_UUID_TBS_URI_LIST);
+		/* Store final result */
+		(void)memcpy(inst->uri_scheme_list, uri_scheme_list, uri_scheme_list_len);
+		inst->uri_scheme_list[uri_scheme_list_len] = '\0';
 
-	LOG_DBG("TBS instance %u uri prefix list is updated to {%s}", bearer_index,
-		 inst->uri_scheme_list);
-
-	if (!inst_is_gtbs(inst)) {
-		/* If the instance is different than GTBS notify on the GTBS instance as well */
-		set_value_changed(&gtbs_inst, set_bearer_uri_schemes_supported_list_changed_cb,
+		set_value_changed(inst, set_bearer_uri_schemes_supported_list_changed_cb,
 				  BT_UUID_TBS_URI_LIST);
+
+		LOG_DBG("TBS instance %u uri prefix list is updated to {%s}", bearer_index,
+			inst->uri_scheme_list);
+
+		if (!inst_is_gtbs(inst)) {
+			/* If the instance is different than GTBS notify on the GTBS instance as
+			 * well
+			 */
+			set_value_changed(&gtbs_inst,
+					  set_bearer_uri_schemes_supported_list_changed_cb,
+					  BT_UUID_TBS_URI_LIST);
+		}
 	}
 
 	err = k_mutex_unlock(&inst->mutex);

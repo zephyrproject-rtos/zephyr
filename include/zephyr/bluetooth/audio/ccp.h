@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2024-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,6 +35,7 @@
 #include <stddef.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/sys/slist.h>
@@ -69,7 +70,8 @@ struct bt_ccp_call_control_server_bearer;
  * @retval -EALREADY @p param.gtbs is true and GTBS has already been registered
  * @retval -EAGAIN @p param.gtbs is false and GTBS has not been registered
  * @retval -ENOMEM @p param.gtbs is false and no more TBS can be registered (see
- *         @kconfig{CONFIG_BT_TBS_BEARER_COUNT})
+ *                 @kconfig{CONFIG_BT_TBS_BEARER_COUNT}) or @p param.uri_schemes is larger than
+ *                 @kconfig{CONFIG_BT_CCP_CALL_CONTROL_SERVER_URI_SCHEMES_MAX_LENGTH}
  * @retval -ENOEXEC The service failed to be registered
  */
 int bt_ccp_call_control_server_register_bearer(const struct bt_tbs_register_param *param,
@@ -103,6 +105,8 @@ int bt_ccp_call_control_server_unregister_bearer(struct bt_ccp_call_control_serv
  * @retval -EINVAL @p bearer or @p name is NULL, or @p name is the empty string or @p name is larger
  *                 than @kconfig{CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH}
  * @retval -EFAULT @p bearer is not registered
+ * @retval -EBUSY The TBS instance of @p bearer is busy
+ * @retval -ENOEXEC The TBS instance of @p bearer returned unexpected error
  */
 int bt_ccp_call_control_server_set_bearer_provider_name(
 	struct bt_ccp_call_control_server_bearer *bearer, const char *name);
@@ -133,6 +137,66 @@ int bt_ccp_call_control_server_get_bearer_provider_name(
 int bt_ccp_call_control_server_get_bearer_uci(struct bt_ccp_call_control_server_bearer *bearer,
 					      const char **uci);
 
+/**
+ * @brief Set a new bearer technology.
+ *
+ * @param[out] bearer The bearer to set the name for.
+ * @param tech The new bearer technology.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p bearer or is NULL or @p tech is invalid.
+ * @retval -EFAULT @p bearer is not registered.
+ */
+int bt_ccp_call_control_server_set_bearer_tech(struct bt_ccp_call_control_server_bearer *bearer,
+					       enum bt_bearer_tech tech);
+
+/**
+ * @brief Get the bearer technology.
+ *
+ * @param[in] bearer The bearer to get the technology for.
+ * @param[out] tech Pointer that will be updated to be the bearer technology.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p bearer or @p tech is NULL.
+ * @retval -EFAULT @p bearer is not registered.
+ */
+int bt_ccp_call_control_server_get_bearer_tech(
+	const struct bt_ccp_call_control_server_bearer *bearer, enum bt_bearer_tech *tech);
+
+/**
+ * @brief Set a new bearer URI schemes supported list.
+ *
+ * @param bearer  The bearer to set the URI schemes supported list for.
+ * @param uri_schemes The new bearer URI schemes supported list.
+ *
+ * @retval 0 New URI schemes supported list set, or if there were no change.
+ * @retval -EINVAL @p bearer or @p uri_schemes is NULL, @p uri_schemes is the empty string or
+ *                 @p uri_schemes contains invalid characters for URI schemes
+ * @retval -EFAULT @p bearer is not registered
+ * @retval -ENOMEM @p uri_schemes is larger than
+ *                 @kconfig{CONFIG_BT_CCP_CALL_CONTROL_SERVER_URI_SCHEMES_MAX_LENGTH}
+ */
+int bt_ccp_call_control_server_set_bearer_uri_schemes(
+	struct bt_ccp_call_control_server_bearer *bearer, const char *uri_schemes);
+
+/**
+ * @brief Get the bearer URI schemes supported list.
+ *
+ * @param[in] bearer  The bearer to get the URI schemes supported list for.
+ * @param[out] uri_schemes Pointer that will be updated to be the bearer URI schemes supported list.
+ * @param uri_schemes_size The size of the @p uri_schemes buffer. The suggested size is
+ *                         @kconfig{CONFIG_BT_CCP_CALL_CONTROL_SERVER_URI_SCHEMES_MAX_LENGTH} + 1 to
+ *                         ensure that the URI schemes supported list always fits.
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p bearer or @p uri_schemes is NULL
+ * @retval -EFAULT @p bearer is not registered
+ * @retval -ENOMEM @p uri_schemes_size is insufficient to hold the bearer URI schemes supported list
+ *                    (including null terminator)
+ */
+int bt_ccp_call_control_server_get_bearer_uri_schemes(
+	struct bt_ccp_call_control_server_bearer *bearer, char *uri_schemes,
+	size_t uri_schemes_size);
 /** @} */ /* End of group bt_ccp_call_control_server */
 
 /**
@@ -148,12 +212,12 @@ struct bt_ccp_call_control_client_bearer;
 
 /** Struct with information about bearers of a client */
 struct bt_ccp_call_control_client_bearers {
-#if defined(CONFIG_BT_TBS_CLIENT_GTBS)
+#if defined(CONFIG_BT_TBS_CLIENT_GTBS) || defined(__DOXYGEN__)
 	/** The GTBS bearer. */
 	struct bt_ccp_call_control_client_bearer *gtbs_bearer;
 #endif /* CONFIG_BT_TBS_CLIENT_GTBS */
 
-#if defined(CONFIG_BT_TBS_CLIENT_TBS)
+#if defined(CONFIG_BT_TBS_CLIENT_TBS) || defined(__DOXYGEN__)
 	/** Number of TBS bearers in @p tbs_bearers */
 	size_t tbs_count;
 
@@ -182,13 +246,13 @@ struct bt_ccp_call_control_client_cb {
 	void (*discover)(struct bt_ccp_call_control_client *client, int err,
 			 struct bt_ccp_call_control_client_bearers *bearers);
 
-#if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME) || defined(__DOXYGEN__)
 	/**
 	 * @brief Callback function for bt_ccp_call_control_client_read_bearer_provider_name().
 	 *
 	 * This callback is called once the read bearer provider name procedure is completed.
 	 *
-	 * @param client Call Control Client instance pointer.
+	 * @param bearer Call Control Client bearer pointer.
 	 * @param err    Error value. 0 on success, GATT error on positive
 	 *               value or errno on negative value.
 	 * @param name   The bearer provider name. NULL if @p err is not 0.
@@ -196,6 +260,51 @@ struct bt_ccp_call_control_client_cb {
 	void (*bearer_provider_name)(struct bt_ccp_call_control_client_bearer *bearer, int err,
 				     const char *name);
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME */
+
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_UCI) || defined(__DOXYGEN__)
+	/**
+	 * @brief Callback function for bt_ccp_call_control_client_read_bearer_uci().
+	 *
+	 * This callback is called once the read bearer UCI procedure is completed.
+	 *
+	 * @param bearer Call Control Client bearer pointer.
+	 * @param err    Error value. 0 on success, GATT error on positive
+	 *               value or errno on negative value.
+	 * @param uci    The UCI of the bearer. NULL if @p err is not 0.
+	 */
+	void (*bearer_uci)(struct bt_ccp_call_control_client_bearer *bearer, int err,
+			   const char *uci);
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_UCI */
+
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY) || defined(__DOXYGEN__)
+	/**
+	 * @brief Callback function for bt_ccp_call_control_client_read_bearer_tech().
+	 *
+	 * This callback is called once the read bearer technology procedure is completed.
+	 *
+	 * @param bearer Call Control Client bearer pointer.
+	 * @param err Error value. 0 on success, GATT error on positive
+	 *            value or errno on negative value.
+	 * @param tech The technology of the bearer.
+	 */
+	void (*bearer_tech)(struct bt_ccp_call_control_client_bearer *bearer, int err,
+			    enum bt_bearer_tech tech);
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY */
+
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST) || defined(__DOXYGEN__)
+	/**
+	 * @brief Callback function for bt_ccp_call_control_client_read_bearer_tech().
+	 *
+	 * This callback is called once the read bearer technology procedure is completed.
+	 *
+	 * @param bearer Call Control Client bearer pointer.
+	 * @param err Error value. 0 on success, GATT error on positive
+	 *            value or errno on negative value.
+	 * @param tech The technology of the bearer.
+	 */
+	void (*bearer_uri_schemes)(struct bt_ccp_call_control_client_bearer *bearer, int err,
+				   const char *uci_schemes);
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST */
 
 	/** @cond INTERNAL_HIDDEN */
 	/** Internally used field for list handling */
@@ -272,8 +381,64 @@ int bt_ccp_call_control_client_get_bearers(struct bt_ccp_call_control_client *cl
  * @retval -EBUSY The @ref bt_ccp_call_control_client identified by @p bearer is busy, or the TBS
  * instance of @p bearer is busy.
  * @retval -ENOTCONN The @ref bt_ccp_call_control_client identified by @p bearer is not connected
+ * @retval -ENOEXEC Rejected by the GATT layer for expected reasons
  */
 int bt_ccp_call_control_client_read_bearer_provider_name(
+	struct bt_ccp_call_control_client_bearer *bearer);
+
+/**
+ * @brief Read the bearer Uniform Caller Identifier (UCI) of a remote TBS bearer.
+ *
+ * @kconfig_dep{CONFIG_BT_TBS_CLIENT_BEARER_UCI}
+ *
+ * @param bearer The bearer to read the UCI from
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p bearer is NULL
+ * @retval -EFAULT @p bearer has not been discovered
+ * @retval -EEXIST A @ref bt_ccp_call_control_client could not be identified for @p bearer
+ * @retval -EBUSY The @ref bt_ccp_call_control_client identified by @p bearer is busy, or the TBS
+ * instance of @p bearer is busy.
+ * @retval -ENOTCONN The @ref bt_ccp_call_control_client identified by @p bearer is not connected
+ * @retval -ENOEXEC Rejected by the GATT layer for expected reasons
+ */
+int bt_ccp_call_control_client_read_bearer_uci(struct bt_ccp_call_control_client_bearer *bearer);
+
+/**
+ * @brief Read the bearer technology of a remote TBS bearer.
+ *
+ * @kconfig_dep{CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY}
+ *
+ * @param bearer The bearer to read the technology from
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p bearer is NULL
+ * @retval -EFAULT @p bearer has not been discovered
+ * @retval -EEXIST A @ref bt_ccp_call_control_client could not be identified for @p bearer
+ * @retval -EBUSY The @ref bt_ccp_call_control_client identified by @p bearer is busy, or the TBS
+ * instance of @p bearer is busy.
+ * @retval -ENOTCONN The @ref bt_ccp_call_control_client identified by @p bearer is not connected
+ * @retval -ENOEXEC Rejected by the GATT layer for expected reasons
+ */
+int bt_ccp_call_control_client_read_bearer_tech(struct bt_ccp_call_control_client_bearer *bearer);
+
+/**
+ * @brief Read the bearer URI schemes supported list of a remote TBS bearer.
+ *
+ * @kconfig_dep{CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST}
+ *
+ * @param bearer The bearer to read the URI schemes supported list from
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p bearer is NULL
+ * @retval -EFAULT @p bearer has not been discovered
+ * @retval -EEXIST A @ref bt_ccp_call_control_client could not be identified for @p bearer
+ * @retval -EBUSY The @ref bt_ccp_call_control_client identified by @p bearer is busy, or the TBS
+ * instance of @p bearer is busy.
+ * @retval -ENOTCONN The @ref bt_ccp_call_control_client identified by @p bearer is not connected
+ * @retval -ENOEXEC Rejected by the GATT layer for expected reasons
+ */
+int bt_ccp_call_control_client_read_bearer_uri_schemes(
 	struct bt_ccp_call_control_client_bearer *bearer);
 /** @} */ /* End of group bt_ccp_call_control_client */
 #ifdef __cplusplus

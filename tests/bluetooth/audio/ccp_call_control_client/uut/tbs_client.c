@@ -7,6 +7,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/sys/util_macro.h>
@@ -34,6 +36,7 @@ int bt_tbs_client_discover(struct bt_conn *conn)
 	return 0;
 }
 
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
 int bt_tbs_client_read_bearer_provider_name(struct bt_conn *conn, uint8_t inst_index)
 {
 	if (conn == NULL) {
@@ -46,3 +49,49 @@ int bt_tbs_client_read_bearer_provider_name(struct bt_conn *conn, uint8_t inst_i
 
 	return 0;
 }
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME */
+
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_UCI)
+int bt_tbs_client_read_bearer_uci(struct bt_conn *conn, uint8_t inst_index)
+{
+	if (conn == NULL) {
+		return -ENOTCONN;
+	}
+
+	if (tbs_cbs != NULL && tbs_cbs->bearer_uci != NULL) {
+		tbs_cbs->bearer_uci(conn, 0, inst_index, "bearer UCI");
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_UCI */
+
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY)
+int bt_tbs_client_read_technology(struct bt_conn *conn, uint8_t inst_index)
+{
+	if (conn == NULL) {
+		return -ENOTCONN;
+	}
+
+	if (tbs_cbs != NULL && tbs_cbs->technology != NULL) {
+		tbs_cbs->technology(conn, 0, inst_index, BT_BEARER_TECH_4G);
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY */
+
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST)
+int bt_tbs_client_read_uri_list(struct bt_conn *conn, uint8_t inst_index)
+{
+	if (conn == NULL) {
+		return -ENOTCONN;
+	}
+
+	if (tbs_cbs != NULL && tbs_cbs->bearer_uci != NULL) {
+		tbs_cbs->uri_list(conn, 0, inst_index, "tel,skype");
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST */
