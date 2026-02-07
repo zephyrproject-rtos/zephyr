@@ -9,3 +9,11 @@ config CLOCK_CONTROL_NUMAKER_SCC
 	depends on DT_HAS_NUVOTON_NUMAKER_SCC_ENABLED
 	help
 	  Enable support for NuMaker system clock controller driver
+
+config CLOCK_CONTROL_NUMICRO_M4_SCC
+	bool "NuMicro system clock controller driver"
+	default y
+	depends on SOC_FAMILY_NUMICRO
+	help
+	  Enable driver for System Clock Controller subsystem found in NuMicro
+	  M4 Series (currently tested for M487).

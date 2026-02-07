@@ -17,22 +17,8 @@ void soc_reset_hook(void)
 	SPIM->CTL1 |= SPIM_CTL1_CACHEOFF_Msk;
 	SPIM->CTL1 |= SPIM_CTL1_CCMEN_Msk;
 
-	/* system clock init */
-	SystemInit();
-
-	/* Enable HXT clock (external XTAL 12MHz) */
-	CLK_EnableXtalRC(CLK_PWRCTL_HXTEN_Msk);
-
-	/* Wait for HXT clock ready */
-	CLK_WaitClockReady(CLK_STATUS_HXTSTB_Msk);
-
-	/* Set core clock as PLL_FOUT source */
-	CLK_SetCoreClock(FREQ_192MHZ);
-
-	/* Set both PCLK0 and PCLK1 as HCLK/2 */
-	CLK->PCLKDIV = (CLK_PCLKDIV_APB0DIV_DIV2 | CLK_PCLKDIV_APB1DIV_DIV2);
-
-	SystemCoreClockUpdate();
+	/* Set flash access time to 8, later real value set in clock driver */
+	FMC->CYCCTL = 8;
 
 	SYS_LockReg();
 }
