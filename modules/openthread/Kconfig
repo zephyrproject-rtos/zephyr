@@ -146,6 +146,36 @@ config OPENTHREAD_SHELL
 	bool "OpenThread shell"
 	depends on SHELL
 
+if OPENTHREAD_SHELL
+
+config OPENTHREAD_SHELL_WAIT_FOR_COMPLETION
+	bool "Wait for OpenThread shell command completion"
+	default y if MCUMGR_GRP_SHELL || SHELL_BACKEND_DUMMY
+	help
+	  Enable a mechanism that blocks the shell thread until an OpenThread
+	  command signals completion or a timeout occurs. This ensures that
+	  the command output is fully captured before the shell prompt returns,
+	  which is essential for remote management tools like mcumgr.
+
+	  This is enabled by default when MCUMGR_GRP_SHELL or SHELL_BACKEND_DUMMY
+	  are active because they expect synchronous command execution to
+	  reliably capture all output. Async commands (e.g. "ot scan",
+	  "ot scan energy", "ot discover") would otherwise return early,
+	  leading to incomplete responses.
+
+config OPENTHREAD_SHELL_WAIT_FOR_COMPLETION_TIMEOUT
+	int "Timeout for OpenThread shell command completion (ms)"
+	depends on OPENTHREAD_SHELL_WAIT_FOR_COMPLETION
+	default 5000
+	range 0 600000
+	help
+	  Maximum duration to wait for an OpenThread command to complete
+	  (signal "Done" or "Error") before assuming it has finished.
+	  This handles cases where the command does not explicitly signal
+	  completion or takes too long.
+
+endif # OPENTHREAD_SHELL
+
 config MBEDTLS_PROMPTLESS
 	default y if OPENTHREAD_SECURITY_DEFAULT_CONFIG
 
