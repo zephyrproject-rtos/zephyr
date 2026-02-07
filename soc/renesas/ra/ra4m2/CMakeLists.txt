@@ -61,3 +61,21 @@ elseif(CONFIG_LD_LINKER_TEMPLATE)
 else()
   message(WARNING "Unsupported linker template.")
 endif()
+
+# Use custom linker script with TrustZone boundary symbols when IDAU is enabled
+if(CONFIG_CPU_HAS_RENESAS_RA_IDAU)
+  set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")
+
+  if(CONFIG_OUTPUT_RPD)
+    # Generate zephyr.rpd file for Renesas Flash Programmer
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+      COMMAND ${PYTHON_EXECUTABLE} ${SOC_FULL_DIR}/tools/gen_rpd.py
+      --kernel ${PROJECT_BINARY_DIR}/${KERNEL_ELF_NAME}
+      --output-rpd ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.rpd
+      $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+      )
+  endif()
+else()
+  set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
+endif()
