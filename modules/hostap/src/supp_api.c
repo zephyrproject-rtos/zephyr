@@ -2589,6 +2589,299 @@ int supplicant_dpp_dispatch(const struct device *dev, struct wifi_dpp_params *pa
 }
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+
+static int nan_params_to_cmd(struct wifi_nan_params *params, char *cmd, size_t max_len)
+{
+	char *pos = cmd;
+	char *end = cmd + max_len;
+	int ret;
+
+	if (!params || !cmd || max_len == 0) {
+		wpa_printf(MSG_ERROR, "%s: Invalid parameters", __func__);
+		return -EINVAL;
+	}
+
+	switch (params->op) {
+	case WIFI_NAN_OP_PUBLISH:
+		ret = snprintf(pos, end - pos, "NAN_PUBLISH");
+		if (ret < 0 || ret >= end - pos) {
+			return -ENOMEM;
+		}
+		pos += ret;
+
+		if (params->publish.service_name[0]) {
+			ret = snprintf(pos, end - pos, " service_name=%s",
+				params->publish.service_name);
+			if (ret < 0 || ret >= end - pos) {
+				return -ENOMEM;
+			}
+			pos += ret;
+		}
+
+		if (params->publish.srv_proto_type > 0) {
+			ret = snprintf(pos, end - pos, " srv_proto_type=%d",
+				params->publish.srv_proto_type);
+			if (ret < 0 || ret >= end - pos) {
+				return -ENOMEM;
+			}
+			pos += ret;
+		}
+
+		if (params->publish.ttl > 0) {
+			ret = snprintf(pos, end - pos, " ttl=%u", params->publish.ttl);
+			if (ret < 0 || ret >= end - pos) {
+				return -ENOMEM;
+			}
+			pos += ret;
+		}
+
+		if (params->publish.freq > 0) {
+			ret = snprintf(pos, end - pos, " freq=%u", params->publish.freq);
+			if (ret < 0 || ret >= end - pos) {
+				return -ENOMEM;
+			}
+			pos += ret;
+		}
+
+		if (params->publish.freq_list[0] != '\0') {
+			ret = snprintf(pos, end - pos, " freq_list=%s",
+				params->publish.freq_list);
+			if (ret < 0 || ret >= end - pos) {
+				return -ENOMEM;
+			}
+			pos += ret;
+		}
+
+		if (params->publish.ssi_len > 0) {
+			ret = snprintf(pos, end - pos, " ssi=");
+			if (ret < 0 || ret >= end - pos) {
+				return -ENOMEM;
+			}
+			pos += ret;
+
+			for (int i = 0; i < params->publish.ssi_len; i++) {
+				ret = snprintf(pos, end - pos, "%02x", params->publish.ssi[i]);
+				if (ret < 0 || ret >= end - pos) {
+					return -ENOMEM;
+				}
+				pos += ret;
+			}
+		}
+
+		if (!params->publish.unsolicited) {
+			ret = snprintf(pos, end - pos, " unsolicited=0");
+			if (ret < 0 || ret >= end - pos) {
+				return -ENOMEM;
+			}
+			pos += ret;
+		}
+
+		if (!params->publish.solicited) {
+			ret = snprintf(pos, end - pos, " solicited=0");
+			if (ret < 0 || ret >= end - pos) {
+				return -ENOMEM;
+			}
+			pos += ret;
+		}
+
+		if (!params->publish.fsd) {
+			ret = snprintf(pos, end - pos, " fsd=0");
+			if (ret < 0 || ret >= end - pos) {
+				return -ENOMEM;
+			}
+			pos += ret;
+		}
+		break;
+
+	case WIFI_NAN_OP_CANCEL_PUBLISH:
+		ret = snprintf(pos, end - pos, "NAN_CANCEL_PUBLISH publish_id=%u",
+			params->cancel_id);
+		if (ret < 0 || ret >= end - pos) {
+			return -ENOMEM;
+		}
+		pos += ret;
+		break;
+
+	case WIFI_NAN_OP_UPDATE_PUBLISH:
+		ret = snprintf(pos, end - pos, "NAN_UPDATE_PUBLISH publish_id=%u",
+			params->update_publish.publish_id);
+		if (ret < 0 || ret >= end - pos) {
+			return -ENOMEM;
+		}
+		pos += ret;
+
+		if (params->update_publish.ssi_len > 0) {
+			ret = snprintf(pos, end - pos, " ssi=");
+			if (ret < 0 || ret >= end - pos) {
+				return -ENOMEM;
+			}
+			pos += ret;
+
+			for (int i = 0; i < params->update_publish.ssi_len; i++) {
+				ret = snprintf(pos, end - pos, "%02x",
+					params->update_publish.ssi[i]);
+				if (ret < 0 || ret >= end - pos) {
+					return -ENOMEM;
+				}
+				pos += ret;
+			}
+		}
+		break;
+
+	case WIFI_NAN_OP_SUBSCRIBE:
+		ret = snprintf(pos, end - pos, "NAN_SUBSCRIBE");
+		if (ret < 0 || ret >= end - pos) {
+			return -ENOMEM;
+		}
+		pos += ret;
+
+		if (params->subscribe.service_name[0]) {
+			ret = snprintf(pos, end - pos, " service_name=%s",
+				params->subscribe.service_name);
+			if (ret < 0 || ret >= end - pos) {
+				return -ENOMEM;
+			}
+			pos += ret;
+		}
+
+		if (params->subscribe.srv_proto_type > 0) {
+			ret = snprintf(pos, end - pos, " srv_proto_type=%d",
+				params->subscribe.srv_proto_type);
+			if (ret < 0 || ret >= end - pos) {
+				return -ENOMEM;
+			}
+			pos += ret;
+		}
+
+		if (params->subscribe.active) {
+			ret = snprintf(pos, end - pos, " active=1");
+			if (ret < 0 || ret >= end - pos) {
+				return -ENOMEM;
+			}
+			pos += ret;
+		}
+
+		if (params->subscribe.ttl > 0) {
+			ret = snprintf(pos, end - pos, " ttl=%u", params->subscribe.ttl);
+			if (ret < 0 || ret >= end - pos) {
+				return -ENOMEM;
+			}
+			pos += ret;
+		}
+
+		if (params->subscribe.freq > 0) {
+			ret = snprintf(pos, end - pos, " freq=%u", params->subscribe.freq);
+			if (ret < 0 || ret >= end - pos) {
+				return -ENOMEM;
+			}
+			pos += ret;
+		}
+
+		if (params->subscribe.ssi_len > 0) {
+			ret = snprintf(pos, end - pos, " ssi=");
+			if (ret < 0 || ret >= end - pos) {
+				return -ENOMEM;
+			}
+			pos += ret;
+
+			for (int i = 0; i < params->subscribe.ssi_len; i++) {
+				ret = snprintf(pos, end - pos, "%02x",
+					params->subscribe.ssi[i]);
+				if (ret < 0 || ret >= end - pos) {
+					return -ENOMEM;
+				}
+				pos += ret;
+			}
+		}
+		break;
+
+	case WIFI_NAN_OP_CANCEL_SUBSCRIBE:
+		ret = snprintf(pos, end - pos, "NAN_CANCEL_SUBSCRIBE subscribe_id=%u",
+			params->cancel_id);
+		if (ret < 0 || ret >= end - pos) {
+			return -ENOMEM;
+		}
+		pos += ret;
+		break;
+
+	case WIFI_NAN_OP_TRANSMIT:
+		ret = snprintf(pos, end - pos,
+			"NAN_TRANSMIT handle=%u req_instance_id=%u address=%02x:%02x:%02x:%02x:%02x:%02x",
+			params->transmit.handle,
+			params->transmit.req_instance_id,
+			params->transmit.peer_addr[0],
+			params->transmit.peer_addr[1],
+			params->transmit.peer_addr[2],
+			params->transmit.peer_addr[3],
+			params->transmit.peer_addr[4],
+			params->transmit.peer_addr[5]);
+		if (ret < 0 || ret >= end - pos) {
+			return -ENOMEM;
+		}
+		pos += ret;
+
+		if (params->transmit.ssi_len > 0) {
+			ret = snprintf(pos, end - pos, " ssi=");
+			if (ret < 0 || ret >= end - pos) {
+				return -ENOMEM;
+			}
+			pos += ret;
+
+			for (int i = 0; i < params->transmit.ssi_len; i++) {
+				ret = snprintf(pos, end - pos, "%02x",
+					params->transmit.ssi[i]);
+				if (ret < 0 || ret >= end - pos) {
+					return -ENOMEM;
+				}
+				pos += ret;
+			}
+		}
+		break;
+
+	default:
+		wpa_printf(MSG_ERROR, "Unknown NAN action: %d", params->op);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int supplicant_nan_cfg(const struct device *dev, struct wifi_nan_params *params)
+{
+	int ret = 0;
+	char *cmd = NULL;
+	struct wpa_supplicant *wpa_s = get_wpa_s_handle(dev);
+
+	if (wpa_s == NULL || params == NULL) {
+		return -EINVAL;
+	}
+
+	cmd = os_zalloc(SUPPLICANT_NAN_CMD_BUF_SIZE);
+	if (cmd == NULL) {
+		return -ENOMEM;
+	}
+
+	/* leave two bytes: one for safety, one for null terminator */
+	ret = nan_params_to_cmd(params, cmd, SUPPLICANT_NAN_CMD_BUF_SIZE - 2);
+	if (ret) {
+		goto out;
+	}
+
+	if (zephyr_wpa_cli_cmd_resp(wpa_s->ctrl_conn, cmd, params->resp)) {
+		ret = -ENOEXEC;
+		goto out;
+	}
+
+	ret = 0;
+
+out:
+	os_free(cmd);
+	return ret;
+}
+
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
+
 int supplicant_config_params(const struct device *dev, struct wifi_config_params *params)
 {
 	struct wpa_supplicant *wpa_s;
