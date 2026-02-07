@@ -301,10 +301,10 @@ ZTEST(flash_sim_api, test_align)
 	zassert_equal(-EINVAL, rc, "Unexpected error code (%d)", rc);
 }
 
-#if defined(CONFIG_FLASH_SIMULATOR_DOUBLE_WRITES) &&	\
-	defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE)
 ZTEST(flash_sim_api, test_double_write)
 {
+#if defined(CONFIG_FLASH_SIMULATOR_DOUBLE_WRITES) &&	\
+	defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE)
 	int rc;
 	/* Test checks behaviour of write when attempting to double write
 	 * selected offset. Simulator, prior to write, checks if selected
@@ -325,12 +325,14 @@ ZTEST(flash_sim_api, test_double_write)
 	rc = flash_write(flash_dev, FLASH_SIMULATOR_BASE_OFFSET,
 				 &data, sizeof(data));
 	zassert_equal(-EIO, rc, "Unexpected error code (%d)", rc);
-}
+#else
+	ztest_test_skip();
 #endif
+}
 
-#if !defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE)
 ZTEST(flash_sim_api, test_ramlike)
 {
+#if defined(CONFIG_FLASH_SIMULATOR_RAMLIKE)
 	/* Within code below there is assumption that the src size is
 	 * equal or greater than the FLASH_SIMULATOR_PROG_UNIT
 	 * (write-block-size) of device.
@@ -440,8 +442,10 @@ ZTEST(flash_sim_api, test_ramlike)
 		} while (i & (sizeof(buf) - 1));
 		zassert_equal(0, rc, "Unexpected value read");
 	}
-}
+#else
+	ztest_test_skip();
 #endif
+}
 
 ZTEST(flash_sim_api, test_get_erase_value)
 {
