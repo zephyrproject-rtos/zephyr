@@ -20,6 +20,12 @@
 
 #include "icm45686_bus.h"
 
+#include "icm456xx_h/imu/inv_imu.h"
+#include "imu/inv_imu_driver.h"
+#ifdef CONFIG_TDK_APEX
+#include "imu/inv_imu_edmp.h"
+#endif
+
 struct icm45686_encoded_payload {
 	union {
 		uint8_t buf[14];
@@ -49,12 +55,12 @@ struct icm45686_encoded_fifo_payload {
 				int16_t x;
 				int16_t y;
 				int16_t z;
-			} __attribute__((__packed__)) accel;
+			} accel;
 			struct {
 				int16_t x;
 				int16_t y;
 				int16_t z;
-			} __attribute__((__packed__)) gyro;
+			} gyro;
 			int16_t temp;
 			uint16_t timestamp;
 			struct {
@@ -143,6 +149,12 @@ struct icm45686_data {
 #elif defined(CONFIG_ICM45686_STREAM)
 	struct icm45686_stream stream;
 #endif /* CONFIG_ICM45686_TRIGGER */
+	inv_imu_device_t driver;
+	uint8_t dmp_odr_hz;
+	uint64_t pedometer_cnt;
+	uint8_t pedometer_activity;
+	uint8_t pedometer_cadence;
+	uint8_t apex_status;
 };
 
 struct icm45686_config {
@@ -163,6 +175,7 @@ struct icm45686_config {
 		bool fifo_watermark_equals : 1;
 	} settings;
 	struct gpio_dt_spec int_gpio;
+	uint8_t apex;
 };
 
 static inline void icm45686_accel_ms(uint8_t fs,
@@ -268,5 +281,27 @@ static inline void icm45686_temp_c(int32_t in, int32_t *out_c, uint32_t *out_uc)
 	/* Micro celsius */
 	*out_uc = ((in100 - (*out_c) * sensitivity) * INT64_C(1000000)) / sensitivity;
 }
+
+#ifdef CONFIG_TDK_APEX
+
+#define ICM45686_APEX_STATUS_MASK_TILT  BIT(0)
+#define ICM45686_APEX_STATUS_MASK_SMD   BIT(1)
+#define ICM45686_APEX_STATUS_MASK_WOM_X BIT(2)
+#define ICM45686_APEX_STATUS_MASK_WOM_Y BIT(3)
+#define ICM45686_APEX_STATUS_MASK_WOM_Z BIT(4)
+#define ICM45686_APEX_STATUS_MASK_TAP   BIT(5)
+#define ICM45686_APEX_STATUS_MASK_DOUBLE_TAP BIT(6)
+
+#define DEFAULT_WOM_THS_MG 52 >> 2
+
+int icm45686_apex_enable(inv_imu_device_t *s);
+int icm45686_apex_fetch_from_dmp(const struct device *dev);
+void icm45686_apex_pedometer_cadence_convert(struct sensor_value *val, uint8_t raw_val,
+		uint8_t dmp_odr_hz);
+int icm45686_apex_enable_pedometer(const struct device *dev, inv_imu_device_t *s);
+int icm45686_apex_enable_tilt(inv_imu_device_t *s);
+int icm45686_apex_enable_smd(inv_imu_device_t *s);
+int icm45686_apex_enable_wom(inv_imu_device_t *s);
+#endif
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_ICM45686_H_ */

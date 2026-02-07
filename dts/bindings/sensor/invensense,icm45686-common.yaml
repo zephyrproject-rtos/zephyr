@@ -156,3 +156,21 @@ properties:
 
       Otherwise, it will generate interrupts when the level is greater or equals the FIFO Watermark
       Threshold (count >= watermark).
+
+  apex:
+    type: string
+    default: "none"
+    description: |
+      APEX (Advanced Pedometer and Event Detection) features. It consists of:
+      * Pedometer: Tracks step count, and provide details such as the cadence and
+                   the estimated activity type (Walk, Run, Unknown).
+      * Tilt Detection: Detects the Tilt when tilting the board with an angle of
+                        30 degrees or more held for 4 seconds.
+      * Wake on Motion (WoM): Detects motion per axis exceeding 195 mg threshold.
+      * Significant Motion Detector (SMD): Detects when the user has moved significantly.
+    enum:
+      - "none"
+      - "pedometer"
+      - "tilt"
+      - "smd"
+      - "wom"
