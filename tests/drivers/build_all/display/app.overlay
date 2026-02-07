@@ -389,6 +389,29 @@
 				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 				grayscale-table = [02 02 02 02 02 02 02 02 03 04 05 06 07 07 07];
 			};
+
+			test_mipi_dbi_ssd1677: ssd1677@22 {
+				compatible = "solomon,ssd1677";
+				mipi-max-frequency = <4000000>;
+				reg = <22>;
+				busy-gpios = <&test_gpio 0 0>;
+
+				width = <480>;
+				height = <800>;
+
+				tssv = <0x80>;
+				softstart = [AE C7 C3 C0 80];
+				gdo-flags = <0x02>;
+				scan-y-reverse;
+
+				full {
+					border-waveform = <0x01>;
+				};
+
+				partial {
+					border-waveform = <0x80>;
+				};
+			};
 		};
 
 		test_mipi_dbi_xfr_16bit_write_only {
