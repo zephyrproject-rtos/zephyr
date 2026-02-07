@@ -1,0 +1,35 @@
+# Copyright (c) 2025 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Infineon I2S configuration options
+
+config I2S_INFINEON
+	bool "Infineon I2S driver"
+	default y
+	depends on DT_HAS_INFINEON_I2S_ENABLED
+	select USE_INFINEON_I2S
+	select PINCTRL
+	help
+	  This option enables the I2S driver.
+
+if I2S_INFINEON
+
+config I2S_INFINEON_RX_QUEUE_SIZE
+	int "RX queue length"
+	default 8
+	help
+	  This option sets the number elements allocated for the rx software
+	  queue. This should match the number of blocks in the memory slab
+	  that will hold the i2s receive data.
+
+config I2S_INFINEON_TX_QUEUE_SIZE
+	int "TX queue length"
+	default 8
+	help
+	  This option sets the number elements allocated for the tx software
+	  queue. This should match the number of blocks in the memory slab
+	  that will hold the i2s transmit data.
+
+endif # I2S_INFINEON
