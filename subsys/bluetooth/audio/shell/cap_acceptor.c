@@ -188,6 +188,7 @@ static int cmd_cap_acceptor_init(const struct shell *sh, size_t argc,
 	return 0;
 }
 
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT)
 static int cmd_cap_acceptor_lock(const struct shell *sh, size_t argc,
 				 char *argv[])
 {
@@ -233,6 +234,7 @@ static int cmd_cap_acceptor_release(const struct shell *sh, size_t argc,
 
 	return 0;
 }
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT */
 
 static int cmd_cap_acceptor_sirk(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -330,8 +332,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "Initialize the service and register callbacks "
 		      "[size <int>] [rank <int>] [not-lockable] [sirk <data>]",
 		      cmd_cap_acceptor_init, 1, 4),
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT)
 	SHELL_CMD_ARG(lock, NULL, "Lock the set", cmd_cap_acceptor_lock, 1, 0),
 	SHELL_CMD_ARG(release, NULL, "Release the set [force]", cmd_cap_acceptor_release, 1, 1),
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT */
 	SHELL_CMD_ARG(sirk, NULL, "Set the currently used SIRK <sirk>", cmd_cap_acceptor_sirk, 2,
 		      0),
 	SHELL_CMD_ARG(get_info, NULL, "Get CSIS info", cmd_cap_acceptor_get_info, 1, 0),

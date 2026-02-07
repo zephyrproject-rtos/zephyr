@@ -471,3 +471,29 @@ tests:
     extra_configs:
       - CONFIG_ASSERT=n
     tags: bluetooth
+  bluetooth.shell.audio.csip_set_member_rank_no_lock_size_on:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    extra_configs:
+      - CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT=y
+      - CONFIG_BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE=n
+      - CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT=n
+      - CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT=y
+    tags: bluetooth
+  bluetooth.shell.audio.csip_set_member_lock_no_size:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    extra_configs:
+      - CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT=n
+      - CONFIG_BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE=n
+      - CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT=y
+    tags: bluetooth
+  bluetooth.shell.audio.csip_set_member_rank_only_no_size:
+    extra_args: CONF_FILE="audio.conf"
+    build_only: true
+    extra_configs:
+      - CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT=n
+      - CONFIG_BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE=n
+      - CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT=n
+      - CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT=y
+    tags: bluetooth

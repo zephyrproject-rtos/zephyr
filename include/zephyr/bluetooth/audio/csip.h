@@ -136,6 +136,8 @@ struct bt_csip_set_member_register_param {
 	 * @brief Size of the set.
 	 *
 	 * If set to 0, the set size characteristic won't be initialized.
+	 * If @kconfig{CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT} is not enabled,
+	 * this will be ignored.
 	 */
 	uint8_t set_size;
 
@@ -151,6 +153,8 @@ struct bt_csip_set_member_register_param {
 	 * @brief Boolean to set whether the set is lockable by clients
 	 *
 	 * Setting this to false will disable the lock characteristic.
+	 * If @kconfig{CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT} is not enabled,
+	 * this will be ignored.
 	 */
 	bool lockable;
 
@@ -158,8 +162,12 @@ struct bt_csip_set_member_register_param {
 	 * @brief Rank of this device in this set.
 	 *
 	 * If the lockable parameter is set to true, this shall be > 0 and
-	 * <= to the set_size. If the lockable parameter is set to false, this
-	 * may be set to 0 to disable the rank characteristic.
+	 * <= to the set_size (if set size support is enabled).
+	 * If the lockable parameter is set to false,
+	 * this may be set to 0 to disable the rank characteristic.
+	 *
+	 * If @kconfig{CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT} is not enabled,
+	 * this will be ignored.
 	 */
 	uint8_t rank;
 
@@ -242,9 +250,13 @@ int bt_csip_set_member_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
  * If @kconfig{CONFIG_BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE} is enabled, this will also send a
  * notification to all connected or bonded clients.
  *
+ * Available if either @kconfig{CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT} or
+ * @kconfig{CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT} is enabled.
+ * The disabled parameter (i.e. @p rank or @p size) will not be set.
+ *
  * @param svc_inst The service instance.
  * @param size The new set size.
- * @param rank The new rank. Ignored if the @p svc_inst is not lockable.
+ * @param rank The new rank.
  *
  * @retval -EINVAL @p svc_inst is NULL, @p size is less than 1, @p rank is less than 1 or higher
  *                 than @p size for a lockable @p svc_inst.
@@ -259,20 +271,36 @@ struct bt_csip_set_member_set_info {
 	/** The 16-octet SIRK */
 	uint8_t sirk[BT_CSIP_SIRK_SIZE];
 
-	/** The set size */
+	/**
+	 * @brief The set size
+	 *
+	 * Will always be 0 if @kconfig{CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT}
+	 * is not enabled.
+	 */
 	uint8_t set_size;
 
 	/**
 	 * @brief The rank
 	 *
-	 * May be 0 if the set is not lockable
+	 * Will always be 0 if the set is not lockable or the option
+	 * @kconfig{CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT} is not enabled.
 	 */
 	uint8_t rank;
 
-	/** Whether the set is lockable  */
+	/**
+	 * @brief Whether the set is lockable
+	 *
+	 * Will always be false if @kconfig{CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT}
+	 * is not enabled.
+	 */
 	bool lockable: 1;
 
-	/** Whether the set is currently locked */
+	/**
+	 * @brief Whether the set is currently locked
+	 *
+	 * Will always be false if @kconfig{CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT}
+	 * is not enabled.
+	 */
 	bool locked: 1;
 
 	/**
@@ -310,6 +338,8 @@ int bt_csip_set_member_generate_rsi(const struct bt_csip_set_member_svc_inst *sv
 
 /**
  * @brief Locks a specific Coordinated Set Identification Service instance on the server.
+ *
+ * @kconfig_dep{CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT}
  *
  * @param svc_inst  Pointer to the Coordinated Set Identification Service.
  * @param lock      If true lock the set, if false release the set.

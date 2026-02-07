@@ -54,8 +54,11 @@
 #define CSIS_RANK_CHAR_ATTR_COUNT 2 /* declaration + value */
 
 #define CSIS_MAX_ATTR                                                                              \
-	(10U + IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE) +                             \
-	 IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE))
+	(3U + IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE) +                             \
+	 (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT) ? 2U : 0U) +                         \
+	 IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE) +                                  \
+	 (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT) ? 3U : 0U) +                         \
+	 (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT) ? 2U : 0U))
 
 LOG_MODULE_REGISTER(bt_csip_set_member, CONFIG_BT_CSIP_SET_MEMBER_LOG_LEVEL);
 
@@ -76,14 +79,20 @@ struct csip_client {
 
 struct bt_csip_set_member_svc_inst {
 	struct bt_csip_sirk sirk;
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT)
 	uint8_t set_size;
-	uint8_t set_lock;
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT */
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT)
 	uint8_t rank;
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT */
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT)
+	uint8_t set_lock;
 	bool lockable;
-	struct bt_csip_set_member_cb *cb;
 	struct k_work_delayable set_lock_timer;
 	bt_addr_le_t lock_client_addr;
-	struct csip_client clients[CONFIG_BT_MAX_PAIRED];
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT */
+	struct bt_csip_set_member_cb *cb;
+		struct csip_client clients[CONFIG_BT_MAX_PAIRED];
 
 	struct bt_gatt_service gatt_svc;
 	struct bt_gatt_attr attrs[CSIS_MAX_ATTR];
@@ -117,6 +126,7 @@ SETTINGS_STATIC_HANDLER_DEFINE_WITH_CPRIO(bt_csip_set_member, "bt/csip", NULL, N
 
 static K_WORK_DELAYABLE_DEFINE(deferred_nfy_work, deferred_nfy_work_handler);
 
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT)
 static bool is_last_client_to_write(const struct bt_csip_set_member_svc_inst *svc_inst,
 				    const struct bt_conn *conn)
 {
@@ -127,6 +137,7 @@ static bool is_last_client_to_write(const struct bt_csip_set_member_svc_inst *sv
 		return bt_addr_le_eq(BT_ADDR_LE_NONE, &svc_inst->lock_client_addr);
 	}
 }
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT */
 
 static void notify_work_reschedule(k_timeout_t delay)
 {
@@ -325,6 +336,7 @@ static ssize_t read_set_size(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
 			     void *buf, uint16_t len, uint16_t offset)
 {
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT)
 	struct bt_csip_set_member_svc_inst *svc_inst = BT_AUDIO_CHRC_USER_DATA(attr);
 
 	LOG_DBG("%u", svc_inst->set_size);
@@ -332,6 +344,10 @@ static ssize_t read_set_size(struct bt_conn *conn,
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
 				 &svc_inst->set_size,
 				 sizeof(svc_inst->set_size));
+#else
+	__ASSERT(false, "Unexpected read callback");
+	return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT */
 }
 
 static void set_size_cfg_changed(const struct bt_gatt_attr *attr,
@@ -344,6 +360,7 @@ static ssize_t read_set_lock(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
 			     void *buf, uint16_t len, uint16_t offset)
 {
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT)
 	struct bt_csip_set_member_svc_inst *svc_inst = BT_AUDIO_CHRC_USER_DATA(attr);
 
 	LOG_DBG("%u", svc_inst->set_lock);
@@ -351,8 +368,14 @@ static ssize_t read_set_lock(struct bt_conn *conn,
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
 				 &svc_inst->set_lock,
 				 sizeof(svc_inst->set_lock));
+#else
+	__ASSERT(false, "Unexpected read callback");
+	return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT */
 }
 
+
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT)
 /**
  * @brief Set the lock value of a CSIP instance.
  *
@@ -419,12 +442,14 @@ static uint8_t set_lock(struct bt_conn *conn,
 
 	return 0;
 }
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT */
 
 static ssize_t write_set_lock(struct bt_conn *conn,
 			      const struct bt_gatt_attr *attr,
 			      const void *buf, uint16_t len,
 			      uint16_t offset, uint8_t flags)
 {
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT)
 	ssize_t res;
 	uint8_t val;
 	struct bt_csip_set_member_svc_inst *svc_inst = BT_AUDIO_CHRC_USER_DATA(attr);
@@ -443,6 +468,10 @@ static ssize_t write_set_lock(struct bt_conn *conn,
 	}
 
 	return len;
+#else
+	__ASSERT(false, "Unexpected write callback");
+	return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT */
 }
 
 static void set_lock_cfg_changed(const struct bt_gatt_attr *attr,
@@ -454,6 +483,7 @@ static void set_lock_cfg_changed(const struct bt_gatt_attr *attr,
 static ssize_t read_rank(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, uint16_t len, uint16_t offset)
 {
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT)
 	struct bt_csip_set_member_svc_inst *svc_inst = BT_AUDIO_CHRC_USER_DATA(attr);
 
 	LOG_DBG("%u", svc_inst->rank);
@@ -462,8 +492,13 @@ static ssize_t read_rank(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 &svc_inst->rank,
 				 sizeof(svc_inst->rank));
 
+#else
+	__ASSERT(false, "Unexpected read callback");
+	return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT */
 }
 
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT)
 static void set_lock_timer_handler(struct k_work *work)
 {
 	struct k_work_delayable *delayable;
@@ -483,6 +518,7 @@ static void set_lock_timer_handler(struct k_work *work)
 		svc_inst->cb->lock_changed(NULL, svc_inst, locked);
 	}
 }
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT */
 
 static void csip_security_changed(struct bt_conn *conn, bt_security_t level,
 				  enum bt_security_err err)
@@ -539,6 +575,7 @@ static void handle_csip_disconnect(struct bt_csip_set_member_svc_inst *svc_inst,
 				   struct bt_conn *conn)
 {
 	LOG_DBG("Non-bonded device");
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT)
 	if (is_last_client_to_write(svc_inst, conn)) {
 		bt_addr_le_copy(&svc_inst->lock_client_addr, BT_ADDR_LE_NONE);
 		svc_inst->set_lock = BT_CSIP_RELEASE_VALUE;
@@ -550,6 +587,7 @@ static void handle_csip_disconnect(struct bt_csip_set_member_svc_inst *svc_inst,
 			svc_inst->cb->lock_changed(conn, svc_inst, locked);
 		}
 	}
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT */
 
 	/* Check if the disconnected device once was bonded and stored
 	 * here as a bonded device
@@ -676,12 +714,15 @@ void *bt_csip_set_member_svc_decl_get(const struct bt_csip_set_member_svc_inst *
 
 static bool valid_register_param(const struct bt_csip_set_member_register_param *param)
 {
-	if (param->lockable && param->rank == 0) {
+	if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT) &&
+	    param->lockable && param->rank == 0) {
 		LOG_DBG("Rank cannot be 0 if service is lockable");
 		return false;
 	}
 
-	if (param->rank > 0 && param->set_size > 0 && param->rank > param->set_size) {
+	if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT) &&
+	    IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT) &&
+	    param->rank > 0 && param->set_size > 0 && param->rank > param->set_size) {
 		LOG_DBG("Invalid rank: %u (shall be less than or equal to set_size: %u)",
 			param->rank, param->set_size);
 		return false;
@@ -773,22 +814,24 @@ static void notify_cb(struct bt_conn *conn, void *data)
 			goto unlock_and_return;
 		}
 
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT)
 		if (atomic_test_and_clear_bit(client->flags, FLAG_NOTIFY_LOCK)) {
 			notify(svc_inst, conn, BT_UUID_CSIS_SET_LOCK, &svc_inst->set_lock,
 			       sizeof(svc_inst->set_lock));
 		}
-
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT */
 		if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIRK_NOTIFIABLE) &&
 		    atomic_test_and_clear_bit(client->flags, FLAG_NOTIFY_SIRK)) {
 			notify(svc_inst, conn, BT_UUID_CSIS_SIRK, &svc_inst->sirk,
 			       sizeof(svc_inst->sirk));
 		}
-
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT)
 		if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE) &&
 		    atomic_test_and_clear_bit(client->flags, FLAG_NOTIFY_SIZE)) {
 			notify(svc_inst, conn, BT_UUID_CSIS_SET_SIZE, &svc_inst->set_size,
 			       sizeof(svc_inst->set_size));
 		}
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT */
 
 unlock_and_return:
 		err = k_mutex_unlock(&svc_inst->mutex);
@@ -962,7 +1005,7 @@ static void instantiate_service(struct bt_csip_set_member_svc_inst *inst,
 		attr_cnt++;
 	}
 
-	if (param->set_size > 0U) {
+	if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT) && param->set_size > 0U) {
 		/* Set Size declaration */
 		inst->attrs[attr_cnt].uuid = chrc_uuid;
 		inst->attrs[attr_cnt].perm = BT_GATT_PERM_READ;
@@ -988,7 +1031,8 @@ static void instantiate_service(struct bt_csip_set_member_svc_inst *inst,
 			attr_cnt++;
 		}
 	}
-	if (param->lockable) {
+
+	if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT) && param->lockable) {
 		/* Set lock declaration */
 		inst->attrs[attr_cnt].uuid = chrc_uuid;
 		inst->attrs[attr_cnt].perm = BT_GATT_PERM_READ;
@@ -1013,7 +1057,7 @@ static void instantiate_service(struct bt_csip_set_member_svc_inst *inst,
 		attr_cnt++;
 	}
 
-	if (param->rank > 0U) {
+	if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT) && param->rank > 0U) {
 		/* Rank declaration */
 		inst->attrs[attr_cnt].uuid = chrc_uuid;
 		inst->attrs[attr_cnt].perm = BT_GATT_PERM_READ;
@@ -1090,17 +1134,21 @@ int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *
 		__ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
 		return err;
 	}
-
-	k_work_init_delayable(&inst->set_lock_timer,
-			      set_lock_timer_handler);
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT)
 	inst->rank = param->rank;
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT */
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT)
 	inst->set_size = param->set_size;
-	inst->set_lock = BT_CSIP_RELEASE_VALUE;
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT */
 	inst->sirk.type = BT_CSIP_SIRK_TYPE_PLAIN;
 	inst->cb = param->cb;
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT)
+	k_work_init_delayable(&inst->set_lock_timer,
+			      set_lock_timer_handler);
+	inst->set_lock = BT_CSIP_RELEASE_VALUE;
 	inst->lockable = param->lockable;
 	bt_addr_le_copy(&inst->lock_client_addr, BT_ADDR_LE_NONE);
-
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT */
 	if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_TEST_SAMPLE_DATA)) {
 		uint8_t test_sirk[] = {
 			0xcd, 0xcc, 0x72, 0xdd, 0x86, 0x8c, 0xcd, 0xce,
@@ -1147,8 +1195,9 @@ int bt_csip_set_member_unregister(struct bt_csip_set_member_svc_inst *svc_inst)
 		return err;
 	}
 
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT)
 	(void)k_work_cancel_delayable(&svc_inst->set_lock_timer);
-
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT */
 	memset(svc_inst, 0, offsetof(struct bt_csip_set_member_svc_inst, mutex));
 
 	err = k_mutex_unlock(&svc_inst->mutex);
@@ -1181,6 +1230,8 @@ int bt_csip_set_member_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
 	return 0;
 }
 
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT) || \
+	defined(CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT)
 int bt_csip_set_member_set_size_and_rank(struct bt_csip_set_member_svc_inst *svc_inst, uint8_t size,
 					 uint8_t rank)
 {
@@ -1189,35 +1240,50 @@ int bt_csip_set_member_set_size_and_rank(struct bt_csip_set_member_svc_inst *svc
 		return -EINVAL;
 	}
 
-	if (size < 1U) {
+	if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT) && size < 1U) {
 		LOG_DBG("Invalid set size %u", size);
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT)
 	if (!svc_inst->lockable && rank != 0U) {
 		LOG_DBG("Invalid rank %u for non-lockable service", rank);
 		return -EINVAL;
 	}
 
-	if (svc_inst->lockable && !IN_RANGE(rank, 1U, size)) {
+	if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT) && svc_inst->lockable
+	    && !IN_RANGE(rank, 1U, size)) {
 		LOG_DBG("Invalid rank: %u for size %u", rank, size);
 		return -EINVAL;
 	}
+#elif defined(CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT)
+	if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT) && !IN_RANGE(rank, 1U, size)) {
+		LOG_DBG("Invalid rank: %u for size %u", rank, size);
+		return -EINVAL;
+	}
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT */
 
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT)
 	if (svc_inst->set_size == size) {
 		LOG_DBG("Set size %u is already set", size);
 		return -EALREADY;
 	}
 
 	svc_inst->set_size = size;
-	svc_inst->rank = svc_inst->lockable ? rank : 0U;
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT */
 
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT)
+	svc_inst->rank = svc_inst->lockable ? rank : 0U;
+#elif defined(CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT)
+	svc_inst->rank = rank;
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT */
 	if (IS_ENABLED(CONFIG_BT_CSIP_SET_MEMBER_SIZE_NOTIFIABLE)) {
 		notify_clients(svc_inst, NULL, FLAG_NOTIFY_SIZE);
 	}
 
 	return 0;
 }
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT || CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT */
 
 int bt_csip_set_member_get_info(const struct bt_csip_set_member_svc_inst *svc_inst,
 				struct bt_csip_set_member_set_info *info)
@@ -1232,16 +1298,30 @@ int bt_csip_set_member_get_info(const struct bt_csip_set_member_svc_inst *svc_in
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT)
 	info->lockable = svc_inst->lockable;
 	info->locked = svc_inst->set_lock == BT_CSIP_LOCK_VALUE;
-	info->rank = svc_inst->rank;
-	info->set_size = svc_inst->set_size;
-	memcpy(info->sirk, svc_inst->sirk.value, BT_CSIP_SIRK_SIZE);
 	bt_addr_le_copy(&info->lock_client_addr, &svc_inst->lock_client_addr);
-
+#else
+	info->lockable = false;
+	info->locked = false;
+	bt_addr_le_copy(&info->lock_client_addr, BT_ADDR_LE_NONE);
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT */
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT)
+	info->rank = svc_inst->rank;
+#else
+	info->rank = 0U;
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT */
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT)
+	info->set_size = svc_inst->set_size;
+#else
+	info->set_size = 0U;
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT */
+	memcpy(info->sirk, svc_inst->sirk.value, BT_CSIP_SIRK_SIZE);
 	return 0;
 }
 
+#if defined(CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT)
 int bt_csip_set_member_lock(struct bt_csip_set_member_svc_inst *svc_inst,
 			    bool lock, bool force)
 {
@@ -1271,3 +1351,4 @@ int bt_csip_set_member_lock(struct bt_csip_set_member_svc_inst *svc_inst,
 		return 0;
 	}
 }
+#endif /* CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT */
