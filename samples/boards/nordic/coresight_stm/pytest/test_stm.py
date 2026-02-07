@@ -172,7 +172,7 @@ def nrfutil_dictionary_from_serial(
     decoded_file_name: str = "output.txt",
     collect_time: float = 60.0,
 ) -> None:
-    UART_PATH = dut.device_config.serial
+    UART_PATH = dut.device_config.serial_configs[0].port
     dut.close()
 
     logger.debug(f"Using serial: {UART_PATH}")
