@@ -60,5 +60,12 @@
 				status = "disabled";
 			};
 		};
+
+		aes: aes@40442000 {
+			compatible = "ti,mspm0-aes";
+			reg = <0x40442000 0x2000>;
+			interrupts = <28 0>;
+			status = "disabled";
+		};
 	};
 };
