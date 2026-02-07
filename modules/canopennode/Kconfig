@@ -84,6 +84,14 @@ config CANOPENNODE_SYNC_THREAD
 	  TPDOs. Application layer must take care of SYNC RPDO and
 	  TPDO processing on its own if this is disabled.
 
+config CANOPENNODE_SYNC_THREAD_PERIOD_US
+	int "Loop period of the periodic CANopen SYNC thread"
+	depends on CANOPENNODE_SYNC_THREAD
+	default 1000
+	help
+	  Loop period in microseconds of the periodic thread processing
+	  CANopen SYNC RPDOs and TPDOs.
+
 config CANOPENNODE_SYNC_THREAD_STACK_SIZE
 	int "Stack size for the CANopen SYNC thread"
 	depends on CANOPENNODE_SYNC_THREAD
