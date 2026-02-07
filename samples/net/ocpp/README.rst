@@ -41,6 +41,22 @@ via Kconfig:
 - ``CONFIG_NET_SAMPLE_SNTP_SERVER``: SNTP server IP address to get the time
   from network
 
+Generating keys and certificate for TLS (Optional):
+***************************************************
+
+- Generate a ECDSA Private key using OpenSSL:
+
+   .. code-block:: console
+
+      openssl ecparam -name prime256v1 -genkey -noout -out ec-priv.key
+
+- Generate a self-signed certificate using OpenSSL:
+
+   .. code-block:: console
+
+      openssl req -new -x509 -key ec-priv.key -days 3650 \
+      -subj "/CN=localhost" -outform PEM -out ec.crt
+
 Building and Running
 ********************
 
