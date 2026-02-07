@@ -114,6 +114,8 @@ New APIs and options
   * :c:macro:`ADC_DT_SPEC_INST_GET_BY_IDX_OR`
   * :c:macro:`ADC_DT_SPEC_INST_GET_BY_NAME_OR`
   * :c:macro:`ADC_DT_SPEC_INST_GET_OR`
+  * :c:member:`adc_sequence.priority`
+  * :kconfig:option:`CONFIG_ADC_SEQUENCE_PRIORITY`
 
 * Architectures
 

@@ -317,6 +317,7 @@
 			st,adc-internal-regulator = "startup-sw-delay";
 			st,adc-has-deep-powerdown;
 			st,adc-has-differential-support;
+			has-injected-support;
 			status = "disabled";
 		};
 

@@ -99,6 +99,7 @@
 			st,adc-oversampler = "none";
 			st,adc-internal-regulator = "startup-sw-delay";
 			st,adc-has-differential-support;
+			has-injected-support;
 			status = "disabled";
 		};
 

@@ -156,5 +156,10 @@ properties:
     description: |
       If present, it indicates that the ADC instance supports differential channel inputs.
 
+  has-injected-support:
+    type: boolean
+    description: |
+      If present, it indicates that the ADC instance supports the injected channel feature.
+
 io-channel-cells:
   - input

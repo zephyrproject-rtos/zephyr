@@ -14,3 +14,14 @@ config STM32_TEMP
 	select ADC
 	help
 	  Enable driver for STM32 temperature sensor.
+
+if STM32_TEMP
+
+config STM32_TEMP_INJECTED
+	bool "STM32 Temperature Sensor through injected channel"
+	depends on ADC_STM32_INJECTED_CHANNELS
+	help
+	  Temperature measurement is done using the injected channel feature.
+	  This will permanently enable the ADC temperature sensor (VSENSESEL bit set to 1).
+
+endif
