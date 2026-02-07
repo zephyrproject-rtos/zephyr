@@ -1,0 +1,31 @@
+description: STM32 LPTIM PWM
+
+compatible: "st,stm32-lptim-pwm"
+
+include:
+  - name: pwm-controller.yaml
+  - name: base.yaml
+  - name: pinctrl-device.yaml
+  - name: st,stm32-lptim.yaml
+    property-blocklist:
+      - st,timeout
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  "#pwm-cells":
+    const: 3
+    description: |
+      Number of items to expect in a PWM
+      - channel of the timer used for PWM
+      - period to set in ns
+      - flags : combination of standard flags like PWM_POLARITY_NORMAL
+
+pwm-cells:
+  - channel
+  - period
+  - flags
