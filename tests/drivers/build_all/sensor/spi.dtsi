@@ -490,8 +490,9 @@ test_spi_adxl345: adxl345@3a {
 	fifo-watermark = <1>;
 };
 
-test_spi_as5048: as5048@3b {
-	compatible = "ams,as5048";
+test_spi_icm45605: icm45605@3b {
+	compatible = "invensense,icm45605";
 	reg = <0x3b>;
 	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
 };
