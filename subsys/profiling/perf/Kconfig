@@ -4,7 +4,6 @@
 
 config PROFILING_PERF
 	bool "Perf support"
-	depends on !SMP
 	depends on SHELL
 	depends on PROFILING_PERF_HAS_BACKEND
 	help
