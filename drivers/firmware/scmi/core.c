@@ -148,9 +148,6 @@ static int scmi_send_message_polling(struct scmi_protocol *proto,
 	}
 
 	ret = scmi_transport_read_message(proto->transport, proto->tx, reply);
-	if (ret < 0) {
-		return ret;
-	}
 
 cleanup:
 	/* restore scmi interrupt enable status when disable it pass */
