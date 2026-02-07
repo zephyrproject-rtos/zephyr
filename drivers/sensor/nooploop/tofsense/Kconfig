@@ -1,0 +1,29 @@
+# Nooploop TOFSense Time of Flight sensor configuration options
+
+# Copyright (c) 2025 Alex Fabre
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig TOFSENSE
+	bool "Nooploop TOFSense ToF sensor"
+	default y
+	depends on DT_HAS_NOOPLOOP_TOFSENSE_ENABLED
+	help
+	  Enable UART/CAN-based driver for the Nooploop TOFSense,
+	  time of flight sensor.
+
+if TOFSENSE
+
+config TOFSENSE_BUS_UART
+	bool "UART TOFSense driver"
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_NOOPLOOP_TOFSENSE),uart)
+	depends on UART_INTERRUPT_DRIVEN
+	select UART
+
+config TOFSENSE_BUS_CAN
+	bool "CAN TOFSense driver"
+	default y
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NOOPLOOP_TOFSENSE),can-bus)
+	select CAN
+
+endif # TOFSENSE
