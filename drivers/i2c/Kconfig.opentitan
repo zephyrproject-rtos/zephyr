@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Rivos Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_OPENTITAN
+	bool "OpenTitan I2C driver"
+	default y
+	depends on DT_HAS_LOWRISC_OPENTITAN_I2C_ENABLED
+	help
+	  Enable I2C support on OpenTitan

@@ -1,0 +1,16 @@
+# Copyright (c) 2025 Rivos Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: OpenTitan I2C controller
+
+compatible: "lowrisc,opentitan-i2c"
+
+include: i2c-controller.yaml
+
+properties:
+  reg:
+    description: Base address and size of the I2C registers.
+    required: true
+  clocks:
+    description: Input clock for the I2C controller.
+    required: true
