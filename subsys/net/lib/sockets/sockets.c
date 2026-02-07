@@ -1152,3 +1152,24 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *message, int flags,
 
 	return 0;
 }
+
+#if !defined(CONFIG_POSIX_NETWORKING)
+/*
+ * this is defined here, weakly, since mbedtls assumes it is available based on the presence of
+ * the <arpa/inet.h> header.
+ *
+ * ```
+ * $HOME/zephyrproject/modules/crypto/mbedtls/library/x509_crt.c:2872: undefined reference to
+ * `inet_pton'
+ *
+ * #if __has_include(<arpa/inet.h>)
+ * #include <arpa/inet.h>
+ * #endif
+ * ```
+ */
+
+__weak int inet_pton(int af, const char *ZRESTRICT src, void *ZRESTRICT dst)
+{
+	return zsock_inet_pton(af, src, dst);
+}
+#endif

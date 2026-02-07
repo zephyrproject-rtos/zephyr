@@ -4,15 +4,19 @@ set(POSIX_VERSION 200809L)
 set(XOPEN_VERSION 700)
 set(GEN_DIR ${ZEPHYR_BINARY_DIR}/include/generated)
 
-zephyr_compile_definitions(-D_POSIX_C_SOURCE=${POSIX_VERSION})
+if(CONFIG_POSIX_SYSTEM_INTERFACES)
+  zephyr_compile_definitions(-D_POSIX_C_SOURCE=${POSIX_VERSION})
+  zephyr_compile_options("SHELL: $<$<COMPILE_LANGUAGE:C>:$<TARGET_PROPERTY:compiler,imacros> ${ZEPHYR_BASE}/include/zephyr/posix/posix_features.h>")
+  zephyr_compile_options("SHELL: $<$<COMPILE_LANGUAGE:CXX>:$<TARGET_PROPERTY:compiler,imacros> ${ZEPHYR_BASE}/include/zephyr/posix/posix_features.h>")
+endif()
+if(CONFIG_XSI)
+  zephyr_compile_definitions(-D_XOPEN_SOURCE=${XOPEN_VERSION})
+endif()
+
 
 zephyr_syscall_header_ifdef(CONFIG_POSIX_CLOCK_SELECTION posix_clock.h)
 zephyr_syscall_header_ifdef(CONFIG_POSIX_TIMERS posix_clock.h)
 zephyr_syscall_header_ifdef(CONFIG_XSI_SINGLE_PROCESS posix_clock.h)
-
-if(CONFIG_POSIX_SYSTEM_INTERFACES)
-  zephyr_include_directories(${ZEPHYR_BASE}/include/zephyr/posix)
-endif()
 
 if(NOT CONFIG_TC_PROVIDES_POSIX_SIGNALS)
   if(CONFIG_POSIX_SIGNALS)
@@ -43,9 +47,6 @@ endif()
 if(NOT CONFIG_TC_PROVIDES_POSIX_CLOCK_SELECTION)
   zephyr_library_sources_ifdef(CONFIG_POSIX_CLOCK_SELECTION clock_selection.c)
 endif()
-if(CONFIG_POSIX_CLOCK_SELECTION)
-  zephyr_compile_definitions(-D_POSIX_CLOCK_SELECTION=${POSIX_VERSION})
-endif()
 
 if(NOT CONFIG_TC_PROVIDES_POSIX_DEVICE_IO)
   zephyr_library_sources_ifdef(CONFIG_POSIX_DEVICE_IO
@@ -68,9 +69,6 @@ endif()
 if(NOT CONFIG_TC_PROVIDES_POSIX_FILE_SYSTEM_R)
   zephyr_library_sources_ifdef(CONFIG_POSIX_FILE_SYSTEM_R file_system_r.c)
 endif()
-if(CONFIG_POSIX_FILE_SYSTEM_R)
-  zephyr_compile_definitions(-D_POSIX_THREAD_SAFE_FUNCTIONS=${POSIX_VERSION})
-endif()
 
 if(NOT CONFIG_TC_PROVIDES_POSIX_MEMORY_PROTECTION)
 zephyr_library_sources_ifdef(CONFIG_POSIX_MEMORY_PROTECTION mprotect.c)
@@ -86,16 +84,9 @@ if(NOT CONFIG_TC_PROVIDES_POSIX_MULTI_PROCESS)
     multi_process.c
   )
 endif()
-if(CONFIG_POSIX_MULTI_PROCESS)
-  zephyr_compile_definitions(-D_POSIX_MULTI_PROCESS=${POSIX_VERSION})
-endif()
 
 if(NOT CONFIG_TC_PROVIDES_POSIX_NETWORKING)
   zephyr_library_sources_ifdef(CONFIG_POSIX_NETWORKING net.c)
-endif()
-
-if(CONFIG_POSIX_REALTIME_SIGNALS)
-  zephyr_compile_definitions(-D_POSIX_REALTIME_SIGNALS=${POSIX_VERSION})
 endif()
 
 if(NOT CONFIG_TC_PROVIDES_POSIX_SIGNALS)
@@ -123,15 +114,6 @@ if(NOT CONFIG_TC_PROVIDES_POSIX_TIMERS)
     timespec_to_timeout.c
   )
 endif()
-if(CONFIG_POSIX_TIMERS)
-  zephyr_compile_definitions(-D_POSIX_TIMERS=${POSIX_VERSION})
-  # FIXME: Until we have a Kconfig for XSI_ADVANCED_REALTIME, define _POSIX_CPUTIME and
-  # _POSIX_MONOTONIC_CLOCK with _POSIX_TIMERS.
-  # For more information on the Advanced Realtime Option Group, please see
-  # https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap02.html
-  zephyr_compile_definitions(-D_POSIX_CPUTIME=${POSIX_VERSION})
-  zephyr_compile_definitions(-D_POSIX_MONOTONIC_CLOCK=${POSIX_VERSION})
-endif()
 
 if(NOT CONFIG_TC_PROVIDES_POSIX_RW_LOCKS)
   zephyr_library_sources_ifdef(CONFIG_POSIX_RW_LOCKS rwlock.c)
@@ -153,9 +135,6 @@ if(NOT CONFIG_TC_PROVIDES_POSIX_THREADS)
     pwd.c
   )
 endif()
-if(CONFIG_POSIX_THREADS)
-  zephyr_compile_definitions(-D_POSIX_THREADS=${POSIX_VERSION})
-endif()
 
 if(NOT CONFIG_TC_PROVIDES_XSI_REALTIME)
   zephyr_library_sources_ifdef(CONFIG_POSIX_FSYNC fsync.c)
@@ -176,9 +155,6 @@ endif()
 if(NOT CONFIG_TC_PROVIDES_XSI_STREAMS)
   zephyr_library_sources_ifdef(CONFIG_XSI_STREAMS stropts.c)
 endif()
-if(CONFIG_XSI_STREAMS)
-  zephyr_compile_definitions(-D_XOPEN_STREAMS=${XOPEN_VERSION})
-endif()
 
 if(NOT CONFIG_TC_PROVIDES_XSI_SYSTEM_LOGGING)
   zephyr_library_sources_ifdef(CONFIG_XSI_SYSTEM_LOGGING syslog.c)
@@ -190,5 +166,3 @@ zephyr_library_include_directories(
 )
 
 zephyr_library_property(ALLOW_EMPTY TRUE)
-
-zephyr_library_compile_options(-U_POSIX_C_SOURCE -D_POSIX_C_SOURCE=200809L)

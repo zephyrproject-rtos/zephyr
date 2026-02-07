@@ -9,8 +9,8 @@
 #include <time.h>
 
 #include <zephyr/kernel.h>
-#include <zephyr/posix/sys/time.h>
-#include <zephyr/posix/unistd.h>
+#include <sys/time.h>
+#include <unistd.h>
 #include <zephyr/sys/clock.h>
 
 int clock_gettime(clockid_t clock_id, struct timespec *ts)

@@ -11,6 +11,9 @@ menuconfig WIFI_SIMPLELINK
 	select ZVFS
 	select ZVFS_FDTABLE
 	select POSIX_SEMAPHORES
+	# TI's driver portability layer relies on POSIX for multi-threading and timers
+	select POSIX_BASE_DEFINITIONS
+	select POSIX_SYSTEM_INTERFACES
 
 if WIFI_SIMPLELINK
 

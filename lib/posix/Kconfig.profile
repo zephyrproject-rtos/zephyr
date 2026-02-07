@@ -2,12 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config POSIX_SYSTEM_INTERFACES
-	bool
-	select NATIVE_LIBC_INCOMPATIBLE
-	help
-	  Make POSIX headers available to the system without the "zephyr/posix" prefix.
-
 config POSIX_API
 	bool "POSIX APIs"
 	select POSIX_SYSTEM_INTERFACES
@@ -150,6 +144,7 @@ config POSIX_AEP_REALTIME_MINIMAL
 	select POSIX_DEVICE_IO
 	select POSIX_SIGNALS
 	select POSIX_SINGLE_PROCESS
+	select XSI
 	select XSI_THREADS_EXT
 	# Options
 	select POSIX_FSYNC
@@ -210,4 +205,4 @@ config POSIX_AEP_REALTIME_DEDICATED
 	  For more information, please see
 	  https://pubs.opengroup.org/onlinepubs/9699919799/xrat/V4_subprofiles.html
 
-endif # POSIX_SYSTEM_INTERFACE
+endif # POSIX_SYSTEM_INTERFACES

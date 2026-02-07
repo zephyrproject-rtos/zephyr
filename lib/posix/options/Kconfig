@@ -27,13 +27,6 @@ rsource "Kconfig.timer"
 # zephyr-keep-sorted-stop
 
 menu "X/Open system interfaces"
-
-# zephyr-keep-sorted-start
-rsource "Kconfig.xsi_realtime"
-rsource "Kconfig.xsi_single_process"
-rsource "Kconfig.xsi_streams"
-rsource "Kconfig.xsi_system_logging"
-rsource "Kconfig.xsi_threads_ext"
-# zephyr-keep-sorted-stop
+rsource "Kconfig.xsi"
 
 endmenu # "X/Open system interfaces"

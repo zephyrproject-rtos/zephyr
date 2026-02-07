@@ -10,9 +10,9 @@
 #include <errno.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/posix/fcntl.h>
-#include <zephyr/posix/pthread.h>
-#include <zephyr/posix/semaphore.h>
+#include <fcntl.h>
+#include <pthread.h>
+#include <semaphore.h>
 
 struct nsem_obj {
 	sys_snode_t snode;
