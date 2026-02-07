@@ -461,6 +461,33 @@ revision:
            ├── <board>.overlay
            └── <board>.defconfig
 
+Application-specific shield overlays
+************************************
+
+In addition to the shield overlays provided with the shield definition, applications
+can provide their own shield-specific devicetree overlays. These are automatically
+discovered when placed in the application's configuration directory under
+:file:`boards/shields/<SHIELD>.overlay`. If a :ref:`file suffix <application-file-suffixes>`
+is defined, overlays matching :file:`boards/shields/<SHIELD>_<FILE_SUFFIX>.overlay` will also
+be applied.
+
+For example, an application might need to adjust shield settings for a particular
+use case without modifying the shield definition itself:
+
+.. code-block:: none
+
+   <app>
+   ├── CMakeLists.txt
+   ├── prj.conf
+   ├── boards
+   │   └── shields
+   │       └── x_nucleo_iks01a1.overlay
+   └── src
+       └── main.c
+
+See :ref:`set-devicetree-overlays` for complete details on how devicetree overlays
+are discovered and applied.
+
 .. _gpio-nexus-node:
 
 GPIO nexus nodes
