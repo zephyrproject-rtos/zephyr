@@ -92,9 +92,6 @@ int main(void)
 	uart_callback_set(uart_dev, uart_callback, (void *)uart_dev);
 
 	while (1) {
-		/* Wait a while until the next burst transmission */
-		k_sleep(K_SECONDS(5));
-
 		/* Each loop, try to send a random number of packets */
 		num_tx = (sys_rand32_get() % LOOP_ITER_MAX_TX) + 1;
 		LOG_INF("Loop %d: Sending %d packets", loop_counter, num_tx);
@@ -131,5 +128,8 @@ int main(void)
 		LOG_INF("RX is now %s", rx_enabled ? "enabled" : "disabled");
 
 		loop_counter += 1;
+
+		/* Wait a while until the next burst transmission */
+		k_sleep(K_SECONDS(5));
 	}
 }
