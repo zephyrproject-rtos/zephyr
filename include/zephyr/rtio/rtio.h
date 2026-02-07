@@ -1274,6 +1274,43 @@ static inline struct rtio_cqe *rtio_cqe_consume_block(struct rtio *r)
 }
 
 /**
+ * @brief Wait for and consume a single completion queue event with timeout
+ *
+ * Similar to @ref rtio_cqe_consume_block but returns NULL if no cqe is received within
+ * the specified timeout.
+ *
+ * @param r RTIO context
+ * @param timeout time before aborting wait for cqe item
+ *
+ * @retval cqe A valid completion queue event consumed from the completion queue
+ */
+static inline struct rtio_cqe *rtio_cqe_consume_block_timeout(struct rtio *r, k_timeout_t timeout)
+{
+	struct mpsc_node *node;
+	struct rtio_cqe *cqe;
+	int ret;
+
+#ifdef CONFIG_RTIO_CONSUME_SEM
+	ret = k_sem_take(r->consume_sem, timeout);
+#else
+	return NULL;
+#endif
+	if (ret != 0) {
+		return NULL;
+	}
+
+	node = mpsc_pop(&r->cq);
+	while (node == NULL) {
+		Z_SPIN_DELAY(1);
+		node = mpsc_pop(&r->cq);
+	}
+	cqe = CONTAINER_OF(node, struct rtio_cqe, q);
+
+	return cqe;
+}
+
+
+/**
  * @brief Release consumed completion queue event
  *
  * @param r RTIO context
