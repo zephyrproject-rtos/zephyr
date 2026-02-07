@@ -148,3 +148,9 @@ uint8_t tester_unregister_pbp(void);
 
 uint8_t tester_init_sdp(void);
 uint8_t tester_unregister_sdp(void);
+
+uint8_t tester_init_hfp_hf(void);
+uint8_t tester_unregister_hfp_hf(void);
+
+uint8_t tester_init_hfp_ag(void);
+uint8_t tester_unregister_hfp_ag(void);
