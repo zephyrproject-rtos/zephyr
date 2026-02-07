@@ -37,14 +37,24 @@
 #error "No disk device defined, is your board supported?"
 #endif
 
+#if CONFIG_SRAM_SIZE >= 512
+/* Cap buffer size at 128 KiB */
+#define MAX_TOTAL_BUF_SIZE 128
+#elif CONFIG_SOC_POSIX
+/* Posix does not define SRAM size */
+#define MAX_TOTAL_BUF_SIZE 128
+#else
+/* Use half of all SRAM */
+#define MAX_TOTAL_BUF_SIZE (CONFIG_SRAM_SIZE / 2)
+#endif
+
+#define BUF_SIZE ((MAX_TOTAL_BUF_SIZE * 1024) / 2)
+
 #ifdef CONFIG_DISK_DRIVER_LOOPBACK
 #define DISK_NAME "loopback0"
 #else
 #define DISK_NAME DISK_NAME_PHYS
 #endif
-
-/* Assume the largest sector we will encounter is 512 bytes */
-#define SECTOR_SIZE 512
 
 /* Sector counts to read */
 #define SECTOR_COUNT1    8
@@ -60,7 +70,7 @@ static uint32_t disk_sector_count;
 static uint32_t disk_sector_size;
 
 /* + 4 to make sure the second buffer is dword-aligned for NVME */
-static uint8_t scratch_buf[2][SECTOR_COUNT_MAX * SECTOR_SIZE + 4];
+static uint8_t scratch_buf[2][BUF_SIZE + 4];
 
 #ifdef CONFIG_DISK_DRIVER_LOOPBACK
 #define BACKING_PATH "/" DISK_NAME_PHYS ":"
@@ -126,8 +136,9 @@ static void test_setup(void)
 	/* We could allocate memory once we know the sector size, but instead
 	 * just verify our assumed maximum size
 	 */
-	zassert_true(cmd_buf <= SECTOR_SIZE,
-		     "Test will fail, SECTOR_SIZE definition must be increased");
+	zassert_true(
+		(disk_sector_size * SECTOR_COUNT_MAX) <= BUF_SIZE,
+		"Test will fail, sector does not fit in buffer, buffer size must be increased");
 }
 
 /* Reads sectors, verifying overflow does not occur */
