@@ -16,6 +16,7 @@
 #include <zephyr/logging/log.h>
 #include <stdio.h>
 #include <zephyr/init.h>
+#include <zephyr/sys/__assert.h>
 
 LOG_MODULE_REGISTER(thread_analyzer, CONFIG_THREAD_ANALYZER_LOG_LEVEL);
 
@@ -122,8 +123,12 @@ static void thread_print_cb(struct thread_analyzer_info *info)
 }
 
 struct ta_cb_user_data {
-	thread_analyzer_cb cb;
+	union {
+		thread_analyzer_cb cb;
+		thread_analyzer_ud_cb ud_cb;
+	};
 	unsigned int cpu;
+	void *user_data;
 };
 
 #ifdef CONFIG_THREAD_ANALYZER_STACK_SAFETY
@@ -160,7 +165,6 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 #endif
 	size_t size = thread->stack_info.size;
 	struct ta_cb_user_data *ud = user_data;
-	thread_analyzer_cb cb = ud->cb;
 	struct thread_analyzer_info info;
 	char hexname[PTR_STR_MAXLEN + 1];
 	const char *name;
@@ -235,7 +239,11 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 
 	ARG_UNUSED(ret);
 
-	cb(&info);
+	if (ud->user_data) {
+		ud->ud_cb(&info, ud->user_data);
+	} else {
+		ud->cb(&info);
+	}
 
 #ifdef CONFIG_THREAD_ANALYZER_LONG_FRAME_PER_INTERVAL
 	k_thread_runtime_stats_longest_frame_reset(thread);
@@ -273,7 +281,11 @@ static void isr_stack(struct ta_cb_user_data *ta_ctx)
 			.stack_used = size - unused,
 		};
 
-		ta_ctx->cb(&isr_info);
+		if (ta_ctx->user_data) {
+			ta_ctx->ud_cb(&isr_info, ta_ctx->user_data);
+		} else {
+			ta_ctx->cb(&isr_info);
+		}
 	}
 }
 
@@ -320,6 +332,18 @@ void thread_analyzer_run(thread_analyzer_cb cb, unsigned int cpu)
 		.cpu = cpu,
 	};
 
+	thread_analyzer_internal(&ctx);
+}
+
+void thread_analyzer_ud_run(thread_analyzer_ud_cb cb, unsigned int cpu, void *user_data)
+{
+	struct ta_cb_user_data ctx = {
+		.ud_cb = cb,
+		.cpu = cpu,
+		.user_data = user_data,
+	};
+
+	__ASSERT_NO_MSG(user_data != NULL);
 	thread_analyzer_internal(&ctx);
 }
 
