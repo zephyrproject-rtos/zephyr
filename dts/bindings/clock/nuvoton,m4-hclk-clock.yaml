@@ -1,0 +1,74 @@
+# Copyright (c) 2026, Fiona Behrens
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton M4 HXT Clock
+
+compatible: "nuvoton,m4-hclk-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 0
+
+  clock-frequency:
+    type: int
+    description: output clock frequency (Hz)
+    required: true
+
+  clocks:
+    type: phandle-array
+    required: true
+
+  div:
+    type: int
+    description: |
+      HCLK Divider from HCLK Clock Source
+
+      Note: If the HCLK clock source is PLL the HCLK should not be equal to PLL/2, so in that case this should not be 2.
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15
+      - 16
+
+  pclk0-div:
+    type: int
+    required: true
+    description: |
+      Divider for PCLK0 from the HCLK
+
+      Note: PCLK must be less then 96MHz
+
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+
+  pclk1-div:
+    type: int
+    required: true
+    description: |
+      Divider for PCLK1 from the HCLK
+
+      Note: PCLK must be less then 96MHz
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
