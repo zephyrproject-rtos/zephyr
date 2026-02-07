@@ -153,6 +153,16 @@ struct usb_desc_header {
 	uint8_t bDescriptorType;
 } __packed;
 
+/** Header of an USB class-specific descriptor */
+struct usb_cs_desc_header {
+	/** Length of the descriptor in bytes */
+	uint8_t bLength;
+	/** Type of the descriptor */
+	uint8_t bDescriptorType;
+	/** Class-specific type of the descriptor */
+	uint8_t bDescriptorSubtype;
+} __packed;
+
 /** USB Standard Device Descriptor defined in spec. Table 9-8 */
 struct usb_device_descriptor {
 	uint8_t bLength;
