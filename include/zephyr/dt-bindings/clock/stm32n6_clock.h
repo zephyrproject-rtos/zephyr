@@ -61,6 +61,7 @@
 /* #define STM32_SRC_I2SCKIN	TBD */
 
 /** Bus clocks */
+#define STM32_CLOCK_BUS_MISC	0x248
 #define STM32_CLOCK_BUS_MEM	0x24C
 #define STM32_CLOCK_BUS_AHB1	0x250
 #define STM32_CLOCK_BUS_AHB2	0x254
@@ -77,7 +78,7 @@
 
 #define STM32_CLOCK_LP_BUS_SHIFT	0x40
 
-#define STM32_PERIPH_BUS_MIN	STM32_CLOCK_BUS_MEM
+#define STM32_PERIPH_BUS_MIN	STM32_CLOCK_BUS_MISC
 #define STM32_PERIPH_BUS_MAX	STM32_CLOCK_BUS_APB5
 
 /** @brief RCC_CCIPRx register offset (RM0486.pdf) */
@@ -122,6 +123,45 @@
 #define MCO1_PRE(val)		STM32_DT_CLOCK_SELECT((val), 7, 4, CCIPR5_REG)
 #define MCO2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 10, 8, CCIPR5_REG)
 #define MCO2_PRE(val)		STM32_DT_CLOCK_SELECT((val), 15, 12, CCIPR5_REG)
+
+/* MCO1 source */
+#define MCO1_SEL_HSI  0
+#define MCO1_SEL_LSE  1
+#define MCO1_SEL_MSI  2
+#define MCO1_SEL_LSI  3
+#define MCO1_SEL_HSE  4
+#define MCO1_SEL_IC5  5
+#define MCO1_SEL_IC10 6
+#define MCO1_SEL_SYSA 7
+
+/* MCO2 source */
+#define MCO2_SEL_HSI  0
+#define MCO2_SEL_LSE  1
+#define MCO2_SEL_MSI  2
+#define MCO2_SEL_LSI  3
+#define MCO2_SEL_HSE  4
+#define MCO2_SEL_IC15 5
+#define MCO2_SEL_IC20 6
+#define MCO2_SEL_SYSB 7
+
+/* MCO prescaler : division factor */
+#define MCO_PRE_DIV_1  0
+#define MCO_PRE_DIV_2  1
+#define MCO_PRE_DIV_3  2
+#define MCO_PRE_DIV_4  3
+#define MCO_PRE_DIV_5  4
+#define MCO_PRE_DIV_6  5
+#define MCO_PRE_DIV_7  6
+#define MCO_PRE_DIV_8  7
+#define MCO_PRE_DIV_9  8
+#define MCO_PRE_DIV_10 9
+#define MCO_PRE_DIV_11 10
+#define MCO_PRE_DIV_12 11
+#define MCO_PRE_DIV_13 12
+#define MCO_PRE_DIV_14 13
+#define MCO_PRE_DIV_15 14
+#define MCO_PRE_DIV_16 15
+
 #define MDF1SEL(val)		STM32_DT_CLOCK_SELECT((val), 18, 16, CCIPR5_REG)
 /** CCIPR6 devices */
 #define XSPI1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 1, 0, CCIPR6_REG)

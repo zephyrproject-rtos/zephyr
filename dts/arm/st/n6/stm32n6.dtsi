@@ -238,6 +238,26 @@
 		};
 	};
 
+	mcos {
+		mco1: mco1 {
+			#clock-cells = <2>;
+			compatible = "st,stm32-clock-mco";
+			clocks = <&rcc STM32_CLOCK(MISC, 1)>,
+				 <&rcc STM32_SRC_HSI MCO1_SEL(MCO1_SEL_HSI)>;
+			clock-names = "clken", "clksel";
+			status = "disabled";
+		};
+
+		mco2: mco2 {
+			#clock-cells = <2>;
+			compatible = "st,stm32-clock-mco";
+			clocks = <&rcc STM32_CLOCK(MISC, 2)>,
+				 <&rcc STM32_SRC_HSI MCO2_SEL(MCO2_SEL_HSI)>;
+			clock-names = "clken", "clksel";
+			status = "disabled";
+		};
+	};
+
 	soc {
 		rcc: rcc@56028000 {
 			compatible = "st,stm32n6-rcc";

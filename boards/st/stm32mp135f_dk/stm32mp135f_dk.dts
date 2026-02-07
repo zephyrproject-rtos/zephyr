@@ -273,7 +273,8 @@ csi_interface: &dcmipp {
  * enabled by a shield when camera pipeline is enabled
  */
 &mco1 {
-	clocks = <&rcc STM32_SRC_HSE MCO1_SEL(MCO1_SEL_HSE)>;
+	clocks = <&rcc MCO1CFGR_REG BIT(12)>, <&rcc STM32_SRC_HSE MCO1_SEL(MCO1_SEL_HSE)>;
+	clock-names = "clken", "clksel";
 	prescaler = <MCO1_PRE(MCO_PRE_DIV_1)>;
 	pinctrl-0 = <&rcc_mco_1_pd7>;
 	pinctrl-names = "default";

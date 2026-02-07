@@ -118,6 +118,7 @@
 	mcos {
 		mco1: mco1 {
 			compatible = "st,stm32-clock-mco";
+			clock-names = "clksel";
 			status = "disabled";
 		};
 	};
