@@ -44,3 +44,59 @@ tests:
     extra_configs:
       - CONFIG_LORAWAN_REGION_EU868=y
       - CONFIG_LORAWAN_REGION_US915=y
+  # lora-basics-modem backend tests (sx126x only)
+  sample.lorawan.class_a.lora-basics-modem.as923:
+    filter: CONFIG_LORA_SX126X
+    extra_configs:
+      - CONFIG_LORA_MODULE_BACKEND_LORA_BASICS_MODEM=y
+      - CONFIG_LORAWAN_LBM_ACK_DOWNLINK_CB=y
+      - CONFIG_LORAWAN_REGION_AS923=y
+  sample.lorawan.class_a.lora-basics-modem.au915:
+    filter: CONFIG_LORA_SX126X
+    extra_configs:
+      - CONFIG_LORA_MODULE_BACKEND_LORA_BASICS_MODEM=y
+      - CONFIG_LORAWAN_LBM_ACK_DOWNLINK_CB=y
+      - CONFIG_LORAWAN_REGION_AU915=y
+  sample.lorawan.class_a.lora-basics-modem.cn470:
+    filter: CONFIG_LORA_SX126X
+    extra_configs:
+      - CONFIG_LORA_MODULE_BACKEND_LORA_BASICS_MODEM=y
+      - CONFIG_LORAWAN_LBM_ACK_DOWNLINK_CB=y
+      - CONFIG_LORAWAN_REGION_CN470=y
+  sample.lorawan.class_a.lora-basics-modem.eu868:
+    filter: CONFIG_LORA_SX126X
+    extra_configs:
+      - CONFIG_LORA_MODULE_BACKEND_LORA_BASICS_MODEM=y
+      - CONFIG_LORAWAN_LBM_ACK_DOWNLINK_CB=y
+      - CONFIG_LORAWAN_REGION_EU868=y
+  sample.lorawan.class_a.lora-basics-modem.kr920:
+    filter: CONFIG_LORA_SX126X
+    extra_configs:
+      - CONFIG_LORA_MODULE_BACKEND_LORA_BASICS_MODEM=y
+      - CONFIG_LORAWAN_LBM_ACK_DOWNLINK_CB=y
+      - CONFIG_LORAWAN_REGION_KR920=y
+  sample.lorawan.class_a.lora-basics-modem.in865:
+    filter: CONFIG_LORA_SX126X
+    extra_configs:
+      - CONFIG_LORA_MODULE_BACKEND_LORA_BASICS_MODEM=y
+      - CONFIG_LORAWAN_LBM_ACK_DOWNLINK_CB=y
+      - CONFIG_LORAWAN_REGION_IN865=y
+  sample.lorawan.class_a.lora-basics-modem.us915:
+    filter: CONFIG_LORA_SX126X
+    extra_configs:
+      - CONFIG_LORA_MODULE_BACKEND_LORA_BASICS_MODEM=y
+      - CONFIG_LORAWAN_LBM_ACK_DOWNLINK_CB=y
+      - CONFIG_LORAWAN_REGION_US915=y
+  sample.lorawan.class_a.lora-basics-modem.ru864:
+    filter: CONFIG_LORA_SX126X
+    extra_configs:
+      - CONFIG_LORA_MODULE_BACKEND_LORA_BASICS_MODEM=y
+      - CONFIG_LORAWAN_LBM_ACK_DOWNLINK_CB=y
+      - CONFIG_LORAWAN_REGION_RU864=y
+  sample.lorawan.class_a.lora-basics-modem.multiregion:
+    filter: CONFIG_LORA_SX126X
+    extra_configs:
+      - CONFIG_LORA_MODULE_BACKEND_LORA_BASICS_MODEM=y
+      - CONFIG_LORAWAN_LBM_ACK_DOWNLINK_CB=y
+      - CONFIG_LORAWAN_REGION_EU868=y
+      - CONFIG_LORAWAN_REGION_US915=y

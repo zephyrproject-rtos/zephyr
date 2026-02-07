@@ -5,6 +5,7 @@
  */
 
 #include <stdarg.h>
+#include <stdio.h>
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/lora.h>
@@ -12,6 +13,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/random/random.h>
+#include <zephyr/sys/reboot.h>
 
 #include <lbm_common.h>
 #include <smtc_modem_hal.h>
@@ -20,7 +22,7 @@
 LOG_MODULE_REGISTER(smtc_modem_hal, CONFIG_LORA_LOG_LEVEL);
 
 #define HAL_WORKQ_STACK_SIZE 1024
-#define HAL_WORKQ_PRIORITY (-1)
+#define HAL_WORKQ_PRIORITY K_PRIO_COOP(CONFIG_LORA_BASICS_MODEM_HAL_WORKQ_PRIORITY)
 
 typedef void (*callback_t)(void *context);
 
@@ -50,6 +52,8 @@ static struct k_work_q hal_workq;
 
 static void hal_timer_callback(struct k_timer *timer);
 static K_TIMER_DEFINE(prv_timer, hal_timer_callback, NULL);
+
+static K_SEM_DEFINE(prv_lbm_event_sem, 0, 1);
 
 static void hal_irq_work_handler(struct k_work *work)
 {
@@ -93,8 +97,7 @@ void smtc_modem_hal_init(const struct device *transceiver)
 
 	prv_transceiver_dev = transceiver;
 
-	k_work_queue_start(&hal_workq, hal_workq_stack,
-			   K_THREAD_STACK_SIZEOF(hal_workq_stack),
+	k_work_queue_start(&hal_workq, hal_workq_stack, K_THREAD_STACK_SIZEOF(hal_workq_stack),
 			   HAL_WORKQ_PRIORITY, NULL);
 	k_thread_name_set(&hal_workq.thread, "lbm_hal_workq");
 
@@ -326,13 +329,10 @@ void smtc_modem_hal_set_ant_switch(bool is_tx_on)
  *         return false. This function is used to check if the radio is used
  *         by an external stack.
  *
- * @remark Not implemented yet.
- *
  * @return false Radio is free (default)
  */
 bool smtc_modem_external_stack_currently_use_radio(void)
 {
-	/* Not implemented yet */
 	return false;
 }
 
@@ -342,12 +342,10 @@ bool smtc_modem_external_stack_currently_use_radio(void)
 
 /**
  * @brief Resets the MCU.
- *
- * @remark Not implemented yet.
  */
 void smtc_modem_hal_reset_mcu(void)
 {
-	/* Not implemented yet */
+	sys_reboot(SYS_REBOOT_COLD);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -390,7 +388,7 @@ void smtc_modem_hal_set_offset_to_test_wrapping(const uint32_t offset_to_test_wr
  *
  * @remark This function is used to restore Modem data from a non volatile memory.
  *
- * @remark Not implemented yet.
+ * @remark NVM storage not implemented - returns zeros.
  *
  * @param [in]  ctx_type Type of modem context that need to be restored
  * @param [in]  offset   Memory offset after ctx_type address
@@ -400,7 +398,10 @@ void smtc_modem_hal_set_offset_to_test_wrapping(const uint32_t offset_to_test_wr
 void smtc_modem_hal_context_restore(const modem_context_type_t ctx_type, uint32_t offset,
 				    uint8_t *buffer, const uint32_t size)
 {
-	/* Not implemented yet */
+	ARG_UNUSED(ctx_type);
+	ARG_UNUSED(offset);
+
+	memset(buffer, 0, size);
 }
 
 /**
@@ -408,7 +409,7 @@ void smtc_modem_hal_context_restore(const modem_context_type_t ctx_type, uint32_
  *
  * @remark This function is used to store Modem data in a non volatile memory.
  *
- * @remark Not implemented yet.
+ * @remark NVM storage not implemented - no-op.
  *
  * @param [in] ctx_type Type of modem context that need to be saved
  * @param [in] offset   Memory offset after ctx_type address
@@ -418,7 +419,10 @@ void smtc_modem_hal_context_restore(const modem_context_type_t ctx_type, uint32_
 void smtc_modem_hal_context_store(const modem_context_type_t ctx_type, uint32_t offset,
 				  const uint8_t *buffer, const uint32_t size)
 {
-	/* Not implemented yet */
+	ARG_UNUSED(ctx_type);
+	ARG_UNUSED(offset);
+	ARG_UNUSED(buffer);
+	ARG_UNUSED(size);
 }
 
 /**
@@ -426,16 +430,19 @@ void smtc_modem_hal_context_store(const modem_context_type_t ctx_type, uint32_t 
  *
  * @remark This function is only used with CONTEXT_STORE_AND_FORWARD.
  *
- * @remark Not implemented yet.
+ * @remark Not implemented - Store-and-Forward service not supported.
  *
  * @param [in] ctx_type Type of modem context that need to be erased
  * @param [in] offset   Memory offset after ctx_type address
  * @param [in] nb_page  Number of pages to erase
  */
-void smtc_modem_hal_context_flash_pages_erase(const modem_context_type_t ctx_type,
-					      uint32_t offset, uint8_t nb_page)
+void smtc_modem_hal_context_flash_pages_erase(const modem_context_type_t ctx_type, uint32_t offset,
+					      uint8_t nb_page)
 {
-	/* Not implemented yet */
+	/* Store-and-Forward not supported */
+	ARG_UNUSED(ctx_type);
+	ARG_UNUSED(offset);
+	ARG_UNUSED(nb_page);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -455,8 +462,21 @@ void smtc_modem_hal_context_flash_pages_erase(const modem_context_type_t ctx_typ
  */
 void smtc_modem_hal_on_panic(uint8_t *func, uint32_t line, const char *fmt, ...)
 {
-	LOG_ERR("LBM panic: %s:%u", func, line);
-	k_panic();
+#ifdef CONFIG_LOG
+	char out_buff[255] = {0};
+	int out_len;
+	va_list args;
+
+	out_len = snprintf(out_buff, sizeof(out_buff), "%s:%u ", func, line);
+
+	va_start(args, fmt);
+	vsnprintf(&out_buff[out_len], sizeof(out_buff) - out_len, fmt, args);
+	va_end(args);
+
+	LOG_ERR("LBM Panic: %s", out_buff);
+#endif
+
+	smtc_modem_hal_reset_mcu();
 }
 
 /* -------------------------------------------------------------------------- */
@@ -471,27 +491,21 @@ void smtc_modem_hal_on_panic(uint8_t *func, uint32_t line, const char *fmt, ...)
  *         1..254: Battery level, where 1 is the minimum and 254 is the maximum.
  *         255: The end-device was not able to measure the battery level.
  *
- * @remark Not implemented yet.
- *
  * @return Battery level for LoRaWAN stack (255 = not able to measure)
  */
 uint8_t smtc_modem_hal_get_battery_level(void)
 {
-	/* Not implemented yet */
 	return 255;
 }
 
 /**
  * @brief Return board wake up delay in milliseconds.
  *
- * @remark Not implemented yet.
- *
  * @return Board wake up delay in ms (0 = no delay)
  */
 int8_t smtc_modem_hal_get_board_delay_ms(void)
 {
-	/* Not implemented yet */
-	return 0;
+	return 1;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -501,14 +515,21 @@ int8_t smtc_modem_hal_get_board_delay_ms(void)
 /**
  * @brief Prints debug trace.
  *
- * @remark Not implemented yet.
- *
  * @param [in] fmt  String format
  * @param [in] ...  String arguments
  */
 void smtc_modem_hal_print_trace(const char *fmt, ...)
 {
-	/* Not implemented yet */
+#ifdef CONFIG_LOG
+	char text[256];
+	va_list args;
+
+	va_start(args, fmt);
+	vsnprintf(text, sizeof(text), fmt, args);
+	va_end(args);
+
+	LOG_INF("%s", text);
+#endif
 }
 
 /* -------------------------------------------------------------------------- */
@@ -729,10 +750,18 @@ uint16_t smtc_modem_hal_flash_get_page_size(void)
  *
  * @remark It could be convenient in the case of an RTOS implementation to
  *         notify the thread that manages the LBM stack.
- *
- * @remark Not implemented yet.
  */
 void smtc_modem_hal_user_lbm_irq(void)
 {
-	/* Not implemented yet */
+	k_sem_give(&prv_lbm_event_sem);
+}
+
+/**
+ * @brief Sleep for a given time, but can be woken up by an LBM IRQ.
+ *
+ * @param[in] timeout Maximum time to sleep.
+ */
+void smtc_modem_hal_interruptible_msleep(k_timeout_t timeout)
+{
+	k_sem_take(&prv_lbm_event_sem, timeout);
 }

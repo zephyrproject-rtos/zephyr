@@ -20,18 +20,25 @@ Zephyr provides APIs for LoRa to send raw data packets directly over the
 wireless interface as well as APIs for LoRaWAN to connect the end device
 to the internet through a gateway.
 
-The Zephyr implementation is based on Semtech's `LoRaMac-node library`_, which
-is included as a Zephyr module.
+Zephyr supports two LoRaWAN stack implementations:
+
+* **LoRaMac-node** (default): Semtech's `LoRaMac-node library`_, included as a
+  Zephyr module. This backend supports all LoRa radio chipsets.
+
+* **LoRa Basics Modem**: Semtech's newer `LoRa Basics Modem`_ library. This
+  backend currently supports sx126x radio chipsets (SX1261, SX1262, SX1268,
+  LLCC68) only.
+
+The backend can be selected using Kconfig:
+
+* :kconfig:option:`CONFIG_LORA_MODULE_BACKEND_LORAMAC_NODE` - LoRaMac-node (default)
+* :kconfig:option:`CONFIG_LORA_MODULE_BACKEND_LORA_BASICS_MODEM` - LoRa Basics Modem
 
 .. note::
 
         ``LoRaMac-node`` has been deprecated by Semtech in favor of
-        `LoRa Basics Modem`_. Porting the Zephyr API's to use
-        ``LoRa Basics Modem`` as the backend is in progress.
-
-        Currently, only the base LoRa API is supported for the SX1261, SX1262,
-        SX1272 and SX1276 chipsets through
-        :kconfig:option:`CONFIG_LORA_MODULE_BACKEND_LORA_BASICS_MODEM`.
+        ``LoRa Basics Modem``. New applications targeting sx126x radios should
+        consider using the LoRa Basics Modem backend.
 
 
 The LoRaWAN specification is published by the `LoRa Alliance`_.
@@ -67,6 +74,10 @@ Related configuration options can be found under
 
 * :kconfig:option:`CONFIG_LORAWAN`
 
+* :kconfig:option:`CONFIG_LORA_MODULE_BACKEND_LORAMAC_NODE`
+
+* :kconfig:option:`CONFIG_LORA_MODULE_BACKEND_LORA_BASICS_MODEM`
+
 * :kconfig:option:`CONFIG_LORAWAN_SYSTEM_MAX_RX_ERROR`
 
 * :kconfig:option:`CONFIG_LORAWAN_REGION_AS923`
@@ -75,9 +86,9 @@ Related configuration options can be found under
 
 * :kconfig:option:`CONFIG_LORAWAN_REGION_CN470`
 
-* :kconfig:option:`CONFIG_LORAWAN_REGION_CN779`
+* :kconfig:option:`CONFIG_LORAWAN_REGION_CN779` (LoRaMac-node only)
 
-* :kconfig:option:`CONFIG_LORAWAN_REGION_EU433`
+* :kconfig:option:`CONFIG_LORAWAN_REGION_EU433` (LoRaMac-node only)
 
 * :kconfig:option:`CONFIG_LORAWAN_REGION_EU868`
 

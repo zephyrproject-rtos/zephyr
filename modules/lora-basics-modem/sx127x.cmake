@@ -12,11 +12,8 @@ if(CONFIG_DT_HAS_SEMTECH_SX1276_ENABLED OR CONFIG_DT_HAS_SEMTECH_SX1278_ENABLED)
   zephyr_library_compile_definitions(SX1276)
 endif()
 
-# Allow modem options
-set(ALLOW_CSMA_BUILD true)
-
 set(LBM_SX127X_LIB_DIR ${LBM_LIB_RADIO_DRIVERS_DIR}/sx127x_driver/src)
-zephyr_include_directories(${LBM_SX127X_LIB_DIR})
+zephyr_library_include_directories(${LBM_SX127X_LIB_DIR})
 
 #-----------------------------------------------------------------------------
 # Radio specific sources
