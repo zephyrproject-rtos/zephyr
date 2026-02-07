@@ -904,6 +904,17 @@ static void cap_commander_proc_complete(void)
 				 * acceptors. We can now stop and delete the broadcast source before
 				 * starting the unicast audio
 				 */
+
+				/* Clear commander parameters. Normally this is done just before the
+				 * application callbacks with bt_cap_common_clear_active_proc, but
+				 * since that is not happening here, we clear them manually. They
+				 * need to be cleared as the call to the CAP APIs does not clear old
+				 * data, and we need to reset everything before calling
+				 * cap_initiator_unicast_audio_start
+				 */
+				memset(active_proc->proc_param.commander, 0,
+				       sizeof(active_proc->proc_param.commander));
+
 				err = bt_cap_handover_broadcast_reception_stopped();
 				if (err != 0) {
 					bt_cap_handover_complete();

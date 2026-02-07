@@ -1242,6 +1242,16 @@ static void cap_initiator_unicast_audio_proc_complete(void)
 	proc_type = active_proc->proc_type;
 
 	if (IS_ENABLED(CONFIG_BT_CAP_HANDOVER) && bt_cap_common_handover_is_active()) {
+		/* Clear initiator parameters. Normally this is done just before the
+		 * application callbacks with bt_cap_common_clear_active_proc, but
+		 * since that is not happening here, we clear them manually. They
+		 * need to be cleared as the call to the CAP APIs does not clear old
+		 * data, and we need to reset everything before calling
+		 * cap_initiator_unicast_audio_start
+		 */
+		memset(active_proc->proc_param.initiator, 0,
+		       sizeof(active_proc->proc_param.initiator));
+
 		bt_cap_handover_unicast_proc_complete();
 		return;
 	}
