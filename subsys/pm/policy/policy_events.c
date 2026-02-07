@@ -18,7 +18,7 @@ static struct k_spinlock events_lock;
 /** List of events. */
 static sys_slist_t events_list;
 /** Pointer to Next Event. */
-struct pm_policy_event *next_event;
+static struct pm_policy_event *next_event;
 
 static void update_next_event(void)
 {
