@@ -43,6 +43,7 @@ struct udc_dwc2_config {
 	struct udc_ep_config *ep_cfg_in;
 	struct udc_ep_config *ep_cfg_out;
 	struct usb_dwc2_reg *const base;
+	const uint16_t *const fifo_sizes;
 	/* Pointer to pin control configuration or NULL */
 	struct pinctrl_dev_config *const pcfg;
 	/* Pointer to vendor quirks or NULL */
