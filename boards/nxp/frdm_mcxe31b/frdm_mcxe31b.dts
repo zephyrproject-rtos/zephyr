@@ -29,8 +29,8 @@
 		zephyr,sram = &sram;
 		zephyr,itcm = &itcm;
 		zephyr,dtcm = &dtcm;
-		zephyr,flash = &program_flash;
-		zephyr,flash-controller = &flash;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &code_partition;
 		zephyr,console = &lpuart_5;
 		zephyr,edac = &erm0;
 		zephyr,shell-uart = &lpuart_5;
@@ -93,6 +93,24 @@
 			   <ARDUINO_HEADER_R3_D13 0 &gpioe_l 1 0>,
 			   <ARDUINO_HEADER_R3_D14 0 &gpioc_l 6 0>,
 			   <ARDUINO_HEADER_R3_D15 0 &gpioc_l 7 0>;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		ivt_header: partition@0 {
+			label = "ivt-header";
+			reg = <0x00000000 0x100>;
+		};
+
+		code_partition: partition@100 {
+			label = "code-partition";
+			reg = <0x00000100 (DT_SIZE_K(3920) - 0x100)>;
+		};
 	};
 };
 
