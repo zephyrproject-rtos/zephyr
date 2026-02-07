@@ -121,6 +121,7 @@
 &flexspi {
 	status = "okay";
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
+	reg-names = "reg_base", "ahb";
 
 	/* Winbond external flash */
 	w25q64jvssiq: w25q64jvssiq@0 {

@@ -99,6 +99,7 @@ arduino_serial: &lpuart2 {
 &flexspi {
 	status = "okay";
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
+	reg-names = "reg_base", "ahb";
 
 	is25lp064: is25lp064@0 {
 		compatible = "nxp,imx-flexspi-nor";

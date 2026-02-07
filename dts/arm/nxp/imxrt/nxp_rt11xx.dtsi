@@ -78,6 +78,7 @@
 		flexspi: spi@400cc000 {
 			compatible = "nxp,imx-flexspi";
 			reg = <0x400cc000 0x4000>;
+			reg-names = "reg_base";
 			interrupts = <130 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -88,6 +89,7 @@
 		flexspi2: spi@400d0000 {
 			compatible = "nxp,imx-flexspi";
 			reg = <0x400d0000 0x4000>;
+			reg-names = "reg_base";
 			interrupts = <131 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;

@@ -95,6 +95,7 @@ arduino_serial: &lpuart1 {};
 &flexspi {
 	status = "okay";
 	reg = <0x400a0000 0x4000>, <0x60000000 DT_SIZE_M(16)>;
+	reg-names = "reg_base", "ahb";
 
 	at25sf128a: at25sf128a@0 {
 		compatible = "nxp,imx-flexspi-nor";
