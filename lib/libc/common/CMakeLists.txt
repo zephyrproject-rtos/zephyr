@@ -19,6 +19,17 @@ zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_THRD
     source/thrd/thrd.c
     source/thrd/tss.c
     )
+zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_FILEOPS source/stdio/fileptr_to_fd.c)
+zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_FOPEN source/stdio/fopen.c)
+zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_FCLOSE source/stdio/fclose.c)
+zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_FEOF source/stdio/feof.c)
+zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_FERROR source/stdio/ferror.c)
+zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_FSEEK source/stdio/fseek.c)
+zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_FPUTC source/stdio/fputc.c)
+zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_FREAD source/stdio/fread.c)
+zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_FTELL source/stdio/ftell.c)
+zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_FWRITE source/stdio/fwrite.c)
+zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_RENAME source/stdio/rename.c)
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_REMOVE source/stdio/remove.c)
 
 # Prevent compiler from optimizing calloc into an infinite recursive call

@@ -58,8 +58,91 @@ int puts(const char *s);
 
 int fputc(int c, FILE *stream);
 int fputs(const char *ZRESTRICT s, FILE *ZRESTRICT stream);
-size_t fwrite(const void *ZRESTRICT ptr, size_t size, size_t nitems,
-	      FILE *ZRESTRICT stream);
+/**
+ * @brief Open file with given name and mode.
+ *
+ * @param filename Name of file
+ * @param mode String declaring more details, as defined in the C standard
+ *
+ * @return FILE* pointer to be used with other C functions on success,
+ * NULL with errno set on failure
+ */
+FILE *fopen(const char *ZRESTRICT filename, const char *ZRESTRICT mode);
+/**
+ * @brief Close stream.
+ *
+ * @param stream Pointer to stream to close; invalid after this function returns
+ *
+ * @return 0 on success; EOF with errno set on failure
+ */
+int fclose(FILE *stream);
+/**
+ * @brief Test if stream has reached end-of-file.
+ *
+ * @param stream Stream to check
+ *
+ * @return 1 if file position indicator is at end of file; EOF with errno set otherwise
+ */
+int feof(FILE *stream);
+/**
+ * @brief Check error indicator for stream. Currently unimplemented.
+ *
+ * @param stream Stream to check
+ *
+ * @return Zero
+ */
+int ferror(FILE *stream);
+int fputc(int c, FILE *stream);
+/**
+ * @brief Read data from stream.
+ *
+ * @param ptr Destination buffer for elements read
+ * @param size Size of each element
+ * @param nmemb Total number of elements
+ * @param stream Source stream
+ *
+ * @return Number of elements successfully read; EOF with errno set otherwise
+ */
+size_t fread(void *ZRESTRICT ptr, size_t size, size_t nmemb, FILE *ZRESTRICT stream);
+/**
+ * @brief Write data to stream.
+ *
+ * @param ptr Array of elements to write
+ * @param size Size of each element in the array
+ * @param nmemb Number of elements in the array
+ * @param stream Output stream
+ *
+ * @return Number of elements successfully written
+ */
+size_t fwrite(const void *ZRESTRICT ptr, size_t size, size_t nmemb, FILE *ZRESTRICT stream);
+/**
+ * @brief Place file position indicator.
+ *
+ * @param stream Stream to work on
+ * @param offset Offset from position specified by @a whence
+ * @param whence Reference for @a offset : SEEK_SET (beginning), SEEK_CUR (current position)
+ * or SEEK_END (end)
+ *
+ * @return 0 on success; EOF with errno set on failure
+ */
+int fseek(FILE *stream, long offset, int whence);
+/**
+ * @brief Get current value of file position indicator.
+ *
+ * @param stream Stream to check
+ *
+ * @return Current value of file position indicator on success; -1 with errno set otherwise
+ */
+long ftell(FILE *stream);
+/**
+ * @brief Change name of file or directory.
+ *
+ * @param old Prior name
+ * @param newp New name
+ *
+ * @return 0 on success; -1 with errno set on failure
+ */
+int rename(const char *old, const char *newp);
 int remove(const char *path);
 #define putc(c, stream) fputc(c, stream)
 #define putchar(c) putc(c, stdout)

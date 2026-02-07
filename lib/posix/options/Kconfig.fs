@@ -8,6 +8,7 @@ menuconfig POSIX_FILE_SYSTEM
 	select FILE_SYSTEM
 	select ZVFS
 	select ZVFS_FDTABLE
+	select COMMON_LIBC_RENAME # exact same function shared with libc
 	help
 	  This enables POSIX style file system related APIs.
 

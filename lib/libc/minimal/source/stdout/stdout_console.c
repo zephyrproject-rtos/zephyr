@@ -38,11 +38,6 @@ static inline int z_vrfy_zephyr_fputc(int c, FILE *stream)
 #include <zephyr/syscalls/zephyr_fputc_mrsh.c>
 #endif
 
-int fputc(int c, FILE *stream)
-{
-	return zephyr_fputc(c, stream);
-}
-
 int fputs(const char *ZRESTRICT s, FILE *ZRESTRICT stream)
 {
 	int len = strlen(s);
@@ -56,13 +51,13 @@ int fputs(const char *ZRESTRICT s, FILE *ZRESTRICT stream)
 #undef putc
 int putc(int c, FILE *stream)
 {
-	return zephyr_fputc(c, stream);
+	return fputc(c, stream);
 }
 
 #undef putchar
 int putchar(int c)
 {
-	return zephyr_fputc(c, stdout);
+	return fputc(c, stdout);
 }
 
 size_t z_impl_zephyr_fwrite(const void *ZRESTRICT ptr, size_t size,
@@ -107,12 +102,27 @@ static inline size_t z_vrfy_zephyr_fwrite(const void *ZRESTRICT ptr,
 #include <zephyr/syscalls/zephyr_fwrite_mrsh.c>
 #endif
 
-size_t fwrite(const void *ZRESTRICT ptr, size_t size, size_t nitems,
-			  FILE *ZRESTRICT stream)
+int z_impl_zephyr_write_stdout(const void *buffer, int nbytes)
 {
-	return zephyr_fwrite(ptr, size, nitems, stream);
+	const char *buf = buffer;
+
+	for (int i = 0; i < nbytes; i++) {
+		if (*(buf + i) == '\n') {
+			_stdout_hook('\r');
+		}
+		_stdout_hook(*(buf + i));
+	}
+	return nbytes;
 }
 
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_zephyr_write_stdout(const void *buf, int nbytes)
+{
+	K_OOPS(K_SYSCALL_MEMORY_READ(buf, nbytes));
+	return z_impl_zephyr_write_stdout((const void *)buf, nbytes);
+}
+#include <zephyr/syscalls/zephyr_write_stdout_mrsh.c>
+#endif
 
 int puts(const char *s)
 {

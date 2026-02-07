@@ -1,0 +1,34 @@
+common:
+  tags:
+    - posix
+    - device_io
+  platform_key:
+    - arch
+    - simulation
+  min_ram: 32
+tests:
+  portability.posix.device_io: {}
+  portability.posix.device_io.tty_stdio:
+    filter: CONFIG_UART_CONSOLE
+    extra_configs:
+      - CONFIG_CONSOLE_SUBSYS=y
+  portability.posix.device_io.armclang_std_libc:
+    toolchain_allow: armclang
+    extra_configs:
+      - CONFIG_ARMCLANG_STD_LIBC=y
+  portability.posix.device_io.arcmwdtlib:
+    toolchain_allow: arcmwdt
+    extra_configs:
+      - CONFIG_ARCMWDT_LIBC=y
+  portability.posix.device_io.minimal:
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+  portability.posix.device_io.newlib:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+  portability.posix.device_io.picolibc:
+    tags: picolibc
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    extra_configs:
+      - CONFIG_PICOLIBC=y

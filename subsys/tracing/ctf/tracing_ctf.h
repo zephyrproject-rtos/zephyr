@@ -695,8 +695,9 @@ void sys_trace_k_event_wait_exit(struct k_event *event, uint32_t events, int ret
 #define sys_port_trace_socket_socketpair_exit(sockA, sockB, ret)                                   \
 	sys_trace_socket_socketpair_exit(sockA, sockB, ret)
 
-#include <zephyr/net/net_ip.h>
-#include <zephyr/sys/fdtable.h>
+struct net_sockaddr;
+struct net_msghdr;
+struct zvfs_pollfd;
 
 void sys_trace_socket_init(int sock, int family, int type, int proto);
 void sys_trace_socket_close_enter(int sock);

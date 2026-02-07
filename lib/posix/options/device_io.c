@@ -12,10 +12,7 @@
 #include <zephyr/posix/poll.h>
 #include <zephyr/posix/unistd.h>
 #include <zephyr/posix/sys/select.h>
-
-/* prototypes for external, not-yet-public, functions in fdtable.c or fs.c */
-FILE *zvfs_fdopen(int fd, const char *mode);
-int zvfs_fileno(FILE *file);
+#include <zephyr/sys/zvfs_fd_file.h>
 
 static struct fd_op_vtable posix_op_vtable = {
 	.read = zvfs_read_vmeth,
@@ -59,7 +56,19 @@ FILE *fdopen(int fd, const char *mode)
 
 int fileno(FILE *file)
 {
-	return zvfs_fileno(file);
+	int fd = -1;
+
+	if (file == stdin) {
+		fd = 0;
+	} else if (file == stdout) {
+		fd = 1;
+	} else if (file == stderr) {
+		fd = 2;
+	} else {
+		fd = zvfs_fileno(file);
+	}
+
+	return fd;
 }
 
 static int posix_mode_to_zephyr(int mf)
@@ -128,7 +137,7 @@ int pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
 	return zvfs_select(nfds, readfds, writefds, exceptfds, timeout, sigmask);
 }
 
-ssize_t pwrite(int fd, void *buf, size_t count, off_t offset)
+ssize_t pwrite(int fd, const void *buf, size_t count, off_t offset)
 {
 	size_t off = (size_t)offset;
 
