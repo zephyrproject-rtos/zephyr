@@ -8,6 +8,7 @@
  */
 
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
@@ -21,32 +22,18 @@
 
 /* Macros to fill up prescaler values */
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
-#define z_hsi_divider(v) LL_RCC_HSI_DIV_ ## v
+#define hsi_divider(v) CONCAT(LL_RCC_HSI_DIV_, v)
 #else
-#define z_hsi_divider(v) LL_RCC_HSI_DIV ## v
+#define hsi_divider(v) CONCAT(LL_RCC_HSI_DIV, v)
 #endif
-#define hsi_divider(v) z_hsi_divider(v)
 
-#define z_sysclk_prescaler(v) LL_RCC_SYSCLK_DIV_ ## v
-#define sysclk_prescaler(v) z_sysclk_prescaler(v)
-
-#define z_ahb_prescaler(v) LL_RCC_AHB_DIV_ ## v
-#define ahb_prescaler(v) z_ahb_prescaler(v)
-
-#define z_apb1_prescaler(v) LL_RCC_APB1_DIV_ ## v
-#define apb1_prescaler(v) z_apb1_prescaler(v)
-
-#define z_apb2_prescaler(v) LL_RCC_APB2_DIV_ ## v
-#define apb2_prescaler(v) z_apb2_prescaler(v)
-
-#define z_apb3_prescaler(v) LL_RCC_APB3_DIV_ ## v
-#define apb3_prescaler(v) z_apb3_prescaler(v)
-
-#define z_apb4_prescaler(v) LL_RCC_APB4_DIV_ ## v
-#define apb4_prescaler(v) z_apb4_prescaler(v)
-
-#define z_apb5_prescaler(v) LL_RCC_APB5_DIV_ ## v
-#define apb5_prescaler(v) z_apb5_prescaler(v)
+#define sysclk_prescaler(v) CONCAT(LL_RCC_SYSCLK_DIV_, v)
+#define ahb_prescaler(v) CONCAT(LL_RCC_AHB_DIV_, v)
+#define apb1_prescaler(v) CONCAT(LL_RCC_APB1_DIV_, v)
+#define apb2_prescaler(v) CONCAT(LL_RCC_APB2_DIV_, v)
+#define apb3_prescaler(v) CONCAT(LL_RCC_APB3_DIV_, v)
+#define apb4_prescaler(v) CONCAT(LL_RCC_APB4_DIV_, v)
+#define apb5_prescaler(v) CONCAT(LL_RCC_APB5_DIV_, v)
 
 /* PLLx fractional ratio is 2^13 */
 #define PLL_FRACN_DIVISOR 8192
@@ -428,6 +415,9 @@ static int stm32_clock_control_configure(const struct device *dev,
 					 void *data)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
+	uint32_t enr = pclken->enr;
+	uint32_t reg = STM32_DT_CLKSEL_REG_GET(enr);
+	uint32_t shift = STM32_DT_CLKSEL_SHIFT_GET(enr);
 	int err;
 
 	ARG_UNUSED(dev);
@@ -446,12 +436,9 @@ static int stm32_clock_control_configure(const struct device *dev,
 
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
-	sys_clear_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
-		       STM32_DT_CLKSEL_MASK_GET(pclken->enr) <<
-			STM32_DT_CLKSEL_SHIFT_GET(pclken->enr));
-	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
-		     STM32_DT_CLKSEL_VAL_GET(pclken->enr) <<
-			STM32_DT_CLKSEL_SHIFT_GET(pclken->enr));
+	stm32_reg_modify_bits((uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) + reg),
+			      STM32_DT_CLKSEL_MASK_GET(enr) << shift,
+			      STM32_DT_CLKSEL_VAL_GET(enr) << shift);
 
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 

@@ -239,7 +239,7 @@
 #define STM32_PLLSAI_POST_R_DIVISOR	DT_PROP_OR(DT_NODELABEL(pllsai), post_div_r, 1)
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pllsai1), st_stm32l4_pllsai_clock, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pllsai1), st_stm32l4_pll_clock, okay)
 #define STM32_PLLSAI1_ENABLED	1
 #define STM32_PLLSAI1_M_DIVISOR		DT_PROP(DT_NODELABEL(pllsai1), div_m)
 #define STM32_PLLSAI1_N_MULTIPLIER	DT_PROP(DT_NODELABEL(pllsai1), mul_n)
@@ -251,7 +251,7 @@
 #define STM32_PLLSAI1_R_DIVISOR		DT_PROP_OR(DT_NODELABEL(pllsai1), div_r, 1)
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pllsai2), st_stm32l4_pllsai_clock, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pllsai2), st_stm32l4_pll_clock, okay)
 #define STM32_PLLSAI2_ENABLED	1
 #define STM32_PLLSAI2_M_DIVISOR		DT_PROP(DT_NODELABEL(pllsai2), div_m)
 #define STM32_PLLSAI2_N_MULTIPLIER	DT_PROP(DT_NODELABEL(pllsai2), mul_n)
@@ -261,8 +261,8 @@
 #define STM32_PLLSAI2_Q_DIVISOR		DT_PROP_OR(DT_NODELABEL(pllsai2), div_q, 1)
 #define STM32_PLLSAI2_R_ENABLED		DT_NODE_HAS_PROP(DT_NODELABEL(pllsai2), div_r)
 #define STM32_PLLSAI2_R_DIVISOR		DT_PROP_OR(DT_NODELABEL(pllsai2), div_r, 1)
-#define STM32_PLLSAI2_DIVR_ENABLED	DT_NODE_HAS_PROP(DT_NODELABEL(pllsai2), div_divr)
-#define STM32_PLLSAI2_DIVR_DIVISOR	DT_PROP_OR(DT_NODELABEL(pllsai2), div_divr, 1)
+#define STM32_PLLSAI2_POST_R_ENABLED	DT_NODE_HAS_PROP(DT_NODELABEL(pllsai2), post_div_r)
+#define STM32_PLLSAI2_POST_R_DIVISOR	DT_PROP_OR(DT_NODELABEL(pllsai2), post_div_r, 1)
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll2), st_stm32u5_pll_clock, okay) || \
@@ -510,23 +510,6 @@
 #define STM32_PLLSAI2_SRC_HSE	1
 #endif
 
-#endif
-
-/* On STM32L4 series - PLL / PLLSAI1 and PLLSAI2 shared same source */
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32l4_pll_clock, okay) && \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pllsai1), st_stm32l4_pllsai_clock, okay) && \
-	!DT_SAME_NODE(DT_PLL_CLOCKS_CTRL, DT_PLLSAI1_CLOCKS_CTRL)
-#error "On STM32L4 series, PLL / PLLSAI1 must have the same source"
-#endif
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pll), st_stm32l4_pll_clock, okay) && \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pllsai2), st_stm32l4_pllsai_clock, okay) && \
-	!DT_SAME_NODE(DT_PLL_CLOCKS_CTRL, DT_PLLSAI2_CLOCKS_CTRL)
-#error "On STM32L4 series, PLL / PLLSAI2 must have the same source"
-#endif
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pllsai1), st_stm32l4_pllsai_clock, okay) && \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(pllsai2), st_stm32l4_pllsai_clock, okay) && \
-	!DT_SAME_NODE(DT_PLLSAI1_CLOCKS_CTRL, DT_PLLSAI2_CLOCKS_CTRL)
-#error "On STM32L4 series, PLLSAI1 / PLLSAI2 must have the same source"
 #endif
 
 /** Fixed clocks related symbols */

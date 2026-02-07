@@ -28,6 +28,54 @@
 
 #endif
 
+#if defined(CONFIG_SOC_SERIES_STM32L4X) || defined(CONFIG_SOC_SERIES_STM32WBX)
+/* On all STM32L4x and WBx, the PLLs share the same source.
+ * Ensure that it is the case for those enabled.
+ */
+#if defined(STM32_PLL_ENABLED) && defined(STM32_PLLSAI1_ENABLED)
+BUILD_ASSERT(DT_SAME_NODE(DT_PLL_CLOCKS_CTRL, DT_PLLSAI1_CLOCKS_CTRL),
+	     "PLL and PLLSAI1 must have the same source");
+#endif /* STM32_PLL_ENABLED && STM32_PLLSAI1_ENABLED */
+
+#if defined(STM32_PLL_ENABLED) && defined(STM32_PLLSAI2_ENABLED)
+BUILD_ASSERT(DT_SAME_NODE(DT_PLL_CLOCKS_CTRL, DT_PLLSAI2_CLOCKS_CTRL),
+	     "PLL and PLLSAI2 must have the same source");
+#endif /* STM32_PLL_ENABLED && STM32_PLLSAI2_ENABLED */
+
+#if defined(STM32_PLLSAI1_ENABLED) && defined(STM32_PLLSAI2_ENABLED)
+BUILD_ASSERT(DT_SAME_NODE(DT_PLLSAI1_CLOCKS_CTRL, DT_PLLSAI2_CLOCKS_CTRL),
+	     "PLLSAI1 and PLLSAI2 must have the same source");
+#endif /* STM32_PLLSAI1_ENABLED && STM32_PLLSAI2_ENABLED */
+
+#endif /* CONFIG_SOC_SERIES_STM32L4X || CONFIG_SOC_SERIES_STM32WBX */
+
+#if (defined(CONFIG_SOC_SERIES_STM32L4X) && !defined(RCC_PLLSAI2M_DIV_1_16_SUPPORT)) || \
+	defined(CONFIG_SOC_SERIES_STM32WBX)
+/* On STM32L4x (except L4+) and WBx, the PLL M division factor is the same for all PLLs.
+ * Ensure that it is the case for those enabled.
+ */
+#if defined(STM32_PLL_ENABLED) && defined(STM32_PLLSAI1_ENABLED)
+BUILD_ASSERT(STM32_PLL_M_DIVISOR == STM32_PLLSAI1_M_DIVISOR,
+	     "PLL M and PLLSAI1 M should have the same value");
+#endif /* STM32_PLL_ENABLED && STM32_PLLSAI1_ENABLED */
+
+#if defined(STM32_PLL_ENABLED) && defined(STM32_PLLSAI2_ENABLED)
+BUILD_ASSERT(STM32_PLL_M_DIVISOR == STM32_PLLSAI2_M_DIVISOR,
+	     "PLL M and PLLSAI2 M should have the same value");
+#endif /* STM32_PLL_ENABLED && STM32_PLLSAI2_ENABLED */
+
+#if defined(STM32_PLLSAI1_ENABLED) && defined(STM32_PLLSAI2_ENABLED)
+BUILD_ASSERT(STM32_PLLSAI1_M_DIVISOR == STM32_PLLSAI2_M_DIVISOR,
+	     "PLLSAI1 M and PLLSAI2 M should have the same value");
+#endif /* STM32_PLLSAI1_ENABLED && STM32_PLLSAI2_ENABLED */
+
+#endif /* L4 (except L4+) || WB */
+
+#if defined(STM32_PLLSAI2_ENABLED) && defined(RCC_CCIPR2_PLLSAI2DIVR)
+BUILD_ASSERT(STM32_PLLSAI2_R_ENABLED == STM32_PLLSAI2_POST_R_ENABLED,
+	     "For PLLSAI2, both div-r and post-div-r must be present if one of them is present");
+#endif /* STM32_PLLI2S_ENABLED && RCC_DCKCFGR_PLLI2SDIVR */
+
 #if defined(STM32_PLL_ENABLED)
 /**
  * @brief Return PLL source
@@ -80,15 +128,53 @@ void config_pll_sysclock(void)
 	}
 #endif /* PWR_CR5_R1MODE */
 
+#if STM32_PLL_P_ENABLED
+#if defined(CONFIG_SOC_SERIES_STM32WLX)
+	LL_RCC_PLL_ConfigDomain_ADC(get_pll_source(),
+				    pllm(STM32_PLL_M_DIVISOR),
+				    STM32_PLL_N_MULTIPLIER,
+				    pllp(STM32_PLL_P_DIVISOR));
+
+	LL_RCC_PLL_EnableDomain_ADC();
+#else /* CONFIG_SOC_SERIES_STM32WLX */
+	LL_RCC_PLL_ConfigDomain_SAI(get_pll_source(),
+				    pllm(STM32_PLL_M_DIVISOR),
+				    STM32_PLL_N_MULTIPLIER,
+				    pllp(STM32_PLL_P_DIVISOR));
+
+	LL_RCC_PLL_EnableDomain_SAI();
+#endif /* CONFIG_SOC_SERIES_STM32WLX */
+#endif /* STM32_PLL_P_ENABLED */
+
+#if STM32_PLL_Q_ENABLED
+#if defined(CONFIG_SOC_SERIES_STM32WLX)
+	LL_RCC_PLL_ConfigDomain_I2S(get_pll_source(),
+				    pllm(STM32_PLL_M_DIVISOR),
+				    STM32_PLL_N_MULTIPLIER,
+				    pllq(STM32_PLL_Q_DIVISOR));
+
+	LL_RCC_PLL_EnableDomain_I2S();
+#else /* CONFIG_SOC_SERIES_STM32WLX */
+	LL_RCC_PLL_ConfigDomain_48M(get_pll_source(),
+				    pllm(STM32_PLL_M_DIVISOR),
+				    STM32_PLL_N_MULTIPLIER,
+				    pllq(STM32_PLL_Q_DIVISOR));
+
+	LL_RCC_PLL_EnableDomain_48M();
+#endif /* CONFIG_SOC_SERIES_STM32WLX */
+#endif /* STM32_PLL_Q_ENABLED */
+
+#if STM32_PLL_R_ENABLED
 	LL_RCC_PLL_ConfigDomain_SYS(get_pll_source(),
 				    pllm(STM32_PLL_M_DIVISOR),
 				    STM32_PLL_N_MULTIPLIER,
 				    pllr(STM32_PLL_R_DIVISOR));
 
 	LL_RCC_PLL_EnableDomain_SYS();
+#endif /* STM32_PLL_R_ENABLED */
 }
 
-#endif /* defined(STM32_PLL_ENABLED) */
+#endif /* STM32_PLL_ENABLED */
 
 #if defined(STM32_PLLSAI1_ENABLED)
 
@@ -137,18 +223,6 @@ uint32_t get_pllsai1src_frequency(void)
 __unused
 void config_pllsai1(void)
 {
-#ifndef RCC_PLLSAI1M_DIV_1_16_SUPPORT
-	/*
-	 * On some L4 series, there is no dedicated M_DIVISOR for PLLSAIs
-	 * and it is shared with PLL and other PLLSAIs. Ensure that if they
-	 * exist, they have the same value
-	 */
-#if defined(STM32_PLL_M_DIVISOR) && (STM32_PLL_M_DIVISOR != STM32_PLLSAI1_M_DIVISOR)
-#error "PLLSAI1 M divisor must have same value as PLL M divisor"
-#elif defined(STM32_PLLSAI2_M_DIVISOR) && (STM32_PLLSAI2_M_DIVISOR != STM32_PLLSAI1_M_DIVISOR)
-#error "PLLSAI1 M divisor must have same value as PLLSAI2 M divisor"
-#endif
-#endif
 #if STM32_PLLSAI1_P_ENABLED
 	LL_RCC_PLLSAI1_ConfigDomain_SAI(get_pllsai1_source(),
 					pllsaim(STM32_PLLSAI1_M_DIVISOR),
@@ -180,7 +254,8 @@ void config_pllsai1(void)
 #endif /* STM32_PLLSAI1_ENABLED */
 
 #if defined(STM32_PLLSAI2_ENABLED)
-#if defined(RCC_PLLSAI2_SUPPORT)
+#if (defined(CONFIG_SOC_SERIES_STM32L4X) && defined(RCC_PLLSAI2_SUPPORT)) ||\
+	defined(CONFIG_SOC_SERIES_STM32L5X)
 
 /**
  * @brief Return PLLSAI2 source
@@ -227,18 +302,6 @@ uint32_t get_pllsai2src_frequency(void)
 __unused
 void config_pllsai2(void)
 {
-#ifndef RCC_PLLSAI2M_DIV_1_16_SUPPORT
-	/*
-	 * On some L4 series, there is no dedicated M_DIVISOR for PLLSAIs
-	 * and it is shared with PLL and other PLLSAIs. Ensure that if they
-	 * exist, they have the same value
-	 */
-#if defined(STM32_PLL_M_DIVISOR) && (STM32_PLL_M_DIVISOR != STM32_PLLSAI2_M_DIVISOR)
-#error "PLLSAI2 M divisor must have same value as PLL M divisor"
-#elif defined(STM32_PLLSAI1_M_DIVISOR) && (STM32_PLLSAI1_M_DIVISOR != STM32_PLLSAI2_M_DIVISOR)
-#error "PLLSAI2 M divisor must have same value as PLLSAI1 M divisor"
-#endif
-#endif
 #if STM32_PLLSAI2_P_ENABLED
 	LL_RCC_PLLSAI2_ConfigDomain_SAI(get_pllsai2_source(),
 					pllsai2m(STM32_PLLSAI2_M_DIVISOR),
@@ -248,41 +311,47 @@ void config_pllsai2(void)
 	LL_RCC_PLLSAI2_EnableDomain_SAI();
 #endif /* STM32_PLLSAI2_P_ENABLED */
 
-#if STM32_PLLSAI2_Q_ENABLED && defined(RCC_PLLSAI2Q_DIV_SUPPORT)
+#if STM32_PLLSAI2_Q_ENABLED
+#if defined(RCC_PLLSAI2Q_DIV_SUPPORT)
 	LL_RCC_PLLSAI2_ConfigDomain_DSI(get_pllsai2_source(),
 					pllsai2m(STM32_PLLSAI2_M_DIVISOR),
 					STM32_PLLSAI2_N_MULTIPLIER,
 					pllsai2q(STM32_PLLSAI2_Q_DIVISOR));
 
 	LL_RCC_PLLSAI2_EnableDomain_DSI();
+#else
+#error "PLLSAI2 doesn't have Q output on this SOC"
+#endif /* RCC_PLLSAI2Q_DIV_SUPPORT */
 #endif /* STM32_PLLSAI2_Q_ENABLED */
 
 #if STM32_PLLSAI2_R_ENABLED
 #if defined(RCC_CCIPR2_PLLSAI2DIVR)
-#if STM32_PLLSAI2_DIVR_ENABLED
+	/* STM32L4+ */
 	LL_RCC_PLLSAI2_ConfigDomain_LTDC(get_pllsai2_source(),
 					 pllsai2m(STM32_PLLSAI2_M_DIVISOR),
 					 STM32_PLLSAI2_N_MULTIPLIER,
 					 pllsai2r(STM32_PLLSAI2_R_DIVISOR),
-					 pllsai2divr(STM32_PLLSAI2_DIVR_DIVISOR));
+					 pllsai2divr(STM32_PLLSAI2_POST_R_DIVISOR));
 
 	LL_RCC_PLLSAI2_EnableDomain_LTDC();
-#else
-#error "On PLLSAI2, div_divr device-tree properties is needed"
-#endif
-#else
+#elif defined(CONFIG_SOC_SERIES_STM32L4X) /* RCC_CCIPR2_PLLSAI2DIVR */
+	/* Other L4 */
 	LL_RCC_PLLSAI2_ConfigDomain_ADC(get_pllsai2_source(),
 					pllsai2m(STM32_PLLSAI2_M_DIVISOR),
 					STM32_PLLSAI2_N_MULTIPLIER,
 					pllsai2r(STM32_PLLSAI2_R_DIVISOR));
 
 	LL_RCC_PLLSAI2_EnableDomain_ADC();
-#endif
+#else /* RCC_CCIPR2_PLLSAI2DIVR */
+	/* PLLSAI2_R is not available on L5. WB and WL don't have PLLSAI2. */
+#error "PLLSAI2 doesn't have R output on this SOC"
+#endif/* RCC_CCIPR2_PLLSAI2DIVR */
 #endif /* STM32_PLLSAI2_R_ENABLED */
 }
-#else
-#error "PLLSAI2 is not available in this platform"
-#endif
+
+#else /* (STM32L4X && RCC_PLLSAI2_SUPPORT) || STM32L5X */
+#error "PLLSAI2 is not available on this SoC"
+#endif /* (STM32L4X && RCC_PLLSAI2_SUPPORT) || STM32L5X */
 
 #endif /* STM32_PLLSAI2_ENABLED */
 

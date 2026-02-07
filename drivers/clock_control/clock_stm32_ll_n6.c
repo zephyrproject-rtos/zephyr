@@ -6,6 +6,7 @@
 
 
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
@@ -18,29 +19,14 @@
 #include <stm32_backup_domain.h>
 
 /* Macros to fill up prescaler values */
-#define z_ic_src_pll(v) LL_RCC_ICCLKSOURCE_PLL ## v
-#define ic_src_pll(v) z_ic_src_pll(v)
-
-#define z_hsi_divider(v) LL_RCC_HSI_DIV_ ## v
-#define hsi_divider(v) z_hsi_divider(v)
-
-#define z_ahb_prescaler(v) LL_RCC_AHB_DIV_ ## v
-#define ahb_prescaler(v) z_ahb_prescaler(v)
-
-#define z_apb1_prescaler(v) LL_RCC_APB1_DIV_ ## v
-#define apb1_prescaler(v) z_apb1_prescaler(v)
-
-#define z_apb2_prescaler(v) LL_RCC_APB2_DIV_ ## v
-#define apb2_prescaler(v) z_apb2_prescaler(v)
-
-#define z_apb4_prescaler(v) LL_RCC_APB4_DIV_ ## v
-#define apb4_prescaler(v) z_apb4_prescaler(v)
-
-#define z_apb5_prescaler(v) LL_RCC_APB5_DIV_ ## v
-#define apb5_prescaler(v) z_apb5_prescaler(v)
-
-#define z_timg_prescaler(v) LL_RCC_TIM_PRESCALER_ ## v
-#define timg_prescaler(v) z_timg_prescaler(v)
+#define ic_src_pll(v) CONCAT(LL_RCC_ICCLKSOURCE_PLL, v)
+#define hsi_divider(v) CONCAT(LL_RCC_HSI_DIV_, v)
+#define ahb_prescaler(v) CONCAT(LL_RCC_AHB_DIV_, v)
+#define apb1_prescaler(v) CONCAT(LL_RCC_APB1_DIV_, v)
+#define apb2_prescaler(v) CONCAT(LL_RCC_APB2_DIV_, v)
+#define apb4_prescaler(v) CONCAT(LL_RCC_APB4_DIV_, v)
+#define apb5_prescaler(v) CONCAT(LL_RCC_APB5_DIV_, v)
+#define timg_prescaler(v) CONCAT(LL_RCC_TIM_PRESCALER_, v)
 
 #define PLL1_ID		1
 #define PLL2_ID		2
@@ -255,6 +241,9 @@ static int stm32_clock_control_configure(const struct device *dev,
 					 void *data)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)(sub_system);
+	uint32_t enr = pclken->enr;
+	uint32_t reg = STM32_DT_CLKSEL_REG_GET(enr);
+	uint32_t shift = STM32_DT_CLKSEL_SHIFT_GET(enr);
 	int err;
 
 	ARG_UNUSED(dev);
@@ -271,12 +260,9 @@ static int stm32_clock_control_configure(const struct device *dev,
 		return 0;
 	}
 
-	sys_clear_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
-		       STM32_DT_CLKSEL_MASK_GET(pclken->enr) <<
-			STM32_DT_CLKSEL_SHIFT_GET(pclken->enr));
-	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
-		     STM32_DT_CLKSEL_VAL_GET(pclken->enr) <<
-			STM32_DT_CLKSEL_SHIFT_GET(pclken->enr));
+	stm32_reg_modify_bits((uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) + reg),
+			      STM32_DT_CLKSEL_MASK_GET(enr) << shift,
+			      STM32_DT_CLKSEL_VAL_GET(enr) << shift);
 
 	return 0;
 }
