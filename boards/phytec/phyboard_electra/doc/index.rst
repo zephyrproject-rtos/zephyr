@@ -1,4 +1,4 @@
-.. _phyboard_electra_am64xx_m4:
+.. zephyr:board:: phyboard_electra
 
 phyBOARD-Electra AM64x M4F Core
 ###############################

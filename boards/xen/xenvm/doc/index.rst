@@ -1,4 +1,4 @@
-.. xenvm:
+.. zephyr:board:: xenvm
 
 ARMv8 Xen Virtual Machine Example
 #################################

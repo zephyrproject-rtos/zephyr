@@ -1,4 +1,4 @@
-.. _phyboard_pollux:
+.. zephyr:board:: phyboard_pollux
 
 phyBOARD-Pollux i.MX8M Plus
 ###########################

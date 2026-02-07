@@ -1,4 +1,4 @@
-.. _ubx_bmd360eval_nrf52811:
+.. zephyr:board:: ubx_bmd360eval
 
 u-blox EVK-BMD-360: BMD-360-EVAL
 ################################

@@ -1,4 +1,4 @@
-.. _96b_neonkey:
+.. zephyr:board:: 96b_neonkey
 
 96Boards Neonkey
 ################

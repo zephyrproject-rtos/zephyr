@@ -1,4 +1,4 @@
-.. _bcm958401m2:
+.. zephyr:board:: bcm958401m2
 
 Broadcom BCM958401M2
 ####################

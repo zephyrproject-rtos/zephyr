@@ -1,4 +1,4 @@
-.. _ubx_ninab4_nrf52833:
+.. zephyr:board:: ubx_evkninab4
 
 u-blox EVK NINA-B40x
 ####################

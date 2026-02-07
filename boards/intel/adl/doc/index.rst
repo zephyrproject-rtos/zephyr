@@ -1,4 +1,4 @@
-.. _intel_adl_n:
+.. zephyr:board:: intel_adl_crb
 
 Alder Lake N
 ############

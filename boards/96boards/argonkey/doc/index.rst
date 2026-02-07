@@ -1,4 +1,4 @@
-.. _96b_argonkey:
+.. zephyr:board:: 96b_argonkey
 
 96Boards Argonkey
 #################

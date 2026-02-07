@@ -1,4 +1,4 @@
-.. _sparkfun_micromod:
+.. zephyr:board:: micromod
 
 SparkFun MicroMod board Processor
 #################################
