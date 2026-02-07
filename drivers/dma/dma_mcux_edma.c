@@ -1067,7 +1067,7 @@ static int dma_mcux_edma_init(const struct device *dev)
 				DT_PROP(DT_DRV_INST(n), channels_shared_irq_mask);
 
 #define GET_EDMA_CHANNEL_SHARED_IRQ_MASK_WIDTH(n) \
-			(DT_INST_PROP(n, dma_channels) / 32)
+	DIV_ROUND_UP(DT_INST_PROP(n, dma_channels), 32)
 
 #define EDMA_CHANNELS_SHARED_REGISTER_IN_IRQ(dev, idx, n) \
 		dma_mcux_edma_multi_channels_irq_handler(dev, idx, edma_channel_mask_##n, \

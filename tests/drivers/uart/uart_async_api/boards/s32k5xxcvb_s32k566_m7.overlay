@@ -1,0 +1,37 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+&pinctrl {
+	lpuart0_default: lpuart0_default {
+		group1 {
+			pinmux = <PA1_LPUART0_TX_O>, <PE2_LPUART0_RTS>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PB6_LPUART0_RX>, <PE5_LPUART0_CTS>;
+			input-enable;
+		};
+	};
+};
+
+dut: &lpuart0 {
+	pinctrl-0 = <&lpuart0_default>;
+	pinctrl-names = "default";
+	dmas = <&edma 0 94>, <&edma 2 93>;
+	dma-names = "tx", "rx";
+	current-speed = <115200>;
+	nxp,loopback;
+	status = "okay";
+};
+
+&lpuart3 {
+	/*
+	 * Not used by the test but if dma is enabled for uart,
+	 * every enabled node shall specify dmas and dma-names
+	 */
+	dmas = <&edma 0 100>, <&edma 2 99>;
+	dma-names = "tx", "rx";
+};
