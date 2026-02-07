@@ -6,6 +6,7 @@
  */
 
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/uart.h>
 #include <NuMicro.h>
 #include <string.h>
@@ -14,7 +15,7 @@
 
 struct uart_numicro_config {
 	UART_T *uart;
-	uint32_t id_rst;
+	const struct reset_dt_spec reset;
 	uint32_t id_clk;
 	const struct pinctrl_dev_config *pincfg;
 };
@@ -150,7 +151,8 @@ static int uart_numicro_init(const struct device *dev)
 	struct uart_numicro_data *ddata = dev->data;
 	int err;
 
-	SYS_ResetModule(config->id_rst);
+	/* Same as BSP SYS_ResetModule(id_rst) */
+	reset_line_toggle_dt(&config->reset);
 
 	SYS_UnlockReg();
 
@@ -188,7 +190,7 @@ PINCTRL_DT_INST_DEFINE(index);						\
 									\
 static const struct uart_numicro_config uart_numicro_cfg_##index = {	\
 	.uart = (UART_T *)DT_INST_REG_ADDR(index),			\
-	.id_rst = UART##index##_RST,					\
+	.reset = RESET_DT_SPEC_INST_GET(index),				\
 	.id_clk = UART##index##_MODULE,					\
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),		\
 };									\
