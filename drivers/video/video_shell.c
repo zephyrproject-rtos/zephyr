@@ -723,7 +723,7 @@ static int video_shell_set_ctrl(const struct shell *sh, const struct device *dev
 		}
 		break;
 	case VIDEO_CTRL_TYPE_INTEGER64:
-		ctrl.val64 = strtoll(arg_value, &arg_value, 10);
+		ctrl.val64 = strtoll(arg_value, &end_value, 10);
 		if (*end_value != '\0') {
 			shell_error(sh, "Invalid integer '%s' for this type", arg_value);
 			return -EINVAL;
