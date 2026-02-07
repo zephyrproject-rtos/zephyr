@@ -28,6 +28,7 @@ config LED_STRIP_RGB_SCRATCH
 	bool
 
 # zephyr-keep-sorted-start
+source "drivers/led_strip/Kconfig.fake"
 source "drivers/led_strip/Kconfig.apa102"
 source "drivers/led_strip/Kconfig.lpd880x"
 source "drivers/led_strip/Kconfig.modulino"
