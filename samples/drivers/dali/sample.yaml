@@ -1,0 +1,15 @@
+sample:
+  description: Dali Zephyr driver application
+  name: dali-zephyr
+tests:
+  sample.drivers.dali:
+    tags: dali
+    integration_platforms:
+      - nucleo_f091rc
+      - nrf52840dk/nrf52840
+    filter: dt_nodelabel_enabled("dali0")
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Target board: (.*)"
