@@ -7,19 +7,6 @@ description: |
   The lowest supported clock frequency is the default
   clock frequency.
 
-  Example:
-
-    global_hsfll: global_hsfll {
-            compatible = "nordic,nrf-hsfll-global";
-            clocks = <&fll16>;
-            #clock-cells = <0>;
-            clock-frequency = <320000000>;
-            supported-clock-frequencies = <64000000
-                                           128000000
-                                           256000000
-                                           320000000>;
-    };
-
 compatible: "nordic,nrf-hsfll-global"
 
 include:
@@ -42,3 +29,16 @@ properties:
     description: |
       Optional fixed frequency specified if used in fixed
       frequency mode.
+
+examples:
+  - |
+    global_hsfll: global_hsfll {
+            compatible = "nordic,nrf-hsfll-global";
+            clocks = <&fll16>;
+            #clock-cells = <0>;
+            clock-frequency = <320000000>;
+            supported-clock-frequencies = <64000000
+                                           128000000
+                                           256000000
+                                           320000000>;
+    };

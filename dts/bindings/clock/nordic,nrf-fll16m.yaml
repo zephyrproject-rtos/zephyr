@@ -14,15 +14,6 @@ description: |
       FLL16M mode is closed-loop and the LFXO clock is
       available.
 
-  Devicetree example:
-
-    fll16m {
-            open-loop-accuracy-ppm = <20000>;
-            open-loop-startup-time-us = <400>;
-            clocks = <&hfxo>, <&lfxo>;
-            clock-names = "hfxo", "lfxo";
-    };
-
 compatible: "nordic,nrf-fll16m"
 
 include: fixed-clock.yaml
@@ -40,3 +31,13 @@ properties:
     type: int
     description: Clock startup time if open-loop clock source is used.
     required: true
+
+examples:
+  - |
+    fll16m {
+            open-loop-accuracy-ppm = <20000>;
+            open-loop-startup-time-us = <400>;
+            clocks = <&hfxo>, <&lfxo>;
+            clock-names = "hfxo", "lfxo";
+    };
+

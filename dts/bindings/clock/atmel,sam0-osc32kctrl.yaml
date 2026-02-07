@@ -24,15 +24,16 @@ properties:
     description: |
       It selects the OSC32CTRL clock to be routed to RTC peripheral
 
-      Example: Connect the XOSC32K to RTC on SAMD5x
-
-        &rtc {
-          clocks = <&mclk 0x14 9 &osc32kctrl>;
-          clock-names = "MCLK", "OSC32KCTRL";
-
-          atmel,assigned-clocks = <&osc32kctrl 4>;
-          atmel,assigned-clock-names = "OSC32KCTRL";
-        };
-
 atmel,assigned-clock-cells:
   - src
+
+examples:
+  - |
+    /* Connect the XOSC32K to RTC on SAMD5x */
+    &rtc {
+      clocks = <&mclk 0x14 9 &osc32kctrl>;
+      clock-names = "MCLK", "OSC32KCTRL";
+
+      atmel,assigned-clocks = <&osc32kctrl 4>;
+      atmel,assigned-clock-names = "OSC32KCTRL";
+    };
