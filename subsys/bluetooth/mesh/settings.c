@@ -89,7 +89,7 @@ static int mesh_commit(void)
 		return 0;
 	}
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ENABLE)) {
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
 		/* The Bluetooth Mesh settings loader calls bt_mesh_start() immediately
 		 * after loading the settings. This is not intended to work before
 		 * bt_enable(). The doc on @ref bt_enable requires the "bt/" settings

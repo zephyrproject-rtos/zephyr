@@ -196,7 +196,7 @@ static int set_setting(const char *name, size_t len_rd, settings_read_cb read_cb
 	ssize_t len;
 	const char *next;
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ENABLE)) {
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
 		/* The Bluetooth settings loader needs to communicate with the Bluetooth
 		 * controller to setup identities. This will not work before
 		 * bt_enable(). The doc on @ref bt_enable requires the "bt/" settings
@@ -308,7 +308,7 @@ static int commit_settings(void)
 
 	LOG_DBG("");
 
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ENABLE)) {
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
 		/* The Bluetooth settings loader needs to communicate with the Bluetooth
 		 * controller to setup identities. This will not work before
 		 * bt_enable(). The doc on @ref bt_enable requires the "bt/" settings
