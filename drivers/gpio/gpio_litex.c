@@ -250,7 +250,7 @@ static int gpio_litex_pin_interrupt_configure(const struct device *dev,
 	}
 
 	if (GPIO_LITEX_HAS_OE(gpio_config) &&
-	    IS_BIT_SET(litex_read32(gpio_config->oe_addr), pin)) {
+	    !IS_BIT_SET(litex_read32(gpio_config->oe_addr), pin)) {
 		return -EINVAL;
 	}
 
@@ -259,8 +259,6 @@ static int gpio_litex_pin_interrupt_configure(const struct device *dev,
 	if (mode == GPIO_INT_MODE_EDGE) {
 		ev_mode = litex_read32(gpio_config->ev_mode_addr);
 		ev_edge = litex_read32(gpio_config->ev_edge_addr);
-
-		litex_write32(ev_enabled | BIT(pin), gpio_config->ev_enable_addr);
 
 		WRITE_BIT(ev_mode, pin, (trig == GPIO_INT_TRIG_BOTH));
 
@@ -278,6 +276,12 @@ static int gpio_litex_pin_interrupt_configure(const struct device *dev,
 		default:
 			break;
 		}
+
+		/* Clear any pending events for this pin, before enabling it */
+		litex_write32(BIT(pin), gpio_config->ev_pending_addr);
+
+		litex_write32(ev_enabled | BIT(pin), gpio_config->ev_enable_addr);
+
 		return 0;
 	}
 
