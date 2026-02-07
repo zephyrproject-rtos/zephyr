@@ -10,6 +10,7 @@ Peripherals
    :maxdepth: 1
 
    w1.rst
+   actuator.rst
    adc.rst
    auxdisplay.rst
    audio/index.rst
