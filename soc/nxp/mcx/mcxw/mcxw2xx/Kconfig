@@ -5,3 +5,7 @@
 config SOC_SERIES_MCXW2XX
 	select HAS_POWEROFF
 	select NXP_SNPS_BLE_CTRL if BT
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
