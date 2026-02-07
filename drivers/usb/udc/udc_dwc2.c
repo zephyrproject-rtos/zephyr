@@ -143,8 +143,8 @@ struct udc_dwc2_data {
 	unsigned int hibernated : 1;
 	unsigned int enumdone : 1;
 	unsigned int enumspd : 2;
-	unsigned int pending_dout_feed : 1;
 	unsigned int ignore_ep0_nakeff : 1;
+	unsigned int pending_setup : 1;
 	enum dwc2_suspend_type suspend_type;
 	/* Number of endpoints including control endpoint */
 	uint8_t numdeveps;
@@ -403,57 +403,6 @@ static bool dwc2_ep_is_periodic(struct udc_ep_config *const cfg)
 static bool dwc2_ep_is_iso(struct udc_ep_config *const cfg)
 {
 	return (cfg->attributes & USB_EP_TRANSFER_TYPE_MASK) == USB_EP_TYPE_ISO;
-}
-
-static int dwc2_ctrl_feed_dout(const struct device *dev, const size_t length)
-{
-	struct udc_dwc2_data *const priv = udc_get_private(dev);
-	struct udc_ep_config *ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
-	struct net_buf *buf;
-	size_t alloc_len = length;
-
-	if (dwc2_in_buffer_dma_mode(dev)) {
-		/* Control OUT buffers must be multiple of bMaxPacketSize0 */
-		alloc_len = ROUND_UP(length, 64);
-	}
-
-	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, alloc_len);
-	if (buf == NULL) {
-		return -ENOMEM;
-	}
-
-	if (dwc2_in_buffer_dma_mode(dev)) {
-		/* Get rid of all dirty cache lines */
-		sys_cache_data_invd_range(buf->data, net_buf_tailroom(buf));
-	}
-
-	udc_buf_put(ep_cfg, buf);
-	atomic_set_bit(&priv->xfer_new, 16);
-	k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_XFER));
-
-	return 0;
-}
-
-static void dwc2_ensure_setup_ready(const struct device *dev)
-{
-	if (dwc2_in_completer_mode(dev)) {
-		/* In Completer mode EP0 can always receive SETUP data */
-		return;
-	} else {
-		struct udc_dwc2_data *const priv = udc_get_private(dev);
-
-		if (udc_ep_is_busy(udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT))) {
-			/* There is already buffer queued */
-			return;
-		}
-
-		/* Enable EP0 OUT only if there is no pending EP0 IN transfer
-		 * after which the stack has to enable EP0 OUT.
-		 */
-		if (!priv->pending_dout_feed) {
-			dwc2_ctrl_feed_dout(dev, 8);
-		}
-	}
 }
 
 static void dwc2_clear_control_in_nak(const struct device *dev)
@@ -717,7 +666,7 @@ static void dwc2_prep_rx(const struct device *dev, struct net_buf *buf,
 	doepctl = sys_read32(doepctl_reg);
 	doepctl |= USB_DWC2_DEPCTL_EPENA;
 	if (cfg->addr == USB_CONTROL_EP_OUT) {
-		struct udc_data *data = dev->data;
+		struct udc_buf_info *bi = udc_get_buf_info(buf);
 
 		/* During OUT Data Stage every packet has to have CNAK set.
 		 * In Buffer DMA mode the OUT endpoint is armed during IN Data
@@ -732,9 +681,7 @@ static void dwc2_prep_rx(const struct device *dev, struct net_buf *buf,
 		 * subsequent control transfer OUT Data Stage packet (SETUP DATA
 		 * is unconditionally ACKed regardless of software state).
 		 */
-		if (data->stage == CTRL_PIPE_STAGE_DATA_OUT ||
-		    data->stage == CTRL_PIPE_STAGE_DATA_IN ||
-		    data->stage == CTRL_PIPE_STAGE_STATUS_OUT) {
+		if (bi->data || bi->status) {
 			doepctl |= USB_DWC2_DEPCTL_CNAK;
 		}
 	} else {
@@ -805,6 +752,18 @@ static void dwc2_prep_rx(const struct device *dev, struct net_buf *buf,
 	LOG_INF("Prepare RX 0x%02x doeptsiz 0x%x", cfg->addr, doeptsiz);
 }
 
+static int dwc2_submit_setup(const struct device *dev, struct net_buf *buf)
+{
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
+
+	priv->pending_setup = 0;
+
+	net_buf_add_mem(buf, priv->setup, sizeof(priv->setup));
+	LOG_HEXDUMP_DBG(buf->data, buf->len, "setup");
+
+	return udc_submit_ep_event(dev, buf, 0);
+}
+
 static void dwc2_handle_xfer_next(const struct device *dev,
 				  struct udc_ep_config *const cfg)
 {
@@ -816,44 +775,50 @@ static void dwc2_handle_xfer_next(const struct device *dev,
 		return;
 	}
 
-	if (USB_EP_DIR_IS_OUT(cfg->addr)) {
+	if (cfg->addr == USB_CONTROL_EP_OUT) {
+		struct udc_buf_info *bi = udc_get_buf_info(buf);
+
+		if (priv->pending_setup) {
+			if (bi->setup) {
+				/* UDC was waiting for stack */
+				dwc2_submit_setup(dev, buf);
+			} else {
+				udc_submit_ep_event(dev, buf, -ECONNRESET);
+			}
+
+			return;
+		}
+
+		if (bi->setup) {
+			if (dwc2_in_completer_mode(dev)) {
+				/* SETUP can be received without enabling EP */
+				return;
+			}
+		}
+
+		dwc2_prep_rx(dev, buf, cfg);
+	} else if (USB_EP_DIR_IS_OUT(cfg->addr)) {
 		dwc2_prep_rx(dev, buf, cfg);
 	} else {
 		int err;
 
-		if (cfg->addr == USB_CONTROL_EP_IN &&
-		    udc_ctrl_stage_is_status_in(dev)) {
+		if (cfg->addr == USB_CONTROL_EP_IN) {
+			struct udc_buf_info *bi = udc_get_buf_info(buf);
+
 			/* It was observed that EPENA results in INEPNAKEFF
 			 * interrupt which leads to endpoint disable. It is not
 			 * clear how to prevent this without violating sequence
 			 * described in Programming Guide, so just set a flag
 			 * for interrupt handler to ignore it.
 			 */
-			priv->ignore_ep0_nakeff = 1;
+			if (bi->status) {
+				priv->ignore_ep0_nakeff = 1;
+			}
+
+			dwc2_clear_control_in_nak(dev);
 		}
 
 		err = dwc2_tx_fifo_write(dev, cfg, buf);
-
-		if (cfg->addr == USB_CONTROL_EP_IN) {
-			/* Feed a buffer for the next setup packet after arming
-			 * IN endpoint with the data. This is necessary both in
-			 * IN Data Stage (Control Read Transfer) and IN Status
-			 * Stage (Control Write Transfers and Control Transfers
-			 * without Data Stage).
-			 *
-			 * The buffer must be fed here in Buffer DMA mode to
-			 * allow receiving premature SETUP. This inevitably does
-			 * automatically arm the buffer for OUT Status Stage.
-			 *
-			 * The buffer MUST NOT be fed here in Completer mode to
-			 * avoid race condition where the next Control Write
-			 * Transfer Data Stage is received into the buffer.
-			 */
-			if (dwc2_in_buffer_dma_mode(dev) && priv->pending_dout_feed) {
-				priv->pending_dout_feed = 0;
-				dwc2_ctrl_feed_dout(dev, 8);
-			}
-		}
 
 		if (err) {
 			LOG_ERR("Failed to start write to TX FIFO, ep 0x%02x (err: %d)",
@@ -877,7 +842,6 @@ static int dwc2_handle_evt_setup(const struct device *dev)
 	struct udc_ep_config *cfg_out = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
 	struct udc_ep_config *cfg_in = udc_get_ep_cfg(dev, USB_CONTROL_EP_IN);
 	struct net_buf *buf;
-	int err;
 
 	/* In Completer mode SETUP data is received without preparing endpoint 0
 	 * transfer beforehand. In Buffer DMA the SETUP can be copied to any EP0
@@ -887,82 +851,35 @@ static int dwc2_handle_evt_setup(const struct device *dev)
 	udc_dwc2_ep_disable(dev, cfg_in, false, true);
 	atomic_and(&priv->xfer_finished, ~(BIT(0) | BIT(16)));
 
-	buf = udc_buf_get_all(cfg_out);
-	if (buf) {
-		net_buf_unref(buf);
+	while ((buf = udc_buf_get(cfg_in))) {
+		udc_submit_ep_event(dev, buf, -ECONNRESET);
 	}
 
-	buf = udc_buf_get_all(cfg_in);
-	if (buf) {
-		net_buf_unref(buf);
+	while ((buf = udc_buf_get(cfg_out))) {
+		struct udc_buf_info *bi = udc_get_buf_info(buf);
+
+		if (bi->setup) {
+			break;
+		}
+
+		udc_submit_ep_event(dev, buf, -ECONNRESET);
 	}
 
 	udc_ep_set_busy(cfg_out, false);
 	udc_ep_set_busy(cfg_in, false);
 
-	/* Allocate buffer and copy received SETUP for processing */
-	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, 8);
 	if (buf == NULL) {
-		LOG_ERR("No buffer available for control ep");
-		return -ENODATA;
+		/* Stack is not ready to process SETUP */
+		priv->pending_setup = 1;
+		return 0;
 	}
 
-	net_buf_add_mem(buf, priv->setup, sizeof(priv->setup));
-	udc_ep_buf_set_setup(buf);
-	LOG_HEXDUMP_DBG(buf->data, buf->len, "setup");
-
-	/* Update to next stage of control transfer */
-	udc_ctrl_update_stage(dev, buf);
-
-	/* We always allocate and feed buffer large enough for a setup packet. */
-
-	if (udc_ctrl_stage_is_data_out(dev)) {
-		/*  Allocate and feed buffer for data OUT stage */
-		LOG_DBG("s:%p|feed for -out-", buf);
-
-		priv->pending_dout_feed = 0;
-
-		if (dwc2_in_completer_mode(dev)) {
-			/* Programming Guide does not clearly describe to clear
-			 * control IN endpoint NAK for Control Write Transfers
-			 * when operating in Completer mode. Set CNAK here,
-			 * because IN endpoint is not armed at this point and
-			 * forced NAKs are not necessary. IN Status stage will
-			 * only finish after IN endpoint is armed.
-			 */
-			dwc2_clear_control_in_nak(dev);
-		}
-
-		err = dwc2_ctrl_feed_dout(dev, udc_data_stage_length(buf));
-		if (err == -ENOMEM) {
-			err = udc_submit_ep_event(dev, buf, err);
-		}
-	} else if (udc_ctrl_stage_is_data_in(dev)) {
-		LOG_DBG("s:%p|feed for -in-status", buf);
-
-		dwc2_clear_control_in_nak(dev);
-
-		err = udc_ctrl_submit_s_in_status(dev);
-
-		priv->pending_dout_feed = 1;
-	} else {
-		LOG_DBG("s:%p|feed >setup", buf);
-
-		dwc2_clear_control_in_nak(dev);
-
-		err = udc_ctrl_submit_s_status(dev);
-
-		priv->pending_dout_feed = 1;
-	}
-
-	return err;
+	return dwc2_submit_setup(dev, buf);
 }
 
 static inline int dwc2_handle_evt_dout(const struct device *dev,
 				       struct udc_ep_config *const cfg)
 {
-	struct udc_dwc2_data *const priv = udc_get_private(dev);
-	struct udc_data *data = dev->data;
 	struct net_buf *buf;
 	int err = 0;
 
@@ -978,39 +895,7 @@ static inline int dwc2_handle_evt_dout(const struct device *dev,
 
 	udc_ep_set_busy(cfg, false);
 
-	if (cfg->addr == USB_CONTROL_EP_OUT) {
-		if (udc_ctrl_stage_is_status_out(dev)) {
-			/* s-in-status finished */
-			LOG_DBG("dout:%p| status, feed >s", buf);
-
-			/* Status stage finished, notify upper layer */
-			udc_ctrl_submit_status(dev, buf);
-
-			if (dwc2_in_buffer_dma_mode(dev)) {
-				dwc2_ctrl_feed_dout(dev, 8);
-			}
-		} else {
-			LOG_DBG("dout:%p| data, feed >s", buf);
-		}
-
-		/* Update to next stage of control transfer */
-		udc_ctrl_update_stage(dev, buf);
-
-		if (udc_ctrl_stage_is_status_in(dev)) {
-			err = udc_ctrl_submit_s_out_status(dev, buf);
-
-			priv->pending_dout_feed = 1;
-		}
-
-		if (data->stage == CTRL_PIPE_STAGE_ERROR) {
-			/* Allow receiving next SETUP. USB stack won't queue any
-			 * buffer because it has no clue about this transfer.
-			 */
-			dwc2_ensure_setup_ready(dev);
-		}
-	} else {
-		err = udc_submit_ep_event(dev, buf, 0);
-	}
+	err = udc_submit_ep_event(dev, buf, 0);
 
 	return err;
 }
@@ -1039,29 +924,6 @@ static int dwc2_handle_evt_din(const struct device *dev,
 
 	buf = udc_buf_get(cfg);
 	udc_ep_set_busy(cfg, false);
-
-	if (cfg->addr == USB_CONTROL_EP_IN) {
-		if (udc_ctrl_stage_is_status_in(dev) ||
-		    udc_ctrl_stage_is_no_data(dev)) {
-			/* Status stage finished, notify upper layer */
-			udc_ctrl_submit_status(dev, buf);
-		}
-
-		/* Update to next stage of control transfer */
-		udc_ctrl_update_stage(dev, buf);
-
-		if (udc_ctrl_stage_is_status_out(dev)) {
-			if (dwc2_in_completer_mode(dev)) {
-				/* Allow OUT status stage */
-				dwc2_ctrl_feed_dout(dev, 8);
-			}
-
-			/* IN transfer finished, release buffer. */
-			net_buf_unref(buf);
-		}
-
-		return 0;
-	}
 
 	return udc_submit_ep_event(dev, buf, 0);
 }
@@ -1784,12 +1646,6 @@ static int udc_dwc2_ep_set_halt(const struct device *dev,
 	LOG_DBG("Set halt ep 0x%02x", cfg->addr);
 	if (ep_idx != 0) {
 		cfg->stat.halted = true;
-	} else {
-		struct udc_dwc2_data *const priv = udc_get_private(dev);
-
-		/* Data/Status stage is STALLed, allow receiving next SETUP */
-		priv->pending_dout_feed = 0;
-		dwc2_ensure_setup_ready(dev);
 	}
 
 	return 0;
@@ -2365,9 +2221,8 @@ static int udc_dwc2_disable(const struct device *dev)
 	/* Enable soft disconnect */
 	sys_set_bits(dctl_reg, USB_DWC2_DCTL_SFTDISCON);
 
-	/* OUT endpoint 0 cannot be disabled by software. The buffer allocated
-	 * in dwc2_ctrl_feed_dout() can only be freed after core reset if the
-	 * core was in Buffer DMA mode.
+	/* OUT endpoint 0 cannot be disabled by software. The enqueued buffer
+	 * can only be freed after core reset if core was in Buffer DMA mode.
 	 *
 	 * Soft Reset does timeout if PHY clock is not running. However, just
 	 * triggering Soft Reset seems to be enough on shutdown clean up.
@@ -3460,10 +3315,6 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 
 	if (evt & BIT(DWC2_DRV_EVT_ENUM_DONE)) {
 		k_event_clear(&priv->drv_evt, BIT(DWC2_DRV_EVT_ENUM_DONE));
-
-		/* Any potential transfer on control IN endpoint is cancelled */
-		priv->pending_dout_feed = 0;
-		dwc2_ensure_setup_ready(dev);
 	}
 
 	udc_unlock_internal(dev);

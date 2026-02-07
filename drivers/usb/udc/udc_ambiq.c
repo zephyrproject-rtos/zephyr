@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#error This UDC driver has to be adapted to new control transfer handling
+
 #include <soc.h>
 #include <string.h>
 #include <zephyr/drivers/clock_control/clock_control_ambiq.h>

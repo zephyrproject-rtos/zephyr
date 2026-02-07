@@ -51,6 +51,8 @@ struct udc_mcux_data {
 	usb_device_struct_t mcux_device;
 	struct k_work work;
 	struct k_fifo fifo;
+	struct usb_setup_packet setup;
+	uint8_t pending_setup;
 	uint8_t controller_id; /* 0xFF is invalid value */
 };
 
@@ -157,49 +159,45 @@ static int udc_mcux_ep_try_feed(const struct device *dev,
 	return 0;
 }
 
-/*
- * Allocate buffer and initiate a new control OUT transfer.
- */
-static int udc_mcux_ctrl_feed_dout(const struct device *dev,
-				   const size_t length)
+static int udc_mcux_submit_setup(const struct device *dev, struct net_buf *buf)
 {
-	struct net_buf *buf;
-	struct udc_ep_config *cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
-	int ret;
+	struct udc_mcux_data *priv = udc_get_private(dev);
 
-	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, length);
-	if (buf == NULL) {
-		return -ENOMEM;
-	}
+	priv->pending_setup = 0;
+	net_buf_add_mem(buf, &priv->setup, sizeof(priv->setup));
 
-	k_fifo_put(&cfg->fifo, buf);
-
-	ret = udc_mcux_ep_feed(dev, cfg, buf);
-
-	if (ret) {
-		net_buf_unref(buf);
-		return ret;
-	}
-
-	return 0;
+	return udc_submit_ep_event(dev, buf, 0);
 }
 
 static int udc_mcux_handler_setup(const struct device *dev, struct usb_setup_packet *setup)
 {
-	int err;
+	struct udc_mcux_data *priv = udc_get_private(dev);
+	struct udc_ep_config *cfg_out = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
+	struct udc_ep_config *cfg_in = udc_get_ep_cfg(dev, USB_CONTROL_EP_IN);
 	struct net_buf *buf;
 
 	LOG_DBG("setup packet");
-	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT,
-			sizeof(struct usb_setup_packet));
-	if (buf == NULL) {
-		LOG_ERR("Failed to allocate for setup");
-		return -EIO;
+
+	memcpy(&priv->setup, setup, sizeof(priv->setup));
+
+	while ((buf = udc_buf_get(cfg_in))) {
+		udc_submit_ep_event(dev, buf, -ECONNRESET);
 	}
 
-	udc_ep_buf_set_setup(buf);
-	memcpy(buf->data, setup, 8);
-	net_buf_add(buf, 8);
+	while ((buf = udc_buf_get(cfg_out))) {
+		struct udc_buf_info *bi = udc_get_buf_info(buf);
+
+		if (bi->setup) {
+			break;
+		}
+
+		udc_submit_ep_event(dev, buf, -ECONNRESET);
+	}
+
+	if (buf == NULL) {
+		priv->pending_setup = 1;
+		return 0;
+	}
 
 	if (setup->RequestType.type == USB_REQTYPE_TYPE_STANDARD &&
 	    setup->RequestType.direction == USB_REQTYPE_DIR_TO_DEVICE &&
@@ -209,83 +207,30 @@ static int udc_mcux_handler_setup(const struct device *dev, struct usb_setup_pac
 			&setup->wValue);
 	}
 
-	/* Update to next stage of control transfer */
-	udc_ctrl_update_stage(dev, buf);
-
-	if (!buf->len) {
-		return -EIO;
-	}
-
-	if (udc_ctrl_stage_is_data_out(dev)) {
-		/*  Allocate and feed buffer for data OUT stage */
-		LOG_DBG("s:%p|feed for -out-", buf);
-		err = udc_mcux_ctrl_feed_dout(dev, udc_data_stage_length(buf));
-		if (err == -ENOMEM) {
-			err = udc_submit_ep_event(dev, buf, err);
-		}
-	} else if (udc_ctrl_stage_is_data_in(dev)) {
-		err = udc_ctrl_submit_s_in_status(dev);
-	} else {
-		err = udc_ctrl_submit_s_status(dev);
-	}
-
-	return err;
+	return udc_mcux_submit_setup(dev, buf);
 }
 
 static int udc_mcux_handler_ctrl_out(const struct device *dev, struct net_buf *buf,
 				uint8_t *mcux_buf, uint16_t mcux_len)
 {
-	int err = 0;
 	uint32_t len;
 
 	len = MIN(net_buf_tailroom(buf), mcux_len);
 	net_buf_add(buf, len);
-	if (udc_ctrl_stage_is_status_out(dev)) {
-		/* Update to next stage of control transfer */
-		udc_ctrl_update_stage(dev, buf);
-		/* Status stage finished, notify upper layer */
-		err = udc_ctrl_submit_status(dev, buf);
-	} else {
-		/* Update to next stage of control transfer */
-		udc_ctrl_update_stage(dev, buf);
-	}
 
-	if (udc_ctrl_stage_is_status_in(dev)) {
-		err = udc_ctrl_submit_s_out_status(dev, buf);
-	}
-
-	return err;
+	return udc_submit_ep_event(dev, buf, 0);
 }
 
 static int udc_mcux_handler_ctrl_in(const struct device *dev, struct net_buf *buf,
 				uint8_t *mcux_buf, uint16_t mcux_len)
 {
-	int err = 0;
 	uint32_t len;
 
 	len = MIN(buf->len, mcux_len);
 	buf->data += len;
 	buf->len -= len;
 
-	if (udc_ctrl_stage_is_status_in(dev) ||
-	udc_ctrl_stage_is_no_data(dev)) {
-		/* Status stage finished, notify upper layer */
-		err = udc_ctrl_submit_status(dev, buf);
-	}
-
-	/* Update to next stage of control transfer */
-	udc_ctrl_update_stage(dev, buf);
-
-	if (udc_ctrl_stage_is_status_out(dev)) {
-		/*
-		 * IN transfer finished, release buffer,
-		 * control OUT buffer should be already fed.
-		 */
-		net_buf_unref(buf);
-		err = udc_mcux_ctrl_feed_dout(dev, 0u);
-	}
-
-	return err;
+	return udc_submit_ep_event(dev, buf, 0);
 }
 
 static int udc_mcux_handler_non_ctrl_in(const struct device *dev, uint8_t ep,
@@ -445,6 +390,11 @@ static void udc_mcux_work_handler(struct k_work *item)
 			struct udc_ep_config *cfg;
 
 			udc_mcux_control(ev->dev, kUSB_DeviceControlSetDefaultStatus, NULL);
+			/* FIXME: Determine why removing ep disable/enable here
+			 * results in setup packet received as all zeroes.
+			 * It should be enough to call the enable/disable in
+			 * udc_mcux_enable/udc_mcux_disable.
+			 */
 			cfg = udc_get_ep_cfg(ev->dev, USB_CONTROL_EP_OUT);
 			if (cfg->stat.enabled) {
 				udc_ep_disable_internal(ev->dev, USB_CONTROL_EP_OUT);
@@ -458,12 +408,12 @@ static void udc_mcux_work_handler(struct k_work *item)
 						USB_MCUX_EP0_SIZE, 0)) {
 				LOG_ERR("Failed to enable control endpoint");
 			}
-
 			if (udc_ep_enable_internal(ev->dev, USB_CONTROL_EP_IN,
 						USB_EP_TYPE_CONTROL,
 						USB_MCUX_EP0_SIZE, 0)) {
 				LOG_ERR("Failed to enable control endpoint");
 			}
+			priv->pending_setup = 0;
 			udc_submit_event(ev->dev, UDC_EVT_RESET, 0);
 		} else {
 			ep  = mcux_msg->code;
@@ -580,6 +530,21 @@ static int udc_mcux_ep_enqueue(const struct device *dev,
 			       struct udc_ep_config *const cfg,
 			       struct net_buf *const buf)
 {
+	if (cfg->addr == USB_CONTROL_EP_OUT) {
+		struct udc_buf_info *bi = udc_get_buf_info(buf);
+
+		if (bi->setup) {
+			struct udc_mcux_data *priv = udc_get_private(dev);
+
+			if (priv->pending_setup) {
+				return udc_mcux_submit_setup(dev, buf);
+			}
+
+			udc_buf_put(cfg, buf);
+			return 0;
+		}
+	}
+
 	udc_buf_put(cfg, buf);
 	if (cfg->stat.halted) {
 		LOG_DBG("ep 0x%02x halted", cfg->addr);
@@ -676,11 +641,32 @@ static int udc_mcux_set_address(const struct device *dev, const uint8_t addr)
 
 static int udc_mcux_enable(const struct device *dev)
 {
+	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_OUT, USB_EP_TYPE_CONTROL,
+				   USB_MCUX_EP0_SIZE, 0)) {
+		LOG_ERR("Failed to enable control endpoint");
+	}
+
+	if (udc_ep_enable_internal(dev, USB_CONTROL_EP_IN, USB_EP_TYPE_CONTROL,
+				   USB_MCUX_EP0_SIZE, 0)) {
+		LOG_ERR("Failed to enable control endpoint");
+	}
+
 	return udc_mcux_control(dev, kUSB_DeviceControlRun, NULL);
 }
 
 static int udc_mcux_disable(const struct device *dev)
 {
+	struct udc_ep_config *cfg;
+
+	cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
+	if (cfg->stat.enabled) {
+		udc_ep_disable_internal(dev, USB_CONTROL_EP_OUT);
+	}
+	cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_IN);
+	if (cfg->stat.enabled) {
+		udc_ep_disable_internal(dev, USB_CONTROL_EP_IN);
+	}
+
 	return udc_mcux_control(dev, kUSB_DeviceControlStop, NULL);
 }
 
