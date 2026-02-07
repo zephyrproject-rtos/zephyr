@@ -846,6 +846,7 @@ static void numaker_usbd_bus_resume_th(const struct device *dev)
 static void numaker_usbd_sof_th(const struct device *dev)
 {
 	/* UDC stack would handle bottom-half processing */
+	udc_update_sof_stamp(dev, 0);
 	udc_submit_sof_event(dev);
 }
 

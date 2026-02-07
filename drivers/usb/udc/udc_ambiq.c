@@ -187,6 +187,7 @@ static void udc_ambiq_evt_callback(const struct device *dev, am_hal_usb_dev_even
 		udc_submit_event(dev, UDC_EVT_RESUME, 0);
 		break;
 	case AM_HAL_USB_DEV_EVT_SOF:
+		udc_update_sof_stamp(dev, 0);
 		udc_submit_sof_event(dev);
 		break;
 	case AM_HAL_USB_DEV_EVT_SUSPEND:

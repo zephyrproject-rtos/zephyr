@@ -12,10 +12,15 @@
 #include <zephyr/input/input.h>
 
 #include <zephyr/usb/usbd.h>
+#include <zephyr/drivers/usb/udc.h>
 #include <zephyr/usb/class/usbd_hid.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
+
+#if CONFIG_UDC_ENABLE_SOF
+static const struct device *const udc_dev = DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0));
+#endif
 
 static const uint8_t hid_report_desc[] = HID_KEYBOARD_REPORT_DESC();
 
@@ -133,6 +138,31 @@ static void kb_output_report(const struct device *dev, const uint16_t len,
 	kb_set_report(dev, HID_REPORT_TYPE_OUTPUT, 0U, len, buf);
 }
 
+#if CONFIG_UDC_ENABLE_SOF
+/*
+ * Use it to measure the latency since the SOF interrupt. Do not blindly trust
+ * the value unless it has been verified with e.g. an osciloscope. The value is
+ * the best case, because in this sample not much happens outside the USB
+ * controller activity. It only works with UDC drivers that update the frame
+ * number on the SOF interrupt.
+ */
+static void kb_sof(const struct device *dev)
+{
+	uint16_t fnumber = udc_get_frame_number(udc_dev);
+	uint64_t stamp = udc_get_sof_stamp(udc_dev);
+
+	/*
+	 * The output connected to the LED can be used to verify the delay
+	 * between the SOF PID on the bus and the event here.
+	 */
+	/* (void)gpio_pin_toggle_dt(&kb_leds[0]); */
+	if (fnumber == 1366) {
+		LOG_INF("Time since SOF ISR %llu us",
+			k_cyc_to_us_ceil64(k_cycle_get_64() - stamp));
+	}
+}
+#endif
+
 struct hid_device_ops kb_ops = {
 	.iface_ready = kb_iface_ready,
 	.get_report = kb_get_report,
@@ -141,6 +171,7 @@ struct hid_device_ops kb_ops = {
 	.get_idle = kb_get_idle,
 	.set_protocol = kb_set_protocol,
 	.output_report = kb_output_report,
+	IF_ENABLED(CONFIG_UDC_ENABLE_SOF, (.sof = kb_sof,))
 };
 
 /* doc device msg-cb start */
