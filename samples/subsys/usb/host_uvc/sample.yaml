@@ -1,0 +1,26 @@
+sample:
+  name: USB host video sample
+tests:
+  sample.subsys.usb.host.uvc.camera:
+    tags:
+      - video
+      - usb
+      - shield
+      - samples
+    extra_args:
+      - platform:rd_rw612_bga/rw612:SHIELD="lcd_par_s035_8080"
+    extra_configs:
+      - CONFIG_FPU=y
+    harness: console
+    harness_config:
+      fixture: fixture_camera
+      type: multi_line
+      ordered: true
+      regex:
+        - "Got frame \\d+"
+        - "size: \\d+;"
+        - "timestamp \\d+"
+    platform_allow:
+      - rd_rw612_bga/rw612
+    integration_platforms:
+      - rd_rw612_bga/rw612

@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if (USBD_VIDEO_CLASS || USBH_VIDEO_CLASS)
+
+config USB_VIDEO_MAX_FRMIVAL
+	int "Max number of video output stream per USB Video interface"
+	range 1 255
+	default 8
+	help
+	  Max number of Frame Interval listed on a frame descriptor. The
+	  default value is selected arbitrarily to fit most situations without
+	  requiring too much RAM.
+
+endif

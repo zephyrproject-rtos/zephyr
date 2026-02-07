@@ -24,6 +24,7 @@
 
 /* Video Class-Specific Request Codes */
 #define UVC_SET_CUR					0x01
+#define UVC_SET_CUR_ALL					0x11
 #define UVC_GET_CUR					0x81
 #define UVC_GET_MIN					0x82
 #define UVC_GET_MAX					0x83
@@ -31,6 +32,14 @@
 #define UVC_GET_LEN					0x85
 #define UVC_GET_INFO					0x86
 #define UVC_GET_DEF					0x87
+#define UVC_GET_CUR_ALL					0x91
+#define UVC_GET_MIN_ALL					0x92
+#define UVC_GET_MAX_ALL					0x93
+#define UVC_GET_RES_ALL					0x94
+#define UVC_GET_DEF_ALL					0x97
+
+/* Control data size limits */
+#define UVC_MAX_CTRL_SIZE				4
 
 /* Flags announcing which controls are supported */
 #define UVC_INFO_SUPPORTS_GET				BIT(0)
@@ -232,6 +241,16 @@ struct uvc_unit_descriptor {
 	uint8_t bDescriptorSubtype;
 	uint8_t bUnitID;
 };
+
+struct uvc_input_terminal_descriptor {
+	uint8_t  bLength;
+	uint8_t  bDescriptorType;
+	uint8_t  bDescriptorSubtype;
+	uint8_t  bTerminalID;
+	uint16_t wTerminalType;
+	uint8_t  bAssocTerminal;
+	uint8_t  iTerminal;
+} __packed;
 
 struct uvc_output_terminal_descriptor {
 	uint8_t bLength;
@@ -436,7 +455,7 @@ struct uvc_frame_discrete_descriptor {
 	uint32_t dwMaxVideoFrameBufferSize;
 	uint32_t dwDefaultFrameInterval;
 	uint8_t bFrameIntervalType;
-	uint32_t dwFrameInterval[CONFIG_USBD_VIDEO_MAX_FRMIVAL];
+	uint32_t dwFrameInterval[CONFIG_USB_VIDEO_MAX_FRMIVAL];
 } __packed;
 
 struct uvc_frame_based_continuous_descriptor {
@@ -468,7 +487,7 @@ struct uvc_frame_based_discrete_descriptor {
 	uint32_t dwMaxBitRate;
 	uint32_t dwDefaultFrameInterval;
 	uint8_t bFrameIntervalType;
-	uint32_t dwFrameInterval[CONFIG_USBD_VIDEO_MAX_FRMIVAL];
+	uint32_t dwFrameInterval[CONFIG_USB_VIDEO_MAX_FRMIVAL];
 } __packed;
 
 struct uvc_color_descriptor {
