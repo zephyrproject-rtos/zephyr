@@ -17,7 +17,8 @@ nvic: &cpuapp_nvic {};
 
 / {
 	chosen {
-		zephyr,entropy = &psa_rng;
+		zephyr,bt-hci = &bt_hci_controller;
+		zephyr,entropy = &rng;
 	};
 
 	soc {
@@ -35,6 +36,10 @@ nvic: &cpuapp_nvic {};
 		compatible = "zephyr,psa-crypto-rng";
 		status = "disabled";
 	};
+};
+
+&bt_hci_controller {
+	status = "okay";
 };
 
 &cpuflpr_vpr {
