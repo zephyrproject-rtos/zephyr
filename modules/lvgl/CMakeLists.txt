@@ -194,6 +194,7 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/draw/vg_lite/lv_draw_vg_lite_vector.c
     ${LVGL_DIR}/src/draw/vg_lite/lv_draw_vg_lite_mask_rect.c
     ${LVGL_DIR}/src/draw/vg_lite/lv_draw_buf_vg_lite.c
+    ${LVGL_DIR}/src/draw/vg_lite/lv_vg_lite_bitmap_font_cache.c
 
     ${LVGL_DIR}/src/font/binfont_loader/lv_binfont_loader.c
     ${LVGL_DIR}/src/font/font_manager/lv_font_manager.c
@@ -281,7 +282,6 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/libs/tiny_ttf/lv_tiny_ttf.c
     ${LVGL_DIR}/src/libs/tjpgd/lv_tjpgd.c
     ${LVGL_DIR}/src/libs/tjpgd/tjpgd.c
-    ${LVGL_DIR}/src/libs/vg_lite_driver/lv_vg_lite_hal/lv_vg_lite_hal.c
     ${LVGL_DIR}/src/libs/vg_lite_driver/VGLiteKernel/vg_lite_kernel.c
     ${LVGL_DIR}/src/libs/vg_lite_driver/VGLite/vg_lite.c
     ${LVGL_DIR}/src/libs/vg_lite_driver/VGLite/vg_lite_image.c
@@ -470,6 +470,9 @@ zephyr_library_sources_ifdef(CONFIG_LV_Z_POINTER_INPUT input/lvgl_pointer_input.
 zephyr_library_sources_ifdef(CONFIG_LV_Z_BUTTON_INPUT input/lvgl_button_input.c)
 zephyr_library_sources_ifdef(CONFIG_LV_Z_ENCODER_INPUT input/lvgl_encoder_input.c)
 zephyr_library_sources_ifdef(CONFIG_LV_Z_KEYPAD_INPUT input/lvgl_keypad_input.c)
+
+zephyr_library_sources_ifdef(CONFIG_LV_USE_GPU_VG_LITE gpus/lvgl_vg_lite_hal_zephyr.c)
+zephyr_library_sources_ifdef(CONFIG_LV_USE_GPU_VG_LITE gpus/lvgl_vg_lite_hal_stubs.c)
 
 zephyr_library_link_libraries(LVGL)
 target_link_libraries(LVGL INTERFACE zephyr_interface)

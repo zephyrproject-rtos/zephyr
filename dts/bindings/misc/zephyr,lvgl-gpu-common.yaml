@@ -1,0 +1,11 @@
+# Copyright 2026 Felipe Neves <ryukokki.felipe@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for gpu lvgl pseudo devices
+
+properties:
+  gpu:
+    type: phandle
+    required: true
+    description: |
+      gpu device phandle.

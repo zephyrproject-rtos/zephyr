@@ -1,0 +1,26 @@
+description: |
+  LVGL VGLite GPU binding
+
+  Example configuration:
+
+  lvgl_vglite {
+          compatible = "zephyr,lvgl-gpu-vglite";
+          gpu = <&gpu2d>;
+          variant = "gc355";
+          revision = "0x13";
+  };
+
+compatible: "zephyr,lvgl-gpu-vglite"
+
+include: zephyr,lvgl-gpu-common.yaml
+
+properties:
+  variant:
+    type: string
+    required: true
+    description: GPU2D variant string.
+
+  revision:
+    type: string
+    required: true
+    description: GPU2D variant revision implementation.
