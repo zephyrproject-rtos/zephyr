@@ -133,6 +133,10 @@ assigned a CVE number.  As fixes are created, it may be necessary to
 allocate additional CVE numbers, or to retire numbers that were
 assigned.
 
+For information on the criteria used to determine whether a vulnerability
+report qualifies for CVE assignment, please see
+:ref:`cve-assignment-criteria`.
+
 Vulnerability Notification
 ==========================
 
