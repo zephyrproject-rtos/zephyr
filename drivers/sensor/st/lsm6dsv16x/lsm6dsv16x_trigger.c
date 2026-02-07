@@ -273,7 +273,7 @@ static void lsm6dsv16x_handle_interrupt(const struct device *dev)
 
 	if (!ON_I3C_BUS(cfg) || (I3C_INT_PIN(cfg))) {
 		ret = gpio_pin_interrupt_configure_dt(lsm6dsv16x->drdy_gpio,
-						GPIO_INT_EDGE_TO_ACTIVE);
+						GPIO_INT_LEVEL_ACTIVE);
 		if (ret < 0) {
 			LOG_ERR("%s: Not able to configure pin_int", dev->name);
 		}
@@ -488,5 +488,5 @@ int lsm6dsv16x_init_interrupt(const struct device *dev)
 #endif
 
 	return gpio_pin_interrupt_configure_dt(lsm6dsv16x->drdy_gpio,
-					       GPIO_INT_EDGE_TO_ACTIVE);
+					       GPIO_INT_LEVEL_ACTIVE);
 }
