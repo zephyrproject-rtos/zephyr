@@ -65,10 +65,6 @@ struct net_nbr {
 	/** Function to be called when the neighbor is removed. */
 	void (*const remove)(struct net_nbr *nbr);
 
-	/** Start of the data storage. Not to be accessed directly
-	 *  (the data pointer should be used instead).
-	 */
-	uint8_t __nbr[] __net_nbr_align;
 };
 
 /* This is an array of struct net_nbr + some additional data */
