@@ -1,0 +1,12 @@
+# Copyright (c) 2026 SiFli Technologies Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config OTP_SIFLI_EFUSE
+	bool "SiFli SF32LB series eFuse OTP driver"
+	default y
+	depends on DT_HAS_SIFLI_SF32LB_EFUSE_ENABLED
+	help
+	  Enable the SiFli SF32LB series eFuse OTP driver.
+	  This driver provides read-only access to the eFuse OTP memory.
+	  The driver uses a cache mechanism to improve read performance
+	  by loading all eFuse content into memory during initialization.
