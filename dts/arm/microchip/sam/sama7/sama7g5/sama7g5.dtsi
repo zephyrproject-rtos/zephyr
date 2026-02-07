@@ -284,6 +284,13 @@
 			status = "disabled";
 		};
 
+		aes: aes@e1810000 {
+			compatible = "microchip,aes-g1-crypto";
+			reg = <0xe1810000 0x100>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 27>;
+			status = "disabled";
+		};
+
 		sha: sha@e1814000 {
 			compatible = "microchip,sha-g1-crypto";
 			reg = <0xe1814000 0x100>;
