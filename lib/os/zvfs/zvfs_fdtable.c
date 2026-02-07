@@ -435,17 +435,25 @@ FILE *zvfs_fdopen(int fd, const char *mode)
 		return NULL;
 	}
 
+#ifdef CONFIG_PICOLIBC
+	return fdopen(fd, mode);
+#else
 	return (FILE *)&fdtable[fd];
+#endif
 }
 
 int zvfs_fileno(FILE *file)
 {
+#ifdef CONFIG_PICOLIBC
+	return fileno(file);
+#else
 	if (!IS_ARRAY_ELEMENT(fdtable, file)) {
 		errno = EBADF;
 		return -1;
 	}
 
 	return (struct fd_entry *)file - fdtable;
+#endif
 }
 
 int zvfs_fstat(int fd, struct zvfs_stat *buf)
