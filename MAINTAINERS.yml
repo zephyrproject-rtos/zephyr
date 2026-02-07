@@ -2680,6 +2680,25 @@ Documentation Infrastructure:
   labels:
     - "area: Wi-Fi"
 
+"Drivers: Wi-Fi orphaned drivers":
+  status: odd fixes
+  files:
+    - drivers/wifi/esp_at/
+    - drivers/wifi/simplelink/
+    - drivers/wifi/winc1500/
+  labels:
+    - "area: Wi-Fi"
+  file-groups:
+    - name: Espressif AT based Wi-Fi driver
+      files:
+        - drivers/wifi/esp_at/
+    - name: MicroChip winc1500 Wi-Fi driver
+      files:
+        - drivers/wifi/winc1500/
+    - name: TI SimpleLink Wi-Fi driver
+      files:
+        - drivers/wifi/simplelink/
+
 "Drivers: Wurth Elektronik Sensors":
   status: maintained
   maintainers:
@@ -2774,6 +2793,10 @@ Espressif Platforms:
     - samples/boards/espressif/
     - tests/boards/espressif/
     - drivers/*/*esp32*/
+  file-groups:
+    - name: Espressif hosted Wi-Fi driver
+      files:
+        - drivers/wifi/esp_hosted
   labels:
     - "platform: ESP32"
 
