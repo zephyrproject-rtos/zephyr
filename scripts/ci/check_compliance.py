@@ -1527,11 +1527,14 @@ flagged.
         "CDC_ACM_PORT_NAME_",
         "CHRE",  # Optional module
         "CHRE_LOG_LEVEL_DBG",  # Optional module
+        "CHROME_PLATFORMS",  # Used in the ec_host_cmd_usb sample
         "CLOCK_STM32_SYSCLK_SRC_",
         "CMD_CACHE",  # Defined in U-Boot, mentioned in docs
         "CMU",
         "COMPILER_RT_RTLIB",
         "CRC",  # Used in TI CC13x2 / CC26x2 SDK comment
+        "CROS_EC",  # Used in the ec_host_cmd_usb sample
+        "CROS_EC_USB",  # Used in the ec_host_cmd_usb sample
         "DEEP_SLEEP",  # #defined by RV32M1 in ext/
         "DESCRIPTION",
         "DT_HAS_",  # example from doc/build/dts/dt-vs-kconfig.rst
@@ -1555,6 +1558,7 @@ flagged.
         # Used in ICMsg tests for intercompatibility
         # with older versions of the ICMsg.
         "IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS",
+        "KEYBOARD_CROS_EC",  # Used in the ec_host_cmd_usb sample
         "LIBGCC_RTLIB",
         "LLEXT_EXPORT_SYMBOL_GROUP_",  # Used in regexp by
         # scripts/build/llext_inspect_discarded_groups.py
