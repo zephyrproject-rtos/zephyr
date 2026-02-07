@@ -9,6 +9,7 @@ config SOC_SERIES_M48X
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU
 	select CPU_HAS_ARM_MPU
+	select RESET
 
 config SOC_M487
 	select HAS_NUMICRO_HAL
