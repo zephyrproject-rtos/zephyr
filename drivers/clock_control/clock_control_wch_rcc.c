@@ -102,7 +102,7 @@ static void clock_control_wch_rcc_setup_flash(void)
 	} else {
 		latency = FLASH_ACTLR_LATENCY_1;
 	}
-#elif defined(CONFIG_SOC_SERIES_CH32V00X)
+#elif defined(CONFIG_SOC_CH32V006)
 	if (WCH_RCC_SYSCLK <= 15000000) {
 		latency = FLASH_ACTLR_LATENCY_0;
 	} else if (WCH_RCC_SYSCLK <= 24000000) {
