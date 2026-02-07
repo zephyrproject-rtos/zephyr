@@ -62,23 +62,15 @@ static void *video_buffer_k_heap_aligned_alloc(size_t align, size_t bytes, k_tim
 
 static struct video_buffer video_buf[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX];
 
-struct mem_block {
-	void *data;
-};
-
-static struct mem_block video_block[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX];
-
 struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_timeout_t timeout)
 {
 	struct video_buffer *vbuf = NULL;
-	struct mem_block *block;
 	int i;
 
 	/* find available video buffer */
 	for (i = 0; i < ARRAY_SIZE(video_buf); i++) {
 		if (video_buf[i].buffer == NULL) {
 			vbuf = &video_buf[i];
-			block = &video_block[i];
 			break;
 		}
 	}
@@ -88,12 +80,11 @@ struct video_buffer *video_buffer_aligned_alloc(size_t size, size_t align, k_tim
 	}
 
 	/* Alloc buffer memory */
-	block->data = VIDEO_COMMON_HEAP_ALLOC(align, size, timeout);
-	if (block->data == NULL) {
+	vbuf->buffer = VIDEO_COMMON_HEAP_ALLOC(align, size, timeout);
+	if (vbuf->buffer == NULL) {
 		return NULL;
 	}
 
-	vbuf->buffer = block->data;
 	vbuf->size = size;
 	vbuf->bytesused = 0;
 
@@ -107,22 +98,20 @@ struct video_buffer *video_buffer_alloc(size_t size, k_timeout_t timeout)
 
 void video_buffer_release(struct video_buffer *vbuf)
 {
-	struct mem_block *block = NULL;
-	int i;
-
 	__ASSERT_NO_MSG(vbuf != NULL);
 
-	/* vbuf to block */
-	for (i = 0; i < ARRAY_SIZE(video_block); i++) {
-		if (video_block[i].data == vbuf->buffer) {
-			block = &video_block[i];
+	for (uint8_t i = 0; i < ARRAY_SIZE(video_buf); i++) {
+		if (video_buf[i].buffer == vbuf->buffer) {
+			video_buf[i].buffer = NULL;
+			video_buf[i].size = 0;
+			video_buf[i].bytesused = 0;
 			break;
 		}
 	}
 
-	vbuf->buffer = NULL;
-	if (block) {
-		VIDEO_COMMON_FREE(block->data);
+	if (vbuf->buffer != NULL) {
+		VIDEO_COMMON_FREE(vbuf->buffer);
+		vbuf->buffer = NULL;
 	}
 }
 
