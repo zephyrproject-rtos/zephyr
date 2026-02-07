@@ -1,0 +1,51 @@
+# Copyright (c) 2025 Paul Wedeck <paulwedeck@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG_BACKEND_CAN
+	bool "CAN backend"
+	depends on CAN
+	depends on CAN_LOG_LEVEL_OFF
+	help
+	  Backend to send out logs using raw CAN frames.
+
+if LOG_BACKEND_CAN
+
+config LOG_BACKEND_CAN_ID
+	hex "CAN ID"
+	default 0x7ff
+	range 0x000 0x7ff if !LOG_BACKEND_USE_EXTID
+	range 0x00000000 0x1fffffff if LOG_BACKEND_USE_EXTID
+	help
+	  CAN ID where log frames should be sent.
+
+config LOG_BACKEND_USE_EXTID
+	bool "Use Extended (29-bit) CAN ID"
+	default n
+	help
+	  Enables use of Extended (29-bit) id.
+
+config LOG_BACKEND_CAN_USE_FD
+	bool "Use FD"
+	depends on CAN_FD_MODE
+	default n
+	help
+	  Enables use of CAN FD (64 byte) frames.
+
+config LOG_BACKEND_CAN_USE_FD_BRS
+	bool "Use baud rate switching (BRS)"
+	depends on LOG_BACKEND_CAN_USE_FD
+	default n
+	help
+	  Enables use of CAN FD baud rate switching.
+
+config LOG_BACKEND_CAN_AUTOSTART
+	bool "Autostart CAN backend"
+	default y
+	help
+	  Select this if logging should be enabled from the start.
+
+backend = CAN
+backend-str = can
+source "subsys/logging/Kconfig.template.log_format_config"
+
+endif # LOG_BACKEND_CAN
