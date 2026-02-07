@@ -23,7 +23,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
@@ -217,7 +216,7 @@ int bt_tmap_register(enum bt_tmap_role role)
 {
 	int err;
 
-	CHECKIF(!valid_tmap_role(role)) {
+	if (!valid_tmap_role(role)) {
 		LOG_DBG("Invalid role: %d", role);
 
 		return -EINVAL;
