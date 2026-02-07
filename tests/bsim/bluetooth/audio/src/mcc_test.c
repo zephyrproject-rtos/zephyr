@@ -845,7 +845,7 @@ static void test_cp_fast_forward(void)
 		printk("FAST FORWARD command succeeded\n");
 	}
 
-	/* Wait for the track position to change during forwarding */
+	/* Wait for the track position to change during fast forwarding */
 	WAIT_FOR_FLAG(track_position_read);
 	if (tmp_pos >= g_pos) {
 		FAIL("Position did not change during forwarding");
