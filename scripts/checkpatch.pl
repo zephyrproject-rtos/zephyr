@@ -6564,6 +6564,43 @@ sub process {
 			}
 		}
 
+# check for macro names defining constants - should be capitalized
+		if ($line =~ /^\+\s*#\s*define\s+([a-zA-Z_][a-zA-Z0-9_]*)\s+/) {
+			my $macro_name = $1;
+			# Skip function-like macros (those with parentheses)
+			if ($line !~ /^\+\s*#\s*define\s+$macro_name\s*\(/) {
+				# Check if macro name contains lowercase letters
+				if ($macro_name =~ /[a-z]/) {
+					# Skip common exceptions
+					if ($macro_name !~ /^(?:asm|__asm__|volatile|__volatile__|inline|__inline__|restrict|__restrict__|typeof|__typeof__)$/) {
+						WARN("MACRO_CASE",
+						     "Macro name '$macro_name' should be capitalized (names of macros defining constants should be capitalized)\n" . $herecurr);
+					}
+				}
+			}
+		}
+
+# check for enum labels - should be capitalized
+		if ($line =~ /^\+\s*([a-z][a-zA-Z0-9_]*)\s*[,=}]/) {
+			my $enum_name = $1;
+			my $in_enum = 0;
+			# Look back to see if we're inside an enum
+			for (my $ln = $linenr - 1; $ln >= $linenr - 20 && $ln >= 0; $ln--) {
+				my $prevrawline = $rawlines[$ln];
+				if ($prevrawline =~ /enum\s+\w*\s*\{/) {
+					$in_enum = 1;
+					last;
+				}
+				if ($prevrawline =~ /\}[^;]*;/) {
+					last;
+				}
+			}
+			if ($in_enum) {
+				WARN("ENUM_CASE",
+				     "Enum label '$enum_name' should be capitalized (names of labels in enums should be capitalized)\n" . $herecurr);
+			}
+		}
+
 # check for feature test macros that request C library API extensions, violating rules A.4 and A.5
 
 		if ($line =~ /#\s*define\s+$api_defines/) {
