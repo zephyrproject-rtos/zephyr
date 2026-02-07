@@ -34,6 +34,8 @@ processes are introduced.
 
 #. Once accepted, these changes will become part of the document.
 
+.. _general_safety_scope:
+
 General safety scope
 ********************
 
