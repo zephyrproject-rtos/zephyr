@@ -98,7 +98,8 @@ static const struct mc_cgm_gate_entry mc_cgm_gate_map[] = {
 	LISTIFY(MC_CGM_COUNT(FSL_FEATURE_SOC_LPI2C_COUNT),
 		MC_CGM_GATE_ENTRY, (,), LPI2C, Lpi2c),
 #endif
-#if defined(CONFIG_COUNTER_MCUX_STM) && defined(FSL_FEATURE_SOC_STM_COUNT)
+#if (defined(CONFIG_COUNTER_MCUX_STM) || defined(CONFIG_MCUX_STM_TIMER)) && \
+	defined(FSL_FEATURE_SOC_STM_COUNT)
 	LISTIFY(MC_CGM_COUNT(FSL_FEATURE_SOC_STM_COUNT),
 		MC_CGM_GATE_ENTRY, (,), STM, Stm),
 #endif
@@ -139,7 +140,8 @@ static const struct mc_cgm_rate_entry mc_cgm_rate_map[] = {
 	LISTIFY(MC_CGM_COUNT(FSL_FEATURE_SOC_LPI2C_COUNT),
 		MC_CGM_RATE_ENTRY, (,), LPI2C, Lpi2c),
 #endif
-#if defined(CONFIG_COUNTER_MCUX_STM) && defined(FSL_FEATURE_SOC_STM_COUNT)
+#if (defined(CONFIG_COUNTER_MCUX_STM) || defined(CONFIG_MCUX_STM_TIMER)) && \
+	defined(FSL_FEATURE_SOC_STM_COUNT)
 	LISTIFY(MC_CGM_COUNT(FSL_FEATURE_SOC_STM_COUNT),
 		MC_CGM_RATE_ENTRY, (,), STM, Stm),
 #endif
@@ -323,14 +325,14 @@ static int mc_cgm_init(const struct device *dev)
 	 * devicetree so customers can override clock sources from board
 	 * overlays without modifying the driver.
 	 */
-#if defined(CONFIG_COUNTER_MCUX_STM)
+#if defined(CONFIG_COUNTER_MCUX_STM) || defined(CONFIG_MCUX_STM_TIMER)
 	CLOCK_SetClkDiv(kCLOCK_DivStm0Clk, NXP_PLL_MUX_1_DC_0_DIV);
 	CLOCK_AttachClk(kAIPS_PLAT_CLK_to_STM0);
 #if defined(FSL_FEATURE_SOC_STM_COUNT) && (FSL_FEATURE_SOC_STM_COUNT == 2U)
 	CLOCK_SetClkDiv(kCLOCK_DivStm1Clk, NXP_PLL_MUX_2_DC_0_DIV);
 	CLOCK_AttachClk(kAIPS_PLAT_CLK_to_STM1);
 #endif /* FSL_FEATURE_SOC_STM_COUNT == 2U */
-#endif /* defined(CONFIG_COUNTER_MCUX_STM) */
+#endif /* defined(CONFIG_COUNTER_MCUX_STM) || defined(CONFIG_MCUX_STM_TIMER) */
 #endif
 #if defined(CONFIG_CAN_MCUX_FLEXCAN)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcan_0)) || \
