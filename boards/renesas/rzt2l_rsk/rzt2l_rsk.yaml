@@ -11,5 +11,6 @@ supported:
   - adc
   - uart
   - gpio
+  - counter
   - pwm
 vendor: renesas
