@@ -40,7 +40,7 @@ static unsigned int num_unprocessed_cpus;
  * P-state where the cpu_load is greater than or equal to the trigger threshold of the
  * P-state. If no P-state matches (i.e., the load is below all thresholds), the policy
  * will select the last P-state in the array (the lowest performance state). This is
- * intrinsic behavior: P-states must be defined in increasing threshold order.
+ * intrinsic behavior: P-states must be defined in decreasing threshold order.
  */
 int cpu_freq_policy_select_pstate(const struct pstate **pstate_out)
 {
