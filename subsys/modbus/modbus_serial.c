@@ -287,10 +287,11 @@ static int modbus_rtu_rx_adu(struct modbus_context *ctx)
 	uint16_t calc_crc;
 	uint16_t crc_idx;
 	uint8_t *data_ptr;
+	uint16_t buf_ctr = cfg->uart_buf_ctr;
 
 	/* Is the message long enough? */
-	if ((cfg->uart_buf_ctr < MODBUS_RTU_MIN_MSG_SIZE) ||
-	    (cfg->uart_buf_ctr > CONFIG_MODBUS_BUFFER_SIZE)) {
+	if ((buf_ctr < MODBUS_RTU_MIN_MSG_SIZE) ||
+	    (buf_ctr > CONFIG_MODBUS_BUFFER_SIZE)) {
 		LOG_WRN("Frame length error");
 		return -EMSGSIZE;
 	}
@@ -299,16 +300,16 @@ static int modbus_rtu_rx_adu(struct modbus_context *ctx)
 	ctx->rx_adu.fc = cfg->uart_buf[1];
 	data_ptr = &cfg->uart_buf[2];
 	/* Payload length without node address, function code, and CRC */
-	ctx->rx_adu.length = cfg->uart_buf_ctr - 4;
+	ctx->rx_adu.length = buf_ctr - 4;
 	/* CRC index */
-	crc_idx = cfg->uart_buf_ctr - sizeof(uint16_t);
+	crc_idx = buf_ctr - sizeof(uint16_t);
 
 	memcpy(ctx->rx_adu.data, data_ptr, ctx->rx_adu.length);
 
 	ctx->rx_adu.crc = sys_get_le16(&cfg->uart_buf[crc_idx]);
 	/* Calculate CRC over address, function code, and payload */
 	calc_crc = crc16_ansi(&cfg->uart_buf[0],
-			      cfg->uart_buf_ctr - sizeof(ctx->rx_adu.crc));
+			      buf_ctr - sizeof(ctx->rx_adu.crc));
 
 	if (ctx->rx_adu.crc != calc_crc) {
 		LOG_WRN("Calculated CRC does not match received CRC");
