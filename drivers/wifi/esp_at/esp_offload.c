@@ -294,11 +294,11 @@ static int _sock_send(struct esp_socket *sock, struct net_pkt *pkt)
 		dst = sock->dst;
 		k_mutex_unlock(&sock->lock);
 
-		/* ESP-AT supports IPv4 only */
-		if (dst.sa_family != AF_INET) {
-			ret = -EAFNOSUPPORT;
-			goto out;
-		}
+    /* ESP-AT supports IPv4 only */
+    if (dst.sa_family != AF_INET) {
+      ret = -EAFNOSUPPORT;
+      goto out;
+    }
 
 		net_addr_ntop(dst.sa_family,
 			      &net_sin(&dst)->sin_addr,
