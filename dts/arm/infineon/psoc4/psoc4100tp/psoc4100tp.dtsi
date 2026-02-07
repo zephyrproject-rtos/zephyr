@@ -151,6 +151,7 @@
 			tcpwm0_0: tcpwm0_0@40200100 {
 				compatible = "infineon,tcpwm";
 				reg = <0x40200100 0x40>;
+				interrupts = <16 3>;
 				resolution = <16>;
 				clk-dst = <0x5>;
 				status = "disabled";
@@ -170,6 +171,7 @@
 			tcpwm0_1: tcpwm0_1@40200140 {
 				compatible = "infineon,tcpwm";
 				reg = <0x40200140 0x40>;
+				interrupts = <17 3>;
 				resolution = <16>;
 				clk-dst = <0x6>;
 				status = "disabled";
@@ -189,6 +191,7 @@
 			tcpwm0_2: tcpwm0_2@40200180 {
 				compatible = "infineon,tcpwm";
 				reg = <0x40200180 0x40>;
+				interrupts = <18 3>;
 				resolution = <16>;
 				clk-dst = <0x7>;
 				status = "disabled";
@@ -208,6 +211,7 @@
 			tcpwm0_3: tcpwm0_3@402001c0 {
 				compatible = "infineon,tcpwm";
 				reg = <0x402001c0 0x40>;
+				interrupts = <19 3>;
 				resolution = <16>;
 				clk-dst = <0x8>;
 				status = "disabled";
@@ -227,6 +231,7 @@
 			tcpwm0_4: tcpwm0_4@40200200 {
 				compatible = "infineon,tcpwm";
 				reg = <0x40200200 0x40>;
+				interrupts = <20 3>;
 				resolution = <16>;
 				clk-dst = <0x9>;
 				status = "disabled";
@@ -246,6 +251,7 @@
 			tcpwm0_5: tcpwm0_5@40200240 {
 				compatible = "infineon,tcpwm";
 				reg = <0x40200240 0x40>;
+				interrupts = <21 3>;
 				resolution = <16>;
 				clk-dst = <0xa>;
 				status = "disabled";
