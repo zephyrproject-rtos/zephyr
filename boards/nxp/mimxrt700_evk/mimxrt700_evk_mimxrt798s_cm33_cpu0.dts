@@ -118,6 +118,19 @@
 		status = "okay";
 		zephyr,memory-region = "PSRAM2";
 	};
+
+	/*
+	 * This node describes the GPIO pins of the LCD-PAR-S035 panel 8080 interface.
+	 */
+	nxp_lcd_8080_connector: lcd-8080-connector {
+		compatible = "nxp,lcd-8080";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <9 0 &gpio2 5 0>,	/* Pin 9, LCD touch INT */
+			   <10 0 &gpio2 2 0>,	/* Pin 10, LCD backlight control */
+			   <11 0 &gpio2 15 0>;	/* Pin 11, LCD and touch reset */
+	};
 };
 
 &ctimer0 {
@@ -295,6 +308,10 @@ nxp_mipi_i2c: &flexcomm8_lpi2c8 {};
 zephyr_mipi_dsi: &mipi_dsi {};
 
 zephyr_lcdif: &lcdif {};
+
+zephyr_mipi_dbi_parallel: &lcdif {};
+
+nxp_8080_touch_panel_i2c: &flexcomm8_lpi2c8 {};
 
 &gpio0 {
 	status = "okay";

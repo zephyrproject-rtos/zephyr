@@ -93,7 +93,7 @@ static int mcux_dcnano_lcdif_dbi_configure(const struct device *dev,
 	const struct mcux_dcnano_lcdif_dbi_config *config = dev->config;
 	struct mcux_dcnano_lcdif_dbi_data *lcdif_data = dev->data;
 	uint8_t bus_type = dbi_config->mode & 0xFU;
-	uint8_t color_coding = dbi_config->mode & 0xF0U;
+	uint8_t color_coding = dbi_config->color_coding & 0xF0U;
 	lcdif_dbi_config_t lcdif_dbi_config = config->dbi_config;
 	status_t status;
 
