@@ -305,22 +305,18 @@ int main(void)
 	case PIXEL_FORMAT_ARGB_8888:
 		bg_color = 0xFFu;
 		fill_buffer_fnc = fill_buffer_argb8888;
-		buf_size *= 4;
 		break;
 	case PIXEL_FORMAT_RGB_888:
 		bg_color = 0xFFu;
 		fill_buffer_fnc = fill_buffer_rgb888;
-		buf_size *= 3;
 		break;
 	case PIXEL_FORMAT_RGB_565:
 		bg_color = 0xFFu;
 		fill_buffer_fnc = fill_buffer_rgb565;
-		buf_size *= 2;
 		break;
 	case PIXEL_FORMAT_RGB_565X:
 		bg_color = 0xFFu;
 		fill_buffer_fnc = fill_buffer_rgb565x;
-		buf_size *= 2;
 		break;
 	case PIXEL_FORMAT_L_8:
 		bg_color = 0xFFu;
@@ -329,19 +325,14 @@ int main(void)
 	case PIXEL_FORMAT_AL_88:
 		bg_color = 0x00u;
 		fill_buffer_fnc = fill_buffer_al_88;
-		buf_size *= 2;
 		break;
 	case PIXEL_FORMAT_MONO01:
 		bg_color = 0xFFu;
 		fill_buffer_fnc = fill_buffer_mono01;
-		buf_size = DIV_ROUND_UP(DIV_ROUND_UP(
-			buf_size, NUM_BITS(uint8_t)), sizeof(uint8_t));
 		break;
 	case PIXEL_FORMAT_MONO10:
 		bg_color = 0x00u;
 		fill_buffer_fnc = fill_buffer_mono10;
-		buf_size = DIV_ROUND_UP(DIV_ROUND_UP(
-			buf_size, NUM_BITS(uint8_t)), sizeof(uint8_t));
 		break;
 	default:
 		LOG_ERR("Unsupported pixel format. Aborting sample.");
@@ -351,6 +342,12 @@ int main(void)
 		return 0;
 #endif
 	}
+
+	/* Amount of bytes necessary depends on format - ensure to round up, necessary for
+	 * MONO formats
+	 */
+	buf_size *= DISPLAY_BITS_PER_PIXEL(capabilities.current_pixel_format);
+	buf_size = DIV_ROUND_UP(DIV_ROUND_UP(buf_size, NUM_BITS(uint8_t)), sizeof(uint8_t));
 
 	buf = k_aligned_alloc(CONFIG_SAMPLE_BUFFER_ADDR_ALIGN, buf_size);
 
