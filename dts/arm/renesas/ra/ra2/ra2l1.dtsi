@@ -360,6 +360,11 @@
 			reg = <0x40078000 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec0: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		pwm1: pwm1@40078100 {
@@ -370,6 +375,11 @@
 			reg = <0x40078100 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec1: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		pwm2: pwm2@40078200 {
@@ -380,6 +390,11 @@
 			reg = <0x40078200 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec2: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		pwm3: pwm3@40078300 {
@@ -390,6 +405,11 @@
 			reg = <0x40078300 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec3: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		pwm4: pwm4@40078400 {
@@ -400,6 +420,11 @@
 			reg = <0x40078400 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec4: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		pwm5: pwm5@40078500 {
@@ -410,6 +435,11 @@
 			reg = <0x40078500 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec5: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		pwm6: pwm6@40078600 {
@@ -420,6 +450,11 @@
 			reg = <0x40078600 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec6: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		pwm7: pwm7@40078700 {
@@ -430,6 +465,11 @@
 			reg = <0x40078700 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec7: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		pwm8: pwm7@40078800 {
@@ -440,6 +480,11 @@
 			reg = <0x40078800 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec8: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		pwm9: pwm7@40078900 {
@@ -450,6 +495,11 @@
 			reg = <0x40078900 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec9: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		agt0: agt@40084000 {

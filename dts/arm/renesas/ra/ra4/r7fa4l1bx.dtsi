@@ -414,6 +414,11 @@
 			reg = <0x40169000 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec0: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		pwm1: pwm1@40169100 {
@@ -424,6 +429,11 @@
 			reg = <0x40169100 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec1: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		pwm2: pwm2@40169200 {
@@ -434,6 +444,11 @@
 			reg = <0x40169200 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec2: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		pwm3: pwm3@40169300 {
@@ -444,6 +459,11 @@
 			reg = <0x40169300 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec3: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		pwm4: pwm4@40169400 {
@@ -454,6 +474,11 @@
 			reg = <0x40169400 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec4: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		pwm5: pwm5@40169500 {
@@ -464,6 +489,11 @@
 			reg = <0x40169500 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec5: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		canfd_global: canfd_global@400b0000 {

@@ -42,6 +42,11 @@
 			reg = <0x40169200 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec2: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		pwm3: pwm3@40169300 {
@@ -52,6 +57,11 @@
 			reg = <0x40169300 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
+
+			qdec3: qdec {
+				compatible = "renesas,ra-qdec";
+				status = "disabled";
+			};
 		};
 
 		canfd_global: canfd_global@400b0000 {

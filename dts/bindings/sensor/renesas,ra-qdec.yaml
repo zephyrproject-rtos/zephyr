@@ -1,0 +1,19 @@
+# Copyright (c) 2025, Pivot International
+# SPDX-License-Identifier: Apache-2.0
+description: |
+  Renesas RA quadrature decoder
+
+compatible: "renesas,ra-qdec"
+
+include:
+  - name: base.yaml
+  - name: pinctrl-device.yaml
+  - name: sensor-device.yaml
+
+properties:
+  micro-ticks-per-rev:
+    type: int
+    required: true
+    description: |
+      This is a number that is used to determine how many revolutions * 1000000
+      were done based on the current counter's value.
