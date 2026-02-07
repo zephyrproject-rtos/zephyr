@@ -441,9 +441,18 @@ function filterBoards() {
       matches = false;
     } else {
       // Check if board matches all selected compatibles (with wildcard support)
+      const scope = document.querySelector('input[name="scope"]:checked').value;
+      let targetCompatibles = boardCompatibles;
+
+      if (scope === 'on-board') {
+        targetCompatibles = (board.getAttribute("data-compatibles-onboard") || "").split(" ").filter(Boolean);
+      } else if (scope === 'on-chip') {
+        targetCompatibles = (board.getAttribute("data-compatibles-onchip") || "").split(" ").filter(Boolean);
+      }
+
       const compatiblesMatch = selectedCompatibles.length === 0 ||
         selectedCompatibles.every((pattern) =>
-          boardCompatibles.some((compatible) => wildcardMatch(pattern, compatible))
+          targetCompatibles.some((compatible) => wildcardMatch(pattern, compatible))
         );
 
       matches =
