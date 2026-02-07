@@ -6114,6 +6114,18 @@ West:
   labels:
     - "area: Audio"
 
+"West project: libsrtp":
+  status: maintained
+  maintainers:
+    - josuah
+  collaborators:
+    - seyedNaserMoravej
+  files:
+    - modules/libsrtp/
+    - samples/modules/libsrtp/
+  labels:
+    - "area: Networking"
+
 "West project: littlefs":
   status: odd fixes
   files:
