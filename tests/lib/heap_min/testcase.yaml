@@ -8,3 +8,6 @@ tests:
   libraries.heap_min.runtime_stats:
     extra_configs:
       - CONFIG_SYS_HEAP_RUNTIME_STATS=y
+  libraries.heap_min.canaries:
+    extra_configs:
+      - CONFIG_SYS_HEAP_CANARIES=y
