@@ -135,4 +135,6 @@ source "drivers/adc/Kconfig.xec"
 source "drivers/adc/Kconfig.xmc4xxx"
 # zephyr-keep-sorted-stop
 
+source "drivers/adc/Kconfig.ads1118"
+
 endif # ADC
