@@ -81,6 +81,28 @@ config FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE
 
 endif # FLASH_MSPI_NOR
 
+config FLASH_MSPI_INFINEON_S28HX512T
+	bool "MSPI Infineon S28HX512T driver"
+	default y
+	depends on DT_HAS_INFINEON_S28HX512T_ENABLED
+	select FLASH_MSPI
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+
+if FLASH_MSPI_INFINEON_S28HX512T
+
+config FLASH_MSPI_INFINEON_S28HX512T_EARLY_FIXUP_RESET
+	bool "Perform initial software reset at 8D-8D-8D"
+	default n
+	help
+	  Some bootloaders may put the flash in the highest possible configuration
+	  before transferring control to Zephyr. One such case is the TI ROM
+	  bootloader. This property replaces the original software reset sequence
+	  such that 8D-8D-8D configuration is applied before doing the software
+	  reset to go back to 1S-1S-1S.
+
+endif # FLASH_MSPI_INFINEON_S28HX512T
+
 endmenu
 
 if FLASH_MSPI
