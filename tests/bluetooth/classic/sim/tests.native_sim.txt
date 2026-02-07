@@ -1,0 +1,17 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+#
+# Bluetooth Classic Simulation Test Directories
+# Lines starting with # are comments
+# Empty lines are ignored
+# Paths can be relative (to this script's directory) or absolute
+
+# GAP Discovery tests
+gap_discovery
+
+# Add more test directories here
+# another_test
+# some_other_test
+
+# You can also use absolute paths
+# /absolute/path/to/test/directory

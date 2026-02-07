@@ -1,0 +1,9 @@
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+module = TEST_GAP_DISCOVERY
+module-str = test_gap_discovery
+source "subsys/logging/Kconfig.template.log_config"
