@@ -739,7 +739,7 @@ static struct usbd_cdc_ecm_desc cdc_ecm_desc_##n = {				\
 		.bAlternateSetting = 1,						\
 		.bNumEndpoints = 2,						\
 		.bInterfaceClass = USB_BCC_CDC_DATA,				\
-		.bInterfaceSubClass = ECM_SUBCLASS,				\
+		.bInterfaceSubClass = 0,					\
 		.bInterfaceProtocol = 0,					\
 		.iInterface = 0,						\
 	},									\
