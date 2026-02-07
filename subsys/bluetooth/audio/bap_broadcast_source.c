@@ -27,7 +27,6 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -583,18 +582,17 @@ static bool valid_broadcast_source_subgroup_param(
 	const struct bt_bap_broadcast_source_subgroup_param *subgroup_param,
 	const struct bt_bap_broadcast_source *source)
 {
-	CHECKIF(subgroup_param->params == NULL) {
+	if (subgroup_param->params == NULL) {
 		LOG_DBG("subgroup_param->params is NULL");
 		return false;
 	}
 
-	CHECKIF(!IN_RANGE(subgroup_param->params_count, 1U,
-			  CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT)) {
+	if (!IN_RANGE(subgroup_param->params_count, 1U, CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT)) {
 		LOG_DBG("subgroup_param->count (%zu) is invalid", subgroup_param->params_count);
 		return false;
 	}
 
-	CHECKIF(!bt_audio_valid_codec_cfg(subgroup_param->codec_cfg)) {
+	if (!bt_audio_valid_codec_cfg(subgroup_param->codec_cfg)) {
 		LOG_DBG("subgroup_param->codec_cfg  is invalid");
 		return false;
 	}
@@ -604,13 +602,12 @@ static bool valid_broadcast_source_subgroup_param(
 
 		stream_param = &subgroup_param->params[i];
 
-		CHECKIF(stream_param->stream == NULL) {
+		if (stream_param->stream == NULL) {
 			LOG_DBG("subgroup_param->stream_params[%zu]->stream is NULL", i);
 			return false;
 		}
 
-		CHECKIF(stream_param->stream->group != NULL &&
-			stream_param->stream->group != source) {
+		if (stream_param->stream->group != NULL && stream_param->stream->group != source) {
 			LOG_DBG("subgroup_param->stream_params[%zu]->stream is already part of "
 				"group %p",
 				i, stream_param->stream->group);
@@ -618,21 +615,21 @@ static bool valid_broadcast_source_subgroup_param(
 		}
 
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
-		CHECKIF(stream_param->data == NULL && stream_param->data_len != 0) {
+		if (stream_param->data == NULL && stream_param->data_len != 0) {
 			LOG_DBG("subgroup_param->stream_params[%zu]->data is NULL with len %zu", i,
 				stream_param->data_len);
 			return false;
 		}
 
-		CHECKIF(stream_param->data_len > CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE) {
+		if (stream_param->data_len > CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE) {
 			LOG_DBG("subgroup_param->stream_params[%zu]->data_len too large: %zu > %d",
 				i, stream_param->data_len, CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE);
 			return false;
 		}
 
-		CHECKIF(stream_param->data != NULL &&
-			subgroup_param->codec_cfg->id == BT_HCI_CODING_FORMAT_LC3 &&
-			!bt_audio_valid_ltv(stream_param->data, stream_param->data_len)) {
+		if (stream_param->data != NULL &&
+		    subgroup_param->codec_cfg->id == BT_HCI_CODING_FORMAT_LC3 &&
+		    !bt_audio_valid_ltv(stream_param->data, stream_param->data_len)) {
 			LOG_DBG("subgroup_param->stream_params[%zu]->data not valid LTV", i);
 			return false;
 		}
@@ -652,44 +649,44 @@ static bool valid_broadcast_source_param(const struct bt_bap_broadcast_source_pa
 {
 	const struct bt_bap_qos_cfg *qos;
 
-	CHECKIF(param == NULL) {
+	if (param == NULL) {
 		LOG_DBG("param is NULL");
 		return false;
 	}
 
-	CHECKIF(!IN_RANGE(param->params_count, 1U, CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT)) {
+	if (!IN_RANGE(param->params_count, 1U, CONFIG_BT_BAP_BROADCAST_SRC_SUBGROUP_COUNT)) {
 		LOG_DBG("param->params_count %zu is invalid", param->params_count);
 		return false;
 	}
 
-	CHECKIF(param->packing != BT_ISO_PACKING_SEQUENTIAL &&
-		param->packing != BT_ISO_PACKING_INTERLEAVED) {
+	if (param->packing != BT_ISO_PACKING_SEQUENTIAL &&
+	    param->packing != BT_ISO_PACKING_INTERLEAVED) {
 		LOG_DBG("param->packing %u is invalid", param->packing);
 		return false;
 	}
 
 	qos = param->qos;
-	CHECKIF(qos == NULL) {
+	if (qos == NULL) {
 		LOG_DBG("param->qos is NULL");
 		return false;
 	}
 
-	CHECKIF(bt_audio_verify_qos(qos) != BT_BAP_ASCS_REASON_NONE) {
+	if (bt_audio_verify_qos(qos) != BT_BAP_ASCS_REASON_NONE) {
 		LOG_DBG("param->qos is invalid");
 		return false;
 	}
 
-	CHECKIF(param->qos->rtn > BT_ISO_BROADCAST_RTN_MAX) {
+	if (param->qos->rtn > BT_ISO_BROADCAST_RTN_MAX) {
 		LOG_DBG("param->qos->rtn %u invalid", param->qos->rtn);
 		return false;
 	}
 
-	CHECKIF(param->params == NULL) {
+	if (param->params == NULL) {
 		LOG_DBG("param->params is NULL");
 		return false;
 	}
 
-	CHECKIF(param->params_count == 0) {
+	if (param->params_count == 0) {
 		LOG_DBG("param->params_count is 0");
 		return false;
 	}
@@ -747,7 +744,7 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_param *param,
 	uint8_t bis_count;
 	int err;
 
-	CHECKIF(out_source == NULL) {
+	if (out_source == NULL) {
 		LOG_DBG("out_source is NULL");
 		return -EINVAL;
 	}
@@ -996,7 +993,7 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 	enum bt_bap_ep_state broadcast_state;
 	struct bt_bap_qos_cfg *qos;
 
-	CHECKIF(source == NULL) {
+	if (source == NULL) {
 		LOG_DBG("source is NULL");
 		return -EINVAL;
 	}
@@ -1057,19 +1054,19 @@ int bt_bap_broadcast_source_update_metadata(struct bt_bap_broadcast_source *sour
 	struct bt_bap_broadcast_subgroup *subgroup;
 	enum bt_bap_ep_state broadcast_state;
 
-	CHECKIF(source == NULL) {
+	if (source == NULL) {
 		LOG_DBG("source is NULL");
 
 		return -EINVAL;
 	}
 
-	CHECKIF((meta == NULL && meta_len != 0) || (meta != NULL && meta_len == 0)) {
+	if ((meta == NULL && meta_len != 0) || (meta != NULL && meta_len == 0)) {
 		LOG_DBG("Invalid metadata combination: %p %zu", meta, meta_len);
 
 		return -EINVAL;
 	}
 
-	CHECKIF(meta_len > CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE) {
+	if (meta_len > CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE) {
 		LOG_DBG("Invalid meta_len: %zu (max %d)", meta_len,
 			CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE);
 
@@ -1108,12 +1105,12 @@ int bt_bap_broadcast_source_start(struct bt_bap_broadcast_source *source, struct
 	size_t bis_count;
 	int err;
 
-	CHECKIF(source == NULL) {
+	if (source == NULL) {
 		LOG_DBG("source is NULL");
 		return -EINVAL;
 	}
 
-	CHECKIF(adv == NULL) {
+	if (adv == NULL) {
 		LOG_DBG("adv is NULL");
 		return -EINVAL;
 	}
@@ -1169,7 +1166,7 @@ int bt_bap_broadcast_source_stop(struct bt_bap_broadcast_source *source)
 	enum bt_bap_ep_state broadcast_state;
 	int err;
 
-	CHECKIF(source == NULL) {
+	if (source == NULL) {
 		LOG_DBG("source is NULL");
 		return -EINVAL;
 	}
@@ -1199,7 +1196,7 @@ int bt_bap_broadcast_source_delete(struct bt_bap_broadcast_source *source)
 {
 	enum bt_bap_ep_state broadcast_state;
 
-	CHECKIF(source == NULL) {
+	if (source == NULL) {
 		LOG_DBG("source is NULL");
 		return -EINVAL;
 	}
@@ -1223,12 +1220,12 @@ int bt_bap_broadcast_source_get_base(struct bt_bap_broadcast_source *source,
 {
 	enum bt_bap_ep_state broadcast_state;
 
-	CHECKIF(source == NULL) {
+	if (source == NULL) {
 		LOG_DBG("source is NULL");
 		return -EINVAL;
 	}
 
-	CHECKIF(base_buf == NULL) {
+	if (base_buf == NULL) {
 		LOG_DBG("base_buf is NULL");
 		return -EINVAL;
 	}
@@ -1299,7 +1296,7 @@ int bt_bap_broadcast_source_register_cb(struct bt_bap_broadcast_source_cb *cb)
 {
 	static bool iso_big_cb_registered;
 
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		LOG_DBG("cb is NULL");
 
 		return -EINVAL;
@@ -1332,7 +1329,7 @@ int bt_bap_broadcast_source_register_cb(struct bt_bap_broadcast_source_cb *cb)
 
 int bt_bap_broadcast_source_unregister_cb(struct bt_bap_broadcast_source_cb *cb)
 {
-	CHECKIF(cb == NULL) {
+	if (cb == NULL) {
 		LOG_DBG("cb is NULL");
 
 		return -EINVAL;
