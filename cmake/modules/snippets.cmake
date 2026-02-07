@@ -71,6 +71,11 @@ function(zephyr_process_snippets)
   list(REMOVE_DUPLICATES SNIPPET_ROOT)
   set(SNIPPET_ROOT "${SNIPPET_ROOT}" PARENT_SCOPE)
 
+  # Skip parsing and validating snippet files if none are requested
+  if(NOT DEFINED SNIPPET)
+    return()
+  endif()
+
   # Generate and include snippets_generated.cmake.
   # The Python script is responsible for checking for unknown
   # snippets.
