@@ -1,0 +1,23 @@
+sample:
+  name: Bluetooth Peripheral ETS
+  description: Demonstrates the ETS (Elapsed Time Service) GATT Service
+tests:
+  sample.bluetooth.peripheral_ets:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+      - frdm_rw612
+    tags: bluetooth
+    integration_platforms:
+      - qemu_cortex_m3
+  sample.bluetooth.peripheral_ets.local_time:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+      - frdm_rw612
+    integration_platforms:
+      - qemu_cortex_m3
+    extra_args: EXTRA_CONF_FILE=overlay-local-time.conf
+    tags: bluetooth
