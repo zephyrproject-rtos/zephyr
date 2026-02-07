@@ -1,16 +1,11 @@
 /*
- * Copyright (c) 2024 STMicroelectronics
+ * Copyright (c) 2026 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/dt-bindings/sensor/lsm6dsv16x.h>
 
-/*
- * Nucleo F401RE board + shield iks4a1
- *
- * This devicetree overlay file will be automatically picked by the Zephyr
- * build system when building the sample for the nucleo_f401re board.
- */
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+#include <zephyr/dt-bindings/sensor/lsm6dsv16x.h>
 
 / {
 	aliases {
@@ -20,12 +15,11 @@
 
 &arduino_i2c {
 	lsm6dsv16x_6b_x_nucleo_iks4a1: lsm6dsv16x@6b {
-		compatible = "st,lsm6dsv16x";
-		reg = <0x6b>;
 		accel-odr = <LSM6DSVXXX_DT_ODR_AT_480Hz>;
 		accel-range = <LSM6DSV16X_DT_FS_16G>;
 		gyro-odr = <LSM6DSVXXX_DT_ODR_AT_480Hz>;
 		gyro-range = <LSM6DSV16X_DT_FS_500DPS>;
+
 		fifo-watermark = <64>;
 		accel-fifo-batch-rate = <LSM6DSVXXX_DT_XL_BATCHED_AT_15Hz>;
 		gyro-fifo-batch-rate = <LSM6DSVXXX_DT_GY_BATCHED_AT_15Hz>;
@@ -33,8 +27,5 @@
 
 		sflp-odr = <LSM6DSVXXX_DT_SFLP_ODR_AT_15Hz>;
 		sflp-fifo-enable = <LSM6DSVXXX_DT_SFLP_FIFO_GAME_ROTATION_GRAVITY_GBIAS>;
-		int2-gpios = <&arduino_header 10 GPIO_ACTIVE_HIGH>; /* D4 (PB5) */
-		drdy-pin = <2>;
-		drdy-pulsed;
 	};
 };

@@ -12,6 +12,10 @@ menuconfig LIS2DUX12
 		      $(dt_compat_on_bus,$(DT_COMPAT_ST_LIS2DUXS12),i2c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LIS2DUX12),spi) || \
 		      $(dt_compat_on_bus,$(DT_COMPAT_ST_LIS2DUXS12),spi)
+
+	select I2C_RTIO if I2C && SENSOR_ASYNC_API
+	select SPI_RTIO if SPI && SENSOR_ASYNC_API
+
 	select HAS_STMEMSC
 	select USE_STDC_LIS2DUX12 if DT_HAS_ST_LIS2DUX12_ENABLED
 	select USE_STDC_LIS2DUXS12 if DT_HAS_ST_LIS2DUXS12_ENABLED
