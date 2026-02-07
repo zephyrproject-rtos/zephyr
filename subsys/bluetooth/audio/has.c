@@ -27,7 +27,6 @@
 #include <zephyr/settings/settings.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -1479,38 +1478,38 @@ int bt_has_preset_register(const struct bt_has_preset_register_param *param)
 	struct has_preset *preset;
 	size_t name_len;
 
-	CHECKIF(param == NULL) {
+	if (param == NULL) {
 		LOG_ERR("param is NULL");
 		return -EINVAL;
 	}
 
-	CHECKIF(param->index == BT_HAS_PRESET_INDEX_NONE) {
+	if (param->index == BT_HAS_PRESET_INDEX_NONE) {
 		LOG_ERR("param->index is invalid");
 		return -EINVAL;
 	}
 
-	CHECKIF(param->name == NULL) {
+	if (param->name == NULL) {
 		LOG_ERR("param->name is NULL");
 		return -EINVAL;
 	}
 
 	name_len = strlen(param->name);
 
-	CHECKIF(name_len < BT_HAS_PRESET_NAME_MIN) {
+	if (name_len < BT_HAS_PRESET_NAME_MIN) {
 		LOG_ERR("param->name is too short (%zu < %u)", name_len, BT_HAS_PRESET_NAME_MIN);
 		return -EINVAL;
 	}
 
-	CHECKIF(name_len > BT_HAS_PRESET_NAME_MAX) {
+	if (name_len > BT_HAS_PRESET_NAME_MAX) {
 		LOG_WRN("param->name is too long (%zu > %u)", name_len, BT_HAS_PRESET_NAME_MAX);
 	}
 
-	CHECKIF(param->ops == NULL) {
+	if (param->ops == NULL) {
 		LOG_ERR("param->ops is NULL");
 		return -EINVAL;
 	}
 
-	CHECKIF(param->ops->select == NULL) {
+	if (param->ops->select == NULL) {
 		LOG_ERR("param->ops->select is NULL");
 		return -EINVAL;
 	}
@@ -1520,8 +1519,8 @@ int bt_has_preset_register(const struct bt_has_preset_register_param *param)
 		return -EALREADY;
 	}
 
-	CHECKIF(!IS_ENABLED(CONFIG_BT_HAS_PRESET_NAME_DYNAMIC) &&
-		(param->properties & BT_HAS_PROP_WRITABLE) > 0) {
+	if (!IS_ENABLED(CONFIG_BT_HAS_PRESET_NAME_DYNAMIC) &&
+	    (param->properties & BT_HAS_PROP_WRITABLE) > 0) {
 		LOG_ERR("Writable presets are not supported");
 		return -ENOTSUP;
 	}
@@ -1544,7 +1543,7 @@ int bt_has_preset_unregister(uint8_t index)
 	struct has_preset *preset;
 	int err;
 
-	CHECKIF(index == BT_HAS_PRESET_INDEX_NONE) {
+	if (index == BT_HAS_PRESET_INDEX_NONE) {
 		LOG_ERR("index is invalid");
 		return -EINVAL;
 	}
@@ -1579,7 +1578,7 @@ static int set_preset_availability(uint8_t index, bool available)
 	struct has_preset *preset;
 	uint8_t change_id;
 
-	CHECKIF(index == BT_HAS_PRESET_INDEX_NONE) {
+	if (index == BT_HAS_PRESET_INDEX_NONE) {
 		LOG_ERR("index is invalid");
 		return -EINVAL;
 	}
@@ -1682,7 +1681,7 @@ uint8_t bt_has_preset_active_get(void)
 
 int bt_has_preset_name_change(uint8_t index, const char *name)
 {
-	CHECKIF(name == NULL) {
+	if (name == NULL) {
 		return -EINVAL;
 	}
 
@@ -1764,7 +1763,7 @@ int bt_has_register(const struct bt_has_features_param *features)
 
 	LOG_DBG("features %p", features);
 
-	CHECKIF(!features) {
+	if (!features) {
 		LOG_DBG("NULL params pointer");
 		return -EINVAL;
 	}
