@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config LORA_SX126X_NATIVE
+	bool "Semtech SX126x native driver (experimental)"
+	default y
+	depends on LORA_MODULE_BACKEND_NATIVE
+	depends on DT_HAS_SEMTECH_SX1262_ENABLED || DT_HAS_SEMTECH_SX1261_ENABLED
+	select SPI
+	select GPIO
+	help
+	  Enable native driver for Semtech SX1261/SX1262 LoRa transceivers.
+	  This is an experimental driver that does not depend on loramac-node
+	  or lora-basics-modem external modules.

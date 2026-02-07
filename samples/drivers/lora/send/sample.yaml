@@ -23,3 +23,11 @@ tests:
       - rak11720
     extra_configs:
       - CONFIG_LORA_MODULE_BACKEND_LORA_BASICS_MODEM=y
+  sample.driver.lora.send.native:
+    build_only: true
+    extra_args:
+      - SHIELD=semtech_sx1261mb2bas
+    extra_configs:
+      - CONFIG_LORA_MODULE_BACKEND_NATIVE=y
+    platform_allow:
+      - nrf52840dk/nrf52840

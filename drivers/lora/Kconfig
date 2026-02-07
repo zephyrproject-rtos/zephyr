@@ -34,6 +34,12 @@ config LORA_MODULE_BACKEND_LORA_BASICS_MODEM
 	help
 	  LoRa API support using the LoRa Basics Modem module.
 
+config LORA_MODULE_BACKEND_NATIVE
+	bool "Native Zephyr backend"
+	help
+	  Use Zephyr's built-in LoRa drivers without external modules.
+	  Currently supports SX1261/SX1262 transceivers.
+
 endchoice
 
 module = LORA
@@ -55,5 +61,6 @@ config LORA_INIT_PRIORITY
 rsource "Kconfig.sx12xx"
 rsource "Kconfig.rylrxxx"
 rsource "lora-basics-modem/Kconfig"
+rsource "native/Kconfig"
 
 endif # LORA
