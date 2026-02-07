@@ -47,3 +47,9 @@ tests:
       - userspace
     integration_platforms:
       - qemu_x86
+  rtio.api.no_op_delay:
+    tags: rtio
+    extra_configs:
+      - CONFIG_RTIO_OP_DELAY=n
+    integration_platforms:
+      - native_sim
