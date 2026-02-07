@@ -1,0 +1,24 @@
+# Copyright (c) 2025 SiFli Technologies(Nanjing) Co., Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SiFli SF32LB LXT32 clock. The PMUC driver configures the XTAL32K pinmux
+  directly when this node is enabled, so no pinctrl bindings are required.
+
+compatible: "sifli,sf32lb-lxt32"
+
+include:
+  - base.yaml
+  - clock-controller.yaml
+  - sifli-sf32lb-pmuc.yaml
+
+properties:
+  clock-frequency:
+    type: int
+    required: true
+
+  "#clock-cells":
+    const: 0
+
+  sifli,pmuc:
+    required: true

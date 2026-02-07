@@ -1,0 +1,33 @@
+# Copyright (c) 2025 SiFli Technologies(Nanjing) Co., Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SiFli PMUC low-speed clock controller. PMUC controls the on-chip low-power
+  RC oscillators and the external 32.768 kHz crystal (LXT32). This binding
+  exposes those clocks so other blocks (e.g. RCC) can request and manage them
+  through the common clock control API.
+
+compatible: "sifli,sf32lb-pmuc-clk"
+
+include:
+  - base.yaml
+  - clock-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  sifli,clk-wdt-src:
+    type: string
+    enum: ["lrc10", "lrc32"]
+    default: "lrc10"
+    description: |
+      Selects the watchdog/LPCLK source via the PMUC SEL_LPCLK control.
+      Defaults to ``lrc10`` if not provided (reset default).
+
+  "#clock-cells":
+    const: 1
+    description: Clock index, see dt-bindings/clock/sf32lb-pmuc-clocks.h
+
+clock-cells:
+  - clk_id

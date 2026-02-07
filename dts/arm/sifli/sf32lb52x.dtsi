@@ -9,6 +9,7 @@
 #include <mem.h>
 
 #include <zephyr/dt-bindings/clock/sf32lb52x-clocks.h>
+#include <zephyr/dt-bindings/clock/sf32lb-pmuc-clocks.h>
 #include <zephyr/dt-bindings/pinctrl/sf32lb52x-pinctrl.h>
 
 / {
@@ -31,22 +32,11 @@
 
 	clocks {
 		lxt32: lxt32 {
-			compatible = "fixed-clock";
+			compatible = "sifli,sf32lb-lxt32", "fixed-clock";
 			clock-frequency = <32768>;
 			#clock-cells = <0>;
+			sifli,pmuc = <&pmuc>;
 			status = "disabled";
-		};
-
-		lrc32: lrc32 {
-			compatible = "fixed-clock";
-			clock-frequency = <DT_FREQ_K(32)>;
-			#clock-cells = <0>;
-		};
-
-		lrc10: lrc10 {
-			compatible = "fixed-clock";
-			clock-frequency = <DT_FREQ_K(10)>;
-			#clock-cells = <0>;
 		};
 
 		hrc48: hrc48 {
@@ -71,10 +61,10 @@
 
 			rcc_clk: clock-controller {
 				compatible = "sifli,sf32lb-rcc-clk";
-				clocks = <&lrc32>, <&lrc10>, <&hrc48>, <&hxt48>,
-					 <&lxt32>;
-				clock-names = "lrc32", "lrc10", "hrc48",
-					      "hxt48", "lxt32";
+				clocks = <&pmuc_clk SF32LB_PMUC_CLOCK_LRC32>,
+					 <&pmuc_clk SF32LB_PMUC_CLOCK_LRC10>,
+					 <&hrc48>, <&hxt48>;
+				clock-names = "lrc32", "lrc10", "hrc48", "hxt48";
 				#clock-cells = <1>;
 				sifli,cfg = <&cfg>;
 				sifli,pmuc = <&pmuc>;
@@ -369,6 +359,15 @@
 		pmuc: syscon@500ca000 {
 			compatible = "sifli,sf32lb-pmuc", "syscon";
 			reg = <0x500ca000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0 0x500ca000 0x1000>;
+
+			pmuc_clk: clock-controller@0 {
+				compatible = "sifli,sf32lb-pmuc-clk";
+				reg = <0x0 0x1000>;
+				#clock-cells = <1>;
+			};
 		};
 
 		rtc: rtc@500cb000 {
