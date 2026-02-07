@@ -10,6 +10,7 @@ if DISK_DRIVERS
 
 # zephyr-keep-sorted-start
 source "drivers/disk/Kconfig.flash"
+source "drivers/disk/Kconfig.ftl"
 source "drivers/disk/Kconfig.loopback"
 source "drivers/disk/Kconfig.mmc"
 source "drivers/disk/Kconfig.ram"
