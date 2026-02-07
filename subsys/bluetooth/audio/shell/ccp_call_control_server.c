@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2024-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include <stdio.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/audio/ccp.h>
 #include <zephyr/shell/shell.h>
@@ -36,7 +37,7 @@ static int cmd_ccp_call_control_server_init(const struct shell *sh, size_t argc,
 		.uri_schemes_supported = "tel,skype",
 		.gtbs = true,
 		.authorization_required = false,
-		.technology = BT_TBS_TECHNOLOGY_3G,
+		.technology = BT_BEARER_TECH_3G,
 		.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
 	};
 	int err;
@@ -59,7 +60,7 @@ static int cmd_ccp_call_control_server_init(const struct shell *sh, size_t argc,
 			.gtbs = false,
 			.authorization_required = false,
 			/* Set different technologies per bearer */
-			.technology = (i % BT_TBS_TECHNOLOGY_WCDMA) + 1,
+			.technology = (i % BT_BEARER_TECH_WCDMA) + 1,
 			.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
 		};
 

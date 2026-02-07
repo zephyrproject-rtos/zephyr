@@ -1,7 +1,7 @@
 /* main.c - Application main entry point */
 
 /*
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2024-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include <string.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/ccp.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/gatt.h>
@@ -88,7 +89,7 @@ static void register_default_bearer(struct ccp_call_control_server_test_suite_fi
 		.uri_schemes_supported = "tel",
 		.gtbs = true,
 		.authorization_required = false,
-		.technology = BT_TBS_TECHNOLOGY_3G,
+		.technology = BT_BEARER_TECH_3G,
 		.supported_features = 0,
 	};
 	int err;
@@ -118,7 +119,7 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 			.uri_schemes_supported = "tel",
 			.gtbs = false,
 			.authorization_required = false,
-			.technology = BT_TBS_TECHNOLOGY_3G,
+			.technology = BT_BEARER_TECH_3G,
 			.supported_features = 0,
 		};
 		int err;
@@ -147,7 +148,7 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 		.uri_schemes_supported = "tel",
 		.gtbs = true,
 		.authorization_required = false,
-		.technology = BT_TBS_TECHNOLOGY_3G,
+		.technology = BT_BEARER_TECH_3G,
 		.supported_features = 0,
 	};
 	int err;
@@ -165,7 +166,7 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 		.uri_schemes_supported = "tel",
 		.gtbs = false,
 		.authorization_required = false,
-		.technology = BT_TBS_TECHNOLOGY_3G,
+		.technology = BT_BEARER_TECH_3G,
 		.supported_features = 0,
 	};
 	int err;
@@ -183,7 +184,7 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 		.uri_schemes_supported = "tel",
 		.gtbs = true,
 		.authorization_required = false,
-		.technology = BT_TBS_TECHNOLOGY_3G,
+		.technology = BT_BEARER_TECH_3G,
 		.supported_features = 0,
 	};
 	int err;
@@ -207,7 +208,7 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 		.uri_schemes_supported = "tel",
 		.gtbs = false,
 		.authorization_required = false,
-		.technology = BT_TBS_TECHNOLOGY_3G,
+		.technology = BT_BEARER_TECH_3G,
 		.supported_features = 0,
 	};
 	int err;
