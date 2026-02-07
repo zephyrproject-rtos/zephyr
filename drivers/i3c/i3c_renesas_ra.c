@@ -231,10 +231,12 @@ static void i3c_renesas_ra_handle_address_phase(const struct device *dev,
 		goto add_phase_exit;
 	}
 
-	/* Update target descriptor */
-	target->dynamic_addr = dyn_addr;
-	target->bcr = daa_rx->bcr;
-	target->dcr = daa_rx->dcr;
+	if (target != NULL) {
+		/* Update target descriptor */
+		target->dynamic_addr = dyn_addr;
+		target->bcr = daa_rx->bcr;
+		target->dcr = daa_rx->dcr;
+	}
 
 	/* Request index for this target */
 	target_index = i3c_renesas_ra_device_index_request(dev, dyn_addr, false);
@@ -272,9 +274,12 @@ static void i3c_renesas_ra_handle_address_phase(const struct device *dev,
 	}
 
 add_phase_exit:
-	if (ret == 0) {
+	if (ret == 0 && target != NULL) {
 		LOG_DBG("Attach PID[0x%016llX] DA[0x%02X] SA[0x%02X] to DAT%d", target->pid,
 			target->dynamic_addr, target->static_addr, target_index);
+	} else if (ret == 0) {
+		LOG_DBG("Attach DA[0x%02X] to DAT%d (no target descriptor)", dyn_addr,
+			target_index);
 	} else {
 		LOG_DBG("DAA address phase error");
 	}
