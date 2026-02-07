@@ -139,17 +139,7 @@ static enum net_verdict test_ok(struct net_conn *conn,
 				union net_proto_header *proto_hdr,
 				void *user_data)
 {
-	struct ud *ud = (struct ud *)user_data;
-
 	k_sem_give(&recv_lock);
-
-	if (!ud) {
-		fail = true;
-
-		DBG("Test %s failed.", ud->test);
-
-		return NET_DROP;
-	}
 
 	fail = false;
 
