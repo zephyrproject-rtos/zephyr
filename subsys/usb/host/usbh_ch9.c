@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(usbh_ch9, CONFIG_USBH_LOG_LEVEL);
  * "9.2.6.4 Standard Device Requests"
  * This will need to be revised and set depending on the request.
  */
-#define SETUP_REQ_TIMEOUT	5000U
+#define SETUP_REQ_TIMEOUT 5000U
 
 K_SEM_DEFINE(ch9_req_sync, 0, 1);
 static bool ctrl_req_no_status;
@@ -47,13 +47,9 @@ void usbh_req_omit_status(const bool omit)
 	ctrl_req_no_status = omit;
 }
 
-int usbh_req_setup(struct usb_device *const udev,
-		   const uint8_t bmRequestType,
-		   const uint8_t bRequest,
-		   const uint16_t wValue,
-		   const uint16_t wIndex,
-		   const uint16_t wLength,
-		   struct net_buf *const buf)
+int usbh_req_setup(struct usb_device *const udev, const uint8_t bmRequestType,
+		   const uint8_t bRequest, const uint16_t wValue, const uint16_t wIndex,
+		   const uint16_t wLength, struct net_buf *const buf)
 {
 	struct usb_setup_packet req = {
 		.bmRequestType = bmRequestType,
@@ -73,8 +69,7 @@ int usbh_req_setup(struct usb_device *const udev,
 
 	memcpy(xfer->setup_pkt, &req, sizeof(req));
 
-	__ASSERT(IS_ENABLED(CONFIG_ZTEST) ||
-		 (buf != NULL && wLength) || (buf == NULL && !wLength),
+	__ASSERT(IS_ENABLED(CONFIG_ZTEST) || (buf != NULL && wLength) || (buf == NULL && !wLength),
 		 "Unresolved conditions for data stage");
 	if (wLength) {
 		ret = usbh_xfer_buf_add(udev, xfer, buf);
@@ -111,23 +106,17 @@ buf_alloc_err:
 	return ret;
 }
 
-int usbh_req_desc(struct usb_device *const udev,
-		  const uint8_t type, const uint8_t index,
-		  const uint16_t id,
-		  const uint16_t len,
-		  struct net_buf *const buf)
+int usbh_req_desc(struct usb_device *const udev, const uint8_t type, const uint8_t index,
+		  const uint16_t id, const uint16_t len, struct net_buf *const buf)
 {
 	const uint8_t bmRequestType = USB_REQTYPE_DIR_TO_HOST << 7;
 	const uint8_t bRequest = USB_SREQ_GET_DESCRIPTOR;
 	const uint16_t wValue = (type << 8) | index;
 
-	return usbh_req_setup(udev,
-			      bmRequestType, bRequest, wValue, id, len,
-			      buf);
+	return usbh_req_setup(udev, bmRequestType, bRequest, wValue, id, len, buf);
 }
 
-int usbh_req_desc_dev(struct usb_device *const udev,
-		      const uint16_t len,
+int usbh_req_desc_dev(struct usb_device *const udev, const uint16_t len,
 		      struct usb_device_descriptor *const desc)
 {
 	const uint8_t type = USB_DESC_DEVICE;
@@ -154,9 +143,7 @@ int usbh_req_desc_dev(struct usb_device *const udev,
 	return ret;
 }
 
-int usbh_req_desc_cfg(struct usb_device *const udev,
-		      const uint8_t index,
-		      const uint16_t len,
+int usbh_req_desc_cfg(struct usb_device *const udev, const uint8_t index, const uint16_t len,
 		      struct usb_cfg_descriptor *const desc)
 {
 	const uint8_t type = USB_DESC_CONFIGURATION;
@@ -180,8 +167,18 @@ int usbh_req_desc_cfg(struct usb_device *const udev,
 	return ret;
 }
 
-int usbh_req_set_address(struct usb_device *const udev,
-			 const uint8_t addr)
+int usbh_req_desc_str(struct usb_device *const udev, const uint8_t index, const uint16_t lang_id,
+		      struct net_buf *const desc_buf)
+{
+	if (desc_buf == NULL) {
+		return -EINVAL;
+	}
+
+	return usbh_req_desc(udev, USB_DESC_STRING, index, lang_id, net_buf_tailroom(desc_buf),
+			     desc_buf);
+}
+
+int usbh_req_set_address(struct usb_device *const udev, const uint8_t addr)
 {
 	const uint8_t bmRequestType = USB_REQTYPE_DIR_TO_DEVICE << 7;
 	const uint8_t bRequest = USB_SREQ_SET_ADDRESS;
@@ -189,8 +186,7 @@ int usbh_req_set_address(struct usb_device *const udev,
 	return usbh_req_setup(udev, bmRequestType, bRequest, addr, 0, 0, NULL);
 }
 
-int usbh_req_set_cfg(struct usb_device *const udev,
-		     const uint8_t cfg)
+int usbh_req_set_cfg(struct usb_device *const udev, const uint8_t cfg)
 {
 	const uint8_t bmRequestType = USB_REQTYPE_DIR_TO_DEVICE << 7;
 	const uint8_t bRequest = USB_SREQ_SET_CONFIGURATION;
@@ -198,8 +194,7 @@ int usbh_req_set_cfg(struct usb_device *const udev,
 	return usbh_req_setup(udev, bmRequestType, bRequest, cfg, 0, 0, NULL);
 }
 
-int usbh_req_get_cfg(struct usb_device *const udev,
-		     uint8_t *const cfg)
+int usbh_req_get_cfg(struct usb_device *const udev, uint8_t *const cfg)
 {
 	const uint8_t bmRequestType = USB_REQTYPE_DIR_TO_HOST << 7;
 	const uint8_t bRequest = USB_SREQ_GET_CONFIGURATION;
@@ -222,18 +217,15 @@ int usbh_req_get_cfg(struct usb_device *const udev,
 	return ret;
 }
 
-int usbh_req_set_alt(struct usb_device *const udev,
-		     const uint8_t iface, const uint8_t alt)
+int usbh_req_set_alt(struct usb_device *const udev, const uint8_t iface, const uint8_t alt)
 {
-	const uint8_t bmRequestType = USB_REQTYPE_DIR_TO_DEVICE << 7 |
-				      USB_REQTYPE_RECIPIENT_INTERFACE;
+	const uint8_t bmRequestType =
+		USB_REQTYPE_DIR_TO_DEVICE << 7 | USB_REQTYPE_RECIPIENT_INTERFACE;
 	const uint8_t bRequest = USB_SREQ_SET_INTERFACE;
 	const uint16_t wValue = alt;
 	const uint16_t wIndex = iface;
 
-	return usbh_req_setup(udev,
-			      bmRequestType, bRequest, wValue, wIndex, 0,
-			      NULL);
+	return usbh_req_setup(udev, bmRequestType, bRequest, wValue, wIndex, 0, NULL);
 }
 
 int usbh_req_set_sfs_rwup(struct usb_device *const udev)
@@ -242,9 +234,7 @@ int usbh_req_set_sfs_rwup(struct usb_device *const udev)
 	const uint8_t bRequest = USB_SREQ_SET_FEATURE;
 	const uint16_t wValue = USB_SFS_REMOTE_WAKEUP;
 
-	return usbh_req_setup(udev,
-			      bmRequestType, bRequest, wValue, 0, 0,
-			      NULL);
+	return usbh_req_setup(udev, bmRequestType, bRequest, wValue, 0, 0, NULL);
 }
 
 int usbh_req_clear_sfs_rwup(struct usb_device *const udev)
@@ -253,9 +243,7 @@ int usbh_req_clear_sfs_rwup(struct usb_device *const udev)
 	const uint8_t bRequest = USB_SREQ_CLEAR_FEATURE;
 	const uint16_t wValue = USB_SFS_REMOTE_WAKEUP;
 
-	return usbh_req_setup(udev,
-			      bmRequestType, bRequest, wValue, 0, 0,
-			      NULL);
+	return usbh_req_setup(udev, bmRequestType, bRequest, wValue, 0, 0, NULL);
 }
 
 int usbh_req_set_sfs_halt(struct usb_device *const udev, const uint8_t ep)
@@ -265,9 +253,7 @@ int usbh_req_set_sfs_halt(struct usb_device *const udev, const uint8_t ep)
 	const uint16_t wValue = USB_SFS_ENDPOINT_HALT;
 	const uint16_t wIndex = ep;
 
-	return usbh_req_setup(udev,
-			      bmRequestType, bRequest, wValue, wIndex, 0,
-			      NULL);
+	return usbh_req_setup(udev, bmRequestType, bRequest, wValue, wIndex, 0, NULL);
 }
 
 int usbh_req_clear_sfs_halt(struct usb_device *const udev, const uint8_t ep)
@@ -277,37 +263,27 @@ int usbh_req_clear_sfs_halt(struct usb_device *const udev, const uint8_t ep)
 	const uint16_t wValue = USB_SFS_ENDPOINT_HALT;
 	const uint16_t wIndex = ep;
 
-	return usbh_req_setup(udev,
-			      bmRequestType, bRequest, wValue, wIndex, 0,
-			      NULL);
+	return usbh_req_setup(udev, bmRequestType, bRequest, wValue, wIndex, 0, NULL);
 }
 
-int usbh_req_set_hcfs_ppwr(struct usb_device *const udev,
-			   const uint8_t port)
+int usbh_req_set_hcfs_ppwr(struct usb_device *const udev, const uint8_t port)
 {
-	const uint8_t bmRequestType = USB_REQTYPE_DIR_TO_DEVICE << 7 |
-				      USB_REQTYPE_TYPE_CLASS << 5 |
+	const uint8_t bmRequestType = USB_REQTYPE_DIR_TO_DEVICE << 7 | USB_REQTYPE_TYPE_CLASS << 5 |
 				      USB_REQTYPE_RECIPIENT_OTHER << 0;
 	const uint8_t bRequest = USB_HCREQ_SET_FEATURE;
 	const uint16_t wValue = USB_HCFS_PORT_POWER;
 	const uint16_t wIndex = port;
 
-	return usbh_req_setup(udev,
-			      bmRequestType, bRequest, wValue, wIndex, 0,
-			      NULL);
+	return usbh_req_setup(udev, bmRequestType, bRequest, wValue, wIndex, 0, NULL);
 }
 
-int usbh_req_set_hcfs_prst(struct usb_device *const udev,
-			   const uint8_t port)
+int usbh_req_set_hcfs_prst(struct usb_device *const udev, const uint8_t port)
 {
-	const uint8_t bmRequestType = USB_REQTYPE_DIR_TO_DEVICE << 7 |
-				      USB_REQTYPE_TYPE_CLASS << 5 |
+	const uint8_t bmRequestType = USB_REQTYPE_DIR_TO_DEVICE << 7 | USB_REQTYPE_TYPE_CLASS << 5 |
 				      USB_REQTYPE_RECIPIENT_OTHER << 0;
 	const uint8_t bRequest = USB_HCREQ_SET_FEATURE;
 	const uint16_t wValue = USB_HCFS_PORT_RESET;
 	const uint16_t wIndex = port;
 
-	return usbh_req_setup(udev,
-			      bmRequestType, bRequest, wValue, wIndex, 0,
-			      NULL);
+	return usbh_req_setup(udev, bmRequestType, bRequest, wValue, wIndex, 0, NULL);
 }
