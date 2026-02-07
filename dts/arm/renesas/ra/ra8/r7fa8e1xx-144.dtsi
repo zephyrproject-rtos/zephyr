@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&adc0 {
+	channel-available-mask = <0x1f7>;
+};

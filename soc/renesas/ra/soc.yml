@@ -76,6 +76,10 @@ family:
       - name: ra6e2
         socs:
           - name: r7fa6e2bb3cfm
+      - name: ra8e1
+        socs:
+          - name: r7fa8e1afdcfb
+          - name: r7fa8e1afdcfp
       - name: ra8m1
         socs:
           - name: r7fa8m1ahecbd
