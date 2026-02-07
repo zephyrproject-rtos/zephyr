@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2025 Eric Sandjong <eric.sandjong@brivo.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <atmel/samc21.dtsi>
+
+/ {
+	aliases {
+		sercom-6 = &sercom6;
+		sercom-7 = &sercom7;
+	};
+
+	soc {
+		sercom6: sercom@43000000 {
+			compatible = "atmel,sam0-sercom";
+			reg = <0x43000000 0x40>;
+			interrupts = <9 0>;
+			clocks = <&gclk 41>, <&mclk 0x20 0>;
+			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
+			status = "disabled";
+		};
+
+		sercom7: sercom@43000400 {
+			compatible = "atmel,sam0-sercom";
+			reg = <0x43000400 0x40>;
+			interrupts = <10 0>;
+			clocks = <&gclk 42>, <&mclk 0x20 1>;
+			clock-names = "GCLK", "MCLK";
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
+			status = "disabled";
+		};
+	};
+};
