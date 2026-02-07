@@ -14,7 +14,7 @@
 	model = "Nordic nRF54L15 DK nRF54L15 Application MCU";
 
 	chosen {
-		zephyr,code-partition = &slot0_partition;
+		zephyr,code-partition = &without_bootloader_partition;
 		zephyr,sram = &cpuapp_sram;
 	};
 };
