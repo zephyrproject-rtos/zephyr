@@ -113,12 +113,15 @@
 /*let's not segfault if this were to happen for some reason*/
 #define CODE_UNREACHABLE \
 {\
+	/* [coverity : unreachable] */\
 	posix_print_error_and_exit("CODE_UNREACHABLE reached from %s:%d\n",\
 		__FILE__, __LINE__);\
 	__builtin_unreachable(); \
 }
 #else
-#define CODE_UNREACHABLE __builtin_unreachable()
+#define CODE_UNREACHABLE \
+	/* [coverity : unreachable] */ \
+	__builtin_unreachable()
 #endif
 #define FUNC_NORETURN    __attribute__((__noreturn__))
 
