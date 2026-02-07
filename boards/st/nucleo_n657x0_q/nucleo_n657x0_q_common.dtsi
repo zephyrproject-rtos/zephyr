@@ -315,6 +315,8 @@ csi_interface: &dcmipp {
 	};
 };
 
+csi_capture_port: &pipe_main {};
+
 &rng {
 	status = "okay";
 };
