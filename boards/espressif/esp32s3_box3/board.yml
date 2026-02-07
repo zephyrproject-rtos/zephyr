@@ -1,0 +1,7 @@
+# Copyright (c) 2026 NotioNext Ltd.
+board:
+  name: esp32s3_box3
+  full_name: ESP32-S3-BOX-3
+  vendor: espressif
+  socs:
+  - name: esp32s3
