@@ -82,34 +82,42 @@ static void i2c_stm32_target_event(const struct device *dev)
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 	const struct i2c_target_callbacks *target_cb;
-	struct i2c_target_config *target_cfg;
+	struct i2c_target_config *target_cfg = NULL;
 
-	if (data->slave_cfg->flags != I2C_TARGET_FLAGS_ADDR_10_BITS) {
-		uint8_t target_address;
-
-		/* Choose the right target from the address match code */
-		target_address = LL_I2C_GetAddressMatchCode(i2c) >> 1;
-		if (data->slave_cfg != NULL &&
-		    target_address == data->slave_cfg->address) {
-			target_cfg = data->slave_cfg;
-		} else if (data->slave2_cfg != NULL &&
-			   target_address == data->slave2_cfg->address) {
-			target_cfg = data->slave2_cfg;
-		} else {
-			__ASSERT_NO_MSG(0);
-			return;
-		}
-	} else {
-		/* On STM32 the LL_I2C_GetAddressMatchCode & (ISR register) returns
-		 * only 7bits of address match so 10 bit dual addressing is broken.
-		 * Revert to assuming single address match.
+	if (data->slave_cfg != NULL) {
+		/**
+		 * Slave1 is configured and could be in 7- or 10-bit mode.
+		 * If 10-bit mode is enabled, Slave2 cannot be in use because
+		 * it only supports 7-bit mode, so we know which cfg is matched.
+		 * If 7-bit mode is enabled, find the correct cfg based on
+		 * the I2C address sent by bus master.
 		 */
-		if (data->slave_cfg != NULL) {
+		if (data->slave_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS) {
 			target_cfg = data->slave_cfg;
 		} else {
-			__ASSERT_NO_MSG(0);
-			return;
+			uint8_t target_address;
+
+			/* Choose the right target from the address match code */
+			target_address = LL_I2C_GetAddressMatchCode(i2c) >> 1;
+			if (target_address == data->slave_cfg->address) {
+				target_cfg = data->slave_cfg;
+			} else if (data->slave2_cfg != NULL &&
+				   target_address == data->slave2_cfg->address) {
+				target_cfg = data->slave2_cfg;
+			}
 		}
+
+	} else {
+		/**
+		 * If we received an event but Slave1 is not configured,
+		 * then Slave2 should be the target for the event.
+		 */
+		target_cfg = data->slave2_cfg;
+	}
+
+	if (target_cfg == NULL) {
+		__ASSERT_NO_MSG(0);
+		return;
 	}
 
 	target_cb = target_cfg->callbacks;
