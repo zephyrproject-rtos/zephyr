@@ -1,4 +1,4 @@
-/* Copyright 2017, 2019-2024 NXP
+/* Copyright 2017, 2019, 2024, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -465,6 +465,10 @@ DT_FOREACH_STATUS_OKAY(nxp_ctimer_pwm, CTIMER_CLOCK_SETUP)
 	POWER_DisablePD(kPDRUNCFG_PD_HSCMP2);
 	POWER_DisablePD(kPDRUNCFG_PD_HSCMP2_DAC);
 #endif
+
+	if (IS_ENABLED(CONFIG_NXP_GINT)) {
+		CLOCK_EnableClock(kCLOCK_Gint);
+	}
 }
 
 /**

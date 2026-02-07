@@ -1,0 +1,10 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config NXP_GINT
+	bool "Grouped GPIO Input Interrupt(GINT) controller for NXP MCUs"
+	default y
+	depends on DT_HAS_NXP_GINT_ENABLED
+	select RESET
+	help
+	  Enable GINT driver for NXP MCUs

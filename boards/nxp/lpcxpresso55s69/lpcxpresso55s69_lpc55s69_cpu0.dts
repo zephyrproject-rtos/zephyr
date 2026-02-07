@@ -1,5 +1,5 @@
 /*
- * Copyright 2019,2024 NXP
+ * Copyright 2019, 2024, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -238,5 +238,13 @@ i2s1: &flexcomm7 {
 };
 
 &counter_rtc {
+	status = "okay";
+};
+
+&gint0 {
+	status = "okay";
+};
+
+&gint1 {
 	status = "okay";
 };
