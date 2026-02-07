@@ -192,10 +192,17 @@ static bool avdtp_media_chan_valid(struct bt_avdtp_sep *sep)
 	return false;
 }
 
+static void avdtp_endpoint_established(struct bt_avdtp_sep *sep)
+{
+	if (sep->ops != NULL && sep->ops->connected != NULL) {
+		sep->ops->connected(sep);
+	}
+}
+
 static void avdtp_endpoint_released(struct bt_avdtp_sep *sep)
 {
-	if (sep->endpoint_released != NULL) {
-		sep->endpoint_released(sep);
+	if (sep->ops != NULL && sep->ops->disconnected != NULL) {
+		sep->ops->disconnected(sep);
 	}
 }
 
@@ -279,6 +286,8 @@ void bt_avdtp_media_l2cap_connected(struct bt_l2cap_chan *chan)
 			req->func(req, NULL);
 		}
 	}
+
+	avdtp_endpoint_established(sep);
 }
 
 void bt_avdtp_media_l2cap_disconnected(struct bt_l2cap_chan *chan)
@@ -324,8 +333,8 @@ int bt_avdtp_media_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	/* media data is received */
 	struct bt_avdtp_sep *sep = CONTAINER_OF(chan, struct bt_avdtp_sep, chan.chan);
 
-	if (sep->media_data_cb != NULL) {
-		sep->media_data_cb(sep, buf);
+	if (sep->ops != NULL && sep->ops->media_data_cb != NULL) {
+		sep->ops->media_data_cb(sep, buf);
 	}
 	return 0;
 }
