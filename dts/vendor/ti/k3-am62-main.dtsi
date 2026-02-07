@@ -298,4 +298,60 @@
 		#size-cells = <0>;
 		status = "disabled";
 	};
+
+	main_sdhci0: mmc@fa10000 {
+		compatible = "ti,am654-sdhci";
+		reg = <0xfa10000 0x260>, <0xfa18000 0x134>;
+		reg-names = "host", "subsys";
+		max-bus-freq = <DT_FREQ_M(200)>;
+		min-bus-freq = <DT_FREQ_M(0)>;
+		ti,is-embedded;
+		ti,driver-strength-ohm = <50>;
+		ti,clkbuf-sel = <0x7>;
+		mmc-hs200-1_8v;
+		ti,otap-del-sel-legacy = <0x00>;
+		ti,otap-del-sel-hs = <0x0>;
+		ti,otap-del-sel-hs200 = <0x6>;
+		status = "disabled";
+	};
+
+	main_sdhci1: mmc@fa00000 {
+		compatible = "ti,am654-sdhci";
+		reg = <0xfa00000 0x260>, <0xfa08000 0x134>;
+		reg-names = "host", "subsys";
+		max-bus-freq = <DT_FREQ_M(200)>;
+		min-bus-freq = <DT_FREQ_M(0)>;
+		ti,clkbuf-sel = <0x7>;
+		ti,otap-del-sel-legacy = <0x0>;
+		ti,otap-del-sel-hs = <0x0>;
+		ti,otap-del-sel-sdr12 = <0xf>;
+		ti,otap-del-sel-sdr25 = <0xf>;
+		ti,otap-del-sel-sdr50 = <0xc>;
+		ti,otap-del-sel-sdr104 = <0x6>;
+		ti,otap-del-sel-ddr50 = <0x9>;
+		ti,itap-del-sel-legacy = <0x0>;
+		ti,itap-del-sel-hs = <0x0>;
+		ti,itap-del-sel-sdr12 = <0x0>;
+		ti,itap-del-sel-sdr25 = <0x0>;
+		status = "disabled";
+	};
+
+	main_sdhci2: mmc@fa20000 {
+		compatible = "ti,am654-sdhci";
+		reg = <0xfa20000 0x260>, <0xfa28000 0x134>;
+		reg-names = "host", "subsys";
+		max-bus-freq = <DT_FREQ_M(200)>;
+		min-bus-freq = <DT_FREQ_M(0)>;
+		ti,clkbuf-sel = <0x7>;
+		ti,otap-del-sel-sdr12 = <0xf>;
+		ti,otap-del-sel-sdr25 = <0xf>;
+		ti,otap-del-sel-sdr50 = <0xc>;
+		ti,otap-del-sel-ddr50 = <0x9>;
+		ti,otap-del-sel-sdr104 = <0x6>;
+		ti,itap-del-sel-legacy = <0x0>;
+		ti,itap-del-sel-hs = <0x0>;
+		ti,itap-del-sel-sdr12 = <0x0>;
+		ti,itap-del-sel-sdr25 = <0x0>;
+		status = "disabled";
+	};
 };

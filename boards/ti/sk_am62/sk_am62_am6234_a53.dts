@@ -49,3 +49,58 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+/* eMMC */
+&main_sdhci0 {
+	status = "okay";
+	pinctrl-0 = <&mmc0_cmd
+		     &mmc0_clk
+		     &mmc0_dat0
+		     &mmc0_dat1
+		     &mmc0_dat2
+		     &mmc0_dat3
+		     &mmc0_dat4
+		     &mmc0_dat5
+		     &mmc0_dat6
+		     &mmc0_dat7>;
+	pinctrl-names = "default";
+
+	mmc {
+		compatible = "zephyr,mmc-disk";
+		bus-width = <8>;
+		disk-name = "emmc";
+	};
+};
+
+/* SD */
+&main_sdhci1 {
+	status = "okay";
+	pinctrl-0 = <&mmc1_cmd
+		     &mmc1_clk
+		     &mmc1_dat0
+		     &mmc1_dat1
+		     &mmc1_dat2
+		     &mmc1_dat2
+		     &mmc1_dat3
+		     &mmc1_sdcd>;
+	pinctrl-names = "default";
+
+	sd {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "sd";
+	};
+};
+
+/* SDIO */
+&main_sdhci2 {
+	status = "disabled";
+	pinctrl-0 = <&mmc2_cmd
+		     &mmc2_clk
+		     &mmc2_dat0
+		     &mmc2_dat1
+		     &mmc2_dat2
+		     &mmc2_dat2
+		     &mmc2_dat3>;
+	pinctrl-names = "default";
+	ti,fails-without-test-cd;
+};
