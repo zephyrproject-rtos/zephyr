@@ -1,0 +1,20 @@
+identifier: esp32s3_eth_8di_8ro/esp32s3/appcpu
+name: ESP32-S3-ETH-8DI-8RO
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - i2c
+  - spi
+  - counter
+  - watchdog
+  - entropy
+  - pwm
+  - dma
+  - input
+  - crypto
+  - retained_mem
+vendor: waveshare
