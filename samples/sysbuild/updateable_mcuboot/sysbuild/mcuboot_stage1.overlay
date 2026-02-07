@@ -1,0 +1,14 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "../boards/nrf52840dk_nrf52840.overlay"
+
+/delete-node/ &slot0_partition;
+/delete-node/ &slot1_partition;
+
+slot0_partition: &slot2_partition {};
+
+slot1_partition: &slot3_partition {};

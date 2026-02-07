@@ -1,0 +1,11 @@
+sample:
+  description: Sample with a 2-stage MCUboot bootloader setup
+  name: MCUboot updateable bootloader
+tests:
+  sample.sysbuild.updateable.mcuboot:
+    sysbuild: true
+    platform_allow:
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - nrf52840dk/nrf52840
+    tags: mcuboot

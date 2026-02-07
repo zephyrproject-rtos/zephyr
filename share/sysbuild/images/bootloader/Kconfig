@@ -240,4 +240,72 @@ endchoice # BOOT_ENCRYPTION_ALG
 
 endif # BOOT_ENCRYPTION
 
-endif
+endif # BOOTLOADER_MCUBOOT
+
+config SUPPORT_STAGE1_BOOTLOADER
+	bool
+	default y if BOOTLOADER_MCUBOOT
+
+config SUPPORT_STAGE1_BOOTLOADER_MCUBOOT_ZEPHYR
+	bool
+	default y
+
+choice STAGE1_BOOTLOADER
+	prompt "Stage 1 bootloader support"
+	default STAGE1_BOOTLOADER_NONE
+	depends on SUPPORT_STAGE1_BOOTLOADER
+
+config STAGE1_BOOTLOADER_NONE
+	bool "None"
+	help
+	  Do not Include a stage 1 (immutable) bootloader in the build
+
+config STAGE1_BOOTLOADER_MCUBOOT
+	bool "MCUboot"
+	depends on SUPPORT_STAGE1_BOOTLOADER_MCUBOOT_ZEPHYR
+	help
+	  Include MCUboot (Zephyr port) as the stage 1 (immutable) bootloader to use, which will
+	  be built in direct-xip mode.
+
+endchoice
+
+if STAGE1_BOOTLOADER_MCUBOOT
+
+choice STAGE1_BOOT_SIGNATURE_TYPE
+	prompt "Stage 1 signature type"
+	default STAGE1_BOOT_SIGNATURE_TYPE_RSA
+
+config STAGE1_BOOT_SIGNATURE_TYPE_NONE
+	bool "No signature; use only hash check"
+
+config STAGE1_BOOT_SIGNATURE_TYPE_RSA
+	bool "RSA signatures"
+
+config STAGE1_BOOT_SIGNATURE_TYPE_ECDSA_P256
+	bool "Elliptic curve digital signatures with curve P-256"
+
+config STAGE1_BOOT_SIGNATURE_TYPE_ED25519
+	bool "Edwards curve digital signatures using ed25519"
+
+endchoice
+
+config STAGE1_BOOT_SIGNATURE_KEY_FILE
+	string "Stage 1 signing PEM key file" if !STAGE1_BOOT_SIGNATURE_TYPE_NONE
+	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/root-ec-p256.pem" if STAGE1_BOOT_SIGNATURE_TYPE_ECDSA_P256
+	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/root-ed25519.pem" if STAGE1_BOOT_SIGNATURE_TYPE_ED25519
+	default "$(ZEPHYR_MCUBOOT_MODULE_DIR)/root-rsa-2048.pem" if STAGE1_BOOT_SIGNATURE_TYPE_RSA
+	default ""
+	help
+	  Absolute path to signing key file to use with MCUBoot.
+
+config STAGE1_MCUBOOT_DIRECT_XIP_GENERATE_VARIANT
+	bool "Generate slot 3 variant image [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	default y
+	help
+	  Will generate an image for the alternate partition (``slot3_partition``) which can be
+	  used for firmware updates. This image will have the same configuration options applied
+	  as the main image, with an extra dts overlay that changes the chosen flash partition to
+	  slot3_partition, and will be named ``<app>_slot_3_variant``.
+
+endif # STAGE1_BOOTLOADER_MCUBOOT
