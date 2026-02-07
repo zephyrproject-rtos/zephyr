@@ -31,6 +31,41 @@
 		compatible = "mmio-sram";
 		reg = <0x0 DT_SIZE_K(64)>;
 	};
+
+	ttc0_timer0: counter0@f1e60000 {
+		compatible = "xlnx,ttc-counter";
+		status = "okay";
+		reg = <0xf1e60000 0x1000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 43 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		timer-id = <0>;
+		clock-frequency = <147915192>;
+		timer-width = <32>;
+	};
+
+	ttc0_timer1: counter1@f1e60000 {
+		compatible = "xlnx,ttc-counter";
+		status = "okay";
+		reg = <0xf1e60000 0x1000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 43 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		timer-id = <1>;
+		clock-frequency = <147915192>;
+		prescaler = <0>;
+		timer-width = <32>;
+	};
+
+	ttc0_timer2: counter2@f1e60000 {
+		compatible = "xlnx,ttc-counter";
+		status = "okay";
+		reg = <0xf1e60000 0x1000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 43 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		timer-id = <2>;
+		clock-frequency = <147915192>;
+		prescaler = <0>;
+		timer-width = <32>;
+	};
 };
 
 &ocm {
