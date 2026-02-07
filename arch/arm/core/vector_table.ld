@@ -27,6 +27,10 @@
 #error "Unsupported architecture variant"
 #endif
 
+#if defined(CONFIG_ARCH_IRQ_VECTOR_TABLE_ALIGN)
+/* Use explicitly configured alignment if provided */
+. = ALIGN(CONFIG_ARCH_IRQ_VECTOR_TABLE_ALIGN);
+#else /* !defined(CONFIG_ARCH_IRQ_VECTOR_TABLE_ALIGN) */
 /* When setting TBLOFF in VTOR we must align the offset to the number of
  * exception entries in the vector table. The minimum alignment of 32 words
  * is sufficient for the 16 ARM Core exceptions and up to 16 HW interrupts.
@@ -36,7 +40,8 @@
  * Cortex-M processor).
  */
 . = ALIGN( 1 << LOG2CEIL(4 * (16 + CONFIG_NUM_IRQS)) );
-#endif
+#endif /* defined(CONFIG_ARCH_IRQ_VECTOR_TABLE_ALIGN) */
+#endif /* defined(CONFIG_CPU_CORTEX_M_HAS_VTOR) */
 
 #ifdef CONFIG_ARM_ZIMAGE_HEADER
 /*
