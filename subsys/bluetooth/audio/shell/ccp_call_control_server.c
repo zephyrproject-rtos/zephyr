@@ -132,7 +132,7 @@ static int cmd_ccp_call_control_server_set_bearer_name(const struct shell *sh, s
 static int cmd_ccp_call_control_server_get_bearer_name(const struct shell *sh, size_t argc,
 						       char *argv[])
 {
-	const char *name;
+	char name[CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH + 1];
 	int index = 0;
 	int err = 0;
 
@@ -143,7 +143,8 @@ static int cmd_ccp_call_control_server_get_bearer_name(const struct shell *sh, s
 		}
 	}
 
-	err = bt_ccp_call_control_server_get_bearer_provider_name(bearers[index], &name);
+	err = bt_ccp_call_control_server_get_bearer_provider_name(bearers[index], name,
+								  sizeof(name));
 	if (err != 0) {
 		shell_error(sh, "Failed to get bearer[%d] name: %d", index, err);
 

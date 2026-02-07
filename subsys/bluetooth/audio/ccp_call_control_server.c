@@ -153,8 +153,10 @@ int bt_ccp_call_control_server_set_bearer_provider_name(
 }
 
 int bt_ccp_call_control_server_get_bearer_provider_name(
-	struct bt_ccp_call_control_server_bearer *bearer, const char **name)
+	struct bt_ccp_call_control_server_bearer *bearer, char *name, size_t name_size)
 {
+	size_t provider_name_len;
+
 	CHECKIF(bearer == NULL) {
 		LOG_DBG("bearer is NULL");
 
@@ -173,7 +175,15 @@ int bt_ccp_call_control_server_get_bearer_provider_name(
 		return -EFAULT;
 	}
 
-	*name = bearer->provider_name;
+	provider_name_len = strlen(bearer->provider_name);
+	if (name_size <= provider_name_len) {
+		LOG_DBG("name buffer not large enough (is <= %zu)", provider_name_len);
+
+		return -ENOMEM;
+	}
+
+	(void)memcpy(name, bearer->provider_name, provider_name_len);
+	name[provider_name_len] = '\0';
 
 	return 0;
 }
