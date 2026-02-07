@@ -720,6 +720,25 @@ config BT_BIP
 	help
 	  This option enables the BIP profile
 
+config BT_PBAP
+	bool
+	select BT_GOEP
+	select MBEDTLS_MD5
+	select PSA_WANT_ALG_MD5
+	help
+	  This option enables the PBAP profile
+
+config BT_PBAP_PSE
+	bool "Bluetooth PBAP Profile Server [EXPERIMENTAL]"
+	select BT_PBAP
+	help
+	  This option enables the PSE
+config BT_PBAP_PCE
+	bool "Bluetooth PBAP Profile Client [EXPERIMENTAL]"
+	select BT_PBAP
+	help
+	  This option enables the PCE
+
 endif # BT_CLASSIC
 
 endmenu
