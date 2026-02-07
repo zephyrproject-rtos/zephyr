@@ -1,0 +1,14 @@
+common:
+  tags:
+    - drivers
+    - mspi
+  harness: ztest
+  harness_config:
+    fixture: mspi_tx_rx_loopback
+
+tests:
+  drivers.mspi.mspi_tx_rx_loopback:
+    platform_allow:
+      - nrf7120dk/nrf7120/cpuapp
+    extra_configs:
+      - CONFIG_MSPI_DMA=y
