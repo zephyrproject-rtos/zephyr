@@ -774,6 +774,46 @@ static void reserved_exception(const struct arch_esf *esf, int fault)
 		      fault < 16 ? "Reserved Exception (" : "Spurious interrupt (IRQ ", fault - 16);
 }
 
+#if defined(CONFIG_USERSPACE)
+static void fault_handle_userspace(uint32_t reason, bool *recoverable)
+{
+	if (*recoverable) {
+		/* Fault is recoverable */
+		return;
+	}
+
+	if ((_current->arch.mode & 1) == 0) {
+		/* Current thread is not usermode thread */
+		return;
+	}
+
+	switch (reason) {
+	/* Faults which are expected to be caused by the usermode thread and which should
+	 * not be able to corrupt the kernel.
+	 */
+	case K_ERR_STACK_CHK_FAIL:
+	case K_ERR_ARM_MEM_STACKING:
+	case K_ERR_ARM_MEM_UNSTACKING:
+	case K_ERR_ARM_MEM_DATA_ACCESS:
+	case K_ERR_ARM_MEM_INSTRUCTION_ACCESS:
+	case K_ERR_ARM_USAGE_DIV_0:
+	case K_ERR_ARM_USAGE_STACK_OVERFLOW:
+		break;
+
+	default:
+		return;
+	}
+
+	PR_FAULT_INFO("  Usermode thread %p aborted", _current);
+
+	/* Usermode thread caused fault. We will abort the usermode thread. */
+	k_thread_abort(_current);
+
+	/* Kernel should not be corrupted, fault was handled and is thus recoverable. */
+	*recoverable = true;
+}
+#endif
+
 /* Handler function for ARM fault conditions. */
 static uint32_t fault_handle(struct arch_esf *esf, int fault, bool *recoverable)
 {
@@ -817,6 +857,10 @@ static uint32_t fault_handle(struct arch_esf *esf, int fault, bool *recoverable)
 		/* Dump generic information about the fault. */
 		fault_show(esf, fault);
 	}
+
+#if defined(CONFIG_USERSPACE)
+	fault_handle_userspace(reason, recoverable);
+#endif
 
 	return reason;
 }
