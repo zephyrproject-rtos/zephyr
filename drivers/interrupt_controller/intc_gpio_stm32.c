@@ -85,11 +85,19 @@ static inline uint32_t stm32_exti_linenum_to_src_cfg_line(gpio_pin_t linenum)
 }
 
 /**
- * @returns EXTI line number for LL_EXTI_LINE_n define
+ * @brief Translate EXTI line to line number
+ *
+ * @param line LL_EXTI_LINE_n, has to be a power of 2
+ *
+ * @returns EXTI line number (n) for LL_EXTI_LINE_n define
  */
 static inline gpio_pin_t ll_exti_line_to_linenum(stm32_gpio_irq_line_t line)
 {
-	return LOG2(line);
+	const gpio_pin_t line_num = LOG2CEIL(line);
+
+	__ASSERT_NO_MSG(IS_POWER_OF_TWO(line) && line_num < NUM_EXTI_LINES);
+
+	return line_num;
 }
 
 /**
@@ -190,8 +198,6 @@ void stm32_gpio_intc_enable_line(stm32_gpio_irq_line_t line)
 {
 	unsigned int irqnum;
 	uint32_t line_num = ll_exti_line_to_linenum(line);
-
-	__ASSERT_NO_MSG(line_num < NUM_EXTI_LINES);
 
 	/* Get matching exti irq provided line thanks to irq_table */
 	irqnum = exti_irq_table[line_num];
