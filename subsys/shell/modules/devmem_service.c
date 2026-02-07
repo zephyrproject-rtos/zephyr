@@ -40,8 +40,21 @@ static int memory_dump(const struct shell *sh, mem_addr_t phys_addr, size_t size
 	const size_t vsize = width / BITS_PER_BYTE;
 	uint8_t hex_data[SHELL_HEXDUMP_BYTES_IN_LINE];
 
+	switch (width) {
+	case 8:
+	case 16:
+	case 32:
+#ifdef CONFIG_64BIT
+	case 64:
+#endif
+		break;
+	default:
+		shell_print(sh, "Incorrect data width: %u", width);
+		return -EINVAL;
+	}
+
 #if defined(CONFIG_MMU) || defined(CONFIG_PCIE)
-	device_map((mm_reg_t *)&addr, phys_addr, size, K_MEM_CACHE_NONE);
+	device_map(&addr, phys_addr, size, K_MEM_CACHE_NONE);
 
 	shell_print(sh, "Mapped 0x%lx to 0x%lx\n", phys_addr, addr);
 #else
@@ -72,14 +85,15 @@ static int memory_dump(const struct shell *sh, mem_addr_t phys_addr, size_t size
 				sys_put_le64(value, &hex_data[data_offset]);
 				break;
 #endif /* CONFIG_64BIT */
-			default:
-				shell_print(sh, "Incorrect data width");
-				return -EINVAL;
 			}
 		}
 
 		shell_hexdump_line(sh, addr, hex_data, MIN(size, SHELL_HEXDUMP_BYTES_IN_LINE));
 	}
+
+#if defined(CONFIG_MMU) || defined(CONFIG_PCIE)
+	device_unmap(addr, size);
+#endif
 
 	return 0;
 }
