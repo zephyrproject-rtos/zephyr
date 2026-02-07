@@ -1,0 +1,6 @@
+shield:
+  name: mikroe_dali2_click
+  full_name: DALI2 Click
+  vendor: mikroe
+  supported_features:
+    - dali

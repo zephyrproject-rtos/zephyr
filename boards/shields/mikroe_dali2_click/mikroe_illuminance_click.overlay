@@ -1,0 +1,44 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		dali = &mikroe_dali2_click;
+	};
+};
+
+/ {
+	mikroe_dali2_click: dali2_click {
+		status = "okay";
+		compatible = "zephyr,dali-pwm";
+
+		rx-gpios = <&mikrobus_header 2 GPIO_ACTIVE_HIGH>;
+
+		/* override this based on your board */
+		counter = <&timer2>;
+		pwms = <&pwm0 0 PWM_USEC(41) PWM_POLARITY_NORMAL>;
+
+		tx-flank-shift-us = <(-46)>;
+		rx-flank-shift-us = <(-59)>;
+		tx-rx-propagation-max-us = <2400>;
+		rx-max-latency-us = <80>;
+		rx-grey-area-us = <800>;
+	};
+};
+
+&pinctrl {
+	pwm0_default_dali: pwm0_default_dali {
+		group1 {
+			psels = <&mikrobus_header 15 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	pwm0_sleep_dali: pwm0_sleep_dali {
+		group1 {
+			psels = <&mikrobus_header 15 GPIO_ACTIVE_HIGH>;
+			low-power-enable;
+		};
+	};
+};
