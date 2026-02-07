@@ -16,6 +16,35 @@ properties:
   interrupts:
     required: true
 
+  interrupt-names:
+    required: true
+
+  section:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+    description: |
+      This property indicates which set of pins this manages:
+      0: Pins 0-31
+      1: Pins 32 - 63
+      BL61x has 35 brought out pins, BL61xL has 37, BL61xD has 53.
+
+  drive-strength:
+    type: int
+    default: 0
+    enum:
+      - 0     # Default value, lower strength, ~3mA
+      - 1     # ~10mA
+      - 2     # ~17mA
+      - 3     # highest strength, ~24mA
+    description: |
+      Pin drive strength. It tunes pin max current where 0 means lower
+      value, which is the default, and 3 represents max drive strength.
+      The driver will automatically apply the default value (8mA) to all
+      pins to save power.
+
   "#gpio-cells":
     const: 2
 

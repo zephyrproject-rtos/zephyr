@@ -1,0 +1,11 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+config BFLB_WO
+	bool "Bouffalolab BL61x GPIO FIFO"
+	depends on CLOCK_CONTROL
+	depends on SOC_SERIES_BL61X
+	select GPIO
+	help
+	  The GPIO FIFO / WO is an extension of the GPIO device, it enables outputting arbitrary
+	  toggle waveforms over 16 pins or more at up to XCLK Hz (32MHz or crystal value).

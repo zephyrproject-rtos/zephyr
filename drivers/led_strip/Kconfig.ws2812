@@ -121,3 +121,12 @@ config WS2812_STRIP_RPI_PICO_PIO
 	help
 	  Enable driver for WS2812 (and compatible) LED strips using
 	  the Raspberry Pi Pico's PIO.
+
+config WS2812_STRIP_BFLB_WO
+	bool "WS2812 LED strip via BFLB WO"
+	default y
+	depends on DT_HAS_WORLDSEMI_WS2812_BFLB_WO_ENABLED
+	select BFLB_WO
+	help
+	  Enable driver for WS2812 (and compatible) LED strips using
+	  the BFLB GPIO FIFO / Wire Out.

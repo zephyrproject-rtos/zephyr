@@ -1,0 +1,25 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  WS2812 and similar on BFLB GPIO FIFO / WO
+
+compatible: "worldsemi,ws2812-bflb-wo"
+
+include: [bflb-wo-device.yaml, ws2812-gpio.yaml]
+
+properties:
+  time-t0h:
+    default: 400
+    description: |
+      WS2812B high timing from WS2812B datasheet for a 0.
+
+  time-t1h:
+    default: 800
+    description: |
+      WS2812B high timing from WS2812B datasheet for a 1.
+
+  time-total:
+    default: 1250
+    description: |
+      WS2812B total time from WS2812B datasheet for a bit.
