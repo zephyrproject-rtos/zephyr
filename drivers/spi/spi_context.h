@@ -302,13 +302,6 @@ static inline void spi_context_complete(struct spi_context *ctx,
 #endif /* CONFIG_SPI_ASYNC */
 }
 
-#ifdef DT_SPI_CTX_HAS_NO_CS_GPIOS
-#define spi_context_cs_configure_all(...) 0
-#define spi_context_cs_get_all(...) 0
-#define spi_context_cs_put_all(...) 0
-#define _spi_context_cs_control(...) (void) 0
-#define spi_context_cs_control(...) (void) 0
-#else /* DT_SPI_CTX_HAS_NO_CS_GPIOS */
 /*
  * This function initializes all the chip select GPIOs associated with a spi controller.
  * The context first must be initialized using the SPI_CONTEXT_CS_GPIOS_INITIALIZE macro.
@@ -319,6 +312,7 @@ static inline void spi_context_complete(struct spi_context *ctx,
  */
 static inline int spi_context_cs_configure_all(struct spi_context *ctx)
 {
+#ifndef DT_SPI_CTX_HAS_NO_CS_GPIOS
 	int ret;
 	const struct gpio_dt_spec *cs_gpio;
 
@@ -334,10 +328,14 @@ static inline int spi_context_cs_configure_all(struct spi_context *ctx)
 			return ret;
 		}
 	}
+#else
+	ARG_UNUSED(ctx);
+#endif
 
 	return 0;
 }
 
+#ifndef DT_SPI_CTX_HAS_NO_CS_GPIOS
 /* Helper function to power manage the GPIO CS pins, not meant to be used directly by drivers */
 static inline int _spi_context_cs_pm_all(struct spi_context *ctx, bool get)
 {
@@ -358,6 +356,7 @@ static inline int _spi_context_cs_pm_all(struct spi_context *ctx, bool get)
 
 	return 0;
 }
+#endif
 
 /* This function should be called by drivers to pm get all the chip select lines in
  * master mode in the case of any CS being a GPIO. This should be called from the
@@ -365,7 +364,12 @@ static inline int _spi_context_cs_pm_all(struct spi_context *ctx, bool get)
  */
 static inline int spi_context_cs_get_all(struct spi_context *ctx)
 {
+#ifndef DT_SPI_CTX_HAS_NO_CS_GPIOS
 	return _spi_context_cs_pm_all(ctx, true);
+#else
+	ARG_UNUSED(ctx);
+	return 0;
+#endif
 }
 
 /* This function should be called by drivers to pm put all the chip select lines in
@@ -374,9 +378,18 @@ static inline int spi_context_cs_get_all(struct spi_context *ctx)
  */
 static inline int spi_context_cs_put_all(struct spi_context *ctx)
 {
+#ifndef DT_SPI_CTX_HAS_NO_CS_GPIOS
 	return _spi_context_cs_pm_all(ctx, false);
+#else
+	ARG_UNUSED(ctx);
+	return 0;
+#endif
 }
 
+#ifdef DT_SPI_CTX_HAS_NO_CS_GPIOS
+#define _spi_context_cs_control(...) (void) 0
+#define spi_context_cs_control(...) (void) 0
+#else /* DT_SPI_CTX_HAS_NO_CS_GPIOS */
 /* Helper function to control the GPIO CS, not meant to be used directly by drivers */
 static inline void _spi_context_cs_control(struct spi_context *ctx,
 					   bool on, bool force_off)
