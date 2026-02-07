@@ -389,6 +389,21 @@
 				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 				grayscale-table = [02 02 02 02 02 02 02 02 03 04 05 06 07 07 07];
 			};
+
+			test_spi_st7586s: st7586s@22 {
+				compatible = "sitronix,st7586s";
+				mipi-max-frequency = <10000000>;
+				reg = <22>;
+				width = <384>;
+				height = <160>;
+				duty = <159>;
+				framerate = <24>;
+				start-line = <0>;
+				display-offset = <0x0>;
+				bias-ratio = <2>;
+				flip-configuration = <0>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			};
 		};
 
 		test_mipi_dbi_xfr_16bit_write_only {
