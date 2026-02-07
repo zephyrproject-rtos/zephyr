@@ -1,0 +1,7 @@
+tests:
+  kernel.cleanup.api:
+    tags:
+      - kernel
+    toolchain_allow: gcc
+    platform_allow:
+      - native_sim

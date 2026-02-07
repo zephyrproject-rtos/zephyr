@@ -7,6 +7,7 @@ OS Services
    :maxdepth: 1
 
    binary_descriptors/index.rst
+   cleanup.rst
    console.rst
    cpu_freq/index.rst
    cpu_load/index.rst
