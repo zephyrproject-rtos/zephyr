@@ -9,44 +9,6 @@
 #include <zephyr/data/json.h>
 #include <zephyr/random/random.h>
 
-static int extract_string_field(char *out_buf, int outlen, char *token)
-{
-	char *end;
-
-	if (out_buf == NULL || token == NULL) {
-		return -EINVAL;
-	}
-
-	strncpy(out_buf, token + 1, outlen - 1);
-	end = strchr(out_buf, '"');
-	if (end != NULL) {
-		*end = '\0';
-	}
-
-	return 0;
-}
-
-static int extract_payload(char *msg, int msglen)
-{
-	size_t len;
-	char *start = strchr(msg, '{');
-	char *end = strrchr(msg, '}');
-
-	if (start == NULL || end == NULL || end < start) {
-		return -EINVAL;
-	}
-
-	len = end - start + 1;
-	if (len >= msglen) {
-		return -ENOMEM;
-	}
-
-	memmove(msg, start, len);
-	msg[len] = '\0';
-
-	return 0;
-}
-
 static int frame_rpc_call_req(char *rpcbuf, int len, int pdu,
 			      uint32_t ses, char *pdumsg)
 {
@@ -473,64 +435,81 @@ static int frame_status_resp_msg(char *buf, int len, char *res, char *uid)
 int parse_rpc_msg(char *msg, int msglen, char *uid, int uidlen,
 		  int *pdu, bool *is_rsp)
 {
-	int ret;
-	char local_buf[JSON_MSG_BUF_512];
-	char action[JSON_MSG_BUF_128];
-	char *token;
-	char *saveptr = NULL;
+
+	struct json_ocpp_call_res_msg call_res_msg = { 0 };
+	struct json_ocpp_call_req_msg call_req_msg = { 0 };
 	int rpc_id = -1;
+	int ret = 0;
 
 	if (msg == NULL || uid == NULL || pdu == NULL || is_rsp == NULL) {
 		return -EINVAL;
 	}
 
-	memcpy(local_buf, msg + 1, sizeof(local_buf) - 1);
-	local_buf[sizeof(local_buf) - 1] = '\0';
-
-	token = strtok_r(local_buf, ",", &saveptr);
-	if (token == NULL) {
-		return -EINVAL;
-	}
-
-	rpc_id = *token - '0';
-
-	token = strtok_r(NULL, ",", &saveptr);
-	if (token == NULL) {
-		return -EINVAL;
-	}
-
-	ret = extract_string_field(uid, uidlen, token);
-	if (ret < 0) {
-		return ret;
-	}
-
+	rpc_id = msg[1] - '0';
 	switch (rpc_id + '0') {
-	case OCPP_WAMP_RPC_REQ:
-		token = strtok_r(NULL, ",", &saveptr);
-		if (token == NULL) {
-			return -EINVAL;
-		}
+	case OCPP_WAMP_RPC_REQ: {
+		call_req_msg.count = 4;
+		struct json_mixed_arr_descr call_req_descr[] = {
+			JSON_MIXED_ARR_DESCR_PRIM(struct json_ocpp_call_req_msg,
+						  call_req, JSON_TOK_INT, count),
+			JSON_MIXED_ARR_DESCR_PRIM(struct json_ocpp_call_req_msg,
+						  uid, JSON_TOK_STRING, count),
+			JSON_MIXED_ARR_DESCR_PRIM(struct json_ocpp_call_req_msg,
+						  action, JSON_TOK_STRING, count),
+			JSON_MIXED_ARR_DESCR_PRIM(struct json_ocpp_call_req_msg,
+						  payload, JSON_TOK_ENCODED_OBJ, count),
+		};
 
-		ret = extract_string_field(action, sizeof(action), token);
+		ret = json_mixed_arr_parse(msg, msglen, call_req_descr,
+					   ARRAY_SIZE(call_req_descr), &call_req_msg);
 		if (ret < 0) {
 			return ret;
 		}
-		*pdu = ocpp_find_pdu_from_literal(action);
-		__fallthrough;
 
-	case OCPP_WAMP_RPC_RESP:
-		*is_rsp = rpc_id - 2;
-		ret = extract_payload(msg, msglen);
-		if (ret < 0) {
-			return ret;
-		}
+		*is_rsp = false;
+		*pdu = ocpp_find_pdu_from_literal(call_req_msg.action);
+		strncpy(uid, call_req_msg.uid, uidlen - 1);
+		uid[uidlen - 1] = '\0';
+
+		strncpy(msg, call_req_msg.payload, msglen - 1);
+		msg[msglen - 1] = '\0';
 		break;
+	}
 
-	case OCPP_WAMP_RPC_ERR:
+	case OCPP_WAMP_RPC_RESP: {
+		call_res_msg.count = 3;
+		struct json_mixed_arr_descr call_res_descr[] = {
+			JSON_MIXED_ARR_DESCR_PRIM(struct json_ocpp_call_res_msg,
+						  call_res, JSON_TOK_INT, count),
+			JSON_MIXED_ARR_DESCR_PRIM(struct json_ocpp_call_res_msg,
+						  uid, JSON_TOK_STRING, count),
+			JSON_MIXED_ARR_DESCR_PRIM(struct json_ocpp_call_res_msg,
+						  payload, JSON_TOK_ENCODED_OBJ, count),
+		};
+
+		ret = json_mixed_arr_parse(msg, msglen, call_res_descr,
+					   ARRAY_SIZE(call_res_descr), &call_res_msg);
+		if (ret < 0) {
+			return ret;
+		}
+
+		*is_rsp = true;
+		*pdu = -1;
+		strncpy(uid, call_res_msg.uid, uidlen - 1);
+		uid[uidlen - 1] = '\0';
+
+		strncpy(msg, call_res_msg.payload, msglen - 1);
+		msg[msglen - 1] = '\0';
+		break;
+	}
+
+	case OCPP_WAMP_RPC_ERR: {
 		__fallthrough;
+	}
 
-	default:
+	default: {
 		return -EINVAL;
+	}
 	}
 
 	return 0;
