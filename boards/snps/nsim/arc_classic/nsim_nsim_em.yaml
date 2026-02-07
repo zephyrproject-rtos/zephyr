@@ -5,6 +5,7 @@ simulation:
   - name: nsim
     exec: nsimdrv
 arch: arc
+ram: 2048
 toolchain:
   - zephyr
   - cross-compile
