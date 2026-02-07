@@ -885,6 +885,19 @@ config TIMEOUT_64BIT
 	  availability of absolute timeout values (which require the
 	  extra precision).
 
+config DEFERRABLE_TIMEOUT
+	bool "Support deferrable support for timeouts"
+	help
+	  When enabled, the kernel distinguishes between deferrable and
+	  non-deferrable timeouts. Deferrable timeouts are allowed to expire
+	  later than scheduled if the system is in a low-power state, preventing
+	  unnecessary wake-ups. They will be processed when the system wakes
+	  up for a non-deferrable event or interrupt. The idle loop uses
+	  the next non-deferrable timeout to determine maximum sleep duration,
+	  allowing the system to avoid waking for soft/low-priority work.
+	  When disabled (default), the timeout structure is unchanged, and
+	  the idle loop uses the existing next-timeout logic.
+
 config SYS_CLOCK_MAX_TIMEOUT_DAYS
 	int "Max timeout (in days) used in conversions"
 	default 365

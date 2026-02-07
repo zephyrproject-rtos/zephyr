@@ -17,6 +17,15 @@ static uint64_t curr_tick;
 
 static sys_dlist_t timeout_list = SYS_DLIST_STATIC_INIT(&timeout_list);
 
+#ifdef CONFIG_DEFERRABLE_TIMEOUT
+/* List of deferrable timeouts */
+static sys_dlist_t defer_timeout_list = SYS_DLIST_STATIC_INIT(&defer_timeout_list);
+
+#define GET_TIMEOUT_LIST(to) (to->deferrable ? &defer_timeout_list : &timeout_list)
+#else
+#define GET_TIMEOUT_LIST(to) (&timeout_list)
+#endif
+
 /*
  * The timeout code shall take no locks other than its own (timeout_lock), nor
  * shall it call any other subsystem while holding this lock.
@@ -38,24 +47,26 @@ static inline unsigned int z_vrfy_sys_clock_hw_cycles_per_sec_runtime_get(void)
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
 
-static struct _timeout *first(void)
+static struct _timeout *first(sys_dlist_t *list)
 {
-	sys_dnode_t *t = sys_dlist_peek_head(&timeout_list);
+	sys_dnode_t *t = sys_dlist_peek_head(list);
 
 	return (t == NULL) ? NULL : CONTAINER_OF(t, struct _timeout, node);
 }
 
-static struct _timeout *next(struct _timeout *t)
+static struct _timeout *next(sys_dlist_t *list, struct _timeout *t)
 {
-	sys_dnode_t *n = sys_dlist_peek_next(&timeout_list, &t->node);
+	sys_dnode_t *n = sys_dlist_peek_next(list, &t->node);
 
 	return (n == NULL) ? NULL : CONTAINER_OF(n, struct _timeout, node);
 }
 
 static void remove_timeout(struct _timeout *t)
 {
-	if (next(t) != NULL) {
-		next(t)->dticks += t->dticks;
+	sys_dlist_t *list = GET_TIMEOUT_LIST(t);
+
+	if (next(list, t) != NULL) {
+		next(list, t)->dticks += t->dticks;
 	}
 
 	sys_dlist_remove(&t->node);
@@ -82,17 +93,30 @@ static int32_t elapsed(void)
 	return announce_remaining == 0 ? sys_clock_elapsed() : 0U;
 }
 
-static int32_t next_timeout(int32_t ticks_elapsed)
+static int32_t first_timeout_expiry(sys_dlist_t *list, int32_t ticks_elapsed)
 {
-	struct _timeout *to = first();
+	struct _timeout *to = first(list);
 	int32_t ret;
 
 	if ((to == NULL) ||
-	    ((int64_t)(to->dticks - ticks_elapsed) > (int64_t)INT_MAX)) {
+		((int64_t)(to->dticks - ticks_elapsed) > (int64_t)INT_MAX)) {
 		ret = SYS_CLOCK_MAX_WAIT;
 	} else {
 		ret = max(0, to->dticks - ticks_elapsed);
 	}
+
+	return ret;
+}
+
+static int32_t next_timeout(int32_t ticks_elapsed)
+{
+	int32_t ret = first_timeout_expiry(&timeout_list, ticks_elapsed);
+
+#ifdef CONFIG_DEFERRABLE_TIMEOUT
+	int32_t deferrable_expiry = first_timeout_expiry(&defer_timeout_list, ticks_elapsed);
+
+	ret = min(ret, deferrable_expiry);
+#endif /* CONFIG_DEFERRABLE_TIMEOUT */
 
 	return ret;
 }
@@ -116,6 +140,7 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 		struct _timeout *t;
 		int32_t ticks_elapsed;
 		bool has_elapsed = false;
+		sys_dlist_t *list = GET_TIMEOUT_LIST(to);
 
 		if (Z_IS_TIMEOUT_RELATIVE(timeout)) {
 			ticks_elapsed = elapsed();
@@ -129,7 +154,8 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 			ticks = timeout.ticks;
 		}
 
-		for (t = first(); t != NULL; t = next(t)) {
+		for (t = first(list); t != NULL;
+			 t = next(list, t)) {
 			if (t->dticks > to->dticks) {
 				t->dticks -= to->dticks;
 				sys_dlist_insert(&t->node, &to->node);
@@ -139,10 +165,10 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 		}
 
 		if (t == NULL) {
-			sys_dlist_append(&timeout_list, &to->node);
+			sys_dlist_append(list, &to->node);
 		}
 
-		if (to == first() && announce_remaining == 0) {
+		if (to == first(list) && announce_remaining == 0) {
 			if (!has_elapsed) {
 				/* In case of absolute timeout that is first to expire
 				 * elapsed need to be read from the system clock.
@@ -162,7 +188,7 @@ int z_abort_timeout(struct _timeout *to)
 
 	K_SPINLOCK(&timeout_lock) {
 		if (sys_dnode_is_linked(&to->node)) {
-			bool is_first = (to == first());
+			bool is_first = (to == first(GET_TIMEOUT_LIST(to)));
 
 			remove_timeout(to);
 			to->dticks = TIMEOUT_DTICKS_ABORTED;
@@ -180,8 +206,9 @@ int z_abort_timeout(struct _timeout *to)
 static k_ticks_t timeout_rem(const struct _timeout *timeout)
 {
 	k_ticks_t ticks = 0;
+	sys_dlist_t *list = GET_TIMEOUT_LIST(timeout);
 
-	for (struct _timeout *t = first(); t != NULL; t = next(t)) {
+	for (struct _timeout *t = first(list); t != NULL; t = next(list, t)) {
 		ticks += t->dticks;
 		if (timeout == t) {
 			break;
@@ -225,8 +252,9 @@ int32_t z_get_next_timeout_expiry(void)
 	int32_t ret = (int32_t) K_TICKS_FOREVER;
 
 	K_SPINLOCK(&timeout_lock) {
-		ret = next_timeout(elapsed());
+		ret = first_timeout_expiry(&timeout_list, elapsed());
 	}
+
 	return ret;
 }
 
@@ -250,9 +278,9 @@ void sys_clock_announce(int32_t ticks)
 
 	struct _timeout *t;
 
-	for (t = first();
+	for (t = first(&timeout_list);
 	     (t != NULL) && (t->dticks <= announce_remaining);
-	     t = first()) {
+	     t = first(&timeout_list)) {
 		int dt = t->dticks;
 
 		curr_tick += dt;
@@ -268,6 +296,31 @@ void sys_clock_announce(int32_t ticks)
 	if (t != NULL) {
 		t->dticks -= announce_remaining;
 	}
+
+#ifdef CONFIG_DEFERRABLE_TIMEOUT
+	/* After expiring non-deferrable timeout, expire the deferrable
+	 * timeouts.
+	 */
+	int32_t defer_remaining = ticks;
+
+	for (t = first(&defer_timeout_list);
+	     (t != NULL) && (t->dticks <= defer_remaining);
+	     t = first(&defer_timeout_list)) {
+		int dt = t->dticks;
+
+		t->dticks = 0;
+		remove_timeout(t);
+
+		k_spin_unlock(&timeout_lock, key);
+		t->fn(t);
+		key = k_spin_lock(&timeout_lock);
+		defer_remaining -= dt;
+	}
+
+	if (t != NULL) {
+		t->dticks -= defer_remaining;
+	}
+#endif
 
 	curr_tick += announce_remaining;
 	announce_remaining = 0;
@@ -349,6 +402,28 @@ k_timeout_t sys_timepoint_timeout(k_timepoint_t timepoint)
 	remaining = (timepoint.tick > now) ? (timepoint.tick - now) : 0;
 	return K_TICKS(remaining);
 }
+
+#ifdef CONFIG_DEFERRABLE_TIMEOUT
+void z_timeout_deferrable_set(struct _timeout *t)
+{
+	K_SPINLOCK(&timeout_lock) {
+		t->deferrable = true;
+	}
+}
+#endif /* CONFIG_DEFERRABLE_TIMEOUT */
+
+int32_t z_impl_k_get_next_non_deferrable_timeout_expiry(void)
+{
+	return z_get_next_timeout_expiry();
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int32_t z_vrfy_k_get_next_non_deferrable_timeout_expiry(void)
+{
+	return z_impl_k_get_next_non_deferrable_timeout_expiry();
+}
+#include <zephyr/syscalls/k_get_next_non_deferrable_timeout_expiry_mrsh.c>
+#endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_ZTEST
 void z_impl_sys_clock_tick_set(uint64_t tick)
