@@ -1,0 +1,28 @@
+common:
+  build_only: true
+  tags:
+    - bluetooth
+  platform_allow:
+    - nrf52_bsim/native
+    - nrf5340bsim/nrf5340/cpuapp
+  harness: bsim
+
+tests:
+  bluetooth.host.legacy_adv_info:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_legacy_adv_info_prj_conf
+  bluetooth.host.ext_adv_info:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_ext_adv_info_prj_conf
+    extra_args:
+      EXTRA_CONF_FILE="overlay-ext.conf"
+  bluetooth.host.legacy_adv_info.privacy:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_legacy_adv_info_privacy_prj_conf
+    extra_args:
+      EXTRA_CONF_FILE="overlay-privacy.conf"
+  bluetooth.host.ext_adv_info.privacy:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_ext_adv_info_privacy_prj_conf
+    extra_args:
+      EXTRA_CONF_FILE="overlay-ext.conf;overlay-privacy.conf"

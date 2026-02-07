@@ -137,6 +137,7 @@ New APIs and options
 
     * :c:func:`bt_gatt_cb_unregister` Added an API to unregister GATT callback handlers.
     * :c:func:`bt_le_per_adv_sync_cb_unregister`
+    * :c:func:`bt_le_adv_get_info` to get advertising set information.
 
   * Mesh
 
