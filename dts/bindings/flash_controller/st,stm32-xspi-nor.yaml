@@ -11,6 +11,7 @@ include:
     property-blocklist:
       - spi-bus-width
       - data-rate
+      - sfdp-bfp
 properties:
   size:
     required: true

@@ -7,3 +7,9 @@ description: |
 compatible: "st,stm32-xspi"
 
 include: st,stm32-ospi.yaml
+
+properties:
+
+  memory-mapped:
+    type: boolean
+    description: Controller is enabling memory mapped accesses on controller device
