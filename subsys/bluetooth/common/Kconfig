@@ -288,6 +288,13 @@ config BT_HCI_ERR_TO_STR
 	  codes represented as strings.
 	  See bt_hci_err_to_str() for more details.
 
+config BT_HCI_OPCODE_TO_STR
+    bool "Enable HCI opcode to string conversion [EXPERIMENTAL]"
+    select EXPERIMENTAL
+    help
+      Enable the conversion of HCI opcodes to their string representations.
+      This is useful for debugging and logging HCI opcode information.
+
 config BT_MONITOR
 	bool
 	select LOG_OUTPUT

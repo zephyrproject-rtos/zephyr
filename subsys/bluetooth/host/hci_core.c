@@ -348,7 +348,7 @@ struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len)
 	struct bt_hci_cmd_hdr *hdr;
 	struct net_buf *buf;
 
-	LOG_DBG("opcode 0x%04x param_len %u", opcode, param_len);
+	LOG_DBG("opcode 0x%04x %s param_len %u", opcode, bt_hci_opcode_to_str(opcode), param_len);
 
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
@@ -399,7 +399,7 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 		}
 	}
 
-	LOG_DBG("opcode 0x%04x param_len %u", opcode, buf->len);
+	LOG_DBG("opcode 0x%04x param_len %u", opcode, bt_hci_opcode_to_str(opcode), buf->len);
 
 	cmd(buf)->opcode = opcode;
 
@@ -456,7 +456,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 		}
 	}
 
-	LOG_DBG("buf %p opcode 0x%04x len %u", buf, opcode, buf->len);
+	LOG_DBG("buf %p opcode 0x%04x %s len %u", buf, opcode, bt_hci_opcode_to_str(opcode), buf->len);
 
 	/* This local sem is just for suspending the current thread until the
 	 * command is processed by the LL. It is given (and we are awaken) by
@@ -497,19 +497,19 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 			 */
 			__maybe_unused bool success = process_pending_cmd(HCI_CMD_TIMEOUT);
 
-			BT_ASSERT_MSG(success, "command opcode 0x%04x timeout", opcode);
+			BT_ASSERT_MSG(success, "command opcode 0x%04x %s timeout", opcode, bt_hci_opcode_to_str(opcode));
 		} while (buf != cmd);
 	}
 
 	/* Now that we have sent the command, suspend until the LL replies */
 	err = k_sem_take(&sync_sem, HCI_CMD_TIMEOUT);
 	BT_ASSERT_MSG(err == 0,
-		      "Controller unresponsive, command opcode 0x%04x timeout with err %d",
-		      opcode, err);
+		      "Controller unresponsive, command opcode 0x%04x %s timeout with err %d",
+		      opcode, bt_hci_opcode_to_str(opcode), err);
 
 	status = cmd(buf)->status;
 	if (status) {
-		LOG_WRN("opcode 0x%04x status 0x%02x %s", opcode,
+		LOG_WRN("opcode 0x%04x %s status 0x%02x %s", opcode, bt_hci_opcode_to_str(opcode),
 			status, bt_hci_err_to_str(status));
 		net_buf_unref(buf);
 
@@ -527,7 +527,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 		}
 	}
 
-	LOG_DBG("rsp %p opcode 0x%04x len %u", buf, opcode, buf->len);
+	LOG_DBG("rsp %p opcode 0x%04x %s len %u", buf, opcode, bt_hci_opcode_to_str(opcode), buf->len);
 
 	if (rsp) {
 		*rsp = buf;
@@ -2541,7 +2541,8 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *evt_bu
 	/* Original command buffer. */
 	struct net_buf *buf = NULL;
 
-	LOG_DBG("opcode 0x%04x status 0x%02x %s buf %p", opcode,
+	LOG_DBG("opcode 0x%04x %s, status 0x%02x %s buf %p", opcode,
+		bt_hci_opcode_to_str(opcode),
 		status, bt_hci_err_to_str(status), evt_buf);
 
 	/* Unsolicited cmd complete. This does not complete a command.
@@ -2560,8 +2561,8 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *evt_bu
 	}
 
 	if (cmd(buf)->opcode != opcode) {
-		LOG_ERR("OpCode 0x%04x completed instead of expected 0x%04x", opcode,
-			cmd(buf)->opcode);
+		LOG_ERR("OpCode 0x%04x %s completed instead of expected 0x%04x %s", opcode,
+			bt_hci_opcode_to_str(opcode), cmd(buf)->opcode, bt_hci_opcode_to_str(cmd(buf)->opcode));
 		buf = atomic_ptr_set((atomic_ptr_t *)&bt_dev.sent_cmd, buf);
 		__ASSERT_NO_MSG(!buf);
 		goto exit;
@@ -2604,7 +2605,7 @@ static void hci_cmd_complete(struct net_buf *buf)
 	ncmd = evt->ncmd;
 	opcode = sys_le16_to_cpu(evt->opcode);
 
-	LOG_DBG("opcode 0x%04x", opcode);
+	LOG_DBG("opcode 0x%04x %s", opcode, bt_hci_opcode_to_str(opcode));
 
 	/* All command return parameters have a 1-byte status in the
 	 * beginning, so we can safely make this generalization.
@@ -2639,7 +2640,7 @@ static void hci_cmd_status(struct net_buf *buf)
 	opcode = sys_le16_to_cpu(evt->opcode);
 	ncmd = evt->ncmd;
 
-	LOG_DBG("opcode 0x%04x", opcode);
+	LOG_DBG("opcode 0x%04x %s", opcode, bt_hci_opcode_to_str(opcode));
 
 	hci_cmd_done(opcode, evt->status, buf);
 
@@ -3270,7 +3271,7 @@ static void hci_core_send_cmd(void)
 
 	bt_dev.sent_cmd = net_buf_ref(buf);
 
-	LOG_DBG("Sending command 0x%04x (buf %p) to driver", cmd(buf)->opcode, buf);
+	LOG_DBG("Sending command 0x%04x %s (buf %p) to driver", cmd(buf)->opcode, bt_hci_opcode_to_str(cmd(buf)->opcode), buf);
 
 	err = bt_send(buf);
 	if (err) {
