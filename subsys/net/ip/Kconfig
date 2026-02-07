@@ -198,6 +198,7 @@ config NET_IPV4_MAPPING_TO_IPV6
 config NET_TC_TX_COUNT
 	int "How many Tx traffic classes to have for each network device"
 	default 1 if USERSPACE || USB_DEVICE_NETWORK || \
+		     USBD_CDC_ECM_CLASS || USBD_CDC_NCM_CLASS || \
 		     NET_SHELL_REQUIRE_TX_THREAD
 	default 0
 	range 1 NET_TC_NUM_PRIORITIES if NET_TC_NUM_PRIORITIES<=8 && \
