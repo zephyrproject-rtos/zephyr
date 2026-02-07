@@ -9,3 +9,20 @@ config RISCV_IMSIC
 	  RISC-V Incoming Message-Signaled Interrupt Controller (IMSIC).
 	  Provides per-hart interrupt files for MSI delivery in RISC-V AIA.
 	  Automatically enabled when an IMSIC node exists in devicetree.
+
+config RISCV_APLIC_MSI
+	bool "RISC-V APLIC in MSI mode"
+	default y if DT_HAS_RISCV_APLIC_MSI_ENABLED
+	depends on RISCV
+	select RISCV_IMSIC
+	help
+	  RISC-V Advanced Platform-Level Interrupt Controller (APLIC) in MSI mode.
+	  Routes wire interrupts to IMSIC as Message-Signaled Interrupts.
+	  Automatically enabled when an APLIC-MSI node exists in devicetree.
+
+config RISCV_AIA
+	bool "RISC-V AIA unified coordinator"
+	default y
+	depends on RISCV_IMSIC || RISCV_APLIC_MSI
+	help
+	  Unified AIA coordinator providing common API for APLIC+IMSIC.
