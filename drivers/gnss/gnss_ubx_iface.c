@@ -18,6 +18,8 @@
 
 LOG_MODULE_REGISTER(ubx_iface, CONFIG_GNSS_LOG_LEVEL);
 
+#define RESET_PULSE_MS 100
+
 static void init_match(struct ubx_iface_data *data, const struct device *gnss)
 {
 	struct gnss_ubx_common_config match_config = {
@@ -205,6 +207,23 @@ static int msg_get(const struct device *dev, const struct ubx_frame *req,
 	return err;
 }
 
+#ifdef CONFIG_GNSS_U_BLOX_RESET_ON_INIT
+static int reset_modem(const struct device *dev)
+{
+	const struct ubx_iface_config *cfg = dev->config;
+
+	if (cfg->reset_gpio.port == NULL) {
+		return 0;
+	}
+
+	(void)gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
+	k_sleep(K_MSEC(RESET_PULSE_MS));
+	(void)gpio_pin_set_dt(&cfg->reset_gpio, 0);
+
+	return 0;
+}
+#endif
+
 int ubx_iface_init(const struct device *dev, const struct modem_ubx_match *unsol,
 		   size_t unsol_size, bool valset_supported)
 {
@@ -216,6 +235,10 @@ int ubx_iface_init(const struct device *dev, const struct modem_ubx_match *unsol
 	struct ubx_mon_ver ver;
 
 	init_match(data, dev);
+
+#ifdef CONFIG_GNSS_U_BLOX_RESET_ON_INIT
+	reset_modem(dev);
+#endif
 
 	err = init_modem(data, cfg, unsol, unsol_size);
 	if (err < 0) {

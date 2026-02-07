@@ -13,11 +13,13 @@
 #include <zephyr/drivers/gnss.h>
 #include <zephyr/modem/ubx.h>
 #include <zephyr/modem/backend/uart.h>
+#include <zephyr/drivers/gpio.h>
 
 #include "gnss_ubx_common.h"
 
 struct ubx_iface_config {
 	const struct device *bus;
+	struct gpio_dt_spec reset_gpio;
 	uint16_t fix_rate_ms;
 	struct {
 		uint32_t initial;
