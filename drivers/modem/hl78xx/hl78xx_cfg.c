@@ -21,6 +21,8 @@ LOG_MODULE_DECLARE(hl78xx_dev);
 #define IMSI_PREFIX_LEN             6
 #define MAX_BANDS                   32
 #define MDM_APN_FULL_STRING_MAX_LEN 256
+#define HL78XX_AT_CMD_MAX_LEN       64
+
 /* Delay after AT+IPR command for new rate to take effect */
 #define BAUDRATE_SWITCH_DELAY_MS    2500
 
@@ -85,12 +87,12 @@ int hl78xx_rat_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 		cmd_set_rat = (const char *)SET_RAT_GSM_CMD_LEGACY;
 		*rat_request = HL78XX_RAT_GSM;
 	}
-#ifdef CONFIG_MODEM_HL78XX_12_FW_R6
+#ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
 	else if (IS_ENABLED(CONFIG_MODEM_HL78XX_RAT_NBNTN)) {
 		cmd_set_rat = (const char *)SET_RAT_NBNTN_CMD_LEGACY;
 		*rat_request = HL78XX_RAT_NBNTN;
 	}
-#endif /* CONFIG_MODEM_HL78XX_12_FW_R6 */
+#endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
 #endif /* CONFIG_MODEM_HL78XX_12 */
 
 	if (cmd_set_rat == NULL || *rat_request == HL78XX_RAT_MODE_NONE) {
@@ -185,6 +187,44 @@ int hl78xx_band_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 error:
 	return ret;
 }
+#ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
+int hl78xx_rat_ntn_cfg(struct hl78xx_data *data, bool *modem_require_restart,
+		       enum hl78xx_cell_rat_mode rat_config_request)
+{
+	int ret = 0;
+	char cmd_kntncfg[HL78XX_AT_CMD_MAX_LEN] = {0};
+	char *pos_provider = NULL;
+	bool is_dynamic = false;
+
+	if (rat_config_request == HL78XX_RAT_MODE_NONE) {
+		return -EINVAL;
+	}
+
+#ifdef CONFIG_NTN_POSITION_SOURCE_IGNSS
+	pos_provider = "IGNSS";
+#else
+	pos_provider = "MANUAL";
+#endif
+#ifdef CONFIG_NTN_MOBILITY_TYPE_STATIC
+	is_dynamic = false;
+#else
+	is_dynamic = true;
+#endif
+	/* Enable GNSS based positioning for NB-NTN */
+	snprintf(cmd_kntncfg, sizeof(cmd_kntncfg), "AT+KNTNCFG=\"POS\",\"%s\",%hhu", pos_provider,
+		 is_dynamic);
+
+	ret = modem_dynamic_cmd_send(data, NULL, cmd_kntncfg, strlen(cmd_kntncfg),
+				     hl78xx_get_ok_match(), hl78xx_get_ok_match_size(),
+				     MDM_CMD_TIMEOUT, false);
+	if (ret < 0) {
+		goto error;
+	}
+
+error:
+	return ret;
+}
+#endif
 
 int hl78xx_set_apn_internal(struct hl78xx_data *data, const char *apn, uint16_t size)
 {
@@ -215,8 +255,12 @@ int hl78xx_set_apn_internal(struct hl78xx_data *data, const char *apn, uint16_t 
 	if (ret < 0) {
 		goto error;
 	}
+#if defined(CONFIG_MODEM_HL78XX_RAT_NBNTN)
+	snprintk(cmd_string, cmd_max_len, "AT+KCNXCFG=1,\"GPRS\",\"%s\",,,", apn);
+#else
 	snprintk(cmd_string, cmd_max_len,
 		 "AT+KCNXCFG=1,\"GPRS\",\"%s\",,,\"" MODEM_HL78XX_ADDRESS_FAMILY "\"", apn);
+#endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
 	ret = modem_dynamic_cmd_send(data, NULL, cmd_string, strlen(cmd_string),
 				     hl78xx_get_ok_match(), hl78xx_get_ok_match_size(),
 				     MDM_CMD_TIMEOUT, false);
@@ -765,7 +809,7 @@ int hl78xx_detect_current_baudrate(struct hl78xx_data *data)
 
 int hl78xx_switch_baudrate(struct hl78xx_data *data, uint32_t target_baudrate)
 {
-	char cmd_buf[32];
+	char cmd_buf[32] = {0};
 	const struct hl78xx_config *config = (const struct hl78xx_config *)data->dev->config;
 	struct uart_config uart_cfg;
 	int ret;
