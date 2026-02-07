@@ -13,6 +13,7 @@ add_subdirectory_ifdef(CONFIG_NVME nvme)
 zephyr_library_sources_ifdef(CONFIG_DISK_DRIVER_FLASH flashdisk.c)
 zephyr_library_sources_ifdef(CONFIG_DISK_DRIVER_LOOPBACK loopback_disk.c)
 zephyr_library_sources_ifdef(CONFIG_DISK_DRIVER_RAM ramdisk.c)
+zephyr_library_sources_ifdef(CONFIG_DISK_DRIVER_UFS ufsdisk.c)
 zephyr_library_sources_ifdef(CONFIG_SDMMC_STM32 sdmmc_stm32.c)
 # zephyr-keep-sorted-stop
 
