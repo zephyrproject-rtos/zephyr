@@ -31,6 +31,7 @@ struct tisci_config {
 	uint32_t host_id;
 	int max_msg_size;
 	int max_rx_timeout_ms;
+	bool is_secure;
 };
 
 /**
@@ -58,16 +59,59 @@ struct tisci_data {
 };
 
 /* Core/Setup Functions */
+/**
+ * @brief Determine if a message type requires the secure path
+ * @param msg_type: TISCI message type
+ * @return true if secure path required, false for non-secure path
+ *
+ * Board configuration, security, and OTP messages must use the secure path.
+ */
+static bool tisci_msg_requires_secure_path(uint16_t msg_type)
+{
+	switch (msg_type) {
+	case TISCI_MSG_BOOT_NOTIFICATION:
+	case TISCI_MSG_SEC_HANDOVER:
+	case TISCI_MSG_BOARD_CONFIG:
+	case TISCI_MSG_BOARD_CONFIG_SECURITY:
+	case TISCI_MSG_SA2UL_SET_DKEK:
+	case TISCI_MSG_SA2UL_GET_DKEK:
+	case TISCI_MSG_SA2UL_RELEASE_DKEK:
+	case TISCI_MSG_SA2UL_SET_DSMEK:
+	case TISCI_MSG_SA2UL_GET_DSMEK:
+	case TISCI_MSG_SA2UL_RELEASE_DSMEK:
+	case TISCI_MSG_OPEN_DEBUG_FWLS:
+	case TISCI_MSG_WRITE_OTP_ROW:
+	case TISCI_MSG_READ_OTP_MMR:
+	case TISCI_MSG_LOCK_OTP_ROW:
+	case TISCI_MSG_GET_OTP_ROW_LOCK_STATUS:
+	case TISCI_MSG_SOFT_LOCK_OTP_WRITE_GLOBAL:
+	case TISCI_MSG_READ_SWREV:
+	case TISCI_MSG_WRITE_SWREV:
+	case TISCI_MSG_READ_KEYCNT_KEYREV:
+	case TISCI_MSG_KEY_WRITER:
+	case TISCI_MSG_WRITE_KEYREV:
+	case TISCI_MSG_ENTER_SLEEP:
+		return true;
+	default:
+		return false;
+	}
+}
+
 static struct tisci_xfer *tisci_setup_one_xfer(const struct device *dev, uint16_t msg_type,
 					       uint32_t msg_flags, void *req_buf,
 					       size_t tx_message_size, void *resp_buf,
 					       size_t rx_message_size)
 {
 	struct tisci_data *data = dev->data;
+	const struct tisci_config *config = dev->config;
+
+	if (!config->is_secure && tisci_msg_requires_secure_path(msg_type)) {
+		LOG_ERR("Secure message on non-secure device not allowed");
+		return NULL;
+	}
 
 	k_sem_take(&data->data_sem, K_FOREVER);
 
-	const struct tisci_config *config = dev->config;
 	struct tisci_xfer *xfer = &data->xfer;
 	struct tisci_msg_hdr *hdr;
 
@@ -138,12 +182,26 @@ static int tisci_get_response(const struct device *dev, struct tisci_xfer *xfer)
 		return -EINVAL;
 	}
 
-	if (data->rx_message.size < xfer->rx_message.size) {
-		LOG_ERR("rx_message.size [ %d ] < xfer->rx_message.size\n", data->rx_message.size);
+	/* Calculate expected received size based on secure path */
+	size_t expected_rx_size = xfer->rx_message.size;
+	size_t rx_offset = 0;
+
+	if (config->is_secure) {
+		/* In secure mode, response includes 4-byte secure header */
+		expected_rx_size += sizeof(struct tisci_secure_msg_hdr);
+		rx_offset = sizeof(struct tisci_secure_msg_hdr);
+	}
+
+	if (data->rx_message.size < expected_rx_size) {
+		LOG_ERR("rx_message.size [ %zu ] < expected_rx_size [ %zu ]\n",
+			data->rx_message.size, expected_rx_size);
 		return -EINVAL;
 	}
 
-	memcpy(xfer->rx_message.buf, data->rx_message.buf, xfer->rx_message.size);
+	/* Skip secure header (if present) and copy tisci_msg_hdr + payload */
+	memcpy(xfer->rx_message.buf,
+	       (uint8_t *)data->rx_message.buf + rx_offset,
+	       xfer->rx_message.size);
 	hdr = (struct tisci_msg_hdr *)xfer->rx_message.buf;
 
 	/* Sanity check for message response */
@@ -158,17 +216,49 @@ static int tisci_get_response(const struct device *dev, struct tisci_xfer *xfer)
 
 static int tisci_do_xfer(const struct device *dev, struct tisci_xfer *xfer)
 {
-	if (!dev) {
+	if (!dev || !xfer) {
 		return -EINVAL;
 	}
 
+	struct tisci_data *data = dev->data;
 	const struct tisci_config *config = dev->config;
 	struct mbox_msg *msg = &xfer->tx_message;
 	int ret;
 
+	/* Stack buffer for secure messaging (max 60 bytes total) */
+	uint8_t secure_buf[MAILBOX_MBOX_SIZE];
+	struct mbox_msg secure_msg;
+
+	if (config->is_secure) {
+		struct tisci_secure_msg_hdr secure_hdr;
+
+		/* Verify message fits with secure header (already checked in max_msg_size) */
+		if (msg->size + sizeof(struct tisci_secure_msg_hdr) > MAILBOX_MBOX_SIZE) {
+			LOG_ERR("Message too large for secure mailbox (%zu + %zu > %d)\n",
+				msg->size, sizeof(struct tisci_secure_msg_hdr), MAILBOX_MBOX_SIZE);
+			k_sem_give(&data->data_sem);
+			return -EMSGSIZE;
+		}
+
+		/* Prepare secure header */
+		secure_hdr.checksum = 0;
+		secure_hdr.reserved = 0;
+
+		/* Copy header and message into secure buffer */
+		memcpy(secure_buf, &secure_hdr, sizeof(struct tisci_secure_msg_hdr));
+		memcpy(secure_buf + sizeof(struct tisci_secure_msg_hdr), msg->data, msg->size);
+
+		/* Use temporary message structure to avoid modifying original */
+		secure_msg.data = secure_buf;
+		secure_msg.size = msg->size + sizeof(struct tisci_secure_msg_hdr);
+		msg = &secure_msg;
+	}
+
 	ret = mbox_send_dt(&config->mbox_tx, msg);
 	if (ret < 0) {
-		LOG_ERR("Could not send (%d)\n", ret);
+		LOG_ERR("Could not send on %s path\n",
+			config->is_secure ? "secure" : "non-secure");
+		k_sem_give(&data->data_sem);
 		return ret;
 	}
 
@@ -180,8 +270,12 @@ static int tisci_do_xfer(const struct device *dev, struct tisci_xfer *xfer)
 		}
 		if (!tisci_is_response_ack(xfer->rx_message.buf)) {
 			LOG_ERR("TISCI Response in NACK\n");
+			k_sem_give(&data->data_sem);
 			return -ENODEV;
 		}
+	} else {
+		/* No response requested, release semaphore */
+		k_sem_give(&data->data_sem);
 	}
 
 	return 0;
@@ -1595,6 +1689,7 @@ static int tisci_init(const struct device *dev)
 		.host_id = DT_INST_PROP(_n, ti_host_id),                                           \
 		.max_msg_size = MAILBOX_MBOX_SIZE,                                                 \
 		.max_rx_timeout_ms = 10000,                                                        \
+		.is_secure = DT_INST_PROP_OR(_n, ti_is_secure, false),                             \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(_n, tisci_init, NULL, &tisci_data_##_n, &tisci_config_##_n,          \
 			      PRE_KERNEL_1, CONFIG_TISCI_INIT_PRIORITY, NULL);
