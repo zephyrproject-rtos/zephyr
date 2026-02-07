@@ -11,7 +11,7 @@
 int sys_heap_runtime_stats_get(struct sys_heap *heap,
 		struct sys_memory_stats *stats)
 {
-	if ((heap == NULL) || (stats == NULL)) {
+	if ((heap == NULL) || (stats == NULL) || (heap->heap == NULL)) {
 		return -EINVAL;
 	}
 
