@@ -921,6 +921,20 @@ ZTEST(devicetree_api, test_irq)
 		      ((60 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11, "");
 #endif
 
+	/* DT_IRQN_BY_NAME */
+#ifndef CONFIG_MULTI_LEVEL_INTERRUPTS
+	zassert_equal(DT_IRQN_BY_NAME(DT_INST(0, DT_DRV_COMPAT), err), 30, "");
+	zassert_equal(DT_IRQN_BY_NAME(DT_INST(0, DT_DRV_COMPAT), stat), 40, "");
+	zassert_equal(DT_IRQN_BY_NAME(DT_INST(0, DT_DRV_COMPAT), done), 60, "");
+#else
+	zassert_equal(DT_IRQN_BY_NAME(DT_INST(0, DT_DRV_COMPAT), err),
+		      ((30 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11, "");
+	zassert_equal(DT_IRQN_BY_NAME(DT_INST(0, DT_DRV_COMPAT), stat),
+		      ((40 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11, "");
+	zassert_equal(DT_IRQN_BY_NAME(DT_INST(0, DT_DRV_COMPAT), done),
+		      ((60 + 1) << CONFIG_1ST_LEVEL_INTERRUPT_BITS) | 11, "");
+#endif
+
 	/* DT_INST */
 	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1, "");
 

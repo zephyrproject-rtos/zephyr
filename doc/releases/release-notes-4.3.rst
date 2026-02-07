@@ -220,6 +220,11 @@ New APIs and options
 
   * :kconfig:option:`CONFIG_MBEDTLS_PSA_CRYPTO_BUILTIN_KEYS`
 
+* Devicetree
+
+  * :c:macro:`DT_IRQN_BY_NAME`
+  * :c:macro:`DT_INST_IRQN_BY_NAME`
+
 * Display
 
   * :c:enumerator:`PIXEL_FORMAT_AL_88`
