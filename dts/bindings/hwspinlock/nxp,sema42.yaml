@@ -1,0 +1,35 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP SEMA42 hardware semaphore controller.
+
+compatible: "nxp,sema42"
+
+include:
+  - name: base.yaml
+  - name: hwspinlock-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    type: phandle-array
+    description: |
+      Clock controller specifier for the SEMA42 peripheral clock gate.
+
+  domain-id:
+    type: int
+    required: true
+    description: |
+      Domain ID used by this CPU/domain when locking/unlocking a SEMA42 gate.
+
+  num-locks:
+    type: int
+    required: true
+    description: |
+      Number of available gates.
+
+hwlock-cells:
+  - id
