@@ -1,0 +1,22 @@
+#
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: frdm_mcxw70
+name: NXP FRDM-MCXW70
+type: mcu
+arch: arm
+ram: 256
+flash: 1536
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - flash
+  - gpio
+  - pinctrl
+  - uart
+  - trng
+vendor: nxp

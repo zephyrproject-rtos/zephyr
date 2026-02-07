@@ -1,0 +1,6 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_FRDM_MCXW70
+	select SOC_MCXW70AC
+	select SOC_PART_NUMBER_MCXW70ACMFTA
