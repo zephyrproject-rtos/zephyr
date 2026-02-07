@@ -26,6 +26,11 @@ config BT_CCP_CALL_CONTROL_CLIENT_BEARER_COUNT
 	help
 	  The number of supported telephone bearers on the CCP Call Control Client
 
+config BT_CCP_CALL_CONTROL_CLIENT_CB_USER_DATA
+	bool "Call Control Profile Client support for user_data in callbacks"
+	help
+	  This option enables support for user_data in Call Control Profile Client callbacks.
+
 module = BT_CCP_CALL_CONTROL_CLIENT
 module-str = "Call Control Profile Client"
 source "subsys/logging/Kconfig.template.log_config"

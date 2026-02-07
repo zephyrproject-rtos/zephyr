@@ -1,7 +1,7 @@
 /* main.c - Application main entry point */
 
 /*
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2024-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,37 +14,51 @@
 #include <zephyr/bluetooth/audio/ccp.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci_types.h>
-#include <zephyr/fff.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/ztest_test.h>
 #include <zephyr/ztest_assert.h>
 
 #include "conn.h"
-#include "ccp_call_control_client.h"
 #include "expects_util.h"
 #include "test_common.h"
 
-DEFINE_FFF_GLOBALS;
-
 struct ccp_call_control_client_test_suite_fixture {
+	struct bt_ccp_call_control_client_cb client_cbs;
+	struct bt_ccp_call_control_client *client;
+	struct bt_conn conn;
+
+	/* Callback values */
 	/** Need 1 additional bearer than the max to trigger some corner cases */
 	struct bt_ccp_call_control_client_bearer
 		*bearers[CONFIG_BT_CCP_CALL_CONTROL_CLIENT_BEARER_COUNT + 1];
-	struct bt_ccp_call_control_client *client;
-	struct bt_conn conn;
 };
 
-static void mock_init_rule_before(const struct ztest_unit_test *test, void *fixture)
+static void discover_cb(struct bt_ccp_call_control_client *client, int err,
+			struct bt_ccp_call_control_client_bearers *bearers, void *user_data)
 {
-	test_mocks_init();
-}
+	struct ccp_call_control_client_test_suite_fixture *fixture = user_data;
 
-static void mock_destroy_rule_after(const struct ztest_unit_test *test, void *fixture)
-{
-	test_mocks_cleanup();
-}
+	zassert_not_null(client);
+	zassert_equal(err, 0);
+	zassert_not_null(bearers);
+	zassert_not_null(user_data);
+	zassert_is_null(fixture->bearers[0]); /* expect only a single call */
 
-ZTEST_RULE(mock_rule, mock_init_rule_before, mock_destroy_rule_after);
+#if defined(CONFIG_BT_TBS_CLIENT_GTBS)
+	zassert_not_null(bearers->gtbs_bearer);
+	fixture->bearers[0] = bearers->gtbs_bearer;
+#endif /* CONFIG_BT_TBS_CLIENT_GTBS */
+
+#if defined(CONFIG_BT_TBS_CLIENT_TBS)
+	zassert_equal(CONFIG_BT_TBS_CLIENT_MAX_TBS_INSTANCES, bearers->tbs_count);
+	zassert_not_null(bearers->tbs_bearers);
+	for (size_t i = 0U; i < bearers->tbs_count; i++) {
+		zassert_not_null(bearers->tbs_bearers[i]);
+		fixture->bearers[i + IS_ENABLED(CONFIG_BT_TBS_CLIENT_GTBS)] =
+			bearers->tbs_bearers[i];
+	}
+#endif /* CONFIG_BT_TBS_CLIENT_TBS */
+}
 
 static void *ccp_call_control_client_test_suite_setup(void)
 {
@@ -62,13 +76,16 @@ static void ccp_call_control_client_test_suite_before(void *f)
 
 	memset(fixture, 0, sizeof(*fixture));
 	test_conn_init(&fixture->conn);
+
+	fixture->client_cbs.discover = discover_cb;
+	fixture->client_cbs.user_data = fixture;
 }
 
 static void ccp_call_control_client_test_suite_after(void *f)
 {
 	struct ccp_call_control_client_test_suite_fixture *fixture = f;
 
-	(void)bt_ccp_call_control_client_unregister_cb(&mock_ccp_call_control_client_cb);
+	(void)bt_ccp_call_control_client_unregister_cb(&fixture->client_cbs);
 	mock_bt_conn_disconnected(&fixture->conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 }
 
@@ -85,7 +102,7 @@ static ZTEST_F(ccp_call_control_client_test_suite, test_ccp_call_control_client_
 {
 	int err;
 
-	err = bt_ccp_call_control_client_register_cb(&mock_ccp_call_control_client_cb);
+	err = bt_ccp_call_control_client_register_cb(&fixture->client_cbs);
 	zassert_equal(0, err, "Unexpected return value %d", err);
 }
 
@@ -103,10 +120,10 @@ static ZTEST_F(ccp_call_control_client_test_suite,
 {
 	int err;
 
-	err = bt_ccp_call_control_client_register_cb(&mock_ccp_call_control_client_cb);
+	err = bt_ccp_call_control_client_register_cb(&fixture->client_cbs);
 	zassert_equal(0, err, "Unexpected return value %d", err);
 
-	err = bt_ccp_call_control_client_register_cb(&mock_ccp_call_control_client_cb);
+	err = bt_ccp_call_control_client_register_cb(&fixture->client_cbs);
 	zassert_equal(-EEXIST, err, "Unexpected return value %d", err);
 }
 
@@ -114,10 +131,10 @@ static ZTEST_F(ccp_call_control_client_test_suite, test_ccp_call_control_client_
 {
 	int err;
 
-	err = bt_ccp_call_control_client_register_cb(&mock_ccp_call_control_client_cb);
+	err = bt_ccp_call_control_client_register_cb(&fixture->client_cbs);
 	zassert_equal(0, err, "Unexpected return value %d", err);
 
-	err = bt_ccp_call_control_client_unregister_cb(&mock_ccp_call_control_client_cb);
+	err = bt_ccp_call_control_client_unregister_cb(&fixture->client_cbs);
 	zassert_equal(0, err, "Unexpected return value %d", err);
 }
 
@@ -135,13 +152,13 @@ static ZTEST_F(ccp_call_control_client_test_suite,
 {
 	int err;
 
-	err = bt_ccp_call_control_client_register_cb(&mock_ccp_call_control_client_cb);
+	err = bt_ccp_call_control_client_register_cb(&fixture->client_cbs);
 	zassert_equal(0, err, "Unexpected return value %d", err);
 
-	err = bt_ccp_call_control_client_unregister_cb(&mock_ccp_call_control_client_cb);
+	err = bt_ccp_call_control_client_unregister_cb(&fixture->client_cbs);
 	zassert_equal(0, err, "Unexpected return value %d", err);
 
-	err = bt_ccp_call_control_client_unregister_cb(&mock_ccp_call_control_client_cb);
+	err = bt_ccp_call_control_client_unregister_cb(&fixture->client_cbs);
 	zassert_equal(-EALREADY, err, "Unexpected return value %d", err);
 }
 
@@ -149,30 +166,11 @@ static ZTEST_F(ccp_call_control_client_test_suite, test_ccp_call_control_client_
 {
 	int err;
 
-	err = bt_ccp_call_control_client_register_cb(&mock_ccp_call_control_client_cb);
+	err = bt_ccp_call_control_client_register_cb(&fixture->client_cbs);
 	zassert_equal(0, err, "Unexpected return value %d", err);
 
 	err = bt_ccp_call_control_client_discover(&fixture->conn, &fixture->client);
 	zassert_equal(0, err, "Unexpected return value %d", err);
-
-	/* Validate that we got the callback with valid values */
-	zexpect_call_count("bt_ccp_call_control_client_cb.discover", 1,
-			   mock_ccp_call_control_client_discover_cb_fake.call_count);
-	zassert_not_null(mock_ccp_call_control_client_discover_cb_fake.arg0_history[0]);
-	zassert_equal(0, mock_ccp_call_control_client_discover_cb_fake.arg1_history[0]);
-	zassert_not_null(mock_ccp_call_control_client_discover_cb_fake.arg2_history[0]);
-
-#if defined(CONFIG_BT_TBS_CLIENT_GTBS)
-	zassert_not_null(
-		mock_ccp_call_control_client_discover_cb_fake.arg2_history[0]->gtbs_bearer);
-#endif /* CONFIG_BT_TBS_CLIENT_GTBS */
-
-#if defined(CONFIG_BT_TBS_CLIENT_TBS)
-	zassert_equal(CONFIG_BT_TBS_CLIENT_MAX_TBS_INSTANCES,
-		      mock_ccp_call_control_client_discover_cb_fake.arg2_history[0]->tbs_count);
-	zassert_not_null(
-		mock_ccp_call_control_client_discover_cb_fake.arg2_history[0]->tbs_bearers);
-#endif /* CONFIG_BT_TBS_CLIENT_TBS */
 }
 
 static ZTEST_F(ccp_call_control_client_test_suite,
@@ -180,7 +178,7 @@ static ZTEST_F(ccp_call_control_client_test_suite,
 {
 	int err;
 
-	err = bt_ccp_call_control_client_register_cb(&mock_ccp_call_control_client_cb);
+	err = bt_ccp_call_control_client_register_cb(&fixture->client_cbs);
 	zassert_equal(0, err, "Unexpected return value %d", err);
 
 	err = bt_ccp_call_control_client_discover(NULL, &fixture->client);
@@ -192,7 +190,7 @@ static ZTEST_F(ccp_call_control_client_test_suite,
 {
 	int err;
 
-	err = bt_ccp_call_control_client_register_cb(&mock_ccp_call_control_client_cb);
+	err = bt_ccp_call_control_client_register_cb(&fixture->client_cbs);
 	zassert_equal(0, err, "Unexpected return value %d", err);
 
 	err = bt_ccp_call_control_client_discover(&fixture->conn, NULL);
@@ -204,7 +202,7 @@ static ZTEST_F(ccp_call_control_client_test_suite, test_ccp_call_control_client_
 	struct bt_ccp_call_control_client_bearers bearers;
 	int err;
 
-	err = bt_ccp_call_control_client_register_cb(&mock_ccp_call_control_client_cb);
+	err = bt_ccp_call_control_client_register_cb(&fixture->client_cbs);
 	zassert_equal(0, err, "Unexpected return value %d", err);
 
 	err = bt_ccp_call_control_client_discover(&fixture->conn, &fixture->client);
