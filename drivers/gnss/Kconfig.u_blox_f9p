@@ -9,8 +9,8 @@ config GNSS_U_BLOX_F9P
 	depends on DT_HAS_U_BLOX_F9P_ENABLED
 	select MODEM_MODULES
 	select MODEM_BACKEND_UART
-	select MODEM_UBX
 	select GNSS_U_BLOX
+	select GNSS_U_BLOX_PROTOCOL
 	help
 	  Enable U-BLOX F9P High precision GNSS modem driver.
 

@@ -9,7 +9,6 @@ config GNSS_U_BLOX_M8
 	depends on GNSS_REFERENCE_FRAME_WGS84
 	select MODEM_MODULES
 	select MODEM_BACKEND_UART
-	select MODEM_UBX
 	select GNSS_PARSE
 	select GNSS_U_BLOX
 	select GNSS_U_BLOX_PROTOCOL
