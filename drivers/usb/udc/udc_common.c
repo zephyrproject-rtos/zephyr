@@ -342,7 +342,7 @@ int udc_ep_enable_internal(const struct device *dev,
 	}
 
 	if (cfg->stat.enabled) {
-		LOG_ERR("ep 0x%02x already enabled", cfg->addr);
+		LOG_WRN("ep 0x%02x already enabled", cfg->addr);
 		return -EALREADY;
 	}
 
@@ -403,7 +403,7 @@ int udc_ep_disable_internal(const struct device *dev, const uint8_t ep)
 	}
 
 	if (!cfg->stat.enabled) {
-		LOG_ERR("ep 0x%02x already disabled", cfg->addr);
+		LOG_WRN("ep 0x%02x already disabled", cfg->addr);
 		return -EALREADY;
 	}
 
@@ -599,7 +599,7 @@ int udc_ep_dequeue(const struct device *dev, const uint8_t ep)
 	}
 
 	if (cfg->stat.enabled || cfg->stat.halted) {
-		LOG_INF("ep 0x%02x is not halted|disabled", cfg->addr);
+		LOG_DBG("ep 0x%02x is not halted|disabled", cfg->addr);
 	}
 
 	if (UDC_COMMON_LOG_LEVEL == LOG_LEVEL_DBG) {
@@ -630,7 +630,7 @@ struct net_buf *udc_ep_buf_alloc(const struct device *dev,
 
 	buf = net_buf_alloc_len(&udc_ep_pool, size, K_NO_WAIT);
 	if (!buf) {
-		LOG_ERR("Failed to allocate net_buf %zd, ep 0x%02x", size, ep);
+		LOG_WRN("Failed to allocate net_buf %zd, ep 0x%02x", size, ep);
 		goto ep_alloc_error;
 	}
 
@@ -981,7 +981,7 @@ void udc_ctrl_update_stage(const struct device *dev,
 		uint16_t length  = udc_data_stage_length(buf);
 
 		if (data->stage != CTRL_PIPE_STAGE_SETUP) {
-			LOG_INF("Sequence %u not completed", data->stage);
+			LOG_DBG("Sequence %u not completed", data->stage);
 
 			if (data->stage == CTRL_PIPE_STAGE_DATA_OUT) {
 				/*
@@ -990,7 +990,7 @@ void udc_ctrl_update_stage(const struct device *dev,
 				 * packet must be removed here because it will
 				 * never reach the stack.
 				 */
-				LOG_INF("Drop setup packet (%p)", (void *)data->setup);
+				LOG_DBG("Drop setup packet (%p)", (void *)data->setup);
 				net_buf_unref(data->setup);
 			}
 
@@ -1049,7 +1049,7 @@ void udc_ctrl_update_stage(const struct device *dev,
 				next_stage = CTRL_PIPE_STAGE_ERROR;
 			}
 		} else {
-			LOG_ERR("Cannot determine the next stage");
+			LOG_WRN("Cannot determine the next stage");
 			next_stage = CTRL_PIPE_STAGE_ERROR;
 		}
 
@@ -1083,7 +1083,7 @@ void udc_ctrl_update_stage(const struct device *dev,
 			LOG_DBG("s-status");
 			next_stage = CTRL_PIPE_STAGE_SETUP;
 		} else {
-			LOG_ERR("Cannot determine the next stage");
+			LOG_WRN("Cannot determine the next stage");
 			next_stage = CTRL_PIPE_STAGE_ERROR;
 		}
 	}
