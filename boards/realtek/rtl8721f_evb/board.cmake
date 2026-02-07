@@ -12,6 +12,6 @@ board_set_flasher_ifnset(amebaflash)
 board_finalize_runner_args(amebaflash)
 
 board_runner_args(jlink "--device=Cortex-M55" "--speed=4000")
-board_runner_args(jlink "--tool-opt=-scriptfile ${CMAKE_CURRENT_LIST_DIR}/support/AP2_KM4.JLinkScript")
+board_runner_args(jlink "--tool-opt=-scriptfile ${CMAKE_CURRENT_LIST_DIR}/support/AP2_AP.JLinkScript")
 
 include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
