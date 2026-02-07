@@ -1,0 +1,66 @@
+# Copyright (c) 2026 ChargePoint, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+include: [i2c-device.yaml, led-controller.yaml]
+
+properties:
+  enable-gpios:
+    type: phandle-array
+    description: |
+      GPIO used to enable/disable the device (VIO_EN).
+  data-ref-mode:
+    type: int
+    default: 1
+    enum:
+      - 1
+      - 2
+    description: |
+      Data Refresh Mode used by the device, see family datasheet 7.3.5 for
+      more information. The default value of Mode 1 is used to avoid the
+      need for VSYNC in default configurations. Note that 16-bit Mode 3 is
+      not supported.
+  max-current-ua:
+    type: int
+    default: 37500
+    enum:
+      - 7500
+      - 12500
+      - 25000
+      - 37500
+      - 50000
+      - 75000
+      - 100000
+    description: |
+      Maximum current allowed through any LED. The default value of 37.5uA
+      is the device POR default.
+  num-channels:
+    type: int
+    default: 18
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+      - 12
+      - 13
+      - 14
+      - 15
+      - 16
+      - 17
+      - 18
+    description: |
+      Number of channels used by the device. The default value of 18 is the
+      family maximum number of supported channels.
+  channels-per-led:
+    type: int
+    default: 3
+    description: |
+      Number of channels per LED module. The default value of 3 assumes the
+      typical usage with RGB LEDs.

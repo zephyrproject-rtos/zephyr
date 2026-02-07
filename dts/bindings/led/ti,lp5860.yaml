@@ -1,0 +1,28 @@
+# Copyright (c) 2026 ChargePoint, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instruments LP5860 LED controller node
+
+compatible: ti,lp5860
+
+include: ti,lp586x.yaml
+
+properties:
+  num-lines:
+    type: int
+    default: 11
+    enum:
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+      - 9
+      - 10
+      - 11
+    description: |
+      Number of lines connected to the device. The default values of 11 is
+      the maximum number supported by this specific device.
