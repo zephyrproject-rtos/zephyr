@@ -1880,6 +1880,7 @@ class LicenseAndCopyrightCheck(ComplianceTest):
 
     name = "LicenseAndCopyrightCheck"
     doc = "Check SPDX headers and copyright lines with the reuse Python API."
+    APACHE_2_0_ID = "Apache-2.0"
 
     def _report_violations(
         self,
@@ -1922,11 +1923,23 @@ class LicenseAndCopyrightCheck(ComplianceTest):
             "File has no SPDX-FileCopyrightText header, consider adding one.",
         )
 
+        files_without_apache = {
+            file_report.path
+            for file_report in getattr(report, "file_reports", {})
+            if len(file_report.licenses_in_file) > 0 and self.APACHE_2_0_ID not in file_report.licenses_in_file
+        }
+        self._report_violations(
+            files_without_apache,
+            "No Apache-2.0 license",
+            "warning",
+            "File is not licensed under Apache-2.0",
+        )
+
         for lic_id, paths in getattr(report, "missing_licenses", {}).items():
             self._report_violations(
                 paths,
                 "License may not be allowed",
-                "warning",
+                "error",
                 (
                     f"License file for '{lic_id}' not found in /LICENSES. Please check "
                     "https://docs.zephyrproject.org/latest/contribute/guidelines.html#components-using-other-licenses."
