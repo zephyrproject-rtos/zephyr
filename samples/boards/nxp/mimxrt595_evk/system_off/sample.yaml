@@ -7,7 +7,23 @@ sample:
   name: Deep Power Down State Sample for mimxrt595_evk
 common:
   tags: power
+  harness: power
+  harness_config:
+    fixture: pm_probe
+    pytest_dut_scope: session
+    power_measurements:
+      elements_to_trim: 100
+      min_peak_distance: 40
+      min_peak_height: 0.008
+      peak_padding: 40
+      measurement_duration: 20
+      num_of_transitions: 6
+      expected_rms_values: []
+      tolerance_percentage: 20
+    record:
+      regex:
+        - "not used"
+      as_json: ['metrics']
 tests:
   sample.boards.mimxrt595_evk.system_off:
-    build_only: true
     platform_allow: mimxrt595_evk/mimxrt595s/cm33

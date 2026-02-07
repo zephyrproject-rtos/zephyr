@@ -125,6 +125,21 @@ config TEST_BUSY_SIM
 	  It simulates cpu load by using counter device to generate interrupts
 	  with random intervals and random busy looping in the interrupt.
 
+config ENABLE_PM_MEASURE
+	bool "System Power Measure"
+	help
+	  This option enables measurement on target power state
+
+if ENABLE_PM_MEASURE
+
+config PM_STATE_SUSTAIN_DURATION
+	int "PM state sustain duration"
+	default 5
+	help
+	  time for target status to sustain
+
+endif # ENABLE_PM_MEASURE
+
 endmenu
 
 
