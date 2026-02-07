@@ -35,7 +35,7 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 	csr_write(mscratch, &_kernel.cpus[0]);
 #endif
 #ifdef CONFIG_SMP
-	_kernel.cpus[0].arch.hartid = csr_read(mhartid);
+	_kernel.cpus[0].arch.hartid = csr_read(CSR_MHARTID);
 	_kernel.cpus[0].arch.online = true;
 #endif
 #if ((CONFIG_MP_MAX_NUM_CPUS) > 1)

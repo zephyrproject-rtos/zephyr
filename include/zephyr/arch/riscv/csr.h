@@ -156,6 +156,37 @@
 #define IRQ_COP		12
 #define IRQ_HOST	13
 
+/* Standard RISC-V CSR numbers */
+#define CSR_MSTATUS  0x300
+#define CSR_MIE      0x304
+#define CSR_MSCRATCH 0x340
+#define CSR_MEPC     0x341
+#define CSR_MCAUSE   0x342
+#define CSR_MHARTID  0xF14
+
+/* PMP CSR numbers */
+#define CSR_PMPCFG0 0x3A0
+#define CSR_PMPCFG1 0x3A1
+#define CSR_PMPCFG2 0x3A2
+#define CSR_PMPCFG3 0x3A3
+
+#define CSR_PMPADDR0  0x3B0
+#define CSR_PMPADDR1  0x3B1
+#define CSR_PMPADDR2  0x3B2
+#define CSR_PMPADDR3  0x3B3
+#define CSR_PMPADDR4  0x3B4
+#define CSR_PMPADDR5  0x3B5
+#define CSR_PMPADDR6  0x3B6
+#define CSR_PMPADDR7  0x3B7
+#define CSR_PMPADDR8  0x3B8
+#define CSR_PMPADDR9  0x3B9
+#define CSR_PMPADDR10 0x3BA
+#define CSR_PMPADDR11 0x3BB
+#define CSR_PMPADDR12 0x3BC
+#define CSR_PMPADDR13 0x3BD
+#define CSR_PMPADDR14 0x3BE
+#define CSR_PMPADDR15 0x3BF
+
 /* SMRNMI CSR addresses */
 #ifdef CONFIG_RISCV_SMRNMI_ENABLE_NMI_DELIVERY
 #define CSR_MNSCRATCH 0x740
@@ -207,13 +238,15 @@
 
 #ifndef _ASMLANGUAGE
 
-#define csr_read(csr)						\
-({								\
-	register unsigned long __rv;				\
-	__asm__ volatile ("csrr %0, " STRINGIFY(csr)		\
-				: "=r" (__rv));			\
-	__rv;							\
-})
+static inline unsigned long csr_read_num(unsigned int csr)
+{
+	unsigned long val;
+
+	__asm__ volatile("csrr %0, %1" : "=r"(val) : "i"(csr));
+	return val;
+}
+
+#define csr_read(csr) csr_read_num(csr)
 
 #define csr_write(csr, val)					\
 	do {							\
@@ -224,15 +257,16 @@
 				  : "memory");		\
 	} while (0)
 
+static inline unsigned long csr_read_set_num(unsigned int csr, unsigned long val)
+{
+	unsigned long ret;
+	unsigned long set = val;
 
-#define csr_read_set(csr, val)					\
-({								\
-	unsigned long __rsv = (unsigned long)(val);		\
-	__asm__ volatile ("csrrs %0, " STRINGIFY(csr) ", %1"	\
-				: "=r" (__rsv) : "rK" (__rsv)	\
-				: "memory");			\
-	__rsv;							\
-})
+	__asm__ volatile("csrrs %0, %1, %2" : "=r"(ret) : "i"(csr), "rK"(set) : "memory");
+	return ret;
+}
+
+#define csr_read_set(csr, val) csr_read_set_num(csr, (unsigned long)(val))
 
 #define csr_set(csr, val)					\
 	do {							\
@@ -243,14 +277,16 @@
 				  : "memory");		\
 	} while (0)
 
-#define csr_read_clear(csr, val)				\
-({								\
-	unsigned long __rcv = (unsigned long)(val);		\
-	__asm__ volatile ("csrrc %0, " STRINGIFY(csr) ", %1"	\
-				: "=r" (__rcv) : "rK" (__rcv)	\
-				: "memory");			\
-	__rcv;							\
-})
+static inline unsigned long csr_read_clear_num(unsigned int csr, unsigned long val)
+{
+	unsigned long ret;
+	unsigned long clr = val;
+
+	__asm__ volatile("csrrc %0, %1, %2" : "=r"(ret) : "i"(csr), "rK"(clr) : "memory");
+	return ret;
+}
+
+#define csr_read_clear(csr, val) csr_read_clear_num(csr, (unsigned long)(val))
 
 #define csr_clear(csr, val)					\
 	do {							\

@@ -47,7 +47,7 @@ static void sched_ipi_handler(const void *unused)
 {
 	ARG_UNUSED(unused);
 
-	MSIP(csr_read(mhartid)) = 0;
+	MSIP(csr_read(CSR_MHARTID)) = 0;
 
 	atomic_val_t pending_ipi = atomic_clear(&cpu_pending_ipi[_current_cpu->id]);
 

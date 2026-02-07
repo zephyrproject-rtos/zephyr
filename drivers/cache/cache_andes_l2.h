@@ -81,7 +81,7 @@ static ALWAYS_INLINE int nds_l2_cache_all(int op)
 {
 	unsigned long ways, sets, index, cmd;
 	uint8_t hart_id;
-	unsigned long status = csr_read(mstatus);
+	unsigned long status = csr_read(CSR_MSTATUS);
 
 	if (!l2_cache_cfg.size) {
 		return -ENOTSUP;

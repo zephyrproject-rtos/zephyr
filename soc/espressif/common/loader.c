@@ -279,7 +279,7 @@ void __start(void)
 			     "csrw mtvec, t0\n");
 
 	/* Disable normal interrupts. */
-	csr_read_clear(mstatus, MSTATUS_MIE);
+	csr_read_clear(CSR_MSTATUS, MSTATUS_MIE);
 
 	/* Configure the global pointer register
 	 * (This should be the first thing startup does, as any other piece of code could be

@@ -164,7 +164,7 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 				_current->stack_info.size -
 				_current->stack_info.delta);
 
-	status = csr_read(mstatus);
+	status = csr_read(CSR_MSTATUS);
 
 	/* Set next CPU status to user mode */
 	status = INSERT_FIELD(status, MSTATUS_MPP, PRV_U);

@@ -34,8 +34,7 @@ int arch_irq_is_enabled(unsigned int irq)
 	 * bit, and SOC's IER are both true.
 	 */
 	if (IS_ENABLED(CONFIG_HAS_ITE_INTC)) {
-		return ((csr_read(mie) & BIT(IRQ_M_EXT)) &&
-			ite_intc_irq_is_enable(irq));
+		return ((csr_read(CSR_MIE) & BIT(IRQ_M_EXT)) && ite_intc_irq_is_enable(irq));
 	} else {
 		return 0;
 	}

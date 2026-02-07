@@ -46,7 +46,7 @@ static ALWAYS_INLINE void disable_pmp_stack_guard(struct pmp_stack_guard_key_t *
 {
 	if (IS_ENABLED(CONFIG_PMP_STACK_GUARD)) {
 		key->irq_key = irq_lock();
-		key->mstatus = csr_read_clear(mstatus, MSTATUS_MPRV);
+		key->mstatus = csr_read_clear(CSR_MSTATUS, MSTATUS_MPRV);
 	} else {
 		ARG_UNUSED(key);
 	}
