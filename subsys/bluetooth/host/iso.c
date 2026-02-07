@@ -108,8 +108,14 @@ static void bt_iso_sent_cb(struct bt_conn *iso, void *user_data, int err)
 
 	ops = chan->ops;
 
-	if (!err && ops != NULL && ops->sent != NULL) {
-		ops->sent(chan);
+	if (ops != NULL) {
+		if (err == 0 && ops->sent != NULL) {
+			ops->sent(chan);
+		} else if (err != 0 && ops->send_failed != NULL) {
+			ops->send_failed(chan, err);
+		} else {
+			/* no op */
+		}
 	}
 #endif /* CONFIG_BT_ISO_TX */
 }
@@ -471,8 +477,12 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 		net_buf_unref(buf);
 	}
 
+	conn_type = chan->iso->iso.info.type;
 	bt_iso_chan_set_state(chan, BT_ISO_STATE_DISCONNECTED);
 	bt_conn_set_state(chan->iso, BT_CONN_DISCONNECT_COMPLETE);
+	if (IS_ENABLED(CONFIG_BT_ISO_BROADCASTER) && conn_type == BT_ISO_CHAN_TYPE_BROADCASTER) {
+		bt_conn_tx_notify(chan->iso, true);
+	}
 
 	/* Calling disconnected before final cleanup allows users to use bt_iso_chan_get_info in
 	 * the callback and to be more similar to the ACL disconnected callback. This also means
