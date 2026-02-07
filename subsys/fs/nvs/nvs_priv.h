@@ -1,6 +1,7 @@
 /*  NVS: non volatile storage in flash
  *
  * Copyright (c) 2018 Laczen
+ * Copyright (c) 2026 Lingao Meng
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,6 +41,19 @@ extern "C" {
 #else
 #define NVS_DATA_CRC_SIZE 0
 #endif
+
+/* Context structure for NVS flash block move operations. */
+struct nvs_block_move_ctx {
+	/* Temporary buffer of size NVS_BLOCK_SIZE used to read
+	 * and write flash data in write_block_size-aligned chunks.
+	 */
+	uint8_t buffer[NVS_BLOCK_SIZE];
+
+	/* Number of bytes currently stored in the buffer that
+	 * have not yet been written. Always < write_block_size.
+	 */
+	size_t buffer_pos;
+};
 
 /* Allocation Table Entry */
 struct nvs_ate {
