@@ -233,6 +233,7 @@ static int regulator_tps55287_disable(const struct device *dev)
 static int regulator_tps55287_init(const struct device *dev)
 {
 	const struct regulator_tps55287_config *config = dev->config;
+	bool is_enabled = false;
 	int ret;
 
 	if (config->en_gpio.port != NULL) {
@@ -252,6 +253,15 @@ static int regulator_tps55287_init(const struct device *dev)
 		gpio_pin_set_dt(&config->en_gpio, 1);
 
 		k_sleep(K_MSEC(RESET_DELAY_MS));
+	} else {
+		uint8_t reg;
+
+		ret = i2c_reg_read_byte_dt(&config->i2c, TPS55287_REG_MODE, &reg);
+		if (ret < 0) {
+			return ret;
+		}
+
+		is_enabled = (reg & TPS55287_REG_MODE_OE) != 0U;
 	}
 
 	if (config->cdc > 0) {
@@ -264,7 +274,7 @@ static int regulator_tps55287_init(const struct device *dev)
 
 	regulator_common_data_init(dev);
 
-	ret = regulator_common_init(dev, false);
+	ret = regulator_common_init(dev, is_enabled);
 	if (ret < 0) {
 		LOG_ERR("%s: Failed to initialize regulator: %d", dev->name, ret);
 	}
