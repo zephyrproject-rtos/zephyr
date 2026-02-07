@@ -22,6 +22,9 @@ if WIFI_ESP_HOSTED
 config WIFI_ESP_HOSTED_DEBUG
 	bool "Extra debugging messages"
 
+config WIFI_ESP_HOSTED_LEGACY
+	bool "Support legacy (<= v0.0.5) firmware"
+
 config WIFI_ESP_HOSTED_EVENT_TASK_PRIORITY
 	int "Event task priority"
 	default 4

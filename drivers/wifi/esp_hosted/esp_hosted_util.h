@@ -132,12 +132,25 @@ static inline int esp_hosted_ctrl_response(CtrlMsg *ctrl_msg)
 		return ctrl_msg->resp_get_wifi_curr_tx_power.resp;
 	case CtrlMsgId_Resp_ConfigHeartbeat:
 		return ctrl_msg->resp_config_heartbeat.resp;
+#if !defined(CONFIG_WIFI_ESP_HOSTED_LEGACY)
+	case CtrlMsgId_Resp_EnableDisable:
+		return ctrl_msg->resp_enable_disable_feat.resp;
+	case CtrlMsgId_Resp_GetFwVersion:
+		return ctrl_msg->resp_get_fw_version.resp;
+	case CtrlMsgId_Resp_SetCountryCode:
+		return ctrl_msg->resp_set_country_code.resp;
+	case CtrlMsgId_Resp_GetCountryCode:
+		return ctrl_msg->resp_get_country_code.resp;
+	case CtrlMsgId_Resp_Custom_RPC_Unserialised_Msg:
+		return ctrl_msg->resp_custom_rpc_unserialised_msg.resp;
+#endif  /* !CONFIG_WIFI_ESP_HOSTED_LEGACY */
+
 	default:
 		return -1;
 	}
 }
 
-#if CONFIG_WIFI_ESP_HOSTED_DEBUG
+#if defined(CONFIG_WIFI_ESP_HOSTED_DEBUG)
 static void esp_hosted_frame_dump(esp_frame_t *frame)
 {
 	static const char *const if_strs[] = {"STA", "AP", "SERIAL", "HCI", "PRIV", "TEST"};

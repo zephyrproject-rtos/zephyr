@@ -21,6 +21,9 @@ properties:
     required: true
 
   spi-cs-setup-delay-ns:
+    type: int
     default: 10000
+
   spi-cs-hold-delay-ns:
+    type: int
     default: 10000
