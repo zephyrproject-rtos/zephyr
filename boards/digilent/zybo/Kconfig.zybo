@@ -4,4 +4,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_ZYBO
-	select SOC_XILINX_XC7Z010
+	select SOC_XC7Z010
