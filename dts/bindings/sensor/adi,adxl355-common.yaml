@@ -1,0 +1,137 @@
+# Copyright (c) 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ADXL355 3-axis accelerometer
+  When setting the accelerometer DTS properties, make sure to include
+  adxl355.h and use the macros defined there.
+
+  Example:
+  #include <zephyr/dt-bindings/sensor/adxl355.h>
+
+  adxl355: adxl355@1d {
+    ...
+
+  };
+
+include: sensor-device.yaml
+
+properties:
+  reg:
+    required: false
+    description: I2C address of the device.
+
+  odr:
+    type: int
+    description: Output data rate. Default is power on reset value.
+    enum:
+      - 0 # ADXL355_DT_ODR_4000
+      - 1 # ADXL355_DT_ODR_2000
+      - 2 # ADXL355_DT_ODR_1000
+      - 3 # ADXL355_DT_ODR_500
+      - 4 # ADXL355_DT_ODR_250
+      - 5 # ADXL355_DT_ODR_125
+      - 6 # ADXL355_DT_ODR_62_5
+      - 7 # ADXL355_DT_ODR_31_25
+      - 8 # ADXL355_DT_ODR_15_625
+      - 9 # ADXL355_DT_ODR_7_813
+      - 10 # ADXL355_DT_ODR_3_906
+    default: 0
+
+  fifo-watermark:
+    type: int
+    description: |
+      Specify the FIFO watermark level in frame count.
+      Valid range: 1 - 96. Default value is the reset value.
+    default: 96
+
+  range:
+    type: int
+    description: |
+          Accelerometer range. Default is power on reset value.
+    enum:
+      - 1 # ADXL355_DT_RANGE_2G
+      - 2 # ADXL355_DT_RANGE_4G
+      - 3 # ADXL355_DT_RANGE_8G
+    default: 1
+
+  hpf-corner:
+    type: int
+    description: |
+      High pass filter corner frequency setting.
+      Default is power on reset value.
+    enum:
+      - 0 # ADXL355_DT_HPF_OFF
+      - 1 # ADXL355_DT_HPF_24_7e_4
+      - 2 # ADXL355_DT_HPF_6_208e_4
+      - 3 # ADXL355_DT_HPF_1_5545e_4
+      - 4 # ADXL355_DT_HPF_0_3862e_4
+      - 5 # ADXL355_DT_HPF_0_0954e_4
+      - 6 # ADXL355_DT_HPF_0_0238e_4
+    default: 0
+
+  ext-clk:
+    type: int
+    description: |
+      Enable external clock input. Default is power on reset value.
+    enum:
+      - 0 # ADXL355_DT_EXTCLK_DISABLED
+      - 1 # ADXL355_DT_EXTCLK_ENABLED
+    default: 0
+
+  ext-sync:
+    type: int
+    description: |
+      Enable external sync input. Default is power on reset value.
+    enum:
+      - 0
+      - 1
+      - 2
+    default: 0
+
+  i2c-hs:
+    type: int
+    description: |
+      Enable I2C high speed mode. Default is power on reset value.
+    enum:
+      - 0 # ADXL355_DT_I2C_HS_DISABLED
+      - 1 # ADXL355_DT_I2C_HS_ENABLED
+    default: 1
+
+  int-pol:
+    type: int
+    description: |
+      Interrupt polarity configuration.
+      Default is power on reset value.
+    enum:
+      - 0 # ADXL355_DT_INT_POL_ACTIVE_LOW
+      - 1 # ADXL355_DT_INT_POL_ACTIVE_HIGH
+    default: 0
+
+  int1-gpios:
+    type: phandle-array
+    description: |
+      The INT1 signal defaults to active low as produced by the
+      sensor.  The property value should ensure the flags properly
+      describe the signal that is presented to the driver.
+      Either this or INT2 will be used to route interrupts. If both
+      are defined, then int1 is prioritized.
+
+  int2-gpios:
+    type: phandle-array
+    description: |
+      The INT2 signal defaults to active low as produced by the
+      sensor.  The property value should ensure the flags properly
+      describe the signal that is presented to the driver.
+      Either this or INT1 will be used to route interrupts. If both
+      are defined, then int1 is prioritized.
+
+  spi-max-frequency:
+    type: int
+    description: Maximum SPI bus frequency in Hz.
+    default: 1000000
+
+  self-test-enable:
+    type: boolean
+    description: |
+      Run Self-Test on initialization.

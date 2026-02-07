@@ -495,3 +495,10 @@ test_spi_as5048: as5048@3b {
 	reg = <0x3b>;
 	spi-max-frequency = <0>;
 };
+
+test_spi_adxl355: adxl355@3c {
+	compatible = "adi,adxl355";
+	reg = <0x3c>;
+	spi-max-frequency = <0>;
+	int1-gpios = <&test_gpio 0 0>;
+};
