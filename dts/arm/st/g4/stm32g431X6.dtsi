@@ -12,4 +12,7 @@
 
 &flash0 {
 	reg = <0x08000000 DT_SIZE_K(32)>;
+	ranges = <0x0 0x8000000 DT_SIZE_K(32)>;
+	#address-cells = <1>;
+	#size-cells = <1>;
 };

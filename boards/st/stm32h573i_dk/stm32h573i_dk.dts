@@ -23,6 +23,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* Set the partitions with first MB to make use of the whole Bank1 */
 		boot_partition: partition@0 {
@@ -35,10 +36,12 @@
 			reg = <0x00010000 DT_SIZE_K(440)>;
 		};
 
+#if 0
 		slot1_partition: partition@7e000 {
 			label = "image-1";
 			reg = <0x0007e000 DT_SIZE_K(448)>;
 		};
+#endif
 
 		/* Set 72KB of storage at the end of Bank1 */
 		storage_partition: partition@ee000 {
@@ -53,10 +56,21 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		partition@0 {
+			label = "nor0";
+			reg = <0x00000000 (DT_SIZE_M(1) - DT_SIZE_K(448))>;
+		};
+
+		slot1_partition: partition@90000 {
+			label = "image-1";
+			reg = <0x00090000 DT_SIZE_K(448)>;
+		};
+
+		partition@100000 {
 			label = "nor";
-			reg = <0x00000000 DT_SIZE_M(64)>;
+			reg = <0x00100000 DT_SIZE_M(64 - 1)>;
 		};
 	};
 };

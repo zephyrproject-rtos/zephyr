@@ -126,6 +126,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
@@ -276,12 +277,19 @@ zephyr_udc0: &usbotg_hs {
 		cs-high-time = <4>; /* >= 50 ns */
 		spi-bus-width = <4>;
 		reset-cmd;
+
+		/* QSPI external flash mapping */
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(64)>;
+
 		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			partition@0 {
 				reg = <0x0 DT_SIZE_M(64)>;
@@ -294,6 +302,7 @@ zephyr_udc0: &usbotg_hs {
 		reg = <0>;
 		size = <DT_SIZE_M(512)>; /* 512 Mbits */
 		qspi-max-frequency = <72000000>;
+		ranges;
 		status = "okay";
 	};
 };

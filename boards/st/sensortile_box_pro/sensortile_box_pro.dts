@@ -336,6 +336,7 @@ zephyr_udc0: &usbotg_fs {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/*
 		 * Following flash partition is dedicated to the use of sensortile_box_pro

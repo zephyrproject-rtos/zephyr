@@ -336,6 +336,7 @@ st_cam_i2c: &i2c1 {
 		four-byte-opcodes;
 		status = "okay";
 
+		/* XSPI external flash mapping */
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges = <0x0 0x70000000 DT_SIZE_M(128)>;
@@ -345,11 +346,15 @@ st_cam_i2c: &i2c1 {
 			reg = <0x0 DT_SIZE_M(128)>;
 			write-block-size = <1>;
 			erase-block-size = <DT_SIZE_K(4)>;
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
 
 			partitions {
 				compatible = "fixed-partitions";
 				#address-cells = <1>;
 				#size-cells = <1>;
+				ranges;
 			};
 		};
 	};

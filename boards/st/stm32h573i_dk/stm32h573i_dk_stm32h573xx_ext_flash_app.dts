@@ -23,6 +23,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* Set the partitions with first MB to make use of the whole Bank1 */
 		boot_partition: partition@0 {
@@ -42,6 +43,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		slot0_partition: partition@0 {
 			label = "image-0";

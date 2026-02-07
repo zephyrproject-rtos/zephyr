@@ -292,12 +292,19 @@ st_cam_i2c: &i2c4 {
 		ospi-max-frequency = <DT_FREQ_M(50)>;
 		spi-bus-width = <OSPI_OPI_MODE>;
 		data-rate = <OSPI_DTR_TRANSFER>;
+
+		/* OSPI external flash mapping */
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(64)>;
+
 		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			partition@0 {
 				label = "nor";

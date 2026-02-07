@@ -51,6 +51,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/*
 		 * Flash layout:
@@ -95,6 +96,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		slot1_partition: partition@0 {
 			reg = <0x00000000 DT_SIZE_K(240)>;

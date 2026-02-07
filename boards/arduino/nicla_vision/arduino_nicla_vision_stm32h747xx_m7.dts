@@ -141,6 +141,7 @@ zephyr_i2c: &i2c1 {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		boot_partition: partition@0 {
 			label = "bootloader";
@@ -168,6 +169,12 @@ zephyr_i2c: &i2c1 {
 		size = <DT_SIZE_M(128)>; /* 128 Mbits (16 MB) */
 		qspi-max-frequency = <72000000>;
 		cs-high-time = <4>; /* >= 50 ns */
+
+		/* QSPI external flash mapping */
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(16)>;
+
 		status = "okay";
 	};
 };

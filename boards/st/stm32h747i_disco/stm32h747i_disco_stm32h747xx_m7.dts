@@ -118,6 +118,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* Set 2KB of storage at the end of first 1MB flash */
 		storage_partition: partition@ff800 {
@@ -262,6 +263,12 @@ zephyr_udc0: &usbotg_hs {
 		cs-high-time = <4>; /* >= 50 ns */
 		spi-bus-width = <4>;
 		reset-cmd;
+
+		/* QSPI external flash mapping */
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(64)>;
+
 		status = "okay";
 
 		partitions {

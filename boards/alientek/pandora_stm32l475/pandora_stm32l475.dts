@@ -93,6 +93,12 @@
 		jedec-id = [ef 40 18];
 		spi-bus-width = <4>;
 		writeoc = "PP_1_1_4";
+
+		/* QSPI external flash mapping */
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(16)>;
+
 		status = "okay";
 	};
 };

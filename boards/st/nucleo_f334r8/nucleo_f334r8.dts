@@ -133,6 +133,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* Set 6Kb of storage at the end of the 64Kb of flash */
 		storage_partition: partition@e800 {

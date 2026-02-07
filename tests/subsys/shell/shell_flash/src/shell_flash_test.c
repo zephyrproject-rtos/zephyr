@@ -14,6 +14,7 @@
 #include <zephyr/device.h>
 
 #include <zephyr/drivers/flash.h>
+#include <zephyr/storage/flash_map.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_dummy.h>
 
@@ -23,7 +24,7 @@
 #else
 #define SOC_NV_FLASH_NODE DT_CHILD(DT_INST(0, zephyr_sim_flash), flash_sim_0)
 #endif /* CONFIG_ARCH_POSIX */
-#define FLASH_SIMULATOR_BASE_OFFSET DT_REG_ADDR(SOC_NV_FLASH_NODE)
+#define FLASH_SIMULATOR_BASE_OFFSET FIXED_PARTITION_NODE_OFFSET(SOC_NV_FLASH_NODE)
 
 /* Test 'flash read' shell command */
 ZTEST(shell_flash, test_flash_read)

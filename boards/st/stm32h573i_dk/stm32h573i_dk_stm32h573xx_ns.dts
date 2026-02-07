@@ -40,6 +40,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* Keep in sync with partitions from flash_layout.h in TF-M
 		 * MCUboot (scratch area)                0000_0000 - 0000_C000 ( 48k)
@@ -93,6 +94,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		partition@0 {
 			label = "nor";

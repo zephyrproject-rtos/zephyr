@@ -132,6 +132,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* Flash has 128KB sector size */
 		boot_partition: partition@0 {
@@ -249,10 +250,16 @@
 		reset-cmd;
 		reset-cmd-wait = <2000>;
 
+		/* QSPI external flash mapping */
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(8)>;
+
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			slot0_partition: partition@0 {
 				label = "image-0";

@@ -81,8 +81,7 @@
 		compatible = "zephyr,memory-region";
 		reg = <0x90000000 DT_SIZE_M(64)>;
 		zephyr,memory-region = "EXT_FLASH";
-		/* DT_MEM_ARM_MPU_EXTMEM and DT_MEM_ARM_MPU_FLASH cause MPU issues */
-		zephyr,memory-attr = <DT_MEM_ARM_MPU_IO>;
+		zephyr,memory-attr = <DT_MEM_ARM_MPU_FLASH>;
 	};
 };
 
@@ -356,17 +355,22 @@
 		spi-bus-width = <XSPI_OCTO_MODE>;
 		data-rate = <XSPI_DTR_TRANSFER>;
 		four-byte-opcodes;
-		status = "okay";
 
+		/* QSPI external flash mapping */
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x90000000 DT_SIZE_M(64)>; /* Ext Flash mem-mapped to 0x90000000 */
+		ranges = <0x0 0x90000000 DT_SIZE_M(64)>;
+
+		status = "okay";
 
 		ext_flash: mx25lm51245: ext-flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_M(64)>;
 			write-block-size = <1>;
 			erase-block-size = <DT_SIZE_K(4)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
 		};
 	};
 };
