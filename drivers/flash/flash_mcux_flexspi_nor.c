@@ -1378,6 +1378,39 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 		/* Device uses bit 1 of status reg 2 for QE */
 		return flash_flexspi_nor_quad_enable(data, flexspi_lut,
 						     JESD216_DW15_QER_VAL_S2B1v5);
+	case 0x1740EF:
+		/* W25Q64JV flash, use 3 byte read/write */
+		flexspi_lut[READ][0] = FLEXSPI_LUT_SEQ(
+			kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_4READ,
+				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_4PAD, 24);
+		/* Flash needs 6 dummy cycles */
+		flexspi_lut[READ][1] = FLEXSPI_LUT_SEQ(
+			kFLEXSPI_Command_DUMMY_SDR, kFLEXSPI_4PAD, 6,
+				kFLEXSPI_Command_READ_SDR, kFLEXSPI_4PAD, 0x04);
+		/* Only 1S-1S-4S page program supported */
+		flexspi_lut[PAGE_PROGRAM][0] =
+			FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_PP_1_1_4,
+					kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 24);
+		flexspi_lut[PAGE_PROGRAM][1] = FLEXSPI_LUT_SEQ(
+			kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_4PAD, 0x3,
+					kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
+		/* Update ERASE commands for 3 byte mode */
+		flexspi_lut[ERASE_SECTOR][0] = FLEXSPI_LUT_SEQ(
+			kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_SE,
+					kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 24);
+		/* 64 KB (0x10000) block erase  0xD8 */
+		flexspi_lut[ERASE_BLOCK][0] = FLEXSPI_LUT_SEQ(
+			kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_BE,
+					kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 24),
+		/* Read instruction used for polling is 0x05 */
+			data->legacy_poll = true;
+		flexspi_lut[READ_STATUS_REG][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR,
+				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x01);
+		/* Device uses bit 1 of status reg 2 for QE */
+		return flash_flexspi_nor_quad_enable(data, flexspi_lut,
+						     JESD216_DW15_QER_VAL_S2B1v5);
 	case 0x3A25C2:
 		/* MX25U51245G flash, use 4 byte read/write */
 		flexspi_lut[READ][0] = FLEXSPI_LUT_SEQ(
