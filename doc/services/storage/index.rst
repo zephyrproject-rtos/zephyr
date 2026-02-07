@@ -12,7 +12,6 @@ Storage
    flash_map/flash_map.rst
    nvmem/index.rst
    nvs/nvs.rst
-   retention/index.rst
    secure_storage/index.rst
    settings/index.rst
    stream/stream_flash.rst
