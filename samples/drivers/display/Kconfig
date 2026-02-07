@@ -15,3 +15,9 @@ config SAMPLE_BUFFER_ADDR_ALIGN
 config SAMPLE_PITCH_ALIGN
 	int "The update area pitch alignment"
 	default 1
+
+config HEAP_MEM_POOL_ADD_SIZE_SAMPLE
+	int "Sample maximum heap allocated buffer size"
+	default 65536
+	help
+	  Maximum size of the buffer for rendering rectangles
