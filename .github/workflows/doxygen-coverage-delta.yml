@@ -97,4 +97,5 @@ jobs:
             --strip-comparison-prefix "$PR_ROOT" \
             --warn-paths "include/zephyr/dt-bindings" \
             --warn-paths "include/zephyr/posix" \
+            --warn-paths "lib/libc" \
             --summary-file "$GITHUB_STEP_SUMMARY"
