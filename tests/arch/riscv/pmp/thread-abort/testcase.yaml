@@ -1,0 +1,5 @@
+common:
+  filter: CONFIG_RISCV_PMP
+
+tests:
+  arch.riscv.pmp.thread_abort: {}
