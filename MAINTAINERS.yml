@@ -5095,11 +5095,15 @@ TI K3 Platforms:
     - gramsay0
     - dnltz
     - vaishnavachath
+    - natto1784
+    - Kronosblaster
   files:
     - boards/ti/*am62*/
     - drivers/*/*davinci*
     - drivers/*/*omap*
     - drivers/*/*ti_k3*
+    - drivers/*/*tisci*
+    - drivers/*/*secproxy*
     - dts/arm/ti/am6*
     - dts/arm/ti/j7*
     - dts/bindings/*/ti,k3*
