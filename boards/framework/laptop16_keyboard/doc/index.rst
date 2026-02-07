@@ -51,11 +51,19 @@ Flashing
 Using UF2
 ---------
 
-Here is an example of building the sample for driving the built-in led.
+Here is an example of building the sample for driving the white backlight.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky_pwm
-   :board: rp2040_plus
+   :board: framework_laptop16_keyboard
+   :goals: build
+   :compact:
+
+Anothe example to for modules with per-key RGB for driving those via the LED controller.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/led/is31fl3743
+   :board: framework_laptop16_keyboard
    :goals: build
    :compact:
 

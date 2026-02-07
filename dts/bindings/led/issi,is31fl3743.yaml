@@ -1,0 +1,61 @@
+# Copyright 2023 Daniel DeGrasse <daniel@degrasse.com>
+# Copyright 2025-2026 Framework Computer Inc
+# SPDX-License-Identifier: Apache-2.0
+description: ISSI IS31FL3743 LED Matrix Driver
+
+compatible: "issi,is31fl3743"
+
+include: "i2c-device.yaml"
+
+properties:
+  sdb-gpios:
+    type: phandle-array
+    description: |
+      Hardware shutdown pin. If routed on the board, this property must be
+      present. Set to a logical 1 at boot to exit the device from hardware
+      shutdown.
+
+  current-limit:
+    type: int
+    default: 0xFF
+    description: |
+      Global current limit. Sets the global current control register of LED
+      driver (set table 14). Limits global current based on the following
+      formula: (343/R_ISET) * (current-limit/256). Defaults to max value
+      of 0xFF, so LED output will still be enabled if property is
+      not provided.
+
+  current-sources:
+    type: int
+    default: 11
+    description: |
+      How many SW pins to source current from. Starting from SW1, enable n number of SW pins to
+      source current for driving the LEDs. The default value works fine even if not all SW pins are
+      connected to LEDs, however driving unconnected pins can result in audible electrical noise.
+      So it is advised to disable all unused pins.
+      Example: Setting this to 5, enables SW1-SW5 and disables SW6-SW11
+    enum:
+      - 11
+      - 10
+      - 9
+      - 8
+      - 7
+      - 6
+      - 5
+      - 4
+      - 3
+      - 2
+      - 0
+
+  sync-mode:
+    type: string
+    default: "none"
+    enum:
+      - "none"
+      - "slave"
+      - "master"
+    description: |
+      This property configures the LED controller as a master or slave
+      clock device. This can be used to synchronize the output of multiple
+      LED controllers. See SYNC bits in LED configuration register for more
+      information.
