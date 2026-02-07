@@ -77,3 +77,8 @@
 	interrupts = <57 4>;
 	interrupt-parent = <&nvic>;
 };
+
+&mcu_rti0 {
+	interrupts = <19 4>;
+	interrupt-parent = <&nvic>;
+};
