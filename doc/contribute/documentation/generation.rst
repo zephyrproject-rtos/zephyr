@@ -107,11 +107,11 @@ as described below:
          sudo apt-get install --no-install-recommends doxygen graphviz librsvg2-bin \
          texlive-latex-base texlive-latex-extra latexmk texlive-fonts-recommended imagemagick
 
-      On Fedora Linux:
+      On Fedora Linux (Use "dnf" or "dnf5" depending on your Fedora version):
 
       .. code-block:: console
 
-         sudo dnf install doxygen graphviz texlive-latex latexmk \
+         sudo dnf5 install doxygen graphviz texlive-latex latexmk \
          texlive-collection-fontsrecommended librsvg2-tools ImageMagick
 
       On Clear Linux:
