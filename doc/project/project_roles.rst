@@ -6,22 +6,26 @@ TSC Project Roles
 Project Roles
 #############
 
-TSC projects generally will involve *Maintainers*, *Collaborators*, and
-*Contributors*:
+You can participate in the Zephyr Project as a *Contributor*, *Collaborator*, or *Maintainer*.
 
-**Maintainer**: lead Collaborators on an area identified by the TSC (e.g.
-Architecture, code subsystems, etc.). Maintainers shall also serve as the
-area’s representative on the TSC as needed. Maintainers may become voting
-members of the TSC under the guidelines stated in the project Charter.
+**Contributor**: Any community member who contributes code, documentation, or other assets to the
+project.
 
-**Collaborator**: A highly involved Contributor in one or more areas.
-May become a Maintainer with approval of existing TSC voting members.
+**Collaborator**: An active Contributor who is highly involved in one or more areas of the project.
 
-**Contributor**: anyone in the community that contributes code or
-documentation to the project. Contributors may become Collaborators
-by approval of the existing Collaborators and Maintainers of the
-particular code base areas or subsystems.
+**Maintainer**: A lead Collaborator responsible for a specific area or subsystem within the project.
+Maintainers also serve as representatives for their area on the Technical Steering Committee (TSC)
+as needed.
 
+Areas in the context of this document refer to specific subsystems, components, or modules within
+the Zephyr Project codebase. Examples of areas include, but are not limited to, networking,
+file systems, device drivers, architecture support, and board support packages (boards and SoC
+definitions).
+
+Areas in the project should at least have one Maintainer and may have multiple Collaborators.
+Depending on the size and complexity of the area, there may be multiple Maintainers as well,
+however, the number of maintainers should be kept to a practical minimum to ensure effective
+management and decision-making.
 
 .. _contributor:
 
@@ -50,51 +54,41 @@ Contributors are granted the following rights and responsibilities:
 * Responsibility to follow the project’s code of conduct
   (https://github.com/zephyrproject-rtos/zephyr/blob/main/CODE_OF_CONDUCT.md)
 
-Contributors are initially only given `Read
-<https://docs.github.com/en/organizations/managing-access-to-your-organizations-repositories/repository-permission-levels-for-an-organization>`_
-access to the Zephyr GitHub repository. Specifically, at the Read access level,
-Contributors are not allowed to assign reviewers to their own pull requests. An
-automated process will assign reviewers. You may also share the pull request on
-the `Zephyr devel mailing list <https://lists.zephyrproject.org/g/devel>`_ or on
-the `Zephyr Discord Server <https://chat.zephyrproject.org>`_.
-
-Contributors who show dedication and skill are granted the Triage permission
-level to the Zephyr GitHub repository.
-
-You may nominate yourself, or another GitHub user, for promotion to the Triage
-permission level by creating a GitHub issue, using the :github:`nomination
-template <new?assignees=&labels=Role+Nomination&template=006_nomination.yml>`.
-
-Contributors granted the Triage permission level are permitted to add reviewers
-to a pull request and can be added as a reviewer by other GitHub users.
-Contributor change requests or approval on pull requests are not counted with
-respect to accepting and merging a pull request. However, Contributors comments
-and requested changes should still be considered by the pull request author.
 
 Zephyr Contributor Badge
-++++++++++++++++++++++++
+------------------------
 
-When your first contribution to the Zephyr project gets merged, you'll become eligible to claim your
-Zephyr Contributor Badge. This digital badge can be displayed on your website, blog, social media
-profile, etc. It will allow you to showcase your involvement in the Zephyr project and help raise
-its awareness.
+When your first contribution to the Zephyr project gets merged, you'll become
+eligible to claim your Zephyr Contributor Badge. This digital badge can be
+displayed on your website, blog, social media profile, etc. It will allow you to
+showcase your involvement in the Zephyr project and help raise its awareness.
 
-You may apply for your Contributor Badge by filling out the `Zephyr Contributor Badge form`_.
+You may apply for your Contributor Badge by filling out the `Zephyr Contributor
+Badge form`_.
 
-.. _collaborator:
+   .. _collaborator:
 
 Collaborator
 ++++++++++++
 
-A *Collaborator* is a Contributor who is also responsible for the maintenance
-of Zephyr source code. Their opinions weigh more when decisions are made, in a
+A *Collaborator* is a Contributor who is also participating in the maintenance
+of Zephyr source code. Their input weighs more when decisions are made, in a
 fully meritocratic fashion.
 
-Collaborators have the following rights and responsibilities,
-in addition to those listed for Contributors:
+You become a collaborator by showing consistent involvement in the project,
+including making significant contributions to the project over a period of
+time and by participating in the development and review of at least one area.
 
-* Right to set goals for the short and medium terms for the project being
-  maintained, alongside the Maintainer.
+To request to become a Collaborator, submit a pull request adding yourself
+to the ``collaborators`` section of an area in the :ref:`maintainers_file` and
+notify the maintainers of that area. The addition needs to be approved by
+the maintainers of that area.
+
+Collaborators have the following rights and responsibilities, in addition to
+those listed for Contributors:
+
+* Right to participate in setting goals for the short and medium terms for the
+  area being maintained, alongside the maintainers of that area.
 * Responsibility to participate in the feature development process.
 * Responsibility to review relevant code changes within reasonable time.
 * Responsibility to ensure the quality of the code to expected levels.
@@ -102,10 +96,6 @@ in addition to those listed for Contributors:
 * Responsibility to mentor new contributors when appropriate
 * Responsibility to participate in the quality verification and release
   process, when those happen.
-
-Contributors are promoted to the Collaborator role by adding the GitHub user
-name to one or more ``collaborators`` sections of the :ref:`maintainers_file` in
-the Zephyr repository.
 
 Collaborator change requests on pull requests should
 be addressed by the original submitter. In cases where the changes requested do
@@ -125,6 +115,19 @@ Maintainer
 A *Maintainer* is a Collaborator who is also responsible for knowing,
 directing and anticipating the needs of a given zephyr source code area.
 
+You become a maintainer of an area by
+
+- showing consistent involvement in the project.
+- making significant contributions to that area over a period of time and
+  participating in the development and review of contributions.
+- when introducing new areas to the project where you are the original author
+  or have significant expertise.
+
+To request to become a Maintainer, submit a pull request adding yourself
+to the ``maintainers`` section of an area in the :ref:`maintainers_file` and
+notify the existing maintainers of that area. The addition needs to be approved by
+the maintainers of that area.
+
 Maintainers have the following rights and responsibilities,
 in addition to those listed for Contributors and Collaborators:
 
@@ -143,28 +146,8 @@ in addition to those listed for Contributors and Collaborators:
 * Responsibility to triage static analysis issues in their code area.
   See :ref:`static_analysis`.
 
-Contributors or Collaborators are promoted to the Maintainer role by adding the
-GitHub user name to one or more ``maintainers`` sections of the
-:ref:`maintainers_file` in the Zephyr repository. Candidates who are neither
-Contributors nor Collaborators must be approved by the TSC before they can
-assume the role of Maintainer.
-
 Maintainer approval of pull requests are counted toward the minimum
 required approvals needed to merge a PR. Other criteria for merging may apply.
-
-Role Retirement
-###############
-
-* Individuals elected to the following Project roles, including, Maintainer,
-  Release Engineering Team member, Release Manager, but are no longer engaged
-  in the project as described by the rights and responsibilities of that role,
-  may be requested by the TSC to retire from the role they are elected.
-* Such a request needs to be raised as a motion in the TSC and be
-  approved by the TSC voting members.
-  By approval of the TSC the individual is considered to be retired
-  from the role they have been elected.
-* The above applies to elected TSC Project roles that may be defined
-  in addition.
 
 
 Teams and Supporting Activities
@@ -173,7 +156,8 @@ Teams and Supporting Activities
 Assignee
 ++++++++
 
-An *Assignee* is one of the maintainers of a subsystem or code being changed.
+An *Assignee* is one of the maintainers of an area being changed in a pull request.
+
 Assignees are set either automatically based on the code being changed or set
 by the other Maintainers, the Release Engineering team can set an assignee when
 the latter is not possible.
@@ -296,57 +280,57 @@ Roles / Permissions
 
     ================ =================== =========== ================ =========== =========== ============
 
+Role Retirement
+###############
+
+Individuals approved by the TSC or representatives of the TSC to fill a project
+role who are no longer actively fulfilling the rights and responsibilities
+associated with their role may be requested by the TSC to retire from that role.
+
+Retirements of inactive maintainers or collaborators are reflected by removing the
+individual's GitHub user name from the relevant sections of the
+:ref:`maintainers_file` in the Zephyr repository and may be initiated by the
+TSC, representatives of the TSC or by the individuals themselves.
 
 .. _maintainers_file:
 
 MAINTAINERS File
 ################
 
-Generic guidelines for deciding and filling in the Maintainers' list
+The following guidelines apply to the structure, scope, and maintenance of the
+MAINTAINERS file.
 
-* We should keep the granularity of code maintainership at a manageable level
-* We should be looking for maintainers for areas of code that
-  are orphaned (i.e. without an explicit maintainer)
+- The MAINTAINERS file shall have designated individuals responsible for the
+  accuracy, structure, and upkeep of the file, in accordance with the Zephyr
+  Project Charter. These individuals shall be appointed by the TSC.
+- The granularity of maintainership should remain practical and manageable.
+- The TSC, in collaboration with existing maintainers and contributors, should
+  actively identify and encourage contributors to step up as maintainers for
+  orphaned areas of the codebase and should facilitate the assignment of
+  maintainers to those components.
+- Unmaintained areas shall be clearly marked as such in the MAINTAINERS file.
+- Updates to the MAINTAINERS file should:
 
-  * Un-maintained areas should be indicated clearly in the MAINTAINERS file
+  - Generally be included as standalone commits when introducing new files or
+    directories.
+  - For major structural changes, including the addition of new areas and new
+    maintainers, should be submitted as separate pull requests, requiring
+    approval by the file’s maintainers. Such activities might be the result of
+    splitting existing large areas into smaller ones or merging smaller areas.
 
-* All submitted pull requests should have an assignee
-* We Introduce an area/subsystem hierarchy to address the above point
+Guidelines for assigning maintainers to different areas of the codebase:
 
-  * Parent-area maintainer should be acting as default substitute/fallback
-    assignee for un-maintained sub-areas
-  * Area maintainer gets precedence over parent-area maintainer
+Architectures, core components, subsystems, samples, and tests:
+  Each area shall have an explicitly assigned maintainer.
 
-* Pull requests may be re-assigned if this is needed or more appropriate
+Boards (including related samples and tests) and SoCs (including DTS definitions)
+  Each board and SoC should have an explicitly assigned maintainer through a
+  platform area covering the boards, SoCs, and their related components and
+  drivers.
 
-  * Re-assigned by original assignee
-
-* In general, updates to the MAINTAINERS file should be
-  in a standalone commit alongside other changes introducing new files and
-  directories to the tree.
-* Major changes to the file, including the addition of new areas with new maintainers
-  should come in as standalone pull requests and require TSC review.
-* If additional review by the TSC is required, the maintainers of the file
-  should send the requested changes to the TSC and give members of the TSC two
-  (2) days to object to any of the changes to maintainership of areas or the
-  addition of new maintainers or areas.
-* Path, collaborator and name changes do not require a review by the TSC.
-* Addition of new areas without a maintainer do not require review by the TSC.
-* The MAINTAINERS file itself shall have a maintainer
-* Architectures, core components, sub-systems, samples, tests
-
-  * Each area shall have an explicit maintainer
-
-* Boards (incl relevant samples, tests), SoCs (incl DTS)
-  * May have a maintainer, shall have a higher-level platform maintainer
-* Drivers
-
-  * Shall have a driver-area (and API) maintainer
-  * Could have individual driver implementation
-    maintainers but preferably collaborator/contributors
-  * In the above case, platform-specific PRs may be
-    re-assigned to respective collaborator/contributor of driver
-    implementation
-
+Drivers / Backends
+  The area of the API level Shall have a maintainer and specific driver
+  implementations or backends shall be covered through a platform area covering
+  the driver implementation.
 
 .. _Zephyr Contributor Badge form: https://forms.gle/oCw9iAPLhUsHTapc8
