@@ -1,0 +1,7 @@
+# Copyright (c) 2018 Google LLC.
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# Copyright (c) 2025 Perry Naseck, MIT Media Lab <pnaseck@media.mit.edu>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ADAFRUIT_TRRS_TRINKEY
+	select SOC_SAMD21E18A
