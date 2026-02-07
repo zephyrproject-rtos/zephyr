@@ -9,7 +9,7 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/interrupt_controller/riscv_imsic.h>
-#include <zephyr/arch/riscv/csr.h>
+#include <zephyr/arch/riscv/icsr.h>
 #include <zephyr/arch/riscv/irq.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>

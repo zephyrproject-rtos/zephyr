@@ -270,46 +270,6 @@
 	__swv;							\
 })
 
-#ifdef CONFIG_RISCV_ISA_EXT_SMCSRIND
-
-static inline unsigned long micsr_read(unsigned int index)
-{
-	csr_write(MISELECT, index);
-	return csr_read(MIREG);
-}
-
-static inline void micsr_write(unsigned int index, unsigned long value)
-{
-	csr_write(MISELECT, index);
-	csr_write(MIREG, value);
-}
-
-static inline void micsr_set(unsigned int index, unsigned long mask)
-{
-	csr_write(MISELECT, index);
-	csr_set(MIREG, mask);
-}
-
-static inline void micsr_clear(unsigned int index, unsigned long mask)
-{
-	csr_write(MISELECT, index);
-	csr_clear(MIREG, mask);
-}
-
-static inline unsigned long micsr_read_set(unsigned int index, unsigned long mask)
-{
-	csr_write(MISELECT, index);
-	return csr_read_set(MIREG, mask);
-}
-
-static inline unsigned long micsr_read_clear(unsigned int index, unsigned long mask)
-{
-	csr_write(MISELECT, index);
-	return csr_read_clear(MIREG, mask);
-}
-
-#endif /* CONFIG_RISCV_ISA_EXT_SMCSRIND */
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* CSR_H_ */
