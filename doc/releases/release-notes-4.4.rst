@@ -197,6 +197,7 @@ New APIs and options
 
   * :dtcompatible:`jedec,mspi-nor` now allows MSPI configuration of read, write and
     control commands separately via devicetree.
+  * :kconfig:option:`CONFIG_FLASH_STM32_ASYNC`
 
 * Haptics
 
