@@ -3416,16 +3416,35 @@ Microchip MEC Platforms:
     - albertofloyd
   files:
     - boards/microchip/mec*/
+    - boards/microchip/ev11l78a/
     - dts/arm/microchip/
     - soc/microchip/mec/
-    - drivers/*/*mchp*.c
+    - drivers/*/*xec*
+    - drivers/sensor/microchip/mchp_tach_xec/
     - tests/boards/mec15xxevb_assy6853/
     - tests/boards/mec172xevb_assy6906/
+    - tests/**/boards/*mec*
     - dts/bindings/*/microchip,mec*
     - dts/bindings/*/microchip,xec*
+    - dts/bindings/*/microchip,dmec*
+    - include/zephyr/*/*/*xec*
     - samples/boards/microchip/
+    - samples/**/boards/*mec*
   labels:
     - "platform: Microchip MEC"
+
+Microchip PIC32 Platforms:
+  status: maintained
+  maintainers:
+    - nandojve
+  collaborators:
+    - ArunMCHP
+    - NhMchp
+  files:
+    - boards/microchip/pic32c/
+    - soc/microchip/pic32c/
+  labels:
+    - "platform: Microchip PIC32"
 
 Microchip RISC-V Platforms:
   status: maintained
@@ -3442,6 +3461,10 @@ Microchip RISC-V Platforms:
     - dts/riscv/microchip/
     - soc/microchip/miv/
     - soc/microchip/pic64/
+    - drivers/*/*mchp*mss*
+    - dts/bindings/*/microchip,mpfs*
+    - dts/bindings/*/microchip,coreuart*
+    - include/zephyr/dt-bindings/reset/mchp_mss*
   labels:
     - "platform: Microchip RISC-V"
 
@@ -3459,10 +3482,39 @@ Microchip SAM Platforms:
     - dts/arm/microchip/sam/
     - soc/atmel/
     - soc/microchip/sam/
-    - drivers/*/*sam*.c
+    - drivers/*/*sam*
+    - drivers/*/*mchp*
     - dts/bindings/*/atmel,*
+    - dts/bindings/*/microchip,sam*
+    - dts/bindings/*/microchip,*-g1*
+    - dts/bindings/clock/microchip/
+    - include/zephyr/*/*/*sam*
+    - include/zephyr/*/*/*atmel*
+    - tests/drivers/pinctrl/microchip/
+    - tests/**/boards/*sam*
+    - samples/**/boards/*sam*
   labels:
     - "platform: Microchip SAM"
+
+Microchip Standalone Devices:
+  status: odd fixes
+  files:
+    - drivers/bbram/*microchip*
+    - drivers/ethernet/phy/*microchip*
+    - drivers/sensor/microchip/mcp9600/
+    - drivers/sensor/microchip/mcp970x/
+    - drivers/sensor/microchip/mtch9010/
+    - drivers/sensor/microchip/tcn75a/
+    - dts/bindings/*/microchip,cap*
+    - dts/bindings/*/microchip,enc*
+    - dts/bindings/*/microchip,mcp*
+    - dts/bindings/*/microchip,tcn*
+    - dts/bindings/**/microchip,ksz*
+    - dts/bindings/**/microchip,lan*
+    - dts/bindings/**/microchip,t1s*
+    - dts/bindings/**/microchip,vsc*
+  labels:
+    - "platform: Microchip"
 
 Modbus:
   status: maintained
@@ -4331,6 +4383,8 @@ Peregrine Platforms:
     - nandojve
   files:
     - boards/peregrine/
+    - boards/shields/atmel_rf2xx/
+    - drivers/ieee802154/*rf2xx*
   labels:
     - "platform: Peregrine"
 
