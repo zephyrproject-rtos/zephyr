@@ -15,23 +15,11 @@
 #include <stdio.h>
 #include <string.h>
 
-#if defined(CONFIG_NRF71_ON_IPC)
-#include "ipc_if.h"
-#else
 #include <zephyr/drivers/wifi/nrf_wifi/bus/qspi_if.h>
 #include "spi_if.h"
 static struct qspi_config config;
-#endif
 
-#if defined(CONFIG_NRF71_ON_IPC)
-static struct rpu_dev ipc = {
-	.init = ipc_init,
-	.deinit = ipc_deinit,
-	.send = ipc_send,
-	.recv = ipc_recv,
-	.register_rx_cb = ipc_register_rx_cb,
-};
-#elif defined(CONFIG_NRF70_ON_QSPI)
+#if defined(CONFIG_NRF70_ON_QSPI)
 static struct qspi_dev qspi = {.init = qspi_init,
 			       .deinit = qspi_deinit,
 			       .read = qspi_read,
@@ -45,7 +33,6 @@ static struct qspi_dev spim = {.init = spim_init,
 			       .hl_read = spim_hl_read};
 #endif
 
-#ifndef CONFIG_NRF71_ON_IPC
 struct qspi_config *qspi_defconfig(void)
 {
 	memset(&config, 0, sizeof(struct qspi_config));
@@ -83,9 +70,7 @@ struct qspi_config *qspi_get_config(void)
 {
 	return &config;
 }
-#endif
 
-#ifndef CONFIG_NRF71_ON_IPC
 struct qspi_dev *qspi_dev(void)
 {
 #if defined(CONFIG_NRF70_ON_QSPI)
@@ -94,9 +79,3 @@ struct qspi_dev *qspi_dev(void)
 	return &spim;
 #endif
 }
-#else
-struct rpu_dev *rpu_dev(void)
-{
-	return &ipc;
-}
-#endif /*! CONFIG_NRF71_ON_IPC */

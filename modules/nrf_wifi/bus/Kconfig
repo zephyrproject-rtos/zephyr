@@ -23,15 +23,6 @@ config NRF70_ON_SPI
 			 $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7000_SPI))
 	select SPI
 
-config NRF71_ON_IPC
-	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF71_WIFI))
-	select MBOX
-	select IPC_SERVICE
-	select SPSC_PBUF
-	help
-	  nRF71 is a Wi-Fi and BLE combo SoC and uses IPC as a communication
-	  between APP and Wi-Fi cores.
-
 module = WIFI_NRF70_BUSLIB
 module-dep = LOG
 module-str = Log level for Wi-Fi nRF70 bus library
