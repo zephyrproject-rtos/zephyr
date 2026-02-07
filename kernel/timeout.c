@@ -12,10 +12,61 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/llext/symbol.h>
+#include <zephyr/sys/min_heap.h>
 
 static uint64_t curr_tick;
 
-static sys_dlist_t timeout_list = SYS_DLIST_STATIC_INIT(&timeout_list);
+/* Forward declaration for timeout_cmp */
+static int timeout_cmp(const void *a, const void *b);
+static uint32_t timeout_seq;
+
+/**
+ * @brief Time comparison helpers that handle wrap-around correctly
+ *
+ * These functions use signed arithmetic to correctly handle timer wrap-around
+ * in both 32-bit and 64-bit modes. The key insight is that for unsigned values
+ * a and b, (a - b) interpreted as a signed value tells us their ordering,
+ * even if wrap-around has occurred (as long as they're within half the range).
+ */
+
+#ifdef CONFIG_TIMEOUT_64BIT
+typedef int64_t k_ticks_diff_t;
+
+static inline bool time_after_eq(int64_t a, int64_t b)
+{
+	return (k_ticks_diff_t)(a - b) >= 0;
+}
+#else
+typedef int32_t k_ticks_diff_t;
+
+static inline bool time_after_eq(int32_t a, int32_t b)
+{
+	return (k_ticks_diff_t)(a - b) >= 0;
+}
+#endif /* CONFIG_TIMEOUT_64BIT */
+
+/* Heap element structure containing pointer to timeout */
+struct timeout_heap_elem {
+	struct _timeout *timeout;
+	uint32_t seq;
+};
+
+/* Storage for timeout heap - statically initialized */
+MIN_HEAP_DEFINE_STATIC(timeout_heap, CONFIG_MAX_TIMEOUTS,
+		       sizeof(struct timeout_heap_elem), __alignof__(struct timeout_heap_elem),
+		       timeout_cmp);
+
+/* Callback to update timeout heap index
+ * Note: Heap internally uses 0-based indexing, but we store 1-based indices
+ * in timeout->heap_idx to allow TIMEOUT_NOT_IN_HEAP = 0
+ */
+static void timeout_update_index(void *element, size_t new_index)
+{
+	struct timeout_heap_elem *elem = element;
+
+	/* Convert 0-based heap index to 1-based for storage */
+	elem->timeout->heap_idx = new_index + 1;
+}
 
 /*
  * The timeout code shall take no locks other than its own (timeout_lock), nor
@@ -38,27 +89,54 @@ static inline unsigned int z_vrfy_sys_clock_hw_cycles_per_sec_runtime_get(void)
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
 
+/* Comparator function for min-heap: compares absolute expiry ticks
+ * Uses wrap-around safe comparison to handle tick counter overflow
+ */
+static int timeout_cmp(const void *a, const void *b)
+{
+	const struct timeout_heap_elem *elem_a = a;
+	const struct timeout_heap_elem *elem_b = b;
+
+#ifdef CONFIG_TIMEOUT_64BIT
+	int64_t tick_a = elem_a->timeout->dticks;
+	int64_t tick_b = elem_b->timeout->dticks;
+
+	/* Use signed difference to handle wrap-around */
+	k_ticks_diff_t diff = (k_ticks_diff_t)(tick_a - tick_b);
+
+	if (diff < 0) {
+		return -1;  /* a expires before b */
+	} else if (diff > 0) {
+		return 1;   /* a expires after b */
+	}
+#else
+	int32_t tick_a = elem_a->timeout->dticks;
+	int32_t tick_b = elem_b->timeout->dticks;
+
+	/* Use signed difference to handle wrap-around */
+	k_ticks_diff_t diff = (k_ticks_diff_t)(tick_a - tick_b);
+
+	if (diff < 0) {
+		return -1;  /* a expires before b */
+	} else if (diff > 0) {
+		return 1;   /* a expires after b */
+	}
+#endif
+
+	/* Ticks are equal, use sequence number for stable sorting */
+	if (elem_a->seq < elem_b->seq) {
+		return -1;
+	} else if (elem_a->seq > elem_b->seq) {
+		return 1;
+	}
+	return 0;
+}
+
 static struct _timeout *first(void)
 {
-	sys_dnode_t *t = sys_dlist_peek_head(&timeout_list);
+	struct timeout_heap_elem *elem = min_heap_peek(&timeout_heap);
 
-	return (t == NULL) ? NULL : CONTAINER_OF(t, struct _timeout, node);
-}
-
-static struct _timeout *next(struct _timeout *t)
-{
-	sys_dnode_t *n = sys_dlist_peek_next(&timeout_list, &t->node);
-
-	return (n == NULL) ? NULL : CONTAINER_OF(n, struct _timeout, node);
-}
-
-static void remove_timeout(struct _timeout *t)
-{
-	if (next(t) != NULL) {
-		next(t)->dticks += t->dticks;
-	}
-
-	sys_dlist_remove(&t->node);
+	return (elem == NULL) ? NULL : elem->timeout;
 }
 
 static int32_t elapsed(void)
@@ -87,11 +165,27 @@ static int32_t next_timeout(int32_t ticks_elapsed)
 	struct _timeout *to = first();
 	int32_t ret;
 
-	if ((to == NULL) ||
-	    ((int64_t)(to->dticks - ticks_elapsed) > (int64_t)INT_MAX)) {
+	if (to == NULL) {
 		ret = SYS_CLOCK_MAX_WAIT;
 	} else {
-		ret = max(0, to->dticks - ticks_elapsed);
+		/* Calculate relative time to next timeout using wrap-around safe arithmetic
+		 * Note: ticks_elapsed is typically small (< 100), so we can safely subtract it
+		 */
+#ifdef CONFIG_TIMEOUT_64BIT
+		k_ticks_diff_t diff = (k_ticks_diff_t)(to->dticks - curr_tick - ticks_elapsed);
+#else
+		k_ticks_diff_t diff = (k_ticks_diff_t)(to->dticks - (int32_t)curr_tick - ticks_elapsed);
+#endif
+
+		/* If diff > INT_MAX, timeout is too far in future */
+		if (diff > (k_ticks_diff_t)INT_MAX) {
+			ret = SYS_CLOCK_MAX_WAIT;
+		} else if (diff < 0) {
+			/* Timeout has already expired or will expire very soon */
+			ret = 0;
+		} else {
+			ret = (int32_t)diff;
+		}
 	}
 
 	return ret;
@@ -100,6 +194,7 @@ static int32_t next_timeout(int32_t ticks_elapsed)
 k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t timeout)
 {
 	k_ticks_t ticks = 0;
+	static bool heap_callback_set;
 
 	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
 		return 0;
@@ -109,38 +204,50 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 	__ASSERT_NO_MSG(sys_cache_is_mem_coherent(to));
 #endif /* CONFIG_KERNEL_COHERENCE */
 
-	__ASSERT(!sys_dnode_is_linked(&to->node), "");
+	__ASSERT(to->heap_idx == TIMEOUT_NOT_IN_HEAP,
+		"timeout already in heap: to=%p, heap_idx=%zu, fn=%p",
+		to, to->heap_idx, fn);
+
 	to->fn = fn;
 
 	K_SPINLOCK(&timeout_lock) {
-		struct _timeout *t;
+		/* One-time initialization of heap callback (protected by timeout_lock) */
+		if (!heap_callback_set) {
+			min_heap_set_update_callback(&timeout_heap, timeout_update_index);
+			heap_callback_set = true;
+		}
+
 		int32_t ticks_elapsed;
 		bool has_elapsed = false;
 
 		if (Z_IS_TIMEOUT_RELATIVE(timeout)) {
 			ticks_elapsed = elapsed();
 			has_elapsed = true;
-			to->dticks = timeout.ticks + 1 + ticks_elapsed;
-			ticks = curr_tick + to->dticks;
+			/* Calculate absolute expiry tick */
+			to->dticks = curr_tick + timeout.ticks + 1 + ticks_elapsed;
+			ticks = to->dticks;
 		} else {
-			k_ticks_t dticks = Z_TICK_ABS(timeout.ticks) - curr_tick;
-
-			to->dticks = max(1, dticks);
-			ticks = timeout.ticks;
+			/* Already an absolute timeout */
+			to->dticks = Z_TICK_ABS(timeout.ticks);
+			ticks = to->dticks;
 		}
 
-		for (t = first(); t != NULL; t = next(t)) {
-			if (t->dticks > to->dticks) {
-				t->dticks -= to->dticks;
-				sys_dlist_insert(&t->node, &to->node);
-				break;
-			}
-			to->dticks -= t->dticks;
+		/* Create heap element and push to heap */
+		struct timeout_heap_elem elem = {.timeout = to, .seq = timeout_seq++ };
+		int ret = min_heap_push(&timeout_heap, &elem);
+
+		if (ret != 0) {
+			/* Heap is full - this is a critical error */
+			/* Restore timeout to inactive state */
+			to->heap_idx = TIMEOUT_NOT_IN_HEAP;
+			to->fn = NULL;
+			to->dticks = 0;
+			ticks = 0;
+			__ASSERT(false, "Timeout heap is full!");
+			K_SPINLOCK_BREAK;
 		}
 
-		if (t == NULL) {
-			sys_dlist_append(&timeout_list, &to->node);
-		}
+		/* heap_idx is automatically updated by the callback during heapify */
 
 		if (to == first() && announce_remaining == 0) {
 			if (!has_elapsed) {
@@ -161,14 +268,27 @@ int z_abort_timeout(struct _timeout *to)
 	int ret = -EINVAL;
 
 	K_SPINLOCK(&timeout_lock) {
-		if (sys_dnode_is_linked(&to->node)) {
-			bool is_first = (to == first());
+		if (to->heap_idx != TIMEOUT_NOT_IN_HEAP) {
+			/* Convert 1-based heap_idx to 0-based for heap operations */
+			size_t heap_index = to->heap_idx - 1;
 
-			remove_timeout(to);
-			to->dticks = TIMEOUT_DTICKS_ABORTED;
-			ret = 0;
-			if (is_first) {
-				sys_clock_set_timeout(next_timeout(elapsed()), false);
+			if (heap_index < timeout_heap.size) {
+				bool is_first = (to == first());
+
+				struct timeout_heap_elem elem;
+				bool removed = min_heap_remove(&timeout_heap, heap_index, &elem);
+
+				if (removed) {
+					to->heap_idx = TIMEOUT_NOT_IN_HEAP;
+					to->dticks = TIMEOUT_DTICKS_ABORTED;
+					ret = 0;
+
+					/* heap_idx is automatically updated by the callback during heapify */
+
+					if (is_first) {
+						sys_clock_set_timeout(next_timeout(elapsed()), false);
+					}
+				}
 			}
 		}
 	}
@@ -179,16 +299,24 @@ int z_abort_timeout(struct _timeout *to)
 /* must be locked */
 static k_ticks_t timeout_rem(const struct _timeout *timeout)
 {
-	k_ticks_t ticks = 0;
-
-	for (struct _timeout *t = first(); t != NULL; t = next(t)) {
-		ticks += t->dticks;
-		if (timeout == t) {
-			break;
-		}
+	if (timeout->heap_idx == TIMEOUT_NOT_IN_HEAP) {
+		return K_TICKS_FOREVER;
 	}
 
-	return ticks;
+	k_ticks_t now = curr_tick + elapsed();
+	k_ticks_t expiry = timeout->dticks;
+
+	/* Use wrap-around safe comparison */
+#ifdef CONFIG_TIMEOUT_64BIT
+	if (time_after_eq(expiry, now)) {
+		return expiry - now;
+	}
+#else
+	if (time_after_eq(expiry, (int32_t)now)) {
+		return expiry - now;
+	}
+#endif
+	return 0;
 }
 
 k_ticks_t z_timeout_remaining(const struct _timeout *timeout)
@@ -197,7 +325,7 @@ k_ticks_t z_timeout_remaining(const struct _timeout *timeout)
 
 	K_SPINLOCK(&timeout_lock) {
 		if (!z_is_inactive_timeout(timeout)) {
-			ticks = timeout_rem(timeout) - elapsed();
+			ticks = timeout_rem(timeout);
 		}
 	}
 
@@ -207,12 +335,13 @@ EXPORT_SYMBOL(z_timeout_remaining);
 
 k_ticks_t z_timeout_expires(const struct _timeout *timeout)
 {
-	k_ticks_t ticks = 0;
+	k_ticks_t ticks = K_TICKS_FOREVER;
 
 	K_SPINLOCK(&timeout_lock) {
-		ticks = curr_tick;
 		if (!z_is_inactive_timeout(timeout)) {
-			ticks += timeout_rem(timeout);
+			if (timeout->heap_idx != TIMEOUT_NOT_IN_HEAP) {
+				ticks = timeout->dticks;
+			}
 		}
 	}
 
@@ -247,29 +376,35 @@ void sys_clock_announce(int32_t ticks)
 	}
 
 	announce_remaining = ticks;
+	curr_tick += ticks;
 
 	struct _timeout *t;
 
-	for (t = first();
-	     (t != NULL) && (t->dticks <= announce_remaining);
-	     t = first()) {
-		int dt = t->dticks;
+	/* Process all expired timeouts
+	 * Use wrap-around safe comparison: timeout has expired if curr_tick >= dticks
+	 */
+#ifdef CONFIG_TIMEOUT_64BIT
+	while ((t = first()) != NULL && time_after_eq(curr_tick, t->dticks)) {
+#else
+	while ((t = first()) != NULL && time_after_eq((int32_t)curr_tick, t->dticks)) {
+#endif
+		struct timeout_heap_elem elem;
+		bool removed = min_heap_pop(&timeout_heap, &elem);
 
-		curr_tick += dt;
-		t->dticks = 0;
-		remove_timeout(t);
+		if (!removed) {
+			break;
+		}
+
+		t = elem.timeout;
+		t->heap_idx = TIMEOUT_NOT_IN_HEAP;
+
+		/* heap_idx is automatically updated by the callback during heapify */
 
 		k_spin_unlock(&timeout_lock, key);
 		t->fn(t);
 		key = k_spin_lock(&timeout_lock);
-		announce_remaining -= dt;
 	}
 
-	if (t != NULL) {
-		t->dticks -= announce_remaining;
-	}
-
-	curr_tick += announce_remaining;
 	announce_remaining = 0;
 
 	sys_clock_set_timeout(next_timeout(0), false);
