@@ -286,6 +286,7 @@ static void uart_cmsdk_apb_irq_tx_enable(const struct device *dev)
 	const struct uart_cmsdk_apb_config *dev_cfg = dev->config;
 	unsigned int key;
 
+	key = irq_lock();
 	dev_cfg->uart->ctrl |= UART_TX_IN_EN;
 	/* The expectation is that TX is a level interrupt, active for as
 	 * long as TX buffer is empty. But in CMSDK UART it's an edge
@@ -295,8 +296,9 @@ static void uart_cmsdk_apb_irq_tx_enable(const struct device *dev)
 	 * full state to allow a transition from full to empty buffer
 	 * that will trigger a TX interrupt.
 	 */
-	key = irq_lock();
-	uart_cmsdk_apb_isr(dev);
+	if (!(dev_cfg->uart->state & UART_TX_BF)) {
+		uart_cmsdk_apb_isr(dev);
+	}
 	irq_unlock(key);
 }
 
@@ -308,10 +310,13 @@ static void uart_cmsdk_apb_irq_tx_enable(const struct device *dev)
 static void uart_cmsdk_apb_irq_tx_disable(const struct device *dev)
 {
 	const struct uart_cmsdk_apb_config *dev_cfg = dev->config;
+	unsigned int key;
 
+	key = irq_lock();
 	dev_cfg->uart->ctrl &= ~UART_TX_IN_EN;
 	/* Clear any pending TX interrupt after disabling it */
 	dev_cfg->uart->intclear = UART_TX_IN;
+	irq_unlock(key);
 }
 
 /**
@@ -325,7 +330,8 @@ static int uart_cmsdk_apb_irq_tx_ready(const struct device *dev)
 {
 	const struct uart_cmsdk_apb_config *dev_cfg = dev->config;
 
-	return !(dev_cfg->uart->state & UART_TX_BF);
+	return !(dev_cfg->uart->state & UART_TX_BF) &&
+	       (dev_cfg->uart->ctrl & UART_TX_IN_EN);
 }
 
 /**
@@ -336,8 +342,15 @@ static int uart_cmsdk_apb_irq_tx_ready(const struct device *dev)
 static void uart_cmsdk_apb_irq_rx_enable(const struct device *dev)
 {
 	const struct uart_cmsdk_apb_config *dev_cfg = dev->config;
+	unsigned int key;
 
+	key = irq_lock();
 	dev_cfg->uart->ctrl |= UART_RX_IN_EN;
+	/* "Prime" the interrupt as described above */
+	if (dev_cfg->uart->state & UART_RX_BF) {
+		uart_cmsdk_apb_isr(dev);
+	}
+	irq_unlock(key);
 }
 
 /**
@@ -348,10 +361,13 @@ static void uart_cmsdk_apb_irq_rx_enable(const struct device *dev)
 static void uart_cmsdk_apb_irq_rx_disable(const struct device *dev)
 {
 	const struct uart_cmsdk_apb_config *dev_cfg = dev->config;
+	unsigned int key;
 
+	key = irq_lock();
 	dev_cfg->uart->ctrl &= ~UART_RX_IN_EN;
 	/* Clear any pending RX interrupt after disabling it */
 	dev_cfg->uart->intclear = UART_RX_IN;
+	irq_unlock(key);
 }
 
 /**
@@ -377,7 +393,8 @@ static int uart_cmsdk_apb_irq_rx_ready(const struct device *dev)
 {
 	const struct uart_cmsdk_apb_config *dev_cfg = dev->config;
 
-	return (dev_cfg->uart->state & UART_RX_BF) == UART_RX_BF;
+	return (dev_cfg->uart->state & UART_RX_BF) &&
+	       (dev_cfg->uart->ctrl & UART_RX_IN_EN);
 }
 
 /**
