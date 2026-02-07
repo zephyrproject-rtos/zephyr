@@ -37,6 +37,12 @@ if(CONFIG_CMSIS_NN)
     file(GLOB SRC_S8 "${CMSIS_NN_DIR}/Source/ConvolutionFunctions/*_s8*.c")
     file(GLOB SRC_S16 "${CMSIS_NN_DIR}/Source/ConvolutionFunctions/*_s16*.c")
     zephyr_library_sources(${SRC_S4} ${SRC_S8} ${SRC_S16})
+
+  set_source_files_properties(
+    ${CMSIS_NN_DIR}/Source/ConvolutionFunctions/arm_depthwise_conv_wrapper_s8.c
+    PROPERTIES
+    COMPILE_FLAGS $<TARGET_PROPERTY:compiler,warning_no_pointer_arithmetic>
+  )
   endif()
 
   if(CONFIG_CMSIS_NN_FULLYCONNECTED)
