@@ -83,4 +83,28 @@ static inline bool lwm2m_outgoing_is_part_of_blockwise(struct lwm2m_message *msg
 	return msg->block_send;
 }
 
+int resume_postponed_response(struct lwm2m_ctx *ctx, struct lwm2m_message *response);
+
+static inline bool response_is_postponed(struct lwm2m_message *response)
+{
+#if defined(CONFIG_LWM2M_ASYNC_RESPONSES)
+	return response->postponed;
+#else
+	ARG_UNUSED(response);
+
+	return false;
+#endif
+}
+
+static inline bool response_is_resuming(struct lwm2m_message *response)
+{
+#if defined(CONFIG_LWM2M_ASYNC_RESPONSES)
+	return response->resuming;
+#else
+	ARG_UNUSED(response);
+
+	return false;
+#endif
+}
+
 #endif /* LWM2M_MESSAGE_HANDLING_H */

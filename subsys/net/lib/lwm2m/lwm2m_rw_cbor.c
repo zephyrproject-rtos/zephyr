@@ -570,5 +570,13 @@ int do_write_op_cbor(struct lwm2m_message *msg)
 		msg->path.level = LWM2M_PATH_LEVEL_RESOURCE;
 	}
 
-	return lwm2m_write_handler(obj_inst, res, res_inst, obj_field, msg);
+	ret = lwm2m_write_handler(obj_inst, res, res_inst, obj_field, msg);
+	if (ret == -EALREADY) {
+		/* If resource was already handled when resuming postponed message
+		 * processing, move on.
+		 */
+		ret = 0;
+	}
+
+	return ret;
 }
