@@ -1,0 +1,54 @@
+/*
+ * Copyright 2025 by Markus Becker
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * add DALI 2 Click (MIKROE-2672)
+ * via Arduino UNO click shield (MIKROE-1581)
+ * to nRF52840 DK (pca10056)
+ * DALI 2 Click
+ *   DALI TX 2
+ *   DALI RX 15
+ * Arduino UNO click shield:
+ *   DALI TX 2  > A3
+ *   DALI RX 15 > D2
+ * nRF52840 DK:
+ *   DALI TX A3 > P0.29
+ *   DALI RX D2 > P1.03
+ */
+
+/ {
+	dali0: dali {
+		compatible = "zephyr,dali-pwm";
+		status = "okay";
+		counter = <&timer2>;
+		pwms = <&pwm0 0 PWM_USEC(41) PWM_POLARITY_NORMAL>;
+		rx-gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>; // D2
+		tx-flank-shift-us = <(-35)>;
+		rx-flank-shift-us = <(-59)>;
+		tx-rx-propagation-max-us = <2400>;
+		rx-max-latency-us = <80>;
+		rx-grey-area-us = <800>;
+	};
+};
+
+&pinctrl {
+	pwm0_default: pwm0_default {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 29)>; // A3
+			nordic,invert;
+		};
+	};
+
+	pwm0_sleep: pwm0_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 0, 29)>; // A3
+			low-power-enable;
+		};
+	};
+};
+
+&timer2 {
+	compatible = "nordic,nrf-timer";
+	status = "okay";
+	prescaler = <4>;
+};
