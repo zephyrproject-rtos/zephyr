@@ -1,0 +1,12 @@
+#
+# Copyright (c) 2025, Egis Technology Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+
+config ZEPHYR_HAL_EGIS_MODULE
+	bool "Egis core driver"
+	default y
+	depends on SOC_EGIS_ET171
+
+rsource "et171/Kconfig.egis_et171"
