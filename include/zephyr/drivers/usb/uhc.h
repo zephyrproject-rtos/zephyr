@@ -95,6 +95,20 @@ struct usb_device {
 	struct usb_host_ep ep_out[16];
 	/** Pointers to device IN endpoints */
 	struct usb_host_ep ep_in[16];
+#ifdef CONFIG_USBH_HUB_CLASS
+	/** Device's first connected hub address (root hub = 0) */
+	uint8_t hub_addr;
+	/** Device's first connected hub's port */
+	uint8_t hub_port;
+	/** Device's first connected high-speed hub's address */
+	uint8_t hs_hub_addr;
+	/** Device's first connected high-speed hub's port */
+	uint8_t hs_hub_port;
+	/** Device's level (root device = 0) */
+	uint8_t level;
+	/** Device's first connected hub's total think time */
+	uint16_t total_think_time;
+#endif
 };
 
 /**

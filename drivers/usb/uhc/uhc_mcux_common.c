@@ -177,16 +177,31 @@ usb_status_t USB_HostHelperGetPeripheralInformation(usb_device_handle deviceHand
 		*infoValue = udev->addr;
 		break;
 
+#ifdef CONFIG_USBH_HUB_CLASS
 	case kUSB_HostGetDeviceHubNumber:
+		*infoValue = udev->hub_addr;
+		break;
+
 	case kUSB_HostGetDevicePortNumber:
+		*infoValue = udev->hub_port;
+		break;
+
 	case kUSB_HostGetDeviceHSHubNumber:
+		*infoValue = udev->hs_hub_addr;
+		break;
+
 	case kUSB_HostGetDeviceHSHubPort:
+		*infoValue = udev->hs_hub_port;
+		break;
+
 	case kUSB_HostGetHubThinkTime:
-		*infoValue = 0;
+		*infoValue = udev->total_think_time;
 		break;
+
 	case kUSB_HostGetDeviceLevel:
-		*infoValue = 1;
+		*infoValue = udev->level;
 		break;
+#endif
 
 	case kUSB_HostGetDeviceSpeed:
 		switch (udev->speed) {
