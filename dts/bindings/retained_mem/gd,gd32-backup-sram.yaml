@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Aleksandr Senin <al@meshium.net>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: GD32 Backup SRAM retained memory
+
+description: |
+  Retained memory driver for GD32 Backup SRAM. The device enables the Backup SRAM
+  clock gate. To retain contents while VBAT is supplied, BLDO (Backup SRAM LDO)
+  should be enabled using a regulator referenced by vin-supply.
+
+compatible: "gd,gd32-backup-sram"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+    description: Reference to BKPSRAM clock gate (AHB1EN BKPSRAM bit)
+
+  vin-supply:
+    type: phandle
+    description: Regulator that powers/controls Backup SRAM retention (BLDO)

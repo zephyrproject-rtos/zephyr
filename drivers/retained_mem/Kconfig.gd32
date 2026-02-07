@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Aleksandr Senin <al@meshium.net>
+# SPDX-License-Identifier: Apache-2.0
+
+config RETAINED_MEM_GD32_BKPSRAM
+	bool "GD32 Backup SRAM retained memory"
+	default y
+	depends on DT_HAS_GD_GD32_BACKUP_SRAM_ENABLED && SOC_SERIES_GD32F4XX
+	help
+	  Enable retained memory driver for GD32 Backup SRAM. The driver enables
+	  the BKPSRAM clock gate. To enable BLDO (Backup SRAM LDO) for retention,
+	  use a regulator referenced via the devicetree vin-supply property.
+
+if RETAINED_MEM_GD32_BKPSRAM
+
+config RETAINED_MEM_GD32_BKPSRAM_INIT_PRIORITY
+	int "Init priority"
+	default 80
+	help
+	  Device driver initialization priority for GD32 Backup SRAM.
+	  Must be later than the BLDO regulator init priority when vin-supply
+	  is used.
+
+endif # RETAINED_MEM_GD32_BKPSRAM
