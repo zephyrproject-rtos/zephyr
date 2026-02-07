@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_S32K3X4EVB_T172
+
+if SERIAL
+
+config UART_CONSOLE
+	default y
+
+endif # SERIAL
+
+endif # BOARD_S32K3X4EVB_T172
