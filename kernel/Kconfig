@@ -297,6 +297,21 @@ endchoice # DYNAMIC_THREAD_PREFER
 
 endif # DYNAMIC_THREADS
 
+config VALIDATE_THREAD_STACK_POINTER
+	bool "Validate thread stack pointer limits"
+	help
+	  Provides a runtime API to validate if a stack pointer is valid.
+	  If CONFIG_ASSERT is enabled, this check is performed during thread
+	  creation and triggers an assertion on failure.
+
+	  Validates both statically and dynamically allocated thread stacks.
+	  Statically allocated stacks must be within reserved memory regions
+	  and dynamically allocated stacks must be created by k_thread_stack_alloc.
+
+	  Helps catch cases where stack pointers are not defined using
+	  K_THREAD_STACK_DEFINE, K_KERNEL_STACK_DEFINE, or not allocated with
+	  k_thread_stack_alloc.
+
 config SCHED_DUMB
 	bool "Simple linked-list ready queue"
 	select DEPRECATED
