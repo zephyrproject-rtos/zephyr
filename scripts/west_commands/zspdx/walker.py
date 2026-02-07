@@ -110,6 +110,18 @@ class Walker:
         # add it to pending relationships queue
         self.pendingRelationships.append(rd)
 
+    def _add_depends_on_relationship(self, doc, cfgpackageA, cfgpackageB):
+        # create DEPENDS_ON relationship data
+        rd = RelationshipData()
+        rd.ownerType = RelationshipDataElementType.PACKAGEID
+        rd.ownerDocument = doc
+        rd.ownerPackageID = cfgpackageA.spdxID
+        rd.otherType = RelationshipDataElementType.PACKAGEID
+        rd.otherPackageID = cfgpackageB.spdxID
+        rd.rlnType = "DEPENDS_ON"
+        # add it to pending relationships queue
+        self.pendingRelationships.append(rd)
+
     # primary entry point
     def makeDocuments(self):
         # parse CMake cache file and get compiler path
@@ -339,13 +351,59 @@ class Walker:
         # add it to pending relationships queue
         self.pendingRelationships.append(rd)
 
-    def setupModulesDocument(self, modules):
+    def setupModulesDocument(self,modules,zephyr=None):
         # set up zephyr document
         cfgModuleExtRef = DocumentConfig()
         cfgModuleExtRef.name = "modules-deps"
         cfgModuleExtRef.namespace = self.cfg.namespacePrefix + "/modules-deps"
         cfgModuleExtRef.docRefID = "DocumentRef-modules-deps"
         self.docModulesExtRefs = Document(cfgModuleExtRef)
+        pkgZephyr = None
+        if zephyr is not None:
+
+            # set up zephyr package
+            cfgPackageZephyr = PackageConfig()
+            cfgPackageZephyr.name = "zephyr-deps"
+            cfgPackageZephyr.spdxID = "SPDXRef-zephyr-deps"
+
+            zephyr_url = zephyr.get("remote", "")
+            if zephyr_url:
+                cfgPackageZephyr.url = zephyr_url
+
+            if zephyr.get("revision"):
+                cfgPackageZephyr.revision = zephyr.get("revision")
+
+            purl = None
+            zephyr_tags = zephyr.get("tags", "")
+            if zephyr_tags:
+                # Find tag vX.Y.Z
+                for tag in zephyr_tags:
+                    version = re.fullmatch(r'^v(?P<version>\d+\.\d+\.\d+)$', tag)
+                    purl = self._build_purl(zephyr_url, tag)
+
+                    if purl:
+                        cfgPackageZephyr.externalReferences.append(purl)
+
+                    # Extract version from tag once
+                    if cfgPackageZephyr.version == "" and version:
+                        cfgPackageZephyr.version = version.group('version')
+            else:
+                 if zephyr.get("revision"):
+                    revision = zephyr.get("revision")
+                    purl = self._build_purl(zephyr_url, revision)
+                 if purl:
+                        cfgPackageZephyr.externalReferences.append(purl)
+
+            if len(cfgPackageZephyr.version) > 0:
+                cpe = f'cpe:2.3:o:zephyrproject:zephyr:{cfgPackageZephyr.version}:-:*:*:*:*:*:*'
+                cfgPackageZephyr.externalReferences.append(cpe)
+
+            if cfgPackageZephyr.version == "" and zephyr.get("revision"):
+                cfgPackageZephyr.version = zephyr.get("revision")
+
+            pkgZephyr = Package(cfgPackageZephyr, self.docZephyr)
+            self.docModulesExtRefs.pkgs[pkgZephyr.cfg.spdxID] = pkgZephyr
+            self._add_describe_relationship(self.docModulesExtRefs, cfgPackageZephyr)
 
         for module in modules:
             module_name = module.get("name", None)
@@ -370,7 +428,12 @@ class Walker:
             pkgModule = Package(cfgPackageModuleExtRef, self.docModulesExtRefs)
             self.docModulesExtRefs.pkgs[pkgModule.cfg.spdxID] = pkgModule
 
-            self._add_describe_relationship(self.docModulesExtRefs, cfgPackageModuleExtRef)
+            if cfgPackageZephyr:
+                self._add_depends_on_relationship(self.docModulesExtRefs,
+                                                  cfgPackageZephyr,
+                                                  cfgPackageModuleExtRef)
+            else:
+                self._add_describe_relationship(self.docModulesExtRefs, cfgPackageModuleExtRef)
 
 
     # set up Documents before beginning
@@ -393,7 +456,7 @@ class Walker:
         if self.cfg.includeSDK:
             self.setupSDKDocument()
 
-        self.setupModulesDocument(content["modules"])
+        self.setupModulesDocument(content["modules"],content["zephyr"])
 
         return True
 
@@ -796,6 +859,11 @@ class Walker:
         elif rlnData.ownerType == RelationshipDataElementType.DOCUMENT:
             # will always be SPDXRef-DOCUMENT
             return rlnData.ownerDocument, "SPDXRef-DOCUMENT", rlnData.ownerDocument.relationships
+        elif rlnData.ownerType == RelationshipDataElementType.PACKAGEID:
+            # will just be the package ID that was passed in
+            return (rlnData.ownerDocument,
+                    rlnData.ownerPackageID,
+                    rlnData.ownerDocument.relationships)
         else:
             log.dbg(f"  - unknown relationship type {rlnData.ownerType}; skipping")
             return None, None, None
