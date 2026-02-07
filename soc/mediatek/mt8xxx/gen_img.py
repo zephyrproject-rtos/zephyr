@@ -39,7 +39,7 @@ def sram_off(addr):
     global sram_block
     if addr < 0x40000000 or addr >= 0x50000000:
         return -1
-    block = addr & ~0xFFFFF
+    block = addr & ~0xFFFF
     assert sram_block in (0, block)
 
     sram_block = block

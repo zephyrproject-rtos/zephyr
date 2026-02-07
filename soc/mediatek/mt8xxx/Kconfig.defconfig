@@ -62,6 +62,7 @@ config XTENSA_CCOUNT_HZ
 	default 400000000 if SOC_MT8186
 	default 800000000 if SOC_MT8188
 	default 800000000 if SOC_MT8196
+	default 600000000 if SOC_MT8365
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,$(dt_nodelabel_path,ostimer64),freq-hz)
@@ -89,6 +90,7 @@ config SOC_TOOLCHAIN_NAME
 	default "mtk_mt8195_adsp" if SOC_SERIES_MT8195
 	default "mtk_mt818x_adsp" if SOC_SERIES_MT818X
 	default "mtk_mt8196_adsp" if SOC_SERIES_MT8196
+	default "mtk_mt8365_adsp" if SOC_SERIES_MT8365
 
 config XTENSA_RESET_VECTOR
 	default n
