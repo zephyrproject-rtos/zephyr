@@ -17,6 +17,10 @@ that can be included during a twister run. This allows testing code
 maintained in modules in addition to what is available in the main Zephyr tree.
 '''
 
+# Warning: avoid adding third party dependencies other than those provided by west
+# to this file. The west 'packages' extension imports this module to install Python
+# dependencies for Zephyr and Zephyr modules
+
 import argparse
 import hashlib
 import os
@@ -24,9 +28,7 @@ import re
 import subprocess
 import sys
 import yaml
-import jsonschema
 from collections import namedtuple
-from jsonschema.exceptions import best_match
 from pathlib import Path, PurePath, PurePosixPath
 
 try:
@@ -162,10 +164,17 @@ BLOB_PRESENT = 'A'
 BLOB_NOT_PRESENT = 'D'
 BLOB_OUTDATED = 'M'
 
-SCHEMA = yaml.load(METADATA_SCHEMA, Loader=SafeLoader)
-VALIDATOR_CLASS = jsonschema.validators.validator_for(SCHEMA)
-VALIDATOR_CLASS.check_schema(SCHEMA)
-VALIDATOR = VALIDATOR_CLASS(SCHEMA)
+
+try:
+    import jsonschema
+    from jsonschema.exceptions import best_match
+
+    SCHEMA = yaml.load(METADATA_SCHEMA, Loader=SafeLoader)
+    VALIDATOR_CLASS = jsonschema.validators.validator_for(SCHEMA)
+    VALIDATOR_CLASS.check_schema(SCHEMA)
+    VALIDATOR = VALIDATOR_CLASS(SCHEMA)
+except ImportError:
+    jsonschema = None
 
 
 def validate_setting(setting, module_path, filename=None):
@@ -179,7 +188,7 @@ def validate_setting(setting, module_path, filename=None):
     return True
 
 
-def process_module(module):
+def process_module(module, require_yaml_validation=True):
     module_path = PurePath(module)
 
     # The input is a module if zephyr/module.{yml,yaml} is a valid yaml file
@@ -191,14 +200,17 @@ def process_module(module):
             with Path(module_yml).open('rb') as f:
                 meta = yaml.load(f.read(), Loader=SafeLoader)
 
-            errors = list(VALIDATOR.iter_errors(meta))
+            if jsonschema is not None:
+                errors = list(VALIDATOR.iter_errors(meta))
 
-            if errors:
-                sys.exit(
-                    'ERROR: Malformed module YAML file: '
-                    f'{module_yml.as_posix()}\n'
-                    f'{best_match(errors).message} in {best_match(errors).json_path}'
-                )
+                if errors:
+                    sys.exit(
+                        'ERROR: Malformed module YAML file: '
+                        f'{module_yml.as_posix()}\n'
+                        f'{best_match(errors).message} in {best_match(errors).json_path}'
+                    )
+            elif require_yaml_validation:
+                sys.exit('Missing jsonschema dependency')
 
             meta['name'] = meta.get('name', module_path.name)
             meta['name-sanitized'] = re.sub('[^a-zA-Z0-9]', '_', meta['name'])
@@ -731,7 +743,7 @@ def west_projects(manifest=None):
 
 
 def parse_modules(zephyr_base, manifest=None, west_projs=None, modules=None,
-                  extra_modules=None):
+                  extra_modules=None, require_yaml_validation=True):
 
     if modules is None:
         west_projs = west_projs or west_projects(manifest)
@@ -761,7 +773,7 @@ def parse_modules(zephyr_base, manifest=None, west_projs=None, modules=None,
         if project == zephyr_base:
             continue
 
-        meta = process_module(project)
+        meta = process_module(project, require_yaml_validation)
         if meta:
             depends = meta.get('build', {}).get('depends', [])
             all_modules_by_name[meta['name']] = Module(project, meta, depends)
