@@ -7,6 +7,8 @@
 
 #define DT_DRV_COMPAT espressif_esp32_i2c
 
+// todo: get rid of include
+#include <zephyr/sys/printk.h>
 /* Include esp-idf headers first to avoid redefining BIT() macro */
 #include <esp32/rom/gpio.h>
 #include <soc/gpio_sig_map.h>
@@ -30,26 +32,28 @@ LOG_MODULE_REGISTER(i2c_esp32, CONFIG_I2C_LOG_LEVEL);
 
 #include "i2c-priv.h"
 
-#define I2C_FILTER_CYC_NUM_DEF 7	/* Number of apb cycles filtered by default */
-#define I2C_CLR_BUS_SCL_NUM 9		/* Number of SCL clocks to restore SDA signal */
-#define I2C_CLR_BUS_HALF_PERIOD_US 5	/* Period of SCL clock to restore SDA signal */
-#define I2C_TRANSFER_TIMEOUT_MSEC 500	/* Transfer timeout period */
+#define I2C_FILTER_CYC_NUM_DEF     7   /* Number of apb cycles filtered by default */
+#define I2C_CLR_BUS_SCL_NUM        9   /* Number of SCL clocks to restore SDA signal */
+#define I2C_CLR_BUS_HALF_PERIOD_US 5   /* Period of SCL clock to restore SDA signal */
+#define I2C_TRANSFER_TIMEOUT_MSEC  500 /* Transfer timeout period */
 
 /* Freq limitation when using different clock sources */
-#define I2C_CLK_LIMIT_REF_TICK (1 * 1000 * 1000 / 20)	/* REF_TICK, no more than REF_TICK/20*/
-#define I2C_CLK_LIMIT_APB (80 * 1000 * 1000 / 20)	/* Limited by APB, no more than APB/20 */
-#define I2C_CLK_LIMIT_RTC (20 * 1000 * 1000 / 20)	/* Limited by RTC, no more than RTC/20 */
-#define I2C_CLK_LIMIT_XTAL (40 * 1000 * 1000 / 20)	/* Limited by RTC, no more than XTAL/20 */
+#define I2C_CLK_LIMIT_REF_TICK (1 * 1000 * 1000 / 20)  /* REF_TICK, no more than REF_TICK/20*/
+#define I2C_CLK_LIMIT_APB      (80 * 1000 * 1000 / 20) /* Limited by APB, no more than APB/20 */
+#define I2C_CLK_LIMIT_RTC      (20 * 1000 * 1000 / 20) /* Limited by RTC, no more than RTC/20 */
+#define I2C_CLK_LIMIT_XTAL     (40 * 1000 * 1000 / 20) /* Limited by RTC, no more than XTAL/20 */
 
-#define I2C_CLOCK_INVALID                 (-1)
+#define I2C_CLOCK_INVALID (-1)
 
 enum i2c_status_t {
-	I2C_STATUS_READ,	/* read status for current master command */
-	I2C_STATUS_WRITE,	/* write status for current master command */
-	I2C_STATUS_IDLE,	/* idle status for current master command */
-	I2C_STATUS_ACK_ERROR,	/* ack error status for current master command */
-	I2C_STATUS_DONE,	/* I2C command done */
-	I2C_STATUS_TIMEOUT,	/* I2C bus status error, and operation timeout */
+	I2C_STATUS_READ,         /* read status for current master command */
+	I2C_STATUS_WRITE,        /* write status for current master command */
+	I2C_STATUS_IDLE,         /* idle status for current master command */
+	I2C_STATUS_ACK_ERROR,    /* ack error status for current master command */
+	I2C_STATUS_DONE,         /* I2C command done */
+	I2C_STATUS_TIMEOUT,      /* I2C bus status error, and operation timeout */
+	I2C_STATUS_TARGET_READ,  /* target mode, read from master */
+	I2C_STATUS_TARGET_WRITE, /* target mode, write to master */
 };
 
 #ifndef SOC_I2C_SUPPORT_HW_CLR_BUS
@@ -68,6 +72,8 @@ struct i2c_esp32_data {
 	uint32_t dev_config;
 	int cmd_idx;
 	int irq_line;
+	struct i2c_target_config *i2c_target;
+	struct k_mutex target_mutex;
 };
 
 typedef void (*irq_connect_cb)(void);
@@ -273,8 +279,8 @@ static void IRAM_ATTR i2c_esp32_configure_bitrate(const struct device *dev, uint
 	i2c_hal_set_bus_timing(&data->hal, bitrate, sclk, clk_freq_mhz);
 
 	if (config->scl_timeout > 0) {
-		uint32_t timeout_cycles = MIN(I2C_LL_MAX_TIMEOUT,
-					      clk_freq_mhz / MHZ(1) * config->scl_timeout);
+		uint32_t timeout_cycles =
+			MIN(I2C_LL_MAX_TIMEOUT, clk_freq_mhz / MHZ(1) * config->scl_timeout);
 		i2c_ll_set_tout(data->hal.dev, timeout_cycles);
 		LOG_DBG("SCL timeout: %d us, value: %d", config->scl_timeout, timeout_cycles);
 	} else {
@@ -307,18 +313,12 @@ static void i2c_esp32_configure_data_mode(const struct device *dev)
 	i2c_ll_set_data_mode(data->hal.dev, tx_mode, rx_mode);
 	i2c_ll_set_filter(data->hal.dev, I2C_FILTER_CYC_NUM_DEF);
 	i2c_ll_update(data->hal.dev);
-
 }
 
 static int i2c_esp32_configure(const struct device *dev, uint32_t dev_config)
 {
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 	uint32_t bitrate;
-
-	if (!(dev_config & I2C_MODE_CONTROLLER)) {
-		LOG_ERR("Only I2C Master mode supported.");
-		return -ENOTSUP;
-	}
 
 	switch (I2C_SPEED_GET(dev_config)) {
 	case I2C_SPEED_STANDARD:
@@ -402,9 +402,7 @@ static void IRAM_ATTR i2c_esp32_master_start(const struct device *dev)
 {
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 
-	i2c_ll_hw_cmd_t cmd = {
-		.op_code = I2C_LL_CMD_RESTART
-	};
+	i2c_ll_hw_cmd_t cmd = {.op_code = I2C_LL_CMD_RESTART};
 
 	i2c_ll_write_cmd_reg(data->hal.dev, cmd, data->cmd_idx++);
 }
@@ -413,9 +411,7 @@ static void IRAM_ATTR i2c_esp32_master_stop(const struct device *dev)
 {
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 
-	i2c_ll_hw_cmd_t cmd = {
-		.op_code = I2C_LL_CMD_STOP
-	};
+	i2c_ll_hw_cmd_t cmd = {.op_code = I2C_LL_CMD_STOP};
 
 	i2c_ll_write_cmd_reg(data->hal.dev, cmd, data->cmd_idx++);
 }
@@ -502,8 +498,8 @@ static int IRAM_ATTR i2c_esp32_master_read(const struct device *dev, struct i2c_
 	return 0;
 }
 
-static int IRAM_ATTR i2c_esp32_read_msg(const struct device *dev,
-					struct i2c_msg *msg, uint16_t addr)
+static int IRAM_ATTR i2c_esp32_read_msg(const struct device *dev, struct i2c_msg *msg,
+					uint16_t addr)
 {
 	int ret = 0;
 
@@ -514,12 +510,15 @@ static int IRAM_ATTR i2c_esp32_read_msg(const struct device *dev,
 		i2c_esp32_master_start(dev);
 		ret = i2c_esp32_write_addr(dev, addr);
 		if (ret < 0) {
+			LOG_ERR("read_msg: NACK/ERR after address phase (ret=%d)", ret);
 			return ret;
 		}
 	}
 
 	ret = i2c_esp32_master_read(dev, msg);
 	if (ret < 0) {
+		LOG_ERR("read_msg: transmit error during data phase (ret=%d, len=%u)", ret,
+			msg->len);
 		return ret;
 	}
 
@@ -527,6 +526,7 @@ static int IRAM_ATTR i2c_esp32_read_msg(const struct device *dev,
 		i2c_esp32_master_stop(dev);
 		ret = i2c_esp32_transmit(dev);
 		if (ret < 0) {
+			LOG_ERR("read_msg: error after STOP (ret=%d)", ret);
 			return ret;
 		}
 	}
@@ -564,6 +564,9 @@ static int IRAM_ATTR i2c_esp32_master_write(const struct device *dev, struct i2c
 			i2c_ll_master_enable_tx_it(data->hal.dev);
 			ret = i2c_esp32_transmit(dev);
 			if (ret < 0) {
+				LOG_ERR("master_write: transmit error (ret=%d, wrote_chunk=%u, "
+					"remaining=%u)",
+					ret, wr_filled, msg_len - wr_filled);
 				return ret;
 			}
 		}
@@ -575,8 +578,8 @@ static int IRAM_ATTR i2c_esp32_master_write(const struct device *dev, struct i2c
 	return 0;
 }
 
-static int IRAM_ATTR i2c_esp32_write_msg(const struct device *dev,
-					 struct i2c_msg *msg, uint16_t addr)
+static int IRAM_ATTR i2c_esp32_write_msg(const struct device *dev, struct i2c_msg *msg,
+					 uint16_t addr)
 {
 	int ret = 0;
 
@@ -611,6 +614,12 @@ static int IRAM_ATTR i2c_esp32_transfer(const struct device *dev, struct i2c_msg
 	struct i2c_msg *current, *next;
 	uint32_t timeout = I2C_TRANSFER_TIMEOUT_MSEC * USEC_PER_MSEC;
 	int ret = 0;
+
+	// ensure that master mode is initialized
+	if (data->i2c_target) {
+		LOG_ERR("I2C not in controller mode.");
+		return -EINVAL;
+	}
 
 	if (!num_msgs) {
 		return 0;
@@ -691,16 +700,160 @@ static int IRAM_ATTR i2c_esp32_transfer(const struct device *dev, struct i2c_msg
 	return ret;
 }
 
+// this handler is called in i2c target mode
+// when the TX FIFO is empty, need to call read callbacks
+static void IRAM_ATTR i2c_target_handle_tx_event(struct i2c_esp32_data *data)
+{
+	struct i2c_target_config *target = data->i2c_target;
+	uint32_t tx_fifo_len; // used as upper bound in loop
+
+	// get length of txfifo, then initialize buffer to send to txfifo
+	// will check later if tx_fifo_len is for some reason smaller than SOC_I2C_FIFO_LEN
+	i2c_ll_get_txfifo_len(data->hal.dev, &tx_fifo_len);
+	tx_fifo_len = tx_fifo_len > SOC_I2C_FIFO_LEN ? SOC_I2C_FIFO_LEN : tx_fifo_len;
+
+	uint8_t tx_buffer[SOC_I2C_FIFO_LEN];
+	uint8_t val;
+	int filled = 0;
+
+	// get all bites to fill tx fifo
+	for (; filled < tx_fifo_len; filled++) {
+		if (!target->callbacks->read_processed(target, &val)) {
+			tx_buffer[filled] = val;
+		} else {
+			break; // no more data to read
+		}
+	}
+
+	// write the bytes to tx fifo
+	if (filled) {
+		i2c_ll_write_txfifo(data->hal.dev, tx_buffer, filled);
+	}
+}
+
+// this handler is called in i2c target mode
+// when the RX interrupt is triggered, need to call write callbacks
+static void IRAM_ATTR i2c_target_handle_rx_event(struct i2c_esp32_data *data)
+{
+	struct i2c_target_config *target = data->i2c_target;
+	uint32_t rx_fifo_len;
+	uint8_t rx_buffer[SOC_I2C_FIFO_LEN];
+
+	// drain RX FIFO completely (may be more than one watermark worth)
+	i2c_ll_get_rxfifo_cnt(data->hal.dev, &rx_fifo_len);
+	rx_fifo_len = rx_fifo_len > SOC_I2C_FIFO_LEN ? SOC_I2C_FIFO_LEN : rx_fifo_len;
+
+	// read rxfifo into buffer
+	i2c_ll_read_rxfifo(data->hal.dev, rx_buffer, rx_fifo_len);
+
+	// process each byte received
+	for (int i = 0; i < rx_fifo_len; i++) {
+		// call write_processed callback for each byte
+		// todo: if the callback returns error, send NACK
+		target->callbacks->write_received(target, rx_buffer[i]);
+	}
+}
+
+static void IRAM_ATTR i2c_target_event(const struct device *dev)
+{
+	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
+	struct i2c_target_config *target = data->i2c_target;
+	i2c_dev_t *hw = data->hal.dev;
+
+	uint32_t int_status = hw->int_status.val; // int_status field
+	i2c_sr_reg_t sr = hw->sr;                 // sr reg field
+	uint32_t clr = 0;
+
+	LOG_DBG("I2C target interrupt, status=0x%08x, sr.slave_rw=%d,", int_status, sr.slave_rw);
+
+	// first, check for data being sent
+	// todo: check if even need to handle start, or just enable interrupts
+	// and check on initial interrupt
+	if (int_status & I2C_INTR_START) {
+		LOG_DBG("I2C target START detected");
+		clr |= I2C_INTR_START;
+		// transaction started
+		// first, determine if it's a read or write phase
+		bool is_read = hw->sr.slave_rw; // 1 = read from slave (master reading), 0 = write
+						// to slave (master writing)
+
+		if (is_read) {
+			LOG_DBG("I2C target read phase detected");
+			// master reading from us
+			data->status = I2C_STATUS_TARGET_WRITE;
+
+			// write initial byte to TX FIFO
+			uint8_t tx_initial;
+			target->callbacks->read_requested(target, &tx_initial);
+			i2c_ll_write_txfifo(hw, &tx_initial, 1);
+
+			// enable TX FIFO WM interrupt to be notified when master reads data
+			i2c_ll_enable_intr_mask(hw, I2C_INTR_TXFIFO_WM);
+		} else {
+			LOG_DBG("I2C target write phase detected");
+			// master writing to us
+			data->status = I2C_STATUS_TARGET_READ;
+
+			// signal to callbaccks that a write is requested
+			target->callbacks->write_requested(target);
+
+			// enable RX FIFO WM interrupt to be notified when master writes data
+			i2c_ll_enable_intr_mask(hw, I2C_INTR_RXFIFO_WM);
+		}
+	}
+
+	// next, check for RX FIFO watermark
+	if (int_status & I2C_INTR_RXFIFO_WM) {
+		LOG_DBG("I2C target RX FIFO WM");
+		clr |= I2C_INTR_RXFIFO_WM;
+
+		i2c_target_handle_rx_event(data);
+		// maybe send ACK? not sure if handled or not
+	}
+
+	// check for TX FIFO watermark
+	if (int_status & I2C_INTR_TXFIFO_WM) {
+		LOG_DBG("I2C target TX FIFO WM");
+		clr |= I2C_INTR_TXFIFO_WM;
+
+		i2c_target_handle_tx_event(data);
+	}
+
+	// finally, check for transfer complete (STOP)
+	if (int_status & I2C_INTR_SLV_COMPLETE) {
+		LOG_DBG("I2C target SLV COMPLETE (STOP)");
+		clr |= I2C_INTR_SLV_COMPLETE;
+
+		i2c_ll_txfifo_rst(hw);
+		i2c_ll_rxfifo_rst(hw);
+
+		target->callbacks->stop(target);
+		data->status = I2C_STATUS_IDLE;
+
+		i2c_ll_disable_intr_mask(hw, I2C_INTR_TXFIFO_WM | I2C_INTR_RXFIFO_WM);
+	}
+
+	// clear interrupts
+	i2c_ll_clear_intr_mask(hw, clr);
+}
+
 static void IRAM_ATTR i2c_esp32_isr(void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 	i2c_intr_event_t evt_type = I2C_INTR_EVENT_ERR;
+	struct i2c_target_config *target = data->i2c_target;
 
-	if (data->status == I2C_STATUS_WRITE) {
-		i2c_hal_master_handle_tx_event(&data->hal, &evt_type);
-	} else if (data->status == I2C_STATUS_READ) {
-		i2c_hal_master_handle_rx_event(&data->hal, &evt_type);
+	if (!target) {
+		// master mode
+		if (data->status == I2C_STATUS_WRITE) {
+			i2c_hal_master_handle_tx_event(&data->hal, &evt_type);
+		} else if (data->status == I2C_STATUS_READ) {
+			i2c_hal_master_handle_rx_event(&data->hal, &evt_type);
+		}
+	} else {
+		i2c_target_event(dev);
+		return;
 	}
 
 	if (evt_type == I2C_INTR_EVENT_NACK) {
@@ -713,7 +866,116 @@ static void IRAM_ATTR i2c_esp32_isr(void *arg)
 		data->status = I2C_STATUS_DONE;
 	}
 
-	k_sem_give(&data->cmd_sem);
+	if (!target) {
+		k_sem_give(&data->cmd_sem);
+	}
+}
+
+static int i2c_esp32_target_register(const struct device *dev, struct i2c_target_config *cf)
+{
+	const struct i2c_esp32_config *config = dev->config;
+	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
+	int ret;
+
+	if (!cf || !cf->callbacks) {
+		return -EINVAL;
+	}
+
+	if (!cf->callbacks->read_requested || !cf->callbacks->read_processed ||
+	    !cf->callbacks->write_requested || !cf->callbacks->write_received ||
+	    !cf->callbacks->stop) {
+		return -EINVAL;
+	}
+
+	if (data->i2c_target) {
+		return -EBUSY; // already registered
+	}
+
+	k_mutex_lock(&data->target_mutex, K_FOREVER);
+
+	i2c_hal_slave_init(&data->hal);
+
+	i2c_esp32_configure_data_mode(dev);
+
+	ret = i2c_esp32_configure(dev, i2c_map_dt_bitrate(config->bitrate));
+	if (ret < 0) {
+		data->i2c_target = NULL;
+		k_mutex_unlock(&data->target_mutex);
+		return ret;
+	}
+
+	i2c_ll_set_slave_addr(data->hal.dev, cf->address,
+			      cf->flags & I2C_TARGET_FLAGS_ADDR_10_BITS);
+
+	// Configure FIFO watermarks
+	// todo: is this needed?
+	// Lower RX watermark so short writes always trigger immediately
+	i2c_ll_set_rxfifo_full_thr(data->hal.dev, 1);
+	// Set TX empty watermark low so we keep topping up while master is reading
+	i2c_ll_set_txfifo_empty_thr(data->hal.dev, 1);
+
+	// Optional: allow automatic TX start on read
+	i2c_ll_slave_tx_auto_start_en(data->hal.dev, true);
+
+	// Clear any pending interrupts then enable only START, RX WM, and SLV_COMPLETE
+	i2c_ll_clear_intr_mask(data->hal.dev, 0xFFFFFFFF);
+	i2c_ll_enable_intr_mask(data->hal.dev, I2C_INTR_SLV_COMPLETE | I2C_INTR_START);
+
+	// Latch all configuration into hardware and do a clean post-config reset.
+	// Without this, address ACK may fail because some regs are not yet applied.
+	i2c_ll_update(data->hal.dev);
+
+	// Reset FIFOs
+	i2c_ll_txfifo_rst(data->hal.dev);
+	i2c_ll_rxfifo_rst(data->hal.dev);
+
+	data->status = I2C_STATUS_IDLE;
+
+	data->i2c_target = cf;
+
+	k_mutex_unlock(&data->target_mutex);
+
+	return 0;
+}
+
+static int i2c_esp32_target_unregister(const struct device *dev, struct i2c_target_config *cf)
+{
+	const struct i2c_esp32_config *config = dev->config;
+	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
+
+	// todo: potentially check if i2c is busy and wait
+
+	if (!cf || data->i2c_target != cf) {
+		return -EINVAL;
+	}
+
+	if (!data->i2c_target) {
+		return -EINVAL; // not registered
+	}
+
+	// switch the i2c mode to master
+	k_mutex_lock(&data->target_mutex, K_FOREVER);
+
+	data->i2c_target = NULL;
+
+	// disable interrupts
+	i2c_ll_slave_disable_rx_it(data->hal.dev);
+	i2c_ll_slave_disable_tx_it(data->hal.dev);
+
+	// disable any masks we enabled for target
+	i2c_ll_disable_intr_mask(data->hal.dev, I2C_INTR_SLV_COMPLETE | I2C_INTR_RXFIFO_WM |
+							I2C_INTR_START | I2C_INTR_TXFIFO_WM);
+	i2c_ll_clear_intr_mask(data->hal.dev, 0xFFFFFFFF);
+
+	k_mutex_unlock(&data->target_mutex);
+
+	i2c_hal_master_init(&data->hal);
+
+	i2c_esp32_configure_data_mode(dev);
+
+	data->status = I2C_STATUS_IDLE;
+
+	return i2c_esp32_configure(dev, I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(config->bitrate));
 }
 
 static DEVICE_API(i2c, i2c_esp32_driver_api) = {
@@ -724,6 +986,8 @@ static DEVICE_API(i2c, i2c_esp32_driver_api) = {
 #ifdef CONFIG_I2C_RTIO
 	.iodev_submit = i2c_iodev_submit_fallback,
 #endif
+	.target_register = i2c_esp32_target_register,
+	.target_unregister = i2c_esp32_target_unregister,
 };
 
 static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
@@ -757,11 +1021,9 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 	clock_control_on(config->clock_dev, config->clock_subsys);
 
 	ret = esp_intr_alloc(config->irq_source,
-			ESP_PRIO_TO_FLAGS(config->irq_priority) |
-			ESP_INT_FLAGS_CHECK(config->irq_flags) | ESP_INTR_FLAG_IRAM,
-			i2c_esp32_isr,
-			(void *)dev,
-			NULL);
+			     ESP_PRIO_TO_FLAGS(config->irq_priority) |
+				     ESP_INT_FLAGS_CHECK(config->irq_flags) | ESP_INTR_FLAG_IRAM,
+			     i2c_esp32_isr, (void *)dev, NULL);
 
 	if (ret != 0) {
 		LOG_ERR("could not allocate interrupt (err %d)", ret);
@@ -778,63 +1040,68 @@ static int IRAM_ATTR i2c_esp32_init(const struct device *dev)
 #define I2C(idx) DT_NODELABEL(i2c##idx)
 
 #ifndef SOC_I2C_SUPPORT_HW_CLR_BUS
-#define I2C_ESP32_GET_PIN_INFO(idx)					\
-	.scl = {							\
-		.gpio = GPIO_DT_SPEC_GET(I2C(idx), scl_gpios),		\
-		.sig_out = I2CEXT##idx##_SCL_OUT_IDX,			\
-		.sig_in = I2CEXT##idx##_SCL_IN_IDX,			\
-	},								\
-	.sda = {							\
-		.gpio = GPIO_DT_SPEC_GET(I2C(idx), sda_gpios),		\
-		.sig_out = I2CEXT##idx##_SDA_OUT_IDX,			\
-		.sig_in = I2CEXT##idx##_SDA_IN_IDX,			\
+#define I2C_ESP32_GET_PIN_INFO(idx)                                                                \
+	.scl =                                                                                     \
+		{                                                                                  \
+			.gpio = GPIO_DT_SPEC_GET(I2C(idx), scl_gpios),                             \
+			.sig_out = I2CEXT##idx##_SCL_OUT_IDX,                                      \
+			.sig_in = I2CEXT##idx##_SCL_IN_IDX,                                        \
+	},                                                                                         \
+	.sda = {                                                                                   \
+		.gpio = GPIO_DT_SPEC_GET(I2C(idx), sda_gpios),                                     \
+		.sig_out = I2CEXT##idx##_SDA_OUT_IDX,                                              \
+		.sig_in = I2CEXT##idx##_SDA_IN_IDX,                                                \
 	},
 #else
 #define I2C_ESP32_GET_PIN_INFO(idx)
 #endif /* SOC_I2C_SUPPORT_HW_CLR_BUS */
 
-#define I2C_ESP32_TIMEOUT(inst)						\
+#define I2C_ESP32_TIMEOUT(inst)                                                                    \
 	COND_CODE_1(DT_NODE_HAS_PROP(I2C(inst), scl_timeout_us),	\
 		    (DT_PROP(I2C(inst), scl_timeout_us)), (0))
 
-#define I2C_ESP32_FREQUENCY(bitrate)					\
-	 (bitrate == I2C_BITRATE_STANDARD ? KHZ(100)			\
-	: bitrate == I2C_BITRATE_FAST     ? KHZ(400)			\
-	: bitrate == I2C_BITRATE_FAST_PLUS  ? MHZ(1) : 0)
+#define I2C_ESP32_FREQUENCY(bitrate)                                                               \
+	(bitrate == I2C_BITRATE_STANDARD    ? KHZ(100)                                             \
+	 : bitrate == I2C_BITRATE_FAST      ? KHZ(400)                                             \
+	 : bitrate == I2C_BITRATE_FAST_PLUS ? MHZ(1)                                               \
+					    : 0)
 
-#define I2C_FREQUENCY(idx)						\
-	I2C_ESP32_FREQUENCY(DT_PROP(I2C(idx), clock_frequency))
+#define I2C_FREQUENCY(idx) I2C_ESP32_FREQUENCY(DT_PROP(I2C(idx), clock_frequency))
 
-#define ESP32_I2C_INIT(idx)									   \
-												   \
-	PINCTRL_DT_DEFINE(I2C(idx));								   \
-												   \
-	static struct i2c_esp32_data i2c_esp32_data_##idx = {					   \
-		.hal = {									   \
-			.dev = (i2c_dev_t *) DT_REG_ADDR(I2C(idx)),				   \
-		},										   \
-		.cmd_sem = Z_SEM_INITIALIZER(i2c_esp32_data_##idx.cmd_sem, 0, 1),		   \
-		.transfer_sem = Z_SEM_INITIALIZER(i2c_esp32_data_##idx.transfer_sem, 1, 1),	   \
-	};											   \
-												   \
-	static const struct i2c_esp32_config i2c_esp32_config_##idx = {				   \
-		.index = idx,									   \
-		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(I2C(idx))),				   \
-		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(I2C(idx)),					   \
-		.clock_subsys = (clock_control_subsys_t)DT_CLOCKS_CELL(I2C(idx), offset),	   \
-		I2C_ESP32_GET_PIN_INFO(idx)							   \
-		.mode = {									   \
-			.tx_lsb_first = DT_PROP(I2C(idx), tx_lsb),				   \
-			.rx_lsb_first = DT_PROP(I2C(idx), rx_lsb),				   \
-		},										   \
-		.irq_source = DT_IRQ_BY_IDX(I2C(idx), 0, irq),				   \
-		.irq_priority = DT_IRQ_BY_IDX(I2C(idx), 0, priority),		   \
-		.irq_flags = DT_IRQ_BY_IDX(I2C(idx), 0, flags),				   \
-		.bitrate = I2C_FREQUENCY(idx),							   \
-		.scl_timeout = I2C_ESP32_TIMEOUT(idx),						   \
-	};											   \
-	I2C_DEVICE_DT_DEFINE(I2C(idx), i2c_esp32_init, NULL, &i2c_esp32_data_##idx,		   \
-			     &i2c_esp32_config_##idx, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,	   \
+#define ESP32_I2C_INIT(idx)                                                                        \
+                                                                                                   \
+	PINCTRL_DT_DEFINE(I2C(idx));                                                               \
+                                                                                                   \
+	static struct i2c_esp32_data i2c_esp32_data_##idx = {                                      \
+		.hal =                                                                             \
+			{                                                                          \
+				.dev = (i2c_dev_t *)DT_REG_ADDR(I2C(idx)),                         \
+			},                                                                         \
+		.cmd_sem = Z_SEM_INITIALIZER(i2c_esp32_data_##idx.cmd_sem, 0, 1),                  \
+		.transfer_sem = Z_SEM_INITIALIZER(i2c_esp32_data_##idx.transfer_sem, 1, 1),        \
+		.i2c_target = NULL,                                                                \
+		.target_mutex = Z_MUTEX_INITIALIZER(i2c_esp32_data_##idx.target_mutex),            \
+		.status = I2C_STATUS_IDLE,                                                         \
+	};                                                                                         \
+                                                                                                   \
+	static const struct i2c_esp32_config i2c_esp32_config_##idx = {                            \
+		.index = idx,                                                                      \
+		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(I2C(idx))),                              \
+		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(I2C(idx)),                                       \
+		.clock_subsys = (clock_control_subsys_t)DT_CLOCKS_CELL(I2C(idx), offset),          \
+		I2C_ESP32_GET_PIN_INFO(idx).mode =                                                 \
+			{                                                                          \
+				.tx_lsb_first = DT_PROP(I2C(idx), tx_lsb),                         \
+				.rx_lsb_first = DT_PROP(I2C(idx), rx_lsb),                         \
+			},                                                                         \
+		.irq_source = DT_IRQ_BY_IDX(I2C(idx), 0, irq),                                     \
+		.irq_priority = DT_IRQ_BY_IDX(I2C(idx), 0, priority),                              \
+		.irq_flags = DT_IRQ_BY_IDX(I2C(idx), 0, flags),                                    \
+		.bitrate = I2C_FREQUENCY(idx),                                                     \
+		.scl_timeout = I2C_ESP32_TIMEOUT(idx),                                             \
+	};                                                                                         \
+	I2C_DEVICE_DT_DEFINE(I2C(idx), i2c_esp32_init, NULL, &i2c_esp32_data_##idx,                \
+			     &i2c_esp32_config_##idx, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,       \
 			     &i2c_esp32_driver_api);
 
 #if DT_NODE_HAS_STATUS_OKAY(I2C(0))
