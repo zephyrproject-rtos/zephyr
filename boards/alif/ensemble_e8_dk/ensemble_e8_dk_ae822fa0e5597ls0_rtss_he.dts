@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2025 Alif Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <alif/ensemble/ae822fa0e5597ls0.dtsi>
+#include <alif/ensemble/common/ensemble_rtss_he.dtsi>
+#include "ensemble_e8_dk-pinctrl.dtsi"
+
+/ {
+	compatible = "alif,ensemble-e8-dk-ae822fa0e5597ls0-rtss-he";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,flash = &mram;
+		zephyr,sram = &dtcm;
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+		zephyr,code-partition = &slot0_partition;
+	};
+};
+
+&mram {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x0 DT_SIZE_K(5632)>;
+		};
+	};
+};
+
+&uart2 {
+	status = "okay";
+	pinctrl-0 = <&pinctrl_uart2>;
+	pinctrl-names = "default";
+};

@@ -1,0 +1,23 @@
+# Copyright (c) 2025 Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_E8_RTSS
+	bool
+	select ARM
+	select ARMV8_M_DSP
+	select ARMV8_1_M_MVEI
+	select ARMV8_1_M_MVEF
+	select CPU_CORTEX_M55
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_CORTEX_M_HAS_VTOR
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select SOC_RESET_HOOK
+	select XIP
+
+config SOC_AE822FA0E5597LS0_RTSS_HE
+	select SOC_SERIES_E8_RTSS
+
+config SOC_AE822FA0E5597LS0_RTSS_HP
+	select SOC_SERIES_E8_RTSS
