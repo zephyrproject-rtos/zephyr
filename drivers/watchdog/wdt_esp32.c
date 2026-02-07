@@ -169,10 +169,6 @@ static int wdt_esp32_init(const struct device *dev)
 		return ret;
 	}
 
-#ifndef CONFIG_WDT_DISABLE_AT_BOOT
-	wdt_esp32_enable(dev);
-#endif
-
 	return 0;
 }
 

@@ -315,13 +315,6 @@ static int wdt_atcwdt200_init(const struct device *dev)
 
 	counter_start(pit_counter_dev);
 
-#ifdef CONFIG_WDT_DISABLE_AT_BOOT
-	wdt_atcwdt200_disable(dev);
-#else
-	data->timeout_valid = true;
-	wdt_atcwdt200_set_max_timeout(dev);
-	wdt_atcwdt200_setup(dev, 0x0);
-#endif
 	return 0;
 }
 
