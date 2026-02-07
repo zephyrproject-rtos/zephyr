@@ -74,13 +74,27 @@ struct ina2xx_channel {
  * are available on all INA2XX variants.
  */
 struct ina2xx_channels {
+#ifdef CONFIG_INA2XX_HAS_CHANNEL_BUS_VOLTAGE
 	const struct ina2xx_channel *voltage;
+#endif /* CONFIG_INA2XX_HAS_CHANNEL_BUS_VOLTAGE */
+#ifdef CONFIG_INA2XX_HAS_CHANNEL_SHUNT_VOLTAGE
 	const struct ina2xx_channel *vshunt;
+#endif /* CONFIG_INA2XX_HAS_CHANNEL_SHUNT_VOLTAGE */
+#ifdef CONFIG_INA2XX_HAS_CHANNEL_CURRENT
 	const struct ina2xx_channel *current;
+#endif /* CONFIG_INA2XX_HAS_CHANNEL_CURRENT */
+#ifdef CONFIG_INA2XX_HAS_CHANNEL_POWER
 	const struct ina2xx_channel *power;
+#endif /* CONFIG_INA2XX_HAS_CHANNEL_POWER */
+#ifdef CONFIG_INA2XX_HAS_CHANNEL_DIE_TEMP
 	const struct ina2xx_channel *die_temp;
+#endif /* CONFIG_INA2XX_HAS_CHANNEL_DIE_TEMP */
+#ifdef CONFIG_INA2XX_HAS_CHANNEL_ENERGY
 	const struct ina2xx_channel *energy;
+#endif /* CONFIG_INA2XX_HAS_CHANNEL_ENERGY */
+#ifdef CONFIG_INA2XX_HAS_CHANNEL_CHARGE
 	const struct ina2xx_channel *charge;
+#endif /* CONFIG_INA2XX_HAS_CHANNEL_CHARGE */
 };
 
 /**
