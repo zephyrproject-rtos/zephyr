@@ -493,9 +493,21 @@ __weak void clock_init(void)
 	 * calculate LCDIF clock.
 	 */
 	rootCfg.div = ((SYS_PLL2_FREQ /
-			DT_PROP(DT_CHILD(DT_NODELABEL(lcdif), display_timings), clock_frequency)) +
-		       1);
+			DT_PROP(DT_CHILD(DT_NODELABEL(lcdif), display_timings), clock_frequency))
+			+ 1);
 	CLOCK_SetRootClock(kCLOCK_Root_Lcdif, &rootCfg);
+#endif
+
+#ifdef CONFIG_DISPLAY_MCUX_LCDIFV2
+	rootCfg.mux = kCLOCK_LCDIF_ClockRoot_MuxSysPll2Out;
+	/*
+	 * PLL2 is fixed at 528MHz. Use desired panel clock clock to
+	 * calculate LCDIF clock.
+	 */
+	rootCfg.div = ((SYS_PLL2_FREQ /
+			DT_PROP(DT_CHILD(DT_NODELABEL(lcdifv2), display_timings), clock_frequency))
+			+ 1);
+	CLOCK_SetRootClock(kCLOCK_Root_Lcdifv2, &rootCfg);
 #endif
 
 #ifdef CONFIG_COUNTER_MCUX_GPT
@@ -610,7 +622,11 @@ void imxrt_pre_init_display_interface(void)
 {
 	/* elcdif output to MIPI DSI */
 	CLOCK_EnableClock(kCLOCK_Video_Mux);
+#if CONFIG_DISPLAY_MCUX_ELCDIF
 	VIDEO_MUX->VID_MUX_CTRL.CLR = VIDEO_MUX_VID_MUX_CTRL_MIPI_DSI_SEL_MASK;
+#elif CONFIG_DISPLAY_MCUX_LCDIFV2
+	VIDEO_MUX->VID_MUX_CTRL.SET = VIDEO_MUX_VID_MUX_CTRL_MIPI_DSI_SEL_MASK;
+#endif
 
 	/* Power on and isolation off. */
 	PGMC_BPC4->BPC_POWER_CTRL |= (PGMC_BPC_BPC_POWER_CTRL_PSW_ON_SOFT_MASK |

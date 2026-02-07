@@ -87,7 +87,7 @@
 	status = "okay";
 };
 
-zephyr_lcdif: &lcdif {};
+zephyr_lcdif: &lcdifv2 {};
 
 zephyr_mipi_dsi: &mipi_dsi {
 	dphy-ref-frequency = <DT_FREQ_M(24)>;
