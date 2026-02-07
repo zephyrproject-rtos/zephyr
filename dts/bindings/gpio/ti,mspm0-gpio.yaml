@@ -13,6 +13,12 @@ properties:
   interrupts:
     required: true
 
+  ti,int-group-iidx:
+    required: true
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: Set the interrupt index
+
   "#gpio-cells":
     const: 2
 

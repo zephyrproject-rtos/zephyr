@@ -12,6 +12,7 @@
 		compatible = "ti,mspm0-gpio";
 		reg = <0x400a4000 0x2000>;
 		interrupts = <1 0>;
+		ti,int-group-iidx = <6>;
 		status = "disabled";
 		gpio-controller;
 		#gpio-cells = <2>;
