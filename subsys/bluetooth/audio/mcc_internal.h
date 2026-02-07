@@ -86,14 +86,13 @@ struct mcs_instance_t {
 	uint16_t content_control_id_handle;
 #endif /* defined(CONFIG_BT_MCC_READ_CONTENT_CONTROL_ID) */
 
-
 	/* The write buffer is used for
 	 * - track position    (4 octets)
 	 * - playback speed    (1 octet)
 	 * - playing order     (1 octet)
 	 * - the control point (5 octets)
 	 *                     (1 octet opcode + optionally 4 octet param)
-	 *                     (mpl_cmd.opcode + mpl_cmd.param)
+	 *                     (mpl_cmd.opcode + bt_mcs_cmd.param)
 	 * If the object transfer client is included, it is also used for
 	 * - object IDs (6 octets - BT_OTS_OBJ_ID_SIZE) and
 	 * - the search control point (64 octets - SEARCH_LEN_MAX)
@@ -105,10 +104,10 @@ struct mcs_instance_t {
 	char write_buf[SEARCH_LEN_MAX];
 #else
 	/* Trick to be able to use sizeof on members of a struct type */
-	/* TODO: Rewrite the mpl_cmd to have the "use_param" parameter */
+	/* TODO: Rewrite the bt_mcs_cmd to have the "use_param" parameter */
 	/* separately, and the opcode and param alone as a struct */
-	char write_buf[sizeof(((struct mpl_cmd *)0)->opcode) +
-		       sizeof(((struct mpl_cmd *)0)->param)];
+	char write_buf[sizeof(((struct bt_mcs_cmd *)0)->opcode) +
+		       sizeof(((struct bt_mcs_cmd *)0)->param)];
 #endif /* CONFIG_BT_MCC_OTS */
 
 	struct bt_gatt_discover_params  discover_params;

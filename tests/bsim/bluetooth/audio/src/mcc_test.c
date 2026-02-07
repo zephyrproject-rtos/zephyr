@@ -348,7 +348,7 @@ static void mcc_read_media_state_cb(struct bt_conn *conn, int err, uint8_t state
 	SET_FLAG(media_state_read);
 }
 
-static void mcc_send_command_cb(struct bt_conn *conn, int err, const struct mpl_cmd *cmd)
+static void mcc_send_command_cb(struct bt_conn *conn, int err, const struct bt_mcs_cmd *cmd)
 {
 	if (err) {
 		FAIL("Command send failed (%d) - opcode: %u, param: %d",
@@ -359,7 +359,7 @@ static void mcc_send_command_cb(struct bt_conn *conn, int err, const struct mpl_
 	SET_FLAG(command_sent);
 }
 
-static void mcc_cmd_ntf_cb(struct bt_conn *conn, int err, const struct mpl_cmd_ntf *ntf)
+static void mcc_cmd_ntf_cb(struct bt_conn *conn, int err, const struct bt_mcs_cmd_ntf *ntf)
 {
 	if (err) {
 		FAIL("Command notification error (%d) - opcode: %u, result: %u",
@@ -383,8 +383,7 @@ static void mcc_read_opcodes_supported_cb(struct bt_conn *conn, int err,
 	SET_FLAG(supported_opcodes_read);
 }
 
-static void mcc_send_search_cb(struct bt_conn *conn, int err,
-			       const struct mpl_search *search)
+static void mcc_send_search_cb(struct bt_conn *conn, int err, const struct bt_mcp_search *search)
 {
 	if (err) {
 		FAIL("Search send failed (%d)", err);
@@ -698,7 +697,7 @@ static void test_read_supported_opcodes(void)
  */
 static void test_invalid_send_cmd(void)
 {
-	struct mpl_cmd cmd = { 0 };
+	struct bt_mcs_cmd cmd = {0};
 	int err;
 
 	err = bt_mcc_send_cmd(NULL, &cmd);
@@ -735,7 +734,7 @@ static void test_invalid_send_cmd(void)
  * Will FAIL on error to send the command.
  * Will WAIT for the required flags before returning.
  */
-static void test_send_cmd_wait_flags(struct mpl_cmd *cmd)
+static void test_send_cmd_wait_flags(struct bt_mcs_cmd *cmd)
 {
 	int err;
 
@@ -759,7 +758,7 @@ static void test_send_cmd_wait_flags(struct mpl_cmd *cmd)
 
 static void test_cp_play(void)
 {
-	struct mpl_cmd cmd;
+	struct bt_mcs_cmd cmd;
 
 	cmd.opcode = BT_MCS_OPC_PLAY;
 	cmd.use_param = false;
@@ -778,7 +777,7 @@ static void test_cp_play(void)
 
 static void test_cp_pause(void)
 {
-	struct mpl_cmd cmd;
+	struct bt_mcs_cmd cmd;
 
 	cmd.opcode = BT_MCS_OPC_PAUSE;
 	cmd.use_param = false;
@@ -798,7 +797,7 @@ static void test_cp_pause(void)
 static void test_cp_fast_rewind(void)
 {
 	const int32_t tmp_pos = g_pos;
-	struct mpl_cmd cmd;
+	struct bt_mcs_cmd cmd;
 
 	cmd.opcode = BT_MCS_OPC_FAST_REWIND;
 	cmd.use_param = false;
@@ -827,7 +826,7 @@ static void test_cp_fast_rewind(void)
 static void test_cp_fast_forward(void)
 {
 	const int32_t tmp_pos = g_pos;
-	struct mpl_cmd cmd;
+	struct bt_mcs_cmd cmd;
 
 	cmd.opcode = BT_MCS_OPC_FAST_FORWARD;
 	cmd.use_param = false;
@@ -845,7 +844,7 @@ static void test_cp_fast_forward(void)
 		printk("FAST FORWARD command succeeded\n");
 	}
 
-	/* Wait for the track position to change during forwarding */
+	/* Wait for the track position to change during fast forwarding */
 	WAIT_FOR_FLAG(track_position_read);
 	if (tmp_pos >= g_pos) {
 		FAIL("Position did not change during forwarding");
@@ -855,7 +854,7 @@ static void test_cp_fast_forward(void)
 
 static void test_cp_stop(void)
 {
-	struct mpl_cmd cmd;
+	struct bt_mcs_cmd cmd;
 
 	cmd.opcode = BT_MCS_OPC_STOP;
 	cmd.use_param = false;
@@ -876,7 +875,7 @@ static void test_cp_stop(void)
 static void test_cp_move_relative(void)
 {
 	int err;
-	struct mpl_cmd cmd;
+	struct bt_mcs_cmd cmd;
 
 	/* Assumes that the server is in a state where it is  able to change
 	 * the current track position
@@ -923,7 +922,7 @@ static void test_cp_move_relative(void)
 
 static void test_cp_prev_segment(void)
 {
-	struct mpl_cmd cmd;
+	struct bt_mcs_cmd cmd;
 
 	/* Assumes that the server is in a state where there is a current
 	 * track that has segments, and where the server may switch between
@@ -953,7 +952,7 @@ static void test_cp_prev_segment(void)
 
 static void test_cp_next_segment(void)
 {
-	struct mpl_cmd cmd;
+	struct bt_mcs_cmd cmd;
 
 	cmd.opcode = BT_MCS_OPC_NEXT_SEGMENT;
 	cmd.use_param = false;
@@ -970,7 +969,7 @@ static void test_cp_next_segment(void)
 
 static void test_cp_first_segment(void)
 {
-	struct mpl_cmd cmd;
+	struct bt_mcs_cmd cmd;
 
 	cmd.opcode = BT_MCS_OPC_FIRST_SEGMENT;
 	cmd.use_param = false;
@@ -987,7 +986,7 @@ static void test_cp_first_segment(void)
 
 static void test_cp_last_segment(void)
 {
-	struct mpl_cmd cmd;
+	struct bt_mcs_cmd cmd;
 
 	cmd.opcode = BT_MCS_OPC_LAST_SEGMENT;
 	cmd.use_param = false;
@@ -1004,7 +1003,7 @@ static void test_cp_last_segment(void)
 
 static void test_cp_goto_segment(void)
 {
-	struct mpl_cmd cmd;
+	struct bt_mcs_cmd cmd;
 
 	cmd.opcode = BT_MCS_OPC_GOTO_SEGMENT;
 	cmd.use_param = true;
@@ -1041,7 +1040,7 @@ static void test_read_current_track_object_id_wait_flags(void)
 static void test_cp_prev_track(void)
 {
 	uint64_t object_id;
-	struct mpl_cmd cmd;
+	struct bt_mcs_cmd cmd;
 
 	/* Assumes that the server is in a state where it has multiple tracks
 	 * and can change between them.
@@ -1078,7 +1077,7 @@ static void test_cp_prev_track(void)
 static void test_cp_next_track_and_track_changed(void)
 {
 	uint64_t object_id;
-	struct mpl_cmd cmd;
+	struct bt_mcs_cmd cmd;
 
 	/* This test is also used to test the track changed notification */
 	UNSET_FLAG(track_change_notified);
@@ -1112,7 +1111,7 @@ static void test_cp_next_track_and_track_changed(void)
 static void test_cp_first_track(void)
 {
 	uint64_t object_id;
-	struct mpl_cmd cmd;
+	struct bt_mcs_cmd cmd;
 
 	cmd.opcode = BT_MCS_OPC_FIRST_TRACK;
 	cmd.use_param = false;
@@ -1140,7 +1139,7 @@ static void test_cp_first_track(void)
 static void test_cp_last_track(void)
 {
 	uint64_t object_id;
-	struct mpl_cmd cmd;
+	struct bt_mcs_cmd cmd;
 
 	cmd.opcode = BT_MCS_OPC_LAST_TRACK;
 	cmd.use_param = false;
@@ -1168,7 +1167,7 @@ static void test_cp_last_track(void)
 static void test_cp_goto_track(void)
 {
 	uint64_t object_id;
-	struct mpl_cmd cmd;
+	struct bt_mcs_cmd cmd;
 
 	cmd.opcode = BT_MCS_OPC_GOTO_TRACK;
 	cmd.use_param = true;
@@ -1215,7 +1214,7 @@ static void test_read_current_group_object_id_wait_flags(void)
 static void test_cp_prev_group(void)
 {
 	uint64_t object_id;
-	struct mpl_cmd cmd;
+	struct bt_mcs_cmd cmd;
 
 	/* Assumes that the server is in a state where it has multiple groups
 	 * and can change between them.
@@ -1252,7 +1251,7 @@ static void test_cp_prev_group(void)
 static void test_cp_next_group(void)
 {
 	uint64_t object_id;
-	struct mpl_cmd cmd;
+	struct bt_mcs_cmd cmd;
 
 	cmd.opcode = BT_MCS_OPC_NEXT_GROUP;
 	cmd.use_param = false;
@@ -1280,7 +1279,7 @@ static void test_cp_next_group(void)
 static void test_cp_first_group(void)
 {
 	uint64_t object_id;
-	struct mpl_cmd cmd;
+	struct bt_mcs_cmd cmd;
 
 	cmd.opcode = BT_MCS_OPC_FIRST_GROUP;
 	cmd.use_param = false;
@@ -1308,7 +1307,7 @@ static void test_cp_first_group(void)
 static void test_cp_last_group(void)
 {
 	uint64_t object_id;
-	struct mpl_cmd cmd;
+	struct bt_mcs_cmd cmd;
 
 	cmd.opcode = BT_MCS_OPC_LAST_GROUP;
 	cmd.use_param = false;
@@ -1336,7 +1335,7 @@ static void test_cp_last_group(void)
 static void test_cp_goto_group(void)
 {
 	uint64_t object_id;
-	struct mpl_cmd cmd;
+	struct bt_mcs_cmd cmd;
 
 	cmd.opcode = BT_MCS_OPC_GOTO_GROUP;
 	cmd.use_param = true;
@@ -1364,8 +1363,8 @@ static void test_cp_goto_group(void)
 
 static void test_search(void)
 {
-	struct mpl_search search = { 0 };
-	struct mpl_sci sci = {0};
+	struct bt_mcp_search search = {0};
+	struct bt_mcp_sci sci = {0};
 	int err;
 
 	/* Invalid behavior */
@@ -2361,7 +2360,7 @@ static void test_read_content_control_id(void)
 
 static void reset_test_iteration(unsigned int i)
 {
-	struct mpl_cmd cmd;
+	struct bt_mcs_cmd cmd;
 
 	printk("Resetting test iteration\n");
 

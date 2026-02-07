@@ -3,7 +3,7 @@
  * @brief Bluetooth Media Control Service (MCS) APIs.
  */
 /*
- * Copyright (c) 2019 - 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2019 - 2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,12 +26,28 @@
  * Profile specifications.
  */
 
+#include <stdbool.h>
+#include <stdint.h>
+#include <zephyr/bluetooth/audio/media_proxy.h>
+#include <zephyr/bluetooth/services/ots.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Media player command
+ */
+struct bt_mcs_cmd {
+	/** The opcode. See the MEDIA_PROXY_OP_* values */
+	uint8_t opcode;
+	/** Whether or not the @ref bt_mcs_cmd.param is used */
+	bool use_param;
+	/** A 32-bit signed parameter. The parameter value depends on the @ref bt_mcs_cmd.opcode */
+	int32_t param;
+};
 
 /**
  * A characteristic value has changed while a Read Long Value Characteristic sub-procedure is in
@@ -317,31 +333,6 @@ extern "C" {
 /** @} */
 
 /**
- * @brief Search control point minimum length
- *
- * At least one search control item (SCI), consisting of the length octet and the type octet.
- * (The * parameter field may be empty.)
- */
-#define SEARCH_LEN_MIN 2
-
-/** Search control point maximum length */
-#define SEARCH_LEN_MAX 64
-
-/**
- * @brief Search control point item (SCI) minimum length
- *
- * An SCI length can be as little as one byte, for an SCI that has only the type field.
- * (The SCI len is the length of type + param.)
- */
-#define SEARCH_SCI_LEN_MIN 1   /* An SCI length can be as little as one byte,
-				* for an SCI that has only the type field.
-				* (The SCI len is the length of type + param.)
-				*/
-
-/** Search parameters maximum length  */
-#define SEARCH_PARAM_MAX 62
-
-/**
  * @name Search notification result codes
  *
  * Reference: Media Control Service spec v1.0 section 3.20.2
@@ -364,6 +355,499 @@ extern "C" {
 /** Group object type is group */
 #define BT_MCS_GROUP_OBJECT_GROUP_TYPE 0x01
 /** @} */
+
+/**
+ * @brief Get the pointer of the Object Transfer Service used by the Media Control Service
+ *
+ * TODO: Find best location for this call, and move this one also
+ */
+struct bt_ots *bt_mcs_get_ots(void);
+
+/* Temporary forward declaration to avoid circular dependency */
+struct bt_mcp_search;
+struct bt_mcs_cmd_ntf;
+
+/** @brief Callbacks when information about the player is requested via MCS */
+struct bt_mcs_cb {
+
+	/**
+	 * @brief Read Media Player Name
+	 *
+	 * @return The name of the media player
+	 */
+	const char *(*get_player_name)(void);
+
+	/**
+	 * @brief Read Icon Object ID
+	 *
+	 * Get an ID (48 bit) that can be used to retrieve the Icon
+	 * Object from an Object Transfer Service
+	 *
+	 * See the Media Control Service spec v1.0 sections 3.2 and
+	 * 4.1 for a description of the Icon Object.
+	 *
+	 * @return The Icon Object ID
+	 */
+	uint64_t (*get_icon_id)(void);
+
+	/**
+	 * @brief Read Icon URL
+	 *
+	 * Get a URL to the media player's icon.
+	 *
+	 * @return The URL of the Icon
+	 */
+	const char *(*get_icon_url)(void);
+
+	/**
+	 * @brief Read Track Title
+	 *
+	 * @return The title of the current track
+	 */
+	const char *(*get_track_title)(void);
+
+	/**
+	 * @brief Read Track Duration
+	 *
+	 * The duration of a track is measured in hundredths of a
+	 * second.
+	 *
+	 * @return The duration of the current track
+	 */
+	int32_t (*get_track_duration)(void);
+
+	/**
+	 * @brief Read Track Position
+	 *
+	 * The position of the player (the playing position) is
+	 * measured in hundredths of a second from the beginning of
+	 * the track
+	 *
+	 * @return The position of the player in the current track
+	 */
+	int32_t (*get_track_position)(void);
+
+	/**
+	 * @brief Set Track Position
+	 *
+	 * Set the playing position of the media player in the current
+	 * track. The position is given in hundredths of a second,
+	 * from the beginning of the track of the track for positive
+	 * values, and (backwards) from the end of the track for
+	 * negative values.
+	 *
+	 * @param position    The player position to set
+	 */
+	void (*set_track_position)(int32_t position);
+
+	/**
+	 * @brief Get Playback Speed
+	 *
+	 * The playback speed parameter is related to the actual
+	 * playback speed as follows:
+	 * actual playback speed = 2^(speed_parameter/64)
+	 *
+	 * A speed parameter of 0 corresponds to unity speed playback
+	 * (i.e. playback at "normal" speed). A speed parameter of
+	 * -128 corresponds to playback at one fourth of normal speed,
+	 * 127 corresponds to playback at almost four times the normal
+	 * speed.
+	 *
+	 * @return The playback speed parameter
+	 */
+	int8_t (*get_playback_speed)(void);
+
+	/**
+	 * @brief Set Playback Speed
+	 *
+	 * See the get_playback_speed() function for an explanation of
+	 * the playback speed parameter.
+	 *
+	 * Note that the media player may not support all possible
+	 * values of the playback speed parameter. If the value given
+	 * is not supported, and is higher than the current value, the
+	 * player should set the playback speed to the next higher
+	 * supported value. (And correspondingly to the next lower
+	 * supported value for given values lower than the current
+	 * value.)
+	 *
+	 * @param speed The playback speed parameter to set
+	 */
+	void (*set_playback_speed)(int8_t speed);
+
+	/**
+	 * @brief Get Seeking Speed
+	 *
+	 * The seeking speed gives the speed with which the player is
+	 * seeking. It is a factor, relative to real-time playback
+	 * speed - a factor four means seeking happens at four times
+	 * the real-time playback speed. Positive values are for
+	 * forward seeking, negative values for backwards seeking.
+	 *
+	 * The seeking speed is not settable - a non-zero seeking speed
+	 * is the result of "fast rewind" of "fast forward" commands.
+	 *
+	 * @return The seeking speed factor
+	 */
+	int8_t (*get_seeking_speed)(void);
+
+	/**
+	 * @brief Read Current Track Segments Object ID
+	 *
+	 * Get an ID (48 bit) that can be used to retrieve the Current
+	 * Track Segments Object from an Object Transfer Service
+	 *
+	 * See the Media Control Service spec v1.0 sections 3.10 and
+	 * 4.2 for a description of the Track Segments Object.
+	 *
+	 * @return Current The Track Segments Object ID
+	 */
+	uint64_t (*get_track_segments_id)(void);
+
+	/**
+	 * @brief Read Current Track Object ID
+	 *
+	 * Get an ID (48 bit) that can be used to retrieve the Current
+	 * Track Object from an Object Transfer Service
+	 *
+	 * See the Media Control Service spec v1.0 sections 3.11 and
+	 * 4.3 for a description of the Current Track Object.
+	 *
+	 * @return The Current Track Object ID
+	 */
+	uint64_t (*get_current_track_id)(void);
+
+	/**
+	 * @brief Set Current Track Object ID
+	 *
+	 * Change the player's current track to the track given by the ID.
+	 * (Behaves similarly to the goto track command.)
+	 *
+	 * @param id    The ID of a track object
+	 */
+	void (*set_current_track_id)(uint64_t id);
+
+	/**
+	 * @brief Read Next Track Object ID
+	 *
+	 * Get an ID (48 bit) that can be used to retrieve the Next
+	 * Track Object from an Object Transfer Service
+	 *
+	 * @return The Next Track Object ID
+	 */
+	uint64_t (*get_next_track_id)(void);
+
+	/**
+	 * @brief Set Next Track Object ID
+	 *
+	 * Change the player's next track to the track given by the ID.
+	 *
+	 * @param id    The ID of a track object
+	 */
+	void (*set_next_track_id)(uint64_t id);
+
+	/**
+	 * @brief Read Parent Group Object ID
+	 *
+	 * Get an ID (48 bit) that can be used to retrieve the Parent
+	 * Track Object from an Object Transfer Service
+	 *
+	 * The parent group is the parent of the current group.
+	 *
+	 * See the Media Control Service spec v1.0 sections 3.14 and
+	 * 4.4 for a description of the Current Track Object.
+	 *
+	 * @return The Current Group Object ID
+	 */
+	uint64_t (*get_parent_group_id)(void);
+
+	/**
+	 * @brief Read Current Group Object ID
+	 *
+	 * Get an ID (48 bit) that can be used to retrieve the Current
+	 * Track Object from an Object Transfer Service
+	 *
+	 * See the Media Control Service spec v1.0 sections 3.14 and
+	 * 4.4 for a description of the Current Group Object.
+	 *
+	 * @return The Current Group Object ID
+	 */
+	uint64_t (*get_current_group_id)(void);
+
+	/**
+	 * @brief Set Current Group Object ID
+	 *
+	 * Change the player's current group to the group given by the
+	 * ID, and the current track to the first track in that group.
+	 *
+	 * @param id    The ID of a group object
+	 */
+	void (*set_current_group_id)(uint64_t id);
+
+	/**
+	 * @brief Read Playing Order
+	 *
+	 * return The media player's current playing order
+	 */
+	uint8_t (*get_playing_order)(void);
+
+	/**
+	 * @brief Set Playing Order
+	 *
+	 * Set the media player's playing order.
+	 * See the MEDIA_PROXY_PLAYING_ORDER_* defines.
+	 *
+	 * @param order	The playing order to set
+	 */
+	void (*set_playing_order)(uint8_t order);
+
+	/**
+	 * @brief Read Playing Orders Supported
+	 *
+	 * Read a bitmap containing the media player's supported
+	 * playing orders.
+	 * See the MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_* defines.
+	 *
+	 * @return The media player's supported playing orders
+	 */
+	uint16_t (*get_playing_orders_supported)(void);
+
+	/**
+	 * @brief Read Media State
+	 *
+	 * Read the media player's state
+	 * See the BT_MCS_MEDIA_STATE_* defines.
+	 *
+	 * @return The media player's state
+	 */
+	uint8_t (*get_media_state)(void);
+
+	/**
+	 * @brief Send Command
+	 *
+	 * Send a command to the media player.
+	 * For command opcodes (play, pause, ...) - see the MEDIA_PROXY_OP_*
+	 * defines.
+	 *
+	 * @param command	The command to send
+	 */
+	int (*send_command)(const struct bt_mcs_cmd *command);
+
+	/**
+	 * @brief Read Commands Supported
+	 *
+	 * Read a bitmap containing the media player's supported
+	 * command opcodes.
+	 * See the MEDIA_PROXY_OP_SUP_* defines.
+	 *
+	 * @return The media player's supported command opcodes
+	 */
+	uint32_t (*get_commands_supported)(void);
+
+	/**
+	 * @brief Set Search
+	 *
+	 * Write a search to the media player.
+	 * (For the formatting of a search, see the Media Control
+	 * Service spec and the mcs.h file.)
+	 *
+	 * @param search	The search to write
+	 */
+	void (*send_search)(const struct bt_mcp_search *search);
+
+	/**
+	 * @brief Read Search Results Object ID
+	 *
+	 * Get an ID (48 bit) that can be used to retrieve the Search
+	 * Results Object from an Object Transfer Service
+	 *
+	 * The search results object is a group object.
+	 * The search results object only exists if a successful
+	 * search operation has been done.
+	 *
+	 * @return The Search Results Object ID
+	 */
+	uint64_t (*get_search_results_id)(void);
+
+	/**
+	 * @brief Read Content Control ID
+	 *
+	 * The content control ID identifies a content control service
+	 * on a device, and links it to the corresponding audio
+	 * stream.
+	 *
+	 * @return The content control ID for the media player
+	 */
+	uint8_t (*get_content_ctrl_id)(void);
+};
+
+/**
+ * @brief Initialize MCS
+ *
+ * @param ots_cbs Pointer to callback structure for OTS. May be NULL.
+
+ * @return 0 if success, errno on failure
+ */
+int bt_mcs_init(struct bt_ots_cb *ots_cbs);
+
+/**
+ * @brief Register Media Control Service callbacks
+ *
+ * @param cbs Pointer to the callbacks
+ *
+ * @return 0 if success, errno on failure
+ */
+int bt_mcs_register_cb(struct bt_mcs_cb *cbs);
+
+/**
+ * @brief Player name changed callback
+ *
+ * To be called when the player's name is changed.
+ */
+void bt_mcs_player_name_changed(void);
+
+/**
+ * @brief Player icon URL changed callback
+ *
+ * To be called when the player's icon URL is changed.
+ */
+void bt_mcs_icon_url_changed(void);
+
+/**
+ * @brief Track changed callback
+ *
+ * To be called when the player's current track is changed
+ */
+void bt_mcs_track_changed(void);
+
+/**
+ * @brief Track title callback
+ *
+ * To be called when the player's current track is changed
+ */
+void bt_mcs_track_title_changed(void);
+
+/**
+ * @brief Track position callback
+ *
+ * To be called when the media player's position in the track is
+ * changed, or when the player is paused or similar.
+ *
+ * Exception: This callback should not be called when the position
+ * changes during regular playback, i.e. while the player is playing
+ * and playback happens at a constant speed.
+ *
+ * The track position is given in hundredths of a second from the
+ * start of the track.
+ */
+void bt_mcs_track_position_changed(void);
+
+/**
+ * @brief Track duration callback
+ *
+ * To be called when the current track's duration is changed (e.g. due
+ * to a track change)
+ *
+ * The track duration is given in hundredths of a second.
+ */
+void bt_mcs_track_duration_changed(void);
+
+/**
+ * @brief Playback speed callback
+ *
+ * To be called when the playback speed is changed.
+ */
+void bt_mcs_playback_speed_changed(void);
+
+/**
+ * @brief Seeking speed callback
+ *
+ * To be called when the seeking speed is changed.
+ */
+void bt_mcs_seeking_speed_changed(void);
+
+/**
+ * @brief Current track object ID callback
+ *
+ * To be called when the ID of the current track is changed (e.g. due
+ * to a track change).
+ */
+void bt_mcs_current_track_id_changed(void);
+
+/**
+ * @brief Next track object ID callback
+ *
+ * To be called when the ID of the current track is changes
+ */
+void bt_mcs_next_track_id_changed(void);
+
+/**
+ * @brief Parent group object ID callback
+ *
+ * To be called when the ID of the parent group is changed
+ */
+void bt_mcs_parent_group_id_changed(void);
+
+/**
+ * @brief Current group object ID callback
+ *
+ * To be called when the ID of the current group is changed
+ */
+void bt_mcs_current_group_id_changed(void);
+
+/**
+ * @brief Playing order callback
+ *
+ * To be called when the playing order is changed
+ */
+void bt_mcs_playing_order_changed(void);
+
+/**
+ * @brief Media state callback
+ *
+ * To be called when the media state is changed
+ */
+void bt_mcs_media_state_changed(void);
+
+/**
+ * @brief Commands supported callback
+ *
+ * To be called when the set of commands supported is changed
+ */
+void bt_mcs_commands_supported_changed(void);
+
+/**
+ * @brief Search Results object ID callback
+ *
+ * To be called when the ID of the search results is changed
+ * (typically as the result of a new successful search).
+ */
+void bt_mcs_search_results_id_changed(void);
+
+/**
+ * @brief Command callback
+ *
+ * To be called when a command has been sent, to notify whether the
+ * command was successfully performed or not.
+ * See the MEDIA_PROXY_CMD_* result code defines.
+ *
+ * @param cmd_ntf	The result of the command
+ */
+void bt_mcs_command_complete(const struct bt_mcs_cmd_ntf *cmd_ntf);
+
+/**
+ * @brief Search callback
+ *
+ * To be called when a search has been set to notify whether the
+ * search was successfully performed or not.
+ * See the MEDIA_PROXY_SEARCH_* result code defines.
+ *
+ * The actual results of the search, if successful, can be found in
+ * the search results object.
+ *
+ * @param result_code	The result (success or failure) of the search
+ */
+void bt_mcs_search_complete(uint8_t result_code);
 
 #ifdef __cplusplus
 }

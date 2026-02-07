@@ -45,32 +45,44 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <zephyr/bluetooth/audio/mcs.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/sys/util_macro.h>
-
-/* TODO: Remove dependency on mcs.h */
-#include "mcs.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * @brief Media player command
+ * @brief Search control point minimum length
+ *
+ * At least one search control item (SCI), consisting of the length octet and the type octet.
+ * (The * parameter field may be empty.)
  */
-struct mpl_cmd {
-	/** The opcode. See the MEDIA_PROXY_OP_* values */
-	uint8_t  opcode;
-	/** Whether or not the @ref mpl_cmd.param is used */
-	bool  use_param;
-	/** A 32-bit signed parameter. The parameter value depends on the @ref mpl_cmd.opcode */
-	int32_t param;
-};
+#define SEARCH_LEN_MIN 2
+
+/** Search control point maximum length */
+#define SEARCH_LEN_MAX 64
+
+/**
+ * @brief Search control point item (SCI) minimum length
+ *
+ * An SCI length can be as little as one byte, for an SCI that has only the type field.
+ * (The SCI len is the length of type + param.)
+ */
+#define SEARCH_SCI_LEN_MIN                                                                         \
+	1 /* An SCI length can be as little as one byte,                                           \
+	   * for an SCI that has only the type field.                                              \
+	   * (The SCI len is the length of type + param.)                                          \
+	   */
+
+/** Search parameters maximum length  */
+#define SEARCH_PARAM_MAX 62
 
 /**
  * @brief Media command notification
  */
-struct mpl_cmd_ntf {
+struct bt_mcs_cmd_ntf {
 	/** The opcode that was sent */
 	uint8_t requested_opcode;
 	/** The result of the operation  */
@@ -80,7 +92,7 @@ struct mpl_cmd_ntf {
 /**
  * @brief Search control item
  */
-struct mpl_sci {
+struct bt_mcp_sci {
 	uint8_t len;                     /**< Length of type and parameter */
 	uint8_t type;                    /**< MEDIA_PROXY_SEARCH_TYPE_<...> */
 	char    param[SEARCH_PARAM_MAX]; /**< Search parameter */
@@ -89,8 +101,8 @@ struct mpl_sci {
 /**
  * @brief Search
  */
-struct mpl_search {
-	/** The length of the @ref mpl_search.search value */
+struct bt_mcp_search {
+	/** The length of the @ref bt_mcp_search.search value */
 	uint8_t len;
 	/** Concatenated search control items - (type, length, param) */
 	char search[SEARCH_LEN_MAX];
@@ -402,6 +414,9 @@ struct mpl_search {
  */
 struct media_player;
 
+/* Temporary forward declaration to avoid circular dependency */
+struct bt_mcs_cmd;
+
 /* PUBLIC API FOR CONTROLLERS */
 
 /**
@@ -423,21 +438,6 @@ struct media_proxy_ctrl_cbs {
 	 * @param err      Error value. 0 on success, or errno on negative value.
 	 */
 	void (*local_player_instance)(struct media_player *player, int err);
-
-#ifdef CONFIG_MCTL_REMOTE_PLAYER_CONTROL
-	/**
-	 * @brief Discover Player Instance callback
-	 *
-	 * Called when a remote player instance has been discovered.
-	 * The instance has been discovered, and will be accessed, using Bluetooth,
-	 * via media control client and a remote media control service.
-	 *
-	 * @param player   Instance pointer to the remote player
-	 * @param err      Error value. 0 on success, GATT error on positive value
-	 *                 or errno on negative value.
-	 */
-	void (*discover_player)(struct media_player *player, int err);
-#endif /* CONFIG_MCTL_REMOTE_PLAYER_CONTROL */
 
 	/**
 	 * @brief Media Player Name receive callback
@@ -755,7 +755,7 @@ struct media_proxy_ctrl_cbs {
 	 *                 or errno on negative value.
 	 * @param cmd      The command sent
 	 */
-	void (*command_send)(struct media_player *player, int err, const struct mpl_cmd *cmd);
+	void (*command_send)(struct media_player *player, int err, const struct bt_mcs_cmd *cmd);
 
 	/**
 	 * @brief Command result receive callback
@@ -769,7 +769,7 @@ struct media_proxy_ctrl_cbs {
 	 * @param result   The result received
 	 */
 	void (*command_recv)(struct media_player *player, int err,
-			     const struct mpl_cmd_ntf *result);
+			     const struct bt_mcs_cmd_ntf *result);
 
 	/**
 	 * @brief Commands supported receive callback
@@ -795,7 +795,8 @@ struct media_proxy_ctrl_cbs {
 	 *                      or errno on negative value.
 	 * @param search        The search sent
 	 */
-	void (*search_send)(struct media_player *player, int err, const struct mpl_search *search);
+	void (*search_send)(struct media_player *player, int err,
+			    const struct bt_mcp_search *search);
 
 	/**
 	 * @brief Search result code receive callback
@@ -850,25 +851,6 @@ struct media_proxy_ctrl_cbs {
  * @return 0 if success, errno on failure
  */
 int media_proxy_ctrl_register(struct media_proxy_ctrl_cbs *ctrl_cbs);
-
-/**
- * @brief Discover a remote media player
- *
- * Discover a remote media player instance.
- * The remote player instance will be discovered, and accessed, using Bluetooth,
- * via the media control client and a remote media control service.
- * This call will start a GATT discovery of the Media Control Service on the peer,
- * and setup handles and subscriptions.
- *
- * This shall be called once before any other actions can be executed for the
- * remote player. The remote player instance will be returned in the
- * discover_player() callback.
- *
- * @param conn   The connection to do discovery for
- *
- * @return 0 if success, errno on failure
- */
-int media_proxy_ctrl_discover_player(struct bt_conn *conn);
 
 /**
  * @brief Read Media Player Name
@@ -1198,7 +1180,7 @@ int media_proxy_ctrl_get_media_state(struct media_player *player);
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_send_command(struct media_player *player, const struct mpl_cmd *command);
+int media_proxy_ctrl_send_command(struct media_player *player, const struct bt_mcs_cmd *command);
 
 /**
  * @brief Read Commands Supported
@@ -1231,7 +1213,7 @@ int media_proxy_ctrl_get_commands_supported(struct media_player *player);
  *
  * @return 0 if success, errno on failure.
  */
-int media_proxy_ctrl_send_search(struct media_player *player, const struct mpl_search *search);
+int media_proxy_ctrl_send_search(struct media_player *player, const struct bt_mcp_search *search);
 
 /**
  * @brief Read Search Results Object ID
@@ -1532,7 +1514,7 @@ struct media_proxy_pl_calls {
 	 *
 	 * @param command	The command to send
 	 */
-	void (*send_command)(const struct mpl_cmd *command);
+	void (*send_command)(const struct bt_mcs_cmd *command);
 
 	/**
 	 * @brief Read Commands Supported
@@ -1554,7 +1536,7 @@ struct media_proxy_pl_calls {
 	 *
 	 * @param search	The search to write
 	 */
-	void (*send_search)(const struct mpl_search *search);
+	void (*send_search)(const struct bt_mcp_search *search);
 
 	/**
 	 * @brief Read Search Results Object ID
@@ -1582,6 +1564,9 @@ struct media_proxy_pl_calls {
 	uint8_t (*get_content_ctrl_id)(void);
 };
 
+/* Temporary forward declaration to avoid circular dependency */
+struct bt_mcs_cb;
+
 /**
  * @brief Register a player with the media proxy
  *
@@ -1595,201 +1580,7 @@ struct media_proxy_pl_calls {
  *
  * @return 0 if success, errno on failure
  */
-int media_proxy_pl_register(struct media_proxy_pl_calls *pl_calls);
-
-/**
- * @brief Initialize player
- *
- * TODO: Move to player header file
- */
-int media_proxy_pl_init(void);
-
-/**
- * @brief Get the pointer of the Object Transfer Service used by the Media Control Service
- *
- * TODO: Find best location for this call, and move this one also
- */
-struct bt_ots *bt_mcs_get_ots(void);
-
-/**
- * @brief Player name changed callback
- *
- * To be called when the player's name is changed.
- *
- * @param name The name of the player
- */
-void media_proxy_pl_name_cb(const char *name);
-
-/**
- * @brief Player icon URL changed callback
- *
- * To be called when the player's icon URL is changed.
- *
- * @param url The URL of the player's icon
- */
-void media_proxy_pl_icon_url_cb(const char *url);
-
-/**
- * @brief Track changed callback
- *
- * To be called when the player's current track is changed
- */
-void media_proxy_pl_track_changed_cb(void);
-
-/**
- * @brief Track title callback
- *
- * To be called when the player's current track is changed
- *
- * @param title	The title of the track
- */
-void media_proxy_pl_track_title_cb(char *title);
-
-/**
- * @brief Track duration callback
- *
- * To be called when the current track's duration is changed (e.g. due
- * to a track change)
- *
- * The track duration is given in hundredths of a second.
- *
- * @param duration	The track duration
- */
-void media_proxy_pl_track_duration_cb(int32_t duration);
-
-/**
- * @brief Track position callback
- *
- * To be called when the media player's position in the track is
- * changed, or when the player is paused or similar.
- *
- * Exception: This callback should not be called when the position
- * changes during regular playback, i.e. while the player is playing
- * and playback happens at a constant speed.
- *
- * The track position is given in hundredths of a second from the
- * start of the track.
- *
- *  @param position	The media player's position in the track
- */
-void media_proxy_pl_track_position_cb(int32_t position);
-
-/**
- * @brief Playback speed callback
- *
- * To be called when the playback speed is changed.
- *
- * @param speed	The playback speed parameter
- */
-void media_proxy_pl_playback_speed_cb(int8_t speed);
-
-/**
- * @brief Seeking speed callback
- *
- * To be called when the seeking speed is changed.
- *
- * @param speed	The seeking speed factor
- */
-void media_proxy_pl_seeking_speed_cb(int8_t speed);
-
-/**
- * @brief Current track object ID callback
- *
- * To be called when the ID of the current track is changed (e.g. due
- * to a track change).
- *
- * @param id The ID of the current track object in the OTS
- */
-void media_proxy_pl_current_track_id_cb(uint64_t id);
-
-/**
- * @brief Next track object ID callback
- *
- * To be called when the ID of the current track is changes
- *
- * @param id The ID of the next track object in the OTS
- */
-void media_proxy_pl_next_track_id_cb(uint64_t id);
-
-/**
- * @brief Parent group object ID callback
- *
- * To be called when the ID of the parent group is changed
- *
- * @param id The ID of the parent group object in the OTS
- */
-void media_proxy_pl_parent_group_id_cb(uint64_t id);
-
-/**
- * @brief Current group object ID callback
- *
- * To be called when the ID of the current group is changed
- *
- * @param id The ID of the current group object in the OTS
- */
-void media_proxy_pl_current_group_id_cb(uint64_t id);
-
-/**
- * @brief Playing order callback
- *
- * To be called when the playing order is changed
- *
- * @param order	The playing order
- */
-void media_proxy_pl_playing_order_cb(uint8_t order);
-
-/**
- * @brief Media state callback
- *
- * To be called when the media state is changed
- *
- * @param state	The media player's state
- */
-void media_proxy_pl_media_state_cb(uint8_t state);
-
-/**
- * @brief Command callback
- *
- * To be called when a command has been sent, to notify whether the
- * command was successfully performed or not.
- * See the MEDIA_PROXY_CMD_* result code defines.
- *
- * @param cmd_ntf	The result of the command
- */
-void media_proxy_pl_command_cb(const struct mpl_cmd_ntf *cmd_ntf);
-
-/**
- * @brief Commands supported callback
- *
- * To be called when the set of commands supported is changed
- *
- * @param opcodes   The supported commands opcodes
- */
-void media_proxy_pl_commands_supported_cb(uint32_t opcodes);
-
-/**
- * @brief Search callback
- *
- * To be called when a search has been set to notify whether the
- * search was successfully performed or not.
- * See the MEDIA_PROXY_SEARCH_* result code defines.
- *
- * The actual results of the search, if successful, can be found in
- * the search results object.
- *
- * @param result_code	The result (success or failure) of the search
- */
-void media_proxy_pl_search_cb(uint8_t result_code);
-
-/**
- * @brief Search Results object ID callback
- *
- * To be called when the ID of the search results is changed
- * (typically as the result of a new successful search).
- *
- * @param id    The ID of the search results object in the OTS
- */
-void media_proxy_pl_search_results_id_cb(uint64_t id);
+int media_proxy_pl_register(struct bt_mcs_cb *pl_calls);
 
 #ifdef __cplusplus
 }

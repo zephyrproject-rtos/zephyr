@@ -18,7 +18,6 @@
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/audio/mcs.h>
-#include <zephyr/bluetooth/audio/media_proxy.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
@@ -33,56 +32,80 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #include "audio_internal.h"
+#include "common/bt_str.h"
 #include "media_proxy_internal.h"
 #include "mcs_internal.h"
 
 LOG_MODULE_REGISTER(bt_mcs, CONFIG_BT_MCS_LOG_LEVEL);
 
-static void notify(const struct bt_uuid *uuid, const void *data, uint16_t len);
+/* The value 1000 was arbitrarily chosen. No action should take longer than this, and using a
+ * non-K_FOREVER value may help catch any programming issues as locking the mutexes may trigger
+ * assertions
+ */
+#define MUTEX_TIMEOUT K_MSEC(1000U)
 
-static struct media_proxy_sctrl_cbs cbs;
+static int notify(struct bt_conn *conn, const struct bt_uuid *uuid, const void *data, uint16_t len);
 
-enum {
-	FLAG_PLAYER_NAME_CHANGED,
-	FLAG_ICON_URL_CHANGED,
-	FLAG_TRACK_CHANGED,
-	FLAG_TRACK_TITLE_CHANGED,
-	FLAG_TRACK_DURATION_CHANGED,
-	FLAG_TRACK_POSITION_CHANGED,
-	FLAG_PLAYBACK_SPEED_CHANGED,
-	FLAG_SEEKING_SPEED_CHANGED,
-	FLAG_PLAYING_ORDER_CHANGED,
-	FLAG_MEDIA_STATE_CHANGED,
-	FLAG_MEDIA_CONTROL_OPCODES_CHANGED,
-	FLAG_MEDIA_CONTROL_POINT_BUSY,
-	FLAG_MEDIA_CONTROL_POINT_RESULT,
+static struct bt_mcs_cb *mcs_cbs;
+
+struct mcs_flags {
+	bool player_name_changed: 1;
+	bool player_name_dirty: 1;
+	bool icon_url_dirty: 1;
+	bool track_changed_changed: 1;
+	bool track_title_changed: 1;
+	bool track_title_dirty: 1;
+	bool track_duration_changed: 1;
+	bool track_position_changed: 1;
+	bool playback_speed_changed: 1;
+	bool seeking_speed_changed: 1;
+	bool playing_order_changed: 1;
+	bool media_state_changed: 1;
+	bool media_control_opcodes_changed: 1;
+	bool media_control_point_busy: 1;
+	bool media_control_point_result: 1;
 #if defined(CONFIG_BT_OTS)
-	FLAG_CURRENT_TRACK_OBJ_ID_CHANGED,
-	FLAG_NEXT_TRACK_OBJ_ID_CHANGED,
-	FLAG_PARENT_GROUP_OBJ_ID_CHANGED,
-	FLAG_CURRENT_GROUP_OBJ_ID_CHANGED,
-	FLAG_SEARCH_RESULTS_OBJ_ID_CHANGED,
-	FLAG_SEARCH_CONTROL_POINT_BUSY,
-	FLAG_SEARCH_CONTROL_POINT_RESULT,
+	bool current_track_obj_id_changed: 1;
+	bool next_track_obj_id_changed: 1;
+	bool parent_group_obj_id_changed: 1;
+	bool current_group_obj_id_changed: 1;
+	bool search_results_obj_id_changed: 1;
+	bool search_control_point_busy: 1;
+	bool search_control_point_result: 1;
 #endif /* CONFIG_BT_OTS */
-	FLAG_NUM,
 };
 
-static struct client_state {
-	ATOMIC_DEFINE(flags, FLAG_NUM);
-	struct mpl_cmd_ntf cmd_ntf;
+static struct mcs_inst {
+	struct k_mutex mutex;
+
+	/* Client states. Access and modification of these shall be guarded by the mutex */
+	struct client_state {
+		struct mcs_flags flags;
+		struct bt_mcs_cmd_ntf cmd_ntf;
 #if defined(CONFIG_BT_OTS)
-	uint8_t search_control_point_result;
+		uint8_t search_control_point_result;
 #endif /* CONFIG_BT_OTS */
-} clients[CONFIG_BT_MAX_CONN];
+	} clients[CONFIG_BT_MAX_CONN];
+
+	struct k_work_delayable notify_work;
+} mcs_inst;
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
+	__maybe_unused int err;
+
+	err = k_mutex_lock(&mcs_inst.mutex, MUTEX_TIMEOUT);
+	__ASSERT(err == 0, "Failed to lock mutex: %d", err);
+
 	/* Clear data on disconnect */
-	memset(&clients[bt_conn_index(conn)], 0, sizeof(struct client_state));
+	memset(&mcs_inst.clients[bt_conn_index(conn)], 0, sizeof(struct client_state));
+
+	err = k_mutex_unlock(&mcs_inst.mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
@@ -97,22 +120,39 @@ static ssize_t read_player_name(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr, void *buf,
 				uint16_t len, uint16_t offset)
 {
-	const char *name = media_proxy_sctrl_get_player_name();
+	if (mcs_cbs == NULL || mcs_cbs->get_player_name == NULL) {
+		LOG_DBG("Callback not set");
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+	}
+
+	const char *name = mcs_cbs->get_player_name();
 
 	LOG_DBG("Player name read: %s (offset %u)", name, offset);
 
+	/* Conn is NULL if doing a local read */
 	if (conn != NULL) {
-		struct client_state *client = &clients[bt_conn_index(conn)];
+		struct mcs_flags *flags;
+		__maybe_unused int err;
 
-		if (offset == 0) {
-			atomic_clear_bit(client->flags, FLAG_PLAYER_NAME_CHANGED);
-		} else if (atomic_test_bit(client->flags, FLAG_PLAYER_NAME_CHANGED)) {
+		err = k_mutex_lock(&mcs_inst.mutex, MUTEX_TIMEOUT);
+		__ASSERT(err == 0, "Failed to lock mutex: %d", err);
+
+		flags = &mcs_inst.clients[bt_conn_index(conn)].flags;
+
+		if (flags->player_name_dirty && offset != 0U) {
+			err = k_mutex_unlock(&mcs_inst.mutex);
+			__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
 			return BT_GATT_ERR(BT_MCS_ERR_LONG_VAL_CHANGED);
 		}
+
+		flags->player_name_dirty = false;
+
+		err = k_mutex_unlock(&mcs_inst.mutex);
+		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 	}
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, name,
-				 strlen(name));
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, name, strlen(name));
 }
 
 static void player_name_cfg_changed(const struct bt_gatt_attr *attr,
@@ -126,7 +166,12 @@ static ssize_t read_icon_id(struct bt_conn *conn,
 			    const struct bt_gatt_attr *attr, void *buf,
 			    uint16_t len, uint16_t offset)
 {
-	uint64_t icon_id = media_proxy_sctrl_get_icon_id();
+	if (mcs_cbs == NULL || mcs_cbs->get_icon_id == NULL) {
+		LOG_DBG("Callback not set");
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+	}
+
+	uint64_t icon_id = mcs_cbs->get_icon_id();
 	uint8_t icon_id_le[BT_OTS_OBJ_ID_SIZE];
 
 	sys_put_le48(icon_id, icon_id_le);
@@ -142,18 +187,36 @@ static ssize_t read_icon_url(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, void *buf,
 			     uint16_t len, uint16_t offset)
 {
-	const char *url = media_proxy_sctrl_get_icon_url();
+	if (mcs_cbs == NULL || mcs_cbs->get_icon_url == NULL) {
+		LOG_DBG("Callback not set");
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+	}
+
+	const char *url = mcs_cbs->get_icon_url();
 
 	LOG_DBG("Icon URL read, offset: %d, len:%d, URL: %s", offset, len, url);
 
+	/* Conn is NULL if doing a local read */
 	if (conn != NULL) {
-		struct client_state *client = &clients[bt_conn_index(conn)];
+		struct mcs_flags *flags;
+		__maybe_unused int err;
 
-		if (offset == 0) {
-			atomic_clear_bit(client->flags, FLAG_ICON_URL_CHANGED);
-		} else if (atomic_test_bit(client->flags, FLAG_ICON_URL_CHANGED)) {
+		err = k_mutex_lock(&mcs_inst.mutex, MUTEX_TIMEOUT);
+		__ASSERT(err == 0, "Failed to lock mutex: %d", err);
+
+		flags = &mcs_inst.clients[bt_conn_index(conn)].flags;
+
+		if (flags->icon_url_dirty && offset != 0U) {
+			err = k_mutex_unlock(&mcs_inst.mutex);
+			__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
 			return BT_GATT_ERR(BT_MCS_ERR_LONG_VAL_CHANGED);
 		}
+
+		flags->icon_url_dirty = false;
+
+		err = k_mutex_unlock(&mcs_inst.mutex);
+		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, url,
@@ -169,18 +232,36 @@ static ssize_t read_track_title(struct bt_conn *conn,
 				const struct bt_gatt_attr *attr,
 				void *buf, uint16_t len, uint16_t offset)
 {
-	const char *title = media_proxy_sctrl_get_track_title();
+	if (mcs_cbs == NULL || mcs_cbs->get_track_title == NULL) {
+		LOG_DBG("Callback not set");
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+	}
+
+	const char *title = mcs_cbs->get_track_title();
 
 	LOG_DBG("Track title read, offset: %d, len:%d, title: %s", offset, len, title);
 
+	/* Conn is NULL if doing a local read */
 	if (conn != NULL) {
-		struct client_state *client = &clients[bt_conn_index(conn)];
+		struct mcs_flags *flags;
+		__maybe_unused int err;
 
-		if (offset == 0) {
-			atomic_clear_bit(client->flags, FLAG_TRACK_TITLE_CHANGED);
-		} else if (atomic_test_bit(client->flags, FLAG_TRACK_TITLE_CHANGED)) {
+		err = k_mutex_lock(&mcs_inst.mutex, MUTEX_TIMEOUT);
+		__ASSERT(err == 0, "Failed to lock mutex: %d", err);
+
+		flags = &mcs_inst.clients[bt_conn_index(conn)].flags;
+
+		if (flags->track_title_dirty && offset != 0U) {
+			err = k_mutex_unlock(&mcs_inst.mutex);
+			__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
 			return BT_GATT_ERR(BT_MCS_ERR_LONG_VAL_CHANGED);
 		}
+
+		flags->track_title_dirty = false;
+
+		err = k_mutex_unlock(&mcs_inst.mutex);
+		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, title,
@@ -197,16 +278,15 @@ static ssize_t read_track_duration(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr, void *buf,
 				   uint16_t len, uint16_t offset)
 {
-	int32_t duration = media_proxy_sctrl_get_track_duration();
+	if (mcs_cbs == NULL || mcs_cbs->get_track_duration == NULL) {
+		LOG_DBG("Callback not set");
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+	}
+
+	int32_t duration = mcs_cbs->get_track_duration();
 	int32_t duration_le = sys_cpu_to_le32(duration);
 
 	LOG_DBG("Track duration read: %d (0x%08x)", duration, duration);
-
-	if (conn != NULL) {
-		struct client_state *client = &clients[bt_conn_index(conn)];
-
-		atomic_clear_bit(client->flags, FLAG_TRACK_DURATION_CHANGED);
-	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &duration_le, sizeof(duration_le));
 }
@@ -219,16 +299,15 @@ static void track_duration_cfg_changed(const struct bt_gatt_attr *attr, uint16_t
 static ssize_t read_track_position(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
 				   uint16_t len, uint16_t offset)
 {
-	int32_t position = media_proxy_sctrl_get_track_position();
+	if (mcs_cbs == NULL || mcs_cbs->get_track_position == NULL) {
+		LOG_DBG("Callback not set");
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+	}
+
+	int32_t position = mcs_cbs->get_track_position();
 	int32_t position_le = sys_cpu_to_le32(position);
 
 	LOG_DBG("Track position read: %d (0x%08x)", position, position);
-
-	if (conn != NULL) {
-		struct client_state *client = &clients[bt_conn_index(conn)];
-
-		atomic_clear_bit(client->flags, FLAG_TRACK_POSITION_CHANGED);
-	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &position_le,
 				 sizeof(position_le));
@@ -239,6 +318,11 @@ static ssize_t write_track_position(struct bt_conn *conn,
 				    const void *buf, uint16_t len,
 				    uint16_t offset, uint8_t flags)
 {
+	if (mcs_cbs == NULL || mcs_cbs->get_track_position == NULL) {
+		LOG_DBG("Callback not set");
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+	}
+
 	int32_t position;
 
 	if (offset != 0) {
@@ -251,7 +335,7 @@ static ssize_t write_track_position(struct bt_conn *conn,
 
 	position = sys_get_le32((uint8_t *)buf);
 
-	media_proxy_sctrl_set_track_position(position);
+	mcs_cbs->set_track_position(position);
 
 	LOG_DBG("Track position write: %d", position);
 
@@ -268,15 +352,14 @@ static ssize_t read_playback_speed(struct bt_conn *conn,
 				   const struct bt_gatt_attr *attr, void *buf,
 				   uint16_t len, uint16_t offset)
 {
-	int8_t speed = media_proxy_sctrl_get_playback_speed();
+	if (mcs_cbs == NULL || mcs_cbs->get_playback_speed == NULL) {
+		LOG_DBG("Callback not set");
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+	}
+
+	int8_t speed = mcs_cbs->get_playback_speed();
 
 	LOG_DBG("Playback speed read: %d", speed);
-
-	if (conn != NULL) {
-		struct client_state *client = &clients[bt_conn_index(conn)];
-
-		atomic_clear_bit(client->flags, FLAG_PLAYBACK_SPEED_CHANGED);
-	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &speed, sizeof(speed));
 }
@@ -284,6 +367,11 @@ static ssize_t read_playback_speed(struct bt_conn *conn,
 static ssize_t write_playback_speed(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				    const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
 {
+	if (mcs_cbs == NULL || mcs_cbs->set_playback_speed == NULL) {
+		LOG_DBG("Callback not set");
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+	}
+
 	int8_t speed;
 
 	if (offset != 0) {
@@ -295,7 +383,7 @@ static ssize_t write_playback_speed(struct bt_conn *conn, const struct bt_gatt_a
 
 	memcpy(&speed, buf, len);
 
-	media_proxy_sctrl_set_playback_speed(speed);
+	mcs_cbs->set_playback_speed(speed);
 
 	LOG_DBG("Playback speed write: %d", speed);
 
@@ -310,15 +398,14 @@ static void playback_speed_cfg_changed(const struct bt_gatt_attr *attr, uint16_t
 static ssize_t read_seeking_speed(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
 				  uint16_t len, uint16_t offset)
 {
-	int8_t speed = media_proxy_sctrl_get_seeking_speed();
+	if (mcs_cbs == NULL || mcs_cbs->get_seeking_speed == NULL) {
+		LOG_DBG("Callback not set");
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+	}
+
+	int8_t speed = mcs_cbs->get_seeking_speed();
 
 	LOG_DBG("Seeking speed read: %d", speed);
-
-	if (conn != NULL) {
-		struct client_state *client = &clients[bt_conn_index(conn)];
-
-		atomic_clear_bit(client->flags, FLAG_SEEKING_SPEED_CHANGED);
-	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &speed,
 				 sizeof(speed));
@@ -335,7 +422,12 @@ static ssize_t read_track_segments_id(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
 				      void *buf, uint16_t len, uint16_t offset)
 {
-	uint64_t track_segments_id = media_proxy_sctrl_get_track_segments_id();
+	if (mcs_cbs == NULL || mcs_cbs->get_track_segments_id == NULL) {
+		LOG_DBG("Callback not set");
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+	}
+
+	uint64_t track_segments_id = mcs_cbs->get_track_segments_id();
 	uint8_t track_segments_id_le[BT_OTS_OBJ_ID_SIZE];
 
 	sys_put_le48(track_segments_id, track_segments_id_le);
@@ -350,18 +442,17 @@ static ssize_t read_current_track_id(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr, void *buf,
 				     uint16_t len, uint16_t offset)
 {
-	uint64_t track_id = media_proxy_sctrl_get_current_track_id();
+	if (mcs_cbs == NULL || mcs_cbs->get_current_track_id == NULL) {
+		LOG_DBG("Callback not set");
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+	}
+
+	uint64_t track_id = mcs_cbs->get_current_track_id();
 	uint8_t track_id_le[BT_OTS_OBJ_ID_SIZE];
 
 	sys_put_le48(track_id, track_id_le);
 
 	LOG_DBG_OBJ_ID("Current track ID read: ", track_id);
-
-	if (conn != NULL) {
-		struct client_state *client = &clients[bt_conn_index(conn)];
-
-		atomic_clear_bit(client->flags, FLAG_CURRENT_TRACK_OBJ_ID_CHANGED);
-	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, track_id_le,
 				 sizeof(track_id_le));
@@ -372,6 +463,11 @@ static ssize_t write_current_track_id(struct bt_conn *conn,
 				      const void *buf, uint16_t len, uint16_t offset,
 				      uint8_t flags)
 {
+	if (mcs_cbs == NULL || mcs_cbs->set_current_track_id == NULL) {
+		LOG_DBG("Callback not set");
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+	}
+
 	uint64_t id;
 
 	if (offset != 0) {
@@ -392,7 +488,7 @@ static ssize_t write_current_track_id(struct bt_conn *conn,
 		LOG_DBG("Current track write: offset: %d, len: %d, track ID: %s", offset, len, str);
 	}
 
-	media_proxy_sctrl_set_current_track_id(id);
+	mcs_cbs->set_current_track_id(id);
 
 	return BT_OTS_OBJ_ID_SIZE;
 }
@@ -407,18 +503,17 @@ static ssize_t read_next_track_id(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr, void *buf,
 				  uint16_t len, uint16_t offset)
 {
-	uint64_t track_id = media_proxy_sctrl_get_next_track_id();
+	if (mcs_cbs == NULL || mcs_cbs->get_next_track_id == NULL) {
+		LOG_DBG("Callback not set");
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+	}
+
+	uint64_t track_id = mcs_cbs->get_next_track_id();
 	uint8_t track_id_le[BT_OTS_OBJ_ID_SIZE];
 
 	sys_put_le48(track_id, track_id_le);
 
-	if (conn != NULL) {
-		struct client_state *client = &clients[bt_conn_index(conn)];
-
-		atomic_clear_bit(client->flags, FLAG_NEXT_TRACK_OBJ_ID_CHANGED);
-	}
-
-	if (track_id == MPL_NO_TRACK_ID) {
+	if (track_id == BT_MCP_NO_TRACK_ID) {
 		LOG_DBG("Next track read, but it is empty");
 		/* "If the media player has no next track, the length of the */
 		/* characteristic shall be zero." */
@@ -435,6 +530,11 @@ static ssize_t write_next_track_id(struct bt_conn *conn,
 				   const void *buf, uint16_t len, uint16_t offset,
 				   uint8_t flags)
 {
+	if (mcs_cbs == NULL || mcs_cbs->set_next_track_id == NULL) {
+		LOG_DBG("Callback not set");
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+	}
+
 	uint64_t id;
 
 	if (offset != 0) {
@@ -455,7 +555,7 @@ static ssize_t write_next_track_id(struct bt_conn *conn,
 		LOG_DBG("Next  track write: offset: %d, len: %d, track ID: %s", offset, len, str);
 	}
 
-	media_proxy_sctrl_set_next_track_id(id);
+	mcs_cbs->set_next_track_id(id);
 
 	return BT_OTS_OBJ_ID_SIZE;
 }
@@ -470,18 +570,17 @@ static ssize_t read_parent_group_id(struct bt_conn *conn,
 				    const struct bt_gatt_attr *attr, void *buf,
 				    uint16_t len, uint16_t offset)
 {
-	uint64_t group_id = media_proxy_sctrl_get_parent_group_id();
+	if (mcs_cbs == NULL || mcs_cbs->get_parent_group_id == NULL) {
+		LOG_DBG("Callback not set");
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+	}
+
+	uint64_t group_id = mcs_cbs->get_parent_group_id();
 	uint8_t group_id_le[BT_OTS_OBJ_ID_SIZE];
 
 	sys_put_le48(group_id, group_id_le);
 
 	LOG_DBG_OBJ_ID("Parent group read: ", group_id);
-
-	if (conn != NULL) {
-		struct client_state *client = &clients[bt_conn_index(conn)];
-
-		atomic_clear_bit(client->flags, FLAG_PARENT_GROUP_OBJ_ID_CHANGED);
-	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, group_id_le,
 				 sizeof(group_id_le));
@@ -497,18 +596,17 @@ static ssize_t read_current_group_id(struct bt_conn *conn,
 				     const struct bt_gatt_attr *attr, void *buf,
 				     uint16_t len, uint16_t offset)
 {
-	uint64_t group_id = media_proxy_sctrl_get_current_group_id();
+	if (mcs_cbs == NULL || mcs_cbs->get_current_group_id == NULL) {
+		LOG_DBG("Callback not set");
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+	}
+
+	uint64_t group_id = mcs_cbs->get_current_group_id();
 	uint8_t group_id_le[BT_OTS_OBJ_ID_SIZE];
 
 	sys_put_le48(group_id, group_id_le);
 
 	LOG_DBG_OBJ_ID("Current group read: ", group_id);
-
-	if (conn != NULL) {
-		struct client_state *client = &clients[bt_conn_index(conn)];
-
-		atomic_clear_bit(client->flags, FLAG_CURRENT_GROUP_OBJ_ID_CHANGED);
-	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, group_id_le,
 				 sizeof(group_id_le));
@@ -519,6 +617,11 @@ static ssize_t write_current_group_id(struct bt_conn *conn,
 				      const void *buf, uint16_t len, uint16_t offset,
 				      uint8_t flags)
 {
+	if (mcs_cbs == NULL || mcs_cbs->set_current_group_id == NULL) {
+		LOG_DBG("Callback not set");
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+	}
+
 	uint64_t id;
 
 	if (offset != 0) {
@@ -540,7 +643,7 @@ static ssize_t write_current_group_id(struct bt_conn *conn,
 			str);
 	}
 
-	media_proxy_sctrl_set_current_group_id(id);
+	mcs_cbs->set_current_group_id(id);
 
 	return BT_OTS_OBJ_ID_SIZE;
 }
@@ -555,15 +658,14 @@ static ssize_t read_playing_order(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr, void *buf,
 				  uint16_t len, uint16_t offset)
 {
-	uint8_t order = media_proxy_sctrl_get_playing_order();
+	if (mcs_cbs == NULL || mcs_cbs->get_playing_order == NULL) {
+		LOG_DBG("Callback not set");
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+	}
+
+	uint8_t order = mcs_cbs->get_playing_order();
 
 	LOG_DBG("Playing order read: %d (0x%02x)", order, order);
-
-	if (conn != NULL) {
-		struct client_state *client = &clients[bt_conn_index(conn)];
-
-		atomic_clear_bit(client->flags, FLAG_PLAYING_ORDER_CHANGED);
-	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &order, sizeof(order));
 }
@@ -571,6 +673,11 @@ static ssize_t read_playing_order(struct bt_conn *conn,
 static ssize_t write_playing_order(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				   const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
 {
+	if (mcs_cbs == NULL || mcs_cbs->set_playing_order == NULL) {
+		LOG_DBG("Callback not set");
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+	}
+
 	LOG_DBG("Playing order write");
 
 	int8_t order;
@@ -584,7 +691,7 @@ static ssize_t write_playing_order(struct bt_conn *conn, const struct bt_gatt_at
 
 	memcpy(&order, buf, len);
 
-	media_proxy_sctrl_set_playing_order(order);
+	mcs_cbs->set_playing_order(order);
 
 	LOG_DBG("Playing order write: %d", order);
 
@@ -599,7 +706,12 @@ static void playing_order_cfg_changed(const struct bt_gatt_attr *attr, uint16_t 
 static ssize_t read_playing_orders_supported(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 					     void *buf, uint16_t len, uint16_t offset)
 {
-	uint16_t orders = media_proxy_sctrl_get_playing_orders_supported();
+	if (mcs_cbs == NULL || mcs_cbs->get_playing_orders_supported == NULL) {
+		LOG_DBG("Callback not set");
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+	}
+
+	uint16_t orders = mcs_cbs->get_playing_orders_supported();
 	uint16_t orders_le = sys_cpu_to_le16(orders);
 
 	LOG_DBG("Playing orders read: %d (0x%04x)", orders, orders);
@@ -610,15 +722,14 @@ static ssize_t read_playing_orders_supported(struct bt_conn *conn, const struct 
 static ssize_t read_media_state(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
 				uint16_t len, uint16_t offset)
 {
-	uint8_t state = media_proxy_sctrl_get_media_state();
+	if (mcs_cbs == NULL || mcs_cbs->get_media_state == NULL) {
+		LOG_DBG("Callback not set");
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+	}
+
+	uint8_t state = mcs_cbs->get_media_state();
 
 	LOG_DBG("Media state read: %d", state);
-
-	if (conn != NULL) {
-		struct client_state *client = &clients[bt_conn_index(conn)];
-
-		atomic_clear_bit(client->flags, FLAG_MEDIA_STATE_CHANGED);
-	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &state,
 				 sizeof(state));
@@ -630,12 +741,16 @@ static void media_state_cfg_changed(const struct bt_gatt_attr *attr,
 	LOG_DBG("value 0x%04x", value);
 }
 
-static ssize_t write_control_point(struct bt_conn *conn,
-				   const struct bt_gatt_attr *attr,
+static ssize_t write_control_point(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				   const void *buf, uint16_t len, uint16_t offset,
-				   uint8_t flags)
+				   uint8_t write_flags)
 {
-	struct mpl_cmd command;
+	if (mcs_cbs == NULL || mcs_cbs->send_command == NULL) {
+		LOG_DBG("Callback not set");
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+	}
+
+	struct bt_mcs_cmd command;
 
 	if (offset != 0) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -650,35 +765,63 @@ static ssize_t write_control_point(struct bt_conn *conn,
 	LOG_DBG("Opcode: %d", command.opcode);
 	command.use_param = false;
 
-	if (!BT_MCS_VALID_OP(command.opcode)) {
-		/* MCS does not specify what to return in case of an error - Only what to notify*/
-
-		const struct mpl_cmd_ntf cmd_ntf = {
-			.requested_opcode = command.opcode,
-			.result_code = BT_MCS_OPC_NTF_NOT_SUPPORTED,
-		};
-
-		LOG_DBG("Opcode 0x%02X is invalid", command.opcode);
-
-		notify(BT_UUID_MCS_MEDIA_CONTROL_POINT, &cmd_ntf, sizeof(cmd_ntf));
-
-		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
-	}
-
 	if (conn != NULL) {
-		struct client_state *client = &clients[bt_conn_index(conn)];
+		struct client_state *client;
+		struct mcs_flags *flags;
+		__maybe_unused int err;
 
-		if (atomic_test_and_set_bit(client->flags, FLAG_MEDIA_CONTROL_POINT_BUSY)) {
-			const struct mpl_cmd_ntf cmd_ntf = {
-				.requested_opcode = command.opcode,
-				.result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED,
-			};
+		err = k_mutex_lock(&mcs_inst.mutex, MUTEX_TIMEOUT);
+		__ASSERT(err == 0, "Failed to lock mutex: %d", err);
 
-			LOG_DBG("Busy with other operation");
+		client = &mcs_inst.clients[bt_conn_index(conn)];
+		flags = &client->flags;
 
-			notify(BT_UUID_MCS_MEDIA_CONTROL_POINT, &cmd_ntf, sizeof(cmd_ntf));
+		/* If we are already handling a control point operation, we cannot handle it.
+		 * Similarly we do not send a notification, as we do not want to risk sending the
+		 * notification for this 2nd request before we've sent the notification for the 1st
+		 * request to avoid confusing the client. Unfortunately there is no flow control
+		 * defined for control point operations.
+		 */
+		if (flags->media_control_point_busy || flags->media_control_point_result) {
+			const bool media_control_point_busy = flags->media_control_point_busy;
+			const bool media_control_point_result = flags->media_control_point_result;
+
+			err = k_mutex_unlock(&mcs_inst.mutex);
+			__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
+			LOG_DBG("Rejecting CP write as one is already pending (%d %d)",
+				media_control_point_busy, media_control_point_result);
 
 			return BT_GATT_ERR(BT_ATT_ERR_PROCEDURE_IN_PROGRESS);
+		}
+
+		if (!BT_MCS_VALID_OP(command.opcode)) {
+			/* MCS does not specify what to return in case of an error - Only what to
+			 * notify
+			 */
+
+			client->cmd_ntf.requested_opcode = command.opcode;
+			client->cmd_ntf.result_code = BT_MCS_OPC_NTF_NOT_SUPPORTED;
+
+			flags->media_control_point_result = true;
+
+			err = k_mutex_unlock(&mcs_inst.mutex);
+			__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+			LOG_DBG("Opcode 0x%02X is invalid", command.opcode);
+
+			err = k_work_schedule(&mcs_inst.notify_work, K_NO_WAIT);
+			__ASSERT(err >= 0, "Failed to schedule work: %d", err);
+
+			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+		}
+
+		flags->media_control_point_busy = true;
+
+		err = k_mutex_unlock(&mcs_inst.mutex);
+		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+	} else {
+		if (!BT_MCS_VALID_OP(command.opcode)) {
+			return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
 		}
 	}
 
@@ -688,7 +831,7 @@ static ssize_t write_control_point(struct bt_conn *conn,
 		LOG_DBG("Parameter: %d", command.param);
 	}
 
-	media_proxy_sctrl_send_command(&command);
+	mcs_cbs->send_command(&command);
 
 	return len;
 }
@@ -703,16 +846,15 @@ static ssize_t read_opcodes_supported(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
 				      void *buf, uint16_t len, uint16_t offset)
 {
-	uint32_t opcodes = media_proxy_sctrl_get_commands_supported();
+	if (mcs_cbs == NULL || mcs_cbs->get_commands_supported == NULL) {
+		LOG_DBG("Callback not set");
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+	}
+
+	uint32_t opcodes = mcs_cbs->get_commands_supported();
 	uint32_t opcodes_le = sys_cpu_to_le32(opcodes);
 
 	LOG_DBG("Opcodes_supported read: %d (0x%08x)", opcodes, opcodes);
-
-	if (conn != NULL) {
-		struct client_state *client = &clients[bt_conn_index(conn)];
-
-		atomic_clear_bit(client->flags, FLAG_MEDIA_CONTROL_OPCODES_CHANGED);
-	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &opcodes_le, sizeof(opcodes_le));
 }
@@ -725,9 +867,14 @@ static void opcodes_supported_cfg_changed(const struct bt_gatt_attr *attr, uint1
 #ifdef CONFIG_BT_OTS
 static ssize_t write_search_control_point(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 					  const void *buf, uint16_t len, uint16_t offset,
-					  uint8_t flags)
+					  uint8_t write_flags)
 {
-	struct mpl_search search = {0};
+	if (mcs_cbs == NULL || mcs_cbs->send_search == NULL) {
+		LOG_DBG("Callback not set");
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+	}
+
+	struct bt_mcp_search search = {0};
 
 	if (offset != 0) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -738,17 +885,37 @@ static ssize_t write_search_control_point(struct bt_conn *conn, const struct bt_
 	}
 
 	if (conn != NULL) {
-		struct client_state *client = &clients[bt_conn_index(conn)];
+		struct mcs_flags *flags;
+		__maybe_unused int err;
 
-		if (atomic_test_and_set_bit(client->flags, FLAG_SEARCH_CONTROL_POINT_BUSY)) {
-			const uint8_t result_code = BT_MCS_SCP_NTF_FAILURE;
+		err = k_mutex_lock(&mcs_inst.mutex, MUTEX_TIMEOUT);
+		__ASSERT(err == 0, "Failed to lock mutex: %d", err);
 
-			LOG_DBG("Busy with other operation");
+		flags = &mcs_inst.clients[bt_conn_index(conn)].flags;
 
-			notify(BT_UUID_MCS_SEARCH_CONTROL_POINT, &result_code, sizeof(result_code));
+		/* If we are already handling a search control point operation, we cannot handle it.
+		 * Similarly we do not send a notification, as we do not want to risk sending the
+		 * notification for this 2nd request before we've sent the notification for the 1st
+		 * request to avoid confusing the client. Unfortunately there is no flow control
+		 * defined for control point operations.
+		 */
+		if (flags->search_control_point_busy || flags->search_control_point_result) {
+			const bool search_control_point_busy = flags->search_control_point_busy;
+			const bool search_control_point_result = flags->search_control_point_result;
+
+			err = k_mutex_unlock(&mcs_inst.mutex);
+			__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
+			LOG_DBG("Rejecting CP write as one is already pending (%d %d)",
+				search_control_point_busy, search_control_point_result);
 
 			return BT_GATT_ERR(BT_ATT_ERR_PROCEDURE_IN_PROGRESS);
 		}
+
+		flags->search_control_point_busy = true;
+
+		err = k_mutex_unlock(&mcs_inst.mutex);
+		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 	}
 
 	memcpy(&search.search, (char *)buf, len);
@@ -756,7 +923,7 @@ static ssize_t write_search_control_point(struct bt_conn *conn, const struct bt_
 	LOG_DBG("Search length: %d", len);
 	LOG_HEXDUMP_DBG(&search.search, search.len, "Search content");
 
-	media_proxy_sctrl_send_search(&search);
+	mcs_cbs->send_search(&search);
 
 	return len;
 }
@@ -771,15 +938,14 @@ static ssize_t read_search_results_id(struct bt_conn *conn,
 				      const struct bt_gatt_attr *attr,
 				      void *buf, uint16_t len, uint16_t offset)
 {
-	uint64_t search_id = media_proxy_sctrl_get_search_results_id();
+	if (mcs_cbs == NULL || mcs_cbs->get_search_results_id == NULL) {
+		LOG_DBG("Callback not set");
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+	}
+
+	uint64_t search_id = mcs_cbs->get_search_results_id();
 
 	LOG_DBG_OBJ_ID("Search results id read: ", search_id);
-
-	if (conn != NULL) {
-		struct client_state *client = &clients[bt_conn_index(conn)];
-
-		atomic_clear_bit(client->flags, FLAG_SEARCH_RESULTS_OBJ_ID_CHANGED);
-	}
 
 	/* TODO: The permanent solution here should be that the call to */
 	/* mpl should fill the UUID in a pointed-to value, and return a */
@@ -814,7 +980,12 @@ static ssize_t read_content_ctrl_id(struct bt_conn *conn,
 				    const struct bt_gatt_attr *attr, void *buf,
 				    uint16_t len, uint16_t offset)
 {
-	uint8_t id = media_proxy_sctrl_get_content_ctrl_id();
+	if (mcs_cbs == NULL || mcs_cbs->get_content_ctrl_id == NULL) {
+		LOG_DBG("Callback not set");
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
+	}
+
+	uint8_t id = mcs_cbs->get_content_ctrl_id();
 
 	LOG_DBG("Content control ID read: %d", id);
 
@@ -968,57 +1139,76 @@ struct bt_ots *bt_mcs_get_ots(void)
 
 /* Callback functions from the media player, notifying attributes */
 /* Placed here, after the service definition, because they reference it. */
-
-/* Helper function to notify non-string values */
-static void notify(const struct bt_uuid *uuid, const void *data, uint16_t len)
-{
-	int err = bt_gatt_notify_uuid(NULL, uuid, mcs.attrs, data, len);
-
-	if (err) {
-		if (err == -ENOTCONN) {
-			LOG_DBG("Notification error: ENOTCONN (%d)", err);
-		} else {
-			LOG_ERR("Notification error: %d", err);
-		}
-	}
-}
-
-static void notify_string(struct bt_conn *conn, const struct bt_uuid *uuid, const char *str)
+static int notify(struct bt_conn *conn, const struct bt_uuid *uuid, const void *data, uint16_t len)
 {
 	const uint16_t max_ntf_size = bt_audio_get_max_ntf_size(conn);
-	int err;
 
-	/* Send notification potentially truncated to the MTU */
-	err = bt_gatt_notify_uuid(conn, uuid, mcs.attrs, (void *)str,
-				  MIN(strlen(str), max_ntf_size));
-	if (err != 0) {
-		LOG_ERR("Notification error: %d", err);
+	if (max_ntf_size < len) {
+		LOG_DBG("Truncating notification to %u (was %u) for %p", max_ntf_size, len, conn);
+		len = max_ntf_size;
 	}
+
+	return bt_gatt_notify_uuid(conn, uuid, mcs.attrs, data, len);
 }
 
-static void mark_icon_url_changed_cb(struct bt_conn *conn, void *data)
+struct mcs_notify_cb_info {
+	const struct bt_gatt_attr *attr;
+	void (*value_cb)(struct mcs_flags *flags);
+};
+
+static void set_value_changed_cb(struct bt_conn *conn, void *data)
 {
-	struct client_state *client = &clients[bt_conn_index(conn)];
+	struct mcs_notify_cb_info *cb_info = data;
+	const struct bt_gatt_attr *attr = cb_info->attr;
 	struct bt_conn_info info;
 	int err;
 
 	err = bt_conn_get_info(conn, &info);
-	if (err != 0) {
-		LOG_ERR("Failed to get conn info: %d", err);
-		return;
-	}
+	__ASSERT(err == 0, "Failed to get conn info: %d", err);
 
 	if (info.state != BT_CONN_STATE_CONNECTED) {
 		/* Not connected */
 		return;
 	}
 
-	atomic_set_bit(client->flags, FLAG_ICON_URL_CHANGED);
+	if (!bt_gatt_is_subscribed(conn, attr, BT_GATT_CCC_NOTIFY)) {
+		/* Not subscribed */
+		return;
+	}
+
+	/* Set the specific flag based on the provided callback */
+	cb_info->value_cb(&mcs_inst.clients[bt_conn_index(conn)].flags);
+
+	/* We may schedule the same work multiple times, but that is OK as scheduling the same work
+	 * multiple times is a no-op
+	 */
+	err = k_work_schedule(&mcs_inst.notify_work, K_NO_WAIT);
+	__ASSERT(err >= 0, "Failed to schedule work: %d", err);
+}
+
+static void set_value_changed(void (*value_cb)(struct mcs_flags *flags), const struct bt_uuid *uuid)
+{
+	struct mcs_notify_cb_info cb_info = {
+		.value_cb = value_cb,
+		.attr = bt_gatt_find_by_uuid(mcs.attrs, 0, uuid),
+	};
+	__maybe_unused int err;
+
+	err = k_mutex_lock(&mcs_inst.mutex, MUTEX_TIMEOUT);
+	__ASSERT(err == 0, "Failed to lock mutex: %d", err);
+
+	__ASSERT(cb_info.attr != NULL, "Failed to find attribute for %s", bt_uuid_str(uuid));
+	bt_conn_foreach(BT_CONN_TYPE_LE, set_value_changed_cb, &cb_info);
+
+	err = k_mutex_unlock(&mcs_inst.mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 }
 
 static void notify_cb(struct bt_conn *conn, void *data)
 {
-	struct client_state *client = &clients[bt_conn_index(conn)];
+
+	struct client_state *client;
+	struct mcs_flags *flags;
 	struct bt_conn_info info;
 	int err;
 
@@ -1033,152 +1223,267 @@ static void notify_cb(struct bt_conn *conn, void *data)
 		return;
 	}
 
-	if (atomic_test_and_clear_bit(client->flags, FLAG_PLAYER_NAME_CHANGED)) {
-		const char *name = media_proxy_sctrl_get_player_name();
+	err = k_mutex_lock(&mcs_inst.mutex, K_NO_WAIT);
+	if (err != 0) {
+		LOG_DBG("Failed to take mutex: %d", err);
+		err = k_work_schedule(&mcs_inst.notify_work, K_USEC(info.le.interval_us));
+		__ASSERT(err >= 0, "Failed to reschedule work: %d", err);
+		return;
+	}
+
+	client = &mcs_inst.clients[bt_conn_index(conn)];
+	flags = &client->flags;
+
+	if (flags->player_name_changed) {
+		const char *name = mcs_cbs->get_player_name();
 
 		LOG_DBG("Notifying player name: %s", name);
-		notify_string(conn, BT_UUID_MCS_PLAYER_NAME, name);
+		err = notify(conn, BT_UUID_MCS_PLAYER_NAME, name, strlen(name));
+		if (err == 0) {
+			flags->player_name_changed = false;
+		} else {
+			goto fail;
+		}
 	}
 
-	if (atomic_test_and_clear_bit(client->flags, FLAG_TRACK_TITLE_CHANGED)) {
-		const char *title = media_proxy_sctrl_get_track_title();
+	if (flags->track_title_changed) {
+		const char *title = mcs_cbs->get_track_title();
 
 		LOG_DBG("Notifying track title: %s", title);
-		notify_string(conn, BT_UUID_MCS_TRACK_TITLE, title);
+		err = notify(conn, BT_UUID_MCS_TRACK_TITLE, title, strlen(title));
+		if (err == 0) {
+			flags->track_title_changed = false;
+		} else {
+			goto fail;
+		}
 	}
 
-	if (atomic_test_and_clear_bit(client->flags, FLAG_TRACK_DURATION_CHANGED)) {
-		int32_t duration = media_proxy_sctrl_get_track_duration();
+	if (flags->track_duration_changed) {
+		int32_t duration = mcs_cbs->get_track_duration();
 		int32_t duration_le = sys_cpu_to_le32(duration);
 
 		LOG_DBG("Notifying track duration: %d", duration);
-		notify(BT_UUID_MCS_TRACK_DURATION, &duration_le, sizeof(duration_le));
+		err = notify(conn, BT_UUID_MCS_TRACK_DURATION, &duration_le, sizeof(duration_le));
+		if (err == 0) {
+			flags->track_duration_changed = false;
+		} else {
+			goto fail;
+		}
 	}
 
-	if (atomic_test_and_clear_bit(client->flags, FLAG_TRACK_POSITION_CHANGED)) {
-		int32_t position = media_proxy_sctrl_get_track_position();
+	if (flags->track_position_changed) {
+		int32_t position = mcs_cbs->get_track_position();
 		int32_t position_le = sys_cpu_to_le32(position);
 
 		LOG_DBG("Notifying track position: %d", position);
-		notify(BT_UUID_MCS_TRACK_POSITION, &position_le, sizeof(position_le));
+		err = notify(conn, BT_UUID_MCS_TRACK_POSITION, &position_le, sizeof(position_le));
+		if (err == 0) {
+			flags->track_position_changed = false;
+		} else {
+			goto fail;
+		}
 	}
 
-	if (atomic_test_and_clear_bit(client->flags, FLAG_PLAYBACK_SPEED_CHANGED)) {
-		int8_t speed = media_proxy_sctrl_get_playback_speed();
+	if (flags->playback_speed_changed) {
+		int8_t speed = mcs_cbs->get_playback_speed();
 
 		LOG_DBG("Notifying playback speed: %d", speed);
-		notify(BT_UUID_MCS_PLAYBACK_SPEED, &speed, sizeof(speed));
+		err = notify(conn, BT_UUID_MCS_PLAYBACK_SPEED, &speed, sizeof(speed));
+		if (err == 0) {
+			flags->playback_speed_changed = false;
+		} else {
+			goto fail;
+		}
 	}
 
-	if (atomic_test_and_clear_bit(client->flags, FLAG_SEEKING_SPEED_CHANGED)) {
-		int8_t speed = media_proxy_sctrl_get_seeking_speed();
+	if (flags->seeking_speed_changed) {
+		int8_t speed = mcs_cbs->get_seeking_speed();
 
 		LOG_DBG("Notifying seeking speed: %d", speed);
-		notify(BT_UUID_MCS_SEEKING_SPEED, &speed, sizeof(speed));
+		err = notify(conn, BT_UUID_MCS_SEEKING_SPEED, &speed, sizeof(speed));
+		if (err == 0) {
+			flags->seeking_speed_changed = false;
+		} else {
+			goto fail;
+		}
 	}
 
 #if defined(CONFIG_BT_OTS)
-	if (atomic_test_and_clear_bit(client->flags, FLAG_CURRENT_TRACK_OBJ_ID_CHANGED)) {
-		uint64_t track_id = media_proxy_sctrl_get_current_track_id();
+	if (flags->current_track_obj_id_changed) {
+		uint64_t track_id = mcs_cbs->get_current_track_id();
 		uint8_t track_id_le[BT_OTS_OBJ_ID_SIZE];
 
 		sys_put_le48(track_id, track_id_le);
 
 		LOG_DBG_OBJ_ID("Notifying current track ID: ", track_id);
-		notify(BT_UUID_MCS_CURRENT_TRACK_OBJ_ID, track_id_le, sizeof(track_id_le));
+		err = notify(conn, BT_UUID_MCS_CURRENT_TRACK_OBJ_ID, track_id_le,
+			     sizeof(track_id_le));
+		if (err == 0) {
+			flags->current_track_obj_id_changed = false;
+		} else {
+			goto fail;
+		}
 	}
 
-	if (atomic_test_and_clear_bit(client->flags, FLAG_NEXT_TRACK_OBJ_ID_CHANGED)) {
-		uint64_t track_id = media_proxy_sctrl_get_next_track_id();
+	if (flags->next_track_obj_id_changed) {
+		uint64_t track_id = mcs_cbs->get_next_track_id();
 
-		if (track_id == MPL_NO_TRACK_ID) {
+		if (track_id == BT_MCP_NO_TRACK_ID) {
 			/* "If the media player has no next track, the length of the
 			 * characteristic shall be zero."
 			 */
 			LOG_DBG_OBJ_ID("Notifying EMPTY next track ID: ", track_id);
-			notify(BT_UUID_MCS_NEXT_TRACK_OBJ_ID, NULL, 0);
+			err = notify(conn, BT_UUID_MCS_NEXT_TRACK_OBJ_ID, NULL, 0);
 		} else {
 			uint8_t track_id_le[BT_OTS_OBJ_ID_SIZE];
 
 			sys_put_le48(track_id, track_id_le);
 
 			LOG_DBG_OBJ_ID("Notifying next track ID: ", track_id);
-			notify(BT_UUID_MCS_NEXT_TRACK_OBJ_ID, track_id_le, sizeof(track_id_le));
+			err = notify(conn, BT_UUID_MCS_NEXT_TRACK_OBJ_ID, track_id_le,
+				     sizeof(track_id_le));
+		}
+
+		if (err == 0) {
+			flags->next_track_obj_id_changed = false;
+		} else {
+			goto fail;
 		}
 	}
 
-	if (atomic_test_and_clear_bit(client->flags, FLAG_PARENT_GROUP_OBJ_ID_CHANGED)) {
-		uint64_t group_id = media_proxy_sctrl_get_parent_group_id();
+	if (flags->parent_group_obj_id_changed) {
+		uint64_t group_id = mcs_cbs->get_parent_group_id();
 		uint8_t group_id_le[BT_OTS_OBJ_ID_SIZE];
 
 		sys_put_le48(group_id, group_id_le);
 
 		LOG_DBG_OBJ_ID("Notifying parent group ID: ", group_id);
-		notify(BT_UUID_MCS_PARENT_GROUP_OBJ_ID, &group_id_le, sizeof(group_id_le));
+		err = notify(conn, BT_UUID_MCS_PARENT_GROUP_OBJ_ID, &group_id_le,
+			     sizeof(group_id_le));
+		if (err == 0) {
+			flags->parent_group_obj_id_changed = false;
+		} else {
+			goto fail;
+		}
 	}
 
-	if (atomic_test_and_clear_bit(client->flags, FLAG_CURRENT_GROUP_OBJ_ID_CHANGED)) {
-		uint64_t group_id = media_proxy_sctrl_get_current_group_id();
+	if (flags->current_group_obj_id_changed) {
+		uint64_t group_id = mcs_cbs->get_current_group_id();
 		uint8_t group_id_le[BT_OTS_OBJ_ID_SIZE];
 
 		sys_put_le48(group_id, group_id_le);
 
 		LOG_DBG_OBJ_ID("Notifying current group ID: ", group_id);
-		notify(BT_UUID_MCS_CURRENT_GROUP_OBJ_ID, &group_id_le, sizeof(group_id_le));
+		err = notify(conn, BT_UUID_MCS_CURRENT_GROUP_OBJ_ID, &group_id_le,
+			     sizeof(group_id_le));
+		if (err == 0) {
+			flags->current_group_obj_id_changed = false;
+		} else {
+			goto fail;
+		}
 	}
 #endif /* CONFIG_BT_OTS */
 
-	if (atomic_test_and_clear_bit(client->flags, FLAG_TRACK_CHANGED)) {
+	if (flags->track_changed_changed) {
 		LOG_DBG("Notifying track change");
-		notify(BT_UUID_MCS_TRACK_CHANGED, NULL, 0);
+		err = notify(conn, BT_UUID_MCS_TRACK_CHANGED, NULL, 0);
+		if (err == 0) {
+			flags->track_changed_changed = false;
+		} else {
+			goto fail;
+		}
 	}
 
-	if (atomic_test_and_clear_bit(client->flags, FLAG_PLAYING_ORDER_CHANGED)) {
-		uint8_t order = media_proxy_sctrl_get_playing_order();
+	if (flags->playing_order_changed) {
+		uint8_t order = mcs_cbs->get_playing_order();
 
 		LOG_DBG("Notifying playing order: %d", order);
-		notify(BT_UUID_MCS_PLAYING_ORDER, &order, sizeof(order));
+		err = notify(conn, BT_UUID_MCS_PLAYING_ORDER, &order, sizeof(order));
+		if (err == 0) {
+			flags->playing_order_changed = false;
+		} else {
+			goto fail;
+		}
 	}
 
-	if (atomic_test_and_clear_bit(client->flags, FLAG_MEDIA_STATE_CHANGED)) {
-		uint8_t state = media_proxy_sctrl_get_media_state();
+	if (flags->media_state_changed) {
+		uint8_t state = mcs_cbs->get_media_state();
 
 		LOG_DBG("Notifying media state: %d", state);
-		notify(BT_UUID_MCS_MEDIA_STATE, &state, sizeof(state));
+		err = notify(conn, BT_UUID_MCS_MEDIA_STATE, &state, sizeof(state));
+		if (err == 0) {
+			flags->media_state_changed = false;
+		} else {
+			goto fail;
+		}
 	}
 
-	if (atomic_test_and_clear_bit(client->flags, FLAG_MEDIA_CONTROL_OPCODES_CHANGED)) {
-		uint32_t opcodes = media_proxy_sctrl_get_commands_supported();
+	if (flags->media_control_opcodes_changed) {
+		uint32_t opcodes = mcs_cbs->get_commands_supported();
 		uint32_t opcodes_le = sys_cpu_to_le32(opcodes);
 
 		LOG_DBG("Notifying command opcodes supported: %d (0x%08x)", opcodes, opcodes);
-		notify(BT_UUID_MCS_MEDIA_CONTROL_OPCODES, &opcodes_le, sizeof(opcodes_le));
+		err = notify(conn, BT_UUID_MCS_MEDIA_CONTROL_OPCODES, &opcodes_le,
+			     sizeof(opcodes_le));
+		if (err == 0) {
+			flags->media_control_opcodes_changed = false;
+		} else {
+			goto fail;
+		}
 	}
 
 #if defined(CONFIG_BT_OTS)
-	if (atomic_test_and_clear_bit(client->flags, FLAG_SEARCH_RESULTS_OBJ_ID_CHANGED)) {
-		uint64_t search_id = media_proxy_sctrl_get_search_results_id();
+	if (flags->search_results_obj_id_changed) {
+		uint64_t search_id = mcs_cbs->get_search_results_id();
 		uint8_t search_id_le[BT_OTS_OBJ_ID_SIZE];
 
 		sys_put_le48(search_id, search_id_le);
 
 		LOG_DBG_OBJ_ID("Notifying search results ID: ", search_id);
-		notify(BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID, &search_id_le, sizeof(search_id_le));
+		err = notify(conn, BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID, &search_id_le,
+			     sizeof(search_id_le));
+		if (err == 0) {
+			flags->search_results_obj_id_changed = false;
+		} else {
+			goto fail;
+		}
 	}
 
-	if (atomic_test_and_clear_bit(client->flags, FLAG_SEARCH_CONTROL_POINT_RESULT)) {
+	if (flags->search_control_point_result) {
 		uint8_t result_code = client->search_control_point_result;
 
 		LOG_DBG("Notifying search control point - result: %d", result_code);
-		notify(BT_UUID_MCS_SEARCH_CONTROL_POINT, &result_code, sizeof(result_code));
+		err = notify(conn, BT_UUID_MCS_SEARCH_CONTROL_POINT, &result_code,
+			     sizeof(result_code));
+		if (err == 0) {
+			flags->search_control_point_result = false;
+		} else {
+			goto fail;
+		}
 	}
 #endif /* CONFIG_BT_OTS */
 
-	if (atomic_test_and_clear_bit(client->flags, FLAG_MEDIA_CONTROL_POINT_RESULT)) {
+	if (flags->media_control_point_result) {
 		LOG_DBG("Notifying control point command - opcode: %d, result: %d",
 			client->cmd_ntf.requested_opcode, client->cmd_ntf.result_code);
-		notify(BT_UUID_MCS_MEDIA_CONTROL_POINT, &client->cmd_ntf, sizeof(client->cmd_ntf));
+		err = notify(conn, BT_UUID_MCS_MEDIA_CONTROL_POINT, &client->cmd_ntf,
+			     sizeof(client->cmd_ntf));
+		if (err == 0) {
+			flags->media_control_point_result = false;
+		} else {
+			goto fail;
+		}
 	}
+
+fail:
+	if (err != 0) {
+		LOG_DBG("Notify failed (%d), retrying next connection interval", err);
+		err = k_work_schedule(&mcs_inst.notify_work, K_USEC(info.le.interval_us));
+		__ASSERT(err >= 0, "Failed to reschedule work: %d", err);
+	}
+
+	err = k_mutex_unlock(&mcs_inst.mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 }
 
 static void deferred_nfy_work_handler(struct k_work *work)
@@ -1186,119 +1491,157 @@ static void deferred_nfy_work_handler(struct k_work *work)
 	bt_conn_foreach(BT_CONN_TYPE_LE, notify_cb, NULL);
 }
 
-static K_WORK_DEFINE(deferred_nfy_work, deferred_nfy_work_handler);
-
-static void defer_value_ntf(struct bt_conn *conn, void *data)
+static void set_player_name_changed_cb(struct mcs_flags *flags)
 {
-	struct client_state *client = &clients[bt_conn_index(conn)];
-	struct bt_conn_info info;
-	int err;
-
-	err = bt_conn_get_info(conn, &info);
-	if (err != 0) {
-		LOG_ERR("Failed to get conn info: %d", err);
-		return;
-	}
-
-	if (info.state != BT_CONN_STATE_CONNECTED) {
-		/* Not connected */
-		return;
-	}
-
-	atomic_set_bit(client->flags, POINTER_TO_UINT(data));
-	k_work_submit(&deferred_nfy_work);
+	flags->player_name_changed = true;
+	flags->player_name_dirty = true;
 }
 
-static void media_proxy_sctrl_player_name_cb(const char *name)
+void bt_mcs_player_name_changed(void)
 {
-	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
-			UINT_TO_POINTER(FLAG_PLAYER_NAME_CHANGED));
+	set_value_changed(set_player_name_changed_cb, BT_UUID_MCS_PLAYER_NAME);
 }
 
-void media_proxy_sctrl_icon_url_cb(const char *name)
+static void set_icon_url_changed_cb(struct mcs_flags *flags)
 {
-	bt_conn_foreach(BT_CONN_TYPE_LE, mark_icon_url_changed_cb, NULL);
+	flags->icon_url_dirty = true;
 }
 
-void media_proxy_sctrl_track_changed_cb(void)
+void bt_mcs_icon_url_changed(void)
 {
-	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
-			UINT_TO_POINTER(FLAG_TRACK_CHANGED));
+	set_value_changed(set_icon_url_changed_cb, BT_UUID_MCS_ICON_URL);
 }
 
-void media_proxy_sctrl_track_title_cb(const char *title)
+static void set_track_changed_changed_cb(struct mcs_flags *flags)
 {
-	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
-			UINT_TO_POINTER(FLAG_TRACK_TITLE_CHANGED));
+	flags->track_changed_changed = true;
 }
 
-void media_proxy_sctrl_track_position_cb(int32_t position)
+void bt_mcs_track_changed(void)
 {
-	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
-			UINT_TO_POINTER(FLAG_TRACK_POSITION_CHANGED));
+	set_value_changed(set_track_changed_changed_cb, BT_UUID_MCS_TRACK_CHANGED);
 }
 
-void media_proxy_sctrl_track_duration_cb(int32_t duration)
+static void set_track_title_changed_cb(struct mcs_flags *flags)
 {
-	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
-			UINT_TO_POINTER(FLAG_TRACK_DURATION_CHANGED));
+	flags->track_title_changed = true;
+	flags->track_title_dirty = true;
 }
 
-void media_proxy_sctrl_playback_speed_cb(int8_t speed)
+void bt_mcs_track_title_changed(void)
 {
-	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
-			UINT_TO_POINTER(FLAG_PLAYBACK_SPEED_CHANGED));
+	set_value_changed(set_track_title_changed_cb, BT_UUID_MCS_TRACK_TITLE);
 }
 
-void media_proxy_sctrl_seeking_speed_cb(int8_t speed)
+static void set_track_position_changed_cb(struct mcs_flags *flags)
 {
-	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
-			UINT_TO_POINTER(FLAG_SEEKING_SPEED_CHANGED));
+	flags->track_position_changed = true;
+}
+
+void bt_mcs_track_position_changed(void)
+{
+	set_value_changed(set_track_position_changed_cb, BT_UUID_MCS_TRACK_POSITION);
+}
+
+static void set_track_duration_changed_cb(struct mcs_flags *flags)
+{
+	flags->track_duration_changed = true;
+}
+
+void bt_mcs_track_duration_changed(void)
+{
+	set_value_changed(set_track_duration_changed_cb, BT_UUID_MCS_TRACK_DURATION);
+}
+
+static void set_playback_speed_changed_cb(struct mcs_flags *flags)
+{
+	flags->playback_speed_changed = true;
+}
+
+void bt_mcs_playback_speed_changed(void)
+{
+	set_value_changed(set_playback_speed_changed_cb, BT_UUID_MCS_PLAYBACK_SPEED);
+}
+
+static void set_seeking_speed_changed_cb(struct mcs_flags *flags)
+{
+	flags->seeking_speed_changed = true;
+}
+
+void bt_mcs_seeking_speed_changed(void)
+{
+	set_value_changed(set_seeking_speed_changed_cb, BT_UUID_MCS_SEEKING_SPEED);
 }
 
 #if defined(CONFIG_BT_OTS)
-void media_proxy_sctrl_current_track_id_cb(uint64_t id)
+static void set_current_track_obj_id_changed_cb(struct mcs_flags *flags)
 {
-	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
-			UINT_TO_POINTER(FLAG_CURRENT_TRACK_OBJ_ID_CHANGED));
+	flags->current_track_obj_id_changed = true;
 }
 
-void media_proxy_sctrl_next_track_id_cb(uint64_t id)
+void bt_mcs_current_track_id_changed(void)
 {
-	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
-			UINT_TO_POINTER(FLAG_NEXT_TRACK_OBJ_ID_CHANGED));
+	set_value_changed(set_current_track_obj_id_changed_cb, BT_UUID_MCS_CURRENT_TRACK_OBJ_ID);
 }
 
-void media_proxy_sctrl_parent_group_id_cb(uint64_t id)
+static void set_next_track_obj_id_changed_cb(struct mcs_flags *flags)
 {
-	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
-			UINT_TO_POINTER(FLAG_PARENT_GROUP_OBJ_ID_CHANGED));
+	flags->next_track_obj_id_changed = true;
 }
 
-void media_proxy_sctrl_current_group_id_cb(uint64_t id)
+void bt_mcs_next_track_id_changed(void)
 {
-	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
-			UINT_TO_POINTER(FLAG_CURRENT_GROUP_OBJ_ID_CHANGED));
+	set_value_changed(set_next_track_obj_id_changed_cb, BT_UUID_MCS_NEXT_TRACK_OBJ_ID);
+}
+
+static void set_parent_group_obj_id_changed_cb(struct mcs_flags *flags)
+{
+	flags->parent_group_obj_id_changed = true;
+}
+
+void bt_mcs_parent_group_id_changed(void)
+{
+	set_value_changed(set_parent_group_obj_id_changed_cb, BT_UUID_MCS_PARENT_GROUP_OBJ_ID);
+}
+
+static void set_current_group_obj_id_changed_cb(struct mcs_flags *flags)
+{
+	flags->current_group_obj_id_changed = true;
+}
+
+void bt_mcs_current_group_id_changed(void)
+{
+	set_value_changed(set_current_group_obj_id_changed_cb, BT_UUID_MCS_CURRENT_GROUP_OBJ_ID);
 }
 #endif /* CONFIG_BT_OTS */
 
-void media_proxy_sctrl_playing_order_cb(uint8_t order)
+static void set_playing_order_changed_cb(struct mcs_flags *flags)
 {
-	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
-			UINT_TO_POINTER(FLAG_PLAYING_ORDER_CHANGED));
+	flags->playing_order_changed = true;
 }
 
-void media_proxy_sctrl_media_state_cb(uint8_t state)
+void bt_mcs_playing_order_changed(void)
 {
-	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
-			UINT_TO_POINTER(FLAG_MEDIA_STATE_CHANGED));
+	set_value_changed(set_playing_order_changed_cb, BT_UUID_MCS_PLAYING_ORDER);
+}
+
+static void set_media_state_changed_cb(struct mcs_flags *flags)
+{
+	flags->media_state_changed = true;
+}
+
+void bt_mcs_media_state_changed(void)
+{
+	set_value_changed(set_media_state_changed_cb, BT_UUID_MCS_MEDIA_STATE);
 }
 
 static void defer_media_control_point_ntf(struct bt_conn *conn, void *data)
 {
-	struct client_state *client = &clients[bt_conn_index(conn)];
-	const struct mpl_cmd_ntf *cmd_ntf = data;
+	const struct bt_mcs_cmd_ntf *cmd_ntf = data;
+	struct client_state *client;
+	struct mcs_flags *flags;
 	struct bt_conn_info info;
+	bool submit_work = false;
 	int err;
 
 	err = bt_conn_get_info(conn, &info);
@@ -1312,30 +1655,50 @@ static void defer_media_control_point_ntf(struct bt_conn *conn, void *data)
 		return;
 	}
 
-	if (atomic_test_and_clear_bit(client->flags, FLAG_MEDIA_CONTROL_POINT_BUSY)) {
+	err = k_mutex_lock(&mcs_inst.mutex, MUTEX_TIMEOUT);
+	__ASSERT(err == 0, "Failed to lock mutex: %d", err);
+
+	client = &mcs_inst.clients[bt_conn_index(conn)];
+	flags = &client->flags;
+
+	if (flags->media_control_point_busy) {
 		client->cmd_ntf = *cmd_ntf;
-		atomic_set_bit(client->flags, FLAG_MEDIA_CONTROL_POINT_RESULT);
-		k_work_submit(&deferred_nfy_work);
+		flags->media_control_point_result = true;
+		flags->media_control_point_busy = false;
+		submit_work = true;
+	}
+
+	err = k_mutex_unlock(&mcs_inst.mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
+	if (submit_work) {
+		k_work_schedule(&mcs_inst.notify_work, K_NO_WAIT);
 	}
 }
 
-void media_proxy_sctrl_command_cb(const struct mpl_cmd_ntf *cmd_ntf)
+void bt_mcs_command_complete(const struct bt_mcs_cmd_ntf *cmd_ntf)
 {
 	/* FIXME: Control Point notification shall be sent to operation initiator only */
 	bt_conn_foreach(BT_CONN_TYPE_LE, defer_media_control_point_ntf, (void *)cmd_ntf);
 }
 
-void media_proxy_sctrl_commands_supported_cb(uint32_t opcodes)
+static void set_media_control_opcodes_changed_cb(struct mcs_flags *flags)
 {
-	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
-			UINT_TO_POINTER(FLAG_MEDIA_CONTROL_OPCODES_CHANGED));
+	flags->media_control_opcodes_changed = true;
+}
+
+void bt_mcs_commands_supported_changed(void)
+{
+	set_value_changed(set_media_control_opcodes_changed_cb, BT_UUID_MCS_MEDIA_CONTROL_OPCODES);
 }
 
 #if defined(CONFIG_BT_OTS)
 static void defer_search_control_point_ntf(struct bt_conn *conn, void *data)
 {
-	struct client_state *client = &clients[bt_conn_index(conn)];
+	struct client_state *client;
 	struct bt_conn_info info;
+	struct mcs_flags *flags;
+	bool submit_work = false;
 	int err;
 
 	err = bt_conn_get_info(conn, &info);
@@ -1349,24 +1712,42 @@ static void defer_search_control_point_ntf(struct bt_conn *conn, void *data)
 		return;
 	}
 
-	if (atomic_test_and_clear_bit(client->flags, FLAG_SEARCH_CONTROL_POINT_BUSY)) {
+	err = k_mutex_lock(&mcs_inst.mutex, MUTEX_TIMEOUT);
+	__ASSERT(err == 0, "Failed to lock mutex: %d", err);
+
+	client = &mcs_inst.clients[bt_conn_index(conn)];
+	flags = &client->flags;
+
+	if (flags->search_control_point_busy) {
 		client->search_control_point_result = POINTER_TO_UINT(data);
-		atomic_set_bit(client->flags, FLAG_SEARCH_CONTROL_POINT_RESULT);
-		k_work_submit(&deferred_nfy_work);
+		flags->search_control_point_result = true;
+		flags->search_control_point_busy = false;
+		submit_work = true;
+	}
+
+	err = k_mutex_unlock(&mcs_inst.mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+
+	if (submit_work) {
+		k_work_schedule(&mcs_inst.notify_work, K_NO_WAIT);
 	}
 }
 
-void media_proxy_sctrl_search_cb(uint8_t result_code)
+void bt_mcs_search_complete(uint8_t result_code)
 {
 	/* FIXME: Control Point notification shall be sent to operation initiator only */
 	bt_conn_foreach(BT_CONN_TYPE_LE, defer_search_control_point_ntf,
 			UINT_TO_POINTER(result_code));
 }
 
-void media_proxy_sctrl_search_results_id_cb(uint64_t id)
+static void set_search_results_obj_id_changed_cb(struct mcs_flags *flags)
 {
-	bt_conn_foreach(BT_CONN_TYPE_LE, defer_value_ntf,
-			UINT_TO_POINTER(FLAG_SEARCH_RESULTS_OBJ_ID_CHANGED));
+	flags->search_results_obj_id_changed = true;
+}
+
+void bt_mcs_search_results_id_changed(void)
+{
+	set_value_changed(set_search_results_obj_id_changed_cb, BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID);
 }
 #endif /* CONFIG_BT_OTS */
 
@@ -1424,32 +1805,121 @@ int bt_mcs_init(struct bt_ots_cb *ots_cbs)
 		return -ENOEXEC;
 	}
 
-	/* Set up the callback structure */
-	cbs.player_name          = media_proxy_sctrl_player_name_cb;
-	cbs.icon_url             = media_proxy_sctrl_icon_url_cb;
-	cbs.track_changed        = media_proxy_sctrl_track_changed_cb;
-	cbs.track_title          = media_proxy_sctrl_track_title_cb;
-	cbs.track_duration       = media_proxy_sctrl_track_duration_cb;
-	cbs.track_position       = media_proxy_sctrl_track_position_cb;
-	cbs.playback_speed       = media_proxy_sctrl_playback_speed_cb;
-	cbs.seeking_speed        = media_proxy_sctrl_seeking_speed_cb;
-#ifdef CONFIG_BT_OTS
-	cbs.current_track_id     = media_proxy_sctrl_current_track_id_cb;
-	cbs.next_track_id        = media_proxy_sctrl_next_track_id_cb;
-	cbs.parent_group_id      = media_proxy_sctrl_parent_group_id_cb;
-	cbs.current_group_id     = media_proxy_sctrl_current_group_id_cb;
-#endif /* CONFIG_BT_OTS */
-	cbs.playing_order        = media_proxy_sctrl_playing_order_cb;
-	cbs.media_state          = media_proxy_sctrl_media_state_cb;
-	cbs.command              = media_proxy_sctrl_command_cb;
-	cbs.commands_supported   = media_proxy_sctrl_commands_supported_cb;
-#ifdef CONFIG_BT_OTS
-	cbs.search               = media_proxy_sctrl_search_cb;
-	cbs.search_results_id    = media_proxy_sctrl_search_results_id_cb;
-#endif /* CONFIG_BT_OTS */
-
-	media_proxy_sctrl_register(&cbs);
+	k_work_init_delayable(&mcs_inst.notify_work, deferred_nfy_work_handler);
+	k_mutex_init(&mcs_inst.mutex);
 
 	initialized = true;
+
 	return 0;
 }
+
+static bool cbs_is_valid(struct bt_mcs_cb *cbs)
+{
+	if (cbs == NULL) {
+		LOG_DBG("cbs is NULL");
+		return false;
+	}
+
+	if (cbs->get_player_name == NULL) {
+		LOG_DBG("get_player_name is NULL");
+		return false;
+	}
+
+	if (cbs->get_track_title == NULL) {
+		LOG_DBG("get_track_title is NULL");
+		return false;
+	}
+
+	if (cbs->get_track_duration == NULL) {
+		LOG_DBG("get_track_duration is NULL");
+		return false;
+	}
+
+	if (cbs->get_track_position == NULL) {
+		LOG_DBG("get_track_position is NULL");
+		return false;
+	}
+
+	if (cbs->set_track_position == NULL) {
+		LOG_DBG("set_track_position is NULL");
+		return false;
+	}
+
+#ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
+	if (cbs->get_current_track_id != NULL) {
+		if (cbs->get_track_segments_id == NULL) {
+			LOG_DBG("get_track_segments_id is NULL");
+			return false;
+		}
+
+		if (cbs->set_current_track_id == NULL) {
+			LOG_DBG("set_current_track_id is NULL");
+			return false;
+		}
+
+		if (cbs->get_next_track_id == NULL) {
+			LOG_DBG("get_next_track_id is NULL");
+			return false;
+		}
+
+		if (cbs->set_next_track_id == NULL) {
+			LOG_DBG("set_next_track_id is NULL");
+			return false;
+		}
+
+		if (cbs->get_parent_group_id == NULL) {
+			LOG_DBG("get_parent_group_id is NULL");
+			return false;
+		}
+
+		if (cbs->get_current_group_id == NULL) {
+			LOG_DBG("get_current_group_id is NULL");
+			return false;
+		}
+
+		if (cbs->set_current_group_id == NULL) {
+			LOG_DBG("set_current_group_id is NULL");
+			return false;
+		}
+	}
+#endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
+	if (cbs->get_media_state == NULL) {
+		LOG_DBG("get_media_state is NULL");
+		return false;
+	}
+
+	if (cbs->send_command != NULL && cbs->get_commands_supported == NULL) {
+		LOG_DBG("get_commands_supported is NULL");
+		return false;
+	}
+
+#ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
+	if (cbs->send_search == NULL) {
+		LOG_DBG("send_search is NULL");
+		return false;
+	}
+
+#endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
+	if (cbs->get_content_ctrl_id == NULL) {
+		LOG_DBG("get_content_ctrl_id is NULL");
+		return false;
+	}
+
+	return true;
+}
+
+int bt_mcs_register_cb(struct bt_mcs_cb *cbs)
+{
+	if (!cbs_is_valid(cbs)) {
+		return -EINVAL;
+	}
+
+	if (mcs_cbs != NULL) {
+		LOG_DBG("Callbacks already registered");
+		return -EALREADY;
+	}
+
+	mcs_cbs = cbs;
+
+	return 0;
+};

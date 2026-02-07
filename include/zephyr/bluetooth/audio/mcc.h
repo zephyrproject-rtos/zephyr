@@ -29,6 +29,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <zephyr/bluetooth/audio/mcs.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/audio/media_proxy.h>
@@ -315,7 +316,7 @@ typedef void (*bt_mcc_read_media_state_cb)(struct bt_conn *conn, int err, uint8_
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param cmd           The command sent
  */
-typedef void (*bt_mcc_send_cmd_cb)(struct bt_conn *conn, int err, const struct mpl_cmd *cmd);
+typedef void (*bt_mcc_send_cmd_cb)(struct bt_conn *conn, int err, const struct bt_mcs_cmd *cmd);
 
 /**
  * @brief Callback function for command notifications
@@ -330,7 +331,7 @@ typedef void (*bt_mcc_send_cmd_cb)(struct bt_conn *conn, int err, const struct m
  * @param err           Error value. 0 on success, GATT error or errno on fail
  * @param ntf           The command notification
  */
-typedef void (*bt_mcc_cmd_ntf_cb)(struct bt_conn *conn, int err, const struct mpl_cmd_ntf *ntf);
+typedef void (*bt_mcc_cmd_ntf_cb)(struct bt_conn *conn, int err, const struct bt_mcs_cmd_ntf *ntf);
 
 /**
  * @brief Callback function for bt_mcc_read_opcodes_supported()
@@ -354,7 +355,7 @@ typedef void (*bt_mcc_read_opcodes_supported_cb)(struct bt_conn *conn, int err,
  * @param search        The search set (or attempted to set)
  */
 typedef void (*bt_mcc_send_search_cb)(struct bt_conn *conn, int err,
-				      const struct mpl_search *search);
+				      const struct bt_mcp_search *search);
 
 /**
  * @brief Callback function for search notifications
@@ -877,7 +878,7 @@ int bt_mcc_read_media_state(struct bt_conn *conn);
  *
  * @return 0 if success, errno on failure.
  */
-int bt_mcc_send_cmd(struct bt_conn *conn, const struct mpl_cmd *cmd);
+int bt_mcc_send_cmd(struct bt_conn *conn, const struct bt_mcs_cmd *cmd);
 
 /**
  * @brief Read Opcodes Supported
@@ -898,7 +899,7 @@ int bt_mcc_read_opcodes_supported(struct bt_conn *conn);
  *
  * @return 0 if success, errno on failure.
  */
-int bt_mcc_send_search(struct bt_conn *conn, const struct mpl_search *search);
+int bt_mcc_send_search(struct bt_conn *conn, const struct bt_mcp_search *search);
 
 /**
  * @brief Search Results Group Object ID
