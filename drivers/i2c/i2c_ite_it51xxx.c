@@ -361,6 +361,7 @@ struct i2c_it51xxx_data {
 #ifdef CONFIG_PM
 	ATOMIC_DEFINE(pm_policy_state_flag, I2C_ITE_PM_POLICY_FLAG_COUNT);
 #endif
+	bool quick_command;
 };
 
 enum i2c_host_status {
@@ -899,6 +900,34 @@ int i2c_tran_write(const struct device *dev)
 	return 1;
 }
 
+int smbus_quick_command_trans(const struct device *dev)
+{
+	const struct i2c_it51xxx_config *config = dev->config;
+	struct i2c_it51xxx_data *data = dev->data;
+
+	if (data->msg->flags & SMB_MSG_START) {
+		/* SMBus host enable */
+		sys_write8(SMB_SMD_TO_EN | SMB_SMH_EN, config->host_base + SMB_HOCTL2);
+		if (data->msg->flags & I2C_MSG_READ) {
+			/* Set transmit target address with read */
+			sys_write8((uint8_t)(data->addr_16bit << 1) | SMB_DIR,
+				   config->host_base + SMB_TRASLA);
+		} else {
+			/* Set transmit target address with write */
+			sys_write8((uint8_t)(data->addr_16bit << 1),
+				   config->host_base + SMB_TRASLA);
+		}
+		/* Set host control register: Quick command enable */
+		sys_write8(SMB_SRT | SMB_SMCD(0) | SMB_INTREN, config->host_base + SMB_HOCTL);
+		/* Clear start flag */
+		data->msg->flags &= ~SMB_MSG_START;
+	} else if (data->msg->flags & I2C_MSG_STOP) {
+		data->stop = 1;
+	}
+
+	return 1;
+}
+
 int i2c_pio_transaction(const struct device *dev)
 {
 	const struct i2c_it51xxx_config *config = dev->config;
@@ -909,15 +938,20 @@ int i2c_pio_transaction(const struct device *dev)
 		data->err = sys_read8(config->host_base + SMB_HOSTA) & HOSTA_ANY_ERROR;
 	} else {
 		if (!data->stop) {
-			/*
-			 * The return value indicates if there is more data to be read or written.
-			 * If the return value = 1, it means that the interrupt cannot be disable
-			 * and continue to transmit data.
-			 */
-			if (data->msg->flags & I2C_MSG_READ) {
-				return i2c_tran_read(dev);
+			if (data->quick_command) {
+				/* Data length = 0 */
+				return smbus_quick_command_trans(dev);
 			} else {
-				return i2c_tran_write(dev);
+				/*
+				 * The return value indicates if there is more data to be read or
+				 * written. If the return value = 1, it means that the interrupt
+				 * cannot be disable and continue to transmit data.
+				 */
+				if (data->msg->flags & I2C_MSG_READ) {
+					return i2c_tran_read(dev);
+				} else {
+					return i2c_tran_write(dev);
+				}
 			}
 		}
 		/* Wait finish */
@@ -932,6 +966,8 @@ int i2c_pio_transaction(const struct device *dev)
 	sys_write8(0, config->host_base + SMB_HOCTL2);
 
 	data->stop = 0;
+	data->quick_command = false;
+
 	/* Done doing work */
 	return 0;
 }
@@ -1290,10 +1326,11 @@ static void i2c_it51xxx_isr(const void *arg)
 #endif
 }
 
-bool fifo_mode_allowed(const struct device *dev, struct i2c_msg *msgs)
+bool fifo_mode_allowed(const struct device *dev, struct i2c_msg *msgs, bool *quick_cmd)
 {
 	const struct i2c_it51xxx_config *config = dev->config;
 	struct i2c_it51xxx_data *data = dev->data;
+	*quick_cmd = false;
 
 	/*
 	 * If the transaction of write or read is divided into two transfers(not two messages),
@@ -1302,27 +1339,48 @@ bool fifo_mode_allowed(const struct device *dev, struct i2c_msg *msgs)
 	if (data->i2ccs != I2C_CH_NORMAL) {
 		return false;
 	}
+
 	/*
-	 * FIFO2 only supports one channel of B or C. If the FIFO of channel is not enabled,
-	 * it will select PIO mode.
+	 * Single-message transfers with STOP need special handling.
 	 */
-	if (!config->fifo_enable) {
-		return false;
+	if (data->num_msgs == 1 && (msgs[0].flags & I2C_MSG_STOP)) {
+		/*
+		 * No data payload: use PIO mode with quick command
+		 * (e.g. cmd_i2c_scan).
+		 */
+		if (msgs[0].len == 0) {
+			*quick_cmd = true;
+			return false;
+		}
+		/*
+		 * FIFO2 only supports one channel of B or C.
+		 * If FIFO is not enabled for this channel, fall back to PIO mode.
+		 */
+		if (!config->fifo_enable) {
+			return false;
+		}
+		/*
+		 * Single message with data payload (<=255 bytes) that fits in FIFO:
+		 * use FIFO mode.
+		 */
+		if (msgs[0].len <= SMB_FIFO_MODE_TOTAL_LEN) {
+			return true;
+		}
 	}
-	/*
-	 * When there is only one message, use the FIFO mode transfer directly.
-	 * Transfer payload too long (>255 bytes), use PIO mode.
-	 * Write or read of I2C target address without data, used by cmd_i2c_scan. Use PIO mode.
-	 */
-	if (data->num_msgs == 1 && (msgs[0].flags & I2C_MSG_STOP) &&
-	    (msgs[0].len <= SMB_FIFO_MODE_TOTAL_LEN) && (msgs[0].len != 0)) {
-		return true;
-	}
+
 	/*
 	 * When there are two messages, we need to judge whether or not there is I2C_MSG_RESTART
 	 * flag from the second message, and then decide todo the FIFO mode or PIO mode transfer.
 	 */
 	if (data->num_msgs == 2) {
+		/*
+		 * FIFO2 only supports one channel of B or C.
+		 * If FIFO is not enabled for this channel, fall back to PIO mode.
+		 */
+		if (!config->fifo_enable) {
+			return false;
+		}
+
 		/*
 		 * The first of two messages must be write.
 		 * Transfer payload too long (>255 bytes), use PIO mode.
@@ -1452,6 +1510,7 @@ static int i2c_it51xxx_transfer(const struct device *dev, struct i2c_msg *msgs, 
 	const struct i2c_it51xxx_config *config = dev->config;
 	struct i2c_it51xxx_data *data = dev->data;
 	int ret;
+	bool quick_cmd;
 
 #ifdef CONFIG_I2C_TARGET
 	if (atomic_get(&data->num_registered_addrs) != 0) {
@@ -1494,7 +1553,7 @@ static int i2c_it51xxx_transfer(const struct device *dev, struct i2c_msg *msgs, 
 	data->msgs_list = msgs;
 	data->msg_index = 0;
 
-	bool fifo_mode_enable = fifo_mode_allowed(dev, msgs);
+	bool fifo_mode_enable = fifo_mode_allowed(dev, msgs, &quick_cmd);
 #endif
 	for (int i = 0; i < num_msgs; i++) {
 		data->widx = 0;
@@ -1517,6 +1576,7 @@ static int i2c_it51xxx_transfer(const struct device *dev, struct i2c_msg *msgs, 
 			}
 		} else {
 #endif
+			data->quick_command = quick_cmd;
 			if (i2c_pio_transaction(dev)) {
 				/* Enable i2c interrupt */
 				irq_enable(config->i2c_irq_base);
