@@ -1,0 +1,6 @@
+board:
+  name: qcc744m_evk
+  full_name: Qualcomm QCC744M Evaluation Board
+  vendor: qcom
+  socs:
+    - name: bl618m05q2i
