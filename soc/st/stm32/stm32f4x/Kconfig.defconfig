@@ -35,4 +35,11 @@ config IDLE_STACK_SIZE
 
 endif # PM
 
+if LVGL
+
+config LV_DRAW_DMA2D_HAL_INCLUDE
+	default "stm32f4xx.h"
+
+endif # LVGL
+
 endif # SOC_SERIES_STM32F4X
