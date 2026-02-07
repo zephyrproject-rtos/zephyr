@@ -1180,7 +1180,7 @@ static void ull_adv_sync_add_to_header(struct pdu_adv *pdu,
 #if defined(CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK)
 			*overflow_len = delta - (PDU_AC_EXT_PAYLOAD_SIZE_MAX - pdu->len);
 			memcpy(ad_overflow,
-			       pdu->payload + PDU_AC_EXT_PAYLOAD_SIZE_MAX - *overflow_len,
+			       pdu->payload + pdu->len - *overflow_len,
 			       *overflow_len);
 			pdu->len -= *overflow_len;
 #endif /* CONFIG_BT_CTLR_ADV_SYNC_PDU_LINK */
