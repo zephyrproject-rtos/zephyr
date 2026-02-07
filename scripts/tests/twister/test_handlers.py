@@ -1185,6 +1185,7 @@ def test_devicehandler_create_command(
 ):
     handler = DeviceHandler(mocked_instance, 'build', mock.Mock())
     handler.options = mock.Mock(west_flash=self_west_flash,
+                                west_cmd='flash',
                                 flash_command=self_flash_command, verbose=0)
     handler.generator_cmd = 'generator_cmd'
 
@@ -1195,7 +1196,8 @@ def test_devicehandler_create_command(
         product=hardware_product_name,
         probe_id=12345 if hardware_probe else None,
         id=12345 if not hardware_probe else None,
-        runner_params=['param1', 'param2']
+        runner_params=['param1', 'param2'],
+        west_cmd=None
     )
 
     command = handler._create_command(runner, hardware)

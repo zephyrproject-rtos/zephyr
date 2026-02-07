@@ -44,6 +44,7 @@ class DeviceConfig:
     fixtures: list[str] = None
     app_build_dir: Path | None = None
     extra_test_args: str = ''
+    west_cmd: str = 'flash'
 
     def __post_init__(self):
         domains = self.build_dir / 'domains.yaml'
@@ -101,7 +102,8 @@ class TwisterHarnessConfig:
             post_script=_cast_to_path(config.option.post_script),
             post_flash_script=_cast_to_path(config.option.post_flash_script),
             fixtures=config.option.fixtures,
-            extra_test_args=config.option.extra_test_args
+            extra_test_args=config.option.extra_test_args,
+            west_cmd=config.option.west_cmd or 'flash'
         )
 
         devices.append(device_from_cli)

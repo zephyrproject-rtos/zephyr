@@ -58,6 +58,7 @@ class DUT:
     probe_id: str | None = None
     notes: str | None = None
     match: bool = False
+    west_cmd: str | None = None
 
     def __post_init__(self):
         """Initialize non-serializable objects after dataclass initialization."""
@@ -66,8 +67,10 @@ class DUT:
         self._available = Value("i", 1)
         self._failures = Value("i", 0)
         self.lock = Lock()
+
         # Ensure serial_baud has a default value
         self.serial_baud = self.serial_baud or 115200
+
 
     @property
     def available(self):
@@ -288,6 +291,7 @@ class HardwareMap:
             product = dut.get('product')
             fixtures = dut.get('fixtures', [])
             connected = dut.get('connected') and ((serial or serial_pty) is not None)
+            west_cmd = dut.get('west_cmd', "")
             if not connected:
                 continue
             for plat in platforms:
@@ -306,7 +310,8 @@ class HardwareMap:
                               post_flash_script=post_flash_script,
                               script_param=script_param,
                               flash_timeout=flash_timeout,
-                              flash_with_test=flash_with_test)
+                              flash_with_test=flash_with_test,
+                              west_cmd=west_cmd)
                 new_dut.fixtures = fixtures
                 new_dut.counter = 0
                 self.duts.append(new_dut)
