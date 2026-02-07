@@ -514,11 +514,15 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 	/* Enable transfer complete ISR if in non-cyclic mode or a callback is requested */
 	if (!stream->cyclic || stream->dma_callback != NULL) {
 		LL_DMA_EnableIT_TC(dma, dma_stm32_id_to_stream(id));
+	} else {
+		LL_DMA_DisableIT_TC(dma, dma_stm32_id_to_stream(id));
 	}
 
 	/* Enable Half-Transfer irq if circular mode is enabled and a callback is requested */
 	if (stream->cyclic && stream->dma_callback != NULL) {
 		LL_DMA_EnableIT_HT(dma, dma_stm32_id_to_stream(id));
+	} else {
+		LL_DMA_DisableIT_HT(dma, dma_stm32_id_to_stream(id));
 	}
 
 #if defined(CONFIG_DMA_STM32_V1)
@@ -637,15 +641,6 @@ DMA_STM32_EXPORT_API int dma_stm32_stop(const struct device *dev, uint32_t id)
 	if (!stm32_dma_is_enabled_stream(dma, id)) {
 		return 0;
 	}
-
-#if !defined(CONFIG_DMAMUX_STM32) \
-	|| defined(CONFIG_SOC_SERIES_STM32H7X) || defined(CONFIG_SOC_SERIES_STM32MP1X)
-	LL_DMA_DisableIT_TC(dma, dma_stm32_id_to_stream(id));
-#endif /* CONFIG_DMAMUX_STM32 */
-
-#if defined(CONFIG_DMA_STM32_V1)
-	stm32_dma_disable_fifo_irq(dma, id);
-#endif
 
 	dma_stm32_clear_stream_irq(dev, id);
 	dma_stm32_disable_stream(dma, id);
