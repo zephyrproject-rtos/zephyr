@@ -41,6 +41,7 @@ $defs:
                 - armfvp
                 - native
                 - custom
+                - whisper
             exec:
               type: string
           required:

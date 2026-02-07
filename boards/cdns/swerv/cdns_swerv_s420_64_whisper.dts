@@ -1,0 +1,105 @@
+/*
+ * Copyright (C) 2026 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <skeleton.dtsi>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,console = &whisper_consoleio;
+		zephyr,sram = &dccm;
+		zephyr,iccm = &iccm;
+		zephyr,dccm = &dccm;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "cdns,swerv,s420", "riscv";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "a", "i", "m", "c", "zicsr", "zifencei",
+					       "zba", "zbb", "zbc", "zbs";
+			reg = <0>;
+			clock-frequency = <15000000>;
+
+			cpu0intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+
+		cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "cdns,swerv,s420", "riscv";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "a", "i", "m", "c", "zicsr", "zifencei",
+					       "zba", "zbb", "zbc", "zbs";
+			reg = <1>;
+			clock-frequency = <15000000>;
+
+			cpu1intc: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		interrupt-parent = <&cpu0intc>;
+		ranges;
+
+		iccm: memory@ee000000 {
+			compatible = "mmio-sram";
+			reg = <0xEE000000 0x02000000>;
+		};
+
+		dccm: memory@f4000000 {
+			compatible = "mmio-sram";
+			reg = <0xF4000000 0x02000000>;
+		};
+
+		pic: interrupt-controller@f0100000 {
+			compatible = "cdns,swerv-pic";
+			#address-cells = <1>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			reg = <0xF0100000 0x00008000>;
+			riscv,max-priority = <15>;
+		};
+
+		timer: timer@80001020 {
+			compatible = "riscv,machine-timer";
+			reg = <0x80001020 0x8 0x80001028 0x8>;
+			reg-names = "mtime", "mtimecmp";
+			interrupts-extended = <&cpu0intc 7
+					       &cpu1intc 7>;
+		};
+
+		swint: swint@2000000 {
+			reg = <0x02000000 0x08>;
+		};
+
+		whisper_consoleio: whisper-consoleio@80002000 {
+			reg = <0x80002000 0x00000004>;
+
+			status = "okay";
+		};
+	};
+};

@@ -80,6 +80,13 @@ extern const int32_t z_sys_timer_irq_for_test;
 #endif
 
 
+/* whisper simulator does not currently have working implementation for
+ * wfi instruction. It simply treats wfi as no-op such that k_cpu_idle()
+ * returns immediately and will fail idle tests.
+ */
+#if defined(CONFIG_WHISPER_TARGET)
+#undef HAS_POWERSAVE_INSTRUCTION
+#endif
 
 typedef struct {
 	int command;            /* command to process   */

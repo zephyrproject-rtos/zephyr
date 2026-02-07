@@ -15,6 +15,7 @@ SUPPORTED_SIMS = [
     "native",
     "custom",
     "simics",
+    "whisper",
 ]
 SUPPORTED_SIMS_IN_PYTEST = ['native', 'qemu']
 SUPPORTED_SIMS_WITH_EXEC = ['nsim', 'mdb-nsim', 'renode', 'tsim', 'native', 'simics', 'custom']

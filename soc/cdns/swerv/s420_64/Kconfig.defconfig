@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_S420_64
+
+config MP_MAX_NUM_CPUS
+	default 2
+	range 1 2
+
+config SMP
+	default y
+
+config PM_CPU_OPS
+	default y
+
+endif # SOC_S420_64

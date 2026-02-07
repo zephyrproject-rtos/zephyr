@@ -45,6 +45,13 @@ config QEMU_TARGET
 	  Mark all QEMU targets with this variable for checking whether we are
 	  running in an emulated environment.
 
+config WHISPER_TARGET
+	bool
+	depends on RISCV
+	help
+	  Mark targets with this variable for checking whether we are running
+	  under the Whisper simulator.
+
 config NET_DRIVERS
 	bool
 	default y if QEMU_TARGET && NETWORKING
@@ -140,6 +147,8 @@ config BOARD_SERIAL_BACKEND_CDC_ACM
 	help
 	  USB stack and CDC ACM UART are configured and initialized at boot
 	  time to be used as a backend for logging or shell.
+
+rsource "Kconfig.whisper"
 
 # There might not be any board options, hence the optional source
 osource "$(KCONFIG_BOARD_DIR)/Kconfig"

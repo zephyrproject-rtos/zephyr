@@ -1,0 +1,40 @@
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+testing:
+  only_tags:
+    - kernel
+  ignore_tags:
+    - benchmark
+variants:
+  cdns_swerv/s400/whisper:
+    type: sim
+    simulation:
+      - name: whisper
+  cdns_swerv/s400/pmp/whisper:
+    type: sim
+    simulation:
+      - name: whisper
+    testing:
+      timeout_multiplier: 6
+  cdns_swerv/s420/whisper:
+    type: sim
+    simulation:
+      - name: whisper
+    supported:
+      - smp
+    # Some SMP tests take a while to finish since it's
+    # under simulated environment.
+    testing:
+      timeout_multiplier: 4
+  cdns_swerv/s420_64/whisper:
+    type: sim
+    simulation:
+      - name: whisper
+    supported:
+      - smp
+    # Some SMP tests take a while to finish since it's
+    # under simulated environment.
+    testing:
+      timeout_multiplier: 4

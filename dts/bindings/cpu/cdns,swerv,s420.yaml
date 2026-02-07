@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cadence SweRV S420 CPU
+
+compatible: "cdns,swerv,s420"
+
+include: riscv,cpus.yaml
