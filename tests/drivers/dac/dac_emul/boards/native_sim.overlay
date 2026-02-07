@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2025, Vaisala Oyj
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/ {
+	dac_emul0: dac-emulator-0 {
+		compatible = "zephyr,dac-emul";
+		nchannels = <4>;
+		#io-channel-cells = <1>;
+		status = "okay";
+	};
+
+	dac_emul_unconfigured: dac-emulator-1 {
+		compatible = "zephyr,dac-emul";
+		nchannels = <1>;
+		#io-channel-cells = <1>;
+		status = "okay";
+	};
+
+	dac_emul_many: dac-emulator-many {
+		compatible = "zephyr,dac-emul";
+		nchannels = <16>;
+		#io-channel-cells = <1>;
+		status = "okay";
+	};
+};

@@ -15,6 +15,13 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		test_dac_emul {
+			compatible = "zephyr,dac-emul";
+			nchannels = <2>;
+			#io-channel-cells = <1>;
+			status = "okay";
+		};
+
 		test_gpio: gpio@deadbeef {
 			compatible = "vnd,gpio";
 			gpio-controller;

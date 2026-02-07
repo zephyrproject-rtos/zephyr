@@ -1,0 +1,7 @@
+# Copyright (c) 2024 Vaisala Oyj
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_EMUL
+	bool "DAC emulator"
+	default y
+	depends on DT_HAS_ZEPHYR_DAC_EMUL_ENABLED
