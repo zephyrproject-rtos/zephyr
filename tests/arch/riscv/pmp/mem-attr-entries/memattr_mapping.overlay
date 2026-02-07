@@ -12,8 +12,8 @@
 		reg = <0x80000000 0x20000>;
 		zephyr,memory-region = "MEMATTR_REGION1";
 		zephyr,memory-attr = <(DT_MEM_RISCV_TYPE_IO_R |
-				      DT_MEM_RISCV_TYPE_IO_W |
-				      DT_MEM_RISCV_TYPE_IO_X)>;
+				       DT_MEM_RISCV_TYPE_IO_W |
+				       DT_MEM_RISCV_TYPE_IO_X)>;
 	};
 
 	memattr_region2: memattr_region2@80000000 {
@@ -21,7 +21,7 @@
 		reg = <0x80020000 0x30000>;
 		zephyr,memory-region = "MEMATTR_REGION2";
 		zephyr,memory-attr = <(DT_MEM_RISCV_TYPE_IO_R |
-				      DT_MEM_RISCV_TYPE_IO_W |
-				      DT_MEM_RISCV_TYPE_IO_X)>;
+				       DT_MEM_RISCV_TYPE_IO_W |
+				       DT_MEM_RISCV_TYPE_IO_X)>;
 	};
 };

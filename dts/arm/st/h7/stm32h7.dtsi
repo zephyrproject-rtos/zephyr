@@ -1182,8 +1182,9 @@
 			interrupt-names = "dcmi";
 			clocks = <&rcc STM32_CLOCK(AHB2, 0)>;
 			dmas = <&dma1 1 75 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_PERIPH_NO_INC |
-				STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS | STM32_DMA_MEM_32BITS |
-				STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
+					    STM32_DMA_MEM_INC | STM32_DMA_PERIPH_8BITS |
+					    STM32_DMA_MEM_32BITS |
+					    STM32_DMA_PRIORITY_HIGH) STM32_DMA_FIFO_1_4>;
 			status = "disabled";
 		};
 
@@ -1195,7 +1196,7 @@
 			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
 				 <&rcc STM32_SRC_PLL2_P SAI1_SEL(1)>;
 			dmas = <&dma1 2 87 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-				STM32_DMA_16BITS) 0>;
+					    STM32_DMA_16BITS) 0>;
 			status = "disabled";
 		};
 
@@ -1207,7 +1208,7 @@
 			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
 				 <&rcc STM32_SRC_PLL2_P SAI1_SEL(1)>;
 			dmas = <&dma1 3 88 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-				STM32_DMA_16BITS) 0>;
+					    STM32_DMA_16BITS) 0>;
 			status = "disabled";
 		};
 
