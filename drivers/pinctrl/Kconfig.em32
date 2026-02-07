@@ -1,0 +1,26 @@
+# Copyright (c) 2026 ELAN Microelectronics Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+# EM32F967 Pin Control configuration
+
+config PINCTRL_EM32
+	bool "EM32F967 pin control driver"
+	default y
+	depends on SOC_EM32F967
+	depends on DT_HAS_ELAN_EM32_PINCTRL_ENABLED
+	help
+	  Enable pin control driver for EM32F967 SoC.
+	  This driver provides pin multiplexing and configuration
+	  support for GPIO, UART, SPI, I2C, and PWM functions.
+
+if PINCTRL_EM32
+
+config PINCTRL_EM32_DEBUG
+	bool "EM32F967 pin control debug features"
+	default n
+	help
+	  Enable debug features for EM32F967 pin control driver.
+	  This includes register dump functions and test utilities.
+	  Only enable for debugging purposes as it increases code size.
+
+endif # PINCTRL_EM32

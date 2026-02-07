@@ -1,7 +1,12 @@
 # Copyright (c) 2025 Elan Microelectronics Corp.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Elan eM32F967 AHB Clock Controller Node
+description: |
+  Elan EM32 AHB Clock Controller.
+
+  The clock specifier has one cell, gate-id, which selects the peripheral
+  clock gate to control. Gate IDs are defined in
+  include/zephyr/dt-bindings/clock/em32_clock.h.
 
 compatible: "elan,em32-ahb"
 
@@ -24,4 +29,25 @@ properties:
     required: true
 
   "#clock-cells":
-    const: 0
+    const: 1
+
+clock-cells:
+  - gate-id
+
+examples:
+  - |
+    clk_ahb: clk-ahb {
+        compatible = "elan,em32-ahb";
+        #clock-cells = <1>;
+        clock-source = <EM32_CLK_SRC_IRCHIGH>;
+        clock-frequency = <EM32_CLK_FREQ_IRCHIGH96>;
+        clock-divider = <EM32_AHB_CLK_DIV1>;
+        status = "okay";
+    };
+
+    gpioa: gpio@40004000 {
+        compatible = "elan,em32-gpio";
+        reg = <0x40004000 0x1000>;
+        clocks = <&clk_ahb EM32_GATE_HCLKG_GPIOA>;
+        status = "okay";
+    };

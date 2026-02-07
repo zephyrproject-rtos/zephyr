@@ -1,0 +1,35 @@
+# Copyright (c) 2026 Elan Microelectronics Corp.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_EM32_AHB
+	bool "Elan EM32 AHB clock control"
+	default y
+	depends on SOC_EM32F967
+	depends on DT_HAS_ELAN_EM32_AHB_ENABLED
+	help
+	  This option enables the clock controller ahb driver for EM32FXXX.
+
+config CLOCK_CONTROL_EM32_APB
+	bool "Elan EM32 APB clock control"
+	default y
+	depends on SOC_EM32F967
+	depends on DT_HAS_ELAN_EM32_APB_ENABLED
+	help
+	  This option enables the clock controller apb driver for EM32FXXX.
+
+if CLOCK_CONTROL_EM32_AHB || CLOCK_CONTROL_EM32_APB
+
+config EM32_DELAY_SWITCH_PRIORITY
+	int "Delay switch init priority"
+	default 1
+	help
+	  Initialization priority for switching the delay backend to k_busy_wait().
+	  Must be greater than CONFIG_SYSTEM_CLOCK_INIT_PRIORITY, because the
+	  system timer is initialized in PRE_KERNEL_2.
+
+	  Default is 1 (CONFIG_SYSTEM_CLOCK_INIT_PRIORITY + 1 on this SoC).
+	  A BUILD_ASSERT enforces ordering and will fail the build if the system
+	  clock init priority changes.
+
+endif # CLOCK_CONTROL_EM32_AHB || CLOCK_CONTROL_EM32_APB
