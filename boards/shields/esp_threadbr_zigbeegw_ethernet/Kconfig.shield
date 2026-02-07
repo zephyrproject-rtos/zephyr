@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Espressif Shanghai (c)
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_ESP_THREADBR_ZIGBEEGW_ETHERNET
+	def_bool $(shields_list_contains,esp_threadbr_zigbeegw_ethernet)
