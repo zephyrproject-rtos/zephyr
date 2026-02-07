@@ -1,0 +1,729 @@
+/*
+ * Copyright (c) 2025 Qingdao IotPi Ltd
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * This file is auto-generated from SF32LB58x User Manual
+ */
+
+&pinmux {
+    /* SF32LB58 LPSYS pinmux */
+
+    /* ACTEST0 */
+    /omit-if-no-ref/ actest0_pb44: PB44_ACTEST0 {
+        pinmux = <0x500030c8 8>;
+    };
+
+    /* ACTEST1 */
+    /omit-if-no-ref/ actest1_pb45: PB45_ACTEST1 {
+        pinmux = <0x500030cc 8>;
+    };
+
+    /* AUD */
+    /omit-if-no-ref/ aud_clk_ext_pb31: PB31_AUD_CLK_EXT {
+        pinmux = <0x50003094 4>;
+    };
+    /omit-if-no-ref/ aud_clk_ext_pb46: PB46_AUD_CLK_EXT {
+        pinmux = <0x500030d0 3>;
+    };
+
+    /* BT */
+    /omit-if-no-ref/ bt_active_pb08: PB08_BT_ACTIVE {
+        pinmux = <0x50003038 6>;
+    };
+    /omit-if-no-ref/ bt_active_pb45: PB45_BT_ACTIVE {
+        pinmux = <0x500030cc 2>;
+    };
+
+    /* DCTEST0 */
+    /omit-if-no-ref/ dctest0_pb26: PB26_DCTEST0 {
+        pinmux = <0x50003080 8>;
+    };
+
+    /* DCTEST1 */
+    /omit-if-no-ref/ dctest1_pb27: PB27_DCTEST1 {
+        pinmux = <0x50003084 8>;
+    };
+
+    /* GPADC */
+    /omit-if-no-ref/ gpadc_ch0_pb32: PB32_GPADC_CH0 {
+        pinmux = <0x50003098 8>;
+    };
+    /omit-if-no-ref/ gpadc_ch1_pb33: PB33_GPADC_CH1 {
+        pinmux = <0x5000309c 8>;
+    };
+    /omit-if-no-ref/ gpadc_ch2_pb34: PB34_GPADC_CH2 {
+        pinmux = <0x500030a0 8>;
+    };
+    /omit-if-no-ref/ gpadc_ch3_pb35: PB35_GPADC_CH3 {
+        pinmux = <0x500030a4 8>;
+    };
+    /omit-if-no-ref/ gpadc_ch4_pb36: PB36_GPADC_CH4 {
+        pinmux = <0x500030a8 8>;
+    };
+    /omit-if-no-ref/ gpadc_ch5_pb37: PB37_GPADC_CH5 {
+        pinmux = <0x500030ac 8>;
+    };
+    /omit-if-no-ref/ gpadc_ch6_pb38: PB38_GPADC_CH6 {
+        pinmux = <0x500030b0 8>;
+    };
+    /omit-if-no-ref/ gpadc_ch7_pb39: PB39_GPADC_CH7 {
+        pinmux = <0x500030b4 8>;
+    };
+
+    /* GPIO */
+    /omit-if-no-ref/ gpio_b10_pb10: PB10_GPIO_B10 {
+        pinmux = <0x50003040 0>;
+    };
+    /omit-if-no-ref/ gpio_b11_pb11: PB11_GPIO_B11 {
+        pinmux = <0x50003044 1>;
+    };
+    /omit-if-no-ref/ gpio_b12_pb12: PB12_GPIO_B12 {
+        pinmux = <0x50003048 0>;
+    };
+    /omit-if-no-ref/ gpio_b13_pb13: PB13_GPIO_B13 {
+        pinmux = <0x5000304c 0>;
+    };
+    /omit-if-no-ref/ gpio_b14_pb14: PB14_GPIO_B14 {
+        pinmux = <0x50003050 0>;
+    };
+    /omit-if-no-ref/ gpio_b15_pb15: PB15_GPIO_B15 {
+        pinmux = <0x50003054 0>;
+    };
+    /omit-if-no-ref/ gpio_b16_pb16: PB16_GPIO_B16 {
+        pinmux = <0x50003058 0>;
+    };
+    /omit-if-no-ref/ gpio_b17_pb17: PB17_GPIO_B17 {
+        pinmux = <0x5000305c 0>;
+    };
+    /omit-if-no-ref/ gpio_b18_pb18: PB18_GPIO_B18 {
+        pinmux = <0x50003060 0>;
+    };
+    /omit-if-no-ref/ gpio_b19_pb19: PB19_GPIO_B19 {
+        pinmux = <0x50003064 0>;
+    };
+    /omit-if-no-ref/ gpio_b20_pb20: PB20_GPIO_B20 {
+        pinmux = <0x50003068 0>;
+    };
+    /omit-if-no-ref/ gpio_b21_pb21: PB21_GPIO_B21 {
+        pinmux = <0x5000306c 0>;
+    };
+    /omit-if-no-ref/ gpio_b22_pb22: PB22_GPIO_B22 {
+        pinmux = <0x50003070 0>;
+    };
+    /omit-if-no-ref/ gpio_b23_pb23: PB23_GPIO_B23 {
+        pinmux = <0x50003074 0>;
+    };
+    /omit-if-no-ref/ gpio_b24_pb24: PB24_GPIO_B24 {
+        pinmux = <0x50003078 0>;
+    };
+    /omit-if-no-ref/ gpio_b25_pb25: PB25_GPIO_B25 {
+        pinmux = <0x5000307c 0>;
+    };
+    /omit-if-no-ref/ gpio_b26_pb26: PB26_GPIO_B26 {
+        pinmux = <0x50003080 0>;
+    };
+    /omit-if-no-ref/ gpio_b27_pb27: PB27_GPIO_B27 {
+        pinmux = <0x50003084 0>;
+    };
+    /omit-if-no-ref/ gpio_b28_pb28: PB28_GPIO_B28 {
+        pinmux = <0x50003088 0>;
+    };
+    /omit-if-no-ref/ gpio_b29_pb29: PB29_GPIO_B29 {
+        pinmux = <0x5000308c 0>;
+    };
+    /omit-if-no-ref/ gpio_b30_pb30: PB30_GPIO_B30 {
+        pinmux = <0x50003090 0>;
+    };
+    /omit-if-no-ref/ gpio_b31_pb31: PB31_GPIO_B31 {
+        pinmux = <0x50003094 0>;
+    };
+    /omit-if-no-ref/ gpio_b32_pb32: PB32_GPIO_B32 {
+        pinmux = <0x50003098 0>;
+    };
+    /omit-if-no-ref/ gpio_b33_pb33: PB33_GPIO_B33 {
+        pinmux = <0x5000309c 0>;
+    };
+    /omit-if-no-ref/ gpio_b34_pb34: PB34_GPIO_B34 {
+        pinmux = <0x500030a0 0>;
+    };
+    /omit-if-no-ref/ gpio_b35_pb35: PB35_GPIO_B35 {
+        pinmux = <0x500030a4 0>;
+    };
+    /omit-if-no-ref/ gpio_b36_pb36: PB36_GPIO_B36 {
+        pinmux = <0x500030a8 0>;
+    };
+    /omit-if-no-ref/ gpio_b37_pb37: PB37_GPIO_B37 {
+        pinmux = <0x500030ac 0>;
+    };
+    /omit-if-no-ref/ gpio_b38_pb38: PB38_GPIO_B38 {
+        pinmux = <0x500030b0 0>;
+    };
+    /omit-if-no-ref/ gpio_b39_pb39: PB39_GPIO_B39 {
+        pinmux = <0x500030b4 0>;
+    };
+    /omit-if-no-ref/ gpio_b40_pb40: PB40_GPIO_B40 {
+        pinmux = <0x500030b8 0>;
+    };
+    /omit-if-no-ref/ gpio_b41_pb41: PB41_GPIO_B41 {
+        pinmux = <0x500030bc 0>;
+    };
+    /omit-if-no-ref/ gpio_b42_pb42: PB42_GPIO_B42 {
+        pinmux = <0x500030c0 0>;
+    };
+    /omit-if-no-ref/ gpio_b43_pb43: PB43_GPIO_B43 {
+        pinmux = <0x500030c4 0>;
+    };
+    /omit-if-no-ref/ gpio_b44_pb44: PB44_GPIO_B44 {
+        pinmux = <0x500030c8 0>;
+    };
+    /omit-if-no-ref/ gpio_b45_pb45: PB45_GPIO_B45 {
+        pinmux = <0x500030cc 0>;
+    };
+    /omit-if-no-ref/ gpio_b46_pb46: PB46_GPIO_B46 {
+        pinmux = <0x500030d0 0>;
+    };
+    /omit-if-no-ref/ gpio_b47_pb47: PB47_GPIO_B47 {
+        pinmux = <0x500030d4 0>;
+    };
+    /omit-if-no-ref/ gpio_b48_pb48: PB48_GPIO_B48 {
+        pinmux = <0x500030d8 0>;
+    };
+    /omit-if-no-ref/ gpio_b49_pb49: PB49_GPIO_B49 {
+        pinmux = <0x500030dc 0>;
+    };
+    /omit-if-no-ref/ gpio_b50_pb50: PB50_GPIO_B50 {
+        pinmux = <0x500030e0 0>;
+    };
+    /omit-if-no-ref/ gpio_b51_pb51: PB51_GPIO_B51 {
+        pinmux = <0x500030e4 0>;
+    };
+    /omit-if-no-ref/ gpio_b52_pb52: PB52_GPIO_B52 {
+        pinmux = <0x500030e8 0>;
+    };
+    /omit-if-no-ref/ gpio_b53_pb53: PB53_GPIO_B53 {
+        pinmux = <0x500030ec 0>;
+    };
+    /omit-if-no-ref/ gpio_b54_pb54: PB54_GPIO_B54 {
+        pinmux = <0x500030f0 0>;
+    };
+    /omit-if-no-ref/ gpio_b55_pb55: PB55_GPIO_B55 {
+        pinmux = <0x500030f4 0>;
+    };
+    /omit-if-no-ref/ gpio_b56_pb56: PB56_GPIO_B56 {
+        pinmux = <0x500030f8 0>;
+    };
+    /omit-if-no-ref/ gpio_b57_pb57: PB57_GPIO_B57 {
+        pinmux = <0x500030fc 0>;
+    };
+    /omit-if-no-ref/ gpio_b58_pb58: PB58_GPIO_B58 {
+        pinmux = <0x50003100 0>;
+    };
+    /omit-if-no-ref/ gpio_b59_pb59: PB59_GPIO_B59 {
+        pinmux = <0x50003104 0>;
+    };
+    /omit-if-no-ref/ gpio_b6_pb06: PB06_GPIO_B6 {
+        pinmux = <0x50003030 0>;
+    };
+    /omit-if-no-ref/ gpio_b7_pb07: PB07_GPIO_B7 {
+        pinmux = <0x50003034 1>;
+    };
+    /omit-if-no-ref/ gpio_b8_pb08: PB08_GPIO_B8 {
+        pinmux = <0x50003038 0>;
+    };
+    /omit-if-no-ref/ gpio_b9_pb09: PB09_GPIO_B9 {
+        pinmux = <0x5000303c 0>;
+    };
+
+    /* GPTIM3 */
+    /omit-if-no-ref/ gptim3_ch1_pb13: PB13_GPTIM3_CH1 {
+        pinmux = <0x5000304c 5>;
+    };
+    /omit-if-no-ref/ gptim3_ch1_pb36: PB36_GPTIM3_CH1 {
+        pinmux = <0x500030a8 5>;
+    };
+    /omit-if-no-ref/ gptim3_ch2_pb14: PB14_GPTIM3_CH2 {
+        pinmux = <0x50003050 5>;
+    };
+    /omit-if-no-ref/ gptim3_ch2_pb37: PB37_GPTIM3_CH2 {
+        pinmux = <0x500030ac 5>;
+    };
+    /omit-if-no-ref/ gptim3_ch3_pb20: PB20_GPTIM3_CH3 {
+        pinmux = <0x50003068 5>;
+    };
+    /omit-if-no-ref/ gptim3_ch3_pb38: PB38_GPTIM3_CH3 {
+        pinmux = <0x500030b0 5>;
+    };
+    /omit-if-no-ref/ gptim3_ch4_pb21: PB21_GPTIM3_CH4 {
+        pinmux = <0x5000306c 5>;
+    };
+    /omit-if-no-ref/ gptim3_ch4_pb39: PB39_GPTIM3_CH4 {
+        pinmux = <0x500030b4 5>;
+    };
+    /omit-if-no-ref/ gptim3_etr_pb40: PB40_GPTIM3_ETR {
+        pinmux = <0x500030b8 5>;
+    };
+
+    /* GPTIM4 */
+    /omit-if-no-ref/ gptim4_ch1_pb22: PB22_GPTIM4_CH1 {
+        pinmux = <0x50003070 5>;
+    };
+    /omit-if-no-ref/ gptim4_ch1_pb41: PB41_GPTIM4_CH1 {
+        pinmux = <0x500030bc 5>;
+    };
+    /omit-if-no-ref/ gptim4_ch2_pb23: PB23_GPTIM4_CH2 {
+        pinmux = <0x50003074 5>;
+    };
+    /omit-if-no-ref/ gptim4_ch2_pb42: PB42_GPTIM4_CH2 {
+        pinmux = <0x500030c0 5>;
+    };
+    /omit-if-no-ref/ gptim4_ch3_pb06: PB06_GPTIM4_CH3 {
+        pinmux = <0x50003030 5>;
+    };
+    /omit-if-no-ref/ gptim4_ch3_pb24: PB24_GPTIM4_CH3 {
+        pinmux = <0x50003078 5>;
+    };
+    /omit-if-no-ref/ gptim4_ch3_pb43: PB43_GPTIM4_CH3 {
+        pinmux = <0x500030c4 5>;
+    };
+    /omit-if-no-ref/ gptim4_ch4_pb07: PB07_GPTIM4_CH4 {
+        pinmux = <0x50003034 5>;
+    };
+    /omit-if-no-ref/ gptim4_ch4_pb25: PB25_GPTIM4_CH4 {
+        pinmux = <0x5000307c 5>;
+    };
+    /omit-if-no-ref/ gptim4_ch4_pb44: PB44_GPTIM4_CH4 {
+        pinmux = <0x500030c8 5>;
+    };
+    /omit-if-no-ref/ gptim4_etr_pb45: PB45_GPTIM4_ETR {
+        pinmux = <0x500030cc 5>;
+    };
+
+    /* GPTIM5 */
+    /omit-if-no-ref/ gptim5_ch1_pb08: PB08_GPTIM5_CH1 {
+        pinmux = <0x50003038 5>;
+    };
+    /omit-if-no-ref/ gptim5_ch1_pb26: PB26_GPTIM5_CH1 {
+        pinmux = <0x50003080 5>;
+    };
+    /omit-if-no-ref/ gptim5_ch1_pb46: PB46_GPTIM5_CH1 {
+        pinmux = <0x500030d0 5>;
+    };
+    /omit-if-no-ref/ gptim5_ch2_pb09: PB09_GPTIM5_CH2 {
+        pinmux = <0x5000303c 5>;
+    };
+    /omit-if-no-ref/ gptim5_ch2_pb27: PB27_GPTIM5_CH2 {
+        pinmux = <0x50003084 5>;
+    };
+    /omit-if-no-ref/ gptim5_ch2_pb47: PB47_GPTIM5_CH2 {
+        pinmux = <0x500030d4 5>;
+    };
+    /omit-if-no-ref/ gptim5_ch3_pb10: PB10_GPTIM5_CH3 {
+        pinmux = <0x50003040 5>;
+    };
+    /omit-if-no-ref/ gptim5_ch3_pb30: PB30_GPTIM5_CH3 {
+        pinmux = <0x50003090 5>;
+    };
+    /omit-if-no-ref/ gptim5_ch3_pb48: PB48_GPTIM5_CH3 {
+        pinmux = <0x500030d8 5>;
+    };
+    /omit-if-no-ref/ gptim5_ch4_pb11: PB11_GPTIM5_CH4 {
+        pinmux = <0x50003044 5>;
+    };
+    /omit-if-no-ref/ gptim5_ch4_pb31: PB31_GPTIM5_CH4 {
+        pinmux = <0x50003094 5>;
+    };
+    /omit-if-no-ref/ gptim5_ch4_pb49: PB49_GPTIM5_CH4 {
+        pinmux = <0x500030dc 5>;
+    };
+    /omit-if-no-ref/ gptim5_etr_pb50: PB50_GPTIM5_ETR {
+        pinmux = <0x500030e0 5>;
+    };
+
+    /* I2C5 */
+    /omit-if-no-ref/ i2c5_scl_pb48: PB48_I2C5_SCL {
+        pinmux = <0x500030d8 1>;
+    };
+    /omit-if-no-ref/ i2c5_sda_pb47: PB47_I2C5_SDA {
+        pinmux = <0x500030d4 1>;
+    };
+
+    /* I2C6 */
+    /omit-if-no-ref/ i2c6_scl_pb28: PB28_I2C6_SCL {
+        pinmux = <0x50003088 1>;
+    };
+    /omit-if-no-ref/ i2c6_sda_pb29: PB29_I2C6_SDA {
+        pinmux = <0x5000308c 1>;
+    };
+
+    /* I2C7 */
+    /omit-if-no-ref/ i2c7_scl_pb12: PB12_I2C7_SCL {
+        pinmux = <0x50003048 3>;
+    };
+    /omit-if-no-ref/ i2c7_sda_pb16: PB16_I2C7_SDA {
+        pinmux = <0x50003058 3>;
+    };
+
+    /* I2S3 */
+    /omit-if-no-ref/ i2s3_bck_pb30: PB30_I2S3_BCK {
+        pinmux = <0x50003090 3>;
+    };
+    /omit-if-no-ref/ i2s3_bck_pb43: PB43_I2S3_BCK {
+        pinmux = <0x500030c4 4>;
+    };
+    /omit-if-no-ref/ i2s3_lrck_pb31: PB31_I2S3_LRCK {
+        pinmux = <0x50003094 3>;
+    };
+    /omit-if-no-ref/ i2s3_lrck_pb44: PB44_I2S3_LRCK {
+        pinmux = <0x500030c8 4>;
+    };
+    /omit-if-no-ref/ i2s3_mclk_pb34: PB34_I2S3_MCLK {
+        pinmux = <0x500030a0 3>;
+    };
+    /omit-if-no-ref/ i2s3_mclk_pb46: PB46_I2S3_MCLK {
+        pinmux = <0x500030d0 4>;
+    };
+    /omit-if-no-ref/ i2s3_sdi_pb27: PB27_I2S3_SDI {
+        pinmux = <0x50003084 3>;
+    };
+    /omit-if-no-ref/ i2s3_sdi_pb42: PB42_I2S3_SDI {
+        pinmux = <0x500030c0 4>;
+    };
+    /omit-if-no-ref/ i2s3_sdo_pb24: PB24_I2S3_SDO {
+        pinmux = <0x50003078 3>;
+    };
+    /omit-if-no-ref/ i2s3_sdo_pb41: PB41_I2S3_SDO {
+        pinmux = <0x500030bc 4>;
+    };
+
+    /* LCDC2 */
+    /omit-if-no-ref/ lcdc2_jdi_r2_pb06: PB06_LCDC2_JDI_R2 {
+        pinmux = <0x50003030 2>;
+    };
+    /omit-if-no-ref/ lcdc2_jdi_so_pb06: PB06_LCDC2_JDI_SO {
+        pinmux = <0x50003030 4>;
+    };
+    /omit-if-no-ref/ lcdc2_jdi_g1_pb08: PB08_LCDC2_JDI_G1 {
+        pinmux = <0x50003038 2>;
+    };
+    /omit-if-no-ref/ lcdc2_jdi_r1_pb09: PB09_LCDC2_JDI_R1 {
+        pinmux = <0x5000303c 2>;
+    };
+    /omit-if-no-ref/ lcdc2_jdi_hst_pb10: PB10_LCDC2_JDI_HST {
+        pinmux = <0x50003040 2>;
+    };
+    /omit-if-no-ref/ lcdc2_jdi_enb_pb12: PB12_LCDC2_JDI_ENB {
+        pinmux = <0x50003048 2>;
+    };
+    /omit-if-no-ref/ lcdc2_jdi_vck_pb15: PB15_LCDC2_JDI_VCK {
+        pinmux = <0x50003054 2>;
+    };
+    /omit-if-no-ref/ lcdc2_jdi_xrst_pb16: PB16_LCDC2_JDI_XRST {
+        pinmux = <0x50003058 2>;
+    };
+    /omit-if-no-ref/ lcdc2_jdi_vst_pb19: PB19_LCDC2_JDI_VST {
+        pinmux = <0x50003064 2>;
+    };
+    /omit-if-no-ref/ lcdc2_spi_dio3_pb06: PB06_LCDC2_SPI_DIO3 {
+        pinmux = <0x50003030 3>;
+    };
+    /omit-if-no-ref/ lcdc2_spi_cs_pb08: PB08_LCDC2_SPI_CS {
+        pinmux = <0x50003038 3>;
+    };
+    /omit-if-no-ref/ lcdc2_spi_dio0_pb09: PB09_LCDC2_SPI_DIO0 {
+        pinmux = <0x5000303c 3>;
+    };
+    /omit-if-no-ref/ lcdc2_spi_clk_pb10: PB10_LCDC2_SPI_CLK {
+        pinmux = <0x50003040 3>;
+    };
+
+    /* LPCOMP1 */
+    /omit-if-no-ref/ lpcomp1_n_pb29: PB29_LPCOMP1_N {
+        pinmux = <0x5000308c 8>;
+    };
+    /omit-if-no-ref/ lpcomp1_out_pb51: PB51_LPCOMP1_OUT {
+        pinmux = <0x500030e4 5>;
+    };
+    /omit-if-no-ref/ lpcomp1_p_pb28: PB28_LPCOMP1_P {
+        pinmux = <0x50003088 8>;
+    };
+
+    /* LPCOMP2 */
+    /omit-if-no-ref/ lpcomp2_n_pb31: PB31_LPCOMP2_N {
+        pinmux = <0x50003094 8>;
+    };
+    /omit-if-no-ref/ lpcomp2_out_pb52: PB52_LPCOMP2_OUT {
+        pinmux = <0x500030e8 5>;
+    };
+    /omit-if-no-ref/ lpcomp2_p_pb30: PB30_LPCOMP2_P {
+        pinmux = <0x50003090 8>;
+    };
+
+    /* LPTIM3 */
+    /omit-if-no-ref/ lptim3_etr_pb33: PB33_LPTIM3_ETR {
+        pinmux = <0x5000309c 5>;
+    };
+
+    /* PMIC */
+    /omit-if-no-ref/ pmic_sclk_pb52: PB52_PMIC_SCLK {
+        pinmux = <0x500030e8 1>;
+    };
+    /omit-if-no-ref/ pmic_sda_pb51: PB51_PMIC_SDA {
+        pinmux = <0x500030e4 1>;
+    };
+
+    /* SDADC */
+    /omit-if-no-ref/ sdadc_ch0_pb40: PB40_SDADC_CH0 {
+        pinmux = <0x500030b8 8>;
+    };
+    /omit-if-no-ref/ sdadc_ch1_pb41: PB41_SDADC_CH1 {
+        pinmux = <0x500030bc 8>;
+    };
+    /omit-if-no-ref/ sdadc_ch2_pb42: PB42_SDADC_CH2 {
+        pinmux = <0x500030c0 8>;
+    };
+    /omit-if-no-ref/ sdadc_ch3_pb43: PB43_SDADC_CH3 {
+        pinmux = <0x500030c4 8>;
+    };
+
+    /* SPI3 */
+    /omit-if-no-ref/ spi3_clk_pb17: PB17_SPI3_CLK {
+        pinmux = <0x5000305c 2>;
+    };
+    /omit-if-no-ref/ spi3_clk_pb21: PB21_SPI3_CLK {
+        pinmux = <0x5000306c 3>;
+    };
+    /omit-if-no-ref/ spi3_clk_pb56: PB56_SPI3_CLK {
+        pinmux = <0x500030f8 3>;
+    };
+    /omit-if-no-ref/ spi3_cs_pb26: PB26_SPI3_CS {
+        pinmux = <0x50003080 2>;
+    };
+    /omit-if-no-ref/ spi3_cs_pb40: PB40_SPI3_CS {
+        pinmux = <0x500030b8 3>;
+    };
+    /omit-if-no-ref/ spi3_cs_pb59: PB59_SPI3_CS {
+        pinmux = <0x50003104 3>;
+    };
+    /omit-if-no-ref/ spi3_di_pb18: PB18_SPI3_DI {
+        pinmux = <0x50003060 2>;
+    };
+    /omit-if-no-ref/ spi3_di_pb25: PB25_SPI3_DI {
+        pinmux = <0x5000307c 3>;
+    };
+    /omit-if-no-ref/ spi3_di_pb58: PB58_SPI3_DI {
+        pinmux = <0x50003100 3>;
+    };
+    /omit-if-no-ref/ spi3_dio_pb22: PB22_SPI3_DIO {
+        pinmux = <0x50003070 4>;
+    };
+    /omit-if-no-ref/ spi3_dio_pb23: PB23_SPI3_DIO {
+        pinmux = <0x50003074 4>;
+    };
+    /omit-if-no-ref/ spi3_dio_pb57: PB57_SPI3_DIO {
+        pinmux = <0x500030fc 4>;
+    };
+    /omit-if-no-ref/ spi3_do_pb22: PB22_SPI3_DO {
+        pinmux = <0x50003070 3>;
+    };
+    /omit-if-no-ref/ spi3_do_pb23: PB23_SPI3_DO {
+        pinmux = <0x50003074 2>;
+    };
+    /omit-if-no-ref/ spi3_do_pb57: PB57_SPI3_DO {
+        pinmux = <0x500030fc 3>;
+    };
+
+    /* SPI4 */
+    /omit-if-no-ref/ spi4_clk_pb12: PB12_SPI4_CLK {
+        pinmux = <0x50003048 1>;
+    };
+    /omit-if-no-ref/ spi4_clk_pb27: PB27_SPI4_CLK {
+        pinmux = <0x50003084 2>;
+    };
+    /omit-if-no-ref/ spi4_cs_pb19: PB19_SPI4_CS {
+        pinmux = <0x50003064 1>;
+    };
+    /omit-if-no-ref/ spi4_cs_pb34: PB34_SPI4_CS {
+        pinmux = <0x500030a0 2>;
+    };
+    /omit-if-no-ref/ spi4_di_pb15: PB15_SPI4_DI {
+        pinmux = <0x50003054 1>;
+    };
+    /omit-if-no-ref/ spi4_di_pb31: PB31_SPI4_DI {
+        pinmux = <0x50003094 2>;
+    };
+    /omit-if-no-ref/ spi4_dio_pb16: PB16_SPI4_DIO {
+        pinmux = <0x50003058 4>;
+    };
+    /omit-if-no-ref/ spi4_dio_pb30: PB30_SPI4_DIO {
+        pinmux = <0x50003090 4>;
+    };
+    /omit-if-no-ref/ spi4_do_pb16: PB16_SPI4_DO {
+        pinmux = <0x50003058 1>;
+    };
+    /omit-if-no-ref/ spi4_do_pb30: PB30_SPI4_DO {
+        pinmux = <0x50003090 2>;
+    };
+
+    /* SWCLK */
+    /omit-if-no-ref/ swclk_pb07: PB07_SWCLK {
+        pinmux = <0x50003034 0>;
+    };
+
+    /* SWDIO */
+    /omit-if-no-ref/ swdio_pb11: PB11_SWDIO {
+        pinmux = <0x50003044 0>;
+    };
+
+    /* UART4 */
+    /omit-if-no-ref/ uart4_cts_pb13: PB13_UART4_CTS {
+        pinmux = <0x5000304c 2>;
+    };
+    /omit-if-no-ref/ uart4_cts_pb43: PB43_UART4_CTS {
+        pinmux = <0x500030c4 2>;
+    };
+    /omit-if-no-ref/ uart4_cts_pb51: PB51_UART4_CTS {
+        pinmux = <0x500030e4 2>;
+    };
+    /omit-if-no-ref/ uart4_cts_pb56: PB56_UART4_CTS {
+        pinmux = <0x500030f8 2>;
+    };
+    /omit-if-no-ref/ uart4_rts_pb14: PB14_UART4_RTS {
+        pinmux = <0x50003050 2>;
+    };
+    /omit-if-no-ref/ uart4_rts_pb44: PB44_UART4_RTS {
+        pinmux = <0x500030c8 2>;
+    };
+    /omit-if-no-ref/ uart4_rts_pb52: PB52_UART4_RTS {
+        pinmux = <0x500030e8 2>;
+    };
+    /omit-if-no-ref/ uart4_rts_pb57: PB57_UART4_RTS {
+        pinmux = <0x500030fc 2>;
+    };
+    /omit-if-no-ref/ uart4_rxd_pb07: PB07_UART4_RXD {
+        pinmux = <0x50003034 2>;
+    };
+    /omit-if-no-ref/ uart4_rxd_pb36: PB36_UART4_RXD {
+        pinmux = <0x500030a8 1>;
+    };
+    /omit-if-no-ref/ uart4_txd_pb11: PB11_UART4_TXD {
+        pinmux = <0x50003044 2>;
+    };
+    /omit-if-no-ref/ uart4_txd_pb37: PB37_UART4_TXD {
+        pinmux = <0x500030ac 1>;
+    };
+
+    /* UART5 */
+    /omit-if-no-ref/ uart5_cts_pb23: PB23_UART5_CTS {
+        pinmux = <0x50003074 1>;
+    };
+    /omit-if-no-ref/ uart5_cts_pb43: PB43_UART5_CTS {
+        pinmux = <0x500030c4 3>;
+    };
+    /omit-if-no-ref/ uart5_cts_pb51: PB51_UART5_CTS {
+        pinmux = <0x500030e4 3>;
+    };
+    /omit-if-no-ref/ uart5_rts_pb26: PB26_UART5_RTS {
+        pinmux = <0x50003080 1>;
+    };
+    /omit-if-no-ref/ uart5_rts_pb44: PB44_UART5_RTS {
+        pinmux = <0x500030c8 3>;
+    };
+    /omit-if-no-ref/ uart5_rts_pb52: PB52_UART5_RTS {
+        pinmux = <0x500030e8 3>;
+    };
+    /omit-if-no-ref/ uart5_rxd_pb17: PB17_UART5_RXD {
+        pinmux = <0x5000305c 1>;
+    };
+    /omit-if-no-ref/ uart5_txd_pb18: PB18_UART5_TXD {
+        pinmux = <0x50003060 1>;
+    };
+
+    /* UART6 */
+    /omit-if-no-ref/ uart6_cts_pb06: PB06_UART6_CTS {
+        pinmux = <0x50003030 6>;
+    };
+    /omit-if-no-ref/ uart6_cts_pb15: PB15_UART6_CTS {
+        pinmux = <0x50003054 3>;
+    };
+    /omit-if-no-ref/ uart6_cts_pb38: PB38_UART6_CTS {
+        pinmux = <0x500030b0 2>;
+    };
+    /omit-if-no-ref/ uart6_cts_pb49: PB49_UART6_CTS {
+        pinmux = <0x500030dc 2>;
+    };
+    /omit-if-no-ref/ uart6_rts_pb19: PB19_UART6_RTS {
+        pinmux = <0x50003064 3>;
+    };
+    /omit-if-no-ref/ uart6_rts_pb39: PB39_UART6_RTS {
+        pinmux = <0x500030b4 2>;
+    };
+    /omit-if-no-ref/ uart6_rts_pb50: PB50_UART6_RTS {
+        pinmux = <0x500030e0 2>;
+    };
+    /omit-if-no-ref/ uart6_rxd_pb10: PB10_UART6_RXD {
+        pinmux = <0x50003040 4>;
+    };
+    /omit-if-no-ref/ uart6_rxd_pb13: PB13_UART6_RXD {
+        pinmux = <0x5000304c 1>;
+    };
+    /omit-if-no-ref/ uart6_rxd_pb28: PB28_UART6_RXD {
+        pinmux = <0x50003088 2>;
+    };
+    /omit-if-no-ref/ uart6_rxd_pb47: PB47_UART6_RXD {
+        pinmux = <0x500030d4 2>;
+    };
+    /omit-if-no-ref/ uart6_rxd_pb49: PB49_UART6_RXD {
+        pinmux = <0x500030dc 3>;
+    };
+    /omit-if-no-ref/ uart6_rxd_pb58: PB58_UART6_RXD {
+        pinmux = <0x50003100 2>;
+    };
+    /omit-if-no-ref/ uart6_txd_pb09: PB09_UART6_TXD {
+        pinmux = <0x5000303c 4>;
+    };
+    /omit-if-no-ref/ uart6_txd_pb14: PB14_UART6_TXD {
+        pinmux = <0x50003050 1>;
+    };
+    /omit-if-no-ref/ uart6_txd_pb29: PB29_UART6_TXD {
+        pinmux = <0x5000308c 2>;
+    };
+    /omit-if-no-ref/ uart6_txd_pb48: PB48_UART6_TXD {
+        pinmux = <0x500030d8 2>;
+    };
+    /omit-if-no-ref/ uart6_txd_pb50: PB50_UART6_TXD {
+        pinmux = <0x500030e0 3>;
+    };
+    /omit-if-no-ref/ uart6_txd_pb59: PB59_UART6_TXD {
+        pinmux = <0x50003104 2>;
+    };
+
+    /* WKUP */
+    /omit-if-no-ref/ wkup_pin0_pb54: PB54_WKUP_PIN0 {
+        pinmux = <0x500030f0 8>;
+    };
+    /omit-if-no-ref/ wkup_pin1_pb55: PB55_WKUP_PIN1 {
+        pinmux = <0x500030f4 8>;
+    };
+    /omit-if-no-ref/ wkup_pin2_pb56: PB56_WKUP_PIN2 {
+        pinmux = <0x500030f8 8>;
+    };
+    /omit-if-no-ref/ wkup_pin3_pb57: PB57_WKUP_PIN3 {
+        pinmux = <0x500030fc 8>;
+    };
+    /omit-if-no-ref/ wkup_pin4_pb58: PB58_WKUP_PIN4 {
+        pinmux = <0x50003100 8>;
+    };
+    /omit-if-no-ref/ wkup_pin5_pb59: PB59_WKUP_PIN5 {
+        pinmux = <0x50003104 8>;
+    };
+
+    /* WLAN */
+    /omit-if-no-ref/ wlan_active_pb09: PB09_WLAN_ACTIVE {
+        pinmux = <0x5000303c 6>;
+    };
+    /omit-if-no-ref/ wlan_active_pb41: PB41_WLAN_ACTIVE {
+        pinmux = <0x500030bc 2>;
+    };
+
+};

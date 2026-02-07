@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2025 Qingdao IotPi Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <sifli/sf32lb58_acpu.dtsi>
+#include <sifli/sf32lb586.dtsi>
+
+/ {
+};

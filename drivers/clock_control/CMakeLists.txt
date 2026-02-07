@@ -140,3 +140,7 @@ zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_WCH_RCC clock_control_wch_rcc.
 zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_AGILEX clock_agilex.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_AGILEX clock_agilex_ll.c)
 # zephyr-keep-sorted-stop
+
+if(CONFIG_SOC_SERIES_SF32LB58)
+  add_subdirectory(sf32lb58)
+endif()

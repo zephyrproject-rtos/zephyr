@@ -14,3 +14,10 @@ family:
     - name: sf32lb52eub6
     - name: sf32lb52guc6
     - name: sf32lb52jud6
+  - name: sf32lb58x
+    socs:
+    - name: sf32lb586
+      cpuclusters:
+      - name: hcpu
+      - name: acpu
+      - name: lcpu

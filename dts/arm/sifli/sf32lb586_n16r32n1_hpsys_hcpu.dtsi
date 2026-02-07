@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2025 Qingdao IotPi Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <sifli/sf32lb586_hpsys_hcpu.dtsi>
+#include <mem.h>
+
+/ {
+    chosen {
+		zephyr,flash = &flash4;
+    };
+    
+    soc {
+        flash4: mpi4@18000000 {
+            compatible = "flash-controller";
+            reg = <0x18000000 DT_SIZE_M(16)>;
+        };
+    };
+};

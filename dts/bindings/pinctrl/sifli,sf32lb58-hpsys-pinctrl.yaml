@@ -1,0 +1,56 @@
+# Copyright (c) 2025 Qingdao IotPi Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Sifli SF32LB58 HPSYS pinctrl node
+
+compatible: "sifli,sf32lb58-hpsys-pinctrl"
+
+include: [base.yaml]
+
+child-binding:
+  description: Sifli SF32LB58 HPSYS pin controller pin group
+  child-binding:
+    description: Sifli SF32LB58 HPSYS pin controller pin configuration node
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - input-enable
+          - bias-disable
+          - bias-pull-up
+          - bias-pull-down
+
+    properties:
+      pinmux:
+        required: true
+        type: phandles
+      drive-strength:
+        type: int
+        enum:
+          - 0
+          - 1
+          - 2
+          - 3
+        description: |
+          Corresponds to DS1/DS0 field in pinmux registers
+          0 (DS1 = 0, DS0 = 0)
+          1 (DS1 = 0, DS0 = 1)
+          2 (DS1 = 1, DS0 = 0)
+          1 (DS1 = 1, DS0 = 1)
+          Defaults to 1
+
+      slew-rate:
+        type: string
+        enum:
+          - "fast"
+          - "slow"
+        description: |
+          Corresponds to SR field in pinmux registers.
+          Fast slew rate: 0
+          Slow slew rate: 1
+          defaults to fast
+      schmitt-input:
+        type: boolean
+        description: |
+          Corresponds to SR field in pinmux registers.

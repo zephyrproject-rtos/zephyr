@@ -73,3 +73,9 @@ if(CONFIG_PINCTRL_BFLB)
   zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_BL61X pinctrl_bflb_bl61x.c)
   zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_BL70X pinctrl_bflb_bl60x_70x.c)
 endif()
+
+if(CONFIG_PINCTRL_SF32LB58_HPSYS)
+  zephyr_library_sources(
+    pinctrl_sf32lb58_hpsys_pinmux.c
+    pinctrl_sf32lb58_hpsys_pinctrl.c)
+endif()

@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2025 Qingdao IotPi Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <sifli/sf32lb586_n16r32n1_hpsys_hcpu.dtsi>
+#include "sf32lb58_devkit_lcd_sf32lb58_hpsys-pinctrl.dtsi"
+#include <mem.h>
+
+/ {
+	model = "SiFli SF32LB58 DevKit LCD HCPU";
+	compatible = "sifli,sf32lb58_devkit_lcd_sf32lb586_hcpu";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+	};
+};
+
+&usart1 {
+	pinctrl-0 = <&pinmux_usart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

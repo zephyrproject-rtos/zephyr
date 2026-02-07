@@ -1,0 +1,121 @@
+/*
+ * Copyright (c) 2025 Qingdao IotPi Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+#include <mem.h>
+
+#include <sifli/sf32lb58.dtsi>
+#include <zephyr/dt-bindings/clock/sf32lb58_clock.h>
+
+/ {
+    soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+        /* accessible from both hcpu and acpu */
+        sram_hcpu: sram-hcpu@20000000 {
+            compatible = "zephyr,memory-region", "mmio-sram";
+            reg = <0x20000000 DT_SIZE_K(2048)>;
+            zephyr,memory-region = "SRAM";
+
+		    #address-cells = <1>;
+		    #size-cells = <1>;
+
+            dtcm_hcpu: dtcm@20000000 {
+                compatible = "zephyr,memory-region", "mmio-sram";
+                reg = <0x20000000 DT_SIZE_K(128)>;
+                zephyr,memory-region = "DTCM";
+            };
+        };
+
+        sram_acpu: sram-acpu@20200000 {
+            compatible = "mmio-sram";
+            reg = <0x20200000 DT_SIZE_K(512)>;
+        };
+
+        hpsys_rcc: hpsys-rcc@40000000 {
+            compatible = "sifli,sf32lb58-hpsys-rcc";
+            status = "okay";
+            #clock-cells = <1>;
+            reg = <0x40000000 0x1000>;
+
+            clocks = <&clk_hxt48>, <&clk_hrc48>, <&clk_lxt32>, <&clk_lrc10>, <&clk_peri_hpsys>;
+            clock-names = "hxt48", "hrc48", "lxt32", "lrc10", "peri_hpsys";
+
+            sel-sys = <HPSYS_RCC_SEL_SYS_HXT48>;
+            sel-lp-sys = <HPSYS_RCC_SEL_LP_SYS_SEL_SYS>;
+            sel-mpi1 = <HPSYS_RCC_SEL_MPI_HPSYS>;
+            sel-mpi2 = <HPSYS_RCC_SEL_MPI_HPSYS>;
+            sel-mpi3 = <HPSYS_RCC_SEL_MPI_HPSYS>;
+            sel-mpi4 = <HPSYS_RCC_SEL_MPI_HPSYS>;
+            sel-peri = <HPSYS_RCC_SEL_PERI_HXT48>;
+            sel-pdm1 = <HPSYS_RCC_SEL_PDM_HPSYS>;
+            sel-pdm2 = <HPSYS_RCC_SEL_PDM_HPSYS>;
+            sel-usbc = <HPSYS_RCC_SEL_USBC_HPSYS>;
+            sel-sdmmc = <HPSYS_RCC_SEL_SDMMC_HPSYS>;
+        };
+
+		hpsys_aon: hpsys-aon@40040000 {
+			compatible = "sifli,sf32lb58-hpsys-aon";
+			reg = <0x40040000 0x1000>;
+            #clock-cells = <1>;
+            status = "okay";
+		};
+
+        pinmux: pinmux@40003000 {
+            compatible = "sifli,sf32lb58-hpsys-pinmux";
+            reg = <0x40003000 0x1000>;
+            clocks = <&hpsys_rcc HPSYS_RCC_SUBSYS_PINMUX1>;
+            status = "okay";
+
+            pinctrl: pinctrl {
+                compatible = "sifli,sf32lb58-hpsys-pinctrl";
+                status = "okay";
+            };
+        };
+
+        usart1: usart@40004000 {
+            compatible = "sifli,sf32lb-usart";
+            reg = <0x40004000 0x1000>;
+            status = "disabled";
+            current-speed = <1000000>;
+            clocks =<&hpsys_rcc HPSYS_RCC_SUBSYS_USART1>, <&clk_peri_hpsys>;
+            interrupts = <59 0>;
+            pinctrl-0 = <&pinmux_usart1_default>;
+            pinctrl-names = "default";
+        };
+    };
+
+    clocks {
+        clk_peri_hpsys: clk-peri-hpsys {
+            compatible = "sifli,sf32lb58-peri-hpsys-clk";
+            #clock-cells = <0>; /* clock, selection */
+            clock-frequency = <DT_FREQ_M(48)>;
+            clocks = <&clk_hxt48>;
+        };
+
+        clk_dll1: clk-dll0 {
+        };
+
+        clk_dll2: clk-dll1 {
+        };
+
+        clk_dll3: clk-dll2 {
+        };
+    };
+};
+
+&clk_hxt48 {
+    clocks = <&hpsys_aon HPSYS_AON_SUBSYS_HXT48>;
+};
+
+&clk_hrc48 {
+    clocks = <&hpsys_aon HPSYS_AON_SUBSYS_HRC48>;
+};
+
+&clk_lrc10 {
+    clocks = <&hpsys_aon HPSYS_AON_SUBSYS_LRC10>;
+};

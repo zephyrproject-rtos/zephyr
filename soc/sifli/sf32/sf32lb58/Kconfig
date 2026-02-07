@@ -1,0 +1,14 @@
+# Copyright (c) 2025 Qingdao IotPi Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SF32LB58
+       bool
+       select ARM
+       select CPU_CORTEX_M33
+       select CPU_HAS_ARM_MPU
+       select CPU_HAS_FPU
+       select CPU_HAS_ICACHE
+       select CPU_HAS_DCACHE
+       select ARMV8_M_DSP
+       select PINCTRL

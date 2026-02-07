@@ -1,0 +1,6 @@
+board:
+  name: sf32lb58_devkit_lcd
+  full_name: SF32LB58 DevKit LCD
+  vendor: sifli
+  socs:
+    - name: sf32lb586

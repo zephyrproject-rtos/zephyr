@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2025 Qingdao IotPi Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+#include <sifli/sf32lb58.dtsi>
+
+/ {
+};
