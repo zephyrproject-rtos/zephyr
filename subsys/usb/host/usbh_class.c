@@ -14,11 +14,9 @@
 
 LOG_MODULE_REGISTER(usbh_class, CONFIG_USBH_LOG_LEVEL);
 
-void usbh_class_init_all(struct usbh_context *const uhs_ctx)
+void usbh_class_init_all(void)
 {
 	int ret;
-
-	usbh_host_lock(uhs_ctx);
 
 	STRUCT_SECTION_FOREACH(usbh_class_node, c_node) {
 		struct usbh_class_data *const c_data = c_node->c_data;
@@ -29,15 +27,13 @@ void usbh_class_init_all(struct usbh_context *const uhs_ctx)
 			continue;
 		}
 
-		ret = usbh_class_init(c_data, uhs_ctx);
+		ret = usbh_class_init(c_data);
 		if (ret != 0) {
 			LOG_WRN("Failed to initialize class %s (%d)",
 				c_data->name, ret);
 			c_node->state = USBH_CLASS_STATE_ERROR;
 		}
 	}
-
-	usbh_host_unlock(uhs_ctx);
 }
 
 void usbh_class_remove_all(struct usb_device *const udev)

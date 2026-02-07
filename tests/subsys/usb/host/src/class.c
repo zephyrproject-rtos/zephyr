@@ -38,8 +38,7 @@ static struct usbh_foo_priv usbh_foo_priv = {
 	.state = FOO_CLASS_PRIV_INACTIVE,
 };
 
-static int usbh_foo_init(struct usbh_class_data *const c_data,
-			 struct usbh_context *const uhs_ctx)
+static int usbh_foo_init(struct usbh_class_data *const c_data)
 {
 	struct usbh_foo_priv *priv = c_data->priv;
 
