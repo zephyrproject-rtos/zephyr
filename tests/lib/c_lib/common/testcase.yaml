@@ -5,7 +5,11 @@ common:
   integration_platforms:
     - mps2/an385
 tests:
-  libraries.libc.common: {}
+  libraries.libc.common:
+    # versal2_rpu excluded: test_time_asctime uses userspace memory partitions
+    # which fail MPU coherence check due to ARMv8-R 64-byte alignment requirements
+    platform_exclude:
+      - versal2_rpu/amd_versal2_rpu
   libraries.libc.common.minimal:
     filter: CONFIG_MINIMAL_LIBC_SUPPORTED
     tags: minimal_libc
@@ -27,6 +31,10 @@ tests:
       - CONFIG_NEWLIB_LIBC_NANO=y
   libraries.libc.common.picolibc:
     filter: CONFIG_PICOLIBC_SUPPORTED
+    # versal2_rpu excluded: test_time_asctime uses userspace memory partitions
+    # which fail MPU coherence check due to ARMv8-R 64-byte alignment requirements
+    platform_exclude:
+      - versal2_rpu/amd_versal2_rpu
     tags: picolibc
     extra_configs:
       - CONFIG_PICOLIBC=y

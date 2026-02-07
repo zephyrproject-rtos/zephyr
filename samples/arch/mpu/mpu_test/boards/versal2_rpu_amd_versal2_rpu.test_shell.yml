@@ -1,0 +1,6 @@
+# Board-specific test commands for versal2_rpu
+# The SRAM on versal2_rpu starts at 0x30000, so use addresses within valid memory range
+- command: "mpu mtest 30000"
+  expected: "The value is: 0x.*"
+- command: "mpu mtest 30004"
+  expected: "The value is: 0x.*"

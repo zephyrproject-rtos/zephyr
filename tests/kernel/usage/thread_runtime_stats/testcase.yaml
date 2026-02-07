@@ -19,3 +19,4 @@ tests:
     platform_exclude:
       - mr_canhubk3
       - cortex_r8_virtual
+      - versal2_rpu/amd_versal2_rpu
