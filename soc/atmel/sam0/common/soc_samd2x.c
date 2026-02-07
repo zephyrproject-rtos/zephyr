@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2017 Google LLC.
  * Copyright (c) 2023 Ionut Catalin Pavel <iocapa@iocapa.com>
- * Copyright (c) 2023-2025 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2023-2026 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,9 +18,9 @@
  *
  * GCLK Gen 0 -> GCLK_MAIN
  * GCLK Gen 1 -> DFLL48M (variable)
- * GCLK Gen 2 -> WDT @ 32768 Hz
+ * GCLK Gen 2 -> WDT @ 32.768 kHz
  * GCLK Gen 3 -> ADC @ 8 MHz
- * GCLK Gen 4 -> RTC @ xtal 32768 Hz
+ * GCLK Gen 4 -> RTC @ xosc32k (xtal or clock) | osc32k 32.768 kHz
  */
 
 #include <zephyr/device.h>
@@ -237,7 +237,11 @@ static inline void gclk_adc_configure(void)
 #else
 static inline void gclk_rtc_configure(void)
 {
-	gclk_connect(4, GCLK_GENCTRL_SRC_XOSC32K, CONFIG_SOC_ATMEL_SAMD_XOSC32K_PRESCALER, 0);
+#if CONFIG_SOC_ATMEL_SAMD_XOSC32K
+	gclk_connect(4, GCLK_GENCTRL_SRC_XOSC32K, CONFIG_SOC_ATMEL_SAMD_32768HZ_RTC_PRESCALER, 0);
+#else
+	gclk_connect(4, GCLK_GENCTRL_SRC_OSC32K, CONFIG_SOC_ATMEL_SAMD_32768HZ_RTC_PRESCALER, 0);
+#endif
 }
 #endif
 
