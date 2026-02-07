@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Embeint Inc
+# SPDX-License-Identifier: Apache-2.0
+
+description: nRF7002 Wi-Fi chip with MSPI interface.
+
+compatible: nordic,nrf7002-mspi
+
+include:
+  - "nordic,nrf70-mspi.yaml"
+  - "wifi-tx-power-2g.yaml"
+  - "wifi-tx-power-5g.yaml"

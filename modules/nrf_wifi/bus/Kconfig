@@ -17,6 +17,12 @@ config NRF70_ON_QSPI
 			 $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7000_QSPI))
 	select NRFX_QSPI
 
+config NRF70_ON_MSPI
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7002_MSPI)) ||\
+			 $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7001_MSPI)) ||\
+			 $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7000_MSPI))
+	select MSPI
+
 config NRF70_ON_SPI
 	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7002_SPI)) ||\
 			 $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7001_SPI)) ||\
