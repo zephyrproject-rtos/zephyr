@@ -246,22 +246,22 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
 			     CONFIG_ISR_STACK_SIZE);
 
-static void isr_stack(thread_analyzer_cb cb, int core)
+static void isr_stack(struct ta_cb_user_data *ta_ctx)
 {
-	const uint8_t *buf = K_KERNEL_STACK_BUFFER(z_interrupt_stacks[core]);
-	size_t size = K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[core]);
+	const uint8_t *buf = K_KERNEL_STACK_BUFFER(z_interrupt_stacks[ta_ctx->cpu]);
+	size_t size = K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[ta_ctx->cpu]);
 	size_t unused;
 	int err;
 
 #if CONFIG_MP_MAX_NUM_CPUS < 10
 	char name[] = "ISR0";
 
-	name[3] += core;
+	name[3] += ta_ctx->cpu;
 #elif CONFIG_MP_MAX_NUM_CPUS < 100
 	char name[] = "ISR00";
 
-	name[3] += core / 10;
-	name[4] += core % 10;
+	name[3] += ta_ctx->cpu / 10;
+	name[4] += ta_ctx->cpu % 10;
 #else
 #error Too many CPUs
 #endif
@@ -273,44 +273,54 @@ static void isr_stack(thread_analyzer_cb cb, int core)
 			.stack_used = size - unused,
 		};
 
-		cb(&isr_info);
+		ta_ctx->cb(&isr_info);
 	}
 }
 
-static void isr_stacks(thread_analyzer_cb cb)
+static void isr_stacks(struct ta_cb_user_data *ta_ctx)
 {
 	unsigned int num_cpus = arch_num_cpus();
 
 	for (int i = 0; i < num_cpus; i++) {
-		isr_stack(cb, i);
+		ta_ctx->cpu = i;
+		isr_stack(ta_ctx);
 	}
 }
 
-void thread_analyzer_run(thread_analyzer_cb cb, unsigned int cpu)
+void thread_analyzer_internal(struct ta_cb_user_data *ta_ctx)
 {
-	struct ta_cb_user_data ud = { .cb = cb, .cpu = cpu };
-
 	if (IS_ENABLED(CONFIG_THREAD_ANALYZER_RUN_UNLOCKED)) {
 		if (IS_ENABLED(CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES)) {
-			k_thread_foreach_unlocked_filter_by_cpu(cpu, thread_analyze_cb, &ud);
+			k_thread_foreach_unlocked_filter_by_cpu(ta_ctx->cpu, thread_analyze_cb,
+								ta_ctx);
 		} else {
-			k_thread_foreach_unlocked(thread_analyze_cb, &ud);
+			k_thread_foreach_unlocked(thread_analyze_cb, ta_ctx);
 		}
 	} else {
 		if (IS_ENABLED(CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES)) {
-			k_thread_foreach_filter_by_cpu(cpu, thread_analyze_cb, &ud);
+			k_thread_foreach_filter_by_cpu(ta_ctx->cpu, thread_analyze_cb, ta_ctx);
 		} else {
-			k_thread_foreach(thread_analyze_cb, &ud);
+			k_thread_foreach(thread_analyze_cb, ta_ctx);
 		}
 	}
 
 	if (IS_ENABLED(CONFIG_THREAD_ANALYZER_ISR_STACK_USAGE)) {
 		if (IS_ENABLED(CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES)) {
-			isr_stack(cb, cpu);
+			isr_stack(ta_ctx);
 		} else {
-			isr_stacks(cb);
+			isr_stacks(ta_ctx);
 		}
 	}
+}
+
+void thread_analyzer_run(thread_analyzer_cb cb, unsigned int cpu)
+{
+	struct ta_cb_user_data ctx = {
+		.cb = cb,
+		.cpu = cpu,
+	};
+
+	thread_analyzer_internal(&ctx);
 }
 
 void thread_analyzer_print(unsigned int cpu)
