@@ -78,7 +78,12 @@ void riscv_imsic_enable_eiid(uint32_t eiid)
 
 	LOG_DBG("IMSIC enable EIID %u on CPU %u: EIE[%u] bit %u", eiid, arch_proc_id(),
 		reg_index, bit);
+
+	unsigned int key = irq_lock();
+
 	micsr_set(icsr_addr, BIT(bit));
+
+	irq_unlock(key);
 }
 
 /* Disable an EIID in IMSIC EIE - operates on CURRENT CPU's IMSIC via CSRs */
@@ -89,7 +94,11 @@ void riscv_imsic_disable_eiid(uint32_t eiid)
 	eiid_to_eie_index(eiid, &reg_index, &bit);
 	uint32_t icsr_addr = ICSR_EIE0 + reg_index;
 
+	unsigned int key = irq_lock();
+
 	micsr_clear(icsr_addr, BIT(bit));
+
+	irq_unlock(key);
 	LOG_DBG("IMSIC disable EIID %u on CPU %u", eiid, arch_proc_id());
 }
 
@@ -101,7 +110,11 @@ int riscv_imsic_is_enabled(uint32_t eiid)
 	eiid_to_eie_index(eiid, &reg_index, &bit);
 	uint32_t icsr_addr = ICSR_EIE0 + reg_index;
 
-	return !!(micsr_read(icsr_addr) & BIT(bit));
+	unsigned int key = irq_lock();
+	int ret = !!(micsr_read(icsr_addr) & BIT(bit));
+
+	irq_unlock(key);
+	return ret;
 }
 
 /* Separate IRQ registration for hart 0 vs other harts to avoid duplicate registration */
