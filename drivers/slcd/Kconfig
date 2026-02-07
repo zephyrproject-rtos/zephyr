@@ -1,0 +1,25 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SLCD
+	bool "SLCD (Segmented LCD) Drivers"
+	help
+	  Enable drivers for Segmented LCD (SLCD).
+
+if SLCD
+
+module = SLCD
+module-str = slcd
+source "subsys/logging/Kconfig.template.log_config"
+
+config SLCD_CONTROLLER_INIT_PRIORITY
+	int "Controller initialization priority"
+	default 85
+	help
+	  SLCD Bus Controllers initialization priority.
+
+# zephyr-keep-sorted-start
+source "drivers/slcd/Kconfig.nxp_slcd"
+# zephyr-keep-sorted-stop
+
+endif # SLCD

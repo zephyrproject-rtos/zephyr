@@ -1,0 +1,7 @@
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_OD_6010
+	def_bool $(shields_list_contains,od_6010)
+	select AUXDISPLAY_SLCD_7SEGMENT

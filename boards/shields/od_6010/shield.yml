@@ -1,0 +1,6 @@
+shields:
+  - name: od_6010
+    full_name: Orient OD-6010 7-segment SLCD Panel
+    vendor: orient
+    supported_features:
+      - slcd

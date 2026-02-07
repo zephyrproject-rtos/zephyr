@@ -1,0 +1,24 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Segmented LCD (SLCD) Controller.
+
+  Generic SLCD controller driver that supports controlling an SLCD device.
+  This driver can be implemented by either a dedicated SLCD IP or a general
+  GPIO IP, depending on what the SoC provides.
+
+include: base.yaml
+
+bus: slcd
+
+properties:
+  num-front-pins:
+    type: int
+    required: true
+    description: Number of front plane pins the controller has
+
+  num-back-coms:
+    type: int
+    required: true
+    description: Number of back plane(com) pins the controller has
