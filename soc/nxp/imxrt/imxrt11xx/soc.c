@@ -770,6 +770,22 @@ static int imxrt_init(void)
  */
 
 #ifdef CONFIG_SOC_RESET_HOOK
+#ifdef __ICCARM__
+void __used _soc_reset_hook(void);
+__root __stackless void soc_reset_hook(void)
+{
+	extern char z_main_stack[];
+	char *stack_top = z_main_stack + CONFIG_MAIN_STACK_SIZE;
+
+	__asm volatile(
+		"msr msp, %0"
+		:
+		: "r" (stack_top)
+	);
+
+	_soc_reset_hook();
+}
+#else /* !__ICCARM__ */
 __asm__ (
 	".global soc_reset_hook\n"
 	"soc_reset_hook:\n"
@@ -777,6 +793,7 @@ __asm__ (
 	"msr msp, r0;\n"
 	"b _soc_reset_hook;\n"
 );
+#endif /* __ICCARM__ */
 
 void __used _soc_reset_hook(void)
 {

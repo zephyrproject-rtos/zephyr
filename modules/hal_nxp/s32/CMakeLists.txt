@@ -60,14 +60,41 @@ if(CONFIG_HAS_MCUX)
   zephyr_linker_sources(RWDATA
     ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/quick_access_data.ld
   )
+  zephyr_linker_section_configure(
+    SECTION .data
+    INPUT "DataQuickAccess"
+    ALIGN 4
+  )
+
   zephyr_linker_sources_ifdef(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
     RAMFUNC_SECTION
     ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/quick_access_code.ld
   )
+  if(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT)
+    zephyr_linker_section_configure(
+      SECTION .ramfunc
+      INPUT "CodeQuickAccess"
+      ALIGN 4
+    )
+  endif()
+
   zephyr_linker_sources_ifdef(CONFIG_NOCACHE_MEMORY
     NOCACHE_SECTION
     ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/nocache.ld
   )
+  if(CONFIG_NOCACHE_MEMORY)
+    zephyr_linker_section_configure(
+      SECTION nocache # _NOCACHE_SECTION_NAME
+      INPUT "NonCacheable"
+      ALIGN 4
+    )
+
+    zephyr_linker_section_configure(
+      SECTION nocache_load # _NOCACHE_LOAD_SECTION_NAME
+      INPUT "NonCacheable.init"
+      ALIGN 4
+    )
+  endif()
 
   # Load MCUX SDK NG code.
   include(../mcux/mcux-sdk-ng/basic.cmake)

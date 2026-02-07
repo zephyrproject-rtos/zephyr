@@ -15,6 +15,16 @@ zephyr_linker_sources_ifdef(CONFIG_MCXE_FLASH_CONFIG
   flash_config.ld
   )
 
+if(CONFIG_MCXE_FLASH_CONFIG)
+  zephyr_linker_section_configure(
+    SECTION .rom_start
+    INPUT ".kinetis_flash_config"
+          ".kinetis_flash_config.*"
+    OFFSET 0x400
+    KEEP
+  )
+endif()
+
 # CMSIS SystemInit will disable watchdog unless instructed not to.
 # Add a compiler definition here to leave watchdog untouched
 # if this Kconfig is set

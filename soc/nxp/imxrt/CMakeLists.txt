@@ -30,12 +30,20 @@ if(CONFIG_SOC_SERIES_IMXRT10XX OR CONFIG_SOC_SERIES_IMXRT11XX)
     INPUT ".boot_hdr.ivt"
           ".boot_hdr.data"
           ${boot_hdr_dcd_data_section}
-          ${boot_hdr_xmcd_data_section}
     OFFSET ${CONFIG_IMAGE_VECTOR_TABLE_OFFSET}
     FIRST
     KEEP
     PRIO 11
   )
+  if(CONFIG_EXTERNAL_MEM_CONFIG_DATA)
+    zephyr_linker_section_configure(
+      SECTION .rom_start
+      INPUT ${boot_hdr_xmcd_data_section}
+      OFFSET ${CONFIG_EXTERNAL_MEM_CONFIG_OFFSET}
+      KEEP
+      PRIO 12
+    )
+  endif()
   zephyr_compile_definitions(XIP_EXTERNAL_FLASH)
 endif()
 
@@ -55,14 +63,25 @@ if(CONFIG_SOC_SERIES_IMXRT118X)
     INPUT ${boot_hdr_xmcd_data_section}
     OFFSET ${CONFIG_EXTERNAL_MEM_CONFIG_OFFSET}
     KEEP
-    PRIO 10
+    PRIO 11
   )
   zephyr_linker_section_configure(
     SECTION .rom_start
     INPUT ".boot_hdr.container"
     OFFSET ${CONFIG_IMAGE_CONTAINER_OFFSET}
     KEEP
-    PRIO 11
+    PRIO 12
+  )
+  zephyr_compile_definitions(XIP_EXTERNAL_FLASH)
+endif()
+
+if(CONFIG_SOC_SERIES_IMXRT6XX OR CONFIG_SOC_SERIES_IMXRT5XX OR CONFIG_SOC_SERIES_IMXRT7XX)
+  zephyr_linker_section_configure(
+    SECTION .rom_start
+    INPUT ".flash_conf"
+    OFFSET ${CONFIG_FLEXSPI_CONFIG_BLOCK_OFFSET}
+    KEEP
+    PRIO 10
   )
   zephyr_compile_definitions(XIP_EXTERNAL_FLASH)
 endif()

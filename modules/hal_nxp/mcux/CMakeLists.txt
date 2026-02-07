@@ -75,17 +75,44 @@ else()
   zephyr_linker_sources(RWDATA
     ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/quick_access_data.ld
     )
+  zephyr_linker_section_configure(
+    SECTION .data
+    INPUT "DataQuickAccess"
+    ALIGN 4
+  )
 
   zephyr_linker_sources_ifdef(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
     RAMFUNC_SECTION
     ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/quick_access_code.ld
     )
+
+  if(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT)
+    zephyr_linker_section_configure(
+      SECTION .ramfunc
+      INPUT "CodeQuickAccess"
+      ALIGN 4
+    )
+  endif()
 endif()
 
 zephyr_linker_sources_ifdef(CONFIG_NOCACHE_MEMORY
   NOCACHE_SECTION
   ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/nocache.ld
   )
+
+if(CONFIG_NOCACHE_MEMORY)
+  zephyr_linker_section_configure(
+    SECTION nocache # _NOCACHE_SECTION_NAME
+    INPUT "NonCacheable"
+    ALIGN 4
+  )
+
+  zephyr_linker_section_configure(
+    SECTION nocache_load # _NOCACHE_LOAD_SECTION_NAME
+    INPUT "NonCacheable.init"
+    ALIGN 4
+  )
+endif()
 
 if(NOT CONFIG_ASSERT OR CONFIG_FORCE_NO_ASSERT)
   zephyr_compile_definitions(NDEBUG) # squelch fsl_flexcan.c warning

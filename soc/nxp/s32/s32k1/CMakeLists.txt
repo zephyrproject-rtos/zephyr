@@ -10,3 +10,12 @@ zephyr_sources_ifdef(CONFIG_ARM_MPU nxp_mpu_regions.c)
 
 zephyr_sources_ifdef(CONFIG_NXP_S32_FLASH_CONFIG flash_configuration.c)
 zephyr_linker_sources_ifdef(CONFIG_NXP_S32_FLASH_CONFIG ROM_START SORT_KEY 0x1 flash_config.ld)
+if(CONFIG_NXP_S32_FLASH_CONFIG)
+  zephyr_linker_section_configure(
+    SECTION .rom_start
+    INPUT ".kinetis_flash_config"
+          ".kinetis_flash_config.*"
+    OFFSET ${CONFIG_NXP_S32_FLASH_CONFIG_OFFSET}
+    KEEP
+  )
+endif()

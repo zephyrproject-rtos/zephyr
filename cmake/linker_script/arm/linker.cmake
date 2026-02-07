@@ -218,11 +218,29 @@ zephyr_linker_symbol(SYMBOL ARM_LIB_STACKHEAP EXPR "(${RAM_ADDR} + ${RAM_SIZE})"
 
 set(VECTOR_ALIGN 4)
 if(CONFIG_CPU_CORTEX_M_HAS_VTOR)
-  math(EXPR VECTOR_ALIGN "4 * (16 + ${CONFIG_NUM_IRQS})")
-  if(${VECTOR_ALIGN} LESS 128)
-    set(VECTOR_ALIGN 128)
+  # Calculate minimum alignment based on architecture variant
+  # This matches the logic in arch/arm/core/vector_table.ld
+  if(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    # VTOR bits 0:7 are reserved (RES0). This requires that the base address
+    # of the vector table is 64-word aligned (256 bytes).
+    set(MIN_VECTOR_ALIGN 256)
+  elseif(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+    # VTOR bits 0:6 are reserved (RES0). This requires that the base address
+    # of the vector table is 32-word aligned (128 bytes).
+    set(MIN_VECTOR_ALIGN 128)
   else()
+    set(MIN_VECTOR_ALIGN 128)
+  endif()
+
+  if(CONFIG_ARCH_IRQ_VECTOR_TABLE_ALIGN)
+    set(VECTOR_ALIGN ${CONFIG_ARCH_IRQ_VECTOR_TABLE_ALIGN})
+  else()
+    math(EXPR VECTOR_ALIGN "4 * (16 + ${CONFIG_NUM_IRQS})")
     pow2round(VECTOR_ALIGN)
+  endif()
+
+  if(${VECTOR_ALIGN} LESS ${MIN_VECTOR_ALIGN})
+    set(VECTOR_ALIGN ${MIN_VECTOR_ALIGN})
   endif()
 endif()
 
@@ -284,3 +302,5 @@ zephyr_linker_section(NAME .last_section VMA FLASH LMA FLASH
                       NOINPUT TYPE LINKER_SCRIPT_FOOTER)
 # KEEP can not be passed to zephyr_linker_section, so:
 zephyr_linker_section_configure(SECTION .last_section INPUT ".last_section" KEEP)
+
+zephyr_linker_symbol(SYMBOL "_flash_used" EXPR "(@__last_section_end@ - ${rom_start})")
