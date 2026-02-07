@@ -1,4 +1,4 @@
-# Copyright (c) 2020-2025, Gerson Fernando Budke <nandojve@gmail.com>
+# Copyright (c) 2020-2026, Gerson Fernando Budke <nandojve@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
 identifier: sam4l_ek
@@ -19,5 +19,6 @@ supported:
   - spi
   - uart
   - usb_device
+  - usbd
   - watchdog
 vendor: atmel
