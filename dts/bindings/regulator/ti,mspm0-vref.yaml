@@ -1,0 +1,53 @@
+# Copyright 2025 Linumiz GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instruments MSPM0 Voltage Reference (VREF) Regulator
+
+compatible: "ti,mspm0-vref"
+
+include:
+  - name: regulator.yaml
+  - name: base.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+  clocks:
+    required: true
+  regulator-uv:
+    type: int
+    required: true
+    enum:
+      - 1400000
+      - 2500000
+    description: |
+      Minimum supported output, usually 1400000 (1.4V)
+      Maximum supported output, usually 2500000 (2.5V)
+  ti,sample-hold-enable:
+    type: boolean
+    description: Enable sample & hold mode
+  ti,sample-cycles:
+    type: int
+    description: Number of sample cycles for sample & hold mode
+    default: 8
+  pinctrl-0:
+    required: true
+    description: |
+      Gpio pin specification for VREF input/output pin ( PA23 )
+  pinctrl-names:
+    required: true
+  ti,hold-cycles:
+    type: int
+    description: Number of hold cycles for sample & hold mode
+    default: 64
+  ti,clk-div:
+    type: int
+    default: 1
+    enum:
+      - 1
+      - 2
+      - 4
+      - 6
+      - 8
