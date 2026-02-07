@@ -1,0 +1,105 @@
+#
+# Copyright (c) 2025 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "ZBus proxy agent support"
+
+config ZBUS_PROXY_AGENT_MESSAGE_SIZE
+	int "ZBus proxy agent message size"
+	default 64
+	help
+	  Configures the size of message buffers used in ZBus proxy agent communication.
+	  This setting sets the maximum size of messages that can be sent between domains.
+
+config ZBUS_PROXY_AGENT_CHANNEL_NAME_SIZE
+	int "ZBus proxy agent channel name size"
+	default 32
+	help
+	  Configures the size of channel name buffers used in ZBus proxy agent communication.
+	  This setting sets how long channel names can be when communicating between domains.
+
+config ZBUS_PROXY_AGENT_CLEANUP_QUEUE_SIZE
+	int "ZBus proxy agent tracking cleanup queue size"
+	default 4
+	help
+	  Configures the size of the tracking cleanup queue used for thread-safe
+	  processing of message tracking cleanup. This queue allows cleanup
+	  processing to be deferred from interrupt context to thread context where
+	  work items can be safely cancelled.
+
+config ZBUS_PROXY_AGENT_RECEIVE_QUEUE_SIZE
+	int "ZBus proxy agent receive queue size"
+	default 2
+	help
+	  Configures the size of the receive queue used for incoming messages
+	  from the remote domain. This queue holds messages until they are
+	  published to local ZBus channels.
+
+config ZBUS_PROXY_AGENT_ACK_TIMEOUT_MAX_MS
+	int "ZBus proxy agent maximum ACK timeout (ms)"
+	default 1000
+	help
+	  Configures the maximum ACK timeout in milliseconds for messages
+	  sent by the ZBus proxy agent. This is the upper limit for the
+	  exponential backoff used when waiting for acknowledgments.
+
+menuconfig ZBUS_PROXY_AGENT_UART
+	bool "ZBus proxy agent UART backend"
+	select UART_ASYNC_API
+	select CRC
+	help
+	  Enables the ZBus proxy agent UART backend, allowing for ZBus between domains over UART.
+
+if ZBUS_PROXY_AGENT_UART
+
+config ZBUS_PROXY_AGENT_RX_BUF_COUNT
+	int "ZBus proxy agent UART RX buffer count"
+	default 2
+	help
+	  Configures the number of RX buffers used by the ZBus proxy agent UART backend.
+
+config ZBUS_PROXY_AGENT_RX_CHUNK_SIZE
+	int "ZBus proxy agent UART RX chunk size"
+	default 32
+	help
+	  Configures the size of the RX chunks used by the ZBus proxy agent UART backend. Smaller
+	  chunk sizes reduce overhead but may impact performance and need more rx buffers.
+
+module = ZBUS_PROXY_AGENT_UART
+module-str = zbus_proxy_agent_uart
+source "subsys/logging/Kconfig.template.log_config"
+endif # ZBUS_PROXY_AGENT_UART
+
+menuconfig ZBUS_PROXY_AGENT_IPC
+	bool "ZBus proxy agent IPC backend"
+	select IPC_SERVICE
+	select MBOX
+	select CRC
+	help
+	  Enables the ZBus proxy agent IPC backend, allowing communication between domains over IPC.
+
+if ZBUS_PROXY_AGENT_IPC
+module = ZBUS_PROXY_AGENT_IPC
+module-str = zbus_proxy_agent_ipc
+source "subsys/logging/Kconfig.template.log_config"
+endif # ZBUS_PROXY_AGENT_IPC
+
+module = ZBUS_PROXY_AGENT
+module-str = zbus_proxy_agent
+source "subsys/logging/Kconfig.template.log_config"
+
+config ZBUS_PROXY_AGENT_STACK_SIZE
+	int "ZBus proxy agent thread stack size"
+	default 2048
+	help
+	  Configures the stack size for the ZBus proxy agent thread.
+
+config ZBUS_PROXY_AGENT_PRIORITY
+	int "ZBus proxy agent thread priority"
+	default 7
+	help
+	  Configures the priority of the ZBus proxy agent thread.
+
+endmenu # ZBus proxy agent support

@@ -1,0 +1,5 @@
+tests:
+  message_bus.zbus.proxy_agent.uart_backend:
+    tags: zbus
+    integration_platforms:
+      - native_sim

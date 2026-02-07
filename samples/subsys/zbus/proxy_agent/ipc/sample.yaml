@@ -1,0 +1,29 @@
+sample:
+  name: IPC Forwarder
+  description: Sample application demonstrating Zbus IPC forwarder functionality.
+tests:
+  sample.zbus.proxy_agent_ipc.nrf54h20_cpuapp_cpurad:
+    sysbuild: true
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    extra_args:
+      - ipc_CONFIG_SOC_NRF54H20_CPURAD_ENABLE=y
+
+  sample.zbus.proxy_agent_ipc.nrf54lm20_cpuapp_cpuflpr:
+    sysbuild: true
+    platform_allow:
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+    extra_args:
+      - ipc_SNIPPET=nordic-flpr
+
+  sample.zbus.proxy_agent_ipc.nrf54l15_cpuapp_cpuflpr:
+    sysbuild: true
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+    extra_args:
+      - ipc_SNIPPET=nordic-flpr
+
+  sample.zbus.proxy_agent_ipc.nrf5340_cpuapp_cpunet:
+    sysbuild: true
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
