@@ -502,11 +502,6 @@ static int pl011_irq_is_pending(const struct device *dev)
 	return pl011_irq_rx_ready(dev) || pl011_irq_tx_ready(dev);
 }
 
-static int pl011_irq_update(const struct device *dev)
-{
-	return 1;
-}
-
 static void pl011_irq_callback_set(const struct device *dev,
 					    uart_irq_callback_user_data_t cb,
 					    void *cb_data)
@@ -549,7 +544,6 @@ static DEVICE_API(uart, pl011_driver_api) = {
 	.irq_err_enable = pl011_irq_err_enable,
 	.irq_err_disable = pl011_irq_err_disable,
 	.irq_is_pending = pl011_irq_is_pending,
-	.irq_update = pl011_irq_update,
 	.irq_callback_set = pl011_irq_callback_set,
 };
 #endif /* PL011_USE_IRQ */

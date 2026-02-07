@@ -487,11 +487,6 @@ static int virtconsole_irq_is_pending(const struct device *dev)
 {
 	return virtconsole_irq_rx_ready(dev);
 }
-static int virtconsole_irq_update(const struct device *dev)
-{
-	/* Nothing to be done */
-	return 1;
-}
 static void virtconsole_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
 					 void *user_data)
 {
@@ -581,7 +576,6 @@ static DEVICE_API(uart, virtconsole_api) = {
 	.irq_rx_enable = virtconsole_irq_rx_enable,
 	.irq_rx_ready = virtconsole_irq_rx_ready,
 	.irq_is_pending = virtconsole_irq_is_pending,
-	.irq_update = virtconsole_irq_update,
 	.irq_callback_set = virtconsole_irq_callback_set,
 #endif
 };

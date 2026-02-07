@@ -482,11 +482,6 @@ static int uart_rcar_irq_is_pending(const struct device *dev)
 	       (uart_rcar_irq_tx_ready(dev) && uart_rcar_irq_is_enabled(dev, SCSCR_TIE));
 }
 
-static int uart_rcar_irq_update(const struct device *dev)
-{
-	return 1;
-}
-
 static void uart_rcar_irq_callback_set(const struct device *dev,
 				       uart_irq_callback_user_data_t cb,
 				       void *cb_data)
@@ -534,7 +529,6 @@ static DEVICE_API(uart, uart_rcar_driver_api) = {
 	.irq_err_enable = uart_rcar_irq_err_enable,
 	.irq_err_disable = uart_rcar_irq_err_disable,
 	.irq_is_pending = uart_rcar_irq_is_pending,
-	.irq_update = uart_rcar_irq_update,
 	.irq_callback_set = uart_rcar_irq_callback_set,
 #endif  /* CONFIG_UART_INTERRUPT_DRIVEN */
 };

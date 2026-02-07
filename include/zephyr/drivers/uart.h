@@ -19,7 +19,7 @@
  *        controllers.
  * @defgroup uart_interface UART
  * @since 1.0
- * @version 1.0.0
+ * @version 1.0.1
  * @ingroup io_interfaces
  * @{
  */
@@ -680,14 +680,13 @@ __syscall int uart_irq_is_pending(const struct device *dev);
  * * For devices with explicit acknowledgment of interrupts, to ack
  *   any pending interrupts and likewise to cache the original value.
  * * For devices with implicit acknowledgment, this function will be
- *   empty. But the ISR must perform the actions needs to ack the
+ *   not implemented. But the ISR must perform the actions needs to ack the
  *   interrupts (usually, call uart_fifo_read() on rx_ready, and
  *   uart_fifo_fill() on tx_ready).
  *
  * @param dev UART device instance.
  *
- * @retval 1 On success.
- * @retval -ENOSYS If this function is not implemented.
+ * @retval 1 On success or if it is not implemented.
  * @retval -ENOTSUP If API is not enabled.
  */
 __syscall int uart_irq_update(const struct device *dev);

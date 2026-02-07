@@ -448,7 +448,7 @@ static inline int z_impl_uart_irq_update(const struct device *dev)
 	const struct uart_driver_api *api = (const struct uart_driver_api *)dev->api;
 
 	if (api->irq_update == NULL) {
-		return -ENOSYS;
+		return 1;
 	}
 	return api->irq_update(dev);
 #else

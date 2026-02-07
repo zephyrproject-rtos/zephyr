@@ -253,13 +253,6 @@ int uart_bflb_irq_is_pending(const struct device *dev)
 	return (((tmp & ~maskVal) & 0xFF) != 0 ? 1 : 0);
 }
 
-int uart_bflb_irq_update(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 1;
-}
-
 void uart_bflb_irq_callback_set(const struct device *dev,
 			      uart_irq_callback_user_data_t cb,
 			      void *user_data)
@@ -569,7 +562,6 @@ static DEVICE_API(uart, uart_bflb_driver_api) = {
 	.irq_err_enable = uart_bflb_irq_err_enable,
 	.irq_err_disable = uart_bflb_irq_err_disable,
 	.irq_is_pending = uart_bflb_irq_is_pending,
-	.irq_update = uart_bflb_irq_update,
 	.irq_callback_set = uart_bflb_irq_callback_set,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };

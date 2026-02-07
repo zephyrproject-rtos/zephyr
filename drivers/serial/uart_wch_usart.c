@@ -266,11 +266,6 @@ static int usart_wch_irq_is_pending(const struct device *dev)
 	return (statr & stat_mask) > 0;
 }
 
-static int usart_wch_irq_update(const struct device *dev)
-{
-	return 1;
-}
-
 static void usart_wch_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
 				       void *user_data)
 {
@@ -298,7 +293,6 @@ static DEVICE_API(uart, usart_wch_driver_api) = {
 	.irq_err_enable = usart_wch_irq_err_enable,
 	.irq_err_disable = usart_wch_irq_err_disable,
 	.irq_is_pending = usart_wch_irq_is_pending,
-	.irq_update = usart_wch_irq_update,
 	.irq_callback_set = usart_wch_irq_callback_set,
 #endif
 };
