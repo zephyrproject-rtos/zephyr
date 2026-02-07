@@ -11,7 +11,7 @@ import re
 from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import dataclass
 from functools import cached_property
-from itertools import islice
+from itertools import groupby, islice
 from typing import (
     Any,
     Literal,
@@ -135,7 +135,7 @@ class PeriphconfBuilder:
             ]
         )
 
-        for macro in sorted(self._macros):
+        for macro, _ in groupby(sorted(self._macros)):
             source_lines.append(macro.c_render(self._nodelabel_lookup))
 
         return "\n".join(source_lines)
@@ -724,7 +724,7 @@ def find_gpio_node_by_port(dt: EDT, port: int, err_suffix: str = "") -> Node:
     raise BadDevicetreeError(f"Failed to find Nordic GPIO node with port {port}{err_suffix}")
 
 
-@dataclass(order=True)
+@dataclass(eq=True, order=True)
 class MacroCall:
     name: str
     args: list
