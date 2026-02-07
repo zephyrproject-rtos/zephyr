@@ -8,3 +8,17 @@ tests:
     platform_allow:
       - sam_e54_xpro
       - pic32cx_sg41_cult
+  drivers.i2c.i2c_eeprom_int:
+    platform_allow:
+      - sam_e54_xpro
+    extra_configs:
+      - CONFIG_I2C_MCHP_INTERRUPT_DRIVEN=y
+      - CONFIG_DMA=n
+      - CONFIG_I2C_CALLBACK=n
+  drivers.i2c.i2c_eeprom_poll:
+    platform_allow:
+      - sam_e54_xpro
+    extra_configs:
+      - CONFIG_I2C_MCHP_INTERRUPT_DRIVEN=n
+      - CONFIG_DMA=n
+      - CONFIG_I2C_CALLBACK=n
