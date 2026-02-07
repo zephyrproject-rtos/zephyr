@@ -371,6 +371,9 @@ def write_regs(node: edtlib.Node) -> None:
     for macro, val in name_vals:
         out_dt_define(macro, val)
 
+    out_dt_define(f"{path_id}_FOREACH_REG(fn)",
+                  " ".join(f"fn(DT_{path_id}, {i})" for i,reg in enumerate(node.regs)))
+
 
 def write_interrupts(node: edtlib.Node) -> None:
     # interrupts property: we have some hard-coded logic for interrupt
