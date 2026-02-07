@@ -1948,6 +1948,256 @@ static int nxp_wifi_ap_set_rts_threshold(const struct device *dev, unsigned int 
 }
 #endif
 
+#ifdef CONFIG_WIFI_MGMT_WILDCARD_SECURITY
+
+#define RSSI_INVALID UINT8_MAX
+
+/**
+ * @brief Check if SSID matches scan result
+ */
+static bool nxp_wifi_ssid_matches(const struct wlan_scan_result *result,
+				  const uint8_t *ssid, size_t ssid_len)
+{
+	return (result->ssid_len == ssid_len) &&
+	       (memcmp(result->ssid, ssid, ssid_len) == 0);
+}
+
+/**
+ * @brief Check if AP is Enterprise-only (not supported)
+ */
+static bool nxp_wifi_is_enterprise_only(const struct wlan_scan_result *result)
+{
+	bool has_enterprise = result->wpa2_entp || result->wpa3_entp ||
+			      result->wpa3_1x_sha256 || result->wpa3_1x_sha384;
+	bool has_psk = result->wpa2 || result->wpa3_sae || result->wpa2_sha256;
+
+	/* Enterprise-only if has Enterprise but no PSK */
+	return has_enterprise && !has_psk;
+}
+
+/**
+ * @brief Parse security type from scan result (excluding Enterprise)
+ *
+ * Note: Enterprise/802.1X authentication is not currently supported.
+ *       For mixed-mode APs (PSK + Enterprise), PSK mode will be selected.
+ */
+static enum wifi_security_type nxp_wifi_parse_security_type(
+	const struct wlan_scan_result *result)
+{
+	bool has_enterprise;
+	bool has_psk;
+
+	/* Skip Enterprise modes - not supported yet */
+	has_enterprise = result->wpa2_entp || result->wpa3_entp ||
+			 result->wpa3_1x_sha256 || result->wpa3_1x_sha384;
+	has_psk = result->wpa2 || result->wpa3_sae || result->wpa2_sha256;
+
+	if (has_enterprise && has_psk) {
+		/* Mixed mode: prefer PSK (Enterprise not supported) */
+		LOG_INF("AP supports both PSK and Enterprise - selecting PSK mode");
+		LOG_INF("(Enterprise mode not yet supported in wildcard security)");
+	}
+
+	/* Priority: WPA3-SAE > WPA2-PSK-SHA256 > WPA2-PSK > Open */
+	if (result->wpa3_sae) {
+		return WIFI_SECURITY_TYPE_SAE;
+	}
+	if (result->wpa2_sha256) {
+		return WIFI_SECURITY_TYPE_PSK_SHA256;
+	}
+	if (result->wpa2) {
+		return WIFI_SECURITY_TYPE_PSK;
+	}
+
+	return WIFI_SECURITY_TYPE_NONE;
+}
+
+/**
+ * @brief Parse MFP option from scan result
+ */
+static enum wifi_mfp_options nxp_wifi_parse_mfp_option(
+	const struct wlan_scan_result *result)
+{
+	if (result->ap_mfpr) {
+		return WIFI_MFP_REQUIRED;
+	}
+	if (result->ap_mfpc) {
+		return WIFI_MFP_OPTIONAL;
+	}
+	return WIFI_MFP_DISABLE;
+}
+
+/**
+ * @brief Log detected AP information
+ */
+static void nxp_wifi_log_detected_ap(const struct wlan_scan_result *ap,
+				     const uint8_t *ssid, size_t ssid_len,
+				     enum wifi_security_type security,
+				     int mfp_value, uint8_t rssi)
+{
+	LOG_INF("Auto-detected AP from vendor scan cache:");
+	LOG_INF("  SSID: '%.*s'", (int)ssid_len, ssid);
+	LOG_INF("  BSSID: %02x:%02x:%02x:%02x:%02x:%02x",
+		ap->bssid[0], ap->bssid[1], ap->bssid[2],
+		ap->bssid[3], ap->bssid[4], ap->bssid[5]);
+	LOG_INF("  Security: %s", wifi_security_txt(security));
+	LOG_INF("  MFP: %d, RSSI: %d, Channel: %d",
+		mfp_value, -(int)rssi, ap->channel);
+}
+
+/**
+ * @brief Get security type from NXP WiFi scan results
+ *
+ * This function queries the vendor driver's cached scan results to determine
+ * the security type and MFP requirements of a specific AP. This is used when
+ * connecting with WIFI_SECURITY_TYPE_WILDCARD to automatically configure the
+ * connection parameters.
+ *
+ * Supported security types:
+ * - WIFI_SECURITY_TYPE_NONE (Open network)
+ * - WIFI_SECURITY_TYPE_PSK (WPA2-PSK)
+ * - WIFI_SECURITY_TYPE_PSK_SHA256 (WPA2-PSK-SHA256)
+ * - WIFI_SECURITY_TYPE_SAE (WPA3-SAE)
+ *
+ * Enterprise/802.1X authentication (EAP) is NOT supported:
+ * - Enterprise-only APs will return -ENOTSUP
+ * - Mixed-mode APs (PSK + Enterprise) will select PSK mode
+ *
+ * @param dev Network device pointer
+ * @param ssid SSID to search for in scan results
+ * @param ssid_len Length of SSID (must be > 0 and <= WIFI_SSID_MAX_LEN)
+ * @param[out] security Detected security type (required, must not be NULL)
+ * @param[out] mfp Detected MFP option (optional, can be NULL)
+ *
+ * @retval 0 Success - security type detected
+ * @retval -EINVAL Invalid parameters (NULL pointers, invalid SSID length)
+ * @retval -ENOENT AP not found in scan results
+ * @retval -ENOTSUP AP requires Enterprise authentication (not supported)
+ */
+static int nxp_wifi_get_security_from_scan(const struct device *dev,
+					   const uint8_t *ssid,
+					   size_t ssid_len,
+					   enum wifi_security_type *security,
+					   enum wifi_mfp_options *mfp)
+{
+	int status = NXP_WIFI_RET_SUCCESS;
+	int ret;
+	struct wlan_scan_result scan_result = {0};
+	struct wlan_scan_result best_match = {0};
+	uint8_t best_rssi = RSSI_INVALID;
+	unsigned int scan_count = 0;
+	bool found = false;
+
+	/* Validate parameters */
+	if (!ssid || ssid_len == 0 || ssid_len > WIFI_SSID_MAX_LEN || !security) {
+		LOG_ERR("Invalid parameters: ssid=%p, len=%zu, security=%p",
+			ssid, ssid_len, security);
+		status = NXP_WIFI_RET_BAD_PARAM;
+	}
+
+	/* Get scan result count */
+	if (status == NXP_WIFI_RET_SUCCESS) {
+		ret = wifi_get_scan_result_count(&scan_count);
+		if (ret != WM_SUCCESS || scan_count == 0) {
+			LOG_ERR("No scan results available (ret=%d, count=%u)",
+				ret, scan_count);
+			LOG_ERR("Please run 'wifi scan' first");
+			status = NXP_WIFI_RET_NOT_READY;
+		}
+	}
+
+	if (status == NXP_WIFI_RET_SUCCESS) {
+		LOG_DBG("Searching for SSID='%.*s' in %u scan results",
+			(int)ssid_len, ssid, scan_count);
+
+		/* Find best matching AP */
+		for (unsigned int i = 0; i < scan_count; i++) {
+			ret = wlan_get_scan_result(i, &scan_result);
+			if (ret != WM_SUCCESS) {
+				LOG_WRN("Failed to get scan result[%u]: %d", i, ret);
+				continue;
+			}
+
+			/* Check SSID match */
+			if (!nxp_wifi_ssid_matches(&scan_result, ssid, ssid_len)) {
+				continue;
+			}
+
+			LOG_DBG("Match AP[%u]: BSSID=%02x:%02x:%02x:%02x:%02x:%02x, RSSI=%d",
+				i, scan_result.bssid[0], scan_result.bssid[1],
+				scan_result.bssid[2], scan_result.bssid[3],
+				scan_result.bssid[4], scan_result.bssid[5],
+				-(int)scan_result.rssi);
+
+			/* Select AP with best signal strength
+			 * Assuming RSSI is positive attenuation: lower is better
+			 */
+			if (scan_result.rssi < best_rssi) {
+				best_rssi = scan_result.rssi;
+				memcpy(&best_match, &scan_result, sizeof(best_match));
+				found = true;
+			}
+		}
+
+		if (!found) {
+			LOG_ERR("AP with SSID='%.*s' not found in %u scan results",
+				(int)ssid_len, ssid, scan_count);
+			status = NXP_WIFI_RET_NOT_FOUND;
+		}
+	}
+
+	/* Check if AP is Enterprise-only (not supported) */
+	if (status == NXP_WIFI_RET_SUCCESS) {
+		if (nxp_wifi_is_enterprise_only(&best_match)) {
+			LOG_ERR("AP '%.*s' requires Enterprise authentication (802.1X/EAP)",
+				(int)ssid_len, ssid);
+			LOG_ERR("Enterprise mode not supported with wildcard security");
+			LOG_ERR("Supported security types: OPEN, WPA2-PSK, WPA3-SAE");
+			status = NXP_WIFI_RET_NOT_SUPPORTED;
+		}
+	}
+
+	/* Parse security and MFP */
+	if (status == NXP_WIFI_RET_SUCCESS) {
+		*security = nxp_wifi_parse_security_type(&best_match);
+		if (mfp) {
+			*mfp = nxp_wifi_parse_mfp_option(&best_match);
+		}
+
+		/* Additional validation */
+		if (*security == WIFI_SECURITY_TYPE_NONE && best_match.wpa2_entp) {
+			/* This shouldn't happen, but add safety check */
+			LOG_ERR("Security detection failed - AP may be Enterprise-only");
+			status = NXP_WIFI_RET_NOT_SUPPORTED;
+		}
+	}
+
+	/* Log detected configuration */
+	if (status == NXP_WIFI_RET_SUCCESS) {
+		nxp_wifi_log_detected_ap(&best_match, ssid, ssid_len, *security,
+					 mfp ? *mfp : -1, best_rssi);
+	}
+
+	/* Convert status to errno */
+	if (status != NXP_WIFI_RET_SUCCESS) {
+		switch (status) {
+		case NXP_WIFI_RET_BAD_PARAM:
+			return -EINVAL;
+		case NXP_WIFI_RET_NOT_READY:
+		case NXP_WIFI_RET_NOT_FOUND:
+			return -ENOENT;
+		case NXP_WIFI_RET_NOT_SUPPORTED:
+			return -ENOTSUP;
+		default:
+			return -EAGAIN;
+		}
+	}
+
+	return 0;
+}
+
+#endif /* CONFIG_WIFI_MGMT_WILDCARD_SECURITY */
+
 static void nxp_wifi_sta_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);

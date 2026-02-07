@@ -421,6 +421,15 @@ static int wifi_connect(uint64_t mgmt_request, struct net_if *iface,
 		return -EINVAL;
 	}
 
+#ifndef CONFIG_WIFI_MGMT_WILDCARD_SECURITY
+	/* Wildcard not supported if feature disabled */
+	if (params->security == WIFI_SECURITY_TYPE_WILDCARD) {
+		LOG_ERR("Wildcard security not supported");
+		LOG_ERR("Enable CONFIG_WIFI_MGMT_WILDCARD_SECURITY");
+		return -ENOTSUP;
+	}
+#endif
+
 	switch (params->security) {
 	case WIFI_SECURITY_TYPE_PSK:
 	case WIFI_SECURITY_TYPE_WPA_PSK:

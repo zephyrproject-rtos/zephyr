@@ -1980,6 +1980,23 @@ struct wifi_mgmt_ops {
 	 */
 	int (*p2p_oper)(const struct device *dev, struct wifi_p2p_params *params);
 #endif
+#ifdef CONFIG_WIFI_MGMT_WILDCARD_SECURITY
+	/** Get security type from vendor's scan results
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param ssid SSID to search for
+	 * @param ssid_len Length of SSID
+	 * @param security Detected security type
+	 * @param mfp Detected MFP option (may be NULL)
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*get_security_from_scan)(const struct device *dev,
+				      const uint8_t *ssid,
+				      size_t ssid_len,
+				      enum wifi_security_type *security,
+				      enum wifi_mfp_options *mfp);
+#endif
 };
 
 /** Wi-Fi management offload API */
