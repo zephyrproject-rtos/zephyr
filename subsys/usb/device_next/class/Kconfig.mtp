@@ -1,0 +1,35 @@
+# Copyright (c) 2025 Mohamed ElShahawi (extremegtx@hotmail.com)
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config USBD_MTP_CLASS
+	bool "USB MTP Class"
+	help
+	  USB Media Transfer Protocol Device Class support.
+	  Allow file transfer independent of storage file system.
+
+if USBD_MTP_CLASS
+
+config USBD_MTP_MAX_HANDLES
+	int "Max number of Object handles per Storage"
+	default 10
+	help
+	  Maximum number of objects to be handled by MTP, including
+	  stored, removed and added objects.
+
+config RECYCLE_OBJECT_HANDLES
+	bool "Recycle Object Handles"
+	default n
+	help
+	  Recycle object handles when the maximum number of objects is reached.
+	  If disabled, new objects will not be added when the maximum number of
+	  objects is reached. Although this option provide better usability,
+	  it is against the MTP specification.
+
+module = USBD_MTP
+module-str = usbd mtp
+default-count = 1
+source "subsys/logging/Kconfig.template.log_config"
+
+rsource "Kconfig.template.instances_count"
+endif
