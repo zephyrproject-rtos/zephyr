@@ -542,7 +542,6 @@
 #define STM32_LSE_DRIVING	DT_PROP(DT_NODELABEL(clk_lse), driving_capability)
 #define STM32_LSE_BYPASS	DT_PROP(DT_NODELABEL(clk_lse), lse_bypass)
 #else
-#define STM32_LSE_ENABLED	0
 #define STM32_LSE_FREQ		0
 #define STM32_LSE_DRIVING	0
 #define STM32_LSE_BYPASS	0
@@ -555,13 +554,12 @@
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_msi), st_stm32_msi_clock, okay)
-#define STM32_MSI_ENABLED	1
 #define STM32_MSI_PLL_MODE	DT_PROP(DT_NODELABEL(clk_msi), msi_pll_mode)
-#endif
 
-#if defined(CONFIG_SOC_SERIES_STM32L4X) && STM32_MSI_PLL_MODE && !STM32_LSE_ENABLED
-#error "On STM32L4 series, MSI PLL mode requires LSE to be enabled"
-#endif
+# if defined(CONFIG_SOC_SERIES_STM32L4X) && STM32_MSI_PLL_MODE && !defined(STM32_LSE_ENABLED)
+# error "On STM32L4 series, MSI PLL mode requires LSE to be enabled"
+# endif /* stm32l4 && msi_pll_mode && !STM32_LSE_ENABLED */
+#endif /* st_stm32_msi_clock */
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_msis), st_stm32u5_msi_clock, okay) || \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_msis), st_stm32u3_msi_clock, okay)
@@ -569,7 +567,6 @@
 #define STM32_MSIS_RANGE	DT_PROP(DT_NODELABEL(clk_msis), msi_range)
 #define STM32_MSIS_PLL_MODE	DT_PROP(DT_NODELABEL(clk_msis), msi_pll_mode)
 #else
-#define STM32_MSIS_ENABLED	0
 #define STM32_MSIS_RANGE	0
 #define STM32_MSIS_PLL_MODE	0
 #endif
@@ -580,7 +577,6 @@
 #define STM32_MSIK_RANGE	DT_PROP(DT_NODELABEL(clk_msik), msi_range)
 #define STM32_MSIK_PLL_MODE	DT_PROP(DT_NODELABEL(clk_msik), msi_pll_mode)
 #else
-#define STM32_MSIK_ENABLED	0
 #define STM32_MSIK_RANGE	0
 #define STM32_MSIK_PLL_MODE	0
 #endif
