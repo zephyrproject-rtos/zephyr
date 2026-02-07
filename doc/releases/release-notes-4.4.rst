@@ -370,6 +370,10 @@ Libraries / Subsystems
 * LoRa/LoRaWAN
 
    * :c:func:`lora_airtime`
+   * Added Channel Activity Detection (CAD) support to the LoRa API:
+     :c:func:`lora_cad_config`, :c:func:`lora_cad`, :c:func:`lora_cad_async`,
+     :c:func:`lora_cad_recv`, :c:func:`lora_cad_recv_async`,
+     :c:func:`lora_cad_send`, :c:func:`lora_cad_send_async`.
 
 * Mbed TLS
 
