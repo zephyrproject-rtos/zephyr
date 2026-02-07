@@ -66,6 +66,11 @@ config GNSS_U_BLOX_PROTOCOL
 	help
 	  Hidden option that enables gnss u-blox protocol.
 
+config GNSS_U_BLOX
+	bool
+	help
+	  Hidden option that enables gnss u-blox common configuration.
+
 choice GNSS_REFERENCE_FRAME
 	bool "GNSS reference frame datum"
 	default GNSS_REFERENCE_FRAME_WGS84
@@ -84,6 +89,7 @@ rsource "Kconfig.emul"
 rsource "Kconfig.generic"
 rsource "Kconfig.luatos_air530z"
 rsource "Kconfig.quectel_lcx6g"
+rsource "Kconfig.u_blox_common"
 rsource "Kconfig.u_blox_f9p"
 rsource "Kconfig.u_blox_m8"
 # zephyr-keep-sorted-stop
