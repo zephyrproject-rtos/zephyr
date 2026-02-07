@@ -252,9 +252,22 @@ arduino_spi: &lpspi1 {
 };
 
 &usdhc1 {
+	status = "okay";
 	pinctrl-0 = <&pinmux_usdhc1>;
-	pinctrl-1 = <&pinmux_usdhc1_dat3_nopull>;
-	pinctrl-names = "default", "nopull";
+	pinctrl-1 = <&pinmux_usdhc1_slow>;
+	pinctrl-2 = <&pinmux_usdhc1_med>;
+	pinctrl-3 = <&pinmux_usdhc1_fast>;
+	pinctrl-4 = <&pinmux_usdhc1_dat3_nopull>;
+	pinctrl-names = "default", "slow", "med", "fast", "nopull";
+	power-delay-ms = <1000>;
+	pwr-gpios = <&gpio10 2 GPIO_ACTIVE_HIGH>;
+	cd-gpios = <&gpio3 31 GPIO_ACTIVE_LOW>;
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
 };
 
 &flexspi {

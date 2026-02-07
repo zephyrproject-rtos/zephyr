@@ -379,6 +379,70 @@
 		};
 	};
 
+	/* fast pinmux settings for USDHC (over 100 Mhz) */
+	pinmux_usdhc1_fast: pinmux_usdhc1_fast {
+		group0 {
+			pinmux = <&iomuxc_gpio_sd_b1_01_usdhc1_clk>;
+			bias-disable;
+			drive-strength = "high";
+			slew-rate = "fast";
+
+		};
+
+		group1 {
+			pinmux = <&iomuxc_gpio_sd_b1_00_usdhc1_cmd>,
+				 <&iomuxc_gpio_sd_b1_02_usdhc1_data0>,
+				 <&iomuxc_gpio_sd_b1_03_usdhc1_data1>,
+				 <&iomuxc_gpio_sd_b1_04_usdhc1_data2>,
+				 <&iomuxc_gpio_sd_b1_05_usdhc1_data3>;
+			drive-strength = "high";
+			bias-pull-up;
+			slew-rate = "fast";
+		};
+	};
+
+	/* medium pinmux settings for USDHC (under 100 Mhz) */
+	pinmux_usdhc1_med: pinmux_usdhc1_med {
+		group0 {
+			pinmux = <&iomuxc_gpio_sd_b1_01_usdhc1_clk>;
+			bias-disable;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+
+		group1 {
+			pinmux = <&iomuxc_gpio_sd_b1_00_usdhc1_cmd>,
+				 <&iomuxc_gpio_sd_b1_02_usdhc1_data0>,
+				 <&iomuxc_gpio_sd_b1_03_usdhc1_data1>,
+				 <&iomuxc_gpio_sd_b1_04_usdhc1_data2>,
+				 <&iomuxc_gpio_sd_b1_05_usdhc1_data3>;
+			drive-strength = "high";
+			bias-pull-up;
+			slew-rate = "fast";
+		};
+	};
+
+	/* slow pinmux settings for USDHC (under 50 Mhz) */
+	pinmux_usdhc1_slow: pinmux_usdhc1_slow {
+		group0 {
+			pinmux = <&iomuxc_gpio_sd_b1_01_usdhc1_clk>;
+			bias-disable;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+
+		group1 {
+			pinmux = <&iomuxc_gpio_sd_b1_00_usdhc1_cmd>,
+				 <&iomuxc_gpio_sd_b1_02_usdhc1_data0>,
+				 <&iomuxc_gpio_sd_b1_03_usdhc1_data1>,
+				 <&iomuxc_gpio_sd_b1_04_usdhc1_data2>,
+				 <&iomuxc_gpio_sd_b1_05_usdhc1_data3>;
+			drive-strength = "high";
+			bias-pull-up;
+			slew-rate = "fast";
+		};
+	};
+
 	/* removes pull on dat3 for card detect */
 	pinmux_usdhc1_dat3_nopull: pinmux_usdhc1_dat3_nopull {
 		group0 {
