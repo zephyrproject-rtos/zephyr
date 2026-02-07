@@ -42,5 +42,5 @@ module-str = usbd msc
 default-count = 1
 source "subsys/logging/Kconfig.template.log_config"
 
-rsource "Kconfig.template.instances_count"
+source "subsys/usb/common/Kconfig.template.instances_count"
 endif

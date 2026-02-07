@@ -13,6 +13,6 @@ module = MCTP_USB_CLASS
 module-str = mctp usb class
 default-count = 1
 
-source "subsys/usb/device_next/class/Kconfig.template.instances_count"
+source "subsys/usb/common/Kconfig.template.instances_count"
 
 endif
