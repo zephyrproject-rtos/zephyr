@@ -7,7 +7,7 @@
 #include <zephyr/nvmem.h>
 
 #define consumer0 DT_NODELABEL(test_consumer0)
-#define nvmem0    DT_ALIAS(nvmem0)
+#define nvmem0    DT_NODELABEL(test_nvmem0)
 
 static const struct nvmem_cell cell0 = NVMEM_CELL_GET_BY_IDX(consumer0, 0);
 static const struct nvmem_cell cell10 = NVMEM_CELL_GET_BY_NAME(consumer0, cell10);
