@@ -1,0 +1,34 @@
+# Copyright (c) 2025 Synopsys, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: RISC-V Advanced Platform-Level Interrupt Controller (APLIC) in MSI mode
+
+compatible: "riscv,aplic-msi"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: Base address and size of the APLIC registers
+
+  riscv,num-sources:
+    type: int
+    required: true
+    description: Number of interrupt sources supported by the APLIC
+
+  riscv,max-priority:
+    type: int
+    description: |
+      Maximum priority level supported by the APLIC implementation.
+      Present on some platforms (e.g., QEMU virt). Not used by Zephyr yet.
+
+  msi-parent:
+    type: phandle
+    required: true
+    description: Phandle to the IMSIC controller used for MSI delivery
+
+interrupt-cells:
+  - irq
+  - priority
+  - flags
