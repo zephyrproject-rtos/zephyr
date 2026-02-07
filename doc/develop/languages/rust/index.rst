@@ -32,11 +32,22 @@ In order to enable Rust support in a Zephyr application, a few things need to be
     This should cause the Rust language support to be placed in :samp:`modules/lang/rust` in your
     Zephyr workspace.
 
+    If your west project uses its own yaml file (e.g. when using the Zephyr Example Application:
+    https://github.com/zephyrproject-rtos/example-application) you may have to edit the
+    :file:`west.yml` file for your west workspace to add the zephyr-lang-rust module:
+
+    .. code-block:: yaml
+
+        - name: zephyr-lang-rust
+          revision: main
+          path: modules/lang/rust
+          remote: zephyrproject-rtos
+
 2.  Enable Rust support, via :kconfig:option:`CONFIG_RUST` in the :file:`prj.conf`. The easiest way
     to do this (as well as the CMake setup from the next step) is to start with one of the samples
     in :module_file:`modules/lang/rust/samples <zephyr-lang-rust:samples>`.
 
-3.  Configure the application's :file:`CMakeLists.txt` file to support Rust.  Again this is easiest
+3.  Configure the application's :file:`CMakeLists.txt` file to support Rust. Again this is easiest
     to copy from a sample, but this will look something like:
 
     .. code-block:: cmake
@@ -71,7 +82,43 @@ In order to enable Rust support in a Zephyr application, a few things need to be
     The only required dependency is ``zephyr`` which provides the zephyr crate that is used to
     interface with Zephyr.
 
-5.  Build as you would any other Zephyr application.  Only a few targets currently support Rust
+5.  Make sure clang is installed too. You can install it with:
+
+    .. tabs::
+
+        .. group-tab:: Ubuntu
+
+            .. _install_dependencies_ubuntu:
+
+            #. Use ``apt`` to install the required dependencies:
+
+                .. code-block:: bash
+
+                sudo apt install clang
+
+        .. group-tab:: macOS
+
+            .. _install_dependencies_macos:
+
+            #. Use ``brew`` to install the required dependencies:
+
+                .. code-block:: bash
+
+                brew install llvm
+                export LIBCLANG_PATH=/opt/homebrew/opt/llvm/lib
+
+        .. group-tab:: Windows
+
+            .. _install_dependencies_windows:
+
+            #. Use ``winget`` to install the required dependencies:
+
+                .. code-block:: bat
+
+                winget install -e --id LLVM.LLVM
+            
+
+6.  Build as you would any other Zephyr application.  Only a few targets currently support Rust
     (these can be seen in the
     :module_file:`modules/lang/rust/etc/platforms.txt <zephyr-lang-rust:etc/platforms.txt>` file).
 
