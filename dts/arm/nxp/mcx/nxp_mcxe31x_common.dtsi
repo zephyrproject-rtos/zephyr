@@ -1153,11 +1153,13 @@
 	};
 
 	stm_0: stm@274000 {
-		compatible = "nxp,stm";
+		compatible = "nxp,stm-hw-timer";
 		reg = <0x274000 0x68>;
 		interrupts = <39 0>;
 		clocks = <&mc_cgm MCUX_STM0_CLK>;
-		status = "disabled";
+		clock-frequency = <DT_FREQ_M(40)>;
+		prescaler = <1>;
+		status = "okay";
 	};
 
 	stm_1: stm@474000 {
