@@ -1,0 +1,4 @@
+compatible: "bosch,bhi2xy"
+
+include: [i2c-device.yaml, "bosch,bhi2xy.yaml"]
+

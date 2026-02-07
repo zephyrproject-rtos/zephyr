@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: bojan
+      url-base: https://github.com/BojanSof  # temporary
 
   group-filter: [-babblesim, -optional, -testing]
 
@@ -110,6 +112,11 @@ manifest:
       revision: da246018ebe031e4fe4a8228187fb459e9f3b2fa
       groups:
         - babblesim
+    - name: bosch_apis
+      repo-path: bosch-apis-zephyr
+      remote: bojan
+      path: modules/lib/bosch_apis
+      revision: ab6e2df4389338205b832d84cd367d1129fd685d
     - name: bsim
       repo-path: babblesim-manifest
       revision: dcf997c28b5cc2dc21ae876b64b31ff72b786210

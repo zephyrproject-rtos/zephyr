@@ -1,0 +1,35 @@
+description: |
+  Bosch BHI260AP/BHI260AB ultra-low power smart sensor with integrated accelerometer and gyroscope.
+
+  The BHI260AP/BHI260AB is an ultra-low power, customizable smart sensor consisting of Bosch
+  Sensortec's programmable 32-bit microcontroller (Fuser2), a state-of-the-art 6-axis IMU
+  (3-Axis Accelerometer + 3-Axis Gyroscope) and a powerful Event-driven Software Framework
+  containing pre-installed sensor fusion and other sensor data processing software.
+
+compatible: "bosch,bhi2xy"
+
+include: sensor-device.yaml
+
+properties:
+  variant:
+    type: string
+    required: true
+    description: Sensor variant (BHI260AP or BHI260AB)
+    enum:
+      - "BHI260AB"
+      - "BHI260AP"
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      The RESET signal connection.
+
+  supply-gpios:
+    type: phandle-array
+    description: |
+      GPIO specifier that controls power to the device.
+
+  vin-supply:
+    type: phandle
+    description: |
+      Reference to the regulator that controls power to the device.
