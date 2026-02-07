@@ -1,4 +1,8 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 &grtc {
 	/delete-property/ child-owned-channels;
@@ -15,8 +19,19 @@ test_timer: &timer131 {
 	prescaler = <0>;
 };
 
+&timer132 {
+	status = "okay";
+	interrupts = <434 0>;
+};
+
 / {
 	chosen {
 		zephyr,cpu-load-counter = &timer130;
+	};
+
+	busy-sim {
+		compatible = "vnd,busy-sim";
+		status = "okay";
+		counter = <&timer132>;
 	};
 };
