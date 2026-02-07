@@ -35,7 +35,7 @@ foreach(file_name include/stddef.h include-fixed/limits.h)
     OUTPUT_VARIABLE _OUTPUT
     )
   get_filename_component(_OUTPUT "${_OUTPUT}" DIRECTORY)
-  string(REGEX REPLACE "\n" "" _OUTPUT "${_OUTPUT}")
+  string(REPLACE "\n" "" _OUTPUT "${_OUTPUT}")
 
   # Need to make sure the path exists before we add it to ${NOSTDINC}.
   # For example, include-fixed is in xcc but not xt-clang.
