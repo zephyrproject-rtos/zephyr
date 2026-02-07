@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2020 George Gkinis
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#define PIN_ATTRS	(GPIO_ACTIVE_HIGH | GPIO_PULL_UP)
+
+/ {
+	aliases {
+		hx711-sensor = &hx711;
+	};
+
+	hx711: hx711 {
+		compatible = "avia,hx711";
+		status = "okay";
+		dout-gpios = <&arduino_header ARDUINO_HEADER_R3_A4 PIN_ATTRS>;
+		sck-gpios = <&arduino_header ARDUINO_HEADER_R3_A3 PIN_ATTRS>;
+		rate-gpios = <&arduino_header ARDUINO_HEADER_R3_A5 GPIO_ACTIVE_HIGH>;
+	};
+};

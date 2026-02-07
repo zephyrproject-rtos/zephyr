@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) 2020 George Gkinis
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#define PIN_ATTRS	(GPIO_ACTIVE_HIGH | GPIO_PULL_UP)
+
+/ {
+	aliases {
+		hx711-sensor = &hx711_label;
+	};
+
+	hx711_label: hx711_node {
+		compatible = "avia,hx711";
+		gain = <64>;
+		rate-hz = <80>;
+		dout-gpios = <&arduino_header ARDUINO_HEADER_R3_D7 PIN_ATTRS>;
+		sck-gpios = <&arduino_header ARDUINO_HEADER_R3_D6 PIN_ATTRS>;
+		rate-gpios = <&arduino_header ARDUINO_HEADER_R3_D5 PIN_ATTRS>;
+	};
+
+	hx712_label: hx712_node {
+		compatible = "avia,hx712", "avia,hx710";
+		status = "disabled";
+		dout-gpios = <&arduino_header ARDUINO_HEADER_R3_D7 PIN_ATTRS>;
+		sck-gpios = <&arduino_header ARDUINO_HEADER_R3_D6 PIN_ATTRS>;
+	};
+
+	hx717_label: hx717_node {
+		compatible = "avia,hx717";
+		status = "disabled";
+		gain = <128>;
+		rate-hz = <80>;
+		dout-gpios = <&arduino_header ARDUINO_HEADER_R3_D7 PIN_ATTRS>;
+		sck-gpios = <&arduino_header ARDUINO_HEADER_R3_D6 PIN_ATTRS>;
+		rate-gpios = <&arduino_header ARDUINO_HEADER_R3_D5 PIN_ATTRS>,
+			     <&arduino_header ARDUINO_HEADER_R3_D4 PIN_ATTRS>;
+	};
+
+	hx71708_label: hx71708_node {
+		compatible = "avia,hx71708";
+		status = "disabled";
+		dout-gpios = <&arduino_header ARDUINO_HEADER_R3_D7 PIN_ATTRS>;
+		sck-gpios = <&arduino_header ARDUINO_HEADER_R3_D6 PIN_ATTRS>;
+	};
+};
