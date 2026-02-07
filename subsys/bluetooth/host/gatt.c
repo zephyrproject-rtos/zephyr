@@ -3679,7 +3679,9 @@ static bool check_subscribe_security_level(struct bt_conn *conn,
 }
 
 static void call_notify_cb_and_maybe_unsubscribe(struct bt_conn *conn, struct gatt_sub *sub,
-						 uint16_t handle, const void *data, uint16_t length)
+						 uint16_t handle, const void *data,
+						 uint16_t length,
+						 enum bt_gatt_notify_type type)
 {
 	struct bt_gatt_subscribe_params *params, *tmp;
 	int err;
@@ -3690,6 +3692,7 @@ static void call_notify_cb_and_maybe_unsubscribe(struct bt_conn *conn, struct ga
 		}
 
 		if (check_subscribe_security_level(conn, params)) {
+			params->received_opcode = type;
 			if (params->notify(conn, params, data, length) == BT_GATT_ITER_STOP) {
 				err = bt_gatt_unsubscribe(conn, params);
 				if (err != 0) {
@@ -3701,7 +3704,8 @@ static void call_notify_cb_and_maybe_unsubscribe(struct bt_conn *conn, struct ga
 }
 
 void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
-			  const void *data, uint16_t length)
+			  const void *data, uint16_t length,
+			  enum bt_gatt_notify_type type)
 {
 	struct gatt_sub *sub;
 
@@ -3712,11 +3716,11 @@ void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
 		return;
 	}
 
-	call_notify_cb_and_maybe_unsubscribe(conn, sub, handle, data, length);
+	call_notify_cb_and_maybe_unsubscribe(conn, sub, handle, data, length, type);
 }
 
 void bt_gatt_mult_notification(struct bt_conn *conn, const void *data,
-			       uint16_t length)
+			       uint16_t length, enum bt_gatt_notify_type type)
 {
 	const struct bt_att_notify_mult *nfy;
 	struct net_buf_simple buf;
@@ -3747,7 +3751,8 @@ void bt_gatt_mult_notification(struct bt_conn *conn, const void *data,
 			return;
 		}
 
-		call_notify_cb_and_maybe_unsubscribe(conn, sub, handle, nfy->value, len);
+		call_notify_cb_and_maybe_unsubscribe(conn, sub, handle, nfy->value, len,
+						     type);
 
 		net_buf_simple_pull_mem(&buf, len);
 	}

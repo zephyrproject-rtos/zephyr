@@ -13,6 +13,7 @@
 
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/gatt.h>
 
 #define BT_GATT_CENTRAL_ADDR_RES_NOT_SUPP	0
 #define BT_GATT_CENTRAL_ADDR_RES_SUPP		1
@@ -47,18 +48,21 @@ int bt_gatt_clear(uint8_t id, const bt_addr_le_t *addr);
 
 #if defined(CONFIG_BT_GATT_CLIENT)
 void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
-			  const void *data, uint16_t length);
+			  const void *data, uint16_t length,
+			  enum bt_gatt_notify_type type);
 
 void bt_gatt_mult_notification(struct bt_conn *conn, const void *data,
-			       uint16_t length);
+			       uint16_t length, enum bt_gatt_notify_type type);
 #else
 static inline void bt_gatt_notification(struct bt_conn *conn, uint16_t handle,
-					const void *data, uint16_t length)
+					const void *data, uint16_t length,
+					enum bt_gatt_notify_type type)
 {
 }
 
 static inline void bt_gatt_mult_notification(struct bt_conn *conn,
-					     const void *data, uint16_t length)
+					     const void *data, uint16_t length,
+					     enum bt_gatt_notify_type type)
 {
 }
 #endif /* CONFIG_BT_GATT_CLIENT */
