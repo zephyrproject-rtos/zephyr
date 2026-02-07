@@ -46,55 +46,55 @@ struct k_spinlock {
 /**
  * @cond INTERNAL_HIDDEN
  */
+	union {
+		struct {
 #ifdef CONFIG_SMP
 #ifdef CONFIG_TICKET_SPINLOCKS
-	/*
-	 * Ticket spinlocks are conceptually two atomic variables,
-	 * one indicating the current FIFO head (spinlock owner),
-	 * and the other indicating the current FIFO tail.
-	 * Spinlock is acquired in the following manner:
-	 * - current FIFO tail value is atomically incremented while it's
-	 *   original value is saved as a "ticket"
-	 * - we spin until the FIFO head becomes equal to the ticket value
-	 *
-	 * Spinlock is released by atomic increment of the FIFO head
-	 */
-	atomic_t owner;
-	atomic_t tail;
+			/*
+			 * Ticket spinlocks are conceptually two atomic variables,
+			 * one indicating the current FIFO head (spinlock owner),
+			 * and the other indicating the current FIFO tail.
+			 * Spinlock is acquired in the following manner:
+			 * - current FIFO tail value is atomically incremented while it's
+			 *   original value is saved as a "ticket"
+			 * - we spin until the FIFO head becomes equal to the ticket value
+			 *
+			 * Spinlock is released by atomic increment of the FIFO head
+			 */
+			atomic_t owner;
+			atomic_t tail;
 #else
-	atomic_t locked;
+			atomic_t locked;
 #endif /* CONFIG_TICKET_SPINLOCKS */
 #endif /* CONFIG_SMP */
 
 #ifdef CONFIG_SPIN_VALIDATE
-	/* Stores the thread that holds the lock with the locking CPU
-	 * ID in the bottom two bits.
-	 */
-	uintptr_t thread_cpu;
+			/* Stores the thread that holds the lock with the locking CPU
+			 * ID in the bottom two bits.
+			 */
+			uintptr_t thread_cpu;
 #ifdef CONFIG_SPIN_LOCK_TIME_LIMIT
-	/* Stores the time (in cycles) when a lock was taken
-	 */
-	uint32_t lock_time;
+			/* Stores the time (in cycles) when a lock was taken
+			 */
+			uint32_t lock_time;
 #endif /* CONFIG_SPIN_LOCK_TIME_LIMIT */
 #endif /* CONFIG_SPIN_VALIDATE */
+		};
 
-#if defined(CONFIG_CPP) && !defined(CONFIG_SMP) && \
-	!defined(CONFIG_SPIN_VALIDATE)
-	/* If CONFIG_SMP and CONFIG_SPIN_VALIDATE are both not defined
-	 * the k_spinlock struct will have no members. The result
-	 * is that in C sizeof(k_spinlock) is 0 and in C++ it is 1.
-	 *
-	 * This size difference causes problems when the k_spinlock
-	 * is embedded into another struct like k_msgq, because C and
-	 * C++ will have different ideas on the offsets of the members
-	 * that come after the k_spinlock member.
-	 *
-	 * To prevent this we add a 1 byte dummy member to k_spinlock
-	 * when the user selects C++ support and k_spinlock would
-	 * otherwise be empty.
-	 */
-	char dummy;
+#ifdef CONFIG_NONZERO_SPINLOCK_SIZE
+		/* Add a dummy field to guarantee the spinlock has a non-zero
+		 * size. If neither CONFIG_SMP nor CONFIG_SPIN_VALIDATE are
+		 * defined then the k_spinlock struct would otherwise have no
+		 * members and sizeof(k_spinlock) would be 0 in C and 1 in C++.
+		 *
+		 * That size difference causes problems when the k_spinlock
+		 * is embedded into another struct like k_msgq, because C and
+		 * C++ will have different ideas on the offsets of the members
+		 * that come after the k_spinlock member.
+		 */
+		char dummy;
 #endif
+	};
 /**
  * INTERNAL_HIDDEN @endcond
  */
