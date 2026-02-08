@@ -36,13 +36,16 @@ include(python)
 # Check that SHIELD has not changed.
 zephyr_check_cache(SHIELD WATCH)
 
+if(NOT DEFINED SHIELD)
+  # No shields required for the build, skip unnecessary work
+  return()
+endif()
+
 if(SHIELD)
   message(STATUS "Shield(s): ${SHIELD}")
 endif()
 
-if(DEFINED SHIELD)
-  string(REPLACE " " ";" SHIELD_AS_LIST "${SHIELD}")
-endif()
+string(REPLACE " " ";" SHIELD_AS_LIST "${SHIELD}")
 # SHIELD-NOTFOUND is a real CMake list, from which valid shields can be popped.
 # After processing all shields, only invalid shields will be left in this list.
 set(SHIELD-NOTFOUND ${SHIELD_AS_LIST})
@@ -85,48 +88,46 @@ if(shields_length GREATER 0)
 endif()
 
 # Process shields in-order
-if(DEFINED SHIELD)
-  foreach(s ${SHIELD_AS_LIST})
-    if(NOT ${s} IN_LIST SHIELD_LIST)
-      continue()
-    endif()
+foreach(s ${SHIELD_AS_LIST})
+  if(NOT ${s} IN_LIST SHIELD_LIST)
+    continue()
+  endif()
 
-    list(REMOVE_ITEM SHIELD-NOTFOUND ${s})
+  list(REMOVE_ITEM SHIELD-NOTFOUND ${s})
 
-    # Add <shield>.overlay to the shield_dts_files output variable.
-    list(APPEND
-      shield_dts_files
-      ${SHIELD_DIR_${s}}/${s}.overlay
-      )
-
-    # Add the shield's directory to the SHIELD_DIRS output variable.
-    list(APPEND
-      SHIELD_DIRS
-      ${SHIELD_DIR_${s}}
-      )
-
-    include(${SHIELD_DIR_${s}}/pre_dt_shield.cmake OPTIONAL)
-
-    # Search for shield/shield.conf file
-    if(EXISTS ${SHIELD_DIR_${s}}/${s}.conf)
-      list(APPEND
-        shield_conf_files
-        ${SHIELD_DIR_${s}}/${s}.conf
-        )
-    endif()
-
-    # Add board-specific .conf and .overlay files to their
-    # respective output variables.
-    zephyr_file(CONF_FILES ${SHIELD_DIR_${s}}/boards
-                DTS   shield_dts_files
-                KCONF shield_conf_files
+  # Add <shield>.overlay to the shield_dts_files output variable.
+  list(APPEND
+    shield_dts_files
+    ${SHIELD_DIR_${s}}/${s}.overlay
     )
-    zephyr_file(CONF_FILES ${SHIELD_DIR_${s}}/boards/${s}
-                DTS   shield_dts_files
-                KCONF shield_conf_files
+
+  # Add the shield's directory to the SHIELD_DIRS output variable.
+  list(APPEND
+    SHIELD_DIRS
+    ${SHIELD_DIR_${s}}
     )
-  endforeach()
-endif()
+
+  include(${SHIELD_DIR_${s}}/pre_dt_shield.cmake OPTIONAL)
+
+  # Search for shield/shield.conf file
+  if(EXISTS ${SHIELD_DIR_${s}}/${s}.conf)
+    list(APPEND
+      shield_conf_files
+      ${SHIELD_DIR_${s}}/${s}.conf
+      )
+  endif()
+
+  # Add board-specific .conf and .overlay files to their
+  # respective output variables.
+  zephyr_file(CONF_FILES ${SHIELD_DIR_${s}}/boards
+              DTS   shield_dts_files
+              KCONF shield_conf_files
+  )
+  zephyr_file(CONF_FILES ${SHIELD_DIR_${s}}/boards/${s}
+              DTS   shield_dts_files
+              KCONF shield_conf_files
+  )
+endforeach()
 
 # Prepare shield usage command printing.
 # This command prints all shields in the system in the following cases:
@@ -134,7 +135,7 @@ endif()
 # - User invokes '<build-command> shields' target
 list(SORT SHIELD_LIST)
 
-if(DEFINED SHIELD AND NOT (SHIELD-NOTFOUND STREQUAL ""))
+if(NOT (SHIELD-NOTFOUND STREQUAL ""))
   # Convert the list to pure string with newlines for printing.
   string(REPLACE ";" "\n" shield_string "${SHIELD_LIST}")
 
