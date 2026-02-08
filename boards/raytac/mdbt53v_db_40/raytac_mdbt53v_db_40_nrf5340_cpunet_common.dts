@@ -35,6 +35,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
@@ -43,7 +44,7 @@
 
 		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x0000C000 0x17000>;
+			reg = <0x0000c000 0x17000>;
 		};
 
 		slot1_partition: partition@23000 {

@@ -61,7 +61,7 @@ Specs Summary
     - CAN: x2
   - Temperature range
 
-    - -40°C to 85°C
+    - -40 °C to 85 °C
 
 More information about the SoM can be found at the
 `Variscite Wiki`_ and

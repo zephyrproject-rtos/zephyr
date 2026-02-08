@@ -24,7 +24,7 @@ Hardware
 96Boards STM32 Sensor Mezzanine provides the following hardware components:
 
 - STM32F446VE in LQFP100 package
-- ARM |reg| 32-bit Cortex |reg|-M4 CPU with FPU
+- ARM® 32-bit Cortex®-M4 CPU with FPU
 - 180 MHz max CPU frequency
 - 1.8V work voltage
 - 512 KB Flash

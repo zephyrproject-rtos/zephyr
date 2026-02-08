@@ -1,12 +1,9 @@
 /*
- * Copyright (c) 2025 Renesas Electronics Corporation
+ * Copyright (c) 2025-2026 Renesas Electronics Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/dt-bindings/ipc_service/static_vrings.h>
-
-/delete-node/ &sram0;
-/delete-node/ &sram1;
 
 / {
 	ipc {
@@ -32,30 +29,25 @@
 	};
 
 	soc {
-		/* Redefine sram regions for CPU0 */
-		sram0: memory@22000000 {
-			reg = <0x22000000 0xe2000>;
-		};
-
-		/* Redefine sram regions for CPU1 */
-		sram1: memory@220e2000 {
-			reg = <0x220e2000 0xe2000>;
-		};
-
 		/* Define shared memory regions for IPC */
 		reserved-memory {
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			sram_ipc0: memory@221c4000 {
-				reg = <0x221c4000 0x8000>;
+			sram_ipc0: memory@22190000 {
+				reg = <0x22190000 0x8000>;
 			};
 
-			sram_ipc1: memory@221cc000 {
-				reg = <0x221cc000 0x8000>;
+			sram_ipc1: memory@22198000 {
+				reg = <0x22198000 0x8000>;
 			};
 		};
 	};
+};
+
+/* Redefine sram size for CPU1 */
+&sram1 {
+	reg = <0x22100000 DT_SIZE_K(576)>;
 };
 
 &mbox0 {

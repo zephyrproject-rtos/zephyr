@@ -7,7 +7,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_imx8ml_m7.dtsi>
+#include <nxp/imx/nxp_imx8ml_m7.dtsi>
 #include "imx8mp_var_dart-pinctrl.dtsi"
 #include "imx8mp_var_dart_m7-common.dtsi"
 #include <zephyr/dt-bindings/gpio/gpio.h>

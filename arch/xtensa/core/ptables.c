@@ -474,7 +474,7 @@ static void map_memory_range(const uint32_t start, const uint32_t end,
 	}
 }
 
-void xtensa_init_page_tables(void)
+static void xtensa_init_page_tables(void)
 {
 	volatile uint8_t entry;
 	static bool already_inited;
@@ -516,6 +516,45 @@ void xtensa_init_page_tables(void)
 	if (IS_ENABLED(PAGE_TABLE_IS_CACHED)) {
 		sys_cache_data_flush_all();
 	}
+}
+
+__weak void arch_xtensa_mmu_post_init(bool is_core0)
+{
+	ARG_UNUSED(is_core0);
+}
+
+void xtensa_mmu_init(void)
+{
+	xtensa_init_page_tables();
+
+	xtensa_mmu_init_paging();
+
+	/*
+	 * This is used to determine whether we are faulting inside double
+	 * exception if this is not zero. Sometimes SoC starts with this not
+	 * being set to zero. So clear it during boot.
+	 */
+	XTENSA_WSR(ZSR_DEPC_SAVE_STR, 0);
+
+	arch_xtensa_mmu_post_init(_current_cpu->id == 0);
+}
+
+void xtensa_mmu_reinit(void)
+{
+	/* First initialize the hardware */
+	xtensa_mmu_init_paging();
+
+#ifdef CONFIG_USERSPACE
+	struct k_thread *thread = _current_cpu->current;
+	struct arch_mem_domain *domain =
+			&(thread->mem_domain_info.mem_domain->arch);
+
+
+	/* Set the page table for current context */
+	xtensa_mmu_set_paging(domain);
+#endif /* CONFIG_USERSPACE */
+
+	arch_xtensa_mmu_post_init(_current_cpu->id == 0);
 }
 
 #ifdef CONFIG_ARCH_HAS_RESERVED_PAGE_FRAMES
@@ -1622,14 +1661,56 @@ int arch_buffer_validate(const void *addr, size_t size, int write)
 	return mem_buffer_validate(addr, size, write, RING_USER);
 }
 
-void xtensa_exc_dtlb_multihit_handle(void)
+void xtensa_exc_dtlb_multihit_handle(void *vaddr)
 {
-	/* For some unknown reasons, using xtensa_dtlb_probe() would result in
-	 * QEMU raising privileged instruction exception. So for now, just
-	 * invalidate all auto-refilled DTLBs.
-	 */
+	uint8_t way, i;
+	const uint8_t num_entries = BIT(XCHAL_DTLB_ARF_ENTRIES_LOG2);
 
-	xtensa_dtlb_autorefill_invalidate();
+	/* Each auto-refill way has a number of entries (4 or 8 depending on
+	 * configuration). So we need to ignore the lowest bits of
+	 * the virtual page number (VPN) to match the truncated VPN in
+	 * each TLB entry.
+	 */
+	const uint32_t excvaddr =
+		(uint32_t)vaddr & (XTENSA_MMU_PTE_VPN_MASK << XCHAL_DTLB_ARF_ENTRIES_LOG2);
+
+	for (way = 0; way < XTENSA_MMU_NUM_TLB_AUTOREFILL_WAYS; way++) {
+		for (i = 0; i < num_entries; i++) {
+			uint32_t entry = way + (i << XTENSA_MMU_PTE_PPN_SHIFT);
+			uint32_t tlb_vaddr = (uint32_t)xtensa_dtlb_vaddr_read(entry);
+
+			if (tlb_vaddr == excvaddr) {
+				xtensa_dtlb_entry_invalidate(entry);
+			}
+		}
+	}
+	__asm__ volatile("isync");
+}
+
+void xtensa_exc_itlb_multihit_handle(void *vaddr)
+{
+	uint8_t way, i;
+	const uint8_t num_entries = BIT(XCHAL_ITLB_ARF_ENTRIES_LOG2);
+
+	/* Each auto-refill way has a number of entries (4 or 8 depending on
+	 * configuration). So we need to ignore the lowest bits of
+	 * the virtual page number (VPN) to match the truncated VPN in
+	 * each TLB entry.
+	 */
+	const uint32_t excvaddr =
+		(uint32_t)vaddr & (XTENSA_MMU_PTE_VPN_MASK << XCHAL_ITLB_ARF_ENTRIES_LOG2);
+
+	for (way = 0; way < XTENSA_MMU_NUM_TLB_AUTOREFILL_WAYS; way++) {
+		for (i = 0; i < num_entries; i++) {
+			uint32_t entry = way + (i << XTENSA_MMU_PTE_PPN_SHIFT);
+			uint32_t tlb_vaddr = (uint32_t)xtensa_itlb_vaddr_read(entry);
+
+			if (tlb_vaddr == excvaddr) {
+				xtensa_itlb_entry_invalidate(entry);
+			}
+		}
+	}
+	__asm__ volatile("isync");
 }
 
 bool xtensa_exc_load_store_ring_error_check(void *bsa_p)

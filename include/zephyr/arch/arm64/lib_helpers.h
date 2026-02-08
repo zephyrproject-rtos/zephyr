@@ -209,6 +209,20 @@ static inline bool is_sve_implemented(void)
 	return (((read_id_aa64pfr0_el1() >> ID_AA64PFR0_SVE_SHIFT) & ID_AA64PFR0_SVE_MASK) != 0U);
 }
 
+#ifdef CONFIG_ARM_PAC
+/* PAC Key Register Helpers */
+MAKE_REG_HELPER(apiakeylo_el1);
+MAKE_REG_HELPER(apiakeyhi_el1);
+MAKE_REG_HELPER(apibkeylo_el1);
+MAKE_REG_HELPER(apibkeyhi_el1);
+MAKE_REG_HELPER(apdakeylo_el1);
+MAKE_REG_HELPER(apdakeyhi_el1);
+MAKE_REG_HELPER(apdbkeylo_el1);
+MAKE_REG_HELPER(apdbkeyhi_el1);
+MAKE_REG_HELPER(apgakeylo_el1);
+MAKE_REG_HELPER(apgakeyhi_el1);
+#endif /* CONFIG_ARM_PAC */
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM64_LIB_HELPERS_H_ */

@@ -7,7 +7,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_lpc55S2x.dtsi>
+#include <nxp/lpc/nxp_lpc55S2x.dtsi>
 #include "lpcxpresso55s28_common.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
@@ -119,9 +119,9 @@
 			reg = <0x00008000 DT_SIZE_K(208)>;
 		};
 
-		slot1_partition: partition@3C000 {
+		slot1_partition: partition@3c000 {
 			label = "image-1";
-			reg = <0x0003C000 DT_SIZE_K(208)>;
+			reg = <0x0003c000 DT_SIZE_K(208)>;
 		};
 
 		storage_partition: partition@70000 {

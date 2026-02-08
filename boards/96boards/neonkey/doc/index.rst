@@ -24,7 +24,7 @@ Hardware
 96Boards Neonkey provides the following hardware components:
 
 - STM32F411CE in UFQFPN48 package
-- ARM |reg| 32-bit Cortex |reg|-M4 CPU with FPU
+- ARM® 32-bit Cortex®-M4 CPU with FPU
 - 84 MHz max CPU frequency
 - 1.8V work voltage
 - 512 KB Flash

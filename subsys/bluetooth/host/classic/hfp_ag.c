@@ -871,15 +871,17 @@ static void bt_ag_notify_work(struct k_work *work)
 
 	bt_ag_tx_free(tx);
 
+	state = ag->state;
+
 	if (err < 0) {
-		state = ag->state;
 		if ((state != BT_HFP_DISCONNECTED) && (state != BT_HFP_DISCONNECTING)) {
 			bt_hfp_ag_set_state(ag, BT_HFP_DISCONNECTING);
 			bt_rfcomm_dlc_disconnect(&ag->rfcomm_dlc);
 		}
 	}
 
-	if (cb != NULL) {
+	/* If the AG connection has been disconnected, ignore the callback of tx node. */
+	if ((state != BT_HFP_DISCONNECTED) && (cb != NULL)) {
 		cb(ag, user_data);
 	}
 

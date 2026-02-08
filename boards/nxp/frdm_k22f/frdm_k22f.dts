@@ -7,7 +7,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_k22fn512.dtsi>
+#include <nxp/kinetis/nxp_k22fn512.dtsi>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include "frdm_k22f-pinctrl.dtsi"
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
@@ -231,14 +231,14 @@ zephyr_uhc0: &usbh {
 			reg = <0x00010000 DT_SIZE_K(182)>;
 		};
 
-		slot1_partition: partition@3D800 {
+		slot1_partition: partition@3d800 {
 			label = "image-1";
-			reg = <0x0003D800 DT_SIZE_K(182)>;
+			reg = <0x0003d800 DT_SIZE_K(182)>;
 		};
 
-		storage_partition: partition@6B000 {
+		storage_partition: partition@6b000 {
 			label = "storage";
-			reg = <0x0006B000 DT_SIZE_K(84)>;
+			reg = <0x0006b000 DT_SIZE_K(84)>;
 		};
 	};
 };

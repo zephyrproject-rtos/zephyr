@@ -1,0 +1,42 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/imxrt/nxp_rt1170_cm4.dtsi>
+#include <zephyr/dt-bindings/led/led.h>
+#include "vmu_rt1170.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "NXP VMU RT1170 (CM4)";
+	compatible = "nxp,mimxrt1176";
+
+	chosen {
+		/* Follow mimxrt1170_evk CM4 choices */
+		zephyr,sram = &sram1;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+		zephyr,canbus = &flexcan2;
+		zephyr,flash-controller = &mx25um51345g;
+		zephyr,flash = &ocram_m4_itcm;
+		nxp,m4-partition = &slot1_partition;
+		zephyr,ipc = &mailbox_b;
+	};
+};
+
+&lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&mailbox_b {
+	status = "okay";
+};
+
+&systick {
+	status = "okay";
+};

@@ -1,6 +1,6 @@
 {
   "private": true,
   "dependencies": {
-    "dts-linter": "^0.3.7-hotfix2"
+    "dts-linter": "^0.3.9"
   }
 }

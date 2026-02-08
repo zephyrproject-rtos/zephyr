@@ -105,6 +105,8 @@ struct i2c_dw_rom_config {
 	uint32_t irqnumber;
 	int16_t lcnt_offset;
 	int16_t hcnt_offset;
+	uint8_t fs_spk_len;
+	uint8_t hs_spk_len;
 
 #if defined(CONFIG_PINCTRL)
 	const struct pinctrl_dev_config *pcfg;

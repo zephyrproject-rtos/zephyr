@@ -757,6 +757,48 @@
 			status = "disabled";
 		};
 
+		opamp1: opamp1@40010300 {
+			compatible = "st,stm32g4-opamp", "st,stm32-opamp";
+			reg = <0x40010300 0x18>;
+			clocks = <&rcc STM32_CLOCK(APB2, 0)>;
+			clock-names = "opampx";
+			programmable-gain = "OPAMP_GAIN_1", "OPAMP_GAIN_2",
+					    "OPAMP_GAIN_3", "OPAMP_GAIN_4",
+					    "OPAMP_GAIN_7", "OPAMP_GAIN_8",
+					    "OPAMP_GAIN_15", "OPAMP_GAIN_16",
+					    "OPAMP_GAIN_31", "OPAMP_GAIN_32",
+					    "OPAMP_GAIN_63", "OPAMP_GAIN_64";
+			status = "disabled";
+		};
+
+		opamp2: opamp2@40010304 {
+			compatible = "st,stm32g4-opamp", "st,stm32-opamp";
+			reg = <0x40010304 0x18>;
+			clocks = <&rcc STM32_CLOCK(APB2, 0)>;
+			clock-names = "opampx";
+			programmable-gain = "OPAMP_GAIN_1", "OPAMP_GAIN_2",
+					    "OPAMP_GAIN_3", "OPAMP_GAIN_4",
+					    "OPAMP_GAIN_7", "OPAMP_GAIN_8",
+					    "OPAMP_GAIN_15", "OPAMP_GAIN_16",
+					    "OPAMP_GAIN_31", "OPAMP_GAIN_32",
+					    "OPAMP_GAIN_63", "OPAMP_GAIN_64";
+			status = "disabled";
+		};
+
+		opamp3: opamp3@40010308 {
+			compatible = "st,stm32g4-opamp", "st,stm32-opamp";
+			reg = <0x40010308 0x18>;
+			clocks = <&rcc STM32_CLOCK(APB2, 0)>;
+			clock-names = "opampx";
+			programmable-gain = "OPAMP_GAIN_1", "OPAMP_GAIN_2",
+					    "OPAMP_GAIN_3", "OPAMP_GAIN_4",
+					    "OPAMP_GAIN_7", "OPAMP_GAIN_8",
+					    "OPAMP_GAIN_15", "OPAMP_GAIN_16",
+					    "OPAMP_GAIN_31", "OPAMP_GAIN_32",
+					    "OPAMP_GAIN_63", "OPAMP_GAIN_64";
+			status = "disabled";
+		};
+
 		comp1: comparator@40010200 {
 			compatible = "st,stm32g4-comp", "st,stm32-comp";
 			reg = <0x40010200 0x4>;

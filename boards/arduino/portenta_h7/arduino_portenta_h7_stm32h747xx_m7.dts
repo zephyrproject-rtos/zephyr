@@ -203,9 +203,9 @@ zephyr_udc0: &usbotg_hs {
 			reg = <0x00040000 0x00060000>;
 		};
 
-		slot1_partition: partition@A0000 {
+		slot1_partition: partition@a0000 {
 			label = "image-1";
-			reg = <0x000A0000 0x00060000>;
+			reg = <0x000a0000 0x00060000>;
 		};
 	};
 };

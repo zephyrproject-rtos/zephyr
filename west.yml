@@ -210,7 +210,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 683b4077c6760ece043e55bb2d7dc9d1996c7ffd
+      revision: c6f70690ab1a55c5d7f76f67eca6f0dcfa906e33
       path: modules/hal/nxp
       groups:
         - hal
@@ -231,7 +231,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 14f3c2bdd307009eaf9520cdfda2cbabb81e8d10
+      revision: f30a54e266292fd0b958b49ef24eb1ca2afd1981
       groups:
         - hal
     - name: hal_rpi_pico
@@ -245,12 +245,12 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 8a4c8d3572731757a0a8d9c66cda27bb9343b588
+      revision: 4db87e248dba7ebcb113c4d9e3d096dd4df22de6
       path: modules/hal/silabs
       groups:
         - hal
     - name: hal_st
-      revision: 6d963459acecfd2f9748ab506385a3188d8768f0
+      revision: 7a792882847223c72944791e0c48eed6101e6569
       path: modules/hal/st
       groups:
         - hal
@@ -291,7 +291,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 7c5d886f4b1afd6d00192e346268f03f5f44354c
+      revision: f5708c522793b0de59f467080a33caac769cd525
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
@@ -326,7 +326,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: cb6e4ceaacd4dfe1e3cdeb92c7f5680f62967837
+      revision: d9c2ba153128efd7c16db9f36dea4ee69f63c7f5
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -364,7 +364,7 @@ manifest:
       path: modules/lib/picolibc
       revision: ca8b6ebba5226a75545e57a140443168a26ba664
     - name: psa-arch-tests
-      revision: d70b2c7072cedf0f14724211d2122ef07b98720c
+      revision: 6e8219237435112df33bbcf37b7f5657fcfb9cff
       path: modules/tee/tf-m/psa-arch-tests
       groups:
         - testing

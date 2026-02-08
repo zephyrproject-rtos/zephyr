@@ -127,6 +127,14 @@ static int fs_get_mnt_point(struct fs_mount_t **mnt_pntp,
 	return 0;
 }
 
+static inline void fs_copy_mnt_point_to_entry(struct fs_mount_t *mnt, struct fs_dirent *entry)
+{
+	entry->type = FS_DIR_ENTRY_DIR;
+	memcpy(entry->name, &mnt->mnt_point[1], min(sizeof(entry->name) - 1, mnt->mountp_len));
+	entry->name[sizeof(entry->name) - 1] = 0;
+	entry->size = 0;
+}
+
 /* File operations */
 int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 {
@@ -445,11 +453,7 @@ int fs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry)
 
 			mnt = CONTAINER_OF(node, struct fs_mount_t, node);
 
-			entry->type = FS_DIR_ENTRY_DIR;
-			strncpy(entry->name, mnt->mnt_point + 1,
-				sizeof(entry->name) - 1);
-			entry->name[sizeof(entry->name) - 1] = 0;
-			entry->size = 0;
+			fs_copy_mnt_point_to_entry(mnt, entry);
 
 			/* Save pointer to the next one, for later */
 			next = sys_dlist_peek_next(&fs_mnt_list, node);
@@ -606,17 +610,35 @@ int fs_stat(const char *abs_path, struct fs_dirent *entry)
 {
 	struct fs_mount_t *mp;
 	int rc = -EINVAL;
+	size_t mp_len;
+	size_t path_len;
 
-	if ((abs_path == NULL) ||
-			(strlen(abs_path) <= 1) || (abs_path[0] != '/')) {
+	if ((abs_path == NULL) || (abs_path[0] != '/')) {
 		LOG_ERR("invalid file or dir name!!");
 		return -EINVAL;
 	}
 
-	rc = fs_get_mnt_point(&mp, abs_path, NULL);
+	path_len = strlen(abs_path);
+	if (path_len == 1) {
+		/* Stat on the root directory */
+		entry->type = FS_DIR_ENTRY_DIR;
+		entry->name[0] = '/';
+		entry->name[1] = '\0';
+		entry->size = 0;
+		return 0;
+	}
+
+	rc = fs_get_mnt_point(&mp, abs_path, &mp_len);
 	if (rc < 0) {
 		LOG_ERR("mount point not found!!");
 		return rc;
+	}
+
+	/* abs_path can have a / at the end, unlike mnt_point. */
+	if (path_len - mp_len <= 1U) {
+		/* Stat on the mount point itself */
+		fs_copy_mnt_point_to_entry(mp, entry);
+		return 0;
 	}
 
 	CHECKIF(mp->fs->stat == NULL) {

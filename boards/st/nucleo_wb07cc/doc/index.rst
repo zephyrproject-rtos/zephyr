@@ -3,9 +3,9 @@
 Overview
 ********
 
-The Nucleo WB07CC board is a Bluetooth |reg| Low Energy wireless and ultra-low-power
-board featuring an ARM Cortex |reg|-M0+ based STM32WB07CCV MCU, embedding a
-powerful and ultra-low-power radio compliant with the Bluetooth |reg| Low Energy
+The Nucleo WB07CC board is a Bluetooth® Low Energy wireless and ultra-low-power
+board featuring an ARM Cortex®-M0+ based STM32WB07CCV MCU, embedding a
+powerful and ultra-low-power radio compliant with the Bluetooth® Low Energy
 SIG specification v5.4.
 
 More information about the board can be found on the `Nucleo WB07CC webpage`_.
@@ -16,7 +16,7 @@ Hardware
 Nucleo WB07CC provides the following hardware components:
 
 - STM32WB07CCV in VFQFPN32 package
-- ARM |reg| 32-bit Cortex |reg|-M0+ CPU
+- ARM® 32-bit Cortex®-M0+ CPU
 - 64 MHz maximal CPU frequency
 - 256 KB Flash
 - 64 KB SRAM
@@ -32,11 +32,11 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
-Bluetooth |reg| support
------------------------
+Bluetooth® support
+------------------
 
-Bluetooth |reg| Low Energy support is enabled; however, to build a Zephyr sample using this board,
-you first need to fetch the Bluetooth |reg| controller library into Zephyr as a binary BLOB.
+Bluetooth® Low Energy support is enabled; however, to build a Zephyr sample using this board,
+you first need to fetch the Bluetooth® controller library into Zephyr as a binary BLOB.
 
 To fetch binary BLOBs:
 

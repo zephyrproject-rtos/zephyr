@@ -115,7 +115,7 @@
 
 		systimer0: systimer@6000b000 {
 			compatible = "espressif,esp32-systimer";
-			reg = <0x6000B000 DT_SIZE_K(4)>;
+			reg = <0x6000b000 DT_SIZE_K(4)>;
 			interrupts = <SYSTIMER_TARGET0_EDGE_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			status = "okay";
@@ -139,7 +139,7 @@
 
 		timer1: counter@6000a000 {
 			compatible = "espressif,esp32-timer";
-			reg = <0x6000A000 DT_SIZE_K(4)>;
+			reg = <0x6000a000 DT_SIZE_K(4)>;
 			clocks = <&clock ESP32_TIMG1_MODULE>;
 			group = <1>;
 			index = <0>;
@@ -155,7 +155,7 @@
 
 		rtc_timer: rtc_timer@600b0c00 {
 			compatible = "espressif,esp32-rtc-timer";
-			reg = <0x600B0C00 DT_SIZE_K(1)>;
+			reg = <0x600b0c00 DT_SIZE_K(1)>;
 			clocks = <&clock ESP32_MODULE_MAX>;
 			interrupts = <LP_RTC_TIMER_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
@@ -164,7 +164,7 @@
 
 		trng0: trng@600b2808 {
 			compatible = "espressif,esp32-trng";
-			reg = <0x600B2808 0x4>;
+			reg = <0x600b2808 0x4>;
 			clocks = <&clock ESP32_RNG_MODULE>;
 			status = "disabled";
 		};
@@ -180,7 +180,7 @@
 
 		wdt1: watchdog@6000a048 {
 			compatible = "espressif,esp32-watchdog";
-			reg = <0x6000A048 0x20>;
+			reg = <0x6000a048 0x20>;
 			interrupts = <TG1_WDT_LEVEL_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_TIMG1_MODULE>;
@@ -205,7 +205,7 @@
 		coretemp: coretemp@6000e058 {
 			compatible = "espressif,esp32-temp";
 			friendly-name = "coretemp";
-			reg = <0x6000E058 0x4>;
+			reg = <0x6000e058 0x4>;
 			status = "disabled";
 		};
 
@@ -242,7 +242,7 @@
 
 		usb_serial: uart@6000f000 {
 			compatible = "espressif,esp32-usb-serial";
-			reg = <0x6000F000 DT_SIZE_K(4)>;
+			reg = <0x6000f000 DT_SIZE_K(4)>;
 			status = "disabled";
 			interrupts = <USB_SERIAL_JTAG_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
@@ -302,7 +302,7 @@
 			compatible = "espressif,esp32-i2s";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x6000D000 DT_SIZE_K(4)>;
+			reg = <0x6000d000 DT_SIZE_K(4)>;
 			interrupts = <I2S1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_I2S1_MODULE>;
@@ -314,7 +314,7 @@
 
 		adc0: adc@6000e000 {
 			compatible = "espressif,esp32-adc";
-			reg = <0x6000E000 0x4>;
+			reg = <0x6000e000 0x4>;
 			clocks = <&clock ESP32_SARADC_MODULE>;
 			unit = <1>;
 			channel-count = <5>;

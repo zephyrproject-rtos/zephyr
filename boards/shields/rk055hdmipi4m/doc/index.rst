@@ -6,6 +6,9 @@ NXP RK055HDMIPI4M MIPI Display
 Overview
 ********
 
+This product is not recommended for new designs. The replacement for this
+LCD is the :ref:`rk055hdmipi4ma0` 5.5-inch LCD Panel.
+
 The Rocktech RK055HDMIPI4M MIPI Display is a 5.5 inch TFT 720x1280 pixels
 panel with LED backlighting, full viewing angle, MIPI interface and
 capacitive touch panel from Rocktech.

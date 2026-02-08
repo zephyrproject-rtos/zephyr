@@ -20,7 +20,7 @@ Key Features
 
   - Camera (8 bit) connector
   - ST7735 TFT-LCD 160 x 80 pixels (RGB565 3-SPI)
-  - microSD |trade| card
+  - microSD™ card
   - USB Type-C Connector
   - SWD header for external debugger
   - 2x 40-pin GPIO connector

@@ -11,7 +11,7 @@ features ams OSRAM TSL2583, a very-high sensitivity light-to-digital converter t
 intensity to a digital signal output capable of the direct I2C interface. It combines one broadband
 photodiode (visible plus infrared) and one infrared-responding photodiode on a single CMOS
 integrated circuit capable of providing a near-photopic response over an effective 16-bit dynamic
-range (16-bit resolution). This Click board |trade| is suitable for general-purpose light sensing
+range (16-bit resolution). This Click board™ is suitable for general-purpose light sensing
 applications to extend battery life and provide optimum viewing in diverse lighting conditions.
 
 .. figure:: images/mikroe_illuminance_click.webp
@@ -24,8 +24,8 @@ applications to extend battery life and provide optimum viewing in diverse light
 Requirements
 ************
 
-This shield can only be used with a board that provides a mikroBUS |trade| socket and defines a
-``mikrobus_i2c`` node label for the mikroBUS |trade| I2C interface. See :ref:`shields` for more
+This shield can only be used with a board that provides a mikroBUS™ socket and defines a
+``mikrobus_i2c`` node label for the mikroBUS™ I2C interface. See :ref:`shields` for more
 details.
 
 Programming

@@ -41,11 +41,8 @@ endfunction()
 # Function to compute partition absolute address and size from devicetree
 function(compute_partition_address_and_size partition_nodelabel output_address_var output_size_var)
   dt_nodelabel(partition_path NODELABEL ${partition_nodelabel} REQUIRED)
-  dt_reg_addr(partition_offset PATH ${partition_path} REQUIRED)
+  dt_reg_addr(partition_address PATH ${partition_path} REQUIRED)
   dt_reg_size(partition_size PATH ${partition_path} REQUIRED)
-
-  # Calculate absolute partition address
-  math(EXPR partition_address "${CONFIG_FLASH_BASE_ADDRESS} + ${partition_offset}" OUTPUT_FORMAT HEXADECIMAL)
 
   # Set output variables in parent scope
   set(${output_address_var} ${partition_address} PARENT_SCOPE)

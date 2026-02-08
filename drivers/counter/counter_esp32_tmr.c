@@ -144,8 +144,12 @@ static int counter_esp32_get_value_64(const struct device *dev, uint64_t *ticks)
 static int counter_esp32_set_alarm_64(const struct device *dev, uint8_t chan_id,
 				      const struct counter_alarm_cfg_64 *alarm_cfg)
 {
-	ARG_UNUSED(chan_id);
 	struct counter_esp32_data *data = dev->data;
+
+	if (chan_id > 0) {
+		return -ENOTSUP;
+	}
+
 	bool absolute = alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE;
 	uint64_t ticks = alarm_cfg->ticks;
 	uint64_t top = data->top_data.ticks;
@@ -154,7 +158,7 @@ static int counter_esp32_set_alarm_64(const struct device *dev, uint8_t chan_id,
 	uint64_t target;
 	uint64_t diff;
 	int err = 0;
-	bool irq_on_late = 0;
+	bool irq_on_late = false;
 
 	if (ticks > data->top_data.ticks) {
 		return -EINVAL;
@@ -178,7 +182,7 @@ static int counter_esp32_set_alarm_64(const struct device *dev, uint8_t chan_id,
 
 	timer_ll_set_alarm_value(data->hal_ctx.dev, data->hal_ctx.timer_id, target);
 
-	diff = (alarm_cfg->ticks - now);
+	diff = absolute ? (target - now) : ticks;
 	if (diff > max_rel_val) {
 		if (absolute) {
 			err = -ETIME;

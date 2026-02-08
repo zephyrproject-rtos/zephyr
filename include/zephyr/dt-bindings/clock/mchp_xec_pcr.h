@@ -29,4 +29,7 @@
 /* Encode a peripheral's sleep-en/clock-req/reset-en index and bit position */
 #define MCHP_XEC_SCR_ENCODE(idx, bitpos) (((idx) & 0x7) | (((bitpos) & 0x1f) << 3))
 
+/* Encode a peripheral's sleep-en/clock-req/reset-en index and bit position */
+#define MCHP_XEC_SCR_ENCODE(idx, bitpos) (((idx) & 0x7) | (((bitpos) & 0x1f) << 3))
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCHP_XEC_H_ */

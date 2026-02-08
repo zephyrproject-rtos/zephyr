@@ -4,25 +4,25 @@ Overview
 ********
 
 STM32WB5MMG is an ultra-low-power and small form factor certified 2.4 GHz
-wireless module. It supports Bluetooth |reg| Low Energy 5.4, Zigbee |reg| 3.0,
+wireless module. It supports Bluetooth® Low Energy 5.4, Zigbee® 3.0,
 OpenThread, dynamic, and static concurrent modes, and 802.15.4 proprietary
 protocols. This board support is added in order to make it possible use this
 module on other boards as HCI layer (Specifically B-U585I-IOT02A Development board).
 
 STM32WB5MMG supports the following features:
 
-- Bluetooth |reg| module in SiP-LGA86 package
+- Bluetooth® module in SiP-LGA86 package
 - Integrated chip antenna
-- Bluetooth |reg| Low Energy 5.4, Zigbee |reg| 3.0, OpenThread certified
+- Bluetooth® Low Energy 5.4, Zigbee® 3.0, OpenThread certified
   Dynamic and static concurrent modes
 - IEEE 802.15.4-2011 MAC PHY Supports 2 Mbits/s
 - Frequency band 2402-2480 MHz
 - Advertising extension
 - Tx output power up to +6 dBm
-- Rx sensitivity: -96 dBm (Bluetooth |reg| Low Energy at 1 Mbps), -100 dBm (802.15.4)
+- Rx sensitivity: -96 dBm (Bluetooth® Low Energy at 1 Mbps), -100 dBm (802.15.4)
 - Range: up to 75 meters
-- Dedicated Arm |reg| Cortex |reg|-M0+ CPU for radio and security tasks
-- Dedicated Arm |reg| Cortex |reg|-M4 CPU with FPU and ART (adaptive real-time accelerator) up to 64 MHz speed
+- Dedicated Arm® Cortex®-M0+ CPU for radio and security tasks
+- Dedicated Arm® Cortex®-M4 CPU with FPU and ART (adaptive real-time accelerator) up to 64 MHz speed
 - 1-Mbyte flash memory, 256-Kbyte SRAM
 - Fully integrated BOM, including 32 MHz radio and 32 kHz RTC crystals
 - Integrated SMPS
@@ -30,13 +30,13 @@ STM32WB5MMG supports the following features:
 - 68 GPIOs
 - SWD, JTAG
 
-More information about the board can be found at the `` `STM32WB5MMG on www.st.com`_.
+More information about the board can be found at the `STM32WB5MMG website`_.
 
 Hardware
 ********
 
 STM32WB5MMG is an ultra-low-power and small form factor certified 2.4 GHz
-wireless module. It supports Bluetooth |reg| Low Energy 5.4, Zigbee |reg| 3.0, OpenThread,
+wireless module. It supports Bluetooth® Low Energy 5.4, Zigbee® 3.0, OpenThread,
 dynamic, and static concurrent modes, and 802.15.4 proprietary protocols. Based
 on the STMicroelectronics STM32WB55VGY wireless microcontroller, STM32WB5MMG
 provides best-in-class RF performance thanks to its high receiver sensitivity
@@ -46,15 +46,15 @@ based on cut 2.1 of the STM32WB55VGY microcontroller. Revision X is based on
 cut 2.2.
 
 - Ultra-low-power with FlexPowerControl (down to 600 nA Standby mode with RTC and 32KB RAM)
-- Core: ARM |reg| 32-bit Cortex |reg|-M4 CPU with FPU, frequency up to 64 MHz
+- Core: ARM® 32-bit Cortex®-M4 CPU with FPU, frequency up to 64 MHz
 - Radio:
 
   - 2.4GHz
-  - RF transceiver supporting Bluetooth |reg| 5.4
+  - RF transceiver supporting Bluetooth® 5.4
     specification, IEEE 802.15.4-2011 PHY
     and MAC, supporting Thread 1.3 and
-  - Zigbee |reg| 3.0
-  - RX sensitivity: -96 dBm (Bluetooth |reg| Low
+  - Zigbee® 3.0
+  - RX sensitivity: -96 dBm (Bluetooth® Low
     Energy at 1 Mbps), -100 dBm (802.15.4)
   - Programmable output power up to +6 dBm
     with 1 dB steps
@@ -63,7 +63,7 @@ cut 2.2.
   - Support GATT caching
   - Support EATT (enhanced ATT)
   - Support advertising extension
-  - Dedicated Arm |reg| 32-bit Cortex |reg| M0+ CPU
+  - Dedicated Arm® 32-bit Cortex® M0+ CPU
     for real-time Radio layer
   - Accurate RSSI to enable power control
   - Suitable for systems requiring compliance
@@ -134,9 +134,9 @@ cut 2.2.
 - Security and ID
 
  - Secure firmware installation (SFI) for
-   Bluetooth |reg| Low Energy and 802.15.4 SW stack
+   Bluetooth® Low Energy and 802.15.4 SW stack
  - 3x hardware encryption AES maximum 256-bit for
-   the application, the Bluetooth |reg|
+   the application, the Bluetooth®
  - Low Energy and IEEE802.15.4
  - Customer key storage/manager services
  - HW public key authority (PKA)
@@ -146,12 +146,12 @@ cut 2.2.
  - CRC calculation unit
  - Die information: 96-bit unique ID
  - IEEE 64-bit unique ID, possibility to derive 802.15.4 64-bit
-   and Bluetooth |reg| Low Energy
+   and Bluetooth® Low Energy
  - 48-bit EUI
 
 More information about STM32WB5MMG can be found here:
 
-- `STM32WB5MMG on www.st.com`_
+- `STM32WB5MMG website`_
 - `STM32WB5MMG datasheet`_
 
 Supported Features
@@ -159,10 +159,10 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
-Bluetooth |reg| and compatibility with STM32WB Copro Wireless Binaries
-======================================================================
+Bluetooth® and compatibility with STM32WB Copro Wireless Binaries
+=================================================================
 
-To operate Bluetooth |reg| on STM32WB5MMG, Cortex-M0 core should be flashed with
+To operate Bluetooth® on STM32WB5MMG, Cortex-M0 core should be flashed with
 a valid STM32WB Coprocessor binaries (either 'Full stack' or 'HCI Layer').
 These binaries are delivered in STM32WB Cube packages, under
 ``Projects/STM32WB_Copro_Wireless_Binaries/STM32WB5x/``
@@ -251,8 +251,8 @@ Then build and flash the application for the STM32WB5MMG module.
    :goals: build flash
 
 Next, reverse back the buttons to default mode (SW4 on ON and SW5
-on OFF) mode. In this case we will upload the Bluetooth |reg| sample on the
-main microcontroller. Then, build the Bluetooth |reg|
+on OFF) mode. In this case we will upload the Bluetooth® sample on the
+main microcontroller. Then, build the Bluetooth®
 :zephyr_file:`samples/bluetooth/observer` demo application for
 B-U585I-IOT02A board:
 
@@ -285,7 +285,7 @@ You can debug an application in the usual way.  Here is an example for the
    :maybe-skip-config:
    :goals: debug
 
-.. _STM32WB5MMG on www.st.com:
+.. _STM32WB5MMG website:
    https://www.st.com/en/microcontrollers-microprocessors/stm32wb5mmg.html
 
 .. _STM32WB5MMG datasheet:

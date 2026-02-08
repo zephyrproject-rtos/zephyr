@@ -118,6 +118,7 @@
 #define PTE_BLOCK_DESC_INNER_SHARE	(3ULL << 8)
 #define PTE_BLOCK_DESC_AF		(1ULL << 10)
 #define PTE_BLOCK_DESC_NG		(1ULL << 11)
+#define PTE_BLOCK_DESC_GP		(1ULL << 50)
 #define PTE_BLOCK_DESC_PXN		(1ULL << 53)
 #define PTE_BLOCK_DESC_UXN		(1ULL << 54)
 

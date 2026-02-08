@@ -4,8 +4,8 @@ Overview
 ********
 
 The Nucleo H533RE board is designed as an affordable development platform for
-STMicroelectronics ARM |reg| Cortex |reg|-M33 core-based STM32H533RET6
-microcontroller with TrustZone |reg|.
+STMicroelectronics ARM® Cortex®-M33 core-based STM32H533RET6
+microcontroller with TrustZone®.
 Here are some highlights of the Nucleo H533RE board:
 
 - STM32H533RE microcontroller featuring 512 kbytes of Flash memory and 272 Kbytes of
@@ -13,7 +13,7 @@ Here are some highlights of the Nucleo H533RE board:
 
 - Board connectors:
 
-  - USB Type-C |reg| Sink device FS
+  - USB Type-C® Sink device FS
   - ST Zio expansion connector including Arduino Uno V3 connectivity (CN5, CN6, CN8, CN9)
   - ST morpho extension connector (CN7, CN10)
 
@@ -32,7 +32,7 @@ Here are some highlights of the Nucleo H533RE board:
   - Virtual COM port
   - debug port
 
-- One user LED shared with ARDUINO |reg| Uno V3
+- One user LED shared with ARDUINO® Uno V3
 - Two push-buttons: USER and RESET
 - 32.768 kHz crystal oscillator
 
@@ -42,19 +42,19 @@ Hardware
 ********
 
 The STM32H533xx devices are high-performance microcontrollers from the STM32H5
-Series based on the high-performance Arm |reg| Cortex |reg|-M33 32-bit RISC core.
+Series based on the high-performance Arm® Cortex®-M33 32-bit RISC core.
 They operate at a frequency of up to 250 MHz.
 
-- Core: ARM |reg| 32-bit Cortex |reg| -M33 CPU with TrustZone |reg| and FPU.
+- Core: ARM® 32-bit Cortex®-M33 CPU with TrustZone® and FPU.
 - Performance benchmark:
 
   - 375 DMPIS/MHz (Dhrystone 2.1)
 
 - Security
 
-  - Arm |reg| TrustZone |reg| with Armv8-M mainline security extension
+  - Arm® TrustZone® with Armv8-M mainline security extension
   - Up to eight configurable SAU regions
-  - TrustZone |reg| aware and securable peripherals
+  - TrustZone® aware and securable peripherals
   - Flexible life cycle scheme with secure debug authentication
   - SESIP3 and PSA Level 3 certified assurance target
   - Preconfigured immutable root of trust (ST-iROT)
@@ -75,7 +75,7 @@ They operate at a frequency of up to 250 MHz.
   - 24 MHz crystal oscillator (HSE)
   - 32 kHz crystal oscillator for RTC (LSE)
   - Internal 64 MHz (HSI) trimmable by software
-  - Internal low-power 32 kHz RC (LSI)( |plusminus| 5%)
+  - Internal low-power 32 kHz RC (LSI)(±5%)
   - Internal 4 MHz oscillator (CSI), trimmable by software
   - Internal 48 MHz (HSI48) with recovery system
   - 3 PLLs for system clock, USB, audio, ADC
@@ -129,7 +129,7 @@ They operate at a frequency of up to 250 MHz.
   - 1x HDMI-CEC
   - 1x 16-bit parallel slave synchronous-interface
 
-- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell |trade|
+- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell™
 
 More information about STM32H533RE can be found here:
 

@@ -74,6 +74,18 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 	ldp	x0, x1, [sp], #16
 #endif
 
+#ifdef CONFIG_ARM_PAC_PER_THREAD
+	/*
+	 * Save and restore PAC keys during context switch.
+	 * This ensures each thread has its own unique PAC keys for security isolation.
+	 * Now safe to call C function since PAC key management functions are compiled
+	 * without PAC protection (branch-protection=none).
+	 */
+	stp	x0, x1, [sp, #-16]!
+	bl	z_arm64_pac_thread_context_switch
+	ldp	x0, x1, [sp], #16
+#endif
+
 #ifdef CONFIG_SMP
 	/* Write barrier: ensure all preceding writes are executed
 	* before writing the switch handle

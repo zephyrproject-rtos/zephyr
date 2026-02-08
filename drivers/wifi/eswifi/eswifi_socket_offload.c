@@ -249,9 +249,11 @@ static int eswifi_socket_setsockopt(void *obj, int level, int optname,
 			ret = map_credentials(sd, optval, optlen);
 			break;
 		case ZSOCK_TLS_HOSTNAME:
+			LOG_ERR("eswifi offload does not support TLS_HOSTNAME");
+			return -ENOTSUP;
 		case ZSOCK_TLS_PEER_VERIFY:
-			ret = 0;
-			break;
+			LOG_ERR("eswifi offload does not support TLS_PEER_VERIFY");
+			return -ENOTSUP;
 		default:
 			return -EINVAL;
 		}

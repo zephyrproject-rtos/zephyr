@@ -1,0 +1,67 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/kinetis/nxp_ke1xz.dtsi>
+
+/delete-node/ &sram_l;
+/delete-node/ &sram_u;
+
+/* Remove non-supported peripherals on 64kB silicon */
+/delete-node/ &ftm2;
+/delete-node/ &lpi2c1;
+/delete-node/ &lpspi1;
+/delete-node/ &edma;
+/delete-node/ &flexio;
+
+/ {
+	chosen {
+		zephyr,flash-controller = &ftfa;
+	};
+
+	/* Fix sram_l and sram_u, they have different addr and size on KE16Z */
+	sram_l: memory@1ffff800 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x1ffff800 DT_SIZE_K(2)>;
+		zephyr,memory-region = "SRAML";
+	};
+
+	sram_u: memory@20000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x20000000 DT_SIZE_K(6)>;
+		zephyr,memory-region = "SRAMU";
+	};
+
+	soc {
+		/* Remove ftfe, it doesn't exist on KE16Z */
+		/delete-node/ ftfe;
+
+		ftfa: flash-controller@40020000 {
+			compatible = "nxp,kinetis-ftfa";
+			reg = <0x40020000 0x1000>;
+			interrupts = <5 0>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0 DT_SIZE_K(64)>;
+				erase-block-size = <DT_SIZE_K(1)>;
+				write-block-size = <8>;
+			};
+		};
+
+		scg@40064000 {
+			/delete-node/ lpfll_clk;
+
+			lpfll_clk: lpfll_clk {
+				compatible = "fixed-clock";
+				clock-frequency = <48000000>;
+				#clock-cells = <0>;
+			};
+		};
+	};
+};

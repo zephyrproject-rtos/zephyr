@@ -352,6 +352,17 @@ config WIFI_NM_WPA_SUPPLICANT_P2P
 	select WIFI_NM_WPA_SUPPLICANT_WPS
 	select WIFI_NM_WPA_SUPPLICANT_EAPOL
 
+if WIFI_NM_WPA_SUPPLICANT_P2P
+
+config WIFI_NM_WPA_SUPPLICANT_P2P_PROV_DISC_REQ_RETRIES
+	int "P2P provision discovery request retries"
+	default 120
+	help
+	  Maximum number of retries for P2P provision discovery requests
+	  when the peer is not listening.
+
+endif # WIFI_NM_WPA_SUPPLICANT_P2P
+
 config WIFI_NM_WPA_SUPPLICANT_EAPOL
 	bool "EAPoL supplicant"
 	default y if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE

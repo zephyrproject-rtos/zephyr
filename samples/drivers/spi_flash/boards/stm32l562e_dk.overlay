@@ -5,7 +5,8 @@
  */
 
 &octospi1 {
-	dmas = <&dma1 0 41 0x480>; /* request 41 for OCTOSPI1 */
+	/* DMA stream channel between [1-8] */
+	dmas = <&dma1 1 41 0x480>; /* request 41 for OCTOSPI1 */
 	dma-names = "tx_rx";
 };
 

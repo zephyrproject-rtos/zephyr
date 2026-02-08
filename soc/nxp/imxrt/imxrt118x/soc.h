@@ -1,5 +1,5 @@
 /*
- * Copyright 2024, 2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,13 +18,13 @@
 #include <zephyr/devicetree.h>
 
 /* Handle variation to implement Wakeup Interrupt */
-#if defined(CONFIG_SOC_MIMXRT1189_CM33)
+#if defined(CONFIG_CPU_CORTEX_M33)
 #define NXP_ENABLE_WAKEUP_SIGNAL(irqn) GPC_CM_EnableIrqWakeup(kGPC_CPU0, irqn, true)
 #define NXP_DISABLE_WAKEUP_SIGNAL(irqn) GPC_CM_EnableIrqWakeup(kGPC_CPU0, irqn, false)
 #define NXP_GET_WAKEUP_SIGNAL_STATUS(irqn) GPC_CM_GetIrqWakeupStatus(kGPC_CPU0, irqn)
 #endif
 
-#if defined(CONFIG_SOC_MIMXRT1189_CM7)
+#if defined(CONFIG_CPU_CORTEX_M7)
 #define NXP_ENABLE_WAKEUP_SIGNAL(irqn) GPC_CM_EnableIrqWakeup(kGPC_CPU1, irqn, true)
 #define NXP_DISABLE_WAKEUP_SIGNAL(irqn) GPC_CM_EnableIrqWakeup(kGPC_CPU1, irqn, false)
 #define NXP_GET_WAKEUP_SIGNAL_STATUS(irqn) GPC_CM_GetIrqWakeupStatus(kGPC_CPU1, irqn)

@@ -3,7 +3,7 @@
 Overview
 ********
 
-The Embedsky TQ-H503A board is an extremely low cost and bare-bones development board featuring an ARM |reg| Cortex |reg|-M33 core-based
+The Embedsky TQ-H503A board is an extremely low cost and bare-bones development board featuring an ARM® Cortex®-M33 core-based
 STM32H503CBT6 microcontroller, see `STM32H503CB website`_.
 This is the 48-pin variant of the STM32H503x series,
 see `STM32H503x reference manual`_.
@@ -20,10 +20,10 @@ Hardware
 ********
 
 The STM32H503CB belongs to the high-performance microcontroller family
-(STM32H5 series) based on the high-performance Arm |reg| Cortex |reg|-M33 32-bit
+(STM32H5 series) based on the high-performance Arm® Cortex®-M33 32-bit
 RISC core. They operate at frequency of up to 250 MHz.
 
-- Core: Arm |reg| Cortex |reg|-M33 CPU with FPU, MPU, 375 DMIPS (Dhrystone 2.1),
+- Core: Arm® Cortex®-M33 CPU with FPU, MPU, 375 DMIPS (Dhrystone 2.1),
   and DSP instructions
 - ART Accelerator
 
@@ -62,7 +62,7 @@ RISC core. They operate at frequency of up to 250 MHz.
 
 - 16x communication interfaces
 
-  - 2x I2Cs FM + interfaces (SMBus/PMBus |reg|)
+  - 2x I2Cs FM + interfaces (SMBus/PMBus®)
   - 2x I3Cs shared with I2C
   - 3x USARTs (ISO7816 interface, LIN, IrDA, modem control)
   - 1x LPUART

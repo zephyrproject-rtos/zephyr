@@ -90,6 +90,13 @@ bool instr_tracing_supported(void);
 bool instr_profiling_supported(void);
 
 /**
+ * @brief Checks if dynamic trigger configuration feature is available.
+ *
+ * @return true if dynamic trigger is supported, false otherwise.
+ */
+bool instr_dynamic_trigger_supported(void);
+
+/**
  * @brief Checks if subsystem is ready to be initialized. Must called be before
  *        instr_init().
  *

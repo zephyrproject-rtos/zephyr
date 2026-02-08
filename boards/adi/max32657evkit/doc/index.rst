@@ -9,7 +9,7 @@ with digital signal processing (DSP) instructions, large flash and SRAM memories
 and the latest generation Bluetooth® 5.4 Low Energy (LE) radio.
 The nano-power modes increase battery life substantially.
 
-The MAX32657 is qualified to operate at a temperature range of -20°C to +85°C.
+The MAX32657 is qualified to operate at a temperature range of -20 °C to +85 °C.
 Bluetooth 5.4 LE radio supports Mesh, long-range (coded), and high-throughput modes.
 A cryptographic toolbox (CTB) provides advanced root of trust security features,
 including an Advanced Encryption Standard (AES) Engine, TRNG, and secure boot.
@@ -518,8 +518,8 @@ see the following message in the terminal:
    ***** Booting Zephyr OS build v4.1.0 *****
    Hello World! max32657evkit/max32657
 
-Building and flashing secure/non-secure with Arm |reg| TrustZone |reg|
-----------------------------------------------------------------------
+Building and flashing secure/non-secure with Arm® TrustZone®
+------------------------------------------------------------
 The TF-M integration samples can be run using the
 ``max32657evkit/max32657/ns`` board target. To run we need to manually flash
 the resulting image (``tfm_merged.hex``) with a J-Link as follows

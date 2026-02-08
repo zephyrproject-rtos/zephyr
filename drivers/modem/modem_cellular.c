@@ -712,6 +712,10 @@ MODEM_CHAT_MATCHES_DEFINE(dial_abort_matches,
 MODEM_CHAT_MATCH_DEFINE(connect_match, "CONNECT", "", NULL);
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(quectel_bg95) || DT_HAS_COMPAT_STATUS_OKAY(quectel_bg96)
+MODEM_CHAT_MATCH_DEFINE(powerdown_match, "POWERED DOWN", "", NULL);
+#endif
+
 
 static int append_apn_cmd(struct modem_cellular_data *data, uint8_t *steps, const char *fmt,
 			  const char *apn_value)
@@ -1525,8 +1529,10 @@ static void modem_cellular_carrier_on_event_handler(struct modem_cellular_data *
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_DORMANT);
 		break;
 	case MODEM_CELLULAR_EVENT_PPP_DEAD:
-		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_DORMANT);
-		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
+		if (net_if_is_admin_up(modem_ppp_get_iface(data->ppp))) {
+			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_DORMANT);
+			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
+		}
 		break;
 
 	case MODEM_CELLULAR_EVENT_SUSPEND:
@@ -2544,11 +2550,11 @@ MODEM_CHAT_SCRIPT_DEFINE(quectel_bg9x_periodic_chat_script,
 			 modem_cellular_chat_callback_handler, 4);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_bg9x_shutdown_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+QPOWD=1", ok_match));
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+QPOWD=1", powerdown_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(quectel_bg9x_shutdown_chat_script,
 			 quectel_bg9x_shutdown_chat_script_cmds, abort_matches,
-			 modem_cellular_chat_callback_handler, 10);
+			 modem_cellular_chat_callback_handler, 1);
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(quectel_eg25_g)
@@ -3053,6 +3059,13 @@ MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf91_slm_dial_chat_script, nordic_nrf91_slm_dia
 
 MODEM_CHAT_SCRIPT_EMPTY_DEFINE(nordic_nrf91_slm_periodic_chat_script);
 
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(nordic_nrf91_slm_shutdown_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=0", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf91_slm_shutdown_chat_script,
+			 nordic_nrf91_slm_shutdown_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 2);
+
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(sqn_gm02s)
@@ -3195,7 +3208,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 						  (user_pipe_0, 3),                                \
 						  (user_pipe_1, 4))                                \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 100, 10000, 5000, false,                        \
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 500, 1000, 5000, 2000, false,                         \
 				       NULL,                                                       \
 				       &quectel_bg9x_init_chat_script,                             \
 				       &quectel_bg9x_dial_chat_script,                             \
@@ -3405,12 +3418,12 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst,                                            \
 						  (gnss_pipe, 3))                                  \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 100, 100, 2000, 10000, false,                         \
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 0, 500, 0, 0, false,                                  \
 				       NULL,                                                       \
 				       &nordic_nrf91_slm_init_chat_script,                         \
 				       &nordic_nrf91_slm_dial_chat_script,                         \
 				       &nordic_nrf91_slm_periodic_chat_script,                     \
-				       NULL)
+				       &nordic_nrf91_slm_shutdown_chat_script)
 
 #define MODEM_CELLULAR_DEVICE_SQN_GM02S(inst)                                                      \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);   \

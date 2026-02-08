@@ -30,7 +30,7 @@ Hardware
 The Nucleo F303K8 provides the following hardware components:
 
 - STM32F303K8T6 in LQFP32 package
-- ARM |reg| 32-bit Cortex |reg| -M4 CPU with FPU
+- ARM® 32-bit Cortex®-M4 CPU with FPU
 - 72 MHz max CPU frequency
 - VDD from 2.0 V to 3.6 V
 - 64 KB Flash

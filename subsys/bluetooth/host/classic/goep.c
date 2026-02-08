@@ -527,6 +527,14 @@ static int goep_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *serve
 	goep->_transport.chan.rx.max_transmit = 3;
 	goep->_transport.chan.rx.mtu = goep->obex.rx.mtu;
 	goep->_transport.chan.rx.extended_control = false;
+	/*
+	 * There is an issue found that the FCS option is not correctly set when connecting to an
+	 * iphone when the profile is PBAP or MAP. The issue is that iphone expects the No FCS
+	 * option will be applied while the 'No FCS' option is not added in an
+	 * L2CAP_CONFIGURATION_REQ packet sent by the iphone.
+	 * Force 16 bits FCS option for enhance retransmission mode by default.
+	 */
+	goep->_transport.chan.rx.fcs = BT_L2CAP_BR_FCS_16BIT;
 	goep->_transport.chan.chan.ops = &goep_l2cap_ops;
 	goep->_transport.chan.required_sec_level = BT_SECURITY_L2;
 
@@ -612,6 +620,14 @@ int bt_goep_transport_l2cap_connect(struct bt_conn *conn, struct bt_goep *goep, 
 	goep->_transport.chan.rx.max_transmit = 3;
 	goep->_transport.chan.rx.mtu = goep->obex.rx.mtu;
 	goep->_transport.chan.rx.extended_control = false;
+	/*
+	 * There is an issue found that the FCS option is not correctly set when connecting to an
+	 * iphone when the profile is PBAP or MAP. The issue is that iphone expects the No FCS
+	 * option will be applied while the 'No FCS' option is not added in an
+	 * L2CAP_CONFIGURATION_REQ packet sent by the iphone.
+	 * Force 16 bits FCS option for enhance retransmission mode by default.
+	 */
+	goep->_transport.chan.rx.fcs = BT_L2CAP_BR_FCS_16BIT;
 	goep->_transport.chan.chan.ops = &goep_l2cap_ops;
 	goep->_transport.chan.required_sec_level = BT_SECURITY_L2;
 

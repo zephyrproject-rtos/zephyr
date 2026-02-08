@@ -90,6 +90,17 @@ struct llext_loader;
 /** Maximum number of dependency LLEXTs */
 #define LLEXT_MAX_DEPENDENCIES 8
 
+#ifdef CONFIG_LLEXT_HEAP_MEMBLK
+struct llext_alloc {
+	int num_blocks;
+	void *memblk_ptr;
+};
+struct llext_alloc_map {
+	int idx;
+	struct llext_alloc map[LLEXT_MEM_COUNT];
+};
+#endif
+
 /**
  * @brief Structure describing a linkable loadable extension
  *
@@ -114,6 +125,10 @@ struct llext {
 
 	/** Is the memory for this region allocated on heap? */
 	bool mem_on_heap[LLEXT_MEM_COUNT];
+
+#ifdef CONFIG_LLEXT_HEAP_MEMBLK
+	struct llext_alloc_map mem_alloc_map;
+#endif
 
 	/** Size of each stored region */
 	size_t mem_size[LLEXT_MEM_COUNT];
@@ -483,7 +498,7 @@ int llext_relink_dependency(struct llext *ext, unsigned int n_ext);
  * During suspend the user has saved all the extension and loader descriptors
  * and related objects and called @ref llext_relink_dependency() to prepare
  * dependency pointers.
- * When resuming llext_alloc_data() has to be used to re-allocate all the objects,
+ * When resuming llext_alloc_metadata() has to be used to re-allocate all the objects,
  * therefore the user needs support from LLEXT core to accomplish that.
  * This function takes arrays of pointers to saved copies of extensions and
  * loaders as arguments and re-allocates all the objects, while also adding them

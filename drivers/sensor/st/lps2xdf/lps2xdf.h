@@ -41,6 +41,7 @@
 
 typedef int32_t (*api_lps2xdf_mode_set_odr_raw)(const struct device *dev, uint8_t odr);
 typedef int32_t (*api_lps2xdf_sample_fetch)(const struct device *dev, enum sensor_channel chan);
+typedef int32_t (*api_lps2xdf_power_on)(const struct device *dev);
 #ifdef CONFIG_LPS2XDF_TRIGGER
 typedef int (*api_lps2xdf_config_interrupt)(const struct device *dev);
 typedef void (*api_lps2xdf_handle_interrupt)(const struct device *dev);
@@ -52,6 +53,7 @@ typedef int (*api_lps2xdf_trigger_set)(const struct device *dev,
 struct lps2xdf_chip_api {
 	api_lps2xdf_mode_set_odr_raw mode_set_odr_raw;
 	api_lps2xdf_sample_fetch sample_fetch;
+	api_lps2xdf_power_on power_on;
 #ifdef CONFIG_LPS2XDF_TRIGGER
 	api_lps2xdf_config_interrupt config_interrupt;
 	api_lps2xdf_handle_interrupt handle_interrupt;
@@ -109,6 +111,7 @@ struct lps2xdf_config {
 struct lps2xdf_data {
 	int32_t sample_press;
 	int16_t sample_temp;
+	uint8_t odr;
 
 #ifdef CONFIG_LPS2XDF_TRIGGER
 	struct gpio_callback gpio_cb;

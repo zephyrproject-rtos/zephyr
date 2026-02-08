@@ -268,8 +268,8 @@ see the following message in the terminal:
    ***** Booting Zephyr OS v3.7.0 *****
    Hello World! lpcxpresso55s69/lpc55s69/cpu0
 
-Building and flashing secure/non-secure with Arm |reg| TrustZone |reg|
-----------------------------------------------------------------------
+Building and flashing secure/non-secure with Arm® TrustZone®
+------------------------------------------------------------
 The TF-M integration samples can be run using the
 ``lpcxpresso55s69/lpc55s69/cpu0/ns`` target. To run we need to manually flash
 the resulting image (``tfm_merged.hex``) with a J-Link as follows

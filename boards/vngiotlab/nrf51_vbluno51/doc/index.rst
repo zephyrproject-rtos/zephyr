@@ -26,7 +26,7 @@ Supported Features
 ==================
 
 - CPU:
-	+ Nordic nRF51822: ARM |reg| Cortex |trade| M0 32bit.
+	+ Nordic nRF51822: ARM® Cortex® M0 32bit.
 	+ *Bluetooth Low Energy interface.*
 	+ 256KB Flash, 32KB RAM.
 	+ UART(1), I2C(2), SPI(1), PWM(3), SWD, Timer 16bit(3).

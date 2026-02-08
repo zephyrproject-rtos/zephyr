@@ -1,0 +1,84 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/imx/nxp_imx95_m7.dtsi>
+#include "imx95_evk_15x15-pinctrl.dtsi"
+
+/ {
+	model = "NXP i.MX95 15x15 EVK board (M7)";
+	compatible = "nxp,imx95_evk_15x15";
+
+	chosen {
+		/* TCM */
+		zephyr,flash = &itcm;
+		zephyr,sram = &dtcm;
+
+		zephyr,flash-controller = &mt35xu01gbba;
+		zephyr,console = &lpuart3;
+		zephyr,shell-uart = &lpuart3;
+	};
+};
+
+/* Enable eDMA used by LPUART async API tests (LPUART dmas -> &edma2). */
+&edma2 {
+	status = "okay";
+};
+
+/* Mirror the EVK M7 defaults */
+&emdio {
+	pinctrl-0 = <&emdio_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy0: phy@1 {
+		compatible = "realtek,rtl8211f";
+		reg = <0x1>;
+		status = "okay";
+	};
+};
+
+&enetc_psi0 {
+	local-mac-address = [00 00 00 01 02 00];
+	pinctrl-0 = <&eth0_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy0>;
+	phy-connection-type = "rgmii";
+	status = "okay";
+};
+
+&enetc_ptp_clock {
+	status = "okay";
+};
+
+&flexspi {
+	status = "okay";
+	ahb-prefetch;
+	ahb-read-addr-opt;
+	rx-clock-source = <1>;
+	pinctrl-0 = <&flexspi_default>;
+	pinctrl-names = "default";
+
+	mt35xu01gbba: mt35xu01gbba@0 {
+		compatible = "nxp,imx-flexspi-nor";
+		size = <DT_SIZE_M(1024)>;
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(200)>;
+		status = "okay";
+		jedec-id = [2c 5b 1b];
+		erase-block-size = <DT_SIZE_K(4)>;
+		write-block-size = <2>;
+	};
+};
+
+/* Enable UART used by chosen zephyr,console / zephyr,shell-uart */
+&lpuart3 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&lpuart3_default>;
+	pinctrl-names = "default";
+};

@@ -263,11 +263,11 @@ ARM arch:
     - arch.arm
 
 ARM64 arch:
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - wearyzen
   collaborators:
     - npitre
-    - wearyzen
-    - ithinuel
     - JiafeiPan
   files:
     - arch/arm64/
@@ -435,6 +435,20 @@ Binary Descriptors:
     - "area: Binary Descriptors"
   tests:
     - bindesc
+
+Biometrics Drivers:
+  status: maintained
+  maintainers:
+    - heronet
+  files:
+    - drivers/biometrics/
+    - dts/bindings/biometrics/
+    - include/zephyr/drivers/biometrics.h
+    - samples/drivers/biometrics/
+    - tests/drivers/biometrics/
+    - doc/hardware/peripherals/biometrics.rst
+  labels:
+    - "area: Biometrics"
 
 Bluetooth Audio:
   status: maintained
@@ -3646,7 +3660,7 @@ NXP Platforms (MCU):
     - boards/nxp/rddrone_fmuk66/
     - tests/boards/vmu_rt1170/
   files-exclude:
-    - dts/arm/nxp/nxp_imx*
+    - dts/arm/nxp/imx/nxp_imx*
     - boards/nxp/frdm_imx*/
   files-regex-exclude:
     - .*s32.*
@@ -3675,14 +3689,14 @@ NXP Platforms (MCU):
       files:
         - boards/nxp/frdm_k*/
         - soc/nxp/kinetis/
-        - dts/arm/nxp/nxp_k*
+        - dts/arm/nxp/kinetis/nxp_k*
     - name: NXP LPC
       collaborators:
         - mmahadevan108
       files:
         - boards/nxp/lpc*/
         - soc/nxp/lpc/
-        - dts/arm/nxp/nxp_lpc*
+        - dts/arm/nxp/lpc/nxp_lpc*
     - name: NXP MCU Xtensa
       collaborators:
         - iuliana-prodan
@@ -3712,6 +3726,13 @@ NXP Platforms (MCU):
         - boards/nxp/vmu*/
         - boards/nxp/rddrone_fmuk66/
         - tests/boards/vmu_rt1170/
+    - name: NXP MCU k32l
+      collaborators:
+        - iia
+      files:
+        - boards/nxp/frdm_k32l2b3/
+        - dts/arm/nxp/kinetis/nxp_k32l2b3.dtsi
+        - soc/nxp/kinetis/k32lx/
   labels:
     - "platform: NXP MCU"
     - "platform: NXP"
@@ -3730,7 +3751,7 @@ NXP Platforms (MPU):
     - drivers/*/*imx*
     - include/zephyr/dt-bindings/rdc/
     - dts/arm64/nxp/
-    - dts/arm/nxp/nxp_imx*
+    - dts/arm/nxp/imx/nxp_imx*
     - soc/nxp/imx/
     - soc/nxp/layerscape/
     - boards/nxp/ls1046ardb/
@@ -3754,7 +3775,7 @@ NXP Platforms (S32):
     - drivers/*/*nxp_s32*
     - drivers/misc/*nxp_s32*/
     - dts/bindings/*/nxp,s32*
-    - dts/arm/nxp/*s32*
+    - dts/arm/nxp/s32/nxp_s32*
     - samples/boards/nxp/s32/
     - include/zephyr/dt-bindings/*/nxp-s32*
     - include/zephyr/dt-bindings/*/nxp_s32*

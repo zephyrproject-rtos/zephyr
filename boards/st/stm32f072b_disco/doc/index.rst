@@ -35,7 +35,7 @@ Hardware
 STM32F072B-DISCO Discovery kit provides the following hardware components:
 
 - STM32F072RBTT6 in LQFP64 package
-- ARM |reg| 32-bit Cortex |reg| -M0 CPU
+- ARM® 32-bit Cortex®-M0 CPU
 - 48 MHz max CPU frequency
 - VDD from 2.0 V to 3.6 V
 - 128 KB Flash

@@ -4,7 +4,7 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_KINETIS_K6X
+if SOC_SERIES_K6X
 
 config CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
 	default y
@@ -25,4 +25,4 @@ config KINETIS_FLASH_CONFIG_FOPT
 	default 0xF9
 	depends on KINETIS_FLASH_CONFIG
 
-endif # SOC_SERIES_KINETIS_K6X
+endif # SOC_SERIES_K6X

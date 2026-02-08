@@ -453,8 +453,8 @@ tests:
   bluetooth.native_shell:
     build_only: true
     extra_args:
-      - EXTRA_CONF_FILE=snippets/xterm-native-shell/xterm-native-shell.conf
-      - EXTRA_DTC_OVERLAY_FILE=snippets/xterm-native-shell/xterm-native-shell.overlay
+      - EXTRA_CONF_FILE=xterm-native-shell.conf
+      - EXTRA_DTC_OVERLAY_FILE=xterm-native-shell.overlay
     platform_allow:
       - nrf52_bsim
     integration_platforms:

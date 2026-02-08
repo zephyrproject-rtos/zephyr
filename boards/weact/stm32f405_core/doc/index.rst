@@ -16,7 +16,7 @@ The STM32F405RG based Core V1.0 Board provides the following
 hardware components:
 
 - STM32F405RG in QFPN64 package
-- ARM |reg| 32-bit Cortex |reg| -M4 CPU with FPU, Adaptive real-time
+- ARM® 32-bit Cortex®-M4 CPU with FPU, Adaptive real-time
   accelerator (ART Accelerator) allowing 0-wait state execution from Flash memory
 - 168 MHz max CPU frequency
 - VDD from 1.7 V to 3.6 V

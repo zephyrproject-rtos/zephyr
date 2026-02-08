@@ -14,32 +14,32 @@
 		#size-cells = <1>;
 		ranges;
 
-		openamp_shm: memory-region@62F00000 {
+		openamp_shm: memory-region@62f00000 {
 			compatible = "zephyr,memory-region";
-			reg = <0x62F00000 0x600000>;
+			reg = <0x62f00000 0x600000>;
 			zephyr,memory-region = "openamp_memory";
 			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 		};
 	};
 
-	mhu1_shm: memory@62F01008 {
+	mhu1_shm: memory@62f01008 {
 		compatible = "mmio-sram";
-		reg = <0x62F01008 0x8>;
+		reg = <0x62f01008 0x8>;
 	};
 
-	mhu3_shm: memory@62F01018 {
+	mhu3_shm: memory@62f01018 {
 		compatible = "mmio-sram";
-		reg = <0x62F01018 0x8>;
+		reg = <0x62f01018 0x8>;
 	};
 
-	mhu4_shm: memory@62F01020 {
+	mhu4_shm: memory@62f01020 {
 		compatible = "mmio-sram";
-		reg = <0x62F01020 0x8>;
+		reg = <0x62f01020 0x8>;
 	};
 
-	mhu5_shm: memory@62F01028 {
+	mhu5_shm: memory@62f01028 {
 		compatible = "mmio-sram";
-		reg = <0x62F01028 0x8>;
+		reg = <0x62f01028 0x8>;
 	};
 
 	mbox-consumer {

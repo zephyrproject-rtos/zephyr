@@ -28,7 +28,7 @@ Hardware
 Nucleo F722ZE provides the following hardware components:
 
 - STM32F722ZET6 microcontroller in LQFP144 package
-- ARM |reg| Cortex |reg|-M4 with FPU
+- ARM® Cortex®-M4 with FPU
 - Adaptive Real-Time Accelerator (ART Accelerator)
 - 216MHz max CPU frequency
 - 512 KB flash

@@ -24,6 +24,14 @@ description: |
         #address-cells = <1>;
         #size-cells = <0>;
       };
+
+      gpio_ext: gpio {
+        compatible = "nxp,sc18is606-gpio";
+        status = "okay";
+        gpio-controller;
+        #gpio-cells = <2>;
+        ngpios = <3>;
+      };
     };
   };
 

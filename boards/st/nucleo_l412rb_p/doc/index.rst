@@ -8,7 +8,7 @@ with a wide range of connectivity support and configurations. Here are
 some highlights of the Nucleo L412RB board:
 
 - STM32 microcontroller in LQFP64 package
-- 1 user LED shared with ARDUINO |reg|
+- 1 user LED shared with ARDUINO®
 - 1 user and 1 reset push-buttons
 - 32.768 kHz crystal oscillator
 - Two types of extension resources:
@@ -32,7 +32,7 @@ some highlights of the Nucleo L412RB board:
     - Micro-AB or Mini-AB USB connector for the ST-LINK
     - MIPI® debug connector
 
-  - Arm® Mbed Enabled |trade| compliant
+  - Arm® Mbed Enabled™ compliant
 
 More information about the board can be found at the `Nucleo L412RB-P website`_.
 
@@ -50,19 +50,19 @@ Nucleo L412RB-P provides the following hardware components:
   - 16 nA Shutdown mode (4 wakeup pins)
   - 32 nA Standby mode (4 wakeup pins)
   - 245 nA Standby mode with RTC
-  - 0.7 |micro| A Stop 2 mode, 0.95 |micro| A with RTC
-  - 79 |micro| A/MHz run mode (LDO Mode)
-  - 28 |micro| A/MHz run mode (@3.3 V SMPS Mode)
+  - 0.7 µA Stop 2 mode, 0.95 µA with RTC
+  - 79 µA/MHz run mode (LDO Mode)
+  - 28 µA/MHz run mode (@3.3 V SMPS Mode)
   - Batch acquisition mode (BAM)
-  - 4 |micro| s wakeup from Stop mode
+  - 4 µs wakeup from Stop mode
   - Brown out reset (BOR)
   - Interconnect matrix
 
-- Core: Arm |reg| 32-bit Cortex |reg| -M4 CPU with FPU, Adaptive real-time accelerator (ART Accelerator |trade| ) allowing 0-wait-state execution from Flash memory, frequency up to 80 MHz, MPU, 100DMIPS and DSP instructions
+- Core: Arm® 32-bit Cortex®-M4 CPU with FPU, Adaptive real-time accelerator (ART Accelerator™ ) allowing 0-wait-state execution from Flash memory, frequency up to 80 MHz, MPU, 100DMIPS and DSP instructions
 - Performance benchmark
 
   - 1.25 DMIPS/MHz (Drystone 2.1)
-  - 273.55 CoreMark |reg| (3.42 CoreMark/MHz @ 80 MHz)
+  - 273.55 CoreMark® (3.42 CoreMark/MHz @ 80 MHz)
 
 - Energy benchmark
 
@@ -73,9 +73,9 @@ Nucleo L412RB-P provides the following hardware components:
 
   - 4 to 48 MHz crystal oscillator
   - 32 kHz crystal oscillator for RTC (LSE)
-  - Internal 16 MHz factory-trimmed RC ( |plusminus| 1%)
-  - Internal low-power 32 kHz RC ( |plusminus| 5%)
-  - Internal multispeed 100 kHz to 48 MHz oscillator, auto-trimmed by LSE (better than |plusminus| 0.25 % accuracy)
+  - Internal 16 MHz factory-trimmed RC (±1%)
+  - Internal low-power 32 kHz RC (±5%)
+  - Internal multispeed 100 kHz to 48 MHz oscillator, auto-trimmed by LSE (better than ±0.25 % accuracy)
   - Internal 48 MHz with clock recovery
   - PLL for system clock
 
@@ -99,7 +99,7 @@ Nucleo L412RB-P provides the following hardware components:
 
 - Rich analog peripherals (independent supply)
 
-  - 2x 12-bit ADC 5 Msps, up to 16-bit with hardware oversampling, 200 |micro| A/Msps
+  - 2x 12-bit ADC 5 Msps, up to 16-bit with hardware oversampling, 200 µA/Msps
   - 2x operational amplifiers with built-in PGA
   - 1x ultra-low-power comparator
   - Accurate 2.5 V or 2.048 V reference voltage buffered output
@@ -115,7 +115,7 @@ Nucleo L412RB-P provides the following hardware components:
 - 14-channel DMA controller
 - True random number generator
 - CRC calculation unit, 96-bit unique ID
-- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell |trade|
+- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell™
 - All packages are ECOPACK2 compliant
 
 Note: the current board revision is C. (MB1319C)

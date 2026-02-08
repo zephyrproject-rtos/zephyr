@@ -13,7 +13,7 @@ This board features the OPT3001, a digital output ambient light sensor with an I
 interrupt from Texas Instruments. The sensor's spectral response tightly matches the human eye's
 photopic response and includes significant (99%) infrared rejection. It has a flexible and wide
 operating range for the ambient light sensor with a resolution of 0.01lux and full detectable
-illumination of 83865.6lux over a 23-bit effective dynamic range. This Click board |trade| is the
+illumination of 83865.6lux over a 23-bit effective dynamic range. This Click board™ is the
 most suitable for obtaining ambient light data in applications such as automatic residential and
 commercial lighting management.
 
@@ -28,8 +28,8 @@ Requirements
 ************
 
 
-This shield can only be used with a board that provides a mikroBUS |trade| socket and defines a
-``mikrobus_i2c`` node label for the mikroBUS |trade| I2C interface. See :ref:`shields` for more
+This shield can only be used with a board that provides a mikroBUS™ socket and defines a
+``mikrobus_i2c`` node label for the mikroBUS™ I2C interface. See :ref:`shields` for more
 details.
 
 Programming

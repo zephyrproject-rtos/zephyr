@@ -22,6 +22,9 @@
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
 #include <zephyr/arch/arm64/mm.h>
+#ifdef CONFIG_ARM_PAC_PER_THREAD
+#include <zephyr/arch/arm64/pac.h>
+#endif
 
 struct _callee_saved {
 	uint64_t x19;
@@ -79,6 +82,9 @@ struct _thread_arch {
 	/* Keep large structures at the end to avoid offset issues */
 #ifdef CONFIG_FPU_SHARING
 	struct z_arm64_fp_context saved_fp_context;
+#endif
+#ifdef CONFIG_ARM_PAC_PER_THREAD
+	struct pac_keys pac_keys;
 #endif
 };
 

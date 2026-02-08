@@ -43,10 +43,10 @@ Hardware
 Nucleo H7S3L8 provides the following hardware components:
 
 The STM32H7S7xx devices are a high-performance microcontrollers family (STM32H7
-Series) based on the high-performance Arm |reg| Cortex |reg|-M7 32-bit RISC core.
+Series) based on the high-performance Arm® Cortex®-M7 32-bit RISC core.
 They operate at a frequency of up to 500 MHz.
 
-- Core: ARM |reg| 32-bit Cortex |reg| -M7 CPU with FPU.
+- Core: ARM® 32-bit Cortex®-M7 CPU with FPU.
 - Performance benchmark:
 
   - 1284 DMPIS/MHz (Dhrystone 2.1)
@@ -71,7 +71,7 @@ They operate at a frequency of up to 500 MHz.
   - 24 MHz crystal oscillator (HSE)
   - 32768 Hz crystal oscillator for RTC (LSE)
   - Internal 64 MHz (HSI) trimmable by software
-  - Internal low-power 32 kHz RC (LSI)( |plusminus| 5%)
+  - Internal low-power 32 kHz RC (LSI)(±5%)
   - Internal 4 MHz oscillator (CSI), trimmable by software
   - Internal 48 MHz (HSI48) with recovery system
   - 3 PLLs for system clock, USB, audio, ADC
@@ -131,7 +131,7 @@ They operate at a frequency of up to 500 MHz.
 - CORDIC for trigonometric functions acceleration
 - FMAC (filter mathematical accelerator)
 - CRC calculation unit
-- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell |trade|
+- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell™
 
 
 

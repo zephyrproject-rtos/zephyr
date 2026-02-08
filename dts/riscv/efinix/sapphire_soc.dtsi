@@ -17,9 +17,9 @@
 		zephyr,sram = &ram0;
 	};
 
-	ram0: memory@F9000000 {
+	ram0: memory@f9000000 {
 		device_type = "memory";
-		reg = <0xF9000000 DT_SIZE_K(192)>;
+		reg = <0xf9000000 DT_SIZE_K(192)>;
 	};
 
 	cpus {

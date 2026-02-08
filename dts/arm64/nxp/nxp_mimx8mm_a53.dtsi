@@ -148,7 +148,7 @@
 		interrupts = <GIC_SPI 55 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>;
 		gptfreq = <24000000>;
-		clocks = <&ccm IMX_CCM_GPT_IPG_CLK 0x6C 20>;
+		clocks = <&ccm IMX_CCM_GPT_IPG_CLK 0x6c 20>;
 		status = "disabled";
 	};
 

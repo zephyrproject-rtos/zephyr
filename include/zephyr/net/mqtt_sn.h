@@ -326,7 +326,7 @@ struct mqtt_sn_client {
 	int64_t ts_gwinfo;
 
 	/** Radius of the next GWINFO transmission */
-	int64_t radius_gwinfo;
+	uint8_t radius_gwinfo;
 
 	/** State for will topic updates */
 	struct mqtt_sn_will_update will_topic_update;

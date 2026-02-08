@@ -14,7 +14,7 @@ The shield features:
 - 2.47-inch round TFT-LCD with 480x480 pixel resolution
 - 16.7M color depth (RGB888)
 - J025F1CN0201W display module with Himax HX8379C LCD controller
-- MIPI DSI |reg| 2-data lane interface
+- MIPI DSI® 2-data lane interface
 - Capacitive touch panel (CTP)
 - LED backlight with GPIO control
 

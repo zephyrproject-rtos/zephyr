@@ -7,7 +7,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_k6x.dtsi>
+#include <nxp/kinetis/nxp_k6x.dtsi>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include "hexiwear_mk64f12-pinctrl.dtsi"
 

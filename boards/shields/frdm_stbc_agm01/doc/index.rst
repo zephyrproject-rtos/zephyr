@@ -6,6 +6,8 @@ NXP FRDM-STBC-AGM01
 Overview
 ********
 
+The FRDM-STBC-AGM01 product is no longer manufactured (discontinued).
+
 The FRDM-STBC-AGM01 is an NXP Freedom development board with
 FXOS8700 and FXAS21002. This 9-axis solution (FXAS21002C Gyroscope,
 + FXOS8700CQ E-compass sensor) is compatible with any board that

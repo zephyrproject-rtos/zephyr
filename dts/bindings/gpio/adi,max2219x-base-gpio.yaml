@@ -18,7 +18,7 @@ properties:
   fault-gpios:
     description: |
       Fault pin indicates when there is Fault state in either FAULT1 or FAULT2
-      bothe of which are cleaned on read once problem is not persistent
+      both of which are cleaned on read once problem is not persistent
     type: phandle-array
   latch-gpios:
     description: |
@@ -51,7 +51,7 @@ properties:
       Wire break is disabled in all channels.
       WBE bit in all Filter registers stand for wire break enable on each
       channel, so to enable WB functionality set 1.
-      If WB on specific channel is disabled , FAULT will not be rised in case
+      If WB on specific channel is disabled , FAULT will not be raised in case
       wire is cut.
       - 1 wire break enable
       - 0 wire break disable

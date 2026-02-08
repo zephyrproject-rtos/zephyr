@@ -12,6 +12,7 @@
 #include <offsets_short.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/common/pm_s2ram.h>
+#include <zephyr/linker/sections.h>
 
 /* Read RCC and PWRC base from Device Tree */
 #include <zephyr/devicetree.h>

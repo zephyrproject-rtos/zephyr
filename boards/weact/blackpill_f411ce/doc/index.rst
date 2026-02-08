@@ -16,7 +16,7 @@ The STM32F411CE based Black Pill V2.0+ Board provides the following
 hardware components:
 
 - STM32F411CEU6 in UFQFPN48 package
-- ARM |reg| 32-bit Cortex |reg| -M4 CPU with FPU
+- ARM® 32-bit Cortex®-M4 CPU with FPU
 - 100 MHz max CPU frequency
 - VDD from 1.7 V to 3.6 V
 - 512 KB Flash

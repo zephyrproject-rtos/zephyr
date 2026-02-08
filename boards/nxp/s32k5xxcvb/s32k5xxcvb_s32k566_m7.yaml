@@ -12,9 +12,11 @@ toolchain:
 supported:
   - adc
   - can
+  - spi
   - gpio
   - pwm
   - counter
   - i2c
   - watchdog
+  - flash
 vendor: nxp

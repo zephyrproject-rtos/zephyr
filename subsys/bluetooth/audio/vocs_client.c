@@ -27,7 +27,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 
@@ -441,12 +440,12 @@ int bt_vocs_client_state_get(struct bt_vocs_client *inst)
 {
 	int err;
 
-	CHECKIF(!inst) {
+	if (!inst) {
 		LOG_DBG("NULL instance");
 		return -EINVAL;
 	}
 
-	CHECKIF(inst->conn == NULL) {
+	if (inst->conn == NULL) {
 		LOG_DBG("NULL conn");
 		return -EINVAL;
 	}
@@ -476,17 +475,17 @@ int bt_vocs_client_state_get(struct bt_vocs_client *inst)
 
 int bt_vocs_client_location_set(struct bt_vocs_client *inst, uint32_t location)
 {
-	CHECKIF(!inst) {
+	if (!inst) {
 		LOG_DBG("NULL instance");
 		return -EINVAL;
 	}
 
-	CHECKIF(inst->conn == NULL) {
+	if (inst->conn == NULL) {
 		LOG_DBG("NULL conn");
 		return -EINVAL;
 	}
 
-	CHECKIF(location > BT_AUDIO_LOCATION_ANY) {
+	if (location > BT_AUDIO_LOCATION_ANY) {
 		LOG_DBG("Invalid location 0x%08X", location);
 		return -EINVAL;
 	}
@@ -514,12 +513,12 @@ int bt_vocs_client_location_get(struct bt_vocs_client *inst)
 {
 	int err;
 
-	CHECKIF(!inst) {
+	if (!inst) {
 		LOG_DBG("NULL instance");
 		return -EINVAL;
 	}
 
-	CHECKIF(inst->conn == NULL) {
+	if (inst->conn == NULL) {
 		LOG_DBG("NULL conn");
 		return -EINVAL;
 	}
@@ -549,17 +548,17 @@ int bt_vocs_client_state_set(struct bt_vocs_client *inst, int16_t offset)
 {
 	int err;
 
-	CHECKIF(!inst) {
+	if (!inst) {
 		LOG_DBG("NULL instance");
 		return -EINVAL;
 	}
 
-	CHECKIF(inst->conn == NULL) {
+	if (inst->conn == NULL) {
 		LOG_DBG("NULL conn");
 		return -EINVAL;
 	}
 
-	CHECKIF(!IN_RANGE(offset, BT_VOCS_MIN_OFFSET, BT_VOCS_MAX_OFFSET)) {
+	if (!IN_RANGE(offset, BT_VOCS_MIN_OFFSET, BT_VOCS_MAX_OFFSET)) {
 		LOG_DBG("Invalid offset: %d", offset);
 		return -EINVAL;
 	}
@@ -594,12 +593,12 @@ int bt_vocs_client_description_get(struct bt_vocs_client *inst)
 {
 	int err;
 
-	CHECKIF(!inst) {
+	if (!inst) {
 		LOG_DBG("NULL instance");
 		return -EINVAL;
 	}
 
-	CHECKIF(inst->conn == NULL) {
+	if (inst->conn == NULL) {
 		LOG_DBG("NULL conn");
 		return -EINVAL;
 	}
@@ -628,12 +627,12 @@ int bt_vocs_client_description_get(struct bt_vocs_client *inst)
 int bt_vocs_client_description_set(struct bt_vocs_client *inst,
 				   const char *description)
 {
-	CHECKIF(!inst) {
+	if (!inst) {
 		LOG_DBG("NULL instance");
 		return -EINVAL;
 	}
 
-	CHECKIF(inst->conn == NULL) {
+	if (inst->conn == NULL) {
 		LOG_DBG("NULL conn");
 		return -EINVAL;
 	}
@@ -673,12 +672,12 @@ int bt_vocs_client_conn_get(const struct bt_vocs *vocs, struct bt_conn **conn)
 {
 	struct bt_vocs_client *inst;
 
-	CHECKIF(vocs == NULL) {
+	if (vocs == NULL) {
 		LOG_DBG("NULL vocs pointer");
 		return -EINVAL;
 	}
 
-	CHECKIF(!vocs->client_instance) {
+	if (!vocs->client_instance) {
 		LOG_DBG("vocs pointer shall be client instance");
 		return -EINVAL;
 	}
@@ -724,19 +723,19 @@ int bt_vocs_discover(struct bt_conn *conn, struct bt_vocs *vocs,
 	struct bt_vocs_client *inst;
 	int err = 0;
 
-	CHECKIF(!vocs || !conn || !param) {
+	if (!vocs || !conn || !param) {
 		LOG_DBG("%s cannot be NULL", vocs == NULL   ? "vocs"
 					     : conn == NULL ? "conn"
 							    : "param");
 		return -EINVAL;
 	}
 
-	CHECKIF(!vocs->client_instance) {
+	if (!vocs->client_instance) {
 		LOG_DBG("vocs pointer shall be client instance");
 		return -EINVAL;
 	}
 
-	CHECKIF(param->end_handle < param->start_handle) {
+	if (param->end_handle < param->start_handle) {
 		LOG_DBG("start_handle (%u) shall be less than end_handle (%u)", param->start_handle,
 			param->end_handle);
 		return -EINVAL;
@@ -773,12 +772,12 @@ void bt_vocs_client_cb_register(struct bt_vocs *vocs, struct bt_vocs_cb *cb)
 {
 	struct bt_vocs_client *inst;
 
-	CHECKIF(!vocs) {
+	if (!vocs) {
 		LOG_DBG("inst cannot be NULL");
 		return;
 	}
 
-	CHECKIF(!vocs->client_instance) {
+	if (!vocs->client_instance) {
 		LOG_DBG("vocs pointer shall be client instance");
 		return;
 	}

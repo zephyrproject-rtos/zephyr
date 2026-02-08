@@ -45,15 +45,15 @@ Hardware
 The STM32L4S5VI SoC provides the following hardware features:
 
 - Ultra-low-power with FlexPowerControl (down to 130 nA Standby mode and 100 uA/MHz run mode)
-- Core: ARM |reg| 32-bit Cortex |reg|-M4 CPU with FPU, frequency up to 120 MHz, 100DMIPS/1.25DMIPS/MHz (Dhrystone 2.1)
+- Core: ARM® 32-bit Cortex®-M4 CPU with FPU, frequency up to 120 MHz, 100DMIPS/1.25DMIPS/MHz (Dhrystone 2.1)
 - Clock Sources:
 
   - 4 to 48 MHz crystal oscillator
   - 32 kHz crystal oscillator for RTC (LSE)
-  - Internal 16 MHz factory-trimmed RC ( |plusminus| 1%)
-  - Internal low-power 32 kHz RC ( |plusminus| 5%)
+  - Internal 16 MHz factory-trimmed RC (±1%)
+  - Internal low-power 32 kHz RC (±5%)
   - Internal multispeed 100 kHz to 48 MHz oscillator, auto-trimmed by
-    LSE (better than  |plusminus| 0.25 % accuracy)
+    LSE (better than ±0.25 % accuracy)
   - 3 PLLs for system clock, USB, audio, ADC
 
 - RTC with HW calendar, alarms and calibration
@@ -98,7 +98,7 @@ The STM32L4S5VI SoC provides the following hardware features:
 - True random number generator
 - CRC calculation unit, 96-bit unique ID
 - AES and HASH hardware accelerators
-- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell |trade|
+- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell™
 
 
 More information about STM32L4S5VI can be found here:

@@ -83,8 +83,8 @@ Programming and Debugging
 ``nrf9161dk/nrf9161`` supports the Armv8m Security Extension, and by default boots
 in the Secure state.
 
-Building Secure/Non-Secure Zephyr applications with Arm |reg| TrustZone |reg|
-=============================================================================
+Building Secure/Non-Secure Zephyr applications with Arm® TrustZone®
+===================================================================
 
 The process requires the following steps:
 

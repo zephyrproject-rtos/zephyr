@@ -102,14 +102,14 @@ Other board's peripherals:
 
   - Relative humidity accuracy: ±1.0% RH
   - Operating humidity range: 0-100% RH
-  - Temperature accuracy: ±0.1°C
-  - Operating temperature range: -40°C to 125°C
+  - Temperature accuracy: ±0.1 °C
+  - Operating temperature range: -40 °C to 125 °C
 - BME280 sensor:
 
   - Relative humidity accuracy: ±3% RH
-  - Temperature accuracy: ±1°C
+  - Temperature accuracy: ±1 C
   - Pressure accuracy: ±1 hPa
-  - Operating temperature range: -40°C to 85°C
+  - Operating temperature range: -40 °C to 85 °C
   - Pressure range: 300-1100 hPa
 - QWIIC connectors: For easy peripheral expansion.
 

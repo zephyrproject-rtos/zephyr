@@ -12,7 +12,7 @@ This sample application periodically (0.5 Hz) measures the ambient
 temperature. The result is written to the console.
 
 If triggered measurements are enabled the sample initializes and
-maintains a |plusminus| 2 |deg| C window around the current temperature.
+maintains a ±2 °C window around the current temperature.
 When the temperature moves outside the window an alert is given, and the
 window is moved to center on the new temperature.
 
@@ -22,8 +22,8 @@ Requirements
 The sample requires a JEDEC JC 42.4 compliant temperature sensor. The
 sample is configured to use the MCP9808 sensor.
 
-The MCP9808 digital temperature sensor converts temperatures between -20 |deg|
-C and +100 |deg| C to a digital word with |plusminus| 0.5 |deg| C (max.)
+The MCP9808 digital temperature sensor converts temperatures between -20 °C
+and +100 °C to a digital word with ±0.5 °C (max.)
 accuracy. It is I2C compatible and supports up to 16 devices on the bus.
 
 Wiring

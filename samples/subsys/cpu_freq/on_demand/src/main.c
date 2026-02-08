@@ -8,7 +8,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(cpu_freq_sample, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(cpu_freq_on_demand_sample, LOG_LEVEL_INF);
 
 #define MS_TO_US(x)      ((x) * 1000)
 #define PERCENT_SLEEP_MS (CONFIG_CPU_FREQ_INTERVAL_MS / 100)
@@ -59,7 +59,7 @@ K_TIMER_DEFINE(timer, update_sleep_time, NULL);
 
 int main(void)
 {
-	LOG_INF("Starting CPU Freq Subsystem Sample!");
+	LOG_INF("Starting CPU Freq on-demand policy Sample!");
 
 	curr_work_time_ms = 0;
 

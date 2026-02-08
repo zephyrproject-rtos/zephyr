@@ -23,7 +23,7 @@
 		height = <40>;
 		segment-offset = <30>;
 		page-offset = <0>;
-		display-offset = <0xC>;
+		display-offset = <0xc>;
 		multiplex-ratio = <0x27>;
 		prechargep = <0x22>;
 		ready-time-ms = <10>;

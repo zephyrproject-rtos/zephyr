@@ -59,7 +59,7 @@
 
 		boot_partition: partition@f4000 {
 			label = "mcuboot";
-			reg = <0x000f4000 0x0000C000>;
+			reg = <0x000f4000 0x0000c000>;
 		};
 	};
 };

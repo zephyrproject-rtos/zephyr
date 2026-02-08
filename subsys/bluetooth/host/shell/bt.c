@@ -3226,14 +3226,14 @@ static int cmd_set_power_report_enable(const struct shell *sh, size_t argc, char
 {
 	if (argc < 4) {
 		int err = 0;
-		bool local_enable = 0;
-		bool remote_enable = 0;
+		bool local_enable = false;
+		bool remote_enable = false;
 
 		if (*argv[1] == '1') {
-			local_enable = 1;
+			local_enable = true;
 		}
 		if (*argv[2] == '1') {
-			remote_enable = 1;
+			remote_enable = true;
 		}
 		if (default_conn == NULL) {
 			shell_error(sh, "Conn handle error, at least one connection is required.");

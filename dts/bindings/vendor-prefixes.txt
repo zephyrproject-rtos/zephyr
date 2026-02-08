@@ -30,6 +30,7 @@ adafruit	Adafruit Industries, LLC
 adapteva	Adapteva, Inc.
 adaptrum	Adaptrum, Inc.
 adh	AD Holdings Plc.
+adh-tech	ADH Technology Co. Ltd.
 adi	Analog Devices, Inc.
 advantech	Advantech Corporation
 aeroflexgaisler	Aeroflex Gaisler AB
@@ -475,6 +476,7 @@ netgear	NETGEAR
 netlogic	Broadcom Corporation (formerly NetLogic Microsystems)
 netron-dy	Netron DY
 netronix	Netronix, Inc.
+netsol	Netsol, CO., LTD
 netxeon	Shenzhen Netxeon Technology CO., LTD
 neweast	Guangdong Neweast Optoelectronics CO., LTD
 newhaven	Newhaven Display International
@@ -633,7 +635,7 @@ si-en	Si-En Technology Ltd.
 si-linux	Silicon Linux Corporation
 siemens	Siemens AG
 sifive	SiFive, Inc.
-sifli	SiFli Technologies(Nanjing) Co., Ltd
+sifli	SiFli Technologies
 sigma	Sigma Designs, Inc.
 sii	Seiko Instruments, Inc.
 sil	Silicon Image
@@ -684,6 +686,7 @@ sunw	Sun Microsystems, Inc
 supermicro	Super Micro Computer, Inc.
 swir	Sierra Wireless
 syna	Synaptics Inc.
+synochip	Hangzhou Synochip Data Security Technology Co., Ltd.
 synology	Synology, Inc.
 tbs	TBS Technologies
 tbs-biometrics	Touchless Biometric Systems AG
@@ -809,6 +812,7 @@ zb	Zbit Semiconductor, Inc.
 zealz	Zealz
 zeitec	ZEITEC Semiconductor Co., LTD.
 zephyr	Zephyr Project
+zhiantec	Hangzhou Zhian Technology Co., Ltd.
 zidoo	Shenzhen Zidoo Technology Co., Ltd.
 zii	Zodiac Inflight Innovations
 zinitix	Zinitix Co., Ltd

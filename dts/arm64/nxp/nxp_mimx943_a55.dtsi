@@ -375,6 +375,16 @@
 		status = "disabled";
 	};
 
+	/* Need to add A55 access permission in system manager firmware when enable it */
+	gpt4: gpt@428c0000 {
+		compatible = "nxp,imx-gpt";
+		reg = <0x428c0000 DT_SIZE_K(16)>;
+		interrupts = <GIC_SPI 146 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		gptfreq = <DT_FREQ_M(24)>;
+		clocks = <&scmi_clk IMX943_CLK_GPT4>;
+		status = "disabled";
+	};
+
 	mu1: mbox@44220000 {
 		compatible = "nxp,mbox-imx-mu";
 		reg = <0x44220000 DT_SIZE_K(64)>;

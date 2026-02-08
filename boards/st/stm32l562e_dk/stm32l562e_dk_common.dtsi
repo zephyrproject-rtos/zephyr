@@ -108,9 +108,9 @@
 					porch-param = [0c 0c 00 33 33];
 					cmd2en-param = [5a 69 02 00];
 					pwctrl1-param = [a4 a1];
-					pvgam-param = [D0 08 11 08 0C 15 39 33 50 36 13 14 29 2D];
-					nvgam-param = [D0 08 10 08 06 06 39 44 51 0B 16 14 2F 31];
-					ram-param = [00 F0];
+					pvgam-param = [d0 08 11 08 0c 15 39 33 50 36 13 14 29 2d];
+					nvgam-param = [d0 08 10 08 06 06 39 44 51 0b 16 14 2f 31];
+					ram-param = [00 f0];
 					rgb-param = [40 02 14];
 				};
 			};
@@ -193,10 +193,6 @@ stm32_lp_tick_source: &lptim1 {
 	};
 };
 
-&rng {
-	status = "okay";
-};
-
 &spi1 {
 	pinctrl-0 = <&spi1_sck_pg2 &spi1_miso_pg3 &spi1_mosi_pg4>;
 	pinctrl-names = "default";
@@ -229,8 +225,13 @@ stm32_lp_tick_source: &lptim1 {
 		reg = <0>;
 		size = <DT_SIZE_M(512)>; /* 512 Megabits */
 		ospi-max-frequency = <DT_FREQ_M(50)>;
-		spi-bus-width = <OSPI_OPI_MODE>;
-		data-rate = <OSPI_DTR_TRANSFER>;
+		/* Using OSPI_OPI_MODE with OSPI_STR_TRANSFER or
+		 * OSPI_DTR_TRANSFER isn't working. Please refer to
+		 * the Errata Sheet for possible causes. Alternatively
+		 * this mode can be tested with MSPI-NOR configuration.
+		 */
+		spi-bus-width = <OSPI_SPI_MODE>;
+		data-rate = <OSPI_STR_TRANSFER>;
 		four-byte-opcodes;
 		status = "okay";
 		sfdp-bfp = [53 46 44 50 06 01 02 ff

@@ -324,7 +324,7 @@ timer0: timer@40000c00 {
 	interrupts = <136 0>;
 	girqs = <23 0>;
 	pcrs = <1 30>;
-	max-value = <0xFFFF>;
+	max-value = <0xffff>;
 	prescaler = <0>;
 	status = "disabled";
 };
@@ -336,7 +336,7 @@ timer1: timer@40000c20 {
 	interrupts = <137 0>;
 	girqs = <23 1>;
 	pcrs = <1 31>;
-	max-value = <0xFFFF>;
+	max-value = <0xffff>;
 	prescaler = <0>;
 	status = "disabled";
 };
@@ -348,7 +348,7 @@ timer2: timer@40000c40 {
 	interrupts = <138 0>;
 	girqs = <23 2>;
 	pcrs = <3 21>;
-	max-value = <0xFFFF>;
+	max-value = <0xffff>;
 	prescaler = <0>;
 	status = "disabled";
 };
@@ -360,7 +360,7 @@ timer3: timer@40000c60 {
 	interrupts = <139 0>;
 	girqs = <23 3>;
 	pcrs = <3 22>;
-	max-value = <0xFFFF>;
+	max-value = <0xffff>;
 	prescaler = <0>;
 	status = "disabled";
 };
@@ -377,7 +377,7 @@ timer4: timer@40000c80 {
 	interrupts = <140 0>;
 	girqs = <23 4>;
 	pcrs = <3 23>;
-	max-value = <0xFFFFFFFF>;
+	max-value = <0xffffffff>;
 	prescaler = <0>;
 	status = "disabled";
 };
@@ -389,7 +389,7 @@ timer5: timer@40000ca0 {
 	interrupts = <141 0>;
 	girqs = <23 5>;
 	pcrs = <3 24>;
-	max-value = <0xFFFFFFFF>;
+	max-value = <0xffffffff>;
 	prescaler = <0>;
 	status = "disabled";
 };
@@ -539,7 +539,7 @@ i2c_smb_2: i2c@40004800 {
 
 i2c_smb_3: i2c@40004c00 {
 	compatible = "microchip,xec-i2c-v2";
-	reg = <0x40004C00 0x80>;
+	reg = <0x40004c00 0x80>;
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	interrupts = <23 1>;
 	girqs = <13 3>;
@@ -737,20 +737,18 @@ peci0: peci@40006400 {
 	#size-cells = <0>;
 };
 
-spi0: spi@40070000 {
+qspi0: spi@40070000 {
 	reg = <0x40070000 0x400>;
 	interrupts = <91 2>;
-	girqs = <MCHP_XEC_ECIA(18, 1, 10, 91)>;
-	clocks = <&pcr 4 8 MCHP_XEC_PCR_CLK_PERIPH>;
+	girqs = <MCHP_XEC_ECIA_GIRQ_ENC(18, 1)>;
+	pcr = <MCHP_XEC_SCR_ENCODE(4, 8)>;
 	clock-frequency = <12000000>;
-	lines = <1>;
-	chip-select = <0>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 	status = "disabled";
 };
 
-spi1: spi@40009400 {
+gpspi0: spi@40009400 {
 	reg = <0x40009400 0x80>;
 	interrupts = <92 2>, <93 2>;
 	girqs = <18 2>, <18 3>;
@@ -758,7 +756,7 @@ spi1: spi@40009400 {
 	status = "disabled";
 };
 
-spi2: spi@40009480 {
+gpspi1: spi@40009480 {
 	reg = <0x40009480 0x80>;
 	interrupts = <94 2>, <95 2>;
 	girqs = <18 4>, <18 5>;

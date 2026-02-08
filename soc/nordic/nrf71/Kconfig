@@ -25,3 +25,12 @@ config SOC_NRF7120_ENGA_CPUAPP
 
 config SOC_NRF7120_ENGA_CPUFLPR
 	select RISCV_CORE_NORDIC_VPR
+
+if SOC_SERIES_NRF71
+
+config SOC_NRF71_WIFI_DAP
+	bool "nRF71 Wi-Fi Debug access port for debugging"
+	help
+	  This controls the Wi-Fi AHB Debug AP (DAP) for debugging nRF71 Wi-Fi cores.
+
+endif # SOC_SERIES_NRF71

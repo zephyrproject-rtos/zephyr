@@ -73,8 +73,8 @@ Programming and Debugging
 ``nrf9131ek/nrf9131`` supports the Armv8m Security Extension, and by default boots
 in the Secure state.
 
-Building Secure/Non-Secure Zephyr applications with Arm |reg| TrustZone |reg|
-=============================================================================
+Building Secure/Non-Secure Zephyr applications with Arm® TrustZone®
+===================================================================
 
 Applications on the nRF9131 may contain a Secure and a Non-Secure firmware
 image. The Secure image can be built using either Zephyr or

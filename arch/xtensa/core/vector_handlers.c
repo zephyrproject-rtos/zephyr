@@ -631,12 +631,16 @@ void *xtensa_excint1_c(void *esf)
 		break;
 #endif /* CONFIG_XTENSA_LAZY_HIFI_SHARING */
 #if defined(CONFIG_XTENSA_MMU) && defined(CONFIG_USERSPACE)
+	case EXCCAUSE_ITLB_MULTIHIT:
+		xtensa_exc_itlb_multihit_handle((void *)bsa->excvaddr);
+		goto return_to_interrupted;
 	case EXCCAUSE_DTLB_MULTIHIT:
-		xtensa_exc_dtlb_multihit_handle();
+		xtensa_exc_dtlb_multihit_handle((void *)bsa->excvaddr);
+		goto return_to_interrupted;
 		break;
 	case EXCCAUSE_LOAD_STORE_RING:
 		if (!xtensa_exc_load_store_ring_error_check(bsa)) {
-			break;
+			goto return_to_interrupted;
 		}
 		__fallthrough;
 #endif /* CONFIG_XTENSA_MMU && CONFIG_USERSPACE */
@@ -704,23 +708,6 @@ skip_checks:
 		break;
 	}
 
-#ifdef CONFIG_XTENSA_MMU
-	switch (cause) {
-	case EXCCAUSE_LEVEL1_INTERRUPT:
-#ifndef CONFIG_USERSPACE
-	case EXCCAUSE_SYSCALL:
-#endif /* !CONFIG_USERSPACE */
-#ifdef CONFIG_XTENSA_LAZY_HIFI_SHARING
-	case EXCCAUSE_CP_DISABLED(XCHAL_CP_ID_AUDIOENGINELX):
-#endif /* CONFIG_XTENSA_LAZY_HIFI_SHARING */
-		is_fatal_error = false;
-		break;
-	default:
-		is_fatal_error = true;
-		break;
-	}
-#endif /* CONFIG_XTENSA_MMU */
-
 	if (is_dblexc || is_fatal_error) {
 		uint32_t ignore;
 
@@ -757,6 +744,15 @@ skip_checks:
 #endif /* CONFIG_XTENSA_MMU */
 
 	return return_to(interrupted_stack);
+
+#if defined(CONFIG_XTENSA_MMU) && defined(CONFIG_USERSPACE)
+return_to_interrupted:
+	if (is_dblexc) {
+		XTENSA_WSR(ZSR_DEPC_SAVE_STR, 0);
+	}
+
+	return interrupted_stack;
+#endif /* CONFIG_XTENSA_MMU && CONFIG_USERSPACE */
 }
 
 #if defined(CONFIG_GDBSTUB)

@@ -880,7 +880,7 @@ static int server_resource_1_get(struct coap_resource *resource,
 
 	r = coap_packet_init(&response, data, COAP_BUF_SIZE,
 			     COAP_VERSION_1, COAP_TYPE_ACK, tkl, token,
-			     COAP_RESPONSE_CODE_OK, id);
+			     COAP_RESPONSE_CODE_CONTENT, id);
 	zassert_equal(r, 0, "Unable to initialize packet");
 
 	r = coap_append_option_int(&response, COAP_OPTION_OBSERVE,

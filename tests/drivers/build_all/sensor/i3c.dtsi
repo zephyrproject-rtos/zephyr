@@ -11,36 +11,36 @@
  **************************************
  */
 
-test_i3c_lps22hh: lps22hh@100000803E0000001 {
+test_i3c_lps22hh: lps22hh@100000803e0000001 {
 	compatible = "st,lps22hh";
-	reg = <0x1 0x00000803 0xE0000001>;
+	reg = <0x1 0x00000803 0xe0000001>;
 	assigned-address = <0x1>;
 	drdy-gpios = <&test_gpio 0 0>;
 };
 
-test_i3c_lps22df: lps22df@200000803E0000002 {
+test_i3c_lps22df: lps22df@200000803e0000002 {
 	compatible = "st,lps22df";
-	reg = <0x2 0x00000803 0xE0000002>;
+	reg = <0x2 0x00000803 0xe0000002>;
 	assigned-address = <0x2>;
 	drdy-gpios = <&test_gpio 0 0>;
 };
 
-test_i3c_lps28dfw: lps28dfw@300000803E0000003 {
+test_i3c_lps28dfw: lps28dfw@300000803e0000003 {
 	compatible = "st,lps28dfw";
-	reg = <0x3 0x00000803 0xE0000003>;
+	reg = <0x3 0x00000803 0xe0000003>;
 	assigned-address = <0x3>;
 	drdy-gpios = <&test_gpio 0 0>;
 };
 
-test_i3c_ilps22qs: ilps22qs@400000803E0000004 {
+test_i3c_ilps22qs: ilps22qs@400000803e0000004 {
 	compatible = "st,ilps22qs";
-	reg = <0x3 0x00000803 0xE0000004>;
+	reg = <0x3 0x00000803 0xe0000004>;
 	assigned-address = <0x4>;
 };
 
-test_i3c_lsm6dsv16x: lsm6dsv16x@500000803E0000004 {
+test_i3c_lsm6dsv16x: lsm6dsv16x@500000803e0000004 {
 	compatible = "st,lsm6dsv16x";
-	reg = <0x5 0x00000803 0xE0000004>;
+	reg = <0x5 0x00000803 0xe0000004>;
 	assigned-address = <0x5>;
 	int1-gpios = <&test_gpio 0 0>;
 	int2-gpios = <&test_gpio 0 0>;
@@ -50,9 +50,9 @@ test_i3c_lsm6dsv16x: lsm6dsv16x@500000803E0000004 {
 	gyro-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
 };
 
-test_i3c_lsm6dsv32x: lsm6dsv32x@600000803E0000004 {
+test_i3c_lsm6dsv32x: lsm6dsv32x@600000803e0000004 {
 	compatible = "st,lsm6dsv32x";
-	reg = <0x6 0x00000803 0xE0000004>;
+	reg = <0x6 0x00000803 0xe0000004>;
 	assigned-address = <0x6>;
 	int1-gpios = <&test_gpio 0 0>;
 	int2-gpios = <&test_gpio 0 0>;
@@ -62,9 +62,9 @@ test_i3c_lsm6dsv32x: lsm6dsv32x@600000803E0000004 {
 	gyro-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
 };
 
-test_i3c_icm45686: icm45686@700000803E0000004 {
+test_i3c_icm45686: icm45686@700000803e0000004 {
 	compatible = "invensense,icm45686";
-	reg = <0x7 0x00000803 0xE0000004>;
+	reg = <0x7 0x00000803 0xe0000004>;
 	assigned-address = <0x7>;
 	int-gpios = <&test_gpio 0 0>;
 };

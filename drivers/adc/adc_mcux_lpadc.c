@@ -705,8 +705,8 @@ static void mcux_lpadc_isr(const struct device *dev)
 				result -= 0x1000;
 			}
 		}
-		*data->buffer++ = result;
 #endif
+		*data->buffer++ = result;
 	} else {
 		*data->buffer++ = conv_result.convValue;
 	}

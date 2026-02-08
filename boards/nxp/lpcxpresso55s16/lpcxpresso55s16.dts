@@ -7,7 +7,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_lpc55S16_ns.dtsi>
+#include <nxp/lpc/nxp_lpc55S16_ns.dtsi>
 #include "lpcxpresso55s16_common.dtsi"
 
 / {

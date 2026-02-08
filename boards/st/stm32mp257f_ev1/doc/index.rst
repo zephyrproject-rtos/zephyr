@@ -5,23 +5,23 @@ Overview
 
 The STM32MP257F-EV1 Evaluation board is designed as a complete demonstration
 and development platform for the STMicroelectronics STM32MP257F microprocessor
-based on Arm |reg| dual-core Cortex |reg|-A35 (1.5 GHz) and Cortex |reg|-M33
+based on Arm® dual-core Cortex®-A35 (1.5 GHz) and Cortex®-M33
 (400 MHz), and the STPMIC25APQR companion chip.
-Zephyr OS is ported to run on the Cortex |reg|-M33 core, as a coprocessor of
-the Cortex |reg|-A35 core.
+Zephyr OS is ported to run on the Cortex®-M33 core, as a coprocessor of
+the Cortex®-A35 core.
 
 Features:
 =========
 
-- STM32MP257FAI3 microprocessor featuring dual-core Arm |reg| Cortex |reg|-A35,
-  a Cortex |reg|-M33 and a Cortex |reg|-M0+ in a TFBGA436 package
+- STM32MP257FAI3 microprocessor featuring dual-core Arm® Cortex®-A35,
+  a Cortex®-M33 and a Cortex®-M0+ in a TFBGA436 package
 - ST power management STPMIC25APQR
 - Two 16-Gbit DDR4 DRAMs
 - 512-Mbit (64 Mbytes) S-NOR flash memory
 - 32-Gbit (4 Gbytes) eMMC v5.0
 - Three 1-Gbit/s Ethernet (RGMII) with TSN switch compliant with IEEE-802.3ab
 - High-speed USB Host 2-port hub
-- High-speed USB Type-C |reg| DRP
+- High-speed USB Type-C® DRP
 - Four user LEDs
 - Two user, one tamper, and one reset push-buttons
 - One wake-up button
@@ -30,22 +30,22 @@ Features:
 
   - Three Ethernet RJ45
   - Two USB Host Type-A
-  - USB Type-C |reg|
-  - microSD |trade| card holder
+  - USB Type-C®
+  - microSD™ card holder
   - Mini PCIe
-  - Dual-lane MIPI CSI-2 |reg| camera module expansion connector
+  - Dual-lane MIPI CSI-2® camera module expansion connector
   - Two CAN FD
   - LVDS
   - MIPI10
   - GPIO expansion connector
-  - mikroBUS |trade| expansion connector
+  - mikroBUS™ expansion connector
   - VBAT for power backup
 
 - On-board STLINK-V3EC debugger/programmer with USB re-enumeration capability
   Two Virtual COM ports (VCPs), and debug ports (JTAG/SWD)
-- Mainlined open-source Linux |reg| STM32 MPU OpenSTLinux Distribution and
+- Mainlined open-source Linux® STM32 MPU OpenSTLinux Distribution and
   STM32CubeMP2 software with examples
-- Linux |reg| Yocto project, Buildroot, and STM32CubeIDE as
+- Linux® Yocto project, Buildroot, and STM32CubeIDE as
   development environments
 
 More information about the board can be found at the
@@ -57,14 +57,14 @@ Hardware
 Cores:
 ======
 
-- 64-bit dual-core Arm |reg| Cortex |reg|-A35 with 1.5 GHz max frequency
-  - 32-Kbyte I + 32-Kbyte D level 1 cache for each Cortex |reg|-A35 core
+- 64-bit dual-core Arm® Cortex®-A35 with 1.5 GHz max frequency
+  - 32-Kbyte I + 32-Kbyte D level 1 cache for each Cortex®-A35 core
   - 512-Kbyte unified level 2 cache
-  - Arm |reg| NEON |trade| and Arm |reg| TrustZone |reg|
-- 32-bit Arm |reg| Cortex |reg|-M33 with FPU/MPU, Arm |reg| TrustZone |reg|,
+  - Arm® NEON™ and Arm® TrustZone®
+- 32-bit Arm® Cortex®-M33 with FPU/MPU, Arm® TrustZone®,
   and 400 MHz max frequency
-  - L1 16-Kbyte ICache / 16-Kbyte DCache for Cortex |reg|-M33
-- 32-bit Arm |reg| Cortex |reg|-M0+ in SmartRun domain with 200 MHz max
+  - L1 16-Kbyte ICache / 16-Kbyte DCache for Cortex®-M33
+- 32-bit Arm® Cortex®-M0+ in SmartRun domain with 200 MHz max
   frequency (up to 16 MHz in autonomous mode)
 
 Memories:
@@ -103,7 +103,7 @@ Clock management
 Security/Safety
 ===============
 
-- Secure boot, TrustZone |reg| peripherals, active tamper, environmental
+- Secure boot, TrustZone® peripherals, active tamper, environmental
   monitors, display secure layers, hardware accelerators
 - Complete resource isolation framework
 
@@ -113,8 +113,8 @@ Connectivity
 - 3x Gigabit Ethernet (RGMII, TSN switch capable)
 - 2x CAN FD
 - USB 2.0 High-Speed Host (dual-port)
-- USB Type-C |reg| DRP
-- mikroBUS |trade| expansion
+- USB Type-C® DRP
+- mikroBUS™ expansion
 - GPIO expansion connector
 
 Display & Camera
@@ -147,15 +147,15 @@ STM32MP257F-EV1 Evaluation Board schematic is available here:
 System Clock
 ============
 
-Cortex |reg|-A35
-----------------
+Cortex®-A35
+------------
 
 Not yet supported in Zephyr.
 
-Cortex |reg|-M33
-----------------
+Cortex®-M33
+-----------
 
-The Cortex |reg|-M33 Core is configured to run at a 400 MHz clock speed.
+The Cortex®-M33 Core is configured to run at a 400 MHz clock speed.
 
 Programming and Debugging
 *************************
@@ -166,9 +166,9 @@ Prerequisite
 ============
 
 Before you can run Zephyr on the STM32MP257F-EV1 Evaluation board, you need to
-set up the Cortex |reg|-A35 core with a Linux |reg| environment. The Cortex
-|reg|-M33 core runs Zephyr as a coprocessor, and it requires the Cortex
-|reg|-A35 to load and start the firmware using remoteproc.
+set up the Cortex®-A35 core with a Linux® environment. The Cortex®-M33 core runs
+Zephyr as a coprocessor, and it requires the Cortex®-A35 to load and start the
+firmware using remoteproc.
 
 One way to set up the Linux environment is to use the official ST
 OpenSTLinux distribution, following the `Starter Package`_. (more information
@@ -177,9 +177,9 @@ about the procedure can be found in the `STM32MPU Wiki`_)
 Loading the firmware
 ====================
 
-Once the OpenSTLinux distribution is installed on the board, the Cortex |reg|
+Once the OpenSTLinux distribution is installed on the board, the Cortex®
 -A35 is responsible (in the current distribution) for loading the Zephyr
-firmware image in DDR and/or SRAM and starting the Cortex |reg| -M33 core. The
+firmware image in DDR and/or SRAM and starting the Cortex®-M33 core. The
 application can be built using west, taking the :zephyr:code-sample:`blinky` as
 an example.
 
@@ -196,7 +196,7 @@ Debugging
 =========
 Applications can be debugged using OpenOCD and GDB. The OpenOCD files can be
 found at `device-stm-openocd`_.
-The firmware must first be started by the Cortex |reg|-A35. The debugger can
+The firmware must first be started by the Cortex®-A35. The debugger can
 then be attached to the running Zephyr firmware using OpenOCD.
 
 - Build the sample:

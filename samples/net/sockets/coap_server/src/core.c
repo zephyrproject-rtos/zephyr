@@ -60,7 +60,7 @@ COAP_RESOURCE_DEFINE(core_1, coap_server,
 {
 	.get = core_get,
 	.path = core_1_path,
-	.user_data = &((struct coap_core_metadata) {
+	.metadata = &((struct coap_core_metadata) {
 		.attributes = core_1_attributes,
 	}),
 });
@@ -75,7 +75,7 @@ COAP_RESOURCE_DEFINE(core_2, coap_server,
 {
 	.get = core_get,
 	.path = core_2_path,
-	.user_data = &((struct coap_core_metadata) {
+	.metadata = &((struct coap_core_metadata) {
 		.attributes = core_2_attributes,
 	}),
 });

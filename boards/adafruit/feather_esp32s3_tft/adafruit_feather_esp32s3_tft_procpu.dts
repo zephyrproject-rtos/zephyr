@@ -115,9 +115,9 @@
 			porch-param = [0c 0c 00 33 33];
 			cmd2en-param = [5a 69 02 01];
 			pwctrl1-param = [a4 a1];
-			pvgam-param = [70 2C 2E 15 10 09 48 33 53 0B 19 18 20 25];
-			nvgam-param = [70 2C 2E 15 10 09 48 33 53 0B 19 18 20 25];
-			ram-param = [00 F0];
+			pvgam-param = [70 2c 2e 15 10 09 48 33 53 0b 19 18 20 25];
+			nvgam-param = [70 2c 2e 15 10 09 48 33 53 0b 19 18 20 25];
+			ram-param = [00 f0];
 			rgb-param = [40 02 14];
 			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 		};

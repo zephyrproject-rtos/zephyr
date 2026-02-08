@@ -57,6 +57,7 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
   zephyr_include_directories(
     ${RADIO_DIR}/rail_lib/common
     ${RADIO_DIR}/rail_lib/plugin/pa-conversions
+    ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_compatible_pa
     ${BLUETOOTH_DIR}/bgstack/ll/inc
   )
 
@@ -130,11 +131,11 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
       ${RADIO_DIR}/rail_lib/protocol/ieee802154
       ${RADIO_DIR}/rail_lib/protocol/zwave
       ${RADIO_DIR}/rail_lib/protocol/sidewalk
-      ${RADIO_DIR}/rail_lib/plugin/rail_util_protocol
-      ${RADIO_DIR}/rail_lib/plugin/rail_util_protocol/config/efr32xg${SILABS_DEVICE_FAMILY_NUMBER}
+      ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_protocol
+      ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_protocol/config/efr32xg${SILABS_DEVICE_FAMILY_NUMBER}
     )
     zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_CUSTOM_RADIO_PHY
-      ${RADIO_DIR}/rail_lib/plugin/rail_util_protocol/sl_rail_util_protocol.c
+      ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_protocol/sl_rail_util_protocol.c
     )
   endif()
 endif()
@@ -164,6 +165,8 @@ zephyr_include_directories(
   ${SERVICE_DIR}/memory_manager/profiler/inc
   ${SERVICE_DIR}/power_manager/config
   ${SERVICE_DIR}/power_manager/inc
+  ${SERVICE_DIR}/power_manager/src/common
+  ${SERVICE_DIR}/power_manager/src/sleep_loop
   ${SERVICE_DIR}/sleeptimer/config
   ${SERVICE_DIR}/sleeptimer/inc
   ${SERVICE_DIR}/sleeptimer/src
@@ -201,6 +204,7 @@ endif()
 if(CONFIG_SILABS_SISDK_SLEEPTIMER)
   zephyr_library_sources(
     ${PERIPHERAL_DIR}/src/sl_hal_sysrtc.c
+    ${PERIPHERAL_DIR}/src/sl_hal_sysrtc_subsystem.c
     ${SERVICE_DIR}/sleeptimer/src/sl_sleeptimer_hal_rtcc.c
     ${SERVICE_DIR}/sleeptimer/src/sl_sleeptimer_hal_sysrtc.c
     ${SERVICE_DIR}/sleeptimer/src/sl_sleeptimer.c
@@ -222,6 +226,7 @@ if(CONFIG_SILABS_SISDK_CLOCK_MANAGER)
     ${SERVICE_DIR}/clock_manager/src/sl_clock_manager_init_hal_s2.c
   )
   zephyr_compile_definitions(
+    SL_CATALOG_CLOCK_MANAGER_PRESENT
     SL_CODE_COMPONENT_CLOCK_MANAGER=clock_manager
   )
 endif()

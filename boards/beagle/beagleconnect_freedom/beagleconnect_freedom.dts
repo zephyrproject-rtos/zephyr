@@ -194,7 +194,7 @@
 			};
 
 			/* Allocate 128 KiB scratch for image swap */
-			scratch_partition: partition@A0000 {
+			scratch_partition: partition@a0000 {
 				label = "image-scratch";
 				reg = <0x000a0000 DT_SIZE_K(128)>;
 			};

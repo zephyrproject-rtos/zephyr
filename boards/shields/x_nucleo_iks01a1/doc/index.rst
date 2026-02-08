@@ -28,7 +28,7 @@ X-NUCLEO-IKS01A1 provides the following key features:
 
  - LSM6DS0: MEMS 3D accelerometer (±2/±4/±8 g) + 3D gyroscope (±245/±500/±2000
    dps)
- - LIS3MDL: MEMS 3D magnetometer (±4/ ±8/ ±12/ 16 gauss)
+ - LIS3MDL: MEMS 3D magnetometer (±4/±8/±12/16 gauss)
  - LPS25HB: MEMS pressure sensor, 260-1260 hPa absolute digital output barometer
  - HTS221: capacitive digital relative humidity and temperature
  - DIL 24-pin socket available for additional MEMS adapters and other sensors

@@ -1,0 +1,10 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MEMC_NXP_S32_XSPI
+	bool "NXP S32 eXpanded Serial Peripheral Interface (XSPI) controller"
+	default y
+	depends on DT_HAS_NXP_S32_XSPI_ENABLED
+	select PINCTRL
+	help
+	  Enable NXP S32 eXpanded Serial Peripheral Interface (XSPI) controller.

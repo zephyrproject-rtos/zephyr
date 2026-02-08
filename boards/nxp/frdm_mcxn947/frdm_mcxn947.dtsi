@@ -263,6 +263,7 @@ arduino_serial: &flexcomm2_lpuart2 {};
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/*
 		 * Partition sizes must be aligned
@@ -278,9 +279,9 @@ arduino_serial: &flexcomm2_lpuart2 {};
 			reg = <0x00014000 DT_SIZE_K(984)>;
 		};
 
-		slot1_partition: partition@10A000 {
+		slot1_partition: partition@10a000 {
 			label = "image-1";
-			reg = <0x0010A000 DT_SIZE_K(984)>;
+			reg = <0x0010a000 DT_SIZE_K(984)>;
 		};
 		/* storage_partition is placed in WINBOND flash memory*/
 	};

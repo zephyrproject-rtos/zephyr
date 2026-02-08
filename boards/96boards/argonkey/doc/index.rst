@@ -24,7 +24,7 @@ Hardware
 96Boards Argonkey provides the following hardware components:
 
 - STM32F412CG in UFQFPN48 package
-- ARM |reg| 32-bit Cortex |reg|-M4 CPU with FPU
+- ARM® 32-bit Cortex®-M4 CPU with FPU
 - 100 MHz max CPU frequency
 - 1.8V work voltage
 - 1024 KB Flash

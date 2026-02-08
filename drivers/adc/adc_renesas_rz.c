@@ -386,6 +386,7 @@ static int adc_rz_init(const struct device *dev)
 		.buffer_mode = ADC_C_BUFFER_MODE_1,                                                \
 		.sampling_time = 100,                                                              \
 		.external_trigger_filter = ADC_C_FILTER_STAGE_SETTING_DISABLE,                     \
+		.p_reg = (void *)DT_INST_REG_ADDR(idx),                                            \
 	};                                                                                         \
 	static const struct adc_rz_config adc_rz_config_##idx = {                                  \
 		.channel_available_mask = DT_INST_PROP(idx, channel_available_mask),               \

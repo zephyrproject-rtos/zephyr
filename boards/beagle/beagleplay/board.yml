@@ -1,6 +1,7 @@
 board:
   name: beagleplay
-  full_name: BeaglePlay (CC1352)
+  full_name: BeaglePlay
   vendor: beagle
   socs:
   - name: cc1352p7
+  - name: am6254

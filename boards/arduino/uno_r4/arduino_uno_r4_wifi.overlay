@@ -124,3 +124,5 @@ zephyr_i2c: &iic0 {};
 arduino_i2c: &iic1 {};
 
 arduino_spi: &spi0 {};
+
+arduino_serial: &uart2 {};

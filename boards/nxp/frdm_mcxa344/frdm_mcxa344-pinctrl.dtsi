@@ -6,6 +6,16 @@
 #include <nxp/mcx/MCXA344VLL-pinctrl.h>
 
 &pinctrl {
+	pinmux_flexcan0: pinmux_flexcan0 {
+		group0 {
+			pinmux = <CAN0_TXD_P1_2>,
+				 <CAN0_RXD_P1_11>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
 	pinmux_lpadc0: pinmux_lpadc0 {
 		group0 {
 			pinmux = <ADC0_A7_P2_7>;

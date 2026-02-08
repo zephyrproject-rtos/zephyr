@@ -49,7 +49,7 @@
 			pwctrl1-param = [a4 a1];
 			pvgam-param = [d0 00 02 07 0a 28 32 44 42 06 0e 12 14 17];
 			nvgam-param = [d0 00 02 07 0a 28 31 54 47 0e 1c 17 1b 1e];
-			ram-param = [00 F0];
+			ram-param = [00 f0];
 			rgb-param = [40 02 14];
 			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 		};

@@ -60,6 +60,7 @@ struct sensing_sensor_register_info {
  */
 enum {
 	EVENT_CONFIG_READY, /**< Configuration is ready. */
+	EVENT_SENSOR_POLL,  /**< Sensor polling requested by timer. */
 };
 
 /**
@@ -69,6 +70,7 @@ enum {
  */
 enum {
 	SENSOR_LATER_CFG_BIT, /**< Indicates if there is a configuration request pending. */
+	SENSOR_POLL_BIT,      /**< Indicates sensor needs to be polled. */
 };
 
 /**

@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -37,6 +38,23 @@
 			gpios = <&gpio3 4 GPIO_ACTIVE_HIGH>;
 			label = "Red LED";
 			status = "disabled";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		status = "disabled";
+
+		green_pwm_led: green_pwm_led {
+			pwms = <&flexpwm0_pwm0 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+
+		blue_pwm_led: blue_pwm_led {
+			pwms = <&flexpwm0_pwm1 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+
+		red_pwm_led: red_pwm_led {
+			pwms = <&flexpwm0_pwm2 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 		};
 	};
 
@@ -146,9 +164,9 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 			reg = <0x00014000 DT_SIZE_K(984)>;
 		};
 
-		slot1_partition: partition@10A000 {
+		slot1_partition: partition@10a000 {
 			label = "image-1";
-			reg = <0x0010A000 DT_SIZE_K(984)>;
+			reg = <0x0010a000 DT_SIZE_K(984)>;
 		};
 
 		/* storage_partition is placed in WINBOND flash memory*/
@@ -256,5 +274,20 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 
 &sc_timer {
 	pinctrl-0 = <&pinmux_sctimer>;
+	pinctrl-names = "default";
+};
+
+&flexpwm0_pwm0 {
+	pinctrl-0 = <&flexpwm0_pwm0_default>;
+	pinctrl-names = "default";
+};
+
+&flexpwm0_pwm1 {
+	pinctrl-0 = <&flexpwm0_pwm1_default>;
+	pinctrl-names = "default";
+};
+
+&flexpwm0_pwm2 {
+	pinctrl-0 = <&flexpwm0_pwm2_default>;
 	pinctrl-names = "default";
 };

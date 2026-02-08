@@ -9,7 +9,7 @@
 
 	smartbattery: sbs_gauge@b {
 		compatible = "sbs,sbs-gauge";
-		reg = <0x0B>;
+		reg = <0x0b>;
 		status = "okay";
 	};
 };

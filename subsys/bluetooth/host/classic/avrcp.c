@@ -1297,7 +1297,7 @@ static int process_register_notification_rsp(struct bt_avrcp *avrcp, uint8_t tid
 
 	if ((rsp_code == BT_AVRCP_RSP_INTERIM) && (ct->ct_notify[event_id].interim_received == 0)) {
 		/* Mark as interim_received flag on interim response */
-		ct->ct_notify[event_id].interim_received = 1;
+		ct->ct_notify[event_id].interim_received = true;
 		avrcp_ct_cb->notification(get_avrcp_ct(avrcp), tid, BT_AVRCP_STATUS_SUCCESS,
 					  event_id, (struct bt_avrcp_event_data *)event_data);
 		return BT_AVRCP_STATUS_OPERATION_COMPLETED;
@@ -1305,7 +1305,7 @@ static int process_register_notification_rsp(struct bt_avrcp *avrcp, uint8_t tid
 	}
 
 	if ((ct->ct_notify[event_id].interim_received == 1) && (rsp_code == BT_AVRCP_RSP_CHANGED)) {
-		ct->ct_notify[event_id].interim_received = 0;
+		ct->ct_notify[event_id].interim_received = false;
 		if (ct->ct_notify[event_id].cb != NULL) {
 			bt_avrcp_notify_changed_cb_t cb;
 
@@ -1323,7 +1323,7 @@ notify_callback:
 		if (ct->ct_notify[i].tid == tid && ct->ct_notify[i].cb != NULL) {
 			failed_evt = i;
 			ct->ct_notify[i].cb = NULL;
-			ct->ct_notify[i].interim_received = 0;
+			ct->ct_notify[i].interim_received = false;
 			found = true;
 			break;
 		}
@@ -3276,7 +3276,7 @@ int bt_avrcp_ct_register_notification(struct bt_avrcp_ct *ct, uint8_t tid, uint8
 	}
 
 	ct->ct_notify[event_id].cb = cb;
-	ct->ct_notify[event_id].interim_received = 0;
+	ct->ct_notify[event_id].interim_received = false;
 	ct->ct_notify[event_id].tid = tid;
 
 	return 0;

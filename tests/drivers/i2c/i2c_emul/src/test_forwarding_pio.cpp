@@ -100,7 +100,7 @@ ZTEST(i2c_emul_forwarding, test_read_is_forwarded)
 
 ZTEST(i2c_emul_forwarding, test_recover_failed_write)
 {
-	uint8_t write_data[2];
+	uint8_t write_data[2] = {};
 
 	// Fail on the write request (should never call the write_received function)
 	target_write_requested_0_fake.return_val = -EINVAL;
@@ -238,7 +238,7 @@ ZTEST(i2c_emul_forwarding, test_forward_two_targets)
 
 ZTEST(i2c_emul_forwarding, test_error_in_write_received)
 {
-	uint8_t data;
+	uint8_t data = 0;
 
 	target_write_received_0_fake.return_val = -EINTR;
 	zassert_equal(-EINTR, i2c_write(controller, &data, 1, emulated_target_config[0].address));

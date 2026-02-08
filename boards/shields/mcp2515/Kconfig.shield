@@ -9,3 +9,6 @@ config SHIELD_KEYESTUDIO_CAN_BUS_KS0411
 
 config SHIELD_ADAFRUIT_CAN_PICOWBELL
 	def_bool $(shields_list_contains,adafruit_can_picowbell)
+
+config SHIELD_SEEED_XIAO_CAN
+	def_bool $(shields_list_contains,seeed_xiao_can)

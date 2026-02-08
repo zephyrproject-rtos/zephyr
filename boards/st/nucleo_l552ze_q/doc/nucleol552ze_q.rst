@@ -33,19 +33,19 @@ Hardware
 ********
 
 The STM32L552xx devices are an ultra-low-power microcontrollers family (STM32L5
-Series) based on the high-performance Arm |reg| Cortex |reg|-M33 32-bit RISC core.
+Series) based on the high-performance Arm® Cortex®-M33 32-bit RISC core.
 They operate at a frequency of up to 110 MHz.
 
 - Ultra-low-power with FlexPowerControl (down to 108 nA Standby mode and 62 uA/MHz run mode)
-- Core: ARM |reg| 32-bit Cortex |reg| -M33 CPU with TrustZone |reg| and FPU.
+- Core: ARM® 32-bit Cortex®-M33 CPU with TrustZone® and FPU.
 - Performance benchmark:
 
   - 1.5 DMPIS/MHz (Drystone 2.1)
-  - 442 CoreMark |reg| (4.02 CoreMark |reg| /MHZ)
+  - 442 CoreMark® (4.02 CoreMark® /MHZ)
 
 - Security
 
-  - Arm |reg|  TrustZone |reg| and securable I/Os memories and peripherals
+  - Arm®  TrustZone® and securable I/Os memories and peripherals
   - Flexible life cycle scheme with RDP (readout protection)
   - Root of trust thanks to unique boot entry and hide protection area (HDP)
   - Secure Firmware Installation thanks to embedded Root Secure Services
@@ -60,10 +60,10 @@ They operate at a frequency of up to 110 MHz.
 
   - 4 to 48 MHz crystal oscillator
   - 32 kHz crystal oscillator for RTC (LSE)
-  - Internal 16 MHz factory-trimmed RC ( |plusminus| 1%)
-  - Internal low-power 32 kHz RC ( |plusminus| 5%)
+  - Internal 16 MHz factory-trimmed RC (±1%)
+  - Internal low-power 32 kHz RC (±5%)
   - Internal multispeed 100 kHz to 48 MHz oscillator, auto-trimmed by
-    LSE (better than  |plusminus| 0.25 % accuracy)
+    LSE (better than ±0.25 % accuracy)
   - 3 PLLs for system clock, USB, audio, ADC
 
 - Power management
@@ -112,7 +112,7 @@ They operate at a frequency of up to 110 MHz.
   - 2x 14 channel DMA controllers
 
 - CRC calculation unit
-- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell |trade|
+- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell™
 
 
 More information about STM32L552ZE can be found here:

@@ -28,29 +28,29 @@
 
 		/* SCFG DEVALT A */
 		alta_uart2_sl: alta5 {
-			alts = <&scfg 0x0A 0x5 0>;
+			alts = <&scfg 0x0a 0x5 0>;
 		};
 
 		alta_uart1_sl1: alta7 {
-			alts = <&scfg 0x0A 0x7 0>;
+			alts = <&scfg 0x0a 0x7 0>;
 		};
 
 		/* SCFG DEVALT C */
 		altc_uart1_sl2: altc0 {
-			alts = <&scfg 0x0C 0x0 0>;
+			alts = <&scfg 0x0c 0x0 0>;
 		};
 
 		/* SCFG DEVALT E */
 		alte_wov_sl: alte0 {
-			alts = <&scfg 0x0E 0x0 0>;
+			alts = <&scfg 0x0e 0x0 0>;
 		};
 
 		alte_i2s_sl: alte1 {
-			alts = <&scfg 0x0E 0x1 0>;
+			alts = <&scfg 0x0e 0x1 0>;
 		};
 
 		alte_dmclk_fast: alte2 {
-			alts = <&scfg 0x0E 0x2 0>;
+			alts = <&scfg 0x0e 0x2 0>;
 		};
 	};
 };

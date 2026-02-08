@@ -18,3 +18,11 @@ config I2C_RENESAS_RZ_IIC
 	select PINCTRL
 	help
 	  Enable Renesas RZ I2C IIC Driver.
+
+config I2C_RENESAS_RZA2M_RIIC
+	bool "Renesas I2C Driver for RZ/A2M"
+	default y
+	depends on DT_HAS_RENESAS_RZA2M_RIIC_ENABLED
+	select PINCTRL
+	help
+	  Enable Renesas I2C Driver (RIIC) for RZ/A2M.

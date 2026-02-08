@@ -193,10 +193,6 @@ static int sdhc_ra_request(const struct device *dev, struct sdhc_command *cmd,
 	/* Reset semaphore */
 	k_sem_reset(&priv->sdmmc_event.transfer_sem);
 	k_sem_take(&priv->thread_lock, K_FOREVER);
-	if (ret < 0) {
-		LOG_ERR("Can not take sem!");
-		goto end;
-	}
 
 	/*
 	 * Handle opcode with RA specifics

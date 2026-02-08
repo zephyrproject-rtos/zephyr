@@ -3,7 +3,7 @@
 Overview
 ********
 
-The Nucleo-H503RB board features an ARM |reg| Cortex |reg|-M33 core-based
+The Nucleo-H503RB board features an ARM® Cortex®-M33 core-based
 STM32H503RBT6 microcontroller with a wide range of connectivity support and
 configurations.
 Here are some highlights of the Nucleo-H503RB board:
@@ -13,9 +13,9 @@ Here are some highlights of the Nucleo-H503RB board:
 
 - Board connectors:
 
-  - User USB Type-C |reg|
+  - User USB Type-C®
   - MIPI10 for debugging (SWD/JTAG)
-  - Arduino |reg| Uno V3 connectivity (CN5, CN6, CN8, CN9)
+  - Arduino® Uno V3 connectivity (CN5, CN6, CN8, CN9)
   - ST morpho extension connector (CN7, CN10)
 
 - Flexible board power supply:
@@ -30,7 +30,7 @@ Here are some highlights of the Nucleo-H503RB board:
   - Virtual COM port
   - debug port
 
-- One user LED shared with ARDUINO |reg| Uno V3
+- One user LED shared with ARDUINO® Uno V3
 - Two push-buttons: USER and RESET
 - 32.768 kHz crystal oscillator
 - 24 MHz HSE crystal oscillator
@@ -45,10 +45,10 @@ Hardware
 ********
 
 The STM32H503xx devices are a high-performance microcontrollers family
-(STM32H5 series) based on the high-performance Arm |reg| Cortex |reg|-M33 32-bit
+(STM32H5 series) based on the high-performance Arm® Cortex®-M33 32-bit
 RISC core. They operate at a frequency of up to 250 MHz.
 
-- Core: Arm |reg| Cortex |reg|-M33 CPU with FPU, MPU, 375 DMIPS (Dhrystone 2.1),
+- Core: Arm® Cortex®-M33 CPU with FPU, MPU, 375 DMIPS (Dhrystone 2.1),
   and DSP instructions
 - ART Accelerator
 
@@ -87,7 +87,7 @@ RISC core. They operate at a frequency of up to 250 MHz.
 
 - Up to 16x communication interfaces
 
-  - Up to 2x I2Cs FM + interfaces (SMBus/PMBus |reg|)
+  - Up to 2x I2Cs FM + interfaces (SMBus/PMBus®)
   - Up to 2x I3Cs shared with I2C
   - Up to 3x USARTs (ISO7816 interface, LIN, IrDA, modem control)
   - 1x LPUART

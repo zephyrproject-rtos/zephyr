@@ -9,7 +9,7 @@ configdefault NET_L2_ETHERNET
 	default y
 
 configdefault OTP
-	default y if NET_L2_ETHERNET && NVMEM
+	default y if ETH_STM32_HAL && NVMEM
 
 if DISPLAY || VIDEO
 # MEMC needs to be enabled in order to store

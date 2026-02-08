@@ -38,6 +38,7 @@ struct sdl_display_init_params {
 	uint16_t transparency_grid_cell_size;
 	void **round_disp_mask;
 	uint32_t mask_color;
+	double angle;
 };
 
 struct sdl_display_write_params {
@@ -54,6 +55,7 @@ struct sdl_display_write_params {
 	bool frame_incomplete;
 	uint32_t color_tint;
 	void *round_disp_mask;
+	double angle;
 };
 
 struct sdl_display_read_params {
@@ -67,6 +69,7 @@ struct sdl_display_read_params {
 	void *mutex;
 	void *texture;
 	void *read_texture;
+	double angle;
 };
 
 struct sdl_display_blanking_off_params {
@@ -75,6 +78,7 @@ struct sdl_display_blanking_off_params {
 	void *background_texture;
 	uint32_t color_tint;
 	void *round_disp_mask;
+	double angle;
 };
 
 struct sdl_display_cleanup_params {

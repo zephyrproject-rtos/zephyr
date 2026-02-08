@@ -12,7 +12,7 @@ Security Document Citations
 
 .. [PAUL09] M. Paul, "The Ten Best Practices for Secure Software
    Development," International Information Systems Security Certification
-   Consortium, Inc. [(ISC)2 |reg|], Palm Harbor, FL, USA, 2009.
+   Consortium, Inc. [(ISC)2®], Palm Harbor, FL, USA, 2009.
 
 .. [MS12] Microsoft Corporation, Security Development Lifecycle - SDL
    Process Guidance Version 5.2,2012.

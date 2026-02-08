@@ -189,6 +189,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		cpuapp_boot_partition: partition@312000 {
 			reg = <0x312000 DT_SIZE_K(64)>;
@@ -202,12 +203,12 @@
 			reg = <0x376000 DT_SIZE_K(440)>;
 		};
 
-		cpuppr_code_partition: partition@3E4000 {
-			reg = <0x3E4000 DT_SIZE_K(64)>;
+		cpuppr_code_partition: partition@3e4000 {
+			reg = <0x3e4000 DT_SIZE_K(64)>;
 		};
 
-		cpuflpr_code_partition: partition@3F4000 {
-			reg = <0x3F4000 DT_SIZE_K(48)>;
+		cpuflpr_code_partition: partition@3f4000 {
+			reg = <0x3f4000 DT_SIZE_K(48)>;
 		};
 
 		cpurad_slot0_partition: partition@400000 {

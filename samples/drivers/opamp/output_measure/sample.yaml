@@ -20,3 +20,4 @@ tests:
       - frdm_mcxa366
       - frdm_mcxn947/mcxn947/cpu0
       - lpcxpresso55s36
+      - nucleo_g474re/stm32g474xx

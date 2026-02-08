@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_mcxa5x.dtsi>
+#include <nxp/mcx/nxp_mcxa5x.dtsi>
 #include "frdm_mcxa577-pinctrl.dtsi"
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -21,6 +21,7 @@
 		led2 = &blue_led;
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
+		watchdog0 = &wwdt0;
 	};
 
 	chosen {
@@ -28,8 +29,8 @@
 		zephyr,flash = &flash;
 		zephyr,flash-controller = &fmu;
 		zephyr,code-partition = &slot0_partition;
-		zephyr,console = &lpuart0;
-		zephyr,shell-uart = &lpuart0;
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
 	};
 
 	leds {
@@ -96,7 +97,7 @@
 };
 
 &cpu0 {
-	clock-frequency = <12000000>;
+	clock-frequency = <DT_FREQ_M(200)>;
 };
 
 &gpio0 {
@@ -119,11 +120,31 @@
 	status = "okay";
 };
 
-&lpuart0 {
+&gpio5 {
+	status = "okay";
+};
+
+&lpuart1 {
 	status = "okay";
 	current-speed = <115200>;
-	pinctrl-0 = <&pinmux_lpuart0>;
+	pinctrl-0 = <&pinmux_lpuart1>;
 	pinctrl-names = "default";
+};
+
+&ctimer0 {
+	status = "okay";
+};
+
+&lptmr0 {
+	status = "okay";
+};
+
+&edma0 {
+	status = "okay";
+};
+
+&wwdt0 {
+	status = "okay";
 };
 
 &flash {
@@ -148,9 +169,9 @@
 			reg = <0x00100000 DT_SIZE_K(896)>;
 		};
 
-		storage_partition: partition@1E0000 {
+		storage_partition: partition@1e0000 {
 			label = "storage";
-			reg = <0x001E0000 DT_SIZE_K(128)>;
+			reg = <0x001e0000 DT_SIZE_K(128)>;
 		};
 	};
 };

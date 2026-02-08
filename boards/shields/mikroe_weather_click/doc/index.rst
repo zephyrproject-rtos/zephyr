@@ -7,7 +7,7 @@ Overview
 ********
 
 The MikroElektronika `Weather Click`_ features the `BME280`_ integrated
-environmental sensor in a `mikroBUS`_ |trade| form factor. The sensor can
+environmental sensor in a `mikroBUS™`_ form factor. The sensor can
 measure relative humidity, barometric pressure, and ambient temperature.
 
 .. figure:: weather-click.webp
@@ -19,9 +19,9 @@ measure relative humidity, barometric pressure, and ambient temperature.
 Requirements
 ************
 
-This shield can only be used with a board that provides a mikroBUS |trade|
-socket and defines a ``mikrobus_i2c`` node label for the mikroBUS |trade| I2C
-interface or a ``mikrobus_spi`` node label for the mikroBUS |trade| SPI
+This shield can only be used with a board that provides a mikroBUS™
+socket and defines a ``mikrobus_i2c`` node label for the mikroBUS™ I2C
+interface or a ``mikrobus_spi`` node label for the mikroBUS™ SPI
 interface (see :ref:`shields` for more details).
 
 .. note::
@@ -63,5 +63,5 @@ example:
 .. _BME280 Datasheet:
    https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bme280-ds002.pdf
 
-.. _mikroBUS:
+.. _mikroBUS™:
    https://www.mikroe.com/mikrobus

@@ -1462,6 +1462,335 @@ enum bt_audio_location {
 
 /** @} */ /* end of @name Company Identifiers */
 
+/**
+ * @name Defined BR Class of Device (CoD) values
+ * @{
+ */
+
+#define BT_COD(major_service, major_device, minor_device)                                          \
+	(((uint32_t)major_service << 13) | ((uint32_t)major_device << 8) |                         \
+	 ((uint32_t)minor_device << 2))
+#define BT_COD_VALID(cod) ((0 == (cod[0] & (BIT(0) | BIT(1)))) ? true : false)
+#define BT_COD_MAJOR_SERVICE_CLASSES(cod)                                                          \
+	((((uint32_t)cod[2] & 0xFF) >> 5) | (((uint32_t)cod[1] & 0xD0) >> 5))
+#define BT_COD_MAJOR_DEVICE_CLASS(cod) ((((uint32_t)cod[1]) & 0x1FUL))
+#define BT_COD_MINOR_DEVICE_CLASS(cod) (((((uint32_t)cod[0]) & 0xFF) >> 2))
+
+/**
+ * @name Major Service Classes
+ * @{
+ */
+
+/** Limited Discoverable Mode service class */
+#define BT_COD_MAJOR_SVC_CLASS_LIMITED_DISCOVER BIT(13)
+/** LE Audio service class */
+#define BT_COD_MAJOR_SVC_CLASS_LE_AUDIO         BIT(14)
+/** Reserved service class */
+#define BT_COD_MAJOR_SVC_CLASS_RESERVED         BIT(15)
+/** Positioning service class */
+#define BT_COD_MAJOR_SVC_CLASS_POSITIONING      BIT(16)
+/** Networking service class */
+#define BT_COD_MAJOR_SVC_CLASS_NETWORKING       BIT(17)
+/** Rendering service class */
+#define BT_COD_MAJOR_SVC_CLASS_RENDERING        BIT(18)
+/** Capturing service class */
+#define BT_COD_MAJOR_SVC_CLASS_CAPTURING        BIT(19)
+/** Object Transfer service class */
+#define BT_COD_MAJOR_SVC_CLASS_OBJECT_TRANSFER  BIT(20)
+/** Audio service class */
+#define BT_COD_MAJOR_SVC_CLASS_AUDIO            BIT(21)
+/** Telephony service class */
+#define BT_COD_MAJOR_SVC_CLASS_TELEPHONY        BIT(22)
+/** Information service class */
+#define BT_COD_MAJOR_SVC_CLASS_INFORMATION      BIT(23)
+
+/** @} */ /* end of Major Service Classes */
+
+/**
+ * @name Major Device Class
+ * @{
+ */
+
+/** Miscellaneous major device class */
+#define BT_COD_MAJOR_DEVICE_CLASS_MISCELLANEOUS 0x00
+/** Computer major device class */
+#define BT_COD_MAJOR_DEVICE_CLASS_COMPUTER      0x01
+/** Phone major device class */
+#define BT_COD_MAJOR_DEVICE_CLASS_PHONE         0x02
+/** LAN/Network Access Point major device class */
+#define BT_COD_MAJOR_DEVICE_CLASS_LAN_NETWORK   0x03
+/** Audio/Video major device class */
+#define BT_COD_MAJOR_DEVICE_CLASS_AUDIO_VIDEO   0x04
+/** Peripheral major device class */
+#define BT_COD_MAJOR_DEVICE_CLASS_PERIPHERAL    0x05
+/** Imaging major device class */
+#define BT_COD_MAJOR_DEVICE_CLASS_IMAGING       0x06
+/** Wearable major device class */
+#define BT_COD_MAJOR_DEVICE_CLASS_WEARABLE      0x07
+/** Toy major device class */
+#define BT_COD_MAJOR_DEVICE_CLASS_TOY           0x08
+/** Health major device class */
+#define BT_COD_MAJOR_DEVICE_CLASS_HEALTH        0x09
+/** Uncategorized major device class */
+#define BT_COD_MAJOR_DEVICE_CLASS_UNCATEGORIZED 0x1F
+
+/** @} */ /* end of Major Device Class */
+
+/**
+ * @name Minor Device Class - Computer Major Class
+ * @{
+ */
+
+/** Uncategorized computer minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_COMPUTER_UNCATEGORIZED       0x00
+/** Desktop workstation computer minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_COMPUTER_DESKTOP_WORKSTATION 0x01
+/** Server-class computer minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_COMPUTER_SERVER              0x02
+/** Laptop computer minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_COMPUTER_LAPTOP              0x03
+/** Handheld PC/PDA computer minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_COMPUTER_HANDHELD_PC_PDA     0x04
+/** Palm-sized PC/PDA computer minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_COMPUTER_PALM_SIZED_PC_PDA   0x05
+/** Wearable computer minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_COMPUTER_WEARABLE_COMPUTER   0x06
+/** Tablet computer minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_COMPUTER_TABLET              0x07
+
+/** @} */ /* end of Minor Device Class - Computer Major Class */
+
+/**
+ * @name Minor Device Class - Phone Major Class
+ * @{
+ */
+
+/** Uncategorized phone minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_PHONE_UNCATEGORIZED      0x00
+/** Cellular phone minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_PHONE_CELLULAR           0x01
+/** Cordless phone minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_PHONE_CORDLESS           0x02
+/** Smartphone minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_PHONE_SMARTPHONE         0x03
+/** Wired modem or voice gateway phone minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_PHONE_WIRED_MODEM        0x04
+/** Common ISDN access phone minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_PHONE_COMMON_ISDN_ACCESS 0x05
+
+/** @} */ /* end of Minor Device Class - Phone Major Class */
+
+/**
+ * @name Minor Device Class - LAN/Network Major Class - Service Utilization
+ * @{
+ */
+
+/** LAN service utilization: fully available */
+#define BT_COD_MINOR_DEVICE_CLASS_LAN_NETWORK_SERVICE_FULLY_AVAILABLE      0x00
+/** LAN service utilization: 1-17% utilized */
+#define BT_COD_MINOR_DEVICE_CLASS_LAN_NETWORK_SERVICE_1_17_UTILIZED        0x01
+/** LAN service utilization: 17-33% utilized */
+#define BT_COD_MINOR_DEVICE_CLASS_LAN_NETWORK_SERVICE_17_33_UTILIZED       0x02
+/** LAN service utilization: 33-50% utilized */
+#define BT_COD_MINOR_DEVICE_CLASS_LAN_NETWORK_SERVICE_33_50_UTILIZED       0x03
+/** LAN service utilization: 50-67% utilized */
+#define BT_COD_MINOR_DEVICE_CLASS_LAN_NETWORK_SERVICE_50_67_UTILIZED       0x04
+/** LAN service utilization: 67-83% utilized */
+#define BT_COD_MINOR_DEVICE_CLASS_LAN_NETWORK_SERVICE_67_83_UTILIZED       0x05
+/** LAN service utilization: 83-99% utilized */
+#define BT_COD_MINOR_DEVICE_CLASS_LAN_NETWORK_SERVICE_83_99_UTILIZED       0x06
+/** LAN service utilization: no service available */
+#define BT_COD_MINOR_DEVICE_CLASS_LAN_NETWORK_SERVICE_NO_SERVICE_AVAILABLE 0x07
+
+/** @} */ /* end of Minor Device Class - LAN/Network Major Class - Service Utilization */
+
+/**
+ * @name Minor Device Class - LAN/Network Major Class - Device Type
+ * @{
+ */
+
+/** Uncategorized LAN/network device type */
+#define BT_COD_MINOR_DEVICE_CLASS_LAN_NETWORK_DEVICE_TYPE_UNCATEGORIZED 0x00
+
+/** Minor Device Class - Audio/Video Major Class */
+/** Uncategorized audio/video minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_AUDIO_VIDEO_UNCATEGORIZED             0x00
+/** Wearable headset audio/video minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_AUDIO_VIDEO_WEARABLE_HEADSET          0x01
+/** Handsfree audio/video minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_AUDIO_VIDEO_HANDSFREE                 0x02
+/** Microphone audio/video minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_AUDIO_VIDEO_MICROPHONE                0x04
+/** Loudspeaker audio/video minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_AUDIO_VIDEO_LOUDSPEAKER               0x05
+/** Headphones audio/video minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_AUDIO_VIDEO_HEADPHONES                0x06
+/** Portable audio audio/video minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_AUDIO_VIDEO_PORTABLE_AUDIO            0x07
+/** Car audio audio/video minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_AUDIO_VIDEO_CAR_AUDIO                 0x08
+/** Set-top box audio/video minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_AUDIO_VIDEO_SETTOP_BOX                0x09
+/** HiFi audio audio/video minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_AUDIO_VIDEO_HIFI_AUDIO                0x0A
+/** VCR audio/video minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_AUDIO_VIDEO_VCR                       0x0B
+/** Video camera audio/video minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_AUDIO_VIDEO_VIDEO_CAMERA              0x0C
+/** Camcorder audio/video minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_AUDIO_VIDEO_CAMCORDER                 0x0D
+/** Video monitor audio/video minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_AUDIO_VIDEO_VIDEO_MONITOR             0x0E
+/** Video display and loudspeaker audio/video minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_AUDIO_VIDEO_VIDEO_DISPLAY_LOUDSPEAKER 0x0F
+/** Video conferencing audio/video minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_AUDIO_VIDEO_VIDEO_CONFERENCING        0x10
+/** Gaming toy audio/video minor device class */
+#define BT_COD_MINOR_DEVICE_CLASS_AUDIO_VIDEO_GAMING_TOY                0x12
+
+/** @} */ /* end of Minor Device Class - Audio/Video Major Class */
+
+/**
+ * @name Minor Device Class - Peripheral Major Class - Input Device Type
+ * @{
+ */
+
+/** Peripheral input: no keyboard, no pointing device */
+#define BT_COD_MINOR_DEVICE_CLASS_PERIPHERAL_INPUT_DEVICE_TYPE_NO_KEYBOARD_NO_POINTING 0x00
+/** Peripheral input: keyboard */
+#define BT_COD_MINOR_DEVICE_CLASS_PERIPHERAL_INPUT_DEVICE_TYPE_KEYBOARD                0x01
+/** Peripheral input: pointing device */
+#define BT_COD_MINOR_DEVICE_CLASS_PERIPHERAL_INPUT_DEVICE_TYPE_POINTING_DEVICE         0x02
+/** Peripheral input: combo keyboard and pointing device */
+#define BT_COD_MINOR_DEVICE_CLASS_PERIPHERAL_INPUT_DEVICE_TYPE_COMBO_KEYBOARD_POINTING 0x03
+
+/** @} */ /* end of Minor Device Class - Peripheral Major Class - Input Device Type */
+
+/**
+ * @name Minor Device Class - Peripheral Major Class - Device Type
+ * @{
+ */
+
+/** Uncategorized peripheral device type */
+#define BT_COD_MINOR_DEVICE_CLASS_PERIPHERAL_DEVICE_TYPE_UNCATEGORIZED           0x00
+/** Joystick peripheral device type */
+#define BT_COD_MINOR_DEVICE_CLASS_PERIPHERAL_DEVICE_TYPE_JOYSTICK                0x01
+/** Gamepad peripheral device type */
+#define BT_COD_MINOR_DEVICE_CLASS_PERIPHERAL_DEVICE_TYPE_GAMEPAD                 0x02
+/** Remote control peripheral device type */
+#define BT_COD_MINOR_DEVICE_CLASS_PERIPHERAL_DEVICE_TYPE_REMOTE_CONTROL          0x03
+/** Sensing device peripheral device type */
+#define BT_COD_MINOR_DEVICE_CLASS_PERIPHERAL_DEVICE_TYPE_SENSING_DEVICE          0x04
+/** Digitizer tablet peripheral device type */
+#define BT_COD_MINOR_DEVICE_CLASS_PERIPHERAL_DEVICE_TYPE_DIGITIZER_TABLET        0x05
+/** Card reader peripheral device type */
+#define BT_COD_MINOR_DEVICE_CLASS_PERIPHERAL_DEVICE_TYPE_CARD_READER             0x06
+/** Digital pen peripheral device type */
+#define BT_COD_MINOR_DEVICE_CLASS_PERIPHERAL_DEVICE_TYPE_DIGITAL_PEN             0x07
+/** Handheld scanner peripheral device type */
+#define BT_COD_MINOR_DEVICE_CLASS_PERIPHERAL_DEVICE_TYPE_HANDHELD_SCANNER        0x08
+/** Handheld gestural input peripheral device type */
+#define BT_COD_MINOR_DEVICE_CLASS_PERIPHERAL_DEVICE_TYPE_HANDHELD_GESTURAL_INPUT 0x09
+
+/** @} */ /* end of Minor Device Class - Peripheral Major Class - Device Type */
+
+/**
+ * @name Minor Device Class - Imaging Major Class
+ * @{
+ */
+
+/** Minor Device Class - Imaging Major Class */
+#define BT_COD_MINOR_DEVICE_CLASS_IMAGING_DISPLAY 0x01
+/** Imaging camera device */
+#define BT_COD_MINOR_DEVICE_CLASS_IMAGING_CAMERA  0x02
+/** Imaging scanner device */
+#define BT_COD_MINOR_DEVICE_CLASS_IMAGING_SCANNER 0x04
+/** Imaging printer device */
+#define BT_COD_MINOR_DEVICE_CLASS_IMAGING_PRINTER 0x08
+
+/** Minor Device Class - Imaging Major Class Uncategorized */
+#define BT_COD_MINOR_DEVICE_CLASS_IMAGING_UNCATEGORIZED 0x00
+
+/** @} */ /* end of Minor Device Class - Imaging Major Class */
+
+/**
+ * @name Minor Device Class - Wearable Major Class
+ * @{
+ */
+
+/** Wearable headset device */
+#define BT_COD_MINOR_DEVICE_CLASS_WEARABLE_HEADSET 0x01
+/** Wearable pager device */
+#define BT_COD_MINOR_DEVICE_CLASS_WEARABLE_PAGER   0x02
+/** Wearable jacket device */
+#define BT_COD_MINOR_DEVICE_CLASS_WEARABLE_JACKET  0x03
+/** Wearable helmet device */
+#define BT_COD_MINOR_DEVICE_CLASS_WEARABLE_HELMET  0x04
+/** Wearable glasses device */
+#define BT_COD_MINOR_DEVICE_CLASS_WEARABLE_GLASSES 0x05
+
+/** @} */ /* end of Minor Device Class - Wearable Major Class */
+
+/**
+ * @name Minor Device Class - Toy Major Class
+ * @{
+ */
+
+/** Toy robot device */
+#define BT_COD_MINOR_DEVICE_CLASS_TOY_ROBOT      0x01
+/** Toy vehicle device */
+#define BT_COD_MINOR_DEVICE_CLASS_TOY_VEHICLE    0x02
+/** Toy doll device */
+#define BT_COD_MINOR_DEVICE_CLASS_TOY_DOLL       0x03
+/** Toy controller device */
+#define BT_COD_MINOR_DEVICE_CLASS_TOY_CONTROLLER 0x04
+/** Toy game device */
+#define BT_COD_MINOR_DEVICE_CLASS_TOY_GAME       0x05
+
+/** @} */ /* end of Minor Device Class - Toy Major Class */
+
+/**
+ * @name Minor Device Class - Health Major Class
+ * @{
+ */
+
+/** Undefined health device */
+#define BT_COD_MINOR_DEVICE_CLASS_HEALTH_UNDEFINED                 0x00
+/** Blood pressure monitor health device */
+#define BT_COD_MINOR_DEVICE_CLASS_HEALTH_BLOOD_PRESSURE_MONITOR    0x01
+/** Thermometer health device */
+#define BT_COD_MINOR_DEVICE_CLASS_HEALTH_THERMOMETER               0x02
+/** Weighing scale health device */
+#define BT_COD_MINOR_DEVICE_CLASS_HEALTH_WEIGHING_SCALE            0x03
+/** Glucose meter health device */
+#define BT_COD_MINOR_DEVICE_CLASS_HEALTH_GLUCOSE_METER             0x04
+/** Pulse oximeter health device */
+#define BT_COD_MINOR_DEVICE_CLASS_HEALTH_PULSE_OXIMETER            0x05
+/** Heart/pulse monitor health device */
+#define BT_COD_MINOR_DEVICE_CLASS_HEALTH_HEART_PULSE_MONITOR       0x06
+/** Health data display device */
+#define BT_COD_MINOR_DEVICE_CLASS_HEALTH_HEALTH_DATA_DISPLAY       0x07
+/** Step counter health device */
+#define BT_COD_MINOR_DEVICE_CLASS_HEALTH_STEP_COUNTER              0x08
+/** Body composition analyzer health device */
+#define BT_COD_MINOR_DEVICE_CLASS_HEALTH_BODY_COMPOSITION_ANALYZER 0x09
+/** Peak flow monitor health device */
+#define BT_COD_MINOR_DEVICE_CLASS_HEALTH_PEAK_FLOW_MONITOR         0x0A
+/** Medication monitor health device */
+#define BT_COD_MINOR_DEVICE_CLASS_HEALTH_MEDICATION_MONITOR        0x0B
+/** Knee prosthesis health device */
+#define BT_COD_MINOR_DEVICE_CLASS_HEALTH_KNEE_PROSTHESIS           0x0C
+/** Ankle prosthesis health device */
+#define BT_COD_MINOR_DEVICE_CLASS_HEALTH_ANKLE_PROSTHESIS          0x0D
+/** Generic health manager device */
+#define BT_COD_MINOR_DEVICE_CLASS_HEALTH_GENERIC_HEALTH_MANAGER    0x0E
+/** Personal mobility health device */
+#define BT_COD_MINOR_DEVICE_CLASS_HEALTH_PERSONAL_MOBILITY_DEVICE  0x0F
+
+/** @} */ /* end of Minor Device Class - Health Major Class */
+
+/** @} */ /* end of @name BR Class of Device */
+
 #ifdef __cplusplus
 }
 #endif

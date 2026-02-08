@@ -843,6 +843,59 @@ int zsock_getnameinfo(const struct net_sockaddr *addr, net_socklen_t addrlen,
 		      char *serv, net_socklen_t servlen, int flags);
 
 /**
+ * @brief Send data to an arbitrary network address. The function will try
+ *        to send all the data requested, blocking if necessary. User can set
+ *        a limit on the time spent in the function using socket send timeout.
+ *
+ * @details
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/sendto.html
+ * for normative description of the parameters. The function differs from
+ * zsock_send() by trying to send all the data requested, blocking
+ * if necessary until all data is sent or timeout occurs.
+ * Note that this is only applicable for stream sockets like TCP.
+ * If the timeout is set to K_NO_WAIT, the function will return after
+ * the first send attempt, possibly sending less data than requested.
+ *
+ * @param sock Socket file descriptor
+ * @param buf Pointer to data buffer to send
+ * @param len Length of data to send
+ * @param flags Socket flags for sending data
+ * @param timeout Maximum time to wait until data is sent
+ * @param sent_len Pointer to variable where to store the actual number of bytes
+ *        sent. Can be set to NULL if the caller does not need this information.
+ * @return 0 on success, -errno on failure
+ */
+int zsock_send_all(int sock, const void *buf, size_t len, int flags,
+		   k_timeout_t timeout, size_t *sent_len);
+
+/**
+ * @brief Send data to an arbitrary network address. The function will try
+ *       to send all the data requested, blocking if necessary. User can set
+ *       a limit on the time spent in the function using socket send timeout.
+ *
+ * @details
+ * See POSIX.1-2017 article
+ * http://pubs.opengroup.org/onlinepubs/9699919799/functions/sendmsg.html
+ * for normative description of the parameters. The function differs from
+ * zsock_sendmsg() by trying to send all the data requested, blocking
+ * if necessary until all data is sent or timeout occurs.
+ * Note that this is only applicable for stream sockets like TCP.
+ * If the timeout is set to K_NO_WAIT, the function will return after
+ * the first send attempt, possibly sending less data than requested.
+ *
+ * @param sock Socket file descriptor
+ * @param msg Pointer to message header describing data to send
+ * @param flags Socket flags for sending data
+ * @param timeout Maximum time to wait until data is sent
+ * @param sent_len Pointer to variable where to store the actual number of bytes
+ *        sent. Can be set to NULL if the caller does not need this information.
+ * @return 0 on success, -errno on failure
+ */
+int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
+		      k_timeout_t timeout, size_t *sent_len);
+
+/**
  * @name Socket level options (ZSOCK_SOL_SOCKET)
  * @{
  */

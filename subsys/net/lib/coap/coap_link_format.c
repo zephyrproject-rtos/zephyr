@@ -143,7 +143,7 @@ static bool match_queries_resource(const struct coap_resource *resource,
 				   const struct coap_option *query,
 				   int num_queries)
 {
-	struct coap_core_metadata *meta = resource->user_data;
+	struct coap_core_metadata *meta = resource->metadata;
 	const char * const *attributes = NULL;
 	const int href_len = strlen("href");
 
@@ -151,11 +151,11 @@ static bool match_queries_resource(const struct coap_resource *resource,
 		return true;
 	}
 
-	if (meta && meta->attributes) {
+	if (meta != NULL && meta->attributes != NULL) {
 		attributes = meta->attributes;
 	}
 
-	if (!attributes) {
+	if (attributes == NULL) {
 		return false;
 	}
 
@@ -354,7 +354,7 @@ static int format_resource(const struct coap_resource *resource,
 			   uint16_t *remaining, size_t *offset,
 			   size_t current, bool *more)
 {
-	struct coap_core_metadata *meta = resource->user_data;
+	struct coap_core_metadata *meta = resource->metadata;
 	const char * const *attributes = NULL;
 	int r;
 
@@ -369,7 +369,7 @@ static int format_resource(const struct coap_resource *resource,
 		return 0;
 	}
 
-	if (meta && meta->attributes) {
+	if (meta != NULL && meta->attributes != NULL) {
 		attributes = meta->attributes;
 	}
 
@@ -602,7 +602,7 @@ static int format_attributes(const char * const *attributes,
 static int format_resource(const struct coap_resource *resource,
 			   struct coap_packet *response)
 {
-	struct coap_core_metadata *meta = resource->user_data;
+	struct coap_core_metadata *meta = resource->metadata;
 	const char * const *attributes = NULL;
 	int r;
 
@@ -611,7 +611,7 @@ static int format_resource(const struct coap_resource *resource,
 		return r;
 	}
 
-	if (meta && meta->attributes) {
+	if (meta != NULL && meta->attributes != NULL) {
 		attributes = meta->attributes;
 	}
 

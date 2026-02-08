@@ -15,6 +15,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/pm/device.h>
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 #include <zephyr/drivers/spi.h>
@@ -467,7 +468,7 @@ static int lis2dw12_set_low_noise(const struct device *dev,
 	return lis2dw12_write_reg(ctx, LIS2DW12_CTRL6, (uint8_t *)&ctrl6, 1);
 }
 
-static int lis2dw12_init(const struct device *dev)
+static int lis2dw12_power_up(const struct device *dev)
 {
 	const struct lis2dw12_device_config *cfg = dev->config;
 	struct lis2dw12_data *lis2dw12 = dev->data;
@@ -575,6 +576,58 @@ static int lis2dw12_init(const struct device *dev)
 	return 0;
 }
 
+static int lis2dw12_pm_control(const struct device *dev, enum pm_device_action action)
+{
+	const struct lis2dw12_device_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	struct lis2dw12_data *lis2dw12 = dev->data;
+	int rc = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		return lis2dw12_data_rate_set(ctx, LIS2DW12_XL_ODR_OFF);
+	case PM_DEVICE_ACTION_RESUME:
+		return lis2dw12_data_rate_set(ctx, LIS2DW12_ODR_TO_REG(lis2dw12->odr));
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		rc = lis2dw12_power_up(dev);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return rc;
+}
+
+static int lis2dw12_bus_check(const struct device *dev)
+{
+	const struct lis2dw12_device_config *cfg = dev->config;
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+	if (!device_is_ready(cfg->stmemsc_cfg.i2c.bus)) {
+		return -ENODEV;
+	}
+#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+	if (!device_is_ready(cfg->stmemsc_cfg.spi.bus)) {
+		return -ENODEV;
+	}
+#endif
+	return 0;
+}
+
+static int lis2dw12_init(const struct device *dev)
+{
+	int ret;
+
+	ret = lis2dw12_bus_check(dev);
+	if (ret < 0) {
+		LOG_ERR("Bus not ready for device %s", dev->name);
+		return ret;
+	}
+	return pm_device_driver_init(dev, lis2dw12_pm_control);
+}
+
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
 #warning "LIS2DW12 driver enabled without any devices"
 #endif
@@ -585,9 +638,10 @@ static int lis2dw12_init(const struct device *dev)
  */
 
 #define LIS2DW12_DEVICE_INIT(inst)					\
+	PM_DEVICE_DT_INST_DEFINE(inst, lis2dw12_pm_control);		\
 	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
 			    lis2dw12_init,				\
-			    NULL,					\
+			    PM_DEVICE_DT_INST_GET(inst),		\
 			    &lis2dw12_data_##inst,			\
 			    &lis2dw12_config_##inst,			\
 			    POST_KERNEL,				\

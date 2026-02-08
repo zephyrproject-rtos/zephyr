@@ -47,7 +47,7 @@
 	};
 
 	ram: memory@40000000 {
-		device_type = "mmio-sram";
+		device_type = "memory";
 		reg = <0x00 0x40000000 0x00 DT_SIZE_M(16)>;
 	};
 

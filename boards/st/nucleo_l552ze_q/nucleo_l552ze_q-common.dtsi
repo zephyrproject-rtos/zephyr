@@ -73,10 +73,6 @@
 	apb2-prescaler = <1>;
 };
 
-&rng {
-	status = "okay";
-};
-
 &dac1 {
 	status = "okay";
 	pinctrl-0 = <&dac1_out1_pa4>;

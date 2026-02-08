@@ -649,6 +649,7 @@ static int dma_stm32_suspend(const struct device *dev, uint32_t id)
 {
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
+	const struct dma_stm32_stream *stream = &config->streams[id];
 
 	if (id >= config->max_streams) {
 		return -EINVAL;
@@ -659,7 +660,8 @@ static int dma_stm32_suspend(const struct device *dev, uint32_t id)
 	/* It's not enough to wait for the SUSPF bit with LL_DMA_IsActiveFlag_SUSP */
 	do {
 		k_busy_wait(800); /* A delay is needed (800us is valid) */
-	} while (LL_DMA_IsActiveFlag_SUSP(dma, dma_stm32_id_to_stream(id)) != 1);
+	} while (LL_DMA_IsActiveFlag_SUSP(dma, dma_stm32_id_to_stream(id)) != 1 &&
+			stream->busy == true);
 
 	/* Do not Reset the channel to allow resuming later */
 	return 0;

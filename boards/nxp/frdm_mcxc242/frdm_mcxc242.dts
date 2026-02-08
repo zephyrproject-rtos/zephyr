@@ -7,7 +7,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_mcxc242.dtsi>
+#include <nxp/mcx/nxp_mcxc242.dtsi>
 #include "frdm_mcxc242-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 

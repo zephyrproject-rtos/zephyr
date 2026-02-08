@@ -30,6 +30,7 @@
 #include <hal/nrf_glitchdet.h>
 #endif
 
+#include <soc.h>
 #include <nrfx.h>
 #include <lib/nrfx_coredep.h>
 
@@ -137,6 +138,15 @@ static void wifi_mpc_configuration(void)
 	override.endaddr = 0x200E0000;
 	override.index = 0;
 	mpc_configure_override(NRF_MPC03, &override);
+
+	if (IS_ENABLED(CONFIG_SOC_NRF71_WIFI_DAP)) {
+		/* Allow access to Wi-Fi debug interface registers */
+		init_mpc_region_override(&override);
+		override.start_address = 0x48000000;
+		override.endaddr = 0x48100000;
+		override.index = index++;
+		mpc_configure_override(NRF_MPC00, &override);
+	}
 }
 
 static void grtc_configuration(void)

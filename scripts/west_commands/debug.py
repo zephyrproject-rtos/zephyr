@@ -92,3 +92,23 @@ class Rtt(WestCommand):
 
     def do_run(self, my_args, runner_args):
         do_run_common(self, my_args, runner_args)
+
+
+class Reset(WestCommand):
+
+    def __init__(self):
+        super().__init__(
+            'reset',
+            # Keep this in sync with the string in west-commands.yml.
+            'reset the board to reboot',
+            "",
+            accepts_unknown_args=True)
+        self.runner_key = 'debug-runner'  # in runners.yaml
+
+    def do_add_parser(self, parser_adder):
+        parser = add_parser_common(self, parser_adder)
+        parser.set_defaults(rebuild=False)
+        return parser
+
+    def do_run(self, my_args, runner_args):
+        do_run_common(self, my_args, runner_args)

@@ -32,21 +32,21 @@ Hardware
 ********
 
 STM32WB55RG is an ultra-low-power dual core Arm Cortex-M4 MCU 64 MHz,Cortex-M0 32MHz
-with 1 Mbyte of Flash memory, Bluetooth |reg| 5, 802.15.4, USB, LCD, AES-256 SoC and
+with 1 Mbyte of Flash memory, Bluetooth® 5, 802.15.4, USB, LCD, AES-256 SoC and
 provides the following hardware capabilities:
 
 - Ultra-low-power with FlexPowerControl (down to 600 nA Standby mode with RTC and 32KB RAM)
-- Core: ARM |reg| 32-bit Cortex |reg|-M4 CPU with FPU, frequency up to 64 MHz
+- Core: ARM® 32-bit Cortex®-M4 CPU with FPU, frequency up to 64 MHz
 - Radio:
 
   - 2.4GHz
   - RF transceiver supporting Bluetooth® 5 specification, IEEE 802.15.4-2011 PHY and MAC,
-    supporting Thread and ZigBee |reg| 3.0
-  - RX Sensitivity: -96 dBm (Bluetooth |reg| Low Energy at 1 Mbps), -100 dBm (802.15.4)
+    supporting Thread and ZigBee® 3.0
+  - RX Sensitivity: -96 dBm (Bluetooth® Low Energy at 1 Mbps), -100 dBm (802.15.4)
   - Programmable output power up to +6 dBm with 1 dB steps
   - Integrated balun to reduce BOM
   - Support for 2 Mbps
-  - Dedicated Arm |reg| 32-bit Cortex |reg|-M0+ CPU for real-time Radio layer
+  - Dedicated Arm® 32-bit Cortex®-M0+ CPU for real-time Radio layer
   - Accurate RSSI to enable power control
   - Suitable for systems requiring compliance with radio frequency regulations
     ETSI EN 300 328, EN 300 440, FCC CFR47 Part 15 and ARIB STD-T66
@@ -56,9 +56,9 @@ provides the following hardware capabilities:
 
   - 32 MHz crystal oscillator with integrated trimming capacitors (Radio and CPU clock)
   - 32 kHz crystal oscillator for RTC (LSE)
-  - 2x Internal low-power 32 kHz RC (|plusminus| 5% and |plusminus| 500ppm)
+  - 2x Internal low-power 32 kHz RC (±5% and ±500ppm)
   - Internal multispeed 100 kHz to 48 MHz oscillator, auto-trimmed by
-    LSE (better than  |plusminus| 0.25 % accuracy)
+    LSE (better than ±0.25 % accuracy)
   - 2 PLLs for system clock, USB, SAI and ADC
 
 - RTC with HW calendar, alarms and calibration
@@ -91,7 +91,7 @@ provides the following hardware capabilities:
 - System peripherals
 
   - Inter processor communication controller (IPCC) for communication with
-    Bluetooth |reg| Low Energy and 802.15.4
+    Bluetooth® Low Energy and 802.15.4
   - HW semaphores for resources sharing between CPUs
   - 2x DMA controllers (7x channels each) supporting ADC, SPI, I2C, USART,
     QSPI, SAI, AES, Timers
@@ -114,7 +114,7 @@ provides the following hardware capabilities:
 - Security and ID
 
  - 3x hardware encryption AES maximum 256-bit for the application,
-   the Bluetooth |reg| Low Energy and IEEE802.15.4
+   the Bluetooth® Low Energy and IEEE802.15.4
  - Customer key storage / key manager services
  - HW public key authority (PKA)
  - Cryptographic algorithms: RSA, Diffie-Helman, ECC over GF(p)
@@ -123,10 +123,10 @@ provides the following hardware capabilities:
  - CRC calculation unit
  - 96-bit unique ID
  - 64-bit unique ID. Possibility to derive 802.15.5 64-bit and
-   Bluetooth |reg| Low Energy 48-bit EUI
+   Bluetooth® Low Energy 48-bit EUI
 
 - Up to 72 fast I/Os, 70 of them 5 V-tolerant
-- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell |trade|
+- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell™
 
 
 More information about STM32WB55RG can be found here:
@@ -140,10 +140,10 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
-Bluetooth |reg| and compatibility with STM32WB Copro Wireless Binaries
-======================================================================
+Bluetooth® and compatibility with STM32WB Copro Wireless Binaries
+=================================================================
 
-To operate Bluetooth |reg| on Nucleo WB55RG, Cortex-M0 core should be flashed with
+To operate Bluetooth® on Nucleo WB55RG, Cortex-M0 core should be flashed with
 a valid STM32WB Coprocessor binaries (either 'Full stack' or 'HCI Layer').
 These binaries are delivered in STM32WB Cube packages, under
 ``Projects/STM32WB_Copro_Wireless_Binaries/STM32WB5x/``

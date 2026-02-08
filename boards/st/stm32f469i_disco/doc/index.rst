@@ -36,7 +36,7 @@ Hardware
 STM32F469I-DISCO Discovery kit provides the following hardware components:
 
 - STM32F469NIH6 in BGA216 package
-- ARM |reg| 32-bit Cortex |reg| -M4 CPU with FPU
+- ARM® 32-bit Cortex®-M4 CPU with FPU
 - 180 MHz max CPU frequency
 - VDD from 1.8 V to 3.6 V
 - 2 MB Flash
@@ -44,7 +44,7 @@ STM32F469I-DISCO Discovery kit provides the following hardware components:
 - GPIO with external interrupt capability
 - LCD parallel interface, 8080/6800 modes
 - LCD TFT controller supporting up to XGA resolution
-- MIPI |reg|  DSI host controller supporting up to 720p 30Hz resolution
+- MIPI®  DSI host controller supporting up to 720p 30Hz resolution
 - 3x12-bit ADC with 24 channels
 - 2x12-bit D/A converters
 - RTC

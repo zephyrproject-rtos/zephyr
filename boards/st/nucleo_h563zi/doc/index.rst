@@ -4,15 +4,15 @@ Overview
 ********
 
 The Nucleo H563ZI board is designed as an affordable development platform for
-STMicroelectronics ARM |reg| Cortex |reg|-M33 core-based STM32H563ZIT6
-microcontroller with TrustZone |reg|.
+STMicroelectronics ARM® Cortex®-M33 core-based STM32H563ZIT6
+microcontroller with TrustZone®.
 Here are some highlights of the Nucleo H563ZI board:
 
 - STM32H563ZI microcontroller featuring 2 Mbytes of Flash memory and 640Kbyte of
   SRAM in LQFP144 package
 - Board connectors:
 
-  - USB Type-C |reg| Sink device FS
+  - USB Type-C® Sink device FS
   - Ethernet RJ45 connector compliant with IEEE-802.3-2002 (depending on STM32 support)
   - ST Zio expansion connector including Arduino Uno V3 connectivity (CN7, CN8, CN9, CN10)
   - ST morpho extension connector (CN11, CN12)
@@ -42,19 +42,19 @@ Hardware
 ********
 
 The STM32H563xx devices are high-performance microcontrollers from the STM32H5
-Series based on the high-performance Arm |reg| Cortex |reg|-M33 32-bit RISC core.
+Series based on the high-performance Arm® Cortex®-M33 32-bit RISC core.
 They operate at a frequency of up to 250 MHz.
 
-- Core: ARM |reg| 32-bit Cortex |reg| -M33 CPU with TrustZone |reg| and FPU.
+- Core: ARM® 32-bit Cortex®-M33 CPU with TrustZone® and FPU.
 - Performance benchmark:
 
   - 375 DMPIS/MHz (Dhrystone 2.1)
 
 - Security
 
-  - Arm |reg| TrustZone |reg| with ARMv8-M mainline security extension
+  - Arm® TrustZone® with ARMv8-M mainline security extension
   - Up to 8 configurable SAU regions
-  - TrustZone |reg| aware and securable peripherals
+  - TrustZone® aware and securable peripherals
   - Flexible lifecycle scheme with secure debug authentication
   - SFI (secure firmware installation)
   - Secure firmware upgrade support with TF-M
@@ -68,7 +68,7 @@ They operate at a frequency of up to 250 MHz.
   - 25 MHz crystal oscillator (HSE)
   - 32 kHz crystal oscillator for RTC (LSE)
   - Internal 64 MHz (HSI) trimmable by software
-  - Internal low-power 32 kHz RC (LSI)( |plusminus| 5%)
+  - Internal low-power 32 kHz RC (LSI)(±5%)
   - Internal 4 MHz oscillator (CSI), trimmable by software
   - Internal 48 MHz (HSI48) with recovery system
   - 3 PLLs for system clock, USB, audio, ADC
@@ -126,7 +126,7 @@ They operate at a frequency of up to 250 MHz.
 - CORDIC for trigonometric functions acceleration
 - FMAC (filter mathematical accelerator)
 - CRC calculation unit
-- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell |trade|
+- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell™
 
 More information about STM32H563ZI can be found here:
 

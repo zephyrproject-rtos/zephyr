@@ -99,7 +99,7 @@
 				       40 00 00 00 00 00 00 /* LUT2: WB: VS0..6 */
 				       80 00 00 00 00 00 00 /* LUT3: WW: VS0..6 */
 				       00 00 00 00 00 00 00 /* LUT4: VCOM: VS0..6 */
-				       0A 00 00 00 04 /* TP0A TP0B TP0C TP0D RP0 */
+				       0a 00 00 00 04 /* TP0A TP0B TP0C TP0D RP0 */
 				       00 00 00 00 00 /* TP1A TP1B TP1C TP1D RP1 */
 				       00 00 00 00 00 /* TP2A TP2B TP2C TP2D RP2 */
 				       00 00 00 00 00 /* TP3A TP3B TP3C TP3D RP3 */

@@ -36,7 +36,7 @@
 
 		code_partition: partition@27000 {
 			label = "Application";
-			reg = <0x00027000 0x000C5000>;
+			reg = <0x00027000 0x000c5000>;
 		};
 
 		storage_partition: partition@ec000 {

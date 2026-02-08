@@ -53,8 +53,8 @@
 				/* Use dummy values for PCG and NGC,
 				 * As this won't drive a real panel
 				 */
-				pgc = [F0 06 0B 07 06 05 2E 33 47 3A 17 16 2E 31];
-				ngc = [F0 09 0D 09 08 23 2E 33 46 38 13 13 2C 32];
+				pgc = [f0 06 0b 07 06 05 2e 33 47 3a 17 16 2e 31];
+				ngc = [f0 09 0d 09 08 23 2e 33 46 38 13 13 2c 32];
 			};
 
 			test_mipi_dbi_st7735r: st7735t@2 {
@@ -65,8 +65,8 @@
 				/* Arbitrary values */
 				x-offset = <0>;
 				y-offset = <0>;
-				gamctrp1 = [10 0E 02 03 0E 07 02 07 0A 12 27 37 00 0D 0E 10];
-				gamctrn1 = [10 0E 03 03 0F 06 02 08 0A 13 26 36 00 0D 0E 10];
+				gamctrp1 = [10 0e 02 03 0e 07 02 07 0a 12 27 37 00 0d 0e 10];
+				gamctrn1 = [10 0e 03 03 0f 06 02 08 0a 13 26 36 00 0d 0e 10];
 				width = <160>;
 				height = <128>;
 			};
@@ -94,7 +94,7 @@
 				pwctrl1-param = [a4 a1];
 				pvgam-param = [d0 00 02 07 0a 28 32 44 42 06 0e 12 14 17];
 				nvgam-param = [d0 00 02 07 0a 28 31 54 47 0e 1c 17 1b 1e];
-				ram-param = [00 E0];
+				ram-param = [00 e0];
 				rgb-param = [40 02 14];
 				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 			};
@@ -328,7 +328,7 @@
 				vsl = [19 19 19 19];
 				vshn = [41 41 41 41];
 				vsln = [19 19 19 19];
-				osc-settings = <0xA6>;
+				osc-settings = <0xa6>;
 				framerate = <0x5>;
 				multiplex-ratio = <0x64>;
 				source-voltage = <0x0>;
@@ -488,8 +488,8 @@
 				data-lanes = <2>;
 				pixel-format = <0>;
 				rotation = <0>;
-				pvgamctrl = [00 10 0E 02 03 0E 07 02 07 0A 12 27 37 00 0D 0E 10];
-				nvgamctrl = [00 10 0E 03 03 0F 06 02 08 0A 13 26 36 00 0D 0E 10];
+				pvgamctrl = [00 10 0e 02 03 0e 07 02 07 0a 12 27 37 00 0d 0e 10];
+				nvgamctrl = [00 10 0e 03 03 0f 06 02 08 0a 13 26 36 00 0d 0e 10];
 
 				display-timings {
 					compatible = "zephyr,panel-timing";

@@ -81,6 +81,29 @@
 			   <7 0 &ioport3 4 0>;	/* IO8 */
 	};
 
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &ioport0 0 0>,	/* AN  */
+			   <1 0 &ioport2 7 0>,	/* RST */
+			   <2 0 &ioport1 3 0>,	/* CS   */
+			   <3 0 &ioport1 2 0>,	/* SCK  */
+			   <4 0 &ioport1 0 0>,	/* MISO */
+			   <5 0 &ioport1 1 0>,	/* MOSI */
+			   /* +3.3V */
+			   /* GND */
+			   <6 0 &ioport4 0 0>,	/* PWM  */
+			   <7 0 &ioport1 10 0>,	/* INT  */
+			   <8 0 &ioport4 10 0>,	/* RX   */
+			   <9 0 &ioport4 11 0>,	/* TX   */
+			   <10 0 &ioport4 8 0>,	/* SCL  */
+			   <11 0 &ioport4 7 0>;	/* SDA  */
+		/* +5V */
+		/* GND */
+	};
+
 	buttons {
 		compatible = "gpio-keys";
 
@@ -152,6 +175,17 @@
 	};
 };
 
+&iic0 {
+	pinctrl-0 = <&iic0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	interrupts = <28 1>, <29 1>, <30 1>, <31 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	clock-frequency = <DT_FREQ_K(400)>;
+};
+
 &spi0 {
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
@@ -218,3 +252,9 @@ pmod_spi: &pmod1_spi {};
 pmod_serial: &pmod2_serial {};
 
 pmod_header: &pmod1_header {};
+
+mikrobus_serial: &uart0 {};
+
+mikrobus_i2c: &iic0 {};
+
+mikrobus_spi: &spi0 {};

@@ -8,6 +8,7 @@
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/clock/renesas_rza2m_clock.h>
 #include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	compatible = "renesas,r7s9210";
@@ -327,7 +328,7 @@
 			interrupt-names = "scanend";
 			#io-channel-cells = <1>;
 			vref-mv = <3300>;
-			channel-available-mask = <0xFF>;
+			channel-available-mask = <0xff>;
 			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_ADC, RZA2M_CLK_P1C)>;
 			status = "disabled";
 		};
@@ -623,6 +624,94 @@
 				     <GIC_SPI 324 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "eri", "rxi", "txi", "tei";
 			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_SCIFA4, RZA2M_CLK_P1C)>;
+			status = "disabled";
+		};
+
+		i2c0: i2c@e803a000 {
+			compatible = "renesas,rza2m-riic";
+			channel = <0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xe803a000 0x50>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 264 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 265 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 266 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 267 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 268 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 269 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 270 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 271 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "tei", "rxi", "txi", "spi",
+					  "sti", "naki", "ali", "tmoi";
+			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_I2C0, RZA2M_CLK_P1C)>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@e803a400 {
+			compatible = "renesas,rza2m-riic";
+			channel = <1>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xe803a400 0x50>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 272 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 273 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 274 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 275 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 276 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 277 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 278 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 279 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "tei", "rxi", "txi", "spi",
+					  "sti", "naki", "ali", "tmoi";
+			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_I2C1, RZA2M_CLK_P1C)>;
+			status = "disabled";
+		};
+
+		i2c2: i2c@e803a800 {
+			compatible = "renesas,rza2m-riic";
+			channel = <2>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xe803a800 0x50>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 280 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 281 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 282 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 283 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 284 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 285 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 286 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 287 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "tei", "rxi", "txi", "spi",
+					  "sti", "naki", "ali", "tmoi";
+			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_I2C2, RZA2M_CLK_P1C)>;
+			status = "disabled";
+		};
+
+		i2c3: i2c@e803ac00 {
+			compatible = "renesas,rza2m-riic";
+			channel = <3>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xe803ac00 0x50>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 288 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 289 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 290 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 291 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 292 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 293 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 294 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 295 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "tei", "rxi", "txi", "spi",
+					  "sti", "naki", "ali", "tmoi";
+			clocks = <&cpg RZA2M_CLOCK(RZA2M_MODULE_I2C3, RZA2M_CLK_P1C)>;
 			status = "disabled";
 		};
 	};

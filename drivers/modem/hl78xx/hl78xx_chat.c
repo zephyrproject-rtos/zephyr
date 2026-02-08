@@ -25,6 +25,13 @@
 #include <zephyr/modem/chat.h>
 #include <zephyr/logging/log.h>
 
+#ifdef CONFIG_HL78XX_GNSS
+#include "hl78xx_gnss_parsers.h"
+
+/* GNSS URC handler for +GNSSEV events */
+void hl78xx_gnss_on_gnssev(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
+#endif /* CONFIG_HL78XX_GNSS */
+
 LOG_MODULE_DECLARE(hl78xx_dev);
 
 /* Forward declarations of handlers implemented in hl78xx.c (extern linkage) */
@@ -72,10 +79,89 @@ void hl78xx_on_serial_number(struct modem_chat *chat, char **argv, uint16_t argc
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 void hl78xx_on_wdsi(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
+#ifdef CONFIG_HL78XX_GNSS
+#ifdef CONFIG_HL78XX_GNSS_SOURCE_NMEA
+void hl78xx_gnss_nmea0183_match_gga(struct modem_chat *chat, char **argv, uint16_t argc,
+				    void *user_data);
+void hl78xx_gnss_nmea0183_match_rmc(struct modem_chat *chat, char **argv, uint16_t argc,
+				    void *user_data);
+void hl78xx_gnss_nmea0183_match_gsv(struct modem_chat *chat, char **argv, uint16_t argc,
+				    void *user_data);
+#endif /* CONFIG_HL78XX_GNSS_SOURCE_NMEA */
+#ifdef CONFIG_HL78XX_GNSS_AUX_DATA_PARSER
+void hl78xx_gnss_nmea0183_match_gsa(struct modem_chat *chat, char **argv, uint16_t argc,
+				    void *user_data);
+void hl78xx_gnss_nmea0183_match_gst(struct modem_chat *chat, char **argv, uint16_t argc,
+				    void *user_data);
+void hl78xx_gnss_nmea_match_epu(struct modem_chat *chat, char **argv, uint16_t argc,
+				void *user_data);
+#endif /* CONFIG_HL78XX_GNSS_AUX_DATA_PARSER */
+void hl78xx_gnss_on_gnssloc(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
+void hl78xx_gnss_on_gnssloc_latitude(struct modem_chat *chat, char **argv, uint16_t argc,
+				     void *user_data);
+void hl78xx_gnss_on_gnssloc_longitude(struct modem_chat *chat, char **argv, uint16_t argc,
+				      void *user_data);
+void hl78xx_gnss_on_gnssloc_gpstime(struct modem_chat *chat, char **argv, uint16_t argc,
+				    void *user_data);
+void hl78xx_gnss_on_gnssloc_fixtype(struct modem_chat *chat, char **argv, uint16_t argc,
+				    void *user_data);
+void hl78xx_gnss_on_gnssloc_hepe(struct modem_chat *chat, char **argv, uint16_t argc,
+				 void *user_data);
+void hl78xx_gnss_on_gnssloc_altitude(struct modem_chat *chat, char **argv, uint16_t argc,
+				     void *user_data);
+void hl78xx_gnss_on_gnssloc_altunc(struct modem_chat *chat, char **argv, uint16_t argc,
+				   void *user_data);
+void hl78xx_gnss_on_gnssloc_direction(struct modem_chat *chat, char **argv, uint16_t argc,
+				      void *user_data);
+void hl78xx_gnss_on_gnssloc_horspeed(struct modem_chat *chat, char **argv, uint16_t argc,
+				     void *user_data);
+void hl78xx_gnss_on_gnssloc_verspeed(struct modem_chat *chat, char **argv, uint16_t argc,
+				     void *user_data);
+void hl78xx_gnss_on_gnssloc_OK(struct modem_chat *chat, char **argv, uint16_t argc,
+			       void *user_data);
+
+void hl78xx_on_gnssnmea(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
+void hl78xx_on_gnssconf_enabledsys(struct modem_chat *chat, char **argv, uint16_t argc,
+				   void *user_data);
+void hl78xx_on_gnssconf_enabledfilter(struct modem_chat *chat, char **argv, uint16_t argc,
+				      void *user_data);
+#ifdef CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE
+void hl78xx_on_gnssad(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
+#endif /* CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE */
+
+#endif /* CONFIG_HL78XX_GNSS */
+
 MODEM_CHAT_MATCH_DEFINE(hl78xx_ok_match, "OK", "", NULL);
 MODEM_CHAT_MATCHES_DEFINE(hl78xx_allow_match, MODEM_CHAT_MATCH("OK", "", NULL),
 			  MODEM_CHAT_MATCH(CME_ERROR_STRING, "", NULL),
 			  MODEM_CHAT_MATCH(ERROR_STRING, "", NULL));
+
+#ifdef CONFIG_HL78XX_GNSS
+/* Multi-line GNSSLOC response matches - use partial=true for intermediate lines
+ * so the script doesn't advance until the final OK is received.
+ * MODEM_CHAT_MATCH_INITIALIZER(match, separators, callback, wildcards, partial)
+ */
+MODEM_CHAT_MATCHES_DEFINE(
+	hl78xx_gnss_gnssloc_matches,
+	MODEM_CHAT_MATCH_INITIALIZER("+GNSSLOC:", "", hl78xx_gnss_on_gnssloc, false, true),
+	MODEM_CHAT_MATCH_INITIALIZER("Latitude: ", "", hl78xx_gnss_on_gnssloc_latitude, false,
+				     true),
+	MODEM_CHAT_MATCH_INITIALIZER("Longitude: ", "", hl78xx_gnss_on_gnssloc_longitude, false,
+				     true),
+	MODEM_CHAT_MATCH_INITIALIZER("GpsTime: ", "", hl78xx_gnss_on_gnssloc_gpstime, false, true),
+	MODEM_CHAT_MATCH_INITIALIZER("FixType: ", "", hl78xx_gnss_on_gnssloc_fixtype, false, true),
+	MODEM_CHAT_MATCH_INITIALIZER("HEPE: ", "", hl78xx_gnss_on_gnssloc_hepe, false, true),
+	MODEM_CHAT_MATCH_INITIALIZER("Altitude: ", "", hl78xx_gnss_on_gnssloc_altitude, false,
+				     true),
+	MODEM_CHAT_MATCH_INITIALIZER("AltUnc: ", "", hl78xx_gnss_on_gnssloc_altunc, false, true),
+	MODEM_CHAT_MATCH_INITIALIZER("Direction: ", "", hl78xx_gnss_on_gnssloc_direction, false,
+				     true),
+	MODEM_CHAT_MATCH_INITIALIZER("HorSpeed: ", "", hl78xx_gnss_on_gnssloc_horspeed, false,
+				     true),
+	MODEM_CHAT_MATCH_INITIALIZER("VerSpeed: ", "", hl78xx_gnss_on_gnssloc_verspeed, false,
+				     true),
+	MODEM_CHAT_MATCH("OK", "", hl78xx_gnss_on_gnssloc_OK)); /* Final OK advances the script */
+#endif                                                          /* CONFIG_HL78XX_GNSS */
 /* clang-format off */
 MODEM_CHAT_MATCHES_DEFINE(hl78xx_unsol_matches,
 			  MODEM_CHAT_MATCH("+KSUP: ", "", hl78xx_on_ksup),
@@ -96,6 +182,24 @@ MODEM_CHAT_MATCHES_DEFINE(hl78xx_unsol_matches,
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 			  MODEM_CHAT_MATCH("+WDSI: ", ",", hl78xx_on_wdsi),
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
+#ifdef CONFIG_HL78XX_GNSS
+#ifdef CONFIG_HL78XX_GNSS_SOURCE_NMEA
+			  /* GNSS NMEA sentence URCs - wildcards match any talker ID */
+		MODEM_CHAT_MATCH_WILDCARD("$??GGA,", ",*", hl78xx_gnss_nmea0183_match_gga),
+		MODEM_CHAT_MATCH_WILDCARD("$??RMC,", ",*", hl78xx_gnss_nmea0183_match_rmc),
+#ifdef CONFIG_GNSS_SATELLITES
+		MODEM_CHAT_MATCH_WILDCARD("$??GSV,", ",*", hl78xx_gnss_nmea0183_match_gsv),
+#endif /* CONFIG_GNSS_SATELLITES */
+#endif /* CONFIG_HL78XX_GNSS_SOURCE_NMEA */
+#ifdef CONFIG_HL78XX_GNSS_AUX_DATA_PARSER
+		/* Supplementary NMEA sentences for enhanced GNSS info */
+		MODEM_CHAT_MATCH_WILDCARD("$??GSA,", ",*", hl78xx_gnss_nmea0183_match_gsa),
+		MODEM_CHAT_MATCH_WILDCARD("$??GST,", ",*", hl78xx_gnss_nmea0183_match_gst),
+		MODEM_CHAT_MATCH_WILDCARD("$??EPU,", ",*", hl78xx_gnss_nmea_match_epu),
+#endif /* CONFIG_HL78XX_GNSS_AUX_DATA_PARSER */
+			  /* GNSS event notifications */
+			  MODEM_CHAT_MATCH("+GNSSEV: ", ",", hl78xx_gnss_on_gnssev),
+#endif /* CONFIG_HL78XX_GNSS */
 			  MODEM_CHAT_MATCH("+KBNDCFG: ", ",", hl78xx_on_kbndcfg),
 			  MODEM_CHAT_MATCH("+CSQ: ", ",", hl78xx_on_csq),
 			  MODEM_CHAT_MATCH("+CESQ: ", ",", hl78xx_on_cesq),
@@ -114,13 +218,23 @@ MODEM_CHAT_MATCH_DEFINE(hl78xx_iccid_match, "+CCID: ", "", hl78xx_on_iccid);
 MODEM_CHAT_MATCH_DEFINE(hl78xx_ksrep_match, "+KSREP: ", ",", hl78xx_on_ksrep);
 MODEM_CHAT_MATCH_DEFINE(hl78xx_ksrat_match, "+KSRAT: ", "", hl78xx_on_ksrat);
 MODEM_CHAT_MATCH_DEFINE(hl78xx_kselacq_match, "+KSELACQ: ", ",", hl78xx_on_kselacq);
-
+#ifdef CONFIG_HL78XX_GNSS
+MODEM_CHAT_MATCH_DEFINE(hl78xx_gnssnmea_match, "+GNSSNMEA: ", ",", hl78xx_on_gnssnmea);
+MODEM_CHAT_MATCH_DEFINE(hl78xx_gnssconf_enabledsys_match, "+GNSSCONF: 10,", "",
+			hl78xx_on_gnssconf_enabledsys);
+MODEM_CHAT_MATCH_DEFINE(hl78xx_gnssconf_enabledfilter_match, "+GNSSCONF: 4,", "",
+			hl78xx_on_gnssconf_enabledfilter);
+#ifdef CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE
+MODEM_CHAT_MATCH_DEFINE(hl78xx_gnssad_match, "+GNSSAD: ", ",", hl78xx_on_gnssad);
+#endif /* CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE */
+#endif /* CONFIG_HL78XX_GNSS */
 /* Chat script matches / definitions */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_periodic_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", hl78xx_ok_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_periodic_chat_script, hl78xx_periodic_chat_script_cmds,
-			 hl78xx_abort_matches, hl78xx_chat_callback_handler, 4);
+			 hl78xx_abort_matches, hl78xx_chat_callback_handler,
+			 HL78XX_SCRIPT_TIMEOUT_PERIODIC);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_init_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KHWIOCFG=3,1,6", hl78xx_ok_match),
@@ -174,7 +288,8 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_init_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGACT?", hl78xx_ok_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_init_chat_script, hl78xx_init_chat_script_cmds,
-			 hl78xx_abort_matches, hl78xx_chat_callback_handler, 100);
+			 hl78xx_abort_matches, hl78xx_chat_callback_handler,
+			 HL78XX_SCRIPT_TIMEOUT_INIT);
 
 /* Post-restart script (moved from hl78xx.c) */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_post_restart_chat_script_cmds,
@@ -186,21 +301,23 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_post_restart_chat_script_cmds,
 );
 
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_post_restart_chat_script, hl78xx_post_restart_chat_script_cmds,
-			 hl78xx_abort_matches, hl78xx_chat_callback_handler, 12);
+			 hl78xx_abort_matches, hl78xx_chat_callback_handler,
+			 HL78XX_SCRIPT_TIMEOUT_POST_RESTART);
 
 /* init_fail_script moved from hl78xx.c */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(init_fail_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSREP?", hl78xx_ksrep_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(init_fail_script, init_fail_script_cmds, hl78xx_abort_matches,
-			 hl78xx_chat_callback_handler, 10);
+			 hl78xx_chat_callback_handler, HL78XX_CMD_TIMEOUT_SHORT);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_enable_ksup_urc_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSREP=1", hl78xx_ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSREP?", hl78xx_ksrep_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_enable_ksup_urc_script, hl78xx_enable_ksup_urc_cmds,
-			 hl78xx_abort_matches, hl78xx_chat_callback_handler, 4);
+			 hl78xx_abort_matches, hl78xx_chat_callback_handler,
+			 HL78XX_CMD_TIMEOUT_SHORT);
 
 /* power-off script moved from hl78xx.c */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_pwroff_cmds,
@@ -208,7 +325,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_pwroff_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CPWROFF", hl78xx_ok_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_pwroff_script, hl78xx_pwroff_cmds, hl78xx_abort_matches,
-			 hl78xx_chat_callback_handler, 4);
+			 hl78xx_chat_callback_handler, HL78XX_SCRIPT_TIMEOUT_POWEROFF);
 
 /* GSM registration status disable / LTE registration status enable script */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_gsm_dis_lte_en_reg_status_script_cmds,
@@ -217,8 +334,46 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_gsm_dis_lte_en_reg_status_script_cmds,
 
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_gsm_dis_lte_en_reg_status_script,
 			 hl78xx_gsm_dis_lte_en_reg_status_script_cmds, hl78xx_abort_matches, NULL,
-			 4);
+			 HL78XX_SCRIPT_TIMEOUT_NETWORK);
 
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_query_cfun_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN?", hl78xx_ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(hl78xx_query_cfun_script, hl78xx_query_cfun_cmds, hl78xx_abort_matches,
+			 hl78xx_chat_callback_handler, HL78XX_CMD_TIMEOUT_LONG);
+
+#ifdef CONFIG_HL78XX_GNSS
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_gnss_init_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP(SET_AIRPLANE_MODE_CMD_LEGACY,
+							 hl78xx_ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP(GET_FULLFUNCTIONAL_MODE_CMD,
+							 hl78xx_ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+GNSSCONF=10,1", hl78xx_ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(hl78xx_gnss_init_chat_script, hl78xx_gnss_init_chat_script_cmds,
+			 hl78xx_abort_matches, hl78xx_chat_callback_handler,
+			 HL78XX_CMD_TIMEOUT_LONG);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_gnss_stop_search_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+GNSSSTOP", hl78xx_ok_match));
+MODEM_CHAT_SCRIPT_DEFINE(hl78xx_gnss_stop_search_chat_script,
+			 hl78xx_gnss_stop_search_chat_script_cmds, hl78xx_abort_matches,
+			 hl78xx_chat_callback_handler, HL78XX_SCRIPT_TIMEOUT_GNSS);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_gnss_terminate_nmea_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("", hl78xx_ok_match));
+MODEM_CHAT_SCRIPT_DEFINE(hl78xx_gnss_terminate_nmea_chat_script,
+			 hl78xx_gnss_terminate_nmea_chat_script_cmds, hl78xx_abort_matches,
+			 hl78xx_chat_callback_handler, HL78XX_SCRIPT_TIMEOUT_GNSS);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_gnss_gnssloc_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+GNSSLOC?",
+							      hl78xx_gnss_gnssloc_matches));
+MODEM_CHAT_SCRIPT_DEFINE(hl78xx_gnss_gnssloc_script, hl78xx_gnss_gnssloc_script_cmds,
+			 hl78xx_abort_matches, hl78xx_chat_callback_handler,
+			 HL78XX_SCRIPT_TIMEOUT_GNSS);
+
+#endif
 #if defined(CONFIG_MODEM_HL78XX_12) &&                                                             \
 	(defined(CONFIG_MODEM_HL78XX_RAT_GSM) || defined(CONFIG_MODEM_HL78XX_AUTORAT))
 /* LTE registration status disable / GSM registration status enable script */
@@ -227,24 +382,27 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_lte_dis_gsm_en_reg_status_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG=3", hl78xx_ok_match));
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_lte_dis_gsm_en_reg_status_script,
 			 hl78xx_lte_dis_gsm_en_reg_status_script_cmds, hl78xx_abort_matches, NULL,
-			 4);
+			 HL78XX_SCRIPT_TIMEOUT_PERIODIC);
 #endif /* CONFIG_MODEM_HL78XX_12 */
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 /* AirVantage script connect accept  */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_av_connect_accept_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSR=1", hl78xx_ok_match));
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_av_connect_accept_script, hl78xx_av_connect_accept_cmds,
-			 hl78xx_abort_matches, hl78xx_chat_callback_handler, 10);
+			 hl78xx_abort_matches, hl78xx_chat_callback_handler,
+			 HL78XX_SCRIPT_TIMEOUT_NETWORK);
 /* FOTA script download accept */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_fota_download_accept_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSR=3", hl78xx_ok_match));
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_fota_download_accept_script, hl78xx_fota_download_accept_cmds,
-			 hl78xx_abort_matches, hl78xx_chat_callback_handler, 10);
+			 hl78xx_abort_matches, hl78xx_chat_callback_handler,
+			 HL78XX_SCRIPT_TIMEOUT_NETWORK);
 /* FOTA script install */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_fota_install_accept_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSR=4", hl78xx_ok_match));
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_fota_install_accept_script, hl78xx_fota_install_accept_cmds,
-			 hl78xx_abort_matches, hl78xx_chat_callback_handler, 10);
+			 hl78xx_abort_matches, hl78xx_chat_callback_handler,
+			 HL78XX_SCRIPT_TIMEOUT_NETWORK);
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 /* Socket-specific matches and wrappers exposed for the sockets translation
  * unit. These were extracted from hl78xx_sockets.c to centralize chat
@@ -376,6 +534,31 @@ size_t hl78xx_get_allow_match_size(void)
 	return (size_t)(ARRAY_SIZE(hl78xx_allow_match));
 }
 
+#ifdef CONFIG_HL78XX_GNSS
+
+const struct modem_chat_match *hl78xx_get_gnssnmea_match(void)
+{
+	return &hl78xx_gnssnmea_match;
+}
+
+const struct modem_chat_match *hl78xx_get_gnssconf_enabledsys_match(void)
+{
+	return &hl78xx_gnssconf_enabledsys_match;
+}
+
+const struct modem_chat_match *hl78xx_get_gnssconf_enabledfilter_match(void)
+{
+	return &hl78xx_gnssconf_enabledfilter_match;
+}
+
+#ifdef CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE
+const struct modem_chat_match *hl78xx_get_gnssad_match(void)
+{
+	return &hl78xx_gnssad_match;
+}
+#endif /* CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE */
+
+#endif /* CONFIG_HL78XX_GNSS */
 /* Run the predefined init script for the given device */
 int hl78xx_run_init_script(struct hl78xx_data *data)
 {
@@ -499,3 +682,46 @@ int hl78xx_run_fota_script_install_accept_async(struct hl78xx_data *data)
 	return modem_chat_run_script_async(&data->chat, &hl78xx_fota_install_accept_script);
 }
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
+
+int hl78xx_run_cfun_query_script_async(struct hl78xx_data *data)
+{
+	if (!data) {
+		return -EINVAL;
+	}
+	return modem_chat_run_script_async(&data->chat, &hl78xx_query_cfun_script);
+}
+
+#ifdef CONFIG_HL78XX_GNSS
+
+int hl78xx_run_gnss_init_chat_script_async(struct hl78xx_data *data)
+{
+	if (!data) {
+		return -EINVAL;
+	}
+	return modem_chat_run_script_async(&data->chat, &hl78xx_gnss_init_chat_script);
+}
+
+int hl78xx_run_gnss_stop_search_chat_script(struct hl78xx_data *data)
+{
+	if (!data) {
+		return -EINVAL;
+	}
+	return modem_chat_run_script(&data->chat, &hl78xx_gnss_stop_search_chat_script);
+}
+
+int hl78xx_run_gnss_terminate_nmea_chat_script(struct hl78xx_data *data)
+{
+	if (!data) {
+		return -EINVAL;
+	}
+	return modem_chat_run_script(&data->chat, &hl78xx_gnss_terminate_nmea_chat_script);
+}
+
+int hl78xx_run_gnss_gnssloc_script(struct hl78xx_data *data)
+{
+	if (!data) {
+		return -EINVAL;
+	}
+	return modem_chat_run_script(&data->chat, &hl78xx_gnss_gnssloc_script);
+}
+#endif /* CONFIG_HL78XX_GNSS */

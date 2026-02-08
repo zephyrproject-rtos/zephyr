@@ -25,7 +25,7 @@ programmable interrupt engine, allowing firmware optimization.
 Requirements
 ************
 
-This shield can only be used with a board that provides a mikroBUS |trade| socket and defines a
+This shield can only be used with a board that provides a mikroBUS™ socket and defines a
 ``mikrobus_i2c`` node label for the mikroBUS™ I2C interface. See :ref:`shields` for more details.
 
 Programming

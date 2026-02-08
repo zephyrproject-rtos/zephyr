@@ -30,7 +30,7 @@ Hardware
      - Low 1.1V VCORE Supply Voltage
      - 3.6V GPIO Operating Range
      - Internal LDO Provides Operation from Single Supply
-     - Wide Operating Temperature: -40°C to +105°C
+     - Wide Operating Temperature: -40 °C to +105 °C
 
   - Power Management Maximizes Uptime for Battery Applications
 

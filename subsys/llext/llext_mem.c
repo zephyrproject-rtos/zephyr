@@ -17,33 +17,10 @@ LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 #include <string.h>
 
 #include "llext_priv.h"
-
-#ifdef CONFIG_MMU_PAGE_SIZE
-#define LLEXT_PAGE_SIZE CONFIG_MMU_PAGE_SIZE
-#elif CONFIG_ARC_MPU_VER == 2
-#define LLEXT_PAGE_SIZE 2048
-#else
-/* Arm and non-v2 ARC MPUs want a 32 byte minimum MPU region */
-#define LLEXT_PAGE_SIZE 32
-#endif
+#include "llext_mem.h"
 
 #ifdef CONFIG_LLEXT_HEAP_DYNAMIC
-#ifdef CONFIG_HARVARD
-struct k_heap llext_instr_heap;
-struct k_heap llext_data_heap;
-#else
-struct k_heap llext_heap;
-#endif
 bool llext_heap_inited;
-#else
-#ifdef CONFIG_HARVARD
-Z_HEAP_DEFINE_IN_SECT(llext_instr_heap, (CONFIG_LLEXT_INSTR_HEAP_SIZE * KB(1)),
-		      __attribute__((section(".rodata.llext_instr_heap"))));
-Z_HEAP_DEFINE_IN_SECT(llext_data_heap, (CONFIG_LLEXT_DATA_HEAP_SIZE * KB(1)),
-		      __attribute__((section(".data.llext_data_heap"))));
-#else
-K_HEAP_DEFINE(llext_heap, CONFIG_LLEXT_HEAP_SIZE * KB(1));
-#endif
 #endif
 
 /*
@@ -179,11 +156,16 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 		return -EFAULT;
 	}
 
+#ifdef CONFIG_LLEXT_HEAP_MEMBLK
+	/* If allocating to heap, allocation must be multiple of block size */
+	region_alloc = ROUND_UP(region_alloc, CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE);
+#endif
+
 	/* Allocate a suitably aligned area for the region. */
 	if (region->sh_flags & SHF_EXECINSTR) {
-		ext->mem[mem_idx] = llext_aligned_alloc_instr(region_align, region_alloc);
+		ext->mem[mem_idx] = llext_aligned_alloc_instr(ext, region_align, region_alloc);
 	} else {
-		ext->mem[mem_idx] = llext_aligned_alloc_data(region_align, region_alloc);
+		ext->mem[mem_idx] = llext_aligned_alloc_data(ext, region_align, region_alloc);
 	}
 
 	if (!ext->mem[mem_idx]) {
@@ -231,7 +213,11 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 	return 0;
 
 err:
-	llext_free(ext->mem[mem_idx]);
+	if (region->sh_flags & SHF_EXECINSTR) {
+		llext_free_instr(ext, ext->mem[mem_idx]);
+	} else {
+		llext_free_data(ext, ext->mem[mem_idx]);
+	}
 	ext->mem[mem_idx] = NULL;
 	return ret;
 }
@@ -239,6 +225,8 @@ err:
 int llext_copy_strings(struct llext_loader *ldr, struct llext *ext,
 		       const struct llext_load_param *ldr_parm)
 {
+	llext_heap_reset(ext);
+
 	int ret = llext_copy_region(ldr, ext, LLEXT_MEM_SHSTRTAB, ldr_parm);
 
 	if (!ret) {
@@ -334,14 +322,16 @@ void llext_free_regions(struct llext *ext)
 			LOG_DBG("freeing memory region %d", i);
 
 			if (i == LLEXT_MEM_TEXT) {
-				llext_free_instr(ext->mem[i]);
+				llext_free_instr(ext, ext->mem[i]);
 			} else {
-				llext_free(ext->mem[i]);
+				llext_free_data(ext, ext->mem[i]);
 			}
 
 			ext->mem[i] = NULL;
 		}
 	}
+
+	llext_heap_reset(ext);
 }
 
 int llext_add_domain(struct llext *ext, struct k_mem_domain *domain)

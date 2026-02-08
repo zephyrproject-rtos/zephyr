@@ -115,7 +115,7 @@ example). You can change the UART by changing the ``zephyr,console`` and
 
 GPIO:
 
-All the GPIO banks are enabled in the :zephyr_file:`dts/arm/nxp/nxp_imx8m_m4.dtsi`.
+All the GPIO banks are enabled in the :zephyr_file:`dts/arm/nxp/imx/nxp_imx8m_m4.dtsi`.
 
 LED:
 

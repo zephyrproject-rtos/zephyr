@@ -4,12 +4,12 @@ Overview
 ********
 
 The STM32H7S78-DK Discovery kit is designed as a complete demonstration and
-development platform for STMicroelectronics Arm |reg| Cortex |reg|-M7 core-based
+development platform for STMicroelectronics Arm® Cortex®-M7 core-based
 STM32H7S7L8H6H microcontroller. Here are some highlights of the STM32H7S78-DK Discovery board:
 
 
-- STM32H7S7L8H6H microcontroller featuring 64Kbytes of Flash memory and 620 Kbytes of SRAM in 225-pin TFBGA package
-- USB Type-C |reg| Host and device with USB power-delivery controller
+- STM32H7S7L8H6H microcontroller featuring 64 Kbytes of Flash memory and 620 Kbytes of SRAM in 225-pin TFBGA package
+- USB Type-C® Host and device with USB power-delivery controller
 - SAI Audio DAC stereo with one audio jacks for input/output,
 - ST MEMS digital microphone with PDM interface
 - Octo-SPI interface connected to 1Gbit Octo-SPI NORFlash memory device (MX66UW1G45GXDI00 from Macronix)
@@ -18,10 +18,10 @@ STM32H7S7L8H6H microcontroller. Here are some highlights of the STM32H7S78-DK Di
 
 - Board connectors
 
-  - STMod+ expansion connector with fan-out expansion board for Wi‑Fi |reg|, Grove and mikroBUS |trade| compatible connectors
-  - Pmod |trade| expansion connector
+  - STMod+ expansion connector with fan-out expansion board for Wi‑Fi®, Grove and mikroBUS™ compatible connectors
+  - Pmod™ expansion connector
   - Audio MEMS daughterboard expansion connector
-  - ARDUINO |reg| Uno V3 expansion connector
+  - ARDUINO® Uno V3 expansion connector
 
 - Flexible power-supply options
 
@@ -44,13 +44,13 @@ Hardware
 ********
 
 The STM32H7S7xx devices are a high-performance microcontrollers family (STM32H7
-Series) based on the high-performance Arm |reg| Cortex |reg|-M7 32-bit RISC core.
+Series) based on the high-performance Arm® Cortex®-M7 32-bit RISC core.
 They operate at a frequency of up to 600 MHz.
 
-- Core: ARM |reg| 32-bit Cortex |reg| -M7 CPU with FPU.
+- Core: ARM® 32-bit Cortex®-M7 CPU with FPU.
 - Performance benchmark:
 
-  - 3196 CoreMark |reg| (5.33 CoreMark |reg|/MHz)
+  - 3196 CoreMark® (5.33 CoreMark®/MHz)
 
 - Security
 
@@ -72,7 +72,7 @@ They operate at a frequency of up to 600 MHz.
   - 24 MHz crystal oscillator (HSE)
   - 32768 Hz crystal oscillator for RTC (LSE)
   - Internal 64 MHz (HSI) trimmable by software
-  - Internal low-power 32 kHz RC (LSI)( |plusminus| 5%)
+  - Internal low-power 32 kHz RC (LSI)(±5%)
   - Internal 4 MHz oscillator (CSI), trimmable by software
   - Internal 48 MHz (HSI48) with recovery system
   - 3 PLLs for system clock, USB, audio, ADC
@@ -112,7 +112,7 @@ They operate at a frequency of up to 600 MHz.
   - 1x USB Type-C / USB power-delivery controller
   - 1x USB OTG full-speed with PHY
   - 1x USB OTG high-speed with PHY
-  - 3x I2C FM+ interfaces (SMBus/PMBus |trade|)
+  - 3x I2C FM+ interfaces (SMBus/PMBus™)
   - 1x I3C interface
   - 7x U(S)ARTS (ISO7816 interface, LIN, IrDA, modem control)
   - 2x LP UART
@@ -131,7 +131,7 @@ They operate at a frequency of up to 600 MHz.
 - CORDIC for trigonometric functions acceleration
 - FMAC (filter mathematical accelerator)
 - CRC calculation unit
-- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell |trade|
+- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell™
 
 
 More information about STM32H7S7 can be found here:

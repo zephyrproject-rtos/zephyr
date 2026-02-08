@@ -92,11 +92,13 @@ References
 - `LPD8806 datasheet`_
 - `APA102C datasheet`_
 - `74AHCT125 datasheet`_
-- `RGB LED strips: an overview`_
+- `LED strip anatomy explained`_
+- `LED strip light (Wikipedia)`_
 - An excellent `blog post on WS2812 timing`_.
 
 .. _WS2812 datasheet: https://cdn-shop.adafruit.com/datasheets/WS2812.pdf
 .. _LPD8806 datasheet: https://cdn-shop.adafruit.com/datasheets/lpd8806+english.pdf
 .. _APA102C datasheet: https://cdn-shop.adafruit.com/product-files/2477/APA102C-iPixelLED.pdf
 .. _blog post on WS2812 timing: https://wp.josh.com/2014/05/13/ws2812-neopixels-are-not-so-finicky-once-you-get-to-know-them/
-.. _RGB LED strips\: an overview: http://nut-bolt.nl/2012/rgb-led-strips/
+.. _LED strip anatomy explained: https://littleanvil.com/journal/2020/4/16/led-strip-anatomy-explained
+.. _LED strip light (Wikipedia): https://en.wikipedia.org/wiki/LED_strip_light

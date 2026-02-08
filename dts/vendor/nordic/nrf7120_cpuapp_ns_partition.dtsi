@@ -6,6 +6,34 @@
  * Default memory partitioning for nRF7120 application CPU.
  */
 
+/*
+ * Default SRAM planning when building for nRF7120 with ARM TrustZone-M support
+ * - Lowest 256 kB SRAM allocated to Secure image (sram0_s).
+ * - Upper 256 kB SRAM allocated to Non-Secure image (sram0_ns).
+ *
+ * cpuapp_sram has 512 kB of volatile memory (SRAM).
+ * This static layout needs to be the same with the upstream TF-M layout in the
+ * header flash_layout.h of the relevant platform. Any updates in the layout
+ * needs to happen both in the flash_layout.h and in this file at the same time.
+ */
+&cpuapp_sram {
+	sram0_s: image_s@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		/* Secure image memory */
+		reg = <0x0 DT_SIZE_K(256)>;
+		ranges = <0x0 0x0 DT_SIZE_K(256)>;
+	};
+
+	sram0_ns: image_ns@20000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		/* Non-Secure image memory */
+		reg = <0x20000 DT_SIZE_K(256)>;
+		ranges = <0x0 0x20000 DT_SIZE_K(256)>;
+	};
+};
+
 &cpuapp_mram {
 	/*
 	 * Default NVM layout on NRF7120 Application MCU without BL2:
@@ -23,6 +51,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* This static layout needs to be the same with the upstream TF-M layout in the
 		 * header flash_layout.h of the relevant platform. Any updates in the layout
@@ -49,14 +78,14 @@
 			reg = <0x00088000 DT_SIZE_K(8)>;
 		};
 
-		slot0_ns_partition: partition@8A000 {
+		slot0_ns_partition: partition@8a000 {
 			label = "image-0-nonsecure";
-			reg = <0x0008A000 DT_SIZE_K(844)>;
+			reg = <0x0008a000 DT_SIZE_K(844)>;
 		};
 
-		storage_partition: partition@15D000 {
+		storage_partition: partition@15d000 {
 			label = "storage";
-			reg = <0x00015D000 DT_SIZE_K(32)>;
+			reg = <0x00015d000 DT_SIZE_K(32)>;
 		};
 	};
 };

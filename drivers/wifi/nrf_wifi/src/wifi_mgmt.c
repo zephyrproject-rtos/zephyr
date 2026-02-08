@@ -1130,13 +1130,11 @@ int nrf_wifi_set_bss_max_idle_period(const struct device *dev,
 		return ret;
 	}
 
-	if (((int)bss_max_idle_period < 0) ||
-	    (bss_max_idle_period > 64000)) {
+	if (bss_max_idle_period > 64000) {
 		/* 0 or value less than 64000 is passed to f/w.
 		 * All other values considered as invalid.
 		 */
-		LOG_ERR("%s: Invalid max_idle_period value : %d",
-			__func__, (int)bss_max_idle_period);
+		LOG_ERR("%s: Invalid max_idle_period value : %d", __func__, bss_max_idle_period);
 		return ret;
 	}
 

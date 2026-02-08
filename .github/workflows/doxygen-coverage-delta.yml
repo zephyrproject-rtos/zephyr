@@ -96,4 +96,5 @@ jobs:
             --strip-reference-prefix "$BASE_ROOT" \
             --strip-comparison-prefix "$PR_ROOT" \
             --warn-paths "include/zephyr/dt-bindings" \
+            --warn-paths "include/zephyr/posix" \
             --summary-file "$GITHUB_STEP_SUMMARY"
