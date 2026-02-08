@@ -98,40 +98,44 @@ static void sdhc_stm32_log_err_type(SDIO_HandleTypeDef *hsd)
 {
 	uint32_t error_code = HAL_SDIO_GetError(hsd);
 
-	if ((error_code & HAL_SDIO_ERROR_TIMEOUT) != 0U) {
-		LOG_ERR("SDIO Timeout");
+	if (error_code == HAL_SDIO_ERROR_NONE) {
+		return;
 	}
 
-	if ((error_code & HAL_SDIO_ERROR_DATA_TIMEOUT) != 0U) {
-		LOG_ERR("SDIO Data Timeout");
-	}
+	static const struct {
+		uint32_t mask;
+		const char *msg;
+	} sdio_errors[] = {
+		{HAL_SDIO_ERROR_TX_UNDERRUN, "Transmit FIFO underrun during write"},
+		{HAL_SDIO_ERROR_RX_OVERRUN, "Receive FIFO overrun during read"},
+		{HAL_SDIO_ERROR_INVALID_CALLBACK, "SDIO Invalid Callback"},
+		{SDMMC_ERROR_ILLEGAL_CMD, "Command is not legal for the card state"},
+		{SDMMC_ERROR_BUSY, "SDHC interface is busy"},
+		{SDMMC_ERROR_INVALID_VOLTRANGE, "Unsupported voltage range requested"},
+		{SDMMC_ERROR_UNSUPPORTED_FEATURE, "Requested card feature is not supported"},
+		{SDMMC_ERROR_DMA, "DMA transfer error occurred"},
 
-	if ((error_code & HAL_SDIO_ERROR_DATA_CRC_FAIL) != 0U) {
-		LOG_ERR("SDIO Data CRC");
-	}
+		{SDMMC_ERROR_GENERAL_UNKNOWN_ERR | SDMMC_ERROR_REQUEST_NOT_APPLICABLE,
+		 "General SDHC error or invalid operation"},
 
-	if ((error_code & HAL_SDIO_ERROR_TX_UNDERRUN) != 0U) {
-		LOG_ERR("SDIO FIFO Transmit Underrun");
-	}
+		{HAL_SDIO_ERROR_TIMEOUT | HAL_SDIO_ERROR_DATA_TIMEOUT,
+		 "Timeout occurred (command or data response)"},
 
-	if ((error_code & HAL_SDIO_ERROR_RX_OVERRUN) != 0U) {
-		LOG_ERR("SDIO FIFO Receive Overrun");
-	}
+		{HAL_SDIO_ERROR_DATA_CRC_FAIL | SDMMC_ERROR_CMD_CRC_FAIL |
+			 SDMMC_ERROR_COM_CRC_FAILED,
+		 "CRC failure detected (command, data, or communication)"},
 
-	if ((error_code & HAL_SDIO_ERROR_INVALID_CALLBACK) != 0U) {
-		LOG_ERR("SDIO Invalid Callback");
-	}
+		{SDMMC_ERROR_ADDR_MISALIGNED | SDMMC_ERROR_ADDR_OUT_OF_RANGE,
+		 "Addressing error: misaligned or out-of-range access"},
 
-	if ((error_code & SDMMC_ERROR_ADDR_MISALIGNED) != 0U) {
-		LOG_ERR("SDIO Misaligned address");
-	}
+		{SDMMC_ERROR_WRITE_PROT_VIOLATION | SDMMC_ERROR_LOCK_UNLOCK_FAILED,
+		 "Access violation: write-protect or lock/unlock failure"},
+	};
 
-	if ((error_code & SDMMC_ERROR_WRITE_PROT_VIOLATION) != 0U) {
-		LOG_ERR("Attempt to program a write protected block");
-	}
-
-	if ((error_code & SDMMC_ERROR_ILLEGAL_CMD) != 0U) {
-		LOG_ERR("Command is not legal for the card state");
+	for (size_t i = 0; i < ARRAY_SIZE(sdio_errors); i++) {
+		if ((error_code & sdio_errors[i].mask) != 0U) {
+			LOG_ERR("SDIO Error: %s", sdio_errors[i].msg);
+		}
 	}
 
 	hsd->ErrorCode = HAL_SDIO_ERROR_NONE;
