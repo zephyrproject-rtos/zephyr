@@ -4476,6 +4476,7 @@ Raspberry Pi Pico Platforms:
     - boards/adafruit/qt_py_rp2040/
     - boards/pimoroni/pico_plus2/
     - boards/seeed/xiao_rp2040/
+    - boards/seeed/xiao_rp2350/
     - boards/sparkfun/pro_micro_rp2040/
     - boards/sparkfun/rp2040_mikrobus/
     - boards/waveshare/rp2040_zero/
