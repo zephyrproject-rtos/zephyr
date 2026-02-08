@@ -495,3 +495,9 @@ test_spi_as5048: as5048@3b {
 	reg = <0x3b>;
 	spi-max-frequency = <0>;
 };
+
+test_spi_ade7978: ade7978@3c {
+	compatible = "adi,ade7978";
+	reg = <0x3c>;
+	spi-max-frequency = <0>;
+};
