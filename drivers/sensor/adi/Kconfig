@@ -3,6 +3,7 @@
 
 # zephyr-keep-sorted-start
 source "drivers/sensor/adi/ad2s1210/Kconfig"
+source "drivers/sensor/adi/ade7978/Kconfig"
 source "drivers/sensor/adi/adltc2990/Kconfig"
 source "drivers/sensor/adi/adt7310/Kconfig"
 source "drivers/sensor/adi/adt7420/Kconfig"
