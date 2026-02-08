@@ -355,6 +355,9 @@ void lll_scan_aux_isr_aux_setup(void *param)
 	aux_start_us -= window_widening_us;
 	aux_start_us -= EVENT_JITTER_US;
 
+	/* +1 us radio_tmr_start_us compensation */
+	aux_start_us -= 1U;
+
 	start_us = radio_tmr_start_us(0, aux_start_us);
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
 		lll_prof_cputime_capture();
@@ -616,7 +619,7 @@ sync_aux_prepare_done:
 		static memq_link_t link;
 		static struct mayfly mfy_after_cen_offset_get = {
 			0U, 0U, &link, NULL, ull_sched_mfy_after_cen_offset_get};
-		struct lll_prepare_param *prepare_param;
+		static struct lll_prepare_param *prepare_param;
 
 		/* Copy the required values to calculate the offsets
 		 *
@@ -652,6 +655,11 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 	 * shall not use -EAGAIN as return value.
 	 */
 	ARG_UNUSED(resume_cb);
+
+	/* Prepare being cancelled (no resume for scan aux) */
+	if (next == NULL) {
+		return -ECANCELED;
+	}
 
 	/* Auxiliary event shall not overlap as they are not periodically
 	 * scheduled.
@@ -696,10 +704,10 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	LL_ASSERT_ERR(e);
 
 #if defined(CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS)
-	e->lll = param;
+	e->lll = prepare_param->param;
 #endif /* CONFIG_BT_CTLR_SCAN_AUX_USE_CHAINS */
 
-	lll_done(param);
+	lll_done(prepare_param->param);
 }
 
 static void isr_done(void *param)

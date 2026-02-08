@@ -1134,17 +1134,28 @@ void ull_conn_done(struct node_rx_event_done *done)
 #endif /* CONFIG_BT_PERIPHERAL */
 	}
 
+	force = 0U;
+	force_lll = 0U;
 	elapsed_event = lll->lazy_prepare + 1U;
 
 	/* Reset supervision countdown */
-	if (done->extra.crc_valid && !done->extra.is_aborted) {
+	if ((done->extra.crc_valid != 0U) && (done->extra.is_aborted == 0U)) {
 		conn->supervision_expire = 0U;
+
+#if defined(CONFIG_BT_PERIPHERAL)
+		if (lll->role == BT_HCI_ROLE_PERIPHERAL) {
+			conn->periph.latency_bust = 0U;
+		}
+#endif /* CONFIG_BT_PERIPHERAL */
 	}
 
 	/* check connection failed to establish */
 	else if (conn->connect_expire) {
 		if (conn->connect_expire > elapsed_event) {
 			conn->connect_expire -= elapsed_event;
+
+			force = 1U;
+			force_lll = 1U;
 		} else {
 			conn_cleanup(conn, BT_HCI_ERR_CONN_FAIL_TO_ESTAB);
 
@@ -1175,8 +1186,6 @@ void ull_conn_done(struct node_rx_event_done *done)
 	}
 
 	/* check supervision timeout */
-	force = 0U;
-	force_lll = 0U;
 	if (conn->supervision_expire) {
 		if (conn->supervision_expire > elapsed_event) {
 			conn->supervision_expire -= elapsed_event;
@@ -1187,18 +1196,40 @@ void ull_conn_done(struct node_rx_event_done *done)
 			/* Force both central and peripheral when close to
 			 * supervision timeout.
 			 */
-			if (conn->supervision_expire <= 6U) {
-				force_lll = 1U;
+			if (conn->supervision_expire <= CONN_ESTAB_COUNTDOWN) {
+#if defined(CONFIG_BT_PERIPHERAL)
+				if ((lll->role == BT_HCI_ROLE_PERIPHERAL) &&
+				    (latency_event != lll->latency) &&
+				    (lll->forced != 0U)) {
+					if (conn->periph.latency_bust == 0U) {
+						conn->periph.latency_bust = latency_event + 1U;
+					}
+
+					lll->latency_event = conn->periph.latency_bust;
+				}
+#endif /* CONFIG_BT_PERIPHERAL */
 
 				force = 1U;
+				force_lll = 1U;
 			}
+
 #if defined(CONFIG_BT_CTLR_CONN_RANDOM_FORCE)
 			/* use randomness to force peripheral role when anchor
 			 * points are being missed.
 			 */
-			else if (lll->role) {
-				if (latency_event) {
+			else if (lll->role == BT_HCI_ROLE_PERIPHERAL) {
+				if (latency_event != lll->latency) {
+					if (lll->forced != 0U) {
+						if (conn->periph.latency_bust == 0U) {
+							conn->periph.latency_bust =
+								latency_event + 1U;
+						}
+
+						lll->latency_event = conn->periph.latency_bust;
+					}
+
 					force = 1U;
+					force_lll = 1U;
 				} else {
 					force = conn->periph.force & 0x01;
 
@@ -1206,10 +1237,13 @@ void ull_conn_done(struct node_rx_event_done *done)
 					conn->periph.force >>= 1U;
 					if (force) {
 						conn->periph.force |= BIT(31);
+
+						force_lll = 1U;
 					}
 				}
 			}
 #endif /* CONFIG_BT_CTLR_CONN_RANDOM_FORCE */
+
 		} else {
 			conn_cleanup(conn, BT_HCI_ERR_CONN_TIMEOUT);
 
@@ -1370,9 +1404,16 @@ void ull_conn_done(struct node_rx_event_done *done)
 		slot_us = tx_time + rx_time;
 		slot_us += lll->tifs_rx_us + (EVENT_CLOCK_JITTER_US << 1);
 		slot_us += ready_delay;
+#if defined(CONFIG_BT_PERIPHERAL)
+		if (lll->role == BT_HCI_ROLE_PERIPHERAL) {
+			slot_us += lll->periph.window_widening_periodic_us << 1U;
+			slot_us += EVENT_JITTER_US << 1U;
+		}
+#endif /* CONFIG_BT_PERIPHERAL */
+		slot_us += EVENT_TICKER_RES_MARGIN_US << 1U;
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX) ||
-		    !conn->lll.role) {
+		    (lll->role == BT_HCI_ROLE_CENTRAL)) {
 			slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 		}
 
@@ -2383,18 +2424,39 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH) && \
 	defined(CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE)
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX)
 		max_tx_time = lll->dle.eff.max_tx_time;
 		max_rx_time = lll->dle.eff.max_rx_time;
+#else /* !CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX */
+#if defined(CONFIG_BT_CTLR_PHY)
+		max_tx_time = PDU_MAX_US(0U, 0U, lll->phy_tx);
+		max_rx_time = PDU_MAX_US(0U, 0U, lll->phy_rx);
+#else /* !CONFIG_BT_CTLR_PHY */
+		max_tx_time = PDU_MAX_US(0U, 0U, PHY_1M);
+		max_rx_time = PDU_MAX_US(0U, 0U, PHY_1M);
+#endif /* !CONFIG_BT_CTLR_PHY */
+#endif /* !CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX */
 
 #else /* !CONFIG_BT_CTLR_DATA_LENGTH ||
        * !CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE
        */
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX)
 		max_tx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
 		max_rx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, PHY_1M);
+#else /* !CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX */
+		max_tx_time = PDU_MAX_US(0U, 0U, PHY_1M);
+		max_rx_time = PDU_MAX_US(0U, 0U, PHY_1M);
+#endif /* !CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX */
+
 #if defined(CONFIG_BT_CTLR_PHY)
+#if defined(CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX)
 		max_tx_time = MAX(max_tx_time, PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, lll->phy_tx));
 		max_rx_time = MAX(max_rx_time, PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN, lll->phy_rx));
-#endif /* !CONFIG_BT_CTLR_PHY */
+#else /* !CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX */
+		max_tx_time = PDU_MAX_US(0U, 0U, lll->phy_tx);
+		max_rx_time = PDU_MAX_US(0U, 0U, lll->phy_rx);
+#endif /* !CONFIG_BT_CTLR_PERIPHERAL_RESERVE_MAX */
+#endif /* CONFIG_BT_CTLR_PHY */
 #endif /* !CONFIG_BT_CTLR_DATA_LENGTH ||
 	* !CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE
 	*/
@@ -2403,6 +2465,13 @@ void ull_conn_update_parameters(struct ll_conn *conn, uint8_t is_cu_proc, uint8_
 		slot_us = max_tx_time + max_rx_time;
 		slot_us += lll->tifs_rx_us + (EVENT_CLOCK_JITTER_US << 1);
 		slot_us += ready_delay_us;
+#if defined(CONFIG_BT_PERIPHERAL)
+		if (lll->role == BT_HCI_ROLE_PERIPHERAL) {
+			slot_us += lll->periph.window_widening_periodic_us << 1U;
+			slot_us += EVENT_JITTER_US << 1U;
+		}
+#endif /* CONFIG_BT_PERIPHERAL */
+		slot_us += EVENT_TICKER_RES_MARGIN_US << 1U;
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_EVENT_OVERHEAD_RESERVE_MAX) ||
 		    (lll->role == BT_HCI_ROLE_CENTRAL)) {

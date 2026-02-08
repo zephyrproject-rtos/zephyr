@@ -30,6 +30,7 @@
 #define TICKER_NULL_SLOT        0
 #define TICKER_NULL_LAZY        0
 #define TICKER_NULL_MUST_EXPIRE 0
+#define TICKER_NULL_OUST_EXPIRE 0x8000
 
 /**
  * @}
@@ -109,12 +110,16 @@
 /* Use to ensure callback is invoked in all intervals, even when latencies
  * occur.
  */
-#define TICKER_LAZY_MUST_EXPIRE      0xFFFF
+#define TICKER_LAZY_MUST_EXPIRE         0xFFFF
 
 /* Use in ticker_start to set lazy to 0 and do not change the must_expire
  * state.
  */
-#define TICKER_LAZY_MUST_EXPIRE_KEEP 0xFFFE
+#define TICKER_LAZY_MUST_EXPIRE_KEEP    0xFFFE
+
+/* Use to ensure callback is invoked in ousted intervals, and maintains latencies.
+ */
+#define TICKER_LAZY_OUST_EXPIRE_BITMASK (TICKER_NULL_OUST_EXPIRE)
 
 /* Set this priority to ensure ticker node is always scheduled. Only one
  * ticker node can have priority TICKER_PRIORITY_CRITICAL at a time
@@ -247,8 +252,16 @@ struct ticker_ext {
 					* node. See defines
 					* TICKER_RESCHEDULE_STATE_XXX
 					*/
+	uint8_t dir_drift_in_window:1; /* Drift direction inside slot window,
+					* either from start or from end side,
+					* to be placed after or before an
+					* overlapping ticker
+					*/
 	uint8_t is_drift_in_window:1;  /* Drift in slot window, to be placed
 					* after an overlapping ticker
+					*/
+	uint8_t is_jitter_in_window:1; /* Jitter in slot window, maintaining
+					* the average periodic interval
 					*/
 #endif /* CONFIG_BT_TICKER_SLOT_AGNOSTIC */
 

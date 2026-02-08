@@ -1,6 +1,6 @@
 # Zephyr Bluetooth Controller configuration options
 
-# Copyright (c) 2016-2017 Nordic Semiconductor ASA
+# Copyright (c) 2016-2025 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 if BT_LL_SW_SPLIT
@@ -10,14 +10,16 @@ config BT_LLL_VENDOR_NORDIC
 	depends on SOC_COMPATIBLE_NRF
 	depends on !$(dt_nodelabel_enabled,timer0)
 	depends on !$(dt_nodelabel_enabled,rtc0)
-
-	select BT_CTLR_ENTROPY_SUPPORT
-	select ENTROPY_NRF5_RNG if BT_CTLR_ENTROPY && !SOC_COMPATIBLE_NRF54LX
+	select CLOCK_CONTROL
+	select ENTROPY_NRF5_RNG if BT_CTLR_ENTROPY && \
+				   !SOC_COMPATIBLE_NRF54LX && \
+				   !SOC_SERIES_NRF54H
 	select ENTROPY_NRF5_BIAS_CORRECTION if ENTROPY_NRF5_RNG
+	select MRAM_LATENCY if SOC_SERIES_NRF54H
 	select EXPERIMENTAL if !ENTROPY_HAS_DRIVER
-
 	select BT_HAS_HCI_VS
 	select BT_HCI_VS_FATAL_ERROR_SUPPORT
+	select BT_CTLR_ENTROPY_SUPPORT
 	select BT_CTLR_CRYPTO_SUPPORT
 	select BT_CTLR_LE_ENC_SUPPORT if BT_CTLR_CRYPTO_SUPPORT && \
 					 !BT_CTLR_DATA_LENGTH_CLEAR && \
@@ -30,6 +32,7 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_CTLR_DATA_LEN_UPDATE_SUPPORT if !BT_CTLR_LE_ENC_SUPPORT || \
 						  HAS_HW_NRF_CCM_LFLEN_8BIT || \
 						  SOC_COMPATIBLE_NRF54LX || \
+						  SOC_SERIES_NRF54H || \
 						  BT_CTLR_DATA_LENGTH_CLEAR
 	select BT_CTLR_EXT_SCAN_FP_SUPPORT
 	select BT_CTLR_PHY_2M_SUPPORT if HAS_HW_NRF_RADIO_BLE_2M || \
@@ -54,15 +57,14 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT
 	select BT_CTLR_DTM_HCI_SUPPORT
 	select BT_CTLR_CONN_RSSI_SUPPORT
-
 	select BT_CTLR_XTAL_ADVANCED_SUPPORT
 	select BT_CTLR_SCHED_ADVANCED_SUPPORT
 	select BT_CTLR_TIFS_HW_SUPPORT
 	select BT_CTLR_ULL_LLL_PRIO_SUPPORT
-
-	select BT_TICKER_REMAINDER_SUPPORT if !SOC_COMPATIBLE_NRF54LX
+	select BT_CTLR_ASSERT_OPTIMIZE_FOR_SIZE_SUPPORT if CPU_CORTEX_M
 	select BT_TICKER_UPDATE if BT_BROADCASTER || BT_CONN || \
 				   (BT_OBSERVER && BT_CTLR_ADV_EXT)
+	select BT_TICKER_REMAINDER_SUPPORT if !BT_CTLR_NRF_GRTC
 	select BT_TICKER_START_REMAINDER if BT_TICKER_REMAINDER_SUPPORT && \
 					    BT_CTLR_CENTRAL_ISO
 	select BT_TICKER_REMAINDER_GET if BT_TICKER_REMAINDER_SUPPORT && \
@@ -76,11 +78,9 @@ config BT_LLL_VENDOR_NORDIC
 	select BT_TICKER_NEXT_SLOT_GET_MATCH if (BT_BROADCASTER && \
 						 BT_CTLR_ADV_EXT) || \
 						BT_CENTRAL || BT_CTLR_CONN_ISO
-	select BT_TICKER_CNTR_FREE_RUNNING if SOC_COMPATIBLE_NRF54LX
+	select BT_TICKER_CNTR_FREE_RUNNING if SOC_COMPATIBLE_NRF54LX || \
+					      SOC_SERIES_NRF54H
 	select BT_TICKER_PREFER_START_BEFORE_STOP if BT_TICKER_SLOT_AGNOSTIC
-
-	select BT_CTLR_ASSERT_OPTIMIZE_FOR_SIZE_SUPPORT if CPU_CORTEX_M
-
 	default y
 	help
 	  Use Nordic Lower Link Layer implementation.
@@ -88,7 +88,6 @@ config BT_LLL_VENDOR_NORDIC
 config BT_LLL_VENDOR_OPENISA
 	bool "Use OpenISA LLL"
 	depends on SOC_OPENISA_RV32M1
-
 	select BT_HAS_HCI_VS
 	select BT_CTLR_ENTROPY_SUPPORT
 	select BT_CTLR_CRYPTO_SUPPORT
@@ -97,10 +96,8 @@ config BT_LLL_VENDOR_OPENISA
 	select BT_CTLR_PRIVACY_SUPPORT if BT_CTLR_CRYPTO_SUPPORT
 	select BT_CTLR_PHY_UPDATE_SUPPORT
 	select BT_CTLR_EXT_REJ_IND_SUPPORT
-
 	select BT_TICKER_REMAINDER_SUPPORT
 	select BT_TICKER_UPDATE if BT_BROADCASTER || BT_CONN
-
 	default y
 	help
 	  Use OpenISA Lower Link Layer implementation.
@@ -467,6 +464,18 @@ config BT_CTLR_ADV_RESERVE_MAX
 	  corresponding to the Advertising Data present at the time of the
 	  start/enable of Advertising is used.
 
+config BT_CTLR_ADV_SLOT_WINDOW
+	bool "Advertising Primary PDUs within a slot window"
+	depends on BT_TICKER_EXT && \
+		   BT_BROADCASTER && (BT_CONN || BT_CTLR_ADV_EXT)
+	default y
+	help
+	  Place Advertising Primary PDUs within a slot window to avoid
+	  overlapping with other periodically scheduled states/roles; and be
+	  placed after such overlapping states/roles at the end of the slot
+	  window so that it does not take the interval of the overlapped state/
+	  role.
+
 config BT_CTLR_ADV_AUX_SLOT_WINDOW_DRIFT
 	bool "Drift Extended Advertising Auxiliary PDUs within a slot window"
 	depends on BT_TICKER_EXT && \
@@ -615,6 +624,17 @@ config BT_CTLR_SYNC_ISO_RESERVE_MAX
 	  Use maximum ISO Synchronized Receiver event time reservation. If
 	  disabled, then time reservation does not include the pre-transmissions
 	  and any Control subevents.
+
+config BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER
+	bool "Wrap ISO Synchronized Receiver event around overlapping roles"
+	depends on BT_TICKER_EXT && \
+		   BT_CTLR_SYNC_ISO && \
+		   !BT_CTLR_SYNC_ISO_RESERVE_MAX
+	help
+	  Wrap ISO Synchronized Receiver event around overlapping roles using
+	  ticker ticks_slot_window feature with jitter in window.
+	  LLL implementation can use the ticks_drifts value to determine the
+	  correct subevents to setup for reception.
 
 config BT_CTLR_ADV_ENABLE_STRICT
 	bool "Enforce Strict Advertising Enable/Disable"
@@ -917,7 +937,7 @@ config BT_CTLR_ULL_LOW_PRIO
 config BT_CTLR_LLL_PREPARE_AT_MARGIN
 	bool "LLL prepare at margin"
 	depends on !BT_CTLR_LOW_LAT
-	default y if SOC_COMPATIBLE_NRF54LX
+	default y if SOC_COMPATIBLE_NRF54LX || SOC_SERIES_NRF54H
 	help
 	  Execute LLL prepare callback at the prepare margin, even when no
 	  overlapping state/role is currently active.
@@ -970,7 +990,9 @@ config BT_CTLR_RX_PDU_META
 
 config BT_CTLR_NRF_GRTC
 	bool "Use nRF GRTC peripheral"
-	depends on BT_TICKER_CNTR_FREE_RUNNING && SOC_COMPATIBLE_NRF54LX
+	depends on BT_TICKER_CNTR_FREE_RUNNING && \
+			(SOC_COMPATIBLE_NRF54LX || \
+			 SOC_SERIES_NRF54H)
 	default y
 	help
 	  Enable use of nRF54Lx NRF_GRTC peripheral.
@@ -1003,7 +1025,8 @@ config BT_CTLR_RADIO_ENABLE_FAST
 	bool "Use tTXEN/RXEN,FAST ramp-up"
 	depends on SOC_COMPATIBLE_NRF52X || \
 		   SOC_COMPATIBLE_NRF53X || \
-		   SOC_COMPATIBLE_NRF54LX
+		   SOC_COMPATIBLE_NRF54LX || \
+		   SOC_SERIES_NRF54H
 	default y
 	help
 	  Enable use of fast radio ramp-up mode.
@@ -1027,7 +1050,8 @@ config BT_CTLR_SW_SWITCH_SINGLE_TIMER
 	depends on BT_CTLR_RADIO_ENABLE_FAST && \
 		   (SOC_COMPATIBLE_NRF52X || \
 		    SOC_COMPATIBLE_NRF53X || \
-		    SOC_COMPATIBLE_NRF54LX)
+		    SOC_COMPATIBLE_NRF54LX || \
+		    SOC_SERIES_NRF54H)
 	default y if SOC_COMPATIBLE_NRF54LX
 	help
 	  Implement the tIFS Trx SW switch with the same TIMER
@@ -1246,6 +1270,17 @@ config BT_CTLR_SCAN_UNRESERVED
 	  Scanner will not use time space reservation for scan window when in
 	  continuous scan mode.
 
+config BT_CTLR_SCAN_SLOT_WINDOW
+	bool "Scan window within a slot window"
+	depends on BT_TICKER_EXT && \
+		   BT_OBSERVER && (BT_CONN || BT_CTLR_ADV_EXT)
+	default y
+	help
+	  Place primary scan window within a slot window to avoid overlapping
+	  with other periodically scheduled states/roles; and be placed after
+	  such overlapping states/roles at the end of the slot window so that it
+	  does not take the interval of the overlapped state/role.
+
 config BT_MAYFLY_YIELD_AFTER_CALL
 	bool "Yield from mayfly thread after first call"
 	default y
@@ -1327,7 +1362,7 @@ config BT_TICKER_NEXT_SLOT_GET_MATCH
 config BT_TICKER_EXT
 	bool "Ticker extensions"
 	depends on !BT_TICKER_LOW_LAT
-	default y if BT_BROADCASTER
+	default y if BT_BROADCASTER && (BT_CONN || BT_CTLR_ADV_EXT)
 	help
 	  This option enables ticker extensions such as re-scheduling of
 	  ticker nodes with slot_window set to non-zero. Ticker extensions

@@ -1242,7 +1242,7 @@ static void test_iso_recv_vs_dp_main(void)
 
 static void test_iso_init(void)
 {
-	bst_ticker_set_next_tick_absolute(60e6);
+	bst_ticker_set_next_tick_absolute(31e6);
 	bst_result = In_progress;
 }
 
