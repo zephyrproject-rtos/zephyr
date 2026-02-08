@@ -6,6 +6,7 @@
  */
 
 #include <zephyr/drivers/stepper.h>
+#include <zephyr/drivers/gpio.h>
 #include "tmc51xx.h"
 #include <adi_tmc5xxx_common.h>
 
@@ -17,6 +18,7 @@ LOG_MODULE_DECLARE(tmc51xx, CONFIG_STEPPER_LOG_LEVEL);
 struct tmc51xx_stepper_drv_config {
 	const uint16_t default_micro_step_res;
 	const int8_t sg_threshold;
+	const struct gpio_dt_spec en_gpio;
 	/* parent controller required for bus communication */
 	const struct device *controller;
 };
@@ -57,6 +59,18 @@ static int tmc51xx_stepper_drv_enable(const struct device *dev)
 
 	LOG_DBG("Enabling Stepper motor controller %s", dev->name);
 
+	if (config->en_gpio.port != NULL) {
+		/* Assert enable line first so the driver can energize even if SPI config
+		 * later fails (e.g., bus wiring issues). The register write still runs so
+		 * we get useful errors in logs.
+		 */
+		err = gpio_pin_set_dt(&config->en_gpio, 1);
+		if (err < 0) {
+			LOG_ERR("Failed to assert enable GPIO (%d)", err);
+			return err;
+		}
+	}
+
 	err = tmc51xx_read(controller, TMC51XX_CHOPCONF, &reg_value);
 	if (err != 0) {
 		return -EIO;
@@ -74,6 +88,14 @@ static int tmc51xx_stepper_drv_disable(const struct device *dev)
 	const struct device *controller = config->controller;
 	uint32_t reg_value;
 	int err;
+
+	if (config->en_gpio.port != NULL) {
+		err = gpio_pin_set_dt(&config->en_gpio, 0);
+		if (err < 0) {
+			LOG_ERR("Failed to deassert enable GPIO (%d)", err);
+			return err;
+		}
+	}
 
 	err = tmc51xx_read(controller, TMC51XX_CHOPCONF, &reg_value);
 	if (err != 0) {
@@ -137,6 +159,19 @@ static int tmc51xx_stepper_drv_init(const struct device *dev)
 	const struct device *controller = config->controller;
 	int err;
 
+	if (config->en_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&config->en_gpio)) {
+			LOG_ERR("Enable GPIO not ready");
+			return -ENODEV;
+		}
+
+		err = gpio_pin_configure_dt(&config->en_gpio, GPIO_OUTPUT_INACTIVE);
+		if (err < 0) {
+			LOG_ERR("Failed to configure enable GPIO (%d)", err);
+			return err;
+		}
+	}
+
 	if (!IN_RANGE(config->sg_threshold, TMC5XXX_SG_MIN_VALUE, TMC5XXX_SG_MAX_VALUE)) {
 		LOG_ERR("Stallguard threshold out of range");
 		return -EINVAL;
@@ -174,6 +209,7 @@ static DEVICE_API(stepper_drv, tmc51xx_stepper_drv_api) = {
 		.controller = DEVICE_DT_GET(DT_PARENT(DT_DRV_INST(inst))),                         \
 		.default_micro_step_res = DT_INST_PROP(inst, micro_step_res),                      \
 		.sg_threshold = DT_INST_PROP(inst, stallguard2_threshold),                         \
+		.en_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, en_gpios, {0}),                          \
 	};                                                                                         \
 	static struct tmc51xx_stepper_drv_data tmc51xx_stepper_drv_data_##inst;                    \
 	DEVICE_DT_INST_DEFINE(inst, tmc51xx_stepper_drv_init, NULL,                                \
