@@ -84,6 +84,45 @@ static int sdhi_power_on(const struct device *dev)
 	return ret;
 }
 
+#if CONFIG_SDHC_LOG_LEVEL > 0
+static const struct {
+	uint32_t mask;
+	const char *msg;
+} sdmmc_errors[] = {
+	{SDMMC_ERROR_TX_UNDERRUN, "Transmit FIFO underrun during write"},
+	{SDMMC_ERROR_RX_OVERRUN, "Receive FIFO overrun during read"},
+	{SDMMC_ERROR_INVALID_PARAMETER, "Invalid parameter passed to SD/SDIO operation"},
+	{SDMMC_ERROR_ILLEGAL_CMD, "Command is not legal for the card state"},
+	{SDMMC_ERROR_BUSY, "SDHC interface is busy"},
+	{SDMMC_ERROR_INVALID_VOLTRANGE, "Unsupported voltage range requested"},
+	{SDMMC_ERROR_UNSUPPORTED_FEATURE, "Requested card feature is not supported"},
+	{SDMMC_ERROR_DMA, "DMA transfer error occurred"},
+	{SDMMC_ERROR_CID_CSD_OVERWRITE, "CID/CSD register overwrite attempted"},
+
+	{SDMMC_ERROR_GENERAL_UNKNOWN_ERR | SDMMC_ERROR_REQUEST_NOT_APPLICABLE,
+	 "General SDHC error or invalid operation"},
+
+	{SDMMC_ERROR_TIMEOUT | SDMMC_ERROR_CMD_RSP_TIMEOUT | SDMMC_ERROR_DATA_TIMEOUT,
+	 "Timeout occurred (command or data response)"},
+
+	{SDMMC_ERROR_CMD_CRC_FAIL | SDMMC_ERROR_DATA_CRC_FAIL | SDMMC_ERROR_COM_CRC_FAILED,
+	 "CRC failure detected (command, data, or communication)"},
+
+	{SDMMC_ERROR_ADDR_MISALIGNED | SDMMC_ERROR_ADDR_OUT_OF_RANGE,
+	 "Addressing error: misaligned or out-of-range access"},
+
+	{SDMMC_ERROR_WRITE_PROT_VIOLATION | SDMMC_ERROR_LOCK_UNLOCK_FAILED,
+	 "Access violation: write-protect or lock/unlock failure"},
+
+	{SDMMC_ERROR_ERASE_RESET | SDMMC_ERROR_AKE_SEQ_ERR,
+	 "Card error: erase reset or authentication sequence failure"},
+
+	{SDMMC_ERROR_BLOCK_LEN_ERR | SDMMC_ERROR_ERASE_SEQ_ERR | SDMMC_ERROR_BAD_ERASE_PARAM |
+		 SDMMC_ERROR_WP_ERASE_SKIP,
+	 "Block or erase sequence error"},
+};
+#endif /* CONFIG_SDHC_LOG_LEVEL > 0 */
+
 /**
  * Logs detailed SDIO error types using Zephyr's logging subsystem.
  *
@@ -98,41 +137,22 @@ static void sdhc_stm32_log_err_type(SDIO_HandleTypeDef *hsd)
 {
 	uint32_t error_code = HAL_SDIO_GetError(hsd);
 
-	if ((error_code & HAL_SDIO_ERROR_TIMEOUT) != 0U) {
-		LOG_ERR("SDIO Timeout");
+	__ASSERT(error_code != HAL_SDIO_ERROR_NONE, "sdhc_stm32_log_err_type called with no error");
+
+#if CONFIG_SDHC_LOG_LEVEL > 0
+	bool known_error = false;
+
+	for (size_t i = 0; i < ARRAY_SIZE(sdmmc_errors); i++) {
+		if ((error_code & sdmmc_errors[i].mask) != 0U) {
+			LOG_ERR("SDIO Error: %s", sdmmc_errors[i].msg);
+			known_error = true;
+		}
 	}
 
-	if ((error_code & HAL_SDIO_ERROR_DATA_TIMEOUT) != 0U) {
-		LOG_ERR("SDIO Data Timeout");
+	if (!known_error) {
+		LOG_ERR("Unknown SDIO Error: 0x%08X", error_code);
 	}
-
-	if ((error_code & HAL_SDIO_ERROR_DATA_CRC_FAIL) != 0U) {
-		LOG_ERR("SDIO Data CRC");
-	}
-
-	if ((error_code & HAL_SDIO_ERROR_TX_UNDERRUN) != 0U) {
-		LOG_ERR("SDIO FIFO Transmit Underrun");
-	}
-
-	if ((error_code & HAL_SDIO_ERROR_RX_OVERRUN) != 0U) {
-		LOG_ERR("SDIO FIFO Receive Overrun");
-	}
-
-	if ((error_code & HAL_SDIO_ERROR_INVALID_CALLBACK) != 0U) {
-		LOG_ERR("SDIO Invalid Callback");
-	}
-
-	if ((error_code & SDMMC_ERROR_ADDR_MISALIGNED) != 0U) {
-		LOG_ERR("SDIO Misaligned address");
-	}
-
-	if ((error_code & SDMMC_ERROR_WRITE_PROT_VIOLATION) != 0U) {
-		LOG_ERR("Attempt to program a write protected block");
-	}
-
-	if ((error_code & SDMMC_ERROR_ILLEGAL_CMD) != 0U) {
-		LOG_ERR("Command is not legal for the card state");
-	}
+#endif /* CONFIG_SDHC_LOG_LEVEL > 0 */
 
 	hsd->ErrorCode = HAL_SDIO_ERROR_NONE;
 }
