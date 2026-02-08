@@ -14,6 +14,7 @@
 #include <zephyr/drivers/clock_control/clock_control_numicro.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/irq.h>
 #include <NuMicro.h>
 
 struct numicro_uart_config {
@@ -21,11 +22,18 @@ struct numicro_uart_config {
 	const struct reset_dt_spec reset;
 	const struct numicro_scc_subsys clock_subsys;
 	const struct device *clk_dev;
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	void (*irq_config_func)(const struct device *dev);
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 	const struct pinctrl_dev_config *pincfg;
 };
 
 struct numicro_uart_data {
 	struct uart_config ucfg;
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	uart_irq_callback_user_data_t user_cb;
+	void *user_data;
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
 static int numicro_uart_poll_in(const struct device *dev, unsigned char *c)
@@ -50,8 +58,33 @@ static void numicro_uart_poll_out(const struct device *dev, unsigned char c)
 
 static int numicro_uart_err_check(const struct device *dev)
 {
-	ARG_UNUSED(dev);
-	return 0;
+	const struct numicro_uart_config *config = dev->config;
+	uint32_t flags = config->regs->FIFOSTS;
+	int err = 0;
+
+	if (flags & UART_FIFOSTS_RXOVIF_Msk) {
+		err |= UART_ERROR_OVERRUN;
+	}
+
+	if (flags & UART_FIFOSTS_PEF_Msk) {
+		err |= UART_ERROR_PARITY;
+	}
+
+	if (flags & UART_FIFOSTS_FEF_Msk) {
+		err |= UART_ERROR_FRAMING;
+	}
+
+	if (flags & UART_FIFOSTS_BIF_Msk) {
+		err |= UART_BREAK;
+	}
+
+	if (flags & (UART_FIFOSTS_BIF_Msk | UART_FIFOSTS_PEF_Msk | UART_FIFOSTS_FEF_Msk |
+		     UART_FIFOSTS_RXOVIF_Msk)) {
+		config->regs->FIFOSTS = (UART_FIFOSTS_BIF_Msk | UART_FIFOSTS_PEF_Msk |
+					 UART_FIFOSTS_FEF_Msk | UART_FIFOSTS_RXOVIF_Msk);
+	}
+
+	return err;
 }
 
 static inline int32_t numicro_uart_convert_stopbit(enum uart_config_stop_bits sb)
@@ -229,9 +262,137 @@ static int numicro_uart_init(const struct device *dev)
 	if (err < 0) {
 		goto out;
 	}
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	config->irq_config_func(dev);
+#endif
 out:
 	return err;
 }
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static int numicro_uart_fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
+{
+	const struct numicro_uart_config *config = dev->config;
+	int tx_bytes = 0;
+
+	/* check TX FIFO not full, then fill */
+	while (((size - tx_bytes) > 0) && (!(config->regs->FIFOSTS & UART_FIFOSTS_TXFULL_Msk))) {
+		/* FIll one byte into TX FIFO */
+		config->regs->DAT = tx_data[tx_bytes++];
+	}
+
+	return tx_bytes;
+}
+
+static int numicro_uart_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
+{
+	const struct numicro_uart_config *config = dev->config;
+	int rx_bytes = 0;
+
+	/* Check RX FIFO not empty, then read */
+	while (((size - rx_bytes) > 0) && (!(config->regs->FIFOSTS & UART_FIFOSTS_RXEMPTY_Msk))) {
+		rx_data[rx_bytes++] = (uint8_t)config->regs->DAT;
+	}
+
+	return rx_bytes;
+}
+
+static void numicro_uart_irq_tx_enable(const struct device *dev)
+{
+	const struct numicro_uart_config *config = dev->config;
+
+	UART_ENABLE_INT(config->regs, UART_INTEN_THREIEN_Msk);
+}
+
+static void numicro_uart_irq_tx_disabled(const struct device *dev)
+{
+	const struct numicro_uart_config *config = dev->config;
+
+	UART_DISABLE_INT(config->regs, UART_INTEN_THREIEN_Msk);
+}
+
+static int numicro_uart_irq_tx_ready(const struct device *dev)
+{
+	const struct numicro_uart_config *config = dev->config;
+
+	return ((!UART_IS_TX_FULL(config->regs)) && (config->regs->INTEN & UART_INTEN_THREIEN_Msk));
+}
+
+static int numicro_uart_irq_tx_complete(const struct device *dev)
+{
+	const struct numicro_uart_config *config = dev->config;
+
+	return (config->regs->INTSTS & UART_INTSTS_THREINT_Msk);
+}
+
+static void numicro_uart_irq_rx_enable(const struct device *dev)
+{
+	const struct numicro_uart_config *config = dev->config;
+
+	UART_ENABLE_INT(config->regs, UART_INTEN_RDAIEN_Msk);
+}
+
+static void numicro_uart_irq_rx_disabled(const struct device *dev)
+{
+	const struct numicro_uart_config *config = dev->config;
+
+	UART_DISABLE_INT(config->regs, UART_INTEN_RDAIEN_Msk);
+}
+
+static int numicro_uart_irq_rx_ready(const struct device *dev)
+{
+	const struct numicro_uart_config *config = dev->config;
+
+	return ((!UART_GET_RX_EMPTY(config->regs)) &&
+		(config->regs->INTEN & UART_INTEN_RDAIEN_Msk));
+}
+
+static void numicro_uart_irq_err_enable(const struct device *dev)
+{
+	const struct numicro_uart_config *config = dev->config;
+
+	UART_ENABLE_INT(config->regs, UART_INTEN_BUFERRIEN_Msk | UART_INTEN_SWBEIEN_Msk);
+}
+
+static void numicro_uart_irq_err_disabled(const struct device *dev)
+{
+	const struct numicro_uart_config *config = dev->config;
+
+	UART_DISABLE_INT(config->regs, UART_INTEN_BUFERRIEN_Msk | UART_INTEN_SWBEIEN_Msk);
+}
+
+static int numicro_uart_irq_is_pending(const struct device *dev)
+{
+	return (numicro_uart_irq_tx_ready(dev) || numicro_uart_irq_rx_ready(dev));
+}
+
+static int numicro_uart_irq_update(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	/* nothing to be done here */
+	return 1;
+}
+
+static void numicro_uart_irq_callback_set(const struct device *dev,
+					  uart_irq_callback_user_data_t cb, void *cb_data)
+{
+	struct numicro_uart_data *data = dev->data;
+
+	data->user_cb = cb;
+	data->user_data = cb_data;
+}
+
+static void numicro_uart_isr(const struct device *dev)
+{
+	struct numicro_uart_data *data = dev->data;
+
+	if (data->user_cb) {
+		data->user_cb(dev, data->user_data);
+	}
+}
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 static DEVICE_API(uart, numicro_uart_driver_api) = {
 	.poll_in = numicro_uart_poll_in,
@@ -241,10 +402,42 @@ static DEVICE_API(uart, numicro_uart_driver_api) = {
 	.configure = numicro_uart_configure,
 	.config_get = numicro_uart_config_get,
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	.fifo_fill = numicro_uart_fifo_fill,
+	.fifo_read = numicro_uart_fifo_read,
+	.irq_tx_enable = numicro_uart_irq_tx_enable,
+	.irq_tx_disable = numicro_uart_irq_tx_disabled,
+	.irq_tx_ready = numicro_uart_irq_tx_ready,
+	.irq_tx_complete = numicro_uart_irq_tx_complete,
+	.irq_rx_enable = numicro_uart_irq_rx_enable,
+	.irq_rx_disable = numicro_uart_irq_rx_disabled,
+	.irq_rx_ready = numicro_uart_irq_rx_ready,
+	.irq_err_enable = numicro_uart_irq_err_enable,
+	.irq_err_disable = numicro_uart_irq_err_disabled,
+	.irq_is_pending = numicro_uart_irq_is_pending,
+	.irq_update = numicro_uart_irq_update,
+	.irq_callback_set = numicro_uart_irq_callback_set,
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+#define NUMICRO_UART_IRQ_FN_NAME(inst) numicro_uart_irq_config_##inst
+#define NUMICRO_UART_IRQ_CONFIG_FUNC(inst)                                                         \
+	static void NUMICRO_UART_IRQ_FN_NAME(inst)(const struct device *dev)                       \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), numicro_uart_isr,     \
+			    DEVICE_DT_INST_GET(inst), 0);                                          \
+		irq_enable(DT_INST_IRQN(inst));                                                    \
+	}
+#define NUMICRO_UART_DEFINE_IRQ(inst) .irq_config_func = NUMICRO_UART_IRQ_FN_NAME(inst)
+#else /* CONFIG_UART_INTERRUPT_DRIVEN */
+#define NUMICRO_UART_IRQ_CONFIG_FUNC(inst)
+#define NUMICRO_UART_DEFINE_IRQ(inst)
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 #define NUMICRO_UART_INIT(inst)                                                                    \
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
+	NUMICRO_UART_IRQ_CONFIG_FUNC(inst)                                                         \
                                                                                                    \
 	static const struct numicro_uart_config numicro_uart_config_##inst = {                     \
 		.regs = (UART_T *)DT_INST_REG_ADDR(inst),                                          \
@@ -264,7 +457,7 @@ static DEVICE_API(uart, numicro_uart_driver_api) = {
 			},                                                                         \
 		.clk_dev = DEVICE_DT_GET(DT_PARENT(DT_INST_CLOCKS_CTLR(inst))),                    \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                    \
-	};                                                                                         \
+		NUMICRO_UART_DEFINE_IRQ(inst)};                                                    \
                                                                                                    \
 	static struct numicro_uart_data numicro_uart_data_##inst = {                               \
 		.ucfg = {.baudrate = DT_INST_PROP(inst, current_speed),                            \
