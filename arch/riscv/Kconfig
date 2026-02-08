@@ -967,6 +967,11 @@ config RISCV_FPU_INSN_VALIDATE
 	  instructions (like Vector instructions) might accidentally trigger
 	  an FP trap.
 
+config ARCH_SUPPORTS_USERSPACE_SIGNALS
+	bool
+	default y
+
+
 rsource "Kconfig.isa"
 
 rsource "custom/Kconfig"

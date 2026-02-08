@@ -37,6 +37,17 @@ extern "C" {
  * Syscall invocation macros. riscv-specific machine constraints used to ensure
  * args land in the proper registers.
  */
+/*
+ * A trap preserves every register, a signal handler delivered on its return path
+ * does not: the caller-saved registers come back as the handler left them, so the
+ * asm declares them clobbered, as a call would, and nothing stays live in them.
+ */
+#if defined(CONFIG_RISCV_ISA_RV32E)
+#define Z_SYSCALL_CLOBBERS "t1", "t2", "memory"
+#else
+#define Z_SYSCALL_CLOBBERS "t1", "t2", "t3", "t4", "t5", "t6", "a6", "a7", "memory"
+#endif
+
 static inline uintptr_t arch_syscall_invoke6(uintptr_t arg1, uintptr_t arg2,
 					     uintptr_t arg3, uintptr_t arg4,
 					     uintptr_t arg5, uintptr_t arg6,
@@ -51,10 +62,9 @@ static inline uintptr_t arch_syscall_invoke6(uintptr_t arg1, uintptr_t arg2,
 	register unsigned long t0 __asm__ ("t0") = call_id;
 
 	__asm__ volatile ("ecall"
-			  : "+r" (a0)
-			  : "r" (a1), "r" (a2), "r" (a3), "r" (a4), "r" (a5),
-			  "r" (t0)
-			  : "memory");
+			  : "+r" (a0), "+r" (a1), "+r" (a2), "+r" (a3), "+r" (a4), "+r" (a5)
+			  : "r" (t0)
+			  : Z_SYSCALL_CLOBBERS);
 	return a0;
 }
 
@@ -71,9 +81,9 @@ static inline uintptr_t arch_syscall_invoke5(uintptr_t arg1, uintptr_t arg2,
 	register unsigned long t0 __asm__ ("t0") = call_id;
 
 	__asm__ volatile ("ecall"
-			  : "+r" (a0)
-			  : "r" (a1), "r" (a2), "r" (a3), "r" (a4), "r" (t0)
-			  : "memory");
+			  : "+r" (a0), "+r" (a1), "+r" (a2), "+r" (a3), "+r" (a4)
+			  : "r" (t0)
+			  : "a5", Z_SYSCALL_CLOBBERS);
 	return a0;
 }
 
@@ -88,9 +98,9 @@ static inline uintptr_t arch_syscall_invoke4(uintptr_t arg1, uintptr_t arg2,
 	register unsigned long t0 __asm__ ("t0") = call_id;
 
 	__asm__ volatile ("ecall"
-			  : "+r" (a0)
-			  : "r" (a1), "r" (a2), "r" (a3), "r" (t0)
-			  : "memory");
+			  : "+r" (a0), "+r" (a1), "+r" (a2), "+r" (a3)
+			  : "r" (t0)
+			  : "a4", "a5", Z_SYSCALL_CLOBBERS);
 	return a0;
 }
 
@@ -104,9 +114,9 @@ static inline uintptr_t arch_syscall_invoke3(uintptr_t arg1, uintptr_t arg2,
 	register unsigned long t0 __asm__ ("t0") = call_id;
 
 	__asm__ volatile ("ecall"
-			  : "+r" (a0)
-			  : "r" (a1), "r" (a2), "r" (t0)
-			  : "memory");
+			  : "+r" (a0), "+r" (a1), "+r" (a2)
+			  : "r" (t0)
+			  : "a3", "a4", "a5", Z_SYSCALL_CLOBBERS);
 	return a0;
 }
 
@@ -118,9 +128,9 @@ static inline uintptr_t arch_syscall_invoke2(uintptr_t arg1, uintptr_t arg2,
 	register unsigned long t0 __asm__ ("t0") = call_id;
 
 	__asm__ volatile ("ecall"
-			  : "+r" (a0)
-			  : "r" (a1), "r" (t0)
-			  : "memory");
+			  : "+r" (a0), "+r" (a1)
+			  : "r" (t0)
+			  : "a2", "a3", "a4", "a5", Z_SYSCALL_CLOBBERS);
 	return a0;
 }
 
@@ -132,7 +142,7 @@ static inline uintptr_t arch_syscall_invoke1(uintptr_t arg1, uintptr_t call_id)
 	__asm__ volatile ("ecall"
 			  : "+r" (a0)
 			  : "r" (t0)
-			  : "memory");
+			  : "a1", "a2", "a3", "a4", "a5", Z_SYSCALL_CLOBBERS);
 	return a0;
 }
 
@@ -144,7 +154,7 @@ static inline uintptr_t arch_syscall_invoke0(uintptr_t call_id)
 	__asm__ volatile ("ecall"
 			  : "=r" (a0)
 			  : "r" (t0)
-			  : "memory");
+			  : "a1", "a2", "a3", "a4", "a5", Z_SYSCALL_CLOBBERS);
 	return a0;
 }
 

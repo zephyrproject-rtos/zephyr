@@ -152,6 +152,10 @@ GTEXT(z_riscv_custom_stack_guard_enable)
 GTEXT(z_riscv_custom_stack_guard_disable)
 #endif /* CONFIG_CUSTOM_STACK_GUARD */
 
+#if defined(CONFIG_SIGNAL) && defined(CONFIG_USERSPACE)
+GTEXT(z_sig_handle)
+#endif
+
 /* exports */
 GTEXT(_isr_wrapper)
 
@@ -729,6 +733,75 @@ valid_syscall_id:
 
 	/* Update a0 (return value) on the stack */
 	sr a0, __struct_arch_esf_a0_OFFSET(sp)
+
+#ifdef CONFIG_SIGNAL
+	/* reload the syscall id: t0 is caller-saved and the syscall may have clobbered it */
+	lr t0, __struct_arch_esf_t0_OFFSET(sp)
+
+	li t1, K_SYSCALL_K_SIG_ACTION
+	beq t0, t1, skip_z_sig_handle
+	li t1, K_SYSCALL_K_SIG_CURRENT
+	beq t0, t1, skip_z_sig_handle
+	li t1, K_SYSCALL_K_SIG_RETURN
+	beq t0, t1, z_sig_return_restore
+
+	mv a0, sp
+	call z_sig_handle
+	beqz a0, skip_z_sig_handle
+
+	/*
+	 * z_sig_handle() redirected the return path into the signal trampoline. The trampoline
+	 * chain clobbers the callee-saved registers per the ABI and k_sig_return() resumes the
+	 * interrupted context without unwinding, so capture them now: at this point they still
+	 * hold the interrupted context's values (s0 is preserved via the esf).
+	 */
+	lr t1, ___cpu_t_current_OFFSET(s0)
+	li t2, __thread_sig_user_s_OFFSET
+	add t1, t1, t2
+	sr s1, (0*RV_REGSIZE)(t1)
+#if !defined(CONFIG_RISCV_ISA_RV32E)
+	sr s2, (1*RV_REGSIZE)(t1)
+	sr s3, (2*RV_REGSIZE)(t1)
+	sr s4, (3*RV_REGSIZE)(t1)
+	sr s5, (4*RV_REGSIZE)(t1)
+	sr s6, (5*RV_REGSIZE)(t1)
+	sr s7, (6*RV_REGSIZE)(t1)
+	sr s8, (7*RV_REGSIZE)(t1)
+	sr s9, (8*RV_REGSIZE)(t1)
+	sr s10, (9*RV_REGSIZE)(t1)
+	sr s11, (10*RV_REGSIZE)(t1)
+#endif
+	j skip_z_sig_handle
+
+z_sig_return_restore:
+	lr t1, ___cpu_t_current_OFFSET(s0)
+
+	/* the return-value store above overwrote the resumed context's a0 */
+	li t2, __thread_sig_user_a0_OFFSET
+	add t2, t1, t2
+	lr t0, 0(t2)
+	sr t0, __struct_arch_esf_a0_OFFSET(sp)
+
+	/* restore the callee-saved registers captured when the trampoline was entered */
+	li t2, __thread_sig_user_s_OFFSET
+	add t1, t1, t2
+	lr s1, (0*RV_REGSIZE)(t1)
+#if !defined(CONFIG_RISCV_ISA_RV32E)
+	lr s2, (1*RV_REGSIZE)(t1)
+	lr s3, (2*RV_REGSIZE)(t1)
+	lr s4, (3*RV_REGSIZE)(t1)
+	lr s5, (4*RV_REGSIZE)(t1)
+	lr s6, (5*RV_REGSIZE)(t1)
+	lr s7, (6*RV_REGSIZE)(t1)
+	lr s8, (7*RV_REGSIZE)(t1)
+	lr s9, (8*RV_REGSIZE)(t1)
+	lr s10, (9*RV_REGSIZE)(t1)
+	lr s11, (10*RV_REGSIZE)(t1)
+#endif
+
+skip_z_sig_handle:
+#endif
+
 
 	/* Disable IRQs again before leaving */
 	csrc RV_STATUS, STATUS_IE

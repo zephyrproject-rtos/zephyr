@@ -105,6 +105,21 @@ struct arch_esf {
 typedef struct soc_esf soc_esf_t;
 #endif
 
+#if defined(CONFIG_SIGNAL) && defined(CONFIG_USERSPACE)
+struct arch_sig_ctx {
+	unsigned long ra;		/* return address */
+	unsigned long a0;		/* function argument/return value */
+	unsigned long mepc;		/* machine exception program counter */
+	unsigned long sp;               /* preserved (user or kernel) stack pointer */
+	unsigned long s0;		/* callee-saved s0 of the interrupted context */
+#if defined(CONFIG_RISCV_ISA_RV32E)
+	unsigned long s[1];             /* s1 */
+#else
+	unsigned long s[11];            /* s1..s11 */
+#endif
+};
+#endif
+
 #ifdef __cplusplus
 }
 #endif

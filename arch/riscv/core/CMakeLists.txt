@@ -44,6 +44,10 @@ zephyr_library_sources_ifdef(CONFIG_ARCH_STACKWALK stacktrace.c)
 zephyr_linker_sources(ROM_START SORT_KEY 0x0vectors vector_table.ld)
 zephyr_library_sources_ifdef(CONFIG_LLEXT elf.c)
 
+if(CONFIG_SIGNAL AND CONFIG_USERSPACE)
+  zephyr_library_sources(signal.c)
+endif()
+
 if(CONFIG_GEN_SW_ISR_TABLE)
   if(CONFIG_DYNAMIC_INTERRUPTS)
     zephyr_linker_sources(RWDATA swi_tables.ld)

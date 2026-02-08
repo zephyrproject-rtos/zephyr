@@ -27,6 +27,13 @@
 
 #include <kernel_offsets.h>
 
+#if defined(CONFIG_SIGNAL) && defined(CONFIG_USERSPACE)
+GEN_ABSOLUTE_SYM(__thread_sig_user_s_OFFSET,
+		 offsetof(struct k_thread, base.sig.user.s));
+GEN_ABSOLUTE_SYM(__thread_sig_user_a0_OFFSET,
+		 offsetof(struct k_thread, base.sig.user.a0));
+#endif
+
 /* struct _callee_saved member offsets */
 GEN_OFFSET_SYM(_callee_saved_t, sp);
 GEN_OFFSET_SYM(_callee_saved_t, ra);
