@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Maximilian Zimmermann
+# SPDX-License-Identifier: Apache-2.0
+
+description: QEMU fw_cfg (I/O port transport)
+
+compatible: "qemu,fw-cfg-ioport"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true

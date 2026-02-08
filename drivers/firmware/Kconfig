@@ -10,6 +10,11 @@ config ARM_SCMI
 	  Enable support for ARM's System Configuration and Management
 	  Interface (SCMI).
 
+config QEMU_FWCFG
+	bool "Support for QEMU's fwcfg"
+	help
+	  Enable support for QEMU's firmware configuration device.
+
 # zephyr-keep-sorted-start
 source "drivers/firmware/scmi/Kconfig"
 source "drivers/firmware/tisci/Kconfig"

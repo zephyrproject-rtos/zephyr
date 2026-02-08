@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Maximilian Zimmermann
+# SPDX-License-Identifier: Apache-2.0
+
+description: QEMU fw_cfg (MMIO transport)
+
+compatible: "qemu,fw-cfg-mmio"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
