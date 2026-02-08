@@ -1,0 +1,69 @@
+/*
+ * Copyright (c) 2025 Altronix
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * RS485 Echo Bot configuration for SAME54 Xplained Pro
+ * Using SERCOM0 with:
+ *   - TX on PA04 (SERCOM0 PAD0)
+ *   - RX on PA05 (SERCOM0 PAD1)
+ *   - DE/RE on PA22 (Driver Enable and Receiver Enable tied together)
+ */
+
+#include <dt-bindings/pinctrl/same54p-pinctrl.h>
+
+/* Add SERCOM0 pinctrl configuration */
+&pinctrl {
+	sercom0_uart_rs485: sercom0_uart_rs485 {
+		group1 {
+			pinmux = <PA4D_SERCOM0_PAD0>,  /* TX */
+				 <PA5D_SERCOM0_PAD1>;  /* RX */
+		};
+	};
+};
+
+/* Configure SERCOM0 as UART with RS485 support */
+&sercom0 {
+	status = "okay";
+	compatible = "atmel,sam0-uart";
+	current-speed = <115200>;
+	rxpo = <1>;  /* RX on PAD1 */
+	txpo = <0>;  /* TX on PAD0 */
+
+	/*
+	 * RS485 transceiver control
+	 *
+	 * Option 1: DE and RE tied together (RECOMMENDED - most common)
+	 * ---------------------------------------------------------------
+	 * If your RS485 transceiver has DE and RE pins connected together,
+	 * only specify de-gpios:
+	 *
+	 *   de-gpios = <&porta 22 GPIO_ACTIVE_HIGH>;
+	 *
+	 * The driver will:
+	 *   - Set GPIO HIGH during transmit (enables driver)
+	 *   - Set GPIO LOW during receive (enables receiver)
+	 *
+	 * Option 2: Separate DE and RE control
+	 * -------------------------------------
+	 * If your transceiver has separate DE and RE pins, specify both:
+	 *
+	 *   de-gpios = <&porta 22 GPIO_ACTIVE_HIGH>;
+	 *   re-gpios = <&porta 23 GPIO_ACTIVE_LOW>;
+	 *
+	 * Note: RE is typically active-low (inverted), so when the driver
+	 * "enables RX", it sets the GPIO to 1, which pulls RE low.
+	 */
+	de-gpios = <&porta 22 GPIO_ACTIVE_HIGH>;
+
+	pinctrl-0 = <&sercom0_uart_rs485>;
+	pinctrl-names = "default";
+};
+
+/* Override the chosen UART for this sample */
+/ {
+	chosen {
+		zephyr,shell-uart = &sercom0;
+	};
+};

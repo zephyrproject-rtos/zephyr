@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Google LLC.
  * Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2025 Altronix
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,8 +16,15 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/gpio.h>
 #include <string.h>
 #include <zephyr/irq.h>
+
+/* Check if any UART instance has RS485 GPIO support */
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(de_gpios) || \
+	DT_ANY_INST_HAS_PROP_STATUS_OKAY(re_gpios)
+#define UART_SAM0_RS485_SUPPORTED 1
+#endif
 
 /* clang-format off */
 
@@ -54,6 +62,12 @@ struct uart_sam0_dev_cfg {
 	uint8_t rx_dma_channel;
 #endif
 	const struct pinctrl_dev_config *pcfg;
+
+#ifdef UART_SAM0_RS485_SUPPORTED
+	/* RS485 transceiver control (optional) */
+	struct gpio_dt_spec de_gpio;  /* Driver Enable */
+	struct gpio_dt_spec re_gpio;  /* Receiver Enable */
+#endif
 };
 
 /* Device run time data */
@@ -103,6 +117,60 @@ static void wait_synchronization(SercomUsart *const usart)
 #error Unsupported device
 #endif
 }
+
+#ifdef UART_SAM0_RS485_SUPPORTED
+/*
+ * RS485 transceiver control helpers
+ * These are no-ops when de_gpio/re_gpio are not configured in device tree
+ */
+static inline void uart_sam0_rs485_tx_enable(const struct device *dev)
+{
+	const struct uart_sam0_dev_cfg *config = dev->config;
+
+	if (config->de_gpio.port != NULL) {
+		gpio_pin_set_dt(&config->de_gpio, 1);
+	}
+}
+
+static inline void uart_sam0_rs485_tx_disable(const struct device *dev)
+{
+	const struct uart_sam0_dev_cfg *config = dev->config;
+
+	if (config->de_gpio.port != NULL) {
+		gpio_pin_set_dt(&config->de_gpio, 0);
+	}
+}
+
+static inline void uart_sam0_rs485_rx_enable(const struct device *dev)
+{
+	const struct uart_sam0_dev_cfg *config = dev->config;
+
+	if (config->re_gpio.port != NULL) {
+		gpio_pin_set_dt(&config->re_gpio, 1);
+	}
+}
+
+static inline void uart_sam0_rs485_rx_disable(const struct device *dev)
+{
+	const struct uart_sam0_dev_cfg *config = dev->config;
+
+	if (config->re_gpio.port != NULL) {
+		gpio_pin_set_dt(&config->re_gpio, 0);
+	}
+}
+
+static inline void uart_sam0_rs485_isr_txc(const struct device *dev)
+{
+	const struct uart_sam0_dev_cfg *const cfg = dev->config;
+
+	/* Switch back to RX mode after transmission completes */
+	if (cfg->regs->INTFLAG.bit.TXC && (cfg->regs->INTENSET.bit.TXC != 0)) {
+		cfg->regs->INTENCLR.reg = SERCOM_USART_INTENCLR_TXC;
+		uart_sam0_rs485_tx_disable(dev);
+		uart_sam0_rs485_rx_enable(dev);
+	}
+}
+#endif /* UART_SAM0_RS485_SUPPORTED */
 
 static int uart_sam0_set_baudrate(SercomUsart *const usart, uint32_t baudrate,
 				  uint32_t clk_freq_hz)
@@ -401,12 +469,19 @@ static int uart_sam0_configure(const struct device *dev,
 	usart->CTRLA.bit.ENABLE = 0;
 	wait_synchronization(usart);
 
-	if (new_cfg->flow_ctrl != UART_CFG_FLOW_CTRL_NONE) {
-		/* Flow control not yet supported though in principle possible
-		 * on this soc family.
-		 */
+#ifdef UART_SAM0_RS485_SUPPORTED
+	if (new_cfg->flow_ctrl == UART_CFG_FLOW_CTRL_RS485) {
+		if (!cfg->de_gpio.port) {
+			return -ENOTSUP;
+		}
+	} else if (new_cfg->flow_ctrl != UART_CFG_FLOW_CTRL_NONE) {
 		return -ENOTSUP;
 	}
+#else
+	if (new_cfg->flow_ctrl != UART_CFG_FLOW_CTRL_NONE) {
+		return -ENOTSUP;
+	}
+#endif
 
 	dev_data->config_cache.flow_ctrl = new_cfg->flow_ctrl;
 
@@ -544,6 +619,29 @@ static int uart_sam0_init(const struct device *dev)
 		return retval;
 	}
 
+#ifdef UART_SAM0_RS485_SUPPORTED
+	/* RS485: Initialize DE (INACTIVE=rx mode) and RE (ACTIVE=rx enabled) */
+	if (cfg->de_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&cfg->de_gpio)) {
+			return -ENODEV;
+		}
+		retval = gpio_pin_configure_dt(&cfg->de_gpio, GPIO_OUTPUT_INACTIVE);
+		if (retval < 0) {
+			return retval;
+		}
+	}
+
+	if (cfg->re_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&cfg->re_gpio)) {
+			return -ENODEV;
+		}
+		retval = gpio_pin_configure_dt(&cfg->re_gpio, GPIO_OUTPUT_ACTIVE);
+		if (retval < 0) {
+			return retval;
+		}
+	}
+#endif
+
 	dev_data->config_cache.flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
 	dev_data->config_cache.parity = UART_CFG_PARITY_NONE;
 	dev_data->config_cache.stop_bits = UART_CFG_STOP_BITS_1;
@@ -651,11 +749,24 @@ static void uart_sam0_poll_out(const struct device *dev, unsigned char c)
 
 	SercomUsart * const usart = config->regs;
 
+#ifdef UART_SAM0_RS485_SUPPORTED
+	uart_sam0_rs485_tx_enable(dev);
+	uart_sam0_rs485_rx_disable(dev);
+#endif
+
 	while (!usart->INTFLAG.bit.DRE) {
 	}
 
-	/* send a character */
 	usart->DATA.reg = c;
+
+#ifdef UART_SAM0_RS485_SUPPORTED
+	/* Wait for TX complete before disabling DE */
+	while (!usart->INTFLAG.bit.TXC) {
+	}
+
+	uart_sam0_rs485_tx_disable(dev);
+	uart_sam0_rs485_rx_enable(dev);
+#endif
 }
 
 static int uart_sam0_err_check(const struct device *dev)
@@ -708,6 +819,10 @@ static void uart_sam0_isr(const struct device *dev)
 	struct uart_sam0_dev_data *const dev_data = dev->data;
 
 #if CONFIG_UART_INTERRUPT_DRIVEN
+#ifdef UART_SAM0_RS485_SUPPORTED
+	uart_sam0_rs485_isr_txc(dev);
+#endif
+
 	if (dev_data->cb) {
 		dev_data->cb(dev, dev_data->cb_data);
 	}
@@ -794,19 +909,29 @@ static int uart_sam0_fifo_fill(const struct device *dev,
 static void uart_sam0_irq_tx_enable(const struct device *dev)
 {
 	const struct uart_sam0_dev_cfg *config = dev->config;
+
 	SercomUsart * const regs = config->regs;
 
+#ifdef UART_SAM0_RS485_SUPPORTED
+	uart_sam0_rs485_tx_enable(dev);
+	uart_sam0_rs485_rx_disable(dev);
+#endif
+
 	regs->INTENSET.reg = SERCOM_USART_INTENSET_DRE
-			   | SERCOM_USART_INTENSET_TXC;
+#ifdef UART_SAM0_RS485_SUPPORTED
+			   | SERCOM_USART_INTENSET_TXC
+#endif
+			   ;
 }
 
 static void uart_sam0_irq_tx_disable(const struct device *dev)
 {
 	const struct uart_sam0_dev_cfg *config = dev->config;
+
 	SercomUsart * const regs = config->regs;
 
-	regs->INTENCLR.reg = SERCOM_USART_INTENCLR_DRE
-			   | SERCOM_USART_INTENCLR_TXC;
+	/* Keep TXC enabled for RS485: ISR switches back to RX mode when done */
+	regs->INTENCLR.reg = SERCOM_USART_INTENCLR_DRE;
 }
 
 static int uart_sam0_irq_tx_ready(const struct device *dev)
@@ -829,7 +954,12 @@ static int uart_sam0_irq_tx_complete(const struct device *dev)
 static void uart_sam0_irq_rx_enable(const struct device *dev)
 {
 	const struct uart_sam0_dev_cfg *config = dev->config;
+
 	SercomUsart * const regs = config->regs;
+
+#ifdef UART_SAM0_RS485_SUPPORTED
+	uart_sam0_rs485_rx_enable(dev);
+#endif
 
 	regs->INTENSET.reg = SERCOM_USART_INTENSET_RXC;
 }
@@ -840,6 +970,10 @@ static void uart_sam0_irq_rx_disable(const struct device *dev)
 	SercomUsart * const regs = config->regs;
 
 	regs->INTENCLR.reg = SERCOM_USART_INTENCLR_RXC;
+
+#ifdef UART_SAM0_RS485_SUPPORTED
+	uart_sam0_rs485_rx_disable(dev);
+#endif
 }
 
 static int uart_sam0_irq_rx_ready(const struct device *dev)
@@ -1270,6 +1404,14 @@ static void uart_sam0_irq_config_##n(const struct device *dev)		\
 #define ASSIGNED_CLOCKS_CELL_BY_NAME					\
 	ATMEL_SAM0_DT_INST_ASSIGNED_CLOCKS_CELL_BY_NAME
 
+#ifdef UART_SAM0_RS485_SUPPORTED
+#define UART_SAM0_RS485_GPIO_INIT(n)					\
+	.de_gpio = GPIO_DT_SPEC_INST_GET_OR(n, de_gpios, {0}),		\
+	.re_gpio = GPIO_DT_SPEC_INST_GET_OR(n, re_gpios, {0}),
+#else
+#define UART_SAM0_RS485_GPIO_INIT(n)
+#endif
+
 #define UART_SAM0_CONFIG_DEFN(n)					\
 static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {		\
 	.regs = (SercomUsart *)DT_INST_REG_ADDR(n),			\
@@ -1283,6 +1425,7 @@ static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {		\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	UART_SAM0_IRQ_HANDLER_FUNC(n)					\
 	UART_SAM0_DMA_CHANNELS(n)					\
+	UART_SAM0_RS485_GPIO_INIT(n)					\
 }
 
 #define UART_SAM0_DEVICE_INIT(n)					\
