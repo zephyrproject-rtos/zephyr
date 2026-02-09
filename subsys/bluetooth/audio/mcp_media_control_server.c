@@ -1943,6 +1943,33 @@ static const char *get_player_name(void)
 	return media_player.name;
 }
 
+int bt_mcp_media_control_server_get_player_name(char *name, size_t name_size)
+{
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return -ENODEV;
+	}
+
+	size_t player_name_len;
+
+	if (name == NULL) {
+		LOG_DBG("name is NULL");
+		return -EINVAL;
+	}
+
+	player_name_len = strlen(media_player.name);
+
+	if (name_size <= player_name_len) {
+		LOG_DBG("name_size %zu cannot fit player_name_len %zu", name_size, player_name_len);
+		return -ENOMEM;
+	}
+
+	(void)memcpy(name, media_player.name, player_name_len);
+	name[player_name_len] = '\0';
+
+	return 0;
+}
+
 static void set_player_name(const char *name)
 {
 	size_t len = strlen(name);
@@ -1958,10 +1985,53 @@ static void set_player_name(const char *name)
 	}
 }
 
+int bt_mcp_media_control_server_set_player_name(const char *name)
+{
+	size_t player_name_len;
+
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return -ENODEV;
+	}
+
+	if (name == NULL) {
+		LOG_DBG("name is NULL");
+		return -EINVAL;
+	}
+
+	player_name_len = strlen(name);
+
+	if (player_name_len >= sizeof(media_player.name)) {
+		LOG_DBG("Media Player Name is too long: %zu", player_name_len);
+		return -ENOMEM;
+	}
+
+	set_player_name(name);
+
+	return 0;
+}
+
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
 static uint64_t get_icon_id(void)
 {
 	return media_player.icon_id;
+}
+
+int bt_mcp_media_control_server_get_icon_id(uint64_t *id)
+{
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return -ENODEV;
+	}
+
+	if (id == NULL) {
+		LOG_DBG("id is NULL");
+		return -EINVAL;
+	}
+
+	*id = media_player.icon_id;
+
+	return 0;
 }
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
 
@@ -1970,9 +2040,70 @@ static const char *get_icon_url(void)
 	return media_player.icon_url;
 }
 
+int bt_mcp_media_control_server_get_icon_url(char *url, size_t url_size)
+{
+	const size_t icon_url_len = strlen(media_player.icon_url);
+
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return -ENODEV;
+	}
+
+	if (url == NULL) {
+		LOG_DBG("url is NULL");
+		return -EINVAL;
+	}
+
+	if (url_size <= icon_url_len) {
+		LOG_DBG("url_size %zu cannot fit icon_url_len %zu", url_size, icon_url_len);
+		return -ENOMEM;
+	}
+
+	(void)memcpy(url, media_player.icon_url, icon_url_len);
+	url[icon_url_len] = '\0';
+
+	return 0;
+}
+
 static const char *get_track_title(void)
 {
 	return media_player.group->track->title;
+}
+
+int bt_mcp_media_control_server_get_track_title(char *track_title, size_t track_title_size)
+{
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return -ENODEV;
+	}
+
+	if (track_title == NULL) {
+		LOG_DBG("track_title is NULL");
+		return -EINVAL;
+	}
+
+	if (media_player.group == NULL) {
+		LOG_DBG("media_player.group is NULL");
+		return -ENOENT;
+	}
+
+	if (media_player.group->track == NULL) {
+		LOG_DBG("media_player.group->track is NULL");
+		return -ENOENT;
+	}
+
+	const size_t track_title_len = strlen(media_player.group->track->title);
+
+	if (track_title_size <= track_title_len) {
+		LOG_DBG("track_title_size %zu cannot fit track_title_len %zu", track_title_size,
+			track_title_len);
+		return -ENOMEM;
+	}
+
+	(void)memcpy(track_title, media_player.group->track->title, track_title_len);
+	track_title[track_title_len] = '\0';
+
+	return 0;
 }
 
 static int32_t get_track_duration(void)
@@ -1980,9 +2111,53 @@ static int32_t get_track_duration(void)
 	return media_player.group->track->duration;
 }
 
+int bt_mcp_media_control_server_get_track_duration(int32_t *duration)
+{
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return -ENODEV;
+	}
+
+	if (duration == NULL) {
+		LOG_DBG("duration is NULL");
+		return -EINVAL;
+	}
+
+	if (media_player.group == NULL) {
+		LOG_DBG("media_player.group is NULL");
+		return -ENOENT;
+	}
+
+	if (media_player.group->track == NULL) {
+		LOG_DBG("media_player.group->track is NULL");
+		return -ENOENT;
+	}
+
+	*duration = media_player.group->track->duration;
+
+	return 0;
+}
+
 static int32_t get_track_position(void)
 {
 	return media_player.track_pos;
+}
+
+int bt_mcp_media_control_server_get_track_position(int32_t *position)
+{
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return -ENODEV;
+	}
+
+	if (position == NULL) {
+		LOG_DBG("position is NULL");
+		return -EINVAL;
+	}
+
+	*position = media_player.track_pos;
+
+	return 0;
 }
 
 static void set_track_position(int32_t position)
@@ -2029,6 +2204,28 @@ static void set_track_position(int32_t position)
 			bt_mcs_track_position_changed();
 		}
 	}
+}
+
+int bt_mcp_media_control_server_set_track_position(int32_t position)
+{
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return -ENODEV;
+	}
+
+	if (media_player.group == NULL) {
+		LOG_DBG("media_player.group is NULL");
+		return -ENOENT;
+	}
+
+	if (media_player.group->track == NULL) {
+		LOG_DBG("media_player.group->track is NULL");
+		return -ENOENT;
+	}
+
+	set_track_position(position);
+
+	return 0;
 }
 
 static void set_relative_track_position(int32_t rel_pos)
@@ -2129,6 +2326,23 @@ static int8_t get_supported_playback_speed(int8_t speed)
 	}
 }
 
+int bt_mcp_media_control_server_get_playback_speed(int8_t *speed)
+{
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return -ENODEV;
+	}
+
+	if (speed == NULL) {
+		LOG_DBG("speed is NULL");
+		return -EINVAL;
+	}
+
+	*speed = media_player.playback_speed_param;
+
+	return 0;
+}
+
 static void set_playback_speed(int8_t speed)
 {
 	/* Set new speed parameter and notify, if different from current */
@@ -2153,15 +2367,71 @@ static void set_playback_speed(int8_t speed)
 	}
 }
 
+int bt_mcp_media_control_server_set_playback_speed(int8_t speed)
+{
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return -ENODEV;
+	}
+
+	set_playback_speed(speed);
+
+	return 0;
+}
+
 static int8_t get_seeking_speed(void)
 {
 	return media_player.seeking_speed_factor;
+}
+
+int bt_mcp_media_control_server_get_seeking_speed(int8_t *speed)
+{
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return -ENODEV;
+	}
+
+	if (speed == NULL) {
+		LOG_DBG("speed is NULL");
+		return -EINVAL;
+	}
+
+	*speed = media_player.seeking_speed_factor;
+
+	return 0;
 }
 
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
 static uint64_t get_track_segments_id(void)
 {
 	return media_player.group->track->segments_id;
+}
+
+int bt_mcp_media_control_server_get_track_segments_id(uint64_t *id)
+{
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return -ENODEV;
+	}
+
+	if (id == NULL) {
+		LOG_DBG("id is NULL");
+		return -EINVAL;
+	}
+
+	if (media_player.group == NULL) {
+		LOG_DBG("media_player.group is NULL");
+		return -ENOENT;
+	}
+
+	if (media_player.group->track == NULL) {
+		LOG_DBG("media_player.group->track is NULL");
+		return -ENOENT;
+	}
+
+	*id = media_player.group->track->segments_id;
+
+	return 0;
 }
 
 static uint64_t get_current_track_id(void)
@@ -2171,7 +2441,28 @@ static uint64_t get_current_track_id(void)
 
 int bt_mcp_media_control_server_get_current_track_id(uint64_t *id)
 {
-	*id = get_current_track_id();
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return -ENODEV;
+	}
+
+	if (id == NULL) {
+		LOG_DBG("id is NULL");
+		return -EINVAL;
+	}
+
+	if (media_player.group == NULL) {
+		LOG_DBG("media_player.group is NULL");
+		return -ENOENT;
+	}
+
+	if (media_player.group->track == NULL) {
+		LOG_DBG("media_player.group->track is NULL");
+		return -ENOENT;
+	}
+
+	*id = media_player.group->track->id;
+
 	return 0;
 }
 
@@ -2203,6 +2494,24 @@ static void set_current_track_id(uint64_t id)
 	 */
 }
 
+int bt_mcp_media_control_server_set_current_track_id(uint64_t id)
+{
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return -ENODEV;
+	}
+
+	if (!IN_RANGE(id, BT_OTS_OBJ_ID_MIN, BT_OTS_OBJ_ID_MAX)) {
+		LOG_DBG("Invalid ID: 0x%016llX", id);
+
+		return -EINVAL;
+	}
+
+	set_current_track_id(id);
+
+	return 0;
+}
+
 static uint64_t get_next_track_id(void)
 {
 	/* If the next track has been set explicitly */
@@ -2221,7 +2530,28 @@ static uint64_t get_next_track_id(void)
 
 int bt_mcp_media_control_server_get_next_track_id(uint64_t *id)
 {
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return -ENODEV;
+	}
+
+	if (id == NULL) {
+		LOG_DBG("id is NULL");
+		return -EINVAL;
+	}
+
+	if (media_player.group == NULL) {
+		LOG_DBG("media_player.group is NULL");
+		return -ENOENT;
+	}
+
+	if (media_player.group->track == NULL) {
+		LOG_DBG("media_player.group->track is NULL");
+		return -ENOENT;
+	}
+
 	*id = get_next_track_id();
+
 	return 0;
 }
 
@@ -2244,6 +2574,24 @@ static void set_next_track_id(uint64_t id)
 	LOG_DBG("Track not found");
 }
 
+int bt_mcp_media_control_server_set_next_track_id(uint64_t id)
+{
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return -ENODEV;
+	}
+
+	if (!IN_RANGE(id, BT_OTS_OBJ_ID_MIN, BT_OTS_OBJ_ID_MAX)) {
+		LOG_DBG("Invalid ID: 0x%016llX", id);
+
+		return -EINVAL;
+	}
+
+	set_next_track_id(id);
+
+	return 0;
+}
+
 static uint64_t get_parent_group_id(void)
 {
 	return media_player.group->parent->id;
@@ -2251,7 +2599,28 @@ static uint64_t get_parent_group_id(void)
 
 int bt_mcp_media_control_server_get_parent_group_id(uint64_t *id)
 {
-	*id = get_parent_group_id();
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return -ENODEV;
+	}
+
+	if (id == NULL) {
+		LOG_DBG("id is NULL");
+		return -EINVAL;
+	}
+
+	if (media_player.group == NULL) {
+		LOG_DBG("media_player.group is NULL");
+		return -ENOENT;
+	}
+
+	if (media_player.group->parent == NULL) {
+		LOG_DBG("media_player.group->parent is NULL");
+		return -ENOENT;
+	}
+
+	*id = media_player.group->parent->id;
+
 	return 0;
 }
 
@@ -2262,7 +2631,23 @@ static uint64_t get_current_group_id(void)
 
 int bt_mcp_media_control_server_get_current_group_id(uint64_t *id)
 {
-	*id = get_current_group_id();
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return -ENODEV;
+	}
+
+	if (id == NULL) {
+		LOG_DBG("id is NULL");
+		return -EINVAL;
+	}
+
+	if (media_player.group == NULL) {
+		LOG_DBG("media_player.group is NULL");
+		return -ENOENT;
+	}
+
+	*id = media_player.group->id;
+
 	return 0;
 }
 
@@ -2287,11 +2672,51 @@ static void set_current_group_id(uint64_t id)
 
 	LOG_DBG("Group not found");
 }
+
+int bt_mcp_media_control_server_set_current_group_id(uint64_t id)
+{
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return -ENODEV;
+	}
+
+	if (!IN_RANGE(id, BT_OTS_OBJ_ID_MIN, BT_OTS_OBJ_ID_MAX)) {
+		LOG_DBG("Invalid ID: 0x%016llX", id);
+
+		return -EINVAL;
+	}
+
+	if (media_player.group == NULL) {
+		LOG_DBG("media_player.group is NULL");
+		return -ENOENT;
+	}
+
+	set_current_group_id(id);
+
+	return 0;
+}
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
 
 static uint8_t get_playing_order(void)
 {
 	return media_player.playing_order;
+}
+
+int bt_mcp_media_control_server_get_playing_order(uint8_t *order)
+{
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return -ENODEV;
+	}
+
+	if (order == NULL) {
+		LOG_DBG("order is NULL");
+		return -EINVAL;
+	}
+
+	*order = media_player.playing_order;
+
+	return 0;
 }
 
 static void set_playing_order(uint8_t order)
@@ -2304,9 +2729,38 @@ static void set_playing_order(uint8_t order)
 	}
 }
 
+int bt_mcp_media_control_server_set_playing_order(uint8_t order)
+{
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return -ENODEV;
+	}
+
+	set_playing_order(order);
+
+	return 0;
+}
+
 static uint16_t get_playing_orders_supported(void)
 {
 	return media_player.playing_orders_supported;
+}
+
+int bt_mcp_media_control_server_get_playing_orders_supported(uint16_t *orders)
+{
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return -ENODEV;
+	}
+
+	if (orders == NULL) {
+		LOG_DBG("orders is NULL");
+		return -EINVAL;
+	}
+
+	*orders = media_player.playing_orders_supported;
+
+	return 0;
 }
 
 static uint8_t get_media_state(void)
@@ -2314,9 +2768,36 @@ static uint8_t get_media_state(void)
 	return media_player.state;
 }
 
+int bt_mcp_media_control_server_get_media_state(uint8_t *state)
+{
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return -ENODEV;
+	}
+
+	if (state == NULL) {
+		LOG_DBG("state is NULL");
+		return -EINVAL;
+	}
+
+	*state = media_player.state;
+
+	return 0;
+}
+
 int bt_mcp_media_control_server_command(const struct bt_mcs_cmd *command)
 {
 	struct bt_mcs_cmd_ntf ntf;
+
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return -ENODEV;
+	}
+
+	if (command == NULL) {
+		LOG_DBG("command is NULL");
+		return -EINVAL;
+	}
 
 	if (command->use_param) {
 		LOG_DBG("opcode: %d, param: %d", command->opcode, command->param);
@@ -2339,6 +2820,23 @@ int bt_mcp_media_control_server_command(const struct bt_mcs_cmd *command)
 static uint32_t get_commands_supported(void)
 {
 	return media_player.opcodes_supported;
+}
+
+int bt_mcp_media_control_server_get_commands_supported(uint32_t *opcodes)
+{
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return -ENODEV;
+	}
+
+	if (opcodes == NULL) {
+		LOG_DBG("opcodes is NULL");
+		return -EINVAL;
+	}
+
+	*opcodes = media_player.opcodes_supported;
+
+	return 0;
 }
 
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
@@ -2408,15 +2906,72 @@ static void send_search(const struct bt_mcp_search *search)
 	parse_search(search);
 }
 
+int bt_mcp_media_control_server_search_command(const struct bt_mcp_search *search)
+{
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return -ENODEV;
+	}
+
+	if (search == NULL) {
+		LOG_DBG("search is NULL");
+		return -EINVAL;
+	}
+
+	if (search->len < SEARCH_LEN_MIN || search->len > SEARCH_LEN_MAX) {
+		LOG_DBG("Invalid search length: %u", search->len);
+		return -EINVAL;
+	}
+
+	/* TODO: need to return error */
+	send_search(search);
+
+	return 0;
+}
+
 static uint64_t get_search_results_id(void)
 {
 	return media_player.search_results_id;
+}
+
+int bt_mcp_media_control_server_get_search_results_id(uint64_t *id)
+{
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return -ENODEV;
+	}
+
+	if (id == NULL) {
+		LOG_DBG("id is NULL");
+		return -EINVAL;
+	}
+
+	*id = media_player.search_results_id;
+
+	return 0;
 }
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
 
 static uint8_t get_content_ctrl_id(void)
 {
 	return media_player.content_ctrl_id;
+}
+
+int bt_mcp_media_control_server_get_ccid(uint8_t *ccid)
+{
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return -ENODEV;
+	}
+
+	if (ccid == NULL) {
+		LOG_DBG("ccid is NULL");
+		return -EINVAL;
+	}
+
+	*ccid = media_player.content_ctrl_id;
+
+	return 0;
 }
 
 /** Calculates the new relative position depending on the state and seeking/playing speed factor
@@ -2473,10 +3028,9 @@ static void pos_work_cb(struct k_work *work)
 
 int bt_mcp_media_control_server_register(void)
 {
-	static bool initialized;
 	int ret;
 
-	if (initialized) {
+	if (media_player.initialized) {
 		LOG_DBG("Already initialized");
 		return -EALREADY;
 	}
@@ -2587,7 +3141,7 @@ int bt_mcp_media_control_server_register(void)
 
 	k_work_init_delayable(&media_player.pos_work, pos_work_cb);
 
-	initialized = true;
+	media_player.initialized = true;
 	return 0;
 }
 
@@ -2595,6 +3149,11 @@ int bt_mcp_media_control_server_register(void)
 
 void bt_mcp_debug_dump_state(void)
 {
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return;
+	}
+
 #if CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
 	char t[BT_OTS_OBJ_ID_STR_LEN];
 	struct bt_mcp_group *group;
@@ -2689,89 +3248,174 @@ void bt_mcp_media_control_server_test_unset_parent_group(void)
 
 void bt_mcp_media_control_server_test_media_state_set(uint8_t state)
 {
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return;
+	}
+
 	bt_mcp_set_state(state);
 }
 
 void bt_mcp_media_control_server_test_player_name_changed_cb(void)
 {
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return;
+	}
+
 	bt_mcs_player_name_changed();
 }
 
 void bt_mcp_media_control_server_test_player_icon_url_changed_cb(void)
 {
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return;
+	}
+
 	bt_mcs_icon_url_changed();
 }
 
 void bt_mcp_media_control_server_test_track_changed_cb(void)
 {
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return;
+	}
+
 	bt_mcs_track_changed();
 }
 
 void bt_mcp_media_control_server_test_title_changed_cb(void)
 {
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return;
+	}
+
 	bt_mcs_track_title_changed();
 }
 
 void bt_mcp_media_control_server_test_duration_changed_cb(void)
 {
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return;
+	}
+
 	bt_mcs_track_duration_changed();
 }
 
 void bt_mcp_media_control_server_test_position_changed_cb(void)
 {
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return;
+	}
+
 	bt_mcs_track_position_changed();
 }
 
 void bt_mcp_media_control_server_test_playback_speed_changed_cb(void)
 {
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return;
+	}
+
 	bt_mcs_playback_speed_changed();
 }
 
 void bt_mcp_media_control_server_test_seeking_speed_changed_cb(void)
 {
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return;
+	}
+
 	bt_mcs_seeking_speed_changed();
 }
 
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
 void bt_mcp_media_control_server_test_current_track_id_changed_cb(void)
 {
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return;
+	}
+
 	bt_mcs_current_track_id_changed();
 }
 
 void bt_mcp_media_control_server_test_next_track_id_changed_cb(void)
 {
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return;
+	}
+
 	bt_mcs_next_track_id_changed();
 }
 
 void bt_mcp_media_control_server_test_parent_group_id_changed_cb(void)
 {
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return;
+	}
+
 	bt_mcs_parent_group_id_changed();
 }
 
 void bt_mcp_media_control_server_test_current_group_id_changed_cb(void)
 {
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return;
+	}
+
 	bt_mcs_current_group_id_changed();
 }
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
 
 void bt_mcp_media_control_server_test_playing_order_changed_cb(void)
 {
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return;
+	}
+
 	bt_mcs_playing_order_changed();
 }
 
 void bt_mcp_media_control_server_test_media_state_changed_cb(void)
 {
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return;
+	}
+
 	bt_mcs_media_state_changed();
 }
 
 void bt_mcp_media_control_server_test_opcodes_supported_changed_cb(void)
 {
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return;
+	}
+
 	bt_mcs_commands_supported_changed();
 }
 
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
 void bt_mcp_media_control_server_test_search_results_changed_cb(void)
 {
+	if (!media_player.initialized) {
+		LOG_DBG("Media player is not initialized");
+		return;
+	}
+
 	bt_mcs_search_results_id_changed();
 }
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */

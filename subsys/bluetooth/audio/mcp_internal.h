@@ -72,6 +72,8 @@ struct bt_mcp_group {
 
 /** @brief Media Player */
 struct bt_mcp_media_control_server_player {
+	bool initialized;
+
 	char name[CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_MEDIA_PLAYER_NAME_MAX];
 #if defined(CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS) || defined(CONFIG_BT_OTS_CLIENT)
 	uint64_t            icon_id;
