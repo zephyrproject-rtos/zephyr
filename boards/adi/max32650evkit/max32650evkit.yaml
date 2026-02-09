@@ -15,5 +15,6 @@ supported:
   - watchdog
   - counter
   - rtc_counter
+  - usbd
 ram: 256
 flash: 3072
