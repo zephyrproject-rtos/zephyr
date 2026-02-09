@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Two loopbacks are used
+ * Each loopback is between analog input and GPIO.
+ * first-gpios (P0.02) -> AIN1 (P0.01)
+ * second-gpios (P0.03, AIN3) -> (P0.00, AIN0)
+ * AIN5 (P0.05) -> VDD
+ */
+
+#include <zephyr/dt-bindings/comparator/nrf-comp.h>
+
+/ {
+	aliases {
+		test-comp = &comp;
+	};
+
+	zephyr,user {
+		first-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+		second-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&comp {
+	status = "okay";
+	psel = <NRF_COMP_AIN4>;
+	refsel = "AREF";
+	extrefsel = <NRF_COMP_AIN3>;
+	sp-mode = "LOW";
+	th-up = <36>;
+	th-down = <30>;
+	isource = "DISABLED";
+	enable-hyst;
+};
