@@ -6,6 +6,6 @@ config NXP_GPU2D_BRINGUP
 	default y
 	depends on DT_HAS_NXP_GPU2D_ENABLED
 	help
-		This option enables the GPU2D graphics accelerator bring-up
-		code, it makes the GPU ready to be consumed by compatible
-		specifications drivers like VGLite.
+	  This option enables the GPU2D graphics accelerator bring-up
+	  code, it makes the GPU ready to be consumed by compatible
+	  specifications drivers like VGLite.
