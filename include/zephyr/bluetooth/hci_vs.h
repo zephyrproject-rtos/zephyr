@@ -38,6 +38,9 @@ extern "C" {
 
 #define BT_VS_CMD_SUP_FEAT(cmd)                 BT_LE_FEAT_TEST(cmd, \
 						BT_VS_CMD_BIT_SUP_FEAT)
+/** Check if HCI VS command BT_VS_CMD_BIT_WRITE_BDADDR is supported */
+#define BT_VS_CMD_WRITE_BD_ADDR(cmd)            BT_LE_FEAT_TEST(cmd, \
+						BT_VS_CMD_BIT_WRITE_BDADDR)
 #define BT_VS_CMD_READ_STATIC_ADDRS(cmd)        BT_LE_FEAT_TEST(cmd, \
 						BT_VS_CMD_BIT_READ_STATIC_ADDRS)
 #define BT_VS_CMD_READ_KEY_ROOTS(cmd)           BT_LE_FEAT_TEST(cmd, \
