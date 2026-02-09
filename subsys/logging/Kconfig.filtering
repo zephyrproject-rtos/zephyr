@@ -10,6 +10,30 @@ config LOG_RUNTIME_FILTERING
 	  Allow runtime configuration of maximal, independent severity
 	  level for instance.
 
+if LOG_RUNTIME_FILTERING
+
+config LOG_RUNTIME_DEFAULT_LEVEL
+	int "Default runtime log level at startup"
+	default LOG_DEFAULT_LEVEL
+	range 0 4
+	help
+	  Sets the initial runtime filter level for all modules at system startup.
+	  This level is applied before any backend or application-specific filtering
+	  is configured. Useful for controlling logging verbosity at boot before
+	  dynamic reconfiguration via IPC or other mechanisms.
+
+	  Levels are:
+	  - 0 OFF, no logs at startup
+	  - 1 ERROR, only errors shown at startup
+	  - 2 WARNING, errors and warnings at startup
+	  - 3 INFO, info level and above at startup
+	  - 4 DEBUG, all logs including debug at startup
+
+	  Note: This affects runtime filtering only. Compile-time log levels
+	  are controlled by CONFIG_LOG_MAX_LEVEL and per-module settings.
+
+endif # LOG_RUNTIME_FILTERING
+
 config LOG_DEFAULT_LEVEL
 	int "Default log level"
 	default 3
