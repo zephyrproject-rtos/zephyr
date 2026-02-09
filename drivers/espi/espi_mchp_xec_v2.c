@@ -1376,7 +1376,7 @@ static void xec_vw_cfg_properties(const struct xec_signal *p, uint32_t regaddr, 
 	uint8_t src_pos = (8u * p->bit);
 	uint8_t rst_state = (p->flags >> MCHP_DT_ESPI_VW_FLAG_RST_STATE_POS)
 				& MCHP_DT_ESPI_VW_FLAG_RST_STATE_MSK0;
-	uint8_t rst_src = rst_src = (p->flags >> MCHP_DT_ESPI_VW_FLAG_RST_SRC_POS)
+	uint8_t rst_src = (p->flags >> MCHP_DT_ESPI_VW_FLAG_RST_SRC_POS)
 				& MCHP_DT_ESPI_VW_FLAG_RST_SRC_MSK0;
 
 	if (dir) {
@@ -1394,7 +1394,7 @@ static void xec_vw_cfg_properties(const struct xec_signal *p, uint32_t regaddr, 
 				temp |= BIT(p->bit + 4u);
 				sys_set_bit(regaddr + src_ofs, src_pos);
 			} else {
-				temp |= ~BIT(p->bit + 4u);
+				temp &= ~BIT(p->bit + 4u);
 				sys_clear_bit(regaddr + src_ofs, src_pos);
 			}
 		}
