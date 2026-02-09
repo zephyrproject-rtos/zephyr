@@ -21,3 +21,5 @@ Guides on how to set up toolchains for Zephyr development.
    host.rst
    other_x_compilers.rst
    custom_cmake.rst
+
+   eld.rst
