@@ -36,12 +36,6 @@
 #define LOG_MODULE_NAME bttester_mcp
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
-static struct media_player *mcs_media_player;
-static uint64_t current_track_obj_id;
-static uint64_t next_track_obj_id;
-static uint8_t media_player_state;
-static uint64_t current_id;
-static uint64_t parent_id;
 struct service_handles {
 	struct {
 		uint16_t player_name;
@@ -1536,74 +1530,22 @@ static uint8_t mcs_inactive_state_set(const void *cmd, uint16_t cmd_len, void *r
 				      uint16_t *rsp_len)
 {
 	struct btp_mcs_state_set_rp *rp = rsp;
+	int err;
 
 	LOG_DBG("MCS Set Media Player to inactive state");
 
 	bt_mcp_media_control_server_test_media_state_set(MEDIA_PROXY_STATE_INACTIVE);
 
-	rp->state = media_player_state;
+	err = bt_mcp_media_control_server_get_media_state(&rp->state);
+	if (err != 0) {
+		LOG_DBG("Failed to get media state: %d", err);
+		return BTP_STATUS_FAILED;
+	}
 
 	*rsp_len = sizeof(*rp);
 
 	return BTP_STATUS_SUCCESS;
 }
-
-static void mcs_player_instance_cb(struct media_player *plr, int err)
-{
-	mcs_media_player = plr;
-
-	LOG_DBG("Media PLayer Instance cb");
-}
-
-static void mcs_command_send_cb(struct media_player *player, int err, const struct bt_mcs_cmd *cmd)
-{
-	LOG_DBG("Media PLayer Send Command cb");
-}
-
-static void mcs_current_track_obj_id_cb(struct media_player *player, int err, uint64_t id)
-{
-	LOG_DBG("Media Player Current Track Object Id cb");
-
-	current_track_obj_id = id;
-}
-
-static void mcs_next_track_obj_id_cb(struct media_player *player, int err, uint64_t id)
-{
-	LOG_DBG("Media PLayer Next Track Object ID cb");
-
-	next_track_obj_id = id;
-}
-
-static void mcs_media_state_cb(struct media_player *player, int err, uint8_t state)
-{
-	LOG_DBG("Media Player State cb");
-
-	media_player_state = state;
-}
-
-static void mcs_current_group_id_cb(struct media_player *player, int err, uint64_t id)
-{
-	LOG_DBG("Media Player Current Group ID cb");
-
-	current_id = id;
-}
-
-static void mcs_parent_group_id_cb(struct media_player *player, int err, uint64_t id)
-{
-	LOG_DBG("Media Player Parent Group ID cb");
-
-	parent_id = id;
-}
-
-static struct media_proxy_ctrl_cbs mcs_cbs = {
-	.local_player_instance = mcs_player_instance_cb,
-	.command_send = mcs_command_send_cb,
-	.current_track_id_recv = mcs_current_track_obj_id_cb,
-	.next_track_id_recv = mcs_next_track_obj_id_cb,
-	.media_state_recv = mcs_media_state_cb,
-	.current_group_id_recv = mcs_current_group_id_cb,
-	.parent_group_id_recv = mcs_parent_group_id_cb,
-};
 
 static const struct btp_handler mcs_handlers[] = {
 	{
@@ -1646,11 +1588,6 @@ uint8_t tester_init_mcs(void)
 	err = bt_mcp_media_control_server_register();
 	if (err != 0) {
 		LOG_DBG("Failed to initialize Media Player: %d", err);
-		return BTP_STATUS_FAILED;
-	}
-
-	err = media_proxy_ctrl_register(&mcs_cbs);
-	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
