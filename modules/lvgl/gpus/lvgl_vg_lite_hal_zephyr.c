@@ -54,10 +54,8 @@ struct z_vglite_config {
 };
 
 struct z_vglite_data {
-	struct vg_lite_device_runtime *vglite_device;
+	struct vg_lite_device_runtime *vglite_dev;
 };
-
-static struct vg_lite_device_runtime *vglite_dev;
 
 vg_lite_error_t vg_lite_hal_allocate(uint32_t size, void **memory)
 {
@@ -140,24 +138,33 @@ void vg_lite_hal_delay(uint32_t ms)
 
 uint32_t vg_lite_hal_peek(uint32_t address)
 {
-	return sys_read32((mem_addr_t)(vglite_dev->register_base + address));
+	const struct device *dev = DEVICE_DT_GET(VGLITE_NODE);
+	struct z_vglite_data *dev_data = dev->data;
+
+	return sys_read32((mem_addr_t)(dev_data->vglite_dev->register_base + address));
 }
 
 void vg_lite_hal_poke(uint32_t address, uint32_t data)
 {
-	sys_write32(data, (mem_addr_t)(vglite_dev->register_base + address));
+	const struct device *dev = DEVICE_DT_GET(VGLITE_NODE);
+	struct z_vglite_data *dev_data = dev->data;
+
+	sys_write32(data, (mem_addr_t)(dev_data->vglite_dev->register_base + address));
 }
 
 int32_t vg_lite_hal_wait_interrupt(uint32_t timeout, uint32_t mask, uint32_t *value)
 {
-	int ret = k_sem_take(&vglite_dev->sync, K_MSEC(timeout));
+	const struct device *dev = DEVICE_DT_GET(VGLITE_NODE);
+	struct z_vglite_data *dev_data = dev->data;
+
+	int ret = k_sem_take(&dev_data->vglite_dev->sync, K_MSEC(timeout));
 
 	if (!ret) {
 		if (value != NULL) {
-			*value = vglite_dev->int_flags & mask;
+			*value = dev_data->vglite_dev->int_flags & mask;
 		}
 
-		vglite_dev->int_flags = 0U;
+		dev_data->vglite_dev->int_flags = 0U;
 
 		return 1;
 	}
@@ -174,19 +181,21 @@ vg_lite_error_t vg_lite_hal_map_memory(vg_lite_kernel_map_memory_t *node)
 
 void vg_lite_set_gpu_execute_state(vg_lite_gpu_execute_state_t state)
 {
-	vglite_dev->gpu_execute_state = state;
+	const struct device *dev = DEVICE_DT_GET(VGLITE_NODE);
+	struct z_vglite_data *dev_data = dev->data;
+
+	dev_data->vglite_dev->gpu_execute_state = state;
 }
 
 static void z_vg_lite_isr(const void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	struct z_vglite_data *dev_data = dev->data;
-	struct vg_lite_device_runtime *vg_dev = dev_data->vglite_device;
 	uint32_t flags = vg_lite_hal_peek(VG_LITE_INTR_STATUS);
 
 	if (flags != 0U) {
-		vg_dev->int_flags |= flags;
-		k_sem_give(&vg_dev->sync);
+		dev_data->vglite_dev->int_flags |= flags;
+		k_sem_give(&dev_data->vglite_dev->sync);
 	}
 }
 
@@ -207,19 +216,18 @@ static int z_vg_lite_init(const struct device *dev)
 
 	sys_heap_init(&vg_lite_heap, &vg_lite_heap_mem[0], CONFIG_LV_Z_VGLITE_HEAP_SIZE);
 
-	err = vg_lite_hal_allocate(sizeof(*vglite_dev), (void **)&vglite_dev);
-	if (err != VG_LITE_SUCCESS || vglite_dev == NULL) {
+	err = vg_lite_hal_allocate(sizeof(struct vg_lite_device_runtime),
+			(void **)&data->vglite_dev);
+
+	if (err != VG_LITE_SUCCESS || data->vglite_dev == NULL) {
 		return -ENOMEM;
 	}
 
-	memset(vglite_dev, 0, sizeof(*vglite_dev));
+	memset(data->vglite_dev, 0, sizeof(struct vg_lite_device_runtime));
 
-	vglite_dev->register_base = cfg->vglite_gpu_base_address;
-	k_sem_init(&vglite_dev->sync, 0, 1);
-	vglite_dev->int_flags = 0U;
-
-	data->vglite_device = vglite_dev;
-
+	data->vglite_dev->register_base = cfg->vglite_gpu_base_address;
+	k_sem_init(&data->vglite_dev->sync, 0, 1);
+	data->vglite_dev->int_flags = 0U;
 	cfg->irq_config(dev);
 
 	vg_lite_init(VGLITE_TESS_W, VGLITE_TESS_H);
@@ -234,7 +242,7 @@ static const struct z_vglite_config z_vglite_config_0 = {
 	.irq_config = z_vglite_irq_config_func,
 };
 
-static struct z_vglite_data z_vglite_data_0;
+static __nocache struct z_vglite_data z_vglite_data_0;
 
 DEVICE_DT_INST_DEFINE(0,
 	      z_vg_lite_init,
