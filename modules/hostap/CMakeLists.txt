@@ -47,6 +47,8 @@ zephyr_library_compile_definitions(
   CONFIG_CTRL_IFACE_ZEPHYR
   CONFIG_SUITEB192
   CONFIG_SUITEB
+  # Though MbedTLS is not FIPS compliant, we don't want to use broken crypto algorithms
+  CONFIG_FIPS
 )
 
 
