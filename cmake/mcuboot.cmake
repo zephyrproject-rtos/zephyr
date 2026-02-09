@@ -221,27 +221,6 @@ function(zephyr_mcuboot_tasks)
                    ${imgtool_sign} ${imgtool_args} --encrypt "${keyfile_enc}" ${output}.bin
                    ${output}.signed.encrypted.bin)
     endif()
-
-    if(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD OR CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)
-      list(APPEND byproducts ${output}.slot1.signed.bin)
-      set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
-                   ${imgtool_sign} ${imgtool_args_alt_slot} ${output}.bin
-                   ${output}.slot1.signed.bin)
-
-      if(CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE)
-        list(APPEND byproducts ${output}.slot1.signed.confirmed.bin)
-        set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
-                     ${imgtool_sign} ${imgtool_args_alt_slot} --pad --confirm ${output}.bin
-                     ${output}.slot1.signed.confirmed.bin)
-      endif()
-
-      if(NOT "${keyfile_enc}" STREQUAL "")
-        list(APPEND byproducts ${output}.slot1.signed.encrypted.bin)
-        set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
-                     ${imgtool_sign} ${imgtool_args_alt_slot} --encrypt "${keyfile_enc}"
-                     ${output}.bin ${output}.slot1.signed.encrypted.bin)
-      endif()
-    endif()
   endif()
 
   # Set up .hex outputs.
