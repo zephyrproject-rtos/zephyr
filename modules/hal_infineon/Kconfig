@@ -56,6 +56,11 @@ config USE_INFINEON_I2S
 	help
 	  Enable Inter-Integrated Sound Interface (I2S) HAL module driver for Infineon devices
 
+config USE_INFINEON_PDM_PCM
+	bool
+	help
+	  Enable PDM-PCM HAL module driver for Infineon devices
+
 config USE_INFINEON_RTC
 	bool
 	help
