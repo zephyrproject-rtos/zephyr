@@ -49,6 +49,7 @@ check_set_compiler_property(APPEND PROPERTY warning_dw_1
                             -Wmissing-prototypes
                             -Wmissing-include-dirs
                             -Wunused-but-set-variable
+                            -Wint-in-bool-context
                             -Wno-missing-field-initializers
 )
 
