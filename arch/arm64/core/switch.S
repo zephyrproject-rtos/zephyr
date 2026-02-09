@@ -160,6 +160,19 @@ SECTION_FUNC(TEXT, z_arm64_context_switch)
 GTEXT(z_arm64_sync_exc)
 SECTION_FUNC(TEXT, z_arm64_sync_exc)
 
+	/*
+	 * CFI: exception entered with SP pointing at struct arch_esf built by
+	 * z_arm64_enter_exc. Describe the interrupted context so GDB can unwind.
+	 */
+	.cfi_sections .debug_frame
+	.cfi_startproc
+	.cfi_def_cfa sp, ___esf_t_SIZEOF
+	/* Return address (ELR_EL1) is saved at esf.spsr_elr + 8 */
+	.cfi_offset 30, (___esf_t_spsr_elr_OFFSET + 8 - ___esf_t_SIZEOF)
+#ifdef CONFIG_FRAME_POINTER
+	.cfi_offset 29, (___esf_t_fp_OFFSET - ___esf_t_SIZEOF)
+#endif
+
 	mrs	x0, esr_el1
 	lsr	x1, x0, #26
 
@@ -241,4 +254,5 @@ inv:
 	bl	z_arm64_fatal_error
 
 	/* Return here only in case of recoverable error */
+	.cfi_endproc
 	b	z_arm64_exit_exc
