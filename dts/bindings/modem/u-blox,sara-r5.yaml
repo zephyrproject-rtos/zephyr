@@ -6,3 +6,7 @@ description: u-blox SARA-R5 modem
 compatible: "u-blox,sara-r5"
 
 include: zephyr,cellular-modem-device.yaml
+
+properties:
+  zephyr,mdm-reset-behavior:
+    default: ["toggle_on_recovery"]

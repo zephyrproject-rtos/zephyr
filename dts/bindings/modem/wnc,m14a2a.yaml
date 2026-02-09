@@ -31,3 +31,6 @@ properties:
   mdm-send-ok-gpios:
     type: phandle-array
     description: UART RTS pin if no HW flow control (set to always enabled)
+
+  zephyr,mdm-reset-behavior:
+    default: ["toggle_on_recovery"]
