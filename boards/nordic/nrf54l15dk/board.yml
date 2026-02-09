@@ -23,6 +23,9 @@ runners:
         run: first
         groups:
           - boards:
+              - nrf54l15dk/nrf54l05/cpuapp
+              - nrf54l15dk/nrf54l10/cpuapp
+              - nrf54l15dk/nrf54l10/cpuapp/ns
               - nrf54l15dk/nrf54l15/cpuapp
               - nrf54l15dk/nrf54l15/cpuapp/ns
               - nrf54l15dk/nrf54l15/cpuflpr
@@ -35,6 +38,9 @@ runners:
         run: first
         groups:
           - boards:
+              - nrf54l15dk/nrf54l05/cpuapp
+              - nrf54l15dk/nrf54l10/cpuapp
+              - nrf54l15dk/nrf54l10/cpuapp/ns
               - nrf54l15dk/nrf54l15/cpuapp
               - nrf54l15dk/nrf54l15/cpuapp/ns
               - nrf54l15dk/nrf54l15/cpuflpr
@@ -47,6 +53,9 @@ runners:
         run: last
         groups:
           - boards:
+              - nrf54l15dk/nrf54l05/cpuapp
+              - nrf54l15dk/nrf54l10/cpuapp
+              - nrf54l15dk/nrf54l10/cpuapp/ns
               - nrf54l15dk/nrf54l15/cpuapp
               - nrf54l15dk/nrf54l15/cpuapp/ns
               - nrf54l15dk/nrf54l15/cpuflpr
