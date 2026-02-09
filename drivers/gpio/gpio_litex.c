@@ -89,7 +89,7 @@ static inline uint32_t get_port_out(const struct gpio_litex_cfg *gpio_config)
 static inline void set_oe(const struct gpio_litex_cfg *gpio_config, gpio_pin_t pin, bool val)
 {
 	if (GPIO_LITEX_HAS_OE(gpio_config)) {
-		set_bit(gpio_config->oe_addr, pin, 1);
+		set_bit(gpio_config->oe_addr, pin, val);
 	}
 }
 
