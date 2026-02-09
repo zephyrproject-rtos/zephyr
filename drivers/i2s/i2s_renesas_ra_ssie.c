@@ -221,6 +221,21 @@ static int renesas_ra_ssie_set_clock_divider(const struct device *dev,
 
 	return 0;
 }
+
+static int i2s_renesas_ra_alloc_stream(struct i2s_config *cfg,
+				       struct renesas_ra_ssie_stream *stream)
+{
+	__ASSERT((cfg != NULL && stream != NULL), "Invalid parameter");
+
+	if (k_mem_slab_alloc(cfg->mem_slab, &stream->mem_block, K_NO_WAIT) < 0) {
+		return -ENOMEM;
+	}
+
+	stream->mem_block_len = cfg->block_size;
+
+	return 0;
+}
+
 static void free_buffer_when_stop(struct i2s_config *cfg, struct renesas_ra_ssie_stream *stream)
 {
 	if (stream->mem_block != NULL) {
@@ -230,32 +245,32 @@ static void free_buffer_when_stop(struct i2s_config *cfg, struct renesas_ra_ssie
 	}
 }
 
-static void free_tx_buffer(struct renesas_ra_ssie_data *dev_data, const void *buffer)
+static int i2s_renesas_ra_put_stream(struct k_msgq *msgq, struct renesas_ra_ssie_stream *stream)
 {
-	k_mem_slab_free(dev_data->tx_cfg.mem_slab, (void *)buffer);
-	LOG_DBG("Freed TX %p", buffer);
+	__ASSERT((msgq != NULL && stream != NULL), "Invalid parameter");
+
+	return k_msgq_put(msgq, stream, K_NO_WAIT);
 }
 
-static void free_rx_buffer(struct renesas_ra_ssie_data *dev_data, void *buffer)
+static int i2s_renesas_ra_get_stream(struct k_msgq *msgq, struct renesas_ra_ssie_stream *stream,
+				     k_timeout_t timeout)
 {
-	k_mem_slab_free(dev_data->rx_cfg.mem_slab, buffer);
-	LOG_DBG("Freed RX %p", buffer);
+	__ASSERT((msgq != NULL && stream != NULL), "Invalid parameter");
+
+	return k_msgq_get(msgq, stream, timeout);
 }
 
 static void drop_queue(const struct device *dev, enum i2s_dir dir)
 {
 	struct renesas_ra_ssie_data *dev_data = dev->data;
-	struct renesas_ra_ssie_stream msg_item;
+	struct i2s_config *cfg = dir == I2S_DIR_TX ? &dev_data->tx_cfg : &dev_data->rx_cfg;
+	struct k_msgq *msgq = dir == I2S_DIR_TX ? &dev_data->tx_queue : &dev_data->rx_queue;
+	struct renesas_ra_ssie_stream stream;
+	int ret;
 
-	if (dir == I2S_DIR_TX || dir == I2S_DIR_BOTH) {
-		while (k_msgq_get(&dev_data->tx_queue, &msg_item, K_NO_WAIT) == 0) {
-			free_tx_buffer(dev_data, msg_item.mem_block);
-		}
-	}
-
-	if (dir == I2S_DIR_RX || dir == I2S_DIR_BOTH) {
-		while (k_msgq_get(&dev_data->rx_queue, &msg_item, K_NO_WAIT) == 0) {
-			free_rx_buffer(dev_data, msg_item.mem_block);
+	while ((ret = k_msgq_get(msgq, &stream, K_NO_WAIT)) != -ENOMSG) {
+		if (ret == 0) {
+			k_mem_slab_free(cfg->mem_slab, stream.mem_block);
 		}
 	}
 }
@@ -267,11 +282,10 @@ static int renesas_ra_ssie_rx_start_transfer(const struct device *dev)
 	int ret;
 	fsp_err_t fsp_err;
 
-	ret = k_mem_slab_alloc(dev_data->rx_cfg.mem_slab, &stream->mem_block, K_NO_WAIT);
+	ret = i2s_renesas_ra_alloc_stream(&dev_data->rx_cfg, stream);
 	if (ret < 0) {
-		return -ENOMEM;
+		return ret;
 	}
-	stream->mem_block_len = dev_data->rx_cfg.block_size;
 
 	fsp_err = R_SSI_Read(&dev_data->fsp_ctrl, stream->mem_block, stream->mem_block_len);
 	if (fsp_err != FSP_SUCCESS) {
@@ -292,7 +306,7 @@ static int renesas_ra_ssie_tx_start_transfer(const struct device *dev)
 	fsp_err_t fsp_err;
 	int ret;
 
-	ret = k_msgq_get(&dev_data->tx_queue, &msg_item, K_NO_WAIT);
+	ret = i2s_renesas_ra_get_stream(&dev_data->tx_queue, &msg_item, K_NO_WAIT);
 	if (ret < 0) {
 		dev_data->state = I2S_STATE_ERROR;
 		return -ENOMEM;
@@ -321,7 +335,7 @@ static int renesas_ra_ssie_tx_rx_start_transfer(const struct device *dev)
 	fsp_err_t fsp_err;
 	int ret;
 
-	ret = k_msgq_get(&dev_data->tx_queue, &msg_item_tx, K_NO_WAIT);
+	ret = i2s_renesas_ra_get_stream(&dev_data->tx_queue, &msg_item_tx, K_NO_WAIT);
 	if (ret < 0) {
 		dev_data->state = I2S_STATE_ERROR;
 		return -ENOMEM;
@@ -330,12 +344,11 @@ static int renesas_ra_ssie_tx_rx_start_transfer(const struct device *dev)
 	stream_tx->mem_block = msg_item_tx.mem_block;
 	stream_tx->mem_block_len = msg_item_tx.mem_block_len;
 
-	ret = k_mem_slab_alloc(dev_data->rx_cfg.mem_slab, &stream_rx->mem_block, K_NO_WAIT);
+	ret = i2s_renesas_ra_alloc_stream(&dev_data->rx_cfg, stream_rx);
 	if (ret < 0) {
 		dev_data->state = I2S_STATE_ERROR;
-		return -ENOMEM;
+		return ret;
 	}
-	stream_rx->mem_block_len = dev_data->rx_cfg.block_size;
 
 	fsp_err = R_SSI_WriteRead(&dev_data->fsp_ctrl, stream_tx->mem_block, stream_rx->mem_block,
 				  stream_rx->mem_block_len);
@@ -404,7 +417,7 @@ static void renesas_ra_ssie_rx_callback(const struct device *dev)
 	msg_item_rx.mem_block = stream->mem_block;
 	msg_item_rx.mem_block_len = stream->mem_block_len;
 
-	ret = k_msgq_put(&dev_data->rx_queue, &msg_item_rx, K_NO_WAIT);
+	ret = i2s_renesas_ra_put_stream(&dev_data->rx_queue, &msg_item_rx);
 	if (ret < 0) {
 		dev_data->state = I2S_STATE_ERROR;
 		goto rx_disable;
@@ -419,7 +432,7 @@ static void renesas_ra_ssie_rx_callback(const struct device *dev)
 			goto rx_disable;
 		}
 
-		ret = k_mem_slab_alloc(dev_data->rx_cfg.mem_slab, &stream->mem_block, K_NO_WAIT);
+		ret = i2s_renesas_ra_alloc_stream(&dev_data->rx_cfg, stream);
 		if (ret < 0) {
 			dev_data->state = I2S_STATE_ERROR;
 			goto rx_disable;
@@ -464,7 +477,7 @@ static void renesas_ra_ssie_tx_callback(const struct device *dev)
 			}
 		}
 
-		ret = k_msgq_get(&dev_data->tx_queue, &msg_item, K_NO_WAIT);
+		ret = i2s_renesas_ra_get_stream(&dev_data->tx_queue, &msg_item, K_NO_WAIT);
 		if (ret < 0) {
 			goto tx_disable;
 		}
@@ -639,16 +652,22 @@ static int i2s_renesas_ra_ssie_configure(const struct device *dev, enum i2s_dir 
 	 * Then drop all data in tx and rx queue
 	 */
 	if (i2s_cfg->frame_clk_freq == 0) {
-		drop_queue(dev, dir);
 		if (dir == I2S_DIR_TX || dir == I2S_DIR_BOTH) {
+			drop_queue(dev, I2S_DIR_TX);
+			dev_data->tx_stream.mem_block = NULL;
+			dev_data->tx_stream.mem_block_len = 0;
 			dev_data->tx_configured = false;
-			memset(&dev_data->tx_stream, 0, sizeof(struct renesas_ra_ssie_stream));
 		}
+
 		if (dir == I2S_DIR_RX || dir == I2S_DIR_BOTH) {
+			drop_queue(dev, I2S_DIR_RX);
+			dev_data->rx_stream.mem_block = NULL;
+			dev_data->rx_stream.mem_block_len = 0;
 			dev_data->rx_configured = false;
-			memset(&dev_data->rx_stream, 0, sizeof(struct renesas_ra_ssie_stream));
 		}
+
 		dev_data->state = I2S_STATE_NOT_READY;
+
 		return 0;
 	}
 
@@ -791,7 +810,7 @@ static int i2s_renesas_ra_ssie_write(const struct device *dev, void *mem_block, 
 		return -EIO;
 	}
 
-	ret = k_msgq_put(&dev_data->tx_queue, &msg_item, K_MSEC(dev_data->tx_cfg.timeout));
+	ret = i2s_renesas_ra_put_stream(&dev_data->tx_queue, &msg_item);
 	if (ret < 0) {
 		return ret;
 	}
@@ -803,6 +822,8 @@ static int i2s_renesas_ra_ssie_read(const struct device *dev, void **mem_block, 
 {
 	struct renesas_ra_ssie_data *dev_data = dev->data;
 	struct renesas_ra_ssie_stream msg_item;
+	k_timeout_t timeout =
+		(dev_data->state == I2S_STATE_ERROR) ? K_NO_WAIT : K_MSEC(dev_data->rx_cfg.timeout);
 	int ret;
 
 	if (!dev_data->rx_configured) {
@@ -816,9 +837,7 @@ static int i2s_renesas_ra_ssie_read(const struct device *dev, void **mem_block, 
 		return -EIO;
 	}
 
-	ret = k_msgq_get(&dev_data->rx_queue, &msg_item,
-			 (dev_data->state == I2S_STATE_ERROR) ? K_NO_WAIT
-							      : K_MSEC(dev_data->rx_cfg.timeout));
+	ret = i2s_renesas_ra_get_stream(&dev_data->rx_queue, &msg_item, timeout);
 	if (ret == -ENOMSG) {
 		return -EIO;
 	}
@@ -902,15 +921,25 @@ static int i2s_renesas_ra_ssie_trigger(const struct device *dev, enum i2s_dir di
 		if (dev_data->state != I2S_STATE_READY) {
 			R_SSI_Stop(&dev_data->fsp_ctrl);
 		}
+		if (dir == I2S_DIR_BOTH || dir == I2S_DIR_TX) {
+			drop_queue(dev, I2S_DIR_TX);
+		}
+		if (dir == I2S_DIR_BOTH || dir == I2S_DIR_RX) {
+			drop_queue(dev, I2S_DIR_RX);
+		}
 		dev_data->trigger_drop = true;
-		drop_queue(dev, dir);
 		return 0;
 
 	case I2S_TRIGGER_PREPARE:
 		if (dev_data->state != I2S_STATE_ERROR) {
 			return -EIO;
 		}
-		drop_queue(dev, dir);
+		if (dir == I2S_DIR_BOTH || dir == I2S_DIR_TX) {
+			drop_queue(dev, I2S_DIR_TX);
+		}
+		if (dir == I2S_DIR_BOTH || dir == I2S_DIR_RX) {
+			drop_queue(dev, I2S_DIR_RX);
+		}
 		dev_data->state = I2S_STATE_READY;
 		return 0;
 
