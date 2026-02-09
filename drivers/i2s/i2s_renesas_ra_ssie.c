@@ -301,25 +301,21 @@ static int renesas_ra_ssie_rx_start_transfer(const struct device *dev)
 static int renesas_ra_ssie_tx_start_transfer(const struct device *dev)
 {
 	struct renesas_ra_ssie_data *const dev_data = dev->data;
-	struct renesas_ra_ssie_stream *stream = &dev_data->tx_stream;
-	struct renesas_ra_ssie_stream msg_item;
+	struct renesas_ra_ssie_stream *tx_stream = &dev_data->tx_stream;
 	fsp_err_t fsp_err;
 	int ret;
 
-	ret = i2s_renesas_ra_get_stream(&dev_data->tx_queue, &msg_item, K_NO_WAIT);
+	ret = i2s_renesas_ra_get_stream(&dev_data->tx_queue, tx_stream, K_NO_WAIT);
 	if (ret < 0) {
 		dev_data->state = I2S_STATE_ERROR;
 		return -ENOMEM;
 	}
 
-	stream->mem_block = msg_item.mem_block;
-	stream->mem_block_len = msg_item.mem_block_len;
-
-	fsp_err = R_SSI_Write(&dev_data->fsp_ctrl, stream->mem_block, stream->mem_block_len);
+	fsp_err = R_SSI_Write(&dev_data->fsp_ctrl, tx_stream->mem_block, tx_stream->mem_block_len);
 	if (fsp_err != FSP_SUCCESS) {
 		LOG_ERR("Failed to start write data");
 		dev_data->state = I2S_STATE_ERROR;
-		free_buffer_when_stop(&dev_data->tx_cfg, stream);
+		free_buffer_when_stop(&dev_data->tx_cfg, tx_stream);
 		return -EIO;
 	}
 
@@ -331,18 +327,14 @@ static int renesas_ra_ssie_tx_rx_start_transfer(const struct device *dev)
 	struct renesas_ra_ssie_data *const dev_data = dev->data;
 	struct renesas_ra_ssie_stream *stream_tx = &dev_data->tx_stream;
 	struct renesas_ra_ssie_stream *stream_rx = &dev_data->rx_stream;
-	struct renesas_ra_ssie_stream msg_item_tx;
 	fsp_err_t fsp_err;
 	int ret;
 
-	ret = i2s_renesas_ra_get_stream(&dev_data->tx_queue, &msg_item_tx, K_NO_WAIT);
+	ret = i2s_renesas_ra_get_stream(&dev_data->tx_queue, stream_tx, K_NO_WAIT);
 	if (ret < 0) {
 		dev_data->state = I2S_STATE_ERROR;
 		return -ENOMEM;
 	}
-
-	stream_tx->mem_block = msg_item_tx.mem_block;
-	stream_tx->mem_block_len = msg_item_tx.mem_block_len;
 
 	ret = i2s_renesas_ra_alloc_stream(&dev_data->rx_cfg, stream_rx);
 	if (ret < 0) {
@@ -400,31 +392,27 @@ dir_both_idle_end:
 static void renesas_ra_ssie_rx_callback(const struct device *dev)
 {
 	struct renesas_ra_ssie_data *const dev_data = dev->data;
-	struct renesas_ra_ssie_stream *stream = &dev_data->rx_stream;
-	struct renesas_ra_ssie_stream msg_item_rx;
+	struct renesas_ra_ssie_stream *rx_stream = &dev_data->rx_stream;
 	fsp_err_t fsp_err;
 	int ret;
 
-	if (stream->mem_block == NULL) {
+	if (rx_stream->mem_block == NULL) {
 		return;
 	}
 
 	if (dev_data->trigger_drop) {
-		free_buffer_when_stop(&dev_data->rx_cfg, stream);
+		free_buffer_when_stop(&dev_data->rx_cfg, rx_stream);
 		return;
 	}
 
-	msg_item_rx.mem_block = stream->mem_block;
-	msg_item_rx.mem_block_len = stream->mem_block_len;
-
-	ret = i2s_renesas_ra_put_stream(&dev_data->rx_queue, &msg_item_rx);
+	ret = i2s_renesas_ra_put_stream(&dev_data->rx_queue, rx_stream);
 	if (ret < 0) {
 		dev_data->state = I2S_STATE_ERROR;
 		goto rx_disable;
 	}
 
-	stream->mem_block = NULL;
-	stream->mem_block_len = 0;
+	rx_stream->mem_block = NULL;
+	rx_stream->mem_block_len = 0;
 
 	if (dev_data->active_dir == I2S_DIR_RX) {
 
@@ -432,15 +420,14 @@ static void renesas_ra_ssie_rx_callback(const struct device *dev)
 			goto rx_disable;
 		}
 
-		ret = i2s_renesas_ra_alloc_stream(&dev_data->rx_cfg, stream);
+		ret = i2s_renesas_ra_alloc_stream(&dev_data->rx_cfg, rx_stream);
 		if (ret < 0) {
 			dev_data->state = I2S_STATE_ERROR;
 			goto rx_disable;
 		}
 
-		stream->mem_block_len = dev_data->rx_cfg.block_size;
-
-		fsp_err = R_SSI_Read(&dev_data->fsp_ctrl, stream->mem_block, stream->mem_block_len);
+		fsp_err = R_SSI_Read(&dev_data->fsp_ctrl, rx_stream->mem_block,
+				     rx_stream->mem_block_len);
 		if (fsp_err != FSP_SUCCESS) {
 			dev_data->state = I2S_STATE_ERROR;
 			LOG_ERR("Failed to restart RX transfer");
@@ -451,15 +438,15 @@ static void renesas_ra_ssie_rx_callback(const struct device *dev)
 	return;
 
 rx_disable:
-	free_buffer_when_stop(&dev_data->rx_cfg, stream);
+	free_buffer_when_stop(&dev_data->rx_cfg, rx_stream);
 	R_SSI_Stop(&dev_data->fsp_ctrl);
 }
 
 static void renesas_ra_ssie_tx_callback(const struct device *dev)
 {
 	struct renesas_ra_ssie_data *const dev_data = dev->data;
-	struct renesas_ra_ssie_stream *stream = &dev_data->tx_stream;
-	struct renesas_ra_ssie_stream msg_item;
+	struct renesas_ra_ssie_stream *tx_stream = &dev_data->tx_stream;
+	struct renesas_ra_ssie_stream tx_msg;
 	fsp_err_t fsp_err;
 	int ret;
 
@@ -477,18 +464,17 @@ static void renesas_ra_ssie_tx_callback(const struct device *dev)
 			}
 		}
 
-		ret = i2s_renesas_ra_get_stream(&dev_data->tx_queue, &msg_item, K_NO_WAIT);
+		ret = i2s_renesas_ra_get_stream(&dev_data->tx_queue, &tx_msg, K_NO_WAIT);
 		if (ret < 0) {
 			goto tx_disable;
 		}
 
-		k_mem_slab_free(dev_data->tx_cfg.mem_slab, stream->mem_block);
+		k_mem_slab_free(dev_data->tx_cfg.mem_slab, tx_stream->mem_block);
 
-		stream->mem_block = msg_item.mem_block;
-		stream->mem_block_len = msg_item.mem_block_len;
+		*tx_stream = tx_msg;
 
 		fsp_err =
-			R_SSI_Write(&dev_data->fsp_ctrl, stream->mem_block, stream->mem_block_len);
+			R_SSI_Write(&dev_data->fsp_ctrl, tx_stream->mem_block, tx_stream->mem_block_len);
 		if (fsp_err != FSP_SUCCESS) {
 			LOG_ERR("Failed to restart write data");
 		}
@@ -497,7 +483,7 @@ static void renesas_ra_ssie_tx_callback(const struct device *dev)
 	return;
 
 tx_disable:
-	free_buffer_when_stop(&dev_data->tx_cfg, stream);
+	free_buffer_when_stop(&dev_data->tx_cfg, tx_stream);
 }
 
 static void renesas_ra_ssie_idle_callback(const struct device *dev)
@@ -791,7 +777,7 @@ static const struct i2s_config *i2s_renesas_ra_ssie_get_config(const struct devi
 static int i2s_renesas_ra_ssie_write(const struct device *dev, void *mem_block, size_t size)
 {
 	struct renesas_ra_ssie_data *dev_data = dev->data;
-	struct renesas_ra_ssie_stream msg_item = {.mem_block = mem_block, .mem_block_len = size};
+	struct renesas_ra_ssie_stream tx_stream = {.mem_block = mem_block, .mem_block_len = size};
 	int ret;
 
 	if (!dev_data->tx_configured) {
@@ -810,7 +796,7 @@ static int i2s_renesas_ra_ssie_write(const struct device *dev, void *mem_block, 
 		return -EIO;
 	}
 
-	ret = i2s_renesas_ra_put_stream(&dev_data->tx_queue, &msg_item);
+	ret = i2s_renesas_ra_put_stream(&dev_data->tx_queue, &tx_stream);
 	if (ret < 0) {
 		return ret;
 	}
@@ -821,7 +807,7 @@ static int i2s_renesas_ra_ssie_write(const struct device *dev, void *mem_block, 
 static int i2s_renesas_ra_ssie_read(const struct device *dev, void **mem_block, size_t *size)
 {
 	struct renesas_ra_ssie_data *dev_data = dev->data;
-	struct renesas_ra_ssie_stream msg_item;
+	struct renesas_ra_ssie_stream rx_stream;
 	k_timeout_t timeout =
 		(dev_data->state == I2S_STATE_ERROR) ? K_NO_WAIT : K_MSEC(dev_data->rx_cfg.timeout);
 	int ret;
@@ -837,14 +823,14 @@ static int i2s_renesas_ra_ssie_read(const struct device *dev, void **mem_block, 
 		return -EIO;
 	}
 
-	ret = i2s_renesas_ra_get_stream(&dev_data->rx_queue, &msg_item, timeout);
+	ret = i2s_renesas_ra_get_stream(&dev_data->rx_queue, &rx_stream, timeout);
 	if (ret == -ENOMSG) {
 		return -EIO;
 	}
 
 	if (ret == 0) {
-		*mem_block = msg_item.mem_block;
-		*size = msg_item.mem_block_len;
+		*mem_block = rx_stream.mem_block;
+		*size = rx_stream.mem_block_len;
 	}
 
 	return ret;
