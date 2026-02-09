@@ -90,6 +90,7 @@
 			ifctl = [01 00 06];
 			ifmode = [c2];
 			gamset = [01];
+			madctl = [48];
 			frmctr1 = [00 1b];
 			pwctrl1 = [10];
 			pwctrl2 = [10];

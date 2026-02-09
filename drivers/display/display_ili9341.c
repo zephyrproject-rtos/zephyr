@@ -62,6 +62,12 @@ int ili9341_regs_init(const struct device *dev)
 		return r;
 	}
 
+	LOG_HEXDUMP_DBG(regs->madctl, ILI9341_MADCTL_LEN, "MADCTL");
+	r = ili9xxx_transmit(dev, ILI9341_MADCTL, regs->madctl, ILI9341_MADCTL_LEN);
+	if (r < 0) {
+		return r;
+	}
+
 	LOG_HEXDUMP_DBG(regs->frmctr1, ILI9341_FRMCTR1_LEN, "FRMCTR1");
 	r = ili9xxx_transmit(dev, ILI9341_FRMCTR1, regs->frmctr1, ILI9341_FRMCTR1_LEN);
 	if (r < 0) {
