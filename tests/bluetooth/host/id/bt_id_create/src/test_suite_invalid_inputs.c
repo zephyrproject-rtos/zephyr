@@ -93,7 +93,7 @@ ZTEST(bt_id_create_invalid_inputs, test_public_address)
 {
 	int err;
 
-	if (IS_ENABLED(CONFIG_BT_HCI_SET_PUBLIC_ADDR)) {
+	if (IS_ENABLED(CONFIG_BT_HCI_SET_PUBLIC_ADDR) || IS_ENABLED(CONFIG_BT_HCI_VS)) {
 		ztest_test_skip();
 	}
 

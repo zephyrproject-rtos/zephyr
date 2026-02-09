@@ -4265,6 +4265,22 @@ static void hci_vs_init(void)
 		net_buf_unref(rsp);
 	}
 }
+
+static int hci_vs_write_bd_addr(bt_addr_t *bdaddr)
+{
+	struct bt_hci_cp_vs_write_bd_addr *cp;
+	struct net_buf *buf;
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	bt_addr_copy(&cp->bdaddr, bdaddr);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_VS_WRITE_BD_ADDR, buf, NULL);
+}
 #endif /* CONFIG_BT_HCI_VS */
 
 static int hci_init(void)
@@ -4320,6 +4336,17 @@ static int hci_init(void)
 
 #if defined(CONFIG_BT_HCI_VS)
 	hci_vs_init();
+
+	if (bt_dev.id_count > 0U && bt_dev.id_addr[BT_ID_DEFAULT].type == BT_ADDR_LE_PUBLIC) {
+		if (BT_VS_CMD_WRITE_BD_ADDR(bt_dev.vs_commands)) {
+			err = hci_vs_write_bd_addr(&bt_dev.id_addr[BT_ID_DEFAULT].a);
+			if (err != 0) {
+				return err;
+			}
+		} else if (!IS_ENABLED(CONFIG_BT_HCI_SET_PUBLIC_ADDR)) {
+			return -ENOTSUP;
+		}
+	}
 #endif
 	err = bt_id_init();
 	if (err) {
