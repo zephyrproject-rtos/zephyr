@@ -171,7 +171,7 @@ uint8_t tester_init_has(void)
 
 	struct bt_has_features_param params = {
 		.type = BT_HAS_HEARING_AID_TYPE_BINAURAL,
-		.preset_sync_support = false,
+		.preset_sync_support = true,
 		.independent_presets = IS_ENABLED(CONFIG_BT_HAS_PRESET_SUPPORT)
 	};
 	int err = bt_has_register(&params);
