@@ -4448,6 +4448,7 @@ RISCV arch:
     - boards/starfive/
     - doc/hardware/arch/risc-v.rst
     - drivers/interrupt_controller/intc_plic.c
+    - drivers/interrupt_controller/intc_riscv_imsic.c
     - dts/bindings/riscv/
     - dts/riscv/
     - include/zephyr/arch/riscv/
