@@ -111,9 +111,11 @@ tests:
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
   sample.minimal.no-mt-no-sw-isr-table.riscv:
     extra_args: CONF_FILE='common.conf;no-mt.conf;no-sw-isr-table.conf;riscv.conf'
     build_only: true
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuflpr
       - nrf54lm20dk/nrf54lm20a/cpuflpr
+      - nrf7120dk/nrf7120/cpuflpr
