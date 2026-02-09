@@ -1998,7 +1998,7 @@ function(import_kconfig prefix kconfig_fragment)
     REGEX "^(${prefix}|# ${prefix})"
   )
 
-  foreach (LINE ${DOT_CONFIG_LIST})
+  foreach(LINE IN LISTS DOT_CONFIG_LIST)
     if("${LINE}" MATCHES "^(${prefix}[^=]+)=([ymn]|.+$)")
       # Matched a normal value assignment, like: CONFIG_NET_BUF=y
       # Note: if the value starts with 'y', 'm', or 'n', then we assume it's a

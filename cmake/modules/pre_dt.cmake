@@ -51,7 +51,7 @@ function(pre_dt_module_run)
   # user's CMakeLists.txt can preserve symbolic links. Others, like
   # scripts/zephyr_module.py --settings-out resolve them.
   unset(real_dts_root)
-  foreach(dts_dir ${DTS_ROOT})
+  foreach(dts_dir IN LISTS DTS_ROOT)
     file(REAL_PATH ${dts_dir} real_dts_dir)
     list(APPEND real_dts_root ${real_dts_dir})
   endforeach()
@@ -64,7 +64,7 @@ function(pre_dt_module_run)
 
   # Finalize DTS_ROOT_SYSTEM_INCLUDE_DIRS.
   set(DTS_ROOT_SYSTEM_INCLUDE_DIRS)
-  foreach(dts_root ${DTS_ROOT})
+  foreach(dts_root IN LISTS DTS_ROOT)
     foreach(dts_root_path
         include
         include/zephyr
