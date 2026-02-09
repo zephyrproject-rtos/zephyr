@@ -3079,7 +3079,7 @@ int bt_bap_unicast_group_reconfig(struct bt_bap_unicast_group *unicast_group,
 				CONTAINER_OF(tx_param->stream->iso, struct bt_bap_iso, chan);
 
 			unicast_group_set_iso_stream_param(unicast_group, bap_iso, tx_param->qos,
-							   BT_AUDIO_DIR_SOURCE);
+							   BT_AUDIO_DIR_SINK);
 		}
 	}
 
