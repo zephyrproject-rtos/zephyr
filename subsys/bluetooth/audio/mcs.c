@@ -17,6 +17,7 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/audio/mcp.h>
 #include <zephyr/bluetooth/audio/mcs.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
@@ -37,7 +38,6 @@
 
 #include "audio_internal.h"
 #include "common/bt_str.h"
-#include "media_proxy_internal.h"
 #include "mcs_internal.h"
 
 LOG_MODULE_REGISTER(bt_mcs, CONFIG_BT_MCS_LOG_LEVEL);
@@ -356,7 +356,7 @@ static ssize_t read_icon_id(struct bt_conn *conn,
 
 	sys_put_le48(icon_id, icon_id_le);
 
-	LOG_DBG_OBJ_ID("Icon object read: ", icon_id);
+	LOG_DBG("Icon object read: 0x%012llX", icon_id);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, icon_id_le,
 				 sizeof(icon_id_le));
@@ -662,7 +662,7 @@ static ssize_t read_track_segments_id(struct bt_conn *conn,
 
 	sys_put_le48(track_segments_id, track_segments_id_le);
 
-	LOG_DBG_OBJ_ID("Track segments ID read: ", track_segments_id);
+	LOG_DBG("Track segments ID read: 0x%012llX", track_segments_id);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
 				 track_segments_id_le, sizeof(track_segments_id_le));
@@ -682,7 +682,7 @@ static ssize_t read_current_track_id(struct bt_conn *conn,
 
 	sys_put_le48(track_id, track_id_le);
 
-	LOG_DBG_OBJ_ID("Current track ID read: ", track_id);
+	LOG_DBG("Current track ID read: 0x%012llX", track_id);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, track_id_le,
 				 sizeof(track_id_le));
@@ -762,7 +762,7 @@ static ssize_t read_next_track_id(struct bt_conn *conn,
 		return bt_gatt_attr_read(conn, attr, buf, len, offset, NULL, 0);
 	}
 
-	LOG_DBG_OBJ_ID("Next track read: ", track_id);
+	LOG_DBG("Next track read: 0x%012llX", track_id);
 	return bt_gatt_attr_read(conn, attr, buf, len, offset,
 				 track_id_le, sizeof(track_id_le));
 }
@@ -833,7 +833,7 @@ static ssize_t read_parent_group_id(struct bt_conn *conn,
 
 	sys_put_le48(group_id, group_id_le);
 
-	LOG_DBG_OBJ_ID("Parent group read: ", group_id);
+	LOG_DBG("Parent group read: 0x%012llX", group_id);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, group_id_le,
 				 sizeof(group_id_le));
@@ -867,7 +867,7 @@ static ssize_t read_current_group_id(struct bt_conn *conn,
 
 	sys_put_le48(group_id, group_id_le);
 
-	LOG_DBG_OBJ_ID("Current group read: ", group_id);
+	LOG_DBG("Current group read: 0x%012llX", group_id);
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, group_id_le,
 				 sizeof(group_id_le));
@@ -1264,7 +1264,7 @@ static ssize_t read_search_results_id(struct bt_conn *conn,
 
 	uint64_t search_id = mcs_cbs->get_search_results_id();
 
-	LOG_DBG_OBJ_ID("Search results id read: ", search_id);
+	LOG_DBG("Search results id read: 0x%012llX", search_id);
 
 	/* TODO: The permanent solution here should be that the call to */
 	/* mpl should fill the UUID in a pointed-to value, and return a */
@@ -1601,7 +1601,7 @@ static void notify_cb(struct bt_conn *conn, void *data)
 
 		sys_put_le48(track_id, track_id_le);
 
-		LOG_DBG_OBJ_ID("Notifying current track ID: ", track_id);
+		LOG_DBG("Notifying current track ID: 0x%012llX", track_id);
 		err = notify(conn, BT_UUID_MCS_CURRENT_TRACK_OBJ_ID, track_id_le,
 			     sizeof(track_id_le));
 		if (err == 0) {
@@ -1618,14 +1618,14 @@ static void notify_cb(struct bt_conn *conn, void *data)
 			/* "If the media player has no next track, the length of the
 			 * characteristic shall be zero."
 			 */
-			LOG_DBG_OBJ_ID("Notifying EMPTY next track ID: ", track_id);
+			LOG_DBG("Notifying EMPTY next track ID: 0x%012llX", track_id);
 			err = notify(conn, BT_UUID_MCS_NEXT_TRACK_OBJ_ID, NULL, 0);
 		} else {
 			uint8_t track_id_le[BT_OTS_OBJ_ID_SIZE];
 
 			sys_put_le48(track_id, track_id_le);
 
-			LOG_DBG_OBJ_ID("Notifying next track ID: ", track_id);
+			LOG_DBG("Notifying next track ID: 0x%012llX", track_id);
 			err = notify(conn, BT_UUID_MCS_NEXT_TRACK_OBJ_ID, track_id_le,
 				     sizeof(track_id_le));
 		}
@@ -1643,7 +1643,7 @@ static void notify_cb(struct bt_conn *conn, void *data)
 
 		sys_put_le48(group_id, group_id_le);
 
-		LOG_DBG_OBJ_ID("Notifying parent group ID: ", group_id);
+		LOG_DBG("Notifying parent group ID: 0x%012llX", group_id);
 		err = notify(conn, BT_UUID_MCS_PARENT_GROUP_OBJ_ID, &group_id_le,
 			     sizeof(group_id_le));
 		if (err == 0) {
@@ -1659,7 +1659,7 @@ static void notify_cb(struct bt_conn *conn, void *data)
 
 		sys_put_le48(group_id, group_id_le);
 
-		LOG_DBG_OBJ_ID("Notifying current group ID: ", group_id);
+		LOG_DBG("Notifying current group ID: 0x%012llX", group_id);
 		err = notify(conn, BT_UUID_MCS_CURRENT_GROUP_OBJ_ID, &group_id_le,
 			     sizeof(group_id_le));
 		if (err == 0) {
@@ -1725,7 +1725,7 @@ static void notify_cb(struct bt_conn *conn, void *data)
 
 		sys_put_le48(search_id, search_id_le);
 
-		LOG_DBG_OBJ_ID("Notifying search results ID: ", search_id);
+		LOG_DBG("Notifying search results ID: 0x%012llX", search_id);
 		err = notify(conn, BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID, &search_id_le,
 			     sizeof(search_id_le));
 		if (err == 0) {
