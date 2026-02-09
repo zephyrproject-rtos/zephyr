@@ -396,6 +396,7 @@
 		clocks = <&gcr ADI_MAX32_CLOCK_BUS0 6>;
 		interrupts = <12 0>;
 		status = "disabled";
+		zephyr,disabling-power-states = <&standby &backup>;
 	};
 };
 
