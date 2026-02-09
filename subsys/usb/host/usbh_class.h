@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
- * SPDX-FileCopyrightText: Copyright 2025 NXP
+ * SPDX-FileCopyrightText: Copyright 2025 - 2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -48,8 +48,12 @@ void usbh_class_init_all(void);
  * The first matching host class driver is going to stop the scanning, and become the one in use.
  *
  * @param[in] udev USB device to probe.
+ *
+ * @retval 0 if the USB Device is probed success.
+ * @retval -EINVAL if error occurs during the probe phase.
+ * @retval -ENOTSUP if no supported class is present.
  */
-void usbh_class_probe_device(struct usb_device *const udev);
+int usbh_class_probe_device(struct usb_device *const udev);
 
 /**
  * @brief Call the device removal handler for every class configured with this device.
