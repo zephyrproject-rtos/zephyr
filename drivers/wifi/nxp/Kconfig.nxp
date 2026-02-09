@@ -591,6 +591,22 @@ config NXP_WIFI_MAX_RESCAN_LIMIT
 	help
 	  This option sets the max scan limit.
 
+config NXP_WIFI_SCHED_SCAN_DEFAULT_ITERATION
+	int "Scheduled scan default iteration when planned iteration is 0"
+	default 6
+	help
+	  Provide limited iteration when the sched_scan plan iteration is 0.
+	  After sched_scan stop, the hostap will re-trigger a sched_scan.
+	  This is to avoid unexpected infinite scan in some corner cases.
+	  Set to 0 to use infinite scan.
+
+config NXP_WIFI_SCHED_SCAN_MIN_INTERVAL
+	int "Scheduled scan minimum interval for each scan"
+	default 30
+	range 1 65535
+	help
+	  Minimum intreval in seconds of sched_scan plan.
+	  This is to save power for some use cases.
 endmenu
 
 config NXP_WIFI_WMM_UAPSD
