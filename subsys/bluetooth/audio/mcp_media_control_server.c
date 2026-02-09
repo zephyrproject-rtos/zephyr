@@ -31,7 +31,6 @@
 #include <zephyr/sys/time_units.h>
 #include <zephyr/sys/util_macro.h>
 
-#include "media_proxy_internal.h"
 #include "mcs_internal.h"
 #include "mcp_internal.h"
 
@@ -688,7 +687,7 @@ static int add_group_and_track_objects(struct bt_mcp_media_control_server_player
 static int on_obj_deleted(struct bt_ots *ots, struct bt_conn *conn,
 			   uint64_t id)
 {
-	LOG_DBG_OBJ_ID("Object Id deleted: ", id);
+	LOG_DBG("Object Id deleted: 0x%012llX", id);
 
 	return 0;
 }
@@ -703,7 +702,7 @@ static void on_obj_selected(struct bt_ots *ots, struct bt_conn *conn,
 		return;
 	}
 
-	LOG_DBG_OBJ_ID("Object Id selected: ", id);
+	LOG_DBG("Object Id selected: 0x%012llX", id);
 
 	if (id == media_player.icon_id) {
 		LOG_DBG("Icon Object ID");
@@ -745,7 +744,7 @@ static int on_obj_created(struct bt_ots *ots, struct bt_conn *conn, uint64_t id,
 {
 	/* Objects are always created locally so we do not need to check for BT_MCP_OBJ_FLAG_BUSY */
 
-	LOG_DBG_OBJ_ID("Object Id created: ", id);
+	LOG_DBG("Object Id created: 0x%012llX", id);
 
 	*created_desc = *obj.desc;
 
@@ -950,7 +949,7 @@ static void do_goto_segment(struct bt_mcp_media_control_server_player *pl, int32
 static void do_prev_track(struct bt_mcp_media_control_server_player *pl)
 {
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
-	LOG_DBG_OBJ_ID("Track ID before: ", pl->group->track->id);
+	LOG_DBG("Track ID before: 0x%012llX", pl->group->track->id);
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
 
 	if (pl->group->track->prev != NULL) {
@@ -965,7 +964,7 @@ static void do_prev_track(struct bt_mcp_media_control_server_player *pl)
 	}
 
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
-	LOG_DBG_OBJ_ID("Track ID after: ", pl->group->track->id);
+	LOG_DBG("Track ID after: 0x%012llX", pl->group->track->id);
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
 }
 
@@ -973,7 +972,7 @@ static void do_prev_track(struct bt_mcp_media_control_server_player *pl)
 static void do_next_track_normal_order(struct bt_mcp_media_control_server_player *pl)
 {
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
-	LOG_DBG_OBJ_ID("Track ID before: ", pl->group->track->id);
+	LOG_DBG("Track ID before: 0x%012llX", pl->group->track->id);
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
 
 	if (pl->group->track->next != NULL) {
@@ -983,7 +982,7 @@ static void do_next_track_normal_order(struct bt_mcp_media_control_server_player
 	}
 
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
-	LOG_DBG_OBJ_ID("Track ID after: ", pl->group->track->id);
+	LOG_DBG("Track ID after: 0x%012llX", pl->group->track->id);
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
 }
 
@@ -1025,7 +1024,7 @@ static void do_first_track(struct bt_mcp_media_control_server_player *pl, bool g
 	bool track_changed = false;
 
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
-	LOG_DBG_OBJ_ID("Track ID before: ", pl->group->track->id);
+	LOG_DBG("Track ID before: 0x%012llX", pl->group->track->id);
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
 
 	/* Set first track */
@@ -1045,14 +1044,14 @@ static void do_first_track(struct bt_mcp_media_control_server_player *pl, bool g
 	}
 
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
-	LOG_DBG_OBJ_ID("Track ID after: ", pl->group->track->id);
+	LOG_DBG("Track ID after: 0x%012llX", pl->group->track->id);
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
 }
 
 static void do_last_track(struct bt_mcp_media_control_server_player *pl)
 {
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
-	LOG_DBG_OBJ_ID("Track ID before: ", pl->group->track->id);
+	LOG_DBG("Track ID before: 0x%012llX", pl->group->track->id);
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
 
 	if (pl->group->track->next != NULL) {
@@ -1071,7 +1070,7 @@ static void do_last_track(struct bt_mcp_media_control_server_player *pl)
 	}
 
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
-	LOG_DBG_OBJ_ID("Track ID after: ", pl->group->track->id);
+	LOG_DBG("Track ID after: 0x%012llX", pl->group->track->id);
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
 }
 
@@ -1081,7 +1080,7 @@ static void do_goto_track(struct bt_mcp_media_control_server_player *pl, int32_t
 	int32_t k;
 
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
-	LOG_DBG_OBJ_ID("Track ID before: ", pl->group->track->id);
+	LOG_DBG("Track ID before: 0x%012llX", pl->group->track->id);
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
 
 	if (tracknum > 0) {
@@ -1115,7 +1114,7 @@ static void do_goto_track(struct bt_mcp_media_control_server_player *pl, int32_t
 	}
 
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
-	LOG_DBG_OBJ_ID("Track ID after: ", pl->group->track->id);
+	LOG_DBG("Track ID after: 0x%012llX", pl->group->track->id);
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
 
 	/* The track has changed if we have moved more in one direction */
@@ -1134,7 +1133,7 @@ static void do_goto_track(struct bt_mcp_media_control_server_player *pl, int32_t
 static void do_prev_group(struct bt_mcp_media_control_server_player *pl)
 {
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
-	LOG_DBG_OBJ_ID("Group ID before: ", pl->group->id);
+	LOG_DBG("Group ID before:0x%012llX", pl->group->id);
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
 
 	if (pl->group->prev != NULL) {
@@ -1143,7 +1142,7 @@ static void do_prev_group(struct bt_mcp_media_control_server_player *pl)
 	}
 
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
-	LOG_DBG_OBJ_ID("Group ID after: ", pl->group->id);
+	LOG_DBG("Group ID after: 0x%012llX", pl->group->id);
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
 }
 
@@ -1151,7 +1150,7 @@ static void do_next_group(struct bt_mcp_media_control_server_player *pl)
 {
 
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
-	LOG_DBG_OBJ_ID("Group ID before: ", pl->group->id);
+	LOG_DBG("Group ID before: 0x%012llX", pl->group->id);
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
 
 	if (pl->group->next != NULL) {
@@ -1160,14 +1159,14 @@ static void do_next_group(struct bt_mcp_media_control_server_player *pl)
 	}
 
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
-	LOG_DBG_OBJ_ID("Group ID after: ", pl->group->id);
+	LOG_DBG("Group ID after: 0x%012llX", pl->group->id);
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
 }
 
 static void do_first_group(struct bt_mcp_media_control_server_player *pl)
 {
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
-	LOG_DBG_OBJ_ID("Group ID before: ", pl->group->id);
+	LOG_DBG("Group ID before: 0x%012llX", pl->group->id);
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
 
 	if (pl->group->prev != NULL) {
@@ -1180,14 +1179,14 @@ static void do_first_group(struct bt_mcp_media_control_server_player *pl)
 	}
 
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
-	LOG_DBG_OBJ_ID("Group ID after: ", pl->group->id);
+	LOG_DBG("Group ID after: 0x%012llX", pl->group->id);
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
 }
 
 static void do_last_group(struct bt_mcp_media_control_server_player *pl)
 {
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
-	LOG_DBG_OBJ_ID("Group ID before: ", pl->group->id);
+	LOG_DBG("Group ID before: 0x%012llX", pl->group->id);
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
 
 	if (pl->group->next != NULL) {
@@ -1200,7 +1199,7 @@ static void do_last_group(struct bt_mcp_media_control_server_player *pl)
 	}
 
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
-	LOG_DBG_OBJ_ID("Group ID after: ", pl->group->id);
+	LOG_DBG("Group ID after: 0x%012llX", pl->group->id);
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
 }
 
@@ -1210,7 +1209,7 @@ static void do_goto_group(struct bt_mcp_media_control_server_player *pl, int32_t
 	int32_t k;
 
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
-	LOG_DBG_OBJ_ID("Group ID before: ", pl->group->id);
+	LOG_DBG("Group ID before: 0x%012llX", pl->group->id);
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
 
 	if (groupnum > 0) {
@@ -1244,7 +1243,7 @@ static void do_goto_group(struct bt_mcp_media_control_server_player *pl, int32_t
 	}
 
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
-	LOG_DBG_OBJ_ID("Group ID after: ", pl->group->id);
+	LOG_DBG("Group ID after: 0x%012llX", pl->group->id);
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
 
 	/* The group has changed if we have moved more in one direction */
@@ -2268,7 +2267,7 @@ static void set_current_track_id(uint64_t id)
 	struct bt_mcp_group *group;
 	struct bt_mcp_track *track;
 
-	LOG_DBG_OBJ_ID("Track ID to set: ", id);
+	LOG_DBG("Track ID to set: 0x%012llX", id);
 
 	if (find_track_by_id(&media_player, id, &group, &track)) {
 		if (media_player.group != group) {
@@ -2349,7 +2348,7 @@ static void set_next_track_id(uint64_t id)
 	struct bt_mcp_group *group;
 	struct bt_mcp_track *track;
 
-	LOG_DBG_OBJ_ID("Next Track ID to set: ", id);
+	LOG_DBG("Next Track ID to set: 0x%012llX", id);
 
 	if (find_track_by_id(&media_player, id, &group, &track)) {
 
@@ -2429,7 +2428,7 @@ static void set_current_group_id(uint64_t id)
 {
 	struct bt_mcp_group *group;
 
-	LOG_DBG_OBJ_ID("Group ID to set: ", id);
+	LOG_DBG("Group ID to set: 0x%012llX", id);
 
 	if (find_group_by_id(&media_player, id, &group)) {
 

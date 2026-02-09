@@ -17,6 +17,7 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/mcc.h>
+#include <zephyr/bluetooth/audio/mcp.h>
 #include <zephyr/bluetooth/audio/mcs.h>
 #include <zephyr/bluetooth/audio/media_proxy.h>
 #include <zephyr/bluetooth/bluetooth.h>
@@ -30,8 +31,6 @@
 
 #include "host/shell/bt.h"
 #include "common/bt_shell_private.h"
-
-#include "../media_proxy_internal.h"
 
 LOG_MODULE_REGISTER(bt_mcc_shell, CONFIG_BT_MCC_LOG_LEVEL);
 

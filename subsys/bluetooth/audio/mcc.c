@@ -40,19 +40,6 @@
 #include "mcc_internal.h"
 #include "mcs_internal.h"
 
-/* TODO: Temporarily copied here from media_proxy_internal.h - clean up */
-/* Debug output of 48 bit Object ID value */
-/* (Zephyr does not yet support debug output of more than 32 bit values.) */
-/* Takes a text and a 64-bit integer as input */
-#define LOG_DBG_OBJ_ID(text, id64) \
-	do { \
-		if (IS_ENABLED(CONFIG_BT_MCS_LOG_LEVEL)) { \
-			char t[BT_OTS_OBJ_ID_STR_LEN]; \
-			(void)bt_ots_obj_id_to_str(id64, t, sizeof(t)); \
-			LOG_DBG(text "0x%s", t); \
-		} \
-	} while (0)
-
 LOG_MODULE_REGISTER(bt_mcc, CONFIG_BT_MCC_LOG_LEVEL);
 
 static struct mcs_instance_t mcs_instance;
@@ -151,7 +138,7 @@ static uint8_t mcc_read_icon_obj_id_cb(struct bt_conn *conn, uint8_t err,
 	} else {
 		LOG_HEXDUMP_DBG(pid, length, "Icon Object ID");
 		id = sys_get_le48(pid);
-		LOG_DBG_OBJ_ID("Icon Object ID: ", id);
+		LOG_DBG("Icon Object ID: 0x%012llX", id);
 
 		if (!BT_MCS_VALID_OBJ_ID(id)) {
 			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
@@ -451,7 +438,7 @@ static uint8_t mcc_read_segments_obj_id_cb(struct bt_conn *conn, uint8_t err,
 	} else {
 		LOG_HEXDUMP_DBG(pid, length, "Segments Object ID");
 		id = sys_get_le48(pid);
-		LOG_DBG_OBJ_ID("Segments Object ID: ", id);
+		LOG_DBG("Segments Object ID: 0x%012llX", id);
 
 		if (!BT_MCS_VALID_OBJ_ID(id)) {
 			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
@@ -480,7 +467,7 @@ static void mcc_current_track_obj_id_cb(struct bt_conn *conn, uint8_t err, const
 	} else {
 		LOG_HEXDUMP_DBG(pid, length, "Current Track Object ID");
 		id = sys_get_le48(pid);
-		LOG_DBG_OBJ_ID("Current Track Object ID: ", id);
+		LOG_DBG("Current Track Object ID: 0x%012llX", id);
 
 		if (!BT_MCS_VALID_OBJ_ID(id)) {
 			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
@@ -519,7 +506,7 @@ static void mcs_write_current_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	} else {
 		obj_id = sys_get_le48((const uint8_t *)params->data);
-		LOG_DBG_OBJ_ID("Object ID: ", obj_id);
+		LOG_DBG("Object ID: 0x%012llX", obj_id);
 
 		if (!BT_MCS_VALID_OBJ_ID(obj_id)) {
 			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
@@ -548,7 +535,7 @@ static void mcc_next_track_obj_id_cb(struct bt_conn *conn, uint8_t err, const vo
 	} else {
 		LOG_HEXDUMP_DBG(pid, length, "Next Track Object ID");
 		id = sys_get_le48(pid);
-		LOG_DBG_OBJ_ID("Next Track Object ID: ", id);
+		LOG_DBG("Next Track Object ID: 0x%012llX", id);
 
 		if (!BT_MCS_VALID_OBJ_ID(id)) {
 			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
@@ -587,7 +574,7 @@ static void mcs_write_next_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	} else {
 		obj_id = sys_get_le48((const uint8_t *)params->data);
-		LOG_DBG_OBJ_ID("Object ID: ", obj_id);
+		LOG_DBG("Object ID: 0x%012llX", obj_id);
 
 		if (!BT_MCS_VALID_OBJ_ID(obj_id)) {
 			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
@@ -614,7 +601,7 @@ static void mcc_parent_group_obj_id_cb(struct bt_conn *conn, uint8_t err, const 
 	} else {
 		LOG_HEXDUMP_DBG(pid, length, "Parent Group Object ID");
 		id = sys_get_le48(pid);
-		LOG_DBG_OBJ_ID("Parent Group Object ID: ", id);
+		LOG_DBG("Parent Group Object ID: 0x%012llX", id);
 
 		if (!BT_MCS_VALID_OBJ_ID(id)) {
 			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
@@ -653,7 +640,7 @@ static void mcc_current_group_obj_id_cb(struct bt_conn *conn, uint8_t err, const
 	} else {
 		LOG_HEXDUMP_DBG(pid, length, "Current Group Object ID");
 		id = sys_get_le48(pid);
-		LOG_DBG_OBJ_ID("Current Group Object ID: ", id);
+		LOG_DBG("Current Group Object ID: 0x%012llX", id);
 
 		if (!BT_MCS_VALID_OBJ_ID(id)) {
 			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
@@ -692,7 +679,7 @@ static void mcs_write_current_group_obj_id_cb(struct bt_conn *conn, uint8_t err,
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	} else {
 		obj_id = sys_get_le48((const uint8_t *)params->data);
-		LOG_DBG_OBJ_ID("Object ID: ", obj_id);
+		LOG_DBG("Object ID: 0x%012llX", obj_id);
 
 		if (!BT_MCS_VALID_OBJ_ID(obj_id)) {
 			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
@@ -948,7 +935,7 @@ static void mcc_search_results_obj_id_cb(struct bt_conn *conn, uint8_t err,
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	} else {
 		id = sys_get_le48(pid);
-		LOG_DBG_OBJ_ID("Search Results Object ID: ", id);
+		LOG_DBG("Search Results Object ID: 0x%012llX", id);
 
 		if (!BT_MCS_VALID_OBJ_ID(id)) {
 			cb_err = BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
