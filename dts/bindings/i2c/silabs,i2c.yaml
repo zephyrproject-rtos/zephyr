@@ -1,7 +1,10 @@
 # Copyright (c) 2025 Silicon Laboratories Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Silabs I2C node
+title: Silicon Labs Series 2 I2C (Inter-Integrated Circuit)
+
+description: |
+  I2C peripheral on Silicon Labs EFM32 and EFR32 Series 2.
 
 compatible: "silabs,i2c"
 
@@ -19,3 +22,16 @@ properties:
 
   pinctrl-names:
     required: true
+
+  zephyr,concat-buf-size:
+    type: int
+    default: 16
+    description: |
+      Size of a concatenation buffer that the driver is to use for merging
+      multiple I2C messages in the same direction that have no RESTART or STOP
+      flag between them (see e.g. the i2c_burst_write() function) into one
+      transfer on the bus.
+
+      This property must be provided when interacting with devices that cannot
+      tolerate a repeated start and address appearing on the bus between message
+      fragments. For many devices a concatenation buffer is not necessary.
