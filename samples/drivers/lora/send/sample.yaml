@@ -31,3 +31,9 @@ tests:
       - CONFIG_LORA_MODULE_BACKEND_NATIVE=y
     platform_allow:
       - nrf52840dk/nrf52840
+  sample.driver.lora.send.native.stm32wl:
+    build_only: true
+    extra_configs:
+      - CONFIG_LORA_MODULE_BACKEND_NATIVE=y
+    integration_platforms:
+      - nucleo_wl55jc
