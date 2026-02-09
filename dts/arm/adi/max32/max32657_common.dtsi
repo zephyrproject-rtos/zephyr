@@ -175,6 +175,7 @@
 		clocks = <&gcr ADI_MAX32_CLOCK_BUS0 13>;
 		interrupts = <10 0>;
 		status = "disabled";
+		zephyr,disabling-power-states = <&standby &backup>;
 	};
 
 	uart0: serial@42000 {
