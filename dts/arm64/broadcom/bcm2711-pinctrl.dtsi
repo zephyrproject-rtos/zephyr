@@ -1,0 +1,73 @@
+/*
+ * Copyright (c) 2026 Muhammad Waleed Badar
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <broadcom/bcm283x-pinctrl.dtsi>
+
+&pinctrl {
+	uart2_gpio0: uart2-gpio0 {
+		group1 {
+			pinmux = <UART2_TX_GPIO0>,
+				 <UART2_RX_GPIO1>;
+		};
+	};
+
+	uart2_ctsrts_gpio0: uart2-ctsrts-gpio0 {
+		group1 {
+			pinmux = <UART2_TX_GPIO0>,
+				 <UART2_RX_GPIO1>,
+				 <UART2_CTS_GPIO2>,
+				 <UART2_RTS_GPIO3>;
+		};
+	};
+
+	uart3_gpio4: uart3-gpio4 {
+		group1 {
+			pinmux = <UART3_TX_GPIO4>,
+				 <UART3_RX_GPIO5>;
+		};
+	};
+
+	uart3_ctsrts_gpio4: uart3-ctsrts-gpio4 {
+		group1 {
+			pinmux = <UART3_TX_GPIO4>,
+				 <UART3_RX_GPIO5>,
+				 <UART3_CTS_GPIO6>,
+				 <UART3_RTS_GPIO7>;
+		};
+	};
+
+	uart4_gpio8: uart4-gpio8 {
+		group1 {
+			pinmux = <UART4_TX_GPIO8>,
+				 <UART4_RX_GPIO9>;
+		};
+	};
+
+	uart4_ctsrts_gpio8: uart4-ctsrts-gpio8 {
+		group1 {
+			pinmux = <UART4_TX_GPIO8>,
+				 <UART4_RX_GPIO9>,
+				 <UART4_CTS_GPIO10>,
+				 <UART4_RTS_GPIO11>;
+		};
+	};
+
+	uart5_gpio12: uart5-gpio12 {
+		group1 {
+			pinmux = <UART5_TX_GPIO12>,
+				 <UART5_RX_GPIO13>;
+		};
+	};
+
+	uart5_ctsrts_gpio12: uart5-ctsrts-gpio12 {
+		group1 {
+			pinmux = <UART5_TX_GPIO12>,
+				 <UART5_RX_GPIO13>,
+				 <UART5_CTS_GPIO14>,
+				 <UART5_RTS_GPIO15>;
+		};
+	};
+};
