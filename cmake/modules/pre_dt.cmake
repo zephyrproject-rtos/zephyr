@@ -60,9 +60,7 @@ function(pre_dt_module_run)
   # Finalize DTS_ROOT.
   list(REMOVE_DUPLICATES DTS_ROOT)
 
-  foreach(arch ${ARCH_V2_NAME_LIST})
-    list(APPEND arch_include dts/${arch})
-  endforeach()
+  list(TRANSFORM ARCH_V2_NAME_LIST PREPEND "dts/" OUTPUT_VARIABLE arch_include)
 
   # Finalize DTS_ROOT_SYSTEM_INCLUDE_DIRS.
   set(DTS_ROOT_SYSTEM_INCLUDE_DIRS)

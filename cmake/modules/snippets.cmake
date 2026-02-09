@@ -118,12 +118,8 @@ function(zephyr_process_snippets)
 
   # If snippets were requested, print messages for each one.
   if(SNIPPET_AS_LIST)
-    # Print the requested snippets.
-    set(snippet_names "Snippet(s):")
-    foreach(snippet IN LISTS SNIPPET_AS_LIST)
-      string(APPEND snippet_names " ${snippet}")
-    endforeach()
-    message(STATUS "${snippet_names}")
+    list(JOIN SNIPPET_AS_LIST " " snippet_names)
+    message(STATUS "Snippet(s): ${snippet_names}")
   endif()
 
   # Re-run cmake if any files we depend on changed.
