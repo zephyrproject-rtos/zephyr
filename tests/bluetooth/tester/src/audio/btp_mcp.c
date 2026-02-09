@@ -1683,7 +1683,7 @@ static uint8_t mcs_player_name_set(const void *cmd, uint16_t cmd_len, void *rsp,
 	name[cp->name_len] = '\0';
 
 	LOG_DBG("MCS Set Media Player Name");
-	err = media_proxy_ctrl_set_player_name(mcs_media_player, name);
+	err = bt_mcp_media_control_server_set_player_name(name);
 	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
