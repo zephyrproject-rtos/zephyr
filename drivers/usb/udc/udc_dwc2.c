@@ -595,7 +595,7 @@ static int dwc2_tx_fifo_write(const struct device *dev,
 			return -ENOTSUP;
 		}
 
-		sys_write32((uint32_t)buf->data,
+		sys_write32(*((uint32_t *)buf->data),
 			    (mem_addr_t)&base->in_ep[ep_idx].diepdma);
 	}
 
@@ -794,7 +794,7 @@ static void dwc2_prep_rx(const struct device *dev, struct net_buf *buf,
 			return;
 		}
 
-		sys_write32((uint32_t)data,
+		sys_write32(*((uint32_t *)data),
 			    (mem_addr_t)&base->out_ep[ep_idx].doepdma);
 	}
 
@@ -2612,7 +2612,7 @@ static inline int dwc2_read_fifo_setup(const struct device *dev, uint8_t ep,
 	/* FIFO access is always in 32-bit words */
 
 	if (size != 8) {
-		LOG_ERR("%d bytes SETUP", size);
+		LOG_ERR("%zu bytes SETUP", size);
 	}
 
 	/*
@@ -2891,7 +2891,7 @@ static inline void dwc2_handle_oepint(const struct device *dev)
 		if (dwc2_in_buffer_dma_mode(dev) &&
 		    (status & USB_DWC2_DOEPINT_XFERCOMPL) &&
 		    (doepint & USB_DWC2_DOEPINT_STUPPKTRCVD)) {
-			uint32_t addr;
+			mem_addr_t addr;
 
 			sys_write32(USB_DWC2_DOEPINT_STUPPKTRCVD, doepint_reg);
 			status &= ~USB_DWC2_DOEPINT_XFERCOMPL;
