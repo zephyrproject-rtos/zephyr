@@ -14,3 +14,6 @@ properties:
 
   mdm-wdisable-gpios:
     type: phandle-array
+
+  zephyr,mdm-reset-behavior:
+    default: ["toggle_on_recovery"]
