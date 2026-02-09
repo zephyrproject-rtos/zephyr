@@ -4431,13 +4431,13 @@ RISCV arch:
     - kgugala
     - tgorochowik
   collaborators:
-    - mgielda
-    - katsuster
     - edersondisouza
-    - npitre
-    - ycsin
-    - VynDragon
+    - katsuster
     - masz-nordic
+    - mgielda
+    - npitre
+    - VynDragon
+    - ycsin
   files:
     - arch/riscv/
     - boards/enjoydigital/litex_vexriscv/
@@ -4446,16 +4446,16 @@ RISCV arch:
     - boards/sifive/
     - boards/sparkfun/red_v_things_plus/
     - boards/starfive/
+    - doc/hardware/arch/risc-v.rst
+    - drivers/interrupt_controller/intc_plic.c
     - dts/bindings/riscv/
     - dts/riscv/
     - include/zephyr/arch/riscv/
     - soc/common/riscv-privileged/
+    - soc/qemu/virt_riscv/
     - soc/sifive/
     - soc/starfive/
-    - soc/qemu/virt_riscv/
     - tests/arch/riscv/
-    - doc/hardware/arch/risc-v.rst
-    - drivers/interrupt_controller/intc_plic.c
   labels:
     - "area: RISCV"
   tests:
