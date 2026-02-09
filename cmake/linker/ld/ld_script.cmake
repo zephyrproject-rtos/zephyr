@@ -74,12 +74,7 @@ function(symbol_to_string)
   get_property(subalign GLOBAL PROPERTY ${STRING_SYMBOL}_SUBALIGN)
 
   string(REPLACE "\\" "" expr "${expr}")
-  string(REGEX MATCHALL "@([^@]*)@" match_res ${expr})
-
-  foreach(match ${match_res})
-    string(REPLACE "@" "" match ${match})
-    string(REPLACE "@${match}@" "${match}" expr ${expr})
-  endforeach()
+  string(REGEX REPLACE "@([^@]*)@" "\\1" expr "${expr}")
 
   set(${STRING_STRING} "${${STRING_STRING}}\n${symbol} = ${expr};\n" PARENT_SCOPE)
 endfunction()
