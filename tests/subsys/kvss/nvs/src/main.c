@@ -1121,4 +1121,61 @@ ZTEST_F(nvs, test_nvs_init_bad_memory_region)
 	zassert_true(err == -EDEADLK, "nvs_mount call ok, expect fail: %d", err);
 #endif
 }
+
+/*
+ * Test NVS GC Pack per entry
+ */
+ZTEST_F(nvs, test_nvs_gc_pack_per_entry)
+{
+	int err;
+	const size_t wbs = fixture->fs.flash_parameters->write_block_size;
+	uint16_t id = 0;
+	uint8_t write_data[NVS_BLOCK_SIZE];
+	uint8_t update_data[NVS_BLOCK_SIZE];
+
+	fixture->fs.sector_count = 2;
+	err = nvs_mount(&fixture->fs);
+	zassert_true(err == 0, "nvs_mount call failure: %d", err);
+
+	/* Fill NVS with variable-length entries until full */
+	while (1) {
+		size_t len = id % wbs;
+		if (len == 0) {
+			len = 1;
+		}
+
+		memset(write_data, id, len);
+
+		err = nvs_write(&fixture->fs, id, write_data, len);
+		if (err < 0) {
+			zassert_equal(err, -ENOSPC, "Expected -ENOSPC, got %d", err);
+			break;
+		}
+
+		id++;
+	}
+
+	/* Limit the number of entries to avoid ZTEST timeout on large erase block sizes(64KB)
+	 * Testing wbs * 2 entries is sufficient because each entry length already covers
+	 * the range.
+	 */
+	id = MIN(id, wbs * 2);
+
+	/* Delete and update each entry immediately */
+	for (uint16_t i = 0; i < id; i++) {
+		size_t len = i % wbs;
+		if (len == 0) {
+			len = 1;
+		}
+
+		err = nvs_delete(&fixture->fs, i);
+		zassert_equal(err, 0, "nvs_delete failed for id %d: %d", i, err);
+
+		/* Prepare updated data: different content */
+		memset(update_data, i + 1, len);
+
+		err = nvs_write(&fixture->fs, i, update_data, len);
+		zassert_equal(err, len, "nvs_write failed for id %d: %d", i, err);
+	}
+}
 #endif /* CONFIG_TEST_NVS_SIMULATOR */
