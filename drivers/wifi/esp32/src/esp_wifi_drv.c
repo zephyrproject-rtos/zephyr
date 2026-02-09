@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2020-2026 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <zephyr/net/wifi_nm.h>
 #endif
 #include <zephyr/device.h>
+#include <zephyr/pm/device.h>
 #include <soc.h>
 #include "esp_private/wifi.h"
 #include "esp_event.h"
@@ -1501,6 +1502,32 @@ static int esp32_wifi_reset_stats(const struct device *dev __unused,
 }
 #endif
 
+static int esp32_wifi_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+
+	case PM_DEVICE_ACTION_SUSPEND:
+#if SOC_WIFI_HW_TSF
+		if (esp_wifi_internal_is_tsf_active()) {
+			/* Reject sleep while TSF is active (timing critical) */
+			return -EBUSY;
+		}
+#endif
+		break;
+
+	case PM_DEVICE_ACTION_TURN_ON:
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static int esp32_wifi_dev_init(const struct device *dev)
 {
 #if CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3
@@ -1537,7 +1564,7 @@ static int esp32_wifi_dev_init(const struct device *dev)
 		net_mgmt_add_event_callback(&esp32_dhcp_cb);
 	}
 
-	return 0;
+	return pm_device_driver_init(dev, esp32_wifi_pm_action);
 }
 
 static int esp32_wifi_set_config(const struct device *dev __unused,
@@ -1600,8 +1627,10 @@ static const struct net_wifi_mgmt_offload esp32_api = {
 	.wifi_mgmt_api = &esp32_wifi_mgmt,
 };
 
+PM_DEVICE_DT_INST_DEFINE(0, esp32_wifi_pm_action);
+
 NET_DEVICE_DT_INST_DEFINE(0,
-		esp32_wifi_dev_init, NULL,
+		esp32_wifi_dev_init, PM_DEVICE_DT_INST_GET(0),
 		&esp32_data, NULL, CONFIG_WIFI_INIT_PRIORITY,
 		&esp32_api, ETHERNET_L2,
 		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
