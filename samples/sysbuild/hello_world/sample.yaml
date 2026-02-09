@@ -73,3 +73,10 @@ tests:
     extra_args:
       - SB_CONFIG_REMOTE_NRF54H20_CPUFLPR_XIP_CORE=y
       - hello_world_SNIPPET=nordic-flpr-xip
+  sample.sysbuild.hello_world.nrf7120_cpuflpr:
+    platform_allow:
+      - nrf7120dk/nrf7120/cpuapp
+    integration_platforms:
+      - nrf7120dk/nrf7120/cpuapp
+    extra_args:
+      - hello_world_SNIPPET=nordic-flpr
