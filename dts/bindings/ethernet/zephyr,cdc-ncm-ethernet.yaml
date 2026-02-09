@@ -12,5 +12,19 @@ properties:
     type: string
     required: true
     description: |
-      Remote MAC address of the virtual Ethernet connection.
-      Should not be the same as local-mac-address property.
+      Remote MAC address of the virtual Ethernet connection encoded as
+      a string of 12 uppercase hexadecimal characters. Do not use
+      colons, dashes, or other separators. Per the USB CDC ECM
+      specification (section 5.4), this string is sent as-is in the
+      string descriptor referenced by the iMACAddress descriptor index
+      to the USB host. Should not be the same as local-mac-address
+      property.
+
+examples:
+  - |
+    / {
+      cdc-ncm {
+        compatible = "zephyr,cdc-ncm-ethernet";
+        remote-mac-address = "00005E005301";
+      };
+    };

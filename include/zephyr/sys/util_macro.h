@@ -101,6 +101,17 @@ extern "C" {
  */
 #define IS_BIT_SET(value, bit) ((((value) >> (bit)) & (0x1)) != 0)
 
+/**
+ * @brief Check if @p c is an uppercase hexadecimal character.
+ *
+ * Evaluates to true if @p c is in the range '0'-'9' or 'A'-'F'.
+ * Does not match lowercase 'a'-'f'.
+ *
+ * @param c Character to check
+ */
+#define IS_UPPERCASE_HEX(c) \
+	(((c) >= '0' && (c) <= '9') || ((c) >= 'A' && (c) <= 'F'))
+
 /** @brief Extract the Least Significant Bit from @p value. */
 #define LSB_GET(value) ((value) & -(value))
 

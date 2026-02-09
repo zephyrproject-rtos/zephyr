@@ -1374,7 +1374,21 @@ const static struct usb_desc_header *cdc_ncm_hs_desc_##n[] = {			\
 	(struct usb_desc_header *) &cdc_ncm_desc_##n.nil_desc,			\
 }
 
+#define BUILD_ASSERT_IMAC(str)							\
+	BUILD_ASSERT(sizeof(str) == 13,						\
+		     "remote-mac-address must be exactly 12 hex characters"	\
+		     " (e.g. \"00005E005301\"), without colons or separators");	\
+	BUILD_ASSERT(								\
+		IS_UPPERCASE_HEX((str)[0])  && IS_UPPERCASE_HEX((str)[1])  &&	\
+		IS_UPPERCASE_HEX((str)[2])  && IS_UPPERCASE_HEX((str)[3])  &&	\
+		IS_UPPERCASE_HEX((str)[4])  && IS_UPPERCASE_HEX((str)[5])  &&	\
+		IS_UPPERCASE_HEX((str)[6])  && IS_UPPERCASE_HEX((str)[7])  &&	\
+		IS_UPPERCASE_HEX((str)[8])  && IS_UPPERCASE_HEX((str)[9])  &&	\
+		IS_UPPERCASE_HEX((str)[10]) && IS_UPPERCASE_HEX((str)[11]),	\
+		"remote-mac-address must contain only hex characters (0-9, A-F)")
+
 #define USBD_CDC_NCM_DT_DEVICE_DEFINE(n)					\
+	BUILD_ASSERT_IMAC(DT_INST_PROP(n, remote_mac_address));			\
 	CDC_NCM_DEFINE_DESCRIPTOR(n);						\
 	USBD_DESC_STRING_DEFINE(mac_desc_data_##n,				\
 				DT_INST_PROP(n, remote_mac_address),		\
