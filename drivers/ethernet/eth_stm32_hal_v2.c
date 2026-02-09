@@ -154,7 +154,7 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 	size_t remaining_read;
 	struct eth_stm32_tx_context *ctx = NULL;
 	struct eth_stm32_tx_buffer_header *buf_header = NULL;
-	HAL_StatusTypeDef hal_ret = HAL_OK;
+	HAL_StatusTypeDef hal_ret;
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 	bool timestamped_frame;
@@ -259,7 +259,7 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 	size_t remaining_read;
 	struct eth_stm32_tx_context *ctx = NULL;
 	struct eth_stm32_tx_buffer_header *buf_header = NULL;
-	HAL_StatusTypeDef hal_ret = HAL_OK;
+	HAL_StatusTypeDef hal_ret;
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 	bool timestamped_frame;
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
@@ -582,7 +582,7 @@ int eth_stm32_hal_init(const struct device *dev)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
-	HAL_StatusTypeDef hal_ret = HAL_OK;
+	HAL_StatusTypeDef hal_ret;
 	__maybe_unused uint8_t *desc_uncached_addr;
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
@@ -657,7 +657,7 @@ void eth_stm32_set_mac_config(const struct device *dev, struct phy_link_state *s
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
-	HAL_StatusTypeDef hal_ret = HAL_OK;
+	HAL_StatusTypeDef hal_ret;
 	ETH_MACConfigTypeDef mac_config = {0};
 
 	hal_ret = HAL_ETH_GetMACConfig(heth, &mac_config);
@@ -719,7 +719,7 @@ int eth_stm32_hal_start(const struct device *dev)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
-	HAL_StatusTypeDef hal_ret = HAL_OK;
+	HAL_StatusTypeDef hal_ret;
 
 	LOG_DBG("Starting ETH HAL driver");
 
@@ -736,7 +736,7 @@ int eth_stm32_hal_stop(const struct device *dev)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
-	HAL_StatusTypeDef hal_ret = HAL_OK;
+	HAL_StatusTypeDef hal_ret;
 
 	LOG_DBG("Stopping ETH HAL driver");
 
