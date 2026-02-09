@@ -16,3 +16,9 @@ config SAMPLE_PDM_CHANNELS
 	default 2
 	help
 	  Count of DMIC channels to capture and process.
+
+config HW_CHANNEL_INDEX
+	int "hardware controller index"
+	default 0
+	help
+	  Specifies the index of the hardware controller.
