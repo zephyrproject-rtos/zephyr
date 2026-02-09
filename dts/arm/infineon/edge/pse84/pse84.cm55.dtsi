@@ -183,6 +183,15 @@
 		     <138 4>; /* TX Structure */
 };
 
+&dmic0 {
+	interrupts = <142 4>, /* Channel 0 */
+		     <143 4>, /* Channel 1 */
+		     <144 4>, /* Channel 2 */
+		     <145 4>, /* Channel 3 */
+		     <146 4>, /* Channel 4 */
+		     <147 4>; /* Channel 5 */
+};
+
 &i3c0 {
 	interrupts = <153 4>;
 };

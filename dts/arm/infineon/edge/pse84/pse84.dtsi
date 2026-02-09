@@ -1159,5 +1159,56 @@
 			clk-dst = <0x00010101>;
 			status = "disabled";
 		};
+
+		dmic0: pdm@44400000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "infineon,pdm";
+			reg = <0x44400000 0x8800>;
+			interrupts = <165 4>, /* Channel 0 */
+				     <166 4>, /* Channel 1 */
+				     <167 4>, /* Channel 2 */
+				     <168 4>, /* Channel 3 */
+				     <169 4>, /* Channel 4 */
+				     <170 4>; /* Channel 5 */
+			clk-dst = <0x00010102>;
+			status = "disabled";
+
+			dmic0_ch0: channel@44408000 {
+				reg = <0x44408000 0x100>;
+				channel = <0>;
+				status = "disabled";
+			};
+
+			dmic0_ch1: channel@44408100 {
+				reg = <0x44408100 0x100>;
+				channel = <1>;
+				status = "disabled";
+			};
+
+			dmic0_ch2: channel@44408200 {
+				reg = <0x44408200 0x100>;
+				channel = <2>;
+				status = "disabled";
+			};
+
+			dmic0_ch3: channel@44408300 {
+				reg = <0x44408300 0x100>;
+				channel = <3>;
+				status = "disabled";
+			};
+
+			dmic0_ch4: channel@44408400 {
+				reg = <0x44408400 0x100>;
+				channel = <4>;
+				status = "disabled";
+			};
+
+			dmic0_ch5: channel@44408500 {
+				reg = <0x44408500 0x100>;
+				channel = <5>;
+				status = "disabled";
+			};
+		};
 	};
 };

@@ -69,6 +69,7 @@ source "subsys/logging/Kconfig.template.log_config"
 
 # zephyr-keep-sorted-start
 source "drivers/audio/Kconfig.dmic_ambiq_pdm"
+source "drivers/audio/Kconfig.dmic_infineon"
 source "drivers/audio/Kconfig.dmic_mcux"
 source "drivers/audio/Kconfig.dmic_nxp_micfil"
 source "drivers/audio/Kconfig.dmic_pdm_nrfx"
