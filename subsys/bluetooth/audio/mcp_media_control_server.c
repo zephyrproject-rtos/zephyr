@@ -1943,10 +1943,41 @@ static const char *get_player_name(void)
 	return media_player.name;
 }
 
+int bt_mcp_media_control_server_get_player_name(char *name, size_t name_size)
+{
+	const size_t player_name_len = strlen(media_player.name);
+
+	if (name == NULL) {
+		LOG_DBG("name is NULL");
+		return -EINVAL;
+	}
+
+	if (name_size < player_name_len) {
+		LOG_DBG("name_size %zu lower than player_name_len %zu", name_size, player_name_len);
+		return -ENOMEM;
+	}
+
+	(void)memcpy(name, media_player.name, player_name_len);
+
+	return 0;
+}
+
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
 static uint64_t get_icon_id(void)
 {
 	return media_player.icon_id;
+}
+
+int bt_mcp_media_control_server_get_icon_id(uint64_t *id)
+{
+	if (id == NULL) {
+		LOG_DBG("id is NULL");
+		return -EINVAL;
+	}
+
+	*id = media_player.icon_id;
+
+	return 0;
 }
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
 
@@ -1955,9 +1986,59 @@ static const char *get_icon_url(void)
 	return media_player.icon_url;
 }
 
+int bt_mcp_media_control_server_get_icon_url(char *url, size_t url_size)
+{
+	const size_t icon_url_len = strlen(media_player.icon_url);
+
+	if (url == NULL) {
+		LOG_DBG("url is NULL");
+		return -EINVAL;
+	}
+
+	if (url_size < icon_url_len) {
+		LOG_DBG("url_size %zu lower than icon_url_len %zu", url_size, icon_url_len);
+		return -ENOMEM;
+	}
+
+	(void)memcpy(url, media_player.icon_url, icon_url_len);
+
+	return 0;
+}
+
 static const char *get_track_title(void)
 {
 	return media_player.group->track->title;
+}
+
+int bt_mcp_media_control_server_get_track_title(char *track_title, size_t track_title_size)
+{
+
+	if (track_title == NULL) {
+		LOG_DBG("track_title is NULL");
+		return -EINVAL;
+	}
+
+	if (media_player.group == NULL) {
+		LOG_DBG("media_player.group is NULL");
+		return -ENODEV;
+	}
+
+	if (media_player.group->track == NULL) {
+		LOG_DBG("media_player.group->track is NULL");
+		return -ENODEV;
+	}
+
+	const size_t track_title_len = strlen(media_player.icon_url);
+
+	if (track_title_size < track_title_len) {
+		LOG_DBG("track_title_size %zu lower than track_title_len %zu", track_title_size,
+			track_title_len);
+		return -ENOMEM;
+	}
+
+	(void)memcpy(track_title, media_player.icon_url, track_title_len);
+
+	return 0;
 }
 
 static int32_t get_track_duration(void)
@@ -1965,9 +2046,43 @@ static int32_t get_track_duration(void)
 	return media_player.group->track->duration;
 }
 
+int bt_mcp_media_control_server_get_track_duration(int32_t *duration)
+{
+	if (duration == NULL) {
+		LOG_DBG("duration is NULL");
+		return -EINVAL;
+	}
+
+	if (media_player.group == NULL) {
+		LOG_DBG("media_player.group is NULL");
+		return -ENODEV;
+	}
+
+	if (media_player.group->track == NULL) {
+		LOG_DBG("media_player.group->track is NULL");
+		return -ENODEV;
+	}
+
+	*duration = media_player.group->track->duration;
+
+	return 0;
+}
+
 static int32_t get_track_position(void)
 {
 	return media_player.track_pos;
+}
+
+int bt_mcp_media_control_server_get_track_position(int32_t *position)
+{
+	if (position == NULL) {
+		LOG_DBG("position is NULL");
+		return -EINVAL;
+	}
+
+	*position = media_player.track_pos;
+
+	return 0;
 }
 
 static void set_track_position(int32_t position)
@@ -2014,6 +2129,23 @@ static void set_track_position(int32_t position)
 			bt_mcs_track_position_changed();
 		}
 	}
+}
+
+int bt_mcp_media_control_server_set_track_position(int32_t position)
+{
+	if (media_player.group == NULL) {
+		LOG_DBG("media_player.group is NULL");
+		return -ENODEV;
+	}
+
+	if (media_player.group->track == NULL) {
+		LOG_DBG("media_player.group->track is NULL");
+		return -ENODEV;
+	}
+
+	set_track_position(position);
+
+	return 0;
 }
 
 static void set_relative_track_position(int32_t rel_pos)
@@ -2114,6 +2246,18 @@ static int8_t get_supported_playback_speed(int8_t speed)
 	}
 }
 
+int bt_mcp_media_control_server_get_playback_speed(int8_t *speed)
+{
+	if (speed == NULL) {
+		LOG_DBG("speed is NULL");
+		return -EINVAL;
+	}
+
+	*speed = media_player.playback_speed_param;
+
+	return 0;
+}
+
 static void set_playback_speed(int8_t speed)
 {
 	/* Set new speed parameter and notify, if different from current */
@@ -2138,15 +2282,56 @@ static void set_playback_speed(int8_t speed)
 	}
 }
 
+int bt_mcp_media_control_server_set_playback_speed(int8_t speed)
+{
+	set_playback_speed(speed);
+
+	return 0;
+}
+
 static int8_t get_seeking_speed(void)
 {
 	return media_player.seeking_speed_factor;
+}
+
+int bt_mcp_media_control_server_get_seeking_speed(int8_t *speed)
+{
+	if (speed == NULL) {
+		LOG_DBG("speed is NULL");
+		return -EINVAL;
+	}
+
+	*speed = media_player.seeking_speed_factor;
+
+	return 0;
 }
 
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
 static uint64_t get_track_segments_id(void)
 {
 	return media_player.group->track->segments_id;
+}
+
+int bt_mcp_media_control_server_get_track_segments_id(uint64_t *id)
+{
+	if (id == NULL) {
+		LOG_DBG("id is NULL");
+		return -EINVAL;
+	}
+
+	if (media_player.group == NULL) {
+		LOG_DBG("media_player.group is NULL");
+		return -ENODEV;
+	}
+
+	if (media_player.group->track == NULL) {
+		LOG_DBG("media_player.group->track is NULL");
+		return -ENODEV;
+	}
+
+	*id = media_player.group->track->segments_id;
+
+	return 0;
 }
 
 static uint64_t get_current_track_id(void)
@@ -2156,7 +2341,23 @@ static uint64_t get_current_track_id(void)
 
 int bt_mcp_media_control_server_get_current_track_id(uint64_t *id)
 {
-	*id = get_current_track_id();
+	if (id == NULL) {
+		LOG_DBG("id is NULL");
+		return -EINVAL;
+	}
+
+	if (media_player.group == NULL) {
+		LOG_DBG("media_player.group is NULL");
+		return -ENODEV;
+	}
+
+	if (media_player.group->track == NULL) {
+		LOG_DBG("media_player.group->track is NULL");
+		return -ENODEV;
+	}
+
+	*id = media_player.group->track->id;
+
 	return 0;
 }
 
@@ -2188,6 +2389,19 @@ static void set_current_track_id(uint64_t id)
 	 */
 }
 
+int bt_mcp_media_control_server_set_current_track_id(uint64_t id)
+{
+	if (!IN_RANGE(id, BT_OTS_OBJ_ID_MIN, BT_OTS_OBJ_ID_MAX)) {
+		LOG_DBG("Invalid ID: 0x%016llX", id);
+
+		return -EINVAL;
+	}
+
+	set_current_track_id(id);
+
+	return 0;
+}
+
 static uint64_t get_next_track_id(void)
 {
 	/* If the next track has been set explicitly */
@@ -2206,7 +2420,23 @@ static uint64_t get_next_track_id(void)
 
 int bt_mcp_media_control_server_get_next_track_id(uint64_t *id)
 {
+	if (id == NULL) {
+		LOG_DBG("id is NULL");
+		return -EINVAL;
+	}
+
+	if (media_player.group == NULL) {
+		LOG_DBG("media_player.group is NULL");
+		return -ENODEV;
+	}
+
+	if (media_player.group->track == NULL) {
+		LOG_DBG("media_player.group->track is NULL");
+		return -ENODEV;
+	}
+
 	*id = get_next_track_id();
+
 	return 0;
 }
 
@@ -2229,6 +2459,19 @@ static void set_next_track_id(uint64_t id)
 	LOG_DBG("Track not found");
 }
 
+int bt_mcp_media_control_server_set_next_track_id(uint64_t id)
+{
+	if (!IN_RANGE(id, BT_OTS_OBJ_ID_MIN, BT_OTS_OBJ_ID_MAX)) {
+		LOG_DBG("Invalid ID: 0x%016llX", id);
+
+		return -EINVAL;
+	}
+
+	set_next_track_id(id);
+
+	return 0;
+}
+
 static uint64_t get_parent_group_id(void)
 {
 	return media_player.group->parent->id;
@@ -2236,7 +2479,23 @@ static uint64_t get_parent_group_id(void)
 
 int bt_mcp_media_control_server_get_parent_group_id(uint64_t *id)
 {
-	*id = get_parent_group_id();
+	if (id == NULL) {
+		LOG_DBG("id is NULL");
+		return -EINVAL;
+	}
+
+	if (media_player.group == NULL) {
+		LOG_DBG("media_player.group is NULL");
+		return -ENODEV;
+	}
+
+	if (media_player.group->parent == NULL) {
+		LOG_DBG("media_player.group->parent is NULL");
+		return -ENODEV;
+	}
+
+	*id = media_player.group->parent->id;
+
 	return 0;
 }
 
@@ -2247,7 +2506,18 @@ static uint64_t get_current_group_id(void)
 
 int bt_mcp_media_control_server_get_current_group_id(uint64_t *id)
 {
-	*id = get_current_group_id();
+	if (id == NULL) {
+		LOG_DBG("id is NULL");
+		return -EINVAL;
+	}
+
+	if (media_player.group == NULL) {
+		LOG_DBG("media_player.group is NULL");
+		return -ENODEV;
+	}
+
+	*id = media_player.group->id;
+
 	return 0;
 }
 
@@ -2272,11 +2542,41 @@ static void set_current_group_id(uint64_t id)
 
 	LOG_DBG("Group not found");
 }
+
+int bt_mcp_media_control_server_set_current_group_id(uint64_t id)
+{
+	if (!IN_RANGE(id, BT_OTS_OBJ_ID_MIN, BT_OTS_OBJ_ID_MAX)) {
+		LOG_DBG("Invalid ID: 0x%016llX", id);
+
+		return -EINVAL;
+	}
+
+	if (media_player.group == NULL) {
+		LOG_DBG("media_player.group is NULL");
+		return -ENODEV;
+	}
+
+	set_current_group_id(id);
+
+	return 0;
+}
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
 
 static uint8_t get_playing_order(void)
 {
 	return media_player.playing_order;
+}
+
+int bt_mcp_media_control_server_get_playing_order(uint8_t *order)
+{
+	if (order == NULL) {
+		LOG_DBG("order is NULL");
+		return -EINVAL;
+	}
+
+	*order = media_player.playing_order;
+
+	return 0;
 }
 
 static void set_playing_order(uint8_t order)
@@ -2289,9 +2589,28 @@ static void set_playing_order(uint8_t order)
 	}
 }
 
+int bt_mcp_media_control_server_set_playing_order(uint8_t order)
+{
+	set_playing_order(order);
+
+	return 0;
+}
+
 static uint16_t get_playing_orders_supported(void)
 {
 	return media_player.playing_orders_supported;
+}
+
+int bt_mcp_media_control_server_get_playing_orders_supported(uint16_t *orders)
+{
+	if (orders == NULL) {
+		LOG_DBG("orders is NULL");
+		return -EINVAL;
+	}
+
+	*orders = media_player.playing_orders_supported;
+
+	return 0;
 }
 
 static uint8_t get_media_state(void)
@@ -2299,9 +2618,26 @@ static uint8_t get_media_state(void)
 	return media_player.state;
 }
 
+int bt_mcp_media_control_server_get_media_state(uint8_t *state)
+{
+	if (state == NULL) {
+		LOG_DBG("state is NULL");
+		return -EINVAL;
+	}
+
+	*state = media_player.state;
+
+	return 0;
+}
+
 int bt_mcp_media_control_server_command(const struct bt_mcs_cmd *command)
 {
 	struct bt_mcs_cmd_ntf ntf;
+
+	if (command == NULL) {
+		LOG_DBG("command is NULL");
+		return -EINVAL;
+	}
 
 	if (command->use_param) {
 		LOG_DBG("opcode: %d, param: %d", command->opcode, command->param);
@@ -2324,6 +2660,18 @@ int bt_mcp_media_control_server_command(const struct bt_mcs_cmd *command)
 static uint32_t get_commands_supported(void)
 {
 	return media_player.opcodes_supported;
+}
+
+int bt_mcp_media_control_server_get_commands_supported(uint32_t *opcodes)
+{
+	if (opcodes == NULL) {
+		LOG_DBG("opcodes is NULL");
+		return -EINVAL;
+	}
+
+	*opcodes = media_player.opcodes_supported;
+
+	return 0;
 }
 
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
@@ -2393,9 +2741,35 @@ static void send_search(const struct bt_mcp_search *search)
 	parse_search(search);
 }
 
+int bt_mcp_media_control_server_search_command(const struct bt_mcp_search *search)
+{
+	if (search == NULL) {
+		LOG_DBG("search is NULL");
+		return -EINVAL;
+	}
+
+	/* TODO: need to return error */
+
+	send_search(search);
+
+	return 0;
+}
+
 static uint64_t get_search_results_id(void)
 {
 	return media_player.search_results_id;
+}
+
+int bt_mcp_media_control_server_get_search_results_id(uint64_t *id)
+{
+	if (id == NULL) {
+		LOG_DBG("id is NULL");
+		return -EINVAL;
+	}
+
+	*id = media_player.search_results_id;
+
+	return 0;
 }
 #endif /* CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS */
 
@@ -2404,11 +2778,27 @@ static uint8_t get_content_ctrl_id(void)
 	return media_player.content_ctrl_id;
 }
 
+<<<<<<< HEAD
 /** Calculates the new relative position depending on the sate and seeking/playing speed factor
  *
  * @return New relative postion in centiseconds (may be negative)
  */
 static int32_t get_pos_diff_cs(void)
+=======
+uint8_t bt_mcp_media_control_server_get_ccid(uint8_t *ccid)
+{
+	if (ccid == NULL) {
+		LOG_DBG("ccid is NULL");
+		return -EINVAL;
+	}
+
+	*ccid = media_player.content_ctrl_id;
+
+	return 0;
+}
+
+static void pos_work_cb(struct k_work *work)
+>>>>>>> c6e0e7cefdf (Bluetooth: MCP: Server: Add missing proxy commands)
 {
 	int32_t pos_diff_ms = TRACK_POS_WORK_DELAY_MS;
 
