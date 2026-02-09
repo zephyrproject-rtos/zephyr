@@ -37,6 +37,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/** Special value indicating that the object ID is not set */
+#define BT_MCP_NO_TRACK_ID 0
+
 /**
  * @defgroup bt_mcp_media_control_server MCP Media Control Server APIs
  * @ingroup bt_mcp
