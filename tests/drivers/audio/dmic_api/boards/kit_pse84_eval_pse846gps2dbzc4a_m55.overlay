@@ -1,0 +1,59 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		dmic-dev = &dmic0;
+	};
+};
+
+&dmic0 {
+	pinctrl-0 = <&p8_5_pdm3_pdm_clk &p8_6_pdm3_pdm_data>;
+	pinctrl-names = "default";
+	clocks = <&peri1_group1_16_5bit_2>;
+	status = "okay";
+
+	dmas = <&dma0 0>;
+	dma-names = "rx";
+};
+
+&dmic0_ch2 {
+	status = "okay";
+	use-alt-io;
+};
+
+&dmic0_ch3 {
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&clk_hf7 {
+	status = "okay";
+	source-path = <IFX_CLK_HF_IN_CLKPATH3>;
+};
+
+&peri1_group1_16_5bit_2 {
+	status = "okay";
+	resource-type = <IFX_RSC_PDM>;
+	resource-instance = <0>;
+	resource-channel = <0>;
+	clock-div = <2>;
+	div-frac-value = <1>;
+};
+
+&p8_5_pdm3_pdm_clk {
+	drive-strength = "half";
+	drive-push-pull;
+};
+
+&p8_6_pdm3_pdm_data {
+	drive-strength = "half";
+	input-enable;
+};
