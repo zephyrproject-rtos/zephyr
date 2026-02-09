@@ -26,7 +26,6 @@
 #include <soc.h>
 
 #define I2S_OPT_BIT_CLK_FRAME_CLK_MASK 0x6
-#define VALID_DIVISOR_COUNT            13
 #define SSI_CLOCK_DIV_INVALID          (-1)
 
 LOG_MODULE_REGISTER(renesas_ra_i2s_ssie, CONFIG_I2S_LOG_LEVEL);
@@ -160,23 +159,21 @@ static ssi_clock_div_t get_ssi_clock_div_enum(uint32_t divisor)
 }
 
 static int renesas_ra_ssie_set_clock_divider(const struct device *dev,
-					     const struct i2s_config *i2s_cfg,
-					     ssi_extended_cfg_t *fsp_ext_cfg)
+					     const struct i2s_config *i2s_cfg)
 {
-	static const uint32_t valid_divisors[] = {1, 2, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128};
+	const uint32_t valid_divisors[] = {1, 2, 4, 6, 8, 12, 16, 24, 32, 48, 64, 96, 128};
 	const struct renesas_ra_ssie_config *config = dev->config;
-	int ret;
-	double err;
-	uint32_t rate;
-	uint32_t divider;
-	uint32_t target_bclk;
-	uint32_t actual_bclk = 0;
+	struct renesas_ra_ssie_data *dev_data = dev->data;
+	ssi_extended_cfg_t *fsp_ext_cfg = &dev_data->fsp_ext_cfg;
+	const uint64_t target_bclk =
+		i2s_cfg->word_size * i2s_cfg->channels * i2s_cfg->frame_clk_freq;
 	uint32_t selected_div = 0;
-	double error_percent = DBL_MAX;
+	int error_min = INT_MAX;
 	ssi_clock_div_t bit_clock_div = SSI_CLOCK_DIV_INVALID;
+	uint32_t rate;
+	int ret;
 
-	ret = clock_control_get_rate(config->audio_clock_dev, (clock_control_subsys_t)0, &rate);
-
+	ret = clock_control_get_rate(config->audio_clock_dev, NULL, &rate);
 	if (ret < 0) {
 		LOG_ERR("Failed to get audio clock rate, error: (%d)", ret);
 		return ret;
@@ -186,31 +183,42 @@ static int renesas_ra_ssie_set_clock_divider(const struct device *dev,
 		return -EIO;
 	}
 
-	target_bclk = i2s_cfg->word_size * i2s_cfg->channels * i2s_cfg->frame_clk_freq;
-
-	for (size_t i = 0; i < VALID_DIVISOR_COUNT; ++i) {
-		divider = valid_divisors[i];
-		actual_bclk = rate / divider;
+	for (size_t i = 0; i < ARRAY_SIZE(valid_divisors); i++) {
+		const uint64_t actual_bclk = DIV_ROUND_CLOSEST(rate, valid_divisors[i]);
+		int err = INT_MAX;
 
 		if (actual_bclk >= target_bclk) {
-			err = 100.0 * ((double)actual_bclk - target_bclk) / target_bclk;
-			if (selected_div == 0 || err < error_percent) {
-				selected_div = divider;
-				error_percent = err;
+			err = DIV_ROUND_UP(1000 * (actual_bclk - target_bclk), target_bclk);
+		} else {
+			err = DIV_ROUND_UP(1000 * (target_bclk - actual_bclk), target_bclk);
+		}
+
+		if (selected_div == 0 || err < error_min) {
+			selected_div = valid_divisors[i];
+			error_min = err;
+
+			if (error_min == 0) {
+				break;
 			}
 		}
 	}
 
-	if (selected_div == 0 || error_percent > 10.0) {
+	if (selected_div == 0 || error_min > 100) {
+		LOG_ERR("Cannot find suitable clock config for target bit clock: %llu Hz",
+			target_bclk);
 		return -EIO;
 	}
 
 	bit_clock_div = get_ssi_clock_div_enum(selected_div);
 	if (bit_clock_div == SSI_CLOCK_DIV_INVALID) {
+		LOG_ERR("Invalid clock divisor selected");
 		return -EINVAL;
 	}
 
+	LOG_DBG("SPS error: %d 1/1000", error_min);
+
 	fsp_ext_cfg->bit_clock_div = bit_clock_div;
+
 	return 0;
 }
 static void free_buffer_when_stop(struct i2s_config *cfg, struct renesas_ra_ssie_stream *stream)
@@ -698,7 +706,7 @@ static int i2s_renesas_ra_ssie_configure(const struct device *dev, enum i2s_dir 
 		operating_mode = I2S_MODE_SLAVE;
 	} else {
 		operating_mode = I2S_MODE_MASTER;
-		ret = renesas_ra_ssie_set_clock_divider(dev, i2s_cfg, &dev_data->fsp_ext_cfg);
+		ret = renesas_ra_ssie_set_clock_divider(dev, i2s_cfg);
 		if (ret < 0) {
 			return ret;
 		}
