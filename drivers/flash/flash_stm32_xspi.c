@@ -2505,10 +2505,10 @@ static int flash_stm32_xspi_init(const struct device *dev)
 #endif /* XSPI_DCR1_DLYBYP */
 
 #if defined(XSPI_DCR3_MAXTRAN)
-#define XSPI_STM32_MAXTRAN	\
-		.MaxTran = 0,
+#define DT_XSPI_STM32_MAXTRAN(inst)	\
+		.MaxTran = DT_PROP(STM32_XSPI_NODE(inst), max_tran),
 #else
-#define XSPI_STM32_MAXTRAN	 /* Not used */
+#define DT_XSPI_STM32_MAXTRAN(inst)	 /* Not used */
 #endif /* XSPI_DCR3_MAXTRAN */
 
 #if defined(XSPI_DCR4_REFRESH)
@@ -2578,7 +2578,7 @@ static int flash_stm32_xspi_init(const struct device *dev)
 				.FreeRunningClock = HAL_XSPI_FREERUNCLK_DISABLE,		\
 				DT_XSPI_STM32_MEMORY_SELECT(inst)				\
 				DT_XSPI_STM32_DELAY_BLOCK_BYPASS(inst)				\
-				XSPI_STM32_MAXTRAN						\
+				DT_XSPI_STM32_MAXTRAN(inst)					\
 				XSPI_STM32_REFRESH						\
 			},									\
 		},										\

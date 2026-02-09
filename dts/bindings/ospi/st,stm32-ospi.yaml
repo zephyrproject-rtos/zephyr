@@ -165,3 +165,9 @@ properties:
       Note: You might need to enable the OCTOSPI I/O manager clock to use the
             property. Please refer to Reference Manual.
             The clock can be enabled in the devicetree.
+
+  max-tran:
+    type: int
+    description: |
+      When present, enables the commuication regulation feature, by releasing
+      the NCS every (max-trans + 1) bytes.
