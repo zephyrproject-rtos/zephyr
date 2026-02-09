@@ -615,6 +615,14 @@ int eth_stm32_hal_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_SOC_SERIES_STM32F4X) || defined(CONFIG_SOC_SERIES_STM32F7X)
+	/* Workaround for F4x and F7x as the HAL_ETH_Init function
+	 * does not set back the MDIO clock range after resetting
+	 * the MAC for these series.
+	 */
+	HAL_ETH_SetMDIOClockRange(heth);
+
+#endif /* CONFIG_SOC_SERIES_STM32F4X || CONFIG_SOC_SERIES_STM32F7X */
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 	/* Enable timestamping of RX packets. We enable all packets to be
 	 * timestamped to cover both IEEE 1588 and gPTP.
