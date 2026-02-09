@@ -272,9 +272,6 @@ config EAP_GTC
 config EAP_MSCHAPV2
 	bool "EAP-MSCHAPv2 support"
 
-config EAP_LEAP
-	bool "EAP-LEAP support"
-
 config EAP_PSK
 	bool "EAP-PSK support"
 

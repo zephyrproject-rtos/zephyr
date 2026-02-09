@@ -26,7 +26,6 @@ tests:
       - CONFIG_EAP_TTLS=y
       - CONFIG_EAP_PEAP=y
       - CONFIG_EAP_MSCHAPV2=y
-      - CONFIG_EAP_LEAP=y
       - CONFIG_EAP_PSK=y
       - CONFIG_EAP_PAX=y
       - CONFIG_EAP_SAKE=y

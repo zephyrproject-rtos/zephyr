@@ -24,9 +24,6 @@ tests:
   wifi.build.crypto_enterprise_mschapv2:
     extra_configs:
       - CONFIG_EAP_MSCHAPV2=y
-  wifi.build.crypto_enterprise_leap:
-    extra_configs:
-      - CONFIG_EAP_LEAP=y
   wifi.build.crypto_enterprise_psk:
     extra_configs:
       - CONFIG_EAP_PSK=y

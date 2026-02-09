@@ -465,14 +465,6 @@ zephyr_library_compile_definitions_ifdef(CONFIG_EAP_MSCHAPV2
   EAP_MSCHAPv2
 )
 
-zephyr_library_sources_ifdef(CONFIG_EAP_LEAP
-  ${HOSTAP_SRC_BASE}/eap_peer/eap_leap.c
-)
-
-zephyr_library_compile_definitions_ifdef(CONFIG_EAP_LEAP
-  EAP_LEAP
-)
-
 zephyr_library_sources_ifdef(CONFIG_EAP_PSK
   ${HOSTAP_SRC_BASE}/eap_peer/eap_psk.c
   ${HOSTAP_SRC_BASE}/eap_common/eap_psk_common.c
