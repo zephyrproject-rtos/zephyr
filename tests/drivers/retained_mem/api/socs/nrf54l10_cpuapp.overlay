@@ -1,11 +1,9 @@
-#include <common/mem.h>
-
 / {
-	sram@2000ffe0 {
+	cpuapp_sram@2002f000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x2000ffe0 0x20>;
-		ranges = <0x0 0x2000ffe0 0x20>;
-		zephyr,memory-region = "Retention";
+		reg = <0x2002f000 DT_SIZE_K(4)>;
+		ranges = <0x0 0x2002f000 DT_SIZE_K(4)>;
+		zephyr,memory-region = "RetainedMem";
 		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -24,6 +22,10 @@
 	};
 };
 
-&sram0 {
-	reg = <0x20000000 DT_SIZE_K(60)>;
+&cpuapp_sram {
+	/* Shrink SRAM size to avoid overlap with retained memory region:
+	 * 192 - 4 = 188KB = 0x2f000
+	 */
+	reg = <0x20000000 0x2f000>;
+	ranges = <0x0 0x20000000 0x2f000>;
 };

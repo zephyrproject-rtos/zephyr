@@ -8,12 +8,18 @@
 	memory@50003f00 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x50003f00 0x100>;
+		ranges = <0x0 0x50003f00 0x100>;
 		zephyr,memory-region = "SRAMLP_RETAINED_MEM";
 		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		retainedmem0: retainedmem {
 			compatible = "zephyr,retained-ram";
 			status = "okay";
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 	};
 
