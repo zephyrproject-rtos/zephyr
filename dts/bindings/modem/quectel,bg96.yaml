@@ -5,7 +5,7 @@ description: quectel BG96 modem
 
 compatible: "quectel,bg96"
 
-include: uart-device.yaml
+include: zephyr,cellular-modem-device.yaml
 
 properties:
   mdm-power-gpios:
@@ -21,3 +21,6 @@ properties:
       automatically when supply voltage is applied—that is, the modem
       asserts PWRKEY internally and does not require an external PWRKEY
       pulse.
+
+  zephyr,mdm-reset-behavior:
+    default: ["toggle_on_recovery"]

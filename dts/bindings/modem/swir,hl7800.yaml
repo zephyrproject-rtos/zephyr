@@ -45,3 +45,6 @@ properties:
   mdm-gpio6-gpios:
     type: phandle-array
     required: true
+
+  zephyr,mdm-reset-behavior:
+    default: ["hold_on_suspend", "toggle_on_resume", "toggle_on_recovery"]

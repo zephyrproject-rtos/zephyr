@@ -17,3 +17,6 @@ properties:
     description: |
       Modem automatically configures and connects the default PDP context (cid=0) when
       registered to the network. This is used by default in Serial Modem application.
+
+  zephyr,mdm-reset-behavior:
+    default: ["toggle_on_recovery"]
