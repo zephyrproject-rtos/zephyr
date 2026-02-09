@@ -132,6 +132,9 @@ static DEVICE_API(retained_mem, silabs_buram_api) = {
 	.write = silabs_buram_write,
 	.clear = silabs_buram_clear,
 };
+BUILD_ASSERT(
+	CONFIG_RETAINED_MEM_INIT_PRIORITY > CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
+	"CONFIG_RETAINED_MEM_INIT_PRIORITY must be higher than CONFIG_CLOCK_CONTROL_INIT_PRIORITY");
 
 #define SILABS_BURAM_DEVICE(inst)                                                                  \
 	static struct silabs_buram_data silabs_buram_data_##inst;                                  \
@@ -146,7 +149,7 @@ static DEVICE_API(retained_mem, silabs_buram_api) = {
 					 ({0})),                                                   \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, &silabs_buram_init, NULL, &silabs_buram_data_##inst,           \
-			      &silabs_buram_config_##inst, POST_KERNEL,                            \
+			      &silabs_buram_config_##inst, PRE_KERNEL_1,                           \
 			      CONFIG_RETAINED_MEM_INIT_PRIORITY, &silabs_buram_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SILABS_BURAM_DEVICE)

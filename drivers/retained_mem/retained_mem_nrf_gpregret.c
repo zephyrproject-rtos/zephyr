@@ -129,7 +129,7 @@ static DEVICE_API(retained_mem, nrf_gpregret_api) = {
 					  (&nrf_gpregret_data_##inst), (NULL)	\
 			      ),						\
 			      &nrf_gpregret_config_##inst,			\
-			      POST_KERNEL,					\
+			      PRE_KERNEL_1,					\
 			      CONFIG_RETAINED_MEM_INIT_PRIORITY,		\
 			      &nrf_gpregret_api);
 

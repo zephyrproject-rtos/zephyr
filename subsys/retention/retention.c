@@ -415,7 +415,7 @@ finish:
 			      NULL,								\
 			      &retention_data_##inst,						\
 			      &retention_config_##inst,						\
-			      POST_KERNEL,							\
+			      PRE_KERNEL_1,							\
 			      CONFIG_RETENTION_INIT_PRIORITY,					\
 			      NULL);
 

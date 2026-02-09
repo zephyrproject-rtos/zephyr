@@ -128,7 +128,7 @@ static DEVICE_API(retained_mem, zephyr_retained_mem_reg_api) = {
 			      NULL,								\
 			      &zephyr_retained_mem_reg_data_##inst,				\
 			      &zephyr_retained_mem_reg_config_##inst,				\
-			      POST_KERNEL,							\
+			      PRE_KERNEL_1,							\
 			      CONFIG_RETAINED_MEM_INIT_PRIORITY,				\
 			      &zephyr_retained_mem_reg_api);
 
