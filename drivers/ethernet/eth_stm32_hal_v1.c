@@ -61,7 +61,7 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 	size_t total_len;
 	uint8_t *dma_buffer;
 	__IO ETH_DMADescTypeDef *dma_tx_desc;
-	HAL_StatusTypeDef hal_ret = HAL_OK;
+	HAL_StatusTypeDef hal_ret;
 
 	__ASSERT_NO_MSG(pkt != NULL);
 	__ASSERT_NO_MSG(pkt->frags != NULL);
@@ -112,7 +112,7 @@ struct net_pkt *eth_stm32_rx(const struct device *dev)
 	size_t total_len = 0;
 	__IO ETH_DMADescTypeDef *dma_rx_desc;
 	uint8_t *dma_buffer;
-	HAL_StatusTypeDef hal_ret = HAL_OK;
+	HAL_StatusTypeDef hal_ret;
 
 	hal_ret = HAL_ETH_GetReceivedFrame_IT(heth);
 	if (hal_ret != HAL_OK) {
@@ -204,7 +204,7 @@ void eth_stm32_set_mac_config(const struct device *dev, struct phy_link_state *s
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
-	HAL_StatusTypeDef hal_ret = HAL_OK;
+	HAL_StatusTypeDef hal_ret;
 
 	heth->Init.DuplexMode =
 		PHY_LINK_IS_FULL_DUPLEX(state->speed) ? ETH_MODE_FULLDUPLEX : ETH_MODE_HALFDUPLEX;
@@ -221,7 +221,7 @@ int eth_stm32_hal_start(const struct device *dev)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
-	HAL_StatusTypeDef hal_ret = HAL_OK;
+	HAL_StatusTypeDef hal_ret;
 
 	LOG_DBG("Starting ETH HAL driver");
 
@@ -238,7 +238,7 @@ int eth_stm32_hal_stop(const struct device *dev)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
-	HAL_StatusTypeDef hal_ret = HAL_OK;
+	HAL_StatusTypeDef hal_ret;
 
 	LOG_DBG("Stopping ETH HAL driver");
 
