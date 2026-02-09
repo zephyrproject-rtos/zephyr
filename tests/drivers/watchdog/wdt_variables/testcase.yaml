@@ -16,9 +16,11 @@ tests:
       - nrf54h20dk/nrf54h20/cpuppr
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
 
   drivers.watchdog.wdt_variables.54h_flpr:
