@@ -244,6 +244,7 @@
 				compatible = "nordic,nrf-spim";
 				reg = <0x4d000 0x1000>;
 				interrupts = <77 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&hfpll>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				max-frequency = <DT_FREQ_M(32)>;
@@ -257,6 +258,7 @@
 				compatible = "nordic,nrf-uarte";
 				reg = <0x4d000 0x1000>;
 				interrupts = <77 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&hfpll>;
 				status = "disabled";
 				endtx-stoptx-supported;
 				frame-timeout-supported;
