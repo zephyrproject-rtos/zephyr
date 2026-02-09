@@ -97,12 +97,9 @@ vg_lite_error_t vg_lite_hal_allocate_contiguous(unsigned long size,
 
 	k_spinlock_key_t key;
 
-	/* Align the size to 64 bytes. */
-	uint32_t aligned_size = (uint32_t)((size + 63U) & ~63U);
-
 	key = k_spin_lock(&vg_lite_heap_lock);
 	*logical = sys_heap_aligned_alloc(&vg_lite_heap, VGLITE_CONTIGUOUS_AREA_ALIGN,
-					aligned_size);
+					size);
 	k_spin_unlock(&vg_lite_heap_lock, key);
 
 	if (*logical == NULL) {
