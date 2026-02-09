@@ -98,27 +98,25 @@ __maybe_unused static void ssi_rt_isr(void *p_args)
 	}
 }
 
-static int audio_clock_enable(const struct renesas_ra_ssie_config *config,
-			      ssi_extended_cfg_t *fsp_ext_cfg)
+static int audio_clock_enable(const struct device *dev)
 {
-	int ret;
-	uint32_t rate;
-
+	const struct renesas_ra_ssie_config *config = dev->config;
 	const struct device *audio_clk_dev = config->audio_clock_dev;
+	uint32_t rate;
+	int ret;
 
 	if (!device_is_ready(audio_clk_dev)) {
 		LOG_ERR("Invalid audio_clock device");
 		return -ENODEV;
 	}
 
-	ret = clock_control_on(audio_clk_dev, (clock_control_subsys_t)0);
+	ret = clock_control_on(audio_clk_dev, NULL);
 	if (ret < 0) {
 		LOG_ERR("Failed to enable Audio clock, error %d", ret);
 		return ret;
 	}
 
-	ret = clock_control_get_rate(config->audio_clock_dev, (clock_control_subsys_t)0, &rate);
-
+	ret = clock_control_get_rate(config->audio_clock_dev, NULL, &rate);
 	if (ret < 0) {
 		LOG_ERR("Failed to get audio clock rate, error: (%d)", ret);
 		return ret;
@@ -952,7 +950,7 @@ static int i2s_renesas_ra_ssie_init(const struct device *dev)
 	}
 	config->irq_config_func(dev);
 
-	ret = audio_clock_enable(config, &dev_data->fsp_ext_cfg);
+	ret = audio_clock_enable(dev);
 	if (ret < 0) {
 		return ret;
 	}
