@@ -46,8 +46,6 @@ zephyr_library_sources_ifdef(CONFIG_BT_MCS mcs.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MCP_MEDIA_CONTROL_SERVER mcp_media_control_server.c)
 
-zephyr_library_sources_ifdef(CONFIG_MCTL media_proxy.c)
-
 zephyr_library_sources_ifdef(CONFIG_BT_ASCS ascs.c)
 zephyr_library_sources_ifdef(CONFIG_BT_PACS pacs.c)
 zephyr_library_sources_ifdef(CONFIG_BT_BAP_STREAM bap_stream.c codec.c bap_iso.c)
