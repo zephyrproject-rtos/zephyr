@@ -46,13 +46,13 @@
 			sleep: sleep {
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-idle";
-				exit-latency-us = <10>;
+				exit-latency-us = <140>;
 			};
 
 			deep_sleep: deep-sleep {
 				compatible = "zephyr,power-state";
 				power-state-name = "standby";
-				exit-latency-us = <11>;
+				exit-latency-us = <140>;
 			};
 		};
 
@@ -364,6 +364,7 @@
 		compatible = "nxp,nbu";
 		interrupts = <48 2>;
 		interrupt-names = "nbu_rx_int";
+		wakeup-source;
 	};
 
 	hci: hci_ble {

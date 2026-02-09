@@ -76,3 +76,8 @@
 &rtc {
 	reg = <0x4002c000 0x60>;
 };
+
+&nbu {
+	rfmc-xo-cdac = <0x0a>;
+	rfmc-xo-isel = <0x0b>;
+};

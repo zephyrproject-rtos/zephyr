@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 NXP
+ * Copyright 2023-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -14,8 +14,8 @@
 #define nbu_handler RF_IMU0_IRQHandler
 
 #undef NXP_ENABLE_WAKEUP_SIGNAL
-void mcxw7xx_set_wakeup(int32_t sig);
-#define NXP_ENABLE_WAKEUP_SIGNAL(sig) mcxw7xx_set_wakeup(sig)
+void mcxw7xx_set_wakeup(int32_t irqn);
+#define NXP_ENABLE_WAKEUP_SIGNAL(irqn) mcxw7xx_set_wakeup(irqn)
 
 #if CONFIG_PM
 void nxp_mcxw7x_power_init(void);
