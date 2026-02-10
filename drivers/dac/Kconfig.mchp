@@ -16,4 +16,22 @@ config DAC_MCHP_G1_DIFFERENTIAL
 	help
 	  Enable Differential Mode support for G1 DAC
 
+config DAC_MCHP_G1_REFRESH
+	bool "Refresh Period"
+	depends on SOC_FAMILY_MICROCHIP_SAM_D5X_E5X
+	help
+	  Enable refresh period support for G1 DAC
+
+config DAC_MCHP_G1_EXTERNAL_FILTER
+	bool "External Filter"
+	depends on SOC_FAMILY_MICROCHIP_SAM_D5X_E5X
+	help
+	  Enable External Filter support for G1 DAC
+
+config DAC_MCHP_G1_OVERSAMPLING_RATIO
+	bool "Oversampling Ratio"
+	depends on SOC_FAMILY_MICROCHIP_SAM_D5X_E5X
+	help
+	  Enable Oversampling Ratio support for G1 DAC
+
 endif # DAC_MCHP_G1
