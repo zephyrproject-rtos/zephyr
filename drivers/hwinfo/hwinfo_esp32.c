@@ -9,6 +9,7 @@
 #include <soc/reset_reasons.h>
 #include "esp_system.h"
 #include "rtc.h"
+#include <esp_sleep.h>
 
 #include <zephyr/drivers/hwinfo.h>
 #include <string.h>
@@ -91,6 +92,50 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 		break;
 	case ESP_RST_BROWNOUT:
 		*cause = RESET_BROWNOUT;
+		break;
+	default:
+		*cause = 0;
+		break;
+	}
+
+	return 0;
+}
+
+int z_impl_hwinfo_get_supported_wakeup_cause(uint32_t *supported)
+{
+	*supported = (WAKEUP_TIMER | WAKEUP_GPIO | WAKEUP_COPROCESSOR | WAKEUP_TOUCHPAD |
+		      WAKEUP_UART | WAKEUP_WIFI | WAKEUP_BT);
+
+	return 0;
+}
+
+int z_impl_hwinfo_get_wakeup_cause(uint32_t *cause)
+{
+	esp_sleep_wakeup_cause_t src = esp_sleep_get_wakeup_cause();
+
+	switch (src) {
+	case ESP_SLEEP_WAKEUP_TIMER:
+		*cause = WAKEUP_TIMER;
+		break;
+	case ESP_SLEEP_WAKEUP_GPIO:
+	case ESP_SLEEP_WAKEUP_EXT0:
+	case ESP_SLEEP_WAKEUP_EXT1:
+		*cause = WAKEUP_GPIO;
+		break;
+	case ESP_SLEEP_WAKEUP_ULP:
+		*cause = WAKEUP_COPROCESSOR;
+		break;
+	case ESP_SLEEP_WAKEUP_TOUCHPAD:
+		*cause = WAKEUP_TOUCHPAD;
+		break;
+	case ESP_SLEEP_WAKEUP_UART:
+		*cause = WAKEUP_UART;
+		break;
+	case ESP_SLEEP_WAKEUP_WIFI:
+		*cause = WAKEUP_WIFI;
+		break;
+	case ESP_SLEEP_WAKEUP_BT:
+		*cause = WAKEUP_BT;
 		break;
 	default:
 		*cause = 0;
