@@ -1,3 +1,4 @@
+/* SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors */
 /* SPDX-License-Identifier: Apache-2.0 */
 /* Please keep in sync with cmake/linker_script/common/common-ram.cmake */
 
@@ -150,4 +151,14 @@ ITERABLE_SECTION_RAM(scmi_protocol, Z_LINK_ITERABLE_SUBALIGN)
 
 #ifdef CONFIG_USERSPACE
 	PLACE_SYMBOL_HERE(_static_kernel_objects_end);
+#endif
+
+#if defined(CONFIG_DCACHE_LINE_SIZE) && CONFIG_DCACHE_LINE_SIZE > 0
+	SECTION_DATA_PROLOGUE(__DCACHELINE_EXCLUSIVE_DATA_SECTION_NAME,,SUBALIGN(CONFIG_DCACHE_LINE_SIZE))
+	{
+		PLACE_SYMBOL_HERE(__dcacheline_exclusive_data_start);
+		KEEP(*(SORT_BY_NAME(.__DCACHELINE_EXCLUSIVE_DATA_SECTION_NAME.*)))
+		. = ALIGN(CONFIG_DCACHE_LINE_SIZE);
+		PLACE_SYMBOL_HERE(__dcacheline_exclusive_data_end);
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 #endif

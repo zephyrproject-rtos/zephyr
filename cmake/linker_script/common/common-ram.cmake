@@ -1,3 +1,4 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 # The contents of this file is based on include/zephyr/linker/common-ram.ld
 # Please keep in sync
@@ -151,4 +152,14 @@ endif()
 
 if(CONFIG_DEVICE_MUTABLE)
   zephyr_iterable_section(NAME device_mutable GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT})
+endif()
+
+if(CONFIG_DCACHE_LINE_SIZE AND CONFIG_DCACHE_LINE_SIZE>0)
+  zephyr_linker_section(NAME ${__DCACHELINE_EXCLUSIVE_DATA_SECTION_NAME} GROUP DATA_REGION
+    SUBALIGN $(CONFIG_DCACHE_LINE_SIZE) NOINPUT
+  )
+  zephyr_linker_section_configure(SECTION ${__DCACHELINE_EXCLUSIVE_DATA_SECTION_NAME}
+    KEEP SORT NAME INPUT ".${__DCACHELINE_EXCLUSIVE_DATA_SECTION_NAME}.*"
+    ALIGN $(CONFIG_DCACHE_LINE_SIZE)
+  )
 endif()
