@@ -78,6 +78,9 @@ void pe_snk_startup_entry(void *obj)
 	/* Set power role to Sink */
 	pe->power_role = TC_ROLE_SINK;
 
+	/* Notify DPM of power role */
+	policy_notify(dev, POWER_ROLE_IS_SINK);
+
 	/* Invalidate explicit contract */
 	atomic_clear_bit(pe->flags, PE_FLAGS_EXPLICIT_CONTRACT);
 

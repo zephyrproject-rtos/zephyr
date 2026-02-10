@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 The Chromium OS Authors
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -84,6 +85,11 @@ void tc_unattached_snk_entry(void *obj)
 
 	LOG_INF("Unattached.SNK");
 
+#ifdef CONFIG_USBC_CSM_DRP
+	/* Start DRP toggle timer with tDRP Sink time */
+	usbc_timer_start_with_value(&tc->tc_t_drp_toggle, TC_T_DRP_SNK_MS);
+#endif
+
 	/*
 	 * Allow the state machine to immediately check the state of CC lines and go into
 	 * Attach.Wait state in case the Rp value is detected on the CC lines
@@ -106,9 +112,25 @@ enum smf_state_result tc_unattached_snk_run(void *obj)
 	 * on at least one of its CC pins.
 	 */
 	if (tcpc_is_cc_rp(tc->cc1) || tcpc_is_cc_rp(tc->cc2)) {
+#ifdef CONFIG_USBC_CSM_DRP
+		/* Stop DRP toggle timer when CC connection detected */
+		usbc_timer_stop(&tc->tc_t_drp_toggle);
+#endif
 		usbc_vbus_enable(vbus, true);
 		tc_set_state(dev, TC_ATTACH_WAIT_SNK_STATE);
+		return SMF_EVENT_HANDLED;
 	}
+
+#ifdef CONFIG_USBC_CSM_DRP
+	/* Check if DRP toggle timer expired - transition to Unattached.SRC */
+	if (usbc_timer_expired(&tc->tc_t_drp_toggle)) {
+		tc_set_state(dev, TC_UNATTACHED_SRC_STATE);
+		/* Execute transition immediately to improve DRP timing accuracy */
+		usbc_bypass_next_sleep(tc->dev);
+		return SMF_EVENT_HANDLED;
+	}
+#endif
+
 	return SMF_EVENT_PROPAGATE;
 }
 
