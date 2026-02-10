@@ -48,3 +48,11 @@ tests:
     extra_configs:
       - CONFIG_NET_STATISTICS_ETHERNET=y
       - CONFIG_NET_STATISTICS_ETHERNET_VENDOR=y
+  drivers.wifi.build.sr_coex:
+    extra_configs:
+      - CONFIG_NRF70_SR_COEX=y
+    extra_args: SHIELD=nrf7002ek
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+    platform_exclude:
+      - nrf7002dk/nrf5340/cpuapp
