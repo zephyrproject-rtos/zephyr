@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2026 William Fish (Manulytica ltd)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
