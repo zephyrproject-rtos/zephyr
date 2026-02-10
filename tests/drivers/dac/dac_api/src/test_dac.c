@@ -88,7 +88,8 @@
 	defined(CONFIG_BOARD_MIMXRT1180_EVK) || \
 	defined(CONFIG_BOARD_FRDM_MCXC444)   || \
 	defined(CONFIG_BOARD_PHYBOARD_ATLAS) || \
-	defined(CONFIG_BOARD_SAM_E54_XPRO)
+	defined(CONFIG_BOARD_SAM_E54_XPRO) || \
+	defined(CONFIG_BOARD_PIC32CX_SG41_CULT)
 /* clang-format on */
 
 #define DAC_DEVICE_NODE		DT_NODELABEL(dac)

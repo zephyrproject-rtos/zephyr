@@ -34,5 +34,6 @@ tests:
       - xg24_ek2703a
       - xg24_rb4187c
       - sam_e54_xpro
+      - pic32cx_sg41_cult
     integration_platforms:
       - nucleo_f207zg
