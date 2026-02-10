@@ -849,8 +849,7 @@ static int can_stm32_send(const struct device *dev, const struct can_frame *fram
 		mailbox->TDHR = frame->data_32[1];
 	}
 
-	mailbox->TDTR = (mailbox->TDTR & ~CAN_TDT1R_DLC) |
-			((frame->dlc & 0xF) << CAN_TDT1R_DLC_Pos);
+	mailbox->TDTR = ((frame->dlc & 0xF) << CAN_TDT1R_DLC_Pos);
 
 	mailbox->TIR |= CAN_TI0R_TXRQ;
 	k_mutex_unlock(&data->inst_mutex);
