@@ -8,6 +8,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
@@ -498,6 +499,61 @@ static int adt7420_probe(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int adt7420_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct adt7420_dev_config *cfg = dev->config;
+	struct adt7420_data *dev_data = dev->data;
+	uint8_t value;
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = i2c_reg_read_byte_dt(&cfg->i2c, ADT7420_REG_CONFIG, &value);
+		if (ret < 0) {
+			LOG_DBG("Failed to read config for suspend");
+			return ret;
+		}
+
+		dev_data->suspended_op_mode = (ADT7420_CONFIG_OP_MODE_MASK & value);
+
+		value |= ADT7420_CONFIG_OP_MODE(ADT7420_OP_MODE_SHUTDOWN);
+		ret = i2c_reg_write_byte_dt(&cfg->i2c, ADT7420_REG_CONFIG, value);
+		if (ret < 0) {
+			LOG_DBG("Failed to suspend device");
+			return ret;
+		}
+
+		LOG_DBG("ADT7420 is suspended");
+		return 0;
+
+	case PM_DEVICE_ACTION_RESUME:
+		ret = i2c_reg_read_byte_dt(&cfg->i2c, ADT7420_REG_CONFIG, &value);
+		if (ret < 0) {
+			LOG_DBG("Failed to read config for resume");
+			return ret;
+		}
+
+		value &= ~ADT7420_CONFIG_OP_MODE(ADT7420_OP_MODE_SHUTDOWN);
+		value |= dev_data->suspended_op_mode;
+		ret = i2c_reg_write_byte_dt(&cfg->i2c, ADT7420_REG_CONFIG, value);
+		if (ret < 0) {
+			LOG_DBG("Failed to resume device");
+			return ret;
+		}
+
+		/* wait 240us for initial temp conversion to complete */
+		k_usleep(240);
+
+		LOG_DBG("ADT7420 resumed");
+		return 0;
+
+	default:
+		return -ENOTSUP;
+	}
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static int adt7420_init(const struct device *dev)
 {
 	const struct adt7420_dev_config *cfg = dev->config;
@@ -527,8 +583,10 @@ static int adt7420_init(const struct device *dev)
 		    .ct_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, ct_gpios, { 0 }),))	\
 	};										\
 											\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, adt7420_init, NULL, &adt7420_data_##inst,	\
-			      &adt7420_config_##inst, POST_KERNEL,			\
-			      CONFIG_SENSOR_INIT_PRIORITY, &adt7420_driver_api);	\
+	PM_DEVICE_DT_INST_DEFINE(inst, adt7420_pm_action);				\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, adt7420_init, PM_DEVICE_DT_INST_GET(inst),	\
+			      &adt7420_data_##inst, &adt7420_config_##inst,		\
+			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,			\
+			      &adt7420_driver_api);					\
 
 DT_INST_FOREACH_STATUS_OKAY(ADT7420_DEFINE)
