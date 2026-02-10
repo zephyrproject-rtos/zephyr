@@ -149,7 +149,8 @@
 			reg-names = "ctrl", "nor";
 			clocks = <&rcc_clk SF32LB52X_CLOCK_MPI1>;
 			#address-cells = <1>;
-			#size-cells = <0>;
+			#size-cells = <1>;
+			ranges = <0x0 0x10000000 DT_SIZE_M(32)>;
 			status = "disabled";
 		};
 
@@ -161,7 +162,8 @@
 			reg = <0x50042000 0x1000>, <0x12000000 DT_SIZE_M(224)>;
 			reg-names = "ctrl", "nor";
 			#address-cells = <1>;
-			#size-cells = <0>;
+			#size-cells = <1>;
+			ranges = <0x0 0x12000000 DT_SIZE_M(224)>;
 			clocks = <&rcc_clk SF32LB52X_CLOCK_MPI2>;
 			status = "disabled";
 		};

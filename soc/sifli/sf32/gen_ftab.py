@@ -44,6 +44,13 @@ def _partition_bounds(node) -> tuple[int, int]:
     return reg.addr, reg.size
 
 
+def _partition_address(flash_base: int, partition_start: int) -> int:
+    if partition_start < flash_base:
+        return flash_base + partition_start
+
+    return partition_start
+
+
 def _flash_base_address(flash_node) -> int:
     controller = flash_node.parent
     if controller is None:
@@ -172,10 +179,10 @@ def main() -> None:
     except KeyError as exc:
         raise SystemExit("Unable to locate 'ptable' labeled partition in devicetree") from exc
 
-    code_offset, code_size = _partition_bounds(code_node)
-    code_start = flash_base + code_offset
-    ptable_offset, _ = _partition_bounds(ptable_node)
-    ptable_addr = flash_base + ptable_offset
+    code_reg_addr, code_size = _partition_bounds(code_node)
+    code_start = _partition_address(flash_base, code_reg_addr)
+    ptable_reg_addr, _ = _partition_bounds(ptable_node)
+    ptable_addr = _partition_address(flash_base, ptable_reg_addr)
     sec_image_desc_index = (
         PartitionIndex.SECONDARY_BOOTLOADER.value - PartitionIndex.LCPU_IMAGE_PING.value
     )

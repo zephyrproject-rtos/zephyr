@@ -88,14 +88,18 @@
 
 	gd25q256e: flash@0 {
 		compatible = "gd,gd25q256e", "jedec,qspi-nor";
-		reg = <0x0>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0x0 DT_SIZE_M(32)>;
 		size = <DT_SIZE_M(256)>;
 		quad-enable-requirements = "S2B1v6";
+		ranges = <0x0 0x0 DT_SIZE_M(32)>;
 
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			ptable: partition@0 {
 				label = "ptable";

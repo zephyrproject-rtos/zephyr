@@ -111,14 +111,18 @@
 
 	py25q128ha: flash@0 {
 		compatible = "puya,py25q128ha", "jedec,qspi-nor";
-		reg = <0x0>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0x0 DT_SIZE_M(16)>;
 		size = <DT_SIZE_M(128)>;
 		quad-enable-requirements = "S2B1v1";
+		ranges = <0x0 0x0 DT_SIZE_M(16)>;
 
 		partitions {
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			ptable: partition@0 {
 				label = "ptable";

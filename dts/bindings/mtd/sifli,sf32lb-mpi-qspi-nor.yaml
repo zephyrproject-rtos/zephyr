@@ -28,7 +28,7 @@ properties:
 
   "#size-cells":
     required: true
-    const: 0
+    const: 1
 
   sifli,lines:
     type: int
