@@ -684,7 +684,7 @@ static int ifx_autanalog_sar_adc_init(const struct device *dev)
 
 #ifdef CONFIG_ADC_ASYNC
 #define ADC_IFX_AUTANALOG_SAR_DRIVER_API(n)                                                        \
-	static const struct adc_driver_api ifx_autanalog_sar_adc_api_##n = {                       \
+	static DEVICE_API(adc, ifx_autanalog_sar_adc_api_##n) = {                                  \
 		.channel_setup = ifx_autanalog_sar_adc_channel_setup,                              \
 		.read = ifx_autanalog_sar_adc_read,                                                \
 		.read_async = ifx_autanalog_sar_adc_read_async,                                    \
@@ -692,7 +692,7 @@ static int ifx_autanalog_sar_adc_init(const struct device *dev)
 	};
 #else
 #define ADC_IFX_AUTANALOG_SAR_DRIVER_API(n)                                                        \
-	static const struct adc_driver_api ifx_autanalog_sar_adc_api_##n = {                       \
+	static DEVICE_API(adc, ifx_autanalog_sar_adc_api_##n) = {                                  \
 		.channel_setup = ifx_autanalog_sar_adc_channel_setup,                              \
 		.read = ifx_autanalog_sar_adc_read,                                                \
 		.ref_internal = DT_INST_PROP(n, vref_mv),                                          \
