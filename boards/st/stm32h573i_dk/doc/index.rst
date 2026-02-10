@@ -187,10 +187,13 @@ Option Byte TZEN will be set).
 Please note that, after having run a TF-M sample on the board, you will need to
 use STM32CubeProgrammer_ to return the board to a state with TrustZone disabled
 and be able to run usual binaries without TrustZone and TF-M. For example,
-when using a device in Open Product State, one can disable TZEN with:
+when using a device in Open Product State, one can run again the generated
+``regression.sh`` script to disable write protections then disable TZEN
+with ``STM32_Programmer_CLI`` tool:
 
    .. code-block:: bash
 
+      $ ./build/tfm/api_ns/regression.sh
       $ STM32_Programmer_CLI -c port=swd -ob TZEN=0xC3
 
 Connections and IOs
