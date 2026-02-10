@@ -1979,7 +1979,7 @@ static bool valid_unicast_audio_update_param(const struct bt_cap_unicast_audio_u
 		if (conn == NULL) {
 			LOG_DBG("param->stream_params[%zu].stream->bap_stream.conn is NULL", i);
 
-			return -EINVAL;
+			return false;
 		}
 
 		if (bap_stream->group == NULL) {
@@ -2246,7 +2246,7 @@ bool bt_cap_initiator_valid_unicast_audio_stop_param(
 		if (conn == NULL) {
 			LOG_DBG("param->streams[%zu]->bap_stream.conn is NULL", i);
 
-			return -EINVAL;
+			return false;
 		}
 
 		if (param->type == BT_CAP_SET_TYPE_CSIP) {
