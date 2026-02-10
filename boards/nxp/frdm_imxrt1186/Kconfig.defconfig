@@ -12,6 +12,41 @@ config EXTERNAL_MEM_CONFIG_DATA
 config NXP_IMX_EXTERNAL_HYPERRAM
 	default y if CPU_CORTEX_M33
 
+if SECOND_CORE_MCUX && BOARD_FRDM_IMXRT1186_MIMXRT1186_CM7
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
+
+config FLASH_LOAD_OFFSET
+	depends on CM7_BOOT_FROM_FLASH
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
+
+config FLASH_LOAD_SIZE
+	depends on CM7_BOOT_FROM_FLASH
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
+
+config BUILD_OUTPUT_INFO_HEADER
+	default y
+
+DT_CHOSEN_IMAGE_M7 = nxp,m7-partition
+DT_CHOSEN_ZEPHYR_FLASH = zephyr,flash
+
+# Only adjust LMA if running from RAM
+if !CM7_BOOT_FROM_FLASH
+
+# Adjust the offset of the output image if building for RT118x SOC in RAM
+# Note: For FRDM-IMXRT1186, HyperRAM is on FlexSPI (0x28000000) and flash is on FlexSPI2 (0x04000000)
+# Use FlexSPI2 base address since flash (where CM7 image is stored) is connected to FlexSPI2
+FLEXSPI_BASE := $(dt_nodelabel_reg_addr_hex,flexspi2,1)
+M7_CODE_BASE := $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_ZEPHYR_FLASH))
+IMAGE_M7_ADDR := $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_M7))
+
+config BUILD_OUTPUT_ADJUST_LMA
+	default "($(IMAGE_M7_ADDR) + $(FLEXSPI_BASE) - $(M7_CODE_BASE))"
+
+endif # !CM7_BOOT_FROM_FLASH
+endif # SECOND_CORE_MCUX && BOARD_FRDM_IMXRT1186_MIMXRT1186_CM7
+
 if DMA
 
 config NOCACHE_MEMORY
