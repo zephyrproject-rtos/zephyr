@@ -7,3 +7,5 @@ tests:
   drivers.dac.api:
     depends_on: dac
     min_ram: 16
+    platform_exclude:
+      - pic32cx_sg61_cult
