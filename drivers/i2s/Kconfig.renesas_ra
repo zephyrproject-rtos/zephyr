@@ -14,6 +14,13 @@ config I2S_RENESAS_RA_SSIE
 
 if I2S_RENESAS_RA_SSIE
 
+config I2S_RENESAS_RA_SSIE_RX_SECONDARY_BUFFER
+	bool "Secondary RX buffer"
+	default y if I2S_RENESAS_RA_SSIE_DTC
+	help
+	  Enable secondary buffer allocation for RX to use as a
+	  chained buffer and improve data reception continuity.
+
 config I2S_RENESAS_RA_SSIE_DTC
 	bool "DTC on Transmission and Reception"
 	default y

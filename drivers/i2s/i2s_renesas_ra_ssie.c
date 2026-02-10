@@ -56,6 +56,9 @@ struct renesas_ra_ssie_data {
 	struct i2s_config rx_cfg;
 	struct renesas_ra_ssie_stream tx_stream;
 	struct renesas_ra_ssie_stream rx_stream;
+#ifdef CONFIG_I2S_RENESAS_RA_SSIE_RX_SECONDARY_BUFFER
+	struct renesas_ra_ssie_stream rx_stream_next;
+#endif
 	struct renesas_ra_ssie_stream tx_msgs[CONFIG_I2S_RENESAS_RA_SSIE_TX_BLOCK_COUNT];
 	struct renesas_ra_ssie_stream rx_msgs[CONFIG_I2S_RENESAS_RA_SSIE_RX_BLOCK_COUNT];
 	bool tx_configured;
@@ -223,18 +226,36 @@ static int renesas_ra_ssie_set_clock_divider(const struct device *dev,
 	return 0;
 }
 
+static void i2s_renesas_ra_release_stream(struct renesas_ra_ssie_stream *stream)
+{
+	__ASSERT((stream != NULL), "Invalid parameter");
+
+	stream->mem_block = NULL;
+	stream->mem_block_len = 0;
+}
+
 static int i2s_renesas_ra_alloc_stream(struct i2s_config *cfg,
 				       struct renesas_ra_ssie_stream *stream)
 {
+	int ret = 0;
+
 	__ASSERT((cfg != NULL && stream != NULL), "Invalid parameter");
 
-	if (k_mem_slab_alloc(cfg->mem_slab, &stream->mem_block, K_NO_WAIT) < 0) {
-		return -ENOMEM;
+	if (k_mem_slab_num_free_get(cfg->mem_slab) > 0) {
+		ret = k_mem_slab_alloc(cfg->mem_slab, &stream->mem_block, K_NO_WAIT);
+		if (ret == 0) {
+			stream->mem_block_len = cfg->block_size;
+		}
+	} else {
+		ret = -ENOMEM;
 	}
 
-	stream->mem_block_len = cfg->block_size;
+	if (ret < 0) {
+		stream->mem_block = NULL;
+		stream->mem_block_len = 0;
+	}
 
-	return 0;
+	return ret;
 }
 
 static void i2s_renesas_ra_free_stream(struct i2s_config *cfg,
@@ -289,11 +310,21 @@ static int renesas_ra_ssie_rx_start_transfer(const struct device *dev)
 		return ret;
 	}
 
+#ifdef CONFIG_I2S_RENESAS_RA_SSIE_RX_SECONDARY_BUFFER
+	ret = i2s_renesas_ra_alloc_stream(&dev_data->rx_cfg, &dev_data->rx_stream_next);
+	if (ret < 0) {
+		LOG_DBG("Failed to allocate secondary RX buffer");
+	}
+#endif
+
 	fsp_err = R_SSI_Read(&dev_data->fsp_ctrl, stream->mem_block, stream->mem_block_len);
 	if (fsp_err != FSP_SUCCESS) {
 		LOG_ERR("Failed to start read data");
 		dev_data->state = I2S_STATE_ERROR;
 		i2s_renesas_ra_free_stream(&dev_data->rx_cfg, &dev_data->rx_stream);
+#ifdef CONFIG_I2S_RENESAS_RA_SSIE_RX_SECONDARY_BUFFER
+		i2s_renesas_ra_free_stream(&dev_data->rx_cfg, &dev_data->rx_stream_next);
+#endif
 		return -EIO;
 	}
 
@@ -342,14 +373,29 @@ static int renesas_ra_ssie_tx_rx_start_transfer(const struct device *dev)
 		return -ENOMEM;
 	}
 
-	ret = i2s_renesas_ra_alloc_stream(&dev_data->rx_cfg, stream_rx);
-	if (ret < 0) {
-		dev_data->state = I2S_STATE_ERROR;
-		return ret;
+#ifdef CONFIG_I2S_RENESAS_RA_SSIE_RX_SECONDARY_BUFFER
+	if (dev_data->state == I2S_STATE_RUNNING || dev_data->state == I2S_STATE_STOPPING) {
+		if (dev_data->rx_stream_next.mem_block == NULL) {
+			i2s_renesas_ra_free_stream(&dev_data->tx_cfg, stream_tx);
+			dev_data->state = I2S_STATE_ERROR;
+			return -ENOMEM;
+		}
+
+		*stream_rx = dev_data->rx_stream_next;
+	} else {
+#endif
+		ret = i2s_renesas_ra_alloc_stream(&dev_data->rx_cfg, stream_rx);
+		if (ret < 0) {
+			i2s_renesas_ra_free_stream(&dev_data->tx_cfg, stream_tx);
+			dev_data->state = I2S_STATE_ERROR;
+			return ret;
+		}
+#ifdef CONFIG_I2S_RENESAS_RA_SSIE_RX_SECONDARY_BUFFER
 	}
+#endif
 
 	fsp_err = R_SSI_WriteRead(&dev_data->fsp_ctrl, stream_tx->mem_block, stream_rx->mem_block,
-				  stream_rx->mem_block_len);
+				  MAX(stream_rx->mem_block_len, stream_tx->mem_block_len));
 	if (fsp_err != FSP_SUCCESS) {
 		dev_data->state = I2S_STATE_ERROR;
 		i2s_renesas_ra_free_stream(&dev_data->tx_cfg, stream_tx);
@@ -357,6 +403,13 @@ static int renesas_ra_ssie_tx_rx_start_transfer(const struct device *dev)
 		LOG_ERR("Failed to start write and read data");
 		return -EIO;
 	}
+
+#ifdef CONFIG_I2S_RENESAS_RA_SSIE_RX_SECONDARY_BUFFER
+	ret = i2s_renesas_ra_alloc_stream(&dev_data->rx_cfg, &dev_data->rx_stream_next);
+	if (ret < 0) {
+		LOG_DBG("Failed to allocate secondary RX buffer");
+	}
+#endif
 
 	/* In case I2S stream is draining, don't update the state */
 	if (dev_data->state != I2S_STATE_STOPPING) {
@@ -369,33 +422,26 @@ static int renesas_ra_ssie_tx_rx_start_transfer(const struct device *dev)
 static void renesas_ra_ssie_idle_dir_both_handle(const struct device *dev)
 {
 	struct renesas_ra_ssie_data *const dev_data = dev->data;
-	struct renesas_ra_ssie_stream *stream_rx = &dev_data->rx_stream;
 	struct renesas_ra_ssie_stream *stream_tx = &dev_data->tx_stream;
-	int ret;
+	bool restart = true;
 
 	if (dev_data->state == I2S_STATE_STOPPING) {
-		/* If there is no msg in tx queue, set deivice the state to ready. */
-		if (k_msgq_num_used_get(&dev_data->tx_queue) == 0) {
+		/*
+		 * In case device is stopping, restart the transfer only if there is still data in
+		 * the TX queue and the trigger command is I2S_TRIGGER_DRAIN.
+		 */
+		if (k_msgq_num_used_get(&dev_data->tx_queue) == 0 ||
+		    dev_data->stop_with_draining == false) {
 			dev_data->state = I2S_STATE_READY;
-			goto dir_both_idle_end;
-		} else if (dev_data->stop_with_draining == false) {
-			dev_data->state = I2S_STATE_READY;
-			goto dir_both_idle_end;
+			restart = false;
 		}
 	}
 
 	i2s_renesas_ra_free_stream(&dev_data->tx_cfg, stream_tx);
 
-	ret = renesas_ra_ssie_tx_rx_start_transfer(dev);
-	if (ret < 0) {
-		goto dir_both_idle_end;
+	if (restart) {
+		renesas_ra_ssie_tx_rx_start_transfer(dev);
 	}
-
-	return;
-
-dir_both_idle_end:
-	i2s_renesas_ra_free_stream(&dev_data->tx_cfg, stream_tx);
-	i2s_renesas_ra_free_stream(&dev_data->rx_cfg, stream_rx);
 }
 
 static void renesas_ra_ssie_idle_tx_handle(const struct device *dev)
@@ -423,55 +469,119 @@ static void renesas_ra_ssie_idle_rx_handle(const struct device *dev)
 
 static void renesas_ra_ssie_rx_callback(const struct device *dev)
 {
+#ifdef CONFIG_I2S_RENESAS_RA_SSIE_RX_SECONDARY_BUFFER
 	struct renesas_ra_ssie_data *const dev_data = dev->data;
-	struct renesas_ra_ssie_stream *rx_stream = &dev_data->rx_stream;
+	bool free_stream = false;
+	bool free_next_stream = false;
 	fsp_err_t fsp_err;
 	int ret;
 
-	if (rx_stream->mem_block == NULL) {
+	if (dev_data->rx_stream.mem_block == NULL) {
+		return;
+	}
+
+	if (dev_data->rx_stream_next.mem_block != NULL) {
+		fsp_err = R_SSI_Read(&dev_data->fsp_ctrl, dev_data->rx_stream_next.mem_block,
+				     dev_data->rx_stream_next.mem_block_len);
+		if (fsp_err != FSP_SUCCESS) {
+			dev_data->state = I2S_STATE_ERROR;
+			LOG_ERR("Failed to restart RX transfer");
+			free_next_stream = true;
+		}
+	} else {
+		free_next_stream = true;
+	}
+
+	if (dev_data->trigger_drop) {
+		i2s_renesas_ra_free_stream(&dev_data->rx_cfg, &dev_data->rx_stream);
+		return;
+	}
+
+	ret = i2s_renesas_ra_put_stream(&dev_data->rx_queue, &dev_data->rx_stream);
+	if (ret < 0) {
+		dev_data->state = I2S_STATE_ERROR;
+		free_stream = true;
+		free_next_stream = true;
+		goto free;
+	}
+
+	if (dev_data->active_dir == I2S_DIR_RX) {
+		if (dev_data->state == I2S_STATE_STOPPING) {
+			goto stop;
+		}
+
+		if (free_next_stream) {
+			dev_data->state = I2S_STATE_ERROR;
+			goto free;
+		}
+
+		dev_data->rx_stream = dev_data->rx_stream_next;
+		ret = i2s_renesas_ra_alloc_stream(&dev_data->rx_cfg, &dev_data->rx_stream_next);
+		if (ret < 0) {
+			LOG_DBG("Failed to allocate RX buffer");
+		}
+	}
+
+	return;
+free:
+	if (free_stream) {
+		i2s_renesas_ra_free_stream(&dev_data->rx_cfg, &dev_data->rx_stream);
+	}
+
+	if (free_next_stream) {
+		i2s_renesas_ra_free_stream(&dev_data->rx_cfg, &dev_data->rx_stream_next);
+	}
+stop:
+	i2s_renesas_ra_release_stream(&dev_data->rx_stream);
+	R_SSI_Stop(&dev_data->fsp_ctrl);
+#else
+	struct renesas_ra_ssie_data *const dev_data = dev->data;
+	fsp_err_t fsp_err;
+	int ret;
+
+	if (dev_data->rx_stream.mem_block == NULL) {
 		return;
 	}
 
 	if (dev_data->trigger_drop) {
-		i2s_renesas_ra_free_stream(&dev_data->rx_cfg, rx_stream);
+		i2s_renesas_ra_free_stream(&dev_data->rx_cfg, &dev_data->rx_stream);
 		return;
 	}
 
-	ret = i2s_renesas_ra_put_stream(&dev_data->rx_queue, rx_stream);
+	ret = i2s_renesas_ra_put_stream(&dev_data->rx_queue, &dev_data->rx_stream);
 	if (ret < 0) {
 		dev_data->state = I2S_STATE_ERROR;
-		goto rx_disable;
+		goto free;
 	}
 
-	rx_stream->mem_block = NULL;
-	rx_stream->mem_block_len = 0;
-
 	if (dev_data->active_dir == I2S_DIR_RX) {
-
 		if (dev_data->state == I2S_STATE_STOPPING) {
-			goto rx_disable;
+			goto stop;
 		}
 
-		ret = i2s_renesas_ra_alloc_stream(&dev_data->rx_cfg, rx_stream);
+		ret = i2s_renesas_ra_alloc_stream(&dev_data->rx_cfg, &dev_data->rx_stream);
 		if (ret < 0) {
 			dev_data->state = I2S_STATE_ERROR;
-			goto rx_disable;
+			goto stop;
 		}
 
-		fsp_err = R_SSI_Read(&dev_data->fsp_ctrl, rx_stream->mem_block,
-				     rx_stream->mem_block_len);
+		fsp_err = R_SSI_Read(&dev_data->fsp_ctrl, dev_data->rx_stream.mem_block,
+				     dev_data->rx_stream.mem_block_len);
 		if (fsp_err != FSP_SUCCESS) {
 			dev_data->state = I2S_STATE_ERROR;
 			LOG_ERR("Failed to restart RX transfer");
-			goto rx_disable;
+			goto free;
 		}
 	}
 
 	return;
 
-rx_disable:
-	i2s_renesas_ra_free_stream(&dev_data->rx_cfg, rx_stream);
+free:
+	i2s_renesas_ra_free_stream(&dev_data->rx_cfg, &dev_data->rx_stream);
+stop:
+	i2s_renesas_ra_release_stream(&dev_data->rx_stream);
 	R_SSI_Stop(&dev_data->fsp_ctrl);
+#endif
 }
 
 static void renesas_ra_ssie_tx_callback(const struct device *dev)
@@ -605,6 +715,10 @@ static int renesas_ra_ssie_stop(const struct device *dev)
 		return -EIO;
 	}
 
+#ifdef CONFIG_I2S_RENESAS_RA_SSIE_RX_SECONDARY_BUFFER
+	i2s_renesas_ra_free_stream(&dev_data->rx_cfg, &dev_data->rx_stream_next);
+#endif
+
 	dev_data->stop_with_draining = false;
 	dev_data->trigger_drop = false;
 	dev_data->state = I2S_STATE_STOPPING;
@@ -650,6 +764,12 @@ static int renesas_ra_trigger_drop(const struct device *dev, enum i2s_dir dir)
 			return -EIO;
 		}
 	}
+
+#ifdef CONFIG_I2S_RENESAS_RA_SSIE_RX_SECONDARY_BUFFER
+	if (dir == I2S_DIR_BOTH || dir == I2S_DIR_RX) {
+		i2s_renesas_ra_free_stream(&dev_data->rx_cfg, &dev_data->rx_stream_next);
+	}
+#endif
 
 	if (dir == I2S_DIR_BOTH || dir == I2S_DIR_TX) {
 		drop_queue(dev, I2S_DIR_TX);
@@ -941,7 +1061,7 @@ static int i2s_renesas_ra_ssie_trigger(const struct device *dev, enum i2s_dir di
 {
 	struct renesas_ra_ssie_data *dev_data = dev->data;
 	bool configured = false;
-	int ret;
+	int ret = 0;
 
 	if (dir == I2S_DIR_BOTH) {
 		if (dev_data->full_duplex == false) {
