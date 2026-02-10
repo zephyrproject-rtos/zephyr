@@ -458,7 +458,7 @@ static int aes_init(const struct device *dev)
 	return 0;
 }
 
-static const struct crypto_driver_api aes_crypto_api = {
+static DEVICE_API(crypto, aes_crypto_api) = {
 	.query_hw_caps = aes_query_hw_caps,
 	.cipher_begin_session = aes_cipher_begin_session,
 	.cipher_free_session = aes_cipher_free_session,
