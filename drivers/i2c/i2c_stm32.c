@@ -367,7 +367,7 @@ static int i2c_stm32_init(const struct device *dev)
 #if defined(CONFIG_SOC_SERIES_STM32F1X)
 	/*
 	 * Force i2c reset for STM32F1 series.
-	 * So that they can enter master mode properly.
+	 * So that they can enter controller mode properly.
 	 * Issue described in ES096 2.14.7
 	 */
 	I2C_TypeDef *i2c = cfg->i2c;

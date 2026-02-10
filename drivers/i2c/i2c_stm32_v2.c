@@ -243,7 +243,7 @@ static void i2c_stm32_target_event(const struct device *dev)
 		 * If 10-bit mode is enabled, Target2 cannot be in use because
 		 * it only supports 7-bit mode, so we know which cfg is matched.
 		 * If 7-bit mode is enabled, find the correct cfg based on
-		 * the I2C address sent by bus master.
+		 * the I2C address sent by bus controller.
 		 */
 		if (data->target_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS) {
 			target_cfg = data->target_cfg;
@@ -365,7 +365,7 @@ int i2c_stm32_target_register(const struct device *dev,
 		return -EBUSY;
 	}
 
-	if (data->master_active) {
+	if (data->controller_active) {
 		return -EBUSY;
 	}
 
@@ -433,7 +433,7 @@ int i2c_stm32_target_unregister(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (data->master_active) {
+	if (data->controller_active) {
 		return -EBUSY;
 	}
 
@@ -494,7 +494,7 @@ void i2c_stm32_event(const struct device *dev)
 	uint32_t isr = stm32_reg_read(&regs->ISR);
 
 #if defined(CONFIG_I2C_TARGET)
-	if (data->target_attached && !data->master_active) {
+	if (data->target_attached && !data->controller_active) {
 		i2c_stm32_target_event(dev);
 		return;
 	}
@@ -611,7 +611,7 @@ int i2c_stm32_error(const struct device *dev)
 #if defined(CONFIG_I2C_TARGET)
 	i2c_target_error_cb_t error_cb = NULL;
 
-	if (data->target_attached && !data->master_active &&
+	if (data->target_attached && !data->controller_active &&
 	    data->target_cfg != NULL && data->target_cfg->callbacks != NULL) {
 		error_cb = data->target_cfg->callbacks->error;
 	}
@@ -628,7 +628,7 @@ int i2c_stm32_error(const struct device *dev)
 		goto end;
 	}
 
-	/* Don't end a transaction on bus error in master mode
+	/* Don't end a transaction on bus error in controller mode
 	 * as errata sheet says that spurious false detections
 	 * of BERR can happen which shall be ignored.
 	 * If a real Bus Error occurs, transaction will time out.
@@ -657,7 +657,7 @@ int i2c_stm32_error(const struct device *dev)
 	return 0;
 end:
 #if defined(CONFIG_I2C_TARGET)
-	if (data->target_attached && !data->master_active) {
+	if (data->target_attached && !data->controller_active) {
 		return -EIO;
 	}
 #endif
@@ -705,7 +705,7 @@ static int stm32_i2c_irq_msg_finish(const struct device *dev, struct i2c_msg *ms
 
 #if defined(CONFIG_I2C_TARGET)
 	if (!keep_enabled || (ret != 0)) {
-		data->master_active = false;
+		data->controller_active = false;
 	}
 	/* Don't disable I2C if a target is attached */
 	if (data->target_attached) {
@@ -741,7 +741,7 @@ static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 	data->current.msg = msg;
 
 #if defined(CONFIG_I2C_TARGET)
-	data->master_active = true;
+	data->controller_active = true;
 #endif
 
 #if defined(CONFIG_I2C_STM32_V2_DMA)
@@ -836,7 +836,7 @@ static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 	if (dma_xfer_start(dev, msg) != 0) {
 		LL_I2C_Disable(regs);
 #if defined(CONFIG_I2C_TARGET)
-		data->master_active = false;
+		data->controller_active = false;
 #endif
 		return -EIO;
 	}
@@ -925,7 +925,7 @@ static inline void msg_init(const struct device *dev, struct i2c_msg *msg,
 		LL_I2C_SetTransferSize(i2c, msg->len);
 
 #if defined(CONFIG_I2C_TARGET)
-		data->master_active = true;
+		data->controller_active = true;
 #endif
 		LL_I2C_Enable(i2c);
 
@@ -1406,7 +1406,7 @@ int i2c_stm32_transaction(const struct device *dev,
 			LL_I2C_DisableReloadMode(i2c);
 		}
 #if defined(CONFIG_I2C_TARGET)
-		data->master_active = false;
+		data->controller_active = false;
 		if (!data->target_attached && !data->smbalert_active) {
 			LL_I2C_Disable(i2c);
 		}

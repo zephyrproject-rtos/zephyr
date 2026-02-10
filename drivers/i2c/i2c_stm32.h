@@ -130,7 +130,7 @@ struct i2c_stm32_data {
 #endif /* CONFIG_I2C_RTIO */
 
 #ifdef CONFIG_I2C_TARGET
-	bool master_active;
+	bool controller_active;
 	bool target_attached;
 	struct i2c_target_config *target_cfg;
 #ifdef CONFIG_I2C_STM32_V2
