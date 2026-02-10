@@ -70,6 +70,8 @@ uint32_t rpu_7002_memmap[][3] = {
 static const struct qspi_dev *qdev;
 static struct qspi_config *cfg;
 
+static int rpu_gpio_remove(void);
+
 static int validate_addr_blk(uint32_t start_addr,
 							 uint32_t end_addr,
 							 uint32_t block_no,
