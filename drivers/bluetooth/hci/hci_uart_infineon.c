@@ -6,7 +6,8 @@
  */
 
 /**
- * @brief CYW43xxx HCI extension driver.
+ * @brief  Implements a Bluetooth HCI (Host Controller Interface) UART driver
+ * extension for Infineon Bluetooth controllers
  */
 
 #include <errno.h>
@@ -23,14 +24,14 @@
 
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(cyw43xxx_driver);
+LOG_MODULE_REGISTER(infineon_bt_hci_uart);
 
 #include <stdint.h>
 
-#define DT_DRV_COMPAT infineon_cyw43xxx_bt_hci
+#define DT_DRV_COMPAT infineon_bt_hci_uart
 
-BUILD_ASSERT(DT_PROP(DT_INST_GPARENT(0), hw_flow_control) == 1,
-		"hw_flow_control must be enabled for HCI H4 UART");
+BUILD_ASSERT(DT_PROP(DT_INST_BUS(0), hw_flow_control) == 1,
+		"hw_flow_control must be enabled in the devicetree");
 
 /* BT settling time after power on */
 #define BT_POWER_ON_SETTLING_TIME_MS      (500u)
@@ -97,7 +98,7 @@ static int bt_update_controller_baudrate(const struct device *bt_uart_dev, uint3
 {
 	/*
 	 *  NOTE from datasheet for update baudrate:
-	 *  - To speed up application downloading, the MCU host commands the CYWxxx device
+	 *  - To speed up application downloading, the MCU host commands the BT device
 	 *    to communicate at a new, higher rate by issuing the following Vendor Specific
 	 *    UPDATE_BAUDRATE command:
 	 *      01 18 FC 06 00 00 xx xx xx xx
@@ -171,7 +172,7 @@ static int bt_firmware_download(const uint8_t *firmware_image, uint32_t size)
 	struct net_buf *buf;
 	int err;
 
-	LOG_DBG("Executing Fw downloading for CYW43xx device");
+	LOG_DBG("Executing Fw downloading for BT device");
 
 	/* Send hci_download_minidriver command */
 	err = bt_hci_cmd_send_sync(BT_HCI_VND_OP_DOWNLOAD_MINIDRIVER, NULL, NULL);

@@ -5,9 +5,11 @@
 
 if BT_AIROC
 
-config BT_CYW43XX
+config BT_HCI_UART_INFINEON
 	bool
 	default y if BT_AIROC && BT_H4
+	help
+	  Enable Infineon HCI UART driver for AIROC connectivity chips
 
 choice  AIROC_PART
 	prompt "Select AIROC part"

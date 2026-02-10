@@ -576,6 +576,16 @@ Infineon
   * ``CONFIG_*_INFINEON_CAT1`` → ``CONFIG_*_INFINEON``
   * ``compatible: "infineon,cat1-adc"`` → ``compatible: "infineon,adc"``
 
+* Infineon Bluetooth HCI UART driver (:kconfig:option:`CONFIG_BT_HCI_UART_INFINEON`) with
+  compatible :dtcompatible:`infineon,bt-hci-uart` is now explicitly scoped to AIROC connectivity
+  chips that use HCI UART transport.
+  (:github:`103871`)
+
+  Corresponding Kconfig symbols and devicetree compatibles have also been updated:
+
+  * ``CONFIG_BT_CYW43XX`` → :kconfig:option:` CONFIG_BT_HCI_UART_INFINEON`
+  * ``dtcompatible: "infineon,cyw43xxx-bt-hci"`` → ``dtcompatible: "infineon,bt-hci-uart"``
+
 MDIO
 ====
 
