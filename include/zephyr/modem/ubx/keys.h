@@ -46,6 +46,15 @@ enum ubx_keys_uart1_proto {
 	UBX_KEY_UART1_PROTO_OUT_RTCM3X = 0x10740004,
 };
 
+/** UART1 configuration keys. */
+enum ubx_keys_uart1_cfg {
+	UBX_KEY_CFG_UART1_BAUDRATE = 0x40520001, /**< default 38400 */
+	UBX_KEY_CFG_UART1_STOPBITS = 0x20520002, /**< default 1 (ONE) */
+	UBX_KEY_CFG_UART1_DATABITS = 0x20520003, /**< default 0 (EIGHT) */
+	UBX_KEY_CFG_UART1_PARITY = 0x20520004, /**< default 0 (NONE) */
+	UBX_KEY_CFG_UART1_ENABLED = 0x10520005, /**< default 1 (true) */
+};
+
 enum ubx_keys_nav_hp_cfg {
 	UBX_KEY_NAV_HP_CFG_GNSS_MODE = 0x20140011,
 };
