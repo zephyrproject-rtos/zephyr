@@ -7,13 +7,19 @@ Overview
 ********
 
 The HW Info API provides access to hardware information such as device
-identifiers and reset cause flags.
+identifiers, reset cause flags, and wakeup cause flags.
 
 Reset cause flags can be used to determine why the device was reset; for
 example due to a watchdog timeout or due to power cycling. Different devices
 support different subset of flags. Use
 :c:func:`hwinfo_get_supported_reset_cause` to retrieve the flags that are
 supported by that device.
+
+Wakeup cause flags can be used to determine what woke the device from low
+power mode. This is only meaningful when the reset cause includes
+:c:macro:`RESET_LOW_POWER_WAKE`. Use
+:c:func:`hwinfo_get_supported_wakeup_cause` to retrieve the wakeup cause
+flags that are supported by that device.
 
 Configuration Options
 *********************

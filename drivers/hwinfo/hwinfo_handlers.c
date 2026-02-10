@@ -53,3 +53,27 @@ int z_vrfy_hwinfo_get_supported_reset_cause(uint32_t *supported)
 	return ret;
 }
 #include <zephyr/syscalls/hwinfo_get_supported_reset_cause_mrsh.c>
+
+int z_vrfy_hwinfo_get_wakeup_cause(uint32_t *cause)
+{
+	int ret;
+	uint32_t cause_copy;
+
+	ret = z_impl_hwinfo_get_wakeup_cause(&cause_copy);
+	K_OOPS(k_usermode_to_copy(cause, &cause_copy, sizeof(uint32_t)));
+
+	return ret;
+}
+#include <zephyr/syscalls/hwinfo_get_wakeup_cause_mrsh.c>
+
+int z_vrfy_hwinfo_get_supported_wakeup_cause(uint32_t *supported)
+{
+	int ret;
+	uint32_t supported_copy;
+
+	ret = z_impl_hwinfo_get_supported_wakeup_cause(&supported_copy);
+	K_OOPS(k_usermode_to_copy(supported, &supported_copy, sizeof(uint32_t)));
+
+	return ret;
+}
+#include <zephyr/syscalls/hwinfo_get_supported_wakeup_cause_mrsh.c>

@@ -194,5 +194,40 @@ ZTEST(hwinfo_device_id_api, test_get_supported_reset_cause)
 					"Supported reset cause not written.");
 }
 
+ZTEST(hwinfo_device_id_api, test_get_wakeup_cause)
+{
+	uint32_t cause;
+	ssize_t ret;
+
+	cause = 0xDEADBEEF;
+
+	ret = hwinfo_get_wakeup_cause(&cause);
+	if (ret == -ENOSYS) {
+		ztest_test_skip();
+		return;
+	}
+
+	zassert_false((ret < 0), "Unexpected negative return value: %zd", ret);
+
+	zassert_not_equal(cause, 0xDEADBEEF, "Wakeup cause not written.");
+}
+
+ZTEST(hwinfo_device_id_api, test_get_supported_wakeup_cause)
+{
+	uint32_t supported;
+	ssize_t ret;
+
+	supported = 0xDEADBEEF;
+
+	ret = hwinfo_get_supported_wakeup_cause(&supported);
+	if (ret == -ENOSYS) {
+		ztest_test_skip();
+		return;
+	}
+
+	zassert_false((ret < 0), "Unexpected negative return value: %zd", ret);
+
+	zassert_not_equal(supported, 0xDEADBEEF, "Supported wakeup cause not written.");
+}
 
 ZTEST_SUITE(hwinfo_device_id_api, NULL, NULL, NULL, NULL, NULL);

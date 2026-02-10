@@ -76,6 +76,29 @@ extern "C" {
  */
 
 /**
+ * @name Wakeup cause flags
+ * @anchor wakeup_cause
+ * @{
+ */
+/** Timer wakeup */
+#define WAKEUP_TIMER       BIT(0)
+/** GPIO wakeup */
+#define WAKEUP_GPIO        BIT(1)
+/** Coprocessor wakeup */
+#define WAKEUP_COPROCESSOR BIT(2)
+/** Touchpad wakeup */
+#define WAKEUP_TOUCHPAD    BIT(3)
+/** UART wakeup */
+#define WAKEUP_UART        BIT(4)
+/** Wi-Fi wakeup */
+#define WAKEUP_WIFI        BIT(5)
+/** Bluetooth wakeup */
+#define WAKEUP_BT          BIT(6)
+/**
+ * @}
+ */
+
+/**
  * @brief Copy the device id to a buffer
  *
  * This routine copies "length" number of bytes of the device ID to the buffer.
@@ -166,6 +189,38 @@ int z_impl_hwinfo_clear_reset_cause(void);
 __syscall int hwinfo_get_supported_reset_cause(uint32_t *supported);
 
 int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported);
+
+/**
+ * @brief      Retrieve cause of wakeup from low power mode.
+ *
+ * @param      cause  OR'd @ref wakeup_cause "wakeup cause" flags
+ *
+ * This routine retrieves the flags that indicate what woke the device
+ * from low power mode. Only meaningful when the reset cause includes
+ * @ref RESET_LOW_POWER_WAKE.
+ *
+ * @retval 0 if successful.
+ * @retval -ENOSYS if there is no implementation for the particular device.
+ * @retval <0 any negative value on driver specific errors.
+ */
+__syscall int hwinfo_get_wakeup_cause(uint32_t *cause);
+
+int z_impl_hwinfo_get_wakeup_cause(uint32_t *cause);
+
+/**
+ * @brief      Get supported wakeup cause flags
+ *
+ * @param      supported  OR'd @ref wakeup_cause "wakeup cause" flags that are supported
+ *
+ * Retrieves all `wakeup_cause` flags that are supported by this device.
+ *
+ * @retval 0 if successful.
+ * @retval -ENOSYS if there is no implementation for the particular device.
+ * @retval <0 any negative value on driver specific errors.
+ */
+__syscall int hwinfo_get_supported_wakeup_cause(uint32_t *supported);
+
+int z_impl_hwinfo_get_supported_wakeup_cause(uint32_t *supported);
 
 /**
  * @}

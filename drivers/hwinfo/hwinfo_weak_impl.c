@@ -30,3 +30,13 @@ int __weak z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 {
 	return -ENOSYS;
 }
+
+int __weak z_impl_hwinfo_get_wakeup_cause(uint32_t *cause)
+{
+	return -ENOSYS;
+}
+
+int __weak z_impl_hwinfo_get_supported_wakeup_cause(uint32_t *supported)
+{
+	return -ENOSYS;
+}
