@@ -60,6 +60,23 @@ config MBEDTLS_GENPRIME_ENABLED
 
 endif # MBEDTLS_RSA_C
 
+config MBEDTLS_RSA_ENABLE_LEGACY_APIS
+	bool
+	imply MBEDTLS_RSA_C
+	imply MBEDTLS_PKCS1_V15
+	default y if MBEDTLS_CIPHERSUITE_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256 || \
+		     MBEDTLS_CIPHERSUITE_TLS_RSA_WITH_AES_256_CBC_SHA256
+	help
+	  Promptless Kconfig to automatically enable legacy RSA crypto support
+	  when RSA based ciphersuites are enabled.
+	  This is required because TLS/X.509 code still relies on these legacy
+	  symbols to guard parts of the code.
+	  In theory this fix is only necessary when TF-M is enabled, because
+	  otherwise when Mbed TLS uses its own implementation of PSA Crypto
+	  it automatically does this internally. On the other hand it doesn't hurt to
+	  always enable it.
+	  This fix is very likely to be removed with Mbed TLS 4.x.
+
 config MBEDTLS_KEY_EXCHANGE_ALL_ENABLED
 	bool "All available ciphersuite modes"
 	select MBEDTLS_MD_C
