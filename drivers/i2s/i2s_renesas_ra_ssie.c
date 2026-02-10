@@ -47,6 +47,7 @@ struct renesas_ra_ssie_data {
 	ssi_instance_ctrl_t fsp_ctrl;
 	i2s_cfg_t fsp_cfg;
 	ssi_extended_cfg_t fsp_ext_cfg;
+	struct k_spinlock lock;
 	volatile enum i2s_state state;
 	enum i2s_dir active_dir;
 	struct k_msgq rx_queue;
@@ -948,6 +949,7 @@ static int i2s_renesas_ra_ssie_trigger(const struct device *dev, enum i2s_dir di
 {
 	struct renesas_ra_ssie_data *dev_data = dev->data;
 	bool configured = false;
+	int ret;
 
 	if (dir == I2S_DIR_BOTH) {
 		if (dev_data->full_duplex == false) {
@@ -972,21 +974,30 @@ static int i2s_renesas_ra_ssie_trigger(const struct device *dev, enum i2s_dir di
 		return -EINVAL;
 	}
 
-	switch (cmd) {
-	case I2S_TRIGGER_START:
-		return renesas_ra_ssie_start_transfer(dev, dir);
-	case I2S_TRIGGER_STOP:
-		return renesas_ra_ssie_stop(dev);
-	case I2S_TRIGGER_DRAIN:
-		return renesas_ra_trigger_drain(dev, dir);
-	case I2S_TRIGGER_DROP:
-		return renesas_ra_trigger_drop(dev, dir);
-	case I2S_TRIGGER_PREPARE:
-		return renesas_ra_trigger_prepare(dev, dir);
-	default:
-		LOG_ERR("Invalid trigger: %d", cmd);
-		return -EINVAL;
+	K_SPINLOCK(&dev_data->lock) {
+		switch (cmd) {
+		case I2S_TRIGGER_START:
+			ret = renesas_ra_ssie_start_transfer(dev, dir);
+			break;
+		case I2S_TRIGGER_STOP:
+			ret = renesas_ra_ssie_stop(dev);
+			break;
+		case I2S_TRIGGER_DRAIN:
+			ret = renesas_ra_trigger_drain(dev, dir);
+			break;
+		case I2S_TRIGGER_DROP:
+			ret = renesas_ra_trigger_drop(dev, dir);
+			break;
+		case I2S_TRIGGER_PREPARE:
+			ret = renesas_ra_trigger_prepare(dev, dir);
+			break;
+		default:
+			LOG_ERR("Invalid trigger: %d", cmd);
+			ret = -EINVAL;
+		}
 	}
+
+	return ret;
 }
 
 static int i2s_renesas_ra_ssie_init(const struct device *dev)
