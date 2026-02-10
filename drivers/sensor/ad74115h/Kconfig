@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2026 William Fish (Manulytica ltd)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 config AD74115H
 	bool "AD74115H SW Configurable I/O Driver"
 	default y
