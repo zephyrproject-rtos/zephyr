@@ -95,13 +95,13 @@ struct mcs_instance_t {
 	 *                     (mpl_cmd.opcode + bt_mcs_cmd.param)
 	 * If the object transfer client is included, it is also used for
 	 * - object IDs (6 octets - BT_OTS_OBJ_ID_SIZE) and
-	 * - the search control point (64 octets - SEARCH_LEN_MAX)
+	 * - the search control point (64 octets - BT_MCS_SEARCH_LEN_MAX)
 	 *
 	 * If there is no OTC, the largest is control point
 	 * If OTC is included, the largest is the search control point
 	 */
 #ifdef CONFIG_BT_MCC_OTS
-	char write_buf[SEARCH_LEN_MAX];
+	char write_buf[BT_MCS_SEARCH_LEN_MAX];
 #else
 	/* Trick to be able to use sizeof on members of a struct type */
 	/* TODO: Rewrite the bt_mcs_cmd to have the "use_param" parameter */
