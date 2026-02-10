@@ -6,6 +6,7 @@
 config INSTRUMENTATION
 	bool "Compiler Instrumentation Support"
 	select REBOOT
+	select UART_CONSOLE
 	select UART_INTERRUPT_DRIVEN
 	help
 	  Enable compiler-managed runtime system instrumentation. This requires
