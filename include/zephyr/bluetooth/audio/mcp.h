@@ -447,7 +447,7 @@ int bt_mcp_media_control_server_get_commands_supported(uint32_t *opcodes);
  * @retval 0 Success
  * @retval -EINVAL @p search was NULL
  */
-int bt_mcp_media_control_server_search_command(const struct bt_mcp_search *search);
+int bt_mcp_media_control_server_search_command(const struct bt_mcs_search *search);
 
 /**
  * @brief Read Search Results Object ID
