@@ -6,7 +6,7 @@
  */
 
 /dts-v1/;
-#include <nordic/nrf54l15_cpuflpr.dtsi>
+#include <vendor/nordic/nrf54l15_cpuflpr.dtsi>
 #include "raytac_an54lq_db_15_common.dtsi"
 
 / {

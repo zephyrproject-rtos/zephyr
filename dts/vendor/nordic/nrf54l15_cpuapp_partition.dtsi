@@ -9,12 +9,14 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
 			reg = <0x0 DT_SIZE_K(64)>;
 		};
 
+#ifdef WITH_FLPR_PARTITIONS
 		slot0_partition: partition@10000 {
 			label = "image-0";
 			reg = <0x10000 DT_SIZE_K(664)>;
@@ -29,5 +31,21 @@
 			label = "storage";
 			reg = <0x15c000 DT_SIZE_K(36)>;
 		};
+#else
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x10000 DT_SIZE_K(712)>;
+		};
+
+		slot1_partition: partition@c2000 {
+			label = "image-1";
+			reg = <0xc2000 DT_SIZE_K(712)>;
+		};
+
+		storage_partition: partition@174000 {
+			label = "storage";
+			reg = <0x174000 DT_SIZE_K(36)>;
+		};
+#endif
 	};
 };

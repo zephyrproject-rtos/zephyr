@@ -5,15 +5,11 @@
  */
 
 &cpuapp_rram {
-	reg = <0x0 DT_SIZE_K(1012)>;
-};
-
-/* These partition sizes assume no FLPR area in RRAM */
-&cpuapp_rram {
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
