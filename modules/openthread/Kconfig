@@ -283,6 +283,23 @@ config OPENTHREAD_COPROCESSOR_UART_RING_BUFFER_SIZE
 	help
 	  TX buffer size for the OpenThread Co-Processor UART.
 
+config OPENTHREAD_COPROCESSOR_UART_ASYNC
+	bool "Use async UART API for OpenThread Co-Processor"
+	depends on UART_ASYNC_API
+	help
+	  Enable use of Zephyr's asynchronous UART API for the OpenThread
+	  Co-Processor interface. When disabled, the interrupt-driven UART API
+	  is used instead.
+
+config OPENTHREAD_COPROCESSOR_UART_RX_BUFFER_SIZE
+	int "Set Co-Processor UART RX buffer size"
+	depends on OPENTHREAD_COPROCESSOR_UART_ASYNC
+	range 0 4096
+	default 256
+	help
+	  RX buffer size for the OpenThread Co-Processor UART when using
+	  the asynchronous UART API.
+
 config OPENTHREAD_COPROCESSOR_VENDOR_HOOK_SOURCE
 	string "Path to vendor hook source file"
 	help
