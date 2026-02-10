@@ -397,6 +397,29 @@ dir_both_idle_end:
 	i2s_renesas_ra_free_stream(&dev_data->rx_cfg, stream_rx);
 }
 
+static void renesas_ra_ssie_idle_tx_handle(const struct device *dev)
+{
+	struct renesas_ra_ssie_data *const dev_data = dev->data;
+
+	if (dev_data->state == I2S_STATE_STOPPING) {
+		i2s_renesas_ra_free_stream(&dev_data->tx_cfg, &dev_data->tx_stream);
+		dev_data->state = I2S_STATE_READY;
+	}
+
+	if (dev_data->state == I2S_STATE_RUNNING) {
+		renesas_ra_ssie_tx_start_transfer(dev);
+	}
+}
+
+static void renesas_ra_ssie_idle_rx_handle(const struct device *dev)
+{
+	struct renesas_ra_ssie_data *const dev_data = dev->data;
+
+	if (dev_data->state == I2S_STATE_STOPPING) {
+		dev_data->state = I2S_STATE_READY;
+	}
+}
+
 static void renesas_ra_ssie_rx_callback(const struct device *dev)
 {
 	struct renesas_ra_ssie_data *const dev_data = dev->data;
@@ -504,27 +527,14 @@ static void renesas_ra_ssie_idle_callback(const struct device *dev)
 	case I2S_DIR_BOTH:
 		renesas_ra_ssie_idle_dir_both_handle(dev);
 		break;
-
 	case I2S_DIR_TX:
-		if (dev_data->state == I2S_STATE_STOPPING) {
-			dev_data->state = I2S_STATE_READY;
-			i2s_renesas_ra_free_stream(&dev_data->tx_cfg, &dev_data->tx_stream);
-		}
-
-		if (dev_data->state == I2S_STATE_RUNNING) {
-			renesas_ra_ssie_tx_start_transfer(dev);
-		}
+		renesas_ra_ssie_idle_tx_handle(dev);
 		break;
-
 	case I2S_DIR_RX:
-		if (dev_data->state == I2S_STATE_STOPPING) {
-			dev_data->state = I2S_STATE_READY;
-		}
+		renesas_ra_ssie_idle_rx_handle(dev);
 		break;
-
 	default:
 		LOG_ERR("Invalid direction: %d", dev_data->active_dir);
-		return;
 	}
 }
 
