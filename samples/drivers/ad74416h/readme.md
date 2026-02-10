@@ -1,7 +1,3 @@
-This `README.md` is designed to be placed in `samples/drivers/ad74416h/README.md`. It follows the standard Zephyr documentation format required for a Pull Request.
-
----
-
 # AD74416H Multi-Function I/O Sample
 
 ## Overview
