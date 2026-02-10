@@ -441,6 +441,11 @@ static inline int video_set_format(const struct device *dev, struct video_format
 	video_hdr = (struct video_common_header *)dev->data;
 
 	k_mutex_lock(&video_hdr->lock, K_FOREVER);
+	/* Format cannot be set if the device is already streaming */
+	if (video_hdr->is_streaming) {
+		k_mutex_unlock(&video_hdr->lock);
+		return -EBUSY;
+	}
 	ret = api->set_format(dev, fmt);
 	k_mutex_unlock(&video_hdr->lock);
 
@@ -741,7 +746,14 @@ static inline int video_stream_start(const struct device *dev, enum video_buf_ty
 	video_hdr = (struct video_common_header *)dev->data;
 
 	k_mutex_lock(&video_hdr->lock, K_FOREVER);
+	if (video_hdr->is_streaming) {
+		k_mutex_unlock(&video_hdr->lock);
+		return -EALREADY;
+	}
 	ret = api->set_stream(dev, true, type);
+	if (ret == 0) {
+		video_hdr->is_streaming = true;
+	}
 	k_mutex_unlock(&video_hdr->lock);
 
 	return ret;
@@ -775,10 +787,16 @@ static inline int video_stream_stop(const struct device *dev, enum video_buf_typ
 	video_hdr = (struct video_common_header *)dev->data;
 
 	k_mutex_lock(&video_hdr->lock, K_FOREVER);
+	if (!video_hdr->is_streaming) {
+		k_mutex_unlock(&video_hdr->lock);
+		return -EALREADY;
+	}
 	ret = api->set_stream(dev, false, type);
 	if (ret < 0) {
 		k_mutex_unlock(&video_hdr->lock);
 		return ret;
+	} else if (ret == 0) {
+		video_hdr->is_streaming = false;
 	}
 	ret = api->flush(dev, true);
 	k_mutex_unlock(&video_hdr->lock);
