@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT analog_ad74115h
+#define DT_DRV_COMPAT adi_ad74115h
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/spi.h>
