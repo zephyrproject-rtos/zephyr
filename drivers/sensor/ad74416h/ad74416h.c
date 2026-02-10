@@ -40,10 +40,14 @@ static int ad74416h_access(const struct device *dev, uint8_t reg, uint16_t val_i
     struct spi_buf_set rx_s = { .buffers = &rx_b, .count = 1 };
 
     int ret = spi_transceive_dt(&config->spi, &tx_s, &rx_s);
-    if (ret) return ret;
+    if (ret) {
+	return ret;
+    }
 
     if (val_out) {
-        if (rx[4] != ad74416h_crc8(rx, 4)) return -EIO;
+        if (rx[4] != ad74416h_crc8(rx, 4)) {
+		return -EIO;
+	}
         *val_out = (rx[2] << 8) | rx[3];
     }
     return 0;
@@ -68,9 +72,13 @@ static int ad74416h_gpio_config(const struct device *dev, gpio_pin_t pin, gpio_f
 static int ad74416h_gpio_set_bits(const struct device *dev, uint32_t mask, uint32_t value) {
     for (int i = 0; i < 4; i++) {
         if (mask & BIT(i)) {
-            uint16_t reg;
+            uint16_t reg = 0;
             ad74416h_read(dev, AD74416H_REG_DO_EXT_CONFIG(i), &reg);
-            if (value & BIT(i)) reg |= BIT(7); else reg &= ~BIT(7);
+            if (value & BIT(i)) {
+		    reg |= BIT(7); 
+            else {
+		    reg &= ~BIT(7);
+	    }
             ad74416h_access(dev, AD74416H_REG_DO_EXT_CONFIG(i), reg, NULL);
         }
     }
@@ -79,7 +87,7 @@ static int ad74416h_gpio_set_bits(const struct device *dev, uint32_t mask, uint3
 
 static const struct gpio_driver_api ad74416h_gpio_api = {
     .pin_configure = ad74416h_gpio_config,
-    .port_set_bits_raw = ad74416h_gpio_set_bits,
+    .port_set_bits_raw = &ad74416h_gpio_set_bits,
 };
 
 /* --- DAC API --- */
@@ -109,7 +117,7 @@ static int ad74416h_sample_fetch(const struct device *dev, enum sensor_channel c
         ad74416h_read(dev, AD74416H_REG_ADC_RESULT_UPR(i), &upr);
         ad74416h_read(dev, AD74416H_REG_ADC_RESULT(i), &lwr);
         uint32_t raw = ((upr & 0xFF) << 16) | lwr;
-        data->raw_results[i] = (raw & 0x800000) ? (int32_t)(raw | 0xFF000000) : (int32_t)raw;
+        data->raw_results[i] = (raw & 0x800000) ? (int32_t)(raw | 0xFF000000U) : (int32_t)raw;
     }
     k_mutex_unlock(&data->lock);
     return 0;
@@ -118,7 +126,9 @@ static int ad74416h_sample_fetch(const struct device *dev, enum sensor_channel c
 static int ad74416h_channel_get(const struct device *dev, enum sensor_channel chan, struct sensor_value *val) {
     struct ad74416h_data *data = dev->data;
     int ch = chan - SENSOR_CHAN_VOLTAGE;
-    if (ch < 0 || ch > 3) return -ENOTSUP;
+    if (ch < 0 || ch > 3) {
+	return -ENOTSUP;
+    }
 
     double v = (double)data->raw_results[ch] * 12.0 / 16777216.0;
     v = (v * data->cal[ch].gain) + data->cal[ch].offset;
@@ -134,7 +144,7 @@ static int ad74416h_channel_get(const struct device *dev, enum sensor_channel ch
     return 0;
 }
 
-static const struct sensor_driver_api ad74416h_sensor_api = {
+static DEVICE_API(sensor, ad74416h_sensor_api) = {
     .sample_fetch = ad74416h_sample_fetch,
     .channel_get = ad74416h_channel_get,
 };
@@ -169,7 +179,9 @@ static int ad74416h_init(const struct device *dev) {
     /* Verify Silicon */
     uint16_t rev;
     ad74416h_read(dev, AD74416H_REG_SILICON_REV, &rev);
-    if (rev != 0x0002) return -ENODEV;
+    if (rev != 0x0002){ 
+	    return -ENODEV;
+    }
 
     for(int i=0; i<4; i++) {
         data->cal[i].gain = 1.0; data->cal[i].offset = 0.0;
