@@ -11,19 +11,6 @@
 / {
 	model = "Nordic nRF54L15 TAG nRF54L15 FLPR MCU";
 	compatible = "nordic,nrf54l15tag_nrf54l15-cpuflpr";
-
-	soc {
-		/* Resize SRAM partition */
-		/delete-node/ memory@2002f000;
-
-		cpuflpr_sram: memory@20028000 {
-			compatible = "mmio-sram";
-			reg = <0x20028000 DT_SIZE_K(96)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			ranges = <0x0 0x20028000 0x18000>;
-		};
-	};
 };
 
 &cpuflpr_rram {
