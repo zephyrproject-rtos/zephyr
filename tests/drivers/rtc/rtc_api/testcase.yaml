@@ -2,26 +2,29 @@
 # Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
+common:
+  tags:
+    - drivers
+    - rtc
+    - api
+  depends_on: rtc
+  timeout: 100
+
 tests:
   drivers.rtc.rtc_api:
-    tags:
-      - drivers
-      - rtc
-      - api
     filter: dt_alias_exists("rtc") and not dt_compat_enabled("zephyr,rtc-counter")
-    depends_on: rtc
-    timeout: 100
+            and not dt_compat_enabled("st,stm32-rtc")
     platform_exclude:
       - qemu_x86_64
 
+  drivers.rtc.rtc_api.stm32:
+    filter: dt_alias_exists("rtc") and not dt_compat_enabled("zephyr,rtc-counter")
+            and dt_compat_enabled("st,stm32-rtc")
+    required_snippets:
+      - st-rtc-alarm
+
   drivers.rtc.rtc_api.rtc_counter:
-    tags:
-      - drivers
-      - rtc
-      - api
     filter: dt_alias_exists("rtc") and dt_compat_enabled("zephyr,rtc-counter")
-    depends_on: rtc
-    timeout: 100
     extra_configs:
       - CONFIG_RTC_ALARM=y
       - CONFIG_RTC_INIT_PRIORITY=70
