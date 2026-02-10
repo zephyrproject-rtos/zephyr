@@ -103,6 +103,9 @@ struct adt7420_data {
 struct adt7420_dev_config {
 	struct i2c_dt_spec i2c;
 	uint8_t init_op_mode;
+	uint8_t id_mask;
+	uint8_t max_temp;
+	int8_t min_temp;
 	bool ct_pol;
 	bool int_pol;
 	bool ct_mode;

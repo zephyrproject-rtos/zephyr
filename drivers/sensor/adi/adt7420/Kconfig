@@ -1,12 +1,13 @@
 # ADT7420 temperature sensor configuration options
 
-# Copyright (c) 2018 Analog Devices Inc.
+# Copyright (c) 2018, 2026 Analog Devices Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig ADT7420
 	bool "ADT7420 Temperature Sensor"
 	default y
-	depends on DT_HAS_ADI_ADT7420_ENABLED
+	depends on DT_HAS_ADI_ADT7420_ENABLED || DT_HAS_ADI_ADT7410_ENABLED || \
+			DT_HAS_ADI_ADT7422_ENABLED
 	select I2C
 	help
 	  Enable the driver for Analog Devices ADT7420 High-Accuracy
@@ -24,12 +25,16 @@ config ADT7420_TEMP_HYST
 
 config ADT7420_TEMP_CRIT
 	int "Critical overtemperature in °C"
-	range -40 150
-	default 147
+	range -40 150 if $(dt_compat_enabled,$(DT_COMPAT_ADI_ADT7420))
+	range -55 150 if $(dt_compat_enabled,$(DT_COMPAT_ADI_ADT7410))
+	range -40 125 if $(dt_compat_enabled,$(DT_COMPAT_ADI_ADT7422))
+	default 147 if $(dt_compat_enabled,$(DT_COMPAT_ADI_ADT7410)) || \
+				$(dt_compat_enabled,$(DT_COMPAT_ADI_ADT7420))
+	default 125 if $(dt_compat_enabled,$(DT_COMPAT_ADI_ADT7422))
+
 	help
 	  The critical overtemperature pin asserts when the temperature
-	  exceeds this value. The default value of 147 is the reset default
-	  of the ADT7420.
+	  exceeds this value.
 
 choice
 	prompt "Trigger mode"
