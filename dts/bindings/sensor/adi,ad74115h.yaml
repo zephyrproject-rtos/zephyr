@@ -1,0 +1,20 @@
+description: |
+    Analog Devices AD74115H Single-Channel Software Configurable I/O.
+    Supports ADC (Sensor), DAC, and GPIO modes.
+compatible: "analog,ad74115h"
+include: [spi-device.yaml, gpio-controller.yaml]
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: GPIO specifier for the RESET pin (active low).
+  adc-rdy-gpios:
+    type: phandle-array
+    description: GPIO specifier for the ADC_RDY pin.
+  analog,ext-charge-pump:
+    type: boolean
+    description: Enable internal charge pump for negative AVSS generation.
+  "#gpio-cells":
+    const: 2
+gpio-cells:
+  - pin
+  - flags
