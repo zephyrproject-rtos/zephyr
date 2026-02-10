@@ -1,0 +1,7 @@
+config AD74115H
+	bool "AD74115H SW Configurable I/O Driver"
+	default y
+	depends on DT_HAS_ANALOG_AD74115H_ENABLED
+	select SPI
+	help
+	  Enable driver for Analog Devices AD74115H.
