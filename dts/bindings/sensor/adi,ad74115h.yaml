@@ -1,7 +1,7 @@
 description: |
     Analog Devices AD74115H Single-Channel Software Configurable I/O.
     Supports ADC (Sensor), DAC, and GPIO modes.
-compatible: "analog,ad74115h"
+compatible: "adi,ad74115h"
 include: [spi-device.yaml, gpio-controller.yaml]
 properties:
   reset-gpios:
