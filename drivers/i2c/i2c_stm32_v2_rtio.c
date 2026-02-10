@@ -66,7 +66,7 @@ static void i2c_stm32_master_mode_end(const struct device *dev)
 	struct i2c_stm32_data *data = dev->data;
 
 	data->master_active = false;
-	if (!data->slave_attached) {
+	if (!data->target_attached) {
 		LL_I2C_Disable(i2c);
 	}
 #else
@@ -84,35 +84,35 @@ static void i2c_stm32_target_event(const struct device *dev)
 	const struct i2c_target_callbacks *target_cb;
 	struct i2c_target_config *target_cfg = NULL;
 
-	if (data->slave_cfg != NULL) {
+	if (data->target_cfg != NULL) {
 		/**
-		 * Slave1 is configured and could be in 7- or 10-bit mode.
-		 * If 10-bit mode is enabled, Slave2 cannot be in use because
+		 * Target1 is configured and could be in 7- or 10-bit mode.
+		 * If 10-bit mode is enabled, Target2 cannot be in use because
 		 * it only supports 7-bit mode, so we know which cfg is matched.
 		 * If 7-bit mode is enabled, find the correct cfg based on
 		 * the I2C address sent by bus master.
 		 */
-		if (data->slave_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS) {
-			target_cfg = data->slave_cfg;
+		if (data->target_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS) {
+			target_cfg = data->target_cfg;
 		} else {
 			uint8_t target_address;
 
 			/* Choose the right target from the address match code */
 			target_address = LL_I2C_GetAddressMatchCode(i2c) >> 1;
-			if (target_address == data->slave_cfg->address) {
-				target_cfg = data->slave_cfg;
-			} else if (data->slave2_cfg != NULL &&
-				   target_address == data->slave2_cfg->address) {
-				target_cfg = data->slave2_cfg;
+			if (target_address == data->target_cfg->address) {
+				target_cfg = data->target_cfg;
+			} else if (data->target2_cfg != NULL &&
+				   target_address == data->target2_cfg->address) {
+				target_cfg = data->target2_cfg;
 			}
 		}
 
 	} else {
 		/**
-		 * If we received an event but Slave1 is not configured,
-		 * then Slave2 should be the target for the event.
+		 * If we received an event but Target1 is not configured,
+		 * then Target2 should be the target for the event.
 		 */
-		target_cfg = data->slave2_cfg;
+		target_cfg = data->target2_cfg;
 	}
 
 	if (target_cfg == NULL) {
@@ -206,7 +206,7 @@ int i2c_stm32_target_register(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (data->slave_cfg && data->slave2_cfg) {
+	if (data->target_cfg && data->target2_cfg) {
 		return -EBUSY;
 	}
 
@@ -235,9 +235,9 @@ int i2c_stm32_target_register(const struct device *dev,
 
 	LL_I2C_Enable(i2c);
 
-	if (!data->slave_cfg) {
-		data->slave_cfg = config;
-		if (data->slave_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS)	{
+	if (!data->target_cfg) {
+		data->target_cfg = config;
+		if (data->target_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS)	{
 			LL_I2C_SetOwnAddress1(i2c, config->address, LL_I2C_OWNADDRESS1_10BIT);
 			LOG_DBG("i2c: target #1 registered with 10-bit address");
 		} else {
@@ -249,9 +249,9 @@ int i2c_stm32_target_register(const struct device *dev,
 
 		LOG_DBG("i2c: target #1 registered");
 	} else {
-		data->slave2_cfg = config;
+		data->target2_cfg = config;
 
-		if (data->slave2_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS)	{
+		if (data->target2_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS)	{
 			return -EINVAL;
 		}
 		LL_I2C_SetOwnAddress2(i2c, config->address << 1U,
@@ -260,7 +260,7 @@ int i2c_stm32_target_register(const struct device *dev,
 		LOG_DBG("i2c: target #2 registered");
 	}
 
-	data->slave_attached = true;
+	data->target_attached = true;
 
 	LL_I2C_EnableIT_ADDR(i2c);
 
@@ -274,7 +274,7 @@ int i2c_stm32_target_unregister(const struct device *dev,
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 
-	if (!data->slave_attached) {
+	if (!data->target_attached) {
 		return -EINVAL;
 	}
 
@@ -282,14 +282,14 @@ int i2c_stm32_target_unregister(const struct device *dev,
 		return -EBUSY;
 	}
 
-	if (config == data->slave_cfg) {
+	if (config == data->target_cfg) {
 		LL_I2C_DisableOwnAddress1(i2c);
-		data->slave_cfg = NULL;
+		data->target_cfg = NULL;
 
 		LOG_DBG("i2c: target #1 unregistered");
-	} else if (config == data->slave2_cfg) {
+	} else if (config == data->target2_cfg) {
 		LL_I2C_DisableOwnAddress2(i2c);
-		data->slave2_cfg = NULL;
+		data->target2_cfg = NULL;
 
 		LOG_DBG("i2c: target #2 unregistered");
 	} else {
@@ -297,8 +297,8 @@ int i2c_stm32_target_unregister(const struct device *dev,
 	}
 
 	/* Return if there is a target remaining */
-	if (data->slave_cfg || data->slave2_cfg) {
-		LOG_DBG("i2c: target#%c still registered", data->slave_cfg?'1':'2');
+	if (data->target_cfg || data->target2_cfg) {
+		LOG_DBG("i2c: target#%c still registered", data->target_cfg?'1':'2');
 		return 0;
 	}
 
@@ -323,7 +323,7 @@ int i2c_stm32_target_unregister(const struct device *dev,
 	/* Release the device */
 	(void)pm_device_runtime_put(dev);
 
-	data->slave_attached = false;
+	data->target_attached = false;
 
 	return 0;
 }
@@ -366,7 +366,7 @@ void i2c_stm32_event(const struct device *dev)
 	int ret = 0;
 
 #if defined(CONFIG_I2C_TARGET)
-	if (data->slave_attached && !data->master_active) {
+	if (data->target_attached && !data->master_active) {
 		i2c_stm32_target_event(dev);
 		return;
 	}
@@ -443,9 +443,9 @@ int i2c_stm32_error(const struct device *dev)
 #if defined(CONFIG_I2C_TARGET)
 	i2c_target_error_cb_t error_cb = NULL;
 
-	if (data->slave_attached && !data->master_active &&
-	    data->slave_cfg != NULL && data->slave_cfg->callbacks != NULL) {
-		error_cb = data->slave_cfg->callbacks->error;
+	if (data->target_attached && !data->master_active &&
+	    data->target_cfg != NULL && data->target_cfg->callbacks != NULL) {
+		error_cb = data->target_cfg->callbacks->error;
 	}
 #endif
 
@@ -453,14 +453,14 @@ int i2c_stm32_error(const struct device *dev)
 		LL_I2C_ClearFlag_ARLO(i2c);
 #if defined(CONFIG_I2C_TARGET)
 		if (error_cb != NULL) {
-			error_cb(data->slave_cfg, I2C_ERROR_ARBITRATION);
+			error_cb(data->target_cfg, I2C_ERROR_ARBITRATION);
 		}
 #endif
 		ret = -EIO;
 	}
 
 #if defined(CONFIG_I2C_TARGET)
-	if (data->slave_attached && !data->master_active) {
+	if (data->target_attached && !data->master_active) {
 		return ret;
 	}
 #endif

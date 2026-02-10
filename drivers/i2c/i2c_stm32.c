@@ -142,7 +142,7 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 #define OPERATION(msg) (((struct i2c_msg *) msg)->flags & I2C_MSG_RW_MASK)
 
 static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
-			      uint8_t num_msgs, uint16_t slave)
+			      uint8_t num_msgs, uint16_t target)
 {
 	struct i2c_stm32_data *data = dev->data;
 	struct i2c_msg *current;
@@ -208,7 +208,7 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 			next = current + 1;
 			next_msg_flags = &(next->flags);
 		}
-		ret = i2c_stm32_transaction(dev, *current, next_msg_flags, slave);
+		ret = i2c_stm32_transaction(dev, *current, next_msg_flags, target);
 		if (ret < 0) {
 			break;
 		}
