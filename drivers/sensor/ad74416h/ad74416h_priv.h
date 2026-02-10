@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2026 William Fish (Manulytica ltd)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef ZEPHYR_DRIVERS_SENSOR_AD74416H_PRIV_H_
 #define ZEPHYR_DRIVERS_SENSOR_AD74416H_PRIV_H_
 
