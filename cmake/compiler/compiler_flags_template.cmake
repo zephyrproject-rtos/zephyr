@@ -140,6 +140,9 @@ set_property(TARGET asm PROPERTY imacros)
 # Compiler flag for disabling pointer arithmetic warnings
 set_compiler_property(PROPERTY warning_no_pointer_arithmetic)
 
+# Compiler flag for disabling misleading indentation warnings
+set_compiler_property(PROPERTY warning_no_misleading_indentation)
+
 # Compiler flags for disabling position independent code / executable
 set_compiler_property(PROPERTY no_position_independent)
 
