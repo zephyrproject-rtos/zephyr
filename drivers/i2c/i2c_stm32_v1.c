@@ -118,7 +118,7 @@ static void i2c_stm32_reset(const struct device *dev)
 }
 
 
-static void i2c_stm32_master_finish(const struct device *dev)
+static void i2c_stm32_controller_finish(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
@@ -129,7 +129,7 @@ static void i2c_stm32_master_finish(const struct device *dev)
 #endif
 
 #if defined(CONFIG_I2C_TARGET)
-	data->master_active = false;
+	data->controller_active = false;
 	if (!data->target_attached && !data->smbalert_active) {
 		LL_I2C_Disable(i2c);
 	} else {
@@ -167,7 +167,7 @@ static inline void msg_init(const struct device *dev, struct i2c_msg *msg,
 	data->current.is_nack = 0U;
 	data->current.msg = msg;
 #if defined(CONFIG_I2C_TARGET)
-	data->master_active = true;
+	data->controller_active = true;
 #endif
 	data->target_address = target;
 
@@ -191,7 +191,7 @@ static int32_t msg_end(const struct device *dev, uint8_t *next_msg_flags,
 	}
 
 	if (!next_msg_flags) {
-		i2c_stm32_master_finish(dev);
+		i2c_stm32_controller_finish(dev);
 	}
 
 	return 0;
@@ -213,14 +213,14 @@ error:
 			data->current.is_err);
 		data->current.is_err = 0U;
 	}
-	i2c_stm32_master_finish(dev);
+	i2c_stm32_controller_finish(dev);
 
 	return -EIO;
 }
 
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 
-static void i2c_stm32_master_mode_end(const struct device *dev)
+static void i2c_stm32_controller_mode_end(const struct device *dev)
 {
 	struct i2c_stm32_data *data = dev->data;
 
@@ -501,7 +501,7 @@ int i2c_stm32_target_register(const struct device *dev, struct i2c_target_config
 		return -EBUSY;
 	}
 
-	if (data->master_active) {
+	if (data->controller_active) {
 		return -EBUSY;
 	}
 
@@ -541,7 +541,7 @@ int i2c_stm32_target_unregister(const struct device *dev, struct i2c_target_conf
 		return -EINVAL;
 	}
 
-	if (data->master_active) {
+	if (data->controller_active) {
 		return -EBUSY;
 	}
 
@@ -570,7 +570,7 @@ void i2c_stm32_event(const struct device *dev)
 	I2C_TypeDef *i2c = cfg->i2c;
 
 #if defined(CONFIG_I2C_TARGET)
-	if (data->target_attached && !data->master_active) {
+	if (data->target_attached && !data->controller_active) {
 		i2c_stm32_target_event(dev);
 		return;
 	}
@@ -600,7 +600,7 @@ int i2c_stm32_error(const struct device *dev)
 #if defined(CONFIG_I2C_TARGET)
 	i2c_target_error_cb_t error_cb = NULL;
 
-	if (data->target_attached && !data->master_active &&
+	if (data->target_attached && !data->controller_active &&
 	    data->target_cfg != NULL && data->target_cfg->callbacks != NULL) {
 		error_cb = data->target_cfg->callbacks->error;
 	}
@@ -661,11 +661,11 @@ int i2c_stm32_error(const struct device *dev)
 	return 0;
 end:
 #if defined(CONFIG_I2C_TARGET)
-	if (!data->target_attached || data->master_active) {
-		i2c_stm32_master_mode_end(dev);
+	if (!data->target_attached || data->controller_active) {
+		i2c_stm32_controller_mode_end(dev);
 	}
 #else
-	i2c_stm32_master_mode_end(dev);
+	i2c_stm32_controller_mode_end(dev);
 #endif
 	return -EIO;
 }

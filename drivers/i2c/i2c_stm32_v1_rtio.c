@@ -64,7 +64,7 @@ static void i2c_stm32_generate_start_condition(I2C_TypeDef *i2c)
 	LL_I2C_GenerateStartCondition(i2c);
 }
 
-static void i2c_stm32_master_mode_end(const struct device *dev, int status)
+static void i2c_stm32_controller_mode_end(const struct device *dev, int status)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
@@ -74,7 +74,7 @@ static void i2c_stm32_master_mode_end(const struct device *dev, int status)
 	i2c_stm32_disable_transfer_interrupts(dev);
 
 #if defined(CONFIG_I2C_TARGET)
-	data->master_active = false;
+	data->controller_active = false;
 	if (data->target_attached) {
 		i2c_stm32_enable_transfer_interrupts(dev);
 		LL_I2C_AcknowledgeNextData(i2c, LL_I2C_ACK);
@@ -189,7 +189,7 @@ static void handle_txe(const struct device *dev)
 			/* Read DR to clear BTF flag */
 			LL_I2C_ReceiveData8(i2c);
 		}
-		i2c_stm32_master_mode_end(dev, 0);
+		i2c_stm32_controller_mode_end(dev, 0);
 	}
 }
 
@@ -204,7 +204,7 @@ static void handle_rxne(const struct device *dev)
 		if ((data->xfer_flags & I2C_MSG_STOP) != 0) {
 			LL_I2C_GenerateStopCondition(i2c);
 		}
-		i2c_stm32_master_mode_end(dev, 0);
+		i2c_stm32_controller_mode_end(dev, 0);
 		break;
 	case 1:
 		LL_I2C_AcknowledgeNextData(i2c, LL_I2C_NACK);
@@ -217,7 +217,7 @@ static void handle_rxne(const struct device *dev)
 		data->xfer_len--;
 		*data->xfer_buf = LL_I2C_ReceiveData8(i2c);
 		data->xfer_buf++;
-		i2c_stm32_master_mode_end(dev, 0);
+		i2c_stm32_controller_mode_end(dev, 0);
 		break;
 	case 2:
 		/*
@@ -272,7 +272,7 @@ static void handle_btf(const struct device *dev)
 				*data->xfer_buf = LL_I2C_ReceiveData8(i2c);
 				data->xfer_buf++;
 			}
-			i2c_stm32_master_mode_end(dev, 0);
+			i2c_stm32_controller_mode_end(dev, 0);
 			break;
 		case 3:
 			/* Set NACK before reading N-2 byte*/
@@ -359,7 +359,7 @@ int i2c_stm32_target_register(const struct device *dev, struct i2c_target_config
 		return -EBUSY;
 	}
 
-	if (data->master_active) {
+	if (data->controller_active) {
 		return -EBUSY;
 	}
 
@@ -399,7 +399,7 @@ int i2c_stm32_target_unregister(const struct device *dev, struct i2c_target_conf
 		return -EINVAL;
 	}
 
-	if (data->master_active) {
+	if (data->controller_active) {
 		return -EBUSY;
 	}
 
@@ -425,7 +425,7 @@ void i2c_stm32_event(const struct device *dev)
 	I2C_TypeDef *i2c = cfg->i2c;
 
 #if defined(CONFIG_I2C_TARGET)
-	if (data->target_attached && !data->master_active) {
+	if (data->target_attached && !data->controller_active) {
 		i2c_stm32_target_event(dev);
 		return;
 	}
@@ -455,7 +455,7 @@ int i2c_stm32_error(const struct device *dev)
 	struct i2c_stm32_data *data = dev->data;
 	i2c_target_error_cb_t error_cb = NULL;
 
-	if (data->target_attached && !data->master_active &&
+	if (data->target_attached && !data->controller_active &&
 	    data->target_cfg != NULL && data->target_cfg->callbacks != NULL) {
 		error_cb = data->target_cfg->callbacks->error;
 	}
@@ -494,11 +494,11 @@ int i2c_stm32_error(const struct device *dev)
 	return 0;
 error:
 #if defined(CONFIG_I2C_TARGET)
-	if (!data->target_attached || data->master_active) {
-		i2c_stm32_master_mode_end(dev, -EIO);
+	if (!data->target_attached || data->controller_active) {
+		i2c_stm32_controller_mode_end(dev, -EIO);
 	}
 #else
-	i2c_stm32_master_mode_end(dev, -EIO);
+	i2c_stm32_controller_mode_end(dev, -EIO);
 #endif
 	return -EIO;
 
@@ -518,7 +518,7 @@ int i2c_stm32_msg_start(const struct device *dev, uint8_t flags,
 	data->is_restart = 0;
 	data->target_address = i2c_addr;
 #if defined(CONFIG_I2C_TARGET)
-	data->master_active = true;
+	data->controller_active = true;
 #endif
 
 	LL_I2C_Enable(i2c);
