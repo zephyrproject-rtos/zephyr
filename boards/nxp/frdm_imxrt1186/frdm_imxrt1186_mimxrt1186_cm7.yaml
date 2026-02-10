@@ -16,4 +16,5 @@ supported:
   - gpio
   - can
   - uart
+  - mbox
 vendor: nxp
