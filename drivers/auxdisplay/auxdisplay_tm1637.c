@@ -329,7 +329,7 @@ static int tm1637_initialize(const struct device *dev)
 	return tm1637_auxdisplay_clear(dev);
 }
 
-static const struct auxdisplay_driver_api tm1637_auxdisplay_api = {
+static DEVICE_API(auxdisplay, tm1637_auxdisplay_api) = {
 	.write = tm1637_auxdisplay_write,
 	.clear = tm1637_auxdisplay_clear,
 	.brightness_set = tm1637_auxdisplay_set_brightness,
