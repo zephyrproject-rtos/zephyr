@@ -373,9 +373,7 @@ static void renesas_ra_ssie_idle_dir_both_handle(const struct device *dev)
 		}
 	}
 
-	k_mem_slab_free(dev_data->tx_cfg.mem_slab, stream_tx->mem_block);
-	stream_tx->mem_block = NULL;
-	stream_tx->mem_block_len = 0;
+	free_buffer_when_stop(&dev_data->tx_cfg, stream_tx);
 
 	ret = renesas_ra_ssie_tx_rx_start_transfer(dev);
 	if (ret < 0) {
@@ -446,7 +444,6 @@ static void renesas_ra_ssie_tx_callback(const struct device *dev)
 {
 	struct renesas_ra_ssie_data *const dev_data = dev->data;
 	struct renesas_ra_ssie_stream *tx_stream = &dev_data->tx_stream;
-	struct renesas_ra_ssie_stream tx_msg;
 	fsp_err_t fsp_err;
 	int ret;
 
@@ -464,17 +461,15 @@ static void renesas_ra_ssie_tx_callback(const struct device *dev)
 			}
 		}
 
-		ret = i2s_renesas_ra_get_stream(&dev_data->tx_queue, &tx_msg, K_NO_WAIT);
+		free_buffer_when_stop(&dev_data->tx_cfg, tx_stream);
+
+		ret = i2s_renesas_ra_get_stream(&dev_data->tx_queue, tx_stream, K_NO_WAIT);
 		if (ret < 0) {
 			goto tx_disable;
 		}
 
-		k_mem_slab_free(dev_data->tx_cfg.mem_slab, tx_stream->mem_block);
-
-		*tx_stream = tx_msg;
-
-		fsp_err =
-			R_SSI_Write(&dev_data->fsp_ctrl, tx_stream->mem_block, tx_stream->mem_block_len);
+		fsp_err = R_SSI_Write(&dev_data->fsp_ctrl, tx_stream->mem_block,
+				      tx_stream->mem_block_len);
 		if (fsp_err != FSP_SUCCESS) {
 			LOG_ERR("Failed to restart write data");
 		}
