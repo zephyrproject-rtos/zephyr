@@ -1,0 +1,21 @@
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+
+	ad74115h@0 {
+		compatible = "analog,ad74115h";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+		
+		/* Hardware Pins */
+		reset-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+		adc-rdy-gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+		
+		/* Driver Features */
+		analog,ext-charge-pump;
+		
+		status = "okay";
+	};
+};
