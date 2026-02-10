@@ -202,6 +202,97 @@ static int cmd_supported_reset_cause(const struct shell *sh, size_t argc,
 	return 0;
 }
 
+static inline const char *wakeup_cause_to_string(uint32_t cause)
+{
+	switch (cause) {
+	case WAKEUP_TIMER:
+		return "timer";
+
+	case WAKEUP_GPIO:
+		return "GPIO";
+
+	case WAKEUP_COPROCESSOR:
+		return "coprocessor";
+
+	case WAKEUP_TOUCHPAD:
+		return "touchpad";
+
+	case WAKEUP_UART:
+		return "UART";
+
+	case WAKEUP_WIFI:
+		return "Wi-Fi";
+
+	case WAKEUP_BT:
+		return "Bluetooth";
+
+	default:
+		return "unknown";
+	}
+}
+
+static void print_all_wakeup_causes(const struct shell *sh, uint32_t cause)
+{
+	for (uint32_t cause_mask = 1; cause_mask; cause_mask <<= 1) {
+		if (cause & cause_mask) {
+			shell_print(sh, "- %s", wakeup_cause_to_string(cause & cause_mask));
+		}
+	}
+}
+
+static int cmd_show_wakeup_cause(const struct shell *sh, size_t argc, char **argv)
+{
+	int res;
+	uint32_t cause;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	res = hwinfo_get_wakeup_cause(&cause);
+	if (res == -ENOSYS) {
+		shell_error(sh, "Not supported by hardware");
+		return res;
+	} else if (res != 0) {
+		shell_error(sh, "Error reading the wakeup cause [%d]", res);
+		return res;
+	}
+
+	if (cause != 0) {
+		shell_print(sh, "wakeup caused by:");
+		print_all_wakeup_causes(sh, cause);
+	} else {
+		shell_print(sh, "No wakeup cause set");
+	}
+
+	return 0;
+}
+
+static int cmd_supported_wakeup_cause(const struct shell *sh, size_t argc, char **argv)
+{
+	uint32_t cause;
+	int res;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	res = hwinfo_get_supported_wakeup_cause(&cause);
+	if (res == -ENOSYS) {
+		shell_error(sh, "Not supported by hardware");
+	} else if (res != 0) {
+		shell_error(sh, "Could not get the supported wakeup causes [%d]", res);
+		return res;
+	}
+
+	if (cause != 0) {
+		shell_print(sh, "supported wakeup causes:");
+		print_all_wakeup_causes(sh, cause);
+	} else {
+		shell_print(sh, "No wakeup causes supported");
+	}
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_reset_cause,
 	SHELL_CMD_ARG(show, NULL, "Show persistent reset causes",
 		      cmd_show_reset_cause, 1, 0),
@@ -213,11 +304,22 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_reset_cause,
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_hwinfo,
-	SHELL_CMD_ARG(devid, NULL, "Show device id", cmd_get_device_id, 1, 0),
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_wakeup_cause,
+			       SHELL_CMD_ARG(show, NULL, "Show wakeup cause", cmd_show_wakeup_cause,
+					     1, 0),
+			       SHELL_CMD_ARG(supported, NULL,
+					     "Get a list of all supported wakeup causes",
+					     cmd_supported_wakeup_cause, 1, 0),
+			       SHELL_SUBCMD_SET_END /* Array terminated. */
+);
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_hwinfo, SHELL_CMD_ARG(devid, NULL, "Show device id", cmd_get_device_id, 1, 0),
 	SHELL_CMD_ARG(deveui64, NULL, "Show device eui64", cmd_get_device_eui64, 1, 0),
-	SHELL_CMD_ARG(reset_cause, &sub_reset_cause, "Reset cause commands",
-		      cmd_show_reset_cause, 1, 0),
+	SHELL_CMD_ARG(reset_cause, &sub_reset_cause, "Reset cause commands", cmd_show_reset_cause,
+		      1, 0),
+	SHELL_CMD_ARG(wakeup_cause, &sub_wakeup_cause, "Wakeup cause commands",
+		      cmd_show_wakeup_cause, 1, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
