@@ -271,6 +271,29 @@ struct video_selection {
 };
 
 /**
+ * @brief Video framework common header structure
+ *
+ * Struct meant to be added as first element of data structure of all
+ * video driver in order to let framework do as much as possible of
+ * common work
+ */
+struct video_common_header {
+	/** device unique struct device pointer */
+	const struct device *dev;
+	/** device lock, used to serialize all video calls */
+	struct k_mutex lock;
+	/** variable to keep state of streaming of the device */
+	bool is_streaming;
+	/** pointer to the format advertised by the device. Keep
+	 * pointer here instead of structure to allow driver not
+	 * impacting format to simply report the format from their
+	 * source
+	 */
+	struct video_format *fmt;
+};
+
+
+/**
  * @typedef video_api_format_t
  * @brief Function pointer type for video_set/get_format()
  *
@@ -404,6 +427,8 @@ __subsystem struct video_driver_api {
 static inline int video_set_format(const struct device *dev, struct video_format *fmt)
 {
 	const struct video_driver_api *api;
+	struct video_common_header *video_hdr;
+	int ret;
 
 	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(fmt != NULL);
@@ -413,7 +438,13 @@ static inline int video_set_format(const struct device *dev, struct video_format
 		return -ENOSYS;
 	}
 
-	return api->set_format(dev, fmt);
+	video_hdr = (struct video_common_header *)dev->data;
+
+	k_mutex_lock(&video_hdr->lock, K_FOREVER);
+	ret = api->set_format(dev, fmt);
+	k_mutex_unlock(&video_hdr->lock);
+
+	return ret;
 }
 
 /**
@@ -429,6 +460,8 @@ static inline int video_set_format(const struct device *dev, struct video_format
 static inline int video_get_format(const struct device *dev, struct video_format *fmt)
 {
 	const struct video_driver_api *api;
+	struct video_common_header *video_hdr;
+	int ret;
 
 	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(fmt != NULL);
@@ -438,7 +471,13 @@ static inline int video_get_format(const struct device *dev, struct video_format
 		return -ENOSYS;
 	}
 
-	return api->get_format(dev, fmt);
+	video_hdr = (struct video_common_header *)dev->data;
+
+	k_mutex_lock(&video_hdr->lock, K_FOREVER);
+	ret = api->get_format(dev, fmt);
+	k_mutex_unlock(&video_hdr->lock);
+
+	return ret;
 }
 
 /**
@@ -460,6 +499,8 @@ static inline int video_get_format(const struct device *dev, struct video_format
 static inline int video_set_frmival(const struct device *dev, struct video_frmival *frmival)
 {
 	const struct video_driver_api *api;
+	struct video_common_header *video_hdr;
+	int ret;
 
 	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(frmival != NULL);
@@ -473,7 +514,13 @@ static inline int video_set_frmival(const struct device *dev, struct video_frmiv
 		return -ENOSYS;
 	}
 
-	return api->set_frmival(dev, frmival);
+	video_hdr = (struct video_common_header *)dev->data;
+
+	k_mutex_lock(&video_hdr->lock, K_FOREVER);
+	ret = api->set_frmival(dev, frmival);
+	k_mutex_unlock(&video_hdr->lock);
+
+	return ret;
 }
 
 /**
@@ -492,6 +539,8 @@ static inline int video_set_frmival(const struct device *dev, struct video_frmiv
 static inline int video_get_frmival(const struct device *dev, struct video_frmival *frmival)
 {
 	const struct video_driver_api *api;
+	struct video_common_header *video_hdr;
+	int ret;
 
 	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(frmival != NULL);
@@ -501,7 +550,13 @@ static inline int video_get_frmival(const struct device *dev, struct video_frmiv
 		return -ENOSYS;
 	}
 
-	return api->get_frmival(dev, frmival);
+	video_hdr = (struct video_common_header *)dev->data;
+
+	k_mutex_lock(&video_hdr->lock, K_FOREVER);
+	ret = api->get_frmival(dev, frmival);
+	k_mutex_unlock(&video_hdr->lock);
+
+	return ret;
 }
 
 /**
@@ -524,6 +579,8 @@ static inline int video_get_frmival(const struct device *dev, struct video_frmiv
 static inline int video_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
 	const struct video_driver_api *api;
+	struct video_common_header *video_hdr;
+	int ret;
 
 	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(fie != NULL);
@@ -534,7 +591,13 @@ static inline int video_enum_frmival(const struct device *dev, struct video_frmi
 		return -ENOSYS;
 	}
 
-	return api->enum_frmival(dev, fie);
+	video_hdr = (struct video_common_header *)dev->data;
+
+	k_mutex_lock(&video_hdr->lock, K_FOREVER);
+	ret = api->enum_frmival(dev, fie);
+	k_mutex_unlock(&video_hdr->lock);
+
+	return ret;
 }
 
 /**
@@ -553,6 +616,8 @@ static inline int video_enum_frmival(const struct device *dev, struct video_frmi
 static inline int video_enqueue(const struct device *dev, struct video_buffer *buf)
 {
 	const struct video_driver_api *api = (const struct video_driver_api *)dev->api;
+	struct video_common_header *video_hdr;
+	int ret;
 
 	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(buf != NULL);
@@ -563,7 +628,13 @@ static inline int video_enqueue(const struct device *dev, struct video_buffer *b
 		return -ENOSYS;
 	}
 
-	return api->enqueue(dev, buf);
+	video_hdr = (struct video_common_header *)dev->data;
+
+	k_mutex_lock(&video_hdr->lock, K_FOREVER);
+	ret = api->enqueue(dev, buf);
+	k_mutex_unlock(&video_hdr->lock);
+
+	return ret;
 }
 
 /**
@@ -584,6 +655,8 @@ static inline int video_dequeue(const struct device *dev, struct video_buffer **
 				k_timeout_t timeout)
 {
 	const struct video_driver_api *api;
+	struct video_common_header *video_hdr;
+	int ret;
 
 	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(buf != NULL);
@@ -593,7 +666,13 @@ static inline int video_dequeue(const struct device *dev, struct video_buffer **
 		return -ENOSYS;
 	}
 
-	return api->dequeue(dev, buf, timeout);
+	video_hdr = (struct video_common_header *)dev->data;
+
+	k_mutex_lock(&video_hdr->lock, K_FOREVER);
+	ret = api->dequeue(dev, buf, timeout);
+	k_mutex_unlock(&video_hdr->lock);
+
+	return ret;
 }
 
 /**
@@ -612,6 +691,8 @@ static inline int video_dequeue(const struct device *dev, struct video_buffer **
 static inline int video_flush(const struct device *dev, bool cancel)
 {
 	const struct video_driver_api *api;
+	struct video_common_header *video_hdr;
+	int ret;
 
 	__ASSERT_NO_MSG(dev != NULL);
 
@@ -620,7 +701,13 @@ static inline int video_flush(const struct device *dev, bool cancel)
 		return -ENOSYS;
 	}
 
-	return api->flush(dev, cancel);
+	video_hdr = (struct video_common_header *)dev->data;
+
+	k_mutex_lock(&video_hdr->lock, K_FOREVER);
+	ret = api->flush(dev, cancel);
+	k_mutex_unlock(&video_hdr->lock);
+
+	return ret;
 }
 
 /**
@@ -641,6 +728,8 @@ static inline int video_flush(const struct device *dev, bool cancel)
 static inline int video_stream_start(const struct device *dev, enum video_buf_type type)
 {
 	const struct video_driver_api *api;
+	struct video_common_header *video_hdr;
+	int ret;
 
 	__ASSERT_NO_MSG(dev != NULL);
 
@@ -649,7 +738,13 @@ static inline int video_stream_start(const struct device *dev, enum video_buf_ty
 		return -ENOSYS;
 	}
 
-	return api->set_stream(dev, true, type);
+	video_hdr = (struct video_common_header *)dev->data;
+
+	k_mutex_lock(&video_hdr->lock, K_FOREVER);
+	ret = api->set_stream(dev, true, type);
+	k_mutex_unlock(&video_hdr->lock);
+
+	return ret;
 }
 
 /**
@@ -667,6 +762,7 @@ static inline int video_stream_start(const struct device *dev, enum video_buf_ty
 static inline int video_stream_stop(const struct device *dev, enum video_buf_type type)
 {
 	const struct video_driver_api *api;
+	struct video_common_header *video_hdr;
 	int ret;
 
 	__ASSERT_NO_MSG(dev != NULL);
@@ -676,8 +772,16 @@ static inline int video_stream_stop(const struct device *dev, enum video_buf_typ
 		return -ENOSYS;
 	}
 
+	video_hdr = (struct video_common_header *)dev->data;
+
+	k_mutex_lock(&video_hdr->lock, K_FOREVER);
 	ret = api->set_stream(dev, false, type);
-	video_flush(dev, true);
+	if (ret < 0) {
+		k_mutex_unlock(&video_hdr->lock);
+		return ret;
+	}
+	ret = api->flush(dev, true);
+	k_mutex_unlock(&video_hdr->lock);
 
 	return ret;
 }
@@ -693,6 +797,8 @@ static inline int video_stream_stop(const struct device *dev, enum video_buf_typ
 static inline int video_get_caps(const struct device *dev, struct video_caps *caps)
 {
 	const struct video_driver_api *api;
+	struct video_common_header *video_hdr;
+	int ret;
 
 	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(caps != NULL);
@@ -702,7 +808,13 @@ static inline int video_get_caps(const struct device *dev, struct video_caps *ca
 		return -ENOSYS;
 	}
 
-	return api->get_caps(dev, caps);
+	video_hdr = (struct video_common_header *)dev->data;
+
+	k_mutex_lock(&video_hdr->lock, K_FOREVER);
+	ret = api->get_caps(dev, caps);
+	k_mutex_unlock(&video_hdr->lock);
+
+	return ret;
 }
 
 /**
@@ -785,6 +897,8 @@ void video_print_ctrl(const struct video_ctrl_query *const cq);
 static inline int video_set_signal(const struct device *dev, struct k_poll_signal *sig)
 {
 	const struct video_driver_api *api;
+	struct video_common_header *video_hdr;
+	int ret;
 
 	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(sig != NULL);
@@ -794,7 +908,13 @@ static inline int video_set_signal(const struct device *dev, struct k_poll_signa
 		return -ENOSYS;
 	}
 
-	return api->set_signal(dev, sig);
+	video_hdr = (struct video_common_header *)dev->data;
+
+	k_mutex_lock(&video_hdr->lock, K_FOREVER);
+	ret = api->set_signal(dev, sig);
+	k_mutex_unlock(&video_hdr->lock);
+
+	return ret;
 }
 
 /**
@@ -819,6 +939,8 @@ static inline int video_set_signal(const struct device *dev, struct k_poll_signa
 static inline int video_set_selection(const struct device *dev, struct video_selection *sel)
 {
 	const struct video_driver_api *api;
+	struct video_common_header *video_hdr;
+	int ret;
 
 	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(sel != NULL);
@@ -828,7 +950,13 @@ static inline int video_set_selection(const struct device *dev, struct video_sel
 		return -ENOSYS;
 	}
 
-	return api->set_selection(dev, sel);
+	video_hdr = (struct video_common_header *)dev->data;
+
+	k_mutex_lock(&video_hdr->lock, K_FOREVER);
+	ret = api->set_selection(dev, sel);
+	k_mutex_unlock(&video_hdr->lock);
+
+	return ret;
 }
 
 /**
@@ -851,6 +979,8 @@ static inline int video_set_selection(const struct device *dev, struct video_sel
 static inline int video_get_selection(const struct device *dev, struct video_selection *sel)
 {
 	const struct video_driver_api *api;
+	struct video_common_header *video_hdr;
+	int ret;
 
 	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(sel != NULL);
@@ -860,7 +990,13 @@ static inline int video_get_selection(const struct device *dev, struct video_sel
 		return -ENOSYS;
 	}
 
-	return api->get_selection(dev, sel);
+	video_hdr = (struct video_common_header *)dev->data;
+
+	k_mutex_lock(&video_hdr->lock, K_FOREVER);
+	ret = api->get_selection(dev, sel);
+	k_mutex_unlock(&video_hdr->lock);
+
+	return ret;
 }
 
 /**
