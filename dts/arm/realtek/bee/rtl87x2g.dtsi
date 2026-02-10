@@ -10,6 +10,7 @@
 #include <dt-bindings/pinctrl/rtl87x2g-pinctrl.h>
 #include <dt-bindings/clock/rtl87x2g-clocks.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	cpus {
@@ -384,6 +385,50 @@
 			reg = <0x40037000 0x34>;
 			interrupts = <58 0>;
 			clocks = <&cctl APB_CLK(KEYSCAN)>;
+			status = "disabled";
+		};
+
+		i2c0: i2c@40035800 {
+			compatible = "realtek,bee-i2c";
+			reg = <0x40035800 0xa0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <30 0>;
+			clocks = <&cctl APB_CLK(I2C0)>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@40035c00 {
+			compatible = "realtek,bee-i2c";
+			reg = <0x40035c00 0xa0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <31 0>;
+			clocks = <&cctl APB_CLK(I2C1)>;
+			status = "disabled";
+		};
+
+		i2c2: i2c@40036000 {
+			compatible = "realtek,bee-i2c";
+			reg = <0x40036000 0xa0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <32 0>;
+			clocks = <&cctl APB_CLK(I2C2)>;
+			status = "disabled";
+		};
+
+		i2c3: i2c@40036400 {
+			compatible = "realtek,bee-i2c";
+			reg = <0x40036400 0xa0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <33 0>;
+			clocks = <&cctl APB_CLK(I2C3)>;
 			status = "disabled";
 		};
 	};
