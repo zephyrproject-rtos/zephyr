@@ -11,7 +11,6 @@
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/mcc.h>
 #include <zephyr/bluetooth/audio/mcs.h>
-#include <zephyr/bluetooth/audio/media_proxy.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gap.h>
@@ -383,7 +382,7 @@ static void mcc_read_opcodes_supported_cb(struct bt_conn *conn, int err,
 	SET_FLAG(supported_opcodes_read);
 }
 
-static void mcc_send_search_cb(struct bt_conn *conn, int err, const struct bt_mcp_search *search)
+static void mcc_send_search_cb(struct bt_conn *conn, int err, const struct bt_mcs_search *search)
 {
 	if (err != 0) {
 		FAIL("Search send failed (%d)", err);
@@ -1363,8 +1362,8 @@ static void test_cp_goto_group(void)
 
 static void test_search(void)
 {
-	struct bt_mcp_search search = {0};
-	struct bt_mcp_sci sci = {0};
+	struct bt_mcs_search search = {0};
+	struct bt_mcs_sci sci = {0};
 	int err;
 
 	/* Invalid behavior */
@@ -1386,7 +1385,7 @@ static void test_search(void)
 		return;
 	}
 
-	search.len = SEARCH_LEN_MAX + 1;
+	search.len = BT_MCS_SEARCH_LEN_MAX + 1;
 
 	err = bt_mcc_send_search(default_conn, &search);
 	if (err == 0) {
@@ -1394,7 +1393,7 @@ static void test_search(void)
 		return;
 	}
 
-	search.len = SEARCH_LEN_MIN - 1;
+	search.len = BT_MCS_SEARCH_LEN_MIN - 1;
 
 	err = bt_mcc_send_search(default_conn, &search);
 	if (err == 0) {

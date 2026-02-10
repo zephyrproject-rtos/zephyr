@@ -12,7 +12,6 @@
 #include <string.h>
 
 #include <zephyr/bluetooth/addr.h>
-#include <zephyr/bluetooth/audio/media_proxy.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/mcc.h>
@@ -78,10 +77,10 @@ struct service_handles {
 
 struct service_handles svc_chrc_handles;
 
-#define SEARCH_LEN_MAX 64
+#define BT_MCS_SEARCH_LEN_MAX 64
 
-static struct net_buf_simple *rx_ev_buf = NET_BUF_SIMPLE(SEARCH_LEN_MAX +
-							 sizeof(struct btp_mcp_search_cp_ev));
+static struct net_buf_simple *rx_ev_buf =
+	NET_BUF_SIMPLE(BT_MCS_SEARCH_LEN_MAX + sizeof(struct btp_mcp_search_cp_ev));
 
 /* Media Control Profile */
 static void btp_send_mcp_found_ev(struct bt_conn *conn, uint8_t status,
@@ -343,10 +342,10 @@ static void btp_send_media_cp_ev(struct bt_conn *conn, uint8_t status, const str
 }
 
 static void btp_send_search_cp_ev(struct bt_conn *conn, uint8_t status,
-				  const struct bt_mcp_search *search)
+				  const struct bt_mcs_search *search)
 {
 	struct btp_mcp_search_cp_ev *ev;
-	uint8_t param[SEARCH_LEN_MAX];
+	uint8_t param[BT_MCS_SEARCH_LEN_MAX];
 
 	net_buf_simple_init(rx_ev_buf, 0);
 
@@ -357,7 +356,7 @@ static void btp_send_search_cp_ev(struct bt_conn *conn, uint8_t status,
 	ev->status = status;
 	ev->param_len = (uint8_t)search->search[0];
 
-	if (ev->param_len > (SEARCH_LEN_MAX - sizeof(ev->param_len))) {
+	if (ev->param_len > (BT_MCS_SEARCH_LEN_MAX - sizeof(ev->param_len))) {
 		return;
 	}
 
@@ -601,7 +600,7 @@ static void mcc_send_cmd_cb(struct bt_conn *conn, int err, const struct bt_mcs_c
 	btp_send_media_cp_ev(conn, err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS, cmd);
 }
 
-static void mcc_send_search_cb(struct bt_conn *conn, int err, const struct bt_mcp_search *search)
+static void mcc_send_search_cb(struct bt_conn *conn, int err, const struct bt_mcs_search *search)
 {
 	LOG_DBG("MCC Send Search cb (%d)", err);
 
@@ -1203,8 +1202,8 @@ static uint8_t mcp_cmd_send(const void *cmd, uint16_t cmd_len, void *rsp, uint16
 static uint8_t mcp_cmd_search(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_mcp_search_cmd *cp = cmd;
-	struct bt_mcp_search search_items;
-	struct bt_mcp_sci scp_cmd;
+	struct bt_mcs_search search_items;
+	struct bt_mcs_sci scp_cmd;
 	struct bt_conn *conn;
 	int err;
 
@@ -1239,7 +1238,7 @@ static uint8_t mcp_cmd_search(const void *cmd, uint16_t cmd_len, void *rsp, uint
 		       sizeof(scp_cmd.type));
 		search_items.len += sizeof(scp_cmd.type);
 	} else {
-		if (cp->param_len >= (SEARCH_LEN_MAX - 1)) {
+		if (cp->param_len >= (BT_MCS_SEARCH_LEN_MAX - 1)) {
 			return BTP_STATUS_FAILED;
 		}
 
@@ -1534,7 +1533,7 @@ static uint8_t mcs_inactive_state_set(const void *cmd, uint16_t cmd_len, void *r
 
 	LOG_DBG("MCS Set Media Player to inactive state");
 
-	bt_mcp_media_control_server_test_media_state_set(MEDIA_PROXY_STATE_INACTIVE);
+	bt_mcp_media_control_server_test_media_state_set(BT_MCS_MEDIA_STATE_INACTIVE);
 
 	err = bt_mcp_media_control_server_get_media_state(&rp->state);
 	if (err != 0) {

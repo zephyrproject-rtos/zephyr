@@ -17,7 +17,6 @@
 #include <zephyr/bluetooth/audio/ccid.h>
 #include <zephyr/bluetooth/audio/mcp.h>
 #include <zephyr/bluetooth/audio/mcs.h>
-#include <zephyr/bluetooth/audio/media_proxy.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/services/ots.h>
 #include <zephyr/bluetooth/conn.h>
@@ -42,7 +41,7 @@ LOG_MODULE_REGISTER(bt_mcp_media_control_server, CONFIG_BT_MCP_MEDIA_CONTROL_SER
 #define TRACK_POS_WORK_DELAY_MS 1000
 #define TRACK_POS_WORK_DELAY    K_MSEC(TRACK_POS_WORK_DELAY_MS)
 
-#define PLAYBACK_SPEED_PARAM_DEFAULT MEDIA_PROXY_PLAYBACK_SPEED_UNITY
+#define PLAYBACK_SPEED_PARAM_DEFAULT BT_MCS_PLAYBACK_SPEED_UNITY
 
 /* Temporary hardcoded setup for groups, tracks and segments */
 /* There is one parent group, which is the parent of a number of groups. */
@@ -247,12 +246,12 @@ static struct bt_mcp_media_control_server_player media_player = {
 	.icon_url = CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_ICON_URL,
 	.group = &group_1,
 	.track_pos = 0,
-	.state = MEDIA_PROXY_STATE_PAUSED,
+	.state = BT_MCS_MEDIA_STATE_PAUSED,
 	.playback_speed_param = PLAYBACK_SPEED_PARAM_DEFAULT,
-	.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO,
-	.playing_order = MEDIA_PROXY_PLAYING_ORDER_INORDER_REPEAT,
-	.playing_orders_supported = MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_INORDER_ONCE |
-				    MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_INORDER_REPEAT,
+	.seeking_speed_factor = BT_MCS_SEEKING_SPEED_FACTOR_ZERO,
+	.playing_order = BT_MCS_PLAYING_ORDERS_SUPPORTED_INORDER_REPEAT,
+	.playing_orders_supported = BT_MCS_PLAYING_ORDERS_SUPPORTED_INORDER_ONCE |
+				    BT_MCS_PLAYING_ORDERS_SUPPORTED_INORDER_REPEAT,
 	.opcodes_supported = 0x001fffff, /* All opcodes */
 #ifdef CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_OBJECTS
 	.search_results_id = 0,
@@ -409,7 +408,7 @@ static uint32_t setup_parent_group_object(struct bt_mcp_group *group)
 	/* pointer in the other direction, so it is not possible to go from */
 	/* the parent group to a group of tracks. */
 
-	uint8_t type = MEDIA_PROXY_GROUP_OBJECT_GROUP_TYPE;
+	uint8_t type = BT_MCS_GROUP_OBJECT_GROUP_TYPE;
 	uint8_t record_size = sizeof(type) + BT_OTS_OBJ_ID_SIZE;
 	int next_size = record_size;
 
@@ -441,7 +440,7 @@ static uint32_t setup_parent_group_object(struct bt_mcp_group *group)
 static uint32_t setup_group_object(struct bt_mcp_group *group)
 {
 	struct bt_mcp_track *track = group->track;
-	uint8_t type = MEDIA_PROXY_GROUP_OBJECT_TRACK_TYPE;
+	uint8_t type = BT_MCS_GROUP_OBJECT_TRACK_TYPE;
 	uint8_t record_size = sizeof(type) + BT_OTS_OBJ_ID_SIZE;
 	int next_size = record_size;
 
@@ -1320,12 +1319,12 @@ static void do_full_goto_group(struct bt_mcp_media_control_server_player *pl, in
 static void bt_mcp_set_state(uint8_t state)
 {
 	switch (state) {
-	case MEDIA_PROXY_STATE_INACTIVE:
-	case MEDIA_PROXY_STATE_PLAYING:
-	case MEDIA_PROXY_STATE_PAUSED:
+	case BT_MCS_MEDIA_STATE_INACTIVE:
+	case BT_MCS_MEDIA_STATE_PLAYING:
+	case BT_MCS_MEDIA_STATE_PAUSED:
 		(void)k_work_cancel_delayable(&media_player.pos_work);
 		break;
-	case MEDIA_PROXY_STATE_SEEKING:
+	case BT_MCS_MEDIA_STATE_SEEKING:
 		(void)k_work_schedule(&media_player.pos_work, TRACK_POS_WORK_DELAY);
 		break;
 	default:
@@ -1339,7 +1338,7 @@ static void bt_mcp_set_state(uint8_t state)
 /* Command handlers (state machines) */
 static uint8_t inactive_state_command_handler(const struct bt_mcs_cmd *command)
 {
-	uint8_t result_code = MEDIA_PROXY_CMD_SUCCESS;
+	uint8_t result_code = BT_MCS_OPC_NTF_SUCCESS;
 
 	LOG_DBG("Command opcode: %d", command->opcode);
 	if (IS_ENABLED(CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_LOG_LEVEL_DBG)) {
@@ -1348,24 +1347,24 @@ static uint8_t inactive_state_command_handler(const struct bt_mcs_cmd *command)
 		}
 	}
 	switch (command->opcode) {
-	case MEDIA_PROXY_OP_PLAY: /* Fall-through - handle several cases identically */
-	case MEDIA_PROXY_OP_PAUSE:
-	case MEDIA_PROXY_OP_FAST_REWIND:
-	case MEDIA_PROXY_OP_FAST_FORWARD:
-	case MEDIA_PROXY_OP_STOP:
-	case MEDIA_PROXY_OP_MOVE_RELATIVE:
-	case MEDIA_PROXY_OP_PREV_SEGMENT:
-	case MEDIA_PROXY_OP_NEXT_SEGMENT:
-	case MEDIA_PROXY_OP_FIRST_SEGMENT:
-	case MEDIA_PROXY_OP_LAST_SEGMENT:
-	case MEDIA_PROXY_OP_GOTO_SEGMENT:
-		result_code = MEDIA_PROXY_CMD_PLAYER_INACTIVE;
+	case BT_MCS_OPC_PLAY: /* Fall-through - handle several cases identically */
+	case BT_MCS_OPC_PAUSE:
+	case BT_MCS_OPC_FAST_REWIND:
+	case BT_MCS_OPC_FAST_FORWARD:
+	case BT_MCS_OPC_STOP:
+	case BT_MCS_OPC_MOVE_RELATIVE:
+	case BT_MCS_OPC_PREV_SEGMENT:
+	case BT_MCS_OPC_NEXT_SEGMENT:
+	case BT_MCS_OPC_FIRST_SEGMENT:
+	case BT_MCS_OPC_LAST_SEGMENT:
+	case BT_MCS_OPC_GOTO_SEGMENT:
+		result_code = BT_MCS_OPC_NTF_PLAYER_INACTIVE;
 		break;
-	case MEDIA_PROXY_OP_PREV_TRACK:
+	case BT_MCS_OPC_PREV_TRACK:
 		do_prev_track(&media_player);
-		bt_mcp_set_state(MEDIA_PROXY_STATE_PAUSED);
+		bt_mcp_set_state(BT_MCS_MEDIA_STATE_PAUSED);
 		break;
-	case MEDIA_PROXY_OP_NEXT_TRACK:
+	case BT_MCS_OPC_NEXT_TRACK:
 		/* TODO:
 		 * The case where the next track has been set explicitly breaks somewhat
 		 * with the "next" order hardcoded into the group and track structure
@@ -1374,52 +1373,52 @@ static uint8_t inactive_state_command_handler(const struct bt_mcs_cmd *command)
 
 		/* For next track, the position is kept if the track */
 		/* does not change */
-		bt_mcp_set_state(MEDIA_PROXY_STATE_PAUSED);
+		bt_mcp_set_state(BT_MCS_MEDIA_STATE_PAUSED);
 		break;
-	case MEDIA_PROXY_OP_FIRST_TRACK:
+	case BT_MCS_OPC_FIRST_TRACK:
 		do_first_track(&media_player, false);
-		bt_mcp_set_state(MEDIA_PROXY_STATE_PAUSED);
+		bt_mcp_set_state(BT_MCS_MEDIA_STATE_PAUSED);
 		break;
-	case MEDIA_PROXY_OP_LAST_TRACK:
+	case BT_MCS_OPC_LAST_TRACK:
 		do_last_track(&media_player);
-		bt_mcp_set_state(MEDIA_PROXY_STATE_PAUSED);
+		bt_mcp_set_state(BT_MCS_MEDIA_STATE_PAUSED);
 		break;
-	case MEDIA_PROXY_OP_GOTO_TRACK:
+	case BT_MCS_OPC_GOTO_TRACK:
 		if (command->use_param) {
 			do_goto_track(&media_player, command->param);
-			bt_mcp_set_state(MEDIA_PROXY_STATE_PAUSED);
+			bt_mcp_set_state(BT_MCS_MEDIA_STATE_PAUSED);
 		} else {
-			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 		break;
-	case MEDIA_PROXY_OP_PREV_GROUP:
+	case BT_MCS_OPC_PREV_GROUP:
 		do_full_prev_group(&media_player);
-		bt_mcp_set_state(MEDIA_PROXY_STATE_PAUSED);
+		bt_mcp_set_state(BT_MCS_MEDIA_STATE_PAUSED);
 		break;
-	case MEDIA_PROXY_OP_NEXT_GROUP:
+	case BT_MCS_OPC_NEXT_GROUP:
 		do_full_next_group(&media_player);
-		bt_mcp_set_state(MEDIA_PROXY_STATE_PAUSED);
+		bt_mcp_set_state(BT_MCS_MEDIA_STATE_PAUSED);
 		break;
-	case MEDIA_PROXY_OP_FIRST_GROUP:
+	case BT_MCS_OPC_FIRST_GROUP:
 		do_full_first_group(&media_player);
-		bt_mcp_set_state(MEDIA_PROXY_STATE_PAUSED);
+		bt_mcp_set_state(BT_MCS_MEDIA_STATE_PAUSED);
 		break;
-	case MEDIA_PROXY_OP_LAST_GROUP:
+	case BT_MCS_OPC_LAST_GROUP:
 		do_full_last_group(&media_player);
-		bt_mcp_set_state(MEDIA_PROXY_STATE_PAUSED);
+		bt_mcp_set_state(BT_MCS_MEDIA_STATE_PAUSED);
 		break;
-	case MEDIA_PROXY_OP_GOTO_GROUP:
+	case BT_MCS_OPC_GOTO_GROUP:
 		if (command->use_param) {
 			do_full_goto_group(&media_player, command->param);
-			bt_mcp_set_state(MEDIA_PROXY_STATE_PAUSED);
+			bt_mcp_set_state(BT_MCS_MEDIA_STATE_PAUSED);
 		} else {
-			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 
 		break;
 	default:
 		LOG_DBG("Invalid command: %d", command->opcode);
-		result_code = MEDIA_PROXY_CMD_NOT_SUPPORTED;
+		result_code = BT_MCS_OPC_NTF_NOT_SUPPORTED;
 		break;
 	}
 
@@ -1428,7 +1427,7 @@ static uint8_t inactive_state_command_handler(const struct bt_mcs_cmd *command)
 
 static uint8_t playing_state_command_handler(const struct bt_mcs_cmd *command)
 {
-	uint8_t result_code = MEDIA_PROXY_CMD_SUCCESS;
+	uint8_t result_code = BT_MCS_OPC_NTF_SUCCESS;
 
 	LOG_DBG("Command opcode: %d", command->opcode);
 	if (IS_ENABLED(CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_LOG_LEVEL_DBG)) {
@@ -1438,37 +1437,37 @@ static uint8_t playing_state_command_handler(const struct bt_mcs_cmd *command)
 	}
 
 	switch (command->opcode) {
-	case MEDIA_PROXY_OP_PLAY:
+	case BT_MCS_OPC_PLAY:
 		/* Continue playing - i.e. do nothing */
 		break;
-	case MEDIA_PROXY_OP_PAUSE:
-		bt_mcp_set_state(MEDIA_PROXY_STATE_PAUSED);
+	case BT_MCS_OPC_PAUSE:
+		bt_mcp_set_state(BT_MCS_MEDIA_STATE_PAUSED);
 		break;
-	case MEDIA_PROXY_OP_FAST_REWIND:
+	case BT_MCS_OPC_FAST_REWIND:
 		/* We're in playing state, seeking speed must have been zero */
 		media_player.seeking_speed_factor = -BT_MCP_SEEKING_SPEED_FACTOR_STEP;
-		bt_mcp_set_state(MEDIA_PROXY_STATE_SEEKING);
+		bt_mcp_set_state(BT_MCS_MEDIA_STATE_SEEKING);
 		bt_mcs_seeking_speed_changed();
 		break;
-	case MEDIA_PROXY_OP_FAST_FORWARD:
+	case BT_MCS_OPC_FAST_FORWARD:
 		/* We're in playing state, seeking speed must have been zero */
 		media_player.seeking_speed_factor = BT_MCP_SEEKING_SPEED_FACTOR_STEP;
-		bt_mcp_set_state(MEDIA_PROXY_STATE_SEEKING);
+		bt_mcp_set_state(BT_MCS_MEDIA_STATE_SEEKING);
 		bt_mcs_seeking_speed_changed();
 		break;
-	case MEDIA_PROXY_OP_STOP:
+	case BT_MCS_OPC_STOP:
 		set_track_position(0);
-		bt_mcp_set_state(MEDIA_PROXY_STATE_PAUSED);
+		bt_mcp_set_state(BT_MCS_MEDIA_STATE_PAUSED);
 		break;
-	case MEDIA_PROXY_OP_MOVE_RELATIVE:
+	case BT_MCS_OPC_MOVE_RELATIVE:
 		if (command->use_param) {
 			set_relative_track_position(command->param);
 		} else {
-			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 
 		break;
-	case MEDIA_PROXY_OP_PREV_SEGMENT:
+	case BT_MCS_OPC_PREV_SEGMENT:
 		/* Switch to previous segment if we are less than <margin> */
 		/* into the segment, otherwise go to start of segment */
 		if (media_player.track_pos - PREV_MARGIN <
@@ -1477,19 +1476,19 @@ static uint8_t playing_state_command_handler(const struct bt_mcs_cmd *command)
 		}
 		set_track_position(media_player.group->track->segment->pos);
 		break;
-	case MEDIA_PROXY_OP_NEXT_SEGMENT:
+	case BT_MCS_OPC_NEXT_SEGMENT:
 		do_next_segment(&media_player);
 		set_track_position(media_player.group->track->segment->pos);
 		break;
-	case MEDIA_PROXY_OP_FIRST_SEGMENT:
+	case BT_MCS_OPC_FIRST_SEGMENT:
 		do_first_segment(&media_player);
 		set_track_position(media_player.group->track->segment->pos);
 		break;
-	case MEDIA_PROXY_OP_LAST_SEGMENT:
+	case BT_MCS_OPC_LAST_SEGMENT:
 		do_last_segment(&media_player);
 		set_track_position(media_player.group->track->segment->pos);
 		break;
-	case MEDIA_PROXY_OP_GOTO_SEGMENT:
+	case BT_MCS_OPC_GOTO_SEGMENT:
 		if (command->use_param) {
 			if (command->param != 0) {
 				do_goto_segment(&media_player, command->param);
@@ -1498,52 +1497,52 @@ static uint8_t playing_state_command_handler(const struct bt_mcs_cmd *command)
 			/* the segment shall stay the same, and the */
 			/* track position shall not change. */
 		} else {
-			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 
 		break;
-	case MEDIA_PROXY_OP_PREV_TRACK:
+	case BT_MCS_OPC_PREV_TRACK:
 		do_prev_track(&media_player);
 		break;
-	case MEDIA_PROXY_OP_NEXT_TRACK:
+	case BT_MCS_OPC_NEXT_TRACK:
 		do_next_track(&media_player);
 		break;
-	case MEDIA_PROXY_OP_FIRST_TRACK:
+	case BT_MCS_OPC_FIRST_TRACK:
 		do_first_track(&media_player, false);
 		break;
-	case MEDIA_PROXY_OP_LAST_TRACK:
+	case BT_MCS_OPC_LAST_TRACK:
 		do_last_track(&media_player);
 		break;
-	case MEDIA_PROXY_OP_GOTO_TRACK:
+	case BT_MCS_OPC_GOTO_TRACK:
 		if (command->use_param) {
 			do_goto_track(&media_player, command->param);
 		} else {
-			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 
 		break;
-	case MEDIA_PROXY_OP_PREV_GROUP:
+	case BT_MCS_OPC_PREV_GROUP:
 		do_full_prev_group(&media_player);
 		break;
-	case MEDIA_PROXY_OP_NEXT_GROUP:
+	case BT_MCS_OPC_NEXT_GROUP:
 		do_full_next_group(&media_player);
 		break;
-	case MEDIA_PROXY_OP_FIRST_GROUP:
+	case BT_MCS_OPC_FIRST_GROUP:
 		do_full_first_group(&media_player);
 		break;
-	case MEDIA_PROXY_OP_LAST_GROUP:
+	case BT_MCS_OPC_LAST_GROUP:
 		do_full_last_group(&media_player);
 		break;
-	case MEDIA_PROXY_OP_GOTO_GROUP:
+	case BT_MCS_OPC_GOTO_GROUP:
 		if (command->use_param) {
 			do_full_goto_group(&media_player, command->param);
 		} else {
-			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 		break;
 	default:
 		LOG_DBG("Invalid command: %d", command->opcode);
-		result_code = MEDIA_PROXY_CMD_NOT_SUPPORTED;
+		result_code = BT_MCS_OPC_NTF_NOT_SUPPORTED;
 		break;
 	}
 
@@ -1552,7 +1551,7 @@ static uint8_t playing_state_command_handler(const struct bt_mcs_cmd *command)
 
 static uint8_t paused_state_command_handler(const struct bt_mcs_cmd *command)
 {
-	uint8_t result_code = MEDIA_PROXY_CMD_SUCCESS;
+	uint8_t result_code = BT_MCS_OPC_NTF_SUCCESS;
 
 	LOG_DBG("Command opcode: %d", command->opcode);
 	if (IS_ENABLED(CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_LOG_LEVEL_DBG)) {
@@ -1562,37 +1561,37 @@ static uint8_t paused_state_command_handler(const struct bt_mcs_cmd *command)
 	}
 
 	switch (command->opcode) {
-	case MEDIA_PROXY_OP_PLAY:
-		bt_mcp_set_state(MEDIA_PROXY_STATE_PLAYING);
+	case BT_MCS_OPC_PLAY:
+		bt_mcp_set_state(BT_MCS_MEDIA_STATE_PLAYING);
 		break;
-	case MEDIA_PROXY_OP_PAUSE:
+	case BT_MCS_OPC_PAUSE:
 		/* No change */
 		break;
-	case MEDIA_PROXY_OP_FAST_REWIND:
+	case BT_MCS_OPC_FAST_REWIND:
 		/* We're in paused state, seeking speed must have been zero */
 		media_player.seeking_speed_factor = -BT_MCP_SEEKING_SPEED_FACTOR_STEP;
-		bt_mcp_set_state(MEDIA_PROXY_STATE_SEEKING);
+		bt_mcp_set_state(BT_MCS_MEDIA_STATE_SEEKING);
 		bt_mcs_seeking_speed_changed();
 		break;
-	case MEDIA_PROXY_OP_FAST_FORWARD:
+	case BT_MCS_OPC_FAST_FORWARD:
 		/* We're in paused state, seeking speed must have been zero */
 		media_player.seeking_speed_factor = BT_MCP_SEEKING_SPEED_FACTOR_STEP;
-		bt_mcp_set_state(MEDIA_PROXY_STATE_SEEKING);
+		bt_mcp_set_state(BT_MCS_MEDIA_STATE_SEEKING);
 		bt_mcs_seeking_speed_changed();
 		break;
-	case MEDIA_PROXY_OP_STOP:
+	case BT_MCS_OPC_STOP:
 		set_track_position(0);
-		bt_mcp_set_state(MEDIA_PROXY_STATE_PAUSED);
+		bt_mcp_set_state(BT_MCS_MEDIA_STATE_PAUSED);
 		break;
-	case MEDIA_PROXY_OP_MOVE_RELATIVE:
+	case BT_MCS_OPC_MOVE_RELATIVE:
 		if (command->use_param) {
 			set_relative_track_position(command->param);
 		} else {
-			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 
 		break;
-	case MEDIA_PROXY_OP_PREV_SEGMENT:
+	case BT_MCS_OPC_PREV_SEGMENT:
 		/* Switch to previous segment if we are less than 5 seconds */
 		/* into the segment, otherwise go to start of segment */
 		if (media_player.group->track->segment != NULL) {
@@ -1603,38 +1602,38 @@ static uint8_t paused_state_command_handler(const struct bt_mcs_cmd *command)
 
 			set_track_position(media_player.group->track->segment->pos);
 		} else {
-			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 
 		break;
-	case MEDIA_PROXY_OP_NEXT_SEGMENT:
+	case BT_MCS_OPC_NEXT_SEGMENT:
 		if (media_player.group->track->segment != NULL) {
 			do_next_segment(&media_player);
 			set_track_position(media_player.group->track->segment->pos);
 		} else {
-			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 
 		break;
-	case MEDIA_PROXY_OP_FIRST_SEGMENT:
+	case BT_MCS_OPC_FIRST_SEGMENT:
 		if (media_player.group->track->segment != NULL) {
 			do_first_segment(&media_player);
 			set_track_position(media_player.group->track->segment->pos);
 		} else {
-			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 
 		break;
-	case MEDIA_PROXY_OP_LAST_SEGMENT:
+	case BT_MCS_OPC_LAST_SEGMENT:
 		if (media_player.group->track->segment != NULL) {
 			do_last_segment(&media_player);
 			set_track_position(media_player.group->track->segment->pos);
 		} else {
-			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 
 		break;
-	case MEDIA_PROXY_OP_GOTO_SEGMENT:
+	case BT_MCS_OPC_GOTO_SEGMENT:
 		if (command->use_param && media_player.group->track->segment != NULL) {
 			if (command->param != 0) {
 				do_goto_segment(&media_player, command->param);
@@ -1643,55 +1642,55 @@ static uint8_t paused_state_command_handler(const struct bt_mcs_cmd *command)
 			/* the segment shall stay the same, and the */
 			/* track position shall not change. */
 		} else {
-			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 
 		break;
-	case MEDIA_PROXY_OP_PREV_TRACK:
+	case BT_MCS_OPC_PREV_TRACK:
 		do_prev_track(&media_player);
 		break;
-	case MEDIA_PROXY_OP_NEXT_TRACK:
+	case BT_MCS_OPC_NEXT_TRACK:
 		do_next_track(&media_player);
 		/* For next track, the position is kept if the track */
 		/* does not change */
 		break;
-	case MEDIA_PROXY_OP_FIRST_TRACK:
+	case BT_MCS_OPC_FIRST_TRACK:
 		do_first_track(&media_player, false);
 		break;
-	case MEDIA_PROXY_OP_LAST_TRACK:
+	case BT_MCS_OPC_LAST_TRACK:
 		do_last_track(&media_player);
 		break;
-	case MEDIA_PROXY_OP_GOTO_TRACK:
+	case BT_MCS_OPC_GOTO_TRACK:
 		if (command->use_param) {
 			do_goto_track(&media_player, command->param);
 		} else {
-			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 
 		break;
-	case MEDIA_PROXY_OP_PREV_GROUP:
+	case BT_MCS_OPC_PREV_GROUP:
 		do_full_prev_group(&media_player);
 		break;
-	case MEDIA_PROXY_OP_NEXT_GROUP:
+	case BT_MCS_OPC_NEXT_GROUP:
 		do_full_next_group(&media_player);
 		break;
-	case MEDIA_PROXY_OP_FIRST_GROUP:
+	case BT_MCS_OPC_FIRST_GROUP:
 		do_full_first_group(&media_player);
 		break;
-	case MEDIA_PROXY_OP_LAST_GROUP:
+	case BT_MCS_OPC_LAST_GROUP:
 		do_full_last_group(&media_player);
 		break;
-	case MEDIA_PROXY_OP_GOTO_GROUP:
+	case BT_MCS_OPC_GOTO_GROUP:
 		if (command->use_param) {
 			do_full_goto_group(&media_player, command->param);
 		} else {
-			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 
 		break;
 	default:
 		LOG_DBG("Invalid command: %d", command->opcode);
-		result_code = MEDIA_PROXY_CMD_NOT_SUPPORTED;
+		result_code = BT_MCS_OPC_NTF_NOT_SUPPORTED;
 		break;
 	}
 
@@ -1700,7 +1699,7 @@ static uint8_t paused_state_command_handler(const struct bt_mcs_cmd *command)
 
 static uint8_t seeking_state_command_handler(const struct bt_mcs_cmd *command)
 {
-	uint8_t result_code = MEDIA_PROXY_CMD_SUCCESS;
+	uint8_t result_code = BT_MCS_OPC_NTF_SUCCESS;
 
 	LOG_DBG("Command opcode: %d", command->opcode);
 	if (IS_ENABLED(CONFIG_BT_MCP_MEDIA_CONTROL_SERVER_LOG_LEVEL_DBG)) {
@@ -1710,18 +1709,18 @@ static uint8_t seeking_state_command_handler(const struct bt_mcs_cmd *command)
 	}
 
 	switch (command->opcode) {
-	case MEDIA_PROXY_OP_PLAY:
-		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
-		bt_mcp_set_state(MEDIA_PROXY_STATE_PLAYING);
+	case BT_MCS_OPC_PLAY:
+		media_player.seeking_speed_factor = BT_MCS_SEEKING_SPEED_FACTOR_ZERO;
+		bt_mcp_set_state(BT_MCS_MEDIA_STATE_PLAYING);
 		bt_mcs_seeking_speed_changed();
 		break;
-	case MEDIA_PROXY_OP_PAUSE:
-		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
+	case BT_MCS_OPC_PAUSE:
+		media_player.seeking_speed_factor = BT_MCS_SEEKING_SPEED_FACTOR_ZERO;
 		/* TODO: Set track and track position */
-		bt_mcp_set_state(MEDIA_PROXY_STATE_PAUSED);
+		bt_mcp_set_state(BT_MCS_MEDIA_STATE_PAUSED);
 		bt_mcs_seeking_speed_changed();
 		break;
-	case MEDIA_PROXY_OP_FAST_REWIND:
+	case BT_MCS_OPC_FAST_REWIND:
 		/* TODO: Here, and for FAST_FORWARD */
 		/* Decide on algorithm for multiple presses - add step (as */
 		/* now) or double/half? */
@@ -1729,34 +1728,34 @@ static uint8_t seeking_state_command_handler(const struct bt_mcs_cmd *command)
 		/* Currently, the seeking speed may also become	 zero */
 		/* Lowest value allowed by spec is -64, notify on change only */
 		if (media_player.seeking_speed_factor >=
-		    -(MEDIA_PROXY_SEEKING_SPEED_FACTOR_MAX - BT_MCP_SEEKING_SPEED_FACTOR_STEP)) {
+		    -(BT_MCS_SEEKING_SPEED_FACTOR_MAX - BT_MCP_SEEKING_SPEED_FACTOR_STEP)) {
 			media_player.seeking_speed_factor -= BT_MCP_SEEKING_SPEED_FACTOR_STEP;
 			bt_mcs_seeking_speed_changed();
 		}
 		break;
-	case MEDIA_PROXY_OP_FAST_FORWARD:
+	case BT_MCS_OPC_FAST_FORWARD:
 		/* Highest value allowed by spec is 64, notify on change only */
 		if (media_player.seeking_speed_factor <=
-		    (MEDIA_PROXY_SEEKING_SPEED_FACTOR_MAX - BT_MCP_SEEKING_SPEED_FACTOR_STEP)) {
+		    (BT_MCS_SEEKING_SPEED_FACTOR_MAX - BT_MCP_SEEKING_SPEED_FACTOR_STEP)) {
 			media_player.seeking_speed_factor += BT_MCP_SEEKING_SPEED_FACTOR_STEP;
 			bt_mcs_seeking_speed_changed();
 		}
 		break;
-	case MEDIA_PROXY_OP_STOP:
-		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
+	case BT_MCS_OPC_STOP:
+		media_player.seeking_speed_factor = BT_MCS_SEEKING_SPEED_FACTOR_ZERO;
 		set_track_position(0);
-		bt_mcp_set_state(MEDIA_PROXY_STATE_PAUSED);
+		bt_mcp_set_state(BT_MCS_MEDIA_STATE_PAUSED);
 		bt_mcs_seeking_speed_changed();
 		break;
-	case MEDIA_PROXY_OP_MOVE_RELATIVE:
+	case BT_MCS_OPC_MOVE_RELATIVE:
 		if (command->use_param) {
 			set_relative_track_position(command->param);
 		} else {
-			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 
 		break;
-	case MEDIA_PROXY_OP_PREV_SEGMENT:
+	case BT_MCS_OPC_PREV_SEGMENT:
 		/* Switch to previous segment if we are less than 5 seconds */
 		/* into the segment, otherwise go to start of segment */
 		if (media_player.track_pos - PREV_MARGIN <
@@ -1765,19 +1764,19 @@ static uint8_t seeking_state_command_handler(const struct bt_mcs_cmd *command)
 		}
 		set_track_position(media_player.group->track->segment->pos);
 		break;
-	case MEDIA_PROXY_OP_NEXT_SEGMENT:
+	case BT_MCS_OPC_NEXT_SEGMENT:
 		do_next_segment(&media_player);
 		set_track_position(media_player.group->track->segment->pos);
 		break;
-	case MEDIA_PROXY_OP_FIRST_SEGMENT:
+	case BT_MCS_OPC_FIRST_SEGMENT:
 		do_first_segment(&media_player);
 		set_track_position(media_player.group->track->segment->pos);
 		break;
-	case MEDIA_PROXY_OP_LAST_SEGMENT:
+	case BT_MCS_OPC_LAST_SEGMENT:
 		do_last_segment(&media_player);
 		set_track_position(media_player.group->track->segment->pos);
 		break;
-	case MEDIA_PROXY_OP_GOTO_SEGMENT:
+	case BT_MCS_OPC_GOTO_SEGMENT:
 		if (command->use_param) {
 			if (command->param != 0) {
 				do_goto_segment(&media_player, command->param);
@@ -1786,74 +1785,75 @@ static uint8_t seeking_state_command_handler(const struct bt_mcs_cmd *command)
 			/* the segment shall stay the same, and the */
 			/* track position shall not change. */
 		} else {
-			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 		break;
-	case MEDIA_PROXY_OP_PREV_TRACK:
+	case BT_MCS_OPC_PREV_TRACK:
 		do_prev_track(&media_player);
-		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
-		bt_mcp_set_state(MEDIA_PROXY_STATE_PAUSED);
+		media_player.seeking_speed_factor = BT_MCS_SEEKING_SPEED_FACTOR_ZERO;
+		bt_mcp_set_state(BT_MCS_MEDIA_STATE_PAUSED);
 		break;
-	case MEDIA_PROXY_OP_NEXT_TRACK:
+	case BT_MCS_OPC_NEXT_TRACK:
 		do_next_track(&media_player);
 		/* For next track, the position is kept if the track */
 		/* does not change */
-		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
-		bt_mcp_set_state(MEDIA_PROXY_STATE_PAUSED);
+		media_player.seeking_speed_factor = BT_MCS_SEEKING_SPEED_FACTOR_ZERO;
+		bt_mcp_set_state(BT_MCS_MEDIA_STATE_PAUSED);
 		break;
-	case MEDIA_PROXY_OP_FIRST_TRACK:
+	case BT_MCS_OPC_FIRST_TRACK:
 		do_first_track(&media_player, false);
-		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
-		bt_mcp_set_state(MEDIA_PROXY_STATE_PAUSED);
+		media_player.seeking_speed_factor = BT_MCS_SEEKING_SPEED_FACTOR_ZERO;
+		bt_mcp_set_state(BT_MCS_MEDIA_STATE_PAUSED);
 		break;
-	case MEDIA_PROXY_OP_LAST_TRACK:
+	case BT_MCS_OPC_LAST_TRACK:
 		do_last_track(&media_player);
-		media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
-		bt_mcp_set_state(MEDIA_PROXY_STATE_PAUSED);
+		media_player.seeking_speed_factor = BT_MCS_SEEKING_SPEED_FACTOR_ZERO;
+		bt_mcp_set_state(BT_MCS_MEDIA_STATE_PAUSED);
 		break;
-	case MEDIA_PROXY_OP_GOTO_TRACK:
+	case BT_MCS_OPC_GOTO_TRACK:
 		if (command->use_param) {
 			do_goto_track(&media_player, command->param);
-			media_player.seeking_speed_factor = MEDIA_PROXY_SEEKING_SPEED_FACTOR_ZERO;
-			bt_mcp_set_state(MEDIA_PROXY_STATE_PAUSED);
+			media_player.seeking_speed_factor = BT_MCS_SEEKING_SPEED_FACTOR_ZERO;
+			bt_mcp_set_state(BT_MCS_MEDIA_STATE_PAUSED);
 		} else {
-			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 		break;
-	case MEDIA_PROXY_OP_PREV_GROUP:
+	case BT_MCS_OPC_PREV_GROUP:
 		do_full_prev_group(&media_player);
-		bt_mcp_set_state(MEDIA_PROXY_STATE_PAUSED);
+		bt_mcp_set_state(BT_MCS_MEDIA_STATE_PAUSED);
 		break;
-	case MEDIA_PROXY_OP_NEXT_GROUP:
+	case BT_MCS_OPC_NEXT_GROUP:
 		do_full_next_group(&media_player);
-		bt_mcp_set_state(MEDIA_PROXY_STATE_PAUSED);
+		bt_mcp_set_state(BT_MCS_MEDIA_STATE_PAUSED);
 		break;
-	case MEDIA_PROXY_OP_FIRST_GROUP:
+	case BT_MCS_OPC_FIRST_GROUP:
 		do_full_first_group(&media_player);
-		bt_mcp_set_state(MEDIA_PROXY_STATE_PAUSED);
+		bt_mcp_set_state(BT_MCS_MEDIA_STATE_PAUSED);
 		break;
-	case MEDIA_PROXY_OP_LAST_GROUP:
+	case BT_MCS_OPC_LAST_GROUP:
 		do_full_last_group(&media_player);
-		bt_mcp_set_state(MEDIA_PROXY_STATE_PAUSED);
+		bt_mcp_set_state(BT_MCS_MEDIA_STATE_PAUSED);
 		break;
-	case MEDIA_PROXY_OP_GOTO_GROUP:
+	case BT_MCS_OPC_GOTO_GROUP:
 		if (command->use_param) {
 			do_full_goto_group(&media_player, command->param);
-			bt_mcp_set_state(MEDIA_PROXY_STATE_PAUSED);
+			bt_mcp_set_state(BT_MCS_MEDIA_STATE_PAUSED);
 		} else {
-			result_code = MEDIA_PROXY_CMD_CANNOT_BE_COMPLETED;
+			result_code = BT_MCS_OPC_NTF_CANNOT_BE_COMPLETED;
 		}
 		break;
 	default:
 		LOG_DBG("Invalid command: %d", command->opcode);
-		result_code = MEDIA_PROXY_CMD_NOT_SUPPORTED;
+		result_code = BT_MCS_OPC_NTF_NOT_SUPPORTED;
 		break;
 	}
 
 	return result_code;
 }
 
-static uint8_t (*command_handlers[MEDIA_PROXY_STATE_LAST])(const struct bt_mcs_cmd *command) = {
+static uint8_t (*command_handlers[BT_MCS_MEDIA_STATE_SEEKING + 1])(
+	const struct bt_mcs_cmd *command) = {
 	inactive_state_command_handler,
 	playing_state_command_handler,
 	paused_state_command_handler,
@@ -2123,7 +2123,7 @@ static void set_track_position(int32_t position)
 		 * not be notified when the Media State is set to “Playing” and playback happens
 		 * at a constant speed.
 		 */
-		if (media_player.state != MEDIA_PROXY_STATE_PLAYING) {
+		if (media_player.state != BT_MCS_MEDIA_STATE_PLAYING) {
 			bt_mcs_track_position_changed();
 		}
 	}
@@ -2548,14 +2548,13 @@ int bt_mcp_media_control_server_command(const struct bt_mcs_cmd *command)
 		LOG_DBG("opcode: %d", command->opcode);
 	}
 
-	if (media_player.state < MEDIA_PROXY_STATE_LAST) {
-		ntf.requested_opcode = command->opcode;
-		ntf.result_code = command_handlers[media_player.state](command);
+	__ASSERT(media_player.state <= BT_MCS_MEDIA_STATE_SEEKING, "Invalid media_player state: %u",
+		 media_player.state);
 
-		bt_mcs_command_complete(&ntf);
-	} else {
-		LOG_DBG("INVALID STATE");
-	}
+	ntf.requested_opcode = command->opcode;
+	ntf.result_code = command_handlers[media_player.state](command);
+
+	bt_mcs_command_complete(&ntf);
 
 	return 0;
 }
@@ -2584,8 +2583,8 @@ static bool parse_sci(struct bt_data *data, void *user_data)
 	LOG_DBG("type: %u len %u", data->type, data->data_len);
 	LOG_HEXDUMP_DBG(data->data, data->data_len, "param:");
 
-	if (data->type < MEDIA_PROXY_SEARCH_TYPE_TRACK_NAME ||
-	    data->type > MEDIA_PROXY_SEARCH_TYPE_ONLY_GROUPS) {
+	if (data->type < BT_MCS_SEARCH_TYPE_TRACK_NAME ||
+	    data->type > BT_MCS_SEARCH_TYPE_ONLY_GROUPS) {
 		LOG_DBG("Invalid search type: %u", data->type);
 		return false;
 	}
@@ -2593,15 +2592,15 @@ static bool parse_sci(struct bt_data *data, void *user_data)
 	return true;
 }
 
-static void parse_search(const struct bt_mcp_search *search)
+static void parse_search(const struct bt_mcs_search *search)
 {
 	bool search_failed = false;
 
-	if (search->len > SEARCH_LEN_MAX) {
+	if (search->len > BT_MCS_SEARCH_LEN_MAX) {
 		LOG_WRN("Search too long (%d) - aborting", search->len);
 		search_failed = true;
 	} else {
-		uint8_t search_ltv[SEARCH_LEN_MAX];
+		uint8_t search_ltv[BT_MCS_SEARCH_LEN_MAX];
 		struct net_buf_simple buf;
 
 		/* Copy so that we can parse it using the net_buf_simple when search is const */
@@ -2621,19 +2620,19 @@ static void parse_search(const struct bt_mcp_search *search)
 
 	if (search_failed) {
 		media_player.search_results_id = 0;
-		bt_mcs_search_complete(MEDIA_PROXY_SEARCH_FAILURE);
+		bt_mcs_search_complete(BT_MCS_SCP_NTF_FAILURE);
 	} else {
 		/* Use current group as search result for now */
 		media_player.search_results_id = media_player.group->id;
-		bt_mcs_search_complete(MEDIA_PROXY_SEARCH_SUCCESS);
+		bt_mcs_search_complete(BT_MCS_SCP_NTF_SUCCESS);
 	}
 
 	bt_mcs_search_results_id_changed();
 }
 
-static void send_search(const struct bt_mcp_search *search)
+static void send_search(const struct bt_mcs_search *search)
 {
-	if (search->len > SEARCH_LEN_MAX) {
+	if (search->len > BT_MCS_SEARCH_LEN_MAX) {
 		LOG_WRN("Search too long: %d", search->len);
 	}
 
@@ -2642,7 +2641,7 @@ static void send_search(const struct bt_mcp_search *search)
 	parse_search(search);
 }
 
-int bt_mcp_media_control_server_search_command(const struct bt_mcp_search *search)
+int bt_mcp_media_control_server_search_command(const struct bt_mcs_search *search)
 {
 	if (search == NULL) {
 		LOG_DBG("search is NULL");
@@ -2695,10 +2694,10 @@ static void pos_work_cb(struct k_work *work)
 {
 	const int32_t pos_diff_cs = TRACK_POS_WORK_DELAY_MS / 10; /* position is in centiseconds*/
 
-	if (media_player.state == MEDIA_PROXY_STATE_SEEKING) {
+	if (media_player.state == BT_MCS_MEDIA_STATE_SEEKING) {
 		/* When seeking, apply the seeking speed factor */
 		set_relative_track_position(pos_diff_cs * media_player.seeking_speed_factor);
-	} else if (media_player.state == MEDIA_PROXY_STATE_PLAYING) {
+	} else if (media_player.state == BT_MCS_MEDIA_STATE_PLAYING) {
 		set_relative_track_position(pos_diff_cs);
 	}
 

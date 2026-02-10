@@ -1113,13 +1113,13 @@ static ssize_t write_search_control_point(struct bt_conn *conn, const struct bt_
 		return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 	}
 
-	struct bt_mcp_search search = {0};
+	struct bt_mcs_search search = {0};
 
 	if (offset != 0) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	if (len > SEARCH_LEN_MAX || len < SEARCH_LEN_MIN) {
+	if (len > BT_MCS_SEARCH_LEN_MAX || len < BT_MCS_SEARCH_LEN_MIN) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 

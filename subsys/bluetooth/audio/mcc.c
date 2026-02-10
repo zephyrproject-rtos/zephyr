@@ -17,7 +17,6 @@
 #include <zephyr/bluetooth/audio/mcc.h>
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/audio/mcs.h>
-#include <zephyr/bluetooth/audio/media_proxy.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
@@ -896,14 +895,13 @@ static void mcs_write_scp_cb(struct bt_conn *conn, uint8_t err,
 {
 	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, write_params);
 	int cb_err = err;
-	struct bt_mcp_search search = {0};
+	struct bt_mcs_search search = {0};
 
 	atomic_clear_bit(mcs_inst->flags, MCC_FLAG_BUSY);
 
 	if (err != 0) {
 		LOG_DBG("err: 0x%02x", err);
-	} else if (!params->data ||
-		   (params->length > SEARCH_LEN_MAX)) {
+	} else if (!params->data || (params->length > BT_MCS_SEARCH_LEN_MAX)) {
 		LOG_DBG("length: %d, data: %p", params->length, params->data);
 		cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	} else {
@@ -3142,7 +3140,7 @@ int bt_mcc_read_opcodes_supported(struct bt_conn *conn)
 #endif /* defined(CONFIG_BT_MCC_READ_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED) */
 
 #ifdef CONFIG_BT_MCC_OTS
-int bt_mcc_send_search(struct bt_conn *conn, const struct bt_mcp_search *search)
+int bt_mcc_send_search(struct bt_conn *conn, const struct bt_mcs_search *search)
 {
 	struct mcs_instance_t *mcs_inst;
 	int err;
@@ -3159,7 +3157,7 @@ int bt_mcc_send_search(struct bt_conn *conn, const struct bt_mcp_search *search)
 		return -EINVAL;
 	}
 
-	if (!IN_RANGE(search->len, SEARCH_LEN_MIN, SEARCH_LEN_MAX)) {
+	if (!IN_RANGE(search->len, BT_MCS_SEARCH_LEN_MIN, BT_MCS_SEARCH_LEN_MAX)) {
 		LOG_DBG("Invalid search->len: %u", search->len);
 
 		return -EINVAL;
