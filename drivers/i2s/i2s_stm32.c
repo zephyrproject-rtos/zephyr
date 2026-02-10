@@ -351,7 +351,7 @@ static int i2s_stm32_trigger(const struct device *dev, enum i2s_dir dir,
 			return -EIO;
 		}
 do_trigger_stop:
-		if (ll_func_i2s_dma_busy(cfg->i2s)) {
+		if (ll_i2s_dma_busy(cfg->i2s)) {
 			stream->state = I2S_STATE_STOPPING;
 			/*
 			 * Indicate that the transition to I2S_STATE_STOPPING
@@ -376,7 +376,7 @@ do_trigger_stop:
 
 		if (dir == I2S_DIR_TX) {
 			if ((queue_is_empty(stream->msgq) == false) ||
-						(ll_func_i2s_dma_busy(cfg->i2s))) {
+						(ll_i2s_dma_busy(cfg->i2s))) {
 				stream->state = I2S_STATE_STOPPING;
 				/*
 				 * Indicate that the transition to I2S_STATE_STOPPING
