@@ -905,6 +905,8 @@ CPU Frequency Scaling:
   maintainers:
     - peter-mitsis
     - seankyer
+  collaborators:
+    - ZhaoxiangJin
   files:
     - include/zephyr/cpu_freq/
     - subsys/cpu_freq/
