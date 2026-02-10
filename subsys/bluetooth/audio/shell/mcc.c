@@ -19,7 +19,6 @@
 #include <zephyr/bluetooth/audio/mcc.h>
 #include <zephyr/bluetooth/audio/mcp.h>
 #include <zephyr/bluetooth/audio/mcs.h>
-#include <zephyr/bluetooth/audio/media_proxy.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/services/ots.h>
@@ -471,7 +470,7 @@ static void mcc_read_opcodes_supported_cb(struct bt_conn *conn, int err,
 #endif /* defined(CONFIG_BT_MCC_READ_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED) */
 
 #ifdef CONFIG_BT_MCC_OTS
-static void mcc_send_search_cb(struct bt_conn *conn, int err, const struct bt_mcp_search *search)
+static void mcc_send_search_cb(struct bt_conn *conn, int err, const struct bt_mcs_search *search)
 {
 	ARG_UNUSED(conn);
 	ARG_UNUSED(search);
@@ -1723,7 +1722,7 @@ static int cmd_mcc_send_search_raw(const struct shell *sh, size_t argc,
 {
 	int result;
 	size_t len;
-	struct bt_mcp_search search;
+	struct bt_mcs_search search;
 
 	ARG_UNUSED(argc);
 
@@ -1751,9 +1750,9 @@ static int cmd_mcc_send_search_ioptest(const struct shell *sh, size_t argc,
 
 	/* Implementation follows Media control service testspec 0.9.0r13 */
 	/* Testcase MCS/SR/SCP/BV-01-C [Search Control Point], rounds 1 - 9 */
-	struct bt_mcp_sci sci_1 = {0};
-	struct bt_mcp_sci sci_2 = {0};
-	struct bt_mcp_search search;
+	struct bt_mcs_sci sci_1 = {0};
+	struct bt_mcs_sci sci_2 = {0};
+	struct bt_mcs_search search;
 	unsigned long testround;
 	int result = 0;
 
@@ -1853,7 +1852,7 @@ static int cmd_mcc_test_send_search_iop_invalid_type(const struct shell *sh,
 						     size_t argc, char *argv[])
 {
 	int result;
-	struct bt_mcp_search search;
+	struct bt_mcs_search search;
 
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -1884,7 +1883,7 @@ static int cmd_mcc_test_send_search_invalid_sci_len(const struct shell *sh,
 	/* in IOP testing */
 
 	int result;
-	struct bt_mcp_search search;
+	struct bt_mcs_search search;
 
 	char offending_search[9] = {6, 1, 't', 'r', 'a', 'c', 'k', 0, 1 };
 
