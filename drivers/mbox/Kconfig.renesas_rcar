@@ -1,0 +1,9 @@
+# Copyright (c) 2026 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config MBOX_RENESAS_RCAR_MFIS
+	bool "Renesas R-Car MFIS Driver"
+	default y
+	depends on DT_HAS_RENESAS_RCAR_MFIS_MBOX_ENABLED
+	help
+	  R-Car MFIS driver
