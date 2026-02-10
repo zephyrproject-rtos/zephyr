@@ -107,6 +107,9 @@ void pe_src_startup_entry(void *obj)
 	/* Set power role to Source */
 	pe->power_role = TC_ROLE_SOURCE;
 
+	/* Notify DPM of power role */
+	policy_notify(dev, POWER_ROLE_IS_SOURCE);
+
 	/* Invalidate explicit contract */
 	atomic_clear_bit(pe->flags, PE_FLAGS_EXPLICIT_CONTRACT);
 
