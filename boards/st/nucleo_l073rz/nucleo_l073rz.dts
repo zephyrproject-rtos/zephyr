@@ -60,6 +60,7 @@
 		eeprom-0 = &eeprom;
 		die-temp0 = &die_temp;
 		volt-sensor0 = &vref;
+		rtc = &rtc;
 	};
 };
 

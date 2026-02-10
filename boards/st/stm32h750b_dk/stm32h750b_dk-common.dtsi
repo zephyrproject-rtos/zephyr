@@ -62,6 +62,7 @@
 		led1 = &red_led;
 		sw0 = &user_button;
 		die-temp0 = &die_temp;
+		rtc = &rtc;
 	};
 };
 

@@ -32,6 +32,7 @@
 		volt-sensor0 = &vref1;
 		volt-sensor1 = &vbat4;
 		die-temp0 = &die_temp;
+		rtc = &rtc;
 	};
 };
 

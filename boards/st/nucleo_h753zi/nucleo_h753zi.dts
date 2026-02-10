@@ -64,6 +64,7 @@
 		sw0 = &user_button;
 		volt-sensor1 = &vbat;
 		watchdog0 = &iwdg;
+		rtc = &rtc;
 	};
 };
 

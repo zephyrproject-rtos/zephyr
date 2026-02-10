@@ -43,6 +43,7 @@
 		volt-sensor0 = &vref1;
 		volt-sensor1 = &vbat4;
 		eeprom-0 = &eeprom0;
+		rtc = &rtc;
 	};
 
 	psram: memory@90000000 {

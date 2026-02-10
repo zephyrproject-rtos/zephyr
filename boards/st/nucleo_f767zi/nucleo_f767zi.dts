@@ -68,6 +68,7 @@
 		watchdog0 = &iwdg;
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
+		rtc = &rtc;
 	};
 };
 
