@@ -1,0 +1,35 @@
+description: |
+    Analog Devices AD74416H Quad-Channel Software Configurable I/O.
+    This driver supports ADC (Sensor), DAC, and GPIO (Digital I/O) modes.
+
+compatible: "analog,ad74416h"
+
+include: [spi-device.yaml, gpio-controller.yaml]
+
+properties:
+  reg:
+    required: true
+  reset-gpios:
+    type: phandle-array
+    description: GPIO specifier for the RESET pin (active low).
+  adc-rdy-gpios:
+    type: phandle-array
+    description: GPIO specifier for the ADC_RDY pin.
+  alert-gpios:
+    type: phandle-array
+    description: GPIO specifier for the ALERT pin.
+  analog,adaptive-power:
+    type: boolean
+    description: Enable adaptive power switching (AVDD_HI/AVDD_LO tracking).
+  analog,wdt-timeout-ms:
+    type: int
+    default: 1000
+    enum: [1, 5, 10, 25, 50, 100, 250, 500, 750, 1000, 2000]
+    description: Watchdog timeout in milliseconds.
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags
