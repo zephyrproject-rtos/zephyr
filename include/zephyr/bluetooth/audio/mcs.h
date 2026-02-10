@@ -28,7 +28,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <zephyr/bluetooth/audio/media_proxy.h>
 #include <zephyr/bluetooth/services/ots.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -38,10 +37,21 @@ extern "C" {
 #endif
 
 /**
+ * @brief Search control point minimum length
+ *
+ * At least one search control item (SCI), consisting of the length octet and the type octet.
+ * (The * parameter field may be empty.)
+ */
+#define BT_MCS_SEARCH_LEN_MIN 2
+
+/** Search control point maximum length */
+#define BT_MCS_SEARCH_LEN_MAX 64
+
+/**
  * @brief Media player command
  */
 struct bt_mcs_cmd {
-	/** The opcode. See the MEDIA_PROXY_OP_* values */
+	/** The opcode. See the BT_MCS_OPC_* values */
 	uint8_t opcode;
 	/** Whether or not the @ref bt_mcs_cmd.param is used */
 	bool use_param;
@@ -363,9 +373,49 @@ struct bt_mcs_cmd {
  */
 struct bt_ots *bt_mcs_get_ots(void);
 
-/* Temporary forward declaration to avoid circular dependency */
-struct bt_mcp_search;
-struct bt_mcs_cmd_ntf;
+/**
+ * @brief Search control point item (SCI) minimum length
+ *
+ * An SCI length can be as little as one byte, for an SCI that has only the type field.
+ * (The SCI len is the length of type + param.)
+ */
+#define BT_MCS_SEARCH_SCI_LEN_MIN                                                                  \
+	1 /* An SCI length can be as little as one byte,                                           \
+	   * for an SCI that has only the type field.                                              \
+	   * (The SCI len is the length of type + param.)                                          \
+	   */
+
+/** Search parameters maximum length  */
+#define BT_MCS_SEARCH_PARAM_MAX 62
+
+/**
+ * @brief Search control item
+ */
+struct bt_mcs_sci {
+	uint8_t len;                         /**< Length of type and parameter */
+	uint8_t type;                        /**< BT_MCS_SEARCH_TYPE_<...> */
+	char param[BT_MCS_SEARCH_PARAM_MAX]; /**< Search parameter */
+};
+
+/**
+ * @brief Search
+ */
+struct bt_mcs_search {
+	/** The length of the @ref bt_mcs_search.search value */
+	uint8_t len;
+	/** Concatenated search control items - (type, length, param) */
+	char search[BT_MCS_SEARCH_LEN_MAX];
+};
+
+/**
+ * @brief Media command notification
+ */
+struct bt_mcs_cmd_ntf {
+	/** The opcode that was sent */
+	uint8_t requested_opcode;
+	/** The result of the operation  */
+	uint8_t result_code;
+};
 
 /** @brief Callbacks when information about the player is requested via MCS */
 struct bt_mcs_cb {
@@ -595,7 +645,7 @@ struct bt_mcs_cb {
 	 * @brief Set Playing Order
 	 *
 	 * Set the media player's playing order.
-	 * See the MEDIA_PROXY_PLAYING_ORDER_* defines.
+	 * See the BT_MCS_PLAYING_ORDER_* defines.
 	 *
 	 * @param order	The playing order to set
 	 */
@@ -606,7 +656,7 @@ struct bt_mcs_cb {
 	 *
 	 * Read a bitmap containing the media player's supported
 	 * playing orders.
-	 * See the MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_* defines.
+	 * See the BT_MCS_PLAYING_ORDERS_SUPPORTED_* defines.
 	 *
 	 * @return The media player's supported playing orders
 	 */
@@ -626,7 +676,7 @@ struct bt_mcs_cb {
 	 * @brief Send Command
 	 *
 	 * Send a command to the media player.
-	 * For command opcodes (play, pause, ...) - see the MEDIA_PROXY_OP_*
+	 * For command opcodes (play, pause, ...) - see the BT_MCS_OPC_*
 	 * defines.
 	 *
 	 * @param command	The command to send
@@ -638,7 +688,7 @@ struct bt_mcs_cb {
 	 *
 	 * Read a bitmap containing the media player's supported
 	 * command opcodes.
-	 * See the MEDIA_PROXY_OP_SUP_* defines.
+	 * See the BT_MCS_OPC_SUP_* defines.
 	 *
 	 * @return The media player's supported command opcodes
 	 */
@@ -653,7 +703,7 @@ struct bt_mcs_cb {
 	 *
 	 * @param search	The search to write
 	 */
-	void (*send_search)(const struct bt_mcp_search *search);
+	void (*send_search)(const struct bt_mcs_search *search);
 
 	/**
 	 * @brief Read Search Results Object ID
@@ -829,7 +879,7 @@ void bt_mcs_search_results_id_changed(void);
  *
  * To be called when a command has been sent, to notify whether the
  * command was successfully performed or not.
- * See the MEDIA_PROXY_CMD_* result code defines.
+ * See the BT_MCS_OPC_NTF_* result code defines.
  *
  * @param cmd_ntf	The result of the command
  */
@@ -840,7 +890,7 @@ void bt_mcs_command_complete(const struct bt_mcs_cmd_ntf *cmd_ntf);
  *
  * To be called when a search has been set to notify whether the
  * search was successfully performed or not.
- * See the MEDIA_PROXY_SEARCH_* result code defines.
+ * See the BT_MCS_SCP_NTF_* result code defines.
  *
  * The actual results of the search, if successful, can be found in
  * the search results object.
