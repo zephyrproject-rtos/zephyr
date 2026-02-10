@@ -15,6 +15,7 @@ supported:
   - bluetooth
   - i2c
   - dma
+  - spi
 testing:
   ignore_tags:
     - pm
