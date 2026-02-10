@@ -1,0 +1,18 @@
+&spi1 {
+    status = "okay";
+    ad74416h@0 {
+        compatible = "analog,ad74416h";
+        reg = <0>;
+        spi-max-frequency = <1000000>;
+        
+        /* Hardware Pins */
+        reset-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+        adc-rdy-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+        
+        /* Driver Features */
+        analog,adaptive-power;
+        analog,wdt-timeout-ms = <1000>;
+        
+        status = "okay";
+    };
+};
