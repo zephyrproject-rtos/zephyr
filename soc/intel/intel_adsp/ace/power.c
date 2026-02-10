@@ -28,7 +28,7 @@
 /* Used to force any pending transaction by HW issuing an upstream read before
  * power down host domain.
  */
-uint8_t adsp_pending_buffer[CONFIG_DCACHE_LINE_SIZE] __aligned(CONFIG_DCACHE_LINE_SIZE);
+uint8_t adsp_pending_buffer[CONFIG_DCACHE_LINE_SIZE] __dcacheline_aligned;
 #endif /* CONFIG_SOC_ACE15_MTPM */
 
 __imr void power_init(void)
