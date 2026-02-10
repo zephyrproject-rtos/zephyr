@@ -242,7 +242,7 @@ static int lpm_init(const struct device *dev)
 	return 0;
 }
 
-static const struct display_driver_api lpm_api = {
+static DEVICE_API(display, lpm_api) = {
 	.blanking_on = lpm_blanking_on,
 	.blanking_off = lpm_blanking_off,
 	.write = lpm_write,
