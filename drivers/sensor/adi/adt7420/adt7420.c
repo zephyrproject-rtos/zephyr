@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT adi_adt7420
-
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/pm/device.h>
@@ -450,7 +448,7 @@ static int adt7420_probe(const struct device *dev)
 		return ret;
 	}
 
-	if (value != ADT7420_DEFAULT_ID) {
+	if ((value & cfg->id_mask) != cfg->id_mask) {
 		return -ENODEV;
 	}
 
@@ -566,13 +564,16 @@ static int adt7420_init(const struct device *dev)
 	return adt7420_probe(dev);
 }
 
-#define ADT7420_DEFINE(inst)								\
-	static struct adt7420_data adt7420_data_##inst = {				\
+#define ADT7420_DEFINE(inst, name, mask, min, max)					\
+	static struct adt7420_data data_##name##_##inst = {				\
 		.resolution_16_bit = DT_INST_ENUM_IDX(inst, set_resolution),		\
 	};										\
 											\
-	static const struct adt7420_dev_config adt7420_config_##inst = {		\
+	static const struct adt7420_dev_config config_##name##_##inst = {		\
 		.i2c = I2C_DT_SPEC_INST_GET(inst),					\
+		.id_mask = mask,							\
+		.min_temp = min,							\
+		.max_temp = max,							\
 		.int_pol = DT_INST_PROP(inst, int_polarity_active_high),		\
 		.ct_pol = DT_INST_PROP(inst, ct_polarity_active_high),			\
 		.ct_mode = DT_INST_PROP(inst, set_comparator_mode),			\
@@ -585,8 +586,36 @@ static int adt7420_init(const struct device *dev)
 											\
 	PM_DEVICE_DT_INST_DEFINE(inst, adt7420_pm_action);				\
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, adt7420_init, PM_DEVICE_DT_INST_GET(inst),	\
-			      &adt7420_data_##inst, &adt7420_config_##inst,		\
+			      &data_##name##_##inst, &config_##name##_##inst,		\
 			      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,			\
 			      &adt7420_driver_api);					\
 
-DT_INST_FOREACH_STATUS_OKAY(ADT7420_DEFINE)
+#define DT_DRV_COMPAT adi_adt7410
+#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
+#define ADT7410_DEFAULT_ID_MASK		0xC8
+#define ADT7410_TEMP_MIN		(-55)
+#define ADT7410_TEMP_MAX		150
+DT_INST_FOREACH_STATUS_OKAY_VARGS(ADT7420_DEFINE, DT_DRV_COMPAT, ADT7410_DEFAULT_ID_MASK,
+				ADT7410_TEMP_MIN, ADT7410_TEMP_MAX)
+#endif
+#undef DT_DRV_COMPAT
+
+#define DT_DRV_COMPAT adi_adt7420
+#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
+#define ADT7420_DEFAULT_ID_MASK		0xC8
+#define ADT7420_TEMP_MIN		(-40)
+#define ADT7420_TEMP_MAX		150
+DT_INST_FOREACH_STATUS_OKAY_VARGS(ADT7420_DEFINE, DT_DRV_COMPAT, ADT7420_DEFAULT_ID_MASK,
+				ADT7420_TEMP_MIN, ADT7420_TEMP_MAX)
+#endif
+#undef DT_DRV_COMPAT
+
+#define DT_DRV_COMPAT adi_adt7422
+#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
+#define ADT7422_DEFAULT_ID_MASK		0xC8
+#define ADT7422_TEMP_MIN		(-40)
+#define ADT7422_TEMP_MAX		125
+DT_INST_FOREACH_STATUS_OKAY_VARGS(ADT7420_DEFINE, DT_DRV_COMPAT, ADT7422_DEFAULT_ID_MASK,
+				ADT7422_TEMP_MIN, ADT7422_TEMP_MAX)
+#endif
+#undef DT_DRV_COMPAT
