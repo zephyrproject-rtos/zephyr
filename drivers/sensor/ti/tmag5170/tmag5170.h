@@ -48,16 +48,14 @@ struct tmag5170_data {
 	struct k_sem sem;
 	struct k_thread thread;
 
-	K_KERNEL_STACK_MEMBER(thread_stack,
-			      CONFIG_TMAG5170_THREAD_STACK_SIZE);
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_TMAG5170_THREAD_STACK_SIZE);
 #elif defined(CONFIG_TMAG5170_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
 #endif
 };
 
 #if defined(CONFIG_TMAG5170_TRIGGER)
-int tmag5170_trigger_set(const struct device *dev,
-			 const struct sensor_trigger *trig,
+int tmag5170_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler);
 
 int tmag5170_trigger_init(const struct device *dev);
