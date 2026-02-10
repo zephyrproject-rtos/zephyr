@@ -41,22 +41,31 @@
 			#size-cells = <1>;
 			compatible = "mmio-sram";
 			reg = <0x50000000 DT_SIZE_K(16)>;
+			ranges = <0x0 0x50000000 DT_SIZE_K(16)>;
 
-			shmlp: memory@50003fb0 {
-				reg = <0x50003fb0 0x50>;
+			ulp_shm: memory@3bf0 {
+				compatible = "zephyr,memory-region", "mmio-sram";
+				reg = <0x3bf0 0x10>;
+				zephyr,memory-region = "SRAMLP_ULP_SHM";
 			};
-		};
 
-		mbox0: mbox@50003ff0 {
-			compatible = "espressif,mbox-esp32";
-			reg = <0x50003ff0 0x8>;
-			status = "disabled";
-			shared-memory = <&shmlp>;
-			shared-memory-size = <0x40>;
-			interrupts = <PMU_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				     <LP_CORE_PMU_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
-			interrupt-parent = <&intc>;
-			#mbox-cells = <1>;
+			ipc_shm: memory@3ef8 {
+				compatible = "zephyr,memory-region", "mmio-sram";
+				reg = <0x3ef8 0x100>;
+				zephyr,memory-region = "SRAMLP_IPC_SHM";
+			};
+
+			mbox0: mbox@3ff8 {
+				compatible = "espressif,mbox-esp32";
+				reg = <0x3ff8 0x8>;
+				status = "okay";
+				shared-memory = <&ipc_shm>;
+				shared-memory-size = <0x100>;
+				interrupts = <PMU_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+					     <LP_CORE_PMU_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+				interrupt-parent = <&intc>;
+				#mbox-cells = <1>;
+			};
 		};
 
 		intc: interrupt-controller@50000008 {

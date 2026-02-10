@@ -19,6 +19,7 @@
 
 	aliases {
 		die-temp0 = &coretemp;
+		retainedmemdevice = &retainedmem0;
 	};
 
 	chosen {
@@ -118,23 +119,56 @@
 			#size-cells = <1>;
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x50000000 DT_SIZE_K(16)>;
-			zephyr,memory-region = "SRAMLP ";
+			zephyr,memory-region = "SRAMLP";
+			ranges = <0x0 0x50000000 DT_SIZE_K(16)>;
 
-			shmlp: memory@50003fe0 {
-				reg = <0x50003fe0 0x10>;
+			ulp_shm: memory@3bf0 {
+				compatible = "zephyr,memory-region", "mmio-sram";
+				reg = <0x3bf0 0x10>;
+				zephyr,memory-region = "SRAMLP_ULP_SHM";
 			};
-		};
 
-		mbox0: mbox@50003ff0 {
-			compatible = "espressif,mbox-esp32";
-			reg = <0x50003ff0 0x8>;
-			status = "disabled";
-			shared-memory = <&shmlp>;
-			shared-memory-size = <0x10>;
-			interrupts = <PMU_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-				     <LP_CORE_PMU_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
-			interrupt-parent = <&intc>;
-			#mbox-cells = <1>;
+			lp_rtc: memory@3c00 {
+				compatible = "zephyr,memory-region", "mmio-sram";
+				reg = <0x3c00 0xf8>;
+				zephyr,memory-region = "SRAMLP_RTC";
+			};
+
+			retainedmem: memory@3cf8 {
+				compatible = "zephyr,memory-region", "mmio-sram";
+				reg = <0x3cf8 0x200>;
+				ranges = <0x0 0x3cf8 0x200>;
+				zephyr,memory-region = "SRAMLP_RETAINED_MEM";
+				status = "okay";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				retainedmem0: retainedmem {
+					compatible = "zephyr,retained-ram";
+					status = "okay";
+					ranges;
+					#address-cells = <1>;
+					#size-cells = <1>;
+				};
+			};
+
+			ipc_shm: memory@3ef8 {
+				compatible = "zephyr,memory-region", "mmio-sram";
+				reg = <0x3ef8 0x100>;
+				zephyr,memory-region = "SRAMLP_IPC_SHM";
+			};
+
+			mbox0: mbox@3ff8 {
+				compatible = "espressif,mbox-esp32";
+				reg = <0x3ff8 0x8>;
+				status = "okay";
+				shared-memory = <&ipc_shm>;
+				shared-memory-size = <0x100>;
+				interrupts = <PMU_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+					     <LP_CORE_PMU_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+				interrupt-parent = <&intc>;
+				#mbox-cells = <1>;
+			};
 		};
 
 		intc: interrupt-controller@60010000 {
