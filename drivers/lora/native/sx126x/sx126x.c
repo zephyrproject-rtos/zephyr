@@ -974,7 +974,7 @@ static int sx126x_lora_test_cw(const struct device *dev, uint32_t frequency,
 	return 0;
 }
 
-static const struct lora_driver_api sx126x_lora_api = {
+static DEVICE_API(lora, sx126x_lora_api) = {
 	.config = sx126x_lora_config,
 	.send = sx126x_lora_send,
 	.send_async = sx126x_lora_send_async,
