@@ -19,6 +19,18 @@ config FLASH_SIZE
 	default $(dt_node_int_prop_int,$(DT_CHOSEN_FLASH_NODE),size,kb) \
 		if $(DT_FLASH_HAS_SIZE_PROP) && XIP
 
+DT_XSPI1_MEM_MAPPED := $(dt_nodelabel_bool_prop,xspi1,memory-mapped)
+DT_XSPI2_MEM_MAPPED := $(dt_nodelabel_bool_prop,xspi2,memory-mapped)
+DT_XSPI3_MEM_MAPPED := $(dt_nodelabel_bool_prop,xspi3,memory-mapped)
+
+# When using xspi controllers muxing on N6, and app is run from external flash
+# flash base address is given by the range coming from the mem mmapped controller
+# which may differ by the parent of the actual flash controller in use
+config FLASH_BASE_ADDRESS
+	default $(dt_nodelabel_reg_addr_hex,xspi1,1) if $(DT_XSPI1_MEM_MAPPED)
+	default $(dt_nodelabel_reg_addr_hex,xspi2,1) if $(DT_XSPI2_MEM_MAPPED)
+	default $(dt_nodelabel_reg_addr_hex,xspi3,1) if $(DT_XSPI3_MEM_MAPPED)
+
 # For STM32N6, override the value defined in STM32 Kconfig to use CPU clock frequency
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default "$(DT_STM32_CPU_CLOCK_FREQ)" if "$(dt_nodelabel_enabled,cpusw)"
