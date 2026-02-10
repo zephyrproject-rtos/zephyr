@@ -13,6 +13,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 
+#include "video_common.h"
 #include "video_ctrls.h"
 #include "video_device.h"
 
@@ -36,7 +37,7 @@ struct sw_ctrls {
 };
 
 struct video_sw_generator_data {
-	const struct device *dev;
+	struct video_common_header hdr;
 	struct sw_ctrls ctrls;
 	struct video_format fmt;
 	struct k_fifo fifo_in;
@@ -93,15 +94,6 @@ static int video_sw_generator_set_fmt(const struct device *dev, struct video_for
 	}
 
 	data->fmt = *fmt;
-	return 0;
-}
-
-static int video_sw_generator_get_fmt(const struct device *dev, struct video_format *fmt)
-{
-	struct video_sw_generator_data *data = dev->data;
-
-	*fmt = data->fmt;
-
 	return 0;
 }
 
@@ -312,7 +304,7 @@ static void video_sw_generator_worker(struct k_work *work)
 
 	switch (data->pattern) {
 	case VIDEO_PATTERN_COLOR_BAR:
-		video_sw_generator_fill(data->dev, vbuf);
+		video_sw_generator_fill(data->hdr.dev, vbuf);
 		break;
 	}
 
@@ -443,7 +435,7 @@ static int video_sw_generator_enum_frmival(const struct device *dev, struct vide
 
 static DEVICE_API(video, video_sw_generator_driver_api) = {
 	.set_format = video_sw_generator_set_fmt,
-	.get_format = video_sw_generator_get_fmt,
+	.get_format = video_common_get_fmt,
 	.set_stream = video_sw_generator_set_stream,
 	.flush = video_sw_generator_flush,
 	.enqueue = video_sw_generator_enqueue,
@@ -476,7 +468,12 @@ static int video_sw_generator_init(const struct device *dev)
 {
 	struct video_sw_generator_data *data = dev->data;
 
-	data->dev = dev;
+	/* TODO - below two init would probably deserve a video_common init
+	 * function or so
+	 */
+	data->hdr.dev = dev;
+	k_mutex_init(&data->hdr.lock);
+	data->hdr.fmt = &data->fmt;
 	k_fifo_init(&data->fifo_in);
 	k_fifo_init(&data->fifo_out);
 	k_work_init_delayable(&data->work, video_sw_generator_worker);
