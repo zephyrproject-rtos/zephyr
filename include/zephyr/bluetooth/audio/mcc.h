@@ -32,7 +32,6 @@
 #include <zephyr/bluetooth/audio/mcs.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/net_buf.h>
-#include <zephyr/bluetooth/audio/media_proxy.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -355,7 +354,7 @@ typedef void (*bt_mcc_read_opcodes_supported_cb)(struct bt_conn *conn, int err,
  * @param search        The search set (or attempted to set)
  */
 typedef void (*bt_mcc_send_search_cb)(struct bt_conn *conn, int err,
-				      const struct bt_mcp_search *search);
+				      const struct bt_mcs_search *search);
 
 /**
  * @brief Callback function for search notifications
@@ -899,7 +898,7 @@ int bt_mcc_read_opcodes_supported(struct bt_conn *conn);
  *
  * @return 0 if success, errno on failure.
  */
-int bt_mcc_send_search(struct bt_conn *conn, const struct bt_mcp_search *search);
+int bt_mcc_send_search(struct bt_conn *conn, const struct bt_mcs_search *search);
 
 /**
  * @brief Search Results Group Object ID
