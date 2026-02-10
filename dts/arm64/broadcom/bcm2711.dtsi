@@ -20,6 +20,9 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-a72";
 			reg = <0>;
+			clock-frequency = <DT_FREQ_M(1500)>;
+			i-cache-line-size = <64>;
+			d-cache-line-size = <64>;
 		};
 	};
 
