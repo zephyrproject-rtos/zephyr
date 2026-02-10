@@ -14,15 +14,10 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 #include "power_ctrl.h"
 
-#define USBC_PORT0_NODE		DT_ALIAS(usbc_port0)
-#define USBC_PORT0_POWER_ROLE	DT_ENUM_IDX(USBC_PORT0_NODE, power_role)
+#define USBC_PORT0_NODE DT_ALIAS(usbc_port0)
 
-/* A Source power role evauates to 1. See usbc_tc.h: TC_ROLE_SOURCE */
-#if (USBC_PORT0_POWER_ROLE != 1)
-#error "Unsupported board: Only Source device supported"
-#endif
-
-#define SOURCE_PDO(node_id, prop, idx)	(DT_PROP_BY_IDX(node_id, prop, idx)),
+BUILD_ASSERT(DT_ENUM_IDX(USBC_PORT0_NODE, power_role) == TC_ROLE_CAP_SOURCE,
+	     "Unsupported board: Only Source device supported");
 
 /* usbc.rst port data object start */
 /**
@@ -49,7 +44,7 @@ static struct port0_data_t {
 	atomic_t show_sink_request;
 } port0_data = {
 	.rp = DT_ENUM_IDX(USBC_PORT0_NODE, typec_power_opmode),
-	.src_caps = {DT_FOREACH_PROP_ELEM(USBC_PORT0_NODE, source_pdos, SOURCE_PDO)},
+	.src_caps = DT_PROP(USBC_PORT0_NODE, source_pdos),
 	.src_cap_cnt = DT_PROP_LEN(USBC_PORT0_NODE, source_pdos),
 };
 

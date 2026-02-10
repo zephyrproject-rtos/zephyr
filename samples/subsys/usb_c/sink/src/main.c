@@ -13,13 +13,9 @@
 LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 #define USBC_PORT0_NODE		DT_ALIAS(usbc_port0)
-#define USBC_PORT0_POWER_ROLE	DT_ENUM_IDX(USBC_PORT0_NODE, power_role)
 
-#if (USBC_PORT0_POWER_ROLE != TC_ROLE_SINK)
-#error "Unsupported board: Only Sink device supported"
-#endif
-
-#define SINK_PDO(node_id, prop, idx)	(DT_PROP_BY_IDX(node_id, prop, idx)),
+BUILD_ASSERT(DT_ENUM_IDX(USBC_PORT0_NODE, power_role) == TC_ROLE_CAP_SINK,
+	     "Unsupported board: Only Sink device supported");
 
 /* usbc.rst port data object start */
 /**
@@ -37,7 +33,7 @@ static struct port0_data_t {
 	/* Power Supply Ready flag */
 	atomic_t ps_ready;
 } port0_data = {
-	.snk_caps = {DT_FOREACH_PROP_ELEM(USBC_PORT0_NODE, sink_pdos, SINK_PDO)},
+	.snk_caps = DT_PROP(USBC_PORT0_NODE, sink_pdos),
 	.snk_cap_cnt = DT_PROP_LEN(USBC_PORT0_NODE, sink_pdos),
 	.src_caps = {0},
 	.src_cap_cnt = 0,
@@ -263,6 +259,7 @@ static void port0_notify(const struct device *dev,
 		break;
 	case SOURCE_CAPABILITIES_RECEIVED:
 		break;
+	default:
 	}
 }
 /* usbc.rst notify end */

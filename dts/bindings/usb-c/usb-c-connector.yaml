@@ -39,7 +39,7 @@ properties:
       - "source"
       - "dual"
     description: |
-      The Port power role. "dual" for Dual Role Port.
+      The Port power role. "dual" for Dual Role Power.
 
   try-power-role:
     type: string

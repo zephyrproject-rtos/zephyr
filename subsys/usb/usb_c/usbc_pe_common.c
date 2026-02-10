@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 The Chromium OS Authors
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +17,7 @@ LOG_MODULE_DECLARE(usbc_stack, CONFIG_USBC_STACK_LOG_LEVEL);
 #include "usbc_pe_common_internal.h"
 #include "usbc_pe_snk_states_internal.h"
 #include "usbc_pe_src_states_internal.h"
+#include "usbc_config.h"
 
 static const struct smf_state pe_states[PE_STATE_COUNT];
 
@@ -117,10 +119,21 @@ static void pe_init(const struct device *dev)
 	/* Initialize common counters */
 	pe->hard_reset_counter = 0;
 
-#ifdef CONFIG_USBC_CSM_SINK_ONLY
-	pe_snk_init(dev);
-#else
-	pe_src_init(dev);
+	if (IS_ENABLED(CONFIG_USBC_CSM_SINK_ONLY)) {
+		pe_snk_init(dev);
+	} else if (IS_ENABLED(CONFIG_USBC_CSM_SOURCE_ONLY)) {
+		pe_src_init(dev);
+	}
+#ifdef CONFIG_USBC_CSM_DRP
+	else {
+		enum tc_state_t tc_state = tc_get_state(dev);
+
+		if (tc_state == TC_ATTACHED_SRC_STATE) {
+			pe_src_init(dev);
+		} else {
+			pe_snk_init(dev);
+		}
+	}
 #endif
 }
 
@@ -609,7 +622,7 @@ bool policy_wait_notify(const struct device *dev, const enum usbc_policy_wait_t 
 	return false;
 }
 
-#ifdef CONFIG_USBC_CSM_SINK_ONLY
+#ifdef CONFIG_USBC_CSM_SUPPORTS_SINK
 
 /**
  * @brief Get a Request Data Object from the DPM
@@ -663,7 +676,9 @@ void policy_get_snk_cap(const struct device *dev, uint32_t **pdos, int *num_pdos
 	data->policy_cb_get_snk_cap(dev, pdos, num_pdos);
 }
 
-#else /* CONFIG_USBC_CSM_SOURCE_ONLY */
+#endif /* CONFIG_USBC_CSM_SUPPORTS_SINK */
+
+#ifdef CONFIG_USBC_CSM_SUPPORTS_SOURCE
 
 /**
  * @brief Send the received sink caps to the DPM
@@ -734,7 +749,7 @@ bool policy_change_src_caps(const struct device *dev)
 	return data->policy_change_src_caps(dev);
 }
 
-#endif /* CONFIG_USBC_CSM_SINK_ONLY */
+#endif /* CONFIG_USBC_CSM_SUPPORTS_SOURCE */
 
 /**
  * @brief PE_DRS_Evaluate_Swap Entry state
@@ -917,7 +932,7 @@ enum smf_state_result pe_get_sink_cap_run(void *obj)
 
 			if (prl_rx->emsg.type == PD_PACKET_SOP) {
 				if (received_data_message(dev, header, PD_DATA_SINK_CAP)) {
-#ifdef CONFIG_USBC_CSM_SOURCE_ONLY
+#ifdef CONFIG_USBC_CSM_SUPPORTS_SOURCE
 					uint32_t *pdos = (uint32_t *)prl_rx->emsg.data;
 					uint32_t num_pdos = PD_CONVERT_BYTES_TO_PD_HEADER_COUNT(
 						prl_rx->emsg.len);
@@ -1180,7 +1195,7 @@ static enum smf_state_result pe_sender_response_run(void *obj)
 		 * Handle Sender Response Timeouts
 		 */
 		switch (current_state) {
-#if CONFIG_USBC_CSM_SINK_ONLY
+#ifdef CONFIG_USBC_CSM_SUPPORTS_SINK
 		/* Sink states */
 		case PE_SNK_SELECT_CAPABILITY:
 			pe_set_state(dev, PE_SNK_HARD_RESET);
@@ -1188,7 +1203,8 @@ static enum smf_state_result pe_sender_response_run(void *obj)
 		case PE_SNK_GET_SOURCE_CAP:
 			pe_set_state(dev, PE_SNK_READY);
 			break;
-#else
+#endif
+#ifdef CONFIG_USBC_CSM_SUPPORTS_SOURCE
 		/* Source states */
 		case PE_SRC_DISCOVERY:
 			/*
@@ -1266,7 +1282,7 @@ static const struct smf_state pe_states[PE_STATE_COUNT] = {
 		pe_sender_response_exit,
 		NULL,
 		NULL),
-#ifdef CONFIG_USBC_CSM_SOURCE_ONLY
+#ifdef CONFIG_USBC_CSM_SUPPORTS_SOURCE
 	[PE_SRC_HARD_RESET_PARENT] = SMF_CREATE_STATE(
 		pe_src_hard_reset_parent_entry,
 		pe_src_hard_reset_parent_run,
@@ -1274,7 +1290,7 @@ static const struct smf_state pe_states[PE_STATE_COUNT] = {
 		NULL,
 		NULL),
 #endif
-#ifdef CONFIG_USBC_CSM_SINK_ONLY
+#ifdef CONFIG_USBC_CSM_SUPPORTS_SINK
 	[PE_SNK_STARTUP] = SMF_CREATE_STATE(
 		pe_snk_startup_entry,
 		pe_snk_startup_run,
@@ -1341,7 +1357,8 @@ static const struct smf_state pe_states[PE_STATE_COUNT] = {
 		pe_snk_transition_sink_exit,
 		NULL,
 		NULL),
-#else
+#endif /* CONFIG_USBC_CSM_SUPPORTS_SINK */
+#ifdef CONFIG_USBC_CSM_SUPPORTS_SOURCE
 	[PE_SRC_STARTUP] = SMF_CREATE_STATE(
 		pe_src_startup_entry,
 		pe_src_startup_run,
@@ -1408,7 +1425,7 @@ static const struct smf_state pe_states[PE_STATE_COUNT] = {
 		NULL,
 		&pe_states[PE_SRC_HARD_RESET_PARENT],
 		NULL),
-#endif
+#endif /* CONFIG_USBC_CSM_SUPPORTS_SOURCE */
 	[PE_GET_SINK_CAP] = SMF_CREATE_STATE(
 		pe_get_sink_cap_entry,
 		pe_get_sink_cap_run,

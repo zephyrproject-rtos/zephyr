@@ -133,7 +133,7 @@ struct usbc_port_data {
 	bool (*policy_cb_wait_notify)(const struct device *dev,
 				      const enum usbc_policy_wait_t policy_notify);
 
-#ifdef CONFIG_USBC_CSM_SINK_ONLY
+#ifdef CONFIG_USBC_CSM_SUPPORTS_SINK
 	/**
 	 * Callback used by the Policy Engine to get the Sink Capabilities
 	 * from the Device Policy Manager
@@ -157,7 +157,8 @@ struct usbc_port_data {
 	 * is at default level
 	 */
 	bool (*policy_cb_is_snk_at_default)(const struct device *dev);
-#else  /* CONFIG_USBC_CSM_SOURCE_ONLY */
+#endif /* CONFIG_USBC_CSM_SUPPORTS_SINK */
+#ifdef CONFIG_USBC_CSM_SUPPORTS_SOURCE
 	/**
 	 * Callback used by the Policy Engine get the Rp pull-up that should
 	 * be placed on the CC lines
@@ -208,12 +209,12 @@ struct usbc_port_data {
 	 */
 	void (*policy_cb_set_port_partner_snk_cap)(const struct device *dev, const uint32_t *pdos,
 						   const int num_pdos);
-#endif /* CONFIG_USBC_CSM_SINK_ONLY */
+#endif /* CONFIG_USBC_CSM_SUPPORTS_SOURCE */
 	/** Device Policy Manager data */
 	void *dpm_data;
 };
 
-#ifdef CONFIG_USBC_CSM_SOURCE_ONLY
+#ifdef CONFIG_USBC_CSM_SUPPORTS_SOURCE
 /**
  * @brief Function that enables the source path either using callback or by the TCPC.
  * If source and sink paths are controlled by the TCPC, this callback doesn't have to be set.
@@ -244,6 +245,6 @@ static inline int usbc_policy_src_en(const struct device *dev, const struct devi
 
 	return ret_tcpc;
 }
-#endif
+#endif /* CONFIG_USBC_CSM_SUPPORTS_SOURCE */
 
 #endif /* ZEPHYR_SUBSYS_USBC_STACK_PRIV_H_ */

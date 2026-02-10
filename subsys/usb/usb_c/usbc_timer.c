@@ -35,6 +35,12 @@ void usbc_timer_start(struct usbc_timer_t *usbc_timer)
 	k_timer_start(&usbc_timer->timer, K_MSEC(usbc_timer->timeout_ms), K_NO_WAIT);
 }
 
+void usbc_timer_start_with_value(struct usbc_timer_t *usbc_timer, uint32_t timeout_ms)
+{
+	usbc_timer->timeout_ms = timeout_ms;
+	usbc_timer_start(usbc_timer);
+}
+
 bool usbc_timer_expired(struct usbc_timer_t *usbc_timer)
 {
 	bool started = atomic_test_bit(&usbc_timer->flags, TIMER_STARTED);

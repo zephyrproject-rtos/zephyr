@@ -169,7 +169,7 @@ void *usbc_get_dpm_data(const struct device *dev)
 	return data->dpm_data;
 }
 
-#ifdef CONFIG_USBC_CSM_SINK_ONLY
+#ifdef CONFIG_USBC_CSM_SUPPORTS_SINK
 /**
  * @brief Set the callback that gets the Sink Capabilities from the
  *	  Device Policy Manager
@@ -217,7 +217,8 @@ void usbc_set_policy_cb_is_snk_at_default(
 	data->policy_cb_is_snk_at_default = policy_cb_is_snk_at_default;
 }
 
-#else /* CONFIG_USBC_CSM_SOURCE_ONLY */
+#endif /* CONFIG_USBC_CSM_SUPPORTS_SINK */
+#ifdef CONFIG_USBC_CSM_SUPPORTS_SOURCE
 
 /**
  * @brief Set the callback for sending the Sink Caps to the DPM
@@ -332,7 +333,7 @@ void usbc_set_vconn_discharge(const struct device *dev, const tcpc_vconn_dischar
 	tcpc_set_vconn_discharge_cb(tcpc, cb);
 }
 
-#endif /* CONFIG_USBC_CSM_SINK_ONLY */
+#endif /* CONFIG_USBC_CSM_SUPPORTS_SOURCE */
 
 /**
  * @brief Set the callback for the Device Policy Manager policy check
