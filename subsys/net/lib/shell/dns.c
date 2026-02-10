@@ -401,6 +401,62 @@ static int cmd_net_dns_list(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_net_dns_browse(const struct shell *sh, size_t argc, char *argv[])
+{
+#if defined(CONFIG_DNS_RESOLVER)
+	struct dns_resolve_context *ctx;
+	char *query;
+	uint16_t dns_id;
+	int ret, count = 0;
+
+	if (argc < 2) {
+		/* Browse for all service types */
+		query = "_services._dns-sd._udp.local";
+	} else {
+		query = argv[1];
+	}
+
+	/* remove any lingering info data */
+	k_msgq_purge(&dns_infoq);
+
+	ctx = dns_resolve_get_default();
+	if (ctx == NULL) {
+		PR_WARNING("No default DNS context found.\n");
+		return -ENOEXEC;
+	}
+
+	ret = dns_resolve_service(ctx, query, &dns_id, dns_service_cb,
+				  (void *)sh, DNS_TIMEOUT);
+	if (ret < 0) {
+		PR_WARNING("Cannot browse '%s' (%d)\n", query, ret);
+		return ret;
+	}
+
+	PR("Browsing for '%s'...\n", query);
+
+	for (;;) {
+		struct dns_addrinfo info;
+
+		ret = k_msgq_get(&dns_infoq, &info, K_MSEC(DNS_TIMEOUT));
+		if (ret < 0) {
+			break;
+		}
+
+		if (info.ai_family == NET_AF_LOCAL) {
+			PR("  %.*s\n", (int)info.ai_addrlen, info.ai_canonname);
+			count++;
+		}
+	}
+
+	PR("Found %d service(s).\n", count);
+#else
+	PR_INFO("Set %s to enable %s support.\n", "CONFIG_DNS_RESOLVER",
+		"DNS resolver");
+#endif
+
+	return 0;
+}
+
 static int cmd_net_dns_service(const struct shell *sh, size_t argc, char *argv[])
 {
 #if defined(CONFIG_DNS_RESOLVER)
@@ -530,6 +586,9 @@ static int cmd_net_dns_service(const struct shell *sh, size_t argc, char *argv[]
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_dns,
+	SHELL_CMD(browse, NULL,
+		  SHELL_HELP("Browse DNS services", "[<service-description>]"),
+		  cmd_net_dns_browse),
 	SHELL_CMD(cancel, NULL, "Cancel all pending requests.",
 		  cmd_net_dns_cancel),
 	SHELL_CMD(query, NULL,
