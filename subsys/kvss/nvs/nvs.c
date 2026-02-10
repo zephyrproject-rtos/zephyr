@@ -1097,7 +1097,7 @@ ssize_t nvs_write(struct nvs_fs *fs, uint16_t id, const void *data, size_t len)
 	}
 
 	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
-	data_size = nvs_al_size(fs, len);
+	data_size = nvs_al_size(fs, len ? len + NVS_DATA_CRC_SIZE : 0U);
 
 	/* The maximum data size is sector size - 4 ate
 	 * where: 1 ate for data, 1 ate for sector close, 1 ate for gc done,
@@ -1105,7 +1105,7 @@ ssize_t nvs_write(struct nvs_fs *fs, uint16_t id, const void *data, size_t len)
 	 * Also take into account the data CRC that is appended at the end of the data field,
 	 * if any.
 	 */
-	if ((len > (fs->sector_size - 4 * ate_size - NVS_DATA_CRC_SIZE)) ||
+	if ((data_size > (fs->sector_size - 4 * ate_size)) ||
 	    ((len > 0) && (data == NULL))) {
 		return -EINVAL;
 	}
@@ -1176,7 +1176,7 @@ no_cached_entry:
 	/* calculate required space if the entry contains data */
 	if (data_size) {
 		/* Leave space for delete ate */
-		required_space = data_size + ate_size + NVS_DATA_CRC_SIZE;
+		required_space = data_size + ate_size;
 	}
 
 	k_mutex_lock(&fs->nvs_lock, K_FOREVER);
