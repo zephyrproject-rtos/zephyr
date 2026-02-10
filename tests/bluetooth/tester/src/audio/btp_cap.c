@@ -849,21 +849,23 @@ static uint8_t btp_cap_broadcast_adv_stop(const void *cmd, uint16_t cmd_len,
 		btp_bap_broadcast_local_source_from_src_id_get(cp->source_id);
 
 	if (source == NULL) {
-		return BTP_STATUS_FAILED;
+		/* Treat missing source as success (already stopped) per PTS expectations */
+		return BTP_STATUS_SUCCESS;
 	}
 
 	err = tester_gap_padv_stop(source->ext_adv);
-	if (err == -ESRCH) {
-		/* Ext adv hasn't been created yet */
-		return BTP_STATUS_SUCCESS;
-	} else if (err != 0) {
+	if (err != 0 && err != -ESRCH) {
 		LOG_DBG("Failed to stop periodic adv, err: %d", err);
 		return BTP_STATUS_FAILED;
 	}
 
 	err = tester_gap_stop_ext_adv(source->ext_adv);
+	if (err != 0 && err != -ESRCH) {
+		LOG_DBG("Failed to stop ext adv, err: %d", err);
+		return BTP_STATUS_FAILED;
+	}
 
-	return BTP_STATUS_VAL(err);
+	return BTP_STATUS_SUCCESS;
 }
 
 static uint8_t btp_cap_broadcast_source_start(const void *cmd, uint16_t cmd_len,
