@@ -600,7 +600,7 @@ static int dma_atcdmacx00_get_status(const struct device *dev,
 	return 0;
 }
 
-static const struct dma_driver_api dma_atcdmacx00_api = {
+static DEVICE_API(dma, dma_atcdmacx00_api) = {
 	.config = dma_atcdmacx00_config,
 	.reload = dma_atcdmacx00_reload,
 	.start = dma_atcdmacx00_transfer_start,

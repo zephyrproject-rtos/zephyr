@@ -397,7 +397,7 @@ static int dma_npcx_init(const struct device *dev)
 	return 0;
 }
 
-static const struct dma_driver_api npcx_driver_api = {
+static DEVICE_API(dma, npcx_driver_api) = {
 		.config = dma_npcx_configure,
 		.start = dma_npcx_start,
 		.stop = dma_npcx_stop,
