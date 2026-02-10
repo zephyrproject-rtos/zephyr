@@ -88,7 +88,7 @@ static enum clock_control_status clock_control_ft9001_get_status(const struct de
 	return CLOCK_CONTROL_STATUS_OFF;
 }
 
-static const struct clock_control_driver_api clock_control_ft9001_api = {
+static DEVICE_API(clock_control, clock_control_ft9001_api) = {
 	.on = clock_control_ft9001_on,
 	.off = clock_control_ft9001_off,
 	.get_status = clock_control_ft9001_get_status,

@@ -970,7 +970,7 @@ static int rts_fp_clk_set_rate(const struct device *dev, clock_control_subsys_t 
 	return clk->ops->set_rate(dev, clk, (uint32_t)rate);
 }
 
-static const struct clock_control_driver_api rts_fp_clk_api = {
+static DEVICE_API(clock_control, rts_fp_clk_api) = {
 	.on = rts_fp_clk_on,
 	.off = rts_fp_clk_off,
 	.get_status = rts_fp_clk_get_status,
