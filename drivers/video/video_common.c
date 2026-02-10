@@ -533,3 +533,12 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 
 	return video_enqueue(sink, buf);
 }
+
+int video_common_get_fmt(const struct device *dev, struct video_format *fmt)
+{
+	struct video_common_header *video_hdr = (struct video_common_header *)dev->data;
+
+	*fmt = *video_hdr->fmt;
+
+	return 0;
+}

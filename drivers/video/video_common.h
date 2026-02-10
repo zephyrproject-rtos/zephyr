@@ -230,4 +230,9 @@ int video_write_cci_multiregs16(const struct i2c_dt_spec *i2c, const struct vide
 
 /** @} */
 
+/**
+ * @brief Helper function for retrieving the current set format
+ */
+int video_common_get_fmt(const struct device *dev, struct video_format *fmt);
+
 #endif /* ZEPHYR_DRIVERS_VIDEO_COMMON_H_ */
