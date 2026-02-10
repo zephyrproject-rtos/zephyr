@@ -81,7 +81,7 @@ struct spi_stm32_data {
 };
 
 #ifdef CONFIG_SPI_STM32_DMA
-static inline uint32_t ll_func_dma_get_reg_addr(SPI_TypeDef *spi, uint32_t location)
+static inline uint32_t ll_dma_get_reg_addr(SPI_TypeDef *spi, uint32_t location)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	if (location == SPI_STM32_DMA_TX) {
@@ -95,7 +95,7 @@ static inline uint32_t ll_func_dma_get_reg_addr(SPI_TypeDef *spi, uint32_t locat
 }
 
 /* checks that DMA Tx packet is fully transmitted over the SPI */
-static inline uint32_t ll_func_spi_dma_busy(SPI_TypeDef *spi)
+static inline uint32_t ll_spi_dma_busy(SPI_TypeDef *spi)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	if (LL_SPI_GetTransferSize(spi) == 0) {
@@ -111,7 +111,7 @@ static inline uint32_t ll_func_spi_dma_busy(SPI_TypeDef *spi)
 }
 #endif /* st_stm32h7_spi */
 
-static inline uint32_t ll_func_tx_is_not_full(SPI_TypeDef *spi)
+static inline uint32_t ll_tx_is_not_full(SPI_TypeDef *spi)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	return LL_SPI_IsActiveFlag_TXP(spi);
@@ -120,7 +120,7 @@ static inline uint32_t ll_func_tx_is_not_full(SPI_TypeDef *spi)
 #endif /* st_stm32h7_spi */
 }
 
-static inline uint32_t ll_func_rx_is_not_empty(SPI_TypeDef *spi)
+static inline uint32_t ll_rx_is_not_empty(SPI_TypeDef *spi)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	return LL_SPI_IsActiveFlag_RXP(spi);
@@ -129,7 +129,7 @@ static inline uint32_t ll_func_rx_is_not_empty(SPI_TypeDef *spi)
 #endif /* st_stm32h7_spi */
 }
 
-static inline void ll_func_enable_int_tx_empty(SPI_TypeDef *spi)
+static inline void ll_enable_int_tx_empty(SPI_TypeDef *spi)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	LL_SPI_EnableIT_TXP(spi);
@@ -138,7 +138,7 @@ static inline void ll_func_enable_int_tx_empty(SPI_TypeDef *spi)
 #endif /* st_stm32h7_spi */
 }
 
-static inline void ll_func_enable_int_rx_not_empty(SPI_TypeDef *spi)
+static inline void ll_enable_int_rx_not_empty(SPI_TypeDef *spi)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	LL_SPI_EnableIT_RXP(spi);
@@ -147,7 +147,7 @@ static inline void ll_func_enable_int_rx_not_empty(SPI_TypeDef *spi)
 #endif /* st_stm32h7_spi */
 }
 
-static inline void ll_func_enable_int_errors(SPI_TypeDef *spi)
+static inline void ll_enable_int_errors(SPI_TypeDef *spi)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	LL_SPI_EnableIT_UDR(spi);
@@ -160,7 +160,7 @@ static inline void ll_func_enable_int_errors(SPI_TypeDef *spi)
 #endif /* st_stm32h7_spi */
 }
 
-static inline void ll_func_disable_int_tx_empty(SPI_TypeDef *spi)
+static inline void ll_disable_int_tx_empty(SPI_TypeDef *spi)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	LL_SPI_DisableIT_TXP(spi);
@@ -169,7 +169,7 @@ static inline void ll_func_disable_int_tx_empty(SPI_TypeDef *spi)
 #endif /* st_stm32h7_spi */
 }
 
-static inline void ll_func_disable_int_rx_not_empty(SPI_TypeDef *spi)
+static inline void ll_disable_int_rx_not_empty(SPI_TypeDef *spi)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	LL_SPI_DisableIT_RXP(spi);
@@ -178,7 +178,7 @@ static inline void ll_func_disable_int_rx_not_empty(SPI_TypeDef *spi)
 #endif /* st_stm32h7_spi */
 }
 
-static inline void ll_func_disable_int_errors(SPI_TypeDef *spi)
+static inline void ll_disable_int_errors(SPI_TypeDef *spi)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	LL_SPI_DisableIT_UDR(spi);
@@ -191,7 +191,7 @@ static inline void ll_func_disable_int_errors(SPI_TypeDef *spi)
 #endif /* st_stm32h7_spi */
 }
 
-static inline bool ll_func_are_int_disabled(SPI_TypeDef *spi)
+static inline bool ll_are_int_disabled(SPI_TypeDef *spi)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	return (spi->IER == 0U);
@@ -202,7 +202,7 @@ static inline bool ll_func_are_int_disabled(SPI_TypeDef *spi)
 #endif
 }
 
-static inline uint32_t ll_func_spi_is_busy(SPI_TypeDef *spi)
+static inline uint32_t ll_spi_is_busy(SPI_TypeDef *spi)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	if (LL_SPI_GetTransferSize(spi) == 0) {
@@ -219,7 +219,7 @@ static inline uint32_t ll_func_spi_is_busy(SPI_TypeDef *spi)
  * non-existing LL FIFO functions for SoC without SPI FIFO
  */
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
-static inline void ll_func_set_fifo_threshold_8bit(SPI_TypeDef *spi)
+static inline void ll_set_fifo_threshold_8bit(SPI_TypeDef *spi)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	LL_SPI_SetFIFOThreshold(spi, LL_SPI_FIFO_TH_01DATA);
@@ -228,7 +228,7 @@ static inline void ll_func_set_fifo_threshold_8bit(SPI_TypeDef *spi)
 #endif /* st_stm32h7_spi */
 }
 
-static inline void ll_func_set_fifo_threshold_16bit(SPI_TypeDef *spi)
+static inline void ll_set_fifo_threshold_16bit(SPI_TypeDef *spi)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	LL_SPI_SetFIFOThreshold(spi, LL_SPI_FIFO_TH_02DATA);
@@ -238,11 +238,11 @@ static inline void ll_func_set_fifo_threshold_16bit(SPI_TypeDef *spi)
 }
 #endif /* st_stm32_spi_fifo */
 
-static inline void ll_func_disable_spi(SPI_TypeDef *spi)
+static inline void ll_disable_spi(SPI_TypeDef *spi)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
 	/* Flush RX buffer */
-	while (ll_func_rx_is_not_empty(spi)) {
+	while (ll_rx_is_not_empty(spi)) {
 		(void) LL_SPI_ReceiveData8(spi);
 	}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo) */
