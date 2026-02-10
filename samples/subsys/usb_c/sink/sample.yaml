@@ -4,7 +4,9 @@ tests:
   sample.usbc.sink:
     depends_on: tcpc
     tags: usbc
-    platform_allow: b_g474e_dpow1
+    platform_allow:
+      - b_g474e_dpow1
+      - stm32g081b_eval
     integration_platforms:
       - b_g474e_dpow1
     harness: console
