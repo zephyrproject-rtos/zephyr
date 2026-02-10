@@ -398,7 +398,7 @@ static int mcux_rtc_jdp_init(const struct device *dev)
 	return 0;
 }
 
-static const struct counter_driver_api mcux_rtc_jdp_driver_api = {
+static DEVICE_API(counter, mcux_rtc_jdp_driver_api) = {
 	.start = mcux_rtc_jdp_start,
 	.stop = mcux_rtc_jdp_stop,
 	.get_value = mcux_rtc_jdp_get_value,
