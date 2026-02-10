@@ -87,7 +87,9 @@ static inline void arch_exception_call_dump_hook(const char *format, ...)
 	}
 }
 
-#if defined(CONFIG_LOG)
+#if defined(CONFIG_EXCEPTION_DUMP_HOOK_ONLY)
+#define EXCEPTION_DUMP(format, ...) arch_exception_call_dump_hook(format "\n",  ##__VA_ARGS__)
+#elif defined(CONFIG_LOG)
 #define EXCEPTION_DUMP(format, ...) arch_exception_call_dump_hook(format "\n",  ##__VA_ARGS__); \
 	LOG_ERR(format, ##__VA_ARGS__)
 #else

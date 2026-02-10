@@ -39,6 +39,13 @@ config EXCEPTION_DUMP_HOOK
 	  Enables hook for configuring an additional method for delivering
 	  exeption prints through similar interface as printk or LOG.
 
+config EXCEPTION_DUMP_HOOK_ONLY
+	bool "Do not send exception prints to logs or printk if hook is set"
+	depends on EXCEPTION_DUMP_HOOK
+	help
+	  Do not send exception prints to logs or printk if the exception
+	  hook is set.
+
 config ARM_MPU
 	bool "ARM MPU Support"
 	select MPU
