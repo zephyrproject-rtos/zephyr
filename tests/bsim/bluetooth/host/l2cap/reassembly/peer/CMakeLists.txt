@@ -8,13 +8,14 @@ project(l2cap_reassembly_peer)
 add_subdirectory(${ZEPHYR_BASE}/tests/bsim/babblekit babblekit)
 target_link_libraries(app PRIVATE babblekit)
 
+target_include_directories(app PRIVATE ../common/)
+
 target_sources(app PRIVATE
   src/main.c
   src/peer.c
 )
 
 zephyr_include_directories(
-  ../
   ${ZEPHYR_BASE}/subsys/bluetooth/common/
   ${BSIM_COMPONENTS_PATH}/libUtilv1/src/
   ${BSIM_COMPONENTS_PATH}/libPhyComv1/src/
