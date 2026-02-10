@@ -593,3 +593,24 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 
 	return video_enqueue(sink, buf);
 }
+
+static int video_init_context(const struct device *dev)
+{
+	struct video_context *vctx;
+
+	if (dev == NULL || dev->data == NULL) {
+		return -EINVAL;
+	}
+
+	vctx = (struct video_context *)dev->data;
+
+	vctx->dev = dev;
+	k_mutex_init(&vctx->lock);
+
+	return 0;
+}
+
+int video_init_context_dev(const struct device *dev)
+{
+	return video_init_context(dev);
+}
