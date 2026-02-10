@@ -1,6 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2025 STMicroelectronics
 
+if BOARD_STM32N6570_DK_STM32N657XX
+
 choice BOOTLOADER
 	default BOOTLOADER_MCUBOOT
 endchoice
+
+endif
