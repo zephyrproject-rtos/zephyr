@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		wakeup-pin = &wakeup_pin;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		wakeup_pin: wakeup_pin {
+			gpios = <&lp_gpio 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		};
+	};
+};
