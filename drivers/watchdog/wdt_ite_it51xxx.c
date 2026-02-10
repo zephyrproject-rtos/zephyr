@@ -65,15 +65,20 @@ struct wdt_it51xxx_data {
 	int wdt_warning_fired;
 };
 
+static inline bool it51xxx_watchdog_is_enabled(const struct device *dev)
+{
+	const struct wdt_it51xxx_config *const wdt_config = dev->config;
+
+	return (sys_read8(wdt_config->base + REG_ETWCFG) & WDT_LEWDCNTL) ? true : false;
+}
+
 static int wdt_it51xxx_install_timeout(const struct device *dev,
 				       const struct wdt_timeout_cfg *config)
 {
-	const struct wdt_it51xxx_config *const wdt_config = dev->config;
 	struct wdt_it51xxx_data *data = dev->data;
-	const uintptr_t base = wdt_config->base;
 
 	/* if watchdog is already running */
-	if (sys_read8(base + REG_ETWCFG) & WDT_LEWDCNTL) {
+	if (it51xxx_watchdog_is_enabled(dev)) {
 		return -EBUSY;
 	}
 
@@ -82,8 +87,15 @@ static int wdt_it51xxx_install_timeout(const struct device *dev,
 	 * 0). Upper limit window timeouts can't be 0 when we install timeout.
 	 */
 	if ((config->window.min != 0) || (config->window.max == 0)) {
-		data->timeout_installed = false;
 		return -EINVAL;
+	}
+
+	if (config->flags != WDT_FLAG_RESET_SOC) {
+		return -ENOTSUP;
+	}
+
+	if (data->timeout_installed) {
+		return -ENOMEM;
 	}
 
 	/* save watchdog timeout */
@@ -116,7 +128,7 @@ static int wdt_it51xxx_setup(const struct device *dev, uint8_t options)
 		return -EINVAL;
 	}
 
-	if (sys_read8(base + REG_ETWCFG) & WDT_LEWDCNTL) {
+	if (it51xxx_watchdog_is_enabled(dev)) {
 		LOG_ERR("WDT is already running");
 		return -EBUSY;
 	}
@@ -176,7 +188,9 @@ static int wdt_it51xxx_feed(const struct device *dev, int channel_id)
 	uint16_t cnt0 = WARNING_TIMER_PERIOD_MS_TO_1024HZ_COUNT(data->timeout);
 	uint8_t reg_val;
 
-	ARG_UNUSED(channel_id);
+	if (!it51xxx_watchdog_is_enabled(dev) || channel_id != 0) {
+		return -EINVAL;
+	}
 
 	/* reset pre-warning timer1 */
 	reg_val = sys_read8(base + REG_ETWCTRL);
@@ -212,6 +226,13 @@ static int wdt_it51xxx_disable(const struct device *dev)
 	const uintptr_t base = wdt_config->base;
 	uint8_t reg_val;
 
+	/* always uninstall timeouts, independent of watchdog enable state */
+	data->timeout_installed = false;
+
+	if (!it51xxx_watchdog_is_enabled(dev)) {
+		return -EFAULT;
+	}
+
 	/* stop watchdog timer counting */
 	reg_val = sys_read8(base + REG_ETWCTRL);
 	sys_write8(reg_val | WDT_EWDSCEN, base + REG_ETWCTRL);
@@ -222,9 +243,6 @@ static int wdt_it51xxx_disable(const struct device *dev)
 
 	/* disable pre-warning timer1 interrupt */
 	irq_disable(DT_INST_IRQN(0));
-
-	/* mark uninstalled */
-	data->timeout_installed = false;
 
 	LOG_DBG("WDT Disabled");
 
