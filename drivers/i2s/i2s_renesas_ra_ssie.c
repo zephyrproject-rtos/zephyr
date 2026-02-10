@@ -236,7 +236,8 @@ static int i2s_renesas_ra_alloc_stream(struct i2s_config *cfg,
 	return 0;
 }
 
-static void free_buffer_when_stop(struct i2s_config *cfg, struct renesas_ra_ssie_stream *stream)
+static void i2s_renesas_ra_free_stream(struct i2s_config *cfg,
+				       struct renesas_ra_ssie_stream *stream)
 {
 	if (stream->mem_block != NULL) {
 		k_mem_slab_free(cfg->mem_slab, stream->mem_block);
@@ -291,7 +292,7 @@ static int renesas_ra_ssie_rx_start_transfer(const struct device *dev)
 	if (fsp_err != FSP_SUCCESS) {
 		LOG_ERR("Failed to start read data");
 		dev_data->state = I2S_STATE_ERROR;
-		free_buffer_when_stop(&dev_data->rx_cfg, &dev_data->rx_stream);
+		i2s_renesas_ra_free_stream(&dev_data->rx_cfg, &dev_data->rx_stream);
 		return -EIO;
 	}
 
@@ -317,7 +318,7 @@ static int renesas_ra_ssie_tx_start_transfer(const struct device *dev)
 	if (fsp_err != FSP_SUCCESS) {
 		LOG_ERR("Failed to start write data");
 		dev_data->state = I2S_STATE_ERROR;
-		free_buffer_when_stop(&dev_data->tx_cfg, tx_stream);
+		i2s_renesas_ra_free_stream(&dev_data->tx_cfg, tx_stream);
 		return -EIO;
 	}
 
@@ -350,8 +351,8 @@ static int renesas_ra_ssie_tx_rx_start_transfer(const struct device *dev)
 				  stream_rx->mem_block_len);
 	if (fsp_err != FSP_SUCCESS) {
 		dev_data->state = I2S_STATE_ERROR;
-		free_buffer_when_stop(&dev_data->tx_cfg, stream_tx);
-		free_buffer_when_stop(&dev_data->rx_cfg, stream_rx);
+		i2s_renesas_ra_free_stream(&dev_data->tx_cfg, stream_tx);
+		i2s_renesas_ra_free_stream(&dev_data->rx_cfg, stream_rx);
 		LOG_ERR("Failed to start write and read data");
 		return -EIO;
 	}
@@ -382,7 +383,7 @@ static void renesas_ra_ssie_idle_dir_both_handle(const struct device *dev)
 		}
 	}
 
-	free_buffer_when_stop(&dev_data->tx_cfg, stream_tx);
+	i2s_renesas_ra_free_stream(&dev_data->tx_cfg, stream_tx);
 
 	ret = renesas_ra_ssie_tx_rx_start_transfer(dev);
 	if (ret < 0) {
@@ -392,8 +393,8 @@ static void renesas_ra_ssie_idle_dir_both_handle(const struct device *dev)
 	return;
 
 dir_both_idle_end:
-	free_buffer_when_stop(&dev_data->tx_cfg, stream_tx);
-	free_buffer_when_stop(&dev_data->rx_cfg, stream_rx);
+	i2s_renesas_ra_free_stream(&dev_data->tx_cfg, stream_tx);
+	i2s_renesas_ra_free_stream(&dev_data->rx_cfg, stream_rx);
 }
 
 static void renesas_ra_ssie_rx_callback(const struct device *dev)
@@ -408,7 +409,7 @@ static void renesas_ra_ssie_rx_callback(const struct device *dev)
 	}
 
 	if (dev_data->trigger_drop) {
-		free_buffer_when_stop(&dev_data->rx_cfg, rx_stream);
+		i2s_renesas_ra_free_stream(&dev_data->rx_cfg, rx_stream);
 		return;
 	}
 
@@ -445,7 +446,7 @@ static void renesas_ra_ssie_rx_callback(const struct device *dev)
 	return;
 
 rx_disable:
-	free_buffer_when_stop(&dev_data->rx_cfg, rx_stream);
+	i2s_renesas_ra_free_stream(&dev_data->rx_cfg, rx_stream);
 	R_SSI_Stop(&dev_data->fsp_ctrl);
 }
 
@@ -470,7 +471,7 @@ static void renesas_ra_ssie_tx_callback(const struct device *dev)
 			}
 		}
 
-		free_buffer_when_stop(&dev_data->tx_cfg, tx_stream);
+		i2s_renesas_ra_free_stream(&dev_data->tx_cfg, tx_stream);
 
 		ret = i2s_renesas_ra_get_stream(&dev_data->tx_queue, tx_stream, K_NO_WAIT);
 		if (ret < 0) {
@@ -487,7 +488,7 @@ static void renesas_ra_ssie_tx_callback(const struct device *dev)
 	return;
 
 tx_disable:
-	free_buffer_when_stop(&dev_data->tx_cfg, tx_stream);
+	i2s_renesas_ra_free_stream(&dev_data->tx_cfg, tx_stream);
 }
 
 static void renesas_ra_ssie_idle_callback(const struct device *dev)
@@ -507,7 +508,7 @@ static void renesas_ra_ssie_idle_callback(const struct device *dev)
 	case I2S_DIR_TX:
 		if (dev_data->state == I2S_STATE_STOPPING) {
 			dev_data->state = I2S_STATE_READY;
-			free_buffer_when_stop(&dev_data->tx_cfg, &dev_data->tx_stream);
+			i2s_renesas_ra_free_stream(&dev_data->tx_cfg, &dev_data->tx_stream);
 		}
 
 		if (dev_data->state == I2S_STATE_RUNNING) {
