@@ -287,7 +287,6 @@ GAF and the top layer profiles have been implemented in Zephyr with the followin
                style=solid;
                MCS_H [label="mcs.h"];
                MCC_H [label="mcc.h"];
-               MP_H [label="media_proxy.h"];
             }
 
             subgraph ccp_layer {
