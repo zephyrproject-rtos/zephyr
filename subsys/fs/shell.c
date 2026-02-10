@@ -641,11 +641,6 @@ static int cmd_read_test(const struct shell *sh, size_t argc, char **argv)
 	uint32_t loops = 0;
 	uint32_t size;
 
-	if (argc < 3) {
-		shell_error(sh, "Missing parameters: read_test <path> <repeat>");
-		return -EINVAL;
-	}
-
 	create_abs_path(argv[1], path, sizeof(path));
 	repeat = strtol(argv[2], NULL, 0);
 
@@ -731,11 +726,6 @@ static int cmd_erase_write_test(const struct shell *sh, size_t argc, char **argv
 	uint64_t loop_time;
 	uint64_t total_time = 0;
 	uint32_t loops = 0;
-
-	if (argc < 4) {
-		shell_error(sh, "Missing parameters: erase_write_test <path> <size> <repeat>");
-		return -EINVAL;
-	}
 
 	create_abs_path(argv[1], path, sizeof(path));
 	size = strtol(argv[2], NULL, 0);
@@ -931,8 +921,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs,
 	SHELL_CMD_ARG(trunc, NULL, "Truncate file", cmd_trunc, 2, 255),
 	SHELL_CMD_ARG(write, NULL, "Write file", cmd_write, 3, 255),
 #ifdef CONFIG_FILE_SYSTEM_SHELL_TEST_COMMANDS
-	SHELL_CMD_ARG(read_test, NULL, "Read file test", cmd_read_test, 2, 2),
-	SHELL_CMD_ARG(erase_write_test, NULL, "Erase/write file test", cmd_erase_write_test, 3, 3),
+	SHELL_CMD_ARG(read_test, NULL, "Read file test", cmd_read_test, 3, 0),
+	SHELL_CMD_ARG(erase_write_test, NULL, "Erase/write file test", cmd_erase_write_test, 4, 0),
 #endif
 	SHELL_SUBCMD_SET_END
 );
