@@ -295,6 +295,8 @@ static int renesas_ra_ssie_rx_start_transfer(const struct device *dev)
 		return -EIO;
 	}
 
+	dev_data->state = I2S_STATE_RUNNING;
+
 	return 0;
 }
 
@@ -318,6 +320,8 @@ static int renesas_ra_ssie_tx_start_transfer(const struct device *dev)
 		free_buffer_when_stop(&dev_data->tx_cfg, tx_stream);
 		return -EIO;
 	}
+
+	dev_data->state = I2S_STATE_RUNNING;
 
 	return 0;
 }
@@ -350,6 +354,11 @@ static int renesas_ra_ssie_tx_rx_start_transfer(const struct device *dev)
 		free_buffer_when_stop(&dev_data->rx_cfg, stream_rx);
 		LOG_ERR("Failed to start write and read data");
 		return -EIO;
+	}
+
+	/* In case I2S stream is draining, don't update the state */
+	if (dev_data->state != I2S_STATE_STOPPING) {
+		dev_data->state = I2S_STATE_RUNNING;
 	}
 
 	return 0;
@@ -540,34 +549,126 @@ static void renesas_ra_ssie_callback(i2s_callback_args_t *p_args)
 	}
 }
 
-static int renesas_ra_ssie_start_transfer(const struct device *dev)
+static int renesas_ra_ssie_start_transfer(const struct device *dev, enum i2s_dir dir)
 {
 	struct renesas_ra_ssie_data *const dev_data = dev->data;
 	int ret;
 
-	/* Start transfer following the current state */
-	switch (dev_data->active_dir) {
-	case I2S_DIR_BOTH:
-		dev_data->state = I2S_STATE_RUNNING;
-		ret = renesas_ra_ssie_tx_rx_start_transfer(dev);
-		break;
-	case I2S_DIR_TX:
-		dev_data->state = I2S_STATE_RUNNING;
-		ret = renesas_ra_ssie_tx_start_transfer(dev);
-		break;
-	case I2S_DIR_RX:
-		dev_data->state = I2S_STATE_RUNNING;
-		ret = renesas_ra_ssie_rx_start_transfer(dev);
-		break;
-	default:
-		LOG_ERR("Invalid direction: %d", dev_data->active_dir);
+	if (dev_data->state != I2S_STATE_READY) {
 		return -EIO;
 	}
 
+	/* Start transfer following the current state */
+	switch (dir) {
+	case I2S_DIR_BOTH:
+		ret = renesas_ra_ssie_tx_rx_start_transfer(dev);
+		break;
+	case I2S_DIR_TX:
+		ret = renesas_ra_ssie_tx_start_transfer(dev);
+		break;
+	case I2S_DIR_RX:
+		ret = renesas_ra_ssie_rx_start_transfer(dev);
+		break;
+	default:
+		LOG_ERR("Invalid direction: %d", dir);
+		ret = -EIO;
+	}
+
 	if (ret < 0) {
-		LOG_ERR("START - Starting transfer failed");
 		return ret;
 	}
+
+	dev_data->active_dir = dir;
+	dev_data->stop_with_draining = false;
+	dev_data->trigger_drop = false;
+
+	return 0;
+}
+
+static int renesas_ra_ssie_stop(const struct device *dev)
+{
+	struct renesas_ra_ssie_data *dev_data = dev->data;
+
+	if (dev_data->state != I2S_STATE_RUNNING) {
+		return -EIO;
+	}
+
+	dev_data->stop_with_draining = false;
+	dev_data->trigger_drop = false;
+	dev_data->state = I2S_STATE_STOPPING;
+
+	return 0;
+}
+
+static int renesas_ra_trigger_drain(const struct device *dev, enum i2s_dir dir)
+{
+	struct renesas_ra_ssie_data *dev_data = dev->data;
+
+	if (dev_data->state != I2S_STATE_RUNNING) {
+		return -EIO;
+	}
+
+	if (dir == I2S_DIR_TX || dir == I2S_DIR_BOTH) {
+		dev_data->stop_with_draining =
+			k_msgq_num_used_get(&dev_data->tx_queue) > 0 ? true : false;
+	} else {
+		/* I2S_DIR_RX */
+		dev_data->stop_with_draining = false;
+	}
+
+	dev_data->state = I2S_STATE_STOPPING;
+	dev_data->trigger_drop = false;
+
+	return 0;
+}
+
+static int renesas_ra_trigger_drop(const struct device *dev, enum i2s_dir dir)
+{
+	struct renesas_ra_ssie_data *dev_data = dev->data;
+	fsp_err_t fsp_err;
+
+	if (dev_data->state == I2S_STATE_NOT_READY) {
+		return -EIO;
+	}
+
+	if (dev_data->state != I2S_STATE_READY) {
+		fsp_err = R_SSI_Stop(&dev_data->fsp_ctrl);
+		if (fsp_err != FSP_SUCCESS) {
+			LOG_ERR("Failed to stop SSI, error: (%d)", fsp_err);
+			return -EIO;
+		}
+	}
+
+	if (dir == I2S_DIR_BOTH || dir == I2S_DIR_TX) {
+		drop_queue(dev, I2S_DIR_TX);
+	}
+
+	if (dir == I2S_DIR_BOTH || dir == I2S_DIR_RX) {
+		drop_queue(dev, I2S_DIR_RX);
+	}
+
+	dev_data->trigger_drop = true;
+
+	return 0;
+}
+
+static int renesas_ra_trigger_prepare(const struct device *dev, enum i2s_dir dir)
+{
+	struct renesas_ra_ssie_data *dev_data = dev->data;
+
+	if (dev_data->state != I2S_STATE_ERROR) {
+		return -EIO;
+	}
+
+	if (dir == I2S_DIR_BOTH || dir == I2S_DIR_TX) {
+		drop_queue(dev, I2S_DIR_TX);
+	}
+
+	if (dir == I2S_DIR_BOTH || dir == I2S_DIR_RX) {
+		drop_queue(dev, I2S_DIR_RX);
+	}
+
+	dev_data->state = I2S_STATE_READY;
 
 	return 0;
 }
@@ -862,68 +963,15 @@ static int i2s_renesas_ra_ssie_trigger(const struct device *dev, enum i2s_dir di
 
 	switch (cmd) {
 	case I2S_TRIGGER_START:
-		if (dev_data->state != I2S_STATE_READY) {
-			return -EIO;
-		}
-		dev_data->active_dir = dir;
-		dev_data->stop_with_draining = false;
-		dev_data->trigger_drop = false;
-		return renesas_ra_ssie_start_transfer(dev);
-
+		return renesas_ra_ssie_start_transfer(dev, dir);
 	case I2S_TRIGGER_STOP:
-		if (dev_data->state != I2S_STATE_RUNNING) {
-			return -EIO;
-		}
-		dev_data->stop_with_draining = false;
-		dev_data->trigger_drop = false;
-		dev_data->state = I2S_STATE_STOPPING;
-		return 0;
-
+		return renesas_ra_ssie_stop(dev);
 	case I2S_TRIGGER_DRAIN:
-		if (dev_data->state != I2S_STATE_RUNNING) {
-			return -EIO;
-		}
-		dev_data->trigger_drop = false;
-		if (dir == I2S_DIR_TX || dir == I2S_DIR_BOTH) {
-			if (k_msgq_num_used_get(&dev_data->tx_queue) > 0) {
-				dev_data->stop_with_draining = true;
-			}
-			dev_data->state = I2S_STATE_STOPPING;
-		} else if (dir == I2S_DIR_RX) {
-			dev_data->stop_with_draining = false;
-			dev_data->state = I2S_STATE_STOPPING;
-		}
-		return 0;
-
+		return renesas_ra_trigger_drain(dev, dir);
 	case I2S_TRIGGER_DROP:
-		if (dev_data->state == I2S_STATE_NOT_READY) {
-			return -EIO;
-		}
-		if (dev_data->state != I2S_STATE_READY) {
-			R_SSI_Stop(&dev_data->fsp_ctrl);
-		}
-		if (dir == I2S_DIR_BOTH || dir == I2S_DIR_TX) {
-			drop_queue(dev, I2S_DIR_TX);
-		}
-		if (dir == I2S_DIR_BOTH || dir == I2S_DIR_RX) {
-			drop_queue(dev, I2S_DIR_RX);
-		}
-		dev_data->trigger_drop = true;
-		return 0;
-
+		return renesas_ra_trigger_drop(dev, dir);
 	case I2S_TRIGGER_PREPARE:
-		if (dev_data->state != I2S_STATE_ERROR) {
-			return -EIO;
-		}
-		if (dir == I2S_DIR_BOTH || dir == I2S_DIR_TX) {
-			drop_queue(dev, I2S_DIR_TX);
-		}
-		if (dir == I2S_DIR_BOTH || dir == I2S_DIR_RX) {
-			drop_queue(dev, I2S_DIR_RX);
-		}
-		dev_data->state = I2S_STATE_READY;
-		return 0;
-
+		return renesas_ra_trigger_prepare(dev, dir);
 	default:
 		LOG_ERR("Invalid trigger: %d", cmd);
 		return -EINVAL;
