@@ -207,6 +207,18 @@ New APIs and options
     * :c:type:`haptics_error_callback_t` to provide function prototype for error callbacks.
     * :c:func:`haptics_register_error_callback` to register an error callback with a driver.
 
+* Hardware Information
+
+  * :c:func:`hwinfo_get_wakeup_cause`
+  * :c:func:`hwinfo_get_supported_wakeup_cause`
+  * :c:macro:`WAKEUP_TIMER`
+  * :c:macro:`WAKEUP_GPIO`
+  * :c:macro:`WAKEUP_COPROCESSOR`
+  * :c:macro:`WAKEUP_TOUCHPAD`
+  * :c:macro:`WAKEUP_UART`
+  * :c:macro:`WAKEUP_WIFI`
+  * :c:macro:`WAKEUP_BT`
+
 * IPM
 
   * IPM callbacks for the mailbox backend now correctly handle signal-only mailbox
