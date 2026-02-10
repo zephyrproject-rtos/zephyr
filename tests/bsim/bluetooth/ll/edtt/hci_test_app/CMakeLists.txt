@@ -11,10 +11,11 @@ target_sources(app PRIVATE
   ../common/edtt_driver_bsim.c
 )
 
+target_include_directories(app PRIVATE ../common)
+
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/samples/bluetooth
   ${ZEPHYR_BASE}/subsys/bluetooth
-  ../common/
   ${BSIM_COMPONENTS_PATH}/libUtilv1/src/
   ${BSIM_COMPONENTS_PATH}/libPhyComv1/src/
 )

@@ -13,10 +13,11 @@ target_sources(app PRIVATE
   main.c
 )
 
+target_include_directories(app PRIVATE ../long_read/)
+
 zephyr_include_directories(
   ${BSIM_COMPONENTS_PATH}/libPhyComv1/src/
   ${BSIM_COMPONENTS_PATH}/libUtilv1/src/
-  ../long_read/
 )
 
 target_link_libraries(app PRIVATE
