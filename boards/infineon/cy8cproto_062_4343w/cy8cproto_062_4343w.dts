@@ -63,7 +63,7 @@ uart2: &scb2 {
 
 		murata-1dx {
 			status = "okay";
-			compatible = "infineon,cyw43xxx-bt-hci";
+			compatible = "infineon,bt-hci-uart";
 			bt-reg-on-gpios = <&gpio_prt3 4 GPIO_ACTIVE_HIGH>;
 
 			/* Configuration UART speeds for firmware download (fw-download-speed)
