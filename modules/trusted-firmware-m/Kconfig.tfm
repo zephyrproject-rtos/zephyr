@@ -233,6 +233,22 @@ config TFM_BL2
 	  TFM is designed to run with MCUboot in a certain configuration.
 	  This config adds MCUboot to the build - built via TFM's build system.
 
+config TFM_ZEPHYR_4_0_TO_4_2_COMPATIBILITY
+	bool "Support upgrading devices originally flashed with Zephyr v4.0 to v4.2"
+	depends on TFM_BL2
+	help
+	  Between Zephyr v4.0 and v4.2, the included version of TF-M had a provisioning
+	  structure field (profile_definition) that changed size from 32 bytes to 48 bytes.
+	  This change was reverted from the TF-M version included in Zephyr v4.3, but the
+	  changing size of the structure prevents OTA upgrades (and bricks devices) when
+	  attempting to update devices programmed with any Zephyr v4.x release before v4.3.
+
+	  This option sets the `PROFILE_DEFINITION_LARGE` define in TF-M, which reverts the
+	  structure field back to 48 bytes. This MUST ONLY be set for applications originally
+	  programmed with a v4.0 to v4.2 Zephyr release.
+
+	  This option MUST remain set for all future upgrades.
+
 config TFM_USE_NS_APP
 	bool "Use the TF-M Non-Secure application"
 	help
