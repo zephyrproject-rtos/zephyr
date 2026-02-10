@@ -1151,18 +1151,17 @@ static int32_t spi_stm32_set_transfer_size(SPI_TypeDef *spi,
 }
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
+#ifndef CONFIG_SPI_STM32_INTERRUPT
 static int spi_stm32_half_duplex_switch_to_receive(const struct spi_stm32_config *cfg,
 						   struct spi_stm32_data *data)
 {
 	SPI_TypeDef *spi = cfg->spi;
 
 	if (!spi_context_tx_on(&data->ctx) && spi_context_rx_on(&data->ctx)) {
-#ifndef CONFIG_SPI_STM32_INTERRUPT
 		while (ll_func_spi_is_busy(spi)) {
 			/* NOP */
 		}
 		LL_SPI_Disable(spi);
-#endif /* CONFIG_SPI_STM32_INTERRUPT*/
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 		const struct spi_config *config = data->ctx.config;
@@ -1226,6 +1225,7 @@ static int spi_stm32_half_duplex_switch_to_receive(const struct spi_stm32_config
 
 	return 0;
 }
+#endif /* !CONFIG_SPI_STM32_INTERRUPT */
 #endif /* !CONFIG_SPI_RTIO */
 
 static int transceive(const struct device *dev,
@@ -1265,8 +1265,6 @@ static int transceive(const struct device *dev,
 	/* Set buffers info */
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, bits2bytes(config->operation));
 
-	uint32_t transfer_dir = LL_SPI_GetTransferDirection(spi);
-
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	if (cfg->fifo_enabled && SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
 		ret = spi_stm32_set_transfer_size(spi, config, tx_bufs, rx_bufs);
@@ -1281,15 +1279,9 @@ static int transceive(const struct device *dev,
 	spi_stm32_msg_start(dev, rx_bufs == NULL);
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
-	do {
-		ret = spi_context_wait_for_completion(&data->ctx);
-
-		if (ret == 0 && transfer_dir == LL_SPI_HALF_DUPLEX_TX) {
-			ret = spi_stm32_half_duplex_switch_to_receive(cfg, data);
-			transfer_dir = LL_SPI_GetTransferDirection(spi);
-		}
-	} while (ret == 0 && spi_stm32_transfer_ongoing(data));
+	ret = spi_context_wait_for_completion(&data->ctx);
 #else /* CONFIG_SPI_STM32_INTERRUPT */
+	uint32_t transfer_dir = LL_SPI_GetTransferDirection(spi);
 	while (ret == 0 && spi_stm32_transfer_ongoing(data)) {
 		ret = spi_stm32_shift_frames(cfg, data);
 
