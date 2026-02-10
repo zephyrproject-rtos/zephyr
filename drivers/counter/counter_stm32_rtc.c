@@ -125,7 +125,7 @@ struct rtc_stm32_data {
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 };
 
-static inline void ll_func_clear_alarm_flag(RTC_TypeDef *rtc)
+static inline void ll_clear_alarm_flag(RTC_TypeDef *rtc)
 {
 #if defined(CONFIG_SOC_SERIES_STM32F1X)
 	LL_RTC_ClearFlag_ALR(rtc);
@@ -134,7 +134,7 @@ static inline void ll_func_clear_alarm_flag(RTC_TypeDef *rtc)
 #endif
 }
 
-static inline uint32_t ll_func_is_active_alarm(RTC_TypeDef *rtc)
+static inline uint32_t ll_is_active_alarm(RTC_TypeDef *rtc)
 {
 #if defined(CONFIG_SOC_SERIES_STM32F1X)
 	return LL_RTC_IsActiveFlag_ALR(rtc);
@@ -143,7 +143,7 @@ static inline uint32_t ll_func_is_active_alarm(RTC_TypeDef *rtc)
 #endif
 }
 
-static inline void ll_func_enable_interrupt_alarm(RTC_TypeDef *rtc)
+static inline void ll_enable_interrupt_alarm(RTC_TypeDef *rtc)
 {
 #if defined(CONFIG_SOC_SERIES_STM32F1X)
 	LL_RTC_EnableIT_ALR(rtc);
@@ -152,7 +152,7 @@ static inline void ll_func_enable_interrupt_alarm(RTC_TypeDef *rtc)
 #endif
 }
 
-static inline void ll_func_disable_interrupt_alarm(RTC_TypeDef *rtc)
+static inline void ll_disable_interrupt_alarm(RTC_TypeDef *rtc)
 {
 #if defined(CONFIG_SOC_SERIES_STM32F1X)
 	LL_RTC_DisableIT_ALR(rtc);
@@ -162,7 +162,7 @@ static inline void ll_func_disable_interrupt_alarm(RTC_TypeDef *rtc)
 }
 
 #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
-static inline uint32_t ll_func_isenabled_interrupt_alarm(RTC_TypeDef *rtc)
+static inline uint32_t ll_isenabled_interrupt_alarm(RTC_TypeDef *rtc)
 {
 #if defined(CONFIG_SOC_SERIES_STM32F1X)
 	return LL_RTC_IsEnabledIT_ALR(rtc);
@@ -172,7 +172,7 @@ static inline uint32_t ll_func_isenabled_interrupt_alarm(RTC_TypeDef *rtc)
 }
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 
-static inline void ll_func_enable_alarm(RTC_TypeDef *rtc)
+static inline void ll_enable_alarm(RTC_TypeDef *rtc)
 {
 #if defined(CONFIG_SOC_SERIES_STM32F1X)
 	ARG_UNUSED(rtc);
@@ -181,7 +181,7 @@ static inline void ll_func_enable_alarm(RTC_TypeDef *rtc)
 #endif
 }
 
-static inline void ll_func_disable_alarm(RTC_TypeDef *rtc)
+static inline void ll_disable_alarm(RTC_TypeDef *rtc)
 {
 #if defined(CONFIG_SOC_SERIES_STM32F1X)
 	ARG_UNUSED(rtc);
@@ -580,7 +580,7 @@ static int rtc_stm32_set_alarm(const struct device *dev, uint8_t chan_id,
 #if !defined(COUNTER_NO_DATE)
 	LL_RTC_DisableWriteProtection(RTC);
 
-	ll_func_disable_alarm(RTC);
+	ll_disable_alarm(RTC);
 
 	/* Configure the Alarm registers */
 	LL_RTC_ALMA_DisableWeekday(RTC);
@@ -618,9 +618,9 @@ static int rtc_stm32_set_alarm(const struct device *dev, uint8_t chan_id,
 	LL_RTC_ALMA_SetSubSecondMask(RTC, 0);
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 #endif /* HW_SUBSECOND_SUPPORT */
-	ll_func_enable_alarm(RTC);
-	ll_func_clear_alarm_flag(RTC);
-	ll_func_enable_interrupt_alarm(RTC);
+	ll_enable_alarm(RTC);
+	ll_clear_alarm_flag(RTC);
+	ll_enable_interrupt_alarm(RTC);
 	LL_RTC_EnableWriteProtection(RTC);
 
 #if defined(COUNTER_NO_DATE)
@@ -656,9 +656,9 @@ static int rtc_stm32_cancel_alarm(const struct device *dev, uint8_t chan_id)
 
 	stm32_backup_domain_enable_access();
 	LL_RTC_DisableWriteProtection(RTC);
-	ll_func_clear_alarm_flag(RTC);
-	ll_func_disable_interrupt_alarm(RTC);
-	ll_func_disable_alarm(RTC);
+	ll_clear_alarm_flag(RTC);
+	ll_disable_interrupt_alarm(RTC);
+	ll_disable_alarm(RTC);
 	LL_RTC_EnableWriteProtection(RTC);
 	stm32_backup_domain_disable_access();
 
@@ -670,7 +670,7 @@ static int rtc_stm32_cancel_alarm(const struct device *dev, uint8_t chan_id)
 
 static uint32_t rtc_stm32_get_pending_int(const struct device *dev)
 {
-	return ll_func_is_active_alarm(RTC) != 0;
+	return ll_is_active_alarm(RTC) != 0;
 }
 
 
@@ -704,17 +704,17 @@ void rtc_stm32_isr(const struct device *dev)
 
 	uint32_t now = rtc_stm32_read(dev);
 
-	if (ll_func_is_active_alarm(RTC) != 0
+	if (ll_is_active_alarm(RTC) != 0
 #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
-	    || (data->irq_on_late && ll_func_isenabled_interrupt_alarm(RTC))
+	    || (data->irq_on_late && ll_isenabled_interrupt_alarm(RTC))
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 	) {
 
 		stm32_backup_domain_enable_access();
 		LL_RTC_DisableWriteProtection(RTC);
-		ll_func_clear_alarm_flag(RTC);
-		ll_func_disable_interrupt_alarm(RTC);
-		ll_func_disable_alarm(RTC);
+		ll_clear_alarm_flag(RTC);
+		ll_disable_interrupt_alarm(RTC);
+		ll_disable_alarm(RTC);
 		LL_RTC_EnableWriteProtection(RTC);
 		stm32_backup_domain_disable_access();
 #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
