@@ -97,7 +97,7 @@ static void dns_result_cb(enum dns_resolve_status status,
 	PR_WARNING("dns: Unhandled status %d received (errno %d)\n", status, errno);
 }
 
-K_MSGQ_DEFINE(dns_infoq, sizeof(struct dns_addrinfo), 3, 1);
+K_MSGQ_DEFINE(dns_infoq, sizeof(struct dns_addrinfo), CONFIG_NET_SHELL_DNS_RESOLVER_QUEUE_SIZE, 1);
 
 static void dns_service_cb(enum dns_resolve_status status,
 			   struct dns_addrinfo *info,
