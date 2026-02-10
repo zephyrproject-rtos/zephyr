@@ -44,21 +44,16 @@ static void tmag5170_thread_main(void *arg1, void *unused1, void *unused2)
 #if defined(CONFIG_TMAG5170_TRIGGER_GLOBAL_THREAD)
 static void tmag5170_work_handler(struct k_work *work)
 {
-	struct tmag5170_data *data = CONTAINER_OF(work,
-						  struct tmag5170_data,
-						  work);
+	struct tmag5170_data *data = CONTAINER_OF(work, struct tmag5170_data, work);
 
 	tmag5170_handle_interrupts(data->dev);
 }
 #endif
 
-static void tmag5170_gpio_callback(const struct device *port,
-				   struct gpio_callback *cb,
+static void tmag5170_gpio_callback(const struct device *port, struct gpio_callback *cb,
 				   uint32_t pin)
 {
-	struct tmag5170_data *data = CONTAINER_OF(cb,
-						  struct tmag5170_data,
-						  gpio_cb);
+	struct tmag5170_data *data = CONTAINER_OF(cb, struct tmag5170_data, gpio_cb);
 
 	ARG_UNUSED(port);
 	ARG_UNUSED(pin);
@@ -72,10 +67,8 @@ static void tmag5170_gpio_callback(const struct device *port,
 #endif
 }
 
-int tmag5170_trigger_set(
-	const struct device *dev,
-	const struct sensor_trigger *trig,
-	sensor_trigger_handler_t handler)
+int tmag5170_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
+			 sensor_trigger_handler_t handler)
 {
 	struct tmag5170_data *data = dev->data;
 
@@ -104,17 +97,9 @@ int tmag5170_trigger_init(const struct device *dev)
 
 #if defined(CONFIG_TMAG5170_TRIGGER_OWN_THREAD)
 	k_sem_init(&data->sem, 0, 1);
-	k_thread_create(
-		&data->thread,
-		data->thread_stack,
-		CONFIG_TMAG5170_THREAD_STACK_SIZE,
-		tmag5170_thread_main,
-		(void *)dev,
-		NULL,
-		NULL,
-		K_PRIO_COOP(CONFIG_TMAG5170_THREAD_PRIORITY),
-		0,
-		K_NO_WAIT);
+	k_thread_create(&data->thread, data->thread_stack, CONFIG_TMAG5170_THREAD_STACK_SIZE,
+			tmag5170_thread_main, (void *)dev, NULL, NULL,
+			K_PRIO_COOP(CONFIG_TMAG5170_THREAD_PRIORITY), 0, K_NO_WAIT);
 #elif defined(CONFIG_TMAG5170_TRIGGER_GLOBAL_THREAD)
 	data->work.handler = tmag5170_work_handler;
 #endif
