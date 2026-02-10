@@ -3459,7 +3459,7 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script,
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst,                                            \
 						  (gnss_pipe, 3))                                  \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 0, 500, 0, 0, false,                                  \
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 0, 500, 5000, 0, false,                               \
 				       NULL,                                                       \
 				       &nordic_nrf91_slm_init_chat_script,                         \
 				       &nordic_nrf91_slm_dial_chat_script,                         \
