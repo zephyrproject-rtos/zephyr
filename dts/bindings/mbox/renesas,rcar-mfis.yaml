@@ -1,0 +1,126 @@
+# Copyright (c) 2026 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Renesas R-Car MFIS MBOX
+
+  The multifunctional interface (MFIS) provides an interface between the
+  different CPU Cores, such as AP System Core domain and the Realtime Core
+  domain, SCP Core domain and AP System Core domain or Realtime Core domain.
+  The MFIS supports both signalling and data transfer modes.
+
+  From the current AP/RT core's perspective, two channel types may be used.
+  A channel can be capable of sending (receiving) signal/data to (from)
+  another AP/RT core domain XOR to (from) SCP core domain.
+  - AP/RT channel IDs = 0 to 63
+  - SCP channel IDs = 64 to 95 for AP cores (cores 0 to 31)
+    SCP channel IDs = 64 to 75 for RT cores (cores 0 to 11)
+
+compatible: "renesas,rcar-mfis-mbox"
+
+include: [base.yaml, mailbox-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+mbox-cells:
+  - channel
+
+examples:
+- |
+  &soc {
+    /* MFIS node on RT core */
+    mfis: mailbox@18800000 {
+      compatible = "renesas,rcar-mfis-mbox";
+      reg = <0x18800000 0x1e2000>;
+      interrupt-parent = <&gic>;
+      interrupts = <GIC_SPI 54 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,  /* AP_00 */
+                   <GIC_SPI 56 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,  /* AP_01 */
+                   <GIC_SPI 58 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,  /* AP_02 */
+                   <GIC_SPI 60 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,  /* AP_03 */
+                   <GIC_SPI 62 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,  /* AP_04 */
+                   <GIC_SPI 64 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,  /* AP_05 */
+                   <GIC_SPI 66 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,  /* AP_06 */
+                   <GIC_SPI 68 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,  /* AP_07 */
+                   <GIC_SPI 70 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,  /* AP_08 */
+                   <GIC_SPI 72 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,  /* AP_09 */
+                   <GIC_SPI 74 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,  /* AP_10 */
+                   <GIC_SPI 76 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,  /* AP_11 */
+                   <GIC_SPI 78 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,  /* AP_12 */
+                   <GIC_SPI 80 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,  /* AP_13 */
+                   <GIC_SPI 82 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,  /* AP_14 */
+                   <GIC_SPI 84 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,  /* AP_15 */
+                   <GIC_SPI 86 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,  /* AP_16 */
+                   <GIC_SPI 88 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,  /* AP_17 */
+                   <GIC_SPI 90 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,  /* AP_18 */
+                   <GIC_SPI 92 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,  /* AP_19 */
+                   <GIC_SPI 94 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,  /* AP_20 */
+                   <GIC_SPI 96 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,  /* AP_21 */
+                   <GIC_SPI 98 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,  /* AP_22 */
+                   <GIC_SPI 100 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_23 */
+                   <GIC_SPI 102 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_24 */
+                   <GIC_SPI 104 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_25 */
+                   <GIC_SPI 106 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_26 */
+                   <GIC_SPI 108 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_27 */
+                   <GIC_SPI 110 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_28 */
+                   <GIC_SPI 112 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_29 */
+                   <GIC_SPI 114 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_30 */
+                   <GIC_SPI 116 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_31 */
+                   <GIC_SPI 118 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_32 */
+                   <GIC_SPI 120 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_33 */
+                   <GIC_SPI 122 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_34 */
+                   <GIC_SPI 124 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_35 */
+                   <GIC_SPI 126 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_36 */
+                   <GIC_SPI 128 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_37 */
+                   <GIC_SPI 130 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_38 */
+                   <GIC_SPI 132 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_39 */
+                   <GIC_SPI 134 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_40 */
+                   <GIC_SPI 136 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_41 */
+                   <GIC_SPI 138 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_42 */
+                   <GIC_SPI 140 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_43 */
+                   <GIC_SPI 142 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_44 */
+                   <GIC_SPI 144 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_45 */
+                   <GIC_SPI 146 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_46 */
+                   <GIC_SPI 148 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_47 */
+                   <GIC_SPI 150 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_48 */
+                   <GIC_SPI 152 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_49 */
+                   <GIC_SPI 154 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_50 */
+                   <GIC_SPI 156 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_51 */
+                   <GIC_SPI 158 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_52 */
+                   <GIC_SPI 160 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_53 */
+                   <GIC_SPI 162 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_54 */
+                   <GIC_SPI 164 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_55 */
+                   <GIC_SPI 166 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_56 */
+                   <GIC_SPI 168 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_57 */
+                   <GIC_SPI 170 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_58 */
+                   <GIC_SPI 172 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_59 */
+                   <GIC_SPI 174 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_60 */
+                   <GIC_SPI 176 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_61 */
+                   <GIC_SPI 178 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_62 */
+                   <GIC_SPI 180 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_63 */
+                   <GIC_SPI 182 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* SCP_00 */
+                   <GIC_SPI 183 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* SCP_01 */
+                   <GIC_SPI 184 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* SCP_02 */
+                   <GIC_SPI 185 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* SCP_03 */
+                   <GIC_SPI 186 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* SCP_04 */
+                   <GIC_SPI 187 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* SCP_05 */
+                   <GIC_SPI 188 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* SCP_06 */
+                   <GIC_SPI 189 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* SCP_07 */
+                   <GIC_SPI 190 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* SCP_08 */
+                   <GIC_SPI 191 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* SCP_09 */
+                   <GIC_SPI 192 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* SCP_10 */
+                   <GIC_SPI 193 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>; /* SCP_11 */
+      #mbox-cells = <1>;
+    };
+
+    /* Consumer using MFIS channel 64 (SCP_00) */
+    scmi {
+      [...]
+      mboxes = <&mfis 64>;
+      [...]
+    };
+  };
