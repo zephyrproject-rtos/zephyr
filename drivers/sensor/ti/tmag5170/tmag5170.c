@@ -497,7 +497,7 @@ static int tmag5170_init(const struct device *dev)
 	static struct tmag5170_data tmag5170_data_##_num;                                          \
 	static const struct tmag5170_dev_config tmag5170_config_##_num = {                         \
 		.bus = SPI_DT_SPEC_INST_GET(_num, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |          \
-							  SPI_WORD_SET(32)),                       \
+							  SPI_WORD_SET(8)),                        \
 		.magnetic_channels = DT_INST_ENUM_IDX(_num, magnetic_channels),                    \
 		.x_range = DT_INST_ENUM_IDX(_num, x_range),                                        \
 		.y_range = DT_INST_ENUM_IDX(_num, y_range),                                        \
