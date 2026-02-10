@@ -8,7 +8,7 @@
 
 int main(void)
 {
-	const struct device *dev = DEVICE_DT_GET_ANY(analog_ad74115h);
+	const struct device *dev = DEVICE_DT_GET_ANY(adi_ad74115h);
 
 	if (!device_is_ready(dev)) {
 		printk("Device not ready\n");
