@@ -186,7 +186,7 @@ static int ad74416h_init(const struct device *dev) {
         .spi = SPI_DT_SPEC_INST_GET(n, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8), 0), \
         .reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}), \
         .adc_rdy_gpio = GPIO_DT_SPEC_INST_GET_OR(n, adc_rdy_gpios, {0}), \
-        .adaptive_power = DT_INST_PROP(n, analog_adaptive_power), \
+        .adaptive_power = DT_INST_PROP(n, adi_adaptive_power), \
     }; \
     DEVICE_DT_INST_DEFINE(n, ad74416h_init, NULL, &ad74416h_data_##n, \
                          &ad74416h_config_##n, POST_KERNEL, \
