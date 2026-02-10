@@ -36,6 +36,17 @@ config XTENSA_ENABLE_BACKTRACE
 	help
 	  Enable this config option to print backtrace on panic exception
 
+config XTENSA_BACKTRACE_EXCEPTION_DUMP_HOOK
+	bool "Send backtrace to exception dump hook"
+	depends on XTENSA_ENABLE_BACKTRACE && EXCEPTION_DUMP_HOOK
+	default y if EXCEPTION_DUMP_HOOK_ONLY
+	help
+	  Enable this option to forward Xtensa panic backtrace output to
+	  exception dump hook.
+
+	  When EXCEPTION_DUMP_HOOK_ONLY is enabled, this defaults to y to
+	  preserve hook-only backtrace output.
+
 config XTENSA_SMALL_VECTOR_TABLE_ENTRY
 	bool "Workaround for small vector table entries"
 	help
