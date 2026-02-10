@@ -18,10 +18,10 @@ properties:
   alert-gpios:
     type: phandle-array
     description: GPIO specifier for the ALERT pin.
-  analog,adaptive-power:
+  adi,adaptive-power:
     type: boolean
     description: Enable adaptive power switching (AVDD_HI/AVDD_LO tracking).
-  analog,wdt-timeout-ms:
+  adi,wdt-timeout-ms:
     type: int
     default: 1000
     enum: [1, 5, 10, 25, 50, 100, 250, 500, 750, 1000, 2000]
