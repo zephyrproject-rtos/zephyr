@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2023 Oticon
+ * Copyright (c) 2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +13,7 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
@@ -243,6 +245,13 @@ static void tbs_client_read_val_cb(struct bt_conn *conn, int err, uint8_t inst_i
 	}
 }
 
+static void tbs_client_technology_cb(struct bt_conn *conn, int err, uint8_t inst_index,
+				     enum bt_bearer_tech technology)
+{
+	tbs_client_chrc_val_ev(conn, err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS, inst_index,
+			       (uint32_t)technology);
+}
+
 static void tbs_client_current_calls_cb(struct bt_conn *conn, int err, uint8_t inst_index,
 					uint8_t call_count, const struct bt_tbs_client_call *calls)
 {
@@ -266,7 +275,7 @@ static struct bt_tbs_client_cb tbs_client_callbacks = {
 	.termination_reason = tbs_client_termination_reason_cb,
 	.bearer_provider_name = tbs_client_read_string_cb,
 	.bearer_uci = tbs_client_read_string_cb,
-	.technology = tbs_client_read_val_cb,
+	.technology = tbs_client_technology_cb,
 	.uri_list = tbs_client_read_string_cb,
 	.signal_strength = tbs_client_read_val_cb,
 	.signal_interval = tbs_client_read_val_cb,
@@ -987,7 +996,7 @@ static uint8_t tbs_set_bearer_technology(const void *cmd, uint16_t cmd_len, void
 
 	LOG_DBG("TBS Set bearer technology");
 
-	err = bt_tbs_set_bearer_technology(cp->index, cp->tech);
+	err = bt_tbs_set_bearer_technology(cp->index, (enum bt_bearer_tech)cp->tech);
 	if (err) {
 		return BTP_STATUS_FAILED;
 	}
@@ -1000,7 +1009,6 @@ static uint8_t tbs_set_uri_scheme_list(const void *cmd, uint16_t cmd_len, void *
 {
 	const struct btp_tbs_set_uri_schemes_list_cmd *cp = cmd;
 	char uri_list[CONFIG_BT_TBS_MAX_SCHEME_LIST_LENGTH];
-	char *uri_ptr = (char *)&uri_list;
 	int err;
 
 	LOG_DBG("TBS Set Uri Scheme list");
@@ -1017,7 +1025,7 @@ static uint8_t tbs_set_uri_scheme_list(const void *cmd, uint16_t cmd_len, void *
 		return BTP_STATUS_FAILED;
 	}
 
-	err = bt_tbs_set_uri_scheme_list(cp->index, (const char **)&uri_ptr, cp->uri_count);
+	err = bt_tbs_set_uri_scheme_list(cp->index, uri_list);
 	if (err) {
 		return BTP_STATUS_FAILED;
 	}
@@ -1158,7 +1166,7 @@ uint8_t tester_init_tbs(void)
 		.uri_schemes_supported = "tel,skype",
 		.gtbs = true,
 		.authorization_required = false,
-		.technology = BT_TBS_TECHNOLOGY_3G,
+		.technology = BT_BEARER_TECH_3G,
 		.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
 	};
 	const struct bt_tbs_register_param tbs_param = {
@@ -1168,7 +1176,7 @@ uint8_t tester_init_tbs(void)
 		.gtbs = false,
 		.authorization_required = false,
 		/* Set different technologies per bearer */
-		.technology = BT_TBS_TECHNOLOGY_4G,
+		.technology = BT_BEARER_TECH_4G,
 		.supported_features = CONFIG_BT_TBS_SUPPORTED_FEATURES,
 	};
 	int err;

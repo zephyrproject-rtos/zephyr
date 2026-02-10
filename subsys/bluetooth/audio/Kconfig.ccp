@@ -57,6 +57,13 @@ config BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH
 	help
 	  Sets the maximum length of the bearer provider name.
 
+config BT_CCP_CALL_CONTROL_SERVER_URI_SCHEMES_MAX_LENGTH
+	int "The maximum length of the bearer URI schemes support list excluding null terminator"
+	default BT_TBS_MAX_SCHEME_LIST_LENGTH
+	range 1 BT_TBS_MAX_SCHEME_LIST_LENGTH
+	help
+	  Sets the maximum length of the bearer URI schemes support list.
+
 module = BT_CCP_CALL_CONTROL_SERVER
 module-str = "Call Control Profile Call Control Server"
 source "subsys/logging/Kconfig.template.log_config"
