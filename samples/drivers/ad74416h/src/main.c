@@ -7,7 +7,7 @@
 
 int main(void)
 {
-	const struct device *dev = DEVICE_DT_GET_ANY(analog_ad74416h);
+	const struct device *dev = DEVICE_DT_GET_ANY(adi_ad74416h);
 
 	if (dev == NULL) {
 		printk("Error: No AD74416H device found.\n");
