@@ -185,11 +185,16 @@ config WAIT_AT_RESET_VECTOR
 
 config ARM64_SAFE_EXCEPTION_STACK
 	bool
+	default y if SIGNAL && USERSPACE
 	help
 	  The safe exception stack is used for checking whether the kernel stack
 	  overflows during the exception happens from EL1. This stack is not
 	  used for user stack overflow checking, because kernel stack support
 	  the checking work.
+
+config ARCH_SUPPORTS_USERSPACE_SIGNALS
+	bool
+	default y
 
 config ARM64_SAFE_EXCEPTION_STACK_SIZE
 	int "The stack size of the safe exception stack"

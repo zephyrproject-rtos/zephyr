@@ -56,6 +56,10 @@ zephyr_linker_sources(ROM_START SORT_KEY 0x0vectors vector_table.ld)
 zephyr_linker_sources(ROM_START SORT_KEY 0x1vectors cortex_m/vector_table_pad.ld)
 endif()
 
+if(CONFIG_SIGNAL AND CONFIG_USERSPACE)
+  zephyr_library_sources(signal.c)
+endif()
+
 if(CONFIG_GEN_SW_ISR_TABLE)
   if(CONFIG_DYNAMIC_INTERRUPTS)
     zephyr_linker_sources(RWDATA swi_tables.ld)

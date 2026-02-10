@@ -55,6 +55,25 @@ struct arch_esf {
 #endif
 } __aligned(16);
 
+struct arch_sig_ctx {
+#ifdef CONFIG_FRAME_POINTER
+	unsigned long fp; /* user frame pointer */
+#endif
+#ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
+	unsigned long sp; /* user stack pointer */
+#endif
+	unsigned long lr; /* user stack pointer */
+	unsigned long elr; /* syscall return address */
+	unsigned long x0; /* syscall return value */
+	/*
+	 * Callee-saved registers of the interrupted context. The signal trampoline chain
+	 * clobbers them per the ABI, and k_sig_return() resumes the interrupted context
+	 * without unwinding the trampoline's frames, so they are captured at redirection
+	 * and restored on the k_sig_return() exit path.
+	 */
+	unsigned long x[10]; /* x19..x28 */
+};
+
 #ifdef __cplusplus
 }
 #endif

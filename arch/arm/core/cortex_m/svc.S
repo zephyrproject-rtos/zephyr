@@ -264,7 +264,7 @@ SECTION_FUNC(TEXT, z_arm_svc)
     adds r1, r1, #_thread_offset_to_priv_stack_start
     ldr r1, [r1] /* bottom of priv stack */
     ldr r3, =CONFIG_PRIVILEGED_STACK_SIZE
-    subs r3, #(_EXC_HW_SAVED_BASIC_SF_SIZE+8) /* 8 for original sp and pc */
+    subs r3, #(_EXC_HW_SAVED_BASIC_SF_SIZE+16) /* original sp, lr, r0, and pc */
     add r1, r3
     mov ip, r1
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
@@ -281,7 +281,7 @@ SECTION_FUNC(TEXT, z_arm_svc)
 #else
     mov r8, #_EXC_HW_SAVED_BASIC_SF_SIZE
 #endif
-    sub ip, #8 /* z_arm_do_syscall will use this to get original sp and pc */
+    sub ip, #16 /* z_arm_do_syscall reserved area: original sp, lr, r0, and pc */
     sub ip, r8 /* 32 for basic sf + 72 for the optional esf */
 #endif
 

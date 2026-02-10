@@ -47,6 +47,10 @@ GDATA(_k_syscall_table)
 # define UNLOCK(unused)
 #endif
 
+#if defined(CONFIG_SIGNAL)
+GTEXT(z_sig_handle)
+#endif
+
 /**
  *
  * User space entry function
@@ -389,6 +393,7 @@ dispatch_syscall:
     lsls r6, #2
     add r0, r6
     ldr r0, [r0]	/* load table address */
+    lsr r6, #2          /* preserve syscall id */
     /* swap ip and r0, restore r1 from lr */
     mov r1, ip
     mov ip, r0
@@ -429,12 +434,93 @@ dispatch_syscall:
     lsl r6, #2
     add ip, r6
     ldr ip, [ip]	/* load table address */
+    lsr r6, #2          /* preserve syscall id */
 
     /* execute function from dispatch table */
     blx ip
 
     /* restore LR */
     ldr lr, [sp,#16]
+#endif
+
+    /* restore stack pointer to its original location */
+    pop {r4,r5,ip}
+
+#ifdef CONFIG_SIGNAL
+    ldr ip, =K_SYSCALL_K_SIG_ACTION
+    cmp ip, r6
+    beq .L_skip_k_sig_handle
+    ldr ip, =K_SYSCALL_K_SIG_CURRENT
+    cmp ip, r6
+    beq .L_skip_k_sig_handle
+    ldr ip, =K_SYSCALL_K_SIG_RETURN
+    cmp ip, r6
+    beq .L_do_sig_return_restore
+
+    /* Store LR into privileged stack */
+    str lr, [sp,#4]
+    /* Store R0 (syscall return value) into privileged stack */
+    str r0, [sp,#8]
+    /* Store PC (return address) into privileged stack from R8 */
+    str r8, [sp,#12]
+
+    /* Pass privileged stack to z_sig_handle() */
+    mov r0, sp
+    ldr ip, =z_sig_handle
+    blx ip
+    cmp r0, #0
+    beq .L_do_sig_restore
+
+    /*
+     * z_sig_handle() redirected the return path into the signal trampoline. The trampoline
+     * chain clobbers the callee-saved registers per the ABI and k_sig_return() resumes the
+     * interrupted context without unwinding, so capture them now: at this point they still
+     * hold the interrupted context's values.
+     */
+    ldr r0, =_kernel
+    ldr r0, [r0, #_kernel_offset_to_current]
+    ldr r1, =__thread_sig_user_s_OFFSET
+    add r0, r0, r1
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    stmia r0!, {r4-r7}
+    mov r1, r8
+    mov r2, r9
+    mov r3, r10
+    stmia r0!, {r1-r3}
+    mov r1, r11
+    str r1, [r0]
+#else
+    stmia r0, {r4-r11}
+#endif
+    b .L_do_sig_restore
+
+.L_do_sig_return_restore:
+    /* restore the callee-saved registers captured when the trampoline was entered */
+    ldr r0, =_kernel
+    ldr r0, [r0, #_kernel_offset_to_current]
+    ldr r1, =__thread_sig_user_s_OFFSET
+    add r0, r0, r1
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    ldmia r0!, {r4-r7}
+    ldmia r0!, {r1-r3}
+    mov r8, r1
+    mov r9, r2
+    mov r10, r3
+    ldr r1, [r0]
+    mov r11, r1
+#else
+    ldmia r0, {r4-r11}
+#endif
+
+.L_do_sig_restore:
+    /* Retore LR from privileged stack */
+    ldr lr, [sp,#4]
+    /* Restore R0 (syscall return value) from privileged stack */
+    ldr r0, [sp,#8]
+    /* Restore PC (return address) from privileged stack into R8 */
+    ldr r8, [sp,#12]
+
+.L_skip_k_sig_handle:
 #endif
 
     LOCK(ip)
@@ -478,14 +564,14 @@ dispatch_syscall:
     /* set stack back to unprivileged stack */
     mov ip, r0
     mov r0, sp
-    ldr r0, [r0,#12]
+    ldr r0, [r0]
     msr PSP, r0
     /* Restore r0 */
     mov r0, ip
 
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     /* set stack back to unprivileged stack */
-    ldr ip, [sp,#12]
+    ldr ip, [sp]
     msr PSP, ip
 #endif
 
@@ -607,7 +693,6 @@ z_syscall_exit_race2:
 #endif
 
     bx ip
-
 
 /*
  * size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)

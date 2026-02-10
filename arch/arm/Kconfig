@@ -237,4 +237,8 @@ endchoice
 config ARCH_HAS_LLEXT_VENEERS
 	bool
 
+config ARCH_SUPPORTS_USERSPACE_SIGNALS
+	bool
+	default y
+
 endmenu

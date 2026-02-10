@@ -14,6 +14,10 @@
 
 _ASM_FILE_PROLOGUE
 
+#if defined(CONFIG_SIGNAL)
+GTEXT(z_sig_handle)
+#endif
+
 /*
  * size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)
  */
@@ -136,6 +140,60 @@ valid_syscall_id:
 
 	/* Save the return value into the ESF */
 	str	x0, [sp, ___esf_t_x0_x1_OFFSET]
+
+#ifdef CONFIG_SIGNAL
+	ldr	x0, =K_SYSCALL_K_SIG_ACTION
+	cmp	x0, x8
+	beq skip_k_sig_handle
+	ldr	x0, =K_SYSCALL_K_SIG_CURRENT
+	cmp	x0, x8
+	beq skip_k_sig_handle
+	ldr	x0, =K_SYSCALL_K_SIG_RETURN
+	cmp	x0, x8
+	beq z_sig_return_restore
+
+	mov	x0, sp
+	ldr	x9, =z_sig_handle
+	blr	x9
+	cbz	x0, skip_k_sig_handle
+
+	/*
+	 * z_sig_handle() redirected the return path into the signal trampoline. The trampoline
+	 * chain clobbers the callee-saved registers per the ABI and k_sig_return() resumes the
+	 * interrupted context without unwinding, so capture them now: at this point they still
+	 * hold the interrupted context's values.
+	 */
+	get_cpu	x9
+	ldr	x9, [x9, #___cpu_t_current_OFFSET]
+	ldr	x10, =__thread_sig_user_x_OFFSET
+	add	x9, x9, x10
+	stp	x19, x20, [x9, #0]
+	stp	x21, x22, [x9, #16]
+	stp	x23, x24, [x9, #32]
+	stp	x25, x26, [x9, #48]
+	stp	x27, x28, [x9, #64]
+	b	skip_k_sig_handle
+
+z_sig_return_restore:
+	get_cpu	x9
+	ldr	x9, [x9, #___cpu_t_current_OFFSET]
+
+	/* the return-value store above overwrote the resumed context's x0 */
+	ldr	x10, =__thread_sig_user_x0_OFFSET
+	ldr	x10, [x9, x10]
+	str	x10, [sp, ___esf_t_x0_x1_OFFSET]
+
+	/* restore the callee-saved registers captured when the trampoline was entered */
+	ldr	x10, =__thread_sig_user_x_OFFSET
+	add	x9, x9, x10
+	ldp	x19, x20, [x9, #0]
+	ldp	x21, x22, [x9, #16]
+	ldp	x23, x24, [x9, #32]
+	ldp	x25, x26, [x9, #48]
+	ldp	x27, x28, [x9, #64]
+
+skip_k_sig_handle:
+#endif
 
 	/* Return from exception */
 	.cfi_endproc

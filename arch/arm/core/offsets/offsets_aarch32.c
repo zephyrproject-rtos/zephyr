@@ -57,6 +57,11 @@ GEN_OFFSET_SYM(_thread_arch_t, mode_exc_return);
 GEN_OFFSET_SYM(_thread_arch_t, priv_stack_start);
 GEN_OFFSET_SYM(_thread_arch_t, priv_stack_end);
 
+#if defined(CONFIG_SIGNAL)
+GEN_ABSOLUTE_SYM(__thread_sig_user_s_OFFSET,
+		 offsetof(struct k_thread, base.sig.user.s));
+#endif
+
 #if defined(CONFIG_CPU_AARCH32_CORTEX_R)
 GEN_OFFSET_SYM(_thread_arch_t, sp_usr);
 #endif
