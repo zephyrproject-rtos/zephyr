@@ -31,7 +31,7 @@ body:
       description: |
         Check this box if this is a regression and provide a SHA if you were able to "git bisect" to a specific commit.
       options:
-        - label: This is a regression.
+        - label: This is a regression (please find the culprit commit with `git bisect` in that case).
           required: false
   - type: textarea
     id: reproduce
