@@ -672,14 +672,6 @@ static int renesas_ra_trigger_prepare(const struct device *dev, enum i2s_dir dir
 		return -EIO;
 	}
 
-	if (dir == I2S_DIR_BOTH || dir == I2S_DIR_TX) {
-		drop_queue(dev, I2S_DIR_TX);
-	}
-
-	if (dir == I2S_DIR_BOTH || dir == I2S_DIR_RX) {
-		drop_queue(dev, I2S_DIR_RX);
-	}
-
 	dev_data->state = I2S_STATE_READY;
 
 	return 0;
