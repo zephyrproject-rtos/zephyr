@@ -155,6 +155,10 @@ ZTEST(flash_driver_negative, test_negative_flash_erase_unaligned)
 	/* Check error returned when erasing unaligned memory */
 	rc = flash_erase(flash_dev, (TEST_AREA_OFFSET + 1), page_info.size);
 	zassert_true(rc < 0, "Invalid use of flash_erase (unaligned erase size) returned %d", rc);
+
+	/* Check error returned when erasing unaligned size */
+	rc = flash_erase(flash_dev, TEST_AREA_OFFSET, page_info.size + 1);
+	zassert_true(rc < 0, "Invalid use of flash_erase (unaligned size) returned %d", rc);
 }
 
 /*  Erase page offset and size are constrains of paged, explicit erase devices,
