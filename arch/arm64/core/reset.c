@@ -84,6 +84,7 @@ void z_arm64_el3_init(void)
 	if (is_sve_implemented()) {
 		reg |= CPTR_EZ_BIT;		/* Enable SVE access for lower ELs */
 		write_cptr_el3(reg);
+		barrier_isync_fence_full();
 
 		/* Initialize ZCR_EL3 for full SVE vector length */
 		/* ZCR_EL3.LEN = 0x1ff means full hardware vector length */
@@ -202,9 +203,17 @@ void z_arm64_el2_init(void)
 #ifdef CONFIG_ARM64_SVE
 	/* Enable SVE for EL1 and EL0 if SVE is implemented */
 	if (is_sve_implemented()) {
-		reg &= ~CPTR_EL2_ZEN_MASK;
-		reg |= (CPTR_EL2_ZEN_EL1_EN | CPTR_EL2_ZEN_EL0_EN);
+		/*
+		 * In non-VHE CPTR_EL2, SVE trapping is controlled by the TZ
+		 * bit (bit 8) which was already cleared above.  Bits [17:16]
+		 * (ZEN) are RES0 in non-VHE mode and must not be set.
+		 *
+		 * Match the Linux kernel sequence (el2_setup.h): write
+		 * CPTR_EL2 with TZ=0, ISB, then set ZCR_EL2 for full
+		 * vector length.
+		 */
 		write_cptr_el2(reg);
+		barrier_isync_fence_full();
 
 		/* Initialize ZCR_EL2 for full SVE vector length */
 		/* ZCR_EL2.LEN = 0x1ff means full hardware vector length */
@@ -259,6 +268,7 @@ void z_arm64_el1_init(void)
 	if (is_sve_implemented()) {
 		reg |= CPACR_EL1_ZEN;	/* Do not trap SVE initially */
 		write_cpacr_el1(reg);
+		barrier_isync_fence_full();
 
 		/* Initialize ZCR_EL1 SVE vector length */
 		write_zcr_el1(CONFIG_ARM64_SVE_VL_MAX/16 - 1);
