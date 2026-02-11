@@ -353,3 +353,22 @@ zephyr_mipi_dbi_spi: &lcdic {
 nxp_pmod_touch_panel_i2c: &arduino_i2c {
 	status = "okay";
 };
+
+/* power-states properties:
+ * min-residency-us depends on use-case, and set by the board or app
+ * Idle mode maps to Power Mode 1
+ */
+&idle {
+	min-residency-us = <0>;
+};
+
+/* Suspend mode maps to Power Mode 2 */
+&suspend {
+	min-residency-us = <412>;
+};
+
+/* standby mode maps to Sleep/Power Mode 3 */
+&standby {
+	exit-latency-us = <13460>;
+	min-residency-us = <1690>;
+};
