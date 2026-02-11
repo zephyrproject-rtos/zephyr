@@ -3787,6 +3787,7 @@ NXP Platforms (MCU):
     - name: NXP MCU LPC11U6x
       collaborators:
         - simonguinot
+        - mbittan
       files:
         - boards/nxp/lpcxpresso11u68/
         - soc/nxp/lpc/lpc11u6x/
