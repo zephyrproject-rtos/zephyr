@@ -3,5 +3,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_MCXW2XX
+	select HAS_PM
 	select HAS_POWEROFF
 	select NXP_SNPS_BLE_CTRL if BT

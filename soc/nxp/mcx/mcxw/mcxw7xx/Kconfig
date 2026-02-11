@@ -10,10 +10,12 @@ config MCUX_CORE_SUFFIX
 config SOC_MCXW716C
 	bool
 	select NXP_MULTICORE if NXP_NBU
+	select HAS_PM
 
 config SOC_MCXW727C
 	bool
 	select NXP_MULTICORE if NXP_NBU
+	select HAS_PM
 
 config SOC_MCXW70AC
 	bool
