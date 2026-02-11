@@ -3449,8 +3449,8 @@ static bool le_conn_rate_common_params_valid(const struct bt_conn_le_conn_rate_p
 		return false;
 	}
 
-	if (!IN_RANGE(param->supervision_timeout_10ms, BT_HCI_LE_SUPERVISON_TIMEOUT_MIN,
-		     BT_HCI_LE_SUPERVISON_TIMEOUT_MAX)) {
+	if (!IN_RANGE(param->supervision_timeout_10ms, BT_HCI_LE_SUPERVISION_TIMEOUT_MIN,
+		     BT_HCI_LE_SUPERVISION_TIMEOUT_MAX)) {
 		return false;
 	}
 

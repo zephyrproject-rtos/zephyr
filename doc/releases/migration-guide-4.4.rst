@@ -903,6 +903,12 @@ Bluetooth Mesh
 * :kconfig:option:`CONFIG_BT_MESH_MODEL_VND_MSG_CID_FORCE` has been deprecated. Enabling it no
   longer has any effect on message handling performance.
 
+Bluetooth HCI
+=============
+* Use :c:macro:`BT_HCI_LE_SUPERVISION_TIMEOUT_MIN` and :c:macro:`BT_HCI_LE_SUPERVISION_TIMEOUT_MAX` instead
+  of :c:macro:`BT_HCI_LE_SUPERVISON_TIMEOUT_MIN` and :c:macro:`BT_HCI_LE_SUPERVISON_TIMEOUT_MAX` because
+  they have been deprecated for misspelling.
+
 Networking
 **********
 
