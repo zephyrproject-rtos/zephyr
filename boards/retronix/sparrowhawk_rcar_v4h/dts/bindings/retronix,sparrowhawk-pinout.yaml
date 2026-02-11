@@ -20,3 +20,7 @@ child-binding:
       type: phandle-array
       description: >
         List of pin specifiers: <&gpio-controller pin flag>
+    pwms:
+      type: phandle-array
+      description: >
+        List of pin specifiers: <&pwm-controller channel period flag>
