@@ -102,8 +102,7 @@ config MBEDTLS_RSA_ENABLE_LEGACY_APIS
 	bool
 	imply MBEDTLS_RSA_C
 	imply MBEDTLS_PKCS1_V15
-	default y if MBEDTLS_CIPHERSUITE_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256 || \
-		     MBEDTLS_CIPHERSUITE_TLS_RSA_WITH_AES_256_CBC_SHA256
+	default y if MBEDTLS_CIPHERSUITE_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
 	help
 	  Promptless Kconfig to automatically enable legacy RSA crypto support
 	  when RSA based ciphersuites are enabled.
@@ -126,7 +125,6 @@ config MBEDTLS_KEY_EXCHANGE_ALL_ENABLED
 	select MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED
 	select MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
 	select MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
-	select MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
 	select MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
 	select MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
 	select MBEDTLS_KEY_EXCHANGE_ECDHE_ECDSA_ENABLED
@@ -155,12 +153,6 @@ config MBEDTLS_PSK_MAX_LEN
 	help
 	  Max size of TLS pre-shared keys, in bytes. It has no effect if no
 	  PSK key exchange is used.
-
-config MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
-	bool "RSA-only based ciphersuite modes"
-	depends on MBEDTLS_MD_C
-	depends on PSA_WANT_KEY_TYPE_RSA_KEY_PAIR_BASIC
-	depends on MBEDTLS_X509_CRT_PARSE_C
 
 config MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
 	bool "DHE-RSA based ciphersuite modes"
