@@ -111,6 +111,16 @@
 			};
 		};
 
+		dmac: dmac@41006000 {
+			compatible = "microchip,dmac-g2-dma";
+			reg = <0x41006000 0x50>;
+			interrupts = <7 0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_AHB_DMAC>;
+			clock-names = "mclk";
+			dma-channels = <0xc>;
+			#dma-cells = <2>;
+		};
+
 		sercom0: sercom@42000400 {
 			compatible = "microchip,sercom-g1";
 			reg = <0x42000400 0x31>;
