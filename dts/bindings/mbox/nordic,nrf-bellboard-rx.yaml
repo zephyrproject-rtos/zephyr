@@ -9,18 +9,6 @@ description: |
   communication (IPC) framework. When used in the rx mode, the BELLBOARD
   instance is used to receive events triggered by other remote cores.
 
-  Example definition:
-
-    bellboard: mailbox@deadbeef {
-      compatible = "nordic,nrf-bellboard-rx";
-      reg = <0xdeadbeef 0x1000>;
-      interrupts = <98 NRF_DEFAULT_IRQ_PRIORITY>,
-                   <99 NRF_DEFAULT_IRQ_PRIORITY>;
-      interrupt-names = "irq2", "irq3";
-      nordic,interrupt-mapping = <0x0000000f 2>, <0x000000f0 3>;
-      #mbox-cells = <1>;
-    };
-
 compatible: "nordic,nrf-bellboard-rx"
 
 include: "nordic,nrf-bellboard-common.yaml"
@@ -41,3 +29,15 @@ properties:
       possible events are mapped to the given interrupt. For example, given
       <0x0000000f 2>, the first four events are mapped to interrupt 2
       (irq2).
+
+examples:
+  - |
+    bellboard: mailbox@deadbeef {
+      compatible = "nordic,nrf-bellboard-rx";
+      reg = <0xdeadbeef 0x1000>;
+      interrupts = <98 NRF_DEFAULT_IRQ_PRIORITY>,
+                   <99 NRF_DEFAULT_IRQ_PRIORITY>;
+      interrupt-names = "irq2", "irq3";
+      nordic,interrupt-mapping = <0x0000000f 2>, <0x000000f0 3>;
+      #mbox-cells = <1>;
+    };
