@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2026 William Fish (Manulytica ltd)
- *
- * SPDX-License-Identifier: Apache-2.0
- */
+* Copyright (c) 2026 William Fish (Manulytica ltd)
+*
+* SPDX-License-Identifier: Apache-2.0
+*/
 
 #define DT_DRV_COMPAT adi_ad74115h
 
@@ -63,7 +63,9 @@ static int ad74115h_access(const struct device *dev, uint8_t reg, uint16_t val_i
 	const struct spi_buf_set rx_set = { .buffers = &rx_buf, .count = 1 };
 
 	int ret = spi_transceive_dt(&config->spi, &tx_set, &rx_set);
-	if (ret < 0) return ret;
+	if (ret < 0) {
+		return ret;
+	}
 
 	if (val_out) {
 		if (rx[3] != ad74115h_crc8(rx, 3)) {
@@ -113,7 +115,8 @@ static const struct sensor_driver_api ad74115h_sensor_api = {
 
 static void ad74115h_rdy_callback(const struct device *port, struct gpio_callback *cb, uint32_t pins)
 {
-	struct ad74115h_data *data = CONTAINER_OF(cb, struct ad74115h_data, adc_rdy_cb);
+	struct ad74115h_data *data;
+	data = CONTAINER_OF(cb, struct ad74115h_data, adc_rdy_cb);
 	k_sem_give(&data->adc_sem);
 }
 
@@ -125,7 +128,9 @@ static int ad74115h_init(const struct device *dev)
 	k_mutex_init(&data->lock);
 	k_sem_init(&data->adc_sem, 0, 1);
 
-	if (!spi_is_ready_dt(&config->spi)) return -ENODEV;
+	if (!spi_is_ready_dt(&config->spi)) {
+		return -ENODEV;
+	}
 
 	if (config->reset_gpio.port) {
 		gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE);
