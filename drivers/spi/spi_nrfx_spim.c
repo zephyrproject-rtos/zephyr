@@ -365,9 +365,16 @@ static int transceive(const struct device *dev,
 	void *reg = dev_data->spim.p_reg;
 	int error;
 
-	pm_device_runtime_get(dev);
 	spi_context_lock(&dev_data->ctx, asynchronous, cb, userdata, spi_cfg);
 
+	spi_context_buffers_setup(&dev_data->ctx, tx_bufs, rx_bufs, 1);
+	if (!spi_context_tx_buf_on(&dev_data->ctx) &&
+	    !spi_context_rx_buf_on(&dev_data->ctx)) {
+		spi_context_release(&dev_data->ctx, -EINVAL);
+		return -EINVAL;
+	}
+
+	pm_device_runtime_get(dev);
 	error = configure(dev, spi_cfg);
 
 	if (error == 0) {
@@ -386,7 +393,6 @@ static int transceive(const struct device *dev,
 			}
 		}
 
-		spi_context_buffers_setup(&dev_data->ctx, tx_bufs, rx_bufs, 1);
 		if (NRF_SPIM_IS_320MHZ_SPIM(reg)) {
 			nrfy_spim_enable(reg);
 		}
