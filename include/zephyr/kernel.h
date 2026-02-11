@@ -366,7 +366,7 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  * @param size Stack size in bytes.
  * @param flags Stack creation flags, or 0.
  *
- * @retval the allocated thread stack on success.
+ * @retval non-NULL the allocated thread stack on success
  * @retval NULL on failure.
  *
  * Relevant stack creation flags include:
@@ -579,7 +579,7 @@ __syscall int k_thread_runtime_stack_unused_threshold_set(struct k_thread *threa
  *
  * @param thread Thread from which to retrieve the threshold
  *
- * @retval Unused stack threshold (in bytes)
+ * @return Unused stack threshold (in bytes)
  */
 __syscall size_t k_thread_runtime_stack_unused_threshold_get(struct k_thread *thread);
 
@@ -1504,7 +1504,7 @@ __syscall int k_thread_name_set(k_tid_t thread, const char *str);
  * Get the name of a thread
  *
  * @param thread Thread ID
- * @retval Thread name, or NULL if @kconfig{CONFIG_THREAD_NAME} not enabled
+ * @return Thread name, or NULL if @kconfig{CONFIG_THREAD_NAME} not enabled
  */
 const char *k_thread_name_get(k_tid_t thread);
 
@@ -1532,7 +1532,7 @@ __syscall int k_thread_name_copy(k_tid_t thread, char *buf,
  * @param buf Buffer into which to copy state strings
  * @param buf_size Size of the buffer
  *
- * @retval Pointer to @a buf if data was copied, else a pointer to "".
+ * @return Pointer to @a buf if data was copied, else a pointer to "".
  */
 const char *k_thread_state_str(k_tid_t thread_id, char *buf, size_t buf_size);
 
@@ -2603,7 +2603,7 @@ __syscall int k_futex_wait(struct k_futex *futex, int expected,
  *                 wakeup the highest priority thread.
  * @retval -EACCES Caller does not have access to the futex address.
  * @retval -EINVAL Futex parameter address not recognized by the kernel.
- * @retval Number of threads that were woken up.
+ * @retval >=0 Number of threads that were woken up.
  */
 __syscall int k_futex_wake(struct k_futex *futex, bool wake_all);
 
@@ -2685,7 +2685,7 @@ __syscall void k_event_init(struct k_event *event);
  * @param event Address of the event object
  * @param events Set of events to post to @a event
  *
- * @retval Previous value of the events in @a event
+ * @return Previous value of the events in @a event
  */
 __syscall uint32_t k_event_post(struct k_event *event, uint32_t events);
 
@@ -2704,7 +2704,7 @@ __syscall uint32_t k_event_post(struct k_event *event, uint32_t events);
  * @param event Address of the event object
  * @param events Set of events to set in @a event
  *
- * @retval Previous value of the events in @a event
+ * @return Previous value of the events in @a event
  */
 __syscall uint32_t k_event_set(struct k_event *event, uint32_t events);
 
@@ -2722,7 +2722,7 @@ __syscall uint32_t k_event_set(struct k_event *event, uint32_t events);
  * @param events Set of events to set/clear in @a event
  * @param events_mask Mask to be applied to @a events
  *
- * @retval Previous value of the events in @a events_mask
+ * @return Previous value of the events in @a events_mask
  */
 __syscall uint32_t k_event_set_masked(struct k_event *event, uint32_t events,
 				  uint32_t events_mask);
@@ -2737,7 +2737,7 @@ __syscall uint32_t k_event_set_masked(struct k_event *event, uint32_t events,
  * @param event Address of the event object
  * @param events Set of events to clear in @a event
  *
- * @retval Previous value of the events in @a event
+ * @return Previous value of the events in @a event
  */
 __syscall uint32_t k_event_clear(struct k_event *event, uint32_t events);
 
@@ -2762,7 +2762,7 @@ __syscall uint32_t k_event_clear(struct k_event *event, uint32_t events);
  * @param timeout Waiting period for the desired set of events or one of the
  *                special values K_NO_WAIT and K_FOREVER.
  *
- * @retval set of matching events upon success
+ * @retval non-zero set of matching events upon success
  * @retval 0 if matching events were not received within the specified time
  */
 __syscall uint32_t k_event_wait(struct k_event *event, uint32_t events,
@@ -2789,7 +2789,7 @@ __syscall uint32_t k_event_wait(struct k_event *event, uint32_t events,
  * @param timeout Waiting period for the desired set of events or one of the
  *                special values K_NO_WAIT and K_FOREVER.
  *
- * @retval set of matching events upon success
+ * @retval non-zero set of matching events upon success
  * @retval 0 if matching events were not received within the specified time
  */
 __syscall uint32_t k_event_wait_all(struct k_event *event, uint32_t events,
@@ -2811,7 +2811,7 @@ __syscall uint32_t k_event_wait_all(struct k_event *event, uint32_t events,
  * @param timeout Waiting period for the desired set of events or one of the
  *                special values K_NO_WAIT and K_FOREVER.
  *
- * @retval set of matching events upon success
+ * @retval non-zero set of matching events upon success
  * @retval 0 if no matching event was received within the specified time
  */
 __syscall uint32_t k_event_wait_safe(struct k_event *event, uint32_t events,
@@ -2833,7 +2833,7 @@ __syscall uint32_t k_event_wait_safe(struct k_event *event, uint32_t events,
  * @param timeout Waiting period for the desired set of events or one of the
  *                special values K_NO_WAIT and K_FOREVER.
  *
- * @retval set of matching events upon success
+ * @retval non-zero set of matching events upon success
  * @retval 0 if all matching events were not received within the specified time
  */
 __syscall uint32_t k_event_wait_all_safe(struct k_event *event, uint32_t events,
@@ -2847,7 +2847,7 @@ __syscall uint32_t k_event_wait_all_safe(struct k_event *event, uint32_t events,
  * @param event Address of the event object
  * @param events_mask Set of desired events to test
  *
- * @retval Current value of events in @a events_mask
+ * @return Current value of events in @a events_mask
  */
 static inline uint32_t k_event_test(struct k_event *event, uint32_t events_mask)
 {
@@ -5616,7 +5616,7 @@ struct k_pipe {
  * @param len Size of data (in bytes).
  * @param timeout Waiting period to wait for the data to be written.
  *
- * @retval number of bytes written on success
+ * @retval >=0 number of bytes written on success
  * @retval -EAGAIN if no data could be written before the timeout expired
  * @retval -ECANCELED if the write was interrupted by k_pipe_reset(..)
  * @retval -EPIPE if the pipe was closed
@@ -5634,7 +5634,7 @@ __syscall int k_pipe_write(struct k_pipe *pipe, const uint8_t *data, size_t len,
  * @param len Requested number of bytes to read.
  * @param timeout Waiting period to wait for the data to be read.
  *
- * @retval number of bytes read on success
+ * @retval >=0 number of bytes read on success
  * @retval -EAGAIN if no data could be read before the timeout expired
  * @retval -ECANCELED if the read was interrupted by k_pipe_reset(..)
  * @retval -EPIPE if the pipe was closed
@@ -6148,7 +6148,7 @@ void k_heap_free(struct k_heap *h, void *mem) __attribute_nonnull(1);
  *
  * @param alloc_bytes Size of a desired allocation
  *
- * @retval Approximate size of the heap required to allocate @a alloc_bytes
+ * @return Approximate size of the heap required to allocate @a alloc_bytes
  */
 #define Z_HEAP_MIN_SIZE_FOR(alloc_bytes) \
 	((alloc_bytes) + _Z_HEAP_SIZE + _Z_HEAP_BUCKETS_SIZE(alloc_bytes) + (3 * 8))
