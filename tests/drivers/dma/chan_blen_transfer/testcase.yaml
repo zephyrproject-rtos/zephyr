@@ -19,3 +19,4 @@ tests:
     platform_allow:
       - nucleo_c031c6
       - sam_e54_xpro
+      - pic32cm_jh01_cpro
