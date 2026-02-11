@@ -16,26 +16,18 @@ LOG_MODULE_REGISTER(tls_configuration_sample, LOG_LEVEL_INF);
 #include <zephyr/net/net_if.h>
 #include <zephyr/sys/util.h>
 
-/* This include is required for the definition of the Mbed TLS internal symbol
- * MBEDTLS_SSL_HANDSHAKE_WITH_PSK_ENABLED.
- */
-#include <mbedtls/ssl_ciphersuites.h>
+#if defined(CONFIG_MBEDTLS_CIPHERSUITE_TLS_PSK_WITH_AES_256_CBC_SHA384) || \
+	defined(CONFIG_MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_ENABLED)
+#define USE_PSK_KEY_EXCHANGE
+#endif
 
-#if defined(MBEDTLS_SSL_HANDSHAKE_WITH_PSK_ENABLED)
+#if defined(USE_PSK_KEY_EXCHANGE)
 static const unsigned char psk[] = { 0x01, 0x02, 0x03, 0x04, 0x05 };
 static const char psk_id[] = "PSK_identity";
-#endif /* MBEDTLS_SSL_HANDSHAKE_WITH_PSK_ENABLED */
+#endif /* USE_PSK_KEY_EXCHANGE */
 
-/* Following certificates (*.inc files) are:
- * - generated from "create-certs.sh" script
- * - converted in C array shape in the CMakeList file
- */
-#if defined(CONFIG_PSA_WANT_ALG_RSA_PKCS1V15_SIGN) || defined(CONFIG_PSA_WANT_ALG_RSA_PSS)
-#define USE_CERTIFICATE
-static const unsigned char certificate[] = {
-#include "rsa.crt.inc"
-};
-#elif defined(CONFIG_PSA_WANT_ALG_ECDSA)
+/* Server certificate is only used when not using PSK key exchanges for simplicity. */
+#if !defined(USE_PSK_KEY_EXCHANGE)
 #define USE_CERTIFICATE
 static const unsigned char certificate[] = {
 #include "ec.crt.inc"
@@ -51,7 +43,7 @@ enum {
 #if defined(USE_CERTIFICATE)
 	CA_CERTIFICATE_TAG,
 #endif
-#if defined(MBEDTLS_SSL_HANDSHAKE_WITH_PSK_ENABLED)
+#if defined(USE_PSK_KEY_EXCHANGE)
 	PSK_TAG,
 #endif
 };
@@ -102,7 +94,7 @@ static int create_socket(void)
 #if defined(USE_CERTIFICATE)
 		CA_CERTIFICATE_TAG,
 #endif
-#if defined(MBEDTLS_SSL_HANDSHAKE_WITH_PSK_ENABLED)
+#if defined(USE_PSK_KEY_EXCHANGE)
 		PSK_TAG,
 #endif
 	};
@@ -159,7 +151,7 @@ static int setup_credentials(void)
 	}
 #endif
 
-#if defined(MBEDTLS_SSL_HANDSHAKE_WITH_PSK_ENABLED)
+#if defined(USE_PSK_KEY_EXCHANGE)
 	err = tls_credential_add(PSK_TAG,
 				TLS_CREDENTIAL_PSK,
 				psk,
