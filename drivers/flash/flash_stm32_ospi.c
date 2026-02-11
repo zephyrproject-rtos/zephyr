@@ -1112,8 +1112,12 @@ static int stm32_ospi_set_memorymap(const struct device *dev)
 	}
 
 	/* Enable the memory-mapping */
+#if defined(CONFIG_SOC_SERIES_STM32U5X) && defined(OCTOSPIM)
+	s_MemMappedCfg.TimeOutActivation = HAL_OSPI_TIMEOUT_COUNTER_ENABLE;
+	s_MemMappedCfg.TimeOutPeriod     = 0x34;
+#else	
 	s_MemMappedCfg.TimeOutActivation = HAL_OSPI_TIMEOUT_COUNTER_DISABLE;
-
+#endif /* CONFIG_SOC_SERIES_STM32U5X && OCTOSPIM*/
 	ret = HAL_OSPI_MemoryMapped(&dev_data->hospi, &s_MemMappedCfg);
 	if (ret != HAL_OK) {
 		LOG_ERR("%d: Failed to enable memory map", ret);
@@ -2388,7 +2392,7 @@ static int flash_stm32_ospi_init(const struct device *dev)
 
 	if (dev_data->hospi.Instance == OCTOSPI1) {
 		ospi_mgr_cfg.ClkPort = DT_OSPI_PROP_OR(clk_port, 1);
-		ospi_mgr_cfg.DQSPort = DT_OSPI_PROP_OR(dqs_port, 1);
+		ospi_mgr_cfg.DQSPort = DT_OSPI_PROP_OR(dqs_port, 0);
 		ospi_mgr_cfg.NCSPort = DT_OSPI_PROP_OR(ncs_port, 1);
 		ospi_mgr_cfg.IOLowPort = DT_OSPI_IO_PORT_PROP_OR(io_low_port,
 								 HAL_OSPIM_IOPORT_1_LOW);
@@ -2396,7 +2400,7 @@ static int flash_stm32_ospi_init(const struct device *dev)
 								  HAL_OSPIM_IOPORT_1_HIGH);
 	} else if (dev_data->hospi.Instance == OCTOSPI2) {
 		ospi_mgr_cfg.ClkPort = DT_OSPI_PROP_OR(clk_port, 2);
-		ospi_mgr_cfg.DQSPort = DT_OSPI_PROP_OR(dqs_port, 2);
+		ospi_mgr_cfg.DQSPort = DT_OSPI_PROP_OR(dqs_port, 0);
 		ospi_mgr_cfg.NCSPort = DT_OSPI_PROP_OR(ncs_port, 2);
 		ospi_mgr_cfg.IOLowPort = DT_OSPI_IO_PORT_PROP_OR(io_low_port,
 								 HAL_OSPIM_IOPORT_2_LOW);
@@ -2585,7 +2589,7 @@ static int flash_stm32_ospi_init(const struct device *dev)
 		(long)(STM32_OSPI_BASE_ADDRESS),
 		dev_cfg->flash_size);
 #else
-	LOG_DBG("NOR octo-flash at 0x%lx (0x%x bytes)",
+	LOG_DBG("NOR octo-flash NOT in MemoryMapped mode",
 		(long)(STM32_OSPI_BASE_ADDRESS),
 		dev_cfg->flash_size);
 #endif /* CONFIG_STM32_MEMMAP */
