@@ -196,13 +196,13 @@ stm32_lp_tick_source: &lptim1 {
 };
 
 zephyr_udc0: &usbotg_hs {
-	clocks = <&rcc STM32_CLOCK(AHB2, 14)>,
-		 <&rcc STM32_SRC_HSE OTGHS_SEL(0)>;
 	status = "okay";
 };
 
 &otghs_phy {
-	/* OTG HS clock source is 32 MHz HSE */
+	/* Select 32 MHz HSE as OTG HS PHY clock source */
+	clocks = <&rcc STM32_CLOCK(AHB2, 15)>,
+		 <&rcc STM32_SRC_HSE OTGHS_SEL(0)>;
 	clock-reference = "SYSCFG_OTG_HS_PHY_CLK_32MHz";
 	status = "okay";
 };
