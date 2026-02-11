@@ -3343,12 +3343,17 @@ struct bt_hci_evt_le_advertising_report {
 } __packed;
 
 /** All limits according to BT Core Spec v5.4 [Vol 4, Part E]. */
-#define BT_HCI_LE_INTERVAL_MIN           0x0006
-#define BT_HCI_LE_INTERVAL_MAX           0x0c80
+#define BT_HCI_LE_INTERVAL_MIN            0x0006
+#define BT_HCI_LE_INTERVAL_MAX            0x0c80
 #define BT_HCI_LE_PERIPHERAL_LATENCY_MIN (0x0000U)
-#define BT_HCI_LE_PERIPHERAL_LATENCY_MAX 0x01f3
-#define BT_HCI_LE_SUPERVISON_TIMEOUT_MIN 0x000a
-#define BT_HCI_LE_SUPERVISON_TIMEOUT_MAX 0x0c80
+#define BT_HCI_LE_PERIPHERAL_LATENCY_MAX  0x01f3
+/** Minimum LE supervision timeout (10 ms) */
+#define BT_HCI_LE_SUPERVISION_TIMEOUT_MIN 0x000a
+/** Maximum LE supervision timeout (3200 ms) */
+#define BT_HCI_LE_SUPERVISION_TIMEOUT_MAX 0x0c80
+/* Deprecated misspelled aliases: use BT_HCI_LE_SUPERVISION_TIMEOUT_{MIN,MAX} instead. */
+#define BT_HCI_LE_SUPERVISON_TIMEOUT_MIN BT_HCI_LE_SUPERVISION_TIMEOUT_MIN __DEPRECATED_MACRO
+#define BT_HCI_LE_SUPERVISON_TIMEOUT_MAX BT_HCI_LE_SUPERVISION_TIMEOUT_MAX __DEPRECATED_MACRO
 
 #define BT_HCI_LE_INTERVAL_UNIT_US (1250U)
 

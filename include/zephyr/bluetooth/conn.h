@@ -359,7 +359,7 @@ struct bt_conn_le_conn_rate_param {
 	 *
 	 * Unit: 10 milliseconds
 	 *
-	 * Range: @ref BT_HCI_LE_SUPERVISON_TIMEOUT_MIN - @ref BT_HCI_LE_SUPERVISON_TIMEOUT_MAX
+	 * Range: @ref BT_HCI_LE_SUPERVISION_TIMEOUT_MIN - @ref BT_HCI_LE_SUPERVISION_TIMEOUT_MAX
 	 */
 	uint16_t supervision_timeout_10ms;
 	/** @brief Minimum length of connection event
@@ -410,7 +410,7 @@ struct bt_conn_le_conn_rate_changed {
 	 *
 	 * Unit: 10 milliseconds
 	 *
-	 * Range: @ref BT_HCI_LE_SUPERVISON_TIMEOUT_MIN - @ref BT_HCI_LE_SUPERVISON_TIMEOUT_MAX
+	 * Range: @ref BT_HCI_LE_SUPERVISION_TIMEOUT_MIN - @ref BT_HCI_LE_SUPERVISION_TIMEOUT_MAX
 	 */
 	uint16_t supervision_timeout_10ms;
 };

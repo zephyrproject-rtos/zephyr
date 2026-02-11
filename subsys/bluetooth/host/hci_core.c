@@ -2079,8 +2079,8 @@ static void le_conn_update_complete(struct net_buf *buf)
 					LOG_WRN("latency exceeds the valid range 0x%04x",
 						conn->le.latency);
 				}
-				if (!IN_RANGE(conn->le.timeout, BT_HCI_LE_SUPERVISON_TIMEOUT_MIN,
-					      BT_HCI_LE_SUPERVISON_TIMEOUT_MAX)) {
+				if (!IN_RANGE(conn->le.timeout, BT_HCI_LE_SUPERVISION_TIMEOUT_MIN,
+					      BT_HCI_LE_SUPERVISION_TIMEOUT_MAX)) {
 					LOG_WRN("supv_timeout exceeds the valid range 0x%04x",
 						conn->le.timeout);
 				}
@@ -2792,8 +2792,8 @@ void bt_hci_le_subrate_change_event(struct net_buf *buf)
 				LOG_WRN("continuation_number exceeds the valid range %d",
 					conn->le.subrate.continuation_number);
 			}
-			if (!IN_RANGE(conn->le.timeout, BT_HCI_LE_SUPERVISON_TIMEOUT_MIN,
-				      BT_HCI_LE_SUPERVISON_TIMEOUT_MAX)) {
+			if (!IN_RANGE(conn->le.timeout, BT_HCI_LE_SUPERVISION_TIMEOUT_MIN,
+				      BT_HCI_LE_SUPERVISION_TIMEOUT_MAX)) {
 				LOG_WRN("supervision_timeout exceeds the valid range 0x%04x",
 					conn->le.timeout);
 			}
@@ -2856,8 +2856,8 @@ void bt_hci_le_conn_rate_change_event(struct net_buf *buf)
 				LOG_WRN("continuation_number exceeds the valid range %d",
 					conn->le.subrate.continuation_number);
 			}
-			if (!IN_RANGE(conn->le.timeout, BT_HCI_LE_SUPERVISON_TIMEOUT_MIN,
-				      BT_HCI_LE_SUPERVISON_TIMEOUT_MAX)) {
+			if (!IN_RANGE(conn->le.timeout, BT_HCI_LE_SUPERVISION_TIMEOUT_MIN,
+				      BT_HCI_LE_SUPERVISION_TIMEOUT_MAX)) {
 				LOG_WRN("supervision_timeout exceeds the valid range 0x%04x",
 					conn->le.timeout);
 			}
