@@ -95,6 +95,7 @@ BinaryFiles.txt
 BoardYml.txt
 Checkpatch.txt
 ClangFormat.txt
+CMakeStyle.txt
 DevicetreeBindings.txt
 DevicetreeLinting.txt
 GitDiffCheck.txt
