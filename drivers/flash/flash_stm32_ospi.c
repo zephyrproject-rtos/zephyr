@@ -2589,9 +2589,7 @@ static int flash_stm32_ospi_init(const struct device *dev)
 		(long)(STM32_OSPI_BASE_ADDRESS),
 		dev_cfg->flash_size);
 #else
-	LOG_DBG("NOR octo-flash NOT in MemoryMapped mode",
-		(long)(STM32_OSPI_BASE_ADDRESS),
-		dev_cfg->flash_size);
+	LOG_DBG("NOR octo-flash NOT in MemoryMapped mode");
 #endif /* CONFIG_STM32_MEMMAP */
 
 	return 0;
