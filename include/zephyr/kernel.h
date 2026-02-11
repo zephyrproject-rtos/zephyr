@@ -1486,7 +1486,7 @@ __syscall void *k_thread_custom_data_get(void);
 /**
  * @brief Set current thread name
  *
- * Set the name of the thread to be used when @kconfig{CONFIG_THREAD_MONITOR}
+ * Set the name of the thread to be used when @kconfig{CONFIG_THREAD_NAME}
  * is enabled for tracing and debugging.
  *
  * @param thread Thread to set name, or NULL to set the current thread
@@ -1504,7 +1504,7 @@ __syscall int k_thread_name_set(k_tid_t thread, const char *str);
  * Get the name of a thread
  *
  * @param thread Thread ID
- * @retval Thread name, or NULL if configuration not enabled
+ * @retval Thread name, or NULL if @kconfig{CONFIG_THREAD_NAME} not enabled
  */
 const char *k_thread_name_get(k_tid_t thread);
 
