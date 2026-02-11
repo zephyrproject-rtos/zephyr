@@ -565,15 +565,6 @@ class RimageSigner(Signer):
 
         command.inf('Signing for SOC target ' + target)
 
-        # FIXME: deprecate --no-manifest and replace it with a much
-        # simpler and more direct `-- -e` which the user can _already_
-        # pass today! With unclear consequences right now...
-        if '--no-manifest' in args.tool_args:
-            no_manifest = True
-            args.tool_args.remove('--no-manifest')
-        else:
-            no_manifest = False
-
         # Non-SOF build does not have extended manifest data for
         # rimage to process, which might result in rimage error.
         # So skip it when not doing SOF builds.
