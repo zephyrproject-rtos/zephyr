@@ -212,19 +212,27 @@ ZTEST(os_mgmt_mpstat, test_read)
 	zassert_true(ok, "Expected decode to be successful");
 	zassert_equal(decoded, 1, "Expected to receive 1 decoded zcbor element");
 
+	const uint32_t libc_malloc_min = (9 * CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE) / 10;
+	const uint32_t libc_malloc_max = (11 * CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE) / 10;
+	const uint32_t kernel_malloc_min = (9 * CONFIG_HEAP_MEM_POOL_SIZE) / 10;
+	const uint32_t kernel_malloc_max = (11 * CONFIG_HEAP_MEM_POOL_SIZE) / 10;
+
 	while (i < receive_response.current_heap) {
 		struct heap_info_t *current_heap =
 				&receive_response.heaps[i];
+		/* Block size only set when CONFIG_MCUMGR_GRP_OS_MPSTAT_ONLY_SUPPORTED_STATS
+		 * is disabled.
+		 */
+		uint32_t block_size = current_heap->block_size ? current_heap->block_size : 1;
+		uint32_t heap_size = current_heap->total_blocks * block_size;
 
-		if (current_heap->total_blocks < CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE &&
-		    current_heap->total_blocks > (CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE / 4)) {
+		if ((libc_malloc_min <= heap_size) && (heap_size <= libc_malloc_max)) {
 			zassert_false(found_common_malloc_area,
 				      "Already found common malloc heap area");
 			found_common_malloc_area = true;
 			common_malloc_normal_size = current_heap->free_blocks;
 			common_malloc_index = i;
-		} else if (current_heap->total_blocks < CONFIG_HEAP_MEM_POOL_SIZE &&
-			   current_heap->total_blocks > (CONFIG_HEAP_MEM_POOL_SIZE / 4)) {
+		} else if ((kernel_malloc_min <= heap_size) && (heap_size <= kernel_malloc_max)) {
 			zassert_false(found_kernel_malloc_area,
 				      "Already found kernel malloc heap area");
 			found_kernel_malloc_area = true;
