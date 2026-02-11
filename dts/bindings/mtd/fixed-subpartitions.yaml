@@ -1,35 +1,6 @@
 description: |
   Fixed subpartitions of a flash (or other nonvolatile storage) memory.
 
-  Here is an example:
-
-    &flash0 {
-            partitions {
-                    compatible = "fixed-partitions";
-                    #address-cells = <1>;
-                    #size-cells = <1>;
-
-                    slot0_partition: partition@10000 {
-                            compatible = "fixed-subpartitions";
-                            label = "image-0";
-                            reg = <0x00010000 0x70000>;
-                            ranges = <0x0 0x10000 0x70000>;
-                            #address-cells = <1>;
-                            #size-cells = <1>;
-
-                            slot0_s_partition: partition@0 {
-                                    label = "image-0-secure";
-                                    reg = <0x00000000 0x40000>;
-                            };
-
-                            slot0_ns_partition: partition@40000 {
-                                    label = "image-0-nonsecure";
-                                    reg = <0x00040000 0x30000>;
-                            };
-                    };
-            };
-    };
-
 compatible: "fixed-subpartitions"
 
 properties:
@@ -87,3 +58,32 @@ child-binding:
         address of the parent memory, and SIZE is the size of
         the partition in bytes.
       required: true
+
+examples:
+  - |
+    &flash0 {
+            partitions {
+                    compatible = "fixed-partitions";
+                    #address-cells = <1>;
+                    #size-cells = <1>;
+
+                    slot0_partition: partition@10000 {
+                            compatible = "fixed-subpartitions";
+                            label = "image-0";
+                            reg = <0x00010000 0x70000>;
+                            ranges = <0x0 0x10000 0x70000>;
+                            #address-cells = <1>;
+                            #size-cells = <1>;
+
+                            slot0_s_partition: partition@0 {
+                                    label = "image-0-secure";
+                                    reg = <0x00000000 0x40000>;
+                            };
+
+                            slot0_ns_partition: partition@40000 {
+                                    label = "image-0-nonsecure";
+                                    reg = <0x00040000 0x30000>;
+                            };
+                    };
+            };
+    };

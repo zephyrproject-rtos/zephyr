@@ -17,8 +17,13 @@ description: |
   these can list the specific EEPROM vendor and model along with the vendor EEPROM family as long as
   the least-specific compatible entry is "atmel,at24".
 
-  Example devicetree node describing a ST M24M01 EEPROM on the i2c0 bus:
+compatible: "atmel,at24"
 
+include: ["atmel,at2x-base.yaml", i2c-device.yaml]
+
+examples:
+  - |
+    /* Example node for an ST M24M01 EEPROM on the i2c0 bus */
     &i2c0 {
       status = "okay";
       clock-frequency = <I2C_BITRATE_FAST>;
@@ -30,9 +35,5 @@ description: |
         pagesize = <256>;
         address-width = <16>;
         timeout = <5>;
-     };
-   };
-
-compatible: "atmel,at24"
-
-include: ["atmel,at2x-base.yaml", i2c-device.yaml]
+      };
+    };

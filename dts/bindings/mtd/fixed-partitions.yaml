@@ -1,43 +1,6 @@
 description: |
   Fixed partitions of a flash (or other non-volatile storage) memory.
 
-  Here is an example:
-
-    &flash0 {
-            partitions {
-                    compatible = "fixed-partitions";
-                    #address-cells = <1>;
-                    #size-cells = <1>;
-
-                    boot_partition: partition@0 {
-                            label = "mcuboot";
-                            reg = <0x00000000 0x0000C000>;
-                    };
-                    slot0_partition: partition@c000 {
-                            label = "image-0";
-                            reg = <0x0000C000 0x00076000>;
-                    };
-                    slot1_partition: partition@82000 {
-                            label = "image-1";
-                            reg = <0x00082000 0x00076000>;
-                    };
-
-                    /*
-                     * The flash starting at 0x000f8000 and ending at
-                     * 0x000fffff is reserved for use by the application.
-                     */
-
-                    /*
-                     * Storage partition will be used by FCB/LittleFS/NVS
-                     * if enabled.
-                     */
-                    storage_partition: partition@f8000 {
-                            label = "storage";
-                            reg = <0x000f8000 0x00008000>;
-                    };
-            };
-    };
-
   Note that the usual name for this node is 'partitions'.
   The fixed-partitions node should be a child of the flash
   memory node. Note also that the flash memory node is usually
@@ -94,3 +57,40 @@ child-binding:
         address of the parent memory, and SIZE is the size of
         the partition in bytes.
       required: true
+
+examples:
+  - |
+    &flash0 {
+            partitions {
+                    compatible = "fixed-partitions";
+                    #address-cells = <1>;
+                    #size-cells = <1>;
+
+                    boot_partition: partition@0 {
+                            label = "mcuboot";
+                            reg = <0x00000000 0x0000C000>;
+                    };
+                    slot0_partition: partition@c000 {
+                            label = "image-0";
+                            reg = <0x0000C000 0x00076000>;
+                    };
+                    slot1_partition: partition@82000 {
+                            label = "image-1";
+                            reg = <0x00082000 0x00076000>;
+                    };
+
+                    /*
+                     * The flash starting at 0x000f8000 and ending at
+                     * 0x000fffff is reserved for use by the application.
+                     */
+
+                    /*
+                     * Storage partition will be used by FCB/LittleFS/NVS
+                     * if enabled.
+                     */
+                    storage_partition: partition@f8000 {
+                            label = "storage";
+                            reg = <0x000f8000 0x00008000>;
+                    };
+            };
+    };
