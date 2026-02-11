@@ -446,7 +446,7 @@ static inline int dma_reload(const struct device *dev, uint32_t channel,
  * Start is allowed on channels that have already been started and must report
  * success.
  *
- * @funcprops \isr_ok
+ * @isr_ok
  *
  * @param dev     Pointer to the device structure for the driver instance.
  * @param channel Numeric identification of the channel where the transfer will
@@ -472,7 +472,7 @@ static inline int dma_start(const struct device *dev, uint32_t channel)
  * Stop is allowed on channels that have already been stopped and must report
  * success.
  *
- * @funcprops \isr_ok
+ * @isr_ok
  *
  * @param dev     Pointer to the device structure for the driver instance.
  * @param channel Numeric identification of the channel where the transfer was
@@ -489,14 +489,13 @@ static inline int dma_stop(const struct device *dev, uint32_t channel)
 	return api->stop(dev, channel);
 }
 
-
 /**
  * @brief Suspend a DMA channel transfer
  *
  * Implementations must check the validity of the channel state and ID passed
  * in and return -EINVAL if either are invalid.
  *
- * @funcprops \isr_ok
+ * @isr_ok
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param channel Numeric identification of the channel to suspend
@@ -522,7 +521,7 @@ static inline int dma_suspend(const struct device *dev, uint32_t channel)
  * Implementations must check the validity of the channel state and ID passed
  * in and return -EINVAL if either are invalid.
  *
- * @funcprops \isr_ok
+ * @isr_ok
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param channel Numeric identification of the channel to resume
@@ -649,7 +648,7 @@ static inline int dma_chan_filter(const struct device *dev, int channel, void *f
  * Implementations must check the validity of the channel ID passed in and
  * return -EINVAL if it is invalid or -ENOSYS if not supported.
  *
- * @funcprops \isr_ok
+ * @isr_ok
  *
  * @param dev     Pointer to the device structure for the driver instance.
  * @param channel Numeric identification of the channel where the transfer was
@@ -680,7 +679,7 @@ static inline int dma_get_status(const struct device *dev, uint32_t channel,
  * Implementations must check the validity of the type passed in and
  * return -EINVAL if it is invalid or -ENOSYS if not supported.
  *
- * @funcprops \isr_ok
+ * @isr_ok
  *
  * @param dev     Pointer to the device structure for the driver instance.
  * @param type    Numeric identification of the attribute
