@@ -68,8 +68,19 @@
 		gp27: gp27 {
 			gpios = <&sparrowhawkgpio 27 GPIO_ACTIVE_LOW>;
 		};
-	};
 
+		pwm0: pwm0 {
+			pwms = <&pwm 6 1024 0>;
+		};
+
+		pwm1: pwm1 {
+			pwms = <&pwm 7 1024 0>;
+		};
+
+		pwm3: pwm3 {
+			pwms = <&pwm 1 1024 0>;
+		};
+	};
 };
 
 /* USB serial */
@@ -83,4 +94,9 @@
 	pinctrl-0 = <&hscif1_data_tx_default &hscif1_data_rx_default>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&pwm {
+	pinctrl-0 = <&pwm1_default &pwm6_default &pwm7_default>;
+	pinctrl-names = "default";
 };
