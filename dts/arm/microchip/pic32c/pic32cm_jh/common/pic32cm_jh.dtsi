@@ -35,6 +35,10 @@
 			write-block-size = <4>;
 		};
 
+		nvm_sw_calib_area: nvm-sw-calib-area@806020 {
+			reg = <0x00806020 0x8>;
+		};
+
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 		};
@@ -162,6 +166,40 @@
 			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_SERCOM3>,
 				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM3_CORE>;
 			clock-names = "mclk", "gclk";
+			status = "disabled";
+		};
+
+		adc0: adc@42004400 {
+			compatible = "microchip,adc-g1";
+			reg = <0x42004400 0x2e>;
+			interrupts = <25 0>;
+			interrupt-names = "resrdy";
+			num-channels = <15>;
+			#io-channel-cells = <1>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_ADC0>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_ADC0>;
+			clock-names = "mclk", "gclk";
+			nvm-calib = <&nvm_sw_calib_area>;
+			calib-mapping = <0 0x0 0x7>,
+					<8 0x3 0x7>;
+			calib-mapping-names = "BIASREFBUF", "BIASCOMP";
+			status = "disabled";
+		};
+
+		adc1: adc@42004800 {
+			compatible = "microchip,adc-g1";
+			reg = <0x42004800 0x2e>;
+			interrupts = <26 0>;
+			interrupt-names = "resrdy";
+			num-channels = <15>;
+			#io-channel-cells = <1>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_ADC1>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_ADC1>;
+			clock-names = "mclk", "gclk";
+			nvm-calib = <&nvm_sw_calib_area>;
+			calib-mapping = <0 0x6 0x7>,
+					<8 0x9 0x7>;
+			calib-mapping-names = "BIASREFBUF", "BIASCOMP";
 			status = "disabled";
 		};
 	};
