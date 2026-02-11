@@ -1,0 +1,26 @@
+#
+# Copyright (c) 2026 Renesas Electronics Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+#
+
+title: PWM consumer for output pin on board
+
+description: >
+  A node that holds a list of PWM phandles and the pin names.
+
+compatible: "retronix,sparrowhawk-pwm-io"
+
+include: base.yaml
+
+properties:
+  pwms:
+    type: phandle-array
+    required: true
+    description: >
+      List of PWM specifiers: <&controller channel period_ns flags>
+  pwm-names:
+    type: string-array
+    description: >
+      The board pin names corresponding to entries in 'pwms'

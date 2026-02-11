@@ -112,6 +112,14 @@
 			clock-frequency = <1041250>;
 			status = "disabled";
 		};
+
+		pwm: pwm@e6e30000 {
+			compatible = "renesas,pwm-rcar";
+			reg = <0xe6e30000 0x8>;
+			clocks = <&cpg CPG_MOD 628>, <&cpg CPG_CORE R8A779G0_CLK_SASYNCPERD4>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
 	};
 
 	clocks {

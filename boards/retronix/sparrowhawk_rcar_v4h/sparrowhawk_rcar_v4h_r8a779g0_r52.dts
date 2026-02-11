@@ -33,6 +33,14 @@
 			   <22 0 &gpio2 6 0>,
 			   <17 0 &gpio2 12 0>;
 	};
+
+	pwm_io: pwm-io {
+		compatible = "retronix,sparrowhawk-pwm-io";
+		pwms = <&pwm 6 1024 0>,
+		       <&pwm 7 1024 0>,
+		       <&pwm 1 1024 0>;
+		pwm-names = "pwm0_io", "pwm1_io", "pwm3_io";
+	};
 };
 
 /* USB serial */
@@ -46,4 +54,9 @@
 	pinctrl-0 = <&hscif1_data_tx_default &hscif1_data_rx_default>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&pwm {
+	pinctrl-0 = <&pwm1_default &pwm6_default &pwm7_default>;
+	pinctrl-names = "default";
 };
