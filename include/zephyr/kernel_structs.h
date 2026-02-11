@@ -299,6 +299,7 @@ typedef void (*_timeout_func_t)(struct _timeout *t);
 struct _timeout {
 	sys_dnode_t node;
 	_timeout_func_t fn;
+	uint32_t flags;
 #ifdef CONFIG_TIMEOUT_64BIT
 	/* Can't use k_ticks_t for header dependency reasons */
 	int64_t dticks;
