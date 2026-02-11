@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # zephyr-keep-sorted-start
+add_subdirectory_ifdef(CONFIG_ICM20948 icm20948)
 add_subdirectory_ifdef(CONFIG_ICM40627 icm40627)
 add_subdirectory_ifdef(CONFIG_ICM42605 icm42605)
 add_subdirectory_ifdef(CONFIG_ICM4268X icm4268x)
