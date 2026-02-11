@@ -20,4 +20,24 @@
 				 <PA17C_SERCOM1_PAD1>;
 		};
 	};
+
+	adc0_default: adc0-default {
+		group1 {
+			pinmux = <PA11B_ADC0_AIN11>, /* EXT1 pin 3 and J803 Pin 6 */
+				 <PB8B_ADC0_AIN2>, /* EXT1 pin 4 and J803 pin 2*/
+				 <PA5B_ADC0_AIN5>, /* EXT2 pin 3 */
+				 <PA4B_ADC0_AIN4>, /* EXT2 pin 4 */
+				 <PA8B_ADC0_AIN8>, /* J803 pin 3 */
+				 <PA9B_ADC0_AIN9>, /* J803 pin 4 */
+				 <PA10B_ADC0_AIN10>, /* J803 pin 5 */
+				 <PA3B_ADC0_AIN1>; /* J701 pin 2 - VREF */
+		};
+	};
+
+	adc1_default: adc1-default {
+		group1 {
+			pinmux = <PB6B_ADC1_AIN8>, /* EXT3 pin 3 */
+				 <PB9B_ADC1_AIN5>; /* EXT3 pin 4 and J803 pin 1 */
+		};
+	};
 };
