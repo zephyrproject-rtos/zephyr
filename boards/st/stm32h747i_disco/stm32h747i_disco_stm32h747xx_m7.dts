@@ -254,7 +254,7 @@ zephyr_udc0: &usbotg_hs {
 	ssht-enable;
 	status = "okay";
 
-	mt25ql512ab1: qspi-nor-flash-1@0 {
+	mt25ql512ab1: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
 		reg = <0>;
 		size = <DT_SIZE_M(512)>; /* 512 Mbits */
@@ -275,9 +275,9 @@ zephyr_udc0: &usbotg_hs {
 		};
 	};
 
-	mt25ql512ab2: qspi-nor-flash-2@0 {
+	mt25ql512ab2: qspi-nor-flash@1 {
 		compatible = "st,stm32-qspi-nor";
-		reg = <0>;
+		reg = <1>;
 		size = <DT_SIZE_M(512)>; /* 512 Mbits */
 		qspi-max-frequency = <72000000>;
 		status = "okay";
