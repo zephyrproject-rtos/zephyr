@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 TriaGnoSys GmbH
+ * Copyright (c) 2026 Phuc Hoang <donp172748@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -283,6 +284,14 @@
 	timer0_pwm: pwm {
 		pinctrl-0 = <&timer0_pwm_default>;
 		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&timer1 {
+	status = "okay";
+
+	timer1_counter: counter {
 		status = "okay";
 	};
 };

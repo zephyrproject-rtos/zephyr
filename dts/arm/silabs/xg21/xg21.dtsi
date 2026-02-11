@@ -2,6 +2,7 @@
  * Copyright (c) 2020 TriaGnoSys GmbH
  * Copyright (c) 2021 Safran Passenger Innovations Germany GmbH
  * Copyright (c) 2025 Silicon Laboratories Inc.
+ * Copyright (c) 2026 Phuc Hoang <donp172748@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -337,6 +338,11 @@
 			interrupts = <6 2>;
 			status = "disabled";
 
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
+
 			pwm {
 				compatible = "silabs,timer-pwm";
 				#pwm-cells = <3>;
@@ -353,6 +359,11 @@
 			interrupt-names = "timer1";
 			interrupts = <7 2>;
 			status = "disabled";
+
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
 
 			pwm {
 				compatible = "silabs,timer-pwm";
@@ -371,6 +382,11 @@
 			interrupts = <8 2>;
 			status = "disabled";
 
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
+
 			pwm {
 				compatible = "silabs,timer-pwm";
 				#pwm-cells = <3>;
@@ -387,6 +403,11 @@
 			interrupt-names = "timer3";
 			interrupts = <9 2>;
 			status = "disabled";
+
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
 
 			pwm {
 				compatible = "silabs,timer-pwm";

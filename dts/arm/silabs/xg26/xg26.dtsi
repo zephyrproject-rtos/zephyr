@@ -378,6 +378,11 @@
 			interrupts = <4 2>;
 			status = "disabled";
 
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
+
 			pwm {
 				compatible = "silabs,timer-pwm";
 				#pwm-cells = <3>;
@@ -394,6 +399,11 @@
 			interrupt-names = "timer1";
 			interrupts = <5 2>;
 			status = "disabled";
+
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
 
 			pwm {
 				compatible = "silabs,timer-pwm";
@@ -412,6 +422,11 @@
 			interrupts = <6 2>;
 			status = "disabled";
 
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
+
 			pwm {
 				compatible = "silabs,timer-pwm";
 				#pwm-cells = <3>;
@@ -428,6 +443,11 @@
 			interrupt-names = "timer3";
 			interrupts = <7 2>;
 			status = "disabled";
+
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
 
 			pwm {
 				compatible = "silabs,timer-pwm";
@@ -446,6 +466,11 @@
 			interrupts = <8 2>;
 			status = "disabled";
 
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
+
 			pwm {
 				compatible = "silabs,timer-pwm";
 				#pwm-cells = <3>;
@@ -462,6 +487,11 @@
 			interrupt-names = "timer5";
 			interrupts = <9 2>;
 			status = "disabled";
+
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
 
 			pwm {
 				compatible = "silabs,timer-pwm";
@@ -480,6 +510,11 @@
 			interrupts = <10 2>;
 			status = "disabled";
 
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
+
 			pwm {
 				compatible = "silabs,timer-pwm";
 				#pwm-cells = <3>;
@@ -496,6 +531,11 @@
 			interrupt-names = "timer7";
 			interrupts = <11 2>;
 			status = "disabled";
+
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
 
 			pwm {
 				compatible = "silabs,timer-pwm";
@@ -514,6 +554,11 @@
 			interrupts = <12 2>;
 			status = "disabled";
 
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
+
 			pwm {
 				compatible = "silabs,timer-pwm";
 				#pwm-cells = <3>;
@@ -530,6 +575,11 @@
 			interrupt-names = "timer9";
 			interrupts = <13 2>;
 			status = "disabled";
+
+			counter {
+				compatible = "silabs,timer-counter";
+				status = "disabled";
+			};
 
 			pwm {
 				compatible = "silabs,timer-pwm";

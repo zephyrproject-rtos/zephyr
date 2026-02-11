@@ -222,6 +222,14 @@
 	};
 };
 
+&timer1 {
+	status = "okay";
+
+	timer1_counter: counter {
+		status = "okay";
+	};
+};
+
 &gpio {
 	status = "okay";
 };
