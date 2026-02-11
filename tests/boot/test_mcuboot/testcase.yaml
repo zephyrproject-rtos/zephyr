@@ -5,11 +5,11 @@ common:
   harness_config:
     type: multi_line
     regex:
-      - "I: Starting bootloader"
-      - "Launching primary slot application on (.*)"
+      - "Starting bootloader"
+      - "Launching primary slot application on"
       - "Secondary application ready for swap, rebooting"
-      - "I: Starting swap using (.*)|I: Image 0 upgrade secondary slot -> primary slot"
-      - "Swapped application booted on (.*)"
+      - "Starting swap using|Image 0 upgrade secondary slot -> primary slot"
+      - "Swapped application booted on"
 tests:
   bootloader.mcuboot:
     platform_allow:
