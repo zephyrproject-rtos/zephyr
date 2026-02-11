@@ -1,11 +1,48 @@
 # Copyright (c) 2026 SiFli Technologies(Nanjing) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-description: SiFli SF32LB series eFuse OTP memory controller
+title: SiFli SF32LB eFuse OTP
+
+description: |
+  SiFli SF32LB series eFuse OTP memory controller.
+
+  This controller exposes the eFuse contents through the Zephyr OTP driver API.
+  It can also be used as an NVMEM provider by defining an `nvmem-layout` node
+  with `compatible = "fixed-layout"` and adding child nodes that describe
+  NVMEM cells via `reg = <offset size>`.
 
 compatible: "sifli,sf32lb-efuse"
 
 include: base.yaml
+
+examples:
+  - |
+    efuse: otp@5000c000 {
+      compatible = "sifli,sf32lb-efuse";
+      reg = <0x5000c000 0x100>;
+      sifli,pmuc = <&pmuc>;
+      sifli,bank-size = <32>;
+      sifli,bank-offsets = <0x30 0x50 0x70 0x90>;
+      status = "okay";
+
+      nvmem-layout {
+        compatible = "fixed-layout";
+        #address-cells = <1>;
+        #size-cells = <1>;
+
+        sf32lb52_uid: uid@0 {
+          reg = <0x0 0x10>;
+          read-only;
+          #nvmem-cell-cells = <0>;
+        };
+
+        sf32lb52_calib_bank1: calib@20 {
+          reg = <0x20 0x20>;
+          read-only;
+          #nvmem-cell-cells = <0>;
+        };
+      };
+    };
 
 properties:
   reg:
