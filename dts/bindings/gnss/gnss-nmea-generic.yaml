@@ -6,17 +6,17 @@ description: |
 
   Implement a generic NMEA based GNSS device.
 
-  Example configuration:
-
-  &uart0 {
-          current-speed = <9600>;
-          ...
-          gnss: gnss-nmea-generic {
-                  compatible = "gnss-nmea-generic";
-          };
-  };
-
 compatible: "gnss-nmea-generic"
 
 include:
   - uart-device.yaml
+
+examples:
+  - |
+    &uart0 {
+            current-speed = <9600>;
+            /* ... */
+            gnss: gnss-nmea-generic {
+                    compatible = "gnss-nmea-generic";
+            };
+    };
