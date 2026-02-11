@@ -172,7 +172,7 @@ ADI Platforms:
     - drivers/dac/dac_ltc*
     - drivers/ethernet/eth_adin*
     - drivers/ethernet/phy/phy_adin*
-    - drivers/mdio/mdio_adin*
+    - drivers/ethernet/mdio/mdio_adin*
     - drivers/sensor/adi/
     - drivers/stepper/adi_tmc/
     - dts/arm/adi/
@@ -1713,16 +1713,21 @@ Documentation Infrastructure:
     - drivers/ethernet/
     - include/zephyr/dt-bindings/ethernet/
     - tests/drivers/build_all/ethernet/
+    - tests/drivers/build_all/mdio/
     - dts/bindings/ethernet/
     - tests/drivers/ethernet/
     - include/zephyr/drivers/ethernet/
+    - include/zephyr/drivers/mdio.h
     - include/zephyr/net/phy.h
+    - include/zephyr/net/mdio.h
     - include/zephyr/net/mii.h
     - include/zephyr/net/ethernet.h
     - samples/drivers/ethernet/
+    - doc/hardware/peripherals/mdio.rst
   labels:
     - "area: Ethernet"
   tests:
+    - drivers.mdio
     - net.ethernet
 
 "Drivers: FPGA":
@@ -2021,24 +2026,6 @@ Documentation Infrastructure:
     - "area: LED"
   tests:
     - drivers.led_strip
-
-"Drivers: MDIO":
-  status: maintained
-  maintainers:
-    - maass-hamburg
-  collaborators:
-    - decsny
-  files:
-    - doc/hardware/peripherals/mdio.rst
-    - drivers/mdio/
-    - include/zephyr/drivers/mdio.h
-    - include/zephyr/net/mdio.h
-    - tests/drivers/build_all/mdio/
-    - dts/bindings/mdio/
-  labels:
-    - "area: MDIO"
-  tests:
-    - drivers.mdio
 
 "Drivers: MEMC":
   status: odd fixes

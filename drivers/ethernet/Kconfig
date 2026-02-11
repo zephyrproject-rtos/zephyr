@@ -110,3 +110,5 @@ config ETH_NET_IF_NO_AUTO_START
 	  net_if_set_link_addr(iface, mac, 6, NET_LINK_ETHERNET).
 	  When all configurations are done net_if_up() has to be invoked to
 	  bring the interface up.
+
+source "drivers/ethernet/mdio/Kconfig"
