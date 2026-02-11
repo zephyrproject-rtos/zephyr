@@ -1,17 +1,17 @@
 /**
- * Copyright (c) 2025-2026 Microchip Technology Inc.
+ * Copyright (c) 2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
- * @file mchp_sam_d5x_e5x_adc.h
- * @brief ADC input selection definitions for SAM D5x/E5x devices.
+ * @file mchp_pic32cx_sg_adc.h
+ * @brief ADC input selection definitions for PIC32CX_SG devices.
  *
  */
 
-#ifndef INCLUDE_ZEPHYR_DT_BINDINGS_ADC_SAM_D5X_E5X_ADC_H_
-#define INCLUDE_ZEPHYR_DT_BINDINGS_ADC_SAM_D5X_E5X_ADC_H_
+#ifndef INCLUDE_ZEPHYR_DT_BINDINGS_ADC_PIC32CX_SG_ADC_H_
+#define INCLUDE_ZEPHYR_DT_BINDINGS_ADC_PIC32CX_SG_ADC_H_
 
 /* External analog inputs */
 #define MCHP_ADC_AIN0  0x00 /**< ADC input AIN0 */
@@ -43,7 +43,7 @@
 /**
  * @brief ADC positive input (MUXPOS) valid values in bits
  */
-#define MCHP_ADC_MUXPOS_VALID_MASK (GENMASK(0x1E, 0x18) | GENMASK(0x0F, 0x00))
+#define MCHP_ADC_MUXPOS_VALID_MASK (BIT(0x1E) | GENMASK(0x1B, 0x18) | GENMASK(0x0F, 0x00))
 
 /**
  * @brief ADC negative input (MUXNEG) valid values in bits
@@ -58,4 +58,4 @@
 #define MCHP_ADC_REF_AREFB   0x05 /**< External reference B */
 #define MCHP_ADC_REF_AREFC   0x06 /**< External reference C (ADC1 only) */
 
-#endif /* INCLUDE_ZEPHYR_DT_BINDINGS_ADC_SAM_D5X_E5X_ADC_H_ */
+#endif /* INCLUDE_ZEPHYR_DT_BINDINGS_ADC_PIC32CX_SG_ADC_H_ */
