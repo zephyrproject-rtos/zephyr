@@ -4,6 +4,7 @@
 * SPDX-License-Identifier: Apache-2.0
 */
 
+
 menuconfig AD74416H
   bool "AD74416H Quad-Channel SW Configurable I/O Driver"
   default y
