@@ -54,6 +54,8 @@ enum tc_state_t {
 	/** Attached Source State */
 	TC_ATTACHED_SRC_STATE,
 #endif
+	/** Startup State */
+	TC_STARTUP_STATE,
 	/** Disabled State */
 	TC_DISABLED_STATE,
 	/** Error Recovery State */
