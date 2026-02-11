@@ -338,6 +338,24 @@
 			sifli,pmuc = <&pmuc>;
 			sifli,bank-size = <32>;
 			sifli,bank-offsets = <0x30 0x50 0x70 0x90>;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				sf32lb52_uid: uid@0 {
+					reg = <0x0 0x10>;
+					read-only;
+					#nvmem-cell-cells = <0>;
+				};
+
+				sf32lb52_calib_bank1: calib@20 {
+					reg = <0x20 0x20>;
+					read-only;
+					#nvmem-cell-cells = <0>;
+				};
+			};
 			status = "disabled";
 		};
 
