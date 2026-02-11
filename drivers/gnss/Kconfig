@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig GNSS
-	bool "GNSS drivers"
+	bool "Global Navigation Satellite System (GNSS) drivers [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
 	  Enable GNSS drivers and configuration.

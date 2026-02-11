@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig SENT
-	bool "SENT Single Edge Nibble Transmission (SENT)"
+	bool "Single Edge Nibble Transmission (SENT) drivers"
 	help
 	  Enable SENT Driver Configuration
 
