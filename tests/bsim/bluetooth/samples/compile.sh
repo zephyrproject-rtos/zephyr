@@ -51,5 +51,11 @@ if [ ${BOARD} == "nrf52_bsim/native" ]; then
     conf_file=prj.conf \
     compile
 fi
+app=samples/bluetooth/peripheral_gap_svc \
+  sysbuild=1 \
+  compile
+app=tests/bsim/bluetooth/samples/peripheral_gap_svc \
+  sysbuild=1 \
+  compile
 
 wait_for_background_jobs
