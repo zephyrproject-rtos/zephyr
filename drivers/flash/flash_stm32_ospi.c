@@ -1115,7 +1115,7 @@ static int stm32_ospi_set_memorymap(const struct device *dev)
 #if defined(CONFIG_SOC_SERIES_STM32U5X) && defined(OCTOSPIM)
 	s_MemMappedCfg.TimeOutActivation = HAL_OSPI_TIMEOUT_COUNTER_ENABLE;
 	s_MemMappedCfg.TimeOutPeriod     = 0x34;
-#else	
+#else
 	s_MemMappedCfg.TimeOutActivation = HAL_OSPI_TIMEOUT_COUNTER_DISABLE;
 #endif /* CONFIG_SOC_SERIES_STM32U5X && OCTOSPIM*/
 	ret = HAL_OSPI_MemoryMapped(&dev_data->hospi, &s_MemMappedCfg);
