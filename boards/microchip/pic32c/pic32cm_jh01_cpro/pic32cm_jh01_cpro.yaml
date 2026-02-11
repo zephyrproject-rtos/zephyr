@@ -10,6 +10,7 @@ toolchain:
 flash: 512
 ram: 64
 supported:
+  - adc
   - clock_control
   - dma
   - gpio
