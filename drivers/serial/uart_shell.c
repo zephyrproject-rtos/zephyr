@@ -91,8 +91,8 @@ static const char *parity_to_str(uint8_t parity)
 	case UART_CFG_PARITY_SPACE:
 		return "space";
 	default:
+		return "Invalid";
 	}
-	return "Invalid";
 }
 
 static const char *stop_bits_to_str(uint8_t stop_bits)
@@ -107,8 +107,8 @@ static const char *stop_bits_to_str(uint8_t stop_bits)
 	case UART_CFG_STOP_BITS_2:
 		return "2";
 	default:
+		return "Invalid";
 	}
-	return "Invalid";
 }
 
 static const char *data_bits_to_str(uint8_t data_bits)
@@ -125,8 +125,8 @@ static const char *data_bits_to_str(uint8_t data_bits)
 	case UART_CFG_DATA_BITS_9:
 		return "9";
 	default:
+		return "Invalid";
 	}
-	return "Invalid";
 }
 
 static const char *flow_ctrl_to_str(uint8_t flow_ctrl)
@@ -141,8 +141,8 @@ static const char *flow_ctrl_to_str(uint8_t flow_ctrl)
 	case UART_CFG_FLOW_CTRL_RS485:
 		return "rs485";
 	default:
+		return "Invalid";
 	}
-	return "Invalid";
 }
 
 static void print_uart_config(const struct shell *sh, const char *dev_name,
