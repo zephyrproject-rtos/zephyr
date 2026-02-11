@@ -5,7 +5,7 @@
 
 menuconfig ETH_PHY_DRIVER
 	bool "Ethernet PHY drivers"
-	default y if NET_L2_ETHERNET || ETH_DRIVER
+	default y
 
 if ETH_PHY_DRIVER
 
