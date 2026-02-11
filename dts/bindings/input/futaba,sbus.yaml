@@ -13,40 +13,6 @@ description: |
   Each channel can be configured to generate either absolute position events
   (for joysticks) or key events (for switches).
 
-  The following example shows how to configure 2 joysticks and a button using 5 channels:
-
-  &lpuart6 {
-    status = "okay";
-
-    sbus {
-        compatible = "futaba,sbus";
-        right_stick_x {
-            channel = <1>;
-            type = <INPUT_EV_ABS>;
-            zephyr,code = <INPUT_ABS_RX>;
-        };
-        right_stick_y {
-            channel = <2>;
-            type = <INPUT_EV_ABS>;
-            zephyr,code = <INPUT_ABS_RY>;
-        };
-        left_stick_x {
-            channel = <3>;
-            type = <INPUT_EV_ABS>;
-            zephyr,code = <INPUT_ABS_X>;
-        };
-        left_stick_y {
-            channel = <4>;
-            type = <INPUT_EV_ABS>;
-            zephyr,code = <INPUT_ABS_Y>;
-        };
-        kill_switch {
-            channel = <5>;
-            type = <INPUT_EV_KEY>;
-            zephyr,code = <INPUT_KEY_0>;
-        };
-    };
-  };
 
 compatible: "futaba,sbus"
 
@@ -72,3 +38,44 @@ child-binding:
       type: int
       required: true
       description: Code to emit.
+
+examples:
+  - |
+    /* Example configuration for 2 joysticks and a button using 5 channels */
+    &lpuart6 {
+      status = "okay";
+
+      sbus {
+          compatible = "futaba,sbus";
+
+          right_stick_x {
+              channel = <1>;
+              type = <INPUT_EV_ABS>;
+              zephyr,code = <INPUT_ABS_RX>;
+          };
+
+          right_stick_y {
+              channel = <2>;
+              type = <INPUT_EV_ABS>;
+              zephyr,code = <INPUT_ABS_RY>;
+          };
+
+          left_stick_x {
+              channel = <3>;
+              type = <INPUT_EV_ABS>;
+              zephyr,code = <INPUT_ABS_X>;
+          };
+
+          left_stick_y {
+              channel = <4>;
+              type = <INPUT_EV_ABS>;
+              zephyr,code = <INPUT_ABS_Y>;
+          };
+
+          kill_switch {
+              channel = <5>;
+              type = <INPUT_EV_KEY>;
+              zephyr,code = <INPUT_KEY_0>;
+          };
+      };
+    };
