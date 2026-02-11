@@ -10,3 +10,23 @@ config OTP_SIFLI_EFUSE
 	  This driver provides read-only access to the eFuse OTP memory.
 	  The driver uses a cache mechanism to improve read performance
 	  by loading all eFuse content into memory during initialization.
+
+config SF32LB52X_EFUSE_FIELDS
+	bool "SF32LB52X eFuse Bank1 field extraction helpers"
+	default y if SOC_SERIES_SF32LB52X
+	help
+	  Enable helpers for extracting calibration fields from the SF32LB52X
+	  eFuse Bank1 raw data. Field definitions are based on the vendor
+	  eFuse map spreadsheet.
+
+config SF32LB52X_EFUSE_NVMEM
+	bool "SF32LB52X eFuse NVMEM read helpers"
+	default y if SOC_SERIES_SF32LB52X
+	depends on SOC_SERIES_SF32LB52X
+	depends on OTP_SIFLI_EFUSE
+	depends on SF32LB52X_EFUSE_FIELDS
+	depends on NVMEM && NVMEM_OTP
+	help
+	  Enable NVMEM-based helpers for reading the SF32LB52X eFuse UID and
+	  Bank1 calibration data. Requires NVMEM cells defined under the eFuse
+	  devicetree node.
