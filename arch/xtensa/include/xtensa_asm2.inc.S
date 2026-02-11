@@ -173,7 +173,8 @@
 	s32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_lbeg_OFFSET
 	rsr.lend \SCRATCH_REG
 	s32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_lend_OFFSET
-	rsr.lcount \SCRATCH_REG
+	movi \SCRATCH_REG, 0
+	xsr.lcount \SCRATCH_REG
 	s32i \SCRATCH_REG, \BSA_PTR, ___xtensa_irq_bsa_t_lcount_OFFSET
 #endif
 	rsr.exccause \SCRATCH_REG
