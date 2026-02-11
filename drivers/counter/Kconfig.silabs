@@ -52,3 +52,14 @@ config COUNTER_SILABS_BURTC_ALARM
 	  not allow set and cancel ALARM operation at runtime (attempts to
 	  set and cancel ALARM will return -ENOTSUP). Choose the configuration
 	  that matches your application's requirements.
+
+config COUNTER_SILABS_TIMER
+	bool "Silicon Labs Series 2 TIMER Counter driver"
+	default y
+	depends on DT_HAS_SILABS_TIMER_COUNTER_ENABLED
+	select SILABS_SISDK_TIMER
+	help
+	  Enable the counter driver based on the Silicon Labs
+	  TIMER peripheral.
+	  This driver supports counter mode with compare-match alarms
+	  using TIMER on Silicon Labs Series 2 SoCs.
