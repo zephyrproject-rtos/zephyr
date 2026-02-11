@@ -33,6 +33,11 @@
 				status = "disabled";
 			};
 
+			protimer: timer {
+				compatible = "silabs,protimer";
+				status = "disabled";
+			};
+
 			pti: pti {
 				compatible = "silabs,pti";
 				clock-frequency = <DT_FREQ_K(1600)>;
