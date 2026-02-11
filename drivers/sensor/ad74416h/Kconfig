@@ -1,31 +1,31 @@
 /*
- * Copyright (c) 2026 William Fish (Manulytica ltd)
- *
- * SPDX-License-Identifier: Apache-2.0
- */
+* Copyright (c) 2026 William Fish (Manulytica ltd)
+*
+* SPDX-License-Identifier: Apache-2.0
+*/
 
 menuconfig AD74416H
-    bool "AD74416H Quad-Channel SW Configurable I/O Driver"
-    default y
-    depends on DT_HAS_ANALOG_AD74416H_ENABLED
-    select SPI
-    select GPIO
-    select DAC
-    help
-      Enable driver for Analog Devices AD74416H.
+  bool "AD74416H Quad-Channel SW Configurable I/O Driver"
+  default y
+  depends on DT_HAS_ANALOG_AD74416H_ENABLED
+  select SPI
+  select GPIO
+  select DAC
+  help
+    Enable driver for Analog Devices AD74416H.
 
 if AD74416H
 
 config AD74416H_NVS_CALIBRATION
-    bool "NVS Persistence for Calibration"
-    select NVS
-    help
-      Store gain/offset calibration values in Non-Volatile Storage.
+  bool "NVS Persistence for Calibration"
+  select NVS
+  help
+    Store gain/offset calibration values in Non-Volatile Storage.
 
 config AD74416H_RTD_MATH
-    bool "Internal RTD Temperature Math"
-    default y
-    help
-      Enable Callendar-Van Dusen math to convert RTD resistance to Celsius.
+  bool "Internal RTD Temperature Math"
+  default y
+  help
+    Enable Callendar-Van Dusen math to convert RTD resistance to Celsius.
 
 endif # AD74416H

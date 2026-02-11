@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2026 William Fish (Manulytica ltd)
- *
- * SPDX-License-Identifier: Apache-2.0
- */
+* Copyright (c) 2026 William Fish (Manulytica ltd)
+*
+* SPDX-License-Identifier: Apache-2.0
+*/
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/sensor.h>
@@ -69,20 +69,21 @@ static int ad74416h_gpio_config(const struct device *dev, gpio_pin_t pin, gpio_f
     }
 }
 
-static int ad74416h_gpio_set_bits(const struct device *dev, uint32_t mask, uint32_t value) {
-    for (int i = 0; i < 4; i++) {
-        if (mask & BIT(i)) {
-            uint16_t reg = 0;
-            ad74416h_read(dev, AD74416H_REG_DO_EXT_CONFIG(i), &reg);
-            if (value & BIT(i)) {
-		    reg |= BIT(7); 
-            else {
-		    reg &= ~BIT(7);
-	    }
-            ad74416h_access(dev, AD74416H_REG_DO_EXT_CONFIG(i), reg, NULL);
-        }
-    }
-    return 0;
+static int ad74416h_gpio_set_bits(const struct device *dev, uint32_t mask, uint32_t value)
+{
+	for (int i = 0; i < 4; i++) {
+		if (mask & BIT(i)) {
+			uint16_t reg = 0;
+			ad74416h_read(dev, AD74416H_REG_DO_EXT_CONFIG(i), &reg);
+			if (value & BIT(i)) {
+				reg |= BIT(7);
+			} else {
+				reg &= ~BIT(7);
+			}
+		}
+		ad74416h_access(dev, AD74416H_REG_DO_EXT_CONFIG(i), reg, NULL);
+	}
+return 0;
 }
 
 static const struct gpio_driver_api ad74416h_gpio_api = {
