@@ -45,6 +45,8 @@ endif # MBEDTLS_SSL_PROTO_TLS1_2
 
 config MBEDTLS_SSL_PROTO_TLS1_3
 	bool "Support for TLS 1.3"
+	select PSA_WANT_ALG_HKDF_EXTRACT
+	select PSA_WANT_ALG_HKDF_EXPAND
 
 if MBEDTLS_SSL_PROTO_TLS1_3
 
@@ -140,7 +142,7 @@ config MBEDTLS_KEY_EXCHANGE_DHE_PSK_ENABLED
 
 config MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
 	bool "ECDHE-PSK based ciphersuite modes"
-	depends on MBEDTLS_ECDH_C
+	depends on PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
 
 config MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
 	bool "RSA-PSK based ciphersuite modes"
@@ -200,7 +202,15 @@ config MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_ENABLED
 
 config MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_EPHEMERAL_ENABLED
 	bool "TLS 1.3 ephemeral key exchange mode"
-	depends on MBEDTLS_X509_CRT_PARSE_C
+	select MBEDTLS_X509_CRT_PARSE_C
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
+	imply PSA_WANT_ALG_ECDH
+	imply PSA_WANT_ECC_SECP_R1_256
+	help
+	  By default ECDH algorithm with secp256r1 elliptic curve is implied
+	  by this Kconfig option. Other elliptic curves or FFDH are also possible.
 
 config MBEDTLS_SSL_TLS1_3_KEY_EXCHANGE_MODE_PSK_EPHEMERAL_ENABLED
 	bool "TLS 1.3 PSK ephemeral key exchange mode"
