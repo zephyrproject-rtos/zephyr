@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig HWSPINLOCK
-	bool "HW spinlock Support"
+	bool "Hardware spinlock drivers"
 	help
 	  Include support for HW spinlock.
 

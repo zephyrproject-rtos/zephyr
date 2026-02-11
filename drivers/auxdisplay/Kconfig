@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig AUXDISPLAY
-	bool "Auxiliary (textual) Display Drivers"
+	bool "Auxiliary (textual) display drivers"
 	help
 	  Enable auxiliary/textual display drivers (e.g. alphanumerical displays)
 
