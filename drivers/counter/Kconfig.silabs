@@ -3,9 +3,26 @@
 # Copyright (c) 2019, Piotr Mienkowski
 # Copyright (c) 2026, Shontal Biton, Based on:
 # Kconfig.mcux_lptmr, Copyright (c) 2020 Vestas Wind Systems A/S
+# Copyright 2026 Silicon Laboratories Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 DT_CHOSEN_SILABS_SLEEPTIMER := silabs,sleeptimer
+
+config COUNTER_SILABS_PROTIMER
+	bool "Silicon Labs PROTIMER Counter driver"
+	default y
+	depends on SOC_FAMILY_SILABS_S2
+	depends on DT_HAS_SILABS_PROTIMER_ENABLED
+	depends on BUILD_ONLY_NO_BLOBS || \
+		(ZEPHYR_HAL_SILABS_MODULE_BLOBS && SOC_GECKO_USE_RAIL)
+	help
+	  Enable counter driver for Silicon Labs PROTIMER peripheral which
+	  is used as the RAIL timer. With BUILD_ONLY_NO_BLOBS (e.g. twister builds),
+	  non-functional stubs are used and the driver will not work on device.
+	  When built with RAIL blobs, SOC_GECKO_USE_RAIL must be
+	  enabled and RAIL must be initialized first. The PROTIMER lives
+	  in the radio block and its clock is not enabled until RAIL init.
+
 
 config COUNTER_GECKO_RTCC
 	bool "Silicon Labs Gecko Counter (RTCC) driver"
