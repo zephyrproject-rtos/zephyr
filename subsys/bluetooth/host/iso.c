@@ -1251,14 +1251,14 @@ static void store_cis_info(const struct bt_hci_evt_le_cis_established *evt, stru
 
 	central->bn = evt->c_bn;
 	central->phy = bt_get_phy(evt->c_phy);
-	central->latency = sys_get_le16(evt->c_latency);
+	central->latency = sys_get_le24(evt->c_latency);
 	central->max_pdu = sys_le16_to_cpu(evt->c_max_pdu);
 	/* Transform to n * 1.25ms */
 	central->flush_timeout = info->iso_interval * evt->c_ft;
 
 	peripheral->bn = evt->p_bn;
 	peripheral->phy = bt_get_phy(evt->p_phy);
-	peripheral->latency = sys_get_le16(evt->p_latency);
+	peripheral->latency = sys_get_le24(evt->p_latency);
 	peripheral->max_pdu = sys_le16_to_cpu(evt->p_max_pdu);
 	/* Transform to n * 1.25ms */
 	peripheral->flush_timeout = info->iso_interval * evt->p_ft;
