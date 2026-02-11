@@ -12,8 +12,13 @@ description: |
   The color order of the TLC5971 is BGR. Applications can provide custom mappings
   using the color-mapping property.
 
-  Example device tree node w. 24 pixels (6 TLC5971 devices):
+compatible: "ti,tlc5971"
 
+include: [spi-device.yaml, led-strip.yaml]
+
+examples:
+  - |
+    /* Example Devicetree node with 24 pixels (6 daisy-chained TLC5971 devices):
     &spi1 {
       led_controller: led_controller@0 {
         status = "okay";
@@ -26,7 +31,3 @@ description: |
                         <LED_COLOR_ID_RED>;
       };
     };
-
-compatible: "ti,tlc5971"
-
-include: [spi-device.yaml, led-strip.yaml]
