@@ -19,7 +19,7 @@ static const struct smf_state tc_states[TC_STATE_COUNT];
 static int tc_init(const struct device *dev);
 
 /**
- * @brief Initializes the state machine and enters the Disabled state
+ * @brief Initializes the state machine and enters the Startup state
  */
 void tc_subsys_init(const struct device *dev)
 {
@@ -30,7 +30,7 @@ void tc_subsys_init(const struct device *dev)
 	tc->dev = dev;
 
 	/* Initialize the state machine */
-	smf_set_initial(SMF_CTX(tc), &tc_states[TC_DISABLED_STATE]);
+	smf_set_initial(SMF_CTX(tc), &tc_states[TC_STARTUP_STATE]);
 }
 
 /**
@@ -177,6 +177,11 @@ static int tc_init(const struct device *dev)
 
 	/* Initialize the state machine */
 	/*
+	 * Transition to Disabled state to ensure port is in a known disabled state.
+	 */
+	tc_set_state(dev, TC_DISABLED_STATE);
+
+	/*
 	 * Start out in error recovery state so the CC lines are opened for a
 	 * short while if this is a system reset.
 	 */
@@ -259,12 +264,14 @@ static void tc_cc_open_entry(void *obj)
 
 	tc->cc_voltage = TC_CC_VOLT_OPEN;
 
-	/* Disable VCONN */
-	ret = tcpc_set_vconn(tcpc, false);
-	if (ret != 0 && ret != -ENOSYS) {
-		LOG_ERR("Couldn't disable vconn: %d", ret);
-		tc_set_state(dev, TC_ERROR_RECOVERY_STATE);
-		return;
+	if (IS_ENABLED(CONFIG_USBC_CSM_SUPPORTS_SOURCE)) {
+		/* Disable VCONN */
+		ret = tcpc_set_vconn(tcpc, false);
+		if (ret != 0 && ret != -ENOSYS) {
+			LOG_ERR("Couldn't disable vconn: %d", ret);
+			tc_set_state(dev, TC_ERROR_RECOVERY_STATE);
+			return;
+		}
 	}
 
 	/* Open CC lines */
@@ -273,6 +280,14 @@ static void tc_cc_open_entry(void *obj)
 		LOG_ERR("Couldn't set CC lines to open: %d", ret);
 		tc_set_state(dev, TC_ERROR_RECOVERY_STATE);
 	}
+}
+
+/**
+ * @brief Startup Entry
+ */
+static void tc_startup_entry(void *obj)
+{
+	LOG_INF("Startup");
 }
 
 /**
@@ -404,6 +419,12 @@ static const struct smf_state tc_states[TC_STATE_COUNT] = {
 		NULL,
 		NULL),
 #endif
+	[TC_STARTUP_STATE] = SMF_CREATE_STATE(
+		tc_startup_entry,
+		NULL,
+		NULL,
+		NULL,
+		NULL),
 	[TC_DISABLED_STATE] = SMF_CREATE_STATE(
 		tc_disabled_entry,
 		tc_disabled_run,
