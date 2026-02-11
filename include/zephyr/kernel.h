@@ -6786,7 +6786,7 @@ __syscall void k_str_out(char *c, size_t n);
  *
  * @retval 0        On success.
  * @retval -ENOTSUP If the floating point disabling is not implemented.
- *         -EINVAL  If the floating point disabling could not be performed.
+ * @retval -EINVAL  If the floating point disabling could not be performed.
  */
 __syscall int k_float_disable(struct k_thread *thread);
 
@@ -6826,7 +6826,7 @@ __syscall int k_float_disable(struct k_thread *thread);
  *
  * @retval 0        On success.
  * @retval -ENOTSUP If the floating point enabling is not implemented.
- *         -EINVAL  If the floating point enabling could not be performed.
+ * @retval -EINVAL  If the floating point enabling could not be performed.
  */
 __syscall int k_float_enable(struct k_thread *thread, unsigned int options);
 
