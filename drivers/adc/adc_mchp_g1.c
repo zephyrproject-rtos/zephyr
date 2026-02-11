@@ -10,10 +10,15 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/mchp_clock_control.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/irq.h>
-#if defined(CONFIG_SOC_FAMILY_MICROCHIP_SAM_D5X_E5X) ||                                            \
-	defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG)
+#include <stdbool.h>
+#if defined(CONFIG_SOC_FAMILY_MICROCHIP_SAM_D5X_E5X)
 #include <zephyr/dt-bindings/adc/mchp_sam_d5x_e5x_adc.h>
+#elif defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG)
+#include <zephyr/dt-bindings/adc/mchp_pic32cx_sg_adc.h>
+#elif defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH)
+#include <zephyr/dt-bindings/adc/mchp_pic32cm_jh_adc.h>
 #endif /* SOC_FAMILY_MICROCHIP_SAM_D5X_E5X || SOC_FAMILY_MICROCHIP_PIC32CX_SG */
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
@@ -67,12 +72,6 @@ static supc_registers_t *SUPC = (supc_registers_t *)SUPC_REGS;
 #define SUPC_VREF (SUPC->SUPC_VREF)
 #endif /* MCHP_SUPC_API_SUPPORT_AVAILABLE */
 
-/* PIC32CXSG family specific reserved inputs */
-#if defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG)
-#define MCHP_ADC_INPUT_POS_RSV_0 0x1C
-#define MCHP_ADC_INPUT_POS_RSV_1 0x1D
-#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG */
-
 struct adc_mchp_channel_cfg {
 	bool initialized;
 	struct adc_channel_cfg channel_cfg;
@@ -117,31 +116,31 @@ static inline void adc_wait_synchronization(adc_registers_t *adc_reg)
 	}
 }
 
+/* Enable the ADC controller. */
+static inline void adc_controller_enable(adc_registers_t *adc_reg)
+{
+	adc_reg->ADC_CTRLA |= ADC_CTRLA_ENABLE_Msk;
+	adc_wait_synchronization(adc_reg);
+}
+
+/* Disable the ADC controller. */
+static inline void adc_controller_disable(adc_registers_t *adc_reg)
+{
+	adc_reg->ADC_CTRLA &= ~ADC_CTRLA_ENABLE_Msk;
+	adc_wait_synchronization(adc_reg);
+}
+
 /* Enable ADC interrupt. */
 static inline void adc_interrupt_enable(adc_registers_t *adc_reg)
 {
 	/* Enable the RESRDY Interrupt */
-	adc_reg->ADC_INTENSET |= ADC_INTENSET_RESRDY(1);
+	adc_reg->ADC_INTENSET |= ADC_INTENSET_RESRDY_Msk;
 }
 
 /* Clear interrupt. */
 static inline void adc_interrupt_clear(adc_registers_t *adc_reg)
 {
-	/* Clear the interrupt */
-	adc_reg->ADC_INTFLAG = ADC_INTFLAG_RESRDY_Msk;
-}
-
-/* Enable or disable the ADC controller. */
-static inline void adc_controller_enable(adc_registers_t *adc_reg)
-{
-	adc_reg->ADC_CTRLA |= ADC_CTRLA_ENABLE(1);
-}
-
-/* ADC Correction enable */
-static inline void adc_correction_enable(adc_registers_t *adc_reg)
-{
-	adc_reg->ADC_CTRLB |= ADC_CTRLB_CORREN(1);
-	adc_wait_synchronization(adc_reg);
+	adc_reg->ADC_INTFLAG |= ADC_INTFLAG_RESRDY_Msk;
 }
 
 /* Set ADC Correction OFFSET */
@@ -151,10 +150,51 @@ static inline void adc_set_offset_correction(adc_registers_t *adc_reg, int16_t o
 	adc_wait_synchronization(adc_reg);
 }
 
+/* Apply gain correction */
+static inline void adc_set_gain_correction(adc_registers_t *adc_reg, int16_t gain_corr)
+{
+	adc_reg->ADC_GAINCORR = ADC_GAINCORR_GAINCORR(gain_corr);
+	adc_wait_synchronization(adc_reg);
+}
+
+static int adc_set_oversampling(adc_registers_t *adc_reg, uint8_t oversampling)
+{
+	uint8_t reg_val;
+
+	/*
+	 * Oversampling configuration:
+	 * 0x0 = 1 sample
+	 * 0x1 = 2 samples
+	 * 0x2 = 4 samples
+	 * 0x3 = 8 samples
+	 * 0x4 = 16 samples
+	 * 0x5 = 32 samples
+	 * 0x6 = 64 samples
+	 * 0x7 = 128 samples
+	 * 0x8 = 256 samples
+	 * 0x9 = 512 samples
+	 * 0xA = 1024 samples
+	 *
+	 * Valid range: 0 to 10 (inclusive)
+	 */
+	if (oversampling > ADC_MAX_OVERSAMPLING_VAL) {
+		LOG_ERR("Invalid oversampling: %d\n", oversampling);
+		return -EINVAL;
+	}
+	reg_val = adc_reg->ADC_AVGCTRL;
+	reg_val &= ~ADC_AVGCTRL_SAMPLENUM_Msk;
+	reg_val |= ADC_AVGCTRL_SAMPLENUM(oversampling);
+	adc_reg->ADC_AVGCTRL = reg_val;
+	adc_wait_synchronization(adc_reg);
+
+	return 0;
+}
+
 /* Trigger an ADC conversion. */
 static inline void adc_trigger_conversion(adc_registers_t *adc_reg)
 {
-	adc_reg->ADC_SWTRIG |= ADC_SWTRIG_START(1);
+	adc_reg->ADC_SWTRIG |= ADC_SWTRIG_START_Msk;
+	adc_wait_synchronization(adc_reg);
 }
 
 /* Read the result of the ADC conversion. */
@@ -163,92 +203,56 @@ static inline uint16_t adc_get_conversion_result(adc_registers_t *adc_reg)
 	return adc_reg->ADC_RESULT;
 }
 
-static inline int8_t adc_set_acq_time(adc_registers_t *adc_reg, uint16_t sample_length)
+#if defined(CONFIG_SOC_FAMILY_MICROCHIP_SAM_D5X_E5X) ||                                            \
+	defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG)
+
+/* ADC Correction enable */
+static inline void adc_correction_enable(adc_registers_t *adc_reg)
 {
+	adc_reg->ADC_CTRLB |= ADC_CTRLB_CORREN_Msk;
+	adc_wait_synchronization(adc_reg);
+}
+
+static inline int adc_set_acq_time(adc_registers_t *adc_reg, uint16_t sample_length)
+{
+	uint8_t reg_val;
+
 	/* Valid sample length: 0–63 */
 	if (sample_length >= 64U) {
 		LOG_ERR("Invalid Sample Length : %d\n", sample_length);
 		return -EINVAL;
 	}
-
-	adc_reg->ADC_SAMPCTRL = ADC_SAMPCTRL_SAMPLEN(sample_length);
+	reg_val = adc_reg->ADC_SAMPCTRL;
+	reg_val &= ~ADC_SAMPCTRL_SAMPLEN_Msk;
+	reg_val |= ADC_SAMPCTRL_SAMPLEN(sample_length);
+	adc_reg->ADC_SAMPCTRL = reg_val;
 	adc_wait_synchronization(adc_reg);
 
 	return 0;
 }
 
-static int8_t adc_validate_channel_params(enum adc_gain gain, enum adc_reference reference,
-					  uint16_t sample_length, uint8_t input_positive,
-					  uint8_t input_negative)
+static int adc_set_reference(adc_registers_t *adc_reg, enum adc_reference reference)
 {
-	/* Validate gain */
-	if (gain != ADC_GAIN_1_2 && gain != ADC_GAIN_2_3 && gain != ADC_GAIN_4_5 &&
-	    gain != ADC_GAIN_1) {
-		LOG_ERR("Invalid gain : %d\n", gain);
-		return -EINVAL;
-	}
+	uint8_t reg_val;
 
-	/* Validate reference */
-	if ((reference < ADC_REF_VDD_1) || (reference > ADC_REF_EXTERNAL1)) {
-		LOG_ERR("Invalid reference : %d\n", reference);
-		return -EINVAL;
-	}
-
-	/* Valid sample length range: 0–63 */
-	if (sample_length >= 64U) {
-		LOG_ERR("Invalid Sample Length : %d\n", sample_length);
-		return -EINVAL;
-	}
-
-	/*
-	 * Validate input_positive:
-	 * - Must be <= MCHP_ADC_INPUT_POS_MAX
-	 * - Range 0x10–0x17 is reserved
-	 */
-	if ((input_positive > MCHP_ADC_INPUT_POS_MAX) ||
-	    ((input_positive >= MCHP_ADC_INPUT_POS_RSV_MIN) &&
-	     (input_positive <= MCHP_ADC_INPUT_POS_RSV_MAX))) {
-		LOG_ERR("Invalid input positive : %d\n", input_positive);
-		return -EINVAL;
-	}
-
-	/* PIC32CXSG family specific reserved inputs */
-#if defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG)
-	if ((input_positive == MCHP_ADC_INPUT_POS_RSV_0) ||
-	    (input_positive == MCHP_ADC_INPUT_POS_RSV_1)) {
-		LOG_ERR("Invalid input positive for PIC32CXSG: %d", input_positive);
-		return -EINVAL;
-	}
-#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG */
-
-	/* Validate input_negative (0–7) */
-	if (input_negative > MCHP_ADC_INPUT_NEG_MAX) {
-		LOG_ERR("Invalid input negative : %d\n", input_negative);
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
-static int8_t adc_set_reference(adc_registers_t *adc_reg, enum adc_reference reference)
-{
-	uint8_t refctrl = 0;
-
+	reg_val = adc_reg->ADC_REFCTRL;
+	reg_val &= ~(ADC_REFCTRL_REFSEL_Msk | ADC_REFCTRL_REFCOMP_Msk);
 	switch (reference) {
 	case ADC_REF_VDD_1:
-		refctrl = ADC_REFCTRL_REFSEL_INTVCC1 | ADC_REFCTRL_REFCOMP(1);
+		reg_val |= ADC_REFCTRL_REFSEL(ADC_REFCTRL_REFSEL_INTVCC1_Val);
 		break;
 	case ADC_REF_VDD_1_2:
-		refctrl = ADC_REFCTRL_REFSEL_INTVCC0 | ADC_REFCTRL_REFCOMP(1);
+		reg_val |= ADC_REFCTRL_REFSEL(ADC_REFCTRL_REFSEL_INTVCC0_Val);
 		break;
 	case ADC_REF_INTERNAL:
-		refctrl = ADC_REFCTRL_REFSEL_INTREF | ADC_REFCTRL_REFCOMP(1);
+		reg_val |= (ADC_REFCTRL_REFSEL(ADC_REFCTRL_REFSEL_INTREF_Val) |
+			    ADC_REFCTRL_REFCOMP(1));
 		break;
 	case ADC_REF_EXTERNAL0:
-		refctrl = ADC_REFCTRL_REFSEL_AREFA;
+		reg_val |= ADC_REFCTRL_REFSEL(ADC_REFCTRL_REFSEL_AREFA_Val);
 		break;
 	case ADC_REF_EXTERNAL1:
-		refctrl = ADC_REFCTRL_REFSEL_AREFB;
+		reg_val |= ADC_REFCTRL_REFSEL(ADC_REFCTRL_REFSEL_AREFB_Val);
 		break;
 	case ADC_REF_VDD_1_3:
 	case ADC_REF_VDD_1_4:
@@ -260,7 +264,7 @@ static int8_t adc_set_reference(adc_registers_t *adc_reg, enum adc_reference ref
 	}
 
 	/* Apply reference selection */
-	adc_reg->ADC_REFCTRL = refctrl;
+	adc_reg->ADC_REFCTRL = reg_val;
 	adc_wait_synchronization(adc_reg);
 
 #ifndef MCHP_SUPC_API_SUPPORT_AVAILABLE
@@ -271,70 +275,16 @@ static int8_t adc_set_reference(adc_registers_t *adc_reg, enum adc_reference ref
 	return 0;
 }
 
-static int8_t adc_set_gain(adc_registers_t *adc_reg, enum adc_gain gain)
+static int adc_set_input_positive(adc_registers_t *adc_reg, uint8_t input_positive)
 {
-	uint16_t gain_corr = 0;
-
-	/* Gain = 1 → no correction needed */
-	if (gain == ADC_GAIN_1) {
-		return 0;
-	}
-
-	/* Enable correction and clear offset */
-	adc_correction_enable(adc_reg);
-	adc_set_offset_correction(adc_reg, 0x0);
-
-	/* Select gain correction factor */
-	switch (gain) {
-	case ADC_GAIN_1_2:
-		gain_corr = ADC_GAIN_CORR_1_2;
-		break;
-	case ADC_GAIN_2_3:
-		gain_corr = ADC_GAIN_CORR_2_3;
-		break;
-	case ADC_GAIN_4_5:
-		gain_corr = ADC_GAIN_CORR_4_5;
-		break;
-	case ADC_GAIN_1:
-		/* Normally unreachable, but kept for safety */
-		gain_corr = ADC_GAIN_CORR_1;
-		break;
-	default:
-		LOG_ERR("Invalid gain: %d\n", gain_corr);
-		return -EINVAL;
-	}
-
-	/* Apply gain correction */
-	adc_reg->ADC_GAINCORR = ADC_GAINCORR_GAINCORR(gain_corr);
-	adc_wait_synchronization(adc_reg);
-
-	return 0;
-}
-
-static int8_t adc_set_input_positive(adc_registers_t *adc_reg, uint8_t input_positive)
-{
-	/* Validate input_positive:
-	 * - Must be <= 0x1E (highest valid value is DAC0)
-	 * - Values 0x10 to 0x17 are reserved and must not be used
-	 */
-	if ((input_positive > MCHP_ADC_INPUT_POS_MAX) ||
-	    ((input_positive >= MCHP_ADC_INPUT_POS_RSV_MIN) &&
-	     (input_positive <= MCHP_ADC_INPUT_POS_RSV_MAX))) {
-		LOG_ERR("Invalid input positive: %d\n", input_positive);
-		return -EINVAL;
-	}
-
-	/* PIC32CXSG family specific reserved inputs */
-#if defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG)
-	if ((input_positive == MCHP_ADC_INPUT_POS_RSV_0) ||
-	    (input_positive == MCHP_ADC_INPUT_POS_RSV_1)) {
-		LOG_ERR("Invalid input positive for PIC32CXSG: %d", input_positive);
-		return -EINVAL;
-	}
-#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG */
-
 	/* Set the MUXPOS field in ADC_INPUTCTRL register */
-	adc_reg->ADC_INPUTCTRL = ADC_INPUTCTRL_MUXPOS(input_positive);
+	uint16_t reg_val;
+
+	reg_val = adc_reg->ADC_INPUTCTRL;
+	reg_val &= ~ADC_INPUTCTRL_MUXPOS_Msk;
+	reg_val |= ADC_INPUTCTRL_MUXPOS(input_positive);
+	adc_reg->ADC_INPUTCTRL = reg_val;
+	adc_wait_synchronization(adc_reg);
 
 #ifndef MCHP_SUPC_API_SUPPORT_AVAILABLE
 	/* Manual SUPC configuration when required */
@@ -376,63 +326,35 @@ static int8_t adc_set_input_positive(adc_registers_t *adc_reg, uint8_t input_pos
 	return 0;
 }
 
-static int8_t adc_set_input_negative(adc_registers_t *adc_reg, uint8_t input_negative,
-				     bool differential)
+static int adc_set_input_negative(adc_registers_t *adc_reg, uint8_t input_negative,
+				  bool differential)
 {
-	/* Validate input_negative range (only valid for differential mode) */
-	if (input_negative > MCHP_ADC_INPUT_NEG_MAX) {
-		LOG_ERR("Invalid input negative: %d\n", input_negative);
-		return -EINVAL;
-	}
+	uint16_t reg_val;
 
+	reg_val = adc_reg->ADC_INPUTCTRL;
+	reg_val &= ~(ADC_INPUTCTRL_MUXNEG_Msk | ADC_INPUTCTRL_DIFFMODE_Msk);
 	if (differential == true) {
 		/* Enable differential mode and set specified negative input */
-		adc_reg->ADC_INPUTCTRL |= ADC_INPUTCTRL_DIFFMODE(1);
-		adc_reg->ADC_INPUTCTRL |= ADC_INPUTCTRL_MUXNEG(input_negative);
+		reg_val |= (ADC_INPUTCTRL_MUXNEG(input_negative) | ADC_INPUTCTRL_DIFFMODE(1));
 	} else {
-#if defined(CONFIG_SOC_FAMILY_MICROCHIP_SAM_D5X_E5X)
 		/* In single-ended mode, connect negative input to GND */
-		adc_reg->ADC_INPUTCTRL |= ADC_INPUTCTRL_MUXNEG(ADC_INPUTCTRL_MUXNEG_GND_Val);
+#if defined(CONFIG_SOC_FAMILY_MICROCHIP_SAM_D5X_E5X)
+		reg_val |= ADC_INPUTCTRL_MUXNEG(ADC_INPUTCTRL_MUXNEG_GND_Val);
 #elif defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG)
-		adc_reg->ADC_INPUTCTRL |= ADC_INPUTCTRL_MUXNEG(ADC_INPUTCTRL_MUXNEG_AVSS_Val);
-#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG */
+		reg_val |= ADC_INPUTCTRL_MUXNEG(ADC_INPUTCTRL_MUXNEG_AVSS_Val);
+#endif
 	}
 
-	return 0;
-}
-
-static int8_t adc_set_oversampling(adc_registers_t *adc_reg, uint8_t oversampling)
-{
-	/*
-	 * Oversampling configuration:
-	 * 0x0 = 1 sample
-	 * 0x1 = 2 samples
-	 * 0x2 = 4 samples
-	 * 0x3 = 8 samples
-	 * 0x4 = 16 samples
-	 * 0x5 = 32 samples
-	 * 0x6 = 64 samples
-	 * 0x7 = 128 samples
-	 * 0x8 = 256 samples
-	 * 0x9 = 512 samples
-	 * 0xA = 1024 samples
-	 *
-	 * Valid range: 0 to 10 (inclusive)
-	 */
-	if (oversampling > ADC_MAX_OVERSAMPLING_VAL) {
-		LOG_ERR("Invalid oversampling: %d\n", oversampling);
-		return -EINVAL;
-	}
-
-	adc_reg->ADC_SWTRIG = ADC_AVGCTRL_SAMPLENUM(oversampling);
+	adc_reg->ADC_INPUTCTRL = reg_val;
 	adc_wait_synchronization(adc_reg);
 
 	return 0;
 }
 
-static int8_t adc_set_resolution(adc_registers_t *adc_reg, uint8_t resolution, uint8_t oversampling)
+static int adc_set_resolution(adc_registers_t *adc_reg, uint8_t resolution, uint8_t oversampling)
 {
 	uint16_t resolution_val;
+	uint16_t reg_val;
 
 	switch (resolution) {
 	case ADC_RESOLUTION_8BIT:
@@ -440,62 +362,64 @@ static int8_t adc_set_resolution(adc_registers_t *adc_reg, uint8_t resolution, u
 			LOG_ERR("Invalid oversampling: %d\n", oversampling);
 			return -EINVAL;
 		}
-		resolution_val = ADC_CTRLB_RESSEL_8BIT;
+		resolution_val = ADC_CTRLB_RESSEL_8BIT_Val;
 		break;
 	case ADC_RESOLUTION_10BIT:
 		if (oversampling != 0) {
 			LOG_ERR("Invalid oversampling: %d\n", oversampling);
 			return -EINVAL;
 		}
-		resolution_val = ADC_CTRLB_RESSEL_10BIT;
+		resolution_val = ADC_CTRLB_RESSEL_10BIT_Val;
 		break;
 	case ADC_RESOLUTION_12BIT:
 		if (oversampling != 0) {
-			resolution_val = ADC_CTRLB_RESSEL_16BIT;
+			resolution_val = ADC_CTRLB_RESSEL_16BIT_Val;
 		} else {
-			resolution_val = ADC_CTRLB_RESSEL_12BIT;
+			resolution_val = ADC_CTRLB_RESSEL_12BIT_Val;
 		}
 		break;
 	default:
 		LOG_ERR("Invalid oversampling: %d\n", oversampling);
 		return -EINVAL;
 	}
-
-	adc_reg->ADC_CTRLB = resolution_val;
+	reg_val = adc_reg->ADC_CTRLB;
+	reg_val &= ~ADC_CTRLB_RESSEL_Msk;
+	reg_val |= ADC_CTRLB_RESSEL(resolution_val);
+	adc_reg->ADC_CTRLB = reg_val;
 	adc_wait_synchronization(adc_reg);
 
 	return 0;
 }
 
-static int8_t adc_set_prescalar(adc_registers_t *adc_reg, uint16_t prescaler)
+static int adc_set_prescalar(adc_registers_t *adc_reg, uint16_t prescaler)
 {
-	int8_t ret = 0;
 	uint16_t prescaler_val = 0;
+	uint16_t reg_val;
 
 	switch (prescaler) {
 	case ADC_PRESCALER_DIV_2:
-		prescaler_val = ADC_CTRLA_PRESCALER_DIV2;
+		prescaler_val = ADC_CTRLA_PRESCALER_DIV2_Val;
 		break;
 	case ADC_PRESCALER_DIV_4:
-		prescaler_val = ADC_CTRLA_PRESCALER_DIV4;
+		prescaler_val = ADC_CTRLA_PRESCALER_DIV4_Val;
 		break;
 	case ADC_PRESCALER_DIV_8:
-		prescaler_val = ADC_CTRLA_PRESCALER_DIV8;
+		prescaler_val = ADC_CTRLA_PRESCALER_DIV8_Val;
 		break;
 	case ADC_PRESCALER_DIV_16:
-		prescaler_val = ADC_CTRLA_PRESCALER_DIV16;
+		prescaler_val = ADC_CTRLA_PRESCALER_DIV16_Val;
 		break;
 	case ADC_PRESCALER_DIV_32:
-		prescaler_val = ADC_CTRLA_PRESCALER_DIV32;
+		prescaler_val = ADC_CTRLA_PRESCALER_DIV32_Val;
 		break;
 	case ADC_PRESCALER_DIV_64:
-		prescaler_val = ADC_CTRLA_PRESCALER_DIV64;
+		prescaler_val = ADC_CTRLA_PRESCALER_DIV64_Val;
 		break;
 	case ADC_PRESCALER_DIV_128:
-		prescaler_val = ADC_CTRLA_PRESCALER_DIV128;
+		prescaler_val = ADC_CTRLA_PRESCALER_DIV128_Val;
 		break;
 	case ADC_PRESCALER_DIV_256:
-		prescaler_val = ADC_CTRLA_PRESCALER_DIV256;
+		prescaler_val = ADC_CTRLA_PRESCALER_DIV256_Val;
 		break;
 	default:
 		/*
@@ -504,21 +428,304 @@ static int8_t adc_set_prescalar(adc_registers_t *adc_reg, uint16_t prescaler)
 		 * (prescaler <= 0 || prescaler > 256 || (prescaler & (prescaler - 1)))
 		 * Notify user of fallback to ensure the ADC doesn't fail to initialize.
 		 */
-		prescaler_val = ADC_CTRLA_PRESCALER_DIV2;
+		prescaler_val = ADC_CTRLA_PRESCALER_DIV2_Val;
 		LOG_WRN("Warning: Invalid ADC prescaler value %d, using default (DIV2).\n",
 			prescaler);
 		break;
 	}
-
-	adc_reg->ADC_CTRLA = prescaler_val;
+	reg_val = adc_reg->ADC_CTRLA;
+	reg_val &= ~ADC_CTRLA_PRESCALER_Msk;
+	reg_val |= ADC_CTRLA_PRESCALER(prescaler_val);
+	adc_reg->ADC_CTRLA = reg_val;
 	adc_wait_synchronization(adc_reg);
 
-	return ret;
+	return 0;
 }
 
-static int8_t adc_select_channels(const struct device *dev, struct adc_channel_cfg *channel_config)
+#elif defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH)
+
+/* ADC Correction enable */
+static inline void adc_correction_enable(adc_registers_t *adc_reg)
 {
-	int8_t ret;
+	adc_reg->ADC_CTRLC |= ADC_CTRLC_CORREN_Msk;
+	adc_wait_synchronization(adc_reg);
+}
+
+static inline int adc_set_acq_time(adc_registers_t *adc_reg, uint16_t sample_length)
+{
+	uint8_t reg_val;
+
+	/* Valid sample length: 0–63 */
+	if (sample_length >= 64U) {
+		LOG_ERR("Invalid Sample Length : %d\n", sample_length);
+		return -EINVAL;
+	}
+
+	reg_val = adc_reg->ADC_SAMPCTRL;
+	reg_val &= ~ADC_SAMPCTRL_SAMPLEN_Msk;
+	reg_val |= ADC_SAMPCTRL_SAMPLEN(sample_length);
+	adc_reg->ADC_SAMPCTRL = reg_val;
+	adc_wait_synchronization(adc_reg);
+
+	return 0;
+}
+
+static int adc_set_reference(adc_registers_t *adc_reg, enum adc_reference reference)
+{
+	uint8_t reg_val;
+	bool enable_bit_state;
+
+#ifndef MCHP_SUPC_API_SUPPORT_AVAILABLE
+	if (reference == ADC_REF_INTERNAL) {
+		/* Manually enable internal references */
+		SUPC_VREF &= ~SUPC_VREF_SEL_Msk;
+		SUPC_VREF |= SUPC_VREF_SEL_2V048;
+		SUPC_VREF |= SUPC_VREF_ONDEMAND_Msk;
+		SUPC_VREF |= SUPC_VREF_VREFOE_Msk;
+	}
+#endif /* MCHP_SUPC_API_SUPPORT_AVAILABLE */
+	enable_bit_state = IS_BIT_SET(adc_reg->ADC_CTRLA, ADC_CTRLA_ENABLE_Pos);
+	/* Apply reference selection */
+	adc_controller_disable(adc_reg);
+	reg_val = adc_reg->ADC_REFCTRL;
+	reg_val &= ~(ADC_REFCTRL_REFSEL_Msk | ADC_REFCTRL_REFCOMP_Msk);
+
+	switch (reference) {
+	case ADC_REF_VDD_1:
+		reg_val |= ADC_REFCTRL_REFSEL(ADC_REFCTRL_REFSEL_INTVCC2_Val);
+		break;
+	case ADC_REF_VDD_1_2:
+		reg_val |= ADC_REFCTRL_REFSEL(ADC_REFCTRL_REFSEL_INTVCC1_Val);
+		break;
+	case ADC_REF_INTERNAL:
+		reg_val |= (ADC_REFCTRL_REFSEL(ADC_REFCTRL_REFSEL_INTREF_Val) |
+			    ADC_REFCTRL_REFCOMP(1));
+		break;
+	case ADC_REF_EXTERNAL0:
+		reg_val |= ADC_REFCTRL_REFSEL(ADC_REFCTRL_REFSEL_VREFA_Val);
+		break;
+	case ADC_REF_VDD_1_3:
+	case ADC_REF_VDD_1_4:
+	case ADC_REF_EXTERNAL1:
+		LOG_ERR("ADC Selected reference is not supported: %d\n", reference);
+		return -EINVAL;
+	default:
+		LOG_ERR("ADC Selected reference is not valid: %d\n", reference);
+		return -EINVAL;
+	}
+	adc_reg->ADC_REFCTRL = reg_val;
+	/* Enable the controller if enabled before disabling */
+	if (enable_bit_state == true) {
+		adc_controller_enable(adc_reg);
+	}
+
+	return 0;
+}
+
+static int adc_set_input_positive(adc_registers_t *adc_reg, uint8_t input_positive)
+{
+	uint16_t reg_val;
+
+	reg_val = adc_reg->ADC_INPUTCTRL;
+	reg_val &= ~ADC_INPUTCTRL_MUXPOS_Msk;
+	reg_val |= ADC_INPUTCTRL_MUXPOS(input_positive);
+	/* Set the MUXPOS field in ADC_INPUTCTRL register */
+	adc_reg->ADC_INPUTCTRL = reg_val;
+	adc_wait_synchronization(adc_reg);
+
+	return 0;
+}
+
+static int adc_set_input_negative(adc_registers_t *adc_reg, uint8_t input_negative,
+				  bool differential)
+{
+	uint16_t reg_val;
+
+	reg_val = adc_reg->ADC_INPUTCTRL;
+	reg_val &= ~ADC_INPUTCTRL_MUXNEG_Msk;
+	if (differential == true) {
+		/* Enable differential mode and set specified negative input */
+		adc_reg->ADC_CTRLC |= ADC_CTRLC_DIFFMODE_Msk;
+		adc_wait_synchronization(adc_reg);
+		reg_val |= ADC_INPUTCTRL_MUXNEG(input_negative);
+	} else {
+		/* In single-ended mode, connect negative input to GND */
+		adc_reg->ADC_CTRLC &= ~ADC_CTRLC_DIFFMODE_Msk;
+		adc_wait_synchronization(adc_reg);
+		reg_val |= ADC_INPUTCTRL_MUXNEG(ADC_INPUTCTRL_MUXNEG_GND_Val);
+	}
+	adc_reg->ADC_INPUTCTRL = reg_val;
+	adc_wait_synchronization(adc_reg);
+
+	return 0;
+}
+
+static int adc_set_resolution(adc_registers_t *adc_reg, uint8_t resolution, uint8_t oversampling)
+{
+	uint16_t resolution_val;
+	uint16_t reg_val;
+
+	switch (resolution) {
+	case ADC_RESOLUTION_8BIT:
+		if (oversampling != 0) {
+			LOG_ERR("Invalid oversampling: %d\n", oversampling);
+			return -EINVAL;
+		}
+		resolution_val = ADC_CTRLC_RESSEL_8BIT_Val;
+		break;
+	case ADC_RESOLUTION_10BIT:
+		if (oversampling != 0) {
+			LOG_ERR("Invalid oversampling: %d\n", oversampling);
+			return -EINVAL;
+		}
+		resolution_val = ADC_CTRLC_RESSEL_10BIT_Val;
+		break;
+	case ADC_RESOLUTION_12BIT:
+		if (oversampling != 0) {
+			resolution_val = ADC_CTRLC_RESSEL_16BIT_Val;
+		} else {
+			resolution_val = ADC_CTRLC_RESSEL_12BIT_Val;
+		}
+		break;
+	default:
+		LOG_ERR("Invalid oversampling: %d\n", oversampling);
+		return -EINVAL;
+	}
+	reg_val = adc_reg->ADC_CTRLC;
+	reg_val &= ~ADC_CTRLC_RESSEL_Msk;
+	reg_val |= ADC_CTRLC_RESSEL(resolution_val);
+	adc_reg->ADC_CTRLC = reg_val;
+	adc_wait_synchronization(adc_reg);
+
+	return 0;
+}
+
+static int adc_set_prescalar(adc_registers_t *adc_reg, uint16_t prescaler)
+{
+	uint16_t prescaler_val = 0;
+	uint8_t reg_val;
+
+	switch (prescaler) {
+	case ADC_PRESCALER_DIV_2:
+		prescaler_val = ADC_CTRLB_PRESCALER_DIV2_Val;
+		break;
+	case ADC_PRESCALER_DIV_4:
+		prescaler_val = ADC_CTRLB_PRESCALER_DIV4_Val;
+		break;
+	case ADC_PRESCALER_DIV_8:
+		prescaler_val = ADC_CTRLB_PRESCALER_DIV8_Val;
+		break;
+	case ADC_PRESCALER_DIV_16:
+		prescaler_val = ADC_CTRLB_PRESCALER_DIV16_Val;
+		break;
+	case ADC_PRESCALER_DIV_32:
+		prescaler_val = ADC_CTRLB_PRESCALER_DIV32_Val;
+		break;
+	case ADC_PRESCALER_DIV_64:
+		prescaler_val = ADC_CTRLB_PRESCALER_DIV64_Val;
+		break;
+	case ADC_PRESCALER_DIV_128:
+		prescaler_val = ADC_CTRLB_PRESCALER_DIV128_Val;
+		break;
+	case ADC_PRESCALER_DIV_256:
+		prescaler_val = ADC_CTRLB_PRESCALER_DIV256_Val;
+		break;
+	default:
+		/*
+		 * Fall back to default prescaler if the provided value is invalid.
+		 * Acceptable values must be powers of 2 within the range 1–256.
+		 * (prescaler <= 0 || prescaler > 256 || (prescaler & (prescaler - 1)))
+		 * Notify user of fallback to ensure the ADC doesn't fail to initialize.
+		 */
+		prescaler_val = ADC_CTRLB_PRESCALER_DIV2_Val;
+		LOG_WRN("Warning: Invalid ADC prescaler value %d, using default (DIV2).\n",
+			prescaler);
+		break;
+	}
+	reg_val = adc_reg->ADC_CTRLB;
+	reg_val &= ~ADC_CTRLB_PRESCALER_Msk;
+	reg_val |= ADC_CTRLB_PRESCALER(prescaler_val);
+	adc_reg->ADC_CTRLB = reg_val;
+	adc_wait_synchronization(adc_reg);
+	return 0;
+}
+#endif /* End of CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
+
+static int adc_set_gain(adc_registers_t *adc_reg, enum adc_gain gain)
+{
+	uint16_t gain_corr = 0;
+
+	/* Gain = 1 → no correction needed */
+	if (gain == ADC_GAIN_1) {
+		return 0;
+	}
+
+	/* Enable correction and clear offset */
+	adc_correction_enable(adc_reg);
+	adc_set_offset_correction(adc_reg, 0x0);
+
+	/* Select gain correction factor */
+	switch (gain) {
+	case ADC_GAIN_1_2:
+		gain_corr = ADC_GAIN_CORR_1_2;
+		break;
+	case ADC_GAIN_2_3:
+		gain_corr = ADC_GAIN_CORR_2_3;
+		break;
+	case ADC_GAIN_4_5:
+		gain_corr = ADC_GAIN_CORR_4_5;
+		break;
+	default:
+		LOG_ERR("Invalid gain: %d\n", gain);
+		return -EINVAL;
+	}
+
+	adc_set_gain_correction(adc_reg, gain_corr);
+
+	return 0;
+}
+
+static int adc_validate_channel_params(enum adc_gain gain, enum adc_reference reference,
+				       uint16_t sample_length, uint8_t input_positive,
+				       uint8_t input_negative)
+{
+	/* Validate gain */
+	if (gain != ADC_GAIN_1_2 && gain != ADC_GAIN_2_3 && gain != ADC_GAIN_4_5 &&
+	    gain != ADC_GAIN_1) {
+		LOG_ERR("Invalid gain : %d\n", gain);
+		return -EINVAL;
+	}
+
+	/* Validate reference */
+	if ((reference < ADC_REF_VDD_1) || (reference > ADC_REF_EXTERNAL1)) {
+		LOG_ERR("Invalid reference : %d\n", reference);
+		return -EINVAL;
+	}
+
+	/* Valid sample length range: 1–63 */
+	if ((sample_length == 0) || (sample_length >= 64U)) {
+		LOG_ERR("Invalid Sample Length : %d\n", sample_length);
+		return -EINVAL;
+	}
+
+	/* Validate input_positive */
+	if ((BIT(input_positive) & MCHP_ADC_MUXPOS_VALID_MASK) == 0) {
+		LOG_ERR("Invalid input positive: %d\n", input_positive);
+		return -EINVAL;
+	}
+
+	/* Validate input_negative */
+	if ((BIT(input_negative) & MCHP_ADC_MUXNEG_VALID_MASK) == 0) {
+		LOG_ERR("Invalid input negative: %d\n", input_negative);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int adc_select_channels(const struct device *dev, struct adc_channel_cfg *channel_config)
+{
+	int ret;
 
 	/* Set channels */
 	ret = adc_set_input_positive(ADC_REGS, channel_config->input_positive);
@@ -562,10 +769,10 @@ static int adc_get_sample_length(uint16_t acq_time, uint32_t adc_clk, uint8_t pr
 	return sample_length;
 }
 
-static int8_t adc_apply_channel_config(const struct device *dev,
-				       struct adc_channel_cfg *channel_config)
+static int adc_apply_channel_config(const struct device *dev,
+				    struct adc_channel_cfg *channel_config)
 {
-	int8_t ret;
+	int ret;
 	const struct adc_mchp_dev_config *const dev_cfg = dev->config;
 	struct adc_mchp_dev_data *dev_data = dev->data;
 
@@ -643,7 +850,7 @@ static int adc_start_read(const struct device *dev, const struct adc_sequence *s
 	uint32_t channels, channel_count, index;
 
 	if (sequence->channels == 0) {
-		LOG_ERR("No chennels selected!\n");
+		LOG_ERR("No channels selected!\n");
 		return -EINVAL;
 	}
 
@@ -836,7 +1043,7 @@ static int adc_mchp_init(const struct device *dev)
 {
 	const struct adc_mchp_dev_config *const dev_cfg = dev->config;
 	struct adc_mchp_dev_data *dev_data = dev->data;
-	int8_t ret = 0;
+	int ret = 0;
 
 	dev_data->dev = dev;
 	/* Enable the ADC Clock */
@@ -855,7 +1062,6 @@ static int adc_mchp_init(const struct device *dev)
 		LOG_ERR("Failed to enable the MCLK for ADC: %d", ret);
 		return ret;
 	}
-	ret = (ret == -EALREADY) ? 0 : ret;
 
 	/* Get ADC Clock Frequency */
 	ret = clock_control_get_rate(dev_cfg->adc_clock.clock_dev, dev_cfg->adc_clock.gclk_sys,
