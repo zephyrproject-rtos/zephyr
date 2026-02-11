@@ -358,7 +358,7 @@ class Binding:
 
                     if elem:
                         # We've popped out all the valid keys.
-                        _err(f"'include:' in {binding_path} should not have "
+                        _err(f"'include:' in '{binding_path}' should not have "
                              f"these unexpected contents: {elem}")
 
                     _check_include_dict(name, allowlist, blocklist,
@@ -370,13 +370,13 @@ class Binding:
                                        child_filter, binding_path)
                     _merge_props(merged, contents, None, binding_path, False)
                 else:
-                    _err(f"all elements in 'include:' in {binding_path} "
+                    _err(f"all elements in 'include:' in '{binding_path}' "
                          "should be either strings or maps with a 'name' key "
                          "and optional 'property-allowlist' or "
                          f"'property-blocklist' keys, but got: {elem}")
         else:
             # Invalid item.
-            _err(f"'include:' in {binding_path} "
+            _err(f"'include:' in '{binding_path}' "
                  f"should be a string or list, but has type {type(include)}")
 
         # Next, merge the merged included files into 'raw'. Error out if
@@ -1785,7 +1785,7 @@ class Node:
         if prop and deprecated:
             msg = (
                 f"'{name}' is marked as deprecated in 'properties:' "
-                f"in {binding_path} for node {node.path}."
+                f"in '{binding_path}' for node {node.path}."
             )
             if err_on_deprecated:
                 _err(msg)
@@ -1796,7 +1796,7 @@ class Node:
             if required and self.status == "okay":
                 _err(
                     f"'{name}' is marked as required in 'properties:' in "
-                    f"{binding_path}, but does not appear in {node!r}"
+                    f"'{binding_path}', but does not appear in {node!r}"
                 )
 
             if default is not None:
@@ -1813,7 +1813,7 @@ class Node:
         if prop_type == "boolean":
             if prop.type != Type.EMPTY:
                 _err(f"'{name}' in {node!r} is defined with 'type: boolean' "
-                     f"in {binding_path}, but is assigned a value ('{prop}') "
+                     f"in '{binding_path}', but is assigned a value ('{prop}') "
                      f"instead of being empty ('{name};')")
             return True
 
@@ -2773,7 +2773,7 @@ def _binding_paths(bindings_dirs: list[str]) -> list[str]:
     # Returns a list with the paths to all bindings (.yaml files) in
     # 'bindings_dirs'
 
-    return [os.path.join(root, filename)
+    return [os.path.normpath(os.path.join(root, filename))
             for bindings_dir in bindings_dirs
             for root, _, filenames in os.walk(bindings_dir)
             for filename in filenames
@@ -2796,11 +2796,11 @@ def _check_include_dict(name: Optional[str],
     # child-binding filter 'child_filter' has valid structure.
 
     if name is None:
-        _err(f"'include:' element in {binding_path} "
+        _err(f"'include:' element in '{binding_path}' "
              "should have a 'name' key")
 
     if allowlist is not None and blocklist is not None:
-        _err(f"'include:' of file '{name}' in {binding_path} "
+        _err(f"'include:' of file '{name}' in '{binding_path}' "
              "should not specify both 'property-allowlist:' "
              "and 'property-blocklist:'")
 
@@ -2815,12 +2815,12 @@ def _check_include_dict(name: Optional[str],
 
         if child_copy:
             # We've popped out all the valid keys.
-            _err(f"'include:' of file '{name}' in {binding_path} "
+            _err(f"'include:' of file '{name}' in '{binding_path}' "
                  "should not have these unexpected contents in a "
                  f"'child-binding': {child_copy}")
 
         if child_allowlist is not None and child_blocklist is not None:
-            _err(f"'include:' of file '{name}' in {binding_path} "
+            _err(f"'include:' of file '{name}' in '{binding_path}' "
                  "should not specify both 'property-allowlist:' and "
                  "'property-blocklist:' in a 'child-binding:'")
 
@@ -2881,7 +2881,7 @@ def _check_prop_filter(name: str, value: Optional[list[str]],
         return
 
     if not isinstance(value, list):
-        _err(f"'{name}' value {value} in {binding_path} should be a list")
+        _err(f"'{name}' value {value} in '{binding_path}' should be a list")
 
 
 def _merge_props(to_dict: dict,
@@ -2915,7 +2915,7 @@ def _merge_props(to_dict: dict,
         elif prop not in to_dict:
             to_dict[prop] = from_dict[prop]
         elif _bad_overwrite(to_dict, from_dict, prop, check_required):
-            _err(f"{binding_path} (in '{parent}'): '{prop}' "
+            _err(f"'{binding_path}' (in '{parent}'): '{prop}' "
                  f"from included file overwritten ('{from_dict[prop]}' "
                  f"replaced with '{to_dict[prop]}')")
         elif prop == "required":
@@ -2924,7 +2924,7 @@ def _merge_props(to_dict: dict,
             if not (isinstance(from_dict["required"], bool) and
                     isinstance(to_dict["required"], bool)):
                 _err(f"malformed 'required:' setting for '{parent}' in "
-                     f"'properties' in {binding_path}, expected true/false")
+                     f"'properties' in '{binding_path}', expected true/false")
 
             # 'required: true' takes precedence
             to_dict["required"] = to_dict["required"] or from_dict["required"]
@@ -2977,14 +2977,14 @@ def _check_prop_by_type(prop_name: str,
 
     if prop_type is None:
         _err(f"missing 'type:' for '{prop_name}' in 'properties' in "
-             f"{binding_path}")
+             f"'{binding_path}'")
 
     ok_types = {"boolean", "int", "array", "uint8-array", "string",
                 "string-array", "phandle", "phandles", "phandle-array",
                 "path", "compound"}
 
     if prop_type not in ok_types:
-        _err(f"'{prop_name}' in 'properties:' in {binding_path} "
+        _err(f"'{prop_name}' in 'properties:' in '{binding_path}' "
              f"has unknown type '{prop_type}', expected one of " +
              ", ".join(ok_types))
 
@@ -2995,7 +2995,7 @@ def _check_prop_by_type(prop_name: str,
     if (prop_type == "phandle-array"
         and not prop_name.endswith("s")
         and "specifier-space" not in options):
-        _err(f"'{prop_name}' in 'properties:' in {binding_path} "
+        _err(f"'{prop_name}' in 'properties:' in '{binding_path}' "
              f"has type 'phandle-array' and its name does not end in 's', "
              f"but no 'specifier-space' was provided.")
 
@@ -3003,7 +3003,7 @@ def _check_prop_by_type(prop_name: str,
     # for PropertySpec.const.
     const_types = {"int", "array", "uint8-array", "string", "string-array"}
     if const and prop_type not in const_types:
-        _err(f"const in {binding_path} for property '{prop_name}' "
+        _err(f"const in '{binding_path}' for property '{prop_name}' "
              f"has type '{prop_type}', expected one of " +
              ", ".join(const_types))
 
@@ -3016,7 +3016,7 @@ def _check_prop_by_type(prop_name: str,
                      "phandle-array", "path"}:
         _err("'default:' can't be combined with "
              f"'type: {prop_type}' for '{prop_name}' in "
-             f"'properties:' in {binding_path}")
+             f"'properties:' in '{binding_path}'")
 
     def ok_default() -> bool:
         # Returns True if 'default' is an okay default for the property's type.
@@ -3046,7 +3046,7 @@ def _check_prop_by_type(prop_name: str,
 
     if not ok_default():
         _err(f"'default: {default}' is invalid for '{prop_name}' "
-             f"in 'properties:' in {binding_path}, "
+             f"in 'properties:' in '{binding_path}', "
              f"which has type {prop_type}")
 
 
