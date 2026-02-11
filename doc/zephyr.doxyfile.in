@@ -292,7 +292,6 @@ ALIASES                = "kconfig{1}=\c \1" \
                          "kconfig_dep{1}=\attention Available only when the following Kconfig option is enabled: \kconfig{\1}." \
                          "kconfig_dep{2}=\attention Available only when the following Kconfig options are enabled: \kconfig{\1}, \kconfig{\2}." \
                          "kconfig_dep{3}=\attention Available only when the following Kconfig options are enabled: \kconfig{\1}, \kconfig{\2}, \kconfig{\3}." \
-                         "funcprops=\par \"Function properties (list may not be complete)\"" \
                          "reschedule=\qualifier reschedule" \
                          "sleep=\qualifier sleep" \
                          "no_wait=\qualifier no-wait" \

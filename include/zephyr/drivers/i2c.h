@@ -896,7 +896,7 @@ static inline int z_impl_i2c_transfer(const struct device *dev,
  * to another I2C device asynchronously with a callback completion.
  *
  * @see i2c_transfer()
- * @funcprops \isr_ok
+ * @isr_ok
  *
  * @param dev Pointer to the device structure for an I2C controller
  *            driver configured in controller mode.
@@ -1047,7 +1047,7 @@ void z_i2c_transfer_signal_cb(const struct device *dev, int result, void *userda
  * to another I2C device asynchronously with a k_poll_signal completion.
  *
  * @see i2c_transfer_cb()
- * @funcprops \isr_ok
+ * @isr_ok
  *
  * @param dev Pointer to the device structure for an I2C controller
  *            driver configured in controller mode.
