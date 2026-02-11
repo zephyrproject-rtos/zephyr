@@ -23,7 +23,12 @@ LOG_MODULE_REGISTER(pwm_rcar);
 /* PWM Controller capabilities */
 #define RCAR_PWM_MAX_CYCLE   1023U
 #define RCAR_PWM_MAX_DIV     24U
+
+#if (SOC_SERIES == rcar_gen4)
+#define RCAR_PWM_MAX_CHANNEL 10
+#else
 #define RCAR_PWM_MAX_CHANNEL 6
+#endif /* SOC_SERIES == rcar_gen4 */
 
 /* Registers */
 #define RCAR_PWM_REG_SHIFT 0x1000
