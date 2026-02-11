@@ -21,6 +21,7 @@
 		zephyr,shell-uart = &usart0;
 		zephyr,sram = &sram0;
 		zephyr,uart-pipe = &usart0;
+		zephyr,openthread-counter = &protimer;
 	};
 
 	/* These aliases are provided for compatibility with samples */
@@ -284,5 +285,9 @@
 };
 
 &bt_hci_silabs {
+	status = "okay";
+};
+
+&protimer {
 	status = "okay";
 };
