@@ -42,6 +42,21 @@ uart2: &scb2 {
 	clock-div = <11500>;
 };
 
+&peri_clk_div4 {
+	status = "okay";
+	resource-type = <IFX_RSC_ADC>;
+	resource-instance = <0>;
+	clock-div = <4>;
+};
+
+&gpio_prt1 {
+	status = "okay";
+};
+
+&gpio_prt2 {
+	status = "okay";
+};
+
 &gpio_prt7 {
 	status = "okay";
 };

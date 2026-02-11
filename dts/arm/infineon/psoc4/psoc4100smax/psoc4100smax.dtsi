@@ -203,6 +203,17 @@
 			status = "disabled";
 		};
 
+		adc0: adc@403a0000 {
+			compatible = "infineon,sar-adc";
+			infineon,version = <2>;
+			reg = <0x403a0000 0xf08>;
+			interrupts = <25 0>;
+			#io-channel-cells = <1>;
+			clocks = <&peri_clk_div4>;
+			clk-dst = <0x12>;
+			status = "disabled";
+		};
+
 		tcpwm0: tcpwm0@40200000 {
 			reg = <0x40200000 0x300>;
 			#address-cells = <1>;

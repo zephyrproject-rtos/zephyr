@@ -58,6 +58,13 @@ spi1: &scb1 {
 	clock-div = <11500>;
 };
 
+&peri_clk_div4 {
+	status = "okay";
+	resource-type = <IFX_RSC_ADC>;
+	resource-instance = <0>;
+	clock-div = <4>;
+};
+
 &gpio_prt4 {
 	status = "okay";
 };
