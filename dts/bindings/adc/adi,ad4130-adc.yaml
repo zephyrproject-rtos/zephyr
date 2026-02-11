@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Bindings for the ADI AD4130 Analog-to-Digital Converter.
+  ADI AD4130 ADC Controller.
 
   This device is controlled over SPI and exposes one or more ADC input channels.
   Each child node corresponds to a channel and supports standard ADC properties

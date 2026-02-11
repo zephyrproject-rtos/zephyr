@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Bindings for the ADI AD7124 Analog-to-Digital Converter.
+  ADI AD7124 ADC Controller.
 
 compatible: "adi,ad7124-adc"
 

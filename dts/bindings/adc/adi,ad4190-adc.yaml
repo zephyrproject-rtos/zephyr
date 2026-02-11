@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Bindings for the ADI AD4190 Analog-to-Digital Converter.
+  ADI AD4190 ADC Controller.
 
 compatible: "adi,ad4190-adc"
 
