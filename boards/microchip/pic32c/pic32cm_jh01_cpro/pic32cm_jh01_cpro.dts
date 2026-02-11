@@ -9,6 +9,8 @@
 #include "pic32cm_jh01_cpro-pinctrl.dtsi"
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/mchp_pic32cm_jh_adc.h>
 
 / {
 	model = "PIC32CM JH01 Curiosity Pro";
@@ -115,6 +117,14 @@
 			gclkgen-src = "fdpll";
 			gclkgen-en = <1>;
 		};
+
+		gclkgen1 {
+			subsystem = <CLOCK_MCHP_GCLKGEN_ID_GEN1>;
+			gclkgen-div-factor = <1>;
+			gclkgen-run-in-standby-en = <1>;
+			gclkgen-src = "xosc";
+			gclkgen-en = <1>;
+		};
 	};
 
 	gclkperiph: gclkperiph {
@@ -125,6 +135,18 @@
 			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_SERCOM4_CORE>;
 			gclkperiph-src = "gclk0";
 			gclkperiph-en = <1>;
+		};
+
+		adc0 {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_ADC0>;
+			gclkperiph-src = "gclk1";
+			gclkperiph-en = <0>;
+		};
+
+		adc1 {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_ADC1>;
+			gclkperiph-src = "gclk1";
+			gclkperiph-en = <0>;
 		};
 	};
 };
@@ -157,5 +179,17 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&sercom1_i2c_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&adc0 {
+	/* ADC clock = xosc => GCLK1 / prescaler (32 MHz / 2 = 16 MHz) */
+	prescaler = <2>;
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&dmac {
 	status = "okay";
 };
