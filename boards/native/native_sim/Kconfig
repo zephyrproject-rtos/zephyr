@@ -34,6 +34,13 @@ config NATIVE_SIM_REBOOT
 	help
 	  Enables the reboot implementation for the native sim executable.
 
+config ARCH_POSIX_AFLPLUSPLUS
+	bool "Enable AFL++ support"
+	default n
+	help
+	  When selected, the AFL++ instrumentation will be enabled for the native 
+	  simulator.
+
 source "boards/native/common/sdl/Kconfig"
 source "boards/native/common/extra_args/Kconfig"
 

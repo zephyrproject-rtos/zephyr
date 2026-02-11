@@ -15,8 +15,13 @@ if(DEFINED TOOLCHAIN_HOME)
   set(find_program_clang_args PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 endif()
 
-find_program(CMAKE_C_COMPILER   clang   ${find_program_clang_args})
-find_program(CMAKE_CXX_COMPILER clang++ ${find_program_clang_args})
+if(CONFIG_ARCH_POSIX_AFLPLUSPLUS)
+  find_program(CMAKE_C_COMPILER   afl-clang-fast   ${find_program_clang_args})
+  find_program(CMAKE_CXX_COMPILER afl-clang-fast++ ${find_program_clang_args})
+else()
+  find_program(CMAKE_C_COMPILER   clang   ${find_program_clang_args})
+  find_program(CMAKE_CXX_COMPILER clang++ ${find_program_clang_args})
+endif()
 
 if(SYSROOT_DIR)
   # The toolchain has specified a sysroot dir, pass it to the compiler
