@@ -11,6 +11,7 @@ flash: 512
 ram: 64
 supported:
   - clock_control
+  - dma
   - gpio
   - pinctrl
   - reset
