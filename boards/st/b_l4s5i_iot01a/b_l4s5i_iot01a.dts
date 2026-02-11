@@ -262,9 +262,9 @@ zephyr_udc0: &usbotg_fs {
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			store_partition: partition@000 {
+			store_partition: partition@0 {
 				label = "store";
-				reg = <0x00000000 DT_SIZE_M(8)>;
+				reg = <0x0 DT_SIZE_M(8)>;
 			};
 		};
 	};
