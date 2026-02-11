@@ -1,4 +1,4 @@
-# Copyright 2022-2025 NXP
+# Copyright 2022-2026 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -16,6 +16,7 @@ string
 	default "frdm_mcxn947/mcxn947/cpu1" if $(BOARD) = "frdm_mcxn947"
 	default "mcx_n9xx_evk/mcxn947/cpu1" if $(BOARD) = "mcx_n9xx_evk"
 	default "mimxrt1180_evk/mimxrt1189/cm7" if $(BOARD) = "mimxrt1180_evk"
+	default "frdm_imxrt1186/mimxrt1186/cm7" if $(BOARD) = "frdm_imxrt1186"
 	default "mimxrt700_evk/mimxrt798s/cm33_cpu1" if $(BOARD) = "mimxrt700_evk"
 	default "esp32s3_devkitc/esp32s3/appcpu" if $(BOARD) = "esp32s3_devkitc"
 	default "esp32_devkitc/esp32/appcpu" if $(BOARD) = "esp32_devkitc"
