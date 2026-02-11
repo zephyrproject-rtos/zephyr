@@ -818,7 +818,19 @@ static void spi_stm32_complete(const struct device *dev, int status)
 	}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
-	if (!(data->ctx.config->operation & SPI_HOLD_ON_CS)) {
+#ifdef CONFIG_SPI_SLAVE
+	bool slave_hd_tx = spi_context_is_slave(&data->ctx) &&
+			   (data->ctx.config->operation & SPI_HALF_DUPLEX) &&
+			   (LL_SPI_GetTransferDirection(spi) == LL_SPI_HALF_DUPLEX_TX);
+#else
+	bool slave_hd_tx = false;
+#endif
+
+	/*
+	 * Keep SPE enabled for SPI_HOLD_ON_CS or Slave Half-Duplex TX.
+	 * Application must call spi_release() to disable SPE.
+	 */
+	if (!slave_hd_tx && !(data->ctx.config->operation & SPI_HOLD_ON_CS)) {
 		ll_disable_spi(spi);
 #if defined(CONFIG_SPI_STM32_INTERRUPT) && defined(CONFIG_SOC_SERIES_STM32H7X)
 	} else {
@@ -1558,8 +1570,19 @@ static int transceive_dma(const struct device *dev,
 
 	/* spi complete relies on SPI Status Reg which cannot be disabled */
 	spi_stm32_complete(dev, ret);
-	/* disable spi instance after completion */
-	LL_SPI_Disable(spi);
+
+#ifdef CONFIG_SPI_SLAVE
+	bool slave_hd_tx = spi_context_is_slave(&data->ctx) &&
+			   (config->operation & SPI_HALF_DUPLEX) &&
+			   (LL_SPI_GetTransferDirection(spi) == LL_SPI_HALF_DUPLEX_TX);
+#else
+	bool slave_hd_tx = false;
+#endif
+
+	/* Keep SPE enabled for SPI_HOLD_ON_CS or Slave Half-Duplex TX */
+	if (!slave_hd_tx && !(config->operation & SPI_HOLD_ON_CS)) {
+		LL_SPI_Disable(spi);
+	}
 	/* The Config. Reg. on some mcus is write un-protected when SPI is disabled */
 	LL_SPI_DisableDMAReq_TX(spi);
 	LL_SPI_DisableDMAReq_RX(spi);
