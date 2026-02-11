@@ -21,6 +21,7 @@
 			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			disabled_a: partition@0 {
 				compatible = "fixed-subpartitions";

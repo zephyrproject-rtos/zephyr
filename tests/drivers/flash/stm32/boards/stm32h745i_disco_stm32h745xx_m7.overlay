@@ -15,6 +15,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* Reserve 4KiB of flash for storage_partition. */
 		storage_partition: partition@1f000 {

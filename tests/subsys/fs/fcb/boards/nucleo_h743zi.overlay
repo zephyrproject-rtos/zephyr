@@ -3,6 +3,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		slot1_partition: partition@80000 {
 			label = "image-1";

@@ -10,6 +10,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* Set 2 last blocks of the code flash as storage partition */
 		storage_partition: partition@1e000 {
