@@ -12,6 +12,10 @@ config BUILD_OUTPUT_EXE
 config OUTPUT_PRINT_MEMORY_USAGE
 	default n
 
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 4096
+
 configdefault NET_L2_ETHERNET
 	default y if !NET_LOOPBACK && !NET_TEST
 

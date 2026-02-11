@@ -214,8 +214,8 @@ ZTEST(os_mgmt_mpstat, test_read)
 
 	const uint32_t libc_malloc_min = (9 * CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE) / 10;
 	const uint32_t libc_malloc_max = (11 * CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE) / 10;
-	const uint32_t kernel_malloc_min = (9 * CONFIG_HEAP_MEM_POOL_SIZE) / 10;
-	const uint32_t kernel_malloc_max = (11 * CONFIG_HEAP_MEM_POOL_SIZE) / 10;
+	const uint32_t kernel_malloc_min = (9 * K_HEAP_MEM_POOL_SIZE) / 10;
+	const uint32_t kernel_malloc_max = (11 * K_HEAP_MEM_POOL_SIZE) / 10;
 
 	while (i < receive_response.current_heap) {
 		struct heap_info_t *current_heap =
