@@ -17,6 +17,9 @@ find_package(Zephyr
   REQUIRED HINTS $ENV{ZEPHYR_BASE}
   )
 
+# Needed since the CMakeLists.txt that would normally set this is not run in this image.
+include(${ZEPHYR_BASE}/modules/hal_nordic/ironside/se/ironside_support_dir.cmake)
+
 project(uicr)
 
 # Function to parse a Kconfig value from a .config file
@@ -261,7 +264,7 @@ endif()
 # Generate hex files (merged, uicr-only, periphconf-only, and secondary-periphconf-only)
 add_custom_command(
   OUTPUT ${merged_hex_file} ${uicr_hex_file} ${periphconf_hex_file} ${secondary_periphconf_hex_file}
-  COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_HAL_NORDIC_MODULE_DIR}/ironside/se/tool/ironside/__main__.py
+  COMMAND ${PYTHON_EXECUTABLE} ${IRONSIDE_SUPPORT_DIR}/se/tool/ironside/__main__.py
           gen-uicr
           --uicr-address ${UICR_ADDRESS}
           --out-merged-hex ${merged_hex_file}
