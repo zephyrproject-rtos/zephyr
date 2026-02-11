@@ -188,3 +188,7 @@ temp_sensor: &tsen {
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
 };
+
+&efuse {
+	status = "okay";
+};
