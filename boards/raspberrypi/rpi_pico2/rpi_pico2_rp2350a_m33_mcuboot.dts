@@ -23,6 +23,10 @@
 
 /* Partitioning for the RP2350A-M33 board using 4M flash.
  */
+&flash0 {
+	/delete-node/ partitions;
+};
+
 #include <raspberrypi/partitions_4M_sysbuild.dtsi>
 
 / {
