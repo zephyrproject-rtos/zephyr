@@ -839,6 +839,9 @@ Bluetooth Host
   protection as of the Bluetooth Core Specification v6.2. Stored bonds that were generated using
   this method will be downgraded to unauthenticated when loaded from persistent storage, resulting
   in a lower security level.
+* The Bluetooth Host no longer depends on :c:func:`k_poll`, and therefore doesn't select
+  :kconfig:option:`CONFIG_POLL`. If the application code itself depends on this, it needs to
+  explicitly enable :kconfig:option:`CONFIG_POLL` in its configuration.
 
 Bluetooth Audio
 ===============
