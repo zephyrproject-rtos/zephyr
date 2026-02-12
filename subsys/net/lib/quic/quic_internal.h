@@ -85,6 +85,65 @@ struct quic_buffer {
  */
 #define MAX_QUIC_SHORT_HEADER_SIZE 25
 
+/* RFC 9002 Section 6.1.1: packet reordering threshold */
+#define QUIC_PACKET_THRESHOLD   3
+
+/* RFC 9002 Section 6.2.2: Initial RTT estimate used before any RTT sample
+ * has been measured. 333 ms is the value mandated by the RFC. It is used
+ * to compute the first PTO timeout and to seed smoothed_rtt / rtt_var in
+ * quic_recovery_init() before any real measurement is available. Once the
+ * first ACK is received, smoothed_rtt is replaced with the actual sample
+ * and this constant is no longer used.
+ */
+#define QUIC_INITIAL_RTT_US         333000U   /* 333 ms in microseconds */
+
+/* RFC 9002 Section 6.1.2: Multiplier for the time-based loss threshold.
+ * Represents 9/8 = 1.125, scaled by 1000 to avoid floating point.
+ * A packet is declared lost if it was sent more than
+ * (SRTT * QUIC_TIME_THRESHOLD / 1000) ago.
+ */
+#define QUIC_TIME_THRESHOLD         1125U
+
+/* Minimum time granularity for loss detection timers (1 ms in microseconds).
+ * Prevents the loss delay from collapsing to zero on very low-latency links.
+ */
+#define QUIC_GRANULARITY_US         1000U
+
+/* Max ACK delay assumed from peer (ms) when not yet negotiated */
+#define QUIC_MAX_ACK_DELAY_MS   25
+
+/**
+ * Information about a sent packet for RTT measurement and loss detection.
+ * This is stored in a ring buffer per packet number space.
+ */
+struct quic_sent_pkt_info {
+	/** Packet number */
+	uint64_t pkt_num;
+
+	/** Time packet was sent (k_uptime_get() value in ms) */
+	int64_t sent_time;
+
+	/** Size of packet in bytes (for bytes_in_flight tracking) */
+	uint16_t sent_bytes;
+
+	/** True if this packet contains ack-eliciting frames */
+	bool ack_eliciting;
+
+	/** True if packet is still in flight (not yet acked/lost) */
+	bool in_flight;
+
+	/* Stream frame carried by this packet (for retransmission).
+	 * Only valid when has_stream_frame is true.
+	 * One STREAM frame per packet is assumed, which matches the
+	 * current quic_stream_send() behaviour.
+	 */
+	bool has_stream_frame;
+	bool stream_fin;
+	uint64_t stream_id;
+	uint64_t stream_offset;   /* byte offset within the stream */
+	uint16_t stream_data_len; /* payload bytes in this frame */
+};
+
 #include "quic_tls.h"
 
 enum quic_handshake_status {
@@ -469,13 +528,14 @@ struct quic_endpoint {
 		struct quic_crypto_ooo_seg ooo[CONFIG_QUIC_CRYPTO_OOO_SLOTS];
 	} crypto;
 
-	/** Largest packet number tracking per encryption level */
+	/** Largest packet number tracking per encryption level for TX */
 	struct {
 		uint64_t initial;
 		uint64_t handshake;
 		uint64_t application;
 	} tx_pn;
 
+	/** Largest packet number tracking per encryption level for RX */
 	struct {
 		uint64_t initial;
 		uint64_t handshake;
@@ -557,6 +617,7 @@ struct quic_endpoint {
 	struct {
 		uint64_t max_data;       /* Max data peer allows us to send */
 		uint64_t bytes_sent;     /* Total bytes sent on all streams */
+		uint64_t blocked_sent;   /* max_data value when DATA_BLOCKED was last sent */
 	} tx_fc;
 
 	/** Connection-level flow control, RX (receiving from peer) */
@@ -564,6 +625,7 @@ struct quic_endpoint {
 		uint64_t max_data;       /* Max data we allow peer to send */
 		uint64_t bytes_received; /* Total bytes received on all streams */
 		uint64_t max_data_sent;  /* Last MAX_DATA value we sent */
+		bool need_window_update; /* Flag to send MAX_DATA */
 	} rx_fc;
 
 	/** Peer's transport parameters */
@@ -612,6 +674,53 @@ struct quic_endpoint {
 		struct k_sem sem;
 	} handshake;
 
+	/** RTT estimation and congestion control state (RFC 9002) */
+	struct {
+		/** Smoothed RTT estimate (microseconds) */
+		uint64_t smoothed_rtt;
+
+		/** RTT variance (microseconds) */
+		uint64_t rtt_var;
+
+		/** Minimum RTT observed (microseconds) */
+		uint64_t min_rtt;
+
+		/** Most recent RTT sample (microseconds) */
+		uint64_t latest_rtt;
+
+		/** Whether we have a valid RTT sample yet */
+		bool rtt_initialized;
+
+		/** Bytes currently in flight (sent but not yet ACKed) */
+		uint64_t bytes_in_flight;
+
+		/** Ring buffer of sent packet info for RTT/loss tracking.
+		 *  One buffer per packet number space (Initial, Handshake, App).
+		 */
+		struct quic_sent_pkt_info sent_pkts[3][CONFIG_QUIC_SENT_PKT_HISTORY_SIZE];
+
+		/** Write index for each sent packet ring buffer */
+		uint16_t sent_pkts_idx[3];
+
+		/** Largest packet number ACKed per PN space */
+		uint64_t largest_acked[3];
+
+		/** Probe Timeout (RFC 9002 Section 6.2) */
+		struct k_work_delayable pto_work;
+
+		/** Max. PTO count */
+		uint32_t max_pto_count;
+
+		/** Incremented on each PTO expiry for backoff */
+		uint32_t pto_count;
+	} recovery;
+
+	/** Max TX payload size for this endpoint, based on path MTU discovery.
+	 * Initialized to a default value and updated based on peer's
+	 * transport parameters and any Path MTU Discovery we perform.
+	 */
+	uint16_t max_tx_payload_size;
+
 	/** Is this endpoint in a server role.
 	 */
 	bool is_server : 1;
@@ -622,13 +731,37 @@ struct quic_endpoint {
 
 struct quic_context;
 
-struct quic_stream_buffer {
+/* Out-of-order segment, stored until the gap before it is filled */
+struct quic_ooo_segment {
+	uint64_t offset;
+	uint16_t len;
+	uint8_t data[CONFIG_QUIC_STREAM_OOO_SEG_SIZE];
+};
+
+struct quic_stream_rx_buffer {
 	uint8_t data[CONFIG_QUIC_STREAM_RX_BUFFER_SIZE];
 	size_t size;           /* Buffer capacity (needed if we change data to be from heap) */
 	size_t head;           /* Read position */
 	size_t tail;           /* Write position */
 	uint64_t read_offset;  /* Stream offset of head */
 	bool fin_received;     /* FIN flag seen */
+
+	/* Small fixed queue for out-of-order segments */
+	struct quic_ooo_segment ooo[CONFIG_QUIC_STREAM_OOO_SLOTS];
+	uint8_t ooo_count;
+};
+
+/**
+ * Retransmit buffer for sent-but-unACKed stream data.
+ *
+ * data[0] corresponds to stream byte offset base_offset.
+ * As ACKs arrive, base_offset advances and data is compacted.
+ * The buffer is full when len == CONFIG_QUIC_STREAM_TX_BUFFER_SIZE.
+ */
+struct quic_stream_tx_buffer {
+	uint8_t  data[CONFIG_QUIC_STREAM_TX_BUFFER_SIZE];
+	uint64_t base_offset; /* stream offset of data[0] */
+	size_t   len;         /* bytes of unACKed data currently stored */
 };
 
 struct quic_stream_state {
@@ -682,6 +815,12 @@ __net_socket struct quic_stream {
 	/** TX flow control, bytes sent on this stream */
 	uint64_t bytes_sent;
 
+	/** TX flow control, highest contiguously ACKed stream offset */
+	uint64_t bytes_acked;
+
+	/** TX flow control, remote_max_data when STREAM_DATA_BLOCKED was last sent */
+	uint64_t blocked_sent;
+
 	/** RX flow control, max data we allow peer to send on this stream */
 	uint64_t local_max_data;
 
@@ -706,6 +845,11 @@ __net_socket struct quic_stream {
 	} recv;
 
 	struct {
+		/** Signal for send readiness (TX buffer has space) */
+		struct k_poll_signal signal;
+	} send;
+
+	struct {
 		/** Condition variable used when receiving data */
 		struct k_condvar recv;
 
@@ -714,7 +858,10 @@ __net_socket struct quic_stream {
 	} cond;
 
 	/** Receive buffer */
-	struct quic_stream_buffer rx_buf;
+	struct quic_stream_rx_buffer rx_buf;
+
+	/** TX retransmit buffer (sent but not yet ACKed data). */
+	struct quic_stream_tx_buffer tx_buf;
 
 	/** Stream priority (to order streams within a connection) */
 	uint8_t priority;

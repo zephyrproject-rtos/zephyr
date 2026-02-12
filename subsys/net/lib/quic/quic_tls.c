@@ -3969,16 +3969,50 @@ static int quic_apply_header_protection_split(uint8_t *header, size_t header_len
 }
 
 /*
+ * Build CRYPTO frame directly into endpoint's TX buffer
+ * Returns pointer to where TLS data should be written
+ */
+static uint8_t *quic_prepare_crypto_frame(struct quic_endpoint *ep,
+					  enum quic_secret_level level,
+					  size_t data_len,
+					  size_t *frame_header_len)
+{
+	uint32_t offset = ep->crypto.stream[level].tx_offset;
+	uint8_t *buf = ep->crypto.tx_buffer;
+	size_t pos = 0;
+	int offset_size, len_size;
+
+	/* Frame type */
+	buf[pos++] = QUIC_FRAME_TYPE_CRYPTO;
+
+	/* Offset */
+	offset_size = quic_get_varint_size(offset);
+	quic_put_len(&buf[pos], sizeof(ep->crypto.tx_buffer) - pos, offset);
+	pos += offset_size;
+
+	/* Length */
+	len_size = quic_get_varint_size(data_len);
+	quic_put_len(&buf[pos], sizeof(ep->crypto.tx_buffer) - pos, data_len);
+	pos += len_size;
+
+	*frame_header_len = pos;
+
+	/* Return pointer where caller should write TLS data */
+	return &buf[pos];
+}
+
+/*
  * Send a QUIC packet using scatter-gather I/O
  *
  * Uses zsock_sendmsg() to avoid copying header and payload into
  * a single buffer. The header is built in a small stack buffer,
  * and the encrypted payload uses the endpoint's tx_buffer.
+ * Encrypt and send ep->crypto.tx_buffer[0..plaintext_len).
+ * Called by both quic_send_packet() and quic_send_packet_sg().
  */
-static int quic_send_packet(struct quic_endpoint *ep,
-			    enum quic_secret_level level,
-			    const uint8_t *payload,
-			    size_t payload_len)
+static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
+				       enum quic_secret_level level,
+				       size_t payload_len)
 {
 	struct quic_crypto_context *crypto_ctx;
 	uint8_t header[MAX_QUIC_HEADER_SIZE];
@@ -3992,10 +4026,34 @@ static int quic_send_packet(struct quic_endpoint *ep,
 	int ret;
 	ssize_t sent;
 	size_t total_len;
+	bool ack_eliciting;
 
 	/* Encrypted payload goes into endpoint's tx_buffer */
 	uint8_t *ciphertext = ep->crypto.tx_buffer;
 	size_t ciphertext_size = sizeof(ep->crypto.tx_buffer);
+
+	/* Track sent packet for RTT measurement.
+	 * Determine if packet is ack-eliciting by checking first frame type.
+	 * ACK frames (0x02, 0x03), PADDING (0x00) and CONNECTION_CLOSE frames
+	 * are not ack-eliciting. Do this check before encryption since frame
+	 * types are visible in plaintext.
+	 */
+	ack_eliciting = true;
+
+	if (payload_len > 0) {
+		uint8_t first_frame = ep->crypto.tx_buffer[0];
+
+		if (first_frame == QUIC_FRAME_TYPE_PADDING ||
+		    first_frame == QUIC_FRAME_TYPE_ACK ||
+		    first_frame == QUIC_FRAME_TYPE_ACK_ECN ||
+		    first_frame == QUIC_FRAME_TYPE_CONNECTION_CLOSE_TRANSPORT ||
+		    first_frame == QUIC_FRAME_TYPE_CONNECTION_CLOSE_APPLICATION) {
+			/* Could be ACK-only or padding-only packet */
+			ack_eliciting = false;
+
+			/* TODO: Check if there are other frames after ACK */
+		}
+	}
 
 	/* Get crypto context */
 	crypto_ctx = quic_get_crypto_context_by_level(ep, level);
@@ -4033,7 +4091,6 @@ static int quic_send_packet(struct quic_endpoint *ep,
 	 * The payload needs to be in a buffer we can pass to PSA.
 	 * We'll build plaintext temporarily in tx_buffer, then encrypt in-place.
 	 */
-	memcpy(ciphertext, payload, payload_len);
 	if (padding > 0) {
 		memset(&ciphertext[payload_len], 0, padding);
 	}
@@ -4112,43 +4169,25 @@ static int quic_send_packet(struct quic_endpoint *ep,
 		NET_WARN("Partial send: %zd of %zu bytes", sent, total_len);
 	}
 
-	NET_DBG("[EP:%p/%d] Sent %zd bytes at level %d, pn=%" PRIu64,
-		ep, quic_get_by_ep(ep), sent, level, packet_number);
+	quic_recovery_on_packet_sent(ep, level, packet_number, total_len, ack_eliciting);
+
+	NET_DBG("[EP:%p/%d] Sent %zd bytes at level %d, pn=%" PRIu64 ", ack-eliciting=%d",
+		ep, quic_get_by_ep(ep), sent, level, packet_number, ack_eliciting);
 
 	return 0;
 }
 
-/*
- * Build CRYPTO frame directly into endpoint's TX buffer
- * Returns pointer to where TLS data should be written
- */
-static uint8_t *quic_prepare_crypto_frame(struct quic_endpoint *ep,
-					  enum quic_secret_level level,
-					  size_t data_len,
-					  size_t *frame_header_len)
+static int quic_send_packet(struct quic_endpoint *ep,
+			    enum quic_secret_level level,
+			    const uint8_t *payload,
+			    size_t payload_len)
 {
-	uint32_t offset = ep->crypto.stream[level].tx_offset;
-	uint8_t *buf = ep->crypto.tx_buffer;
-	size_t pos = 0;
-	int offset_size, len_size;
+	if (payload_len > sizeof(ep->crypto.tx_buffer)) {
+		return -ENOBUFS;
+	}
 
-	/* Frame type */
-	buf[pos++] = QUIC_FRAME_TYPE_CRYPTO;
-
-	/* Offset */
-	offset_size = quic_get_varint_size(offset);
-	quic_put_len(&buf[pos], sizeof(ep->crypto.tx_buffer) - pos, offset);
-	pos += offset_size;
-
-	/* Length */
-	len_size = quic_get_varint_size(data_len);
-	quic_put_len(&buf[pos], sizeof(ep->crypto.tx_buffer) - pos, data_len);
-	pos += len_size;
-
-	*frame_header_len = pos;
-
-	/* Return pointer where caller should write TLS data */
-	return &buf[pos];
+	memcpy(ep->crypto.tx_buffer, payload, payload_len);
+	return quic_send_packet_from_txbuf(ep, level, payload_len);
 }
 
 /*
