@@ -35,3 +35,9 @@ config I2C_DW_EXTENDED_SUPPORT
 	help
 	  This option enables support for the SCL/SDA timeout registers and some
 	  additional features of the DW I2C controller.
+
+config I2C_DW_PM_POLICY_STATE_LOCK
+	bool "Lock power managemnet policy during I2C transfers"
+	help
+	  Enable this option to block power management policy state changes
+	  during I2C transfers.

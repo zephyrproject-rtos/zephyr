@@ -21,6 +21,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/irq.h>
 #include <string.h>
 
@@ -630,8 +631,8 @@ done:
 
 static int i2c_dw_setup(const struct device *dev, uint16_t slave_address)
 {
-	const struct i2c_dw_rom_config * const rom = dev->config;
-	struct i2c_dw_dev_config * const dw = dev->data;
+	const struct i2c_dw_rom_config *const rom = dev->config;
+	struct i2c_dw_dev_config *const dw = dev->data;
 	uint32_t value;
 	union ic_con_register ic_con;
 	union ic_tar_register ic_tar;
@@ -844,6 +845,15 @@ static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 	/* Enable controller */
 	set_bit_enable_en(reg_base);
 
+	if (IS_ENABLED(CONFIG_I2C_DW_PM_POLICY_STATE_LOCK)) {
+		/*
+		 * Prevent the system from suspending during an I2C transaction.
+		 * This differs from the pm_device_busy_set() which only prevents
+		 * the power management from suspending the I2C driver instance.
+		 */
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
+
 	/*
 	 * While waiting at device_sync_sem, kernel can switch to idle
 	 * task which in turn can call pm_system_suspend() hook of Power
@@ -938,6 +948,9 @@ static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 
 	pm_device_busy_clear(dev);
 
+	if (IS_ENABLED(CONFIG_I2C_DW_PM_POLICY_STATE_LOCK)) {
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
 error:
 	/* keep error mask for bus recovery */
 	dw->state &= I2C_DW_STUCK_ERR_MASK;
