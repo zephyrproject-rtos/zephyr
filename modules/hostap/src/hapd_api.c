@@ -375,17 +375,21 @@ int hostapd_ap_reg_domain(const struct device *dev,
 	if (iface == NULL) {
 		wpa_printf(MSG_ERROR, "Interface %s not found", dev->name);
 		ret = -ENODEV;
+		goto out;
 	}
 
 	if (iface->state == HAPD_IFACE_ENABLED) {
 		wpa_printf(MSG_ERROR, "Interface %s is operational and in SAP mode", dev->name);
 		ret = -EACCES;
+		goto out;
 	}
 
 	if (!hostapd_cli_cmd_v("set country_code %s", reg_domain->country_code)) {
 		ret = -ENOTSUP;
+		goto out;
 	}
 
+out:
 	return ret;
 }
 
