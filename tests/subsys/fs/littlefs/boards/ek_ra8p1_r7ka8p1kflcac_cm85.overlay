@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &storage_partition;
+
+&ext_flash_ctrl {
+	status = "okay";
+};
+
+&ext_flash {
+	status = "okay";
+
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		small_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "small";
+			reg = <0x0 DT_SIZE_K(64)>;
+		};
+
+		medium_partition: partition@10000 {
+			compatible = "zephyr,mapped-partition";
+			label = "medium";
+			reg = <0x10000 DT_SIZE_K(960)>;
+		};
+
+		large_partition: partition@100000 {
+			compatible = "zephyr,mapped-partition";
+			label = "large";
+			reg = <0x100000 DT_SIZE_M(3)>;
+		};
+	};
+};
