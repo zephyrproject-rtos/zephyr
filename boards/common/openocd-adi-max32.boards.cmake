@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2025 Analog Devices, Inc
+# Copyright (c) 2025-2026 Analog Devices, Inc
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -11,11 +11,12 @@ else()
   set(MAX32_INTERFACE_CFG "cmsis-dap.cfg")
 endif()
 
-# MAX32666 share the same target configuration file with MAX32665
-if(CONFIG_SOC_MAX32666)
-  set(MAX32_TARGET_CFG "max32665.cfg")
+if(CONFIG_SOC_MAX32651)
+  set(MAX32_TARGET_CFG "max32650.cfg")
 elseif(CONFIG_SOC_MAX32657)
   set(MAX32_INTERFACE_CFG "jlink.cfg")
+elseif(CONFIG_SOC_MAX32666)
+  set(MAX32_TARGET_CFG "max32665.cfg")
 endif()
 
 board_runner_args(openocd --cmd-pre-init "source [find interface/${MAX32_INTERFACE_CFG}]")
