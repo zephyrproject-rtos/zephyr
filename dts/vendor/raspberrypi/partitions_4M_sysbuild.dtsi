@@ -5,12 +5,13 @@
  */
 
 &flash0 {
-	status = "okay";
+	/delete-node/ partitions;
 
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <0x1>;
 		#size-cells = <0x1>;
+		ranges;
 
 		boot_partition: partition@0 {
 			label = "mcuboot";

@@ -5,7 +5,7 @@
  */
 
 &flash0 {
-	status = "okay";
+	/delete-node/ partitions;
 
 	partitions {
 		compatible = "fixed-partitions";
