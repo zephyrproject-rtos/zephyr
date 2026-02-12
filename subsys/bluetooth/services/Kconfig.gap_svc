@@ -28,21 +28,43 @@ config BT_DEVICE_NAME_GATT_WRITABLE
 if BT_DEVICE_NAME_GATT_WRITABLE
 choice BT_DEVICE_NAME_GATT_WRITABLE_SECURITY
 	prompt "Security requirements"
-	default DEVICE_NAME_GATT_WRITABLE_ENCRYPT
+	default BT_DEVICE_NAME_GATT_WRITABLE_NONE if DEVICE_NAME_GATT_WRITABLE_NONE
+	default BT_DEVICE_NAME_GATT_WRITABLE_AUTHEN if DEVICE_NAME_GATT_WRITABLE_AUTHEN
+	default BT_DEVICE_NAME_GATT_WRITABLE_ENCRYPT if DEVICE_NAME_GATT_WRITABLE_ENCRYPT
+	default BT_DEVICE_NAME_GATT_WRITABLE_ENCRYPT
 	help
 	  Select security requirements for writing device name by remote GATT
 	  clients.
 
-config DEVICE_NAME_GATT_WRITABLE_NONE
+config BT_DEVICE_NAME_GATT_WRITABLE_NONE
 	bool "No requirements"
 
-config DEVICE_NAME_GATT_WRITABLE_ENCRYPT
+config BT_DEVICE_NAME_GATT_WRITABLE_ENCRYPT
 	bool "Encryption required"
 
-config DEVICE_NAME_GATT_WRITABLE_AUTHEN
+config BT_DEVICE_NAME_GATT_WRITABLE_AUTHEN
 	bool "Encryption and authentication required"
 
 endchoice  #BT_DEVICE_NAME_GATT_WRITABLE_SECURITY
+
+config DEVICE_NAME_GATT_WRITABLE_NONE
+	select DEPRECATED
+	bool "No requirements [DEPRECATED]"
+	help
+	  This option is deprecated. Select BT_DEVICE_NAME_GATT_WRITABLE_NONE instead.
+
+config DEVICE_NAME_GATT_WRITABLE_ENCRYPT
+	select DEPRECATED
+	bool "Encryption required [DEPRECATED]"
+	help
+	  This option is deprecated. Select BT_DEVICE_NAME_GATT_WRITABLE_ENCRYPT instead.
+
+config DEVICE_NAME_GATT_WRITABLE_AUTHEN
+	select DEPRECATED
+	bool "Encryption and authentication required [DEPRECATED]"
+	help
+	  This option is deprecated. Select BT_DEVICE_NAME_GATT_WRITABLE_AUTHEN instead.
+
 endif #BT_DEVICE_NAME_GATT_WRITABLE
 
 config BT_DEVICE_APPEARANCE_GATT_WRITABLE
@@ -56,7 +78,8 @@ config BT_DEVICE_APPEARANCE_GATT_WRITABLE
 if BT_DEVICE_APPEARANCE_GATT_WRITABLE
 choice BT_DEVICE_APPEARANCE_GATT_WRITABLE
 	prompt "Security requirements"
-	default DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN
+	default BT_DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN if DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN
+	default BT_DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN
 	help
 	  Select security requirements for writing device appearance by remote
 	  GATT clients.
@@ -67,10 +90,17 @@ config BT_DEVICE_APPEARANCE_GATT_WRITABLE_NONE
 config BT_DEVICE_APPEARANCE_GATT_WRITABLE_ENCRYPT
 	bool "Encryption required"
 
-config DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN
+config BT_DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN
 	bool "Encryption and authentication required"
 
 endchoice  #BT_DEVICE_APPEARANCE_GATT_WRITABLE
+
+config DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN
+	select DEPRECATED
+	bool "Encryption and authentication required [DEPRECATED]"
+	help
+	  This option is deprecated. Select BT_DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN instead.
+
 endif #BT_DEVICE_APPEARANCE_GATT_WRITABLE
 
 endif #BT_GAP_SVC
