@@ -6,26 +6,27 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - adc
   - arduino_gpio
   - arduino_i2c
-  - i2c
+  - ble
+  - counter
+  - dac
+  - dma
+  - gpio
   - hts221
+  - i2c
   - lps22hb
   - lsm6dsl
-  - pwm
-  - counter
-  - gpio
-  - ble
-  - spi
   - nvs
+  - pwm
+  - qspi
+  - rtc
+  - spi
+  - usb_device
+  - usbd
   - vl53l0x
   - watchdog
-  - adc
-  - dac
-  - qspi
-  - dma
-  - rtc
-  - usbd
 ram: 96
 flash: 1024
 vendor: st
