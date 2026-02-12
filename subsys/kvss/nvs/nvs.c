@@ -679,11 +679,63 @@ static int nvs_add_gc_done_ate(struct nvs_fs *fs)
 	return nvs_flash_ate_wrt(fs, &gc_done_ate);
 }
 
+/* Attempt to write a new entry during garbage collection */
+static int nvs_gc_try_write(struct nvs_fs *fs,
+			    struct nvs_gc_write_entry *entry)
+{
+	struct nvs_flash_wrt_stream strm = {
+		.data = NULL,
+		.len = 0U,
+	};
+	size_t required_space = 0U;
+	struct nvs_ate wrt_ate;
+	size_t ate_size;
+	int rc;
+
+	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
+
+	if (entry) {
+		required_space = ate_size +
+			nvs_al_size(fs, entry->len + NVS_DATA_CRC_SIZE);
+	}
+
+	if (!entry || (fs->ate_wra < (fs->data_wra + required_space))) {
+		/* Not enough space for entry, only flush buffer if needed */
+		return 0;
+	}
+
+	strm.data = entry->data;
+	strm.len = entry->len;
+
+	/* Update ATE offset to the new data location. */
+	wrt_ate.offset = (uint16_t)(fs->data_wra & ADDR_OFFS_MASK);
+
+	rc = nvs_flash_data_al_wrt(fs, &strm, true);
+	if (rc) {
+		return rc;
+	}
+
+	wrt_ate.id = entry->id;
+	wrt_ate.len = entry->len + NVS_DATA_CRC_SIZE;
+	wrt_ate.part = 0xff;
+
+	nvs_ate_crc8_update(&wrt_ate);
+
+	rc = nvs_flash_ate_wrt(fs, &wrt_ate);
+	if (rc) {
+		return rc;
+	}
+
+	entry->is_written = true;
+
+	return 0;
+}
+
 /* garbage collection: the address ate_wra has been updated to the new sector
  * that has just been started. The data to gc is in the sector after this new
  * sector.
  */
-static int nvs_gc(struct nvs_fs *fs)
+static int nvs_gc(struct nvs_fs *fs, struct nvs_gc_write_entry *entry)
 {
 	int rc;
 	struct nvs_ate close_ate, gc_ate, wlk_ate;
@@ -762,6 +814,22 @@ static int nvs_gc(struct nvs_fs *fs)
 		 * needed unless it is a deleted item.
 		 */
 		if ((wlk_prev_addr == gc_prev_addr) && gc_ate.len) {
+			/* If we have a matching entry already in the sector being GC'd:
+			 * - Check that the entry ID matches the current GC ATE
+			 * - Check that the existing entry's data + CRC fits within the GC
+			 *   ATE length
+			 *
+			 * Entry matches the GC target and fits in the allocation.
+			 * Do not write it now; it will be written later during the final GC
+			 * flush.
+			 */
+			if (entry && (entry->id == gc_ate.id) &&
+			    ((entry->len + NVS_DATA_CRC_SIZE) <= gc_ate.len)) {
+				LOG_DBG("Skipping entry id %d, len %d; will write later",
+					 gc_ate.id, gc_ate.len);
+				continue;
+			}
+
 			/* copy needed */
 			LOG_DBG("Moving %d, len %d", gc_ate.id, gc_ate.len);
 
@@ -782,6 +850,11 @@ static int nvs_gc(struct nvs_fs *fs)
 			}
 		}
 	} while (gc_prev_addr != stop_addr);
+
+	rc = nvs_gc_try_write(fs, entry);
+	if (rc) {
+		return rc;
+	}
 
 gc_done:
 
@@ -986,7 +1059,7 @@ static int nvs_startup(struct nvs_fs *fs)
 			fs->lookup_cache[i] = fs->ate_wra;
 		}
 #endif
-		rc = nvs_gc(fs);
+		rc = nvs_gc(fs, NULL);
 		goto end;
 	}
 
@@ -1143,6 +1216,7 @@ int nvs_mount(struct nvs_fs *fs)
 ssize_t nvs_write(struct nvs_fs *fs, uint16_t id, const void *data, size_t len)
 {
 	int rc, gc_count;
+	struct nvs_gc_write_entry wrt_entry;
 	size_t ate_size, data_size;
 	struct nvs_ate wlk_ate;
 	uint32_t wlk_addr, rd_addr;
@@ -1264,17 +1338,29 @@ no_cached_entry:
 			break;
 		}
 
-
 		rc = nvs_sector_close(fs);
 		if (rc) {
 			goto end;
 		}
 
-		rc = nvs_gc(fs);
+		/* Initialize pending write request for GC processing */
+		if (gc_count == 0) {
+			wrt_entry.id = id;
+			wrt_entry.data = data;
+			wrt_entry.len = len;
+			wrt_entry.is_written = false;
+		}
+
+		rc = nvs_gc(fs, &wrt_entry);
 		if (rc) {
 			goto end;
 		}
 		gc_count++;
+
+		/* Exit if the entry has been written during GC */
+		if (wrt_entry.is_written) {
+			break;
+		}
 	}
 	rc = len;
 end:
@@ -1485,7 +1571,7 @@ int nvs_sector_use_next(struct nvs_fs *fs)
 		goto end;
 	}
 
-	ret = nvs_gc(fs);
+	ret = nvs_gc(fs, NULL);
 
 end:
 	k_mutex_unlock(&fs->nvs_lock);
