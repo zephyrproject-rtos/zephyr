@@ -99,47 +99,113 @@ static inline size_t nvs_al_size(struct nvs_fs *fs, size_t len)
 /* end basic routines */
 
 /* flash routines */
-/* basic aligned flash write to nvs address */
-static int nvs_flash_al_wrt(struct nvs_fs *fs, uint32_t addr, const void *data,
-			     size_t len)
-{
-	const uint8_t *data8 = (const uint8_t *)data;
-	int rc = 0;
-	off_t offset;
-	size_t blen;
-	uint8_t buf[NVS_BLOCK_SIZE];
 
-	if (!len) {
-		/* Nothing to write, avoid changing the flash protection */
+/* Write the data described by @p strm to flash at the given NVS address,
+ * respecting the flash write block alignment requirements. The write
+ * include a primary data, and optional a tail. All buffers are
+ * written as a single contiguous stream.
+ */
+static int nvs_flash_al_wrt_streams(struct nvs_fs *fs, uint32_t addr,
+				    const struct nvs_flash_wrt_stream *strm)
+{
+	const struct flash_parameters *fp = fs->flash_parameters;
+	size_t wbs = fp->write_block_size;
+	uint8_t buf[NVS_BLOCK_SIZE];
+	size_t stream_idx = 0U;
+	size_t full_bytes = 0U;
+	size_t buf_fill = 0U;
+	size_t copy = 0U;
+	off_t offset;
+	int rc;
+
+	/* Nothing to write */
+	if ((strm->data.len + strm->tail.len) == 0U) {
 		return 0;
 	}
 
+	/* Convert NVS address to flash offset */
 	offset = fs->offset;
 	offset += fs->sector_size * (addr >> ADDR_SECT_SHIFT);
 	offset += addr & ADDR_OFFS_MASK;
 
-	blen = len & ~(fs->flash_parameters->write_block_size - 1U);
-	if (blen > 0) {
-		rc = flash_write(fs->flash_device, offset, data8, blen);
-		if (rc) {
-			/* flash write error */
-			goto end;
+	/* Logical write stream: data -> tail */
+	struct nvs_flash_buf streams[] = {
+		strm->data,
+		strm->tail,
+	};
+
+	while (stream_idx < ARRAY_SIZE(streams)) {
+		if (streams[stream_idx].len == 0U) {
+			stream_idx++;
+			continue;
 		}
-		len -= blen;
-		offset += blen;
-		data8 += blen;
-	}
-	if (len) {
-		memcpy(buf, data8, len);
-		(void)memset(buf + len, fs->flash_parameters->erase_value,
-			fs->flash_parameters->write_block_size - len);
 
-		rc = flash_write(fs->flash_device, offset, buf,
-				 fs->flash_parameters->write_block_size);
+		/* Direct write of aligned full blocks */
+		if (buf_fill == 0) {
+			/* number of full blocks = len & ~(wbs - 1) */
+			full_bytes = streams[stream_idx].len & ~(wbs - 1);
+
+			if (full_bytes > 0U) {
+				rc = flash_write(fs->flash_device, offset,
+						 streams[stream_idx].ptr,
+						 full_bytes);
+				if (rc) {
+					return rc;
+				}
+
+				streams[stream_idx].ptr += full_bytes;
+				streams[stream_idx].len -= full_bytes;
+				offset += full_bytes;
+				continue;
+			}
+		}
+
+		/* Copy to buffer to assemble a full block */
+		copy = MIN(wbs - buf_fill, streams[stream_idx].len);
+		if (copy > 0U) {
+			(void)memcpy(buf + buf_fill, streams[stream_idx].ptr, copy);
+
+			streams[stream_idx].ptr += copy;
+			streams[stream_idx].len -= copy;
+			buf_fill += copy;
+		}
+
+		/* If buffer full, write to flash */
+		if (buf_fill == wbs) {
+			rc = flash_write(fs->flash_device, offset, buf, wbs);
+			if (rc) {
+				return rc;
+			}
+
+			offset += wbs;
+			buf_fill = 0U;
+		}
 	}
 
-end:
-	return rc;
+
+	if (buf_fill > 0U) {
+		(void)memset(buf + buf_fill, fp->erase_value, wbs - buf_fill);
+
+		rc = flash_write(fs->flash_device, offset, buf, wbs);
+		if (rc) {
+			return rc;
+		}
+	}
+
+	return 0;
+}
+
+static int nvs_flash_al_wrt(struct nvs_fs *fs, uint32_t addr, const void *data,
+			    size_t len)
+{
+	struct nvs_flash_wrt_stream strm = {
+		.data = {
+			.ptr = data,
+			.len = len,
+		},
+	};
+
+	return nvs_flash_al_wrt_streams(fs, addr, &strm);
 }
 
 /* basic flash read from nvs address */
@@ -176,47 +242,39 @@ static int nvs_flash_ate_wrt(struct nvs_fs *fs, const struct nvs_ate *entry)
 }
 
 /* data write */
-static int nvs_flash_data_wrt(struct nvs_fs *fs, const void *data, size_t len, bool compute_crc)
+static int nvs_flash_data_al_wrt(struct nvs_fs *fs,
+				 struct nvs_flash_wrt_stream *strm,
+				 bool compute_crc)
 {
+	uint32_t data_crc;
 	int rc;
 
 	/* Only add the CRC if required (ignore deletion requests, i.e. when len is 0) */
-	if (IS_ENABLED(CONFIG_NVS_DATA_CRC) && compute_crc && (len > 0)) {
-		size_t aligned_len, data_len = len;
-		uint8_t *data8 = (uint8_t *)data, buf[NVS_BLOCK_SIZE + NVS_DATA_CRC_SIZE], *pbuf;
-		uint32_t data_crc;
+	if (IS_ENABLED(CONFIG_NVS_DATA_CRC) && compute_crc && (strm->data.len > 0)) {
+		data_crc = crc32_ieee(strm->data.ptr, strm->data.len);
 
-		/* Write as much aligned data as possible, so the CRC can be concatenated at
-		 * the end of the unaligned data later
-		 */
-		aligned_len = len & ~(fs->flash_parameters->write_block_size - 1U);
-		rc = nvs_flash_al_wrt(fs, fs->data_wra, data8, aligned_len);
-		fs->data_wra += aligned_len;
-		if (rc) {
-			return rc;
-		}
-		data8 += aligned_len;
-		len -= aligned_len;
-
-		/* Create a buffer with the unaligned data if any */
-		pbuf = buf;
-		if (len) {
-			memcpy(pbuf, data8, len);
-			pbuf += len;
-		}
-
-		/* Append the CRC */
-		data_crc = crc32_ieee(data, data_len);
-		memcpy(pbuf, &data_crc, sizeof(data_crc));
-		len += sizeof(data_crc);
-
-		rc = nvs_flash_al_wrt(fs, fs->data_wra, buf, len);
-	} else {
-		rc = nvs_flash_al_wrt(fs, fs->data_wra, data, len);
+		strm->tail.ptr = (void *)&data_crc;
+		strm->tail.len = sizeof(data_crc);
 	}
-	fs->data_wra += nvs_al_size(fs, len);
+
+	rc = nvs_flash_al_wrt_streams(fs, fs->data_wra, strm);
+
+	fs->data_wra += nvs_al_size(fs, strm->data.len + strm->tail.len);
 
 	return rc;
+}
+
+static int nvs_flash_data_wrt(struct nvs_fs *fs, const void *data, size_t len,
+			      bool compute_crc)
+{
+	struct nvs_flash_wrt_stream strm = {
+		.data = {
+			.ptr = data,
+			.len = len,
+		},
+	};
+
+	return nvs_flash_data_al_wrt(fs, &strm, compute_crc);
 }
 
 /* flash ate read */

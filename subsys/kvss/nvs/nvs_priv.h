@@ -41,6 +41,31 @@ extern "C" {
 #define NVS_DATA_CRC_SIZE 0
 #endif
 
+/**
+ * @brief Simple flash buffer descriptor
+ *
+ * Describes a single contiguous memory region to be written to flash.
+ */
+struct nvs_flash_buf {
+	const uint8_t *ptr; /**< Pointer to buffer */
+	size_t len;         /**< Length of buffer */
+};
+
+/**
+ * @brief Description of a contiguous flash write
+ *
+ * Describes a flash write consisting of up to two buffers:
+ *  - primary data
+ *  - optional tail
+ *
+ * Buffers are written sequentially as a single logical stream,
+ * respecting flash write-block alignment.
+ */
+struct nvs_flash_wrt_stream {
+	struct nvs_flash_buf data; /**< Primary data buffer */
+	struct nvs_flash_buf tail; /**< Optional tail buffer */
+};
+
 /* Allocation Table Entry */
 struct nvs_ate {
 	uint16_t id;	/* data id */
