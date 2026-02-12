@@ -21,6 +21,7 @@ libraries for the application to use. See the list below for details.
    buf_mgmt.rst
    net_tech.rst
    protocols.rst
+   quic.rst
    system_mgmt.rst
    tsn.rst
    zperf.rst
