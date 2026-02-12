@@ -3,8 +3,54 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_FAMILY_INFINEON_PSOC4
+if SOC_SERIES_PSOC4100TP
 
 rsource "*/Kconfig.defconfig"
 
-endif # SOC_FAMILY_INFINEON_PSOC4
+configdefault SHARED_IRQ_MAX_NUM_CLIENTS
+	# All 3 GPIO ports enabled
+	default 3 if $(dt_nodelabel_enabled,gpio_prt4) && \
+		$(dt_nodelabel_enabled,gpio_prt5) && \
+		$(dt_nodelabel_enabled,gpio_prt6)
+
+	# Any 2 GPIO ports enabled
+	default 2 if $(dt_nodelabel_enabled,gpio_prt4) && $(dt_nodelabel_enabled,gpio_prt5)
+	default 2 if $(dt_nodelabel_enabled,gpio_prt4) && $(dt_nodelabel_enabled,gpio_prt6)
+	default 2 if $(dt_nodelabel_enabled,gpio_prt5) && $(dt_nodelabel_enabled,gpio_prt6)
+
+configdefault SHARED_INTERRUPTS
+	default y if (($(dt_nodelabel_enabled,gpio_prt4) && \
+		($(dt_nodelabel_enabled,gpio_prt5) || $(dt_nodelabel_enabled,gpio_prt6))) || \
+		($(dt_nodelabel_enabled,gpio_prt5) && $(dt_nodelabel_enabled,gpio_prt6)))
+
+endif # SOC_SERIES_PSOC4100TP
+
+if SOC_SERIES_PSOC4100SMAX
+
+rsource "*/Kconfig.defconfig"
+
+configdefault SHARED_IRQ_MAX_NUM_CLIENTS
+	default 9 if \
+		$(dt_nodelabel_enabled,gpio_prt4) || \
+		$(dt_nodelabel_enabled,gpio_prt5) || \
+		$(dt_nodelabel_enabled,gpio_prt6) || \
+		$(dt_nodelabel_enabled,gpio_prt7) || \
+		$(dt_nodelabel_enabled,gpio_prt8) || \
+		$(dt_nodelabel_enabled,gpio_prt9) || \
+		$(dt_nodelabel_enabled,gpio_prt10) || \
+		$(dt_nodelabel_enabled,gpio_prt11) || \
+		$(dt_nodelabel_enabled,gpio_prt12)
+
+configdefault SHARED_INTERRUPTS
+	default y if \
+		$(dt_nodelabel_enabled,gpio_prt4) || \
+		$(dt_nodelabel_enabled,gpio_prt5) || \
+		$(dt_nodelabel_enabled,gpio_prt6) || \
+		$(dt_nodelabel_enabled,gpio_prt7) || \
+		$(dt_nodelabel_enabled,gpio_prt8) || \
+		$(dt_nodelabel_enabled,gpio_prt9) || \
+		$(dt_nodelabel_enabled,gpio_prt10) || \
+		$(dt_nodelabel_enabled,gpio_prt11) || \
+		$(dt_nodelabel_enabled,gpio_prt12)
+
+endif # SOC_SERIES_PSOC4100SMAX
