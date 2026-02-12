@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Silicon Laboratories
+# SPDX-License-Identifier: Apache-2.0
+
+description: Silicon Labs EFR32 IEEE 802.15.4 radio
+
+compatible: "silabs,efr32-ieee802154"
+
+include: base.yaml
+
+properties:
+  hfxo:
+    type: phandle
+    description: |
+      Optional phandle to the HFXO (high-frequency crystal oscillator) node.
+      When present, the driver uses the HFXO's "precision" property (ppm) for
+      get_sch_acc (CSL scheduler accuracy), matching SL_OPENTHREAD_HFXO_ACCURACY
+      in the PAL. Boards set this in the same dtsi where they configure &hfxo.

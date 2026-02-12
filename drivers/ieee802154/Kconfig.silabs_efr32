@@ -1,0 +1,36 @@
+# Silicon Laboratories EFR32 802.15.4 configuration options
+
+# Copyright (c) 2026 Silicon Laboratories
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IEEE802154_SILABS_EFR32
+	bool "Silabs EFR32 IEEE 802.15.4 Driver"
+	default y
+	depends on DT_HAS_SILABS_EFR32_IEEE802154_ENABLED
+	select SOC_GECKO_USE_RAIL
+
+if IEEE802154_SILABS_EFR32
+
+config IEEE802154_SILABS_EFR32_RX_STACK_SIZE
+	int "Driver's internal RX thread stack size"
+	default 800
+	help
+	  This option sets the driver's stack size for its internal RX thread.
+	  The default value should be sufficient, but in case it proves to be
+	  a too little one, this option makes it easy to play with the size.
+
+config IEEE802154_SILABS_EFR32_INIT_PRIO
+	int "Silabs EFR32 IEEE 802.15.4 initialization priority"
+	default 80
+	help
+	  Set the initialization priority number. Do not mess with it unless
+	  you know what you are doing.
+
+config IEEE802154_SILABS_EFR32_DRIVER_LOG_LEVEL
+	int "Silabs EFR32 IEEE 802.15.4 driver log level"
+	default 0
+	depends on LOG
+	help
+	  Log level for the Silabs EFR32 IEEE 802.15.4 driver.
+
+endif
