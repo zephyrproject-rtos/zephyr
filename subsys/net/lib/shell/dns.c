@@ -319,8 +319,8 @@ static int cmd_net_dns_query(const struct shell *sh, size_t argc, char *argv[])
 		PR("Query for '%s' sent.\n", host);
 	}
 #else
-	PR_INFO("DNS resolver not supported. Set CONFIG_DNS_RESOLVER to "
-		"enable it.\n");
+	PR_INFO("Set %s to enable %s support.\n", "CONFIG_DNS_RESOLVER",
+		"DNS resolver");
 #endif
 
 	return 0;
@@ -348,8 +348,8 @@ static int cmd_net_dns(const struct shell *sh, size_t argc, char *argv[])
 
 	print_dns_info(sh, ctx);
 #else
-	PR_INFO("DNS resolver not supported. Set CONFIG_DNS_RESOLVER to "
-		"enable it.\n");
+	PR_INFO("Set %s to enable %s support.\n", "CONFIG_DNS_RESOLVER",
+		"DNS resolver");
 #endif
 
 	return 0;
@@ -394,8 +394,8 @@ static int cmd_net_dns_list(const struct shell *sh, size_t argc, char *argv[])
 		return 0;
 	}
 #else
-	PR_INFO("DNS service discovery not supported. Set CONFIG_DNS_SD to "
-		"enable it.\n");
+	PR_INFO("Set %s to enable %s support.\n", "CONFIG_DNS_RESOLVER",
+		"DNS service discovery");
 #endif
 
 	return 0;
@@ -578,8 +578,8 @@ static int cmd_net_dns_service(const struct shell *sh, size_t argc, char *argv[]
 		}
 	}
 #else
-	PR_INFO("DNS resolver not supported. Set CONFIG_DNS_RESOLVER to "
-		"enable it.\n");
+	PR_INFO("Set %s to enable %s support.\n", "CONFIG_DNS_RESOLVER",
+		"DNS resolver");
 #endif
 
 	return 0;
