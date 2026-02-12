@@ -4,13 +4,19 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig WIFI_SIMPLELINK
-	bool "SimpleLink Wi-Fi driver support"
+	bool "SimpleLink Wi-Fi driver support [DEPRECATED]"
 	select SIMPLELINK_HOST_DRIVER
 	select WIFI_OFFLOAD
 	select NET_L2_WIFI_MGMT
 	select ZVFS
 	select ZVFS_FDTABLE
 	select POSIX_SEMAPHORES
+	select DEPRECATED
+	help
+	  This offloaded wifi driver is deprecated and will be removed
+	  in a future release. It is currently scheduled to be removed in
+	  Zephyr 4.6. The reason for deprecation is that there is no
+	  maintainer for this driver.
 
 if WIFI_SIMPLELINK
 
