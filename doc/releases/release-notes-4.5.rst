@@ -97,6 +97,12 @@ Removed APIs and options
 
 * West sign support for imgtool, which was deprecated in Zephyr 4.0, has been removed.
 
+* Bluetooth
+
+  * Audio
+
+    * All ``media_proxy_`` functions and definitions for Bluetooth have been removed.
+
 Deprecated APIs and options
 ===========================
 
@@ -176,6 +182,8 @@ New APIs and options
     * :c:func:`bt_ascs_unregister`
     * :c:func:`bt_bap_unicast_client_qos_from_group`
     * :c:func:`bt_bap_qos_cfg_eq`
+    * A set of ``bt_mcp_media_control_server_`` APIs for controlling the local media player has
+      been added.
 
   * Host
 
