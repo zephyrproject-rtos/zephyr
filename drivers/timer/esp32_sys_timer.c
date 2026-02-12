@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2025 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2021-2026 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,8 @@
 #include <zephyr/init.h>
 #include <zephyr/spinlock.h>
 
+#include "esp32_sys_timer.h"
+
 #define CYC_PER_TICK ((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec()	\
 			      / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
 #define MAX_CYC 0xffffffffu
@@ -31,6 +33,12 @@ const int32_t z_sys_timer_irq_for_test = DT_IRQN(DT_NODELABEL(systimer0));
 #endif
 
 #define TICKLESS IS_ENABLED(CONFIG_TICKLESS_KERNEL)
+
+#if defined(CONFIG_PM)
+static uint64_t systimer_pre_idle;
+static uint64_t lptim_pre_idle;
+static bool timeout_idle;
+#endif
 
 static struct k_spinlock lock;
 static uint64_t last_count;
@@ -57,17 +65,24 @@ static uint64_t get_systimer_alarm(void)
 	return systimer_hal_get_counter_value(&systimer_hal, SYSTIMER_COUNTER_OS_TICK);
 }
 
+static uint64_t sys_timer_elapsed_ticks(uint64_t now)
+{
+	uint64_t dticks = (uint64_t)((now - last_count) / CYC_PER_TICK);
+
+	last_count += dticks * CYC_PER_TICK;
+
+	return dticks;
+}
+
 static void IRAM_ATTR sys_timer_isr(void *arg)
 {
 	ARG_UNUSED(arg);
 	systimer_ll_clear_alarm_int(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
+
 	uint64_t now = get_systimer_alarm();
-
-	uint64_t dticks = (uint64_t)((now - last_count) / CYC_PER_TICK);
-
-	last_count += dticks * CYC_PER_TICK;
+	uint64_t dticks = sys_timer_elapsed_ticks(now);
 
 	if (!TICKLESS) {
 		uint64_t next = last_count + CYC_PER_TICK;
@@ -84,8 +99,6 @@ static void IRAM_ATTR sys_timer_isr(void *arg)
 
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
-	ARG_UNUSED(idle);
-
 #if defined(CONFIG_TICKLESS_KERNEL)
 	ticks = ticks == K_TICKS_FOREVER ? MAX_TICKS : ticks;
 	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
@@ -108,6 +121,22 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	}
 
 	set_systimer_alarm(cyc + last_count);
+
+#if defined(CONFIG_PM)
+	if (idle && ticks != K_TICKS_FOREVER) {
+		uint64_t timeout_us =
+			((uint64_t)ticks * USEC_PER_SEC) / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+
+		lptim_pre_idle = esp32_lptim_hook_on_lpm_entry(timeout_us);
+		systimer_pre_idle = get_systimer_alarm();
+		timeout_idle = true;
+	} else {
+		timeout_idle = false;
+	}
+#else
+	ARG_UNUSED(idle);
+#endif
+
 	k_spin_unlock(&lock, key);
 #endif
 }
@@ -141,6 +170,47 @@ void sys_clock_disable(void)
 	systimer_ll_enable_alarm_int(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0, false);
 	systimer_hal_deinit(&systimer_hal);
 }
+
+#if defined(CONFIG_PM)
+void sys_clock_idle_exit(void)
+{
+	if (!timeout_idle) {
+		return;
+	}
+
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	uint64_t lptim_now = esp32_lptim_hook_on_lpm_exit();
+	uint64_t systimer_now = get_systimer_alarm();
+	uint64_t lptim_diff = lptim_now - lptim_pre_idle;
+	uint64_t systimer_diff = systimer_now - systimer_pre_idle;
+	uint64_t expected_cycles =
+		(lptim_diff * sys_clock_hw_cycles_per_sec()) / esp32_lptim_hook_get_freq();
+	uint64_t missed_cycles = 0;
+
+	if (expected_cycles > systimer_diff) {
+		missed_cycles = expected_cycles - systimer_diff;
+	}
+
+	uint64_t new_value =
+		systimer_hal_get_counter_value(&systimer_hal, SYSTIMER_COUNTER_OS_TICK) +
+		missed_cycles;
+
+	/* Compensate systimer missed cycles while in sleep */
+	systimer_ll_set_counter_value(systimer_hal.dev, SYSTIMER_COUNTER_OS_TICK, new_value);
+	systimer_ll_apply_counter_value(systimer_hal.dev, SYSTIMER_COUNTER_OS_TICK);
+
+	systimer_now = get_systimer_alarm();
+	uint64_t dticks = sys_timer_elapsed_ticks(systimer_now);
+
+	timeout_idle = false;
+
+	k_spin_unlock(&lock, key);
+
+	/* Announce OS ticks as systimer remained stalled while in light sleep */
+	sys_clock_announce(dticks);
+}
+#endif
 
 static int sys_clock_driver_init(void)
 {
