@@ -232,7 +232,7 @@ static int gpio_max14906_port_clear_bits_raw(const struct device *dev, gpio_port
 	uint32_t reg_val = 0;
 
 	ret = MAX14906_REG_READ(dev, MAX14906_SETOUT_REG);
-	reg_val = ret & (0xf0 & ~pins);
+	reg_val = ret & ~(pins & 0x0f);
 
 	return MAX14906_REG_WRITE(dev, MAX14906_SETOUT_REG, reg_val);
 }
