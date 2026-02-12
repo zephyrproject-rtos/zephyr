@@ -144,8 +144,8 @@ static int i2c_silabs_transfer_dma(const struct device *dev, struct i2c_msg *msg
 		uint8_t msgs_in_transfer = 1;
 
 		/*  Combined DMA write-read (repeated start) */
-		if ((msgs[i].flags & I2C_MSG_WRITE) == 0 && (i + 1 < num_msgs) &&
-		    (msgs[i + 1].flags & I2C_MSG_READ)) {
+		if (!(msgs[i].flags & I2C_MSG_READ) && (i + 1 < num_msgs) &&
+		    (msgs[i + 1].flags & I2C_MSG_READ) && (msgs[i + 1].flags & I2C_MSG_RESTART)) {
 			msgs_in_transfer = 2;
 		}
 		data->last_transfer = (i + msgs_in_transfer) == num_msgs;
@@ -231,8 +231,8 @@ static int i2c_silabs_transfer_sync(const struct device *dev, struct i2c_msg *ms
 	while (i < num_msgs) {
 		uint8_t msgs_in_transfer = 1;
 
-		if ((msgs[i].flags & I2C_MSG_WRITE) == 0 && (i + 1 < num_msgs) &&
-		    (msgs[i + 1].flags & I2C_MSG_READ)) {
+		if (!(msgs[i].flags & I2C_MSG_READ) && (i + 1 < num_msgs) &&
+		    (msgs[i + 1].flags & I2C_MSG_READ) && (msgs[i + 1].flags & I2C_MSG_RESTART)) {
 			msgs_in_transfer = 2;
 			if (sl_i2c_leader_transfer_blocking(&data->i2c_handle, addr, msgs[i].buf,
 							    msgs[i].len, msgs[i + 1].buf,
@@ -241,7 +241,6 @@ static int i2c_silabs_transfer_sync(const struct device *dev, struct i2c_msg *ms
 				err = -EIO;
 				goto out;
 			}
-			i++;
 		} else if (msgs[i].flags & I2C_MSG_READ) {
 			if (IS_ENABLED(CONFIG_I2C_TARGET)) {
 				if (sl_i2c_follower_receive_blocking(
