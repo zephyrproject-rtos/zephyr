@@ -1,6 +1,7 @@
 /*  NVS: non volatile storage in flash
  *
  * Copyright (c) 2018 Laczen
+ * Copyright (c) 2026 Lingao Meng
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +42,19 @@ extern "C" {
 #define NVS_DATA_CRC_SIZE 0
 #endif
 
+/* Context structure for NVS flash block move operations. */
+struct nvs_block_move_ctx {
+	/* Temporary buffer of size NVS_BLOCK_SIZE used to read
+	 * and write flash data in write_block_size-aligned chunks.
+	 */
+	uint8_t buffer[NVS_BLOCK_SIZE];
+
+	/* Number of bytes currently stored in the buffer that
+	 * have not yet been written. Always < write_block_size.
+	 */
+	size_t buffer_pos;
+};
+
 /**
  * @brief Simple flash buffer descriptor
  *
@@ -54,7 +68,8 @@ struct nvs_flash_buf {
 /**
  * @brief Description of a contiguous flash write
  *
- * Describes a flash write consisting of up to two buffers:
+ * Describes a flash write consisting of up to three buffers:
+ *  - optional head
  *  - primary data
  *  - optional tail
  *
@@ -62,6 +77,7 @@ struct nvs_flash_buf {
  * respecting flash write-block alignment.
  */
 struct nvs_flash_wrt_stream {
+	struct nvs_flash_buf head; /**< Optional head buffer */
 	struct nvs_flash_buf data; /**< Primary data buffer */
 	struct nvs_flash_buf tail; /**< Optional tail buffer */
 };

@@ -1,6 +1,7 @@
 /*  NVS: non volatile storage in flash
  *
  * Copyright (c) 2018 Laczen
+ * Copyright (c) 2026 Lingao Meng
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -102,7 +103,7 @@ static inline size_t nvs_al_size(struct nvs_fs *fs, size_t len)
 
 /* Write the data described by @p strm to flash at the given NVS address,
  * respecting the flash write block alignment requirements. The write
- * include a primary data, and optional a tail. All buffers are
+ * may include a header, primary data, and a tail. All buffers are
  * written as a single contiguous stream.
  */
 static int nvs_flash_al_wrt_streams(struct nvs_fs *fs, uint32_t addr,
@@ -119,7 +120,7 @@ static int nvs_flash_al_wrt_streams(struct nvs_fs *fs, uint32_t addr,
 	int rc;
 
 	/* Nothing to write */
-	if ((strm->data.len + strm->tail.len) == 0U) {
+	if ((strm->head.len + strm->data.len + strm->tail.len) == 0U) {
 		return 0;
 	}
 
@@ -128,8 +129,9 @@ static int nvs_flash_al_wrt_streams(struct nvs_fs *fs, uint32_t addr,
 	offset += fs->sector_size * (addr >> ADDR_SECT_SHIFT);
 	offset += addr & ADDR_OFFS_MASK;
 
-	/* Logical write stream: data -> tail */
+	/* Logical write stream: head -> data -> tail */
 	struct nvs_flash_buf streams[] = {
+		strm->head,
 		strm->data,
 		strm->tail,
 	};
@@ -259,7 +261,7 @@ static int nvs_flash_data_al_wrt(struct nvs_fs *fs,
 
 	rc = nvs_flash_al_wrt_streams(fs, fs->data_wra, strm);
 
-	fs->data_wra += nvs_al_size(fs, strm->data.len + strm->tail.len);
+	fs->data_wra += nvs_al_size(fs, strm->head.len + strm->data.len + strm->tail.len);
 
 	return rc;
 }
@@ -353,34 +355,88 @@ static int nvs_flash_cmp_const(struct nvs_fs *fs, uint32_t addr, uint8_t value,
 	return 0;
 }
 
-/* flash block move: move a block at addr to the current data write location
- * and updates the data write location.
+/* flash block move (GC-only helper)
+ *
+ * Move data starting at @addr to the current data write location during GC.
+ *
+ * This function writes data in write_block_size-aligned chunks only.
+ * If the total length is not aligned to write_block_size, the tail bytes
+ * (less than one write block) are read into @buf but NOT written immediately.
+ *
+ * The number of buffered but unwritten bytes is returned via @ctx->buffer_pos.
+ * The caller is responsible for flushing these remaining bytes later
+ * (typically before writing the corresponding ATE).
+ *
+ * Notes:
+ * - This function is intended to be used ONLY during GC.
+ * - @ctx->buffer_pos is guaranteed to be < write_block_size.
+ * - No padding or alignment is added to the data.
  */
-static int nvs_flash_block_move(struct nvs_fs *fs, uint32_t addr, size_t len)
+static int nvs_flash_block_move(struct nvs_fs *fs, uint32_t addr, struct nvs_block_move_ctx *ctx,
+				struct nvs_ate *gc_ate)
 {
+	size_t wbs = fs->flash_parameters->write_block_size;
+	size_t bytes_to_copy, block_size, tail_len;
+	size_t len = gc_ate->len;
 	int rc;
-	size_t bytes_to_copy, block_size;
-	uint8_t buf[NVS_BLOCK_SIZE];
 
-	block_size =
-		NVS_BLOCK_SIZE & ~(fs->flash_parameters->write_block_size - 1U);
+	/* Include any buffered tail bytes in the length */
+	len += ctx->buffer_pos;
 
+	/*
+	 * Split the total length into:
+	 * - a multiple of write_block_size (block_size)
+	 * - a remaining tail smaller than write_block_size (tail_len)
+	 */
+	tail_len = len & (wbs - 1U);
+	block_size = NVS_BLOCK_SIZE & ~(wbs - 1U);
+	len -= tail_len;
+
+	/* Update ATE offset to the new data location.
+	 * ctx.buffer_pos accounts for any buffered but unwritten
+	 * data carried over from previous moves.
+	 */
+	gc_ate->offset = (uint16_t)((fs->data_wra + ctx->buffer_pos)
+				    & ADDR_OFFS_MASK);
+
+	/* Copy and write only write_block_size-aligned data.
+	 * Any previously buffered bytes (ctx->buffer_pos) are prepended
+	 * to the newly read data to form a full aligned write.
+	 */
 	while (len) {
-		bytes_to_copy = MIN(block_size, len);
-		rc = nvs_flash_rd(fs, addr, buf, bytes_to_copy);
+		bytes_to_copy = MIN(block_size, len) - ctx->buffer_pos;
+
+		rc = nvs_flash_rd(fs, addr, ctx->buffer + ctx->buffer_pos, bytes_to_copy);
 		if (rc) {
 			return rc;
 		}
+
 		/* Just rewrite the whole record, no need to recompute the CRC as the data
 		 * did not change
 		 */
-		rc = nvs_flash_data_wrt(fs, buf, bytes_to_copy, false);
+		rc = nvs_flash_data_wrt(fs, ctx->buffer, bytes_to_copy + ctx->buffer_pos, false);
 		if (rc) {
 			return rc;
 		}
-		len -= bytes_to_copy;
+
+		len  -= bytes_to_copy + ctx->buffer_pos;
 		addr += bytes_to_copy;
+		ctx->buffer_pos = 0U;
 	}
+
+	/* Read the remaining unaligned tail into buffer.
+	 * This data is not written now and will be combined with the next data block.
+	 */
+	if (tail_len) {
+		rc = nvs_flash_rd(fs, addr, ctx->buffer + ctx->buffer_pos,
+				  tail_len - ctx->buffer_pos);
+		if (rc) {
+			return rc;
+		}
+
+		ctx->buffer_pos = tail_len;
+	}
+
 	return 0;
 }
 
@@ -679,13 +735,18 @@ static int nvs_add_gc_done_ate(struct nvs_fs *fs)
 	return nvs_flash_ate_wrt(fs, &gc_done_ate);
 }
 
-/* Attempt to write a new entry during garbage collection */
-static int nvs_gc_try_write(struct nvs_fs *fs,
-			    struct nvs_gc_write_entry *entry)
+/* Attempt to write a new entry during garbage collection
+ * and flush any remaining tail.
+ */
+static int nvs_gc_flush_and_try_write(struct nvs_fs *fs,
+				      struct nvs_block_move_ctx *bm_ctx,
+				      struct nvs_gc_write_entry *entry)
 {
 	struct nvs_flash_wrt_stream strm = {
-		.data = NULL,
-		.len = 0U,
+		.head = {
+			.ptr = bm_ctx->buffer,
+			.len = bm_ctx->buffer_pos,
+		},
 	};
 	size_t required_space = 0U;
 	struct nvs_ate wrt_ate;
@@ -696,19 +757,30 @@ static int nvs_gc_try_write(struct nvs_fs *fs,
 
 	if (entry) {
 		required_space = ate_size +
-			nvs_al_size(fs, entry->len + NVS_DATA_CRC_SIZE);
+			nvs_al_size(fs, bm_ctx->buffer_pos + entry->len + NVS_DATA_CRC_SIZE);
 	}
 
 	if (!entry || (fs->ate_wra < (fs->data_wra + required_space))) {
 		/* Not enough space for entry, only flush buffer if needed */
+		if (bm_ctx->buffer_pos > 0U) {
+			rc = nvs_flash_data_al_wrt(fs, &strm, false);
+			if (rc) {
+				return rc;
+			}
+		}
+
 		return 0;
 	}
 
-	strm.data = entry->data;
-	strm.len = entry->len;
+	strm.data.ptr = entry->data;
+	strm.data.len = entry->len;
 
-	/* Update ATE offset to the new data location. */
-	wrt_ate.offset = (uint16_t)(fs->data_wra & ADDR_OFFS_MASK);
+	/* Update ATE offset to the new data location.
+	 * bm_ctx->buffer_pos accounts for any buffered but unwritten
+	 * data carried over from previous moves.
+	 */
+	wrt_ate.offset = (uint16_t)((fs->data_wra + bm_ctx->buffer_pos)
+				    & ADDR_OFFS_MASK);
 
 	rc = nvs_flash_data_al_wrt(fs, &strm, true);
 	if (rc) {
@@ -741,6 +813,9 @@ static int nvs_gc(struct nvs_fs *fs, struct nvs_gc_write_entry *entry)
 	struct nvs_ate close_ate, gc_ate, wlk_ate;
 	uint32_t sec_addr, gc_addr, gc_prev_addr, wlk_addr, wlk_prev_addr,
 	      data_addr, stop_addr;
+	struct nvs_block_move_ctx ctx = {
+		.buffer_pos = 0U,
+	};
 	size_t ate_size;
 
 	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
@@ -810,8 +885,13 @@ static int nvs_gc(struct nvs_fs *fs, struct nvs_gc_write_entry *entry)
 			}
 		} while (wlk_addr != fs->ate_wra);
 
-		/* if walk has reached the same address as gc_addr copy is
-		 * needed unless it is a deleted item.
+		/* If the walk cursor reaches the same entry as the GC cursor,
+		 * the data must be moved unless this entry represents a deleted item
+		 * (len == 0).
+		 *
+		 * During GC, data is compacted and rewritten to the current data
+		 * write location. Data may be packed back-to-back without alignment
+		 * padding; write alignment is handled internally by buffering.
 		 */
 		if ((wlk_prev_addr == gc_prev_addr) && gc_ate.len) {
 			/* If we have a matching entry already in the sector being GC'd:
@@ -836,13 +916,17 @@ static int nvs_gc(struct nvs_fs *fs, struct nvs_gc_write_entry *entry)
 			data_addr = (gc_prev_addr & ADDR_SECT_MASK);
 			data_addr += gc_ate.offset;
 
-			gc_ate.offset = (uint16_t)(fs->data_wra & ADDR_OFFS_MASK);
-			nvs_ate_crc8_update(&gc_ate);
-
-			rc = nvs_flash_block_move(fs, data_addr, gc_ate.len);
+			/* Move the data to the new location.
+			 * Data is written in write_block_size-aligned chunks only.
+			 * Any remaining unaligned bytes are buffered in ctx.buffer and
+			 * reported back via ctx.buffer_pos.
+			 */
+			rc = nvs_flash_block_move(fs, data_addr, &ctx, &gc_ate);
 			if (rc) {
 				return rc;
 			}
+
+			nvs_ate_crc8_update(&gc_ate);
 
 			rc = nvs_flash_ate_wrt(fs, &gc_ate);
 			if (rc) {
@@ -851,7 +935,7 @@ static int nvs_gc(struct nvs_fs *fs, struct nvs_gc_write_entry *entry)
 		}
 	} while (gc_prev_addr != stop_addr);
 
-	rc = nvs_gc_try_write(fs, entry);
+	rc = nvs_gc_flush_and_try_write(fs, &ctx, entry);
 	if (rc) {
 		return rc;
 	}
