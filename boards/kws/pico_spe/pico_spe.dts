@@ -152,6 +152,7 @@
 		rst-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
 		status = "okay";
 		local-mac-address = [ca 2f b7 10 23 78];
+		phy-handle = <&lan865x_phy>;
 
 		lan865x_mdio: lan865x_mdio {
 			compatible = "microchip,lan865x-mdio";
@@ -159,7 +160,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			ethernet-phy@0 {
+			lan865x_phy: ethernet-phy@0 {
 				compatible = "microchip,t1s-phy";
 				reg = <0x0>;
 				plca-enable;
