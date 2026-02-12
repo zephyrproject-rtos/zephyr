@@ -276,6 +276,11 @@ static int gpio_max14906_config(const struct device *dev, gpio_pin_t pin, gpio_f
 		LOG_DBG("SETUP AS INPUT %d", pin);
 		break;
 	case GPIO_OUTPUT:
+		if (flags & GPIO_OUTPUT_INIT_HIGH) {
+			gpio_max14906_port_set_bits_raw(dev, BIT(pin));
+		} else if (flags & GPIO_OUTPUT_INIT_LOW) {
+			gpio_max14906_port_clear_bits_raw(dev, BIT(pin));
+		}
 		max14906_ch_func(dev, (uint32_t)pin, MAX14906_OUT);
 		LOG_DBG("SETUP AS OUTPUT %d", pin);
 		break;
