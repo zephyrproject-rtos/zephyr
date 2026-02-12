@@ -534,7 +534,8 @@ MODEM_CHAT_MATCHES_DEFINE(__maybe_unused unsol_matches,
 			  MODEM_CHAT_MATCH("+CEREG: ", ",", modem_cellular_chat_on_cxreg),
 			  MODEM_CHAT_MATCH("+CGREG: ", ",", modem_cellular_chat_on_cxreg),
 			  MODEM_CHAT_MATCH("+CGEV: ", ",", modem_cellular_chat_on_cgev),
-			  MODEM_CHAT_MATCH("APP RDY", "", modem_cellular_chat_on_modem_ready));
+			  MODEM_CHAT_MATCH("APP RDY", "", modem_cellular_chat_on_modem_ready),
+			  MODEM_CHAT_MATCH("Ready", "", modem_cellular_chat_on_modem_ready));
 
 MODEM_CHAT_MATCHES_DEFINE(abort_matches, MODEM_CHAT_MATCH("ERROR", "", NULL));
 
