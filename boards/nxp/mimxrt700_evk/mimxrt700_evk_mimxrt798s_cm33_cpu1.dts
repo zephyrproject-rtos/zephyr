@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -134,4 +134,9 @@
 		enable-differential-clk;
 		sample-clk-source = <3>;
 	};
+};
+
+&sema420 {
+	domain-id = <5>;
+	status = "okay";
 };
