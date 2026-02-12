@@ -15,9 +15,7 @@ elseif(CONFIG_SOC_AMEBA_NP_IMAGE)
 
   set(hal_blob_dir ${ZEPHYR_HAL_REALTEK_MODULE_DIR}/zephyr/blobs/ameba/${CONFIG_SOC_SERIES}/bin/)
 
-  if(CONFIG_SOC_SERIES_AMEBAD)
-    set(blob_bin_file ${hal_blob_dir}/km0_image2_all.bin)
-  elseif(CONFIG_SOC_SERIES_AMEBADPLUS)
+  if(CONFIG_SOC_SERIES_AMEBADPLUS)
     set(blob_bin_file ${hal_blob_dir}/km0_image2_all.bin)
   elseif(CONFIG_SOC_SERIES_AMEBAG2)
     set(blob_bin_file ${hal_blob_dir}/km4ns_image2_all.bin)
