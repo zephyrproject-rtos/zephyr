@@ -42,9 +42,10 @@ Supported Features
 Board Variants
 ==============
 
-The following board target is available:
+The following board targets are available:
 
-* ``fvp_corstone1000/a320`` - ARMv9.2-A with Cortex-A320 CPU
+* ``fvp_corstone1000/a320`` - single-core ARMv9.2-A with Cortex-A320 CPU
+* ``fvp_corstone1000/a320/smp`` - quad-core SMP with all 4 Cortex-A320 CPUs
 
 Memory Map
 ==========
