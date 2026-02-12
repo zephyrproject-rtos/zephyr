@@ -107,6 +107,11 @@ BUILD_ASSERT(offsetof(struct nvs_ate, crc8) ==
 		 sizeof(struct nvs_ate) - sizeof(uint8_t),
 		 "crc8 must be the last member");
 
+#if defined(CONFIG_ZTEST)
+int nvs_flash_al_wrt_streams(struct nvs_fs *fs, uint32_t addr,
+			     const struct nvs_flash_wrt_stream *strm);
+#endif /* CONFIG_ZTEST */
+
 #ifdef __cplusplus
 }
 #endif

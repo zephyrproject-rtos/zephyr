@@ -1140,6 +1140,7 @@ ZTEST_F(nvs, test_nvs_gc_pack_per_entry)
 	/* Fill NVS with variable-length entries until full */
 	while (1) {
 		size_t len = id % wbs;
+
 		if (len == 0) {
 			len = 1;
 		}
@@ -1164,6 +1165,7 @@ ZTEST_F(nvs, test_nvs_gc_pack_per_entry)
 	/* Delete and update each entry immediately */
 	for (uint16_t i = 0; i < id; i++) {
 		size_t len = i % wbs;
+
 		if (len == 0) {
 			len = 1;
 		}
@@ -1176,6 +1178,91 @@ ZTEST_F(nvs, test_nvs_gc_pack_per_entry)
 
 		err = nvs_write(&fixture->fs, i, update_data, len);
 		zassert_equal(err, len, "nvs_write failed for id %d: %d", i, err);
+	}
+}
+
+/*
+ * Test NVS write stream
+ */
+ZTEST_F(nvs, test_nvs_write_stream)
+{
+	uint8_t head[15] = {
+		0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8,
+		0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAE, 0xAF
+	};
+	uint8_t data[16] = {
+		0xB1, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6, 0xB7, 0xB8,
+		0xB9, 0xBA, 0xBB, 0xBC, 0xBD, 0xBE, 0xBF, 0xC0,
+	};
+	uint8_t tail[17] = {
+		0xD1, 0xD2, 0xD3, 0xD4, 0xD5, 0xD6, 0xD7, 0xD8,
+		0xD9, 0xDA, 0xDB, 0xDC, 0xDD, 0xDE, 0xDF, 0xE0,
+		0xE1,
+	};
+	uint8_t expected[sizeof(head) + sizeof(data) + sizeof(tail)];
+	uint8_t read_buf[sizeof(expected)];
+
+	struct {
+		bool use_head;
+		bool use_data;
+		bool use_tail;
+	} cases[] = {
+		{false, true,  false},
+		{true,  false, false},
+		{false, false, true },
+		{true,  true,  false},
+		{false, true,  true },
+		{true,  false, true },
+		{true,  true,  true },
+		{false, false, false},
+	};
+	int err;
+
+	err = nvs_mount(&fixture->fs);
+	zassert_true(err == 0, "nvs_mount call failure: %d", err);
+
+	for (int i = 0; i < ARRAY_SIZE(cases); i++) {
+		memset(expected, 0, sizeof(expected));
+		memset(read_buf, 0, sizeof(read_buf));
+
+		struct nvs_flash_wrt_stream strm = {0};
+
+		size_t offset = 0;
+
+		if (cases[i].use_head) {
+			strm.head.ptr = head;
+			strm.head.len = sizeof(head);
+			memcpy(expected + offset, head, sizeof(head));
+			offset += sizeof(head);
+		}
+
+		if (cases[i].use_data) {
+			strm.data.ptr = data;
+			strm.data.len = sizeof(data);
+			memcpy(expected + offset, data, sizeof(data));
+			offset += sizeof(data);
+		}
+
+		if (cases[i].use_tail) {
+			strm.tail.ptr = tail;
+			strm.tail.len = sizeof(tail);
+			memcpy(expected + offset, tail, sizeof(tail));
+			offset += sizeof(tail);
+		}
+
+		err = nvs_flash_al_wrt_streams(&fixture->fs, 0, &strm);
+
+		zassert_true(err == 0, "write failed err %d", err);
+
+		err = flash_read(fixture->fs.flash_device, fixture->fs.offset,
+				 read_buf, offset);
+		zassert_true(err == 0, "read failed err %d", err);
+
+		zassert_mem_equal(read_buf, expected, offset, "mismatch");
+
+		err = flash_erase(fixture->fs.flash_device, fixture->fs.offset,
+				  fixture->fs.sector_size);
+		zassert_true(err == 0, "erase failed err %d", err);
 	}
 }
 #endif /* CONFIG_TEST_NVS_SIMULATOR */
