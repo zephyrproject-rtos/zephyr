@@ -655,6 +655,7 @@ int ataes132a_aes_ecb_block(const struct device *dev,
 	/* Ensure buf_len + 3 fits within a uint8_t and the destination buffer */
 	if (buf_len > (UINT8_MAX - 3) || (buf_len + 3) > sizeof(param_buffer)) {
 		LOG_ERR("Encrypt buffer length %d is too large", buf_len);
+		k_sem_give(&data->device_sem);
 		return -EINVAL;
 	}
 
