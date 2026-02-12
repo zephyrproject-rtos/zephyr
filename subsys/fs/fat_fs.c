@@ -20,6 +20,17 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(fs, CONFIG_FS_LOG_LEVEL);
 
+/*
+ * Some SDHC drivers (e.g. i.MX USDHC with DMA) require wider alignment for IO
+ * buffers. CONFIG_SDHC_BUFFER_ALIGNMENT is not always defined (e.g. when SDHC
+ * is not enabled), so fall back to 4-byte alignment.
+ */
+#ifdef CONFIG_SDHC_BUFFER_ALIGNMENT
+#define FATFS_WORKBUF_ALIGNMENT CONFIG_SDHC_BUFFER_ALIGNMENT
+#else
+#define FATFS_WORKBUF_ALIGNMENT 4
+#endif
+
 #define FATFS_MAX_FILE_NAME 12 /* Uses 8.3 SFN */
 
 /* Memory pool for FatFs directory objects */
@@ -458,7 +469,7 @@ static int fatfs_mount(struct fs_mount_t *mountp)
 	/* If no file system found then create one */
 	if (res == FR_NO_FILESYSTEM &&
 	    (mountp->flags & FS_MOUNT_FLAG_NO_FORMAT) == 0) {
-		uint8_t work[FF_MAX_SS];
+		uint8_t work[FF_MAX_SS] __aligned(FATFS_WORKBUF_ALIGNMENT);
 		MKFS_PARM mkfs_opt = {
 			.fmt = FM_ANY | FM_SFD,	/* Any suitable FAT */
 			.n_fat = 1,		/* One FAT fs table */
@@ -518,7 +529,7 @@ static MKFS_PARM def_cfg = {
 static int fatfs_mkfs(uintptr_t dev_id, void *cfg, int flags)
 {
 	FRESULT res;
-	uint8_t work[FF_MAX_SS];
+	uint8_t work[FF_MAX_SS] __aligned(FATFS_WORKBUF_ALIGNMENT);
 	MKFS_PARM *mkfs_opt = &def_cfg;
 
 	if (cfg != NULL) {
