@@ -304,16 +304,12 @@ static int gpio_max14906_port_get_raw(const struct device *dev, gpio_port_value_
 static int gpio_max14906_port_toggle_bits(const struct device *dev, gpio_port_pins_t pins)
 {
 	int ret;
-	uint32_t reg_val, direction, state, new_reg_val;
+	uint32_t reg_val;
 
 	ret = MAX14906_REG_READ(dev, MAX14906_SETOUT_REG);
+	reg_val = ret ^ (pins & 0x0f);
 
-	direction = ret & 0xf0;
-	state = ret & 0x0f;
-	reg_val = state ^ pins;
-	new_reg_val = direction | (0x0f & state);
-
-	return MAX14906_REG_WRITE(dev, MAX14906_SETOUT_REG, new_reg_val);
+	return MAX14906_REG_WRITE(dev, MAX14906_SETOUT_REG, reg_val);
 }
 
 static int gpio_max14906_clean_on_power(const struct device *dev)
