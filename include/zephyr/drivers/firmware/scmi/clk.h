@@ -35,6 +35,12 @@
 
 #define SCMI_CLK_PROTOCOL_SUPPORTED_VERSION	0x30000
 
+/** clock name length (short version) */
+#define SCMI_CLK_NAME_LEN 16
+
+/** get the clock's enabled status based on given attributes */
+#define SCMI_CLK_ENABLED(attributes) ((attributes) & BIT(0))
+
 /**
  * @struct scmi_clock_config
  *
@@ -58,6 +64,22 @@ struct scmi_clock_rate_config {
 	uint32_t clk_id;
 	uint32_t rate[2];
 };
+
+/**
+ * @struct scmi_clock_attributes
+ *
+ * @brief Describes the content of the CLOCK_ATTRIBUTES command reply
+ */
+struct scmi_clock_attributes {
+	/** reply status */
+	int32_t status;
+	/** clock attributes */
+	uint32_t attributes;
+	/** clock name */
+	uint8_t clock_name[SCMI_CLK_NAME_LEN];
+	/** clock enable delay incurred by platform */
+	uint32_t clock_enable_delay;
+} __packed;
 
 /**
  * @brief Clock protocol command message IDs
@@ -157,6 +179,18 @@ int scmi_clock_parent_get(struct scmi_protocol *proto, uint32_t clk_id, uint32_t
  */
 int scmi_clock_parent_set(struct scmi_protocol *proto, uint32_t clk_id, uint32_t parent_id);
 
+/**
+ * @brief Send the CLOCK_ATTRIBUTES command and get its reply
+ *
+ * @param proto pointer to SCMI clock protocol data
+ * @param clk_id ID of the clock for which the query is done
+ * @param attributes clock attributes returned by the command
+ *
+ * @retval 0 if successful
+ * @retval negative errno if failure
+ */
+int scmi_clock_attributes(struct scmi_protocol *proto, uint32_t clk_id,
+			  struct scmi_clock_attributes *attributes);
 /**
  * @}
  */
