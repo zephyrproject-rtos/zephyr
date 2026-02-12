@@ -5,8 +5,6 @@
  */
 
 &flash0 {
-	status = "okay";
-
 	partitions {
 		ranges;
 		#address-cells = <0x1>;

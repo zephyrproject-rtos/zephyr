@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Beechwoods Software, Inc.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,14 +13,8 @@
 		code_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
 			label = "code";
-			reg = <0x0 DT_SIZE_M(1)>;
+			reg = <0x0 DT_SIZE_M(2)>;
 			read-only;
-		};
-
-		storage_partition: partition@100000 {
-			compatible = "zephyr,mapped-partition";
-			label = "storage";
-			reg = <0x100000 DT_SIZE_M(3)>;
 		};
 	};
 };
