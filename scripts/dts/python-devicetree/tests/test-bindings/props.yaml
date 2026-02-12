@@ -49,3 +49,6 @@ properties:
 
   path:
     type: path
+
+  bar-io-channels:
+    type: phandle-array

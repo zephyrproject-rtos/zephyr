@@ -425,6 +425,7 @@
 		phandle-array-foos = <&{/ctrl-1} 1 &{/ctrl-2} 2 3>;
 		foo-gpios = <&{/ctrl-1} 1>;
 		path = &{/ctrl-1};
+		bar-io-channels = <&{/ctrl-2} 2>;
 	};
 
 	ctrl-1 {
@@ -436,6 +437,7 @@
 	ctrl-2 {
 		compatible = "phandle-array-controller-2";
 		#phandle-array-foo-cells = <2>;
+		#io-channel-cells = <1>;
 	};
 
 	props-2 {
@@ -580,6 +582,8 @@
 		handle = <&{/ctrl-1}>;
 		phandles = <&{/ctrl-1}>, <&{/ctrl-2}>;
 		phandle-array-foos = <&{/ctrl-2} 1 2>;
+		foo-gpios = <&{/ctrl-1} 1>;
+		bar-io-channels = <&{/ctrl-2} 2>;
 	};
 
 	//

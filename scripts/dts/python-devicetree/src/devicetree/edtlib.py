@@ -2067,15 +2067,19 @@ class Node:
         # unspecified.
 
         if not specifier_space:
-            if prop.name.endswith("gpios"):
-                # There's some slight special-casing for *-gpios properties in that
-                # e.g. foo-gpios still maps to #gpio-cells rather than
-                # #foo-gpio-cells
-                specifier_space = "gpio"
-            else:
-                # Strip -s. We've already checked that property names end in -s
-                # if there is no specifier space in _check_prop_by_type().
-                specifier_space = prop.name[:-1]
+            specifier_space_groups = {"gpio", "io-channel"}
+            for group in specifier_space_groups:
+                if prop.name.endswith(group + 's'):
+                    # There's some slight special-casing for some properties in that
+                    # e.g. foo-gpios and bar-io-channels still map to #gpio-cells and
+                    # #io-channels rather than #foo-gpio-cells and bar-io-channels
+                    # respectively.
+                    specifier_space = group
+
+        if not specifier_space:
+            # Strip -s. We've already checked that property names end in -s
+            # if there is no specifier space in _check_prop_by_type().
+            specifier_space = prop.name[:-1]
 
         res: list[Optional[ControllerAndData]] = []
 

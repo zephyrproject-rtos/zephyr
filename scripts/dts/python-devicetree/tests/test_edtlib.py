@@ -764,6 +764,10 @@ def test_props():
                               'foo-gpios',
                               [(ctrl_1, {'gpio-one': 1})])
 
+    verify_phandle_array_prop(props_node,
+                              'bar-io-channels',
+                              [(ctrl_2, {'io-channel-one': 2})])
+
 def test_nexus():
     '''Test <prefix>-map via gpio-map (the most common case).'''
     with from_here():
@@ -891,6 +895,14 @@ def test_binding_inference():
     verify_phandle_array_prop(zephyr_user,
                               'phandle-array-foos',
                               [(edt.get_node('/ctrl-2'), {'one': 1, 'two': 2})])
+
+    verify_phandle_array_prop(zephyr_user,
+                              'foo-gpios',
+                              [(ctrl_1, {'gpio-one': 1})])
+
+    verify_phandle_array_prop(zephyr_user,
+                              'bar-io-channels',
+                              [(ctrl_2, {'io-channel-one': 2})])
 
 def test_multi_bindings():
     '''Test having multiple directories with bindings'''
