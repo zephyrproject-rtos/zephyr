@@ -168,6 +168,7 @@ config XTENSA_MMU
 	bool "Xtensa MMU Support"
 	select MMU
 	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
+	select ARCH_MEM_DOMAIN_SUPPORTS_DEINIT if USERSPACE && XTENSA_MMU
 	select CURRENT_THREAD_USE_NO_TLS if USERSPACE
 	help
 	  Enable support for Xtensa Memory Management Unit.
