@@ -80,8 +80,10 @@ static int pinctrl_mcux_init(const struct device *dev)
 		 ? 0                                                                               \
 		 : MAKE_MRCC_REGADDR(MRCC_BASE, DT_INST_CLOCKS_CELL(n, mrcc_offset)))
 #else
-#define PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n) \
-	DT_INST_CLOCKS_CELL(n, name)
+#define PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n)			\
+	COND_CODE_1(						\
+		DT_PHA_HAS_CELL(DT_DRV_INST(n), clocks, name),	\
+		(DT_INST_CLOCKS_CELL(n, name)), (0U))
 #endif
 
 #define PINCTRL_MCUX_INIT(n)						\

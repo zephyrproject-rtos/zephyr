@@ -1013,8 +1013,9 @@ static DEVICE_API(spi, spi_mcux_driver_api) = {
 		.base =							\
 		(SPI_Type *)DT_INST_REG_ADDR(id),			\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),	\
-		.clock_subsys =					\
-		(clock_control_subsys_t)DT_INST_CLOCKS_CELL(id, name),\
+		.clock_subsys = (clock_control_subsys_t)COND_CODE_1(	\
+			DT_PHA_HAS_CELL(DT_DRV_INST(id), clocks, name),	\
+			(DT_INST_CLOCKS_CELL(id, name)), (0U)),		\
 		SPI_MCUX_FLEXCOMM_IRQ_HANDLER_FUNC(id)			\
 		.pre_delay = DT_INST_PROP_OR(id, pre_delay, 0),		\
 		.post_delay = DT_INST_PROP_OR(id, post_delay, 0),		\

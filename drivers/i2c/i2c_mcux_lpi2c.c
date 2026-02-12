@@ -650,8 +650,9 @@ static DEVICE_API(i2c, mcux_lpi2c_driver_api) = {
 	static const struct mcux_lpi2c_config mcux_lpi2c_config_##n = {	\
 		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),	\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
-		.clock_subsys =						\
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),\
+		.clock_subsys = (clock_control_subsys_t)COND_CODE_1(	\
+			DT_PHA_HAS_CELL(DT_DRV_INST(n), clocks, name),	\
+			(DT_INST_CLOCKS_CELL(n, name)), (0U)),		\
 		.irq_config_func = mcux_lpi2c_config_func_##n,		\
 		.bitrate = DT_INST_PROP(n, clock_frequency),		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
