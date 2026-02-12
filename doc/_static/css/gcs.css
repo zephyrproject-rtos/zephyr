@@ -14,6 +14,10 @@
   color: var(--body-color) !important;
 }
 
+.gsc-above-wrapper-area, .gsc-wrapper {
+  max-width: none !important;
+}
+
 .gsc-control-cse {
   width: 100%;
   padding: 0 !important;
@@ -22,6 +26,10 @@
   background-color: inherit !important;
   border: none !important;
   font-size: inherit !important;
+}
+
+.gsc-refinementsArea {
+  background-color: inherit !important;
 }
 
 .gsc-completion-container {
@@ -45,7 +53,6 @@
 
 .gs-result .gs-image, .gs-result .gs-promotion-image {
   border: none !important;
-  padding-right: .5em;
 }
 
 .gsc-table-result {
@@ -70,6 +77,12 @@
   padding: .5em 0;
   border: none !important;
   border-bottom: 1px solid var(--hr-color) !important;
+}
+
+.gs-webResult .gs-visibleUrl {
+  color: var(--body-color) !important;
+  font-weight: 100;
+  font-size: 0.9em;
 }
 
 .gs-webResult div.gs-per-result-labels {
