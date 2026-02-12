@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2025 NXP
+ * Copyright 2020-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -215,6 +215,24 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sema42))
 	if ((uint32_t)sub_system == MCUX_SEMA42_CLK) {
 		CLOCK_EnableClock(kCLOCK_Sema42);
+	}
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sema420))
+	if ((uint32_t)sub_system == MCUX_SEMA42_CLK) {
+		CLOCK_EnableClock(kCLOCK_Sema420);
+	}
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sema423))
+	if ((uint32_t)sub_system == MCUX_SEMA42_CLK) {
+		CLOCK_EnableClock(kCLOCK_Sema423);
+	}
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sema424))
+	if ((uint32_t)sub_system == MCUX_SEMA42_CLK) {
+		CLOCK_EnableClock(kCLOCK_Sema424);
 	}
 #endif
 
