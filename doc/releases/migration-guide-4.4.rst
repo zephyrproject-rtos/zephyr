@@ -514,6 +514,8 @@ Ethernet
   :kconfig:option:`CONFIG_PTP_CLOCK_INIT_PRIORITY`,  but only if :kconfig:option:`CONFIG_ETH_DRIVER`
   is enabled. This way the priority is based on the dependencies in the devicetree.
 
+* The ``phy-handle`` property of :dtcompatible:`microchip,lan865x` must now be set to the phy node.
+
 File System
 ===========
 
