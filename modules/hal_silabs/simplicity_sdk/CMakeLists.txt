@@ -58,6 +58,7 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
     ${RADIO_DIR}/rail_lib/common
     ${RADIO_DIR}/rail_lib/plugin/pa-conversions
     ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_compatible_pa
+    ${RADIO_DIR}/rail_lib/protocol/ieee802154
     ${BLUETOOTH_DIR}/bgstack/ll/inc
   )
 
@@ -137,6 +138,14 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
     zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_CUSTOM_RADIO_PHY
       ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_protocol/sl_rail_util_protocol.c
     )
+    # So the IEEE802154 native driver can find sl_rail_ieee802154.h when not using CUSTOM_RADIO_PHY
+    zephyr_include_directories_ifdef(CONFIG_IEEE802154_SILABS_EFR32
+      ${RADIO_DIR}/rail_lib/protocol/ieee802154
+    )
+  endif()
+
+  if(CONFIG_IEEE802154_SILABS_EFR32)
+    add_prebuilt_library(libsl_openthread_cm33_gcc protocol/openthread/platform-abstraction/efr32/libsl_openthread_cm33_gcc.a)
   endif()
 endif()
 
