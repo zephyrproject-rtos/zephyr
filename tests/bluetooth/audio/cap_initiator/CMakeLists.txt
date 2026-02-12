@@ -36,6 +36,7 @@ target_sources(app PRIVATE
   ${ZEPHYR_BASE}/subsys/bluetooth/audio/ccid.c
   ${ZEPHYR_BASE}/subsys/bluetooth/common/bt_str.c
   ${ZEPHYR_BASE}/subsys/bluetooth/host/uuid.c
+  ${ZEPHYR_BASE}/lib/uuid/uuid.c
 
   # Mock files
   ${ZEPHYR_BASE}/tests/bluetooth/audio/mocks/src/conn.c
