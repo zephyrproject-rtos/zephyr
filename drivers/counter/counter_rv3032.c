@@ -23,16 +23,14 @@ LOG_MODULE_REGISTER(rv3032_counter, CONFIG_COUNTER_LOG_LEVEL);
 
 struct rv3032_counter_config {
 	struct counter_config_info counter_info;
-	uint32_t base;
 	const struct device *mfd;
 };
 
 struct rv3032_counter_data {
 	struct counter_alarm_cfg alarm_cfg0;
-	uint32_t freq;
 };
 
-int rv3032_counter_start(const struct device *dev)
+static int rv3032_counter_start(const struct device *dev)
 {
 	const struct rv3032_counter_config *config = dev->config;
 
@@ -40,26 +38,24 @@ int rv3032_counter_start(const struct device *dev)
 				      RV3032_CONTROL1_TE);
 }
 
-int rv3032_counter_stop(const struct device *dev)
+static int rv3032_counter_stop(const struct device *dev)
 {
 	const struct rv3032_counter_config *config = dev->config;
 
 	return mfd_rv3032_update_reg8(config->mfd, RV3032_REG_CONTROL1, RV3032_CONTROL1_TE, 0);
 }
 
-int rv3032_counter_get_value(const struct device *dev, uint32_t *ticks)
+/* The RV-3032 does not support reading the current value of the periodic
+ * countdown timer.
+ */
+static int rv3032_counter_get_value(const struct device *dev, uint32_t *ticks)
 {
-	const struct rv3032_counter_config *config = dev->config;
-	uint8_t val[2];
-
-	mfd_rv3032_read_regs(config->mfd, RV3032_REG_CONTROL1, val, 2);
-
-	*ticks = (val[1]<<8) | val[0];
-
-	return 0;
+	ARG_UNUSED(dev);
+	ARG_UNUSED(ticks);
+	return -ENOTSUP;
 }
 
-int rv3032_counter_reset(const struct device *dev)
+static int rv3032_counter_reset(const struct device *dev)
 {
 	const struct rv3032_counter_config *config = dev->config;
 	int ret;
@@ -76,7 +72,7 @@ exit:
 	return ret;
 }
 
-void rv3032_counter_isr(const struct device *dev)
+static void rv3032_counter_isr(const struct device *dev)
 {
 	struct rv3032_counter_data *data = dev->data;
 
@@ -86,11 +82,12 @@ void rv3032_counter_isr(const struct device *dev)
 	}
 }
 
-int rv3032_counter_set_alarm(const struct device *dev, uint8_t chan_id,
-			      const struct counter_alarm_cfg *alarm_cfg)
+static int rv3032_counter_set_alarm(const struct device *dev, uint8_t chan_id,
+				    const struct counter_alarm_cfg *alarm_cfg)
 {
 	const struct rv3032_counter_config *config = dev->config;
 	struct rv3032_counter_data *data = dev->data;
+	const uint32_t freq = config->counter_info.freq;
 	int err;
 	uint8_t time_val[2];
 	uint8_t freq_val;
@@ -100,8 +97,8 @@ int rv3032_counter_set_alarm(const struct device *dev, uint8_t chan_id,
 	data->alarm_cfg0.flags = alarm_cfg->flags;
 	data->alarm_cfg0.ticks = alarm_cfg->ticks;
 
-	if (alarm_cfg->ticks > 4096) {
-		LOG_ERR("alarm_cfg->ticks %d) Max value (4096)", alarm_cfg->ticks);
+	if (alarm_cfg->ticks > config->counter_info.max_top_value) {
+		LOG_ERR("alarm_cfg->ticks %d) Max value (%d)", alarm_cfg->ticks, config->counter_info.max_top_value);
 		return -ENOTSUP;
 	}
 
@@ -126,13 +123,13 @@ int rv3032_counter_set_alarm(const struct device *dev, uint8_t chan_id,
 		LOG_ERR("TIMER register write failed : %d", err);
 	}
 
-	if (data->freq == 4096) {
+	if (freq == 4096) {
 		freq_val = 0x0;
-	} else if (data->freq == 64) {
+	} else if (freq == 64) {
 		freq_val = 0x1;
-	} else if (data->freq == 1) {
+	} else if (freq == 1) {
 		freq_val = 0x2;
-	} else if (data->freq == 0) {
+	} else if (freq == 0) {
 		freq_val = 0x3;
 	} else {
 		freq_val = 0x0;
@@ -178,7 +175,7 @@ err_return:
 	return err;
 }
 
-int rv3032_counter_cancel_alarm(const struct device *dev, uint8_t chan_id)
+static int rv3032_counter_cancel_alarm(const struct device *dev, uint8_t chan_id)
 {
 	const struct rv3032_counter_config *config = dev->config;
 	int err;
@@ -197,7 +194,10 @@ int rv3032_counter_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	return err;
 }
 
-uint32_t rv3032_counter_get_pending_int(const struct device *dev)
+/* The Counter API does not specify a return value for errors, so 0 is also
+ * returned for errors here.
+ */
+static uint32_t rv3032_counter_get_pending_int(const struct device *dev)
 {
 	const struct rv3032_counter_config *config = dev->config;
 	uint8_t status;
@@ -205,26 +205,14 @@ uint32_t rv3032_counter_get_pending_int(const struct device *dev)
 
 	err = mfd_rv3032_read_reg8(config->mfd, RV3032_REG_STATUS, &status);
 	if (err) {
-		LOG_ERR("TIMER register read failed : %d", err);
-		return err;
+		LOG_ERR("Status register read failed : %d", err);
+		return 0;
 	}
 
-	/* Check timer bit in status reg, if there is pending int fire ISR*/
-	if (status & RV3032_STATUS_TF) {
-		err = mfd_rv3032_update_reg8(config->mfd, RV3032_REG_STATUS, RV3032_STATUS_TF,
-					     RV3032_STATUS_TF);
-		if (err) {
-			LOG_ERR("TIMER register read failed : %d", err);
-			return err;
-		}
-
-		rv3032_counter_isr(dev);
-	}
-
-	return err;
+	return (status & RV3032_STATUS_TF) > 0;
 }
 
-int rv3032_counter_set_top_value(const struct device *dev, const struct counter_top_cfg *cfg)
+static int rv3032_counter_set_top_value(const struct device *dev, const struct counter_top_cfg *cfg)
 {
 	const struct rv3032_counter_config *config = dev->config;
 	uint8_t timer[2];
@@ -241,7 +229,7 @@ int rv3032_counter_set_top_value(const struct device *dev, const struct counter_
 	return 0;
 }
 
-uint32_t rv3032_counter_get_top_value(const struct device *dev)
+static uint32_t rv3032_counter_get_top_value(const struct device *dev)
 {
 	const struct rv3032_counter_config *config = dev->config;
 	uint8_t timer[2];
@@ -257,30 +245,6 @@ uint32_t rv3032_counter_get_top_value(const struct device *dev)
 	val = timer[0] | (timer[1] << 8);
 
 	return val;
-}
-
-uint32_t rv3032_counter_get_guard_period(const struct device *dev, uint32_t flags)
-{
-	return -ENOTSUP;
-}
-
-int rv3032_counter_set_guard_period(const struct device *dev, uint32_t ticks, uint32_t flags)
-{
-	return -ENOTSUP;
-}
-
-uint32_t rv3032_counter_get_freq(const struct device *dev)
-{
-	/*
-	 * 4096 Hz – Default value
-	 * 64 Hz
-	 * 1 Hz
-	 * 1/60 Hz
-	 */
-
-	const struct rv3032_counter_data *data = dev->data;
-
-	return data->freq;
 }
 
 static int rv3032_counter_init(const struct device *dev)
@@ -302,25 +266,23 @@ static DEVICE_API(counter, rv3032_counter_api) = {
 	.set_top_value = rv3032_counter_set_top_value,
 	.get_pending_int = rv3032_counter_get_pending_int,
 	.get_top_value = rv3032_counter_get_top_value,
-	.get_freq = rv3032_counter_get_freq,
 };
 
-#define rv3032_counter_INIT(inst)                                                                  \
+#define RV3032_COUNTER_INIT(inst)                                                                  \
 	static const struct rv3032_counter_config rv3032_counter_config_##inst = {                 \
 		.counter_info = {                                                                  \
-			.max_top_value = 4096,                                                     \
-			.flags = COUNTER_CONFIG_INFO_COUNT_UP,                                     \
+			.max_top_value = 4095,                                                     \
+			.freq = DT_INST_PROP_OR(inst, frequency, 4096),                            \
+			.flags = 0,                                     			   \
 			.channels = 1,                                                             \
 		},                                                                                 \
 		.mfd = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                        \
 	};                                                                                         \
-	static struct rv3032_counter_data rv3032_counter_data_##inst = {                           \
-		.freq = DT_INST_PROP_OR(inst, frequency, 4096),                                    \
-	};                                                                                         \
+	static struct rv3032_counter_data rv3032_counter_data_##inst = {};                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(0, &rv3032_counter_init, NULL, &rv3032_counter_data_##inst,          \
+	DEVICE_DT_INST_DEFINE(inst, &rv3032_counter_init, NULL, &rv3032_counter_data_##inst,       \
 			      &rv3032_counter_config_##inst, POST_KERNEL,                          \
 			      CONFIG_COUNTER_MICROCRYSTAL_RV3032_INIT_PRIORITY,                    \
 			      &rv3032_counter_api);
 
-DT_INST_FOREACH_STATUS_OKAY(rv3032_counter_INIT)
+DT_INST_FOREACH_STATUS_OKAY(RV3032_COUNTER_INIT)
