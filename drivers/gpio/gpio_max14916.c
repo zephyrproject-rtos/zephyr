@@ -213,6 +213,11 @@ static int gpio_max14916_config(const struct device *dev, gpio_pin_t pin, gpio_f
 
 	switch (flags & GPIO_DIR_MASK) {
 	case GPIO_OUTPUT:
+		if (flags & GPIO_OUTPUT_INIT_HIGH) {
+			gpio_max14916_port_set_bits_raw(dev, BIT(pin));
+		} else if (flags & GPIO_OUTPUT_INIT_LOW) {
+			gpio_max14916_port_clear_bits_raw(dev, BIT(pin));
+		}
 		break;
 	case GPIO_INPUT:
 	default:
