@@ -13,6 +13,7 @@ config QUIC
 	select SMF
 	select NET_IPV6_PMTU if NET_NATIVE_IPV6
 	select NET_IPV4_PMTU if NET_NATIVE_IPV4
+	select NET_STATISTICS_USER_API if NET_STATISTICS_QUIC
 	help
 	  This option enables the QUIC implementation specified
 	  in RFC 9000.

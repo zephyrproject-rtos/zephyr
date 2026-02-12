@@ -50,6 +50,7 @@ LOG_MODULE_REGISTER(net_quic, CONFIG_QUIC_LOG_LEVEL);
 #include "sockets_internal.h"
 #include "tls_internal.h"
 #include "quic_internal.h"
+#include "quic_stats.h"
 
 BUILD_ASSERT(CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL <= CONFIG_QUIC_STREAM_RX_BUFFER_SIZE,
 	     "Flow control window must not exceed RX buffer size");
@@ -122,6 +123,11 @@ static struct zsock_pollfd quic_ipv6_pollfds[QUIC_IPV6_SVC_POLL_COUNT];
 #else
 #define QUIC_IPV6_SVC_POLL_COUNT 0
 #endif
+
+#if defined(CONFIG_NET_STATISTICS_QUIC)
+static struct net_stats_quic_global quic_stats_vars;
+struct net_stats_quic_global *quic_stats = &quic_stats_vars;
+#endif /* CONFIG_NET_STATISTICS_QUIC */
 
 static K_FIFO_DEFINE(quic_queue);
 
@@ -4064,6 +4070,7 @@ static struct quic_stream *quic_create_stream_from_peer(struct quic_context *ctx
 	stream = quic_get_stream(ctx);
 	if (stream == NULL) {
 		NET_DBG("[CO:%p/%d] No available stream slots", ctx, quic_get_by_conn(ctx));
+		quic_stats_update_stream_open_failed();
 		return NULL;
 	}
 
@@ -4096,6 +4103,8 @@ static struct quic_stream *quic_create_stream_from_peer(struct quic_context *ctx
 	stream->local_max_data = CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL;
 	stream->bytes_received = 0;
 	stream->local_max_data_sent = stream->local_max_data;
+
+	quic_stats_update_stream_opened();
 
 	NET_DBG("[ST:%p/%d] Created stream %" PRIu64 " (type=%d) from peer, remote_max=%" PRIu64,
 		stream, quic_get_by_stream(stream), stream_id, stream->type,
@@ -5070,6 +5079,8 @@ static void receive_data(int sock, struct quic_endpoint *ep_hint)
 		NET_DBG("[EP:%p/%d] Read %d QUIC packet%sfrom datagram", ep,
 			quic_get_by_ep(ep), packets,
 			packets > 1 ? "s " : " ");
+
+		quic_stats_update_packets_rx(packets);
 	}
 }
 

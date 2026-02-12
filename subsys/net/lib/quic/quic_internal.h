@@ -768,6 +768,10 @@ __net_socket struct quic_context {
 		struct k_sem stream_sem;
 	} incoming;
 
+#if defined(CONFIG_NET_STATISTICS_QUIC)
+	struct net_stats_quic stats;
+#endif /* CONFIG_NET_STATISTICS_QUIC */
+
 	/** Stream id counter */
 	uint64_t stream_id_counter;
 
