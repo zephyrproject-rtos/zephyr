@@ -31,6 +31,62 @@
 extern "C" {
 #endif
 
+/** Quic statistics */
+struct net_stats_quic {
+	/** Number of handshake init packets received */
+	uint32_t handshake_init_rx;
+	/** Number of handshake init packets sent */
+	uint32_t handshake_init_tx;
+	/** Number of handshake response packets received */
+	uint32_t handshake_resp_rx;
+	/** Number of handshake response packets sent */
+	uint32_t handshake_resp_tx;
+	/** Number of invalid handshake errors */
+	uint32_t invalid_handshake;
+	/** Number of peer not found errors */
+	uint32_t peer_not_found;
+	/** Number of invalid packets */
+	uint32_t invalid_packet;
+	/** Number of invalid key errors */
+	uint32_t invalid_key;
+	/** Number of invalid packet length errors */
+	uint32_t invalid_packet_len;
+	/** Number of decrypt failed errors */
+	uint32_t decrypt_failed;
+	/** Number of dropped RX packets */
+	uint32_t drop_rx;
+	/** Number of dropped TX packets */
+	uint32_t drop_tx;
+	/** Number of allocation failures */
+	uint32_t alloc_failed;
+	/** Number of valid packets received */
+	uint32_t valid_rx;
+	/** Number of valid packets sent */
+	uint32_t valid_tx;
+};
+
+/** Quic global statistics */
+struct net_stats_quic_global {
+	/** Number of any (valid or invalid) packets received */
+	uint32_t packets_rx;
+	/** Total number of connections opened */
+	uint32_t connections_opened;
+	/** Total number of connections closed */
+	uint32_t connections_closed;
+	/** Total number of streams opened */
+	uint32_t streams_opened;
+	/** Total number of streams closed */
+	uint32_t streams_closed;
+	/** Total number of connection open failures */
+	uint32_t connection_open_failed;
+	/** Total number of stream open failures */
+	uint32_t stream_open_failed;
+	/** Total number of connection close failures */
+	uint32_t connection_close_failed;
+	/** Total number of stream close failures */
+	uint32_t stream_close_failed;
+};
+
 /** Stream direction */
 enum quic_stream_direction {
 	QUIC_STREAM_BIDIRECTIONAL  = 0x00, /**< Bidirectional stream */

@@ -406,6 +406,8 @@ static int quic_ctx_close_vmeth(void *obj)
 
 	quic_context_unref(ctx);
 
+	quic_stats_update_connection_closed();
+
 	return 0;
 }
 
@@ -1374,6 +1376,7 @@ int quic_connection_open(const struct net_sockaddr *remote_addr,
 
 	ctx = quic_get();
 	if (ctx == NULL) {
+		quic_stats_update_connection_open_failed();
 		return -ENOMEM;
 	}
 
@@ -1413,6 +1416,10 @@ out:
 		if (fd >= 0) {
 			zvfs_free_fd(fd);
 		}
+
+		quic_stats_update_connection_open_failed();
+	} else {
+		quic_stats_update_connection_opened();
 	}
 
 	return ret;
@@ -1443,16 +1450,19 @@ int quic_connection_close(int sock)
 			return 0;
 		}
 
+		quic_stats_update_connection_close_failed();
 		return -errno;
 	}
 
 	if (!PART_OF_ARRAY(contexts, ctx)) {
+		quic_stats_update_connection_close_failed();
 		return -EINVAL;
 	}
 
 	(void)sock_obj_core_dealloc(ctx->sock);
 	quic_context_unref(ctx);
 
+	quic_stats_update_connection_closed();
 	return 0;
 }
 
@@ -1487,10 +1497,12 @@ int quic_stream_open(int connection_sock,
 			goto have_endpoint;
 		}
 
+		quic_stats_update_stream_open_failed();
 		return -errno;
 	}
 
 	if (!PART_OF_ARRAY(contexts, ctx)) {
+		quic_stats_update_stream_open_failed();
 		return -EINVAL;
 	}
 
@@ -1498,6 +1510,7 @@ int quic_stream_open(int connection_sock,
 	ep = SYS_SLIST_PEEK_HEAD_CONTAINER(&ctx->endpoints, ep, node);
 	if (ep == NULL) {
 		NET_DBG("No endpoint for connection context");
+		quic_stats_update_stream_open_failed();
 		return -ENOTCONN;
 	}
 
@@ -1530,6 +1543,7 @@ have_endpoint:
 			if (!quic_conn_init_setup(ep, ep->peer_cid, ep->peer_cid_len)) {
 				NET_DBG("[EP:%p/%d] Failed to setup initial crypto",
 					ep, quic_get_by_ep(ep));
+				quic_stats_update_stream_open_failed();
 				return -EIO;
 			}
 
@@ -1538,6 +1552,7 @@ have_endpoint:
 			if (ret != 0) {
 				NET_DBG("[EP:%p/%d] Failed to start client TLS: %d",
 					ep, quic_get_by_ep(ep), ret);
+				quic_stats_update_stream_open_failed();
 				return ret;
 			}
 		}
@@ -1548,11 +1563,13 @@ have_endpoint:
 					 K_MSEC(ep->handshake.timeout_ms));
 			if (ret != 0) {
 				NET_ERR("[EP:%p/%d] Handshake timeout", ep, quic_get_by_ep(ep));
+				quic_stats_update_stream_open_failed();
 				return -ETIMEDOUT;
 			}
 
 			if (!ep->handshake.completed) {
 				NET_ERR("[EP:%p/%d] Handshake failed", ep, quic_get_by_ep(ep));
+				quic_stats_update_stream_open_failed();
 				return -ECONNREFUSED;
 			}
 		}
@@ -1560,6 +1577,7 @@ have_endpoint:
 
 	stream = quic_get_stream(ctx);
 	if (stream == NULL) {
+		quic_stats_update_stream_open_failed();
 		return -ENOMEM;
 	}
 
@@ -1619,6 +1637,10 @@ out:
 		if (fd >= 0) {
 			zvfs_free_fd(fd);
 		}
+
+		quic_stats_update_stream_open_failed();
+	} else {
+		quic_stats_update_stream_opened();
 	}
 
 	return ret;
@@ -1632,16 +1654,19 @@ int quic_stream_close(int sock)
 				 (const struct fd_op_vtable *)&quic_stream_fd_op_vtable,
 				 ENOENT);
 	if (stream == NULL) {
+		quic_stats_update_stream_close_failed();
 		return -errno;
 	}
 
 	if (!PART_OF_ARRAY(contexts, stream->conn)) {
+		quic_stats_update_stream_close_failed();
 		return -EINVAL;
 	}
 
 	(void)sock_obj_core_dealloc(stream->sock);
 	(void)quic_stream_unref(stream);
 
+	quic_stats_update_stream_closed();
 	return 0;
 }
 
