@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig WIFI_ESP_AT
-	bool "Espressif AT Command support"
+	bool "Espressif AT Command support [DEPRECATED]"
 	default y
 	depends on DT_HAS_ESPRESSIF_ESP_AT_ENABLED
 	select MODEM
@@ -11,11 +11,16 @@ menuconfig WIFI_ESP_AT
 	select MODEM_IFACE_UART
 	select NET_L2_WIFI_MGMT
 	select WIFI_OFFLOAD
+	select DEPRECATED
 	imply UART_USE_RUNTIME_CONFIGURE
 	help
 	  Enable Espressif AT Command offloaded WiFi driver. It is supported on
 	  any serial capable platform and communicates with Espressif chips
 	  running ESP-AT firmware (https://github.com/espressif/esp-at).
+	  This offloaded wifi driver is deprecated and will be removed
+	  in a future release. It is currently scheduled to be removed in
+	  Zephyr 4.6. The reason for deprecation is that there is no
+	  maintainer for this driver.
 
 if WIFI_ESP_AT
 
