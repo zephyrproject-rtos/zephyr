@@ -40,7 +40,6 @@ config BT_HCI_HOST
 	bool
 	default y
 	depends on !BT_HCI_RAW
-	select POLL
 
 config BT_HCI_TX_STACK_SIZE
 	# NOTE: This value is derived from other symbols and should only be

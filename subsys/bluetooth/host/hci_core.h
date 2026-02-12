@@ -34,13 +34,6 @@
 /* SCO  settings */
 #define BT_VOICE_CVSD_16BIT     0x0060
 
-/* k_poll event tags */
-enum {
-	BT_EVENT_CMD_TX,
-	BT_EVENT_CONN_TX_QUEUE,
-	BT_EVENT_CONN_FREE_TX,
-};
-
 /* bt_dev flags: the flags defined here represent BT controller state */
 enum {
 	BT_DEV_ENABLE,
