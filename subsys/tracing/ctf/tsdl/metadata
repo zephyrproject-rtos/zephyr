@@ -162,6 +162,11 @@ event {
 };
 
 event {
+    name = end_call;
+    id = 0x20;
+};
+
+event {
 	name = semaphore_init;
 	id = 0x21;
 	fields := struct {
