@@ -73,7 +73,7 @@
 
 		pinctrl: pin-controller@8c11f {
 			compatible = "renesas,rx-pinctrl";
-			reg = <0x0008C11F 0x3c0>;
+			reg = <0x0008c11f 0x3c0>;
 			status = "okay";
 		};
 
@@ -528,6 +528,7 @@
 			clocks = <&pclkb MSTPB 30>;
 			status = "disabled";
 			channel = <1>;
+			dtc = <&dtc>;
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -539,10 +540,11 @@
 			compatible = "renesas,rx-sci";
 			interrupts = <222 1>, <223 1>, <224 1>, <225 1>;
 			interrupt-names = "eri", "rxi", "txi", "tei";
-			reg = <0x8A0a0 0x20>;
+			reg = <0x8a0a0 0x20>;
 			clocks = <&pclkb MSTPB 26>;
 			status = "disabled";
 			channel = <5>;
+			dtc = <&dtc>;
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -558,6 +560,7 @@
 			clocks = <&pclkb MSTPB 25>;
 			status = "disabled";
 			channel = <6>;
+			dtc = <&dtc>;
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -573,6 +576,7 @@
 			clocks = <&pclkb MSTPC 27>;
 			status = "disabled";
 			channel = <8>;
+			dtc = <&dtc>;
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -588,6 +592,7 @@
 			clocks = <&pclkb MSTPB 4>;
 			status = "disabled";
 			channel = <8>;
+			dtc = <&dtc>;
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -603,6 +608,7 @@
 			clocks = <&pclkb MSTPB 4>;
 			status = "disabled";
 			channel = <8>;
+			dtc = <&dtc>;
 
 			uart {
 				compatible = "renesas,rx-uart-sci";
@@ -796,8 +802,8 @@
 			cmt1: timer@88008 {
 				compatible = "renesas,rx-timer-cmt";
 				reg = <0x00088008 0x02>,
-				      <0x0008800A 0x02>,
-				      <0x0008800C 0x02>;
+				      <0x0008800a 0x02>,
+				      <0x0008800c 0x02>;
 				reg-names = "CMCR", "CMCNT", "CMCOR";
 				interrupts = <29 1>;
 				interrupt-names = "cmi";
@@ -819,7 +825,7 @@
 
 		ofsm: ofsm@ffffff80 {
 			compatible = "zephyr,memory-region";
-			reg = <0xFFFFFF80 0x0F>;
+			reg = <0xffffff80 0x0f>;
 			zephyr,memory-region = "OFSM";
 			status = "okay";
 		};
