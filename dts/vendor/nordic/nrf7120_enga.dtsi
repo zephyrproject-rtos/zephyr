@@ -96,7 +96,7 @@
 			zephyr,memory-region = "NRF_KMU_CRACEN_EXCHANGE";
 		};
 
-		nrf_mpc_region: memory@50041000 {
+		nrf_mpc: memory@50041000 {
 			#address-cells = <1>;
 			#size-cells = <1>;
 			compatible = "nordic,nrf-mpc";
