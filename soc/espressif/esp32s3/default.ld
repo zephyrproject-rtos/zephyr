@@ -130,7 +130,7 @@ ENTRY(CONFIG_KERNEL_ENTRY)
 #ifdef CONFIG_SOC_ENABLE_APPCPU
 _heap_sentry = procpu_dram_end;
 #else
-_heap_sentry = DRAM_RESERVED_START;
+_heap_sentry = DRAM_USER_END;
 #endif
 
 _libc_heap_size = _heap_sentry - _end;
@@ -243,7 +243,7 @@ SECTIONS
     *(.rtc.force_fast .rtc.force_fast.*)
     . = ALIGN(4);
     _rtc_force_fast_end = ABSOLUTE(.);
-  } GROUP_DATA_LINK_IN(rtc_slow_seg, ROMABLE_REGION)
+  } GROUP_DATA_LINK_IN(rtc_iram_seg, ROMABLE_REGION)
 
   /* RTC data section holds data marked with
    * RTC_DATA_ATTR, RTC_RODATA_ATTR attributes.

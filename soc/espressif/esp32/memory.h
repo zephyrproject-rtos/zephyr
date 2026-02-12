@@ -4,6 +4,8 @@
  */
 #pragma once
 
+#define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
+
 /* SRAM0 (192kB)  instruction cache+memory */
 #define SRAM0_IRAM_START    DT_REG_ADDR(DT_NODELABEL(sram0))
 #define SRAM0_CACHE_SIZE    0x10000
@@ -62,16 +64,19 @@
 #define SRAM1_DRAM_IRAM_CALC(addr_dram) (SRAM1_SIZE - (addr_dram - SRAM1_DRAM_START) + \
 					SRAM1_IRAM_START)
 
-/* Set bootloader segments size */
-#define BOOTLOADER_DRAM_SEG_LEN        0x8000
-#define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x4000
-#define BOOTLOADER_IRAM_SEG_LEN        0xa000
-
-/* Start of the lower region is determined by region size and the end of the higher region */
-#define BOOTLOADER_DRAM_SEG_START  0x3ffe8000
-#define BOOTLOADER_DRAM_SEG_END    (BOOTLOADER_DRAM_SEG_START + BOOTLOADER_DRAM_SEG_LEN)
+/* Bootloader segment start addresses (fixed by physical bank layout) */
+#define BOOTLOADER_DRAM_SEG_START        0x3ffe8000
 #define BOOTLOADER_IRAM_LOADER_SEG_START 0x40078000
-#define BOOTLOADER_IRAM_SEG_START  0x400a0000
+#define BOOTLOADER_IRAM_SEG_START        ALIGN_UP(SRAM1_IRAM_START, 0x400)
+
+/* Bootloader segment sizes (computed from bank boundaries) */
+#define BOOTLOADER_DRAM_SEG_LEN \
+	(SRAM1_DRAM_END - BOOTLOADER_DRAM_SEG_START)
+#define BOOTLOADER_DRAM_SEG_END \
+	(BOOTLOADER_DRAM_SEG_START + BOOTLOADER_DRAM_SEG_LEN)
+#define BOOTLOADER_IRAM_LOADER_SEG_LEN \
+	((SRAM0_IRAM_START + SRAM0_CACHE_SIZE) - BOOTLOADER_IRAM_LOADER_SEG_START)
+#define BOOTLOADER_IRAM_SEG_LEN         SRAM1_SIZE
 
 /* The `USER_IRAM_END` represents the end of staticaly allocated memory.
  * This address is where 2nd stage bootloader starts allocating memory.
