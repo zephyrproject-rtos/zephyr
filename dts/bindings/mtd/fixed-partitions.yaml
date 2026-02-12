@@ -6,6 +6,7 @@ description: |
     &flash0 {
             partitions {
                     compatible = "fixed-partitions";
+                    ranges;
                     #address-cells = <1>;
                     #size-cells = <1>;
 
@@ -13,10 +14,12 @@ description: |
                             label = "mcuboot";
                             reg = <0x00000000 0x0000C000>;
                     };
+
                     slot0_partition: partition@c000 {
                             label = "image-0";
                             reg = <0x0000C000 0x00076000>;
                     };
+
                     slot1_partition: partition@82000 {
                             label = "image-1";
                             reg = <0x00082000 0x00076000>;
@@ -49,7 +52,8 @@ description: |
   memory flash0's base address. That is, partition addresses
   are relative; physical addresses must be calculated by adding
   the start address of flash0 in memory to each partition's
-  reg address.
+  reg address - this is set by having the ``ranges;`` property, the parent flash node must also
+  use the ``ranges <>;`` property to correctly set the address range that child nodes will inherit.
 
 compatible: "fixed-partitions"
 
