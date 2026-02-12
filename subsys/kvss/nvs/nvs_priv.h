@@ -66,6 +66,18 @@ struct nvs_flash_wrt_stream {
 	struct nvs_flash_buf tail; /**< Optional tail buffer */
 };
 
+/**
+ * @brief NVS GC Write entry context
+ *
+ * Holds data being written during garbage collection.
+ */
+struct nvs_gc_write_entry {
+	uint16_t id;       /**< Entry ID */
+	const void *data;  /**< Pointer to data */
+	uint16_t len;      /**< Data length in bytes */
+	bool is_written;   /**< GC written flags for upper layers */
+};
+
 /* Allocation Table Entry */
 struct nvs_ate {
 	uint16_t id;	/* data id */
