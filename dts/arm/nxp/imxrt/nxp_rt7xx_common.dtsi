@@ -197,6 +197,15 @@
 		reg = <0xa5000 0x1000>;
 		status = "okay";
 	};
+
+	sema420: hwspinlock@206000 {
+		compatible = "nxp,sema42";
+		reg = <0x206000 0x1000>;
+		clocks = <&clkctl3 MCUX_SEMA42_CLK>;
+		#hwlock-cells = <1>;
+		num-locks = <64>;
+		status = "disabled";
+	};
 };
 
 &systick {
