@@ -6,7 +6,7 @@
 
 / {
 	board_power: resources {
-		compatible = "microchip,mec15xx-board-power";
+		compatible = "intel-rvp,board-power";
 		/* MCHP_GPIO_012 */
 		pwrg-gpios = <MCHP_GPIO_DECODE_012 GPIO_ACTIVE_HIGH>;
 		/* MCHP_GPIO_0054 */
