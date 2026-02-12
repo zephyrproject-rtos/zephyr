@@ -50,6 +50,12 @@ API Changes
 Removed APIs and options
 ========================
 
+* Bluetooth
+
+  * Audio
+
+    * All ``media_proxy_`` functions and definitions for Bluetooth have been removed.
+
 Deprecated APIs and options
 ===========================
 
@@ -67,6 +73,7 @@ New APIs and options
 
   * Audio
 
+    * ``bt_mcp_media_control_server_*`` API for controlling the local media player has been added.
     * :c:func:`bt_pacs_get_location`
     * :c:struct:`bt_pacs_cb`
     * :c:func:`bt_pacs_register_cb`
