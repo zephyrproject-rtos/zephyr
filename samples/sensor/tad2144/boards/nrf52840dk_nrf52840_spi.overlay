@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2024, TDK Invensense
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Example configuration of a TAD2144 device on spi2 compatible with an Arduino SPI bus.
+ */
+
+&pinctrl {
+    spi1_default_alt: spi1_default_alt {
+        group1 {
+            psels = <NRF_PSEL(SPIM_SCK, 1, 15)>,
+                    <NRF_PSEL(SPIM_MOSI, 1, 13)>,
+                    <NRF_PSEL(SPIM_MISO, 1, 14)>; 
+        };
+    };
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_default_alt>; 
+	pinctrl-names = "default", "sleep";
+    cs-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>; 
+
+	tad2144: tad2144@0 {
+		compatible = "invensense,tad2144";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+		int-gpios = <&arduino_header 2 GPIO_ACTIVE_HIGH>;
+	};
+};
+

@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2024, TDK Invensense
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Example configuration of a TAD2144 device on encoder interface.
+ */
+/ {
+    tad2144_encoder: tad2144_encoder {
+        compatible = "invensense,tad2144";
+        status = "okay";
+
+        miso-gpios = <&gpio1 14 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>; // encB
+        mosi-gpios = <&gpio1 13 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>; // encA
+        sck-gpios  = <&gpio1 15 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>; // encZ
+        cs-gpios   = <&gpio1 10 GPIO_ACTIVE_LOW>;
+    };
+};
+

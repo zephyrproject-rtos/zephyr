@@ -1,0 +1,20 @@
+# Copyright (c) 2025 TDK Invensense
+# SPDX-License-Identifier: Apache-2.0
+
+description: TAD2144 TMR Angle Sensor IC
+
+compatible: "invensense,tad2144"
+
+include: [i2c-device.yaml, "invensense,tad2144.yaml"]
+
+properties:
+  sa1-gpios:
+    type: phandle-array
+    description: |
+      Use for selecting the device address
+      
+  sa2-gpios:
+    type: phandle-array
+    description: |
+      Use for selecting the device address
+ 

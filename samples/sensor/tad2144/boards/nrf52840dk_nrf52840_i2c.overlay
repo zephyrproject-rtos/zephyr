@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2024, TDK Invensense
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *        sa1-gpios = <&arduino_header 8 GPIO_ACTIVE_HIGH>;
+ *       sa2-gpios = <&arduino_header 12 GPIO_ACTIVE_HIGH>;
+*     clock-frequency = <I2C_BITRATE_STANDARD>;
+ */
+
+&arduino_i2c {
+    status = "okay";   
+    clock-frequency = <400000>;
+    
+    tad2144: tad2144@65 {
+        compatible = "invensense,tad2144";
+        reg = <0x65>;
+        int-gpios = <&arduino_header 2 GPIO_ACTIVE_HIGH>;
+        sa1-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+        sa2-gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
+    };
+};
+
