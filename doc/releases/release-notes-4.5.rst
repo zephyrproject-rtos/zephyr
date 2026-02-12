@@ -50,6 +50,12 @@ API Changes
 Removed APIs and options
 ========================
 
+* Bluetooth
+
+  * Audio
+
+    * All ``media_proxy_`` functions and definitions for Bluetooth have been removed.
+
 Deprecated APIs and options
 ===========================
 
@@ -73,7 +79,16 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w)
 
-* :c:func:`lora_recv_duty_cycle_async`
+* Bluetooth
+
+  * Audio
+
+    * A set of ``bt_mcp_media_control_server_`` APIs for controlling the local media player has
+      been added.
+
+* LoRa
+
+  * :c:func:`lora_recv_duty_cycle_async`
 
 .. zephyr-keep-sorted-stop
 
