@@ -90,11 +90,8 @@ zephyr_library_sources(${pdl_drv_dir}/source/cy_ppc.c)
 zephyr_library_sources(${pdl_drv_dir}/source/cy_syspm_pdcm.c)
 zephyr_library_sources(${pdl_drv_dir}/source/cy_syspm_ppu.c)
 zephyr_library_sources(${pdl_drv_dir}/source/ppu_v1.c)
-zephyr_library_sources(${pdl_drv_dir}/source/cy_smif.c)
 
 zephyr_library_sources(${pdl_drv_dir}/source/cy_trigmux.c)
-zephyr_library_sources(${pdl_drv_dir}/source/cy_wdt.c)
-zephyr_library_sources(${pdl_drv_dir}/source/cy_tcpwm_pwm.c)
 
 zephyr_include_directories(${hal_dir}/include)
 zephyr_library_sources(${hal_dir}/source/mtb_hal_clock.c)
