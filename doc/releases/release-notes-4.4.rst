@@ -182,6 +182,12 @@ New APIs and options
       generating slot 1 images automatically in sysbuild projects when using MCUboot in
       direct-xip mode.
 
+    * Enhanced image-specific configuration file discovery to support board-specific
+      Kconfig fragments and devicetree overlays using :file:`<image>_<board>.conf`
+      and :file:`<image>_<board>.overlay` naming patterns in the application's
+      sysbuild directory. This aligns with the existing base image configuration
+      discovery and provides consistent file naming conventions.
+
 * CPUFreq
 
   * :kconfig:option:`CONFIG_CPU_FREQ_POLICY_PRESSURE`

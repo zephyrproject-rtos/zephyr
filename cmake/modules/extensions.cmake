@@ -2741,6 +2741,11 @@ endfunction()
 #                                    For example:
 #                                    SUFFIX fish, will look for <file>_fish.conf and use
 #                                    if found but will use <file>.conf if not found
+#                     PREFIX <name>: Prefix name to check for instead of the default name
+#                                    but with a fallback to the default name if not found.
+#                                    For example:
+#                                    PREFIX mcuboot, will look for mcuboot_<file>.conf and use
+#                                    if found but will use <file>.conf if not found
 #                     REQUIRED:      Option to indicate that the <list> specified by DTS or KCONF
 #                                    must contain at least one element, else an error will be raised.
 #
@@ -2755,7 +2760,7 @@ Please provide one of following: APPLICATION_ROOT, CONF_FILES")
     set(single_args APPLICATION_ROOT BASE_DIR)
   elseif(${ARGV0} STREQUAL CONF_FILES)
     set(options QUALIFIERS REQUIRED)
-    set(single_args BOARD BOARD_REVISION BOARD_QUALIFIERS DTS KCONF DEFCONFIG SUFFIX)
+    set(single_args BOARD BOARD_REVISION BOARD_QUALIFIERS DTS KCONF DEFCONFIG SUFFIX PREFIX)
     set(multi_args CONF_FILES NAMES)
   endif()
 
@@ -3069,6 +3074,64 @@ function(zephyr_file_suffix filename)
     # Use the filename with the suffix if it exists, if not then fall back to the default
     if(EXISTS "${new_filename}")
       list(APPEND tmp_new_list ${new_filename})
+    else()
+      list(APPEND tmp_new_list ${file})
+    endif()
+  endforeach()
+
+  # Update supplied variable if it differs
+  if(NOT "${${filename}}" STREQUAL "${tmp_new_list}")
+    set(${filename} "${tmp_new_list}" PARENT_SCOPE)
+  endif()
+endfunction()
+
+# Usage:
+#   zephyr_file_prefix(<filename> PREFIX <prefix>)
+#
+# Zephyr file add prefix extension.
+# This function will check the provided filename or list of filenames to see if they have a
+# `<prefix>_` prefix to them and if so, updates the supplied variable/list with the new
+# path/paths.
+#
+# <filename>: Variable (singular or list) of absolute path filename(s) which should be checked
+#             and updated if there is a filename which has the <prefix> present.
+# <prefix>: The prefix to test for and prepend to the provided filename.
+#
+# Returns an updated variable of absolute path(s)
+#
+function(zephyr_file_prefix filename)
+  set(single_args PREFIX)
+  cmake_parse_arguments(PFILE "" "${single_args}" "" ${ARGN})
+
+  if(NOT DEFINED PFILE_PREFIX OR NOT DEFINED ${filename})
+    # If the file prefix variable is not known then there is nothing to do, return early
+    return()
+  endif()
+
+  set(tmp_new_list)
+
+  foreach(file ${${filename}})
+    if("${file}" STREQUAL "")
+      # Skip checking empty variables
+      continue()
+    endif()
+
+    # Get the file path components
+    cmake_path(GET file PARENT_PATH file_dir)
+    cmake_path(GET file FILENAME file_name)
+
+    # Create new filename with prefix
+    set(new_filename "${PFILE_PREFIX}_${file_name}")
+
+    if(file_dir)
+      cmake_path(APPEND file_dir ${new_filename} OUTPUT_VARIABLE new_file_path)
+    else()
+      set(new_file_path ${new_filename})
+    endif()
+
+    # Use the filename with the prefix if it exists, if not then fall back to the default
+    if(EXISTS "${new_file_path}")
+      list(APPEND tmp_new_list ${new_file_path})
     else()
       list(APPEND tmp_new_list ${file})
     endif()

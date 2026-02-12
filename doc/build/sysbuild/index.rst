@@ -659,7 +659,12 @@ In the folder of the main application, create a Kconfig fragment or a devicetree
 overlay under a sysbuild folder, where the name of the file is
 :file:`<image>.conf` or :file:`<image>.overlay`, for example if your main
 application includes ``my_sample`` then create a :file:`sysbuild/my_sample.conf`
-file or a devicetree overlay :file:`sysbuild/my_sample.overlay`.
+file or a devicetree overlay :file:`sysbuild/my_sample.overlay`. Board-specific
+configuration files and overlays can also be created using the naming patterns
+:file:`<image>_<board>.conf` and :file:`<image>_<board>.overlay`, such as
+:file:`sysbuild/my_sample_nrf54h20dk_nrf54h20_cpuapp.conf` or
+:file:`sysbuild/my_sample_nrf54h20dk_nrf54h20_cpuapp.overlay`, which will be
+automatically discovered and applied when building for the corresponding board.
 
 A Kconfig fragment could look as:
 

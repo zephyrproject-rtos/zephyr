@@ -277,6 +277,11 @@ function(ExternalZephyrProject_Add)
                 NAMES ${ZBUILD_APPLICATION}.conf SUFFIX ${FILE_SUFFIX}
     )
 
+    # Check for board-specific conf files with image name prefix
+    zephyr_file(CONF_FILES ${sysbuild_image_conf_dir} KCONF sysbuild_image_conf_fragment
+                SUFFIX ${FILE_SUFFIX} PREFIX ${ZBUILD_APPLICATION}
+    )
+
     if(NOT (${ZBUILD_APPLICATION}_OVERLAY_CONFIG OR ${ZBUILD_APPLICATION}_EXTRA_CONF_FILE)
         AND EXISTS ${sysbuild_image_conf_fragment}
     )
@@ -286,22 +291,23 @@ function(ExternalZephyrProject_Add)
     endif()
 
     if(NOT ${ZBUILD_APPLICATION}_DTC_OVERLAY_FILE)
-      # Check for overlay named <ZBUILD_APPLICATION>.overlay.
-      set(sysbuild_image_dts_overlay_files ${sysbuild_image_conf_dir}/${ZBUILD_APPLICATION}.overlay)
+      # Check for overlay named <ZBUILD_APPLICATION>.overlay with optional FILE_SUFFIX.
+      zephyr_file(CONF_FILES ${sysbuild_image_conf_dir} DTS sysbuild_image_dts_overlay
+                  NAMES ${ZBUILD_APPLICATION}.overlay SUFFIX ${FILE_SUFFIX}
+      )
 
-      # Check for overlay named <ZBUILD_APPLICATION>_<FILE_SUFFIX>.overlay.
-      if(FILE_SUFFIX)
-        list(PREPEND sysbuild_image_dts_overlay_files ${sysbuild_image_conf_dir}/${ZBUILD_APPLICATION}_${FILE_SUFFIX}.overlay)
+      # Check for board-specific overlay files with image name prefix
+      if(NOT EXISTS ${sysbuild_image_dts_overlay})
+        zephyr_file(CONF_FILES ${sysbuild_image_conf_dir} DTS sysbuild_image_dts_overlay
+                    SUFFIX ${FILE_SUFFIX} PREFIX ${ZBUILD_APPLICATION}
+        )
       endif()
 
-      foreach(overlay_file ${sysbuild_image_dts_overlay_files})
-        if(EXISTS ${overlay_file})
-          set(${ZBUILD_APPLICATION}_DTC_OVERLAY_FILE ${overlay_file}
+      if(EXISTS ${sysbuild_image_dts_overlay})
+        set(${ZBUILD_APPLICATION}_DTC_OVERLAY_FILE ${sysbuild_image_dts_overlay}
             CACHE INTERNAL "devicetree overlay file defined by main application"
-          )
-          break()
-        endif()
-      endforeach()
+        )
+      endif()
     endif()
   endif()
 
