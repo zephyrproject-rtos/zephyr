@@ -9,6 +9,11 @@
 
 #define DT_DRV_COMPAT vnd_hwspinlock
 
+static struct k_spinlock *vnd_hwspinlock_get_spinlock(const struct device *dev, uint32_t id)
+{
+	return NULL;
+}
+
 static void vnd_hwspinlock_lock(const struct device *dev, uint32_t id)
 {
 }
@@ -23,6 +28,7 @@ static uint32_t vnd_hwspinlock_get_max_id(const struct device *dev)
 }
 
 static DEVICE_API(hwspinlock, vnd_hwspinlock_api) = {
+	.get_spinlock = vnd_hwspinlock_get_spinlock,
 	.lock = vnd_hwspinlock_lock,
 	.unlock = vnd_hwspinlock_unlock,
 	.get_max_id = vnd_hwspinlock_get_max_id,
