@@ -111,6 +111,15 @@
 	status = "okay";
 };
 
+&pllsai {
+	div-m = <25>;
+	mul-n = <429>;
+	div-q = <2>;
+	post-div-q = <19>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
 &rcc {
 	clocks = <&pll>;
 	clock-frequency = <DT_FREQ_M(216)>;
@@ -273,6 +282,21 @@ qsh_030_i2c: &i2c4 {
 					    STM32_FMC_SDRAM_RPIPE_0>;
 			st,sdram-timing = <2 6 4 6 2 2 2>;
 		};
+	};
+};
+
+&dfsdm {
+	status = "okay";
+};
+
+&pdm0 {
+	pinctrl-0 = <&dfsdm1_ckout_pd3
+		     &dfsdm1_datin1_pc3>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	channel@1 {
+		reg = <1>;
 	};
 };
 
