@@ -9,6 +9,11 @@
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
 / {
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "smc";
+	};
+
 	chosen {
 		zephyr,sram = &dram0;
 		zephyr,flash = &flash0;

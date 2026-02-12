@@ -4,3 +4,5 @@ board:
   vendor: arm
   socs:
   - name: a320
+    variants:
+    - name: smp

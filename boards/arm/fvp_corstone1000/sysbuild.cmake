@@ -205,6 +205,11 @@ set(TFM_CMAKE_ARGS
   -DCORSTONE1000_DSU_120T=TRUE
 )
 
+# Multi-core support: boot all 4 host CPUs (secondaries enter holding pen)
+if("${BOARD_QUALIFIERS}" MATCHES "/smp$")
+  list(APPEND TFM_CMAKE_ARGS -DENABLE_MULTICORE=TRUE)
+endif()
+
 # STOPGAP: Corstone1000 TF-M platform code has implicit int/pointer casts
 # and a missing declaration that GCC 14+ (Zephyr SDK 1.0+) treats as errors.
 # Other TF-M platforms don't have these issues. Remove this workaround once
@@ -312,6 +317,11 @@ set(TFA_EXTRA_ARGS
   PSA_FWU_SUPPORT=1
   NR_OF_IMAGES_IN_FW_BANK=4
 )
+
+# Multi-core PSCI support for secondary CPU boot
+if("${BOARD_QUALIFIERS}" MATCHES "/smp$")
+  list(APPEND TFA_EXTRA_ARGS ENABLE_MULTICORE=1)
+endif()
 
 # TF-A requires an AArch64 toolchain (aarch64-zephyr-elf from the Zephyr SDK)
 if(EXISTS "${ZEPHYR_SDK_INSTALL_DIR}/gnu/aarch64-zephyr-elf")
