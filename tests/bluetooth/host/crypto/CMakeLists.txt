@@ -15,6 +15,8 @@ add_library(mocks STATIC
             ${ZEPHYR_BASE}/subsys/logging/log_minimal.c
             ${ZEPHYR_BASE}/subsys/bluetooth/common/bt_str.c
             ${ZEPHYR_BASE}/subsys/bluetooth/host/uuid.c
+            ${ZEPHYR_BASE}/lib/utils/hex.c
+            ${ZEPHYR_BASE}/lib/uuid/uuid.c
 )
 
 target_include_directories(mocks PUBLIC
