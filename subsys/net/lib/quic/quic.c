@@ -234,8 +234,21 @@ static int quic_endpoint_send_connection_close(struct quic_endpoint *ep,
 					       uint64_t error_code,
 					       const char *reason);
 static int derive_application_secrets(struct quic_tls_context *ctx);
+static int quic_send_max_data(struct quic_endpoint *ep);
 static int quic_send_max_stream_data(struct quic_endpoint *ep,
 				     struct quic_stream *stream);
+static int quic_send_data_blocked(struct quic_endpoint *ep);
+static int quic_send_stream_data_blocked(struct quic_endpoint *ep,
+					 struct quic_stream *stream);
+static void quic_pto_work_handler(struct k_work *work);
+static void quic_reset_pto_timer(struct quic_endpoint *ep);
+static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
+				       enum quic_secret_level level,
+				       size_t payload_len);
+static int quic_send_packet(struct quic_endpoint *ep,
+			    enum quic_secret_level level,
+			    const uint8_t *payload,
+			    size_t payload_len);
 
 static int quic_get_by_ep(struct quic_endpoint *ep)
 {
@@ -2115,6 +2128,12 @@ static int quic_endpoint_unref(struct quic_endpoint *ep)
 		zsock_close(ep->sock);
 	}
 
+	ret = k_work_cancel_delayable(&ep->recovery.pto_work);
+	if (ret != 0) {
+		NET_DBG("[EP:%p/%d] PTO work cancel issue (%d)",
+			ep, quic_get_by_ep(ep), ret);
+	}
+
 	if (ep->is_closing_notified) {
 		NET_DBG("[EP:%p/%d] Already notified streams closing", ep,
 			quic_get_by_ep(ep));
@@ -2480,8 +2499,636 @@ static void quic_start_idle_timeout_checker(void)
 	k_work_reschedule(&idle_timeout_work, K_NO_WAIT);
 }
 
+static void quic_endpoint_negotiate_idle_timeout(struct quic_endpoint *ep)
+{
+	uint64_t peer_timeout_ms = ep->peer_params.max_idle_timeout;
+	uint64_t local_timeout_ms = ep->idle.local_max_idle_timeout_ms;
+
+	if (peer_timeout_ms == 0 && local_timeout_ms == 0) {
+		/* Both side disabled idle timeout */
+		ep->idle.negotiated_timeout_ms = 0;
+		ep->idle.idle_timeout_disabled = true;
+		NET_INFO("Idle timeout disabled for endpoint");
+		return;
+	}
+
+	/* Use minimum of both values. We do allow peer to disable idle
+	 * timeout (unless we also disabled it) so that peer cannot consume
+	 * our resources forever.
+	 */
+	if (peer_timeout_ms == 0) {
+		peer_timeout_ms = UINT64_MAX;
+	}
+
+	ep->idle.negotiated_timeout_ms = MIN(peer_timeout_ms, local_timeout_ms);
+	ep->idle.idle_timeout_disabled = false;
+
+	NET_DBG("[EP:%p/%d] Negotiated idle timeout: %" PRIu64 " ms",
+		ep, quic_get_by_ep(ep), ep->idle.negotiated_timeout_ms);
+}
+
+/**
+ * Convert encryption level to packet number space index (0, 1, or 2)
+ */
+static inline int level_to_pn_space(enum quic_secret_level level)
+{
+	switch (level) {
+	case QUIC_SECRET_LEVEL_INITIAL:
+		return 0;
+	case QUIC_SECRET_LEVEL_HANDSHAKE:
+		return 1;
+	case QUIC_SECRET_LEVEL_APPLICATION:
+	default:
+		return 2;
+	}
+}
+
+/* RFC 9002 Section 6.4: discard all in-flight packet state for a PN space.
+ * Must be called when Initial or Handshake keys are dropped.
+ */
+static void quic_recovery_discard_pn_space(struct quic_endpoint *ep, int pn_space)
+{
+	uint64_t discarded = 0;
+
+	for (int i = 0; i < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE; i++) {
+		struct quic_sent_pkt_info *info;
+
+		info = &ep->recovery.sent_pkts[pn_space][i];
+		if (info->in_flight) {
+			discarded += info->sent_bytes;
+			ep->recovery.bytes_in_flight -= info->sent_bytes;
+			info->in_flight = false;
+		}
+
+		/* Clear the slot entirely so the ring buffer is clean for any reuse */
+		info->has_stream_frame = false;
+	}
+
+	ep->recovery.sent_pkts_idx[pn_space] = 0;
+	ep->recovery.largest_acked[pn_space] = 0;
+
+	NET_DBG("[EP:%p/%d] Discarded pn_space %d, cleared %" PRIu64
+		" bytes, bytes_in_flight=%" PRIu64,
+		ep, quic_get_by_ep(ep), pn_space, discarded,
+		ep->recovery.bytes_in_flight);
+
+	/* Immediately cancel or reschedule the PTO timer to reflect the
+	 * updated bytes_in_flight, the timer was armed before the discard
+	 * and would otherwise fire based on stale state.
+	 */
+	quic_reset_pto_timer(ep);
+}
+
+static void quic_recovery_init(struct quic_endpoint *ep)
+{
+	/* RFC 9002 Section 6.2.2: Initialize RTT with initial estimate */
+	ep->recovery.smoothed_rtt = QUIC_INITIAL_RTT_US;
+	ep->recovery.rtt_var = QUIC_INITIAL_RTT_US / 2;
+	ep->recovery.min_rtt = UINT64_MAX;
+	ep->recovery.latest_rtt = 0;
+	ep->recovery.rtt_initialized = false;
+	ep->recovery.bytes_in_flight = 0;
+	ep->recovery.pto_count = 0;
+
+	/* Clear sent packet history */
+	for (int pn_space = 0; pn_space < 3; pn_space++) {
+		ep->recovery.sent_pkts_idx[pn_space] = 0;
+		ep->recovery.largest_acked[pn_space] = 0;
+
+		for (int i = 0; i < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE; i++) {
+			ep->recovery.sent_pkts[pn_space][i].in_flight = false;
+			ep->recovery.sent_pkts[pn_space][i].has_stream_frame = false;
+		}
+	}
+
+	k_work_init_delayable(&ep->recovery.pto_work, quic_pto_work_handler);
+
+	NET_DBG("[EP:%p/%d] Recovery state initialized, initial SRTT=%" PRIu64 " us",
+		ep, quic_get_by_ep(ep), ep->recovery.smoothed_rtt);
+}
+
+static void quic_recovery_on_packet_sent(struct quic_endpoint *ep,
+					 enum quic_secret_level level,
+					 uint64_t pkt_num,
+					 size_t sent_bytes,
+					 bool ack_eliciting)
+{
+	int pn_space = level_to_pn_space(level);
+	uint16_t idx = ep->recovery.sent_pkts_idx[pn_space];
+	struct quic_sent_pkt_info *info = &ep->recovery.sent_pkts[pn_space][idx];
+
+	/* If we're overwriting a packet still in flight, decrement bytes_in_flight */
+	if (info->in_flight) {
+		ep->recovery.bytes_in_flight -= info->sent_bytes;
+	}
+
+	/* Record this packet */
+	info->pkt_num = pkt_num;
+	info->sent_time = k_uptime_get();
+	info->sent_bytes = (uint16_t)MIN(sent_bytes, UINT16_MAX);
+	info->ack_eliciting = ack_eliciting;
+	info->in_flight = ack_eliciting; /* Only ack-eliciting packets count */
+	info->has_stream_frame  = false;
+
+	/* Update bytes in flight */
+	if (ack_eliciting) {
+		ep->recovery.bytes_in_flight += info->sent_bytes;
+		quic_reset_pto_timer(ep);
+	}
+
+	/* Advance ring buffer index */
+	ep->recovery.sent_pkts_idx[pn_space] =
+		(idx + 1) % CONFIG_QUIC_SENT_PKT_HISTORY_SIZE;
+
+	NET_DBG("[EP:%p/%d] Sent pkt pn=%" PRIu64 ", %zu bytes, ack_eliciting=%d, "
+		"bytes_in_flight=%" PRIu64,
+		ep, quic_get_by_ep(ep), pkt_num, sent_bytes, ack_eliciting,
+		ep->recovery.bytes_in_flight);
+}
+
+static void quic_stream_advance_tx_acked(struct quic_endpoint *ep,
+					 uint64_t stream_id,
+					 uint64_t acked_end)
+{
+	struct quic_stream *stream = quic_find_stream_by_id(ep, stream_id);
+	struct quic_stream_tx_buffer *tx;
+	uint64_t new_base;
+	size_t advance;
+
+	if (stream == NULL) {
+		return;
+	}
+
+	/* Only advance if this ACK extends the contiguous frontier.
+	 * Out-of-order ACKs (acked_end <= bytes_acked) are ignored;
+	 * the data they cover stays in the buffer until the gap is filled.
+	 */
+	if (acked_end <= stream->bytes_acked) {
+		return;
+	}
+
+	stream->bytes_acked = acked_end;
+
+	tx = &stream->tx_buf;
+	new_base = stream->bytes_acked;
+
+	if (new_base <= tx->base_offset) {
+		return; /* nothing new to release */
+	}
+
+	advance = (size_t)(new_base - tx->base_offset);
+	if (advance > tx->len) {
+		advance = tx->len; /* clamp, shouldn't happen */
+	}
+
+	memmove(tx->data, tx->data + advance, tx->len - advance);
+	tx->len -= advance;
+	tx->base_offset += advance;
+
+	/* Signal that the stream is now writable (TX buffer has space) */
+	k_poll_signal_raise(&stream->send.signal, 0);
+}
+
+/*
+ * Scatter-gather variant of quic_send_packet().
+ * Accepts a small frame header and a separate data buffer,
+ * assembling them into ep->crypto.tx_buffer internally.
+ * Avoids requiring a large frame[] on the caller's stack.
+ */
+static int quic_send_packet_sg(struct quic_endpoint *ep,
+			       enum quic_secret_level level,
+			       const uint8_t *hdr, size_t hdr_len,
+			       const uint8_t *data, size_t data_len)
+{
+	size_t plaintext_len = hdr_len + data_len;
+
+	if (plaintext_len > sizeof(ep->crypto.tx_buffer)) {
+		return -ENOBUFS;
+	}
+
+	/* Assemble plaintext directly into the encryption buffer.
+	 * This is safe: nothing else touches tx_buffer at this point.
+	 */
+	memcpy(ep->crypto.tx_buffer, hdr, hdr_len);
+	if (data_len > 0) {
+		memcpy(ep->crypto.tx_buffer + hdr_len, data, data_len);
+	}
+
+	/* Delegate to the internal _from_txbuf variant that skips the
+	 * redundant payload copy inside quic_send_packet().
+	 */
+	return quic_send_packet_from_txbuf(ep, level, plaintext_len);
+}
+
+static void quic_annotate_last_sent_stream(struct quic_endpoint *ep,
+					   enum quic_secret_level level,
+					   uint64_t stream_id,
+					   uint64_t stream_offset,
+					   uint16_t stream_data_len,
+					   bool stream_fin)
+{
+	int pn_space = level_to_pn_space(level);
+	uint16_t last_idx = (ep->recovery.sent_pkts_idx[pn_space] +
+			     CONFIG_QUIC_SENT_PKT_HISTORY_SIZE - 1) %
+		CONFIG_QUIC_SENT_PKT_HISTORY_SIZE;
+	struct quic_sent_pkt_info *info =
+		&ep->recovery.sent_pkts[pn_space][last_idx];
+
+	info->has_stream_frame  = true;
+	info->stream_id         = stream_id;
+	info->stream_offset     = stream_offset;
+	info->stream_data_len   = stream_data_len;
+	info->stream_fin        = stream_fin;
+}
+
+static void quic_retransmit_stream_frame(struct quic_endpoint *ep,
+					 const struct quic_sent_pkt_info *lost)
+{
+	/* Small fixed header, 1 + 8 + 8 + 8 bytes max */
+	uint8_t hdr[32];
+	size_t hdr_len = 0;
+	struct quic_stream_tx_buffer *tx;
+	struct quic_stream *stream;
+	uint8_t frame_type;
+	size_t buf_off;
+	int ret;
+
+	stream = quic_find_stream_by_id(ep, lost->stream_id);
+	if (stream == NULL) {
+		return;
+	}
+
+	tx = &stream->tx_buf;
+
+	if (lost->stream_offset < tx->base_offset) {
+		return; /* already ACKed */
+	}
+
+	buf_off = (size_t)(lost->stream_offset - tx->base_offset);
+	if (buf_off + lost->stream_data_len > tx->len) {
+		NET_WARN("[EP:%p/%d] Lost frame not in TX buffer",
+			 ep, quic_get_by_ep(ep));
+		return;
+	}
+
+	/* Build STREAM frame header into the small stack buffer */
+	frame_type = QUIC_FRAME_TYPE_STREAM_BASE | 0x04 | 0x02;
+	if (lost->stream_fin) {
+		frame_type |= 0x01;
+	}
+	hdr[hdr_len++] = frame_type;
+
+	ret = quic_put_len(&hdr[hdr_len], sizeof(hdr) - hdr_len, lost->stream_id);
+	if (ret != 0) {
+		return;
+	}
+	hdr_len += quic_get_varint_size(lost->stream_id);
+
+	ret = quic_put_len(&hdr[hdr_len], sizeof(hdr) - hdr_len, lost->stream_offset);
+	if (ret != 0) {
+		return;
+	}
+	hdr_len += quic_get_varint_size(lost->stream_offset);
+
+	ret = quic_put_len(&hdr[hdr_len], sizeof(hdr) - hdr_len, lost->stream_data_len);
+	if (ret != 0) {
+		return;
+	}
+	hdr_len += quic_get_varint_size(lost->stream_data_len);
+
+	/* Send: header from stack, payload directly from tx_buf */
+	ret = quic_send_packet_sg(ep, QUIC_SECRET_LEVEL_APPLICATION,
+				  hdr, hdr_len,
+				  &tx->data[buf_off], lost->stream_data_len);
+	if (ret == 0) {
+		quic_annotate_last_sent_stream(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					       lost->stream_id, lost->stream_offset,
+					       lost->stream_data_len, lost->stream_fin);
+	}
+}
+
+/* Maximum number of ACK ranges we track from a single ACK frame.
+ * The first range is always present; additional ranges come from
+ * gap+range pairs in the ACK frame (RFC 9000 Section 19.3).
+ */
+#define QUIC_MAX_ACK_RANGES 8
+
+struct quic_ack_range {
+	uint64_t start;  /* lowest acked pkt_num in this range (inclusive) */
+	uint64_t end;    /* highest acked pkt_num in this range (inclusive) */
+};
+
+static bool pkt_num_in_ack_ranges(uint64_t pkt_num,
+				  const struct quic_ack_range *ranges,
+				  int count)
+{
+	for (int i = 0; i < count; i++) {
+		if (pkt_num >= ranges[i].start && pkt_num <= ranges[i].end) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static void quic_detect_lost_packets(struct quic_endpoint *ep,
+				     int pn_space,
+				     uint64_t largest_ack)
+{
+	int64_t  now_ms = k_uptime_get();
+
+	/* RFC 9002 Section 6.1.2: time threshold in milliseconds.
+	 * loss_delay = max(K_TIME_THRESHOLD * SRTT, GRANULARITY)
+	 * QUIC_TIME_THRESHOLD = 1125 (represents 9/8 scaled by 1000)
+	 */
+	uint64_t srtt_ms    = ep->recovery.smoothed_rtt / 1000U;
+	uint64_t loss_delay = (srtt_ms * QUIC_TIME_THRESHOLD) / 1000U;
+	bool pkt_threshold;
+	bool time_threshold;
+
+	if (loss_delay < (QUIC_GRANULARITY_US / 1000U)) {
+		loss_delay = QUIC_GRANULARITY_US / 1000U;
+	}
+
+	for (int i = 0; i < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE; i++) {
+		struct quic_sent_pkt_info *info =
+			&ep->recovery.sent_pkts[pn_space][i];
+
+		if (!info->in_flight) {
+			continue;
+		}
+
+		/* Only consider packets older than largest_ack */
+		if (info->pkt_num >= largest_ack) {
+			continue;
+		}
+
+		pkt_threshold  = (largest_ack >= info->pkt_num + QUIC_PACKET_THRESHOLD);
+		time_threshold = ((now_ms - info->sent_time) >= (int64_t)loss_delay);
+
+		if (!pkt_threshold && !time_threshold) {
+			continue;
+		}
+
+		NET_DBG("[EP:%p/%d] Packet %" PRIu64 " declared lost "
+			"(pkt_threshold=%d time_threshold=%d age=%" PRId64
+			"ms delay=%" PRIu64 "ms)",
+			ep, quic_get_by_ep(ep), info->pkt_num, pkt_threshold,
+			time_threshold,
+			(long long)(now_ms - info->sent_time),
+			(unsigned long long)loss_delay);
+
+		ep->recovery.bytes_in_flight -= info->sent_bytes;
+		info->in_flight = false;
+
+		if (info->has_stream_frame) {
+			quic_retransmit_stream_frame(ep, info);
+		}
+	}
+}
+
+static void quic_recovery_on_ack_received(struct quic_endpoint *ep,
+					  enum quic_secret_level level,
+					  const struct quic_ack_range *ranges,
+					  int range_count,
+					  uint64_t ack_delay_us)
+{
+	int pn_space = level_to_pn_space(level);
+	int64_t now = k_uptime_get();
+	bool found_largest = false;
+	int64_t largest_sent_time = 0;
+	uint64_t largest_ack;
+
+	if (range_count <= 0) {
+		return;
+	}
+
+	/* The first range always contains the largest acknowledged PN */
+	largest_ack = ranges[0].end;
+
+	if (largest_ack > ep->recovery.largest_acked[pn_space]) {
+		ep->recovery.largest_acked[pn_space] = largest_ack;
+	}
+
+	/* Find and mark acked packets, calculate RTT from largest_ack */
+	for (int i = 0; i < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE; i++) {
+		struct quic_sent_pkt_info *info = &ep->recovery.sent_pkts[pn_space][i];
+
+		if (!info->in_flight) {
+			continue;
+		}
+
+		/* Only mark packets that fall within one of the ACK ranges */
+		if (!pkt_num_in_ack_ranges(info->pkt_num, ranges, range_count)) {
+			continue;
+		}
+
+		/* Decrement bytes in flight */
+		ep->recovery.bytes_in_flight -= info->sent_bytes;
+		info->in_flight = false;
+
+		/* Release ACKed data from TX buffer */
+		if (info->has_stream_frame) {
+			quic_stream_advance_tx_acked(
+				ep, info->stream_id,
+				info->stream_offset + info->stream_data_len);
+		}
+
+		/* Track the largest acked packet's send time for RTT */
+		if (info->pkt_num == largest_ack) {
+			found_largest = true;
+			largest_sent_time = info->sent_time;
+		}
+	}
+
+	/* Update RTT if we found the largest acked packet */
+	if (found_largest && largest_sent_time > 0) {
+		/* Calculate latest_rtt in microseconds */
+		int64_t rtt_ms = now - largest_sent_time;
+		uint64_t latest_rtt_us = (uint64_t)rtt_ms * 1000;
+
+		ep->recovery.latest_rtt = latest_rtt_us;
+
+		/* Update min_rtt */
+		if (latest_rtt_us < ep->recovery.min_rtt) {
+			ep->recovery.min_rtt = latest_rtt_us;
+		}
+
+		/* RFC 9002 Section 5.3: RTT estimation */
+		if (!ep->recovery.rtt_initialized) {
+			/* First RTT sample */
+			ep->recovery.smoothed_rtt = latest_rtt_us;
+			ep->recovery.rtt_var = latest_rtt_us / 2;
+			ep->recovery.rtt_initialized = true;
+		} else {
+			/* Adjust ack_delay, cannot exceed max_ack_delay after handshake */
+			uint64_t adjusted_rtt = latest_rtt_us;
+			uint64_t rtt_diff;
+
+			if (latest_rtt_us > ep->recovery.min_rtt + ack_delay_us) {
+				adjusted_rtt = latest_rtt_us - ack_delay_us;
+			}
+
+			/* RFC 9002 equations:
+			 * rtt_var = 3/4 * rtt_var + 1/4 * |smoothed_rtt - adjusted_rtt|
+			 * smoothed_rtt = 7/8 * smoothed_rtt + 1/8 * adjusted_rtt
+			 */
+
+			if (ep->recovery.smoothed_rtt > adjusted_rtt) {
+				rtt_diff = ep->recovery.smoothed_rtt - adjusted_rtt;
+			} else {
+				rtt_diff = adjusted_rtt - ep->recovery.smoothed_rtt;
+			}
+
+			ep->recovery.rtt_var = (3 * ep->recovery.rtt_var + rtt_diff) / 4;
+			ep->recovery.smoothed_rtt =
+				(7 * ep->recovery.smoothed_rtt + adjusted_rtt) / 8;
+		}
+
+		NET_DBG("[EP:%p/%d] RTT update: level %d, latest=%" PRIu64 " us, "
+			"smoothed=%" PRIu64 " us, var=%" PRIu64	" us, "
+			"min=%" PRIu64 " us, bytes_in_flight=%" PRIu64,
+			ep, quic_get_by_ep(ep), level,
+			ep->recovery.latest_rtt,
+			ep->recovery.smoothed_rtt,
+			ep->recovery.rtt_var,
+			ep->recovery.min_rtt,
+			ep->recovery.bytes_in_flight);
+	} else {
+		NET_DBG("[EP:%p/%d] ACK received: largest=%" PRIu64
+			", bytes_in_flight=%" PRIu64,
+			ep, quic_get_by_ep(ep), largest_ack, ep->recovery.bytes_in_flight);
+	}
+
+	/* Run loss detection after processing the ACK */
+	quic_detect_lost_packets(ep, pn_space, largest_ack);
+
+	/* Reset PTO timer aspackets are moving */
+	ep->recovery.pto_count = 0;
+	quic_reset_pto_timer(ep);
+}
+
+/* RFC 9002 specifies minimum PTO count of 3 */
+#define QUIC_MIN_PTO_COUNT 3
+
+static uint8_t quic_compute_max_pto_count(uint64_t pto_base_ms)
+{
+	uint8_t n;
+
+	/* Prevent division by zero */
+	if (pto_base_ms == 0ULL) {
+		return 0;
+	}
+
+	/* If base PTO already exceeds max, allow zero backoff */
+	if (pto_base_ms >= CONFIG_QUIC_MAX_PTO_TIMEOUT_MS) {
+		return 0;
+	}
+
+	/* Compute the maximum PTO count such that:
+	 *   n = floor(log2(max_timeout_ms / pto_base_ms))
+	 */
+	n = LOG2(CONFIG_QUIC_MAX_PTO_TIMEOUT_MS / pto_base_ms);
+
+	return MAX(QUIC_MIN_PTO_COUNT, n);
+}
+
+/* RFC 9002 Section 6.2.1 */
+static uint64_t quic_compute_pto_ms(struct quic_endpoint *ep)
+{
+	uint64_t srtt_ms = ep->recovery.smoothed_rtt / 1000U;
+	uint64_t rttvar_ms = ep->recovery.rtt_var / 1000U;
+	uint64_t pto;
+
+	/* TODO: do not add ACK_DELAY in handshake phase */
+	pto = srtt_ms + MAX(4U * rttvar_ms, 1U) + QUIC_MAX_ACK_DELAY_MS;
+	ep->recovery.max_pto_count = quic_compute_max_pto_count(pto);
+
+	/* Exponential backoff */
+	pto <<= ep->recovery.pto_count;
+
+	/* Cap to a sensible maximum (e.g., 10 s) */
+	return MIN(pto, (uint64_t)CONFIG_QUIC_MAX_PTO_TIMEOUT_MS);
+}
+
+static void quic_reset_pto_timer(struct quic_endpoint *ep)
+{
+	if (ep->recovery.bytes_in_flight == 0) {
+		k_work_cancel_delayable(&ep->recovery.pto_work);
+		return;
+	}
+
+	k_work_reschedule(&ep->recovery.pto_work,
+			  K_MSEC(quic_compute_pto_ms(ep)));
+}
+
+/* Send a PING to elicit an ACK, or retransmit the oldest unACKed
+ * stream frame if one is available. RFC 9002 Section 6.2.4.
+ */
+static void quic_pto_probe(struct quic_endpoint *ep)
+{
+	int pn_space = level_to_pn_space(QUIC_SECRET_LEVEL_APPLICATION);
+
+	/* Find the oldest in-flight stream frame */
+	struct quic_sent_pkt_info *oldest = NULL;
+
+	for (int i = 0; i < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE; i++) {
+		struct quic_sent_pkt_info *info =
+			&ep->recovery.sent_pkts[pn_space][i];
+
+		if (!info->in_flight || !info->has_stream_frame) {
+			continue;
+		}
+
+		if (oldest == NULL || info->sent_time < oldest->sent_time) {
+			oldest = info;
+		}
+	}
+
+	if (oldest != NULL) {
+		NET_DBG("[EP:%p/%d] PTO: retransmitting oldest stream frame pn=%" PRIu64,
+			ep, quic_get_by_ep(ep), oldest->pkt_num);
+		quic_retransmit_stream_frame(ep, oldest);
+	} else {
+		/* No stream frame to retransmit, send a PING to keep the
+		 * connection alive and elicit an ACK.
+		 */
+		uint8_t ping = QUIC_FRAME_TYPE_PING;
+
+		NET_DBG("[EP:%p/%d] PTO: sending PING probe", ep, quic_get_by_ep(ep));
+		quic_send_packet(ep, QUIC_SECRET_LEVEL_APPLICATION, &ping, 1);
+	}
+}
+
+static void quic_pto_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct quic_endpoint *ep = CONTAINER_OF(dwork, struct quic_endpoint,
+						recovery.pto_work);
+
+	NET_DBG("[EP:%p/%d] PTO fired (count=%u)", ep, quic_get_by_ep(ep),
+		ep->recovery.pto_count);
+
+	ep->recovery.pto_count++;
+
+	/* Drop connection if PTO count exceeds a threshold (e.g. 10 retries) */
+	if (ep->recovery.pto_count > ep->recovery.max_pto_count) {
+		NET_DBG("[EP:%p/%d] Connection dropped due to excessive PTO "
+			"timeouts (was %d, max %d)", ep, quic_get_by_ep(ep),
+			(int)ep->recovery.pto_count,
+			(int)ep->recovery.max_pto_count);
+		quic_endpoint_unref(ep);
+		return;
+	}
+
+	quic_pto_probe(ep);
+
+	/* Reschedule with backoff for the next probe */
+	quic_reset_pto_timer(ep);
+}
+
 static void quic_endpoint_init_idle_timeout(struct quic_endpoint *ep,
-                                            uint64_t local_timeout_ms)
+					    uint64_t local_timeout_ms)
 {
 	ep->idle.last_rx_time = k_uptime_get();
 	ep->idle.local_max_idle_timeout_ms = local_timeout_ms;
@@ -2531,13 +3178,15 @@ static void quic_endpoint_init(struct quic_endpoint *ep)
 	 */
 	ep->tx_fc.max_data = 0;
 	ep->tx_fc.bytes_sent = 0;
-	ep->rx_fc.max_data = 1048576; /* 1 MB default for receiving */
+	ep->rx_fc.max_data = CONFIG_QUIC_INITIAL_MAX_DATA;
 	ep->rx_fc.bytes_received = 0;
-	ep->rx_fc.max_data_sent = 0;
+	ep->rx_fc.max_data_sent = CONFIG_QUIC_INITIAL_MAX_DATA;
+	ep->rx_fc.need_window_update = false;
 	ep->peer_params.parsed = false;
 
 	quic_endpoint_init_idle_timeout(ep, QUIC_DEFAULT_IDLE_TIMEOUT_MS);
 	quic_endpoint_init_handshake_timeout(ep, QUIC_DEFAULT_HANDSHAKE_TIMEOUT_MS);
+	quic_recovery_init(ep);
 
 	k_mutex_init(&ep->pending.lock);
 	k_sem_init(&ep->handshake.sem, 0, 1);
@@ -2970,15 +3619,28 @@ static struct quic_stream *quic_stream_init(struct quic_stream *stream)
 	k_poll_event_init(&stream->recv.event, K_POLL_TYPE_SIGNAL,
 			  K_POLL_MODE_NOTIFY_ONLY, &stream->recv.signal);
 
+	/* Signal for TX buffer ready (writable) */
+	k_poll_signal_init(&stream->send.signal);
+
 	memset(&stream->rx_buf, 0, sizeof(stream->rx_buf));
 	stream->rx_buf.size = sizeof(stream->rx_buf.data);
 	stream->rx_buf.fin_received = false;
+
+	memset(&stream->tx_buf, 0, sizeof(stream->tx_buf));
+	stream->tx_buf.base_offset = 0;
 
 	/* Initialize flow control with default values.
 	 * This should be updated when peer transport parameters are received.
 	 */
 	stream->remote_max_data = 16384;
 	stream->bytes_sent = 0;
+	stream->bytes_acked = 0;
+
+	/* RX flow control. Initialize to what we advertise in transport params */
+	stream->local_max_data = MIN(CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL,
+				     sizeof(stream->rx_buf.data));
+	stream->local_max_data_sent = CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL;
+	stream->bytes_received = 0;
 
 	return stream;
 }
@@ -3499,6 +4161,11 @@ static int quic_endpoint_send_connection_close(struct quic_endpoint *ep,
 		level = QUIC_SECRET_LEVEL_INITIAL;
 	}
 
+	/* Cancel any PTO work to avoid unnecessary retransmissions after
+	 * connection close.
+	 */
+	k_work_cancel_delayable(&ep->recovery.pto_work);
+
 	return quic_send_packet(ep, level, frame, pos);
 }
 
@@ -3773,6 +4440,9 @@ static int quic_handshake_complete(struct quic_endpoint *ep)
 		}
 	}
 
+	quic_recovery_discard_pn_space(ep, level_to_pn_space(QUIC_SECRET_LEVEL_INITIAL));
+	quic_recovery_discard_pn_space(ep, level_to_pn_space(QUIC_SECRET_LEVEL_HANDSHAKE));
+
 	quic_endpoint_handshake_complete(ep);
 
 	NET_DBG("[EP:%p/%d] QUIC handshake complete", ep, quic_get_by_ep(ep));
@@ -3943,8 +4613,9 @@ static int quic_stream_receive_data(struct quic_stream *stream,
 				    size_t len,
 				    bool is_fin)
 {
-	struct quic_stream_buffer *buf = &stream->rx_buf;
+	struct quic_stream_rx_buffer *buf = &stream->rx_buf;
 	struct quic_endpoint *ep = stream->ep;
+	bool progress = true;
 	size_t available;
 	int ret = 0;
 
@@ -3952,15 +4623,52 @@ static int quic_stream_receive_data(struct quic_stream *stream,
 
 	/* For now, just log and store if this is in-order data */
 	if (offset != buf->read_offset + (buf->tail - buf->head)) {
-		/* Out of order, need reassembly logic */
-		/* For now, drop or buffer for later */
-		NET_DBG("[%p] Out of order data: expected %llu, got %llu", stream,
-			buf->read_offset + (buf->tail - buf->head), offset);
-		return -EAGAIN;
+		uint64_t expected = buf->read_offset + (buf->tail - buf->head);
+
+		if (offset < expected) {
+			/* Duplicate, already have this data, silently ignore */
+			NET_DBG("[ST:%p/%d] Duplicate data at offset %" PRIu64 ", ignoring",
+				stream, quic_get_by_stream(stream), offset);
+			goto unlock;
+		}
+
+		/* offset > expected: out-of-order, stash it if we have room */
+		if (buf->ooo_count < ARRAY_SIZE(buf->ooo) &&
+		    len <= sizeof(buf->ooo[0].data)) {
+			/* Check not already stored */
+			bool already_stored = false;
+
+			for (int i = 0; i < buf->ooo_count; i++) {
+				if (buf->ooo[i].offset == offset) {
+					already_stored = true;
+					break;
+				}
+			}
+
+			if (!already_stored) {
+				struct quic_ooo_segment *seg = &buf->ooo[buf->ooo_count++];
+
+				seg->offset = offset;
+				seg->len = (uint16_t)len;
+				memcpy(seg->data, data, len);
+
+				NET_DBG("[ST:%p/%d] Stored OOO segment: offset=%" PRIu64
+					" len=%zu slots_used=%u",
+					stream, quic_get_by_stream(stream), offset, len,
+					buf->ooo_count);
+			}
+		} else {
+			NET_DBG("[ST:%p/%d] OOO queue full, dropping offset=%" PRIu64,
+				stream, quic_get_by_stream(stream), offset);
+		}
+
+		ret = -EAGAIN;
+		goto unlock;
 	}
 
-	NET_DBG("[%p] Stream %llu: received %zu bytes at offset %llu%s", stream,
-		stream->id, len, offset, is_fin ? " (FIN)" : "");
+	NET_DBG("[ST:%p/%d] Stream %" PRIu64 ": received %zu bytes at offset %" PRIu64 "%s",
+		stream, quic_get_by_stream(stream), stream->id, len, offset,
+		is_fin ? " (FIN)" : "");
 
 	if (IS_ENABLED(CONFIG_QUIC_TXRX_DEBUG)) {
 		NET_HEXDUMP_DBG(data, MIN(len, 64), "Stream data (first 64 bytes):");
@@ -3969,9 +4677,39 @@ static int quic_stream_receive_data(struct quic_stream *stream,
 	/* Check buffer space */
 	available = buf->size - buf->tail;
 	if (len > available) {
-		NET_DBG("[%p] Stream buffer full, dropping %zu bytes",
-			stream, len - available);
-		len = available;
+		/* Attempt to compact the buffer to reclaim space from already-read data */
+		if (buf->head > 0) {
+			size_t unread = buf->tail - buf->head;
+
+			memmove(buf->data, &buf->data[buf->head], unread);
+			buf->tail = unread;
+			buf->head = 0;
+
+			/* Recalculate available space */
+			available = buf->size - buf->tail;
+		}
+
+		/* If it's still full, the peer exceeded our flow control
+		 * window which is a protocol violation (RFC 9000, Section 4.1).
+		 * We can close the connection now.
+		 */
+		if (len > available) {
+			NET_ERR("[ST:%p/%d] Stream buffer overflow: need %zu, "
+				"have %zu (flow control violated)",
+				stream, quic_get_by_stream(stream),
+				len, available);
+
+			k_mutex_unlock(&stream->cond.data_available);
+
+			if (ep != NULL) {
+				quic_endpoint_send_connection_close(
+					ep,
+					QUIC_ERROR_FLOW_CONTROL_ERROR,
+					"stream data exceeds rx buffer");
+			}
+
+			return -EPROTO;
+		}
 	}
 
 	/* Copy data to buffer */
@@ -3982,6 +4720,43 @@ static int quic_stream_receive_data(struct quic_stream *stream,
 	stream->bytes_received += len;
 	if (ep != NULL) {
 		ep->rx_fc.bytes_received += len;
+	}
+
+	/* Flow control window updates are sent when the application consumes
+	 * data via recv(). This allows proper backpressure, if the app can't
+	 * keep up, we don't tell the peer to send more data.
+	 */
+
+	/* Replay: keep delivering OOO segments that are now in order */
+	while (progress && buf->ooo_count > 0) {
+		uint64_t next;
+		size_t avail;
+		size_t copy;
+
+		progress = false;
+		next = buf->read_offset + (buf->tail - buf->head);
+
+		for (int i = 0; i < buf->ooo_count; i++) {
+			struct quic_ooo_segment *seg = &buf->ooo[i];
+
+			if (seg->offset != next) {
+				continue;
+			}
+
+			/* This segment is now in order, so deliver it */
+			avail = buf->size - buf->tail;
+			copy  = MIN((size_t)seg->len, avail);
+
+			memcpy(&buf->data[buf->tail], seg->data, copy);
+			buf->tail += copy;
+
+			/* Remove from queue by replacing with last entry */
+			buf->ooo[i] = buf->ooo[buf->ooo_count - 1];
+			buf->ooo_count--;
+
+			progress = true;
+			break;
+		}
 	}
 
 	if (is_fin) {
@@ -4100,9 +4875,13 @@ static struct quic_stream *quic_create_stream_from_peer(struct quic_context *ctx
 	}
 
 	/* Set local limits for receiving data on this stream */
-	stream->local_max_data = CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL;
+	stream->local_max_data = MIN(CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL,
+				     sizeof(stream->rx_buf.data));
 	stream->bytes_received = 0;
 	stream->local_max_data_sent = stream->local_max_data;
+
+	stream->tx_buf.base_offset = 0;
+	stream->tx_buf.len = 0;
 
 	quic_stats_update_stream_opened();
 
@@ -4775,7 +5554,8 @@ static int process_short_header(struct quic_endpoint *ep,
 	ret = handle_crypto_level_packet(target_ep, QUIC_SECRET_LEVEL_APPLICATION,
 					 decrypted.payload, decrypted.payload_len, len,
 					 &ack_only);
-	if (ret < 0) {
+	/* EAGAIN indicates out-of-order data. Packet was valid, fall through to ACK */
+	if (ret < 0 && ret != -EAGAIN) {
 		NET_DBG("Short header packet handling failure (%d)", ret);
 		quic_endpoint_unref(target_ep);
 		goto out;

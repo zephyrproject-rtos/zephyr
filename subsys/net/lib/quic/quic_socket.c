@@ -586,6 +586,35 @@ static int quic_ctx_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 	return 0;
 }
 
+static bool quic_stream_can_send(struct quic_stream *stream)
+{
+	struct quic_endpoint *ep = stream->ep;
+	size_t tx_free = sizeof(stream->tx_buf.data) - stream->tx_buf.len;
+
+	/* Check TX retransmit buffer space. We need meaningful space, not just 1 byte */
+	if (tx_free < 64) {
+		return false;
+	}
+
+	/* Check flow control window */
+	if (ep == NULL || !ep->crypto.application.initialized) {
+		return false;
+	}
+
+	/* Use signed comparison to guard against underflow if limits were
+	 * ever violated, treat any negative headroom as zero (blocked).
+	 */
+	if (stream->bytes_sent >= stream->remote_max_data) {
+		return false;
+	}
+
+	if (ep->tx_fc.bytes_sent >= ep->tx_fc.max_data) {
+		return false;
+	}
+
+	return true;
+}
+
 static int quic_stream_poll_prepare(struct quic_stream *stream,
 				    struct zsock_pollfd *pfd,
 				    struct k_poll_event **pev,
@@ -613,7 +642,24 @@ static int quic_stream_poll_prepare(struct quic_stream *stream,
 	}
 
 	if (pfd->events & ZSOCK_POLLOUT) {
-		ret = -EALREADY; /* Assume always ready to send for simplicity */
+		if (*pev == pev_end) {
+			return -ENOMEM;
+		}
+
+		/* Reset the signal before polling as we only want to wake
+		 * on NEW events, not stale signals from previous ACKs
+		 */
+		k_poll_signal_reset(&stream->send.signal);
+
+		(*pev)->obj = &stream->send.signal;
+		(*pev)->type = K_POLL_TYPE_SIGNAL;
+		(*pev)->mode = K_POLL_MODE_NOTIFY_ONLY;
+		(*pev)->state = K_POLL_STATE_NOT_READY;
+		(*pev)++;
+
+		NET_DBG("[%p] POLLOUT prepare: tx_free=%zu, can_send=%d",
+			stream, sizeof(stream->tx_buf.data) - stream->tx_buf.len,
+			quic_stream_can_send(stream));
 	}
 
 	return ret;
@@ -621,6 +667,10 @@ static int quic_stream_poll_prepare(struct quic_stream *stream,
 
 static bool quic_stream_is_eof(struct quic_stream *stream)
 {
+	if (stream->ep == NULL) {
+		return true;
+	}
+
 	if (stream->rx_buf.head == stream->rx_buf.tail &&
 	    stream->rx_buf.fin_received) {
 		return true;
@@ -633,8 +683,6 @@ static int quic_stream_poll_update(struct quic_stream *stream,
 				   struct zsock_pollfd *pfd,
 				   struct k_poll_event **pev)
 {
-	ARG_UNUSED(stream);
-
 	if (pfd->events & ZSOCK_POLLIN) {
 		if (((*pev)->state != K_POLL_STATE_NOT_READY &&
 		     (*pev)->state != K_POLL_STATE_CANCELLED) ||
@@ -642,6 +690,27 @@ static int quic_stream_poll_update(struct quic_stream *stream,
 			pfd->revents |= ZSOCK_POLLIN;
 		}
 		(*pev)++;
+	}
+
+	if (pfd->events & ZSOCK_POLLOUT) {
+		bool can_send = quic_stream_can_send(stream);
+
+		NET_DBG("[%p] POLLOUT update: state=%d, can_send=%d, tx_free=%zu",
+			stream, (*pev)->state, can_send,
+			sizeof(stream->tx_buf.data) - stream->tx_buf.len);
+
+		/* Only report POLLOUT if we can actually send data.
+		 * The signal being raised just means space became available at some
+		 * point, but we need to verify current state.
+		 */
+		if (can_send) {
+			pfd->revents |= ZSOCK_POLLOUT;
+		}
+		(*pev)++;
+	}
+
+	if (stream->ep == NULL) {
+		pfd->revents |= ZSOCK_POLLHUP;
 	}
 
 	return 0;
@@ -684,6 +753,71 @@ static int quic_stream_ioctl_vmeth(void *obj, unsigned int request, va_list args
 	return 0;
 }
 
+/**
+ * Send a STREAM frame with the FIN bit set and zero payload.
+ * This signals to the peer that we have finished sending on this stream.
+ * RFC 9000 Section 19.8: STREAM frame with FIN bit = 1 and Length = 0.
+ */
+static int quic_send_stream_fin(struct quic_stream *stream)
+{
+	uint8_t frame[32]; /* 1 type + max 8 stream_id + max 8 offset + max 2 len */
+	size_t frame_len = 0;
+	int ret;
+
+	if (stream->ep == NULL) {
+		NET_DBG("[ST:%p/%d] Cannot send FIN: no endpoint",
+			stream, quic_get_by_stream(stream));
+		return -ENOTCONN;
+	}
+
+	/*
+	 * STREAM frame type bits:
+	 *   0x04 (OFF) = offset field present
+	 *   0x02 (LEN) = length field present
+	 *   0x01 (FIN) = final frame for this stream
+	 */
+	frame[frame_len++] = QUIC_FRAME_TYPE_STREAM_BASE | 0x04 | 0x02 | 0x01;
+
+	/* Stream ID */
+	ret = quic_put_len(&frame[frame_len], sizeof(frame) - frame_len, stream->id);
+	if (ret != 0) {
+		return -EINVAL;
+	}
+	frame_len += quic_get_varint_size(stream->id);
+
+	/* Offset = bytes_sent (the final size of the stream) */
+	ret = quic_put_len(&frame[frame_len], sizeof(frame) - frame_len, stream->bytes_sent);
+	if (ret != 0) {
+		return -EINVAL;
+	}
+	frame_len += quic_get_varint_size(stream->bytes_sent);
+
+	/* Length = 0 (no data payload, FIN only) */
+	ret = quic_put_len(&frame[frame_len], sizeof(frame) - frame_len, 0ULL);
+	if (ret != 0) {
+		return -EINVAL;
+	}
+	frame_len += quic_get_varint_size(0ULL);
+
+	ret = quic_send_packet(stream->ep, QUIC_SECRET_LEVEL_APPLICATION,
+			       frame, frame_len);
+	if (ret < 0) {
+		NET_DBG("[ST:%p/%d] Failed to send FIN for stream %" PRIu64 " : %d",
+			stream, quic_get_by_stream(stream), stream->id, ret);
+		return ret;
+	}
+
+	/* Annotate the packet for loss recovery / retransmission tracking */
+	quic_annotate_last_sent_stream(stream->ep, QUIC_SECRET_LEVEL_APPLICATION,
+				       stream->id, stream->bytes_sent,
+				       0 /* data_len */, true /* stream_fin */);
+
+	NET_DBG("[ST:%p/%d] Sent FIN for stream %" PRIu64 " at offset %" PRIu64,
+		stream, quic_get_by_stream(stream), stream->id, stream->bytes_sent);
+
+	return 0;
+}
+
 static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 				size_t buf_len, int32_t timeout)
 {
@@ -691,8 +825,12 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 	size_t stream_window;
 	size_t conn_window;
 	size_t available_window;
+	struct quic_stream_tx_buffer *tx;
+	size_t tx_free;
+	uint64_t this_offset;
 	size_t to_send;
 	uint8_t frame[CONFIG_QUIC_TX_BUFFER_SIZE];
+	size_t max_payload_size;
 	size_t frame_len = 0;
 	uint8_t frame_type;
 	int state;
@@ -700,14 +838,14 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 
 	ARG_UNUSED(timeout);
 
+	ep = stream->ep;
+
 	/* Check if stream has a valid endpoint with crypto context */
-	if (stream->ep == NULL) {
+	if (ep == NULL) {
 		NET_DBG("[ST:%p/%d] No endpoint with crypto context",
 			stream, quic_get_by_stream(stream));
 		return -ENOTCONN;
 	}
-
-	ep = stream->ep;
 
 	/* Check if the stream is in a state that allows sending */
 	state = quic_stream_get_state(stream);
@@ -720,24 +858,93 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 	/* Handle QUIC Flow Control.
 	 * We cannot send more data than the peer's MAX_STREAM_DATA limit
 	 * or the connection-level MAX_DATA limit.
+	 * Guard against unsigned underflow if limits are somehow breached.
 	 */
-	stream_window = stream->remote_max_data - stream->bytes_sent;
-	conn_window = ep->tx_fc.max_data - ep->tx_fc.bytes_sent;
+	if (stream->bytes_sent >= stream->remote_max_data) {
+		stream_window = 0;
+	} else {
+		stream_window = stream->remote_max_data - stream->bytes_sent;
+	}
+
+	if (ep->tx_fc.bytes_sent >= ep->tx_fc.max_data) {
+		conn_window = 0;
+	} else {
+		conn_window = ep->tx_fc.max_data - ep->tx_fc.bytes_sent;
+	}
+
 	available_window = MIN(stream_window, conn_window);
 
 	if (available_window == 0) {
-		/* Window is full, return EAGAIN */
-		NET_DBG("[%p] Window is full (stream=%zu, conn=%zu)",
-			stream, stream_window, conn_window);
+		/* Window is full, send blocked frame to request more credit */
+		if (stream_window == 0) {
+			quic_send_stream_data_blocked(ep, stream);
+		}
+
+		if (conn_window == 0) {
+			quic_send_data_blocked(ep);
+		}
+
+		NET_DBG("[ST:%p/%d] Window is full (stream=%zu, conn=%zu)",
+			stream, quic_get_by_stream(stream), stream_window, conn_window);
 		return -EAGAIN;
 	}
 
-	to_send = MIN(buf_len, available_window);
+	max_payload_size = MIN(sizeof(frame), ep->max_tx_payload_size);
 
-	/* Limit to what fits in frame buffer (minus header overhead) */
-	if (to_send > sizeof(frame) - 32) {
-		to_send = sizeof(frame) - 32;
+	/* Subtract QUIC packet-level overhead from max_payload_size.
+	 * max_tx_payload_size is the max UDP payload (MTU - IP - UDP headers),
+	 * but the QUIC packet adds:
+	 *   - Short header: 1 (first byte) + my_cid_len + 4 (max PN length)
+	 *   - AEAD authentication tag: 16 bytes
+	 * Additionally, the STREAM frame has its own header:
+	 *   - 1 (frame type) + varint(stream_id) + varint(offset) + varint(len)
+	 */
+	{
+		size_t quic_overhead = 1 + ep->my_cid_len + 4 + QUIC_AEAD_TAG_LEN;
+		size_t stream_hdr = 1 + quic_get_varint_size(stream->id) +
+				    quic_get_varint_size(stream->bytes_sent);
+
+		/* Reserve space for the length varint too (estimate 2 bytes) */
+		stream_hdr += 2;
+
+		if (max_payload_size > quic_overhead + stream_hdr) {
+			max_payload_size -= quic_overhead + stream_hdr;
+		} else {
+			max_payload_size = 0;
+		}
 	}
+
+	/* Limit to what fits in frame buffer */
+	to_send = MIN(buf_len, available_window);
+	to_send = MIN(to_send, max_payload_size);
+
+	/* Also limit by TX retransmit buffer space */
+	tx = &stream->tx_buf;
+	tx_free = sizeof(tx->data) - tx->len;
+
+	if (tx_free == 0) {
+		/* Buffer full, peer is not ACKing fast enough.
+		 * Caller should retry; the PTO timer will eventually
+		 * unblock things by retransmitting stalled data.
+		 */
+		NET_DBG("[ST:%p/%d] TX retransmit buffer full on stream %" PRIu64,
+			stream, quic_get_by_stream(stream), stream->id);
+		return -EAGAIN;
+	}
+
+	if (to_send > tx_free) {
+		to_send = tx_free;
+	}
+
+	/* Record the stream offset before updating bytes_sent */
+	this_offset = stream->bytes_sent;
+
+	/* Copy into retransmit buffer BEFORE sending.
+	 * If the send fails the data is still here; it will be
+	 * retransmitted by the PTO or loss detection.
+	 */
+	memcpy(&tx->data[tx->len], buf, to_send);
+	tx->len += to_send;
 
 	if (to_send != buf_len) {
 		NET_DBG("[ST:%p/%d] Limiting send from %zd to %zd bytes due to flow control/buffer",
@@ -789,7 +996,11 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 	/* Send the packet */
 	ret = quic_send_packet(ep, QUIC_SECRET_LEVEL_APPLICATION, frame, frame_len);
 	if (ret < 0) {
-		NET_DBG("[%p] Failed to send STREAM frame: %d", stream, ret);
+		/* Roll back TX buffer on send failure */
+		tx->len -= to_send;
+
+		NET_DBG("[ST:%p/%d] Failed to send STREAM frame: %d",
+			stream, quic_get_by_stream(stream), ret);
 		return ret;
 	}
 
@@ -797,8 +1008,16 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 	stream->bytes_sent += to_send;
 	ep->tx_fc.bytes_sent += to_send;
 
-	NET_DBG("[%p] Sent %zd bytes, stream total=%llu, conn total=%llu",
-		stream, to_send, stream->bytes_sent, ep->tx_fc.bytes_sent);
+	/* Annotate the sent_pkt ring-buffer entry with stream frame info
+	 * so loss detection knows what to retransmit.
+	 */
+	quic_annotate_last_sent_stream(ep, QUIC_SECRET_LEVEL_APPLICATION,
+				       stream->id, this_offset,
+				       (uint16_t)to_send, false);
+
+	NET_DBG("[ST:%p/%d] Sent %zd bytes, stream total=%" PRIu64 ", conn total=%" PRIu64,
+		stream, quic_get_by_stream(stream), to_send, stream->bytes_sent,
+		ep->tx_fc.bytes_sent);
 
 	return (ssize_t)to_send;
 }
@@ -806,11 +1025,14 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 static int quic_stream_recv(struct quic_stream *stream, uint8_t *buf,
 			    size_t buf_len, int32_t timeout)
 {
-	struct quic_stream_buffer *rx = &stream->rx_buf;
+	struct quic_stream_rx_buffer *rx = &stream->rx_buf;
+	struct quic_endpoint *ep;
 	k_timeout_t tout;
 	size_t available;
 	size_t to_copy;
+	int threshold;
 	int ret;
+	bool buffer_empty = false;
 
 	if (timeout == SYS_FOREVER_MS) {
 		tout = K_FOREVER;
@@ -870,6 +1092,7 @@ static int quic_stream_recv(struct quic_stream *stream, uint8_t *buf,
 	if (rx->head == rx->tail) {
 		rx->head = 0;
 		rx->tail = 0;
+		buffer_empty = true;
 
 		/* Buffer is now empty, reset the poll signal so poll()
 		 * doesn't immediately return POLLIN when there's no data.
@@ -882,16 +1105,84 @@ static int quic_stream_recv(struct quic_stream *stream, uint8_t *buf,
 		rx->head = 0;
 	}
 
+	/* Remember endpoint while the mutex is still held.
+	 * The quic_endpoint_notify_streams_closed() can set stream->ep = NULL from
+	 * another thread at any point after we release the mutex. We must not
+	 * dereference stream->ep after the unlock without checking.
+	 */
+	ep = stream->ep;
+
 	k_mutex_unlock(&stream->cond.data_available);
 
 	NET_DBG("[ST:%p/%d] Received %zd bytes", stream, quic_get_by_stream(stream), to_copy);
 
 	/* Update flow control: increase window and mark for sending update */
 	stream->local_max_data += to_copy;
-	if (stream->local_max_data > stream->local_max_data_sent + 16384) {
-		/* Send update when we've consumed enough data (16KB threshold) */
-		NET_DBG("[%p] Update stream window", stream);
-		quic_send_max_stream_data(stream->ep, stream);
+
+	/* Update at desired number of bytes consumed */
+	threshold = (int)(stream->local_max_data_sent /
+			  (100 / CONFIG_QUIC_STREAM_RX_WINDOW_UPDATE_THRESHOLD));
+
+	if (stream->local_max_data > (stream->local_max_data_sent + threshold)) {
+		/* Send update when we've consumed enough data */
+		NET_DBG("[ST:%p/%d] Update stream window (threshold %d)", stream,
+			quic_get_by_stream(stream), threshold);
+		NET_DBG("[ST:%p/%d] Stream local_max_data=%" PRIu64
+			", local_max_data_sent=%" PRIu64,
+			stream, quic_get_by_stream(stream), stream->local_max_data,
+			stream->local_max_data_sent);
+
+		if (ep != NULL) {
+			quic_send_max_stream_data(ep, stream);
+		}
+
+	} else if (buffer_empty &&
+		   stream->local_max_data > stream->local_max_data_sent) {
+		/* Buffer is empty and we have window credit not yet advertised.
+		 * The peer may be blocked at the flow control limit. Send update
+		 * to prevent deadlock, but only if the unadvertised credit is
+		 * meaningful (more than half the RX buffer size).
+		 */
+		uint64_t unadvertised = stream->local_max_data -
+					stream->local_max_data_sent;
+		if (unadvertised > rx->size / 2) {
+			NET_DBG("[ST:%p/%d] Buffer empty, unadvertised=%" PRIu64
+				", sending window update",
+				stream, quic_get_by_stream(stream), unadvertised);
+
+			if (ep != NULL) {
+				quic_send_max_stream_data(ep, stream);
+			}
+		}
+	}
+
+	/* Also advance connection-level flow control window */
+	if (ep != NULL) {
+		int conn_threshold;
+
+		ep->rx_fc.max_data += to_copy;
+
+		conn_threshold = (int)(ep->rx_fc.max_data_sent /
+				       (100 / CONFIG_QUIC_STREAM_RX_WINDOW_UPDATE_THRESHOLD));
+
+		if (ep->rx_fc.max_data > (ep->rx_fc.max_data_sent + conn_threshold)) {
+			NET_DBG("[EP:%p/%d] Update conn window: max_data=%" PRIu64
+				" sent=%" PRIu64,
+				ep, quic_get_by_ep(ep), ep->rx_fc.max_data,
+				ep->rx_fc.max_data_sent);
+			ep->rx_fc.max_data_sent = ep->rx_fc.max_data;
+			quic_send_max_data(ep);
+		} else if (buffer_empty &&
+			   ep->rx_fc.max_data > ep->rx_fc.max_data_sent) {
+			uint64_t unadvertised = ep->rx_fc.max_data -
+						ep->rx_fc.max_data_sent;
+			if (unadvertised > rx->size / 2) {
+				NET_DBG("[EP:%p/%d] Buffer empty, sending conn window update",
+					ep, quic_get_by_ep(ep));
+				ep->rx_fc.max_data_sent = ep->rx_fc.max_data;
+				quic_send_max_data(ep);
+			}
+		}
 	}
 
 	return to_copy;
@@ -1327,9 +1618,30 @@ static int quic_stream_close_vmeth(void *obj)
 {
 	struct quic_stream *stream = obj;
 	int sock = stream->sock;
+	int state;
 
 	NET_DBG("[ST:%p/%d] Closing stream id %" PRIu64 ", sock %d",
 		stream, quic_get_by_stream(stream), stream->id, sock);
+
+	/*
+	 * Send FIN to the peer to cleanly terminate the send side of the stream.
+	 * Skip if:
+	 *   - No endpoint (connection already gone)
+	 *   - Stream was reset (RESET_STREAM already sent/received)
+	 *   - FIN was already sent (DATA_SENT or DATA_RECVD)
+	 */
+	if (stream->ep != NULL) {
+		state = quic_stream_get_state(stream);
+
+		if (state != STATE_RESET_SENT &&
+		    state != STATE_RESET_RECVD &&
+		    state != STATE_RESET_READ &&
+		    state != STATE_DATA_SENT &&
+		    state != STATE_DATA_RECVD &&
+		    state != STATE_DATA_READ) {
+			(void)quic_send_stream_fin(stream);
+		}
+	}
 
 	/* Clear the socket fd first to prevent recursive close in unref */
 	stream->sock = -1;
@@ -1599,6 +1911,21 @@ have_endpoint:
 	stream->type = initiator | direction;
 	stream->priority = priority;
 	stream->id = quic_stream_id_get(stream);
+
+	/* Initialize TX flow control from peer transport parameters */
+	if (ep->peer_params.parsed) {
+		if (direction == QUIC_STREAM_BIDIRECTIONAL) {
+			/* For locally-initiated bidi stream, peer's bidi_remote is our TX limit */
+			stream->remote_max_data =
+				ep->peer_params.initial_max_stream_data_bidi_remote;
+		} else {
+			/* For locally-initiated uni stream, peer's uni is our TX limit */
+			stream->remote_max_data =
+				ep->peer_params.initial_max_stream_data_uni;
+		}
+		NET_DBG("[%p] Stream TX flow control: remote_max_data=%" PRIu64,
+			stream, stream->remote_max_data);
+	}
 
 	if (initiator == QUIC_STREAM_CLIENT) {
 		NET_DBG("[ST:%p/%d] Opened %s %s stream id %" PRIu64 " prio %d on conn %p",

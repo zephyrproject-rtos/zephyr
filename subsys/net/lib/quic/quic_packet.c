@@ -115,19 +115,18 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 	/* Deliver data to the stream */
 	ret = quic_stream_receive_data(stream, offset, &buf[pos], data_len, is_fin);
 	if (ret < 0) {
+		if (ret == -EAGAIN) {
+			/* Out-of-order data. This is not fatal, consume the frame bytes */
+			*consumed = pos + data_len;
+			return pos + data_len;
+		}
+
 		NET_DBG("[CO:%p/%d] Failed to deliver stream data: %d",
 			conn, quic_get_by_conn(conn), ret);
 		return ret;
 	}
 
 	*consumed = pos + data_len;
-
-	/* Send pending window updates (MAX_STREAM_DATA) if needed */
-	if (stream->need_window_update) {
-		NET_DBG("[%p] Update stream window", stream);
-		stream->need_window_update = false;
-		quic_send_max_stream_data(ep, stream);
-	}
 
 	return pos + data_len;
 }
@@ -238,10 +237,26 @@ static int handle_max_data_frame(struct quic_endpoint *ep,
 
 	/* Update connection-level TX flow control if increased */
 	if (max_data > ep->tx_fc.max_data) {
+		struct quic_stream *stream, *tmp;
+		struct quic_context *ctx;
+
 		NET_DBG("[EP:%p/%d] MAX_DATA: %" PRIu64 " -> %" PRIu64 " (delta=%" PRIu64 ")",
 			ep, quic_get_by_ep(ep), ep->tx_fc.max_data, max_data,
 			max_data - ep->tx_fc.max_data);
+
 		ep->tx_fc.max_data = max_data;
+
+		/* Signal all streams on this endpoint that they may be writable now.
+		 * Connection-level flow control affects all streams.
+		 */
+		ctx = quic_find_context(ep);
+		if (ctx != NULL) {
+			SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ctx->streams, stream, tmp, node) {
+				if (stream->ep == ep) {
+					k_poll_signal_raise(&stream->send.signal, 0);
+				}
+			}
+		}
 	} else {
 		NET_DBG("[EP:%p/%d] MAX_DATA: %" PRIu64 " (no change)",
 			ep, quic_get_by_ep(ep), max_data);
@@ -281,6 +296,8 @@ static int handle_max_stream_data_frame(struct quic_endpoint *ep,
 				ep, quic_get_by_ep(ep), stream_id,
 				stream->remote_max_data, max_stream_data);
 			stream->remote_max_data = max_stream_data;
+			/* Signal that stream may now be writable */
+			k_poll_signal_raise(&stream->send.signal, 0);
 		}
 	} else {
 		NET_DBG("[EP:%p/%d] MAX_STREAM_DATA: stream=%" PRIu64
@@ -381,6 +398,88 @@ static int quic_send_max_stream_data(struct quic_endpoint *ep,
 	return quic_send_packet(ep, QUIC_SECRET_LEVEL_APPLICATION, frame, pos);
 }
 
+/**
+ * @brief Send DATA_BLOCKED frame to notify peer that we are blocked
+ *
+ * This is sent when the sender is blocked by connection-level flow control.
+ * The receiver should respond with MAX_DATA to increase the limit.
+ *
+ * @param ep The endpoint
+ * @return 0 on success, negative errno on error
+ */
+static int quic_send_data_blocked(struct quic_endpoint *ep)
+{
+	uint8_t frame[16];
+	int pos = 0;
+	int varint_len;
+
+	/* Only send if we haven't already sent DATA_BLOCKED for this limit */
+	if (ep->tx_fc.blocked_sent >= ep->tx_fc.max_data) {
+		return 0;
+	}
+
+	frame[pos++] = QUIC_FRAME_TYPE_DATA_BLOCKED;
+
+	varint_len = quic_put_varint(&frame[pos], sizeof(frame) - pos,
+				     ep->tx_fc.max_data);
+	if (varint_len <= 0) {
+		return -EINVAL;
+	}
+	pos += varint_len;
+
+	ep->tx_fc.blocked_sent = ep->tx_fc.max_data;
+
+	NET_DBG("[EP:%p/%d] Sending DATA_BLOCKED: limit=%" PRIu64, ep, quic_get_by_ep(ep),
+		ep->tx_fc.max_data);
+
+	return quic_send_packet(ep, QUIC_SECRET_LEVEL_APPLICATION, frame, pos);
+}
+
+/**
+ * @brief Send STREAM_DATA_BLOCKED frame when stream flow control blocks sending
+ *
+ * This notifies the peer that we are blocked by stream-level flow control.
+ * The peer should respond with MAX_STREAM_DATA to increase the limit.
+ *
+ * @param ep The endpoint
+ * @param stream The stream that is blocked
+ * @return 0 on success, negative errno on error
+ */
+static int quic_send_stream_data_blocked(struct quic_endpoint *ep,
+					 struct quic_stream *stream)
+{
+	uint8_t frame[24];
+	int pos = 0;
+	int varint_len;
+
+	/* Only send if we haven't already sent STREAM_DATA_BLOCKED for this limit */
+	if (stream->blocked_sent >= stream->remote_max_data) {
+		return 0;
+	}
+
+	frame[pos++] = QUIC_FRAME_TYPE_STREAM_DATA_BLOCKED;
+
+	varint_len = quic_put_varint(&frame[pos], sizeof(frame) - pos, stream->id);
+	if (varint_len <= 0) {
+		return -EINVAL;
+	}
+	pos += varint_len;
+
+	varint_len = quic_put_varint(&frame[pos], sizeof(frame) - pos,
+				     stream->remote_max_data);
+	if (varint_len <= 0) {
+		return -EINVAL;
+	}
+	pos += varint_len;
+
+	stream->blocked_sent = stream->remote_max_data;
+
+	NET_DBG("[EP:%p/%d] Sending STREAM_DATA_BLOCKED: stream=%" PRIu64 ", limit=%" PRIu64,
+		ep, quic_get_by_ep(ep), stream->id, stream->remote_max_data);
+
+	return quic_send_packet(ep, QUIC_SECRET_LEVEL_APPLICATION, frame, pos);
+}
+
 static int handle_data_blocked_frame(struct quic_endpoint *ep,
 				     const uint8_t *buf, size_t len)
 {
@@ -395,7 +494,8 @@ static int handle_data_blocked_frame(struct quic_endpoint *ep,
 
 	pos += ret;
 
-	NET_DBG("DATA_BLOCKED: limit=%" PRIu64, max_data);
+	NET_DBG("[EP:%p/%d] DATA_BLOCKED: limit=%" PRIu64,
+		ep, quic_get_by_ep(ep), max_data);
 
 	/* Peer is blocked, send MAX_DATA to increase their limit */
 	if (ep->rx_fc.max_data > max_data) {
@@ -427,8 +527,8 @@ static int handle_stream_data_blocked_frame(struct quic_endpoint *ep,
 
 	pos += ret;
 
-	NET_DBG("STREAM_DATA_BLOCKED: stream=%" PRIu64 ", limit=%" PRIu64,
-		stream_id, max_stream_data);
+	NET_DBG("[EP:%p/%d] STREAM_DATA_BLOCKED: stream=%" PRIu64 ", limit=%" PRIu64,
+		ep, quic_get_by_ep(ep), stream_id, max_stream_data);
 
 	/* Find the stream and send MAX_STREAM_DATA */
 	stream = quic_find_stream_by_id(ep, stream_id);
@@ -657,6 +757,9 @@ static int handle_ack_frame(struct quic_endpoint *ep,
 	uint64_t ack_delay;
 	uint64_t ack_range_count;
 	uint64_t first_ack_range;
+	uint64_t ack_delay_us;
+	struct quic_ack_range ranges[QUIC_MAX_ACK_RANGES];
+	int range_idx = 0;
 	int ret;
 	bool has_ecn = (data[pos] == QUIC_FRAME_TYPE_ACK_ECN);
 
@@ -695,12 +798,27 @@ static int handle_ack_frame(struct quic_endpoint *ep,
 
 	pos += ret;
 
+	/* Build the first ACK range: [largest_ack - first_ack_range, largest_ack] */
+	if (first_ack_range > largest_ack) {
+		return -EPROTO;
+	}
+
+	ranges[range_idx].end = largest_ack;
+	ranges[range_idx].start = largest_ack - first_ack_range;
+	range_idx++;
+
 	NET_DBG("[EP:%p/%d] ACK frame: largest=%" PRIu64 ", delay=%" PRIu64
 		", ranges=%" PRIu64 ", first_range=%" PRIu64,
 		ep, quic_get_by_ep(ep), largest_ack, ack_delay, ack_range_count,
 		first_ack_range);
 
-	/* Parse additional ACK ranges */
+	/* Parse additional ACK ranges and build range entries.
+	 * Per RFC 9000 Section 19.3.1:
+	 *   smallest = previous_range.start
+	 *   gap means (gap + 1) unacknowledged packets
+	 *   range_end = smallest - gap - 2
+	 *   range_start = range_end - ack_range
+	 */
 	for (uint64_t i = 0; i < ack_range_count; i++) {
 		uint64_t gap, ack_range;
 
@@ -719,6 +837,20 @@ static int handle_ack_frame(struct quic_endpoint *ep,
 		}
 
 		pos += ret;
+
+		/* Build range entry if we have room */
+		if (range_idx < QUIC_MAX_ACK_RANGES) {
+			uint64_t smallest = ranges[range_idx - 1].start;
+
+			if (smallest < gap + 2) {
+				/* Malformed: gap exceeds available PN space */
+				break;
+			}
+
+			ranges[range_idx].end = smallest - gap - 2;
+			ranges[range_idx].start = ranges[range_idx].end - ack_range;
+			range_idx++;
+		}
 	}
 
 	/* Parse ECN counts if present */
@@ -747,9 +879,15 @@ static int handle_ack_frame(struct quic_endpoint *ep,
 		pos += ret;
 	}
 
-	/* TODO: Process the acknowledgment, mark packets as acknowledged,
-	 * update RTT estimates, handle loss detection, etc.
+	/* Convert ACK delay to microseconds.
+	 * The ack_delay field is encoded in units of 2^ack_delay_exponent microseconds.
+	 * Default ack_delay_exponent is 3, so default unit is 8 microseconds.
+	 * TODO: Use peer's ack_delay_exponent from transport params.
 	 */
+	ack_delay_us = ack_delay << 3; /* Default exponent = 3 */
+
+	/* Update RTT and bytes_in_flight based on ACK ranges */
+	quic_recovery_on_ack_received(ep, level, ranges, range_idx, ack_delay_us);
 
 	*consumed = pos;
 
@@ -1127,7 +1265,8 @@ static int handle_1rtt_packet(struct quic_pkt *pkt)
 		if ((frame_type & 0xF8) == QUIC_FRAME_TYPE_STREAM_BASE) {
 			ret = handle_stream_frame(ep, &buf[pos], len - pos, &consumed);
 			if (ret < 0) {
-				NET_DBG("Failed to handle STREAM frame:  %d", ret);
+				NET_DBG("[EP:%p/%d] Failed to handle STREAM frame: %d",
+					ep, quic_get_by_ep(ep), ret);
 				goto fail;
 			}
 
@@ -1570,6 +1709,12 @@ static int handle_crypto_level_packet(struct quic_endpoint *ep,
 				saw_other_frame = true;
 				if (!ep->is_server) {
 					ep->crypto.tls.state = QUIC_TLS_STATE_CONNECTED;
+
+					/* Discard Initial and Handshake spaces */
+					quic_recovery_discard_pn_space(ep,
+						level_to_pn_space(QUIC_SECRET_LEVEL_INITIAL));
+					quic_recovery_discard_pn_space(ep,
+						level_to_pn_space(QUIC_SECRET_LEVEL_HANDSHAKE));
 				}
 				continue;
 
