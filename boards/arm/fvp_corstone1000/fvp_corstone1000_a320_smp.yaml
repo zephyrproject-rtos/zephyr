@@ -1,0 +1,19 @@
+# Copyright (c) 2026 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: fvp_corstone1000/a320/smp
+name: Arm Corstone-1000-A320 Fixed Virtual Platform (SMP)
+arch: arm64
+type: sim
+simulation:
+  - name: armfvp
+    exec: FVP_Corstone-1000-A320
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 128
+flash: 64
+vendor: arm
+sysbuild: true
+testing:
+  timeout_multiplier: 3
