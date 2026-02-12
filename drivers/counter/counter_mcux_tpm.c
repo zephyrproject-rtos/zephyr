@@ -8,6 +8,7 @@
 
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/nxp_mcux_clock_subsys.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/barrier.h>
@@ -31,6 +32,7 @@ struct mcux_tpm_config {
 
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
+	clock_control_subsys_t clock_subsys_rate;
 
 	tpm_clock_source_t tpm_clock_source;
 	tpm_clock_prescale_t prescale;
@@ -261,7 +263,7 @@ static int mcux_tpm_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys_rate,
 				   &input_clock_freq)) {
 		LOG_ERR("Could not get clock frequency");
 		return -EINVAL;
@@ -303,8 +305,10 @@ static DEVICE_API(counter, mcux_tpm_driver_api) = {
 	static const struct mcux_tpm_config mcux_tpm_config_ ## n = {		\
 		DEVICE_MMIO_NAMED_ROM_INIT(tpm_mmio, DT_DRV_INST(n)),		\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
-		.clock_subsys =							\
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
+		.clock_subsys =						\
+			(clock_control_subsys_t)NXP_MCUX_DT_INST_CLOCK_GATE_SUBSYS(n),	\
+		.clock_subsys_rate =					\
+			(clock_control_subsys_t)NXP_MCUX_DT_INST_CLOCK_RATE_SUBSYS(n),	\
 		.tpm_clock_source = kTPM_SystemClock,				\
 		.prescale = TO_TPM_PRESCALE_DIVIDE(DT_INST_PROP(n, prescaler)),	\
 		.info = {							\
