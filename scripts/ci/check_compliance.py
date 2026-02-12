@@ -327,7 +327,7 @@ class CheckPatch(ComplianceTest):
             except subprocess.CalledProcessError as ex:
                 output = ex.output.decode("utf-8")
                 regex = (
-                    r'^\s*\S+:(\d+):\s*(ERROR|WARNING):(.+?):(.+)(?:\n|\r\n?)+'
+                    r'^\s*\S+:(\d+):\s*(ERROR|WARNING):(.+?):(.+)[\r\n]+'
                     r'^\s*#(\d+):\s*FILE:\s*(.+):(\d+):'
                 )
 
