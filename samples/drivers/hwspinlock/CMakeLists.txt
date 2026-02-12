@@ -1,8 +1,23 @@
-# Copyright 2025 NXP
+# Copyright 2025-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 cmake_minimum_required(VERSION 3.20.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+
+set(REMOTE_ZEPHYR_DIR ${CMAKE_CURRENT_BINARY_DIR}/../remote/zephyr)
+
+if(CONFIG_BOARD_MIMXRT700_EVK_MIMXRT798S_CM33_CPU0 OR
+   CONFIG_BOARD_FRDM_MCXN947_MCXN947_CPU0 OR
+   CONFIG_BOARD_MCX_N9XX_EVK_MCXN947_CPU0)
+  message(STATUS "${BOARD}${BOARD_QUALIFIERS} compile as Main in this sample")
+else()
+  message(FATAL_ERROR "${BOARD}${BOARD_QUALIFIERS} is not supported for this sample")
+endif()
+
 project(hwspinlock)
 
+
+if(CONFIG_INCLUDE_REMOTE_DIR)
+  zephyr_include_directories(${REMOTE_ZEPHYR_DIR}/include/public)
+endif()
 target_sources(app PRIVATE src/main.c)
