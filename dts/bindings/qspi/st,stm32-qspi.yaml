@@ -4,19 +4,6 @@
 description: |
     STM32 QSPI Controller.
 
-    An stm32 quadspi node would typically look like this:
-
-        &quadspi {
-            pinctrl-0 = <&quadspi_clk_pe10 &quadspi_ncs_pe11
-                         &quadspi_bk1_io0_pe12 &quadspi_bk1_io1_pe13
-                         &quadspi_bk1_io2_pe14 &quadspi_bk1_io3_pe15>;
-
-            dmas = <&dma1 5 5 0x0000 0x03>;
-            dma-names = "tx_rx";
-
-            status = "okay";
-        };
-
 compatible: "st,stm32-qspi"
 
 include: [base.yaml, pinctrl-device.yaml]
@@ -86,3 +73,16 @@ properties:
 
       For example
          flash-id = <2>;
+
+examples:
+  - |
+    &quadspi {
+      pinctrl-0 = <&quadspi_clk_pe10 &quadspi_ncs_pe11
+                   &quadspi_bk1_io0_pe12 &quadspi_bk1_io1_pe13
+                   &quadspi_bk1_io2_pe14 &quadspi_bk1_io3_pe15>;
+
+      dmas = <&dma1 5 5 0x0000 0x03>;
+      dma-names = "tx_rx";
+
+      status = "okay";
+    };

@@ -2,15 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    MAX32 SPIXF device representation. A node would typically looks to this:
-
-        &spixf {
-            pinctrl-0 = <&spixf_sdio0_p0_1 &spixf_sdio2_p0_2 &spixf_sck_p0_3
-                         &spixf_sdio3_p0_4 &spixf_sdio1_p0_5 &spixf_ss0_p0_6>;
-            pinctrl-names = "default";
-
-            status = "okay";
-        };
+    MAX32 SPIXF device representation.
 
 compatible: "adi,max32-spixf"
 
@@ -30,3 +22,13 @@ properties:
 
   pinctrl-names:
     required: true
+
+examples:
+  - |
+    &spixf {
+      pinctrl-0 = <&spixf_sdio0_p0_1 &spixf_sdio2_p0_2 &spixf_sck_p0_3
+                   &spixf_sdio3_p0_4 &spixf_sdio1_p0_5 &spixf_ss0_p0_6>;
+      pinctrl-names = "default";
+
+      status = "okay";
+    };
