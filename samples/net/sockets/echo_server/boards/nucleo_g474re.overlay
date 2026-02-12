@@ -21,6 +21,8 @@
 
 		local-mac-address = [00 19 05 00 00 01];
 
+		phy-handle = <&lan865x_phy>;
+
 		spi-max-frequency = <25000000>;
 
 		lan865x_mdio: lan865x_mdio {
