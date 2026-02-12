@@ -11,6 +11,7 @@ LOG_MODULE_DECLARE(net_shell);
 
 #if defined(CONFIG_QUIC_SHELL)
 
+#include <zephyr/net/quic.h>
 #include "quic/quic_internal.h"
 
 static void quic_endpoint_cb(struct quic_endpoint *ep, void *user_data)
@@ -285,6 +286,81 @@ static int cmd_net_quic(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_NET_STATISTICS_QUIC) && defined(CONFIG_NET_STATISTICS_USER_API)
+#include "quic_stats.h"
+
+static void print_quic_stats(struct quic_context *ctx, const struct shell *sh)
+{
+	PR("Statistics for Quic context %d (sock %d)\n", ctx->id, ctx->sock);
+
+	PR("Handshake init RX   : %u\n", ctx->stats.handshake_init_rx);
+	PR("Handshake init TX   : %u\n", ctx->stats.handshake_init_tx);
+	PR("Handshake resp RX   : %u\n", ctx->stats.handshake_resp_rx);
+	PR("Handshake resp TX   : %u\n", ctx->stats.handshake_resp_tx);
+	PR("Peer not found      : %u\n", ctx->stats.peer_not_found);
+	PR("Invalid packet      : %u\n", ctx->stats.invalid_packet);
+	PR("Invalid key         : %u\n", ctx->stats.invalid_key);
+	PR("Invalid packet len  : %u\n", ctx->stats.invalid_packet_len);
+	PR("Invalid handshake   : %u\n", ctx->stats.invalid_handshake);
+	PR("Decrypt failed      : %u\n", ctx->stats.decrypt_failed);
+	PR("Dropped RX          : %u\n", ctx->stats.drop_rx);
+	PR("Dropped TX          : %u\n", ctx->stats.drop_tx);
+	PR("Allocation failed   : %u\n", ctx->stats.alloc_failed);
+	PR("RX data packets     : %u\n", ctx->stats.valid_rx);
+	PR("TX data packets     : %u\n", ctx->stats.valid_tx);
+	PR("\n");
+}
+
+static void context_stats_cb(struct quic_context *context, void *user_data)
+{
+	struct net_shell_user_data *data = user_data;
+	const struct shell *sh = data->sh;
+	int *count = data->user_data;
+
+	print_quic_stats(context, sh);
+	(*count)++;
+}
+#endif /* CONFIG_NET_STATISTICS_QUIC && CONFIG_NET_STATISTICS_USER_API */
+
+static int cmd_net_quic_stats(const struct shell *sh, size_t argc, char *argv[])
+{
+#if defined(CONFIG_NET_STATISTICS_QUIC) && defined(CONFIG_NET_STATISTICS_USER_API)
+	struct net_shell_user_data user_data;
+	int count = 0;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	user_data.sh = sh;
+	user_data.user_data = &count;
+
+	PR("Global Quic statistics\n");
+
+	PR("Packets RX          : %u\n", quic_stats->packets_rx);
+	PR("Connections opened  : %u\n", quic_stats->connections_opened);
+	PR("Connections closed  : %u\n", quic_stats->connections_closed);
+	PR("Streams opened      : %u\n", quic_stats->streams_opened);
+	PR("Streams closed      : %u\n", quic_stats->streams_closed);
+	PR("Conn open failed    : %u\n", quic_stats->connection_open_failed);
+	PR("Stream open failed  : %u\n", quic_stats->stream_open_failed);
+	PR("Conn close failed   : %u\n", quic_stats->connection_close_failed);
+	PR("Stream close failed : %u\n", quic_stats->stream_close_failed);
+	PR("\n");
+
+	quic_context_foreach(context_stats_cb, &user_data);
+
+	if (count == 0) {
+		PR("No connections\n");
+	}
+#else
+	PR_INFO("Set %s to enable %s support.\n",
+		"CONFIG_NET_STATISTICS_QUIC, CONFIG_NET_STATISTICS_USER_API and CONFIG_QUIC",
+		"Quic statistics");
+#endif /* CONFIG_NET_STATISTICS_QUIC */
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_quic,
 	SHELL_CMD_ARG(endpoints, NULL,
 		      SHELL_HELP("Show information about Quic endpoints", ""),
@@ -292,6 +368,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_quic,
 	SHELL_CMD_ARG(streams, NULL,
 		      SHELL_HELP("Show information about Quic streams", ""),
 		      cmd_net_quic_streams, 1, 0),
+	SHELL_CMD_ARG(stats, NULL,
+		      SHELL_HELP("Show statistics information for Quic connections", ""),
+		      cmd_net_quic_stats, 1, 1),
 	SHELL_SUBCMD_SET_END
 );
 
