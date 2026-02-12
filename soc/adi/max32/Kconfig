@@ -1,6 +1,6 @@
 # Analog Devices MAX32xxx MCU family
 
-# Copyright (c) 2023-2025 Analog Devices, Inc.
+# Copyright (c) 2023-2026 Analog Devices, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FAMILY_MAX32
@@ -101,5 +101,7 @@ config BUILD_WITH_TFM
 	default y if TRUSTED_EXECUTION_NONSECURE
 	help
 	  Auto set WITH_TFM for a Non-Secure version of the board,
+
+source "soc/adi/max32/sbt/Kconfig"
 
 endif # SOC_FAMILY_MAX32

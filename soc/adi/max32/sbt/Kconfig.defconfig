@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if MAX32_SECURE_SOC_SIGNING
+
+config CUSTOM_LINKER_SCRIPT
+	default "$(ZEPHYR_BASE)/soc/adi/max32/sbt/linker_with_sig_section.ld"
+
+config BUILD_GAP_FILL_PATTERN
+	default 0x00
+
+endif

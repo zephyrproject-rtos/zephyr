@@ -1,6 +1,6 @@
 # Analog Devices MAX32xxx MCU family
 
-# Copyright (c) 2023-2025 Analog Devices, Inc.
+# Copyright (c) 2023-2026 Analog Devices, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FAMILY_MAX32
@@ -21,9 +21,20 @@ config SOC_FAMILY_MAX32_RV32
 config SOC_FAMILY
 	default "max32" if SOC_FAMILY_MAX32
 
+config SOC_MAX32_SECURE_BOOT_SUPPORTED
+	bool
+	help
+	  Indicates that the SoC supports secure boot signing. This is selected
+	  by SoCs that have secure boot capabilities requiring image signing.
+
 config SOC_MAX32650
 	bool
 	select SOC_FAMILY_MAX32_M4
+
+config SOC_MAX32651
+	bool
+	select SOC_FAMILY_MAX32_M4
+	select SOC_MAX32_SECURE_BOOT_SUPPORTED
 
 config SOC_MAX32655
 	bool
@@ -128,6 +139,7 @@ config SOC_MAX78002_RV32
 
 config SOC
 	default "max32650" if SOC_MAX32650
+	default "max32651" if SOC_MAX32651
 	default "max32655" if SOC_MAX32655
 	default "max32657" if SOC_MAX32657
 	default "max32658" if SOC_MAX32658
