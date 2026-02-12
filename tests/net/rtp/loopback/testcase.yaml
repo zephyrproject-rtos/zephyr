@@ -1,0 +1,11 @@
+common:
+  depends_on: netif
+  tags:
+    - net
+    - rtp
+
+tests:
+  net.rtp.loopback: {}
+  net.rtp.loopback.csrc:
+    extra_configs:
+      - CONFIG_RTP_MAX_CSRC_COUNT=4
