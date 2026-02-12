@@ -132,6 +132,17 @@ config QUIC_INITIAL_MAX_STREAMS_UNI
 	  Setting this parameter is equivalent to sending a MAX_STREAMS
 	  (Section 19.11) of the corresponding type with the same value.
 
+config QUIC_STREAM_RX_WINDOW_UPDATE_THRESHOLD
+	int "Percentage of received data after we send a window update"
+	default 25
+	range 1 99
+	help
+	  This tells the threshold of incoming data after we
+	  send a window update to peer. For example if
+	  QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL is set to 16kb,
+	  then value of 25 sends a window update message (MAX_STREAM_DATA)
+	  to peer after we have received 4kb of data.
+
 config QUIC_MAX_IDLE_TIMEOUT
 	int "Max idle timeout in ms"
 	default 30000
@@ -268,11 +279,45 @@ config QUIC_CRYPTO_OOO_SLOTS
 	  Each slot holds metadata for one out-of-order CRYPTO frame fragment.
 	  Chrome can split a ClientHello into 10+ small fragments.
 
+config QUIC_STREAM_TX_BUFFER_SIZE
+	int "Stream unacked sent buffer size"
+	default 8192
+	range 1500 $(UINT16_MAX)
+	help
+	  Size of the sent buffer for each QUIC stream that holds
+	  data before it is acked by peer.
+
 config QUIC_STREAM_RX_BUFFER_SIZE
 	int "Stream receive buffer size"
-	default 4096
+	default QUIC_STREAM_TX_BUFFER_SIZE
+	range 1500 $(UINT16_MAX)
 	help
-	  Size of the receive buffer for each QUIC stream.
+	  Size of the receive buffer for each QUIC stream. Defaults to
+	  QUIC_STREAM_TX_BUFFER_SIZE for symmetric workloads like echo.
+
+config QUIC_STREAM_OOO_SLOTS
+	int "Number of out-of-order stream segment slots per stream"
+	default 4
+	help
+	  Each slot holds one out-of-order STREAM frame payload up to
+	  QUIC_STREAM_OOO_SEG_SIZE bytes. Larger values handle more
+	  reordering at the cost of RAM (slots * seg_size bytes per stream).
+
+config QUIC_STREAM_OOO_SEG_SIZE
+	int "Maximum size of a buffered out-of-order stream segment (bytes)"
+	default 1280
+	help
+	  Size of the segment for received out of order data
+
+config QUIC_SENT_PKT_HISTORY_SIZE
+	int "Number of sent packets to track for RTT/loss detection"
+	default 64
+	range 16 256
+	help
+	  Number of recently sent packets to track for RTT measurement
+	  and loss detection. Each entry uses ~24 bytes of memory.
+	  Larger values allow better loss detection over high-latency
+	  or lossy links.
 
 config QUIC_CONNECT_TIMEOUT
 	int "Timeout value in milliseconds to CONNECT"
@@ -281,6 +326,32 @@ config QUIC_CONNECT_TIMEOUT
 	help
 	  This variable specifies time in milliseconds after the connect
 	  will timeout if we have not received another packet from peer.
+
+config QUIC_MAX_PTO_TIMEOUT_MS
+	int "Maximum QUIC PTO timeout (milliseconds)"
+	default 10000
+	range 1000 600000
+	help
+	  Upper bound for the QUIC Probe Timeout (PTO) duration in milliseconds.
+
+	  The QUIC PTO timer increases exponentially on consecutive
+	  probe timeouts:
+
+	      PTO_n = PTO_base * 2^pto_count
+
+	  This option limits the maximum PTO duration to the specified
+	  number of milliseconds, regardless of the computed exponential backoff.
+
+	  This prevents excessively long retransmission delays on
+	  high-latency or lossy networks and ensures the PTO does not
+	  exceed the configured connection idle timeout.
+
+	  Recommended value:
+	    - Should be less than or equal to the QUIC idle timeout.
+	    - For embedded systems, 5–10 seconds is typically sufficient.
+
+	  Setting this value too low may cause premature connection
+	  termination on high-RTT links.
 
 config QUIC_SERVICE_THREAD_PRIO
 	int "Priority of the QUIC service dispatcher thread"
