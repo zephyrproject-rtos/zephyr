@@ -237,6 +237,19 @@ static int gpio_max14906_port_clear_bits_raw(const struct device *dev, gpio_port
 	return MAX14906_REG_WRITE(dev, MAX14906_SETOUT_REG, reg_val);
 }
 
+static int gpio_max14906_port_set_masked_raw(const struct device *dev,
+					     gpio_port_pins_t mask,
+					     gpio_port_value_t value)
+{
+	int ret;
+	uint32_t reg_val;
+
+	ret = MAX14906_REG_READ(dev, MAX14906_SETOUT_REG);
+	reg_val = (ret & ~(mask & 0x0f)) | (value & mask & 0x0f);
+
+	return MAX14906_REG_WRITE(dev, MAX14906_SETOUT_REG, reg_val);
+}
+
 static int gpio_max14906_config(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	int err = 0;
@@ -451,6 +464,7 @@ static int gpio_max14906_init(const struct device *dev)
 static DEVICE_API(gpio, gpio_max14906_api) = {
 	.pin_configure = gpio_max14906_config,
 	.port_get_raw = gpio_max14906_port_get_raw,
+	.port_set_masked_raw = gpio_max14906_port_set_masked_raw,
 	.port_set_bits_raw = gpio_max14906_port_set_bits_raw,
 	.port_clear_bits_raw = gpio_max14906_port_clear_bits_raw,
 	.port_toggle_bits = gpio_max14906_port_toggle_bits,
