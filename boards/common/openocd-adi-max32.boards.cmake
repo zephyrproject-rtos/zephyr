@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2025 Analog Devices, Inc
+# Copyright (c) 2025-2026 Analog Devices, Inc
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -15,11 +15,12 @@ if(NOT DEFINED MAX32_TARGET_CFG OR NOT DEFINED MAX32_INTERFACE_CFG)
   endif()
 endif()
 
-# MAX32666 share the same target configuration file with MAX32665
-if(CONFIG_SOC_MAX32666)
-  set(MAX32_TARGET_CFG "max32665.cfg")
+if(CONFIG_SOC_MAX32651)
+  set(MAX32_TARGET_CFG "max32650.cfg")
 elseif(CONFIG_SOC_MAX32657)
   set(MAX32_INTERFACE_CFG "jlink.cfg")
+elseif(CONFIG_SOC_MAX32666)
+  set(MAX32_TARGET_CFG "max32665.cfg")
 endif()
 
 if(MAX32_FLASH_INTERFACE_CFG)
