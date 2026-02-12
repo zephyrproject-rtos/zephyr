@@ -1,0 +1,14 @@
+common:
+  tags: memory
+  filter: CONFIG_SOC_FAMILY_ESPRESSIF_ESP32
+  harness: console
+  harness_config:
+    type: multi_line
+    regex:
+      - "total SRAM region: (.*) bytes"
+      - "heap boundary: (.*) KB verified"
+      - "PASS"
+tests:
+  boards.espressif.memory_layout.simple_boot: {}
+  boards.espressif.memory_layout.mcuboot:
+    sysbuild: true
