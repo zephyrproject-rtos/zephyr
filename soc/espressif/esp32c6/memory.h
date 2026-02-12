@@ -4,6 +4,8 @@
  */
 #pragma once
 
+#define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
+
 /* LP-SRAM (16kB) memory */
 #define LPSRAM_IRAM_START      DT_REG_ADDR(DT_NODELABEL(sramlp))
 #define LPSRAM_SIZE            DT_REG_SIZE(DT_NODELABEL(sramlp))
@@ -31,30 +33,36 @@
  *  buffers area (0x4087c610).
  */
 
-#define DRAM_BUFFERS_START      0x4086ad08
-#define DRAM_BUFFERS_END        0x4087c610
-#define DRAM_STACK_START        DRAM_BUFFERS_END
+#define DRAM_SHARED_BUFFERS_START      0x4086ad08
+#define DRAM_SHARED_BUFFERS_END        0x4087c610
+#define DRAM_STACK_START        DRAM_SHARED_BUFFERS_END
 #define DRAM_ROM_BSS_DATA_START 0x4087e610
 
-/* Set the limit for the application runtime dynamic allocations */
-#define DRAM_RESERVED_START DRAM_BUFFERS_END
+/* Upper boundary of user-usable SRAM */
+#define DRAM_USER_END DRAM_SHARED_BUFFERS_END
 
-/* For safety margin between bootloader data section and startup stacks */
-#define BOOTLOADER_STACK_OVERHEAD      0x0
-/* These lengths can be adjusted, if necessary: FIXME: optimize ram usage */
-#define BOOTLOADER_DRAM_SEG_LEN        0xA000
+/* Safety margin between MCUboot segments and ROM stack */
+#define BOOTLOADER_STACK_OVERHEAD      0x2000
 #define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x3000
-#define BOOTLOADER_IRAM_SEG_LEN        0xC000
 
-/* Base address used for calculating memory layout
- * counted from Dbus backwards and back to the Ibus
+/* Upper limit of SRAM available for MCUboot bootloader segments */
+#define BOOTLOADER_USER_DRAM_END (DRAM_SHARED_BUFFERS_END - BOOTLOADER_STACK_OVERHEAD)
+
+#define BOOTLOADER_IRAM_LOADER_SEG_START (BOOTLOADER_USER_DRAM_END - BOOTLOADER_IRAM_LOADER_SEG_LEN)
+
+/* MCUboot iram/dram segments: placed in upper half of SRAM, below iram_loader_seg.
+ * On unified-address SoCs (C6, H2) these are the same physical memory.
+ * The lower half is reserved for the application image.
  */
-#define BOOTLOADER_USER_SRAM_END (DRAM_BUFFERS_START - BOOTLOADER_STACK_OVERHEAD)
-
-/* Start of the lower region is determined by region size and the end of the higher region */
-#define BOOTLOADER_IRAM_LOADER_SEG_START (BOOTLOADER_USER_SRAM_END - BOOTLOADER_IRAM_LOADER_SEG_LEN)
-#define BOOTLOADER_IRAM_SEG_START       (BOOTLOADER_IRAM_LOADER_SEG_START - BOOTLOADER_IRAM_SEG_LEN)
-#define BOOTLOADER_DRAM_SEG_START        (BOOTLOADER_IRAM_SEG_START - BOOTLOADER_DRAM_SEG_LEN)
+#define BOOTLOADER_IRAM_SEG_TARGET_LEN \
+	((BOOTLOADER_IRAM_LOADER_SEG_START - (HPSRAM_START + ICACHE_SIZE)) / 4)
+#define BOOTLOADER_IRAM_SEG_START \
+	ALIGN_UP(BOOTLOADER_IRAM_LOADER_SEG_START - BOOTLOADER_IRAM_SEG_TARGET_LEN, 0x100)
+#define BOOTLOADER_IRAM_SEG_LEN \
+	(BOOTLOADER_IRAM_LOADER_SEG_START - BOOTLOADER_IRAM_SEG_START)
+#define BOOTLOADER_DRAM_SEG_LEN   BOOTLOADER_IRAM_SEG_LEN
+#define BOOTLOADER_DRAM_SEG_START \
+	(BOOTLOADER_IRAM_SEG_START - BOOTLOADER_DRAM_SEG_LEN)
 
 /* Flash */
 #ifdef CONFIG_FLASH_SIZE
