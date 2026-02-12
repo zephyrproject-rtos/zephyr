@@ -1,3 +1,8 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /dts-v1/;
 
 #include <raspberrypi/rpi_pico/rp2040.dtsi>
