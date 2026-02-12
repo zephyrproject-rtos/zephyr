@@ -152,6 +152,9 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
     zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_CUSTOM_RADIO_PHY
       ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_protocol/sl_rail_util_protocol.c
     )
+    zephyr_include_directories_ifdef(CONFIG_IEEE802154_SILABS_EFR32
+      ${RADIO_DIR}/rail_lib/protocol/ieee802154
+    )
   endif()
 endif()
 
