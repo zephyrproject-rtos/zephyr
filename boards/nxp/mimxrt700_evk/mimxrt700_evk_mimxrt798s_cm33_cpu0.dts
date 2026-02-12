@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -502,5 +502,10 @@ p3t1755dp_ard_i2c_interface: &flexcomm8_lpi2c8 {};
 };
 
 &pca9422 {
+	status = "okay";
+};
+
+&sema420 {
+	domain-id = <0>;
 	status = "okay";
 };
