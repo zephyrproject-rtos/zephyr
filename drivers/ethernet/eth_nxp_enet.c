@@ -316,7 +316,12 @@ static int eth_nxp_enet_set_config(const struct device *dev,
 		}
 		return 0;
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
-		/* Promiscuous mode is enabled at eth_nxp_enet_init */
+		/* Promiscuous mode is enabled at eth_nxp_enet_init and
+		 * cannot be disabled at runtime
+		 */
+		if (!cfg->promisc_mode) {
+			return -EINVAL;
+		}
 		return 0;
 	default:
 		break;
