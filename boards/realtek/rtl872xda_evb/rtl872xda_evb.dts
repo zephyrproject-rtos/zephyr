@@ -18,11 +18,36 @@
 		zephyr,shell-uart = &loguart;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
 	};
 };
 
 &flash0 {
 	reg = <0x0e000020 DT_SIZE_M(4)>;
+	ranges = <0x0 0x0e000020 DT_SIZE_M(4)>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		boot_partition: partition@0 {
+			label = "bootloader";
+			reg = <0x00000000 0x00014000>;
+			read-only;
+		};
+
+		slot0_partition: partition@14000 {
+			label = "image-0";
+			reg = <0x00014000 0x001ec000>;
+		};
+
+		storage_partition: partition@3e0000 {
+			label = "storage";
+			reg = <0x003e0000 0x00020000>;
+		};
+	};
 };
 
 &loguart {
