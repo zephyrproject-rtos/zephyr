@@ -576,6 +576,8 @@ Ethernet
   It is enabled by default if :kconfig:option:`CONFIG_NET_CHECKSUM_OFFLOAD_SUPPORTED` is selected.
   (:github:`105051`)
 
+* The ``phy-handle`` property of :dtcompatible:`microchip,lan865x` must now be set to the phy node.
+
 File System
 ===========
 
