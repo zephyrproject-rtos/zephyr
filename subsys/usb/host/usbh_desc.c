@@ -1,15 +1,18 @@
 /*
  * SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
- * SPDX-FileCopyrightText: Copyright 2025 NXP
+ * SPDX-FileCopyrightText: Copyright 2025 - 2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/drivers/usb/uhc.h>
 #include <zephyr/usb/usb_ch9.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
 
 #include "usbh_class.h"
 #include "usbh_desc.h"
+#include "usbh_ch9.h"
+#include "usbh_device.h"
 
 LOG_MODULE_REGISTER(usbh_desc, CONFIG_USBH_LOG_LEVEL);
 
@@ -57,6 +60,12 @@ bool usbh_desc_is_valid_endpoint(const void *const desc)
 {
 	return usbh_desc_is_valid(desc, sizeof(struct usb_ep_descriptor),
 				  USB_DESC_ENDPOINT);
+}
+
+bool usbh_desc_is_valid_string(const void *const desc)
+{
+	return usbh_desc_is_valid(desc, sizeof(struct usb_string_descriptor),
+				  USB_DESC_STRING);
 }
 
 const void *usbh_desc_get_next(const void *const desc)
@@ -217,4 +226,64 @@ const void *usbh_desc_get_next_function(const void *const desc)
 	}
 
 	return NULL;
+}
+
+int usbh_desc_get_lang_ids(const void *const desc, const uint8_t len, uint16_t *const lang_ids,
+			   const uint8_t lang_ids_len)
+{
+	const struct usb_desc_header *const head = desc;
+	const uint8_t *data = (const uint8_t *)desc + sizeof(struct usb_desc_header);
+	uint8_t lang_id_count;
+
+	if (len < sizeof(struct usb_string_descriptor) || !usbh_desc_is_valid_string(desc)) {
+		return -EINVAL;
+	}
+
+	/* Calculate number of LANGIDs that buffer can hold */
+	lang_id_count =
+		(MIN(head->bLength, len) - sizeof(struct usb_desc_header)) / sizeof(uint16_t);
+	lang_id_count = MIN(lang_id_count, lang_ids_len);
+
+	for (unsigned int i = 0; i < lang_id_count; i++) {
+		lang_ids[i] = sys_get_le16(&data[i * 2]);
+	}
+
+	return (int)lang_id_count;
+}
+
+int usbh_desc_str_to_ascii(const void *const desc, const uint8_t len, char *const str,
+			   const uint8_t str_len)
+{
+	const struct usb_desc_header *const head = desc;
+	const uint8_t *data = (const uint8_t *)desc + sizeof(struct usb_desc_header);
+	uint8_t char_count;
+
+	if (len < sizeof(struct usb_string_descriptor) || !usbh_desc_is_valid_string(desc)) {
+		return -EINVAL;
+	}
+
+	if (str_len == 0) {
+		return -EINVAL;
+	}
+
+	/* Calculate number of characters */
+	char_count = (MIN(head->bLength, len) - sizeof(struct usb_desc_header)) / sizeof(uint16_t);
+
+	memset(str, '\0', str_len);
+
+	for (unsigned int i = 0; i < MIN(char_count, str_len - 1); i++) {
+		uint16_t utf16le_code = sys_get_le16(&data[i * 2]);
+
+		if (utf16le_code > 0x7F) {
+			return -ENOTSUP;
+		}
+
+		if (utf16le_code == 0) {
+			break;
+		}
+
+		str[i] = (char)utf16le_code;
+	}
+
+	return 0;
 }
