@@ -1760,6 +1760,7 @@ Documentation Infrastructure:
     - include/zephyr/drivers/firmware/
     - dts/bindings/firmware/
     - doc/hardware/arch/arm-scmi.rst
+    - samples/drivers/firmware/
   labels:
     - "area: Firmware"
 
