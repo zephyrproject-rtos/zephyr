@@ -5,8 +5,8 @@
  *
  * ZMS: Zephyr Memory Storage
  */
-#ifndef ZEPHYR_INCLUDE_FS_ZMS_H_
-#define ZEPHYR_INCLUDE_FS_ZMS_H_
+#ifndef ZEPHYR_INCLUDE_KVSS_ZMS_H_
+#define ZEPHYR_INCLUDE_KVSS_ZMS_H_
 
 #include <sys/types.h>
 #include <zephyr/drivers/flash.h>
@@ -265,4 +265,4 @@ int zms_sector_use_next(struct zms_fs *fs);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_FS_ZMS_H_ */
+#endif /* ZEPHYR_INCLUDE_KVSS_ZMS_H_ */
