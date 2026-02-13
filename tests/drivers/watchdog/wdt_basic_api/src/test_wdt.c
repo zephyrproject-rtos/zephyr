@@ -72,7 +72,11 @@
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_window_watchdog)
 #define WDT_NODE            DT_INST(0, st_stm32_window_watchdog)
 #define TIMEOUTS            0
+#if defined(CONFIG_SOC_SERIES_STM32F7X)
+#define WDT_TEST_MAX_WINDOW 170
+#else
 #define WDT_TEST_MAX_WINDOW 200
+#endif
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_watchdog)
 #define WDT_NODE DT_INST(0, st_stm32_watchdog)
 #define TIMEOUTS 0
