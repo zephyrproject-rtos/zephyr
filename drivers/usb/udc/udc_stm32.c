@@ -193,16 +193,6 @@ struct udc_stm32_config {
 static int udc_stm32_clock_enable(const struct device *);
 static int udc_stm32_clock_disable(const struct device *);
 
-static void udc_stm32_lock(const struct device *dev)
-{
-	udc_lock_internal(dev, K_FOREVER);
-}
-
-static void udc_stm32_unlock(const struct device *dev)
-{
-	udc_unlock_internal(dev);
-}
-
 #define hpcd2data(hpcd) CONTAINER_OF(hpcd, struct udc_stm32_data, pcd)
 
 /*
@@ -699,47 +689,6 @@ static void udc_stm32_thread_handler(void *arg1, void *arg2, void *arg3)
 	}
 }
 
-int udc_stm32_init(const struct device *dev)
-{
-	struct udc_stm32_data *priv = udc_get_private(dev);
-	const struct udc_stm32_config *cfg = dev->config;
-	HAL_StatusTypeDef status;
-	int err;
-
-	err = stm32_usb_pwr_enable();
-	if (err != 0) {
-		LOG_ERR("Error enabling USB power: %d", err);
-		return err;
-	}
-
-	if (udc_stm32_clock_enable(dev) < 0) {
-		LOG_ERR("Error enabling clock(s)");
-		return -EIO;
-	}
-
-	/* Wipe and (re)initialize HAL context */
-	memset(&priv->pcd, 0, sizeof(priv->pcd));
-
-	priv->pcd.Instance = cfg->base;
-	priv->pcd.Init.dev_endpoints = cfg->num_endpoints;
-	priv->pcd.Init.ep0_mps = UDC_STM32_EP0_MAX_PACKET_SIZE;
-	priv->pcd.Init.phy_itface = cfg->selected_phy;
-	priv->pcd.Init.speed = cfg->selected_speed;
-	priv->pcd.Init.Sof_enable = IS_ENABLED(CONFIG_UDC_ENABLE_SOF);
-
-	status = HAL_PCD_Init(&priv->pcd);
-	if (status != HAL_OK) {
-		LOG_ERR("PCD_Init failed, %d", (int)status);
-		return -EIO;
-	}
-
-	if (HAL_PCD_Stop(&priv->pcd) != HAL_OK) {
-		return -EIO;
-	}
-
-	return 0;
-}
-
 /*
  * NOTE: This will no longer work if a new SoC contains
  * both an instance of the ST USB IP and an instance of
@@ -872,6 +821,75 @@ static int udc_stm32_ep_mem_config(const struct device *dev,
 	return 0;
 }
 #endif
+
+static int udc_stm32_ep_flush(const struct device *dev,
+			      struct udc_ep_config *ep_cfg)
+{
+	struct udc_stm32_data *priv = udc_get_private(dev);
+	HAL_StatusTypeDef status;
+
+	LOG_DBG("Flush ep 0x%02x", ep_cfg->addr);
+
+	status = HAL_PCD_EP_Flush(&priv->pcd, ep_cfg->addr);
+	if (status != HAL_OK) {
+		LOG_ERR("HAL_PCD_EP_Flush failed(0x%02x), %d",
+			ep_cfg->addr, (int)status);
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static void udc_stm32_lock(const struct device *dev)
+{
+	udc_lock_internal(dev, K_FOREVER);
+}
+
+static void udc_stm32_unlock(const struct device *dev)
+{
+	udc_unlock_internal(dev);
+}
+
+int udc_stm32_init(const struct device *dev)
+{
+	struct udc_stm32_data *priv = udc_get_private(dev);
+	const struct udc_stm32_config *cfg = dev->config;
+	HAL_StatusTypeDef status;
+	int err;
+
+	err = stm32_usb_pwr_enable();
+	if (err != 0) {
+		LOG_ERR("Error enabling USB power: %d", err);
+		return err;
+	}
+
+	if (udc_stm32_clock_enable(dev) < 0) {
+		LOG_ERR("Error enabling clock(s)");
+		return -EIO;
+	}
+
+	/* Wipe and (re)initialize HAL context */
+	memset(&priv->pcd, 0, sizeof(priv->pcd));
+
+	priv->pcd.Instance = cfg->base;
+	priv->pcd.Init.dev_endpoints = cfg->num_endpoints;
+	priv->pcd.Init.ep0_mps = UDC_STM32_EP0_MAX_PACKET_SIZE;
+	priv->pcd.Init.phy_itface = cfg->selected_phy;
+	priv->pcd.Init.speed = cfg->selected_speed;
+	priv->pcd.Init.Sof_enable = IS_ENABLED(CONFIG_UDC_ENABLE_SOF);
+
+	status = HAL_PCD_Init(&priv->pcd);
+	if (status != HAL_OK) {
+		LOG_ERR("PCD_Init failed, %d", (int)status);
+		return -EIO;
+	}
+
+	if (HAL_PCD_Stop(&priv->pcd) != HAL_OK) {
+		return -EIO;
+	}
+
+	return 0;
+}
 
 static int udc_stm32_enable(const struct device *dev)
 {
@@ -1130,24 +1148,6 @@ static int udc_stm32_ep_clear_halt(const struct device *dev,
 			udc_stm32_rx(dev, ep_cfg, buf);
 		}
 	}
-	return 0;
-}
-
-static int udc_stm32_ep_flush(const struct device *dev,
-			      struct udc_ep_config *ep_cfg)
-{
-	struct udc_stm32_data *priv = udc_get_private(dev);
-	HAL_StatusTypeDef status;
-
-	LOG_DBG("Flush ep 0x%02x", ep_cfg->addr);
-
-	status = HAL_PCD_EP_Flush(&priv->pcd, ep_cfg->addr);
-	if (status != HAL_OK) {
-		LOG_ERR("HAL_PCD_EP_Flush failed(0x%02x), %d",
-			ep_cfg->addr, (int)status);
-		return -EIO;
-	}
-
 	return 0;
 }
 
