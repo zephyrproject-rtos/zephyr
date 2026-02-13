@@ -9,7 +9,7 @@
 
 /* Define nrfx API version used in Zephyr. */
 #define NRFX_CONFIG_API_VER_MAJOR 4
-#define NRFX_CONFIG_API_VER_MINOR 0
+#define NRFX_CONFIG_API_VER_MINOR 1
 #define NRFX_CONFIG_API_VER_MICRO 0
 
 /* Macros used in zephyr-specific config files. */
