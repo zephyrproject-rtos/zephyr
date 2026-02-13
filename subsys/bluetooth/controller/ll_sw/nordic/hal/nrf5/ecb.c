@@ -204,8 +204,7 @@ void ecb_encrypt_nonblocking(struct ecb *e)
 static void isr_ecb(const void *arg)
 {
 #ifdef EASYVDMA_PRESENT
-	struct ecb *e = (void *)((uint8_t *)NRF_ECB->ECBDATAPTR -
-				 sizeof(struct ecb));
+	struct ecb *e = (void *)((uint8_t *)NRF_ECB->ECBDATAPTR - sizeof(struct ecb));
 #else /* EASYVDMA_PRESENT */
 	struct ecb *e = (void *)NRF_ECB->ECBDATAPTR;
 #endif /* EASYVDMA_PRESENT */
