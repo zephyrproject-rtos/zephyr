@@ -245,6 +245,12 @@ void *instr_get_trigger_func(void);
  */
 void *instr_get_stop_func(void);
 
+void instr_recursive_exclude_try_enable(void *callee);
+
+void instr_recursive_exclude_try_disable(void *callee);
+
+bool instr_recursive_exclude_enabled(void);
+
 #ifdef __cplusplus
 }
 #endif

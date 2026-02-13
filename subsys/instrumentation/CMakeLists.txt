@@ -7,6 +7,17 @@ if(CONFIG_INSTRUMENTATION)
 
   zephyr_library()
 
+  set(instr_recursive_exclude ${CMAKE_BINARY_DIR}/instr_recursive_exclude.c)
+
+  add_custom_command(
+    OUTPUT ${instr_recursive_exclude}
+    COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/instr_exclude_gen.py ${CONFIG_INSTRUMENTATION_RECURSIVE_EXCLUDE_LIST} ${instr_recursive_exclude}
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/instr_exclude_gen.py
+    VERBATIM
+  )
+
+  zephyr_library_sources_ifdef(CONFIG_INSTRUMENTATION_RECURSIVE_EXCLUDE ${instr_recursive_exclude})
+
   zephyr_library_sources(common/instr_common.c)
   zephyr_library_sources(timestamp/timestamp.c)
 

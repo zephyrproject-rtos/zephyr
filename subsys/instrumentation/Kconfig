@@ -24,6 +24,19 @@ endchoice
 rsource "transport/Kconfig.uart"
 rsource "transport/Kconfig.tracing"
 
+config INSTRUMENTATION_RECURSIVE_EXCLUDE
+	bool "Recursively exclude children of specified functions from instrumentation"
+	default y
+
+if INSTRUMENTATION_RECURSIVE_EXCLUDE
+
+config INSTRUMENTATION_RECURSIVE_EXCLUDE_LIST
+	string "Comma separated list of functions"
+	default "sys_clock_isr,z_impl_k_sem_give,z_impl_k_sem_take,z_impl_k_mutex_lock,\
+z_impl_k_mutex_unlock,printk,instr_timestamp_ns"
+
+endif
+
 config INSTRUMENTATION_MODE_CALLGRAPH
 	bool "Call graph mode (Tracing)"
 	default y
@@ -105,6 +118,7 @@ config INSTRUMENTATION_EXCLUDE_FUNCTION_LIST
 
 config INSTRUMENTATION_EXCLUDE_FILE_LIST
 	string "Exclude file list"
+	default "include/zephyr/spinlock.h,include/zephyr/timing/timing.h,zephyr/subsys/tracing/"
 	depends on INSTRUMENTATION_MODE_CALLGRAPH || INSTRUMENTATION_MODE_STATISTICAL
 	help
 	  Set the list of files that are excluded from instrumentation. The
