@@ -35,6 +35,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/nxp_mcux_clock_subsys.h>
 #include <zephyr/drivers/hwinfo.h>
 
 #ifdef CONFIG_PTP_CLOCK
@@ -968,8 +969,8 @@ BUILD_ASSERT(NXP_ENET_PHY_MODE(DT_DRV_INST(n)) != NXP_ENET_RGMII_MODE ||		\
 			.irq_config_func = nxp_enet_##n##_irq_config_func,		\
 			.module_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),			\
 			.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(n))),	\
-			.clock_subsys = (void *)DT_CLOCKS_CELL_BY_IDX(			\
-						DT_INST_PARENT(n), 0, name),		\
+			.clock_subsys = (clock_control_subsys_t)				\
+				NXP_MCUX_DT_CLOCK_RATE_SUBSYS_BY_IDX(DT_INST_PARENT(n), 0),	\
 			.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 			.buffer_config = {{						\
 				.rxBdNumber = CONFIG_ETH_NXP_ENET_RX_BUFFERS,		\
@@ -1046,8 +1047,8 @@ static int nxp_enet_mod_init(const struct device *dev)
 static const struct nxp_enet_mod_config nxp_enet_mod_cfg_##n = {			\
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),					\
 		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_DRV_INST(n))),		\
-		.clock_subsys = (void *) DT_CLOCKS_CELL_BY_IDX(				\
-							DT_DRV_INST(n), 0, name),	\
+		.clock_subsys = (clock_control_subsys_t)					\
+			NXP_MCUX_DT_CLOCK_GATE_SUBSYS_BY_IDX(DT_DRV_INST(n), 0),		\
 };											\
 											\
 static struct nxp_enet_mod_data nxp_enet_mod_data_##n;					\
@@ -1067,8 +1068,8 @@ DT_INST_FOREACH_STATUS_OKAY_VARGS(NXP_ENET_INIT, DT_DRV_COMPAT)
 static const struct nxp_enet_mod_config nxp_enet1g_mod_cfg_##n = {			\
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),					\
 		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_DRV_INST(n))),		\
-		.clock_subsys = (void *) DT_CLOCKS_CELL_BY_IDX(				\
-							DT_DRV_INST(n), 0, name),	\
+		.clock_subsys = (clock_control_subsys_t)					\
+			NXP_MCUX_DT_CLOCK_GATE_SUBSYS_BY_IDX(DT_DRV_INST(n), 0),		\
 };											\
 											\
 static struct nxp_enet_mod_data nxp_enet1g_mod_data_##n;				\
