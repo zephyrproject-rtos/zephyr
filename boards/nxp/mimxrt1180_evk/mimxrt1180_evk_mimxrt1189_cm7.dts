@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -132,5 +132,10 @@ zephyr_udc1: &usb2 {
 };
 
 &sai1 {
+	status = "okay";
+};
+
+&sema1 {
+	domain-id = <9>;
 	status = "okay";
 };
