@@ -512,9 +512,7 @@ static DEVICE_API(gpio, api_table) = {
 #define GPIO_PCA953X_INIT(n)							\
 	static const struct pca953x_config pca953x_cfg_##n = {			\
 		.i2c = I2C_DT_SPEC_INST_GET(n),					\
-		.common = {							\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),	\
-		},								\
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),			\
 		.interrupt_enabled = DT_INST_NODE_HAS_PROP(n, nint_gpios),	\
 		.has_pud = DT_INST_PROP(n, has_pud),				\
 		.gpio_int = GPIO_DT_SPEC_INST_GET_OR(n, nint_gpios, {0}),	\

@@ -218,8 +218,9 @@ static DEVICE_API(gpio, gpio_xmc4xxx_driver_api) = {
 	static struct gpio_xmc4xxx_data xmc4xxx_data_##index;                                      \
                                                                                                    \
 	static const struct gpio_xmc4xxx_config xmc4xxx_config_##index = {                         \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(index),                                  \
 		.port = (XMC_GPIO_PORT_t *)DT_INST_REG_ADDR(index),                                \
-		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(index)}};              \
+	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(index, gpio_xmc4xxx_init, NULL, &xmc4xxx_data_##index,               \
 			      &xmc4xxx_config_##index, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,     \

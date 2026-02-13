@@ -221,10 +221,7 @@ static DEVICE_API(gpio, gpio_sc18is606_driver_api) = {
 
 #define GPIO_SC18IS606_DEFINE(inst)                                                                \
 	static const struct gpio_sc18is606_config gpio_sc18is606_config##inst = {                  \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),            \
-			},                                                                         \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(inst),                                   \
 		.bridge = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                     \
 	};                                                                                         \
 	static struct gpio_sc18is606_data gpio_sc18is606_data##inst = {                            \

@@ -215,7 +215,7 @@ static DEVICE_API(gpio, kb1200_gpio_api) = {
 		return 0;                                                                          \
 	};                                                                                         \
 	static const struct gpio_kb1200_config port_##n##_kb1200_config = {                        \
-		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n)},                   \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                                      \
 		.gpio_regs = (struct gpio_regs *)DT_INST_REG_ADDR_BY_IDX(n, 0),                    \
 		.gptd_regs = (struct gptd_regs *)DT_INST_REG_ADDR_BY_IDX(n, 1),                    \
 	};                                                                                         \

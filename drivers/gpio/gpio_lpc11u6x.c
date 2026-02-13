@@ -568,10 +568,8 @@ static int gpio_lpc11u6x_init(const struct device *dev)
 #define GPIO_LPC11U6X_INIT(id)						\
 static const struct gpio_lpc11u6x_config				\
 			gpio_lpc11u6x_config_##id = {			\
-	.common = {							\
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(	\
+	.common = GPIO_COMMON_CONFIG_FROM_DT_NODE(			\
 					DT_NODELABEL(gpio##id)),	\
-	},								\
 	.shared = &gpio_lpc11u6x_shared,				\
 	.port_num = id,							\
 	.ngpios = DT_PROP(DT_NODELABEL(gpio##id), ngpios),		\

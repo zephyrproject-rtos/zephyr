@@ -568,11 +568,7 @@ static DEVICE_API(gpio, gpio_rz_driver_api) = {
 		.p_extend = NULL,                                                                  \
 	};                                                                                         \
 	static const struct gpio_rz_config gpio_rz_##inst##_config = {                             \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask =                                                   \
-					(gpio_port_pins_t)GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),   \
-			},                                                                         \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(inst),                                   \
 		.fsp_port = (uint32_t)DT_INST_REG_ADDR(inst),                                      \
 		.port_num = (uint8_t)DT_NODE_CHILD_IDX(DT_DRV_INST(inst)),                         \
 		.ngpios = (uint8_t)DT_INST_PROP(inst, ngpios),                                     \

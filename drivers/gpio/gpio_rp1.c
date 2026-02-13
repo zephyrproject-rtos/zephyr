@@ -208,7 +208,7 @@ static int gpio_rp1_init(const struct device *port)
 	static struct gpio_rp1_data gpio_rp1_data_##n;                                             \
                                                                                                    \
 	static const struct gpio_rp1_config gpio_rp1_cfg_##n = {                                   \
-		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0)},                   \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(0),                                      \
 		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_INST_PARENT(n)),                           \
 		.gpio_offset = DT_INST_REG_ADDR_BY_IDX(n, 0),                                      \
 		.rio_offset = DT_INST_REG_ADDR_BY_IDX(n, 1),                                       \

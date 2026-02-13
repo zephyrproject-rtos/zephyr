@@ -458,9 +458,7 @@ static int gpio_rpi_bank_init(const struct device *dev)
 		}                                                                                  \
 	))                                                                                         \
 	static const struct gpio_rpi_config gpio_rpi_##idx##_config = {                            \
-		.common = {                                                                        \
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),                     \
-		},                                                                                 \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(idx),                                    \
 		IF_ENABLED(IS_GPIO_RPI_LO_NODE(DT_DRV_INST(idx)), (                                \
 			.bank_config_func = bank_##idx##_config_func,                              \
 		))                                                                                 \

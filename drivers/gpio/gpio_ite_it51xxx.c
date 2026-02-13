@@ -450,7 +450,7 @@ static DEVICE_API(gpio, gpio_ite_driver_api) = {
 			IT8XXX2_DT_WUC_ITEMS_LIST(inst);                                           \
 	static struct gpio_ite_data gpio_ite_data_##inst;                                          \
 	static const struct gpio_ite_cfg gpio_ite_cfg_##inst = {                                   \
-		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst)},                \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(inst),                                   \
 		.wuc_map_list = it51xxx_gpio_wuc_##inst,                                           \
 		.reg_gpdr = DT_INST_REG_ADDR_BY_IDX(inst, 0),                                      \
 		.reg_gpdmr = DT_INST_REG_ADDR_BY_IDX(inst, 1),                                     \

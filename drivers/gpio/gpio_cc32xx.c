@@ -264,9 +264,7 @@ static DEVICE_API(gpio, api_funcs) = {
 
 #define GPIO_CC32XX_INIT(n)						     \
 	static const struct gpio_cc32xx_config gpio_cc32xx_a##n##_config = { \
-		.common = {						     \
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n), \
-		},							     \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),		     \
 		.port_base = DT_INST_REG_ADDR(n),			     \
 		.port_num = n						     \
 	};								     \

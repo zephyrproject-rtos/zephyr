@@ -299,10 +299,7 @@ static DEVICE_API(gpio, gpio_altera_driver_api) = {
 	static void gpio_altera_cfg_func_##n(void);			\
 	static struct gpio_altera_data gpio_altera_data_##n;		\
 	static struct gpio_altera_config gpio_config_##n = {		\
-		.common		= {					\
-		.port_pin_mask	=					\
-				  GPIO_PORT_PIN_MASK_FROM_DT_INST(n),	\
-		},						        \
+		.common		= GPIO_COMMON_CONFIG_FROM_DT_INST(n),	\
 		.reg_base	= DT_INST_REG_ADDR(n),			\
 		.direction	= DT_INST_ENUM_IDX(n, direction),	\
 		.irq_num	= COND_CODE_1(DT_INST_IRQ_HAS_IDX(n, 0), (DT_INST_IRQN(n)), (0)),\

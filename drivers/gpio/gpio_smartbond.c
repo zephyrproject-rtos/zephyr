@@ -400,10 +400,7 @@ static DEVICE_API(gpio, gpio_smartbond_drv_api_funcs) = {
 #define GPIO_SMARTBOND_DEVICE(id)							\
 	GPIO_PM_DEVICE_STATE(id, DT_INST_PROP(id, ngpios))				\
 	static const struct gpio_smartbond_config gpio_smartbond_config_##id = {	\
-		.common = {								\
-			.port_pin_mask =						\
-			GPIO_PORT_PIN_MASK_FROM_DT_INST(id),				\
-		},									\
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(id),				\
 		.data_regs = (volatile struct gpio_smartbond_data_regs *)		\
 						DT_INST_REG_ADDR_BY_NAME(id, data),	\
 		.mode_regs = (volatile uint32_t *)DT_INST_REG_ADDR_BY_NAME(id, mode),	\

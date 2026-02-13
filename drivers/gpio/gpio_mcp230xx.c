@@ -84,9 +84,7 @@ static int mcp230xx_bus_is_ready(const struct device *dev)
 		.reg_cache.gpio = 0x0,     .reg_cache.olat = 0x0,                                  \
 	};                                                                                         \
 	static const struct mcp23xxx_config mcp##model##_##inst##_config = {                       \
-		.config = {                                                                        \
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),                    \
-		},                                                                                 \
+		.config = GPIO_COMMON_CONFIG_FROM_DT_INST(inst),                                   \
 		.bus = {                                                                           \
 			.i2c = I2C_DT_SPEC_INST_GET(inst),                                         \
 		},                                                                                 \

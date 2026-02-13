@@ -396,10 +396,7 @@ static DEVICE_API(gpio, gpio_adi_max22017_api) = {
 
 #define GPIO_MAX22017_DEVICE(id)                                                                   \
 	static const struct gpio_adi_max22017_config gpio_adi_max22017_##id##_cfg = {              \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(id),              \
-			},                                                                         \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(id),                                     \
 		.parent = DEVICE_DT_GET(DT_INST_PARENT(id)),                                       \
 	};                                                                                         \
 	static struct gpio_adi_max22017_data gpio_adi_max22017_##id##_data;                        \

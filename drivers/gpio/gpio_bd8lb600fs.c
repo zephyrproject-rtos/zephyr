@@ -185,10 +185,7 @@ static int bd8lb600fs_gpio_init(const struct device *dev)
 
 #define BD8LB600FS_GPIO_INIT(inst)                                                                 \
 	static const struct bd8lb600fs_gpio_config bd8lb600fs_##inst##_config = {                  \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),            \
-			},                                                                         \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(inst),                                   \
 		.parent_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                 \
 		.gpios_count = DT_INST_PROP(inst, ngpios),                                         \
 	};                                                                                         \

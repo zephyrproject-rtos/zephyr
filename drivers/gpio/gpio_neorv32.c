@@ -294,9 +294,7 @@ static DEVICE_API(gpio, neorv32_gpio_driver_api) = {
 	};								\
 									\
 	static const struct neorv32_gpio_config neorv32_gpio_##n##_config = { \
-		.common = {						\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n) \
-		},							\
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),		\
 		.syscon = DEVICE_DT_GET(DT_INST_PHANDLE(n, syscon)),	\
 		.base = DT_INST_REG_ADDR(n),				\
 		.irq_config_func = neorv32_gpio_config_func_##n,	\

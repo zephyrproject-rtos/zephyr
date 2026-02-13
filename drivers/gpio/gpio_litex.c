@@ -352,7 +352,7 @@ static DEVICE_API(gpio, gpio_litex_driver_api) = {
 		     "Number of gpios exceeds what can be handled");				   \
                                                                                                    \
 	static const struct gpio_litex_cfg gpio_litex_cfg_##n = {                                  \
-		.common = { .port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n) },                 \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                                      \
 		.oe_addr = DT_INST_REG_ADDR_BY_NAME_OR(n, oe, 0),                                  \
 		.in_addr = DT_INST_REG_ADDR_BY_NAME_OR(n, in, 0),                                  \
 		.out_addr = DT_INST_REG_ADDR_BY_NAME_OR(n, out, 0),                                \

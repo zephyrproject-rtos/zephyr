@@ -210,9 +210,7 @@ static DEVICE_API(gpio, gpio_esp32_lp_driver_api) = {
 
 static struct gpio_esp32_lp_data gpio_esp32_lp_data_0;
 static struct gpio_esp32_lp_config gpio_esp32_lp_cfg = {
-	.drv_cfg = {
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(DT_NODELABEL(lp_gpio)),
-		},
+	.drv_cfg = GPIO_COMMON_CONFIG_FROM_DT_NODE(DT_NODELABEL(lp_gpio)),
 	.lp_io_dev = (lp_io_dev_t *)DT_REG_ADDR(DT_NODELABEL(lp_gpio)),
 };
 

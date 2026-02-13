@@ -344,9 +344,7 @@ static DEVICE_API(gpio, gpio_bflb_api) = {
 	static void port_##n##_bflb_irq_enable_func(const struct device *dev);	\
 										\
 	static const struct gpio_bflb_config port_##n##_bflb_config = {		\
-		.common = {							\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),	\
-		},								\
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),			\
 		.base_reg = DT_INST_REG_ADDR(n),				\
 		.irq_config_func = port_##n##_bflb_irq_config_func,		\
 		.irq_enable_func = port_##n##_bflb_irq_enable_func,		\

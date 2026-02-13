@@ -688,10 +688,7 @@ static DEVICE_API(gpio, gpio_nrfx_drv_api_funcs) = {
 	GPIOTE_CHECK(id);								\
 	static struct gpio_nrfx_data gpio_nrfx_p##id##_data;				\
 	static const struct gpio_nrfx_cfg gpio_nrfx_p##id##_cfg = {			\
-		.common = {								\
-			.port_pin_mask =						\
-			GPIO_PORT_PIN_MASK_FROM_DT_INST(id),				\
-		},									\
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(id),				\
 		.port = _CONCAT(NRF_P, DT_INST_PROP(id, port)),				\
 		.gpiote = GPIOTE_REF(id),						\
 		.edge_sense = DT_INST_PROP_OR(id, sense_edge_mask, 0),			\

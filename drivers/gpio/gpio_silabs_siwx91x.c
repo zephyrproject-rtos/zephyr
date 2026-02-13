@@ -460,7 +460,7 @@ static DEVICE_API(gpio, gpio_siwx91x_api) = {
 	struct gpio_siwx91x_pin_config_info                                                        \
 		pin_config_info_##n[__builtin_popcount(GPIO_PORT_PIN_MASK_FROM_DT_NODE(n))];       \
 	static const struct gpio_siwx91x_port_config gpio_siwx91x_port_config##n = {               \
-		.common.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(n),                        \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_NODE(n),                                      \
 		.parent = DEVICE_DT_GET(DT_PARENT(n)),                                             \
 		.pads = DT_PROP(n, silabs_pads),                                                   \
 		.port = DT_REG_ADDR(n),                                                            \

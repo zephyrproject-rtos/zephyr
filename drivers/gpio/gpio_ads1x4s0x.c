@@ -132,7 +132,7 @@ BUILD_ASSERT(CONFIG_GPIO_ADS1X4S0X_INIT_PRIORITY > CONFIG_ADC_INIT_PRIORITY,
 
 #define GPIO_ADS1X4S0X_DEVICE(id)                                                                  \
 	static const struct gpio_ads1x4s0x_config gpio_ads1x4s0x_##id##_cfg = {                    \
-		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(id)},                  \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(id),                                     \
 		.parent = DEVICE_DT_GET(DT_INST_BUS(id)),                                          \
 	};                                                                                         \
                                                                                                    \

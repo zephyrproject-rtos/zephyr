@@ -208,10 +208,7 @@ int gpio_iproc_init(const struct device *dev)
 	}                                                                                          \
                                                                                                    \
 	static const struct gpio_iproc_config gpio_port_config_##n = {                             \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                                      \
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.irq_config_func = port_iproc_config_func_##n,                                     \
 	};                                                                                         \
