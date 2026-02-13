@@ -9,6 +9,7 @@
 #include <zephyr/drivers/comparator.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/nxp_mcux_clock_subsys.h>
 
 LOG_MODULE_REGISTER(nxp_cmp, CONFIG_COMPARATOR_LOG_LEVEL);
 
@@ -251,8 +252,8 @@ static DEVICE_API(comparator, nxp_cmp_api) = {
 				hysteresis_mode, 0),				\
 		.irq_config_func = _CONCAT(nxp_cmp_irq_config, inst),		\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),		\
-		.clock_subsys =							\
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, name),\
+		.clock_subsys =						\
+			(clock_control_subsys_t)NXP_MCUX_DT_INST_CLOCK_GATE_SUBSYS(inst),\
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(inst, nxp_cmp_init, PM_DEVICE_DT_INST_GET(inst),	\
