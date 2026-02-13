@@ -79,7 +79,7 @@
 	};
 };
 
-&code_flash {
+&code_flash0 {
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;

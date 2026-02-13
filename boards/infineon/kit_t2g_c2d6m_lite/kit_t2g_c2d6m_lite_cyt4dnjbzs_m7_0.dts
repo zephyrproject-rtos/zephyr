@@ -16,7 +16,7 @@
 
 	chosen {
 		zephyr,sram = &sram_m7_0;
-		zephyr,flash = &code_flash;
+		zephyr,flash = &code_flash0;
 		zephyr,dtcm = &dtcm;
 		zephyr,itcm = &itcm;
 		zephyr,code-partition = &m7_0_partition;

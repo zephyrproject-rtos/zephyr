@@ -13,7 +13,7 @@
 
 	chosen {
 		zephyr,sram = &sram_m0plus;
-		zephyr,flash = &code_flash;
+		zephyr,flash = &code_flash0;
 		zephyr,code-partition = &m0p_partition;
 		/* Modify the following properties to enable uart */
 		/* zephyr,console = &uart7; */

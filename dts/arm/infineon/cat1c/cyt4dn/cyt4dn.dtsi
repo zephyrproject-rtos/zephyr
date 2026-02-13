@@ -44,7 +44,7 @@
 		#size-cells = <1>;
 		status = "okay";
 
-		code_flash: flash@10000000 {
+		code_flash0: flash@10000000 {
 			compatible = "soc-nv-flash";
 			reg = <0x10000000 DT_SIZE_K(6336)>;
 			write-block-size = <512>;
