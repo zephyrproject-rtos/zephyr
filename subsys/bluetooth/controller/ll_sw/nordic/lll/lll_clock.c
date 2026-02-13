@@ -32,7 +32,7 @@ static uint16_t const sca_ppm_lut[] = {500, 250, 150, 100, 75, 50, 30, 20};
 static atomic_val_t hf_refcnt;
 
 #if defined(CONFIG_SOC_SERIES_NRF54H)
-#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 7U /* FIXME: */
+#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 7U /* FIXME: Get the correct value for the board */
 
 const static struct device *clock_dev_lf = DEVICE_DT_GET(DT_NODELABEL(lfclk));
 const static struct nrf_clock_spec clock_req_spec_lf = {
@@ -70,6 +70,7 @@ int lll_clock_deinit(void)
 
 int lll_clock_wait(void)
 {
+	/* FIXME: Design and implement blocking wait for sleep clock startup as needed */
 	return 0;
 }
 
@@ -107,8 +108,7 @@ int lll_hfclock_on(void)
 
 int lll_hfclock_on_wait(void)
 {
-	/* TODO: */
-
+	/* FIXME: Design and implement blocking wait for active clock startup as needed */
 	return 0;
 }
 
