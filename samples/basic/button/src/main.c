@@ -9,7 +9,13 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 
-static const struct led_dt_spec led0 = LED_DT_SPEC_GET_OR(DT_ALIAS(led0), {0});
+#define LED0_NODE DT_ALIAS(led0)
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_PARENT(LED0_NODE))
+static const struct led_dt_spec led0 = LED_DT_SPEC_GET(LED0_NODE);
+#else
+static const struct led_dt_spec led0;
+#endif
 
 static void button_input_cb(struct input_event *evt, void *user_data)
 {
