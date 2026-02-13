@@ -163,7 +163,7 @@ static int i2c_rts5912_recover_bus(const struct device *dev)
 	gpio_pin_get_dt(&config->scl_gpios);
 
 	/* Output type selection */
-	flags = GPIO_OUTPUT_HIGH | RTS5912_GPIO_SCHEN;
+	flags = GPIO_OUTPUT_HIGH | RTS5912_GPIO_SCHEN | GPIO_OPEN_DRAIN;
 	/* Set SCL of I2C as GPIO pin */
 	gpio_pin_configure_dt(&config->scl_gpios, flags);
 	/* Set SDA of I2C as GPIO pin */
