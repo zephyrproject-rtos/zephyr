@@ -492,12 +492,6 @@ enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 		goto drop;
 	}
 
-	reass = reassembly_get(id, hdr->src, hdr->dst);
-	if (!reass) {
-		NET_DBG("Cannot get reassembly slot, dropping pkt %p", pkt);
-		goto drop;
-	}
-
 	more = flag & 0x01;
 	net_pkt_set_ipv6_fragment_flags(pkt, flag);
 
@@ -508,6 +502,12 @@ enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 		 */
 		net_icmpv6_send_error(pkt, NET_ICMPV6_PARAM_PROBLEM,
 				      NET_ICMPV6_PARAM_PROB_HEADER, NET_IPV6H_LENGTH_OFFSET);
+		goto drop;
+	}
+
+	reass = reassembly_get(id, hdr->src, hdr->dst);
+	if (reass == NULL) {
+		NET_DBG("Cannot get reassembly slot, dropping pkt %p", pkt);
 		goto drop;
 	}
 
