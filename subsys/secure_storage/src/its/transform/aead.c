@@ -1,7 +1,7 @@
 /* Copyright (c) 2024 Nordic Semiconductor
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <../library/psa_crypto_driver_wrappers.h>
+#include <../core/psa_crypto_driver_wrappers.h>
 #include <zephyr/secure_storage/its/transform.h>
 #include <zephyr/secure_storage/its/transform/aead_get.h>
 #include <zephyr/sys/__assert.h>
