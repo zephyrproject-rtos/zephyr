@@ -24,7 +24,7 @@
 	chosen {
 		zephyr,flash = &flash;
 		zephyr,flash-controller = &fmu;
-		zephyr,code-partition = &code_partition;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,sram = &stcm0;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
@@ -130,12 +130,24 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		code_partition: partition@0 {
-			reg = <0x0 DT_SIZE_K(2024)>;
+		/*
+		 * Partition sizes must be aligned
+		 * to the flash memory sector size of 8KB.
+		 */
+		boot_partition: partition@0 {
+			reg = <0x0 DT_SIZE_K(80)>;
 		};
 
-		storage_partition: partition@1fa000 {
-			reg = <0x1fa000 DT_SIZE_K(16)>;
+		slot0_partition: partition@14000 {
+			reg = <0x14000 DT_SIZE_K(928)>;
+		};
+
+		slot1_partition: partition@fc000 {
+			reg = <0xfc000 DT_SIZE_K(928)>;
+		};
+
+		storage_partition: partition@1e4000 {
+			reg = <0x1e4000 DT_SIZE_K(104)>;
 		};
 
 		hw_params_partition: partition@1fe000 {
