@@ -1,0 +1,19 @@
+# Copyright 2026 Texas Instruments Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Counter based Real Time Clock (RTC) available in the TI K3 generation of processors.
+
+compatible: "ti,k3-rtc-counter"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
