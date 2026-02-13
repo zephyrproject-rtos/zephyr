@@ -15,8 +15,17 @@
 
 LOG_MODULE_REGISTER(auxdisplay_sample, LOG_LEVEL_DBG);
 
+#ifdef CONFIG_AUXDISPLAY_MCUX_SLCD
+/*
+ * NXP MCUX SLCD controller is using com back panel and
+ * d-pin front panel to control.
+ */
+#define AUXDISPLAY_NODE        DT_NODELABEL(auxdisplay0)
+#define AUXDISPLAY_DIGIT_COUNT DT_PROP(AUXDISPLAY_NODE, columns)
+#else
 #define AUXDISPLAY_NODE        DT_NODELABEL(auxdisplay_0)
 #define AUXDISPLAY_DIGIT_COUNT DT_PROP_LEN(AUXDISPLAY_NODE, digit_gpios)
+#endif
 
 static const struct device *const dev = DEVICE_DT_GET(AUXDISPLAY_NODE);
 static uint8_t data[AUXDISPLAY_DIGIT_COUNT * 2];
@@ -30,6 +39,8 @@ int main(void)
 		LOG_ERR("Auxdisplay device is not ready.");
 		return -ENODEV;
 	}
+
+	LOG_INF("Auxdisplay demo starting");
 
 	/* Light up all segments */
 	for (i = 0; i < AUXDISPLAY_DIGIT_COUNT; i++) {
@@ -86,6 +97,17 @@ int main(void)
 	}
 
 	k_msleep(500);
+
+#ifdef CONFIG_AUXDISPLAY_MCUX_SLCD
+	/* demo colon feature of slcd */
+	LOG_INF("NXP SLCD write 12:12");
+	auxdisplay_write(dev, "12:12", 5);
+	k_msleep(500);
+	LOG_INF("NXP SLCD write 12:12:12");
+	auxdisplay_write(dev, "12:12:12", 8);
+	k_msleep(500);
+	LOG_INF("Auxdisplay demo running");
+#endif /* CONFIG_AUXDISPLAY_MCUX_SLCD */
 
 	/* Count from 0 up to fill all digits */
 

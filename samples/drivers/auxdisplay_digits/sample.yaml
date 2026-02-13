@@ -9,3 +9,13 @@ tests:
     integration_platforms:
       - native_sim
     build_only: true
+  sample.drivers.auxdisplay_digits.nxp_slcd:
+    tags: auxdisplay
+    depends_on:
+      - auxdisplay
+      - slcd
+    integration_platforms:
+      - frdm_mcxa266
+      - frdm_mcxc444
+    filter: CONFIG_AUXDISPLAY_MCUX_SLCD and dt_compat_enabled("nxp,slcd")
+    harness: pytest
