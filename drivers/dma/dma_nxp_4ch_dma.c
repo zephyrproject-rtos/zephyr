@@ -8,6 +8,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/nxp_mcux_clock_subsys.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/barrier.h>
@@ -441,10 +442,12 @@ static DEVICE_API(dma, nxp_dma_api) = {
 		.irq_config_func = _CONCAT(nxp_dma_irq_config_func, inst),			\
 		.dma_clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_IDX(inst, 0)),		\
 		.dma_clk_subsys =								\
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_IDX(inst, 0, name),	\
+			(clock_control_subsys_t)						\
+				NXP_MCUX_DT_INST_CLOCK_GATE_SUBSYS_BY_IDX(inst, 0),	\
 		.dmamux_clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_IDX(inst, 1)),		\
 		.dmamux_clk_subsys =								\
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_IDX(inst, 1, name),	\
+			(clock_control_subsys_t)						\
+				NXP_MCUX_DT_INST_CLOCK_GATE_SUBSYS_BY_IDX(inst, 1),	\
 	};											\
 												\
 	DEVICE_DT_INST_DEFINE(inst, nxp_dma_init, NULL, &_CONCAT(nxp_dma_runtime, inst),	\
