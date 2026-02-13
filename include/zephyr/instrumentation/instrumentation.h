@@ -245,6 +245,27 @@ void *instr_get_trigger_func(void);
  */
 void *instr_get_stop_func(void);
 
+/**
+ * @brief Try to enable recursive instrumentation exclusion for the given function.
+ *
+ * @param callee The function address.
+ */
+void instr_recursive_exclude_try_enable(void *callee);
+
+/**
+ * @brief Try to disable recursive instrumentation exclusion for the given function.
+ *
+ * @param callee The function address.
+ */
+void instr_recursive_exclude_try_disable(void *callee);
+
+/**
+ * @brief Check whether recursive instrumentation exclusion is enabled.
+ *
+ * @return true if recursive exclude is enabled, false otherwise.
+ */
+bool instr_recursive_exclude_enabled(void);
+
 #ifdef __cplusplus
 }
 #endif

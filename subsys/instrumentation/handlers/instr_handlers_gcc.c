@@ -1,5 +1,7 @@
 /*
  * Copyright 2023 Linaro
+ * Copyright (c) 2026 Antmicro <www.antmicro.com>
+ * Copyright (c) 2026 Analog Devices
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,7 +35,11 @@ void __cyg_profile_func_enter(void *callee, void *caller)
 		return;
 	}
 
-	instr_event_handler(INSTR_EVENT_ENTRY, callee, caller);
+	if (!instr_recursive_exclude_enabled()) {
+		instr_event_handler(INSTR_EVENT_ENTRY, callee, caller);
+	}
+
+	instr_recursive_exclude_try_enable(callee);
 }
 
 __no_instrumentation__
@@ -47,7 +53,11 @@ void __cyg_profile_func_exit(void *callee, void *caller)
 		return;
 	}
 
-	instr_event_handler(INSTR_EVENT_EXIT, callee, caller);
+	instr_recursive_exclude_try_disable(callee);
+
+	if (!instr_recursive_exclude_enabled()) {
+		instr_event_handler(INSTR_EVENT_EXIT, callee, caller);
+	}
 
 	/* Turn off instrumentation if stopper returns */
 	if (callee == instr_get_stop_func() && instr_turned_on()) {
