@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: >
-  This is a representation of the Wi-Fi parts of the nRF71 Series Wi-Fi and
-  Bluetooth chip SoC.
+  Wi-Fi domain of nRF7120 Wi-Fi and
+  Bluetooth combo SoC.
 
-compatible: "nordic,nrf71-wifi"
+compatible: "nordic,nrf7120-wifi"
 
 include:
   - "wifi-tx-power-2g.yaml"
