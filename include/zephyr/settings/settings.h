@@ -410,11 +410,12 @@ int settings_commit(void);
  */
 int settings_commit_subtree(const char *subtree);
 
-#if defined(CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION) || defined(__DOXYGEN__)
 /**
  * Save a single currently running serialized value to persisted storage (if it has changed
  * value) by reading the value using the get function, or save a whole subtree's currently
  * running serialized items out.
+ *
+ * @kconfig_dep{CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION}
  *
  * @param name Name/key of the settings item or subtree.
  * @param save_if_subtree Set to true if the item should be save and it is a subtree.
@@ -426,7 +427,6 @@ int settings_commit_subtree(const char *subtree);
 int settings_save_subtree_or_single_without_modification(const char *name,
 							 bool save_if_subtree,
 							 bool save_if_single_setting);
-#endif
 
 /**
  * @} settings
@@ -649,8 +649,6 @@ int settings_name_next(const char *name, const char **next);
  * @}
  */
 
-#ifdef CONFIG_SETTINGS_RUNTIME
-
 /**
  * @defgroup settings_rt Settings subsystem runtime
  * @brief API for runtime settings
@@ -660,6 +658,8 @@ int settings_name_next(const char *name, const char **next);
 
 /**
  * Set a value with a specific key to a module handler.
+ *
+ * @kconfig_dep{CONFIG_SETTINGS_RUNTIME}
  *
  * @param name Key in string format.
  * @param data Binary value.
@@ -672,6 +672,8 @@ int settings_runtime_set(const char *name, const void *data, size_t len);
 /**
  * Get a value corresponding to a key from a module handler.
  *
+ * @kconfig_dep{CONFIG_SETTINGS_RUNTIME}
+ *
  * @param name Key in string format.
  * @param data Returned binary value.
  * @param len requested value length in bytes.
@@ -683,6 +685,8 @@ int settings_runtime_get(const char *name, void *data, size_t len);
 /**
  * Apply settings in a module handler.
  *
+ * @kconfig_dep{CONFIG_SETTINGS_RUNTIME}
+ *
  * @param name Key in string format.
  *
  * @return 0 on success, non-zero on failure.
@@ -691,8 +695,6 @@ int settings_runtime_commit(const char *name);
 /**
  * @}
  */
-
-#endif /* CONFIG_SETTINGS_RUNTIME */
 
 /**
  * Get the storage instance used by zephyr.
