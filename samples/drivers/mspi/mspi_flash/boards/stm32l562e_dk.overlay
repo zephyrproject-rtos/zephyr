@@ -18,6 +18,7 @@
 			clock-names = "ospix", "ospi-ker";
 			clocks = <&rcc STM32_CLOCK(AHB3, 8)>,
 				 <&rcc STM32_SRC_SYSCLK OSPI_SEL(0)>;
+			clock-frequency = <DT_FREQ_M(50)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			op-mode = "MSPI_OP_MODE_CONTROLLER";
