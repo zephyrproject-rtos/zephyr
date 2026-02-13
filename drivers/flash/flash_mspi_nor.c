@@ -1342,11 +1342,11 @@ BUILD_ASSERT((CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE % 4096) == 0,
 #define FLASH_PAGE_LAYOUT_DEFINE(inst) \
 	.layout = { \
 		.pages_size = CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE, \
-		.pages_count = FLASH_SIZE(inst) \
+		.pages_count = FLASH_SIZE_INST(inst) \
 			     / CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE, \
 	},
 #define FLASH_PAGE_LAYOUT_CHECK(inst) \
-BUILD_ASSERT((FLASH_SIZE(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) == 0, \
+BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) == 0, \
 	"MSPI_NOR_FLASH_LAYOUT_PAGE_SIZE incompatible with flash size, instance " #inst);
 #else
 #define FLASH_PAGE_LAYOUT_DEFINE(inst)
@@ -1377,7 +1377,7 @@ BUILD_ASSERT((FLASH_SIZE(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) == 0, \
 
 #define FLASH_MSPI_NOR_INST(inst)						\
 	BUILD_ASSERT(!PACKET_DATA_LIMIT(inst) ||				\
-		     FLASH_PAGE_SIZE(inst) <= PACKET_DATA_LIMIT(inst),		\
+		     FLASH_PAGE_SIZE_INST(inst) <= PACKET_DATA_LIMIT(inst),		\
 		"Page size for " DT_NODE_FULL_NAME(DT_DRV_INST(inst))		\
 		" exceeds controller packet data limit");			\
 	SFDP_BUILD_ASSERTS(inst);						\
@@ -1388,8 +1388,8 @@ BUILD_ASSERT((FLASH_SIZE(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) == 0, \
 		.bus = DEVICE_DT_GET(DT_INST_BUS(inst)),			\
 		.packet_data_limit = DT_PROP_OR(DT_INST_BUS(inst),		\
 						packet_data_limit, 0),		\
-		.flash_size = FLASH_SIZE(inst),					\
-		.page_size = FLASH_PAGE_SIZE(inst),				\
+		.flash_size = FLASH_SIZE_INST(inst),					\
+		.page_size = FLASH_PAGE_SIZE_INST(inst),				\
 		.mspi_id = MSPI_DEVICE_ID_DT_INST(inst),			\
 		.mspi_nor_cfg = MSPI_DEVICE_CONFIG_DT_INST(inst),		\
 		.mspi_control_cfg = FLASH_CONTROL_CMD_CONFIG(inst),		\
