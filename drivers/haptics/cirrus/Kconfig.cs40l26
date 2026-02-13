@@ -1,0 +1,79 @@
+# Copyright 2026 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig HAPTICS_CS40L26
+	bool "CS40L26/27 Haptics Driver"
+	default y
+	depends on DT_HAS_CIRRUS_CS40L26_ENABLED || \
+		   DT_HAS_CIRRUS_CS40L27_ENABLED
+	help
+	  Enable CS40L26/27 haptics driver.
+
+if HAPTICS_CS40L26
+
+config HAPTICS_CS40L26_I2C
+	def_bool $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L26),i2c) || \
+		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L27),i2c)
+	select I2C
+
+config HAPTICS_CS40L26_SPI
+	def_bool $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L26),spi) || \
+		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L27),spi)
+	select SPI
+
+config HAPTICS_CS40L26_A1
+	def_bool $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L26),i2c) || \
+		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L26),spi)
+
+config HAPTICS_CS40L27_B2
+	def_bool $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L27),i2c) || \
+		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L27),spi)
+
+config HAPTICS_CS40L26_RESET
+	def_bool $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L26),reset-gpios) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L27),reset-gpios)
+
+config HAPTICS_CS40L26_INTERRUPT
+	def_bool $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L26),int-gpios) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L27),int-gpios)
+
+config HAPTICS_CS40L26_FLASH
+	def_bool $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L26),flash-storage) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L27),flash-storage)
+
+config HAPTICS_CS40L26_CALIBRATION
+	bool "Calibration"
+	default y
+	help
+	  Allow the device to run its calibration routine and optionally
+	  write calibration data to flash memory if flash storage is provided.
+
+config HAPTICS_CS40L26_CLICK_COMPENSATION
+	bool "Click Compensation"
+	default y
+	help
+	  Enable click compensation for haptic effects.
+
+config HAPTICS_CS40L26_DYNAMIC_F0
+	bool "Dynamic F0"
+	default y
+	help
+	  Enable dynamic F0 compensation for haptic effects.
+
+config HAPTICS_CS40L26_PM_ACTIVE_TIMEOUT
+	int "Active Timeout"
+	default 8000
+	range 0 327680
+	help
+	  After the device has finished playing an effect, wait the specified amount
+	  of time (in units of 1/32768 seconds) before entering the standby state.
+
+config HAPTICS_CS40L26_PM_STDBY_TIMEOUT
+	int "Standby Timeout"
+	default 160000
+	range 0 327680
+	help
+	  When the device enters the standby state with hibernation enabled, wait the
+	  specified amount of time (in units of 1/32768 seconds) before entering hibernation.
+
+endif #HAPTICS_CS40L26

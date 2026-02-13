@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: SPI-based CS40L27 Haptic Driver
+
+compatible: "cirrus,cs40l27"
+
+include: ["spi-device.yaml", "cirrus,cs40l26-base.yaml"]
