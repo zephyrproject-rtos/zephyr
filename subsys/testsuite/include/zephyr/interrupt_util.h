@@ -9,7 +9,15 @@
 
 #define k_str_out_count(s) k_str_out((s), sizeof(s) - 1)
 
-#if defined(CONFIG_CPU_CORTEX_M)
+#if defined(CONFIG_CPU_ARM9)
+static inline void trigger_irq(int irq)
+{
+	ARG_UNUSED(irq);
+
+	IF_DISABLED(CONFIG_COMPILER_WARNINGS_AS_ERRORS,
+		    (#warning "No generic ways to trigger IRQ of ARM9"))
+}
+#elif defined(CONFIG_CPU_CORTEX_M)
 #include <cmsis_core.h>
 
 static inline uint32_t get_available_nvic_line(uint32_t initial_offset)
