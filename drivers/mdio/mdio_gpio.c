@@ -84,7 +84,7 @@ static int mdio_gpio_transfer(const struct device *dev, uint8_t prtad, uint8_t d
 	/* DIR: output */
 	mdio_gpio_dir(dev_cfg, MDIO_GPIO_DIR_OUTPUT);
 	/* PRE32: 32 bits '1' for sync*/
-	mdio_gpio_write(dev_cfg, 0xFFFFFFFF, 32);
+	mdio_gpio_write(dev_cfg, UINT32_MAX, 32);
 	/* ST: 2 bits start of frame, 1 for clause 22, 0 for clause 45 */
 	mdio_gpio_write(dev_cfg, c22 ? 0x1 : 0x0, 2);
 	/* OP: 2 bits opcode */
