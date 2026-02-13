@@ -1418,6 +1418,16 @@ static int udc_stm32_driver_preinit(const struct device *dev)
 	return 0;
 }
 
+/*
+ * Note the usage of device ordinals to create per-instance symbol
+ * names, whereas most other STM32 drivers use the "instance number"
+ * for this purpose instead. Unlike most drivers, we can instantiate
+ * devices with different compatibles *in a single build* such as on
+ * SoCs with one OTGHS + one OTGFS. The instance number is unique only
+ * for *one* given compatible so it cannot be used here because there
+ * are multiple compatibles. Device ordinals are globally unique and
+ * look similar to instance numbers so they fit nice as replacement.
+ */
 #define UDC_STM32_DEFINE(node_id, phy_node, ord, _irq_name)					\
 	K_THREAD_STACK_DEFINE(CONCAT(udc, ord, _thr_stk), CONFIG_UDC_STM32_STACK_SIZE);		\
 												\
