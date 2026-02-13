@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1599,6 +1599,22 @@
 		dma-names = "rx", "tx";
 		nxp,tx-dma-channel = <0>;
 		nxp,rx-dma-channel = <8>;
+		status = "disabled";
+	};
+
+	sema1: hwspinlock@4260000 {
+		compatible = "nxp,sema42";
+		reg = <0x4260000 0x1000>;
+		#hwlock-cells = <1>;
+		num-locks = <64>;
+		status = "disabled";
+	};
+
+	sema2: hwspinlock@2450000 {
+		compatible = "nxp,sema42";
+		reg = <0x2450000 0x1000>;
+		#hwlock-cells = <1>;
+		num-locks = <64>;
 		status = "disabled";
 	};
 };
