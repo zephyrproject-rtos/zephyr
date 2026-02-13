@@ -270,12 +270,7 @@ config NRFX_TWIS
 	bool "NRFX driver for TWIS peripheral"
 
 config NRFX_UART
-	bool
-
-config NRFX_UART0
-	bool "UART0 driver instance"
-	depends on $(dt_nodelabel_exists,uart0) && (SOC_SERIES_NRF51 || SOC_SERIES_NRF52)
-	select NRFX_UART
+	bool "UART driver"
 
 config NRFX_UARTE
 	bool "UARTE driver"
