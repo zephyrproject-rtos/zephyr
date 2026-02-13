@@ -47,6 +47,11 @@ LOG_MODULE_REGISTER(uaol_intel_adsp);
 
 #define UAOL_STREAM_TO_SIO_PIN(stream)		(stream + 1)
 
+struct stream_id_pair {
+	int hda_link_stream_id;
+	int uaol_stream_id;
+};
+
 /* Device run time data */
 struct uaol_intel_adsp_data {
 	mem_addr_t ip_base;
@@ -57,6 +62,8 @@ struct uaol_intel_adsp_data {
 	bool is_initialized;
 	uint16_t art_divider_m;
 	uint16_t art_divider_n;
+	struct stream_id_pair *stream_map;
+	size_t stream_map_length;
 };
 
 /* Helper macros for accessing registers */
@@ -834,6 +841,22 @@ static DEVICE_API(uaol, uaol_intel_adsp_api_funcs) = {
 	.get_capabilities = uaol_intel_adsp_get_capabilities,
 };
 
+/* Can be called anytime, e.g., before the device probe. */
+int uaol_get_mapped_hda_link_stream_id(const struct device *dev, int uaol_stream_id)
+{
+	struct uaol_intel_adsp_data *dp = dev->data;
+	size_t i;
+
+	/* A spinlock is not needed: stream map data is populated at build time. */
+	for (i = 0; i < dp->stream_map_length; i++) {
+		if (dp->stream_map[i].uaol_stream_id == uaol_stream_id) {
+			return dp->stream_map[i].hda_link_stream_id;
+		}
+	}
+
+	return -1;
+}
+
 static int uaol_intel_adsp_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	int ret = 0;
@@ -862,13 +885,21 @@ static int uaol_intel_adsp_init_device(const struct device *dev)
 	return pm_device_runtime_enable(dev);
 };
 
+#define STREAM_ID_PAIR(node_id)    { DT_REG_ADDR(node_id), DT_PROP(node_id, stream) },
+
 #define UAOL_INTEL_ADSP_INIT_DEVICE(n)							\
+	static struct stream_id_pair stream_map_##n[] = {				\
+		DT_INST_FOREACH_CHILD(n, STREAM_ID_PAIR)				\
+	};										\
+											\
 	static struct uaol_intel_adsp_data uaol_intel_adsp_data_##n = {			\
 		.shim_base = DT_INST_REG_ADDR(n) + DT_INST_PROP(n, shim_offset),	\
 		.ip_base = DT_INST_REG_ADDR(n) + DT_INST_PROP(n, ip_offset),		\
 		IF_ENABLED(DT_NODE_EXISTS(DT_NODELABEL(hdamluaol)),			\
 			(.hdaml_base = DT_REG_ADDR(DT_NODELABEL(hdamluaol)),))		\
 		.link = DT_INST_PROP(n, link),						\
+		.stream_map = stream_map_##n,						\
+		.stream_map_length = ARRAY_SIZE(stream_map_##n)				\
 	};										\
 											\
 	PM_DEVICE_DT_INST_DEFINE(n, uaol_intel_adsp_pm_action);				\
