@@ -1021,7 +1021,21 @@ static ALWAYS_INLINE void l2_page_tables_counter_inc(uint32_t *l2_table)
 static ALWAYS_INLINE void l2_page_tables_counter_dec(uint32_t *l2_table)
 {
 	if (is_l2_table_inside_array(l2_table)) {
-		l2_page_tables_counter[l2_table_to_counter_pos(l2_table)]--;
+		int pos = l2_table_to_counter_pos(l2_table);
+
+		l2_page_tables_counter[pos]--;
+
+		/* When the L2 table is no longer being referenced,
+		 * we should mark all PTEs to be illegal just to be
+		 * safe.
+		 */
+		if (l2_page_tables_counter[pos] == 0) {
+			init_page_table(l2_table, L2_PAGE_TABLE_NUM_ENTRIES, PTE_L2_ILLEGAL);
+		}
+
+		if (IS_ENABLED(PAGE_TABLE_IS_CACHED)) {
+			sys_cache_data_flush_and_invd_range((void *)l2_table, L2_PAGE_TABLE_SIZE);
+		}
 	}
 }
 
