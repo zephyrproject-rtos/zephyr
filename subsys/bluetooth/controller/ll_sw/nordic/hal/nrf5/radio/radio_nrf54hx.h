@@ -81,14 +81,14 @@
 	HAL_RADIO_NS2US_ROUND(HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_S2_FAST_NS)
 
 /* TXEN->TXIDLE + TXIDLE->TX (with default Radio ramp-up mode)
- * in microseconds for LE 2M PHY [S2].
+ * in microseconds for LE CODED PHY [S2].
  */
 #define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_S2_DEFAULT_NS 132200	/* 130 + 2.2 */
 #define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_S2_DEFAULT_US \
 	HAL_RADIO_NS2US_ROUND(HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_S2_DEFAULT_NS)
 
 /* TXEN->TXIDLE + TXIDLE->TX (with default Radio ramp-up mode and
- * no HW TIFS auto-switch) in microseconds for LE 2M PHY [S2].
+ * no HW TIFS auto-switch) in microseconds for LE CODED PHY [S2].
  */
 /* 129.5 + 2.2 */
 #define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_S2_DEFAULT_NO_HW_TIFS_NS 131700
@@ -103,14 +103,14 @@
 #define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_S8_FAST_US \
 	HAL_RADIO_NS2US_ROUND(HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_S8_FAST_NS)
 /* TXEN->TXIDLE + TXIDLE->TX (with default Radio ramp-up mode)
- * in microseconds for LE 2M PHY [S8].
+ * in microseconds for LE CODED PHY [S8].
  */
 #define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_S8_DEFAULT_NS 121800	/*119.6 + 2.2 */
 #define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_S8_DEFAULT_US \
 	HAL_RADIO_NS2US_ROUND(HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_S8_DEFAULT_NS)
 
 /* TXEN->TXIDLE + TXIDLE->TX (with default Radio ramp-up mode and
- * no HW TIFS auto-switch) in microseconds for LE 2M PHY [S8].
+ * no HW TIFS auto-switch) in microseconds for LE CODED PHY [S8].
  */
  /* 129.5 + 2.2 */
 #define HAL_RADIO_NRF54HX_TXEN_TXIDLE_TX_S8_DEFAULT_NO_HW_TIFS_NS 131700
@@ -413,7 +413,7 @@ static inline void hal_radio_stop(void)
 
 static inline void hal_radio_ram_prio_setup(void)
 {
-	/* TODO */
+	/* TODO: Add any required setup after reset and before enabling */
 }
 
 static inline uint32_t hal_radio_phy_mode_get(uint8_t phy, uint8_t flags)
