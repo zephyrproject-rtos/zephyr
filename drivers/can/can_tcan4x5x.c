@@ -662,7 +662,6 @@ static int tcan4x5x_init_normal_mode(const struct device *dev)
 	return err;
 }
 
-#ifdef CONFIG_PM_DEVICE
 static int tcan4x5x_pm_control(const struct device *dev, enum pm_device_action action)
 {
 	int err = 0;
@@ -706,7 +705,6 @@ static int tcan4x5x_pm_control(const struct device *dev, enum pm_device_action a
 
 	return -ENOTSUP;
 }
-#endif /* CONFIG_PM_DEVICE */
 
 static int tcan4x5x_init(const struct device *dev)
 {
@@ -827,7 +825,7 @@ static int tcan4x5x_init(const struct device *dev)
 		FIELD_GET(GENMASK(15, 8), info[2]), FIELD_GET(GENMASK(7, 0), info[2]));
 #endif /* CONFIG_CAN_LOG_LEVEL >= LOG_LEVEL_DBG */
 
-	return tcan4x5x_init_normal_mode(dev);
+	return pm_device_driver_init(dev, tcan4x5x_pm_control);
 }
 
 static DEVICE_API(can, tcan4x5x_driver_api) = {
