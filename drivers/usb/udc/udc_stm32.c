@@ -822,24 +822,6 @@ static int udc_stm32_ep_mem_config(const struct device *dev,
 }
 #endif
 
-static int udc_stm32_ep_flush(const struct device *dev,
-			      struct udc_ep_config *ep_cfg)
-{
-	struct udc_stm32_data *priv = udc_get_private(dev);
-	HAL_StatusTypeDef status;
-
-	LOG_DBG("Flush ep 0x%02x", ep_cfg->addr);
-
-	status = HAL_PCD_EP_Flush(&priv->pcd, ep_cfg->addr);
-	if (status != HAL_OK) {
-		LOG_ERR("HAL_PCD_EP_Flush failed(0x%02x), %d",
-			ep_cfg->addr, (int)status);
-		return -EIO;
-	}
-
-	return 0;
-}
-
 static void udc_stm32_lock(const struct device *dev)
 {
 	udc_lock_internal(dev, K_FOREVER);
@@ -1180,9 +1162,14 @@ static int udc_stm32_ep_enqueue(const struct device *dev,
 static int udc_stm32_ep_dequeue(const struct device *dev,
 				struct udc_ep_config *ep_cfg)
 {
+	struct udc_stm32_data *priv = udc_get_private(dev);
+	__maybe_unused HAL_StatusTypeDef status;
 	struct net_buf *buf;
 
-	udc_stm32_ep_flush(dev, ep_cfg);
+	LOG_DBG("Flush ep 0x%02x", ep_cfg->addr);
+
+	status = HAL_PCD_EP_Flush(&priv->pcd, ep_cfg->addr);
+	__ASSERT_NO_MSG(status == HAL_OK);
 
 	buf = udc_buf_get_all(ep_cfg);
 	if (buf != NULL) {
