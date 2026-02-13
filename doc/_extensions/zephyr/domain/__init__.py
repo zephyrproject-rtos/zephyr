@@ -299,14 +299,15 @@ class ConvertBoardNode(SphinxTransform):
             field_list = nodes.field_list()
             sidebar += field_list
 
+            status_para = nodes.paragraph()
             if node.get("maintained", False):
-                status_text = nodes.abbreviation(
+                status_para += nodes.abbreviation(
                     "Maintained",
                     "Maintained",
                     explanation="At least one active maintainer is looking after this board",
                 )
             else:
-                status_text = nodes.abbreviation(
+                status_para += nodes.abbreviation(
                     "Not actively maintained",
                     "Not actively maintained",
                     explanation="No active maintainer on file, but contributions are welcome",
@@ -315,7 +316,7 @@ class ConvertBoardNode(SphinxTransform):
             details = [
                 ("Name", nodes.literal(text=node["id"])),
                 ("Vendor", node["vendor"]),
-                ("Status", status_text),
+                ("Status", status_para),
                 ("Architecture", ", ".join(node["archs"])),
                 ("SoC", ", ".join(node["socs"])),
             ]
