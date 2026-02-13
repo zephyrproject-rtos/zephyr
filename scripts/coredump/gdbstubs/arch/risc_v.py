@@ -50,8 +50,12 @@ class RegNum:
 
 
 class GdbStub_RISC_V(GdbStub):
+    # Legacy 18-register layouts
     ARCH_DATA_BLK_STRUCT = "<IIIIIIIIIIIIIIIIII"
     ARCH_DATA_BLK_STRUCT_2 = "<QQQQQQQQQQQQQQQQQQ"
+    # Full 33-register layouts (x0-x31, pc)
+    ARCH_DATA_BLK_STRUCT_3 = "<" + "I" * 33
+    ARCH_DATA_BLK_STRUCT_4 = "<" + "Q" * 33
 
     GDB_SIGNAL_DEFAULT = 7
 
@@ -72,30 +76,39 @@ class GdbStub_RISC_V(GdbStub):
             tu = struct.unpack(self.ARCH_DATA_BLK_STRUCT, arch_data_blk)
         elif self.arch_data_ver == 2:
             tu = struct.unpack(self.ARCH_DATA_BLK_STRUCT_2, arch_data_blk)
+        elif self.arch_data_ver == 3:
+            tu = struct.unpack(self.ARCH_DATA_BLK_STRUCT_3, arch_data_blk)
+        elif self.arch_data_ver == 4:
+            tu = struct.unpack(self.ARCH_DATA_BLK_STRUCT_4, arch_data_blk)
 
         self.registers = dict()
 
-        self.registers[RegNum.RA] = tu[0]
-        self.registers[RegNum.TP] = tu[1]
-        self.registers[RegNum.T0] = tu[2]
-        self.registers[RegNum.T1] = tu[3]
-        self.registers[RegNum.T2] = tu[4]
-        self.registers[RegNum.A0] = tu[5]
-        self.registers[RegNum.A1] = tu[6]
-        self.registers[RegNum.A2] = tu[7]
-        self.registers[RegNum.A3] = tu[8]
-        self.registers[RegNum.A4] = tu[9]
-        self.registers[RegNum.A5] = tu[10]
-        self.registers[RegNum.A6] = tu[11]
-        self.registers[RegNum.A7] = tu[12]
-        self.registers[RegNum.T3] = tu[13]
-        self.registers[RegNum.T4] = tu[14]
-        self.registers[RegNum.T5] = tu[15]
-        self.registers[RegNum.T6] = tu[16]
-        self.registers[RegNum.PC] = tu[17]
+        if self.arch_data_ver in (3, 4):
+            for i in range(33):
+                self.registers[i] = tu[i]
+        else:
+            # Keep parsing v1/v2 for existing dumps
+            self.registers[RegNum.RA] = tu[0]
+            self.registers[RegNum.TP] = tu[1]
+            self.registers[RegNum.T0] = tu[2]
+            self.registers[RegNum.T1] = tu[3]
+            self.registers[RegNum.T2] = tu[4]
+            self.registers[RegNum.A0] = tu[5]
+            self.registers[RegNum.A1] = tu[6]
+            self.registers[RegNum.A2] = tu[7]
+            self.registers[RegNum.A3] = tu[8]
+            self.registers[RegNum.A4] = tu[9]
+            self.registers[RegNum.A5] = tu[10]
+            self.registers[RegNum.A6] = tu[11]
+            self.registers[RegNum.A7] = tu[12]
+            self.registers[RegNum.T3] = tu[13]
+            self.registers[RegNum.T4] = tu[14]
+            self.registers[RegNum.T5] = tu[15]
+            self.registers[RegNum.T6] = tu[16]
+            self.registers[RegNum.PC] = tu[17]
 
     def handle_register_group_read_packet(self):
-        reg_fmt = "<I" if self.arch_data_ver == 1 else "<Q"
+        reg_fmt = "<I" if self.arch_data_ver in (1, 3) else "<Q"
 
         idx = 0
         pkt = b''
@@ -107,7 +120,7 @@ class GdbStub_RISC_V(GdbStub):
             else:
                 # Register not in coredump -> unknown value
                 # Send in "xxxxxxxx"
-                length = 8 if self.arch_data_ver == 1 else 16
+                length = 8 if self.arch_data_ver in (1, 3) else 16
                 pkt += b'x' * length
 
             idx += 1
@@ -117,5 +130,5 @@ class GdbStub_RISC_V(GdbStub):
     def handle_register_single_read_packet(self, pkt):
         # Mark registers as "<unavailable>". 'p' packets are not sent for the registers
         # currently handled in this file so we can safely reply "xxxxxxxx" here.
-        length = 8 if self.arch_data_ver == 1 else 16
+        length = 8 if self.arch_data_ver in (1, 3) else 16
         self.put_gdb_packet(b'x' * length)
