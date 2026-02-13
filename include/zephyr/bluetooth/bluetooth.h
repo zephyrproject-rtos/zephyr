@@ -1032,7 +1032,7 @@ struct bt_le_per_adv_param {
 	 */
 	uint16_t interval_max;
 
-	/** Bit-field of periodic advertising options, see the @ref bt_le_adv_opt field. */
+	/** Bit-field of periodic advertising options, see the @ref bt_le_per_adv_opt field. */
 	uint32_t options;
 
 #if defined(CONFIG_BT_PER_ADV_RSP) || defined(__DOXYGEN__)
