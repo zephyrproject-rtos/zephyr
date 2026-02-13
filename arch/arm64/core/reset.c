@@ -288,9 +288,9 @@ void z_arm64_el1_init(void)
 	barrier_isync_fence_full();
 
 	write_cntv_cval_el0(~(uint64_t)0);
+	write_cntp_cval_el0(~(uint64_t)0);
 	/*
-	 * Enable these if/when we use the corresponding timers.
-	 * write_cntp_cval_el0(~(uint64_t)0);
+	 * Enable secure cntps if/when we use the corresponding timer.
 	 * write_cntps_cval_el1(~(uint64_t)0);
 	 */
 

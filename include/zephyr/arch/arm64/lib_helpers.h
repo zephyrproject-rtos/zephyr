@@ -12,6 +12,8 @@
 #include <zephyr/arch/arm64/cpu.h>
 #include <stdint.h>
 
+/** @cond INTERNAL_HIDDEN */
+
 /* All the macros need a memory clobber */
 
 #define read_sysreg(reg)						\
@@ -62,6 +64,7 @@ MAKE_REG_HELPER(cnthp_ctl_el2);
 MAKE_REG_HELPER(cnthps_ctl_el2);
 MAKE_REG_HELPER(cntv_ctl_el0)
 MAKE_REG_HELPER(cntv_cval_el0)
+MAKE_REG_HELPER(cntp_cval_el0)
 MAKE_REG_HELPER(cntvct_el0);
 MAKE_REG_HELPER(cntvoff_el2);
 MAKE_REG_HELPER(currentel);
@@ -222,6 +225,8 @@ MAKE_REG_HELPER(apdbkeyhi_el1);
 MAKE_REG_HELPER(apgakeylo_el1);
 MAKE_REG_HELPER(apgakeyhi_el1);
 #endif /* CONFIG_ARM_PAC */
+
+/** @endcond */
 
 #endif /* !_ASMLANGUAGE */
 
