@@ -54,7 +54,7 @@ static int sy1xx_mdio_wait_for_ready(const struct device *dev);
 static int sy1xx_mdio_initialize(const struct device *dev)
 {
 
-	struct sy1xx_mdio_dev_config *cfg = (struct sy1xx_mdio_dev_config *)dev->config;
+	const struct sy1xx_mdio_dev_config *const cfg = dev->config;
 	int ret;
 	uint32_t divider;
 	uint32_t reg;
@@ -92,7 +92,7 @@ static int sy1xx_mdio_initialize(const struct device *dev)
 
 static uint32_t sy1xx_mdio_is_ready(const struct device *dev)
 {
-	struct sy1xx_mdio_dev_config *cfg = (struct sy1xx_mdio_dev_config *)dev->config;
+	const struct sy1xx_mdio_dev_config *const cfg = dev->config;
 	uint32_t status = sys_read32(cfg->base_addr + SY1XX_MDIO_CTRL_REG);
 
 	return (status & BIT(SY1XX_MDIO_CTRL_READY_OFFS));
@@ -114,7 +114,7 @@ static int sy1xx_mdio_wait_for_ready(const struct device *dev)
 
 static int sy1xx_mdio_read(const struct device *dev, uint8_t prtad, uint8_t regad, uint16_t *data)
 {
-	struct sy1xx_mdio_dev_config *cfg = (struct sy1xx_mdio_dev_config *)dev->config;
+	const struct sy1xx_mdio_dev_config *const cfg = dev->config;
 	int ret;
 	uint32_t v;
 
@@ -146,7 +146,7 @@ static int sy1xx_mdio_read(const struct device *dev, uint8_t prtad, uint8_t rega
 
 static int sy1xx_mdio_write(const struct device *dev, uint8_t prtad, uint8_t regad, uint16_t data)
 {
-	struct sy1xx_mdio_dev_config *cfg = (struct sy1xx_mdio_dev_config *)dev->config;
+	const struct sy1xx_mdio_dev_config *const cfg = dev->config;
 	int ret;
 	uint32_t v;
 
