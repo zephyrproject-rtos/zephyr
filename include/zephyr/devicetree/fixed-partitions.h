@@ -143,13 +143,16 @@ extern "C" {
  * parent's address and wrongly start at address 0x0 which was a bug that was fixed post Zephyr
  * 4.3, this extra handling can be removed in Zephyr 4.6 or newer
  */
-#define DT_FIXED_PARTITION_ADDR(node_id)						\
-	COND_CODE_0(DT_NODE_HAS_COMPAT(DT_PARENT(node_id), fixed_subpartitions),	\
-		(COND_CODE_0(DT_NUM_RANGES(DT_GPARENT(node_id)),			\
-			(DT_REG_ADDR(node_id) + DT_REG_ADDR(DT_GPARENT(node_id))),	\
-			(DT_REG_ADDR(node_id)))),					\
-		(COND_CODE_0(DT_NUM_RANGES(DT_GPARENT(DT_PARENT(node_id))),		\
-			(DT_REG_ADDR(node_id) + DT_REG_ADDR(DT_GPARENT(node_id))),	\
+#define DT_FIXED_PARTITION_ADDR(node_id)						    \
+	COND_CODE_0(DT_NODE_HAS_COMPAT(DT_PARENT(node_id), fixed_subpartitions),	    \
+		(COND_CODE_0(DT_NUM_RANGES(DT_GPARENT(node_id)),			    \
+			(DT_REG_ADDR(node_id) + DT_REG_ADDR(DT_GPARENT(node_id))),	    \
+			(DT_REG_ADDR(node_id)))),					    \
+		(COND_CODE_0(DT_NUM_RANGES(DT_PARENT(node_id)),				    \
+			(COND_CODE_0(DT_NUM_RANGES(DT_GPARENT(DT_PARENT(node_id))),	    \
+				(DT_REG_ADDR(node_id) + DT_REG_ADDR(DT_PARENT(node_id)) +   \
+					DT_REG_ADDR(DT_GPARENT(DT_PARENT(node_id)))),	    \
+				(DT_REG_ADDR(node_id) + DT_REG_ADDR(DT_PARENT(node_id))))), \
 			(DT_REG_ADDR(node_id)))))
 
 /**
@@ -234,10 +237,14 @@ extern "C" {
  * address and wrongly start at address 0x0 which was a bug that was fixed post Zephyr 4.3, this
  * extra handling can be removed in Zephyr 4.6 or newer
  */
-#define DT_FIXED_SUBPARTITION_ADDR(node_id)						\
-	COND_CODE_0(DT_NUM_RANGES(DT_GPARENT(DT_PARENT(node_id))),			\
-		(DT_REG_ADDR(node_id) + DT_REG_ADDR(DT_GPARENT(DT_PARENT(node_id)))),	\
-		(DT_REG_ADDR(node_id)))
+#define DT_FIXED_SUBPARTITION_ADDR(node_id)							\
+	COND_CODE_0(DT_NODE_HAS_COMPAT(DT_GPARENT(node_id), fixed_subpartitions),		\
+		(COND_CODE_0(DT_NUM_RANGES(DT_PARENT(node_id)),					\
+			(DT_REG_ADDR(node_id) + DT_FIXED_PARTITION_ADDR(DT_PARENT(node_id))),	\
+			(DT_REG_ADDR(node_id)))),						\
+		(COND_CODE_0(DT_NUM_RANGES(DT_PARENT(node_id)),					\
+			(DT_REG_ADDR(node_id) + DT_FIXED_PARTITION_ADDR(DT_PARENT(node_id))),	\
+			(DT_REG_ADDR(node_id)))))
 
 /**
  * @}
