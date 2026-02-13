@@ -257,10 +257,7 @@ static inline void hal_event_timer_start_ppi_config(void)
 
 	/* Setup TIMER start subscribe in radio domain */
 	nrf_timer_subscribe_set(EVENT_TIMER, NRF_TIMER_TASK_START, HAL_EVENT_TIMER_START_PPI);
-#else
-	/* Setup TIMER start subscribe in radio domain */
-	nrf_timer_subscribe_set(EVENT_TIMER, NRF_TIMER_TASK_START, HAL_EVENT_TIMER_START_PPI);
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_SOC_SERIES_NRF54H */
+#endif
 
 #else /* !CONFIG_BT_CTLR_NRF_GRTC */
 	nrf_rtc_publish_set(NRF_RTC, NRF_RTC_EVENT_COMPARE_2, HAL_EVENT_TIMER_START_PPI);
