@@ -205,6 +205,16 @@ static void udc_stm32_unlock(const struct device *dev)
 
 #define hpcd2data(hpcd) CONTAINER_OF(hpcd, struct udc_stm32_data, pcd)
 
+/*
+ * The callbacks below are invoked by HAL_PCD_IRQHandler() when appropriate.
+ * HAL_PCD_IRQHandler() is registered as ISR for this driver because it just
+ * so happens to match the Zephyr ISR calling convention, and we don't need
+ * to do any additional processing upon interrupt: this saves a few cycles
+ * when taking an interrupt and ought to consume less ROM too.
+ *
+ * (As an exception, the Setup/DataIn/DataOut callback are right above their
+ *  ISR lower half/worker thread handler functions rather than grouped here)
+ */
 void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
 {
 	struct udc_stm32_data *priv = hpcd2data(hpcd);
@@ -268,6 +278,17 @@ void HAL_PCD_SOFCallback(PCD_HandleTypeDef *hpcd)
 	struct udc_stm32_data *priv = hpcd2data(hpcd);
 
 	udc_submit_sof_event(priv->dev);
+}
+
+void HAL_PCDEx_SetConnectionState(PCD_HandleTypeDef *hpcd, uint8_t state)
+{
+	struct udc_stm32_data *priv = hpcd2data(hpcd);
+	const struct udc_stm32_config *cfg = priv->dev->config;
+
+	if (cfg->disconnect_gpio.port != NULL) {
+		gpio_pin_configure_dt(&cfg->disconnect_gpio,
+				      state ? GPIO_OUTPUT_ACTIVE : GPIO_OUTPUT_INACTIVE);
+	}
 }
 
 /*
@@ -677,25 +698,6 @@ static void udc_stm32_thread_handler(void *arg1, void *arg2, void *arg3)
 		}
 	}
 }
-
-void HAL_PCDEx_SetConnectionState(PCD_HandleTypeDef *hpcd, uint8_t state)
-{
-	struct udc_stm32_data *priv = hpcd2data(hpcd);
-	const struct udc_stm32_config *cfg = priv->dev->config;
-
-	if (cfg->disconnect_gpio.port != NULL) {
-		gpio_pin_configure_dt(&cfg->disconnect_gpio,
-				      state ? GPIO_OUTPUT_ACTIVE : GPIO_OUTPUT_INACTIVE);
-	}
-}
-
-/*
- * The callbacks above are invoked by HAL_PCD_IRQHandler() when appropriate.
- * HAL_PCD_IRQHandler() is registered as ISR for this driver because it just
- * so happens to match the Zephyr ISR calling convention, and we don't need
- * to do any additional processing upon interrupt: this saves a few cycles
- * when taking an interrupt and ought to consume less ROM too.
- */
 
 int udc_stm32_init(const struct device *dev)
 {
