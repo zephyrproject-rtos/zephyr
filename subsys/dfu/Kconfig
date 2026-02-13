@@ -1,6 +1,7 @@
 # DFU support configuration options
 
 # Copyright (c) 2017 Nordic Semiconductor ASA
+# Copyright (c) 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 #
@@ -32,6 +33,32 @@ config MCUBOOT_IMG_MANAGER
 
 endchoice
 
+config IMG_BLOCK_BUF_SIZE
+	int "Image writer buffer size"
+	default 512
+	help
+	  Size (in Bytes) of buffer for image writer. Must be a multiple of
+	  the access alignment required by used flash driver.
+
+config IMG_ERASE_PROGRESSIVELY
+	bool "Erase flash progressively when receiving new firmware"
+	select STREAM_FLASH_ERASE if FLASH_HAS_EXPLICIT_ERASE
+	help
+	  If enabled, flash is erased as necessary when receiving new firmware,
+	  instead of erasing the whole image slot at once. This is necessary
+	  on some hardware that has long erase times, to prevent long wait
+	  times at the beginning of the DFU process.
+
+config IMG_ENABLE_IMAGE_CHECK
+	bool "Image check functions"
+	select FLASH_AREA_CHECK_INTEGRITY
+	help
+	  If enabled, there will be available the function to check flash
+	  integrity.  It can be used to verify flash integrity after received
+	  a new firmware.  This is useful to avoid firmware reboot and test.
+	  Another use is to ensure that firmware upgrade routines from internet
+	  server to flash slot are performing properly.
+
 if MCUBOOT_IMG_MANAGER
 
 config MCUBOOT_SHELL
@@ -59,32 +86,6 @@ config MCUBOOT_UPDATE_FOOTER_SIZE
 	  Estimated size of update image data, which is used to prevent loading of firmware updates
 	  that MCUboot cannot update due to being too large. This should be set from sysbuild, only
 	  used when MCUMGR_GRP_IMG_TOO_LARGE_SYSBUILD is enabled.
-
-config IMG_BLOCK_BUF_SIZE
-	int "Image writer buffer size"
-	default 512
-	help
-	  Size (in Bytes) of buffer for image writer. Must be a multiple of
-	  the access alignment required by used flash driver.
-
-config IMG_ERASE_PROGRESSIVELY
-	bool "Erase flash progressively when receiving new firmware"
-	select STREAM_FLASH_ERASE if FLASH_HAS_EXPLICIT_ERASE
-	help
-	  If enabled, flash is erased as necessary when receiving new firmware,
-	  instead of erasing the whole image slot at once. This is necessary
-	  on some hardware that has long erase times, to prevent long wait
-	  times at the beginning of the DFU process.
-
-config IMG_ENABLE_IMAGE_CHECK
-	bool "Image check functions"
-	select FLASH_AREA_CHECK_INTEGRITY
-	help
-	  If enabled, there will be available the function to check flash
-	  integrity.  It can be used to verify flash integrity after received
-	  a new firmware.  This is useful to avoid firmware reboot and test.
-	  Another use is to ensure that firmware upgrade routines from internet
-	  server to flash slot are performing properly.
 
 endif # MCUBOOT_IMG_MANAGER
 
