@@ -8,3 +8,12 @@ config OTP_STM32_BSEC
 	depends on DT_HAS_ST_STM32_BSEC_ENABLED
 	help
 	  Enable OTP fuse access for STM32 SoCs embedding a BSEC peripheral.
+
+config OTP_STM32
+	bool "STM32 Flash OTP driver"
+	default y
+	depends on DT_HAS_ST_STM32_OTP_ENABLED
+	depends on SOC_FLASH_STM32
+	help
+	  Enable access to STM32 embedded Flash OTP memory.
+	  OTP programming uses the STM32 flash driver infrastructure.

@@ -1,0 +1,42 @@
+# Copyright (c) 2026 James Walmsley <james@fullfat-fs.co.uk>
+# SPDX-License-Identifier: Apache-2.0
+
+title: STM32 Flash OTP memory
+
+description: |
+  STM32 MCUs can expose a one-time programmable (OTP) area inside the embedded
+  Flash. This binding represents that memory region and allows using the Zephyr
+  OTP driver API and nvmem fixed layout cells.
+
+examples: |
+  otp: otp@1fff7800 {
+    compatible = "st,stm32-otp";
+    reg = <0x1fff7800 0x210>;
+    flash = <&flash>;
+
+    nvmem-layout {
+      compatible = "fixed-layout";
+      #address-cells = <1>;
+      #size-cells = <1>;
+
+      boot_flags: boot-flags@0 {
+        reg = <0x0 0x4>;
+        #nvmem-cell-cells = <0>;
+      };
+    };
+  };
+
+compatible: "st,stm32-otp"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+    description: OTP memory base address and size.
+
+  flash:
+    type: phandle
+    required: true
+    description: |
+      Phandle to the STM32 flash controller device used for OTP programming.
