@@ -33,7 +33,7 @@ properties:
       - 500000
       - 1000000
     description: |
-      CHGIN to SYS path current limitter configuration.
+      CHGIN to SYS path current limiter configuration.
       Refer to ILimCntl register description for details.
 
   system-voltage-min-threshold-microvolt:
