@@ -13,6 +13,7 @@
 #include <zephyr/drivers/ethernet/eth_nxp_enet.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/nxp_mcux_clock_subsys.h>
 #include <zephyr/sys_clock.h>
 
 struct nxp_enet_mdio_config {
@@ -244,8 +245,8 @@ static int nxp_enet_mdio_init(const struct device *dev)
 		.module_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),			\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),				\
 		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(inst))),	\
-		.clock_subsys = (void *) DT_CLOCKS_CELL_BY_IDX(				\
-							DT_INST_PARENT(inst), 0, name),	\
+		.clock_subsys = (clock_control_subsys_t)					\
+			NXP_MCUX_DT_CLOCK_RATE_SUBSYS_BY_IDX(DT_INST_PARENT(inst), 0),	\
 		.disable_preamble = DT_INST_PROP(inst, suppress_preamble),		\
 		.mdc_freq = DT_INST_PROP(inst, clock_frequency),			\
 	};										\
