@@ -9,6 +9,7 @@
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/sys/linear_range.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/nxp_mcux_clock_subsys.h>
 #include <zephyr/dt-bindings/regulator/nxp_vref.h>
 #include <fsl_device_registers.h>
 #include <zephyr/logging/log.h>
@@ -236,7 +237,7 @@ static int nxp_vref_init(const struct device *dev)
 		.current_compensation_en = DT_INST_PROP(inst, current_compensation_en),	\
 		.regulator_en = DT_INST_PROP(inst, internal_voltage_regulator_en),	\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),			\
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, name),\
+		.clock_subsys = (clock_control_subsys_t)NXP_MCUX_DT_INST_CLOCK_GATE_SUBSYS(inst),\
 	};										\
 											\
 	DEVICE_DT_INST_DEFINE(inst, nxp_vref_init, NULL, &data_##inst, &config_##inst,	\
