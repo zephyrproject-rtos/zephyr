@@ -86,8 +86,7 @@ static inline int mdio_busy_wait(uint32_t reg_addr, uint32_t bit_msk)
 static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t devad, uint8_t rw,
 			 uint16_t data_in, uint16_t *data_out)
 {
-	const struct mdio_dwcxgmac_dev_config *const cfg =
-		(struct mdio_dwcxgmac_dev_config *)dev->config;
+	const struct mdio_dwcxgmac_dev_config *const cfg = dev->config;
 	struct mdio_dwcxgmac_dev_data *const data = (struct mdio_dwcxgmac_dev_data *)dev->data;
 	int retval;
 	mem_addr_t ioaddr = 0;
@@ -155,8 +154,7 @@ static int mdio_dwcxgmac_write(const struct device *dev, uint8_t prtad, uint8_t 
 static int mdio_dwcxgmac_initialize(const struct device *dev)
 {
 	struct mdio_dwcxgmac_dev_data *const data = (struct mdio_dwcxgmac_dev_data *)dev->data;
-	const struct mdio_dwcxgmac_dev_config *const cfg =
-		(struct mdio_dwcxgmac_dev_config *)dev->config;
+	__maybe_unused const struct mdio_dwcxgmac_dev_config *const cfg = dev->config;
 	mem_addr_t ioaddr;
 	int ret = 0;
 
