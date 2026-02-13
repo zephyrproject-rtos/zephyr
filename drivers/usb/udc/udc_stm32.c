@@ -203,7 +203,7 @@ static void udc_stm32_unlock(const struct device *dev)
 	udc_unlock_internal(dev);
 }
 
-#define hpcd2data(hpcd) CONTAINER_OF(hpcd, struct udc_stm32_data, pcd);
+#define hpcd2data(hpcd) CONTAINER_OF(hpcd, struct udc_stm32_data, pcd)
 
 void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
 {
