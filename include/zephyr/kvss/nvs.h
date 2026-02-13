@@ -4,8 +4,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_FS_NVS_H_
-#define ZEPHYR_INCLUDE_FS_NVS_H_
+#ifndef ZEPHYR_INCLUDE_KVSS_NVS_H_
+#define ZEPHYR_INCLUDE_KVSS_NVS_H_
 
 #include <sys/types.h>
 #include <zephyr/kernel.h>
@@ -196,4 +196,4 @@ int nvs_sector_use_next(struct nvs_fs *fs);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_FS_NVS_H_ */
+#endif /* ZEPHYR_INCLUDE_KVSS_NVS_H_ */
