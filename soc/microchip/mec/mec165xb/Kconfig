@@ -9,4 +9,5 @@ config SOC_SERIES_MEC165XB
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_ARM_MPU
 	select HAS_SWO
+	select HAS_PM
 	select SOC_PREP_HOOK
