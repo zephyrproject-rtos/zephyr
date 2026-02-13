@@ -297,7 +297,7 @@ You may still optionally document these internal symbols to provide a useful ref
 users.
 
 .. code-block:: c
-   :emphasize-lines: 8,12
+   :emphasize-lines: 7,11
 
    /** Timer structure.
     *
@@ -328,7 +328,7 @@ approaches:
    visible to Doxygen, as this macro is automatically defined by Doxygen.
 
 .. code-block:: c
-   :emphasize-lines: 4,10
+   :emphasize-lines: 3,9
 
    struct coap_packet {
        uint8_t *data;  /**< User allocated buffer. */
