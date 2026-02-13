@@ -17,7 +17,7 @@ properties:
     type: int
     description: Divider for High Frequency Clock 
     default: 1
-    enum: [1, 2, 4, 8]
+    enum: [0, 1, 2, 4, 8]
   
   "#clock-cells":
     const: 0
