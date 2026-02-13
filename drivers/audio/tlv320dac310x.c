@@ -413,8 +413,8 @@ static void codec_configure_output(const struct device *dev)
 	codec_read_reg(dev, HP_OUT_POP_RM_ADDR, &val);
 	codec_write_reg(dev, HP_OUT_POP_RM_ADDR, val | HP_OUT_POP_RM_ENABLE);
 
-	/* route DAC output to Headphone */
-	val = OUTPUT_ROUTING_HPL | OUTPUT_ROUTING_HPR;
+	/* route DAC output to Mixer Amplifier -> so that volume control has effect */
+	val = OUTPUT_ROUTING_MIXERL | OUTPUT_ROUTING_MIXERR;
 	codec_write_reg(dev, OUTPUT_ROUTING_ADDR, val);
 
 	/* enable volume control on Headphone out */
