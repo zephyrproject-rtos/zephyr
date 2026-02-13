@@ -73,6 +73,8 @@ tests:
   drivers.watchdog.stm32wwdg_h7:
     filter: dt_compat_enabled("st,stm32-window-watchdog") or dt_compat_enabled("st,stm32-watchdog")
     extra_args: DTC_OVERLAY_FILE="boards/stm32_wwdg_h7.overlay"
+    extra_configs:
+      - CONFIG_DCACHE=n
     platform_allow:
       - nucleo_h7s3l8
       - stm32h7s78_dk

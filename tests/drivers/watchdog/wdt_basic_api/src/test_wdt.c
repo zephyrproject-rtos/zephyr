@@ -167,7 +167,11 @@ static struct wdt_timeout_cfg m_cfg_wdt1;
 #define DATATYPE uint32_t
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
+/*
+ * Exclude all STM32 SoCs from using the DTCM noinit section,
+ * as it may break WDT state retention.
+ */
+#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm)) && !defined(CONFIG_SOC_FAMILY_STM32)
 #define NOINIT_SECTION ".dtcm_noinit.test_wdt"
 #else
 #define NOINIT_SECTION ".noinit.test_wdt"
