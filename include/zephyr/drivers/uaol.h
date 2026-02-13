@@ -153,4 +153,16 @@ static inline int uaol_get_capabilities(const struct device *dev, struct uaol_ca
 	return api->get_capabilities(dev, caps);
 }
 
+/**
+ * @brief Get the HDA link stream ID mapped in HW to the UAOL stream ID.
+ *
+ * Can be called anytime, e.g., before the device probe.
+ *
+ * @param dev UAOL device instance.
+ * @param uaol_stream_id UAOL stream ID.
+ *
+ * @return the HDA link stream ID on success, otherwise -1.
+ */
+int uaol_get_mapped_hda_link_stream_id(const struct device *dev, int uaol_stream_id);
+
 #endif /* ZEPHYR_INCLUDE_DRIVERS_UAOL_H_ */
