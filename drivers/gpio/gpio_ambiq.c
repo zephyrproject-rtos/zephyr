@@ -605,10 +605,7 @@ gpio_pin_t ambiq_gpio_get_pinnum(const struct device *dev, gpio_pin_t pin)
 	static struct ambiq_gpio_data ambiq_gpio_data_##n;                                         \
 	static void ambiq_gpio_cfg_func_##n(void);                                                 \
 	static const struct ambiq_gpio_config ambiq_gpio_config_##n = {                            \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                                      \
 		.base = DT_REG_ADDR(DT_INST_PARENT(n)),                                            \
 		.offset = DT_INST_REG_ADDR(n),                                                     \
 		.ngpios = DT_INST_PROP(n, ngpios),                                                 \

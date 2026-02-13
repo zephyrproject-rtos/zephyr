@@ -504,9 +504,7 @@ static DEVICE_API(gpio, gpio_esp32_driver_api) = {
 #define ESP_SOC_GPIO_INIT(_id)							\
 	static struct gpio_esp32_data gpio_data_##_id;	\
 	static struct gpio_esp32_config gpio_config_##_id = {			\
-		.drv_cfg = {							\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(_id),	\
-		},								\
+		.drv_cfg = GPIO_COMMON_CONFIG_FROM_DT_INST(_id),		\
 		.gpio_base = (gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio0)),	\
 		.gpio_dev = (gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio##_id)),	\
 		.gpio_port = _id	\

@@ -394,10 +394,7 @@ static void gpio_psoc4_register_irq(const struct device *dev)
 #endif
 #define GPIO_CAT1_INIT(n)                                                                          \
 	static const struct gpio_cat1_config gpio_cat1_config_##n = {                              \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                                      \
 		.ngpios = DT_INST_PROP_OR(n, ngpios, 8),                                           \
 		.regs = (GPIO_PRT_Type *)DT_INST_REG_ADDR(n),                                      \
 		INTR_PRIORITY(n)};                                                                 \

@@ -43,9 +43,8 @@ struct gpio_cc13xx_cc26xx_data {
 
 static struct gpio_cc13xx_cc26xx_data gpio_cc13xx_cc26xx_data_0;
 
-static const struct gpio_driver_config gpio_cc13xx_cc26xx_cfg_0 = {
-	.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
-};
+static const struct gpio_driver_config gpio_cc13xx_cc26xx_cfg_0 =
+	GPIO_COMMON_CONFIG_FROM_DT_INST(0);
 
 static int gpio_cc13xx_cc26xx_port_set_bits_raw(const struct device *port,
 						uint32_t mask);

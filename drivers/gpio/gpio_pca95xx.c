@@ -819,9 +819,7 @@ static int gpio_pca95xx_init(const struct device *dev)
 
 #define GPIO_PCA95XX_DEVICE_INSTANCE(inst)				\
 static const struct gpio_pca95xx_config gpio_pca95xx_##inst##_cfg = {	\
-	.common = {							\
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),	\
-	},								\
+	.common = GPIO_COMMON_CONFIG_FROM_DT_INST(inst),			\
 	.bus = I2C_DT_SPEC_INST_GET(inst),				\
 	.capabilities =							\
 		(DT_INST_PROP(inst, has_pud) ? PCA_HAS_PUD : 0) |	\

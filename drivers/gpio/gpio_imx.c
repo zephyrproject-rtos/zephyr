@@ -279,10 +279,7 @@ static DEVICE_API(gpio, imx_gpio_driver_api) = {
 	static int imx_gpio_##n##_init(const struct device *port);	\
 									\
 	static const struct imx_gpio_config imx_gpio_##n##_config = {	\
-		.common = {						\
-			.port_pin_mask =				\
-				GPIO_PORT_PIN_MASK_FROM_DT_INST(n),	\
-		},							\
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),		\
 		.base = (GPIO_Type *)DT_INST_REG_ADDR(n),		\
 		IMX_IGPIO_PIN_INIT(n)					\
 	};								\

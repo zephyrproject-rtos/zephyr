@@ -520,10 +520,7 @@ static DEVICE_API(gpio, gpio_mcux_driver_api) = {
 	static int gpio_mcux_port##n##_init(const struct device *dev);                             \
                                                                                                    \
 	static const struct gpio_mcux_config gpio_mcux_port##n##_config = {                        \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                                      \
 		GPIO_PERIPH_BASE_DEFINE(n)                                                         \
 		.flags = UTIL_AND(UTIL_OR(DT_INST_IRQ_HAS_IDX(n, 0), GPIO_HAS_SHARED_IRQ),         \
 				  GPIO_INT_ENABLE),                                                \

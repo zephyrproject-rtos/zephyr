@@ -182,7 +182,7 @@ static DEVICE_API(gpio, gpio_siwx91x_uulp_api) = {
 
 #define GPIO_PORT_INIT(idx)                                                                        \
 	static const struct gpio_siwx91x_uulp_config gpio_siwx91x_port_config##idx = {             \
-		.common.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),                      \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(idx)                                     \
 	};                                                                                         \
 	static struct gpio_siwx91x_uulp_data gpio_siwx91x_port_data##idx;                          \
                                                                                                    \

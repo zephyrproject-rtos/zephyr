@@ -289,9 +289,7 @@ static int gpio_sam0_init(const struct device *dev) { return 0; }
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(porta))
 
 static const struct gpio_sam0_config gpio_sam0_config_0 = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
-	},
+	.common = GPIO_COMMON_CONFIG_FROM_DT_INST(0),
 	.regs = (PortGroup *)DT_REG_ADDR(DT_NODELABEL(porta)),
 #ifdef CONFIG_SAM0_EIC
 	.id = 0,
@@ -311,9 +309,7 @@ DEVICE_DT_DEFINE(DT_NODELABEL(porta),
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(portb))
 
 static const struct gpio_sam0_config gpio_sam0_config_1 = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(1),
-	},
+	.common = GPIO_COMMON_CONFIG_FROM_DT_INST(1),
 	.regs = (PortGroup *)DT_REG_ADDR(DT_NODELABEL(portb)),
 #ifdef CONFIG_SAM0_EIC
 	.id = 1,
@@ -333,9 +329,7 @@ DEVICE_DT_DEFINE(DT_NODELABEL(portb),
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(portc))
 
 static const struct gpio_sam0_config gpio_sam0_config_2 = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(2),
-	},
+	.common = GPIO_COMMON_CONFIG_FROM_DT_INST(2),
 	.regs = (PortGroup *)DT_REG_ADDR(DT_NODELABEL(portc)),
 #ifdef CONFIG_SAM0_EIC
 	.id = 2,
@@ -355,9 +349,7 @@ DEVICE_DT_DEFINE(DT_NODELABEL(portc),
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(portd))
 
 static const struct gpio_sam0_config gpio_sam0_config_3 = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(3),
-	},
+	.common = GPIO_COMMON_CONFIG_FROM_DT_INST(3),
 	.regs = (PortGroup *)DT_REG_ADDR(DT_NODELABEL(portd)),
 #ifdef CONFIG_SAM0_EIC
 	.id = 3,

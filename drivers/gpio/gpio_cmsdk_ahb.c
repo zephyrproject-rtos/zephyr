@@ -281,9 +281,7 @@ static int gpio_cmsdk_ahb_init(const struct device *dev)
 	static void gpio_cmsdk_port_##n##_config_func(const struct device *dev); \
 										\
 	static const struct gpio_cmsdk_ahb_cfg gpio_cmsdk_port_##n##_config = {	\
-		.common = {							\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),	\
-		},								\
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),			\
 		.port = ((volatile struct gpio_cmsdk_ahb *)DT_INST_REG_ADDR(n)),\
 		.gpio_config_func = gpio_cmsdk_port_##n##_config_func,		\
 		.gpio_cc_as = {.bus = CMSDK_AHB, .state = SOC_ACTIVE,		\

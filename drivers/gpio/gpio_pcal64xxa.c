@@ -1110,9 +1110,7 @@ int pcal64xxa_init(const struct device *dev)
 		.manage_callback = pcal64xxa_manage_callback,                                      \
 	};                                                                                         \
 	static const struct pcal64xxa_drv_cfg pcal6408a_cfg##idx = {                               \
-		.common = {                                                                        \
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),                     \
-		},                                                                                 \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(idx),                                    \
 		.i2c = I2C_DT_SPEC_INST_GET(idx),                                                  \
 		.ngpios = DT_INST_PROP(idx, ngpios),                                               \
 		.gpio_interrupt = PCAL64XXA_INIT_INT_GPIO_FIELDS(idx),                             \
@@ -1144,9 +1142,7 @@ DT_INST_FOREACH_STATUS_OKAY(GPIO_PCAL6408A_INST)
 		.manage_callback = pcal64xxa_manage_callback,                                      \
 	};                                                                                         \
 	static const struct pcal64xxa_drv_cfg pcal6416a_cfg##idx = {                               \
-		.common = {                                                                        \
-		       .port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),                      \
-		},                                                                                 \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(idx),                                  \
 		.i2c = I2C_DT_SPEC_INST_GET(idx),                                                  \
 		.ngpios = DT_INST_PROP(idx, ngpios),                                               \
 		.gpio_interrupt = PCAL64XXA_INIT_INT_GPIO_FIELDS(idx),                             \

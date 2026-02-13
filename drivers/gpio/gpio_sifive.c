@@ -355,9 +355,7 @@ static int gpio_sifive_init(const struct device *dev)
 static void gpio_sifive_cfg_0(void);
 
 static const struct gpio_sifive_config gpio_sifive_config0 = {
-	.common = {
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(0),
-	},
+	.common = GPIO_COMMON_CONFIG_FROM_DT_INST(0),
 	.gpio_base_addr = DT_INST_REG_ADDR(0),
 	.gpio_irq_base  = DT_INST_IRQN(0),
 	.gpio_cfg_func  = gpio_sifive_cfg_0,

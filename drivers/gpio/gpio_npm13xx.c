@@ -212,10 +212,7 @@ static int gpio_npm13xx_init(const struct device *dev)
 
 #define GPIO_NPM13XX_DEFINE(partno, n)                                                             \
 	static const struct gpio_npm13xx_config gpio_##partno##_config##n = {                      \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),               \
-			},                                                                         \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                                      \
 		.mfd = DEVICE_DT_GET(DT_INST_PARENT(n))};                                          \
                                                                                                    \
 		static struct gpio_npm13xx_data gpio_##partno##_data##n;                           \

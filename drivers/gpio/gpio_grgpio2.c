@@ -283,9 +283,7 @@ static DEVICE_API(gpio, driver_api) = {
 
 #define GRGPIO_INIT(n)							\
 	static const struct cfg cfg_##n = {				\
-		.common = {						\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(n),\
-		},							\
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),		\
 		.regs = (void *) DT_INST_REG_ADDR(n),			\
 		.interrupt = DT_INST_IRQN(n),				\
 	};								\

@@ -262,10 +262,7 @@ static int gpio_ch32v00x_init(const struct device *dev)
 
 #define GPIO_CH32V00X_INIT(idx)                                                                    \
 	static const struct gpio_ch32v00x_config gpio_ch32v00x_##idx##_config = {                  \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),             \
-			},                                                                         \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(idx),                                    \
 		.regs = (GPIO_TypeDef *)DT_INST_REG_ADDR(idx),                                     \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                              \
 		.clock_id = DT_INST_CLOCKS_CELL(idx, id),                                          \

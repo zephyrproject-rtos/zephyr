@@ -526,10 +526,7 @@ static int gpio_rza2m_port_init(const struct device *port_dev)
 
 #define GPIO_RZA2M_PORT_INIT(inst)                                                                 \
 	static const struct gpio_rza2m_port_config gpio_rza2m_cfg_##inst = {                       \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst),            \
-			},                                                                         \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(inst),                                   \
 		.port = DT_INST_REG_ADDR(inst),                                                    \
 		.ngpios = DT_INST_PROP(inst, ngpios),                                              \
 		.int_dev = DEVICE_DT_GET_OR_NULL(DT_INST(0, renesas_rza2m_gpio_int)),              \

@@ -448,9 +448,7 @@ static int gpio_xlnx_ps_bank_init(const struct device *dev)
 /* MIO / EMIO bank device definition macros */
 #define GPIO_XLNX_PS_BANK_INIT(idx)\
 static const struct gpio_xlnx_ps_bank_dev_cfg gpio_xlnx_ps_bank##idx##_cfg = {\
-	.common = {\
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),\
-	},\
+	.common = GPIO_COMMON_CONFIG_FROM_DT_INST(idx),\
 	.bank_index = DT_INST_REG_ADDR(idx),\
 };\
 static struct gpio_xlnx_ps_bank_dev_data gpio_xlnx_ps_bank##idx##_data = {\

@@ -536,7 +536,7 @@ static int gpio_ite_init(const struct device *dev)
 		     "The maximum number of pins per port is 8.");                                 \
 	static struct gpio_ite_data gpio_ite_data_##inst;                                          \
 	static const struct gpio_ite_cfg gpio_ite_cfg_##inst = {                                   \
-		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst)},                \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(inst),                                   \
 		.reg_gpdr = DT_INST_REG_ADDR_BY_IDX(inst, 0),                                      \
 		.reg_gpdmr = DT_INST_REG_ADDR_BY_IDX(inst, 1),                                     \
 		.reg_gpotr = DT_INST_REG_ADDR_BY_IDX(inst, 2),                                     \

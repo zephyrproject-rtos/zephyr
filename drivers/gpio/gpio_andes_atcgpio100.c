@@ -358,10 +358,7 @@ static int gpio_atcgpio100_init(const struct device *port)
 									\
 	static const struct gpio_atcgpio100_config			\
 		gpio_atcgpio100_config_##n = {				\
-			.common = {					\
-				.port_pin_mask =			\
-				GPIO_PORT_PIN_MASK_FROM_DT_INST(n),	\
-			},						\
+			.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),	\
 			.base = DT_INST_REG_ADDR(n),			\
 			.irq_num = DT_INST_IRQN(n),			\
 			.cfg_func = gpio_atcgpio100_cfg_func_##n	\

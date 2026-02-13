@@ -709,9 +709,7 @@ static int gpio_mchp_init(const struct device *dev)
 /* Define GPIO port configuration macro */
 #define GPIO_PORT_CONFIG(idx)									  \
 	static const struct gpio_mchp_config gpio_mchp_config_##idx = {                           \
-		.common = {                                                                       \
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(idx),			  \
-		},										  \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(idx),                                   \
 		.gpio_regs = (port_group_registers_t *)DT_INST_REG_ADDR(idx),                     \
 		GPIO_PORT_ID_CONFIG(idx)							  \
 	};                                                                                        \

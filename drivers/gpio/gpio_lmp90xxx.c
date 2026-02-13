@@ -151,10 +151,7 @@ BUILD_ASSERT(CONFIG_GPIO_LMP90XXX_INIT_PRIORITY >
 
 #define GPIO_LMP90XXX_DEVICE(id)					\
 	static const struct gpio_lmp90xxx_config gpio_lmp90xxx_##id##_cfg = {\
-		.common = {                                             \
-			.port_pin_mask =                                \
-				 GPIO_PORT_PIN_MASK_FROM_DT_INST(id)	\
-		},                                                      \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(id),		\
 		.parent = DEVICE_DT_GET(DT_INST_BUS(id)),		\
 	};								\
 									\
