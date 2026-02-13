@@ -395,7 +395,10 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  *
  * @return fixed-partition address, as defined for the partition in DTS.
  */
-#define FIXED_PARTITION_ADDRESS(label) DT_REG_ADDR(DT_NODELABEL(label))
+#define FIXED_PARTITION_ADDRESS(label) \
+	COND_CODE_1(DT_FIXED_SUBPARTITION_EXISTS(DT_NODELABEL(label)), \
+		(DT_FIXED_SUBPARTITION_ADDR(DT_NODELABEL(label))), \
+		(DT_FIXED_PARTITION_ADDR(DT_NODELABEL(label))))
 
 /**
  * Get fixed-partition or fixed-subpartition address from DTS node
@@ -404,7 +407,10 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  *
  * @return fixed-partition address, as defined for the partition in DTS.
  */
-#define FIXED_PARTITION_NODE_ADDRESS(node) DT_REG_ADDR(node)
+#define FIXED_PARTITION_NODE_ADDRESS(node) \
+	COND_CODE_1(DT_FIXED_SUBPARTITION_EXISTS(node), \
+		(DT_FIXED_SUBPARTITION_ADDR(node)), \
+		(DT_FIXED_PARTITION_ADDR(node)))
 
 /**
  * Get fixed-partition offset from DTS node
