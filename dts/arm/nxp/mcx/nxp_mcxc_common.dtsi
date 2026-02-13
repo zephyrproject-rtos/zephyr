@@ -346,14 +346,14 @@
 			reg = <0x40073000 0x1000>;
 			interrupts = <16 0>;
 			status = "disabled";
-			clocks = <&sim KINETIS_SIM_CMP_CLK 0 0>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1034 19>;
 		};
 
 		vref: vref@40074000 {
 			compatible = "nxp,vrefv1";
 			reg = <0x40074000 0x100>;
 			status = "disabled";
-			clocks = <&sim KINETIS_SIM_VREF_CLK 0 0>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1034 20>;
 			chop-oscillator-en;
 			current-compensation-en;
 			internal-voltage-regulator-en;
@@ -375,8 +375,8 @@
 			dma-requests = <64>;
 			reg = <0x40008000 0x1000>,
 			      <0x40021000 0x1000>;
-			clocks = <&sim KINETIS_SIM_DMA_CLK 0 0>,
-				 <&sim KINETIS_SIM_DMAMUX_CLK 0 0>;
+			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1040 8>,
+				 <&sim KINETIS_SIM_BUS_CLK 0x103c 1>;
 			interrupts = <0 0>, <1 0>, <2 0>, <3 0>;
 			status = "disabled";
 		};
