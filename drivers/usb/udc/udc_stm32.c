@@ -190,9 +190,6 @@ struct udc_stm32_config {
 	uint8_t num_clocks;
 };
 
-static int udc_stm32_clock_enable(const struct device *);
-static int udc_stm32_clock_disable(const struct device *);
-
 #define hpcd2data(hpcd) CONTAINER_OF(hpcd, struct udc_stm32_data, pcd)
 
 /*
@@ -410,6 +407,84 @@ static int udc_stm32_rx(const struct device *dev, struct udc_ep_config *ep_cfg,
 	}
 
 	udc_ep_set_busy(ep_cfg, true);
+
+	return 0;
+}
+
+
+static int udc_stm32_clock_enable(const struct device *dev)
+{
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct udc_stm32_config *cfg = dev->config;
+	int err;
+
+	if (cfg->num_clocks > 1) {
+		if (clock_control_configure(clk, &cfg->pclken[1], NULL) != 0) {
+			LOG_ERR("Could not select USB domain clock");
+			return -EIO;
+		}
+	}
+
+	if (clock_control_on(clk, &cfg->pclken[0]) != 0) {
+		LOG_ERR("Unable to enable USB clock");
+		return -EIO;
+	}
+
+	if (IS_ENABLED(CONFIG_UDC_STM32_CLOCK_CHECK) && cfg->num_clocks > 1) {
+		uint32_t usb_clock_rate;
+
+		if (clock_control_get_rate(clk, &cfg->pclken[1], &usb_clock_rate) != 0) {
+			LOG_ERR("Failed to get USB domain clock rate");
+			return -EIO;
+		}
+
+		if (usb_clock_rate != MHZ(48)) {
+			LOG_ERR("USB Clock is not 48MHz (%d)", usb_clock_rate);
+			return -ENOTSUP;
+		}
+	}
+
+	/* Previous check won't work in case of F1/F3. Add build time check */
+#if defined(RCC_CFGR_OTGFSPRE) || defined(RCC_CFGR_USBPRE)
+
+#if (MHZ(48) == CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) && !defined(STM32_PLL_USBPRE)
+	/* PLL output clock is set to 48MHz, it should not be divided */
+#warning USBPRE/OTGFSPRE should be set in rcc node
+#endif
+
+#endif /* RCC_CFGR_OTGFSPRE / RCC_CFGR_USBPRE */
+
+	/* Configure PHY if applicable (must be after enabling UDC clock) */
+	if (cfg->phy != NULL) {
+		err = cfg->phy->enable(cfg->phy);
+		if (err != 0) {
+			LOG_ERR("Failed to enable USB PHY: %d", err);
+			return err;
+		}
+	}
+
+	return 0;
+}
+
+static int udc_stm32_clock_disable(const struct device *dev)
+{
+	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct udc_stm32_config *cfg = dev->config;
+	int err;
+
+	/* Per API contract, disable PHY before USB controller */
+	if (cfg->phy != NULL) {
+		err = cfg->phy->disable(cfg->phy);
+		if (err != 0) {
+			LOG_ERR("Failed to disable USB PHY: %d", err);
+			return err;
+		}
+	}
+
+	if (clock_control_off(clk, &cfg->pclken[0]) != 0) {
+		LOG_ERR("Unable to disable USB clock");
+		return -EIO;
+	}
 
 	return 0;
 }
@@ -1221,83 +1296,6 @@ static const struct udc_api udc_stm32_api = {
 	.ep_dequeue = udc_stm32_ep_dequeue,
 	.device_speed = udc_stm32_device_speed,
 };
-
-static int udc_stm32_clock_enable(const struct device *dev)
-{
-	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	const struct udc_stm32_config *cfg = dev->config;
-	int err;
-
-	if (cfg->num_clocks > 1) {
-		if (clock_control_configure(clk, &cfg->pclken[1], NULL) != 0) {
-			LOG_ERR("Could not select USB domain clock");
-			return -EIO;
-		}
-	}
-
-	if (clock_control_on(clk, &cfg->pclken[0]) != 0) {
-		LOG_ERR("Unable to enable USB clock");
-		return -EIO;
-	}
-
-	if (IS_ENABLED(CONFIG_UDC_STM32_CLOCK_CHECK) && cfg->num_clocks > 1) {
-		uint32_t usb_clock_rate;
-
-		if (clock_control_get_rate(clk, &cfg->pclken[1], &usb_clock_rate) != 0) {
-			LOG_ERR("Failed to get USB domain clock rate");
-			return -EIO;
-		}
-
-		if (usb_clock_rate != MHZ(48)) {
-			LOG_ERR("USB Clock is not 48MHz (%d)", usb_clock_rate);
-			return -ENOTSUP;
-		}
-	}
-
-	/* Previous check won't work in case of F1/F3. Add build time check */
-#if defined(RCC_CFGR_OTGFSPRE) || defined(RCC_CFGR_USBPRE)
-
-#if (MHZ(48) == CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) && !defined(STM32_PLL_USBPRE)
-	/* PLL output clock is set to 48MHz, it should not be divided */
-#warning USBPRE/OTGFSPRE should be set in rcc node
-#endif
-
-#endif /* RCC_CFGR_OTGFSPRE / RCC_CFGR_USBPRE */
-
-	/* Configure PHY if applicable (must be after enabling UDC clock) */
-	if (cfg->phy != NULL) {
-		err = cfg->phy->enable(cfg->phy);
-		if (err != 0) {
-			LOG_ERR("Failed to enable USB PHY: %d", err);
-			return err;
-		}
-	}
-
-	return 0;
-}
-
-static int udc_stm32_clock_disable(const struct device *dev)
-{
-	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	const struct udc_stm32_config *cfg = dev->config;
-	int err;
-
-	/* Per API contract, disable PHY before USB controller */
-	if (cfg->phy != NULL) {
-		err = cfg->phy->disable(cfg->phy);
-		if (err != 0) {
-			LOG_ERR("Failed to disable USB PHY: %d", err);
-			return err;
-		}
-	}
-
-	if (clock_control_off(clk, &cfg->pclken[0]) != 0) {
-		LOG_ERR("Unable to disable USB clock");
-		return -EIO;
-	}
-
-	return 0;
-}
 
 static int udc_stm32_driver_preinit(const struct device *dev)
 {
