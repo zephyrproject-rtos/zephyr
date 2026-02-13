@@ -577,7 +577,9 @@ void radio_pkt_configure(uint8_t bits_len, uint8_t max_len, uint8_t flags)
 	} else {
 		bits_s1 = 0U;
 	}
-#endif /* CONFIG_SOC_COMPATIBLE_NRF52X */
+#endif /* CONFIG_SOC_COMPATIBLE_NRF52X || CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET ||
+	* CONFIG_SOC_COMPATIBLE_NRF54LX || CONFIG_SOC_SERIES_NRF54H
+	*/
 
 	NRF_RADIO->PCNF0 =
 		(((1UL) << RADIO_PCNF0_S0LEN_Pos) & RADIO_PCNF0_S0LEN_Msk) |
@@ -640,7 +642,9 @@ void radio_rx_enable(void)
 	 *        radio event but when the radio event is done.
 	 */
 	hal_sw_switch_timer_clear_ppi_config();
-#endif /* CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET || CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET || CONFIG_SOC_COMPATIBLE_NRF54LX  ||
+	* CONFIG_SOC_SERIES_NRF54H
+	*/
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 	nrf_radio_task_trigger(NRF_RADIO, NRF_RADIO_TASK_RXEN);
@@ -663,7 +667,9 @@ void radio_tx_enable(void)
 	 *        radio event but when the radio event is done.
 	 */
 	hal_sw_switch_timer_clear_ppi_config();
-#endif /* CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET || CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET || CONFIG_SOC_COMPATIBLE_NRF54LX ||
+	* CONFIG_SOC_SERIES_NRF54H
+	*/
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 	nrf_radio_task_trigger(NRF_RADIO, NRF_RADIO_TASK_TXEN);
@@ -1049,7 +1055,9 @@ void sw_switch(uint8_t dir_curr, uint8_t dir_next, uint8_t phy_curr, uint8_t fla
 	 * so channel is already enabled.
 	 */
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_RADIO_END_TIME_CAPTURE_PPI));
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX &&
+	* !CONFIG_SOC_SERIES_NRF54H
+	*/
 #endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 	sw_tifs_toggle += 1U;
@@ -1466,22 +1474,30 @@ void radio_tmr_tx_enable(void)
 {
 #if defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET) || defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || \
 	defined(CONFIG_SOC_SERIES_NRF54H)
-#else /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#else  /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX &&
+	* !CONFIG_SOC_SERIES_NRF54H
+	*/
 #if (HAL_RADIO_ENABLE_TX_ON_TICK_PPI == HAL_RADIO_ENABLE_RX_ON_TICK_PPI)
 	hal_radio_enable_on_tick_ppi_config_and_enable(1U);
 #endif /* HAL_RADIO_ENABLE_TX_ON_TICK_PPI == HAL_RADIO_ENABLE_RX_ON_TICK_PPI */
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX &&
+	* !CONFIG_SOC_SERIES_NRF54H
+	*/
 }
 
 void radio_tmr_rx_enable(void)
 {
 #if defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET) || defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || \
 	defined(CONFIG_SOC_SERIES_NRF54H)
-#else /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#else  /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX &&
+	* !CONFIG_SOC_SERIES_NRF54H
+	*/
 #if (HAL_RADIO_ENABLE_TX_ON_TICK_PPI == HAL_RADIO_ENABLE_RX_ON_TICK_PPI)
 	hal_radio_enable_on_tick_ppi_config_and_enable(0U);
 #endif /* HAL_RADIO_ENABLE_TX_ON_TICK_PPI == HAL_RADIO_ENABLE_RX_ON_TICK_PPI */
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX &&
+	* !CONFIG_SOC_SERIES_NRF54H
+	*/
 }
 
 void radio_tmr_tx_disable(void)
@@ -1489,8 +1505,12 @@ void radio_tmr_tx_disable(void)
 #if defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET) || defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || \
 	defined(CONFIG_SOC_SERIES_NRF54H)
 	nrf_radio_subscribe_clear(NRF_RADIO, NRF_RADIO_TASK_TXEN);
-#else /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX */
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#else  /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX &&
+	* !CONFIG_SOC_SERIES_NRF54H
+	*/
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX &&
+	* !CONFIG_SOC_SERIES_NRF54H
+	*/
 }
 
 void radio_tmr_rx_disable(void)
@@ -1498,8 +1518,12 @@ void radio_tmr_rx_disable(void)
 #if defined(CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET) || defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || \
 	defined(CONFIG_SOC_SERIES_NRF54H)
 	nrf_radio_subscribe_clear(NRF_RADIO, NRF_RADIO_TASK_RXEN);
-#else /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX */
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#else  /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX &&
+	* !CONFIG_SOC_SERIES_NRF54H
+	*/
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX &&
+	* !CONFIG_SOC_SERIES_NRF54H
+	*/
 }
 
 void radio_tmr_tifs_set(uint32_t tifs)
@@ -1749,7 +1773,9 @@ uint32_t radio_tmr_start_tick(uint8_t trx, uint32_t ticks_start)
 	 *        radio event but when the radio event is done.
 	 */
 	hal_sw_switch_timer_clear_ppi_config();
-#endif /* CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET || CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET || CONFIG_SOC_COMPATIBLE_NRF54LX ||
+	* CONFIG_SOC_SERIES_NRF54H
+	*/
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 	return remainder_us;
@@ -1780,7 +1806,9 @@ uint32_t radio_tmr_start_us(uint8_t trx, uint32_t start_us)
 	 *        radio event but when the radio event is done.
 	 */
 	hal_sw_switch_timer_clear_ppi_config();
-#endif /* CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET || CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET || CONFIG_SOC_COMPATIBLE_NRF54LX ||
+	* CONFIG_SOC_SERIES_NRF54H
+	*/
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 	/* start_us could be the current count in the timer */
@@ -1996,8 +2024,10 @@ void radio_tmr_end_capture(void)
 	 !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER))
 	hal_radio_end_time_capture_ppi_config();
 	hal_radio_nrf_ppi_channels_enable(BIT(HAL_RADIO_END_TIME_CAPTURE_PPI));
-#endif /* (!CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX) ||
-	* ((CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET || CONFIG_SOC_COMPATIBLE_NRF54LX) &&
+#endif /* (!CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET && !CONFIG_SOC_COMPATIBLE_NRF54LX &&
+	*  !CONFIG_SOC_SERIES_NRF54H) ||
+	* ((CONFIG_SOC_COMPATIBLE_NRF5340_CPUNET || CONFIG_SOC_COMPATIBLE_NRF54LX ||
+	*   CONFIG_SOC_SERIES_NRF54H) &&
 	*  !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 	*/
 }
@@ -2216,9 +2246,9 @@ static struct {
 	struct ccm_job_ptr out[6];
 } ccm_job;
 
-#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_SOC_SERIES_NRF54H */
 static uint8_t MALIGN(4) _ccm_scratch[(HAL_RADIO_PDU_LEN_MAX - 4) + 16];
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_SOC_SERIES_NRF54H */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC) || defined(CONFIG_BT_CTLR_SYNC_ISO)
 static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_type, void *pkt)
@@ -2349,7 +2379,8 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 #undef ADATAMASK
 #endif /* CONFIG_HAS_HW_NRF_CCM_HEADERMASK */
 #endif /* CONFIG_HAS_HW_NRF_CCM_HEADERMASK ||
-	* CONFIG_SOC_COMPATIBLE_NRF54LX
+	* CONFIG_SOC_COMPATIBLE_NRF54LX ||
+	* CONFIG_SOC_SERIES_NRF54H
 	*/
 
 #if !defined(CONFIG_SOC_SERIES_NRF51) && \
@@ -2439,7 +2470,7 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_END);
 	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ERROR);
 
-#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_SOC_SERIES_NRF54H */
 	NRF_CCM->CNFPTR = (uint32_t)cnf;
 	NRF_CCM->INPTR = (uint32_t)_pkt_scratch;
 	NRF_CCM->OUTPTR = (uint32_t)pkt;
@@ -2451,7 +2482,7 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ERROR);
 
 	nrf_ccm_task_trigger(NRF_CCM, NRF_CCM_TASK_KSGEN);
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_SOC_SERIES_NRF54H */
 
 	return _pkt_scratch;
 }
@@ -2540,7 +2571,8 @@ static void *radio_ccm_ext_tx_pkt_set(struct ccm *cnf, uint8_t pdu_type, void *p
 #undef ADATAMASK
 #endif /* CONFIG_HAS_HW_NRF_CCM_HEADERMASK */
 #endif /* CONFIG_HAS_HW_NRF_CCM_HEADERMASK ||
-	* CONFIG_SOC_COMPATIBLE_NRF54LX
+	* CONFIG_SOC_COMPATIBLE_NRF54LX ||
+	* CONFIG_SOC_SERIES_NRF54H
 	*/
 
 #if !defined(CONFIG_SOC_SERIES_NRF51) && \
@@ -2627,7 +2659,7 @@ static void *radio_ccm_ext_tx_pkt_set(struct ccm *cnf, uint8_t pdu_type, void *p
 
 	nrf_ccm_task_trigger(NRF_CCM, NRF_CCM_TASK_START);
 
-#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_SOC_SERIES_NRF54H */
 	NRF_CCM->CNFPTR = (uint32_t)cnf;
 	NRF_CCM->INPTR = (uint32_t)pkt;
 	NRF_CCM->OUTPTR = (uint32_t)_pkt_scratch;
@@ -2639,7 +2671,7 @@ static void *radio_ccm_ext_tx_pkt_set(struct ccm *cnf, uint8_t pdu_type, void *p
 	nrf_ccm_event_clear(NRF_CCM, NRF_CCM_EVENT_ERROR);
 
 	nrf_ccm_task_trigger(NRF_CCM, NRF_CCM_TASK_KSGEN);
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_SOC_SERIES_NRF54H */
 
 	return _pkt_scratch;
 }
@@ -2719,9 +2751,9 @@ static struct {
 	/* NOTE: Refer to the AAR section in the SoC product specification for details */
 } aar_job;
 
-#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_SOC_SERIES_NRF54H */
 static uint8_t MALIGN(4) _aar_scratch[3];
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_SOC_SERIES_NRF54H */
 
 void radio_ar_configure(uint32_t nirk, void *irk, uint8_t flags)
 {
@@ -2803,12 +2835,12 @@ void radio_ar_configure(uint32_t nirk, void *irk, uint8_t flags)
 	NRF_AAR->OUT.PTR = (uint32_t)&aar_job.out[0];
 	NRF_AAR->MAXRESOLVED = AAR_JOB_OUT_MAX_RESOLVED;
 
-#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_SOC_SERIES_NRF54H */
 	NRF_AAR->NIRK = nirk;
 	NRF_AAR->IRKPTR = (uint32_t)irk;
 	NRF_AAR->ADDRPTR = addrptr;
 	NRF_AAR->SCRATCHPTR = (uint32_t)&_aar_scratch[0];
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_SOC_SERIES_NRF54H */
 
 	nrf_aar_event_clear(NRF_AAR, NRF_AAR_EVENT_END);
 	nrf_aar_event_clear(NRF_AAR, NRF_AAR_EVENT_RESOLVED);
@@ -2825,9 +2857,9 @@ uint32_t radio_ar_match_get(void)
 {
 #if defined(CONFIG_SOC_COMPATIBLE_NRF54LX) || defined(CONFIG_SOC_SERIES_NRF54H)
 	return aar_job.status;
-#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_SOC_SERIES_NRF54H */
 	return NRF_AAR->STATUS;
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_SOC_SERIES_NRF54H */
 }
 
 void radio_ar_status_reset(void)
@@ -2907,9 +2939,9 @@ uint8_t radio_ar_resolve(const uint8_t *addr)
 	NRF_AAR->OUT.PTR = (uint32_t)&aar_job.out[0];
 	NRF_AAR->MAXRESOLVED = AAR_JOB_OUT_MAX_RESOLVED;
 
-#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#else /* !CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_SOC_SERIES_NRF54H */
 	NRF_AAR->ADDRPTR = (uint32_t)addr - 3;
-#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX */
+#endif /* !CONFIG_SOC_COMPATIBLE_NRF54LX && !CONFIG_SOC_SERIES_NRF54H */
 
 	nrf_aar_event_clear(NRF_AAR, NRF_AAR_EVENT_END);
 	nrf_aar_event_clear(NRF_AAR, NRF_AAR_EVENT_RESOLVED);

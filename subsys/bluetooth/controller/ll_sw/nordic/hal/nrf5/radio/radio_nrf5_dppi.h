@@ -136,7 +136,6 @@ static inline void hal_event_timer_start_ppi_config(void)
 
 	/* Enable same DPPI in global domain */
 	nrf_dppi_channels_enable(NRF_DPPIC132, BIT(HAL_EVENT_TIMER_START_PPI));
-#else
 #endif
 
 #else /* !CONFIG_BT_CTLR_NRF_GRTC */

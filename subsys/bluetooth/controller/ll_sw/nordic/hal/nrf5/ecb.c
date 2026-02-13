@@ -49,7 +49,8 @@ struct ecb_job_ptr {
 
 /* Product Specification recommends a value of 11, but prior work had used 7 */
 #define ECB_JOB_PTR_ATTRIBUTE 7U
-#endif /* NRF54L_SERIES */
+
+#endif /* NRF54L_SERIES || NRF54H_SERIES */
 
 struct ecb_param {
 	uint8_t key[16];
@@ -59,7 +60,7 @@ struct ecb_param {
 #if defined(NRF54L_SERIES) || defined(NRF54H_SERIES)
 	struct ecb_job_ptr in[2];
 	struct ecb_job_ptr out[2];
-#endif /* NRF54L_SERIES */
+#endif /* NRF54L_SERIES || NRF54H_SERIES */
 } __packed;
 
 static void do_ecb(struct ecb_param *ep)
@@ -89,9 +90,9 @@ static void do_ecb(struct ecb_param *ep)
 
 		NRF_ECB->IN.PTR = (uint32_t)ep->in;
 		NRF_ECB->OUT.PTR = (uint32_t)ep->out;
-#else /* !NRF54L_SERIES */
+#else /* !NRF54L_SERIES &&  !NRF54H_SERIES */
 		NRF_ECB->ECBDATAPTR = (uint32_t)ep;
-#endif /* !NRF54L_SERIES */
+#endif /* !NRF54L_SERIES && !NRF54H_SERIES */
 
 		NRF_ECB->EVENTS_ENDECB = 0;
 		NRF_ECB->EVENTS_ERRORECB = 0;
@@ -185,9 +186,9 @@ void ecb_encrypt_nonblocking(struct ecb *e)
 
 	NRF_ECB->IN.PTR = (uint32_t)in;
 	NRF_ECB->OUT.PTR = (uint32_t)out;
-#else /* !NRF54L_SERIES */
+#else /* !NRF54L_SERIES && !NRF54H_SERIES */
 	NRF_ECB->ECBDATAPTR = (uint32_t)e;
-#endif /* !NRF54L_SERIES */
+#endif /* !NRF54L_SERIES && !NRF54H_SERIES */
 	NRF_ECB->EVENTS_ENDECB = 0;
 	NRF_ECB->EVENTS_ERRORECB = 0;
 	nrf_ecb_int_enable(NRF_ECB, ECB_INTENSET_ERRORECB_Msk
@@ -204,11 +205,10 @@ void ecb_encrypt_nonblocking(struct ecb *e)
 static void isr_ecb(const void *arg)
 {
 #if defined(NRF54L_SERIES) || defined(NRF54H_SERIES)
-	struct ecb *e = (void *)((uint8_t *)NRF_ECB->ECBDATAPTR -
-				 sizeof(struct ecb));
-#else /* !NRF54L_SERIES */
+	struct ecb *e = (void *)((uint8_t *)NRF_ECB->ECBDATAPTR - sizeof(struct ecb));
+#else /* !NRF54L_SERIES && !NRF54H_SERIES */
 	struct ecb *e = (void *)NRF_ECB->ECBDATAPTR;
-#endif /* !NRF54L_SERIES */
+#endif /* !NRF54L_SERIES && !NRF54H_SERIES */
 
 	ARG_UNUSED(arg);
 
