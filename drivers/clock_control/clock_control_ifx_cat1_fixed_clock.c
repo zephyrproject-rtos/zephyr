@@ -41,6 +41,7 @@ static int fixed_rate_clk_init(const struct device *dev)
 
 	case 7:
 		Cy_SysClk_IloSrcEnable(0);
+		break;
 
 	case 2: /* ECO */
 		int ret = Cy_SysClk_EcoConfigure(config->rate, IFX_ECO_CSUM, IFX_ECO_ISR,

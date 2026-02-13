@@ -17,270 +17,303 @@
 		/* ilo */
 		clk_ilo: clk_ilo {
 			#clock-cells = <0>;
-			compatible = "infineon,fixed-clock";
-			clock-frequency = <32768>;
-			clock-block = <7>; /* ILO */
-			status = "okay";
-		};
-
-		/* eco */
-		clk_eco: clk_eco {
-			#clock-cells = <0>;
-			compatible = "infineon,fixed-clock";
-			clock-frequency = <16000000>;
-			clock-block = <2>; /* ECO */
-			status = "okay";
-		};
-
-		/* imo */
-		clk_imo: clk_imo {
-			#clock-cells = <0>;
-			compatible = "fixed-clock";
-			clock-frequency = <8000000>;
-			status = "disabled";
-		};
-
-		/* ext_clk */
-		clk_ext: clk_ext {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
 			status = "disabled";
 		};
 
-		/* fll */
-		fll0: fll0 {
-			#clock-cells = <0>;
-			compatible = "fixed-clock";
-			clock-frequency = <96000000>;
-			status = "disabled";
+		path-source {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			/* imo */
+			clk_imo: clk_imo@0 {
+				#clock-cells = <0>;
+				reg = <0x0>;
+				compatible = "fixed-clock";
+				clock-frequency = <8000000>;
+				status = "disabled";
+			};
+
+			/* ext_clk */
+			clk_ext: clk_ext@1 {
+				#clock-cells = <0>;
+				compatible = "fixed-clock";
+				reg = <0x1>;
+				status = "disabled";
+			};
+
+			/* eco */
+			clk_eco: clk_eco@2 {
+				#clock-cells = <0>;
+				compatible = "fixed-clock";
+				reg = <0x2>;
+				clock-frequency = <16000000>;
+				status = "okay";
+			};
 		};
 
-		pll0: pll0 {
-			#clock-cells = <0>;
-			compatible = "infineon,cat1-pll";
-			clocks = <&clk_eco>;
-			ifx,pll-instance = <1>;
-			p-div = <40>;
-			q-div = <1>;
-			output-div = <2>;
-			status = "disabled";
+		fll {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			/* fll */
+			fll0: fll0 {
+				#clock-cells = <0>;
+				compatible = "fixed-clock";
+				clock-frequency = <96000000>;
+				status = "disabled";
+			};
 		};
 
-		pll1: pll1 {
-			#clock-cells = <0>;
-			compatible = "infineon,cat1-pll";
-			clocks = <&clk_eco>;
-			ifx,pll-instance = <2>;
-			p-div = <31>;
-			q-div = <1>;
-			output-div = <2>;
-			status = "disabled";
+		pll {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			pll0: pll@0 {
+				#clock-cells = <0>;
+				compatible = "infineon,cat1-pll";
+				clocks = <&clk_eco>;
+				reg = <1>;
+				p-div = <40>;
+				q-div = <1>;
+				output-div = <2>;
+				status = "disabled";
+			};
+
+			pll1: pll@1 {
+				#clock-cells = <0>;
+				compatible = "infineon,cat1-pll";
+				clocks = <&clk_eco>;
+				reg = <2>;
+				p-div = <31>;
+				q-div = <1>;
+				output-div = <2>;
+				status = "disabled";
+			};
+
+			pll2: pll@2 {
+				#clock-cells = <0>;
+				compatible = "infineon,cat1-pll";
+				clocks = <&clk_eco>;
+				reg = <3>;
+				p-div = <31>;
+				q-div = <1>;
+				output-div = <2>;
+				status = "disabled";
+			};
+
+			pll3: pll@3 {
+				#clock-cells = <0>;
+				compatible = "infineon,cat1-pll";
+				clocks = <&clk_eco>;
+				reg = <4>;
+				p-div = <31>;
+				q-div = <1>;
+				output-div = <2>;
+				status = "disabled";
+			};
+
+			pll4: pll@4 {
+				#clock-cells = <0>;
+				compatible = "infineon,cat1-pll";
+				clocks = <&clk_eco>;
+				reg = <5>;
+				p-div = <62>;
+				q-div = <2>;
+				output-div = <2>;
+				frac-div = <0x800000>;
+				status = "disabled";
+			};
+
+			pll5: pll@5 {
+				#clock-cells = <0>;
+				compatible = "infineon,cat1-pll";
+				clocks = <&clk_eco>;
+				reg = <6>;
+				p-div = <30>;
+				q-div = <2>;
+				output-div = <2>;
+				status = "disabled";
+			};
+
+			pll6: pll@6 {
+				#clock-cells = <0>;
+				compatible = "infineon,cat1-pll";
+				clocks = <&clk_eco>;
+				reg = <7>;
+				p-div = <25>;
+				q-div = <2>;
+				output-div = <2>;
+				status = "disabled";
+			};
+
+			pll7: pll@7 {
+				#clock-cells = <0>;
+				compatible = "infineon,cat1-pll";
+				clocks = <&clk_eco>;
+				reg = <8>;
+				p-div = <47>;
+				q-div = <3>;
+				output-div = <2>;
+				status = "disabled";
+			};
 		};
 
-		pll2: pll2 {
-			#clock-cells = <0>;
-			compatible = "infineon,cat1-pll";
-			clocks = <&clk_eco>;
-			ifx,pll-instance = <3>;
-			p-div = <31>;
-			q-div = <1>;
-			output-div = <2>;
-			status = "disabled";
+		direct {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clk_direct0: clk_direct@5 {
+				#clock-cells = <0>;
+				compatible = "fixed-clock";
+				reg = <5>;
+				clocks = <&clk_eco>;
+				status = "disabled";
+			};
 		};
 
-		pll3: pll3 {
-			#clock-cells = <0>;
-			compatible = "infineon,cat1-pll";
-			clocks = <&clk_eco>;
-			ifx,pll-instance = <4>;
-			p-div = <31>;
-			q-div = <1>;
-			output-div = <2>;
-			status = "disabled";
-		};
+		clk_hf {
+			#address-cells = <1>;
+			#size-cells = <0>;
 
-		pll4: pll4 {
-			#clock-cells = <0>;
-			compatible = "infineon,cat1-pll";
-			clocks = <&clk_eco>;
-			ifx,pll-instance = <5>;
-			p-div = <62>;
-			q-div = <2>;
-			output-div = <2>;
-			status = "disabled";
-		};
+			/* clk_hf0 */
+			clk_hf0: clk_hf@0 {
+				#clock-cells = <0>;
+				compatible = "infineon,cat1-hf-clock";
+				reg = <0>;
+				divider = <0>;
+				clocks = <&pll5>;
+				status = "disabled";
+			};
 
-		pll5: pll5 {
-			#clock-cells = <0>;
-			compatible = "infineon,cat1-pll";
-			clocks = <&clk_eco>;
-			ifx,pll-instance = <6>;
-			p-div = <30>;
-			q-div = <2>;
-			output-div = <2>;
-			status = "disabled";
-		};
+			/* clk_hf1 */
+			clk_hf1: clk_hf@1 {
+				#clock-cells = <0>;
+				compatible = "infineon,cat1-hf-clock";
+				reg = <1>;
+				divider = <0>;
+				clocks = <&pll0>;
+				status = "disabled";
+			};
 
-		pll6: pll6 {
-			#clock-cells = <0>;
-			compatible = "infineon,cat1-pll";
-			clocks = <&clk_eco>;
-			ifx,pll-instance = <7>;
-			p-div = <25>;
-			q-div = <2>;
-			output-div = <2>;
-			status = "disabled";
-		};
+			/* clk_hf2 */
+			clk_hf2: clk_hf@2 {
+				#clock-cells = <0>;
+				compatible = "infineon,cat1-hf-clock";
+				reg = <2>;
+				divider = <0>;
+				clocks = <&pll6>;
+				status = "disabled";
+			};
 
-		pll7: pll7 {
-			#clock-cells = <0>;
-			compatible = "infineon,cat1-pll";
-			clocks = <&clk_eco>;
-			ifx,pll-instance = <8>;
-			p-div = <47>;
-			q-div = <3>;
-			output-div = <2>;
-			status = "disabled";
-		};
+			/* clk_hf3 */
+			clk_hf3: clk_hf@3 {
+				#clock-cells = <0>;
+				compatible = "infineon,cat1-hf-clock";
+				reg = <3>;
+				divider = <2>;
+				clocks = <&pll5>;
+				status = "disabled";
+			};
 
-		/* clk_hf0 */
-		clk_hf0: clk_hf0 {
-			#clock-cells = <0>;
-			compatible = "infineon,cat1-clock";
-			clock-frequency = <125000000>;
-			ifx,hf-predivider = <IFX_CAT1_CLKHF_NO_DIVIDE>;
-			ifx,hf-instance = <0>;
-			clocks = <&pll5>;
-			status = "disabled";
-		};
+			/* clk_hf4 */
+			clk_hf4: clk_hf@4 {
+				#clock-cells = <0>;
+				compatible = "infineon,cat1-hf-clock";
+				reg = <4>;
+				divider = <0>;
+				clocks = <&pll7>;
+				status = "disabled";
+			};
 
-		/* clk_hf1 */
-		clk_hf1: clk_hf1 {
-			#clock-cells = <0>;
-			compatible = "infineon,cat1-clock";
-			clock-frequency = <320000000>;
-			ifx,hf-predivider = <IFX_CAT1_CLKHF_NO_DIVIDE>;
-			clocks = <&pll0>;
-			ifx,hf-instance = <1>;
-		};
+			/* clk_hf5 */
+			clk_hf5: clk_hf@5 {
+				#clock-cells = <0>;
+				compatible = "infineon,cat1-hf-clock";
+				reg = <5>;
+				divider = <0>;
+				clocks = <&pll1>;
+				status = "disabled";
+			};
 
-		/* clk_hf2 */
-		clk_hf2: clk_hf2 {
-			#clock-cells = <0>;
-			compatible = "infineon,cat1-clock";
-			clock-frequency = <100000000>;
-			ifx,hf-predivider = <IFX_CAT1_CLKHF_NO_DIVIDE>;
-			ifx,hf-instance = <2>;
-			clocks = <&pll6>;
-		};
+			/* clk_hf6 */
+			clk_hf6: clk_hf@6 {
+				#clock-cells = <0>;
+				compatible = "infineon,cat1-hf-clock";
+				reg = <6>;
+				divider = <0>;
+				clocks = <&pll1>;
+				status = "disabled";
+			};
 
-		/* clk_hf3 */
-		clk_hf3: clk_hf3 {
-			#clock-cells = <0>;
-			compatible = "infineon,cat1-clock";
-			clock-frequency = <196000000>;
-			ifx,hf-predivider = <IFX_CAT1_CLKHF_DIVIDE_BY_2>;
-			clocks = <&pll5>;
-			ifx,hf-instance = <3>;
-		};
+			/* clk_hf7 */
+			clk_hf7: clk_hf@7 {
+				#clock-cells = <0>;
+				compatible = "infineon,cat1-hf-clock";
+				reg = <7>;
+				divider = <0>;
+				clocks = <&pll1>;
+				status = "disabled";
+			};
 
-		/* clk_hf4 */
-		clk_hf4: clk_hf4 {
-			#clock-cells = <0>;
-			compatible = "infineon,cat1-clock";
-			clock-frequency = <125000000>;
-			ifx,hf-predivider = <IFX_CAT1_CLKHF_NO_DIVIDE>;
-			clocks = <&pll7>;
-			ifx,hf-instance = <4>;
-		};
+			/* clk_hf8 */
+			clk_hf8: clk_hf@8 {
+				#clock-cells = <0>;
+				compatible = "infineon,cat1-hf-clock";
+				reg = <8>;
+				divider = <0>;
+				clocks = <&pll2>;
+				status = "disabled";
+			};
 
-		/* clk_hf5 */
-		clk_hf5: clk_hf5 {
-			#clock-cells = <0>;
-			compatible = "infineon,cat1-clock";
-			clock-frequency = <196000000>;
-			ifx,hf-predivider = <IFX_CAT1_CLKHF_NO_DIVIDE>;
-			clocks = <&pll1>;
-			ifx,hf-instance = <5>;
-		};
+			/* clk_hf9 */
+			clk_hf9: clk_hf@9 {
+				#clock-cells = <0>;
+				compatible = "infineon,cat1-hf-clock";
+				reg = <9>;
+				divider = <0>;
+				clocks = <&pll3>;
+				status = "disabled";
+			};
 
-		/* clk_hf6 */
-		clk_hf6: clk_hf6 {
-			#clock-cells = <0>;
-			compatible = "infineon,cat1-clock";
-			clock-frequency = <196000000>;
-			ifx,hf-predivider = <IFX_CAT1_CLKHF_NO_DIVIDE>;
-			clocks = <&pll1>;
-			ifx,hf-instance = <6>;
-		};
+			/* clk_hf10 */
+			clk_hf10: clk_hf@10 {
+				#clock-cells = <0>;
+				compatible = "infineon,cat1-hf-clock";
+				reg = <10>;
+				divider = <0>;
+				clocks = <&pll3>;
+				status = "disabled";
+			};
 
-		/* clk_hf7 */
-		clk_hf7: clk_hf7 {
-			#clock-cells = <0>;
-			compatible = "infineon,cat1-clock";
-			clock-frequency = <196000000>;
-			ifx,hf-predivider = <IFX_CAT1_CLKHF_NO_DIVIDE>;
-			ifx,hf-instance = <7>;
-			clocks = <&pll1>;
-		};
+			/* clk_hf11 */
+			clk_hf11: clk_hf@11 {
+				#clock-cells = <0>;
+				compatible = "infineon,cat1-hf-clock";
+				reg = <11>;
+				divider = <0>;
+				clocks = <&pll4>;
+				status = "disabled";
+			};
 
-		/* clk_hf8 */
-		clk_hf8: clk_hf8 {
-			#clock-cells = <0>;
-			compatible = "infineon,cat1-clock";
-			clock-frequency = <320000000>;
-			ifx,hf-predivider = <IFX_CAT1_CLKHF_NO_DIVIDE>;
-			ifx,hf-instance = <8>;
-			clocks = <&pll2>;
-		};
+			/* clk_hf12 */
+			clk_hf12: clk_hf@12 {
+				#clock-cells = <0>;
+				compatible = "infineon,cat1-hf-clock";
+				reg = <12>;
+				divider = <0>;
+				clocks = <&pll7>;
+				status = "disabled";
+			};
 
-		/* clk_hf9 */
-		clk_hf9: clk_hf9 {
-			#clock-cells = <0>;
-			compatible = "infineon,cat1-clock";
-			clock-frequency = <320000000>;
-			ifx,hf-predivider = <IFX_CAT1_CLKHF_NO_DIVIDE>;
-			ifx,hf-instance = <9>;
-			clocks = <&pll3>;
-		};
-
-		/* clk_hf10 */
-		clk_hf10: clk_hf10 {
-			#clock-cells = <0>;
-			compatible = "infineon,cat1-clock";
-			clock-frequency = <250000000>;
-			ifx,hf-predivider = <IFX_CAT1_CLKHF_NO_DIVIDE>;
-			ifx,hf-instance = <10>;
-			clocks = <&pll3>;
-		};
-
-		/* clk_hf11 */
-		clk_hf11: clk_hf11 {
-			#clock-cells = <0>;
-			compatible = "infineon,cat1-clock";
-			clock-frequency = <220000000>;
-			ifx,hf-predivider = <IFX_CAT1_CLKHF_NO_DIVIDE>;
-			ifx,hf-instance = <11>;
-			clocks = <&pll4>;
-		};
-
-		/* clk_hf12 */
-		clk_hf12: clk_hf12 {
-			#clock-cells = <0>;
-			compatible = "infineon,cat1-clock";
-			clock-frequency = <200000000>;
-			ifx,hf-predivider = <IFX_CAT1_CLKHF_NO_DIVIDE>;
-			ifx,hf-instance = <12>;
-			clocks = <&pll7>;
-		};
-
-		/* clk_hf13 */
-		clk_hf13: clk_hf13 {
-			#clock-cells = <0>;
-			compatible = "infineon,cat1-clock";
-			clock-frequency = <200000000>;
-			ifx,hf-predivider = <IFX_CAT1_CLKHF_NO_DIVIDE>;
-			ifx,hf-instance = <13>;
+			/* clk_hf13 */
+			clk_hf13: clk_hf@13 {
+				#clock-cells = <0>;
+				compatible = "infineon,cat1-hf-clock";
+				reg = <13>;
+				divider = <0>;
+				clocks = <&pll7>;
+				status = "disabled";
+			};
 		};
 	};
 };

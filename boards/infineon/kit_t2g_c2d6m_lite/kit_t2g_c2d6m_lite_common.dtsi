@@ -248,6 +248,18 @@ can0: &can0_0 {
 	status = "okay";
 };
 
+&pll2 {
+	status = "okay";
+};
+
+&pll3 {
+	status = "okay";
+};
+
+&pll4 {
+	status = "okay";
+};
+
 &pll5 {
 	status = "okay";
 };
@@ -275,33 +287,43 @@ can0: &can0_0 {
 &clk_hf3 {
 	status = "disabled";
 };
+
 &clk_hf4 {
 	status = "okay";
 };
+
 &clk_hf5 {
 	status = "okay";
 };
+
 &clk_hf6 {
-	status = "disabled";
+	status = "okay";
 };
+
 &clk_hf7 {
-	status = "disabled";
+	status = "okay";
 };
+
 &clk_hf8 {
-	status = "disabled";
+	status = "okay";
 };
+
 &clk_hf9 {
-	status = "disabled";
+	status = "okay";
 };
+
 &clk_hf10 {
-	status = "disabled";
+	status = "okay";
 };
+
 &clk_hf11 {
-	status = "disabled";
+	status = "okay";
 };
+
 &clk_hf12 {
-	status = "disabled";
+	status = "okay";
 };
+
 &clk_hf13 {
-	status = "disabled";
+	status = "okay";
 };
