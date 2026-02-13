@@ -2,6 +2,13 @@
 
 zephyr_library()
 zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
+# Add some Mbed TLS' internal folders where there are files included from
+# "psa_crypto_driver_wrappers.h" in "src/its/transform/aead.c".
+if(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_IMPLEMENTATION_AEAD)
+  zephyr_library_include_directories(${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}/dispatch)
+  zephyr_library_include_directories(${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}/drivers/builtin/src)
+endif()
+
 zephyr_library_include_directories(include/internal) # secure_storage headers
 add_subdirectory(src)
 
