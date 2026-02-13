@@ -18,6 +18,7 @@
 
 #include "esp_mcuboot_image.h"
 #include "esp_memory_utils.h"
+#include <zephyr/zsr.h>
 
 #ifdef CONFIG_SMP
 
@@ -94,7 +95,7 @@ static void appcpu_entry2(void)
 	 */
 	_cpu_t *cpu = &_kernel.cpus[1];
 
-	__asm__ volatile("wsr.MISC0 %0" : : "r"(cpu));
+	__asm__ volatile("wsr %0, " ZSR_CPU_STR : : "r"(cpu));
 
 	smp_log("ESP32: APPCPU running");
 
