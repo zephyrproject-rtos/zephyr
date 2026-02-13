@@ -721,6 +721,25 @@ int arch_mem_domain_max_partitions_get(void);
 int arch_mem_domain_init(struct k_mem_domain *domain);
 #endif /* CONFIG_ARCH_MEM_DOMAIN_DATA */
 
+/**
+ * @brief Architecture-specific hook for memory domain de-initialization
+ *
+ * Perform any tasks needed to de-initialize architecture-specific data within
+ * the memory domain, such as releasing memory for page tables.
+ *
+ * The associated function k_mem_domain_deinit() documents that making
+ * multiple de-init calls to the same memory domain is undefined behavior,
+ * but has no assertions in place to check this. If this matters, it may be
+ * desirable to add checks for this in the implementation of this function.
+ *
+ * This assumes the memory domain has been initialized properly and is valid.
+ *
+ * @param domain The memory domain to be de-initialized
+ * @retval 0 Success
+ * @retval -ENOMEM Insufficient memory
+ */
+int arch_mem_domain_deinit(struct k_mem_domain *domain);
+
 #ifdef CONFIG_ARCH_MEM_DOMAIN_SYNCHRONOUS_API
 /**
  * @brief Add a thread to a memory domain (arch-specific)
