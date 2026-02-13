@@ -327,6 +327,9 @@ static void irq_uninit(struct shell_uart_int_driven *sh_uart)
 
 static void async_uninit(struct shell_uart_async *sh_uart)
 {
+	const struct device *dev = sh_uart->common.dev;
+
+	(void)uart_rx_disable(dev);
 }
 
 static void polling_uninit(struct shell_uart_polling *sh_uart)
