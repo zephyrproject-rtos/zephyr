@@ -315,6 +315,14 @@
 			channels = <4>;
 			status = "disabled";
 		};
+
+		qdec: qdec@40004000 {
+			compatible = "realtek,bee-basic-qdec";
+			reg = <0x40004000 0x30>;
+			clocks = <&cctl APB_CLK(QDEC)>;
+			interrupts = <19 0>;
+			status = "disabled";
+		};
 	};
 
 	clocks {

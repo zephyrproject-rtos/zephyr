@@ -388,6 +388,13 @@
 			status = "disabled";
 		};
 
+		qdec: qdec@40001bd0 {
+			compatible = "realtek,bee-aon-qdec";
+			reg = <0x40001bd0 0x3>;
+			interrupts = <59 0>;
+			status = "disabled";
+		};
+
 		i2c0: i2c@40035800 {
 			compatible = "realtek,bee-i2c";
 			reg = <0x40035800 0xa0>;
