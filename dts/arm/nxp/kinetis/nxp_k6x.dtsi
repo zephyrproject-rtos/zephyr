@@ -485,7 +485,7 @@
 		enet: ethernet@400c0000 {
 			compatible = "nxp,enet";
 			reg = <0x400c0000 0x620>;
-			clocks = <&sim KINETIS_SIM_ENET_CLK 0 0>;
+			clocks = <&sim KINETIS_SIM_CORESYS_CLK 0x102c 0>;
 
 			enet_mac: ethernet {
 				compatible = "nxp,enet-mac";
@@ -508,7 +508,7 @@
 				compatible = "nxp,enet-ptp-clock";
 				interrupts = <82 0>;
 				interrupt-names = "IEEE1588_TMR";
-				clocks = <&sim KINETIS_SIM_ENET_1588_CLK 0 0>;
+				clocks = <&sim KINETIS_SIM_OSCERCLK 0x102c 0>;
 				status = "disabled";
 			};
 		};
