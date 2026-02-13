@@ -105,7 +105,7 @@ static int mdio_litex_transfer(const struct device *dev, uint8_t prtad, uint8_t 
 
 	litex_write8(LITEX_MDIO_OE, dev_cfg->w_addr);
 	/* PRE32: 32 bits '1' for sync*/
-	mdio_litex_write(dev_cfg, 0xFFFFFFFF, 32);
+	mdio_litex_write(dev_cfg, UINT32_MAX, 32);
 	/* ST: 2 bits start of frame */
 	mdio_litex_write(dev_cfg, 0x1, 2);
 	/* OP: 2 bits opcode, read '10' or write '01' */
