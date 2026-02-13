@@ -19,6 +19,10 @@
 		zephyr,sram = &ddr0;
 	};
 
+	aliases {
+		rtc = &counter_rtc0;
+	};
+
 	cpus {
 		cpu@0 {
 			status = "okay";
@@ -47,5 +51,13 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_rx_default &uart0_tx_default>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+&main_rtc0 {
+	status = "okay";
+};
+
+&counter_rtc0 {
 	status = "okay";
 };
