@@ -104,6 +104,10 @@ struct riscv_arch_block {
  */
 static struct riscv_arch_block arch_blk;
 
+#if defined(CONFIG_DEBUG_COREDUMP_THREAD_STACK_TOP)
+static uintptr_t riscv_coredump_fault_sp;
+#endif
+
 void arch_coredump_info_dump(const struct arch_esf *esf)
 {
 	struct coredump_arch_hdr_t hdr = {
@@ -125,6 +129,9 @@ void arch_coredump_info_dump(const struct arch_esf *esf)
 	arch_blk.r.zero = 0;
 	arch_blk.r.ra = esf->ra;
 	arch_blk.r.sp = z_riscv_get_sp_before_exc(esf);
+#if defined(CONFIG_DEBUG_COREDUMP_THREAD_STACK_TOP)
+	riscv_coredump_fault_sp = arch_blk.r.sp;
+#endif
 
 	__asm__ volatile("mv %0, gp" : "=r"(gp_val));
 	arch_blk.r.gp = gp_val;
@@ -184,6 +191,20 @@ uint16_t arch_coredump_tgt_code_get(void)
 {
 	return COREDUMP_TGT_RISC_V;
 }
+
+#if defined(CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_THREADS) ||                                          \
+	defined(CONFIG_DEBUG_COREDUMP_THREAD_STACK_TOP)
+uintptr_t arch_coredump_stack_ptr_get(const struct k_thread *thread)
+{
+#if defined(CONFIG_DEBUG_COREDUMP_THREAD_STACK_TOP)
+	if (thread == _current) {
+		return riscv_coredump_fault_sp;
+	}
+#endif
+
+	return thread->callee_saved.sp;
+}
+#endif /* CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_THREADS || CONFIG_DEBUG_COREDUMP_THREAD_STACK_TOP */
 
 #if defined(CONFIG_DEBUG_COREDUMP_DUMP_THREAD_PRIV_STACK)
 void arch_coredump_priv_stack_dump(struct k_thread *thread)
