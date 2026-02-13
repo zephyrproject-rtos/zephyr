@@ -125,6 +125,27 @@
 			};
 		};
 
+		otp: otp@1fff7800 {
+			compatible = "st,stm32-otp";
+			reg = <0x1fff7800 0x210>;
+			flash = <&flash>;
+			status = "disabled";
+
+			nvmem-layout {
+				/* NOTE: The OTP lock bytes at offset 0x200 permanently lock 32-byte blocks. */
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				/* OTP lock bytes: one byte per 32-byte block, 0x00 locks forever. */
+				otp_lock: otp-lock@200 {
+					reg = <0x200 0x10>;
+					read-only;
+					#nvmem-cell-cells = <0>;
+				};
+			};
+		};
+
 		rcc: rcc@40023800 {
 			compatible = "st,stm32f4-rcc";
 			#clock-cells = <2>;
