@@ -263,19 +263,6 @@ void HAL_PCD_ResumeCallback(PCD_HandleTypeDef *hpcd)
 	udc_submit_event(priv->dev, UDC_EVT_RESUME, 0);
 }
 
-void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
-{
-	struct udc_stm32_data *priv = hpcd2data(hpcd);
-	struct udc_stm32_msg msg = {.type = UDC_STM32_MSG_SETUP};
-	int err;
-
-	err = k_msgq_put(&priv->msgq_data, &msg, K_NO_WAIT);
-
-	if (err < 0) {
-		LOG_ERR("UDC Message queue overrun");
-	}
-}
-
 void HAL_PCD_SOFCallback(PCD_HandleTypeDef *hpcd)
 {
 	struct udc_stm32_data *priv = hpcd2data(hpcd);
@@ -433,21 +420,6 @@ void HAL_PCD_DataOutStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 	}
 }
 
-void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
-{
-	struct udc_stm32_data *priv = hpcd2data(hpcd);
-	struct udc_stm32_msg msg = {
-		.type = UDC_STM32_MSG_DATA_IN,
-		.ep = epnum,
-	};
-	int err;
-
-	err = k_msgq_put(&priv->msgq_data, &msg, K_NO_WAIT);
-	if (err != 0) {
-		LOG_ERR("UDC Message queue overrun");
-	}
-}
-
 static void handle_msg_data_out(struct udc_stm32_data *priv, uint8_t epnum, uint16_t rx_count)
 {
 	const struct device *dev = priv->dev;
@@ -538,6 +510,21 @@ static void handle_msg_data_out(struct udc_stm32_data *priv, uint8_t epnum, uint
 	}
 }
 
+void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
+{
+	struct udc_stm32_data *priv = hpcd2data(hpcd);
+	struct udc_stm32_msg msg = {
+		.type = UDC_STM32_MSG_DATA_IN,
+		.ep = epnum,
+	};
+	int err;
+
+	err = k_msgq_put(&priv->msgq_data, &msg, K_NO_WAIT);
+	if (err != 0) {
+		LOG_ERR("UDC Message queue overrun");
+	}
+}
+
 static void handle_msg_data_in(struct udc_stm32_data *priv, uint8_t epnum)
 {
 	const struct device *dev = priv->dev;
@@ -611,6 +598,19 @@ static void handle_msg_data_in(struct udc_stm32_data *priv, uint8_t epnum)
 	buf = udc_buf_peek(ep_cfg);
 	if (buf != NULL) {
 		udc_stm32_tx(dev, ep_cfg, buf);
+	}
+}
+
+void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
+{
+	struct udc_stm32_data *priv = hpcd2data(hpcd);
+	struct udc_stm32_msg msg = {.type = UDC_STM32_MSG_SETUP};
+	int err;
+
+	err = k_msgq_put(&priv->msgq_data, &msg, K_NO_WAIT);
+
+	if (err < 0) {
+		LOG_ERR("UDC Message queue overrun");
 	}
 }
 
