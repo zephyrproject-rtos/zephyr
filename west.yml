@@ -19,6 +19,8 @@ manifest:
     remote: upstream
 
   remotes:
+    - name: erwango_mcuboot
+      url-base: https://github.com/erwango
     - name: upstream
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
@@ -326,7 +328,8 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: d9c2ba153128efd7c16db9f36dea4ee69f63c7f5
+      remote: erwango_mcuboot
+      revision: dual_xspi
       path: bootloader/mcuboot
       groups:
         - bootloader
