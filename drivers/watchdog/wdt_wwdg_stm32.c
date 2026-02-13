@@ -82,7 +82,7 @@ LOG_MODULE_REGISTER(wdt_wwdg_stm32);
 #define ABS_DIFF_UINT(a, b)  ((a) > (b) ? (a) - (b) : (b) - (a))
 #define WWDG_TIMEOUT_ERROR_MARGIN(__TIMEOUT__)   (__TIMEOUT__ / 10)
 #define IS_WWDG_TIMEOUT(__TIMEOUT_GOLDEN__, __TIMEOUT__)  \
-	(__TIMEOUT__ - __TIMEOUT_GOLDEN__) < \
+	ABS_DIFF_UINT(__TIMEOUT__, __TIMEOUT_GOLDEN__) < \
 	WWDG_TIMEOUT_ERROR_MARGIN(__TIMEOUT_GOLDEN__)
 
 static void wwdg_stm32_irq_config(const struct device *dev);
