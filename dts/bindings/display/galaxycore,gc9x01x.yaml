@@ -43,6 +43,11 @@ compatible: "galaxycore,gc9x01x"
 include: [mipi-dbi-spi-device.yaml, display-controller.yaml, lcd-controller.yaml]
 
 properties:
+  backlight-gpios:
+    type: phandle-array
+    description: |
+      The BLn pin is asserted to control the backlight of the panel.
+
   orientation:
     type: string
     default: "normal"

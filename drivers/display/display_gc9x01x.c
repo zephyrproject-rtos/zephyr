@@ -11,6 +11,7 @@
 #include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/mipi_dbi.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/byteorder.h>
@@ -32,6 +33,7 @@ struct gc9x01x_data {
 struct gc9x01x_config {
 	const struct device *mipi_dev;
 	struct mipi_dbi_config dbi_config;
+	const struct gpio_dt_spec backlight_gpios;
 	uint8_t pixel_format;
 	uint16_t orientation;
 	uint16_t x_resolution;
@@ -355,12 +357,34 @@ static int gc9x01x_hw_reset(const struct device *dev)
 static int gc9x01x_display_blanking_off(const struct device *dev)
 {
 	LOG_DBG("Turning display blanking off");
+
+	const struct gc9x01x_config *config = dev->config;
+	int ret;
+
+	if (config->backlight_gpios.port != NULL) {
+		ret = gpio_pin_set_dt(&config->backlight_gpios, 0);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	return gc9x01x_transmit(dev, MIPI_DCS_SET_DISPLAY_ON, NULL, 0);
 }
 
 static int gc9x01x_display_blanking_on(const struct device *dev)
 {
 	LOG_DBG("Turning display blanking on");
+
+	const struct gc9x01x_config *config = dev->config;
+	int ret;
+
+	if (config->backlight_gpios.port != NULL) {
+		ret = gpio_pin_set_dt(&config->backlight_gpios, 1);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	return gc9x01x_transmit(dev, MIPI_DCS_SET_DISPLAY_OFF, NULL, 0);
 }
 
@@ -460,7 +484,17 @@ static int gc9x01x_configure(const struct device *dev)
 
 static int gc9x01x_init(const struct device *dev)
 {
+	const struct gc9x01x_config *config = dev->config;
 	int ret;
+
+	/* Setup backlight */
+	if (config->backlight_gpios.port != NULL) {
+		ret = gpio_pin_configure_dt(&config->backlight_gpios, GPIO_OUTPUT);
+		if (ret < 0) {
+			LOG_ERR("Could not configure bl GPIO (%d)", ret);
+			return ret;
+		}
+	}
 
 	gc9x01x_hw_reset(dev);
 
@@ -628,6 +662,7 @@ static DEVICE_API(display, gc9x01x_api) = {
 							      SPI_OP_MODE_MASTER |                 \
 							      SPI_WORD_SET(8), 0),                 \
 		},                                                                                 \
+		.backlight_gpios = GPIO_DT_SPEC_INST_GET_OR(inst, backlight_gpios, {0}),	       \
 		.pixel_format = DT_INST_PROP(inst, pixel_format),                                  \
 		.orientation = DT_INST_ENUM_IDX(inst, orientation),                                \
 		.x_resolution = DT_INST_PROP(inst, width),                                         \
