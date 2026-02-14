@@ -11,24 +11,6 @@
 #include <zephyr/sys/util.h>
 
 /* Command registers */
-#define GC9X01X_CMD_SLPIN     0x10U /* Enter Sleep Mode */
-#define GC9X01X_CMD_SLPOUT    0x11U /* Exit Sleep Mode */
-#define GC9X01X_CMD_PTLON     0x12U /* Partial Mode ON */
-#define GC9X01X_CMD_NORON     0x13U /* Normal Display Mode ON */
-#define GC9X01X_CMD_INVOFF    0x20U /* Display Inversion OFF */
-#define GC9X01X_CMD_INVON     0x21U /* Display Inversion ON */
-#define GC9X01X_CMD_DISPOFF   0x28U /* Display OFF */
-#define GC9X01X_CMD_DISPON    0x29U /* Display ON */
-#define GC9X01X_CMD_COLSET    0x2AU /* Column Address Set */
-#define GC9X01X_CMD_ROWSET    0x2BU /* Row Address Set */
-#define GC9X01X_CMD_MEMWR     0x2CU /* Memory Write */
-#define GC9X01X_CMD_PTLAR     0x30U /* Partial Area */
-#define GC9X01X_CMD_VSCRDEF   0x33U /* Vertical Scrolling Definition */
-#define GC9X01X_CMD_TEOFF     0x34U /* Tearing Effect Line OFF */
-#define GC9X01X_CMD_TEON      0x35U /* Tearing Effect Line ON */
-#define GC9X01X_CMD_MADCTL    0x36U /* Memory Access Control */
-#define GC9X01X_CMD_VSCRSADD  0x37U /* Vertical Scrolling Start Address */
-#define GC9X01X_CMD_PIXFMT    0x3AU /* Pixel Format Set */
 #define GC9X01X_CMD_DFUNCTR   0xB6U /* Display Function Control */
 #define GC9X01X_CMD_PWRCTRL1  0xC1U /* Power Control 1 */
 #define GC9X01X_CMD_PWRCTRL2  0xC3U /* Power Control 2 */

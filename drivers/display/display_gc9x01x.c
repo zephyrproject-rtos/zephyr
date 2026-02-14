@@ -291,7 +291,7 @@ static int gc9x01x_regs_init(const struct device *dev)
 	}
 
 	/* Enable Tearing line */
-	ret = gc9x01x_transmit(dev, GC9X01X_CMD_TEON, NULL, 0);
+	ret = gc9x01x_transmit(dev, MIPI_DCS_SET_TEAR_ON, NULL, 0);
 	if (ret < 0) {
 		return ret;
 	}
@@ -303,7 +303,7 @@ static int gc9x01x_exit_sleep(const struct device *dev)
 {
 	int ret;
 
-	ret = gc9x01x_transmit(dev, GC9X01X_CMD_SLPOUT, NULL, 0);
+	ret = gc9x01x_transmit(dev, MIPI_DCS_EXIT_SLEEP_MODE, NULL, 0);
 	if (ret < 0) {
 		return ret;
 	}
@@ -355,13 +355,13 @@ static int gc9x01x_hw_reset(const struct device *dev)
 static int gc9x01x_display_blanking_off(const struct device *dev)
 {
 	LOG_DBG("Turning display blanking off");
-	return gc9x01x_transmit(dev, GC9X01X_CMD_DISPON, NULL, 0);
+	return gc9x01x_transmit(dev, MIPI_DCS_SET_DISPLAY_ON, NULL, 0);
 }
 
 static int gc9x01x_display_blanking_on(const struct device *dev)
 {
 	LOG_DBG("Turning display blanking on");
-	return gc9x01x_transmit(dev, GC9X01X_CMD_DISPOFF, NULL, 0);
+	return gc9x01x_transmit(dev, MIPI_DCS_SET_DISPLAY_OFF, NULL, 0);
 }
 
 static int gc9x01x_set_pixel_format(const struct device *dev,
@@ -383,7 +383,7 @@ static int gc9x01x_set_pixel_format(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	ret = gc9x01x_transmit(dev, GC9X01X_CMD_PIXFMT, &tx_data, 1U);
+	ret = gc9x01x_transmit(dev, MIPI_DCS_SET_PIXEL_FORMAT, &tx_data, 1U);
 	if (ret < 0) {
 		return ret;
 	}
@@ -414,7 +414,7 @@ static int gc9x01x_set_orientation(const struct device *dev,
 		tx_data |= GC9X01X_MADCTL_VAL_MV | GC9X01X_MADCTL_VAL_MX;
 	}
 
-	ret = gc9x01x_transmit(dev, GC9X01X_CMD_MADCTL, &tx_data, 1U);
+	ret = gc9x01x_transmit(dev, MIPI_DCS_SET_ADDRESS_MODE, &tx_data, 1U);
 	if (ret < 0) {
 		return ret;
 	}
@@ -449,7 +449,7 @@ static int gc9x01x_configure(const struct device *dev)
 
 	/* Display inversion mode. */
 	if (config->inversion) {
-		ret = gc9x01x_transmit(dev, GC9X01X_CMD_INVON, NULL, 0);
+		ret = gc9x01x_transmit(dev, MIPI_DCS_ENTER_INVERT_MODE, NULL, 0);
 		if (ret < 0) {
 			return ret;
 		}
@@ -489,14 +489,14 @@ static int gc9x01x_set_mem_area(const struct device *dev, const uint16_t x, cons
 
 	spi_data[0] = sys_cpu_to_be16(x);
 	spi_data[1] = sys_cpu_to_be16(x + w - 1U);
-	ret = gc9x01x_transmit(dev, GC9X01X_CMD_COLSET, &spi_data[0], 4U);
+	ret = gc9x01x_transmit(dev, MIPI_DCS_SET_COLUMN_ADDRESS, &spi_data[0], 4U);
 	if (ret < 0) {
 		return ret;
 	}
 
 	spi_data[0] = sys_cpu_to_be16(y);
 	spi_data[1] = sys_cpu_to_be16(y + h - 1U);
-	ret = gc9x01x_transmit(dev, GC9X01X_CMD_ROWSET, &spi_data[0], 4U);
+	ret = gc9x01x_transmit(dev, MIPI_DCS_SET_PAGE_ADDRESS, &spi_data[0], 4U);
 	if (ret < 0) {
 		return ret;
 	}
@@ -543,7 +543,7 @@ static int gc9x01x_write(const struct device *dev, const uint16_t x, const uint1
 	mipi_desc.pitch = desc->width;
 	mipi_desc.frame_incomplete = desc->frame_incomplete;
 
-	ret = gc9x01x_transmit(dev, GC9X01X_CMD_MEMWR, NULL, 0);
+	ret = gc9x01x_transmit(dev, MIPI_DCS_WRITE_MEMORY_START, NULL, 0);
 	if (ret < 0) {
 		return ret;
 	}
