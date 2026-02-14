@@ -35,8 +35,8 @@ LOG_MODULE_REGISTER(memc_stm32_ospi_psram_v2, CONFIG_MEMC_LOG_LEVEL);
         (_CONCAT(HAL_OSPIM_, DT_STRING_TOKEN(STM32_OSPI_NODE, prop))),	\
         ((default_value)))
 
-#define READ_CMD          0xEB  // Fast Read Quad (стандарт для QSPI)
-#define WRITE_CMD         0x38  // Quad Write (иногда 0x02, проверьте даташит)
+#define READ_CMD		  0xEB  // Fast Read Quad (standard QSPI command)
+#define WRITE_CMD		  0x38  // Quad Write (sometimes 0x02, check device datasheet)
 #define ENTER_QPI         0x35
 #define DUMMY_CYCLES_READ 6
 #define DUMMY_CLOCK_CYCLES_READ 6
@@ -93,7 +93,7 @@ static int PSRAM_EnableMemoryMapped(OSPI_HandleTypeDef *hospi)
     OSPI_RegularCmdTypeDef sCommand = {0};
     OSPI_MemoryMappedTypeDef sMemMappedCfg = {0};
 
-	// 1. Команда переключения в QSPI режим (1-1-1 -> 4-4-4)
+	// 1. Command to switch to QSPI mode (1-1-1 -> 4-4-4)
 	sCommand.OperationType      = HAL_OSPI_OPTYPE_COMMON_CFG;	//HAL_OSPI_OPTYPE_WRITE_CFG;
 	sCommand.FlashId            = HAL_OSPI_FLASH_ID_1;
 	sCommand.Instruction        = ENTER_QPI;
@@ -116,7 +116,7 @@ static int PSRAM_EnableMemoryMapped(OSPI_HandleTypeDef *hospi)
 		return -EIO;
 	}
 
-	/*Configure Memory Mapped mode*/
+	/*Configure Memory Mapped mode (write cmd)*/
 	sCommand.OperationType      = HAL_OSPI_OPTYPE_WRITE_CFG;
 	sCommand.FlashId            = HAL_OSPI_FLASH_ID_1;
 	sCommand.Instruction        = WRITE_CMD;
@@ -142,7 +142,7 @@ static int PSRAM_EnableMemoryMapped(OSPI_HandleTypeDef *hospi)
 		LOG_ERR("%d: Failed to set memory map write cmd", ret);
 		return -EIO;
 	}
-
+	/*Configure Memory Mapped mode (read cmd)*/
 	sCommand.OperationType = HAL_OSPI_OPTYPE_READ_CFG;
 	sCommand.Instruction   = READ_CMD;
 	sCommand.DummyCycles   = DUMMY_CLOCK_CYCLES_READ;
@@ -221,14 +221,6 @@ static int memc_stm32_ospi_psram_init(const struct device *dev) {
 		return 0;
 	}
 #endif /* CONFIG_STM32_MEMMAP */
-
-    // /* The SPI/DTR is not a valid config of data_mode/data_rate according to the DTS */
-    // if ((dev_cfg->data_mode != OSPI_OPI_MODE)
-    //     && (dev_cfg->data_rate == OSPI_DTR_TRANSFER)) {
-    //     /* already the right config, continue */
-    //     LOG_ERR("OSPI mode SPI|DUAL|QUAD/DTR is not valid");
-    //     return -ENOTSUP;
-    //     }
 
     /* Signals configuration */
     ret = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
@@ -367,7 +359,7 @@ static int memc_stm32_ospi_psram_init(const struct device *dev) {
 #ifdef CONFIG_STM32_MEMMAP
 	/* Now configure the octo Flash in MemoryMapped (access by address) */
     ret = PSRAM_EnableMemoryMapped(&dev_data->hospi);
-	if (ret != 0) {
+	if (ret != HAL_OK) {
 		LOG_ERR("Error (%d): setting PSRAM in MemoryMapped mode", ret);
 		return -EINVAL;
 	}
