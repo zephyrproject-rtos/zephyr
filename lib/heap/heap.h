@@ -328,4 +328,14 @@ static inline struct z_heap_chunk_trailer *chunk_trailer(struct z_heap *h,
 
 #endif /* CONFIG_SYS_HEAP_CANARIES */
 
+#ifdef CONFIG_SYS_HEAP_VALIDATE
+bool z_heap_full_check(struct z_heap *h);
+#else
+static inline bool z_heap_full_check(struct z_heap *h)
+{
+	ARG_UNUSED(h);
+	return true;
+}
+#endif
+
 #endif /* ZEPHYR_INCLUDE_LIB_OS_HEAP_H_ */
