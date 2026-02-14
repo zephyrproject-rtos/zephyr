@@ -6,7 +6,6 @@ menu "Heap and Memory Allocation"
 
 config SYS_HEAP_VALIDATE
 	bool "Internal heap validity checking"
-	depends on ASSERT
 	help
 	  The sys_heap implementation is instrumented for extensive
 	  internal validation.  Leave this off by default, unless
@@ -78,18 +77,85 @@ config HEAP_LISTENER
 	  listeners of certain events related to a heap usage,
 	  such as the heap resize.
 
-config SYS_HEAP_CANARIES
-	bool "Heap canaries for corruption detection"
+choice SYS_HEAP_HARDENING
+	prompt "Heap hardening level"
+	default SYS_HEAP_HARDENING_MODERATE if ASSERT
+	default SYS_HEAP_HARDENING_BASIC
 	help
-	  Enable canary values at the end of each heap allocation to detect
-	  memory corruption. The canary is validated when memory is freed,
-	  catching buffer overflows (writing past allocation) and double-free
-	  errors.
+	  Controls the level of runtime validation performed by the
+	  sys_heap allocator. Higher levels detect more classes of
+	  heap corruption but add increasing overhead. Each level
+	  includes all checks from lower levels.
 
-	  This adds 8 bytes of memory overhead per allocation and a
-	  canary computation on alloc and validation on free. It is
-	  useful for hardening against memory corruption as well as
-	  for chasing bugs during development.
+config SYS_HEAP_HARDENING_NONE
+	bool "None"
+	help
+	  Disable all heap validation checks for maximum performance.
+	  Use this for production builds where heap usage is well
+	  tested and every cycle counts.
+
+config SYS_HEAP_HARDENING_BASIC
+	bool "Basic"
+	help
+	  Cheap double-free and buffer overflow detection in
+	  sys_heap_free(). This adds a few field reads on the free
+	  path with negligible runtime cost. Suitable for production
+	  builds that want a safety net.
+
+config SYS_HEAP_HARDENING_MODERATE
+	bool "Moderate"
+	help
+	  In addition to basic checks, validate free list pointer
+	  consistency in free list operations and bidirectional
+	  neighbor size consistency in sys_heap_free(). This adds
+	  a few more field reads on the alloc and free paths. This
+	  is quite effective at detecting most accidental corruptions
+	  and is a good default for development and production
+	  systems that need extra robustness.
+
+config SYS_HEAP_HARDENING_FULL
+	bool "Full"
+	select SYS_HEAP_CANARIES
+	help
+	  In addition to moderate checks, enable per-chunk trailer
+	  canaries. The canary is validated on free, realloc, and
+	  size queries. This adds 8 bytes of memory overhead per
+	  allocation and a canary computation on alloc and free.
+	  Useful for hardening against deliberate memory corruption
+	  attacks as well as for chasing bugs during development.
+
+config SYS_HEAP_HARDENING_EXTREME
+	bool "Extreme"
+	select SYS_HEAP_CANARIES
+	select SYS_HEAP_VALIDATE
+	help
+	  In addition to full checks, run a complete heap structure
+	  validation after every allocation and free operation.
+	  This walks every chunk on each operation, making it
+	  extremely expensive (linear in the number of allocations).
+	  Detects external corruption of the heap before the allocator
+	  acts on it.
+
+	  The overhead of this level is disproportionate to the
+	  protection it provides over "Full". It is unsuitable for
+	  production use and intended solely for debugging.
+
+endchoice
+
+config SYS_HEAP_HARDENING_LEVEL
+	int
+	default 0 if SYS_HEAP_HARDENING_NONE
+	default 1 if SYS_HEAP_HARDENING_BASIC
+	default 2 if SYS_HEAP_HARDENING_MODERATE
+	default 3 if SYS_HEAP_HARDENING_FULL
+	default 4 if SYS_HEAP_HARDENING_EXTREME
+
+config SYS_HEAP_CANARIES
+	bool
+
+module = SYS_HEAP
+module-str = sys_heap
+source "subsys/logging/Kconfig.template.log_config"
 
 choice
 	prompt "Supported heap sizes"
