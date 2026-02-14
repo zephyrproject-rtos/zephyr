@@ -101,7 +101,7 @@ static int cmd_net_pmtu_flush(const struct shell *sh, size_t argc, char *argv[])
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_pmtu,
 	SHELL_CMD(flush, NULL,
-		  "Remove all entries from PMTU destination cache.",
+		  SHELL_HELP("Remove all entries from PMTU destination cache", ""),
 		  cmd_net_pmtu_flush),
 	SHELL_SUBCMD_SET_END
 );

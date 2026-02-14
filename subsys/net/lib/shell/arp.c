@@ -86,7 +86,8 @@ static int cmd_net_arp_flush(const struct shell *sh, size_t argc, char *argv[])
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_arp,
-	SHELL_CMD(flush, NULL, "Remove all entries from ARP cache.",
+	SHELL_CMD(flush, NULL,
+		  SHELL_HELP("Remove all entries from ARP cache", ""),
 		  cmd_net_arp_flush),
 	SHELL_SUBCMD_SET_END
 );

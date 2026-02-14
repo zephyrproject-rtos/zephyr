@@ -490,10 +490,10 @@ static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_ping,
-	SHELL_CMD(--help, NULL,
-		  "'net ping [-c count] [-i interval ms] [-I <iface index>] "
-		  "[-Q tos] [-s payload size] [-p priority] <host>' "
-		  "Send ICMPv4 or ICMPv6 Echo-Request to a network host.",
+	SHELL_CMD(ping, NULL,
+		  SHELL_HELP("Send ICMPv4 or ICMPv6 Echo-Request to a network host",
+			     "[-c count] [-i interval ms] [-I <iface index>]\n"
+			     "[-Q tos] [-s payload size] [-p priority] <host>"),
 		  cmd_net_ping),
 	SHELL_SUBCMD_SET_END
 );

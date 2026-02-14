@@ -449,19 +449,20 @@ static int cmd_net_ip6_pe(const struct shell *sh, size_t argc, char *argv[])
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_ip6,
 	SHELL_CMD(add, NULL,
-		  "'net ipv6 add <index> <address>' adds the address to the interface.",
+		  SHELL_HELP("Adds the address to the interface",
+			     "<index> <address>"),
 		  cmd_net_ip6_add),
 	SHELL_CMD(del, NULL,
-		  "'net ipv6 del <index> <address>' deletes the address from the interface.",
+		  SHELL_HELP("Deletes the address from the interface",
+			     "<index> <address>"),
 		  cmd_net_ip6_del),
 	SHELL_CMD(pe, NULL,
-		  "net ipv6 pe add [allow|deny] <IPv6 prefix>\n"
-		  "Add IPv6 address to filter list. The allow/deny "
-		  "parameter tells if this is allow listed (accepted) or "
-		  "deny listed (declined) prefix. Default is to allow list "
-		  "the prefix.\n"
-		  "ipv6 pe del <IPv6 prefix>\n"
-		  "Delete IPv6 address from filter list.",
+		  SHELL_HELP("Add/delete IPv6 address to/from filter list",
+			     "add [allow|deny] <IPv6 prefix>\n"
+			     "pe del <IPv6 prefix>\n"
+			     "The allow/deny parameter tells if this is "
+			     "allow listed (accepted) or deny listed (declined) prefix.\n"
+			     "Default is to allow list the prefix"),
 		  cmd_net_ip6_pe),
 	SHELL_SUBCMD_SET_END
 );
