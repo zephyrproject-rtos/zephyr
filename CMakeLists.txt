@@ -1048,6 +1048,8 @@ target_include_directories(${OFFSETS_LIB} PRIVATE
 # Make sure that LTO will never be enabled when compiling offsets.c
 set_source_files_properties(${OFFSETS_C_PATH} PROPERTIES COMPILE_OPTIONS $<TARGET_PROPERTY:compiler,prohibit_lto>)
 
+target_sources(${OFFSETS_LIB} PRIVATE ${ZEPHYR_BASE}/lib/heap/heap_constants.c)
+
 target_link_libraries(${OFFSETS_LIB} zephyr_interface)
 add_dependencies(zephyr_interface
   ${SYSCALL_LIST_H_TARGET}
@@ -1061,6 +1063,7 @@ add_custom_command(
   COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/gen_offset_header.py
   -i $<TARGET_OBJECTS:${OFFSETS_LIB}>
   -o ${OFFSETS_H_PATH}
+  COMMAND_EXPAND_LISTS
   DEPENDS
   ${OFFSETS_LIB}
   $<TARGET_OBJECTS:${OFFSETS_LIB}>

@@ -6,8 +6,8 @@
 #
 
 """
-This script scans a specified object file and generates a header file
-that defined macros for the offsets of various found structure members
+This script scans one or more specified object files and generates a header
+file that defined macros for the offsets of various found structure members
 (particularly symbols ending with ``_OFFSET`` or ``_SIZEOF``), primarily
 intended for use in assembly code.
 """
@@ -27,7 +27,7 @@ def get_symbol_table(obj):
     raise LookupError("Could not find symbol table")
 
 
-def gen_offset_header(input_name, input_file, output_file):
+def gen_offset_header(input_files, output_file):
     include_guard = "__GEN_OFFSETS_H__"
     output_file.write(
         f"""/* THIS FILE IS AUTO GENERATED.  PLEASE DO NOT EDIT.
@@ -41,19 +41,21 @@ def gen_offset_header(input_name, input_file, output_file):
 #define {include_guard}\n\n"""
     )
 
-    obj = ELFFile(input_file)
-    for sym in get_symbol_table(obj).iter_symbols():
-        if isinstance(sym.name, bytes):
-            sym.name = str(sym.name, 'ascii')
+    for input_path in input_files:
+        with open(input_path, 'rb') as input_file:
+            obj = ELFFile(input_file)
+            for sym in get_symbol_table(obj).iter_symbols():
+                if isinstance(sym.name, bytes):
+                    sym.name = str(sym.name, 'ascii')
 
-        if not sym.name.endswith(('_OFFSET', '_SIZEOF')):
-            continue
-        if sym.entry['st_shndx'] != 'SHN_ABS':
-            continue
-        if sym.entry['st_info']['bind'] != 'STB_GLOBAL':
-            continue
+                if not sym.name.endswith(('_OFFSET', '_SIZEOF')):
+                    continue
+                if sym.entry['st_shndx'] != 'SHN_ABS':
+                    continue
+                if sym.entry['st_info']['bind'] != 'STB_GLOBAL':
+                    continue
 
-        output_file.write(f"#define {sym.name} 0x{sym.entry['st_value']:x}\n")
+                output_file.write(f"#define {sym.name} 0x{sym.entry['st_value']:x}\n")
 
     output_file.write(f"\n#endif /* {include_guard} */\n")
 
@@ -67,12 +69,12 @@ if __name__ == '__main__':
         allow_abbrev=False,
     )
 
-    parser.add_argument("-i", "--input", required=True, help="Input object file")
+    parser.add_argument("-i", "--input", required=True, nargs='+', help="Input object file(s)")
     parser.add_argument("-o", "--output", required=True, help="Output header file")
 
     args = parser.parse_args()
 
-    with open(args.input, 'rb') as input_file, open(args.output, 'w') as output_file:
-        ret = gen_offset_header(args.input, input_file, output_file)
+    with open(args.output, 'w') as output_file:
+        ret = gen_offset_header(args.input, output_file)
 
     sys.exit(ret)
