@@ -7,8 +7,11 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/heap_listener.h>
 #include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 #include <string.h>
 #include "heap.h"
+
+LOG_MODULE_REGISTER(os_heap, CONFIG_SYS_HEAP_LOG_LEVEL);
 #ifdef CONFIG_MSAN
 #include <sanitizer/msan_interface.h>
 #endif
@@ -53,9 +56,9 @@ static inline void verify_chunk_canary(struct z_heap *h, chunkid_t c, void *mem)
 
 	if (found != expected) {
 		if (found == HEAP_CANARY_POISON) {
-			__ASSERT(false, "double free detected for %p", mem);
+			LOG_ERR("heap canary: double free at %p", mem);
 		} else {
-			__ASSERT(false, "heap corruption detected for %p", mem);
+			LOG_ERR("heap canary: corruption at %p", mem);
 		}
 		k_panic();
 	}
@@ -85,9 +88,16 @@ static void free_list_remove_bidx(struct z_heap *h, chunkid_t c, int bidx)
 {
 	struct z_heap_bucket *b = &h->buckets[bidx];
 
-	CHECK(!chunk_used(h, c));
 	CHECK(b->next != 0);
 	CHECK(h->avail_buckets & BIT(bidx));
+
+	if (SYS_HEAP_HARDENING_MODERATE &&
+	    (chunk_used(h, c) ||
+	     left_chunk(h, right_chunk(h, c)) != c ||
+	     right_chunk(h, left_chunk(h, c)) != c)) {
+		LOG_ERR("heap corruption (chunk list linkage)");
+		k_panic();
+	}
 
 	if (next_free_chunk(h, c) == c) {
 		/* this is the last chunk */
@@ -96,6 +106,13 @@ static void free_list_remove_bidx(struct z_heap *h, chunkid_t c, int bidx)
 	} else {
 		chunkid_t first = prev_free_chunk(h, c),
 			  second = next_free_chunk(h, c);
+
+		if (SYS_HEAP_HARDENING_MODERATE &&
+		    (next_free_chunk(h, first) != c ||
+		     prev_free_chunk(h, second) != c)) {
+			LOG_ERR("heap corruption (free list linkage)");
+			k_panic();
+		}
 
 		b->next = second;
 		set_next_free_chunk(h, first, second);
@@ -133,6 +150,12 @@ static void free_list_add_bidx(struct z_heap *h, chunkid_t c, int bidx)
 		/* Insert before (!) the "next" pointer */
 		chunkid_t second = b->next;
 		chunkid_t first = prev_free_chunk(h, second);
+
+		if (SYS_HEAP_HARDENING_MODERATE &&
+		    next_free_chunk(h, first) != second) {
+			LOG_ERR("heap corruption (free list linkage)");
+			k_panic();
+		}
 
 		set_prev_free_chunk(h, c, first);
 		set_next_free_chunk(h, c, second);
@@ -218,24 +241,54 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 	struct z_heap *h = heap->heap;
 	chunkid_t c = mem_to_chunkid(h, mem);
 
-	/*
-	 * This should catch many double-free cases.
-	 * This is cheap enough so let's do it all the time.
-	 */
-	__ASSERT(chunk_used(h, c),
-		 "unexpected heap state (double-free?) for memory at %p", mem);
+	if (SYS_HEAP_HARDENING_BASIC && !chunk_used(h, c)) {
+		LOG_ERR("heap corruption (double free?) at %p", mem);
+		k_panic();
+	}
 
 	/*
-	 * It is easy to catch many common memory overflow cases with
-	 * a quick check on this and next chunk header fields that are
-	 * immediately before and after the freed memory.
+	 * Header fields are ordered as LEFT_SIZE then SIZE_AND_USED.
+	 * This places SIZE_AND_USED immediately before the user data,
+	 * and LEFT_SIZE of the following chunk immediately after:
+	 *
+	 *       chunk c              right_chunk(c)
+	 *   +-----------+---------+-----------+---------+
+	 *   |  SIZE (1) | data    | L_SIZE (2)|  SIZE   |
+	 *   +-----------+---------+-----------+---------+
+	 *
+	 * A buffer overflow from c's data corrupts field (2).
+	 * Checking left(right(c)) == c catches this because
+	 * right(c) reads field (1) and left() reads field (2):
+	 * the two fields straddle the data buffer, so the
+	 * round-trip fails if either side was corrupted.
 	 */
-	__ASSERT(left_chunk(h, right_chunk(h, c)) == c,
-		 "corrupted heap bounds (buffer overflow?) for memory at %p",
-		 mem);
+	if (SYS_HEAP_HARDENING_BASIC &&
+	    left_chunk(h, right_chunk(h, c)) != c) {
+		LOG_ERR("heap corruption (buffer overflow?) at %p", mem);
+		k_panic();
+	}
 
-	verify_chunk_canary(h, c, mem);
-	poison_chunk_canary(h, c);
+	/*
+	 * The above check validated SIZE_AND_USED using a field from
+	 * the next chunk.  Now validate LEFT_SIZE: if it was corrupted
+	 * (by an overflow from the left neighbor or an underflow from
+	 * our own buffer) then right(left(c)) won't return to c.
+	 */
+	if (SYS_HEAP_HARDENING_MODERATE &&
+	    right_chunk(h, left_chunk(h, c)) != c) {
+		LOG_ERR("heap corruption (left neighbor?) at %p", mem);
+		k_panic();
+	}
+
+	if (SYS_HEAP_HARDENING_FULL) {
+		verify_chunk_canary(h, c, mem);
+		poison_chunk_canary(h, c);
+	}
+
+	if (SYS_HEAP_HARDENING_EXTREME && !z_heap_full_check(h)) {
+		LOG_ERR("heap validation failed");
+		k_panic();
+	}
 
 	set_chunk_used(h, c, false);
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
@@ -255,13 +308,20 @@ size_t sys_heap_usable_size(struct sys_heap *heap, void *mem)
 	struct z_heap *h = heap->heap;
 	chunkid_t c = mem_to_chunkid(h, mem);
 
-	verify_chunk_canary(h, c, mem);
+	if (SYS_HEAP_HARDENING_FULL) {
+		verify_chunk_canary(h, c, mem);
+	}
 
 	return chunk_usable_bytes(h, c) - mem_align_gap(h, mem);
 }
 
 static chunkid_t alloc_chunk(struct z_heap *h, chunksz_t sz)
 {
+	if (SYS_HEAP_HARDENING_EXTREME && !z_heap_full_check(h)) {
+		LOG_ERR("heap validation failed");
+		k_panic();
+	}
+
 	int bi = bucket_idx(h, sz);
 	struct z_heap_bucket *b = &h->buckets[bi];
 
@@ -335,7 +395,9 @@ void *sys_heap_alloc(struct sys_heap *heap, size_t bytes)
 	}
 
 	set_chunk_used(h, c, true);
-	set_chunk_canary(h, c);
+	if (SYS_HEAP_HARDENING_FULL) {
+		set_chunk_canary(h, c);
+	}
 
 	mem = chunk_mem(h, c);
 
@@ -423,7 +485,9 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 	}
 
 	set_chunk_used(h, c, true);
-	set_chunk_canary(h, c);
+	if (SYS_HEAP_HARDENING_FULL) {
+		set_chunk_canary(h, c);
+	}
 
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 	increase_allocated_bytes(h, chunk_usable_bytes(h, c));
@@ -447,7 +511,27 @@ static bool inplace_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 
 	chunksz_t chunks_need = bytes_to_chunksz(h, bytes, align_gap);
 
-	verify_chunk_canary(h, c, ptr);
+	if (SYS_HEAP_HARDENING_BASIC && !chunk_used(h, c)) {
+		LOG_ERR("heap corruption (not in use?) at %p", ptr);
+		k_panic();
+	}
+	if (SYS_HEAP_HARDENING_BASIC &&
+	    left_chunk(h, right_chunk(h, c)) != c) {
+		LOG_ERR("heap corruption (buffer overflow?) at %p", ptr);
+		k_panic();
+	}
+	if (SYS_HEAP_HARDENING_MODERATE &&
+	    right_chunk(h, left_chunk(h, c)) != c) {
+		LOG_ERR("heap corruption (left neighbor?) at %p", ptr);
+		k_panic();
+	}
+	if (SYS_HEAP_HARDENING_FULL) {
+		verify_chunk_canary(h, c, ptr);
+	}
+	if (SYS_HEAP_HARDENING_EXTREME && !z_heap_full_check(h)) {
+		LOG_ERR("heap validation failed");
+		k_panic();
+	}
 
 	if (chunk_size(h, c) == chunks_need) {
 		/* We're good already */
@@ -467,7 +551,9 @@ static bool inplace_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 
 		split_chunks(h, c, c + chunks_need);
 		set_chunk_used(h, c, true);
-		set_chunk_canary(h, c);
+		if (SYS_HEAP_HARDENING_FULL) {
+			set_chunk_canary(h, c);
+		}
 		free_chunk(h, c + chunks_need);
 
 #ifdef CONFIG_SYS_HEAP_LISTENER
@@ -504,7 +590,9 @@ static bool inplace_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 
 		merge_chunks(h, c, rc);
 		set_chunk_used(h, c, true);
-		set_chunk_canary(h, c);
+		if (SYS_HEAP_HARDENING_FULL) {
+			set_chunk_canary(h, c);
+		}
 
 #ifdef CONFIG_SYS_HEAP_LISTENER
 		heap_listener_notify_alloc(HEAP_ID_FROM_POINTER(heap), ptr,

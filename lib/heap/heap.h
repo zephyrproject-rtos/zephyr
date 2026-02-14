@@ -20,6 +20,15 @@
 #define CHECK(x) /**/
 #endif
 
+/* Heap hardening level predicates.  Each is true when the configured
+ * hardening level is at or above the named level.  The compiler
+ * eliminates dead code at lower levels.
+ */
+#define SYS_HEAP_HARDENING_BASIC    (CONFIG_SYS_HEAP_HARDENING_LEVEL >= 1)
+#define SYS_HEAP_HARDENING_MODERATE (CONFIG_SYS_HEAP_HARDENING_LEVEL >= 2)
+#define SYS_HEAP_HARDENING_FULL     (CONFIG_SYS_HEAP_HARDENING_LEVEL >= 3)
+#define SYS_HEAP_HARDENING_EXTREME (CONFIG_SYS_HEAP_HARDENING_LEVEL >= 4)
+
 /* Chunks are identified by their offset in 8 byte units from the
  * first address in the buffer (a zero-valued chunkid_t is used as a
  * null; that chunk would always point into the metadata at the start
