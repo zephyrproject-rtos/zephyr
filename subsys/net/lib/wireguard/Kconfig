@@ -34,13 +34,8 @@ config WIREGUARD_CRYPTO
 	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
 	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
 	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_DERIVE
-	select MBEDTLS if NET_NATIVE
-	select MBEDTLS_PSA_CRYPTO_C
-	select MBEDTLS_CIPHER
-	select MBEDTLS_CIPHER_CHACHA20_ENABLED
-	select MBEDTLS_POLY1305
-	select MBEDTLS_CHACHAPOLY_AEAD_ENABLED
-	select MBEDTLS_ECP_C
+	imply PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
+	select PSA_CRYPTO
 	help
 	  Use PSA Crypto API for cryptographic operations where available.
 	  This enables hardware acceleration on platforms that support it.
