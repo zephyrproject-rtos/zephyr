@@ -80,8 +80,8 @@ static void blake2s_compress(blake2s_ctx *ctx, int last)
 /*  Initialize the hashing context "ctx" with optional key "key". */
 /*       1 <= outlen <= 32 gives the digest size in bytes. */
 /*       Secret key (also <= 32 bytes) is optional (keylen = 0). */
-int blake2s_init(blake2s_ctx *ctx, size_t outlen, const void *key,
-		 size_t keylen) /*  (keylen=0: no key) */
+static int blake2s_init(blake2s_ctx *ctx, size_t outlen, const void *key,
+			size_t keylen) /*  (keylen=0: no key) */
 {
 	size_t i;
 
@@ -111,7 +111,7 @@ int blake2s_init(blake2s_ctx *ctx, size_t outlen, const void *key,
 }
 
 /*  Add "inlen" bytes from "in" into the hash. */
-void blake2s_update(blake2s_ctx *ctx, const void *in, size_t inlen) /*  data bytes */
+static void blake2s_update(blake2s_ctx *ctx, const void *in, size_t inlen) /*  data bytes */
 {
 	size_t i;
 
@@ -130,7 +130,7 @@ void blake2s_update(blake2s_ctx *ctx, const void *in, size_t inlen) /*  data byt
 
 /*  Generate the message digest (size given in init). */
 /*       Result placed in "out". */
-void blake2s_final(blake2s_ctx *ctx, void *out)
+static void blake2s_final(blake2s_ctx *ctx, void *out)
 {
 	size_t i;
 
@@ -151,7 +151,8 @@ void blake2s_final(blake2s_ctx *ctx, void *out)
 }
 
 /*  Convenience function for all-in-one computation. */
-int blake2s(void *out, size_t outlen, const void *key, size_t keylen, const void *in, size_t inlen)
+static int blake2s(void *out, size_t outlen, const void *key, size_t keylen,
+		   const void *in, size_t inlen)
 {
 	blake2s_ctx ctx;
 
