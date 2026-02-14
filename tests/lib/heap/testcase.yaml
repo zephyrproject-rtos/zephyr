@@ -18,6 +18,9 @@ common:
     - qemu_x86
 tests:
   libraries.heap: {}
-  libraries.heap.canaries:
+  libraries.heap.hardening_none:
     extra_configs:
-      - CONFIG_SYS_HEAP_CANARIES=y
+      - CONFIG_SYS_HEAP_HARDENING_NONE=y
+  libraries.heap.hardening_full:
+    extra_configs:
+      - CONFIG_SYS_HEAP_HARDENING_FULL=y
