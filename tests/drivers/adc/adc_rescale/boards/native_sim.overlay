@@ -35,9 +35,25 @@
 		zero-current-voltage-mv = <1650>;
 	};
 
+	sensor4: ad590 {
+		compatible = "temperature-transducer";
+		io-channels = <&adc0 3>;
+		sense-offset-millicelsius = <(-273150)>;
+		sense-resistor-ohms = <8060>;
+		alpha-ppm-per-celsius = <1>; /* 1 µA/K */
+	};
+
+	sensor5: ltc2997 {
+		compatible = "temperature-transducer";
+		io-channels = <&adc0 4>;
+		sense-offset-millicelsius = <(-273150)>;
+		sense-resistor-ohms = <1>;
+		alpha-ppm-per-celsius = <4000>; /* 4 mV/K */
+	};
+
 	adc0: adc {
 		compatible = "zephyr,adc-emul";
-		nchannels = <3>;
+		nchannels = <5>;
 		ref-internal-mv = <3300>;
 		ref-external1-mv = <5000>;
 		#io-channel-cells = <1>;
@@ -69,6 +85,24 @@
 
 	channel@2 {
 		reg = <2>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@3 {
+		reg = <3>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@4 {
+		reg = <4>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,vref-mv = <3300>;
