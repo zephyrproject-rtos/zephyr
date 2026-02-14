@@ -8,6 +8,6 @@ tests:
   libraries.heap_min.runtime_stats:
     extra_configs:
       - CONFIG_SYS_HEAP_RUNTIME_STATS=y
-  libraries.heap_min.canaries:
+  libraries.heap_min.hardening_full:
     extra_configs:
-      - CONFIG_SYS_HEAP_CANARIES=y
+      - CONFIG_SYS_HEAP_HARDENING_FULL=y
