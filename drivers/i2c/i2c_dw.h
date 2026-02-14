@@ -158,6 +158,8 @@ struct i2c_dw_rom_config {
 #endif
 	int16_t lcnt_offset;
 	int16_t hcnt_offset;
+	uint16_t scl_lcnt;
+	uint16_t scl_hcnt;
 	uint8_t fs_spk_len;
 	uint8_t hs_spk_len;
 	k_timeout_t transfer_timeout;

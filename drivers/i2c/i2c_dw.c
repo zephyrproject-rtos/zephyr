@@ -1072,6 +1072,15 @@ static int i2c_dw_configure(const struct device *dev, uint32_t config)
 		rc = -EINVAL;
 	}
 
+	if (rc == 0U && I2C_SPEED_GET(config) == I2C_SPEED_GET(i2c_map_dt_bitrate(rom->bitrate))) {
+		if (rom->scl_lcnt != 0U) {
+			lcnt_val = rom->scl_lcnt;
+		}
+		if (rom->scl_hcnt != 0U) {
+			hcnt_val = rom->scl_hcnt;
+		}
+	}
+
 	if (I2C_SPEED_GET(config) == I2C_SPEED_HIGH) {
 		/* Ensure minimum HCNT and LCNT register values for High Speed */
 		lcnt_val = I2C_ENSURE_MIN_SCL_LCNT(lcnt_val, rom->hs_spk_len);
@@ -1653,10 +1662,16 @@ static int i2c_dw_initialize(const struct device *dev)
 		.fs_spk_len = MAX((uint8_t)DT_INST_PROP_OR(n, fs_spike_len, 0), DW_IC_SPKLEN_MIN), \
 		.hs_spk_len = MAX((uint8_t)DT_INST_PROP_OR(n, hs_spike_len, 0), DW_IC_SPKLEN_MIN), \
 		.transfer_timeout = I2C_DT_INST_TRANSFER_TIMEOUT(inst),                            \
+		.scl_lcnt = (uint16_t)DT_INST_PROP_OR(n, scl_lcnt, 0),                             \
+		.scl_hcnt = (uint16_t)DT_INST_PROP_OR(n, scl_hcnt, 0),                             \
 		TIMEOUT_DW_CONFIG(n) RESET_DW_CONFIG(n) PINCTRL_DW_CONFIG(n) I2C_DW_INIT_PCIE(n)   \
 			I2C_CONFIG_DMA_INIT(n) CLOCK_DW_CONFIG(n)};                                \
 	BUILD_ASSERT(DT_INST_PROP_OR(n, sda_hold_tx, 0) <= 0xffff, "Invalid SDA_HOLD_TX value");   \
 	BUILD_ASSERT(DT_INST_PROP_OR(n, sda_hold_rx, 0) <= 0xff, "Invalid SDA_HOLD_RX value");     \
+	BUILD_ASSERT(DT_INST_PROP_OR(n, scl_lcnt, 0) >= 0 &&                                       \
+		     DT_INST_PROP_OR(n, scl_lcnt, 0) <= 0xffff, "Invalid SCL_LCNT value");         \
+	BUILD_ASSERT(DT_INST_PROP_OR(n, scl_hcnt, 0) >= 0 &&                                       \
+		     DT_INST_PROP_OR(n, scl_hcnt, 0) <= 0xffff, "Invalid SCL_HCNT value");         \
 	static struct i2c_dw_dev_config i2c_##n##_runtime;                                         \
 	PM_DEVICE_DT_INST_DEFINE(n, i2c_dw_pm_action);                                             \
 	I2C_DEVICE_DT_INST_DEFINE(n, i2c_dw_initialize, PM_DEVICE_DT_INST_GET(n),                  \
