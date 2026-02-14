@@ -91,7 +91,11 @@ static int codec_configure(const struct device *dev,
 	/* Configure reset GPIO, and set the line to inactive, which will also
 	 * de-assert the reset line and thus enable the codec.
 	 */
-	gpio_pin_configure_dt(&dev_cfg->reset_gpio, GPIO_OUTPUT_INACTIVE);
+	ret = gpio_pin_configure_dt(&dev_cfg->reset_gpio, GPIO_OUTPUT_INACTIVE);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure reset GPIO (%d)", ret);
+		return ret;
+	}
 
 	codec_soft_reset(dev);
 
