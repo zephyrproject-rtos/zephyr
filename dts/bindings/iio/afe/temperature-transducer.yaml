@@ -1,13 +1,5 @@
-# SPDX-License-Identifier: (GPL-2.0 OR BSD-2-Clause)
-%YAML 1.2
----
-$id: http://devicetree.org/schemas/iio/afe/temperature-transducer.yaml#
-$schema: http://devicetree.org/meta-schemas/core.yaml#
-
-title: Temperature Transducer
-
-maintainers:
-  - Liam Beguin <liambeguin@gmail.com>
+# Copyright (C) 2022 Liam Beguin <liambeguin@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
 
 description: |
   A temperature transducer is a device that converts a thermal quantity
@@ -49,47 +41,45 @@ description: |
           -----
            GND
 
-properties:
-  compatible:
-    const: temperature-transducer
+  This is based on Linux, documentation:
+    https://www.kernel.org/doc/Documentation/devicetree/bindings/iio/afe/temperature-transducer.yaml
 
+compatible: "temperature-transducer"
+
+include: base.yaml
+
+properties:
   io-channels:
-    maxItems: 1
+    required: true
     description: |
       Channel node of a voltage io-channel.
 
-  '#io-channel-cells':
-    const: 0
-
   sense-offset-millicelsius:
+    type: int
+    default: 0
     description: |
-      Temperature offset.
+      Temperature offset in millicelsius.
       This offset is commonly used to convert from Kelvins to degrees Celsius.
       In that case, sense-offset-millicelsius would be set to <(-273150)>.
-    default: 0
 
   sense-resistor-ohms:
+    type: int
+    default: 1
     description: |
-      The sense resistor.
+      The sense resistor in ohms.
       By default sense-resistor-ohms cancels out the resistor making the
       circuit behave like a temperature transducer.
-    default: 1
 
   alpha-ppm-per-celsius:
+    type: int
+    required: true
     description: |
       Sometimes referred to as output gain, slope, or temperature coefficient.
 
       alpha is expressed in parts per million which can be micro-amps per
-      degrees Celsius or micro-volts per degrees Celsius. The is the main
+      degrees Celsius or micro-volts per degrees Celsius. This is the main
       characteristic of a temperature transducer and should be stated in the
       datasheet.
-
-additionalProperties: false
-
-required:
-  - compatible
-  - io-channels
-  - alpha-ppm-per-celsius
 
 examples:
   - |
