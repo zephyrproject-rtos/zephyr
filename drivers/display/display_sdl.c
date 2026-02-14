@@ -188,38 +188,6 @@ static int sdl_display_init(const struct device *dev)
 
 	LOG_DBG("Initializing display driver");
 
-	disp_data->current_pixel_format =
-#if defined(CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_888)
-		PIXEL_FORMAT_RGB_888
-#elif defined(CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO01)
-		PIXEL_FORMAT_MONO01
-#elif defined(CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO10)
-		PIXEL_FORMAT_MONO10
-#elif defined(CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_565)
-		PIXEL_FORMAT_RGB_565
-#elif defined(CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_565X)
-		PIXEL_FORMAT_RGB_565X
-#elif defined(CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_L_8)
-		PIXEL_FORMAT_L_8
-#elif defined(CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_AL_88)
-		PIXEL_FORMAT_AL_88
-#elif defined(CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_XRGB_8888)
-		PIXEL_FORMAT_XRGB_8888
-#elif defined(CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGR_888)
-		PIXEL_FORMAT_BGR_888
-#elif defined(CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_ABGR_8888)
-		PIXEL_FORMAT_ABGR_8888
-#elif defined(CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGBA_8888)
-		PIXEL_FORMAT_RGBA_8888
-#elif defined(CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGRA_8888)
-		PIXEL_FORMAT_BGRA_8888
-#elif defined(CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_I_4)
-		PIXEL_FORMAT_I_4
-#else  /* SDL_DISPLAY_DEFAULT_PIXEL_FORMAT */
-		PIXEL_FORMAT_ARGB_8888
-#endif /* SDL_DISPLAY_DEFAULT_PIXEL_FORMAT */
-		;
-
 	k_sem_init(&disp_data->task_sem, 0, 1);
 	k_mutex_init(&disp_data->task_mutex);
 	k_thread_create(&disp_data->sdl_thread, disp_data->sdl_thread_stack,
@@ -1018,7 +986,7 @@ static void sdl_display_read_l8(const uint8_t *read_buf,
 }
 
 static void sdl_display_read_al88(const uint8_t *read_buf,
-				const struct display_buffer_descriptor *desc, void *buf)
+				  const struct display_buffer_descriptor *desc, void *buf)
 {
 	uint8_t *buf8;
 	const uint32_t *pix_ptr;
@@ -1092,7 +1060,7 @@ static void sdl_display_read_i4(const struct device *dev, const uint8_t *read_bu
 #endif /* CONFIG_DISPLAY_COLOR_PALETTE */
 }
 
-	static int sdl_display_read(const struct device *dev, const uint16_t x, const uint16_t y,
+static int sdl_display_read(const struct device *dev, const uint16_t x, const uint16_t y,
 			    const struct display_buffer_descriptor *desc, void *buf)
 {
 	struct sdl_display_data *disp_data = dev->data;
@@ -1289,8 +1257,9 @@ static void sdl_display_get_capabilities(
 		(IS_ENABLED(CONFIG_SDL_DISPLAY_MONO_VTILED) ? SCREEN_INFO_MONO_VTILED : 0) |
 		(IS_ENABLED(CONFIG_SDL_DISPLAY_MONO_MSB_FIRST) ? SCREEN_INFO_MONO_MSB_FIRST : 0);
 }
-	static int sdl_display_set_pixel_format(const struct device *dev,
-		const enum display_pixel_format pixel_format)
+
+static int sdl_display_set_pixel_format(const struct device *dev,
+					const enum display_pixel_format pixel_format)
 {
 	struct sdl_display_data *disp_data = dev->data;
 
@@ -1382,6 +1351,7 @@ static DEVICE_API(display, sdl_display_api) = {
 	static uint8_t sdl_read_buf_##n[4 * DT_INST_PROP(n, height) * DT_INST_PROP(n, width)];     \
 	K_MSGQ_DEFINE(sdl_task_msgq_##n, sizeof(struct sdl_display_task), 1, 4);                   \
 	static struct sdl_display_data sdl_data_##n = {                                            \
+		.current_pixel_format = DT_INST_PROP(n, pixel_format),                             \
 		.buf = sdl_buf_##n,                                                                \
 		.read_buf = sdl_read_buf_##n,                                                      \
 		.task_msgq = &sdl_task_msgq_##n,                                                   \
