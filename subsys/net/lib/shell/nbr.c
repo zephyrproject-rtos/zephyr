@@ -195,7 +195,7 @@ static void nbr_address_get(size_t idx, struct shell_static_entry *entry)
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_nbr,
 	SHELL_CMD(rm, NBR_ADDRESS_CMD,
-		  "'net nbr rm <address>' removes neighbor from cache.",
+		  SHELL_HELP("Removes neighbor from cache", "<address>"),
 		  cmd_net_nbr_rm),
 	SHELL_SUBCMD_SET_END
 );

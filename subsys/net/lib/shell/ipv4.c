@@ -249,13 +249,16 @@ static int cmd_net_ip_gateway(const struct shell *sh, size_t argc, char *argv[])
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_ip,
 	SHELL_CMD(add, NULL,
-		  "'net ipv4 add <index> <address> [<netmask>]' adds the address to the interface.",
+		  SHELL_HELP("Adds the address to the interface",
+			     "<index> <address> [<netmask>]"),
 		  cmd_net_ip_add),
 	SHELL_CMD(del, NULL,
-		  "'net ipv4 del <index> <address>' deletes the address from the interface.",
+		  SHELL_HELP("Deletes the address from the interface",
+			     "<index> <address>"),
 		  cmd_net_ip_del),
 	SHELL_CMD(gateway, NULL,
-		  "'net ipv4 gateway <index> <gateway_ip>' sets IPv4 gateway for the interface.",
+		  SHELL_HELP("Sets IPv4 gateway for the interface",
+			     "<index> <gateway_ip>"),
 		  cmd_net_ip_gateway),
 	SHELL_SUBCMD_SET_END
 );

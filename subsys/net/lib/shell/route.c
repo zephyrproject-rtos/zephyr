@@ -232,12 +232,12 @@ static int cmd_net_route(const struct shell *sh, size_t argc, char *argv[])
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_route,
 	SHELL_CMD(add, NULL,
-		  "'net route add <index> <destination> <gateway>'"
-		  " adds the route to the destination.",
+		  SHELL_HELP("Adds the route to the destination",
+			     "<index> <destination> <gateway>"),
 		  cmd_net_ip6_route_add),
 	SHELL_CMD(del, NULL,
-		  "'net route del <index> <destination>'"
-		  " deletes the route to the destination.",
+		  SHELL_HELP("Deletes the route to the destination",
+			     "<index> <destination>"),
 		  cmd_net_ip6_route_del),
 	SHELL_SUBCMD_SET_END
 );
