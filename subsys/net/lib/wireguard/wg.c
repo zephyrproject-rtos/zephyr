@@ -108,8 +108,10 @@ struct wg_iface_context {
 	struct net_stats_vpn stats;
 #endif /* CONFIG_NET_STATISTICS_VPN */
 
+	/* PSA key ID for interface private key */
+	psa_key_id_t private_key_id;
+
 	uint8_t public_key[WG_PUBLIC_KEY_LEN];
-	uint8_t private_key[WG_PRIVATE_KEY_LEN];
 
 	uint8_t cookie_secret[WG_HASH_LEN];
 	k_timepoint_t cookie_secret_expires;
@@ -458,15 +460,15 @@ static void crypto_init(struct wg_context *ctx)
 {
 	blake2s_ctx bl_ctx;
 
-	wireguard_blake2s_init(&bl_ctx, WG_HASH_LEN, NULL, 0);
-	wireguard_blake2s_update(&bl_ctx, CONSTRUCTION, sizeof(CONSTRUCTION));
-	wireguard_blake2s_final(&bl_ctx, ctx->construction_hash);
+	blake2s_init(&bl_ctx, WG_HASH_LEN, NULL, 0);
+	blake2s_update(&bl_ctx, CONSTRUCTION, sizeof(CONSTRUCTION));
+	blake2s_final(&bl_ctx, ctx->construction_hash);
 
-	wireguard_blake2s_init(&bl_ctx, WG_HASH_LEN, NULL, 0);
-	wireguard_blake2s_update(&bl_ctx, ctx->construction_hash,
+	blake2s_init(&bl_ctx, WG_HASH_LEN, NULL, 0);
+	blake2s_update(&bl_ctx, ctx->construction_hash,
 				 sizeof(ctx->construction_hash));
-	wireguard_blake2s_update(&bl_ctx, IDENTIFIER, sizeof(IDENTIFIER));
-	wireguard_blake2s_final(&bl_ctx, ctx->identifier_hash);
+	blake2s_update(&bl_ctx, IDENTIFIER, sizeof(IDENTIFIER));
+	blake2s_final(&bl_ctx, ctx->identifier_hash);
 }
 
 static int wireguard_init(void)
@@ -501,6 +503,7 @@ static int wireguard_init(void)
 		ctx->ifindex = ret;
 	}
 
+	wg_crypto_init();
 	crypto_init(ctx);
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
@@ -688,18 +691,29 @@ static int handle_transport_data(struct wg_peer *peer,
 {
 	NET_PKT_DATA_ACCESS_DEFINE(access, struct msg_transport_data);
 	struct msg_transport_data *msg;
+	struct wg_peer *session_peer;
 
 	msg = (struct msg_transport_data *)net_pkt_get_data(pkt, &access);
 	if (msg == NULL) {
 		return -EINVAL;
 	}
 
-	peer = peer_lookup_by_receiver(peer->ctx, msg->receiver);
-	if (peer == NULL) {
+	session_peer = peer_lookup_by_receiver(peer->ctx, msg->receiver);
+	if (session_peer == NULL) {
+		/* No valid session for this receiver index. The remote peer
+		 * might have a stale session. Trigger a new handshake if we
+		 * haven't done so recently.
+		 */
+		if (!peer->handshake.is_valid && !peer->session.keypair.current.is_valid) {
+			peer->send_handshake = true;
+			memcpy(&peer->endpoint, peer_addr, sizeof(peer->endpoint));
+			(void)k_work_schedule(&peer->ctx->wg_ctx->wg_periodic_timer,
+					      K_NO_WAIT);
+		}
 		return -ENOENT;
 	}
 
-	return wg_process_data_message(peer->ctx, peer, msg, pkt,
+	return wg_process_data_message(session_peer->ctx, session_peer, msg, pkt,
 				       ip_udp_hdr_len, peer_addr);
 }
 
@@ -1028,6 +1042,8 @@ static int interface_stop(const struct device *dev)
 
 	ctx->status = false;
 
+	wg_cleanup_interface_keys(ctx);
+
 	NET_DBG("Stopping iface %d", net_if_get_by_iface(ctx->iface));
 
 	return 0;
@@ -1307,27 +1323,15 @@ static enum net_verdict interface_recv(struct net_if *iface,
 static int init_iface_context(struct wg_iface_context *ctx,
 			      const struct virtual_interface_config *config)
 {
-	bool ret;
+	int ret;
 
-	if (config->private_key.len != WG_PRIVATE_KEY_LEN) {
-		NET_DBG("Invalid private key length, was %zu expected %zu",
-			config->private_key.len, WG_PRIVATE_KEY_LEN);
+	if (ctx == NULL || config->private_key.len != WG_PRIVATE_KEY_LEN) {
 		return -EINVAL;
 	}
 
-	/* Generate public key from the private key */
-	memcpy(ctx->private_key, config->private_key.data, WG_PRIVATE_KEY_LEN);
-
-	/* Private key needs to be clamped */
-	wg_clamp_private_key(ctx->private_key);
-
-	ret = wg_generate_public_key(ctx->public_key, ctx->private_key);
-	if (!ret) {
-		crypto_zero(ctx->private_key, WG_PRIVATE_KEY_LEN);
-
-		NET_DBG("Public key generation failed");
-
-		return -EINVAL;
+	ret = wg_set_interface_private_key(ctx, config->private_key.data);
+	if (ret < 0) {
+		return ret;
 	}
 
 	wg_generate_cookie_secret(ctx, COOKIE_SECRET_MAX_AGE_MSEC);
@@ -1690,11 +1694,16 @@ static void wg_send_handshake_cookie(struct wg_iface_context *ctx,
 	int ret;
 
 	/* Use the port and address to calculate the cookie */
-	wg_create_cookie_reply(ctx, &packet, mac1, index,
-			       (uint8_t *)&net_sin(addr)->sin_port,
-			       addr->sa_family == NET_AF_INET ?
-			       (2U + sizeof(struct net_in_addr)) :
-			       (2U + sizeof(struct net_in6_addr)));
+	ret = wg_create_cookie_reply(ctx, &packet, mac1, index,
+				     (uint8_t *)&net_sin(addr)->sin_port,
+				     addr->sa_family == NET_AF_INET ?
+				     (2U + sizeof(struct net_in_addr)) :
+				     (2U + sizeof(struct net_in6_addr)));
+	if (ret < 0) {
+		NET_DBG("Cannot create cookie reply (%d)", ret);
+		vpn_stats_update_invalid_handshake(ctx);
+		return;
+	}
 
 	ret = create_packet(ctx->wg_ctx->iface, addr, net_sad(&ctx->peer->endpoint),
 			    (uint8_t *)&packet, sizeof(packet), NET_IPV4_DSCP_AF41, 0,
@@ -1723,6 +1732,7 @@ drop:
 	}
 }
 
+#include "wg_psa.c"
 #include "wg_crypto.c"
 
 /* Lock must be held when calling these lookup functions */
@@ -1904,34 +1914,36 @@ static bool wg_peer_init(struct wg_iface_context *ctx,
 		return false;
 	}
 
+	/* Copy raw public key for lookups */
 	memcpy(peer->key.public_key, public_key, WG_PUBLIC_KEY_LEN);
 	memset(peer->greatest_timestamp, 0, sizeof(peer->greatest_timestamp));
 
-	if (preshared_key != NULL) {
-		memcpy(peer->key.preshared, preshared_key, WG_SESSION_KEY_LEN);
-	} else {
-		crypto_zero(peer->key.preshared, WG_SESSION_KEY_LEN);
+	/* Import keys into PSA */
+	ret = wg_set_peer_keys(peer, public_key, preshared_key);
+	if (ret < 0) {
+		return false;
 	}
 
-	ret = wireguard_x25519(peer->key.public_dh, ctx->private_key,
-			       peer->key.public_key);
-	if (ret == 0) {
-		memset(&peer->handshake, 0, sizeof(struct wg_handshake));
-		peer->handshake.is_valid = false;
-
-		peer->cookie_secret_expires =
-			sys_timepoint_calc(K_MSEC(COOKIE_SECRET_MAX_AGE_MSEC));
-		memset(&peer->cookie, 0, WG_COOKIE_LEN);
-
-		wg_mac_key(peer->label_mac1_key, peer->key.public_key,
-			   LABEL_MAC1, sizeof(LABEL_MAC1));
-		wg_mac_key(peer->label_cookie_key, peer->key.public_key,
-			   LABEL_COOKIE, sizeof(LABEL_COOKIE));
-		is_valid = true;
-	} else {
-		NET_DBG("Cannot calculate DH public key for peer");
-		crypto_zero(peer->key.public_dh, WG_PUBLIC_KEY_LEN);
+	/* Precompute static DH */
+	ret = wg_precompute_static_dh(ctx, peer);
+	if (ret < 0) {
+		NET_DBG("Cannot precompute static DH for peer %d (%d)", peer->id, ret);
+		wg_cleanup_peer_keys(peer);
+		return false;
 	}
+
+	memset(&peer->handshake, 0, sizeof(struct wg_handshake));
+	peer->handshake.is_valid = false;
+
+	peer->cookie_secret_expires =
+		sys_timepoint_calc(K_MSEC(COOKIE_SECRET_MAX_AGE_MSEC));
+	memset(&peer->cookie, 0, WG_COOKIE_LEN);
+
+	wg_mac_key(peer->label_mac1_key, peer->key.public_key,
+		   LABEL_MAC1, sizeof(LABEL_MAC1));
+	wg_mac_key(peer->label_cookie_key, peer->key.public_key,
+		   LABEL_COOKIE, sizeof(LABEL_COOKIE));
+	is_valid = true;
 
 	return is_valid;
 }
@@ -2083,7 +2095,7 @@ out:
 
 static void wg_peer_cleanup(struct wg_peer *peer)
 {
-	memset(&peer->key, 0, sizeof(peer->key));
+	wg_cleanup_peer_keys(peer);
 
 	peer->id = 0;
 	peer->first_valid = false;

@@ -5,6 +5,7 @@
  */
 
 #include "crypto/crypto.h"
+#include <psa/crypto.h>
 
 /* tai64n contains 64-bit seconds and 32-bit nano offset (12 bytes) */
 #define WG_TAI64N_LEN 12U
@@ -110,7 +111,7 @@ union wg_msg {
 struct wg_handshake {
 	uint32_t local_index;
 	uint32_t remote_index;
-	uint8_t ephemeral_private[WG_PRIVATE_KEY_LEN];
+	psa_key_id_t ephemeral_private_id;
 	uint8_t remote_ephemeral[WG_PUBLIC_KEY_LEN];
 	uint8_t hash[WG_HASH_LEN];
 	uint8_t chaining_key[WG_HASH_LEN];
@@ -122,10 +123,10 @@ struct wg_keypair {
 	k_timepoint_t expires;
 	k_timepoint_t rejected;
 
-	uint8_t sending_key[WG_SESSION_KEY_LEN];
-	uint64_t sending_counter;
+	psa_key_id_t sending_key_id;
+	psa_key_id_t receiving_key_id;
 
-	uint8_t receiving_key[WG_SESSION_KEY_LEN];
+	uint64_t sending_counter;
 
 	uint32_t last_tx;
 	uint32_t last_rx;
@@ -156,8 +157,11 @@ struct wg_peer {
 	sys_snode_t node;
 
 	struct {
+		/* Keep raw public key for peer lookups */
 		uint8_t public_key[WG_PUBLIC_KEY_LEN];
-		uint8_t preshared[WG_SESSION_KEY_LEN];
+
+		psa_key_id_t public_key_id;    /* Peer's public key */
+		psa_key_id_t preshared_key_id; /* Optional preshared key */
 
 		/* Precomputed DH(Sprivi,Spubr) with interface private key and peer public key */
 		uint8_t public_dh[WG_PUBLIC_KEY_LEN];
@@ -265,13 +269,11 @@ static void wg_kdf3(uint8_t *tau1, uint8_t *tau2, uint8_t *tau3,
 		    const uint8_t *data, size_t data_len);
 static bool wg_check_replay(struct wg_keypair *keypair, uint64_t seq);
 static void wg_clamp_private_key(uint8_t *key);
-static void wg_generate_private_key(uint8_t *key);
-static bool wg_generate_public_key(uint8_t *public_key, const uint8_t *private_key);
 static bool wg_check_mac1(struct wg_iface_context *ctx,
 			  const uint8_t *data, size_t len,
 			  const uint8_t *mac1);
-static void wg_generate_cookie_secret(struct wg_iface_context *ctx,
-				      uint32_t lifetime_in_ms);
+static int wg_generate_cookie_secret(struct wg_iface_context *ctx,
+				     uint32_t lifetime_in_ms);
 static void wg_tai64n_now(uint8_t *output);
 static bool wg_check_initiation_message(struct wg_iface_context *ctx,
 					struct msg_handshake_init *msg,
@@ -302,12 +304,12 @@ static void wg_send_handshake_cookie(struct wg_iface_context *ctx,
 static bool wg_process_cookie_message(struct wg_iface_context *ctx,
 				      struct wg_peer *peer,
 				      struct msg_cookie_reply *src);
-static void wg_create_cookie_reply(struct wg_iface_context *ctx,
-				   struct msg_cookie_reply *dst,
-				   const uint8_t *mac1,
-				   uint32_t index,
-				   uint8_t *source_addr_port,
-				   size_t source_length);
+static int wg_create_cookie_reply(struct wg_iface_context *ctx,
+				  struct msg_cookie_reply *dst,
+				  const uint8_t *mac1,
+				  uint32_t index,
+				  uint8_t *source_addr_port,
+				  size_t source_length);
 static void wg_process_response_message(struct wg_iface_context *ctx,
 					struct wg_peer *peer,
 					struct msg_handshake_response *response,
@@ -321,4 +323,44 @@ static int wg_process_data_message(struct wg_iface_context *ctx,
 static void keypair_destroy(struct wg_keypair *keypair);
 static void wg_encrypt_packet(uint8_t *dst, const uint8_t *src, size_t src_len,
 			      struct wg_keypair *keypair);
+static int wg_set_interface_private_key(struct wg_iface_context *ctx,
+					const uint8_t *private_key_data);
+static void wg_cleanup_interface_keys(struct wg_iface_context *ctx);
+static int wg_set_peer_keys(struct wg_peer *peer,
+			    const uint8_t *public_key,
+			    const uint8_t *preshared_key);
+static void wg_cleanup_peer_keys(struct wg_peer *peer);
+static int wg_precompute_static_dh(struct wg_iface_context *ctx,
+				   struct wg_peer *peer);
+static void wg_psa_destroy_key(psa_key_id_t key_id);
+static int wg_psa_derive_session_keys(psa_key_id_t *sending_key_id,
+				      psa_key_id_t *receiving_key_id,
+				      const uint8_t *chaining_key,
+				      bool is_initiator);
+static int wg_psa_x25519_hybrid(uint8_t *shared_secret,
+				psa_key_id_t private_key_id,
+				const uint8_t *public_key);
+static int wg_psa_export_key(uint8_t *key_data, size_t key_data_len,
+			     psa_key_id_t key_id);
+static int wg_psa_generate_x25519_keypair(psa_key_id_t *key_id,
+					  uint8_t *public_key);
+static int wg_psa_aead_encrypt_by_id(uint8_t *dst,
+				     const uint8_t *src, size_t src_len,
+				     const uint8_t *ad, size_t ad_len,
+				     uint64_t nonce,
+				     psa_key_id_t key_id);
+static bool wg_psa_aead_decrypt_by_id(uint8_t *dst,
+				      const uint8_t *src, size_t src_len,
+				      const uint8_t *ad, size_t ad_len,
+				      uint64_t nonce,
+				      psa_key_id_t key_id);
+static int wg_psa_import_x25519_private(psa_key_id_t *key_id,
+					const uint8_t *key_data);
+static int wg_psa_import_x25519_public(psa_key_id_t *key_id,
+				       const uint8_t *key_data);
+static int wg_psa_import_chacha_key(psa_key_id_t *key_id,
+				    const uint8_t *key_data,
+				    psa_key_usage_t usage);
+static int wg_psa_export_public_key(uint8_t *public_key, psa_key_id_t key_id);
+static int wg_crypto_init(void);
 #endif /* WG_FUNCTION_PROTOTYPES */

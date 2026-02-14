@@ -11,44 +11,14 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <mbedtls/constant_time.h>
+
 /*
  * BLAKE2S IMPLEMENTATION
  * Note: BLAKE2s is not available in PSA Crypto API, so we always use
  * the reference implementation.
  */
 #include "refc/blake2s.h"
-#define wireguard_blake2s_ctx                            blake2s_ctx
-#define wireguard_blake2s_init(ctx, outlen, key, keylen) blake2s_init(ctx, outlen, key, keylen)
-#define wireguard_blake2s_update(ctx, in, inlen)         blake2s_update(ctx, in, inlen)
-#define wireguard_blake2s_final(ctx, out)                blake2s_final(ctx, out)
-#define wireguard_blake2s(out, outlen, key, keylen, in, inlen)                                     \
-	blake2s(out, outlen, key, keylen, in, inlen)
-
-#include "../wg_psa.h"
-
-/* X25519 IMPLEMENTATION using PSA */
-#define wireguard_x25519(out, scalar, base) \
-	wg_psa_x25519(out, scalar, base)
-
-#define wireguard_x25519_public_key(pub, priv) \
-	wg_psa_x25519_public_key(pub, priv)
-
-/* CHACHA20POLY1305 IMPLEMENTATION using PSA */
-#define wireguard_aead_encrypt(dst, src, srclen, ad, adlen, nonce, key) \
-	wg_psa_aead_encrypt(dst, src, srclen, ad, adlen, nonce, key)
-
-#define wireguard_aead_decrypt(dst, src, srclen, ad, adlen, nonce, key) \
-	wg_psa_aead_decrypt(dst, src, srclen, ad, adlen, nonce, key)
-
-/*
- * XChaCha20-Poly1305 IMPLEMENTATION
- * Note: XChaCha20-Poly1305 (24-byte nonce) is not available in PSA Crypto API,
- * so we always use the reference implementation.
- */
-#define wireguard_xaead_encrypt(dst, src, srclen, ad, adlen, nonce, key) \
-	wg_psa_xaead_encrypt(dst, src, srclen, ad, adlen, nonce, key)
-#define wireguard_xaead_decrypt(dst, src, srclen, ad, adlen, nonce, key) \
-	wg_psa_xaead_decrypt(dst, src, srclen, ad, adlen, nonce, key)
 
 /* Endian / unaligned helper macros */
 #define U8C(v)  (v##U)
@@ -112,7 +82,7 @@
 		(p)[0] = U8V((v) >> 56);                                                           \
 	} while (0)
 
-void crypto_zero(void *dest, size_t len);
-bool crypto_equal(const void *a, const void *b, size_t size);
+#define crypto_zero(dest, len) mbedtls_platform_zeroize(dest, len)
+#define crypto_equal(a, b, n) (mbedtls_ct_memcmp(a, b, n) == 0 ? true : false)
 
 #endif /* _CRYPTO_H_ */
