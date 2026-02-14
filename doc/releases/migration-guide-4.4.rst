@@ -506,6 +506,12 @@ File System
   :dtcompatible:`zephyr,fstab,fatfs` with the ``automount`` property are present in the devicetree.
   Applications that do not want this behavior need to explicitly disable this option.
 
+* NVS and ZMS have been moved to the new Key-Value Storage Systems (KVSS) subsystem; the move
+  affects NVS and ZMS interface header paths which have been moved from
+  ``zephyr/fs/`` to ``zephyr/kvss/``.
+  Kconfig options for NVS and ZMS have been moved from underneath "File Systems" menu to
+  "Key-Value Storage Systems" menu, no Kconfigs have been affected.
+
 GPIO
 ====
 
@@ -569,6 +575,16 @@ Infineon
 
   * ``CONFIG_*_INFINEON_CAT1`` → ``CONFIG_*_INFINEON``
   * ``compatible: "infineon,cat1-adc"`` → ``compatible: "infineon,adc"``
+
+* Infineon Bluetooth HCI UART driver (:kconfig:option:`CONFIG_BT_HCI_UART_INFINEON`) with
+  compatible :dtcompatible:`infineon,bt-hci-uart` is now explicitly scoped to AIROC connectivity
+  chips that use HCI UART transport.
+  (:github:`103871`)
+
+  Corresponding Kconfig symbols and devicetree compatibles have also been updated:
+
+  * ``CONFIG_BT_CYW43XX`` → :kconfig:option:` CONFIG_BT_HCI_UART_INFINEON`
+  * ``dtcompatible: "infineon,cyw43xxx-bt-hci"`` → ``dtcompatible: "infineon,bt-hci-uart"``
 
 MDIO
 ====

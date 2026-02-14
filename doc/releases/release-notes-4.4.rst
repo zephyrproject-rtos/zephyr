@@ -144,6 +144,7 @@ New APIs and options
 
     * :c:func:`bt_bap_ep_get_conn`
     * :c:member:`bt_ccp_call_control_client_cb.user_data`
+    * :kconfig:option:`CONFIG_BT_TBS_MAX_FRIENDLY_NAME_LENGTH`
 
   * Host
 
@@ -285,6 +286,10 @@ New APIs and options
   * :kconfig:option:`CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION`
   * :kconfig:option:`CONFIG_SETTINGS_SAVE_SINGLE_SUBTREE_WITHOUT_MODIFICATION_VALUE_SIZE`
 
+* Shell
+
+  * :c:func:`shell_readline` for :ref:`user input <shell-readline>`
+
 * Sys
 
   * :c:macro:`COND_CASE_1`
@@ -358,6 +363,8 @@ New Drivers
 
   * Added new stm32 BSEC driver that provides means to program and read OTP fuses
     (:dtcompatible:`st,stm32-bsec`). (:github:`102403`)
+  * Added SiFli SF32LB eFuse OTP driver (:dtcompatible:`sifli,sf32lb-efuse`).
+    (:github:`101926`)
   * :dtcompatible:`nxp,ocotp` (:github:`102567` & :github:`103089`)
 
 New Samples

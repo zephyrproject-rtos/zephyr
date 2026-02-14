@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,15 +55,21 @@ static int mc_cgm_clock_control_on(const struct device *dev, clock_control_subsy
 	case MCUX_FLEXCAN2_CLK:
 		CLOCK_EnableClock(kCLOCK_Flexcan2);
 		break;
+#if defined(FSL_FEATURE_SOC_FLEXCAN_COUNT) && (FSL_FEATURE_SOC_FLEXCAN_COUNT > 3U)
 	case MCUX_FLEXCAN3_CLK:
 		CLOCK_EnableClock(kCLOCK_Flexcan3);
 		break;
+#endif /* FSL_FEATURE_SOC_FLEXCAN_COUNT > 3U */
+#if defined(FSL_FEATURE_SOC_FLEXCAN_COUNT) && (FSL_FEATURE_SOC_FLEXCAN_COUNT > 4U)
 	case MCUX_FLEXCAN4_CLK:
 		CLOCK_EnableClock(kCLOCK_Flexcan4);
 		break;
+#endif /* FSL_FEATURE_SOC_FLEXCAN_COUNT > 4U */
+#if defined(FSL_FEATURE_SOC_FLEXCAN_COUNT) && (FSL_FEATURE_SOC_FLEXCAN_COUNT > 5U)
 	case MCUX_FLEXCAN5_CLK:
 		CLOCK_EnableClock(kCLOCK_Flexcan5);
 		break;
+#endif /* FSL_FEATURE_SOC_FLEXCAN_COUNT > 5U */
 #endif /* defined(CONFIG_CAN_MCUX_FLEXCAN) */
 
 #if defined(CONFIG_UART_MCUX_LPUART)
@@ -79,42 +85,66 @@ static int mc_cgm_clock_control_on(const struct device *dev, clock_control_subsy
 	case MCUX_LPUART3_CLK:
 		CLOCK_EnableClock(kCLOCK_Lpuart3);
 		break;
+#if defined(FSL_FEATURE_SOC_LPUART_COUNT) && (FSL_FEATURE_SOC_LPUART_COUNT > 4U)
 	case MCUX_LPUART4_CLK:
 		CLOCK_EnableClock(kCLOCK_Lpuart4);
 		break;
+#endif /* FSL_FEATURE_SOC_LPUART_COUNT > 4U */
+#if defined(FSL_FEATURE_SOC_LPUART_COUNT) && (FSL_FEATURE_SOC_LPUART_COUNT > 5U)
 	case MCUX_LPUART5_CLK:
 		CLOCK_EnableClock(kCLOCK_Lpuart5);
 		break;
+#endif /* FSL_FEATURE_SOC_LPUART_COUNT > 5U */
+#if defined(FSL_FEATURE_SOC_LPUART_COUNT) && (FSL_FEATURE_SOC_LPUART_COUNT > 6U)
 	case MCUX_LPUART6_CLK:
 		CLOCK_EnableClock(kCLOCK_Lpuart6);
 		break;
+#endif /* FSL_FEATURE_SOC_LPUART_COUNT > 6U */
+#if defined(FSL_FEATURE_SOC_LPUART_COUNT) && (FSL_FEATURE_SOC_LPUART_COUNT > 7U)
 	case MCUX_LPUART7_CLK:
 		CLOCK_EnableClock(kCLOCK_Lpuart7);
 		break;
+#endif /* FSL_FEATURE_SOC_LPUART_COUNT > 7U */
+#if defined(FSL_FEATURE_SOC_LPUART_COUNT) && (FSL_FEATURE_SOC_LPUART_COUNT > 8U)
 	case MCUX_LPUART8_CLK:
 		CLOCK_EnableClock(kCLOCK_Lpuart8);
 		break;
+#endif /* FSL_FEATURE_SOC_LPUART_COUNT > 8U */
+#if defined(FSL_FEATURE_SOC_LPUART_COUNT) && (FSL_FEATURE_SOC_LPUART_COUNT > 9U)
 	case MCUX_LPUART9_CLK:
 		CLOCK_EnableClock(kCLOCK_Lpuart9);
 		break;
+#endif /* FSL_FEATURE_SOC_LPUART_COUNT > 9U */
+#if defined(FSL_FEATURE_SOC_LPUART_COUNT) && (FSL_FEATURE_SOC_LPUART_COUNT > 10U)
 	case MCUX_LPUART10_CLK:
 		CLOCK_EnableClock(kCLOCK_Lpuart10);
 		break;
+#endif /* FSL_FEATURE_SOC_LPUART_COUNT > 10U */
+#if defined(FSL_FEATURE_SOC_LPUART_COUNT) && (FSL_FEATURE_SOC_LPUART_COUNT > 11U)
 	case MCUX_LPUART11_CLK:
 		CLOCK_EnableClock(kCLOCK_Lpuart11);
 		break;
+#endif /* FSL_FEATURE_SOC_LPUART_COUNT > 11U */
+#if defined(FSL_FEATURE_SOC_LPUART_COUNT) && (FSL_FEATURE_SOC_LPUART_COUNT > 12U)
 	case MCUX_LPUART12_CLK:
 		CLOCK_EnableClock(kCLOCK_Lpuart12);
 		break;
+#endif /* FSL_FEATURE_SOC_LPUART_COUNT > 12U */
+#if defined(FSL_FEATURE_SOC_LPUART_COUNT) && (FSL_FEATURE_SOC_LPUART_COUNT > 13U)
 	case MCUX_LPUART13_CLK:
 		CLOCK_EnableClock(kCLOCK_Lpuart13);
 		break;
+#endif /* FSL_FEATURE_SOC_LPUART_COUNT > 13U */
+#if defined(FSL_FEATURE_SOC_LPUART_COUNT) && (FSL_FEATURE_SOC_LPUART_COUNT > 14U)
 	case MCUX_LPUART14_CLK:
 		CLOCK_EnableClock(kCLOCK_Lpuart14);
 		break;
+#endif /* FSL_FEATURE_SOC_LPUART_COUNT > 14U */
+#if defined(FSL_FEATURE_SOC_LPUART_COUNT) && (FSL_FEATURE_SOC_LPUART_COUNT > 15U)
 	case MCUX_LPUART15_CLK:
 		CLOCK_EnableClock(kCLOCK_Lpuart15);
 		break;
+#endif /* FSL_FEATURE_SOC_LPUART_COUNT > 15U */
 #endif /* defined(CONFIG_UART_MCUX_LPUART) */
 
 #if defined(CONFIG_SPI_NXP_LPSPI)
@@ -130,12 +160,16 @@ static int mc_cgm_clock_control_on(const struct device *dev, clock_control_subsy
 	case MCUX_LPSPI3_CLK:
 		CLOCK_EnableClock(kCLOCK_Lpspi3);
 		break;
+#if defined(FSL_FEATURE_SOC_LPSPI_COUNT) && (FSL_FEATURE_SOC_LPSPI_COUNT > 4U)
 	case MCUX_LPSPI4_CLK:
 		CLOCK_EnableClock(kCLOCK_Lpspi4);
 		break;
+#endif /* FSL_FEATURE_SOC_LPSPI_COUNT > 4U */
+#if defined(FSL_FEATURE_SOC_LPSPI_COUNT) && (FSL_FEATURE_SOC_LPSPI_COUNT > 5U)
 	case MCUX_LPSPI5_CLK:
 		CLOCK_EnableClock(kCLOCK_Lpspi5);
 		break;
+#endif /* FSL_FEATURE_SOC_LPSPI_COUNT > 5U */
 #endif /* defined(CONFIG_SPI_NXP_LPSPI) */
 
 #if defined(CONFIG_I2C_MCUX_LPI2C)
@@ -151,9 +185,11 @@ static int mc_cgm_clock_control_on(const struct device *dev, clock_control_subsy
 	case MCUX_STM0_CLK:
 		CLOCK_EnableClock(kCLOCK_Stm0);
 		break;
+#if defined(FSL_FEATURE_SOC_STM_COUNT) && (FSL_FEATURE_SOC_STM_COUNT > 1U)
 	case MCUX_STM1_CLK:
 		CLOCK_EnableClock(kCLOCK_Stm1);
 		break;
+#endif /* FSL_FEATURE_SOC_STM_COUNT > 1U */
 #endif /* defined(CONFIG_COUNTER_MCUX_STM) */
 
 #ifdef CONFIG_COUNTER_NXP_PIT
@@ -176,12 +212,16 @@ static int mc_cgm_clock_control_on(const struct device *dev, clock_control_subsy
 	case MCUX_CMP0_CLK:
 		CLOCK_EnableClock(kCLOCK_Lpcmp0);
 		break;
+#if defined(FSL_FEATURE_SOC_LPCMP_COUNT) && (FSL_FEATURE_SOC_LPCMP_COUNT > 1U)
 	case MCUX_CMP1_CLK:
 		CLOCK_EnableClock(kCLOCK_Lpcmp1);
 		break;
+#endif /* FSL_FEATURE_SOC_LPCMP_COUNT > 1U */
+#if defined(FSL_FEATURE_SOC_LPCMP_COUNT) && (FSL_FEATURE_SOC_LPCMP_COUNT > 2U)
 	case MCUX_CMP2_CLK:
 		CLOCK_EnableClock(kCLOCK_Lpcmp2);
 		break;
+#endif /* FSL_FEATURE_SOC_LPCMP_COUNT > 2U */
 	default:
 		break;
 	}
@@ -195,9 +235,11 @@ static int mc_cgm_clock_control_on(const struct device *dev, clock_control_subsy
 	case MCUX_ADC1_CLK:
 		CLOCK_EnableClock(kCLOCK_Adc1);
 		break;
+#if defined(FSL_FEATURE_SOC_ADC_COUNT) && (FSL_FEATURE_SOC_ADC_COUNT > 2U)
 	case MCUX_ADC2_CLK:
 		CLOCK_EnableClock(kCLOCK_Adc2);
 		break;
+#endif /* FSL_FEATURE_SOC_ADC_COUNT > 2U */
 	default:
 		break;
 	}
@@ -228,23 +270,47 @@ static int mc_cgm_get_subsys_rate(const struct device *dev, clock_control_subsys
 		break;
 #if defined(CONFIG_UART_MCUX_LPUART)
 	case MCUX_LPUART0_CLK:
+#if defined(FSL_FEATURE_SOC_LPUART_COUNT) && (FSL_FEATURE_SOC_LPUART_COUNT > 8U)
 	case MCUX_LPUART8_CLK:
+#endif /* FSL_FEATURE_SOC_LPUART_COUNT > 8U */
 		*rate = CLOCK_GetAipsPlatClkFreq();
 		break;
 	case MCUX_LPUART1_CLK:
 	case MCUX_LPUART2_CLK:
 	case MCUX_LPUART3_CLK:
+#if defined(FSL_FEATURE_SOC_LPUART_COUNT) && (FSL_FEATURE_SOC_LPUART_COUNT > 4U)
 	case MCUX_LPUART4_CLK:
+#endif /* FSL_FEATURE_SOC_LPUART_COUNT > 4U */
+#if defined(FSL_FEATURE_SOC_LPUART_COUNT) && (FSL_FEATURE_SOC_LPUART_COUNT > 5U)
 	case MCUX_LPUART5_CLK:
+#endif /* FSL_FEATURE_SOC_LPUART_COUNT > 5U */
+#if defined(FSL_FEATURE_SOC_LPUART_COUNT) && (FSL_FEATURE_SOC_LPUART_COUNT > 6U)
 	case MCUX_LPUART6_CLK:
+#endif /* FSL_FEATURE_SOC_LPUART_COUNT > 6U */
+#if defined(FSL_FEATURE_SOC_LPUART_COUNT) && (FSL_FEATURE_SOC_LPUART_COUNT > 7U)
 	case MCUX_LPUART7_CLK:
+#endif /* FSL_FEATURE_SOC_LPUART_COUNT > 7U */
+#if defined(FSL_FEATURE_SOC_LPUART_COUNT) && (FSL_FEATURE_SOC_LPUART_COUNT > 9U)
 	case MCUX_LPUART9_CLK:
+#endif /* FSL_FEATURE_SOC_LPUART_COUNT > 9U */
+#if defined(FSL_FEATURE_SOC_LPUART_COUNT) && (FSL_FEATURE_SOC_LPUART_COUNT > 10U)
 	case MCUX_LPUART10_CLK:
+#endif /* FSL_FEATURE_SOC_LPUART_COUNT > 10U */
+#if defined(FSL_FEATURE_SOC_LPUART_COUNT) && (FSL_FEATURE_SOC_LPUART_COUNT > 11U)
 	case MCUX_LPUART11_CLK:
+#endif /* FSL_FEATURE_SOC_LPUART_COUNT > 11U */
+#if defined(FSL_FEATURE_SOC_LPUART_COUNT) && (FSL_FEATURE_SOC_LPUART_COUNT > 12U)
 	case MCUX_LPUART12_CLK:
+#endif /* FSL_FEATURE_SOC_LPUART_COUNT > 12U */
+#if defined(FSL_FEATURE_SOC_LPUART_COUNT) && (FSL_FEATURE_SOC_LPUART_COUNT > 13U)
 	case MCUX_LPUART13_CLK:
+#endif /* FSL_FEATURE_SOC_LPUART_COUNT > 13U */
+#if defined(FSL_FEATURE_SOC_LPUART_COUNT) && (FSL_FEATURE_SOC_LPUART_COUNT > 14U)
 	case MCUX_LPUART14_CLK:
+#endif /* FSL_FEATURE_SOC_LPUART_COUNT > 14U */
+#if defined(FSL_FEATURE_SOC_LPUART_COUNT) && (FSL_FEATURE_SOC_LPUART_COUNT > 15U)
 	case MCUX_LPUART15_CLK:
+#endif /* FSL_FEATURE_SOC_LPUART_COUNT > 15U */
 		*rate = CLOCK_GetAipsSlowClkFreq();
 		break;
 #endif /* defined(CONFIG_UART_MCUX_LPUART) */
@@ -256,8 +322,12 @@ static int mc_cgm_get_subsys_rate(const struct device *dev, clock_control_subsys
 	case MCUX_LPSPI1_CLK:
 	case MCUX_LPSPI2_CLK:
 	case MCUX_LPSPI3_CLK:
+#if defined(FSL_FEATURE_SOC_LPSPI_COUNT) && (FSL_FEATURE_SOC_LPSPI_COUNT > 4U)
 	case MCUX_LPSPI4_CLK:
+#endif /* FSL_FEATURE_SOC_LPSPI_COUNT > 4U */
+#if defined(FSL_FEATURE_SOC_LPSPI_COUNT) && (FSL_FEATURE_SOC_LPSPI_COUNT > 5U)
 	case MCUX_LPSPI5_CLK:
+#endif /* FSL_FEATURE_SOC_LPSPI_COUNT > 5U */
 		*rate = CLOCK_GetAipsSlowClkFreq();
 		break;
 #endif /* defined(CONFIG_SPI_NXP_LPSPI) */
@@ -279,30 +349,40 @@ static int mc_cgm_get_subsys_rate(const struct device *dev, clock_control_subsys
 	case MCUX_FLEXCAN2_CLK:
 		*rate = CLOCK_GetFlexcanPeClkFreq(2);
 		break;
+#if defined(FSL_FEATURE_SOC_FLEXCAN_COUNT) && (FSL_FEATURE_SOC_FLEXCAN_COUNT > 3U)
 	case MCUX_FLEXCAN3_CLK:
 		*rate = CLOCK_GetFlexcanPeClkFreq(3);
 		break;
+#endif /* FSL_FEATURE_SOC_FLEXCAN_COUNT > 3U */
+#if defined(FSL_FEATURE_SOC_FLEXCAN_COUNT) && (FSL_FEATURE_SOC_FLEXCAN_COUNT > 4U)
 	case MCUX_FLEXCAN4_CLK:
 		*rate = CLOCK_GetFlexcanPeClkFreq(4);
 		break;
+#endif /* FSL_FEATURE_SOC_FLEXCAN_COUNT > 4U */
+#if defined(FSL_FEATURE_SOC_FLEXCAN_COUNT) && (FSL_FEATURE_SOC_FLEXCAN_COUNT > 5U)
 	case MCUX_FLEXCAN5_CLK:
 		*rate = CLOCK_GetFlexcanPeClkFreq(5);
 		break;
+#endif /* FSL_FEATURE_SOC_FLEXCAN_COUNT > 5U */
 #endif /* defined(CONFIG_CAN_MCUX_FLEXCAN) */
 
 #if defined(CONFIG_COUNTER_MCUX_STM)
 	case MCUX_STM0_CLK:
 		*rate = CLOCK_GetStmClkFreq(0);
 		break;
+#if defined(FSL_FEATURE_SOC_STM_COUNT) && (FSL_FEATURE_SOC_STM_COUNT > 1U)
 	case MCUX_STM1_CLK:
 		*rate = CLOCK_GetStmClkFreq(1);
 		break;
+#endif /* FSL_FEATURE_SOC_STM_COUNT > 1U */
 #endif /* defined(CONFIG_COUNTER_MCUX_STM) */
 
 #if defined(CONFIG_ADC_NXP_SAR_ADC)
 	case MCUX_ADC0_CLK:
 	case MCUX_ADC1_CLK:
+#if defined(FSL_FEATURE_SOC_ADC_COUNT) && (FSL_FEATURE_SOC_ADC_COUNT > 2U)
 	case MCUX_ADC2_CLK:
+#endif /* FSL_FEATURE_SOC_ADC_COUNT > 2U */
 		*rate = CLOCK_GetCoreClkFreq();
 		break;
 

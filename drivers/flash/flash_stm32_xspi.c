@@ -2083,11 +2083,6 @@ static int flash_stm32_xspi_init(const struct device *dev)
 	uint32_t prescaler = STM32_XSPI_CLOCK_PRESCALER_MIN;
 	int ret;
 
-	if (!device_is_ready(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE))) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
 #if defined(CONFIG_STM32_APP_IN_EXT_FLASH) && defined(CONFIG_XIP)
 	/* If MemoryMapped then configure skip init
 	 * Check clock status first as reading CR register without bus clock doesn't work on N6
@@ -2478,9 +2473,6 @@ static int flash_stm32_xspi_init(const struct device *dev)
 #else
 #define XSPI_DMA_CHANNEL(node, dir, DIR, src, dest)
 #endif /* CONFIG_USE_STM32_HAL_DMA */
-
-#define XSPI_FLASH_MODULE(drv_id, flash_id)				\
-		(DT_DRV_INST(drv_id), xspi_nor_flash_##flash_id)
 
 #define DT_WRITEOC_PROP_OR(inst, default_value)							\
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, writeoc),					\

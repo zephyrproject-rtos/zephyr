@@ -1585,6 +1585,15 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 #define VIDEO_PIX_FMT_XYUV32 VIDEO_FOURCC('X', 'Y', 'U', 'V')
 
 /**
+ * 24 bit YUV format with 8 bit per component
+ *
+ * @code{.unparsed}
+ * | Yyyyyyyy Uuuuuuuu Vvvvvvvv | ...
+ * @endcode
+ */
+#define VIDEO_PIX_FMT_YUV24 VIDEO_FOURCC('Y', 'U', 'V', '3')
+
+/**
  * Planar formats
  */
 /**
@@ -1823,6 +1832,11 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 #define VIDEO_PIX_FMT_H264_NO_SC VIDEO_FOURCC('A', 'V', 'C', '1')
 
 /**
+ * PNG
+ */
+#define VIDEO_PIX_FMT_PNG VIDEO_FOURCC('P', 'N', 'G', ' ')
+
+/**
  * @}
  */
 
@@ -1897,6 +1911,7 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 	case VIDEO_PIX_FMT_RGB24:
 	case VIDEO_PIX_FMT_NV24:
 	case VIDEO_PIX_FMT_NV42:
+	case VIDEO_PIX_FMT_YUV24:
 		return 24;
 	case VIDEO_PIX_FMT_XRGB32:
 	case VIDEO_PIX_FMT_XYUV32:

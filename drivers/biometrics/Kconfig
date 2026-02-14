@@ -2,7 +2,7 @@
 # Copyright (c) 2025 Siratul Islam
 
 menuconfig BIOMETRICS
-	bool "Biometrics Drivers"
+	bool "Biometrics drivers"
 	help
 	  Enable biometric sensor driver support.
 

@@ -27,6 +27,7 @@ struct modem_shell_user_data {
 
 #if defined(CONFIG_MODEM_CONTEXT)
 #include "modem_context.h"
+#include "modem_cmd_handler.h"
 #define ms_context		modem_context
 #define ms_max_context		CONFIG_MODEM_CONTEXT_MAX_NUM
 #define ms_send(ctx_, buf_, size_) \

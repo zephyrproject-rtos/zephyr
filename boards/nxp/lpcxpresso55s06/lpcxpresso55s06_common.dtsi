@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022 metraTec
- * Copyright 2022-2023 NXP
+ * Copyright 2022-2023, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -170,4 +170,12 @@
 	can-transceiver {
 		max-bitrate = <5000000>;
 	};
+};
+
+&gint0 {
+	status = "okay";
+};
+
+&gint1 {
+	status = "okay";
 };

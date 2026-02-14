@@ -19,18 +19,7 @@ Hardware
 Supported Features
 ==================
 
-This configuration supports the following hardware features:
-
-+--------------+------------+-----------------------+
-| Interface    | Controller | Driver/Component      |
-+==============+============+=======================+
-| HPET         | on-chip    | system clock          |
-+--------------+------------+-----------------------+
-| APIC         | on-chip    | interrupt controller  |
-+--------------+------------+-----------------------+
-| NS16550      | on-chip    | serial port           |
-| UART         |            |                       |
-+--------------+------------+-----------------------+
+.. zephyr:board-supported-hw::
 
 Devices
 =======

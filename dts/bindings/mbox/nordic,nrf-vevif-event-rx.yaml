@@ -9,20 +9,6 @@ description: |
   When used in the event rx mode, the VEVIF events are used to receive IRQs that are
   triggered by the VPR core.
 
-  Example definition:
-
-    cpuppr_vpr: vpr@deadbeef {
-      ...
-      cpuflpr_vevif_event_rx: mailbox@0 {
-        compatible = "nordic,nrf-vevif-event-rx";
-        reg = <0x0 0x1000>;
-        interrupts = <76 NRF_DEFAULT_IRQ_PRIORITY>;
-        #mbox-cells = <1>;
-        nordic,events = <1>;
-        nordic,events-mask = <0x00008000>;
-      };
-    };
-
 compatible: "nordic,nrf-vevif-event-rx"
 
 include: [base.yaml, mailbox-controller.yaml]
@@ -46,3 +32,17 @@ properties:
 
 mbox-cells:
   - channel
+
+examples:
+  - |
+    cpuppr_vpr: vpr@deadbeef {
+      /* ... */
+      cpuflpr_vevif_event_rx: mailbox@0 {
+        compatible = "nordic,nrf-vevif-event-rx";
+        reg = <0x0 0x1000>;
+        interrupts = <76 NRF_DEFAULT_IRQ_PRIORITY>;
+        #mbox-cells = <1>;
+        nordic,events = <1>;
+        nordic,events-mask = <0x00008000>;
+      };
+    };

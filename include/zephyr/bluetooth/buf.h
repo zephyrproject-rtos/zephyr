@@ -201,7 +201,7 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout);
  * callee must not perform any action that makes the current thread unready. When called from ISR
  * context, the callback runs without scheduler lock.
  *
- * @funcprops \isr_ok
+ * @isr_ok
  *
  * @param type_mask A bit mask of buffer types that have been freed.
  */
@@ -211,7 +211,7 @@ typedef void (*bt_buf_rx_freed_cb_t)(enum bt_buf_type type_mask);
  *
  * It's safe to call this inside the callback itself.
  *
- * @funcprops \isr_ok
+ * @isr_ok
  *
  * @param cb Callback to notify about freed buffer in the incoming data pool. If NULL, the callback
  *           is disabled.

@@ -83,7 +83,7 @@
 		status = "okay";
 
 		murata-1dx {
-			compatible = "infineon,cyw43xxx-bt-hci";
+			compatible = "infineon,bt-hci-uart";
 			bt-reg-on-gpios = <&gpiof 14 GPIO_ACTIVE_HIGH>;
 			bt-host-wake-gpios = <&gpiod 14 GPIO_ACTIVE_HIGH>;
 			bt-dev-wake-gpios = <&gpioe 9 GPIO_ACTIVE_HIGH>;

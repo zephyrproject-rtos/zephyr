@@ -940,6 +940,7 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Set up PLLs */
 	r = set_up_plls();
 	if (r < 0) {
+		__ASSERT(0, "PLL setup failed");
 		return r;
 	}
 

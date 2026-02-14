@@ -43,7 +43,7 @@ int pm_device_runtime_auto_enable(const struct device *dev);
  * This function will enable runtime PM on the given device. If the device is
  * in #PM_DEVICE_STATE_ACTIVE state, the device will be suspended.
  *
- * @funcprops \pre_kernel_ok
+ * @pre_kernel_ok
  *
  * @param dev Device instance.
  *
@@ -61,7 +61,7 @@ int pm_device_runtime_enable(const struct device *dev);
  *
  * If the device is currently suspended it will be resumed.
  *
- * @funcprops \pre_kernel_ok
+ * @pre_kernel_ok
  *
  * @param dev Device instance.
  *
@@ -85,7 +85,7 @@ int pm_device_runtime_disable(const struct device *dev);
  * @note It is safe to use this function in contexts where blocking is not
  * allowed, e.g. ISR, provided the device PM implementation does not block.
  *
- * @funcprops \pre_kernel_ok
+ * @pre_kernel_ok
  *
  * @param dev Device instance.
  *
@@ -104,7 +104,7 @@ int pm_device_runtime_get(const struct device *dev);
  * state will be left unchanged. In all other cases, usage count will be
  * decremented (down to 0).
  *
- * @funcprops \pre_kernel_ok
+ * @pre_kernel_ok
  *
  * @param dev Device instance.
  *
@@ -129,7 +129,7 @@ int pm_device_runtime_put(const struct device *dev);
  * this case, the function will be blocking (equivalent to
  * pm_device_runtime_put()).
  *
- * @funcprops \pre_kernel_ok, \async, \isr_ok
+ * @pre_kernel_ok @async @isr_ok
  *
  * @param dev Device instance.
  * @param delay Minimum amount of time before triggering the action.
@@ -147,7 +147,7 @@ int pm_device_runtime_put_async(const struct device *dev, k_timeout_t delay);
 /**
  * @brief Check if device runtime is enabled for a given device.
  *
- * @funcprops \pre_kernel_ok
+ * @pre_kernel_ok
  *
  * @param dev Device instance.
  *

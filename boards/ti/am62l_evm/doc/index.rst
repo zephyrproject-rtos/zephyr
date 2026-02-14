@@ -94,13 +94,13 @@ References
 https://www.ti.com/tool/TMDS62LEVM
 
 .. _AM62L EVM TRM:
-   https://www.ti.com/lit/pdf/SPRUJG8
+   https://www.ti.com/lit/pdf/sprujb4
 
 .. _TI AM62L Product Page:
    https://www.ti.com/product/AM62L
 
 .. _WIC:
-   https://dr-download.ti.com/software-development/software-development-kit-sdk/MD-PvdSyIiioq/10.01.10.04/tisdk-default-image-am62xx-evm-10.01.10.04.rootfs.wic.xz
+   https://dr-download.ti.com/software-development/software-development-kit-sdk/MD-YjEeNKJJjt/11.02.08.02/tisdk-default-image-am62lxx-evm-11.02.08.02.rootfs.wic.xz
 
 .. _EVM User's Guide:
    https://www.ti.com/lit/pdf/SPRUJG8

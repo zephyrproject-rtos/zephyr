@@ -914,6 +914,7 @@ int stm32_clock_control_init(const struct device *dev)
 	/* Set up PLLs */
 	r = set_up_plls();
 	if (r < 0) {
+		__ASSERT(0, "PLL setup failed");
 		return r;
 	}
 
@@ -944,6 +945,7 @@ int stm32_clock_control_init(const struct device *dev)
 		while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI) {
 		}
 	} else {
+		__ASSERT(0, "Invalid SYSCLK source selected");
 		return -ENOTSUP;
 	}
 

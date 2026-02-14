@@ -124,6 +124,8 @@
 				compatible = "soc-nv-flash";
 				write-block-size = <1>;
 				erase-block-size = <4096>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 

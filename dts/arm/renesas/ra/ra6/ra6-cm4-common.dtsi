@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-ra.h>
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <zephyr/dt-bindings/pwm/ra_pwm.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <freq.h>
 
 / {
@@ -362,6 +363,7 @@
 			compatible = "renesas,ra-iic";
 			channel = <0>;
 			reg = <0x40053000 0x100>;
+			clocks = <&pclkb MSTPB 9>;
 			status = "disabled";
 		};
 
@@ -369,6 +371,8 @@
 			compatible = "renesas,ra-iic";
 			channel = <1>;
 			reg = <0x40053100 0x100>;
+			clocks = <&pclkb MSTPB 8>;
+			max-bitrate-supported = <I2C_BITRATE_FAST>;
 			status = "disabled";
 		};
 

@@ -118,8 +118,8 @@
 	dqs-as-an-output;
 	error-payload-high = <0x12345678>;
 	error-payload-low = <0x87654321>;
-	transaction-timeout = <0xFFFFFFFF>;
-	arbitration-timeout = <0xFFFFFFFF>;
+	transaction-timeout = <0xffffffff>;
+	arbitration-timeout = <0xffffffff>;
 	status = "okay";
 
 	sfp_mdad {
@@ -137,7 +137,7 @@
 		#size-cells = <1>;
 
 		frad_0: frad@0 {
-			reg = <0x0 0xFFFFFFFF>;
+			reg = <0x0 0xffffffff>;
 			master-domain-acp-policy = <(NXP_S32_XSPI_NON_SECURE |
 						    NXP_S32_XSPI_SECURE |
 						    NXP_S32_XSPI_PRIVILEGE)>;
@@ -170,4 +170,8 @@
 			};
 		};
 	};
+};
+
+&edma {
+	status = "okay";
 };

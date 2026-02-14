@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Microchip Technology Inc.
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,9 +11,10 @@
 #include <zephyr/drivers/clock_control/mchp_clock_control.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
-#if CONFIG_SOC_FAMILY_MICROCHIP_SAM_D5X_E5X
+#if defined(CONFIG_SOC_FAMILY_MICROCHIP_SAM_D5X_E5X) ||                                            \
+	defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG)
 #include <zephyr/dt-bindings/adc/mchp_sam_d5x_e5x_adc.h>
-#endif /* SOC_FAMILY_MICROCHIP_SAM_D5X_E5X */
+#endif /* SOC_FAMILY_MICROCHIP_SAM_D5X_E5X || SOC_FAMILY_MICROCHIP_PIC32CX_SG */
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 
@@ -65,6 +66,12 @@ LOG_MODULE_REGISTER(adc_mchp_g1, CONFIG_ADC_LOG_LEVEL);
 static supc_registers_t *SUPC = (supc_registers_t *)SUPC_REGS;
 #define SUPC_VREF (SUPC->SUPC_VREF)
 #endif /* MCHP_SUPC_API_SUPPORT_AVAILABLE */
+
+/* PIC32CXSG family specific reserved inputs */
+#if defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG)
+#define MCHP_ADC_INPUT_POS_RSV_0 0x1C
+#define MCHP_ADC_INPUT_POS_RSV_1 0x1D
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG */
 
 struct adc_mchp_channel_cfg {
 	bool initialized;
@@ -205,6 +212,15 @@ static int8_t adc_validate_channel_params(enum adc_gain gain, enum adc_reference
 		return -EINVAL;
 	}
 
+	/* PIC32CXSG family specific reserved inputs */
+#if defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG)
+	if ((input_positive == MCHP_ADC_INPUT_POS_RSV_0) ||
+	    (input_positive == MCHP_ADC_INPUT_POS_RSV_1)) {
+		LOG_ERR("Invalid input positive for PIC32CXSG: %d", input_positive);
+		return -EINVAL;
+	}
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG */
+
 	/* Validate input_negative (0–7) */
 	if (input_negative > MCHP_ADC_INPUT_NEG_MAX) {
 		LOG_ERR("Invalid input negative : %d\n", input_negative);
@@ -308,6 +324,15 @@ static int8_t adc_set_input_positive(adc_registers_t *adc_reg, uint8_t input_pos
 		return -EINVAL;
 	}
 
+	/* PIC32CXSG family specific reserved inputs */
+#if defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG)
+	if ((input_positive == MCHP_ADC_INPUT_POS_RSV_0) ||
+	    (input_positive == MCHP_ADC_INPUT_POS_RSV_1)) {
+		LOG_ERR("Invalid input positive for PIC32CXSG: %d", input_positive);
+		return -EINVAL;
+	}
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG */
+
 	/* Set the MUXPOS field in ADC_INPUTCTRL register */
 	adc_reg->ADC_INPUTCTRL = ADC_INPUTCTRL_MUXPOS(input_positive);
 
@@ -365,8 +390,12 @@ static int8_t adc_set_input_negative(adc_registers_t *adc_reg, uint8_t input_neg
 		adc_reg->ADC_INPUTCTRL |= ADC_INPUTCTRL_DIFFMODE(1);
 		adc_reg->ADC_INPUTCTRL |= ADC_INPUTCTRL_MUXNEG(input_negative);
 	} else {
+#if defined(CONFIG_SOC_FAMILY_MICROCHIP_SAM_D5X_E5X)
 		/* In single-ended mode, connect negative input to GND */
 		adc_reg->ADC_INPUTCTRL |= ADC_INPUTCTRL_MUXNEG(ADC_INPUTCTRL_MUXNEG_GND_Val);
+#elif defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG)
+		adc_reg->ADC_INPUTCTRL |= ADC_INPUTCTRL_MUXNEG(ADC_INPUTCTRL_MUXNEG_AVSS_Val);
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG */
 	}
 
 	return 0;

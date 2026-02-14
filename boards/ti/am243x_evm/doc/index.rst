@@ -256,7 +256,7 @@ References
 **********
 
 AM64x/AM243x EVM Technical Reference Manual:
-   https://www.ti.com/lit/ug/spruj63a/spruj63a.pdf
+   https://www.ti.com/lit/pdf/spruim2
 
 MCU+ SDK Github repository:
    https://github.com/TexasInstruments/mcupsdk-core

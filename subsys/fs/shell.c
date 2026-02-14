@@ -641,11 +641,6 @@ static int cmd_read_test(const struct shell *sh, size_t argc, char **argv)
 	uint32_t loops = 0;
 	uint32_t size;
 
-	if (argc < 3) {
-		shell_error(sh, "Missing parameters: read_test <path> <repeat>");
-		return -EINVAL;
-	}
-
 	create_abs_path(argv[1], path, sizeof(path));
 	repeat = strtol(argv[2], NULL, 0);
 
@@ -731,11 +726,6 @@ static int cmd_erase_write_test(const struct shell *sh, size_t argc, char **argv
 	uint64_t loop_time;
 	uint64_t total_time = 0;
 	uint32_t loops = 0;
-
-	if (argc < 4) {
-		shell_error(sh, "Missing parameters: erase_write_test <path> <size> <repeat>");
-		return -EINVAL;
-	}
 
 	create_abs_path(argv[1], path, sizeof(path));
 	size = strtol(argv[2], NULL, 0);
@@ -898,13 +888,13 @@ static int cmd_mount_littlefs(const struct shell *sh, size_t argc, char **argv)
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs_mount,
 #if defined(CONFIG_FAT_FILESYSTEM_ELM)
 	SHELL_CMD_ARG(fat, NULL,
-		      "Mount fatfs. fs mount fat <mount-point>",
+		      SHELL_HELP("Mount fatfs", "<mount-point>"),
 		      cmd_mount_fat, 2, 0),
 #endif
 
 #if defined(CONFIG_FILE_SYSTEM_LITTLEFS)
 	SHELL_CMD_ARG(littlefs, NULL,
-		      "Mount littlefs. fs mount littlefs <mount-point>",
+		      SHELL_HELP("Mount littlefs", "<mount-point>"),
 		      cmd_mount_littlefs, 2, 0),
 #endif
 
@@ -913,26 +903,34 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs_mount,
 #endif
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs,
-	SHELL_CMD(cd, NULL, "Change working directory", cmd_cd),
-	SHELL_CMD(ls, NULL, "List files in current directory", cmd_ls),
-	SHELL_CMD_ARG(mkdir, NULL, "Create directory", cmd_mkdir, 2, 0),
+	SHELL_CMD(cd, NULL, SHELL_HELP("Change working directory", "[<path>]"), cmd_cd),
+	SHELL_CMD(ls, NULL, SHELL_HELP("List files in current directory", "[<path>]"), cmd_ls),
+	SHELL_CMD_ARG(mkdir, NULL, SHELL_HELP("Create directory", "<path>"), cmd_mkdir, 2, 0),
 #ifdef CONFIG_FILE_SYSTEM_SHELL_MOUNT_COMMAND
 	SHELL_CMD(mount, &sub_fs_mount,
-		  "<Mount fs, syntax:- fs mount <fs type> <mount-point>", NULL),
+		  SHELL_HELP("Mount filesystem", "<fs type> <mount-point>"), NULL),
 #endif
-	SHELL_CMD(pwd, NULL, "Print current working directory", cmd_pwd),
-	SHELL_CMD_ARG(read, NULL, "Read from file", cmd_read, 2, 255),
+	SHELL_CMD(pwd, NULL, SHELL_HELP("Print current working directory", NULL), cmd_pwd),
+	SHELL_CMD_ARG(read, NULL, SHELL_HELP("Read from file", "<path> [<count> [<offset>]]"),
+		      cmd_read, 2, 255),
 	SHELL_CMD_ARG(cat, NULL,
-		"Concatenate files and print on the standard output",
-		cmd_cat, 2, 255),
-	SHELL_CMD_ARG(rm, NULL, "Remove file", cmd_rm, 2, 0),
-	SHELL_CMD_ARG(cp, NULL, "Copy file", cmd_cp, 3, 0),
-	SHELL_CMD_ARG(statvfs, NULL, "Show file system state", cmd_statvfs, 2, 0),
-	SHELL_CMD_ARG(trunc, NULL, "Truncate file", cmd_trunc, 2, 255),
-	SHELL_CMD_ARG(write, NULL, "Write file", cmd_write, 3, 255),
+		      SHELL_HELP("Concatenate files and print on the standard output",
+				 "<path> [<path> ...]"),
+		      cmd_cat, 2, 255),
+	SHELL_CMD_ARG(rm, NULL, SHELL_HELP("Remove file", "<path>"), cmd_rm, 2, 0),
+	SHELL_CMD_ARG(cp, NULL, SHELL_HELP("Copy file", "<source> <dest>"), cmd_cp, 3, 0),
+	SHELL_CMD_ARG(statvfs, NULL, SHELL_HELP("Show file system state", "<path>"),
+		      cmd_statvfs, 2, 0),
+	SHELL_CMD_ARG(trunc, NULL, SHELL_HELP("Truncate file", "<path> [<length>]"),
+		      cmd_trunc, 2, 255),
+	SHELL_CMD_ARG(write, NULL, SHELL_HELP("Write file", "<path> <data> [<data> ...]"),
+		      cmd_write, 3, 255),
 #ifdef CONFIG_FILE_SYSTEM_SHELL_TEST_COMMANDS
-	SHELL_CMD_ARG(read_test, NULL, "Read file test", cmd_read_test, 2, 2),
-	SHELL_CMD_ARG(erase_write_test, NULL, "Erase/write file test", cmd_erase_write_test, 3, 3),
+	SHELL_CMD_ARG(read_test, NULL, SHELL_HELP("Read file test", "<path> <repeat>"),
+		      cmd_read_test, 3, 0),
+	SHELL_CMD_ARG(erase_write_test, NULL,
+		      SHELL_HELP("Erase/write file test", "<path> <size> <repeat>"),
+		      cmd_erase_write_test, 4, 0),
 #endif
 	SHELL_SUBCMD_SET_END
 );

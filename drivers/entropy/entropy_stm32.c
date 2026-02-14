@@ -831,10 +831,6 @@ static int entropy_stm32_rng_init(const struct device *dev)
 
 	dev_data->clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
-	if (!device_is_ready(dev_data->clock)) {
-		return -ENODEV;
-	}
-
 	res = clock_control_on(dev_data->clock,
 		(clock_control_subsys_t)&dev_cfg->pclken[0]);
 	__ASSERT_NO_MSG(res == 0);

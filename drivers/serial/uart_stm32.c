@@ -1282,6 +1282,7 @@ static void uart_stm32_dma_rx_flush(const struct device *dev, int status)
 	struct dma_status stat;
 	struct uart_stm32_data *data = dev->data;
 	size_t rx_rcv_len = 0;
+	uint32_t half_pos;
 
 	switch (status) {
 	case DMA_STATUS_COMPLETE:
@@ -1297,7 +1298,7 @@ static void uart_stm32_dma_rx_flush(const struct device *dev, int status)
 		break;
 	case DMA_STATUS_BLOCK:
 		/* half complete */
-		uint32_t half_pos = data->dma_rx.buffer_length / 2;
+		half_pos = data->dma_rx.buffer_length / 2;
 
 		/* Already handled by timeout path has already dealt with this data.
 		 * Return immediately.
@@ -2222,11 +2223,6 @@ static int uart_stm32_clocks_enable(const struct device *dev)
 {
 	const struct uart_stm32_config *config = dev->config;
 	int err;
-
-	if (!device_is_ready(config->clock)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
 
 	/* enable clock */
 	err = clock_control_on(config->clock, (clock_control_subsys_t)&config->pclken[0]);

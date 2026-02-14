@@ -147,11 +147,6 @@ static int crypto_stm32_hash_init(const struct device *dev)
 	const struct crypto_stm32_hash_config *cfg = CRYPTO_STM32_HASH_CFG(dev);
 	struct crypto_stm32_hash_data *data = CRYPTO_STM32_HASH_DATA(dev);
 
-	if (!device_is_ready(clk)) {
-		LOG_ERR("Clock control device not ready");
-		return -ENODEV;
-	}
-
 	if (clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken) != 0) {
 		LOG_ERR("Clock op failed\n");
 		return -EIO;

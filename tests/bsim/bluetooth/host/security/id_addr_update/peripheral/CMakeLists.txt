@@ -8,13 +8,14 @@ project(bsim_test_id_addr_update)
 add_subdirectory(${ZEPHYR_BASE}/tests/bsim/babblekit babblekit)
 target_link_libraries(app PRIVATE babblekit)
 
+target_include_directories(app PRIVATE ../common/)
+
 target_sources(app PRIVATE
   src/peripheral.c
   src/utils.c
 )
 
 zephyr_include_directories(
-  ../common/
   ${BSIM_COMPONENTS_PATH}/libUtilv1/src/
   ${BSIM_COMPONENTS_PATH}/libPhyComv1/src/
   )

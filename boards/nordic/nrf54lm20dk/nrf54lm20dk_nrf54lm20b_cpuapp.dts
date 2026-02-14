@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nordic/nrf54lm20b_cpuapp.dtsi>
+#include "nrf54lm20_a_b_cpuapp_common.dtsi"
+#include <nordic/nrf54lm20b_cpuapp_partition.dtsi>
+
+/ {
+	compatible = "nordic,nrf54lm20dk_nrf54lm20b-cpuapp";
+	model = "Nordic nRF54LM20 DK nRF54LM20B Application MCU";
+
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram = &cpuapp_sram;
+	};
+};

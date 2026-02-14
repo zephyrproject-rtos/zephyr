@@ -1026,6 +1026,7 @@
 				 <&rcc STM32_SRC_PCLK5 NO_SEL>;
 			clock-names = "dcmipp", "dcmipp-ker";
 			interrupts = <95 0>;
+			interrupt-names = "dcmipp";
 			resets = <&rctl STM32_RESET(APB5, 2)>;
 			status = "disabled";
 

@@ -50,6 +50,11 @@ config NET_SHELL_DNS_RESOLVER_SUPPORTED
 	default y
 	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || DNS_RESOLVER
 
+config NET_SHELL_DNS_RESOLVER_QUEUE_SIZE
+	int "DNS resolver info queue size"
+	default 3
+	depends on NET_SHELL_DNS_RESOLVER_SUPPORTED
+
 config NET_SHELL_EVENT_MONITOR_SUPPORTED
 	bool "Network management event monitoring configuration"
 	default y

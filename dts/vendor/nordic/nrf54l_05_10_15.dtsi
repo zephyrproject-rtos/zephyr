@@ -145,6 +145,7 @@
 				#size-cells = <0>;
 				reg = <0x4a000 0x1000>;
 				interrupts = <74 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&hfpll>;
 				max-frequency = <DT_FREQ_M(32)>;
 				easydma-maxcnt-bits = <16>;
 				rx-delay-supported;
@@ -734,6 +735,8 @@
 				compatible = "soc-nv-flash";
 				erase-block-size = <4096>;
 				write-block-size = <16>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 

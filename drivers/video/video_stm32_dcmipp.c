@@ -1680,11 +1680,6 @@ static int stm32_dcmipp_enable_clock(const struct device *dev)
 	const struct device *cc_node = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	int err;
 
-	if (!device_is_ready(cc_node)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
 	/* Turn on DCMIPP peripheral clock */
 	err = clock_control_configure(cc_node, (clock_control_subsys_t)&config->dcmipp_pclken_ker,
 				      NULL);
@@ -1828,6 +1823,15 @@ static void stm32_dcmipp_isr(const struct device *dev)
 	HAL_DCMIPP_IRQHandler(&dcmipp->hdcmipp);
 }
 
+#if defined(STM32_DCMIPP_HAS_CSI) && defined(CONFIG_VIDEO_STM32_DCMIPP_CSI_ENABLE_IRQ)
+static void stm32_dcmipp_csi_isr(const struct device *dev)
+{
+	struct stm32_dcmipp_data *dcmipp = dev->data;
+
+	HAL_DCMIPP_CSI_IRQHandler(&dcmipp->hdcmipp);
+}
+#endif
+
 #define SOURCE_DEV(inst) DEVICE_DT_GET(DT_NODE_REMOTE_DEVICE(DT_INST_ENDPOINT_BY_ID(inst, 0, 0)))
 
 #define DCMIPP_PIPE_INIT_DEFINE(node_id, inst)						\
@@ -1856,8 +1860,20 @@ static void stm32_dcmipp_isr(const struct device *dev)
 					    (0),						\
 					    (DT_PROP_BY_IDX(DT_INST_ENDPOINT_BY_ID(inst, 0, 0),	\
 							    data_lanes, 1))),
+
+#if defined(CONFIG_VIDEO_STM32_DCMIPP_CSI_ENABLE_IRQ)
+#define STM32_DCMIPP_CSI_IRQ_INIT(inst)								\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, dcmipp_csi, irq),				\
+			    DT_INST_IRQ_BY_NAME(inst, dcmipp_csi, priority),			\
+			    stm32_dcmipp_csi_isr, DEVICE_DT_INST_GET(inst), 0);			\
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, dcmipp_csi, irq));
+#else
+#define STM32_DCMIPP_CSI_IRQ_INIT(inst)
+#endif
+
 #else
 #define STM32_DCMIPP_CSI_DT_PARAMS(inst)
+#define STM32_DCMIPP_CSI_IRQ_INIT(inst)
 #endif
 
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
@@ -1871,9 +1887,11 @@ static void stm32_dcmipp_isr(const struct device *dev)
 #define STM32_DCMIPP_INIT(inst)									\
 	static void stm32_dcmipp_irq_config_##inst(const struct device *dev)			\
 	{											\
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),			\
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, dcmipp, irq),				\
+			    DT_INST_IRQ_BY_NAME(inst, dcmipp, priority),			\
 			    stm32_dcmipp_isr, DEVICE_DT_INST_GET(inst), 0);			\
-		irq_enable(DT_INST_IRQN(inst));							\
+		irq_enable(DT_INST_IRQ_BY_NAME(inst, dcmipp, irq));				\
+		STM32_DCMIPP_CSI_IRQ_INIT(inst)							\
 	}											\
 												\
 	static struct stm32_dcmipp_data stm32_dcmipp_data_##inst = {				\

@@ -992,23 +992,24 @@ static int radio_pm_action(const struct device *dev, enum pm_device_action actio
 	case PM_DEVICE_ACTION_RESUME:
 		LL_AHB5_GRP1_EnableClock(LL_AHB5_GRP1_PERIPH_RADIO);
 #if defined(CONFIG_PM_S2RAM)
-		if (LL_PWR_IsActiveFlag_SB() == 1U) {
-			/* Put the radio in active state */
-			LL_AHB5_GRP1_EnableClock(LL_AHB5_GRP1_PERIPH_RADIO);
-			link_layer_register_isr(true);
+		if (ll_sys_dp_slp_get_state() == LL_SYS_DP_SLP_ENABLED) {
+			if (LL_PWR_IsActiveFlag_SB() == 1U) {
+				/* Restore NVIC configuration for radio */
+				link_layer_register_isr(true);
+				ll_sys_dp_slp_exit();
+			}
 		}
+#endif /* CONFIG_PM_S2RAM */
 		LINKLAYER_PLAT_NotifyWFIExit();
-		ll_sys_dp_slp_exit();
-#endif
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 #if defined(CONFIG_PM_S2RAM)
-		uint64_t next_radio_evt;
-		enum pm_state state = pm_state_next_get(_current_cpu->id)->state;
+		if (ll_sys_dp_slp_get_state() == LL_SYS_DP_SLP_DISABLED) {
+			uint64_t next_radio_evt;
+			enum pm_state state = pm_state_next_get(_current_cpu->id)->state;
 
-		if (state == PM_STATE_SUSPEND_TO_RAM) {
-			next_radio_evt = os_timer_get_earliest_time();
-			if (llhwc_cmn_is_dp_slp_enabled() == 0) {
+			if (state == PM_STATE_SUSPEND_TO_RAM) {
+				next_radio_evt = os_timer_get_earliest_time();
 				if (next_radio_evt > CFG_LPM_STDBY_WAKEUP_TIME) {
 					/* No event in a "near" futur */
 					next_radio_evt -= CFG_LPM_STDBY_WAKEUP_TIME;
@@ -1016,7 +1017,7 @@ static int radio_pm_action(const struct device *dev, enum pm_device_action actio
 				}
 			}
 		}
-#endif
+#endif /* CONFIG_PM_S2RAM */
 		LINKLAYER_PLAT_NotifyWFIEnter();
 		break;
 	default:

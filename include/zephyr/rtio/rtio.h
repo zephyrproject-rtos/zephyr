@@ -346,11 +346,13 @@ struct rtio_sqe {
 			uint8_t *rx_buf; /**< Buffer to read into */
 		} txrx;
 
+#ifdef CONFIG_RTIO_OP_DELAY
 		/** OP_DELAY */
 		struct {
 			k_timeout_t timeout; /**< Delay timeout. */
 			struct _timeout to; /**< Timeout struct. Used internally. */
 		} delay;
+#endif
 
 		/** OP_I2C_CONFIGURE */
 		uint32_t i2c_config;
@@ -375,10 +377,33 @@ struct rtio_sqe {
 	};
 };
 
+
+/**
+ * @brief IO device submission queue entry
+ *
+ * May be cast safely to and from a rtio_sqe as they occupy the same memory provided by the pool
+ */
+struct rtio_iodev_sqe {
+	struct rtio_sqe sqe;
+	struct mpsc_node q;
+	struct rtio_iodev_sqe *next;
+	struct rtio *r;
+};
+
+
 /** @cond ignore */
-/* Ensure the rtio_sqe never grows beyond a common cacheline size of 64 bytes */
-BUILD_ASSERT(sizeof(struct rtio_sqe) <= 64);
+/* Ensure the rtio_iodev_sqe never grows beyond a common cacheline size of 64 bytes */
+#if CONFIG_RTIO_SQE_CACHELINE_CHECK
+#ifdef CONFIG_DCACHE_LINE_SIZE
+#define RTIO_CACHE_LINE_SIZE CONFIG_DCACHE_LINE_SIZE
+#else
+#define RTIO_CACHE_LINE_SIZE 64
+#endif
+BUILD_ASSERT(sizeof(struct rtio_iodev_sqe) <= RTIO_CACHE_LINE_SIZE,
+	"RTIO performs best when the submissions queue entries are less than a cache line")
+#endif
 /** @endcond */
+
 
 /**
  * @brief A completion queue event
@@ -506,18 +531,6 @@ static inline uint16_t __rtio_compute_mempool_block_index(const struct rtio *r, 
 	return (addr - buff) / block_size;
 }
 #endif
-
-/**
- * @brief IO device submission queue entry
- *
- * May be cast safely to and from a rtio_sqe as they occupy the same memory provided by the pool
- */
-struct rtio_iodev_sqe {
-	struct rtio_sqe sqe;
-	struct mpsc_node q;
-	struct rtio_iodev_sqe *next;
-	struct rtio *r;
-};
 
 /**
  * @brief API that an RTIO IO device should implement
@@ -805,6 +818,18 @@ static inline void rtio_sqe_prep_await_executor(struct rtio_sqe *sqe, int8_t pri
 	rtio_sqe_prep_await(sqe, NULL, prio, userdata);
 }
 
+/**
+ * @brief Prepare a delay operation submission which completes after the given timeout
+ *
+ * This operation will setup a kernel timer with the given timeout.
+ *
+ * @note Operation is enabled by default but may be disabled by turning off CONFIG_RTIO_OP_DELAY
+ *
+ * @param sqe Submission queue entry to prepare
+ * @param timeout The k_timeout_t (e.g. K_MSEC(1)) to delay for
+ * @param userdata User supplied pointer to associated data
+ */
+#ifdef CONFIG_RTIO_OP_DELAY
 static inline void rtio_sqe_prep_delay(struct rtio_sqe *sqe,
 				       k_timeout_t timeout,
 				       void *userdata)
@@ -816,6 +841,10 @@ static inline void rtio_sqe_prep_delay(struct rtio_sqe *sqe,
 	sqe->delay.timeout = timeout;
 	sqe->userdata = userdata;
 }
+#else
+#define rtio_sqe_prep_delay(sqe, timeout, userdata) \
+	BUILD_ASSERT(false, "CONFIG_RTIO_OP_DELAY not enabled")
+#endif
 
 static inline struct rtio_iodev_sqe *rtio_sqe_pool_alloc(struct rtio_sqe_pool *pool)
 {

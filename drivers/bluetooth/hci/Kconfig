@@ -262,7 +262,7 @@ config BT_AIROC
 	select BT_HCI_SET_PUBLIC_ADDR
 	select USE_INFINEON_ABSTRACTION_RTOS if BT_CYW208XX
 	select EVENTS                        if BT_CYW208XX
-	depends on DT_HAS_INFINEON_CYW43XXX_BT_HCI_ENABLED || DT_HAS_INFINEON_CYW208XX_HCI_ENABLED
+	depends on DT_HAS_INFINEON_BT_HCI_UART_ENABLED || DT_HAS_INFINEON_CYW208XX_HCI_ENABLED
 	help
 	  Infineon's AIROC™ Wi-Fi & combos portfolio integrates
 	  IEEE 802.11a/b/g/n/ac/ax Wi-Fi and Bluetooth® 5.2 in a single-chip

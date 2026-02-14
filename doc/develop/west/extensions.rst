@@ -12,20 +12,23 @@ own.
 
 Some commands you can run when using west with Zephyr, like the ones used to
 :ref:`build, flash, and debug <west-build-flash-debug>` and the
-:ref:`ones described here <west-zephyr-ext-cmds>` , are extensions. That's why
+:ref:`ones described here <west-zephyr-ext-cmds>`, are extensions. That's why
 help for them shows up like this in ``west --help``:
 
 .. code-block:: none
 
-   commands from project at "zephyr":
+   extension commands from project manifest (path: zephyr):
      completion:           display shell completion scripts
      boards:               display information about supported boards
+     shields:              display list of supported shields
      build:                compile a Zephyr application
+     twister:              west twister wrapper
      sign:                 sign a Zephyr binary for bootloader chain-loading
      flash:                flash and run a binary on a board
      debug:                flash and interactively debug a Zephyr application
      debugserver:          connect to board and launch a debug server
      attach:               interactively debug a board
+     ...
 
 See :file:`zephyr/scripts/west-commands.yml` and the
 :file:`zephyr/scripts/west_commands` directory for the implementation details.
@@ -67,12 +70,12 @@ built-in command.
 Step 1: Implement Your Command
 ==============================
 
-Create a Python file to contain your command implementation (see the "Meta >
-Requires" information on the `west PyPI page`_ for details on the currently
+Create a Python file to contain your command implementation (see the west
+project metadata on the `west PyPI page`_ for details on the currently
 supported versions of Python). You can put it in anywhere in any project
 tracked by your :term:`west manifest`, or the manifest repository itself.
-This file must contain a subclass of the ``west.commands.WestCommand`` class;
-this class will be instantiated and used when your extension is run.
+This file must contain a subclass of the ``west.commands.WestCommand`` class.
+This class will be instantiated and used when your extension is run.
 
 Here is a basic skeleton you can use to get started. It contains a subclass of
 ``WestCommand``, with implementations for all the abstract methods. For more
@@ -118,7 +121,7 @@ details on the west APIs you can use, see :ref:`west-apis`.
 
            return parser           # gets stored as self.parser
 
-       def do_run(self, args, unknown_args):
+       def do_run(self, args, unknown):
            # This gets called when the user runs the command, e.g.:
            #
            #   $ west my-command-name -o FOO BAR
@@ -127,7 +130,7 @@ details on the west APIs you can use, see :ref:`west-apis`.
            self.inf('--optional is', args.optional)
            self.inf('required is', args.required)
 
-You can ignore the second argument to ``do_run()`` (``unknown_args`` above), as
+You can ignore the second argument to ``do_run()`` (``unknown`` above), as
 ``WestCommand`` will reject unknown arguments by default. If you want to be
 passed a list of unknown arguments instead, add ``accepts_unknown_args=True``
 to the ``super().__init__()`` arguments.

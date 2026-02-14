@@ -1,0 +1,8 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nordic/nrf54lm20a.dtsi>
+#include "nrf54lm20_a_b_cpuapp.dtsi"

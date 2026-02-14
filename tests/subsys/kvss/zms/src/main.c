@@ -1,0 +1,1320 @@
+/*
+ * Copyright (c) 2019 Nordic Semiconductor ASA
+ * Copyright (c) 2024 BayLibre SAS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <stdio.h>
+#include <string.h>
+#include <zephyr/ztest.h>
+
+#include <zephyr/drivers/flash.h>
+#include <zephyr/kvss/zms.h>
+#include <zephyr/stats/stats.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/sys/crc.h>
+#include "zms_priv.h"
+
+#define TEST_ZMS_AREA        storage_partition
+#define TEST_ZMS_AREA_OFFSET FIXED_PARTITION_OFFSET(TEST_ZMS_AREA)
+#define TEST_ZMS_AREA_ID     FIXED_PARTITION_ID(TEST_ZMS_AREA)
+#define TEST_ZMS_AREA_DEV    DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(DT_NODELABEL(TEST_ZMS_AREA)))
+#define TEST_DATA_ID         1
+#define TEST_SECTOR_COUNT    5U
+
+static const struct device *const flash_dev = TEST_ZMS_AREA_DEV;
+
+struct zms_fixture {
+	struct zms_fs fs;
+#ifdef CONFIG_TEST_ZMS_SIMULATOR
+	struct stats_hdr *sim_stats;
+	struct stats_hdr *sim_thresholds;
+#endif /* CONFIG_TEST_ZMS_SIMULATOR */
+};
+
+static void *setup(void)
+{
+	int err;
+	const struct flash_area *fa;
+	struct flash_pages_info info;
+	static struct zms_fixture fixture;
+
+	__ASSERT_NO_MSG(device_is_ready(flash_dev));
+
+	err = flash_area_open(TEST_ZMS_AREA_ID, &fa);
+	zassert_true(err == 0, "flash_area_open() fail: %d", err);
+
+	fixture.fs.offset = TEST_ZMS_AREA_OFFSET;
+	err = flash_get_page_info_by_offs(flash_area_get_device(fa), fixture.fs.offset, &info);
+	zassert_true(err == 0, "Unable to get page info: %d", err);
+
+	fixture.fs.sector_size = info.size;
+	fixture.fs.sector_count = TEST_SECTOR_COUNT;
+	fixture.fs.flash_device = flash_area_get_device(fa);
+
+	return &fixture;
+}
+
+static void before(void *data)
+{
+#ifdef CONFIG_TEST_ZMS_SIMULATOR
+	struct zms_fixture *fixture = (struct zms_fixture *)data;
+
+	fixture->sim_stats = stats_group_find("flash_sim_stats");
+	fixture->sim_thresholds = stats_group_find("flash_sim_thresholds");
+#endif /* CONFIG_TEST_ZMS_SIMULATOR */
+}
+
+static void after(void *data)
+{
+	struct zms_fixture *fixture = (struct zms_fixture *)data;
+
+#ifdef CONFIG_TEST_ZMS_SIMULATOR
+	if (fixture->sim_stats) {
+		stats_reset(fixture->sim_stats);
+	}
+	if (fixture->sim_thresholds) {
+		stats_reset(fixture->sim_thresholds);
+	}
+#endif /* CONFIG_TEST_ZMS_SIMULATOR */
+
+	/* Clear ZMS */
+	if (fixture->fs.ready) {
+		int err;
+
+		err = zms_clear(&fixture->fs);
+		zassert_true(err == 0, "zms_clear call failure: %d", err);
+	}
+
+	fixture->fs.sector_count = TEST_SECTOR_COUNT;
+}
+
+ZTEST_SUITE(zms, NULL, setup, before, after, NULL);
+
+ZTEST_F(zms, test_zms_mount)
+{
+	int err;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+}
+
+static void execute_long_pattern_write(uint32_t id, struct zms_fs *fs)
+{
+	char rd_buf[512];
+	char wr_buf[512];
+	char pattern[] = {0xDE, 0xAD, 0xBE, 0xEF};
+	size_t len;
+
+	len = zms_read(fs, id, rd_buf, sizeof(rd_buf));
+	zassert_true(len == -ENOENT, "zms_read unexpected failure: %d", len);
+
+	BUILD_ASSERT((sizeof(wr_buf) % sizeof(pattern)) == 0);
+	for (int i = 0; i < sizeof(wr_buf); i += sizeof(pattern)) {
+		memcpy(wr_buf + i, pattern, sizeof(pattern));
+	}
+
+	len = zms_write(fs, id, wr_buf, sizeof(wr_buf));
+	zassert_true(len == sizeof(wr_buf), "zms_write failed: %d", len);
+
+	len = zms_read(fs, id, rd_buf, sizeof(rd_buf));
+	zassert_true(len == sizeof(rd_buf), "zms_read unexpected failure: %d", len);
+	zassert_mem_equal(wr_buf, rd_buf, sizeof(rd_buf), "RD buff should be equal to the WR buff");
+}
+
+ZTEST_F(zms, test_zms_write)
+{
+	int err;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	execute_long_pattern_write(TEST_DATA_ID, &fixture->fs);
+}
+
+#ifdef CONFIG_TEST_ZMS_SIMULATOR
+static int flash_sim_write_calls_find(struct stats_hdr *hdr, void *arg, const char *name,
+				      uint16_t off)
+{
+	if (!strcmp(name, "flash_write_calls")) {
+		uint32_t **flash_write_stat = (uint32_t **)arg;
+		*flash_write_stat = (uint32_t *)((uint8_t *)hdr + off);
+	}
+
+	return 0;
+}
+
+static int flash_sim_max_write_calls_find(struct stats_hdr *hdr, void *arg, const char *name,
+					  uint16_t off)
+{
+	if (!strcmp(name, "max_write_calls")) {
+		uint32_t **max_write_calls = (uint32_t **)arg;
+		*max_write_calls = (uint32_t *)((uint8_t *)hdr + off);
+	}
+
+	return 0;
+}
+
+ZTEST_F(zms, test_zms_corrupted_write)
+{
+	int err;
+	size_t len;
+	char rd_buf[512];
+	char wr_buf_1[512];
+	char wr_buf_2[512];
+	char pattern_1[] = {0xDE, 0xAD, 0xBE, 0xEF};
+	char pattern_2[] = {0x03, 0xAA, 0x85, 0x6F};
+	uint32_t *flash_write_stat;
+	uint32_t *flash_max_write_calls;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	err = zms_read(&fixture->fs, TEST_DATA_ID, rd_buf, sizeof(rd_buf));
+	zassert_true(err == -ENOENT, "zms_read unexpected failure: %d", err);
+
+	BUILD_ASSERT((sizeof(wr_buf_1) % sizeof(pattern_1)) == 0);
+	for (int i = 0; i < sizeof(wr_buf_1); i += sizeof(pattern_1)) {
+		memcpy(wr_buf_1 + i, pattern_1, sizeof(pattern_1));
+	}
+
+	len = zms_write(&fixture->fs, TEST_DATA_ID, wr_buf_1, sizeof(wr_buf_1));
+	zassert_true(len == sizeof(wr_buf_1), "zms_write failed: %d", len);
+
+	len = zms_read(&fixture->fs, TEST_DATA_ID, rd_buf, sizeof(rd_buf));
+	zassert_true(len == sizeof(rd_buf), "zms_read unexpected failure: %d", len);
+	zassert_mem_equal(wr_buf_1, rd_buf, sizeof(rd_buf),
+			  "RD buff should be equal to the first WR buff");
+
+	BUILD_ASSERT((sizeof(wr_buf_2) % sizeof(pattern_2)) == 0);
+	for (int i = 0; i < sizeof(wr_buf_2); i += sizeof(pattern_2)) {
+		memcpy(wr_buf_2 + i, pattern_2, sizeof(pattern_2));
+	}
+
+	/* Set the maximum number of writes that the flash simulator can
+	 * execute.
+	 */
+	stats_walk(fixture->sim_thresholds, flash_sim_max_write_calls_find, &flash_max_write_calls);
+	stats_walk(fixture->sim_stats, flash_sim_write_calls_find, &flash_write_stat);
+
+	*flash_max_write_calls = *flash_write_stat - 1;
+	*flash_write_stat = 0;
+
+	/* Flash simulator will lose part of the data at the end of this write.
+	 * This should simulate power down during flash write. The written data
+	 * are corrupted at this point and should be discarded by the ZMS.
+	 */
+	len = zms_write(&fixture->fs, TEST_DATA_ID, wr_buf_2, sizeof(wr_buf_2));
+	zassert_true(len == sizeof(wr_buf_2), "zms_write failed: %d", len);
+
+	/* Reinitialize the ZMS. */
+	memset(&fixture->fs, 0, sizeof(fixture->fs));
+	(void)setup();
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	len = zms_read(&fixture->fs, TEST_DATA_ID, rd_buf, sizeof(rd_buf));
+	zassert_true(len == sizeof(rd_buf), "zms_read unexpected failure: %d", len);
+	zassert_true(memcmp(wr_buf_2, rd_buf, sizeof(rd_buf)) != 0,
+		     "RD buff should not be equal to the second WR buff because of "
+		     "corrupted write operation");
+	zassert_mem_equal(wr_buf_1, rd_buf, sizeof(rd_buf),
+			  "RD buff should be equal to the first WR buff because subsequent "
+			  "write operation has failed");
+}
+
+ZTEST_F(zms, test_zms_gc)
+{
+	int err;
+	int len;
+	uint8_t buf[32];
+	uint8_t rd_buf[32];
+	const uint8_t max_id = 10;
+	/* 21st write will trigger GC. */
+	const uint16_t max_writes = 21;
+
+	fixture->fs.sector_count = 2;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	for (int i = 0; i < max_writes; i++) {
+		uint8_t id = (i % max_id);
+		uint8_t id_data = id + max_id * (i / max_id);
+
+		memset(buf, id_data, sizeof(buf));
+
+		len = zms_write(&fixture->fs, id, buf, sizeof(buf));
+		zassert_true(len == sizeof(buf), "zms_write failed: %d", len);
+	}
+
+	for (int id = 0; id < max_id; id++) {
+		len = zms_read(&fixture->fs, id, rd_buf, sizeof(buf));
+		zassert_true(len == sizeof(rd_buf), "zms_read unexpected failure: %d", len);
+
+		for (int i = 0; i < sizeof(rd_buf); i++) {
+			rd_buf[i] = rd_buf[i] % max_id;
+			buf[i] = id;
+		}
+		zassert_mem_equal(buf, rd_buf, sizeof(rd_buf),
+				  "RD buff should be equal to the WR buff");
+	}
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	for (int id = 0; id < max_id; id++) {
+		len = zms_read(&fixture->fs, id, rd_buf, sizeof(buf));
+		zassert_true(len == sizeof(rd_buf), "zms_read unexpected failure: %d", len);
+
+		for (int i = 0; i < sizeof(rd_buf); i++) {
+			rd_buf[i] = rd_buf[i] % max_id;
+			buf[i] = id;
+		}
+		zassert_mem_equal(buf, rd_buf, sizeof(rd_buf),
+				  "RD buff should be equal to the WR buff");
+	}
+}
+
+static void write_content(uint32_t max_id, uint32_t begin, uint32_t end, struct zms_fs *fs)
+{
+	uint8_t buf[32];
+	ssize_t len;
+
+	for (int i = begin; i < end; i++) {
+		uint8_t id = (i % max_id);
+		uint8_t id_data = id + max_id * (i / max_id);
+
+		memset(buf, id_data, sizeof(buf));
+
+		len = zms_write(fs, id, buf, sizeof(buf));
+		zassert_true(len == sizeof(buf), "zms_write failed: %d", len);
+	}
+}
+
+static void check_content(uint32_t max_id, struct zms_fs *fs)
+{
+	uint8_t rd_buf[32];
+	uint8_t buf[32];
+	ssize_t len;
+
+	for (int id = 0; id < max_id; id++) {
+		len = zms_read(fs, id, rd_buf, sizeof(buf));
+		zassert_true(len == sizeof(rd_buf), "zms_read unexpected failure: %d", len);
+
+		for (int i = 0; i < ARRAY_SIZE(rd_buf); i++) {
+			rd_buf[i] = rd_buf[i] % max_id;
+			buf[i] = id;
+		}
+		zassert_mem_equal(buf, rd_buf, sizeof(rd_buf),
+				  "RD buff should be equal to the WR buff");
+	}
+}
+
+/**
+ * Full round of GC over 3 sectors
+ */
+ZTEST_F(zms, test_zms_gc_3sectors)
+{
+	int err;
+	const uint16_t max_id = 10;
+	/* 41st write will trigger 1st GC. */
+	const uint16_t max_writes = 41;
+	/* 61st write will trigger 2nd GC. */
+	const uint16_t max_writes_2 = 41 + 20;
+	/* 81st write will trigger 3rd GC. */
+	const uint16_t max_writes_3 = 41 + 20 + 20;
+	/* 101st write will trigger 4th GC. */
+	const uint16_t max_writes_4 = 41 + 20 + 20 + 20;
+
+	fixture->fs.sector_count = 3;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+	zassert_equal(fixture->fs.ate_wra >> ADDR_SECT_SHIFT, 0, "unexpected write sector");
+
+	/* Trigger 1st GC */
+	write_content(max_id, 0, max_writes, &fixture->fs);
+
+	/* sector sequence: empty,closed, write */
+	zassert_equal(fixture->fs.ate_wra >> ADDR_SECT_SHIFT, 2, "unexpected write sector");
+	check_content(max_id, &fixture->fs);
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	zassert_equal(fixture->fs.ate_wra >> ADDR_SECT_SHIFT, 2, "unexpected write sector");
+	check_content(max_id, &fixture->fs);
+
+	/* Trigger 2nd GC */
+	write_content(max_id, max_writes, max_writes_2, &fixture->fs);
+
+	/* sector sequence: write, empty, closed */
+	zassert_equal(fixture->fs.ate_wra >> ADDR_SECT_SHIFT, 0, "unexpected write sector");
+	check_content(max_id, &fixture->fs);
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	zassert_equal(fixture->fs.ate_wra >> ADDR_SECT_SHIFT, 0, "unexpected write sector");
+	check_content(max_id, &fixture->fs);
+
+	/* Trigger 3rd GC */
+	write_content(max_id, max_writes_2, max_writes_3, &fixture->fs);
+
+	/* sector sequence: closed, write, empty */
+	zassert_equal(fixture->fs.ate_wra >> ADDR_SECT_SHIFT, 1, "unexpected write sector");
+	check_content(max_id, &fixture->fs);
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	zassert_equal(fixture->fs.ate_wra >> ADDR_SECT_SHIFT, 1, "unexpected write sector");
+	check_content(max_id, &fixture->fs);
+
+	/* Trigger 4th GC */
+	write_content(max_id, max_writes_3, max_writes_4, &fixture->fs);
+
+	/* sector sequence: empty,closed, write */
+	zassert_equal(fixture->fs.ate_wra >> ADDR_SECT_SHIFT, 2, "unexpected write sector");
+	check_content(max_id, &fixture->fs);
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	zassert_equal(fixture->fs.ate_wra >> ADDR_SECT_SHIFT, 2, "unexpected write sector");
+	check_content(max_id, &fixture->fs);
+}
+
+static int flash_sim_max_len_find(struct stats_hdr *hdr, void *arg, const char *name, uint16_t off)
+{
+	if (!strcmp(name, "max_len")) {
+		uint32_t **max_len = (uint32_t **)arg;
+		*max_len = (uint32_t *)((uint8_t *)hdr + off);
+	}
+
+	return 0;
+}
+
+ZTEST_F(zms, test_zms_corrupted_sector_close_operation)
+{
+	int err;
+	int len;
+	uint8_t buf[32];
+	uint32_t *flash_write_stat;
+	uint32_t *flash_max_write_calls;
+	uint32_t *flash_max_len;
+	const uint16_t max_id = 10;
+	/* 21st write will trigger GC. */
+	const uint16_t max_writes = 21;
+
+	/* Get the address of simulator parameters. */
+	stats_walk(fixture->sim_thresholds, flash_sim_max_write_calls_find, &flash_max_write_calls);
+	stats_walk(fixture->sim_thresholds, flash_sim_max_len_find, &flash_max_len);
+	stats_walk(fixture->sim_stats, flash_sim_write_calls_find, &flash_write_stat);
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	for (int i = 0; i < max_writes; i++) {
+		uint8_t id = (i % max_id);
+		uint8_t id_data = id + max_id * (i / max_id);
+
+		memset(buf, id_data, sizeof(buf));
+
+		if (i == max_writes - 1) {
+			/* Reset stats. */
+			*flash_write_stat = 0;
+
+			/* Block write calls and simulate power down during
+			 * sector closing operation, so only a part of a ZMS
+			 * closing ate will be written.
+			 */
+			*flash_max_write_calls = 1;
+			*flash_max_len = 4;
+		}
+		len = zms_write(&fixture->fs, id, buf, sizeof(buf));
+		zassert_true(len == sizeof(buf), "zms_write failed: %d", len);
+	}
+
+	/* Make the flash simulator functional again. */
+	*flash_max_write_calls = 0;
+	*flash_max_len = 0;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	check_content(max_id, &fixture->fs);
+
+	/* Ensure that the ZMS is able to store new content. */
+	execute_long_pattern_write(max_id, &fixture->fs);
+}
+#endif /* CONFIG_TEST_ZMS_SIMULATOR */
+
+/**
+ * @brief Test case when storage become full, so only deletion is possible.
+ */
+ZTEST_F(zms, test_zms_full_sector)
+{
+	int err;
+	ssize_t len;
+	uint32_t filling_id = 0;
+	uint32_t data_read;
+
+	fixture->fs.sector_count = 3;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	while (1) {
+		len = zms_write(&fixture->fs, filling_id, &filling_id, sizeof(filling_id));
+		if (len == -ENOSPC) {
+			break;
+		}
+		zassert_true(len == sizeof(filling_id), "zms_write failed: %d", len);
+		filling_id++;
+	}
+
+	/* check whether can delete whatever from full storage */
+	err = zms_delete(&fixture->fs, 1);
+	zassert_true(err == 0, "zms_delete call failure: %d", err);
+
+	/* the last sector is full now, test re-initialization */
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	len = zms_write(&fixture->fs, filling_id, &filling_id, sizeof(filling_id));
+	zassert_true(len == sizeof(filling_id), "zms_write failed: %d", len);
+
+	/* coherence check on ZMS content */
+	for (int i = 0; i <= filling_id; i++) {
+		len = zms_read(&fixture->fs, i, &data_read, sizeof(data_read));
+		if (i == 1) {
+			zassert_true(len == -ENOENT, "zms_read shouldn't found the entry: %d", len);
+		} else {
+			zassert_true(len == sizeof(data_read),
+				     "zms_read #%d failed: len is %zd instead of %zu", i, len,
+				     sizeof(data_read));
+			zassert_equal(data_read, i, "read unexpected data: %d instead of %d",
+				      data_read, i);
+		}
+	}
+}
+
+ZTEST_F(zms, test_delete)
+{
+	int err;
+	ssize_t len;
+	uint32_t filling_id;
+	uint32_t data_read;
+	uint32_t ate_wra;
+	uint32_t data_wra;
+
+	fixture->fs.sector_count = 3;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	for (filling_id = 0; filling_id < 10; filling_id++) {
+		len = zms_write(&fixture->fs, filling_id, &filling_id, sizeof(filling_id));
+
+		zassert_true(len == sizeof(filling_id), "zms_write failed: %d", len);
+
+		if (filling_id != 0) {
+			continue;
+		}
+
+		/* delete the first entry while it is the most recent one */
+		err = zms_delete(&fixture->fs, filling_id);
+		zassert_true(err == 0, "zms_delete call failure: %d", err);
+
+		len = zms_read(&fixture->fs, filling_id, &data_read, sizeof(data_read));
+		zassert_true(len == -ENOENT, "zms_read shouldn't found the entry: %d", len);
+	}
+
+	/* delete existing entry */
+	err = zms_delete(&fixture->fs, 1);
+	zassert_true(err == 0, "zms_delete call failure: %d", err);
+
+	len = zms_read(&fixture->fs, 1, &data_read, sizeof(data_read));
+	zassert_true(len == -ENOENT, "zms_read shouldn't found the entry: %d", len);
+
+	ate_wra = fixture->fs.ate_wra;
+	data_wra = fixture->fs.data_wra;
+
+#ifdef CONFIG_ZMS_NO_DOUBLE_WRITE
+	/* delete already deleted entry */
+	err = zms_delete(&fixture->fs, 1);
+	zassert_true(err == 0, "zms_delete call failure: %d", err);
+	zassert_true(ate_wra == fixture->fs.ate_wra && data_wra == fixture->fs.data_wra,
+		     "delete already deleted entry should not make"
+		     " any footprint in the storage");
+
+	/* delete nonexisting entry */
+	err = zms_delete(&fixture->fs, filling_id);
+	zassert_true(err == 0, "zms_delete call failure: %d", err);
+	zassert_true(ate_wra == fixture->fs.ate_wra && data_wra == fixture->fs.data_wra,
+		     "delete nonexistent entry should not make"
+		     " any footprint in the storage");
+#endif
+}
+
+#ifdef CONFIG_TEST_ZMS_SIMULATOR
+/*
+ * Test that garbage-collection can recover all ate's even when the last ate,
+ * ie close_ate, is corrupt. In this test the close_ate is set to point to the
+ * last ate at -5. A valid ate is however present at -6. Since the close_ate
+ * has an invalid crc8, the offset should not be used and a recover of the
+ * last ate should be done instead.
+ */
+ZTEST_F(zms, test_zms_gc_corrupt_close_ate)
+{
+	struct zms_ate ate;
+	struct zms_ate close_ate;
+	struct zms_ate empty_ate;
+	uint32_t data;
+	ssize_t len;
+	int err;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_FLASH_SIMULATOR_DOUBLE_WRITES);
+	memset(&close_ate, 0xff, sizeof(struct zms_ate));
+	close_ate.id = ZMS_HEAD_ID;
+	close_ate.offset = fixture->fs.sector_size - sizeof(struct zms_ate) * 5;
+	close_ate.len = 0;
+	close_ate.cycle_cnt = 1;
+	close_ate.crc8 = 0xff; /* Incorrect crc8 */
+
+	memset(&empty_ate, 0, sizeof(struct zms_ate));
+	empty_ate.id = ZMS_HEAD_ID;
+	empty_ate.len = 0xffff;
+	empty_ate.metadata = FIELD_PREP(ZMS_VERSION_MASK, ZMS_DEFAULT_VERSION) |
+			     FIELD_PREP(ZMS_MAGIC_NUMBER_MASK, ZMS_MAGIC_NUMBER) |
+			     FIELD_PREP(ZMS_ATE_FORMAT_MASK, ZMS_DEFAULT_ATE_FORMAT);
+	empty_ate.cycle_cnt = 1;
+	empty_ate.crc8 =
+		crc8_ccitt(0xff, (uint8_t *)&empty_ate + SIZEOF_FIELD(struct zms_ate, crc8),
+			   sizeof(struct zms_ate) - SIZEOF_FIELD(struct zms_ate, crc8));
+
+	memset(&ate, 0, sizeof(struct zms_ate));
+	ate.id = 0x1;
+	ate.len = sizeof(data);
+	ate.cycle_cnt = 1;
+	data = 0xaa55aa55;
+	memcpy(&ate.data, &data, sizeof(data));
+	ate.crc8 = crc8_ccitt(0xff, (uint8_t *)&ate + SIZEOF_FIELD(struct zms_ate, crc8),
+			      sizeof(struct zms_ate) - SIZEOF_FIELD(struct zms_ate, crc8));
+
+	/* Add empty ATE */
+	err = flash_write(fixture->fs.flash_device,
+			  fixture->fs.offset + fixture->fs.sector_size - sizeof(struct zms_ate),
+			  &empty_ate, sizeof(empty_ate));
+	zassert_true(err == 0, "flash_write failed: %d", err);
+
+	/* Mark sector 0 as closed */
+	err = flash_write(fixture->fs.flash_device,
+			  fixture->fs.offset + fixture->fs.sector_size - 2 * sizeof(struct zms_ate),
+			  &close_ate, sizeof(close_ate));
+	zassert_true(err == 0, "flash_write failed: %d", err);
+
+	/* Write valid ate at -6 */
+	err = flash_write(fixture->fs.flash_device,
+			  fixture->fs.offset + fixture->fs.sector_size - 6 * sizeof(struct zms_ate),
+			  &ate, sizeof(ate));
+	zassert_true(err == 0, "flash_write failed: %d", err);
+
+	/* Mark sector 1 as closed */
+	err = flash_write(fixture->fs.flash_device,
+			  fixture->fs.offset + (2 * fixture->fs.sector_size) -
+				  2 * sizeof(struct zms_ate),
+			  &close_ate, sizeof(close_ate));
+	zassert_true(err == 0, "flash_write failed: %d", err);
+
+	fixture->fs.sector_count = 3;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	data = 0;
+	len = zms_read(&fixture->fs, 1, &data, sizeof(data));
+	zassert_true(len == sizeof(data), "zms_read should have read %d bytes", sizeof(data));
+	zassert_true(data == 0xaa55aa55, "unexpected value %d", data);
+}
+#endif /* CONFIG_TEST_ZMS_SIMULATOR */
+
+/*
+ * Test that garbage-collection correctly handles corrupt ate's.
+ */
+ZTEST_F(zms, test_zms_gc_corrupt_ate)
+{
+	struct zms_ate corrupt_ate;
+	struct zms_ate close_ate;
+	int err;
+
+	close_ate.id = ZMS_HEAD_ID;
+	close_ate.offset = fixture->fs.sector_size / 2;
+	close_ate.len = 0;
+	close_ate.crc8 =
+		crc8_ccitt(0xff, (uint8_t *)&close_ate + SIZEOF_FIELD(struct zms_ate, crc8),
+			   sizeof(struct zms_ate) - SIZEOF_FIELD(struct zms_ate, crc8));
+
+	corrupt_ate.id = 0xdeadbeef;
+	corrupt_ate.offset = 0;
+	corrupt_ate.len = 20;
+	corrupt_ate.crc8 = 0xff; /* Incorrect crc8 */
+
+	/* Mark sector 0 as closed */
+	err = flash_write(fixture->fs.flash_device,
+			  fixture->fs.offset + fixture->fs.sector_size - 2 * sizeof(struct zms_ate),
+			  &close_ate, sizeof(close_ate));
+	zassert_true(err == 0, "flash_write failed: %d", err);
+
+	/* Write a corrupt ate */
+	err = flash_write(fixture->fs.flash_device,
+			  fixture->fs.offset + (fixture->fs.sector_size / 2), &corrupt_ate,
+			  sizeof(corrupt_ate));
+	zassert_true(err == 0, "flash_write failed: %d", err);
+
+	/* Mark sector 1 as closed */
+	err = flash_write(fixture->fs.flash_device,
+			  fixture->fs.offset + (2 * fixture->fs.sector_size) -
+				  2 * sizeof(struct zms_ate),
+			  &close_ate, sizeof(close_ate));
+	zassert_true(err == 0, "flash_write failed: %d", err);
+
+	fixture->fs.sector_count = 3;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+}
+
+#ifdef CONFIG_ZMS_LOOKUP_CACHE
+static size_t num_matching_cache_entries(uint64_t addr, bool compare_sector_only, struct zms_fs *fs)
+{
+	size_t num = 0;
+	uint64_t mask = compare_sector_only ? ADDR_SECT_MASK : UINT64_MAX;
+
+	for (int i = 0; i < CONFIG_ZMS_LOOKUP_CACHE_SIZE; i++) {
+		if ((fs->lookup_cache[i] & mask) == addr) {
+			num++;
+		}
+	}
+
+	return num;
+}
+
+static size_t num_occupied_cache_entries(struct zms_fs *fs)
+{
+	return CONFIG_ZMS_LOOKUP_CACHE_SIZE -
+	       num_matching_cache_entries(ZMS_LOOKUP_CACHE_NO_ADDR, false, fs);
+}
+#endif
+
+/*
+ * Test that ZMS lookup cache is properly rebuilt on zms_mount(), or initialized
+ * to ZMS_LOOKUP_CACHE_NO_ADDR if the store is empty.
+ */
+ZTEST_F(zms, test_zms_cache_init)
+{
+#ifdef CONFIG_ZMS_LOOKUP_CACHE
+	int err;
+	size_t num;
+	uint64_t ate_addr;
+	uint8_t data = 0;
+
+	/* Test cache initialization when the store is empty */
+
+	fixture->fs.sector_count = 3;
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	num = num_occupied_cache_entries(&fixture->fs);
+	zassert_equal(num, 0, "uninitialized cache");
+
+	/* Test cache update after zms_write() */
+
+	ate_addr = fixture->fs.ate_wra;
+	err = zms_write(&fixture->fs, 1, &data, sizeof(data));
+	zassert_equal(err, sizeof(data), "zms_write call failure: %d", err);
+
+	num = num_occupied_cache_entries(&fixture->fs);
+	zassert_equal(num, 1, "cache not updated after write");
+
+	num = num_matching_cache_entries(ate_addr, false, &fixture->fs);
+	zassert_equal(num, 1, "invalid cache entry after write");
+
+	/* Test cache initialization when the store is non-empty */
+
+	memset(fixture->fs.lookup_cache, 0xAA, sizeof(fixture->fs.lookup_cache));
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	num = num_occupied_cache_entries(&fixture->fs);
+	zassert_equal(num, 1, "uninitialized cache after restart");
+
+	num = num_matching_cache_entries(ate_addr, false, &fixture->fs);
+	zassert_equal(num, 1, "invalid cache entry after restart");
+#else
+	ztest_test_skip();
+#endif
+}
+
+/*
+ * Test that even after writing more ZMS IDs than the number of ZMS lookup cache
+ * entries they all can be read and deleted correctly.
+ */
+ZTEST_F(zms, test_zms_cache_collision)
+{
+#ifdef CONFIG_ZMS_LOOKUP_CACHE
+	int err;
+	uint16_t data;
+
+	fixture->fs.sector_count = 4;
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	for (int id = 0; id < CONFIG_ZMS_LOOKUP_CACHE_SIZE + 1; id++) {
+		data = id;
+		err = zms_write(&fixture->fs, id, &data, sizeof(data));
+		zassert_equal(err, sizeof(data), "zms_write call failure: %d", err);
+	}
+
+	for (int id = 0; id < CONFIG_ZMS_LOOKUP_CACHE_SIZE + 1; id++) {
+		err = zms_read(&fixture->fs, id, &data, sizeof(data));
+		zassert_equal(err, sizeof(data), "zms_read call failure: %d", err);
+		zassert_equal(data, id, "incorrect data read");
+	}
+
+	for (int id = 0; id < CONFIG_ZMS_LOOKUP_CACHE_SIZE + 1; id++) {
+		err = zms_delete(&fixture->fs, id);
+		zassert_equal(0, err, "zms_delete failed: %d", err);
+	}
+
+	for (int id = 0; id < CONFIG_ZMS_LOOKUP_CACHE_SIZE + 1; id++) {
+		err = zms_read(&fixture->fs, id, &data, sizeof(data));
+		zassert_equal(-ENOENT, err, "zms_delete failed: %d", err);
+	}
+#else
+	ztest_test_skip();
+#endif
+}
+
+/*
+ * Test that ZMS lookup cache does not contain any address from gc-ed sector
+ */
+ZTEST_F(zms, test_zms_cache_gc)
+{
+#ifdef CONFIG_ZMS_LOOKUP_CACHE
+	int err;
+	size_t num;
+	uint16_t data = 0;
+
+	fixture->fs.sector_count = 3;
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	/* Fill the first sector with writes of ID 1 */
+
+	while (fixture->fs.data_wra + sizeof(data) + sizeof(struct zms_ate) <=
+	       fixture->fs.ate_wra) {
+		++data;
+		err = zms_write(&fixture->fs, 1, &data, sizeof(data));
+		zassert_equal(err, sizeof(data), "zms_write call failure: %d", err);
+	}
+
+	/* Verify that cache contains a single entry for sector 0 */
+
+	num = num_matching_cache_entries(0ULL << ADDR_SECT_SHIFT, true, &fixture->fs);
+	zassert_equal(num, 1, "invalid cache content after filling sector 0");
+
+	/* Fill the second sector with writes of ID 2 */
+
+	while ((fixture->fs.ate_wra >> ADDR_SECT_SHIFT) != 2) {
+		++data;
+		err = zms_write(&fixture->fs, 2, &data, sizeof(data));
+		zassert_equal(err, sizeof(data), "zms_write call failure: %d", err);
+	}
+
+	/*
+	 * At this point sector 0 should have been gc-ed. Verify that action is
+	 * reflected by the cache content.
+	 */
+
+	num = num_matching_cache_entries(0ULL << ADDR_SECT_SHIFT, true, &fixture->fs);
+	zassert_equal(num, 0, "not invalidated cache entries aftetr gc");
+
+	num = num_matching_cache_entries(2ULL << ADDR_SECT_SHIFT, true, &fixture->fs);
+	zassert_equal(num, 2, "invalid cache content after gc");
+#else
+	ztest_test_skip();
+#endif
+}
+
+/*
+ * Test ZMS lookup cache hash quality.
+ */
+ZTEST_F(zms, test_zms_cache_hash_quality)
+{
+#ifdef CONFIG_ZMS_LOOKUP_CACHE
+	const size_t MIN_CACHE_OCCUPANCY = CONFIG_ZMS_LOOKUP_CACHE_SIZE * 6 / 10;
+	int err;
+	size_t num;
+	uint32_t id;
+	uint16_t data;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	/* Write ZMS IDs from 0 to CONFIG_ZMS_LOOKUP_CACHE_SIZE - 1 */
+
+	for (int i = 0; i < CONFIG_ZMS_LOOKUP_CACHE_SIZE; i++) {
+		id = i;
+		data = 0;
+
+		err = zms_write(&fixture->fs, id, &data, sizeof(data));
+		zassert_equal(err, sizeof(data), "zms_write call failure: %d", err);
+	}
+
+	/* Verify that at least 60% cache entries are occupied */
+
+	num = num_occupied_cache_entries(&fixture->fs);
+	TC_PRINT("Cache occupancy: %u\n", (unsigned int)num);
+	zassert_between_inclusive(num, MIN_CACHE_OCCUPANCY, CONFIG_ZMS_LOOKUP_CACHE_SIZE,
+				  "too low cache occupancy - poor hash quality");
+
+	err = zms_clear(&fixture->fs);
+	zassert_true(err == 0, "zms_clear call failure: %d", err);
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	/* Write CONFIG_ZMS_LOOKUP_CACHE_SIZE ZMS IDs that form the following series: 0, 4, 8... */
+
+	for (int i = 0; i < CONFIG_ZMS_LOOKUP_CACHE_SIZE; i++) {
+		id = i * 4;
+		data = 0;
+
+		err = zms_write(&fixture->fs, id, &data, sizeof(data));
+		zassert_equal(err, sizeof(data), "zms_write call failure: %d", err);
+	}
+
+	/* Verify that at least 60% cache entries are occupied */
+
+	num = num_occupied_cache_entries(&fixture->fs);
+	TC_PRINT("Cache occupancy: %u\n", (unsigned int)num);
+	zassert_between_inclusive(num, MIN_CACHE_OCCUPANCY, CONFIG_ZMS_LOOKUP_CACHE_SIZE,
+				  "too low cache occupancy - poor hash quality");
+#else
+	ztest_test_skip();
+#endif
+}
+
+ZTEST_F(zms, test_zms_input_validation)
+{
+	int err;
+
+	err = zms_mount(NULL);
+	zassert_true(err == -EINVAL, "zms_mount call with NULL fs failure: %d", err);
+
+	err = zms_clear(NULL);
+	zassert_true(err == -EINVAL, "zms_clear call with NULL fs failure: %d", err);
+	err = zms_clear(&fixture->fs);
+	zassert_true(err == -EACCES, "zms_clear call before mount fs failure: %d", err);
+
+	err = zms_calc_free_space(NULL);
+	zassert_true(err == -EINVAL, "zms_calc_free_space call with NULL fs failure: %d", err);
+	err = zms_calc_free_space(&fixture->fs);
+	zassert_true(err == -EACCES, "zms_calc_free_space call before mount fs failure: %d", err);
+
+	err = zms_active_sector_free_space(NULL);
+	zassert_true(err == -EINVAL, "zms_active_sector_free_space call with NULL fs failure: %d",
+		     err);
+	err = zms_active_sector_free_space(&fixture->fs);
+	zassert_true(err == -EACCES, "zms_calc_free_space call before mount fs failure: %d", err);
+
+	err = zms_sector_use_next(NULL);
+	zassert_true(err == -EINVAL, "zms_sector_use_next call with NULL fs failure: %d", err);
+	err = zms_sector_use_next(&fixture->fs);
+	zassert_true(err == -EACCES, "zms_sector_use_next call before mount fs failure: %d", err);
+
+	/* Read */
+	err = zms_read(NULL, 0, NULL, 0);
+	zassert_true(err == -EINVAL, "zms_read call with NULL fs failure: %d", err);
+	err = zms_read(&fixture->fs, 0, NULL, 0);
+	zassert_true(err == -EACCES, "zms_read call before mount fs failure: %d", err);
+
+	/* zms_read() and zms_get_data_length() are currently wrappers around zms_read_hist() but
+	 * add test here in case that is ever changed. Same is true for zms_delete() and zms_write()
+	 */
+	err = zms_read_hist(NULL, 0, NULL, 0, 0);
+	zassert_true(err == -EINVAL, "zms_read_hist call with NULL fs failure: %d", err);
+	err = zms_read_hist(&fixture->fs, 0, NULL, 0, 0);
+	zassert_true(err == -EACCES, "zms_read_hist call before mount fs failure: %d", err);
+	err = zms_get_data_length(NULL, 0);
+	zassert_true(err == -EINVAL, "zms_get_data_length call with NULL fs failure: %d", err);
+	err = zms_get_data_length(&fixture->fs, 0);
+	zassert_true(err == -EACCES, "zms_get_data_length call before mount fs failure: %d", err);
+
+	/* Write */
+	err = zms_write(NULL, 0, NULL, 0);
+	zassert_true(err == -EINVAL, "zms_write call with NULL fs failure: %d", err);
+	err = zms_write(&fixture->fs, 0, NULL, 0);
+	zassert_true(err == -EACCES, "zms_write call before mount fs failure: %d", err);
+
+	/* Delete */
+	err = zms_delete(NULL, 0);
+	zassert_true(err == -EINVAL, "zms_delete call with NULL fs failure: %d", err);
+	err = zms_delete(&fixture->fs, 0);
+	zassert_true(err == -EACCES, "zms_delete call before mount fs failure: %d", err);
+}
+
+/*
+ * Test 64 bit ZMS ID support.
+ */
+ZTEST_F(zms, test_zms_id_64bit)
+{
+	int err;
+	ssize_t len;
+	uint64_t data_wra;
+	uint64_t filling_id_1 = 0xdeadbeefULL;
+	uint64_t filling_id_2 = 0xdefacedbULL;
+	uint64_t data_1;
+	uint32_t data_2;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_ZMS_ID_64BIT);
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	/* Fill the first sector with writes of different IDs */
+
+	while (fixture->fs.data_wra + sizeof(data_1) + sizeof(struct zms_ate) <=
+	       fixture->fs.ate_wra) {
+		data_1 = filling_id_1;
+		len = zms_write(&fixture->fs, (zms_id_t)filling_id_1, &data_1, sizeof(data_1));
+		zassert_true(len == sizeof(data_1), "zms_write failed: %d", len);
+
+		/* Choose the next ID so that its lower 32 bits stay invariant.
+		 * The purpose is to test that ZMS doesn't mistakenly cast the
+		 * 64 bit ID to a 32 bit one somewhere.
+		 */
+		filling_id_1 += BIT64(32);
+	}
+
+	/* Fill the second sector similarly, except with small data in ATE */
+
+	err = zms_sector_use_next(&fixture->fs);
+	zassert_true(err == 0, "zms_sector_use_next call failure: %d", err);
+
+	data_wra = fixture->fs.data_wra;
+	while (data_wra + sizeof(data_2) + sizeof(struct zms_ate) <= fixture->fs.ate_wra) {
+		/* Again, the lower 32 bits are invariant, so use the upper bits
+		 * to get unique data contents.
+		 */
+		data_2 = (uint32_t)(filling_id_2 >> 32);
+		len = zms_write(&fixture->fs, (zms_id_t)filling_id_2, &data_2, sizeof(data_2));
+		zassert_true(len == sizeof(data_2), "zms_write failed: %d", len);
+
+		/* Expect no data to be stored outside of the ATE */
+		zassert_equal(data_wra, fixture->fs.data_wra, "data_wra should not have changed");
+
+		filling_id_2 += BIT64(32);
+	}
+
+	/* Read back the written entries and check that they're all unique */
+
+	for (uint64_t id = 0xdeadbeefULL; id < filling_id_1; id += BIT64(32)) {
+		len = zms_read_hist(&fixture->fs, (zms_id_t)id, &data_1, sizeof(data_1), 0);
+		zassert_true(len == sizeof(data_1), "zms_read_hist unexpected failure: %d", len);
+		zassert_equal(id, data_1, "read unexpected data for id %llx: %llx", id, data_1);
+
+		len = zms_read_hist(&fixture->fs, (zms_id_t)id, &data_1, sizeof(data_1), 1);
+		zassert_true(len == -ENOENT, "zms_read_hist unexpected failure: %d", len);
+	}
+
+	for (uint64_t id = 0xdefacedbULL; id < filling_id_2; id += BIT64(32)) {
+		len = zms_read_hist(&fixture->fs, (zms_id_t)id, &data_2, sizeof(data_2), 0);
+		zassert_true(len == sizeof(data_2), "zms_read_hist unexpected failure: %d", len);
+		zassert_equal((uint32_t)(id >> 32), data_2, "read unexpected data for id %llx: %x",
+			      id, data_2);
+
+		len = zms_read_hist(&fixture->fs, (zms_id_t)id, &data_2, sizeof(data_2), 1);
+		zassert_true(len == -ENOENT, "zms_read_hist unexpected failure: %d", len);
+	}
+}
+
+/*
+ * Test zms_active_sector_free_space() and zms_calc_free_space().
+ */
+ZTEST_F(zms, test_zms_free_space)
+{
+	const size_t max_space_in_sector = fixture->fs.sector_size - sizeof(struct zms_ate) * 5;
+	size_t free_space_sector;
+	size_t free_space_total;
+	size_t write_len;
+	ssize_t len;
+	zms_id_t id;
+	int err;
+	char write_buf[max_space_in_sector + 1];
+
+	fixture->fs.sector_count = 2;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	/* Set and verify the initial values of free_space_sector and free_space_total */
+
+	free_space_sector = max_space_in_sector;
+	zassert_equal(free_space_sector, zms_active_sector_free_space(&fixture->fs),
+		      "unexpected free space in empty sector");
+	free_space_total = max_space_in_sector;
+	zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+		      "unexpected free space in empty filesystem");
+
+	id = 0;
+
+	len = zms_write(&fixture->fs, id, write_buf, sizeof(write_buf));
+	zassert_true(len == -EINVAL, "zms_write unexpected failure: %d", len);
+
+	do {
+		/* fill the filesystem with a single entry */
+		write_len = free_space_total;
+		len = zms_write(&fixture->fs, id, write_buf, write_len);
+		zassert_true(len == write_len, "zms_write failed: %d", len);
+		zassert_equal(0, zms_active_sector_free_space(&fixture->fs),
+			      "expected sector to appear full");
+		zassert_equal(0, zms_calc_free_space(&fixture->fs),
+			      "expected filesystem to appear full");
+
+		/* no space in filesystem -> next write must fail */
+		len = zms_write(&fixture->fs, id + 1, write_buf, 1);
+		zassert_true(len == -ENOSPC, "zms_write unexpected failure: %d", len);
+
+		/* drop the filler entry; expect delete ATE to fit in the active sector */
+		err = zms_delete(&fixture->fs, id);
+		zassert_true(err == 0, "zms_delete call failure: %d", err);
+		zassert_equal(0, zms_active_sector_free_space(&fixture->fs),
+			      "expected sector to appear full");
+		zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+			      "unexpected total free space");
+
+		/* Check cases where the active sector is filled in such a way
+		 * that there is only room for one ATE, and there is more space
+		 * for data to be stored within that ATE, than outside of it.
+		 * The calculated free space shall be ZMS_DATA_IN_ATE_SIZE.
+		 */
+		write_len -= sizeof(struct zms_ate);
+		while (write_len > ZMS_DATA_IN_ATE_SIZE) {
+			len = zms_write(&fixture->fs, id, write_buf, write_len);
+			zassert_true(len == write_len, "zms_write failed: %d", len);
+			zassert_equal(ZMS_DATA_IN_ATE_SIZE,
+				      zms_active_sector_free_space(&fixture->fs),
+				      "unexpected free space in active sector");
+			zassert_equal(ZMS_DATA_IN_ATE_SIZE, zms_calc_free_space(&fixture->fs),
+				      "unexpected total free space");
+
+			/* no space for data outside of ATE -> next write must fail */
+			len = zms_write(&fixture->fs, id + 1, write_buf, ZMS_DATA_IN_ATE_SIZE + 1);
+			zassert_true(len == -ENOSPC, "zms_write unexpected failure: %d", len);
+
+			/* add ATE with data inside it */
+			len = zms_write(&fixture->fs, id + 1, write_buf, ZMS_DATA_IN_ATE_SIZE);
+			zassert_true(len == ZMS_DATA_IN_ATE_SIZE, "zms_write failed: %d", len);
+			zassert_equal(0, zms_active_sector_free_space(&fixture->fs),
+				      "expected sector to appear full");
+			zassert_equal(0, zms_calc_free_space(&fixture->fs),
+				      "expected filesystem to appear full");
+
+			/* cleanup; expect delete ATE to fit in the active sector */
+			err = zms_delete(&fixture->fs, id + 1);
+			zassert_true(err == 0, "zms_delete call failure: %d", err);
+			zassert_equal(0, zms_active_sector_free_space(&fixture->fs),
+				      "expected sector to appear full");
+			zassert_equal(ZMS_DATA_IN_ATE_SIZE, zms_calc_free_space(&fixture->fs),
+				      "unexpected total free space");
+
+			err = zms_delete(&fixture->fs, id);
+			zassert_true(err == 0, "zms_delete call failure: %d", err);
+			zassert_equal(0, zms_active_sector_free_space(&fixture->fs),
+				      "expected sector to appear full");
+			zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+				      "unexpected total free space");
+
+			write_len -= fixture->fs.flash_parameters->write_block_size;
+
+			if (write_len <
+			    (free_space_total - sizeof(struct zms_ate) - ZMS_DATA_IN_ATE_SIZE)) {
+				break;
+			}
+		}
+
+		/* add small data ATE with unique ID; these will accumulate until the loop ends */
+		len = zms_write(&fixture->fs, id, write_buf, 1);
+		zassert_true(len == 1, "zms_write failed: %d", len);
+		id++;
+
+		free_space_sector -= sizeof(struct zms_ate);
+		zassert_equal(free_space_sector, zms_active_sector_free_space(&fixture->fs),
+			      "unexpected free space in active sector");
+		free_space_total = free_space_sector;
+		zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+			      "unexpected total free space");
+	} while (free_space_total > 0);
+
+	/* Filesystem is filled with small data ATEs, now delete them all */
+
+	for (zms_id_t delete_id = 0; delete_id < id; delete_id++) {
+		err = zms_delete(&fixture->fs, delete_id);
+		zassert_true(err == 0, "zms_delete call failure: %d", err);
+
+		free_space_total += sizeof(struct zms_ate);
+		zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+			      "unexpected total free space");
+
+		if (free_space_sector == 0) {
+			free_space_sector = free_space_total;
+			zassert_equal(0, zms_active_sector_free_space(&fixture->fs),
+				      "unexpected free space in active sector");
+		} else {
+			free_space_sector -= sizeof(struct zms_ate);
+			zassert_equal(free_space_sector, zms_active_sector_free_space(&fixture->fs),
+				      "unexpected free space in active sector");
+		}
+	}
+	zassert_equal(free_space_total, max_space_in_sector, "expected file system to be empty");
+
+	/* Trigger garbage-collection */
+
+	err = zms_sector_use_next(&fixture->fs);
+	zassert_true(err == 0, "zms_sector_use_next call failure: %d", err);
+
+	free_space_sector = max_space_in_sector;
+	zassert_equal(free_space_sector, zms_active_sector_free_space(&fixture->fs),
+		      "unexpected free space in empty sector");
+	zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+		      "total free space should not have changed");
+
+	/* Finally, fill the active sector with redundant entries */
+
+	write_len = 64;
+	len = zms_write(&fixture->fs, id, write_buf, write_len);
+	zassert_true(len == write_len, "zms_write failed: %d", len);
+
+	free_space_sector -= (write_len + sizeof(struct zms_ate));
+	zassert_equal(free_space_sector, zms_active_sector_free_space(&fixture->fs),
+		      "unexpected free space in active sector");
+	free_space_total -= (write_len + sizeof(struct zms_ate));
+	zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+		      "unexpected total free space");
+
+#ifndef CONFIG_ZMS_NO_DOUBLE_WRITE
+	while (free_space_sector >= (write_len + sizeof(struct zms_ate))) {
+		len = zms_write(&fixture->fs, id, write_buf, write_len);
+		zassert_true(len == write_len, "zms_write failed: %d", len);
+
+		free_space_sector -= (write_len + sizeof(struct zms_ate));
+		zassert_equal(free_space_sector, zms_active_sector_free_space(&fixture->fs),
+			      "unexpected free space in active sector");
+		zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+			      "total free space should not have changed");
+	}
+#else
+	/* With no double write, the above loop would never terminate */
+	len = zms_write(&fixture->fs, id, write_buf, write_len);
+	zassert_true(len == 0, "zms_write failed: %d", len);
+
+	zassert_equal(free_space_sector, zms_active_sector_free_space(&fixture->fs),
+		      "active sector free space should not have changed");
+	zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+		      "total free space should not have changed");
+#endif
+}
+
+/*
+ * Test zms_calc_free_space() with more than 2 sectors.
+ * This is to exercise its handling of closed sectors.
+ */
+ZTEST_F(zms, test_zms_free_space_5sectors)
+{
+	const size_t max_space_in_sector = fixture->fs.sector_size - sizeof(struct zms_ate) * 5;
+	size_t free_space_total;
+	int err;
+	char write_buf[max_space_in_sector];
+
+	fixture->fs.sector_count = 5;
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	free_space_total = max_space_in_sector * (fixture->fs.sector_count - 1);
+	zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+		      "unexpected free space in empty filesystem");
+
+	/* Sector 1: add 3 new ATEs */
+
+	zms_write(&fixture->fs, 0, write_buf, 100);
+	zms_write(&fixture->fs, 1, write_buf, 200);
+	zms_write(&fixture->fs, 2, write_buf, 300);
+
+	free_space_total -= (100 + 200 + 300 + 3 * sizeof(struct zms_ate));
+	zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+		      "unexpected total free space");
+
+	err = zms_sector_use_next(&fixture->fs);
+	zassert_true(err == 0, "zms_sector_use_next call failure: %d", err);
+	zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+		      "total free space should not have changed");
+
+	/* Sector 2: add 1 new ATE and update 1 existing ATE */
+
+	zms_write(&fixture->fs, 3, write_buf, 100);
+	zms_write(&fixture->fs, 1, write_buf, 800);
+
+	free_space_total -= (100 + (800 - 200) + sizeof(struct zms_ate));
+	zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+		      "unexpected total free space");
+
+	err = zms_sector_use_next(&fixture->fs);
+	zassert_true(err == 0, "zms_sector_use_next call failure: %d", err);
+	zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+		      "total free space should not have changed");
+
+	/* Sector 3: add 2 new ATEs */
+
+	zms_write(&fixture->fs, 4, write_buf, max_space_in_sector - sizeof(struct zms_ate));
+	zms_write(&fixture->fs, 5, write_buf, ZMS_DATA_IN_ATE_SIZE);
+
+	free_space_total -= max_space_in_sector;
+	zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+		      "unexpected total free space");
+
+	err = zms_sector_use_next(&fixture->fs);
+	zassert_true(err == 0, "zms_sector_use_next call failure: %d", err);
+	zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+		      "total free space should not have changed");
+
+	/* Sector 4: update 1 existing ATE */
+
+	zms_write(&fixture->fs, 4, write_buf, max_space_in_sector);
+
+	free_space_total -= sizeof(struct zms_ate);
+	zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+		      "unexpected total free space");
+
+	err = zms_sector_use_next(&fixture->fs);
+	zassert_true(err == 0, "zms_sector_use_next call failure: %d", err);
+	zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+		      "total free space should not have changed");
+
+	/* GC all sectors and verify relation with zms_active_sector_free_space() */
+
+	free_space_total = 0;
+	for (int i = 0; i < fixture->fs.sector_count - 1; i++) {
+		free_space_total += zms_active_sector_free_space(&fixture->fs);
+
+		err = zms_sector_use_next(&fixture->fs);
+		zassert_true(err == 0, "zms_sector_use_next call failure: %d", err);
+	}
+	zassert_equal(free_space_total, zms_calc_free_space(&fixture->fs),
+		      "total free space did not match sum of gc'd sectors");
+}

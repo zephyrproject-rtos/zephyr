@@ -612,7 +612,9 @@ void z_riscv_pmp_init(void)
 
 	/* The read-only area is always there for every mode */
 	set_pmp_entry(&index,
-		      PMP_R | PMP_X | COND_CODE_1(CONFIG_PMP_NO_LOCK_GLOBAL, (0x0), (PMP_L)),
+		      PMP_R | PMP_X | COND_CODE_1(CONFIG_PMP_NO_LOCK_GLOBAL, (0x0),
+		      (COND_CODE_1(CONFIG_PMP_UNLOCK_ROM_FOR_DEBUG, (0x0),
+		      (PMP_L)))),
 		      (uintptr_t)__rom_region_start,
 		      (size_t)__rom_region_size,
 		      pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));

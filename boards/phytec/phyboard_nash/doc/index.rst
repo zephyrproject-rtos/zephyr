@@ -1,4 +1,4 @@
-.. _phyboard_nash:
+.. zephyr:board:: phyboard_nash
 
 phyBOARD-Nash i.MX93
 ####################
@@ -52,41 +52,7 @@ More information about the board can be found at the `PHYTEC website`_.
 Supported Features
 ==================
 
-The ``phyboard_nash/mimx9352/a55`` board target supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| GIC-v4    | on-chip    | interrupt controller                |
-+-----------+------------+-------------------------------------+
-| ARM TIMER | on-chip    | system clock                        |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
-| TPM       | on-chip    | TPM Counter                         |
-+-----------+------------+-------------------------------------+
-
-The ``phyboard_nash/mimx9352/m33`` board target supports the following hardware
-features:
-
-+-----------+------------+-------------------------------------+
-| Interface | Controller | Driver/Component                    |
-+===========+============+=====================================+
-| NVIC      | on-chip    | interrupt controller                |
-+-----------+------------+-------------------------------------+
-| SYSTICK   | on-chip    | systick                             |
-+-----------+------------+-------------------------------------+
-| CLOCK     | on-chip    | clock_control                       |
-+-----------+------------+-------------------------------------+
-| PINMUX    | on-chip    | pinmux                              |
-+-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port                         |
-+-----------+------------+-------------------------------------+
+.. zephyr:board-supported-hw::
 
 Devices
 ========

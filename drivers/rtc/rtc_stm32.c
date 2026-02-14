@@ -445,11 +445,6 @@ static int rtc_stm32_init(const struct device *dev)
 
 	int err = 0;
 
-	if (!device_is_ready(clk)) {
-		LOG_ERR("clock control device not ready");
-		return -ENODEV;
-	}
-
 	/* Enable RTC bus clock */
 	if (clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]) != 0) {
 		LOG_ERR("clock op failed\n");

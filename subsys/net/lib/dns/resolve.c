@@ -916,9 +916,11 @@ int dns_resolve_init_with_svc(struct dns_resolve_context *ctx, const char *serve
 		ctx->state = DNS_RESOLVE_CONTEXT_INACTIVE;
 	}
 
+	k_mutex_lock(&ctx->lock, K_FOREVER);
 	ret = dns_resolve_init_locked(ctx, servers, servers_sa, svc, port,
 				      interfaces, true, DNS_SOURCE_UNKNOWN);
 
+	k_mutex_unlock(&ctx->lock);
 	k_mutex_unlock(&lock);
 
 	return ret;
@@ -1411,13 +1413,18 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 
 		invoke_query_callback(DNS_EAI_INPROGRESS, &info, &ctx->queries[*query_idx]);
 
-		if (dns_msg->response_type == DNS_RESPONSE_IP ||
-		    dns_msg->response_type == DNS_RESPONSE_SRV) {
+		switch (dns_msg->response_type) {
+		case DNS_RESPONSE_IP:
+		case DNS_RESPONSE_SRV:
+		case DNS_RESPONSE_DATA:
 #ifdef CONFIG_DNS_RESOLVER_CACHE
 			dns_cache_add(&dns_cache,
 				ctx->queries[*query_idx].query, &info, ttl);
 #endif /* CONFIG_DNS_RESOLVER_CACHE */
 			items++;
+			break;
+		default:
+			break;
 		}
 	}
 

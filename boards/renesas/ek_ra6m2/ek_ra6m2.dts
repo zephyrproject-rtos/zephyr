@@ -69,7 +69,7 @@
 	#size-cells = <0>;
 	interrupts = <91 1>, <92 1>, <93 1>, <94 1>;
 	interrupt-names = "rxi", "txi", "tei", "eri";
-	clock-frequency = <DT_FREQ_M(1)>;
+	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&iic2_default>;
 	pinctrl-names = "default";
 };

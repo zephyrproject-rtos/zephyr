@@ -122,11 +122,6 @@ static int regulator_stm32_vrefbuf_init(const struct device *dev)
 
 	regulator_common_data_init(dev);
 
-	if (!device_is_ready(clk)) {
-		LOG_ERR("Clock control device not ready");
-		return -ENODEV;
-	}
-
 	if (clock_control_on(clk, (clock_control_subsys_t)&config->pclken[0]) != 0) {
 		LOG_ERR("Could not enable clock");
 		return -EIO;

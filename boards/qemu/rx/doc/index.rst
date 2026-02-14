@@ -18,19 +18,7 @@ Hardware
 Supported Features
 ==================
 
-The following hardware features are supported:
-
-+----------------+------------+----------------------+
-| Interface      | Controller | Driver/Component     |
-+================+============+======================+
-| ICU            | on-chip    | interrupt controller |
-+----------------+------------+----------------------+
-| CMT timer      | on-chip    | system clock         |
-+----------------+------------+----------------------+
-| SCI UART       | on-chip    | serial port          |
-+----------------+------------+----------------------+
-
-The kernel currently does not support other hardware features on this platform.
+.. zephyr:board-supported-hw::
 
 Devices
 ========

@@ -1339,6 +1339,38 @@ static inline void bsim_btp_wait_for_mcp_cmd_ntf(uint8_t *requested_opcode)
 	net_buf_unref(buf);
 }
 
+static inline void bsim_btp_tbs_register_bearer(
+	bool gtbs, uint8_t technology,
+	uint16_t optional_opcodes,
+	const char *provider_name,
+	const char *uci,
+	const char *uri_scheme_list)
+{
+	struct btp_tbs_register_bearer_cmd *cmd;
+	struct btp_hdr *cmd_hdr;
+
+	NET_BUF_SIMPLE_DEFINE(cmd_buffer, BTP_MTU);
+
+	cmd_hdr = net_buf_simple_add(&cmd_buffer, sizeof(*cmd_hdr));
+	cmd_hdr->service = BTP_SERVICE_ID_TBS;
+	cmd_hdr->opcode = BTP_TBS_REGISTER_BEARER;
+	cmd_hdr->index = BTP_INDEX;
+	cmd = net_buf_simple_add(&cmd_buffer, sizeof(*cmd));
+	cmd->gtbs = gtbs ? 1U : 0U;
+	cmd->technology = technology;
+	cmd->optional_opcodes = sys_cpu_to_le16(optional_opcodes);
+	cmd->provider_name_len = strlen(provider_name);
+	cmd->uci_len = strlen(uci);
+	cmd->uri_scheme_list_len = strlen(uri_scheme_list);
+	net_buf_simple_add_mem(&cmd_buffer, provider_name, cmd->provider_name_len);
+	net_buf_simple_add_mem(&cmd_buffer, uci, cmd->uci_len);
+	net_buf_simple_add_mem(&cmd_buffer, uri_scheme_list, cmd->uri_scheme_list_len);
+
+	cmd_hdr->len = sys_cpu_to_le16(cmd_buffer.len - sizeof(*cmd_hdr));
+
+	bsim_btp_send_to_tester(cmd_buffer.data, cmd_buffer.len);
+}
+
 static inline void bsim_btp_tmap_discover(const bt_addr_le_t *address)
 {
 	struct btp_tmap_discover_cmd *cmd;

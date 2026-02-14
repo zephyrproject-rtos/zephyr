@@ -905,6 +905,8 @@ CPU Frequency Scaling:
   maintainers:
     - peter-mitsis
     - seankyer
+  collaborators:
+    - ZhaoxiangJin
   files:
     - include/zephyr/cpu_freq/
     - subsys/cpu_freq/
@@ -1173,7 +1175,6 @@ Disk:
     - danieldegrasse
   collaborators:
     - jfischer-no
-    - decsny
   files:
     - include/zephyr/storage/disk_access.h
     - include/zephyr/drivers/disk.h
@@ -1187,6 +1188,12 @@ Disk:
     - dts/bindings/sd/
     - dts/bindings/mmc/
     - dts/bindings/disk/
+  file-groups:
+    - name: eMMC
+      collaborators:
+        - decsny
+      files-regex:
+        - ^(?!.*sdmmc).*mmc
   labels:
     - "area: Disk Access"
   tests:
@@ -2342,6 +2349,8 @@ Documentation Infrastructure:
     - dts/bindings/reset/
     - include/zephyr/dt-bindings/reset/
     - tests/drivers/reset/
+  labels:
+    - "area: Reset"
 
 "Drivers: Retained Memory":
   status: maintained
@@ -3188,6 +3197,24 @@ Kernel:
   tests:
     - kernel
 
+Key-Value Storage Systems:
+  status: maintained
+  maintainers:
+    - rghaddab
+  collaborators:
+    - Laczen
+    - nashif
+    - LingaoM
+  files:
+    - include/zephyr/kvss/
+    - samples/subsys/kvss/
+    - subsys/kvss/
+    - tests/subsys/kvss/
+  labels:
+    - "area: Key-Value Storage Systems"
+  tests:
+    - keyvalstorage
+
 "Linkable Loadable Extensions":
   status: maintained
   maintainers:
@@ -3628,6 +3655,7 @@ NXP Platform Wireless:
     - name: MCXW platform
       collaborators:
         - axelnxp
+        - yeaissa
       files:
         - boards/nxp/*mcxw*/
         - soc/nxp/mcx/mcxw/
@@ -3635,6 +3663,7 @@ NXP Platform Wireless:
       collaborators:
         - MaochenWang1
         - axelnxp
+        - yeaissa
       files:
         - soc/nxp/rw/
         - boards/nxp/*rw*/
@@ -3760,6 +3789,7 @@ NXP Platforms (MCU):
     - name: NXP MCU LPC11U6x
       collaborators:
         - simonguinot
+        - mbittan
       files:
         - boards/nxp/lpcxpresso11u68/
         - soc/nxp/lpc/lpc11u6x/
@@ -4431,13 +4461,13 @@ RISCV arch:
     - kgugala
     - tgorochowik
   collaborators:
-    - mgielda
-    - katsuster
     - edersondisouza
-    - npitre
-    - ycsin
-    - VynDragon
+    - katsuster
     - masz-nordic
+    - mgielda
+    - npitre
+    - VynDragon
+    - ycsin
   files:
     - arch/riscv/
     - boards/enjoydigital/litex_vexriscv/
@@ -4446,16 +4476,17 @@ RISCV arch:
     - boards/sifive/
     - boards/sparkfun/red_v_things_plus/
     - boards/starfive/
+    - doc/hardware/arch/risc-v.rst
+    - drivers/interrupt_controller/intc_plic.c
+    - drivers/interrupt_controller/intc_riscv_imsic.c
     - dts/bindings/riscv/
     - dts/riscv/
     - include/zephyr/arch/riscv/
     - soc/common/riscv-privileged/
+    - soc/qemu/virt_riscv/
     - soc/sifive/
     - soc/starfive/
-    - soc/qemu/virt_riscv/
     - tests/arch/riscv/
-    - doc/hardware/arch/risc-v.rst
-    - drivers/interrupt_controller/intc_plic.c
   labels:
     - "area: RISCV"
   tests:
@@ -4917,6 +4948,15 @@ Settings:
         - subsys/settings/include/settings/settings_zms.h
         - tests/subsys/settings/zms/
         - tests/subsys/settings/functional/zms/
+    - name: NVS backend
+      collaborators:
+        - Laczen
+        - LingaoM
+      files:
+        - subsys/settings/src/settings_nvs.c
+        - subsys/settings/include/settings/settings_nvs.h
+        - tests/subsys/settings/nvs/
+        - tests/subsys/settings/functional/nvs/
   labels:
     - "area: Settings"
   tests:
@@ -5076,10 +5116,10 @@ Storage ZMS:
   maintainers:
     - rghaddab
   files:
-    - subsys/fs/zms/
-    - include/zephyr/fs/zms.h
-    - samples/subsys/fs/zms/
-    - tests/subsys/fs/zms/
+    - subsys/kvss/zms/
+    - include/zephyr/kvss/zms.h
+    - samples/subsys/kvss/zms/
+    - tests/subsys/kvss/zms/
     - doc/services/storage/zms/zms.rst
 
 Synopsys Platforms:

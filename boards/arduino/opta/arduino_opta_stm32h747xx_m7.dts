@@ -138,7 +138,7 @@ zephyr_udc0: &usbotg_fs {
 		status = "okay";
 
 		murata-1dx {
-			compatible = "infineon,cyw43xxx-bt-hci";
+			compatible = "infineon,bt-hci-uart";
 			bt-reg-on-gpios = <&gpioj 12 GPIO_ACTIVE_HIGH>;
 			bt-host-wake-gpios = <&gpioj 13 GPIO_ACTIVE_HIGH>;
 			bt-dev-wake-gpios = <&gpioj 14 GPIO_ACTIVE_HIGH>;

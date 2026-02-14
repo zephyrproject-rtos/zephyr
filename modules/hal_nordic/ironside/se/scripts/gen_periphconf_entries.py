@@ -127,6 +127,12 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--lock",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Value to set for the lock bit in registers that support it.",
+    )
+    parser.add_argument(
         "--in-edt-pickle",
         type=argparse.FileType("rb"),
         required=True,
@@ -146,7 +152,7 @@ def main() -> None:
     dt = pickle.load(args.in_edt_pickle)
     processor = dt_processor_id(dt)
     lookup_tables = lookup_tables_get(Soc.soc(args.soc), Family.family(args.soc))
-    builder = PeriphconfBuilder(dt, lookup_tables)
+    builder = PeriphconfBuilder(dt, lookup_tables, lock_value=args.lock)
 
     # Application local peripherals
     if processor == ProcessorId.APPLICATION:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, NXP
+ * Copyright (c) 2019, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,4 +59,12 @@
 
 &mma8652fc {
 	status = "disabled";
+};
+
+&gint0 {
+	status = "okay";
+};
+
+&gint1 {
+	status = "okay";
 };
