@@ -280,6 +280,8 @@ static int memc_stm32_ospi_psram_init(const struct device *dev) {
 
 	LOG_DBG("CLK prescaler %u", prescaler);
 	LOG_DBG("CLK clock frequency: %u", ahb_clock_freq / prescaler);
+	LOG_DBG("ChipSelectBoundary: %u", dev_data->hospi.Init.ChipSelectBoundary);
+	LOG_DBG("Refresh cycles: %u", dev_data->hospi.Init.Refresh);
 
     /* Initialize OSPI HAL structure completely */
     dev_data->hospi.Init.ClockPrescaler = prescaler;
@@ -300,7 +302,6 @@ static int memc_stm32_ospi_psram_init(const struct device *dev) {
         dev_data->hospi.Init.MemoryType = HAL_OSPI_MEMTYPE_MICRON;
         dev_data->hospi.Init.DelayHoldQuarterCycle = HAL_OSPI_DHQC_ENABLE;  // HAL_OSPI_DHQC_DISABLE - > HAL_OSPI_DHQC_ENABLE; /* PSRAM needs DHQC enabled in STR mode as well */
     }
-    //dev_data->hospi.Init.ChipSelectBoundary = 4;  // DT_INST_PROP(0, st_csbound); //1 > 4 for PSRAM
 #if STM32_OSPI_DLYB_BYPASSED
     dev_data->hospi.Init.DelayBlockBypass = HAL_OSPI_DELAY_BLOCK_BYPASSED;
 #else
