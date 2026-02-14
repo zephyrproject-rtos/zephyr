@@ -7,6 +7,6 @@ common:
     - mps2/an521/cpu0
 tests:
   libraries.heap_align: {}
-  libraries.heap_align.canaries:
+  libraries.heap_align.hardening_full:
     extra_configs:
-      - CONFIG_SYS_HEAP_CANARIES=y
+      - CONFIG_SYS_HEAP_HARDENING_FULL=y
