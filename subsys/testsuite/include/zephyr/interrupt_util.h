@@ -7,7 +7,7 @@
 #ifndef INTERRUPT_UTIL_H_
 #define INTERRUPT_UTIL_H_
 
-#define k_str_out_count(s) k_str_out((s), sizeof(s) - 1);
+#define k_str_out_count(s) k_str_out((s), sizeof(s) - 1)
 
 #if defined(CONFIG_CPU_CORTEX_M)
 #include <cmsis_core.h>
