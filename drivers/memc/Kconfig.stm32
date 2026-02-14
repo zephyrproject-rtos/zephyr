@@ -55,3 +55,23 @@ config MEMC_STM32_OSPI_PSRAM
 	select PINCTRL
 	help
 	  Enable STM32 OSPI PSRAM Controller driver.
+
+config MEMC_STM32_PSRAM_V2
+	bool "STM32U5 OCTOSPI QSPI PSRAM support"
+	default y
+	depends on SOC_SERIES_STM32U5X
+	select USE_STM32_HAL_OSPI
+	select USE_STM32_LL_DLYB
+	select USE_STM32_HAL_DMA
+	select USE_STM32_HAL_DMA_EX
+	select PINCTRL
+	
+	help
+	  Enable QSPI PSRAM support for STM32U5 devices using the OCTOSPI
+	  peripheral.
+
+	  This driver configures external Quad-SPI PSRAM and supports
+	  memory-mapped mode operation. It is designed to work with
+	  STM32U5 OCTOSPIM pin multiplexing, allowing OSPI1 and OSPI2
+	  to share IO0–IO3 and CLK lines.
+	
