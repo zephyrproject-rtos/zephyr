@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "crypto/crypto.h"
 #include <psa/crypto.h>
 
 /* tai64n contains 64-bit seconds and 32-bit nano offset (12 bytes) */
