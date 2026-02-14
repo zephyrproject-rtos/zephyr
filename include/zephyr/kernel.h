@@ -6108,50 +6108,55 @@ void *k_heap_realloc(struct k_heap *h, void *ptr, size_t bytes, k_timeout_t time
  */
 void k_heap_free(struct k_heap *h, void *mem) __attribute_nonnull(1);
 
-/* Minimum heap sizes needed to return a successful 1-byte allocation.
- * Assumes a chunk aligned (8 byte) memory buffer.
+/*
+ * Heap sizing constants computed at build time from actual struct layouts
+ * in lib/heap/heap_constants.c via the gen_offset mechanism.
  */
-#ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
-#define Z_HEAP_MIN_SIZE ((sizeof(void *) > 4) ? 80 : 52)
-#else
-#define Z_HEAP_MIN_SIZE ((sizeof(void *) > 4) ? 56 : 44)
-#endif /* CONFIG_SYS_HEAP_RUNTIME_STATS */
+#if __has_include(<zephyr/offsets.h>)
+#include <zephyr/offsets.h>
+#endif
 
-/* Size of `struct z_heap` */
-#define _Z_HEAP_SIZE                                                                               \
-	((4 * sizeof(uint32_t)) +                                                                  \
-	 (3 * (IS_ENABLED(CONFIG_SYS_HEAP_RUNTIME_STATS) ? sizeof(size_t) : 0)))
+/* chunk0 size in bytes for nb buckets */
+#define _Z_HEAP_C0(nb) \
+	ROUND_UP(___z_heap_struct_SIZEOF + \
+		 (nb) * ___z_heap_bucket_SIZEOF, ___z_heap_chunk_unit_SIZEOF)
 
-/* Number of buckets required to store @a bytes */
-#define _Z_HEAP_NUM_BUCKETS(bytes) ((31 - __builtin_clz((bytes / 8) - 1)) + 1)
+/* Allocation chunk size in bytes */
+#define _Z_HEAP_AC(ab) \
+	ROUND_UP(___z_heap_hdr_SIZEOF + (ab), ___z_heap_chunk_unit_SIZEOF)
 
-/* Number of bytes consumed by buckets */
-#define _Z_HEAP_BUCKETS_SIZE(bytes) (_Z_HEAP_NUM_BUCKETS(bytes) * sizeof(uint32_t))
+/* Total heap size in chunk units */
+#define _Z_HEAP_SZ(nb, ab) \
+	((_Z_HEAP_C0(nb) + _Z_HEAP_AC(ab)) / ___z_heap_chunk_unit_SIZEOF)
+
+/* Bucket count from heap size in chunk units (mirrors bucket_idx() + 1) */
+#define _Z_HEAP_NB(sz) \
+	(32 - __builtin_clz((unsigned int)((sz) - \
+	 ___z_heap_min_chunk_SIZEOF + 1)))
+
+/* 3-round convergent iteration starting from 1 bucket */
+#define _Z_HEAP_NB1(ab) _Z_HEAP_NB(_Z_HEAP_SZ(1, ab))
+#define _Z_HEAP_NB2(ab) _Z_HEAP_NB(_Z_HEAP_SZ(_Z_HEAP_NB1(ab), ab))
+#define _Z_HEAP_NB3(ab) _Z_HEAP_NB(_Z_HEAP_SZ(_Z_HEAP_NB2(ab), ab))
 
 /**
  * @brief Minimum heap size required for allocating a given size
  *
  * Heaps store metadata at the start of the provided array, resulting in a
  * heap declaration of N bytes having an actual allocation capacity of less
- * than N bytes. This macro approximates how much overhead in bytes the metadata
- * consumes, allowing for real allocations closer to the requested size.
- *
- * Assumes small heaps, since for large heaps the importance of tuning single bytes
- * is small.
- *
- * The parameters considered:
- *   Size of the header "struct z_heap"
- *   Buckets holding chunk metadata
- *   Free heap chunk
- *   End chunk
- *   Chunk metadata for single allocation
+ * than N bytes.  This macro returns the exact heap buffer size needed to
+ * satisfy a single allocation of @a alloc_bytes bytes.
+ * A chunk aligned (8 byte) memory buffer is assumed.
  *
  * @param alloc_bytes Size of a desired allocation
  *
- * @return Approximate size of the heap required to allocate @a alloc_bytes
+ * @return Size of the heap required to allocate @a alloc_bytes
  */
 #define Z_HEAP_MIN_SIZE_FOR(alloc_bytes) \
-	((alloc_bytes) + _Z_HEAP_SIZE + _Z_HEAP_BUCKETS_SIZE(alloc_bytes) + (3 * 8))
+	(_Z_HEAP_C0(_Z_HEAP_NB3(alloc_bytes)) + \
+	 _Z_HEAP_AC(alloc_bytes) + ___z_heap_ftr_SIZEOF)
+
+#define Z_HEAP_MIN_SIZE Z_HEAP_MIN_SIZE_FOR(1)
 
 /**
  * @brief Define a static k_heap in the specified linker section
