@@ -91,7 +91,7 @@ static inline void INNER_BLOCK(uint32_t *block)
 /*  Once the 20 ChaCha rounds have been completed, the first 128 bits and last 128 bits of the
  * ChaCha state (both little-endian) are concatenated, and this 256-bit subkey is returned.
  */
-void hchacha20(uint8_t *out, const uint8_t *nonce, const uint8_t *key)
+static void hchacha20(uint8_t *out, const uint8_t *nonce, const uint8_t *key)
 {
 	uint32_t state[16];
 

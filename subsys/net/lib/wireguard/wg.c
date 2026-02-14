@@ -47,6 +47,11 @@ static const uint8_t LABEL_COOKIE[8] = "cookie--";
 #define WG_FUNCTION_PROTOTYPES
 #include "wg_internal.h"
 
+/* Reference implementations needed when not using PSA or for algorithms
+ * not available in PSA (Blake and XChaCha20-Poly1305)
+ */
+#include "crypto/crypto.c"
+
 static int interface_send(struct net_if *iface, struct net_pkt *pkt);
 
 #if defined(CONFIG_WIREGUARD_TXRX_DEBUG)

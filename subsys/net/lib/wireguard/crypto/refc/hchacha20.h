@@ -41,6 +41,6 @@
 
 #define CHACHA20_KEY_SIZE   (32)
 
-void hchacha20(uint8_t *out, const uint8_t *nonce, const uint8_t *key);
+static void hchacha20(uint8_t *out, const uint8_t *nonce, const uint8_t *key);
 
 #endif /* _HCHACHA20_H_ */
