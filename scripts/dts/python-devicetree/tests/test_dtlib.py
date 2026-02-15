@@ -671,6 +671,43 @@ def test_node_path_references():
 
 / {
 	sub {
+		x = &{/sub/unambiguous_path};
+		unambiguous_path@10 {};
+	};
+};
+""",
+"""
+/dts-v1/;
+
+/ {
+	sub {
+		x = &{/sub/unambiguous_path};
+		unambiguous_path@10 {
+		};
+	};
+};
+""")
+
+    verify_error("""
+/dts-v1/;
+
+/ {
+	sub {
+		x = &{/sub/ambiguous_path};
+		ambiguous_path@10 {
+		};
+		ambiguous_path@20 {
+		};
+	};
+};
+""",
+"/sub: component 'ambiguous_path' in path '/sub/ambiguous_path' does not exist")
+
+    verify_parse("""
+/dts-v1/;
+
+/ {
+	sub {
 		a = &{/sub/case_insesitive1@ABC};
 		b = &{/sub/case_insesitive1@abc};
 		c = &{/sub/case_insesitive2@ABC};
