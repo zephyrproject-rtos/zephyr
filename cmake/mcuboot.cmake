@@ -117,6 +117,11 @@ function(zephyr_mcuboot_tasks)
     set(imgtool_args)
   endif()
 
+  get_property(extra_imgtool_args_prop GLOBAL PROPERTY mcuboot_extra_imgtool_args)
+  if(extra_imgtool_args_prop)
+    list(APPEND imgtool_args ${extra_imgtool_args_prop})
+  endif()
+
   if(NOT "${keyfile}" STREQUAL "")
     set(imgtool_args --key "${keyfile}" ${imgtool_args})
   endif()
