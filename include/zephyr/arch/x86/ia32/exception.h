@@ -61,6 +61,24 @@ struct _x86_syscall_stack_frame {
 	uint32_t ss;
 };
 
+#if defined(CONFIG_SIGNAL) && defined(CONFIG_USERSPACE)
+struct arch_sig_ctx {
+	unsigned long eip;
+	unsigned long eax;
+	unsigned long esp;
+	unsigned long eflags;
+	/*
+	 * Registers the interrupted context expects preserved across a syscall: the syscall
+	 * gate restores EDX, ECX, EBX, and EDI from its privileged-stack argument slots, and
+	 * EBP and ESI survive in-register per the ABI. The signal trampoline chain clobbers
+	 * them, and k_sig_return() resumes the interrupted context without unwinding the
+	 * trampoline's frames, so they are captured at redirection and restored on the
+	 * k_sig_return() exit path.
+	 */
+	unsigned long s[6]; /* edx, ecx, ebx, edi, ebp, esi */
+};
+#endif
+
 #ifdef __cplusplus
 }
 #endif

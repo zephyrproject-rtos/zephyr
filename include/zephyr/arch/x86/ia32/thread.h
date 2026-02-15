@@ -217,6 +217,11 @@ struct _thread_arch {
 	 * Un-set for supervisor threads.
 	 */
 	char *psp;
+
+#if defined(CONFIG_SIGNAL)
+	/* Last syscall return value, saved/restored across signal delivery. */
+	unsigned long sig_eax;
+#endif
 #endif
 
 #if defined(CONFIG_LAZY_FPU_SHARING)

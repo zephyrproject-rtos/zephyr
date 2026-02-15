@@ -19,6 +19,11 @@
 #define _thread_offset_to_psp \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_psp_OFFSET)
 
+#ifdef CONFIG_SIGNAL
+#define _thread_offset_to_sig_eax \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_sig_eax_OFFSET)
+#endif
+
 #define _thread_offset_to_ptables \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_ptables_OFFSET)
 #endif /* CONFIG_USERSPACE */

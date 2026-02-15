@@ -66,6 +66,20 @@ struct x86_ssf {
 	unsigned long rsp;
 };
 
+struct arch_sig_ctx {
+	unsigned long rip;
+	unsigned long rax;
+	unsigned long rsp;
+	unsigned long rflags;
+	/*
+	 * Callee-saved registers of the interrupted context. The signal trampoline chain
+	 * clobbers them per the ABI, and k_sig_return() resumes the interrupted context
+	 * without unwinding the trampoline's frames, so they are captured at redirection
+	 * and restored on the k_sig_return() exit path.
+	 */
+	unsigned long s[6]; /* rbx, rbp, r12..r15 */
+};
+
 #ifdef __cplusplus
 }
 #endif

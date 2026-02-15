@@ -41,6 +41,12 @@ GEN_OFFSET_SYM(_cpu_arch_t, fpu_owner);
 
 #ifdef CONFIG_USERSPACE
 GEN_OFFSET_SYM(_thread_arch_t, psp);
+#ifdef CONFIG_SIGNAL
+GEN_OFFSET_SYM(_thread_arch_t, sig_eax);
+
+GEN_ABSOLUTE_SYM(__thread_sig_user_s_OFFSET,
+		 offsetof(struct k_thread, base.sig.user.s));
+#endif
 #ifndef CONFIG_X86_COMMON_PAGE_TABLE
 GEN_OFFSET_SYM(_thread_arch_t, ptables);
 #endif

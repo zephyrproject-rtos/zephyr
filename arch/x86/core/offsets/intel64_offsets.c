@@ -50,6 +50,9 @@ GEN_OFFSET_SYM(x86_tss64_t, shstk_addr);
 GEN_OFFSET_SYM(x86_tss64_t, exception_shstk_addr);
 #endif
 #ifdef CONFIG_USERSPACE
+#ifdef CONFIG_SIGNAL
+GEN_OFFSET_SYM(x86_tss64_t, syscall_id);
+#endif
 GEN_OFFSET_SYM(x86_tss64_t, psp);
 GEN_OFFSET_SYM(x86_tss64_t, usp);
 #endif /* CONFIG_USERSPACE */
@@ -60,5 +63,14 @@ GEN_OFFSET_SYM(x86_cpuboot_t, gs_base);
 GEN_OFFSET_SYM(x86_cpuboot_t, sp);
 GEN_OFFSET_SYM(x86_cpuboot_t, stack_size);
 GEN_ABSOLUTE_SYM(__X86_CPUBOOT_SIZEOF, sizeof(x86_cpuboot_t));
+
+#if defined(CONFIG_USERSPACE) && defined(CONFIG_SIGNAL)
+GEN_OFFSET_STRUCT(x86_ssf, rsp);
+GEN_OFFSET_STRUCT(x86_ssf, rdi);
+GEN_ABSOLUTE_SYM(__X86_SSF_SIZEOF, sizeof(struct x86_ssf));
+
+GEN_ABSOLUTE_SYM(__thread_sig_user_s_OFFSET,
+		 offsetof(struct k_thread, base.sig.user.s));
+#endif
 
 #endif /* _X86_OFFSETS_INC_ */

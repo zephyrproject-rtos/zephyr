@@ -22,6 +22,10 @@ GTEXT(z_x86_user_string_nlen_fixup)
 /* Imports */
 GDATA(_k_syscall_table)
 
+#if defined(CONFIG_SIGNAL)
+GTEXT(z_sig_handle)
+#endif
+
 #ifdef CONFIG_X86_KPTI
 /* Switch from the shadow to the kernel page table, switch to the interrupted
  * thread's kernel stack, and copy all context from the trampoline stack.
@@ -215,6 +219,75 @@ _id_ok:
 
 	/* Run the handler, which is some entry in _k_syscall_table */
 	call	*%ebx
+
+#if defined(CONFIG_SIGNAL)
+	cmp	$K_SYSCALL_K_SIG_ACTION, %esi
+	je	_skip_z_sig_handle
+	cmp	$K_SYSCALL_K_SIG_CURRENT, %esi
+	je	_skip_z_sig_handle
+	cmp	$K_SYSCALL_K_SIG_RETURN, %esi
+	je	_do_sig_restore
+
+	/* Save syscall return value in thread arch storage */
+	movl	$_kernel, %edx
+	movl	_kernel_offset_to_current(%edx), %edx
+	movl	%eax, _thread_offset_to_sig_eax(%edx)
+
+	/* Pass privileged syscall frame pointer to z_sig_handle() */
+	push	24(%esp)
+	call	z_sig_handle
+	add	$4, %esp
+	test	%eax, %eax
+	jz	_do_sig_return
+
+	/*
+	 * z_sig_handle() redirected the return path into the signal trampoline. The trampoline
+	 * chain clobbers the registers the interrupted context expects preserved across the
+	 * syscall, and k_sig_return() resumes the interrupted context without unwinding, so
+	 * capture them now: EDX, ECX, EBX, and EDI from this syscall's argument slots (the
+	 * exit path below reloads them from there), and EBP and ESI still in-register.
+	 */
+	movl	$_kernel, %edx
+	movl	_kernel_offset_to_current(%edx), %edx
+	movl	4(%esp), %ecx
+	movl	%ecx, (__thread_sig_user_s_OFFSET + 0)(%edx)
+	movl	8(%esp), %ecx
+	movl	%ecx, (__thread_sig_user_s_OFFSET + 4)(%edx)
+	movl	12(%esp), %ecx
+	movl	%ecx, (__thread_sig_user_s_OFFSET + 8)(%edx)
+	movl	16(%esp), %ecx
+	movl	%ecx, (__thread_sig_user_s_OFFSET + 12)(%edx)
+	movl	%ebp, (__thread_sig_user_s_OFFSET + 16)(%edx)
+	movl	%esi, (__thread_sig_user_s_OFFSET + 20)(%edx)
+	jmp	_do_sig_return
+
+_do_sig_restore:
+	/*
+	 * Restore the registers captured when the trampoline was entered: write EDX, ECX,
+	 * EBX, and EDI into this syscall's argument slots so the exit path below pops the
+	 * captured values, and reload EBP and ESI directly.
+	 */
+	movl	$_kernel, %edx
+	movl	_kernel_offset_to_current(%edx), %edx
+	movl	(__thread_sig_user_s_OFFSET + 0)(%edx), %ecx
+	movl	%ecx, 4(%esp)
+	movl	(__thread_sig_user_s_OFFSET + 4)(%edx), %ecx
+	movl	%ecx, 8(%esp)
+	movl	(__thread_sig_user_s_OFFSET + 8)(%edx), %ecx
+	movl	%ecx, 12(%esp)
+	movl	(__thread_sig_user_s_OFFSET + 12)(%edx), %ecx
+	movl	%ecx, 16(%esp)
+	movl	(__thread_sig_user_s_OFFSET + 16)(%edx), %ebp
+	movl	(__thread_sig_user_s_OFFSET + 20)(%edx), %esi
+
+_do_sig_return:
+	/* Restore syscall return value from thread arch storage */
+	movl	$_kernel, %edx
+	movl	_kernel_offset_to_current(%edx), %edx
+	movl	_thread_offset_to_sig_eax(%edx), %eax
+
+_skip_z_sig_handle:
+#endif
 
 	/* EAX now contains return value. Pop or xor everything else to prevent
 	 * information leak from kernel mode.

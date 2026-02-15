@@ -90,6 +90,11 @@ struct x86_tss64 {
 #endif
 
 #ifdef CONFIG_USERSPACE
+#ifdef CONFIG_SIGNAL
+	/* Ran out of registers and need to preserve syscall id */
+	uintptr_t syscall_id;
+#endif
+
 	/* Privilege mode stack pointer value when doing a system call */
 	char *psp;
 

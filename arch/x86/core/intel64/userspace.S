@@ -10,6 +10,11 @@
 #include <zephyr/syscall.h>
 #include <zephyr/kernel/mm.h>
 
+/* Imports */
+#if defined(CONFIG_SIGNAL)
+GTEXT(z_sig_handle)
+#endif
+
 #ifdef CONFIG_X86_KPTI
 /* Copy interrupt return stack context to the trampoline stack, switch back
  * to the user page table, and only then 'iret'. We jump to this instead
@@ -69,6 +74,10 @@ z_x86_trampoline_to_user:
 .global z_x86_syscall_entry_stub
 z_x86_syscall_entry_stub:
 	swapgs
+
+#if defined(CONFIG_SIGNAL)
+	movq	%rax, %gs:__x86_tss64_t_syscall_id_OFFSET
+#endif
 
 	/* Save original stack pointer from user mode in memory, at the
 	 * moment we have no free registers or stack to save it to. This
@@ -151,6 +160,60 @@ _id_ok:
 
 	/* Run the marshal function, which is some entry in _k_syscall_table */
 	call	*%r10
+
+#if defined(CONFIG_SIGNAL)
+	movq	%gs:__x86_tss64_t_syscall_id_OFFSET, %rdi
+
+	cmp	$K_SYSCALL_K_SIG_ACTION, %rdi
+	je	_skip_z_sig_handle
+	cmp	$K_SYSCALL_K_SIG_CURRENT, %rdi
+	je	_skip_z_sig_handle
+	cmp	$K_SYSCALL_K_SIG_RETURN, %rdi
+	je	_do_sig_restore
+
+	/* Store RAX (syscall return value) into privileged stack */
+	movq	%rax, (__struct_x86_ssf_rdi_OFFSET + 8)(%rsp)
+
+	/* Pass privileged stack to z_sig_handle() */
+	movq	%rsp, %rdi
+	addq	$8, %rdi
+	call	z_sig_handle
+	testq	%rax, %rax
+	jz	_do_sig_return
+
+	/*
+	 * z_sig_handle() redirected the return path into the signal trampoline. The trampoline
+	 * chain clobbers the callee-saved registers per the ABI and k_sig_return() resumes the
+	 * interrupted context without unwinding, so capture them now: at this point they still
+	 * hold the interrupted context's values.
+	 */
+	movq	%gs:__x86_tss64_t_cpu_OFFSET, %rdi
+	movq	___cpu_t_current_OFFSET(%rdi), %rdi
+	movq	%rbx, (__thread_sig_user_s_OFFSET + 0)(%rdi)
+	movq	%rbp, (__thread_sig_user_s_OFFSET + 8)(%rdi)
+	movq	%r12, (__thread_sig_user_s_OFFSET + 16)(%rdi)
+	movq	%r13, (__thread_sig_user_s_OFFSET + 24)(%rdi)
+	movq	%r14, (__thread_sig_user_s_OFFSET + 32)(%rdi)
+	movq	%r15, (__thread_sig_user_s_OFFSET + 40)(%rdi)
+	jmp	_do_sig_return
+
+_do_sig_restore:
+	/* restore the callee-saved registers captured when the trampoline was entered */
+	movq	%gs:__x86_tss64_t_cpu_OFFSET, %rdi
+	movq	___cpu_t_current_OFFSET(%rdi), %rdi
+	movq	(__thread_sig_user_s_OFFSET + 0)(%rdi), %rbx
+	movq	(__thread_sig_user_s_OFFSET + 8)(%rdi), %rbp
+	movq	(__thread_sig_user_s_OFFSET + 16)(%rdi), %r12
+	movq	(__thread_sig_user_s_OFFSET + 24)(%rdi), %r13
+	movq	(__thread_sig_user_s_OFFSET + 32)(%rdi), %r14
+	movq	(__thread_sig_user_s_OFFSET + 40)(%rdi), %r15
+
+_do_sig_return:
+	/* Restore RAX (syscall return value) from privileged stack */
+	movq	(__struct_x86_ssf_rdi_OFFSET + 8)(%rsp), %rax
+
+_skip_z_sig_handle:
+#endif
 
 	/* RAX now contains the return value
 	 *
