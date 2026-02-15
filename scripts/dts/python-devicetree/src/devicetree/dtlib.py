@@ -2180,10 +2180,15 @@ def _root_and_path_to_node(cur, path, fullpath):
             component = name
 
         if component not in cur.nodes:
-            _err(f"component '{component}' in path '{fullpath}' "
-                 "does not exist")
-
-        cur = cur.nodes[component]
+            prefix = f"{name}@"
+            names = [k for k in cur.nodes if k.startswith(prefix)]
+            if len(names) == 1:
+                cur = cur.nodes[names[0]]
+            else:
+                _err(f"component '{component}' in path '{fullpath}' "
+                     "does not exist")
+        else:
+            cur = cur.nodes[component]
 
     return cur
 
