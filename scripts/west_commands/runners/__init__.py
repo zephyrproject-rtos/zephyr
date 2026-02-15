@@ -47,6 +47,7 @@ _names = [
     'minichlink',
     'misc',
     'mpcli',
+    'mplab_ipe',
     'native',
     'nrfjprog',
     'nrfutil',
