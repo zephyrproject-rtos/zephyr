@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT adi_tmc50xx_stepper
+#define DT_DRV_COMPAT adi_tmc50xx_stepper_ctrl
 
 #include <stdlib.h>
 

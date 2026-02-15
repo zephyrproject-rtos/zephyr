@@ -11,7 +11,7 @@
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
-adi_tmc50xx: adi_tmc50xx@0 {
+adi_tmc50xx: adi-tmc50xx@0 {
 	compatible = "adi,tmc50xx";
 	status = "okay";
 	reg = <0x0>;
@@ -23,18 +23,18 @@ adi_tmc50xx: adi_tmc50xx@0 {
 	lock-gconf;
 	clock-frequency = <16000000>; /* Internal/External Clock frequency */
 
-	tmc50xx_0_stepper_driver: tmc50xx_0_stepper_driver {
+	tmc50xx_0_stepper_driver: tmc50xx-0-stepper-driver {
 		idx = <0>;
-		compatible = "adi,tmc50xx-stepper-drv";
+		compatible = "adi,tmc50xx-stepper-driver";
 		micro-step-res = <256>;
 		/* ADI TMC stallguard settings specific to TMC50XX */
 		stallguard2-threshold = <30>;
 	};
 
 	/* ADI TMC ramp generator as well as current settings */
-	tmc50xx_0_motion_controller: tmc50xx_0_motion_controller {
+	tmc50xx_0_motion_controller: tmc50xx-0-motion-controller {
 		idx = <0>;
-		compatible = "adi,tmc50xx-stepper";
+		compatible = "adi,tmc50xx-stepper-ctrl";
 		vstart = <1000>;
 		vstop = <10>;
 		a1 = <10000>;
@@ -54,18 +54,18 @@ adi_tmc50xx: adi_tmc50xx@0 {
 		stallguard-threshold-velocity = <200000>;
 	};
 
-	tmc50xx_1_stepper_driver: tmc50xx_1_stepper_driver {
+	tmc50xx_1_stepper_driver: tmc50xx-1-stepper-driver {
 		idx = <1>;
-		compatible = "adi,tmc50xx-stepper-drv";
+		compatible = "adi,tmc50xx-stepper-driver";
 		micro-step-res = <256>;
 		/* ADI TMC stallguard settings specific to TMC50XX */
 		stallguard2-threshold = <9>;
 	};
 
-	tmc50xx_1_motion_controller: tmc50xx_1_motion_controller {
+	tmc50xx_1_motion_controller: tmc50xx-1-motion-controller {
 		idx = <1>;
 		/* ADI TMC stallguard settings specific to TMC50XX */
-		compatible = "adi,tmc50xx-stepper";
+		compatible = "adi,tmc50xx-stepper-ctrl";
 		activate-stallguard2;
 		stallguard-velocity-check-interval-ms = <100>;
 		stallguard-threshold-velocity = <500000>;
@@ -87,7 +87,7 @@ adi_tmc50xx: adi_tmc50xx@0 {
 	};
 };
 
-adi_tmc51xx_1: adi_tmc51xx@1 {
+adi_tmc51xx_1: adi-tmc51xx@1 {
 	compatible = "adi,tmc51xx";
 	status = "okay";
 	reg = <0x01>;
@@ -100,7 +100,7 @@ adi_tmc51xx_1: adi_tmc51xx@1 {
 	clock-frequency = <16000000>; /* Internal/External Clock frequency */
 
 	tmc51xx_1_stepper_driver: tmc51xx_1_stepper_driver {
-		compatible = "adi,tmc51xx-stepper-drv";
+		compatible = "adi,tmc51xx-stepper-driver";
 		micro-step-res = <256>;
 		/* ADI TMC stallguard settings specific to TMC51XX */
 		stallguard2-threshold = <9>;
@@ -108,7 +108,7 @@ adi_tmc51xx_1: adi_tmc51xx@1 {
 
 	/* common stepper controller settings */
 	tmc51xx_1_motion_controller: tmc51xx_1_motion_controller {
-		compatible = "adi,tmc51xx-stepper";
+		compatible = "adi,tmc51xx-stepper-ctrl";
 
 		/* ADI TMC stallguard settings specific to TMC5160 */
 		activate-stallguard2;
@@ -134,7 +134,7 @@ adi_tmc51xx_1: adi_tmc51xx@1 {
 	};
 };
 
-adi_tmc51xx_2: adi_tmc51xx@2 {
+adi_tmc51xx_2: adi-tmc51xx@2 {
 	compatible = "adi,tmc51xx";
 	status = "okay";
 	reg = <0x02>;
@@ -148,16 +148,16 @@ adi_tmc51xx_2: adi_tmc51xx@2 {
 	shaft;
 	clock-frequency = <16000000>; /* Internal/External Clock frequency */
 
-	tmc51xx_2_stepper_driver: tmc51xx_2_stepper_driver {
-		compatible = "adi,tmc51xx-stepper-drv";
+	tmc51xx_2_stepper_driver: tmc51xx-2-stepper-driver {
+		compatible = "adi,tmc51xx-stepper-driver";
 		micro-step-res = <256>;
 		/* ADI TMC stallguard settings specific to TMC51XX */
 		stallguard2-threshold = <9>;
 	};
 
 	/* common stepper controller settings */
-	tmc51xx_2_motion_controller: tmc51xx_2_motion_controller {
-		compatible = "adi,tmc51xx-stepper";
+	tmc51xx_2_motion_controller: tmc51xx-2-motion-controller {
+		compatible = "adi,tmc51xx-stepper-ctrl";
 
 		/* ADI TMC stallguard settings specific to TMC5160 */
 		activate-stallguard2;

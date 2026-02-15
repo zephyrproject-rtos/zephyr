@@ -6,11 +6,11 @@
 
 / {
 	aliases {
-		stepper-drv = &tmc2209;
-		stepper = &step_dir_motion_control;
+		stepper-driver = &tmc2209;
+		stepper-ctrl = &step_dir_motion_control;
 	};
 
-	tmc2209: tmc2209 {
+	tmc2209: stepper-driver {
 		compatible = "adi,tmc2209";
 		en-gpios = <&gpioa 6 GPIO_ACTIVE_HIGH>; /* D12 */
 		m0-gpios = <&gpiob 0 GPIO_ACTIVE_HIGH>; /* D10 */
@@ -18,11 +18,11 @@
 		micro-step-res = <32>;
 	};
 
-	step_dir_motion_control: step_dir_motion_control {
-		compatible = "zephyr,gpio-step-dir-stepper";
+	step_dir_motion_control: motion-controller {
+		compatible = "zephyr,gpio-step-dir-stepper-ctrl";
 		step-gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>; /* D8 */
 		dir-gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>; /* D9 */
 		invert-direction;
-		stepper-drv = <&tmc2209>;
+		stepper-driver = <&tmc2209>;
 	};
 };

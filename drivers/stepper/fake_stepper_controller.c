@@ -186,10 +186,10 @@ static DEVICE_API(stepper_ctrl, fake_stepper_ctrl_api) = {
 			      NULL, POST_KERNEL, CONFIG_STEPPER_INIT_PRIORITY,                     \
 			      &fake_stepper_ctrl_api);
 
-#define DT_DRV_COMPAT zephyr_fake_stepper_drv
-DT_INST_FOREACH_STATUS_OKAY(FAKE_STEPPER_DRV_INIT)
+#define DT_DRV_COMPAT zephyr_fake_stepper_driver
+DT_INST_FOREACH_STATUS_OKAY(FAKE_STEPPER_DRIVER_INIT)
 #undef DT_DRV_COMPAT
 
-#define DT_DRV_COMPAT zephyr_fake_stepper
-DT_INST_FOREACH_STATUS_OKAY(FAKE_STEPPER_INIT)
+#define DT_DRV_COMPAT zephyr_fake_stepper_ctrl
+DT_INST_FOREACH_STATUS_OKAY(FAKE_STEPPER_CTRL_INIT)
 #undef DT_DRV_COMPAT
