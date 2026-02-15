@@ -1,0 +1,23 @@
+identifier: nucleo_g491re
+name: ST Nucleo G491RE
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 112
+flash: 512
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - counter
+  - dac
+  - gpio
+  - i2c
+  - nvs
+  - pwm
+  - rng
+  - spi
+  - watchdog
+vendor: st
