@@ -111,10 +111,10 @@ config CPU_CORTEX_M_HAS_SYSTICK
 	help
 	  This option is enabled when the CPU implements the SysTick timer.
 
-config DCACHE_LINE_SIZE
+configdefault DCACHE_LINE_SIZE
 	default 32
 
-config ICACHE_LINE_SIZE
+configdefault ICACHE_LINE_SIZE
 	default 32
 
 config CPU_CORTEX_M_HAS_DWT
