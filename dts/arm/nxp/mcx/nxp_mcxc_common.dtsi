@@ -393,6 +393,14 @@
 			#io-channel-cells = <1>;
 			voltage-reference = <2>;
 		};
+
+		llwu: llwu@4007c000 {
+			compatible = "nxp,llwu";
+			reg = <0x4007c000 0xa>;
+			interrupts = <7 0>;
+			#wakeup-ctrl-cells = <1>;
+			status = "disabled";
+		};
 	};
 };
 
