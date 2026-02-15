@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
 # SPDX-License-Identifier: Apache-2.0
 
-compatible: "adi,tmc51xx-stepper"
+compatible: "adi,tmc51xx-stepper-ctrl"
 
 include:
   - name: adi,trinamic-stallguard.yaml

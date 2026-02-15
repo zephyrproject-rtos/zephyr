@@ -7,7 +7,7 @@
  **************************************
  */
 
-adi_tmc51xx_uart: adi_tmc51xx {
+adi_tmc51xx_uart: adi-tmc51xx {
 	compatible = "adi,tmc51xx";
 	status = "okay";
 
@@ -17,16 +17,16 @@ adi_tmc51xx_uart: adi_tmc51xx {
 	test-mode; /* ADI TMC Global configuration flags */
 	clock-frequency = <16000000>; /* Internal/External Clock frequency */
 
-	tmc51xx_stepper_driver: stepper_driver {
-		compatible = "adi,tmc51xx-stepper-drv";
+	tmc51xx_stepper_driver: stepper-driver {
+		compatible = "adi,tmc51xx-stepper-driver";
 		micro-step-res = <256>;
 		/* ADI TMC stallguard settings specific to TMC51XX */
 		stallguard2-threshold = <9>;
 	};
 
 	/* common stepper controller settings */
-	tmc51xx_motion_controller: motion_controller {
-		compatible = "adi,tmc51xx-stepper";
+	tmc51xx_motion_controller: motion-controller {
+		compatible = "adi,tmc51xx-stepper-ctrl";
 
 		/* ADI TMC stallguard settings specific to TMC5160 */
 		activate-stallguard2;

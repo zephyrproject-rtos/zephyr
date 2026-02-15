@@ -14,7 +14,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(tmc51xx, CONFIG_STEPPER_LOG_LEVEL);
 
-#define DT_DRV_COMPAT adi_tmc51xx_stepper
+#define DT_DRV_COMPAT adi_tmc51xx_stepper_ctrl
 
 struct tmc51xx_stepper_ctrl_config {
 	const bool is_sg_enabled;

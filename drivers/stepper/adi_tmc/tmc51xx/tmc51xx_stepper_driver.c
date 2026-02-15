@@ -13,7 +13,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(tmc51xx, CONFIG_STEPPER_LOG_LEVEL);
 
-#define DT_DRV_COMPAT adi_tmc51xx_stepper_drv
+#define DT_DRV_COMPAT adi_tmc51xx_stepper_driver
 
 struct tmc51xx_stepper_driver_config {
 	const uint16_t default_micro_step_res;

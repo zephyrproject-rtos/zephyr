@@ -4,6 +4,6 @@
 config GPIO_STEP_DIR_STEPPER
 	bool "Activate driver for gpio step dir stepper control"
 	select GPIO_STEPPER
-	depends on DT_HAS_ZEPHYR_GPIO_STEP_DIR_STEPPER_ENABLED
+	depends on DT_HAS_ZEPHYR_GPIO_STEP_DIR_STEPPER_CTRL_ENABLED
 	select STEP_DIR_STEPPER
 	default y

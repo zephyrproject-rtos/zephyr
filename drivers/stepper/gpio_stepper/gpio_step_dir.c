@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT zephyr_gpio_step_dir_stepper
+#define DT_DRV_COMPAT zephyr_gpio_step_dir_stepper_ctrl
 
 #include <zephyr/drivers/stepper/stepper_ctrl.h>
 #include <zephyr/drivers/gpio.h>

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT zephyr_h_bridge_stepper
+#define DT_DRV_COMPAT zephyr_h_bridge_stepper_ctrl
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
