@@ -408,7 +408,7 @@ void cmd_alloc_free_call(unsigned long a0, unsigned long a1, unsigned long a2, u
 	switch (t_call.num) {
 	case 0:
 		res->a0 = OPTEE_SMC_RETURN_RPC_PREFIX | OPTEE_SMC_RPC_FUNC_ALLOC;
-		res->a1 = 1;
+		res->a1 = OPTEE_MSG_GET_ARG_SIZE(1);
 		break;
 	case 1:
 		zassert_equal(a0, 0x32000003, "%s failed with ret %lx", __func__, a0);
@@ -523,7 +523,7 @@ void cmd_rpc_call(unsigned long a0, unsigned long a1, unsigned long a2, unsigned
 	switch (t_call.num) {
 	case 0:
 		res->a0 = OPTEE_SMC_RETURN_RPC_PREFIX | OPTEE_SMC_RPC_FUNC_ALLOC;
-		res->a1 = 1;
+		res->a1 = OPTEE_MSG_GET_ARG_SIZE(2);
 		break;
 	case 1:
 		zassert_equal(a0, 0x32000003, "%s failed with ret %lx", __func__, a0);
@@ -666,7 +666,7 @@ void cmd_shm_alloc_appl(unsigned long a0, unsigned long a1, unsigned long a2, un
 	switch (t_call.num) {
 	case 0:
 		res->a0 = OPTEE_SMC_RETURN_RPC_PREFIX | OPTEE_SMC_RPC_FUNC_ALLOC;
-		res->a1 = 1;
+		res->a1 = OPTEE_MSG_GET_ARG_SIZE(1);
 		break;
 	case 1:
 		zassert_equal(a0, 0x32000003, "%s failed with ret %lx", __func__, a0);
@@ -835,7 +835,7 @@ void cmd_gettime_call(unsigned long a0, unsigned long a1, unsigned long a2, unsi
 	switch (t_call.num) {
 	case 0:
 		res->a0 = OPTEE_SMC_RETURN_RPC_PREFIX | OPTEE_SMC_RPC_FUNC_ALLOC;
-		res->a1 = 1;
+		res->a1 = OPTEE_MSG_GET_ARG_SIZE(1);
 		break;
 	case 1:
 		zassert_equal(a0, 0x32000003, "%s failed with ret %lx", __func__, a0);
@@ -935,7 +935,7 @@ void cmd_suspend_call(unsigned long a0, unsigned long a1, unsigned long a2, unsi
 	switch (t_call.num) {
 	case 0:
 		res->a0 = OPTEE_SMC_RETURN_RPC_PREFIX | OPTEE_SMC_RPC_FUNC_ALLOC;
-		res->a1 = 1;
+		res->a1 = OPTEE_MSG_GET_ARG_SIZE(1);
 		break;
 	case 1:
 		zassert_equal(a0, 0x32000003, "%s failed with ret %lx", __func__, a0);
@@ -1024,7 +1024,7 @@ void cmd_notify_alloc_call(unsigned long a0, unsigned long a1, unsigned long a2,
 	switch (t_call.num) {
 	case 0:
 		res->a0 = OPTEE_SMC_RETURN_RPC_PREFIX | OPTEE_SMC_RPC_FUNC_ALLOC;
-		res->a1 = 1;
+		res->a1 = OPTEE_MSG_GET_ARG_SIZE(1);
 		break;
 	case 1:
 		zassert_equal(a0, 0x32000003, "%s failed with ret %lx", __func__, a0);
