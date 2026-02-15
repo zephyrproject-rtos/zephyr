@@ -210,6 +210,37 @@ static void rm67162_te_isr_handler(const struct device *gpio_dev,
 	k_sem_give(&data->te_sem);
 }
 
+static int rm67162_set_column_page(const struct rm67162_config *config,
+				   uint16_t x, uint16_t y, uint16_t width, uint16_t height)
+{
+	uint16_t start, end;
+	uint8_t param[4];
+	int ret;
+
+	/* Set column address of target area */
+	/* First two bytes are starting X coordinate */
+	start = x;
+	end = x + width - 1;
+	sys_put_be16(start, &param[0]);
+	/* Second two bytes are ending X coordinate */
+	sys_put_be16(end, &param[2]);
+	ret = mipi_dsi_dcs_write(config->mipi_dsi, config->channel,
+				 MIPI_DCS_SET_COLUMN_ADDRESS, param, sizeof(param));
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Set page address of target area */
+	/* First two bytes are starting Y coordinate */
+	start = y;
+	end = y + height - 1;
+	sys_put_be16(start, &param[0]);
+	/* Second two bytes are ending X coordinate */
+	sys_put_be16(end, &param[2]);
+	return mipi_dsi_dcs_write(config->mipi_dsi, config->channel,
+				  MIPI_DCS_SET_PAGE_ADDRESS, param, sizeof(param));
+}
+
 static int rm67162_init(const struct device *dev)
 {
 	const struct rm67162_config *config = dev->config;
@@ -222,6 +253,16 @@ static int rm67162_init(const struct device *dev)
 	/* Attach to MIPI DSI host */
 	mdev.data_lanes = config->num_of_lanes;
 	mdev.pixfmt = data->pixel_format;
+	mdev.mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST | MIPI_DSI_MODE_LPM;
+
+	mdev.timings.hactive = config->panel_width;
+	mdev.timings.hbp = 1;
+	mdev.timings.hfp = 1;
+	mdev.timings.hsync = 1;
+	mdev.timings.vactive = config->panel_height;
+	mdev.timings.vbp = 1;
+	mdev.timings.vfp = 1;
+	mdev.timings.vsync = 1;
 
 	ret = mipi_dsi_attach(config->mipi_dsi, config->channel, &mdev);
 	if (ret < 0) {
@@ -344,6 +385,11 @@ static int rm67162_init(const struct device *dev)
 		k_sem_init(&data->te_sem, 0, 1);
 	}
 
+	ret = rm67162_set_column_page(config, 0, 0, config->panel_width, config->panel_height);
+	if (ret < 0) {
+		return ret;
+	}
+
 	/* Now, enable display */
 	return mipi_dsi_dcs_write(config->mipi_dsi, config->channel,
 				MIPI_DCS_SET_DISPLAY_ON, NULL, 0);
@@ -403,10 +449,8 @@ static int rm67162_write(const struct device *dev, const uint16_t x,
 	const struct rm67162_config *config = dev->config;
 	struct rm67162_data *data = dev->data;
 	int ret;
-	uint16_t start, end;
 	const uint8_t *src;
 	bool first_cmd;
-	uint8_t param[4];
 
 	LOG_DBG("W=%d, H=%d @%d,%d", desc->width, desc->height, x, y);
 
@@ -415,31 +459,7 @@ static int rm67162_write(const struct device *dev, const uint16_t x,
 	 * to write to the video memory buffer on the RM67162 control IC,
 	 * and the IC will update the display automatically.
 	 */
-
-	/* Set column address of target area */
-	/* First two bytes are starting X coordinate */
-	start = x;
-	end = x + desc->width - 1;
-	sys_put_be16(start, &param[0]);
-	/* Second two bytes are ending X coordinate */
-	sys_put_be16(end, &param[2]);
-	ret = mipi_dsi_dcs_write(config->mipi_dsi, config->channel,
-				MIPI_DCS_SET_COLUMN_ADDRESS, param,
-				sizeof(param));
-	if (ret < 0) {
-		return ret;
-	}
-
-	/* Set page address of target area */
-	/* First two bytes are starting Y coordinate */
-	start = y;
-	end = y + desc->height - 1;
-	sys_put_be16(start, &param[0]);
-	/* Second two bytes are ending X coordinate */
-	sys_put_be16(end, &param[2]);
-	ret = mipi_dsi_dcs_write(config->mipi_dsi, config->channel,
-				MIPI_DCS_SET_PAGE_ADDRESS, param,
-				sizeof(param));
+	ret = rm67162_set_column_page(config, x, y, desc->width, desc->height);
 	if (ret < 0) {
 		return ret;
 	}
