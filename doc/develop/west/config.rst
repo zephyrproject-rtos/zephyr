@@ -113,6 +113,16 @@ To undo the above change:
 
    west config --global color.ui true
 
+To add an optional project ``foo`` to the list of ``manifest.project-filter``:
+
+.. code-block:: console
+
+   west config --append manifest.project-filter +foo
+
+N.b. multiple calls to ``--append``/``-a`` are cumulative. Calling ``--delete``
+will remove the entire ``manifest.project-filter`` configuration option, not
+just the specified value.
+
 .. _west-config-index:
 
 Built-in Configuration Options
