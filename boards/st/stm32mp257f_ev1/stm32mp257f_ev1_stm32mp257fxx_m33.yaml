@@ -6,9 +6,7 @@ toolchain:
   - zephyr
   - gccarmemb
 supported:
-  - LED
   - gpio
-  - shell
   - i2c
   - i3c
   - spi

@@ -17,6 +17,5 @@ supported:
   - hwinfo
   - pwm
   - sdhc
-  - shell
   - uart
 vendor: microchip

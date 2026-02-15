@@ -12,6 +12,5 @@ ram: 256
 supported:
   - gpio
   - pinctrl
-  - shell
   - uart
 vendor: microchip

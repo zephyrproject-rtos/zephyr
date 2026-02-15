@@ -26,7 +26,6 @@ supported:
   - pwm
   - reset
   - rtc
-  - shell
   - spi
   - uart
   - watchdog
