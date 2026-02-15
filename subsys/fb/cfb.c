@@ -251,7 +251,6 @@ static uint8_t draw_char_htmono(const struct char_framebuffer *fb,
 			uint8_t pixel_value;
 
 			if (fb_x < 0 || fb->x_res <= fb_x || fb_y < 0 || fb->y_res <= fb_y) {
-				g_y++;
 				continue;
 			}
 
