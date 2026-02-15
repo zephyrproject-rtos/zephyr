@@ -6116,10 +6116,11 @@ void k_heap_free(struct k_heap *h, void *mem) __attribute_nonnull(1);
 #include <zephyr/offsets.h>
 #endif
 
-/* chunk0 size in bytes for nb buckets */
+/* chunk0 size in bytes for nb buckets (includes trailer metadata) */
 #define _Z_HEAP_C0(nb) \
-	ROUND_UP(___z_heap_struct_SIZEOF + \
-		 (nb) * ___z_heap_bucket_SIZEOF, ___z_heap_chunk_unit_SIZEOF)
+	(ROUND_UP(___z_heap_struct_SIZEOF + \
+		  (nb) * ___z_heap_bucket_SIZEOF, ___z_heap_chunk_unit_SIZEOF) + \
+	 ___z_heap_trailer_SIZEOF)
 
 /* Allocation chunk size in bytes (header + data rounded up, plus trailer) */
 #define _Z_HEAP_AC(ab) \
