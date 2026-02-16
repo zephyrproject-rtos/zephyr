@@ -905,12 +905,13 @@ static int validate_send(const struct bt_iso_chan *chan, const struct net_buf *b
 
 	BT_ISO_DATA_DBG("chan %p len %zu", chan, net_buf_frags_len(buf));
 
-	if (chan->state != BT_ISO_STATE_CONNECTED) {
+	iso_conn = chan->iso;
+	if (iso_conn == NULL || iso_conn->state != BT_CONN_CONNECTED ||
+	    chan->state != BT_ISO_STATE_CONNECTED) {
 		LOG_DBG("Channel %p not connected", chan);
 		return -ENOTCONN;
 	}
 
-	iso_conn = chan->iso;
 	if (!iso_conn->iso.info.can_send) {
 		LOG_DBG("Channel %p not able to send", chan);
 		return -EINVAL;
