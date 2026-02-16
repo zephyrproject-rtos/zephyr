@@ -46,6 +46,9 @@ BUILD_ASSERT(DT_PROP(DT_INST_BUS(0), hw_flow_control) == 1,
 /* Length of UPDATE BAUD RATE command */
 #define HCI_VSC_UPDATE_BAUD_RATE_LENGTH   (6u)
 
+/* Length of Write_SCO_PCM_Int_Param command */
+#define HCI_VSC_WRITE_SCO_PCM_INT_PARAM_LENGTH   (5u)
+
 /* Default BAUDRATE */
 #define HCI_UART_DEFAULT_BAUDRATE         (115200)
 
@@ -53,13 +56,21 @@ BUILD_ASSERT(DT_PROP(DT_INST_BUS(0), hw_flow_control) == 1,
 extern const uint8_t brcm_patchram_buf[];
 extern const int brcm_patch_ram_length;
 
-enum {
-	BT_HCI_VND_OP_SET_MAC                   = 0xFC01,
-	BT_HCI_VND_OP_DOWNLOAD_MINIDRIVER       = 0xFC2E,
-	BT_HCI_VND_OP_WRITE_RAM                 = 0xFC4C,
-	BT_HCI_VND_OP_LAUNCH_RAM                = 0xFC4E,
-	BT_HCI_VND_OP_UPDATE_BAUDRATE           = 0xFC18,
-};
+#define BT_HCI_CMD_SET_MAC               0x0001
+#define BT_HCI_CMD_DOWNLOAD_MINIDRIVER   0x002E
+#define BT_HCI_CMD_WRITE_RAM             0x004C
+#define BT_HCI_CMD_LAUNCH_RAM            0x004E
+#define BT_HCI_CMD_UPDATE_BAUDRATE       0x0018
+#define BT_HCI_CMD_WRITE_PCM_INT_PARAM   0x001C
+
+/* Vendor specific commands */
+#define BT_HCI_VND_OP_SET_MAC                   BT_OP(BT_OGF_VS, BT_HCI_CMD_SET_MAC)
+#define BT_HCI_VND_OP_DOWNLOAD_MINIDRIVER       BT_OP(BT_OGF_VS, BT_HCI_CMD_DOWNLOAD_MINIDRIVER)
+#define BT_HCI_VND_OP_WRITE_RAM                 BT_OP(BT_OGF_VS, BT_HCI_CMD_WRITE_RAM)
+#define BT_HCI_VND_OP_LAUNCH_RAM                BT_OP(BT_OGF_VS, BT_HCI_CMD_LAUNCH_RAM)
+#define BT_HCI_VND_OP_UPDATE_BAUDRATE           BT_OP(BT_OGF_VS, BT_HCI_CMD_UPDATE_BAUDRATE)
+#define BT_HCI_VND_OP_WRITE_PCM_INT_PARAM       BT_OP(BT_OGF_VS, BT_HCI_CMD_WRITE_PCM_INT_PARAM)
+
 
 /*  bt_h4_vnd_setup function.
  * This function executes vendor-specific commands sequence to
@@ -224,6 +235,26 @@ static int bt_firmware_download(const uint8_t *firmware_image, uint32_t size)
 	return 0;
 }
 
+static int bt_update_sco_route(void)
+{
+	struct net_buf *buf;
+
+	/* Allocate buffer for write pcm internal params command*/
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		LOG_ERR("Unable to allocate command buffer");
+		return -ENOMEM;
+	}
+
+	/* Zero-initialize to use the default settings */
+	memset(net_buf_add(buf, HCI_VSC_WRITE_SCO_PCM_INT_PARAM_LENGTH), 0,
+		HCI_VSC_WRITE_SCO_PCM_INT_PARAM_LENGTH);
+
+	/* Send write pcm internal params command. */
+	return bt_hci_cmd_send_sync(BT_HCI_VND_OP_WRITE_PCM_INT_PARAM, buf, NULL);
+}
+
+
 int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *params)
 {
 	int err;
@@ -336,5 +367,19 @@ int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *
 		}
 	}
 
+	if (IS_ENABLED(CONFIG_BT_CYW555XX)) {
+		/* Update SCO Route to PCM
+		 * Default route is set to Transport. While Sending Host Buffer Size,
+		 * BLE application only sets ACL data length and number of packet for ACL
+		 * but its not setting SCO packet count and size. As SCO Route is set to
+		 * Transport and Host is not setting SCO PKT Size and Count, Controller
+		 * sends invalid command response. So set the default route to PCM
+		 */
+		err = bt_update_sco_route();
+		if (err) {
+			LOG_ERR("Failed to update SCO route (err %d)", err);
+			return err;
+		}
+	}
 	return 0;
 }
