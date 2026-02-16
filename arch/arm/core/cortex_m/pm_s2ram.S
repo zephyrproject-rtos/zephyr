@@ -160,8 +160,8 @@ _ASM_FILE_PROLOGUE
  * NOTE: the z_arm_pm_s2ram_*_fpu functions always
  * exist (but behave as no-ops if CONFIG_FPU=n)
  */
-GTEXT(z_arm_pm_s2ram_save_scb_mpu)
-GTEXT(z_arm_pm_s2ram_restore_scb_mpu)
+GTEXT(z_arm_pm_s2ram_save_scb_mpu_nvic)
+GTEXT(z_arm_pm_s2ram_restore_scb_mpu_nvic)
 GTEXT(z_arm_pm_s2ram_save_and_disable_fpu)
 GTEXT(z_arm_pm_s2ram_enable_and_restore_fpu)
 GTEXT(pm_s2ram_mark_set)
@@ -185,7 +185,7 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	SAVE_SPECIAL_REGISTERS(/* ctx: */ r1, /* tmp: */ r2)
 
 	/* Call C helpers to save the rest of CPU context */
-	bl		z_arm_pm_s2ram_save_scb_mpu
+	bl		z_arm_pm_s2ram_save_scb_mpu_nvic
 	bl		z_arm_pm_s2ram_save_and_disable_fpu
 
 	/*
@@ -213,7 +213,7 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 	bl pm_s2ram_mark_check_and_clear
 
 	/*
-	 * SCB and MPU state is intact since power off was not
+	 * SCB, MPU and NVIC state is intact since power off was not
 	 * successful. However, the FPU was disabled and its state
 	 * may have been lost: restore it unconditionally.
 	 */
@@ -267,7 +267,7 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_resume)
 	 *  instead of "bx lr")
 	 */
 	push		{ r4, lr }
-	bl		z_arm_pm_s2ram_restore_scb_mpu
+	bl		z_arm_pm_s2ram_restore_scb_mpu_nvic
 	bl		z_arm_pm_s2ram_enable_and_restore_fpu
 	pop		{ r4, lr }
 
