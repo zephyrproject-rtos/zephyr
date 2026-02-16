@@ -25,6 +25,10 @@
 	status = "okay";
 };
 
+&sai1 {
+	status = "okay";
+};
+
 &sai1_a {
 	pinctrl-0 = <&sai1_mclk_a_pa3 &sai1_sd_a_pa10
 		     &sai1_fs_a_pa9 &sai1_sck_a_pa8>;
