@@ -32,5 +32,42 @@
 		zephyr,sram = &m55_data;
 		zephyr,console = &uart2;
 		zephyr,shell-uart = &uart2;
+		zephyr,bt-hci = &bt_hci_uart;
+	};
+};
+
+&peri0_group1_16_5bit_0 {
+	status = "okay";
+	resource-type = <IFX_RSC_SCB>;
+	resource-instance = <4>;
+	clock-div = <1>;
+};
+
+uart4: &scb4 {
+	compatible = "infineon,uart";
+	status = "okay";
+
+	current-speed = <115200>;
+
+	clocks = <&peri0_group1_16_5bit_0>;
+
+	/* HCI-UART pins */
+	pinctrl-0 = <&p10_1_scb4_uart_tx &p10_0_scb4_uart_rx &p10_3_scb4_uart_rts
+		     &p10_2_scb4_uart_cts>;
+	pinctrl-names = "default";
+
+	/* HW Flow control must be enabled for HCI H4 */
+	hw-flow-control;
+
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+
+		cyw55513 {
+			status = "okay";
+			compatible = "infineon,bt-hci-uart";
+			bt-reg-on-gpios = <&gpio_prt11 0 GPIO_ACTIVE_HIGH>;
+			fw-download-speed = <115200>;
+			hci-operation-speed = <115200>;
+		};
 	};
 };
