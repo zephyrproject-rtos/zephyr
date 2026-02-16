@@ -289,6 +289,9 @@ int z_sched_wait(struct k_spinlock *lock, k_spinlock_key_t key,
  * performance. As such, care must be taken when using both this function and
  * the specified callback.
  *
+ * @warning @p func may safely remove the thread received as argument from the
+ * wait queue only when `CONFIG_WAITQ_SCALABLE=n`.
+ *
  * @param wait_q Identifies the wait queue to walk
  * @param func   Callback to invoke on each waiting thread
  * @param data   Custom data passed to the callback
