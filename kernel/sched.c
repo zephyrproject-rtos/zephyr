@@ -1563,8 +1563,8 @@ int z_sched_wait(struct k_spinlock *lock, k_spinlock_key_t key,
 	return ret;
 }
 
-int z_sched_waitq_walk(_wait_q_t  *wait_q,
-		       int (*func)(struct k_thread *, void *), void *data)
+int z_sched_waitq_walk(_wait_q_t *wait_q, _waitq_walk_cb_t walk_func,
+		       _waitq_post_walk_cb_t post_func, void *data)
 {
 	struct k_thread *thread;
 	int  status = 0;
@@ -1585,10 +1585,19 @@ int z_sched_waitq_walk(_wait_q_t  *wait_q,
 			 * it returns 0.
 			 */
 
-			status = func(thread, data);
+			status = walk_func(thread, data);
 			if (status != 0) {
 				break;
 			}
+		}
+
+		/*
+		 * Invoke post-walk callback. This is done while
+		 * still holding _sched_spinlock to enable atomic
+		 * operations (from the scheduler's point of view).
+		 */
+		if (post_func != NULL) {
+			post_func(status, data);
 		}
 	}
 

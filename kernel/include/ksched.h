@@ -278,28 +278,48 @@ int z_sched_wait(struct k_spinlock *lock, k_spinlock_key_t key,
 		 _wait_q_t *wait_q, k_timeout_t timeout, void **data);
 
 /**
- * @brief Walks the wait queue invoking the callback on each waiting thread
+ * Callback function called during queue walk by @ref z_sched_waitq_walk
+ * for each thread in the wait queue (if not ended earlier)
  *
- * This function walks the wait queue invoking the callback function on each
- * waiting thread while holding _sched_spinlock. This can be useful for routines
- * that need to operate on multiple waiting threads.
+ * @param thread Thread info data structure
+ * @param data   `data` parameter of z_sched_waitq_walk()
+ * @return non-zero to end wait queue walk immediately, 0 to continue
+ */
+typedef int (*_waitq_walk_cb_t)(struct k_thread *thread, void *data);
+
+/**
+ * Callback function called after queue walk by @ref z_sched_waitq_walk
+ *
+ * @param status Wait queue walk status
+ * (same value that will be returned to caller of z_sched_waitq_walk())
+ * @param data   `data` parameter of z_sched_waitq_walk()
+ */
+typedef void (*_waitq_post_walk_cb_t)(int status, void *data);
+
+/**
+ * @brief Walks the wait queue invoking a callback on each waiting thread
+ *
+ * This function walks the wait queue invoking the `walk_func` callback function
+ * on each waiting thread (except if stopped earlier by a non-zero return value),
+ * followed by a single call of `post_func`, all while holding `_sched_spinlock`.
+ * This can be useful for routines that need to operate on multiple waiting threads.
  *
  * CAUTION! As a wait queue is of indeterminate length, the scheduler will be
- * locked for an indeterminate amount of time. This may impact system
- * performance. As such, care must be taken when using both this function and
- * the specified callback.
+ * locked for an indeterminate amount of time. This may impact system performance.
+ * As such, care must be taken when using this function and in the callbacks.
  *
- * @warning @p func may safely remove the thread received as argument from the
- * wait queue only when `CONFIG_WAITQ_SCALABLE=n`.
+ * @warning @p walk_func may safely remove the thread received as argument from
+ * the wait queue only when `CONFIG_WAITQ_SCALABLE=n`.
  *
- * @param wait_q Identifies the wait queue to walk
- * @param func   Callback to invoke on each waiting thread
- * @param data   Custom data passed to the callback
+ * @param wait_q    Identifies the wait queue to walk
+ * @param walk_func Callback to invoke for each waiting thread
+ * @param post_func Callback to invoke after queue walk (optional)
+ * @param data      Custom data passed to the callbacks
  *
- * @retval non-zero if walk is terminated by the callback; otherwise 0
+ * @return non-zero if walk is terminated by the callback; otherwise 0
  */
-int z_sched_waitq_walk(_wait_q_t *wait_q,
-		       int (*func)(struct k_thread *, void *), void *data);
+int z_sched_waitq_walk(_wait_q_t *wait_q, _waitq_walk_cb_t walk_func,
+		       _waitq_post_walk_cb_t post_func, void *data);
 
 /** @brief Halt thread cycle usage accounting.
  *

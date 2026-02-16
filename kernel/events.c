@@ -191,7 +191,7 @@ static uint32_t k_event_post_internal(struct k_event *event, uint32_t events,
 #endif /* CONFIG_WAITQ_SCALABLE */
 	data.events = events;
 	data.clear_events = 0;
-	z_sched_waitq_walk(&event->wait_q, event_walk_op, &data);
+	z_sched_waitq_walk(&event->wait_q, event_walk_op, NULL, &data);
 
 #ifdef CONFIG_WAITQ_SCALABLE
 	if (data.head != NULL) {
