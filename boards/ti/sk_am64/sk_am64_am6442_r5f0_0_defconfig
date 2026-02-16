@@ -5,3 +5,6 @@
 
 # Zephyr Kernel Configuration
 CONFIG_XIP=n
+
+# Enable OpenAMP resource table needed for remoteproc booting
+CONFIG_OPENAMP_RSC_TABLE=y
