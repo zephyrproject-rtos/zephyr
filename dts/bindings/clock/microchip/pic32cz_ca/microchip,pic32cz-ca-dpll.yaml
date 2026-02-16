@@ -109,7 +109,6 @@ child-binding:
         FPFD = FCKR / REFDIV (i.e., FPFD must always be between 4 MHz to 48 MHz.
 
   child-binding:
-    compatible: "microchip,pic32cz-ca-dpllout"
     properties:
       subsystem:
         type: int
