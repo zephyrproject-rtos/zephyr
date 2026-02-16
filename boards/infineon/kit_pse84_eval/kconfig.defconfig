@@ -28,3 +28,23 @@ config HEAP_MEM_POOL_ADD_SIZE_BOARD
 endif # WIFI
 
 endif # BOARD_KIT_PSE84_EVAL_PSE846GPS2DBZC4A_M55
+
+if BOARD_KIT_PSE84_EVAL_PSE846GPS2DBZC4A_M33
+
+if BT
+
+# Select AIROC part and module
+choice AIROC_PART
+	default CYW55500
+endchoice
+
+choice CYW55500_MODULE
+	default CYW55513IUBG_SM
+endchoice
+
+config MAIN_STACK_SIZE
+	default 2048 if BT_HCI
+
+endif # BT
+
+endif # BOARD_KIT_PSE84_EVAL_PSE846GPS2DBZC4A_M33
