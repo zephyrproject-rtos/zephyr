@@ -57,6 +57,8 @@ LOG_MODULE_REGISTER(uart_ifx, CONFIG_UART_LOG_LEVEL);
 #define IFX_UART_RX_INT_MASK_NONE 0UL
 #define IFX_UART_TX_INT_MASK_NONE 0UL
 
+#define IFX_UART_RTS_RX_FIFO_LEVEL 63UL
+
 #ifdef CONFIG_UART_ASYNC_API
 #include <zephyr/drivers/dma.h>
 #include <cy_trigmux.h>
@@ -423,7 +425,8 @@ static int ifx_cat1_uart_configure(const struct device *dev, const struct uart_c
 	data->scb_config.dataWidth = convert_uart_data_bits_z_to_cy(cfg->data_bits);
 	data->scb_config.stopBits = convert_uart_stop_bits_z_to_cy(cfg->stop_bits);
 	data->scb_config.parity = convert_uart_parity_z_to_cy(cfg->parity);
-	data->scb_config.enableCts = data->cts_enabled;
+	data->scb_config.enableCts = cfg->flow_ctrl;
+	data->scb_config.rtsRxFifoLevel = cfg->flow_ctrl ? IFX_UART_RTS_RX_FIFO_LEVEL : 0UL;
 
 	Cy_SCB_UART_Init(config->reg_addr, &(data->scb_config), NULL);
 	Cy_SCB_UART_Enable(config->reg_addr);
