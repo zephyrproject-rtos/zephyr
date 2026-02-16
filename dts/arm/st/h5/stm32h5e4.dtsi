@@ -1,0 +1,147 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/h5/stm32h563.dtsi>
+
+/* re-assign the sram blocks */
+/delete-node/ &sram1;
+/delete-node/ &sram2;
+/delete-node/ &sram3;
+
+/* no UART 9 instance */
+/delete-node/ &uart9;
+
+/ {
+	soc {
+		compatible = "st,stm32h5ef", "st,stm32h5", "simple-bus";
+
+		pinctrl: pin-controller@42020000 {
+			gpioh: gpio@42021c00 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x42021c00 0x400>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 7)>;
+			};
+
+			gpioj: gpio@42022400 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x42022400 0x400>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 9)>;
+			};
+
+			gpiok: gpio@42022800 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x42022800 0x400>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 26)>;
+			};
+		};
+
+		sram0: memory@20000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(256)>;
+			zephyr,memory-region = "SRAM1";
+		};
+
+		sram1: memory@20040000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x20040000 DT_SIZE_K(128)>;
+			zephyr,memory-region = "SRAM2";
+		};
+
+		sram2: memory@20060000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x20060000 DT_SIZE_K(384)>;
+			zephyr,memory-region = "SRAM3";
+		};
+
+		sram3: memory@200c0000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x200c0000 DT_SIZE_K(384)>;
+			zephyr,memory-region = "SRAM4";
+		};
+
+		sram4: memory@20120000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x20120000 DT_SIZE_K(384)>;
+			zephyr,memory-region = "SRAM5";
+		};
+
+		adc3: adc@4202d800 {
+			compatible = "st,stm32-adc";
+			reg = <0x4202d800 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 24)>;
+			clock-names = "adcx";
+			interrupts = <149 0>;
+			vref-mv = <3300>;
+			#io-channel-cells = <1>;
+			st,adc-resolutions = <12 10 8 6>;
+			sampling-times = <3 7 13 25 48 93 248 641>;
+			st,adc-sequencer = "programmable";
+			st,adc-oversampler = "minimal";
+			st,adc-internal-regulator = "startup-sw-delay";
+			st,adc-has-deep-powerdown;
+			st,adc-has-differential-support;
+			status = "disabled";
+		};
+
+		xspi2: spi@47002400 {
+			/* OCTOSPI instance has a XSPI IO manager */
+			compatible = "st,stm32-xspi";
+			reg = <0x47002400 0x400>, <0x70000000 DT_SIZE_M(256)>;
+			interrupts = <150 0>;
+			clock-names = "xspix", "xspi-ker", "xspi-mgr";
+			clocks = <&rcc STM32_CLOCK(AHB4, 21)>,
+				 <&rcc STM32_SRC_PLL1_Q OCTOSPI2_SEL(1)>,
+				 <&rcc STM32_CLOCK(AHB4, 22)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		fdcan3: can@4000a000 {
+			compatible = "st,stm32-fdcan";
+			reg = <0x4000a000 0x400>, <0x4000ac00 0x9f0>;
+			reg-names = "m_can", "message_ram";
+			interrupts = <152 0>, <153 0>;
+			interrupt-names = "int0", "int1";
+			/* common clock FDCAN 1 & 2 & 3 */
+			clocks = <&rcc STM32_CLOCK(APB1_2, 9)>,
+				 <&rcc STM32_SRC_HSE FDCAN_SEL(0)>;
+			bosch,mram-cfg = <0x6a0 28 8 3 3 0 3 3>;
+			status = "disabled";
+		};
+	};
+};
+
+&rng {
+	/* True RNG noise source is the default one */
+	/delete-property/ noise-source-control;
+};
+
+&die_temp {
+	io-channels = <&adc3 16>;
+};
+
+&vref {
+	io-channels = <&adc3 17>;
+};
+
+&vbat {
+	io-channels = <&adc3 14>;
+};
+
+&xspi1 {
+	/* OCTOSPI instance has a XSPI IO manager */
+	clock-names = "xspix", "xspi-ker", "xspi-mgr";
+	clocks = <&rcc STM32_CLOCK(AHB4, 20)>,
+		 <&rcc STM32_SRC_PLL1_Q OCTOSPI1_SEL(1)>,
+		 <&rcc STM32_CLOCK(AHB4, 22)>;
+};
