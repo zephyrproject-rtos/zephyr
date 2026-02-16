@@ -90,6 +90,7 @@ static inline int _cache_all(NRF_CACHE_Type *cache, enum k_nrf_cache_op op)
 	return 0;
 }
 
+#if defined(ICACHE) || defined(DCACHE)
 #if NRF_CACHE_HAS_LINEADDR
 static inline void _cache_line(NRF_CACHE_Type *cache, enum k_nrf_cache_op op, uintptr_t line_addr)
 {
@@ -129,6 +130,13 @@ static inline int _cache_range(NRF_CACHE_Type *cache, enum k_nrf_cache_op op, vo
 {
 	uintptr_t line_addr = (uintptr_t)addr;
 	uintptr_t end_addr;
+	uint32_t cache_line_size = 0;
+
+	if (cache == NRF_DCACHE) {
+		cache_line_size = CONFIG_DCACHE_LINE_SIZE;
+	} else if (cache == NRF_ICACHE) {
+		cache_line_size = CONFIG_ICACHE_LINE_SIZE;
+	}
 
 	/* Some SOCs has a bug that requires to set 28th bit in the address on
 	 * Trustzone secure builds.
@@ -140,17 +148,21 @@ static inline int _cache_range(NRF_CACHE_Type *cache, enum k_nrf_cache_op op, vo
 
 	end_addr = line_addr + size;
 
-	/*
-	 * Align address to line size
-	 */
-	line_addr &= ~(CONFIG_DCACHE_LINE_SIZE - 1);
+	if (cache_line_size) {
+		__ASSERT_NO_MSG(cache_line_size % 2)
 
-	do {
-		_cache_line(cache, op, line_addr);
-		line_addr += CONFIG_DCACHE_LINE_SIZE;
-	} while (line_addr < end_addr);
+		/*
+		 * Align address to line size
+		 */
+		line_addr &= ~(cache_line_size - 1);
 
-	wait_for_cache(cache);
+		do {
+			_cache_line(cache, op, line_addr);
+			line_addr += cache_line_size;
+		} while (line_addr < end_addr);
+
+		wait_for_cache(cache);
+	}
 
 	return 0;
 }
@@ -184,8 +196,9 @@ static inline int _cache_all_checks(NRF_CACHE_Type *cache, enum k_nrf_cache_op o
 	return _cache_all(cache, op);
 }
 #endif /* NRF_CACHE_HAS_LINEADDR */
+#endif /* ICACHE || DCACHE */
 
-#if defined(NRF_DCACHE) && NRF_CACHE_HAS_TASKS
+#if defined(DCACHE) && defined(NRF_DCACHE) && NRF_CACHE_HAS_TASKS
 
 void cache_data_enable(void)
 {
@@ -291,7 +304,7 @@ int cache_data_flush_and_invd_range(void *addr, size_t size)
 
 #endif /* NRF_DCACHE */
 
-#if defined(NRF_ICACHE) && NRF_CACHE_HAS_TASKS
+#if defined(ICACHE) && defined(NRF_ICACHE) && NRF_CACHE_HAS_TASKS
 
 void cache_instr_enable(void)
 {
