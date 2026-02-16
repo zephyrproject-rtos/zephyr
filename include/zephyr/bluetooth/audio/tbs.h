@@ -1128,6 +1128,16 @@ int bt_tbs_client_register_cb(struct bt_tbs_client_cb *cbs);
 struct bt_tbs_instance *bt_tbs_client_get_by_ccid(const struct bt_conn *conn,
 						  uint8_t ccid);
 
+/**
+ * @brief Look up Telephone Bearer Service instance by index
+ *
+ * @param conn The connection to the TBS server.
+ * @param index The index to lookup a service instance for.
+ *
+ * @return Pointer to a Telephone Bearer Service instance if found else NULL.
+ */
+struct bt_tbs_instance *bt_tbs_client_get_by_index(const struct bt_conn *conn, uint8_t index);
+
 #ifdef __cplusplus
 }
 #endif
