@@ -1,0 +1,12 @@
+# Copyright (c) 2022, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+        STM32U5 SPI controller.
+
+        The stm32u5 spi has some slight differences compared to the stm32h7 spi,
+        which in the ec_host_cmd_backend_spi_stm32.c means it does not work.
+
+compatible: "st,stm32u5-spi"
+
+include: st,stm32-spi-common.yaml

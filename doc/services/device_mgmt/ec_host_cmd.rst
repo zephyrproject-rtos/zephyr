@@ -76,6 +76,15 @@ SoCs, modify the compatible string as shown.
        ...
    };
 
+For the STM32U5 family, you must modify the compatible string as shown below.
+
+.. code-block:: devicetree
+
+   &spi1 {
+      compatible = "st,stm32h7-spi", "st,stm32u5-spi", "st,stm32-spi-fifo", "st,stm32-spi-host-cmd";
+      ...
+   };
+
 The chip that runs Zephyr is a SPI slave and the ``cs-gpios`` property is used to point our CS pin.
 For the SPI, it is required to set the backend chosen node ``zephyr,host-cmd-spi-backend``.
 
