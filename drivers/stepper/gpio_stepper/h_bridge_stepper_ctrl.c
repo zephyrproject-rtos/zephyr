@@ -109,10 +109,10 @@ static void stepper_work_step_handler(const struct device *dev)
 		switch (data->run_mode) {
 		case STEPPER_CTRL_RUN_MODE_POSITION:
 			gpio_stepper_common_update_remaining_steps(dev);
-			gpio_stepper_common_position_mode_task(data->dev);
+			gpio_stepper_common_position_mode_task(dev);
 			break;
 		case STEPPER_CTRL_RUN_MODE_VELOCITY:
-			gpio_stepper_common_velocity_mode_task(data->dev);
+			gpio_stepper_common_velocity_mode_task(dev);
 			break;
 		default:
 			LOG_WRN("Unsupported run mode %d", data->run_mode);
@@ -133,7 +133,7 @@ static int h_bridge_stepper_ctrl_move_by(const struct device *dev, int32_t micro
 	}
 
 	if (micro_steps == 0) {
-		gpio_stepper_trigger_callback(dev, STEPPER_CTRL_EVENT_STEPS_COMPLETED);
+		gpio_stepper_common_process_cb(dev, STEPPER_CTRL_EVENT_STEPS_COMPLETED);
 		config->timing_source->stop(dev);
 		return 0;
 	}
@@ -215,7 +215,7 @@ static int h_bridge_stepper_ctrl_stop(const struct device *dev)
 
 	K_SPINLOCK(&data->lock) {
 		err = config->timing_source->stop(dev);
-		gpio_stepper_trigger_callback(dev, STEPPER_CTRL_EVENT_STOPPED);
+		gpio_stepper_common_process_cb(dev, STEPPER_CTRL_EVENT_STOPPED);
 	}
 
 	return err;
@@ -223,11 +223,9 @@ static int h_bridge_stepper_ctrl_stop(const struct device *dev)
 
 static int h_bridge_stepper_init(const struct device *dev)
 {
-	struct gpio_stepper_common_data *data = dev->data;
 	const struct h_bridge_stepper_ctrl_config *config = dev->config;
 	int err;
 
-	data->dev = dev;
 	LOG_DBG("Initializing %s h_bridge_stepper with %d pin", dev->name, NUM_CONTROL_PINS);
 	for (uint8_t n_pin = 0; n_pin < NUM_CONTROL_PINS; n_pin++) {
 		if (!gpio_is_ready_dt(&config->control_pins[n_pin])) {
@@ -268,7 +266,9 @@ static DEVICE_API(stepper_ctrl, h_bridge_stepper_ctrl_api) = {
 		.step_gap = DT_INST_PROP(inst, lut_step_gap),					   \
 		.control_pins = h_bridge_stepper_ctrl_control_pins_##inst			   \
 	};											   \
-	static struct h_bridge_stepper_ctrl_data h_bridge_stepper_ctrl_data_##inst;		   \
+	static struct h_bridge_stepper_ctrl_data h_bridge_stepper_ctrl_data_##inst = {		   \
+		.common = GPIO_STEPPER_DT_INST_COMMON_DATA_INIT(inst),				   \
+	};											   \
 	DEVICE_DT_INST_DEFINE(inst, h_bridge_stepper_init, NULL,				   \
 			      &h_bridge_stepper_ctrl_data_##inst,				   \
 			      &h_bridge_stepper_ctrl_config_##inst, POST_KERNEL,		   \

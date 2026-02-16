@@ -130,7 +130,7 @@ static int gpio_step_dir_stepper_ctrl_move_by(const struct device *dev, const in
 	}
 
 	if (micro_steps == 0) {
-		gpio_stepper_trigger_callback(data->common.dev, STEPPER_CTRL_EVENT_STEPS_COMPLETED);
+		gpio_stepper_common_process_cb(dev, STEPPER_CTRL_EVENT_STEPS_COMPLETED);
 		config->common.timing_source->stop(dev);
 		return 0;
 	}
@@ -228,7 +228,7 @@ int gpio_step_dir_stepper_ctrl_stop(const struct device *dev)
 		}
 	}
 
-	gpio_stepper_trigger_callback(dev, STEPPER_CTRL_EVENT_STOPPED);
+	gpio_stepper_common_process_cb(dev, STEPPER_CTRL_EVENT_STOPPED);
 
 	return 0;
 }
