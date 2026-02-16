@@ -53,3 +53,20 @@
 &gpiote30 {
 	status = "okay";
 };
+
+/*
+ * Note this SPI instance conflicts with UART30. Disable or reconfigure pinctrl for UART30
+ * to use this SPI instance.
+ */
+nordic_expansion_spi: &spi22 {
+	cs-gpios = <&gpio3 2 GPIO_ACTIVE_LOW>;
+	pinctrl-0 = <&spi22_default>;
+	pinctrl-1 = <&spi22_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+nordic_expansion_pwm: &pwm21 {
+	pinctrl-0 = <&pwm21_default>;
+	pinctrl-1 = <&pwm21_sleep>;
+	pinctrl-names = "default", "sleep";
+};
