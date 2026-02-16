@@ -177,6 +177,24 @@ static void update_gptp(struct net_if *iface, struct net_pkt *pkt,
 #define update_gptp(iface, pkt, send)
 #endif /* CONFIG_NET_GPTP */
 
+static int sendall(int sock, const void *buf, size_t len)
+{
+	long out_len;
+
+	/* Make sure that the entire packet is sent. Partial
+	 * writes are not allowed since the host TAP driver
+	 * expects to receive full Ethernet frames.
+	 */
+	do {
+		out_len = nsi_host_write(sock, buf, len);
+		if ((size_t)out_len == len) {
+			break;
+		}
+	} while ((out_len == -1 && errno == EINTR) || (out_len >= 0));
+
+	return out_len;
+}
+
 static int eth_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct eth_context *ctx = dev->data;
@@ -192,7 +210,7 @@ static int eth_send(const struct device *dev, struct net_pkt *pkt)
 
 	LOG_DBG("Send pkt %p len %d", pkt, count);
 
-	ret = nsi_host_write(ctx->dev_fd, ctx->send, count);
+	ret = sendall(ctx->dev_fd, ctx->send, count);
 	if (ret < 0) {
 		LOG_DBG("Cannot send pkt %p (%d)", pkt, ret);
 	}
