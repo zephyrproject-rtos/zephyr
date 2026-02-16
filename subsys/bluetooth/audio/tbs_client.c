@@ -102,7 +102,7 @@ static struct bt_tbs_instance *tbs_instance_find(struct bt_tbs_server_inst *serv
 	return NULL;
 }
 
-static struct bt_tbs_instance *tbs_inst_by_index(struct bt_conn *conn, uint8_t index)
+static struct bt_tbs_instance *tbs_inst_by_index(const struct bt_conn *conn, uint8_t index)
 {
 	struct bt_tbs_server_inst *server;
 
@@ -2518,5 +2518,16 @@ struct bt_tbs_instance *bt_tbs_client_get_by_ccid(const struct bt_conn *conn,
 	server = &srv_insts[bt_conn_index(conn)];
 
 	return tbs_instance_find(server, tbs_instance_ccid_is_eq, UINT_TO_POINTER(ccid));
+}
+
+struct bt_tbs_instance *bt_tbs_client_get_by_index(const struct bt_conn *conn, uint8_t index)
+
+{
+	if (conn == NULL) {
+		LOG_DBG("conn was NULL");
+		return NULL;
+	}
+
+	return tbs_inst_by_index(conn, index);
 }
 #endif /* defined(CONFIG_BT_TBS_CLIENT_CCID) */
