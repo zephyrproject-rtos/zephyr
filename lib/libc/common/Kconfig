@@ -104,6 +104,20 @@ config COMMON_LIBC_STRNLEN
 	help
 	  common implementation of strnlen().
 
+config COMMON_LIBC_SIGNAL
+	bool "Common C library signal"
+	depends on MINIMAL_LIBC
+	default y
+	help
+	  Provide libc signal().
+
+config COMMON_LIBC_RAISE
+	bool "Common C library raise"
+	depends on MINIMAL_LIBC
+	default y
+	help
+	  Provide libc raise().
+
 config COMMON_LIBC_THRD
 	bool "C11 <threads.h> API support"
 	depends on DYNAMIC_THREAD
