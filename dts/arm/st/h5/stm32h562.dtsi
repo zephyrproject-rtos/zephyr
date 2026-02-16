@@ -126,28 +126,28 @@
 			status = "disabled";
 		};
 
-		sai1_a: sai1@40015404 {
+		sai1: sai1@40015400 {
 			compatible = "st,stm32-sai";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40015404 0x20>;
+			reg = <0x40015400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 21)>,
 				 <&rcc STM32_SRC_PLL1_P SAI1_SEL(0)>;
-			dmas = <&gpdma1 1 53 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-					      STM32_DMA_16BITS)>;
 			status = "disabled";
-		};
 
-		sai1_b: sai1@40015424 {
-			compatible = "st,stm32-sai";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x40015424 0x20>;
-			clocks = <&rcc STM32_CLOCK(APB2, 21)>,
-				 <&rcc STM32_SRC_PLL1_P SAI1_SEL(0)>;
-			dmas = <&gpdma1 0 54 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-					      STM32_DMA_16BITS)>;
-			status = "disabled";
+			sai1_a: sai1a@40015404 {
+				compatible = "st,stm32-sai-sub";
+				reg = <0x40015404 0x20>;
+				dmas = <&gpdma1 1 53 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				status = "disabled";
+			};
+
+			sai1_b: sai1b@40015424 {
+				compatible = "st,stm32-sai-sub";
+				reg = <0x40015424 0x20>;
+				dmas = <&gpdma1 0 54 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				status = "disabled";
+			};
 		};
 
 		uart4: serial@40004c00 {

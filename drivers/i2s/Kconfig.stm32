@@ -27,9 +27,9 @@ config I2S_STM32_TX_BLOCK_COUNT
 endif # I2S_STM32
 
 menuconfig I2S_STM32_SAI
-	bool "STM32 MCU I2S controller driver"
+	bool "STM32 MCU SAI controller driver"
 	default y
-	depends on DT_HAS_ST_STM32_SAI_ENABLED
+	depends on DT_HAS_ST_STM32_SAI_ENABLED && DT_HAS_ST_STM32_SAI_SUB_ENABLED
 	select CACHE_MANAGEMENT if CPU_HAS_DCACHE
 	select DMA
 	select USE_STM32_HAL_DMA
