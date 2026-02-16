@@ -77,6 +77,10 @@
 	status = "okay";
 };
 
+&gpio3 {
+	status = "okay";
+};
+
 &gpiote20 {
 	status = "okay";
 };
