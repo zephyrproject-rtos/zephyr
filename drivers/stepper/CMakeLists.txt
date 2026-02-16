@@ -7,6 +7,7 @@ zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/stepper/stepper_ctrl
 # zephyr-keep-sorted-start
 add_subdirectory(adi_tmc)
 add_subdirectory(allegro)
+add_subdirectory(event_handler)
 add_subdirectory(gpio_stepper)
 add_subdirectory(step_dir)
 add_subdirectory(ti)
