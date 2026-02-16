@@ -14,6 +14,22 @@
 	input-enable;
 };
 
+&p10_1_scb4_uart_tx {
+	drive-push-pull;
+};
+
+&p10_0_scb4_uart_rx {
+	input-enable;
+};
+
+&p10_3_scb4_uart_rts {
+	drive-push-pull;
+};
+
+&p10_2_scb4_uart_cts {
+	input-enable;
+};
+
 &p21_0_sdhc0_card_cmd {
 	drive-push-pull;
 	input-enable;
