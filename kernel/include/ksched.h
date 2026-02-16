@@ -221,11 +221,13 @@ bool z_sched_wake(_wait_q_t *wait_q, int swap_retval, void *swap_data);
  * Given a specific thread, wake it up. This routine assumes that the given
  * thread is not on the timeout queue.
  *
+ * @warning Caller must hold _sched_spinlock when calling this function!
+ *
  * @param thread Given thread to wake up.
  * @param is_timeout True if called from the timer ISR; false otherwise.
  *
  */
-void z_sched_wake_thread(struct k_thread *thread, bool is_timeout);
+void z_sched_wake_thread_locked(struct k_thread *thread, bool is_timeout);
 
 /**
  * Wake up all threads pending on the provided wait queue

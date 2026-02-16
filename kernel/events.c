@@ -182,7 +182,11 @@ static uint32_t k_event_post_internal(struct k_event *event, uint32_t events,
 		do {
 			arch_thread_return_value_set(thread, 0);
 			next = thread->next_event_link;
-			z_sched_wake_thread(thread, false);
+
+			K_SPINLOCK(&_sched_spinlock) {
+				z_sched_wake_thread_locked(thread, false);
+			}
+
 			thread = next;
 		} while (thread != NULL);
 	}
