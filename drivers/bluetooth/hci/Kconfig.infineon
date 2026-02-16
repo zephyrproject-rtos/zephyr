@@ -229,6 +229,37 @@ config CYW20829B1_BT_FW_TX10
 endchoice
 endif # CYW20829
 
+choice CYW55500_MODULE
+	prompt "CYW55500 module"
+	depends on CYW55500 && BT_H4
+
+config CYW55513IUBG_SM
+	bool "CYW55513 Module"
+	help
+	  AIROC™ CYW55513 Wi-Fi & Bluetooth® is a low-power, single chip device
+	  that support single-stream, tri-band,mWi-Fi 6/6E, IEEE 802.11ax compliant
+	  Wi-Fi MAC/baseband/radio, and Bluetooth®/Bluetooth® Low Energy 5.4.
+
+config CYW55513_MURATA_2FY
+	bool "CYW55513 Murata 2FY Module"
+	help
+	  Type 2FY is a small and high performance module based on Infineon CYW55513
+	  combo chipset which supports Wi-Fi® 802.11a/b/g/n/ac/ax + Bluetooth® 5.4
+	  BR/EDR/LE up to 143Mbps PHY data rate on Wi-Fi, 3Mbps PHY data rate on
+	  Bluetooth and 2Mbps PHY data rate on Bluetooth® LE.
+
+	  Detailed information about Murata Type 2FY module you can find on
+	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type2fy
+endchoice
+
+
+config BT_CYW555XX
+	bool "Bluetooth support for CYW555XX"
+	default y if CYW55513_MURATA_2FY || CYW55513IUBG_SM
+	help
+	  Common Bluetooth configuration for CYW555XX-based designs,
+	  including Murata 2FY modules and discrete chip implementations.
+
 config AIROC_CUSTOM_FIRMWARE_HCD_BLOB
 	string  "Path to user BT firmware HCD file"
 	help
