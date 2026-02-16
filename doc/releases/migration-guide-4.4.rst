@@ -681,43 +681,56 @@ Stepper
 * For :dtcompatible:`adi,tmc2209`, the property ``msx-gpios`` is now replaced by ``m0-gpios`` and
   ``m1-gpios`` for consistency with other step/dir stepper drivers.
 
-* Since :github:`91979`, All stepper-drv driver APIs have been refactored out of the stepper API.
-  The following APIs have been moved from :c:group:`stepper_interface` to :c:group:`stepper_drv_interface`:
+* Several API functions have been renamed:
 
-  * :c:func:`stepper_enable` is replaced by :c:func:`stepper_drv_enable`.
-  * :c:func:`stepper_disable` is replaced by :c:func:`stepper_drv_disable`.
-  * :c:func:`stepper_set_micro_step_res` is replaced by :c:func:`stepper_drv_set_micro_step_res`.
-  * :c:func:`stepper_get_micro_step_res` is replaced by :c:func:`stepper_drv_get_micro_step_res`.
+  * ``stepper_move_by`` to :c:func:`stepper_ctrl_move_by`.
+  * ``stepper_move_to`` to :c:func:`stepper_ctrl_move_to`.
+  * ``stepper_is_moving`` to :c:func:`stepper_ctrl_is_moving`.
+  * ``stepper_run`` to :c:func:`stepper_ctrl_run`.
+  * ``stepper_stop`` to :c:func:`stepper_ctrl_stop`.
+  * ``stepper_set_reference_position`` to :c:func:`stepper_ctrl_set_reference_position`.
+  * ``stepper_get_actual_position`` to :c:func:`stepper_ctrl_get_actual_position`.
+  * ``stepper_set_microstep_interval`` to :c:func:`stepper_ctrl_set_microstep_interval`.
 
-* :c:enum:`stepper_micro_step_resolution` is replaced by :c:enum:`stepper_drv_micro_step_resolution`.
-* ``STEPPER_DRV_EVENT_STALL_DETECTED`` and ``STEPPER_DRV_EVENT_FAULT_DETECTED`` events have been
-  refactored to :c:enum:`stepper_drv_event`.
+* The following events have been moved from :c:enum:`stepper_event` to :c:enum:`stepper_ctrl_event`:
 
-* :dtcompatible:`zephyr,gpio-step-dir-stepper` implements :c:group:`stepper_interface` for
-  controlling stepper motors via GPIO step and direction signals. Refer to
-  :ref:`stepper-individual-controller-driver` for more details.
+  * ``STEPPER_EVENT_STEPS_COMPLETED`` to ``STEPPER_CTRL_EVENT_STEPS_COMPLETED``.
+  * ``STEPPER_EVENT_LEFT_END_STOP_DETECTED`` to ``STEPPER_CTRL_EVENT_LEFT_END_STOP_DETECTED```.
+  * ``STEPPER_EVENT_RIGHT_END_STOP_DETECTED`` to ``STEPPER_CTRL_EVENT_RIGHT_END_STOP_DETECTED``.
+  * ``STEPPER_EVENT_STOPPED`` to ``STEPPER_CTRL_EVENT_STOPPED``.
 
-  * ``step-gpios``, ``dir-gpios``, ``invert-direction`` and ``counter`` properties are removed
-    from :dtcompatible:`adi,tmc2209`, :dtcompatible:`ti,drv84xx` and :dtcompatible:`allegro,a4979`,
-    these are now are implemented by :dtcompatible:`zephyr,gpio-step-dir-stepper`.
-  * :c:func:`stepper_move_by`, :c:func:`stepper_move_to`, :c:func:`stepper_run`,
-    :c:func:`stepper_stop`, :c:func:`stepper_is_moving`, :c:func:`stepper_set_microstep_interval`
-    and :c:func:`stepper_set_event_callback` APIs are removed from :dtcompatible:`adi,tmc2209`,
-    :dtcompatible:`ti,drv84xx` and :dtcompatible:`allegro,a4979`.
-  * :dtcompatible:`adi,tmc2209`, :dtcompatible:`ti,drv84xx` and :dtcompatible:`allegro,a4979`
-    implement :c:group:`stepper_drv_interface`.
+* The ``step-gpios``, ``dir-gpios``, ``invert-direction``, and ``counter`` properties have been
+  removed from all bindings of step-dir stepper hardware driver devices (:dtcompatible:`adi,tmc2209`,
+  :dtcompatible:`ti,drv84xx`, and :dtcompatible:`allegro,a4979`) and moved to the new generic stepper
+  motion controller binding :dtcompatible:`zephyr,gpio-step-dir-stepper-ctrl`.
 
-* :c:func:`stepper_enable`, :c:func:`stepper_disable`, :c:func:`stepper_set_micro_step_res` and
-  :c:func:`stepper_get_micro_step_res` APIs are removed from :dtcompatible:`zephyr,h-bridge-stepper`.
-* ``en-gpios`` property is removed from :dtcompatible:`zephyr,h-bridge-stepper`.
-* ``micro-step-res`` property is replaced by ``lut-step-gap`` property in
-  :dtcompatible:`zephyr,h-bridge-stepper`.
+* Motion control must now be performed through a :dtcompatible:`zephyr,gpio-step-dir-stepper-ctrl`
+  device that references the stepper hardware driver devicetree node via the ``stepper-driver`` property.
+  Applications must update their devicetree to add a motion controller node and use the ``stepper_ctrl_*``
+  APIs, instead of calling motion control functions directly on the stepper hardware driver device.
+
+* Stepper hardware driver specific APIs have been removed from the H-bridge stepper controller:
+
+  * :dtcompatible:`zephyr,h-bridge-stepper` is renamed to :dtcompatible:`zephyr,h-bridge-stepper-ctrl` to
+    reflect that it is a stepper motion controller binding, not a stepper hardware driver binding.
+
+  * :c:func:`stepper_enable`, :c:func:`stepper_disable`, :c:func:`stepper_set_micro_step_res`,
+    and :c:func:`stepper_get_micro_step_res` API functions are no longer usable with
+    :dtcompatible:`zephyr,h-bridge-stepper-ctrl` compatible devices.
+
+  * The ``en-gpios`` property has been removed from :dtcompatible:`zephyr,h-bridge-stepper-ctrl`.
+
+  * The ``micro-step-res`` property has been replaced by ``lut-step-gap`` in
+    :dtcompatible:`zephyr,h-bridge-stepper-ctrl` to better reflect the H-bridge control mechanism,
+    which uses lookup table interpolation rather than hardware micro-stepping.
+
+  Applications using H-bridge stepper controller must:
+
+  1. Remove calls to stepper hardware driver specific APIs on H-bridge controller devices
+  2. Update devicetree to use ``lut-step-gap`` instead of ``micro-step-res``
+  3. Remove ``en-gpios`` property if present
 
 * :dtcompatible:`adi,tmc50xx` and :dtcompatible:`adi,tmc51xx` devices are now modeled as MFDs.
-* :dtcompatible:`adi,tmc50xx-stepper` and :dtcompatible:`adi,tmc51xx-stepper` drivers implement
-  :c:group:`stepper_interface`.
-* :dtcompatible:`adi,tmc50xx-stepper-drv` and :dtcompatible:`adi,tmc51xx-stepper-drv` drivers implement
-  :c:group:`stepper_drv_interface`.
 
 STM32
 =====
