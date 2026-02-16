@@ -46,7 +46,7 @@
 /* Similar for nRF54H20 cpuppr (RISC-V core), it has a slow CPU clock
  * compared to other cores, causing the increased overhead.
  */
-#define MAXIMUM_SHORTEST_TICKS 4
+#define MAXIMUM_SHORTEST_TICKS (IS_ENABLED(CONFIG_XIP) ? 8 : 4)
 #else
 #define MAXIMUM_SHORTEST_TICKS 1
 #endif
