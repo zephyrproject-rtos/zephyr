@@ -1,0 +1,32 @@
+/* SPDX-FileCopyrightText: Copyright (c) 2026 ID8 Engineering AB */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/ {
+	chosen {
+		zephyr,modem-uart = &mikrobus_uart;
+	};
+
+	aliases {
+		modem = &modem;
+		modem-uart = &mikrobus_uart;
+	};
+
+	en_rts {
+		compatible = "regulator-fixed";
+		regulator-name = "enable-rts";
+		enable-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
+		regulator-boot-on;
+	};
+};
+
+&mikrobus_uart {
+	status = "okay";
+	current-speed = <115200>;
+
+	modem: modem {
+		status = "okay";
+		compatible = "u-blox,sara-r4";
+		mdm-power-gpios = <&mikrobus_header 0 (GPIO_OPEN_SOURCE | GPIO_ACTIVE_HIGH)>;
+		mdm-reset-gpios = <&mikrobus_header 1 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
+	};
+};
