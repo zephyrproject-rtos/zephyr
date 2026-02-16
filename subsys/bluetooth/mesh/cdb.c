@@ -1053,8 +1053,12 @@ void bt_mesh_cdb_node_del(struct bt_mesh_cdb_node *node, bool store)
 	}
 
 	node->addr = BT_MESH_ADDR_UNASSIGNED;
+	node->num_elem = 0;
+	node->net_idx = 0;
+	memset(node->uuid, 0, sizeof(node->uuid));
 	bt_mesh_key_destroy(&node->dev_key);
 	memset(&node->dev_key, 0, sizeof(node->dev_key));
+	atomic_clear(node->flags);
 }
 
 void bt_mesh_cdb_node_update(struct bt_mesh_cdb_node *node, uint16_t addr,
