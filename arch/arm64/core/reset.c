@@ -212,7 +212,8 @@ void z_arm64_el2_init(void)
 #endif
 
 	zero_cntvoff_el2();		/* Set 64-bit virtual timer offset to 0 */
-	zero_cnthctl_el2();
+	reg = CNTHCTL_EL2_EL1PCEN | CNTHCTL_EL2_EL1PCTEN;
+	write_cnthctl_el2(reg);
 #ifdef CONFIG_CPU_AARCH64_CORTEX_R
 	zero_cnthps_ctl_el2();
 #else
