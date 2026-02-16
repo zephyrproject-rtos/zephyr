@@ -762,7 +762,10 @@ static void send_can_tx_cb(const struct device *dev, int error, void *arg)
 
 	ARG_UNUSED(dev);
 
-	sctx->tx_backlog--;
+	if (sctx->tx_backlog > 0) {
+		sctx->tx_backlog--;
+	}
+
 	k_sem_give(&sctx->tx_sem);
 
 	if (sctx->state == ISOTP_TX_WAIT_BACKLOG) {
