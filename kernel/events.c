@@ -156,10 +156,7 @@ static int event_walk_op(struct k_thread *thread, void *data)
 		if (thread->event_options & K_EVENT_OPTION_CLEAR) {
 			event_data->clear_events |= match;
 		}
-
-#ifdef CONFIG_SYS_CLOCK_EXISTS
-		z_abort_timeout(&thread->base.timeout);
-#endif /* CONFIG_SYS_CLOCK_EXISTS */
+		z_abort_thread_timeout(thread);
 
 #ifndef CONFIG_WAITQ_SCALABLE
 		/*
