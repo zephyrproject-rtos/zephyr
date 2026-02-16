@@ -21,6 +21,14 @@ config BOOTLOADER_MCUBOOT
 config BOARD_ENABLE_CPUNET
 	default y if !MCUBOOT
 
+if BUILD_WITH_TFM
+
+choice TFM_PROFILE_TYPE
+	default TFM_PROFILE_TYPE_MINIMAL
+endchoice
+
+endif # BUILD_WITH_TFM
+
 # Code Partition:
 #
 # For the secure version of the board the firmware is linked at the beginning
