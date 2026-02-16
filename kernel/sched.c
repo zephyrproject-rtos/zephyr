@@ -1570,7 +1570,14 @@ int z_sched_waitq_walk(_wait_q_t  *wait_q,
 	int  status = 0;
 
 	K_SPINLOCK(&_sched_spinlock) {
-		_WAIT_Q_FOR_EACH(wait_q, thread) {
+#ifndef CONFIG_WAITQ_SCALABLE
+		struct k_thread *tmp;
+
+		_WAIT_Q_FOR_EACH_SAFE(wait_q, thread, tmp)
+#else /* !CONFIG_WAITQ_SCALABLE */
+		_WAIT_Q_FOR_EACH(wait_q, thread)
+#endif /* !CONFIG_WAITQ_SCALABLE */
+		{
 
 			/*
 			 * Invoke the callback function on each waiting thread
