@@ -5854,11 +5854,6 @@ static int configure_TCP_socket(struct hl7800_socket *sock)
 	char cmd_cfg[sizeof("AT+KTCPCFG=#,#,\"" IPV6_ADDR_FORMAT "\",#####,,,,#,,#")];
 	int dst_port = -1;
 	int af;
-	bool restore_on_boot = false;
-
-#ifdef CONFIG_MODEM_HL7800_LOW_POWER_MODE
-	restore_on_boot = true;
-#endif
 
 	if (sock->dst.sa_family == NET_AF_INET6) {
 		af = MDM_HL7800_SOCKET_AF_IPV6;
@@ -5872,8 +5867,8 @@ static int configure_TCP_socket(struct hl7800_socket *sock)
 
 	sock->socket_id = MDM_CREATE_SOCKET_ID;
 
-	snprintk(cmd_cfg, sizeof(cmd_cfg), "AT+KTCPCFG=%d,%d,\"%s\",%u,,,,%d,,%d", 1, 0,
-		 hl7800_sprint_ip_addr(&sock->dst), dst_port, af, restore_on_boot);
+	snprintk(cmd_cfg, sizeof(cmd_cfg), "AT+KTCPCFG=%d,%d,\"%s\",%u,,,,%d,,0", 1, 0,
+		 hl7800_sprint_ip_addr(&sock->dst), dst_port, af);
 	ret = send_at_cmd(sock, cmd_cfg, MDM_CMD_SEND_TIMEOUT, 0, false);
 	if (ret < 0) {
 		LOG_ERR("AT+KTCPCFG ret:%d", ret);
@@ -5890,11 +5885,6 @@ static int configure_UDP_socket(struct hl7800_socket *sock)
 	int ret = 0;
 	char cmd[sizeof("AT+KUDPCFG=1,0,,,,,0,#")];
 	int af;
-	bool restore_on_boot = false;
-
-#ifdef CONFIG_MODEM_HL7800_LOW_POWER_MODE
-	restore_on_boot = true;
-#endif
 
 	sock->socket_id = MDM_CREATE_SOCKET_ID;
 
@@ -5906,7 +5896,7 @@ static int configure_UDP_socket(struct hl7800_socket *sock)
 		return -EINVAL;
 	}
 
-	snprintk(cmd, sizeof(cmd), "AT+KUDPCFG=1,0,,,,,%d,%d", af, restore_on_boot);
+	snprintk(cmd, sizeof(cmd), "AT+KUDPCFG=1,0,,,,,%d,0", af);
 	ret = send_at_cmd(sock, cmd, MDM_CMD_SEND_TIMEOUT, 0, false);
 	if (ret < 0) {
 		LOG_ERR("AT+KUDPCFG ret:%d", ret);
