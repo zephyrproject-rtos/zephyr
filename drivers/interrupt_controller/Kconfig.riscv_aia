@@ -12,7 +12,8 @@ config RISCV_IMSIC
 
 config RISCV_APLIC
 	bool "RISC-V APLIC (Advanced Platform-Level Interrupt Controller)"
-	default y if DT_HAS_RISCV_APLIC_ENABLED
+	default y
+	depends on DT_HAS_RISCV_APLIC_ENABLED
 	depends on RISCV
 	help
 	  RISC-V Advanced Platform-Level Interrupt Controller (APLIC).
@@ -21,7 +22,7 @@ config RISCV_APLIC
 
 config RISCV_APLIC_MSI
 	bool "RISC-V APLIC MSI delivery mode"
-	default y if $(dt_compat_all_has_prop,$(DT_COMPAT_RISCV_APLIC),msi-parent)
+	default y
 	depends on RISCV_APLIC
 	depends on $(dt_compat_all_has_prop,$(DT_COMPAT_RISCV_APLIC),msi-parent)
 	select RISCV_IMSIC
