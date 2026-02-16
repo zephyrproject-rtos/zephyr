@@ -653,9 +653,6 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	/* Initialize custom data field (value is opaque to kernel) */
 	new_thread->custom_data = NULL;
 #endif /* CONFIG_THREAD_CUSTOM_DATA */
-#ifdef CONFIG_EVENTS
-	new_thread->no_wake_on_timeout = false;
-#endif /* CONFIG_EVENTS */
 #ifdef CONFIG_THREAD_MONITOR
 	new_thread->entry.pEntry = entry;
 	new_thread->entry.parameter1 = p1;

@@ -622,21 +622,11 @@ void z_unpend_thread_no_timeout(struct k_thread *thread)
 	}
 }
 
-void z_sched_wake_thread_locked(struct k_thread *thread, bool is_timeout)
+void z_sched_wake_thread_locked(struct k_thread *thread)
 {
 	/* No K_SPINLOCK: caller must hold _sched_spinlock when calling */
 	bool killed = (thread->base.thread_state &
 			(_THREAD_DEAD | _THREAD_ABORTING));
-
-#ifdef CONFIG_EVENTS
-	bool do_nothing = thread->no_wake_on_timeout && is_timeout;
-
-	thread->no_wake_on_timeout = false;
-
-	if (do_nothing) {
-		return;
-	}
-#endif /* CONFIG_EVENTS */
 
 	if (!killed) {
 		/* The thread is not being killed */
@@ -656,7 +646,7 @@ void z_thread_timeout(struct _timeout *timeout)
 					       struct k_thread, base.timeout);
 
 	K_SPINLOCK(&_sched_spinlock) {
-		z_sched_wake_thread_locked(thread, true);
+		z_sched_wake_thread_locked(thread);
 	}
 }
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
