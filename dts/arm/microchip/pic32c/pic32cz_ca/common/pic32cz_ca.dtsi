@@ -60,12 +60,10 @@
 				compatible = "microchip,pic32cz-ca-dpll";
 
 				dpll0: dpll0 {
-					compatible = "microchip,pic32cz-ca-dpllchild";
 					subsystem = <CLOCK_MCHP_DPLL_ID_DPLL0>;
 				};
 
 				dpll1: dpll1 {
-					compatible = "microchip,pic32cz-ca-dpllchild";
 					subsystem = <CLOCK_MCHP_DPLL_ID_DPLL1>;
 				};
 			};

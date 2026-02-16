@@ -12,7 +12,6 @@ include: [base.yaml]
 compatible: "microchip,pic32cz-ca-dpll"
 
 child-binding:
-  compatible: "microchip,pic32cz-ca-dpllchild"
   properties:
     subsystem:
       type: int
