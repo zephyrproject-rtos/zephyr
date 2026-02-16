@@ -94,7 +94,6 @@
 			dpll-en = <1>;
 
 			dpll0out0: dpll0out0 {
-				compatible = "microchip,pic32cz-ca-dpllout";
 				subsystem = <CLOCK_MCHP_DPLL0_ID_OUT0>;
 				dpll-output-division-factor = <4>;
 				dpll-output-en = <1>;
