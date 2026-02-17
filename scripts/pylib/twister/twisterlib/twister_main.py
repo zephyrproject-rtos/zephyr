@@ -86,6 +86,9 @@ class Twister:
             self.options.no_clean
             or self.options.only_failed
             or self.options.test_only
+            or self.options.list_tests
+            or self.options.list_tags
+            or self.options.test_tree
             or self.options.report_summary is not None
         ):
             if os.path.exists(self.options.outdir):
