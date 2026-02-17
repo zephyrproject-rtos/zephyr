@@ -202,10 +202,9 @@ class Twister:
             raise SystemExit(0)
         return report
 
-    def execute(self, tplan: TestPlan, env: TwisterEnv, hwm: HardwareMap) -> TwisterRunner:
+    def execute(self, tplan: TestPlan, env: TwisterEnv) -> TwisterRunner:
         """Run twister runner."""
         runner = TwisterRunner(tplan.instances, tplan.testsuites, env)
-        runner.duts = hwm.duts
         runner.run()
         return runner
 
@@ -329,7 +328,7 @@ class Twister:
         if self.options.short_build_path:
             self.tplan.create_build_dir_links()
 
-        self.runner = self.execute(self.tplan, self.env, self.hwm)
+        self.runner = self.execute(self.tplan, self.env)
 
         self.prepare_reports(self.report, previous_results_file)
 

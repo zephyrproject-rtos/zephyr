@@ -159,15 +159,14 @@ class HardwareMap:
     }
 
     def __init__(self, env=None):
-        self.detected: list[DUT] = []
         self.duts: list[DUT] = []
         self.options = env.options
 
     def discover(self):
 
         if self.options.generate_hardware_map:
-            self.scan(persistent=self.options.persistent_hardware_map)
-            self.save(self.options.generate_hardware_map)
+            detected = self.scan(persistent=self.options.persistent_hardware_map)
+            self.save(self.options.generate_hardware_map, detected)
             return 0
 
         if not self.options.device_testing and self.options.hardware_map:
@@ -311,8 +310,10 @@ class HardwareMap:
                 new_dut.counter = 0
                 self.duts.append(new_dut)
 
-    def scan(self, persistent=False):
+    def scan(self, persistent=False) -> list[DUT]:
         from serial.tools import list_ports
+
+        detected: list[DUT] = []
 
         if persistent and platform.system() == 'Linux':
             # On Linux, /dev/serial/by-id provides symlinks to
@@ -379,16 +380,18 @@ class HardwareMap:
 
                 s_dev.connected = True
                 s_dev.lock = None
-                self.detected.append(s_dev)
+                detected.append(s_dev)
             else:
                 logger.warning(f"Unsupported device ({d.manufacturer}): {d}")
 
-    def save(self, hwm_file):
+        return detected
+
+    def save(self, hwm_file, detected: list[DUT]):
         # list of board ids with boot-serial sequence
         boot_ids = []
 
         # use existing map
-        self.detected = natsorted(self.detected, key=lambda x: x.serial or '')
+        detected = natsorted(detected, key=lambda x: x.serial or '')
         if os.path.exists(hwm_file):
             with open(hwm_file) as yaml_file:
                 hwm = yaml.load(yaml_file, Loader=SafeLoader)
@@ -403,7 +406,7 @@ class HardwareMap:
                         else :
                             boot_ids.append(h['id'])
 
-                    for _detected in self.detected:
+                    for _detected in detected:
                         for h in hwm:
                             if all([
                                 _detected.id == h['id'],
@@ -417,7 +420,7 @@ class HardwareMap:
                                 _detected.match = True
                                 break
 
-                new_duts = list(filter(lambda d: not d.match, self.detected))
+                new_duts = list(filter(lambda d: not d.match, detected))
                 new = []
                 for d in new_duts:
                     new.append(d.to_dict())
@@ -442,7 +445,7 @@ class HardwareMap:
         else:
             # create new file
             dl = []
-            for _connected in self.detected:
+            for _connected in detected:
                 platform  = _connected.platform
                 id = _connected.id
                 runner = _connected.runner
@@ -460,9 +463,11 @@ class HardwareMap:
             with open(hwm_file, 'w') as yaml_file:
                 yaml.dump(dl, yaml_file, Dumper=Dumper, default_flow_style=False)
             logger.info("Detected devices:")
-            self.dump(detected=True)
+            self.dump(detected=detected)
 
-    def dump(self, filtered=None, header=None, connected_only=False, detected=False):
+    def dump(
+        self, filtered=None, header=None, connected_only=False, detected: list[DUT] | None = None
+    ):
         if filtered is None:
             filtered = []
         if header is None:
@@ -470,7 +475,7 @@ class HardwareMap:
         print("")
         table = []
         if detected:
-            to_show = self.detected
+            to_show = detected
         else:
             to_show = self.duts
 

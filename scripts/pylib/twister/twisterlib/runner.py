@@ -30,7 +30,6 @@ from packaging import version
 from twisterlib.cmakecache import CMakeCache
 from twisterlib.constants import canonical_zephyr_base
 from twisterlib.error import BuildError, ConfigurationError, StatusAttributeError
-from twisterlib.hardwaremap import DUT
 from twisterlib.log_helper import setup_logging
 from twisterlib.statuses import TwisterStatus
 
@@ -885,7 +884,6 @@ class ProjectBuilder(FilterBuilder):
         self.filtered_tests = 0
         self.options = env.options
         self.env = env
-        self.duts: list[DUT] = []
 
     @property
     def trace(self) -> bool:
@@ -1756,7 +1754,7 @@ class ProjectBuilder(FilterBuilder):
             instance.status = TwisterStatus.NONE
 
             if instance.handler.type_str == "device":
-                instance.handler.duts = self.duts
+                instance.handler.duts = self.env.hwm.duts
 
             if(self.options.seed is not None and instance.platform.name.startswith("native_")):
                 self.parse_generated()
@@ -1825,7 +1823,6 @@ class TwisterRunner:
         self.env = env
         self.instances: dict[str, TestInstance] = instances
         self.suites: dict[str, TestSuite] = suites
-        self.duts: list[DUT] = []
         self.jobs = 1
         self.results = None
         self.jobserver = None
@@ -2051,7 +2048,6 @@ class TwisterRunner:
                     continue
 
                 pb = ProjectBuilder(instance, self.env, self.jobserver)
-                pb.duts = self.duts
                 pb.process(processing_queue, processing_ready, task, lock, results)
                 if (
                     self.env.options.quit_on_failure
