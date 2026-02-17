@@ -141,16 +141,9 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 	LOG_INF("SUBMIT seqnum %u finished err %d ep 0x%02x",
 		cmd->hdr.seqnum, xfer->err, xfer->ep);
 
-	ret.hdr.command = net_htonl(USBIP_RET_SUBMIT);
-	ret.hdr.seqnum = net_htonl(cmd->hdr.seqnum);
-	ret.hdr.devid = net_htonl(cmd->hdr.devid);
-	ret.hdr.ep = net_htonl(xfer->ep);
-	ret.hdr.direction = net_htonl(cmd->hdr.direction);
-
-	memset(&ret.submit, 0, sizeof(ret.submit));
-	ret.submit.status = net_htonl(xfer->err);
-	ret.submit.start_frame = net_htonl(cmd->submit.start_frame);
-	ret.submit.numof_iso_pkts = net_htonl(0xFFFFFFFFUL);
+	key = irq_lock();
+	sys_dlist_remove(&cmd_nd->node);
+	irq_unlock(key);
 
 	if (xfer->err == -ECONNRESET) {
 		LOG_INF("URB seqnum %u unlinked (ECONNRESET)", cmd->hdr.seqnum);
@@ -161,6 +154,17 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 		LOG_WRN("Connection closed, drop completed seqnum %u", cmd->hdr.seqnum);
 		goto usbip_req_cb_error;
 	}
+
+	ret.hdr.command = net_htonl(USBIP_RET_SUBMIT);
+	ret.hdr.seqnum = net_htonl(cmd->hdr.seqnum);
+	ret.hdr.devid = net_htonl(cmd->hdr.devid);
+	ret.hdr.ep = net_htonl(xfer->ep);
+	ret.hdr.direction = net_htonl(cmd->hdr.direction);
+
+	memset(&ret.submit, 0, sizeof(ret.submit));
+	ret.submit.status = net_htonl(xfer->err);
+	ret.submit.start_frame = net_htonl(cmd->submit.start_frame);
+	ret.submit.numof_iso_pkts = net_htonl(0xFFFFFFFFUL);
 
 	if (xfer->err == -EPIPE) {
 		LOG_INF("RET_SUBMIT status is EPIPE");
@@ -200,10 +204,6 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 	}
 
 usbip_req_cb_error:
-	key = irq_lock();
-	sys_dlist_remove(&cmd_nd->node);
-	irq_unlock(key);
-
 	k_mem_slab_free(&usbip_slab, (void *)cmd_nd);
 	if (xfer->buf) {
 		net_buf_unref(buf);
