@@ -38,7 +38,7 @@ ZTEST_USER_F(lc709203f, test_get_some_props_failed__returns_bad_status)
 		/* Second invalid property */
 		FUEL_GAUGE_PROP_MAX,
 		/* Valid property */
-		FUEL_GAUGE_VOLTAGE,
+		FUEL_GAUGE_VOLTAGE_UV,
 	};
 	union fuel_gauge_prop_val vals[ARRAY_SIZE(props)];
 
@@ -68,7 +68,7 @@ ZTEST_USER_F(lc709203f, test_set_some_props_failed__returns_err)
 		/* Second invalid property */
 		FUEL_GAUGE_PROP_MAX,
 		/* Valid property */
-		FUEL_GAUGE_STATE_OF_CHARGE_ALARM,
+		FUEL_GAUGE_STATE_OF_CHARGE_ALARM_PCT,
 		/* Set Manufacturer's Access to arbitrary word */
 
 	};
@@ -80,7 +80,7 @@ ZTEST_USER_F(lc709203f, test_set_some_props_failed__returns_err)
 		{0},
 		/* Valid property */
 		/* Sets state of charge threshold to generate Alarm signal*/
-		{.state_of_charge_alarm = 10},
+		{.state_of_charge_alarm_pct = 10},
 	};
 
 	int ret = fuel_gauge_set_props(fixture->dev, prop_types, props, ARRAY_SIZE(props));
@@ -92,14 +92,14 @@ ZTEST_USER_F(lc709203f, test_set_prop_can_be_get)
 {
 	uint16_t sbs_mode = 0x0002;
 	uint16_t current_direction = 0x0001;
-	uint8_t state_of_charge_alarm = 20;
-	uint32_t low_voltage_alarm = 3000 * 1000;
+	uint8_t state_of_charge_alarm_pct = 20;
+	uint32_t low_voltage_alarm_uv = 3000 * 1000;
 
 	fuel_gauge_prop_t prop_types[] = {
 		FUEL_GAUGE_SBS_MODE,
 		FUEL_GAUGE_CURRENT_DIRECTION,
-		FUEL_GAUGE_STATE_OF_CHARGE_ALARM,
-		FUEL_GAUGE_LOW_VOLTAGE_ALARM,
+		FUEL_GAUGE_STATE_OF_CHARGE_ALARM_PCT,
+		FUEL_GAUGE_LOW_VOLTAGE_ALARM_UV,
 	};
 
 	union fuel_gauge_prop_val set_props[] = {
@@ -110,10 +110,10 @@ ZTEST_USER_F(lc709203f, test_set_prop_can_be_get)
 			.current_direction = current_direction,
 		},
 		{
-			.state_of_charge_alarm = state_of_charge_alarm,
+			.state_of_charge_alarm_pct = state_of_charge_alarm_pct,
 		},
 		{
-			.low_voltage_alarm = low_voltage_alarm,
+			.low_voltage_alarm_uv = low_voltage_alarm_uv,
 		},
 	};
 
@@ -127,41 +127,41 @@ ZTEST_USER_F(lc709203f, test_set_prop_can_be_get)
 
 	zassert_equal(get_props[0].sbs_mode, sbs_mode);
 	zassert_equal(get_props[1].current_direction, current_direction);
-	zassert_equal(get_props[2].state_of_charge_alarm, state_of_charge_alarm);
-	zassert_equal(get_props[3].low_voltage_alarm, low_voltage_alarm);
+	zassert_equal(get_props[2].state_of_charge_alarm_pct, state_of_charge_alarm_pct);
+	zassert_equal(get_props[3].low_voltage_alarm_uv, low_voltage_alarm_uv);
 }
 
 ZTEST_USER_F(lc709203f, test_get_props__returns_ok)
 {
 	fuel_gauge_prop_t props[] = {
-		FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE,
-		FUEL_GAUGE_TEMPERATURE,
-		FUEL_GAUGE_VOLTAGE,
+		FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE_PCT,
+		FUEL_GAUGE_TEMPERATURE_DK,
+		FUEL_GAUGE_VOLTAGE_UV,
 		FUEL_GAUGE_SBS_MODE,
 		FUEL_GAUGE_DESIGN_CAPACITY,
 		FUEL_GAUGE_CURRENT_DIRECTION,
-		FUEL_GAUGE_STATE_OF_CHARGE_ALARM,
-		FUEL_GAUGE_LOW_VOLTAGE_ALARM,
+		FUEL_GAUGE_STATE_OF_CHARGE_ALARM_PCT,
+		FUEL_GAUGE_LOW_VOLTAGE_ALARM_UV,
 	};
 	union fuel_gauge_prop_val vals[ARRAY_SIZE(props)];
 
 	int ret = fuel_gauge_get_props(fixture->dev, props, vals, ARRAY_SIZE(props));
 
 #if CONFIG_EMUL
-	zassert_equal(vals[0].relative_state_of_charge, 50);
-	zassert_equal(vals[1].temperature, 0x0BA6);
-	zassert_equal(vals[2].voltage, 3700 * 1000);
+	zassert_equal(vals[0].relative_state_of_charge_pct, 50);
+	zassert_equal(vals[1].temperature_dk, 0x0BA6);
+	zassert_equal(vals[2].voltage_uv, 3700 * 1000);
 	zassert_equal(vals[3].sbs_mode, 0x0001);
 	zassert_equal(vals[4].design_cap, 500);
 	zassert_true(((vals[5].current_direction == 0x0000) ||
 		      (vals[5].current_direction == 0x0001) ||
 		      (vals[5].current_direction == 0xFFFF)));
-	zassert_equal(vals[6].state_of_charge_alarm, 0x0008);
-	zassert_equal(vals[7].low_voltage_alarm, 0x0000);
+	zassert_equal(vals[6].state_of_charge_alarm_pct, 0x0008);
+	zassert_equal(vals[7].low_voltage_alarm_uv, 0x0000);
 #else
-	zassert_between_inclusive(vals[0].relative_state_of_charge, 0, 100);
-	zassert_between_inclusive(vals[1].temperature, 0x09E4, 0x0D04);
-	zassert_between_inclusive(vals[2].voltage, 0, 0xFFFF * 1000);
+	zassert_between_inclusive(vals[0].relative_state_of_charge_pct, 0, 100);
+	zassert_between_inclusive(vals[1].temperature_dk, 0x09E4, 0x0D04);
+	zassert_between_inclusive(vals[2].voltage_uv, 0, 0xFFFF * 1000);
 	zassert_between_inclusive(vals[3].sbs_mode, 0x0001, 0x0002);
 	zassert_true(((vals[4].design_cap == 100) || (vals[4].design_cap == 200) ||
 		      (vals[4].design_cap == 500) || (vals[4].design_cap == 1000) ||
@@ -169,8 +169,8 @@ ZTEST_USER_F(lc709203f, test_get_props__returns_ok)
 	zassert_true(((vals[5].current_direction == 0x0000) ||
 		      (vals[5].current_direction == 0x0001) ||
 		      (vals[5].current_direction == 0xFFFF)));
-	zassert_between_inclusive(vals[6].state_of_charge_alarm, 0, 100);
-	zassert_between_inclusive(vals[7].low_voltage_alarm, 0, 0xFFFF * 1000);
+	zassert_between_inclusive(vals[6].state_of_charge_alarm_pct, 0, 100);
+	zassert_between_inclusive(vals[7].low_voltage_alarm_uv, 0, 0xFFFF * 1000);
 #endif
 
 	zassert_equal(ret, 0, "Getting bad property has a good status.");
@@ -181,15 +181,15 @@ ZTEST_USER_F(lc709203f, test_set_get_single_prop)
 	uint8_t test_value = 5;
 
 	union fuel_gauge_prop_val state_of_charge_alarm_set = {
-		.state_of_charge_alarm = test_value,
+		.state_of_charge_alarm_pct = test_value,
 	};
 	union fuel_gauge_prop_val state_of_charge_alarm_get;
 
-	zassert_ok(fuel_gauge_set_prop(fixture->dev, FUEL_GAUGE_STATE_OF_CHARGE_ALARM,
+	zassert_ok(fuel_gauge_set_prop(fixture->dev, FUEL_GAUGE_STATE_OF_CHARGE_ALARM_PCT,
 				       state_of_charge_alarm_set));
-	zassert_ok(fuel_gauge_get_prop(fixture->dev, FUEL_GAUGE_STATE_OF_CHARGE_ALARM,
+	zassert_ok(fuel_gauge_get_prop(fixture->dev, FUEL_GAUGE_STATE_OF_CHARGE_ALARM_PCT,
 				       &state_of_charge_alarm_get));
-	zassert_equal(state_of_charge_alarm_get.state_of_charge_alarm, test_value);
+	zassert_equal(state_of_charge_alarm_get.state_of_charge_alarm_pct, test_value);
 }
 
 ZTEST_SUITE(lc709203f, NULL, lc709203f_setup, NULL, NULL, NULL);

@@ -262,6 +262,15 @@ Flash
   of each plane in the flash device. For devices with a single plane, this should be set to the
   same value as ``size-bytes``.
 
+Fuel Gauge
+==========
+
+* Various fuel gauge property enums and union fields have been deprecated in
+  favor of new versions with explicit unit suffixes. Applications and drivers
+  should migrate to the unit-suffixed names. For example,
+  ``FUEL_GAUGE_CURRENT`` (``val.current``) is replaced by
+  ``FUEL_GAUGE_CURRENT_UA`` (``val.current_ua``).
+
 GPIO
 ====
 
