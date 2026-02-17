@@ -10,18 +10,18 @@
     {%- if google_searchengine_id is defined %}
     <span id="search-se-settings-icon" class="fa fa-gear" role="button" tabindex="0"
           title="Search settings" aria-label="Search settings"
-          aria-haspopup="true" aria-controls="search-se-menu" aria-expanded="false"
+          aria-haspopup="menu" aria-controls="search-se-menu" aria-expanded="false"
           onclick="toggleSearchEngineSettingsMenu()">
     </span>
     <div id="search-se-menu" role="menu" aria-labelledby="search-se-settings-icon">
       <ul>
         <li id="search-se-menuitem-sphinx" role="menuitemradio" tabindex="-1"
             aria-label="Built-in search" onclick="switchSearchEngine('sphinx')">
-          Built-in search <span class="fa fa-check">
+          Built-in search <span class="fa fa-check"></span>
         </li>
         <li id="search-se-menuitem-google" role="menuitemradio" tabindex="-1"
             aria-label="Google search" onclick="switchSearchEngine('google')">
-          Google search <span class="fa fa-check">
+          Google search <span class="fa fa-check"></span>
         </li>
     </div>
     {%- endif %}
