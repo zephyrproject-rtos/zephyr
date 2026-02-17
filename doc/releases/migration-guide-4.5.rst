@@ -53,8 +53,15 @@ Clock Control
   RT11xx overlays should be updated using the mapping
   ``loop-div = clock-mult * 2`` and ``post-div = clock-div``.
 
+Fuel Gauge
+==========
 
-.. zephyr-keep-sorted-stop
+* Various fuel gauge property enums and union fields have been deprecated in
+  favor of new versions with explicit unit suffixes. Applications and drivers
+  should migrate to the unit-suffixed names. For more information, see
+  :ref:`fuel_gauge_deprecated_properties`.
+
+ .. zephyr-keep-sorted-stop
 
 Bluetooth
 *********

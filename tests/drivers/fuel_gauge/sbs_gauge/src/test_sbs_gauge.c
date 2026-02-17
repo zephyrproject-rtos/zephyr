@@ -40,7 +40,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_get_some_props_failed_returns_bad_status)
 		/* Second invalid property */
 		FUEL_GAUGE_PROP_MAX,
 		/* Valid property */
-		FUEL_GAUGE_VOLTAGE,
+		FUEL_GAUGE_VOLTAGE_UV,
 	};
 	union fuel_gauge_prop_val props[ARRAY_SIZE(prop_types)] = {0};
 
@@ -97,7 +97,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_set_prop_can_be_get)
 	fuel_gauge_prop_t prop_types[] = {
 		FUEL_GAUGE_SBS_MFR_ACCESS,
 		FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM,
-		FUEL_GAUGE_SBS_REMAINING_TIME_ALARM,
+		FUEL_GAUGE_SBS_REMAINING_TIME_ALARM_MINS,
 		FUEL_GAUGE_SBS_MODE,
 		FUEL_GAUGE_SBS_ATRATE,
 	};
@@ -110,7 +110,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_set_prop_can_be_get)
 			.sbs_remaining_capacity_alarm = word,
 		},
 		{
-			.sbs_remaining_time_alarm = word,
+			.sbs_remaining_time_alarm_mins = word,
 		},
 		{
 			.sbs_mode = word,
@@ -130,7 +130,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_set_prop_can_be_get)
 
 	zassert_equal(get_props[0].sbs_mfr_access_word, word);
 	zassert_equal(get_props[1].sbs_remaining_capacity_alarm, word);
-	zassert_equal(get_props[2].sbs_remaining_time_alarm, word);
+	zassert_equal(get_props[2].sbs_remaining_time_alarm_mins, word);
 	zassert_equal(get_props[3].sbs_mode, word);
 	zassert_equal(get_props[4].sbs_at_rate, (int16_t)word);
 }
@@ -140,30 +140,30 @@ ZTEST_USER_F(sbs_gauge_new_api, test_get_props__returns_ok)
 	/* Validate what props are supported by the driver */
 
 	fuel_gauge_prop_t prop_types[] = {
-		FUEL_GAUGE_VOLTAGE,
-		FUEL_GAUGE_CURRENT,
-		FUEL_GAUGE_AVG_CURRENT,
-		FUEL_GAUGE_TEMPERATURE,
-		FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE,
-		FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE,
-		FUEL_GAUGE_RUNTIME_TO_FULL,
-		FUEL_GAUGE_RUNTIME_TO_EMPTY,
-		FUEL_GAUGE_REMAINING_CAPACITY,
-		FUEL_GAUGE_FULL_CHARGE_CAPACITY,
+		FUEL_GAUGE_VOLTAGE_UV,
+		FUEL_GAUGE_CURRENT_UA,
+		FUEL_GAUGE_AVG_CURRENT_UA,
+		FUEL_GAUGE_TEMPERATURE_DK,
+		FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE_PCT,
+		FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE_PCT,
+		FUEL_GAUGE_RUNTIME_TO_FULL_MINS,
+		FUEL_GAUGE_RUNTIME_TO_EMPTY_MINS,
+		FUEL_GAUGE_REMAINING_CAPACITY_UAH,
+		FUEL_GAUGE_FULL_CHARGE_CAPACITY_UAH,
 		FUEL_GAUGE_CYCLE_COUNT,
 		FUEL_GAUGE_SBS_MFR_ACCESS,
 		FUEL_GAUGE_SBS_MODE,
-		FUEL_GAUGE_CHARGE_CURRENT,
-		FUEL_GAUGE_CHARGE_VOLTAGE,
+		FUEL_GAUGE_CHARGE_CURRENT_UA,
+		FUEL_GAUGE_CHARGE_VOLTAGE_UV,
 		FUEL_GAUGE_STATUS,
 		FUEL_GAUGE_DESIGN_CAPACITY,
-		FUEL_GAUGE_DESIGN_VOLTAGE,
+		FUEL_GAUGE_DESIGN_VOLTAGE_MV,
 		FUEL_GAUGE_SBS_ATRATE,
-		FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL,
-		FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY,
+		FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL_MINS,
+		FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY_MINS,
 		FUEL_GAUGE_SBS_ATRATE_OK,
 		FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM,
-		FUEL_GAUGE_SBS_REMAINING_TIME_ALARM,
+		FUEL_GAUGE_SBS_REMAINING_TIME_ALARM_MINS,
 	};
 
 	union fuel_gauge_prop_val props[ARRAY_SIZE(prop_types)] = {0};
@@ -177,7 +177,7 @@ ZTEST_USER_F(sbs_gauge_new_api, test_set_props__returns_ok)
 		FUEL_GAUGE_SBS_MFR_ACCESS,
 		FUEL_GAUGE_SBS_MODE,
 		FUEL_GAUGE_SBS_ATRATE,
-		FUEL_GAUGE_SBS_REMAINING_TIME_ALARM,
+		FUEL_GAUGE_SBS_REMAINING_TIME_ALARM_MINS,
 		FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM,
 
 	};
@@ -213,13 +213,13 @@ ZTEST_USER_F(sbs_gauge_new_api, test_charging_5v_3a)
 
 	zassume_ok(emul_fuel_gauge_set_battery_charging(fixture->sbs_fuel_gauge, expected_uV,
 							expected_uA));
-	zassert_ok(fuel_gauge_get_prop(fixture->dev, FUEL_GAUGE_VOLTAGE, &voltage));
-	zassert_ok(fuel_gauge_get_prop(fixture->dev, FUEL_GAUGE_CURRENT, &current));
+	zassert_ok(fuel_gauge_get_prop(fixture->dev, FUEL_GAUGE_VOLTAGE_UV, &voltage));
+	zassert_ok(fuel_gauge_get_prop(fixture->dev, FUEL_GAUGE_CURRENT_UA, &current));
 
-	zassert_equal(voltage.voltage, expected_uV, "Got %d instead of %d",
-			voltage.voltage, expected_uV);
-	zassert_equal(current.current, expected_uA, "Got %d instead of %d",
-			current.current, expected_uA);
+	zassert_equal(voltage.voltage_uv, expected_uV, "Got %d instead of %d", voltage.voltage_uv,
+		      expected_uV);
+	zassert_equal(current.current_ua, expected_uA, "Got %d instead of %d", current.current_ua,
+		      expected_uA);
 }
 
 ZTEST_USER_F(sbs_gauge_new_api, test_charging_5v_neg_1a)
@@ -232,13 +232,13 @@ ZTEST_USER_F(sbs_gauge_new_api, test_charging_5v_neg_1a)
 
 	zassume_ok(emul_fuel_gauge_set_battery_charging(fixture->sbs_fuel_gauge, expected_uV,
 							expected_uA));
-	zassert_ok(fuel_gauge_get_prop(fixture->dev, FUEL_GAUGE_VOLTAGE, &voltage));
-	zassert_ok(fuel_gauge_get_prop(fixture->dev, FUEL_GAUGE_CURRENT, &current));
+	zassert_ok(fuel_gauge_get_prop(fixture->dev, FUEL_GAUGE_VOLTAGE_UV, &voltage));
+	zassert_ok(fuel_gauge_get_prop(fixture->dev, FUEL_GAUGE_CURRENT_UA, &current));
 
-	zassert_equal(voltage.voltage, expected_uV, "Got %d instead of %d",
-			voltage.voltage, expected_uV);
-	zassert_equal(current.current, expected_uA, "Got %d instead of %d",
-			current.current, expected_uA);
+	zassert_equal(voltage.voltage_uv, expected_uV, "Got %d instead of %d", voltage.voltage_uv,
+		      expected_uV);
+	zassert_equal(current.current_ua, expected_uA, "Got %d instead of %d", current.current_ua,
+		      expected_uA);
 }
 
 ZTEST_USER_F(sbs_gauge_new_api, test_set_get_single_prop)

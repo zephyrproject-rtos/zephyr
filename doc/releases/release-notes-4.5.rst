@@ -53,6 +53,12 @@ Removed APIs and options
 Deprecated APIs and options
 ===========================
 
+* Fuel Gauge
+
+  * Deprecated various fuel gauge property enums and union fields in favor of
+    new versions with explicit unit suffixes. For more information, see
+    :ref:`fuel_gauge_deprecated_properties`.
+
 * LoRa
 
   * Renamed :c:func:`lora_recv_duty_cycle` to :c:func:`lora_recv_duty_cycle_async`
