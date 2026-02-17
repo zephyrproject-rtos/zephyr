@@ -288,7 +288,6 @@ struct i2c_it51xxx_config {
 	struct gpio_dt_spec scl_gpios;
 	/* SDA GPIO cells */
 	struct gpio_dt_spec sda_gpios;
-	int transfer_timeout_ms;
 	mm_reg_t host_base;
 	mm_reg_t target_base;
 	mm_reg_t i2cbase;
@@ -1525,7 +1524,7 @@ static int i2c_it51xxx_transfer(const struct device *dev, struct i2c_msg *msgs, 
 		}
 #endif
 		/* Wait for the transfer to complete */
-		ret = k_sem_take(&data->device_sync_sem, K_MSEC(config->transfer_timeout_ms));
+		ret = k_sem_take(&data->device_sync_sem, I2C_TRANSFER_TIMEOUT);
 		/*
 		 * The irq will be enabled at the condition of start or repeat start of I2C.
 		 * If timeout occurs without being wake up during suspend(ex: interrupt is not
@@ -1960,7 +1959,6 @@ pin_config:
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
 		.scl_gpios = GPIO_DT_SPEC_INST_GET(inst, scl_gpios),                               \
 		.sda_gpios = GPIO_DT_SPEC_INST_GET(inst, sda_gpios),                               \
-		.transfer_timeout_ms = DT_INST_PROP(inst, transfer_timeout_ms),                    \
 		.bitrate = DT_INST_PROP(inst, clock_frequency),                                    \
 		.i2c_irq_base = DT_INST_IRQ_BY_IDX(inst, 0, irq),                                  \
 		.i2cs_irq_base = DT_INST_IRQ_BY_IDX(inst, 1, irq),                                 \

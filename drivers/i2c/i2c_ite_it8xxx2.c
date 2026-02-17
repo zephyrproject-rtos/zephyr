@@ -52,7 +52,6 @@ struct i2c_it8xxx2_config {
 	/* I2C alternate configuration */
 	const struct pinctrl_dev_config *pcfg;
 	uint32_t clock_gate_offset;
-	int transfer_timeout_ms;
 	bool fifo_enable;
 	bool push_pull_recovery;
 };
@@ -1011,7 +1010,7 @@ static int i2c_it8xxx2_transfer(const struct device *dev, struct i2c_msg *msgs,
 			}
 		}
 		/* Wait for the transfer to complete */
-		res = k_sem_take(&data->device_sync_sem, K_MSEC(config->transfer_timeout_ms));
+		res = k_sem_take(&data->device_sync_sem, I2C_TRANSFER_TIMEOUT);
 		/*
 		 * The irq will be enabled at the condition of start or
 		 * repeat start of I2C. If timeout occurs without being
@@ -1310,7 +1309,6 @@ DT_INST_FOREACH_STATUS_OKAY(I2C_IT8XXX2_CHECK_SUPPORTED_CLOCK)
 		.scl_gpios = GPIO_DT_SPEC_INST_GET(inst, scl_gpios),            \
 		.sda_gpios = GPIO_DT_SPEC_INST_GET(inst, sda_gpios),            \
 		.clock_gate_offset = DT_INST_PROP(inst, clock_gate_offset),     \
-		.transfer_timeout_ms = DT_INST_PROP(inst, transfer_timeout_ms), \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                   \
 		.fifo_enable = DT_INST_PROP(inst, fifo_enable),                 \
 		.push_pull_recovery = DT_INST_PROP(inst, push_pull_recovery),   \
