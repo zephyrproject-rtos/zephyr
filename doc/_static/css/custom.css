@@ -306,7 +306,8 @@ a.internal:visited code.literal {
 }
 
 .highlight .ch /* Comment.Hashbang */,
-.highlight .cp /* Comment.Preproc */ {
+.highlight .cp /* Comment.Preproc */,
+.highlight .gp /* Generic.Prompt */ {
     color: var(--highlight-keyword2-color);
 }
 
