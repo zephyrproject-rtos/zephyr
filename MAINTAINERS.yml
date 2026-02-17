@@ -165,6 +165,7 @@ ADI Platforms:
     - microbuilder
   files:
     - boards/adi/
+    - boards/common/*adi*
     - boards/shields/eval*ardz/
     - boards/shields/pmod_acl/
     - drivers/*/*max*
@@ -175,6 +176,7 @@ ADI Platforms:
     - drivers/ethernet/mdio/mdio_adin*
     - drivers/sensor/adi/
     - drivers/stepper/adi_tmc/
+    - drivers/usb/udc/*max*
     - dts/arm/adi/
     - dts/bindings/*/adi,*
     - dts/bindings/*/lltc,*
