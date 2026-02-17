@@ -69,7 +69,7 @@ int usbh_req_setup(struct usb_device *const udev,
 
 	k_mutex_lock(&ch9_req_lock, K_FOREVER);
 
-	xfer = usbh_xfer_alloc(udev, ep, ch9_req_cb, NULL);
+	xfer = usbh_xfer_alloc(udev, ep, ch9_req_cb, NULL, K_NO_WAIT);
 	if (!xfer) {
 		ret = -ENOMEM;
 		goto unlock;
