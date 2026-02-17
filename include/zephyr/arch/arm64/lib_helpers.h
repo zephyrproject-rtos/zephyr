@@ -65,6 +65,7 @@ MAKE_REG_HELPER(cnthps_ctl_el2);
 MAKE_REG_HELPER(cntv_ctl_el0)
 MAKE_REG_HELPER(cntv_cval_el0)
 MAKE_REG_HELPER(cntp_cval_el0)
+MAKE_REG_HELPER(cntps_cval_el1)
 MAKE_REG_HELPER(cntvct_el0);
 MAKE_REG_HELPER(cntvoff_el2);
 MAKE_REG_HELPER(currentel);
