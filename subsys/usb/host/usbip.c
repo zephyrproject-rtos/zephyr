@@ -233,7 +233,7 @@ static int usbip_submit_req(struct usbip_cmd_node *const cmd_nd, const uint8_t e
 	 * be reworked to take a timeout argument.
 	 */
 	do {
-		xfer = usbh_xfer_alloc(udev, ep, usbip_req_cb, cmd_nd);
+		xfer = usbh_xfer_alloc(udev, ep, usbip_req_cb, cmd_nd, K_NO_WAIT);
 		if (xfer == NULL) {
 			k_msleep(1);
 		}

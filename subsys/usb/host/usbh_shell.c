@@ -95,7 +95,7 @@ static int cmd_bulk(const struct shell *sh, size_t argc, char **argv)
 	ep = strtol(argv[2], NULL, 16);
 	len = MIN(sizeof(vreq_test_buf), strtol(argv[3], NULL, 10));
 
-	xfer = usbh_xfer_alloc(udev, ep, bulk_req_cb, NULL);
+	xfer = usbh_xfer_alloc(udev, ep, bulk_req_cb, NULL, K_NO_WAIT);
 	if (!xfer) {
 		shell_error(sh, "host: Failed to allocate transfer");
 		return -ENOMEM;

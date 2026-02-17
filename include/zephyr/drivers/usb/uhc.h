@@ -420,6 +420,9 @@ static inline int uhc_bus_resume(const struct device *dev)
  * @param[in] udev    Pointer to USB device
  * @param[in] cb      Transfer completion callback
  * @param[in] cb_priv Completion callback callback private data
+ * @param[in] timeout Waiting period to wait for allocation to complete.
+ *                    Use K_NO_WAIT to return without waiting,
+ *                    or K_FOREVER to wait as long as necessary.
  *
  * @return pointer to allocated transfer or NULL on error.
  */
@@ -427,7 +430,8 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 				    const uint8_t ep,
 				    struct usb_device *const udev,
 				    void *const cb,
-				    void *const cb_priv);
+				    void *const cb_priv,
+				    const k_timeout_t timeout);
 
 /**
  * @brief Allocate UHC transfer with buffer

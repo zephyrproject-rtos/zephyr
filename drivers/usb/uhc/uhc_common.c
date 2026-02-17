@@ -94,7 +94,8 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 				    const uint8_t ep,
 				    struct usb_device *const udev,
 				    void *const cb,
-				    void *const cb_priv)
+				    void *const cb_priv,
+				    const k_timeout_t timeout)
 {
 	uint8_t ep_idx = USB_EP_GET_IDX(ep) & 0xF;
 	const struct uhc_api *api = dev->api;
@@ -134,7 +135,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 
 	LOG_DBG("Allocate xfer, ep 0x%02x mps %u cb %p", ep, mps, cb);
 
-	if (k_mem_slab_alloc(&uhc_xfer_pool, (void **)&xfer, K_NO_WAIT)) {
+	if (k_mem_slab_alloc(&uhc_xfer_pool, (void **)&xfer, timeout)) {
 		LOG_ERR("Failed to allocate transfer");
 		goto xfer_alloc_error;
 	}
@@ -169,7 +170,7 @@ struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev,
 		return NULL;
 	}
 
-	xfer = uhc_xfer_alloc(dev, ep, udev, cb, cb_priv);
+	xfer = uhc_xfer_alloc(dev, ep, udev, cb, cb_priv, K_NO_WAIT);
 	if (xfer == NULL) {
 		net_buf_unref(buf);
 		return NULL;
