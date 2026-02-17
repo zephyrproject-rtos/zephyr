@@ -28,7 +28,8 @@ from queue import Empty, Queue
 
 import psutil
 from serial.tools import list_ports
-from twisterlib.environment import ZEPHYR_BASE, strip_ansi_sequences
+from twisterlib.constants import ZEPHYR_BASE
+from twisterlib.environment import strip_ansi_sequences
 from twisterlib.error import TwisterException
 from twisterlib.hardwaremap import DUT
 from twisterlib.platform import Platform

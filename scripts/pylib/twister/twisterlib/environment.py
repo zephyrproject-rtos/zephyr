@@ -22,23 +22,11 @@ from pathlib import Path
 from typing import Any
 
 import zephyr_module
-from twisterlib.constants import SUPPORTED_SIMS
+from twisterlib.constants import SUPPORTED_SIMS, ZEPHYR_BASE
 from twisterlib.coverage import supported_coverage_formats
 from twisterlib.log_helper import log_command
 
 logger = logging.getLogger('twister')
-
-ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
-if not ZEPHYR_BASE:
-    sys.exit("$ZEPHYR_BASE environment variable undefined")
-
-# Use this for internal comparisons; that's what canonicalization is
-# for. Don't use it when invoking other components of the build system
-# to avoid confusing and hard to trace inconsistencies in error messages
-# and logs, generated Makefiles, etc. compared to when users invoke these
-# components directly.
-# Note "normalization" is different from canonicalization, see os.path.
-canonical_zephyr_base = os.path.realpath(ZEPHYR_BASE)
 
 
 def _get_installed_packages() -> Generator[str, None, None]:

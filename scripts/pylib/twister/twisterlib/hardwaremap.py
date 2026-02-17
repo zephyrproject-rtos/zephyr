@@ -17,7 +17,7 @@ from typing import Any
 import scl
 import yaml
 from natsort import natsorted
-from twisterlib.environment import ZEPHYR_BASE
+from twisterlib.constants import ZEPHYR_BASE
 
 try:
     # Use the C LibYAML parser if available, rather than the Python parser.
