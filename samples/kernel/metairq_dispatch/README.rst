@@ -1,17 +1,17 @@
-.. _samples_scheduler_metairq_dispatch:
+.. zephyr:code-sample:: Meta-IRQ_dispatch
+   :name: Meta-IRQ Thread Priority
 
-MetaIRQ Thread Priority Demonstration
-#####################################
+   Implement a thread running at a Meta-IRQ priority level.
 
 Overview
 ********
 
-This sample demonstrates the use of a thread running at a MetaIRQ
+This sample implements a thread running at a Meta-IRQ
 priority level to implement "bottom half" style processing
 synchronously with the end of a hardware ISR.  It implements a
 simulated "device" that produces messages that need to be dispatched
 to asynchronous queues feeding several worker threads, each running at
-a different priority.  The dispatch is handled by a MetaIRQ thread fed
+a different priority.  The dispatch is handled by a Meta-IRQ thread fed
 via a queue from the device ISR (really just a timer interrupt).
 
 Each message has a random (and non-trivial) amount of processing that
@@ -22,7 +22,7 @@ Messages are accompanied by a timestamp that allows per-message
 latencies to be computed at several points:
 
 * The cycle time between message creation in the ISR and receipt by
-  the MetaIRQ thread for dispatch.
+  the Meta-IRQ thread for dispatch.
 
 * The time between ISR and receipt by the worker thread.
 
@@ -37,13 +37,13 @@ Aspects to note in the results:
 
 * Cooperatively scheduled threads have significantly better processing
   delay behavior than preemptible ones, as they can only be preempted
-  by the MetaIRQ thread.
+  by the Meta-IRQ thread.
 
 * Because of queueing and the bursty load, all worker threads of any
   priority will experience some load-dependent delays, as the CPU
   occasionally has more work to do than time available.
 
-* But, no matter the system load or thread configuration, the MetaIRQ
+* But, no matter the system load or thread configuration, the Meta-IRQ
   thread always runs immediately after the ISR.  It shows reliable,
   constant latency under all circumstances because it can preempt all
   other threads, including cooperative ones that cannot normally be
