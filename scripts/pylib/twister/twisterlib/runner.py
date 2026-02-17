@@ -28,7 +28,7 @@ from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 from packaging import version
 from twisterlib.cmakecache import CMakeCache
-from twisterlib.environment import canonical_zephyr_base
+from twisterlib.constants import canonical_zephyr_base
 from twisterlib.error import BuildError, ConfigurationError, StatusAttributeError
 from twisterlib.hardwaremap import DUT
 from twisterlib.log_helper import setup_logging
@@ -41,7 +41,7 @@ if version.parse(elftools.__version__) < version.parse('0.24'):
 if sys.platform == 'linux':
     from twisterlib.jobserver import GNUMakeJobClient, GNUMakeJobServer, JobClient
 
-from twisterlib.environment import ZEPHYR_BASE
+from twisterlib.constants import ZEPHYR_BASE
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
 from domains import Domains
