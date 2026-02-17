@@ -211,3 +211,7 @@ zephyr_udc0: &usb {
 &vref {
 	status = "okay";
 };
+
+&dma {
+	status = "okay";
+};
