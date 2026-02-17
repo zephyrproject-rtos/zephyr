@@ -233,6 +233,11 @@ static void udc_event_xfer_in_done(const struct device *dev, struct udc_ep_confi
 	} else {
 		udc_submit_ep_event(dev, buf, 0);
 	}
+
+	/* Start the next transfer if there is another waiting */
+	if (ep_cfg->addr != USB_CONTROL_EP_IN && udc_buf_peek(ep_cfg) != NULL) {
+		udc_event_xfer_in(dev, ep_cfg);
+	}
 }
 
 static void udc_event_xfer_out_done(const struct device *dev, struct udc_ep_config *ep_cfg)
@@ -259,6 +264,11 @@ static void udc_event_xfer_out_done(const struct device *dev, struct udc_ep_conf
 		udc_ctrl_submit_s_out_status(dev, buf);
 	} else {
 		udc_submit_ep_event(dev, buf, 0);
+	}
+
+	/* Start the next transfer if there is another waiting */
+	if (ep_cfg->addr != USB_CONTROL_EP_OUT && udc_buf_peek(ep_cfg) != NULL) {
+		udc_event_xfer_out(dev, ep_cfg);
 	}
 }
 
