@@ -60,53 +60,53 @@ static int hy4245_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 	uint16_t raw;
 
 	switch (prop) {
-	case FUEL_GAUGE_TEMPERATURE:
+	case FUEL_GAUGE_TEMPERATURE_DK:
 		ret = hy4245_read16(dev, HY4245_CMD_TEMPERATURE, &raw);
-		val->temperature = raw;
+		val->temperature_dk = raw;
 		break;
-	case FUEL_GAUGE_VOLTAGE:
+	case FUEL_GAUGE_VOLTAGE_UV:
 		ret = hy4245_read16(dev, HY4245_CMD_VOLTAGE, &raw);
-		val->voltage = raw * 1000;
+		val->voltage_uv = raw * 1000;
 		break;
-	case FUEL_GAUGE_CURRENT:
+	case FUEL_GAUGE_CURRENT_UA:
 		ret = hy4245_read16(dev, HY4245_CMD_CURRENT, &raw);
-		val->current = (int16_t)raw * 1000;
+		val->current_ua = (int16_t)raw * 1000;
 		break;
-	case FUEL_GAUGE_REMAINING_CAPACITY:
+	case FUEL_GAUGE_REMAINING_CAPACITY_UAH:
 		ret = hy4245_read16(dev, HY4245_CMD_CAPACITY_REM, &raw);
-		val->remaining_capacity = raw * 1000;
+		val->remaining_capacity_uah = raw * 1000;
 		break;
-	case FUEL_GAUGE_FULL_CHARGE_CAPACITY:
+	case FUEL_GAUGE_FULL_CHARGE_CAPACITY_UAH:
 		ret = hy4245_read16(dev, HY4245_CMD_CAPACITY_FULL, &raw);
-		val->full_charge_capacity = raw * 1000;
+		val->full_charge_capacity_uah = raw * 1000;
 		break;
-	case FUEL_GAUGE_AVG_CURRENT:
+	case FUEL_GAUGE_AVG_CURRENT_UA:
 		ret = hy4245_read16(dev, HY4245_CMD_AVG_CURRENT, &raw);
-		val->avg_current = (int16_t)raw * 1000;
+		val->avg_current_ua = (int16_t)raw * 1000;
 		break;
-	case FUEL_GAUGE_RUNTIME_TO_EMPTY:
+	case FUEL_GAUGE_RUNTIME_TO_EMPTY_MINS:
 		ret = hy4245_read16(dev, HY4245_CMD_TIME_TO_EMPTY, &raw);
-		val->runtime_to_empty = raw;
+		val->runtime_to_empty_mins = raw;
 		break;
-	case FUEL_GAUGE_RUNTIME_TO_FULL:
+	case FUEL_GAUGE_RUNTIME_TO_FULL_MINS:
 		ret = hy4245_read16(dev, HY4245_CMD_TIME_TO_FULL, &raw);
-		val->runtime_to_full = raw;
+		val->runtime_to_full_mins = raw;
 		break;
-	case FUEL_GAUGE_CHARGE_VOLTAGE:
+	case FUEL_GAUGE_CHARGE_VOLTAGE_UV:
 		ret = hy4245_read16(dev, HY4245_CMD_CHRG_VOLTAGE, &raw);
-		val->chg_voltage = raw * 1000;
+		val->chg_voltage_uv = raw * 1000;
 		break;
-	case FUEL_GAUGE_CHARGE_CURRENT:
+	case FUEL_GAUGE_CHARGE_CURRENT_UA:
 		ret = hy4245_read16(dev, HY4245_CMD_CHRG_CURRENT, &raw);
-		val->chg_current = raw * 1000;
+		val->chg_current_ua = raw * 1000;
 		break;
 	case FUEL_GAUGE_DESIGN_CAPACITY:
 		ret = hy4245_read16(dev, HY4245_CMD_CAPACITY_FULL_AVAIL, &raw);
 		val->design_cap = raw;
 		break;
-	case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE:
+	case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE_PCT:
 		ret = hy4245_read16(dev, HY4245_CMD_RELATIVE_STATE_OF_CHRG, &raw);
-		val->relative_state_of_charge = raw;
+		val->relative_state_of_charge_pct = raw;
 		break;
 	default:
 		ret = -ENOTSUP;
