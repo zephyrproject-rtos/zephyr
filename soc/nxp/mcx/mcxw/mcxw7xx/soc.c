@@ -105,11 +105,20 @@ __weak void clock_init(void)
 
 	CLOCK_SetXtal32Freq(32768U);
 
+	const scg_firc_trim_config_t scg_firc_trim_config = {
+		.trimMode = kSCG_FircTrimUpdate,   /* FIRC trim is enabled and */
+						   /* trim value update is enabled */
+		.trimSrc = kSCG_FircTrimSrcSysOsc, /* Trim source is System OSC */
+		.trimDiv = 31U,                    /* Divided by 32 */
+		.trimCoar = 0U, /* Trim value, see Reference Manual for more information */
+		.trimFine = 0U, /* Trim value, see Reference Manual for more information */
+	};
+
 	/* Configuration to set FIRC to maximum frequency */
 	scg_firc_config_t scg_firc_config = {
 		.enableMode = kSCG_FircEnable, /* Fast IRC is enabled */
 		.range = kSCG_FircRange96M,    /* 96 Mhz FIRC clock selected */
-		.trimConfig = NULL,
+		.trimConfig = &scg_firc_trim_config,
 	};
 
 	scg_sys_clk_config_t sys_clk_safe_config_source = {
