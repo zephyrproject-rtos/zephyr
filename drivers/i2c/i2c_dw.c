@@ -635,7 +635,6 @@ done:
 
 static int i2c_dw_setup(const struct device *dev, uint16_t slave_address)
 {
-	const struct i2c_dw_rom_config *const rom = dev->config;
 	struct i2c_dw_dev_config *const dw = dev->data;
 	uint32_t value;
 	union ic_con_register ic_con;
@@ -692,7 +691,6 @@ static int i2c_dw_setup(const struct device *dev, uint16_t slave_address)
 		LOG_DBG("I2C: speed set to STANDARD");
 		write_ss_scl_lcnt(dw->lcnt, reg_base);
 		write_ss_scl_hcnt(dw->hcnt, reg_base);
-		write_fs_spklen(rom->fs_spk_len, reg_base);
 		ic_con.bits.speed = I2C_DW_SPEED_STANDARD;
 
 		break;
@@ -702,7 +700,6 @@ static int i2c_dw_setup(const struct device *dev, uint16_t slave_address)
 		LOG_DBG("I2C: speed set to FAST or FAST_PLUS");
 		write_fs_scl_lcnt(dw->lcnt, reg_base);
 		write_fs_scl_hcnt(dw->hcnt, reg_base);
-		write_fs_spklen(rom->fs_spk_len, reg_base);
 		ic_con.bits.speed = I2C_DW_SPEED_FAST;
 
 		break;
@@ -714,7 +711,6 @@ static int i2c_dw_setup(const struct device *dev, uint16_t slave_address)
 		LOG_DBG("I2C: speed set to HIGH");
 		write_hs_scl_lcnt(dw->lcnt, reg_base);
 		write_hs_scl_hcnt(dw->hcnt, reg_base);
-		write_hs_spklen(rom->hs_spk_len, reg_base);
 		ic_con.bits.speed = I2C_DW_SPEED_HIGH;
 
 		break;
@@ -1360,6 +1356,10 @@ static int i2c_dw_initialize(const struct device *dev)
 	}
 
 	rom->config_func(dev);
+
+	/* Set spike length */
+	write_fs_spklen(rom->fs_spk_len, reg_base);
+	write_hs_spklen(rom->hs_spk_len, reg_base);
 
 	dw->app_config = I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(rom->bitrate);
 
