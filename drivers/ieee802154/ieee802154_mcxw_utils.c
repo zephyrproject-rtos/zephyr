@@ -1,7 +1,7 @@
 /* ieee802154_mcxw_utils.c - NXP MCXW 802.15.4 driver utils*/
 
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -325,20 +325,34 @@ static uint8_t *get_csl_ie_content_start(uint8_t *pdu, uint16_t length)
 
 	if (is_ie_present(fcf)) {
 		uint8_t ie_start_idx = calculate_addr_field_size(fcf) + get_asn_size(pdu, length);
+
+		/* Ensure we don't read beyond the PDU length */
+		if (ie_start_idx + 2 > length) {
+			return NULL;
+		}
+
 		uint8_t *cur_ie = &pdu[ie_start_idx];
 
-		uint8_t ie_header = (uint16_t)(cur_ie[0] | (cur_ie[1] << 8));
+		uint16_t ie_header = (uint16_t)(cur_ie[0] | (cur_ie[1] << 8));
 		uint8_t ie_length = ie_header & 0x7F;
-		uint8_t ie_el_id = ie_header & 0x7F80;
+		uint16_t ie_el_id = (ie_header >> 7) & 0xFF;
 
 		while ((ie_el_id != 0x7e) && (ie_el_id != 0x7f)) {
 			if (ie_el_id == 0x1a) {
 				return (cur_ie + 2);
 			}
+
+			/* Move to next IE */
 			cur_ie += (2 + ie_length);
+
+			/* Ensure we don't read beyond the PDU length */
+			if ((cur_ie - pdu) + 2 > length) {
+				return NULL;
+			}
+
 			ie_header = (uint16_t)(cur_ie[0] | (cur_ie[1] << 8));
 			ie_length = ie_header & 0x7F;
-			ie_el_id = ie_header & 0x7F80;
+			ie_el_id = (ie_header >> 7) & 0xFF;
 		}
 	}
 
@@ -350,7 +364,10 @@ void set_csl_ie(uint8_t *pdu, uint16_t length, uint16_t period, uint16_t phase)
 	uint8_t *csl_ie_content = get_csl_ie_content_start(pdu, length);
 
 	if (csl_ie_content) {
-		sys_put_le16(phase, csl_ie_content);
-		sys_put_le16(period, csl_ie_content + 2);
+		/* Ensure we have enough space for CSL IE content (4 bytes: phase + period) */
+		if ((csl_ie_content - pdu) + 4 <= length) {
+			sys_put_le16(phase, csl_ie_content);
+			sys_put_le16(period, csl_ie_content + 2);
+		}
 	}
 }
