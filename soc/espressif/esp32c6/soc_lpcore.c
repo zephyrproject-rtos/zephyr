@@ -6,27 +6,19 @@
 
 #include <zephyr/toolchain.h>
 #include "soc/soc_caps.h"
-#include "esp_rom_caps.h"
-#include "rom/ets_sys.h"
 #include "ulp_lp_core_utils.h"
 #include "ulp_lp_core_lp_timer_shared.h"
 #include "ulp_lp_core_memory_shared.h"
-#include "ulp_lp_core_print.h"
 #include <soc.h>
 
-extern void main(void);
 extern FUNC_NORETURN void z_cstart(void);
 
-/* Initialize lp core related system functions before calling user's main*/
+/* Initialize lp core related system functions before calling user's main */
 void lp_core_startup(void)
 {
-#if CONFIG_ESP32_ULP_HP_UART_CONSOLE_PRINT && ESP_ROM_HAS_LP_ROM
-	ets_install_putc1(lp_core_print_char);
-#endif
-
 	ulp_lp_core_update_wakeup_cause();
 
-	/* Start Zephyr */
+	/* Start Zephyr kernel - runs device init (mbox, uart, etc.) then main() */
 	z_cstart();
 
 	CODE_UNREACHABLE;
