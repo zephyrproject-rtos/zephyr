@@ -39,4 +39,11 @@ config OTP_PROGRAM
 	  Allowing the programming of OTPs may cause irreversible damage
 	  to a platform. Use it very carefully and at your own risk.
 
+config OTP_SHELL
+	bool "OTP shell commands"
+	depends on OTP_PROGRAM
+	depends on SHELL
+	help
+	  Enable shell commands for interacting with OTP devices.
+
 endif # OTP
