@@ -17,3 +17,7 @@
 		zephyr,flash = &flash0;
 	};
 };
+
+&syscon {
+	status = "okay";
+};
