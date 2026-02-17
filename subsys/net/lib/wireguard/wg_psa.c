@@ -455,11 +455,11 @@ static int wg_psa_aead_encrypt(uint8_t *dst,
 	return 0;
 }
 
-bool wg_psa_aead_decrypt(uint8_t *dst,
-			 const uint8_t *src, size_t src_len,
-			 const uint8_t *ad, size_t ad_len,
-			 uint64_t nonce,
-			 const uint8_t *key)
+static bool wg_psa_aead_decrypt(uint8_t *dst,
+				const uint8_t *src, size_t src_len,
+				const uint8_t *ad, size_t ad_len,
+				uint64_t nonce,
+				const uint8_t *key)
 {
 	psa_status_t status;
 	psa_key_id_t key_id = PSA_KEY_ID_NULL;
@@ -505,11 +505,11 @@ bool wg_psa_aead_decrypt(uint8_t *dst,
  * - HChaCha20: reference implementation (not available in PSA)
  * - ChaCha20-Poly1305: PSA implementation
  */
-int wg_psa_xaead_encrypt(uint8_t *dst,
-			 const uint8_t *src, size_t src_len,
-			 const uint8_t *ad, size_t ad_len,
-			 const uint8_t *nonce,
-			 const uint8_t *key)
+static int wg_psa_xaead_encrypt(uint8_t *dst,
+				const uint8_t *src, size_t src_len,
+				const uint8_t *ad, size_t ad_len,
+				const uint8_t *nonce,
+				const uint8_t *key)
 {
 	uint8_t subkey[CHACHA20_KEY_SIZE];
 	uint64_t new_nonce;
@@ -529,11 +529,11 @@ int wg_psa_xaead_encrypt(uint8_t *dst,
 	return ret;
 }
 
-bool wg_psa_xaead_decrypt(uint8_t *dst,
-			  const uint8_t *src, size_t src_len,
-			  const uint8_t *ad, size_t ad_len,
-			  const uint8_t *nonce,
-			  const uint8_t *key)
+static bool wg_psa_xaead_decrypt(uint8_t *dst,
+				 const uint8_t *src, size_t src_len,
+				 const uint8_t *ad, size_t ad_len,
+				 const uint8_t *nonce,
+				 const uint8_t *key)
 {
 	uint8_t subkey[CHACHA20_KEY_SIZE];
 	uint64_t new_nonce;
