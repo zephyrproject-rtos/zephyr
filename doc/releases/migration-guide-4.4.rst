@@ -225,6 +225,10 @@ Controller Area Network (CAN)
   :kconfig:option:`CONFIG_CAN_NXP_LPC_MCAN` as this driver is not based on the NXP MCUXpresso HAL
   (:github:`103679`).
 
+* Added devicetree property ``ti,nwkrq-voltage-vio`` to :dtcompatible:`ti,tcan4x5x` to allow
+  configuring the voltage rail used for the ``nWKRQ`` pin. To maintain previous driver default of
+  using VIO, this property must be set (:github:`104182`).
+
 Counter
 =======
 
