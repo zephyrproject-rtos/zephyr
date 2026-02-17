@@ -44,6 +44,60 @@
 			ahb-clk-divider = <1>;
 			status = "disabled";
 		};
+
+		swm: swm@4000c000 {
+			compatible = "nxp,lpc84x-swm";
+			reg = <0x4000c000 0x4000>;
+			clocks = <&syscon LPC84X_CLK_SWM>;
+			status = "disabled";
+		};
+
+		iocon: iocon@40044000 {
+			compatible = "nxp,lpc84x-iocon";
+			reg = <0x40044000 0x4000>;
+			clocks = <&syscon LPC84X_CLK_IOCON>;
+			status = "disabled";
+		};
+
+		uart0: uart@40064000 {
+			compatible = "nxp,lpc84x-uart";
+			reg = <0x40064000 0x4000>;
+			clocks = <&syscon LPC84X_CLK_UART0>;
+			interrupts = <3 0>;
+			status = "disabled";
+		};
+
+		uart1: uart@40068000 {
+			compatible = "nxp,lpc84x-uart";
+			reg = <0x40068000 0x4000>;
+			clocks = <&syscon LPC84X_CLK_UART1>;
+			interrupts = <4 0>;
+			status = "disabled";
+		};
+
+		uart2: uart@4006c000 {
+			compatible = "nxp,lpc84x-uart";
+			reg = <0x4006c000 0x4000>;
+			clocks = <&syscon LPC84X_CLK_UART2>;
+			interrupts = <5 0>;
+			status = "disabled";
+		};
+
+		uart3: uart@40070000 {
+			compatible = "nxp,lpc84x-uart";
+			reg = <0x40070000 0x4000>;
+			clocks = <&syscon LPC84X_CLK_UART3>;
+			interrupts = <30 0>;
+			status = "disabled";
+		};
+
+		uart4: uart@40074000 {
+			compatible = "nxp,lpc84x-uart";
+			reg = <0x40074000 0x4000>;
+			clocks = <&syscon LPC84X_CLK_UART4>;
+			interrupts = <31 0>;
+			status = "disabled";
+		};
 	};
 };
 
