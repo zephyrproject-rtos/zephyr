@@ -167,6 +167,8 @@
 			compatible = "nordic,nrf-dppic";
 			reg = <0x4100f000 0x1000>;
 			status = "okay";
+			channels = <16>;
+			groups = <6>;
 		};
 
 		temp: temp@41010000 {
