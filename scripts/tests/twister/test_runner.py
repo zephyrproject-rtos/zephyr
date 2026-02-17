@@ -2256,7 +2256,6 @@ TESTDATA_14 = [
         True,
         True,
         True,
-        True,
         False
     ),
     (
@@ -2267,7 +2266,6 @@ TESTDATA_14 = [
         'not posix',
         {'CONFIG_FAKE_ENTROPY_NATIVE_SIM': 'y'},
         'not pytest',
-        False,
         False,
         False,
         False,
@@ -2286,14 +2284,13 @@ TESTDATA_14 = [
         False,
         False,
         False,
-        False,
         False
     ),
 ]
 
 @pytest.mark.parametrize(
     'ready, type_str, seed, platform_name, platform_arch, defconfig, harness,' \
-    ' expect_duts, expect_parse_generated, expect_seed,' \
+    ' expect_parse_generated, expect_seed,' \
     ' expect_extra_test_args, expect_pytest, expect_handle',
     TESTDATA_14,
     ids=['pytest full', 'not pytest minimal', 'not ready']
@@ -2307,7 +2304,6 @@ def test_projectbuilder_run(
     platform_arch,
     defconfig,
     harness,
-    expect_duts,
     expect_parse_generated,
     expect_seed,
     expect_extra_test_args,
@@ -2328,7 +2324,6 @@ def test_projectbuilder_run(
     instance_mock.handler.seed = 123
     instance_mock.handler.ready = ready
     instance_mock.handler.type_str = type_str
-    instance_mock.handler.duts = [mock.Mock(name='dummy dut')]
     instance_mock.platform.name = platform_name
     instance_mock.platform.arch = platform_arch
     instance_mock.testsuite.harness = harness
@@ -2336,7 +2331,6 @@ def test_projectbuilder_run(
 
     pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
     pb.options.extra_test_args = ['dummy_arg1', 'dummy_arg2']
-    pb.duts = ['another dut']
     pb.options.seed = seed
     pb.defconfig = defconfig
     pb.parse_generated = mock.Mock()
@@ -2344,9 +2338,6 @@ def test_projectbuilder_run(
     with mock.patch('twisterlib.runner.HarnessImporter.get_harness',
                     mock_harness):
         pb.run()
-
-    if expect_duts:
-        assert pb.instance.handler.duts == ['another dut']
 
     if expect_parse_generated:
         pb.parse_generated.assert_called_once()
