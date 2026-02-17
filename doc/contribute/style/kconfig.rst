@@ -92,6 +92,12 @@ The specific formats by subtree:
 
 * **Boards (/boards)**: Use ``BOARD_`` for symbols.
 
+* **SoCs (/soc)**: Use the most appropriate base for symbols: ``SOC_FAMILY_{SoC family}_`` if it
+  relates to a whole SoC family, ``SOC_SERIES_{SoC series}_`` if it relates to a whole SoC series,
+  or ``SOC_{SoC}_`` if it relates to a specific SoC - see :ref:`soc_porting_guide` for details on
+  these terms and where they must originate from. This is to prevent conflicts with other vendors
+  and external modules.
+
 Examples
 ========
 
@@ -120,6 +126,12 @@ Examples
 **Test examples:**
 
 .. literalinclude:: kconfig_example_test.txt
+   :language: kconfig
+   :start-after: start-after-here
+
+**SoC examples:**
+
+.. literalinclude:: kconfig_example_soc.txt
    :language: kconfig
    :start-after: start-after-here
 
