@@ -107,6 +107,30 @@ a.btn:hover {
     color: var(--link-color);
 }
 
+/* Ensure links in body text are visually distinct from other text as per WCAG 1.4.1 */
+.rst-content p a,
+.rst-content blockquote p a,
+.rst-content dl dd p a,
+.rst-content li a {
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-thickness: from-font;
+  text-underline-offset: 0.2em;
+}
+.rst-content p a:hover,
+.rst-content blockquote p a:hover,
+.rst-content dl dd p a:hover,
+.rst-content li a:hover {
+  text-decoration: underline;
+}
+/* Preserve no-underline for buttons & navigation */
+a.btn,
+.wy-menu-vertical a,
+.wy-breadcrumbs a,
+.rst-versions a {
+  text-decoration: none !important;
+}
+
 /* Style external links differently to make them easier to distinguish from internal links. */
 .reference.external {
     background-position: center right;
