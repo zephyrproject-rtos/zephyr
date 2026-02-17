@@ -136,6 +136,9 @@ LOG_MODULE_REGISTER(adc_ad7124, CONFIG_ADC_LOG_LEVEL);
 /* Error register bits */
 #define AD7124_ERR_REG_SPI_IGNORE_ERR BIT(6)
 
+/* Burnout current source configuration bits */
+#define AD7124_BURNOUT_CURRENT_SOURCE_MSK GENMASK(10, 9)
+
 enum ad7124_register_lengths {
 	AD7124_STATUS_REG_LEN = 1,
 	AD7124_ADC_CONTROL_REG_LEN = 2,
@@ -232,6 +235,13 @@ enum ad7124_iout_channel {
 	AD7124_IOUT_AIN7 = 15,
 };
 
+enum ad7124_burnout_current_strength {
+	AD7124_BURNOUT_OFF = 0,
+	AD7124_BURNOUT_0_5_UA = 1,
+	AD7124_BURNOUT_2_UA = 2,
+	AD7124_BURNOUT_4_UA = 3
+};
+
 struct ad7124_current_source_config {
 	enum ad7124_iout_current current;
 	enum ad7124_iout_channel channel;
@@ -241,6 +251,7 @@ struct ad7124_config_props {
 	enum ad7124_reference_source refsel;
 	enum ad7124_gain pga_bits;
 	enum ad7124_filter_type filter_type;
+	enum ad7124_burnout_current_strength burnout_strength;
 	uint16_t odr_sel_bits;
 	bool bipolar;
 	bool inbuf_enable;
@@ -464,6 +475,7 @@ static int adc_ad7124_create_new_cfg(const struct device *dev, const struct adc_
 		new_cfg->props.filter_type = AD7124_FILTER_SINC4;
 	}
 
+	new_cfg->props.burnout_strength = cfg->burnout_source_strength;
 	new_cfg->props.odr_sel_bits = adc_ad7124_odr_to_fs(dev, odr);
 	new_cfg->props.bipolar = config->bipolar_mask & BIT(cfg->channel_id);
 	new_cfg->props.inbuf_enable = config->inbuf_enable_mask & BIT(cfg->channel_id);
@@ -725,6 +737,8 @@ static int adc_ad7124_setup_cfg(const struct device *dev, const struct ad7124_ch
 
 	configuration_setup |= FIELD_PREP(AD7124_SETUP_CONF_REG_REF_SEL_MSK, cfg->props.refsel);
 	configuration_setup |= FIELD_PREP(AD7124_SETUP_CONF_PGA_MSK, cfg->props.pga_bits);
+	configuration_setup |=
+		FIELD_PREP(AD7124_BURNOUT_CURRENT_SOURCE_MSK, cfg->props.burnout_strength);
 	configuration_mask |= AD7124_SETUP_CONFIGURATION_MASK;
 
 	ret = adc_ad7124_reg_write_msk(dev, AD7124_CONFIG(cfg->cfg_slot), AD7124_CONFIG_REG_LEN,

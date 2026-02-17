@@ -196,6 +196,16 @@ struct adc_channel_cfg {
 	 */
 	uint32_t vbias_pins;
 #endif /* CONFIG_ADC_CONFIGURABLE_VBIAS_PIN */
+
+#ifdef CONFIG_ADC_CONFIGURABLE_BURNOUT_SOURCE
+	/**
+	 * Drive strength for burnout sources.
+	 * This is only available if the driver enables the feature
+	 * via the hidden configuration option ADC_CONFIGURABLE_BURNOUT_SOURCE.
+	 * The interpretation of this field is dependent on the driver.
+	 */
+	uint8_t burnout_source_strength;
+#endif /* CONFIG_ADC_CONFIGURABLE_BURNOUT_SOURCE */
 };
 
 /**
@@ -280,7 +290,9 @@ IF_ENABLED(CONFIG_ADC_CONFIGURABLE_EXCITATION_CURRENT_SOURCE_PIN, \
 	 .current_source_pin = DT_PROP_OR(node_id, zephyr_current_source_pin, {0}),)) \
 IF_ENABLED(CONFIG_ADC_CONFIGURABLE_VBIAS_PIN, \
 	(.vbias_pins = DT_PROP_OR(node_id, zephyr_vbias_pins, 0),)) \
-}
+IF_ENABLED(CONFIG_ADC_CONFIGURABLE_BURNOUT_SOURCE, \
+	(.burnout_source_strength = DT_PROP_OR(node_id, zephyr_burnout_source_strength, 0),)) \
+	}
 
 /**
  * @brief Container for ADC channel information specified in devicetree.

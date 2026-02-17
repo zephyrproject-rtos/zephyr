@@ -169,3 +169,10 @@ child-binding:
         Output pin selection for the bias voltage. The actual interpretation
         depends on the driver. This is used only for drivers which select
         the ADC_CONFIGURABLE_VBIAS_PIN Kconfig option.
+
+    zephyr,burnout-source-strength:
+      type: int
+      description: |
+        Selection of burnout current source strength. The actual interpretation
+        depends on the driver. This is used only for drivers which select the
+        ADC_CONFIGURABLE_BURNOUT_SOURCE Kconfig option.
