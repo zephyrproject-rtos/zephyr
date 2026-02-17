@@ -131,7 +131,7 @@ SECTIONS
     }
 
     . = ORIGIN(shared_mem_ram);
-    .shared_mem (ALIGN(4)) :
+    .shared_mem (NOLOAD) :
     {
         KEEP(*(.shared_mem))
     } > shared_mem_ram

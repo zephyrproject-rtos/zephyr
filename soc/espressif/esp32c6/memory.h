@@ -6,12 +6,14 @@
 
 #define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
-/* LP-SRAM (16kB) memory */
+/* LP-SRAM memory */
 #define LPSRAM_IRAM_START      DT_REG_ADDR(DT_NODELABEL(sramlp))
 #define LPSRAM_SIZE            DT_REG_SIZE(DT_NODELABEL(sramlp))
-#define ESP32_ULP_SHARED_MEM_SIZE    DT_REG_SIZE(DT_NODELABEL(shmlp))
-#define ESP32_ULP_SHARED_MEM_ADDR    DT_REG_ADDR(DT_NODELABEL(shmlp))
-#define ESP32_ULP_COPROC_RESERVE_MEM (0x4000)
+#define LPSRAM_RTC_START             DT_REG_ADDR(DT_NODELABEL(lp_rtc))
+#define LPSRAM_RTC_SIZE              DT_REG_SIZE(DT_NODELABEL(lp_rtc))
+#define ESP32_ULP_COPROC_RESERVE_MEM CONFIG_ESP32_ULP_COPROC_RESERVE_MEM
+#define ESP32_ULP_SHARED_MEM_SIZE    DT_REG_SIZE(DT_NODELABEL(ulp_shm))
+#define ESP32_ULP_SHARED_MEM_ADDR    DT_REG_ADDR(DT_NODELABEL(ulp_shm))
 
 /* HP-SRAM (512kB) memory */
 #define HPSRAM_START          DT_REG_ADDR(DT_NODELABEL(sramhp))

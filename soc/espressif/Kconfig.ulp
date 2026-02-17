@@ -31,6 +31,48 @@ config ESP32_ULP_COPROC_TYPE_LP_CORE
 	depends on SOC_SERIES_ESP32C6
 endchoice
 
+config ESP32_ULP_COPROC_RESERVE_MEM
+	int
+	depends on ESP32_ULP_COPROC_ENABLED && (SOC_SERIES_ESP32C6 || SOC_ESP32C6_LPCORE)
+	default $(dt_node_reg_size_int,/soc/memory@50000000,0)
+	help
+	  LP SRAM reserved for ULP coprocessor firmware and data.
+	  Value is derived from the sramlp devicetree node size.
+
+choice ESP32_ULP_LP_CORE_WAKEUP_SOURCE
+	prompt "LP core wakeup source"
+	depends on ESP32_ULP_COPROC_TYPE_LP_CORE
+	default ESP32_ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU
+	help
+	  Select the wakeup source for the LP core.
+
+config ESP32_ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU
+	bool "HP CPU (single wakeup)"
+	help
+	  LP core is started once by the HP CPU.
+
+config ESP32_ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER
+	bool "LP timer (periodic wakeup)"
+	help
+	  LP core wakes periodically from the LP timer.
+	  The sleep duration is configured by
+	  ESP32_ULP_LP_CORE_LP_TIMER_SLEEP_DURATION_US.
+
+config ESP32_ULP_LP_CORE_WAKEUP_SOURCE_LP_IO
+	bool "LP IO (GPIO interrupt)"
+	help
+	  LP core wakes on LP IO interrupt.
+
+endchoice
+
+config ESP32_ULP_LP_CORE_LP_TIMER_SLEEP_DURATION_US
+	int "LP timer sleep duration (us)"
+	depends on ESP32_ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER
+	default 2000000
+	help
+	  Sleep duration in microseconds between LP core wakeups
+	  when using LP timer as wakeup source.
+
 menu "ULP RISC-V Settings"
 	depends on ESP32_ULP_COPROC_TYPE_RISCV
 
