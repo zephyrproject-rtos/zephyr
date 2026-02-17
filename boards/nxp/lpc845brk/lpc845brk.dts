@@ -18,6 +18,6 @@
 	};
 };
 
-&cpu0 {
-	clock-frequency = <30000000>;
+&syscon {
+	status = "okay";
 };
