@@ -555,7 +555,7 @@ static int tcan4x5x_reset(const struct device *dev)
 	}
 #endif /* TCAN4X5X_RST_GPIO_SUPPORT */
 
-	k_busy_wait(CAN_TCAN4X5X_T_RESET_US);
+	k_usleep(CAN_TCAN4X5X_T_RESET_US);
 
 	return 0;
 }
