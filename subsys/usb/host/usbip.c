@@ -44,6 +44,7 @@ struct usbip_dev_ctx {
 	struct usb_device *udev;
 	struct k_thread thread;
 	struct k_event event;
+	struct k_mutex send_mutex;
 	sys_dlist_t dlist;
 	int connfd;
 	uint32_t devid;
@@ -132,6 +133,8 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 	struct usbip_command *const cmd = &cmd_nd->cmd;
 	struct net_buf *buf = xfer->buf;
 	struct usbip_return ret;
+	struct iovec iov[2];
+	struct msghdr msg;
 	unsigned int key;
 	int err;
 
@@ -176,20 +179,24 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 		check_ctrl_request(dev_ctx->udev, xfer->ep, xfer->setup_pkt);
 	}
 
-	err = usbip_send(dev_ctx->connfd, &ret, sizeof(ret));
-	if (err != 0) {
-		LOG_ERR("Send RET_SUBMIT failed err %d errno %d", err, errno);
-		goto usbip_req_cb_error;
-	}
+	iov[0].iov_base = &ret;
+	iov[0].iov_len = sizeof(ret);
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_iov = iov;
+	msg.msg_iovlen = 1;
 
 	if (USB_EP_DIR_IS_IN(xfer->ep) && ret.submit.actual_length != 0) {
 		LOG_INF("Send RET_SUBMIT transfer_buffer len %u", buf->len);
-		err = usbip_send(dev_ctx->connfd, buf->data, buf->len);
-		if (err != 0) {
-			LOG_ERR("Send transfer_buffer failed err %d errno %d",
-				err, errno);
-			goto usbip_req_cb_error;
-		}
+		iov[1].iov_base = buf->data;
+		iov[1].iov_len = buf->len;
+		msg.msg_iovlen += 1;
+	}
+
+	k_mutex_lock(&dev_ctx->send_mutex, K_FOREVER);
+	err = zsock_sendmsg_all(dev_ctx->connfd, &msg, 0, K_FOREVER, NULL);
+	k_mutex_unlock(&dev_ctx->send_mutex);
+	if (err != 0) {
+		LOG_ERR("Send transfer_buffer failed err %d", err);
 	}
 
 usbip_req_cb_error:
@@ -375,7 +382,11 @@ static int usbip_handle_unlink(struct usbip_dev_ctx *const dev_ctx,
 	}
 	irq_unlock(key);
 
-	return usbip_send(dev_ctx->connfd, &rsp, sizeof(rsp));
+	k_mutex_lock(&dev_ctx->send_mutex, K_FOREVER);
+	ret = usbip_send(dev_ctx->connfd, &rsp, sizeof(rsp));
+	k_mutex_unlock(&dev_ctx->send_mutex);
+
+	return ret;
 }
 
 static int usbip_handle_cmd(struct usbip_dev_ctx *const dev_ctx)
@@ -742,6 +753,7 @@ static int usbip_init(void)
 
 		/* busnum << 16 | devnum */
 		ctx->devid = (1U << 16) | i;
+		k_mutex_init(&ctx->send_mutex);
 		sys_dlist_init(&ctx->dlist);
 		k_event_init(&ctx->event);
 		k_thread_create(&ctx->thread, dev_thread_stacks[i],
