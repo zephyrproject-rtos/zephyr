@@ -647,26 +647,43 @@ static int cmd_wg_stats(const struct shell *sh, size_t argc, char *argv[])
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_wg,
 	SHELL_CMD_ARG(add, NULL,
-		      "Add a peer in order to establish a VPN connection.\n"
-		      "[-k, --public-key <key>] : Peer public key in base64 format\n"
-		      "[-a, --allowed-ips <ipaddr/mask-len>] : Allowed IPv4/6 addresses. "
-		      "Separate multiple addresses by comma or space.\n",
-		      cmd_wg_add, 1, 8),
+		      SHELL_HELP("Add a peer in order to establish a VPN connection",
+				 "-k, --public-key <key>\n"
+				 "-e, --endpoint <ip address and port>\n"
+				 "[-a, --allowed-ips <ipaddr/mask-len>]\n"
+				 "[-t, --keepalive <seconds>]\n"
+				 "[<peer endpoint IPv4/6 address>:<port>]\n"
+				 "Peer public/private key must be in base64 format.\n"
+				 "Allowed IPv4/6 addresses can be specified with optional mask "
+				 "length (default 32 for IPv4 and 128 for IPv6). "
+				 "Separate multiple addresses by comma or space\n"
+				 "Peer endpoint is specified in the format\n"
+				 "<IPv4 address>:<port> or [<IPv6 address>]:<port>\n"
+				 "Keepalive time is specified in seconds. "
+				 "If set to 0 (default), no keepalive messages are sent.\n"
+				 "Examples:\n"
+				 "net wg add -k bm90IHNldA== "
+				 "-a 198.51.100.1/24,2001:db8:100::1/64 "
+				 "-e [2001:db8::2]:51820 -t 60\n"
+				 "net wg add -k ZGV2IG51bGw= -a 198.51.100.1/24 "
+				 "-e 192.0.2.2:51820"),
+		      cmd_wg_add, 1, 9),
 	SHELL_CMD_ARG(del, NULL,
-		      "Delete a peer. Any existing connection is terminated.\n"
-		      "[-i, --id <peer-id>] : Peer id\n",
+		      SHELL_HELP("Delete a peer. Any existing connection is terminated",
+				 "[-i, --id <peer-id>]"),
 		      cmd_wg_del, 1, 4),
 	SHELL_CMD_ARG(keepalive, NULL,
-		      "Send a keepalive message to peer.\n",
+		      SHELL_HELP("Send a keepalive message to peer", ""),
 		      cmd_wg_keepalive, 1, 1),
 	SHELL_CMD_ARG(show, NULL,
-		      "Show information about the Wireguard VPN connections.\n"
-		      "To get detailed information about a specific connection, "
-		      "use the 'show <id>' command.\n",
+		      SHELL_HELP("Show information about the Wireguard VPN connections. "
+				 "To get detailed information about a specific connection, "
+				 "use the 'show <id>' command", "[<id>]"),
 		      cmd_net_wg, 1, 1),
 	SHELL_CMD_ARG(stats, NULL,
-		      "Show statistics information about the Wireguard VPN connections.\n"
-		      "The statistics can be reset by using the 'reset' command.\n",
+		      SHELL_HELP("Show statistics information about the Wireguard VPN connections."
+				 " The statistics can be reset by using the 'reset' command",
+				 "[reset]"),
 		      cmd_wg_stats, 1, 1),
 	SHELL_SUBCMD_SET_END
 );
