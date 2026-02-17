@@ -17,13 +17,35 @@ config UART_MAX32
 	  processors.
 	  Say y if you wish to use serial port on MAX32 MCU.
 
+config UART_MAX32_TX_IRQ_WORKAROUND
+	bool
+	default y if SOC_MAX32690 || SOC_MAX32655 || SOC_MAX32657 || \
+		SOC_MAX32666 || SOC_MAX32670 || SOC_MAX32672 || SOC_MAX32675
+	depends on UART_MAX32 && UART_INTERRUPT_DRIVEN
+	help
+		Workaround for the subset of MAX32 MCUs that have errata regarding
+		failing to consistently raise interrupts for TX half/almost empty
+		flags.
+
+if UART_MAX32_TX_IRQ_WORKAROUND
+
+config UART_MAX32_TX_IRQ_WORKAROUND_POLL_US
+	int "Interval for checking for TX completion"
+	default 500
+	help
+		Timer interval for checking the TX FIFO status, for platforms where
+		the TX half/almost empty interrupts may sometimes fail to raise.
+
+endif
+
 config UART_MAX32_TX_AE_WORKAROUND
 	bool
-	default y if SOC_MAX32690 || SOC_MAX32655 || SOC_MAX32657
+	select DEPRECATED
 	depends on UART_MAX32 && UART_INTERRUPT_DRIVEN
 	help
 		This option enables a small workaround for almost-empty interrupts
-		not firing on TX of small amounts
+		not firing on TX of small amounts. This option is deprecated, in favor
+		of more complete interrupt workaround for the necessary platforms.
 
 if UART_MAX32
 
