@@ -1,0 +1,150 @@
+name: Eclair Code Scanning
+on:
+  push:
+    branches:
+      - main
+      - v*-branch
+      - collab-*
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  EclairScanCode:
+    if: github.repository_owner == 'zephyrproject-rtos'
+    runs-on:
+      group: zephyr-runner-v2-linux-x64-4xlarge
+    container:
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.28.7.20251127
+      options: '--entrypoint /bin/bash'
+    permissions:
+      pull-requests: write # to create/update pull request comments
+      security-events: write
+    env:
+      BASE_REF: ${{ github.base_ref }}
+    steps:
+      - name: Print cloud service information
+        run: |
+          echo "ZEPHYR_RUNNER_CLOUD_PROVIDER = ${ZEPHYR_RUNNER_CLOUD_PROVIDER}"
+          echo "ZEPHYR_RUNNER_CLOUD_NODE = ${ZEPHYR_RUNNER_CLOUD_NODE}"
+          echo "ZEPHYR_RUNNER_CLOUD_POD = ${ZEPHYR_RUNNER_CLOUD_POD}"
+
+      - name: Apply container owner mismatch workaround
+        run: |
+          # FIXME: The owner UID of the GITHUB_WORKSPACE directory may not
+          #        match the container user UID because of the way GitHub
+          #        Actions runner is implemented. Remove this workaround when
+          #        GitHub comes up with a fundamental fix for this problem.
+          git config --global --add safe.directory ${GITHUB_WORKSPACE}
+
+      - name: Clone cached Zephyr repository
+        continue-on-error: true
+        run: |
+          git clone --shared /repo-cache/zephyrproject/zephyr .
+          git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
+
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Environment Setup
+        run: |
+          if [ "${{github.event_name}}" = "pull_request" ]; then
+            git config --global user.email "bot@zephyrproject.org"
+            git config --global user.name "Zephyr Builder"
+            rm -fr ".git/rebase-apply"
+            rm -fr ".git/rebase-merge"
+            git rebase origin/${BASE_REF}
+            git clean -f -d
+            git log  --pretty=oneline | head -n 10
+          fi
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+          west init -l . || true
+          west config manifest.group-filter -- +ci,+optional
+          west config --global update.narrow true
+          west update --path-cache /repo-cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /repo-cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /repo-cache/zephyrproject)
+          west forall -c 'git reset --hard HEAD'
+
+          echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
+
+      - name: Check Environment
+        run: |
+          cmake --version
+          gcc --version
+          cargo --version
+          rustup target list --installed
+          ls -la
+
+      - name: SCA Setup
+        uses: zephyrproject-rtos/action-sca-setup@main
+        with:
+          tool-name: eclair
+          install-dir: eclair
+          s3-access-key-id: ${{ secrets.TOOLDIST_ACCESS_KEY }}
+          s3-secret-access-key: ${{ secrets.TOOLDIST_SECRET_ACCESS_KEY }}
+          license-server: ${{ secrets.TOOLDIST_ECLAIR_LICENSE_SERVER }}
+          license-key-ttl: 240
+
+      - name: Set Up Python 3.12
+        uses: actions/setup-python@8d9ed9ac5c53483de85588cdf95a591a75ab9f55 # v5.5.0
+        with:
+          python-version: 3.12
+          cache: pip
+          cache-dependency-path: scripts/requirements-actions.txt
+
+      - name: install-packages
+        run: |
+          pip install -r scripts/requirements-actions.txt --require-hashes
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Scan code with Eclair
+        run: |
+          ./scripts/twister -j 16 -p qemu_x86  -T samples/synchronization -i --build-only -v  -xZEPHYR_SCA_VARIANT=eclair -x=USE_CCACHE=0 -xECLAIR_REPORTS_SARIF=1
+          jq -s '{ "$schema": "https://json.schemastore.org/sarif-2.1.0", "version": "2.1.0", "runs": map(.runs) | add }'  $(find twister-out -name "reports.sarif")  > results.sarif
+          jq --arg basepath "file://${GITHUB_WORKSPACE}/" '
+            .runs[].results[] |= (
+             # Remove partialFingerprints if it exists
+             del(.partialFingerprints)
+             |
+            .locations[]? |= (
+            .physicalLocation.artifactLocation.uri
+            |= if type == "string" then ($basepath + .) else . end
+            )
+            | .relatedLocations[]? |= (
+            .physicalLocation.artifactLocation.uri
+            |= if type == "string" then ($basepath + .) else . end
+            )
+            )
+            ' results.sarif > results_tmp.sarif
+          mv results_tmp.sarif results.sarif
+
+          ver=`git describe`
+          echo "PAYLOAD_VERSION=${ver}" >> $GITHUB_ENV
+          echo "PAYLOAD_DESC=${ver}" >> $GITHUB_ENV
+      - name: Clean up
+        if: always()
+        run: |
+          eclair_licman -c 57350
+
+      - name: Upload SARIF as artifact
+        if: always() && github.event_name == 'push'
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        with:
+          name: sarif
+          if-no-files-found: ignore
+          path: |
+            results.sarif
+
+      - name: Upload Analysis Results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: results.sarif
