@@ -172,3 +172,10 @@ config CBPRINTF_CONVERT_CHECK_PTR
 	  If enabled, cbprintf_package_convert() supports checking if string
 	  candidate is used for %p format specifier. Check cannot be performed
 	  if string is not present in the memory.
+
+config CBPRINTF_RV32E_USE_DEFAULT_ALIGNMENT
+	bool
+	depends on RISCV_ISA_RV32E
+	help
+	  Use default alignment instead of architecture specific. It can be used if cbprintf
+	  packages are created on a RISCV target but formatted on different architecture.
