@@ -330,7 +330,7 @@ do { \
 	int _plen; \
 	uint32_t _options = Z_LOG_MSG_CBPRINTF_FLAGS(_cstr_cnt) | \
 			  CBPRINTF_PACKAGE_ADD_RW_STR_POS; \
-	if (GET_ARG_N(1, __VA_ARGS__) == NULL) { \
+	if (is_null_no_warn((void *)GET_ARG_N(1, __VA_ARGS__))) { \
 		_plen = 0; \
 	} else { \
 		CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG_ALIGN_OFFSET, _options, \
