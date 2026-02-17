@@ -14,8 +14,14 @@
 
 #include <stm32_ll_system.h>
 #include <stm32_ll_bus.h>
+#include <stm32_ll_gpio.h>
 
 #include <cmsis_core.h>
+
+/**
+ * Does pinctrl property `swj-cfg` have value @p v ?
+ */
+#define SWJ_CFG_HAS_VALUE(v) DT_ENUM_HAS_VALUE(DT_NODELABEL(pinctrl), swj_cfg, v)
 
 /**
  * @brief Perform basic hardware initialization at boot.
@@ -37,25 +43,28 @@ void soc_early_init_hook(void)
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 #endif
 
-/* ignore swj-cfg reset state (default value) */
-#if ((DT_NODE_HAS_PROP(DT_NODELABEL(pinctrl), swj_cfg)) && \
-	(DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) != 0))
+/*
+ * Configure SWD-JTAG port if a non-default value is selected.
+ * The default value 'full' corresponds to hardware reset value:
+ * 000: Full SJW (JTAG-DP + SW-DP)
+ */
+#if !SWJ_CFG_HAS_VALUE(full)
 	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
 
-	/* reset state is '000' (Full SWJ, (JTAG-DP + SW-DP)) */
-	/* only one of the 3 bits can be set */
-#if (DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) == 1)
+#if SWJ_CFG_HAS_VALUE(no_njtrst)
 	/* 001: Full SWJ (JTAG-DP + SW-DP) but without NJTRST */
 	/* releases: PB4 */
 	LL_GPIO_AF_Remap_SWJ_NONJTRST();
-#elif (DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) == 2)
+#elif SWJ_CFG_HAS_VALUE(jtag_disable)
 	/* 010: JTAG-DP Disabled and SW-DP Enabled */
 	/* releases: PB4 PB3 PA15 */
 	LL_GPIO_AF_Remap_SWJ_NOJTAG();
-#elif (DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) == 3)
+#elif SWJ_CFG_HAS_VALUE(disable)
 	/* 100: JTAG-DP Disabled and SW-DP Disabled */
 	/* releases: PB4 PB3 PA13 PA14 PA15 */
 	LL_GPIO_AF_DisableRemap_SWJ();
-#endif /* DT_ENUM_IDX(...) */
-#endif /* DT_NODE_HAS_PROP(DT_NODELABEL(pinctrl), swj_cfg) */
+#else
+#error Unreachable?!
+#endif /* SWJ_CFG_HAS_VALUE(...) */
+#endif /* !SWJ_CFG_HAS_VALUE(full) */
 }
