@@ -13,6 +13,7 @@
 function(zephyr_runner_file type path)
   # Property magic which makes west flash choose the signed build
   # output of a given type.
+  string(REPLACE "${ZEPHYR_BINARY_DIR}/" "" path ${path})
   set_target_properties(runners_yaml_props_target PROPERTIES "${type}_file" "${path}")
 endfunction()
 
