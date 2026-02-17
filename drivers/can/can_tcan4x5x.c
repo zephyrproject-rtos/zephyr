@@ -206,13 +206,14 @@ LOG_MODULE_REGISTER(can_tcan4x5x, CONFIG_CAN_LOG_LEVEL);
 #define CAN_TCAN4X5X_READ_B_FL  0x41
 
 /* TCAN4x5x timing requirements */
-#define CAN_TCAN4X5X_T_MODE_STBY_NOM_US 70
-#define CAN_TCAN4X5X_T_MODE_NOM_SLP_US  200
-#define CAN_TCAN4X5X_T_MODE_NOM_STBY_US 200
-#define CAN_TCAN4X5X_T_MODE_SLP_STBY_US 200
-#define CAN_TCAN4X5X_T_WAKE_US          50
-#define CAN_TCAN4X5X_T_PULSE_WIDTH_US   30
-#define CAN_TCAN4X5X_T_RESET_US         1000
+#define CAN_TCAN4X5X_T_MODE_STBY_NOM_US           70
+#define CAN_TCAN4X5X_T_MODE_NOM_SLP_US            200
+#define CAN_TCAN4X5X_T_MODE_NOM_STBY_US           200
+#define CAN_TCAN4X5X_T_MODE_SLP_STBY_US           200
+#define CAN_TCAN4X5X_T_MODE_SLP_STBY_VCCOUT_ON_US 1500
+#define CAN_TCAN4X5X_T_WAKE_US                    50
+#define CAN_TCAN4X5X_T_PULSE_WIDTH_US             30
+#define CAN_TCAN4X5X_T_RESET_US                   1000
 
 /*
  * Only compile in support for the optional GPIOs if at least one enabled tcan4x5x device tree node
@@ -509,6 +510,8 @@ static int tcan4x5x_wake(const struct device *dev)
 			LOG_ERR("failed to deassert WAKE GPIO (err %d)", err);
 			return err;
 		}
+
+		k_usleep(CAN_TCAN4X5X_T_MODE_SLP_STBY_VCCOUT_ON_US);
 	}
 #endif /* TCAN4X5X_WAKE_GPIO_SUPPORT*/
 
