@@ -36,4 +36,26 @@ void soc_early_init_hook(void)
 #if defined(CONFIG_PM) || defined(CONFIG_POWEROFF)
 	LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
 #endif
+
+/* ignore swj-cfg reset state (default value) */
+#if ((DT_NODE_HAS_PROP(DT_NODELABEL(pinctrl), swj_cfg)) && \
+	(DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) != 0))
+	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
+
+	/* reset state is '000' (Full SWJ, (JTAG-DP + SW-DP)) */
+	/* only one of the 3 bits can be set */
+#if (DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) == 1)
+	/* 001: Full SWJ (JTAG-DP + SW-DP) but without NJTRST */
+	/* releases: PB4 */
+	LL_GPIO_AF_Remap_SWJ_NONJTRST();
+#elif (DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) == 2)
+	/* 010: JTAG-DP Disabled and SW-DP Enabled */
+	/* releases: PB4 PB3 PA15 */
+	LL_GPIO_AF_Remap_SWJ_NOJTAG();
+#elif (DT_ENUM_IDX(DT_NODELABEL(pinctrl), swj_cfg) == 3)
+	/* 100: JTAG-DP Disabled and SW-DP Disabled */
+	/* releases: PB4 PB3 PA13 PA14 PA15 */
+	LL_GPIO_AF_DisableRemap_SWJ();
+#endif /* DT_ENUM_IDX(...) */
+#endif /* DT_NODE_HAS_PROP(DT_NODELABEL(pinctrl), swj_cfg) */
 }
