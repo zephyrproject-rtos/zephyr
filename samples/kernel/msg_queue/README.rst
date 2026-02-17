@@ -1,7 +1,8 @@
 .. zephyr:code-sample:: msg_queue
    :name: Message Queue
+   :relevant-api: msgq_apis
 
-   Implements a basic message queue producer/consumer thread pair.
+   Implement a basic message queue producer/consumer thread pair.
 
 Overview
 ********
