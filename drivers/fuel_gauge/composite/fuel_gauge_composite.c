@@ -68,13 +68,13 @@ static int composite_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 	int rc = 0;
 
 	/* Validate at build time that equivalent channel output fields still match */
-	BUILD_ASSERT(sizeof(val->absolute_state_of_charge) ==
-		     sizeof(val->relative_state_of_charge));
-	BUILD_ASSERT(offsetof(union fuel_gauge_prop_val, absolute_state_of_charge) ==
-		     offsetof(union fuel_gauge_prop_val, relative_state_of_charge));
-	BUILD_ASSERT(sizeof(val->current) == sizeof(val->avg_current));
-	BUILD_ASSERT(offsetof(union fuel_gauge_prop_val, current) ==
-		     offsetof(union fuel_gauge_prop_val, avg_current));
+	BUILD_ASSERT(sizeof(val->absolute_state_of_charge_pct) ==
+		     sizeof(val->relative_state_of_charge_pct));
+	BUILD_ASSERT(offsetof(union fuel_gauge_prop_val, absolute_state_of_charge_pct) ==
+		     offsetof(union fuel_gauge_prop_val, relative_state_of_charge_pct));
+	BUILD_ASSERT(sizeof(val->current_ua) == sizeof(val->avg_current_ua));
+	BUILD_ASSERT(offsetof(union fuel_gauge_prop_val, current_ua) ==
+		     offsetof(union fuel_gauge_prop_val, avg_current_ua));
 
 	if (now >= data->next_reading) {
 		/* Trigger a sample on the input devices */
@@ -91,13 +91,13 @@ static int composite_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 	}
 
 	switch (prop) {
-	case FUEL_GAUGE_FULL_CHARGE_CAPACITY:
+	case FUEL_GAUGE_FULL_CHARGE_CAPACITY_UAH:
 		rc = composite_channel_get(dev, SENSOR_CHAN_GAUGE_FULL_AVAIL_CAPACITY, &sensor_val);
 		if (rc == -ENOTSUP) {
 			if (config->charge_capacity_microamp_hours == 0) {
 				return -ENOTSUP;
 			}
-			val->full_charge_capacity = config->charge_capacity_microamp_hours;
+			val->full_charge_capacity_uah = config->charge_capacity_microamp_hours;
 			rc = 0;
 		}
 		break;
@@ -112,16 +112,16 @@ static int composite_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 			rc = 0;
 		}
 		break;
-	case FUEL_GAUGE_VOLTAGE:
+	case FUEL_GAUGE_VOLTAGE_UV:
 		sensor_chan = config->fg_channels ? SENSOR_CHAN_GAUGE_VOLTAGE : SENSOR_CHAN_VOLTAGE;
 		rc = composite_channel_get(dev, sensor_chan, &sensor_val);
-		val->voltage = sensor_value_to_micro(&sensor_val);
+		val->voltage_uv = sensor_value_to_micro(&sensor_val);
 		break;
-	case FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE:
-	case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE:
+	case FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE_PCT:
+	case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE_PCT:
 		rc = composite_channel_get(dev, SENSOR_CHAN_GAUGE_STATE_OF_CHARGE, &sensor_val);
 		if (rc == 0) {
-			val->absolute_state_of_charge = sensor_val.val1;
+			val->absolute_state_of_charge_pct = sensor_val.val1;
 		} else if (rc == -ENOTSUP) {
 			if (config->ocv_lookup_table[0] == -1) {
 				return -ENOTSUP;
@@ -133,24 +133,24 @@ static int composite_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 			voltage = sensor_value_to_micro(&sensor_val);
 			if (rc == 0) {
 				/* Convert voltage to state of charge */
-				val->relative_state_of_charge =
+				val->relative_state_of_charge_pct =
 					battery_soc_lookup(config->ocv_lookup_table, voltage) /
 					1000;
 			}
 		}
 		break;
-	case FUEL_GAUGE_CURRENT:
-	case FUEL_GAUGE_AVG_CURRENT:
+	case FUEL_GAUGE_CURRENT_UA:
+	case FUEL_GAUGE_AVG_CURRENT_UA:
 		sensor_chan =
 			config->fg_channels ? SENSOR_CHAN_GAUGE_AVG_CURRENT : SENSOR_CHAN_CURRENT;
 		rc = composite_channel_get(dev, sensor_chan, &sensor_val);
-		val->current = sensor_value_to_micro(&sensor_val);
+		val->current_ua = sensor_value_to_micro(&sensor_val);
 		break;
-	case FUEL_GAUGE_TEMPERATURE:
+	case FUEL_GAUGE_TEMPERATURE_DK:
 		sensor_chan = config->fg_channels ? SENSOR_CHAN_GAUGE_TEMP : SENSOR_CHAN_DIE_TEMP;
 		rc = composite_channel_get(dev, sensor_chan, &sensor_val);
 		/* Output unit = 0.1K (10x increase + 273.0) */
-		val->temperature = sensor_value_to_deci(&sensor_val) + 2730;
+		val->temperature_dk = sensor_value_to_deci(&sensor_val) + 2730;
 		break;
 	default:
 		return -ENOTSUP;
