@@ -96,6 +96,7 @@ struct max32_uart_data {
 	uint32_t flags;                   /* Cached interrupt flags */
 	uint32_t status;                  /* Cached status flags */
 	struct k_timer timer;
+	volatile bool disable_tx_irq;
 #endif
 #ifdef CONFIG_UART_ASYNC_API
 	struct max32_uart_async_data async;
@@ -330,16 +331,14 @@ static int api_fifo_fill(const struct device *dev, const uint8_t *tx_data, int s
 {
 	unsigned int num_tx = 0;
 	const struct max32_uart_config *cfg = dev->config;
-#ifdef CONFIG_UART_MAX32_TX_AE_WORKAROUND
-	struct max32_uart_data *const data = dev->data;
-#endif
 
 	num_tx = MXC_UART_WriteTXFIFO(cfg->regs, (unsigned char *)tx_data, size);
 
-#ifdef CONFIG_UART_MAX32_TX_AE_WORKAROUND
-	/* AE doesn't always trigger when small payloads are sent, so trigger timer ISR */
-	if (size <= 2) {
-		k_timer_start(&data->timer, K_NO_WAIT, K_NO_WAIT);
+#ifndef CONFIG_UART_MAX32_TX_IRQ_WORKAROUND
+	struct max32_uart_data *const data = dev->data;
+	/* AE doesn't trigger when one byte is sent, so trigger timer ISR */
+	if (size > 0 && size <= 1) {
+		k_timer_start(&data->timer, K_USEC(250), K_USEC(500));
 	}
 #endif
 
@@ -365,19 +364,24 @@ static void api_irq_tx_enable(const struct device *dev)
 	uart_max32_pm_policy_state_lock_get(dev, MAX32_UART_PM_POLICY_STATE_TX_FLAG);
 #endif
 
+	data->disable_tx_irq = false;
 	MXC_UART_EnableInt(cfg->regs, ADI_MAX32_UART_INT_TX | ADI_MAX32_UART_INT_TX_OEM);
 
 	/* Fire timer interrupt to run TX callbacks for ISR context */
-	k_timer_start(&data->timer, K_NO_WAIT, K_NO_WAIT);
+	k_timer_start(&data->timer, K_NO_WAIT,
+		      COND_CODE_1(IS_ENABLED(CONFIG_UART_MAX32_TX_IRQ_WORKAROUND),
+				  (K_USEC(CONFIG_UART_MAX32_TX_IRQ_WORKAROUND_POLL_US)),
+				  (K_NO_WAIT)));
 }
 
 static void api_irq_tx_disable(const struct device *dev)
 {
-	const struct max32_uart_config *cfg = dev->config;
+	struct max32_uart_data *const data = dev->data;
 
-	MXC_UART_DisableInt(cfg->regs, ADI_MAX32_UART_INT_TX | ADI_MAX32_UART_INT_TX_OEM);
-#ifdef CONFIG_PM
-	uart_max32_pm_policy_state_lock_put(dev, MAX32_UART_PM_POLICY_STATE_TX_FLAG);
+	data->disable_tx_irq = true;
+
+#ifndef CONFIG_UART_MAX32_TX_IRQ_WORKAROUND
+	k_timer_start(&data->timer, K_NO_WAIT, K_NO_WAIT);
 #endif
 }
 
@@ -388,18 +392,15 @@ static int api_irq_tx_ready(const struct device *dev)
 	uint32_t inten = Wrap_MXC_UART_GetRegINTEN(cfg->regs);
 
 	return ((inten & (ADI_MAX32_UART_INT_TX | ADI_MAX32_UART_INT_TX_OEM)) &&
+		!data->disable_tx_irq &&
 		!(data->status & ADI_MAX32_UART_STATUS_TX_FULL));
 }
 
 static int api_irq_tx_complete(const struct device *dev)
 {
-	const struct max32_uart_config *cfg = dev->config;
+	struct max32_uart_data *const data = dev->data;
 
-	if (MXC_UART_GetActive(cfg->regs) == E_BUSY) {
-		return 0;
-	} else {
-		return 1; /* transmission completed */
-	}
+	return (data->status & ADI_MAX32_UART_TX_EMPTY);
 }
 
 static int api_irq_rx_ready(const struct device *dev)
@@ -437,6 +438,16 @@ static int api_irq_update(const struct device *dev)
 
 	data->flags = MXC_UART_GetFlags(cfg->regs);
 	data->status = MXC_UART_GetStatus(cfg->regs);
+	MXC_UART_ClearFlags(cfg->regs, data->flags);
+
+	if ((data->status & ADI_MAX32_UART_TX_EMPTY) && data->disable_tx_irq) {
+		data->disable_tx_irq = false;
+		k_timer_stop(&data->timer);
+#ifdef CONFIG_PM
+		uart_max32_pm_policy_state_lock_put(dev, MAX32_UART_PM_POLICY_STATE_TX_FLAG);
+#endif
+		MXC_UART_DisableInt(cfg->regs, ADI_MAX32_UART_INT_TX | ADI_MAX32_UART_INT_TX_OEM);
+	}
 
 	return 1;
 }
@@ -477,10 +488,6 @@ static void api_irq_rx_disable(const struct device *dev)
 static void uart_max32_isr(const struct device *dev)
 {
 	struct max32_uart_data *data = dev->data;
-	const struct max32_uart_config *cfg = dev->config;
-	uint32_t intfl;
-
-	intfl = MXC_UART_GetFlags(cfg->regs);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	if (data->cb) {
@@ -497,14 +504,17 @@ static void uart_max32_isr(const struct device *dev)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 #ifdef CONFIG_UART_ASYNC_API
+	const struct max32_uart_config *cfg = dev->config;
+	uint32_t intfl;
+
+	intfl = MXC_UART_GetFlags(cfg->regs);
 	if (data->async.rx.timeout != SYS_FOREVER_US && data->async.rx.timeout != 0 &&
 	    (intfl & ADI_MAX32_UART_INT_RX)) {
 		k_work_reschedule(&data->async.rx.timeout_work, K_USEC(data->async.rx.timeout));
 	}
-#endif /* CONFIG_UART_ASYNC_API */
-
 	/* Clear RX/TX interrupts flag after cb is called */
 	MXC_UART_ClearFlags(cfg->regs, intfl);
+#endif /* CONFIG_UART_ASYNC_API */
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API */
 
