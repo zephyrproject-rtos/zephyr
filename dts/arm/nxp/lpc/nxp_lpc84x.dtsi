@@ -6,6 +6,7 @@
 
 #include <arm/armv6-m.dtsi>
 #include <mem.h>
+#include <zephyr/dt-bindings/clock/lpc84x-clock.h>
 
 / {
 	cpus {
@@ -48,6 +49,15 @@
 				erase-block-size = <1024>;
 				write-block-size = <64>;
 			};
+		};
+
+		syscon: syscon@40048000 {
+			compatible = "nxp,lpc84x-clock";
+			reg = <0x40048000 0x4000>;
+			#clock-cells = <1>;
+			frg0-clk-src = "fro";
+			ahb-clk-divider = <1>;
+			status = "disabled";
 		};
 	};
 };
