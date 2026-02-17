@@ -23,6 +23,7 @@
 		reset-gpios = <&mikrobus_header 1 GPIO_ACTIVE_HIGH>;
 		int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
 		bosch,mram-cfg = <0x0 15 15 7 7 0 10 10>;
+		ti,nwkrq-voltage-vio;
 
 		can-transceiver {
 			max-bitrate = <8000000>;
