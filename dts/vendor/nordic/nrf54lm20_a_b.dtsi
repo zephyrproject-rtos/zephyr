@@ -151,18 +151,22 @@
 				compatible = "nordic,nrf-dppic";
 				reg = <0x42000 0x808>;
 				status = "disabled";
+				channels = <16>;
+				groups = <2>;
 			};
 
 			ppib00: ppib@44000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0x44000 0x1000>;
 				status = "disabled";
+				channels = <12>;
 			};
 
 			ppib01: ppib@45000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0x45000 0x1000>;
 				status = "disabled";
+				channels = <8>;
 			};
 
 			cpuflpr_vpr: vpr@4c000 {
@@ -252,18 +256,22 @@
 				compatible = "nordic,nrf-dppic";
 				reg = <0x82000 0x808>;
 				status = "disabled";
+				channels = <24>;
+				groups = <6>;
 			};
 
 			ppib10: ppib@83000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0x83000 0x1000>;
 				status = "disabled";
+				channels = <12>;
 			};
 
 			ppib11: ppib@84000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0x84000 0x1000>;
 				status = "disabled";
+				channels = <16>;
 			};
 
 			timer10: timer@85000 {
@@ -313,24 +321,29 @@
 				compatible = "nordic,nrf-dppic";
 				reg = <0xc2000 0x808>;
 				status = "disabled";
+				channels = <16>;
+				groups = <6>;
 			};
 
 			ppib20: ppib@c3000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0xc3000 0x1000>;
 				status = "disabled";
+				channels = <8>;
 			};
 
 			ppib21: ppib@c4000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0xc4000 0x1000>;
 				status = "disabled";
+				channels = <16>;
 			};
 
 			ppib22: ppib@c5000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0xc5000 0x1000>;
 				status = "disabled";
+				channels = <4>;
 			};
 
 			i2c20: i2c@c6000 {
@@ -713,12 +726,15 @@
 				compatible = "nordic,nrf-dppic";
 				reg = <0x102000 0x808>;
 				status = "disabled";
+				channels = <4>;
+				groups = <2>;
 			};
 
 			ppib30: ppib@103000 {
 				compatible = "nordic,nrf-ppib";
 				reg = <0x103000 0x1000>;
 				status = "disabled";
+				channels = <4>;
 			};
 
 			i2c30: i2c@104000 {

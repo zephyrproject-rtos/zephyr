@@ -60,7 +60,7 @@
 
 #define NRFX_DPPI_OWNED_MASK(inst_num) \
 	UTIL_OR(DT_NODE_HAS_PROP(DT_NODELABEL(_CONCAT(dppic, inst_num)), owned_channels), \
-		DT_NODE_HAS_PROP(DT_NODELABEL(_CONCAT(dppic, inst_num)), channels))
+		DT_NODE_HAS_COMPAT(DT_NODELABEL(_CONCAT(dppic, inst_num)), nordic_nrf_dppic_local))
 
 /* Variables names generation. */
 #define NRFX_CONFIG_DPPI_CHANNELS_ENTRY_NAME(node_id) _CONCAT(_CONCAT(m_, node_id), _channels)
