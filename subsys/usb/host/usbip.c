@@ -65,6 +65,7 @@ struct usbip_cmd_node {
 	struct usbip_command cmd;
 	struct usbip_dev_ctx *ctx;
 	struct uhc_transfer *xfer;
+	bool unlinked;
 };
 
 K_MEM_SLAB_DEFINE(usbip_slab, sizeof(struct usbip_cmd_node),
@@ -145,7 +146,7 @@ static int usbip_req_cb(struct usb_device *const udev, struct uhc_transfer *cons
 	sys_dlist_remove(&cmd_nd->node);
 	irq_unlock(key);
 
-	if (xfer->err == -ECONNRESET) {
+	if (xfer->err == -ECONNRESET || cmd_nd->unlinked) {
 		LOG_INF("URB seqnum %u unlinked (ECONNRESET)", cmd->hdr.seqnum);
 		goto usbip_req_cb_error;
 	}
@@ -332,6 +333,7 @@ static int usbip_handle_submit(struct usbip_dev_ctx *const dev_ctx,
 	/* Make a copy of the command and add it to the backlog */
 	memcpy(&cmd_nd->cmd, cmd, sizeof(struct usbip_command));
 	cmd_nd->ctx = dev_ctx;
+	cmd_nd->unlinked = false;
 	sys_dlist_append(&dev_ctx->dlist, &cmd_nd->node);
 
 	ret = usbip_submit_req(cmd_nd, ep, &setup, buf);
@@ -346,6 +348,20 @@ static int usbip_handle_submit(struct usbip_dev_ctx *const dev_ctx,
 	}
 
 	return 0;
+}
+
+static struct usbip_cmd_node *find_seqnum(struct usbip_dev_ctx *const dev_ctx,
+					  const uint32_t seqnum)
+{
+	struct usbip_cmd_node *cmd_nd;
+
+	SYS_DLIST_FOR_EACH_CONTAINER(&dev_ctx->dlist, cmd_nd, node) {
+		if (cmd_nd->cmd.hdr.seqnum == seqnum) {
+			return cmd_nd;
+		}
+	}
+
+	return NULL;
 }
 
 static int usbip_handle_unlink(struct usbip_dev_ctx *const dev_ctx,
@@ -373,11 +389,17 @@ static int usbip_handle_unlink(struct usbip_dev_ctx *const dev_ctx,
 	memset(&rsp.unlink, 0, sizeof(rsp.unlink));
 
 	key = irq_lock();
-	SYS_DLIST_FOR_EACH_CONTAINER(&dev_ctx->dlist, cmd_nd, node) {
-		if (cmd_nd->cmd.hdr.seqnum == cmd->unlink.seqnum) {
-			rsp.unlink.status = net_htonl(-ECONNRESET);
-			usbh_xfer_dequeue(dev_ctx->udev, cmd_nd->xfer);
-			break;
+	cmd_nd = find_seqnum(dev_ctx, cmd->unlink.seqnum);
+	if (cmd_nd != NULL) {
+		rsp.unlink.status = net_htonl(-ECONNRESET);
+		ret = usbh_xfer_dequeue(dev_ctx->udev, cmd_nd->xfer);
+		if (ret != 0) {
+			/*
+			 * Transfer is dequeued but still in the list. Mark it
+			 * as unlinked and drop it in the completion handler.
+			 */
+			LOG_DBG("unlink floating %u", cmd->unlink.seqnum);
+			cmd_nd->unlinked = true;
 		}
 	}
 	irq_unlock(key);
