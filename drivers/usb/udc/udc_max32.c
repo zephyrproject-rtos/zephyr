@@ -115,62 +115,8 @@ static void udc_event_xfer_out_callback(void *cbdata)
 }
 
 /*
- * Thread-context (non ISR-safe) handlers for xfer completions.
+ * Thread-context handlers for triggering xfer in / out
  */
-static void udc_event_xfer_in_done(const struct device *dev, struct udc_ep_config *ep_cfg)
-{
-	struct udc_max32_data *priv = udc_get_private(dev);
-	MXC_USB_Req_t *ep_request = &priv->ep_request[USB_EP_GET_IDX(ep_cfg->addr)];
-	struct net_buf *buf;
-
-	buf = udc_buf_get(ep_cfg);
-
-	udc_ep_set_busy(ep_cfg, false);
-
-	if (ep_request->error_code) {
-		LOG_ERR("ep 0x%02x error: %x", ep_cfg->addr, ep_request->error_code);
-		udc_submit_ep_event(dev, buf, ep_request->error_code);
-		return;
-	}
-
-	if (udc_ep_buf_has_zlp(buf)) {
-		udc_ep_buf_clear_zlp(buf);
-	}
-
-	if (ep_cfg->addr == USB_CONTROL_EP_IN) {
-		udc_event_xfer_ctrl_status(dev, buf);
-	} else {
-		udc_submit_ep_event(dev, buf, 0);
-	}
-}
-
-static void udc_event_xfer_out_done(const struct device *dev, struct udc_ep_config *ep_cfg)
-{
-	struct udc_max32_data *priv = udc_get_private(dev);
-	MXC_USB_Req_t *ep_request = &priv->ep_request[USB_EP_GET_IDX(ep_cfg->addr)];
-	struct net_buf *buf;
-
-	buf = udc_buf_get(ep_cfg);
-	net_buf_add(buf, ep_request->actlen);
-
-	udc_ep_set_busy(ep_cfg, false);
-
-	if (ep_request->error_code) {
-		LOG_ERR("ep 0x%02x error: %x", ep_cfg->addr, ep_request->error_code);
-		udc_submit_ep_event(dev, buf, ep_request->error_code);
-		return;
-	}
-
-	if (ep_cfg->addr == USB_CONTROL_EP_OUT) {
-		/* Update to next stage of control transfer */
-		udc_ctrl_update_stage(dev, buf);
-
-		udc_ctrl_submit_s_out_status(dev, buf);
-	} else {
-		udc_submit_ep_event(dev, buf, 0);
-	}
-}
-
 static void udc_event_xfer_in(const struct device *dev, struct udc_ep_config *ep_cfg)
 {
 	struct udc_max32_data *priv = udc_get_private(dev);
@@ -256,6 +202,63 @@ static void udc_event_xfer_out(const struct device *dev, struct udc_ep_config *e
 		udc_ep_set_busy(ep_cfg, false);
 		LOG_ERR("ep 0x%02x error: %x", ep_cfg->addr, ret);
 		udc_submit_ep_event(dev, buf, -ECONNREFUSED);
+	}
+}
+
+/*
+ * Thread-context (non ISR-safe) handlers for xfer completions.
+ */
+static void udc_event_xfer_in_done(const struct device *dev, struct udc_ep_config *ep_cfg)
+{
+	struct udc_max32_data *priv = udc_get_private(dev);
+	MXC_USB_Req_t *ep_request = &priv->ep_request[USB_EP_GET_IDX(ep_cfg->addr)];
+	struct net_buf *buf;
+
+	buf = udc_buf_get(ep_cfg);
+
+	udc_ep_set_busy(ep_cfg, false);
+
+	if (ep_request->error_code) {
+		LOG_ERR("ep 0x%02x error: %x", ep_cfg->addr, ep_request->error_code);
+		udc_submit_ep_event(dev, buf, ep_request->error_code);
+		return;
+	}
+
+	if (udc_ep_buf_has_zlp(buf)) {
+		udc_ep_buf_clear_zlp(buf);
+	}
+
+	if (ep_cfg->addr == USB_CONTROL_EP_IN) {
+		udc_event_xfer_ctrl_status(dev, buf);
+	} else {
+		udc_submit_ep_event(dev, buf, 0);
+	}
+}
+
+static void udc_event_xfer_out_done(const struct device *dev, struct udc_ep_config *ep_cfg)
+{
+	struct udc_max32_data *priv = udc_get_private(dev);
+	MXC_USB_Req_t *ep_request = &priv->ep_request[USB_EP_GET_IDX(ep_cfg->addr)];
+	struct net_buf *buf;
+
+	buf = udc_buf_get(ep_cfg);
+	net_buf_add(buf, ep_request->actlen);
+
+	udc_ep_set_busy(ep_cfg, false);
+
+	if (ep_request->error_code) {
+		LOG_ERR("ep 0x%02x error: %x", ep_cfg->addr, ep_request->error_code);
+		udc_submit_ep_event(dev, buf, ep_request->error_code);
+		return;
+	}
+
+	if (ep_cfg->addr == USB_CONTROL_EP_OUT) {
+		/* Update to next stage of control transfer */
+		udc_ctrl_update_stage(dev, buf);
+
+		udc_ctrl_submit_s_out_status(dev, buf);
+	} else {
+		udc_submit_ep_event(dev, buf, 0);
 	}
 }
 
