@@ -33,8 +33,10 @@
 #elif defined(CONFIG_ARC)
 #define VA_STACK_MIN_ALIGN	ARCH_STACK_PTR_ALIGN
 #elif defined(__riscv)
-#ifdef CONFIG_RISCV_ISA_RV32E
+#if defined(CONFIG_RISCV_ISA_RV32E)
+#if !defined(CONFIG_CBPRINTF_RV32E_USE_DEFAULT_ALIGNMENT)
 #define VA_STACK_ALIGN(type)	4
+#endif
 #else
 #define VA_STACK_MIN_ALIGN	(__riscv_xlen / 8)
 #endif /* CONFIG_RISCV_ISA_RV32E */
