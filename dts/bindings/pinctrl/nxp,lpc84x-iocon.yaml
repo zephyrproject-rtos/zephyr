@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Aerlync Labs Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP LPC84x I/O Pin Configuration (IOCON)
+
+compatible: "nxp,lpc84x-iocon"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
