@@ -161,8 +161,7 @@ ADI Platforms:
     - ozersa
     - ttmut
     - yasinustunerg
-    - galak
-    - microbuilder
+    - petejohanson-adi
   files:
     - boards/adi/
     - boards/common/*adi*
