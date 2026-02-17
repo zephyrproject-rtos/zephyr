@@ -467,6 +467,17 @@ kbd, .kbd,
     border-color: var(--guiitems-border-color);
 }
 
+/* footnote labels and brackets tweaks */
+.rst-content .fn-bracket,
+.rst-content .footnote .label,
+.rst-content .citation .label {
+  color: var(--body-color)
+}
+.rst-content .backrefs {
+  color: var(--link-color);
+}
+
+
 /* heading tweaks to make document hierarchy easier to grasp */
 
 .rst-content section > h1 {
