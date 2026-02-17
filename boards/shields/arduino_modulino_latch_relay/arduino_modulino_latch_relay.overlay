@@ -1,0 +1,12 @@
+/*
+ * Copyright 2026 Silicon Labs
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&zephyr_i2c {
+	modulino-latch-relay@2 {
+		compatible = "arduino,modulino-latch-relay";
+		reg = <0x02>;
+	};
+};
