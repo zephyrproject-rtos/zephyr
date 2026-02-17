@@ -100,9 +100,10 @@ static void rf_rx_on_idle(uint32_t newValue);
 static void rf_set_rx_time_poll(uint32_t time_poll);
 
 static uint8_t ot_phy_ctx = (uint8_t)(-1);
+static struct mcxw_context mcxw_ctx;
+
 static net_time_t mcxw_get_time_ns(const struct device *dev);
 static uint64_t mcxw_get_time_us(void);
-static struct mcxw_context mcxw_ctx;
 
 /**
  * Stub function used for controlling low power mode
