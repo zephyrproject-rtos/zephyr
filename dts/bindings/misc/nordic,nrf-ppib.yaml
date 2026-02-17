@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Nordic Semiconductor ASA
+# Copyright (c) 2026 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -11,3 +11,14 @@ include: base.yaml
 properties:
   reg:
     required: true
+
+  channels:
+    type: int
+    required: true
+    description: Number of channels implemented by the PPIB instance.
+
+  offset:
+    type: int
+    description: |
+      Optional offset used in connection within a pair of PPIBs. Offset need to be
+      applied to the central PPIB connected to the current PPIB.
