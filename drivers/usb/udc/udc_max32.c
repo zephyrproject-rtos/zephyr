@@ -566,8 +566,11 @@ static int udc_max32_event_callback(maxusb_event_t event, void *cbdata)
 		break;
 	case MAXUSB_EVENT_DPACT:
 		LOG_DBG("DPACT event occurred");
-		udc_set_suspended(dev, false);
-		udc_submit_sof_event(dev);
+		/* Only submit resume if device is suspended */
+		if (udc_is_suspended(dev)) {
+			udc_set_suspended(dev, false);
+			udc_submit_event(dev, UDC_EVT_RESUME, 0);
+		}
 		break;
 	case MAXUSB_EVENT_BRST:
 		LOG_DBG("BRST event occurred");
