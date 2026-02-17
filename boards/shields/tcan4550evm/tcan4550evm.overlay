@@ -24,7 +24,8 @@
 		spi-max-frequency = <2000000>;
 		status = "okay";
 		clock-frequency = <40000000>;
-		device-state-gpios = <&arduino_header ARDUINO_HEADER_R3_D6 GPIO_ACTIVE_HIGH>;
+		device-state-gpios = <&arduino_header ARDUINO_HEADER_R3_D6
+				      (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
 		device-wake-gpios = <&arduino_header ARDUINO_HEADER_R3_D7 GPIO_ACTIVE_HIGH>;
 		reset-gpios = <&arduino_header ARDUINO_HEADER_R3_D8 GPIO_ACTIVE_HIGH>;
 		int-gpios = <&arduino_header ARDUINO_HEADER_R3_D9 GPIO_ACTIVE_LOW>;
