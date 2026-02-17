@@ -23,6 +23,7 @@
 #include <zephyr/sys/util.h>
 #include <inttypes.h>
 #include <zephyr/linker/linker-defs.h>
+#include <zephyr/cache.h>
 
 #ifdef Z_LIBC_PARTITION_EXISTS
 K_APPMEM_PARTITION_DEFINE(z_libc_partition);
@@ -344,6 +345,19 @@ static struct k_object *dynamic_object_create(enum k_objects otype, size_t align
 			return NULL;
 		}
 
+#ifdef CONFIG_DYNAMIC_OBJECTS_FORCE_STACK_CACHED
+		/* With kernel coherence enabled, it is possible that the stack
+		 * has been allocated on uncached area. This has an implications on
+		 * performance as memory access is not cached.
+		 * This simply nudges the indicated stack pointer to be inside
+		 * cached area such that the thread object will have its stack
+		 * inside cached area.
+		 */
+		if (sys_cache_is_ptr_uncached(dyn->data)) {
+			dyn->data = sys_cache_cached_ptr_get(dyn->data);
+		}
+#endif /* CONFIG_DYNAMIC_OBJECTS_FORCE_STACK_CACHED */
+
 #ifdef CONFIG_GEN_PRIV_STACKS
 		struct z_stack_data *stack_data = (struct z_stack_data *)
 			((uint8_t *)dyn->data + adjusted_size - sizeof(*stack_data));
@@ -478,7 +492,27 @@ void k_object_free(void *obj)
 	k_spin_unlock(&objfree_lock, key);
 
 	if (dyn != NULL) {
-		k_free(dyn->data);
+#ifdef CONFIG_DYNAMIC_OBJECTS_FORCE_STACK_CACHED
+		/* We may have nudged the pointer to point to the cached area
+		 * in dynamic_object_create() when we first created the thread
+		 * stack object. So we need to restore the uncached one before
+		 * freeing it.
+		 */
+		if (dyn->kobj.type == K_OBJ_THREAD_STACK_ELEMENT) {
+			uint8_t *stack;
+
+			if (sys_cache_is_ptr_cached(dyn->data)) {
+				stack = sys_cache_uncached_ptr_get(dyn->data);
+			} else {
+				stack = dyn->data;
+			}
+
+			k_free(stack);
+		} else
+#endif /* CONFIG_DYNAMIC_OBJECTS_FORCE_STACK_CACHED */
+		{
+			k_free(dyn->data);
+		}
 		k_free(dyn);
 	}
 }
