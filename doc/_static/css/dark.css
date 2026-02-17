@@ -27,11 +27,11 @@
     --navbar-scrollbar-active-color: #7929d2;
     --navbar-scrollbar-background: #1c1e21;
 
-    --link-color: #8cf;
-    --link-color-hover: #9df;
-    --link-color-active: #6ad;
+    --link-color: #6ad;
+    --link-color-hover: #8cf;
+    --link-color-active: #5bc;
     --link-color-visited: #cb99f6;
-    --external-reference-icon: url("data:image/svg+xml;base64,PHN2ZyBoZWlnaHQ9IjEyIiB3aWR0aD0iMTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjOGNmIj48cGF0aCBkPSJtNy41IDcuMXYzLjRoLTZ2LTZoMy40Ii8+PHBhdGggZD0ibTUuNzY1IDFoNS4yMzV2NS4zOWwtMS41NzMgMS41NDctMS4zMS0xLjMxLTIuNzI0IDIuNzIzLTIuNjktMi42ODggMi44MS0yLjgwOC0xLjMxMy0xLjMxeiIvPjwvZz48L3N2Zz4K");
+    --external-reference-icon: url("data:image/svg+xml;base64,PHN2ZyBoZWlnaHQ9IjEyIiB3aWR0aD0iMTIiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNmFkIj48cGF0aCBkPSJtNy41IDcuMXYzLjRoLTZ2LTZoMy40Ii8+PHBhdGggZD0ibTUuNzY1IDFoNS4yMzV2NS4zOWwtMS41NzMgMS41NDctMS4zMS0xLjMxLTIuNzI0IDIuNzIzLTIuNjktMi42ODggMi44MS0yLjgwOC0xLjMxMy0xLjMxeiIvPjwvZz48L3N2Zz4=");
     --classref-badge-text-color: hsl(0, 0%, 70%);
 
     --hr-color: #555;
@@ -54,13 +54,13 @@
     --highlight-background-color: #202531;
     --highlight-background-emph-color: #2d3444;
     --highlight-default-color: rgba(255, 255, 255, 0.85);
-    --highlight-comment-color: rgba(204, 206, 211, 0.5);
-    --highlight-keyword-color: #ff7085;
+    --highlight-comment-color: rgba(204, 206, 211, 0.72);
+    --highlight-keyword-color: #ff8598;
     --highlight-keyword2-color: #42ffc2;
     --highlight-number-color: #a1ffe0;
     --highlight-decorator-color: #abc8ff;
-    --highlight-type-color: #8effda;
-    --highlight-type2-color: #c6ffed;
+    --highlight-type-color: #7df0cb;
+    --highlight-type2-color: #a5f3da;
     --highlight-function-color: #57b3ff;
     --highlight-operator-color: #abc8ff;
     --highlight-string-color: #ffeca1;
