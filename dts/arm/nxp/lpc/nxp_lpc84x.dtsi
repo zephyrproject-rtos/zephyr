@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2026 Aerlync Labs Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv6-m.dtsi>
+#include <mem.h>
+#include <zephyr/dt-bindings/clock/lpc84x-clock.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m0+";
+			reg = <0>;
+			clock-frequency = <30000000>;
+		};
+	};
+
+	/*
+	 * LPC84X have either 8KB or 16KB of SRAM
+	 * that should be taken care in board specific .dtsi
+	 */
+
+	sram0: memory@10000000 {
+		compatible = "mmio-sram";
+		reg = <0x10000000 DT_SIZE_K(8)>;
+	};
+
+	soc {
+		flash0: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+		};
+
+		syscon: syscon@40048000 {
+			compatible = "nxp,lpc84x-clock";
+			reg = <0x40048000 0x4000>;
+			#clock-cells = <1>;
+			frg0-clk-src = "fro";
+			ahb-clk-divider = <1>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <2>;
+};
