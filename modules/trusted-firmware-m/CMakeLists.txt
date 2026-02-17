@@ -432,6 +432,11 @@ if(CONFIG_BUILD_WITH_TFM)
     -DMBEDTLS_PSA_CRYPTO_CONFIG_FILE="config-psa.h"
   )
 
+  # Add interface headers to zephyr_interface.
+  zephyr_include_directories(
+    ${TFM_INTERFACE_INCLUDE_DIR}
+  )
+
   zephyr_library_link_libraries(
     ${TFM_INTERFACE_LIB_DIR}/s_veneers.o
     )
