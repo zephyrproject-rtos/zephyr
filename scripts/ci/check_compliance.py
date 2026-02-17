@@ -1419,6 +1419,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
             regex,
             "--",
             ":!/doc/releases",
+            ":!/doc/develop/manifest/external",
             ":!/doc/security/vulnerabilities.rst",
             cwd=GIT_TOP,
         )
