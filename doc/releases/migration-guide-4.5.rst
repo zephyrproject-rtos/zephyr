@@ -50,6 +50,13 @@ Device Drivers and Devicetree
 Bluetooth
 *********
 
+Bluetooth Audio
+===============
+
+* :c:member:`bt_bap_stream.codec_cfg` is now ``const``, to better reflect that it is a read-only
+  value. Any non-read uses of it will need to be updated with the appropriate operations such as
+  :c:func:`bt_bap_stream_config`, :c:func:`bt_bap_stream_reconfig`, :c:func:`bt_bap_stream_enable`
+  or :c:func:`bt_bap_stream_metadata`. (:github:`104219`)
 
 Networking
 **********
