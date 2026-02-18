@@ -30,10 +30,11 @@ LOG_MODULE_REGISTER(i2c_esp32, CONFIG_I2C_LOG_LEVEL);
 
 #include "i2c-priv.h"
 
+BUILD_ASSERT_INVALID_I2C_TRANSFER_TIMEOUT();
+
 #define I2C_FILTER_CYC_NUM_DEF 7	/* Number of apb cycles filtered by default */
 #define I2C_CLR_BUS_SCL_NUM 9		/* Number of SCL clocks to restore SDA signal */
 #define I2C_CLR_BUS_HALF_PERIOD_US 5	/* Period of SCL clock to restore SDA signal */
-#define I2C_TRANSFER_TIMEOUT_MSEC 500	/* Transfer timeout period */
 
 /* Freq limitation when using different clock sources */
 #define I2C_CLK_LIMIT_REF_TICK (1 * 1000 * 1000 / 20)	/* REF_TICK, no more than REF_TICK/20*/
@@ -379,7 +380,7 @@ static int IRAM_ATTR i2c_esp32_transmit(const struct device *dev)
 	i2c_ll_trans_start(data->hal.dev);
 	data->cmd_idx = 0;
 
-	ret = k_sem_take(&data->cmd_sem, K_MSEC(I2C_TRANSFER_TIMEOUT_MSEC));
+	ret = k_sem_take(&data->cmd_sem, K_MSEC(CONFIG_I2C_TRANSFER_TIMEOUT_MS));
 	if (ret != 0) {
 		/* If the I2C slave is powered off or the SDA/SCL is */
 		/* connected to ground, for example, I2C hw FSM would get */
@@ -609,18 +610,16 @@ static int IRAM_ATTR i2c_esp32_transfer(const struct device *dev, struct i2c_msg
 {
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 	struct i2c_msg *current, *next;
-	uint32_t timeout = I2C_TRANSFER_TIMEOUT_MSEC * USEC_PER_MSEC;
 	int ret = 0;
 
 	if (!num_msgs) {
 		return 0;
 	}
 
-	while (i2c_ll_is_bus_busy(data->hal.dev)) {
-		k_busy_wait(1);
-		if (timeout-- == 0) {
-			return -EBUSY;
-		}
+	if (!WAIT_FOR(i2c_ll_is_bus_busy(data->hal.dev),
+		      CONFIG_I2C_TRANSFER_TIMEOUT_MS * USEC_PER_MSEC,
+		      k_busy_wait(1))) {
+		return -EBUSY;
 	}
 
 	/* Check for validity of all messages before transfer */
