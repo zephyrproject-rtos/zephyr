@@ -981,7 +981,8 @@ static struct bt_bap_ep *broadcast_sink_new_ep(uint8_t index)
 
 static int bt_bap_broadcast_sink_setup_stream(struct bt_bap_broadcast_sink *sink,
 					      struct bt_bap_stream *stream,
-					      struct bt_audio_codec_cfg *codec_cfg)
+					      const struct bt_audio_codec_cfg *codec_cfg,
+					      uint8_t id)
 {
 	struct bt_bap_iso *iso;
 	struct bt_bap_ep *ep;
@@ -1006,12 +1007,14 @@ static int bt_bap_broadcast_sink_setup_stream(struct bt_bap_broadcast_sink *sink
 	bt_bap_iso_init(iso, &broadcast_sink_iso_ops);
 	bt_bap_iso_bind_ep(iso, ep);
 	stream->iso = &iso->chan;
+	ep->id = id;
 
 	bt_bap_qos_cfg_to_iso_qos(iso->chan.qos->rx, &sink->qos_cfg);
+	(void)memcpy(&ep->codec_cfg, codec_cfg, sizeof(*codec_cfg));
 
 	bt_bap_iso_unref(iso);
 
-	bt_bap_stream_attach(NULL, stream, ep, codec_cfg);
+	bt_bap_stream_attach(NULL, stream, ep);
 	stream->qos = &sink->qos_cfg;
 	stream->group = sink;
 
@@ -1347,12 +1350,12 @@ int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t inde
 	sink->stream_count = 0U;
 	for (size_t i = 0; i < stream_count; i++) {
 		struct bt_bap_stream *stream;
-		struct bt_audio_codec_cfg *codec_cfg;
+		const struct bt_audio_codec_cfg *codec_cfg;
 
 		stream = streams[i];
 		codec_cfg = &data.codec_cfgs[i];
 
-		err = bt_bap_broadcast_sink_setup_stream(sink, stream, codec_cfg);
+		err = bt_bap_broadcast_sink_setup_stream(sink, stream, codec_cfg, i);
 		if (err != 0) {
 			LOG_DBG("Failed to setup streams[%zu]: %d", i, err);
 			broadcast_sink_cleanup_streams(sink);

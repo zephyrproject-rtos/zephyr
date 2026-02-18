@@ -143,12 +143,10 @@ static struct unicast_client {
 static sys_slist_t unicast_client_cbs = SYS_SLIST_STATIC_INIT(&unicast_client_cbs);
 
 /* TODO: Move the functions to avoid these prototypes */
-static int unicast_client_ep_set_metadata(struct bt_bap_ep *ep, void *data, uint8_t len,
-					  struct bt_audio_codec_cfg *codec_cfg);
+static int unicast_client_ep_set_metadata(struct bt_bap_ep *ep, void *data, uint8_t len);
 
 static int unicast_client_ep_set_codec_cfg(struct bt_bap_ep *ep, uint8_t id, uint16_t cid,
-					   uint16_t vid, void *data, uint8_t len,
-					   struct bt_audio_codec_cfg *codec_cfg);
+					   uint16_t vid, void *data, uint8_t len);
 static int unicast_client_ep_start(struct bt_bap_ep *ep, struct net_buf_simple *buf);
 
 static int unicast_client_ase_discover(struct bt_conn *conn, uint16_t start_handle);
@@ -932,11 +930,6 @@ static void unicast_client_ep_config_state(struct bt_bap_ep *ep, struct net_buf_
 	if (stream->codec_cfg == NULL) {
 		LOG_ERR("Stream %p does not have a codec configured", stream);
 		return;
-	} else if (stream->codec_cfg->id != cfg->codec.id) {
-		LOG_ERR("Codec configuration mismatched: %u, %u", stream->codec_cfg->id,
-			cfg->codec.id);
-		/* TODO: Release the stream? */
-		return;
 	}
 
 	if (buf->len < cfg->cc_len) {
@@ -976,7 +969,7 @@ static void unicast_client_ep_config_state(struct bt_bap_ep *ep, struct net_buf_
 	}
 
 	unicast_client_ep_set_codec_cfg(ep, cfg->codec.id, sys_le16_to_cpu(cfg->codec.cid),
-					sys_le16_to_cpu(cfg->codec.vid), cc, cfg->cc_len, NULL);
+					sys_le16_to_cpu(cfg->codec.vid), cc, cfg->cc_len);
 
 	/* Every time a stream enters the codec configured state, there is a chance that all streams
 	 * in that direction has exited the QoS configured state, and we need to update the stored
@@ -1142,7 +1135,7 @@ static void unicast_client_ep_enabling_state(struct bt_bap_ep *ep, struct net_bu
 
 	LOG_DBG("dir %s cig 0x%02x cis 0x%02x", bt_audio_dir_str(ep->dir), ep->cig_id, ep->cis_id);
 
-	unicast_client_ep_set_metadata(ep, metadata, enable->metadata_len, NULL);
+	unicast_client_ep_set_metadata(ep, metadata, enable->metadata_len);
 
 	/* Notify upper layer
 	 *
@@ -1168,6 +1161,7 @@ static void unicast_client_ep_streaming_state(struct bt_bap_ep *ep, struct net_b
 {
 	struct bt_ascs_ase_status_stream *stream_status;
 	struct bt_bap_stream *stream;
+	void *metadata;
 
 	if (buf->len < sizeof(*stream_status)) {
 		LOG_ERR("Streaming status too short");
@@ -1182,11 +1176,21 @@ static void unicast_client_ep_streaming_state(struct bt_bap_ep *ep, struct net_b
 
 	stream_status = net_buf_simple_pull_mem(buf, sizeof(*stream_status));
 
+	if (buf->len < stream_status->metadata_len) {
+		LOG_ERR("Malformed PDU: remaining len %u expected %u", buf->len,
+			stream_status->metadata_len);
+		return;
+	}
+
+	metadata = net_buf_simple_pull_mem(buf, stream_status->metadata_len);
+
 	LOG_DBG("dir %s cig 0x%02x cis 0x%02x", bt_audio_dir_str(ep->dir), ep->cig_id, ep->cis_id);
 
-	/* If there is a state change (i.e. going from non-streaming to streaming) we setup the data
-	 * path and notify the upper layers with the started callback, and if there is no state
-	 * change then that indicates that it is just a metadata update
+	unicast_client_ep_set_metadata(ep, metadata, stream_status->metadata_len);
+
+	/* Notify upper layer
+	 *
+	 * If the state did not change then only the metadata was changed
 	 */
 	if (state_changed) {
 		/* Setup the ISO data path when the stream is started. We could do it earlier when
@@ -1476,31 +1480,28 @@ static bool valid_ltv_cb(struct bt_data *data, void *user_data)
 }
 
 static int unicast_client_ep_set_codec_cfg(struct bt_bap_ep *ep, uint8_t id, uint16_t cid,
-					   uint16_t vid, void *data, uint8_t len,
-					   struct bt_audio_codec_cfg *codec_cfg)
+					   uint16_t vid, void *data, uint8_t len)
 {
-	if (!ep && !codec_cfg) {
+	if (ep == NULL) {
 		return -EINVAL;
 	}
 
 	LOG_DBG("ep %p codec id 0x%02x cid 0x%04x vid 0x%04x len %u", ep, id, cid, vid, len);
 
-	if (!codec_cfg) {
-		codec_cfg = &ep->codec_cfg;
+	if (CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0) {
+		if (len > sizeof(ep->codec_cfg.data)) {
+			LOG_DBG("Cannot store %u octets of codec data", len);
+
+			return -ENOMEM;
+		}
+
+		ep->codec_cfg.data_len = len;
+		(void)memcpy(ep->codec_cfg.data, data, len);
 	}
 
-	if (len > sizeof(codec_cfg->data)) {
-		LOG_DBG("Cannot store %u octets of codec data", len);
-
-		return -ENOMEM;
-	}
-
-	codec_cfg->id = id;
-	codec_cfg->cid = cid;
-	codec_cfg->vid = vid;
-
-	codec_cfg->data_len = len;
-	memcpy(codec_cfg->data, data, len);
+	ep->codec_cfg.id = id;
+	ep->codec_cfg.cid = cid;
+	ep->codec_cfg.vid = vid;
 
 	return 0;
 }
@@ -1570,28 +1571,24 @@ static int unicast_client_set_codec_cap(uint8_t id, uint16_t cid, uint16_t vid, 
 	return 0;
 }
 
-static int unicast_client_ep_set_metadata(struct bt_bap_ep *ep, void *data, uint8_t len,
-					  struct bt_audio_codec_cfg *codec_cfg)
+static int unicast_client_ep_set_metadata(struct bt_bap_ep *ep, void *data, uint8_t len)
 {
-	if (!ep && !codec_cfg) {
+	if (ep == NULL) {
 		return -EINVAL;
 	}
 
-	LOG_DBG("ep %p len %u codec_cfg %p", ep, len, codec_cfg);
+	LOG_DBG("ep %p len %u", ep, len);
 
-	if (!codec_cfg) {
-		codec_cfg = &ep->codec_cfg;
+	if (CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0) {
+		if (len > sizeof(ep->codec_cfg.meta)) {
+			LOG_DBG("Cannot store %u octets of metadata", len);
+
+			return -ENOMEM;
+		}
+
+		ep->codec_cfg.meta_len = len;
+		(void)memcpy(ep->codec_cfg.meta, data, len);
 	}
-
-	if (len > sizeof(codec_cfg->meta)) {
-		LOG_DBG("Cannot store %u octets of metadata", len);
-
-		return -ENOMEM;
-	}
-
-	/* Reset current metadata */
-	codec_cfg->meta_len = len;
-	(void)memcpy(codec_cfg->meta, data, len);
 
 	return 0;
 }

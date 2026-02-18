@@ -21,8 +21,7 @@ int bt_bap_stream_disconnect(struct bt_bap_stream *stream);
 
 void bt_bap_stream_reset(struct bt_bap_stream *stream);
 
-void bt_bap_stream_attach(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_bap_ep *ep,
-			  struct bt_audio_codec_cfg *codec_cfg);
+void bt_bap_stream_attach(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_bap_ep *ep);
 
 void bt_bap_qos_cfg_to_iso_qos(struct bt_iso_chan_io_qos *io, const struct bt_bap_qos_cfg *qos_cfg);
 
