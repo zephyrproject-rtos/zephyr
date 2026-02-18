@@ -22,6 +22,7 @@
 #define ADC_TEST_NODE_3 DT_NODELABEL(sensor3)
 #define ADC_TEST_NODE_4 DT_NODELABEL(sensor4)
 #define ADC_TEST_NODE_5 DT_NODELABEL(sensor5)
+#define ADC_TEST_NODE_6 DT_NODELABEL(sensor6)
 
 /**
  * @brief Get ADC emulated device
@@ -310,6 +311,104 @@ ZTEST(adc_rescale, test_adc_temp_transducer_voltage_type)
 	 */
 	millicelsius = temp_transducer_scale_dt(&transducer_spec, 1593);
 	zassert_within(millicelsius, 125000, 500, "Expected ~125°C, got %d mC", millicelsius);
+}
+
+/*
+ * test_adc_temp_transducer_tmp236 - Test TMP236 with full ADC cycle
+ */
+ZTEST_USER(adc_rescale, test_adc_temp_transducer_tmp236)
+{
+	int ret;
+	int32_t calculated_temp = 0;
+	int32_t calculated_microvolts;
+	/* TMP236: At 25°C, VOUT = 400 mV + (19.5 mV/°C × 25) = 887.5 mV */
+	int32_t input_mv = 888;
+	const struct temp_transducer_dt_spec adc_node_6 =
+		TEMP_TRANSDUCER_DT_SPEC_GET(ADC_TEST_NODE_6);
+
+	ret = init_adc(&adc_node_6.port, input_mv);
+	zassert_equal(ret, 0, "Setting up of the TMP236 channel failed with code %d", ret);
+
+	struct adc_sequence sequence = {
+		.buffer = &calculated_temp,
+		.buffer_size = sizeof(calculated_temp),
+	};
+	adc_sequence_init_dt(&adc_node_6.port, &sequence);
+
+	ret = adc_read_dt(&adc_node_6.port, &sequence);
+	zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
+	calculated_microvolts = calculated_temp;
+
+	ret = adc_raw_to_millivolts_dt(&adc_node_6.port, &calculated_temp);
+	zassert_equal(ret, 0, "adc_raw_to_millivolts_dt() failed with code %d", ret);
+
+	ret = adc_raw_to_microvolts_dt(&adc_node_6.port, &calculated_microvolts);
+	zassert_equal(ret, 0, "adc_raw_to_microvolts_dt() failed with code %d", ret);
+	zassert_equal(calculated_microvolts / 1000, calculated_temp);
+
+	calculated_temp = temp_transducer_scale_dt(&adc_node_6, calculated_temp);
+
+	/* Expected: 25°C = 25000 millicelsius */
+	zassert_within(calculated_temp, 25000, 500,
+		       "%d != 25000, should have calculated 25°C", calculated_temp);
+}
+
+/*
+ * test_adc_temp_transducer_tmp236_datasheet - Verify TMP236 against datasheet values
+ */
+ZTEST(adc_rescale, test_adc_temp_transducer_tmp236_datasheet)
+{
+	int32_t millicelsius;
+	const struct temp_transducer_dt_spec tmp236_spec =
+		TEMP_TRANSDUCER_DT_SPEC_GET(ADC_TEST_NODE_6);
+
+	/*
+	 * TMP236 Transfer Function: VOUT = 400 mV + (19.5 mV/°C × T)
+	 * Offset calculation: -(400 × 1,000,000) / 19500 = -20513 mC
+	 */
+
+	/**
+	 * Test -40°C
+	 * VOUT = 400 + (19.5 × -40) = 400 - 780 = -380 mV (below ground, not realistic)
+	 * TMP236 typically doesn't go this low, but test the math
+	 */
+	millicelsius = temp_transducer_scale_dt(&tmp236_spec, -380);
+	zassert_within(millicelsius, -40000, 100, "Expected -40°C, got %d mC", millicelsius);
+
+	/**
+	 * Test 0°C
+	 * VOUT = 400 + (19.5 × 0) = 400 mV
+	 */
+	millicelsius = temp_transducer_scale_dt(&tmp236_spec, 400);
+	zassert_within(millicelsius, 0, 100, "Expected 0°C, got %d mC", millicelsius);
+
+	/**
+	 * Test 25°C
+	 * VOUT = 400 + (19.5 × 25) = 887.5 mV
+	 */
+	millicelsius = temp_transducer_scale_dt(&tmp236_spec, 888);
+	zassert_within(millicelsius, 25000, 100, "Expected 25°C, got %d mC", millicelsius);
+
+	/**
+	 * Test 50°C
+	 * VOUT = 400 + (19.5 × 50) = 1375 mV
+	 */
+	millicelsius = temp_transducer_scale_dt(&tmp236_spec, 1375);
+	zassert_within(millicelsius, 50000, 100, "Expected 50°C, got %d mC", millicelsius);
+
+	/**
+	 * Test 100°C
+	 * VOUT = 400 + (19.5 × 100) = 2350 mV
+	 */
+	millicelsius = temp_transducer_scale_dt(&tmp236_spec, 2350);
+	zassert_within(millicelsius, 100000, 100, "Expected 100°C, got %d mC", millicelsius);
+
+	/**
+	 * Test 125°C
+	 * VOUT = 400 + (19.5 × 125) = 2837.5 mV
+	 */
+	millicelsius = temp_transducer_scale_dt(&tmp236_spec, 2838);
+	zassert_within(millicelsius, 125000, 100, "Expected 125°C, got %d mC", millicelsius);
 }
 
 void *adc_rescale_setup(void)

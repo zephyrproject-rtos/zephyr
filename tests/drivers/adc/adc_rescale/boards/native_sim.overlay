@@ -51,9 +51,17 @@
 		alpha-ppm-per-celsius = <4000>; /* 4 mV/K */
 	};
 
+	sensor6: tmp236 {
+		compatible = "temperature-transducer";
+		io-channels = <&adc0 5>;
+		sense-offset-millicelsius = <(-20513)>; /* -(400mV × 1000000) / 19500 */
+		sense-resistor-ohms = <1>;
+		alpha-ppm-per-celsius = <19500>; /* 19.5 mV/°C */
+	};
+
 	adc0: adc {
 		compatible = "zephyr,adc-emul";
-		nchannels = <5>;
+		nchannels = <6>;
 		ref-internal-mv = <3300>;
 		ref-external1-mv = <5000>;
 		#io-channel-cells = <1>;
@@ -103,6 +111,15 @@
 
 	channel@4 {
 		reg = <4>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@5 {
+		reg = <5>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,vref-mv = <3300>;
