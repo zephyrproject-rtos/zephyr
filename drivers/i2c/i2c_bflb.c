@@ -28,9 +28,10 @@ LOG_MODULE_REGISTER(i2c_bflb, CONFIG_I2C_LOG_LEVEL);
 
 #include "i2c-priv.h"
 
+BUILD_ASSERT_INVALID_I2C_TRANSFER_TIMEOUT();
+
 /* defines */
 
-#define I2C_WAIT_TIMEOUT_MS	200
 #define I2C_MAX_PACKET_LENGTH	0xFF
 #define I2C_MAX_FREQ_40M	MHZ(80)
 
@@ -413,7 +414,7 @@ static int i2c_bflb_write(const struct device *dev, uint8_t *buf, uint8_t len)
 {
 	const struct i2c_bflb_cfg *config = dev->config;
 	uint32_t tmp;
-	k_timepoint_t end_timeout = sys_timepoint_calc(K_MSEC(I2C_WAIT_TIMEOUT_MS));
+	k_timepoint_t end_timeout = sys_timepoint_calc(K_MSEC(CONFIG_I2C_TRANSFER_TIMEOUT_MS));
 	uint8_t j;
 
 	tmp = sys_read32(config->base + I2C_CONFIG_OFFSET);
@@ -433,7 +434,7 @@ static int i2c_bflb_write(const struct device *dev, uint8_t *buf, uint8_t len)
 		}
 		tmp = sys_read32(config->base + I2C_FIFO_CONFIG_1_OFFSET);
 		if ((tmp & I2C_TX_FIFO_CNT_MASK) > 0) {
-			end_timeout = sys_timepoint_calc(K_MSEC(I2C_WAIT_TIMEOUT_MS));
+			end_timeout = sys_timepoint_calc(K_MSEC(CONFIG_I2C_TRANSFER_TIMEOUT_MS));
 			tmp = 0;
 			j = 0;
 			for (; j < 4 && i + j < len; j++) {
@@ -459,7 +460,7 @@ static int i2c_bflb_read(const struct device *dev, uint8_t *buf, uint8_t len)
 {
 	const struct i2c_bflb_cfg *config = dev->config;
 	uint32_t tmp;
-	k_timepoint_t end_timeout = sys_timepoint_calc(K_MSEC(I2C_WAIT_TIMEOUT_MS));
+	k_timepoint_t end_timeout = sys_timepoint_calc(K_MSEC(CONFIG_I2C_TRANSFER_TIMEOUT_MS));
 	uint8_t j;
 
 	tmp = sys_read32(config->base + I2C_CONFIG_OFFSET);
@@ -484,7 +485,7 @@ static int i2c_bflb_read(const struct device *dev, uint8_t *buf, uint8_t len)
 		}
 		tmp = sys_read32(config->base + I2C_FIFO_CONFIG_1_OFFSET);
 		if ((tmp & I2C_RX_FIFO_CNT_MASK) > 0) {
-			end_timeout = sys_timepoint_calc(K_MSEC(I2C_WAIT_TIMEOUT_MS));
+			end_timeout = sys_timepoint_calc(K_MSEC(CONFIG_I2C_TRANSFER_TIMEOUT_MS));
 			tmp = sys_read32(config->base + I2C_FIFO_RDATA_OFFSET);
 			j = 0;
 			for (; j < 4 && i + j < len; j++) {
@@ -569,7 +570,7 @@ static int i2c_bflb_check_msgs(struct i2c_msg *msgs, uint8_t num_msgs, bool *add
 
 static int i2c_bflb_wait_idle(const struct device *dev)
 {
-	k_timepoint_t end_timeout = sys_timepoint_calc(K_MSEC(I2C_WAIT_TIMEOUT_MS));
+	k_timepoint_t end_timeout = sys_timepoint_calc(K_MSEC(CONFIG_I2C_TRANSFER_TIMEOUT_MS));
 
 	while (i2c_bflb_busy(dev) && !sys_timepoint_expired(end_timeout)) {
 		k_usleep(1);
@@ -582,7 +583,7 @@ static int i2c_bflb_wait_idle(const struct device *dev)
 
 static int i2c_bflb_wait_completion(const struct device *dev)
 {
-	k_timepoint_t end_timeout = sys_timepoint_calc(K_MSEC(I2C_WAIT_TIMEOUT_MS));
+	k_timepoint_t end_timeout = sys_timepoint_calc(K_MSEC(CONFIG_I2C_TRANSFER_TIMEOUT_MS));
 
 	while ((i2c_bflb_busy(dev)
 		|| !i2c_bflb_ended(dev))
