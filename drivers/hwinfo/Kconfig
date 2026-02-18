@@ -28,6 +28,7 @@ config HWINFO_SHELL
 # zephyr-keep-sorted-start
 rsource "Kconfig.ambiq"
 rsource "Kconfig.andes"
+rsource "Kconfig.bflb"
 rsource "Kconfig.cc13xx_cc26xx"
 rsource "Kconfig.cc23x0"
 rsource "Kconfig.esp32"
