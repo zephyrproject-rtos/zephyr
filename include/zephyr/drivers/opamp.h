@@ -22,7 +22,6 @@
  * @{
  */
 
-#include <zephyr/dt-bindings/opamp/opamp.h>
 #include <zephyr/device.h>
 #include <errno.h>
 
@@ -57,6 +56,26 @@ enum opamp_gain {
  *
  * For internal use only, skip these in public documentation.
  */
+
+/**
+ * @brief Enumerations for opamp functional mode.
+ */
+enum opamp_functional_mode {
+	/** Differential amplifier mode */
+	OPAMP_FUNCTIONAL_MODE_DIFFERENTIAL = 0,
+	/** Inverting amplifier mode */
+	OPAMP_FUNCTIONAL_MODE_INVERTING,
+	/** Non-inverting amplifier mode */
+	OPAMP_FUNCTIONAL_MODE_NON_INVERTING,
+	/** Follower mode */
+	OPAMP_FUNCTIONAL_MODE_FOLLOWER,
+	/**
+	 * @brief Standalone mode.
+	 * The gain is set by external resistors. The API call to set the gain
+	 * is ignored in this mode or has no impact.
+	 */
+	OPAMP_FUNCTIONAL_MODE_STANDALONE,
+};
 
 typedef int (*opamp_api_set_gain_t)(const struct device *dev, enum opamp_gain gain);
 
