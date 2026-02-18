@@ -46,6 +46,8 @@ LOG_MODULE_REGISTER(cat1_spi, CONFIG_SPI_LOG_LEVEL);
 
 #if defined(CY_IP_MXSCB_INSTANCES)
 #define IFX_SCB_ARRAY_SIZE (CY_IP_MXSCB_INSTANCES)
+#elif defined(CY_IP_MXS22SCB_VERSION)
+#define IFX_SCB_ARRAY_SIZE (CY_IP_MXS22SCB_INSTANCES)
 #elif defined(CY_IP_M0S8SCB_INSTANCES)
 #define IFX_SCB_ARRAY_SIZE (CY_IP_M0S8SCB_INSTANCES)
 #endif
@@ -742,7 +744,7 @@ static int ifx_cat1_spi_init(const struct device *dev)
 	.parity = CY_SCB_SPI_PARITY_NONE, .dropOnParityError = false,                              \
 	.ssSetupDelay = DT_INST_PROP_OR(n, ss_setup_delay, 0),                                     \
 	.ssHoldDelay = DT_INST_PROP_OR(n, ss_hold_delay, 0),                                       \
-	.ssInterDataframeDelay = DT_INST_PROP_OR(n, ss_inter_frame_delay, 0)
+	.ssInterDataframeDelay = DT_INST_PROP_OR(n, ss_inter_frame_delay, 0),
 #else
 #define ADVANCED_SPI_FIELDS(n)
 #endif
@@ -781,7 +783,7 @@ static int ifx_cat1_spi_init(const struct device *dev)
 				 DT_INST_PROP_OR(n, enable_miso_late_sample, true),                \
 			 .EN_XFER_SEPARATION =                                                     \
 				 DT_INST_PROP_OR(n, enable_transfer_separation, false),            \
-			 ADVANCED_SPI_FIELDS(n),                                                   \
+			 ADVANCED_SPI_FIELDS(n)                                                    \
 			 .enableWakeFromSleep = DT_INST_PROP_OR(n, enableWakeFromSleep, false),    \
 			 .ssPolarity = DT_INST_PROP_OR(n, ss_polarity, CY_SCB_SPI_ACTIVE_LOW),     \
 			 .rxFifoTriggerLevel = DT_INST_PROP_OR(n, rx_fifo_trigger_level, 0),       \
