@@ -76,10 +76,9 @@ void bt_bap_stream_init(struct bt_bap_stream *stream)
 	stream->user_data = user_data;
 }
 
-void bt_bap_stream_attach(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_bap_ep *ep,
-			  struct bt_audio_codec_cfg *codec_cfg)
+void bt_bap_stream_attach(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_bap_ep *ep)
 {
-	LOG_DBG("conn %p stream %p ep %p codec_cfg %p", (void *)conn, stream, ep, codec_cfg);
+	LOG_DBG("conn %p stream %p ep %p", (void *)conn, stream, ep);
 
 	if (conn != NULL) {
 		__ASSERT(stream->conn == NULL || stream->conn == conn,
@@ -88,7 +87,7 @@ void bt_bap_stream_attach(struct bt_conn *conn, struct bt_bap_stream *stream, st
 			stream->conn = bt_conn_ref(conn);
 		}
 	}
-	stream->codec_cfg = codec_cfg;
+	stream->codec_cfg = &ep->codec_cfg;
 	stream->ep = ep;
 	ep->stream = stream;
 }
@@ -655,7 +654,7 @@ int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, str
 	}
 	__ASSERT(ep->iso == NULL, "endpoint %p already bound to iso %p", ep, ep->iso);
 
-	bt_bap_stream_attach(conn, stream, ep, codec_cfg);
+	bt_bap_stream_attach(conn, stream, ep);
 
 	/* If a stream has been added to a group at this point, then it has a reference to a CIS.
 	 * and we can bind the ep to the CIS
