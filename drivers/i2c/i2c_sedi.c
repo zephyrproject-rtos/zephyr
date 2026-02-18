@@ -15,7 +15,6 @@
 LOG_MODULE_REGISTER(i2c_sedi);
 
 #include "i2c-priv.h"
-#define I2C_SEDI_TIMEOUT_MS (1000)
 
 struct i2c_sedi_context {
 	DEVICE_MMIO_RAM;
@@ -105,7 +104,7 @@ static int i2c_sedi_api_full_io(const struct device *dev, struct i2c_msg *msgs, 
 			break;
 		}
 
-		ret = k_sem_take(context->sem, K_MSEC(I2C_SEDI_TIMEOUT_MS));
+		ret = k_sem_take(context->sem, I2C_TRANSFER_TIMEOUT);
 		if (ret != 0) {
 			break;
 		}
