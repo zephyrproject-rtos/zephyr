@@ -111,6 +111,10 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 		return -EINVAL;
 	}
 
+#ifdef CONFIG_SPI_MAX32_REG_WRITE_WAIT_WORKAROUND
+	k_busy_wait(10);
+#endif
+
 	int cpol = (SPI_MODE_GET(config->operation) & SPI_MODE_CPOL) ? 1 : 0;
 	int cpha = (SPI_MODE_GET(config->operation) & SPI_MODE_CPHA) ? 1 : 0;
 
@@ -127,7 +131,9 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 		return -EINVAL;
 	}
 
+#ifdef CONFIG_SPI_MAX32_REG_WRITE_WAIT_WORKAROUND
 	k_busy_wait(1);
+#endif
 
 	ret = MXC_SPI_SetDataSize(regs, SPI_WORD_SIZE_GET(config->operation));
 	if (ret) {
@@ -156,7 +162,9 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 	}
 #endif
 
+#ifdef CONFIG_SPI_MAX32_REG_WRITE_WAIT_WORKAROUND
 	k_busy_wait(1);
+#endif
 
 	data->ctx.config = config;
 
