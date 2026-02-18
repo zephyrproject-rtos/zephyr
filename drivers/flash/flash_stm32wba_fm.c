@@ -159,6 +159,106 @@ static int flash_stm32_write(const struct device *dev, off_t offset,
 
 	return rc;
 }
+#ifdef CONFIG_FLASH_STM32_ACCEPT_UNALIGNED_WRITES
+static int write_unaligned(const struct device *dev, off_t offset,
+				       const uint8_t *data, size_t len)
+{
+	uint8_t temp_data[FLASH_STM32_WRITE_BLOCK_SIZE];
+	off_t cur_offset_addr;
+	size_t local_offset;
+
+	BUILD_ASSERT(FLASH_STM32_WRITE_BLOCK_SIZE <= 128, "Write block size is above the limit.");
+	__ASSERT(len <= FLASH_STM32_WRITE_BLOCK_SIZE, "Length too big.");
+
+	memset(temp_data, flash_stm32_parameters.erase_value, FLASH_STM32_WRITE_BLOCK_SIZE);
+
+	cur_offset_addr = ROUND_DOWN(offset, FLASH_STM32_WRITE_BLOCK_SIZE);
+	local_offset = offset - cur_offset_addr;
+
+	__ASSERT(len == (FLASH_STM32_WRITE_BLOCK_SIZE - local_offset), "Length error.");
+
+	memcpy(temp_data + local_offset, data, len);
+
+	return flash_stm32_write(dev, cur_offset_addr, temp_data, FLASH_STM32_WRITE_BLOCK_SIZE);
+}
+
+static int flash_stm32_no_align_write(const struct device *dev, off_t offset,
+			     const void *data, size_t len)
+{
+	const uint8_t *data_ptr = data;
+	size_t chunk_size, local_offset;
+	off_t off = offset;
+	size_t remaining = len;
+	int rc;
+
+	BUILD_ASSERT(FLASH_STM32_WRITE_BLOCK_SIZE >= 4, "Invalid write size.");
+
+	if (!remaining) {
+		return 0;
+	}
+
+	if (!flash_stm32_range_exists(dev, off, remaining)) {
+		return -EINVAL;
+	}
+
+	if (off % FLASH_STM32_WRITE_BLOCK_SIZE != 0) {
+		local_offset = off % FLASH_STM32_WRITE_BLOCK_SIZE;
+		chunk_size = MIN(remaining, FLASH_STM32_WRITE_BLOCK_SIZE - local_offset);
+
+		rc = write_unaligned(dev, off, data, chunk_size);
+		if (rc != 0) {
+			return rc;
+		}
+
+		remaining -= chunk_size;
+		off += chunk_size;
+		data_ptr += chunk_size;
+	}
+
+	chunk_size = ROUND_DOWN(remaining, FLASH_STM32_WRITE_BLOCK_SIZE);
+
+	if (chunk_size != 0) {
+		if (IS_ALIGNED(data_ptr, 4)) {
+			rc = flash_stm32_write(dev, off, data_ptr, chunk_size);
+			if (rc != 0) {
+				return rc;
+			}
+			off += chunk_size;
+			data_ptr += chunk_size;
+			remaining -= chunk_size;
+		} else {
+			/* Workaround quirk in FM-based flash driver which requires word-aligned
+			* input buffer. This should not be necessary once this bug is fixed in
+			* the flash driver.
+			*/
+			size_t temp_chunk_size = chunk_size;
+
+			while (temp_chunk_size > 0) {
+				size_t step = MIN(temp_chunk_size, FLASH_STM32_WRITE_BLOCK_SIZE);
+
+				rc = write_unaligned(dev, off, data_ptr, step);
+				if (rc != 0) {
+					return rc;
+				}
+
+				data_ptr += step;
+				off += step;
+				temp_chunk_size -= step;
+			}
+			remaining -= chunk_size;
+		}
+	}
+
+	/* Write tail for any leftover bytes. */
+	if (remaining > 0) {
+		rc = write_unaligned(dev, off, data_ptr, remaining);
+		if (rc != 0) {
+			return rc;
+		}
+	}
+	return 0;
+}
+#endif /* CONFIG_FLASH_STM32_ACCEPT_UNALIGNED_WRITES */
 
 static const struct flash_parameters *
 			flash_stm32_get_parameters(const struct device *dev)
@@ -204,7 +304,11 @@ void flash_stm32wba_page_layout(const struct device *dev,
 
 static DEVICE_API(flash, flash_stm32_api) = {
 	.erase = flash_stm32_erase,
+#ifndef CONFIG_FLASH_STM32_ACCEPT_UNALIGNED_WRITES
 	.write = flash_stm32_write,
+#else
+	.write = flash_stm32_no_align_write,
+#endif
 	.read = flash_stm32_read,
 	.get_parameters = flash_stm32_get_parameters,
 	.get_size = flash_stm32wba_get_size,
