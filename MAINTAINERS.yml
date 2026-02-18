@@ -2172,7 +2172,6 @@ Documentation Infrastructure:
     - dts/bindings/opamp/
     - drivers/opamp/
     - include/zephyr/drivers/opamp.h
-    - include/zephyr/dt-bindings/opamp/
     - samples/drivers/opamp/
     - tests/drivers/build_all/opamp/
     - tests/drivers/opamp/
