@@ -7,12 +7,11 @@
 properties:
   accel-fs:
     type: int
-    default: 0
+    default: 1
     description: |
       Specify the accelerometer range in g.
       Default is power-up configuration.
     enum:
-      - 0 # ICM45686_DT_ACCEL_FS_32
       - 1 # ICM45686_DT_ACCEL_FS_16
       - 2 # ICM45686_DT_ACCEL_FS_8
       - 3 # ICM45686_DT_ACCEL_FS_4
@@ -20,12 +19,11 @@ properties:
 
   gyro-fs:
     type: int
-    default: 0
+    default: 1
     description: |
       Specify the gyro range in degrees per second.
       Default is power-up configuration.
     enum:
-      - 0 # ICM45686_DT_GYRO_FS_4000
       - 1 # ICM45686_DT_GYRO_FS_2000
       - 2 # ICM45686_DT_GYRO_FS_1000
       - 3 # ICM45686_DT_GYRO_FS_500
