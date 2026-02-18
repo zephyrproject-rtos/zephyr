@@ -182,35 +182,35 @@ Source tree layout
 
 The stack is split up as follows in the source tree:
 
-``subsys/bluetooth/host``
+:zephyr_file:`subsys/bluetooth/host`
   :ref:`The host stack <bluetooth_le_host>`. This is where the HCI command and
   event handling as well as connection tracking happens. The implementation of
   the core protocols such as L2CAP, ATT, and SMP is also here.
 
-``subsys/bluetooth/controller``
+:zephyr_file:`subsys/bluetooth/controller`
   :ref:`Bluetooth LE Controller <bluetooth-ctlr-arch>` implementation.
   Implements the controller-side of HCI, the Link Layer as well as access to the
   radio transceiver.
 
-``include/zephyr/bluetooth/``
+:zephyr_file:`include/zephyr/bluetooth/`
   :ref:`Public API <bluetooth_api>` header files. These are the header files
   applications need to include in order to use Bluetooth functionality.
 
-``drivers/bluetooth/``
+:zephyr_file:`drivers/bluetooth/`
   HCI transport drivers. Every HCI transport needs its own driver. For example,
   the two common types of UART transport protocols (3-Wire and 5-Wire)
   have their own drivers.
 
-``samples/bluetooth/``
+:zephyr_file:`samples/bluetooth/`
   :zephyr:code-sample-category:`Sample Bluetooth code <bluetooth>`. This is a good reference to
   get started with Bluetooth application development.
 
-``tests/bluetooth/``
+:zephyr_file:`tests/bluetooth/`
   Test applications. These applications are used to verify the
   functionality of the Bluetooth stack, but are not necessary the best
-  source for sample code (see ``samples/bluetooth`` instead).
+  source for sample code (see :zephyr_file:`samples/bluetooth` instead).
 
-``doc/connectivity/bluetooth/``
+:zephyr_file:`doc/connectivity/bluetooth/`
   Extra documentation, such as PICS documents.
 
 .. _Bluetooth Specification: https://www.bluetooth.com/specifications/bluetooth-core-specification
