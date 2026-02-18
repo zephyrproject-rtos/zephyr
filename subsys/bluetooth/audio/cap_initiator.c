@@ -1341,7 +1341,7 @@ cap_initiator_unicast_audio_configure(struct bt_cap_common_proc *active_proc,
 				      const struct bt_cap_unicast_audio_start_param *param)
 {
 	struct bt_cap_initiator_proc_param *proc_param;
-	struct bt_audio_codec_cfg *codec_cfg;
+	const struct bt_audio_codec_cfg *codec_cfg;
 	struct bt_bap_stream *bap_stream;
 	struct bt_bap_ep *ep;
 	struct bt_conn *conn;
@@ -1504,9 +1504,9 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 	}
 
 	if (!bt_cap_common_proc_is_done()) {
+		const struct bt_audio_codec_cfg *codec_cfg;
 		struct bt_cap_stream *next_cap_stream;
 		struct bt_bap_stream *next_bap_stream;
-		struct bt_audio_codec_cfg *codec_cfg;
 		struct bt_conn *conn;
 		struct bt_bap_ep *ep;
 		int err;

@@ -469,7 +469,7 @@ struct bt_cap_unicast_audio_start_stream_param {
 	 * This value is assigned to the @p stream, and shall remain valid while the stream is
 	 * non-idle.
 	 */
-	struct bt_audio_codec_cfg *codec_cfg;
+	const struct bt_audio_codec_cfg *codec_cfg;
 };
 
 /** Parameters for the bt_cap_initiator_unicast_audio_start() function */
@@ -654,7 +654,7 @@ struct bt_cap_initiator_broadcast_subgroup_param {
 	struct bt_cap_initiator_broadcast_stream_param *stream_params;
 
 	/** Subgroup Codec configuration. */
-	struct bt_audio_codec_cfg *codec_cfg;
+	const struct bt_audio_codec_cfg *codec_cfg;
 };
 
 /** Parameters for * bt_cap_initiator_broadcast_audio_create() */

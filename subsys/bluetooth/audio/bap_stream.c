@@ -608,7 +608,7 @@ static uint8_t conn_get_role(const struct bt_conn *conn)
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 
 int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_bap_ep *ep,
-			 struct bt_audio_codec_cfg *codec_cfg)
+			 const struct bt_audio_codec_cfg *codec_cfg)
 {
 	uint8_t role;
 	int err;
@@ -785,8 +785,7 @@ int bt_bap_stream_stop(struct bt_bap_stream *stream)
 }
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
-int bt_bap_stream_reconfig(struct bt_bap_stream *stream,
-			     struct bt_audio_codec_cfg *codec_cfg)
+int bt_bap_stream_reconfig(struct bt_bap_stream *stream, const struct bt_audio_codec_cfg *codec_cfg)
 {
 	enum bt_bap_ep_state state;
 	uint8_t role;

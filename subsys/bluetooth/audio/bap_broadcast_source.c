@@ -930,7 +930,6 @@ static void broadcast_source_reconfig_update_subgroup(
 	struct bt_bap_broadcast_source *source, struct bt_bap_broadcast_subgroup *subgroup,
 	const struct bt_bap_broadcast_source_subgroup_param *subgroup_param)
 {
-	struct bt_audio_codec_cfg *codec_cfg = subgroup_param->codec_cfg;
 	struct bt_bap_stream *stream;
 
 	(void)memcpy(&subgroup->codec_cfg, subgroup_param->codec_cfg, sizeof(subgroup->codec_cfg));
@@ -960,8 +959,8 @@ static void broadcast_source_reconfig_update_subgroup(
 		if (CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0) {
 			const struct bt_audio_broadcast_stream_data *stream_data =
 				&source->stream_data[stream->ep->id];
+			struct bt_audio_codec_cfg *codec_cfg = &stream->ep->codec_cfg;
 
-			codec_cfg = &stream->ep->codec_cfg;
 			(void)memcpy(codec_cfg, subgroup_param->codec_cfg,
 				     sizeof(struct bt_audio_codec_cfg));
 

@@ -374,9 +374,8 @@ static ZTEST_F(cap_initiator_test_unicast_start,
 	int err;
 
 	/* CAP requires stream context - Let's remove it */
-	(void)memset(fixture->audio_start_stream_params[0].codec_cfg->meta, 0,
-		     sizeof(fixture->audio_start_stream_params[0].codec_cfg->meta));
-	fixture->audio_start_stream_params[0].codec_cfg->meta_len = 0U;
+	(void)memset(&fixture->preset.codec_cfg, 0, sizeof(fixture->preset.codec_cfg));
+	fixture->preset.codec_cfg.meta_len = 0U;
 
 	err = bt_cap_initiator_unicast_audio_start(&fixture->audio_start_param);
 	zassert_equal(err, -EINVAL, "Unexpected return value %d", err);
