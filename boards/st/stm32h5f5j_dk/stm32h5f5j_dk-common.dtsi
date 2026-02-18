@@ -257,3 +257,36 @@
 &vbat {
 	status = "okay";
 };
+
+&xspi1 {
+	pinctrl-0 = <&octospim_p1_io0_pc9 &octospim_p1_io1_pf9
+		     &octospim_p1_io2_pe2 &octospim_p1_io3_pa6
+		     &octospim_p1_io4_ph2 &octospim_p1_io5_ph3
+		     &octospim_p1_io6_pe9 &octospim_p1_io7_pe10
+		     &octospim_p1_clk_pf10 &octospim_p1_ncs1_pg6
+		     &octospim_p1_dqs_pc5>;
+	pinctrl-names = "default";
+
+	status = "okay";
+
+	ext_flash_ctrl: xspi-flash-controller@0 {
+		compatible = "st,stm32-xspi-nor";
+		reg = <0>;
+		size = <DT_SIZE_M(512)>; /* 512 Mbits */
+		ospi-max-frequency = <DT_FREQ_M(50)>;
+		spi-bus-width = <XSPI_OCTO_MODE>;
+		data-rate = <XSPI_DTR_TRANSFER>;
+		four-byte-opcodes;
+		status = "okay";
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		ext_flash: mx25lm51245: ext-flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(64)>;
+			write-block-size = <1>;
+			erase-block-size = <DT_SIZE_K(4)>;
+		};
+	};
+};
