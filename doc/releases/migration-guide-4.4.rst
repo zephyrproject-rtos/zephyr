@@ -593,6 +593,11 @@ MDIO
   MDIO bus enabling/disabling is now handled internally by the MDIO drivers.
   (:github:`99690`).
 
+* The MDIO driver area has been integrated into the Ethernet driver area.
+  The drivers have been moved from ``drivers/mdio/`` to :zephyr_file:`drivers/ethernet/mdio/`.
+  The devicetree bindings have been moved from ``dts/bindings/mdio/`` to
+  :zephyr_file:`dts/bindings/ethernet/mdio/`. (:github:`103944`)
+
 MEMC
 ====
 
