@@ -14,7 +14,7 @@ Hardware
 ********
 - Dual core Arm Cortex-M0+ processor running up to 133MHz
 - 264KB on-chip SRAM
-- 16MB on-board QSPI flash with XIP capabilities
+- 2MB on-board QSPI flash with XIP capabilities
 - 26 GPIO pins
 - 3 Analog inputs
 - 2 UART peripherals
@@ -22,7 +22,7 @@ Hardware
 - 2 I2C controllers
 - 16 PWM channels
 - USB 1.1 controller (host/device)
-- 8 Programmable I/O (PIO) for custom peripherals
+- 2 Programmable IO (PIO) blocks, 8 state machines total
 - On-board LED
 - 1 Watchdog timer peripheral
 - Wiznet W5500 Ethernet MAC/PHY
@@ -41,12 +41,13 @@ the datasheet to see the possible routings for each peripheral.
 
 External pin mapping on the W5500_EVB_PICO is identical to the Raspberry Pi
 Pico. Since GPIO 25 is routed to the on-board LED on, similar to the Raspberry
-Pi Pico, the blinky example works as intended. The W5500 is routed to the SPI0
+Pi Pico, the blinky example works as intended. GPIO 29 (ADC_CH3) is connected
+internally to measure VSYS/3.The W5500 is routed to the SPI0
 (P16-P19), with the reset and interrupt signal for the W5500 routed to P20 and
 P21, respectively. All of these are shared with the edge connector on the
 board.
 
-Refer to `W55500 Evaluation Board Documentation`_ for a board schematic and
+Refer to `W5500 Evaluation Board Documentation`_ for a board schematic and
 other certifications.
 
 Default Zephyr Peripheral Mapping:
@@ -77,7 +78,7 @@ Programming and Debugging
 .. zephyr:board-supported-runners::
 
 The overall explanation regarding flashing and debugging is the same as or :zephyr:board:`rpi_pico`.
-See :ref:`rpi_pico_programming_and_debugging` in :zephyr:board:`rpi_pico` documentation. N.b. OpenOCD support requires using Raspberry Pi's forked version of OpenOCD.
+See :ref:`rpi_pico_programming_and_debugging` in :zephyr:board:`rpi_pico` documentation.
 
 Below is an example of building and flashing the :zephyr:code-sample:`blinky` application.
 
@@ -95,5 +96,5 @@ Below is an example of building and flashing the :zephyr:code-sample:`blinky` ap
 .. _Getting Started with Raspberry Pi Pico:
   https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf
 
-.. _W55500 Evaluation Board Documentation:
-  https://docs.wiznet.io/Product/iEthernet/W5500/w5500-evb-pico
+.. _W5500 Evaluation Board Documentation:
+  https://docs.wiznet.io/Product/Chip/Ethernet/W5500/w5500-evb-pico

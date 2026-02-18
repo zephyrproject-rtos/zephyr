@@ -13,7 +13,7 @@ their SWD interface, using an external adapter.
 Hardware
 ********
 
-- Dual core Arm Cortex-M33 or Hazard3 processor running up to 133MHz
+- Dual core Arm Cortex-M33 or Hazard3 processor running up to 150MHz
 - 520KB on-chip SRAM
 - 16MB on-board QSPI flash with XIP capabilities
 - 26 GPIO pins
@@ -21,11 +21,12 @@ Hardware
 - 2 UART peripherals
 - 2 SPI controllers
 - 2 I2C controllers
-- 16 PWM channels
+- 24 PWM channels
 - USB 1.1 controller (host/device)
-- 3 Programmable I/O (PIO) for custom peripherals
+- 3 Programmable IO (PIO) blocks, 12 state machines total
 - On-board LED
 - 1 Watchdog timer peripheral
+- 1 HSTX pheripheral
 - Wiznet W5500 Ethernet MAC/PHY
 
 Supported Features
@@ -42,12 +43,13 @@ the datasheet to see the possible routings for each peripheral.
 
 External pin mapping on the W5500_EVB_PICO2 is identical to the Raspberry Pi
 Pico2. Since GPIO 25 is routed to the on-board LED on, similar to the Raspberry
-Pi Pico, the blinky example works as intended. The W5500 is routed to the SPI0
+Pi Pico, the blinky example works as intended. GPIO 29 (ADC_CH3) is connected
+internally to measure VSYS/3. The W5500 is routed to the SPI0
 (P16-P19), with the reset and interrupt signal for the W5500 routed to P20 and
 P21, respectively. All of these are shared with the edge connector on the
 board.
 
-Refer to `W55500 Evaluation Board Pico2 Documentation`_ for a board schematic and
+Refer to `W5500 Evaluation Board Pico2 Documentation`_ for a board schematic and
 other certifications.
 
 Default Zephyr Peripheral Mapping:
@@ -77,9 +79,14 @@ Programming and Debugging
 
 .. zephyr:board-supported-runners::
 
-The overall explanation regarding flashing and debugging is the same as or :zephyr:board:`rpi_pico`.
-See :ref:`rpi_pico_programming_and_debugging` in :zephyr:board:`rpi_pico` documentation. N.b. OpenOCD support requires using Raspberry Pi's forked version of OpenOCD.
+.. note::
 
+   The OpenOCD version bundled with Zephyr SDK does not currently support the
+   RP2350. To debug this board, use the Raspberry Pi OpenOCD fork or an external
+   debug probe such as Segger J-Link.
+
+The overall explanation regarding flashing and debugging is the same as or :zephyr:board:`rpi_pico`.
+See :ref:`rpi_pico_programming_and_debugging` in :zephyr:board:`rpi_pico` documentation.
 Below is an example of building and flashing the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
@@ -96,5 +103,5 @@ Below is an example of building and flashing the :zephyr:code-sample:`blinky` ap
 .. _Getting Started with Raspberry Pi Pico:
   https://datasheets.raspberrypi.com/pico/getting-started-with-pico.pdf
 
-.. _W55500 Evaluation Board Pico2 Documentation:
-  https://docs.wiznet.io/Product/iEthernet/W5500/w5500-evb-pico2
+.. _W5500 Evaluation Board Pico2 Documentation:
+  https://docs.wiznet.io/Product/Chip/Ethernet/W5500/w5500-evb-pico2
