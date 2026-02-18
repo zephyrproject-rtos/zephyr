@@ -2188,9 +2188,9 @@ static int flash_stm32_xspi_init(const struct device *dev)
 	/* XSPI I/O manager init Function */
 	XSPIM_CfgTypeDef xspi_mgr_cfg;
 
-	if (dev_data->hxspi.Instance == XSPI1) {
+	if (dev_data->hxspi.Instance == STM32_XSPI1) {
 		xspi_mgr_cfg.IOPort = HAL_XSPIM_IOPORT_1;
-	} else if (dev_data->hxspi.Instance == XSPI2) {
+	} else if (dev_data->hxspi.Instance == STM32_XSPI2) {
 		xspi_mgr_cfg.IOPort = HAL_XSPIM_IOPORT_2;
 	}
 	xspi_mgr_cfg.nCSOverride = HAL_XSPI_CSSEL_OVR_DISABLED;
