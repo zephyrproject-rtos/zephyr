@@ -118,7 +118,6 @@ LOG_MODULE_REGISTER(iproc_i2c);
 #define S_RX_DATA_SHIFT   0x0
 #define S_RX_DATA_MASK    0xff
 
-#define I2C_TIMEOUT_MSEC         100
 #define TX_RX_FIFO_SIZE          64
 #define M_RX_FIFO_MAX_THLD_VALUE (TX_RX_FIFO_SIZE - 1)
 #define M_RX_FIFO_THLD_VALUE     50
@@ -746,7 +745,7 @@ static int iproc_i2c_transfer_one(const struct device *dev, struct i2c_msg *msg,
 	sys_write32(val, base + M_CMD_OFFSET);
 
 	/* Wait for the transfer to complete or timeout */
-	rc = k_sem_take(&dd->device_sync_sem, K_MSEC(I2C_TIMEOUT_MSEC));
+	rc = k_sem_take(&dd->device_sync_sem, I2C_TRANSFER_TIMEOUT);
 
 	/* disable all interrupts */
 	sys_write32(0, base + IE_OFFSET);
