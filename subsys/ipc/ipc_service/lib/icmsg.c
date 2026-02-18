@@ -306,11 +306,12 @@ static bool callback_process(struct icmsg_data_t *dev_data)
 				return false;
 			}
 
+			atomic_set(&dev_data->state, ICMSG_STATE_CONNECTED_SID_DISABLED);
+
 			if (dev_data->cb->bound) {
 				dev_data->cb->bound(dev_data->ctx);
 			}
 
-			atomic_set(&dev_data->state, ICMSG_STATE_CONNECTED_SID_DISABLED);
 			notify_remote = true;
 		}
 
