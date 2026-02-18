@@ -75,8 +75,6 @@ struct gpio_stm32_config {
 struct gpio_stm32_data {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_data common;
-	/* device's owner of this data */
-	const struct device *dev;
 	/* user ISR cb */
 	sys_slist_t cb;
 	/* keep track of pins that  are connected and need GPIO clock to be enabled */
