@@ -282,6 +282,7 @@ config I2C_NIOS2
 	bool "Nios-II I2C driver"
 	default y
 	depends on DT_HAS_ALTR_NIOS2_I2C_ENABLED
+	select I2C_TRANSFER_TIMEOUT_SUPPORTED
 	help
 	  Enable the Nios-II I2C driver.
 
