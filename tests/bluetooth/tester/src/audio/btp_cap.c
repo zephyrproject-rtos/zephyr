@@ -584,9 +584,8 @@ static uint8_t btp_cap_broadcast_source_setup_subgroup(const void *cmd, uint16_t
 	struct bt_cap_initiator_broadcast_subgroup_param *subgroup_param =
 		&cap_broadcast_params[cp->source_id].cap_subgroup_params[cp->subgroup_id];
 
-	subgroup_param->codec_cfg = &source->subgroup_codec_cfg[cp->subgroup_id];
-
-	codec_cfg = subgroup_param->codec_cfg;
+	codec_cfg = &source->subgroup_codec_cfg[cp->subgroup_id];
+	subgroup_param->codec_cfg = codec_cfg;
 
 	memset(codec_cfg, 0, sizeof(*codec_cfg));
 	codec_cfg->id = cp->coding_format;

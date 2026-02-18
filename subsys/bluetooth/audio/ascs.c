@@ -1704,7 +1704,7 @@ static struct bt_bap_ep *ep_lookup_stream(struct bt_conn *conn, struct bt_bap_st
 }
 
 int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
-		       struct bt_audio_codec_cfg *codec_cfg,
+		       const struct bt_audio_codec_cfg *codec_cfg,
 		       const struct bt_bap_qos_cfg_pref *qos_pref)
 {
 	const struct bt_audio_codec_cap *codec_cap;
