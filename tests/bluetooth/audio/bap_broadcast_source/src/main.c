@@ -254,7 +254,7 @@ ZTEST_F(bap_broadcast_source_test_suite, test_broadcast_source_create_start_send
 
 			/* verify bap stream started cb stream parameter */
 			zassert_equal(mock_bap_stream_started_cb_fake.arg0_history[i], bap_stream);
-			struct bt_audio_codec_cfg *codec_cfg = bap_stream->codec_cfg;
+			const struct bt_audio_codec_cfg *codec_cfg = bap_stream->codec_cfg;
 			enum bt_audio_location chan_allocation;
 			/* verify subgroup codec data */
 			zassert_equal(bt_audio_codec_cfg_get_freq(codec_cfg),

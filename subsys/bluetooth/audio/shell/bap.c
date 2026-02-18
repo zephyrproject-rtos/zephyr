@@ -772,7 +772,7 @@ static const struct bt_bap_unicast_server_cb unicast_server_cb = {
 };
 #endif /* CONFIG_BT_BAP_UNICAST_SERVER */
 
-static uint16_t strmeta(const char *name)
+static enum bt_audio_context strmeta(const char *name)
 {
 	if (strcmp(name, "Unspecified") == 0) {
 		return BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED;
@@ -800,22 +800,7 @@ static uint16_t strmeta(const char *name)
 		return BT_AUDIO_CONTEXT_TYPE_EMERGENCY_ALARM;
 	}
 
-	return 0u;
-}
-
-static int set_metadata(struct bt_audio_codec_cfg *codec_cfg, const char *meta_str)
-{
-	uint16_t context;
-
-	context = strmeta(meta_str);
-	if (context == 0) {
-		return -ENOEXEC;
-	}
-
-	/* TODO: Check the type and only overwrite the streaming context */
-	sys_put_le16(context, codec_cfg->meta);
-
-	return 0;
+	return BT_AUDIO_CONTEXT_TYPE_NONE;
 }
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
@@ -1528,7 +1513,7 @@ static int cmd_qos(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_enable(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct bt_audio_codec_cfg *codec_cfg;
+	struct shell_stream *uni_stream;
 	int err;
 
 	if (default_stream == NULL) {
@@ -1536,17 +1521,37 @@ static int cmd_enable(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	codec_cfg = default_stream->codec_cfg;
+	if (default_stream->ep == NULL || default_stream->codec_cfg == NULL) {
+		shell_error(sh, "Selected stream is not yet configured");
+		return -ENOEXEC;
+	}
+
+	if (default_stream->conn == NULL) {
+		shell_error(sh, "Selected stream is not unicast");
+		return -ENOEXEC;
+	}
+
+	uni_stream = shell_stream_from_bap_stream(default_stream);
 
 	if (argc > 1) {
-		err = set_metadata(codec_cfg, argv[1]);
+		enum bt_audio_context context;
+
+		context = strmeta(argv[1]);
+		if (context == BT_AUDIO_CONTEXT_TYPE_NONE) {
+			shell_error(sh, "Invalid metadata: %s", argv[1]);
+
+			return -ENOEXEC;
+		}
+
+		err = bt_audio_codec_cfg_meta_set_stream_context(&uni_stream->codec_cfg, context);
 		if (err != 0) {
 			shell_error(sh, "Unable to handle metadata update: %d", err);
-			return err;
+			return -ENOEXEC;
 		}
 	}
 
-	err = bt_bap_stream_enable(default_stream, codec_cfg->meta, codec_cfg->meta_len);
+	err = bt_bap_stream_enable(default_stream, uni_stream->codec_cfg.meta,
+				   uni_stream->codec_cfg.meta_len);
 	if (err) {
 		shell_error(sh, "Unable to enable Channel");
 		return -ENOEXEC;
@@ -1594,7 +1599,7 @@ static int cmd_connect(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_metadata(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct bt_audio_codec_cfg *codec_cfg;
+	struct shell_stream *uni_stream;
 	int err;
 
 	if (default_stream == NULL) {
@@ -1602,17 +1607,37 @@ static int cmd_metadata(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	codec_cfg = default_stream->codec_cfg;
+	if (default_stream->ep == NULL || default_stream->codec_cfg == NULL) {
+		shell_error(sh, "Selected stream is not yet configured");
+		return -ENOEXEC;
+	}
+
+	if (default_stream->conn == NULL) {
+		shell_error(sh, "Selected stream is not unicast");
+		return -ENOEXEC;
+	}
+
+	uni_stream = shell_stream_from_bap_stream(default_stream);
 
 	if (argc > 1) {
-		err = set_metadata(codec_cfg, argv[1]);
+		enum bt_audio_context context;
+
+		context = strmeta(argv[1]);
+		if (context == BT_AUDIO_CONTEXT_TYPE_NONE) {
+			shell_error(sh, "Invalid metadata: %s", argv[1]);
+
+			return -ENOEXEC;
+		}
+
+		err = bt_audio_codec_cfg_meta_set_stream_context(&uni_stream->codec_cfg, context);
 		if (err != 0) {
 			shell_error(sh, "Unable to handle metadata update: %d", err);
-			return err;
+			return -ENOEXEC;
 		}
 	}
 
-	err = bt_bap_stream_metadata(default_stream, codec_cfg->meta, codec_cfg->meta_len);
+	err = bt_bap_stream_metadata(default_stream, uni_stream->codec_cfg.meta,
+				     uni_stream->codec_cfg.meta_len);
 	if (err) {
 		shell_error(sh, "Unable to set Channel metadata");
 		return -ENOEXEC;

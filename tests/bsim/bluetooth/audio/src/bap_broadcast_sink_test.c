@@ -456,7 +456,7 @@ static struct bt_bap_scan_delegator_cb scan_delegator_cbs = {
 
 static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
 {
-	struct bt_audio_codec_cfg *codec_cfg = stream->codec_cfg;
+	const struct bt_audio_codec_cfg *codec_cfg = stream->codec_cfg;
 	enum bt_audio_location chan_allocation;
 	uint8_t frames_blocks_per_sdu;
 	size_t min_sdu_size_required;

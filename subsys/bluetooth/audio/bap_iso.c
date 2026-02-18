@@ -174,7 +174,7 @@ static struct bt_bap_iso_dir *bap_iso_get_iso_dir(bool unicast_client, struct bt
 
 void bt_bap_setup_iso_data_path(struct bt_bap_stream *stream)
 {
-	struct bt_audio_codec_cfg *codec_cfg = stream->codec_cfg;
+	const struct bt_audio_codec_cfg *codec_cfg = stream->codec_cfg;
 	struct bt_bap_ep *ep = stream->ep;
 	struct bt_bap_iso *bap_iso = ep->iso;
 	const bool is_unicast_client =

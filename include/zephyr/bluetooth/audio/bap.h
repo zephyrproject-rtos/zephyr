@@ -926,8 +926,12 @@ struct bt_bap_stream {
 	/** Endpoint reference */
 	struct bt_bap_ep *ep;
 
-	/** Codec Configuration */
-	struct bt_audio_codec_cfg *codec_cfg;
+	/**
+	 * @brief Codec Configuration
+	 *
+	 * Only valid if the endpoint for this stream is non-NULL.
+	 */
+	const struct bt_audio_codec_cfg *codec_cfg;
 
 	/** QoS Configuration */
 	struct bt_bap_qos_cfg *qos;
