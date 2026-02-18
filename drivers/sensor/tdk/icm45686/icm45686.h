@@ -20,6 +20,12 @@
 
 #include "icm45686_bus.h"
 
+#include "icm456xx_h/imu/inv_imu.h"
+#include "imu/inv_imu_driver.h"
+#ifdef CONFIG_TDK_APEX
+#include "imu/inv_imu_edmp.h"
+#endif
+
 struct icm45686_encoded_payload {
 	union {
 		uint8_t buf[14];
@@ -49,21 +55,21 @@ struct icm45686_encoded_fifo_payload {
 				int16_t x;
 				int16_t y;
 				int16_t z;
-			} __attribute__((__packed__)) accel;
+			} accel;
 			struct {
 				int16_t x;
 				int16_t y;
 				int16_t z;
-			} __attribute__((__packed__)) gyro;
+			} gyro;
 			int16_t temp;
 			uint16_t timestamp;
 			struct {
-				uint8_t gyro_x : 4;
-				uint8_t accel_x : 4;
-				uint8_t gyro_y : 4;
-				uint8_t accel_y : 4;
-				uint8_t gyro_z : 4;
-				uint8_t accel_z : 4;
+				uint8_t gyro_x: 4;
+				uint8_t accel_x: 4;
+				uint8_t gyro_y: 4;
+				uint8_t accel_y: 4;
+				uint8_t gyro_z: 4;
+				uint8_t accel_z: 4;
 			} lsb;
 		} __attribute__((__packed__));
 	};
@@ -71,10 +77,10 @@ struct icm45686_encoded_fifo_payload {
 
 struct icm45686_encoded_header {
 	uint64_t timestamp;
-	uint8_t accel_fs : 4;
-	uint8_t gyro_fs : 4;
-	uint8_t events : 3;
-	uint8_t channels : 7;
+	uint8_t accel_fs: 4;
+	uint8_t gyro_fs: 4;
+	uint8_t events: 3;
+	uint8_t channels: 7;
 	uint16_t fifo_count;
 };
 
@@ -87,19 +93,19 @@ struct icm45686_encoded_data {
 };
 
 struct icm45686_triggers {
-		struct gpio_callback cb;
-		const struct device *dev;
-		struct k_mutex lock;
-		struct {
-			const struct sensor_trigger *trigger;
-			sensor_trigger_handler_t handler;
-		} entry;
+	struct gpio_callback cb;
+	const struct device *dev;
+	struct k_mutex lock;
+	struct {
+		const struct sensor_trigger *trigger;
+		sensor_trigger_handler_t handler;
+	} entry;
 #if defined(CONFIG_ICM45686_TRIGGER_OWN_THREAD)
-		K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ICM45686_THREAD_STACK_SIZE);
-		struct k_thread thread;
-		struct k_sem sem;
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ICM45686_THREAD_STACK_SIZE);
+	struct k_thread thread;
+	struct k_sem sem;
 #elif defined(CONFIG_ICM45686_TRIGGER_GLOBAL_THREAD)
-		struct k_work work;
+	struct k_work work;
 #endif
 };
 
@@ -110,26 +116,26 @@ struct icm45686_stream {
 	atomic_t state;
 	struct {
 		struct {
-			bool drdy : 1;
-			bool fifo_ths : 1;
-			bool fifo_full : 1;
+			bool drdy: 1;
+			bool fifo_ths: 1;
+			bool fifo_full: 1;
 		} enabled;
 		struct {
 			enum sensor_stream_data_opt drdy;
 			enum sensor_stream_data_opt fifo_ths;
 			enum sensor_stream_data_opt fifo_full;
 		} opt;
-		bool drdy : 1;
-		bool fifo_ths : 1;
-		bool fifo_full : 1;
+		bool drdy: 1;
+		bool fifo_ths: 1;
+		bool fifo_full: 1;
 	} settings;
 	struct {
 		uint64_t timestamp;
 		uint8_t int_status;
 		struct {
-			bool drdy : 1;
-			bool fifo_ths : 1;
-			bool fifo_full : 1;
+			bool drdy: 1;
+			bool fifo_ths: 1;
+			bool fifo_full: 1;
 		} events;
 	} data;
 };
@@ -143,32 +149,36 @@ struct icm45686_data {
 #elif defined(CONFIG_ICM45686_STREAM)
 	struct icm45686_stream stream;
 #endif /* CONFIG_ICM45686_TRIGGER */
+	inv_imu_device_t driver;
+	uint8_t dmp_odr_hz;
+	uint64_t pedometer_cnt;
+	uint8_t pedometer_activity;
+	uint8_t pedometer_cadence;
+	uint8_t apex_status;
 };
 
 struct icm45686_config {
 	struct {
 		struct {
-			uint8_t pwr_mode : 2;
-			uint8_t fs : 4;
-			uint8_t odr : 4;
-			uint8_t lpf : 3;
+			uint8_t pwr_mode: 2;
+			uint8_t fs: 4;
+			uint8_t odr: 4;
+			uint8_t lpf: 3;
 		} accel;
 		struct {
-			uint8_t pwr_mode : 2;
-			uint8_t fs : 4;
-			uint8_t odr : 4;
-			uint8_t lpf : 3;
+			uint8_t pwr_mode: 2;
+			uint8_t fs: 4;
+			uint8_t odr: 4;
+			uint8_t lpf: 3;
 		} gyro;
 		uint16_t fifo_watermark;
-		bool fifo_watermark_equals : 1;
+		bool fifo_watermark_equals: 1;
 	} settings;
 	struct gpio_dt_spec int_gpio;
+	uint8_t apex;
 };
 
-static inline void icm45686_accel_ms(uint8_t fs,
-				     int32_t in,
-				     bool high_res,
-				     int32_t *out_ms,
+static inline void icm45686_accel_ms(uint8_t fs, int32_t in, bool high_res, int32_t *out_ms,
 				     int32_t *out_ums)
 {
 	int64_t sensitivity;
@@ -204,10 +214,7 @@ static inline void icm45686_accel_ms(uint8_t fs,
 	*out_ums = (in_ms - (*out_ms * sensitivity * 1000000LL)) / sensitivity;
 }
 
-static inline void icm45686_gyro_rads(uint8_t fs,
-				      int32_t in,
-				      bool high_res,
-				      int32_t *out_rads,
+static inline void icm45686_gyro_rads(uint8_t fs, int32_t in, bool high_res, int32_t *out_rads,
 				      int32_t *out_urads)
 {
 	int64_t sensitivity_x10;
@@ -268,5 +275,27 @@ static inline void icm45686_temp_c(int32_t in, int32_t *out_c, uint32_t *out_uc)
 	/* Micro celsius */
 	*out_uc = ((in100 - (*out_c) * sensitivity) * INT64_C(1000000)) / sensitivity;
 }
+
+#ifdef CONFIG_TDK_APEX
+
+#define ICM45686_APEX_STATUS_MASK_TILT       BIT(0)
+#define ICM45686_APEX_STATUS_MASK_SMD        BIT(1)
+#define ICM45686_APEX_STATUS_MASK_WOM_X      BIT(2)
+#define ICM45686_APEX_STATUS_MASK_WOM_Y      BIT(3)
+#define ICM45686_APEX_STATUS_MASK_WOM_Z      BIT(4)
+#define ICM45686_APEX_STATUS_MASK_TAP        BIT(5)
+#define ICM45686_APEX_STATUS_MASK_DOUBLE_TAP BIT(6)
+
+#define DEFAULT_WOM_THS_MG 52 >> 2
+
+int icm45686_apex_enable(inv_imu_device_t *s);
+int icm45686_apex_fetch_from_dmp(const struct device *dev);
+void icm45686_apex_pedometer_cadence_convert(struct sensor_value *val, uint8_t raw_val,
+					     uint8_t dmp_odr_hz);
+int icm45686_apex_enable_pedometer(const struct device *dev, inv_imu_device_t *s);
+int icm45686_apex_enable_tilt(inv_imu_device_t *s);
+int icm45686_apex_enable_smd(inv_imu_device_t *s);
+int icm45686_apex_enable_wom(inv_imu_device_t *s);
+#endif
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_ICM45686_H_ */
