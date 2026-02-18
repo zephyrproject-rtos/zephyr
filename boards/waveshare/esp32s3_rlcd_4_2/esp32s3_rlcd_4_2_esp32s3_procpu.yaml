@@ -1,0 +1,17 @@
+identifier: esp32s3_rlcd_4_2/esp32s3/procpu
+name: ESP32-S3-RLCD-4.2 PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - display
+  - gpio
+  - i2c
+  - input
+  - rtc
+  - sdhc
+  - sensor
+  - uart
+vendor: waveshare
