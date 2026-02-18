@@ -631,4 +631,6 @@ SECTIONS {
 	MEM_MAP_SYM_PROVIDE(__rodata_region_end)
 	MEM_MAP_SYM_PROVIDE(__text_region_start)
 	MEM_MAP_SYM_PROVIDE(__text_region_end)
+	MEM_MAP_SYM_PROVIDE(_shared_heap_start)
+	MEM_MAP_SYM_PROVIDE(_shared_heap_end)
 }
