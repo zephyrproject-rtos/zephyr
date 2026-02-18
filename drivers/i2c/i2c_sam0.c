@@ -27,12 +27,6 @@ LOG_MODULE_REGISTER(i2c_sam0, CONFIG_I2C_LOG_LEVEL);
 #define SERCOM_I2CM_CTRLA_MODE_I2C_MASTER SERCOM_I2CM_CTRLA_MODE(5)
 #endif
 
-#if CONFIG_I2C_SAM0_TRANSFER_TIMEOUT
-#define I2C_TRANSFER_TIMEOUT_MSEC K_MSEC(CONFIG_I2C_SAM0_TRANSFER_TIMEOUT)
-#else
-#define I2C_TRANSFER_TIMEOUT_MSEC K_FOREVER
-#endif
-
 struct i2c_sam0_dev_config {
 	SercomI2cm *regs;
 	const struct pinctrl_dev_config *pcfg;
@@ -509,7 +503,7 @@ static int i2c_sam0_transfer(const struct device *dev, struct i2c_msg *msgs,
 		irq_unlock(key);
 
 		/* Now wait for the ISR to handle everything */
-		ret = k_sem_take(&data->sem, I2C_TRANSFER_TIMEOUT_MSEC);
+		ret = k_sem_take(&data->sem, I2C_TRANSFER_TIMEOUT);
 
 		if (ret != 0) {
 			ret = -EIO;
