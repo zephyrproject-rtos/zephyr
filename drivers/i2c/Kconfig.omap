@@ -8,6 +8,7 @@ config I2C_OMAP
 	default y
 	depends on DT_HAS_TI_OMAP_I2C_ENABLED
 	select PINCTRL
+	select I2C_TRANSFER_TIMEOUT_SUPPORTED
 	help
 	  Enable the I2C driver for TI OMAP SoCs.
 

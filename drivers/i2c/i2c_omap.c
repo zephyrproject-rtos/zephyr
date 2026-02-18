@@ -21,8 +21,9 @@
 
 LOG_MODULE_REGISTER(omap_i2c, CONFIG_I2C_LOG_LEVEL);
 
+BUILD_ASSERT_INVALID_I2C_TRANSFER_TIMEOUT();
+
 #define I2C_OMAP_TIMEOUT     100U
-#define I2C_OMAP_TRANSFER_TIMEOUT 1000U
 /* OCP_SYSSTATUS bit definitions */
 #define SYSS_RESETDONE_MASK  BIT(0)
 #define RETRY                -1
@@ -424,7 +425,7 @@ restore:
 static int i2c_omap_wait_for_bb(const struct device *dev)
 {
 	volatile i2c_omap_regs_t *i2c_base_addr = DEV_I2C_BASE(dev);
-	uint32_t timeout = k_uptime_get_32() + I2C_OMAP_TIMEOUT;
+	uint32_t timeout = k_uptime_get_32() + CONFIG_I2C_TRANSFER_TIMEOUT_MS;
 
 	while (i2c_base_addr->STAT & I2C_OMAP_STAT_BB) {
 		if (k_uptime_get_32() > timeout) {
@@ -580,7 +581,7 @@ static int i2c_omap_transfer_message(const struct device *dev, struct i2c_msg *m
 	i2c_base_addr->CON = control_reg;
 	/* Poll for status until the transfer is complete */
 	/* Call a lower-level function to continue the transfer */
-	end = sys_timepoint_calc(K_MSEC(I2C_OMAP_TRANSFER_TIMEOUT));
+	end = sys_timepoint_calc(K_MSEC(CONFIG_I2C_TRANSFER_TIMEOUT_MS));
 	do {
 		result = i2c_omap_transfer_message_ll(dev);
 	} while (result == RETRY && !sys_timepoint_expired(end));
