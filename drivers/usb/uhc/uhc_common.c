@@ -99,13 +99,10 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 				    const k_timeout_t timeout)
 {
 	uint8_t ep_idx = USB_EP_GET_IDX(ep) & 0xF;
-	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
 	struct uhc_transfer *xfer = NULL;
 	uint16_t mps;
 	uint16_t interval;
 	uint8_t type;
-
-	api->lock(dev);
 
 	if (!uhc_is_initialized(dev)) {
 		goto xfer_alloc_error;
@@ -152,7 +149,6 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 	xfer->priv = cb_priv;
 
 xfer_alloc_error:
-	api->unlock(dev);
 
 	return xfer;
 }
@@ -213,17 +209,13 @@ int uhc_xfer_buf_add(const struct device *dev,
 		     struct uhc_transfer *const xfer,
 		     struct net_buf *buf)
 {
-	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
 	int ret = 0;
 
-	api->lock(dev);
 	if (xfer->queued) {
 		ret = -EBUSY;
 	} else {
 		xfer->buf = buf;
 	}
-
-	api->unlock(dev);
 
 	return ret;
 }
