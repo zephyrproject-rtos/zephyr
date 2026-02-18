@@ -75,6 +75,13 @@
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
 	};
+
+	psram: memory@70000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x70000000 DT_SIZE_M(8)>;
+		zephyr,memory-region = "PSRAM";
+		zephyr,memory-attr = <DT_MEM_ARM_MPU_RAM>;
+	};
 };
 
 &clk_hsi48 {
@@ -288,5 +295,29 @@
 			write-block-size = <1>;
 			erase-block-size = <DT_SIZE_K(4)>;
 		};
+	};
+};
+
+&xspi2 {
+	pinctrl-0 = <&octospim_p2_io0_pg0 &octospim_p2_io1_pd2
+		     &octospim_p2_io2_pg2 &octospim_p2_io3_pg3
+		     &octospim_p2_io4_pg4 &octospim_p2_io5_pg5
+		     &octospim_p2_io6_pg10 &octospim_p2_io7_pg15
+		     &octospim_p2_clk_pe14 &octospim_p2_ncs1_pe15
+		     &octospim_p2_dqs_pf5>;
+	pinctrl-names = "default";
+
+	status = "okay";
+
+	memc: aps6408l: memory@0 {
+		compatible = "st,stm32-xspi-psram";
+		reg = <0>;
+		size = <DT_SIZE_M(64)>; /* 64 Mbits */
+		max-frequency = <DT_FREQ_M(133)>;
+		fixed-latency;
+		burst-length = <3>;
+		st,refresh = <320>;
+		st,csbound = <10>;
+		status = "okay";
 	};
 };
