@@ -45,7 +45,7 @@ struct bt_bap_ep {
 	uint8_t dir;
 	uint8_t cig_id;
 	uint8_t cis_id;
-	uint8_t id;
+	uint8_t id; /* ASE ID or BIS ID (BIS index - 1) */
 	enum bt_bap_ep_state state;
 	struct bt_bap_stream *stream;
 	struct bt_audio_codec_cfg codec_cfg;
@@ -130,11 +130,6 @@ struct bt_bap_broadcast_source {
 #endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 
-	/* The complete codec specific configured data for each stream in the subgroup.
-	 * This contains both the subgroup and the BIS-specific data for each stream.
-	 */
-	struct bt_audio_codec_cfg codec_cfg[BROADCAST_STREAM_CNT];
-
 	/* The subgroups containing the streams used to create the broadcast source */
 	sys_slist_t subgroups;
 };
@@ -169,7 +164,6 @@ struct bt_bap_broadcast_sink_subgroup {
 struct bt_bap_broadcast_sink_bis {
 	uint8_t index;
 	struct bt_iso_chan *chan;
-	struct bt_audio_codec_cfg codec_cfg;
 };
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SINK)
