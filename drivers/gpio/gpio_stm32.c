@@ -791,10 +791,10 @@ __maybe_unused static int gpio_stm32_init(const struct device *dev)
  * !!!Keep both lists in sync!!!
  */
 #define GPIO_PORTS_LWR \
-	a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, x, y, z
+	a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z
 
 #define GPIO_PORTS_UPR \
-	A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, X, Y, Z
+	A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z
 
 #define DEVICE_INIT_IF_OKAY(idx, __suffix) \
 	GPIO_DEVICE_INIT_STM32_IF_OKAY(__suffix, GET_ARG_N(UTIL_INC(idx), GPIO_PORTS_UPR))
