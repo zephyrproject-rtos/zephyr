@@ -13,7 +13,7 @@ include: [base.yaml]
 examples:
   - |
     &i2c0_0 {
-      nct3807@70 {
+      nct3807: nct3807@70 {
         compatible = "nuvoton,nct38xx";
         reg = <0x70>;
 
@@ -43,7 +43,7 @@ examples:
         };
       };
 
-      nct3808_0_P1@71 {
+      nct3808_0_p1: nct3808_0_P1@71 {
         compatible = "nuvoton,nct38xx";
         reg = <0x71>;
 
@@ -64,7 +64,7 @@ examples:
         };
       };
 
-      nct3808_0_P2@75 {
+      nct3808_0_p2: nct3808_0_P2@75 {
         compatible = "nuvoton,nct38xx";
         reg = <0x75>;
 
