@@ -38,6 +38,7 @@ config MEMC_STM32_XSPI_PSRAM
 	default y
 	depends on DT_HAS_ST_STM32_XSPI_PSRAM_ENABLED
 	select USE_STM32_HAL_XSPI
+	select USE_STM32_LL_DLYB if SOC_SERIES_STM32H5X
 	select PINCTRL
 	help
 	  Enable STM32 XSPI Memory Controller.

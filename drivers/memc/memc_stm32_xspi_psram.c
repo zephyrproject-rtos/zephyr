@@ -47,12 +47,29 @@ struct shared_multi_heap_region smh_psram = {
 #define RESET_CMD	0xFFU
 
 /* Memory default dummy clocks cycles */
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+#define DUMMY_CLK_CYCLES_READ	8U
+#define DUMMY_CLK_CYCLES_WRITE	4U
+#else /* CONFIG_SOC_SERIES_STM32H5X */
 #define DUMMY_CLK_CYCLES_READ	6U
 #define DUMMY_CLK_CYCLES_WRITE	6U
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
 
 #define STM32_XSPI_CLOCK_PRESCALER_MIN  0U
 #define STM32_XSPI_CLOCK_PRESCALER_MAX  255U
 #define STM32_XSPI_CLOCK_COMPUTE(bus_freq, prescaler) ((bus_freq) / ((prescaler) + 1U))
+
+#if defined(XSPI1)
+#define STM32_XSPI1 XSPI1
+#elif defined(OCTOSPI1)
+#define STM32_XSPI1 OCTOSPI1
+#endif /* XSPI1 */
+
+#if defined(XSPI2)
+#define STM32_XSPI2 XSPI2
+#elif defined(OCTOSPI2)
+#define STM32_XSPI2 OCTOSPI2
+#endif /* XSPI2 */
 
 struct memc_stm32_xspi_psram_config {
 	const struct pinctrl_dev_config *pcfg;
@@ -81,7 +98,6 @@ static int ap_memory_write_reg(XSPI_HandleTypeDef *hxspi, uint32_t address, uint
 	 */
 	cmd.Instruction = WRITE_REG_CMD;
 	cmd.InstructionMode = HAL_XSPI_INSTRUCTION_8_LINES;
-	cmd.InstructionDTRMode = HAL_XSPI_INSTRUCTION_DTR_DISABLE;
 	cmd.Address = address;
 	cmd.AddressMode = HAL_XSPI_ADDRESS_8_LINES;
 	cmd.AddressWidth = HAL_XSPI_ADDRESS_32_BITS;
@@ -296,19 +312,40 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 		 */
 		XSPIM_CfgTypeDef cfg = {0};
 
-		if (hxspi->Instance == XSPI1) {
+		if (hxspi->Instance == STM32_XSPI1) {
 			cfg.IOPort = HAL_XSPIM_IOPORT_1;
-		} else if (hxspi->Instance == XSPI2) {
+		} else if (hxspi->Instance == STM32_XSPI2) {
 			cfg.IOPort = HAL_XSPIM_IOPORT_2;
+		} else {
+			LOG_ERR("XSPIMgr Instance failed");
+			return -EIO;
 		}
-		cfg.nCSOverride = HAL_XSPI_CSSEL_OVR_DISABLED;
-
 		if (HAL_XSPIM_Config(hxspi, &cfg, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
 			LOG_ERR("XSPIMgr Init failed");
 			return -EIO;
 		}
 	}
 
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+	/* DELAYBlock Enable for the stm32H5 boards */
+	LL_DLYB_CfgTypeDef dlyb_cfg;
+
+	if (hxspi->Instance == STM32_XSPI1) {
+		LL_DLYB_Enable(DLYB_OCTOSPI1);
+		LL_DLYB_GetDelay(DLYB_OCTOSPI1, &dlyb_cfg);
+		dlyb_cfg.PhaseSel /= 4; /* empiric value given by the stm32Cube */
+		LL_DLYB_SetDelay(DLYB_OCTOSPI1, &dlyb_cfg);
+	} else if (hxspi->Instance == STM32_XSPI2) {
+		LL_DLYB_Enable(DLYB_OCTOSPI2);
+		LL_DLYB_GetDelay(DLYB_OCTOSPI2, &dlyb_cfg);
+		dlyb_cfg.PhaseSel /= 4; /* empiric value given by the stm32Cube */
+		LL_DLYB_SetDelay(DLYB_OCTOSPI2, &dlyb_cfg);
+	} else {
+		LOG_ERR("XSPI Delay block failed");
+		return -EIO;
+	}
+
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
 	/* Configure AP memory registers */
 	ret = ap_memory_configure(hxspi);
 	if (ret != 0) {
@@ -325,12 +362,18 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 	 */
 	cmd.OperationType = HAL_XSPI_OPTYPE_WRITE_CFG;
 	cmd.InstructionMode = HAL_XSPI_INSTRUCTION_8_LINES;
-	cmd.Instruction = BURST_WRITE_CMD;
 	cmd.AddressMode = HAL_XSPI_ADDRESS_8_LINES;
 	cmd.AddressWidth = HAL_XSPI_ADDRESS_32_BITS;
 	cmd.AddressDTRMode = HAL_XSPI_ADDRESS_DTR_ENABLE;
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+	cmd.Instruction = SYNC_WRITE_CMD;
+	/* The STM32H5X octsopi peripheral has 8 lines */
+	cmd.DataMode = HAL_XSPI_DATA_8_LINES;
+#else /* CONFIG_SOC_SERIES_STM32H5X */
+	cmd.Instruction = BURST_WRITE_CMD;
 	cmd.DataMode = DT_INST_PROP(0, io_x16_mode) ? HAL_XSPI_DATA_16_LINES
 						    : HAL_XSPI_DATA_8_LINES;
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
 	cmd.DataDTRMode = HAL_XSPI_DATA_DTR_ENABLE;
 	cmd.DummyCycles = DUMMY_CLK_CYCLES_WRITE;
 	cmd.DQSMode = HAL_XSPI_DQS_ENABLE;
@@ -340,7 +383,11 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 	}
 
 	cmd.OperationType = HAL_XSPI_OPTYPE_READ_CFG;
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+	cmd.Instruction = SYNC_READ_CMD;
+#else /* CONFIG_SOC_SERIES_STM32H5X */
 	cmd.Instruction = BURST_READ_CMD;
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
 	cmd.DummyCycles = DUMMY_CLK_CYCLES_READ;
 
 	if (HAL_XSPI_Command(hxspi, &cmd, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
@@ -407,6 +454,9 @@ static struct memc_stm32_xspi_psram_data memc_stm32_xspi_data = {
 			.SampleShifting = HAL_XSPI_SAMPLE_SHIFT_NONE,
 			.DelayHoldQuarterCycle = HAL_XSPI_DHQC_ENABLE,
 			.ChipSelectBoundary = DT_INST_PROP(0, st_csbound),
+#ifdef OCTOSPI_DCR1_DLYBYP
+			.DelayBlockBypass = HAL_XSPI_DELAY_BLOCK_ON,
+#endif /* OCTOSPI_DCR1_DLYBYP */
 			.MaxTran = 0U,
 			.Refresh = DT_INST_PROP(0, st_refresh),
 			.MemorySelect = HAL_XSPI_CSSEL_NCS1,
