@@ -13,8 +13,8 @@
 #include <zephyr/drivers/i3c.h>
 
 enum icm45686_bus_type {
-	ICM45686_BUS_SPI,
 	ICM45686_BUS_I2C,
+	ICM45686_BUS_SPI,
 	ICM45686_BUS_I3C,
 };
 

@@ -14,8 +14,7 @@
 #include <zephyr/drivers/sensor.h>
 
 /* Configure triggers for the icm45686 sensor */
-int icm45686_trigger_set(const struct device *dev,
-			 const struct sensor_trigger *trig,
+int icm45686_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler);
 
 /* Initialization for icm45686 Triggers module */

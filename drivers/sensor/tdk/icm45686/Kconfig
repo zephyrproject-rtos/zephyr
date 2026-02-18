@@ -5,13 +5,46 @@
 menuconfig ICM45686
 	bool "ICM45686 High-precision 6-Axis Motion Tracking Device"
 	default y
-	depends on DT_HAS_INVENSENSE_ICM45686_ENABLED
-	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),spi)
-	select SPI_RTIO if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),spi)
-	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),i2c)
-	select I2C_RTIO if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),i2c)
-	select I3C if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),i3c)
-	select I3C_RTIO if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),i3c)
+	depends on DT_HAS_INVENSENSE_ICM45605_ENABLED || \
+		DT_HAS_INVENSENSE_ICM45605S_ENABLED || \
+		DT_HAS_INVENSENSE_ICM45686_ENABLED || \
+		DT_HAS_INVENSENSE_ICM45686S_ENABLED || \
+		DT_HAS_INVENSENSE_ICM45688P_ENABLED
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45605),spi) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45605S),spi) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),spi) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686S),spi) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45688P),spi)
+	select SPI_RTIO if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45605),spi) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45605S),spi) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),spi) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686S),spi) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45688P),spi)
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45605),i2c) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45605S),i2c) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),i2c) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686S),i2c) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45688P),i2c)
+	select I2C_RTIO if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45605),i2c) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45605S),i2c) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),i2c) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686S),i2c) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45688P),i2c)
+	select I3C if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45605),i3c) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45605S),i3c) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),i3c) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686S),i3c) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45688P),i3c)
+	select I3C_RTIO if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45605),i3c) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45605S),i3c) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),i3c) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686S),i3c) \
+		|| $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45688P),i3c)
+	select USE_EMD_ICM45605 if DT_HAS_INVENSENSE_ICM45605_ENABLED
+	select USE_EMD_ICM45605S if DT_HAS_INVENSENSE_ICM45605S_ENABLED
+	select USE_EMD_ICM45686 if DT_HAS_INVENSENSE_ICM45686_ENABLED
+	select USE_EMD_ICM45686S if DT_HAS_INVENSENSE_ICM45686S_ENABLED
+	select USE_EMD_ICM45688P if DT_HAS_INVENSENSE_ICM45688P_ENABLED
 	help
 	  Enable driver for ICM45686 High-precision 6-axis motion
 	  tracking device.
@@ -30,18 +63,31 @@ config ICM45686_TRIGGER_NONE
 config ICM45686_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
-	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM45686),int-gpios)
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM45605),int-gpios) || \
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM45605S),int-gpios) || \
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM45686),int-gpios) || \
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM45686S),int-gpios) || \
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM45688P),int-gpios)
 	depends on !ICM45686_STREAM
 	select ICM45686_TRIGGER
+	select TDK_APEX
 
 config ICM45686_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
-	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM45686),int-gpios)
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM45605),int-gpios) || \
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM45605S),int-gpios) || \
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM45686),int-gpios) || \
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM45686S),int-gpios) || \
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM45688P),int-gpios)
 	depends on !ICM45686_STREAM
 	select ICM45686_TRIGGER
+	select TDK_APEX
 
 endchoice
+
+config TDK_APEX
+	bool
 
 config ICM45686_TRIGGER
 	bool
@@ -64,8 +110,16 @@ config ICM45686_STREAM
 	bool "Streaming mode"
 	depends on GPIO || \
 		   $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),i3c)
-	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM45686),int-gpios) || \
-		   $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),i3c)
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM45605),int-gpios) || \
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM45605S),int-gpios) || \
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM45686),int-gpios) || \
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM45686S),int-gpios) || \
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_INVENSENSE_ICM45688P),int-gpios) || \
+		   $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45605),i3c) || \
+		   $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45605S),i3c) || \
+		   $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686),i3c) || \
+		   $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45686S),i3c) || \
+		   $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM45688P),i3c)
 	help
 	  Enable streaming of sensor data.
 
