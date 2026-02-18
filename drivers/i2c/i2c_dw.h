@@ -78,6 +78,23 @@ typedef void (*i2c_isr_cb_t)(const struct device *port);
 #define I2C_HS_HCNT  ((CONFIG_I2C_DW_CLOCK_SPEED * 6) / 8)
 #define I2C_HS_LCNT  ((CONFIG_I2C_DW_CLOCK_SPEED * 7) / 8)
 
+/* The below SCL macros calculations are valid
+ * if CONFIG_IC_CLK_FREQ_OPTIMIZATION is off
+ * Refer section 2.14.1 of DW spec
+ */
+#define I2C_MIN_SCL_LCNT(spk)  ((spk) + 8)
+#define I2C_MIN_SCL_HCNT(spk)  ((spk) + 6)
+
+/* Min SCL High Time is spike_len + 6 cycles */
+#define I2C_ENSURE_MIN_SCL_HCNT(x, spk_len)	\
+	(((x) < I2C_MIN_SCL_HCNT(spk_len)) ?	\
+	I2C_MIN_SCL_HCNT(spk_len) : (x))
+
+/* Min SCL Low Time is spike_len + 8 cycles */
+#define I2C_ENSURE_MIN_SCL_LCNT(x, spk_len)	\
+	(((x) < I2C_MIN_SCL_LCNT(spk_len)) ?	\
+	I2C_MIN_SCL_LCNT(spk_len) : (x))
+
 /*
  * DesignWare speed values don't directly translate from the Zephyr speed
  * selections in include/i2c.h so here we do a little translation
