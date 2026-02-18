@@ -7,6 +7,7 @@ config I2C_CADENCE
 	default y
 	depends on DT_HAS_CDNS_I2C_ENABLED
 	select EVENTS
+	select I2C_TRANSFER_TIMEOUT_SUPPORTED
 	help
 	  Enable Cadence I2C driver.
 
