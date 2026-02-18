@@ -22,6 +22,18 @@
 
 #define STM32_XSPI_FIFO_THRESHOLD       4U
 
+#if defined(XSPI1)
+#define STM32_XSPI1 XSPI1
+#elif defined(OCTOSPI1)
+#define STM32_XSPI1 OCTOSPI1
+#endif /* XSPI1 */
+
+#if defined(XSPI2)
+#define STM32_XSPI2 XSPI2
+#elif defined(OCTOSPI2)
+#define STM32_XSPI2 OCTOSPI2
+#endif /* XSPI2 */
+
 /* Valid range is [0, 255] */
 #define STM32_XSPI_CLOCK_PRESCALER_MIN  0U
 #define STM32_XSPI_CLOCK_PRESCALER_MAX  255U
