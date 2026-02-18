@@ -442,26 +442,26 @@ static int sw_set_pins(const struct device *dev,
 
 	if (pins & BIT(SWDP_SWCLK_PIN)) {
 		if (value & BIT(SWDP_SWCLK_PIN)) {
-			gpio_pin_set_dt(&config->clk, 1);
+			(void)gpio_pin_set_raw(config->clk.port, config->clk.pin, 1);
 		} else {
-			gpio_pin_set_dt(&config->clk, 0);
+			(void)gpio_pin_set_raw(config->clk.port, config->clk.pin, 0);
 		}
 	}
 
 	if (config->dout_reg != NULL) {
 		if (pins & BIT(SWDP_SWDIO_PIN)) {
 			if (value & BIT(SWDP_SWDIO_PIN)) {
-				gpio_pin_set_dt(&config->dout, 1);
+				(void)gpio_pin_set_raw(config->dout.port, config->dout.pin, 1);
 			} else {
-				gpio_pin_set_dt(&config->dout, 0);
+				(void)gpio_pin_set_raw(config->dout.port, config->dout.pin, 0);
 			}
 		}
 	} else {
 		if (pins & BIT(SWDP_SWDIO_PIN)) {
 			if (value & BIT(SWDP_SWDIO_PIN)) {
-				gpio_pin_set_dt(&config->dio, 1);
+				(void)gpio_pin_set_raw(config->dio.port, config->dio.pin, 1);
 			} else {
-				gpio_pin_set_dt(&config->dio, 0);
+				(void)gpio_pin_set_raw(config->dio.port, config->dio.pin, 0);
 			}
 		}
 	}
@@ -469,9 +469,9 @@ static int sw_set_pins(const struct device *dev,
 	if (config->reset.port) {
 		if (pins & BIT(SWDP_nRESET_PIN)) {
 			if (value & BIT(SWDP_nRESET_PIN)) {
-				gpio_pin_set_dt(&config->reset, 1);
+				(void)gpio_pin_set_raw(config->reset.port, config->reset.pin, 1);
 			} else {
-				gpio_pin_set_dt(&config->reset, 0);
+				(void)gpio_pin_set_raw(config->reset.port, config->reset.pin, 0);
 			}
 		}
 	}
@@ -482,17 +482,31 @@ static int sw_set_pins(const struct device *dev,
 static int sw_get_pins(const struct device *dev, uint8_t *const state)
 {
 	const struct sw_config *config = dev->config;
-	uint32_t val;
+	int val;
+
+	*state = 0;
 
 	if (config->reset.port) {
-		val = gpio_pin_get_dt(&config->reset);
+		val = gpio_pin_get_raw(config->reset.port, config->reset.pin);
+		if (val < 0) {
+			LOG_ERR("Failed to read reset pin");
+			return val;
+		}
 		*state = val ? BIT(SWDP_nRESET_PIN) : 0;
 	}
 
-	val = gpio_pin_get_dt(&config->dio);
+	val = gpio_pin_get_raw(config->dio.port, config->dio.pin);
+	if (val < 0) {
+		LOG_ERR("Failed to read SWDIO pin");
+		return val;
+	}
 	*state |= val ? BIT(SWDP_SWDIO_PIN) : 0;
 
-	val = gpio_pin_get_dt(&config->clk);
+	val = gpio_pin_get_raw(config->clk.port, config->clk.pin);
+	if (val < 0) {
+		LOG_ERR("Failed to read SWCLK pin");
+		return val;
+	}
 	*state |= val ? BIT(SWDP_SWCLK_PIN) : 0;
 
 	LOG_DBG("pins state 0x%02x", *state);
