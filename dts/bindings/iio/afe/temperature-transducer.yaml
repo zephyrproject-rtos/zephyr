@@ -62,6 +62,16 @@ properties:
       This offset is commonly used to convert from Kelvins to degrees Celsius.
       In that case, sense-offset-millicelsius would be set to <(-273150)>.
 
+      When the datasheet specifies an output voltage at a reference temperature
+      (e.g., 400 mV at 0°C for the TMP236), the offset must be calculated from
+      the transfer function. For a sensor with VOUT = V0 + (alpha × T)
+
+        sense-offset-millicelsius = -(V0_mV × 1,000,000) / alpha-ppm-per-celsius
+
+      Example for TMP236 (V0 = 400 mV at 0°C, alpha = 19.5 mV/°C = 19500 µV/°C)
+
+        sense-offset-millicelsius = -(400 × 1,000,000) / 19500 = -20513
+
   sense-resistor-ohms:
     type: int
     default: 1
