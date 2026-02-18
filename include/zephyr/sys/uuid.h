@@ -56,6 +56,8 @@ struct uuid {
  *
  * @param out The UUID where the result will be written.
  *
+ * @kconfig_dep{CONFIG_UUID_V4}
+ *
  * @retval 0 The UUID has been correctly generated and stored in @p out
  * @retval -EINVAL @p out is not acceptable
  */
@@ -66,6 +68,8 @@ int uuid_generate_v4(struct uuid *out);
  *
  * @details This function computes a deterministic UUID starting from a namespace UUID and binary
  * data.
+ *
+ * @kconfig_dep{CONFIG_UUID_V5}
  *
  * @param ns A pointer to an UUID to be used as namespace.
  * @param data A pointer to the data that will be hashed to produce the UUID.
@@ -139,6 +143,8 @@ int uuid_to_string(const struct uuid *data, char out[UUID_STR_LEN]);
 
 /**
  * @brief Convert a UUID to its base 64 (RFC 3548, RFC 4648) string representation.
+ *
+ * @kconfig_dep{CONFIG_UUID_BASE64}
  *
  * @param data The UUID to convert to string.
  * @param out A pointer to a previously allocated buffer where the result will be written.
