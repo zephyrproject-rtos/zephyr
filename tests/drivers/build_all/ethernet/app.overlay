@@ -19,7 +19,7 @@
 		test_ethernet: ethernet {
 			compatible = "vnd,ethernet";
 
-			test_mdio: mdio {
+			test_mdio0: mdio {
 				compatible = "zephyr,mdio-gpio";
 				mdc-gpios = <&test_gpio 0 0>;
 				mdio-gpios = <&test_gpio 0 0>;
@@ -114,6 +114,15 @@
 					reset-deassertion-timeout-ms = <10>;
 				};
 			};
+		};
+
+		test_mdio1: mdio {
+			compatible = "zephyr,mdio-gpio";
+			mdc-gpios = <&test_gpio 0 0>;
+			mdio-gpios = <&test_gpio 0 0>;
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 	};
 };

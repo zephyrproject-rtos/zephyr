@@ -1713,7 +1713,6 @@ Documentation Infrastructure:
     - drivers/ethernet/
     - include/zephyr/dt-bindings/ethernet/
     - tests/drivers/build_all/ethernet/
-    - tests/drivers/build_all/mdio/
     - dts/bindings/ethernet/
     - tests/drivers/ethernet/
     - include/zephyr/drivers/ethernet/
@@ -1727,7 +1726,6 @@ Documentation Infrastructure:
   labels:
     - "area: Ethernet"
   tests:
-    - drivers.mdio
     - net.ethernet
 
 "Drivers: FPGA":
