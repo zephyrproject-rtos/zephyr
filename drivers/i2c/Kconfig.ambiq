@@ -11,6 +11,7 @@ menuconfig I2C_AMBIQ
 	depends on DT_HAS_AMBIQ_I2C_ENABLED
 	select AMBIQ_HAL
 	select AMBIQ_HAL_USE_I2C
+	select I2C_TRANSFER_TIMEOUT_SUPPORTED
 	help
 	  Enable driver for Ambiq I2C.
 
