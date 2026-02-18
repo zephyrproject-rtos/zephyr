@@ -136,7 +136,7 @@ static int pcf8563_set_time(const struct device *dev, const struct rtc_time *tim
 	raw_time[6] = bin2bcd(timeptr->tm_mon);
 
 	/* Set year */
-	raw_time[7] = bin2bcd(timeptr->tm_year);
+	raw_time[7] = bin2bcd(timeptr->tm_year % 100);
 
 	/* Write to device */
 	ret = i2c_write_dt(&config->i2c, raw_time, sizeof(raw_time));
@@ -190,6 +190,7 @@ static int pcf8563_get_time(const struct device *dev, struct rtc_time *timeptr)
 
 	/* Get year */
 	timeptr->tm_year = bcd2bin(raw_time[6]);
+	timeptr->tm_year = timeptr->tm_year + 100;
 
 	/* Day number not used */
 	timeptr->tm_yday = -1;
