@@ -449,7 +449,7 @@
 		};
 
 		burtc0: burtc@50064000 {
-			compatible = "silabs,gecko-burtc";
+			compatible = "silabs,burtc-counter";
 			reg = <0x50064000 0x4000>;
 			clocks = <&cmu CLOCK_BURTC CLOCK_BRANCH_EM4GRPACLK>;
 			interrupt-names = "burtc";
