@@ -1,0 +1,18 @@
+sample:
+  name: es7210 custom codec sample
+  description: Basic register-level ES7210 custom API example.
+
+tests:
+  sample.drivers.audio.es7210_custom:
+    tags:
+      - audio
+      - codec
+      - i2c
+    filter: dt_compat_enabled("everest,es7210")
+    integration_platforms:
+      - m5stack_cores3_procpu
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "ES7210 configured"

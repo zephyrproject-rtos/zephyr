@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2026 Zhang Xingtao
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		es7210 = &es7210;
+	};
+};
+
+&pinctrl {
+	i2s0_default: i2s0_default {
+		group1 {
+			pinmux = <I2S0_O_BCK_GPIO34>,
+				 <I2S0_O_WS_GPIO33>,
+				 <I2S0_O_SD_GPIO13>,
+				 <I2S0_I_SD_GPIO14>,
+				 <I2S0_MCLK_GPIO0>;
+		};
+	};
+};
+
+&i2c0 {
+	status = "okay";
+
+	es7210: audio-codec@40 {
+		compatible = "everest,es7210";
+		reg = <0x40>;
+		status = "okay";
+	};
+};
+
+&i2s0 {
+	status = "okay";
+	pinctrl-0 = <&i2s0_default>;
+	pinctrl-names = "default";
+};
+
+&i2s1 {
+	status = "disabled";
+};
+
+&dma {
+	status = "okay";
+};

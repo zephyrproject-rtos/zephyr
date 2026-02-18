@@ -1,0 +1,50 @@
+# Copyright (c) 2026 Zhang Xingtao
+# SPDX-License-Identifier: Apache-2.0
+
+description: Everest ES7210 4-channel ADC audio codec
+
+compatible: "everest,es7210"
+
+include: [i2c-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  int-gpios:
+    type: phandle-array
+    description: Optional interrupt GPIO.
+
+  whoami-reg:
+    type: int
+    default: 0x3d
+    description: Register used for WHOAMI verification.
+
+  whoami-value:
+    type: int
+    default: 0x72
+    description: Expected WHOAMI value.
+
+  sdp-interface1:
+    type: int
+    default: 0x80
+    description: Default value written to register 0x11 (32-bit I2S slot recommended).
+
+  sdp-interface2:
+    type: int
+    default: 0x00
+    description: Default value written to register 0x12 (0x00 = non-TDM I2S).
+
+  sdp-interface1:
+    type: int
+    default: 0x80
+    description: |
+      Default value for register 0x11 (SDP_INTERFACE1).
+      0x80 is validated on M5Stack CoreS3 with 32-bit I2S slots.
+
+  sdp-interface2:
+    type: int
+    default: 0x00
+    description: |
+      Default value for register 0x12 (SDP_INTERFACE2).
+      0x00 keeps non-TDM I2S mode.
