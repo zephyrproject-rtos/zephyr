@@ -12,15 +12,21 @@
 #include <zephyr/drivers/adc/temp_transducer.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
 LOG_MODULE_REGISTER(temp_transducer, CONFIG_SENSOR_LOG_LEVEL);
 
 struct temp_transducer_config {
 	struct temp_transducer_dt_spec spec;
+	struct gpio_dt_spec gpio_power;
+	uint32_t sample_delay_us;
 };
 
 struct temp_transducer_data {
 	struct adc_sequence sequence;
+	k_timeout_t earliest_sample;
 	int16_t raw;
 };
 
@@ -33,6 +39,9 @@ static int temp_transducer_sample_fetch(const struct device *dev, enum sensor_ch
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_AMBIENT_TEMP) {
 		return -ENOTSUP;
 	}
+
+	/* Wait until sampling is valid */
+	k_sleep(data->earliest_sample);
 
 	ret = adc_read_dt(&config->spec.port, &data->sequence);
 	if (ret < 0) {
@@ -71,6 +80,52 @@ static int temp_transducer_channel_get(const struct device *dev, enum sensor_cha
 	return 0;
 }
 
+static int pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct temp_transducer_config *config = dev->config;
+	struct temp_transducer_data *data = dev->data;
+	int ret = 0;
+
+	if (!config->gpio_power.port) {
+		return 0;
+	}
+
+	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+		ret = gpio_pin_configure_dt(&config->gpio_power, GPIO_OUTPUT_INACTIVE);
+		if (ret != 0) {
+			LOG_ERR("failed to configure GPIO for PM on");
+		}
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		ret = gpio_pin_set_dt(&config->gpio_power, 1);
+		if (ret != 0) {
+			LOG_ERR("failed to set GPIO for PM resume");
+		}
+		data->earliest_sample = K_TIMEOUT_ABS_TICKS(
+			k_uptime_ticks() + k_us_to_ticks_ceil32(config->sample_delay_us));
+		/* Power up */
+		pm_device_runtime_get(config->spec.port.dev);
+		break;
+#ifdef CONFIG_PM_DEVICE
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = gpio_pin_set_dt(&config->gpio_power, 0);
+		if (ret != 0) {
+			LOG_ERR("failed to set GPIO for PM suspend");
+		}
+		/* Power down */
+		pm_device_runtime_put(config->spec.port.dev);
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+#endif
+	default:
+		return -ENOTSUP;
+	}
+
+	return ret;
+}
+
 static int temp_transducer_init(const struct device *dev)
 {
 	const struct temp_transducer_config *config = dev->config;
@@ -81,6 +136,15 @@ static int temp_transducer_init(const struct device *dev)
 		LOG_ERR("ADC device not ready");
 		return -ENODEV;
 	}
+
+	if (config->gpio_power.port) {
+		if (!gpio_is_ready_dt(&config->gpio_power)) {
+			LOG_ERR("Power GPIO is not ready");
+			return -ENODEV;
+		}
+	}
+
+	data->earliest_sample = K_TIMEOUT_ABS_TICKS(0);
 
 	ret = adc_channel_setup_dt(&config->spec.port);
 	if (ret < 0) {
@@ -97,7 +161,7 @@ static int temp_transducer_init(const struct device *dev)
 	data->sequence.buffer = &data->raw;
 	data->sequence.buffer_size = sizeof(data->raw);
 
-	return 0;
+	return pm_device_driver_init(dev, pm_action);
 }
 
 static DEVICE_API(sensor, temp_transducer_api) = {
@@ -110,9 +174,13 @@ static DEVICE_API(sensor, temp_transducer_api) = {
                                                                                                    \
 	static const struct temp_transducer_config temp_transducer_config_##inst = {               \
 		.spec = TEMP_TRANSDUCER_DT_SPEC_GET(DT_DRV_INST(inst)),                            \
+		.gpio_power = GPIO_DT_SPEC_INST_GET_OR(inst, power_gpios, {0}),                    \
+		.sample_delay_us = DT_INST_PROP(inst, power_on_sample_delay_us),                   \
 	};                                                                                         \
                                                                                                    \
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, temp_transducer_init, NULL,                             \
+	PM_DEVICE_DT_INST_DEFINE(inst, pm_action);                                                 \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, temp_transducer_init, PM_DEVICE_DT_INST_GET(inst),      \
 				     &temp_transducer_data_##inst,                                 \
 				     &temp_transducer_config_##inst, POST_KERNEL,                  \
 				     CONFIG_SENSOR_INIT_PRIORITY, &temp_transducer_api);
