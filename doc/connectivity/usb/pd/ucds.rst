@@ -118,6 +118,7 @@ Define the following devicetree, structures and callbacks:
 
 * Devicetree ``usb-c-connector`` node referencing a TCPC
 * Devicetree ``vbus`` node referencing a VBUS measurement device
+* Devicetree ``pwrctrl`` node for VBUS and VCONN power control
 * User defined structure that encapsulates application specific data
 * Policy callbacks
 
@@ -141,6 +142,14 @@ VBUS is measured by a device that's referenced in the devicetree by a
    :end-before: usbc.rst vbus-voltage-divider-adc end
    :linenos:
 
+Power control for VBUS and VCONN can be managed by a device referenced in the
+devicetree by a ``zephyr,usb-c-pwrctrl`` compatible node:
+
+.. literalinclude:: ../../../../samples/subsys/usb_c/source/boards/stm32g081b_eval.overlay
+   :language: dts
+   :start-after: usbc.rst pwrctrl start
+   :end-before: usbc.rst pwrctrl end
+   :linenos:
 
 A user defined structure is defined and later registered with the subsystem and can
 be accessed from callback through an API:
