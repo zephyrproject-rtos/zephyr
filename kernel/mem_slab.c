@@ -104,6 +104,7 @@ static struct k_obj_core_stats_desc mem_slab_stats_desc = {
 static int create_free_list(struct k_mem_slab *slab)
 {
 	char *p;
+	size_t total_size;
 
 	/* blocks must be word aligned */
 	CHECKIF(((slab->info.block_size | (uintptr_t)slab->buffer) &
@@ -111,8 +112,15 @@ static int create_free_list(struct k_mem_slab *slab)
 		return -EINVAL;
 	}
 
+	if (size_mul_overflow(slab->info.block_size, slab->info.num_blocks, &total_size)) {
+		return -EINVAL;
+	}
+	if (size_add_overflow((size_t)(uintptr_t)slab->buffer, total_size, &total_size)) {
+		return -EINVAL;
+	}
+
 	slab->free_list = NULL;
-	p = slab->buffer + slab->info.block_size * (slab->info.num_blocks - 1);
+	p = (char *)(total_size - slab->info.block_size);
 
 	for (int i = slab->info.num_blocks - 1; i >= 0; i--) {
 		*(char **)p = slab->free_list;
