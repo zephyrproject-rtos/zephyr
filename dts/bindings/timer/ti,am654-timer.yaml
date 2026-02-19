@@ -14,3 +14,12 @@ properties:
 
   interrupts:
     required: true
+
+  clksel:
+    type: phandle-array
+    description: |
+      Optional syscon configuration for timer clock source selection.
+      Format: <&syscon_phandle offset value>
+      - syscon_phandle: reference to syscon device
+      - offset: register offset within syscon for clock selection
+      - value: value to write for desired clock source
