@@ -63,6 +63,14 @@ properties:
       When enabled, a specific write sequence is applied to allow write on a bank
       while code is being executed from another bank.
 
+  erase-block-size:
+    type: int
+    description: address alignment required by flash erase operations
+
+  write-block-size:
+    type: int
+    description: address alignment required by flash write operations
+
 examples:
   - |
     mx25lm51245: xspi-nor-flash@0 {
