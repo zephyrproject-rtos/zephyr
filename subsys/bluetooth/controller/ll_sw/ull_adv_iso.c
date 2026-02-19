@@ -1369,8 +1369,7 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 	ticks_slot = adv_iso->ull.ticks_slot + ticks_slot_overhead;
 
 	/* Find the slot after Periodic Advertisings events */
-	ticks_anchor = ticker_ticks_now_get() +
-		       HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
+	ticks_anchor = ticker_ticks_now_get();
 	slot_max_us = adv_iso_time_get(adv_iso, true);
 	ticks_slot_max = HAL_TICKER_US_TO_TICKS_CEIL(slot_max_us) + ticks_slot_overhead;
 	err = ull_sched_adv_aux_sync_free_anchor_get(ticks_slot_max, &ticks_anchor);
