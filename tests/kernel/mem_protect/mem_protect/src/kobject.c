@@ -16,7 +16,7 @@ K_SEM_DEFINE(kobject_sem, SEMAPHORE_INIT_COUNT, SEMAPHORE_MAX_COUNT);
 K_SEM_DEFINE(kobject_public_sem, SEMAPHORE_INIT_COUNT, SEMAPHORE_MAX_COUNT);
 K_MUTEX_DEFINE(kobject_mutex);
 
-extern struct k_thread child_thread;
+static struct k_thread kobj_child_thread;
 struct k_thread extra_thread;
 
 struct k_sem *random_sem_type;
@@ -224,7 +224,7 @@ ZTEST(mem_protect_kobj, test_kobject_revoke_access)
 	k_thread_access_grant(k_current_get(),
 			      &kobject_sem);
 
-	k_thread_create(&child_thread,
+	k_thread_create(&kobj_child_thread,
 			child_stack,
 			KOBJECT_STACK_SIZE,
 			kobject_revoke_access_user_part,
@@ -232,16 +232,16 @@ ZTEST(mem_protect_kobj, test_kobject_revoke_access)
 			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
 
-	k_thread_join(&child_thread, K_FOREVER);
+	k_thread_join(&kobj_child_thread, K_FOREVER);
 	k_object_access_revoke(&kobject_sem, k_current_get());
 
-	k_thread_create(&child_thread,
+	k_thread_create(&kobj_child_thread,
 			child_stack,
 			KOBJECT_STACK_SIZE,
 			kobject_revoke_access_user_part,
 			(void *)2, NULL, NULL,
 			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
-	k_thread_join(&child_thread, K_FOREVER);
+	k_thread_join(&kobj_child_thread, K_FOREVER);
 }
 
 /****************************************************************************/
@@ -271,14 +271,14 @@ ZTEST(mem_protect_kobj, test_kobject_grant_access_kobj)
 	k_thread_access_grant(k_current_get(),
 			      &kobject_sem, &extra_thread);
 
-	k_thread_create(&child_thread,
+	k_thread_create(&kobj_child_thread,
 			child_stack,
 			KOBJECT_STACK_SIZE,
 			kobject_grant_access_child_entry,
 			NULL, NULL, NULL,
 			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
-	k_thread_join(&child_thread, K_FOREVER);
+	k_thread_join(&kobj_child_thread, K_FOREVER);
 
 	k_thread_create(&extra_thread,
 			extra_stack,
@@ -314,16 +314,16 @@ ZTEST(mem_protect_kobj, test_kobject_grant_access_kobj_invalid)
 {
 	set_fault_valid(false);
 
-	k_thread_access_grant(&child_thread, &kobject_sem);
+	k_thread_access_grant(&kobj_child_thread, &kobject_sem);
 
-	k_thread_create(&child_thread,
+	k_thread_create(&kobj_child_thread,
 			child_stack,
 			KOBJECT_STACK_SIZE,
 			grant_access_kobj_invalid_child,
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
 
-	k_thread_join(&child_thread, K_FOREVER);
+	k_thread_join(&kobj_child_thread, K_FOREVER);
 }
 
 /****************************************************************************/
@@ -351,14 +351,14 @@ ZTEST(mem_protect_kobj, test_kobject_release_from_user)
 	k_thread_access_grant(k_current_get(),
 			      &kobject_sem);
 
-	k_thread_create(&child_thread,
+	k_thread_create(&kobj_child_thread,
 			child_stack,
 			KOBJECT_STACK_SIZE,
 			release_from_user_child,
 			NULL, NULL, NULL,
 			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
-	k_thread_join(&child_thread, K_FOREVER);
+	k_thread_join(&kobj_child_thread, K_FOREVER);
 }
 
 /**
@@ -404,22 +404,22 @@ ZTEST(mem_protect_kobj, test_kobject_access_all_grant)
 	set_fault_valid(false);
 
 	k_object_access_all_grant(&kobject_public_sem);
-	k_thread_create(&child_thread,
+	k_thread_create(&kobj_child_thread,
 			child_stack,
 			KOBJECT_STACK_SIZE,
 			access_all_grant_child_give,
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
-	k_thread_join(&child_thread, K_FOREVER);
+	k_thread_join(&kobj_child_thread, K_FOREVER);
 
-	k_thread_create(&child_thread,
+	k_thread_create(&kobj_child_thread,
 			child_stack,
 			KOBJECT_STACK_SIZE,
 			access_all_grant_child_take,
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
 
-	k_thread_join(&child_thread, K_FOREVER);
+	k_thread_join(&kobj_child_thread, K_FOREVER);
 }
 
 /****************************************************************************/
@@ -455,23 +455,23 @@ ZTEST(mem_protect_kobj, test_thread_has_residual_permissions)
 	k_thread_access_grant(k_current_get(),
 			      &kobject_sem);
 
-	k_thread_create(&child_thread,
+	k_thread_create(&kobj_child_thread,
 			child_stack,
 			KOBJECT_STACK_SIZE,
 			residual_permissions_child_success,
 			NULL, NULL, NULL,
 			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
-	k_thread_join(&child_thread, K_FOREVER);
+	k_thread_join(&kobj_child_thread, K_FOREVER);
 
-	k_thread_create(&child_thread,
+	k_thread_create(&kobj_child_thread,
 			child_stack,
 			KOBJECT_STACK_SIZE,
 			residual_permissions_child_fail,
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
 
-	k_thread_join(&child_thread, K_FOREVER);
+	k_thread_join(&kobj_child_thread, K_FOREVER);
 }
 
 /****************************************************************************/
@@ -554,14 +554,14 @@ ZTEST(mem_protect_kobj, test_access_kobject_without_init_with_access)
 	k_thread_access_grant(k_current_get(),
 			      &kobject_sem_no_init_access);
 
-	k_thread_create(&child_thread,
+	k_thread_create(&kobj_child_thread,
 			child_stack,
 			KOBJECT_STACK_SIZE,
 			without_init_with_access_child,
 			NULL, NULL, NULL,
 			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
-	k_thread_join(&child_thread, K_FOREVER);
+	k_thread_join(&kobj_child_thread, K_FOREVER);
 }
 
 /****************************************************************************/
@@ -594,14 +594,14 @@ ZTEST(mem_protect_kobj, test_kobject_reinitialize_thread_kobj)
 {
 	set_fault_valid(false);
 
-	k_thread_create(&child_thread,
+	k_thread_create(&kobj_child_thread,
 			child_stack,
 			KOBJECT_STACK_SIZE,
 			reinitialize_thread_kobj_child,
 			NULL, NULL, NULL,
 			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
-	k_thread_join(&child_thread, K_FOREVER);
+	k_thread_join(&kobj_child_thread, K_FOREVER);
 }
 
 /****************************************************************************/
@@ -621,7 +621,7 @@ static void new_thread_from_user_child(void *p1, void *p2, void *p3)
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
 
-	k_thread_join(&child_thread, K_FOREVER);
+	k_thread_join(&kobj_child_thread, K_FOREVER);
 }
 
 /**
@@ -640,18 +640,18 @@ ZTEST(mem_protect_kobj, test_create_new_thread_from_user)
 {
 	set_fault_valid(false);
 
-	k_thread_access_grant(&child_thread,
+	k_thread_access_grant(&kobj_child_thread,
 			      &extra_thread,
 			      &extra_stack);
 
-	k_thread_create(&child_thread,
+	k_thread_create(&kobj_child_thread,
 			child_stack,
 			KOBJECT_STACK_SIZE,
 			new_thread_from_user_child,
 			NULL, NULL, NULL,
 			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
-	k_thread_join(&child_thread, K_FOREVER);
+	k_thread_join(&kobj_child_thread, K_FOREVER);
 }
 
 /* Additional functions for test below
@@ -673,7 +673,7 @@ static void new_user_thrd_child_with_in_use_stack(void *p1, void *p2, void *p3)
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
 
-	k_thread_join(&child_thread, K_FOREVER);
+	k_thread_join(&kobj_child_thread, K_FOREVER);
 }
 
 /**
@@ -690,19 +690,19 @@ ZTEST(mem_protect_kobj, test_new_user_thread_with_in_use_stack_obj)
 {
 	set_fault_valid(false);
 
-	k_thread_access_grant(&child_thread,
+	k_thread_access_grant(&kobj_child_thread,
 			      &extra_thread,
 			      &extra_stack,
 			      &child_stack);
 
-	k_thread_create(&child_thread,
+	k_thread_create(&kobj_child_thread,
 			child_stack,
 			KOBJECT_STACK_SIZE,
 			new_user_thrd_child_with_in_use_stack,
 			NULL, NULL, NULL,
 			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
-	k_thread_join(&child_thread, K_FOREVER);
+	k_thread_join(&kobj_child_thread, K_FOREVER);
 }
 
 static void from_user_no_access_stack_extra_entry(void *p1, void *p2, void *p3)
@@ -734,16 +734,16 @@ ZTEST(mem_protect_kobj, test_create_new_thread_from_user_no_access_stack)
 {
 	set_fault_valid(false);
 
-	k_thread_access_grant(&child_thread,
+	k_thread_access_grant(&kobj_child_thread,
 			      &extra_thread);
 
-	k_thread_create(&child_thread,
+	k_thread_create(&kobj_child_thread,
 			child_stack,
 			KOBJECT_STACK_SIZE,
 			from_user_no_access_stack_child_entry,
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
-	k_thread_join(&child_thread, K_FOREVER);
+	k_thread_join(&kobj_child_thread, K_FOREVER);
 }
 
 /****************************************************************************/
@@ -781,17 +781,17 @@ ZTEST(mem_protect_kobj, test_create_new_thread_from_user_invalid_stacksize)
 
 	set_fault_valid(false);
 
-	k_thread_access_grant(&child_thread,
+	k_thread_access_grant(&kobj_child_thread,
 			      &extra_thread,
 			      &child_stack);
 
-	k_thread_create(&child_thread,
+	k_thread_create(&kobj_child_thread,
 			child_stack,
 			KOBJECT_STACK_SIZE,
 			from_user_invalid_stacksize_child,
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
-	k_thread_join(&child_thread, K_FOREVER);
+	k_thread_join(&kobj_child_thread, K_FOREVER);
 }
 
 /****************************************************************************/
@@ -832,18 +832,18 @@ ZTEST(mem_protect_kobj, test_create_new_thread_from_user_huge_stacksize)
 
 	set_fault_valid(false);
 
-	k_thread_access_grant(&child_thread,
+	k_thread_access_grant(&kobj_child_thread,
 			      &extra_thread,
 			      &extra_stack);
 
-	k_thread_create(&child_thread,
+	k_thread_create(&kobj_child_thread,
 			child_stack,
 			KOBJECT_STACK_SIZE,
 			user_huge_stacksize_child,
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
 
-	k_thread_join(&child_thread, K_FOREVER);
+	k_thread_join(&kobj_child_thread, K_FOREVER);
 }
 
 /****************************************************************************/
@@ -880,18 +880,18 @@ ZTEST(mem_protect_kobj, test_create_new_supervisor_thread_from_user)
 {
 	set_fault_valid(false);
 
-	k_thread_access_grant(&child_thread,
+	k_thread_access_grant(&kobj_child_thread,
 			      &extra_thread,
 			      &extra_stack);
 
-	k_thread_create(&child_thread,
+	k_thread_create(&kobj_child_thread,
 			child_stack,
 			KOBJECT_STACK_SIZE,
 			supervisor_from_user_child,
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
 
-	k_thread_join(&child_thread, K_FOREVER);
+	k_thread_join(&kobj_child_thread, K_FOREVER);
 }
 
 /****************************************************************************/
@@ -924,17 +924,17 @@ ZTEST(mem_protect_kobj, test_create_new_essential_thread_from_user)
 {
 	set_fault_valid(false);
 
-	k_thread_access_grant(&child_thread,
+	k_thread_access_grant(&kobj_child_thread,
 			      &extra_thread,
 			      &extra_stack);
 
-	k_thread_create(&child_thread,
+	k_thread_create(&kobj_child_thread,
 			child_stack,
 			KOBJECT_STACK_SIZE,
 			essential_thread_from_user_child,
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
-	k_thread_join(&child_thread, K_FOREVER);
+	k_thread_join(&kobj_child_thread, K_FOREVER);
 }
 
 /****************************************************************************/
@@ -970,18 +970,18 @@ ZTEST(mem_protect_kobj, test_create_new_higher_prio_thread_from_user)
 {
 	set_fault_valid(false);
 
-	k_thread_access_grant(&child_thread,
+	k_thread_access_grant(&kobj_child_thread,
 			      &extra_thread,
 			      &extra_stack);
 
-	k_thread_create(&child_thread,
+	k_thread_create(&kobj_child_thread,
 			child_stack,
 			KOBJECT_STACK_SIZE,
 			higher_prio_from_user_child,
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
 
-	k_thread_join(&child_thread, K_FOREVER);
+	k_thread_join(&kobj_child_thread, K_FOREVER);
 }
 
 /****************************************************************************/
@@ -1017,25 +1017,25 @@ ZTEST(mem_protect_kobj, test_create_new_invalid_prio_thread_from_user)
 {
 	set_fault_valid(false);
 
-	k_thread_access_grant(&child_thread,
+	k_thread_access_grant(&kobj_child_thread,
 			      &extra_thread,
 			      &extra_stack);
 
-	k_thread_create(&child_thread,
+	k_thread_create(&kobj_child_thread,
 			child_stack,
 			KOBJECT_STACK_SIZE,
 			invalid_prio_from_user_child,
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
 
-	k_thread_join(&child_thread, K_FOREVER);
+	k_thread_join(&kobj_child_thread, K_FOREVER);
 }
 
 /* Function to init thread's stack objects */
 static void thread_stack_init_objects(void *p1, void *p2, void *p3)
 {
 	/* check that thread is initialized when running */
-	zassert_true(k_object_is_valid(&child_thread, K_OBJ_ANY));
+	zassert_true(k_object_is_valid(&kobj_child_thread, K_OBJ_ANY));
 
 	/* check that stack is initialized when running */
 	zassert_true(k_object_is_valid(child_stack, K_OBJ_ANY));
@@ -1056,20 +1056,20 @@ ZTEST(mem_protect_kobj, test_mark_thread_exit_uninitialized)
 	int ret;
 	struct k_object *ko;
 
-	k_thread_access_grant(&child_thread,
+	k_thread_access_grant(&kobj_child_thread,
 			      &child_stack);
 
-	k_thread_create(&child_thread,
+	k_thread_create(&kobj_child_thread,
 			child_stack,
 			KOBJECT_STACK_SIZE,
 			thread_stack_init_objects,
 			NULL, NULL, NULL,
 			0, K_INHERIT_PERMS, K_NO_WAIT);
 
-	k_thread_join(&child_thread, K_FOREVER);
+	k_thread_join(&kobj_child_thread, K_FOREVER);
 
 	/* check thread is uninitialized after its exit */
-	ko = k_object_find(&child_thread);
+	ko = k_object_find(&kobj_child_thread);
 	ret = k_object_validate(ko, K_OBJ_ANY, _OBJ_INIT_FALSE);
 	zassert_equal(ret, _OBJ_INIT_FALSE);
 
@@ -1110,7 +1110,7 @@ ZTEST(mem_protect_kobj, test_kobject_free_error)
 		perm = perm | K_USER;
 	}
 
-	k_tid_t tid = k_thread_create(&child_thread, child_stack,
+	k_tid_t tid = k_thread_create(&kobj_child_thread, child_stack,
 			K_THREAD_STACK_SIZEOF(child_stack),
 			tThread_object_free_error,
 			(void *)&tid, NULL, NULL,
@@ -1369,7 +1369,7 @@ ZTEST(mem_protect_kobj, test_kobject_perm_error)
 
 	for (int i = 0; i < NUM_KOBJS; i++) {
 
-		k_tid_t tid = k_thread_create(&child_thread, child_stack,
+		k_tid_t tid = k_thread_create(&kobj_child_thread, child_stack,
 			K_THREAD_STACK_SIZEOF(child_stack),
 			entry_error_perm,
 			kobj[i], NULL, NULL,
