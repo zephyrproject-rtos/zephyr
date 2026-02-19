@@ -102,6 +102,110 @@
 #define SX126X_CALIBRATE_IMAGE              BIT(6)
 #define SX126X_CALIBRATE_ALL                0x7F
 
+/* ============================================ */
+/* FSK/GFSK Modulation Parameters               */
+/* ============================================ */
+
+/* FSK Modulation Shaping (for SET_MODULATION_PARAMS) */
+#define SX126X_FSK_MOD_SHAPING_OFF          0x00
+#define SX126X_FSK_MOD_SHAPING_G_BT_03      0x08  /* Gaussian BT=0.3 */
+#define SX126X_FSK_MOD_SHAPING_G_BT_05      0x09  /* Gaussian BT=0.5 */
+#define SX126X_FSK_MOD_SHAPING_G_BT_07      0x0A  /* Gaussian BT=0.7 */
+#define SX126X_FSK_MOD_SHAPING_G_BT_1       0x0B  /* Gaussian BT=1.0 */
+
+/* FSK RX Bandwidth (for SET_MODULATION_PARAMS) */
+#define SX126X_FSK_BW_4800                  0x1F
+#define SX126X_FSK_BW_5800                  0x17
+#define SX126X_FSK_BW_7300                  0x0F
+#define SX126X_FSK_BW_9700                  0x1E
+#define SX126X_FSK_BW_11700                 0x16
+#define SX126X_FSK_BW_14600                 0x0E
+#define SX126X_FSK_BW_19500                 0x1D
+#define SX126X_FSK_BW_23400                 0x15
+#define SX126X_FSK_BW_29300                 0x0D
+#define SX126X_FSK_BW_39000                 0x1C
+#define SX126X_FSK_BW_46900                 0x14
+#define SX126X_FSK_BW_58600                 0x0C
+#define SX126X_FSK_BW_78200                 0x1B
+#define SX126X_FSK_BW_93800                 0x13
+#define SX126X_FSK_BW_117300                0x0B
+#define SX126X_FSK_BW_156200                0x1A
+#define SX126X_FSK_BW_187200                0x12
+#define SX126X_FSK_BW_234300                0x0A
+#define SX126X_FSK_BW_312000                0x19
+#define SX126X_FSK_BW_373600                0x11
+#define SX126X_FSK_BW_467000                0x09
+
+/* FSK Preamble Detector Length (for SET_PACKET_PARAMS) */
+#define SX126X_FSK_PREAMBLE_DETECT_OFF      0x00
+#define SX126X_FSK_PREAMBLE_DETECT_8_BITS   0x04
+#define SX126X_FSK_PREAMBLE_DETECT_16_BITS  0x05
+#define SX126X_FSK_PREAMBLE_DETECT_24_BITS  0x06
+#define SX126X_FSK_PREAMBLE_DETECT_32_BITS  0x07
+
+/* FSK Address Filtering (for SET_PACKET_PARAMS) */
+#define SX126X_FSK_ADDR_FILT_OFF            0x00
+#define SX126X_FSK_ADDR_FILT_NODE           0x01
+#define SX126X_FSK_ADDR_FILT_NODE_BROADCAST 0x02
+
+/* FSK Packet Length Mode (for SET_PACKET_PARAMS) */
+#define SX126X_FSK_PACKET_FIXED_LENGTH      0x00
+#define SX126X_FSK_PACKET_VARIABLE_LENGTH   0x01
+
+/* FSK CRC Types (for SET_PACKET_PARAMS) */
+#define SX126X_FSK_CRC_OFF                  0x01
+#define SX126X_FSK_CRC_1_BYTE               0x00
+#define SX126X_FSK_CRC_2_BYTE               0x02
+#define SX126X_FSK_CRC_1_BYTE_INV           0x04
+#define SX126X_FSK_CRC_2_BYTE_INV           0x06
+#define SX126X_FSK_CRC_2_BYTE_IBM           0x0A
+#define SX126X_FSK_CRC_2_BYTE_CCIT          0x0C
+
+/* FSK Whitening (DC-Free) Mode (for SET_PACKET_PARAMS) */
+#define SX126X_FSK_DC_FREE_OFF              0x00
+#define SX126X_FSK_DC_FREE_WHITENING        0x01
+
+/* FSK Sync Word Registers (up to 8 bytes) */
+#define SX126X_REG_FSK_SYNC_WORD_0          0x06C0
+#define SX126X_REG_FSK_SYNC_WORD_1          0x06C1
+#define SX126X_REG_FSK_SYNC_WORD_2          0x06C2
+#define SX126X_REG_FSK_SYNC_WORD_3          0x06C3
+#define SX126X_REG_FSK_SYNC_WORD_4          0x06C4
+#define SX126X_REG_FSK_SYNC_WORD_5          0x06C5
+#define SX126X_REG_FSK_SYNC_WORD_6          0x06C6
+#define SX126X_REG_FSK_SYNC_WORD_7          0x06C7
+
+/* FSK Node and Broadcast Address Registers */
+#define SX126X_REG_FSK_NODE_ADDRESS         0x06CD
+#define SX126X_REG_FSK_BROADCAST_ADDRESS    0x06CE
+
+/* FSK CRC Registers */
+#define SX126X_REG_FSK_CRC_INIT_MSB         0x06BC
+#define SX126X_REG_FSK_CRC_INIT_LSB         0x06BD
+#define SX126X_REG_FSK_CRC_POLY_MSB         0x06BE
+#define SX126X_REG_FSK_CRC_POLY_LSB         0x06BF
+
+/* FSK Whitening Seed Registers */
+#define SX126X_REG_FSK_WHITENING_MSB        0x06B8
+#define SX126X_REG_FSK_WHITENING_LSB        0x06B9
+
+/* Bitrate calculation: bitrate_reg = (32 * XTAL_FREQ) / bitrate */
+#define SX126X_FSK_BITRATE_TO_REG(br) \
+	((uint32_t)(((uint64_t)32 * SX126X_XTAL_FREQ) / (br)))
+
+/* Frequency deviation calculation: fdev_reg = (fdev * 2^25) / XTAL_FREQ */
+#define SX126X_FSK_FDEV_TO_REG(fdev) \
+	((uint32_t)(((uint64_t)(fdev) << 25) / SX126X_XTAL_FREQ))
+
+/* RX/TX Fallback Mode values */
+#define SX126X_RX_TX_FALLBACK_MODE_FS       0x40
+#define SX126X_RX_TX_FALLBACK_MODE_STDBY_XOSC 0x30
+#define SX126X_RX_TX_FALLBACK_MODE_STDBY_RC 0x20
+
+/* ============================================ */
+/* LoRa Modulation Parameters                   */
+/* ============================================ */
+
 /* LoRa Bandwidth values (for SET_MODULATION_PARAMS) */
 #define SX126X_LORA_BW_7_8                  0x00
 #define SX126X_LORA_BW_10_4                 0x08
