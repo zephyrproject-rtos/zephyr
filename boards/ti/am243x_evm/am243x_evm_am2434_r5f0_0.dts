@@ -5,6 +5,7 @@
 
 /dts-v1/;
 
+#include <zephyr/dt-bindings/timer/ti-dmtimer.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <ti/am64x_r5f0_0.dtsi>
 #include "am243x_evm_am2434_r5f0_0-pinctrl.dtsi"
@@ -67,6 +68,7 @@
 
 /* system timer */
 &main_timer8 {
+	clksel = <&main_mmr_cfg0 0x81d0 HFOSC0_CLKOUT>;
 	status = "okay";
 };
 

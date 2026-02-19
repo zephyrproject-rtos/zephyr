@@ -18,3 +18,12 @@ properties:
       Example:
         ti,unlock-offsets = <0x1008   /* Partition 1  */
                              0x5008>; /* Partition 2 */
+
+  "#clksel-cells":
+    type: int
+    const: 2
+    description: Number of items to expect in a clksel specifier
+
+clksel-cells:
+  - offset
+  - value
