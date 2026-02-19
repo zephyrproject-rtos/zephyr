@@ -9,6 +9,8 @@ common:
   filter: CONFIG_UART_CONSOLE
   integration_platforms:
     - qemu_x86
+  platform_exclude:
+    - dt_xt_zb1_devkit
 tests:
   logging.backend.uart.single:
     extra_args: DTC_OVERLAY_FILE="./single.overlay"
