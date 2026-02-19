@@ -595,6 +595,7 @@ int dns_unpack_query(struct dns_msg_t *dns_msg, struct net_buf *buf,
 	uint8_t *dns_query;
 	int ret;
 	int query_type, query_class;
+	int remaining;
 
 	dns_query = dns_msg->msg + dns_msg->query_offset;
 
@@ -602,6 +603,11 @@ int dns_unpack_query(struct dns_msg_t *dns_msg, struct net_buf *buf,
 			      buf, &end_of_label);
 	if (ret < 0) {
 		return ret;
+	}
+
+	remaining = dns_msg->msg_size - (end_of_label - dns_msg->msg);
+	if (remaining < DNS_QTYPE_LEN + DNS_QCLASS_LEN) {
+		return -EMSGSIZE;
 	}
 
 	query_type = dns_unpack_query_qtype(end_of_label);
