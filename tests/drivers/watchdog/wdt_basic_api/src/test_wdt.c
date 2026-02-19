@@ -128,6 +128,9 @@
 #define WDT_TEST_BAD_MAX_WINDOW 0
 #define WDT_TEST_FINAL_DISABLE  1
 #endif
+#if DT_HAS_COMPAT_STATUS_OKAY(bflb_wdt)
+#define WDT_TEST_MAX_WINDOW 1999U
+#endif
 
 #define WDT_TEST_STATE_IDLE        0
 #define WDT_TEST_STATE_CHECK_RESET 1

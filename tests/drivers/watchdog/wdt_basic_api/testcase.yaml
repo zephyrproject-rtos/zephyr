@@ -182,6 +182,11 @@ tests:
       - max32655fthr/max32655/m4
       - max32690evkit/max32690/m4
       - max78002evkit/max78002/m4
+  drivers.watchdog.bflb:
+    platform_allow:
+      - ai_m62_12f_kit
+      - ai_wb2_12f_kit
+      - dt_xt_zb1_devkit
   drivers.watchdog.pm_enabled:
     platform_allow:
       - siwx917_rb4338a
