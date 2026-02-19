@@ -238,9 +238,9 @@ void can_common_test_setup(can_mode_t initial_mode)
 	(void)can_stop(can_dev);
 
 	err = can_set_mode(can_dev, initial_mode);
-	zassert_equal(err, 0, "failed to set initial mode (err %d)", err);
+	zassert_ok(err, "failed to set initial mode (err %d)", err);
 	zassert_equal(initial_mode, can_get_mode(can_dev));
 
 	err = can_start(can_dev);
-	zassert_equal(err, 0, "failed to start CAN controller (err %d)", err);
+	zassert_ok(err, "failed to start CAN controller (err %d)", err);
 }
