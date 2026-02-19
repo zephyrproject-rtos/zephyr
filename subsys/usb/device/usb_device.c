@@ -60,6 +60,7 @@
 #include <errno.h>
 #include <stddef.h>
 #include <bos_desc.h>
+#include <kernel_arch_interface.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/init.h>
@@ -1393,7 +1394,9 @@ int usb_write(uint8_t ep, const uint8_t *data, uint32_t data_len, uint32_t *byte
 		ret = usb_dc_ep_write(ep, data, data_len, bytes_ret);
 		if (ret == -EAGAIN) {
 			LOG_WRN("Failed to write endpoint buffer 0x%02x", ep);
-			k_yield();
+			if (!arch_is_in_isr()) {
+				k_yield();
+			}
 		}
 
 	} while (ret == -EAGAIN && tries--);
