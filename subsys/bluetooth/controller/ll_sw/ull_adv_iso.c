@@ -1289,7 +1289,9 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 	uint32_t ticks_slot_overhead;
 	uint32_t ticks_slot_offset;
 	volatile uint32_t ret_cb;
+	uint32_t ticks_slot_max;
 	uint32_t ticks_anchor;
+	uint32_t slot_max_us;
 	uint32_t ticks_slot;
 	uint32_t slot_us;
 	uint32_t ret;
@@ -1312,9 +1314,11 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 	/* Find the slot after Periodic Advertisings events */
 	ticks_anchor = ticker_ticks_now_get() +
 		       HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
-	err = ull_sched_adv_aux_sync_free_anchor_get(ticks_slot, &ticks_anchor);
+	slot_max_us = adv_iso_time_get(adv_iso, true);
+	ticks_slot_max = HAL_TICKER_US_TO_TICKS_CEIL(slot_max_us) + ticks_slot_overhead;
+	err = ull_sched_adv_aux_sync_free_anchor_get(ticks_slot_max, &ticks_anchor);
 	if (!err) {
-		ticks_anchor += HAL_TICKER_US_TO_TICKS(
+		ticks_anchor += HAL_TICKER_US_TO_TICKS_CEIL(
 					MAX(EVENT_MAFS_US,
 					    EVENT_OVERHEAD_START_US) -
 					EVENT_OVERHEAD_START_US +
