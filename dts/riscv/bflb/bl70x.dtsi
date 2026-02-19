@@ -103,6 +103,7 @@
 			reg = <0>;
 			riscv,isa-base = "rv32i";
 			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei";
+			d-cache-line-size = <32>;
 			hardware-exec-breakpoint-count = <4>;
 			status = "okay";
 
