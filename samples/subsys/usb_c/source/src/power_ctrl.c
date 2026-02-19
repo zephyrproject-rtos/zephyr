@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 The Chromium OS Authors.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,12 +20,7 @@ LOG_MODULE_REGISTER(power_ctrl, LOG_LEVEL_DBG);
 #include "power_ctrl.h"
 
 #define PORT1_DCDC_DETECT_NODE	DT_PATH(dcdc_detect)
-
-#define PORT1_SOURCE_EN_NODE	DT_NODELABEL(source_en)
-#define PORT1_DCDC_EN_NODE	DT_NODELABEL(dcdc_en)
-#define PORT1_PWM_CTL_NODE	DT_NODELABEL(pwm_ctl)
-#define PORT1_VCONN1_EN_NODE	DT_NODELABEL(vconn1_en)
-#define PORT1_VCONN2_EN_NODE	DT_NODELABEL(vconn2_en)
+#define PWRCTRL_NODE		DT_NODELABEL(pwrctrl)
 
 /* DCDC Voltage is 19V and setting min threshold to 18V */
 #define MIN_DCDC_DETECT_MV 18000
@@ -34,13 +30,14 @@ LOG_MODULE_REGISTER(power_ctrl, LOG_LEVEL_DBG);
 #define PWM_FOR_5V	21500
 #define PWM_FOR_0V	0
 
-static const struct gpio_dt_spec source_en = GPIO_DT_SPEC_GET(PORT1_SOURCE_EN_NODE, gpios);
-static const struct gpio_dt_spec dcdc_en = GPIO_DT_SPEC_GET(PORT1_DCDC_EN_NODE, gpios);
+/* Required properties */
+static const struct gpio_dt_spec source_en = GPIO_DT_SPEC_GET(PWRCTRL_NODE, source_en_gpios);
+static const struct gpio_dt_spec vconn1_en = GPIO_DT_SPEC_GET(PWRCTRL_NODE, vconn1_en_gpios);
+static const struct gpio_dt_spec vconn2_en = GPIO_DT_SPEC_GET(PWRCTRL_NODE, vconn2_en_gpios);
 
-static const struct gpio_dt_spec vconn1_en = GPIO_DT_SPEC_GET(PORT1_VCONN1_EN_NODE, gpios);
-static const struct gpio_dt_spec vconn2_en = GPIO_DT_SPEC_GET(PORT1_VCONN2_EN_NODE, gpios);
-
-static const struct pwm_dt_spec pwm_ctl = PWM_DT_SPEC_GET(PORT1_PWM_CTL_NODE);
+/* Optional properties - use _GET_OR for graceful fallback */
+static const struct gpio_dt_spec dcdc_en = GPIO_DT_SPEC_GET_OR(PWRCTRL_NODE, dcdc_en_gpios, {0});
+static const struct pwm_dt_spec pwm_ctl = PWM_DT_SPEC_GET_OR(PWRCTRL_NODE, {0});
 
 int vconn_ctrl_set(enum vconn_t v)
 {
