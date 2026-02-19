@@ -47,7 +47,7 @@ static void zzz_entry(void *p1, void *p2, void *p3)
 static K_THREAD_DEFINE(zzz_thread, 256 + CONFIG_TEST_EXTRA_STACK_SIZE,
 		       zzz_entry, NULL, NULL, NULL, 0, 0, 0);
 
-void test_mem_domain_setup(void)
+void *test_mem_domain_setup(void)
 {
 	int max_parts = arch_mem_domain_max_partitions_get();
 	struct k_mem_partition *parts[] = {
@@ -84,6 +84,8 @@ void test_mem_domain_setup(void)
 	for (unsigned int j = 0; j < MEM_REGION_ALLOC; j++) {
 		ro_buf[j] = (j % 256U);
 	}
+
+	return NULL;
 }
 
 /* Helper function; run a function under a child user thread.
@@ -600,13 +602,5 @@ ZTEST(mem_protect_domain, test_mem_part_remove_error_zerosize)
 		0, "should fail to remove memory partition");
 }
 
-/* setup function */
-void *mem_domain_setup(void)
-{
-	test_mem_domain_setup();
-
-	return NULL;
-}
-
-ZTEST_SUITE(mem_protect_domain, NULL, mem_domain_setup, NULL,
+ZTEST_SUITE(mem_protect_domain, NULL, test_mem_domain_setup, NULL,
 		NULL, NULL);
