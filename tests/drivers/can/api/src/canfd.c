@@ -59,8 +59,7 @@ static void rx_std_callback_2(const struct device *dev, struct can_frame *frame,
 	k_sem_give(&rx_callback_sem);
 }
 
-static void rx_std_callback_fd_1(const struct device *dev, struct can_frame *frame,
-				 void *user_data)
+static void rx_std_callback_fd_1(const struct device *dev, struct can_frame *frame, void *user_data)
 {
 	struct can_filter *filter = user_data;
 
@@ -71,8 +70,7 @@ static void rx_std_callback_fd_1(const struct device *dev, struct can_frame *fra
 	k_sem_give(&rx_callback_sem);
 }
 
-static void rx_std_callback_fd_2(const struct device *dev, struct can_frame *frame,
-				 void *user_data)
+static void rx_std_callback_fd_2(const struct device *dev, struct can_frame *frame, void *user_data)
 {
 	struct can_filter *filter = user_data;
 
@@ -149,8 +147,7 @@ static inline int add_rx_msgq(const struct device *dev, const struct can_filter 
  *
  * @return CAN filter ID.
  */
-static inline int add_rx_filter(const struct device *dev,
-				const struct can_filter *filter,
+static inline int add_rx_filter(const struct device *dev, const struct can_filter *filter,
 				can_rx_callback_t callback)
 {
 	int filter_id;
@@ -172,10 +169,8 @@ static inline int add_rx_filter(const struct device *dev,
  * @param frame1  CAN frame 1
  * @param frame2  CAN frame 2
  */
-static void send_receive(const struct can_filter *filter1,
-			 const struct can_filter *filter2,
-			 const struct can_frame *frame1,
-			 const struct can_frame *frame2)
+static void send_receive(const struct can_filter *filter1, const struct can_filter *filter2,
+			 const struct can_frame *frame1, const struct can_frame *frame2)
 {
 	struct can_frame frame_buffer;
 	int filter_id_1;
@@ -280,8 +275,7 @@ ZTEST(canfd, test_send_fd_incorrect_esi)
  */
 ZTEST(canfd, test_send_receive_classic)
 {
-	send_receive(&test_std_filter_1, &test_std_filter_2,
-		     &test_std_frame_1, &test_std_frame_2);
+	send_receive(&test_std_filter_1, &test_std_filter_2, &test_std_frame_1, &test_std_frame_2);
 }
 
 /**
@@ -289,8 +283,8 @@ ZTEST(canfd, test_send_receive_classic)
  */
 ZTEST(canfd, test_send_receive_fd)
 {
-	send_receive(&test_std_filter_1, &test_std_filter_2,
-		     &test_std_fdf_frame_1, &test_std_fdf_frame_2);
+	send_receive(&test_std_filter_1, &test_std_filter_2, &test_std_fdf_frame_1,
+		     &test_std_fdf_frame_2);
 }
 
 /**
@@ -298,8 +292,8 @@ ZTEST(canfd, test_send_receive_fd)
  */
 ZTEST(canfd, test_send_receive_mixed)
 {
-	send_receive(&test_std_filter_1, &test_std_filter_2,
-		     &test_std_fdf_frame_1, &test_std_frame_2);
+	send_receive(&test_std_filter_1, &test_std_filter_2, &test_std_fdf_frame_1,
+		     &test_std_frame_2);
 }
 
 /**
@@ -524,7 +518,7 @@ ZTEST_USER(canfd, test_set_bitrate_data_while_started)
  */
 ZTEST_USER(canfd, test_set_timing_data_while_started)
 {
-	struct can_timing timing = { 0 };
+	struct can_timing timing = {0};
 	int err;
 
 	err = can_calc_timing_data(can_dev, &timing, TEST_BITRATE_3, TEST_SAMPLE_POINT_2);
