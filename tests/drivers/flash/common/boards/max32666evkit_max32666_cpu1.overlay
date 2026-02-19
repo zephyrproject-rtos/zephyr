@@ -10,7 +10,7 @@
 	};
 };
 
-&flash0 {
+&flash1 {
 	partitions {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -18,14 +18,14 @@
 
 		code_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			reg = <0x0 DT_SIZE_K(256)>;
+			reg = <0x0 DT_SIZE_K(128)>;
 			read-only;
 		};
 
-		storage_partition: partition@40000 {
+		storage_partition: partition@20000 {
 			compatible = "zephyr,mapped-partition";
 			label = "storage";
-			reg = <0x40000 DT_SIZE_K(256)>;
+			reg = <0x20000 DT_SIZE_K(128)>;
 		};
 	};
 };
