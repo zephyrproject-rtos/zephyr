@@ -266,6 +266,18 @@ def load_driver_sources():
 
     dt_drv_compat_pattern = re.compile(r"#define DT_DRV_COMPAT\s+(.*)")
     device_dt_inst_define_pattern = re.compile(r"DEVICE_DT_INST_DEFINE")
+    device_dt_define_pattern = re.compile(r"DEVICE_DT_DEFINE\s*\(")
+
+    # Patterns for drivers using DT_FOREACH_STATUS_OKAY, DT_HAS_COMPAT_*, etc.
+    # instead of DT_DRV_COMPAT + DEVICE_DT_INST_DEFINE
+    dt_foreach_status_okay_pattern = re.compile(
+        r"DT_FOREACH_STATUS_OKAY\s*\(\s*(\w+)\s*,")
+    dt_foreach_status_okay_vargs_pattern = re.compile(
+        r"DT_FOREACH_STATUS_OKAY_VARGS\s*\(\s*(\w+)\s*,")
+    dt_has_compat_status_okay_pattern = re.compile(
+        r"DT_HAS_COMPAT_STATUS_OKAY\s*\(\s*(\w+)\s*\)")
+    dt_has_compat_on_bus_pattern = re.compile(
+        r"DT_HAS_COMPAT_ON_BUS_STATUS_OKAY\s*\(\s*(\w+)\s*,")
 
     folders_to_scan = ["boards", "drivers", "modules", "soc", "subsys"]
 
@@ -274,6 +286,8 @@ def load_driver_sources():
     #   compatible.
     # - or, a file contains both a "#define DT_DRV_COMPAT <compatible>" and a
     #   DEVICE_DT_INST_DEFINE(...) call.
+    # - or, a file uses DT_FOREACH_STATUS_OKAY/DT_HAS_COMPAT_* with DEVICE_DT_DEFINE (e.g.
+    #   display_st730x.c, display_sh1122.c).
 
     for folder in folders_to_scan:
         for dirpath, _, filenames in os.walk(ZEPHYR_BASE / folder):
@@ -289,13 +303,37 @@ def load_driver_sources():
                 # Find all DT_DRV_COMPAT occurrences in the file
                 dt_drv_compat_matches = dt_drv_compat_pattern.findall(content)
                 for compatible in dt_drv_compat_matches:
+                    compatible = compatible.strip()
                     dt_drv_compat_occurrences[compatible].append(relative_path)
 
                 if dt_drv_compat_matches and device_dt_inst_define_pattern.search(content):
                     for compatible in dt_drv_compat_matches:
+                        compatible = compatible.strip()
                         if compatible in driver_sources:
                             # Mark as ambiguous if multiple files define the same compatible
                             driver_sources[compatible] = None
+                        else:
+                            driver_sources[compatible] = relative_path
+
+                # Find compatibles from DT_FOREACH_STATUS_OKAY, DT_HAS_COMPAT_*, etc.
+                # These drivers use DEVICE_DT_DEFINE instead of DEVICE_DT_INST_DEFINE
+                if device_dt_define_pattern.search(content):
+                    alt_compatibles = set()
+                    for pattern in (dt_foreach_status_okay_pattern,
+                                    dt_foreach_status_okay_vargs_pattern,
+                                    dt_has_compat_status_okay_pattern,
+                                    dt_has_compat_on_bus_pattern):
+                        for match in pattern.finditer(content):
+                            # Skip DT_DRV_COMPAT - it's a macro expansion, not a literal compatible
+                            compat = match.group(1)
+                            if compat != 'DT_DRV_COMPAT' and 'DT_DRV_COMPAT' not in compat:
+                                alt_compatibles.add(compat)
+
+                    for compatible in alt_compatibles:
+                        dt_drv_compat_occurrences[compatible].append(relative_path)
+                        if compatible in driver_sources:
+                            if driver_sources[compatible] != relative_path:
+                                driver_sources[compatible] = None
                         else:
                             driver_sources[compatible] = relative_path
 
