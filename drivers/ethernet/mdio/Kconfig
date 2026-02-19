@@ -48,7 +48,7 @@ rsource "Kconfig.xmc4xxx"
 
 config MDIO_INIT_PRIORITY
 	int "Init priority"
-	default 60
+	default ETH_INIT_PRIORITY
 	help
 	  MDIO device driver initialization priority.
 
