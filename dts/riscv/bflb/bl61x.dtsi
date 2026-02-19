@@ -259,6 +259,15 @@
 			interrupt-parent = <&clic>;
 		};
 
+		wdt0: watchdog@2000a500 {
+			compatible = "bflb,wdt";
+			reg = <0x2000a500 0x100>;
+			status = "disabled";
+
+			interrupts = <54 1>;
+			interrupt-parent = <&clic>;
+		};
+
 		flashctrl: flash-controller@2000b000 {
 			compatible = "bflb,flash-controller";
 			reg = <0x2000b000 0x1000>;
