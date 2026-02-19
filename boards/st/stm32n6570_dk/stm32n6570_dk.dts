@@ -13,14 +13,17 @@
 
 	chosen {
 		zephyr,sram = &axisram1;
-		zephyr,flash-controller = &mx66uw1g45g_1;
-		zephyr,flash = &ext_flash_xspi1;
+		zephyr,flash-controller = &mx66uw1g45g_xspi1;
+		zephyr,flash = &mx66uw1g45g_xspi1;
 	};
 };
 
-&mx66uw1g45g_1{
-	status = "okay";
+&mx66uw1g45g_xspi1{
+	#include "partitions.dtsi"
+
 	ncs-line = <1>;
+
+	status = "okay";
 };
 
 &xspi2 {
@@ -31,9 +34,4 @@
 
 &xspi1 {
 	status = "okay";
-};
-
-&ext_flash_xspi1{
-	status = "okay";
-	#include "partitions.dtsi"
 };

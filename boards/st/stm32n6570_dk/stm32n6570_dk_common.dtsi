@@ -21,9 +21,9 @@
 		zephyr,canbus = &fdcan1;
 		zephyr,display = &ltdc;
 		zephyr,touch = &gt911;
-		spi-flash0 = &mx66uw1g45g;
-		zephyr,flash-controller = &mx66uw1g45g;
-		zephyr,flash = &ext_flash;
+		spi-flash0 = &mx66uw1g45g_xspi2;
+		zephyr,flash-controller = &mx66uw1g45g_xspi2;
+		zephyr,flash = &mx66uw1g45g_xspi2;
 		zephyr,code-partition = &slot0_partition;
 	};
 
@@ -388,7 +388,7 @@ zephyr_udc0: &usbotg_hs1 {
 
 	max-tran = <22>;
 
-	mx66uw1g45g_1: ospi-nor-flash@0 {
+	mx66uw1g45g_xspi1: ospi-nor-flash@0 {
 		compatible = "st,stm32-xspi-nor";
 		reg = <0>;
 		size = <DT_SIZE_M(1024)>; /* 1Gbits */
@@ -402,16 +402,10 @@ zephyr_udc0: &usbotg_hs1 {
 		#size-cells = <1>;
 		ranges = <0x0 0x90000000 DT_SIZE_M(128)>;
 
+		write-block-size = <4>;
+		erase-block-size = <DT_SIZE_K(4)>;
+
 		status = "disabled";
-
-		ext_flash_xspi1: ext-flash@0 {
-			compatible = "soc-nv-flash";
-			reg = <0x0 DT_SIZE_M(128)>;
-			write-block-size = <1>;
-			erase-block-size = <DT_SIZE_K(4)>;
-
-			status = "disabled";
-		};
 	};
 };
 
@@ -424,7 +418,7 @@ zephyr_udc0: &usbotg_hs1 {
 
 	max-tran = <22>;
 
-	mx66uw1g45g: ospi-nor-flash@0 {
+	mx66uw1g45g_xspi2: ospi-nor-flash@0 {
 		compatible = "st,stm32-xspi-nor";
 		reg = <0>;
 		size = <DT_SIZE_M(1024)>; /* 1Gbits */
@@ -437,16 +431,10 @@ zephyr_udc0: &usbotg_hs1 {
 		#size-cells = <1>;
 		ranges = <0x0 0x70000000 DT_SIZE_M(128)>;
 
+		write-block-size = <4>;
+		erase-block-size = <DT_SIZE_K(4)>;
+
 		status = "disabled";
-
-		ext_flash_xspi2: ext-flash@0 {
-			compatible = "soc-nv-flash";
-			reg = <0x0 DT_SIZE_M(128)>;
-			write-block-size = <1>;
-			erase-block-size = <DT_SIZE_K(4)>;
-
-			status = "disabled";
-		};
 	};
 };
 
