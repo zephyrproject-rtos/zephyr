@@ -20,7 +20,7 @@ Release Notes
    release-notes-1.*
    release-notes-2.[0-6]
    release-notes-3.[0-6]
-   release-notes-4.[0-0]
+   release-notes-4.[0-1]
 
 .. _eol_releases_migration_guides:
 
@@ -33,4 +33,4 @@ Migration Guides
    :reversed:
 
    migration-guide-3.[5-6]
-   migration-guide-4.[0-0]
+   migration-guide-4.[0-1]
