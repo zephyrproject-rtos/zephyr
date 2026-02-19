@@ -324,7 +324,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	} else if (bt_conn_get_info(conn, &info)) {
 		LOG_WRN("Could not parse connection info");
 	} else {
-		bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+		(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 		error = otPlatBleGattMtuGet(ble_openthread_instance, &mtu);
 		if (error != OT_ERROR_NONE) {
@@ -368,7 +368,7 @@ static void le_param_updated(struct bt_conn *conn, uint16_t interval, uint16_t l
 	if (bt_conn_get_info(conn, &info)) {
 		LOG_INF("Could not parse connection info");
 	} else {
-		bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+		(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 		error = otPlatBleGattMtuGet(ble_openthread_instance, &mtu);
 
