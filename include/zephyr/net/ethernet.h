@@ -599,6 +599,12 @@ struct ethernet_api {
 	int (*send)(const struct device *dev, struct net_pkt *pkt);
 };
 
+/** Ethernet device driver API */
+__subsystem struct ethernet_driver_api {
+	/** Ethernet L2 API operations */
+	struct ethernet_api l2;
+};
+
 /** @cond INTERNAL_HIDDEN */
 
 /* Make sure that the network interface API is properly setup inside
