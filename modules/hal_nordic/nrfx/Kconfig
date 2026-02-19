@@ -167,7 +167,7 @@ config NRFX_GPPI
 config NRFX_GPPI_V1
 	bool "GPPI layer legacy"
 	depends on NRFX_GPPI
-	default y if SOC_SERIES_NRF54H
+	default y if SOC_SERIES_NRF54H && !SOC_NRF54H20_CPURAD
 	help
 	  When enabled then legacy version of Generic PPI layer is used.
 
