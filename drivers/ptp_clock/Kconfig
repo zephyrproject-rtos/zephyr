@@ -15,6 +15,7 @@ source "drivers/ptp_clock/Kconfig.nxp_netc"
 
 config PTP_CLOCK_INIT_PRIORITY
 	int "Init priority"
+	default ETH_INIT_PRIORITY if ETH_DRIVER
 	default 75
 	help
 	  PTP Clock device driver initialization priority
