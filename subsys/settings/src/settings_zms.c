@@ -682,7 +682,11 @@ static int settings_zms_backend_init(struct settings_zms *cf)
 		return -ENODEV;
 	}
 
+#ifdef CONFIG_SETTINGS_ZMS_FORCE_MOUNT
+	rc = zms_mount_force(&cf->cf_zms);
+#else
 	rc = zms_mount(&cf->cf_zms);
+#endif
 	if (rc) {
 		return rc;
 	}

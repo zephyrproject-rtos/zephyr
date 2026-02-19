@@ -92,6 +92,12 @@ config SETTINGS_ZMS_LL_CACHE_SIZE
 	help
 	  Number of entries in Settings ZMS linked list cache.
 
+config SETTINGS_ZMS_FORCE_MOUNT
+	bool "ZMS force mount"
+	help
+	  Enable forcing of ZMS storage mount, wiping partition if necessary to recover from
+	  corrupted data.
+
 endif # SETTINGS_ZMS
 
 config SETTINGS_FCB
