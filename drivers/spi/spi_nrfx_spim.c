@@ -430,7 +430,10 @@ static int transceive(const struct device *dev,
 		}
 	}
 
-	spi_context_release(&dev_data->ctx, error);
+	if (error || !(dev_data->ctx.config->operation & SPI_LOCK_ON)) {
+		spi_context_release(&dev_data->ctx, error);
+	}
+
 	if (error || !asynchronous) {
 		pm_device_runtime_put(dev);
 	}
