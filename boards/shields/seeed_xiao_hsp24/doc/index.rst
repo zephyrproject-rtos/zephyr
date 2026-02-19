@@ -31,10 +31,10 @@ Programming
 
 Set ``--shield seeed_xiao_hsp24`` when invoking ``west build``.
 
-For example, using the :zephyr:code-sample:`sensor_shell` sample:
+For example, using the :zephyr:code-sample:`s3km1110` sample:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/sensor/sensor_shell
+   :zephyr-app: samples/sensor/s3km1110
    :board: xiao_esp32c6/esp32c6/hpcore
    :shield: seeed_xiao_hsp24
    :goals: build
