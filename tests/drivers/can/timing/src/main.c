@@ -76,7 +76,7 @@ static void assert_bitrate_correct(const struct device *dev, struct can_timing *
 	zassert_not_equal(timing->prescaler, 0, "prescaler is zero");
 
 	err = can_get_core_clock(dev, &core_clock);
-	zassert_equal(err, 0, "failed to get core CAN clock");
+	zassert_ok(err, "failed to get core CAN clock");
 
 	bitrate_calc = core_clock / timing->prescaler / ts;
 	zassert_equal(bitrate, bitrate_calc, "bitrate mismatch");
@@ -222,7 +222,7 @@ static bool test_timing_values(const struct device *dev, const struct can_timing
 		} else {
 			err = can_set_timing(dev, &timing);
 		}
-		zassert_equal(err, 0, "failed to set timing (err %d)", err);
+		zassert_ok(err, "failed to set timing (err %d)", err);
 
 		printk("OK, sample point error %d.%d%%\n", sp_err / 10, sp_err % 10);
 	}
@@ -260,7 +260,7 @@ ZTEST_USER(can_timing, test_timing_data)
 	int i;
 
 	err = can_get_capabilities(dev, &cap);
-	zassert_equal(err, 0, "failed to get CAN controller capabilities (err %d)", err);
+	zassert_ok(err, "failed to get CAN controller capabilities (err %d)", err);
 
 	if ((cap & CAN_MODE_FD) == 0) {
 		ztest_test_skip();
@@ -285,7 +285,7 @@ void *can_timing_setup(void)
 	k_object_access_grant(dev, k_current_get());
 
 	err = can_get_core_clock(dev, &core_clock);
-	zassert_equal(err, 0, "failed to get core CAN clock");
+	zassert_ok(err, "failed to get core CAN clock");
 
 	printk("testing on device %s @ %u Hz, sample point margin +/-%u permille\n", dev->name,
 		core_clock, CONFIG_CAN_SAMPLE_POINT_MARGIN);
@@ -294,7 +294,7 @@ void *can_timing_setup(void)
 		can_mode_t cap;
 
 		err = can_get_capabilities(dev, &cap);
-		zassert_equal(err, 0, "failed to get CAN controller capabilities (err %d)", err);
+		zassert_ok(err, "failed to get CAN controller capabilities (err %d)", err);
 
 		if ((cap & CAN_MODE_FD) != 0) {
 			switch (core_clock) {
