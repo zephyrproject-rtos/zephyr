@@ -32,7 +32,12 @@ struct power_bflb_config_s {
 
 static void power_bflb_isr(const struct device *dev)
 {
-	LOG_ERR("Unexpected Power Management Interrupt");
+	const struct power_bflb_config_s *config = dev->config;
+	uint32_t tmp;
+
+	tmp = sys_read32(config->base_hbn + HBN_IRQ_STAT_OFFSET);
+	LOG_ERR("Unexpected Power Management Interrupt: %x", tmp);
+	sys_write32(tmp, config->base_hbn + HBN_IRQ_CLR_OFFSET);
 }
 
 static void power_bflb_setup_irqs(void)
@@ -122,8 +127,30 @@ static void power_bflb_setup_bor(const struct device *dev)
 #error Unknown Platform
 #endif
 
+static void power_bflb_reset_irq_srcs(const struct device *dev)
+{
+	const struct power_bflb_config_s *config = dev->config;
+	uint32_t tmp;
+
+	tmp = sys_read32(config->base_hbn + HBN_IRQ_MODE_OFFSET);
+	/* Mask GPIO wake IRQs */
+	tmp |= HBN_PIN_WAKEUP_MASK_MSK;
+	/* Disable ACOMP wake IRQs */
+	tmp &= HBN_IRQ_ACOMP0_EN_UMSK;
+	tmp &= HBN_IRQ_ACOMP1_EN_UMSK;
+	/* Disable BOR IRQ */
+	tmp &= HBN_IRQ_BOR_EN_UMSK;
+	sys_write32(tmp, config->base_hbn + HBN_IRQ_MODE_OFFSET);
+
+	tmp = sys_read32(config->base_hbn + HBN_PIR_CFG_OFFSET);
+	/* Disable PIR IRQ */
+	tmp &= HBN_PIR_EN_UMSK;
+	sys_write32(tmp, config->base_hbn + HBN_PIR_CFG_OFFSET);
+}
+
 static int power_bflb_init(const struct device *dev)
 {
+	power_bflb_reset_irq_srcs(dev);
 	power_bflb_setup_irqs();
 	power_bflb_setup_bor(dev);
 
@@ -131,10 +158,10 @@ static int power_bflb_init(const struct device *dev)
 }
 
 const struct power_bflb_config_s power_bflb_config = {
-		.base_hbn = DT_INST_REG_ADDR_BY_NAME(0, hbn),
-		.base_aon = DT_INST_REG_ADDR_BY_NAME(0, aon),
-		.brown_out_reset = !DT_INST_PROP(0, brown_out_reset_disable),
-		.bo_threshold = DT_INST_ENUM_IDX(0, brown_out_threshold_microvolt),
+	.base_hbn = DT_INST_REG_ADDR_BY_NAME(0, hbn),
+	.base_aon = DT_INST_REG_ADDR_BY_NAME(0, aon),
+	.brown_out_reset = !DT_INST_PROP(0, brown_out_reset_disable),
+	.bo_threshold = DT_INST_ENUM_IDX(0, brown_out_threshold_microvolt),
 };
 
 DEVICE_DT_INST_DEFINE(0, power_bflb_init, NULL, NULL, &power_bflb_config, PRE_KERNEL_1,
