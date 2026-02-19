@@ -56,7 +56,7 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 	char addr[BT_ADDR_LE_STR_LEN];
 	uint8_t conn_index;
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (err != 0) {
 		bt_shell_error("Failed to connect to %s (%u)", addr, err);
@@ -216,7 +216,7 @@ static bool csip_found(struct bt_data *data, void *user_data)
 		bt_addr_le_t *addr = user_data;
 		char addr_str[BT_ADDR_LE_STR_LEN];
 
-		bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
+		(void)bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 		bt_shell_print("Found CSIP advertiser with address %s", addr_str);
 
 		if (is_discovered(addr)) {
@@ -300,7 +300,7 @@ static int cmd_csip_set_coordinator_discover(const struct shell *sh,
 
 	conn = conns[member_index];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	shell_print(sh, "Discovering for member[%u] (%s)",
 		    (uint8_t)member_index, addr);

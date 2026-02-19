@@ -2437,7 +2437,7 @@ static void broadcast_scan_recv(const struct bt_le_scan_recv_info *info, struct 
 		return;
 	}
 
-	bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
+	(void)bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
 
 	bt_shell_print("Found broadcaster with ID 0x%06X (%s) and addr %s and sid 0x%02X (scanning "
 		       "for 0x%06X (%s))",

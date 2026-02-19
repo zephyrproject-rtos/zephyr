@@ -45,7 +45,7 @@ int cmd_ll_addr_read(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	(void)ll_addr_read(addr_type, addr.val);
-	bt_addr_to_str(&addr, str_addr, sizeof(str_addr));
+	(void)bt_addr_to_str(&addr, str_addr, sizeof(str_addr));
 
 	shell_print(sh, "Current %s address: %s", str_type, str_addr);
 

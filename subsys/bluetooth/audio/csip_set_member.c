@@ -814,7 +814,7 @@ static void add_bonded_addr_to_client_list(const struct bt_bond_info *info, void
 				atomic_set_bit(svc_inst->clients[j].flags, FLAG_ACTIVE);
 				memcpy(&svc_inst->clients[j].addr, &info->addr,
 				       sizeof(bt_addr_le_t));
-				bt_addr_le_to_str(&svc_inst->clients[j].addr, addr_str,
+				(void)bt_addr_le_to_str(&svc_inst->clients[j].addr, addr_str,
 						  sizeof(addr_str));
 				LOG_DBG("Added %s to bonded list\n", addr_str);
 				return;

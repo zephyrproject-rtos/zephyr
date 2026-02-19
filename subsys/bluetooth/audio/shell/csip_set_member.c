@@ -282,7 +282,7 @@ static int cmd_csip_set_member_get_info(const struct shell *sh, size_t argc, cha
 	if (info.locked) {
 		char addr_str[BT_ADDR_LE_STR_LEN];
 
-		bt_addr_le_to_str(&info.lock_client_addr, addr_str, sizeof(addr_str));
+		(void)bt_addr_le_to_str(&info.lock_client_addr, addr_str, sizeof(addr_str));
 		shell_print(sh, "\tLock owner: %s", addr_str);
 	}
 

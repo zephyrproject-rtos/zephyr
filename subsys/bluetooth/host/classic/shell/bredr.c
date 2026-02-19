@@ -145,7 +145,7 @@ static void br_device_found(const bt_addr_t *addr, int8_t rssi, const uint8_t co
 		eir += eir[0] + 1;
 	}
 
-	bt_addr_to_str(addr, br_addr, sizeof(br_addr));
+	(void)bt_addr_to_str(addr, br_addr, sizeof(br_addr));
 
 	bt_shell_print("[DEVICE]: %s, RSSI %i %s", br_addr, rssi, name);
 }
@@ -984,7 +984,7 @@ static int cmd_oob(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	bt_addr_to_str(&oob.addr, addr, sizeof(addr));
+	(void)bt_addr_to_str(&oob.addr, addr, sizeof(addr));
 
 	shell_print(sh, "BR/EDR OOB data:");
 	shell_print(sh, "  addr %s", addr);
@@ -1615,7 +1615,7 @@ static void bond_info(const struct bt_br_bond_info *info, void *user_data)
 	char addr[BT_ADDR_STR_LEN];
 	int *bond_count = user_data;
 
-	bt_addr_to_str(&info->addr, addr, sizeof(addr));
+	(void)bt_addr_to_str(&info->addr, addr, sizeof(addr));
 	bt_shell_print("Remote Identity: %s", addr);
 	(*bond_count)++;
 }
@@ -1688,7 +1688,7 @@ static int cmd_select(const struct shell *sh, size_t argc, char *argv[])
 
 	default_conn = conn;
 
-	bt_addr_to_str(&addr, addr_str, sizeof(addr_str));
+	(void)bt_addr_to_str(&addr, addr_str, sizeof(addr_str));
 	shell_print(sh, "Selected conn is now: %s", addr_str);
 
 	return 0;
@@ -1752,7 +1752,7 @@ static int cmd_info(const struct shell *sh, size_t argc, char *argv[])
 	if (info.type == BT_CONN_TYPE_BR) {
 		char addr_str[BT_ADDR_STR_LEN];
 
-		bt_addr_to_str(info.br.dst, addr_str, sizeof(addr_str));
+		(void)bt_addr_to_str(info.br.dst, addr_str, sizeof(addr_str));
 		shell_print(sh, "Peer address %s", addr_str);
 	}
 

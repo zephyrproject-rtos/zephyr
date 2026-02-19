@@ -139,7 +139,7 @@ static void print_le_addr(const char *desc, const bt_addr_le_t *addr)
 				bt_addr_le_is_rpa(addr) ? "resolvable" :
 				"non-resolvable";
 
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
+	(void)bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 
 	bt_shell_print("%s address: %s (%s)", desc, addr_str, addr_desc);
 }
@@ -527,7 +527,7 @@ bool passes_scan_filter(const struct bt_le_scan_recv_info *info, const struct ne
 	if (scan_filter.addr_set) {
 		char le_addr[BT_ADDR_LE_STR_LEN] = {0};
 
-		bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+		(void)bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 
 		if (!is_substring(scan_filter.addr, le_addr)) {
 			return false;
@@ -568,7 +568,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info, struct net_buf_si
 	(void)memset(name, 0, sizeof(name));
 
 	bt_data_parse(buf, data_cb, name);
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	(void)bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 
 	bt_shell_print("%s%s, AD evt type %u, RSSI %i %s "
 		       "C:%u S:%u D:%d SR:%u E:%u Prim: %s, Secn: %s, "
@@ -642,7 +642,7 @@ static void adv_scanned(struct bt_le_ext_adv *adv,
 {
 	char str[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(info->addr, str, sizeof(str));
+	(void)bt_addr_le_to_str(info->addr, str, sizeof(str));
 
 	bt_shell_print("Advertiser[%d] %p scanned by %s", bt_le_ext_adv_get_index(adv), adv, str);
 }
@@ -654,7 +654,7 @@ static void adv_connected(struct bt_le_ext_adv *adv,
 {
 	char str[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(info->conn), str, sizeof(str));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(info->conn), str, sizeof(str));
 
 	bt_shell_print("Advertiser[%d] %p connected by %s", bt_le_ext_adv_get_index(adv), adv, str);
 }
@@ -710,7 +710,7 @@ static const char *current_prompt(void)
 		return NULL;
 	}
 
-	bt_addr_le_to_str(info.le.dst, str, sizeof(str) - 2);
+	(void)bt_addr_le_to_str(info.le.dst, str, sizeof(str) - 2);
 	strcat(str, "> ");
 	return str;
 }
@@ -728,11 +728,11 @@ void conn_addr_str(struct bt_conn *conn, char *addr, size_t len)
 	switch (info.type) {
 #if defined(CONFIG_BT_CLASSIC)
 	case BT_CONN_TYPE_BR:
-		bt_addr_to_str(info.br.dst, addr, len);
+		(void)bt_addr_to_str(info.br.dst, addr, len);
 		break;
 #endif
 	case BT_CONN_TYPE_LE:
-		bt_addr_le_to_str(info.le.dst, addr, len);
+		(void)bt_addr_le_to_str(info.le.dst, addr, len);
 		break;
 	default:
 		break;
@@ -745,7 +745,7 @@ static void print_le_oob(const struct shell *sh, struct bt_le_oob *oob)
 	char c[KEY_STR_LEN];
 	char r[KEY_STR_LEN];
 
-	bt_addr_le_to_str(&oob->addr, addr, sizeof(addr));
+	(void)bt_addr_le_to_str(&oob->addr, addr, sizeof(addr));
 
 	bin2hex(oob->le_sc_data.c, sizeof(oob->le_sc_data.c), c, sizeof(c));
 	bin2hex(oob->le_sc_data.r, sizeof(oob->le_sc_data.r), r, sizeof(r));
@@ -871,8 +871,8 @@ static void identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
 	char addr_identity[BT_ADDR_LE_STR_LEN];
 	char addr_rpa[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(identity, addr_identity, sizeof(addr_identity));
-	bt_addr_le_to_str(rpa, addr_rpa, sizeof(addr_rpa));
+	(void)bt_addr_le_to_str(identity, addr_identity, sizeof(addr_identity));
+	(void)bt_addr_le_to_str(rpa, addr_rpa, sizeof(addr_rpa));
 
 	bt_shell_print("Identity resolved %s -> %s", addr_rpa, addr_identity);
 }
@@ -1333,7 +1333,7 @@ static void per_adv_sync_sync_cb(struct bt_le_per_adv_sync *sync,
 	char le_addr[BT_ADDR_LE_STR_LEN];
 	char past_peer[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	(void)bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 
 	if (is_past_peer) {
 		conn_addr_str(info->conn, past_peer, sizeof(past_peer));
@@ -1369,7 +1369,7 @@ static void per_adv_sync_terminated_cb(
 		}
 	}
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	(void)bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	bt_shell_print("PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated",
 		       bt_le_per_adv_sync_get_index(sync), le_addr);
 }
@@ -1381,7 +1381,7 @@ static void per_adv_sync_recv_cb(
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	(void)bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	bt_shell_print("PER_ADV_SYNC[%u]: [DEVICE]: %s, tx_power %i, "
 		       "RSSI %i, CTE %u, data length %u",
 		       bt_le_per_adv_sync_get_index(sync), le_addr, info->tx_power,
@@ -1393,7 +1393,7 @@ static void per_adv_sync_biginfo_cb(struct bt_le_per_adv_sync *sync,
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(biginfo->addr, le_addr, sizeof(le_addr));
+	(void)bt_addr_le_to_str(biginfo->addr, le_addr, sizeof(le_addr));
 	bt_shell_print("BIG_INFO PER_ADV_SYNC[%u]: [DEVICE]: %s, sid 0x%02x, num_bis %u, "
 		       "nse 0x%02x, interval 0x%04x (%u us), bn 0x%02x, pto 0x%02x, irc 0x%02x, "
 		       "max_pdu 0x%04x, sdu_interval 0x%04x, max_sdu 0x%04x, phy %s, framing 0x%02x, "
@@ -1627,7 +1627,7 @@ static int cmd_id_create(const struct shell *sh, size_t argc, char *argv[])
 		return err;
 	}
 
-	bt_addr_le_to_str(&addr, addr_str, sizeof(addr_str));
+	(void)bt_addr_le_to_str(&addr, addr_str, sizeof(addr_str));
 	shell_print(sh, "New identity (%d) created: %s", err, addr_str);
 
 	return 0;
@@ -1663,7 +1663,7 @@ static int cmd_id_reset(const struct shell *sh, size_t argc, char *argv[])
 		return err;
 	}
 
-	bt_addr_le_to_str(&addr, addr_str, sizeof(addr_str));
+	(void)bt_addr_le_to_str(&addr, addr_str, sizeof(addr_str));
 	shell_print(sh, "Identity %u reset: %s", id, addr_str);
 
 	return 0;
@@ -1702,7 +1702,7 @@ static int cmd_id_show(const struct shell *sh, size_t argc, char *argv[])
 	for (i = 0; i < count; i++) {
 		char addr_str[BT_ADDR_LE_STR_LEN];
 
-		bt_addr_le_to_str(&addrs[i], addr_str, sizeof(addr_str));
+		(void)bt_addr_le_to_str(&addrs[i], addr_str, sizeof(addr_str));
 		shell_print(sh, "%s%zu: %s", i == selected_id ? "*" : " ", i, addr_str);
 	}
 
@@ -1724,7 +1724,7 @@ static int cmd_id_select(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	bt_addr_le_to_str(&addrs[id], addr_str, sizeof(addr_str));
+	(void)bt_addr_le_to_str(&addrs[id], addr_str, sizeof(addr_str));
 	shell_print(sh, "Selected identity: %s", addr_str);
 	selected_id = id;
 
@@ -3783,7 +3783,7 @@ static int cmd_select(const struct shell *sh, size_t argc, char *argv[])
 
 	default_conn = conn;
 
-	bt_addr_le_to_str(&addr, addr_str, sizeof(addr_str));
+	(void)bt_addr_le_to_str(&addr, addr_str, sizeof(addr_str));
 	shell_print(sh, "Selected conn is now: %s", addr_str);
 
 	return 0;
@@ -3888,7 +3888,7 @@ static int cmd_info(const struct shell *sh, size_t argc, char *argv[])
 	if (info.type == BT_CONN_TYPE_BR) {
 		char addr_str[BT_ADDR_STR_LEN];
 
-		bt_addr_to_str(info.br.dst, addr_str, sizeof(addr_str));
+		(void)bt_addr_to_str(info.br.dst, addr_str, sizeof(addr_str));
 		shell_print(sh, "Peer address %s", addr_str);
 	}
 #endif /* defined(CONFIG_BT_CLASSIC) */
@@ -4244,7 +4244,7 @@ static void bond_info(const struct bt_bond_info *info, void *user_data)
 	char addr[BT_ADDR_LE_STR_LEN];
 	int *bond_count = user_data;
 
-	bt_addr_le_to_str(&info->addr, addr, sizeof(addr));
+	(void)bt_addr_le_to_str(&info->addr, addr, sizeof(addr));
 	bt_shell_print("Remote Identity: %s", addr);
 	(*bond_count)++;
 }
@@ -4279,19 +4279,19 @@ static void connection_info(struct bt_conn *conn, void *user_data)
 	switch (info.type) {
 #if defined(CONFIG_BT_CLASSIC)
 	case BT_CONN_TYPE_BR:
-		bt_addr_to_str(info.br.dst, addr, sizeof(addr));
+		(void)bt_addr_to_str(info.br.dst, addr, sizeof(addr));
 		bt_shell_print("%s#%u [BR][%s] %s", selected, info.id, role_str, addr);
 		break;
 #endif
 	case BT_CONN_TYPE_LE:
-		bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
+		(void)bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
 		bt_shell_print("%s#%u [LE][%s] %s: Interval %u us, latency %u, timeout %u ms",
 			       selected, info.id, role_str, addr, info.le.interval_us,
 			       info.le.latency, info.le.timeout * 10);
 		break;
 #if defined(CONFIG_BT_ISO)
 	case BT_CONN_TYPE_ISO:
-		bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
+		(void)bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
 		bt_shell_print(" #%u [ISO][%s] %s", info.id, role_str, addr);
 		break;
 #endif
@@ -4318,7 +4318,7 @@ static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 	char addr[BT_ADDR_LE_STR_LEN];
 	char passkey_str[7];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	snprintk(passkey_str, 7, "%06u", passkey);
 
@@ -4331,7 +4331,7 @@ static void auth_passkey_display_keypress(struct bt_conn *conn,
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	bt_shell_print("Passkey keypress notification from %s: type %d", addr, type);
 }
@@ -4342,7 +4342,7 @@ static void auth_passkey_confirm(struct bt_conn *conn, unsigned int passkey)
 	char addr[BT_ADDR_LE_STR_LEN];
 	char passkey_str[7];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	snprintk(passkey_str, 7, "%06u", passkey);
 
@@ -4353,7 +4353,7 @@ static void auth_passkey_entry(struct bt_conn *conn)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	bt_shell_print("Enter passkey for %s", addr);
 }
@@ -4377,7 +4377,7 @@ static void auth_pairing_confirm(struct bt_conn *conn)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	bt_shell_print("Confirm pairing for %s", addr);
 }
@@ -4424,7 +4424,7 @@ static void auth_pairing_oob_data_request(struct bt_conn *conn,
 
 		if (oobd_remote &&
 		    !bt_addr_le_eq(info.le.remote, &oob_remote.addr)) {
-			bt_addr_le_to_str(info.le.remote, addr, sizeof(addr));
+			(void)bt_addr_le_to_str(info.le.remote, addr, sizeof(addr));
 			bt_shell_print("No OOB data available for remote %s", addr);
 			bt_conn_auth_cancel(conn);
 			return;
@@ -4432,7 +4432,7 @@ static void auth_pairing_oob_data_request(struct bt_conn *conn,
 
 		if (oobd_local &&
 		    !bt_addr_le_eq(info.le.local, &oob_local.addr)) {
-			bt_addr_le_to_str(info.le.local, addr, sizeof(addr));
+			(void)bt_addr_le_to_str(info.le.local, addr, sizeof(addr));
 			bt_shell_print("No OOB data available for local %s", addr);
 			bt_conn_auth_cancel(conn);
 			return;
@@ -4440,14 +4440,14 @@ static void auth_pairing_oob_data_request(struct bt_conn *conn,
 
 		bt_le_oob_set_sc_data(conn, oobd_local, oobd_remote);
 
-		bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
+		(void)bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
 		bt_shell_print("Set %s OOB SC data for %s, ",
 			       oob_config_str(oob_info->lesc.oob_config), addr);
 		return;
 	}
 #endif /* CONFIG_BT_SMP_OOB_LEGACY_PAIR_ONLY */
 
-	bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
+	(void)bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
 	bt_shell_print("Legacy OOB TK requested from remote %s", addr);
 }
 
@@ -4462,10 +4462,10 @@ static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
 
 	switch (info.type) {
 	case BT_CONN_TYPE_LE:
-		bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
+		(void)bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
 		break;
 	case BT_CONN_TYPE_BR:
-		bt_addr_to_str(info.br.dst, addr, sizeof(addr));
+		(void)bt_addr_to_str(info.br.dst, addr, sizeof(addr));
 		break;
 	default:
 		bt_shell_print("Unrecognized conn type: %d", info.type);
@@ -4486,10 +4486,10 @@ static void auth_pairing_failed(struct bt_conn *conn, enum bt_security_err err)
 
 	switch (info.type) {
 	case BT_CONN_TYPE_LE:
-		bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
+		(void)bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
 		break;
 	case BT_CONN_TYPE_BR:
-		bt_addr_to_str(info.br.dst, addr, sizeof(addr));
+		(void)bt_addr_to_str(info.br.dst, addr, sizeof(addr));
 		break;
 	default:
 		bt_shell_print("Unrecognized conn type: %d", info.type);
@@ -4513,7 +4513,7 @@ static void auth_pincode_entry(struct bt_conn *conn, bool highsec)
 		return;
 	}
 
-	bt_addr_to_str(info.br.dst, addr, sizeof(addr));
+	(void)bt_addr_to_str(info.br.dst, addr, sizeof(addr));
 
 	if (highsec) {
 		bt_shell_print("Enter 16 digits wide PIN code for %s", addr);
@@ -4554,7 +4554,7 @@ void bond_deleted(uint8_t id, const bt_addr_le_t *peer)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(peer, addr, sizeof(addr));
+	(void)bt_addr_le_to_str(peer, addr, sizeof(addr));
 	bt_shell_print("Bond deleted for %s, id %u", addr, id);
 }
 
@@ -4563,7 +4563,7 @@ static void br_bond_deleted(const bt_addr_t *peer)
 {
 	char addr[BT_ADDR_STR_LEN];
 
-	bt_addr_to_str(peer, addr, sizeof(addr));
+	(void)bt_addr_to_str(peer, addr, sizeof(addr));
 	bt_shell_print("Classic bond deleted for %s", addr);
 }
 #endif /* CONFIG_BT_CLASSIC */

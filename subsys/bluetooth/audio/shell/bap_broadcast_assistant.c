@@ -121,7 +121,7 @@ static void bap_broadcast_assistant_scan_cb(const struct bt_le_scan_recv_info *i
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	(void)bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	bt_shell_print(
 		"[DEVICE]: %s, broadcast_id 0x%06X, interval (ms) %u (0x%04x)), SID 0x%x, RSSI %i",
 		le_addr, broadcast_id, BT_GAP_PER_ADV_INTERVAL_TO_MS(info->interval),
@@ -153,7 +153,7 @@ static void bap_broadcast_assistant_recv_state_cb(
 		return;
 	}
 
-	bt_addr_le_to_str(&state->addr, le_addr, sizeof(le_addr));
+	(void)bt_addr_le_to_str(&state->addr, le_addr, sizeof(le_addr));
 	bin2hex(state->bad_code, BT_ISO_BROADCAST_CODE_SIZE, bad_code, sizeof(bad_code));
 
 	is_bad_code = state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE;
@@ -615,7 +615,7 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info,
 		char addr_str[BT_ADDR_LE_STR_LEN];
 		bool identified_broadcast = false;
 
-		bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
+		(void)bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
 
 		if (sr_info.broadcast_id == auto_scan.broadcast_id) {
 			identified_broadcast = true;
