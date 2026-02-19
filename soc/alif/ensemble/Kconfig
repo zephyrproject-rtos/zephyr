@@ -3,6 +3,21 @@
 
 if SOC_FAMILY_ENSEMBLE
 
+config SOC_FAMILY_ENSEMBLE_RTSS
+	bool
+	select ARM
+	select ARMV8_M_DSP
+	select ARMV8_1_M_MVEI
+	select ARMV8_1_M_MVEF
+	select CPU_CORTEX_M55
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_CORTEX_M_HAS_VTOR
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select SOC_RESET_HOOK
+	select XIP
+
 rsource "*/Kconfig"
 
 endif # SOC_FAMILY_ENSEMBLE
