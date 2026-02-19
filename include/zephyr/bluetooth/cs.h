@@ -498,6 +498,12 @@ struct bt_le_cs_create_config_params {
 	enum bt_conn_le_cs_rtt_type rtt_type;
 	/** CS Sync PHY */
 	enum bt_conn_le_cs_sync_phy cs_sync_phy;
+	/** Channel map used for CS procedure
+	 *  Channels n = 0, 1, 23, 24, 25, 77, and 78 are not allowed and shall be set to zero.
+	 *  Channel 79 is reserved for future use and shall be set to zero.
+	 *  At least 15 channels shall be enabled.
+	 */
+	 uint8_t channel_map[10];
 	/** The number of times the Channel_Map field will be cycled through for non-mode-0 steps
 	 * within a CS procedure
 	 */
@@ -508,12 +514,8 @@ struct bt_le_cs_create_config_params {
 	enum bt_conn_le_cs_ch3c_shape ch3c_shape;
 	/** Number of channels skipped in each rising and falling sequence  */
 	uint8_t ch3c_jump;
-	/** Channel map used for CS procedure
-	 *  Channels n = 0, 1, 23, 24, 25, 77, and 78 are not allowed and shall be set to zero.
-	 *  Channel 79 is reserved for future use and shall be set to zero.
-	 *  At least 15 channels shall be enabled.
-	 */
-	uint8_t channel_map[10];
+	/** CS enhancements 1 */
+	uint8_t cs_enhancements_1;
 };
 
 /** Callbacks for CS Test */
@@ -665,7 +667,7 @@ int bt_le_cs_start_test(const struct bt_le_cs_test_param *params);
 int bt_le_cs_create_config(struct bt_conn *conn, struct bt_le_cs_create_config_params *params,
 			   enum bt_le_cs_create_config_context context);
 
-/** @brief Create CS configuration
+/** @brief Remove CS configuration
  *
  * This command is used to remove a CS configuration from the local controller
  * identified by the config_id
@@ -852,6 +854,19 @@ int bt_le_cs_set_channel_classification(uint8_t channel_classification[10]);
  */
 int bt_le_cs_read_local_supported_capabilities(struct bt_conn_le_cs_capabilities *ret);
 
+/** @brief CS Read Local Supported Capabilities V2
+ *
+ *  This command is used to read the CS capabilities that are supported
+ *  by the local Controller.
+ *
+ * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING} must be set.
+ *
+ * @param ret Return values for the CS Procedure Enable command.
+ *
+ * @return Zero on success or (negative) error code on failure.
+ */
+int bt_le_cs_read_local_supported_capabilities_v2(struct bt_conn_le_cs_capabilities *ret);
+
 /** @brief CS Write Cached Remote Supported Capabilities
  *
  *  This command is used to write the cached copy of the CS capabilities
@@ -866,6 +881,22 @@ int bt_le_cs_read_local_supported_capabilities(struct bt_conn_le_cs_capabilities
  * @return Zero on success or (negative) error code on failure.
  */
 int bt_le_cs_write_cached_remote_supported_capabilities(
+	struct bt_conn *conn, const struct bt_conn_le_cs_capabilities *params);
+
+/** @brief CS Write Cached Remote Supported Capabilities V2
+ *
+ *  This command is used to write the cached copy of the CS capabilities
+ *  that are supported by the remote Controller for the connection
+ *  identified.
+ *
+ * @note To use this API @kconfig{CONFIG_BT_CHANNEL_SOUNDING} must be set.
+ *
+ * @param conn   Connection Object.
+ * @param params Parameters for the CS Write Cached Remote Supported Capabilities command.
+ *
+ * @return Zero on success or (negative) error code on failure.
+ */
+int bt_le_cs_write_cached_remote_supported_capabilities_v2(
 	struct bt_conn *conn, const struct bt_conn_le_cs_capabilities *params);
 
 /** @brief CS Write Cached Remote FAE Table
