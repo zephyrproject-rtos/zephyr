@@ -97,6 +97,18 @@ endif # MAX32_SECONDARY_RV32
 
 endif # MAX32_HAS_SECONDARY_RV32
 
+config MAX32_SECONDARY_M4
+	bool "Secondary M4 core enable"
+	depends on DT_HAS_ADI_MAX32_M4F_CPU1_ENABLED
+
+if MAX32_SECONDARY_M4
+
+config MAX32_SECONDARY_M4_STARTUP_DELAY
+	int "Secondary M4 core startup delay (in cycles)"
+	default 0
+
+endif # MAX32_SECONDARY_M4
+
 config BUILD_WITH_TFM
 	default y if TRUSTED_EXECUTION_NONSECURE
 	help
