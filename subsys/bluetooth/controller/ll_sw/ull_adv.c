@@ -1500,12 +1500,16 @@ uint8_t ll_adv_enable(uint8_t enable)
 				 * add ULL_ADV_RANDOM_DELAY and round up for a
 				 * aux interval equal or higher instead
 				 */
-				aux->interval = DIV_ROUND_UP(interval_us +
-						     HAL_TICKER_TICKS_TO_US(ULL_ADV_RANDOM_DELAY),
-						     PERIODIC_INT_UNIT_US);
+				aux->interval =	DIV_ROUND_UP(
+					ROUND_DOWN((interval_us +
+						    HAL_TICKER_TICKS_TO_US(ULL_ADV_RANDOM_DELAY)),
+						   HAL_TICKER_TICKS_TO_US(ULL_ADV_RANDOM_DELAY)),
+					PERIODIC_INT_UNIT_US);
 			} else {
-				aux->interval = (interval_us * (adv->max_skip + 1))
-						 / PERIODIC_INT_UNIT_US;
+				aux->interval =
+					ROUND_DOWN((interval_us * (adv->max_skip + 1)),
+						   HAL_TICKER_TICKS_TO_US(ULL_ADV_RANDOM_DELAY)) /
+					PERIODIC_INT_UNIT_US;
 			}
 
 			ret = ull_adv_aux_start(aux, ticks_anchor_aux,
