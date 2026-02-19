@@ -10,9 +10,11 @@ zephyr_library()
 zephyr_library_property(ALLOW_EMPTY TRUE)
 zephyr_library_sources_ifdef(CONFIG_IRONSIDE_SE_CALL
   ${IRONSIDE_SUPPORT_DIR}/se/src/ironside_se_api.c
-  call.c
   glue.c
 )
+zephyr_library_compile_definitions(IRONSIDE_SE_GLUE_EXT_FILE_PATH="ironside_zephyr/se/glue_impl.h")
+zephyr_library_compile_definitions_ifdef(CONFIG_IRONSIDE_SE_CALL_MINIMAL IRONSIDE_SE_CALL_MINIMAL=1)
+zephyr_library_sources_ifdef(CONFIG_IRONSIDE_SE_CALL_ZEPHYR call.c)
 zephyr_library_sources_ifdef(CONFIG_IRONSIDE_SE_DVFS dvfs.c)
 
 if(CONFIG_NRF_PERIPHCONF_SECTION OR CONFIG_NRF_MPCCONF_SECTION)
