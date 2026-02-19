@@ -2070,7 +2070,7 @@ class Node:
         # unspecified.
 
         if not specifier_space:
-            specifier_space_groups = {"gpio", "io-channel"}
+            specifier_space_groups = {"gpio", "io-channel", "counter-capture"}
             for group in specifier_space_groups:
                 if prop.name.endswith(group + 's'):
                     # There's some slight special-casing for some properties in that
