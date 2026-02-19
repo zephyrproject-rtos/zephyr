@@ -533,8 +533,7 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 			 * in non-overlapping timeline when auxiliary and
 			 * Periodic Advertising have similar event interval.
 			 */
-			ticks_anchor_sync = ticker_ticks_now_get() +
-				HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
+			ticks_anchor_sync = ticker_ticks_now_get();
 
 #if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
 			err = ull_sched_adv_aux_sync_free_anchor_get(sync->ull.ticks_slot,
@@ -573,8 +572,7 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 			 */
 			lll_aux = adv->lll.aux;
 			aux = HDR_LLL2ULL(lll_aux);
-			ticks_anchor_aux = ticker_ticks_now_get() +
-				HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
+			ticks_anchor_aux = ticker_ticks_now_get();
 			ticks_slot_overhead_aux =
 				ull_adv_aux_evt_init(aux, &ticks_anchor_aux);
 
