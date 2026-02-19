@@ -33,3 +33,31 @@ properties:
       the maximum of the "SRAM Partition Configuration Register" value (which is
       also its reset value), leading to half of the locations being used for
       indirect reads and the other half for indirect writes
+
+  cdns,nss-delay-ns:
+    type: int
+    required: true
+    description: |
+      Amount of nanoseconds between the CS pin is deasserted between
+      transactions after startup.
+
+  cdns,btwn-delay-ns:
+    type: int
+    required: true
+    description: |
+      Amount of nanoseconds no peripheral is selected during switching device
+      after startup.
+
+  cdns,after-delay-ns:
+    type: int
+    required: true
+    description: |
+      Amount of nanoseconds the CS pin is continued being held after the last
+      bit was transferred.
+
+  cdns,init-delay-ns:
+    type: int
+    required: true
+    description: |
+      Amount of nanoseconds between setting n_ss_out low and sending the first
+      bit of the transmission.
