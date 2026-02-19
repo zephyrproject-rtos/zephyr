@@ -31,6 +31,10 @@ struct mspi_cadence_config {
 	const uint32_t fifo_addr;
 	const uint32_t sram_allocated_for_read;
 	const uint32_t reference_frequency;
+	const uint32_t nss_delay_ns;
+	const uint32_t btwn_delay_ns;
+	const uint32_t after_delay_ns;
+	const uint32_t init_delay_ns;
 };
 
 struct mspi_cadence_data {
@@ -151,6 +155,38 @@ static int mspi_cadence_check_transfer_request(const struct mspi_xfer *request)
 	return 0;
 }
 
+static uint32_t mspi_cadence_ns_to_ticks(const uint32_t ref_clk_hz, const uint32_t ns)
+{
+	return DIV_ROUND_UP((ref_clk_hz / 1000) * ns, 1000000);
+}
+
+static void mspi_cadence_configure_delays(const struct device *controller, const uint32_t tsclk)
+{
+	const struct mspi_cadence_config *config = controller->config;
+	const mem_addr_t base_addr = DEVICE_MMIO_GET(controller);
+
+	uint32_t nss_delay =
+		mspi_cadence_ns_to_ticks(config->reference_frequency, config->nss_delay_ns);
+	uint32_t btwn_delay =
+		mspi_cadence_ns_to_ticks(config->reference_frequency, config->btwn_delay_ns);
+	uint32_t after_delay =
+		mspi_cadence_ns_to_ticks(config->reference_frequency, config->after_delay_ns);
+	uint32_t init_delay =
+		mspi_cadence_ns_to_ticks(config->reference_frequency, config->init_delay_ns);
+
+	/* tsclk is the number of REFCLK ticks per SCLK tick.
+	 * nss delay must be at least one SCLK tick.
+	 */
+	nss_delay = MAX(nss_delay, tsclk);
+
+	uint32_t dev_delay = FIELD_PREP(CADENCE_MSPI_DEV_DELAY_REG_D_NSS_MASK, nss_delay) |
+			     FIELD_PREP(CADENCE_MSPI_DEV_DELAY_REG_D_BTWN_MASK, btwn_delay) |
+			     FIELD_PREP(CADENCE_MSPI_DEV_DELAY_REG_D_AFTER_MASK, after_delay) |
+			     FIELD_PREP(CADENCE_MSPI_DEV_DELAY_REG_D_INIT_MASK, init_delay);
+
+	sys_write32(dev_delay, base_addr + CADENCE_MSPI_DEV_DELAY_OFFSET);
+}
+
 static int mspi_cadence_init(const struct device *dev)
 {
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
@@ -203,6 +239,9 @@ static int mspi_cadence_init(const struct device *dev)
 	/* Set baud rate division to 32; formula: (n + 1) * 2 */
 	config_reg &= ~CADENCE_MSPI_CONFIG_REG_MSTR_BAUD_DIV_MASK;
 	config_reg |= FIELD_PREP(CADENCE_MSPI_CONFIG_REG_MSTR_BAUD_DIV_MASK, 15);
+
+	/* configure chipselect delays with 32 as tsclk */
+	mspi_cadence_configure_delays(dev, 32);
 
 	/* Disable dual byte opcodes */
 	config_reg &= ~CADENCE_MSPI_CONFIG_REG_DUAL_BYTE_OPCODE_EN_BIT;
@@ -1048,6 +1087,9 @@ static int mspi_cadence_dev_config(const struct device *controller,
 			goto exit;
 		}
 		config_reg |= FIELD_PREP(CADENCE_MSPI_CONFIG_REG_MSTR_BAUD_DIV_MASK, actual_div);
+
+		/* configure delays */
+		mspi_cadence_configure_delays(controller, required_div);
 	}
 
 	sys_write32(config_reg, base_addr + CADENCE_MSPI_CONFIG_OFFSET);
@@ -1117,6 +1159,10 @@ static DEVICE_API(mspi, mspi_cadence_driver_api) = {
 		.fifo_addr = DT_REG_ADDR_BY_IDX(DT_DRV_INST(n), 1),                                \
 		.sram_allocated_for_read = DT_PROP(DT_DRV_INST(n), read_buffer_size),              \
 		.reference_frequency = DT_PROP(DT_DRV_INST(n), clock_frequency),                   \
+		.nss_delay_ns = DT_INST_PROP(n, cdns_nss_delay_ns),                                \
+		.btwn_delay_ns = DT_INST_PROP(n, cdns_btwn_delay_ns),                              \
+		.after_delay_ns = DT_INST_PROP(n, cdns_after_delay_ns),                            \
+		.init_delay_ns = DT_INST_PROP(n, cdns_init_delay_ns),                              \
 	};                                                                                         \
 	static struct mspi_cadence_data mspi_cadence_data_##n = {};                                \
 	DEVICE_DT_INST_DEFINE(n, mspi_cadence_init, NULL, &mspi_cadence_data_##n,                  \
