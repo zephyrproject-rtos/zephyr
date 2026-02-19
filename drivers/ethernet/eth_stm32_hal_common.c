@@ -357,17 +357,17 @@ static void eth0_irq_config(void)
 
 PINCTRL_DT_INST_DEFINE(0);
 
-static const struct stm32_pclken eth0_pclken[] = STM32_DT_CLOCKS(DT_INST_PARENT(0));
+static const struct stm32_pclken eth0_pclken[] = STM32_DT_INST_CLOCKS(0);
 
-#define ETH_STM32_HAS_PTP_CLOCK	DT_CLOCKS_HAS_NAME(DT_INST_PARENT(0), mac_clk_ptp)
+#define ETH_STM32_HAS_PTP_CLOCK	DT_INST_CLOCKS_HAS_NAME(0, mac_clk_ptp)
 
 static const struct eth_stm32_hal_dev_cfg eth0_config = {
 	.config_func = eth0_irq_config,
 	.pclken = eth0_pclken,
-	.pclken_cnt = DT_NUM_CLOCKS(DT_INST_PARENT(0)),
+	.pclken_cnt = DT_INST_NUM_CLOCKS(0),
 #ifdef CONFIG_PTP_CLOCK_STM32_HAL
 	/* If no dedicated PTP clock is defined, fall back to the MAC bus clock. */
-	.rate_pclken_idx = DT_PHA_ELEM_IDX_BY_NAME(DT_INST_PARENT(0), clocks,
+	.rate_pclken_idx = DT_PHA_ELEM_IDX_BY_NAME(DT_DRV_INST(0), clocks,
 						   COND_CODE_1(ETH_STM32_HAS_PTP_CLOCK,
 							       (mac_clk_ptp), (stm_eth))),
 #endif
@@ -384,7 +384,7 @@ BUILD_ASSERT(DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii)
 
 static struct eth_stm32_hal_dev_data eth0_data = {
 	.heth = {
-		.Instance = (ETH_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(0)),
+		.Instance = (ETH_TypeDef *)DT_INST_REG_ADDR(0),
 		.Init = {
 #if defined(CONFIG_ETH_STM32_HAL_API_V1)
 			.RxMode = ETH_RXINTERRUPT_MODE,
