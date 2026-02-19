@@ -20,22 +20,18 @@
 			status = "disabled";
 		};
 
-		ethernet@40028000 {
+		mac: ethernet@40028000 {
+			compatible = "st,stm32h5-ethernet", "st,stm32h7-ethernet",
+				     "st,stm32-ethernet";
 			reg = <0x40028000 0x8000>;
-			compatible = "st,stm32-ethernet-controller";
 			clock-names = "stm-eth", "mac-clk-tx", "mac-clk-rx";
 			clocks = <&rcc STM32_CLOCK(AHB1, 19)>,
 				 <&rcc STM32_CLOCK(AHB1, 20)>,
 				 <&rcc STM32_CLOCK(AHB1, 21)>;
-
-			mac: mdio: ethernet {
-				compatible = "st,stm32h5-ethernet", "st,stm32h7-ethernet",
-					     "st,stm32-ethernet";
-				interrupts = <106 0>;
-				status = "disabled";
-				#address-cells = <1>;
-				#size-cells = <0>;
-			};
+			interrupts = <106 0>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 
 		fdcan2: can@4000a800 {

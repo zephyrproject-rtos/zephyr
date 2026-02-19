@@ -1173,22 +1173,18 @@
 			status = "disabled";
 		};
 
-		ethernet@40028000 {
+		mac: ethernet@40028000 {
+			compatible = "st,stm32h7-ethernet", "st,stm32-ethernet";
 			reg = <0x40028000 0x8000>;
-			compatible = "st,stm32-ethernet-controller";
 			clock-names = "stm-eth", "mac-clk-tx", "mac-clk-rx";
 			clocks = <&rcc STM32_CLOCK(AHB1, 15)>,
 				 <&rcc STM32_CLOCK(AHB1, 16)>,
 				 <&rcc STM32_CLOCK(AHB1, 17)>;
-
-			mac: ethernet {
-				compatible = "st,stm32h7-ethernet", "st,stm32-ethernet";
-				interrupts = <61 0>;
-				memory-regions = <&sram2>;
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-			};
+			interrupts = <61 0>;
+			memory-regions = <&sram2>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		fmc: memory-controller@52004000 {

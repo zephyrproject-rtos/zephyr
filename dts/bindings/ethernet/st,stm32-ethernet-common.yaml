@@ -6,6 +6,12 @@
 include: [ethernet-controller.yaml, mdio-controller.yaml, pinctrl-device.yaml]
 
 properties:
+  reg:
+    required: true
+  clocks:
+    required: true
+  clock-names:
+    required: true
   interrupts:
     required: true
   pinctrl-0:

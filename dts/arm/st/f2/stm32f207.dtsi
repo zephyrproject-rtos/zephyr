@@ -10,22 +10,18 @@
 	soc {
 		compatible = "st,stm32f207", "st,stm32f2", "simple-bus";
 
-		ethernet@40028000 {
+		mac: ethernet@40028000 {
+			compatible = "st,stm32-ethernet";
 			reg = <0x40028000 0x8000>;
-			compatible = "st,stm32-ethernet-controller";
 			clock-names = "stm-eth", "mac-clk-tx", "mac-clk-rx", "mac-clk-ptp";
 			clocks = <&rcc STM32_CLOCK(AHB1, 25)>,
 				 <&rcc STM32_CLOCK(AHB1, 26)>,
 				 <&rcc STM32_CLOCK(AHB1, 27)>,
 				 <&rcc STM32_CLOCK(AHB1, 28)>;
-
-			mac: ethernet {
-				compatible = "st,stm32-ethernet";
-				interrupts = <61 0>;
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-			};
+			interrupts = <61 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		can1: can@40006400 {
