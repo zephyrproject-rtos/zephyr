@@ -1314,7 +1314,7 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 		       HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
 	err = ull_sched_adv_aux_sync_free_anchor_get(ticks_slot, &ticks_anchor);
 	if (!err) {
-		ticks_anchor += HAL_TICKER_US_TO_TICKS(
+		ticks_anchor += HAL_TICKER_US_TO_TICKS_CEIL(
 					MAX(EVENT_MAFS_US,
 					    EVENT_OVERHEAD_START_US) -
 					EVENT_OVERHEAD_START_US +

@@ -2548,7 +2548,7 @@ uint32_t ull_adv_aux_evt_init(struct ll_adv_aux_set *aux,
 						     &ticks_anchor_aux);
 	if (!err) {
 		*ticks_anchor = ticks_anchor_aux;
-		*ticks_anchor += HAL_TICKER_US_TO_TICKS(
+		*ticks_anchor += HAL_TICKER_US_TO_TICKS_CEIL(
 					MAX(EVENT_MAFS_US,
 					    EVENT_OVERHEAD_START_US) -
 					EVENT_OVERHEAD_START_US +
