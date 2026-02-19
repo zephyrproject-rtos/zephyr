@@ -8,6 +8,7 @@ config TI_DM_TIMER
 	default y
 	depends on DT_HAS_TI_AM654_TIMER_ENABLED
 	select TICKLESS_CAPABLE
+	select SYSCON if $(dt_compat_any_has_prop,$(DT_COMPAT_TI_AM654_TIMER),clksel)
 	help
 	  This module implements a kernel device driver for TI Dual-Mode timer. This
 	  driver provides system tick interface.
