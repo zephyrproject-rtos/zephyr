@@ -1505,17 +1505,12 @@ write_end:
 	return ret;
 }
 
-static const struct flash_parameters flash_stm32_xspi_parameters = {
-	.write_block_size = 1,
-	.erase_value = 0xff
-};
-
 static const struct flash_parameters *
 flash_stm32_xspi_get_parameters(const struct device *dev)
 {
-	ARG_UNUSED(dev);
+	const struct flash_stm32_xspi_data *dev_data = dev->data;
 
-	return &flash_stm32_xspi_parameters;
+	return &dev_data->parameters;
 }
 
 static void flash_stm32_xspi_isr(const struct device *dev)
@@ -2661,6 +2656,11 @@ static int flash_stm32_xspi_init(const struct device *dev)
 												\
 		XSPI_DMA_CHANNEL(STM32_XSPI_NODE(inst), tx, TX, MEMORY, PERIPHERAL)		\
 		XSPI_DMA_CHANNEL(STM32_XSPI_NODE(inst), rx, RX, PERIPHERAL, MEMORY)		\
+												\
+		.parameters = {									\
+			.write_block_size = DT_INST_PROP(inst, write_block_size),		\
+			.erase_value = 0xff							\
+		},										\
 	};											\
 												\
 	DEVICE_DT_INST_DEFINE(inst, &flash_stm32_xspi_init, NULL,				\

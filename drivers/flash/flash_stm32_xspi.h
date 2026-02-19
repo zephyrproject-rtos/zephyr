@@ -119,6 +119,7 @@ struct flash_stm32_xspi_data {
 	struct stream dma_tx;
 	struct stream dma_rx;
 #endif /* CONFIG_FLASH_STM32_XSPI_DMA */
+	struct flash_parameters parameters;
 };
 
 #endif /* ZEPHYR_DRIVERS_FLASH_XSPI_STM32_H_ */
