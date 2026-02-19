@@ -27,5 +27,9 @@ extern uint32_t rectspace1016[];
 extern uint32_t rectspace1123[];
 extern uint32_t tofu1016[];
 extern uint32_t circle10[];
+extern uint32_t circle10_outside_top_left[];
+extern uint32_t circle10_outside_top_right[];
+extern uint32_t circle10_outside_bottom_right[];
+extern uint32_t circle10_outside_bottom_left[];
 
 #endif /* TESTS_SUBSYS_DISPLAY_CFB_DRAW_TEXT_AND_PRINT_SRC_TESTDATA_H__ */
