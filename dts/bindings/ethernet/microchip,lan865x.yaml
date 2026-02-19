@@ -6,7 +6,7 @@ description: |
 
 compatible: "microchip,lan865x"
 
-include: [spi-device.yaml, ethernet-controller.yaml]
+include: [spi-device.yaml, ethernet-controller.yaml, mdio-controller.yaml]
 
 properties:
   tx-cut-through-mode:

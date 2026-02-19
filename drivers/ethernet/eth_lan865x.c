@@ -16,41 +16,49 @@ LOG_MODULE_REGISTER(eth_lan865x, CONFIG_ETHERNET_LOG_LEVEL);
 #include <errno.h>
 
 #include <zephyr/net/net_if.h>
-#include <zephyr/drivers/ethernet/eth_lan865x.h>
 
 #include "eth_lan865x_priv.h"
 
-int eth_lan865x_mdio_c22_read(const struct device *dev, uint8_t prtad, uint8_t regad,
-			      uint16_t *data)
+#ifdef CONFIG_ETH_LAN865X_MDIO
+static int lan865x_mdio_c22_read(const struct device *dev, uint8_t prtad, uint8_t regad,
+				 uint16_t *data)
 {
 	struct lan865x_data *ctx = dev->data;
 
 	return oa_tc6_mdio_read(ctx->tc6, prtad, regad, data);
 }
 
-int eth_lan865x_mdio_c22_write(const struct device *dev, uint8_t prtad, uint8_t regad,
-			       uint16_t data)
+static int lan865x_mdio_c22_write(const struct device *dev, uint8_t prtad, uint8_t regad,
+				  uint16_t data)
 {
 	struct lan865x_data *ctx = dev->data;
 
 	return oa_tc6_mdio_write(ctx->tc6, prtad, regad, data);
 }
 
-int eth_lan865x_mdio_c45_read(const struct device *dev, uint8_t prtad, uint8_t devad,
-			      uint16_t regad, uint16_t *data)
+static int lan865x_mdio_c45_read(const struct device *dev, uint8_t prtad, uint8_t devad,
+				 uint16_t regad, uint16_t *data)
 {
 	struct lan865x_data *ctx = dev->data;
 
 	return oa_tc6_mdio_read_c45(ctx->tc6, prtad, devad, regad, data);
 }
 
-int eth_lan865x_mdio_c45_write(const struct device *dev, uint8_t prtad, uint8_t devad,
-			       uint16_t regad, uint16_t data)
+static int lan865x_mdio_c45_write(const struct device *dev, uint8_t prtad, uint8_t devad,
+				  uint16_t regad, uint16_t data)
 {
 	struct lan865x_data *ctx = dev->data;
 
 	return oa_tc6_mdio_write_c45(ctx->tc6, prtad, devad, regad, data);
 }
+
+static DEVICE_API(mdio, mdio_lan865x_api) = {
+	.read = lan865x_mdio_c22_read,
+	.write = lan865x_mdio_c22_write,
+	.read_c45 = lan865x_mdio_c45_read,
+	.write_c45 = lan865x_mdio_c45_write,
+};
+#endif /* CONFIG_ETH_LAN865X_MDIO */
 
 static int lan865x_mac_rxtx_control(const struct device *dev, bool en)
 {
@@ -466,12 +474,15 @@ const struct device *lan865x_get_phy(const struct device *dev)
 	return cfg->phy;
 }
 
-static const struct ethernet_api lan865x_api_func = {
-	.iface_api.init = lan865x_iface_init,
-	.get_capabilities = lan865x_port_get_capabilities,
-	.set_config = lan865x_set_config,
-	.send = lan865x_port_send,
-	.get_phy = lan865x_get_phy,
+static DEVICE_API(ethernet, lan865x_api_func) = {
+	.l2.iface_api.init = lan865x_iface_init,
+	.l2.get_capabilities = lan865x_port_get_capabilities,
+	.l2.set_config = lan865x_set_config,
+	.l2.send = lan865x_port_send,
+	.l2.get_phy = lan865x_get_phy,
+#ifdef CONFIG_ETH_LAN865X_MDIO
+	.mdio = &mdio_lan865x_api,
+#endif /* CONFIG_ETH_LAN865X_MDIO */
 };
 
 #define LAN865X_DEFINE(inst)                                                                       \

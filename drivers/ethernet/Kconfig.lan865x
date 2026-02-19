@@ -18,6 +18,14 @@ menuconfig ETH_LAN865X
 
 if ETH_LAN865X
 
+config ETH_LAN865X_MDIO
+	bool "LAN865X MDIO Controller"
+	default y
+	depends on MDIO
+	select ETH_DRIVER_WITH_MDIO
+	help
+	 Use the integrated MDIO Controller
+
 config ETH_LAN865X_INIT_PRIORITY
 	int "LAN865X driver init priority"
 	default 50

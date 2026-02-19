@@ -90,23 +90,19 @@
 
 		phy-handle = <&lan865x_phy>;
 
-		lan865x_mdio: lan865x_mdio {
-			compatible = "microchip,lan865x-mdio";
-			status = "okay";
-			#address-cells = <1>;
-			#size-cells = <0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 
-			lan865x_phy: ethernet-phy@0 {
-				compatible = "microchip,t1s-phy";
-				reg = <0x0>;
-				plca-enable;
-				plca-node-id = <0>;
-				plca-node-count = <8>;
-				plca-burst-count = <0>;
-				plca-burst-timer = <0x80>;
-				plca-to-timer = <0x20>;
-				status = "okay";
-			};
+		lan865x_phy: ethernet-phy@0 {
+			compatible = "microchip,t1s-phy";
+			reg = <0x0>;
+			plca-enable;
+			plca-node-id = <0>;
+			plca-node-count = <8>;
+			plca-burst-count = <0>;
+			plca-burst-timer = <0x80>;
+			plca-to-timer = <0x20>;
+			status = "okay";
 		};
 	};
 };
