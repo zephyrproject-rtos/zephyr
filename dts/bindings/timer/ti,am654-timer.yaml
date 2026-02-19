@@ -17,6 +17,7 @@ properties:
 
   clksel:
     type: phandle-array
+    specifier-space: clksel
     description: |
       Optional syscon configuration for timer clock source selection.
       Format: <&syscon_phandle offset value>
