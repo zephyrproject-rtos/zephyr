@@ -1,0 +1,13 @@
+# Copyright (c) 2026 HawkEye 360
+# SPDX-License-Identifier: Apache-2.0
+
+config QORVO_CMD170P4
+	bool "Qorvo CMD170P4 RF power detector driver"
+	default y
+	depends on DT_HAS_QORVO_CMD170P4_ENABLED
+	select ADC
+	help
+	  Enable driver for the Qorvo CMD170P4 7.5-9 GHz driver amplifier
+	  with integrated power detector. The driver uses table-based
+	  interpolation to convert detector voltage (0-5V) to RF output
+	  power (0-30 dBm) according to the manufacturer's transfer function.
