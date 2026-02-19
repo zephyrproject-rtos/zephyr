@@ -52,7 +52,7 @@ static void test_iso_broadcaster(void)
 	bsim_btp_gap_create_big(1, BIG_INTERVAL, 20, true, broadcast_code);
 
 	bsim_btp_wait_for_gap_bis_data_path_setup(&ev_addr, &bis_id);
-	bt_addr_le_to_str(&ev_addr, addr_str, sizeof(addr_str));
+	(void)bt_addr_le_to_str(&ev_addr, addr_str, sizeof(addr_str));
 	LOG_INF("Device %s: Data path of BIS %u is setup", addr_str, bis_id);
 	while (count > 0) {
 		net_buf_simple_reset(&data);

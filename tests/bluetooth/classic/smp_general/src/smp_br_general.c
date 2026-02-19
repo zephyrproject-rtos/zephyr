@@ -517,7 +517,7 @@ static int cmd_get_security_info(const struct shell *sh, size_t argc, char *argv
 		return -ENOEXEC;
 	}
 
-	bt_addr_to_str(info.br.dst, addr_str, sizeof(addr_str));
+	(void)bt_addr_to_str(info.br.dst, addr_str, sizeof(addr_str));
 	shell_print(sh, "Peer address %s", addr_str);
 	shell_print(sh, "Encryption key size: %d", info.security.enc_key_size);
 	shell_print(sh, "Security level: %d", info.security.level);

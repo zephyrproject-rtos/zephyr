@@ -190,7 +190,7 @@ static int pa_sync_no_past(struct sync_state *state,
 	} else {
 		char addr_str[BT_ADDR_LE_STR_LEN];
 
-		bt_addr_le_to_str(&recv_state->addr, addr_str, sizeof(addr_str));
+		(void)bt_addr_le_to_str(&recv_state->addr, addr_str, sizeof(addr_str));
 		printk("PA sync pending for addr %s\n", addr_str);
 		state->pa_syncing = true;
 		k_work_init_delayable(&state->pa_timer, pa_timer_handler);
@@ -510,7 +510,7 @@ static bool broadcast_source_found(struct bt_data *data, void *user_data)
 	}
 
 	g_broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
-	bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
+	(void)bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
 
 	printk("Found BAP broadcast source with address %s and ID 0x%06X\n",
 	       addr_str, g_broadcast_id);

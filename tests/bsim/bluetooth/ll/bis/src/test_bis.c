@@ -655,7 +655,7 @@ static void pa_sync_cb(struct bt_le_per_adv_sync *sync,
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	(void)bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
 	       "Interval 0x%04x (%u ms), PHY %s\n",
@@ -670,7 +670,7 @@ static void pa_terminated_cb(struct bt_le_per_adv_sync *sync,
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	(void)bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated\n",
 	       bt_le_per_adv_sync_get_index(sync), le_addr);
@@ -690,7 +690,7 @@ static void pa_recv_cb(struct bt_le_per_adv_sync *sync,
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	(void)bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s, tx_power %i, "
 	       "RSSI %i, CTE %u, data length %u\n",
@@ -716,7 +716,7 @@ static void pa_biginfo_cb(struct bt_le_per_adv_sync *sync,
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(biginfo->addr, le_addr, sizeof(le_addr));
+	(void)bt_addr_le_to_str(biginfo->addr, le_addr, sizeof(le_addr));
 	printk("BIG INFO[%u]: [DEVICE]: %s, sid 0x%02x, "
 	       "num_bis %u, nse %u, interval 0x%04x (%u ms), "
 	       "bn %u, pto %u, irc %u, max_pdu %u, "
@@ -775,7 +775,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 
 	bt_data_parse(buf, data_cb, name);
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	(void)bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	printk("[DEVICE]: %s, AD evt type %u, Tx Pwr: %i, RSSI %i %s "
 	       "C:%u S:%u D:%u SR:%u E:%u Prim: %s, Secn: %s, "
 	       "Interval: 0x%04x (%u ms), SID: %u\n",

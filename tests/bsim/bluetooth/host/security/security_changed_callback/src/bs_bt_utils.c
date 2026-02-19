@@ -126,7 +126,7 @@ static void stop_scan_and_connect(const bt_addr_le_t *addr,
 		return;
 	}
 
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
+	(void)bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 	printk("Got scan result, connecting.. dst %s, RSSI %d\n", addr_str, rssi);
 
 	err = bt_le_scan_stop();

@@ -53,7 +53,7 @@ static void print_conn_state_transition(const char *prefix, struct bt_conn *conn
 	err = bt_conn_get_info(conn, &info);
 	TEST_ASSERT(!err, "Unexpected conn info result.");
 
-	bt_addr_le_to_str(info.le.dst, addr_str, sizeof(addr_str));
+	(void)bt_addr_le_to_str(info.le.dst, addr_str, sizeof(addr_str));
 	printk("%s: %s\n", prefix, addr_str);
 }
 

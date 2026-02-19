@@ -90,7 +90,7 @@ static void bap_broadcast_assistant_scan_cb(const struct bt_le_scan_recv_info *i
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	(void)bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	printk("Scan Recv: [DEVICE]: %s, broadcast_id 0x%06X, "
 	       "interval (ms) %u), SID 0x%x, RSSI %i\n",
 	       le_addr, broadcast_id, info->interval * 5 / 4,
@@ -133,7 +133,7 @@ static void bap_broadcast_assistant_recv_state_cb(
 		return;
 	}
 
-	bt_addr_le_to_str(&state->addr, le_addr, sizeof(le_addr));
+	(void)bt_addr_le_to_str(&state->addr, le_addr, sizeof(le_addr));
 	(void)bin2hex(state->bad_code, BT_ISO_BROADCAST_CODE_SIZE, bad_code, sizeof(bad_code));
 	printk("BASS recv state: src_id %u, addr %s, sid %u, sync_state %u, encrypt_state %u%s%s\n",
 	       state->src_id, le_addr, state->adv_sid, state->pa_sync_state, state->encrypt_state,
@@ -303,7 +303,7 @@ static void sync_cb(struct bt_le_per_adv_sync *sync,
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	(void)bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
 	       "Interval 0x%04x (%u ms), PHY %s\n",
@@ -318,7 +318,7 @@ static void term_cb(struct bt_le_per_adv_sync *sync,
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	(void)bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated\n",
 	       bt_le_per_adv_sync_get_index(sync), le_addr);
@@ -487,8 +487,8 @@ static void test_bass_add_source(void)
 		char addr[BT_ADDR_LE_STR_LEN];
 		char expected_addr[BT_ADDR_LE_STR_LEN];
 
-		bt_addr_le_to_str(&recv_state.addr, addr, sizeof(addr));
-		bt_addr_le_to_str(&add_src_param.addr, expected_addr, sizeof(expected_addr));
+		(void)bt_addr_le_to_str(&recv_state.addr, addr, sizeof(addr));
+		(void)bt_addr_le_to_str(&add_src_param.addr, expected_addr, sizeof(expected_addr));
 
 		FAIL("Unexpected addr %s != %s\n", addr, expected_addr);
 		return;

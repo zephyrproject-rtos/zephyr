@@ -47,18 +47,18 @@ static void test_iso_sync_receiver(void)
 	bsim_btp_core_register(BTP_SERVICE_ID_GAP);
 	bsim_btp_gap_start_discovery(BTP_GAP_DISCOVERY_FLAG_LE);
 	bsim_btp_wait_for_gap_device_found(&remote_addr);
-	bt_addr_le_to_str(&remote_addr, addr_str, sizeof(addr_str));
+	(void)bt_addr_le_to_str(&remote_addr, addr_str, sizeof(addr_str));
 	LOG_INF("Found remote device %s", addr_str);
 
 	bsim_btp_gap_padv_create_sync(&remote_addr, 0, 0, 0x200, 0);
 	bsim_btp_wait_for_gap_periodic_sync_established(&ev_addr, &sync_handle, &status);
-	bt_addr_le_to_str(&ev_addr, ev_addr_str, sizeof(ev_addr_str));
+	(void)bt_addr_le_to_str(&ev_addr, ev_addr_str, sizeof(ev_addr_str));
 	TEST_ASSERT(bt_addr_le_eq(&remote_addr, &ev_addr), "%s != %s", addr_str, ev_addr_str);
 	TEST_ASSERT(status == 0, "Sync failed with status %u", status);
 	LOG_INF("Device %s: periodic synced %u status %u", addr_str, sync_handle, status);
 
 	bsim_btp_wait_for_gap_periodic_biginfo(&ev_addr, &sid, &num_bis, &encryption);
-	bt_addr_le_to_str(&ev_addr, ev_addr_str, sizeof(ev_addr_str));
+	(void)bt_addr_le_to_str(&ev_addr, ev_addr_str, sizeof(ev_addr_str));
 	TEST_ASSERT(bt_addr_le_eq(&remote_addr, &ev_addr), "%s != %s", addr_str, ev_addr_str);
 	LOG_INF("Device %s: BIGinfo sid %u num_bis %u enc %u", addr_str, sid, num_bis, encryption);
 
@@ -66,7 +66,7 @@ static void test_iso_sync_receiver(void)
 				     broadcast_code);
 
 	bsim_btp_wait_for_gap_bis_data_path_setup(&ev_addr, &bis_id);
-	bt_addr_le_to_str(&ev_addr, ev_addr_str, sizeof(ev_addr_str));
+	(void)bt_addr_le_to_str(&ev_addr, ev_addr_str, sizeof(ev_addr_str));
 	TEST_ASSERT(bt_addr_le_eq(&remote_addr, &ev_addr), "%s != %s", addr_str, ev_addr_str);
 	LOG_INF("Device %s: Data path of BIS %u is setup", addr_str, bis_id);
 
@@ -76,7 +76,7 @@ static void test_iso_sync_receiver(void)
 		TEST_ASSERT(bis_stream_rx.len >= sizeof(*ev));
 
 		ev = net_buf_simple_pull_mem(&bis_stream_rx, sizeof(*ev));
-		bt_addr_le_to_str(&ev->address, ev_addr_str, sizeof(ev_addr_str));
+		(void)bt_addr_le_to_str(&ev->address, ev_addr_str, sizeof(ev_addr_str));
 		TEST_ASSERT(bt_addr_le_eq(&ev->address, &ev_addr));
 		TEST_ASSERT(ev->bis_id == bis_id, "Invalid BIS %u != %u", ev->bis_id, bis_id);
 		LOG_INF("Device %s: BIS Stream RX BIS %u len %u flags %u TS %u seq_num %u",

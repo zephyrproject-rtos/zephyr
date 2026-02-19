@@ -57,7 +57,7 @@ static int recv_cb(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	tester->sdu_count += 1;
 
-	bt_addr_le_to_str(bt_conn_get_dst(chan->conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(chan->conn), addr, sizeof(addr));
 
 	LOG_INF("Received SDU %d / %d from (%s)", tester->sdu_count, SDU_NUM, addr);
 
@@ -125,7 +125,7 @@ static struct bt_conn *connect_tester(void)
 	err = bt_testlib_connect(&tester, &conn);
 	TEST_ASSERT(!err, "Failed to initiate connection (err %d)", err);
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 	LOG_DBG("Connected to %s", addr);
 
 	return conn;

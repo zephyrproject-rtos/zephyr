@@ -13,7 +13,7 @@ const char *bt_addr_le_str(const bt_addr_le_t *addr)
 {
 	static char str[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(addr, str, sizeof(str));
+	(void)bt_addr_le_to_str(addr, str, sizeof(str));
 
 	return str;
 }

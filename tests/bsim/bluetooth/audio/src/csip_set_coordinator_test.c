@@ -201,7 +201,7 @@ static bool csip_found(struct bt_data *data, void *user_data)
 		const bt_addr_le_t *addr = user_data;
 		char addr_str[BT_ADDR_LE_STR_LEN];
 
-		bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
+		(void)bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 		printk("Found CSIP advertiser with address %s\n", addr_str);
 
 		if (is_discovered(addr)) {
@@ -338,7 +338,7 @@ static void connect_set(void)
 		return;
 	}
 
-	bt_addr_le_to_str(&addr_found[0], addr, sizeof(addr));
+	(void)bt_addr_le_to_str(&addr_found[0], addr, sizeof(addr));
 	err = bt_conn_le_create(&addr_found[0], BT_CONN_LE_CREATE_CONN, BT_BAP_CONN_PARAM_RELAXED,
 				&conns[0]);
 	if (err != 0) {
@@ -385,7 +385,7 @@ static void connect_set(void)
 	}
 
 	for (uint8_t i = 1; i < members_found; i++) {
-		bt_addr_le_to_str(&addr_found[i], addr, sizeof(addr));
+		(void)bt_addr_le_to_str(&addr_found[i], addr, sizeof(addr));
 
 		UNSET_FLAG(flag_connected);
 		printk("Connecting to member[%d] (%s)", i, addr);
@@ -412,7 +412,7 @@ static void disconnect_set(void)
 		char addr[BT_ADDR_LE_STR_LEN];
 		int err;
 
-		bt_addr_le_to_str(&addr_found[i], addr, sizeof(addr));
+		(void)bt_addr_le_to_str(&addr_found[i], addr, sizeof(addr));
 
 		printk("Disconnecting member[%u] (%s)", i, addr);
 		err = bt_conn_disconnect(conns[i], BT_HCI_ERR_REMOTE_USER_TERM_CONN);

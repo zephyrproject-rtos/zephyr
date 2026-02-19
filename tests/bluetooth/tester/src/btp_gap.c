@@ -428,7 +428,7 @@ static void oob_data_request(struct bt_conn *conn,
 
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
+	(void)bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
 
 	switch (oob_info->type) {
 	case BT_CONN_OOB_LE_SC:
@@ -461,7 +461,7 @@ static void oob_data_request(struct bt_conn *conn,
 
 		if (oobd_local &&
 		    !bt_addr_le_eq(info.le.local, &oob_sc_local.addr)) {
-			bt_addr_le_to_str(info.le.local, addr, sizeof(addr));
+			(void)bt_addr_le_to_str(info.le.local, addr, sizeof(addr));
 			LOG_DBG("No OOB data available for local %s",
 				addr);
 			bt_conn_auth_cancel(conn);

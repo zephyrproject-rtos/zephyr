@@ -1612,7 +1612,7 @@ void scan_and_connect(void)
 
 	WAIT_FOR_FLAG(flag_connected);
 
-	bt_addr_le_to_str(bt_conn_get_dst(default_conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(default_conn), addr, sizeof(addr));
 	printk("Connected: %s\n", addr);
 }
 

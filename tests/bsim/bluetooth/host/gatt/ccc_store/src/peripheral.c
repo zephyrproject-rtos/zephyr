@@ -117,7 +117,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 {
 	char addr_str[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
 
 	if (err) {
 		TEST_FAIL("Failed to connect to %s (err %d)", addr_str, err);
@@ -135,7 +135,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	char addr_str[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
 
 	LOG_DBG("Disconnected: %s (reason 0x%02x)", addr_str, reason);
 
@@ -150,7 +150,7 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 {
 	char addr_str[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
 
 	if (!err) {
 		LOG_DBG("Security changed: %s level %u", addr_str, level);

@@ -58,7 +58,7 @@ static void test_cap_central(void)
 
 	bsim_btp_gap_start_discovery(BTP_GAP_DISCOVERY_FLAG_LE);
 	bsim_btp_wait_for_gap_device_found(&remote_addr);
-	bt_addr_le_to_str(&remote_addr, addr_str, sizeof(addr_str));
+	(void)bt_addr_le_to_str(&remote_addr, addr_str, sizeof(addr_str));
 	LOG_INF("Found remote device %s", addr_str);
 
 	bsim_btp_gap_stop_discovery();

@@ -37,7 +37,7 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 {
 	char addr_str[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
 
 	TEST_ASSERT(err == 0, "Security update failed: %s level %u err %d", addr_str, level, err);
 

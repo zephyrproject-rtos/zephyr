@@ -36,7 +36,7 @@ static void test_hap_peripheral(void)
 	bsim_btp_gap_set_discoverable(BTP_GAP_GENERAL_DISCOVERABLE);
 	bsim_btp_gap_start_advertising(0U, 0U, NULL, BT_HCI_OWN_ADDR_PUBLIC);
 	bsim_btp_wait_for_gap_device_connected(&remote_addr);
-	bt_addr_le_to_str(&remote_addr, addr_str, sizeof(addr_str));
+	(void)bt_addr_le_to_str(&remote_addr, addr_str, sizeof(addr_str));
 	LOG_INF("Device %s connected", addr_str);
 	bsim_btp_wait_for_gap_device_disconnected(NULL);
 	LOG_INF("Device %s disconnected", addr_str);

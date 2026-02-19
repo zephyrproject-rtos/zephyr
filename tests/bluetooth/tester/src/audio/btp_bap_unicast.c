@@ -1922,7 +1922,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	struct btp_bap_unicast_connection *u_conn;
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (err != 0) {
 		LOG_DBG("Failed to connect to %s (%u)", addr, err);
@@ -1940,7 +1940,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	LOG_DBG("Disconnected: %s (reason 0x%02x)", addr, reason);
 }

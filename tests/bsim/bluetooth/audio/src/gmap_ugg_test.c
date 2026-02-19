@@ -443,7 +443,7 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info, struct net_buf
 		return;
 	}
 
-	bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
+	(void)bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
 	printk("Device found: %s (RSSI %d)\n", addr_str, info->rssi);
 
 	/* connect only to devices in close proximity */

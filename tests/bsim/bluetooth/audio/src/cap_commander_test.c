@@ -352,7 +352,7 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 
 	broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	(void)bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 
 	printk("Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X\n", broadcast_id,
 	       le_addr, info->sid);
@@ -498,7 +498,7 @@ bap_broadcast_assistant_recv_state_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	bt_addr_le_to_str(&state->addr, le_addr, sizeof(le_addr));
+	(void)bt_addr_le_to_str(&state->addr, le_addr, sizeof(le_addr));
 	(void)bin2hex(state->bad_code, BT_ISO_BROADCAST_CODE_SIZE, bad_code, sizeof(bad_code));
 	printk("BASS recv state: src_id %u, addr %s, sid %u, sync_state %u, "
 	       "encrypt_state %u%s%s\n",
@@ -577,7 +577,7 @@ static bool check_audio_support_and_connect_cb(struct bt_data *data, void *user_
 		return true; /* Continue parsing to next AD data type */
 	}
 
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
+	(void)bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 	printk("Device found: %s\n", addr_str);
 
 	printk("Stopping scan\n");

@@ -134,7 +134,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 		return;
 	}
 
-	bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
+	(void)bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
 	LOG_INF("Device found: %s (RSSI %d)", addr_str, info->rssi);
 
 	/* In the case of extended advertising and active scanning, this
@@ -202,7 +202,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	LOG_DBG("Connected: %s", addr);
 }
@@ -215,7 +215,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		return;
 	}
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	LOG_DBG("Disconnected: %s (reason 0x%02x)", addr, reason);
 
@@ -231,8 +231,8 @@ static void identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
 	char addr_identity[BT_ADDR_LE_STR_LEN];
 	char addr_rpa[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(identity, addr_identity, sizeof(addr_identity));
-	bt_addr_le_to_str(rpa, addr_rpa, sizeof(addr_rpa));
+	(void)bt_addr_le_to_str(identity, addr_identity, sizeof(addr_identity));
+	(void)bt_addr_le_to_str(rpa, addr_rpa, sizeof(addr_rpa));
 
 	LOG_DBG("Identity resolved %s -> %s", addr_rpa, addr_identity);
 

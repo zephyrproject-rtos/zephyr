@@ -24,7 +24,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 
 	k_msleep(500); /* simulate a slow memcpy (or user processing the scan data) */
 
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
+	(void)bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 	LOG_DBG("Device found: %s (RSSI %d), type %u, AD data len %u", addr_str, rssi, type,
 		ad->len);
 }

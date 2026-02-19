@@ -304,7 +304,7 @@ static bool check_audio_support_and_connect_cb(struct bt_data *data, void *user_
 		return true; /* Continue parsing to next AD data type */
 	}
 
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
+	(void)bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 	LOG_DBG("Device found: %s", addr_str);
 
 	bt_addr_le_copy(&remote_dev_addr, addr);

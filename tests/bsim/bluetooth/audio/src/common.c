@@ -91,7 +91,7 @@ static void device_found(const struct bt_le_scan_recv_info *info, struct net_buf
 		return;
 	}
 
-	bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
+	(void)bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
 	printk("Device found: %s (RSSI %d)\n", addr_str, info->rssi);
 
 	/* connect only to devices in close proximity */
@@ -147,7 +147,7 @@ void disconnected(struct bt_conn *conn, uint8_t reason)
 		return;
 	}
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	printk("Disconnected: %s (reason 0x%02x)\n", addr, reason);
 
@@ -281,7 +281,7 @@ void start_broadcast_adv(struct bt_le_ext_adv *adv)
 		}
 	}
 
-	bt_addr_le_to_str(info.addr, addr_str, sizeof(addr_str));
+	(void)bt_addr_le_to_str(info.addr, addr_str, sizeof(addr_str));
 	printk("Started advertising with addr %s\n", addr_str);
 }
 

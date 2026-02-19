@@ -108,7 +108,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	/* Check for connectable, extended advertising */
 	if (((info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0) ||
 		((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE)) != 0) {
-		bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+		(void)bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 		printk("[DEVICE]: %s, ", le_addr);
 		/* Check for TMAS support in advertising data */
 		bt_data_parse(buf, check_audio_support_and_connect, (void *)info->addr);

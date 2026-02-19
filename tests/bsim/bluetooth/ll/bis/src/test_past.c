@@ -60,7 +60,7 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (conn_err) {
 		FAIL("Failed to connect to %s (%u)\n", addr, conn_err);
@@ -123,7 +123,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 {
 	char dev[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(addr, dev, sizeof(dev));
+	(void)bt_addr_le_to_str(addr, dev, sizeof(dev));
 	printk("[DEVICE]: %s, AD evt type %u, AD data len %u, RSSI %i\n",
 			dev, type, ad->len, rssi);
 
@@ -138,7 +138,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	printk("Disconnected: %s (reason 0x%02x)\n", addr, reason);
 
@@ -241,7 +241,7 @@ static void pa_sync_cb(struct bt_le_per_adv_sync *sync,
 
 	default_sync = sync;
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	(void)bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
 		   "Interval 0x%04x (%u ms), PHY %s\n",
@@ -260,7 +260,7 @@ static void pa_terminated_cb(struct bt_le_per_adv_sync *sync,
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	(void)bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated\n",
 		   bt_le_per_adv_sync_get_index(sync), le_addr);
@@ -335,7 +335,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 
 	bt_data_parse(buf, data_cb, name);
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	(void)bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	printk("[DEVICE]: %s, AD evt type %u, Tx Pwr: %i, RSSI %i %s "
 		   "C:%u S:%u D:%u SR:%u E:%u Prim: %s, Secn: %s, "
 		   "Interval: 0x%04x (%u ms), SID: %u\n",

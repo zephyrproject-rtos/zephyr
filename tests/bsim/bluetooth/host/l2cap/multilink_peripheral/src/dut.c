@@ -45,7 +45,7 @@ static int send_data_over_l2cap(struct bt_l2cap_chan *chan, uint8_t *data, size_
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(chan->conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(chan->conn), addr, sizeof(addr));
 
 	LOG_DBG("[%s] chan %p data %p len %d", addr, chan, data, len);
 
@@ -81,7 +81,7 @@ static void resume_sending_until_done(struct test_ctx *ctx)
 	} else {
 		char addr[BT_ADDR_LE_STR_LEN];
 
-		bt_addr_le_to_str(bt_conn_get_dst(chan->conn), addr, sizeof(addr));
+		(void)bt_addr_le_to_str(bt_conn_get_dst(chan->conn), addr, sizeof(addr));
 
 		LOG_DBG("[%s] Done sending", addr);
 	}
@@ -193,7 +193,7 @@ static void acl_connected(struct bt_conn *conn, uint8_t err)
 	struct test_ctx *ctx;
 	int ret;
 
-	bt_addr_le_to_str(central, addr, sizeof(addr));
+	(void)bt_addr_le_to_str(central, addr, sizeof(addr));
 
 	TEST_ASSERT(err == 0, "Failed to connect to %s (0x%02x)", addr, err);
 
@@ -219,7 +219,7 @@ static void acl_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	LOG_DBG("Disconnected from %s (reason 0x%02x)", addr, reason);
 }

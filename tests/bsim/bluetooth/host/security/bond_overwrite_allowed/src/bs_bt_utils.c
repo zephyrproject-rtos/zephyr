@@ -103,7 +103,7 @@ static void scan_connect_to_first_result__device_found(const bt_addr_le_t *addr,
 		TEST_FAIL("Unexpected advertisement type.");
 	}
 
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
+	(void)bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 	printk("Got scan result, connecting.. dst %s, RSSI %d", addr_str, rssi);
 
 	err = bt_le_scan_stop();

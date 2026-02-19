@@ -80,8 +80,8 @@ static void test_disable_set_default_id(void)
 			uint8_t addr_set_str[BT_ADDR_LE_STR_LEN];
 			uint8_t addr_stored_str[BT_ADDR_LE_STR_LEN];
 
-			bt_addr_le_to_str(&addr, addr_set_str, BT_ADDR_LE_STR_LEN);
-			bt_addr_le_to_str(&stored_id, addr_stored_str, BT_ADDR_LE_STR_LEN);
+			(void)bt_addr_le_to_str(&addr, addr_set_str, BT_ADDR_LE_STR_LEN);
+			(void)bt_addr_le_to_str(&stored_id, addr_stored_str, BT_ADDR_LE_STR_LEN);
 			TEST_FAIL("Expected stored ID to be equal to set ID: %s, %s", addr_set_str,
 				  addr_stored_str);
 		}

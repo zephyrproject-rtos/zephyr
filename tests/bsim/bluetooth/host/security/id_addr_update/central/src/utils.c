@@ -54,7 +54,7 @@ static void print_conn_state_transition(const char *prefix, struct bt_conn *conn
 	err = bt_conn_get_info(conn, &info);
 	TEST_ASSERT(!err, "Unexpected conn info result.");
 
-	bt_addr_le_to_str(info.le.dst, addr_str, sizeof(addr_str));
+	(void)bt_addr_le_to_str(info.le.dst, addr_str, sizeof(addr_str));
 	printk("%s: %s\n", prefix, addr_str);
 }
 
@@ -136,7 +136,7 @@ static void scan_connect_to_first_result__device_found(const bt_addr_le_t *addr,
 		TEST_FAIL("Unexpected advertisement type.");
 	}
 
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
+	(void)bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 	printk("Got scan result, connecting.. dst %s, RSSI %d\n", addr_str, rssi);
 
 	err = bt_le_scan_stop();

@@ -349,7 +349,7 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (conn_err) {
 		TEST_FAIL("Failed to connect to %s (%u)", addr, conn_err);
@@ -365,7 +365,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	LOG_DBG("%p %s (reason 0x%02x)", conn, addr, reason);
 
@@ -531,7 +531,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 
 	char str[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(addr, str, sizeof(str));
+	(void)bt_addr_le_to_str(addr, str, sizeof(str));
 
 	LOG_DBG("Connecting to %s", str);
 

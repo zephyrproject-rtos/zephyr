@@ -2460,7 +2460,7 @@ void test_main(void)
 
 		char addr[BT_ADDR_LE_STR_LEN];
 
-		bt_addr_le_to_str(bt_conn_get_dst(default_conn), addr, sizeof(addr));
+		(void)bt_addr_le_to_str(bt_conn_get_dst(default_conn), addr, sizeof(addr));
 		printk("Connected: %s\n", addr);
 
 		bt_conn_le_param_update(default_conn,

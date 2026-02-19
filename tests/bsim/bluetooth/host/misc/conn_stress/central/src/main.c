@@ -187,7 +187,7 @@ static uint8_t notify_func(struct bt_conn *conn, struct bt_gatt_subscribe_params
 	struct conn_info *conn_info_ref;
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (!data) {
 		LOG_INF("[UNSUBSCRIBED] addr %s", addr);
@@ -219,7 +219,7 @@ static void subscribe_func(struct bt_conn *conn, uint8_t err,
 	struct conn_info *conn_info_ref;
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 	__ASSERT(!err, "Subscribe failed for addr %s (err %d)", addr, err);
 
 	conn_info_ref = get_conn_info_ref(conn);
@@ -379,7 +379,7 @@ static bool parse_ad(struct bt_data *data, void *user_data)
 
 		char addr_str[BT_ADDR_LE_STR_LEN];
 
-		bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
+		(void)bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 		LOG_INF("Connecting to %s", addr_str);
 
 		struct bt_le_conn_param *param = BT_LE_CONN_PARAM_DEFAULT;
@@ -425,7 +425,7 @@ static void connected_cb(struct bt_conn *conn, uint8_t conn_err)
 	struct conn_info *conn_info_ref;
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	__ASSERT(conn_err == BT_HCI_ERR_SUCCESS, "Failed to connect to %s (%u)", addr, conn_err);
 
@@ -461,7 +461,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	struct conn_info *conn_info_ref;
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	LOG_INF("Disconnected: %s (reason 0x%02x)", addr, reason);
 
@@ -485,7 +485,7 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	__ASSERT(!err, "Security for %s failed", addr);
 	LOG_INF("Security for %s changed: level %u", addr, level);
@@ -504,8 +504,8 @@ static void identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
 	char addr_rpa[BT_ADDR_LE_STR_LEN];
 	struct conn_info *conn_info_ref;
 
-	bt_addr_le_to_str(identity, addr_identity, sizeof(addr_identity));
-	bt_addr_le_to_str(rpa, addr_rpa, sizeof(addr_rpa));
+	(void)bt_addr_le_to_str(identity, addr_identity, sizeof(addr_identity));
+	(void)bt_addr_le_to_str(rpa, addr_rpa, sizeof(addr_rpa));
 
 	LOG_ERR("Identity resolved %s -> %s", addr_rpa, addr_identity);
 
@@ -536,7 +536,7 @@ static void mtu_exchange_cb(struct bt_conn *conn, uint8_t err,
 	struct conn_info *conn_info_ref;
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	conn_info_ref = get_conn_info_ref(conn);
 	__ASSERT_NO_MSG(conn_info_ref);
@@ -553,7 +553,7 @@ static void exchange_mtu(struct bt_conn *conn, void *data)
 	char addr[BT_ADDR_LE_STR_LEN];
 	int err;
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	conn_info_ref = get_connected_conn_info_ref(conn);
 	if (conn_info_ref == NULL) {
@@ -583,7 +583,7 @@ static void subscribe_to_service(struct bt_conn *conn, void *data)
 	int *p_err = (int *)data;
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	conn_info_ref = get_connected_conn_info_ref(conn);
 	if (conn_info_ref == NULL) {
@@ -653,7 +653,7 @@ static void notify_peers(struct bt_conn *conn, void *data)
 	struct conn_info *conn_info_ref;
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	conn_info_ref = get_connected_conn_info_ref(conn);
 	if (conn_info_ref == NULL) {
@@ -718,7 +718,7 @@ void test_central_main(void)
 			start_scan();
 		} else {
 			if (atomic_test_bit(status_flags, DEVICE_IS_CONNECTING)) {
-				bt_addr_le_to_str(bt_conn_get_dst(conn_connecting),
+				(void)bt_addr_le_to_str(bt_conn_get_dst(conn_connecting),
 						  addr, sizeof(addr));
 				LOG_INF("already connecting to: %s", addr);
 			}

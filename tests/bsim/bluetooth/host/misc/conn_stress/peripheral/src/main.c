@@ -120,7 +120,7 @@ void mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 	if (tx == CONFIG_BT_L2CAP_TX_MTU && rx == CONFIG_BT_L2CAP_TX_MTU) {
 		char addr[BT_ADDR_LE_STR_LEN];
 
-		bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+		(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 		atomic_set_bit(conn_info.flags, CONN_INFO_MTU_EXCHANGED);
 		LOG_INF("Updating MTU succeeded %s", addr);
@@ -139,7 +139,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		return;
 	}
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	rounds++;
 	conn_info.conn_ref = conn;
@@ -182,7 +182,7 @@ static bool le_param_req(struct bt_conn *conn, struct bt_le_conn_param *param)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	LOG_DBG("LE conn param req: %s int (0x%04x (~%u ms), 0x%04x (~%u ms)) lat %d to %d",
 		addr, param->interval_min, (uint32_t)(param->interval_min * 1.25),
@@ -197,7 +197,7 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (err) {
 		LOG_ERR("Security for %p failed: %s level %u err %d", conn, addr, level, err);
@@ -234,7 +234,7 @@ static uint8_t rx_notification(struct bt_conn *conn, struct bt_gatt_subscribe_pa
 	/* TODO: enable */
 	/* __ASSERT_NO_MSG(atomic_test_bit(conn_info.flags, CONN_INFO_SUBSCRIBED)); */
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	received_counter = strtoul(data_ptr, NULL, 0);
 	LOG_INF("RX %d", received_counter);
@@ -315,7 +315,7 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 
 		char addr[BT_ADDR_LE_STR_LEN];
 
-		bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+		(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 		LOG_INF("[SUBSCRIBED] addr %s", addr);
 	}
 
@@ -338,7 +338,7 @@ static void subscribe_to_service(struct bt_conn *conn)
 		int err;
 		char addr[BT_ADDR_LE_STR_LEN];
 
-		bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+		(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 		memcpy(&uuid, CENTRAL_SERVICE_UUID, sizeof(uuid));
 		discover_params.uuid = &uuid.uuid;

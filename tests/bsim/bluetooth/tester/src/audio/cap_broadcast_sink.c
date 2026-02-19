@@ -45,7 +45,7 @@ static void test_cap_broadcast_sink(void)
 
 	bsim_btp_bap_broadcast_scan_start();
 	bsim_btp_wait_for_bap_baa_found(&remote_addr, &broadcast_id, &adv_sid);
-	bt_addr_le_to_str(&remote_addr, addr_str, sizeof(addr_str));
+	(void)bt_addr_le_to_str(&remote_addr, addr_str, sizeof(addr_str));
 	LOG_INF("Found remote device %s", addr_str);
 	bsim_btp_bap_broadcast_scan_stop();
 
