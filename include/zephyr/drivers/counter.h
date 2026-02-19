@@ -34,8 +34,12 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/devicetree/counter-capture.h>
 #include <zephyr/sys_clock.h>
 #include <stdbool.h>
+
+#include <zephyr/dt-bindings/counter/counter-capture.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -127,20 +131,7 @@ extern "C" {
  * @{
  */
 
-/**
- * @brief Capture rising edge of an external input signal
- */
-#define COUNTER_CAPTURE_RISING_EDGE BIT(0)
-
-/**
- * @brief Capture falling edge of an external input signal
- */
-#define COUNTER_CAPTURE_FALLING_EDGE BIT(1)
-
-/**
- * @brief Capture both falling and rising edge of an external input signal
- */
-#define COUNTER_CAPTURE_BOTH_EDGES (COUNTER_CAPTURE_FALLING_EDGE | COUNTER_CAPTURE_RISING_EDGE)
+/* Bit 0 and 1 are used for COUNTER_CAPTURE_RISING_EDGE/COUNTER_CAPTURE_FALLING_EDGE */
 
 /**
  * @brief Capture an event continuously until stopped.
@@ -162,6 +153,314 @@ extern "C" {
  */
 
 typedef uint32_t counter_capture_flags_t;
+
+/**
+ * @brief Container for counter capture information specified in devicetree.
+ *
+ * This type contains a pointer to a counter device, a channel number
+ * (controlled by the counter device), and capture flags applicable to the
+ * channel.
+ *
+ * @see COUNTER_CAPTURE_DT_SPEC_GET_BY_NAME
+ * @see COUNTER_CAPTURE_DT_SPEC_GET_BY_NAME_OR
+ * @see COUNTER_CAPTURE_DT_SPEC_GET_BY_IDX
+ * @see COUNTER_CAPTURE_DT_SPEC_GET_BY_IDX_OR
+ * @see COUNTER_CAPTURE_DT_SPEC_GET
+ * @see COUNTER_CAPTURE_DT_SPEC_GET_OR
+ */
+struct counter_capture_dt_spec {
+	/** Counter device instance. */
+	const struct device *dev;
+	/** Channel ID. */
+	uint8_t chan_id;
+	/** Capture flags. */
+	counter_capture_flags_t flags;
+};
+
+/**
+ * @brief Static initializer for a struct counter_capture_dt_spec
+ *
+ * This returns a static initializer for a struct counter_capture_dt_spec given
+ * a devicetree node identifier and a name.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *    n: node {
+ *        counter-captures = <&counter1 1 COUNTER_CAPTURE_RISING_EDGE>,
+ *                           <&counter2 3 COUNTER_CAPTURE_BOTH_EDGES>;
+ *        counter-capture-names = "alpha", "beta";
+ *    };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *    const struct counter_capture_dt_spec spec =
+ *        COUNTER_CAPTURE_DT_SPEC_GET_BY_NAME(DT_NODELABEL(n), counter_captures, alpha);
+ *
+ *    // Initializes 'spec' to:
+ *    // {
+ *    //         .dev = DEVICE_DT_GET(DT_NODELABEL(counter1)),
+ *    //         .chan_id = 1,
+ *    //         .flags = COUNTER_CAPTURE_RISING_EDGE,
+ *    // }
+ * @endcode
+ *
+ * The device (dev) must still be checked for readiness, e.g. using
+ * device_is_ready(). It is an error to use this macro unless the node exists,
+ * has the 'counter-captures' property, and that 'counter-captures' property
+ * specifies a counter controller, a channel and optionally flags.
+ *
+ * @param node_id Devicetree node identifier.
+ * @param prop lowercase-and-underscores property name
+ * @param name Lowercase-and-underscores name of a counter-captures element as
+ *             defined by the node's counter-capture-names property.
+ *
+ * @return Static initializer for a struct counter_capture_dt_spec for the
+ *         property.
+ *
+ * @see COUNTER_CAPTURE_DT_SPEC_INST_GET_BY_NAME
+ */
+#define COUNTER_CAPTURE_DT_SPEC_GET_BY_NAME(node_id, prop, name)                                   \
+	{                                                                                          \
+		.dev = DEVICE_DT_GET(DT_COUNTER_CAPTURES_CTLR_BY_NAME(node_id, prop, name)),       \
+		.chan_id = (uint8_t)DT_COUNTER_CAPTURES_CHANNEL_BY_NAME(node_id, prop, name),      \
+		.flags = DT_COUNTER_CAPTURES_FLAGS_BY_NAME(node_id, prop, name),                   \
+	}
+
+/**
+ * @brief Static initializer for a struct counter_capture_dt_spec from a
+ *        DT_DRV_COMPAT instance.
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param prop lowercase-and-underscores property name
+ * @param name Lowercase-and-underscores name of a counter-captures element as
+ *             defined by the node's counter-capture-names property.
+ *
+ * @return Static initializer for a struct counter_capture_dt_spec for the
+ *         property.
+ *
+ * @see COUNTER_CAPTURE_DT_SPEC_GET_BY_NAME
+ */
+#define COUNTER_CAPTURE_DT_SPEC_INST_GET_BY_NAME(inst, prop, name)                                 \
+	COUNTER_CAPTURE_DT_SPEC_GET_BY_NAME(DT_DRV_INST(inst), prop, name)
+
+/**
+ * @brief Like COUNTER_CAPTURE_DT_SPEC_GET_BY_NAME(), with a fallback to a
+ *        default value.
+ *
+ * If the devicetree node identifier 'node_id' refers to a node with a
+ * property 'counter-captures', this expands to
+ * <tt>COUNTER_CAPTURE_DT_SPEC_GET_BY_NAME(node_id, name)</tt>. The
+ * @p default_value parameter is not expanded in this case. Otherwise, this
+ * expands to @p default_value.
+ *
+ * @param node_id Devicetree node identifier.
+ * @param prop lowercase-and-underscores property name
+ * @param name Lowercase-and-underscores name of a counter-captures element as
+ *             defined by the node's counter-capture-names property.
+ * @param default_value Fallback value to expand to.
+ *
+ * @return Static initializer for a struct counter_capture_dt_spec for the
+ *         property, or @p default_value if the node or property do not exist.
+ *
+ * @see COUNTER_CAPTURE_DT_SPEC_INST_GET_BY_NAME_OR
+ */
+#define COUNTER_CAPTURE_DT_SPEC_GET_BY_NAME_OR(node_id, prop, name, default_value)                 \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop),                                               \
+			(COUNTER_CAPTURE_DT_SPEC_GET_BY_NAME(node_id, prop, name)),                \
+			(default_value))
+
+/**
+ * @brief Like COUNTER_CAPTURE_DT_SPEC_INST_GET_BY_NAME(), with a fallback to a
+ *        default value.
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param prop lowercase-and-underscores property name
+ * @param name Lowercase-and-underscores name of a counter-captures element as
+ *             defined by the node's counter-capture-names property.
+ * @param default_value Fallback value to expand to.
+ *
+ * @return Static initializer for a struct counter_capture_dt_spec for the
+ *         property, or @p default_value if the node or property do not exist.
+ *
+ * @see COUNTER_CAPTURE_DT_SPEC_GET_BY_NAME_OR
+ */
+#define COUNTER_CAPTURE_DT_SPEC_INST_GET_BY_NAME_OR(inst, prop, name, default_value)               \
+	COUNTER_CAPTURE_DT_SPEC_GET_BY_NAME_OR(DT_DRV_INST(inst), prop, name, default_value)
+
+/**
+ * @brief Static initializer for a struct counter_capture_dt_spec
+ *
+ * This returns a static initializer for a struct counter_capture_dt_spec given
+ * a devicetree node identifier and an index.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *    n: node {
+ *        counter-captures = <&counter1 1 COUNTER_CAPTURE_RISING_EDGE>,
+ *                           <&counter2 3 COUNTER_CAPTURE_BOTH_EDGES>;
+ *    };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *    const struct counter_capture_dt_spec spec =
+ *        COUNTER_CAPTURE_DT_SPEC_GET_BY_IDX(DT_NODELABEL(n), counter_captures, 1);
+ *
+ *    // Initializes 'spec' to:
+ *    // {
+ *    //         .dev = DEVICE_DT_GET(DT_NODELABEL(counter2)),
+ *    //         .chan_id = 3,
+ *    //         .flags = COUNTER_CAPTURE_BOTH_EDGES,
+ *    // }
+ * @endcode
+ *
+ * The device (dev) must still be checked for readiness, e.g. using
+ * device_is_ready(). It is an error to use this macro unless the node exists,
+ * has the 'counter-captures' property, and that 'counter-captures' property
+ * specifies a counter controller, a channel and optionally flags.
+ *
+ * @param node_id Devicetree node identifier.
+ * @param prop lowercase-and-underscores property name
+ * @param idx Logical index into 'counter-captures' property.
+ *
+ * @return Static initializer for a struct counter_capture_dt_spec for the
+ *         property.
+ *
+ * @see COUNTER_CAPTURE_DT_SPEC_INST_GET_BY_IDX
+ */
+#define COUNTER_CAPTURE_DT_SPEC_GET_BY_IDX(node_id, prop, idx)                                     \
+	{                                                                                          \
+		.dev = DEVICE_DT_GET(DT_COUNTER_CAPTURES_CTLR_BY_IDX(node_id, prop, idx)),         \
+		.chan_id = (uint8_t)DT_COUNTER_CAPTURES_CHANNEL_BY_IDX(node_id, prop, idx),        \
+		.flags = DT_COUNTER_CAPTURES_FLAGS_BY_IDX(node_id, prop, idx),                     \
+	}
+
+/**
+ * @brief Static initializer for a struct counter_capture_dt_spec from a
+ *        DT_DRV_COMPAT instance.
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param prop lowercase-and-underscores property name
+ * @param idx Logical index into 'counter-captures' property.
+ *
+ * @return Static initializer for a struct counter_capture_dt_spec for the
+ *         property.
+ *
+ * @see COUNTER_CAPTURE_DT_SPEC_GET_BY_IDX
+ */
+#define COUNTER_CAPTURE_DT_SPEC_INST_GET_BY_IDX(inst, prop, idx)                                   \
+	COUNTER_CAPTURE_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst), prop, idx)
+
+/**
+ * @brief Like COUNTER_CAPTURE_DT_SPEC_GET_BY_IDX(), with a fallback to a
+ *        default value.
+ *
+ * If the devicetree node identifier 'node_id' refers to a node with a
+ * property 'counter-captures', this expands to
+ * <tt>COUNTER_CAPTURE_DT_SPEC_GET_BY_IDX(node_id, idx)</tt>. The
+ * @p default_value parameter is not expanded in this case. Otherwise, this
+ * expands to @p default_value.
+ *
+ * @param node_id Devicetree node identifier.
+ * @param prop lowercase-and-underscores property name
+ * @param idx Logical index into 'counter-captures' property.
+ * @param default_value Fallback value to expand to.
+ *
+ * @return Static initializer for a struct counter_capture_dt_spec for the
+ *         property, or @p default_value if the node or property do not exist.
+ *
+ * @see COUNTER_CAPTURE_DT_SPEC_INST_GET_BY_IDX_OR
+ */
+#define COUNTER_CAPTURE_DT_SPEC_GET_BY_IDX_OR(node_id, prop, idx, default_value)                   \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop),                                               \
+			(COUNTER_CAPTURE_DT_SPEC_GET_BY_IDX(node_id, prop, idx)),                  \
+			(default_value))
+
+/**
+ * @brief Like COUNTER_CAPTURE_DT_SPEC_INST_GET_BY_IDX(), with a fallback to a
+ *        default value.
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param prop lowercase-and-underscores property name
+ * @param idx Logical index into 'counter-captures' property.
+ * @param default_value Fallback value to expand to.
+ *
+ * @return Static initializer for a struct counter_capture_dt_spec for the
+ *         property, or @p default_value if the node or property do not exist.
+ *
+ * @see COUNTER_CAPTURE_DT_SPEC_GET_BY_IDX_OR
+ */
+#define COUNTER_CAPTURE_DT_SPEC_INST_GET_BY_IDX_OR(inst, prop, idx, default_value)                 \
+	COUNTER_CAPTURE_DT_SPEC_GET_BY_IDX_OR(DT_DRV_INST(inst), prop, idx, default_value)
+
+/**
+ * @brief Equivalent to <tt>COUNTER_CAPTURE_DT_SPEC_GET_BY_IDX(node_id, 0)</tt>.
+ *
+ * @param node_id Devicetree node identifier.
+ * @param prop lowercase-and-underscores property name
+ *
+ * @return Static initializer for a struct counter_capture_dt_spec for the
+ *         property.
+ *
+ * @see COUNTER_CAPTURE_DT_SPEC_GET_BY_IDX
+ * @see COUNTER_CAPTURE_DT_SPEC_INST_GET
+ */
+#define COUNTER_CAPTURE_DT_SPEC_GET(node_id, prop)                                                 \
+	COUNTER_CAPTURE_DT_SPEC_GET_BY_IDX(node_id, prop, 0)
+
+/**
+ * @brief Equivalent to <tt>COUNTER_CAPTURE_DT_SPEC_INST_GET_BY_IDX(inst, 0)</tt>.
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param prop lowercase-and-underscores property name
+ *
+ * @return Static initializer for a struct counter_capture_dt_spec for the
+ *         property.
+ *
+ * @see COUNTER_CAPTURE_DT_SPEC_INST_GET_BY_IDX
+ * @see COUNTER_CAPTURE_DT_SPEC_GET
+ */
+#define COUNTER_CAPTURE_DT_SPEC_INST_GET(inst, prop)                                               \
+	COUNTER_CAPTURE_DT_SPEC_GET(DT_DRV_INST(inst), prop)
+
+/**
+ * @brief Equivalent to
+ *        <tt>COUNTER_CAPTURE_DT_SPEC_GET_BY_IDX_OR(node_id, 0, default_value)</tt>.
+ *
+ * @param node_id Devicetree node identifier.
+ * @param prop lowercase-and-underscores property name
+ * @param default_value Fallback value to expand to.
+ *
+ * @return Static initializer for a struct counter_capture_dt_spec for the
+ *         property.
+ *
+ * @see COUNTER_CAPTURE_DT_SPEC_GET_BY_IDX_OR
+ * @see COUNTER_CAPTURE_DT_SPEC_INST_GET_OR
+ */
+#define COUNTER_CAPTURE_DT_SPEC_GET_OR(node_id, prop, default_value)                               \
+	COUNTER_CAPTURE_DT_SPEC_GET_BY_IDX_OR(node_id, prop, 0, default_value)
+
+/**
+ * @brief Equivalent to
+ *        <tt>COUNTER_CAPTURE_DT_SPEC_INST_GET_BY_IDX_OR(inst, 0, default_value)</tt>.
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @param prop lowercase-and-underscores property name
+ * @param default_value Fallback value to expand to.
+ *
+ * @return Static initializer for a struct counter_capture_dt_spec for the
+ *         property.
+ *
+ * @see COUNTER_CAPTURE_DT_SPEC_INST_GET_BY_IDX_OR
+ * @see COUNTER_CAPTURE_DT_SPEC_GET_OR
+ */
+#define COUNTER_CAPTURE_DT_SPEC_INST_GET_OR(inst, prop, default_value)                             \
+	COUNTER_CAPTURE_DT_SPEC_GET_OR(DT_DRV_INST(inst), prop, default_value)
 
 /**@} */
 
@@ -1380,6 +1679,22 @@ static inline int counter_capture_callback_set(const struct device *dev, uint8_t
 	return api->capture_callback_set(dev, chan_id, flags, cb, user_data);
 }
 
+/**
+ * @brief Set callback function for a counter timestamp capture using a DT spec.
+ *
+ * @param spec Pointer to the counter capture DT spec.
+ * @param cb Callback function reference.
+ * @param user_data Argument passed to the callback function.
+ *
+ * @retval 0 If successful.
+ * @retval Negative error code on failure.
+ */
+static inline int counter_capture_callback_set_dt(const struct counter_capture_dt_spec *spec,
+						  counter_capture_cb_t cb, void *user_data)
+{
+	return counter_capture_callback_set(spec->dev, spec->chan_id, spec->flags, cb, user_data);
+}
+
 #if defined(CONFIG_COUNTER_64BITS_TICKS) || defined(__DOXYGEN__)
 /**
  * @brief Set callback function for a counter timestamp capture for 64 bits ticks
@@ -1408,6 +1723,23 @@ static inline int counter_capture_callback_set_64(const struct device *dev, uint
 	}
 
 	return api->capture_callback_set_64(dev, chan_id, flags, cb, user_data);
+}
+
+/**
+ * @brief Set callback function for a counter timestamp capture with 64-bit ticks using a DT spec.
+ *
+ * @param spec Pointer to the counter capture DT spec.
+ * @param cb Callback function reference.
+ * @param user_data Argument passed to the callback function.
+ *
+ * @retval 0 If successful.
+ * @retval Negative error code on failure.
+ */
+static inline int counter_capture_callback_set_64_dt(const struct counter_capture_dt_spec *spec,
+						     counter_capture_cb_64_t cb, void *user_data)
+{
+	return counter_capture_callback_set_64(spec->dev, spec->chan_id, spec->flags, cb,
+					       user_data);
 }
 #endif /* CONFIG_COUNTER_64BITS_TICKS */
 
@@ -1438,6 +1770,19 @@ static inline int z_impl_counter_enable_capture(const struct device *dev, uint8_
 }
 
 /**
+ * @brief Enable capture on a channel using a DT spec.
+ *
+ * @param spec Pointer to the counter capture DT spec.
+ *
+ * @retval 0 If successful.
+ * @retval Negative error code on failure.
+ */
+static inline int counter_enable_capture_dt(const struct counter_capture_dt_spec *spec)
+{
+	return counter_enable_capture(spec->dev, spec->chan_id);
+}
+
+/**
  * @brief Disable capture on a channel.
  *
  * @param dev  Pointer to the device structure for the driver instance.
@@ -1461,6 +1806,19 @@ static inline int z_impl_counter_disable_capture(const struct device *dev, uint8
 	}
 
 	return api->disable_capture(dev, chan_id);
+}
+
+/**
+ * @brief Disable capture on a channel using a DT spec.
+ *
+ * @param spec Pointer to the counter capture DT spec.
+ *
+ * @retval 0 If successful.
+ * @retval Negative error code on failure.
+ */
+static inline int counter_disable_capture_dt(const struct counter_capture_dt_spec *spec)
+{
+	return counter_disable_capture(spec->dev, spec->chan_id);
 }
 
 /** @} */

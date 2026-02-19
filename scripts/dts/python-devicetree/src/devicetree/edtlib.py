@@ -2057,6 +2057,11 @@ class Node:
                 # e.g. foo-gpios still maps to #gpio-cells rather than
                 # #foo-gpio-cells
                 specifier_space = "gpio"
+            elif prop.name.endswith("counter-captures"):
+                # Similar special-casing for *-counter-captures properties:
+                # e.g. foo-counter-captures maps to #counter-capture-cells
+                # rather than #foo-counter-capture-cells
+                specifier_space = "counter-capture"
             else:
                 # Strip -s. We've already checked that property names end in -s
                 # if there is no specifier space in _check_prop_by_type().

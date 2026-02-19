@@ -380,6 +380,7 @@
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
+				#counter-capture-cells = <2>;
 			};
 		};
 

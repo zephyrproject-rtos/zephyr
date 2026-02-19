@@ -6,3 +6,7 @@ description: STM32 counters
 compatible: "st,stm32-counter"
 
 include: [base.yaml, pinctrl-device.yaml]
+
+counter-capture-cells:
+  - channel
+  - flags
