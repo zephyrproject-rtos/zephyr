@@ -548,22 +548,103 @@ static int i2c_bflb_prepare_transfer(const struct device *dev,
 	return i;
 }
 
+static int i2c_bflb_check_msgs(struct i2c_msg *msgs, uint8_t num_msgs, bool *addr_10b)
+{
+	for (uint8_t i = 0; i < num_msgs; i++) {
+		if (msgs[i].len > I2C_MAX_PACKET_LENGTH) {
+			LOG_ERR("Cannot send packet of length > 255");
+			return -ENOTSUP;
+		}
+		if ((msgs[i].flags & I2C_MSG_ADDR_10_BITS) != 0) {
+#if defined(CONFIG_SOC_SERIES_BL61X)
+			*addr_10b = true;
+#else
+			LOG_ERR("10 bits addresses not supported");
+			return -ENOTSUP;
+#endif
+		}
+	}
+	return 0;
+}
+
+static int i2c_bflb_wait_idle(const struct device *dev)
+{
+	k_timepoint_t end_timeout = sys_timepoint_calc(K_MSEC(I2C_WAIT_TIMEOUT_MS));
+
+	while (i2c_bflb_busy(dev) && !sys_timepoint_expired(end_timeout)) {
+		k_usleep(1);
+	}
+	if (sys_timepoint_expired(end_timeout)) {
+		return -ETIMEDOUT;
+	}
+	return 0;
+}
+
+static int i2c_bflb_wait_completion(const struct device *dev)
+{
+	k_timepoint_t end_timeout = sys_timepoint_calc(K_MSEC(I2C_WAIT_TIMEOUT_MS));
+
+	while ((i2c_bflb_busy(dev)
+		|| !i2c_bflb_ended(dev))
+		&& !sys_timepoint_expired(end_timeout)
+		&& !i2c_bflb_nacked(dev)
+		&& !i2c_bflb_errored(dev)) {
+	}
+	if (sys_timepoint_expired(end_timeout)) {
+		return -ETIMEDOUT;
+	}
+	if (i2c_bflb_errored(dev) || i2c_bflb_nacked(dev)) {
+		return -EIO;
+	}
+	return 0;
+}
+
+static int i2c_bflb_do_read(const struct device *dev, struct i2c_bflb_data *data,
+			     struct i2c_msg *msgs, uint8_t start, uint8_t count)
+{
+	int ret;
+	uint8_t *p;
+
+	ret = i2c_bflb_read(dev, data->transfer_buffer, data->next_transfer_len);
+	if (ret < 0) {
+		return ret;
+	}
+	p = data->transfer_buffer;
+	for (uint8_t j = start; j < start + count; j++) {
+		memcpy(msgs[j].buf, p, msgs[j].len);
+		p += msgs[j].len;
+	}
+	return 0;
+}
+
+static int i2c_bflb_do_write(const struct device *dev, struct i2c_bflb_data *data)
+{
+	if (data->next_transfer_len == 0) {
+		/* Address-only probe (0-length write): HW needs at least
+		 * 1 data byte, send a dummy byte so the address is clocked
+		 * out and we can check ACK/NAK.
+		 */
+		data->transfer_buffer[0] = 0;
+		data->next_transfer_len = 1;
+	}
+	return i2c_bflb_write(dev, data->transfer_buffer, data->next_transfer_len);
+}
+
 static int i2c_bflb_transfer(const struct device *dev,
 			     struct i2c_msg *msgs,
 			     uint8_t num_msgs,
 			     uint16_t addr)
 {
 	struct i2c_bflb_data *data = dev->data;
-	k_timepoint_t end_timeout = sys_timepoint_calc(K_MSEC(I2C_WAIT_TIMEOUT_MS));
 	bool addr_10b = false;
+	int num_msgs_combined;
 	int ret;
-	uint8_t *p;
 
 	if (msgs == NULL) {
 		return -EINVAL;
 	}
 
-	if (num_msgs <= 0) {
+	if (num_msgs == 0) {
 		return 0;
 	}
 
@@ -572,66 +653,38 @@ static int i2c_bflb_transfer(const struct device *dev,
 		return ret;
 	}
 
-	while (i2c_bflb_busy(dev) && !sys_timepoint_expired(end_timeout)) {
-		k_usleep(1);
-	}
-	if (sys_timepoint_expired(end_timeout)) {
-		ret = -ETIMEDOUT;
+	ret = i2c_bflb_wait_idle(dev);
+	if (ret < 0) {
 		goto out;
 	}
 
 	i2c_bflb_clean(dev);
 
-	/* Check spin */
-	for (uint8_t i = 0; i < num_msgs; i++) {
-		if (msgs[i].len > I2C_MAX_PACKET_LENGTH) {
-			LOG_ERR("Cannot send packet of length > 255");
-			ret = -ENOTSUP;
-			goto out;
-		}
-		if ((msgs[i].flags & I2C_MSG_ADDR_10_BITS) != 0) {
-#if defined(CONFIG_SOC_SERIES_BL61X)
-			addr_10b = true;
-#else
-			LOG_ERR("10 bits addresses not supported");
-			ret = -ENOTSUP;
-			goto out;
-#endif
-		}
+	ret = i2c_bflb_check_msgs(msgs, num_msgs, &addr_10b);
+	if (ret < 0) {
+		goto out;
 	}
 
 	i2c_bflb_set_address(dev, addr, addr_10b);
 
 	for (uint8_t i = 0; i < num_msgs; i++) {
-		ret = i2c_bflb_prepare_transfer(dev, &(msgs[i]), num_msgs - i);
-		if (ret < 0) {
+		num_msgs_combined = i2c_bflb_prepare_transfer(dev, &msgs[i], num_msgs - i);
+		if (num_msgs_combined < 0) {
+			ret = num_msgs_combined;
 			goto out;
 		}
 		LOG_DBG("Next transfer %d len: %d", i, data->next_transfer_len);
 		if ((msgs[i].flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
-			i2c_bflb_read(dev, data->transfer_buffer, data->next_transfer_len);
-			p = data->transfer_buffer;
-			for (uint8_t j = i; j < i + ret; j++) {
-				memcpy(msgs[j].buf, p, msgs[j].len);
-				p += msgs[j].len;
-			}
+			ret = i2c_bflb_do_read(dev, data, msgs, i, num_msgs_combined);
 		} else {
-			i2c_bflb_write(dev, data->transfer_buffer, data->next_transfer_len);
+			ret = i2c_bflb_do_write(dev, data);
 		}
-		i += ret;
-		end_timeout = sys_timepoint_calc(K_MSEC(I2C_WAIT_TIMEOUT_MS));
-		while ((i2c_bflb_busy(dev)
-			|| !i2c_bflb_ended(dev))
-			&& !sys_timepoint_expired(end_timeout)
-			&& !i2c_bflb_nacked(dev)
-			&& !i2c_bflb_errored(dev)) {
-		}
-		if (sys_timepoint_expired(end_timeout)) {
-			ret = -ETIMEDOUT;
+		if (ret < 0) {
 			goto out;
 		}
-		if (i2c_bflb_errored(dev) || i2c_bflb_nacked(dev)) {
-			ret = -EIO;
+		i += num_msgs_combined;
+		ret = i2c_bflb_wait_completion(dev);
+		if (ret < 0) {
 			goto out;
 		}
 		i2c_bflb_detrigger(dev);
