@@ -91,6 +91,21 @@ properties:
       characteristic of a temperature transducer and should be stated in the
       datasheet.
 
+  power-gpios:
+    type: phandle-array
+    description: |
+      GPIO used to control power to the temperature transducer.
+      When specified, the driver will automatically enable power during
+      sample_fetch() and disable it afterward for power saving.
+
+  power-on-sample-delay-us:
+    type: int
+    default: 0
+    description: |
+      Delay in microseconds after enabling power-gpios before sampling.
+      This allows the sensor output to stabilize after power-on.
+      Consult the sensor datasheet for required startup time.
+
 examples:
   - |
     ad950: temperature-sensor-0 {
