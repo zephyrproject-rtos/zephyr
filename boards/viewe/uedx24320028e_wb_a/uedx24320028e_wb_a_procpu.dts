@@ -1,0 +1,196 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <espressif/esp32s3/esp32s3_wroom_n16r8.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/led/worldsemi_ws2812c.h>
+#include <espressif/partitions_0x0_amp_16M.dtsi>
+#include "uedx24320028e_wb_a-pinctrl.dtsi"
+
+/ {
+	model = "VIEWE UEDX24320028E-WB-A PROCPU";
+	compatible = "viewe,uedx24320028e-wb-a";
+
+	aliases {
+		i2c-0 = &i2c0;
+		watchdog0 = &wdt0;
+		uart-0 = &uart0;
+		sw0 = &button0;
+		led-strip = &rgb_led;
+	};
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+		zephyr,display = &gc9307n;
+		zephyr,touch = &chsc6x;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "BOOT Button";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	lcd_backlight_en {
+		compatible = "regulator-fixed";
+		regulator-name = "lcd_backlight_enable";
+		enable-gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;  /* IO13-BL-EN */
+		regulator-boot-on;
+	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		status = "okay";
+		spi-dev = <&spi2>;
+		dc-gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;   /* IO41 */
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		gc9307n: gc9307n@0 {
+			compatible = "galaxycore,gc9x01x";
+			reg = <0>;
+			status = "okay";
+			mipi-max-frequency = <80000000>;
+			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+			width = <240>;
+			height = <320>;
+			/*
+			 * Vendor init sequence from BOARD_VIEWE_UEDX24320028E_WB_A.h
+			 * Gamma settings derived from vendor commands
+			 */
+			gamma1 = [49 0b 09 08 06 2e];
+			gamma2 = [45 92 93 2b 31 6f];
+			gamma3 = [49 0b 09 08 06 2e];
+			gamma4 = [45 92 93 2b 31 6f];
+		};
+	};
+};
+
+&usb_serial {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+
+	/*
+	 * IM0 and IM1 pins select the MCU interface mode for the GC9A01.
+	 * For 4-wire SPI mode: IM0=LOW, IM1=HIGH.
+	 */
+	lcd-im0-hog {
+		gpio-hog;
+		gpios = <15 GPIO_ACTIVE_HIGH>;  /* IO47 - IM0 */
+		output-low;
+	};
+
+	lcd-im1-hog {
+		gpio-hog;
+		gpios = <16 GPIO_ACTIVE_HIGH>;  /* IO48 - IM1 */
+		output-high;
+	};
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+
+	chsc6x: chsc6x@2e {
+		compatible = "chipsemi,chsc6x";
+		reg = <0x2e>;
+		irq-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>; /* IO42 */
+};
+
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	line-idle-low;
+	pinctrl-0 = <&spim3_ws2812_led>;
+	pinctrl-names = "default";
+
+	rgb_led: ws2812@0 {
+		compatible = "worldsemi,ws2812-spi";
+		reg = <0>;
+		spi-max-frequency = <WS2812C_SPI_FREQ>;
+		chain-length = <1>;
+		color-mapping = <LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_BLUE>;
+		spi-one-frame = <WS2812C_ONE_FRAME>;
+		spi-zero-frame = <WS2812C_ZERO_FRAME>;
+	};
+};
+
+&timer0 {
+	status = "disabled";
+};
+
+&timer1 {
+	status = "disabled";
+};
+
+&timer2 {
+	status = "disabled";
+};
+
+&timer3 {
+	status = "disabled";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};
+
+zephyr_udc0: &usb_otg {
+	status = "okay";
+};

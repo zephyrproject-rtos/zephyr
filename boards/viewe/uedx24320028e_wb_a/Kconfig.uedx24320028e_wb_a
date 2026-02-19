@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_UEDX24320028E_WB_A
+	select SOC_ESP32S3_WROOM_N16R8
+	select SOC_ESP32S3_PROCPU if BOARD_UEDX24320028E_WB_A_ESP32S3_PROCPU
+	select SOC_ESP32S3_APPCPU if BOARD_UEDX24320028E_WB_A_ESP32S3_APPCPU
