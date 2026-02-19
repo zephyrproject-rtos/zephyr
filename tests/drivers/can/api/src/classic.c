@@ -82,8 +82,7 @@ static void tx_ext_callback_2(const struct device *dev, int error, void *user_da
  *
  * See @a can_rx_callback_t() for argument description.
  */
-static void rx_std_callback_1(const struct device *dev, struct can_frame *frame,
-			      void *user_data)
+static void rx_std_callback_1(const struct device *dev, struct can_frame *frame, void *user_data)
 {
 	struct can_filter *filter = user_data;
 
@@ -99,8 +98,7 @@ static void rx_std_callback_1(const struct device *dev, struct can_frame *frame,
  *
  * See @a can_rx_callback_t() for argument description.
  */
-static void rx_std_callback_2(const struct device *dev, struct can_frame *frame,
-			      void *user_data)
+static void rx_std_callback_2(const struct device *dev, struct can_frame *frame, void *user_data)
 {
 	struct can_filter *filter = user_data;
 
@@ -150,8 +148,7 @@ static void rx_std_mask_callback_2(const struct device *dev, struct can_frame *f
  *
  * See @a can_rx_callback_t() for argument description.
  */
-static void rx_ext_callback_1(const struct device *dev, struct can_frame *frame,
-			      void *user_data)
+static void rx_ext_callback_1(const struct device *dev, struct can_frame *frame, void *user_data)
 {
 	struct can_filter *filter = user_data;
 
@@ -167,8 +164,7 @@ static void rx_ext_callback_1(const struct device *dev, struct can_frame *frame,
  *
  * See @a can_rx_callback_t() for argument description.
  */
-static void rx_ext_callback_2(const struct device *dev, struct can_frame *frame,
-			      void *user_data)
+static void rx_ext_callback_2(const struct device *dev, struct can_frame *frame, void *user_data)
 {
 	struct can_filter *filter = user_data;
 
@@ -279,8 +275,7 @@ static inline int add_rx_msgq(const struct device *dev, const struct can_filter 
  *
  * @return CAN filter ID.
  */
-static inline int add_rx_filter(const struct device *dev,
-				const struct can_filter *filter,
+static inline int add_rx_filter(const struct device *dev, const struct can_filter *filter,
 				can_rx_callback_t callback)
 {
 	int filter_id;
@@ -302,10 +297,8 @@ static inline int add_rx_filter(const struct device *dev,
  * @param frame1  CAN frame 1
  * @param frame2  CAN frame 2
  */
-static void send_receive(const struct can_filter *filter1,
-			 const struct can_filter *filter2,
-			 const struct can_frame *frame1,
-			 const struct can_frame *frame2)
+static void send_receive(const struct can_filter *filter1, const struct can_filter *filter2,
+			 const struct can_frame *frame1, const struct can_frame *frame2)
 {
 	struct can_frame frame_buffer;
 	uint32_t mask = 0U;
@@ -393,8 +386,7 @@ static void send_receive(const struct can_filter *filter1,
  * @param data_frame  CAN data frame
  * @param rtr_frame   CAN RTR frame
  */
-static void send_receive_rtr(const struct can_filter *filter,
-			     const struct can_frame *data_frame,
+static void send_receive_rtr(const struct can_filter *filter, const struct can_frame *data_frame,
 			     const struct can_frame *rtr_frame)
 {
 	struct can_frame frame;
@@ -888,8 +880,7 @@ ZTEST(can_classic, test_send_ext_id_dlc_of_range)
  */
 ZTEST(can_classic, test_send_receive_std_id)
 {
-	send_receive(&test_std_filter_1, &test_std_filter_2,
-		     &test_std_frame_1, &test_std_frame_2);
+	send_receive(&test_std_filter_1, &test_std_filter_2, &test_std_frame_1, &test_std_frame_2);
 }
 
 /**
@@ -898,10 +889,10 @@ ZTEST(can_classic, test_send_receive_std_id)
 ZTEST(can_classic, test_send_receive_std_id_no_data)
 {
 	const struct can_frame frame = {
-		.flags   = 0,
-		.id      = TEST_CAN_STD_ID_1,
-		.dlc     = 0,
-		.data    = { 0 }
+		.flags = 0,
+		.id = TEST_CAN_STD_ID_1,
+		.dlc = 0,
+		.data = {0},
 	};
 	struct can_frame frame_buffer;
 	int filter_id;
@@ -924,8 +915,7 @@ ZTEST(can_classic, test_send_receive_std_id_no_data)
  */
 ZTEST(can_classic, test_send_receive_ext_id)
 {
-	send_receive(&test_ext_filter_1, &test_ext_filter_2,
-		     &test_ext_frame_1, &test_ext_frame_2);
+	send_receive(&test_ext_filter_1, &test_ext_filter_2, &test_ext_frame_1, &test_ext_frame_2);
 }
 
 /**
@@ -933,8 +923,8 @@ ZTEST(can_classic, test_send_receive_ext_id)
  */
 ZTEST(can_classic, test_send_receive_std_id_masked)
 {
-	send_receive(&test_std_masked_filter_1, &test_std_masked_filter_2,
-		     &test_std_frame_1, &test_std_frame_2);
+	send_receive(&test_std_masked_filter_1, &test_std_masked_filter_2, &test_std_frame_1,
+		     &test_std_frame_2);
 }
 
 /**
@@ -942,8 +932,8 @@ ZTEST(can_classic, test_send_receive_std_id_masked)
  */
 ZTEST(can_classic, test_send_receive_ext_id_masked)
 {
-	send_receive(&test_ext_masked_filter_1, &test_ext_masked_filter_2,
-		     &test_ext_frame_1, &test_ext_frame_2);
+	send_receive(&test_ext_masked_filter_1, &test_ext_masked_filter_2, &test_ext_frame_1,
+		     &test_ext_frame_2);
 }
 
 /**
@@ -1389,7 +1379,7 @@ ZTEST_USER(can_classic, test_set_bitrate_while_started)
  */
 ZTEST_USER(can_classic, test_set_timing_while_started)
 {
-	struct can_timing timing = { 0 };
+	struct can_timing timing = {0};
 	int err;
 
 	err = can_calc_timing(can_dev, &timing, TEST_BITRATE_1, TEST_SAMPLE_POINT);
