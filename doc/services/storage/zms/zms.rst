@@ -106,6 +106,10 @@ Mounting the storage system starts by getting the flash parameters, checking tha
 properties are correct (sector_size, sector_count ...) then calling the zms_init function to
 make the storage ready.
 
+By default, :c:func:`zms_mount` returns an error if the partition cannot be mounted.
+For recovery-oriented use cases, :c:func:`zms_mount_force` can be used to automatically
+wipe and reinitialize the partition when the first mount attempt fails.
+
 To mount the filesystem the following elements in the :c:struct:`zms_fs` structure must be initialized:
 
 .. code-block:: c
@@ -396,6 +400,8 @@ Version 1
 - Versioning of ZMS (to handle future evolutions)
 - Supports large ``write-block-size`` (only for platforms that need it)
 - Supports multiple ATE formats to satisfy the requirements of different applications
+- Supports forced mount recovery via :c:func:`zms_mount_force` (automatic partition wipe
+  and reinitialization on mount failure)
 
 Future features
 ===============
@@ -410,8 +416,6 @@ Future features
 - Add the possibility to retrieve the wear out value of the device based on the cycle count value
 - Add a recovery function that can recover a storage partition if something went wrong
 - Add a library/application to allow migration from NVS entries to ZMS entries
-- Add the possibility to force formatting the storage partition to the ZMS format if something
-  went wrong when mounting the storage.
 
 ZMS and other storage systems in Zephyr
 =======================================
