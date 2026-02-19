@@ -368,6 +368,7 @@ static void i2c_bflb_set_address(const struct device *dev, uint32_t address, boo
 		tmp |= I2C_CR_I2C_10B_ADDR_EN;
 		tmp |= ((address & 0x3FF) << I2C_CR_I2C_SLV_ADDR_SHIFT);
 	} else {
+		tmp &= ~I2C_CR_I2C_10B_ADDR_EN;
 		tmp |= ((address & 0x7F) << I2C_CR_I2C_SLV_ADDR_SHIFT);
 	}
 #else
@@ -408,11 +409,11 @@ static inline bool i2c_bflb_errored(const struct device *dev)
 	return (tmp & I2C_ARB_INT) != 0 || (tmp & I2C_FER_INT) != 0;
 }
 
-__no_optimization static int i2c_bflb_write(const struct device *dev, uint8_t *buf, uint8_t len)
+static int i2c_bflb_write(const struct device *dev, uint8_t *buf, uint8_t len)
 {
 	const struct i2c_bflb_cfg *config = dev->config;
 	uint32_t tmp;
-	k_timepoint_t end_timeout;
+	k_timepoint_t end_timeout = sys_timepoint_calc(K_MSEC(I2C_WAIT_TIMEOUT_MS));
 	uint8_t j;
 
 	tmp = sys_read32(config->base + I2C_CONFIG_OFFSET);
@@ -426,6 +427,10 @@ __no_optimization static int i2c_bflb_write(const struct device *dev, uint8_t *b
 	sys_write32(tmp, config->base + I2C_CONFIG_OFFSET);
 
 	for (uint8_t i = 0; i < len && !sys_timepoint_expired(end_timeout);) {
+		if (i2c_bflb_nacked(dev) || i2c_bflb_errored(dev)) {
+			LOG_DBG("write: NAK/error after %u/%u bytes", i, len);
+			return -EIO;
+		}
 		tmp = sys_read32(config->base + I2C_FIFO_CONFIG_1_OFFSET);
 		if ((tmp & I2C_TX_FIFO_CNT_MASK) > 0) {
 			end_timeout = sys_timepoint_calc(K_MSEC(I2C_WAIT_TIMEOUT_MS));
@@ -442,14 +447,19 @@ __no_optimization static int i2c_bflb_write(const struct device *dev, uint8_t *b
 		}
 	}
 
+	if (sys_timepoint_expired(end_timeout)) {
+		LOG_DBG("write: timeout after %u bytes", len);
+		return -ETIMEDOUT;
+	}
+
 	return 0;
 }
 
-__no_optimization static int i2c_bflb_read(const struct device *dev, uint8_t *buf, uint8_t len)
+static int i2c_bflb_read(const struct device *dev, uint8_t *buf, uint8_t len)
 {
 	const struct i2c_bflb_cfg *config = dev->config;
 	uint32_t tmp;
-	k_timepoint_t end_timeout;
+	k_timepoint_t end_timeout = sys_timepoint_calc(K_MSEC(I2C_WAIT_TIMEOUT_MS));
 	uint8_t j;
 
 	tmp = sys_read32(config->base + I2C_CONFIG_OFFSET);
@@ -465,6 +475,13 @@ __no_optimization static int i2c_bflb_read(const struct device *dev, uint8_t *bu
 	i2c_bflb_trigger(dev);
 
 	for (uint8_t i = 0; i < len && !sys_timepoint_expired(end_timeout);) {
+		if (i2c_bflb_nacked(dev) || i2c_bflb_errored(dev)) {
+			uint32_t sts = sys_read32(config->base + I2C_INT_STS_OFFSET);
+
+			LOG_DBG("read: NAK/error after %u/%u bytes (INT_STS=0x%08x)",
+				i, len, sts);
+			return -EIO;
+		}
 		tmp = sys_read32(config->base + I2C_FIFO_CONFIG_1_OFFSET);
 		if ((tmp & I2C_RX_FIFO_CNT_MASK) > 0) {
 			end_timeout = sys_timepoint_calc(K_MSEC(I2C_WAIT_TIMEOUT_MS));
@@ -477,10 +494,15 @@ __no_optimization static int i2c_bflb_read(const struct device *dev, uint8_t *bu
 		}
 	}
 
+	if (sys_timepoint_expired(end_timeout)) {
+		LOG_DBG("read: timeout after %u bytes", len);
+		return -ETIMEDOUT;
+	}
+
 	return 0;
 }
 
-__no_optimization static int i2c_bflb_prepare_transfer(const struct device *dev,
+static int i2c_bflb_prepare_transfer(const struct device *dev,
 				     struct i2c_msg *msgs, uint8_t num_msgs)
 {
 	struct i2c_bflb_data *data = dev->data;
@@ -526,7 +548,7 @@ __no_optimization static int i2c_bflb_prepare_transfer(const struct device *dev,
 	return i;
 }
 
-__no_optimization static int i2c_bflb_transfer(const struct device *dev,
+static int i2c_bflb_transfer(const struct device *dev,
 			     struct i2c_msg *msgs,
 			     uint8_t num_msgs,
 			     uint16_t addr)
