@@ -26,7 +26,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	struct bt_conn *conn;
 	int err;
 
-	bt_addr_le_to_str(addr, dev, sizeof(dev));
+	(void)bt_addr_le_to_str(addr, dev, sizeof(dev));
 	printk("[DEVICE]: %s, AD evt type %u, AD data len %u, RSSI %i\n",
 	       dev, type, ad->len, rssi);
 

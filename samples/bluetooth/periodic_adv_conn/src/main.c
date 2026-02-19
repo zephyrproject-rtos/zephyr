@@ -95,7 +95,7 @@ static void response_cb(struct bt_le_ext_adv *adv, struct bt_le_per_adv_response
 		return;
 	}
 
-	bt_addr_le_to_str(&peer, addr_str, sizeof(addr_str));
+	(void)bt_addr_le_to_str(&peer, addr_str, sizeof(addr_str));
 	printk("Connecting to %s in subevent %d\n", addr_str, info->subevent);
 
 	synced_param.peer = &peer;

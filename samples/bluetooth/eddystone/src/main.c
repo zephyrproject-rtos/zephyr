@@ -445,7 +445,7 @@ static int eds_slot_restart(struct eds_slot *slot, uint8_t type)
 		return err;
 	}
 
-	bt_addr_le_to_str(&addr, addr_s, sizeof(addr_s));
+	(void)bt_addr_le_to_str(&addr, addr_s, sizeof(addr_s));
 	printk("Advertising as %s\n", addr_s);
 
 	slot->type = type;
@@ -642,7 +642,7 @@ static void bt_ready(int err)
 
 	/* Restore connectable if slot */
 	bt_le_oob_get_local(BT_ID_DEFAULT, &oob);
-	bt_addr_le_to_str(&oob.addr, addr_s, sizeof(addr_s));
+	(void)bt_addr_le_to_str(&oob.addr, addr_s, sizeof(addr_s));
 	printk("Initial advertising as %s\n", addr_s);
 
 	k_work_schedule(&idle_work, EDS_IDLE_TIMEOUT);

@@ -29,7 +29,7 @@ static void sync_cb(struct bt_le_per_adv_sync *sync, struct bt_le_per_adv_sync_s
 	char le_addr[BT_ADDR_LE_STR_LEN];
 	int err;
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	(void)bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	printk("Synced to %s with %d subevents\n", le_addr, info->num_subevents);
 
 	params.properties = 0;
@@ -49,7 +49,7 @@ static void term_cb(struct bt_le_per_adv_sync *sync,
 {
 	char le_addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	(void)bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 
 	printk("Sync terminated (reason %d)\n", info->reason);
 }
@@ -86,7 +86,7 @@ static void recv_cb(struct bt_le_per_adv_sync *sync,
 			return;
 		}
 
-		bt_addr_le_to_str(&oob.addr, addr_str, sizeof(addr_str));
+		(void)bt_addr_le_to_str(&oob.addr, addr_str, sizeof(addr_str));
 		printk("Responding with own addr: %s\n", addr_str);
 
 		net_buf_simple_add_u8(&rsp_buf, sizeof(bt_addr_le_t));

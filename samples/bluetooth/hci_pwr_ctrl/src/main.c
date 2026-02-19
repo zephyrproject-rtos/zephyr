@@ -157,7 +157,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 			printk("No connection handle (err %d)\n", ret);
 		} else {
 			/* Send first at the default selected power */
-			bt_addr_le_to_str(bt_conn_get_dst(conn),
+			(void)bt_addr_le_to_str(bt_conn_get_dst(conn),
 							  addr, sizeof(addr));
 			printk("Connected via connection (%d) at %s\n",
 			       default_conn_handle, addr);

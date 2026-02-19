@@ -154,7 +154,7 @@ int main(void)
 	}
 	printk("success\n");
 
-	bt_addr_le_to_str(&oob_local.addr, addr_s, sizeof(addr_s));
+	(void)bt_addr_le_to_str(&oob_local.addr, addr_s, sizeof(addr_s));
 
 	printk("Started extended advertising as %s\n", addr_s);
 	return 0;

@@ -541,7 +541,7 @@ bap_broadcast_assistant_recv_state_read_cb(struct bt_conn *conn, int err,
 	if (state != NULL) {
 		char le_addr[BT_ADDR_LE_STR_LEN];
 
-		bt_addr_le_to_str(&state->addr, le_addr, sizeof(le_addr));
+		(void)bt_addr_le_to_str(&state->addr, le_addr, sizeof(le_addr));
 		printk("BASS recv state: src_id %u, addr %s, sid %u, sync_state %u, encrypt_state "
 		       "%u, num_subgroups %u\n",
 		       state->src_id, le_addr, state->adv_sid, state->pa_sync_state,

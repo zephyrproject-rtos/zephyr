@@ -44,7 +44,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (err) {
 		printk("Failed to connect to %s %u %s\n", addr, err, bt_hci_err_to_str(err));
@@ -62,7 +62,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	printk("Disconnected from %s, reason 0x%02x %s\n", addr,
 	       reason, bt_hci_err_to_str(reason));
@@ -74,8 +74,8 @@ static void identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
 	char addr_identity[BT_ADDR_LE_STR_LEN];
 	char addr_rpa[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(identity, addr_identity, sizeof(addr_identity));
-	bt_addr_le_to_str(rpa, addr_rpa, sizeof(addr_rpa));
+	(void)bt_addr_le_to_str(identity, addr_identity, sizeof(addr_identity));
+	(void)bt_addr_le_to_str(rpa, addr_rpa, sizeof(addr_rpa));
 
 	printk("Identity resolved %s -> %s\n", addr_rpa, addr_identity);
 }
@@ -85,7 +85,7 @@ static void security_changed(struct bt_conn *conn, bt_security_t level,
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	if (!err) {
 		printk("Security changed: %s level %u\n", addr, level);
@@ -107,7 +107,7 @@ static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	printk("Passkey for %s: %06u\n", addr, passkey);
 }
@@ -116,7 +116,7 @@ static void auth_cancel(struct bt_conn *conn)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
+	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	printk("Pairing cancelled: %s\n", addr);
 }

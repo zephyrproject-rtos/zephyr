@@ -309,7 +309,7 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 
 	bt_conn_get_info(conn, &info);
 
-	bt_addr_to_str(info.br.dst, addr, sizeof(addr));
+	(void)bt_addr_to_str(info.br.dst, addr, sizeof(addr));
 
 	printk("Security changed: %s level %u, err %s(%d)\n", addr, level,
 	       bt_security_err_to_str(err), err);
@@ -338,7 +338,7 @@ static void discovery_timeout_cb(const struct bt_br_discovery_result *results, s
 	size_t i;
 
 	for (i = 0; i < count; i++) {
-		bt_addr_to_str(&results[i].addr, addr, sizeof(addr));
+		(void)bt_addr_to_str(&results[i].addr, addr, sizeof(addr));
 		printk("Device[%d]: %s, rssi %d, cod 0x%02x%02x%02x", i, addr, results[i].rssi,
 		       results[i].cod[0], results[i].cod[1], results[i].cod[2]);
 

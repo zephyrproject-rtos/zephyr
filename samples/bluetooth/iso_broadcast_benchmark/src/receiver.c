@@ -100,7 +100,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 		return;
 	}
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
+	(void)bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 
 	LOG_INF("Found broadcaster with address %s (RSSI %i)",
 		le_addr, info->rssi);
