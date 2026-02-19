@@ -4,24 +4,56 @@
 config HAS_IRONSIDE_SE
 	bool
 
+config HAS_IRONSIDE_SE_CALL
+	bool
+
 menu "IronSide SE"
 	depends on HAS_IRONSIDE_SE
 
 config IRONSIDE_SE_CALL
 	bool "IronSide calls"
 	default y
-	depends on DT_HAS_NORDIC_IRONSIDE_CALL_ENABLED
-	depends on MULTITHREADING
-	select EVENTS
-	select MBOX
+	depends on HAS_IRONSIDE_SE_CALL
 	help
 	  Support for IronSide call APIs.
 
 if IRONSIDE_SE_CALL
 
+choice IRONSIDE_SE_CALL_DRIVER
+	prompt "IronSide calls driver implementation"
+	default IRONSIDE_SE_CALL_ZEPHYR if DT_HAS_NORDIC_IRONSIDE_CALL_ENABLED
+	default IRONSIDE_SE_CALL_MINIMAL
+	help
+	  Driver implementation used for IronSide calls.
+
+config IRONSIDE_SE_CALL_ZEPHYR
+	bool "Zephyr driver"
+	depends on DT_HAS_NORDIC_IRONSIDE_CALL_ENABLED
+	depends on MULTITHREADING
+	select EVENTS
+	select MBOX
+	help
+	  Use the default driver for IronSide calls which supports concurrent
+	  calls being made from different threads. This is the recommended implementation
+	  and should be used in most applications.
+
+config IRONSIDE_SE_CALL_MINIMAL
+	bool "Minimal driver"
+	help
+	  Use the minimal driver for IronSide calls, which is included with the
+	  IronSide APIs. This driver does not support concurrent calls from different
+	  threads, and uses busy waiting instead of interrupts when waiting for a
+	  reply from IronSide SE. It also does not perform data cache handling for the IPC
+	  buffer, and instead assumes that the IPC buffer area is not cached.
+	  This option is primarily intended for constrained applications such as bootloaders
+	  and is not recommended for general use.
+
+endchoice
+
 config IRONSIDE_SE_CALL_INIT_PRIORITY
 	int "IronSide calls' driver initialization priority"
 	default 41
+	depends on IRONSIDE_SE_CALL_ZEPHYR
 	help
 	  Initialization priority of the IronSide call protocol driver.
 	  It must be below MBOX_INIT_PRIORITY, but higher than the priority of any feature
