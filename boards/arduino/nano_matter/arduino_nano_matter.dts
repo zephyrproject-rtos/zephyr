@@ -179,9 +179,10 @@
 	pinctrl-names = "default";
 };
 
-&i2c0 {
+zephyr_i2c: &i2c0 {
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio {
