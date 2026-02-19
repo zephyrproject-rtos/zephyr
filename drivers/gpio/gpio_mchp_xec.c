@@ -292,10 +292,6 @@ static int gpio_xec_pin_interrupt_config(const struct device *dev, gpio_pin_t pi
 	idet_curr = MEC_GPIO_CR1_IDET_GET(cr1);
 	idet = gen_gpio_ctrl_icfg(mode, trig);
 
-	if (idet_curr == idet) {
-		return 0;
-	}
-
 	if ((idet == MEC_GPIO_CR1_IDET_LL) || (idet == MEC_GPIO_CR1_IDET_LH)) {
 		data->level_intr_bm |= BIT(pin);
 	} else {
