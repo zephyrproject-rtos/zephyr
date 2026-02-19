@@ -972,7 +972,7 @@ static void broadcast_source_reconfig_update_subgroup(
 int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 				     struct bt_bap_broadcast_source_param *param)
 {
-	struct bt_bap_broadcast_subgroup *subgroup;
+	struct bt_bap_broadcast_subgroup *subgroup = NULL;
 	enum bt_bap_ep_state broadcast_state;
 	struct bt_bap_qos_cfg *qos;
 
@@ -1005,6 +1005,10 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 			subgroup =
 				SYS_SLIST_PEEK_HEAD_CONTAINER(&source->subgroups, subgroup, _node);
 		} else {
+			/* Number of subgroups in `source` are verified in
+			 * valid_broadcast_source_reconfig_param so this should never happen
+			 */
+			__ASSERT_NO_MSG(subgroup != NULL);
 			subgroup = SYS_SLIST_PEEK_NEXT_CONTAINER(subgroup, _node);
 		}
 
