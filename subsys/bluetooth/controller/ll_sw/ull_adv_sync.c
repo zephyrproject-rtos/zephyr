@@ -540,7 +540,26 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 			err = ull_sched_adv_aux_sync_free_anchor_get(sync->ull.ticks_slot,
 								     &ticks_anchor_sync);
 			if (!err) {
-				ticks_anchor_sync += HAL_TICKER_US_TO_TICKS(
+				const struct ll_adv_aux_set *aux_set;
+				const struct pdu_adv *pdu;
+				uint32_t ticks_slot;
+				uint32_t ticks_diff;
+				uint32_t slot_us;
+				uint8_t pdu_len;
+
+				aux_set = HDR_LLL2ULL(lll_aux);
+
+				pdu = (const struct pdu_adv *)lll_aux->data.pdu[sec_idx];
+				pdu_len = pdu->len - pdu->adv_ext_ind.ext_hdr_len -
+					  PDU_AC_EXT_HEADER_SIZE_MIN + PDU_AC_EXT_HEADER_SIZE_MAX;
+				slot_us = ull_adv_aux_time_get(aux_set, pdu_len, 0U);
+
+				ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(slot_us);
+				ticks_diff = ticker_ticks_diff_get(ticks_slot,
+								   aux_set->ull.ticks_slot);
+
+				ticks_anchor_sync += ticks_diff;
+				ticks_anchor_sync += HAL_TICKER_US_TO_TICKS_CEIL(
 					MAX(EVENT_MAFS_US,
 					    EVENT_OVERHEAD_START_US) -
 					EVENT_OVERHEAD_START_US +
@@ -563,7 +582,7 @@ uint8_t ll_adv_sync_enable(uint8_t handle, uint8_t enable)
 	(CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET == 0)
 			ticks_anchor_sync = ticks_anchor_aux +
 				ticks_slot_overhead_aux + aux->ull.ticks_slot +
-				HAL_TICKER_US_TO_TICKS(
+				HAL_TICKER_US_TO_TICKS_CEIL(
 					MAX(EVENT_MAFS_US,
 					    EVENT_OVERHEAD_START_US) -
 					EVENT_OVERHEAD_START_US +
