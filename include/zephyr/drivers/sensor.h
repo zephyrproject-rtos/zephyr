@@ -164,6 +164,8 @@ enum sensor_channel {
 	SENSOR_CHAN_CURRENT,
 	/** Power in watts **/
 	SENSOR_CHAN_POWER,
+	/** Power in dBm (decibels relative to 1 milliwatt) **/
+	SENSOR_CHAN_POWER_DBM,
 
 	/** Resistance , in Ohm **/
 	SENSOR_CHAN_RESISTANCE,
