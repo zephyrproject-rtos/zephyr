@@ -1517,10 +1517,24 @@ static int lsm6dsv16x_pm_action(const struct device *dev, enum pm_device_action 
 				     &lsm6dsv16x_driver_api);
 
 #ifdef CONFIG_LSM6DSV16X_TRIGGER
+#define LSM6DSV16X_CFG_IRQ_GPIO(inst) \
+	.int1_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, { 0 }),	\
+	.int2_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int2_gpios, { 0 }),
+
+#ifdef CONFIG_COUNTER_CAPTURE
+#define LSM6DSV16X_CFG_IRQ_COUNTER(inst) \
+	.int1_counter_capture =						\
+		COUNTER_CAPTURE_DT_SPEC_INST_GET_BY_IDX_OR(inst, int1_counter_capture, 0, { 0 }), \
+	.int2_counter_capture =						\
+		COUNTER_CAPTURE_DT_SPEC_INST_GET_BY_IDX_OR(inst, int2_counter_capture, 0, { 0 }),
+#else
+#define LSM6DSV16X_CFG_IRQ_COUNTER(inst)
+#endif
+
 #define LSM6DSV16X_CFG_IRQ(inst)					\
 	.trig_enabled = true,						\
-	.int1_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, { 0 }),	\
-	.int2_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int2_gpios, { 0 }),	\
+	LSM6DSV16X_CFG_IRQ_GPIO(inst)					\
+	LSM6DSV16X_CFG_IRQ_COUNTER(inst)				\
 	.drdy_pulsed = DT_INST_PROP(inst, drdy_pulsed),                 \
 	.drdy_pin = DT_INST_PROP(inst, drdy_pin)
 #else
@@ -1542,9 +1556,7 @@ static int lsm6dsv16x_pm_action(const struct device *dev, enum pm_device_action 
 		    .sflp_odr  = DT_INST_PROP(inst, sflp_odr),			\
 		    .sflp_fifo_en  = DT_INST_PROP(inst, sflp_fifo_enable),	\
 		    .temp_batch  = DT_INST_PROP(inst, temp_fifo_batch_rate),))	\
-	IF_ENABLED(UTIL_OR(DT_INST_NODE_HAS_PROP(inst, int1_gpios),		\
-			   DT_INST_NODE_HAS_PROP(inst, int2_gpios)),		\
-		   (LSM6DSV16X_CFG_IRQ(inst)))
+	LSM6DSV16X_CFG_IRQ(inst)
 
 /*
  * Instantiation macros used when a device is on a SPI bus.
@@ -1661,7 +1673,22 @@ static int lsm6dsv16x_pm_action(const struct device *dev, enum pm_device_action 
  * bus-specific macro at preprocessor time.
  */
 
+#ifdef CONFIG_COUNTER_CAPTURE
+#define LSM6DSV16X_BUILD_ASSERT_NO_MIXED_TRIGGER(inst)				\
+	BUILD_ASSERT(								\
+		!(DT_INST_NODE_HAS_PROP(inst, int1_gpios) &&			\
+		  DT_INST_NODE_HAS_PROP(inst, int1_counter_capture)),		\
+		"LSM6DSV16X: int1 cannot have both gpio and counter-capture");	\
+	BUILD_ASSERT(								\
+		!(DT_INST_NODE_HAS_PROP(inst, int2_gpios) &&			\
+		  DT_INST_NODE_HAS_PROP(inst, int2_counter_capture)),		\
+		"LSM6DSV16X: int2 cannot have both gpio and counter-capture");
+#else
+#define LSM6DSV16X_BUILD_ASSERT_NO_MIXED_TRIGGER(inst)
+#endif /* CONFIG_COUNTER_CAPTURE */
+
 #define LSM6DSV16X_DEFINE(inst, prefix)						\
+	LSM6DSV16X_BUILD_ASSERT_NO_MIXED_TRIGGER(inst)				\
 	COND_CODE_1(DT_INST_ON_BUS(inst, spi),					\
 		(LSM6DSV16X_DEFINE_SPI(inst, prefix)),				\
 		(COND_CODE_1(DT_INST_ON_BUS(inst, i3c),				\

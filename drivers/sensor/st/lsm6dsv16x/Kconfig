@@ -51,23 +51,31 @@ config LSM6DSV16X_TRIGGER_NONE
 
 config LSM6DSV16X_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
-	depends on GPIO || I3C
+	depends on GPIO || I3C || COUNTER_CAPTURE
 	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV16X),int1-gpios) ||\
 		   $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV16X),int2-gpios) ||\
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV16X),int1-counter-capture) ||\
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV16X),int2-counter-capture) ||\
 		   $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV16X),i3c) ||\
 		   $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV32X),int1-gpios) ||\
 		   $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV32X),int2-gpios) ||\
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV32X),int1-counter-capture) ||\
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV32X),int2-counter-capture) ||\
 		   $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV32X),i3c)
 	select LSM6DSV16X_TRIGGER
 
 config LSM6DSV16X_TRIGGER_OWN_THREAD
 	bool "Use own thread"
-	depends on GPIO || I3C
+	depends on GPIO || I3C || COUNTER_CAPTURE
 	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV16X),int1-gpios) ||\
 		   $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV16X),int2-gpios) ||\
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV16X),int1-counter-capture) ||\
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV16X),int2-counter-capture) ||\
 		   $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV16X),i3c) ||\
 		   $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV32X),int1-gpios) ||\
 		   $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV32X),int2-gpios) ||\
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV32X),int1-counter-capture) ||\
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV32X),int2-counter-capture) ||\
 		   $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV32X),i3c)
 	select LSM6DSV16X_TRIGGER
 
