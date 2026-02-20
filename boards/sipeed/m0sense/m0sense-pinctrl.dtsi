@@ -1,0 +1,39 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/bl70x-pinctrl.h>
+
+&pinctrl {
+	usb_default: usb_default {
+		group1 {
+			pinmux = <BFLB_PINMUX(7, usb, dp, analog)>,
+				 <BFLB_PINMUX(8, usb, dm, analog)>;
+		};
+	};
+
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <BFLB_PINMUX(14, uart0, tx, periph)>,
+				 <BFLB_PINMUX(15, uart0, rx, periph)>;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <BFLB_PINMUX(26, i2c, scl, periph)>,
+				 <BFLB_PINMUX(27, i2c, sda, periph)>;
+			bias-pull-up;
+			input-schmitt-enable;
+		};
+	};
+
+	pwm0_default: pwm0_default {
+		group1 {
+			pinmux = <BFLB_PINMUX(23, pwm, ch3, periph)>,
+				 <BFLB_PINMUX(24, pwm, ch4, periph)>,
+				 <BFLB_PINMUX(25, pwm, ch0, periph)>;
+		};
+	};
+};

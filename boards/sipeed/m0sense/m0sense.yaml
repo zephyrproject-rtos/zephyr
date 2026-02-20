@@ -1,0 +1,15 @@
+identifier: m0sense
+name: Sipeed M0Sense
+type: mcu
+arch: riscv
+ram: 64
+flash: 512
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - pwm
+  - uart
+  - usbd
+vendor: sipeed
