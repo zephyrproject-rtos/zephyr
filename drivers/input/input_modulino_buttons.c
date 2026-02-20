@@ -66,7 +66,7 @@ static int modulino_buttons_init(const struct device *dev)
 	data->dev = dev;
 
 	if (!i2c_is_ready_dt(&cfg->bus)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERR_DEVICE_NOT_READY(cfg->bus.bus);
 		return -ENODEV;
 	}
 

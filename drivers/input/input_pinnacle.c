@@ -370,7 +370,7 @@ static int pinnacle_set_sensitivity(const struct device *dev)
 static bool pinnacle_is_ready_i2c(const struct pinnacle_bus *bus)
 {
 	if (!i2c_is_ready_dt(&bus->i2c)) {
-		LOG_ERR("I2C bus %s is not ready", bus->i2c.bus->name);
+		LOG_ERR_DEVICE_NOT_READY(bus->i2c.bus);
 		return false;
 	}
 
@@ -417,7 +417,7 @@ static int pinnacle_seq_read_i2c(const struct pinnacle_bus *bus, uint8_t address
 static bool pinnacle_is_ready_spi(const struct pinnacle_bus *bus)
 {
 	if (!spi_is_ready_dt(&bus->spi)) {
-		LOG_ERR("SPI bus %s is not ready", bus->spi.bus->name);
+		LOG_ERR_DEVICE_NOT_READY(bus->spi.bus);
 		return false;
 	}
 
@@ -711,7 +711,7 @@ int pinnacle_init_interrupt(const struct device *dev)
 	/* Configure GPIO pin for HW_DR signal */
 	rc = gpio_is_ready_dt(gpio);
 	if (!rc) {
-		LOG_ERR("GPIO device %s/%d is not ready", gpio->port->name, gpio->pin);
+		LOG_ERR_DEVICE_NOT_READY(gpio->port);
 		return -ENODEV;
 	}
 

@@ -240,7 +240,7 @@ static int cst816s_chip_init(const struct device *dev)
 	cst816s_chip_reset(dev);
 
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("I2C bus %s not ready", cfg->i2c.bus->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->i2c.bus);
 		return -ENODEV;
 	}
 	ret = i2c_reg_read_byte_dt(&cfg->i2c, CST816S_REG_CHIP_ID, &chip_id);
@@ -293,7 +293,7 @@ static int cst816s_init(const struct device *dev)
 	const struct cst816s_config *config = dev->config;
 
 	if (!gpio_is_ready_dt(&config->int_gpio)) {
-		LOG_ERR("GPIO port %s not ready", config->int_gpio.port->name);
+		LOG_ERR_DEVICE_NOT_READY(config->int_gpio.port);
 		return -ENODEV;
 	}
 

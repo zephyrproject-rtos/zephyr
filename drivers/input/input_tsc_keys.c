@@ -177,7 +177,7 @@ static int stm32_tsc_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(clk)) {
-		LOG_ERR("%s: clock controller device not ready", dev->name);
+		LOG_ERR_DEVICE_NOT_READY(clk);
 		return -ENODEV;
 	}
 
@@ -397,7 +397,7 @@ static int input_tsc_keys_init(const struct device *dev)
 	struct input_tsc_keys_data *data = dev->data;
 
 	if (!device_is_ready(config->tsc_dev)) {
-		LOG_ERR("%s: TSC device not ready", config->tsc_dev->name);
+		LOG_ERR_DEVICE_NOT_READY(config->tsc_dev);
 		return -ENODEV;
 	}
 

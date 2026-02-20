@@ -111,7 +111,7 @@ static int nunchuk_init(const struct device *dev)
 	data->interval_ms = K_MSEC(cfg->polling_interval_ms - 11);
 
 	if (!i2c_is_ready_dt(&cfg->i2c_bus)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERR_DEVICE_NOT_READY(cfg->i2c_bus.bus);
 		return -ENODEV;
 	}
 

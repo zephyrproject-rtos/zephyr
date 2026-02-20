@@ -360,7 +360,7 @@ static void cy8cmbr3xxx_reset(const struct device *dev)
 	int ret;
 
 	if (!gpio_is_ready_dt(&config->rst_gpio)) {
-		LOG_ERR("GPIO controller device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->rst_gpio.port);
 		return;
 	}
 
@@ -390,14 +390,14 @@ static int cy8cmbr3xxx_init(const struct device *dev)
 	k_work_init(&data->work, cy8cmbr3xxx_work_handler);
 
 	if (!i2c_is_ready_dt(&config->i2c)) {
-		LOG_ERR("I2C controller device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->i2c.bus);
 		return -ENODEV;
 	}
 
 	cy8cmbr3xxx_reset(dev);
 
 	if (!gpio_is_ready_dt(&config->int_gpio)) {
-		LOG_ERR("GPIO controller device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->int_gpio.port);
 		return -ENODEV;
 	}
 
