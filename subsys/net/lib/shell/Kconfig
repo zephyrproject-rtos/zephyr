@@ -60,6 +60,11 @@ config NET_SHELL_EVENT_MONITOR_SUPPORTED
 	default y
 	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_MGMT_EVENT_MONITOR
 
+config NET_SHELL_FTP_SUPPORTED
+	bool "FTP client"
+	default y
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || FTP_CLIENT
+
 config NET_SHELL_GPTP_SUPPORTED
 	bool "gPTP monitoring"
 	default y
