@@ -24,6 +24,7 @@ from typing import Any
 import zephyr_module
 from twisterlib.constants import SUPPORTED_SIMS, ZEPHYR_BASE
 from twisterlib.coverage import supported_coverage_formats
+from twisterlib.hardwaremap import HardwareMap
 from twisterlib.log_helper import log_command
 
 logger = logging.getLogger('twister')
@@ -1087,7 +1088,7 @@ class TwisterEnv:
                 self.arch_roots.append(project / Path(arch_root))
 
         self.modules = [m.meta for m in modules]
-        self.hwm = None
+        self.hwm: HardwareMap | None = None
 
         self.test_config = options.test_config
 
