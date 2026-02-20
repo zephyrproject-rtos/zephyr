@@ -45,33 +45,6 @@ static void *rtc_clk_setup(void)
 	return NULL;
 }
 
-ZTEST(rtc_clk, test_cpu_xtal_src)
-{
-	struct esp32_clock_config clk_cfg = {0};
-	int ret = 0;
-	uint32_t cpu_rate = 0;
-
-	clk_cfg.cpu.clk_src = ESP32_CPU_CLK_SRC_XTAL;
-	clk_cfg.cpu.xtal_freq = (DT_PROP(DT_INST(0, DT_CPU_COMPAT), xtal_freq) / MHZ(1));
-
-	for (uint8_t i = 0; i < 4; i++) {
-		clk_cfg.cpu.cpu_freq = clk_cfg.cpu.xtal_freq >> i;
-
-		TC_PRINT("Testing CPU frequency: %d MHz\n", clk_cfg.cpu.cpu_freq);
-
-		ret = clock_control_configure(
-			clk_dev, (clock_control_subsys_t)ESP32_CLOCK_CONTROL_SUBSYS_CPU, &clk_cfg);
-		zassert_false(ret, "Failed to set CPU clock source");
-
-		ret = clock_control_get_rate(
-			clk_dev, (clock_control_subsys_t)ESP32_CLOCK_CONTROL_SUBSYS_CPU, &cpu_rate);
-		zassert_false(ret, "Failed to get CPU clock rate");
-		zassert_equal(cpu_rate, clk_cfg.cpu.cpu_freq * MHZ(1),
-			      "CPU clock rate is not equal to XTAL frequency (%d != %d)", cpu_rate,
-			      clk_cfg.cpu.cpu_freq);
-	}
-}
-
 uint32_t rtc_pll_src_freq_mhz[] = {
 #if defined(ESP32_CLK_CPU_PLL_48M)
 	ESP32_CLK_CPU_PLL_48M,
@@ -92,6 +65,54 @@ uint32_t rtc_pll_src_freq_mhz[] = {
 	ESP32_CLK_CPU_PLL_240M,
 #endif
 };
+
+ZTEST(rtc_clk, test_cpu_xtal_src)
+{
+	struct esp32_clock_config clk_cfg = {0};
+	int ret = 0;
+	uint32_t cpu_rate = 0;
+
+	clk_cfg.cpu.clk_src = ESP32_CPU_CLK_SRC_XTAL;
+	clk_cfg.cpu.xtal_freq = (DT_PROP(DT_INST(0, DT_CPU_COMPAT), xtal_freq) / MHZ(1));
+
+	/*
+	 * Test CPU frequencies that are valid integer divisions of XTAL.
+	 * Use dividers 1, 2, 4, 8 and skip if the result doesn't match.
+	 */
+	for (uint8_t i = 0; i < 4; i++) {
+		uint32_t divider = 1 << i;
+		uint32_t target_freq = clk_cfg.cpu.xtal_freq / divider;
+
+		/* Skip if division doesn't result in exact frequency */
+		if (target_freq * divider != clk_cfg.cpu.xtal_freq) {
+			TC_PRINT("Skipping CPU frequency: %d MHz (not exact division)\n",
+				 clk_cfg.cpu.xtal_freq >> i);
+			continue;
+		}
+
+		clk_cfg.cpu.cpu_freq = target_freq;
+
+		TC_PRINT("Testing CPU frequency: %d MHz\n", clk_cfg.cpu.cpu_freq);
+
+		ret = clock_control_configure(
+			clk_dev, (clock_control_subsys_t)ESP32_CLOCK_CONTROL_SUBSYS_CPU, &clk_cfg);
+		zassert_false(ret, "Failed to set CPU clock source");
+
+		ret = clock_control_get_rate(
+			clk_dev, (clock_control_subsys_t)ESP32_CLOCK_CONTROL_SUBSYS_CPU, &cpu_rate);
+		zassert_false(ret, "Failed to get CPU clock rate");
+		zassert_equal(cpu_rate, clk_cfg.cpu.cpu_freq * MHZ(1),
+			      "CPU clock rate is not equal to XTAL frequency (%d != %d)", cpu_rate,
+			      clk_cfg.cpu.cpu_freq);
+	}
+
+	/* Restore CPU to PLL for subsequent tests */
+	clk_cfg.cpu.clk_src = ESP32_CPU_CLK_SRC_PLL;
+	clk_cfg.cpu.cpu_freq = rtc_pll_src_freq_mhz[0] / MHZ(1);
+	ret = clock_control_configure(
+		clk_dev, (clock_control_subsys_t)ESP32_CLOCK_CONTROL_SUBSYS_CPU, &clk_cfg);
+	zassert_false(ret, "Failed to restore CPU to PLL");
+}
 
 ZTEST(rtc_clk, test_cpu_pll_src)
 {
