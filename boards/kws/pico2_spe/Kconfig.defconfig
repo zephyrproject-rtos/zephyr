@@ -13,9 +13,6 @@ endif # I2C_DW
 config USB_SELF_POWERED
 	default n
 
-configdefault PHY_INIT_PRIORITY
-	default 82
-
 configdefault NET_L2_ETHERNET
 	default y
 
