@@ -97,13 +97,15 @@ struct sx126x_data {
  * @param frequency RF frequency in Hz
  * @param bitrate Bit rate in bps (e.g., 50000 for 50 kbps)
  * @param fdev Frequency deviation in Hz (e.g., 25000 for 25 kHz)
+ * @param shaping Gaussian shaping (SX126X_FSK_MOD_SHAPING_*)
  * @param bandwidth RX bandwidth (use SX126X_FSK_BW_* constants)
  * @param tx_power TX power in dBm
  * @return 0 on success, negative error code otherwise
  */
 int sx126x_fsk_config(const struct device *dev,
 		      uint32_t frequency, uint32_t bitrate,
-		      uint32_t fdev, uint8_t bandwidth, int8_t tx_power);
+		      uint32_t fdev, uint8_t shaping,
+		      uint8_t bandwidth, int8_t tx_power);
 
 /**
  * @brief Set FSK packet parameters

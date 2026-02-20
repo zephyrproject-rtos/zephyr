@@ -1027,7 +1027,8 @@ static int sx126x_set_fsk_crc_params(const struct device *dev,
 
 int sx126x_fsk_config(const struct device *dev,
 		      uint32_t frequency, uint32_t bitrate,
-		      uint32_t fdev, uint8_t bandwidth, int8_t tx_power)
+		      uint32_t fdev, uint8_t shaping,
+		      uint8_t bandwidth, int8_t tx_power)
 {
 	struct sx126x_data *data = dev->data;
 	const struct sx126x_hal_config *config = dev->config;
@@ -1114,7 +1115,7 @@ int sx126x_fsk_config(const struct device *dev,
 	}
 
 	ret = sx126x_set_fsk_modulation_params(dev, bitrate, fdev,
-					       SX126X_FSK_MOD_SHAPING_OFF,
+					       shaping,
 					       bandwidth);
 	if (ret < 0) {
 		goto out;
@@ -1146,12 +1147,12 @@ int sx126x_fsk_config(const struct device *dev,
 	data->fsk_config.bitrate = bitrate;
 	data->fsk_config.fdev = fdev;
 	data->fsk_config.bandwidth = bandwidth;
-	data->fsk_config.shaping = SX126X_FSK_MOD_SHAPING_OFF;
+	data->fsk_config.shaping = shaping;
 	data->fsk_config.frequency = frequency;
 	data->fsk_config.tx_power = tx_power;
 
-	LOG_INF("FSK Config: freq=%u, bitrate=%u, fdev=%u, bw=0x%02x, power=%d",
-		frequency, bitrate, fdev, bandwidth, tx_power);
+	LOG_INF("FSK Config: freq=%u, bitrate=%u, fdev=%u, shaping=0x%02x, bw=0x%02x, power=%d",
+		frequency, bitrate, fdev, shaping, bandwidth, tx_power);
 
 out:
 	k_mutex_unlock(&data->lock);
@@ -1438,10 +1439,7 @@ int sx126x_fsk_recv(const struct device *dev, uint8_t *data_buf,
 		     ? 0 : k_ticks_to_ms_ceil32(timeout.ticks);
 	ret = sx126x_set_rx(dev, timeout_ms);
 	if (ret < 0) {
-		sx126x_set_rf_path(dev, false, false);
-		k_mutex_unlock(&data->lock);
-		atomic_set(&data->state, SX126X_STATE_IDLE);
-		return ret;
+		goto out_error;
 	}
 
 	k_mutex_unlock(&data->lock);
@@ -1493,21 +1491,20 @@ int sx126x_fsk_recv_async(const struct device *dev, lora_recv_cb cb, void *user_
 		sx126x_set_standby(dev, SX126X_STANDBY_RC);
 		sx126x_set_rf_path(dev, false, false);
 		atomic_set(&data->state, SX126X_STATE_IDLE);
-
-		k_mutex_unlock(&data->lock);
-		return 0;
+		ret = 0;
+		goto out_unlock;
 	}
 
 	if (!data->config_valid || data->current_modulation != SX126X_MODULATION_FSK) {
 		LOG_ERR("FSK not configured");
-		k_mutex_unlock(&data->lock);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto out_unlock;
 	}
 
 	if (!atomic_cas(&data->state, SX126X_STATE_IDLE, SX126X_STATE_RX)) {
 		LOG_ERR("FSK RX async: Busy");
-		k_mutex_unlock(&data->lock);
-		return -EBUSY;
+		ret = -EBUSY;
+		goto out_unlock;
 	}
 
 	data->rx_cb = cb;
@@ -1577,18 +1574,20 @@ int sx126x_fsk_recv_async(const struct device *dev, lora_recv_cb cb, void *user_
 	ret = sx126x_set_rx(dev, 0);
 	if (ret < 0) {
 		LOG_ERR("FSK RX async: Failed set RX: %d", ret);
-		sx126x_set_rf_path(dev, false, false);
 		goto out_error;
 	}
 
 	LOG_DBG("FSK RX async started");
-	k_mutex_unlock(&data->lock);
-	return 0;
+	ret = 0;
+	goto out_unlock;
 
 out_error:
 	data->rx_cb = NULL;
-	k_mutex_unlock(&data->lock);
+	data->rx_cb_user_data = NULL;
+	sx126x_set_rf_path(dev, false, false);
 	atomic_set(&data->state, SX126X_STATE_IDLE);
+out_unlock:
+	k_mutex_unlock(&data->lock);
 	return ret;
 }
 
