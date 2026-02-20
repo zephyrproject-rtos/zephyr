@@ -148,7 +148,7 @@ static int kbd_it8801_init(const struct device *dev)
 
 	/* Verify multi-function parent is ready */
 	if (!device_is_ready(config->mfd)) {
-		LOG_ERR("(input)%s is not ready", config->mfd->name);
+		LOG_ERR_DEVICE_NOT_READY(config->mfd);
 		return -ENODEV;
 	}
 

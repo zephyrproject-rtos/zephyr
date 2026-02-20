@@ -231,7 +231,7 @@ static void analog_axis_thread(void *arg1, void *arg2, void *arg3)
 		const struct analog_axis_channel_config *axis_cfg = &cfg->channel_cfg[i];
 
 		if (!adc_is_ready_dt(&axis_cfg->adc)) {
-			LOG_ERR("ADC controller device not ready");
+			LOG_ERR_DEVICE_NOT_READY(axis_cfg->adc.dev);
 			return;
 		}
 

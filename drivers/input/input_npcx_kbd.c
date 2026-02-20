@@ -146,7 +146,7 @@ static int npcx_kbd_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(clk_dev)) {
-		LOG_ERR("%s device not ready", clk_dev->name);
+		LOG_ERR_DEVICE_NOT_READY(clk_dev);
 		return -ENODEV;
 	}
 

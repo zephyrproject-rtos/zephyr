@@ -295,6 +295,7 @@ static int renesas_ra_ctsu_group_init(const struct device *dev)
 #endif /* CONFIG_INPUT_RENESAS_RA_QE_TOUCH_CFG */
 
 	if (!device_is_ready(cfg->ctsu_dev)) {
+		LOG_ERR_DEVICE_NOT_READY(cfg->ctsu_dev);
 		return -ENODEV;
 	}
 
@@ -559,6 +560,7 @@ static int renesas_ra_ctsu_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(ctsu_cfg->clock)) {
+		LOG_ERR_DEVICE_NOT_READY(ctsu_cfg->clock);
 		return -ENODEV;
 	}
 
@@ -653,7 +655,12 @@ static int ctsu_device_init(const struct device *dev)
 {
 	const struct ctsu_device_cfg *cfg = dev->config;
 
-	return device_is_ready(cfg->group_dev) ? 0 : -ENODEV;
+	if (!device_is_ready(cfg->group_dev)) {
+		LOG_ERR_DEVICE_NOT_READY(cfg->group_dev);
+		return -ENODEV;
+	}
+
+	return 0;
 }
 
 #undef DT_DRV_COMPAT
