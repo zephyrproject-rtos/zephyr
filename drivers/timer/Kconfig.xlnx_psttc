@@ -5,7 +5,7 @@
 
 config XLNX_PSTTC_TIMER
 	bool "Xilinx PS Triple-Timer Counter support"
-	default y
+	default y if !DT_HAS_ARM_ARMV8_TIMER_ENABLED
 	depends on DT_HAS_XLNX_TTCPS_ENABLED
 	select TICKLESS_CAPABLE
 	help
