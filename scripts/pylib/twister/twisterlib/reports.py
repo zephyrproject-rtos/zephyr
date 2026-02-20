@@ -364,8 +364,8 @@ class Reporting:
             if instance.toolchain:
                 suite['toolchain'] = instance.toolchain
 
-            if instance.dut:
-                suite["dut"] = instance.dut
+            if instance.hardware_id:
+                suite["dut"] = instance.hardware_id
             if available_ram:
                 suite["available_ram"] = available_ram
             if available_rom:
