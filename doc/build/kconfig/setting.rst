@@ -156,7 +156,7 @@ used.
 #. Otherwise, if board revisions are used and
    :file:`boards/<BOARD>_<revision>.conf` exists in the application
    configuration directory, the result of merging it with :file:`prj.conf` and
-   :file:`boards/<BOARD>.conf` is used.
+   :file:`boards/<BOARD>_<revision>.conf` is used.
 
 #. Otherwise, :file:`prj.conf` is used from the application configuration
    directory. If it does not exist then a fatal error will be emitted.
