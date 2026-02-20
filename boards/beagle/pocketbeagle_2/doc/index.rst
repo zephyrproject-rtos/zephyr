@@ -163,7 +163,7 @@ MSPM0L1105
 .. note::
    Zephyr by default uses P1.19 and P1.21 as UART RX and TX respectively.
 
-To test the A53 cores, we build the :zephyr:code-sample:`minimal` sample with the following command.
+To test the MSPM0L1105, we build the :zephyr:code-sample:`minimal` sample with the following command.
 
 .. zephyr-app-commands::
    :board: pocketbeagle_2/mspm0l1105
