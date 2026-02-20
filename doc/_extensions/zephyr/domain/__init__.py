@@ -32,7 +32,6 @@ Roles
 """
 
 import json
-import re
 import sys
 from collections.abc import Iterator
 from os import path
@@ -66,50 +65,31 @@ sys.path.insert(0, str(Path(__file__).parents[4] / "scripts/dts/python-devicetre
 sys.path.insert(0, str(Path(__file__).parents[4] / "scripts/west_commands"))
 sys.path.insert(0, str(Path(__file__).parents[3] / "_scripts"))
 
+import dts_binding_types
 from gen_boards_catalog import get_catalog
 
 ZEPHYR_BASE = Path(__file__).parents[4]
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 RESOURCES_DIR = Path(__file__).parent / "static"
 
+
 # Load and parse binding types from text file
-BINDINGS_TXT_PATH = ZEPHYR_BASE / "dts" / "bindings" / "binding-types.txt"
-ACRONYM_PATTERN = re.compile(r'([a-zA-Z0-9-]+)\s*\((.*?)\)')
-ACRONYM_PATTERN_UPPERCASE_ONLY = re.compile(r'(\b[A-Z0-9-]+)\s*\((.*?)\)')
-BINDING_TYPE_TO_DOCUTILS_NODE = {}
-
-
-def parse_text_with_acronyms(text, uppercase_only=False):
-    """Parse text that may contain acronyms into a list of nodes."""
+def _build_docutils_node_from_chunks(chunks) -> nodes.inline:
     result = nodes.inline()
-    last_end = 0
-
-    pattern = ACRONYM_PATTERN_UPPERCASE_ONLY if uppercase_only else ACRONYM_PATTERN
-    for match in pattern.finditer(text):
-        # Add any text before the acronym
-        if match.start() > last_end:
-            result += nodes.Text(text[last_end : match.start()])
-
-        # Add the acronym
-        abbr, explanation = match.groups()
-        result += nodes.abbreviation(abbr, abbr, explanation=explanation)
-        last_end = match.end()
-
-    # Add any remaining text
-    if last_end < len(text):
-        result += nodes.Text(text[last_end:])
-
+    for chunk in chunks:
+        if chunk["type"] == "text":
+            result += nodes.Text(chunk["content"])
+        elif chunk["type"] == "acronym":
+            result += nodes.abbreviation(
+                chunk["abbr"], chunk["abbr"], explanation=chunk["explanation"]
+            )
     return result
 
 
-with open(BINDINGS_TXT_PATH) as f:
-    for line in f:
-        line = line.strip()
-        if not line or line.startswith('#'):
-            continue
-
-        key, value = line.split('\t', 1)
-        BINDING_TYPE_TO_DOCUTILS_NODE[key] = parse_text_with_acronyms(value)
+BINDING_TYPE_TO_DOCUTILS_NODE = {
+    k: _build_docutils_node_from_chunks(v)
+    for k, v in dts_binding_types.load_binding_types().items()
+}
 
 logger = logging.getLogger(__name__)
 
@@ -975,7 +955,11 @@ class BoardSupportedHardwareDirective(SphinxDirective):
                     desc_entry = nodes.entry(classes=["description"])
                     desc_para = nodes.paragraph(classes=["status"])
                     if value["title"]:
-                        desc_para += parse_text_with_acronyms(value["title"], uppercase_only=True)
+                        desc_para += _build_docutils_node_from_chunks(
+                            dts_binding_types.parse_text_with_acronyms(
+                                value["title"], uppercase_only=True
+                            )
+                        )
                     else:
                         desc_para += nodes.Text(value["description"])
 
