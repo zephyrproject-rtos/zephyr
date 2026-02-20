@@ -272,7 +272,7 @@ static int xlnx_gem_mdio_initialize(const struct device *dev)
 		return ret;
 	}
 	uint32_t reg_addr = 0x40480000;
-	reg_val = 0x80000003;  /* enable rgmii mode and enable eth ip block */
+	reg_val = BIT(31);  /* enable rgmii mode and enable eth ip block */
 
 	sys_write32(reg_val, reg_addr);
 
