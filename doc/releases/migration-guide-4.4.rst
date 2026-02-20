@@ -503,6 +503,12 @@ Ethernet
   reworked to be used as active low, you may have to set the pin as
   ``GPIO_ACTIVE_LOW`` in devicetree (:github:`100751`).
 
+* :kconfig:option:`CONFIG_ETH_INIT_PRIORITY` is now set to 60 by default.
+  :kconfig:option:`CONFIG_PHY_INIT_PRIORITY` and :kconfig:option:`CONFIG_MDIO_INIT_PRIORITY` are now
+  defaulting to the value of :kconfig:option:`CONFIG_ETH_INIT_PRIORITY`. Same for
+  :kconfig:option:`CONFIG_PTP_CLOCK_INIT_PRIORITY`,  but only if :kconfig:option:`CONFIG_ETH_DRIVER`
+  is enabled. This way the priority is based on the dependencies in the devicetree.
+
 File System
 ===========
 
