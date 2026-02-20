@@ -1,4 +1,6 @@
 /* Copyright 2025 The ChromiumOS Authors
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 #ifndef _ZEPHYR_ARCH_ARM_M_SWITCH_H
@@ -95,9 +97,21 @@ static inline void arm_m_exc_tail(void)
 	if (IS_ENABLED(CONFIG_STACK_SENTINEL)) {
 		z_check_stack_sentinel();
 	}
+
 	if (isr_lr != arm_m_cs_ptrs.lr_fixup) {
-		arm_m_cs_ptrs.lr_save = isr_lr;
-		*arm_m_exc_lr_ptr = (uint32_t)arm_m_cs_ptrs.lr_fixup;
+		/* We need to return to arm_m_exc_exit only if an exception is returning to thread
+		 * mode with PSP. Note that it is possible to get an exception in arm_m_exc_exit
+		 * after interrupts are enabled but, before branching to lr (0xFFFFFFFD) and, at
+		 * this point the exception pushes an ESF on MSP. If we write arm_m_exc_exit at top
+		 * of MSP at this point, we are corrupting the XPSR of the ESF which will result in
+		 * a usage fault. So, make sure that we do this only if we are returning to thread
+		 * mode and using PSP to do so.
+		 */
+		if ((((uint32_t)isr_lr & 0xFFFFFF00U) == 0xFFFFFF00U)
+				&& (((uint32_t)isr_lr & 0xC) == 0xC)) {
+			arm_m_cs_ptrs.lr_save = isr_lr;
+			*arm_m_exc_lr_ptr = (uint32_t)arm_m_cs_ptrs.lr_fixup;
+		}
 	}
 #endif
 }
