@@ -110,6 +110,9 @@ static int max14906_reg_update(const struct device *dev, uint8_t addr, uint8_t m
 	uint32_t reg_val = 0;
 
 	ret = MAX14906_REG_READ(dev, addr);
+	if (ret < 0) {
+		return ret;
+	}
 
 	reg_val = ret;
 	reg_val &= ~mask;
@@ -128,26 +131,46 @@ static int gpio_max14906_diag_chan_get(const struct device *dev)
 		LOG_ERR("[DIAG] FAULT flag is rised");
 	}
 
-	data->glob.interrupt.reg_raw =
-		max149x6_reg_transceive(dev, MAX14906_INT_REG, 0, NULL, MAX149x6_READ);
+	ret = max149x6_reg_transceive(dev, MAX14906_INT_REG, 0, NULL, MAX149x6_READ);
+	if (ret < 0) {
+		return ret;
+	}
+	data->glob.interrupt.reg_raw = ret;
+
 	if (data->glob.interrupt.reg_raw) {
 		if (data->glob.interrupt.reg_bits.OVER_LD_FAULT ||
 		    data->glob.interrupt.reg_bits.CURR_LIM) {
-			data->chan.ovr_ld.reg_raw = max149x6_reg_transceive(
+			ret = max149x6_reg_transceive(
 				dev, MAX14906_OVR_LD_REG, 0, NULL, MAX149x6_READ);
+			if (ret < 0) {
+				return ret;
+			}
+			data->chan.ovr_ld.reg_raw = ret;
 		}
 		if (data->glob.interrupt.reg_bits.OW_OFF_FAULT ||
 		    data->glob.interrupt.reg_bits.ABOVE_VDD_FAULT) {
-			data->chan.opn_wir.reg_raw = max149x6_reg_transceive(
+			ret = max149x6_reg_transceive(
 				dev, MAX14906_OPN_WIR_FLT_REG, 0, NULL, MAX149x6_READ);
+			if (ret < 0) {
+				return ret;
+			}
+			data->chan.opn_wir.reg_raw = ret;
 		}
 		if (data->glob.interrupt.reg_bits.SHT_VDD_FAULT) {
-			data->chan.sht_vdd.reg_raw = max149x6_reg_transceive(
+			ret = max149x6_reg_transceive(
 				dev, MAX14906_SHT_VDD_FLT_REG, 0, NULL, MAX149x6_READ);
+			if (ret < 0) {
+				return ret;
+			}
+			data->chan.sht_vdd.reg_raw = ret;
 		}
 		if (data->glob.interrupt.reg_bits.DE_MAG_FAULT) {
-			data->chan.doi_level.reg_raw = max149x6_reg_transceive(
+			ret = max149x6_reg_transceive(
 				dev, MAX14906_DOILEVEL_REG, 0, NULL, MAX149x6_READ);
+			if (ret < 0) {
+				return ret;
+			}
+			data->chan.doi_level.reg_raw = ret;
 			if (data->chan.doi_level.reg_raw) {
 				PRINT_ERR(data->chan.doi_level.reg_bits.VDDOK_FAULT1);
 				PRINT_ERR(data->chan.doi_level.reg_bits.VDDOK_FAULT2);
@@ -160,8 +183,12 @@ static int gpio_max14906_diag_chan_get(const struct device *dev)
 			}
 		}
 		if (data->glob.interrupt.reg_bits.SUPPLY_ERR) {
-			data->glob.glob_err.reg_raw = max149x6_reg_transceive(
+			ret = max149x6_reg_transceive(
 				dev, MAX14906_GLOB_ERR_REG, 0, NULL, MAX149x6_READ);
+			if (ret < 0) {
+				return ret;
+			}
+			data->glob.glob_err.reg_raw = ret;
 			PRINT_ERR(data->glob.glob_err.reg_bits.VINT_UV);
 			PRINT_ERR(data->glob.glob_err.reg_bits.V5_UVLO);
 			PRINT_ERR(data->glob.glob_err.reg_bits.VDD_LOW);
@@ -221,6 +248,9 @@ static int gpio_max14906_port_set_bits_raw(const struct device *dev, gpio_port_p
 	uint32_t reg_val = 0;
 
 	ret = MAX14906_REG_READ(dev, MAX14906_SETOUT_REG);
+	if (ret < 0) {
+		return ret;
+	}
 	reg_val = ret | (pins & 0x0f);
 
 	return MAX14906_REG_WRITE(dev, MAX14906_SETOUT_REG, reg_val);
@@ -232,6 +262,9 @@ static int gpio_max14906_port_clear_bits_raw(const struct device *dev, gpio_port
 	uint32_t reg_val = 0;
 
 	ret = MAX14906_REG_READ(dev, MAX14906_SETOUT_REG);
+	if (ret < 0) {
+		return ret;
+	}
 	reg_val = ret & ~(pins & 0x0f);
 
 	return MAX14906_REG_WRITE(dev, MAX14906_SETOUT_REG, reg_val);
@@ -245,6 +278,9 @@ static int gpio_max14906_port_set_masked_raw(const struct device *dev,
 	uint32_t reg_val;
 
 	ret = MAX14906_REG_READ(dev, MAX14906_SETOUT_REG);
+	if (ret < 0) {
+		return ret;
+	}
 	reg_val = (ret & ~(mask & 0x0f)) | (value & mask & 0x0f);
 
 	return MAX14906_REG_WRITE(dev, MAX14906_SETOUT_REG, reg_val);
@@ -301,7 +337,14 @@ static int gpio_max14906_port_get_raw(const struct device *dev, gpio_port_value_
 	 * In case PIN is OUTPUT same bits show VDDOKFault state.
 	 */
 
-	*value = (0x0f & MAX14906_REG_READ(dev, MAX14906_DOILEVEL_REG));
+	int ret;
+
+	ret = MAX14906_REG_READ(dev, MAX14906_DOILEVEL_REG);
+	if (ret < 0) {
+		return ret;
+	}
+
+	*value = ret & 0x0f;
 
 	return 0;
 }
@@ -312,6 +355,9 @@ static int gpio_max14906_port_toggle_bits(const struct device *dev, gpio_port_pi
 	uint32_t reg_val;
 
 	ret = MAX14906_REG_READ(dev, MAX14906_SETOUT_REG);
+	if (ret < 0) {
+		return ret;
+	}
 	reg_val = ret ^ (pins & 0x0f);
 
 	return MAX14906_REG_WRITE(dev, MAX14906_SETOUT_REG, reg_val);
