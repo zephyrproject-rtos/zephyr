@@ -330,13 +330,6 @@ enum net_verdict net_ipv4_handle_fragment_hdr(struct net_pkt *pkt, struct net_ip
 	flag = ntohs(*((uint16_t *)&hdr->offset));
 	id = ntohs(*((uint16_t *)&hdr->id));
 
-	reass = reassembly_get(id, (struct in_addr *)hdr->src,
-			       (struct in_addr *)hdr->dst, hdr->proto);
-	if (!reass) {
-		LOG_ERR("Cannot get reassembly slot, dropping pkt %p", pkt);
-		goto drop;
-	}
-
 	more = (flag & NET_IPV4_MORE_FRAG_MASK) ? true : false;
 	net_pkt_set_ipv4_fragment_flags(pkt, flag);
 
@@ -346,6 +339,13 @@ enum net_verdict net_ipv4_handle_fragment_hdr(struct net_pkt *pkt, struct net_ip
 		 */
 		net_icmpv4_send_error(pkt, NET_ICMPV4_BAD_IP_HEADER,
 				      NET_ICMPV4_BAD_IP_HEADER_LENGTH);
+		goto drop;
+	}
+
+	reass = reassembly_get(id, (struct in_addr *)hdr->src,
+			       (struct in_addr *)hdr->dst, hdr->proto);
+	if (reass == NULL) {
+		LOG_ERR("Cannot get reassembly slot, dropping pkt %p", pkt);
 		goto drop;
 	}
 
