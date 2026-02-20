@@ -41,3 +41,10 @@ properties:
       necessarily supported by Zephyr.
     type: string-array
     required: true
+
+  riscv,isa-omissions:
+    description: |
+      Elements of the base ISA expected but not supported by the hart. Currently, the
+      only value respected by Zephyr is "fence", to disable use of builtin barrier
+      operations.
+    type: string-array
