@@ -374,6 +374,15 @@ struct rtio_sqe {
 			rtio_signaled_t callback;
 			void *userdata;
 		} await;
+
+		/** OP_NANO_TXRX */
+		struct {
+			uint8_t tx[4];    /** < TX buffer */
+			uint8_t *rx_buf;  /**< Buffer to read into */
+			uint8_t buf_len; /**< Length of tx and rx buffers */
+			uint8_t rx_skip;
+		} nano_txrx;
+
 	};
 };
 
@@ -597,6 +606,9 @@ struct rtio_iodev {
 /** An operation to await a signal while blocking the iodev (if one is provided) */
 #define RTIO_OP_AWAIT (RTIO_OP_I3C_CCC+1)
 
+/** An operation that blocks and performs a simultaneous transmit-and-receive of up to 4 bytes */
+#define RTIO_OP_NANO_TXRX (RTIO_OP_AWAIT+1)
+
 /**
  * @brief Prepare a nop (no op) submission
  */
@@ -694,6 +706,40 @@ static inline void rtio_sqe_prep_tiny_write(struct rtio_sqe *sqe,
 	sqe->iodev = iodev;
 	sqe->tiny_tx.buf_len = tiny_write_len;
 	memcpy(sqe->tiny_tx.buf, tiny_write_data, tiny_write_len);
+}
+
+
+/**
+ * @brief Prepare a NANO TXRX operation
+ *
+ * This operation performs a very small, up-to-4‑byte transmit/receive
+ * transaction where the data is copied directly into the SQE. Because the
+ * transfer size is tiny, the call is executed in a blocking manner—avoiding
+ * the overhead of a context switch, which would be more expensive than the
+ * transaction itself.
+ *
+ * This is useful for quick register-level interactions, such as writing a
+ * small value and immediately reading back the result.
+ */
+static inline void rtio_sqe_prep_nano_txrx(struct rtio_sqe *sqe,
+					    const struct rtio_iodev *iodev,
+					    int8_t prio,
+					    const uint8_t *tx_buf,
+					    uint8_t *rx_buf,
+					    uint32_t buf_len,
+					    uint32_t rx_skip,
+					    void *userdata)
+{
+	__ASSERT_NO_MSG(buf_len <= sizeof(sqe->nano_txrx.tx));
+
+	memset(sqe, 0, sizeof(struct rtio_sqe));
+	sqe->op = RTIO_OP_NANO_TXRX;
+	sqe->prio = prio;
+	sqe->iodev = iodev;
+	sqe->nano_txrx.buf_len = buf_len;
+	sqe->nano_txrx.rx_skip = rx_skip;
+	memcpy(sqe->nano_txrx.tx, tx_buf, buf_len);
+	sqe->nano_txrx.rx_buf = rx_buf;
 	sqe->userdata = userdata;
 }
 
