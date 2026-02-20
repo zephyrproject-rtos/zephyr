@@ -12,7 +12,14 @@
 
 #define PWM_CHANNEL   0
 #define PWM_PERIOD_NS (1 * NSEC_PER_MSEC)
-#define PWM_FLAGS     PWM_POLARITY_NORMAL
+
+#if defined(CONFIG_PWM_MAX32)
+#define PWM_FLAGS       PWM_POLARITY_INVERTED
+#define PWM_FULL_LOW_NS PWM_PERIOD_NS
+#else
+#define PWM_FLAGS       PWM_POLARITY_NORMAL
+#define PWM_FULL_LOW_NS 0
+#endif
 
 static struct pwm_event_callback callback;
 
@@ -30,7 +37,8 @@ static void pwm_callback_handler(const struct device *dev, struct pwm_event_call
 		pwm_idle = !pwm_idle;
 		counter = 0;
 
-		ret = pwm_set(dev, PWM_CHANNEL, PWM_PERIOD_NS, pwm_idle ? 0 : PWM_PERIOD_NS / 2,
+		ret = pwm_set(dev, PWM_CHANNEL, PWM_PERIOD_NS,
+				  pwm_idle ? PWM_FULL_LOW_NS : PWM_PERIOD_NS / 2,
 			      PWM_FLAGS);
 		if (ret < 0) {
 			printk("failed to set pwm (%d)\n", ret);
