@@ -389,6 +389,15 @@
 				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 				grayscale-table = [02 02 02 02 02 02 02 02 03 04 05 06 07 07 07];
 			};
+
+			ac057tc1: ac057tc1@22 {
+				compatible = "eink,ac057tc1";
+				reg = <22>;
+				mipi-max-frequency = <2000000>;
+				width = <600>;
+				height = <448>;
+				busy-gpios = <&test_gpio 0 0>;
+			};
 		};
 
 		test_mipi_dbi_xfr_16bit_write_only {
