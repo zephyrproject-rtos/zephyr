@@ -20,10 +20,6 @@
 
 &mx66uw1g45g_xspi1{
 	#include "partitions.dtsi"
-
-	ncs-line = <1>;
-
-	status = "okay";
 };
 
 &xspi2 {

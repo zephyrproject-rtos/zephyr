@@ -26,12 +26,9 @@
 };
 
 &xspi2 {
+	/* Enable memory mapping which will be used for chainloaded app */
 	status = "okay";
 	memory-mapped;
-};
-
-&mx66uw1g45g_xspi2{
-	status = "okay";
 };
 
 &xspi1 {
@@ -40,8 +37,4 @@
 
 &mx66uw1g45g_xspi1{
 	#include "partitions.dtsi"
-
-	ncs-line = <1>;
-
-	status = "okay";
 };

@@ -22,8 +22,6 @@
 		zephyr,display = &ltdc;
 		zephyr,touch = &gt911;
 		spi-flash0 = &mx66uw1g45g_xspi2;
-		zephyr,flash-controller = &mx66uw1g45g_xspi2;
-		zephyr,flash = &mx66uw1g45g_xspi2;
 		zephyr,code-partition = &slot0_partition;
 	};
 
@@ -396,6 +394,7 @@ zephyr_udc0: &usbotg_hs1 {
 		spi-bus-width = <XSPI_OCTO_MODE>;
 		data-rate = <XSPI_DTR_TRANSFER>;
 		four-byte-opcodes;
+		/* Flash accesses will be made using rww sequence */
 		read-while-write;
 
 		#address-cells = <1>;
@@ -404,8 +403,6 @@ zephyr_udc0: &usbotg_hs1 {
 
 		write-block-size = <4>;
 		erase-block-size = <DT_SIZE_K(4)>;
-
-		status = "disabled";
 	};
 };
 
@@ -433,8 +430,6 @@ zephyr_udc0: &usbotg_hs1 {
 
 		write-block-size = <4>;
 		erase-block-size = <DT_SIZE_K(4)>;
-
-		status = "disabled";
 	};
 };
 
