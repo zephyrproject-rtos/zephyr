@@ -228,7 +228,7 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	bne t1, t2, no_fp
 	/* determine if we trapped on an FP instruction. */
 	csrr t2, mtval		/* get faulting instruction */
-#ifdef RISCV_NO_MTVAL_ON_FP_TRAP
+#ifdef CONFIG_RISCV_NO_MTVAL_ON_FP_TRAP
 	/*
 	 * Some implementations may not support MTVAL in this capacity.
 	 * Notably QEMU when a CSR instruction is involved.
