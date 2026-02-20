@@ -26,6 +26,7 @@ static int max14916_pars_spi_diag(const struct device *dev, uint8_t *rx_diag_buf
 {
 	struct max14916_data *data = dev->data;
 	int ret = 0;
+	int diag_ret;
 
 	if (rx_diag_buff[0]) {
 		LOG_ERR("[DIAG] MAX14916 in SPI diag - error detected");
@@ -68,7 +69,10 @@ static int max14916_pars_spi_diag(const struct device *dev, uint8_t *rx_diag_buf
 
 		if (rx_diag_buff[1]) {
 			LOG_ERR("[DIAG] gpio_max14916_diag_chan_get(%x)\n", rx_diag_buff[1] & 0x0f);
-			ret = gpio_max14916_diag_chan_get(dev);
+			diag_ret = gpio_max14916_diag_chan_get(dev);
+			if (diag_ret) {
+				ret = diag_ret;
+			}
 		}
 	}
 
