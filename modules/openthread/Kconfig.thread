@@ -283,3 +283,7 @@ config OPENTHREAD_NET_DIAG_VENDOR_SW_VERSION
 	default "Zephyr-OT-v1.0"
 	help
 	  This value represents vendor software version that will be exposed in network diagnostic TLV.
+
+config OPENTHREAD_DEFAULT_TRANSMIT_POWER
+	int "Default transmit power for Thread radio"
+	default 0
