@@ -69,8 +69,7 @@ The KIT-PSE84-EVAL includes an onboard programmer/debugger (`KitProg3`_) to prov
 flash programming, and serial communication over USB. Flash and debug commands use OpenOCD and
 require a custom Infineon OpenOCD version, that supports KitProg3, to be installed.
 
-Please refer to the `ModusToolbox™ software installation guide`_ to install the
-Infineon OpenOCD and Edge Protect Security Suite (edgeprotecttools).
+Please refer to the `ModusToolbox™ software installation guide`_ to install Infineon OpenOCD.
 
 Flashing
 ========
