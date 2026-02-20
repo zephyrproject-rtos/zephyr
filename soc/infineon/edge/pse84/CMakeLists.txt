@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+include(${ZEPHYR_BASE}/soc/infineon/edge/pse84/pse84_metadata.cmake)
+
 if(CONFIG_CPU_CORTEX_M33 AND CONFIG_TRUSTED_EXECUTION_SECURE)
   zephyr_sources(soc_pse84_m33_s.c)
 
@@ -11,29 +13,10 @@ if(CONFIG_CPU_CORTEX_M33 AND CONFIG_TRUSTED_EXECUTION_SECURE)
   zephyr_sources(security_config/pse84_s_system.c)
   zephyr_sources(security_config/pse84_s_sau.c)
 
-  find_program(EDGEPROTECTTOOLS edgeprotecttools OPTIONAL)
+  set(unsigned_hex ${ZEPHYR_BINARY_DIR}/${KERNEL_NAME}.hex)
+  set(signed_hex ${ZEPHYR_BINARY_DIR}/${KERNEL_NAME}.signed.hex)
 
-  if(${EDGEPROTECTTOOLS} STREQUAL "EDGEPROTECTTOOLS-NOTFOUND")
-    message(WARNING "Could not find edgeprotecttools.
-      This will result in a nonfunctional secure cm33.
-      Please consult index.rst for kit_pse84_eval board.")
-  else()
-    message("-- Found edgeprotecttools: ${EDGEPROTECTTOOLS}")
-
-    set(unsigned_hex ${ZEPHYR_BINARY_DIR}/${KERNEL_NAME}.hex)
-    set(signed_hex ${ZEPHYR_BINARY_DIR}/${KERNEL_NAME}.signed.hex)
-    dt_nodelabel(m33s_header NODELABEL "m33s_header")
-    dt_reg_addr(header_addr PATH ${m33s_header})
-    dt_reg_size(header_size PATH ${m33s_header})
-
-    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-      COMMAND edgeprotecttools image-metadata --image ${unsigned_hex} --output ${signed_hex}
-        --erased-val 0xff --hex-addr ${header_addr} --header-size ${header_size}
-        --slot-size 0x130000
-    )
-
-    set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts ${signed_hex})
-  endif()
+  pse84_add_metadata_secure_hex(${unsigned_hex} ${signed_hex})
 else()
   zephyr_sources_ifdef(CONFIG_CPU_CORTEX_M55 soc_pse84_m55.c)
 endif()
