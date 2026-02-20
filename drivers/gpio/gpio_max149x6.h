@@ -82,6 +82,8 @@ static uint8_t max149x6_crc(uint8_t *data, bool encode, uint8_t check_byte)
  * @param dev - MAX149x6 device config.
  * @param addr - Register value to which data is written.
  * @param val - Value which is to be written to requested register.
+ * @param rx_diag_buff - Optional buffer for received diagnostic bytes.
+ * @param rw - Transaction direction (MAX149x6_READ or MAX149x6_WRITE).
  * @return 0 in case of success, negative error code otherwise.
  */
 static int max149x6_reg_transceive(const struct device *dev, uint8_t addr, uint8_t val,
@@ -134,17 +136,22 @@ static int max149x6_reg_transceive(const struct device *dev, uint8_t addr, uint8
 		}
 	}
 
+	/* byte0 is first diagnostic byte */
 	if (rx_diag_buff != NULL) {
 		rx_diag_buff[0] = local_rx_buff[0];
 	}
 
-	/* In case of write we are getting 2 diagnostic bytes - byte0 & byte1
-	 * and pass them to diag buffer to be parsed in next stage
-	 */
-	if ((MAX149x6_WRITE == rw) && (rx_diag_buff != NULL)) {
-		rx_diag_buff[1] = local_rx_buff[1];
-	} else {
-		ret = local_rx_buff[1];
+	/* byte1 for WRITE: second diagnostic byte */
+	if (MAX149x6_WRITE == rw) {
+		if (rx_diag_buff != NULL) {
+			rx_diag_buff[1] = local_rx_buff[1];
+		}
+		return ret;
+	}
+
+	/* byte1 for READ: register value returned to caller */
+	if (MAX149x6_READ == rw) {
+		return local_rx_buff[1];
 	}
 
 	return ret;
