@@ -1116,6 +1116,23 @@ config ENFORCE_ZEPHYR_STDINT
 	  should be turned off with the caveat that argument type validation
 	  on Zephyr code will be skipped.
 
+config OMIT_ZEPHYR_STDINT_FOR_APPS
+	bool "Omit Zephyr stdint convention for application code"
+	depends on ENFORCE_ZEPHYR_STDINT
+	help
+	  When enabled, the "app" build target (i.e. source files under
+	  APPLICATION_SOURCE_DIR) is compiled with the toolchain's native
+	  integer type definitions instead of Zephyr's enforced convention.
+	  This is useful when application code includes compiler-provided
+	  headers that are incompatible with Zephyr's type mappings.
+
+	  The Zephyr kernel, drivers, subsystems, and any libraries built
+	  via zephyr_library() remain under the enforced convention.
+	  Because Zephyr is C-only, there is no symbol mangling dependency
+	  on the underlying types, and the affected types (e.g. int vs long
+	  on ILP32) share the same size and ABI, so linkage between
+	  application and Zephyr object code remains fully compatible.
+
 endmenu
 
 

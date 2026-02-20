@@ -224,6 +224,10 @@ add_custom_target(zephyr_property_target)
 zephyr_library_named(app)
 set_property(TARGET app PROPERTY ARCHIVE_OUTPUT_DIRECTORY app)
 
+if(CONFIG_OMIT_ZEPHYR_STDINT_FOR_APPS)
+  target_compile_definitions(app PRIVATE ZEPHYR_INCLUDE_TOOLCHAIN_STDINT_H_)
+endif()
+
 add_subdirectory(${ZEPHYR_BASE} ${__build_dir})
 
 # Link 'app' with the Zephyr interface libraries.
