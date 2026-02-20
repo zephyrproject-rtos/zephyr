@@ -10,7 +10,7 @@ jobs:
   stale:
     name: Find Stale issues and PRs
     runs-on: ubuntu-24.04
-    if: github.repository == 'zephyrproject-rtos/zephyr'
+    if: github.repository == 'nrfconnect/sdk-zephyr'
     permissions:
       pull-requests: write # to comment on stale pull requests
       issues: write        # to comment on stale issues
