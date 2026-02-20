@@ -841,14 +841,17 @@ static void eth_xlnx_gem_configure_clocks(const struct device *dev,
 	/* ETH_CTL */
 	uint32_t reg_val = sys_read32(0x40480000);
 
-#if 0
+#if !defined(CONFIG_PHY_GENERIC_MII)
 	if (PHY_LINK_IS_SPEED_100M(state->speed)) {
 		reg_val |= BIT(10); /*REFETH_CLK dvider */
 	}
 #endif
 
-	reg_val |= BIT(1) | BIT(0); /* RGMII */
-	reg_val |= BIT(31);
+	reg_val |= BIT(1); /* RGMII */
+#if defined (CONFIG_PHY_GENERIC_MII)
+	reg_val |= BIT(0); /* RMII */
+#endif
+
 	sys_write32(reg_val, 0x40480000);
 
 	return;
