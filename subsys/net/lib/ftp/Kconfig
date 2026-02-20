@@ -1,0 +1,44 @@
+#
+# Copyright (c) 2020-2026 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig FTP_CLIENT
+	bool "FTP client [EXPERIMENTAL]"
+	depends on NET_TCP
+	depends on NET_SOCKETS
+	select EXPERIMENTAL
+	help
+	  Enable FTP client library compliant with RFC959 File Transfer Protocol.
+
+if FTP_CLIENT
+
+config FTP_CLIENT_KEEPALIVE_TIME
+	int "Keep-alive time in seconds after connection"
+	range 0 $(UINT32_MAX)
+	default 60
+	help
+	  Define the automatic keep-alive time (in seconds) for the FTP client.
+	  Set to 0 to disable automatic keep-alive (which allows to save
+	  resources needed for the dedicated work queue). If disabled, it's
+	  still possible to perform keep-alive exchanges from the application
+	  level with ftp_keepalive() function.
+
+config FTP_CLIENT_LISTEN_TIME
+	int "Poll time in seconds in receiving FTP message"
+	default 10
+	help
+	  Define the wait time for receiving.
+
+config FTP_CLIENT_BUF_SIZE
+	int "Buffer size used by FTP client"
+	range 128 $(UINT16_MAX)
+	default 1024
+
+module=FTP_CLIENT
+module-dep=LOG
+module-str=FTP client
+source "$(ZEPHYR_BASE)/subsys/logging/Kconfig.template.log_config"
+
+endif # FTP_CLIENT
