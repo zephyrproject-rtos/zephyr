@@ -99,6 +99,10 @@
 	status = "okay";
 };
 
+&edma0 {
+	status = "okay";
+};
+
 &enet1g {
 	pinctrl-0 = <&pinmux_enet1g>;
 	pinctrl-names = "default";
@@ -162,21 +166,29 @@
 };
 
 &lpspi1 {
+	dmas = <&edma0 0 36>, <&edma0 1 37>;
+	dma-names = "rx", "tx";
 	pinctrl-0 = <&pinmux_lpspi1>;
 	pinctrl-names = "default";
 };
 
 &lpspi2 {
+	dmas = <&edma0 2 38>, <&edma0 3 39>;
+	dma-names = "rx", "tx";
 	pinctrl-0 = <&pinmux_lpspi2>;
 	pinctrl-names = "default";
 };
 
 &lpspi3 {
+	dmas = <&edma0 4 40>, <&edma0 5 41>;
+	dma-names = "rx", "tx";
 	pinctrl-0 = <&pinmux_lpspi3>;
 	pinctrl-names = "default";
 };
 
 &lpspi6 {
+	dmas = <&edma0 6 46>, <&edma0 7 47>;
+	dma-names = "rx", "tx";
 	pinctrl-0 = <&pinmux_lpspi6>;
 	pinctrl-names = "default";
 };
