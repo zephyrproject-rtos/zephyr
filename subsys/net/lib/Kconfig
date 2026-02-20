@@ -7,6 +7,8 @@ source "subsys/net/lib/coap/Kconfig"
 
 source "subsys/net/lib/dns/Kconfig"
 
+source "subsys/net/lib/ftp/Kconfig"
+
 source "subsys/net/lib/latmon/Kconfig"
 
 source "subsys/net/lib/midi2/Kconfig"
