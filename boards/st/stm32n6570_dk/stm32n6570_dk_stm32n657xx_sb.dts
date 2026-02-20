@@ -18,6 +18,12 @@
 
 };
 
+&xspim {
+	io-port-1 = <&xspi1>;
+	io-port-2 = <&xspi2>;
+	status = "okay";
+};
+
 &xspi2 {
 	status = "okay";
 };
