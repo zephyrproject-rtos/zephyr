@@ -5614,7 +5614,9 @@ VFS:
     - filesystem
 
 WCH Platforms:
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - BOJIT
   collaborators:
     - nzmichaelh
     - kholia
@@ -6177,6 +6179,7 @@ West:
   maintainers:
     - nzmichaelh
     - kholia
+    - BOJIT
   collaborators:
     - VynDragon
   files:
