@@ -219,17 +219,24 @@ static int gpio_max14906_diag_chan_get(const struct device *dev)
 static int max14906_ch_func(const struct device *dev, uint32_t ch, enum max14906_function function)
 {
 	uint8_t setout_reg_val;
+	int ret;
 
 	switch (function) {
 	case MAX14906_HIGH_Z:
 		setout_reg_val = MAX14906_IN;
-		max14906_reg_update(dev, MAX14906_CONFIG_DO_REG, MAX14906_DO_MASK(ch),
-				    FIELD_PREP(MAX14906_DO_MASK(ch), MAX14906_PUSH_PULL));
+		ret = max14906_reg_update(dev, MAX14906_CONFIG_DO_REG, MAX14906_DO_MASK(ch),
+					 FIELD_PREP(MAX14906_DO_MASK(ch), MAX14906_PUSH_PULL));
+		if (ret < 0) {
+			return ret;
+		}
 		break;
 	case MAX14906_IN:
 		setout_reg_val = MAX14906_IN;
-		max14906_reg_update(dev, MAX14906_CONFIG_DO_REG, MAX14906_DO_MASK(ch),
-				    FIELD_PREP(MAX14906_DO_MASK(ch), MAX14906_HIGH_SIDE));
+		ret = max14906_reg_update(dev, MAX14906_CONFIG_DO_REG, MAX14906_DO_MASK(ch),
+					 FIELD_PREP(MAX14906_DO_MASK(ch), MAX14906_HIGH_SIDE));
+		if (ret < 0) {
+			return ret;
+		}
 		break;
 	case MAX14906_OUT:
 		setout_reg_val = MAX14906_OUT;
@@ -308,16 +315,25 @@ static int gpio_max14906_config(const struct device *dev, gpio_pin_t pin, gpio_f
 
 	switch (flags & GPIO_DIR_MASK) {
 	case GPIO_INPUT:
-		max14906_ch_func(dev, (uint32_t)pin, MAX14906_IN);
+		err = max14906_ch_func(dev, (uint32_t)pin, MAX14906_IN);
+		if (err < 0) {
+			break;
+		}
 		LOG_DBG("SETUP AS INPUT %d", pin);
 		break;
 	case GPIO_OUTPUT:
 		if (flags & GPIO_OUTPUT_INIT_HIGH) {
-			gpio_max14906_port_set_bits_raw(dev, BIT(pin));
+			err = gpio_max14906_port_set_bits_raw(dev, BIT(pin));
 		} else if (flags & GPIO_OUTPUT_INIT_LOW) {
-			gpio_max14906_port_clear_bits_raw(dev, BIT(pin));
+			err = gpio_max14906_port_clear_bits_raw(dev, BIT(pin));
 		}
-		max14906_ch_func(dev, (uint32_t)pin, MAX14906_OUT);
+		if (err < 0) {
+			break;
+		}
+		err = max14906_ch_func(dev, (uint32_t)pin, MAX14906_OUT);
+		if (err < 0) {
+			break;
+		}
 		LOG_DBG("SETUP AS OUTPUT %d", pin);
 		break;
 	default:
