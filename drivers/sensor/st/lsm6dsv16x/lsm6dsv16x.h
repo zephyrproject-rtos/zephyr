@@ -14,6 +14,7 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/types.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/counter.h>
 #include <zephyr/sys/util.h>
 #include <stmemsc.h>
 #include "lsm6dsv16x_reg.h"
@@ -45,6 +46,11 @@
 #define ON_I3C_BUS(cfg)  (false)
 #define I3C_INT_PIN(cfg) (false)
 #endif
+
+#define LSM6DSV16X_USING_GPIO_TRIGGER(dev)                                                     \
+	((((const struct lsm6dsv16x_data *)(dev)->data)->drdy_gpio != NULL) &&                 \
+	 (!ON_I3C_BUS(((const struct lsm6dsv16x_config *)((dev)->config))) ||                  \
+	  (I3C_INT_PIN(((const struct lsm6dsv16x_config *)((dev)->config))))))
 
 #define LSM6DSV16X_EN_BIT					0x01
 #define LSM6DSV16X_DIS_BIT					0x00
@@ -90,6 +96,10 @@ struct lsm6dsv16x_config {
 #ifdef CONFIG_LSM6DSV16X_TRIGGER
 	const struct gpio_dt_spec int1_gpio;
 	const struct gpio_dt_spec int2_gpio;
+#ifdef CONFIG_COUNTER_CAPTURE
+	const struct counter_capture_dt_spec int1_counter_capture;
+	const struct counter_capture_dt_spec int2_counter_capture;
+#endif /* CONFIG_COUNTER_CAPTURE */
 	uint8_t drdy_pin;
 	bool trig_enabled;
 #if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
@@ -187,8 +197,10 @@ struct lsm6dsv16x_data {
 
 #ifdef CONFIG_LSM6DSV16X_TRIGGER
 	struct gpio_dt_spec *drdy_gpio;
-
 	struct gpio_callback gpio_cb;
+#ifdef CONFIG_COUNTER_CAPTURE
+	const struct counter_capture_dt_spec *drdy_counter_capture;
+#endif /* CONFIG_COUNTER_CAPTURE */
 	sensor_trigger_handler_t handler_drdy_acc;
 	const struct sensor_trigger *trig_drdy_acc;
 	sensor_trigger_handler_t handler_drdy_gyr;

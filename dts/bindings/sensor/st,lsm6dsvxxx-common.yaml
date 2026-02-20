@@ -22,6 +22,24 @@ properties:
       The property value should ensure the flags properly describe
       the signal that is presented to the driver.
 
+  int1-counter-capture:
+    type: phandle-array
+    specifier-space: counter-capture
+    description: |
+      INT1 trigger source routed to a counter capture channel.
+
+      This is an alternative to int1-gpios. The single entry should reference
+      a counter capture provider/channel used to detect the sensor interrupt.
+
+  int2-counter-capture:
+    type: phandle-array
+    specifier-space: counter-capture
+    description: |
+      INT2 trigger source routed to a counter capture channel.
+
+      This is an alternative to int2-gpios. The single entry should reference
+      a counter capture provider/channel used to detect the sensor interrupt.
+
   drdy-pin:
     type: int
     default: 1
