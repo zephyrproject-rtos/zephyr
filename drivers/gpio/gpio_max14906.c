@@ -400,14 +400,29 @@ static int gpio_max14906_config_diag(const struct device *dev)
 {
 	const struct max14906_data *data = dev->data;
 	const struct max14906_config *config = dev->config;
+	int ret;
 
 	/* Set Config1 and Config2 regs */
-	MAX14906_REG_WRITE(dev, MAX14906_CONFIG1_REG, config->config1.reg_raw);
-	MAX14906_REG_WRITE(dev, MAX14906_CONFIG2_REG, config->config2.reg_raw);
+	ret = MAX14906_REG_WRITE(dev, MAX14906_CONFIG1_REG, config->config1.reg_raw);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = MAX14906_REG_WRITE(dev, MAX14906_CONFIG2_REG, config->config2.reg_raw);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Configure per channel diagnostics */
-	MAX14906_REG_WRITE(dev, MAX14906_OPN_WR_EN_REG, data->chan_en.opn_wr_en.reg_raw);
-	MAX14906_REG_WRITE(dev, MAX14906_SHT_VDD_EN_REG, data->chan_en.sht_vdd_en.reg_raw);
+	ret = MAX14906_REG_WRITE(dev, MAX14906_OPN_WR_EN_REG, data->chan_en.opn_wr_en.reg_raw);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = MAX14906_REG_WRITE(dev, MAX14906_SHT_VDD_EN_REG, data->chan_en.sht_vdd_en.reg_raw);
+	if (ret < 0) {
+		return ret;
+	}
 
 	return 0;
 }
@@ -498,10 +513,19 @@ static int gpio_max14906_init(const struct device *dev)
 	}
 
 	int ret = gpio_max14906_clean_on_power(dev);
+	if (ret < 0) {
+		return ret;
+	}
 
-	MAX14906_REG_WRITE(dev, MAX14906_SETOUT_REG, 0);
+	ret = MAX14906_REG_WRITE(dev, MAX14906_SETOUT_REG, 0);
+	if (ret < 0) {
+		return ret;
+	}
 
-	gpio_max14906_config_diag(dev);
+	ret = gpio_max14906_config_diag(dev);
+	if (ret < 0) {
+		return ret;
+	}
 
 	LOG_DBG(" --- GPIO MAX14906 init OUT ---");
 

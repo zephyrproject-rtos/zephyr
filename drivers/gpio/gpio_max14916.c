@@ -293,9 +293,7 @@ static int gpio_max14916_port_toggle_bits(const struct device *dev, gpio_port_pi
 	reg_val = ret;
 	reg_val ^= pins;
 
-	MAX14916_REG_WRITE(dev, MAX14916_SETOUT_REG, reg_val);
-
-	return 0;
+	return MAX14916_REG_WRITE(dev, MAX14916_SETOUT_REG, reg_val);
 }
 
 static int gpio_max14916_clean_on_power(const struct device *dev)
@@ -335,12 +333,33 @@ static int gpio_max14916_config_diag(const struct device *dev)
 {
 	const struct max14916_config *config = dev->config;
 	struct max14916_data *data = dev->data;
+	int ret;
 
-	MAX14916_REG_WRITE(dev, MAX14916_CONFIG1_REG, config->config1.reg_raw);
-	MAX14916_REG_WRITE(dev, MAX14916_CONFIG2_REG, config->config2.reg_raw);
-	MAX14916_REG_WRITE(dev, MAX14916_OW_OFF_EN_REG, data->chan_en.ow_on_en);
-	MAX14916_REG_WRITE(dev, MAX14916_OW_OFF_EN_REG, data->chan_en.ow_off_en);
-	MAX14916_REG_WRITE(dev, MAX14916_SHT_VDD_EN_REG, data->chan_en.sht_vdd_en);
+	ret = MAX14916_REG_WRITE(dev, MAX14916_CONFIG1_REG, config->config1.reg_raw);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = MAX14916_REG_WRITE(dev, MAX14916_CONFIG2_REG, config->config2.reg_raw);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = MAX14916_REG_WRITE(dev, MAX14916_OW_OFF_EN_REG, data->chan_en.ow_on_en);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = MAX14916_REG_WRITE(dev, MAX14916_OW_OFF_EN_REG, data->chan_en.ow_off_en);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = MAX14916_REG_WRITE(dev, MAX14916_SHT_VDD_EN_REG, data->chan_en.sht_vdd_en);
+	if (ret < 0) {
+		return ret;
+	}
+
 	return 0;
 }
 
@@ -413,10 +432,19 @@ static int gpio_max14916_init(const struct device *dev)
 	LOG_ERR("[GPIO] EN    - %d\n", gpio_pin_get_dt(&config->en_gpio));
 
 	int ret = gpio_max14916_clean_on_power(dev);
+	if (ret < 0) {
+		return ret;
+	}
 
-	MAX14916_REG_WRITE(dev, MAX14916_SETOUT_REG, 0);
+	ret = MAX14916_REG_WRITE(dev, MAX14916_SETOUT_REG, 0);
+	if (ret < 0) {
+		return ret;
+	}
 
-	gpio_max14916_config_diag(dev);
+	ret = gpio_max14916_config_diag(dev);
+	if (ret < 0) {
+		return ret;
+	}
 
 	LOG_DBG(" --- GPIO MAX14916 init OUT ---");
 
