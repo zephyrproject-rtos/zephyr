@@ -149,6 +149,13 @@
 	status = "okay";
 };
 
+&spi5 {
+	pinctrl-0 = <&spi5_nss_pf6 &spi5_sck_ph7
+		     &spi5_miso_pa8 &spi5_mosi_ph3>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &i2c1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&i2c1_scl_pd12 &i2c1_sda_pe8>;
