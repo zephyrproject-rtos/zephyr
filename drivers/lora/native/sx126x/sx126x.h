@@ -148,6 +148,19 @@ int sx126x_fsk_recv(const struct device *dev, uint8_t *data_buf,
 		    uint8_t size, k_timeout_t timeout, int16_t *rssi);
 
 /**
+ * @brief Receive data asynchronously using FSK modulation
+ *
+ * Reception is cancelled by calling this function again with @p cb = NULL.
+ *
+ * @param dev Device instance
+ * @param cb Callback to run on receiving data. If NULL, any pending
+ *	     asynchronous receptions will be cancelled.
+ * @param user_data User data passed to callback
+ * @return 0 when reception successfully setup, negative on error
+ */
+int sx126x_fsk_recv_async(const struct device *dev, lora_recv_cb cb, void *user_data);
+
+/**
  * @brief Switch back to LoRa modulation
  *
  * @param dev Device instance

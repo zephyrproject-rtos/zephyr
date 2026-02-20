@@ -288,15 +288,21 @@ static int sx126x_get_rx_buffer_status(const struct device *dev,
 static int sx126x_get_packet_status(const struct device *dev,
 				    int16_t *rssi, int8_t *snr)
 {
+	struct sx126x_data *data = dev->data;
 	uint8_t buf[3];
 	int ret;
 
-	ret = sx126x_hal_read_cmd(dev, SX126X_CMD_GET_PACKET_STATUS, buf, 2);
+	ret = sx126x_hal_read_cmd(dev, SX126X_CMD_GET_PACKET_STATUS, buf, 3);
 	if (ret == 0) {
-		/* RSSI is -value/2 dBm */
-		*rssi = -((int16_t)buf[0] >> 1);
-		/* SNR is value/4 dB (signed) */
-		*snr = ((int8_t)buf[1]) >> 2;
+		if (data->current_modulation == SX126X_MODULATION_FSK) {
+			/* GFSK packet status: [0]=status flags, [1]=RSSI_SYNC, [2]=RSSI_AVG */
+			*rssi = -((int16_t)buf[1] >> 1);
+			*snr = 0;
+		} else {
+			/* LoRa packet status: [0]=RSSI_PKT, [1]=SNR_PKT, [2]=SIGNAL_RSSI_PKT */
+			*rssi = -((int16_t)buf[0] >> 1);
+			*snr = ((int8_t)buf[1]) >> 2;
+		}
 	}
 
 	return ret;
@@ -460,12 +466,20 @@ static void sx126x_handle_irq_rx_done(const struct device *dev, uint16_t irq_sta
 
 	/* Handle async callback or signal sync receiver */
 	if (data->rx_cb != NULL) {
-		/* Async mode - call callback and restart RX */
-		data->rx_cb(dev, data->rx_buf, result.len,
-			    result.rssi, result.snr,
-			    data->rx_cb_user_data);
-		/* Restart RX for continuous reception */
-		sx126x_set_rx(dev, 0);
+		if (result.status > 0) {
+			data->rx_cb(dev, data->rx_buf, result.len,
+				    result.rssi, result.snr,
+				    data->rx_cb_user_data);
+		}
+		/*
+		 * Explicitly re-arm async RX after each RX_DONE for both LoRa and
+		 * FSK. Some GFSK flows behave as one-shot without this.
+		 */
+		if (sx126x_set_rx(dev, 0) < 0) {
+			LOG_ERR("Failed to re-arm async RX after RX_DONE");
+			atomic_set(&data->state, SX126X_STATE_IDLE);
+			sx126x_set_rf_path(dev, false, false);
+		}
 	} else {
 		/* Sync mode */
 		atomic_set(&data->state, SX126X_STATE_IDLE);
@@ -477,21 +491,57 @@ static void sx126x_handle_irq_rx_done(const struct device *dev, uint16_t irq_sta
 static void sx126x_handle_irq_timeout(const struct device *dev)
 {
 	struct sx126x_data *data = dev->data;
+	int state = atomic_get(&data->state);
 
 	LOG_DBG("Timeout");
-	atomic_set(&data->state, SX126X_STATE_IDLE);
-	sx126x_set_rf_path(dev, false, false);
 
-	if (data->tx_async_signal != NULL) {
+	/*
+	 * Always treat timeout in TX state as TX timeout, even if an RX callback
+	 * is registered from a previous async FSK receive session.
+	 */
+	if (state == SX126X_STATE_TX || data->tx_async_signal != NULL) {
 		struct sx126x_tx_result result = { .status = -ETIMEDOUT };
 
-		k_poll_signal_raise(data->tx_async_signal, -ETIMEDOUT);
+		atomic_set(&data->state, SX126X_STATE_IDLE);
+		sx126x_set_rf_path(dev, false, false);
+		if (data->tx_async_signal != NULL) {
+			k_poll_signal_raise(data->tx_async_signal, -ETIMEDOUT);
+		}
 		data->tx_async_signal = NULL;
 		k_msgq_put(&data->tx_msgq, &result, K_NO_WAIT);
+	} else if (state == SX126X_STATE_RX &&
+		   data->rx_cb != NULL &&
+		   data->current_modulation == SX126X_MODULATION_FSK) {
+		/*
+		 * Async RX should not timeout in continuous mode, but if it does,
+		 * recover by forcing continuous RX again instead of dropping to IDLE.
+		 */
+		int ret;
+
+		ret = sx126x_set_standby(dev, SX126X_STANDBY_RC);
+		if (ret < 0) {
+			LOG_ERR("Async RX timeout recovery standby failed: %d", ret);
+			atomic_set(&data->state, SX126X_STATE_IDLE);
+			sx126x_set_rf_path(dev, false, false);
+			return;
+		}
+
+		sx126x_set_rf_path(dev, true, false);
+		ret = sx126x_set_rx(dev, 0);
+		if (ret < 0) {
+			LOG_ERR("Async RX timeout recovery SetRx failed: %d", ret);
+			atomic_set(&data->state, SX126X_STATE_IDLE);
+			sx126x_set_rf_path(dev, false, false);
+			return;
+		}
+
+		atomic_set(&data->state, SX126X_STATE_RX);
 	} else if (data->rx_cb == NULL) {
 		/* Sync RX timeout */
 		struct sx126x_rx_result result = { .status = -EAGAIN };
 
+		atomic_set(&data->state, SX126X_STATE_IDLE);
+		sx126x_set_rf_path(dev, false, false);
 		k_msgq_put(&data->rx_msgq, &result, K_NO_WAIT);
 	}
 }
@@ -522,7 +572,12 @@ static void sx126x_irq_work_handler(struct k_work *work)
 		sx126x_handle_irq_rx_done(dev, irq_status);
 	}
 
-	if (irq_status & SX126X_IRQ_RX_TX_TIMEOUT) {
+	/*
+	 * If RX_DONE and TIMEOUT are latched together, RX_DONE wins.
+	 * Handling timeout in the same cycle can incorrectly tear RX down.
+	 */
+	if ((irq_status & SX126X_IRQ_RX_TX_TIMEOUT) &&
+	    !(irq_status & SX126X_IRQ_RX_DONE)) {
 		sx126x_handle_irq_timeout(dev);
 	}
 
@@ -773,13 +828,21 @@ static int sx126x_lora_recv_async(const struct device *dev,
 	k_mutex_lock(&data->lock, K_FOREVER);
 
 	if (cb == NULL) {
+		/* Do not let LoRa stop commands tear down active FSK async RX. */
+		if (data->current_modulation != SX126X_MODULATION_LORA) {
+			k_mutex_unlock(&data->lock);
+			return 0;
+		}
+
 		/* Stop async reception */
 		data->rx_cb = NULL;
 		data->rx_cb_user_data = NULL;
-		if (atomic_cas(&data->state, SX126X_STATE_RX, SX126X_STATE_IDLE)) {
-			sx126x_set_standby(dev, SX126X_STANDBY_RC);
-			sx126x_set_rf_path(dev, false, false);
-		}
+
+		/* Force RX stop even if state tracking is out of sync. */
+		sx126x_set_standby(dev, SX126X_STANDBY_RC);
+		sx126x_set_rf_path(dev, false, false);
+		atomic_set(&data->state, SX126X_STATE_IDLE);
+
 		k_mutex_unlock(&data->lock);
 		return 0;
 	}
@@ -1102,6 +1165,10 @@ int sx126x_fsk_set_packet_params(const struct device *dev,
 				 bool crc_on, bool whitening)
 {
 	struct sx126x_data *data = dev->data;
+	uint16_t preamble_bits;
+	uint8_t sync_bits;
+	uint8_t max_det_bits;
+	uint8_t preamble_det;
 	int ret;
 
 	k_mutex_lock(&data->lock, K_FOREVER);
@@ -1113,10 +1180,19 @@ int sx126x_fsk_set_packet_params(const struct device *dev,
 		}
 	}
 
+	preamble_bits = preamble_len * 8;
+	sync_bits = sync_word_len * 8;
+	max_det_bits = MIN(sync_bits, (uint8_t)MIN(preamble_bits, 255));
+	preamble_det = (max_det_bits >= 32) ? SX126X_FSK_PREAMBLE_DETECT_32_BITS :
+		       (max_det_bits >= 24) ? SX126X_FSK_PREAMBLE_DETECT_24_BITS :
+		       (max_det_bits >= 16) ? SX126X_FSK_PREAMBLE_DETECT_16_BITS :
+		       (max_det_bits > 0)   ? SX126X_FSK_PREAMBLE_DETECT_8_BITS :
+					      SX126X_FSK_PREAMBLE_DETECT_OFF;
+
 	ret = sx126x_set_fsk_packet_params(dev,
-					   preamble_len * 8,
-					   SX126X_FSK_PREAMBLE_DETECT_16_BITS,
-					   sync_word_len * 8,
+					   preamble_bits,
+					   preamble_det,
+					   sync_bits,
 					   SX126X_FSK_ADDR_FILT_OFF,
 					   fixed_len ? SX126X_FSK_PACKET_FIXED_LENGTH :
 						       SX126X_FSK_PACKET_VARIABLE_LENGTH,
@@ -1129,7 +1205,7 @@ int sx126x_fsk_set_packet_params(const struct device *dev,
 	}
 
 	data->fsk_config.preamble_len = preamble_len;
-	data->fsk_config.preamble_detect = SX126X_FSK_PREAMBLE_DETECT_16_BITS;
+	data->fsk_config.preamble_detect = preamble_det;
 	data->fsk_config.sync_word_len = sync_word_len;
 	data->fsk_config.addr_comp = SX126X_FSK_ADDR_FILT_OFF;
 	data->fsk_config.packet_type = fixed_len ? SX126X_FSK_PACKET_FIXED_LENGTH :
@@ -1225,6 +1301,14 @@ int sx126x_fsk_send(const struct device *dev, uint8_t *data_buf, uint32_t data_l
 		goto out_error;
 	}
 
+	/* Ensure TX_DONE is routed to DIO1 even after async FSK RX remaps IRQs. */
+	uint16_t tx_irq_mask = SX126X_IRQ_TX_DONE | SX126X_IRQ_RX_TX_TIMEOUT;
+	ret = sx126x_set_dio_irq_params(dev, tx_irq_mask, tx_irq_mask, 0, 0);
+	if (ret < 0) {
+		LOG_ERR("FSK TX: Failed IRQ map: %d", ret);
+		goto out_error;
+	}
+
 	ret = sx126x_set_fsk_packet_params(dev,
 		data->fsk_config.preamble_len * 8,
 		data->fsk_config.preamble_detect,
@@ -1290,6 +1374,64 @@ int sx126x_fsk_recv(const struct device *dev, uint8_t *data_buf,
 	data->rx_cb = NULL;
 	k_msgq_purge(&data->rx_msgq);
 
+	/* Ensure we're in FSK mode with correct settings */
+	ret = sx126x_set_standby(dev, SX126X_STANDBY_RC);
+	if (ret < 0) {
+		LOG_ERR("FSK RX: Failed to set standby: %d", ret);
+		goto out_error;
+	}
+
+	ret = sx126x_set_packet_type(dev, SX126X_PACKET_TYPE_GFSK);
+	if (ret < 0) {
+		LOG_ERR("FSK RX: Failed to set packet type: %d", ret);
+		goto out_error;
+	}
+
+	ret = sx126x_set_fsk_modulation_params(dev,
+		data->fsk_config.bitrate,
+		data->fsk_config.fdev,
+		data->fsk_config.shaping,
+		data->fsk_config.bandwidth);
+	if (ret < 0) {
+		LOG_ERR("FSK RX: Failed to set modulation params: %d", ret);
+		goto out_error;
+	}
+
+	ret = sx126x_set_rf_frequency(dev, data->fsk_config.frequency);
+	if (ret < 0) {
+		LOG_ERR("FSK RX: Failed to set frequency: %d", ret);
+		goto out_error;
+	}
+
+	ret = sx126x_configure_pa_and_tx_params(dev,
+		data->fsk_config.tx_power,
+		data->fsk_config.frequency,
+		SX126X_RAMP_200_US);
+	if (ret < 0) {
+		LOG_ERR("FSK RX: Failed to set PA params: %d", ret);
+		goto out_error;
+	}
+
+	ret = sx126x_set_fsk_packet_params(dev,
+		data->fsk_config.preamble_len * 8,
+		data->fsk_config.preamble_detect,
+		data->fsk_config.sync_word_len * 8,
+		data->fsk_config.addr_comp,
+		data->fsk_config.packet_type,
+		data->fsk_config.payload_len,
+		data->fsk_config.crc_type,
+		data->fsk_config.whitening);
+	if (ret < 0) {
+		LOG_ERR("FSK RX: Failed to set packet params: %d", ret);
+		goto out_error;
+	}
+
+	ret = sx126x_clear_irq_status(dev, SX126X_IRQ_ALL);
+	if (ret < 0) {
+		LOG_ERR("FSK RX: Failed to clear IRQs: %d", ret);
+		goto out_error;
+	}
+
 	sx126x_set_rf_path(dev, true, false);
 
 	timeout_ms = K_TIMEOUT_EQ(timeout, K_FOREVER)
@@ -1327,6 +1469,127 @@ int sx126x_fsk_recv(const struct device *dev, uint8_t *data_buf,
 	}
 
 	return result.status;
+
+out_error:
+	sx126x_set_rf_path(dev, false, false);
+	k_mutex_unlock(&data->lock);
+	atomic_set(&data->state, SX126X_STATE_IDLE);
+	return ret;
+}
+
+int sx126x_fsk_recv_async(const struct device *dev, lora_recv_cb cb, void *user_data)
+{
+	struct sx126x_data *data = dev->data;
+	int ret;
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	if (cb == NULL) {
+		/* Stop async reception */
+		data->rx_cb = NULL;
+		data->rx_cb_user_data = NULL;
+
+		/* Force RX stop even if state tracking is out of sync. */
+		sx126x_set_standby(dev, SX126X_STANDBY_RC);
+		sx126x_set_rf_path(dev, false, false);
+		atomic_set(&data->state, SX126X_STATE_IDLE);
+
+		k_mutex_unlock(&data->lock);
+		return 0;
+	}
+
+	if (!data->config_valid || data->current_modulation != SX126X_MODULATION_FSK) {
+		LOG_ERR("FSK not configured");
+		k_mutex_unlock(&data->lock);
+		return -EINVAL;
+	}
+
+	if (!atomic_cas(&data->state, SX126X_STATE_IDLE, SX126X_STATE_RX)) {
+		LOG_ERR("FSK RX async: Busy");
+		k_mutex_unlock(&data->lock);
+		return -EBUSY;
+	}
+
+	data->rx_cb = cb;
+	data->rx_cb_user_data = user_data;
+
+	/* Ensure FSK mode */
+	ret = sx126x_set_standby(dev, SX126X_STANDBY_RC);
+	if (ret < 0) {
+		LOG_ERR("FSK RX async: Failed standby: %d", ret);
+		goto out_error;
+	}
+
+	ret = sx126x_set_packet_type(dev, SX126X_PACKET_TYPE_GFSK);
+	if (ret < 0) {
+		LOG_ERR("FSK RX async: Failed packet type: %d", ret);
+		goto out_error;
+	}
+
+	ret = sx126x_set_fsk_modulation_params(dev,
+		data->fsk_config.bitrate,
+		data->fsk_config.fdev,
+		data->fsk_config.shaping,
+		data->fsk_config.bandwidth);
+	if (ret < 0) {
+		LOG_ERR("FSK RX async: Failed modulation: %d", ret);
+		goto out_error;
+	}
+
+	ret = sx126x_set_rf_frequency(dev, data->fsk_config.frequency);
+	if (ret < 0) {
+		LOG_ERR("FSK RX async: Failed frequency: %d", ret);
+		goto out_error;
+	}
+
+	ret = sx126x_set_fsk_packet_params(dev,
+		data->fsk_config.preamble_len * 8,
+		data->fsk_config.preamble_detect,
+		data->fsk_config.sync_word_len * 8,
+		data->fsk_config.addr_comp,
+		data->fsk_config.packet_type,
+		SX126X_MAX_PAYLOAD_LEN,
+		data->fsk_config.crc_type,
+		data->fsk_config.whitening);
+	if (ret < 0) {
+		LOG_ERR("FSK RX async: Failed packet params: %d", ret);
+		goto out_error;
+	}
+
+	/* RadioLib-style RX IRQ mapping for continuous async GFSK receive. */
+	uint16_t irq_mask = SX126X_IRQ_RX_DONE | SX126X_IRQ_CRC_ERR |
+			    SX126X_IRQ_SYNC_WORD_VALID;
+	ret = sx126x_set_dio_irq_params(dev, irq_mask, irq_mask, 0, 0);
+	if (ret < 0) {
+		LOG_ERR("FSK RX async: Failed IRQ map: %d", ret);
+		goto out_error;
+	}
+
+	ret = sx126x_clear_irq_status(dev, SX126X_IRQ_ALL);
+	if (ret < 0) {
+		LOG_ERR("FSK RX async: Failed clear IRQ: %d", ret);
+		goto out_error;
+	}
+
+	sx126x_set_rf_path(dev, true, false);
+
+	/* Start continuous RX */
+	ret = sx126x_set_rx(dev, 0);
+	if (ret < 0) {
+		LOG_ERR("FSK RX async: Failed set RX: %d", ret);
+		sx126x_set_rf_path(dev, false, false);
+		goto out_error;
+	}
+
+	LOG_DBG("FSK RX async started");
+	k_mutex_unlock(&data->lock);
+	return 0;
+
+out_error:
+	data->rx_cb = NULL;
+	k_mutex_unlock(&data->lock);
+	atomic_set(&data->state, SX126X_STATE_IDLE);
+	return ret;
 }
 
 int sx126x_set_lora_mode(const struct device *dev)
