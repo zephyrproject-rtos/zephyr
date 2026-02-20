@@ -2016,9 +2016,9 @@ static int eth_sam_gmac_get_config(const struct device *dev,
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 static const struct device *eth_sam_gmac_get_ptp_clock(const struct device *dev)
 {
-	struct eth_sam_dev_data *const dev_data = dev->data;
+	const struct eth_sam_dev_cfg *const cfg = dev->config;
 
-	return dev_data->ptp_clock;
+	return cfg->ptp_clock;
 }
 #endif
 
@@ -2090,6 +2090,8 @@ static const struct ethernet_api eth_api = {
 		BUILD_ASSERT(DT_INST_ENUM_IDX(n, phy_connection_type) <=		\
 			     SAM_GMAC_PHY_CONNECTION_TYPE_MAX,				\
 			     "Invalid PHY connection");					\
+		IF_ENABLED(CONFIG_PTP_CLOCK_SAM_GMAC,					\
+			(DEVICE_DECLARE(gmac_ptp_clock_##n);))				\
 		static const struct eth_sam_dev_cfg eth##n##_config = {			\
 			.regs = (Gmac *)DT_REG_ADDR(DT_INST_PARENT(n)),			\
 			.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
@@ -2100,6 +2102,8 @@ static const struct ethernet_api eth_api = {
 			.phy_conn_type = DT_INST_ENUM_IDX(n, phy_connection_type),	\
 			.ref_clk_source = DT_INST_ENUM_IDX(n, ref_clk_source),		\
 			.mcfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(n),			\
+			IF_ENABLED(CONFIG_PTP_CLOCK_SAM_GMAC,				\
+				(.ptp_clock = DEVICE_GET(gmac_ptp_clock_##n),))		\
 		};
 
 #define DEFN_RX_FLAG_LIST_0(n)								\
@@ -2226,17 +2230,10 @@ static const struct ethernet_api eth_api = {
 					      GMAC_MTU);
 
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
-struct ptp_context {
-	const struct device *eth_dev;
-};
-
-#define SAM_GMAC_PTP_CONTEXT_DEFN(n) static struct ptp_context ptp_gmac_##n##_context;
-
 static int ptp_clock_sam_gmac_set(const struct device *dev,
 				  struct net_ptp_time *tm)
 {
-	struct ptp_context *ptp_context = dev->data;
-	const struct eth_sam_dev_cfg *const cfg = ptp_context->eth_dev->config;
+	const struct eth_sam_dev_cfg *const cfg = dev->config;
 	Gmac *gmac = cfg->regs;
 
 	gmac->GMAC_TSH = tm->_sec.high & 0xffff;
@@ -2249,8 +2246,7 @@ static int ptp_clock_sam_gmac_set(const struct device *dev,
 static int ptp_clock_sam_gmac_get(const struct device *dev,
 				  struct net_ptp_time *tm)
 {
-	struct ptp_context *ptp_context = dev->data;
-	const struct eth_sam_dev_cfg *const cfg = ptp_context->eth_dev->config;
+	const struct eth_sam_dev_cfg *const cfg = dev->config;
 	Gmac *gmac = cfg->regs;
 
 	tm->second = ((uint64_t)(gmac->GMAC_TSH & 0xffff) << 32) | gmac->GMAC_TSL;
@@ -2261,8 +2257,7 @@ static int ptp_clock_sam_gmac_get(const struct device *dev,
 
 static int ptp_clock_sam_gmac_adjust(const struct device *dev, int increment)
 {
-	struct ptp_context *ptp_context = dev->data;
-	const struct eth_sam_dev_cfg *const cfg = ptp_context->eth_dev->config;
+	const struct eth_sam_dev_cfg *const cfg = dev->config;
 	Gmac *gmac = cfg->regs;
 
 	if ((increment <= -(int)NSEC_PER_SEC) || (increment >= (int)NSEC_PER_SEC)) {
@@ -2291,26 +2286,11 @@ static DEVICE_API(ptp_clock, ptp_api) = {
 	.rate_adjust = ptp_clock_sam_gmac_rate_adjust,
 };
 
-#define SAM_GMAC_PTP_INIT_DEFN(n)							\
-		static int ptp_gmac_##n##_init(const struct device *port)		\
-		{									\
-			const struct device *const eth_dev = DEVICE_DT_INST_GET(n);	\
-			struct eth_sam_dev_data *dev_data = eth_dev->data;		\
-			struct ptp_context *ptp_context = port->data;			\
-											\
-			dev_data->ptp_clock = port;					\
-			ptp_context->eth_dev = eth_dev;					\
-											\
-			return 0;							\
-		}
-
 #define SAM_GMAC_PTP_CLOCK_DEFN(n)							\
-		DEVICE_DEFINE(gmac_ptp_clock_##n, PTP_CLOCK_NAME, ptp_gmac_##n##_init,	\
-			NULL, &ptp_gmac_##n##_context, NULL, POST_KERNEL,		\
-			CONFIG_PTP_CLOCK_INIT_PRIORITY, &ptp_api);
+		DEVICE_DEFINE(gmac_ptp_clock_##n, PTP_CLOCK_NAME, NULL,			\
+			NULL, &eth##n##_data, &eth##n##_config, POST_KERNEL,		\
+			CONFIG_ETH_INIT_PRIORITY, &ptp_api);
 #else
-#define SAM_GMAC_PTP_CONTEXT_DEFN(n)
-#define SAM_GMAC_PTP_INIT_DEFN(n)
 #define SAM_GMAC_PTP_CLOCK_DEFN(n)
 #endif /* CONFIG_PTP_CLOCK_SAM_GMAC */
 
@@ -2325,8 +2305,6 @@ static DEVICE_API(ptp_clock, ptp_api) = {
 											\
 		SAM_GMAC_DT_INST_DEFN(n)						\
 											\
-		SAM_GMAC_PTP_CONTEXT_DEFN(n)						\
-		SAM_GMAC_PTP_INIT_DEFN(n)						\
 		SAM_GMAC_PTP_CLOCK_DEFN(n)
 
 DT_INST_FOREACH_STATUS_OKAY(ETH_SAM_GMAC_DEVICE)
