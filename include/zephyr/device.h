@@ -869,6 +869,28 @@ size_t z_device_get_all_static(const struct device **devices);
 __syscall bool device_is_ready(const struct device *dev);
 
 /**
+ * @brief Writes a "device not ready" warning message to the log.
+ *
+ * @details Writes a "device not ready" warning message to the log using the
+ * device name as reference, meant to be used in device_is_ready checks.
+ *
+ * @param dev pointer to a struct device.
+ */
+#define LOG_WRN_DEVICE_NOT_READY(dev) \
+	LOG_WRN("%s device not ready", (dev) ? (dev)->name : "(null)")
+
+/**
+ * @brief Writes a "device not ready" error message to the log.
+ *
+ * @details Writes a "device not ready" error message to the log using the
+ * device name as reference, meant to be used in device_is_ready checks.
+ *
+ * @param dev pointer to a struct device.
+ */
+#define LOG_ERR_DEVICE_NOT_READY(dev) \
+	LOG_ERR("%s device not ready", (dev) ? (dev)->name : "(null)")
+
+/**
  * @brief Initialize a device.
  *
  * A device whose initialization was deferred (by marking it as
