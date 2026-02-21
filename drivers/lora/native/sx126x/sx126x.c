@@ -1092,6 +1092,7 @@ int sx126x_fsk_config(const struct device *dev,
 	}
 
 	uint8_t sync_word[] = {0x12, 0xAD};
+
 	ret = sx126x_set_fsk_sync_word(dev, sync_word, sizeof(sync_word));
 	if (ret < 0) {
 		LOG_ERR("Set FSK sync word failed: %d", ret);
@@ -1304,6 +1305,7 @@ int sx126x_fsk_send(const struct device *dev, uint8_t *data_buf, uint32_t data_l
 
 	/* Ensure TX_DONE is routed to DIO1 even after async FSK RX remaps IRQs. */
 	uint16_t tx_irq_mask = SX126X_IRQ_TX_DONE | SX126X_IRQ_RX_TX_TIMEOUT;
+
 	ret = sx126x_set_dio_irq_params(dev, tx_irq_mask, tx_irq_mask, 0, 0);
 	if (ret < 0) {
 		LOG_ERR("FSK TX: Failed IRQ map: %d", ret);
