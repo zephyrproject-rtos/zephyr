@@ -18,9 +18,6 @@ config LV_Z_VDB_SIZE
 config LV_DPI_DEF
 	default 128
 
-config LV_Z_BITS_PER_PIXEL
-	default 1
-
 # Use offloaded render thread
 config LV_Z_FLUSH_THREAD
 	default y

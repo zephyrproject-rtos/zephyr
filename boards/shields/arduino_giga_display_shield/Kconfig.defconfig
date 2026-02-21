@@ -8,9 +8,6 @@ if LVGL
 config INPUT
 	default y
 
-config LV_Z_BITS_PER_PIXEL
-	default 16
-
 config LV_DPI_DEF
 	default 128
 
