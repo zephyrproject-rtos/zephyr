@@ -247,12 +247,12 @@ static int gpio_bflb_config(const struct device *dev, gpio_pin_t pin,
 		outputcfg |= BIT(pin);
 		if (flags & GPIO_OUTPUT_INIT_HIGH) {
 			tmp = sys_read32(cfg->base_reg + GLB_GPIO_CFGCTL32_OFFSET);
-			tmp = tmp | pin;
+			tmp |= BIT(pin);
 			sys_write32(tmp, cfg->base_reg + GLB_GPIO_CFGCTL32_OFFSET);
 		}
 		if (flags & GPIO_OUTPUT_INIT_LOW) {
 			tmp = sys_read32(cfg->base_reg + GLB_GPIO_CFGCTL32_OFFSET);
-			tmp = tmp & ~pin;
+			tmp &= ~BIT(pin);
 			sys_write32(tmp, cfg->base_reg + GLB_GPIO_CFGCTL32_OFFSET);
 		}
 	} else {
