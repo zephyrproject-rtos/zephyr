@@ -67,6 +67,26 @@ static int api_get_value(const struct device *dev, uint32_t *ticks)
 	return 0;
 }
 
+static int api_set_value(const struct device *dev, uint32_t ticks)
+{
+	const struct max32_tmr_config *cfg = dev->config;
+
+	MXC_TMR_Stop(cfg->regs);
+	MXC_TMR_SetCount(cfg->regs, ticks);
+	MXC_TMR_Start(cfg->regs);
+	return 0;
+}
+
+static int api_reset(const struct device *dev)
+{
+	const struct max32_tmr_config *cfg = dev->config;
+
+	MXC_TMR_Stop(cfg->regs);
+	MXC_TMR_SetCount(cfg->regs, 0);
+	MXC_TMR_Start(cfg->regs);
+	return 0;
+}
+
 static int api_set_top_value(const struct device *dev, const struct counter_top_cfg *counter_cfg)
 {
 	const struct max32_tmr_config *cfg = dev->config;
@@ -289,6 +309,8 @@ static DEVICE_API(counter, counter_max32_driver_api) = {
 	.start = api_start,
 	.stop = api_stop,
 	.get_value = api_get_value,
+	.set_value = api_set_value,
+	.reset = api_reset,
 	.set_top_value = api_set_top_value,
 	.get_pending_int = api_get_pending_int,
 	.get_top_value = api_get_top_value,
