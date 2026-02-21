@@ -5,16 +5,16 @@
  */
 
 #define LOG_MODULE_NAME net_tftp_client_app
-#define LOG_LEVEL LOG_LEVEL_DBG
+#define LOG_LEVEL       LOG_LEVEL_DBG
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include <zephyr/net/tftp.h>
+#include <zephyr/net/tftp_client.h>
 #include <zephyr/posix/netdb.h>
 
-#define APP_BANNER		"Run TFTP client"
-#define TFTP_SAMPLE_DATA	"Lorem ipsum dolor sit amet, consectetur adipiscing elit"
+#define APP_BANNER       "Run TFTP client"
+#define TFTP_SAMPLE_DATA "Lorem ipsum dolor sit amet, consectetur adipiscing elit"
 
 static struct tftpc client;
 
@@ -22,14 +22,10 @@ static void tftp_event_callback(const struct tftp_evt *evt)
 {
 	switch (evt->type) {
 	case TFTP_EVT_DATA:
-		LOG_HEXDUMP_INF(evt->param.data.data_ptr,
-				evt->param.data.len,
-				"Received data: ");
+		LOG_HEXDUMP_INF(evt->param.data.data_ptr, evt->param.data.len, "Received data: ");
 		break;
 	case TFTP_EVT_ERROR:
-		LOG_ERR("Error code %d msg: %s",
-			evt->param.error.code,
-			evt->param.error.msg);
+		LOG_ERR("Error code %d msg: %s", evt->param.error.code, evt->param.error.msg);
 	default:
 		break;
 	}
@@ -84,8 +80,7 @@ int main(void)
 	LOG_INF("TFTP client get done");
 
 	/* Put TFTP sample data into newfile.bin to server in octet mode */
-	ret = tftp_put(&client, "newfile.bin", "octet",
-			TFTP_SAMPLE_DATA, sizeof(TFTP_SAMPLE_DATA));
+	ret = tftp_put(&client, "newfile.bin", "octet", TFTP_SAMPLE_DATA, sizeof(TFTP_SAMPLE_DATA));
 	if (ret < 0 || ret != sizeof(TFTP_SAMPLE_DATA)) {
 		LOG_ERR("Error while putting file (%d)", ret);
 		return ret;

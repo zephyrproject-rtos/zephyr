@@ -5,8 +5,8 @@
 
 config TFTP_LIB
 	bool "Socket TFTP Library Support [EXPERIMENTAL]"
-	select NET_SOCKETS
 	select EXPERIMENTAL
+	select NET_SOCKETS
 	help
 	  Enable the Zephyr TFTP Library
 
@@ -36,5 +36,55 @@ config TFTPC_REQUEST_RETRANSMITS
 	  the request to the server in hopes that the server will respond within
 	  time to this request. This number dictates the number of times we will
 	  do re-tx of our request before giving up and exiting.
+
+config TFTPS
+	bool "TFTP Server Support [EXPERIMENTAL]"
+	select FILE_SYSTEM
+	help
+	  Enable the Zephyr TFTP Server implementation.
+	  The server supports multiple concurrent clients, serves files from
+	  all mounted file systems, and supports UDP socket and serial transports.
+
+if TFTPS
+
+config TFTPS_MAX_CLIENTS
+	int "Maximum number of concurrent TFTP client connections"
+	default 1
+	help
+	  Maximum number of concurrent client connections the TFTP server
+	  can handle simultaneously. Each client connection requires a
+	  session structure.
+
+config TFTPS_REQUEST_TIMEOUT
+	int "TFTP Server request timeout in milliseconds"
+	default 5000
+	help
+	  Maximum amount of time (in milliseconds) that the TFTP server
+	  will wait for client packets before timing out a session.
+	  Sessions that timeout are automatically cleaned up.
+
+config TFTPS_POLL_TIMEOUT_MS
+	int "TFTP Server polling timeout in milliseconds"
+	default 100
+	help
+	  Interval (in milliseconds) that the server checks for events
+	  on active sockets. This also impacts the granularity of session timeouts.
+
+config TFTPS_MAX_RETRIES
+	int "Maximum number of retries for TFTP operations"
+	default 5
+	help
+	  Maximum number of times the server will retry failed operations
+	  before giving up.
+
+config TFTPS_STACK_SIZE
+	int "TFTP Server thread stack size"
+	default 2048
+	help
+	  Stack size for the TFTP server thread. Increase this if you
+	  experience stack overflow issues with large file transfers
+	  or many concurrent clients.
+
+endif # TFTPS
 
 endif # TFTP_LIB
