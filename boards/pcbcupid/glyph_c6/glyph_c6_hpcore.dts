@@ -56,3 +56,10 @@
 &gpio0 {
 	status = "okay";
 };
+
+&i2c0 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
