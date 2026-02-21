@@ -32,9 +32,13 @@ void soc_early_init_hook(void)
 	tmp = tmp & HBN_REG_EN_HW_PU_PD_UMSK;
 	sys_write32(tmp, HBN_BASE + HBN_IRQ_MODE_OFFSET);
 
-	/* 'seam' 0kb, undocumented */
+	/* Configure "seam" (BLE exchange memory): 8KB with BLE, 0KB otherwise */
 	tmp = sys_read32(GLB_BASE + GLB_SEAM_MISC_OFFSET);
+#if defined(CONFIG_BT_BFLB_BL70X)
+	tmp = (tmp & GLB_EM_SEL_UMSK) | (3U << GLB_EM_SEL_POS);
+#else
 	tmp = (tmp & GLB_EM_SEL_UMSK) | (0U << GLB_EM_SEL_POS);
+#endif
 	sys_write32(tmp, GLB_BASE + GLB_SEAM_MISC_OFFSET);
 
 	/* Reset UART signal swap */
