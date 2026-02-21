@@ -61,6 +61,7 @@ void hl78xx_on_rrc_status(struct modem_chat *chat, char **argv, uint16_t argc, v
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 void hl78xx_on_socknotifydata(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
 void hl78xx_on_ktcpnotif(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
+void hl78xx_on_cme_error(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
 /* Handler implemented to assign modem-provided udp socket ids */
 void hl78xx_on_kudpsocket_create(struct modem_chat *chat, char **argv, uint16_t argc,
 				 void *user_data);
@@ -490,12 +491,12 @@ MODEM_CHAT_SCRIPT_DEFINE(hl78xx_fota_install_accept_script, hl78xx_fota_install_
  * definitions.
  */
 MODEM_CHAT_MATCHES_DEFINE(connect_matches, MODEM_CHAT_MATCH(CONNECT_STRING, "", NULL),
-			  MODEM_CHAT_MATCH(CME_ERROR_STRING, "", NULL),
-			  MODEM_CHAT_MATCH(ERROR_STRING, "", NULL));
+			  MODEM_CHAT_MATCH(CME_ERROR_STRING, "", hl78xx_on_cme_error),
+			  MODEM_CHAT_MATCH(ERROR_STRING, "", hl78xx_on_cme_error));
 MODEM_CHAT_MATCHES_DEFINE(kudpind_allow_match,
 			  MODEM_CHAT_MATCH("+KUDP_IND: ", ",", hl78xx_on_kudpsocket_create),
-			  MODEM_CHAT_MATCH(CME_ERROR_STRING, "", NULL),
-			  MODEM_CHAT_MATCH(ERROR_STRING, "", NULL));
+			  MODEM_CHAT_MATCH(CME_ERROR_STRING, "", hl78xx_on_cme_error),
+			  MODEM_CHAT_MATCH(ERROR_STRING, "", hl78xx_on_cme_error));
 MODEM_CHAT_MATCH_DEFINE(ktcpind_match, "+KTCP_IND: ", ",", hl78xx_on_ktcpind);
 MODEM_CHAT_MATCH_DEFINE(ktcpcfg_match, "+KTCPCFG: ", "", hl78xx_on_ktcpsocket_create);
 MODEM_CHAT_MATCH_DEFINE(cgdcontrdp_match, "+CGCONTRDP: ", ",", hl78xx_on_cgdcontrdp);

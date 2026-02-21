@@ -2584,6 +2584,15 @@ static int hl78xx_on_sleep_state_enter(struct hl78xx_data *data)
 	modem_chat_release(&data->chat);
 	modem_pipe_attach(data->uart_pipe, hl78xx_bus_pipe_handler, data);
 	modem_pipe_close_async(data->uart_pipe);
+
+#if defined(CONFIG_MODEM_HL78XX_00)
+	/* HL7800 destroys all TCP/UDP socket contexts when entering PSM/eDRX.
+	 * Invalidate modem-side socket IDs now so they will be transparently
+	 * re-created when the application uses them after wake.
+	 */
+	hl78xx_invalidate_socket_contexts(data);
+#endif /* CONFIG_MODEM_HL78XX_00 */
+
 	k_sem_give(&data->suspended_sem);
 	return 0;
 }
