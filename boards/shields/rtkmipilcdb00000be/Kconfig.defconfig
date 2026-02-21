@@ -32,9 +32,6 @@ config LV_Z_DOUBLE_VDB
 config LV_Z_FULL_REFRESH
 	default y
 
-config LV_Z_BITS_PER_PIXEL
-	default 16
-
 # Use offloaded render thread
 choice LV_COLOR_DEPTH
 	default LV_COLOR_DEPTH_16
