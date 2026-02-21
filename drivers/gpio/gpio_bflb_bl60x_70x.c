@@ -309,6 +309,12 @@ int gpio_bflb_init(const struct device *dev)
 {
 	const struct gpio_bflb_config * const cfg = dev->config;
 
+#if defined(CONFIG_SOC_SERIES_BL70X) && !DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(psram))
+	/* Pins 23-28 are output-only (no high-Z). Route them through the PSRAM IO pads. */
+	sys_write32(GLB_CFG_GPIO_USE_PSRAM_IO_MSK,
+		    GLB_BASE + GLB_GPIO_USE_PSRAM__IO_OFFSET);
+#endif
+
 	cfg->irq_config_func(dev);
 
 	return 0;
