@@ -952,6 +952,19 @@ static inline bool hl78xx_psm_is_active(struct hl78xx_data *data)
 #endif /* CONFIG_MODEM_HL78XX_PSM */
 
 void hl78xx_release_socket_comms(struct hl78xx_data *data);
+#if defined(CONFIG_MODEM_HL78XX_00)
+/**
+ * @brief Invalidate all modem-side socket IDs after sleep.
+ *
+ * HL7800 does not retain TCP/UDP socket contexts after PSM/eDRX exit.
+ * This function resets the modem-side socket IDs so they will be re-created
+ * on the next connect/send operation. The application-side file descriptors
+ * remain valid.
+ *
+ * @param data Modem driver data
+ */
+void hl78xx_invalidate_socket_contexts(struct hl78xx_data *data);
+#endif /* CONFIG_MODEM_HL78XX_00 */
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 
 #endif /* HL78XX_H */
