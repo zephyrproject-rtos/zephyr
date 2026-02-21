@@ -362,7 +362,7 @@ static int gpio_max14916_config_diag(const struct device *dev)
 		return ret;
 	}
 
-	ret = MAX14916_REG_WRITE(dev, MAX14916_OW_OFF_EN_REG, data->chan_en.ow_on_en);
+	ret = MAX14916_REG_WRITE(dev, MAX14916_OW_ON_EN_REG, data->chan_en.ow_on_en);
 	if (ret < 0) {
 		return ret;
 	}
