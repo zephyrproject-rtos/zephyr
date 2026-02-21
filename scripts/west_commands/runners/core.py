@@ -331,6 +331,9 @@ class RunnerCaps:
     - skip_load: whether the runner supports the --load/--no-load option, which
       allows skipping the load of image on target before starting a debug session
       (this option only affects the 'debug' command)
+
+    - verify: whether the runner supports an --verify option, which
+      does a verification of the flashed hex after programming.
     '''
 
     commands: set[str] = field(default_factory=lambda: set(_RUNNERCAPS_COMMANDS))
@@ -354,6 +357,7 @@ class RunnerCaps:
                               # 'disconnect', and 'quit' commands (named batch_debug in west),
                               # unlike interactive debug mode (default),
                               # which stops and waits for user input
+    verify: bool = False
 
     def __post_init__(self):
         if self.mult_dev_ids and not self.dev_id:
@@ -691,6 +695,11 @@ class ZephyrBinaryRunner(abc.ABC):
                             help="enable west debug batch mode"
                             if caps.batch_debug else argparse.SUPPRESS)
 
+        parser.add_argument('--verify', action=argparse.BooleanOptionalAction,
+                            help=("verify flash after programming, or don't"
+                                  "Default action depends on each specific runner."
+                                  if caps.verify else argparse.SUPPRESS))
+
         # Runner-specific options.
         cls.do_add_parser(parser)
 
@@ -737,12 +746,16 @@ class ZephyrBinaryRunner(abc.ABC):
             _missing_cap(cls, '--rtt-address')
         if args.dry_run and not caps.dry_run:
             _missing_cap(cls, '--dry-run')
+        if args.verify and not caps.verify:
+            _missing_cap(cls, '--verify')
 
         ret = cls.do_create(cfg, args)
         if args.erase:
             ret.logger.info('mass erase requested')
         if args.reset:
             ret.logger.info('reset after flashing requested')
+        if args.verify:
+            ret.logger.info('verify requested')
         return ret
 
     @classmethod
