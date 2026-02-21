@@ -67,12 +67,10 @@ static int max14916_pars_spi_diag(const struct device *dev, uint8_t *rx_diag_buf
 			MAX149X6_GET_BIT(rx_diag_buff[1], 4), MAX149X6_GET_BIT(rx_diag_buff[1], 5),
 			MAX149X6_GET_BIT(rx_diag_buff[1], 6), MAX149X6_GET_BIT(rx_diag_buff[1], 7));
 
-		if (rx_diag_buff[1]) {
-			LOG_ERR("[DIAG] gpio_max14916_diag_chan_get(%x)\n", rx_diag_buff[1] & 0x0f);
-			diag_ret = gpio_max14916_diag_chan_get(dev);
-			if (diag_ret) {
-				ret = diag_ret;
-			}
+		LOG_ERR("[DIAG] gpio_max14916_diag_chan_get(%x)\n", rx_diag_buff[1] & 0x0f);
+		diag_ret = gpio_max14916_diag_chan_get(dev);
+		if (diag_ret < 0) {
+			ret = diag_ret;
 		}
 	}
 
@@ -84,18 +82,25 @@ static int max14916_reg_trans_spi_diag(const struct device *dev, uint8_t addr, u
 {
 	const struct max14916_config *config = dev->config;
 	uint8_t rx_diag_buff[2];
+	int trans_ret, parse_ret;
 
 	if (!gpio_pin_get_dt(&config->fault_gpio)) {
 		LOG_ERR(" >>> FLT PIN");
 	}
 
-	int ret = max149x6_reg_transceive(dev, addr, tx, rx_diag_buff, rw);
+	trans_ret = max149x6_reg_transceive(dev, addr, tx, rx_diag_buff, rw);
 
-	if (max14916_pars_spi_diag(dev, rx_diag_buff, rw)) {
-		ret = -EIO;
+	if (trans_ret < 0) {
+		return trans_ret;
 	}
 
-	return ret;
+	parse_ret = max14916_pars_spi_diag(dev, rx_diag_buff, rw);
+
+	if (parse_ret < 0) {
+		return parse_ret;
+	}
+
+	return trans_ret;
 }
 
 #define MAX14916_REG_READ(dev, addr) max14916_reg_trans_spi_diag(dev, addr, 0, MAX149x6_READ)
