@@ -16,7 +16,15 @@
 		zephyr,flash = &code_flash0;
 		zephyr,code-partition = &m0p_partition;
 		/* Modify the following properties to enable uart */
-		/* zephyr,console = &uart7; */
-		/* zephyr,shell-uart = &uart7; */
+		zephyr,console = &uart9;
+		zephyr,shell-uart = &uart9;
 	};
+};
+
+&uart9 {
+	status = "okay";
+};
+
+&gpio_prt29 {
+        status = "okay";
 };
