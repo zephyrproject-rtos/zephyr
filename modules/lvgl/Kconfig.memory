@@ -6,12 +6,12 @@ menu "Memory manager settings"
 
 config LV_Z_BITS_PER_PIXEL
 	int "Bits per pixel"
-	default 32
 	default 32 if LV_COLOR_DEPTH_32
 	default 24 if LV_COLOR_DEPTH_24
 	default 16 if LV_COLOR_DEPTH_16
 	default 8 if LV_COLOR_DEPTH_8
 	default 1 if LV_COLOR_DEPTH_1
+	default 32
 	range 1 32
 	help
 	  Number of bits per pixel.
