@@ -120,6 +120,14 @@ static int gpio_max14916_diag_chan_get(const struct device *dev)
 	}
 	data->glob.interrupt.reg_raw = ret;
 
+	/* clear stale cached faults */
+	data->chan.ovr_ld = 0;
+	data->chan.curr_lim = 0;
+	data->chan.ow_off = 0;
+	data->chan.ow_on = 0;
+	data->chan.sht_vdd = 0;
+	data->glob.glob_err.reg_raw = 0;
+
 	if (data->glob.interrupt.reg_raw) {
 		if (data->glob.interrupt.reg_bits.OVER_LD_FLT) {
 			ret = max149x6_reg_transceive(dev, MAX14916_OVR_LD_REG, 0, NULL,
