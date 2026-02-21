@@ -57,11 +57,13 @@ void z_soc_irq_init()
 	uint8_t i;
 
 #ifdef CONFIG_INFINEON_CAT1C_M0PLUS
+#if !defined(CONFIG_SOC_SERIES_CYT4DN)
 	/* Setup IRQ lines as priorities */
 	for (i = 4; i < 8; i++) {
 		NVIC_SetPriority(NvicMux0_IRQn + i, MAX(i - 4, IRQ_PRIO_LOWEST));
 		NVIC_EnableIRQ(NvicMux0_IRQn + i);
 	}
+#endif
 #else
 	/* Setup IRQ lines as priorities */
 	for (i = 0; i < 8; i++) {
