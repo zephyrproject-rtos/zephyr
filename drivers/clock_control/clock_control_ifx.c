@@ -84,6 +84,11 @@ static int ifx_clock_init(const struct device *dev)
 			continue;
 		}
 
+		ret = Cy_SysClk_PllDisable(i);
+		if (ret) {
+			LOG_ERR("PLL %d disable failed\n", i);
+			return ret;
+		}
 		ret = Cy_SysClk_PllManualConfigure(
 			i, &((struct ifx_clock_config *)dev->config)->pll_configs[i - 1]);
 		if (ret) {
