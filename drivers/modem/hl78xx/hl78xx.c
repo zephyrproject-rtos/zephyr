@@ -2728,7 +2728,7 @@ static void hl78xx_airplane_mode_event_handler(struct hl78xx_data *data, enum hl
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
 #ifdef CONFIG_HL78XX_GNSS
 		/* Check and process any pending GNSS mode entry request */
-		if (hl78xx_gnss_check_and_clear_pending(data)) {
+		if (hl78xx_gnss_is_pending(data)) {
 			LOG_INF("Processing pending GNSS mode request");
 			hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_GNSS_INIT_SCRIPT);
 			break;

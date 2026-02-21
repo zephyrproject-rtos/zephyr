@@ -1152,10 +1152,24 @@ int hl78xx_edrx_get_time_to_sleep(const struct device *dev);
 /**
  * @brief Enter GNSS mode
  *
- * Switches modem from LTE mode to GNSS mode. This will:
- * 1. Put modem in airplane mode (AT+CFUN=4)
- * 2. Initialize GNSS engine
- * 3. Fire HL78XX_GNSS_ENGINE_READY event when complete
+ * Switches modem from LTE mode to GNSS mode. The exact transition depends
+ * on the modem's current power state:
+ *
+ * **Without low-power mode (default / airplane mode path):**
+ * 1. Carrier off (notify app, close sockets)
+ * 2. Put modem in airplane mode (AT+CFUN=4)
+ * 3. Initialize GNSS engine
+ * 4. Fire HL78XX_GNSS_ENGINE_READY event when complete
+ *
+ * **With low-power mode (PSM path):**
+ * 1. Mark GNSS as pending
+ * 2. Wait for modem to enter PSM sleep (PSMEV:1)
+ * 3. Wake modem (UART only - LTE stays hibernating)
+ * 4. Initialize GNSS engine (no CFUN=4 needed, RF path already free)
+ * 5. Fire HL78XX_GNSS_ENGINE_READY event when complete
+ *
+ * Per HL78xx GNSS App Note 5.3: "GNSS can be used in PSM mode" because
+ * the LTE modem is unavailable and the shared RF Rx path is free.
  *
  * After entering GNSS mode, call hl78xx_queue_gnss_search() to start fix acquisition.
  *
@@ -1169,8 +1183,17 @@ int hl78xx_enter_gnss_mode(const struct device *dev);
  *
  * Switches modem from GNSS mode back to LTE mode. This will:
  * 1. Stop any active GNSS search
- * 2. Restore full phone functionality (AT+CFUN=1)
- * 3. Modem will re-register to the network
+ * 2. Fire HL78XX_GNSS_EVENT_MODE_EXITED event
+ *
+ * After the event fires, the next step depends on the power mode:
+ * - **Airplane mode**: User must call
+ *   hl78xx_api_func_set_phone_functionality(dev, HL78XX_FULLY_FUNCTIONAL, ...)
+ *   to restore LTE.
+ * - **PSM mode**: The driver automatically transitions back to
+ *   AWAIT_REGISTERED and the modem will re-register to LTE.
+ *
+ *  * - **LOW-POWER-PSM mode**: User does not need to do anything, the modem will automatically
+ * transition back to LTE registration after the kcellmeasure or socket data transmission starts.
  *
  * @param dev Pointer to the modem device
  * @return 0 on success, -EALREADY if not in GNSS mode, negative errno on failure

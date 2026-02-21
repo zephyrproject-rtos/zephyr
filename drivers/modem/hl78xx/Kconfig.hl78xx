@@ -400,6 +400,53 @@ config HL78XX_GNSS_START_MODE_FACTORY
 
 endchoice
 
+choice HL78XX_GNSS_REQUEST_PROCESSING_MODE
+	prompt "GNSS request processing mode"
+	default HL78XX_GNSS_PROCESS_POST_PSM
+	depends on MODEM_HL78XX_PSM
+	help
+	  Select how queued GNSS requests are handled in relation to the modem's
+	  PSM (Power Save Mode) sleep cycles.
+
+	  POST-PSM: GNSS runs after the modem naturally wakes from PSM, just
+	  before LTE re-establishes. The driver sets CFUN=4 (airplane mode) to
+	  claim the shared RF path for GNSS before LTE can register.
+
+	  PRE-PSM: GNSS runs as soon as the modem enters PSM sleep. The driver
+	  immediately wakes the modem and starts GNSS while LTE is still
+	  hibernating, without needing to set airplane mode.
+
+	  Note: This only affects queued/pending GNSS requests. Explicit
+	  hl78xx_enter_gnss_mode() calls while the modem is already sleeping
+	  always wake the modem immediately regardless of this setting.
+
+config HL78XX_GNSS_PROCESS_POST_PSM
+	bool "Process GNSS request after exiting sleep (post-PSM)"
+	help
+	  In this mode, GNSS requests are processed immediately after the modem
+	  naturally exits PSM sleep (GPIO6 asserted, wake-up pin triggered),
+	  just before the LTE connection is re-established.
+
+	  The driver intercepts the wake-up sequence and sets CFUN=4 (airplane
+	  mode) to prevent LTE from reclaiming the shared RF path, allowing
+	  GNSS to operate. After GNSS completes, the modem returns to full
+	  functionality and LTE registration proceeds.
+
+	  Use this mode when you want GNSS data available at the start of each
+	  wake cycle, before performing LTE operations.
+
+config HL78XX_GNSS_PROCESS_PRE_PSM
+	bool "Process GNSS request when entering sleep (pre-PSM)"
+	help
+	  In this mode, GNSS requests are processed as soon as the modem enters
+	  PSM sleep. The driver immediately wakes the modem and starts GNSS
+	  while the LTE modem is hibernating, so the shared RF Rx path is
+	  already free without needing to set airplane mode.
+
+	  Use this mode when you want GNSS acquisition to run during the PSM
+	  sleep window, maximizing the time available for satellite fix.
+endchoice
+
 choice HL78XX_GNSS_CONSTELLATIONS
 	prompt "GNSS satellite constellations"
 	default HL78XX_GNSS_CONSTELLATIONS_GPS_GLONASS
