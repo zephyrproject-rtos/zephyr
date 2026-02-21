@@ -400,25 +400,25 @@ static int gpio_max14906_clean_on_power(const struct device *dev)
 	int ret;
 
 	/* Clear the latched faults generated at power up */
-	ret = MAX14906_REG_READ(dev, MAX14906_OPN_WIR_FLT_REG);
+	ret = max149x6_reg_transceive(dev, MAX14906_OPN_WIR_FLT_REG, 0, NULL, MAX149x6_READ);
 	if (ret < 0) {
 		LOG_ERR("Error reading MAX14906_OPN_WIR_FLT_REG");
 		goto err_clean_on_power_max14906;
 	}
 
-	ret = MAX14906_REG_READ(dev, MAX14906_OVR_LD_REG);
+	ret = max149x6_reg_transceive(dev, MAX14906_OVR_LD_REG, 0, NULL, MAX149x6_READ);
 	if (ret < 0) {
 		LOG_ERR("Error reading MAX14906_OVR_LD_REG");
 		goto err_clean_on_power_max14906;
 	}
 
-	ret = MAX14906_REG_READ(dev, MAX14906_SHT_VDD_FLT_REG);
+	ret = max149x6_reg_transceive(dev, MAX14906_SHT_VDD_FLT_REG, 0, NULL, MAX149x6_READ);
 	if (ret < 0) {
 		LOG_ERR("Error reading MAX14906_SHD_VDD_FLT_REG");
 		goto err_clean_on_power_max14906;
 	}
 
-	ret = MAX14906_REG_READ(dev, MAX14906_GLOB_ERR_REG);
+	ret = max149x6_reg_transceive(dev, MAX14906_GLOB_ERR_REG, 0, NULL, MAX149x6_READ);
 	if (ret < 0) {
 		LOG_ERR("Error reading MAX14906_GLOBAL_FLT_REG");
 		goto err_clean_on_power_max14906;
@@ -435,23 +435,27 @@ static int gpio_max14906_config_diag(const struct device *dev)
 	int ret;
 
 	/* Set Config1 and Config2 regs */
-	ret = MAX14906_REG_WRITE(dev, MAX14906_CONFIG1_REG, config->config1.reg_raw);
+	ret = max149x6_reg_transceive(dev, MAX14906_CONFIG1_REG,
+				      config->config1.reg_raw, NULL, MAX149x6_WRITE);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = MAX14906_REG_WRITE(dev, MAX14906_CONFIG2_REG, config->config2.reg_raw);
+	ret = max149x6_reg_transceive(dev, MAX14906_CONFIG2_REG,
+				      config->config2.reg_raw, NULL, MAX149x6_WRITE);
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Configure per channel diagnostics */
-	ret = MAX14906_REG_WRITE(dev, MAX14906_OPN_WR_EN_REG, data->chan_en.opn_wr_en.reg_raw);
+	ret = max149x6_reg_transceive(dev, MAX14906_OPN_WR_EN_REG,
+				      data->chan_en.opn_wr_en.reg_raw, NULL, MAX149x6_WRITE);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = MAX14906_REG_WRITE(dev, MAX14906_SHT_VDD_EN_REG, data->chan_en.sht_vdd_en.reg_raw);
+	ret = max149x6_reg_transceive(dev, MAX14906_SHT_VDD_EN_REG,
+				      data->chan_en.sht_vdd_en.reg_raw, NULL, MAX149x6_WRITE);
 	if (ret < 0) {
 		return ret;
 	}
@@ -549,7 +553,7 @@ static int gpio_max14906_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = MAX14906_REG_WRITE(dev, MAX14906_SETOUT_REG, 0);
+	ret = max149x6_reg_transceive(dev, MAX14906_SETOUT_REG, 0, NULL, MAX149x6_WRITE);
 	if (ret < 0) {
 		return ret;
 	}
