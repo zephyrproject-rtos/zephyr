@@ -1,0 +1,84 @@
+# Copyright (c) 2026 William Markezana
+# SPDX-License-Identifier: Apache-2.0
+
+config BT_BFLB_BL70X
+	bool
+	default y
+	depends on DT_HAS_BFLB_BL70X_BT_HCI_ENABLED
+	select HAS_BT_CTLR
+	select DYNAMIC_INTERRUPTS
+	select FPU_SHARING
+	select BFLB_FREERTOS_SHIM
+	help
+	  Bouffalo Lab BL70X (BL702) on-chip BLE controller HCI driver.
+	  Uses precompiled binary blobs from the hal_bouffalolab module.
+
+if BT_BFLB_BL70X
+
+choice BFLB_BL70X_BLE_VARIANT
+	prompt "BLE controller variant"
+	default BFLB_BL70X_BLE_M16S1 if BT_HCI_RAW
+	default BFLB_BL70X_BLE_M16S1 if (BT_PERIPHERAL && BT_CENTRAL)
+	default BFLB_BL70X_BLE_M0S0SP if (!BT_CONN && BT_OBSERVER)
+	default BFLB_BL70X_BLE_M0S1S if (BT_PERIPHERAL && BT_OBSERVER)
+	default BFLB_BL70X_BLE_M0S1P if BT_PERIPHERAL
+	default BFLB_BL70X_BLE_M16S1
+	help
+	  Select the BLE controller binary variant. The default is
+	  automatically chosen based on the enabled Bluetooth roles.
+	  The naming convention is m<master>s<slave>[suffix]:
+	    m = max master connections, s = max slave connections
+	    p = PDS (power down sleep), s = scan/observer
+
+config BFLB_BL70X_BLE_M0S1P
+	bool "m0s1p: Peripheral only, 1 connection"
+	help
+	  1 BLE connection, slave/peripheral only. Supports PDS.
+
+config BFLB_BL70X_BLE_M0S1
+	bool "m0s1: Peripheral only, 1 connection (no PDS)"
+
+config BFLB_BL70X_BLE_M0S1S
+	bool "m0s1s: Peripheral + Observer, 1 connection"
+
+config BFLB_BL70X_BLE_M0S1T10
+	bool "m0s1t10: Peripheral, 1 connection (test mode)"
+	help
+	  1 BLE connection, slave/peripheral only. Test/manufacturing mode.
+
+config BFLB_BL70X_BLE_M0S0SP
+	bool "m0s0sp: Observer only, no connections"
+
+config BFLB_BL70X_BLE_M1S1
+	bool "m1s1: Central + Peripheral, 1 connection each"
+	help
+	  1 master + 1 slave BLE connection.
+
+config BFLB_BL70X_BLE_M16S1
+	bool "m16s1: All roles, 16 master + 1 slave"
+
+config BFLB_BL70X_BLE_UARTHCI
+	bool "uarthci: UART HCI transport"
+	help
+	  BLE controller with UART HCI transport interface.
+
+endchoice
+
+config BT_BUF_ACL_TX_COUNT
+	default 2
+
+config HEAP_MEM_POOL_ADD_SIZE_BFLB_BT
+	int
+	default 8192
+	help
+	  Additional heap memory reserved for BLE controller usage
+	  (task stacks, message queues, etc.)
+
+config BT_BFLB_CTLR_TASK_PRIO
+	int "BLE controller task priority (FreeRTOS-style)"
+	default 5
+	help
+	  Priority passed to the BLE controller init function. The RTOS
+	  shim layer maps this to a Zephyr preemptive priority.
+
+endif # BT_BFLB_BL70X

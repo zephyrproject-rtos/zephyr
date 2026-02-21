@@ -402,6 +402,20 @@
 		sram0: memory@42018000 {
 			compatible = "mmio-sram";
 			reg = <0x42018000 DT_SIZE_K(96)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x42018000 DT_SIZE_K(96)>;
+
+			/* 88 KB — top 8 KB reserved for BLE exchange memory */
+			sram0_bt: sram@0 {
+				compatible = "mmio-sram";
+				reg = <0x0 DT_SIZE_K(88)>;
+			};
+		};
+
+		bt_hci_bflb: bt-hci {
+			compatible = "bflb,bl70x-bt-hci";
+			status = "disabled";
 		};
 	};
 };
