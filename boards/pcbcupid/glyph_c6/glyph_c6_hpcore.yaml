@@ -7,4 +7,5 @@ toolchain:
   - zephyr
 supported:
   - gpio
+  - i2c
   - uart
