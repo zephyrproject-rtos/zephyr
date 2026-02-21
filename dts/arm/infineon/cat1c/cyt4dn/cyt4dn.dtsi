@@ -38,7 +38,7 @@
 	};
 
 	flash_controller: flash-controller@40240000 {
-		compatible = "infineon,cat1-flash-controller";
+		compatible = "infineon,cat1-flash-controller-pdl";
 		reg = < 0x40240000 0x10000 >;
 		#address-cells = <1>;
 		#size-cells = <1>;
