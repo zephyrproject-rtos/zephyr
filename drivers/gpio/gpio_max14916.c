@@ -362,17 +362,17 @@ static int gpio_max14916_config_diag(const struct device *dev)
 		return ret;
 	}
 
-	ret = MAX14916_REG_WRITE(dev, MAX14916_OW_ON_EN_REG, data->chan_en.ow_on_en);
+	ret = MAX14916_REG_WRITE(dev, MAX14916_OW_ON_EN_REG, data->chan_en.ow_on_en.reg_raw);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = MAX14916_REG_WRITE(dev, MAX14916_OW_OFF_EN_REG, data->chan_en.ow_off_en);
+	ret = MAX14916_REG_WRITE(dev, MAX14916_OW_OFF_EN_REG, data->chan_en.ow_off_en.reg_raw);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = MAX14916_REG_WRITE(dev, MAX14916_SHT_VDD_EN_REG, data->chan_en.sht_vdd_en);
+	ret = MAX14916_REG_WRITE(dev, MAX14916_SHT_VDD_EN_REG, data->chan_en.sht_vdd_en.reg_raw);
 	if (ret < 0) {
 		return ret;
 	}
@@ -501,7 +501,41 @@ static DEVICE_API(gpio, gpio_max14916_api) = {
 		.spi_addr = DT_INST_PROP(id, spi_addr),                                            \
 	};                                                                                         \
                                                                                                    \
-	static struct max14916_data max##model##_##id##_data;                                      \
+	static struct max14916_data max##model##_##id##_data = {                                   \
+		.chan_en.ow_on_en.reg_bits =                                                       \
+			{                                                                          \
+				.OW_ON_EN1 = DT_INST_PROP_BY_IDX(id, ow_on_en, 0),                 \
+				.OW_ON_EN2 = DT_INST_PROP_BY_IDX(id, ow_on_en, 1),                 \
+				.OW_ON_EN3 = DT_INST_PROP_BY_IDX(id, ow_on_en, 2),                 \
+				.OW_ON_EN4 = DT_INST_PROP_BY_IDX(id, ow_on_en, 3),                 \
+				.OW_ON_EN5 = DT_INST_PROP_BY_IDX(id, ow_on_en, 4),                 \
+				.OW_ON_EN6 = DT_INST_PROP_BY_IDX(id, ow_on_en, 5),                 \
+				.OW_ON_EN7 = DT_INST_PROP_BY_IDX(id, ow_on_en, 6),                 \
+				.OW_ON_EN8 = DT_INST_PROP_BY_IDX(id, ow_on_en, 7),                 \
+			},                                                                         \
+		.chan_en.ow_off_en.reg_bits =                                                      \
+			{                                                                          \
+				.OW_OFF_EN1 = DT_INST_PROP_BY_IDX(id, ow_off_en, 0),               \
+				.OW_OFF_EN2 = DT_INST_PROP_BY_IDX(id, ow_off_en, 1),               \
+				.OW_OFF_EN3 = DT_INST_PROP_BY_IDX(id, ow_off_en, 2),               \
+				.OW_OFF_EN4 = DT_INST_PROP_BY_IDX(id, ow_off_en, 3),               \
+				.OW_OFF_EN5 = DT_INST_PROP_BY_IDX(id, ow_off_en, 4),               \
+				.OW_OFF_EN6 = DT_INST_PROP_BY_IDX(id, ow_off_en, 5),               \
+				.OW_OFF_EN7 = DT_INST_PROP_BY_IDX(id, ow_off_en, 6),               \
+				.OW_OFF_EN8 = DT_INST_PROP_BY_IDX(id, ow_off_en, 7),               \
+			},                                                                         \
+		.chan_en.sht_vdd_en.reg_bits =                                                     \
+			{                                                                          \
+				.SH_VDD_EN1 = DT_INST_PROP_BY_IDX(id, sh_vdd_en, 0),               \
+				.SH_VDD_EN2 = DT_INST_PROP_BY_IDX(id, sh_vdd_en, 1),               \
+				.SH_VDD_EN3 = DT_INST_PROP_BY_IDX(id, sh_vdd_en, 2),               \
+				.SH_VDD_EN4 = DT_INST_PROP_BY_IDX(id, sh_vdd_en, 3),               \
+				.SH_VDD_EN5 = DT_INST_PROP_BY_IDX(id, sh_vdd_en, 4),               \
+				.SH_VDD_EN6 = DT_INST_PROP_BY_IDX(id, sh_vdd_en, 5),               \
+				.SH_VDD_EN7 = DT_INST_PROP_BY_IDX(id, sh_vdd_en, 6),               \
+				.SH_VDD_EN8 = DT_INST_PROP_BY_IDX(id, sh_vdd_en, 7),               \
+			},                                                                         \
+	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(id, &gpio_max14916_init, NULL, &max##model##_##id##_data,            \
 			      &max##model##_##id##_cfg, POST_KERNEL,                               \
