@@ -106,6 +106,10 @@ static int create_free_list(struct k_mem_slab *slab)
 	char *p;
 	size_t total_size;
 
+	CHECKIF(slab->info.block_size == 0U) {
+		return -EINVAL;
+	}
+
 	/* blocks must be word aligned */
 	CHECKIF(((slab->info.block_size | (uintptr_t)slab->buffer) &
 				(sizeof(void *) - 1)) != 0U) {
