@@ -181,7 +181,7 @@
 				compatible = "infineon,cat1-hf-clock";
 				reg = <0>;
 				divider = <0>;
-				clocks = <&pll5>;
+				clocks = <&pll7>;
 				status = "disabled";
 			};
 
@@ -231,7 +231,7 @@
 				compatible = "infineon,cat1-hf-clock";
 				reg = <5>;
 				divider = <0>;
-				clocks = <&pll1>;
+				clocks = <&pll7>;
 				status = "disabled";
 			};
 
