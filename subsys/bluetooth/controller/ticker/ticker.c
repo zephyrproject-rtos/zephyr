@@ -3303,6 +3303,7 @@ void ticker_job(void *param)
 	!defined(CONFIG_BT_TICKER_LOW_LAT)
 		/* Re-schedule any pending nodes with slot_window */
 		if (ticker_job_reschedule_in_window(instance)) {
+			pending = 1U;
 			flag_compare_update = 1U;
 		}
 #endif /* CONFIG_BT_TICKER_EXT */
