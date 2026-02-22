@@ -10,3 +10,4 @@ supported:
   - i2c
   - uart
   - watchdog
+  - entropy
