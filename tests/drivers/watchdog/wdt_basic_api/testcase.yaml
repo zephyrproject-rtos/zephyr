@@ -185,6 +185,7 @@ tests:
       - max78002evkit/max78002/m4
   drivers.watchdog.bflb:
     platform_allow:
+      - 3r_tnh_sensor_lite
       - ai_m62_12f_kit
       - ai_wb2_12f_kit
       - dt_xt_zb1_devkit
