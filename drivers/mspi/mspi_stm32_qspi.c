@@ -981,20 +981,12 @@ static int mspi_stm32_qspi_dev_config(const struct device *controller,
 		goto e_return;
 	}
 
-	(void)pm_device_runtime_get(controller);
-	/* Prevent the clocks to be stopped during the request */
-	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-
 	data->dev_id = dev_id;
 	/* Validate and save device configuration */
 	ret = mspi_stm32_qspi_dev_cfg_save(controller, param_mask, dev_cfg);
 	if (ret != 0) {
 		LOG_ERR("failed to change device cfg");
 	}
-
-	/* Release PM resources */
-	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-	(void)pm_device_runtime_put(controller);
 
 e_return:
 	if (locked) {
