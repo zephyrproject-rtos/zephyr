@@ -95,8 +95,8 @@
 	};
 
 	aliases {
-		led0 = &blue_led;
-		led1 = &red_led;
+		led0 = &red_led;
+		led1 = &blue_led;
 		sw0 = &user_button;
 	};
 };
