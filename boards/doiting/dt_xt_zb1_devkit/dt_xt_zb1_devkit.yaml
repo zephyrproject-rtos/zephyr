@@ -21,4 +21,5 @@ supported:
   - spi
   - flash
   - entropy
+  - crypto
 vendor: doiting
