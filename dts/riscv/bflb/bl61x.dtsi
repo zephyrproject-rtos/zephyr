@@ -201,6 +201,24 @@
 			status = "disabled";
 		};
 
+		sec_eng_sha: sha@20004000 {
+			compatible = "bflb,sec-eng-sha";
+			reg = <0x20004000 0x100>, <0x20004000 0x600>;
+			reg-names = "sha", "sec_eng";
+			interrupts = <26 1>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
+		sec_eng_aes: aes@20004100 {
+			compatible = "bflb,sec-eng-aes";
+			reg = <0x20004100 0x100>, <0x20004000 0x600>;
+			reg-names = "aes", "sec_eng";
+			interrupts = <26 1>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
 		uart0: uart@2000a000 {
 			compatible = "bflb,uart";
 			reg = <0x2000a000 0x100>;
