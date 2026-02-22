@@ -21,6 +21,7 @@
 		zephyr,sram = &sram0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
+		zephyr,entropy = &sec_eng_trng;
 	};
 
 	aliases {
