@@ -7,6 +7,7 @@ zephyr_library_sources(gnss_publish.c)
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_GNSS_DUMP gnss_dump.c)
 zephyr_library_sources_ifdef(CONFIG_GNSS_EMUL gnss_emul.c)
+zephyr_library_sources_ifdef(CONFIG_GNSS_GLOBALTOP_PA6H gnss_globaltop_pa6h.c)
 zephyr_library_sources_ifdef(CONFIG_GNSS_LUATOS_AIR530Z gnss_luatos_air530z.c)
 zephyr_library_sources_ifdef(CONFIG_GNSS_NMEA0183 gnss_nmea0183.c)
 zephyr_library_sources_ifdef(CONFIG_GNSS_NMEA0183_MATCH gnss_nmea0183_match.c)
