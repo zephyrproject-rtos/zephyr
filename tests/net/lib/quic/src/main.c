@@ -9,8 +9,10 @@ LOG_MODULE_REGISTER(net_test, CONFIG_QUIC_LOG_LEVEL);
 
 #include <stdio.h>
 #include <zephyr/ztest_assert.h>
+#include <zephyr/misc/lorem_ipsum.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/net/loopback.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
 #include <zephyr/net/quic.h>
@@ -1085,11 +1087,13 @@ ZTEST(net_socket_quic, test_15_header_protection_rfc9001)
 #define MAX_BUF_SIZE 1024
 
 struct config {
-	int sock;
-	int accepted_sock;
+	int sock;             /* Server listening socket */
+	int connected_sock;   /* Server accepted connection socket */
+	int stream_recv_sock; /* Server accepted stream socket for receiving data */
 	struct k_sem sem;
 	int error;
 	int counter;
+	volatile bool test_done;
 };
 
 static void server_thread(void *p1, void *p2, void *p3)
@@ -1099,6 +1103,7 @@ static void server_thread(void *p1, void *p2, void *p3)
 
 	struct config *data = (struct config *)p1;
 	int server_sock = data->sock;
+	int connected_sock;
 	struct net_sockaddr_storage client_addr;
 	net_socklen_t client_addr_len = sizeof(client_addr);
 	static uint8_t buf[MAX_BUF_SIZE];
@@ -1107,7 +1112,42 @@ static void server_thread(void *p1, void *p2, void *p3)
 
 	k_sem_give(&data->sem);
 
-	stream = zsock_accept(server_sock,
+	struct zsock_pollfd pfd = {
+		.fd = server_sock,
+		.events = ZSOCK_POLLIN,
+	};
+
+	ret = zsock_poll(&pfd, 1, SYS_FOREVER_MS);
+	if (!(pfd.revents & ZSOCK_POLLIN)) {
+		data->error = -ETIMEDOUT;
+		LOG_DBG("Poll error while waiting for client connection");
+		goto out;
+	}
+
+	connected_sock = zsock_accept(server_sock,
+				      (struct net_sockaddr *)&client_addr,
+				      &client_addr_len);
+	if (connected_sock < 0) {
+		data->error = errno;
+		LOG_DBG("Connection accept failed (%d)", -data->error);
+		goto out;
+	}
+
+	data->connected_sock = connected_sock;
+
+	/* Wait that the client creates a stream */
+	pfd.fd = connected_sock;
+	pfd.events = ZSOCK_POLLIN;
+	pfd.revents = 0;
+
+	ret = zsock_poll(&pfd, 1, SYS_FOREVER_MS);
+	if (!(pfd.revents & ZSOCK_POLLIN)) {
+		data->error = -ETIMEDOUT;
+		LOG_DBG("Poll error while waiting for client stream");
+		goto out;
+	}
+
+	stream = zsock_accept(connected_sock,
 			      (struct net_sockaddr *)&client_addr,
 			      &client_addr_len);
 	if (stream < 0) {
@@ -1116,10 +1156,15 @@ static void server_thread(void *p1, void *p2, void *p3)
 		goto out;
 	}
 
-	data->accepted_sock = stream;
+	data->stream_recv_sock = stream;
 
-	for (int i = 0; i < data->counter; i++) {
+	while (true) {
 		len = zsock_recv(stream, buf, sizeof(buf), 0);
+		if (len == 0) {
+			/* FIN received — client closed its send side cleanly */
+			break;
+		}
+
 		if (len < 0) {
 			data->error = -errno;
 			LOG_DBG("Stream recv failed (%d)", data->error);
@@ -1133,13 +1178,20 @@ static void server_thread(void *p1, void *p2, void *p3)
 			break;
 		}
 
-		k_yield();
+		k_msleep(10);
+
+		if (data->test_done) {
+			break;
+		}
 	}
 
 out:
 }
 
-static void quic_server_and_client(const char *server, const char *client)
+static void quic_server_and_client(const char *server, const char *client,
+				   char *tx_buf, size_t tx_buf_len,
+				   char *rx_buf, size_t rx_buf_len,
+				   size_t batch_size)
 {
 	/* Implement a test that sets up a QUIC server and client
 	 * using the socket API, performs a handshake, and exchanges
@@ -1154,12 +1206,13 @@ static void quic_server_and_client(const char *server, const char *client)
 	sec_tag_t client_sec_tags[] = {
 		CA_CERTIFICATE_TAG,
 	};
-	const char *alpn_list[] = {
+	static const char * const alpn_list[] = {
 		"test-quic",
 		NULL
 	};
 
 	int server_sock, client_sock, client_stream_sock, server_stream_sock;
+	int server_connected_sock;
 	k_tid_t tid;
 	int counter = 5;
 	int ret;
@@ -1168,8 +1221,6 @@ static void quic_server_and_client(const char *server, const char *client)
 	static K_THREAD_STACK_DEFINE(server_thread_stack, STACK_SIZE);
 	static struct k_thread server_thread_data;
 
-	static uint8_t tx_buf[MAX_BUF_SIZE];
-	static uint8_t rx_buf[MAX_BUF_SIZE];
 	static struct config data;
 
 	ret = k_sem_init(&data.sem, 0, 1);
@@ -1199,7 +1250,11 @@ static void quic_server_and_client(const char *server, const char *client)
 	setup_alpn(server_sock, alpn_list, ARRAY_SIZE(alpn_list));
 
 	data.sock = server_sock;
-	data.counter = counter;
+	data.counter = counter * ((tx_buf_len + batch_size - 1) / batch_size);
+	data.error = 0;
+	data.connected_sock = -1;
+	data.stream_recv_sock = -1;
+	data.test_done = false;
 
 	/* Start listening on the server socket in a separate thread */
 	tid = k_thread_create(&server_thread_data, server_thread_stack,
@@ -1231,34 +1286,106 @@ static void quic_server_and_client(const char *server, const char *client)
 	zassert_true(client_stream_sock >= 0, "Failed to open client stream");
 
 	for (int i = 0; i < counter; i++) {
-		int count;
+		int sent = tx_buf_len;
+		int idx = 0;
+		int total_drained = 0;  /* Track bytes received during send retries */
 
-		count = sys_rand16_get() % MAX_BUF_SIZE;
-		sys_rand_get(tx_buf, count);
+		do {
+			int to_send = MIN((int)batch_size, sent);
+			int actually_sent;
+			int recvd;
 
-		/* Wait for server to accept the stream, and then send and receive data */
-		ret = zsock_send(client_stream_sock, tx_buf, count, 0);
-		zassert_true(ret >= 0, "Failed to send data on client stream %d (%d)",
-			     client_stream_sock, -errno);
-		zassert_equal(ret, count, "Not all data sent to client stream %d, "
-			      "was %d expected %d", client_stream_sock, ret, count);
+			/* Send with EAGAIN handling, poll and retry if flow control blocks */
+			while (true) {
+				ret = zsock_send(client_stream_sock, tx_buf + idx, to_send, 0);
+				if (ret > 0) {
+					break;
+				}
+				if (errno == EAGAIN || errno == EWOULDBLOCK) {
+					struct zsock_pollfd pfd = {
+						.fd = client_stream_sock,
+						.events = ZSOCK_POLLOUT | ZSOCK_POLLIN,
+					};
+					int poll_ret;
+					int drain_ret;
 
-		ret = zsock_recv(client_stream_sock, rx_buf, sizeof(rx_buf), 0);
-		zassert_true(ret >= 0, "Failed to recv data on client stream %d (%d)",
-			     client_stream_sock, -errno);
-		zassert_equal(ret, count, "Not all data received from client stream %d, "
-			      "was %d expected %d", client_stream_sock, ret, count);
+					poll_ret = zsock_poll(&pfd, 1, 1000);
+					zassert_true(poll_ret >= 0, "poll failed (%d)", -errno);
 
-		zassert_mem_equal(rx_buf, tx_buf, count,
-				  "Received data does not match sent data on client stream %d",
+					/* Drain any incoming data while waiting to send.
+					 * This is critical for flow control, the server may be
+					 * waiting to send us MAX_DATA or echo data.
+					 */
+					if (!(pfd.revents & ZSOCK_POLLIN)) {
+						continue;
+					}
+
+					drain_ret = zsock_recv(client_stream_sock,
+							       rx_buf + total_drained,
+							       rx_buf_len - total_drained,
+							       ZSOCK_MSG_DONTWAIT);
+					if (drain_ret > 0) {
+						total_drained += drain_ret;
+					}
+
+					continue;
+				}
+				zassert_true(false, "Failed to send data on client stream %d (%d)",
+					     client_stream_sock, -errno);
+			}
+
+			/* Don't assert ret == to_send; partial sends are valid */
+			actually_sent = ret;
+
+			/* Receive what was sent minus what we already drained */
+			recvd = (total_drained > idx) ? (total_drained - idx) : 0;
+			if (recvd > actually_sent) {
+				recvd = actually_sent;  /* Don't count more than this chunk */
+			}
+			while (recvd < actually_sent) {
+				ret = zsock_recv(client_stream_sock, rx_buf + idx + recvd,
+						 actually_sent - recvd, 0);
+				if (ret < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+					struct zsock_pollfd pfd = {
+						.fd = client_stream_sock,
+						.events = ZSOCK_POLLIN,
+					};
+
+					ret = zsock_poll(&pfd, 1, 1000);
+					zassert_true(ret >= 0, "poll failed (%d)", -errno);
+					continue;
+				}
+				zassert_true(ret > 0,
+					     "Failed to recv data on client stream %d (%d)",
+					     client_stream_sock, -errno);
+				recvd += ret;
+			}
+
+			zassert_mem_equal(rx_buf + idx, tx_buf + idx, actually_sent,
+					  "Data mismatch on client stream %d",
+					  client_stream_sock);
+
+			idx  += actually_sent;
+			sent -= actually_sent;
+
+			/* Update total_drained to reflect idx advancement */
+			if (total_drained < idx) {
+				total_drained = idx;
+			}
+
+			k_msleep(10);
+		} while (sent > 0);
+
+		zassert_mem_equal(rx_buf, tx_buf, MIN(tx_buf_len, rx_buf_len),
+				  "Received data does not match sent data on "
+				  "client stream %d",
 				  client_stream_sock);
 	}
 
-	k_thread_join(tid, K_FOREVER);
+	data.test_done = true;
 
-	server_stream_sock = data.accepted_sock;
-
-	zassert_equal(data.error, 0, "Server thread reported error (%d)", data.error);
+	memset(rx_buf, 0, rx_buf_len);
+	memset(tx_buf, 0, tx_buf_len);
 
 	/* We could also use zsock_close() here to close the stream and
 	 * the connection.
@@ -1267,9 +1394,19 @@ static void quic_server_and_client(const char *server, const char *client)
 	zassert_equal(ret, 0, "Failed to close client stream %d (%d)",
 		      client_stream_sock, ret);
 
+	k_thread_join(tid, K_MSEC(500));
+
+	server_stream_sock = data.stream_recv_sock;
+	server_connected_sock = data.connected_sock;
+
+	zassert_equal(data.error, 0, "Server thread reported error (%d)", data.error);
+
 	ret = quic_stream_close(server_stream_sock);
 	zassert_equal(ret, 0, "Failed to close server stream %d (%d)",
 		      server_stream_sock, ret);
+
+	ret = quic_connection_close(server_connected_sock);
+	zassert_equal(ret, 0, "Failed to close server connection (%d)", ret);
 
 	ret = quic_connection_close(client_sock);
 	zassert_equal(ret, 0, "Failed to close client connection (%d)", ret);
@@ -1281,9 +1418,24 @@ static void quic_server_and_client(const char *server, const char *client)
 #define LOCAL_ADDR_IPV6_STR "[::1]:12345"
 #define REMOTE_ADDR_IPV6_STR "[::1]:9999"
 
+#define SMALL_BUF_SIZE 128
+
 ZTEST(net_socket_quic, test_16_quic_ipv6_server_and_client)
 {
-	quic_server_and_client(LOCAL_ADDR_IPV6_STR, REMOTE_ADDR_IPV6_STR);
+	static uint8_t tx_buf[SMALL_BUF_SIZE];
+	static uint8_t rx_buf[SMALL_BUF_SIZE];
+	int count;
+	int ret;
+
+	ret = loopback_set_packet_drop_ratio(0.0); /* No drops for this test */
+	zassert_ok(ret, "Failed to set loopback packet drop ratio (%d)", ret);
+
+	count = sys_rand16_get() % sizeof(tx_buf);
+	sys_rand_get(tx_buf, count);
+
+	quic_server_and_client(LOCAL_ADDR_IPV6_STR, REMOTE_ADDR_IPV6_STR,
+			       tx_buf, sizeof(tx_buf), rx_buf, sizeof(rx_buf),
+			       sizeof(tx_buf));
 }
 
 #define LOCAL_ADDR_IPV4_STR "127.0.0.1:54321"
@@ -1291,53 +1443,66 @@ ZTEST(net_socket_quic, test_16_quic_ipv6_server_and_client)
 
 ZTEST(net_socket_quic, test_17_quic_ipv4_server_and_client)
 {
-	quic_server_and_client(LOCAL_ADDR_IPV4_STR, REMOTE_ADDR_IPV4_STR);
+	static uint8_t tx_buf[SMALL_BUF_SIZE];
+	static uint8_t rx_buf[SMALL_BUF_SIZE];
+	int count;
+	int ret;
+
+	ret = loopback_set_packet_drop_ratio(0.0); /* No drops for this test */
+	zassert_ok(ret, "Failed to set loopback packet drop ratio (%d)", ret);
+
+	count = sys_rand16_get() % sizeof(tx_buf);
+	sys_rand_get(tx_buf, count);
+
+	quic_server_and_client(LOCAL_ADDR_IPV4_STR, REMOTE_ADDR_IPV4_STR,
+			       tx_buf, sizeof(tx_buf), rx_buf, sizeof(rx_buf),
+			       sizeof(tx_buf));
 }
 
 /* IPv4 UDP packet with QUIC Initial header (too short payload)
  * QUIC: Initial, DCID=fb2d975016f72831, SCID=c0e644e9be5f36dc, PKN: 0, CRYPTO, PADDING
-*/
+ */
 static const uint8_t too_short_initial_msg[] =
 	/* QUIC header and payload (partial and too short) */
-"\xcf\x00\x00\x00\x01\x08" \
-"\xfb\x2d\x97\x50\x16\xf7\x28\x31\x08\xc0\xe6\x44\xe9\xbe\x5f\x36" \
-"\xdc\x00\x44\x96\x98\x17\xe1\x48\xa3\x61\xed\x5a\xa6\x85\x82\x57" \
-"\xba\xa5\xa3\x0b\x55\x75\xfe\x6b\x9a\xd6\xce\xa9\x51\xb9\x39\xe6" \
-"\x54\x12\x91\xce\x40\x2f\xa2\xcc\x29\xdb\xf4\xd2\x41\x7c\x51\x24" \
-"\xdf\x60\x11\x80\x4c\xc5\x0e\x4a\x37\x30\x4e\x94\x13\x9d\x24\x8e" \
-"\x5f\x31\xf8\x0f\xdc\x2c\xdd\xf0\xef\x2c\x9d\x42\x12\xfd\x89\x49" \
-"\x2f\x3c\xac\x57\x6b\x79\x07\x9f\x87\xcd\x9c\xcb\x70\x18\xb5\xb1" \
-"\x3a\x27\x31\x42\xf6\xa6\xf2\x15\xd8\x9a\x4c\xeb\x2d\xe5\x8f\x82" \
-"\xcc\x94\x78\x60\xd7\xfe\xaf\x94\x3c\x59\x38\xc4\xd0\x79\x8a\x08" \
-"\xb5\xcf\x15\x01\x1f\xa9\xf7\xf5\x5f\xcc\xdd\x2e\xd0\x4c\x25\x2f" \
-"\xbf\x16\x4b\x2e\x40\xaa\xf1\x1f\x8a\x16\xb0\x93\x0c\xf5\xa9\x8f" \
-"\xdc\x66\x8e\xdb\xb3\x53\x5b\x74\x7e\x53\x02\x03\xc9\xd8\x3e\x2a" \
-"\x4f\xd5\x55\xa0\xd3\x2b\xc1\xef\x32\x14\x81\xc9\xed\x7d\xd5\x05" \
-"\x49\x5d\xf2\x0f\xc2\x4a\xf0\x86\xb1\xad\xb9\x2d\x77\x41\x98\x94" \
-"\x2e\x74\x4b\x52\x65\x2a\x0f\xcf\xe8\x85\xd9\xe5\x25\xda\x26\x10" \
-"\x94\xf8\xbf\x2f\xa4\x77\xa1\xe4\x04\x13\x15\x2e\xac\xc8\x56\xa4" \
-"\x8a\x73\x41\x66\x63\x1b\x24\x32\x37\xc2\x4a\x05\x08\xf0\x76\x24" \
-"\x57\x13\x42\x98\xbe\xa4\x5d\xda\x50\xc4\xa4\xab\x58\x99\x18\x19" \
-"\xe1\x0d\x8f\xc3\xef\xa3\xe1\x76\xe9\x3c\x45\xf1\xa3\x1e\x60\x1c" \
-"\xf1\x5b\xa6\x33\x3d\x28\x4f\xcd\x9c\xa6\x0a\xc1\xb4\x2c\xce\xc8" \
-"\x85\x01\xad\xe1\x73\x4a\x9d\xba\x1c\xf5\xe4\xee\xb4\xf7\x33\xb1" \
-"\x4a\x64\xfa\xa0\x6e\xf7\x63\xf8\x6f\x26\x43\x39\xf3\x88\x40\x10" \
-"\x9c\x60\xb3\x22\x7b\x67\x3f\x2e\x0c\x14\xa7\xe8\x7f\x17\xf5\x7f" \
-"\x92\x18\x92\x4c\xe7\xc1\x96\x31\xa0\xd7\xe4\x1d\xac\x79\x8d\xb4" \
-"\xf3\xd1\x90\x8e\xd3\x1d\x6e\x4b\x46\x49\x6b\x55\x3e\x14\x7d\x3c" \
-"\xec\x1f\x41\xb9\xbe\x95\xfd\xef\xe7\xe3\x6b\xc4\xc9\xca\x6d\xa8" \
-"\xd8\x66\x19\xd8\x5f\x26\x69\x8a\xe3\xe5\xf7\xc4\x73\xfc\x0e\xa1" \
-"\xc7\x57\x61\x38\x60\xfa\x27\xeb\xc3\x4e\xd8\xb8\x43\x72\x1e\x95" \
-"\x4c\x15\x61\x1d\x6e\x01\x22\x4d\x57\x78\xfa\x6a\xb7\x1e\x56\xd0" \
-"\x95\xe0\x8d\x7e\x31\x0a\x14\x3e\x03\x63\x59\xb3\x12\xd8\x74\x66" \
-"\x56\xbd\xc9\xfc\xf4\x06\x6f\x60\x5f\x08\xa9\x95\x71\xc2\x77\x64" \
-"\x60\x9b\xcb\xd9\x20\x08\x07\x6b\xe8\x69\xc1\x2f\x01\x34\x84\x34" \
-"\xec\x45\x72\x36\xd6\xc4\x67\x24\x82\xfb\x6d\x9e\x83\xa4\x59\x4a" \
-"\x2d\xaa\x56\x61\x6d\xb0\x07\xe1\xf5\x51\x1a\x22\xe8\x95\xdc\xf0" \
-"\xdb\x66\x5c\x31\x03\x6b\x12\x00\x78\x50\x9c\x0f\xf9\xf0\xd6\x79" \
-"\x7c\xa2\x30\x58\x81\x8f\x3d\xa3\xfd\x30\x64\xfb\xc2\xaf\x93\x7c" \
-"\x9c\x10\x2f\xaa\x76\x3b\xd9\xab\x57\x53\x14\x81\xd4\x55\x1b\xd2" \
-"\xc8\x52\xd0\x4e\x5c\x37\xb8\xd8\x89\xfe\xae\x70\xe4\x52\x54\x53" \
+"\xcf\x00\x00\x00\x01\x08"
+"\xfb\x2d\x97\x50\x16\xf7\x28\x31\x08\xc0\xe6\x44\xe9\xbe\x5f\x36"
+"\xdc\x00\x44\x96\x98\x17\xe1\x48\xa3\x61\xed\x5a\xa6\x85\x82\x57"
+"\xba\xa5\xa3\x0b\x55\x75\xfe\x6b\x9a\xd6\xce\xa9\x51\xb9\x39\xe6"
+"\x54\x12\x91\xce\x40\x2f\xa2\xcc\x29\xdb\xf4\xd2\x41\x7c\x51\x24"
+"\xdf\x60\x11\x80\x4c\xc5\x0e\x4a\x37\x30\x4e\x94\x13\x9d\x24\x8e"
+"\x5f\x31\xf8\x0f\xdc\x2c\xdd\xf0\xef\x2c\x9d\x42\x12\xfd\x89\x49"
+"\x2f\x3c\xac\x57\x6b\x79\x07\x9f\x87\xcd\x9c\xcb\x70\x18\xb5\xb1"
+"\x3a\x27\x31\x42\xf6\xa6\xf2\x15\xd8\x9a\x4c\xeb\x2d\xe5\x8f\x82"
+"\xcc\x94\x78\x60\xd7\xfe\xaf\x94\x3c\x59\x38\xc4\xd0\x79\x8a\x08"
+"\xb5\xcf\x15\x01\x1f\xa9\xf7\xf5\x5f\xcc\xdd\x2e\xd0\x4c\x25\x2f"
+"\xbf\x16\x4b\x2e\x40\xaa\xf1\x1f\x8a\x16\xb0\x93\x0c\xf5\xa9\x8f"
+"\xdc\x66\x8e\xdb\xb3\x53\x5b\x74\x7e\x53\x02\x03\xc9\xd8\x3e\x2a"
+"\x4f\xd5\x55\xa0\xd3\x2b\xc1\xef\x32\x14\x81\xc9\xed\x7d\xd5\x05"
+"\x49\x5d\xf2\x0f\xc2\x4a\xf0\x86\xb1\xad\xb9\x2d\x77\x41\x98\x94"
+"\x2e\x74\x4b\x52\x65\x2a\x0f\xcf\xe8\x85\xd9\xe5\x25\xda\x26\x10"
+"\x94\xf8\xbf\x2f\xa4\x77\xa1\xe4\x04\x13\x15\x2e\xac\xc8\x56\xa4"
+"\x8a\x73\x41\x66\x63\x1b\x24\x32\x37\xc2\x4a\x05\x08\xf0\x76\x24"
+"\x57\x13\x42\x98\xbe\xa4\x5d\xda\x50\xc4\xa4\xab\x58\x99\x18\x19"
+"\xe1\x0d\x8f\xc3\xef\xa3\xe1\x76\xe9\x3c\x45\xf1\xa3\x1e\x60\x1c"
+"\xf1\x5b\xa6\x33\x3d\x28\x4f\xcd\x9c\xa6\x0a\xc1\xb4\x2c\xce\xc8"
+"\x85\x01\xad\xe1\x73\x4a\x9d\xba\x1c\xf5\xe4\xee\xb4\xf7\x33\xb1"
+"\x4a\x64\xfa\xa0\x6e\xf7\x63\xf8\x6f\x26\x43\x39\xf3\x88\x40\x10"
+"\x9c\x60\xb3\x22\x7b\x67\x3f\x2e\x0c\x14\xa7\xe8\x7f\x17\xf5\x7f"
+"\x92\x18\x92\x4c\xe7\xc1\x96\x31\xa0\xd7\xe4\x1d\xac\x79\x8d\xb4"
+"\xf3\xd1\x90\x8e\xd3\x1d\x6e\x4b\x46\x49\x6b\x55\x3e\x14\x7d\x3c"
+"\xec\x1f\x41\xb9\xbe\x95\xfd\xef\xe7\xe3\x6b\xc4\xc9\xca\x6d\xa8"
+"\xd8\x66\x19\xd8\x5f\x26\x69\x8a\xe3\xe5\xf7\xc4\x73\xfc\x0e\xa1"
+"\xc7\x57\x61\x38\x60\xfa\x27\xeb\xc3\x4e\xd8\xb8\x43\x72\x1e\x95"
+"\x4c\x15\x61\x1d\x6e\x01\x22\x4d\x57\x78\xfa\x6a\xb7\x1e\x56\xd0"
+"\x95\xe0\x8d\x7e\x31\x0a\x14\x3e\x03\x63\x59\xb3\x12\xd8\x74\x66"
+"\x56\xbd\xc9\xfc\xf4\x06\x6f\x60\x5f\x08\xa9\x95\x71\xc2\x77\x64"
+"\x60\x9b\xcb\xd9\x20\x08\x07\x6b\xe8\x69\xc1\x2f\x01\x34\x84\x34"
+"\xec\x45\x72\x36\xd6\xc4\x67\x24\x82\xfb\x6d\x9e\x83\xa4\x59\x4a"
+"\x2d\xaa\x56\x61\x6d\xb0\x07\xe1\xf5\x51\x1a\x22\xe8\x95\xdc\xf0"
+"\xdb\x66\x5c\x31\x03\x6b\x12\x00\x78\x50\x9c\x0f\xf9\xf0\xd6\x79"
+"\x7c\xa2\x30\x58\x81\x8f\x3d\xa3\xfd\x30\x64\xfb\xc2\xaf\x93\x7c"
+"\x9c\x10\x2f\xaa\x76\x3b\xd9\xab\x57\x53\x14\x81\xd4\x55\x1b\xd2"
+"\xc8\x52\xd0\x4e\x5c\x37\xb8\xd8\x89\xfe\xae\x70\xe4\x52\x54\x53"
 "\x5e\x6f\x97\x98\x9f\x0d\xa0\xf0\xf6\x6a\xb0\x68\x78\x11\xa4\xc2";
 
 ZTEST(net_socket_quic, test_18_quic_initial_too_short)
@@ -1401,6 +1566,22 @@ ZTEST(net_socket_quic, test_18_quic_initial_too_short)
 
 	ret = quic_connection_close(server_sock);
 	zassert_ok(ret, "Cannot close server socket %d (%d)", server_sock, -errno);
+}
+
+ZTEST(net_socket_quic, test_19_quic_check_retransmissions)
+{
+	static uint8_t tx_buf[sizeof(LOREM_IPSUM_LONG)];
+	static uint8_t rx_buf[sizeof(LOREM_IPSUM_LONG)];
+	int ret;
+
+	ret = loopback_set_packet_drop_ratio(0.1); /* drop every 10th packet */
+	zassert_ok(ret, "Failed to set packet drop ratio (%d)", ret);
+
+	memcpy(tx_buf, LOREM_IPSUM_LONG, sizeof(LOREM_IPSUM_LONG));
+
+	quic_server_and_client(LOCAL_ADDR_IPV4_STR, REMOTE_ADDR_IPV4_STR,
+			       tx_buf, sizeof(tx_buf), rx_buf, sizeof(rx_buf),
+			       MAX_BUF_SIZE);
 }
 
 ZTEST_SUITE(net_socket_quic, NULL, setup, before, after, NULL);

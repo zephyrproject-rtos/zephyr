@@ -142,7 +142,6 @@ static int quic_getsockopt_ctx(void *obj, int level, int optname,
 {
 	struct quic_context *ctx = obj;
 	struct quic_endpoint *ep;
-	int ep_sock = -1;
 
 	/* Get the first endpoint or the listening one */
 	if (ctx->listen != NULL) {
