@@ -84,10 +84,12 @@ static int regulator_bflb_set_voltage(const struct device *dev, int32_t min_uv, 
 		tmp &= HBN_SW_LDO11SOC_VOUT_SEL_AON_UMSK;
 		tmp |= idx << HBN_SW_LDO11SOC_VOUT_SEL_AON_POS;
 		break;
+#ifndef CONFIG_SOC_SERIES_BL70XL
 	case REGULATOR_BFLB_TYPE_RT:
 		tmp &= HBN_SW_LDO11_RT_VOUT_SEL_UMSK;
 		tmp |= idx << HBN_SW_LDO11_RT_VOUT_SEL_POS;
 		break;
+#endif
 	case REGULATOR_BFLB_TYPE_AON:
 		tmp &= HBN_SW_LDO11_AON_VOUT_SEL_UMSK;
 		tmp |= idx << HBN_SW_LDO11_AON_VOUT_SEL_POS;
@@ -110,9 +112,11 @@ static int regulator_bflb_get_voltage(const struct device *dev, int32_t *volt_uv
 	case REGULATOR_BFLB_TYPE_SOC:
 		idx = (idx & HBN_SW_LDO11SOC_VOUT_SEL_AON_MSK) >> HBN_SW_LDO11SOC_VOUT_SEL_AON_POS;
 		break;
+#ifndef CONFIG_SOC_SERIES_BL70XL
 	case REGULATOR_BFLB_TYPE_RT:
 		idx = (idx & HBN_SW_LDO11_RT_VOUT_SEL_MSK) >> HBN_SW_LDO11_RT_VOUT_SEL_POS;
 		break;
+#endif
 	case REGULATOR_BFLB_TYPE_AON:
 		idx = (idx & HBN_SW_LDO11_AON_VOUT_SEL_MSK) >> HBN_SW_LDO11_AON_VOUT_SEL_POS;
 		break;
@@ -133,10 +137,12 @@ static int regulator_bflb_init(const struct device *dev)
 	if (config->type != REGULATOR_BFLB_TYPE_SOC) {
 		tmp = sys_read32(config->reg + HBN_CTL_OFFSET);
 		switch (config->type) {
+#ifndef CONFIG_SOC_SERIES_BL70XL
 		case REGULATOR_BFLB_TYPE_RT:
 			tmp &= HBN_LDO11_RT_VOUT_SEL_UMSK;
 			tmp |= config->sleep_v_id << HBN_LDO11_RT_VOUT_SEL_POS;
 			break;
+#endif
 		case REGULATOR_BFLB_TYPE_AON:
 			tmp &= HBN_LDO11_AON_VOUT_SEL_UMSK;
 			tmp |= config->sleep_v_id << HBN_LDO11_AON_VOUT_SEL_POS;

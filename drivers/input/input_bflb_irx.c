@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(input_bflb_irx, CONFIG_INPUT_LOG_LEVEL);
 #define IRX_OFFSET_PIN	10
 #define IRX_PIN_OFFSET	GLB_LED_DRIVER_OFFSET
 #define IRX_FIFO_OFFSET	IRRX_SWM_FIFO_CONFIG_0_OFFSET
-#elif defined(CONFIG_SOC_SERIES_BL70X)
+#elif defined(CONFIG_SOC_SERIES_BL70X) || defined(CONFIG_SOC_SERIES_BL70XL)
 #define IRX_MIN_PIN	17
 #define IRX_MAX_PIN	31
 #define IRX_OFFSET_PIN	16
@@ -101,7 +101,8 @@ static uint32_t bflb_irx_get_set_clock(void)
 
 	/* Set divider so the output clock is BFLB_IRX_CLOCK */
 	set_divider = uclk / BFLB_IRX_CLOCK - 1;
-#if defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X)
+#if defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X) || \
+	defined(CONFIG_SOC_SERIES_BL70XL)
 	ir_divider = sys_read32(GLB_BASE + GLB_CLK_CFG2_OFFSET);
 	ir_divider &= GLB_IR_CLK_DIV_UMSK;
 	ir_divider |= (set_divider << GLB_IR_CLK_DIV_POS) & GLB_IR_CLK_DIV_MSK;
