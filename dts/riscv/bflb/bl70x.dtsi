@@ -172,6 +172,24 @@
 			status = "disabled";
 		};
 
+		sec_eng_sha: sha@40004000 {
+			compatible = "bflb,sec-eng-sha";
+			reg = <0x40004000 0x100>, <0x40004000 0x600>;
+			reg-names = "sha", "sec_eng";
+			interrupts = <30 0>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
+		sec_eng_aes: aes@40004100 {
+			compatible = "bflb,sec-eng-aes";
+			reg = <0x40004100 0x100>, <0x40004000 0x600>;
+			reg-names = "aes", "sec_eng";
+			interrupts = <29 0>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
 		efuse: efuse@40007000 {
 			compatible = "bflb,efuse";
 			reg = <0x40007000 0x1000>;
