@@ -874,6 +874,14 @@ Bluetooth Host
 * The Bluetooth Host no longer depends on :c:func:`k_poll`, and therefore doesn't select
   :kconfig:option:`CONFIG_POLL`. If the application code itself depends on this, it needs to
   explicitly enable :kconfig:option:`CONFIG_POLL` in its configuration.
+* Replace any usage of :kconfig:option:`CONFIG_DEVICE_NAME_GATT_WRITABLE_NONE`
+  with :kconfig:option:`CONFIG_BT_DEVICE_NAME_GATT_WRITABLE_NONE`.
+* Replace any usage of :kconfig:option:`CONFIG_DEVICE_NAME_GATT_WRITABLE_ENCRYPT`
+  with :kconfig:option:`CONFIG_BT_DEVICE_NAME_GATT_WRITABLE_ENCRYPT`.
+* Replace any usage of :kconfig:option:`CONFIG_DEVICE_NAME_GATT_WRITABLE_AUTHEN`
+  with :kconfig:option:`CONFIG_BT_DEVICE_NAME_GATT_WRITABLE_AUTHEN`.
+* Replace any usage of :kconfig:option:`CONFIG_DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN`
+  with :kconfig:option:`CONFIG_BT_DEVICE_APPEARANCE_GATT_WRITABLE_AUTHEN`.
 
 Bluetooth Audio
 ===============
