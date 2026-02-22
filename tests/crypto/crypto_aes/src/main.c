@@ -20,6 +20,8 @@
 #define CRYPTO_DEV_COMPAT sifli_sf32lb_crypto
 #elif CONFIG_CRYPTO_STM32
 #define CRYPTO_DEV_COMPAT st_stm32_cryp
+#elif DT_HAS_COMPAT_STATUS_OKAY(bflb_sec_eng_aes)
+#define CRYPTO_DEV_COMPAT bflb_sec_eng_aes
 #else
 #error "You need to enable one crypto device"
 #endif
