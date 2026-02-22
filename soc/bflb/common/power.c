@@ -85,9 +85,10 @@ static void power_bflb_setup_bor(const struct device *dev)
 	sys_write32(tmp, config->base_hbn + HBN_BOR_CFG_OFFSET);
 }
 
-#elif defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X)
+#elif defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X) || \
+	defined(CONFIG_SOC_SERIES_BL70XL)
 
-#ifdef CONFIG_SOC_SERIES_BL70X
+#if defined(CONFIG_SOC_SERIES_BL70X) || defined(CONFIG_SOC_SERIES_BL70XL)
 #define BOR_CFG_OFFSET HBN_MISC_OFFSET
 #else
 #define BOR_CFG_OFFSET HBN_BOR_CFG_OFFSET
@@ -142,10 +143,12 @@ static void power_bflb_reset_irq_srcs(const struct device *dev)
 	tmp &= HBN_IRQ_BOR_EN_UMSK;
 	sys_write32(tmp, config->base_hbn + HBN_IRQ_MODE_OFFSET);
 
+#if !defined(CONFIG_SOC_SERIES_BL70XL)
 	tmp = sys_read32(config->base_hbn + HBN_PIR_CFG_OFFSET);
 	/* Disable PIR IRQ */
 	tmp &= HBN_PIR_EN_UMSK;
 	sys_write32(tmp, config->base_hbn + HBN_PIR_CFG_OFFSET);
+#endif
 }
 
 static int power_bflb_init(const struct device *dev)
@@ -170,8 +173,9 @@ DEVICE_DT_INST_DEFINE(0, power_bflb_init, NULL, NULL, &power_bflb_config, PRE_KE
 #ifdef CONFIG_SOC_SERIES_BL61X
 BUILD_ASSERT(DT_INST_PROP(0, brown_out_threshold_microvolt) > E907_VALID_BO_THRES_MIN,
 	     "BL61x Brown Out threshold must be > 2050000 uV");
-#elif defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X)
+#elif defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X) || \
+	defined(CONFIG_SOC_SERIES_BL70XL)
 BUILD_ASSERT(DT_INST_PROP(0, brown_out_threshold_microvolt) == E24_VALID_BO_THRES_0
 	|| DT_INST_PROP(0, brown_out_threshold_microvolt) == E24_VALID_BO_THRES_1,
-	     "BL60x and BL70x only support 2.0v and 2.4v Brown Out thresholds");
+	     "BL60x, BL70x, and BL70xL only support 2.0v and 2.4v Brown Out thresholds");
 #endif
