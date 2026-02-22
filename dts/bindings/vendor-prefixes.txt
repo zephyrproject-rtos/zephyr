@@ -714,6 +714,7 @@ terasic	Terasic Inc.
 tfc	Three Five Corp
 thine	THine Electronics, Inc.
 thingyjp	thingy.jp
+thirdreality	Third Reality, Inc.
 ti	Texas Instruments
 tianma	Tianma Micro-electronics Co., Ltd.
 titanmec	Shenzhen Titan Micro Electronics Co., Ltd.
