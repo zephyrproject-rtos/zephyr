@@ -18,6 +18,7 @@
 		zephyr,sram = &sram0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
+		zephyr,entropy = &sec_eng_trng;
 	};
 
 	aliases {
@@ -62,4 +63,8 @@
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+};
+
+&sec_eng_trng {
+	status = "okay";
 };

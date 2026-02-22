@@ -159,6 +159,14 @@
 			interrupt-parent = <&clic>;
 		};
 
+		sec_eng_trng: trng@40004000 {
+			compatible = "bflb,sec-eng-trng";
+			reg = <0x40004200 0x100>;
+			interrupts = <28 0>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
 		efuse: efuse@40007000 {
 			compatible = "bflb,efuse";
 			reg = <0x40007000 0x1000>;
