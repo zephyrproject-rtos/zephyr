@@ -27,6 +27,7 @@
 	aliases {
 		led0 = &red_led;
 		sw0 = &button0;
+		watchdog0 = &wdt0;
 	};
 
 	leds: leds {
@@ -61,5 +62,8 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+};
+
+&wdt0 {
 	status = "okay";
 };
