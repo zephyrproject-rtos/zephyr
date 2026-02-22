@@ -165,6 +165,28 @@ void assert_frame_equal(const struct can_frame *frame1,
 			uint32_t id_mask);
 
 /**
+ * @brief Add a CAN message queue with asserts.
+ *
+ * @param dev    Pointer to the device structure for the driver instance.
+ * @param filter CAN filter for the CAN message queue.
+ *
+ * @return CAN filter ID.
+ */
+int can_common_add_rx_msgq(const struct device *dev, const struct can_filter *filter);
+
+/**
+ * @brief Add a CAN filter with asserts.
+ *
+ * @param dev      Pointer to the device structure for the driver instance.
+ * @param filter   CAN filter.
+ * @param callback Receive callback function.
+ *
+ * @return CAN filter ID.
+ */
+int can_common_add_rx_filter(const struct device *dev, const struct can_filter *filter,
+			     can_rx_callback_t callback);
+
+/**
  * @brief Common setup function for the CAN controller device under test.
  *
  * @param initial_mode Initial CAN controller operational mode.

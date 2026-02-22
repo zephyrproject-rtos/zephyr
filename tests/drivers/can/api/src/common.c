@@ -220,6 +220,31 @@ void assert_frame_equal(const struct can_frame *frame1, const struct can_frame *
 	}
 }
 
+int can_common_add_rx_msgq(const struct device *dev, const struct can_filter *filter)
+{
+	int filter_id;
+
+	filter_id = can_add_rx_filter_msgq(dev, &can_msgq, filter);
+	zassert_not_equal(filter_id, -ENOSPC, "no filters available");
+	zassert_true(filter_id >= 0, "negative filter number");
+
+	return filter_id;
+}
+
+int can_common_add_rx_filter(const struct device *dev, const struct can_filter *filter,
+			     can_rx_callback_t callback)
+{
+	int filter_id;
+
+	k_sem_reset(&rx_callback_sem);
+
+	filter_id = can_add_rx_filter(dev, callback, (void *)filter, filter);
+	zassert_not_equal(filter_id, -ENOSPC, "no filters available");
+	zassert_true(filter_id >= 0, "negative filter number");
+
+	return filter_id;
+}
+
 void can_common_test_setup(can_mode_t initial_mode)
 {
 	int err;

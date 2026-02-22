@@ -248,48 +248,6 @@ static void send_test_frame_nowait(const struct device *dev, const struct can_fr
 }
 
 /**
- * @brief Add a CAN message queue with asserts.
- *
- * @param dev    Pointer to the device structure for the driver instance.
- * @param filter CAN filter for the CAN message queue.
- *
- * @return CAN filter ID.
- */
-static inline int add_rx_msgq(const struct device *dev, const struct can_filter *filter)
-{
-	int filter_id;
-
-	filter_id = can_add_rx_filter_msgq(dev, &can_msgq, filter);
-	zassert_not_equal(filter_id, -ENOSPC, "no filters available");
-	zassert_true(filter_id >= 0, "negative filter number");
-
-	return filter_id;
-}
-
-/**
- * @brief Add a CAN filter with asserts.
- *
- * @param dev      Pointer to the device structure for the driver instance.
- * @param filter   CAN filter.
- * @param callback Receive callback function.
- *
- * @return CAN filter ID.
- */
-static inline int add_rx_filter(const struct device *dev, const struct can_filter *filter,
-				can_rx_callback_t callback)
-{
-	int filter_id;
-
-	k_sem_reset(&rx_callback_sem);
-
-	filter_id = can_add_rx_filter(dev, callback, (void *)filter, filter);
-	zassert_not_equal(filter_id, -ENOSPC, "no filters available");
-	zassert_true(filter_id >= 0, "negative filter number");
-
-	return filter_id;
-}
-
-/**
  * @brief Perform a send/receive test with a set of CAN ID filters and CAN frames.
  *
  * @param filter1 CAN filter 1
@@ -306,7 +264,7 @@ static void send_receive(const struct can_filter *filter1, const struct can_filt
 	int filter_id_2;
 	int err;
 
-	filter_id_1 = add_rx_msgq(can_dev, filter1);
+	filter_id_1 = can_common_add_rx_msgq(can_dev, filter1);
 	zassert_not_equal(filter_id_1, -ENOSPC, "no filters available");
 	zassert_true(filter_id_1 >= 0, "negative filter number");
 	send_test_frame(can_dev, frame1);
@@ -331,25 +289,29 @@ static void send_receive(const struct can_filter *filter1, const struct can_filt
 
 	if ((frame1->flags & CAN_FRAME_IDE) != 0) {
 		if (filter1->mask == CAN_EXT_ID_MASK) {
-			filter_id_1 = add_rx_filter(can_dev, filter1, rx_ext_callback_1);
-			filter_id_2 = add_rx_filter(can_dev, filter2, rx_ext_callback_2);
+			filter_id_1 = can_common_add_rx_filter(can_dev, filter1, rx_ext_callback_1);
+			filter_id_2 = can_common_add_rx_filter(can_dev, filter2, rx_ext_callback_2);
 			send_test_frame_nowait(can_dev, frame1, tx_ext_callback_1);
 			send_test_frame_nowait(can_dev, frame2, tx_ext_callback_2);
 		} else {
-			filter_id_1 = add_rx_filter(can_dev, filter1, rx_ext_mask_callback_1);
-			filter_id_2 = add_rx_filter(can_dev, filter2, rx_ext_mask_callback_2);
+			filter_id_1 =
+				can_common_add_rx_filter(can_dev, filter1, rx_ext_mask_callback_1);
+			filter_id_2 =
+				can_common_add_rx_filter(can_dev, filter2, rx_ext_mask_callback_2);
 			send_test_frame_nowait(can_dev, frame1, tx_ext_callback_1);
 			send_test_frame_nowait(can_dev, frame2, tx_ext_callback_2);
 		}
 	} else {
 		if (filter1->mask == CAN_STD_ID_MASK) {
-			filter_id_1 = add_rx_filter(can_dev, filter1, rx_std_callback_1);
-			filter_id_2 = add_rx_filter(can_dev, filter2, rx_std_callback_2);
+			filter_id_1 = can_common_add_rx_filter(can_dev, filter1, rx_std_callback_1);
+			filter_id_2 = can_common_add_rx_filter(can_dev, filter2, rx_std_callback_2);
 			send_test_frame_nowait(can_dev, frame1, tx_std_callback_1);
 			send_test_frame_nowait(can_dev, frame2, tx_std_callback_2);
 		} else {
-			filter_id_1 = add_rx_filter(can_dev, filter1, rx_std_mask_callback_1);
-			filter_id_2 = add_rx_filter(can_dev, filter2, rx_std_mask_callback_2);
+			filter_id_1 =
+				can_common_add_rx_filter(can_dev, filter1, rx_std_mask_callback_1);
+			filter_id_2 =
+				can_common_add_rx_filter(can_dev, filter2, rx_std_mask_callback_2);
 			send_test_frame_nowait(can_dev, frame1, tx_std_callback_1);
 			send_test_frame_nowait(can_dev, frame2, tx_std_callback_2);
 		}
@@ -613,22 +575,24 @@ ZTEST(can_classic, test_add_filter)
 {
 	int filter_id;
 
-	filter_id = add_rx_filter(can_dev, &test_std_filter_1, rx_std_callback_1);
+	filter_id = can_common_add_rx_filter(can_dev, &test_std_filter_1, rx_std_callback_1);
 	can_remove_rx_filter(can_dev, filter_id);
 
-	filter_id = add_rx_filter(can_dev, &test_ext_filter_1, rx_ext_callback_1);
+	filter_id = can_common_add_rx_filter(can_dev, &test_ext_filter_1, rx_ext_callback_1);
 	can_remove_rx_filter(can_dev, filter_id);
 
-	filter_id = add_rx_msgq(can_dev, &test_std_filter_1);
+	filter_id = can_common_add_rx_msgq(can_dev, &test_std_filter_1);
 	can_remove_rx_filter(can_dev, filter_id);
 
-	filter_id = add_rx_msgq(can_dev, &test_ext_filter_1);
+	filter_id = can_common_add_rx_msgq(can_dev, &test_ext_filter_1);
 	can_remove_rx_filter(can_dev, filter_id);
 
-	filter_id = add_rx_filter(can_dev, &test_std_masked_filter_1, rx_std_mask_callback_1);
+	filter_id = can_common_add_rx_filter(can_dev, &test_std_masked_filter_1,
+					     rx_std_mask_callback_1);
 	can_remove_rx_filter(can_dev, filter_id);
 
-	filter_id = add_rx_filter(can_dev, &test_ext_masked_filter_1, rx_ext_mask_callback_1);
+	filter_id = can_common_add_rx_filter(can_dev, &test_ext_masked_filter_1,
+					     rx_ext_mask_callback_1);
 	can_remove_rx_filter(can_dev, filter_id);
 }
 
@@ -739,7 +703,7 @@ static void add_remove_max_filters(bool ide)
 
 	for (i = 0; i < max; i++) {
 		filter.id++;
-		filter_ids[i] = add_rx_msgq(can_dev, &filter);
+		filter_ids[i] = can_common_add_rx_msgq(can_dev, &filter);
 	}
 
 	filter.id++;
@@ -776,7 +740,7 @@ ZTEST_USER(can_classic, test_receive_timeout)
 	int filter_id;
 	int err;
 
-	filter_id = add_rx_msgq(can_dev, &test_std_filter_1);
+	filter_id = can_common_add_rx_msgq(can_dev, &test_std_filter_1);
 
 	err = k_msgq_get(&can_msgq, &frame, TEST_RECEIVE_TIMEOUT);
 	zassert_equal(err, -EAGAIN, "received a frame without sending one");
@@ -898,7 +862,7 @@ ZTEST(can_classic, test_send_receive_std_id_no_data)
 	int filter_id;
 	int err;
 
-	filter_id = add_rx_msgq(can_dev, &test_std_filter_1);
+	filter_id = can_common_add_rx_msgq(can_dev, &test_std_filter_1);
 	err = can_send(can_dev, &frame, TEST_SEND_TIMEOUT, NULL, NULL);
 	zassert_ok(err, "failed to send frame without data (err %d)", err);
 
@@ -948,7 +912,7 @@ ZTEST_USER(can_classic, test_send_receive_msgq)
 	int err;
 	int i;
 
-	filter_id = add_rx_msgq(can_dev, &test_std_filter_1);
+	filter_id = can_common_add_rx_msgq(can_dev, &test_std_filter_1);
 
 	k_msgq_get_attrs(&can_msgq, &attrs);
 	nframes = attrs.max_msgs;
@@ -1007,7 +971,7 @@ ZTEST_USER(can_classic, test_reject_std_id_rtr)
 
 	Z_TEST_SKIP_IFDEF(CONFIG_CAN_ACCEPT_RTR);
 
-	filter_id = add_rx_msgq(can_dev, &test_std_filter_1);
+	filter_id = can_common_add_rx_msgq(can_dev, &test_std_filter_1);
 
 	err = can_send(can_dev, &test_std_rtr_frame_1, TEST_SEND_TIMEOUT, NULL, NULL);
 	if (err == -ENOTSUP) {
@@ -1034,7 +998,7 @@ ZTEST_USER(can_classic, test_reject_ext_id_rtr)
 
 	Z_TEST_SKIP_IFDEF(CONFIG_CAN_ACCEPT_RTR);
 
-	filter_id = add_rx_msgq(can_dev, &test_ext_filter_1);
+	filter_id = can_common_add_rx_msgq(can_dev, &test_ext_filter_1);
 
 	err = can_send(can_dev, &test_ext_rtr_frame_1, TEST_SEND_TIMEOUT, NULL, NULL);
 	if (err == -ENOTSUP) {
@@ -1059,7 +1023,7 @@ ZTEST(can_classic, test_send_receive_wrong_id)
 	int filter_id;
 	int err;
 
-	filter_id = add_rx_msgq(can_dev, &test_std_filter_1);
+	filter_id = can_common_add_rx_msgq(can_dev, &test_std_filter_1);
 
 	send_test_frame(can_dev, &test_std_frame_2);
 
@@ -1183,7 +1147,7 @@ ZTEST_USER(can_classic, test_filters_preserved_through_mode_change)
 	int filter_id;
 	int err;
 
-	filter_id = add_rx_msgq(can_dev, &test_std_filter_1);
+	filter_id = can_common_add_rx_msgq(can_dev, &test_std_filter_1);
 	send_test_frame(can_dev, &test_std_frame_1);
 
 	err = k_msgq_get(&can_msgq, &frame, TEST_RECEIVE_TIMEOUT);
@@ -1227,7 +1191,7 @@ ZTEST_USER(can_classic, test_filters_preserved_through_bitrate_change)
 	int filter_id;
 	int err;
 
-	filter_id = add_rx_msgq(can_dev, &test_std_filter_1);
+	filter_id = can_common_add_rx_msgq(can_dev, &test_std_filter_1);
 	send_test_frame(can_dev, &test_std_frame_1);
 
 	err = k_msgq_get(&can_msgq, &frame, TEST_RECEIVE_TIMEOUT);
@@ -1274,7 +1238,7 @@ ZTEST_USER(can_classic, test_filters_added_while_stopped)
 	err = can_stop(can_dev);
 	zassert_ok(err, "failed to stop CAN controller (err %d)", err);
 
-	filter_id = add_rx_msgq(can_dev, &test_std_filter_1);
+	filter_id = can_common_add_rx_msgq(can_dev, &test_std_filter_1);
 
 	err = can_start(can_dev);
 	zassert_ok(err, "failed to start CAN controller (err %d)", err);

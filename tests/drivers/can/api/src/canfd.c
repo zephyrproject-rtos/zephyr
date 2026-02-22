@@ -120,48 +120,6 @@ static void send_test_frame_nowait(const struct device *dev, const struct can_fr
 }
 
 /**
- * @brief Add a CAN message queue with asserts.
- *
- * @param dev    Pointer to the device structure for the driver instance.
- * @param filter CAN filter for the CAN message queue.
- *
- * @return CAN filter ID.
- */
-static inline int add_rx_msgq(const struct device *dev, const struct can_filter *filter)
-{
-	int filter_id;
-
-	filter_id = can_add_rx_filter_msgq(dev, &can_msgq, filter);
-	zassert_not_equal(filter_id, -ENOSPC, "no filters available");
-	zassert_true(filter_id >= 0, "negative filter number");
-
-	return filter_id;
-}
-
-/**
- * @brief Add a CAN filter with asserts.
- *
- * @param dev      Pointer to the device structure for the driver instance.
- * @param filter   CAN filter.
- * @param callback Receive callback function.
- *
- * @return CAN filter ID.
- */
-static inline int add_rx_filter(const struct device *dev, const struct can_filter *filter,
-				can_rx_callback_t callback)
-{
-	int filter_id;
-
-	k_sem_reset(&rx_callback_sem);
-
-	filter_id = can_add_rx_filter(dev, callback, (void *)filter, filter);
-	zassert_not_equal(filter_id, -ENOSPC, "no filters available");
-	zassert_true(filter_id >= 0, "negative filter number");
-
-	return filter_id;
-}
-
-/**
  * @brief Perform a send/receive test with a set of CAN ID filters and CAN frames.
  *
  * @param filter1 CAN filter 1
@@ -177,7 +135,7 @@ static void send_receive(const struct can_filter *filter1, const struct can_filt
 	int filter_id_2;
 	int err;
 
-	filter_id_1 = add_rx_msgq(can_dev, filter1);
+	filter_id_1 = can_common_add_rx_msgq(can_dev, filter1);
 	send_test_frame(can_dev, frame1);
 
 	err = k_msgq_get(&can_msgq, &frame_buffer, TEST_RECEIVE_TIMEOUT);
@@ -189,15 +147,15 @@ static void send_receive(const struct can_filter *filter1, const struct can_filt
 	k_sem_reset(&tx_callback_sem);
 
 	if ((frame1->flags & CAN_FRAME_FDF) != 0) {
-		filter_id_1 = add_rx_filter(can_dev, filter1, rx_std_callback_fd_1);
+		filter_id_1 = can_common_add_rx_filter(can_dev, filter1, rx_std_callback_fd_1);
 	} else {
-		filter_id_1 = add_rx_filter(can_dev, filter1, rx_std_callback_1);
+		filter_id_1 = can_common_add_rx_filter(can_dev, filter1, rx_std_callback_1);
 	}
 
 	if ((frame2->flags & CAN_FRAME_FDF) != 0) {
-		filter_id_2 = add_rx_filter(can_dev, filter2, rx_std_callback_fd_2);
+		filter_id_2 = can_common_add_rx_filter(can_dev, filter2, rx_std_callback_fd_2);
 	} else {
-		filter_id_2 = add_rx_filter(can_dev, filter2, rx_std_callback_2);
+		filter_id_2 = can_common_add_rx_filter(can_dev, filter2, rx_std_callback_2);
 	}
 
 	send_test_frame_nowait(can_dev, frame1, tx_std_callback_1);
@@ -323,8 +281,8 @@ static void check_filters_preserved_between_modes(can_mode_t first, can_mode_t s
 	zassert_ok(err, "failed to start CAN controller (err %d)", err);
 
 	/* Add classic CAN and CAN FD filter */
-	filter_id_1 = add_rx_msgq(can_dev, &test_std_filter_1);
-	filter_id_2 = add_rx_msgq(can_dev, &test_std_filter_2);
+	filter_id_1 = can_common_add_rx_msgq(can_dev, &test_std_filter_1);
+	filter_id_2 = can_common_add_rx_msgq(can_dev, &test_std_filter_2);
 
 	/* Verify classic filter in first mode */
 	send_test_frame(can_dev, &test_std_frame_1);
