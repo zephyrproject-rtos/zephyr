@@ -50,7 +50,7 @@ static int max14916_pars_spi_diag(const struct device *dev, uint8_t *rx_diag_buf
 		PRINT_ERR(data->glob.interrupt.reg_bits.OVER_LD_FLT);
 	}
 
-	if (rw == MAX149x6_WRITE && (rx_diag_buff[1] & 0x0f)) {
+	if (rw == MAX149x6_WRITE && rx_diag_buff[1]) {
 		/* +-----------------------------------------------------------------------+
 		 * | LSB                             BYTE 2                            MSB |
 		 * +--------+--------+--------+--------+--------+--------+--------+--------+
@@ -67,7 +67,7 @@ static int max14916_pars_spi_diag(const struct device *dev, uint8_t *rx_diag_buf
 			MAX149X6_GET_BIT(rx_diag_buff[1], 4), MAX149X6_GET_BIT(rx_diag_buff[1], 5),
 			MAX149X6_GET_BIT(rx_diag_buff[1], 6), MAX149X6_GET_BIT(rx_diag_buff[1], 7));
 
-		LOG_ERR("[DIAG] gpio_max14916_diag_chan_get(%x)\n", rx_diag_buff[1] & 0x0f);
+		LOG_ERR("[DIAG] gpio_max14916_diag_chan_get(%x)\n", rx_diag_buff[1]);
 		diag_ret = gpio_max14916_diag_chan_get(dev);
 		if (diag_ret < 0) {
 			ret = diag_ret;
