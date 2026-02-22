@@ -25,6 +25,8 @@
 #define CRYPTO_DEV_COMPAT raspberrypi_pico_sha256
 #elif DT_HAS_COMPAT_STATUS_OKAY(sifli_sf32lb_crypto)
 #define CRYPTO_DEV_COMPAT sifli_sf32lb_crypto
+#elif DT_HAS_COMPAT_STATUS_OKAY(bflb_sec_eng_sha)
+#define CRYPTO_DEV_COMPAT bflb_sec_eng_sha
 #else
 #error "You need to enable one crypto device"
 #endif
