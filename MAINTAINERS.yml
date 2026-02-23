@@ -690,11 +690,11 @@ Bluetooth ISO:
 Bluetooth Mesh:
   status: maintained
   maintainers:
-    - PavelVPV
+    - alxelax
   collaborators:
     - jhedberg
+    - PavelVPV
     - LingaoM
-    - alxelax
     - akredalen
     - HaavardRei
     - omkar3141
