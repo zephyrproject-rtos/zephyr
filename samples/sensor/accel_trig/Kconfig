@@ -9,5 +9,8 @@ mainmenu "Accelerometer trigger sample application"
 config SAMPLE_TAP_DETECTION
 	bool "Set tap detection as trigger in the sample"
 	default n
+config ACTIVITY_DETECTION
+	bool "Set activity detection as trigger in the sample"
+	default n
 
 source "Kconfig.zephyr"
