@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 ENE Technology Inc.
+ * Copyright (c) 2025-2026 ENE Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,21 +12,58 @@
 #include <reg/ser.h>
 
 struct kb106x_uart_config {
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_cfg_func)(void);
-#endif
 	struct serial_regs *ser;
 	const struct pinctrl_dev_config *pcfg;
+};
+
+#define QUEUE_SIZE 16
+
+struct uart_queue {
+	uint8_t data[QUEUE_SIZE];
+	int8_t front;
+	int8_t rear;
 };
 
 struct kb106x_uart_data {
 	uart_irq_callback_user_data_t callback;
 	struct uart_config current_config;
+	struct uart_queue rx_queue;
+	bool rx_irq_enabled;
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void *callback_data;
 	uint8_t pending_flag_data;
+	struct k_timer tx_timer;
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+static void uart_queue_init(struct uart_queue *q)
+{
+	q->front = q->rear = 0;
+}
+
+static bool uart_enqueue(struct uart_queue *q, uint8_t value)
+{
+	if ((q->rear + 1) % QUEUE_SIZE == q->front) {
+		return false;
+	}
+
+	q->data[q->rear] = value;
+	q->rear = (q->rear + 1) % QUEUE_SIZE;
+	return true;
+}
+
+static bool uart_dequeue(struct uart_queue *q, uint8_t *value)
+{
+	if (q->front == q->rear) {
+		return false;
+	}
+
+	*value = q->data[q->front];
+	q->front = (q->front + 1) % QUEUE_SIZE;
+	return true;
+}
+
 static int kb106x_uart_configure(const struct device *dev, const struct uart_config *cfg)
 {
 	uint16_t reg_baudrate = 0;
@@ -80,12 +117,13 @@ static int kb106x_uart_configure(const struct device *dev, const struct uart_con
 		ret = -ENOTSUP;
 		break;
 	}
-	config->ser->SERCFG = (reg_baudrate << 16) | 0x04 | SERIE_TX_ENABLE;
+	config->ser->SERCFG = (reg_baudrate << 16) | 0x04 | SERCFG_TX_ENABLE | SERCFG_RX_ENABLE;
 	config->ser->SERCTRL = SERCTRL_MODE1;
 	data->current_config = *cfg;
 	return ret;
 }
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
 static int kb106x_uart_config_get(const struct device *dev, struct uart_config *cfg)
 {
 	struct kb106x_uart_data *data = dev->data;
@@ -96,43 +134,114 @@ static int kb106x_uart_config_get(const struct device *dev, struct uart_config *
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
+void tx_irq_triger(struct k_timer *timer)
+{
+	struct device *dev = k_timer_user_data_get(timer);
+	const struct kb106x_uart_config *config = dev->config;
+	struct kb106x_uart_data *data = dev->data;
+
+	data->pending_flag_data = 0;
+	if (config->ser->SERIE & SERIE_TX_ENABLE) {
+		config->ser->SERPF = SERPF_TX_EMPTY;
+		data->pending_flag_data |= SERPF_TX_EMPTY;
+	}
+	if (data->callback && data->pending_flag_data) {
+		data->callback(dev, data->callback_data);
+	}
+}
+
 static int kb106x_uart_fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
 {
 	const struct kb106x_uart_config *config = dev->config;
 	uint16_t tx_bytes = 0U;
+	unsigned int key;
 
-	while ((size - tx_bytes) > 0) {
-		/* Check Tx FIFO not Full*/
-		while (config->ser->SERSTS & SERSTS_TX_FULL) {
-		}
+	key = irq_lock();
+	while (((size - tx_bytes) > 0) && (!(config->ser->SERSTS & SERSTS_TX_FULL))) {
 		/* Put a character into	Tx FIFO	*/
-		config->ser->SERTBUF = tx_data[tx_bytes];
-		tx_bytes++;
+		config->ser->SERTBUF = tx_data[tx_bytes++];
 	}
+	irq_unlock(key);
+
 	return tx_bytes;
 }
 
 static void kb106x_uart_irq_tx_enable(const struct device *dev)
 {
 	const struct kb106x_uart_config *config = dev->config;
+	struct kb106x_uart_data *data = dev->data;
 
 	config->ser->SERPF = SERPF_TX_EMPTY;
 	config->ser->SERIE |= SERIE_TX_ENABLE;
+	if (!(config->ser->SERSTS & SERSTS_TX_BUSY)) {
+		k_timer_start(&data->tx_timer, K_NO_WAIT, K_FOREVER);
+	}
 }
 
 static void kb106x_uart_irq_tx_disable(const struct device *dev)
 {
 	const struct kb106x_uart_config *config = dev->config;
+	struct kb106x_uart_data *data = dev->data;
 
+	k_timer_stop(&data->tx_timer);
 	config->ser->SERIE &= ~SERIE_TX_ENABLE;
 	config->ser->SERPF = SERPF_TX_EMPTY;
 }
 
+static int kb106x_uart_irq_tx_complete(const struct device *dev)
+{
+	const struct kb106x_uart_config *config = dev->config;
+
+	return (config->ser->SERSTS & SERSTS_TX_BUSY) ? 0 : 1;
+}
+
 static int kb106x_uart_irq_tx_ready(const struct device *dev)
+{
+	const struct kb106x_uart_config *config = dev->config;
+
+	return (config->ser->SERSTS & SERSTS_TX_FULL) ? 0 : 1;
+}
+
+static int kb106x_uart_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
+{
+	struct kb106x_uart_data *data = dev->data;
+	int read_len = 0;
+	unsigned int key;
+
+	key = irq_lock();
+	while (read_len < size) {
+		if (!uart_dequeue(&data->rx_queue, &rx_data[read_len])) {
+			break;
+		}
+		read_len++;
+	}
+	irq_unlock(key);
+
+	return read_len;
+}
+
+static void kb106x_uart_irq_rx_enable(const struct device *dev)
 {
 	struct kb106x_uart_data *data = dev->data;
 
-	return (data->pending_flag_data & SERPF_TX_EMPTY) ? 1 : 0;
+	data->rx_irq_enabled = true;
+}
+
+static void kb106x_uart_irq_rx_disable(const struct device *dev)
+{
+	struct kb106x_uart_data *data = dev->data;
+
+	data->rx_irq_enabled = false;
+}
+
+static int kb106x_uart_irq_rx_ready(const struct device *dev)
+{
+	struct kb106x_uart_data *data = dev->data;
+	struct uart_queue *q = &data->rx_queue;
+	bool empty;
+
+	empty = q->front == q->rear;
+	return empty ? 0 : 1;
 }
 
 static int kb106x_uart_irq_is_pending(const struct device *dev)
@@ -144,12 +253,7 @@ static int kb106x_uart_irq_is_pending(const struct device *dev)
 
 static int kb106x_uart_irq_update(const struct device *dev)
 {
-	struct kb106x_uart_data *data = dev->data;
-	const struct kb106x_uart_config *config = dev->config;
-
-	data->pending_flag_data = (config->ser->SERPF) & (config->ser->SERIE);
-	/*clear	pending	flag*/
-	config->ser->SERPF = data->pending_flag_data;
+	ARG_UNUSED(dev);
 	return 1;
 }
 
@@ -164,40 +268,71 @@ static void kb106x_uart_irq_callback_set(const struct device *dev, uart_irq_call
 
 static void kb106x_uart_irq_handler(const struct device *dev)
 {
+	const struct kb106x_uart_config *config = dev->config;
 	struct kb106x_uart_data *data = dev->data;
 
-	if (data->callback) {
+	data->pending_flag_data = 0;
+	if (config->ser->SERPF & SERPF_RX_CNT_FULL) {
+		uint8_t rx_data;
+
+		rx_data = (uint8_t)config->ser->SERRBUF;
+		uart_enqueue(&data->rx_queue, rx_data);
+		config->ser->SERPF = SERPF_RX_CNT_FULL;
+		if (data->rx_irq_enabled) {
+			data->pending_flag_data |= SERPF_RX_CNT_FULL;
+		}
+	}
+	if ((config->ser->SERPF & SERPF_TX_EMPTY) && (config->ser->SERIE & SERIE_TX_ENABLE)) {
+		config->ser->SERPF = SERPF_TX_EMPTY;
+		data->pending_flag_data |= SERPF_TX_EMPTY;
+	}
+	if (data->callback && data->pending_flag_data) {
 		data->callback(dev, data->callback_data);
+	}
+}
+#else
+static void kb106x_uart_irq_handler(const struct device *dev)
+{
+	const struct kb106x_uart_config *config = dev->config;
+	struct kb106x_uart_data *data = dev->data;
+
+	if (config->ser->SERPF & SERPF_RX_CNT_FULL) {
+		uint8_t rx_data;
+
+		rx_data = (uint8_t)config->ser->SERRBUF;
+		uart_enqueue(&data->rx_queue, rx_data);
+		config->ser->SERPF = SERPF_RX_CNT_FULL;
 	}
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 static int kb106x_uart_poll_in(const struct device *dev, unsigned char *c)
 {
-	const struct kb106x_uart_config *config = dev->config;
+	struct kb106x_uart_data *data = dev->data;
+	unsigned int key;
+	int ret = -1;
 
-	/* Check Rx FIFO not Empty*/
-	if (config->ser->SERSTS & SERSTS_RX_BUSY) {
-		return -1;
+	key = irq_lock();
+	if (uart_dequeue(&data->rx_queue, c)) {
+		ret = 0;
 	}
-	/* Put a character into Tx FIFO */
-	*c = config->ser->SERRBUF;
-	return 0;
+	irq_unlock(key);
+
+	return ret;
 }
 
 static void kb106x_uart_poll_out(const struct device *dev, unsigned char c)
 {
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-	kb106x_uart_fifo_fill(dev, &c, 1);
-#else
 	const struct kb106x_uart_config *config = dev->config;
+	unsigned int key;
 
+	key = irq_lock();
 	/* Wait	Tx FIFO	not Full*/
 	while (config->ser->SERSTS & SERSTS_TX_FULL) {
 	}
 	/* Put a character into	Tx FIFO */
 	config->ser->SERTBUF = c;
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+	irq_unlock(key);
 }
 
 static DEVICE_API(uart, kb106x_uart_api) = {
@@ -209,18 +344,21 @@ static DEVICE_API(uart, kb106x_uart_api) = {
 #endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.fifo_fill = kb106x_uart_fifo_fill,
+	.fifo_read = kb106x_uart_fifo_read,
 	.irq_tx_enable = kb106x_uart_irq_tx_enable,
 	.irq_tx_disable = kb106x_uart_irq_tx_disable,
 	.irq_tx_ready = kb106x_uart_irq_tx_ready,
+	.irq_tx_complete = kb106x_uart_irq_tx_complete,
+	.irq_rx_enable = kb106x_uart_irq_rx_enable,
+	.irq_rx_disable = kb106x_uart_irq_rx_disable,
+	.irq_rx_ready = kb106x_uart_irq_rx_ready,
 	.irq_is_pending = kb106x_uart_irq_is_pending,
 	.irq_update = kb106x_uart_irq_update,
 	.irq_callback_set = kb106x_uart_irq_callback_set,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
-
-/* GPIO module instances */
+/* UART module instances */
 #define KB106X_UART_DEV(inst) DEVICE_DT_INST_GET(inst),
 static const struct device *const uart_devices[] = {DT_INST_FOREACH_STATUS_OKAY(KB106X_UART_DEV)};
 static void kb106x_uart_isr_wrap(const struct device *dev)
@@ -229,12 +367,14 @@ static void kb106x_uart_isr_wrap(const struct device *dev)
 		const struct device *dev_ = uart_devices[i];
 		const struct kb106x_uart_config *config = dev_->config;
 
-		if (config->ser->SERIE & config->ser->SERPF) {
+		if (((config->ser->SERIE & SERIE_RX_ENABLE) &&
+		     (config->ser->SERPF & SERPF_RX_CNT_FULL)) ||
+		    ((config->ser->SERIE & SERIE_TX_ENABLE) &&
+		     (config->ser->SERPF & SERPF_TX_EMPTY))) {
 			kb106x_uart_irq_handler(dev_);
 		}
 	}
 }
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 static int kb106x_uart_init(const struct device *dev)
 {
@@ -248,14 +388,18 @@ static int kb106x_uart_init(const struct device *dev)
 	}
 
 	kb106x_uart_configure(dev, &data->current_config);
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	uart_queue_init(&data->rx_queue);
+	config->ser->SERPF = SERPF_RX_CNT_FULL;
+	config->ser->SERIE |= SERIE_RX_ENABLE;
 	config->irq_cfg_func();
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	k_timer_init(&data->tx_timer, tx_irq_triger, NULL);
+	k_timer_user_data_set(&data->tx_timer, (void *)dev);
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 	return 0;
 }
 
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static bool init_irq = true;
 static void kb106x_uart_irq_init(void)
 {
@@ -266,12 +410,12 @@ static void kb106x_uart_irq_init(void)
 		irq_enable(DT_INST_IRQN(0));
 	}
 }
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 #define KB106X_UART_INIT(n)                                                                        \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	static struct kb106x_uart_data kb106x_uart_data_##n = {                                    \
-		.current_config = {                                                                \
+		.current_config =                                                                  \
+			{                                                                          \
 				.baudrate = DT_INST_PROP(n, current_speed),                        \
 				.parity = UART_CFG_PARITY_NONE,                                    \
 				.stop_bits = UART_CFG_STOP_BITS_1,                                 \
@@ -280,7 +424,7 @@ static void kb106x_uart_irq_init(void)
 			},                                                                         \
 	};                                                                                         \
 	static const struct kb106x_uart_config kb106x_uart_config_##n = {                          \
-		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN, (.irq_cfg_func = kb106x_uart_irq_init,))  \
+		.irq_cfg_func = kb106x_uart_irq_init,                                              \
 		.ser = (struct serial_regs *)DT_INST_REG_ADDR(n),                                  \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 	};                                                                                         \
