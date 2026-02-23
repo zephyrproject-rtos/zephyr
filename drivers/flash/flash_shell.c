@@ -24,7 +24,7 @@
 #define SPEED_TEST_MAX_REPETITIONS 10000
 
 /* Buffer is only needed for bytes that follow command and offset */
-#define BUF_ARRAY_CNT (CONFIG_SHELL_ARGC_MAX - 2)
+#define BUF_ARRAY_CNT (CONFIG_SHELL_ARGC_MAX - 3)
 
 #define FLASH_LOAD_BUF_MAX 256
 
@@ -99,12 +99,28 @@ static int cmd_erase(const struct shell *sh, size_t argc, char *argv[])
 	const struct device *flash_dev;
 	uint32_t page_addr;
 	uint32_t size;
+	char *endptr;
+
+	/* For safety, require explicit device name for erase operations */
+	if (argc < 2) {
+		shell_error(sh, "Missing argument");
+		return -EINVAL;
+	}
+
+	/* Check if first argument is a device name (not a number) */
+	(void)strtoul(argv[1], &endptr, 16);
+	if (*endptr == '\0') {
+		/* First argument is a number, not a device name */
+		shell_error(sh, "Incorrect device name");
+		shell_print(sh, "Usage: flash erase <device> <address> [size]");
+		return -EINVAL;
+	}
 
 	result = parse_helper(sh, &argc, &argv, &flash_dev, &page_addr);
 	if (result) {
 		return result;
 	}
-	if (argc > 2) {
+	if (argc > 3) {
 		size = strtoul(argv[2], NULL, 16);
 	} else {
 		struct flash_pages_info info;
@@ -120,6 +136,11 @@ static int cmd_erase(const struct shell *sh, size_t argc, char *argv[])
 		}
 
 		size = info.size;
+	}
+
+	if (size == 0) {
+		shell_error(sh, "Invalid size: 0");
+		return -EINVAL;
 	}
 
 	result = flash_erase(flash_dev, page_addr, size);
@@ -142,6 +163,22 @@ static int cmd_write(const struct shell *sh, size_t argc, char *argv[])
 	uint32_t w_addr;
 	int ret;
 	size_t op_size;
+	char *endptr;
+
+	/* For safety, require explicit device name for write operations */
+	if (argc < 3) {
+		shell_error(sh, "Missing argument");
+		return -EINVAL;
+	}
+
+	/* Check if first argument is a device name (not a number) */
+	(void)strtoul(argv[1], &endptr, 16);
+	if (*endptr == '\0') {
+		/* First argument is a number, not a device name */
+		shell_error(sh, "Incorrect device name");
+		shell_print(sh, "Usage: flash write <device> <address> <data>...");
+		return -EINVAL;
+	}
 
 	ret = parse_helper(sh, &argc, &argv, &flash_dev, &w_addr);
 	if (ret) {
@@ -802,14 +839,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	flash_cmds,
 	SHELL_CMD_ARG(copy, &dsub_device_name,
 		      "<src_device> <dst_device> <src_offset> <dst_offset> <size>", cmd_copy, 5, 5),
-	SHELL_CMD_ARG(erase, &dsub_device_name, "[<device>] <page address> [<size>]", cmd_erase, 2,
-		      2),
+	SHELL_CMD_ARG(erase, &dsub_device_name, "<device> <page address> [<size>]", cmd_erase, 3,
+		      1),
 	SHELL_CMD_ARG(read, &dsub_device_name, "[<device>] <address> [<byte count>]", cmd_read, 2,
 		      2),
 	SHELL_CMD_ARG(test, &dsub_device_name, "[<device>] <address> <size> <repeat count>",
 		      cmd_test, 4, 1),
-	SHELL_CMD_ARG(write, &dsub_device_name, "[<device>] <address> <dword> [<dword>...]",
-		      cmd_write, 3, BUF_ARRAY_CNT),
+	SHELL_CMD_ARG(write, &dsub_device_name, "<device> <address> <dword> [<dword>...]",
+		      cmd_write, 4, BUF_ARRAY_CNT),
 	SHELL_CMD_ARG(load, &dsub_device_name, "[<device>] <address> <size>", cmd_load, 3, 1),
 	SHELL_CMD_ARG(page_info, &dsub_device_name, "[<device>] <address>", cmd_page_info, 2, 1),
 
