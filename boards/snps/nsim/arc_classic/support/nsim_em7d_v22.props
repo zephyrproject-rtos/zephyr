@@ -32,7 +32,7 @@
 	nsim_isa_stack_checking=1
 	nsim_isa_has_dmp_peripheral=1
 	nsim_isa_smart_stack_entries=8
-	mpu_regions=8
+	mpu_regions=16
 	mpu_version=2
 	nsim_isa_number_of_interrupts=20
 	nsim_isa_number_of_levels=4
