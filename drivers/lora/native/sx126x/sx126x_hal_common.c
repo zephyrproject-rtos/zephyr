@@ -26,22 +26,17 @@ static int spi_transfer(const struct spi_dt_spec *spi,
 
 	struct spi_buf tx_bufs[] = {
 		{ .buf = (uint8_t *)hdr, .len = hdr_len },
-		{ .buf = data, .len = data_len },
+		{ .buf = read ? NULL : data, .len = data_len },
 	};
 	struct spi_buf rx_bufs[] = {
 		{ .buf = rx_hdr, .len = hdr_len },
 		{ .buf = data, .len = data_len },
 	};
-	struct spi_buf_set tx_set = {
-		.buffers = tx_bufs,
-		.count = (read || (data_len == 0)) ? 1 : 2,
-	};
-	struct spi_buf_set rx_set = {
-		.buffers = rx_bufs,
-		.count = read ? 2 : 1,
-	};
+	int count = (data_len == 0) ? 1 : 2;
+	struct spi_buf_set tx_set = { .buffers = tx_bufs, .count = count };
+	struct spi_buf_set rx_set = { .buffers = rx_bufs, .count = count };
 
-	return spi_transceive_dt(spi, &tx_set, &rx_set);
+	return spi_transceive_dt(spi, &tx_set, read ? &rx_set : NULL);
 }
 
 int sx126x_hal_wait_busy(const struct device *dev, uint32_t timeout_ms)
