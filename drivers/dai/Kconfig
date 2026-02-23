@@ -32,6 +32,7 @@ source "subsys/logging/Kconfig.template.log_config"
 comment "Device Drivers"
 
 # zephyr-keep-sorted-start
+source "drivers/dai/amd/sdw/Kconfig.acp_sdw_dai"
 source "drivers/dai/intel/alh/Kconfig.alh"
 source "drivers/dai/intel/dmic/Kconfig.dmic"
 source "drivers/dai/intel/hda/Kconfig.hda"
