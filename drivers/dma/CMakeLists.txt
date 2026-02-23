@@ -6,6 +6,8 @@ zephyr_library()
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_DMAMUX_STM32 dmamux_stm32.c)
+zephyr_library_sources_ifdef(CONFIG_DMA_AMD_ACP_HOST dma_amd_acp_host.c)
+zephyr_library_sources_ifdef(CONFIG_DMA_AMD_ACP_SDW dma_amd_acp_sdw.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_ANDES_ATCDMACX00 dma_andes_atcdmacx00.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_BFLB dma_bflb.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_DW dma_dw.c dma_dw_common.c)
