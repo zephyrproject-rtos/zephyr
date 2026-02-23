@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,25 @@
 };
 
 /delete-node/ &clk_erfo;
+
+/* MAX78000 external clocks. */
+/ {
+	clocks {
+		clk_lptmr0: clk_lptmr0 {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <0>;
+			status = "disabled";
+		};
+
+		clk_lptmr1: clk_lptmr1 {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <0>;
+			status = "disabled";
+		};
+	};
+};
 
 &pinctrl {
 	reg = <0x40008000 0x2200>;
@@ -94,7 +113,7 @@
 			compatible = "adi,max32-timer";
 			reg = <0x40080c00 0x400>;
 			status = "disabled";
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 2>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 2>, <&clk_lptmr0>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
 			prescaler = <1>;
 
@@ -116,7 +135,7 @@
 			compatible = "adi,max32-timer";
 			reg = <0x40081000 0x400>;
 			status = "disabled";
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 3>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 3>, <&clk_lptmr1>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
 			prescaler = <1>;
 
