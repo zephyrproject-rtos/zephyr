@@ -12,6 +12,8 @@ extern "C" {
 
 /* Control and Status Registers (CSRs) available for Andes V5 SoCs */
 #define NDS_MMISC_CTL                0x7D0
+#define NDS_MILMB                    0x7C0
+#define NDS_MDLMB                    0x7C1
 #define NDS_MCACHE_CTL               0x7CA
 #define NDS_MXSTATUS                 0x7C4
 #define NDS_MCCTLBEGINADDR           0x7CB
@@ -26,6 +28,14 @@ extern "C" {
 #define NDS_MMSC_CFG                 0xFC2
 #define NDS_MMSC_CFG2                0xFC3
 #define NDS_MRVARCH_CFG              0xFCA
+
+/* Fields of the ILM and DLM CSRs */
+#define NDS_MILMB_IEN                0x1
+#define NDS_MILMB_ECCEN              0x6
+#define NDS_MDLMB_DEN                0x1
+#define NDS_MDLMB_ECCEN              0x6
+#define NDS_MICM_CFG_ILMSZ           0xF8000
+#define NDS_MDCM_CFG_DLMSZ           0xF8000
 
 /* Control and Status Registers (CSRs) available for Andes V5 PMA */
 #define NDS_PMACFG0                  0xBC0
