@@ -460,41 +460,6 @@ static DEVICE_API(sensor, adxl345_api_funcs) = {
 #endif
 };
 
-#ifdef CONFIG_ADXL345_TRIGGER
-/**
- * Configure the INT1 and INT2 interrupt pins.
- * @param dev - The device structure.
- * @param int1 -  INT1 interrupt pins.
- * @return 0 in case of success, negative error code otherwise.
- */
-static int adxl345_interrupt_config(const struct device *dev,
-				    uint8_t int1)
-{
-	int ret;
-	const struct adxl345_dev_config *cfg = dev->config;
-
-	ret = adxl345_reg_write_byte(dev, ADXL345_INT_MAP, cfg->route_to_int2 ? int1 : ~int1);
-	if (ret) {
-		return ret;
-	}
-
-	ret = adxl345_reg_write_byte(dev, ADXL345_INT_ENABLE, int1);
-	if (ret) {
-		return ret;
-	}
-
-	uint8_t samples;
-
-	ret = adxl345_reg_read_byte(dev, ADXL345_INT_MAP, &samples);
-	ret = adxl345_reg_read_byte(dev, ADXL345_INT_ENABLE, &samples);
-#ifdef CONFIG_ADXL345_TRIGGER
-	gpio_pin_interrupt_configure_dt(&cfg->interrupt,
-					      GPIO_INT_EDGE_TO_ACTIVE);
-#endif
-	return 0;
-}
-#endif
-
 static int adxl345_init(const struct device *dev)
 {
 	int rc;
@@ -558,14 +523,6 @@ static int adxl345_init(const struct device *dev)
 	}
 
 	rc = adxl345_set_odr(dev, cfg->odr);
-	if (rc) {
-		return rc;
-	}
-	rc = adxl345_interrupt_config(dev, ADXL345_INT_MAP_WATERMARK_MSK);
-	if (rc) {
-		return rc;
-	}
-	rc = adxl345_interrupt_config(dev, ADXL345_INT_MAP_ACT_MSK);
 	if (rc) {
 		return rc;
 	}
