@@ -1063,6 +1063,26 @@ def dt_node_parent(kconf, _, path):
 
     return node.parent.path if node.parent else ""
 
+def dt_node_child(kconf, _, path, offset):
+    """
+    This function takes a 'path' and looks for an EDT node at that path. If it finds an EDT node,
+    it will look for the specified child of that node. If the child exists, it will return the
+    path to that child. Otherwise, an empty string will be returned.
+    """
+    if doc_mode or edt is None:
+        return ""
+
+    try:
+        node = edt.get_node(path)
+    except edtlib.EDTError:
+        return ""
+
+    if node is None:
+        return ""
+
+    return list(node.children.values())[int(offset)].path if node.children and \
+        len(node.children) > int(offset) else ""
+
 def dt_gpio_hogs_enabled(kconf, _):
     """
     Return "y" if any GPIO hog node is enabled. Otherwise, return "n".
@@ -1253,6 +1273,7 @@ functions = {
         "dt_node_has_compat": (dt_node_has_compat, 2, 2),
         "dt_nodelabel_path": (dt_nodelabel_path, 1, 1),
         "dt_node_parent": (dt_node_parent, 1, 1),
+        "dt_node_child": (dt_node_child, 2, 2),
         "dt_nodelabel_array_prop_has_val": (dt_nodelabel_array_prop_has_val, 3, 3),
         "dt_node_array_prop_has_val": (dt_node_array_prop_has_val, 3, 3),
         "dt_gpio_hogs_enabled": (dt_gpio_hogs_enabled, 0, 0),
