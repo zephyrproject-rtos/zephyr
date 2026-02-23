@@ -1,0 +1,6 @@
+tests:
+  libraries.midi2.ump_stream_responder:
+    tags:
+      - midi
+    integration_platforms:
+      - native_sim
