@@ -20,7 +20,10 @@
 
 LOG_MODULE_REGISTER(modem_st87mxx, CONFIG_MODEM_LOG_LEVEL);
 
-#define MDM_BASE_SOCKET_NUM		0
+#define MDM_BASE_SOCKET_NUM					(0)
+#define ST87MXX_AT_DEFAULT_TIMEOUT_S				(60)
+#define ST87MXX_GNSS_READY					(2)
+#define ST87MXX_GNSS_VALID_FIX					(0)
 
 /* RX thread structures */
 K_KERNEL_STACK_DEFINE(modem_rx_stack, CONFIG_MODEM_ST87MXX_RX_STACK_SIZE);
@@ -32,7 +35,8 @@ static void ring_pin_cb(const struct device *dev, struct gpio_callback *cb, uint
 static const struct gpio_dt_spec reset_gpio = GPIO_DT_SPEC_INST_GET(0, mdm_reset_gpios);
 static const struct gpio_dt_spec ring_gpio = GPIO_DT_SPEC_INST_GET(0, mdm_ring_gpios);
 static struct gpio_callback ring_gpio_callback_data;
-static char tmp_data[128];
+static char tmp_data[256];
+
 /**
  * ST87 Reset states
  */
@@ -41,6 +45,19 @@ typedef enum {
 	RESET_PIN_ON = 1,	/* Reset Pin on		*/
 	RESET_PIN_PULSE = 2	/* Reset Pin toggle	*/
 } st87mxx_reset_pin_t;
+
+/* GNSS Get Fix sequence states */
+typedef enum  {
+	GET_FIX_SEQ_INIT	= 0,
+	GET_FIX_SEQ_FIX		= 1,
+	GET_FIX_SEQ_DEINIT	= 2
+} get_fix_state_t;
+
+/* Wifi scanning states */
+typedef enum  {
+	WSCAN_SEQ_START		= 0,
+	WSCAN_SEQ_STOP		= 1
+} wscan_state_t;
 
 /**
  * Static Data for ST87MXX
@@ -62,6 +79,42 @@ static char dns_result_canonname[DNS_MAX_NAME_SIZE + 1];
 static struct modem_context mctx;
 static struct st87mxx_data mdata;
 
+struct getfix_params {
+	st87mxx_get_pos_callback_t *get_pos_callback_func;
+	uint32_t timeout;
+};
+
+struct getfix_vars {
+	struct getfix_params params;
+	get_fix_state_t state;
+	uint8_t init_status;
+	uint8_t fix_status;
+	uint16_t rcv_urc_nb;
+	uint16_t pos_cnt;
+};
+
+struct wscan_vars {
+	st87mxx_wifiscan_params params;
+	wscan_state_t state;
+	uint16_t iter_cnt;
+};
+
+struct getrssi_params {
+	st87mxx_get_rssi_callback_t *get_rssi_callback_func;
+};
+
+struct st87mxx_app_srv_data {
+	struct k_sem sequence_sem;
+	sequence_state sequence_state;
+	struct getfix_vars getfix_vars;
+	struct wscan_vars wscan_vars;
+	struct getrssi_params rssi_data;
+};
+
+struct k_timer st87mxx_sequence_timer;
+static struct st87mxx_app_srv_data app_srv_data;
+static char on_cmd_data_buf[CONFIG_MODEM_ST87MXX_MAX_RX_DATA_LENGTH];
+extern void sequence_timer_timeout_func(struct k_timer *timer);
 
 static int offload_socket(int family, int type, int proto);
 
@@ -208,6 +261,11 @@ MODEM_CMD_DEFINE(on_cmd_steng)
 	mdata.mdm_rssi -= 0x10000;
 
 	LOG_INF("RSSI: %d", mdata.mdm_rssi);
+
+	if ((app_srv_data.sequence_state != SEQUENCE_NONE) && (!k_sem_count_get(&mdata.sem_app))) {
+		k_sem_give(&mdata.sem_app);
+	}
+
 	return 0;
 }
 
@@ -270,11 +328,19 @@ MODEM_CMD_DEFINE(on_cmd_wakeup)
 
 MODEM_CMD_DEFINE(on_cmd_socket_create)
 {
-	LOG_INF("on_cmd_socket_create: %s", argv[0]);
 	struct modem_socket *sock = NULL;
 
+	if (argc == 1) {
+		mdata.sock_id = atoi(argv[0]);
+	} else if (argc > 1) {
+		mdata.sock_id = atoi(argv[1]);
+	} else {
+	}
+
+	LOG_INF("on_cmd_socket_create sock_id: %d", mdata.sock_id);
+
 	/* Look up new socket by id. */
-	sock = modem_socket_from_id(&mdata.socket_config, atoi(argv[0]));
+	sock = modem_socket_from_id(&mdata.socket_config, mdata.sock_id);
 	return 0;
 }
 
@@ -688,6 +754,7 @@ static int st87mxx_init(struct st87mxx_register *reg)
 	mdata.mctx = reg->mctx;
 	mdata.reset_gpio = reg->reset_gpio;
 	mdata.ring_gpio = reg->ring_gpio;
+	mdata.sock_id = 0xFF;
 
 	/* Reset of the whole system as init */
 	status += (uint8_t)st87mxx_reset();
@@ -758,6 +825,7 @@ static int modem_init(const struct device *dev)
 	k_sem_init(&mdata.sem_response, 0, 1);
 	k_sem_init(&mdata.sem_dns, 0, 1);
 	k_sem_init(&mdata.sem_nvm, 0, 1);
+	k_sem_init(&mdata.sem_app, 0, 1);
 
 	/* Assume the modem is not registered to the network. */
 	mdata.mdm_registration = 0;
@@ -861,6 +929,9 @@ static void socket_close(struct modem_socket *sock)
 	}
 
 	modem_socket_put(&mdata.socket_config, sock->sock_fd);
+
+	mdata.sock_id = 0xFF;
+
 }
 
 static int st87mxx_create_socket(struct modem_socket *sock, const struct net_sockaddr *addr)
@@ -1407,6 +1478,424 @@ static void offload_freeaddrinfo(struct zsock_addrinfo *res)
 	ARG_UNUSED(res);
 }
 #endif
+
+/* Application services functions */
+void st87mxx_gnss_deinit(void)
+{
+	LOG_INF("Sending DEINIT");
+	char buf_gnss_deinit[sizeof("AT#GNSSDEINIT")];
+
+	snprintk(buf_gnss_deinit, sizeof(buf_gnss_deinit), "AT#GNSSDEINIT");
+	modem_cmd_send_nolock(&mctx.iface, &mctx.cmd_handler,
+						NULL, 0U, buf_gnss_deinit, NULL, K_NO_WAIT);
+
+	/* Wait for the OK. */
+	k_sem_reset(&mdata.sem_response);
+	k_sem_take(&mdata.sem_response, MDM_CMD_TIMEOUT);
+
+	app_srv_data.getfix_vars.state = GET_FIX_SEQ_DEINIT;
+	k_sem_give(&app_srv_data.sequence_sem);
+	app_srv_data.sequence_state = SEQUENCE_NONE;
+}
+
+MODEM_CMD_DEFINE(on_cmd_gnssinit)
+{
+	LOG_INF("on_cmd_gnssinit");
+	size_t out_len;
+
+	out_len = net_buf_linearize(on_cmd_data_buf, len, data->rx_buf, 2, len);
+	LOG_DBG("GNSSINIT sts = %d", atoi(argv[0]));
+	app_srv_data.getfix_vars.init_status = atoi(argv[0]);
+	/* URC with GNSS init status collected: proceed with sequence next steps */
+	k_sem_give(&app_srv_data.sequence_sem);
+	return 0;
+}
+
+#if (GNSS_FORMAT_TYPE == 0) /* ST format */
+MODEM_CMD_DEFINE(on_cmd_gnssfix_st)
+{
+	LOG_INF("on_cmd_gnssfix_st");
+
+	int i = 0;
+
+	LOG_DBG("GNSSFIX sts = %d", atoi(argv[0]));
+
+	/* Look for the end of the URC, starting from the
+	 * values just after the '#GNSSFIX: ' tag.
+	 * Add - 1 to remove the \0 counted in sizeof.
+	 */
+	while ((*(data->rx_buf->__buf + (sizeof("#GNSSFIX: ") - 1) + i) != '\r')
+			&& (i < CONFIG_MODEM_ST87MXX_MAX_RX_DATA_LENGTH)) {
+		on_cmd_data_buf[i] = *(data->rx_buf->__buf + (sizeof("#GNSSFIX: ") - 1) + i);
+		i++;
+	}
+	on_cmd_data_buf[i] = '\0';
+
+	if (app_srv_data.getfix_vars.params.get_pos_callback_func != NULL) {
+		app_srv_data.getfix_vars.params.get_pos_callback_func(on_cmd_data_buf);
+	}
+
+	app_srv_data.getfix_vars.fix_status = atoi(argv[0]);
+	if (app_srv_data.getfix_vars.fix_status == ST87MXX_GNSS_VALID_FIX) {
+		app_srv_data.getfix_vars.pos_cnt++;
+		LOG_DBG("GNSSFIX pos_cnt = %d", app_srv_data.getfix_vars.pos_cnt);
+
+		if (app_srv_data.getfix_vars.pos_cnt == app_srv_data.getfix_vars.rcv_urc_nb) {
+			/* Nb of requested positions reached */
+			k_sem_give(&app_srv_data.sequence_sem);
+		}
+	}
+	return 0;
+}
+#elif (GNSS_FORMAT_TYPE == 1) /* NMEA format */
+MODEM_CMD_DEFINE(on_cmd_gnssfix_nmea)
+{
+	LOG_INF("on_cmd_gnssfix_nmea");
+
+	int i = 0;
+
+	while ((*(data->rx_buf->__buf + i) != '\r')
+		&& (i < CONFIG_MODEM_ST87MXX_MAX_RX_DATA_LENGTH)) {
+		on_cmd_data_buf[i] = *(data->rx_buf->__buf + i);
+		i++;
+	}
+	on_cmd_data_buf[i] = '\0';
+
+	if (app_srv_data.getfix_vars.params.get_pos_callback_func != NULL) {
+		app_srv_data.getfix_vars.params.get_pos_callback_func(on_cmd_data_buf);
+	}
+
+	app_srv_data.getfix_vars.pos_cnt++;
+	LOG_DBG("GNSSFIX pos_cnt = %d", app_srv_data.getfix_vars.pos_cnt);
+
+	if (app_srv_data.getfix_vars.pos_cnt == app_srv_data.getfix_vars.rcv_urc_nb) {
+		/* Nb of requested positions reached */
+		k_sem_give(&app_srv_data.sequence_sem);
+	}
+
+	return 0;
+}
+#endif
+
+MODEM_CMD_DEFINE(on_cmd_wscan)
+{
+	LOG_INF("on_cmd_wscan");
+
+	int i = 0;
+
+	while ((*(data->rx_buf->__buf + (sizeof("#WSCAN:") - 1) + i) != '\r')
+		&& (i < CONFIG_MODEM_ST87MXX_MAX_RX_DATA_LENGTH)) {
+		on_cmd_data_buf[i] = *(data->rx_buf->__buf + (sizeof("#WSCAN:") - 1) + i);
+		i++;
+	}
+	on_cmd_data_buf[i] = '\0';
+	if (app_srv_data.wscan_vars.params.get_beacon_data_callback_func != NULL) {
+		app_srv_data.wscan_vars.params.get_beacon_data_callback_func(on_cmd_data_buf);
+	}
+	return 0;
+}
+
+MODEM_CMD_DEFINE(on_cmd_wsrestart)
+{
+	LOG_INF("on_cmd_wsrestart");
+
+	app_srv_data.wscan_vars.iter_cnt++;
+	LOG_DBG("on_cmd_wsrestart: Enter (iter=%d)", app_srv_data.wscan_vars.iter_cnt);
+	return 0;
+}
+
+MODEM_CMD_DEFINE(on_cmd_wsstop)
+{
+	LOG_INF("on_cmd_wsstop");
+
+	app_srv_data.wscan_vars.state = WSCAN_SEQ_STOP;
+	k_sem_give(&app_srv_data.sequence_sem);
+	return 0;
+}
+
+void st87mxx_app_services_init(void)
+{
+	LOG_INF("st87mxx_app_services_init");
+
+	/* Init response semaphore */
+	k_sem_init(&app_srv_data.sequence_sem, 0, 1);
+	app_srv_data.sequence_state = SEQUENCE_NONE;
+}
+
+int st87mxx_gnss_getfix(uint32_t nb_position,
+st87mxx_get_pos_callback_t *get_pos_callback_func, uint32_t timeout)
+{
+	LOG_INF("st87mxx_gnss_getfix");
+
+	int ret = 0;
+	char buf_gnss_init[sizeof("AT#GNSSINIT: #,#")];
+#if (GNSS_FORMAT_TYPE == 0) /* ST format */
+	char buf_gnss_fix[sizeof("AT#GNSSFIX: #,#,#,#,#,#,#")];
+	struct modem_cmd data_cmd_fix_st[] = { MODEM_CMD_ARGS_MAX("#GNSSFIX: ",
+		on_cmd_gnssfix_st, 1U, 31U, ",") };
+#elif (GNSS_FORMAT_TYPE == 1) /* NMEA format */
+	char buf_gnss_fix[sizeof("AT#GNSSFIX: #,#,#,#,#,#,#,#,#")];
+	struct modem_cmd data_cmd_fix_nmea[] = { MODEM_CMD_ARGS_MAX("$G", on_cmd_gnssfix_nmea,
+		1U, 31U, ",") };
+#endif /* GNSS_FORMAT_TYPE */
+	struct modem_cmd data_cmd_init[] = { MODEM_CMD("#GNSSINIT: ", on_cmd_gnssinit, 2U, ",") };
+
+	if (timeout == 0) {
+		LOG_ERR("bad parameter");
+		ret = EINVAL;
+		goto end;
+	} else if (app_srv_data.sequence_state == SEQUENCE_ONGOING) {
+		LOG_ERR("sequence already on-going");
+		ret = ECANCELED;
+		goto end;
+	}
+
+	/* Initializations */
+	app_srv_data.sequence_state = SEQUENCE_ONGOING;
+	app_srv_data.getfix_vars.state = GET_FIX_SEQ_INIT;
+	app_srv_data.getfix_vars.params.get_pos_callback_func = get_pos_callback_func;
+	app_srv_data.getfix_vars.params.timeout = timeout;
+
+	app_srv_data.getfix_vars.init_status = 0xFF;
+	app_srv_data.getfix_vars.pos_cnt = 0;
+#if GNSS_FORMAT_TYPE == 0 /* ST format */
+	app_srv_data.getfix_vars.rcv_urc_nb = nb_position;
+#elif GNSS_FORMAT_TYPE == 1 /* NMEA format */
+	app_srv_data.getfix_vars.rcv_urc_nb = nb_position *
+			(GNSS_NMEA_GPGGA + GNSS_NMEA_GPGSA + GNSS_NMEA_GPGSV +
+			GNSS_NMEA_GPGLL + GNSS_NMEA_GPRMC + GNSS_NMEA_GPVTG);
+#endif
+	/* Initiate timeout timer */
+	k_timer_init(&st87mxx_sequence_timer, sequence_timer_timeout_func, NULL);
+	k_timer_start(&st87mxx_sequence_timer,
+		K_SECONDS(app_srv_data.getfix_vars.params.timeout), K_NO_WAIT);
+
+	/* Send the GNSS Init AT cmd */
+	LOG_DBG("sending init");
+	snprintk(buf_gnss_init, sizeof(buf_gnss_init), "AT#GNSSINIT=1,%d", GNSS_CONSTELLATION_ID);
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, data_cmd_init,
+			ARRAY_SIZE(data_cmd_init), buf_gnss_init, &app_srv_data.sequence_sem,
+			APP_MDM_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_ERR("Failed to send AT#GNSSINIT command");
+		ret = -1;
+		goto end;
+	}
+
+	/* Wait for the answer. */
+
+	/* Check if the module is ready for fix and if yes start GNSS Fix */
+	app_srv_data.getfix_vars.state = GET_FIX_SEQ_FIX;
+	if (app_srv_data.getfix_vars.init_status == ST87MXX_GNSS_READY) {
+		LOG_INF("Sending FIX");
+#if (GNSS_FORMAT_TYPE == 0) /* ST format */
+		ret = snprintk(buf_gnss_fix, sizeof(buf_gnss_fix), "AT#GNSSFIX=1,1,0,%d%d%d%d",
+			GNSS_FORMAT_ST_POSITION, GNSS_FORMAT_ST_ACCURACY, GNSS_FORMAT_ST_SATELLITES,
+			GNSS_FORMAT_ST_ORIENTATION);
+		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
+			data_cmd_fix_st, ARRAY_SIZE(data_cmd_fix_st),
+			buf_gnss_fix, &app_srv_data.sequence_sem, APP_MDM_CMD_TIMEOUT);
+#elif (GNSS_FORMAT_TYPE == 1) /* NMEA format */
+		ret = snprintk(buf_gnss_fix, sizeof(buf_gnss_fix), "AT#GNSSFIX=1,1,1,%d%d%d%d%d%d",
+			GNSS_NMEA_GPGGA, GNSS_NMEA_GPGSA, GNSS_NMEA_GPGSV, GNSS_NMEA_GPGLL,
+			GNSS_NMEA_GPRMC, GNSS_NMEA_GPVTG);
+		ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, data_cmd_fix_nmea,
+			ARRAY_SIZE(data_cmd_fix_nmea), buf_gnss_fix, &app_srv_data.sequence_sem,
+			APP_MDM_CMD_TIMEOUT);
+#endif
+
+		if (ret < 0) {
+			LOG_ERR("Failed to send AT#GNSSFIX command");
+			k_sem_give(&app_srv_data.sequence_sem);
+			ret = -1;
+			goto end;
+		}
+	} else {
+		LOG_ERR("Bad init sts (=%d)", app_srv_data.getfix_vars.init_status);
+		k_sem_give(&app_srv_data.sequence_sem);
+		ret = -1;
+		goto end;
+	}
+
+end:
+	if (app_srv_data.getfix_vars.state != GET_FIX_SEQ_DEINIT) {
+		st87mxx_gnss_deinit();
+	}
+	k_timer_stop(&st87mxx_sequence_timer);
+	app_srv_data.sequence_state = SEQUENCE_NONE;
+	return -ret;
+}
+
+void st87mxx_gnss_stop(void)
+{
+	LOG_INF("st87mxx_gnss_stop");
+	st87mxx_gnss_deinit();
+}
+
+int st87mxx_wifiscan(st87mxx_wifiscan_params *wscan_params)
+{
+	LOG_INF("st87mxx_wifiscan");
+
+	int ret = 0;
+	char buf_wscan[sizeof("AT#WSCAN: #,##############")];
+	struct modem_cmd data_cmd[] = {
+			MODEM_CMD_ARGS_MAX("#WSCAN:", on_cmd_wscan, 3U, 4U, ","),
+			MODEM_CMD("#WSRESTART", on_cmd_wsrestart, 0U, ""),
+			MODEM_CMD("#WSSTOP", on_cmd_wsstop, 0U, "")};
+
+	/* Check parameters and configuration */
+	if ((wscan_params->channel_list == NULL)
+		|| (wscan_params->timeout == 0)) {
+		ret = EINVAL;
+		goto end;
+	} else if (app_srv_data.sequence_state == SEQUENCE_ONGOING) {
+		LOG_ERR("sequence already on-going");
+		ret = ECANCELED;
+		goto end;
+	}
+
+	/* Initializations */
+	app_srv_data.sequence_state = SEQUENCE_ONGOING;
+	memcpy(&app_srv_data.wscan_vars.params, wscan_params, sizeof(st87mxx_wifiscan_params));
+	app_srv_data.wscan_vars.iter_cnt = 0;
+
+	/* Initiate timeout timer */
+	k_timer_init(&st87mxx_sequence_timer, sequence_timer_timeout_func, NULL);
+	k_timer_start(&st87mxx_sequence_timer,
+		K_SECONDS(app_srv_data.wscan_vars.params.timeout), K_NO_WAIT);
+
+	/* Configure the WSCAN */
+	snprintk(buf_wscan, sizeof(buf_wscan), "AT#WSCAN=2,%d", URC_MODE);
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL,
+			0, buf_wscan, NULL, K_NO_WAIT);
+
+	/* Wait for the OK */
+	k_sem_reset(&mdata.sem_response);
+	ret = k_sem_take(&mdata.sem_response, MDM_CMD_TIMEOUT);
+
+	snprintk(buf_wscan, sizeof(buf_wscan), "AT#WSCAN=3,%d", HOPPING_TIME);
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL,
+			0, buf_wscan, NULL, K_NO_WAIT);
+
+	/* Wait for the OK */
+	k_sem_reset(&mdata.sem_response);
+	ret = k_sem_take(&mdata.sem_response, MDM_CMD_TIMEOUT);
+
+	snprintk(buf_wscan, sizeof(buf_wscan), "AT#WSCAN=4,%d", ANT_SEL);
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL,
+			0, buf_wscan, NULL, K_NO_WAIT);
+
+	/* Wait for the OK */
+	k_sem_reset(&mdata.sem_response);
+	ret = k_sem_take(&mdata.sem_response, MDM_CMD_TIMEOUT);
+
+	snprintk(buf_wscan, sizeof(buf_wscan), "AT#WSCAN=5,%d",
+		app_srv_data.wscan_vars.params.nb_scan_iterations);
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL,
+			0, buf_wscan, NULL, K_NO_WAIT);
+
+	/* Wait for the OK */
+	k_sem_reset(&mdata.sem_response);
+	ret = k_sem_take(&mdata.sem_response, MDM_CMD_TIMEOUT);
+
+	/* Send the WSCAN Start AT cmd */
+	app_srv_data.wscan_vars.state = WSCAN_SEQ_START;
+	LOG_DBG("Sending WSCAN START");
+	snprintk(buf_wscan, sizeof(buf_wscan), "AT#WSCAN=1,%s",
+		app_srv_data.wscan_vars.params.channel_list);
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler,
+				data_cmd, ARRAY_SIZE(data_cmd),
+				buf_wscan, &app_srv_data.sequence_sem, APP_MDM_CMD_TIMEOUT);
+
+end:
+	if (app_srv_data.wscan_vars.state != WSCAN_SEQ_STOP) {
+		st87mxx_wifiscan_stop();
+	}
+
+	k_timer_stop(&st87mxx_sequence_timer);
+	app_srv_data.sequence_state = SEQUENCE_NONE;
+	return -ret;
+}
+
+void st87mxx_wifiscan_stop(void)
+{
+	LOG_INF("st87mxx_wifiscan_stop");
+
+	char buf_wscan[sizeof("AT#WSCAN=0")];
+	int ret = 0;
+
+	snprintk(buf_wscan, sizeof(buf_wscan), "AT#WSCAN=0");
+	ret = modem_cmd_send_nolock(&mctx.iface, &mctx.cmd_handler,
+					NULL, 0U, buf_wscan, NULL, K_NO_WAIT);
+
+	/* Wait for the OK. */
+	k_sem_reset(&mdata.sem_response);
+	ret = k_sem_take(&mdata.sem_response, MDM_CMD_TIMEOUT);
+
+	app_srv_data.wscan_vars.state = WSCAN_SEQ_STOP;
+	k_sem_give(&app_srv_data.sequence_sem);
+	app_srv_data.sequence_state = SEQUENCE_NONE;
+}
+
+int st87mxx_getrssi(st87mxx_get_rssi_callback_t *get_rssi_callback_func)
+{
+	LOG_INF("st87mxx_getrssi");
+
+	int ret;
+	char buf_steng_polling[sizeof("AT#STENG=3")];
+
+	if (app_srv_data.sequence_state == SEQUENCE_ONGOING) {
+		LOG_ERR("sequence already on-going");
+		ret = ECANCELED;
+		goto end;
+	}
+
+	app_srv_data.sequence_state = SEQUENCE_ONGOING;
+	app_srv_data.rssi_data.get_rssi_callback_func = get_rssi_callback_func;
+
+	/* Initiate timeout timer */
+	k_timer_init(&st87mxx_sequence_timer, sequence_timer_timeout_func, NULL);
+	k_timer_start(&st87mxx_sequence_timer, K_SECONDS(ST87MXX_AT_DEFAULT_TIMEOUT_S),
+		K_NO_WAIT);
+
+	snprintk(buf_steng_polling, sizeof(buf_steng_polling), "AT#STENG=3");
+	ret = modem_cmd_send_nolock(&mctx.iface, &mctx.cmd_handler,
+				NULL, 0U, buf_steng_polling, NULL, K_NO_WAIT);
+	if (ret < 0) {
+		LOG_ERR("Failed to send AT#STENG=3 command");
+		ret = -1;
+		goto end;
+	}
+
+	/* Wait for the #STENG URC. */
+	k_sem_reset(&mdata.sem_app);
+	ret = k_sem_take(&mdata.sem_app, APP_MDM_CMD_TIMEOUT);
+
+	/* #STENG URC received */
+	if (app_srv_data.rssi_data.get_rssi_callback_func != NULL) {
+		app_srv_data.rssi_data.get_rssi_callback_func((const char * const)mdata.mdm_rssi);
+	}
+
+end:
+	k_timer_stop(&st87mxx_sequence_timer);
+	app_srv_data.sequence_state = SEQUENCE_NONE;
+	return -ret;
+}
+
+sequence_state st87mxx_app_services_getstate(void)
+{
+	return app_srv_data.sequence_state;
+}
+
+void sequence_timer_timeout_func(struct k_timer *timer)
+{
+	LOG_INF("Sequence timeout!!");
+
+	app_srv_data.sequence_state = SEQUENCE_TIMED_OUT;
+	k_sem_give(&app_srv_data.sequence_sem);
+}
+
+/* Enf of application services functions */
 
 
 #if defined(CONFIG_DNS_RESOLVER)
