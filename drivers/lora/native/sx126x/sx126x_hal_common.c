@@ -60,16 +60,16 @@ void sx126x_hal_set_antenna_enable(const struct device *dev, bool enable)
 	}
 }
 
-void sx126x_hal_set_rf_switch(const struct device *dev, bool tx)
+void sx126x_hal_set_rf_switch(const struct device *dev, bool enable, bool tx)
 {
 	const struct sx126x_hal_config *config = dev->config;
 
 	if (config->tx_enable.port != NULL) {
-		gpio_pin_set_dt(&config->tx_enable, tx);
+		gpio_pin_set_dt(&config->tx_enable, enable && tx);
 	}
 
 	if (config->rx_enable.port != NULL) {
-		gpio_pin_set_dt(&config->rx_enable, !tx);
+		gpio_pin_set_dt(&config->rx_enable, enable && !tx);
 	}
 }
 

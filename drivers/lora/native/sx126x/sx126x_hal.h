@@ -77,7 +77,7 @@ void sx126x_hal_dio1_irq_enable(const struct device *dev);
 
 void sx126x_hal_set_antenna_enable(const struct device *dev, bool enable);
 
-void sx126x_hal_set_rf_switch(const struct device *dev, bool tx);
+void sx126x_hal_set_rf_switch(const struct device *dev, bool enable, bool tx);
 
 int sx126x_hal_configure_gpio(const struct gpio_dt_spec *gpio,
 			      gpio_flags_t flags, const char *name);
