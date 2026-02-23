@@ -43,10 +43,8 @@ properties:
     description: Enable 32K Source Clock for PWM Channel 5
 
   channels:
-    type: int
     const: 6
     required: true
-    description: Number of channels this PWM has
 
   reg:
     required: true
