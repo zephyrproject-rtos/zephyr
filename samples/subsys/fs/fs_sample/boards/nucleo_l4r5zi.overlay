@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2026 Waqar Ahmed
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&sdmmc1 {
+	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9 &sdmmc1_d2_pc10
+		     &sdmmc1_d3_pc11 &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+	pinctrl-names = "default";
+	bus-width = <4>;
+	disk-name = "SD";
+	status = "okay";
+};
