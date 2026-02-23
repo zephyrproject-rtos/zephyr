@@ -1,14 +1,8 @@
-# Copyright 2024 NXP
+# Copyright (c) 2026 Advanced Micro Devices, Inc. (AMD)
 #
 # SPDX-License-Identifier: Apache-2.0
 
 source "Kconfig.zephyr"
-
-config INCLUDE_REMOTE_DIR
-	bool "Include remote core header directory"
-	help
-	  Include remote build header files. Can be used if primary image
-	  needs to be aware of size or base address of secondary image
 
 config MBOX_DATA_MAX_MSG_SIZE
 	int "Maximum mbox message size in bytes"
