@@ -49,6 +49,7 @@ config SPI_NRFX_SPIS
 
 config SPI_NRFX_RAM_BUFFER_SIZE
 	int "Size of RAM buffers for SPIM peripherals"
+	default 0 if HAS_NORDIC_DMM
 	default 8
 	depends on SPI_NRFX_SPIM
 	help
