@@ -9,6 +9,10 @@ board:
   - name: ae350_d23
     variants:
     - name: clic
+      variants:
+      - name: lm
   - name: ae350_d25f
+    variants:
+    - name: lm
   - name: ae350_a25
   - name: ae350_ax45
