@@ -93,6 +93,20 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	struct arch_esf *pInitCtx;
 
 	/*
+	 * Make sure the stack is large enough to hold at least the
+	 * exception stack frame (ESF). On ARM64 the ESF is ~176 bytes
+	 * and even a simple thread needs several hundred bytes more
+	 * for function call frames. A stack that is too small will
+	 * overflow into nearby memory and cause crashes that are
+	 * difficult to debug.
+	 */
+	__ASSERT((stack_ptr - (char *)stack) > (int)sizeof(struct arch_esf),
+		 "ARM64 thread stack size is too small. "
+		 "It must be larger than sizeof(struct arch_esf) (%zu bytes). "
+		 "Use at least 1024 bytes for ARM64 threads.",
+		 sizeof(struct arch_esf));
+
+	/*
 	 * Clean the thread->arch to avoid unexpected behavior because the
 	 * thread->arch might be dirty
 	 */

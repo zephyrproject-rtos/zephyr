@@ -500,6 +500,92 @@ void z_arm64_fatal_error(unsigned int reason, struct arch_esf *esf)
 		}
 #endif
 
+#if defined(CONFIG_EXCEPTION_DEBUG) && defined(CONFIG_THREAD_STACK_INFO)
+		/*
+		 * Check for possible stack overflow when there is no
+		 * HW stack protection. Three patterns are checked:
+		 *
+		 * 1. The ESF is outside the thread's stack bounds
+		 *    while not in IRQ context. This means the SP was
+		 *    corrupted, most likely because a neighboring
+		 *    thread's overflow corrupted this thread's saved
+		 *    context, resulting in a bad SP on resume.
+		 *
+		 * 2. An instruction abort (EC=0x21) at address 0 with
+		 *    LR=0, which means a stack overflow corrupted a
+		 *    nearby thread's saved return addresses.
+		 *
+		 * 3. The stack sentinel value at the base of the
+		 *    thread's stack has been overwritten, which is
+		 *    direct evidence of stack overflow.
+		 */
+		if (reason != K_ERR_STACK_CHK_FAIL && esf != NULL) {
+			bool overflow = false;
+			uintptr_t sp_start = _current->stack_info.start;
+			size_t sp_size = _current->stack_info.size;
+			uintptr_t sp_end = sp_start + sp_size;
+
+			/*
+			 * Pattern 1: ESF is outside the thread's stack
+			 * while running in thread context (nested == 0).
+			 * During IRQ handling the ESF may legitimately
+			 * be on the IRQ stack, so skip this check then.
+			 *
+			 * Also skip for user threads: their stack_info
+			 * describes the user-mode stack, but exceptions
+			 * push the ESF onto the separate privileged
+			 * (EL1) stack, which is outside stack_info.
+			 */
+			if (arch_curr_cpu()->nested == 0 &&
+			    (_current->base.user_options & K_USER) == 0 &&
+			    ((uintptr_t)esf < sp_start ||
+			     (uintptr_t)esf >= sp_end)) {
+				overflow = true;
+			}
+
+			/* Pattern 2: Instruction abort at PC=0 with LR=0 */
+			if (GET_ESR_EC(esr) == 0x21 && elr == 0 &&
+			    esf->lr == 0) {
+				overflow = true;
+			}
+
+#ifdef CONFIG_STACK_SENTINEL
+			/*
+			 * Pattern 3: Stack sentinel overwritten.
+			 * The sentinel is a known value placed at the
+			 * bottom of the stack during thread creation.
+			 * If it has changed, the stack has overflowed.
+			 */
+			{
+				uint32_t *sentinel;
+
+				sentinel = (uint32_t *)sp_start;
+				if (*sentinel != STACK_SENTINEL) {
+					overflow = true;
+				}
+			}
+#endif /* CONFIG_STACK_SENTINEL */
+
+			if (overflow) {
+				EXCEPTION_DUMP("");
+				EXCEPTION_DUMP("*** POSSIBLE STACK OVERFLOW"
+					" DETECTED ***");
+				EXCEPTION_DUMP("Stack bounds: [0x%lx - 0x%lx]"
+					" size %zu",
+					(unsigned long)sp_start,
+					(unsigned long)sp_end,
+					sp_size);
+				EXCEPTION_DUMP("ESF at: 0x%lx",
+					(unsigned long)esf);
+				EXCEPTION_DUMP("Hint: Increase the thread"
+					" stack size. ARM64 threads need"
+					" at minimum 1024 bytes.");
+				EXCEPTION_DUMP("");
+				reason = K_ERR_STACK_CHK_FAIL;
+			}
+		}
+#endif /* CONFIG_EXCEPTION_DEBUG && CONFIG_THREAD_STACK_INFO */
+
 		/* Check for PACBTI-related exceptions */
 		if (z_arm64_handle_pacbti_exception(esf, esr, far)) {
 			reason = K_ERR_CPU_EXCEPTION;
