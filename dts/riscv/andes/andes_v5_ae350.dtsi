@@ -185,6 +185,38 @@
 		};
 	};
 
+	ilm: ilm@0 {
+		compatible = "zephyr,memory-region", "andestech,ilm";
+		reg = <0x00000000 DT_SIZE_K(512)
+		       0xa0000000 DT_SIZE_K(512)
+		       0xa0400000 DT_SIZE_K(512)
+		       0xa0800000 DT_SIZE_K(512)
+		       0xa0c00000 DT_SIZE_K(512)>;
+		reg-names = "mem",
+			    "subordinateport_0",
+			    "subordinateport_1",
+			    "subordinateport_2",
+			    "subordinateport_3";
+		zephyr,memory-region = "ITCM";
+		status = "disabled";
+	};
+
+	dlm: dlm@200000 {
+		compatible = "zephyr,memory-region", "andestech,dlm";
+		reg = <0x00200000 DT_SIZE_K(512)
+		       0xa0200000 DT_SIZE_K(512)
+		       0xa0600000 DT_SIZE_K(512)
+		       0xa0a00000 DT_SIZE_K(512)
+		       0xa0e00000 DT_SIZE_K(512)>;
+		reg-names = "mem",
+			    "subordinateport_0",
+			    "subordinateport_1",
+			    "subordinateport_2",
+			    "subordinateport_3";
+		zephyr,memory-region = "DTCM";
+		status = "disabled";
+	};
+
 	dram: memory@0 {
 		device_type = "memory";
 		compatible = "mmio-sram";
