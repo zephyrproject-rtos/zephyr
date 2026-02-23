@@ -460,12 +460,19 @@ static void sx126x_handle_irq_rx_done(const struct device *dev, uint16_t irq_sta
 
 	/* Handle async callback or signal sync receiver */
 	if (data->rx_cb != NULL) {
-		/* Async mode - call callback and restart RX */
-		data->rx_cb(dev, data->rx_buf, result.len,
-			    result.rssi, result.snr,
-			    data->rx_cb_user_data);
-		/* Restart RX for continuous reception */
-		sx126x_set_rx(dev, 0);
+		/*
+		 * Async mode: only report valid packets.
+		 * CRC/read failures are dropped and RX is restarted.
+		 */
+		if (result.status > 0) {
+			data->rx_cb(dev, data->rx_buf, result.len,
+				    result.rssi, result.snr,
+				    data->rx_cb_user_data);
+		}
+		/* Restart RX unless the callback stopped reception */
+		if (data->rx_cb != NULL) {
+			sx126x_set_rx(dev, 0);
+		}
 	} else {
 		/* Sync mode */
 		atomic_set(&data->state, SX126X_STATE_IDLE);
