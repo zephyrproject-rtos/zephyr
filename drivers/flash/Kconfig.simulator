@@ -102,4 +102,11 @@ config FLASH_SIMULATOR_STAT_PAGE_COUNT
 	  This is why it's not possible to calculate the number of pages with
 	  preprocessor using DT properties.
 
+config FLASH_SIMULATOR_EX_OP
+	bool "Extended operations API"
+	select FLASH_HAS_EX_OP
+	help
+	  The flash extended operations API can be used to perform non-standard operations. For example
+	  to fake bad block management required for NAND flash translation layers.
+
 endif # FLASH_SIMULATOR
