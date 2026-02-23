@@ -35,7 +35,11 @@ LOG_MODULE_REGISTER(bt_nxp_ctlr);
 #define HCI_CMD_STORE_BT_CAL_DATA_PARAM_ANNEX100_LENGTH 16
 #define HCI_CMD_STORE_BT_CAL_DATA_OCF                   0x61
 #define HCI_CMD_STORE_BT_CAL_DATA_PARAM_LENGTH          32
-
+#define HCI_CMD_BT_CONFIG_IR_OCF                        0x0D
+#define HCI_CMD_BT_CONFIG_IR_LENGTH                     2
+#define HCI_CMD_BT_CONFIG_IR_MODE                       0x02
+#define HCI_CMD_BT_CONFIG_IR_PARAM                      0xFF
+#define HCI_CMD_BT_CONFIG_IR_OPCODE                     BT_OP(BT_OGF_VS, HCI_CMD_BT_CONFIG_IR_OCF)
 extern const unsigned char *bt_fw_bin;
 extern const unsigned int bt_fw_bin_len;
 
@@ -1427,6 +1431,63 @@ static int bt_nxp_set_calibration_data_annex100(void)
 }
 #endif /* defined(CONFIG_HCI_NXP_SET_CAL_DATA_ANNEX100) */
 
+#if defined(CONFIG_HCI_NXP_CONFIG_IR)
+static int bt_nxp_configure_ir(void)
+{
+	const uint8_t hci_configure_ir[HCI_CMD_BT_CONFIG_IR_LENGTH] = {
+		HCI_CMD_BT_CONFIG_IR_MODE,
+		HCI_CMD_BT_CONFIG_IR_PARAM
+	};
+	struct net_buf *buf;
+	int err;
+
+	LOG_DBG("Configuring IR");
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		LOG_ERR("Unable to allocate command buffer");
+		return -ENOMEM;
+	}
+
+	net_buf_add_mem(buf, hci_configure_ir, HCI_CMD_BT_CONFIG_IR_LENGTH);
+
+	err = bt_hci_cmd_send_sync(HCI_CMD_BT_CONFIG_IR_OPCODE, buf, NULL);
+	if (err) {
+		LOG_DBG("Failed to send config IR cmd (err %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
+int bt_nxp_trigger_ir(const struct device *dev)
+{
+	int err;
+	uint8_t ir_trigger_buf[] = {0x01, 0xfc, 0xfc, 0x00}; /*IR trigger sequence*/
+
+	LOG_DBG("Triggering IR.");
+	ARRAY_FOR_EACH(ir_trigger_buf, i) {
+		uart_poll_out(dev, ir_trigger_buf[i]);
+	}
+
+	LOG_DBG("Downloading FW.");
+	err = bt_nxp_ctlr_init();
+	if (err == 0) {
+		LOG_DBG("IR Successful, Perform BT Init again to activate interface.");
+	} else {
+		LOG_ERR("IR Failed: %d", err);
+	}
+
+	return err;
+}
+#else
+int bt_nxp_trigger_ir(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return -ENODEV;
+}
+#endif /* defined(CONFIG_HCI_NXP_CONFIG_IR) */
+
 int bt_hci_transport_setup(const struct device *dev)
 {
 	int ret = 0;
@@ -1435,8 +1496,19 @@ int bt_hci_transport_setup(const struct device *dev)
 	}
 
 	if (!fw_upload.is_setup_done) {
+		LOG_DBG("HCI Transport Initial Setup\n");
 		ret = bt_nxp_ctlr_init();
 	}
+#ifdef	CONFIG_HCI_NXP_TRIGGER_IR_ON_BT_INIT
+	else {
+		LOG_DBG("HCI transport setup after bt disable\n");
+
+		/* If setup is already done earlier, for subsequent bt disable
+		 * and bt enable, trigger IR to reload controller FW
+		 */
+		ret = bt_nxp_trigger_ir(dev);
+	}
+#endif /* defined(CONFIG_HCI_NXP_TRIGGER_IR_ON_BT_INIT) */
 	return ret;
 }
 
@@ -1520,6 +1592,15 @@ int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *
 			LOG_ERR("Fail to load annex-100 calibration data");
 			return err;
 		}
+
+#if defined(CONFIG_HCI_NXP_CONFIG_IR)
+		err = bt_nxp_configure_ir();
+		if (err) {
+			LOG_ERR("Fail to configure IR");
+			return err;
+		}
+#endif
+
 #if defined(CONFIG_BT_NXP_CTRL_WAKE_ON_BT)
 #if DT_NODE_HAS_PROP(DT_DRV_INST(0), wakeup_bt_gpios)
 	struct gpio_dt_spec wakeup = GPIO_DT_SPEC_GET(DT_DRV_INST(0), wakeup_bt_gpios);
