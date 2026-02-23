@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Counter capture test configuration"
+
+source "Kconfig.zephyr"
+
+config NUM_OF_CONTINUOUS_CAPTURES
+	int "Number of continuous capture iterations"
+	default 5
+	range 1 255
+	help
+	  Number of capture iterations run by each continuous capture test case.
