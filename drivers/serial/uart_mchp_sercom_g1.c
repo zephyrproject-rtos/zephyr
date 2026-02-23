@@ -34,10 +34,11 @@
  * @brief Macro definitions
  *****************************************************************************/
 LOG_MODULE_REGISTER(uart_mchp_sercom_g1, CONFIG_UART_LOG_LEVEL);
-#define TIMEOUT_VALUE_US       1000
-#define DELAY_US               2
-#define UART_SUCCESS           0
-#define BITSHIFT_FOR_BAUD_CALC 20
+#define TIMEOUT_VALUE_US             1000
+#define DELAY_US                     2
+#define UART_SUCCESS                 0
+/* 65536 * 16 = 1 << 20 */
+#define SAMPLING_RATE_16X_ARITHMETIC 20U
 
 /* Do the peripheral interrupt related configuration */
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_MCHP_ASYNC)
@@ -395,17 +396,15 @@ static int uart_config_stop_bits(sercom_registers_t *regs, bool is_clock_externa
 /**
  * @brief Configure the UART pinout.
  *
- * @param regs Pointer to the uart_mchp_dev_cfg_t structure.
- * @param is_clock_external Boolean to indicate external or internal clock
+ * @param cfg Pointer to the uart_mchp_dev_cfg_t structure.
  */
 static void uart_config_pinout(const uart_mchp_dev_cfg_t *const cfg)
 {
 	sercom_registers_t *regs = cfg->regs;
 	uint32_t rxpo = cfg->rxpo;
 	uint32_t txpo = cfg->txpo;
-	bool is_clock_external = cfg->is_clock_external;
 
-	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, cfg->is_clock_external);
 	uint32_t reg_value = usart->SERCOM_CTRLA;
 
 	reg_value &= ~(SERCOM_USART_CTRLA_RXPO_Msk | SERCOM_USART_CTRLA_TXPO_Msk);
@@ -532,7 +531,7 @@ static int uart_set_baudrate(sercom_registers_t *regs, bool is_clock_external, u
 		return -EINVAL;
 	}
 
-	tmp = (uint64_t)baudrate << BITSHIFT_FOR_BAUD_CALC;
+	tmp = (uint64_t)baudrate << SAMPLING_RATE_16X_ARITHMETIC;
 	tmp = (tmp + (clk_freq_hz >> 1)) / clk_freq_hz;
 
 	/* Verify that the calculated result is within range */
@@ -829,31 +828,16 @@ static bool uart_is_interrupt_pending(sercom_registers_t *regs, bool is_clock_ex
 
 #ifdef CONFIG_UART_MCHP_ASYNC
 /**
- * @brief Get the DMA destination address for UART.
+ * @brief Get the UART DATA register address.
  *
- * This function retrieves the DMA destination address for the specified UART instance.
+ * Returns the address of the SERCOM USART DATA register.
  *
- * @param regs Pointer to the sercom_registers_t structure.
- * @param is_clock_external Boolean to indicate external or internal clock
- * @return The DMA destination address.
+ * @param regs Pointer to the SERCOM register base structure.
+ * @param is_clock_external Selects the external or internal clock register set.
+ *
+ * @return Pointer to the UART DATA register.
  */
-static inline void *uart_get_dma_dest_addr(sercom_registers_t *regs, bool is_clock_external)
-{
-	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
-
-	return (void *)&usart->SERCOM_DATA;
-}
-
-/**
- * @brief Get the DMA source address for UART.
- *
- * This function retrieves the DMA source address for the specified UART instance.
- *
- * @param regs Pointer to the sercom_registers_t structure.
- * @param is_clock_external Boolean to indicate external or internal clock
- * @return The DMA source address.
- */
-static inline void *uart_get_dma_source_addr(sercom_registers_t *regs, bool is_clock_external)
+static inline void *uart_get_data_reg_addr(sercom_registers_t *regs, bool is_clock_external)
 {
 	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
 
@@ -1139,7 +1123,7 @@ static int uart_mchp_init(const struct device *dev)
 		dma_cfg.dma_slot = cfg->uart_dma.tx_dma_request;
 
 		dma_blk.block_size = 1;
-		dma_blk.dest_address = (uint32_t)(uart_get_dma_dest_addr(regs, is_clock_external));
+		dma_blk.dest_address = (uint32_t)(uart_get_data_reg_addr(regs, is_clock_external));
 		dma_blk.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 
 		retval = dma_config(cfg->uart_dma.dma_dev, cfg->uart_dma.tx_dma_channel, &dma_cfg);
@@ -1167,7 +1151,7 @@ static int uart_mchp_init(const struct device *dev)
 
 		dma_blk.block_size = 1;
 		dma_blk.source_address =
-			(uint32_t)(uart_get_dma_source_addr(regs, is_clock_external));
+			(uint32_t)(uart_get_data_reg_addr(regs, is_clock_external));
 		dma_blk.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 
 		retval = dma_config(cfg->uart_dma.dma_dev, cfg->uart_dma.rx_dma_channel, &dma_cfg);
@@ -1801,7 +1785,7 @@ static void uart_mchp_rx_timeout(struct k_work *work)
 		 * empty buffer, so always restart the transfer.
 		 */
 		dma_reload(cfg->uart_dma.dma_dev, cfg->uart_dma.rx_dma_channel,
-			   (uint32_t)(uart_get_dma_source_addr(regs, is_clock_external)),
+			   (uint32_t)(uart_get_data_reg_addr(regs, is_clock_external)),
 			   (uint32_t)rx_dma_start, dev_data->rx_len - rx_processed);
 
 		dev_data->rx_waiting_for_irq = true;
@@ -1934,7 +1918,7 @@ static void uart_mchp_dma_rx_done(const struct device *dma_dev, void *arg, uint3
 		dev_data->rx_processed_len = 0U;
 
 		dma_reload(cfg->uart_dma.dma_dev, cfg->uart_dma.rx_dma_channel,
-			   (uint32_t)(uart_get_dma_source_addr(cfg->regs, cfg->is_clock_external)),
+			   (uint32_t)(uart_get_data_reg_addr(cfg->regs, cfg->is_clock_external)),
 			   (uint32_t)dev_data->rx_buf, dev_data->rx_len);
 
 		/*
@@ -2036,7 +2020,7 @@ static int uart_mchp_tx(const struct device *dev, const uint8_t *buf, size_t len
 
 		retval = dma_reload(
 			cfg->uart_dma.dma_dev, cfg->uart_dma.tx_dma_channel, (uint32_t)buf,
-			(uint32_t)(uart_get_dma_dest_addr(cfg->regs, cfg->is_clock_external)), len);
+			(uint32_t)(uart_get_data_reg_addr(cfg->regs, cfg->is_clock_external)), len);
 		if (retval != 0U) {
 			break;
 		}
@@ -2178,7 +2162,7 @@ static int uart_mchp_rx_enable(const struct device *dev, uint8_t *buf, size_t le
 
 			retval = dma_reload(
 				cfg->uart_dma.dma_dev, cfg->uart_dma.rx_dma_channel,
-				(uint32_t)(uart_get_dma_source_addr(regs, is_clock_external)),
+				(uint32_t)(uart_get_data_reg_addr(regs, is_clock_external)),
 				(uint32_t)buf, len);
 			if (retval != 0) {
 				break;
