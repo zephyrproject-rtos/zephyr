@@ -24,7 +24,7 @@
 #define DISK_NAME_PHYS "SD"
 #elif defined(CONFIG_DISK_DRIVER_MMC)
 #define DISK_NAME_PHYS "SD2"
-#elif defined(CONFIG_DISK_DRIVER_FLASH)
+#elif defined(CONFIG_DISK_DRIVER_FLASH) || defined(CONFIG_DISK_DRIVER_FTL)
 #define DISK_NAME_PHYS "NAND"
 #elif defined(CONFIG_NVME)
 #define DISK_NAME_PHYS "nvme0n0"
