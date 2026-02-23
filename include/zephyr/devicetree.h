@@ -5696,5 +5696,6 @@
 #include <zephyr/devicetree/hwspinlock.h>
 #include <zephyr/devicetree/map.h>
 #include <zephyr/devicetree/wuc.h>
+#include <zephyr/devicetree/mapped-partition.h>
 
 #endif /* ZEPHYR_INCLUDE_DEVICETREE_H_ */
