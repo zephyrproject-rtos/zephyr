@@ -1,9 +1,9 @@
-# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# Copyright (c) 2025-2026 MASSDRIVER EI (massdriver.space)
 # SPDX-License-Identifier: Apache-2.0
 
-description: The BL70x DLL
+description: The BL70x/L DLL
 
-compatible: "bflb,bl70x-dll"
+compatible: "bflb,bl70x_l-dll"
 
 include: [base.yaml, clock-controller.yaml]
 
