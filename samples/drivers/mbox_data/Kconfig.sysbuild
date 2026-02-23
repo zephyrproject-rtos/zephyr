@@ -18,3 +18,5 @@ string
 	default "imx943_evk/mimx94398/m33" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "imx943_evk/mimx94398/m7_1"
 	default "imx943_evk/mimx94398/m33" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "imx943_evk/mimx94398/m7_0"
 	default "imx943_evk/mimx94398/m7_1" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "imx943_evk/mimx94398/m33"
+	default "versalnet_rpu" if $(BOARD) = "versalnet_rpu"
+	default "versal2_rpu" if $(BOARD) = "versal2_rpu"
