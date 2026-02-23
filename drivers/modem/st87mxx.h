@@ -12,6 +12,7 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_context.h>
+#include <zephyr/drivers/modem/st87mxx_app_services.h>
 
 #include "modem_context.h"
 #include "modem_socket.h"
@@ -123,8 +124,6 @@
  * However, it does not guarantee that the packet has been received by the remote server.
  * If NB_PACKET_SENT is 1, counting is active.
  * If NB_PACKET_SENT is 0, counting is inactive.
- * NbUdpPacketsSent counter var in EC Lib State structure (ST87EC_Lib_Status_t)
- * keeps 0 value.
  */
 #define NB_PACKET_SENT_ENABLE		1
 #define DOMAIN_NAME			"8.8.8.8"	/* IP address for DNS resolution */
@@ -176,6 +175,7 @@ struct st87mxx_data {
 	 */
 	struct modem_socket_config socket_config;
 	struct modem_socket sockets[MDM_MAX_SOCKETS];
+	int sock_id;
 
 	int current_sock_written;
 
@@ -202,6 +202,7 @@ struct st87mxx_data {
 	struct k_sem sem_response;
 	struct k_sem sem_dns;
 	struct k_sem sem_nvm;
+	struct k_sem sem_app;
 };
 
 /*
