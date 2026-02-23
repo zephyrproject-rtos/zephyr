@@ -192,6 +192,10 @@ static uint32_t format_flags(void)
 		flags |= LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
 	}
 
+	if (IS_ENABLED(CONFIG_LOG_CORE_ID_PREFIX)) {
+		flags |= LOG_OUTPUT_FLAG_CORE;
+	}
+
 	return flags;
 }
 
