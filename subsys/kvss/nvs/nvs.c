@@ -17,12 +17,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(fs_nvs, CONFIG_NVS_LOG_LEVEL);
 
-#ifdef CONFIG_ZTEST
-#define STATIC
-#else
-#define STATIC static
-#endif
-
 static int nvs_prev_ate(struct nvs_fs *fs, uint32_t *addr, struct nvs_ate *ate);
 static int nvs_ate_valid(struct nvs_fs *fs, uint16_t entry_addr,
 			 const struct nvs_ate *entry);
@@ -112,8 +106,8 @@ static inline size_t nvs_al_size(struct nvs_fs *fs, size_t len)
  * may include a header, primary data, and a tail. All buffers are
  * written as a single contiguous stream.
  */
-STATIC int nvs_flash_al_wrt_streams(struct nvs_fs *fs, uint32_t addr,
-				    const struct nvs_flash_wrt_stream *strm)
+ZTESTABLE_STATIC int nvs_flash_al_wrt_streams(struct nvs_fs *fs, uint32_t addr,
+					      const struct nvs_flash_wrt_stream *strm)
 {
 	const struct flash_parameters *fp = fs->flash_parameters;
 	size_t wbs = fp->write_block_size;
