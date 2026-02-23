@@ -132,6 +132,16 @@ see the following message in the terminal:
    ***** Booting Zephyr OS v4.2.0-xxx-xxxxxxxxxxxxx *****
    Hello World! ek_ra8m2/r7ka8m2jflcac/cm85
 
+For the CM33 core, you can use the ``--sysbuild`` flow to build a minimal first-core launcher image that
+starts the CM33 core.
+
+.. zephyr-app-commands::
+   :tool: west
+   :zephyr-app: samples/hello_world
+   :board: ek_ra8m2/r7ka8m2jflcac/cm33
+   :goals: build flash
+   :west-args: --sysbuild
+
 Flashing
 ========
 
