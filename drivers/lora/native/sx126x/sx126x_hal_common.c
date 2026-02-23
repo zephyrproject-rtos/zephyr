@@ -96,6 +96,35 @@ int sx126x_hal_configure_gpio(const struct gpio_dt_spec *gpio,
 	return 0;
 }
 
+int sx126x_hal_wakeup(const struct device *dev)
+{
+	const struct sx126x_hal_config *config = dev->config;
+	uint8_t buf[2] = { SX126X_CMD_GET_STATUS, 0x00 };
+	struct spi_buf tx_buf = {
+		.buf = buf,
+		.len = sizeof(buf),
+	};
+	struct spi_buf_set tx_set = {
+		.buffers = &tx_buf,
+		.count = 1,
+	};
+	int ret;
+
+	/*
+	 * Send a write-only GET_STATUS command. The NSS falling edge wakes
+	 * the chip from sleep. Use spi_write_dt() (TX-only) rather than
+	 * spi_transceive_dt() because the chip's MISO line is undefined
+	 * during sleep mode.
+	 */
+	ret = spi_write_dt(&config->spi, &tx_set);
+	if (ret < 0) {
+		LOG_ERR("Wakeup SPI failed: %d", ret);
+		return ret;
+	}
+
+	return sx126x_hal_wait_busy(dev, SX126X_BUSY_DEFAULT_TIMEOUT);
+}
+
 int sx126x_hal_write_cmd(const struct device *dev, uint8_t opcode,
 			 const uint8_t *data, size_t len)
 {
@@ -116,6 +145,12 @@ int sx126x_hal_write_cmd(const struct device *dev, uint8_t opcode,
 
 	if (opcode != SX126X_CMD_SET_SLEEP) {
 		ret = sx126x_hal_wait_busy(dev, SX126X_BUSY_DEFAULT_TIMEOUT);
+	} else {
+		/*
+		 * The chip needs time to fully enter sleep mode before the
+		 * next NSS falling edge can wake it up reliably.
+		 */
+		k_busy_wait(500);
 	}
 
 	return ret;
