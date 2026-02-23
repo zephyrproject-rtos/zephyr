@@ -23,6 +23,8 @@ zephyr_library_sources_ifdef(CONFIG_HDLC_RCP_IF
 zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_BLE_TCAT ble.c)
 zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_COPROCESSOR uart.c)
 zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_CRYPTO_PSA crypto_psa.c)
+# crypto_psa.c needs psa/crypto.h; link with mbedTLS to get PSA include path
+zephyr_library_link_libraries_ifdef(CONFIG_OPENTHREAD_CRYPTO_PSA mbedTLS)
 zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_EXTERNAL_HEAP memory.c)
 zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_PLATFORM_MESSAGE_MANAGEMENT messagepool.c)
 zephyr_library_sources_ifdef(CONFIG_SETTINGS settings.c)
