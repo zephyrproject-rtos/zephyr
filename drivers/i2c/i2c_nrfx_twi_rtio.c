@@ -185,6 +185,9 @@ static DEVICE_API(i2c, i2c_nrfx_twi_rtio_driver_api) = {
 	BUILD_ASSERT(I2C_FREQUENCY(DT_DRV_INST(idx)) !=                                           \
 			I2C_NRFX_TWI_INVALID_FREQUENCY,                                           \
 			"Wrong I2C " #idx " frequency setting in dts");                           \
+	I2C_RTIO_DEFINE(_i2c##idx##_twi_rtio,                                                     \
+			DT_INST_PROP_OR(idx, sq_size, CONFIG_I2C_RTIO_SQ_SIZE),                   \
+			DT_INST_PROP_OR(idx, cq_size, CONFIG_I2C_RTIO_CQ_SIZE));                  \
 	static struct i2c_nrfx_twi_rtio_data twi_##idx##_data = {                                 \
 		.twi = NRFX_TWI_INSTANCE(DT_INST_REG_ADDR(idx)),	                          \
 		.ctx = &_i2c##idx##_twi_rtio,                                                     \
@@ -203,9 +206,6 @@ static DEVICE_API(i2c, i2c_nrfx_twi_rtio_driver_api) = {
 		i2c_rtio_init(dev_data->ctx, dev);                                                \
 		return i2c_nrfx_twi_init(dev);                                                    \
 	}                                                                                         \
-	I2C_RTIO_DEFINE(_i2c##idx##_twi_rtio,                                                     \
-			DT_INST_PROP_OR(n, sq_size, CONFIG_I2C_RTIO_SQ_SIZE),                     \
-			DT_INST_PROP_OR(n, cq_size, CONFIG_I2C_RTIO_CQ_SIZE));                    \
 	PINCTRL_DT_INST_DEFINE(idx);                                                              \
 	static const struct i2c_nrfx_twi_config twi_##idx##z_config = {                           \
 		.config = {                                                                       \
