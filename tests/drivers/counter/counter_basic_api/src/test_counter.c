@@ -184,6 +184,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_RENESAS_RZA2M_OSTM
 	DEVS_FOR_DT_COMPAT(renesas_rza2m_ostm_counter)
 #endif
+#ifdef CONFIG_COUNTER_BFLB_TIMER
+	DEVS_FOR_DT_COMPAT(bflb_timer_channel)
+#endif
 };
 
 static const struct device *const period_devs[] = {
