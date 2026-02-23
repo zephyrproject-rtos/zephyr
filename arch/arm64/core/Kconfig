@@ -255,6 +255,12 @@ config ARMV9_A
 	  performance, and machine learning capabilities while maintaining
 	  backward compatibility with ARMv8-A software.
 
+configdefault DCACHE_LINE_SIZE
+	default 64
+
+configdefault ICACHE_LINE_SIZE
+	default 64
+
 rsource "xen/Kconfig"
 
 endif # CPU_CORTEX_A
@@ -275,6 +281,12 @@ config ARMV8_R
 	  virtualization at the highest security level while retaining the
 	  Protected Memory System Architecture (PMSA) based on a Memory Protection
 	  Unit (MPU). It supports the A32 and T32 instruction sets.
+
+configdefault DCACHE_LINE_SIZE
+	default 64
+
+configdefault ICACHE_LINE_SIZE
+	default 64
 
 rsource "cortex_r/Kconfig"
 
