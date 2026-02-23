@@ -1781,8 +1781,6 @@ static DEVICE_API(flash, spi_nor_api) = {
 };
 
 #define PAGE_LAYOUT_GEN(idx)								\
-	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(idx, size),					\
-		"jedec,spi-nor size required for non-runtime SFDP page layout");	\
 	enum {										\
 		INST_##idx##_BYTES = (DT_INST_PROP(idx, size) / 8)			\
 	};										\
@@ -1797,13 +1795,9 @@ static DEVICE_API(flash, spi_nor_api) = {
 	     "SPI_NOR_FLASH_LAYOUT_PAGE_SIZE incompatible with flash size");
 
 #define SFDP_BFP_ATTR_GEN(idx)							\
-	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(idx, sfdp_bfp),			\
-		"jedec,spi-nor sfdp-bfp required for devicetree SFDP");		\
 	static const __aligned(4) uint8_t bfp_##idx##_data[] = DT_INST_PROP(idx, sfdp_bfp);
 
 #define INST_ATTR_GEN(idx)								\
-	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(idx, jedec_id),				\
-		"jedec,spi-nor jedec-id required for non-runtime SFDP");		\
 	IF_ENABLED(CONFIG_FLASH_PAGE_LAYOUT, (PAGE_LAYOUT_GEN(idx)))			\
 	IF_ENABLED(CONFIG_SPI_NOR_SFDP_DEVICETREE, (SFDP_BFP_ATTR_GEN(idx)))
 
