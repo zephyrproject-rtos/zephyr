@@ -164,6 +164,18 @@ static const struct gpio_dt_spec ulpi_reset =
 
 #endif /* USB */
 
+/* Priority of ISR lower half thread */
+#define USB_ISR_LOWER_HALF_THREAD_PRIO K_PRIO_COOP(2)
+
+/* Size of ISR lower half thread stack */
+#define USB_ISR_LOWER_HALF_THREAD_STACK_SIZE 1024
+
+/* Number of messages in ISR -> lower half thread msgq */
+#define USB_ISR_MSGQ_SIZE 16
+
+/* Special "target" indicating message targets USB stack */
+#define USB_MSG_TARGET_STACK 0xFFu
+
 /* Size of a USB SETUP packet */
 #define SETUP_SIZE 8
 
@@ -184,22 +196,116 @@ struct usb_dc_stm32_ep_state {
 	struct k_sem write_sem;	/** Write boolean semaphore */
 };
 
+/* ISR -> lower half message */
+struct usb_dc_stm32_msg {
+	union {
+		enum usb_dc_status_code stack_cb_status;
+		enum usb_dc_ep_cb_status_code ep_cb_status;
+	};
+	/* endpoint address or USB_MSG_TARGET_STACK */
+	uint8_t target;
+};
+
 /* Driver state */
 struct usb_dc_stm32_state {
 	PCD_HandleTypeDef pcd;	/* Storage for the HAL_PCD api */
 	usb_dc_status_callback status_cb; /* Status callback */
 	struct usb_dc_stm32_ep_state out_ep_state[USB_NUM_BIDIR_ENDPOINTS];
 	struct usb_dc_stm32_ep_state in_ep_state[USB_NUM_BIDIR_ENDPOINTS];
+	struct k_thread isr_lower_half_thread;
+	struct k_msgq isr_msgq;
 	uint8_t ep_buf[USB_NUM_BIDIR_ENDPOINTS][EP_MPS];
+	char msgq_buf[USB_ISR_MSGQ_SIZE * sizeof(struct usb_dc_stm32_msg)];
 
 #if defined(USB) || defined(USB_DRD_FS)
 	uint32_t pma_offset;
 #endif /* USB */
 };
 
+K_THREAD_STACK_DEFINE(usb_dc_stm32_thr_stk, USB_ISR_LOWER_HALF_THREAD_STACK_SIZE);
+
 static struct usb_dc_stm32_state usb_dc_stm32_state;
 
 /* Internal functions */
+
+/* these helpers are defined as macros such that LOG_ERR() call
+ * is performed in caller's scope and has proper function name
+ */
+#define SEND_MSG_TO_LOWERHALF(_status_field, _status, _target)			\
+	do {									\
+		struct usb_dc_stm32_msg _msg = {				\
+			. _status_field = _status,				\
+			.target = _target,					\
+		};								\
+										\
+		int _errcode = k_msgq_put(					\
+			&usb_dc_stm32_state.isr_msgq, &_msg, K_NO_WAIT);	\
+		if (_errcode != 0) {						\
+			LOG_ERR("k_msgq_put() failed: %d", _errcode);		\
+			__ASSERT_NO_MSG(0);					\
+		}								\
+	} while (0)
+
+#define usb_dc_stm32_send_stack_msg(_status)				\
+	SEND_MSG_TO_LOWERHALF(stack_cb_status, _status, USB_MSG_TARGET_STACK)
+
+#define usb_dc_stm32_send_ep_msg(_ep, _status)				\
+	SEND_MSG_TO_LOWERHALF(ep_cb_status, _status, _ep)
+
+int usb_dc_ep_start_read(uint8_t ep, uint8_t *data, uint32_t max_data_len);
+
+static void usb_dc_stm32_isr_lower_half(void *a1, void *a2, void *a3)
+{
+	ARG_UNUSED(a1);
+	ARG_UNUSED(a2);
+	ARG_UNUSED(a3);
+
+	struct usb_dc_stm32_state *state = &usb_dc_stm32_state;
+	struct usb_dc_stm32_msg msg;
+	int res;
+
+	while (true) {
+		res = k_msgq_get(&state->isr_msgq, &msg, K_FOREVER);
+		__ASSERT_NO_MSG(res == 0);
+
+		if (msg.target == USB_MSG_TARGET_STACK) {
+			if (state->status_cb != NULL) {
+				state->status_cb(msg.stack_cb_status, NULL);
+			}
+
+			continue;
+		}
+
+		/* Endpoint target */
+		struct usb_dc_stm32_ep_state *ep_state;
+		const uint8_t ep_idx = USB_EP_GET_IDX(msg.target);
+
+		if (USB_EP_DIR_IS_IN(msg.target)) {
+			ep_state = &usb_dc_stm32_state.in_ep_state[ep_idx];
+		} else { /* target is OUT ep */
+			ep_state =  &usb_dc_stm32_state.out_ep_state[ep_idx];
+		}
+
+		if (ep_state->cb == NULL) {
+			continue;
+		}
+
+		ep_state->cb(msg.target, msg.ep_cb_status);
+
+		/* Special handling for SETUP event */
+		if (msg.ep_cb_status == USB_DC_EP_SETUP) {
+			struct usb_setup_packet *setup =
+				(void *)usb_dc_stm32_state.pcd.Setup;
+
+			if (!(setup->wLength == 0U) &&
+				usb_reqtype_is_to_device(setup)) {
+				usb_dc_ep_start_read(EP0_OUT,
+						     usb_dc_stm32_state.ep_buf[EP0_IDX],
+						     setup->wLength);
+			}
+		}
+	}
+}
 
 static bool usb_dc_stm32_clock_enabled(void)
 {
@@ -236,7 +342,7 @@ static void usb_dc_stm32_isr(const void *arg)
 #ifdef CONFIG_USB_DEVICE_SOF
 void HAL_PCD_SOFCallback(PCD_HandleTypeDef *hpcd)
 {
-	usb_dc_stm32_state.status_cb(USB_DC_SOF, NULL);
+	usb_dc_stm32_send_stack_msg(USB_DC_SOF);
 }
 #endif
 
@@ -603,6 +709,17 @@ static int usb_dc_stm32_init(void)
 		k_sem_init(&usb_dc_stm32_state.in_ep_state[i].write_sem, 1, 1);
 	}
 #endif /* USB */
+
+	k_msgq_init(&usb_dc_stm32_state.isr_msgq, usb_dc_stm32_state.msgq_buf,
+		    sizeof(struct usb_dc_stm32_msg), USB_ISR_MSGQ_SIZE);
+
+	k_thread_create(&usb_dc_stm32_state.isr_lower_half_thread,
+			usb_dc_stm32_thr_stk,
+			K_THREAD_STACK_SIZEOF(usb_dc_stm32_thr_stk),
+			usb_dc_stm32_isr_lower_half,
+			NULL, NULL, NULL,
+			USB_ISR_LOWER_HALF_THREAD_PRIO,
+			K_ESSENTIAL, K_NO_WAIT);
 
 	IRQ_CONNECT(USB_IRQ, USB_IRQ_PRI,
 		    usb_dc_stm32_isr, 0, 0);
@@ -1202,50 +1319,39 @@ void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
 		k_sem_give(&usb_dc_stm32_state.in_ep_state[i].write_sem);
 	}
 
-	if (usb_dc_stm32_state.status_cb) {
-		usb_dc_stm32_state.status_cb(USB_DC_RESET, NULL);
-	}
+	usb_dc_stm32_send_stack_msg(USB_DC_RESET);
 }
 
 void HAL_PCD_ConnectCallback(PCD_HandleTypeDef *hpcd)
 {
 	LOG_DBG("");
 
-	if (usb_dc_stm32_state.status_cb) {
-		usb_dc_stm32_state.status_cb(USB_DC_CONNECTED, NULL);
-	}
+	usb_dc_stm32_send_stack_msg(USB_DC_CONNECTED);
 }
 
 void HAL_PCD_DisconnectCallback(PCD_HandleTypeDef *hpcd)
 {
 	LOG_DBG("");
 
-	if (usb_dc_stm32_state.status_cb) {
-		usb_dc_stm32_state.status_cb(USB_DC_DISCONNECTED, NULL);
-	}
+	usb_dc_stm32_send_stack_msg(USB_DC_DISCONNECTED);
 }
 
 void HAL_PCD_SuspendCallback(PCD_HandleTypeDef *hpcd)
 {
 	LOG_DBG("");
 
-	if (usb_dc_stm32_state.status_cb) {
-		usb_dc_stm32_state.status_cb(USB_DC_SUSPEND, NULL);
-	}
+	usb_dc_stm32_send_stack_msg(USB_DC_SUSPEND);
 }
 
 void HAL_PCD_ResumeCallback(PCD_HandleTypeDef *hpcd)
 {
 	LOG_DBG("");
 
-	if (usb_dc_stm32_state.status_cb) {
-		usb_dc_stm32_state.status_cb(USB_DC_RESUME, NULL);
-	}
+	usb_dc_stm32_send_stack_msg(USB_DC_RESUME);
 }
 
 void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
 {
-	struct usb_setup_packet *setup = (void *)usb_dc_stm32_state.pcd.Setup;
 	struct usb_dc_stm32_ep_state *ep_state;
 
 	LOG_DBG("");
@@ -1258,16 +1364,7 @@ void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
 	memcpy(&usb_dc_stm32_state.ep_buf[EP0_IDX],
 	       usb_dc_stm32_state.pcd.Setup, ep_state->read_count);
 
-	if (ep_state->cb) {
-		ep_state->cb(EP0_OUT, USB_DC_EP_SETUP);
-
-		if (!(setup->wLength == 0U) &&
-		    usb_reqtype_is_to_device(setup)) {
-			usb_dc_ep_start_read(EP0_OUT,
-					     usb_dc_stm32_state.ep_buf[EP0_IDX],
-					     setup->wLength);
-		}
-	}
+	usb_dc_stm32_send_ep_msg(EP0_OUT, USB_DC_EP_SETUP);
 }
 
 void HAL_PCD_DataOutStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
@@ -1285,9 +1382,7 @@ void HAL_PCD_DataOutStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 	usb_dc_ep_get_read_count(ep, &ep_state->read_count);
 	ep_state->read_offset = 0U;
 
-	if (ep_state->cb) {
-		ep_state->cb(ep, USB_DC_EP_DATA_OUT);
-	}
+	usb_dc_stm32_send_ep_msg(ep, USB_DC_EP_DATA_OUT);
 }
 
 void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
@@ -1302,9 +1397,7 @@ void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 
 	k_sem_give(&ep_state->write_sem);
 
-	if (ep_state->cb) {
-		ep_state->cb(ep, USB_DC_EP_DATA_IN);
-	}
+	usb_dc_stm32_send_ep_msg(ep, USB_DC_EP_DATA_IN);
 }
 
 void HAL_PCD_ISOINIncompleteCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
