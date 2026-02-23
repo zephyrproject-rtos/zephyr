@@ -26,4 +26,5 @@ supported:
   - adc
   - entropy
   - crypto
+  - counter
 vendor: bflb
