@@ -6,6 +6,44 @@
 #include <andes_csr.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/arch/cpu.h>
+
+#include "../../core/asm_macros.inc"
+
+/* Zero the memory from \start to \end. */
+	.macro nds_zero_region start, end
+	j .Lcheck\@
+.Lloop\@:
+	sr x0, 0(\start)
+	addi \start, \start, RV_REGSIZE
+.Lcheck\@:
+	bltu \start, \end, .Lloop\@
+	.endm
+
+/*
+ * If the ECC of the local memory is enabled, temporarily disable it and
+ * clear the memory from \start to \end to regenerate the ECC codes.
+ */
+	.macro nds_lm_ecc_init csr, eccen, start, end
+	csrr t0, \csr
+	andi t0, t0, \eccen
+	beqz t0, .Ldone\@
+	csrci \csr, \eccen
+	nds_zero_region \start, \end
+	/* Restore the ECC settings. */
+	csrs \csr, t0
+.Ldone\@:
+	.endm
+
+/* Disable the local memory if \cfg reports that it is present. */
+	.macro nds_lm_disable cfg, size_mask, csr, en
+	csrr t0, \cfg
+	li t1, \size_mask
+	and t1, t0, t1
+	beqz t1, .Ldone\@
+	csrci \csr, \en
+.Ldone\@:
+	.endm
 
 /* exports */
 GTEXT(__reset)
@@ -72,6 +110,48 @@ check_cm_enabled:
 
 cache_enable_finish:
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(andestech_l2c) */
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(andestech_ilm)
+	/* Enable ILM */
+	csrsi NDS_MILMB, NDS_MILMB_IEN
+#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_itcm)) && defined(CONFIG_XIP) && \
+	!DT_SAME_NODE(DT_CHOSEN(zephyr_itcm), DT_CHOSEN(zephyr_flash))
+	/*
+	 * When XIP=n, or when the program runs from ILM, the earlier boot
+	 * stage or loader is responsible for initializing ILM and its ECC.
+	 *
+	 * Only the Zephyr ITCM sections, from the start of ITCM to
+	 * __itcm_end, are cleared.
+	 */
+	li t1, DT_REG_ADDR(DT_CHOSEN(zephyr_itcm))
+	la t2, __itcm_end
+	nds_lm_ecc_init NDS_MILMB, NDS_MILMB_ECCEN, t1, t2
+#endif
+#else
+	/* Disable ILM to avoid relocation accessing overlaid DDR. */
+	nds_lm_disable NDS_MICM_CFG, NDS_MICM_CFG_ILMSZ, NDS_MILMB, NDS_MILMB_IEN
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(andestech_dlm)
+	/* Enable DLM. */
+	csrsi NDS_MDLMB, NDS_MDLMB_DEN
+#ifdef CONFIG_XIP
+	/*
+	 * When XIP=n, the earlier boot stage or loader is responsible for
+	 * initializing DLM and its ECC before being loaded.
+	 *
+	 * The entire DLM region is cleared to support Zephyr DTCM, data, bss,
+	 * and stack usage.
+	 */
+	li t1, DT_REG_ADDR(DT_INST(0, andestech_dlm))
+	li t2, DT_REG_SIZE(DT_INST(0, andestech_dlm))
+	add t2, t1, t2
+	nds_lm_ecc_init NDS_MDLMB, NDS_MDLMB_ECCEN, t1, t2
+#endif
+#else
+	/* Disable DLM to avoid relocation accessing overlaid DDR. */
+	nds_lm_disable NDS_MDCM_CFG, NDS_MDCM_CFG_DLMSZ, NDS_MDLMB, NDS_MDLMB_DEN
 #endif
 
 	/* Enable misaligned access and non-blocking load */
