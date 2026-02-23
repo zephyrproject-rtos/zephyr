@@ -742,6 +742,9 @@
 			reg = <0 DT_SIZE_M(2)>;
 			erase-block-size = <DT_SIZE_K(8)>;
 			write-block-size = <16>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
 		};
 
 		uuid: uuid@1100000 {
