@@ -99,6 +99,17 @@ config USE_DT_CODE_PARTITION
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
 DT_CHOSEN_Z_FLASH := zephyr,flash
+DT_COMPAT_Z_MAPPED_PARTITION := zephyr,mapped-partition
+
+config FLASH_USES_MAPPED_PARTITION
+	bool
+	default $(dt_node_has_compat,$(dt_chosen_path,$(DT_CHOSEN_Z_CODE_PARTITION)),$(DT_COMPAT_Z_MAPPED_PARTITION))
+	depends on USE_DT_CODE_PARTITION
+	help
+	  Temporary Kconfig to indicate if underlying chosen chosen flash partition uses the
+	  zephyr,mapped-partition compatible, this is to allow ease of migration from
+	  fixed-partitions and should not be relied upon outside of the zephyr build system and
+	  will be removed in future.
 
 config FLASH_CODE_PARTITION_ADDRESS_INVALID
 	bool
