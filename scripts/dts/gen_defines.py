@@ -286,7 +286,7 @@ def write_special_props(node: edtlib.Node) -> None:
     # Macros that are special to bindings inherited from Linux, which
     # we can't capture with the current bindings language.
     write_pinctrls(node)
-    write_fixed_partitions(node)
+    write_partition_data(node)
     write_gpio_hogs(node)
     write_maps(node)
 
@@ -565,10 +565,12 @@ def write_pinctrls(node: edtlib.Node) -> None:
                           f"DT_{ph.z_path_id}")
 
 
-def write_fixed_partitions(node: edtlib.Node) -> None:
-    # Macros for child nodes of each fixed-partitions node.
+def write_partition_data(node: edtlib.Node) -> None:
+    # Macros for partition nodes (fixed-partitions, fixed-subpartitions, zephyr,mapped-partition)
 
-    if not (node.parent and ("fixed-partitions" in node.parent.compats or "fixed-subpartitions" in node.parent.compats)):
+    if not (node.parent and ("fixed-partitions" in node.parent.compats or
+        "zephyr,mapped-partition" in node.compats or
+        "fixed-subpartitions" in node.parent.compats)):
         return
 
     global flash_area_num
@@ -1066,6 +1068,25 @@ def write_global_macros(edt: edtlib.EDT):
 
                         out_dt_define(macro, val)
                         out_dt_define(macro + "_EXISTS", 1)
+            elif compat == "zephyr,mapped-partition":
+                parent = node.parent
+
+                while parent and "soc-nv-flash" not in parent.compats:
+                    parent = parent.parent
+
+                if not parent:
+                    err(f"zephyr,mapped-partition node lacks soc-nv-flash parent: {node.path}")
+
+                out_comment("parent NVM identifier:")
+                out_dt_define(f"{node.z_path_id}_NVM_DEVICE", f"DT_{parent.z_path_id}")
+
+                if "label" in node.props:
+                    label = node.props["label"].val
+                    macro = f"COMPAT_{str2ident(compat)}_LABEL_{str2ident(label)}"
+                    val = f"DT_{node.z_path_id}"
+
+                    out_dt_define(macro, val)
+                    out_dt_define(macro + "_EXISTS", 1)
 
     out_comment('Macros for compatibles with status "okay" nodes\n')
     for compat, okay_nodes in edt.compat2okay.items():
