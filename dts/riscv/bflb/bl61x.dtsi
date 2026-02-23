@@ -325,6 +325,33 @@
 			interrupt-parent = <&clic>;
 		};
 
+		timer: timer@2000a500 {
+			compatible = "bflb,timer";
+			reg = <0x2000a500 0x100>;
+			clocks = <&clk_crystal>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			timer0: channel@0 {
+				compatible = "bflb,timer-channel";
+				reg = <0>;
+				status = "disabled";
+
+				interrupts = <52 1>;
+				interrupt-parent = <&clic>;
+			};
+
+			timer1: channel@1 {
+				compatible = "bflb,timer-channel";
+				reg = <1>;
+				status = "disabled";
+
+				interrupts = <53 1>;
+				interrupt-parent = <&clic>;
+			};
+		};
+
 		flashctrl: flash-controller@2000b000 {
 			compatible = "bflb,flash-controller";
 			reg = <0x2000b000 0x1000>;
@@ -373,6 +400,12 @@
 			compatible = "bflb,aon-regulator";
 			reg = <0x2000f000 0x1000>;
 			status = "okay";
+		};
+
+		rtc0: rtc@2000f000 {
+			compatible = "bflb,rtc";
+			reg = <0x2000f000 0x20>;
+			status = "disabled";
 		};
 
 		retram: memory@20010000 {
