@@ -6,3 +6,6 @@ board:
   - name: ae350
     variants:
     - name: clic
+      variants:
+      - name: lm
+    - name: lm
