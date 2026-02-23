@@ -16,9 +16,15 @@
 
 LOG_MODULE_REGISTER(HX711, CONFIG_SENSOR_LOG_LEVEL);
 
+/* Max sample rate of HX711 is 145 Hz
+ * (assuming max external clock speed 20 MHz)
+ */
+#define HX711_SLEEP_BETWEEN_POLLING_MS 6
+
 static int hx711_spi_read_sample(const struct device *dev, int32_t *sample)
 {
 	const struct hx711_config *config = dev->config;
+	struct hx711_data *data = dev->data;
 
 	/*
 	 * Send out a clock pulse sequence through MOSI to HX711.
@@ -32,7 +38,7 @@ static int hx711_spi_read_sample(const struct device *dev, int32_t *sample)
 	uint8_t rx_buffer[6] = {0};
 	int ret;
 
-	switch (config->gain) {
+	switch (data->gain) {
 	case 64:
 		tx_buffer[6] = HX711_CHA_GAIN_64;
 		break;
@@ -63,23 +69,165 @@ static int hx711_spi_read_sample(const struct device *dev, int32_t *sample)
 	 * Need to "squash" it to recover the actual value.
 	 */
 
-	if (sample) {
-		*sample = 0;
+	if (!sample) {
+		return 0;
+	}
 
-		for (int i = 0; i < sizeof(rx_buffer); ++i) {
-			uint8_t b = rx_buffer[i];
+	*sample = 0;
 
-			*sample <<= 4;
-			*sample |= (b & 0x1) | (((b >> 3) & 0x1) << 1) | (((b >> 5) & 0x1) << 2) |
-				   (((b >> 7) & 0x1) << 3);
+	for (int i = 0; i < sizeof(rx_buffer); ++i) {
+		uint8_t b = rx_buffer[i];
+
+		*sample <<= 4;
+		*sample |= (b & 0x1) | (((b >> 3) & 0x1) << 1) | (((b >> 5) & 0x1) << 2) |
+			   (((b >> 7) & 0x1) << 3);
+	}
+
+	/* Discard unfilled bits and recover the sign */
+	*sample = (*sample << 8) >> 8;
+
+	return 0;
+}
+
+static int hx711_sample_fetch_impl(const struct device *dev)
+{
+	const struct hx711_config *config = dev->config;
+	struct hx711_data *data = dev->data;
+	int32_t sample;
+	int ret;
+
+	ret = hx711_spi_read_sample(dev, &sample);
+
+	if (ret < 0) {
+		LOG_ERR("Failed to fetch sample.");
+		return ret;
+	}
+
+	data->sample_uv = ((int64_t)sample * config->avdd_uv / HX711_SAMPLE_MAX) / 2 / data->gain;
+
+	return 0;
+}
+
+#if defined(CONFIG_HX711_SPI_TRIGGER)
+static int hx711_configure_gpio_interrupt(const struct device *dev, bool enable)
+{
+	const struct hx711_config *config = dev->config;
+	struct hx711_data *data = dev->data;
+	int ret;
+
+	if (enable) {
+		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_TRIGGER);
+		if (ret < 0) {
+			LOG_ERR("could not apply pin config, return code %d", ret);
+			return ret;
 		}
 
-		/* Discard unfilled bits and recover the sign */
-		*sample = (*sample << 8) >> 8;
+		ret = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_FALLING);
+		if (ret < 0) {
+			LOG_ERR("could not set up gpio interrupt, return code %d", ret);
+			return ret;
+		}
+
+		data->trigger_armed = true;
+	} else {
+		ret = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_DISABLE);
+		if (ret < 0) {
+			LOG_ERR("could not set up gpio interrupt, return code %d", ret);
+			return ret;
+		}
+
+		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0) {
+			LOG_ERR("could not apply pin config, return code %d", ret);
+			return ret;
+		}
+
+		data->trigger_armed = false;
 	}
 
 	return 0;
 }
+
+static void hx711_gpio_irq_handler(const struct device *port, struct gpio_callback *cb,
+				   gpio_port_pins_t pins)
+{
+	struct hx711_data *data = CONTAINER_OF(cb, struct hx711_data, gpio_cb);
+
+	hx711_configure_gpio_interrupt(data->dev, false);
+
+#if defined(CONFIG_HX711_SPI_TRIGGER_OWN_THREAD)
+	k_work_submit_to_queue(&data->work_q, &data->work);
+#else
+	k_work_submit(&data->work);
+#endif
+}
+
+static void hx711_gpio_irq_work_handler(struct k_work *item)
+{
+	struct hx711_data *data = CONTAINER_OF(item, struct hx711_data, work);
+	const struct device *dev = data->dev;
+
+	if (data->data_ready_handler != NULL) {
+		data->data_ready_handler(dev, data->data_ready_trigger);
+	}
+
+	hx711_configure_gpio_interrupt(data->dev, true);
+}
+
+static int hx711_gpio_irq_init(const struct device *dev)
+{
+	const struct hx711_config *config = dev->config;
+	struct hx711_data *data = dev->data;
+	int ret;
+
+	if (!gpio_is_ready_dt(&config->int_gpio)) {
+		LOG_ERR("gpio %s is not ready", config->int_gpio.port->name);
+		return -EIO;
+	}
+
+	gpio_init_callback(&data->gpio_cb, hx711_gpio_irq_handler, BIT(config->int_gpio.pin));
+
+	ret = gpio_add_callback(config->int_gpio.port, &data->gpio_cb);
+	if (ret != 0) {
+		LOG_ERR("Failed at gpio_add_callback_dt for int_gpio, return code %d", ret);
+		return ret;
+	}
+
+	data->dev = dev;
+
+#if defined(CONFIG_HX711_SPI_TRIGGER_OWN_THREAD)
+	k_work_queue_init(&data->work_q);
+	k_work_queue_start(&data->work_q, data->thread_stack, CONFIG_HX711_SPI_THREAD_STACK_SIZE,
+			   K_PRIO_COOP(CONFIG_HX711_SPI_THREAD_PRIORITY), NULL);
+#endif
+
+	data->work.handler = hx711_gpio_irq_work_handler;
+
+	return 0;
+}
+
+static int hx711_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
+			     sensor_trigger_handler_t handler)
+{
+	const struct hx711_config *config = dev->config;
+	struct hx711_data *data = dev->data;
+
+	if (!config->int_gpio.port || trig->type != SENSOR_TRIG_DATA_READY) {
+		return -ENOTSUP;
+	}
+
+	hx711_configure_gpio_interrupt(data->dev, false);
+
+	data->data_ready_handler = handler;
+	data->data_ready_trigger = trig;
+
+	if (handler) {
+		hx711_configure_gpio_interrupt(dev, true);
+	}
+
+	return 0;
+}
+#endif
 
 static int hx711_sample_wait(const struct device *dev)
 {
@@ -114,10 +262,7 @@ static int hx711_sample_wait(const struct device *dev)
 			return -EAGAIN;
 		}
 
-		/* Max sample rate of HX711 is 145 Hz
-		 * (assuming max external clock speed 20 MHz)
-		 */
-		k_msleep(6);
+		k_msleep(HX711_SLEEP_BETWEEN_POLLING_MS);
 	}
 
 	return 0;
@@ -125,30 +270,33 @@ static int hx711_sample_wait(const struct device *dev)
 
 static int hx711_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
-	const struct hx711_config *config = dev->config;
 	struct hx711_data *data = dev->data;
-	int32_t sample;
 	int ret;
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_VOLTAGE chan ==
-			(enum sensor_channel)SENSOR_CHAN_HX711_MASS);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_VOLTAGE ||
+			chan == (enum sensor_channel)SENSOR_CHAN_HX711_MASS);
 
+#if defined(CONFIG_HX711_SPI_TRIGGER)
+	if (data->trigger_armed) {
+		LOG_ERR("cannot fetch when waiting for trigger");
+		return -EAGAIN;
+	}
+#endif
 	ret = hx711_sample_wait(dev);
 
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = hx711_spi_read_sample(dev, &sample);
+	ret = hx711_sample_fetch_impl(dev);
 
-	if (ret < 0) {
-		LOG_ERR("Failed to fetch sample.");
-		return ret;
+#if defined(CONFIG_HX711_SPI_TRIGGER)
+	if (data->data_ready_handler) {
+		hx711_configure_gpio_interrupt(dev, true);
 	}
+#endif
 
-	data->sample_uv = ((int64_t)sample * config->avdd_uv / HX711_SAMPLE_MAX) / 2 / config->gain;
-
-	return 0;
+	return ret;
 }
 
 static int hx711_channel_get(const struct device *dev, enum sensor_channel chan,
@@ -162,7 +310,7 @@ static int hx711_channel_get(const struct device *dev, enum sensor_channel chan,
 		val->val2 = data->sample_uv;
 		break;
 	case SENSOR_CHAN_HX711_MASS:
-		val->val1 = data->sample_uv * data->conv_factor_uv_to_g;
+		val->val1 = (data->sample_uv - data->offset) * data->conv_factor_uv_to_g;
 		val->val2 = 0;
 		break;
 	default:
@@ -205,6 +353,9 @@ static DEVICE_API(sensor, hx711_driver_api) = {
 	.sample_fetch = hx711_sample_fetch,
 	.channel_get = hx711_channel_get,
 	.attr_set = hx711_attr_set,
+#if defined(CONFIG_HX711_SPI_TRIGGER)
+	.trigger_set = hx711_trigger_set,
+#endif
 };
 
 static int hx711_init(const struct device *dev)
@@ -226,6 +377,12 @@ static int hx711_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+#if defined(CONFIG_HX711_SPI_TRIGGER)
+	if (hx711_gpio_irq_init(dev) < 0) {
+		return -ENODEV;
+	}
+#endif
+
 	return 0;
 }
 
@@ -233,12 +390,17 @@ static int hx711_init(const struct device *dev)
 	(SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_TRANSFER_MSB)
 
 #define HX711_DEFINE(inst)                                                                         \
-	static struct hx711_data hx711_data_##inst;                                                \
+	IF_ENABLED(CONFIG_HX711_SPI_TRIGGER, (PINCTRL_DT_INST_DEFINE(inst)));                      \
+	static struct hx711_data hx711_data_##inst = {                                             \
+		.gain = DT_INST_PROP(inst, gain),                                                  \
+	};                                                                                         \
 	static const struct hx711_config hx711_config_##inst = {                                   \
 		.spi = SPI_DT_SPEC_INST_GET(inst, HX711_SPI_OPERATION),                            \
-		.gain = DT_INST_PROP(inst, gain),                                                  \
 		.avdd_uv = DT_INST_PROP(inst, avdd) * 1000,                                        \
-	};                                                                                         \
+		IF_ENABLED(CONFIG_HX711_SPI_TRIGGER, (                                             \
+					.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),              \
+					.int_gpio = GPIO_DT_SPEC_INST_GET(inst, dout_trig_gpios),  \
+					)) }; \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, hx711_init, NULL,                                       \
 				     &hx711_data_##inst, &hx711_config_##inst, POST_KERNEL,        \
