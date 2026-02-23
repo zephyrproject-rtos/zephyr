@@ -1,0 +1,9 @@
+description: Bouffalo Lab RTC Counter (HBN-based)
+
+compatible: "bflb,rtc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
