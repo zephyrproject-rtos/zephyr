@@ -22,4 +22,5 @@ supported:
   - flash
   - entropy
   - crypto
+  - counter
 vendor: doiting
