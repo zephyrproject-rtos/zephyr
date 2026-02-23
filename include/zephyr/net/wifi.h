@@ -309,6 +309,8 @@ const char *wifi_bandwidth_txt(enum wifi_frequency_bandwidths bandwidth);
 #define WIFI_PSK_MAX_LEN 64
 /** Maximum WEP key length (WEP-104: 26 hex chars) */
 #define WIFI_WEP_KEY_MAX_LEN 26
+/** Length of the PBKDF2 key */
+#define WIFI_PSK_PBKDF2_KEY_LEN 32
 /** Max SAW password length */
 #define WIFI_SAE_PSWD_MAX_LEN 128
 /** MAC address length */
