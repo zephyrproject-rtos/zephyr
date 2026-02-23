@@ -1,0 +1,10 @@
+tests:
+  drivers.counter.capture:
+    tags:
+      - drivers
+      - counter
+      - gpio
+    depends_on: counter
+    filter: dt_compat_enabled("test-counter-capture")
+    min_ram: 16
+    timeout: 600
