@@ -1,0 +1,25 @@
+# Copyright (c) 2026 Zephyr Project Developers
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Avia Semiconductor HX711 24-bit ADC Specialized for Load Cells / Strain Gauges on SPI bus
+
+compatible: "avia,hx711-spi"
+
+include: ["spi-device.yaml", "sensor-device.yaml"]
+
+properties:
+  gain:
+    type: int
+    required: true
+    enum:
+      - 64
+      - 128
+    description: |
+      PGA gain for channel A
+
+  avdd:
+    type: int
+    required: true
+    description: |
+      AVDD value in milivolts, for converting samples to voltage

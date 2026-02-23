@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Zephyr Project Developers
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig HX711_SPI
+	bool "Avia Semiconductor HX711 24-bit ADC Specialized for Load Cells / Strain Gauges on SPI bus"
+	default y
+	depends on DT_HAS_AVIA_HX711_SPI_ENABLED
+	select SPI
+	help
+	  Enable driver for Avia Semiconductor HX711 24-bit ADC Specialized for
+	  Load Cells / Strain Gauges on SPI bus.
