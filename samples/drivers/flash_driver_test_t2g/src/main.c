@@ -52,7 +52,11 @@ int main(void)
 	// const struct device *flash_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 
 	/* Use the smif_0 or smif_1 for the flash driver */
+
+	// const struct device *flash_dev = DEVICE_DT_GET(DT_NODELABEL(smif0));
+
 	const struct device *flash_dev = DEVICE_DT_GET(DT_NODELABEL(smif0));
+
 	int ret;
 
 /* Option 1: 64-byte data array - For WFLASH */

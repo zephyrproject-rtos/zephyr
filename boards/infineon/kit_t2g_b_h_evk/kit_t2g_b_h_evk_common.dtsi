@@ -59,23 +59,24 @@
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
-        reserved-memory {
-		#address-cells = <1>;
+    reserved-memory {
+        #address-cells = <1>;
         #size-cells = <1>;
         sram_srom: memory@28000000 {
             reg = <0x28000000 DT_SIZE_K(2)>;
         };
         sram_m0plus: memory@28000800 {
-            reg = <0x28000800 DT_SIZE_K(12)>; /* Reduced to fit in 14KB sram0 */
+            reg = <0x28000800 DT_SIZE_K(30)>;
         };
-        sram_m7_0: memory@28040000  {
-            reg = <0x28040000  DT_SIZE_K(256)>; /* Full sram1 */
+        sram_m7_0: memory@28008000 {
+            reg = <0x28008000 DT_SIZE_K(224)>;
         };
-        sram_m7_1: memory@28084000 {
-            reg = <0x28084000 DT_SIZE_K(112)>; /* sram2, after 16KB IPC at 0x28080000 */
-		};
-	};
+        sram_m7_1: memory@28040000 {
+            reg = <0x28040000 DT_SIZE_K(256)>;
+        };
+    };
 };
+
 
 &code_flash0 {
 	partitions {
@@ -158,12 +159,14 @@ i2c9: &scb9 {
 
 &eth0_mac {
 	status = "okay";
-	pinctrl-0 = <&p26_6_eth_tx_clk &p26_2_eth_txd_0 &p26_3_eth_txd_1
-	&p26_4_eth_txd_2 &p26_5_eth_txd_3 &p26_1_eth_tx_en
-	&p27_3_eth_rx_clk &p26_7_eth_rxd_0 &p27_0_eth_rxd_1
-	&p27_1_eth_rxd_2 &p27_2_eth_rxd_3 &p27_4_eth_rx_ctl>;
+	pinctrl-0 = < &p26_2_eth_txd_0 &p26_3_eth_txd_1 &p26_4_eth_txd_2 &p26_5_eth_txd_3
+				&p26_0_eth_ref_clk &p26_1_eth_tx_en	&p26_6_eth_tx_clk
+				&p26_7_eth_rxd_0 &p27_0_eth_rxd_1 &p27_1_eth_rxd_2 &p27_2_eth_rxd_3
+				&p27_4_eth_rx_ctl &p27_3_eth_rx_clk  >;
+
 	pinctrl-names = "default";
 	phy-connection-type = "rgmii";
+
 	phy-handle = <&eth0_phy>;
 	clock-frequency = <125000000>;
 	local-mac-address = [b0 19 21 67 36 00];
@@ -174,11 +177,14 @@ i2c9: &scb9 {
 	pinctrl-0 = <&p27_5_eth_mdc &p27_6_eth_mdio>;
 	pinctrl-names = "default";
 
-	eth0_phy: phy@0 {
+	eth0_phy: phy@1 {
 		compatible = "ti,dp83867";
-		reg = <0x0>;
+		reg = <0x1>;
 		status = "okay";
-		reset-gpios = <&gpio_prt27 7 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio_prt27 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		ti,interface-type = "rgmii-id";
+		ti,rx-internal-delay = <8>;
+		ti,tx-internal-delay = <8>;
 	};
 };
 
@@ -219,14 +225,6 @@ i2c9: &scb9 {
 
 &dma0 {
 	status = "okay";
-};
-
-&eth0_mac {
-       status = "disabled";
-};
-
-&eth0_mdio {
-       status = "disabled";
 };
 
 &gpio_prt16 {
@@ -281,10 +279,16 @@ i2c9: &scb9 {
 &pll0 {
 	status = "okay";
 };
+
 &pll1 {
 	status = "okay";
 };
+
 &pll2 {
+	status = "okay";
+};
+
+&pll3 {
 	status = "okay";
 };
 
@@ -311,6 +315,6 @@ i2c9: &scb9 {
 	status = "okay";
 };
 &clk_hf7 {
-	status = "disabled";
+	status = "okay";
 };
 

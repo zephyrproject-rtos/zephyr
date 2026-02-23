@@ -21,3 +21,13 @@
 &p13_3_scb3_uart_cts {
 	input-enable;
 };
+
+&p15_2_scb9_i2c_scl {
+    drive-open-drain;
+    input-enable;
+};
+
+&p15_1_scb9_i2c_sda {
+    drive-open-drain;
+    input-enable;
+};
