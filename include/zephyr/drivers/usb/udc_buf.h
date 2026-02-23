@@ -15,7 +15,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
 
-#if defined(CONFIG_DCACHE) && !defined(CONFIG_UDC_BUF_FORCE_NOCACHE)
+#if defined(CONFIG_DCACHE_LINE_SIZE) && CONFIG_DCACHE_LINE_SIZE > 0 \
+	&& !defined(CONFIG_UDC_BUF_FORCE_NOCACHE)
 /*
  * Here we try to get DMA-safe buffers, but we lack a consistent source of
  * information about data cache properties, such as line cache size, and a
