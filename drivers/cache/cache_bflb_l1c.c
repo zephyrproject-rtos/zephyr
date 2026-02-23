@@ -134,10 +134,10 @@ void cache_data_disable(void)
 	uint32_t tmp;
 
 	tmp = *((volatile uint32_t *)(cache_cfg.base + L1C_CONFIG_OFFSET));
-	tmp |= 1 << L1C_BYPASS_POS;
 	tmp &= ~(1 << L1C_CACHEABLE_POS);
-	tmp &= ~L1C_WAY_DIS_MSK;
+	tmp |= L1C_WAY_DIS_MSK;
 	tmp &= ~(1 << L1C_CNT_EN_POS);
+	tmp &= ~(1 << L1C_BYPASS_POS);
 	*((volatile uint32_t *)(cache_cfg.base + L1C_CONFIG_OFFSET)) = tmp;
 }
 
