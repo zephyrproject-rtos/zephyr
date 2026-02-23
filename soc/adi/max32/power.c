@@ -15,12 +15,24 @@
 #include <wrap_max32_lp.h>
 #include <wrap_max32_sys.h>
 
+#include "gpio.h"
+
 #include <zephyr/logging/log.h>
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
 
 #ifdef CONFIG_PM_S2RAM
 extern int pm_s2ram_suspend(pm_s2ram_system_off_fn_t system_off);
+
+#define DT_DRV_COMPAT           adi_max32_gpio
+#define GPIO_PORT_NUM_IRQ(_num) {MXC_GPIO_GET_IDX((mxc_gpio_regs_t *)DT_INST_REG_ADDR(_num)), \
+				 DT_INST_IRQN(_num)},
+struct {
+	uint8_t port;
+	int irq;
+} gpio_wakeup_sources[] = {DT_INST_FOREACH_STATUS_OKAY(GPIO_PORT_NUM_IRQ)};
+#undef DT_DRV_COMPAT
+
 #endif /* CONFIG_PM_S2RAM */
 
 #define SYS_TIMER_COMPANION DT_CHOSEN(zephyr_system_timer_companion)
@@ -90,10 +102,20 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	case PM_STATE_SUSPEND_TO_RAM:
 #ifdef CONFIG_PM_S2RAM
 		max32xx_system_init();
-		Wrap_MXC_LP_ExitBackupMode();
 #if DT_NODE_HAS_COMPAT(SYS_TIMER_COMPANION, adi_max32_wut)
 		MXC_LP_EnableWUTAlarmWakeup();
 #endif
+		/* Check if GPIO pins caused wakeup and manually trigger interrupts */
+		for (size_t i = 0; i < ARRAY_SIZE(gpio_wakeup_sources); i++) {
+			uint32_t wakeup_status =
+				MXC_LP_GetGPIOWakeupEnable(gpio_wakeup_sources[i].port) &
+				MXC_LP_GetGPIOWakeupStatus(gpio_wakeup_sources[i].port);
+			if (wakeup_status) {
+				NVIC_EnableIRQ(gpio_wakeup_sources[i].irq);
+				NVIC_SetPendingIRQ(gpio_wakeup_sources[i].irq);
+			}
+		}
+
 		LOG_DBG("exited PM state suspend to ram");
 #else
 		LOG_WRN("PM_STATE_SUSPEND_TO_RAM must be enabled by Kconfig option!");
