@@ -233,6 +233,27 @@ extern "C" {
 #define K_MEM_PARTITION_P_RX_U_RX ((k_mem_partition_attr_t) \
 	{PMP_R | PMP_X})
 
+/**
+ * @brief Evaluate Write-ability
+ *
+ * Evaluate whether the access permissions include write-ability.
+ *
+ * @param attr The k_mem_partition_attr_t object holding the
+ *             PMP attributes to be checked against write-ability.
+ */
+#define K_MEM_PARTITION_IS_WRITABLE(attr) (attr.pmp_attr & PMP_W)
+
+/**
+ * @brief Evaluate Execution allowance
+ *
+ * Evaluate whether the access permissions include execution.
+ *
+ * @param attr The k_mem_partition_attr_t object holding the
+ *             PMP attributes to be checked against execution
+ *             allowance.
+ */
+#define K_MEM_PARTITION_IS_EXECUTABLE(attr) (attr.pmp_attr & PMP_X)
+
 /* Typedef for the k_mem_partition attribute */
 typedef struct {
 	uint8_t pmp_attr;
