@@ -85,4 +85,6 @@ int sx126x_hal_configure_gpio(const struct gpio_dt_spec *gpio,
 int sx126x_hal_configure_tx_params(const struct device *dev, int8_t power,
 				   uint32_t frequency, uint8_t ramp_time);
 
+int sx126x_hal_wakeup(const struct device *dev);
+
 #endif /* ZEPHYR_DRIVERS_LORA_SX126X_SX126X_HAL_H_ */

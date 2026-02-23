@@ -34,23 +34,6 @@ static inline struct sx126x_hal_data *get_hal_data(const struct device *dev)
 	return &data->hal;
 }
 
-static int sx126x_hal_wakeup(const struct device *dev)
-{
-	const struct sx126x_hal_config *config = dev->config;
-	uint8_t tx_buf[2] = { SX126X_CMD_GET_STATUS, 0x00 };
-
-	struct spi_buf tx_spi_buf = {
-		.buf = tx_buf,
-		.len = sizeof(tx_buf),
-	};
-	struct spi_buf_set tx_set = {
-		.buffers = &tx_spi_buf,
-		.count = 1,
-	};
-
-	return spi_write_dt(&config->spi, &tx_set);
-}
-
 int sx126x_hal_reset(const struct device *dev)
 {
 	int ret;
@@ -64,17 +47,11 @@ int sx126x_hal_reset(const struct device *dev)
 
 	/*
 	 * After RCC reset, the radio is in sleep mode. Send a wakeup command
-	 * to allow the busy flag to be properly checked.
+	 * to transition into STDBY_RC so that BUSY can be properly checked.
 	 */
 	ret = sx126x_hal_wakeup(dev);
 	if (ret < 0) {
 		LOG_ERR("Wakeup failed: %d", ret);
-		return ret;
-	}
-
-	/* Wait for chip to be ready */
-	ret = sx126x_hal_wait_busy(dev, SX126X_BUSY_DEFAULT_TIMEOUT);
-	if (ret < 0) {
 		return ret;
 	}
 
