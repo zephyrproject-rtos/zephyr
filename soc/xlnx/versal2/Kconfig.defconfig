@@ -6,6 +6,9 @@
 
 if SOC_AMD_VERSAL2
 
+configdefault CACHE_MANAGEMENT
+	default y
+
 if SOC_AMD_VERSAL2_RPU
 
 config NUM_IRQS
