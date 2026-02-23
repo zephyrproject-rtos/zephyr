@@ -9,6 +9,8 @@
 #define ZEPHYR_DRIVERS_GPIO_GPIO_MAX14906_H_
 
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/spi.h>
 
 #define MAX14906_FAULT2_ENABLES 5
 #define MAX14906_CHANNELS       4
