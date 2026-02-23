@@ -257,51 +257,89 @@ static int max14906_ch_func(const struct device *dev, uint32_t ch, enum max14906
 
 static int gpio_max14906_port_set_bits_raw(const struct device *dev, gpio_port_pins_t pins)
 {
+	struct max14906_data *data = dev->data;
 	int ret;
 	uint32_t reg_val = 0;
 
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+
 	ret = MAX14906_REG_READ(dev, MAX14906_SETOUT_REG);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 	reg_val = ret | (pins & 0x0f);
 
-	return MAX14906_REG_WRITE(dev, MAX14906_SETOUT_REG, reg_val);
+	ret = MAX14906_REG_WRITE(dev, MAX14906_SETOUT_REG, reg_val);
+
+out:
+	k_mutex_unlock(&data->lock);
+	return ret;
 }
 
 static int gpio_max14906_port_clear_bits_raw(const struct device *dev, gpio_port_pins_t pins)
 {
+	struct max14906_data *data = dev->data;
 	int ret;
 	uint32_t reg_val = 0;
 
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+
 	ret = MAX14906_REG_READ(dev, MAX14906_SETOUT_REG);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 	reg_val = ret & ~(pins & 0x0f);
 
-	return MAX14906_REG_WRITE(dev, MAX14906_SETOUT_REG, reg_val);
+	ret = MAX14906_REG_WRITE(dev, MAX14906_SETOUT_REG, reg_val);
+
+out:
+	k_mutex_unlock(&data->lock);
+	return ret;
 }
 
 static int gpio_max14906_port_set_masked_raw(const struct device *dev,
 					     gpio_port_pins_t mask,
 					     gpio_port_value_t value)
 {
+	struct max14906_data *data = dev->data;
 	int ret;
 	uint32_t reg_val;
 
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+
 	ret = MAX14906_REG_READ(dev, MAX14906_SETOUT_REG);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 	reg_val = (ret & ~(mask & 0x0f)) | (value & mask & 0x0f);
 
-	return MAX14906_REG_WRITE(dev, MAX14906_SETOUT_REG, reg_val);
+	ret = MAX14906_REG_WRITE(dev, MAX14906_SETOUT_REG, reg_val);
+
+out:
+	k_mutex_unlock(&data->lock);
+	return ret;
 }
 
 static int gpio_max14906_config(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
+	struct max14906_data *data = dev->data;
 	int err = 0;
+
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
 
 	if ((flags & (GPIO_INPUT | GPIO_OUTPUT)) == GPIO_DISCONNECTED) {
 		return -ENOTSUP;
@@ -318,6 +356,8 @@ static int gpio_max14906_config(const struct device *dev, gpio_pin_t pin, gpio_f
 	if (flags & GPIO_INT_ENABLE) {
 		return -ENOTSUP;
 	}
+
+	k_mutex_lock(&data->lock, K_FOREVER);
 
 	switch (flags & GPIO_DIR_MASK) {
 	case GPIO_INPUT:
@@ -348,6 +388,7 @@ static int gpio_max14906_config(const struct device *dev, gpio_pin_t pin, gpio_f
 		break;
 	}
 
+	k_mutex_unlock(&data->lock);
 	return err;
 }
 
@@ -359,30 +400,51 @@ static int gpio_max14906_port_get_raw(const struct device *dev, gpio_port_value_
 	 * In case PIN is OUTPUT same bits show VDDOKFault state.
 	 */
 
+	struct max14906_data *data = dev->data;
 	int ret;
+
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_mutex_lock(&data->lock, K_FOREVER);
 
 	ret = MAX14906_REG_READ(dev, MAX14906_DOILEVEL_REG);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 
 	*value = ret & 0x0f;
+	ret = 0;
 
-	return 0;
+out:
+	k_mutex_unlock(&data->lock);
+	return ret;
 }
 
 static int gpio_max14906_port_toggle_bits(const struct device *dev, gpio_port_pins_t pins)
 {
+	struct max14906_data *data = dev->data;
 	int ret;
 	uint32_t reg_val;
 
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+
 	ret = MAX14906_REG_READ(dev, MAX14906_SETOUT_REG);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 	reg_val = ret ^ (pins & 0x0f);
 
-	return MAX14906_REG_WRITE(dev, MAX14906_SETOUT_REG, reg_val);
+	ret = MAX14906_REG_WRITE(dev, MAX14906_SETOUT_REG, reg_val);
+
+out:
+	k_mutex_unlock(&data->lock);
+	return ret;
 }
 
 static int gpio_max14906_clean_on_power(const struct device *dev)
@@ -456,6 +518,7 @@ static int gpio_max14906_config_diag(const struct device *dev)
 static int gpio_max14906_init(const struct device *dev)
 {
 	const struct max14906_config *config = dev->config;
+	struct max14906_data *data = dev->data;
 	int err = 0;
 
 	LOG_DBG(" --- GPIO MAX14906 init IN ---");
@@ -463,6 +526,12 @@ static int gpio_max14906_init(const struct device *dev)
 	if (!spi_is_ready_dt(&config->spi)) {
 		LOG_ERR("SPI bus is not ready\n");
 		return -ENODEV;
+	}
+
+	err = k_mutex_init(&data->lock);
+	if (err != 0) {
+		LOG_ERR("unable to initialize mutex");
+		return err;
 	}
 
 	/* setup READY gpio - normal low */

@@ -8,6 +8,8 @@
 #ifndef ZEPHYR_DRIVERS_GPIO_GPIO_MAX14906_H_
 #define ZEPHYR_DRIVERS_GPIO_GPIO_MAX14906_H_
 
+#include <zephyr/kernel.h>
+
 #define MAX14906_FAULT2_ENABLES 5
 #define MAX14906_CHANNELS       4
 #define MAX14916_CHANNELS       8
@@ -301,6 +303,7 @@ struct max149x6_config {
 
 struct max14906_data {
 	struct gpio_driver_data common;
+	struct k_mutex lock;
 	struct {
 		union max14906_doi_level doi_level;
 		union max14906_ovr_ld_chf ovr_ld;
