@@ -25,8 +25,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "phy_mii.h"
 
+#define PHY_MC_KSZ8081_OMSO_FACTORY_MODE_BIT 15
+
 #define PHY_MC_KSZ8081_OMSO_REG			0x16
-#define PHY_MC_KSZ8081_OMSO_FACTORY_MODE_MASK	BIT(15)
+#define PHY_MC_KSZ8081_OMSO_FACTORY_MODE_MASK   BIT(PHY_MC_KSZ8081_OMSO_FACTORY_MODE_BIT)
 #define PHY_MC_KSZ8081_OMSO_NAND_TREE_MASK	BIT(5)
 #define PHY_MC_KSZ8081_OMSO_RMII_OVERRIDE_MASK	BIT(1)
 #define PHY_MC_KSZ8081_OMSO_MII_OVERRIDE_MASK	BIT(0)
@@ -435,6 +437,50 @@ static int phy_mc_ksz8081_reset_gpio(const struct mc_ksz8081_config *config)
 }
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) */
 
+static int phy_mc_ksz8081_phy_readiness_check(const struct device *dev)
+{
+	int ret;
+	uint32_t bmcr = 0;
+	uint32_t omso = 0;
+
+	/* According to IEEE 802.3, Section 2, Subsection 22.2.4.1.1,
+	 * a PHY reset may take up to 0.5 s.
+	 */
+	k_msleep(500);
+
+	/* Verify if PHY is ready.*/
+	ret = phy_mc_ksz8081_read(dev, MII_BMCR, &bmcr);
+
+	if (ret < 0) {
+		LOG_ERR("Failed to read PHY BMCR register. ret: %d", ret);
+		return ret;
+	}
+
+	if (IS_BIT_SET(bmcr, MII_BMCR_POWER_DOWN_BIT)) {
+		LOG_ERR("PHY is still powered down!");
+		return -ETIMEDOUT;
+	}
+
+	if (IS_BIT_SET(bmcr, MII_BMCR_RESET_BIT)) {
+		LOG_ERR("PHY Reset bit is not cleared!");
+		return -ETIMEDOUT;
+	}
+
+	ret = phy_mc_ksz8081_read(dev, PHY_MC_KSZ8081_OMSO_REG, &omso);
+
+	if (ret < 0) {
+		LOG_ERR("Failed to read PHY OMSO register ret: %d", ret);
+		return ret;
+	}
+
+	if (IS_BIT_SET(omso, PHY_MC_KSZ8081_OMSO_FACTORY_MODE_BIT)) {
+		LOG_ERR("PHY is still in factory mode!");
+		return -ETIMEDOUT;
+	}
+
+	return 0;
+}
+
 static int phy_mc_ksz8081_reset(const struct device *dev)
 {
 	const struct mc_ksz8081_config *config = dev->config;
@@ -449,19 +495,18 @@ static int phy_mc_ksz8081_reset(const struct device *dev)
 	}
 
 	ret = phy_mc_ksz8081_reset_gpio(config);
-	if (ret != -ENODEV) { /* On -ENODEV, attempt command-based reset */
-		goto done;
+	if (ret == -ENODEV) { /* On -ENODEV, attempt command-based reset */
+		ret = phy_mc_ksz8081_write(dev, MII_BMCR, MII_BMCR_RESET);
+		if (ret < 0) {
+			goto done;
+		}
 	}
 
-	ret = phy_mc_ksz8081_write(dev, MII_BMCR, MII_BMCR_RESET);
-	if (ret) {
+	/* PHY reset can be slower on some systems. So make sure PHY is up.*/
+	ret = phy_mc_ksz8081_phy_readiness_check(dev);
+	if (ret < 0) {
 		goto done;
 	}
-
-	/* According to IEEE 802.3, Section 2, Subsection 22.2.4.1.1,
-	 * a PHY reset may take up to 0.5 s.
-	 */
-	k_busy_wait(500 * USEC_PER_MSEC);
 
 	/* After each reset we will apply the static cfg from DT */
 	ret = phy_mc_ksz8081_static_cfg(dev);
