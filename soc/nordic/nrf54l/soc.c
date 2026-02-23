@@ -20,6 +20,9 @@
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/cache.h>
+#ifndef __ZEPHYR__
+#include <hal/nrf_cache.h>
+#endif
 #include <lib/nrfx_coredep.h>
 #include <soc.h>
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
@@ -161,7 +164,11 @@ int nordicsemi_nrf54l_init(void)
 	 */
 	SystemCoreClock = NRF_PERIPH_GET_FREQUENCY(DT_NODELABEL(cpu));
 
+#ifdef __ZEPHYR__
 	sys_cache_instr_enable();
+#elif defined(NRF_ICACHE)
+	nrf_cache_enable(NRF_ICACHE);
+#endif
 
 #if (defined(NRF_APPLICATION) && !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)) || \
 	!defined(__ZEPHYR__)
