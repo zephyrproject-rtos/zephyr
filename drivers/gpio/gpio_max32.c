@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Analog Devices, Inc.
+ * Copyright (c) 2023-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(gpio_max32, CONFIG_GPIO_LOG_LEVEL);
 struct max32_gpio_config {
 	struct gpio_driver_config common;
 	mxc_gpio_regs_t *regs;
+	uint8_t idx;
 	const struct device *clock;
 	void (*irq_func)(void);
 	struct max32_perclk perclk;
@@ -159,6 +160,11 @@ static int api_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
 		/* clear interrupt flags */
 		MXC_GPIO_ClearFlags(cfg->regs, (MXC_GPIO_GetFlags(cfg->regs) & gpio_cfg.mask));
 
+#ifdef CONFIG_PM
+		MXC_LP_DisableGPIOWakeup(&gpio_cfg);
+		MXC_GPIO_ClearWakeEn(gpio_cfg.port, gpio_cfg.mask);
+#endif /* CONFIG_PM */
+
 		return 0;
 	}
 
@@ -235,6 +241,15 @@ static void gpio_max32_isr(const void *param)
 	/* clear interrupt flags */
 	MXC_GPIO_ClearFlags(cfg->regs, flags);
 
+#if defined(CONFIG_PM)
+	unsigned int lp_flags =
+		MXC_LP_GetGPIOWakeupEnable(cfg->idx) & MXC_LP_GetGPIOWakeupStatus(cfg->idx);
+	/* clear wakeup flags */
+	MXC_LP_ClearGPIOWakeupStatus(cfg->idx, lp_flags);
+
+	flags |= lp_flags;
+#endif /* CONFIG_PM */
+
 	gpio_fire_callbacks(&(data->cb_list), dev, flags);
 }
 
@@ -266,6 +281,7 @@ static int gpio_max32_init(const struct device *dev)
 	static const struct max32_gpio_config max32_gpio_config_##_num = {                         \
 		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(_num),                                   \
 		.regs = (mxc_gpio_regs_t *)DT_INST_REG_ADDR(_num),                                 \
+		.idx = MXC_GPIO_GET_IDX((mxc_gpio_regs_t *)DT_INST_REG_ADDR(_num)),                \
 		.irq_func = &gpio_max32_irq_init_##_num,                                           \
 		.clock = DEVICE_DT_GET_OR_NULL(DT_INST_CLOCKS_CTLR(_num)),                         \
 		.perclk.bus = DT_INST_PHA_BY_IDX_OR(_num, clocks, 0, offset, 0),                   \
