@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,6 +31,7 @@ struct max32_tmr_config {
 	struct counter_config_info info;
 	struct max32_tmr_ch_data *ch_data;
 	mxc_tmr_regs_t *regs;
+	const struct pinctrl_dev_config *pctrl;
 	const struct device *clock;
 	struct max32_perclk perclk;
 	int clock_source;
@@ -285,6 +286,11 @@ static int max32_counter_init(const struct device *dev)
 		return ret;
 	}
 
+	ret = pinctrl_apply_state(cfg->pctrl, PINCTRL_STATE_DEFAULT);
+	if (ret < 0 && ret != -ENOENT) {
+		return ret;
+	}
+
 	ret = Wrap_MXC_TMR_Init(regs, &tmr_cfg);
 	if (ret != E_NO_ERROR) {
 		return ret;
@@ -326,6 +332,7 @@ static DEVICE_API(counter, counter_max32_driver_api) = {
 
 #define COUNTER_MAX32_DEFINE(_num)                                                                 \
 	static struct max32_tmr_ch_data counter##_num##_ch_data[MAX32_TIMER_CH];                   \
+	PINCTRL_DT_INST_DEFINE(_num);                                                              \
 	static void max32_tmr_irq_init_##_num(const struct device *dev)                            \
 	{                                                                                          \
 		IRQ_CONNECT(DT_IRQN(TIMER(_num)), DT_IRQ(TIMER(_num), priority),                   \
@@ -345,6 +352,7 @@ static DEVICE_API(counter, counter_max32_driver_api) = {
 				.channels = MAX32_TIMER_CH,                                        \
 			},                                                                         \
 		.regs = (mxc_tmr_regs_t *)DT_REG_ADDR(TIMER(_num)),                                \
+		.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(_num),                                     \
 		.clock = DEVICE_DT_GET(DT_CLOCKS_CTLR(TIMER(_num))),                               \
 		.perclk.bus = DT_CLOCKS_CELL(TIMER(_num), offset),                                 \
 		.perclk.bit = DT_CLOCKS_CELL(TIMER(_num), bit),                                    \
