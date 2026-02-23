@@ -1,0 +1,12 @@
+sample:
+  description: echo client using QUIC API
+  name: quic_service_echo_client
+common:
+  harness: net
+  depends_on: netif
+  filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
+tests:
+  sample.net.quic.service.echo_client:
+    tags:
+      - net
+      - socket
