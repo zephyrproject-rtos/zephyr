@@ -10,6 +10,9 @@ config KERNEL_ENTRY
 config NUM_IRQS
 	default 512 if SOC_SERIES_J721E_R5
 
+# The frequency for Cortex-R cores depends on the external crystal on the
+# board. Therefor it is defined for each board individually
+
 if SERIAL
 
 config UART_NS16550
