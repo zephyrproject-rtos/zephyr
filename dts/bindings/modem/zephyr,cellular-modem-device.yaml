@@ -70,7 +70,6 @@ properties:
     enum:
       - 0
       - 1
-    default: 0
     description: |
       Modem automatically configures and connects the default PDP context (cid=0) when
       registered to the network.
@@ -84,7 +83,6 @@ properties:
     enum:
       - 0
       - 1
-    default: 0
     description: |
       Modem automatically configures the APN name when registering to the network.
       If this is set to 1, the modem driver will supply empty string as APN name when
