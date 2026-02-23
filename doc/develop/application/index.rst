@@ -1241,7 +1241,7 @@ more SoCs into the menu.
 
 The Kconfig files above may describe the SoC or load additional SoC Kconfig files.
 
-An example of loading ``stm31l0`` specific Kconfig files in this structure:
+An example of loading ``stm32l0`` specific Kconfig files in this structure:
 
 .. code-block:: none
 
