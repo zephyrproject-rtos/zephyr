@@ -140,9 +140,11 @@ static void dmm_check_output_buffer(struct dmm_test_region *dtr, uint32_t *fill_
 	}
 
 	zassert_ok(retval);
-	if (IS_ENABLED(CONFIG_DCACHE) && is_cached) {
+#if defined(CONFIG_DCACHE_LINE_SIZE) && CONFIG_DCACHE_LINE_SIZE > 0
+	if (is_cached) {
 		zassert_true(IS_ALIGNED(buf, CONFIG_DCACHE_LINE_SIZE));
 	}
+#endif
 
 	if (IS_ENABLED(CONFIG_HAS_NORDIC_DMM)) {
 		if (was_prealloc) {
@@ -188,9 +190,11 @@ static void dmm_check_input_buffer(struct dmm_test_region *dtr, uint32_t *fill_v
 		TC_PRINT("%saligned buffer in prepare buf:%p size:%d took %d.%dus (%d cycles)\n",
 			aligned ? "" : "not ", buf, size, cyc_to_us(t), cyc_to_rem_ns(t), t);
 	}
-	if (IS_ENABLED(CONFIG_DCACHE) && is_cached) {
+#if defined(CONFIG_DCACHE_LINE_SIZE) && CONFIG_DCACHE_LINE_SIZE > 0
+	if (is_cached) {
 		zassert_true(IS_ALIGNED(buf, CONFIG_DCACHE_LINE_SIZE));
 	}
+#endif
 
 	if (IS_ENABLED(CONFIG_HAS_NORDIC_DMM)) {
 		if (was_prealloc) {
