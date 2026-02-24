@@ -15,6 +15,8 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 
+#include <stm32_gpio_shared.h>
+
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 #define STM32_PINCFG_MODE_OUTPUT        (STM32_MODE_OUTPUT     \
 					 | STM32_CNF_GP_OUTPUT \
