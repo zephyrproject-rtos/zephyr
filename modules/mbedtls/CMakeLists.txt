@@ -70,6 +70,10 @@ if(CONFIG_MBEDTLS)
       ${CMAKE_CURRENT_LIST_DIR}/include
     )
 
+    # Add some support for legacy crypto that unfortunately is still required
+    # in some scenarios.
+    include(${CMAKE_CURRENT_LIST_DIR}/legacy_support.cmake)
+
     # Add another library to provide Zephyr-specific support
     zephyr_library()
     zephyr_library_sources(
