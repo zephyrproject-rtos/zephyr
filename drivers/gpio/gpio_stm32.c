@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* Define for grep-ability, even though this will not be used */
 #define DT_DRV_COMPAT st_stm32_gpio
 
 #include <errno.h>
@@ -646,7 +647,7 @@ static int gpio_stm32_manage_callback(const struct device *dev,
 	return gpio_manage_callback(&data->cb, callback, set);
 }
 
-static DEVICE_API(gpio, gpio_stm32_driver) = {
+DEVICE_API(gpio, gpio_stm32_driver) = {
 	.pin_configure = gpio_stm32_config,
 #if defined(CONFIG_GPIO_GET_CONFIG) && !defined(CONFIG_SOC_SERIES_STM32F1X)
 	.pin_get_config = gpio_stm32_get_config,
@@ -660,95 +661,7 @@ static DEVICE_API(gpio, gpio_stm32_driver) = {
 	.manage_callback = gpio_stm32_manage_callback,
 };
 
-static int gpio_stm32_pm_action(const struct device *dev,
-				enum pm_device_action action)
-{
-	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	const struct gpio_stm32_config *cfg = dev->config;
-	clock_control_subsys_t subsys = (void *)&cfg->pclken;
-
-	switch (action) {
-	case PM_DEVICE_ACTION_RESUME:
-		return clock_control_on(clk, subsys);
-	case PM_DEVICE_ACTION_SUSPEND:
-		return clock_control_off(clk, subsys);
-	case PM_DEVICE_ACTION_TURN_OFF:
-	case PM_DEVICE_ACTION_TURN_ON:
-		break;
-	default:
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
-
-
-/**
- * @brief Initialize GPIO port
- *
- * Perform basic initialization of a GPIO port. The code will
- * enable the clock for corresponding peripheral.
- *
- * @param dev GPIO device struct
- *
- * @return 0
+/*
+ * GPIO port devices are not instanced by this driver.
+ * See `soc/st/stm32/common/gpioport_mgr.c` for details.
  */
-__maybe_unused static int gpio_stm32_init(const struct device *dev)
-{
-#if (defined(PWR_CR2_IOSV) || defined(PWR_SVMCR_IO2SV)) && \
-	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpiog))
-	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
-	/* Port G[15:2] requires external power supply */
-	/* Cf: L4/L5/U3 RM, Chapter "Independent I/O supply rail" */
-#ifdef CONFIG_SOC_SERIES_STM32U3X
-	LL_PWR_EnableVDDIO2();
-#else
-	LL_PWR_EnableVddIO2();
-#endif
-	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
-#endif
-
-	return pm_device_driver_init(dev, gpio_stm32_pm_action);
-}
-
-#define GPIO_DEVICE_INIT(__node, __suffix, __base_addr, __port)			\
-	static const struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {	\
-		.common = {							\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(16U),	\
-		},								\
-		.base = (uint32_t *)__base_addr,				\
-		.port = __port,							\
-		IF_ENABLED(DT_NODE_HAS_PROP(__node, clocks),			\
-			   (.pclken = STM32_CLOCK_INFO(0, __node),))		\
-	};									\
-										\
-	static struct gpio_stm32_data gpio_stm32_data_## __suffix;		\
-										\
-	PM_DEVICE_DT_DEFINE(__node, gpio_stm32_pm_action);			\
-										\
-	DEVICE_DT_DEFINE(__node,						\
-			 COND_CODE_1(DT_NODE_HAS_PROP(__node, clocks),		\
-				     (gpio_stm32_init),				\
-				     (NULL)),					\
-			 PM_DEVICE_DT_GET(__node),				\
-			 &gpio_stm32_data_## __suffix,				\
-			 &gpio_stm32_cfg_## __suffix,				\
-			 PRE_KERNEL_1,						\
-			 CONFIG_GPIO_INIT_PRIORITY,				\
-			 &gpio_stm32_driver)
-
-#define GPIO_DEVICE_INIT_STM32(__suffix, __SUFFIX)				\
-	GPIO_DEVICE_INIT(DT_NODELABEL(gpio##__suffix),				\
-			 __suffix,						\
-			 DT_REG_ADDR(DT_NODELABEL(gpio##__suffix)),		\
-			 STM32_PORT##__SUFFIX)
-
-#define GPIO_DEVICE_INIT_STM32_IF_OKAY(__suffix, __SUFFIX)			\
-	IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio##__suffix)),	\
-		   (GPIO_DEVICE_INIT_STM32(__suffix, __SUFFIX)))
-
-#define DEVICE_INIT_IF_OKAY(idx, __suffix) 				\
-	GPIO_DEVICE_INIT_STM32_IF_OKAY(__suffix,			\
-		GET_ARG_N(UTIL_INC(idx), STM32_GPIO_PORTS_LIST_UPR))
-
-FOR_EACH_IDX(DEVICE_INIT_IF_OKAY, (;), STM32_GPIO_PORTS_LIST_LWR);
