@@ -6,3 +6,7 @@
 /dts-v1/;
 
 #include "ch32v307v_evt_r1_common.dtsi"
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(64)>;
+};
