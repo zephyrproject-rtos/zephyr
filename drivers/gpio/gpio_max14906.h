@@ -286,6 +286,7 @@ union max14906_config2 {
 #define MAX149x6_DISABLE 0
 
 struct max149x6_config {
+	struct gpio_driver_config common;
 	struct spi_dt_spec spi;
 	struct gpio_dt_spec fault_gpio;
 	struct gpio_dt_spec ready_gpio;
