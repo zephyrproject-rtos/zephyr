@@ -32,3 +32,34 @@ if(CONFIG_MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS)
     ${CMAKE_BINARY_DIR}/legacy-mbedtls-headers/
   )
 endif()
+
+set(MBEDTLS_EXPORT_REMOVED_HEADERS  OFF)
+set(MBEDTLS_REMOVED_MODULES_PATH "${ZEPHYR_HOSTAP_MODULE_DIR}/port/mbedtls/removed")
+
+# HostAP still heavily depends on legacy Mbed TLS crypto. Luckily most of
+# that support is still available and it can still be accessed somehow,
+# but DHM and DES modules were removed from tf-psa-crypto. As a temporary solution
+# they are added back in TF-PSA-Crypto and they are compiled with the
+# builtin library when crypto features of HostAP library are enabled.
+if(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT)
+  target_sources(builtin PRIVATE ${MBEDTLS_REMOVED_MODULES_PATH}/dhm.c)
+  target_sources(builtin PRIVATE ${MBEDTLS_REMOVED_MODULES_PATH}/des.c)
+  # These build symbols cannot be set in tf-psa-crypto configuration header
+  # file otherwise the build will fail, so we manually set them here only
+  # to build these legacy modules.
+  target_compile_definitions(builtin PRIVATE
+    # Setting legacy build symbols is not allowed so we need to set this
+    # to bypass the check.
+    -DTF_PSA_CRYPTO_CONFIG_CHECK_BYPASS
+    -DMBEDTLS_DES_C
+    -DMBEDTLS_DHM_C
+  )
+  set(MBEDTLS_EXPORT_REMOVED_HEADERS  ON)
+endif()
+
+if(MBEDTLS_EXPORT_REMOVED_HEADERS)
+  target_include_directories(builtin PRIVATE ${MBEDTLS_REMOVED_MODULES_PATH})
+  target_include_directories(mbedTLS INTERFACE
+    ${MBEDTLS_REMOVED_MODULES_PATH}
+  )
+endif()
