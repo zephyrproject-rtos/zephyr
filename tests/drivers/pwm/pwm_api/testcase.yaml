@@ -172,3 +172,4 @@ tests:
       - frdm_mcxw71
     filter: dt_nodelabel_enabled("pwm_test_center") and CONFIG_DT_HAS_NXP_KINETIS_TPM_ENABLED
     depends_on: pwm
+    harness: ztest

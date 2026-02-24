@@ -195,13 +195,18 @@
 	pinctrl-names = "default";
 };
 
+&lgpt0 {
+	clk-prescale = <32>;
+	status = "okay";
+};
+
 &lgpt1 {
-	clk-prescale = <0>;
+	clk-prescale = <32>;
 	status = "okay";
 };
 
 &lgpt2 {
-	clk-prescale = <0>;
+	clk-prescale = <32>;
 	status = "okay";
 };
 

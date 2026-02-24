@@ -1,0 +1,40 @@
+# Copyright (c) 2025 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI CC27XX LGPT PWM Controller Node
+
+    &lgpt0 {
+      status = "okay";
+    };
+
+    &pwm0 {
+      status = "okay";
+      pinctrl-0 = <&pwm0_default>;
+      pinctrl-names = "default";
+    };
+
+  Note: PWM0-PWM8 are 16bit without prescale, max timeout is 682550 ns (at 96MHz)
+        PWM9-PWM11 are 24bit without prescale, max timeout is 174759875 ns (at 96MHz)
+
+compatible: "ti,cc27xx-lgpt-pwm"
+
+include: [base.yaml, pwm-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  ti,output-index:
+    type: int
+    description: |
+      The timer output index (0, 1, or 2) that this PWM controls.
+      Must match the timer channel connected via pinctrl (T*_C0/C0N=0, T*_C1/C1N=1, T*_C2/C2N=2).
+
+pwm-cells:
+  - channel
+  - period
+  - flags

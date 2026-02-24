@@ -1,0 +1,26 @@
+# Copyright (c) 2025 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+description: CC27xx LGPT counter driver
+
+properties:
+  freq:
+    type: int
+    description: clock frequency (only used for external clock sources)
+
+  interrupts:
+    required: true
+
+  clk-prescale:
+    type: int
+    required: true
+    description: Counter clock prescale
+
+  max-top-value:
+    type: int
+    required: true
+    description: Max allowed value for counter
+
+compatible: "ti,cc27xx-lgpt"
+
+include: base.yaml
