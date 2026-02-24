@@ -57,7 +57,7 @@
 /** PLLSAI2 R output, can be selected for ADC or LTDC peripheral */
 #define STM32_SRC_PLLSAI2_R	(STM32_SRC_PLLSAI2_Q + 1)
 /** PLLSAI2 R output with addition divider, used for LTDC peripheral */
-#define STM32_SRC_PLLSAI2_DIVR	(STM32_SRC_PLLSAI2_R + 1)
+#define STM32_SRC_PLLSAI2_POST_R	(STM32_SRC_PLLSAI2_R + 1)
 
 /** @brief RCC_CCIPR register offset */
 #define CCIPR_REG		0x88
