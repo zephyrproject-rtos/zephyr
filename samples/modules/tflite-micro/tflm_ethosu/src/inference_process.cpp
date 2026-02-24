@@ -7,15 +7,14 @@
 #include "inference_process.hpp"
 
 #include <tensorflow/lite/micro/micro_mutable_op_resolver.h>
-#include <tensorflow/lite/micro/cortex_m_generic/debug_log_callback.h>
 #include <tensorflow/lite/micro/micro_log.h>
 #include <tensorflow/lite/micro/micro_interpreter.h>
 #include <tensorflow/lite/micro/micro_profiler.h>
 #include <tensorflow/lite/schema/schema_generated.h>
 
-#include <cmsis_compiler.h>
 #include <inttypes.h>
 #include <zephyr/kernel.h>
+#include <zephyr/cache.h>
 
 using namespace std;
 
@@ -28,7 +27,7 @@ bool copyOutput(const TfLiteTensor &src, InferenceProcess::DataPtr &dst)
 	}
 
 	if (src.bytes > dst.size) {
-		printf("Tensor size mismatch (bytes): actual=%d, expected%d.\n", src.bytes,
+		printf("Tensor size mismatch (bytes): actual=%zu, expected=%zu.\n", src.bytes,
 		       dst.size);
 		return true;
 	}
@@ -49,16 +48,12 @@ DataPtr::DataPtr(void *_data, size_t _size) : data(_data), size(_size)
 
 void DataPtr::invalidate()
 {
-#if defined(__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
-	SCB_InvalidateDCache_by_Addr(reinterpret_cast<uint32_t *>(data), size);
-#endif
+	sys_cache_data_invd_range(data, size);
 }
 
 void DataPtr::clean()
 {
-#if defined(__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
-	SCB_CleanDCache_by_Addr(reinterpret_cast<uint32_t *>(data), size);
-#endif
+	sys_cache_data_flush_range(data, size);
 }
 
 InferenceJob::InferenceJob()
@@ -149,7 +144,7 @@ bool InferenceProcess::runJob(InferenceJob &job)
 		const TfLiteTensor *tensor = interpreter.input(i);
 
 		if (input.size != tensor->bytes) {
-			printf("Input tensor size mismatch. index=%zu, input=%zu, network=%u\n", i,
+			printf("Input tensor size mismatch. index=%zu, input=%zu, network=%zu\n", i,
 			       input.size, tensor->bytes);
 			return true;
 		}
@@ -168,7 +163,7 @@ bool InferenceProcess::runJob(InferenceJob &job)
 	/* Copy output data */
 	if (job.output.size() > 0) {
 		if (interpreter.outputs_size() != job.output.size()) {
-			printf("Number of job and network outputs do not match. job=%zu, network=%u\n",
+			printf("Number of job and network outputs do not match. job=%zu, network=%zu\n",
 			       job.output.size(), interpreter.outputs_size());
 			return true;
 		}
