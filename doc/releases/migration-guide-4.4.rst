@@ -594,6 +594,9 @@ Ethernet
   ``microchip,ksz8463``, ``microchip,ksz8794`` and ``microchip,ksz8863`` were removed, as they
   haven't been migrated to the new DSA subsystem. (:github:`105926`)
 
+* The ``microchip,lan865x-mdio`` compatible has been removed, the mdio node is now part of the
+  ethernet node :dtcompatible:`microchip,lan865x` (:github:`104268`).
+
 File System
 ===========
 
