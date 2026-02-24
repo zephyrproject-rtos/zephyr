@@ -393,6 +393,26 @@ governing board.
 Processes to achieve selected certification will be determined by the Security and
 Safety Working Groups and coordinated with the TSC.
 
+Host Tools Support Policy
+*************************
+
+Python Version Policy
+*********************
+
+Zephyr tracks the `Python upstream release schedule`_ when determining its minimum supported Python
+version.
+
+The minimum supported version is selected to balance long-term support and practical availability in
+mainstream, actively supported Linux distributions (e.g. current Ubuntu LTS and Debian Stable
+releases).
+
+A Python version is considered for removal when:
+
+* It is approaching or has reached upstream end-of-life (EOL), and
+* Newer Python versions are broadly available in current, actively supported major Linux
+  distributions.
+
+.. _Python upstream release schedule: https://devguide.python.org/versions/
 
 Hardware Support Tiers
 ***********************
