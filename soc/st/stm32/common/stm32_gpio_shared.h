@@ -99,6 +99,17 @@ static inline uint32_t stm32_gpiomgr_pinnum_to_ll_val(gpio_pin_t pinnum)
  */
 const struct device *stm32_gpioport_get(uint32_t port_index);
 
+/**
+ * @brief Configure specific pin on GPIO port
+ *
+ * @param port GPIO port device
+ * @param pin Pin to configure
+ *
+ * @return 0 on success, negative errno value otherwise
+ */
+int stm32_gpioport_configure_pin(
+	const struct device *port, gpio_pin_t pin, uint32_t config, uint32_t func);
+
 /*
  * GPIO port device API
  *

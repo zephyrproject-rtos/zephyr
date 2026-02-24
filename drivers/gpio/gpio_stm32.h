@@ -54,16 +54,4 @@ struct gpio_stm32_pin {
 };
 #endif /* CONFIG_GPIO_GET_CONFIG */
 
-/**
- * @brief helper for configuration of GPIO pin
- *
- * @param dev GPIO port device pointer
- * @param pin IO pin
- * @param conf GPIO mode
- * @param func Pin function
- *
- * @return 0 on success, negative errno code on failure
- */
-int gpio_stm32_configure(const struct device *dev, gpio_pin_t pin, uint32_t conf, uint32_t func);
-
 #endif /* ZEPHYR_DRIVERS_GPIO_GPIO_STM32_H_ */
