@@ -1,0 +1,51 @@
+# Copyright (c) 2026, Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+#
+# JSON Schema for west monitor YAML configuration files
+$schema: "https://json-schema.org/draft/2020-12/schema"
+type: object
+properties:
+  serial:
+    type: object
+    properties:
+      baud:
+        type: integer
+      rtscts:
+        type: boolean
+      read_mode:
+        type: string
+        enum: ["auto", "line", "raw"]
+      idle_flush_ms:
+        type: integer
+    additionalProperties: false
+  reset:
+    type: object
+    properties:
+      mode:
+        type: string
+        enum: ["none", "run", "boot", "dtr-pulse", "rts-pulse"]
+      on_connect:
+        type: boolean
+      on_reconnect:
+        type: boolean
+      delay_ms:
+        type: integer
+      hold_ms:
+        type: integer
+      line_map:
+        type: string
+      invert_reset:
+        type: boolean
+      invert_boot:
+        type: boolean
+      idle_lines:
+        type: string
+        enum: ["released", "boot-hold", "reset-hold"]
+    additionalProperties: false
+  display:
+    type: object
+    properties:
+      timestamp:
+        type: boolean
+    additionalProperties: false
+additionalProperties: false
