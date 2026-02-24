@@ -112,4 +112,39 @@
 				 <UART1_RTS_GPIO43>;
 		};
 	};
+
+	i2c0_gpio0: i2c0-gpio0 {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO0>,
+				 <I2C0_SCL_GPIO1>;
+		};
+	};
+
+	i2c0_gpio28: i2c0-gpio28 {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO28>,
+				 <I2C0_SCL_GPIO29>;
+		};
+	};
+
+	i2c0_gpio44: i2c0-gpio44 {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO44>,
+				 <I2C0_SCL_GPIO45>;
+		};
+	};
+
+	i2c1_gpio2: i2c1-gpio2 {
+		group1 {
+			pinmux = <I2C1_SDA_GPIO2>,
+				 <I2C1_SCL_GPIO3>;
+		};
+	};
+
+	i2c1_gpio44: i2c1-gpio44 {
+		group1 {
+			pinmux = <I2C1_SDA_GPIO44>,
+				 <I2C1_SCL_GPIO45>;
+		};
+	};
 };
