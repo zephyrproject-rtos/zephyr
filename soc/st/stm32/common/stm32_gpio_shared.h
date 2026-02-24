@@ -6,6 +6,7 @@
 #ifndef ZEPHYR_SOC_ST_STM32_COMMON_STM32_GPIO_SHARED_H_
 #define ZEPHYR_SOC_ST_STM32_COMMON_STM32_GPIO_SHARED_H_
 
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/types.h>
 
@@ -24,8 +25,38 @@
 	A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z
 
 /*
- * Utility functions
+ * STM32 GPIO port configuration block and data block structures
  */
+struct gpio_stm32_config {
+#if defined(CONFIG_GPIO_STM32)
+	struct gpio_driver_config common;
+#endif /* CONFIG_GPIO_STM32 */
+
+	/* GPIO port base address */
+	void *base;
+
+	/* GPIO port index (`STM32_PORTx`) */
+	uint32_t port;
+
+	/* Clock configuration */
+	struct stm32_pclken pclken;
+};
+
+struct gpio_stm32_data {
+#if defined(CONFIG_GPIO_STM32)
+	struct gpio_driver_data common;
+
+	/*
+	 * Keeps track of pins which are used as GPIOs
+	 * and need the GPIO port clock to remain enabled.
+	 */
+	gpio_port_pins_t pin_has_clock_enabled;
+#endif /* CONFIG_GPIO_STM32 */
+
+	/* User callbacks list */
+	sys_slist_t cb;
+};
+
 
 /**
  * @brief Translate pin to pinval that the LL library needs
@@ -52,5 +83,30 @@ static inline uint32_t stm32_gpiomgr_pinnum_to_ll_val(gpio_pin_t pinnum)
 #endif
 	return pinval;
 }
+
+/*
+ * Exports from the GPIO port manager module
+ */
+
+/**
+ * @brief Get GPIO port device by index
+ *
+ * @param port_index GPIO port index `STM32_PORTx`
+ * (c.f., `include/zephyr/dt-bindings/pinctrl/stm32-pinctrl-common.h`)
+ *
+ * @return Non-NULL pointer to requested GPIO port device on success,
+ * NULL if the requested GPIO port does not exist or is not ready.
+ */
+const struct device *stm32_gpioport_get(uint32_t port_index);
+
+/*
+ * GPIO port device API
+ *
+ * Implementation of the Zephyr GPIO driver API
+ * exported by the GPIO driver when enabled.
+ */
+#if defined(CONFIG_GPIO_STM32)
+extern const struct gpio_driver_api gpio_stm32_driver;
+#endif /* CONFIG_GPIO_STM32 */
 
 #endif /* ZEPHYR_SOC_ST_STM32_COMMON_STM32_GPIO_SHARED_H_ */

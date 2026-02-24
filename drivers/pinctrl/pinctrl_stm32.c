@@ -17,13 +17,7 @@
 #include <stm32_ll_gpio.h>
 #include <stm32_ll_system.h>
 
-/** Helper to extract IO port number from STM32PIN() encoded value */
-#define STM32_PORT(__pin) \
-	((__pin) >> 4)
-
-/** Helper to extract IO pin number from STM32PIN() encoded value */
-#define STM32_PIN(__pin) \
-	((__pin) & 0xf)
+#include <stm32_gpio_shared.h>
 
 /** Helper to extract IO port number from STM32_PINMUX() encoded value */
 #define STM32_DT_PINMUX_PORT(__pin) \
@@ -42,43 +36,6 @@
 #define STM32_DT_PINMUX_REMAP(__pin) \
 	(((__pin) >> STM32_REMAP_SHIFT) & STM32_REMAP_MASK)
 #endif
-
-/**
- * @brief Array containing pointers to each GPIO port.
- *
- * Entries will be NULL if the GPIO port is not enabled.
- */
-static const struct device *const gpio_ports[] = {
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioa)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiob)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioc)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiod)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioe)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiof)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiog)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioh)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioi)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioj)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiok)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiol)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiom)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpion)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioo)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiop)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioq)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpior)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpios)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiot)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiou)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiov)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiow)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiox)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioy)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioz)),
-};
-
-/** Number of GPIO ports. */
-static const size_t gpio_ports_cnt = ARRAY_SIZE(gpio_ports);
 
 #if DT_NODE_HAS_PROP(DT_NODELABEL(pinctrl), remap_pa11)
 #define REMAP_PA11	DT_PROP(DT_NODELABEL(pinctrl), remap_pa11)
@@ -186,23 +143,6 @@ static int stm32_pins_remap(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt)
 
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
 
-static int stm32_pin_configure(uint32_t pin, uint32_t pin_cgf, uint32_t pin_func)
-{
-	const struct device *port_device;
-
-	if (STM32_PORT(pin) >= gpio_ports_cnt) {
-		return -EINVAL;
-	}
-
-	port_device = gpio_ports[STM32_PORT(pin)];
-
-	if ((port_device == NULL) || (!device_is_ready(port_device))) {
-		return -ENODEV;
-	}
-
-	return gpio_stm32_configure(port_device, STM32_PIN(pin), pin_cgf, pin_func);
-}
-
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_pinctrl)
 static int apply_iosync_configuration(uint32_t port, uint32_t pin, uint32_t pincfg)
 {
@@ -212,12 +152,8 @@ static int apply_iosync_configuration(uint32_t port, uint32_t pin, uint32_t pinc
 	GPIO_TypeDef *gpio_reg;
 	int ret;
 
-	if (port >= gpio_ports_cnt) {
-		return -EINVAL;
-	}
-
-	port_device = gpio_ports[port];
-	if (port_device == NULL || !device_is_ready(port_device)) {
+	port_device = stm32_gpioport_get(port);
+	if (port_device == NULL) {
 		return -ENODEV;
 	}
 
@@ -261,8 +197,9 @@ static int apply_iosync_configuration(uint32_t port, uint32_t pin, uint32_t pinc
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			   uintptr_t reg)
 {
-	uint32_t pin, mux;
+	const struct device *port;
 	uint32_t pin_cgf = 0;
+	uint32_t mux;
 	int ret = 0;
 
 	ARG_UNUSED(reg);
@@ -310,11 +247,13 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			__ASSERT_NO_MSG(STM32_DT_PINMUX_FUNC(mux));
 		}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
+		port = stm32_gpioport_get(STM32_DT_PINMUX_PORT(mux));
+		if (port == NULL) {
+			return -ENODEV;
+		}
 
-		pin = STM32PIN(STM32_DT_PINMUX_PORT(mux),
-			       STM32_DT_PINMUX_LINE(mux));
-
-		ret = stm32_pin_configure(pin, pin_cgf, STM32_DT_PINMUX_FUNC(mux));
+		ret = gpio_stm32_configure(port, STM32_DT_PINMUX_LINE(mux),
+					   pin_cgf, STM32_DT_PINMUX_FUNC(mux));
 		if (ret < 0) {
 			return ret;
 		}
