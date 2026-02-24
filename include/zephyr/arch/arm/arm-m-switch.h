@@ -3,6 +3,17 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Cortex-M context-switch support helpers
+ *
+ * The routines in this header back Zephyr's Cortex-M context-switch path
+ * when `CONFIG_USE_SWITCH` is enabled. They build and manipulate the stack
+ * frames consumed by the hand-written assembly in `arm_m_switch()` and the
+ * ISR tail-fixup logic, and expose a small interface to the scheduler and
+ * fault handlers.
+ */
 #ifndef _ZEPHYR_ARCH_ARM_M_SWITCH_H
 #define _ZEPHYR_ARCH_ARM_M_SWITCH_H
 
@@ -35,34 +46,113 @@
 #define _ARM_M_SWITCH_HAVE_DSP
 #endif
 
+/**
+ * @brief Create an initial switch frame on a new thread's stack.
+ *
+ * The stack contents are prepared so that the first invocation of
+ * `arm_m_switch()` can restore directly into @p entry with arguments
+ * @p arg0 through @p arg3. The stack base and size are aligned to the
+ * 8-byte requirement mandated by the ARM EABI.
+ *
+ * @param base   Start address of the stack buffer (lowest address).
+ * @param sz     Size of the stack buffer in bytes.
+ * @param entry  Entry point the thread should begin executing.
+ * @param arg0   First argument passed to @p entry.
+ * @param arg1   Second argument passed to @p entry.
+ * @param arg2   Third argument passed to @p entry.
+ * @param arg3   Fourth argument passed to @p entry.
+ *
+ * @return Pointer to the synthesized switch handle to store in
+ *         `struct k_thread::switch_handle`, or NULL if the stack is too
+ *         small to hold the frame.
+ */
 void *arm_m_new_stack(char *base, uint32_t sz, void *entry, void *arg0, void *arg1, void *arg2,
 		      void *arg3);
 
+/**
+ * @brief Evaluate whether an interrupt should trigger a context switch.
+ *
+ * Invoked from the ISR tail path to decide if the scheduler selected a new
+ * thread. If a switch is needed, this saves the current callee-saved frame
+ * pointers in ::arm_m_cs_ptrs and initiates the hand-off to
+ * `arm_m_do_switch()`.
+ *
+ * @retval true  A switch was performed or scheduled.
+ * @retval false No switch requested; continue returning from the interrupt.
+ */
 bool arm_m_must_switch(void);
 
+/**
+ * @brief Assembly stub that completes the Cortex-M context restore.
+ *
+ * This routine is patched into the LR saved on the ISR stack by
+ * arm_m_exc_tail() so that callee-saved registers can be fixed up and control
+ * returned to the correct thread context.
+ */
 void arm_m_exc_exit(void);
 
+/**
+ * @brief Recover an interrupted IT/ICI instruction after a context switch.
+ *
+ * The function is called from the fault handler that follows the deliberate
+ * `UDF` in arm_m_iciit_stub(). It detects whether the undefined instruction
+ * came from our stub and, if so, restores the saved PC/xPSR to re-execute the
+ * original instruction.
+ *
+ * @param msp Exception entry stack pointer for MSP.
+ * @param psp Exception entry stack pointer for PSP.
+ * @param lr  EXC_RETURN value captured on exception entry.
+ *
+ * @retval true  The fault corresponded to the IT/ICI recovery stub and was
+ *               handled.
+ * @retval false The fault was unrelated and should be processed normally.
+ */
 bool arm_m_iciit_check(uint32_t msp, uint32_t psp, uint32_t lr);
 
+/**
+ * @brief Undefined-instruction stub used to force IT/ICI recovery.
+ *
+ * When an interrupt preempts certain conditional instructions inside an
+ * IT/ICI block and a context switch occurs, returning directly can violate
+ * architectural rules. The handler patches the stacked PC to this stub so the
+ * subsequent fault can repair and resume the original instruction.
+ */
 void arm_m_iciit_stub(void);
 
+/** Pointer to the stacked LR word used by the ISR tail fixup path. */
 extern uint32_t *arm_m_exc_lr_ptr;
 
 void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread);
 
+/** Thread-local storage pointer for the currently running thread. */
 extern uintptr_t z_arm_tls_ptr;
 
+/** Backing storage used when relocating stacks during switch operations. */
 extern uint32_t arm_m_switch_stack_buffer;
 
+/** @cond INTERNAL_HIDDEN */
 /* Global pointers to the frame locations for the callee-saved
  * registers.  Set in arm_m_must_switch(), and used by the fixup
  * assembly in arm_m_exc_exit.
  */
 struct arm_m_cs_ptrs {
+	/** Pointer to the callee-saved block being written by the outgoing thread */
 	void *out, *in, *lr_save, *lr_fixup;
 };
+/** @endcond */
+
+/** Global instance with current callee-saved frame pointers. */
 extern struct arm_m_cs_ptrs arm_m_cs_ptrs;
 
+/**
+ * @brief ISR-tail helper that patches the stacked LR for deferred switch fixup.
+ *
+ * Called near the end of interrupt handling, this routine optionally rewrites
+ * the topmost LR on the active stack to branch to arm_m_exc_exit() instead of
+ * the original return site. Doing so defers the expensive callee-saved
+ * register handling until just before returning to thread mode. Stack
+ * sentinel checking is also performed here when enabled.
+ */
 static inline void arm_m_exc_tail(void)
 {
 #ifdef CONFIG_MULTITHREADING
@@ -116,6 +206,17 @@ static inline void arm_m_exc_tail(void)
 #endif
 }
 
+/**
+ * @brief Core Cortex-M context switch routine.
+ *
+ * Performs the low-level swap between the outgoing and incoming thread switch
+ * handles. Implemented with inline assembly to manage stacked frames, optional
+ * FPU/DSP state, privilege level, and stack guards. Called by arch_switch()
+ * and scheduler paths only.
+ *
+ * @param switch_to     Switch handle (typically PSP) for the next thread.
+ * @param switched_from Storage location to write the outgoing switch handle.
+ */
 static ALWAYS_INLINE void arm_m_switch(void *switch_to, void **switched_from)
 {
 #if defined(CONFIG_USERSPACE) || defined(CONFIG_MPU_STACK_GUARD)
@@ -239,6 +340,15 @@ static ALWAYS_INLINE void arm_m_switch(void *switch_to, void **switched_from)
 }
 
 #ifdef CONFIG_USE_SWITCH
+/**
+ * @brief Public arch-level wrapper for the Cortex-M switch routine.
+ *
+ * Thin inline that forwards to arm_m_switch() when the architecture uses
+ * the `CONFIG_USE_SWITCH` mechanism.
+ *
+ * @param switch_to     Switch handle for the next thread.
+ * @param switched_from Storage for the outgoing switch handle.
+ */
 static ALWAYS_INLINE void arch_switch(void *switch_to, void **switched_from)
 {
 	arm_m_switch(switch_to, switched_from);
