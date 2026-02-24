@@ -115,34 +115,41 @@ static int hx711_configure_gpio_interrupt(const struct device *dev, bool enable)
 	struct hx711_data *data = dev->data;
 	int ret;
 
+	if (!config->trig_cfg) {
+		LOG_ERR("trigger not configured for this device");
+		return -ENOTSUP;
+	}
+
 	if (enable) {
-		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_TRIGGER);
+		ret = pinctrl_apply_state(config->trig_cfg->pcfg, PINCTRL_STATE_TRIGGER);
 		if (ret < 0) {
 			LOG_ERR("could not apply pin config, return code %d", ret);
 			return ret;
 		}
 
-		ret = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_FALLING);
+		ret = gpio_pin_interrupt_configure_dt(&config->trig_cfg->int_gpio,
+						      GPIO_INT_EDGE_FALLING);
 		if (ret < 0) {
 			LOG_ERR("could not set up gpio interrupt, return code %d", ret);
 			return ret;
 		}
 
-		data->trigger_armed = true;
+		data->trig_data->trigger_armed = true;
 	} else {
-		ret = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_DISABLE);
+		ret = gpio_pin_interrupt_configure_dt(&config->trig_cfg->int_gpio,
+						      GPIO_INT_DISABLE);
 		if (ret < 0) {
 			LOG_ERR("could not set up gpio interrupt, return code %d", ret);
 			return ret;
 		}
 
-		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+		ret = pinctrl_apply_state(config->trig_cfg->pcfg, PINCTRL_STATE_DEFAULT);
 		if (ret < 0) {
 			LOG_ERR("could not apply pin config, return code %d", ret);
 			return ret;
 		}
 
-		data->trigger_armed = false;
+		data->trig_data->trigger_armed = false;
 	}
 
 	return 0;
@@ -151,27 +158,27 @@ static int hx711_configure_gpio_interrupt(const struct device *dev, bool enable)
 static void hx711_gpio_irq_handler(const struct device *port, struct gpio_callback *cb,
 				   gpio_port_pins_t pins)
 {
-	struct hx711_data *data = CONTAINER_OF(cb, struct hx711_data, gpio_cb);
+	struct hx711_trigger_data *trig_data = CONTAINER_OF(cb, struct hx711_trigger_data, gpio_cb);
 
-	hx711_configure_gpio_interrupt(data->dev, false);
+	hx711_configure_gpio_interrupt(trig_data->dev, false);
 
 #if defined(CONFIG_HX711_SPI_TRIGGER_OWN_THREAD)
-	k_work_submit_to_queue(&data->work_q, &data->work);
+	k_work_submit_to_queue(&trig_data->work_q, &trig_data->work);
 #else
-	k_work_submit(&data->work);
+	k_work_submit(&trig_data->work);
 #endif
 }
 
 static void hx711_gpio_irq_work_handler(struct k_work *item)
 {
-	struct hx711_data *data = CONTAINER_OF(item, struct hx711_data, work);
-	const struct device *dev = data->dev;
+	struct hx711_trigger_data *trig_data = CONTAINER_OF(item, struct hx711_trigger_data, work);
+	const struct device *dev = trig_data->dev;
 
-	if (data->data_ready_handler != NULL) {
-		data->data_ready_handler(dev, data->data_ready_trigger);
+	if (trig_data->data_ready_handler != NULL) {
+		trig_data->data_ready_handler(dev, trig_data->data_ready_trigger);
 	}
 
-	hx711_configure_gpio_interrupt(data->dev, true);
+	hx711_configure_gpio_interrupt(dev, true);
 }
 
 static int hx711_gpio_irq_init(const struct device *dev)
@@ -180,28 +187,30 @@ static int hx711_gpio_irq_init(const struct device *dev)
 	struct hx711_data *data = dev->data;
 	int ret;
 
-	if (!gpio_is_ready_dt(&config->int_gpio)) {
-		LOG_ERR("gpio %s is not ready", config->int_gpio.port->name);
+	if (!gpio_is_ready_dt(&config->trig_cfg->int_gpio)) {
+		LOG_ERR("gpio %s is not ready", config->trig_cfg->int_gpio.port->name);
 		return -EIO;
 	}
 
-	gpio_init_callback(&data->gpio_cb, hx711_gpio_irq_handler, BIT(config->int_gpio.pin));
+	gpio_init_callback(&data->trig_data->gpio_cb, hx711_gpio_irq_handler,
+			   BIT(config->trig_cfg->int_gpio.pin));
 
-	ret = gpio_add_callback(config->int_gpio.port, &data->gpio_cb);
+	ret = gpio_add_callback(config->trig_cfg->int_gpio.port, &data->trig_data->gpio_cb);
 	if (ret != 0) {
 		LOG_ERR("Failed at gpio_add_callback_dt for int_gpio, return code %d", ret);
 		return ret;
 	}
 
-	data->dev = dev;
+	data->trig_data->dev = dev;
 
 #if defined(CONFIG_HX711_SPI_TRIGGER_OWN_THREAD)
-	k_work_queue_init(&data->work_q);
-	k_work_queue_start(&data->work_q, data->thread_stack, CONFIG_HX711_SPI_THREAD_STACK_SIZE,
+	k_work_queue_init(&data->trig_data->work_q);
+	k_work_queue_start(&data->trig_data->work_q, data->trig_data->thread_stack,
+			   CONFIG_HX711_SPI_THREAD_STACK_SIZE,
 			   K_PRIO_COOP(CONFIG_HX711_SPI_THREAD_PRIORITY), NULL);
 #endif
 
-	data->work.handler = hx711_gpio_irq_work_handler;
+	data->trig_data->work.handler = hx711_gpio_irq_work_handler;
 
 	return 0;
 }
@@ -212,14 +221,14 @@ static int hx711_trigger_set(const struct device *dev, const struct sensor_trigg
 	const struct hx711_config *config = dev->config;
 	struct hx711_data *data = dev->data;
 
-	if (!config->int_gpio.port || trig->type != SENSOR_TRIG_DATA_READY) {
+	if (!config->trig_cfg->int_gpio.port || trig->type != SENSOR_TRIG_DATA_READY) {
 		return -ENOTSUP;
 	}
 
-	hx711_configure_gpio_interrupt(data->dev, false);
+	hx711_configure_gpio_interrupt(dev, false);
 
-	data->data_ready_handler = handler;
-	data->data_ready_trigger = trig;
+	data->trig_data->data_ready_handler = handler;
+	data->trig_data->data_ready_trigger = trig;
 
 	if (handler) {
 		hx711_configure_gpio_interrupt(dev, true);
@@ -270,14 +279,15 @@ static int hx711_sample_wait(const struct device *dev)
 
 static int hx711_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
-	struct hx711_data *data = dev->data;
 	int ret;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_VOLTAGE ||
 			chan == (enum sensor_channel)SENSOR_CHAN_HX711_MASS);
 
 #if defined(CONFIG_HX711_SPI_TRIGGER)
-	if (data->trigger_armed) {
+	struct hx711_data *data = dev->data;
+
+	if (data->trig_data->trigger_armed) {
 		LOG_ERR("cannot fetch when waiting for trigger");
 		return -EAGAIN;
 	}
@@ -291,7 +301,7 @@ static int hx711_sample_fetch(const struct device *dev, enum sensor_channel chan
 	ret = hx711_sample_fetch_impl(dev);
 
 #if defined(CONFIG_HX711_SPI_TRIGGER)
-	if (data->data_ready_handler) {
+	if (data->trig_data->data_ready_handler) {
 		hx711_configure_gpio_interrupt(dev, true);
 	}
 #endif
@@ -378,7 +388,7 @@ static int hx711_init(const struct device *dev)
 	}
 
 #if defined(CONFIG_HX711_SPI_TRIGGER)
-	if (hx711_gpio_irq_init(dev) < 0) {
+	if (config->trig_cfg && hx711_gpio_irq_init(dev) < 0) {
 		return -ENODEV;
 	}
 #endif
@@ -389,18 +399,34 @@ static int hx711_init(const struct device *dev)
 #define HX711_SPI_OPERATION                                                                        \
 	(SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_TRANSFER_MSB)
 
+#define HX711_TRGGER_ENABLED(node)                                                                 \
+	COND_CODE_1(CONFIG_HX711_SPI_TRIGGER, (DT_INST_PINCTRL_HAS_NAME(node, trigger)), (false))
+
+#define HX711_TRIGGER_CONFIG_NAME(node) hx711_##node##_trig_config
+
+#define HX711_TRIGGER_DATA_NAME(node) hx711_##node##_trig_data
+
+#define HX711_TRIGGER_DECL(node)                                                                   \
+	PINCTRL_DT_INST_DEFINE(node);                                                              \
+	static struct hx711_trigger_config HX711_TRIGGER_CONFIG_NAME(node) = {                     \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(node),                                      \
+		.int_gpio = GPIO_DT_SPEC_INST_GET(node, dout_trig_gpios),                          \
+	};                                                                                         \
+	static struct hx711_trigger_data HX711_TRIGGER_DATA_NAME(node);
+
 #define HX711_DEFINE(inst)                                                                         \
-	IF_ENABLED(CONFIG_HX711_SPI_TRIGGER, (PINCTRL_DT_INST_DEFINE(inst)));                      \
+	IF_ENABLED(CONFIG_HX711_SPI_TRIGGER, (HX711_TRIGGER_DECL(inst)));                          \
 	static struct hx711_data hx711_data_##inst = {                                             \
 		.gain = DT_INST_PROP(inst, gain),                                                  \
-	};                                                                                         \
+		IF_ENABLED(HX711_TRGGER_ENABLED(inst), (                                           \
+					.trig_data = &(HX711_TRIGGER_DATA_NAME(inst)),             \
+					)) };                                                      \
 	static const struct hx711_config hx711_config_##inst = {                                   \
 		.spi = SPI_DT_SPEC_INST_GET(inst, HX711_SPI_OPERATION),                            \
 		.avdd_uv = DT_INST_PROP(inst, avdd) * 1000,                                        \
-		IF_ENABLED(CONFIG_HX711_SPI_TRIGGER, (                                             \
-					.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),              \
-					.int_gpio = GPIO_DT_SPEC_INST_GET(inst, dout_trig_gpios),  \
-					)) }; \
+		IF_ENABLED(HX711_TRGGER_ENABLED(inst), (                                           \
+					.trig_cfg = &(HX711_TRIGGER_CONFIG_NAME(inst)),            \
+					)) };                                                      \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, hx711_init, NULL,                                       \
 				     &hx711_data_##inst, &hx711_config_##inst, POST_KERNEL,        \
