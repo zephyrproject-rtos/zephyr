@@ -583,6 +583,7 @@
 				vdd-ov-en = <0 0 0 0>;
 				gdrv-en = <0 0 0 0>;
 				sh-vdd-en = <0 0 0 0>;
+				curr-lim = <0 0 0 0>;
 				drdy-gpios = <&test_gpio 0 0>;
 				fault-gpios = <&test_gpio 0 0>;
 				sync-gpios = <&test_gpio 0 0>;

@@ -486,7 +486,7 @@ static int gpio_max14906_config_diag(const struct device *dev)
 	const struct max14906_config *config = dev->config;
 	int ret;
 
-	/* Set Config1 and Config2 regs */
+	/* Configure global registers */
 	ret = max149x6_reg_transceive(dev, MAX14906_CONFIG1_REG,
 				      config->config1.reg_raw, NULL, MAX149x6_WRITE);
 	if (ret < 0) {
@@ -499,7 +499,13 @@ static int gpio_max14906_config_diag(const struct device *dev)
 		return ret;
 	}
 
-	/* Configure per channel diagnostics */
+	/* Configure per-channel registers */
+	ret = max149x6_reg_transceive(dev, MAX14906_CONFIG_CURR_LIM,
+				      config->curr_lim.reg_raw, NULL, MAX149x6_WRITE);
+	if (ret < 0) {
+		return ret;
+	}
+
 	ret = max149x6_reg_transceive(dev, MAX14906_OPN_WR_EN_REG,
 				      data->chan_en.opn_wr_en.reg_raw, NULL, MAX149x6_WRITE);
 	if (ret < 0) {
@@ -658,6 +664,10 @@ static DEVICE_API(gpio, gpio_max14906_api) = {
 		.config2.reg_bits.OW_OFF_CS = DT_INST_PROP(id, ow_off_cs),                         \
 		.config2.reg_bits.WD_TO = DT_INST_PROP(id, wd_to),                                 \
 		.pkt_size = (DT_INST_PROP(id, crc_en) & 0x1) ? 3 : 2,                              \
+		.curr_lim.reg_bits.CL1 = DT_INST_PROP_BY_IDX(id, curr_lim, 0),                     \
+		.curr_lim.reg_bits.CL2 = DT_INST_PROP_BY_IDX(id, curr_lim, 1),                     \
+		.curr_lim.reg_bits.CL3 = DT_INST_PROP_BY_IDX(id, curr_lim, 2),                     \
+		.curr_lim.reg_bits.CL4 = DT_INST_PROP_BY_IDX(id, curr_lim, 3),                     \
 		.spi_addr = DT_INST_PROP(id, spi_addr),                                            \
 	};                                                                                         \
                                                                                                    \

@@ -89,6 +89,16 @@ properties:
       - 0 mean disable
       - 1 mean enable
       channels indentation start from CH0...CH3
+  curr-lim:
+    type: array
+    default: [0, 0, 0, 0]
+    description: |
+      Default values are from documentation.
+      Per-channel high-side current limit for CH0..CH3.
+      0: 600 mA (default)
+      1: 130 mA
+      2: 300 mA
+      3: 1200 mA
   fled-set:
     type: boolean
     description: |
