@@ -398,6 +398,17 @@ enum wifi_security_type wpas_key_mgmt_to_zephyr(bool is_hapd, void *config, int 
 		return WIFI_SECURITY_TYPE_EAP_TLS;
 #endif
 	case WPA_KEY_MGMT_NONE:
+#ifdef CONFIG_WEP
+		if (!is_hapd && config) {
+			struct wpa_ssid *ssid = (struct wpa_ssid *)config;
+
+			for (int i = 0; i < NUM_WEP_KEYS; i++) {
+				if (ssid->wep_key_len[i] > 0) {
+					return WIFI_SECURITY_TYPE_WEP;
+				}
+			}
+		}
+#endif
 		return WIFI_SECURITY_TYPE_NONE;
 	case WPA_KEY_MGMT_PSK:
 		if (proto == WPA_PROTO_RSN) {
@@ -702,7 +713,10 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 	}
 
 	if (params->security != WIFI_SECURITY_TYPE_NONE) {
-		if (params->psk) {
+		if (params->psk &&
+		    params->security != WIFI_SECURITY_TYPE_WEP &&
+		    params->security != WIFI_SECURITY_TYPE_WEP_OPEN &&
+		    params->security != WIFI_SECURITY_TYPE_WEP_SHARED) {
 			if ((params->psk_length < WIFI_PSK_MIN_LEN) ||
 			    (params->psk_length > WIFI_PSK_MAX_LEN)) {
 				wpa_printf(MSG_ERROR,
@@ -722,8 +736,11 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 			goto rem_net;
 		}
 
-		/* Except for WPA-PSK, rest all are under WPA2 */
-		if (params->security != WIFI_SECURITY_TYPE_WPA_PSK) {
+		/* Except for WPA-PSK and WEP, rest all are under WPA2 */
+		if (params->security != WIFI_SECURITY_TYPE_WPA_PSK &&
+		    params->security != WIFI_SECURITY_TYPE_WEP &&
+		    params->security != WIFI_SECURITY_TYPE_WEP_OPEN &&
+		    params->security != WIFI_SECURITY_TYPE_WEP_SHARED) {
 			if (!wpa_cli_cmd_v("set_network %d proto RSN",
 					   resp.network_id)) {
 				goto out;
@@ -1092,6 +1109,67 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 
 			if (!wpa_cli_cmd_v("set_network %d private_key2_passwd \"%s\"",
 					   resp.network_id, params->key2_passwd)) {
+				goto out;
+			}
+#endif
+#ifdef CONFIG_WEP
+		} else if (params->security == WIFI_SECURITY_TYPE_WEP ||
+			   params->security == WIFI_SECURITY_TYPE_WEP_OPEN ||
+			   params->security == WIFI_SECURITY_TYPE_WEP_SHARED) {
+			const char *auth_alg;
+
+			if (!params->psk || !params->psk_length) {
+				wpa_printf(MSG_ERROR, "WEP key is required");
+				goto out;
+			}
+
+			char wep_key_buf[WIFI_WEP_KEY_MAX_LEN + 1] = {0};
+
+			if (params->psk_length > sizeof(wep_key_buf) - 1) {
+				wpa_printf(MSG_ERROR, "WEP key too long: %d",
+					   params->psk_length);
+				goto out;
+			}
+
+			os_memcpy(wep_key_buf, params->psk, params->psk_length);
+			wep_key_buf[params->psk_length] = '\0';
+
+			if (!wpa_cli_cmd_v("set_network %d key_mgmt NONE",
+					   resp.network_id)) {
+				goto out;
+			}
+
+			/*
+			 * TODO: Only wep_key0 with wep_tx_keyidx 0 is supported.
+			 * Alternate key indices (1-3) are not yet configurable.
+			 */
+			if (params->psk_length == 5 || params->psk_length == 13) {
+				if (!wpa_cli_cmd_v("set_network %d wep_key0 \"%s\"",
+						   resp.network_id, wep_key_buf)) {
+					goto out;
+				}
+			} else {
+				if (!wpa_cli_cmd_v("set_network %d wep_key0 %s",
+						   resp.network_id, wep_key_buf)) {
+					goto out;
+				}
+			}
+
+			if (!wpa_cli_cmd_v("set_network %d wep_tx_keyidx 0",
+					   resp.network_id)) {
+				goto out;
+			}
+
+			if (params->security == WIFI_SECURITY_TYPE_WEP_OPEN) {
+				auth_alg = "OPEN";
+			} else if (params->security == WIFI_SECURITY_TYPE_WEP_SHARED) {
+				auth_alg = "SHARED";
+			} else {
+				auth_alg = "OPEN SHARED";
+			}
+
+			if (!wpa_cli_cmd_v("set_network %d auth_alg %s",
+					   resp.network_id, auth_alg)) {
 				goto out;
 			}
 #endif

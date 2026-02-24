@@ -93,6 +93,10 @@ const char *wifi_security_txt(enum wifi_security_type security)
 		return "FT-EAP-SHA384";
 	case WIFI_SECURITY_TYPE_SAE_EXT_KEY:
 		return "WPA3-SAE-EXT-KEY";
+	case WIFI_SECURITY_TYPE_WEP_OPEN:
+		return "WEP-OPEN";
+	case WIFI_SECURITY_TYPE_WEP_SHARED:
+		return "WEP-SHARED";
 	case WIFI_SECURITY_TYPE_UNKNOWN:
 	default:
 		return "UNKNOWN";
@@ -407,9 +411,32 @@ static int wifi_connect(uint64_t mgmt_request, struct net_if *iface,
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT) && !defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_WEP)
+	if (params->security == WIFI_SECURITY_TYPE_WEP ||
+	    params->security == WIFI_SECURITY_TYPE_WEP_OPEN ||
+	    params->security == WIFI_SECURITY_TYPE_WEP_SHARED) {
+		NET_ERR("WEP not supported: enable CONFIG_WIFI_NM_WPA_SUPPLICANT_WEP");
+		return -ENOTSUP;
+	}
+
 	if (params->psk_length && (params->psk_length < 8 || params->psk_length > 64)) {
 		return -EINVAL;
 	}
+#else
+	if (params->security == WIFI_SECURITY_TYPE_WEP ||
+	    params->security == WIFI_SECURITY_TYPE_WEP_OPEN ||
+	    params->security == WIFI_SECURITY_TYPE_WEP_SHARED) {
+		if (params->psk_length &&
+		    params->psk_length != 5 && params->psk_length != 13 &&
+		    params->psk_length != 10 && params->psk_length != 26) {
+			NET_ERR("Invalid WEP key length %d: valid lengths are "
+				"5/13 (ASCII) or 10/26 (hex)", params->psk_length);
+			return -EINVAL;
+		}
+	} else if (params->psk_length && (params->psk_length < 8 || params->psk_length > 64)) {
+		return -EINVAL;
+	}
+#endif
 
 	if (params->sae_password_length &&
 	    (params->sae_password_length < 8 ||
@@ -438,6 +465,15 @@ static int wifi_connect(uint64_t mgmt_request, struct net_if *iface,
 			return -EINVAL;
 		}
 		break;
+#if !defined(CONFIG_WIFI_NM_WPA_SUPPLICANT) || defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_WEP)
+	case WIFI_SECURITY_TYPE_WEP:
+	case WIFI_SECURITY_TYPE_WEP_OPEN:
+	case WIFI_SECURITY_TYPE_WEP_SHARED:
+		if (!params->psk_length || !params->psk) {
+			return -EINVAL;
+		}
+		break;
+#endif
 	default:
 		break;
 	}

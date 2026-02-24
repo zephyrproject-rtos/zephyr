@@ -113,6 +113,10 @@ enum wifi_security_type {
 	WIFI_SECURITY_TYPE_FT_EAP_SHA384,
 	/** SAE Extended key (uses group-dependent hashing) */
 	WIFI_SECURITY_TYPE_SAE_EXT_KEY,
+	/** WEP security with Open System authentication. */
+	WIFI_SECURITY_TYPE_WEP_OPEN,
+	/** WEP security with Shared Key authentication. */
+	WIFI_SECURITY_TYPE_WEP_SHARED,
 
 	/** @cond INTERNAL_HIDDEN */
 	__WIFI_SECURITY_TYPE_AFTER_LAST,
@@ -303,6 +307,8 @@ const char *wifi_bandwidth_txt(enum wifi_frequency_bandwidths bandwidth);
 #define WIFI_PSK_MIN_LEN 8
 /** Maximum PSK length */
 #define WIFI_PSK_MAX_LEN 64
+/** Maximum WEP key length (WEP-104: 26 hex chars) */
+#define WIFI_WEP_KEY_MAX_LEN 26
 /** Max SAW password length */
 #define WIFI_SAE_PSWD_MAX_LEN 128
 /** MAC address length */
