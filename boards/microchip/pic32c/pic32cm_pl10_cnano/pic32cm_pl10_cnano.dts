@@ -118,3 +118,7 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&dmac {
+	status = "okay";
+};
