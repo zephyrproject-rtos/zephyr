@@ -43,6 +43,12 @@
 			reg = <0x50000000 DT_SIZE_K(16)>;
 			ranges = <0x0 0x50000000 DT_SIZE_K(16)>;
 
+			ulp_ram: memory@0 {
+				compatible = "zephyr,memory-region", "mmio-sram";
+				reg = <0x0 0x3c00>;
+				zephyr,memory-region = "SRAMLP_ULP";
+			};
+
 			ulp_shm: memory@3bf0 {
 				compatible = "zephyr,memory-region", "mmio-sram";
 				reg = <0x3bf0 0x10>;
