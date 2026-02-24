@@ -320,6 +320,7 @@ static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 		if (!evt_buf) {
 			LOG_ERR("No available event buffers!");
 			__ASSERT_NO_MSG(evt_buf);
+			k_sem_give(&hci_sem);
 			return -ENOMEM;
 		}
 		/*
