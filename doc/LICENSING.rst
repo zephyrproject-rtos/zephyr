@@ -10,6 +10,17 @@ are not covered by the `Apache 2.0 License`_. In some places
 there is no LICENSE file or way to put a LICENSE file there, so we describe the
 licensing in this document.
 
+Bootstrap JavaScript and CSS Files
+----------------------------------
+
+* *Origin:* Bootstrap
+* *Licensing:* `MIT License`_
+* *Impact:* These files are used in the :ref:`dashboard` tool and never linked into the firmware.
+* *Files:*
+
+  * :zephyr_file:`scripts/dashboard/static/js/bootstrap-chop.js`
+  * :zephyr_file:`scripts/dashboard/static/css/bootstrap-chop.css`
+
 Continuous Integration Scripts
 ------------------------------
 

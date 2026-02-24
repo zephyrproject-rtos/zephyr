@@ -1,0 +1,89 @@
+<!--
+Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+
+SPDX-License-Identifier: Apache-2.0
+-->
+{% extends "base.html" %}
+
+{% block head %}
+
+<script>
+  // Create Javascript variables with all the report data in it.
+  let edtTree = {{edt_tree|safe}};
+</script>
+
+<link href="static/css/treetable.css" rel="stylesheet">
+<script src="static/js/treetable.js"></script>
+<link href="static/css/pygments.css" rel="stylesheet">
+<script src="static/js/dts.js"></script>
+
+{% endblock %}
+
+{% block content %}
+
+<div class="card callout mb-4">
+  <div class="card-body" style="font-size:smaller">
+    The devicetree browser provides navigation of the DTS contents,
+    with cross-referenced linking through phandles. Click on a row
+    to view additional details from the associated binding file as well
+    the location of the original definition. The original DTS source
+    can also be viewed in the "Source" tab.
+  </div>
+</div>
+
+<div class="row rst-content mb-3">
+  <div class="col">
+    <code class="literal p-1">{{file_path}}</code>
+  </div>
+</div>
+
+<ul class="nav nav-underline mb-3" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="browserTab" data-bs-toggle="tab"
+        data-bs-target="#dtBrowser" type="button" role="tab"
+        aria-controls="dtBrowser" aria-selected="true">
+      <h5>Browser</h5>
+    </button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="sourceTab" data-bs-toggle="tab"
+        data-bs-target="#dtSource" type="button" role="tab"
+        aria-controls="dtSource" aria-selected="false">
+      <h5>Source</h5>
+    </button>
+  </li>
+</ul>
+
+<div class="tab-content mb-5">
+
+  <div class="tab-pane fade show active" id="dtBrowser" role="tabpanel" aria-labelledby="browserTab">
+    <div class="row mb-2">
+      <div class="col">
+        <div class="form-check form-switch mt-1">
+          <input class="form-check-input" type="checkbox" id="showAllInfo">
+          <label class="form-check-label" for="showAllInfo">Show all node and property details</label>
+        </div>
+      </div>
+      <div class="col-auto">
+        <input class="form-control" type="search" id="search" placeholder="Search...">
+      </div>
+    </div>
+
+    <table id="edtTree" class="table table-sm table-hover table-bordered table-light mb-5">
+      <tbody>
+      </tbody>
+    </table>
+
+  </div>
+
+  <div class="tab-pane fade" id="dtSource" role="tabpanel" aria-labelledby="sourceTab">
+    <div class="row">
+      <div class="col">
+        <pre class="text-viewer"><code>{{file_contents|safe}}</code></pre>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

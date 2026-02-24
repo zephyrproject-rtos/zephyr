@@ -2184,9 +2184,9 @@ class BinaryFiles(ComplianceTest):
     doc = "No binary files allowed."
 
     def run(self):
-        BINARY_ALLOW_PATHS = ("doc/", "boards/", "samples/")
+        BINARY_ALLOW_PATHS = ("doc/", "boards/", "samples/", "scripts/dashboard/static/font/")
         # svg files are always detected as binary, see .gitattributes
-        BINARY_ALLOW_EXT = (".jpg", ".jpeg", ".png", ".svg", ".webp")
+        BINARY_ALLOW_EXT = (".jpg", ".jpeg", ".png", ".svg", ".webp", ".woff2")
 
         for stat in git("diff", "--numstat", "--diff-filter=A", COMMIT_RANGE).splitlines():
             added, deleted, fname = stat.split("\t")

@@ -796,6 +796,17 @@ Broadcom Platforms:
     - soc/brcm/
     - boards/brcm/
 
+Build Dashboard:
+  status: maintained
+  maintainers:
+    - grahamroff-dev
+  collaborators:
+    - mbolivar
+  files:
+    - scripts/dashboard/
+  labels:
+    - "area: Build Dashboard"
+
 Build system:
   status: maintained
   maintainers:
