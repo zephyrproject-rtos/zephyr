@@ -970,7 +970,7 @@ Other notable changes
 * A header file has been introduced to allocate ID ranges for persistent keys in the PSA Crypto API.
   It defines the ID ranges allocated to different users of the API (application, subsystems...).
   Users of the API must now use this header file to construct persistent key IDs.
-  See :zephyr_file:`include/zephyr/psa/key_ids.h` for more information. (:github:`85581`)
+  See ``include/zephyr/psa/key_ids.h`` for more information. (:github:`85581`)
 
 * Space-separated lists support has been removed from Twister configuration
   files. This feature was deprecated a long time ago. Projects that do still use

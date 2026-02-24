@@ -14,7 +14,6 @@
 #define OPENTHREAD_CORE_ZEPHYR_CONFIG_H_
 
 #include <zephyr/devicetree.h>
-#include <zephyr/psa/key_ids.h>
 #include <zephyr/toolchain.h>
 
 /**
@@ -559,7 +558,7 @@
  * NVM offset while using key refs.
  *
  */
-#define OPENTHREAD_CONFIG_PSA_ITS_NVM_OFFSET ZEPHYR_PSA_OPENTHREAD_KEY_ID_RANGE_BEGIN
+#define OPENTHREAD_CONFIG_PSA_ITS_NVM_OFFSET CONFIG_PSA_KEY_ID_OPENTHREAD_RANGE_START
 
 #ifdef CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER
 #define OPENTHREAD_CONFIG_MULTICAST_DNS_PUBLIC_API_ENABLE 1

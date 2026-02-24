@@ -12,7 +12,6 @@
 #include "mesh/keys.h"
 #include <bs_cmd_line.h>
 
-#include <zephyr/psa/key_ids.h>
 #include <psa/crypto.h>
 
 #define LOG_MODULE_NAME test_persistence
@@ -463,7 +462,7 @@ static void fake_key_setup(void)
 {
 	psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
 	psa_status_t status;
-	psa_key_id_t key_id = ZEPHYR_PSA_BT_MESH_KEY_ID_RANGE_BEGIN;
+	psa_key_id_t key_id = CONFIG_PSA_KEY_ID_BT_MESH_RANGE_START;
 	psa_key_id_t key_id_imported;
 	const uint8_t in[16] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
 						0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10};
@@ -499,7 +498,7 @@ static void fake_key_setup(void)
 static void fake_key_destruction_check(void)
 {
 	psa_status_t status;
-	psa_key_id_t key_id = ZEPHYR_PSA_BT_MESH_KEY_ID_RANGE_BEGIN;
+	psa_key_id_t key_id = CONFIG_PSA_KEY_ID_BT_MESH_RANGE_START;
 	uint8_t out[16] = {0};
 	size_t out_len;
 

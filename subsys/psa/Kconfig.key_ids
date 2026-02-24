@@ -1,0 +1,65 @@
+#
+# Copyright (c) 2026 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# Defines PSA Crypto persistent key ID ranges reserved for different subsystems.
+#
+# A user or external components may define additional ranges by adding a pair
+# of Kconfig options using the following naming pattern:
+# - PSA_KEY_ID_<range-name>_RANGE_START
+# - PSA_KEY_ID_<range-name>_RANGE_SIZE.
+#
+# An accompanying CMake check ensures there is no overlap between any defined
+# ranges preventing from persistent key ID collisions across subsystems.
+
+menu "PSA Crypto persistent key ID ranges"
+
+config PSA_KEY_ID_OPENTHREAD_RANGE_START
+	hex "Range start for OpenThread"
+	default 0x20000
+	help
+	  Base key ID for OpenThread. Matches the default value upstream:
+	  https://github.com/openthread/openthread/blob/thread-reference-20230706/src/core/config/platform.h#L138
+
+config PSA_KEY_ID_OPENTHREAD_RANGE_SIZE
+	hex "Range size for OpenThread"
+	default 0x10000 # 64Ki
+
+config PSA_KEY_ID_MATTER_RANGE_START
+	hex "Range start for Matter"
+	default 0x30000
+	help
+	  Base key ID for Matter. Matches the default value upstream:
+	  https://github.com/project-chip/connectedhomeip/blob/v1.4.0.0/src/crypto/CHIPCryptoPALPSA.h#L55
+
+config PSA_KEY_ID_MATTER_RANGE_SIZE
+	hex "Range size for Matter"
+	default 0x10000 # 64Ki
+
+config PSA_KEY_ID_BT_MESH_RANGE_START
+	hex "Range start for Bluetooth Mesh"
+	default 0x20000000
+
+config PSA_KEY_ID_BT_MESH_RANGE_SIZE
+	hex "Range size for Bluetooth Mesh"
+	default 0xC000 # 48Ki
+
+config PSA_KEY_ID_WIFI_CREDENTIALS_RANGE_START
+	hex "Range start for Wi-Fi credentials management"
+	default 0x20010000
+
+config PSA_KEY_ID_WIFI_CREDENTIALS_RANGE_SIZE
+	hex "Range size for Wi-Fi credentials management"
+	default 0x100 # 256
+
+config PSA_KEY_ID_APPLICATION_RANGE_START
+	hex "Range start for application-specific keys"
+	default 0x30000000
+
+config PSA_KEY_ID_APPLICATION_RANGE_SIZE
+	hex "Range size for application-specific keys"
+	default 0x100000 # 1Mi
+
+endmenu

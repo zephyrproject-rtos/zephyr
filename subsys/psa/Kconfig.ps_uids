@@ -1,0 +1,35 @@
+#
+# Copyright (c) 2026 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# Defines PSA Protected Storage UID ranges reserved for different subsystems.
+#
+# A user or external components may define additional ranges by adding a pair
+# of Kconfig options using the following naming pattern:
+# - PSA_PS_UID_<range-name>_RANGE_START
+# - PSA_PS_UID_<range-name>_RANGE_SIZE.
+#
+# An accompanying CMake check ensures there is no overlap between any defined
+# ranges preventing from UID collisions across subsystems.
+
+menu "PSA Protected Storage UID ranges"
+
+config PSA_PS_UID_SETTINGS_TFM_RANGE_START
+	hex "Range start for TF-M Settings backend"
+	default 0x2C000000
+
+config PSA_PS_UID_SETTINGS_TFM_RANGE_SIZE
+	hex "Range size for TF-M Settings backend"
+	default 0x10000 # 64Ki
+
+config PSA_PS_UID_APPLICATION_RANGE_START
+	hex "Range start for application-specific data"
+	default 0x30000000
+
+config PSA_PS_UID_APPLICATION_RANGE_SIZE
+	hex "Range size for application-specific data"
+	default 0x100000 # 1Mi
+
+endmenu

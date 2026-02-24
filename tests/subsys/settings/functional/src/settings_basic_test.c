@@ -28,19 +28,17 @@ LOG_MODULE_REGISTER(settings_basic_test);
 
 #if defined(CONFIG_SETTINGS_TFM_PSA_BACKEND_PS)
 #include <psa/protected_storage.h>
-#include <zephyr/psa/ps_ids.h>
 
 #define SETTINGS_PSA_MAX_ASSET_SIZE PS_MAX_ASSET_SIZE
 #define SETTINGS_PSA_REMOVE psa_ps_remove
-#define SETTINGS_PSA_ID_RANGE_START ZEPHYR_PSA_SETTINGS_TFM_PS_UID_RANGE_BEGIN
+#define SETTINGS_PSA_ID_RANGE_START CONFIG_PSA_PS_UID_SETTINGS_TFM_RANGE_START
 
 #elif defined(CONFIG_SETTINGS_TFM_PSA_BACKEND_ITS)
 #include <psa/internal_trusted_storage.h>
-#include <zephyr/psa/its_ids.h>
 
 #define SETTINGS_PSA_MAX_ASSET_SIZE ITS_MAX_ASSET_SIZE
 #define SETTINGS_PSA_REMOVE psa_its_remove
-#define SETTINGS_PSA_ID_RANGE_START ZEPHYR_PSA_SETTINGS_TFM_ITS_UID_RANGE_BEGIN
+#define SETTINGS_PSA_ID_RANGE_START CONFIG_PSA_ITS_UID_SETTINGS_TFM_RANGE_START
 
 #else
 #error "No PSA backend selected"

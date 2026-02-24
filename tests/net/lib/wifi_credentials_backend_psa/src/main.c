@@ -10,7 +10,6 @@
 #include <string.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
-#include <zephyr/psa/key_ids.h>
 
 #include <zephyr/fff.h>
 
@@ -81,7 +80,7 @@ psa_status_t custom_psa_export_key(mbedtls_svc_key_id_t key, uint8_t *data, size
 
 static void custom_psa_set_key_id(psa_key_attributes_t *attributes, mbedtls_svc_key_id_t key)
 {
-	zassert_equal(idx + ZEPHYR_PSA_WIFI_CREDENTIALS_KEY_ID_RANGE_BEGIN, key, "Key ID mismatch");
+	zassert_equal(idx + CONFIG_PSA_KEY_ID_WIFI_CREDENTIALS_RANGE_START, key, "Key ID mismatch");
 }
 
 void custom_psa_set_key_bits(psa_key_attributes_t *attributes, size_t bits)
@@ -173,7 +172,7 @@ ZTEST(wifi_credentials_backend_psa, test_add)
 ZTEST(wifi_credentials_backend_psa, test_get)
 {
 	int ret;
-	psa_key_id_t key_id = idx + ZEPHYR_PSA_WIFI_CREDENTIALS_KEY_ID_RANGE_BEGIN;
+	psa_key_id_t key_id = idx + CONFIG_PSA_KEY_ID_WIFI_CREDENTIALS_RANGE_START;
 	uint8_t buf[ENTRY_MAX_LEN];
 
 	ret = wifi_credentials_load_entry(idx, buf, ARRAY_SIZE(buf));
@@ -184,7 +183,7 @@ ZTEST(wifi_credentials_backend_psa, test_get)
 	zassert_equal(psa_export_key_fake.arg2_val, ARRAY_SIZE(buf), "Export key arg2 mismatch");
 
 	idx++;
-	key_id = idx + ZEPHYR_PSA_WIFI_CREDENTIALS_KEY_ID_RANGE_BEGIN;
+	key_id = idx + CONFIG_PSA_KEY_ID_WIFI_CREDENTIALS_RANGE_START;
 
 	ret = wifi_credentials_load_entry(idx, buf, ARRAY_SIZE(buf));
 
@@ -203,7 +202,7 @@ ZTEST(wifi_credentials_backend_psa, test_delete)
 	ret = wifi_credentials_delete_entry(idx);
 
 	zassert_equal(0, ret, "Delete entry failed");
-	zassert_equal(psa_destroy_key_fake.arg0_val, ZEPHYR_PSA_WIFI_CREDENTIALS_KEY_ID_RANGE_BEGIN,
+	zassert_equal(psa_destroy_key_fake.arg0_val, CONFIG_PSA_KEY_ID_WIFI_CREDENTIALS_RANGE_START,
 		      "Destroy key arg0 mismatch");
 
 	idx++;
@@ -212,7 +211,7 @@ ZTEST(wifi_credentials_backend_psa, test_delete)
 
 	zassert_equal(0, ret, "Delete entry failed");
 	zassert_equal(psa_destroy_key_fake.arg0_val,
-		      idx + ZEPHYR_PSA_WIFI_CREDENTIALS_KEY_ID_RANGE_BEGIN,
+		      idx + CONFIG_PSA_KEY_ID_WIFI_CREDENTIALS_RANGE_START,
 		      "Destroy key arg0 mismatch");
 
 	zassert_equal(psa_destroy_key_fake.call_count, 2, "Destroy key call count mismatch");

@@ -1595,6 +1595,10 @@ flagged.
         "OPT_0",
         "PEDO_THS_MIN",
         "PSA_H",  # This is used in config-psa.h as guard for the header file
+        "PSA_",  # Used as an option matching prefix
+        "PSA_ITS_UID",  # Used as an option matching prefix
+        "PSA_KEY_ID",  # Used as an option matching prefix
+        "PSA_PS_UID",  # Used as an option matching prefix
         "REG1",
         "REG2",
         "RIMAGE_SIGNING_SCHEMA",  # Optional module

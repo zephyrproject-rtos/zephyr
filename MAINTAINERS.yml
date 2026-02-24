@@ -4920,8 +4920,8 @@ Secure storage:
   maintainers:
     - tomi-font
   files:
+    - subsys/psa/
     - subsys/secure_storage/
-    - include/zephyr/psa/
     - samples/psa/
     - doc/services/storage/secure_storage/index.rst
     - tests/subsys/secure_storage/

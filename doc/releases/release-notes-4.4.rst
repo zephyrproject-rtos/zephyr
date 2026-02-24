@@ -66,6 +66,18 @@ API Changes
 Removed APIs and options
 ========================
 
+* PSA
+
+  * The headers ``include/zephyr/psa/ps_ids.h``, ``include/zephyr/psa/its_ids.h``, and
+    ``include/zephyr/psa/key_ids.h`` were removed. The PSA storage UID and persistent key
+    ID ranges are now defined via Kconfig instead of these headers.
+    Each range is configured with a pair of options (e.g.
+    :kconfig:option:`CONFIG_PSA_PS_UID_APPLICATION_RANGE_START` and
+    :kconfig:option:`CONFIG_PSA_PS_UID_APPLICATION_RANGE_SIZE`).
+    CMake checks at build time that no two ranges overlap, making it easier to reconfigure
+    ranges and to detect collisions when integrating external components that use PSA
+    storage (:github:`104448`).
+
 Deprecated APIs and options
 ===========================
 

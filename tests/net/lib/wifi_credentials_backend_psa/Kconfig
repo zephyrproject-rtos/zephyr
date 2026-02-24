@@ -1,0 +1,12 @@
+#
+# Copyright (c) 2026 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# This test mocks PSA Crypto API so the following option must be set by the test
+# to enable Kconfig options that define reserved persistent key ID ranges.
+config PSA_CRYPTO_PERSISTENT_KEYS
+	default y
+
+source "Kconfig.zephyr"

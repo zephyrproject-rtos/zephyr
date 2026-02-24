@@ -1,0 +1,45 @@
+#
+# Copyright (c) 2026 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# Indicates that there is a PSA Protected Storage API implementation enabled in
+# the system. External implementations should select this symbol to enable
+# Kconfig options that define reserved UID ranges.
+config PSA_PS
+	bool
+	default y if SECURE_STORAGE || TFM_PARTITION_PROTECTED_STORAGE
+
+# Indicates that there is a PSA Internal Truster Storage API implementation
+# enabled in the system. External implementations should select this symbol to
+# enable Kconfig options that define reserved UID ranges.
+config PSA_ITS
+	bool
+	default y if SECURE_STORAGE || TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
+
+# Indicates that there is a support for PSA Crypto persistent keys enabled in
+# the system. External implementations should select this symbol to enable
+# Kconfig options that define reserved persistent key ID ranges.
+config PSA_CRYPTO_PERSISTENT_KEYS
+	bool
+	default y if MBEDTLS_PSA_CRYPTO_STORAGE_C
+	default y if TFM_CRYPTO_KEY_MODULE_ENABLED && TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
+
+if PSA_PS
+
+rsource "Kconfig.ps_uids"
+
+endif # PSA_PS
+
+if PSA_ITS
+
+rsource "Kconfig.its_uids"
+
+endif # PSA_ITS
+
+if PSA_CRYPTO_PERSISTENT_KEYS
+
+rsource "Kconfig.key_ids"
+
+endif # PSA_CRYPTO_PERSISTENT_KEYS
