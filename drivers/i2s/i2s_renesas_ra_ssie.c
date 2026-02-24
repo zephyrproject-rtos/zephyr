@@ -12,16 +12,12 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/i2s.h>
 #include <zephyr/drivers/pinctrl.h>
-#include <zephyr/drivers/pwm.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
 
-#include "r_ssi.h"
-#include "rp_ssi.h"
-#ifdef CONFIG_I2S_RENESAS_RA_SSIE_DTC
-#include "r_dtc.h"
-#endif
+#include <r_ssi.h>
+#include <r_dtc.h>
 
 #include <soc.h>
 
@@ -261,11 +257,14 @@ static int i2s_renesas_ra_alloc_stream(struct i2s_config *cfg,
 static void i2s_renesas_ra_free_stream(struct i2s_config *cfg,
 				       struct renesas_ra_ssie_stream *stream)
 {
+	__ASSERT((cfg != NULL && stream != NULL), "Invalid parameter");
+
 	if (stream->mem_block != NULL) {
 		k_mem_slab_free(cfg->mem_slab, stream->mem_block);
-		stream->mem_block = NULL;
-		stream->mem_block_len = 0;
 	}
+
+	stream->mem_block = NULL;
+	stream->mem_block_len = 0;
 }
 
 static int i2s_renesas_ra_put_stream(struct k_msgq *msgq, struct renesas_ra_ssie_stream *stream)
@@ -575,7 +574,6 @@ stop:
 	}
 
 	return;
-
 free:
 	i2s_renesas_ra_free_stream(&dev_data->rx_cfg, &dev_data->rx_stream);
 stop:
@@ -600,7 +598,9 @@ static void renesas_ra_ssie_tx_callback(const struct device *dev)
 			/* If there is no msg in tx queue, set decive state to ready*/
 			if (k_msgq_num_used_get(&dev_data->tx_queue) == 0) {
 				goto tx_disable;
-			} else if (dev_data->stop_with_draining == false) {
+			}
+
+			if (dev_data->stop_with_draining == false) {
 				goto tx_disable;
 			}
 		}
@@ -620,7 +620,6 @@ static void renesas_ra_ssie_tx_callback(const struct device *dev)
 	}
 
 	return;
-
 tx_disable:
 	i2s_renesas_ra_free_stream(&dev_data->tx_cfg, tx_stream);
 }
@@ -860,15 +859,13 @@ static int i2s_renesas_ra_ssie_configure(const struct device *dev, enum i2s_dir 
 	if (i2s_cfg->frame_clk_freq == 0) {
 		if (dir == I2S_DIR_TX || dir == I2S_DIR_BOTH) {
 			drop_queue(dev, I2S_DIR_TX);
-			dev_data->tx_stream.mem_block = NULL;
-			dev_data->tx_stream.mem_block_len = 0;
+			i2s_renesas_ra_release_stream(&dev_data->tx_stream);
 			dev_data->tx_configured = false;
 		}
 
 		if (dir == I2S_DIR_RX || dir == I2S_DIR_BOTH) {
 			drop_queue(dev, I2S_DIR_RX);
-			dev_data->rx_stream.mem_block = NULL;
-			dev_data->rx_stream.mem_block_len = 0;
+			i2s_renesas_ra_release_stream(&dev_data->rx_stream);
 			dev_data->rx_configured = false;
 		}
 
@@ -984,14 +981,17 @@ static const struct i2s_config *i2s_renesas_ra_ssie_get_config(const struct devi
 {
 	struct renesas_ra_ssie_data *dev_data = dev->data;
 
-	if (dir == I2S_DIR_TX && dev_data->tx_configured) {
-		return &dev_data->tx_cfg;
-	}
-	if (dir == I2S_DIR_RX && dev_data->rx_configured) {
-		return &dev_data->rx_cfg;
+	if (dir == I2S_DIR_TX) {
+		return dev_data->tx_configured ? &dev_data->tx_cfg : NULL;
 	}
 
-	return NULL;
+	if (dir == I2S_DIR_RX) {
+		return dev_data->rx_configured ? &dev_data->rx_cfg : NULL;
+	}
+
+	/* dir == I2S_DIR_BOTH */
+	return dev_data->rx_configured ? &dev_data->rx_cfg
+				       : (dev_data->tx_configured ? &dev_data->tx_cfg : NULL);
 }
 
 static int i2s_renesas_ra_ssie_write(const struct device *dev, void *mem_block, size_t size)
@@ -1068,6 +1068,7 @@ static int i2s_renesas_ra_ssie_trigger(const struct device *dev, enum i2s_dir di
 			LOG_ERR("I2S_DIR_BOTH is not supported for half-duplex device");
 			return -ENOSYS;
 		}
+
 		configured = dev_data->tx_configured && dev_data->rx_configured;
 	} else if (dir == I2S_DIR_TX) {
 		configured = dev_data->tx_configured;
@@ -1130,7 +1131,6 @@ static int i2s_renesas_ra_ssie_init(const struct device *dev)
 	}
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
-
 	if (ret < 0) {
 		LOG_ERR("%s: pinctrl config failed.", __func__);
 		return ret;
@@ -1148,6 +1148,7 @@ static int i2s_renesas_ra_ssie_init(const struct device *dev)
 		LOG_ERR("Failed to initialize the device");
 		return -EIO;
 	}
+
 	config->irq_config_func(dev);
 
 	ret = audio_clock_enable(dev);
