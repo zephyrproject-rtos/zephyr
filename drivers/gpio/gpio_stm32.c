@@ -350,30 +350,6 @@ static void gpio_stm32_configure_raw(const struct device *dev, gpio_pin_t pin,
 
 }
 
-/**
- * @brief GPIO port clock handling
- */
-static int gpio_stm32_clock_request(const struct device *dev, bool on)
-{
-	const struct gpio_stm32_config *cfg = dev->config;
-	int ret;
-
-	__ASSERT_NO_MSG(dev != NULL);
-
-	/* enable clock for subsystem */
-	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-
-	if (on) {
-		ret = clock_control_on(clk,
-					(clock_control_subsys_t)&cfg->pclken);
-	} else {
-		ret = clock_control_off(clk,
-					(clock_control_subsys_t)&cfg->pclken);
-	}
-
-	return ret;
-}
-
 static int gpio_stm32_port_get_raw(const struct device *dev, uint32_t *value)
 {
 	const struct gpio_stm32_config *cfg = dev->config;
@@ -707,11 +683,15 @@ static DEVICE_API(gpio, gpio_stm32_driver) = {
 static int gpio_stm32_pm_action(const struct device *dev,
 				enum pm_device_action action)
 {
+	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	const struct gpio_stm32_config *cfg = dev->config;
+	clock_control_subsys_t subsys = (void *)&cfg->pclken;
+
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		return gpio_stm32_clock_request(dev, true);
+		return clock_control_on(clk, subsys);
 	case PM_DEVICE_ACTION_SUSPEND:
-		return gpio_stm32_clock_request(dev, false);
+		return clock_control_off(clk, subsys);
 	case PM_DEVICE_ACTION_TURN_OFF:
 	case PM_DEVICE_ACTION_TURN_ON:
 		break;
