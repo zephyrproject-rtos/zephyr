@@ -159,26 +159,6 @@ static int gpio_stm32_pincfg_to_flags(struct gpio_stm32_pin pin_cfg,
 }
 #endif /* CONFIG_GPIO_GET_CONFIG */
 
-/**
- * @brief Translate pin to pinval that the LL library needs
- */
-static inline uint32_t stm32_pinval_get(gpio_pin_t pin)
-{
-	uint32_t pinval;
-
-#ifdef CONFIG_SOC_SERIES_STM32F1X
-	pinval = (1 << pin) << GPIO_PIN_MASK_POS;
-	if (pin < 8) {
-		pinval |= 1 << pin;
-	} else {
-		pinval |= (1 << (pin % 8)) | 0x04000000;
-	}
-#else
-	pinval = 1 << pin;
-#endif
-	return pinval;
-}
-
 static inline void ll_gpio_set_pin_pull(GPIO_TypeDef *GPIOx, uint32_t Pin, uint32_t Pull)
 {
 #if defined(CONFIG_SOC_SERIES_STM32WB0X)
@@ -246,7 +226,7 @@ static void gpio_stm32_configure_raw(const struct device *dev, gpio_pin_t pin,
 	const struct gpio_stm32_config *cfg = dev->config;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
 
-	uint32_t pin_ll = stm32_pinval_get(pin);
+	uint32_t pin_ll = stm32_gpiomgr_pinnum_to_ll_val(pin);
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 	ARG_UNUSED(func);
@@ -568,7 +548,7 @@ static int gpio_stm32_get_config(const struct device *dev,
 		return err;
 	}
 
-	pin_ll = stm32_pinval_get(pin);
+	pin_ll = stm32_gpiomgr_pinnum_to_ll_val(pin);
 	pin_config.type = LL_GPIO_GetPinOutputType(gpio, pin_ll);
 	pin_config.pupd = ll_gpio_get_pin_pull(gpio, pin_ll);
 	pin_config.mode = LL_GPIO_GetPinMode(gpio, pin_ll);
