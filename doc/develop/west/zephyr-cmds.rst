@@ -233,6 +233,18 @@ under their original filename or with a SHA-256 suffix (``<filename>.<sha>``).
 If found, the blob is copied from the cache to the blob path; otherwise
 it is downloaded from its url to the blob path.
 
+.. _west-serial-monitor:
+
+Serial monitor: ``west monitor``
+********************************
+
+The ``monitor`` command provides a serial monitor with auto-reconnect,
+addr2line decoding, reset control, and layered YAML configuration::
+
+  west monitor
+
+See :ref:`west-monitor` for full documentation.
+
 .. _west-twister:
 
 Twister wrapper: ``west twister``
