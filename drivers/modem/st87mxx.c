@@ -55,7 +55,7 @@ static const struct socket_op_vtable offload_socket_fd_op_vtable;
 #if defined(CONFIG_DNS_RESOLVER)
 static const struct socket_dns_offload offload_dns_ops;
 static struct zsock_addrinfo dns_result;
-static struct sockaddr dns_result_addr;
+static struct net_sockaddr dns_result_addr;
 static char dns_result_canonname[DNS_MAX_NAME_SIZE + 1];
 #endif
 
@@ -395,9 +395,9 @@ MODEM_CMD_DEFINE(on_cmd_dns)
 	argv[0][strlen(argv[0])] = '\0';
 
 	/* Hard-code DNS to return IPv4. */
-	dns_result_addr.sa_family = AF_INET;
+	dns_result_addr.sa_family = NET_PF_INET;
 	(void)net_addr_pton(dns_result.ai_family, &argv[0][0],
-				&((struct sockaddr_in *)&dns_result_addr)->sin_addr);
+			    &((struct net_sockaddr_in *)&dns_result_addr)->sin_addr);
 
 	k_sem_give(&mdata.sem_dns);
 	return 0;
@@ -533,15 +533,15 @@ static bool offload_is_supported(int family, int type, int proto)
 {
 	LOG_INF("OFFLOAD IS SUPPORTED");
 
-	if ((family != AF_INET) && (family != AF_INET6)) {
+	if ((family != NET_PF_INET) && (family != NET_PF_INET6)) {
 		return false;
 	}
 
-	if ((type != SOCK_DGRAM) && (type != SOCK_STREAM)) {
+	if ((type != NET_SOCK_DGRAM) && (type != NET_SOCK_STREAM)) {
 		return false;
 	}
 
-	if ((proto != IPPROTO_TCP) && (proto != IPPROTO_UDP)) {
+	if ((proto != NET_IPPROTO_TCP) && (proto != NET_IPPROTO_UDP)) {
 		return false;
 	}
 
@@ -863,7 +863,7 @@ static void socket_close(struct modem_socket *sock)
 	modem_socket_put(&mdata.socket_config, sock->sock_fd);
 }
 
-static int st87mxx_create_socket(struct modem_socket *sock, const struct sockaddr *addr)
+static int st87mxx_create_socket(struct modem_socket *sock, const struct net_sockaddr *addr)
 {
 	char *protocol;
 	struct modem_cmd cmd[] = { MODEM_CMD("#SOCKETCREATE: ", on_cmd_socket_create, 1U, "") };
@@ -873,17 +873,17 @@ static int st87mxx_create_socket(struct modem_socket *sock, const struct sockadd
 	int ip_mode = -1;
 
 	/* Get the IP version */
-	if (addr->sa_family == AF_INET6) {
-		LOG_INF("addr->sa_family: AF_INET6");
+	if (addr->sa_family == NET_PF_INET6) {
+		LOG_INF("addr->sa_family: NET_PF_INET6");
 		ip_mode = 1;
-	} else if (addr->sa_family == AF_INET) {
-		LOG_INF("addr->sa_family: AF_INET");
+	} else if (addr->sa_family == NET_PF_INET) {
+		LOG_INF("addr->sa_family: NET_PF_INET");
 		ip_mode = 0;
 	} else {
 	}
 
 	/* Get protocol */
-	protocol = (sock->type == SOCK_STREAM) ? "TCP" : "UDP";
+	protocol = (sock->type == NET_SOCK_STREAM) ? "TCP" : "UDP";
 
 	ret = modem_context_sprint_ip_addr(addr, ip_str, sizeof(ip_str));
 	if (ret != 0) {
@@ -925,7 +925,7 @@ error:
 
 }
 
-static int st87mxx_tcp_connect(struct modem_socket *sock, const struct sockaddr *addr)
+static int st87mxx_tcp_connect(struct modem_socket *sock, const struct net_sockaddr *addr)
 {
 	int ret;
 	uint16_t dst_port = 0;
@@ -933,12 +933,12 @@ static int st87mxx_tcp_connect(struct modem_socket *sock, const struct sockaddr 
 	char send_buf[sizeof("AT#TCPCONNECT=#,#,#xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:"
 			"xxx.xxx.xxx.xxx#,####")] = { 0 };
 
-	if (sock->type == SOCK_STREAM) {
+	if (sock->type == NET_SOCK_STREAM) {
 		/* Get the destination port */
-		if (addr->sa_family == AF_INET6) {
-			dst_port = ntohs(net_sin6(addr)->sin6_port);
-		} else if (addr->sa_family == AF_INET) {
-			dst_port = ntohs(net_sin(addr)->sin_port);
+		if (addr->sa_family == NET_PF_INET6) {
+			dst_port = net_ntohs(net_sin6(addr)->sin6_port);
+		} else if (addr->sa_family == NET_PF_INET) {
+			dst_port = net_ntohs(net_sin(addr)->sin_port);
 		} else {
 		}
 
@@ -988,7 +988,7 @@ static int offload_socket(int family, int type, int proto)
 }
 
 
-static int offload_bind(void *obj, const struct sockaddr *addr, socklen_t addrlen)
+static int offload_bind(void *obj, const struct net_sockaddr *addr, net_socklen_t addrlen)
 {
 	LOG_INF("OFFLOAD BIND");
 	struct modem_socket *sock = (struct modem_socket *)obj;
@@ -1059,7 +1059,7 @@ static int offload_ioctl(void *obj, unsigned int request, va_list args)
 	}
 }
 
-static int offload_connect(void *obj, const struct sockaddr *addr, socklen_t addrlen)
+static int offload_connect(void *obj, const struct net_sockaddr *addr, net_socklen_t addrlen)
 {
 	LOG_INF("OFFLOAD CONNECT");
 
@@ -1081,7 +1081,7 @@ static int offload_connect(void *obj, const struct sockaddr *addr, socklen_t add
 		}
 	}
 
-	if (sock->type == SOCK_STREAM) {
+	if (sock->type == NET_SOCK_STREAM) {
 		ret = (int)st87mxx_tcp_connect(sock, addr);
 	}
 
@@ -1101,7 +1101,7 @@ error:
 }
 
 static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
-				const struct sockaddr *dest_addr, socklen_t addrlen)
+				const struct net_sockaddr *dest_addr, net_socklen_t addrlen)
 {
 	LOG_INF("OFFLOAD SENDTO");
 
@@ -1134,7 +1134,7 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 	k_sem_take(&mdata.cmd_handler_data.sem_tx_lock, K_FOREVER);
 
 	switch (sock->type) {
-	case SOCK_STREAM:
+	case NET_SOCK_STREAM:
 		ret = snprintk(send_buf_tcp, sizeof(send_buf_tcp), "AT#IPSENDTCP=%d,%d,1,%zu",
 						mdata.context_id, sock->id, len);
 		if (ret < 0) {
@@ -1156,13 +1156,13 @@ static ssize_t offload_sendto(void *obj, const void *buf, size_t len, int flags,
 
 		break;
 
-	case SOCK_DGRAM:
+	case NET_SOCK_DGRAM:
 
 	/* Get the destination port. */
-	if (dest_addr->sa_family == AF_INET6) {
-		dst_port = ntohs(net_sin6(dest_addr)->sin6_port);
-	} else if (dest_addr->sa_family == AF_INET) {
-		dst_port = ntohs(net_sin(dest_addr)->sin_port);
+	if (dest_addr->sa_family == NET_PF_INET6) {
+		dst_port = net_ntohs(net_sin6(dest_addr)->sin6_port);
+	} else if (dest_addr->sa_family == NET_PF_INET) {
+		dst_port = net_ntohs(net_sin(dest_addr)->sin_port);
 	} else {
 	}
 
@@ -1224,7 +1224,7 @@ exit:
 }
 
 static ssize_t offload_recvfrom(void *obj, void *buf, size_t max_len, int flags,
-				struct sockaddr *src_addr, socklen_t *addrlen)
+				struct net_sockaddr *src_addr, net_socklen_t *addrlen)
 {
 	LOG_INF("OFFLOAD RECVFROM");
 
@@ -1289,7 +1289,7 @@ exit:
 
 }
 
-static ssize_t offload_sendmsg(void *obj, const struct msghdr *msg, int flags)
+static ssize_t offload_sendmsg(void *obj, const struct net_msghdr *msg, int flags)
 {
 	LOG_INF("OFFLOAD SENDMSG");
 
@@ -1350,8 +1350,8 @@ static int offload_getaddrinfo(const char *node, const char *service,
 	(void)memset(&dns_result_addr, 0, sizeof(dns_result_addr));
 
 	/* Currently only supports IPv4. */
-	dns_result.ai_family = AF_INET;
-	dns_result_addr.sa_family = AF_INET;
+	dns_result.ai_family = NET_PF_INET;
+	dns_result_addr.sa_family = NET_PF_INET;
 	dns_result.ai_addr = &dns_result_addr;
 	dns_result.ai_addrlen = sizeof(dns_result_addr);
 	dns_result.ai_canonname = dns_result_canonname;
@@ -1365,20 +1365,20 @@ static int offload_getaddrinfo(const char *node, const char *service,
 	}
 
 	if (port > 0U) {
-		if (dns_result.ai_family == AF_INET) {
-			net_sin(&dns_result_addr)->sin_port = htons(port);
+		if (dns_result.ai_family == NET_PF_INET) {
+			net_sin(&dns_result_addr)->sin_port = net_htons(port);
 		}
 	}
 
 	/* Check if node is an IP address. */
 	if (net_addr_pton(dns_result.ai_family, node,
-				&((struct sockaddr_in *)&dns_result_addr)->sin_addr) == 0) {
+			  &((struct net_sockaddr_in *)&dns_result_addr)->sin_addr) == 0) {
 		*res = &dns_result;
 		return 0;
 	}
 
 	/* User flagged node as numeric host, but we failed net_addr_pton. */
-	if (hints && hints->ai_flags & AI_NUMERICHOST) {
+	if (hints && hints->ai_flags & ZSOCK_AI_NUMERICHOST) {
 		return DNS_EAI_NONAME;
 	}
 
@@ -1444,4 +1444,4 @@ NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, modem_init, NULL, &mdata, NULL,
 				CONFIG_MODEM_ST87MXX_MAX_RX_DATA_LENGTH);
 
 NET_SOCKET_OFFLOAD_REGISTER(st87mxx, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY,
-				AF_UNSPEC, offload_is_supported, offload_socket);
+			    NET_PF_UNSPEC, offload_is_supported, offload_socket);
