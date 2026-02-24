@@ -77,7 +77,7 @@ static int max14916_reg_trans_spi_diag(const struct device *dev, uint8_t addr, u
 	uint8_t rx_diag_buff[2];
 	int trans_ret, parse_ret;
 
-	if (!gpio_pin_get_dt(&config->fault_gpio)) {
+	if (gpio_pin_get_dt(&config->fault_gpio)) {
 		LOG_ERR(" >>> FLT PIN");
 	}
 
@@ -106,7 +106,7 @@ static int gpio_max14916_diag_chan_get(const struct device *dev)
 	struct max14916_data *data = dev->data;
 	int ret;
 
-	if (!gpio_pin_get_dt(&config->fault_gpio)) {
+	if (gpio_pin_get_dt(&config->fault_gpio)) {
 		LOG_ERR("FLT flag is rised");
 	}
 

@@ -74,7 +74,7 @@ static int max14906_reg_trans_spi_diag(const struct device *dev, uint8_t addr, u
 	uint8_t rx_diag_buff[2];
 	int trans_ret, parse_ret;
 
-	if (config->fault_gpio.port && !gpio_pin_get_dt(&config->fault_gpio)) {
+	if (config->fault_gpio.port && gpio_pin_get_dt(&config->fault_gpio)) {
 		LOG_ERR("[FAULT] pin triggered");
 	}
 
@@ -129,7 +129,7 @@ static int gpio_max14906_diag_chan_get(const struct device *dev)
 	struct max14906_data *data = dev->data;
 	int ret;
 
-	if (config->fault_gpio.port && !gpio_pin_get_dt(&config->fault_gpio)) {
+	if (config->fault_gpio.port && gpio_pin_get_dt(&config->fault_gpio)) {
 		LOG_ERR("[DIAG] FAULT flag is rised");
 	}
 
