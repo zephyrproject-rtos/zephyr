@@ -587,6 +587,18 @@
 				fault-gpios = <&test_gpio 0 0>;
 				sync-gpios = <&test_gpio 0 0>;
 				en-gpios = <&test_gpio 0 0>;
+				fled-set;
+				sled-set;
+				fled-stretch = <3>;
+				ffilter-en;
+				filter-long;
+				flatch-en;
+				led-cur-lim;
+				vdd-on-thr;
+				synch-wd-en;
+				sht-vdd-thr = <3>;
+				ow-off-cs = <3>;
+				wd-to = <0>;
 			};
 
 			test_spi_max14916: max14916@7 {
@@ -606,6 +618,18 @@
 				fault-gpios = <&test_gpio 0 0>;
 				sync-gpios = <&test_gpio 0 0>;
 				en-gpios = <&test_gpio 0 0>;
+				fled-set;
+				sled-set;
+				fled-stretch = <3>;
+				ffilter-en;
+				filter-long;
+				flatch-en;
+				led-cur-lim;
+				vdd-on-thr;
+				synch-wd-en;
+				sht-vdd-thr = <3>;
+				ow-off-cs = <3>;
+				wd-to = <0>;
 			};
 
 			test_spi_mcp23s08: mcp23s08@8 {
@@ -684,10 +708,25 @@
 				ngpios = <8>;
 				crc-en;
 				spi-addr = <0>;
+				ow-on-en = <0 0 0 0 0 0 0 0>;
+				ow-off-en = <0 0 0 0 0 0 0 0>;
+				sh-vdd-en = <0 0 0 0 0 0 0 0>;
 				drdy-gpios = <&test_gpio 0 0>;
 				fault-gpios = <&test_gpio 0 0>;
 				sync-gpios = <&test_gpio 0 0>;
 				en-gpios = <&test_gpio 0 0>;
+				fled-set;
+				sled-set;
+				fled-stretch = <3>;
+				ffilter-en;
+				filter-long;
+				flatch-en;
+				led-cur-lim;
+				vdd-on-thr;
+				synch-wd-en;
+				sht-vdd-thr = <3>;
+				ow-off-cs = <3>;
+				wd-to = <0>;
 			};
 
 			test_spi_max14917: max14917@d {
