@@ -2818,7 +2818,7 @@ static int handle_ra_input(struct net_icmp_ctx *ctx,
 		}
 	} else {
 		net_if_ipv6_router_add(net_pkt_iface(pkt), &ra_src,
-				       router_lifetime);
+				       router_lifetime != 0, router_lifetime);
 	}
 
 	net_ipv6_nbr_lock();
