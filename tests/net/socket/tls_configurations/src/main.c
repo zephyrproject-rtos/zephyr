@@ -89,9 +89,9 @@ static int create_socket(void)
 	zsock_inet_pton(NET_AF_INET, "127.0.0.1", &addr.sin_addr);
 
 #if defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_3)
-	socket_fd = zsock_socket(addr.sin_family, NET_SOCK_STREAM, IPPROTO_TLS_1_3);
+	socket_fd = zsock_socket(addr.sin_family, NET_SOCK_STREAM, NET_IPPROTO_TLS_1_3);
 #else
-	socket_fd = zsock_socket(addr.sin_family, NET_SOCK_STREAM, IPPROTO_TLS_1_2);
+	socket_fd = zsock_socket(addr.sin_family, NET_SOCK_STREAM, NET_IPPROTO_TLS_1_2);
 #endif
 	if (socket_fd < 0) {
 		LOG_ERR("Failed to create TLS socket (%d)", errno);
@@ -107,7 +107,7 @@ static int create_socket(void)
 #endif
 	};
 
-	ret = zsock_setsockopt(socket_fd, SOL_TLS, TLS_SEC_TAG_LIST, sec_tag_list,
+	ret = zsock_setsockopt(socket_fd, ZSOCK_SOL_TLS, ZSOCK_TLS_SEC_TAG_LIST, sec_tag_list,
 			       sizeof(sec_tag_list));
 	if (ret < 0) {
 		LOG_ERR("Failed to set TLS_SEC_TAG_LIST option (%d)", errno);
@@ -116,7 +116,8 @@ static int create_socket(void)
 
 	/* HOSTNAME is only required for key exchanges that use a certificate. */
 #if defined(USE_CERTIFICATE)
-	ret = zsock_setsockopt(socket_fd, SOL_TLS, TLS_HOSTNAME, "localhost", sizeof("localhost"));
+	ret = zsock_setsockopt(socket_fd, ZSOCK_SOL_TLS, ZSOCK_TLS_HOSTNAME, "localhost",
+			       sizeof("localhost"));
 	if (ret < 0) {
 		LOG_ERR("Failed to set TLS_HOSTNAME option (%d)", errno);
 		return -errno;
@@ -218,7 +219,7 @@ int main(void)
 
 		wait_for_event();
 
-		ret = zsock_recv(socket_fd, test_buf, data_len, MSG_WAITALL);
+		ret = zsock_recv(socket_fd, test_buf, data_len, ZSOCK_MSG_WAITALL);
 		if (ret == 0) {
 			LOG_ERR("Server terminated unexpectedly");
 			ret = -EIO;
