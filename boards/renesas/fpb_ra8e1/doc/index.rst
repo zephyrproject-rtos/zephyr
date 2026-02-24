@@ -54,6 +54,7 @@ programing tool (e.g. J-Flash Lite by SEGGER), set the type of debugger (tool) t
 Hardware
 ********
 Detailed Hardware features for the RA8E1 MCU group can be found at:
+
 - The RA8E1 MCU group: `RA8E1 Group User's Manual Hardware`_
 - The FPB-RA8E1 board: `FPB-RA8E1 - User's Manual`_
 
