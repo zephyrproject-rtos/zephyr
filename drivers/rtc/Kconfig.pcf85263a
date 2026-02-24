@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Mathias Eriksen <maee@foss.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_PCF85263A
+	bool "NXP PCF85263A Real-Time Clock driver"
+	default y
+	depends on DT_HAS_NXP_PCF85263A_ENABLED
+	select I2C
+	help
+	  Enable NXP PCF85263A I2C driver.
