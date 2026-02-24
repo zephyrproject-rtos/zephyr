@@ -343,6 +343,11 @@ class Validator:
             for dep in dev.depends_on:
                 self._check_dep(dev_ord, dep.dep_ordinal)
 
+    @property
+    def initlevels(self):
+        """Get the dictionary of initlevels."""
+        return self._obj.initlevels
+
     def print_initlevels(self):
         for level, calls in self._obj.initlevels.items():
             print(level)
