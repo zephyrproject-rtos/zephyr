@@ -21,6 +21,9 @@ config SILABS_SISDK_EMU
 config SILABS_SISDK_EUSART
 	bool "Peripheral HAL for EUSART"
 
+config SILABS_SISDK_GPCRC
+	bool "Peripheral HAL for GPCRC"
+
 config SILABS_SISDK_GPIO
 	bool "Peripheral HAL for GPIO"
 

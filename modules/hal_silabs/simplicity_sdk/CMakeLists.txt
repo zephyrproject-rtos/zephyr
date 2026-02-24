@@ -318,6 +318,8 @@ if(CONFIG_SILABS_SISDK_I2C)
   )
 endif()
 
+# GPCRC
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_GPCRC     ${PERIPHERAL_DIR}/src/sl_hal_gpcrc.c)
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_LETIMER   ${PERIPHERAL_DIR}/src/sl_hal_letimer.c)
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_TIMER     ${PERIPHERAL_DIR}/src/sl_hal_timer.c)
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_VDAC      ${PERIPHERAL_DIR}/src/sl_hal_vdac.c)
