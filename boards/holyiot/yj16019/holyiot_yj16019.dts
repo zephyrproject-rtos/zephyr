@@ -6,7 +6,6 @@
 
 /dts-v1/;
 #include <nordic/nrf52832_qfaa.dtsi>
-#include <nordic/nrf52840_partition.dtsi>
 #include "holyiot_yj16019-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
