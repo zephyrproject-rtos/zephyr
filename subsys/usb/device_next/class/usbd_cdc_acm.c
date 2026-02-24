@@ -360,6 +360,11 @@ static void usbd_cdc_acm_enable(struct usbd_class_data *const c_data)
 		cdc_acm_irq_rx_enable(dev);
 	}
 
+	if (data->cb == NULL) {
+		/* Allow cdc_acm_poll_in to receive */
+		cdc_acm_work_submit(&data->rx_fifo_work);
+	}
+
 	if (ring_buf_is_empty(data->tx_fifo.rb)) {
 		if (atomic_test_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED)) {
 			/* Raise TX ready interrupt */
