@@ -13,10 +13,26 @@ as two separate CPU clusters.
 * **RTSS-HP** (High Performance): Cortex-M55 running at up to 400 MHz
 * **RTSS-HE** (High Efficiency): Cortex-M55 running at up to 160 MHz
 
-To build for the above cores, use the following board targets (for Ensemble E8 SOC AE822FA0E5597LS0):
+Board Identifiers
+=================
 
-* ``ensemble_e8_dk/ae822fa0e5597ls0/rtss_hp``
-* ``ensemble_e8_dk/ae822fa0e5597ls0/rtss_he``
+The following board identifiers are supported:
+
++----------------------------------------------+-------------+----------+
+| Board Identifier                             | SoC Series  | Core     |
++==============================================+=============+==========+
+| ``ensemble_e8_dk/ae402fa0e5597le0/rtss_he``  | E4          | RTSS-HE  |
++----------------------------------------------+-------------+----------+
+| ``ensemble_e8_dk/ae402fa0e5597le0/rtss_hp``  | E4          | RTSS-HP  |
++----------------------------------------------+-------------+----------+
+| ``ensemble_e8_dk/ae612fa0e5597ls0/rtss_he``  | E6          | RTSS-HE  |
++----------------------------------------------+-------------+----------+
+| ``ensemble_e8_dk/ae612fa0e5597ls0/rtss_hp``  | E6          | RTSS-HP  |
++----------------------------------------------+-------------+----------+
+| ``ensemble_e8_dk/ae822fa0e5597ls0/rtss_he``  | E8          | RTSS-HE  |
++----------------------------------------------+-------------+----------+
+| ``ensemble_e8_dk/ae822fa0e5597ls0/rtss_hp``  | E8          | RTSS-HP  |
++----------------------------------------------+-------------+----------+
 
 More information about the board can be found at the
 `Ensemble E8 DevKit Product Page`_.
