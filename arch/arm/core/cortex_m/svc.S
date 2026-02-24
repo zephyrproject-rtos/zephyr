@@ -2,6 +2,7 @@
  * Copyright (c) 2013-2014 Wind River Systems, Inc.
  * Copyright (c) 2017-2019 Nordic Semiconductor ASA.
  * Copyright (c) 2020 Stephanos Ioannidis <root@stephanos.io>
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -467,12 +468,14 @@ SECTION_FUNC(TEXT, z_arm_svc)
     msr PSPLIM, ip
 #endif
 
+#ifdef CONFIG_USE_SWITCH
     /* Take lock before returning from svc */
 #if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     mov r0, #_EXC_IRQ_DEFAULT_PRIO
     msr BASEPRI, r0
 #else
     cpsid i
+#endif
 #endif
 
     /* return from SVC to the modified LR - z_arm_do_syscall */
