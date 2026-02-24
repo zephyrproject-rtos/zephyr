@@ -1,0 +1,19 @@
+common:
+  platform_key:
+    - arch
+  min_ram: 32
+  timeout: 120
+  tags:
+    - kernel
+    - benchmark
+  integration_platforms:
+    - qemu_x86
+    - qemu_cortex_a53
+  harness: console
+
+tests:
+  benchmark.timeout_mgmt.simple:
+    harness_config:
+      type: one_line
+      regex:
+        - "PROJECT EXECUTION SUCCESSFUL"
