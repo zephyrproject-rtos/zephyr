@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021 Vestas Wind Systems A/S
- * Copyright (c) 2025 NXP
+ * Copyright (c) 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,11 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 #define LPTMR_BASE ((LPTMR_Type *)(DT_INST_REG_ADDR(0)))
 #define LPTMR_CLK_SOURCE TO_LPTMR_CLK_SEL(DT_INST_PROP_OR(0, clk_source, 0))
 #define LPTMR_PRESCALER DT_INST_PROP_OR(0, prescale_glitch_filter, 0)
+/*
+ * Default must be false so prescale-glitch-filter can be used without requiring
+ * an explicit bypass property.
+ */
+#define LPTMR_PRESCALER_BYPASS DT_INST_PROP_OR(0, prescale_glitch_filter_bypass, false)
 #define LPTMR_IRQN DT_INST_IRQN(0)
 #define LPTMR_IRQ_PRIORITY DT_INST_IRQ(0, priority)
 
@@ -85,8 +90,8 @@ static int sys_clock_driver_init(void)
 	config.timerMode = kLPTMR_TimerModeTimeCounter;
 	config.enableFreeRunning = false;
 	config.prescalerClockSource = LPTMR_CLK_SOURCE;
-	config.bypassPrescaler = (LPTMR_PRESCALER == 0);
-	config.value = (LPTMR_PRESCALER == 0) ? 0 : (LPTMR_PRESCALER - 1);
+	config.bypassPrescaler = LPTMR_PRESCALER_BYPASS;
+	config.value = LPTMR_PRESCALER;
 
 	LPTMR_Init(LPTMR_BASE, &config);
 
