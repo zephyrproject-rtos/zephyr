@@ -116,6 +116,7 @@ struct tbs_inst {
 
 static struct tbs_inst svc_insts[CONFIG_BT_TBS_BEARER_COUNT];
 static struct tbs_inst gtbs_inst;
+static bool try_change_dialing_call_to_alerting(struct tbs_inst *inst);
 
 #define READ_BUF_SIZE                                                                             \
 	MAX(BT_ATT_MAX_ATTRIBUTE_LEN,                                                             \
@@ -371,9 +372,20 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		memset(&svc_insts[i].flags[conn_index], 0, sizeof(svc_insts[i].flags[conn_index]));
 
 		if (err == 0) { /* if mutex was locked */
+			/* Try to promote after clearing flags */
+			(void)try_change_dialing_call_to_alerting(&svc_insts[i]);
 			err = k_mutex_unlock(&svc_insts[i].mutex);
 			__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 		}
+	}
+
+	/* Also try GTBS after cleanup */
+	int err = k_mutex_lock(&gtbs_inst.mutex, MUTEX_TIMEOUT);
+
+	if (err == 0) {
+		(void)try_change_dialing_call_to_alerting(&gtbs_inst);
+		err = k_mutex_unlock(&gtbs_inst.mutex);
+		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 	}
 }
 
@@ -745,63 +757,125 @@ static int notify_calls(struct tbs_inst *inst)
 	return 0;
 }
 
-/**
- * @brief Attempt to move a call in an instance from dialing to alerting
- *
- * This function will look through the state of an instance to see if there are any calls in the
- * instance that are in the dialing state, and move them to the dialing state if we do not have any
- * pending call state notification. The reason for this is that we do not have an API for the
- * application to change from dialing to alterting state at this point, but the qualification tests
- * require us to do this state change.
- * Since we only notify the latest value, we need to notify dialing first for both current calls and
- * call states, and then switch to the alerting state for the call and then notify again.
- *
- * @param inst The instance to attempt the state change on
- * @retval true There was a state change
- * @retval false There was not a state change
- */
-static bool try_change_dialing_call_to_alerting(struct tbs_inst *inst)
+static bool inst_has_pending_call_state_notifications(const struct tbs_inst *inst)
 {
-	bool state_changed = false;
-
-	/* If we still have pending state change notifications, we cannot change the state
-	 * autonomously
-	 */
 	for (size_t i = 0U; i < ARRAY_SIZE(inst->flags); i++) {
 		const struct tbs_flags *flags = &inst->flags[i];
 
 		if (flags->bearer_list_current_calls_changed || flags->call_state_changed) {
-			return false;
+			return true;
 		}
 	}
 
-	if (!inst_is_gtbs(inst)) {
-		/* If inst is not the GTBS then we also need to ensure that GTBS is done notifying
-		 * before changing state
-		 */
-		for (size_t i = 0U; i < ARRAY_SIZE(gtbs_inst.flags); i++) {
-			const struct tbs_flags *flags = &gtbs_inst.flags[i];
+	return false;
+}
 
-			if (flags->bearer_list_current_calls_changed || flags->call_state_changed) {
-				return false;
-			}
-		}
+/**
+ * @brief Promote a BT_TBS_CALL_STATE_DIALING call to BT_TBS_CALL_STATE_ALERTING
+ * on a single instance.
+ *
+ * IMPORTANT:
+ *  - This function MUST NOT be called unless both:
+ *        inst_has_pending_call_state_notifications(inst) == false
+ *    AND inst_has_pending_call_state_notifications(&gtbs_inst) == false.
+ *
+ *  - The caller is responsible for checking these conditions.
+ *    This helper performs no validation and assumes that pending
+ *    notifications have already been flushed.
+ *
+ *  - This split makes the API lightweight but also easy to misuse,
+ *    so all callers must enforce the above preconditions.
+ *
+ * @return true if a call was promoted, false otherwise.
+ */
+static bool promote_dialing_call_to_alerting(struct tbs_inst *inst)
+{
+	if (inst_has_pending_call_state_notifications(inst)) {
+		return false;
 	}
 
-	/* Check if we have any calls in the dialing state */
 	for (size_t i = 0U; i < ARRAY_SIZE(inst->calls); i++) {
 		if (inst->calls[i].state == BT_TBS_CALL_STATE_DIALING) {
 			inst->calls[i].state = BT_TBS_CALL_STATE_ALERTING;
-			state_changed = true;
-			break;
+			notify_calls(inst);
+			return true;
 		}
 	}
 
-	if (state_changed) {
-		notify_calls(inst);
+	return false;
+}
+
+/**
+ * @brief Attempt to move a call in an instance from DIALING to ALERTING.
+ *
+ * This function checks the state of the given instance and promotes any
+ * BT_TBS_CALL_STATE_DIALING call to the BT_TBS_CALL_STATE_ALERTING state,
+ * provided that there are no pending.
+ * call-state or current-calls notifications that must be flushed first.
+ *
+ * Notification ordering requirement:
+ *   - We must first notify the BT_TBS_CALL_STATE_DIALING state.
+ *   - Only after all pending notifications have been completed may the call
+ *     be promoted to BT_TBS_CALL_STATE_ALERTING.
+ *   - Once promoted, the BT_TBS_CALL_STATE_ALERTING state is notified immediately.
+ *
+ * GTBS/TBS behavior:
+ *   - For a regular TBS instance, promotion may only occur once GTBS has
+ *     finished sending its pending notifications.
+ *   - For GTBS, promotion is attempted first on GTBS-owned calls, and if none
+ *     exist, on all registered TBS bearers.
+ *
+ * NOTE:
+ *   The lower-level helper promote_dialing_call_to_alerting() must never be
+ *   called directly unless the caller has ensured that both the target
+ *   instance and GTBS have no pending notifications. This function performs
+ *   all required safety checks and is the only safe entry point.
+ *
+ * @param inst The instance (GTBS or TBS) to attempt the promotion on.
+ * @retval true  A call was promoted to ALERTING.
+ * @retval false No promotion occurred.
+ */
+
+ /* Caller must lock inst->mutex before calling this function */
+static bool try_change_dialing_call_to_alerting(struct tbs_inst *inst)
+{
+	bool promoted = false;
+
+	/* Non-GTBS: only promote on this bearer, and only once GTBS
+	 * is done sending its own notifications.
+	 */
+	if (!inst_is_gtbs(inst)) {
+		/* Check GTBS pending notifications */
+		if (inst_has_pending_call_state_notifications(&gtbs_inst)) {
+			return false;
+		}
+
+		if (promote_dialing_call_to_alerting(inst)) {
+			promoted = true;
+		}
+
+		return promoted;
 	}
 
-	return state_changed;
+	/* GTBS path: Promote GTBS-owned calls */
+	if (promote_dialing_call_to_alerting(&gtbs_inst)) {
+		promoted = true;
+	}
+
+	/* Promote calls on all TBS bearers */
+	for (size_t i = 0U; i < ARRAY_SIZE(svc_insts); i++) {
+		struct tbs_inst *tbs_inst = &svc_insts[i];
+
+		if (!inst_is_registered(tbs_inst)) {
+			continue;
+		}
+
+		if (promote_dialing_call_to_alerting(tbs_inst)) {
+			promoted = true;
+		}
+	}
+
+	return promoted;
 }
 
 static void notify_handler_cb(struct bt_conn *conn, void *data)
@@ -1195,8 +1269,24 @@ static void current_calls_cfg_changed(const struct bt_gatt_attr *attr, uint16_t 
 {
 	struct tbs_inst *inst = lookup_inst_by_attr(attr);
 
-	if (inst != NULL) {
-		LOG_DBG("Index %u: value 0x%04x", inst_index(inst), value);
+	if (inst == NULL) {
+		return;
+	}
+
+	LOG_DBG("Index %u: value 0x%04x", inst_index(inst), value);
+
+	if (value == 0U) {
+		int err = k_mutex_lock(&inst->mutex, K_FOREVER);
+
+		if (err != 0) {
+			LOG_DBG("Failed to lock mutex: %d", err);
+			return;
+		}
+
+		(void)try_change_dialing_call_to_alerting(inst);
+
+		err = k_mutex_unlock(&inst->mutex);
+		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 	}
 }
 
@@ -1363,8 +1453,24 @@ static void call_state_cfg_changed(const struct bt_gatt_attr *attr, uint16_t val
 {
 	struct tbs_inst *inst = lookup_inst_by_attr(attr);
 
-	if (inst != NULL) {
-		LOG_DBG("Index %u: value 0x%04x", inst_index(inst), value);
+	if (inst == NULL) {
+		return;
+	}
+
+	LOG_DBG("Index %u: value 0x%04x", inst_index(inst), value);
+
+	if (value == 0U) {
+		int err = k_mutex_lock(&inst->mutex, K_FOREVER);
+
+		if (err != 0) {
+			LOG_DBG("Failed to lock mutex: %d", err);
+			return;
+		}
+
+		(void)try_change_dialing_call_to_alerting(inst);
+
+		err = k_mutex_unlock(&inst->mutex);
+		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 	}
 }
 
@@ -1851,6 +1957,7 @@ static ssize_t write_call_cp(struct bt_conn *conn, const struct bt_gatt_attr *at
 	if (tbs != NULL && status == BT_TBS_RESULT_CODE_SUCCESS) {
 		notify_calls(tbs);
 		calls_changed = true;
+		(void)try_change_dialing_call_to_alerting(tbs);
 	}
 
 	if (conn != NULL && bt_gatt_is_subscribed(conn, attr, BT_GATT_CCC_NOTIFY)) {
