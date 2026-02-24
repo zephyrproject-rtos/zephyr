@@ -26,3 +26,8 @@ CONFIG_ARMV8_A_NS=y
 # comment the lines below.
 CONFIG_FPU=n
 CONFIG_FPU_SHARING=n
+
+# Default is 12 for ARM64_VA_BITS_40. With WDT and other peripheral MMU
+# entries we may need up to 28 tables. Keep it at 40 so that all possible
+# use cases like mem_protect and other tests will work.
+CONFIG_MAX_XLAT_TABLES=40
