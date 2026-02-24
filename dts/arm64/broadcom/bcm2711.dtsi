@@ -43,6 +43,12 @@
 			clock-frequency = <DT_FREQ_M(48)>;
 			#clock-cells = <0>;
 		};
+
+		clk_vpu: clk-vpu {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(500)>;
+			#clock-cells = <0>;
+		};
 	};
 
 	soc {
@@ -154,6 +160,72 @@
 				      IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "uart5";
 			clocks = <&clk_uart>;
+			status = "disabled";
+		};
+
+		i2c0: i2c@fe205000 {
+			compatible = "brcm,bcm2711-i2c";
+			reg = <0xfe205000 0x200>;
+			interrupts = <GIC_SPI 117 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&clk_vpu>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@fe804000 {
+			compatible = "brcm,bcm2711-i2c";
+			reg = <0xfe804000 0x200>;
+			interrupts = <GIC_SPI 117 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&clk_vpu>;
+			status = "disabled";
+		};
+
+		i2c3: i2c@fe205600 {
+			compatible = "brcm,bcm2711-i2c";
+			reg = <0xfe205600 0x200>;
+			interrupts = <GIC_SPI 117 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&clk_vpu>;
+			status = "disabled";
+		};
+
+		i2c4: i2c@fe205800 {
+			compatible = "brcm,bcm2711-i2c";
+			reg = <0xfe205800 0x200>;
+			interrupts = <GIC_SPI 117 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&clk_vpu>;
+			status = "disabled";
+		};
+
+		i2c5: i2c@fe205a00 {
+			compatible = "brcm,bcm2711-i2c";
+			reg = <0xfe205a00 0x200>;
+			interrupts = <GIC_SPI 117 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&clk_vpu>;
+			status = "disabled";
+		};
+
+		i2c6: i2c@fe205c00 {
+			compatible = "brcm,bcm2711-i2c";
+			reg = <0xfe205c00 0x200>;
+			interrupts = <GIC_SPI 117 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&clk_vpu>;
 			status = "disabled";
 		};
 	};
