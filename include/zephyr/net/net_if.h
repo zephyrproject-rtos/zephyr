@@ -1960,12 +1960,14 @@ void net_if_ipv6_router_update_lifetime(struct net_if_router *router,
  *
  * @param iface Network interface
  * @param addr IPv6 address
- * @param router_lifetime Lifetime of the router
+ * @param is_default Is this router the default one
+ * @param router_lifetime Lifetime of the router. 0 if the router never expire.
  *
  * @return Pointer to router information, NULL if could not be added
  */
 struct net_if_router *net_if_ipv6_router_add(struct net_if *iface,
 					     const struct net_in6_addr *addr,
+					     bool is_default,
 					     uint16_t router_lifetime);
 
 /**
@@ -2614,7 +2616,7 @@ struct net_if_router *net_if_ipv4_router_find_default(struct net_if *iface,
  * @param iface Network interface
  * @param addr IPv4 address
  * @param is_default Is this router the default one
- * @param router_lifetime Lifetime of the router
+ * @param router_lifetime Lifetime of the router. 0 if the router never expire.
  *
  * @return Pointer to router information, NULL if could not be added
  */
