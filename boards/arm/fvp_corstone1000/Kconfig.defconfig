@@ -29,6 +29,11 @@ config ATOMIC_OPERATIONS_ARCH
 
 endif # BOARD_FVP_CORSTONE1000_A320_SMP
 
+# The Ethos-U85 of the Corstone-1000-A320 is cache coherent with the host
+# through ACE, so the driver needs no software cache maintenance.
+config ETHOS_U_DCACHE
+	default n if SOC_A320
+
 if BOARD_FVP_CORSTONE1000_CORSTONE1000_EXTSYS
 
 if SERIAL
