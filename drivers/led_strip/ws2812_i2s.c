@@ -46,11 +46,23 @@ struct ws2812_i2s_cfg {
 	uint8_t nibble_zero;
 };
 
+static inline uint32_t ws2812_i2s_reset_word(const struct ws2812_i2s_cfg *cfg)
+{
+	return cfg->active_low ? ~0 : 0;
+}
+
+static inline uint32_t *ws2812_get_first_data_frame(void *mem_block)
+{
+	return (uint32_t *)mem_block + WS2812_I2S_PRE_DELAY_WORDS;
+}
+
 /* Serialize an 8-bit color channel value into two 16-bit I2S values (or 1 32-bit
  * word).
  */
-static inline uint32_t ws2812_i2s_ser(uint8_t color, const uint8_t sym_one, const uint8_t sym_zero)
+static uint32_t ws2812_i2s_ser(const struct ws2812_i2s_cfg *cfg, uint8_t color)
 {
+	const uint8_t sym_one = cfg->nibble_one;
+	const uint8_t sym_zero = cfg->nibble_zero;
 	uint32_t word = 0;
 
 	for (uint_fast8_t mask = 0x80; mask != 0; mask >>= 1) {
@@ -62,65 +74,21 @@ static inline uint32_t ws2812_i2s_ser(uint8_t color, const uint8_t sym_one, cons
 	return (word >> 16) | (word << 16);
 }
 
-static int ws2812_strip_update_rgb(const struct device *dev, struct led_rgb *pixels,
-				   size_t num_pixels)
+static int ws2812_strip_update(const struct ws2812_i2s_cfg *cfg, void *mem_block, size_t size)
 {
-	const struct ws2812_i2s_cfg *cfg = dev->config;
-	const uint8_t sym_one = cfg->nibble_one;
-	const uint8_t sym_zero = cfg->nibble_zero;
-	const uint32_t reset_word = cfg->active_low ? ~0 : 0;
-	uint32_t *tx_buf;
+	uint32_t *frame = mem_block;
 	uint32_t flush_time_us;
-	void *mem_block;
 	int ret;
-
-	/* Acquire memory for the I2S payload. */
-	ret = k_mem_slab_alloc(cfg->mem_slab, &mem_block, K_SECONDS(10));
-	if (ret < 0) {
-		LOG_ERR("Unable to allocate mem slab for TX (err %d)", ret);
-		return -ENOMEM;
-	}
-	tx_buf = (uint32_t *)mem_block;
 
 	/* Add a pre-data reset, so the first pixel isn't skipped by the strip. */
 	for (uint16_t i = 0; i < WS2812_I2S_PRE_DELAY_WORDS; i++) {
-		*tx_buf = reset_word;
-		tx_buf++;
+		frame[i] = ws2812_i2s_reset_word(cfg);
 	}
 
-	/*
-	 * Convert pixel data into I2S frames. Each frame has pixel data
-	 * in color mapping on-wire format (e.g. GRB, GRBW, RGB, etc).
-	 */
-	for (uint16_t i = 0; i < num_pixels; i++) {
-		for (uint16_t j = 0; j < cfg->num_colors; j++) {
-			uint8_t pixel;
-
-			switch (cfg->color_mapping[j]) {
-			/* White channel is not supported by LED strip API. */
-			case LED_COLOR_ID_WHITE:
-				pixel = 0;
-				break;
-			case LED_COLOR_ID_RED:
-				pixel = pixels[i].r;
-				break;
-			case LED_COLOR_ID_GREEN:
-				pixel = pixels[i].g;
-				break;
-			case LED_COLOR_ID_BLUE:
-				pixel = pixels[i].b;
-				break;
-			default:
-				return -EINVAL;
-			}
-			*tx_buf = ws2812_i2s_ser(pixel, sym_one, sym_zero) ^ reset_word;
-			tx_buf++;
-		}
-	}
-
+	/* Add post-data reset */
+	frame = (uint32_t *)mem_block + WS2812_I2S_PRE_DELAY_WORDS + size;
 	for (uint16_t i = 0; i < cfg->reset_words; i++) {
-		*tx_buf = reset_word;
-		tx_buf++;
+		frame[i] = ws2812_i2s_reset_word(cfg);
 	}
 
 	/* Flush the buffer on the wire. */
@@ -148,6 +116,53 @@ static int ws2812_strip_update_rgb(const struct device *dev, struct led_rgb *pix
 	k_usleep(flush_time_us + cfg->extra_wait_time_us);
 
 	return ret;
+}
+
+static int ws2812_strip_update_rgb(const struct device *dev, struct led_rgb *pixels,
+				   size_t num_pixels)
+{
+	const struct ws2812_i2s_cfg *cfg = dev->config;
+	void *mem_block;
+	uint32_t *frame;
+	int ret;
+
+	ret = k_mem_slab_alloc(cfg->mem_slab, &mem_block, K_SECONDS(10));
+	if (ret < 0) {
+		LOG_ERR("Unable to allocate mem slab for TX (err %d)", ret);
+		return -ENOMEM;
+	}
+
+	/*
+	 * Convert pixel data into I2S frames. Each frame has pixel data
+	 * in color mapping on-wire format (e.g. GRB, GRBW, RGB, etc).
+	 */
+	frame = ws2812_get_first_data_frame(mem_block);
+	for (uint16_t i = 0; i < num_pixels; i++) {
+		for (uint16_t j = 0; j < cfg->num_colors; j++) {
+			uint8_t pixel;
+
+			switch (cfg->color_mapping[j]) {
+			/* White channel is not supported by LED strip API. */
+			case LED_COLOR_ID_WHITE:
+				pixel = 0;
+				break;
+			case LED_COLOR_ID_RED:
+				pixel = pixels[i].r;
+				break;
+			case LED_COLOR_ID_GREEN:
+				pixel = pixels[i].g;
+				break;
+			case LED_COLOR_ID_BLUE:
+				pixel = pixels[i].b;
+				break;
+			default:
+				return -EINVAL;
+			}
+			*frame++ = ws2812_i2s_ser(cfg, pixel) ^ ws2812_i2s_reset_word(cfg);
+		}
+	}
+
+	return ws2812_strip_update(cfg, mem_block, cfg->num_colors * num_pixels);
 }
 
 static size_t ws2812_strip_length(const struct device *dev)
