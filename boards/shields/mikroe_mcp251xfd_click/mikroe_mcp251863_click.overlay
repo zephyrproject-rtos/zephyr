@@ -4,22 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&mikrobus_spi {
-	cs-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
-
-	mcp251863_mikroe_mcp251863_click: mcp251863@0 {
-		compatible = "microchip,mcp251xfd";
-		status = "okay";
-
-		spi-max-frequency = <18000000>;
-		int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
-		reg = <0x0>;
-		osc-freq = <40000000>;
-	};
-};
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <freq.h>
 
 / {
 	chosen {
 		zephyr,canbus = &mcp251863_mikroe_mcp251863_click;
+	};
+};
+
+&mikrobus_spi {
+	cs-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
+
+	mcp251863_mikroe_mcp251863_click: can@0 {
+		compatible = "microchip,mcp251xfd";
+		reg = <0x0>;
+		spi-max-frequency = <DT_FREQ_M(18)>;
+		osc-freq = <DT_FREQ_M(40)>;
+		int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
+		status = "okay";
 	};
 };
