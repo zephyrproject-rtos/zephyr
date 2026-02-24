@@ -334,3 +334,13 @@ config MBEDTLS_NIST_KW_C
 	help
 	  Key Wrapping mode for 128-bit block ciphers,
 	  as defined in NIST SP 800-38F.
+
+config MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
+	bool "Legacy crypto support (private)"
+	help
+	  Legacy crypto is now private inside TF-PSA-Crypto and they should
+	  no more be directly accessed. However there might be code that still
+	  needs to be transitioned and in this case enabling this Kconfig
+	  allows internal headers related to legacy crypto to be made public.
+	  The long term goal is to get rid of this support so all the code
+	  should be transitioned to the PSA Crypto API as soon as possible.
