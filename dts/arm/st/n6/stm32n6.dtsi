@@ -944,11 +944,6 @@
 					compatible = "st,stm32n6-ethernet", "st,stm32h7-ethernet",
 						     "st,stm32-ethernet";
 					interrupts = <179 0>;
-					status = "disabled";
-				};
-
-				mdio: mdio {
-					compatible = "st,stm32-mdio";
 					#address-cells = <1>;
 					#size-cells = <0>;
 					status = "disabled";

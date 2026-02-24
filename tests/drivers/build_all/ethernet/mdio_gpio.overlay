@@ -4,7 +4,6 @@
  */
 
 /delete-node/ &eth_phy;
-/delete-node/ &mdio;
 
 / {
 	mdio: mdio {

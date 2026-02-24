@@ -165,6 +165,10 @@ static int eth_initialize(const struct device *dev)
 
 	heth->Init.MACAddr = dev_data->mac_addr;
 
+#ifdef CONFIG_ETH_STM32_HAL_MDIO
+	k_mutex_init(&dev_data->mdio_mutex);
+#endif /* CONFIG_ETH_STM32_HAL_MDIO */
+
 	ret = eth_stm32_hal_init(dev);
 	if (ret) {
 		LOG_ERR("Failed to initialize HAL");
@@ -334,18 +338,83 @@ static struct net_stats_eth *eth_stm32_hal_get_stats(const struct device *dev)
 }
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
 
-static const struct ethernet_api eth_api = {
-	.iface_api.init = eth_iface_init,
+#ifdef CONFIG_ETH_STM32_HAL_MDIO
+static int mdio_stm32_read(const struct device *dev, uint8_t prtad,
+			   uint8_t regad, uint16_t *data)
+{
+	struct eth_stm32_hal_dev_data *dev_data = dev->data;
+	ETH_HandleTypeDef *heth = &dev_data->heth;
+	HAL_StatusTypeDef ret;
+	uint32_t read;
+
+	k_mutex_lock(&dev_data->mdio_mutex, K_FOREVER);
+
+#ifdef CONFIG_ETH_STM32_HAL_API_V2
+	ret = HAL_ETH_ReadPHYRegister(heth, prtad, regad, &read);
+#else
+	heth->Init.PhyAddress = prtad;
+
+	ret = HAL_ETH_ReadPHYRegister(heth, regad, &read);
+#endif
+
+	k_mutex_unlock(&dev_data->mdio_mutex);
+
+	if (ret != HAL_OK) {
+		return -EIO;
+	}
+
+	*data = read & GENMASK(15, 0);
+
+	return 0;
+}
+
+static int mdio_stm32_write(const struct device *dev, uint8_t prtad,
+			    uint8_t regad, uint16_t data)
+{
+	struct eth_stm32_hal_dev_data *dev_data = dev->data;
+	ETH_HandleTypeDef *heth = &dev_data->heth;
+	HAL_StatusTypeDef ret;
+
+	k_mutex_lock(&dev_data->mdio_mutex, K_FOREVER);
+
+#ifdef CONFIG_ETH_STM32_HAL_API_V2
+	ret = HAL_ETH_WritePHYRegister(heth, prtad, regad, data);
+#else
+	heth->Init.PhyAddress = prtad;
+
+	ret = HAL_ETH_WritePHYRegister(heth, regad, data);
+#endif
+
+	k_mutex_unlock(&dev_data->mdio_mutex);
+
+	if (ret != HAL_OK) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static DEVICE_API(mdio, mdio_stm32_api) = {
+	.read = mdio_stm32_read,
+	.write = mdio_stm32_write,
+};
+#endif /* CONFIG_ETH_STM32_HAL_MDIO */
+
+static DEVICE_API(ethernet, eth_api) = {
+	.l2.iface_api.init = eth_iface_init,
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-	.get_ptp_clock = eth_stm32_get_ptp_clock,
+	.l2.get_ptp_clock = eth_stm32_get_ptp_clock,
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
-	.get_capabilities = eth_stm32_hal_get_capabilities,
-	.set_config = eth_stm32_hal_set_config,
-	.get_phy = eth_stm32_hal_get_phy,
-	.send = eth_stm32_tx,
+	.l2.get_capabilities = eth_stm32_hal_get_capabilities,
+	.l2.set_config = eth_stm32_hal_set_config,
+	.l2.get_phy = eth_stm32_hal_get_phy,
+	.l2.send = eth_stm32_tx,
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-	.get_stats = eth_stm32_hal_get_stats,
+	.l2.get_stats = eth_stm32_hal_get_stats,
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
+#ifdef CONFIG_ETH_STM32_HAL_MDIO
+	.mdio = &mdio_stm32_api,
+#endif /* CONFIG_ETH_STM32_HAL_MDIO */
 };
 
 static void eth0_irq_config(void)

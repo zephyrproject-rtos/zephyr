@@ -993,11 +993,6 @@
 				compatible = "st,stm32h7-ethernet", "st,stm32-ethernet";
 				interrupts = <92 0>;
 				memory-regions = <&sram2>;
-				status = "disabled";
-			};
-
-			mdio: mdio {
-				compatible = "st,stm32-mdio";
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";

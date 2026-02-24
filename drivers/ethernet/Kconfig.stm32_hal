@@ -46,6 +46,14 @@ config ETH_STM32_HAL_API_V1
 
 endchoice
 
+config ETH_STM32_HAL_MDIO
+	bool "STM32 Ethernet MDIO Controller"
+	depends on MDIO
+	select ETH_DRIVER_WITH_MDIO
+	default y
+	help
+	  Use the integrated MDIO controller.
+
 config ETH_STM32_HAL_RX_THREAD_STACK_SIZE
 	int "RX thread stack size"
 	default 1500

@@ -3,7 +3,7 @@
 
 # Common fields for STM32 Ethernet peripherals.
 
-include: [ethernet-controller.yaml, pinctrl-device.yaml]
+include: [ethernet-controller.yaml, mdio-controller.yaml, pinctrl-device.yaml]
 
 properties:
   interrupts:

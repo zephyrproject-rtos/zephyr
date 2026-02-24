@@ -138,6 +138,9 @@ struct eth_stm32_hal_dev_data {
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	struct net_stats_eth stats;
 #endif
+#ifdef CONFIG_ETH_STM32_HAL_MDIO
+	struct k_mutex mdio_mutex;
+#endif /* CONFIG_ETH_STM32_HAL_MDIO */
 };
 
 void eth_stm32_setup_mac_filter(ETH_HandleTypeDef *heth);

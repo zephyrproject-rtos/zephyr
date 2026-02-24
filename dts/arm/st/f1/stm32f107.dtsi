@@ -29,11 +29,6 @@
 			mac: ethernet {
 				compatible = "st,stm32-ethernet";
 				interrupts = <61 0>;
-				status = "disabled";
-			};
-
-			mdio: mdio {
-				compatible = "st,stm32-mdio";
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
