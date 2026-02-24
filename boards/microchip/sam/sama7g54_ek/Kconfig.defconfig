@@ -3,5 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+configdefault EEPROM
+	default y if NVMEM
+
 configdefault NET_L2_ETHERNET
 	default y if NETWORKING
