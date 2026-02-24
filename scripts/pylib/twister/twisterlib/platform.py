@@ -52,6 +52,9 @@ class Platform:
     platform_schema = scl.yaml_load(
         os.path.join(ZEPHYR_BASE, "scripts", "schemas", "twister", "platform-schema.yaml")
     )
+    monitor_schema = scl.yaml_load(
+        os.path.join(ZEPHYR_BASE, "scripts", "schemas", "monitor-schema.yaml")
+    )
 
     def __init__(self):
         """Constructor.
@@ -223,6 +226,8 @@ def generate_platforms(board_roots, soc_roots, arch_roots):
 
                 if entry.name == "twister.yaml":
                     data = scl.yaml_load_verify(entry.path, Platform.platform_schema)
+                elif entry.name == "monitor.yaml":
+                    scl.yaml_load_verify(entry.path, Platform.monitor_schema)
                 elif entry.name.endswith(".yaml"):
                     legacy_files.append(entry.path)
 
