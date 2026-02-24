@@ -99,6 +99,15 @@ properties:
       1: 130 mA
       2: 300 mA
       3: 1200 mA
+  do-mode:
+    type: array
+    default: [0, 0, 0, 0]
+    description: |
+      Per-channel output drive mode for CH0..CH3.
+      0: High-side
+      1: High-side with 2x inrush current
+      2: Active-clamp push-pull
+      3: Simple push-pull
   fled-set:
     type: boolean
     description: |

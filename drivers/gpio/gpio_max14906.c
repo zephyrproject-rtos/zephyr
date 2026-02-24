@@ -224,7 +224,9 @@ static int gpio_max14906_diag_chan_get(const struct device *dev)
  */
 static int max14906_ch_func(const struct device *dev, uint32_t ch, enum max14906_function function)
 {
+	const struct max14906_config *config = dev->config;
 	uint8_t setout_reg_val;
+	uint8_t do_mode;
 	int ret;
 
 	switch (function) {
@@ -246,6 +248,12 @@ static int max14906_ch_func(const struct device *dev, uint32_t ch, enum max14906
 		break;
 	case MAX14906_OUT:
 		setout_reg_val = MAX14906_OUT;
+		do_mode = FIELD_GET(MAX14906_DO_MASK(ch), config->config_do.reg_raw);
+		ret = max14906_reg_update(dev, MAX14906_CONFIG_DO_REG, MAX14906_DO_MASK(ch),
+					 FIELD_PREP(MAX14906_DO_MASK(ch), do_mode));
+		if (ret < 0) {
+			return ret;
+		}
 		break;
 	default:
 		return -EINVAL;
@@ -500,6 +508,12 @@ static int gpio_max14906_config_diag(const struct device *dev)
 	}
 
 	/* Configure per-channel registers */
+	ret = max149x6_reg_transceive(dev, MAX14906_CONFIG_DO_REG,
+				      config->config_do.reg_raw, NULL, MAX149x6_WRITE);
+	if (ret < 0) {
+		return ret;
+	}
+
 	ret = max149x6_reg_transceive(dev, MAX14906_CONFIG_CURR_LIM,
 				      config->curr_lim.reg_raw, NULL, MAX149x6_WRITE);
 	if (ret < 0) {
@@ -668,6 +682,10 @@ static DEVICE_API(gpio, gpio_max14906_api) = {
 		.curr_lim.reg_bits.CL2 = DT_INST_PROP_BY_IDX(id, curr_lim, 1),                     \
 		.curr_lim.reg_bits.CL3 = DT_INST_PROP_BY_IDX(id, curr_lim, 2),                     \
 		.curr_lim.reg_bits.CL4 = DT_INST_PROP_BY_IDX(id, curr_lim, 3),                     \
+		.config_do.reg_bits.DO_MODE1 = DT_INST_PROP_BY_IDX(id, do_mode, 0),                \
+		.config_do.reg_bits.DO_MODE2 = DT_INST_PROP_BY_IDX(id, do_mode, 1),                \
+		.config_do.reg_bits.DO_MODE3 = DT_INST_PROP_BY_IDX(id, do_mode, 2),                \
+		.config_do.reg_bits.DO_MODE4 = DT_INST_PROP_BY_IDX(id, do_mode, 3),                \
 		.spi_addr = DT_INST_PROP(id, spi_addr),                                            \
 	};                                                                                         \
                                                                                                    \
