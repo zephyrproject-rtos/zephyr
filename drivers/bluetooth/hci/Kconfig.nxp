@@ -68,6 +68,12 @@ config HCI_NXP_TRIGGER_IR_ON_BT_INIT
 	  If enabled, the Host will send trigger iR vendor command to the Bluetooth Controller
 	  on bt init following a bt disable.
 
+config BT_NXP_SHELL_INTERFACE
+	bool "Bluetooth NXP specific shell interface config"
+	help
+	  If enabled, it will add NXP specific shell commands to test features which requires
+	  shell interface commands.
+
 config HCI_NXP_RX_THREAD
 	bool "Process RX buffers in a dedicated thread"
 	help
