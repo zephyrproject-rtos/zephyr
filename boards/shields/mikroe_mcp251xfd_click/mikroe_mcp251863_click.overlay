@@ -1,4 +1,5 @@
 /*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Henrik Brix Andersen <henrik@brixandersen.dk>
  * SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
  * SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
  * SPDX-License-Identifier: Apache-2.0
@@ -11,6 +12,13 @@
 	chosen {
 		zephyr,canbus = &mcp251863_mikroe_mcp251863_click;
 	};
+
+	transceiver0: can-phy0 {
+		compatible = "microchip,ata6563", "can-transceiver-gpio";
+		standby-gpios = <&mikrobus_header 0 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
+	};
 };
 
 &mikrobus_spi {
@@ -22,6 +30,7 @@
 		spi-max-frequency = <DT_FREQ_M(18)>;
 		osc-freq = <DT_FREQ_M(40)>;
 		int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
+		phys = <&transceiver0>;
 		status = "okay";
 	};
 };

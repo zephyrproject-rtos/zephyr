@@ -1,4 +1,5 @@
 /*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Henrik Brix Andersen <henrik@brixandersen.dk>
  * SPDX-FileCopyrightText: Copyright (c) 2023 Andriy Gelman
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,5 +23,9 @@
 		osc-freq = <DT_FREQ_M(40)>;
 		int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
 		status = "okay";
+
+		can-transceiver {
+			max-bitrate = <5000000>;
+		};
 	};
 };
