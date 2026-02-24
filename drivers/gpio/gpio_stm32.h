@@ -13,11 +13,7 @@
 
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/gpio.h>
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl)
-#include <zephyr/dt-bindings/pinctrl/stm32f1-pinctrl.h>
-#else
-#include <zephyr/dt-bindings/pinctrl/stm32-pinctrl.h>
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_pinctrl) */
+#include <zephyr/drivers/pinctrl.h>
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 #define STM32_PINCFG_MODE_OUTPUT        (STM32_MODE_OUTPUT     \
