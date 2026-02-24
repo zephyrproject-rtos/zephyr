@@ -1109,7 +1109,7 @@ int sx126x_fsk_config(const struct device *dev,
 		goto out;
 	}
 
-	ret = sx126x_configure_pa_and_tx_params(dev, tx_power, frequency,
+	ret = sx126x_hal_configure_tx_params(dev, tx_power, frequency,
 						SX126X_RAMP_40_US);
 	if (ret < 0) {
 		goto out;
@@ -1288,7 +1288,7 @@ int sx126x_fsk_send(const struct device *dev, uint8_t *data_buf, uint32_t data_l
 		goto out_error;
 	}
 
-	ret = sx126x_configure_pa_and_tx_params(dev,
+	ret = sx126x_hal_configure_tx_params(dev,
 		data->fsk_config.tx_power,
 		data->fsk_config.frequency,
 		SX126X_RAMP_200_US);
@@ -1406,7 +1406,7 @@ int sx126x_fsk_recv(const struct device *dev, uint8_t *data_buf,
 		goto out_error;
 	}
 
-	ret = sx126x_configure_pa_and_tx_params(dev,
+	ret = sx126x_hal_configure_tx_params(dev,
 		data->fsk_config.tx_power,
 		data->fsk_config.frequency,
 		SX126X_RAMP_200_US);
