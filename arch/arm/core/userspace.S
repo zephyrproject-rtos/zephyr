@@ -2,7 +2,7 @@
  * Userspace and service handler hooks
  *
  * Copyright (c) 2017 Linaro Limited
- * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ * Copyright 2025-2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -34,12 +34,17 @@ GDATA(_kernel)
 /* Imports */
 GDATA(_k_syscall_table)
 
+#if defined(CONFIG_USE_SWITCH)
 #if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 # define LOCK(reg)   mov reg, #_EXC_IRQ_DEFAULT_PRIO ; msr BASEPRI, reg
 # define UNLOCK(reg) mov reg, #0 ; msr BASEPRI, reg
 #else
 # define LOCK(unused)   cpsid i
 # define UNLOCK(unused) cpsie i
+#endif
+#else
+# define LOCK(unused)
+# define UNLOCK(unused)
 #endif
 
 /**
@@ -197,7 +202,18 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
      * large enough to accommodate a maximum exception stack frame.
      */
 
+#ifndef CONFIG_USE_SWITCH
+    /* Temporarily store current IRQ locking status in ip */
+    mrs ip, BASEPRI
+#endif
     push {r0, ip}
+
+#ifndef CONFIG_USE_SWITCH
+    /* Lock PendSV while reprogramming PSP and PSPLIM */
+    mov r0, #_EXC_PENDSV_PRIO_MASK
+    msr BASEPRI_MAX, r0
+    isb
+#endif
 
     /* Set PSPLIM to guard the thread's user stack. */
     msr PSPLIM, r4
@@ -210,6 +226,11 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
 #endif
 
     UNLOCK(r0)
+#if !defined(CONFIG_USE_SWITCH) && defined(CONFIG_BUILTIN_STACK_GUARD)
+    /* Restore interrupt lock status */
+    msr BASEPRI, ip
+    isb
+#endif
 
     /* restore r0 */
     mov r0, lr
@@ -436,6 +457,16 @@ dispatch_syscall:
      * large enough to accommodate a maximum exception stack frame.
      */
 
+#ifndef CONFIG_USE_SWITCH
+    /* Temporarily store current IRQ locking status in r2 */
+    mrs r2, BASEPRI
+
+    /* Lock PendSV while reprogramming PSP and PSPLIM */
+    mov r3, #_EXC_PENDSV_PRIO_MASK
+    msr BASEPRI_MAX, r3
+    isb
+#endif
+
     /* Set PSPLIM to guard the thread's user stack. */
     ldr r3, =_kernel
     ldr r3, [r3, #_kernel_offset_to_current]
@@ -456,6 +487,12 @@ dispatch_syscall:
     /* set stack back to unprivileged stack */
     ldr ip, [sp,#12]
     msr PSP, ip
+#endif
+
+#if !defined(CONFIG_USE_SWITCH) && defined(CONFIG_BUILTIN_STACK_GUARD)
+    /* Restore interrupt lock status */
+    msr BASEPRI, r2
+    isb
 #endif
 
     push {r0, r1}
