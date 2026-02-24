@@ -182,6 +182,20 @@ properties:
       1: Enable SPI Watchdog Status, set SPI and SYNCH Watchdog Timeout to 200ms (typ)
       2: Enable SPI Watchdog Status, set SPI and SYNCH Watchdog Timeout to 600ms (typ)
       3: Enable SPI Watchdog Status, set SPI and SYNCH Watchdog Timeout to 1.2s (typ)
+  fault-mask:
+    type: int
+    default: 0xBE
+    description: |
+      Each bit masks one fault source from asserting the FAULT pin (1 = masked, 0 = unmasked).
+      POR default 0xBE unmasks only OverLd and SupplyErr.
+      Bit 0: OverLd   - Thermal overload
+      Bit 1: CurrLim  - Current limit active
+      Bit 2: OWOff    - Open-wire (switch off)
+      Bit 3: OWOn     - Open-wire (switch on)
+      Bit 4: ShtVDD   - Short to VDD
+      Bit 5: VDDOK    - VDD below threshold
+      Bit 6: SupplyErr - Supply undervoltage or ground loss
+      Bit 7: ComErr   - SPI CRC or watchdog error
 
 gpio-cells:
   - pin

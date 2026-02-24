@@ -601,6 +601,7 @@
 				sht-vdd-thr = <3>;
 				ow-off-cs = <3>;
 				wd-to = <0>;
+				fault-mask = <0xbe>;
 			};
 
 			test_spi_max14916: max14916@7 {
@@ -632,6 +633,7 @@
 				sht-vdd-thr = <3>;
 				ow-off-cs = <3>;
 				wd-to = <0>;
+				fault-mask = <0xbe>;
 			};
 
 			test_spi_mcp23s08: mcp23s08@8 {
@@ -729,6 +731,7 @@
 				sht-vdd-thr = <3>;
 				ow-off-cs = <3>;
 				wd-to = <0>;
+				fault-mask = <0xbe>;
 			};
 
 			test_spi_max14917: max14917@d {

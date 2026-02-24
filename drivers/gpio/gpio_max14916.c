@@ -405,6 +405,7 @@ static int gpio_max14916_config_diag(const struct device *dev)
 	struct max14916_data *data = dev->data;
 	int ret;
 
+	/* Configure global registers */
 	ret = max149x6_reg_transceive(dev, MAX14916_CONFIG1_REG,
 				      config->config1.reg_raw, NULL, MAX149x6_WRITE);
 	if (ret < 0) {
@@ -417,6 +418,13 @@ static int gpio_max14916_config_diag(const struct device *dev)
 		return ret;
 	}
 
+	ret = max149x6_reg_transceive(dev, MAX14916_CONFIG_MASK,
+				      data->glob.mask.reg_raw, NULL, MAX149x6_WRITE);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Configure per-channel registers */
 	ret = max149x6_reg_transceive(dev, MAX14916_OW_ON_EN_REG, data->chan_en.ow_on_en.reg_raw,
 				      NULL, MAX149x6_WRITE);
 	if (ret < 0) {
@@ -601,6 +609,7 @@ static DEVICE_API(gpio, gpio_max14916_api) = {
 				.SH_VDD_EN7 = DT_INST_PROP_BY_IDX(id, sh_vdd_en, 6),               \
 				.SH_VDD_EN8 = DT_INST_PROP_BY_IDX(id, sh_vdd_en, 7),               \
 			},                                                                         \
+		.glob.mask.reg_raw = DT_INST_PROP(id, fault_mask),                                 \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(id, &gpio_max14916_init, NULL, &max##model##_##id##_data,            \

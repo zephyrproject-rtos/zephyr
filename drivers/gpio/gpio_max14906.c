@@ -507,6 +507,12 @@ static int gpio_max14906_config_diag(const struct device *dev)
 		return ret;
 	}
 
+	ret = max149x6_reg_transceive(dev, MAX14906_CONFIG_MASK,
+				      data->glob.mask.reg_raw, NULL, MAX149x6_WRITE);
+	if (ret < 0) {
+		return ret;
+	}
+
 	/* Configure per-channel registers */
 	ret = max149x6_reg_transceive(dev, MAX14906_CONFIG_DO_REG,
 				      config->config_do.reg_raw, NULL, MAX149x6_WRITE);
@@ -712,6 +718,7 @@ static DEVICE_API(gpio, gpio_max14906_api) = {
 				.SH_VDD_EN3 = DT_INST_PROP_BY_IDX(id, sh_vdd_en, 2),               \
 				.SH_VDD_EN4 = DT_INST_PROP_BY_IDX(id, sh_vdd_en, 3),               \
 			},                                                                         \
+		.glob.mask.reg_raw = DT_INST_PROP(id, fault_mask),                                 \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(id, &gpio_max14906_init, NULL, &max14906_##id##_data,                \
