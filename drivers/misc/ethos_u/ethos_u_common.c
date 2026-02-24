@@ -10,6 +10,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/cache.h>
+#include <zephyr/kernel/mm.h>
 
 #include <ethosu_driver.h>
 
@@ -101,6 +102,20 @@ int ethosu_semaphore_give(void *sem)
 	k_sem_give((struct k_sem *)sem);
 	return 0;
 }
+
+/*
+ * The NPU accesses memory with physical addresses. With an MMU, translate the
+ * CPU's virtual addresses. Without one, the weak default in the core driver's
+ * ethosu_driver.c returns the address unchanged.
+ */
+
+#if defined(CONFIG_MMU)
+uint64_t ethosu_address_remap(uint64_t address, int index)
+{
+	ARG_UNUSED(index);
+	return (uint64_t)k_mem_phys_addr((void *)(uintptr_t)address);
+}
+#endif
 
 #if defined(CONFIG_ETHOS_U_DCACHE)
 void ethosu_flush_dcache(const uint64_t *base_addr,
