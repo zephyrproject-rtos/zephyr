@@ -554,6 +554,21 @@ static int spi_nand_erase(const struct device *dev, off_t addr, size_t size)
 	return ret;
 }
 
+static int spi_nand_reset(const struct device *dev)
+{
+	const struct spi_nand_config *config = dev->config;
+	uint8_t status;
+	int ret;
+
+	ret = spi_nand_cmd_write(dev, SPI_NAND_CMD_RESET);
+	if (ret != 0) {
+		return ret;
+	}
+	ret = spi_nand_wait_until_ready(dev, "reset", config->reset_us, 100, &status);
+
+	return ret;
+}
+
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 
 static void spi_nand_pages_layout(const struct device *dev,
@@ -566,6 +581,33 @@ static void spi_nand_pages_layout(const struct device *dev,
 }
 
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
+
+#if defined(CONFIG_FLASH_EX_OP_ENABLED)
+
+static int spi_nand_ex_op(const struct device *dev, uint16_t code, const uintptr_t in, void *out)
+{
+	int ret;
+
+	ARG_UNUSED(in);
+	ARG_UNUSED(out);
+
+	acquire_device(dev);
+
+	switch (code) {
+	case FLASH_EX_OP_RESET:
+		ret = spi_nand_reset(dev);
+		break;
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	release_device(dev);
+
+	return ret;
+}
+
+#endif /* CONFIG_FLASH_EX_OP_ENABLED */
 
 static const struct flash_parameters *flash_nand_get_parameters(const struct device *dev)
 {
@@ -700,7 +742,6 @@ static int spi_nand_configure(const struct device *dev)
 {
 	const struct spi_nand_config *config = dev->config;
 	uint8_t jedec_id[SPI_NAND_MAX_ID_LEN];
-	uint8_t status;
 	int ret;
 
 	/* Validate bus and CS is ready */
@@ -711,11 +752,7 @@ static int spi_nand_configure(const struct device *dev)
 	acquire_device(dev);
 
 	/* Soft RESET chip and wait until ready again */
-	ret = spi_nand_cmd_write(dev, SPI_NAND_CMD_RESET);
-	if (ret != 0) {
-		goto release;
-	}
-	ret = spi_nand_wait_until_ready(dev, "reset", config->reset_us, 100, &status);
+	ret = spi_nand_reset(dev);
 	if (ret != 0) {
 		goto release;
 	}
@@ -794,6 +831,9 @@ static DEVICE_API(flash, spi_nand_api) = {
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = spi_nand_pages_layout,
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
+#if defined(CONFIG_FLASH_EX_OP_ENABLED)
+	.ex_op = spi_nand_ex_op,
+#endif /* CONFIG_FLASH_EX_OP_ENABLED */
 };
 
 /* clang-format off */

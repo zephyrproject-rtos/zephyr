@@ -9,6 +9,7 @@ menuconfig SPI_NAND
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_EXPLICIT_ERASE
 	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EX_OP
 	select SPI
 	select CRC
 
