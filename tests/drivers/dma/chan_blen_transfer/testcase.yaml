@@ -20,3 +20,4 @@ tests:
       - nucleo_c031c6
       - sam_e54_xpro
       - pic32cm_jh01_cpro
+      - pic32cm_pl10_cnano
