@@ -84,6 +84,9 @@ struct sx126x_data {
 
 	/* Current modulation type */
 	uint8_t current_modulation;
+
+	/* LoRa sync word (1-byte spec value; 0 = use public_network from config) */
+	uint8_t lora_sync_word;
 };
 
 /* ============================================ */
@@ -177,6 +180,6 @@ int sx126x_set_lora_mode(const struct device *dev);
  * @param sync_word 16-bit Sync Word (e.g. 0x1424 for private, 0x3444 for public)
  * @return 0 on success, negative error code otherwise
  */
-int sx126x_set_lora_sync_word(const struct device *dev, uint16_t sync_word);
+int sx126x_set_lora_sync_word(const struct device *dev, uint8_t sync_word);
 
 #endif /* ZEPHYR_DRIVERS_LORA_SX126X_SX126X_INTERNAL_H_ */

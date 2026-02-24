@@ -630,7 +630,16 @@ static int sx126x_lora_config(const struct device *dev,
 	}
 
 	/* Set sync word */
-	ret = sx126x_set_sync_word(dev, config->public_network);
+	if (data->lora_sync_word != 0) {
+		uint8_t buf[2] = {
+			(data->lora_sync_word & 0xF0U) | 0x04U,
+			((data->lora_sync_word & 0x0FU) << 4) | 0x04U,
+		};
+		ret = sx126x_hal_write_regs(dev, SX126X_REG_LORA_SYNC_WORD_MSB,
+					    buf, 2);
+	} else {
+		ret = sx126x_set_sync_word(dev, config->public_network);
+	}
 	if (ret < 0) {
 		goto out;
 	}
@@ -1233,12 +1242,12 @@ out:
 	return ret;
 }
 
-int sx126x_set_lora_sync_word(const struct device *dev, uint16_t sync_word)
+int sx126x_set_lora_sync_word(const struct device *dev, uint8_t sync_word)
 {
-	uint8_t buf[2];
+	struct sx126x_data *data = dev->data;
 
-	sys_put_be16(sync_word, buf);
-	return sx126x_hal_write_regs(dev, SX126X_REG_LORA_SYNC_WORD_MSB, buf, 2);
+	data->lora_sync_word = sync_word;
+	return 0;
 }
 
 int sx126x_fsk_send(const struct device *dev, uint8_t *data_buf, uint32_t data_len)
