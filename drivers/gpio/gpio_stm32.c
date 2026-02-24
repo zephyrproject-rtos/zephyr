@@ -767,16 +767,8 @@ __maybe_unused static int gpio_stm32_init(const struct device *dev)
 	IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio##__suffix)),	\
 		   (GPIO_DEVICE_INIT_STM32(__suffix, __SUFFIX)))
 
-/*
- * !!!Keep both lists in sync!!!
- */
-#define GPIO_PORTS_LWR \
-	a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z
+#define DEVICE_INIT_IF_OKAY(idx, __suffix) 				\
+	GPIO_DEVICE_INIT_STM32_IF_OKAY(__suffix,			\
+		GET_ARG_N(UTIL_INC(idx), STM32_GPIO_PORTS_LIST_UPR))
 
-#define GPIO_PORTS_UPR \
-	A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z
-
-#define DEVICE_INIT_IF_OKAY(idx, __suffix) \
-	GPIO_DEVICE_INIT_STM32_IF_OKAY(__suffix, GET_ARG_N(UTIL_INC(idx), GPIO_PORTS_UPR))
-
-FOR_EACH_IDX(DEVICE_INIT_IF_OKAY, (;), GPIO_PORTS_LWR);
+FOR_EACH_IDX(DEVICE_INIT_IF_OKAY, (;), STM32_GPIO_PORTS_LIST_LWR);
