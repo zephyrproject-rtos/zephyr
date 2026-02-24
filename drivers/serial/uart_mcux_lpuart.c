@@ -146,6 +146,7 @@ static void mcux_lpuart_pm_policy_state_lock_get(const struct device *dev)
 	if (!data->pm_state_lock_on) {
 		data->pm_state_lock_on = true;
 		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+		pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	}
 }
 
@@ -156,6 +157,7 @@ static void mcux_lpuart_pm_policy_state_lock_put(const struct device *dev)
 	if (data->pm_state_lock_on) {
 		data->pm_state_lock_on = false;
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+		pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
 	}
 }
 #endif /* CONFIG_PM */
