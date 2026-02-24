@@ -165,6 +165,33 @@ static int ws2812_strip_update_rgb(const struct device *dev, struct led_rgb *pix
 	return ws2812_strip_update(cfg, mem_block, cfg->num_colors * num_pixels);
 }
 
+static int ws2812_strip_update_channels(const struct device *dev, uint8_t *channels,
+					size_t num_channels)
+{
+	const struct ws2812_i2s_cfg *cfg = dev->config;
+	void *mem_block;
+	uint32_t *frame;
+	int ret;
+
+	ret = k_mem_slab_alloc(cfg->mem_slab, &mem_block, K_SECONDS(10));
+	if (ret < 0) {
+		LOG_ERR("Unable to allocate mem slab for TX (err %d)", ret);
+		return -ENOMEM;
+	}
+	/*
+	 * Convert pixel data into I2S frames. Each frame has pixel data
+	 * in color mapping on-wire format (e.g. GRB, GRBW, RGB, etc).
+	 */
+	frame = ws2812_get_first_data_frame(mem_block);
+
+	for (size_t i = 0; i < num_channels; i++) {
+		*frame = ws2812_i2s_ser(cfg, channels[i]) ^ ws2812_i2s_reset_word(cfg);
+		frame++;
+	}
+
+	return ws2812_strip_update(cfg, mem_block, num_channels);
+}
+
 static size_t ws2812_strip_length(const struct device *dev)
 {
 	const struct ws2812_i2s_cfg *cfg = dev->config;
@@ -220,6 +247,7 @@ static int ws2812_i2s_init(const struct device *dev)
 static DEVICE_API(led_strip, ws2812_i2s_api) = {
 	.update_rgb = ws2812_strip_update_rgb,
 	.length = ws2812_strip_length,
+	.update_channels = ws2812_strip_update_channels,
 };
 
 #define WS2812_I2S_LRCK_PERIOD_US(idx) DT_INST_PROP(idx, lrck_period)
