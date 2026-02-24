@@ -490,11 +490,50 @@ SECTIONS
     *libzephyr.a:bootloader_random*.*(.literal.bootloader_random_enable .text.bootloader_random_enable)
 
 #if defined(CONFIG_ESP32_WIFI_IRAM_OPT)
-    *libnet80211.a:(.wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.*)
-    *libpp.a:(.wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiorslpiram .wifiorslpiram.* .wifiextrairam .wifiextrairam.*)
-    *libcoexist.a:(.wifi_slp_iram  .wifi_slp_iram.* .coexiram .coexiram.* .coexsleepiram .coexsleepiram.*)
+    *libnet80211.a:(.wifi0iram .wifi0iram.*)
+    *libpp.a:(.wifi0iram .wifi0iram.*)
+#endif
 
-    /* [mapping:esp_wifi] */
+#if defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT)
+    *libnet80211.a:(.wifirxiram .wifirxiram.*)
+    *libpp.a:(.wifirxiram .wifirxiram.*)
+#endif
+
+#if defined(CONFIG_ESP32_WIFI_SLP_IRAM_OPT)
+    *libnet80211.a:(.wifislpiram .wifislpiram.*)
+    *libpp.a:(.wifislpiram .wifislpiram.*)
+#endif
+
+#if defined(CONFIG_ESP32_WIFI_IRAM_OPT) || defined(CONFIG_ESP32_WIFI_SLP_IRAM_OPT)
+    *libnet80211.a:(.wifiorslpiram .wifiorslpiram.*)
+    *libpp.a:(.wifiorslpiram .wifiorslpiram.*)
+#endif
+
+#if defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT) || defined(CONFIG_ESP32_WIFI_SLP_IRAM_OPT)
+    *libnet80211.a:(.wifislprxiram .wifislprxiram.*)
+    *libpp.a:(.wifislprxiram .wifislprxiram.*)
+#endif
+
+#if defined(CONFIG_ESP32_WIFI_EXTRA_IRAM_OPT)
+    *libnet80211.a:(.wifiextrairam .wifiextrairam.*)
+    *libpp.a:(.wifiextrairam .wifiextrairam.*)
+#endif
+
+#if defined(CONFIG_ESP32_WIFI_IRAM_OPT)
+    *libcoexist.a:(.coexiram .coexiram.*)
+#endif
+
+#if defined(CONFIG_ESP32_WIFI_SLP_IRAM_OPT)
+    *libcoexist.a:(.coexsleepiram .coexsleepiram.*)
+#endif
+
+#if defined(CONFIG_ESP32_WIFI_IRAM_OPT)
+    *(.literal.coex_pti_get_wrapper .text.coex_pti_get_wrapper)
+    *(.literal.wifi_sta_receive .text.wifi_sta_receive)
+    *(.literal.wifi_transmit_wrap .text.wifi_transmit_wrap)
+#endif
+
+#if defined(CONFIG_ESP32_WIFI_SLP_IRAM_OPT)
     *(.literal.wifi_clock_enable_wrapper .text.wifi_clock_enable_wrapper)
     *(.literal.wifi_clock_disable_wrapper .text.wifi_clock_disable_wrapper)
 
@@ -502,11 +541,11 @@ SECTIONS
     *(.literal.esp_phy_enable .text.esp_phy_enable)
     *(.literal.esp_phy_disable .text.esp_phy_disable)
     *(.literal.esp_wifi_bt_power_domain_off .text.esp_wifi_bt_power_domain_off)
-#endif
 
-#if defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT)
-    *libnet80211.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
-    *libpp.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
+#if defined(CONFIG_PM)
+    *(.literal.wifi_apb80m_request .text.wifi_apb80m_request)
+    *(.literal.wifi_apb80m_release .text.wifi_apb80m_release)
+#endif
 #endif
 
     /* align + add 16B for CPU dummy speculative instr. fetch */
@@ -910,14 +949,62 @@ SECTIONS
     __rom_region_start = ABSOLUTE(.);
 
 #if !defined(CONFIG_ESP32_WIFI_IRAM_OPT)
-    *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.*)
-    *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiorslpiram .wifiorslpiram.* .wifiextrairam .wifiextrairam.*)
-    *libcoexist.a:(.wifi_slp_iram  .wifi_slp_iram.* .coexiram .coexiram.* .coexsleepiram .coexsleepiram.*)
+    *libnet80211.a:(.wifi0iram .wifi0iram.*)
+    *libpp.a:(.wifi0iram .wifi0iram.*)
 #endif
 
 #if !defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT)
-    *libnet80211.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
-    *libpp.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
+    *libnet80211.a:(.wifirxiram .wifirxiram.*)
+    *libpp.a:(.wifirxiram .wifirxiram.*)
+#endif
+
+#if !defined(CONFIG_ESP32_WIFI_SLP_IRAM_OPT)
+    *libnet80211.a:(.wifislpiram .wifislpiram.*)
+    *libpp.a:(.wifislpiram .wifislpiram.*)
+#endif
+
+#if !defined(CONFIG_ESP32_WIFI_IRAM_OPT) && !defined(CONFIG_ESP32_WIFI_SLP_IRAM_OPT)
+    *libnet80211.a:(.wifiorslpiram .wifiorslpiram.*)
+    *libpp.a:(.wifiorslpiram .wifiorslpiram.*)
+#endif
+
+#if !defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT) && !defined(CONFIG_ESP32_WIFI_SLP_IRAM_OPT)
+    *libnet80211.a:(.wifislprxiram .wifislprxiram.*)
+    *libpp.a:(.wifislprxiram .wifislprxiram.*)
+#endif
+
+#if !defined(CONFIG_ESP32_WIFI_EXTRA_IRAM_OPT)
+    *libnet80211.a:(.wifiextrairam .wifiextrairam.*)
+    *libpp.a:(.wifiextrairam .wifiextrairam.*)
+#endif
+
+#if !defined(CONFIG_ESP32_WIFI_IRAM_OPT)
+    *libcoexist.a:(.coexiram .coexiram.*)
+#endif
+
+#if !defined(CONFIG_ESP32_WIFI_SLP_IRAM_OPT)
+    *libcoexist.a:(.coexsleepiram .coexsleepiram.*)
+#endif
+
+#if !defined(CONFIG_ESP32_WIFI_IRAM_OPT)
+    *(.literal.coex_pti_get_wrapper .text.coex_pti_get_wrapper)
+    *(.literal.wifi_sta_receive .text.wifi_sta_receive)
+    *(.literal.wifi_transmit_wrap .text.wifi_transmit_wrap)
+#endif
+
+#if !defined(CONFIG_ESP32_WIFI_SLP_IRAM_OPT)
+    *(.literal.wifi_clock_enable_wrapper .text.wifi_clock_enable_wrapper)
+    *(.literal.wifi_clock_disable_wrapper .text.wifi_clock_disable_wrapper)
+
+    /* [mapping:esp_phy] */
+    *(.literal.esp_phy_enable .text.esp_phy_enable)
+    *(.literal.esp_phy_disable .text.esp_phy_disable)
+    *(.literal.esp_wifi_bt_power_domain_off .text.esp_wifi_bt_power_domain_off)
+
+#if !defined(CONFIG_PM)
+    *(.literal.wifi_apb80m_request .text.wifi_apb80m_request)
+    *(.literal.wifi_apb80m_release .text.wifi_apb80m_release)
+#endif
 #endif
 
     *(.stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
