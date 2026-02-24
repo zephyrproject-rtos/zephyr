@@ -597,6 +597,13 @@ Ethernet
 * The ``microchip,lan865x-mdio`` compatible has been removed, the mdio node is now part of the
   ethernet node :dtcompatible:`microchip,lan865x` (:github:`104268`).
 
+* For the STM32 ethernet controllers :dtcompatible:`st,stm32-ethernet`, the MDIO controller,
+  formally ``"st,stm32-mdio`` is now integrated into the ethernet controller node, and the
+  ``mdio`` child node has been removed. The MDIO bus is now automatically registered by the
+  ethernet driver, and the PHY device should be connected directly to the ethernet node as
+  a child. The values of the ``pinctrl-0`` properties of the former mdio node need to be added
+  to the ``mac`` node. (:github:`104268`).
+
 File System
 ===========
 
