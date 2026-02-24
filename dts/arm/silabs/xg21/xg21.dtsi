@@ -18,6 +18,7 @@
 / {
 	chosen {
 		silabs,sleeptimer = &rtcc0;
+		zephyr,crc = &gpcrc;
 		zephyr,entropy = &se;
 		zephyr,flash-controller = &msc;
 	};
@@ -469,6 +470,13 @@
 			compatible = "silabs,buram";
 			reg = <0x50080000 0x80>;
 			status = "disabled";
+		};
+
+		gpcrc: gpcrc@50088000 {
+			compatible = "silabs,gpcrc";
+			reg = <0x50088000 0x4000>;
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_HCLK>;
+			status = "okay";
 		};
 
 		rtcc0: rtcc@58000000 {
