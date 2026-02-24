@@ -5601,6 +5601,16 @@ West:
   labels:
     - "area: West"
 
+West Monitor:
+  status: maintained
+  maintainers:
+    - sylvioalves
+  files:
+    - scripts/west_commands/monitor.py
+    - doc/develop/west/monitor.rst
+  labels:
+    - "area: West"
+
 "West project: acpica":
   status: odd fixes
   files:
