@@ -55,31 +55,6 @@ struct gpio_stm32_pin {
 #endif /* CONFIG_GPIO_GET_CONFIG */
 
 /**
- * @brief configuration of GPIO device
- */
-struct gpio_stm32_config {
-	/* gpio_driver_config needs to be first */
-	struct gpio_driver_config common;
-	/* port base address */
-	uint32_t *base;
-	/* IO port */
-	int port;
-	struct stm32_pclken pclken;
-};
-
-/**
- * @brief driver data
- */
-struct gpio_stm32_data {
-	/* gpio_driver_data needs to be first */
-	struct gpio_driver_data common;
-	/* user ISR cb */
-	sys_slist_t cb;
-	/* keep track of pins that  are connected and need GPIO clock to be enabled */
-	uint32_t pin_has_clock_enabled;
-};
-
-/**
  * @brief helper for configuration of GPIO pin
  *
  * @param dev GPIO port device pointer
