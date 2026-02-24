@@ -7,6 +7,7 @@
 
 #include <cmsis_core.h>
 #include <stm32_ll_gpio.h>
+#include <stm32_ll_pwr.h>
 
 #include <stm32_hsem.h>
 #include <stm32_gpio_shared.h>
@@ -54,6 +55,29 @@ static const struct device *const gpio_ports[] = {
 	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioz)),
 };
 
+static void ll_gpio_set_pin_pull(GPIO_TypeDef *GPIOx, uint32_t Pin, uint32_t Pull)
+{
+#if defined(CONFIG_SOC_SERIES_STM32WB0X)
+	/* On STM32WB0, the PWRC PU/PD control registers should be used instead
+	 * of the GPIO controller registers, so we cannot use LL_GPIO_SetPinPull.
+	 */
+	const uint32_t gpio = (GPIOx == GPIOA) ? LL_PWR_GPIO_A : LL_PWR_GPIO_B;
+
+	if (Pull == LL_GPIO_PULL_UP) {
+		LL_PWR_EnableGPIOPullUp(gpio, Pin);
+		LL_PWR_DisableGPIOPullDown(gpio, Pin);
+	} else if (Pull == LL_GPIO_PULL_DOWN) {
+		LL_PWR_EnableGPIOPullDown(gpio, Pin);
+		LL_PWR_DisableGPIOPullUp(gpio, Pin);
+	} else if (Pull == LL_GPIO_PULL_NO) {
+		LL_PWR_DisableGPIOPullUp(gpio, Pin);
+		LL_PWR_DisableGPIOPullDown(gpio, Pin);
+	}
+#else
+	LL_GPIO_SetPinPull(GPIOx, Pin, Pull);
+#endif /* CONFIG_SOC_SERIES_STM32WB0X */
+}
+
 const struct device *stm32_gpioport_get(uint32_t port_index)
 {
 	const struct device *dev;
@@ -65,6 +89,116 @@ const struct device *stm32_gpioport_get(uint32_t port_index)
 	dev = gpio_ports[port_index];
 
 	return device_is_ready(dev) ? dev : NULL;
+}
+
+int stm32_gpioport_configure_pin(
+	const struct device *port, gpio_pin_t pin, uint32_t config, uint32_t func)
+{
+	const struct gpio_stm32_config *dev_cfg = port->config;
+	GPIO_TypeDef *gpio = (GPIO_TypeDef *)dev_cfg->base;
+	uint32_t pin_ll = stm32_gpiomgr_pinnum_to_ll_val(pin);
+
+#ifdef CONFIG_SOC_SERIES_STM32F1X
+	ARG_UNUSED(func);
+
+	uint32_t temp = config &
+			      (STM32_MODE_INOUT_MASK << STM32_MODE_INOUT_SHIFT);
+
+	if (temp == STM32_MODE_INPUT) {
+		temp = config & (STM32_CNF_IN_MASK << STM32_CNF_IN_SHIFT);
+
+		if (temp == STM32_CNF_IN_ANALOG) {
+			LL_GPIO_SetPinMode(gpio, pin_ll, LL_GPIO_MODE_ANALOG);
+		} else if (temp == STM32_CNF_IN_FLOAT) {
+			LL_GPIO_SetPinMode(gpio, pin_ll, LL_GPIO_MODE_FLOATING);
+		} else {
+			temp = config & (STM32_PUPD_MASK << STM32_PUPD_SHIFT);
+
+			if (temp == STM32_PUPD_PULL_UP) {
+				ll_gpio_set_pin_pull(gpio, pin_ll,
+							       LL_GPIO_PULL_UP);
+			} else {
+				ll_gpio_set_pin_pull(gpio, pin_ll,
+							     LL_GPIO_PULL_DOWN);
+			}
+
+			LL_GPIO_SetPinMode(gpio, pin_ll, LL_GPIO_MODE_INPUT);
+		}
+
+	} else {
+		temp = config & (STM32_CNF_OUT_1_MASK << STM32_CNF_OUT_1_SHIFT);
+
+		if (temp == STM32_CNF_GP_OUTPUT) {
+			LL_GPIO_SetPinMode(gpio, pin_ll, LL_GPIO_MODE_OUTPUT);
+		} else {
+			LL_GPIO_SetPinMode(gpio, pin_ll,
+							LL_GPIO_MODE_ALTERNATE);
+		}
+
+		temp = config & (STM32_CNF_OUT_0_MASK << STM32_CNF_OUT_0_SHIFT);
+
+		if (temp == STM32_CNF_PUSH_PULL) {
+			LL_GPIO_SetPinOutputType(gpio, pin_ll,
+						       LL_GPIO_OUTPUT_PUSHPULL);
+		} else {
+			LL_GPIO_SetPinOutputType(gpio, pin_ll,
+						      LL_GPIO_OUTPUT_OPENDRAIN);
+		}
+
+		temp = config &
+			    (STM32_MODE_OSPEED_MASK << STM32_MODE_OSPEED_SHIFT);
+
+		if (temp == STM32_MODE_OUTPUT_MAX_2) {
+			LL_GPIO_SetPinSpeed(gpio, pin_ll,
+							LL_GPIO_SPEED_FREQ_LOW);
+		} else if (temp == STM32_MODE_OUTPUT_MAX_10) {
+			LL_GPIO_SetPinSpeed(gpio, pin_ll,
+						     LL_GPIO_SPEED_FREQ_MEDIUM);
+		} else {
+			LL_GPIO_SetPinSpeed(gpio, pin_ll,
+						       LL_GPIO_SPEED_FREQ_HIGH);
+		}
+	}
+#else
+	uint32_t mode, otype, ospeed, pupd;
+
+	mode = config & (STM32_MODER_MASK << STM32_MODER_SHIFT);
+	otype = config & (STM32_OTYPER_MASK << STM32_OTYPER_SHIFT);
+	ospeed = config & (STM32_OSPEEDR_MASK << STM32_OSPEEDR_SHIFT);
+	pupd = config & (STM32_PUPDR_MASK << STM32_PUPDR_SHIFT);
+
+	z_stm32_hsem_lock(CFG_HW_GPIO_SEMID, HSEM_LOCK_DEFAULT_RETRY);
+
+#if defined(CONFIG_SOC_SERIES_STM32L4X) && defined(GPIO_ASCR_ASC0)
+	/*
+	 * For STM32L47xx/48xx, register ASCR should be configured to connect
+	 * analog switch of gpio lines to the ADC.
+	 */
+	if (mode == STM32_MODER_ANALOG_MODE) {
+		LL_GPIO_EnablePinAnalogControl(gpio, pin_ll);
+	}
+#endif
+
+	LL_GPIO_SetPinOutputType(gpio, pin_ll, otype >> STM32_OTYPER_SHIFT);
+
+	LL_GPIO_SetPinSpeed(gpio, pin_ll, ospeed >> STM32_OSPEEDR_SHIFT);
+
+	ll_gpio_set_pin_pull(gpio, pin_ll, pupd >> STM32_PUPDR_SHIFT);
+
+	if (mode == STM32_MODER_ALT_MODE) {
+		if (pin < 8) {
+			LL_GPIO_SetAFPin_0_7(gpio, pin_ll, func);
+		} else {
+			LL_GPIO_SetAFPin_8_15(gpio, pin_ll, func);
+		}
+	}
+
+	LL_GPIO_SetPinMode(gpio, pin_ll, mode >> STM32_MODER_SHIFT);
+
+	z_stm32_hsem_unlock(CFG_HW_GPIO_SEMID);
+#endif  /* CONFIG_SOC_SERIES_STM32F1X */
+
+	return 0;
 }
 
 static int stm32_gpioport_pm_action(const struct device *dev,

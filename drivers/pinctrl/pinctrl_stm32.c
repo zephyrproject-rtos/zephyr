@@ -11,12 +11,12 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
-#include <gpio/gpio_stm32.h>
 
 #include <stm32_ll_bus.h>
 #include <stm32_ll_gpio.h>
 #include <stm32_ll_system.h>
 
+#include <stm32_bitops.h>
 #include <stm32_gpio_shared.h>
 
 /** Helper to extract IO port number from STM32_PINMUX() encoded value */
@@ -164,16 +164,15 @@ static int apply_iosync_configuration(uint32_t port, uint32_t pin, uint32_t pinc
 	 */
 	gpio_cfg = port_device->config;
 	gpio_reg = (GPIO_TypeDef *)gpio_cfg->base;
+	piocfgr = (pincfg >> STM32_IORETIME_ADVCFGR_SHIFT) & STM32_IORETIME_ADVCFGR_MASK;
+	delayr = (pincfg >> STM32_IODELAY_LENGTH_SHIFT) & STM32_IODELAY_LENGTH_MASK;
+	pinbit = BIT(pin);
 
 	/* Make sure GPIO clock is enabled */
 	ret = pm_device_runtime_get(port_device);
 	if (ret < 0) {
 		return ret;
 	}
-
-	piocfgr = (pincfg >> STM32_IORETIME_ADVCFGR_SHIFT) & STM32_IORETIME_ADVCFGR_MASK;
-	delayr = (pincfg >> STM32_IODELAY_LENGTH_SHIFT) & STM32_IODELAY_LENGTH_MASK;
-	pinbit = BIT(pin);
 
 	/**
 	 * Thanks to clever encoding, we don't have to check whether the I/O retiming
@@ -192,15 +191,21 @@ static int apply_iosync_configuration(uint32_t port, uint32_t pin, uint32_t pinc
 	/* Release GPIO device since we are done */
 	return pm_device_runtime_put(port_device);
 }
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_pinctrl) */
+
+#ifdef CONFIG_SOC_SERIES_STM32F1X
+#define IS_GPIO_OUT GPIO_OUT
+#else
+#define IS_GPIO_OUT STM32_GPIO
 #endif
 
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			   uintptr_t reg)
 {
 	const struct device *port;
+	uint32_t mux, func, line;
 	uint32_t pin_cgf = 0;
-	uint32_t mux;
-	int ret = 0;
+	int ret = 0, cfg_ret;
 
 	ARG_UNUSED(reg);
 
@@ -252,10 +257,41 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			return -ENODEV;
 		}
 
-		ret = gpio_stm32_configure(port, STM32_DT_PINMUX_LINE(mux),
-					   pin_cgf, STM32_DT_PINMUX_FUNC(mux));
+		ret = pm_device_runtime_get(port);
 		if (ret < 0) {
 			return ret;
+		}
+
+		line = STM32_DT_PINMUX_LINE(mux);
+		func = STM32_DT_PINMUX_FUNC(mux);
+
+		cfg_ret = stm32_gpioport_configure_pin(port, line, pin_cgf, func);
+
+		if (cfg_ret >= 0 && func == IS_GPIO_OUT) {
+			/* Apply output level configuration */
+			const struct gpio_stm32_config *cfg = port->config;
+			GPIO_TypeDef *gpio = cfg->base;
+			uint32_t gpio_out = pin_cgf & (STM32_ODR_MASK << STM32_ODR_SHIFT);
+
+			if (gpio_out == STM32_ODR_1) {
+				stm32_reg_write(&gpio->BSRR, BIT(line));
+			} else {
+				/* c.f. gpio_stm32_port_clear_bits_raw() for rationale */
+#ifdef CONFIG_SOC_SERIES_STM32F1X
+				stm32_reg_write(&gpio->BRR, BIT(line));
+#else /* CONFIG_SOC_SERIES_STM32F1X */
+				LL_GPIO_ResetOutputPin(gpio, BIT(line));
+#endif /* CONFIG_SOC_SERIES_STM32F1X */
+			}
+		}
+
+		ret = pm_device_runtime_put(port);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (cfg_ret < 0) {
+			return cfg_ret;
 		}
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_pinctrl)
