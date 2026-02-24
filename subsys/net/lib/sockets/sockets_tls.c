@@ -262,7 +262,7 @@ __net_socket struct tls_context {
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
 #if defined(CONFIG_NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK)
-		struct tls_cert_verify_cb cert_verify;
+		struct zsock_tls_cert_verify_cb cert_verify;
 #endif /* CONFIG_NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK */
 	} options;
 
@@ -2704,17 +2704,17 @@ static int tls_opt_cert_verify_callback_set(struct tls_context *context,
 					    const void *optval,
 					    net_socklen_t optlen)
 {
-	struct tls_cert_verify_cb *cert_verify;
+	struct zsock_tls_cert_verify_cb *cert_verify;
 
 	if (!optval) {
 		return -EINVAL;
 	}
 
-	if (optlen != sizeof(struct tls_cert_verify_cb)) {
+	if (optlen != sizeof(struct zsock_tls_cert_verify_cb)) {
 		return -EINVAL;
 	}
 
-	cert_verify = (struct tls_cert_verify_cb *)optval;
+	cert_verify = (struct zsock_tls_cert_verify_cb *)optval;
 	if (cert_verify->cb == NULL) {
 		return -EINVAL;
 	}
