@@ -37,7 +37,9 @@ extern "C" {
 #define arch_irq_disable                    arm_irq_disable
 #define arch_irq_is_enabled                 arm_irq_is_enabled
 #endif
+#ifndef CONFIG_USE_SWITCH
 GTEXT(z_arm_int_exit);
+#endif
 GTEXT(arch_irq_enable)
 GTEXT(arch_irq_disable)
 GTEXT(arch_irq_is_enabled)
