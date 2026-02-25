@@ -22,6 +22,10 @@
 	dram: memory@80000000 {
 		reg = <0x80000000 DT_SIZE_M(1)>;
 	};
+
+	aliases {
+		watchdog0 = &wdog4;
+	};
 };
 
 &gpio3 {
@@ -113,4 +117,8 @@
 		motorcomm,rx-delay-sel = <13>;
 		motorcomm,tx-delay-sel = <13>;
 	};
+};
+
+&wdog4 {
+	status = "okay";
 };
