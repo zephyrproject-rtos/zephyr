@@ -5,6 +5,14 @@
  */
 
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <freq.h>
+
+/ {
+	chosen {
+		zephyr,canbus = &mcp2515_dfrobot_can_bus_v2_0;
+	};
+};
 
 &arduino_spi {
 	status = "okay";
@@ -12,21 +20,15 @@
 
 	mcp2515_dfrobot_can_bus_v2_0: can@0 {
 		compatible = "microchip,mcp2515";
-		spi-max-frequency = <1000000>;
+		reg = <0x0>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+		osc-freq = <DT_FREQ_M(16)>;
 		int-gpios = <&arduino_header ARDUINO_HEADER_R3_D2 GPIO_ACTIVE_LOW>;
 		status = "okay";
-		reg = <0x0>;
-		osc-freq = <16000000>;
 
 		can-transceiver {
 			min-bitrate = <60000>;
 			max-bitrate = <1000000>;
 		};
-	};
-};
-
-/ {
-	chosen {
-		zephyr,canbus = &mcp2515_dfrobot_can_bus_v2_0;
 	};
 };
