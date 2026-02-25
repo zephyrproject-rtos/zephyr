@@ -10,6 +10,11 @@
  * Extracted helper implementations for RAT, band and APN configuration to
  * keep the main state-machine TU small and maintainable.
  */
+
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L /* Required for strtok_r() */
+#include <stdio.h>
+#include <string.h>
 #include "hl78xx.h"
 #include "hl78xx_cfg.h"
 #include "hl78xx_chat.h"
