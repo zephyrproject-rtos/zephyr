@@ -27,12 +27,16 @@
 #error "Unknown GIC controller compatible for this configuration"
 #endif
 
+#ifdef CONFIG_SMP
 static const uint64_t cpu_mpid_list[] = {
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_PATH(cpus), DT_REG_ADDR, (,))
 };
 
 BUILD_ASSERT(ARRAY_SIZE(cpu_mpid_list) >= CONFIG_MP_MAX_NUM_CPUS,
 		"The count of CPU Cores nodes in dts is less than CONFIG_MP_MAX_NUM_CPUS\n");
+#endif
+
+static uint8_t gic_get_cpu_mask(void);
 
 void arm_gic_irq_enable(unsigned int irq)
 {
@@ -40,6 +44,25 @@ void arm_gic_irq_enable(unsigned int irq)
 
 	int_grp = irq / 32;
 	int_off = irq % 32;
+
+#ifndef CONFIG_SMP
+	/*
+	 * In AMP (non-SMP) mode, ensure the calling CPU is included
+	 * in the SPI's target list.  We OR the local CPU mask into
+	 * the existing value so that if another core has already
+	 * registered itself, it is not removed.  This allows shared
+	 * SPIs (e.g., for testing 1-of-N delivery) while still
+	 * routing private SPIs to the calling core.
+	 *
+	 * SGIs (irq 0-15) and PPIs (irq 16-31) are banked per-CPU
+	 * and do not have a shareable ITARGETSR, so skip them.
+	 */
+	if (irq >= GIC_SPI_INT_BASE) {
+		uint8_t cur = sys_read8(GICD_ITARGETSRn + irq);
+
+		sys_write8(cur | gic_get_cpu_mask(), GICD_ITARGETSRn + irq);
+	}
+#endif
 
 	sys_write32((1 << int_off), (GICD_ISENABLERn + int_grp * 4));
 }
@@ -176,11 +199,35 @@ void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
 	barrier_isync_fence_full();
 }
 
+/*
+ * Read the current CPU's target mask from hardware.
+ * GICD_ITARGETSR bytes 0-3 (SGIs, IRQs 0-3) are banked per-CPU
+ * and read-only, returning this CPU's own interface target bit.
+ * This is reliable regardless of what the device tree defines.
+ */
+static uint8_t gic_get_cpu_mask(void)
+{
+	return sys_read8(GICD_ITARGETSRn);
+}
+
 static void gic_dist_init(void)
 {
 	unsigned int gic_irqs, i;
-	uint8_t cpu_mask = 0;
 	uint32_t reg_val;
+
+#ifdef CONFIG_GIC_SAFE_CONFIG
+	/*
+	 * In AMP configurations multiple independent OSes share the same
+	 * GIC distributor.  If another core has already set up the
+	 * distributor (forwarding enabled), skip re-initialization to
+	 * avoid clobbering its SPI enables, targets and priorities.
+	 * Per-SPI affinity for this core is handled later by
+	 * arm_gic_irq_enable() when each driver enables its IRQ.
+	 */
+	if (sys_read32(GICD_CTLR) & BIT(0)) {
+		return;
+	}
+#endif
 
 	gic_irqs = sys_read32(GICD_TYPER) & 0x1f;
 	gic_irqs = (gic_irqs + 1) * 32;
@@ -194,17 +241,33 @@ static void gic_dist_init(void)
 	 */
 	sys_write32(0, GICD_CTLR);
 
+#ifdef CONFIG_SMP
 	/*
-	 * Enable all global interrupts distributing to CPUs listed
-	 * in dts with the count of arch_num_cpus().
+	 * In SMP mode, target SPIs to all CPUs.
+	 * Get the current CPU's hardware target mask from the GIC
+	 * and combine it with all CPUs from the device tree.
 	 */
-	unsigned int num_cpus = arch_num_cpus();
+	{
+		uint8_t cpu_mask = gic_get_cpu_mask();
+		unsigned int num_cpus = arch_num_cpus();
 
-	for (i = 0; i < num_cpus; i++) {
-		cpu_mask |= BIT(cpu_mpid_list[i]);
+		for (i = 0; i < num_cpus; i++) {
+			cpu_mask |= BIT(cpu_mpid_list[i]);
+		}
+
+		reg_val = cpu_mask | (cpu_mask << 8) | (cpu_mask << 16) | (cpu_mask << 24);
 	}
-	reg_val = cpu_mask | (cpu_mask << 8) | (cpu_mask << 16)
-		| (cpu_mask << 24);
+#else
+	/*
+	 * In non-SMP (AMP) mode, clear all SPI targets during init.
+	 * Each driver's arm_gic_irq_enable() will OR in its own CPU
+	 * mask, so only the cores that actually register a handler
+	 * are included in the target list.  This avoids pre-routing
+	 * SPIs to cores that have no handler for them.
+	 */
+	reg_val = 0;
+#endif
+
 	for (i = GIC_SPI_INT_BASE; i < gic_irqs; i += 4) {
 		sys_write32(reg_val, GICD_ITARGETSRn + i);
 	}
