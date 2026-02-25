@@ -15,7 +15,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/net/http/service.h>
 #include <zephyr/sys/base64.h>
-#include <mbedtls/sha1.h>
 #include <zephyr/net/websocket.h>
 #include <psa/crypto.h>
 
