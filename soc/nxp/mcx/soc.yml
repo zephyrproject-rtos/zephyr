@@ -32,14 +32,24 @@ family:
     - name: mcxe317
     - name: mcxe31b
 - name: mcxa
-  socs:
-  - name: mcxa153
-  - name: mcxa156
-  - name: mcxa346
-  - name: mcxa266
-  - name: mcxa366
-  - name: mcxa344
-  - name: mcxa577
+  series:
+  - name: mcxa1x3
+    socs:
+    - name: mcxa153
+  - name: mcxa1x6
+    socs:
+    - name: mcxa156
+  - name: mcxaxx6
+    socs:
+    - name: mcxa346
+    - name: mcxa266
+    - name: mcxa366
+  - name: mcxaxx4
+    socs:
+    - name: mcxa344
+  - name: mcxaxx7
+    socs:
+    - name: mcxa577
 - name: mcxw
   series:
   - name: mcxw2xx
