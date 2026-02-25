@@ -255,6 +255,18 @@ void board_early_init_hook(void)
 	CLOCK_SetClockDiv(kCLOCK_DivWWDT1, 1u);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc0))
+	CLOCK_SetClockDiv(kCLOCK_DivADC, 3u);
+	CLOCK_AttachClk(kFRO_HF_to_ADC);
+	CLOCK_EnableClock(kCLOCK_GateADC0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc1))
+	CLOCK_SetClockDiv(kCLOCK_DivADC, 3u);
+	CLOCK_AttachClk(kFRO_HF_to_ADC);
+	CLOCK_EnableClock(kCLOCK_GateADC1);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 }
