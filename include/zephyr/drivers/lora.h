@@ -91,23 +91,165 @@ enum lora_coding_rate {
 };
 
 /**
+ * @brief Radio modulation type
+ *
+ * Selects the modulation used for the next @ref lora_config call.
+ * LoRa-capable modems (e.g. SX126x family) support multiple modulations on
+ * the same hardware. FSK is required for LoRaWAN regional plans that mandate
+ * an FSK data rate (e.g. EU868 DR7).
+ *
+ * The value @c LORA_MOD_LORA is zero so that zero-initialized
+ * @ref lora_modem_config structs default to LoRa, preserving backward
+ * compatibility with existing code that does not set this field.
+ */
+enum lora_modulation {
+	LORA_MOD_LORA = 0, /**< LoRa chirp spread spectrum (default) */
+	LORA_MOD_FSK  = 1, /**< (G)FSK - also used for LoRaWAN FSK data rates */
+};
+
+/**
+ * @brief FSK Gaussian pulse shaping
+ *
+ * Controls the Gaussian low-pass filter applied to the frequency modulation
+ * signal before transmission. Stronger shaping (lower BT product) reduces
+ * spectral occupancy at the cost of increased inter-symbol interference.
+ */
+enum lora_fsk_shaping {
+	LORA_FSK_SHAPING_NONE        = 0, /**< No shaping filter */
+	LORA_FSK_SHAPING_GAUSS_BT_0_3 = 1, /**< Gaussian filter BT=0.3 */
+	LORA_FSK_SHAPING_GAUSS_BT_0_5 = 2, /**< Gaussian filter BT=0.5 */
+	LORA_FSK_SHAPING_GAUSS_BT_0_7 = 3, /**< Gaussian filter BT=0.7 */
+	LORA_FSK_SHAPING_GAUSS_BT_1_0 = 4, /**< Gaussian filter BT=1.0 */
+};
+
+/**
+ * @brief FSK RX channel bandwidth
+ *
+ * Nominal single-sideband RX filter bandwidth in kHz. Select a bandwidth
+ * slightly wider than @c 2 * fdev + bitrate to accommodate both the signal
+ * and frequency offset. Wider bandwidths reduce sensitivity; narrower
+ * bandwidths improve it at the cost of tolerance to frequency error.
+ */
+enum lora_fsk_bandwidth {
+	FSK_BW_4_KHZ   = 4,    /**< ~4.8 kHz */
+	FSK_BW_5_KHZ   = 5,    /**< ~5.8 kHz */
+	FSK_BW_7_KHZ   = 7,    /**< ~7.3 kHz */
+	FSK_BW_9_KHZ   = 9,    /**< ~9.7 kHz */
+	FSK_BW_11_KHZ  = 11,   /**< ~11.7 kHz */
+	FSK_BW_14_KHZ  = 14,   /**< ~14.6 kHz */
+	FSK_BW_19_KHZ  = 19,   /**< ~19.5 kHz */
+	FSK_BW_23_KHZ  = 23,   /**< ~23.4 kHz */
+	FSK_BW_29_KHZ  = 29,   /**< ~29.3 kHz */
+	FSK_BW_39_KHZ  = 39,   /**< ~39.0 kHz */
+	FSK_BW_46_KHZ  = 46,   /**< ~46.9 kHz */
+	FSK_BW_58_KHZ  = 58,   /**< ~58.6 kHz */
+	FSK_BW_78_KHZ  = 78,   /**< ~78.2 kHz */
+	FSK_BW_93_KHZ  = 93,   /**< ~93.8 kHz */
+	FSK_BW_117_KHZ = 117,  /**< ~117.3 kHz */
+	FSK_BW_156_KHZ = 156,  /**< ~156.2 kHz */
+	FSK_BW_187_KHZ = 187,  /**< ~187.2 kHz */
+	FSK_BW_234_KHZ = 234,  /**< ~234.3 kHz */
+	FSK_BW_312_KHZ = 312,  /**< ~312.0 kHz */
+	FSK_BW_373_KHZ = 373,  /**< ~373.6 kHz */
+	FSK_BW_467_KHZ = 467,  /**< ~467.0 kHz */
+};
+
+/**
+ * @brief FSK/GFSK modulation configuration
+ *
+ * Passed inside @ref lora_modem_config when @c modulation is set to
+ * @ref LORA_MOD_FSK. All fields are ignored for other modulations.
+ */
+struct lora_fsk_config {
+	/** Bit rate in bits per second (e.g. 50000 for 50 kbps) */
+	uint32_t bitrate;
+
+	/**
+	 * Frequency deviation in Hz (e.g. 25000 for ±25 kHz).
+	 * Carson's rule: occupied bandwidth ≈ 2*(fdev + bitrate/2).
+	 */
+	uint32_t fdev;
+
+	/** Gaussian pulse shaping applied to the modulated signal */
+	enum lora_fsk_shaping shaping;
+
+	/** RX channel filter bandwidth */
+	enum lora_fsk_bandwidth bandwidth;
+
+	/**
+	 * Preamble length in bytes (minimum 2; typical 4-8).
+	 * Zero selects a driver-defined default.
+	 */
+	uint16_t preamble_len;
+
+	/**
+	 * Sync word bytes (up to 8 bytes).
+	 *
+	 * The sync word marks the start of each packet and must match
+	 * between transmitter and receiver. Common values:
+	 *  - LoRaWAN GFSK (EU868 DR7): { 0xC1, 0x94, 0xC1 } (3 bytes)
+	 *  - Custom peer-to-peer:       any agreed-upon sequence
+	 *
+	 * Set @c sync_word_len to 0 to use the driver's built-in default.
+	 */
+	uint8_t sync_word[8];
+
+	/**
+	 * Number of valid bytes in @c sync_word (0-8).
+	 *
+	 * Set to 0 to use the driver's built-in default sync word.
+	 * Longer sync words improve false-sync rejection at the cost of
+	 * a small overhead per packet.
+	 */
+	uint8_t sync_word_len;
+
+	/**
+	 * Maximum payload length in bytes.
+	 * For variable-length packets this is the receive buffer limit.
+	 * For fixed-length packets this is the exact TX/RX payload size.
+	 * Zero selects the driver-defined maximum (up to 255 bytes).
+	 */
+	uint8_t payload_len;
+
+	/**
+	 * Use variable-length packet format.
+	 * When true, a length byte is prepended to each packet.
+	 * When false, @c payload_len must be set to the exact packet size.
+	 */
+	bool variable_len;
+
+	/** Enable 16-bit CRC on payload */
+	bool crc_on;
+
+	/** Enable data whitening (DC-free encoding) */
+	bool whitening;
+};
+
+/**
  * @struct lora_modem_config
  * Structure containing the configuration of a LoRa modem
+ *
+ * The @c modulation field selects the active modulation. Fields that belong to
+ * a specific modulation (e.g. @c bandwidth for LoRa, @c fsk for FSK) are
+ * ignored when the corresponding modulation is not selected. Because
+ * @c LORA_MOD_LORA has the value 0, zero-initialized structs default to LoRa
+ * mode and all existing code that does not set @c modulation continues to work
+ * unchanged.
  */
 struct lora_modem_config {
 	/** Frequency in Hz to use for transceiving */
 	uint32_t frequency;
 
-	/** The bandwidth to use for transceiving */
+	/** The bandwidth to use for transceiving (LoRa mode only) */
 	enum lora_signal_bandwidth bandwidth;
 
-	/** The data-rate to use for transceiving */
+	/** The data-rate to use for transceiving (LoRa mode only) */
 	enum lora_datarate datarate;
 
-	/** The coding rate to use for transceiving */
+	/** The coding rate to use for transceiving (LoRa mode only) */
 	enum lora_coding_rate coding_rate;
 
-	/** Length of the preamble */
+	/** Length of the preamble (LoRa mode only) */
 	uint16_t preamble_len;
 
 	/** TX-power in dBm to use for transmission */
@@ -121,12 +263,12 @@ struct lora_modem_config {
 	 * should be set to false. In advanced use-cases where a
 	 * differentation is needed between "uplink" and "downlink" traffic,
 	 * the IQ can be inverted to create two different channels on the
-	 * same frequency
+	 * same frequency. LoRa mode only.
 	 */
 	bool iq_inverted;
 
 	/**
-	 * Sets the sync-byte to use:
+	 * Sets the sync-byte to use (LoRa mode only):
 	 *  - false: for using the private network sync-byte
 	 *  - true:  for using the public network sync-byte
 	 * The public network sync-byte is only intended for advanced usage.
@@ -136,8 +278,31 @@ struct lora_modem_config {
 	 */
 	bool public_network;
 
-	/** Set to true to disable the 16-bit payload CRC */
+	/**
+	 * Custom LoRa sync word (1-byte network ID; LoRa mode only).
+	 *
+	 * When non-zero this overrides @c public_network and programs the
+	 * supplied byte directly as the network discriminator (e.g. 0x2D
+	 * for Meshtastic). The driver maps it to the 2-byte register value
+	 * internally. When zero the @c public_network field is used instead.
+	 */
+	uint8_t lora_sync_word;
+
+	/** Set to true to disable the 16-bit payload CRC (LoRa mode only) */
 	bool packet_crc_disable;
+
+	/**
+	 * Modulation type to use.
+	 *
+	 * Defaults to @ref LORA_MOD_LORA (value 0) when zero-initialized,
+	 * so existing code that does not set this field continues to work
+	 * unchanged. Set to @ref LORA_MOD_FSK to use FSK/GFSK and fill in
+	 * the @c fsk sub-struct below.
+	 */
+	enum lora_modulation modulation;
+
+	/** FSK configuration (valid only when @c modulation == LORA_MOD_FSK) */
+	struct lora_fsk_config fsk;
 };
 
 /**
