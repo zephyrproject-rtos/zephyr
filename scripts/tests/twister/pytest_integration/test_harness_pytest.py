@@ -8,7 +8,6 @@ from unittest import mock
 
 import pytest
 import yaml
-from twisterlib.hardwaredata import HardwareData
 from twisterlib.harness import Pytest
 from twisterlib.platform import Platform
 from twisterlib.testinstance import TestInstance
@@ -38,8 +37,6 @@ def testinstance(tmp_path: Path) -> TestInstance:
     )
     testinstance.handler.options.fixture = ['fixture1:option1', 'fixture2']
     testinstance.handler.type_str = 'native'
-    testinstance.handler.get_hardware = mock.Mock(return_value=HardwareData())
-    testinstance.handler.get_other_duts_with_same_id = mock.Mock(return_value=[])
     testinstance.build_dir = tmp_path
     return testinstance
 

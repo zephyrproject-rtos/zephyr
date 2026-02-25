@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
+from twisterlib.error import NoDeviceAvailableException, TwisterException
 from twisterlib.hardwaremap import DUT, HardwareMap
 
 
@@ -791,3 +792,209 @@ def test_hardwaremap_save_existing_map_disconnect_omits_serial(mocked_hm):
 
     # And ensure nobody writes serial=None
     assert all(d.get('serial') is not None for d in dumped if 'serial' in d)
+
+
+TESTDATA_10 = [
+    (
+        'dummy_platform',
+        'dummy fixture',
+        [
+            mock.Mock(
+                fixtures=[],
+                platform='dummy_platform',
+                available=1,
+                failures=0,
+                counter_increment=mock.Mock(),
+                counter=0
+            ),
+            mock.Mock(
+                fixtures=['dummy fixture'],
+                platform='another_platform',
+                available=1,
+                failures=0,
+                counter_increment=mock.Mock(),
+                counter=0
+            ),
+            mock.Mock(
+                fixtures=['dummy fixture'],
+                platform='dummy_platform',
+                serial_pty=None,
+                serial=None,
+                available=1,
+                failures=0,
+                counter_increment=mock.Mock(),
+                counter=0
+            ),
+            mock.Mock(
+                fixtures=['dummy fixture'],
+                platform='dummy_platform',
+                serial_pty=mock.Mock(),
+                available=1,
+                failures=0,
+                counter_increment=mock.Mock(),
+                counter=0
+            ),
+            mock.Mock(
+                fixtures=['dummy fixture'],
+                platform='dummy_platform',
+                serial_pty=mock.Mock(),
+                available=1,
+                failures=0,
+                counter_increment=mock.Mock(),
+                counter=0
+            )
+        ],
+        3
+    ),
+    (
+        'dummy_platform',
+        'dummy fixture',
+        [
+            mock.Mock(
+                fixtures=[],
+                platform='dummy_platform',
+                available=1,
+                failures=0,
+                counter_increment=mock.Mock(),
+                counter=0
+            ),
+            mock.Mock(
+                fixtures=['dummy fixture'],
+                platform='another_platform',
+                available=1,
+                failures=0,
+                counter_increment=mock.Mock(),
+                counter=0
+            ),
+            mock.Mock(
+                fixtures=['dummy fixture'],
+                platform='dummy_platform',
+                serial_pty=None,
+                serial=None,
+                available=1,
+                failures=0,
+                counter_increment=mock.Mock(),
+                counter=0
+            ),
+            mock.Mock(
+                fixtures=['dummy fixture'],
+                platform='dummy_platform',
+                serial_pty=mock.Mock(),
+                available=1,
+                failures=1,
+                counter_increment=mock.Mock(),
+                counter=0
+            ),
+            mock.Mock(
+                fixtures=['dummy fixture'],
+                platform='dummy_platform',
+                serial_pty=mock.Mock(),
+                available=1,
+                failures=0,
+                counter_increment=mock.Mock(),
+                counter=0
+            )
+        ],
+        4
+    ),
+    (
+        'dummy_platform',
+        'dummy fixture',
+        [],
+        TwisterException
+    ),
+    (
+        'dummy_platform',
+        'dummy fixture',
+        [
+            mock.Mock(
+                fixtures=['dummy fixture'],
+                platform='dummy_platform',
+                serial_pty=mock.Mock(),
+                counter_increment=mock.Mock(),
+                failures=0,
+                available=0
+            ),
+            mock.Mock(
+                fixtures=['another fixture'],
+                platform='dummy_platform',
+                serial_pty=mock.Mock(),
+                counter_increment=mock.Mock(),
+                failures=0,
+                available=0
+            ),
+            mock.Mock(
+                fixtures=['dummy fixture'],
+                platform='dummy_platform',
+                serial=mock.Mock(),
+                counter_increment=mock.Mock(),
+                failures=0,
+                available=0
+            ),
+            mock.Mock(
+                fixtures=['another fixture'],
+                platform='dummy_platform',
+                serial=mock.Mock(),
+                counter_increment=mock.Mock(),
+                failures=0,
+                available=0
+            )
+        ],
+        NoDeviceAvailableException
+    )
+]
+
+@pytest.mark.parametrize(
+    'platform_name, fixture, duts, expected',
+    TESTDATA_10,
+    ids=['two good duts, select the first one',
+         'two duts, the first was failed once, select the second not failed',
+         'exception - no duts', 'no available duts']
+)
+def test_hardwaremap_reserve_dut(
+    platform_name,
+    fixture,
+    duts,
+    expected
+):
+    hm = HardwareMap(env=mock.Mock())
+    hm.duts = duts
+
+    if isinstance(expected, int):
+        device = hm.reserve_dut(platform_name, fixture)
+
+        assert device == duts[expected]
+        assert device.available == 0
+        device.counter_increment.assert_called_once()
+    elif isinstance(expected, type):
+        with pytest.raises(expected):
+            hm.reserve_dut(platform_name, fixture)
+    else:
+        pytest.fail(f"Unexpected expected value: {expected}")
+
+
+def test_hardwaremap_release_dut():
+    serial = mock.Mock(name='dummy_serial')
+    duts = [
+        mock.Mock(available=0, serial=serial, serial_pty=None),
+        mock.Mock(available=0, serial=None, serial_pty=serial),
+        mock.Mock(
+            available=0,
+            serial=mock.Mock('another_serial'),
+            serial_pty=None
+        )
+    ]
+
+    hm = HardwareMap(env=mock.Mock())
+    hm.duts = duts
+
+    hm.release_dut(duts[1])
+
+    assert len([None for d in hm.duts if d.available == 1]) == 1
+    assert hm.duts[0].available == 0
+    assert hm.duts[2].available == 0
+
+    hm.release_dut(duts[0])
+
+    assert len([None for d in hm.duts if d.available == 1]) == 2
+    assert hm.duts[2].available == 0
