@@ -74,6 +74,34 @@
 		compatible = "nxp,imx-ccm-rev2";
 		reg = <0x44450000 DT_SIZE_K(64)>;
 		#clock-cells = <3>;
+
+		ext_clk: ext24m {
+			/* WDOG ext clock: 24MHz */
+			compatible = "fixed-clock";
+			clock-frequency = <24000000>;
+			#clock-cells = <0>;
+		};
+
+		lpo_clk: lpo32k {
+			/* WDOG LPO clock: 32KHz */
+			compatible = "fixed-clock";
+			clock-frequency = <32000>;
+			#clock-cells = <0>;
+		};
+
+		int_clk: int133m {
+			/* WDOG int clock: 133MHz */
+			compatible = "fixed-clock";
+			clock-frequency = <133000000>;
+			#clock-cells = <0>;
+		};
+
+		ipg_clk: ipg133m {
+			/* WDOG ipg clock: 133MHz */
+			compatible = "fixed-clock";
+			clock-frequency = <133000000>;
+			#clock-cells = <0>;
+		};
 	};
 
 	edma4_2: edma@42000000 {
@@ -89,6 +117,32 @@
 			     <GIC_SPI 129 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 			     <GIC_SPI 129 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		#dma-cells = <2>;
+		status = "disabled";
+	};
+
+	wdog3: watchdog@42490000 {
+		compatible = "nxp,wdog32";
+		reg = <0x42490000 0x1000>;
+		interrupts = <GIC_SPI 79 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		/* clk-source and clocks must aligned: 0-ipg_clk, 1-lpo_clk, 2-int_clk, 3-ext_clk */
+		clocks = <&lpo_clk>;
+		clock-names = "clksrc1";
+		clk-source = <1>;
+		clk-divider = <256>;
+		status = "disabled";
+	};
+
+	wdog4: watchdog@424a0000 {
+		compatible = "nxp,wdog32";
+		reg = <0x424a0000 0x1000>;
+		interrupts = <GIC_SPI 80 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		/* clk-source and clocks must aligned: 0-ipg_clk, 1-lpo_clk, 2-int_clk, 3-ext_clk */
+		clocks = <&lpo_clk>;
+		clock-names = "clksrc1";
+		clk-source = <1>;
+		clk-divider = <256>;
 		status = "disabled";
 	};
 
