@@ -183,7 +183,7 @@ static bool start_coap_client(void)
 	}
 
 #if defined(CONFIG_UPDATEHUB_DTLS)
-	int verify = TLS_PEER_VERIFY_REQUIRED;
+	int verify = ZSOCK_TLS_PEER_VERIFY_REQUIRED;
 	sec_tag_t sec_list[] = { CA_CERTIFICATE_TAG };
 	int protocol = NET_IPPROTO_DTLS_1_2;
 	char port[] = "5684";
