@@ -1,0 +1,21 @@
+common:
+  tags: lora
+  depends_on: lora
+sample:
+  description: Demonstration of FSK send over a LoRa-capable modem
+  name: LoRa FSK Send Sample
+tests:
+  sample.driver.lora.send_fsk.native:
+    build_only: true
+    extra_args:
+      - SHIELD=semtech_sx1261mb2bas
+    extra_configs:
+      - CONFIG_LORA_MODULE_BACKEND_NATIVE=y
+    platform_allow:
+      - nrf52840dk/nrf52840
+  sample.driver.lora.send_fsk.native.stm32wl:
+    build_only: true
+    extra_configs:
+      - CONFIG_LORA_MODULE_BACKEND_NATIVE=y
+    integration_platforms:
+      - nucleo_wl55jc
