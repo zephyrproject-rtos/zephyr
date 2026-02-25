@@ -287,36 +287,66 @@ int hfp_hf_send_cmd(struct bt_hfp_hf *hf, at_resp_cb_t resp,
 	return 0;
 }
 
-static int vendor_handle(struct at_client *hf_at)
-{
-	char *val;
-
-	val = at_get_string(hf_at);
-	if (!val) {
-		LOG_ERR("Error getting value");
-		return 0;
-	}
-
-	return 0;
-}
-
 static int vendor_resp(struct at_client *hf_at, struct net_buf *buf)
 {
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	char *cmd = NULL;
+	char *data = (char *)buf->data;
+	int val_len = 0;
+	int err = 0;
+
 	LOG_DBG("Vendor specific response received");
 
-	int err = at_parse_cmd_input(hf_at, buf, "VENDOR", vendor_handle,
-		AT_CMD_TYPE_NORMAL);
+	/* Find the value part until \r */
+	while (val_len < buf->len && data[val_len] != '\r') {
+		val_len++;
+	}
 
-	return err;
+	if (val_len == buf->len) {
+		return -ENODATA;
+	}
+
+	data[val_len] = '\0';
+
+	if (hf_at->rsp_buf.len > 0U) {
+		cmd = (char *)hf_at->rsp_buf.data;
+		cmd[hf_at->rsp_buf.len] = '\0';
+	}
+
+	if (bt_hf && bt_hf->vendor_specific) {
+		bt_hf->vendor_specific(hf, cmd, data);
+	}
+
+	/* Consume value, \0 and \n from buf */
+	net_buf_pull(buf, val_len);
+
+	err = at_check_byte(buf, '\0');
+	if (err < 0) {
+		LOG_ERR("vendor_resp: expected NUL byte not found");
+		return err;
+	}
+
+	err = at_check_byte(buf, '\n');
+	if (err < 0) {
+		LOG_ERR("vendor_resp: expected LF byte not found");
+		return err;
+	}
+
+	/* Reset AT state for result parsing */
+	hf_at->state = AT_STATE_START;
+
+	return 0;
 }
 
 static int vendor_finish(struct at_client *hf_at, enum bt_at_result result,
 		          enum bt_at_cme cme_err)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
-	LOG_DBG("Vendor specific response received");
+	LOG_DBG("Vendor specific response finished");
 
-	bt_hf->vendor_specific(hf, NULL);
+	if (bt_hf && bt_hf->vendor_specific) {
+		bt_hf->vendor_specific(hf, NULL, NULL);
+	}
 
 	atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_VENDOR_PENDING);
 

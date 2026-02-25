@@ -511,15 +511,16 @@ struct bt_hfp_hf_cb {
 	void (*query_call)(struct bt_hfp_hf *hf, struct bt_hfp_hf_current_call *call);
 
 	/** @brief Vendor specific command callback
-	 * 
+	 *
 	 * If this callback is provided it will be called whenever the
 	 * vendor specific result is received from AG.
-	 * If the request is finished, the callback will be called with a NULL rsp.
-	 * 
+	 * If the request is finished, the callback will be called with NULL cmd and value.
+	 *
 	 * @param hf HFP HF object.
-	 * @param rsp Vendor specific response string.
+	 * @param cmd Vendor specific command name (without leading '+'), or NULL if finished.
+	 * @param value Vendor specific response value, or NULL if finished.
 	 */
-	void (*vendor_specific)(struct bt_hfp_hf *hf, const char *rsp);
+	void (*vendor_specific)(struct bt_hfp_hf *hf, const char *cmd, const char *value);
 };
 
 /** @brief Register HFP HF profile
