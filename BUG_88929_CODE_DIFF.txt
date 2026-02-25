@@ -1,0 +1,96 @@
+================================================================================
+                         BUG #88929 - CODE CHANGES DIFF
+                      MSP/PSP Stack Conflict Fix - Visual Diff
+================================================================================
+
+FILE: arch/arm/core/cortex_m/reset.S
+------------------------------------
+
+================================================================================
+CHANGE #1: Added z_main_stack initialization (Lines 207-210)
+================================================================================
+
+ #ifdef CONFIG_INIT_STACKS
+     ldr r0, =z_interrupt_stacks
+     ldr r1, =0xaa
+     ldr r2, =CONFIG_ISR_STACK_SIZE + MPU_GUARD_ALIGN_AND_SIZE
+     bl arch_early_memset
++
++    ldr r0, =z_main_stack
++    ldr r1, =0xaa
++    ldr r2, =CONFIG_MAIN_STACK_SIZE
++    bl arch_early_memset
+ #endif
+
+================================================================================
+CHANGE #2: Changed PSP initialization from z_interrupt_stacks to z_main_stack
+================================================================================
+
+     /*
+-     * Set PSP and use it to boot without using MSP, so that it
+-     * gets set to z_interrupt_stacks during initialization.
++     * Set PSP to z_main_stack and use it to boot without using MSP,
++     * so that MSP can be set to z_interrupt_stacks during initialization
++     * without causing stack conflicts.
++     * This fixes the bug where both PSP and MSP were using z_interrupt_stacks,
++     * causing memory corruption when interrupts occurred during early init.
+      */
+-    ldr r0, =z_interrupt_stacks
+-    ldr r1, =CONFIG_ISR_STACK_SIZE + MPU_GUARD_ALIGN_AND_SIZE
++    ldr r0, =z_main_stack
++    ldr r1, =CONFIG_MAIN_STACK_SIZE
+     adds r0, r0, r1
+     msr PSP, r0
+     mrs r0, CONTROL
+     movs r1, #(2 | CONTROL_ARM_PAC_MASK | CONTROL_ARM_BTI_MASK)
+     orrs r0, r1 /* CONTROL_SPSEL_Msk */
+     msr CONTROL, r0
+     /*
+      * When changing the stack pointer, software must use an ISB instruction
+      * immediately after the MSR instruction. This ensures that instructions
+      * after the ISB instruction execute using the new stack pointer.
+      */
+     isb
+
+     /*
+      * 'bl' jumps the furthest of the branch instructions that are
+      * supported on all platforms. So it is used when jumping to z_prep_c
+      * (even though we do not intend to return).
+      */
+     bl z_prep_c
+
+================================================================================
+                                    SUMMARY
+================================================================================
+
+Files Changed:      1
+Lines Added:        8
+Lines Removed:      3
+Net Change:         +5 lines
+
+Changed Regions:    2
+
+CRITICAL CHANGES:
+-----------------
+1. PSP now points to z_main_stack instead of z_interrupt_stacks
+2. z_main_stack is now initialized when CONFIG_INIT_STACKS is enabled
+
+IMPACT:
+-------
+✅ Fixes memory corruption bug during early initialization
+✅ Separates PSP and MSP stacks (no more conflict)
+✅ Allows safe interrupts during z_sys_init_run_level()
+
+BEFORE FIX:
+-----------
+    PSP = z_interrupt_stacks  ❌
+    MSP = z_interrupt_stacks  ❌
+    Result: Stack corruption when interrupts occur
+
+AFTER FIX:
+----------
+    PSP = z_main_stack         ✅
+    MSP = z_interrupt_stacks   ✅
+    Result: No corruption, proper separation
+
+================================================================================

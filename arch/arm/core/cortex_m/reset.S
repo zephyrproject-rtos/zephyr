@@ -204,14 +204,22 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
     ldr r1, =0xaa
     ldr r2, =CONFIG_ISR_STACK_SIZE + MPU_GUARD_ALIGN_AND_SIZE
     bl arch_early_memset
+
+    ldr r0, =z_main_stack
+    ldr r1, =0xaa
+    ldr r2, =CONFIG_MAIN_STACK_SIZE
+    bl arch_early_memset
 #endif
 
     /*
-     * Set PSP and use it to boot without using MSP, so that it
-     * gets set to z_interrupt_stacks during initialization.
+     * Set PSP to z_main_stack and use it to boot without using MSP,
+     * so that MSP can be set to z_interrupt_stacks during initialization
+     * without causing stack conflicts.
+     * This fixes the bug where both PSP and MSP were using z_interrupt_stacks,
+     * causing memory corruption when interrupts occurred during early init.
      */
-    ldr r0, =z_interrupt_stacks
-    ldr r1, =CONFIG_ISR_STACK_SIZE + MPU_GUARD_ALIGN_AND_SIZE
+    ldr r0, =z_main_stack
+    ldr r1, =CONFIG_MAIN_STACK_SIZE
     adds r0, r0, r1
     msr PSP, r0
     mrs r0, CONTROL
