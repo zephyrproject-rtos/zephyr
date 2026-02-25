@@ -28,12 +28,12 @@
 			reg = <0x00010000 DT_SIZE_K(1988)>;
 		};
 
-		slot1_partition: partition@202000 {
+		slot1_partition: partition@201000 {
 			label = "image-1";
 			reg = <0x00201000 DT_SIZE_K(1988)>;
 		};
 
-		storage_partition: partition@3f4000 {
+		storage_partition: partition@3f2000 {
 			label = "storage";
 			reg = <0x003f2000 DT_SIZE_K(36)>;
 		};
