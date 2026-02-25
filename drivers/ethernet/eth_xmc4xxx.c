@@ -288,7 +288,7 @@ static int eth_xmc4xxx_clear_checksum(struct net_pkt *pkt)
 		msg = msg_error_skipping_pkt;
 		goto end;
 	}
-	p_type = ntohs(eth_hdr->type);
+	p_type = net_ntohs(eth_hdr->type);
 	switch (p_type) {
 	case NET_ETH_PTYPE_IP: {
 		NET_PKT_DATA_ACCESS_DEFINE(ip_access, struct net_ipv4_hdr);
@@ -330,17 +330,17 @@ static int eth_xmc4xxx_clear_checksum(struct net_pkt *pkt)
 	}
 
 	switch (next_header) {
-	case IPPROTO_TCP:
+	case NET_IPPROTO_TCP:
 		next_header_str = "TCP";
 		break;
-	case IPPROTO_UDP:
+	case NET_IPPROTO_UDP:
 		next_header_str = "UDP";
 		break;
-	case IPPROTO_ICMP:
+	case NET_IPPROTO_ICMP:
 		next_header_str = "ICMPv4";
 		ret = eth_xmc4xxx_clear_checksum_icmpv4(pkt);
 		break;
-	case IPPROTO_ICMPV6:
+	case NET_IPPROTO_ICMPV6:
 		next_header_str = "ICMPv6";
 		break;
 	default:
