@@ -3177,6 +3177,7 @@ static void udc_dwc2_isr_handler(const struct device *dev)
 
 			dsts = sys_read32((mem_addr_t)&base->dsts);
 			priv->sof_num = usb_dwc2_get_dsts_soffn(dsts);
+			udc_update_sof_stamp(dev, priv->sof_num);
 			udc_submit_sof_event(dev);
 		}
 

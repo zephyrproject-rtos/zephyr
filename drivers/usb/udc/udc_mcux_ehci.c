@@ -544,6 +544,7 @@ usb_status_t USB_DeviceNotificationTrigger(void *handle, void *msg)
 		udc_submit_event(dev, UDC_EVT_VBUS_READY, 0);
 		break;
 	case kUSB_DeviceNotifySOF:
+		udc_update_sof_stamp(dev, 0);
 		udc_submit_sof_event(dev);
 		break;
 	default:

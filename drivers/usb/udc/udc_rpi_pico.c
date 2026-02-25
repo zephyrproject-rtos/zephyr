@@ -679,6 +679,7 @@ static void rpi_pico_isr_handler(const struct device *dev)
 
 	if (status & USB_INTS_DEV_SOF_BITS) {
 		handled |= USB_INTS_DEV_SOF_BITS;
+		udc_update_sof_stamp(dev, sys_read32((mm_reg_t)&base->sof_rd));
 		udc_submit_sof_event(dev);
 	}
 
