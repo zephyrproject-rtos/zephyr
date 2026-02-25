@@ -50,7 +50,7 @@ config IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET
 	default y if IPC_SERVICE_BACKEND_RPMSG
 
 config BT_HCI_IPC
-	default y if BT
+	default y if BT_HCI
 
 endif # BOARD_NRF5340BSIM_NRF5340_CPUAPP
 
