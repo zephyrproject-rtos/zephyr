@@ -4,26 +4,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&mikrobus_spi {
-	cs-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
-
-	mcp25625_mikroe_mcp25625_click: mcp25625@0 {
-		compatible = "microchip,mcp2515";
-		status = "okay";
-
-		spi-max-frequency = <10000000>;
-		int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
-		reg = <0x0>;
-		osc-freq = <20000000>;
-
-		can-transceiver {
-			max-bitrate = <1000000>;
-		};
-	};
-};
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <freq.h>
 
 / {
 	chosen {
 		zephyr,canbus = &mcp25625_mikroe_mcp25625_click;
+	};
+};
+
+&mikrobus_spi {
+	cs-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
+
+	mcp25625_mikroe_mcp25625_click: can@0 {
+		compatible = "microchip,mcp2515";
+		reg = <0x0>;
+		spi-max-frequency = <DT_FREQ_M(10)>;
+		osc-freq = <DT_FREQ_M(20)>;
+		int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
+		status = "okay";
+
+		can-transceiver {
+			max-bitrate = <1000000>;
+		};
 	};
 };
