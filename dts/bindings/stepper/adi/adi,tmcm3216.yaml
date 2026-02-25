@@ -1,0 +1,48 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Alexis Czezar C Torreno
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  The TMCM-3216 is a compact, 3-axis bipolar stepper motor controller and
+  standalone driver board.
+
+compatible: "adi,tmcm3216"
+
+include: [base.yaml, uart-device.yaml]
+
+properties:
+  module-address:
+    type: int
+    required: true
+    description: RS485 module address (1-255)
+
+  de-gpios:
+    type: phandle-array
+    description: GPIO for RS485 Driver Enable (DE) pin
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/gpio/gpio.h>
+
+    &usart2 {
+        /* Bus options here, not shown */
+
+        tmcm3216: tmcm3216 {
+            compatible = "adi,tmcm3216";
+            status = "okay";
+            module-address = <1>;
+            de-gpios = <&gpioa 3 GPIO_ACTIVE_HIGH>;
+
+            stepper_driver_0: stepper-driver {
+                compatible = "adi,tmcm3216-stepper-driver";
+                status = "okay";
+                idx = <0>;
+                micro-step-res = <16>;
+            };
+
+            stepper_ctrl_0: stepper-ctrl {
+                compatible = "adi,tmcm3216-stepper-ctrl";
+                status = "okay";
+                idx = <0>;
+            };
+        };
+    };
