@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config RPU_DUAL_IRQ_AMP_CPU_INDEX
+	int "Override logical core ID for split AMP images (-1 = derive from MPIDR)"
+	range -1 3
+	default 0 if BOARD = "versal2_rpu" && BOARD_QUALIFIERS = "amd_versal2_rpu/amp/core0"
+	default 1 if BOARD = "versal2_rpu" && BOARD_QUALIFIERS = "amd_versal2_rpu/amp/core1"
+	default 0 if BOARD = "versalnet_rpu" && BOARD_QUALIFIERS = "amd_versalnet_rpu/amp/core0"
+	default 1 if BOARD = "versalnet_rpu" && BOARD_QUALIFIERS = "amd_versalnet_rpu/amp/core1"
+	default 0 if BOARD = "versal_rpu" && BOARD_QUALIFIERS = "versal_rpu/amp/core0"
+	default 1 if BOARD = "versal_rpu" && BOARD_QUALIFIERS = "versal_rpu/amp/core1"
+	default -1
+	help
+	  Zephyr AMP samples are built per-core (separate ELF). Some platforms should
+	  use the board-qualified ID instead of deriving from MPIDR at runtime.

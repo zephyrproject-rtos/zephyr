@@ -1,0 +1,25 @@
+sample:
+  name: AMD RPU Dual-Core GIC AMP Validation Test
+  description: |
+    Dual-core AMP validation test for AMD RPU platforms.
+    Supports Versal RPU (Cortex-R5, GICv1), VersalNet RPU (Cortex-R52, GICv3),
+    and Versal Gen 2 RPU (GICv3).
+    Phase 1 tests SGI delivery to both cores.
+    Phase 2 tests SPI routing and delivery (GICD_ITARGETSRn on GICv1,
+    GICD_IROUTERn on GICv3).
+    Requires two separate ELFs (core0 + core1) loaded via XSDB.
+tests:
+  sample.board.rpu_dual_irq:
+    platform_allow:
+      - versal_rpu/versal_rpu/amp/core0
+      - versal_rpu/versal_rpu/amp/core1
+      - versalnet_rpu/amd_versalnet_rpu/amp/core0
+      - versalnet_rpu/amd_versalnet_rpu/amp/core1
+      - versal2_rpu/amd_versal2_rpu/amp/core0
+      - versal2_rpu/amd_versal2_rpu/amp/core1
+    tags: boards amd amp
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - ".*Overall: ALL PASS.*"
