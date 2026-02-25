@@ -21,12 +21,6 @@ properties:
   reg:
     required: true
 
-  clocks:
-    required: true
-
-  resets:
-    required: true
-
   ref-voltages:
     type: array
     required: true
@@ -54,3 +48,11 @@ properties:
     description: |
       Enables the VREF+ output pin. VREF+ pin is in high-impedance state
       otherwise.
+
+  clocks:
+    type: phandle-array
+    description: Optional VREFBUF clock (present on some STM32 series).
+
+  resets:
+    type: phandle-array
+    description: Optional VREFBUF reset line (present on some STM32 series).

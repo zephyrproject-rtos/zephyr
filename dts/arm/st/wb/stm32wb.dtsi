@@ -574,6 +574,13 @@
 			status = "disabled";
 		};
 
+		vrefbuf: vrefbuf@40010030 {
+			compatible = "st,stm32-vrefbuf";
+			reg = <0x40010030 0xd0>;
+			ref-voltages = <2048000>, <2500000>;
+			status = "disabled";
+		};
+
 		pwr: power@58000400 {
 			compatible = "st,stm32-pwr";
 			reg = <0x58000400 0x400>; /* PWR register bank */
