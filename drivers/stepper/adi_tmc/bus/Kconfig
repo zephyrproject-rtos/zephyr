@@ -12,3 +12,9 @@ config STEPPER_ADI_TMC_UART
 	select UART
 	help
 	  A Trinamic Stepper Controller with single wire UART is enabled
+
+config STEPPER_ADI_TMCM_RS485
+	bool "Use Trinamic Stepper Controller with RS485"
+	select SERIAL
+	help
+	  A Trinamic Stepper Controller with Serial is enabled
