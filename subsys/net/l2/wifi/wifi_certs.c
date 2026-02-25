@@ -291,23 +291,24 @@ int process_certificates(void)
 		return -1;
 	}
 
-	wifi_set_enterprise_credentials(iface, 0);
-
 	if (config_process_blob(wpa_s->conf, "ca_cert",
 				enterprise_creds_params.ca_cert,
 				enterprise_creds_params.ca_cert_len)) {
+		LOG_ERR("Failed to process ca_cert blob\n");
 		return -1;
 	}
 
 	if (config_process_blob(wpa_s->conf, "client_cert",
 				enterprise_creds_params.client_cert,
 				enterprise_creds_params.client_cert_len)) {
+		LOG_ERR("Failed to process client_cert blob\n");
 		return -1;
 	}
 
 	if (config_process_blob(wpa_s->conf, "private_key",
 				enterprise_creds_params.client_key,
 				enterprise_creds_params.client_key_len)) {
+		LOG_ERR("Failed to process private_key blob\n");
 		return -1;
 	}
 
@@ -330,6 +331,7 @@ static void set_enterprise_creds_params(bool is_ap)
 		enterprise_creds_params.client_cert2_len = ARRAY_SIZE(client_cert2_test);
 		enterprise_creds_params.client_key2 = (uint8_t *)client_key2_test;
 		enterprise_creds_params.client_key2_len = ARRAY_SIZE(client_key2_test);
+		process_certificates();
 
 		return;
 	}
@@ -338,6 +340,7 @@ static void set_enterprise_creds_params(bool is_ap)
 	enterprise_creds_params.server_cert_len = ARRAY_SIZE(server_cert_test);
 	enterprise_creds_params.server_key = (uint8_t *)server_key_test;
 	enterprise_creds_params.server_key_len = ARRAY_SIZE(server_key_test);
+	process_certificates();
 }
 
 void wifi_clear_enterprise_credentials(void)
