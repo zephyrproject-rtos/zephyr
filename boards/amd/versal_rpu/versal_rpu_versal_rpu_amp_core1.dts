@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2026, Advanced Micro Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Versal RPU AMP Core1: DDR @ 0x10000000, console on uart1, timer on ttc1.
+ *
+ * Core 1 must use a different TTC than Core 0 (which uses ttc0) to avoid
+ * both cores fighting over the same timer hardware in AMP mode.
+ */
+
+#include "versal_rpu_versal_rpu_amp.dts"
+
+/ {
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+	};
+};
+
+&soc {
+	sram1: memory@10000000 {
+		compatible = "mmio-sram";
+		reg = <0x10000000 DT_SIZE_M(256)>;
+	};
+};
+
+/* Disable ttc0 on Core 1 - it's used by Core 0 */
+&ttc0 {
+	status = "disabled";
+};
+
+/* Enable ttc1 for Core 1's system timer */
+&ttc1 {
+	status = "okay";
+	clock-frequency = <100000000>;
+};

@@ -7,3 +7,8 @@ board:
   vendor: amd
   socs:
   - name: versal_rpu
+    variants:
+    - name: amp
+      variants:
+      - name: core0
+      - name: core1

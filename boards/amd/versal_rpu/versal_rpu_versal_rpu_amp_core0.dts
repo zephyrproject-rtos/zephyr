@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2026, Advanced Micro Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Versal RPU AMP Core0: DDR @ 0x40000, console on uart0.
+ */
+
+#include "versal_rpu_versal_rpu_amp.dts"
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+};
+
+&soc {
+	sram0: memory@40000 {
+		compatible = "mmio-sram";
+		reg = <0x40000 0x7ffc0000>;
+	};
+};
