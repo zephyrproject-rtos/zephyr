@@ -185,6 +185,57 @@ void board_early_init_hook(void)
 	RESET_ReleasePeripheralReset(kLPI2C4_RST_SHIFT_RSTn);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpspi0))
+	CLOCK_SetClockDiv(kCLOCK_DivLPSPI0, 1u);
+	CLOCK_AttachClk(kFRO_LF_DIV_to_LPSPI0);
+	RESET_ReleasePeripheralReset(kLPSPI0_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpspi1))
+	CLOCK_SetClockDiv(kCLOCK_DivLPSPI1, 1u);
+	CLOCK_AttachClk(kFRO_LF_DIV_to_LPSPI1);
+	RESET_ReleasePeripheralReset(kLPSPI1_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpspi2))
+	CLOCK_SetClockDiv(kCLOCK_DivLPSPI2, 1u);
+	CLOCK_AttachClk(kFRO_LF_DIV_to_LPSPI2);
+	RESET_ReleasePeripheralReset(kLPSPI2_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpspi3))
+	CLOCK_SetClockDiv(kCLOCK_DivLPSPI3, 1u);
+	CLOCK_AttachClk(kFRO_LF_DIV_to_LPSPI3);
+	RESET_ReleasePeripheralReset(kLPSPI3_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpspi4))
+	CLOCK_SetClockDiv(kCLOCK_DivLPSPI4, 1u);
+	CLOCK_AttachClk(kFRO_LF_DIV_to_LPSPI4);
+	RESET_ReleasePeripheralReset(kLPSPI4_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpspi5))
+	CLOCK_SetClockDiv(kCLOCK_DivLPSPI5, 1u);
+	CLOCK_AttachClk(kFRO_LF_DIV_to_LPSPI5);
+	RESET_ReleasePeripheralReset(kLPSPI5_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc0)) || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc1))
+	CLOCK_SetClockDiv(kCLOCK_DivADC, 1u);
+	CLOCK_AttachClk(kFRO_LF_DIV_to_ADC);
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc0))
+	CLOCK_EnableClock(kCLOCK_GateADC0);
+	RESET_ReleasePeripheralReset(kADC0_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc1))
+	CLOCK_EnableClock(kCLOCK_GateADC1);
+	RESET_ReleasePeripheralReset(kADC1_RST_SHIFT_RSTn);
+#endif
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer0))
 	CLOCK_SetClockDiv(kCLOCK_DivCTIMER0, 1u);
 	CLOCK_AttachClk(kPll1ClkDiv_to_CTIMER0);
@@ -233,7 +284,7 @@ void board_early_init_hook(void)
 	RESET_ReleasePeripheralReset(kDMA0_RST_SHIFT_RSTn);
 	CLOCK_EnableClock(kCLOCK_GateDMA0);
 	/* Release DMA0 request */
-	for (uint8_t i = 0; i < AHBSC_SEC_GP_REG_COUNT/2; i++) {
+	for (uint8_t i = 0; i < AHBSC_SEC_GP_REG_COUNT / 2; i++) {
 		AHBSC->SEC_GP_REG[i] = 0xFFFFFFFF;
 	}
 #endif
@@ -242,7 +293,7 @@ void board_early_init_hook(void)
 	RESET_ReleasePeripheralReset(kDMA1_RST_SHIFT_RSTn);
 	CLOCK_EnableClock(kCLOCK_GateDMA1);
 	/* Release DMA1 request */
-	for (uint8_t i = AHBSC_SEC_GP_REG_COUNT/2; i < AHBSC_SEC_GP_REG_COUNT; i++) {
+	for (uint8_t i = AHBSC_SEC_GP_REG_COUNT / 2; i < AHBSC_SEC_GP_REG_COUNT; i++) {
 		AHBSC->SEC_GP_REG[i] = 0xFFFFFFFF;
 	}
 #endif
