@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -102,6 +102,18 @@
 			reg = <0x40047000 0x1060>;
 			#clock-cells = <3>;
 
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x40047000 0x1060>;
+
+			cop: watchdog@0 {
+				compatible = "nxp,cop";
+				reg = <0x0 0x8>;
+				status = "disabled";
+				clk-source = <0>;
+				timeout-cycles = <1024>;
+			};
+
 			core_clk {
 				compatible = "fixed-factor-clock";
 				clocks = <&mcg KINETIS_MCG_OUT_CLK>;
@@ -115,14 +127,6 @@
 				clock-div = <2>;
 				#clock-cells = <0>;
 			};
-		};
-
-		cop: watchdog@40047000 {
-			compatible = "nxp,cop";
-			reg = <0x40047000 0x8>;
-			status = "disabled";
-			clk-source = <0>;
-			timeout-cycles = <1024>;
 		};
 
 		porta: pinmux@40049000 {
