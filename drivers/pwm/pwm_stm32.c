@@ -529,7 +529,12 @@ static int pwm_stm32_disable_capture(const struct device *dev, uint32_t channel)
 		}
 	}
 
-	LL_TIM_SetUpdateSource(timer, LL_TIM_UPDATESOURCE_REGULAR);
+	/* Preventing desynchronization between master and slave instances
+	 * triggered by software update events (LL_TIM_GenerateEvent_UPDATE) during reconfiguration
+	 */
+	if (cfg->mastermode != LL_TIM_TRGO_UPDATE || !is_center_aligned(cfg->countermode)) {
+		LL_TIM_SetUpdateSource(timer, LL_TIM_UPDATESOURCE_REGULAR);
+	}
 
 	disable_capture_interrupt[channel - 1](timer);
 
@@ -732,6 +737,13 @@ static int pwm_stm32_init(const struct device *dev)
 #endif
 
 	if (IS_TIM_MASTER_INSTANCE(timer)) {
+		/* Preventing desynchronization between master and slave instances
+		 * triggered by software update events (LL_TIM_GenerateEvent_UPDATE) during
+		 * reconfiguration
+		 */
+		if (cfg->mastermode == LL_TIM_TRGO_UPDATE && is_center_aligned(cfg->countermode)) {
+			LL_TIM_SetUpdateSource(timer, LL_TIM_UPDATESOURCE_COUNTER);
+		}
 		ll_tim_set_trigger_output(timer, cfg->mastermode);
 	} else {
 		if (cfg->mastermode != 0) {
