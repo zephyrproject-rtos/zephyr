@@ -25,7 +25,7 @@ extern const uint32_t __rom_region_mpu_size_bits;
  * - 0xFD000000 - 0xFDFFFFFF: FPS slaves (16MB, device)
  * - 0xFE000000 - 0xFEFFFFFF: Upper LPS slaves (16MB, device)
  * - 0xFF000000 - 0xFFFFFFFF: Lower LPS slaves, TCM, OCM (16MB, device)
- * - 0xFFFC0000 - 0xFFFFFFFF: OCM (256KB, cacheable - overlay)
+ * - 0xFFFC0000 - 0xFFFFFFFF: OCM (256KB, non-cacheable RAM, AMP shared-memory overlay)
  */
 
 /*
@@ -152,15 +152,17 @@ static const struct arm_mpu_region mpu_regions[] = {
 			 DEVICE_SHAREABLE |
 			 NOT_EXEC}),
 
-	/* Region 3: OCM overlay - 256KB normal cacheable memory from 0xFFFC0000
-	 * This overlays the peripheral region and marks OCM as cacheable
+	/* Region 3: OCM overlay - 256KB non-cacheable memory from 0xFFFC0000
+	 * This overlays the peripheral region and marks OCM as non-cacheable RAM
+	 * for shared memory coherency between R5 cores in split mode.
 	 */
 	MPU_REGION_ENTRY(
 		"ocm",
 		0xFFFC0000,
 		REGION_256K,
 		{.rasr = FULL_ACCESS_Msk |
-			 NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE}),
+			 NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE |
+			 NOT_EXEC}),
 
 	/* Region 4: Interrupt vectors at 0x0
 	 * ARMv7-R requires vectors at 0x0 (HIVECS=0)
