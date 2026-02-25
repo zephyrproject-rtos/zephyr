@@ -35,6 +35,12 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #define LFXO_NODE DT_NODELABEL(lfxo)
 #define HFXO_NODE DT_NODELABEL(hfxo)
 
+#if DT_PROP(LFXO_NODE, external_clock_source)
+BUILD_ASSERT(DT_ENUM_HAS_VALUE(LFXO_NODE, load_capacitors, internal) == 0,
+	     "Internal load capacitors must be disconnected when using "
+	     "external clock source");
+#endif
+
 static inline void power_and_clock_configuration(void)
 {
 /* NRF_REGULATORS and NRF_OSCILLATORS are configured to be secure
@@ -87,7 +93,7 @@ static inline void power_and_clock_configuration(void)
 	}
 
 	nrf_oscillators_lfxo_cap_set(NRF_OSCILLATORS, lfxo_intcap);
-#elif DT_ENUM_HAS_VALUE(LFXO_NODE, load_capacitors, external)
+#else
 	nrf_oscillators_lfxo_cap_set(NRF_OSCILLATORS, (nrf_oscillators_lfxo_cap_t)0);
 #endif
 
@@ -131,9 +137,14 @@ static inline void power_and_clock_configuration(void)
 	}
 
 	nrf_oscillators_hfxo_cap_set(NRF_OSCILLATORS, true, hfxo_intcap);
-
-#elif DT_ENUM_HAS_VALUE(HFXO_NODE, load_capacitors, external)
+#else
 	nrf_oscillators_hfxo_cap_set(NRF_OSCILLATORS, false, 0);
+#endif
+
+#if DT_PROP(LFXO_NODE, external_clock_source)
+	nrf_oscillators_lfxo_bypass_set(NRF_OSCILLATORS, true);
+#else
+	nrf_oscillators_lfxo_bypass_set(NRF_OSCILLATORS, false);
 #endif
 
 #if (DT_PROP(DT_NODELABEL(vregmain), regulator_initial_mode) == NRF5X_REG_MODE_DCDC)
