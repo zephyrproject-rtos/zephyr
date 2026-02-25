@@ -16,4 +16,5 @@ supported:
   - counter
   - net
   - uart
+  - watchdog
 vendor: nxp
