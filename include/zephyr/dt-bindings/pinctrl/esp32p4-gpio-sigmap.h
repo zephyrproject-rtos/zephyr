@@ -246,4 +246,14 @@
 #define ESP_PCNT_CTRL_CH1_IN2 155 /**< PCNT unit 2 channel 1 control input */
 #define ESP_PCNT_CTRL_CH1_IN3 156 /**< PCNT unit 3 channel 1 control input */
 
+/* RMT */
+#define ESP_RMT_SIG_IN0  246 /**< RMT channel 0 input */
+#define ESP_RMT_SIG_OUT0 246 /**< RMT channel 0 output */
+#define ESP_RMT_SIG_IN1  247 /**< RMT channel 1 input */
+#define ESP_RMT_SIG_OUT1 247 /**< RMT channel 1 output */
+#define ESP_RMT_SIG_IN2  248 /**< RMT channel 2 input */
+#define ESP_RMT_SIG_OUT2 248 /**< RMT channel 2 output */
+#define ESP_RMT_SIG_IN3  249 /**< RMT channel 3 input */
+#define ESP_RMT_SIG_OUT3 249 /**< RMT channel 3 output */
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_ESP32P4_GPIO_SIGMAP_H_ */
