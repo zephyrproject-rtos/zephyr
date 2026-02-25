@@ -223,7 +223,7 @@ static bool fpu_state_pushed(uint32_t lr)
  */
 __attribute__((naked)) void arm_m_iciit_stub(void)
 {
-	__asm__("udf 0;");
+	__asm__("udf #0;");
 }
 
 /* Called out of interrupt entry to test for an interrupted instruction */
