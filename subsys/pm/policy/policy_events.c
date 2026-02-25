@@ -12,6 +12,7 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/sys/time_units.h>
+#include <zephyr/sys/__assert.h>
 
 /** Lock to synchronize access to the events list. */
 static struct k_spinlock events_lock;
@@ -19,6 +20,19 @@ static struct k_spinlock events_lock;
 static sys_slist_t events_list;
 /** Pointer to Next Event. */
 static struct pm_policy_event *next_event;
+
+static bool event_is_registered_locked(const struct pm_policy_event *evt)
+{
+	struct pm_policy_event *iter;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&events_list, iter, node) {
+		if (iter == evt) {
+			return true;
+		}
+	}
+
+	return false;
+}
 
 static void update_next_event(void)
 {
@@ -61,16 +75,32 @@ int64_t pm_policy_next_event_ticks(void)
 
 void pm_policy_event_register(struct pm_policy_event *evt, int64_t uptime_ticks)
 {
+	__ASSERT_NO_MSG(evt != NULL);
+
 	K_SPINLOCK(&events_lock) {
+		bool registered = event_is_registered_locked(evt);
+
+		/*
+		 * Protect against list corruption on accidental double registration.
+		 * Re-registering an already registered event behaves like an update.
+		 */
 		evt->uptime_ticks = uptime_ticks;
-		sys_slist_append(&events_list, &evt->node);
+		if (!registered) {
+			sys_slist_append(&events_list, &evt->node);
+		}
 		update_next_event();
 	}
 }
 
 void pm_policy_event_update(struct pm_policy_event *evt, int64_t uptime_ticks)
 {
+	__ASSERT_NO_MSG(evt != NULL);
+
 	K_SPINLOCK(&events_lock) {
+		if (!event_is_registered_locked(evt)) {
+			K_SPINLOCK_BREAK;
+		}
+
 		evt->uptime_ticks = uptime_ticks;
 		update_next_event();
 	}
@@ -78,7 +108,13 @@ void pm_policy_event_update(struct pm_policy_event *evt, int64_t uptime_ticks)
 
 void pm_policy_event_unregister(struct pm_policy_event *evt)
 {
+	__ASSERT_NO_MSG(evt != NULL);
+
 	K_SPINLOCK(&events_lock) {
+		if (!event_is_registered_locked(evt)) {
+			K_SPINLOCK_BREAK;
+		}
+
 		(void)sys_slist_find_and_remove(&events_list, &evt->node);
 		update_next_event();
 	}
