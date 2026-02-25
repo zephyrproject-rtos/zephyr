@@ -7,8 +7,8 @@ project(adsp_cavs_code_relocation)
 
 target_sources(app PRIVATE src/main.c src/reloc.c)
 
-zephyr_code_relocate(FILES src/reloc.c LOCATION SRAM2_LITERAL)
-zephyr_code_relocate(FILES src/reloc.c LOCATION SRAM2_TEXT)
-zephyr_code_relocate(FILES src/reloc.c LOCATION SRAM3_DATA)
-zephyr_code_relocate(FILES src/reloc.c LOCATION SRAM3_RODATA)
-zephyr_code_relocate(FILES src/reloc.c LOCATION SRAM4_BSS)
+zephyr_code_relocate(FILES src/reloc.c LOCATION SRAM2_LITERAL TARGET app)
+zephyr_code_relocate(FILES src/reloc.c LOCATION SRAM2_TEXT TARGET app)
+zephyr_code_relocate(FILES src/reloc.c LOCATION SRAM3_DATA TARGET app)
+zephyr_code_relocate(FILES src/reloc.c LOCATION SRAM3_RODATA TARGET app)
+zephyr_code_relocate(FILES src/reloc.c LOCATION SRAM4_BSS TARGET app)

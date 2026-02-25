@@ -15,9 +15,9 @@ if(CONFIG_BOARD_QEMU_XTENSA)
 endif()
 
 # Code relocation feature
-zephyr_code_relocate(FILES src/test_file1.c ${SRAM2_PHDR} LOCATION SRAM2)
+zephyr_code_relocate(FILES src/test_file1.c ${SRAM2_PHDR} LOCATION SRAM2 TARGET app)
 
-zephyr_code_relocate(FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/test_file2.c ${RAM_PHDR} LOCATION RAM FILTER ".*sram")
+zephyr_code_relocate(FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/test_file2.c ${RAM_PHDR} LOCATION RAM FILTER ".*sram" TARGET app)
 
 # Add custom library that we can relocate code for
 add_subdirectory(test_lib)
@@ -30,12 +30,12 @@ zephyr_code_relocate(LIBRARY test_lib LOCATION SRAM2)
 set(reloc_files src/test_file4.c src/test_file5.c)
 set(genex_expr
   ${CMAKE_CURRENT_LIST_DIR}/$<JOIN:${reloc_files},$<SEMICOLON>${CMAKE_CURRENT_LIST_DIR}/>)
-zephyr_code_relocate(FILES ${genex_expr} LOCATION SRAM2)
+zephyr_code_relocate(FILES ${genex_expr} LOCATION SRAM2 TARGET app)
 
-zephyr_code_relocate(FILES src/test_file3.c LOCATION SRAM2_LITERAL)
-zephyr_code_relocate(FILES src/test_file3.c LOCATION SRAM2_TEXT)
-zephyr_code_relocate(FILES src/test_file3.c LOCATION RAM_DATA)
-zephyr_code_relocate(FILES src/test_file3.c LOCATION SRAM2_BSS)
+zephyr_code_relocate(FILES src/test_file3.c LOCATION SRAM2_LITERAL TARGET app)
+zephyr_code_relocate(FILES src/test_file3.c LOCATION SRAM2_TEXT TARGET app)
+zephyr_code_relocate(FILES src/test_file3.c LOCATION RAM_DATA TARGET app)
+zephyr_code_relocate(FILES src/test_file3.c LOCATION SRAM2_BSS TARGET app)
 
 # Test NOKEEP support. Placing both KEEP and NOKEEP symbols in the same location
 # (this and test_file2.c in RAM) should work fine.

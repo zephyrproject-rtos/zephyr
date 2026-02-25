@@ -1477,9 +1477,11 @@ endmacro()
 # - NOKEEP: suppress the generation of KEEP() statements in the linker script,
 #   to allow any unused code in the given files/library to be discarded.
 # - PHDR [program_header]: add program header. Used on Xtensa platforms.
+# - TARGET: specify the target to which the relocation files belong. By default, the it's `zephyr`.
+#   Not needed when using the LIBRARY directive. Only needed for excluding relocated files from LTO.
 function(zephyr_code_relocate)
   set(options NOCOPY NOKEEP)
-  set(single_args LIBRARY LOCATION PHDR FILTER)
+  set(single_args LIBRARY LOCATION PHDR FILTER TARGET)
   set(multi_args FILES)
   cmake_parse_arguments(CODE_REL "${options}" "${single_args}"
     "${multi_args}" ${ARGN})
@@ -1519,6 +1521,8 @@ function(zephyr_code_relocate)
     set(nonempty_src_list "$<$<BOOL:${src_list_rel}>:${src_list}>")
     set(sep_list "$<$<AND:$<BOOL:${src_list_abs}>,$<BOOL:${src_list_rel}>>:$<SEMICOLON>>")
     set(file_list "${src_list_abs}${sep_list}${nonempty_src_list}")
+    # Exclude relocated files from LTO by applying the prohibit_lto compile option to the library target.
+    target_compile_options(${CODE_REL_LIBRARY} INTERFACE $<TARGET_PROPERTY:compiler,prohibit_lto>)
   else()
     # Check if CODE_REL_FILES is a generator expression, if so leave it
     # untouched.
@@ -1536,6 +1540,13 @@ function(zephyr_code_relocate)
       # Generator expression is present in file list. Leave the list untouched.
       set(file_list ${CODE_REL_FILES})
     endif()
+    if(NOT CODE_REL_TARGET)
+      set(CODE_REL_TARGET zephyr)
+    endif()
+    # Exclude relocated files from LTO by applying the prohibit_lto compile option.
+    set_source_files_properties(${file_list}
+                                TARGET_DIRECTORY ${CODE_REL_TARGET}
+                                PROPERTIES COMPILE_OPTIONS $<TARGET_PROPERTY:compiler,prohibit_lto>)
   endif()
   if(NOT CODE_REL_NOCOPY)
     set(flag_list COPY)

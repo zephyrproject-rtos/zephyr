@@ -17,8 +17,8 @@ if(CONFIG_CPU_CORTEX_M_HAS_VTOR)
   zephyr_code_relocate(FILES ${ZEPHYR_BASE}/arch/arm/core/cortex_m/exc_exit.c LOCATION RAM)
 endif()
 
-zephyr_code_relocate(FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/main.c FILTER ".test_irq_callback" LOCATION RAM)
-zephyr_code_relocate(FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/fake_driver.c FILTER ".fake_driver_isr" LOCATION RAM)
+zephyr_code_relocate(FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/main.c FILTER ".test_irq_callback" LOCATION RAM TARGET app)
+zephyr_code_relocate(FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/fake_driver.c FILTER ".fake_driver_isr" LOCATION RAM TARGET app)
 
 # Only needed because the fake driver is defined in tests folder
 zephyr_linker_sources(SECTIONS sections-rom.ld)

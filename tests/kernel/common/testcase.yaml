@@ -79,8 +79,7 @@ tests:
   kernel.common.lto:
     platform_key:
       - arch
-    # CONFIG_CODE_DATA_RELOCATION causes a build error (issue #69730)
-    filter: CONFIG_ISR_TABLES_LOCAL_DECLARATION_SUPPORTED and not CONFIG_CODE_DATA_RELOCATION
+    filter: CONFIG_ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
     tags: lto
     extra_configs:
       - CONFIG_TEST_USERSPACE=n
@@ -92,8 +91,7 @@ tests:
   kernel.common.lto.singlethreaded:
     platform_key:
       - arch
-    # CONFIG_CODE_DATA_RELOCATION causes a build error (issue #69730)
-    filter: CONFIG_ISR_TABLES_LOCAL_DECLARATION_SUPPORTED and not CONFIG_CODE_DATA_RELOCATION
+    filter: CONFIG_ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
     tags: lto
     extra_configs:
       - CONFIG_TEST_USERSPACE=n
