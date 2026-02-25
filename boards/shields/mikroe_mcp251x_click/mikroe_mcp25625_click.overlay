@@ -11,6 +11,13 @@
 	chosen {
 		zephyr,canbus = &mcp25625_mikroe_mcp25625_click;
 	};
+
+	transceiver0: can-phy0 {
+		compatible = "microchip,mcp2562", "can-transceiver-gpio";
+		standby-gpios = <&mikrobus_header 0 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <1000000>;
+		#phy-cells = <0>;
+	};
 };
 
 &mikrobus_spi {
@@ -22,10 +29,7 @@
 		spi-max-frequency = <DT_FREQ_M(10)>;
 		osc-freq = <DT_FREQ_M(20)>;
 		int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
+		phys = <&transceiver0>;
 		status = "okay";
-
-		can-transceiver {
-			max-bitrate = <1000000>;
-		};
 	};
 };
