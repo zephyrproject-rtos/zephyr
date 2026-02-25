@@ -2067,7 +2067,7 @@ def test_projectbuilder_report_out(
     instance_mock.handler.seed = 123
     instance_mock.handler.ready = ready_run
     instance_mock.run = ready_run
-    instance_mock.dut = 'dummy dut'
+    instance_mock.hardware_id = 'dummy dut'
     instance_mock.execution_time = 60
     instance_mock.platform.name = 'dummy platform'
     instance_mock.status = status
