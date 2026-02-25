@@ -60,7 +60,9 @@
 #define _EXC_PENDSV_PRIO_MASK Z_EXC_PRIO(_EXC_PENDSV_PRIO)
 
 #ifdef _ASMLANGUAGE
+#ifndef CONFIG_USE_SWITCH
 GTEXT(z_arm_exc_exit);
+#endif
 #else
 #include <zephyr/types.h>
 
