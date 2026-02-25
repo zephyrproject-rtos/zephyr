@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019, Linaro
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -464,11 +464,14 @@ static int mcux_pwm_configure_capture(const struct device *dev,
 	/* Setup input capture on channel */
 	PWM_SetupInputCapture(config->base, config->index, pwm_channel, &capture_config);
 
+#if defined(FSL_FEATURE_PWM_HAS_INPUT_FILTER_CAPTURE) && \
+	(FSL_FEATURE_PWM_HAS_INPUT_FILTER_CAPTURE == 1U)
 	/* Set capture filter */
 	PWM_SetFilterSampleCount(config->base, pwm_channel, config->index,
 		config->input_filter_count);
 	PWM_SetFilterSamplePeriod(config->base, pwm_channel, config->index,
 		config->input_filter_period);
+#endif
 
 	return 0;
 }

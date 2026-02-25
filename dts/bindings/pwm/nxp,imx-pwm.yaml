@@ -1,5 +1,5 @@
 # Copyright (c) 2019 Linaro Limited
-# Copyright 2025 NXP
+# Copyright 2025-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP MCUX PWM
@@ -56,6 +56,7 @@ properties:
       is the decimal value of this field plus three: the bit field value of 0-7
       represents 3-10 samples, respectively. The value affects the input latency.
       Valid range: 0 - 7
+      Note this property only takes effect when capture input filter register is available.
 
   input-filter-period:
     type: int
@@ -65,6 +66,7 @@ properties:
       If the value is 0x00 (default), then the input filter is bypassed. The value affects
       the input latency.
       Valid range: 0 - 255
+      Note this property only takes effect when capture input filter register is available.
 
   "#pwm-cells":
     const: 3
