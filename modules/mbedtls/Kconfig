@@ -14,6 +14,12 @@ config MBEDTLS_PROMPTLESS
 	  mbed TLS menu prompt and instead handle the selection of MBEDTLS from
 	  dependent sub-configurations and thus prevent stuck symbol behavior.
 
+config MBEDTLS_VERSION_4_x
+	bool
+	default y
+	help
+	  Hidden Kconfig symbol used internally to mark support for Mbed TLS 4.x.
+
 rsource "Kconfig.psa.auto"
 rsource "Kconfig.psa.logic"
 
