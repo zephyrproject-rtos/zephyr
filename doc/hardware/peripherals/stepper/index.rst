@@ -5,10 +5,10 @@ Steppers
 
 The stepper driver subsystem consists of two device driver APIs:
 
-Stepper API
-***********
+Stepper Hardware Driver API
+***************************
 
-The stepper driver API provides a common interface for stepper drivers.
+The stepper hardware driver API provides a common interface for stepper hardware drivers.
 
 - Configure **micro-stepping resolution** using :c:func:`stepper_set_micro_step_res`
   and :c:func:`stepper_get_micro_step_res`.
@@ -37,14 +37,22 @@ The stepper motion controller API provides a common interface for stepper motion
 Device Tree
 ***********
 
-In the context of stepper motion controllers, devicetree provides the initial hardware
-configuration for stepper drivers on a per device level. Each device must specify
-a device tree binding in Zephyr, and ideally, a set of hardware configuration options
-for things such as current settings, ramp parameters and furthermore. These can then
-be used in a boards devicetree to configure a stepper driver to its initial state.
+In the context of drivers in stepper driver subsystem, devicetree provides the initial hardware
+configuration for stepper motion controllers and stepper hardware drivers on a per device level.
+Each device must specify a device tree binding in Zephyr, and ideally, a set of hardware configuration
+options for things such as current settings, ramp parameters and furthermore. These can then be used
+in a boards devicetree to configure a stepper driver to its initial state.
 
 Driver Composition Scenarios
 ============================
+
+In order to actually get a stepper motor up and running a combination of stepper motion controller
+a stepper hardware driver is needed.
+
+.. image:: int_ctrl_driver.svg
+   :width: 70%
+   :align: center
+   :alt:  Integrated Controller & Driver
 
 Below are two typical scenarios:
 
