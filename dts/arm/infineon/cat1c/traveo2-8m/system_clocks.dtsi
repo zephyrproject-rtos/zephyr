@@ -104,10 +104,10 @@
 				compatible = "infineon,cat1-pll";
 				reg = <2>;
 				clocks = <&clk_eco>;
-				p-div = <36>;
-				q-div = <3>;
-				frac-div = <0xDD2F1A>;
-				output-div = <2>;
+				p-div = <31>;
+				q-div = <1>;
+				frac-div = <0x400000>;
+				output-div = <4>;
 				status = "disabled";
 			};
 
@@ -117,7 +117,7 @@
 				reg = <3>;
 				clocks = <&clk_eco>;
 				p-div = <25>;
-				q-div = <1>;
+				q-div = <2>;
 				output-div = <2>;
 				status = "disabled";
 			};
@@ -156,7 +156,7 @@
 				compatible = "infineon,cat1-hf-clock";
 				reg = <0>;
 				clocks = <&pll2>;
-				divider = <2>;
+				divider = <0>;
 				status = "okay";
 			};
 
@@ -165,7 +165,7 @@
 				compatible = "infineon,cat1-hf-clock";
 				reg = <1>;
 				clocks = <&pll0>;
-				divider = <1>;
+				divider = <0>;
 				status = "disabled";
 			};
 
@@ -174,7 +174,7 @@
 				compatible = "infineon,cat1-hf-clock";
 				reg = <2>;
 				clocks = <&pll2>;
-				divider = <2>;
+				divider = <0>;
 				status = "disabled";
 			};
 
