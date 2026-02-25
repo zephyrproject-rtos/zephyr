@@ -602,6 +602,10 @@
 				ow-off-cs = <3>;
 				wd-to = <0>;
 				fault-mask = <0xbe>;
+				ovl-blank = <3>;
+				ovl-stretch-en;
+				above-vdd-prot-en = <1>;
+				typ2-di;
 			};
 
 			test_spi_max14916: max14916@7 {

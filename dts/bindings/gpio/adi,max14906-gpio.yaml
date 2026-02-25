@@ -226,6 +226,39 @@ properties:
       Bit 5: VDDOK    - VDD below threshold
       Bit 6: SupplyErr - Supply undervoltage or ground loss
       Bit 7: ComErr   - SPI CRC or watchdog error
+  ovl-blank:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    description: |
+      Overload blanking time after DOI_ state change.
+      0: Disable blanking (default)
+      1: 8ms (typ)
+      2: 50ms (typ)
+      3: 300ms (typ)
+  ovl-stretch-en:
+    type: boolean
+    description: |
+      Enable 100ms hold time on OVL_ fault bits during inrush.
+  above-vdd-prot-en:
+    type: int
+    default: 1
+    enum:
+      - 0
+      - 1
+    description: |
+      Enable above-VDD protection via external pMOS on G_ pins.
+      0: Disable
+      1: Enable (default)
+  typ2-di:
+    type: boolean
+    description: |
+      Select IEC 61131-2 Type 2 digital input (7mA sink).
+      Default is Type 1/3 (2.3mA sink).
 
 gpio-cells:
   - pin

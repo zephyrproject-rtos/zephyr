@@ -507,6 +507,12 @@ static int gpio_max14906_config_diag(const struct device *dev)
 		return ret;
 	}
 
+	ret = max149x6_reg_transceive(dev, MAX14906_CONFIG_DI_REG,
+				      config->config_di.reg_raw, NULL, MAX149x6_WRITE);
+	if (ret < 0) {
+		return ret;
+	}
+
 	ret = max149x6_reg_transceive(dev, MAX14906_CONFIG_MASK,
 				      data->glob.mask.reg_raw, NULL, MAX149x6_WRITE);
 	if (ret < 0) {
@@ -692,6 +698,12 @@ static DEVICE_API(gpio, gpio_max14906_api) = {
 		.config_do.reg_bits.DO_MODE2 = DT_INST_PROP_BY_IDX(id, do_mode, 1),                \
 		.config_do.reg_bits.DO_MODE3 = DT_INST_PROP_BY_IDX(id, do_mode, 2),                \
 		.config_do.reg_bits.DO_MODE4 = DT_INST_PROP_BY_IDX(id, do_mode, 3),                \
+		.config_di.reg_bits.OVL_BLANK = DT_INST_PROP(id, ovl_blank),                       \
+		.config_di.reg_bits.OVL_STRETCH_EN = DT_INST_PROP(id, ovl_stretch_en),             \
+		.config_di.reg_bits.ABOVE_VDD_PROT_EN =                                            \
+			DT_INST_PROP(id, above_vdd_prot_en),                                       \
+		/* VDD_FAULT_SEL omitted: muxes VDD faults into DoiLevel, breaks port_get_raw */ \
+		.config_di.reg_bits.TYP_2_DI = DT_INST_PROP(id, typ2_di),                         \
 		.spi_addr = DT_INST_PROP(id, spi_addr),                                            \
 	};                                                                                         \
                                                                                                    \
