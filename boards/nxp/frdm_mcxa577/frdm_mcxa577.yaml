@@ -19,4 +19,5 @@ supported:
   - counter
   - dma
   - watchdog
+  - flash
 vendor: nxp
