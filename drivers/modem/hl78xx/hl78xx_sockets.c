@@ -3,6 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L /* Required for strnlen() */
+#include <string.h>
+#include <stdlib.h>
+#include <stddef.h>
+
 #include <zephyr/modem/chat.h>
 #include <zephyr/modem/backend/uart.h>
 #include <zephyr/kernel.h>
@@ -20,9 +27,6 @@
 #include <zephyr/net/tls_credentials.h>
 #endif
 
-#include <string.h>
-#include <stdlib.h>
-#include <stddef.h>
 #include "hl78xx.h"
 #include "hl78xx_chat.h"
 #include "hl78xx_cfg.h"
