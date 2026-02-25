@@ -12,6 +12,7 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include <zephyr/sys/sys_getopt.h>
 #include <zephyr/net/virtual.h>
+#include <zephyr/net/virtual_mgmt.h>
 #include <zephyr/net/wireguard.h>
 
 #include "net_shell_private.h"
@@ -645,6 +646,178 @@ static int cmd_wg_stats(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_WIREGUARD_SHELL)
+static int parse_setup_args_to_params(const struct shell *sh,
+				      int argc, char *argv[],
+				      char *private_key,
+				      size_t private_key_len,
+				      struct net_if **vpn_iface)
+{
+	struct sys_getopt_state *state;
+	struct net_if *iface;
+	int option_index = 1;
+	int iface_idx;
+	int opt;
+	int ret;
+
+	static const struct sys_getopt_option long_options[] = {
+		{ "private-key", sys_getopt_required_argument, 0, 'k' },
+		{ "iface", sys_getopt_required_argument, 0, 'i' },
+		{ "help", sys_getopt_no_argument, 0, 'h' },
+		{ 0, 0, 0, 0 }
+	};
+
+	while ((opt = sys_getopt_long(argc, argv, "k:i:h",
+				      long_options, &option_index)) != -1) {
+		state = sys_getopt_state_get();
+
+		switch (opt) {
+		case 'k':
+			strncpy(private_key, state->optarg, private_key_len);
+			break;
+		case 'i':
+			ret = 0;
+			iface_idx = shell_strtol(state->optarg, 10, &ret);
+			if (ret < 0 || iface_idx == 0) {
+				PR_ERROR("Invalid interface index \"%s\"\n",
+					 state->optarg);
+				return ret;
+			}
+
+			iface = net_if_get_by_index(iface_idx);
+			if (iface == NULL) {
+				PR_ERROR("Invalid interface: %d\n", iface_idx);
+				return -EINVAL;
+			}
+
+			if (!(net_virtual_get_iface_capabilities(iface) & VIRTUAL_INTERFACE_VPN)) {
+				PR_ERROR("Interface %d is not a VPN one\n", iface_idx);
+				return -ENOENT;
+			}
+
+			*vpn_iface = iface;
+			break;
+		case 'h':
+		case '?':
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		default:
+			PR_ERROR("Invalid option %c\n", state->optopt);
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		}
+	}
+
+	return 0;
+}
+
+/* User data for the interface callback */
+struct ud {
+	struct net_if *vpn[CONFIG_WIREGUARD_MAX_PEER];
+};
+
+static void wg_iface_cb(struct net_if *iface, void *user_data)
+{
+	struct ud *ud = user_data;
+
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(VIRTUAL)) {
+		return;
+	}
+
+	if (!(net_virtual_get_iface_capabilities(iface) & VIRTUAL_INTERFACE_VPN)) {
+		return;
+	}
+
+	for (int i = 0; i < CONFIG_WIREGUARD_MAX_PEER; i++) {
+		if (ud->vpn[i] != NULL) {
+			continue;
+		}
+
+		ud->vpn[i] = iface;
+		return;
+	}
+}
+
+static void crypto_zero(void *dest, size_t len)
+{
+	volatile uint8_t *p = (uint8_t *)dest;
+
+	while (len--) {
+		*p++ = 0;
+	}
+}
+#endif
+
+static int cmd_wg_setup(const struct shell *sh, size_t argc, char *argv[])
+{
+#if defined(CONFIG_WIREGUARD_SHELL)
+	struct virtual_interface_req_params params = { 0 };
+	uint8_t my_private_key[WG_PRIVATE_KEY_LEN] = { 0 };
+	char private_key[WG_PRIVATE_KEY_LEN * 2] = { 0 };
+	struct net_if *iface = NULL;
+	struct ud user_data = { 0 };
+	size_t olen = 0;
+	int ret;
+
+	if (argc < 2) {
+		PR_ERROR("Invalid number of arguments\n");
+		return -EINVAL;
+	}
+
+	if (parse_setup_args_to_params(sh, argc, argv,
+				       private_key, sizeof(private_key),
+				       &iface) != 0) {
+		return -ENOEXEC;
+	}
+
+	/* public_key contains the private key in base64 format at this point */
+	ret = base64_decode(my_private_key, sizeof(my_private_key),
+			    &olen, private_key, strlen(private_key));
+	if (ret < 0 || olen != sizeof(my_private_key)) {
+		PR_ERROR("Invalid private key (len %d)\n", olen);
+		return -EINVAL;
+	}
+
+	params.private_key.data = my_private_key;
+	params.private_key.len = sizeof(my_private_key);
+
+	if (iface == NULL) {
+		net_if_foreach(wg_iface_cb, &user_data);
+
+		if (user_data.vpn[0] == NULL) {
+			PR_ERROR("No available VPN interface for the new peer\n");
+			return -ENODEV;
+		}
+
+		iface = user_data.vpn[0];
+		if (iface == NULL) {
+			PR_ERROR("No available VPN interface for the new peer\n");
+			return -ENODEV;
+		}
+	}
+
+	ret = net_mgmt(NET_REQUEST_VIRTUAL_INTERFACE_SET_PRIVATE_KEY,
+		       iface, &params, sizeof(params));
+
+	crypto_zero(private_key, sizeof(private_key));
+	crypto_zero(my_private_key, sizeof(my_private_key));
+
+	if (ret < 0) {
+		LOG_ERR("Cannot set private key (%d)", ret);
+		return ret;
+	}
+
+	PR_INFO("VPN interface %d is set up with the provided private key. "
+		"You can add peers using the 'net wg add' command.\n",
+		net_if_get_by_iface(iface));
+#else
+	PR_INFO("Set %s to enable %s support.\n", "CONFIG_WIREGUARD",
+		"Wireguard VPN");
+#endif /* CONFIG_WIREGUARD_SHELL */
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_wg,
 	SHELL_CMD_ARG(add, NULL,
 		      SHELL_HELP("Add a peer in order to establish a VPN connection",
@@ -680,6 +853,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_wg,
 				 "To get detailed information about a specific connection, "
 				 "use the 'show <id>' command", "[<id>]"),
 		      cmd_net_wg, 1, 1),
+	SHELL_CMD_ARG(setup, NULL,
+		      SHELL_HELP("Setup local VPN network interface",
+				 "[-i, --iface=<interface index>]: Interface index\n"
+				 "-k, --private-key <key>: Private key in base64 format"),
+		      cmd_wg_setup, 1, 7),
 	SHELL_CMD_ARG(stats, NULL,
 		      SHELL_HELP("Show statistics information about the Wireguard VPN connections."
 				 " The statistics can be reset by using the 'reset' command",
