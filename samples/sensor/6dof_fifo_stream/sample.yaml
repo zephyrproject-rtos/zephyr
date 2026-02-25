@@ -1,7 +1,7 @@
 sample:
   name: Stream FIFO sample
 tests:
-  sample.sensor.stream_fifo:
+  sample.sensor.6dof_fifo_stream:
     harness: console
     tags: sensors
     filter: dt_alias_exists("stream0")

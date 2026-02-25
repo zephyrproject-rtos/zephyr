@@ -1,5 +1,5 @@
-.. zephyr:code-sample:: stream_fifo
-   :name: Generic device FIFO streaming
+.. zephyr:code-sample:: 6dof_fifo_stream
+   :name: 6dof device FIFO streaming
    :relevant-api: sensor_interface
 
    Get accelerometer/gyroscope/temperature FIFO data frames from a sensor using
@@ -8,13 +8,14 @@
 Overview
 ********
 
-This sample application demonstrates how to stream FIFO data using the
+This sample application demonstrates how to stream a six degree of freedom device
+(rotational and translational) data from FIFO using the
 :ref:`RTIO framework <rtio>` based :ref:`Read and Decode method <sensor-read-and-decode>`.
 
 The streaming is started using the sensor_stream() API and it is self-sustained by the
 SENSOR_TRIG_FIFO_WATERMARK trigger.
 
-Currently the sample gets/prints data for the following sensor channels:
+The sample gets/prints data for the following sensor channels:
 
 - SENSOR_CHAN_ACCEL_XYZ
 - SENSOR_CHAN_GYRO_XYZ
@@ -43,18 +44,18 @@ to be aliased as :samp:`stream{N}` where ``N`` goes from ``0`` to ``9``. For exa
 A devicetree overlay and configuration are already available for sensortile_box_pro board
 in the boards directory:
 
-- :zephyr_file:`samples/sensor/stream_fifo/boards/sensortile_box_pro.overlay`
+- :zephyr_file:`samples/sensor/6dof_fifo_stream/boards/sensortile_box_pro.overlay`
 
   DT overlay file for the sensortile_box_pro board.
 
-- :zephyr_file:`samples/sensor/stream_fifo/boards/sensortile_box_pro.conf`
+- :zephyr_file:`samples/sensor/6dof_fifo_stream/boards/sensortile_box_pro.conf`
 
   Configuration file for the sensortile_box_pro board.
 
 Build and run sample for sensortile_box_pro board with:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/sensor/stream_fifo
+   :zephyr-app: samples/sensor/6dof_fifo_stream
    :board: sensortile_box_pro
    :goals: build flash
    :compact:
@@ -64,7 +65,7 @@ For example, to build and run the sample for the :zephyr:board:`nucleo_h503rb` b
 with a :zephyr:ref:`x-nucleo-iks4a1` shield, use the following command:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/sensor/stream_fifo
+   :zephyr-app: samples/sensor/6dof_fifo_stream
    :board: nucleo_h503rb
    :shield: x_nucleo_iks4a1
    :goals: build flash
