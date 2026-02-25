@@ -257,7 +257,7 @@ static ALWAYS_INLINE void arm_m_switch(void *switch_to, void **switched_from)
 			 "mov r6, r12;"
 			 "mov r7, lr;"
 			 "ldr r8, =3f;"    /* address of restore PC */
-			 "add r8, r8, #1;" /* set thumb bit */
+			 "orr r8, r8, #1;" /* set thumb bit */
 			 "push {r6-r8};"
 			 "sub sp, sp, #24;" /* skip over space for r6-r11 */
 			 "push {r0-r5};"
