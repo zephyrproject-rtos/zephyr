@@ -63,7 +63,7 @@ DT_FOREACH_STATUS_OKAY_NODE(DEVICE_CONSTRAINTS_DEFINE)
 #define PM_STATE_DEVICE_CONSTRAINT_INIT(node_id)                                              \
 	{                                                                                     \
 		.dev = DEVICE_DT_NAME(node_id),                                                \
-		.pm_constraints_size = DT_PROP_LEN(node_id, zephyr_disabling_power_states),   \
+		.pm_constraints_size = ARRAY_SIZE(PM_CONSTRAINTS_NAME(node_id)),               \
 		.constraints = PM_CONSTRAINTS_NAME(node_id),                                  \
 	},
 
