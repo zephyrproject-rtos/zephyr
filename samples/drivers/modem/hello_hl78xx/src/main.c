@@ -415,14 +415,14 @@ static void hl78xx_on_ok(struct modem_chat *chat, char **argv, uint16_t argc, vo
  * @brief resolve_broker_addr - Resolve the broker address and port.
  * @param broker Pointer to sockaddr_in structure to store the resolved address.
  */
-static int resolve_broker_addr(struct sockaddr_in *broker)
+static int resolve_broker_addr(struct net_sockaddr_in *broker)
 {
 	int ret;
 	struct zsock_addrinfo *ai = NULL;
 
 	const struct zsock_addrinfo hints = {
-		.ai_family = AF_INET,
-		.ai_socktype = SOCK_STREAM,
+		.ai_family = NET_PF_INET,
+		.ai_socktype = NET_SOCK_STREAM,
 		.ai_protocol = 0,
 	};
 	char port_string[6] = {0};
@@ -430,12 +430,13 @@ static int resolve_broker_addr(struct sockaddr_in *broker)
 	snprintf(port_string, sizeof(port_string), "%d", TEST_SERVER_PORT);
 	ret = zsock_getaddrinfo(TEST_SERVER_ENDPOINT, port_string, &hints, &ai);
 	if (ret == 0) {
-		char addr_str[INET_ADDRSTRLEN];
+		char addr_str[NET_INET_ADDRSTRLEN];
 
-		memcpy(broker, ai->ai_addr, MIN(ai->ai_addrlen, sizeof(struct sockaddr_storage)));
+		memcpy(broker, ai->ai_addr, MIN(ai->ai_addrlen,
+		       sizeof(struct net_sockaddr_storage)));
 
-		zsock_inet_ntop(AF_INET, &broker->sin_addr, addr_str, sizeof(addr_str));
-		LOG_INF("Resolved: %s:%u", addr_str, htons(broker->sin_port));
+		zsock_inet_ntop(NET_PF_INET, &broker->sin_addr, addr_str, sizeof(addr_str));
+		LOG_INF("Resolved: %s:%u", addr_str, net_htons(broker->sin_port));
 	} else {
 		LOG_ERR("failed to resolve hostname err = %d (errno = %d)", ret, errno);
 	}
@@ -594,7 +595,7 @@ appre_run:
 	hl78xx_modem_cmd_send(modem, sample_cmd, strlen(sample_cmd), &ok_match, 1);
 	LOG_INF("New APN: %s", (strlen(apn) > 0) ? apn : "\"\"");
 
-	struct sockaddr_in test_endpoint_addr;
+	struct net_sockaddr_in test_endpoint_addr;
 
 	LOG_INF("Test endpoint: %s:%d", TEST_SERVER_ENDPOINT, TEST_SERVER_PORT);
 
