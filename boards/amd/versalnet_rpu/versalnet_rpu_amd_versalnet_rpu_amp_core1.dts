@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2025, Advanced Micro Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * VersalNet RPU AMP Core1: DDR @ 0x10000000, console on uart1.
+ */
+
+#include "versalnet_rpu_amd_versalnet_rpu_amp.dts"
+
+/ {
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,ocm = &ocm;
+	};
+};
+
+&soc {
+	sram1: memory@10000000 {
+		compatible = "mmio-sram";
+		reg = <0x10000000 DT_SIZE_M(256)>;
+	};
+};

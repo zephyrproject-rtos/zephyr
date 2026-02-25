@@ -4,3 +4,8 @@ board:
   vendor: amd
   socs:
   - name: amd_versalnet_rpu
+    variants:
+    - name: amp
+      variants:
+      - name: core0
+      - name: core1

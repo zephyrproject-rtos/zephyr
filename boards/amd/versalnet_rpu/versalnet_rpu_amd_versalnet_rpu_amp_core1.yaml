@@ -1,0 +1,16 @@
+# Copyright (c) 2025, Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: versalnet_rpu/amd_versalnet_rpu/amp/core1
+name: AMD VersalNet RPU Cortex-R52 AMP Core1
+arch: arm
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: amd
+supported:
+  - sdhc
+  - mbox
