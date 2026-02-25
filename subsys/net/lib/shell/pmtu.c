@@ -30,11 +30,11 @@ static void pmtu_cb(struct net_pmtu_entry *entry, void *user_data)
 /* Use the value of NET_IPV6_ADDR_LEN */
 #define ADDR_STR_LEN 40
 #elif defined(CONFIG_NET_IPV4)
-#define ADDR_STR_LEN INET_ADDRSTRLEN
+#define ADDR_STR_LEN NET_INET_ADDRSTRLEN
 #elif defined(CONFIG_NET_IPV6)
 #define ADDR_STR_LEN 40
 #else
-#define ADDR_STR_LEN INET_ADDRSTRLEN
+#define ADDR_STR_LEN NET_INET_ADDRSTRLEN
 #endif
 
 	if (!entry->in_use) {
