@@ -13,7 +13,7 @@ from runners.core import RunnerCaps, RunnerConfig, ZephyrBinaryRunner
 
 class XSDBBinaryRunner(ZephyrBinaryRunner):
     def __init__(self, cfg: RunnerConfig, config=None, bitstream=None,
-            fsbl=None, pdi=None, bl31=None, dtb=None):
+            fsbl=None, pdi=None, bl31=None, dtb=None, second_elf=None):
         super().__init__(cfg)
         self.elf_file = cfg.elf_file
         if not config:
@@ -27,6 +27,7 @@ class XSDBBinaryRunner(ZephyrBinaryRunner):
         self.pdi = pdi
         self.bl31 = bl31
         self.dtb = dtb
+        self.second_elf = second_elf
 
     @classmethod
     def name(cls):
@@ -44,6 +45,7 @@ class XSDBBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--pdi', help='path to the base/boot pdi file')
         parser.add_argument('--bl31', help='path to the bl31(ATF) elf file')
         parser.add_argument('--system-dtb', help='path to the system.dtb file')
+        parser.add_argument('--second-elf', help='path to a second elf file for dual-core loading')
 
     @classmethod
     def do_create(
@@ -51,7 +53,8 @@ class XSDBBinaryRunner(ZephyrBinaryRunner):
     ) -> "XSDBBinaryRunner":
         return XSDBBinaryRunner(cfg, config=args.config,
                 bitstream=args.bitstream, fsbl=args.fsbl,
-                pdi=args.pdi, bl31=args.bl31, dtb=args.system_dtb)
+                pdi=args.pdi, bl31=args.bl31, dtb=args.system_dtb,
+                second_elf=args.second_elf)
 
     def do_run(self, command, **kwargs):
         if self.bitstream and self.fsbl:
@@ -68,4 +71,6 @@ class XSDBBinaryRunner(ZephyrBinaryRunner):
             cmd = ['xsdb', self.xsdb_cfg_file, self.elf_file, self.pdi]
         else:
             cmd = ['xsdb', self.xsdb_cfg_file, self.elf_file]
+        if self.second_elf:
+            cmd.append(self.second_elf)
         self.check_call(cmd)
