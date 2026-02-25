@@ -132,6 +132,30 @@
 	pinctrl-names = "default";
 };
 
+&lpadc0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpadc0>;
+	pinctrl-names = "default";
+};
+
+&lpspi2 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpspi2>;
+	pinctrl-names = "default";
+};
+
+&lpi2c0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c0>;
+	pinctrl-names = "default";
+};
+
+&lpi2c3 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c3>;
+	pinctrl-names = "default";
+};
+
 &ctimer0 {
 	status = "okay";
 };

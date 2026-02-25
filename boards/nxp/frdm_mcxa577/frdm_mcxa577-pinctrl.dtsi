@@ -25,4 +25,48 @@
 			input-enable;
 		};
 	};
+
+	pinmux_lpadc0: pinmux_lpadc0 {
+		group0 {
+			pinmux = <ADC0_A9_P0_19>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
+
+	pinmux_lpspi2: pinmux_lpspi2 {
+		group0 {
+			pinmux = <LPSPI2_SDO_P4_4>,
+				 <LPSPI2_SCK_P4_3>,
+				 <LPSPI2_SDI_P4_5>,
+				 <LPSPI2_PCS1_P4_0>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	pinmux_lpi2c0: pinmux_lpi2c0 {
+		group0 {
+			pinmux = <LPI2C0_SDA_P0_20>,
+				 <LPI2C0_SCL_P0_21>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-up;
+			drive-open-drain;
+		};
+	};
+
+	pinmux_lpi2c3: pinmux_lpi2c3 {
+		group0 {
+			pinmux = <LPI2C3_SDA_P3_20>,
+				 <LPI2C3_SCL_P3_21>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-up;
+			drive-open-drain;
+		};
+	};
 };
