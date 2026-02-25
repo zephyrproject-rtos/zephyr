@@ -94,6 +94,7 @@ static struct mcs_inst {
 
 	struct k_work_delayable notify_work;
 } mcs_inst;
+static struct bt_gatt_service mcs;
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
@@ -114,6 +115,165 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = disconnected,
 };
+
+struct mcs_notify_cb_info {
+	const struct bt_gatt_attr *attr;
+	void (*value_cb)(struct mcs_flags *flags, bool set);
+};
+
+static void set_value_changed_cb(struct bt_conn *conn, void *data)
+{
+	struct mcs_notify_cb_info *cb_info = data;
+	const struct bt_gatt_attr *attr = cb_info->attr;
+	struct bt_conn_info info;
+	struct mcs_flags *flags;
+	int err;
+
+	err = bt_conn_get_info(conn, &info);
+	__ASSERT(err == 0, "Failed to get conn info: %d", err);
+
+	if (info.state != BT_CONN_STATE_CONNECTED) {
+		/* Not connected */
+		return;
+	}
+
+	flags = &mcs_inst.clients[bt_conn_index(conn)].flags;
+
+	if (bt_gatt_is_subscribed(conn, attr, BT_GATT_CCC_NOTIFY)) {
+		/* Set the specific flag based on the provided callback */
+		cb_info->value_cb(flags, true);
+
+		/* We may schedule the same work multiple times, but that is OK as scheduling the
+		 * same work multiple times is a no-op
+		 */
+		err = k_work_schedule(&mcs_inst.notify_work, K_NO_WAIT);
+		__ASSERT(err >= 0, "Failed to schedule work: %d", err);
+	} else {
+		/* Set the specific flag based on the provided callback */
+		cb_info->value_cb(flags, false);
+
+		/* Check if all flags are cleared, and if so then cancel any pending k_work */
+		if (util_memeq(flags, &(struct mcs_flags){0}, sizeof(*flags))) {
+			(void)k_work_cancel_delayable(&mcs_inst.notify_work);
+		}
+	}
+}
+
+static void set_value_changed(void (*value_cb)(struct mcs_flags *flags, bool set),
+			      const struct bt_uuid *uuid)
+{
+	struct mcs_notify_cb_info cb_info = {
+		.value_cb = value_cb,
+		.attr = bt_gatt_find_by_uuid(mcs.attrs, 0, uuid),
+	};
+	__maybe_unused int err;
+
+	err = k_mutex_lock(&mcs_inst.mutex, MUTEX_TIMEOUT);
+	__ASSERT(err == 0, "Failed to lock mutex: %d", err);
+
+	__ASSERT(cb_info.attr != NULL, "Failed to find attribute for %s", bt_uuid_str(uuid));
+	bt_conn_foreach(BT_CONN_TYPE_LE, set_value_changed_cb, &cb_info);
+
+	err = k_mutex_unlock(&mcs_inst.mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
+}
+
+static void set_player_name_changed_cb(struct mcs_flags *flags, bool set)
+{
+	flags->player_name_changed = set;
+	flags->player_name_dirty = set;
+}
+
+static void set_icon_url_changed_cb(struct mcs_flags *flags, bool set)
+{
+	flags->icon_url_dirty = set;
+}
+
+static void set_track_changed_changed_cb(struct mcs_flags *flags, bool set)
+{
+	flags->track_changed_changed = set;
+}
+
+static void set_track_title_changed_cb(struct mcs_flags *flags, bool set)
+{
+	flags->track_title_changed = set;
+	flags->track_title_dirty = set;
+}
+
+static void set_track_position_changed_cb(struct mcs_flags *flags, bool set)
+{
+	flags->track_position_changed = set;
+}
+
+static void set_track_duration_changed_cb(struct mcs_flags *flags, bool set)
+{
+	flags->track_duration_changed = set;
+}
+
+static void set_playback_speed_changed_cb(struct mcs_flags *flags, bool set)
+{
+	flags->playback_speed_changed = set;
+}
+
+static void set_seeking_speed_changed_cb(struct mcs_flags *flags, bool set)
+{
+	flags->seeking_speed_changed = set;
+}
+#if defined(CONFIG_BT_OTS)
+static void set_current_track_obj_id_changed_cb(struct mcs_flags *flags, bool set)
+{
+	flags->current_track_obj_id_changed = set;
+}
+
+static void set_next_track_obj_id_changed_cb(struct mcs_flags *flags, bool set)
+{
+	flags->next_track_obj_id_changed = set;
+}
+
+static void set_parent_group_obj_id_changed_cb(struct mcs_flags *flags, bool set)
+{
+	flags->parent_group_obj_id_changed = set;
+}
+
+static void set_current_group_obj_id_changed_cb(struct mcs_flags *flags, bool set)
+{
+	flags->current_group_obj_id_changed = set;
+}
+#endif /* CONFIG_BT_OTS */
+
+static void set_playing_order_changed_cb(struct mcs_flags *flags, bool set)
+{
+	flags->playing_order_changed = set;
+}
+
+static void set_media_state_changed_cb(struct mcs_flags *flags, bool set)
+{
+	flags->media_state_changed = set;
+}
+
+static void set_media_control_opcodes_changed_cb(struct mcs_flags *flags, bool set)
+{
+	flags->media_control_opcodes_changed = set;
+}
+
+static void clear_media_control_ntf_cb(struct mcs_flags *flags, bool set)
+{
+	__ASSERT(!set, "Callback should only be triggered by a clear operation");
+	flags->media_control_point_result = false;
+}
+
+#if defined(CONFIG_BT_OTS)
+static void set_search_results_obj_id_changed_cb(struct mcs_flags *flags, bool set)
+{
+	flags->search_results_obj_id_changed = set;
+}
+
+static void clear_search_control_ntf_cb(struct mcs_flags *flags, bool set)
+{
+	__ASSERT(!set, "Callback should only be triggered by a clear operation");
+	flags->search_control_point_result = false;
+}
+#endif /* CONFIG_BT_OTS */
 
 /* Functions for reading and writing attributes, and for keeping track
  * of attribute configuration changes.
@@ -159,6 +319,11 @@ static void player_name_cfg_changed(const struct bt_gatt_attr *attr,
 	ARG_UNUSED(attr);
 
 	LOG_DBG("value 0x%04x", value);
+
+	/* Clear any pending notifications for any connections that unsubscribes */
+	if (value == 0U) {
+		set_value_changed(set_player_name_changed_cb, BT_UUID_MCS_PLAYER_NAME);
+	}
 }
 
 #ifdef CONFIG_BT_OTS
@@ -218,6 +383,11 @@ static void track_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 	ARG_UNUSED(attr);
 
 	LOG_DBG("value 0x%04x", value);
+
+	/* Clear any pending notifications for any connections that unsubscribes */
+	if (value == 0U) {
+		set_value_changed(set_track_changed_changed_cb, BT_UUID_MCS_TRACK_CHANGED);
+	}
 }
 
 static ssize_t read_track_title(struct bt_conn *conn,
@@ -261,6 +431,11 @@ static void track_title_cfg_changed(const struct bt_gatt_attr *attr,
 	ARG_UNUSED(attr);
 
 	LOG_DBG("value 0x%04x", value);
+
+	/* Clear any pending notifications for any connections that unsubscribes */
+	if (value == 0U) {
+		set_value_changed(set_track_title_changed_cb, BT_UUID_MCS_TRACK_TITLE);
+	}
 }
 
 static ssize_t read_track_duration(struct bt_conn *conn,
@@ -280,6 +455,11 @@ static void track_duration_cfg_changed(const struct bt_gatt_attr *attr, uint16_t
 	ARG_UNUSED(attr);
 
 	LOG_DBG("value 0x%04x", value);
+
+	/* Clear any pending notifications for any connections that unsubscribes */
+	if (value == 0U) {
+		set_value_changed(set_track_duration_changed_cb, BT_UUID_MCS_TRACK_DURATION);
+	}
 }
 
 static ssize_t read_track_position(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
@@ -328,6 +508,11 @@ static void track_position_cfg_changed(const struct bt_gatt_attr *attr,
 	ARG_UNUSED(attr);
 
 	LOG_DBG("value 0x%04x", value);
+
+	/* Clear any pending notifications for any connections that unsubscribes */
+	if (value == 0U) {
+		set_value_changed(set_track_position_changed_cb, BT_UUID_MCS_TRACK_POSITION);
+	}
 }
 
 static ssize_t read_playback_speed(struct bt_conn *conn,
@@ -371,6 +556,11 @@ static void playback_speed_cfg_changed(const struct bt_gatt_attr *attr, uint16_t
 	ARG_UNUSED(attr);
 
 	LOG_DBG("value 0x%04x", value);
+
+	/* Clear any pending notifications for any connections that unsubscribes */
+	if (value == 0U) {
+		set_value_changed(set_playback_speed_changed_cb, BT_UUID_MCS_PLAYBACK_SPEED);
+	}
 }
 
 static ssize_t read_seeking_speed(struct bt_conn *conn, const struct bt_gatt_attr *attr, void *buf,
@@ -390,6 +580,11 @@ static void seeking_speed_cfg_changed(const struct bt_gatt_attr *attr,
 	ARG_UNUSED(attr);
 
 	LOG_DBG("value 0x%04x", value);
+
+	/* Clear any pending notifications for any connections that unsubscribes */
+	if (value == 0U) {
+		set_value_changed(set_seeking_speed_changed_cb, BT_UUID_MCS_SEEKING_SPEED);
+	}
 }
 
 #ifdef CONFIG_BT_OTS
@@ -463,6 +658,12 @@ static void current_track_id_cfg_changed(const struct bt_gatt_attr *attr,
 	ARG_UNUSED(attr);
 
 	LOG_DBG("value 0x%04x", value);
+
+	/* Clear any pending notifications for any connections that unsubscribes */
+	if (value == 0U) {
+		set_value_changed(set_current_track_obj_id_changed_cb,
+				  BT_UUID_MCS_CURRENT_TRACK_OBJ_ID);
+	}
 }
 
 static ssize_t read_next_track_id(struct bt_conn *conn,
@@ -526,6 +727,11 @@ static void next_track_id_cfg_changed(const struct bt_gatt_attr *attr,
 	ARG_UNUSED(attr);
 
 	LOG_DBG("value 0x%04x", value);
+
+	/* Clear any pending notifications for any connections that unsubscribes */
+	if (value == 0U) {
+		set_value_changed(set_next_track_obj_id_changed_cb, BT_UUID_MCS_NEXT_TRACK_OBJ_ID);
+	}
 }
 
 static ssize_t read_parent_group_id(struct bt_conn *conn,
@@ -549,6 +755,12 @@ static void parent_group_id_cfg_changed(const struct bt_gatt_attr *attr,
 	ARG_UNUSED(attr);
 
 	LOG_DBG("value 0x%04x", value);
+
+	/* Clear any pending notifications for any connections that unsubscribes */
+	if (value == 0U) {
+		set_value_changed(set_parent_group_obj_id_changed_cb,
+				  BT_UUID_MCS_PARENT_GROUP_OBJ_ID);
+	}
 }
 
 static ssize_t read_current_group_id(struct bt_conn *conn,
@@ -606,6 +818,12 @@ static void current_group_id_cfg_changed(const struct bt_gatt_attr *attr, uint16
 	ARG_UNUSED(attr);
 
 	LOG_DBG("value 0x%04x", value);
+
+	/* Clear any pending notifications for any connections that unsubscribes */
+	if (value == 0U) {
+		set_value_changed(set_current_group_obj_id_changed_cb,
+				  BT_UUID_MCS_CURRENT_GROUP_OBJ_ID);
+	}
 }
 #endif /* CONFIG_BT_OTS */
 
@@ -652,6 +870,11 @@ static void playing_order_cfg_changed(const struct bt_gatt_attr *attr, uint16_t 
 	ARG_UNUSED(attr);
 
 	LOG_DBG("value 0x%04x", value);
+
+	/* Clear any pending notifications for any connections that unsubscribes */
+	if (value == 0U) {
+		set_value_changed(set_playing_order_changed_cb, BT_UUID_MCS_PLAYING_ORDER);
+	}
 }
 
 static ssize_t read_playing_orders_supported(struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -682,6 +905,11 @@ static void media_state_cfg_changed(const struct bt_gatt_attr *attr,
 	ARG_UNUSED(attr);
 
 	LOG_DBG("value 0x%04x", value);
+
+	/* Clear any pending notifications for any connections that unsubscribes */
+	if (value == 0U) {
+		set_value_changed(set_media_state_changed_cb, BT_UUID_MCS_MEDIA_STATE);
+	}
 }
 
 static ssize_t write_control_point(struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -783,6 +1011,11 @@ static void control_point_cfg_changed(const struct bt_gatt_attr *attr,
 	ARG_UNUSED(attr);
 
 	LOG_DBG("value 0x%04x", value);
+
+	/* Clear any pending notifications for any connections that unsubscribes */
+	if (value == 0U) {
+		set_value_changed(clear_media_control_ntf_cb, BT_UUID_MCS_MEDIA_CONTROL_POINT);
+	}
 }
 
 static ssize_t read_opcodes_supported(struct bt_conn *conn,
@@ -802,6 +1035,12 @@ static void opcodes_supported_cfg_changed(const struct bt_gatt_attr *attr, uint1
 	ARG_UNUSED(attr);
 
 	LOG_DBG("value 0x%04x", value);
+
+	/* Clear any pending notifications for any connections that unsubscribes */
+	if (value == 0U) {
+		set_value_changed(set_media_control_opcodes_changed_cb,
+				  BT_UUID_MCS_MEDIA_CONTROL_OPCODES);
+	}
 }
 
 #ifdef CONFIG_BT_OTS
@@ -872,6 +1111,11 @@ static void search_control_point_cfg_changed(const struct bt_gatt_attr *attr,
 	ARG_UNUSED(attr);
 
 	LOG_DBG("value 0x%04x", value);
+
+	/* Clear any pending notifications for any connections that unsubscribes */
+	if (value == 0U) {
+		set_value_changed(clear_search_control_ntf_cb, BT_UUID_MCS_SEARCH_CONTROL_POINT);
+	}
 }
 
 static ssize_t read_search_results_id(struct bt_conn *conn,
@@ -910,6 +1154,12 @@ static void search_results_id_cfg_changed(const struct bt_gatt_attr *attr,
 	ARG_UNUSED(attr);
 
 	LOG_DBG("value 0x%04x", value);
+
+	/* Clear any pending notifications for any connections that unsubscribes */
+	if (value == 0U) {
+		set_value_changed(set_search_results_obj_id_changed_cb,
+				  BT_UUID_MCS_SEARCH_RESULTS_OBJ_ID);
+	}
 }
 #endif /* CONFIG_BT_OTS */
 
@@ -1058,8 +1308,7 @@ static ssize_t read_content_ctrl_id(struct bt_conn *conn,
 		      BT_GATT_PERM_READ_ENCRYPT, \
 		      read_content_ctrl_id, NULL, NULL)
 
-static struct bt_gatt_attr svc_attrs[] = { BT_MCS_SERVICE_DEFINITION };
-static struct bt_gatt_service mcs;
+static struct bt_gatt_attr svc_attrs[] = {BT_MCS_SERVICE_DEFINITION};
 #ifdef CONFIG_BT_OTS
 static struct bt_ots *ots;
 #endif /* CONFIG_BT_OTS */
@@ -1093,59 +1342,6 @@ static int notify(struct bt_conn *conn, const struct bt_uuid *uuid, const void *
 	__ASSERT(err != -EINVAL, "bt_gatt_notify_uuid returned -EINVAL");
 
 	return 0;
-}
-
-struct mcs_notify_cb_info {
-	const struct bt_gatt_attr *attr;
-	void (*value_cb)(struct mcs_flags *flags);
-};
-
-static void set_value_changed_cb(struct bt_conn *conn, void *data)
-{
-	struct mcs_notify_cb_info *cb_info = data;
-	const struct bt_gatt_attr *attr = cb_info->attr;
-	struct bt_conn_info info;
-	int err;
-
-	err = bt_conn_get_info(conn, &info);
-	__ASSERT(err == 0, "Failed to get conn info: %d", err);
-
-	if (info.state != BT_CONN_STATE_CONNECTED) {
-		/* Not connected */
-		return;
-	}
-
-	if (!bt_gatt_is_subscribed(conn, attr, BT_GATT_CCC_NOTIFY)) {
-		/* Not subscribed */
-		return;
-	}
-
-	/* Set the specific flag based on the provided callback */
-	cb_info->value_cb(&mcs_inst.clients[bt_conn_index(conn)].flags);
-
-	/* We may schedule the same work multiple times, but that is OK as scheduling the same work
-	 * multiple times is a no-op
-	 */
-	err = k_work_schedule(&mcs_inst.notify_work, K_NO_WAIT);
-	__ASSERT(err >= 0, "Failed to schedule work: %d", err);
-}
-
-static void set_value_changed(void (*value_cb)(struct mcs_flags *flags), const struct bt_uuid *uuid)
-{
-	struct mcs_notify_cb_info cb_info = {
-		.value_cb = value_cb,
-		.attr = bt_gatt_find_by_uuid(mcs.attrs, 0, uuid),
-	};
-	__maybe_unused int err;
-
-	err = k_mutex_lock(&mcs_inst.mutex, MUTEX_TIMEOUT);
-	__ASSERT(err == 0, "Failed to lock mutex: %d", err);
-
-	__ASSERT(cb_info.attr != NULL, "Failed to find attribute for %s", bt_uuid_str(uuid));
-	bt_conn_foreach(BT_CONN_TYPE_LE, set_value_changed_cb, &cb_info);
-
-	err = k_mutex_unlock(&mcs_inst.mutex);
-	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 }
 
 static void notify_cb(struct bt_conn *conn, void *data)
@@ -1438,22 +1634,11 @@ static void deferred_nfy_work_handler(struct k_work *work)
 	bt_conn_foreach(BT_CONN_TYPE_LE, notify_cb, NULL);
 }
 
-static void set_player_name_changed_cb(struct mcs_flags *flags)
-{
-	flags->player_name_changed = true;
-	flags->player_name_dirty = true;
-}
-
 static void media_proxy_sctrl_player_name_cb(const char *name)
 {
 	ARG_UNUSED(name);
 
 	set_value_changed(set_player_name_changed_cb, BT_UUID_MCS_PLAYER_NAME);
-}
-
-static void set_icon_url_changed_cb(struct mcs_flags *flags)
-{
-	flags->icon_url_dirty = true;
 }
 
 void media_proxy_sctrl_icon_url_cb(const char *name)
@@ -1463,44 +1648,21 @@ void media_proxy_sctrl_icon_url_cb(const char *name)
 	set_value_changed(set_icon_url_changed_cb, BT_UUID_MCS_ICON_URL);
 }
 
-static void set_track_changed_changed_cb(struct mcs_flags *flags)
-{
-	flags->track_changed_changed = true;
-}
-
 void media_proxy_sctrl_track_changed_cb(void)
 {
 	set_value_changed(set_track_changed_changed_cb, BT_UUID_MCS_TRACK_CHANGED);
 }
-
-static void set_track_title_changed_cb(struct mcs_flags *flags)
-{
-	flags->track_title_changed = true;
-	flags->track_title_dirty = true;
-}
-
 void media_proxy_sctrl_track_title_cb(const char *title)
 {
 	ARG_UNUSED(title);
 
 	set_value_changed(set_track_title_changed_cb, BT_UUID_MCS_TRACK_TITLE);
 }
-
-static void set_track_position_changed_cb(struct mcs_flags *flags)
-{
-	flags->track_position_changed = true;
-}
-
 void media_proxy_sctrl_track_position_cb(int32_t position)
 {
 	ARG_UNUSED(position);
 
 	set_value_changed(set_track_position_changed_cb, BT_UUID_MCS_TRACK_POSITION);
-}
-
-static void set_track_duration_changed_cb(struct mcs_flags *flags)
-{
-	flags->track_duration_changed = true;
 }
 
 void media_proxy_sctrl_track_duration_cb(int32_t duration)
@@ -1509,24 +1671,12 @@ void media_proxy_sctrl_track_duration_cb(int32_t duration)
 
 	set_value_changed(set_track_duration_changed_cb, BT_UUID_MCS_TRACK_DURATION);
 }
-
-static void set_playback_speed_changed_cb(struct mcs_flags *flags)
-{
-	flags->playback_speed_changed = true;
-}
-
 void media_proxy_sctrl_playback_speed_cb(int8_t speed)
 {
 	ARG_UNUSED(speed);
 
 	set_value_changed(set_playback_speed_changed_cb, BT_UUID_MCS_PLAYBACK_SPEED);
 }
-
-static void set_seeking_speed_changed_cb(struct mcs_flags *flags)
-{
-	flags->seeking_speed_changed = true;
-}
-
 void media_proxy_sctrl_seeking_speed_cb(int8_t speed)
 {
 	ARG_UNUSED(speed);
@@ -1535,45 +1685,23 @@ void media_proxy_sctrl_seeking_speed_cb(int8_t speed)
 }
 
 #if defined(CONFIG_BT_OTS)
-static void set_current_track_obj_id_changed_cb(struct mcs_flags *flags)
-{
-	flags->current_track_obj_id_changed = true;
-}
-
 void media_proxy_sctrl_current_track_id_cb(uint64_t id)
 {
 	ARG_UNUSED(id);
 
 	set_value_changed(set_current_track_obj_id_changed_cb, BT_UUID_MCS_CURRENT_TRACK_OBJ_ID);
 }
-
-static void set_next_track_obj_id_changed_cb(struct mcs_flags *flags)
-{
-	flags->next_track_obj_id_changed = true;
-}
-
 void media_proxy_sctrl_next_track_id_cb(uint64_t id)
 {
 	ARG_UNUSED(id);
 
 	set_value_changed(set_next_track_obj_id_changed_cb, BT_UUID_MCS_NEXT_TRACK_OBJ_ID);
 }
-
-static void set_parent_group_obj_id_changed_cb(struct mcs_flags *flags)
-{
-	flags->parent_group_obj_id_changed = true;
-}
-
 void media_proxy_sctrl_parent_group_id_cb(uint64_t id)
 {
 	ARG_UNUSED(id);
 
 	set_value_changed(set_parent_group_obj_id_changed_cb, BT_UUID_MCS_PARENT_GROUP_OBJ_ID);
-}
-
-static void set_current_group_obj_id_changed_cb(struct mcs_flags *flags)
-{
-	flags->current_group_obj_id_changed = true;
 }
 
 void media_proxy_sctrl_current_group_id_cb(uint64_t id)
@@ -1584,21 +1712,11 @@ void media_proxy_sctrl_current_group_id_cb(uint64_t id)
 }
 #endif /* CONFIG_BT_OTS */
 
-static void set_playing_order_changed_cb(struct mcs_flags *flags)
-{
-	flags->playing_order_changed = true;
-}
-
 void media_proxy_sctrl_playing_order_cb(uint8_t order)
 {
 	ARG_UNUSED(order);
 
 	set_value_changed(set_playing_order_changed_cb, BT_UUID_MCS_PLAYING_ORDER);
-}
-
-static void set_media_state_changed_cb(struct mcs_flags *flags)
-{
-	flags->media_state_changed = true;
 }
 
 void media_proxy_sctrl_media_state_cb(uint8_t state)
@@ -1634,12 +1752,17 @@ static void defer_media_control_point_ntf(struct bt_conn *conn, void *data)
 	flags = &client->flags;
 
 	if (flags->media_control_point_busy) {
+		const struct bt_gatt_attr *cp_attr =
+			bt_gatt_find_by_uuid(mcs.attrs, 0, BT_UUID_MCS_MEDIA_CONTROL_POINT);
+		__ASSERT(cp_attr != NULL, "Could not looking control point attribute");
+
 		client->cmd_ntf = *cmd_ntf;
-		flags->media_control_point_result = true;
 		flags->media_control_point_busy = false;
 
-		err = k_work_schedule(&mcs_inst.notify_work, K_NO_WAIT);
-		__ASSERT(err >= 0, "Failed to schedule work: %d", err);
+		if (bt_gatt_is_subscribed(conn, cp_attr, BT_GATT_CCC_NOTIFY)) {
+			flags->media_control_point_result = true;
+			(void)k_work_schedule(&mcs_inst.notify_work, K_NO_WAIT);
+		}
 	}
 
 	err = k_mutex_unlock(&mcs_inst.mutex);
@@ -1650,11 +1773,6 @@ void media_proxy_sctrl_command_cb(const struct mpl_cmd_ntf *cmd_ntf)
 {
 	/* FIXME: Control Point notification shall be sent to operation initiator only */
 	bt_conn_foreach(BT_CONN_TYPE_LE, defer_media_control_point_ntf, (void *)cmd_ntf);
-}
-
-static void set_media_control_opcodes_changed_cb(struct mcs_flags *flags)
-{
-	flags->media_control_opcodes_changed = true;
 }
 
 void media_proxy_sctrl_commands_supported_cb(uint32_t opcodes)
@@ -1690,12 +1808,17 @@ static void defer_search_control_point_ntf(struct bt_conn *conn, void *data)
 	flags = &client->flags;
 
 	if (flags->search_control_point_busy) {
+		const struct bt_gatt_attr *cp_attr =
+			bt_gatt_find_by_uuid(mcs.attrs, 0, BT_UUID_MCS_SEARCH_CONTROL_POINT);
+		__ASSERT(cp_attr != NULL, "Could not looking control point attribute");
+
 		client->search_control_point_result = POINTER_TO_UINT(data);
-		flags->search_control_point_result = true;
 		flags->search_control_point_busy = false;
 
-		err = k_work_schedule(&mcs_inst.notify_work, K_NO_WAIT);
-		__ASSERT(err >= 0, "Failed to schedule work: %d", err);
+		if (bt_gatt_is_subscribed(conn, cp_attr, BT_GATT_CCC_NOTIFY)) {
+			flags->search_control_point_result = true;
+			(void)k_work_schedule(&mcs_inst.notify_work, K_NO_WAIT);
+		}
 	}
 
 	err = k_mutex_unlock(&mcs_inst.mutex);
@@ -1708,12 +1831,6 @@ void media_proxy_sctrl_search_cb(uint8_t result_code)
 	bt_conn_foreach(BT_CONN_TYPE_LE, defer_search_control_point_ntf,
 			UINT_TO_POINTER(result_code));
 }
-
-static void set_search_results_obj_id_changed_cb(struct mcs_flags *flags)
-{
-	flags->search_results_obj_id_changed = true;
-}
-
 void media_proxy_sctrl_search_results_id_cb(uint64_t id)
 {
 	ARG_UNUSED(id);
