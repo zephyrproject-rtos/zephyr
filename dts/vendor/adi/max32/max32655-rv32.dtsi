@@ -28,7 +28,7 @@
 };
 
 &mbox {
-	interrupts = <16 0>;
+	interrupts = <4 0>;
 };
 
 &dma0 {
