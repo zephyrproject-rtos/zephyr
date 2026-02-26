@@ -229,5 +229,30 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 		};
+
+		spi0: spi@f1960000 {
+			compatible = "cdns,spi";
+			status = "disabled";
+			reg = <0xf1960000 0x1000>;
+			interrupts = <GIC_SPI 23 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			fifo-width = <8>;
+			rx-fifo-depth = <128>;
+			tx-fifo-depth = <128>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi1: spi@f1970000 {
+			compatible = "cdns,spi";
+			status = "disabled";
+			reg = <0xf1970000 0x1000>;
+			interrupts = <GIC_SPI 24 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			fifo-width = <8>;
+			rx-fifo-depth = <128>;
+			tx-fifo-depth = <128>;
+			clock-frequency = <120000000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
 	};
 };
