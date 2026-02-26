@@ -119,7 +119,6 @@ lpuart1: &lpuart_1 {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		storage_partition: partition@17a000 {
 			label = "storage";
@@ -138,7 +137,6 @@ lpuart1: &lpuart_1 {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		code_partition: partition@0 {
 			label = "code";

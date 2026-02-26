@@ -147,7 +147,6 @@ m4_uart: &uart0 {};
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		m4_partition: partition@0 {
 			label = "image-m4";

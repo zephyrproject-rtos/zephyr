@@ -101,7 +101,6 @@
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 
 			loader_program: partition@0 {
 				label = "loader-program";

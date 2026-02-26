@@ -85,7 +85,6 @@
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 
 			reserved: partition@0 {
 				reg = <0x00000000 0x20000>;
