@@ -1759,8 +1759,8 @@ static int cmd_i3c_reattach(const struct shell *sh, size_t argc, char **argv)
 		return ret;
 	}
 
-	if (argc > 2) {
-		old_dyn_addr = strtol(argv[2], NULL, 16);
+	if (argc > 3) {
+		old_dyn_addr = strtol(argv[3], NULL, 16);
 	}
 
 	ret = i3c_reattach_i3c_device(desc, old_dyn_addr);
