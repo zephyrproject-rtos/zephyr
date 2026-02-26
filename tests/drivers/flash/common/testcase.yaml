@@ -271,3 +271,7 @@ tests:
       - SHIELD=mikroe_flash_5_click
       - DTC_OVERLAY_FILE="./boards/mikroe_flash_5_click.overlay"
       - EXTRA_CONF_FILE="./boards/mikroe_flash_5_click.conf"
+  drivers.flash.common.versalnet:
+    build_only: true
+    platform_allow:
+      - versalnet_rpu/amd_versalnet_rpu
