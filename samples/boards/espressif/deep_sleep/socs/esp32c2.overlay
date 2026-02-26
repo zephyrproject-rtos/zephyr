@@ -9,7 +9,7 @@
 		/* On ESP32-C2, only GPIO0~5 can be used
 		 * as wake-up sources
 		 */
-		wakeup-gpios = &wakeup_pins;
+		wakeup-pins = &wakeup_pins;
 	};
 
 	gpio_keys {

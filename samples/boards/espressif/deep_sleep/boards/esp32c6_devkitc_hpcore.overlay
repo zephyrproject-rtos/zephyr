@@ -6,7 +6,7 @@
 
 / {
 	aliases {
-		wakeup-gpios = &wakeup_pins;
+		wakeup-pins = &wakeup_pins;
 	};
 
 	gpio_keys {
