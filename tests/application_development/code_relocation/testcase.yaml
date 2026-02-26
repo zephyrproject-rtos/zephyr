@@ -4,11 +4,12 @@ tests:
   buildsystem.app_dev.code_relocation:
     filter: not CONFIG_CPU_HAS_NXP_SYSMPU and CONFIG_MINIMAL_LIBC and
             dt_chosen_enabled("zephyr,itcm")
-    arch_allow: arm
     extra_configs:
       - CONFIG_RELOCATE_TO_ITCM=y
     platform_allow:
       - mimxrt1060_evk/mimxrt1062/qspi
+      - adp_xc7k/ae350
+      - adp_xc7k/ae350/clic
   buildsystem.app_dev.code_relocation_kinetis:
     filter: CONFIG_CPU_HAS_NXP_SYSMPU
     arch_allow: arm

@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2026 Andes Technology Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/ {
+	chosen {
+		zephyr,itcm = &ilm;
+	};
+};
+
+&dram {
+	/* avoid overlay with ilm and dlm region. */
+	reg = <0x00400000 0x3fc00000>;
+};
+
+&ilm {
+	status = "okay";
+};
