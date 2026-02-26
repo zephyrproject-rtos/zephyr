@@ -9,3 +9,38 @@ properties:
   "#io-channel-cells":
     type: int
     required: true
+
+child-binding:
+  description: |
+    Channel configuration.
+
+    All nodes using this binding must be named "channel", otherwise their
+    data will not be accessible for the DAC API macros.
+
+  properties:
+    reg:
+      type: array
+      required: true
+      description: Channel identifier.
+
+    zephyr,resolution:
+      type: int
+      description: |
+        DAC resolution to be used for the channel.
+
+    zephyr,buffered:
+      type: boolean
+      description: |
+        Enable output buffer for the channel.
+
+    zephyr,internal:
+      type: boolean
+      description: |
+        Enable internal output path for the channel.
+
+    zephyr,vref-mv:
+      type: int
+      description: |
+        This property can be used to specify the voltage (in millivolts)
+        of the reference selected for this channel, so that applications
+        can get that value if needed for some calculations.
