@@ -3046,7 +3046,7 @@ static void cdns_i3c_read_hw_cfg(const struct device *dev)
 	data->hw_cfg.ddr_rx_mem_depth = CONF_STATUS1_SLV_DDR_RX_DEPTH(cfg1) * 4;
 	data->hw_cfg.ddr_tx_mem_depth = CONF_STATUS1_SLV_DDR_TX_DEPTH(cfg1) * 4;
 	data->hw_cfg.ibir_mem_depth = CONF_STATUS0_IBIR_DEPTH(cfg0) * 4;
-	data->hw_cfg.ibi_mem_depth = CONF_STATUS1_IBI_DEPTH(cfg0) * 4;
+	data->hw_cfg.ibi_mem_depth = CONF_STATUS1_IBI_DEPTH(cfg1) * 4;
 
 	LOG_DBG("%s: FIFO info:\r\n"
 		"  cmd_mem_depth = %u\r\n"
