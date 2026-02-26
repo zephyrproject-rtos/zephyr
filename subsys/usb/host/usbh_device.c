@@ -541,10 +541,14 @@ int usbh_device_init(struct usb_device *const udev)
 	}
 
 	/*
-	 * Limit mps0 to the minimum supported by full-speed devices until the
-	 * device descriptor is read.
+	 * High-speed device control endpoints always use 64 bytes MPS0 per
+	 * USB 2.0 spec (5.5.3). For full-speed devices, the actual MPS0 is
+	 * unknown until the device descriptor is read, but 64 bytes is a safe
+	 * upper bound for the initial 8-byte control request, since data fits
+	 * in a single packet at any full-speed device.
 	 */
-	udev->dev_desc.bMaxPacketSize0 = 8;
+	udev->dev_desc.bMaxPacketSize0 = 64;
+
 	err = usbh_req_desc_dev(udev, 8, &udev->dev_desc);
 	if (err) {
 		LOG_ERR("Failed to read device descriptor");
