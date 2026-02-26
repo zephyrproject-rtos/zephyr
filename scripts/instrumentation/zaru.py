@@ -57,7 +57,7 @@ SERIAL = "/dev/ttyACM0"
 NUM_PING_ATTEMPTS = 20
 
 
-PERFETTO_FILENAME = "./perfetto.json"
+TRACE_EVENT_FILENAME = "./trace_event.json"
 
 
 def get_symbols_from_elf(elf_file, verbose=False):
@@ -428,7 +428,70 @@ def get_stream(port):
                     return ll
 
 
-def get_and_print_trace(args, port, elf, demangle, annotate_ret=False, verbose=False):
+# Generator for getting an event with symbols resolved.
+# The event returned is a dict().
+def get_trace_event_generator(msg_it, symbols):
+    for msg in msg_it:
+        if isinstance(msg, bt2._EventMessageConst):
+            event = msg.event
+
+            # Entry / exit events (w/ or wo/ context) are converted to
+            # 'entry' and 'exit' types just to simplify the matching
+            # code using them -- match against a shorter string.  It can
+            # be enhanced if necessary. Currently just handle entry /
+            # exit with context and sched switch in/out events.
+            if "entry" in event.name:
+                event_type = "entry"
+            elif "exit" in event.name:
+                event_type = "exit"
+            elif "switched_in" in event.name:
+                event_type = "switched_in"
+            elif "switched_out" in event.name:
+                event_type = "switched_out"
+            else:
+                continue
+
+            # Resolve callee symbol.
+            callee = event.payload_field.get("callee").real
+            callee_symbol = symbols.get(callee)
+
+            if callee_symbol is None:
+                print(
+                    Fore.RED + f"Symbol address {callee} could not be resolved! "
+                    "Are you sure FW flashed matches provided zephyr.elf in build dir?\n"
+                    "Tracing will be aborted because it's unreliable when symbols can't be "
+                    "properly resolved."
+                )
+
+                sys.exit(1)
+
+            thread_id = event.payload_field.get("thread_id")
+            # When tracing non-application code usually there isn't
+            # a thread ID associated to the context, so in this case
+            # change thread ID to "none-thread".
+            if thread_id == 0:
+                thread_id = "none-thread"
+            else:
+                thread_id = hex(thread_id)
+
+            cpu = event.payload_field.get("cpu")
+            mode = event.payload_field.get("mode")
+            timestamp = event.payload_field.get("timestamp").real
+            thread_name = event.payload_field.get("thread_name")
+
+            e = dict()
+            e["type"] = str(event_type)
+            e["func"] = str(callee_symbol)
+            e["thread_id"] = str(thread_id)
+            e["cpu"] = str(cpu)
+            e["mode"] = str(mode)
+            e["timestamp"] = str(timestamp)
+            e["thread_name"] = str(thread_name)
+
+            yield e  # event
+
+
+def get_and_print_trace(args, tmpdir, elf, demangle, annotate_ret=False, verbose=False):
     """Get traces from target and print them.
 
     This function uses 'port' to get the binary stream from target and 'elf'
@@ -437,284 +500,335 @@ def get_and_print_trace(args, port, elf, demangle, annotate_ret=False, verbose=F
     'metadata', using library babeltrece2.
     """
 
-    port.write(b"dump_trace\r")
+    msg_it = bt2.TraceCollectionMessageIterator(tmpdir)
 
-    # babeltrace2 and CTF 1.8 specification is a tad odd in the sense that
-    # TraceCollectionMessageIterator() only allows a directory to be specified, which must contain
-    # a 'data' (binary) file and 'metadata' file written in the TSDL, hence it's not possible to
-    # specify an alternative path for 'data' or 'metadata' files. Thus here a temporary dir. is
-    # created and a copy of the 'metadata' is copied to it together with the binary stream extracted
-    # from the target, which is saved as 'data' file. The tempory dir. is then passed the babeltrace
-    # methods.
-    with tempfile.TemporaryDirectory() as tmpdir:
-        if verbose:
-            print("Temporary dir:", tmpdir)
+    symbols = get_symbols_from_elf(elf, verbose)
 
-        # Copy binary stream to temporary dir.
-        data_file = tmpdir + "/data"
-        with open(data_file, "wb") as fd:
-            ll = get_stream(port)
-            fd.write(ll)
+    ge = get_trace_event_generator(msg_it, symbols)
 
-        # Copy CTF metadata to temporary dir.
-        metadata_file = get_ctf_metadata_file(args, args.verbose)
-        shutil.copy(metadata_file, tmpdir + "/metadata")
+    line_buffer_first_half = []  # thread_id, CPU, mode, and timestamp (ts)
+    line_buffer_second_half = []  # functions
+    per_thread_func_nest_depth = {}
+    func_nest_depth_step = 2
+    current_event = next(ge, None)
+    while current_event:
+        cur_type, cur_func, cur_thread_id, cur_cpu, cur_mode, cur_ts, cur_tn = (
+            current_event.values()
+        )
 
-        msg_it = bt2.TraceCollectionMessageIterator(tmpdir)
+        if demangle:
+            cmd = CPPFILT_CMD + [cur_func]
 
-        symbols = get_symbols_from_elf(elf, verbose)
+            try:
+                func_demangled = subprocess.check_output(cmd, text=True).strip()
+            except subprocess.CalledProcessError:
+                cmd = " ".join(cmd)
+                print(f"'{cmd}' failed execution. Check if it is properly installed.")
+                sys.exit(2)
+            except FileNotFoundError:
+                print(f"Could not find executable '{CPPFILT_CMD[0]}'. Please install it.")
+                sys.exit(3)
 
-        # Generator for getting an event with symbols resolved.
-        # The event returned is a dict().
-        def get_trace_event_generator():
-            for msg in msg_it:
-                if isinstance(msg, bt2._EventMessageConst):
-                    event = msg.event
+            cur_func = func_demangled
 
-                    # Entry / exit events (w/ or wo/ context) are converted to
-                    # 'entry' and 'exit' types just to simplify the matching
-                    # code using them -- match against a shorter string.  It can
-                    # be enhanced if necessary. Currently just handle entry /
-                    # exit with context and sched switch in/out events.
-                    if "entry" in event.name:
-                        event_type = "entry"
-                    elif "exit" in event.name:
-                        event_type = "exit"
-                    elif "switched_in" in event.name:
-                        event_type = "switched_in"
-                    elif "switched_out" in event.name:
-                        event_type = "switched_out"
-                    else:
-                        continue
+        line = (
+            cur_tn.rjust(20)
+            + cur_thread_id.rjust(14)
+            + " "
+            + cur_cpu.rjust(3)
+            + ") "
+            + cur_mode.rjust(4)
+            + " | "
+            + cur_ts.rjust(12)
+            + " ns |"
+        )
+        line_buffer_first_half.append(line)
 
-                    # Resolve callee symbol.
-                    callee = event.payload_field.get("callee").real
-                    callee_symbol = symbols.get(callee)
+        # Keep track of nesting depth per thread, since thread stacks
+        # are independent.
+        if cur_tn not in per_thread_func_nest_depth:
+            # Init function nest depth for each new found thread. It's used
+            # for function indentation, which is different for each thread.
+            per_thread_func_nest_depth[cur_tn] = 0
 
-                    if callee_symbol is None:
-                        print(
-                            Fore.RED + f"Symbol address {callee} could not be resolved! "
-                            "Are you sure FW flashed matches provided zephyr.elf in build dir?\n"
-                            "Tracing will be aborted because it's unreliable when symbols can't be "
-                            "properly resolved."
-                        )
+        next_event = next(ge, None)
+        if next_event:
+            next_type, next_func, *_ = next_event.values()
 
-                        sys.exit(1)
-
-                    thread_id = event.payload_field.get("thread_id")
-                    # When tracing non-application code usually there isn't
-                    # a thread ID associated to the context, so in this case
-                    # change thread ID to "none-thread".
-                    if thread_id == 0:
-                        thread_id = "none-thread"
-                    else:
-                        thread_id = hex(thread_id)
-
-                    cpu = event.payload_field.get("cpu")
-                    mode = event.payload_field.get("mode")
-                    timestamp = event.payload_field.get("timestamp").real
-                    thread_name = event.payload_field.get("thread_name")
-
-                    e = dict()
-                    e["type"] = str(event_type)
-                    e["func"] = str(callee_symbol)
-                    e["thread_id"] = str(thread_id)
-                    e["cpu"] = str(cpu)
-                    e["mode"] = str(mode)
-                    e["timestamp"] = str(timestamp)
-                    e["thread_name"] = str(thread_name)
-
-                    yield e  # event
-
-        ge = get_trace_event_generator()
-
-        line_buffer_first_half = []  # thread_id, CPU, mode, and timestamp (ts)
-        line_buffer_second_half = []  # functions
-        per_thread_func_nest_depth = {}
-        func_nest_depth_step = 2
-        current_event = next(ge, None)
-        while current_event:
-            cur_type, cur_func, cur_thread_id, cur_cpu, cur_mode, cur_ts, cur_tn = (
-                current_event.values()
-            )
-
-            if demangle:
-                cmd = CPPFILT_CMD + [cur_func]
-
-                try:
-                    func_demangled = subprocess.check_output(cmd, text=True).strip()
-                except subprocess.CalledProcessError:
-                    cmd = " ".join(cmd)
-                    print(f"'{cmd}' failed execution. Check if it is properly installed.")
-                    sys.exit(2)
-                except FileNotFoundError:
-                    print(f"Could not find executable '{CPPFILT_CMD[0]}'. Please install it.")
-                    sys.exit(3)
-
-                cur_func = func_demangled
-
-            line = (
-                cur_tn.rjust(20)
-                + cur_thread_id.rjust(14)
-                + " "
-                + cur_cpu.rjust(3)
-                + ") "
-                + cur_mode.rjust(4)
-                + " | "
-                + cur_ts.rjust(12)
-                + " ns |"
-            )
-            line_buffer_first_half.append(line)
-
-            # Keep track of nesting depth per thread, since thread stacks
-            # are independent.
-            if cur_tn not in per_thread_func_nest_depth:
-                # Init function nest depth for each new found thread. It's used
-                # for function indentation, which is different for each thread.
-                per_thread_func_nest_depth[cur_tn] = 0
-
-            next_event = next(ge, None)
-            if next_event:
-                next_type, next_func, *_ = next_event.values()
-
-                if cur_type == "entry" and next_type == "exit" and cur_func == next_func:
-                    # Same function, so use compact print.
-                    line = cur_func + "();"
-                    thread = cur_tn
-                    per_thread_line = {
-                        "thread": thread,
-                        "line": line.rjust(per_thread_func_nest_depth[cur_tn] + len(line)),
-                    }
-                    line_buffer_second_half.append(per_thread_line)
-
-                    # Fetch next event.
-                    current_event = next(ge, None)
-
-                    continue
-
-            if cur_type == "entry":
-                line = cur_func + "() {"
+            if cur_type == "entry" and next_type == "exit" and cur_func == next_func:
+                # Same function, so use compact print.
+                line = cur_func + "();"
+                thread = cur_tn
                 per_thread_line = {
-                    "thread": cur_tn,
+                    "thread": thread,
                     "line": line.rjust(per_thread_func_nest_depth[cur_tn] + len(line)),
                 }
                 line_buffer_second_half.append(per_thread_line)
 
-                # Advance nesting.
-                per_thread_func_nest_depth[cur_tn] = (
-                    per_thread_func_nest_depth[cur_tn] + func_nest_depth_step
-                )
+                # Fetch next event.
+                current_event = next(ge, None)
 
-            elif cur_type == "exit":
-                # Retreat nesting.
-                per_thread_func_nest_depth[cur_tn] = (
-                    per_thread_func_nest_depth[cur_tn] - func_nest_depth_step
-                )
+                continue
 
-                if per_thread_func_nest_depth[cur_tn] >= 0:
-                    line = "};"
-                    if annotate_ret:
-                        line = (
-                            line
-                            + Fore.WHITE
-                            + Style.DIM
-                            + f"   /* {cur_func} */"
-                            + Fore.RESET
-                            + Style.RESET_ALL
-                        )
-                    per_thread_line = {
-                        "thread": cur_tn,
-                        "line": line.rjust(per_thread_func_nest_depth[cur_tn] + len(line)),
-                    }
+        if cur_type == "entry":
+            line = cur_func + "() {"
+            per_thread_line = {
+                "thread": cur_tn,
+                "line": line.rjust(per_thread_func_nest_depth[cur_tn] + len(line)),
+            }
+            line_buffer_second_half.append(per_thread_line)
 
-                else:
-                    # Found an orphaned exit, so adjust indentation for all the previous lines to
-                    # the correct nesting depth, i.e. justify lines at right by
-                    # 'func_nest_depth_step'. Only the lines of current thread(cur_tn) are
-                    # justified, since each thread has a different stack, the nesting depth is kept
-                    # per thread.
-                    line_buffer_second_half = [
-                        {
-                            "thread": lines["thread"],
-                            "line": lines["line"].rjust(func_nest_depth_step + len(lines["line"])),
-                        }
-                        if lines["thread"] == cur_tn
-                        else lines
-                        for lines in line_buffer_second_half
-                    ]
-
-                    # Then inform the orphaned exit.
-                    per_thread_line = {
-                        "thread": cur_tn,
-                        "line": Fore.RED + f"}}; --> orphaned '{cur_func}'" + Fore.RESET,
-                    }
-
-                    # Reset function nest depth after justification of all previous lines.
-                    per_thread_func_nest_depth[cur_tn] = 0
-
-                # Save new line to the buffer.
-                line_buffer_second_half.append(per_thread_line)
-
-            elif cur_type == "switched_in":
-                # Switch events are not adjusted for indentation, hence the
-                # 'thread' key is not 'cur_tn' but an unlikely name of thread
-                # (00000), so list comprehension above that justifies the
-                # previous lines never matches this thread name.
-                line = (
-                    Fore.LIGHTYELLOW_EX
-                    + f"/* <-- Scheduler switched IN thread '{cur_tn}' */"
-                    + Fore.RESET
-                    + Style.RESET_ALL
-                )
-                line_buffer_second_half.append({"thread": "00000", "line": line})
-            else:  # switched_out
-                line = (
-                    Fore.LIGHTYELLOW_EX
-                    + f"/* --> Scheduler switched OUT from thread '{cur_tn}' */"
-                    + Fore.RESET
-                    + Style.RESET_ALL
-                )
-                line_buffer_second_half.append({"thread": "00000", "line": line})
-
-            current_event = next_event
-
-        # Join both halves into a single line (trace) and print it. Two halves
-        # are used because the second half needs to be adjusted for the orphaned
-        # function exit cases, whilst the first associated half is not adjusted.
-
-        # Remove "thread" key/value from the second half keeping just the lines
-        # before joining it with first half.
-        line_buffer_second_half = [lines["line"] for lines in line_buffer_second_half]
-        traces = [
-            " ".join(halves)
-            for halves in tuple(zip(line_buffer_first_half, line_buffer_second_half, strict=False))
-        ]
-
-        # Print header
-        if traces:
-            print(
-                "Thread Name".rjust(20),
-                "Thread ID".rjust(14),
-                "",
-                "CPU".rjust(3),
-                "",
-                "Mode".rjust(4),
-                "",
-                "Timestamp".rjust(12),
-                "",
-                "Function(s)".rjust(19),
+            # Advance nesting.
+            per_thread_func_nest_depth[cur_tn] = (
+                per_thread_func_nest_depth[cur_tn] + func_nest_depth_step
             )
-            print("    ".ljust(100, "-"))
 
-        # Print traces
-        for trace in traces:
-            print(trace)
+        elif cur_type == "exit":
+            # Retreat nesting.
+            per_thread_func_nest_depth[cur_tn] = (
+                per_thread_func_nest_depth[cur_tn] - func_nest_depth_step
+            )
 
-        return len(traces)
+            if per_thread_func_nest_depth[cur_tn] >= 0:
+                line = "};"
+                if annotate_ret:
+                    line = (
+                        line
+                        + Fore.WHITE
+                        + Style.DIM
+                        + f"   /* {cur_func} */"
+                        + Fore.RESET
+                        + Style.RESET_ALL
+                    )
+                per_thread_line = {
+                    "thread": cur_tn,
+                    "line": line.rjust(per_thread_func_nest_depth[cur_tn] + len(line)),
+                }
+
+            else:
+                # Found an orphaned exit, so adjust indentation for all the previous lines to
+                # the correct nesting depth, i.e. justify lines at right by
+                # 'func_nest_depth_step'. Only the lines of current thread(cur_tn) are
+                # justified, since each thread has a different stack, the nesting depth is kept
+                # per thread.
+                line_buffer_second_half = [
+                    {
+                        "thread": lines["thread"],
+                        "line": lines["line"].rjust(func_nest_depth_step + len(lines["line"])),
+                    }
+                    if lines["thread"] == cur_tn
+                    else lines
+                    for lines in line_buffer_second_half
+                ]
+
+                # Then inform the orphaned exit.
+                per_thread_line = {
+                    "thread": cur_tn,
+                    "line": Fore.RED + f"}}; --> orphaned '{cur_func}'" + Fore.RESET,
+                }
+
+                # Reset function nest depth after justification of all previous lines.
+                per_thread_func_nest_depth[cur_tn] = 0
+
+            # Save new line to the buffer.
+            line_buffer_second_half.append(per_thread_line)
+
+        elif cur_type == "switched_in":
+            # Switch events are not adjusted for indentation, hence the
+            # 'thread' key is not 'cur_tn' but an unlikely name of thread
+            # (00000), so list comprehension above that justifies the
+            # previous lines never matches this thread name.
+            line = (
+                Fore.LIGHTYELLOW_EX
+                + f"/* <-- Scheduler switched IN thread '{cur_tn}' */"
+                + Fore.RESET
+                + Style.RESET_ALL
+            )
+            line_buffer_second_half.append({"thread": "00000", "line": line})
+        else:  # switched_out
+            line = (
+                Fore.LIGHTYELLOW_EX
+                + f"/* --> Scheduler switched OUT from thread '{cur_tn}' */"
+                + Fore.RESET
+                + Style.RESET_ALL
+            )
+            line_buffer_second_half.append({"thread": "00000", "line": line})
+
+        current_event = next_event
+
+    # Join both halves into a single line (trace) and print it. Two halves
+    # are used because the second half needs to be adjusted for the orphaned
+    # function exit cases, whilst the first associated half is not adjusted.
+
+    # Remove "thread" key/value from the second half keeping just the lines
+    # before joining it with first half.
+    line_buffer_second_half = [lines["line"] for lines in line_buffer_second_half]
+    traces = [
+        " ".join(halves)
+        for halves in tuple(zip(line_buffer_first_half, line_buffer_second_half, strict=False))
+    ]
+
+    # Print header
+    if traces:
+        print(
+            "Thread Name".rjust(20),
+            "Thread ID".rjust(14),
+            "",
+            "CPU".rjust(3),
+            "",
+            "Mode".rjust(4),
+            "",
+            "Timestamp".rjust(12),
+            "",
+            "Function(s)".rjust(19),
+        )
+        print("    ".ljust(100, "-"))
+
+    # Print traces
+    for trace in traces:
+        print(trace)
+
+    return len(traces)
 
 
-def export_to_perfetto(args, port, elf, output_filename, demangle, verbose=False):
-    """Get traces from target and save them in Tracer Event Format for Perfetto ingestion.
+def get_traces_in_trace_event_format(tmpdir, elf, demangle, verbose=False):
+    msg_it = bt2.TraceCollectionMessageIterator(tmpdir)
+
+    symbols = get_symbols_from_elf(elf, verbose)
+
+    ge = get_trace_event_generator(msg_it, symbols)
+
+    trace_events = []
+    system_trace_events = []
+    named_thread_list = []
+    for trace in ge:
+        event_type, func, tid, cpu, _, ts, tn = trace.values()
+
+        # Use 4 LSB in tid (address) as the final thread ID just to ease
+        # displaying it in Perfetto. Hardly there will be a collision.
+        tid = int(tid, 0)
+        tid = tid & 0xFFFF
+
+        # Set phase type according with the Event
+        if event_type == "entry":
+            ph = "B"  # Event Begin
+        elif event_type == "exit":
+            ph = "E"  # Event End
+        elif event_type == "switched_out":
+            # Mimic a ftrace sched_switch event out of a pair of switched
+            # out / switched in events in Zephyr.
+
+            # Trace Event Format time unit is different from ftrace time
+            # unit in sched switch event, so 1 time unit in Trace Event
+            # Format is actually 1/10^6 time units in ftrace event. Since,
+            # to correctly display events in Perfetto, it's necessary to
+            # show the same time scale for ftrace events and other events,
+            # convert the ftrace time accordingly.
+            ftrace_ts = int(ts) / (10**6)
+            sched_ts = f"{ftrace_ts:.6f}"
+
+            sched_cpu = f"{int(cpu):03d}"
+
+            # See ftrace https://github.com/google/perfetto/blob/master/docs/data-sources/cpu-scheduling.md
+            # doc for details on the thread states.
+            system_trace_switched_out_event = (
+                f"{tn}-{tid} ({tid}) [{sched_cpu}] .... {sched_ts}: sched_switch: "
+                f"prev_comm={tn} prev_pid={tid} prev_prio=0 prev_state=T ==> "
+            )
+
+            next_trace = next(ge, None)
+            if not next_trace:
+                print(
+                    Fore.RED + "Warning: A switched in event is expected after a switched out! "
+                    "Skipping sched switch event." + Fore.RESET
+                )
+                continue
+
+            next_event_type, _, next_tid, _, _, next_ts, next_tn = next_trace.values()
+            assert next_event_type == "switched_in", (
+                "A switched in event is expected after a switched out!"
+            )
+
+            # See comment above on 'tid'.
+            next_tid = int(next_tid, 0)
+            next_tid = next_tid & 0xFFFF
+
+            ftrace_ts = int(next_ts) / (10**6)
+
+            system_trace_switched_in_event = (
+                f"next_comm={next_tn} next_pid={next_tid} next_prio=0\n"
+            )
+
+            system_trace_switch_event = (
+                system_trace_switched_out_event + system_trace_switched_in_event
+            )
+
+            if verbose:
+                # Remove \n at the end of line just for sake of showing it
+                # better in log.
+                print(Fore.YELLOW + system_trace_switch_event.strip() + Fore.RESET)
+
+            system_trace_events.append(system_trace_switch_event)
+
+        else:  # Ignore other type of traces.
+            continue
+
+        # Check if it's necessary to name a thread/process in the Event
+        # Trace Format. Once a new thread is found it's named and included
+        # to the list of named threads, threads need to be named only once.
+        # N.B.: Zephyr has no notion of process as it's found in Linux, so
+        # consider pid == tid.
+        if tn not in named_thread_list:
+            named_thread_list.append(tn)
+            if verbose:
+                print(f"Found thread '{tn}'.")
+
+            trace_event = {
+                "args": {"name": tn},
+                "cat": "__metadata",
+                "name": "thread_name",
+                "ph": "M",
+                "pid": tid,
+                "tid": tid,
+                "ts": 0,
+            }
+            trace_events.append(trace_event)
+
+        if demangle:
+            cmd = CPPFILT_CMD + [func]
+
+            try:
+                func_demangled = subprocess.check_output(cmd, text=True).strip()
+            except subprocess.CalledProcessError:
+                cmd = " ".join(cmd)
+                print(f"'{cmd}' failed execution. Check if it is properly installed.")
+                sys.exit(2)
+            except FileNotFoundError:
+                print(f"Could not find executable '{CPPFILT_CMD[0]}'. Please install it.")
+                sys.exit(3)
+
+            func = func_demangled
+
+        trace_event = {"ts": ts, "pid": tid, "tid": tid, "ph": ph, "name": func}
+        trace_events.append(trace_event)
+    if verbose:
+        print(
+            f"Found {len(trace_events)} event(s), {len(named_thread_list)} thread(s), "
+            f"{len(system_trace_events)} context switch(es)."
+        )
+
+    # Write Event Trace Format data to JSON file.
+
+    # 'systemTraceEvents' must be prefixed with '# tracer: nop\n' string.
+    system_trace_events = " ".join(system_trace_events)
+    system_trace_events_w_prefix = "# tracer: nop\n " + system_trace_events
+
+    output = {"traceEvents": trace_events, "systemTraceEvents": system_trace_events_w_prefix}
+    return output, len(trace_events) + len(system_trace_events)
+
+
+def export_to_trace_event_format(args, tmpdir, elf, output_filename, demangle, verbose=False):
+    """Get traces from target and save them in Tracer Event Format.
 
     This function uses 'port' to get the binary stream from target and 'elf'
     file to resolve the symbols and then prints the traces in it. The binary
@@ -723,227 +837,16 @@ def export_to_perfetto(args, port, elf, output_filename, demangle, verbose=False
     in Trace Event Format (https://tinyurl.com/45bb69s9).
     """
 
-    port.write(b"dump_trace\r")
+    output, events_len = get_traces_in_trace_event_format(tmpdir, elf, demangle, verbose)
 
-    # babeltrace2 and CTF 1.8 specification is a tad odd in the sense that
-    # TraceCollectionMessageIterator() only allows a directory to be specified, which must contain a
-    # 'data' (binary) file and 'metadata' file written in the TSDL, hence it's not possible to
-    # specify an alternative path for 'data' or 'metadata' files. Thus here a temporary dir is
-    # created and a copy of the 'metadata' is copied to it together with the binary stream extracted
-    # from the target, which is saved as 'data' file. The tempory dir is then passed to the
-    # babeltrace methods.
-    with tempfile.TemporaryDirectory() as tmpdir:
-        if verbose:
-            print("Temporary dir:", tmpdir)
+    with open(output_filename, "w") as fd:
+        json.dump(output, fd)
 
-        # Copy binary stream to temporary dir.
-        data_file = tmpdir + "/data"
-        with open(data_file, "wb") as fd:
-            ll = get_stream(port)
-            fd.write(ll)
+    if verbose:
+        st = os.stat(output_filename)
+        print(f"{st.st_size} byte(s) written to '{output_filename}'.")
 
-        # Copy CTF metadata to temporary dir.
-        metadata_file = get_ctf_metadata_file(args, args.verbose)
-        shutil.copy(metadata_file, tmpdir + "/metadata")
-
-        msg_it = bt2.TraceCollectionMessageIterator(tmpdir)
-
-        symbols = get_symbols_from_elf(elf, verbose)
-
-        # Generator for getting an event with symbols resolved.
-        # The event returned is a dict().
-        def get_trace_event_generator():
-            for msg in msg_it:
-                if isinstance(msg, bt2._EventMessageConst):
-                    event = msg.event
-
-                    # Entry / exit events (w/ or wo/ context) are converted to
-                    # 'entry' and 'exit' types just to simplify the matching
-                    # code using them -- match against a shorter string.  It can
-                    # be enhanced if necessary. Currently just handle entry /
-                    # exit with context and sched switch in/out events.
-                    if "entry" in event.name:
-                        event_type = "entry"
-                    elif "exit" in event.name:
-                        event_type = "exit"
-                    elif "switched_in" in event.name:
-                        event_type = "switched_in"
-                    elif "switched_out" in event.name:
-                        event_type = "switched_out"
-                    else:
-                        continue
-
-                    # Resolve callee symbol.
-                    callee = event.payload_field.get("callee").real
-                    callee_symbol = symbols.get(callee)
-
-                    assert callee_symbol is not None, (
-                        f"Symbol address {callee} could not be resolved! Are you sure "
-                        "FW flashed matches provided ELF file in build dir?"
-                    )
-
-                    thread_id = event.payload_field.get("thread_id")
-                    # When tracing non-application code usually there isn't
-                    # a thread ID associated to the context, so in this case
-                    # change thread ID to "none-thread".
-                    if thread_id == 0:
-                        thread_id = "none-thread"
-                    else:
-                        thread_id = hex(thread_id)
-
-                    cpu = event.payload_field.get("cpu")
-                    mode = event.payload_field.get("mode")
-                    timestamp = event.payload_field.get("timestamp").real
-                    thread_name = event.payload_field.get("thread_name")
-
-                    e = dict()
-                    e["type"] = str(event_type)
-                    e["func"] = str(callee_symbol)
-                    e["thread_id"] = str(thread_id)
-                    e["cpu"] = str(cpu)
-                    e["mode"] = str(mode)
-                    e["timestamp"] = str(timestamp)
-                    e["thread_name"] = str(thread_name)
-
-                    yield e  # event
-
-        ge = get_trace_event_generator()
-
-        trace_events = []
-        system_trace_events = []
-        named_thread_list = []
-        for trace in ge:
-            event_type, func, tid, cpu, _, ts, tn = trace.values()
-
-            # Use 4 LSB in tid (address) as the final thread ID just to ease
-            # displaying it in Perfetto. Hardly there will be a collision.
-            tid = int(tid, 0)
-            tid = tid & 0xFFFF
-
-            # Set phase type according with the Event
-            if event_type == "entry":
-                ph = "B"  # Event Begin
-            elif event_type == "exit":
-                ph = "E"  # Event End
-            elif event_type == "switched_out":
-                # Mimic a ftrace sched_switch event out of a pair of switched
-                # out / switched in events in Zephyr.
-
-                # Trace Event Format time unit is different from ftrace time
-                # unit in sched switch event, so 1 time unit in Trace Event
-                # Format is actually 1/10^6 time units in ftrace event. Since,
-                # to correctly display events in Perfetto, it's necessary to
-                # show the same time scale for ftrace events and other events,
-                # convert the ftrace time accordingly.
-                ftrace_ts = int(ts) / (10**6)
-                sched_ts = f"{ftrace_ts:.6f}"
-
-                sched_cpu = f"{int(cpu):03d}"
-
-                # See ftrace https://github.com/google/perfetto/blob/master/docs/data-sources/cpu-scheduling.md
-                # doc for details on the thread states.
-                system_trace_switched_out_event = (
-                    f"{tn}-{tid} ({tid}) [{sched_cpu}] .... {sched_ts}: sched_switch: "
-                    f"prev_comm={tn} prev_pid={tid} prev_prio=0 prev_state=T ==> "
-                )
-
-                next_trace = next(ge, None)
-                if not next_trace:
-                    print(
-                        Fore.RED + "Warning: A switched in event is expected after a switched out! "
-                        "Skipping sched switch event." + Fore.RESET
-                    )
-                    continue
-
-                next_event_type, _, next_tid, _, _, next_ts, next_tn = next_trace.values()
-                assert next_event_type == "switched_in", (
-                    "A switched in event is expected after a switched out!"
-                )
-
-                # See comment above on 'tid'.
-                next_tid = int(next_tid, 0)
-                next_tid = next_tid & 0xFFFF
-
-                ftrace_ts = int(next_ts) / (10**6)
-
-                system_trace_switched_in_event = (
-                    f"next_comm={next_tn} next_pid={next_tid} next_prio=0\n"
-                )
-
-                system_trace_switch_event = (
-                    system_trace_switched_out_event + system_trace_switched_in_event
-                )
-
-                if verbose:
-                    # Remove \n at the end of line just for sake of showing it
-                    # better in log.
-                    print(Fore.YELLOW + system_trace_switch_event.strip() + Fore.RESET)
-
-                system_trace_events.append(system_trace_switch_event)
-
-            else:  # Ignore other type of traces.
-                continue
-
-            # Check if it's necessary to name a thread/process in the Event
-            # Trace Format. Once a new thread is found it's named and included
-            # to the list of named threads, threads need to be named only once.
-            # N.B.: Zephyr has no notion of process as it's found in Linux, so
-            # consider pid == tid.
-            if tn not in named_thread_list:
-                named_thread_list.append(tn)
-                if verbose:
-                    print(f"Found thread '{tn}'.")
-
-                trace_event = {
-                    "args": {"name": tn},
-                    "cat": "__metadata",
-                    "name": "thread_name",
-                    "ph": "M",
-                    "pid": tid,
-                    "tid": tid,
-                    "ts": 0,
-                }
-                trace_events.append(trace_event)
-
-            if demangle:
-                cmd = CPPFILT_CMD + [func]
-
-                try:
-                    func_demangled = subprocess.check_output(cmd, text=True).strip()
-                except subprocess.CalledProcessError:
-                    cmd = " ".join(cmd)
-                    print(f"'{cmd}' failed execution. Check if it is properly installed.")
-                    sys.exit(2)
-                except FileNotFoundError:
-                    print(f"Could not find executable '{CPPFILT_CMD[0]}'. Please install it.")
-                    sys.exit(3)
-
-                func = func_demangled
-
-            trace_event = {"ts": ts, "pid": tid, "tid": tid, "ph": ph, "name": func}
-            trace_events.append(trace_event)
-
-        if verbose:
-            print(
-                f"Found {len(trace_events)} event(s), {len(named_thread_list)} thread(s), "
-                f"{len(system_trace_events)} context switch(es)."
-            )
-
-        # Write Event Trace Format data to JSON file.
-
-        # 'systemTraceEvents' must be prefixed with '# tracer: nop\n' string.
-        system_trace_events = " ".join(system_trace_events)
-        system_trace_events_w_prefix = "# tracer: nop\n " + system_trace_events
-
-        output = {"traceEvents": trace_events, "systemTraceEvents": system_trace_events_w_prefix}
-        with open(output_filename, "w") as fd:
-            json.dump(output, fd)
-
-        if verbose:
-            st = os.stat(output_filename)
-            print(f"{st.st_size} byte(s) written to '{output_filename}'.")
-
-        return len(trace_events) + len(system_trace_events)
+    return events_len
 
 
 def get_and_print_profile(args, port, elf, n, verbose=False):
@@ -1154,14 +1057,38 @@ def trace(args):
         sys.exit(1)
 
     elf_file = get_elf_file(args, args.verbose)
-    if args.perfetto:
-        num_traces = export_to_perfetto(
-            args, sport, elf_file, args.output, args.demangle, args.verbose
-        )
-    else:
-        num_traces = get_and_print_trace(
-            args, sport, elf_file, args.demangle, args.annotation, args.verbose
-        )
+
+    sport.write(b"dump_trace\r")
+
+    # babeltrace2 and CTF 1.8 specification is a tad odd in the sense that
+    # TraceCollectionMessageIterator() only allows a directory to be specified, which must contain a
+    # 'data' (binary) file and 'metadata' file written in the TSDL, hence it's not possible to
+    # specify an alternative path for 'data' or 'metadata' files. Thus here a temporary dir is
+    # created and a copy of the 'metadata' is copied to it together with the binary stream extracted
+    # from the target, which is saved as 'data' file. The tempory dir is then passed to the
+    # babeltrace methods.
+    with tempfile.TemporaryDirectory() as tmpdir:
+        if args.verbose:
+            print("Temporary dir:", tmpdir)
+
+        # Copy binary stream to temporary dir.
+        data_file = tmpdir + "/data"
+        with open(data_file, "wb") as fd:
+            ll = get_stream(sport)
+            fd.write(ll)
+
+        # Copy CTF metadata to temporary dir.
+        metadata_file = get_ctf_metadata_file(args, args.verbose)
+        shutil.copy(metadata_file, tmpdir + "/metadata")
+
+        if args.export_tef:
+            num_traces = export_to_trace_event_format(
+                args, tmpdir, elf_file, args.output, args.demangle, args.verbose
+            )
+        else:
+            num_traces = get_and_print_trace(
+                args, tmpdir, elf_file, args.demangle, args.annotation, args.verbose
+            )
 
     if num_traces == 0:
         print_message_on_empty_buffer("trace")
@@ -1257,17 +1184,17 @@ if __name__ == "__main__":
         help="set both trigger and stopper to FUNC_NAME.",
     )
     trace_parser.add_argument(
-        '--perfetto',
-        '-p',
+        '--export-tef',
+        '-e',
         action='store_true',
-        help="export traces to Perfetto TraceViewer UI (Event Trace Format).",
+        help="export traces to Trace Event Format.",
     )
     trace_parser.add_argument(
         '--output',
         '-o',
         type=str,
-        default=PERFETTO_FILENAME,
-        help=f"output filename. Default to '{PERFETTO_FILENAME}'.",
+        default=TRACE_EVENT_FILENAME,
+        help=f"output filename. Defaults to '{TRACE_EVENT_FILENAME}'.",
     )
     trace_parser.add_argument('--demangle', '-d', action='store_true', help="demangle C++ symbols.")
     trace_parser.add_argument(
