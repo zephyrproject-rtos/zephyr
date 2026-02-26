@@ -60,6 +60,7 @@ tests:
       - frdm_mcxa366
       - frdm_mcxa344
       - frdm_mcxc242
+      - frdm_mcxa577
       - max32655evkit/max32655/m4
       - max32662evkit
       - max32666evkit/max32666/cpu0
