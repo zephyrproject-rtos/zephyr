@@ -46,16 +46,20 @@ message(STATUS "Using BSIM from BSIM_COMPONENTS_PATH=${BSIM_COMPONENTS_PATH} "
 
 if((NOT DEFINED BSIM_COMPONENTS_PATH) OR (NOT DEFINED BSIM_OUT_PATH))
   message(FATAL_ERROR
-    "This board requires the BabbleSim simulator. Please either\n"
-    " a) Enable the west babblesim group with\n"
+    "This board requires the BabbleSim simulator:\n"
+    " 1) If you do not already have a bsim installation,\n"
+    "    enable the west babblesim group with\n"
     "    west config manifest.group-filter +babblesim && west update\n"
     "    and build it with\n"
     "    cd ${ZEPHYR_BASE}/../tools/bsim\n"
     "     make everything -j 8\n"
-    "    OR\n"
-    " b) set the environment variable BSIM_COMPONENTS_PATH to point to your own bsim installation\n"
+    "    AND\n"
+    " 2) set the environment variable BSIM_COMPONENTS_PATH to point to your bsim installation\n"
     "    `components/` folder, *and* BSIM_OUT_PATH to point to the folder where the simulator\n"
     "    is compiled to.\n"
+    "    If you followed the previous step (1), you can just do:\n"
+    "      export BSIM_OUT_PATH=${ZEPHYR_BASE}/../tools/bsim\n"
+    "      export BSIM_COMPONENTS_PATH=${BSIM_OUT_PATH}/components/\n"
     "    More information can be found in https://babblesim.github.io/folder_structure_and_env.html"
   )
 endif()
