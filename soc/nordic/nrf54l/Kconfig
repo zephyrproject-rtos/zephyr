@@ -107,4 +107,11 @@ config SOC_NRF54L_ANOMALY_56_WORKAROUND
 	help
 	   This option enables configuration workaround 56 for nRF54L Series SoCs.
 
+config SOC_NRF54LM20A_DEVELOP_IN_NRF54LM20B
+	bool
+	help
+	  The nrf54lm20dk board can be used to develop the nRF54LM20A or nRF54LM20B SoCs
+	  onto the nRF54LM20B DK. This symbol needs to be considered by certain system
+	  initialization functionality residing in SoC erratas.
+
 endif # SOC_SERIES_NRF54L
