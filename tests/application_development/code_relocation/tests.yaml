@@ -16,6 +16,14 @@ tests:
       - CONFIG_CUSTOM_LINKER_SCRIPT="linker_arm_sram2.ld"
     platform_allow:
       - mimxrt1060_evk/mimxrt1062/qspi
+  buildsystem.app_dev.code_relocation.andes:
+    extra_configs:
+      - CONFIG_RELOCATE_TO_ITCM=y
+      - CONFIG_CUSTOM_LINKER_SCRIPT="linker_riscv_qemu_sram2.ld"
+      - CONFIG_MINIMAL_LIBC=y
+    platform_allow:
+      - adp_xc7k/ae350
+      - adp_xc7k/ae350/clic
   buildsystem.app_dev.code_relocation_kinetis:
     extra_configs:
       - CONFIG_MPU_ALLOW_FLASH_WRITE=y
