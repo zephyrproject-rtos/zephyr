@@ -4,21 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-flash_controller: flash-controller@39000 {
-	compatible = "nordic,nrf91-flash-controller";
-	reg = <0x39000 0x1000>;
-	partial-erase;
-
-	#address-cells = <1>;
-	#size-cells = <1>;
-
-	flash0: flash@0 {
-		compatible = "soc-nv-flash";
-		erase-block-size = <4096>;
-		write-block-size = <4>;
-	};
-};
-
 adc: adc@e000 {
 	compatible = "nordic,nrf-saadc";
 	reg = <0xe000 0x1000>;
