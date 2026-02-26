@@ -314,6 +314,7 @@
 &flash1 {
 	partitions {
 		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -504,7 +505,10 @@ dvp_20pin_interface: &ceu {};
 		data-rate = <XSPI_DTR_TRANSFER>;
 		ospi-max-frequency = <DT_FREQ_M(200)>;
 		reg = <0x90000000 DT_SIZE_M(64)>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(64)>;
 		write-block-size = <1>;
+		#address-cells = <1>;
+		#size-cells = <1>;
 		status = "okay";
 
 		pages_layout: pages_layout {
@@ -528,6 +532,7 @@ dvp_20pin_interface: &ceu {};
 			compatible = "fixed-partitions";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			partition@0 {
 				label = "nor";

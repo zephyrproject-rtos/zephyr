@@ -187,6 +187,7 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		storage_partition: partition@0 {
 			label = "storage";
@@ -231,9 +232,12 @@
 	mx25l25645g: qspi-nor-flash@60000000 {
 		compatible = "renesas,ra-qspi-nor";
 		reg = <0x60000000 DT_SIZE_M(32)>;
+		ranges = <0x0 0x60000000 DT_SIZE_M(32)>;
 		status = "okay";
 		write-block-size = <1>;
 		erase-block-size = <4096>;
+		#address-cells = <1>;
+		#size-cells = <1>;
 	};
 };
 
