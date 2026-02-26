@@ -20,6 +20,8 @@
  */
 static inline bool rtio_vrfy_sqe(struct rtio_sqe *sqe)
 {
+	const struct adc_sequence *adc_read_sequence;
+
 	if (sqe->iodev != NULL) {
 		if (K_SYSCALL_OBJ(sqe->iodev, K_OBJ_RTIO_IODEV)) {
 			return false;
@@ -49,6 +51,26 @@ static inline bool rtio_vrfy_sqe(struct rtio_sqe *sqe)
 		valid_sqe &= K_SYSCALL_MEMORY(sqe->adc_channel_setup.channel_cfg,
 					      sizeof(struct adc_channel_cfg),
 					      true);
+		break;
+	case RTIO_OP_ADC_READ:
+		adc_read_sequence = sqe->adc_read.sequence;
+
+		valid_sqe &= K_SYSCALL_MEMORY(adc_read_sequence,
+					      sizeof(*adc_read_sequence),
+					      true);
+
+		valid_sqe &= K_SYSCALL_MEMORY(adc_read_sequence->buffer,
+					      adc_read_sequence->buffer_size,
+					      true);
+
+		if (adc_read_sequence->options) {
+			valid_sqe &= K_SYSCALL_MEMORY(adc_read_sequence->options,
+						      sizeof(*adc_read_sequence->options),
+						      true);
+
+			valid_sqe &= adc_read_sequence->options->callback == NULL;
+		}
+
 		break;
 	default:
 		/* RTIO OP must be known and allowable from user mode

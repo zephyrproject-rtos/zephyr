@@ -179,6 +179,9 @@ extern "C" {
 /** An operation to set up an ADC channel */
 #define RTIO_OP_ADC_CHANNEL_SETUP (RTIO_OP_AWAIT+1)
 
+/** An operation to set up an ADC read */
+#define RTIO_OP_ADC_READ (RTIO_OP_ADC_CHANNEL_SETUP+1)
+
 /**
  * @}
  */
@@ -390,6 +393,11 @@ struct rtio_sqe {
 		struct {
 			const void *channel_cfg;
 		} adc_channel_setup;
+
+		/** OP_ADC_READ */
+		struct {
+			const void *sequence;
+		} adc_read;
 	};
 };
 
