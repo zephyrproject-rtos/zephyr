@@ -52,6 +52,7 @@ config SIMPLELINK_F3_RADIO_DRIVER
 	bool "Build the RCL driver"
 	depends on HAS_CC23X0_SDK || HAS_CC27XX_SDK
 	select ENTROPY_GENERATOR
+	default n if MCUBOOT
 	default y
 	help
 		Build the RCL driver
