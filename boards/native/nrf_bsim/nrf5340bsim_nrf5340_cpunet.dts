@@ -58,12 +58,12 @@
 	ranges = <0x0 0x01000000 DT_SIZE_K(256)>;
 
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges;
 
 		storage_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x00000000 DT_SIZE_K(256)>;
 		};
