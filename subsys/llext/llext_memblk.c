@@ -13,6 +13,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 
+Z_HEAP_DEFINE_IN_SECT(llext_metadata_heap, (CONFIG_LLEXT_METADATA_HEAP_SIZE * KB(1)),
+		      __attribute__((section(".llext_metadata_heap"))));
 #ifdef CONFIG_HARVARD
 BUILD_ASSERT(CONFIG_LLEXT_INSTR_HEAP_SIZE * KB(1) % CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE == 0,
 	     "CONFIG_LLEXT_INSTR_HEAP_SIZE must be multiple of "
@@ -24,10 +26,9 @@ BUILD_ASSERT(CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE % LLEXT_PAGE_SIZE == 0,
 	     "CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE must be multiple of LLEXT_PAGE_SIZE");
 uint8_t llext_instr_heap_buf[CONFIG_LLEXT_INSTR_HEAP_SIZE * KB(1)]
 	__aligned(CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE)
-	__attribute__((section(".rodata.llext_instr_heap_buf")));
+	__attribute__((section(".llext_instr_heap")));
 uint8_t llext_data_heap_buf[CONFIG_LLEXT_DATA_HEAP_SIZE * KB(1)]
-	__aligned(CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE)
-	__attribute__((section(".data.llext_data_heap_buf")));
+	__aligned(CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE) __attribute__((section(".llext_data_heap")));
 SYS_MEM_BLOCKS_DEFINE_WITH_EXT_BUF(llext_instr_heap, CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE,
 				   CONFIG_LLEXT_INSTR_HEAP_SIZE * KB(1) /
 					   CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE,
@@ -36,17 +37,18 @@ SYS_MEM_BLOCKS_DEFINE_WITH_EXT_BUF(llext_data_heap, CONFIG_LLEXT_HEAP_MEMBLK_BLO
 				   CONFIG_LLEXT_DATA_HEAP_SIZE * KB(1) /
 					   CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE,
 				   llext_data_heap_buf);
-K_HEAP_DEFINE(llext_metadata_heap, CONFIG_LLEXT_METADATA_HEAP_SIZE * KB(1));
 #else  /* !CONFIG_HARVARD */
 BUILD_ASSERT(CONFIG_LLEXT_EXT_HEAP_SIZE * KB(1) % CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE == 0,
 	     "CONFIG_LLEXT_EXT_HEAP_SIZE must be multiple of "
 	     "CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE");
 BUILD_ASSERT(CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE % LLEXT_PAGE_SIZE == 0,
 	     "CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE must be multiple of LLEXT_PAGE_SIZE");
-SYS_MEM_BLOCKS_DEFINE(llext_ext_heap, CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE,
-		      CONFIG_LLEXT_EXT_HEAP_SIZE * KB(1) / CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE,
-		      CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE);
-K_HEAP_DEFINE(llext_metadata_heap, CONFIG_LLEXT_METADATA_HEAP_SIZE * KB(1));
+uint8_t llext_ext_heap_buf[CONFIG_LLEXT_EXT_HEAP_SIZE * KB(1)]
+	__aligned(CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE) __attribute__((section(".llext_ext_heap")));
+SYS_MEM_BLOCKS_DEFINE_WITH_EXT_BUF(llext_ext_heap, CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE,
+				   CONFIG_LLEXT_EXT_HEAP_SIZE * KB(1) /
+					   CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE,
+				   llext_ext_heap_buf);
 #endif /* CONFIG_HARVARD */
 
 static inline struct llext_alloc *get_llext_alloc(struct llext_alloc_map *map, void *alloc_ptr)

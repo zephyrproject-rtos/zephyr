@@ -27,14 +27,6 @@ control these allocations.
 
         Size of the LLEXT heap in data memory in kilobytes.
 
-.. note::
-   The LLEXT instruction heap is grouped with Zephyr .rodata, which the linker
-   typically places after .text in instruction memory.
-
-.. warning::
-   LLEXT will be unable to link and execute extensions if instruction memory
-   (i.e., memory the processor can fetch instructions from) is not writable.
-
 Alternatively the application can configure a dynamic heap using the following
 option.
 
@@ -58,8 +50,36 @@ option.
    alignment required by the architecture.
 
 .. note::
+
    On Harvard architectures, applications must call
    :c:func:`llext_heap_init_harvard`.
+
+Heap placement
+--------------
+
+The LLEXT heap(s) have custom sections. The non-Harvard heap section
+(``.llext_heap``) is placed alongside ``.noinit`` sections by default.
+Harvard instruction and data heap sections (``.llext_instr_heap`` and
+``.llext_data_heap``) are placed in instruction and data memory respectively.
+These default placements can be overridden by providing a custom linker script.
+
+:kconfig:option:`CONFIG_CUSTOM_LINKER_SCRIPT`
+
+        Path to the linker script to be used instead of the one defined by the
+        board.
+
+        The linker script must be based on a version provided by Zephyr since
+        the kernel can expect a certain layout/certain regions.
+
+        This is useful when an application needs to add sections into the
+        linker script and avoid having to change the script provided by
+        Zephyr.
+
+.. warning::
+
+   LLEXT will be unable to load extensions if the instruction memory
+   ``.llext_instr_heap`` is placed in is not writable at the time the
+   extensions are loaded and linked.
 
 .. _llext_kconfig_type:
 
