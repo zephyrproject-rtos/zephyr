@@ -1088,6 +1088,10 @@ static int cmd_i3c_ccc_rstact(const struct shell *sh, size_t argc, char **argv)
 	if (strcmp(argv[3], "get") == 0) {
 		ret = i3c_ccc_do_rstact_fmt3(desc, action, &data);
 	} else if (strcmp(argv[3], "set") == 0) {
+		if (action >= 0x80) {
+			shell_error(sh, "I3C: defining bytes >= 0x80 are only valid for get");
+			return -EINVAL;
+		}
 		ret = i3c_ccc_do_rstact_fmt2(desc, action);
 	} else {
 		shell_error(sh, "I3C: invalid parameter");
