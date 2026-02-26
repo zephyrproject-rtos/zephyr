@@ -114,4 +114,18 @@ config SOC_NRF54LM20A_DEVELOP_IN_NRF54LM20B
 	  onto the nRF54LM20B DK. This symbol needs to be considered by certain system
 	  initialization functionality residing in SoC erratas.
 
+config SOC_NRF54L10_DEVELOP_IN_NRF54L15
+	bool
+	help
+	  The nrf54l15dk board can be used to develop the nRF54L10 SoC onto the nRF54L15 DK.
+	  This symbol needs to be considered by certain system initialization functionality
+	  residing in system_nrf54l.c and SoC erratas.
+
+config SOC_NRF54L05_DEVELOP_IN_NRF54L15
+	bool
+	help
+	  The nrf54l15dk board can be used to develop the nRF54L05 SoC onto the nRF54L15 DK.
+	  This symbol needs to be considered by certain system initialization functionality
+	  residing in system_nrf54l.c and SoC erratas.
+
 endif # SOC_SERIES_NRF54L
