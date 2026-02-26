@@ -54,12 +54,15 @@
 /** Unknown swap */
 #define DFU_BOOT_SWAP_TYPE_UNKNOWN	255
 
-#ifdef CONFIG_MCUBOOT_IMG_MANAGER
+#if defined(CONFIG_MCUBOOT_IMG_MANAGER) || defined(CONFIG_NXPBOOT_HYBRID_MCUBOOT)
 #ifdef CONFIG_MCUBOOT_BOOTLOADER_USES_SHA512
 #define DFU_BOOT_IMG_SHA_LEN 64
 #else
 #define DFU_BOOT_IMG_SHA_LEN 32
 #endif
+#elif defined(CONFIG_NXPBOOT_IMG_MANAGER)
+/* NXP SB image can use either SHA-256 or SHA-384 */
+#define DFU_BOOT_IMG_SHA_LEN 48
 #else
 /** Image hash size */
 #define DFU_BOOT_IMG_SHA_LEN 64
