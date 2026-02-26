@@ -29,7 +29,7 @@
 #define CONF_STATUS0_PROT_FAULTS_CHK      BIT(24)
 #define CONF_STATUS0_GPO_NUM(x)           (((x) & GENMASK(23, 16)) >> 16)
 #define CONF_STATUS0_GPI_NUM(x)           (((x) & GENMASK(15, 8)) >> 8)
-#define CONF_STATUS0_IBIR_DEPTH(x)        (4 << (((x) & GENMASK(7, 6)) >> 7))
+#define CONF_STATUS0_IBIR_DEPTH(x)        (4 << (((x) & GENMASK(7, 6)) >> 6))
 /* CONF_STATUS0_SUPPORTS_DDR moved to CONF_STATUS1 in rev >= 1p7 */
 #define CONF_STATUS0_SUPPORTS_DDR         BIT(5)
 #define CONF_STATUS0_SEC_MASTER           BIT(4)
