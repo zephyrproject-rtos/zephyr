@@ -1,6 +1,8 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
  * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2026 NXP
+
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,13 +11,12 @@
 #include <zephyr/toolchain.h>
 #include <string.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/dfu/mcuboot.h>
+#include <zephyr/dfu/dfu_boot.h>
+#include <zephyr/storage/flash_map.h>
 
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
 #include <zcbor_encode.h>
-
-#include <bootutil/bootutil_public.h>
 
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
@@ -30,6 +31,10 @@
 
 #ifdef CONFIG_MCUMGR_GRP_IMG_IMAGE_SLOT_STATE_HOOK
 #include <mgmt/mcumgr/transport/smp_internal.h>
+#endif
+
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
+#include <zephyr/dfu/mcuboot.h>
 #endif
 
 LOG_MODULE_DECLARE(mcumgr_img_grp, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
@@ -50,13 +55,6 @@ LOG_MODULE_DECLARE(mcumgr_img_grp, CONFIG_MCUMGR_GRP_IMG_LOG_LEVEL);
 #define REPORT_SLOT_PENDING	BIT(1)
 #define REPORT_SLOT_CONFIRMED	BIT(2)
 #define REPORT_SLOT_PERMANENT	BIT(3)
-
-#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
-#define DIRECT_XIP_BOOT_UNSET		0
-#define DIRECT_XIP_BOOT_ONCE		1
-#define DIRECT_XIP_BOOT_REVERT		2
-#define DIRECT_XIP_BOOT_FOREVER		3
-#endif
 
 #if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER) && \
 	CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER > 1
@@ -163,17 +161,17 @@ img_mgmt_state_flags(int query_slot)
 int img_mgmt_get_next_boot_slot(int image, enum img_mgmt_next_boot_type *type)
 {
 	const int active_slot = img_mgmt_active_slot(image);
-	const int state = mcuboot_swap_type_multi(image);
+	const int state = dfu_boot_get_swap_type(image);
 	/* All cases except BOOT_SWAP_TYPE_NONE return opposite slot */
 	int slot = img_mgmt_get_opposite_slot(active_slot);
 	enum img_mgmt_next_boot_type lt = NEXT_BOOT_TYPE_NORMAL;
 
 	switch (state) {
-	case BOOT_SWAP_TYPE_NONE:
+	case DFU_BOOT_SWAP_TYPE_NONE:
 		/* Booting to the same slot, keeping type to NEXT_BOOT_TYPE_NORMAL */
 		slot = active_slot;
 		break;
-	case BOOT_SWAP_TYPE_PERM:
+	case DFU_BOOT_SWAP_TYPE_PERM:
 		/* For BOOT_SWAP_TYPE_PERM reported type will be NEXT_BOOT_TYPE_NORMAL,
 		 * and only difference between this and BOOT_SWAP_TYPE_NONE is that
 		 * the later boots to the application in currently active slot while the former
@@ -182,14 +180,14 @@ int img_mgmt_get_next_boot_slot(int image, enum img_mgmt_next_boot_type *type)
 		 * for revert or pending for test, and will change on reset.
 		 */
 		break;
-	case BOOT_SWAP_TYPE_REVERT:
+	case DFU_BOOT_SWAP_TYPE_REVERT:
 		/* Application is in test mode and has not yet been confirmed,
 		 * which means that on the next boot the application will revert to
 		 * the copy from reported slot.
 		 */
 		lt = NEXT_BOOT_TYPE_REVERT;
 		break;
-	case BOOT_SWAP_TYPE_TEST:
+	case DFU_BOOT_SWAP_TYPE_TEST:
 		/* Reported next boot slot is set for one boot only and app needs to
 		 * confirm itself or it will be reverted.
 		 */
@@ -208,39 +206,6 @@ int img_mgmt_get_next_boot_slot(int image, enum img_mgmt_next_boot_type *type)
 	return slot;
 }
 #else
-
-#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
-static int read_directxip_state(int slot)
-{
-	struct boot_swap_state bss;
-	int fa_id = img_mgmt_flash_area_id(slot);
-	const struct flash_area *fa;
-	int rc = 0;
-
-	__ASSERT(fa_id != -1, "Could not map slot to area ID");
-
-	rc = flash_area_open(fa_id, &fa);
-	if (rc < 0) {
-		return rc;
-	}
-	rc = boot_read_swap_state(fa, &bss);
-	flash_area_close(fa);
-	if (rc != 0) {
-		LOG_ERR("Failed to read state of slot %d with error %d", slot, rc);
-		return -1;
-	}
-
-	if (bss.magic == BOOT_MAGIC_GOOD) {
-		if (bss.image_ok == BOOT_FLAG_SET) {
-			return DIRECT_XIP_BOOT_FOREVER;
-		} else if (bss.copy_done == BOOT_FLAG_SET) {
-			return DIRECT_XIP_BOOT_REVERT;
-		}
-		return DIRECT_XIP_BOOT_ONCE;
-	}
-	return DIRECT_XIP_BOOT_UNSET;
-}
-#endif /* defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) */
 
 #if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) || \
 	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
@@ -262,8 +227,8 @@ int img_mgmt_get_next_boot_slot(int image, enum img_mgmt_next_boot_type *type)
 	int rca = img_mgmt_read_info(active_slot, &aver, NULL, NULL);
 
 #if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
-	active_slot_state = read_directxip_state(active_slot);
-	other_slot_state = read_directxip_state(other_slot);
+	active_slot_state = mcuboot_read_directxip_state(active_slot);
+	other_slot_state = mcuboot_read_directxip_state(other_slot);
 	if (rca != 0 ||
 	    (rcs != 0 && rcs != IMG_MGMT_ERR_NO_IMAGE)) {
 		/* We do not really know what will happen, as we can not
@@ -287,11 +252,11 @@ int img_mgmt_get_next_boot_slot(int image, enum img_mgmt_next_boot_type *type)
 		goto out;
 	}
 
-	if (active_slot_state == DIRECT_XIP_BOOT_REVERT) {
+	if (active_slot_state == MCUBOOT_DIRECT_XIP_BOOT_REVERT) {
 		lt = NEXT_BOOT_TYPE_REVERT;
 		return_slot = other_slot;
-	} else if (other_slot_state == DIRECT_XIP_BOOT_UNSET) {
-		if (active_slot_state == DIRECT_XIP_BOOT_ONCE) {
+	} else if (other_slot_state == MCUBOOT_DIRECT_XIP_BOOT_UNSET) {
+		if (active_slot_state == MCUBOOT_DIRECT_XIP_BOOT_ONCE) {
 			lt = NEXT_BOOT_TYPE_TEST;
 		}
 	} else if ((img_mgmt_vercmp(&aver, &over) < 0) ||
@@ -302,11 +267,13 @@ int img_mgmt_get_next_boot_slot(int image, enum img_mgmt_next_boot_type *type)
 		 * - If both slots are valid and the versions are equal, a slot with lower number
 		 *   is preferred.
 		 */
-		if (other_slot_state == DIRECT_XIP_BOOT_FOREVER) {
+		if (other_slot_state == MCUBOOT_DIRECT_XIP_BOOT_FOREVER) {
 			return_slot = other_slot;
-		} else if (other_slot_state == DIRECT_XIP_BOOT_ONCE) {
+		} else if (other_slot_state == MCUBOOT_DIRECT_XIP_BOOT_ONCE) {
 			lt = NEXT_BOOT_TYPE_TEST;
 			return_slot = other_slot;
+		} else {
+			/* active slot will boot next time. */
 		}
 	} else {
 		/* There is neither a preference nor a necessity to boot the other slot.
@@ -364,7 +331,8 @@ img_mgmt_slot_in_use(int slot)
 	int image = img_mgmt_slot_to_image(slot);
 	int active_slot = img_mgmt_active_slot(image);
 
-#if !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) && \
+#if defined(CONFIG_BOOTLOADER_MCUBOOT) && \
+	!defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) && \
 	!defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) && \
 	!defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT) && \
 	!defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_FIRMWARE_UPDATER)
@@ -460,10 +428,10 @@ static bool img_mgmt_state_encode_slot(struct smp_streamer *ctxt, uint32_t slot,
 	zcbor_state_t *zse = ctxt->writer->zs;
 	uint32_t flags;
 	char vers_str[IMG_MGMT_VER_MAX_STR_LEN];
-	uint8_t hash[IMAGE_SHA_LEN];
+	uint8_t hash[DFU_BOOT_IMG_SHA_LEN];
 	struct zcbor_string zhash = {
 		.value = hash,
-		.len = IMAGE_SHA_LEN,
+		.len = DFU_BOOT_IMG_SHA_LEN,
 	};
 	struct image_version ver;
 	bool ok;
@@ -506,7 +474,7 @@ static bool img_mgmt_state_encode_slot(struct smp_streamer *ctxt, uint32_t slot,
 
 	ok = ok && zcbor_tstr_put_lit(zse, "hash")					&&
 	     zcbor_bstr_encode(zse, &zhash)						&&
-	     ZCBOR_ENCODE_FLAG(zse, "bootable", !(flags & IMAGE_F_NON_BOOTABLE))	&&
+	     ZCBOR_ENCODE_FLAG(zse, "bootable", !(flags & DFU_BOOT_IMG_F_NON_BOOTABLE))	&&
 	     ZCBOR_ENCODE_FLAG(zse, "pending", state_flags & REPORT_SLOT_PENDING)	&&
 	     ZCBOR_ENCODE_FLAG(zse, "confirmed", state_flags & REPORT_SLOT_CONFIRMED)	&&
 	     ZCBOR_ENCODE_FLAG(zse, "active", state_flags & REPORT_SLOT_ACTIVE)		&&
@@ -629,33 +597,16 @@ img_mgmt_state_read(struct smp_streamer *ctxt)
 
 static int img_mgmt_set_next_boot_slot_common(int slot, int active_slot, bool confirm)
 {
-	const struct flash_area *fa;
-	int area_id = img_mgmt_flash_area_id(slot);
 	int rc = 0;
 
-	if (flash_area_open(area_id, &fa) != 0) {
-		return IMG_MGMT_ERR_FLASH_OPEN_FAILED;
-	}
-
-	rc = boot_set_next(fa, slot == active_slot, confirm);
+	rc = dfu_boot_set_next(slot, slot == active_slot, confirm);
 	if (rc != 0) {
 		/* Failed to set next slot for boot as desired */
-		LOG_ERR("Failed boot_set_next with code %d, for slot %d,"
+		LOG_ERR("Failed dfu_boot_set_next with code %d, for slot %d,"
 			" with active slot %d and confirm %d",
 			 rc, slot, active_slot, confirm);
-
-		/* Translate from boot util error code to IMG mgmt group error code */
-		if (rc == BOOT_EFLASH) {
-			rc = IMG_MGMT_ERR_FLASH_WRITE_FAILED;
-		} else if (rc == BOOT_EBADVECT) {
-			rc = IMG_MGMT_ERR_INVALID_IMAGE_VECTOR_TABLE;
-		} else if (rc == BOOT_EBADIMAGE) {
-			rc = IMG_MGMT_ERR_INVALID_IMAGE_HEADER_MAGIC;
-		} else {
-			rc = IMG_MGMT_ERR_UNKNOWN;
-		}
+		return IMG_MGMT_ERR_FLASH_WRITE_FAILED;
 	}
-	flash_area_close(fa);
 
 #if defined(CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS)
 	if (rc == 0 && slot == active_slot && confirm) {
@@ -663,12 +614,13 @@ static int img_mgmt_set_next_boot_slot_common(int slot, int active_slot, bool co
 		int32_t err_rc;
 		uint16_t err_group;
 		struct img_mgmt_image_confirmed confirmed_data = {
-			.image = img_mgmt_slot_to_image(slot)
-		};
+			.image = img_mgmt_slot_to_image(slot)};
 
 		(void)mgmt_callback_notify(MGMT_EVT_OP_IMG_MGMT_DFU_CONFIRMED, &confirmed_data,
 					   sizeof(confirmed_data), &err_rc, &err_group);
 	}
+#else
+	ARG_UNUSED(active_slot);
 #endif
 
 	return rc;
@@ -826,14 +778,14 @@ img_mgmt_state_write(struct smp_streamer *ctxt)
 					     IMG_MGMT_ERR_INVALID_HASH);
 			goto end;
 		}
-	} else if (zhash.len != IMAGE_SHA_LEN) {
+	} else if (zhash.len != DFU_BOOT_IMG_SHA_LEN) {
 		/* The img_mgmt_find_by_hash does exact length compare
 		 * so just fail here.
 		 */
 		ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_IMAGE, IMG_MGMT_ERR_INVALID_HASH);
 		goto end;
 	} else {
-		uint8_t hash[IMAGE_SHA_LEN];
+		uint8_t hash[DFU_BOOT_IMG_SHA_LEN];
 
 		memcpy(hash, zhash.value, zhash.len);
 
