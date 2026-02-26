@@ -1226,12 +1226,20 @@
 		pinmux = <MCHP_XEC_PINMUX(0251, MCHP_AF1)>;
 	};
 
+	/omit-if-no-ref/ pspi_sdo_gpio251: pspi_sdo_gpio251 {
+		pinmux = <MCHP_XEC_PINMUX(0251, MCHP_AF2)>;
+	};
+
 	/omit-if-no-ref/ spi0_int_sdo_gpio251: spi0_int_sdo_gpio251 {
 		pinmux = <MCHP_XEC_PINMUX(0251, MCHP_AF3)>;
 	};
 
-	/omit-if-no-ref/ spi0_int_io1_gpio252: spi0_int_io1_gpio252 {
+	/omit-if-no-ref/ int_spi_io1_gpio252: int_spi_io1_gpio252 {
 		pinmux = <MCHP_XEC_PINMUX(0252, MCHP_AF1)>;
+	};
+
+	/omit-if-no-ref/ pspi_sdi_gpio252: pspi_sdi_gpio252 {
+		pinmux = <MCHP_XEC_PINMUX(0252, MCHP_AF2)>;
 	};
 
 	/omit-if-no-ref/ spi0_int_sdi_gpio252: spi0_int_sdi_gpio252 {
@@ -1250,12 +1258,20 @@
 		pinmux = <MCHP_XEC_PINMUX(0256, MCHP_AF1)>;
 	};
 
+	/omit-if-no-ref/ pspi_cs_n_gpio256: pspi_cs_n_gpio256 {
+		pinmux = <MCHP_XEC_PINMUX(0256, MCHP_AF2)>;
+	};
+
 	/omit-if-no-ref/ spi0_int_cs_n_gpio256: spi0_int_cs_n_gpio256 {
 		pinmux = <MCHP_XEC_PINMUX(0256, MCHP_AF3)>;
 	};
 
 	/omit-if-no-ref/ int_spi_clk_gpio257: int_spi_clk_gpio257 {
 		pinmux = <MCHP_XEC_PINMUX(0257, MCHP_AF1)>;
+	};
+
+	/omit-if-no-ref/ pspi_clk_gpio257: pspi_clk_gpio257 {
+		pinmux = <MCHP_XEC_PINMUX(0257, MCHP_AF2)>;
 	};
 
 	/omit-if-no-ref/ spi0_int_clk_gpio257: spi0_int_clk_gpio257 {

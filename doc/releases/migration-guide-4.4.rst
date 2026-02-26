@@ -483,6 +483,8 @@ EEPROM
 * Added :c:func:`eeprom_target_read_data()` and :c:func:`eeprom_target_write_data()` which takes an
   offset and length and deprecated :c:func:`eeprom_target_program()` for the I2C EEPROM target driver.
 
+* Updated :dtcompatible:`microchip,xec-eeprom` for PCR and GIRQ properties to use new macros (:github:`104591`).
+
 ESP32-S3
 ========
 
