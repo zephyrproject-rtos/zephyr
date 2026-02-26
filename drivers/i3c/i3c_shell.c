@@ -1951,7 +1951,7 @@ static int cmd_i3c_ibi_hj_response(const struct shell *sh, size_t argc, char **a
 	bool ack;
 	int ret;
 
-	dev = device_get_binding(argv[ARGV_DEV]);
+	dev = shell_device_get_binding(argv[ARGV_DEV]);
 	if (!dev) {
 		shell_error(sh, "I3C: Device driver %s not found.", argv[ARGV_DEV]);
 		return -ENODEV;
