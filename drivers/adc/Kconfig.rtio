@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_RTIO
+	bool "ADC RTIO context"
+	select RTIO
+
+if ADC_RTIO
+
+config ADC_RTIO_WRAPPER
+	bool "ADC RTIO wrapper API implementations"
+	default y
+	help
+	  Include implementations of the adc_channel_setup(), adc_read() and adc_read_async() APIs
+	  with the ADC RTIO context.
+
+endif # ADC_RTIO

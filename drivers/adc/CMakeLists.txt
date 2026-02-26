@@ -7,6 +7,7 @@ zephyr_library()
 zephyr_library_sources_ifdef(CONFIG_ADC adc_common.c)
 zephyr_library_sources_ifdef(CONFIG_ADC_SHELL adc_shell.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE adc_handlers.c)
+zephyr_library_sources_ifdef(CONFIG_ADC_RTIO adc_rtio.c)
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_ADC_AD405X adc_ad405x.c)

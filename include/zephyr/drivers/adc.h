@@ -1505,6 +1505,249 @@ extern const struct rtio_iodev_api __adc_iodev_api;
 	};											\
 	RTIO_IODEV_DEFINE(name, &__adc_iodev_api, &_CONCAT(__adc_read_config_, name))
 
+#if defined(CONFIG_ADC_RTIO) || defined(__DOXYGEN__)
+
+/**
+ * @name ADC RTIO API
+ *
+ * Theses functions are for using the ADC driver class through an RTIO-based API
+ *
+ * @{
+ */
+
+/**
+ * @brief Prepare an ADC_CHANNEL_SETUP op submission
+ *
+ * The ADC_CHANNEL_SETUP operation has similar semantics to @ref adc_channel_setup.
+ *
+ * @param[in] sqe Submission queue event to prepare
+ * @param[in] iodev Iodev to perform submission queue event
+ * @param[in] prio Priority of the submission queue event
+ * @param[in] channel_cfg Channel configuration to set up
+ * @param[in] userdata Optional userdata passed with CQE
+ */
+static inline void adc_rtio_sqe_prep_channel_setup(struct rtio_sqe *sqe,
+						   const struct rtio_iodev *iodev,
+						   int8_t prio,
+						   const struct adc_channel_cfg *channel_cfg,
+						   void *userdata)
+{
+	memset(sqe, 0, sizeof(struct rtio_sqe));
+	sqe->op = RTIO_OP_ADC_CHANNEL_SETUP;
+	sqe->prio = prio;
+	sqe->iodev = iodev;
+	sqe->adc_channel_setup.channel_cfg = channel_cfg;
+	sqe->userdata = userdata;
+}
+
+/**
+ * @brief Prepare an ADC_READ op submission
+ *
+ * The ADC_READ operation has similar semantics to @ref adc_read_async as it will
+ * perform the read sequence asynchronously.
+ *
+ * @param[in] sqe Submission queue event to prepare
+ * @param[in] iodev Iodev to perform submission queue event
+ * @param[in] prio Priority of the submission queue event
+ * @param[in] sequence Read sequence to perform
+ * @param[in] userdata Optional userdata passed with CQE
+ */
+static inline void adc_rtio_sqe_prep_read(struct rtio_sqe *sqe,
+					  const struct rtio_iodev *iodev,
+					  int8_t prio,
+					  const struct adc_sequence *sequence,
+					  void *userdata)
+{
+	memset(sqe, 0, sizeof(struct rtio_sqe));
+	sqe->op = RTIO_OP_ADC_READ;
+	sqe->prio = prio;
+	sqe->iodev = iodev;
+	sqe->adc_read.sequence = sequence;
+	sqe->userdata = userdata;
+}
+
+/** @cond INTERNAL_HIDDEN */
+
+extern const struct rtio_iodev_api adc_rtio_iodev_api;
+
+/** @endcond */
+
+/**
+ * @brief Statically define an ADC iodev for ADC controller by devicetree node identifier
+ *
+ * @param[in] _name Symbolic name to use for defining the iodev
+ * @param[in] _node_id Devicetree node identifier
+ */
+#define ADC_DT_IODEV_DEFINE(_name, _node_id)							\
+	static const struct adc_dt_spec CONCAT(_adc_dt_spec_, _name) = {			\
+		.dev = DEVICE_DT_GET(_node_id),							\
+	};											\
+												\
+	static RTIO_IODEV_DEFINE(								\
+		_name,										\
+		&adc_rtio_iodev_api,								\
+		(void *)&CONCAT(_adc_dt_spec_, _name)						\
+	)
+
+/**
+ * @brief Statically define an ADC iodev for ADC channel by devicetree node identifier and index
+ *
+ * @param[in] _name Symbolic name to use for defining the iodev
+ * @param[in] _node_id Devicetree node identifier
+ * @param[in] _chan_idx ADC channel index
+ *
+ * @see ADC_DT_SPEC_GET_BY_IDX
+ */
+#define ADC_DT_CHAN_IODEV_DEFINE_BY_IDX(_name, _node_id, _chan_idx)				\
+	static const struct adc_dt_spec CONCAT(_adc_dt_spec_, _name) =				\
+		ADC_DT_SPEC_GET_BY_IDX(_node_id, _chan_idx);					\
+												\
+	static RTIO_IODEV_DEFINE(								\
+		_name,										\
+		&adc_rtio_iodev_api,								\
+		(void *)&CONCAT(_adc_dt_spec_, _name)						\
+	)
+
+/**
+ * @brief Statically define an ADC iodev for ADC channel by devicetree node identifier and name
+ *
+ * @param[in] _name Symbolic name to use for defining the iodev
+ * @param[in] _node_id Devicetree node identifier
+ * @param[in] _chan_name ADC channel name
+ *
+ * @see ADC_DT_SPEC_GET_BY_NAME
+ */
+#define ADC_DT_CHAN_IODEV_DEFINE_BY_NAME(_name, _node_id, _chan_name)				\
+	static const struct adc_dt_spec CONCAT(_adc_dt_spec_, _name) =				\
+		ADC_DT_SPEC_GET_BY_NAME(_node_id, _chan_name);					\
+												\
+	static RTIO_IODEV_DEFINE(								\
+		_name,										\
+		&adc_rtio_iodev_api,								\
+		(void *)&CONCAT(_adc_dt_spec_, _name)						\
+	)
+
+/**
+ * @brief Statically define an ADC iodev for ADC channel by devicetree node identifier
+ *
+ * Defines ADC iodev for the first ADC channel.
+ *
+ * @param[in] _name Symbolic name to use for defining the iodev
+ * @param[in] _node_id Devicetree node identifier
+ *
+ * @see ADC_DT_SPEC_GET
+ */
+#define ADC_DT_CHAN_IODEV_DEFINE(_name, _node_id) \
+	ADC_DT_CHAN_IODEV_DEFINE_BY_IDX(_name, _node_id, 0)
+
+/**
+ * @brief Device driver instance variants of ADC_DT_IODEV_ macros
+ *
+ * @see ADC_DT_IODEV_DEFINE_BY_IDX
+ * @see ADC_DT_IODEV_DEFINE_BY_NAME
+ * @see ADC_DT_IODEV_DEFINE
+ *
+ * @{
+ */
+
+#define ADC_DT_INST_IODEV_DEFINE(_name, _inst) \
+	ADC_DT_IODEV_DEFINE(_name, DT_DRV_INST(_inst))
+
+#define ADC_DT_INST_CHAN_IODEV_DEFINE_BY_IDX(_name, _inst, _chan_idx) \
+	ADC_DT_CHAN_IODEV_DEFINE_BY_IDX(_name, DT_DRV_INST(_inst), _chan_idx)
+
+#define ADC_DT_INST_CHAN_IODEV_DEFINE_BY_NAME(_name, _inst, _chan_name) \
+	ADC_DT_CHAN_IODEV_DEFINE_BY_NAME(_name, DT_DRV_INST(_inst), _chan_name)
+
+#define ADC_DT_INST_CHAN_IODEV_DEFINE(_name, _inst) \
+	ADC_DT_CHAN_IODEV_DEFINE(_name, DT_DRV_INST(_inst))
+
+/**
+ * @}
+ */
+
+/**
+ * @brief Prepare an ADC_CHANNEL_SETUP op submission from ADC channel iodev
+ *
+ * The ADC channel configuration to set up is retrieved from the provided iodev.
+ *
+ * @see adc_rtio_sqe_prep_channel_setup
+ *
+ * @param[in] sqe Submission queue event to prepare
+ * @param[in] iodev Iodev to perform submission queue event and get configuration from
+ * @param[in] prio Priority of the submission queue event
+ * @param[in] userdata Optional userdata passed with CQE
+ */
+static inline void adc_rtio_sqe_prep_channel_setup_iodev(struct rtio_sqe *sqe,
+							 const struct rtio_iodev *iodev,
+							 int8_t prio,
+							 void *userdata)
+{
+	const struct adc_dt_spec *spec = (const struct adc_dt_spec *)iodev->data;
+	const struct adc_channel_cfg *channel_cfg = &spec->channel_cfg;
+
+	__ASSERT_NO_MSG(spec->channel_cfg_dt_node_exists);
+
+	adc_rtio_sqe_prep_channel_setup(sqe,
+					iodev,
+					prio,
+					channel_cfg,
+					userdata);
+}
+
+
+/**
+ * @brief Prepare an ADC_READ op submission from ADC channel iodev
+ *
+ * The ADC channel to use up is retrieved from the provided iodev.
+ *
+ * @see adc_rtio_sqe_prep_read
+ *
+ * @param[in] sqe Submission queue event to prepare
+ * @param[in] iodev Iodev to perform submission queue event and get configuration from
+ * @param[in] prio Priority of the submission queue event
+ * @param[in] sequence Read sequence to perform
+ * @param[in] userdata Optional userdata passed with CQE
+ */
+static inline void adc_rtio_sqe_prep_read_iodev(struct rtio_sqe *sqe,
+						const struct rtio_iodev *iodev,
+						int8_t prio,
+						struct adc_sequence *sequence,
+						void *userdata)
+{
+	const struct adc_dt_spec *spec = (const struct adc_dt_spec *)iodev->data;
+	const struct adc_channel_cfg *channel_cfg = &spec->channel_cfg;
+
+	__ASSERT_NO_MSG(spec->channel_cfg_dt_node_exists);
+
+	sequence->channels = BIT(channel_cfg->channel_id);
+
+	adc_rtio_sqe_prep_read(sqe,
+			       iodev,
+			       prio,
+			       sequence,
+			       userdata);
+}
+
+/**
+ * @brief Validate that ADC of ADC iodev is ready.
+ *
+ * @param iodev ADC iodev to validate
+ *
+ * @retval true if ADC of ADC iodev is ready
+ * @retval false if ADC of ADC iodev is not ready
+ */
+static inline bool adc_is_ready_iodev(const struct rtio_iodev *iodev)
+{
+	const struct adc_dt_spec *spec = (const struct adc_dt_spec *)iodev->data;
+
+	return adc_is_ready_dt(spec);
+}
+
+/** @} */
+
+#endif /* CONFIG_ADC_RTIO || __DOXYGEN__ */
+
 #ifdef __cplusplus
 }
 #endif
