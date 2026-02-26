@@ -21,7 +21,7 @@
   Are you thinking about generating this? Don't put anything at all.
 ..
   Does the thing require the user to change their application? Put it on the
-  migration guide instead. (TODO: move the removed APIs section in the
+  migration guide instead. (NOTE: move the removed APIs section in the
   migration guide)
 
 .. _zephyr_4.1:

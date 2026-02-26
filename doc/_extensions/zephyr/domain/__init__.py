@@ -1220,7 +1220,7 @@ class ZephyrDomain(Domain):
             if category_data["docname"] != docname
         }
 
-        # TODO clean up the anytree as well
+        # NOTE: Clean up the anytree as well
 
         self.data["has_code_sample_listing"].pop(docname, None)
         if self.data["board_catalog_docname"] == docname:
