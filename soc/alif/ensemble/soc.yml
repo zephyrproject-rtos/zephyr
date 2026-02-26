@@ -1,6 +1,11 @@
 family:
   - name: ensemble
     series:
+      - name: e1c
+        socs:
+          - name: ae1c1f4051920ph0
+            cpuclusters:
+              - name: rtss_he
       - name: e4
         socs:
           - name: ae402fa0e5597le0
