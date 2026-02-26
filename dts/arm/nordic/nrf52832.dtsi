@@ -45,6 +45,8 @@
 	};
 
 	soc {
+		compatible = "simple-bus";
+
 		ficr: ficr@10000000 {
 			compatible = "nordic,nrf-ficr";
 			reg = <0x10000000 0x1000>;
@@ -417,7 +419,7 @@
 		flash_controller: flash-controller@4001e000 {
 			compatible = "nordic,nrf52-flash-controller";
 			reg = <0x4001e000 0x1000>;
-
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -425,6 +427,9 @@
 				compatible = "soc-nv-flash";
 				erase-block-size = <4096>;
 				write-block-size = <4>;
+				status = "okay";
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 

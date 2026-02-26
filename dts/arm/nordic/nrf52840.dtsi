@@ -429,9 +429,8 @@
 		flash_controller: flash-controller@4001e000 {
 			compatible = "nordic,nrf52-flash-controller";
 			reg = <0x4001e000 0x1000>;
-			ranges = <0x0 0x0 DT_SIZE_K(1024)>;
+			ranges;
 			partial-erase;
-			status = "okay";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -440,7 +439,7 @@
 				erase-block-size = <4096>;
 				write-block-size = <4>;
 				reg = <0x0 DT_SIZE_K(1024)>;
-				ranges;
+				ranges = <0x0 0x0 DT_SIZE_K(1024)>;
 				status = "okay";
 				#address-cells = <1>;
 				#size-cells = <1>;
