@@ -895,6 +895,7 @@
 		rram_controller: rram-controller@5004e000 {
 			compatible = "nordic,rram-controller";
 			reg = <0x5004e000 0x1000>;
+			ranges;
 			interrupts = <78 NRF_DEFAULT_IRQ_PRIORITY>;
 			#address-cells = <1>;
 			#size-cells = <1>;
