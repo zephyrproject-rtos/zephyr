@@ -4,7 +4,7 @@
 config INPUT_CHSC6X
 	bool "Use CHSC6X capacitive touch panel driver"
 	default y
-	depends on DT_HAS_CHIPSEMI_CHSC6X_ENABLED
+	depends on DT_HAS_CHIPSEMI_CHSC6X_ENABLED || DT_HAS_CHIPSEMI_CHSC6540_ENABLED
 	select GPIO
 	select I2C
 	help
