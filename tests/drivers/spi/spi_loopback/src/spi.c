@@ -676,7 +676,10 @@ ZTEST(spi_loopback, test_spi_write_back)
 /* similar to test_spi_write_back, simulates the real common case of 1 word command */
 ZTEST(spi_loopback, test_spi_same_buf_cmd)
 {
-	if (IS_ENABLED(CONFIG_SPI_STM32_DMA) || IS_ENABLED(CONFIG_DSPI_MCUX_EDMA)) {
+	if (IS_ENABLED(CONFIG_SPI_STM32_DMA) ||
+	    IS_ENABLED(CONFIG_DSPI_MCUX_EDMA) ||
+	    IS_ENABLED(CONFIG_SPI_NRFX_SPIM) ||
+	    IS_ENABLED(CONFIG_SPI_NRFX_SPIM_RTIO)) {
 		ztest_test_skip();
 	}
 
