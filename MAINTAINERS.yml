@@ -3936,20 +3936,28 @@ Networking:
     - doc/connectivity/networking/api/ptp.rst
     - doc/connectivity/networking/api/wifi.rst
     - doc/connectivity/networking/api/http*.rst
+    - doc/connectivity/networking/api/ethernet*.rst
+    - doc/connectivity/networking/api/lldp.rst
+    - doc/connectivity/networking/api/vlan.rst
+    - doc/connectivity/networking/dsa*
+    - doc/connectivity/networking/eth_*.rst
     - include/zephyr/net/gptp.h
     - include/zephyr/net/ieee802154*.h
     - include/zephyr/net/ptp.h
     - include/zephyr/net/wifi*.h
     - include/zephyr/net/dhcpv4*.h
     - include/zephyr/net/http/
-    - samples/net/ethernet/gptp/
+    - include/zephyr/net/ethernet*.h
+    - include/zephyr/net/dsa*.h
+    - include/zephyr/net/lldp.h
+    - samples/net/ethernet/
     - samples/net/sockets/coap_*/
     - samples/net/sockets/*http*/
     - samples/net/lwm2m_client/
     - samples/net/ocpp/
     - samples/net/wifi/
     - samples/net/dhcpv4_client/
-    - subsys/net/l2/ethernet/gptp/
+    - subsys/net/l2/ethernet/
     - subsys/net/l2/ieee802154/
     - subsys/net/l2/wifi/
     - subsys/net/lib/coap/
@@ -3965,6 +3973,10 @@ Networking:
     - tests/net/lib/ocpp/
     - tests/net/lib/http*/
     - tests/net/wifi/
+    - tests/net/arp/
+    - tests/net/bridge/
+    - tests/net/ethernet_mgmt/
+    - tests/net/vlan/
   labels:
     - "area: Networking"
   tests:
@@ -4071,6 +4083,38 @@ Networking:
     - "area: DSA"
   tests:
     - sample.net.dsa
+
+"Networking: Ethernet":
+  status: maintained
+  maintainers:
+    - rlubos
+    - jukkar
+  collaborators:
+    - yangbolu1991
+    - pdgendt
+  files:
+    - subsys/net/l2/ethernet/
+    - include/zephyr/net/ethernet*.h
+    - include/zephyr/net/lldp.h
+    - samples/net/ethernet/
+    - tests/net/arp/
+    - tests/net/bridge/
+    - tests/net/ethernet_mgmt/
+    - tests/net/vlan/
+    - doc/connectivity/networking/api/ethernet*.rst
+    - doc/connectivity/networking/api/lldp.rst
+    - doc/connectivity/networking/api/vlan.rst
+    - doc/connectivity/networking/eth_*.rst
+  files-exclude:
+    - subsys/net/l2/ethernet/dsa/
+    - subsys/net/l2/ethernet/gptp/
+    - samples/net/ethernet/dsa/
+    - samples/net/ethernet/gptp/
+  labels:
+    - "area: Networking"
+    - "area: Ethernet"
+  tests:
+    - sample.net.ethernet
 
 "Networking: HTTP":
   status: maintained
