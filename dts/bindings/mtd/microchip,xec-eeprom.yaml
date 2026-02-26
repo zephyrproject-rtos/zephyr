@@ -5,20 +5,16 @@ description: Microchip on-chip EEPROM
 
 compatible: "microchip,xec-eeprom"
 
-include: [eeprom-base.yaml, pinctrl-device.yaml]
+include:
+  - name: eeprom-base.yaml
+  - name: pinctrl-device.yaml
+  - name: microchip,dmec-ecia-girq.yaml
 
 properties:
   reg:
     required: true
 
-  girqs:
-    type: array
+  pcr-scr:
+    type: int
     required: true
-    description: |
-      Array of GIRQ and bit position pairs for each interrupt
-      signal the block generates.
-
-  pcrs:
-    type: array
-    required: true
-    description: PS2 PCR register index and bit position
+    description: EEPROM PCR register index and bit position
