@@ -17,6 +17,7 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/byteorder.h>
 #include <stdlib.h>
 #include <string.h>
 #include <zephyr/drivers/uart.h>
@@ -140,6 +141,19 @@ static int pms7003_sample_fetch(const struct device *dev,
 	if (uart_read_bytes(cfg->uart_dev, pms7003_receive_buffer, 30,
 			    CFG_PMS7003_SERIAL_TIMEOUT) < 0) {
 		return -ETIME;
+	}
+
+	/* check crc, (start bytes + receive buffer) */
+	uint16_t crc = pms7003_start_bytes[0] + pms7003_start_bytes[1];
+
+	for (int i = 0; i < 28; i++) {
+		crc += pms7003_receive_buffer[i];
+	}
+
+	uint16_t expected_crc = sys_get_be16(&pms7003_receive_buffer[28]);
+
+	if (crc != expected_crc) {
+		LOG_WRN("crc error");
 	}
 
 	drv_data->pm_1_0_cf = (pms7003_receive_buffer[2] << 8) + pms7003_receive_buffer[3];
