@@ -20,6 +20,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/iso.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -294,8 +295,19 @@ struct bt_cap_common_client {
 	const struct bt_csip_set_coordinator_csis_inst *csis_inst;
 };
 
+/**
+ * Returns the current active proc with the mutex taken.
+ *
+ * The caller is responsible for unlocking the mutex.
+ */
 struct bt_cap_common_proc *bt_cap_common_get_active_proc(void);
-void bt_cap_common_clear_active_proc(void);
+void bt_cap_common_unlock_proc(void);
+/**
+ * @brief Clear and unlock @p proc
+ *
+ * @param proc The procedure to unlock and clear
+ */
+void bt_cap_common_clear_proc(struct bt_cap_common_proc *proc);
 void bt_cap_common_set_proc(enum bt_cap_common_proc_type proc_type, size_t proc_cnt);
 void bt_cap_common_set_subproc(enum bt_cap_common_subproc_type subproc_type);
 void bt_cap_common_set_handover_active(void);
@@ -327,28 +339,32 @@ bool bt_cap_initiator_stream_is_in_state(const struct bt_bap_stream *bap_stream,
 					 enum bt_bap_ep_state state);
 bool bt_cap_initiator_valid_unicast_audio_stop_param(
 	const struct bt_cap_unicast_audio_stop_param *param);
-int cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start_param *param);
-int cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_param *param);
+int cap_initiator_unicast_audio_start(struct bt_cap_common_proc *active_proc,
+				      const struct bt_cap_unicast_audio_start_param *param);
+int cap_initiator_unicast_audio_stop(struct bt_cap_common_proc *active_proc,
+				     const struct bt_cap_unicast_audio_stop_param *param);
 enum bt_bap_ep_state bt_cap_initiator_stream_get_state(const struct bt_bap_stream *bap_stream);
 
 int cap_commander_broadcast_reception_start(
-	const struct bt_cap_commander_broadcast_reception_start_param *param);
-int cap_commander_broadcast_reception_start(
+	struct bt_cap_common_proc *active_proc,
 	const struct bt_cap_commander_broadcast_reception_start_param *param);
 int cap_commander_broadcast_reception_stop(
+	struct bt_cap_common_proc *active_proc,
 	const struct bt_cap_commander_broadcast_reception_stop_param *param);
 bool bt_cap_commander_valid_broadcast_reception_stop_param(
 	const struct bt_cap_commander_broadcast_reception_stop_param *param);
 void cap_commander_register_broadcast_assistant_callbacks(void);
 
-void bt_cap_handover_complete(void);
-void bt_cap_handover_unicast_to_broadcast_setup_broadcast(void);
+/** Completes the handover procedure. This also unlocks the active_proc_mutex. */
+void bt_cap_handover_complete(struct bt_cap_common_proc *active_proc);
+int bt_cap_handover_unicast_to_broadcast_setup_broadcast(struct bt_cap_common_proc *active_proc);
 void bt_cap_handover_unicast_to_broadcast_reception_start(void);
-void bt_cap_handover_unicast_proc_complete(void);
+/** Completes the unicast procedure. This also unlocks the active_proc_mutex. */
+void bt_cap_handover_unicast_proc_complete(struct bt_cap_common_proc *active_proc);
 void bt_cap_handover_broadcast_source_stopped(uint8_t reason);
-void bt_cap_handover_broadcast_audio_stopped(void);
+int bt_cap_handover_broadcast_audio_stopped(struct bt_cap_common_proc *active_proc);
 void bt_cap_handover_receive_state_updated(const struct bt_conn *conn,
 					   const struct bt_bap_scan_delegator_recv_state *state);
 bool bt_cap_handover_is_handover_broadcast_source(
 	const struct bt_cap_broadcast_source *cap_broadcast_source);
-int bt_cap_handover_broadcast_reception_stopped(void);
+int bt_cap_handover_broadcast_reception_stopped(struct bt_cap_common_proc *active_proc);
