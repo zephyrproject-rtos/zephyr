@@ -25,6 +25,7 @@
 #define TEST_IRQ	DT_NODELABEL(test_irq)
 #define TEST_IRQ_EXT	DT_NODELABEL(test_irq_extended)
 #define TEST_TEMP	DT_NODELABEL(test_temp_sensor)
+#define TEST_DAC	DT_NODELABEL(test_dac_outputs)
 #define TEST_REG	DT_NODELABEL(test_reg)
 #define TEST_VENDOR	DT_NODELABEL(test_vendor)
 #define TEST_MODEL	DT_NODELABEL(test_vendor)
@@ -92,6 +93,8 @@
 
 #define TEST_IO_CHANNEL_CTLR_1 DT_NODELABEL(test_adc_1)
 #define TEST_IO_CHANNEL_CTLR_2 DT_NODELABEL(test_adc_2)
+#define TEST_IO_CHANNEL_CTLR_3 DT_NODELABEL(test_dac_1)
+#define TEST_IO_CHANNEL_CTLR_4 DT_NODELABEL(test_dac_2)
 
 #define TEST_RANGES_PCIE  DT_NODELABEL(test_ranges_pcie)
 #define TEST_RANGES_OTHER DT_NODELABEL(test_ranges_other)
@@ -1393,7 +1396,7 @@ ZTEST(devicetree_api, test_gpio)
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_adc_temp_sensor
-ZTEST(devicetree_api, test_io_channels)
+ZTEST(devicetree_api, test_io_channel_inputs)
 {
 	/* DT_IO_CHANNELS_CTLR_BY_IDX */
 	zassert_true(DT_SAME_NODE(DT_IO_CHANNELS_CTLR_BY_IDX(TEST_TEMP, 0),
@@ -1438,6 +1441,55 @@ ZTEST(devicetree_api, test_io_channels)
 	zassert_equal(DT_INST_IO_CHANNELS_INPUT_BY_NAME(0, ch1), 10, "");
 	zassert_equal(DT_INST_IO_CHANNELS_INPUT_BY_NAME(0, ch2), 20, "");
 	zassert_equal(DT_INST_IO_CHANNELS_INPUT(0), 10, "");
+}
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_dac_outputs
+ZTEST(devicetree_api, test_io_channel_outputs)
+{
+	/* DT_IO_CHANNELS_CTLR_BY_IDX */
+	zassert_true(DT_SAME_NODE(DT_IO_CHANNELS_CTLR_BY_IDX(TEST_DAC, 0),
+				  TEST_IO_CHANNEL_CTLR_3), "");
+	zassert_true(DT_SAME_NODE(DT_IO_CHANNELS_CTLR_BY_IDX(TEST_DAC, 1),
+				  TEST_IO_CHANNEL_CTLR_4), "");
+
+	/* DT_IO_CHANNELS_CTLR_BY_NAME */
+	zassert_true(DT_SAME_NODE(DT_IO_CHANNELS_CTLR_BY_NAME(TEST_DAC, ch1),
+				  TEST_IO_CHANNEL_CTLR_3), "");
+	zassert_true(DT_SAME_NODE(DT_IO_CHANNELS_CTLR_BY_NAME(TEST_DAC, ch2),
+				  TEST_IO_CHANNEL_CTLR_4), "");
+
+	/* DT_IO_CHANNELS_CTLR */
+	zassert_true(DT_SAME_NODE(DT_IO_CHANNELS_CTLR(TEST_DAC),
+				  TEST_IO_CHANNEL_CTLR_3), "");
+
+	/* DT_INST_IO_CHANNELS_CTLR_BY_IDX */
+	zassert_true(DT_SAME_NODE(DT_INST_IO_CHANNELS_CTLR_BY_IDX(0, 0),
+				  TEST_IO_CHANNEL_CTLR_3), "");
+	zassert_true(DT_SAME_NODE(DT_INST_IO_CHANNELS_CTLR_BY_IDX(0, 1),
+				  TEST_IO_CHANNEL_CTLR_4), "");
+
+	/* DT_INST_IO_CHANNELS_CTLR_BY_NAME */
+	zassert_true(DT_SAME_NODE(DT_INST_IO_CHANNELS_CTLR_BY_NAME(0, ch1),
+				  TEST_IO_CHANNEL_CTLR_3), "");
+	zassert_true(DT_SAME_NODE(DT_INST_IO_CHANNELS_CTLR_BY_NAME(0, ch2),
+				  TEST_IO_CHANNEL_CTLR_4), "");
+
+	/* DT_INST_IO_CHANNELS_CTLR */
+	zassert_true(DT_SAME_NODE(DT_INST_IO_CHANNELS_CTLR(0),
+				  TEST_IO_CHANNEL_CTLR_3), "");
+
+	zassert_equal(DT_IO_CHANNELS_OUTPUT_BY_IDX(TEST_DAC, 0), 10, "");
+	zassert_equal(DT_IO_CHANNELS_OUTPUT_BY_IDX(TEST_DAC, 1), 20, "");
+	zassert_equal(DT_IO_CHANNELS_OUTPUT_BY_NAME(TEST_DAC, ch1), 10, "");
+	zassert_equal(DT_IO_CHANNELS_OUTPUT_BY_NAME(TEST_DAC, ch2), 20, "");
+	zassert_equal(DT_IO_CHANNELS_OUTPUT(TEST_DAC), 10, "");
+
+	zassert_equal(DT_INST_IO_CHANNELS_OUTPUT_BY_IDX(0, 0), 10, "");
+	zassert_equal(DT_INST_IO_CHANNELS_OUTPUT_BY_IDX(0, 1), 20, "");
+	zassert_equal(DT_INST_IO_CHANNELS_OUTPUT_BY_NAME(0, ch1), 10, "");
+	zassert_equal(DT_INST_IO_CHANNELS_OUTPUT_BY_NAME(0, ch2), 20, "");
+	zassert_equal(DT_INST_IO_CHANNELS_OUTPUT(0), 10, "");
 }
 
 #undef DT_DRV_COMPAT
