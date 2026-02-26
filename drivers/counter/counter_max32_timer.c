@@ -330,7 +330,23 @@ static DEVICE_API(counter, counter_max32_driver_api) = {
 #define TIMER(_num)    DT_INST_PARENT(_num)
 #define MAX32_TIM(idx) ((mxc_tmr_regs_t *)DT_REG_ADDR(TIMER(idx)))
 
+#define COUNTER_MAX32_CLOCK_SOURCE(_num)                                                           \
+	DT_PROP(TIMER(_num), clock_source)
+
+#define COUNTER_MAX32_EXT_CLK_FREQ(_num)                                                           \
+	DT_PROP(DT_CLOCKS_CTLR_BY_IDX(TIMER(_num), 1), clock_frequency)
+
+#define COUNTER_MAX32_CLK_IS_EXT_CLK(_num)                                                         \
+	IS_EQ(COUNTER_MAX32_CLOCK_SOURCE(_num), ADI_MAX32_PRPH_CLK_SRC_EXTCLK)
+
+#define COUNTER_MAX32_CLOCK_FREQ(_num)                                                             \
+	COND_CODE_1(COUNTER_MAX32_CLK_IS_EXT_CLK(_num),                                            \
+		    (COUNTER_MAX32_EXT_CLK_FREQ(_num)),                                            \
+		    (ADI_MAX32_GET_PRPH_CLK_FREQ(DT_PROP(TIMER(_num), clock_source))))
+
 #define COUNTER_MAX32_DEFINE(_num)                                                                 \
+	BUILD_ASSERT(COUNTER_MAX32_CLOCK_FREQ(_num) > 0,                                           \
+		     "Counter clock frequency must be greater than 0");                            \
 	static struct max32_tmr_ch_data counter##_num##_ch_data[MAX32_TIMER_CH];                   \
 	PINCTRL_DT_INST_DEFINE(_num);                                                              \
 	static void max32_tmr_irq_init_##_num(const struct device *dev)                            \
@@ -345,8 +361,7 @@ static DEVICE_API(counter, counter_max32_driver_api) = {
 				.max_top_value = WRAP_MXC_IS_32B_TIMER(MAX32_TIM(_num))            \
 							 ? UINT32_MAX                              \
 							 : UINT16_MAX,                             \
-				.freq = ADI_MAX32_GET_PRPH_CLK_FREQ(                               \
-						DT_PROP(TIMER(_num), clock_source)) /              \
+				.freq = COUNTER_MAX32_CLOCK_FREQ(_num) /                           \
 					DT_PROP(TIMER(_num), prescaler),                           \
 				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                             \
 				.channels = MAX32_TIMER_CH,                                        \
