@@ -143,6 +143,14 @@
 			status = "disabled";
 		};
 
+		wdog1: wdog@30280000 {
+			compatible = "nxp,imx-wdog";
+			reg = <0x30280000 0x1000>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 79 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
 		gpt1: gpt@302d0000 {
 			compatible = "nxp,imx-gpt";
 			reg = <0x302d0000 DT_SIZE_K(64)>;
