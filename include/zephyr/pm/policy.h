@@ -256,21 +256,6 @@ void pm_policy_event_update(struct pm_policy_event *evt, int64_t uptime_ticks);
 void pm_policy_event_unregister(struct pm_policy_event *evt);
 
 /**
- * @brief Check if a state will disable a device
- *
- * This function allows client code to check if a state will disable a device.
- *
- * @param dev Device reference.
- * @param state The state to check on whether it disables the device.
- * @param substate_id The substate to check on whether it disables the device.
- *
- * @retval true if the state disables the device
- * @retval false if the state does not disable the device
- */
-bool pm_policy_device_is_disabling_state(const struct device *dev,
-					 enum pm_state state, uint8_t substate_id);
-
-/**
  * @brief Returns the ticks until the next event
  *
  * Returns a relative timeout, in uptime ticks, until the earliest (soonest)
@@ -392,6 +377,21 @@ void pm_policy_device_power_lock_get(const struct device *dev);
  */
 void pm_policy_device_power_lock_put(const struct device *dev);
 
+/**
+ * @brief Check if a state will disable a device
+ *
+ * This function allows client code to check if a state will disable a device.
+ *
+ * @param dev Device reference.
+ * @param state The state to check on whether it disables the device.
+ * @param substate_id The substate to check on whether it disables the device.
+ *
+ * @retval true if the state disables the device
+ * @retval false if the state does not disable the device
+ */
+bool pm_policy_device_is_disabling_state(const struct device *dev,
+					 enum pm_state state, uint8_t substate_id);
+
 #else
 
 static inline void pm_policy_device_power_lock_get(const struct device *dev)
@@ -402,6 +402,17 @@ static inline void pm_policy_device_power_lock_get(const struct device *dev)
 static inline void pm_policy_device_power_lock_put(const struct device *dev)
 {
 	ARG_UNUSED(dev);
+}
+
+static inline bool pm_policy_device_is_disabling_state(const struct device *dev,
+						       enum pm_state state,
+						       uint8_t substate_id)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
+
+	return false;
 }
 #endif /* CONFIG_PM_POLICY_DEVICE_CONSTRAINTS */
 
