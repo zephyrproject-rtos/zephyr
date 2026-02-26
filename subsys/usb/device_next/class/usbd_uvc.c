@@ -2026,6 +2026,133 @@ static int uvc_preinit(const struct device *dev)
 	return 0;
 }
 
+#if CONFIG_USBD_VIDEO_ISO
+#define USBD_VIDEO_ENDPOINT_DESC						\
+	.if1 = {								\
+		.bLength = sizeof(struct usb_if_descriptor),			\
+		.bDescriptorType = USB_DESC_INTERFACE,				\
+		.bInterfaceNumber = 1,						\
+		.bAlternateSetting = 0,						\
+		.bNumEndpoints = 0,						\
+		.bInterfaceClass = USB_BCC_VIDEO,				\
+		.bInterfaceSubClass = UVC_SC_VIDEOSTREAMING,			\
+		.bInterfaceProtocol = 0,					\
+		.iInterface = 0,						\
+	},									\
+										\
+	.if1_hdr = {								\
+		.bLength = sizeof(struct uvc_stream_header_descriptor),		\
+		.bDescriptorType = USB_DESC_CS_INTERFACE,			\
+		.bDescriptorSubtype = UVC_VS_INPUT_HEADER,			\
+		.bNumFormats = 0,						\
+		.wTotalLength = sys_cpu_to_le16(				\
+			sizeof(struct uvc_stream_header_descriptor)),		\
+		.bEndpointAddress = 0x81,					\
+		.bmInfo = 0,							\
+		.bTerminalLink = UVC_UNIT_ID_OT,				\
+		.bStillCaptureMethod = 0,					\
+		.bTriggerSupport = 0,						\
+		.bTriggerUsage = 0,						\
+		.bControlSize = 0,						\
+	},									\
+										\
+	.if1_color = {								\
+		.bLength = sizeof(struct uvc_color_descriptor),			\
+		.bDescriptorType = USB_DESC_CS_INTERFACE,			\
+		.bDescriptorSubtype = UVC_VS_COLORFORMAT,			\
+		.bColorPrimaries = UVC_COLOR_BT709,				\
+		.bTransferCharacteristics = UVC_COLOR_BT709,			\
+		.bMatrixCoefficients = UVC_COLOR_BT601,				\
+	},									\
+										\
+	.if1 = {								\
+		.bLength = sizeof(struct usb_if_descriptor),			\
+		.bDescriptorType = USB_DESC_INTERFACE,				\
+		.bInterfaceNumber = 1,						\
+		.bAlternateSetting = 1,						\
+		.bNumEndpoints = 1,						\
+		.bInterfaceClass = USB_BCC_VIDEO,				\
+		.bInterfaceSubClass = UVC_SC_VIDEOSTREAMING,			\
+		.bInterfaceProtocol = 0,					\
+		.iInterface = 0,						\
+	},									\
+										\
+	.if1_ep_fs = {								\
+		.bLength = sizeof(struct usb_ep_descriptor),			\
+		.bDescriptorType = USB_DESC_ENDPOINT,				\
+		.bEndpointAddress = 0x81,					\
+		.bmAttributes = USB_EP_TYPE_ISO,				\
+		.wMaxPacketSize = sys_cpu_to_le16(64),				\
+		.bInterval = 1,							\
+	},									\
+										\
+	.if1_ep_hs = {								\
+		.bLength = sizeof(struct usb_ep_descriptor),			\
+		.bDescriptorType = USB_DESC_ENDPOINT,				\
+		.bEndpointAddress = 0x81,					\
+		.bmAttributes = USB_EP_TYPE_ISO,				\
+		.wMaxPacketSize = sys_cpu_to_le16(512),				\
+		.bInterval = 1,							\
+	},
+#else
+#define USBD_VIDEO_ENDPOINT_DESC						\
+	.if1 = {								\
+		.bLength = sizeof(struct usb_if_descriptor),			\
+		.bDescriptorType = USB_DESC_INTERFACE,				\
+		.bInterfaceNumber = 1,						\
+		.bAlternateSetting = 0,						\
+		.bNumEndpoints = 1,						\
+		.bInterfaceClass = USB_BCC_VIDEO,				\
+		.bInterfaceSubClass = UVC_SC_VIDEOSTREAMING,			\
+		.bInterfaceProtocol = 0,					\
+		.iInterface = 0,						\
+	},									\
+										\
+	.if1_hdr = {								\
+		.bLength = sizeof(struct uvc_stream_header_descriptor),		\
+		.bDescriptorType = USB_DESC_CS_INTERFACE,			\
+		.bDescriptorSubtype = UVC_VS_INPUT_HEADER,			\
+		.bNumFormats = 0,						\
+		.wTotalLength = sys_cpu_to_le16(				\
+			sizeof(struct uvc_stream_header_descriptor)),		\
+		.bEndpointAddress = 0x81,					\
+		.bmInfo = 0,							\
+		.bTerminalLink = UVC_UNIT_ID_OT,				\
+		.bStillCaptureMethod = 0,					\
+		.bTriggerSupport = 0,						\
+		.bTriggerUsage = 0,						\
+		.bControlSize = 0,						\
+	},									\
+										\
+	.if1_color = {								\
+		.bLength = sizeof(struct uvc_color_descriptor),			\
+		.bDescriptorType = USB_DESC_CS_INTERFACE,			\
+		.bDescriptorSubtype = UVC_VS_COLORFORMAT,			\
+		.bColorPrimaries = UVC_COLOR_BT709,				\
+		.bTransferCharacteristics = UVC_COLOR_BT709,			\
+		.bMatrixCoefficients = UVC_COLOR_BT601,				\
+	},									\
+										\
+	.if1_ep_fs = {								\
+		.bLength = sizeof(struct usb_ep_descriptor),			\
+		.bDescriptorType = USB_DESC_ENDPOINT,				\
+		.bEndpointAddress = 0x81,					\
+		.bmAttributes = USB_EP_TYPE_BULK,				\
+		.wMaxPacketSize = sys_cpu_to_le16(64),				\
+		.bInterval = 0,							\
+	},									\
+										\
+	.if1_ep_hs = {								\
+		.bLength = sizeof(struct usb_ep_descriptor),			\
+		.bDescriptorType = USB_DESC_ENDPOINT,				\
+		.bEndpointAddress = 0x81,					\
+		.bmAttributes = USB_EP_TYPE_BULK,				\
+		.wMaxPacketSize = sys_cpu_to_le16(512),				\
+		.bInterval = 0,							\
+	},
+#endif
+
+
 #define UVC_DEFINE_DESCRIPTOR(n)						\
 static struct uvc_desc uvc_desc_##n = {						\
 	.iad = {								\
@@ -2130,61 +2257,8 @@ static struct uvc_desc uvc_desc_##n = {						\
 		.bSourceID = UVC_UNIT_ID_XU,					\
 		.iTerminal = 0,							\
 	},									\
-										\
-	.if1 = {								\
-		.bLength = sizeof(struct usb_if_descriptor),			\
-		.bDescriptorType = USB_DESC_INTERFACE,				\
-		.bInterfaceNumber = 1,						\
-		.bAlternateSetting = 0,						\
-		.bNumEndpoints = 1,						\
-		.bInterfaceClass = USB_BCC_VIDEO,				\
-		.bInterfaceSubClass = UVC_SC_VIDEOSTREAMING,			\
-		.bInterfaceProtocol = 0,					\
-		.iInterface = 0,						\
-	},									\
-										\
-	.if1_hdr = {								\
-		.bLength = sizeof(struct uvc_stream_header_descriptor),		\
-		.bDescriptorType = USB_DESC_CS_INTERFACE,			\
-		.bDescriptorSubtype = UVC_VS_INPUT_HEADER,			\
-		.bNumFormats = 0,						\
-		.wTotalLength = sys_cpu_to_le16(				\
-			sizeof(struct uvc_stream_header_descriptor)),		\
-		.bEndpointAddress = 0x81,					\
-		.bmInfo = 0,							\
-		.bTerminalLink = UVC_UNIT_ID_OT,				\
-		.bStillCaptureMethod = 0,					\
-		.bTriggerSupport = 0,						\
-		.bTriggerUsage = 0,						\
-		.bControlSize = 0,						\
-	},									\
-										\
-	.if1_color = {								\
-		.bLength = sizeof(struct uvc_color_descriptor),			\
-		.bDescriptorType = USB_DESC_CS_INTERFACE,			\
-		.bDescriptorSubtype = UVC_VS_COLORFORMAT,			\
-		.bColorPrimaries = UVC_COLOR_BT709,				\
-		.bTransferCharacteristics = UVC_COLOR_BT709,			\
-		.bMatrixCoefficients = UVC_COLOR_BT601,				\
-	},									\
-										\
-	.if1_ep_fs = {								\
-		.bLength = sizeof(struct usb_ep_descriptor),			\
-		.bDescriptorType = USB_DESC_ENDPOINT,				\
-		.bEndpointAddress = 0x81,					\
-		.bmAttributes = USB_EP_TYPE_BULK,				\
-		.wMaxPacketSize = sys_cpu_to_le16(64),				\
-		.bInterval = 0,							\
-	},									\
-										\
-	.if1_ep_hs = {								\
-		.bLength = sizeof(struct usb_ep_descriptor),			\
-		.bDescriptorType = USB_DESC_ENDPOINT,				\
-		.bEndpointAddress = 0x81,					\
-		.bmAttributes = USB_EP_TYPE_BULK,				\
-		.wMaxPacketSize = sys_cpu_to_le16(512),				\
-		.bInterval = 0,							\
-	},									\
+	                                                                        \
+	USBD_VIDEO_ENDPOINT_DESC						\
 };										\
 										\
 struct usb_desc_header *uvc_fs_desc_##n[UVC_MAX_FS_DESC] = {			\
