@@ -168,7 +168,7 @@ bool pm_policy_state_any_active(void)
 static void pm_policy_latency_update_locked(int32_t max_latency_us)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(substates); i++) {
-		if (substates[i].exit_latency_us >= max_latency_us) {
+		if (substates[i].exit_latency_us > max_latency_us) {
 			latency_mask &= ~BIT(i);
 		} else {
 			latency_mask |= BIT(i);
