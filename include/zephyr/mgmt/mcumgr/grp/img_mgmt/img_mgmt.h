@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
  * Copyright (c) 2022-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,8 +10,8 @@
 #define H_IMG_MGMT_
 
 #include <inttypes.h>
-#include <bootutil/image.h>
 #include <zcbor_common.h>
+#include <zephyr/dfu/dfu_boot.h>
 
 #ifdef CONFIG_MCUMGR_GRP_IMG_VERBOSE_ERR
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
@@ -23,6 +24,20 @@
  * @ingroup mcumgr_mgmt_api
  * @{
  */
+
+/**
+ * @brief Image version structure
+ */
+struct image_version {
+	/** Major version number */
+	uint8_t iv_major;
+	/** Minor version number */
+	uint8_t iv_minor;
+	/** Revision version number */
+	uint16_t iv_revision;
+	/** Build number */
+	uint32_t iv_build_num;
+} __packed;
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,11 +66,11 @@ extern "C" {
  * @name Swap Types for image management state machine
  * @{
  */
-#define IMG_MGMT_SWAP_TYPE_NONE    0   /**< No swap */
-#define IMG_MGMT_SWAP_TYPE_TEST    1   /**< Test swap */
-#define IMG_MGMT_SWAP_TYPE_PERM    2   /**< Permanent swap */
-#define IMG_MGMT_SWAP_TYPE_REVERT  3   /**< Revert swap */
-#define IMG_MGMT_SWAP_TYPE_UNKNOWN 255 /**< Unknown swap */
+#define IMG_MGMT_SWAP_TYPE_NONE    DFU_BOOT_SWAP_TYPE_NONE    /**< No swap */
+#define IMG_MGMT_SWAP_TYPE_TEST    DFU_BOOT_SWAP_TYPE_TEST    /**< Test swap */
+#define IMG_MGMT_SWAP_TYPE_PERM    DFU_BOOT_SWAP_TYPE_PERM    /**< Permanent swap */
+#define IMG_MGMT_SWAP_TYPE_REVERT  DFU_BOOT_SWAP_TYPE_REVERT  /**< Revert swap */
+#define IMG_MGMT_SWAP_TYPE_UNKNOWN DFU_BOOT_SWAP_TYPE_UNKNOWN /**< Unknown swap */
 /** @} */
 
 /**
