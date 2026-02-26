@@ -267,7 +267,7 @@
 
 #define CMD1_FIFO            0x64
 #define CMD1_FIFO_CMDID(id)  ((id) << 24)
-#define CMD1_FIFO_DB(db)     (((db) & GENMASK(15, 8)) << 8)
+#define CMD1_FIFO_DB(db)     FIELD_PREP(GENMASK(15, 8), (db))
 #define CMD1_FIFO_CSRADDR(a) (a)
 #define CMD1_FIFO_CCC(id)    (id)
 
