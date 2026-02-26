@@ -35,6 +35,8 @@
 	};
 
 	soc {
+		compatible = "simple-bus";
+
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 			#address-cells = <1>;
@@ -51,6 +53,26 @@
 			 * peripheral description
 			 */
 			#include "nrf5340_cpuapp_peripherals.dtsi"
+		};
+
+		flash_controller: flash-controller@40039000 {
+			compatible = "nordic,nrf53-flash-controller";
+			reg = <0x40039000 0x1000>;
+			ranges;
+			partial-erase;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				erase-block-size = <4096>;
+				write-block-size = <4>;
+				reg = <0x0 DT_SIZE_K(1024)>;
+				ranges = <0x0 0x0 DT_SIZE_K(1024)>;
+				status = "okay";
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
 		};
 
 		/*
