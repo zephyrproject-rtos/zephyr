@@ -289,9 +289,9 @@
 #define SLV_DDR_TX_FIFO             0x88
 #define SLV_DDR_RX_FIFO             0x8c
 #define DDR_PREAMBLE_MASK           GENMASK(19, 18)
-#define DDR_PREAMBLE_CMD_CRC        0x1 << 18
-#define DDR_PREAMBLE_DATA_ABORT     0x2 << 18
-#define DDR_PREAMBLE_DATA_ABORT_ALT 0x3 << 18
+#define DDR_PREAMBLE_CMD_CRC        (0x1 << 18)
+#define DDR_PREAMBLE_DATA_ABORT     (0x2 << 18)
+#define DDR_PREAMBLE_DATA_ABORT_ALT (0x3 << 18)
 #define DDR_DATA(x)                 (((x) & GENMASK(17, 2)) >> 2)
 #define DDR_EVEN_PARITY             BIT(0)
 #define DDR_ODD_PARITY              BIT(1)
