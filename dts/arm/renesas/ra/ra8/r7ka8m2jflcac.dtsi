@@ -12,14 +12,18 @@
 			code_mram_cm85: mram@2000000 {
 				compatible = "renesas,ra-nv-mram";
 				reg = <0x2000000 DT_SIZE_M(1)>;
+				ranges = <0x0 0x2000000 DT_SIZE_M(1)>;
 				write-block-size = <1>;
 				erase-block-size = <32>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 
 		sram0: memory@22000000 {
 			compatible = "mmio-sram";
 			reg = <0x22000000 DT_SIZE_K(1664)>;
+			ranges = <0x0 0x22000000 DT_SIZE_K(1664)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 		};

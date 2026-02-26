@@ -14,6 +14,9 @@
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 			reg = <0x20000000 DT_SIZE_K(256)>;
+			ranges = <0x0 0x20000000 DT_SIZE_K(256)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 
 		sci1: sci1@40118100 {

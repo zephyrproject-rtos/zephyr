@@ -52,6 +52,9 @@
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 			reg = <0x20000000 DT_SIZE_K(96)>;
+			ranges = <0x0 0x20000000 DT_SIZE_K(96)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 
 		ioport0: gpio@4001f000 {

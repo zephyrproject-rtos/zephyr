@@ -6,5 +6,6 @@
 
 &flash0 {
 	reg = <0x0 DT_SIZE_K(128)>;
+	ranges = <0x0 0x0 DT_SIZE_K(128)>;
 	erase-blocks = <&flash 8 8192>, <&flash 2 32768>;
 };

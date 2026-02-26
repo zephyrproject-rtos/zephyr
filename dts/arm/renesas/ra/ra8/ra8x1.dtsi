@@ -58,6 +58,7 @@
 		system: system@4001e000 {
 			compatible = "renesas,ra-system";
 			reg = <0x4001e000 0x1000>;
+			ranges = <0x0 0x4001e000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			status = "okay";
