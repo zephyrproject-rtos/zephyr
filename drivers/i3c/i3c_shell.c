@@ -444,7 +444,7 @@ static int i3c_read_to_buffer(const struct shell *sh, char *s_dev_name, char *s_
 	}
 	tdev = shell_device_get_binding(s_tdev_name);
 	if (!tdev) {
-		shell_error(sh, "I3C: Device driver %s not found.", s_dev_name);
+		shell_error(sh, "I3C: Device driver %s not found.", s_tdev_name);
 		return -ENODEV;
 	}
 	desc = get_i3c_attached_desc_from_dev_name(dev, tdev->name);
