@@ -224,6 +224,17 @@ ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(1100000));
 	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
 
+	/* update latency requirement to exactly PM_STATE_RUNTIME_IDLE latency,
+	 * so PM_STATE_RUNTIME_IDLE should remain available.
+	 */
+	pm_policy_latency_request_update(&req1, 10000);
+
+	next = pm_policy_next_state(0U, k_us_to_ticks_floor32(110000));
+	zassert_equal(next->state, PM_STATE_RUNTIME_IDLE);
+
+	/* restore intermediate latency requirement for subsequent checks. */
+	pm_policy_latency_request_update(&req1, 50000);
+
 	/* add a new latency requirement with a maximum value below the
 	 * latency given by any state, so we should stay active all the time
 	 * since it overrides the previous one.
