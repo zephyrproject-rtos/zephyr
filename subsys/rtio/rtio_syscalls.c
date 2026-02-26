@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/internal/syscall_handler.h>
+#include <zephyr/drivers/adc.h>
 
 /**
  * Verify each SQE type operation and its fields ensuring
@@ -43,6 +44,11 @@ static inline bool rtio_vrfy_sqe(struct rtio_sqe *sqe)
 	case RTIO_OP_TXRX:
 		valid_sqe &= K_SYSCALL_MEMORY(sqe->txrx.tx_buf, sqe->txrx.buf_len, true);
 		valid_sqe &= K_SYSCALL_MEMORY(sqe->txrx.rx_buf, sqe->txrx.buf_len, true);
+		break;
+	case RTIO_OP_ADC_CHANNEL_SETUP:
+		valid_sqe &= K_SYSCALL_MEMORY(sqe->adc_channel_setup.channel_cfg,
+					      sizeof(struct adc_channel_cfg),
+					      true);
 		break;
 	default:
 		/* RTIO OP must be known and allowable from user mode

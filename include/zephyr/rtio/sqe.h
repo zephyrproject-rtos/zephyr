@@ -176,6 +176,9 @@ extern "C" {
 /** An operation to await a signal while blocking the iodev (if one is provided) */
 #define RTIO_OP_AWAIT (RTIO_OP_I3C_CCC+1)
 
+/** An operation to set up an ADC channel */
+#define RTIO_OP_ADC_CHANNEL_SETUP (RTIO_OP_AWAIT+1)
+
 /**
  * @}
  */
@@ -382,6 +385,11 @@ struct rtio_sqe {
 			rtio_signaled_t callback;
 			void *userdata;
 		} await;
+
+		/** OP_ADC_CHANNEL_SETUP */
+		struct {
+			const void *channel_cfg;
+		} adc_channel_setup;
 	};
 };
 
