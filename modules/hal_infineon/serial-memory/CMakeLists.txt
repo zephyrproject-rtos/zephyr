@@ -9,3 +9,6 @@ zephyr_include_directories(${serial_memory_dir}/include)
 zephyr_include_directories(${serial_memory_dir}/source)
 
 zephyr_library_sources(${serial_memory_dir}/source/mtb_serial_memory.c)
+if(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+  zephyr_code_relocate(FILES ${serial_memory_dir}/source/mtb_serial_memory.c LOCATION RAM)
+endif()
