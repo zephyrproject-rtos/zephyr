@@ -55,7 +55,7 @@
 #define REV_ID_VID(id)       (((id) & GENMASK(31, 20)) >> 20)
 #define REV_ID_PID(id)       (((id) & GENMASK(19, 8)) >> 8)
 #define REV_ID_REV(id)       ((id) & GENMASK(7, 0))
-#define REV_ID_VERSION(m, n) ((m << 5) | (n))
+#define REV_ID_VERSION(m, n) (((m) << 5) | (n))
 #define REV_ID_REV_MAJOR(id) (((id) & GENMASK(7, 5)) >> 5)
 #define REV_ID_REV_MINOR(id) ((id) & GENMASK(4, 0))
 
