@@ -34,7 +34,7 @@ static int settings_nvs_save(struct settings_store *cs, const char *name,
 			     const char *value, size_t val_len);
 static void *settings_nvs_storage_get(struct settings_store *cs);
 
-static struct settings_store_itf settings_nvs_itf = {
+static const struct settings_store_itf settings_nvs_itf = {
 	.csi_load = settings_nvs_load,
 	.csi_save = settings_nvs_save,
 	.csi_storage_get = settings_nvs_storage_get
