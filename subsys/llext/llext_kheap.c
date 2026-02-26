@@ -16,10 +16,11 @@ struct k_heap llext_heap;
 #else /* !CONFIG_LLEXT_HEAP_DYNAMIC */
 #ifdef CONFIG_HARVARD
 Z_HEAP_DEFINE_IN_SECT(llext_instr_heap, (CONFIG_LLEXT_INSTR_HEAP_SIZE * KB(1)),
-		      __attribute__((section(".rodata.llext_instr_heap"))));
+		      __attribute__((section(".llext_instr_heap"))));
 Z_HEAP_DEFINE_IN_SECT(llext_data_heap, (CONFIG_LLEXT_DATA_HEAP_SIZE * KB(1)),
-		      __attribute__((section(".data.llext_data_heap"))));
+		      __attribute__((section(".llext_data_heap"))));
 #else /* !CONFIG_HARVARD */
-K_HEAP_DEFINE(llext_heap, CONFIG_LLEXT_HEAP_SIZE * KB(1));
-#endif
+Z_HEAP_DEFINE_IN_SECT(llext_heap, (CONFIG_LLEXT_HEAP_SIZE * KB(1)),
+		      __attribute__((section(".llext_heap"))));
+#endif /* CONFIG_HARVARD */
 #endif /* CONFIG_LLEXT_HEAP_DYNAMIC */
