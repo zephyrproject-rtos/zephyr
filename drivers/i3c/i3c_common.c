@@ -413,6 +413,7 @@ int i3c_sec_get_basic_info(const struct device *dev, uint8_t dynamic_addr, uint8
 	/* First try to look up if this is a known device in the list by PID */
 	ret = i3c_ccc_do_getpid(&temp_desc, &getpid);
 	if (ret != 0) {
+		i3c_detach_i3c_device(&temp_desc);
 		return ret;
 	}
 
@@ -424,6 +425,7 @@ int i3c_sec_get_basic_info(const struct device *dev, uint8_t dynamic_addr, uint8
 		/* device was not found so allocate a descriptor */
 		desc = i3c_device_desc_alloc();
 		if (!desc) {
+			i3c_detach_i3c_device(&temp_desc);
 			return -ENOMEM;
 		}
 		desc->pid = id.pid;
