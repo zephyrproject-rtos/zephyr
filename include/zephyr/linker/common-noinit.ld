@@ -21,6 +21,11 @@ SECTION_PROLOGUE(_NOINIT_SECTION_NAME,(NOLOAD),)
 
         *(.noinit)
         *(".noinit.*")
+#ifdef CONFIG_LLEXT
+        *(.llext_heap)
+        *(.llext_ext_heap)
+        *(.llext_metadata_heap)
+#endif /* CONFIG_LLEXT */
 #ifdef CONFIG_USERSPACE
 	z_user_stacks_start = .;
 	*(.user_stacks*)
