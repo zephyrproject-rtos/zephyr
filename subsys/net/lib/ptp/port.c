@@ -851,15 +851,18 @@ static int port_management_set(struct ptp_port *port,
 			       struct ptp_msg *req,
 			       struct ptp_tlv_mgmt *tlv)
 {
+	static const int8_t limit = sizeof(uint64_t) * CHAR_BIT - 1;
 	bool send_resp = false;
 
 	switch (tlv->id) {
 	case PTP_MGMT_LOG_ANNOUNCE_INTERVAL:
-		port->port_ds.log_announce_interval = *tlv->data;
+		/* Use limits to protect from undefined bitwise shift operations */
+		port->port_ds.log_announce_interval = CLAMP(*tlv->data, -limit, limit);
 		send_resp = true;
 		break;
 	case PTP_MGMT_LOG_SYNC_INTERVAL:
-		port->port_ds.log_sync_interval = *tlv->data;
+		/* Use limits to protect from undefined bitwise shift operations */
+		port->port_ds.log_sync_interval = CLAMP(*tlv->data, -limit, limit);
 		send_resp = true;
 		break;
 	case PTP_MGMT_UNICAST_NEGOTIATION_ENABLE:
