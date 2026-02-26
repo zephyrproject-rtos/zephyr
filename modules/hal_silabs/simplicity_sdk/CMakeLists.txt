@@ -56,8 +56,11 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
 
   zephyr_include_directories(
     ${RADIO_DIR}/rail_lib/common
-    ${RADIO_DIR}/rail_lib/plugin/pa-conversions
     ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_compatible_pa
+    ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_pa_conversions
+    ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_pa_conversions/efr32xg${SILABS_DEVICE_FAMILY_NUMBER}/config
+    ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_pa_tables
+    ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_pa_tables/efr32xg${SILABS_DEVICE_FAMILY_NUMBER}
     ${RADIO_DIR}/rail_lib/protocol/ieee802154
     ${BLUETOOTH_DIR}/bgstack/ll/inc
   )
@@ -101,7 +104,8 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
     if(NOT CONFIG_SILABS_DEVICE_IS_MODULE)
       zephyr_library_sources(${RADIO_DIR}/rail_lib/plugin/pa-conversions/pa_curves_efr32.c)
     endif()
-    zephyr_library_sources(${RADIO_DIR}/rail_lib/plugin/pa-conversions/pa_conversions_efr32.c)
+    zephyr_library_sources(${RADIO_DIR}/rail_lib/plugin/sl_rail_util_pa_conversions/sl_rail_util_pa_conversions.c)
+    zephyr_library_sources(${RADIO_DIR}/rail_lib/plugin/sl_rail_util_pa_conversions/sl_rail_util_pa_tables.c)
 
     if(CONFIG_SILABS_SISDK_RAIL_MULTIPROTOCOL)
       zephyr_compile_definitions(SL_RAIL_LIB_MULTIPROTOCOL_SUPPORT=1)
@@ -139,9 +143,22 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
       ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_protocol/sl_rail_util_protocol.c
     )
     # So the IEEE802154 native driver can find sl_rail_ieee802154.h when not using CUSTOM_RADIO_PHY
-    zephyr_include_directories_ifdef(CONFIG_IEEE802154_SILABS_EFR32
-      ${RADIO_DIR}/rail_lib/protocol/ieee802154
-    )
+    if(CONFIG_IEEE802154_SILABS_EFR32)
+      zephyr_include_directories(
+        ${RADIO_DIR}/rail_lib/protocol/ieee802154
+      )
+      zephyr_include_directories_ifdef(CONFIG_BOARD_XG24_RB4186C
+        ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_sequencer/config/efr32xg${SILABS_DEVICE_FAMILY_NUMBER}/pa_10dbm
+        ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_pa_tables/efr32xg${SILABS_DEVICE_FAMILY_NUMBER}/config/10dbm
+      )
+      zephyr_include_directories_ifdef(CONFIG_BOARD_XG24_RB4187C
+        ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_sequencer/config/efr32xg${SILABS_DEVICE_FAMILY_NUMBER}/pa_20dbm
+        ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_pa_tables/efr32xg${SILABS_DEVICE_FAMILY_NUMBER}/config/20dbm
+      )
+      zephyr_library_sources(
+        ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_sequencer/sl_rail_util_sequencer.c
+      )
+    endif()
   endif()
 
   if(CONFIG_IEEE802154_SILABS_EFR32)
