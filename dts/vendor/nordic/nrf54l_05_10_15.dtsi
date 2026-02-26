@@ -751,14 +751,16 @@
 		rram_controller: rram-controller@5004b000 {
 			compatible = "nordic,rram-controller";
 			reg = <0x5004b000 0x1000>;
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			interrupts = <75 NRF_DEFAULT_IRQ_PRIORITY>;
 
-			cpuapp_rram: rram@0 {
+			cpuapp_rram: flash@0 {
 				compatible = "soc-nv-flash";
 				erase-block-size = <4096>;
 				write-block-size = <16>;
+				status = "okay";
 				#address-cells = <1>;
 				#size-cells = <1>;
 			};
