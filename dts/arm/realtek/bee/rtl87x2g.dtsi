@@ -119,7 +119,6 @@
 					compatible = "fixed-partitions";
 					#address-cells = <1>;
 					#size-cells = <1>;
-					ranges;
 
 					/* 0x4000000-0x402d000 is reserved for Realtek firmwares.
 					 * Do not use.

@@ -21,7 +21,6 @@
 
 	partitions {
 		compatible = "fixed-partitions";
-		ranges;
 
 		/* See AN1416: SiWx917 SoC Memory Map, 3.1.4 Memory Map (8 MB) */
 		mbr_nwp_partition: partition@0 {

@@ -87,7 +87,6 @@
 				compatible = "fixed-partitions";
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges;
 
 				loader_param: partition@0 {
 					label = "loader-param";
