@@ -158,16 +158,22 @@ Boards
 
 * ITE ``it515xx_evb`` is renamed to ``it51xxx_evb``.
 
-* Boards that have NVM devices must now correctly have their addresses set or inheritied when they
-  do not start at address 0x0. In previous zephyr releases, a ``partitions`` entry in DTS was
-  wrongly interpreted as starting in the flash device's address range even though the DTS file
-  does not describe this and instead describes flash partitions starting at absolute addresses
-  e.g. 0x0. If you build and get the deprecated Kconfig
-  :kconfig:option:`CONFIG_FLASH_CODE_PARTITION_ADDRESS_INVALID` being set then this means your
-  board, SoC or DTS files are wrong and need updating, a ``ranges <>;`` property should be used
-  by the flash nodes to specify the base address and size for child nodes, and
-  ``fixed-partitions``/``fixed-subpartitions`` nodes must have a ``ranges;`` property to pass the
-  parent's ranges on to child nodes.
+* Boards that use :kconfig:option:`CONFIG_USE_DT_CODE_PARTITION` or have a
+  ``zephyr,code-partition`` chosen node set should now use the new
+  :dtcompatible:`zephyr,mapped-partition` compatible. This binding uses the devicetree unit address
+  to be able to get the memory-mapped address of the partition rather than having to manually go up
+  child nodes until a node with a specific name is found in order to calculate it, and also
+  disallows usage of :kconfig:option:`CONFIG_FLASH_LOAD_OFFSET` and
+  :kconfig:option:`CONFIG_FLASH_LOAD_SIZE` when a :dtcompatible:`zephyr,mapped-partition` is used,
+  as the linker file can now work out the NVM offset and size without needing Kconfig to perform
+  math operations as an intermediate step. In addition, :dtcompatible:`fixed-subpartitions` are no
+  longer needed on memory-mapped devices when switching to :dtcompatible:`zephyr,mapped-partition`
+  as these can natively be nested inside of each other and will have the correct addresses and
+  offsets (when used with the devicetree ``ranges`` property).
+  :kconfig:option:`CONFIG_FLASH_CODE_PARTITION_USING_FIXED_PARTITIONS` will be set on board
+  targets that have not updated to use the :dtcompatible:`zephyr,mapped-partition` binding for
+  ``zephyr,code-partition`` chosen devices. Support for using fixed-partitions as the chosen
+  ``zephyr,code-partition`` node will be deprecated in the future.
 
 Device Drivers and Devicetree
 *****************************
@@ -1137,6 +1143,44 @@ Flash
 
 * The flash shell commands ``flash erase`` and ``flash write`` now require an explicit
   device argument. This avoids accidental corruption of the device's program flash.
+
+Flash map
+=========
+
+* The following :zephyr_file:`include/zephyr/storage/flash_map.h` macros have been deprecated and
+  replaced:
+
+  +-----------------------------------------+-----------------------------------+
+  | Deprecated macro                        | Replacement macro                 |
+  +=========================================+===================================+
+  | :c:macro:`FIXED_PARTITION_EXISTS`       | :c:macro:`PARTITION_EXISTS`       |
+  +-----------------------------------------+-----------------------------------+
+  | :c:macro:`FIXED_PARTITION_ID`           | :c:macro:`PARTITION_ID`           |
+  +-----------------------------------------+-----------------------------------+
+  | :c:macro:`FIXED_PARTITION_OFFSET`       | :c:macro:`PARTITION_OFFSET`       |
+  +-----------------------------------------+-----------------------------------+
+  | :c:macro:`FIXED_PARTITION_ADDRESS`      | :c:macro:`PARTITION_ADDRESS`      |
+  +-----------------------------------------+-----------------------------------+
+  | :c:macro:`FIXED_PARTITION_NODE_ADDRESS` | :c:macro:`PARTITION_NODE_ADDRESS` |
+  +-----------------------------------------+-----------------------------------+
+  | :c:macro:`FIXED_PARTITION_NODE_OFFSET`  | :c:macro:`PARTITION_NODE_OFFSET`  |
+  +-----------------------------------------+-----------------------------------+
+  | :c:macro:`FIXED_PARTITION_SIZE`         | :c:macro:`PARTITION_SIZE`         |
+  +-----------------------------------------+-----------------------------------+
+  | :c:macro:`FIXED_PARTITION_NODE_SIZE`    | :c:macro:`PARTITION_NODE_SIZE`    |
+  +-----------------------------------------+-----------------------------------+
+  | :c:macro:`FIXED_PARTITION_DEVICE`       | :c:macro:`PARTITION_DEVICE`       |
+  +-----------------------------------------+-----------------------------------+
+  | :c:macro:`FIXED_PARTITION_NODE_DEVICE`  | :c:macro:`PARTITION_NODE_DEVICE`  |
+  +-----------------------------------------+-----------------------------------+
+  | :c:macro:`FIXED_PARTITION_MTD`          | :c:macro:`PARTITION_MTD`          |
+  +-----------------------------------------+-----------------------------------+
+  | :c:macro:`FIXED_PARTITION_NODE_MTD`     | :c:macro:`PARTITION_NODE_MTD`     |
+  +-----------------------------------------+-----------------------------------+
+  | :c:macro:`FIXED_PARTITION_BY_NODE`      | :c:macro:`PARTITION_BY_NODE`      |
+  +-----------------------------------------+-----------------------------------+
+
+  These new macros also add support for the :dtcompatible:`zephyr,mapped-partition` binding.
 
 JWT
 ===
