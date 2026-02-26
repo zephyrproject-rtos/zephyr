@@ -905,9 +905,36 @@ static int sx126x_lora_config(const struct device *dev,
 		return ret;
 	}
 
-
 	/* Store configuration */
 	memcpy(&data->config, config, sizeof(*config));
+
+	/* Put radio in standby before reconfiguring (may be coming from FSK mode) */
+	ret = sx126x_set_standby(dev, SX126X_STANDBY_RC);
+	if (ret < 0) {
+		goto out;
+	}
+
+	/* Set packet type to LoRa (FSK config sets it to GFSK) */
+	ret = sx126x_set_packet_type(dev, SX126X_PACKET_TYPE_LORA);
+	if (ret < 0) {
+		goto out;
+	}
+
+	/* Restore LoRa IRQ mask (FSK prepare_tx narrows it to TX-only) */
+	{
+		uint16_t irq_mask = SX126X_IRQ_TX_DONE | SX126X_IRQ_RX_DONE |
+				    SX126X_IRQ_RX_TX_TIMEOUT | SX126X_IRQ_CRC_ERR;
+
+		ret = sx126x_set_dio_irq_params(dev, irq_mask, irq_mask, 0, 0);
+		if (ret < 0) {
+			goto out;
+		}
+
+		ret = sx126x_clear_irq_status(dev, SX126X_IRQ_ALL);
+		if (ret < 0) {
+			goto out;
+		}
+	}
 
 	/* Run image calibration for frequency band */
 	ret = sx126x_calibrate_image(dev, config->frequency);
