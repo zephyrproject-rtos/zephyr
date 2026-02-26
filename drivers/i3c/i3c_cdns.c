@@ -1318,7 +1318,6 @@ static void cdns_i3c_cancel_transfer(const struct device *dev)
 	struct cdns_i3c_data *data = dev->data;
 	const struct cdns_i3c_config *config = dev->config;
 	uint32_t val;
-	uint32_t retry_count;
 
 	/* Disable further interrupts */
 	sys_write32(MST_INT_CMDD_EMP, config->base + MST_IDR);
@@ -1338,15 +1337,17 @@ static void cdns_i3c_cancel_transfer(const struct device *dev)
 	 * actually take any time since we only get here if a transaction didn't
 	 * complete in a long time.
 	 */
-	retry_count = I3C_MAX_IDLE_CANCEL_WAIT_RETRIES;
-	while (retry_count--) {
+	bool idle = false;
+
+	for (uint32_t i = 0; i < I3C_MAX_IDLE_CANCEL_WAIT_RETRIES; i++) {
 		val = sys_read32(config->base + MST_STATUS0);
 		if (val & MST_STATUS0_IDLE) {
+			idle = true;
 			break;
 		}
 		k_msleep(10);
 	}
-	if (retry_count == 0) {
+	if (!idle) {
 		data->xfer.ret = -ETIMEDOUT;
 	}
 
