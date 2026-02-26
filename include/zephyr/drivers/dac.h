@@ -23,7 +23,7 @@ extern "C" {
  * @brief Interfaces for Digital-to-Analog Converters.
  * @defgroup dac_interface DAC
  * @since 2.3
- * @version 1.0.0
+ * @version 1.1.0
  * @ingroup io_interfaces
  * @{
  *
@@ -559,6 +559,124 @@ static inline int dac_write_value_dt(const struct dac_dt_spec *spec,
 	}
 
 	return dac_write_value(spec->dev, spec->channel_id, value);
+}
+
+/**
+ * @brief Conversion from specified input units to raw DAC units
+ *
+ * This function performs the necessary conversion to transform a
+ * physical voltage to a raw DAC value.
+ *
+ * @param ref_mv the reference voltage used for the value, in
+ * millivolts.
+ *
+ * @param resolution the number of bits in the absolute value of the
+ * output.
+ *
+ * @param valp pointer to the physical voltage value on input, and the
+ * corresponding raw output value on successful conversion.  If
+ * conversion fails the stored value is left unchanged.
+ *
+ * @retval 0 on successful conversion
+ */
+typedef int (*dac_x_to_raw_fn)(uint32_t ref_mv, uint8_t resolution, uint32_t *valp);
+
+/**
+ * @brief Convert a millivolts value to a raw DAC value.
+ *
+ * @see dac_x_to_raw_fn
+ */
+static inline int dac_millivolts_to_raw(uint32_t ref_mv, uint8_t resolution, uint32_t *valp)
+{
+	uint64_t dac_mv = (((uint64_t)*valp) << resolution) / (uint64_t)ref_mv;
+
+	if (dac_mv > (1UL << resolution)) {
+		__ASSERT_MSG_INFO("conversion result is out of range");
+		return -ERANGE;
+	}
+
+	*valp = (uint32_t)dac_mv;
+
+	return 0;
+}
+
+/**
+ * @brief Convert a raw DAC value to microvolts.
+ *
+ * @see dac_x_to_raw_fn
+ */
+static inline int dac_microvolts_to_raw(uint32_t ref_mv, uint8_t resolution, uint32_t *valp)
+{
+	uint64_t dac_uv = (((uint64_t)*valp) << resolution) / (uint64_t)ref_mv / (uint64_t)1000;
+
+	if (dac_uv > (1UL << resolution)) {
+		__ASSERT_MSG_INFO("conversion result is out of range");
+		return -ERANGE;
+	}
+
+	*valp = (uint32_t)dac_uv;
+
+	return 0;
+}
+
+/**
+ * @brief Convert a raw DAC value to an arbitrary output unit
+ *
+ * @param[in] conv_func Function that converts to the final output unit.
+ * @param[in] spec DAC specification from Devicetree.
+ * @param[in,out] valp pointer to the physical voltage value on input, and the
+ * corresponding raw output value on successful conversion.  If
+ * conversion fails the stored value is left unchanged.
+ *
+ * @return A value from dac_x_to_raw_dt_chan or -ENOTSUP if information from
+ * Devicetree is not valid.
+ * @see dac_x_to_raw_fn
+ */
+static inline int dac_x_to_raw_dt_chan(dac_x_to_raw_fn conv_func,
+					    const struct dac_dt_spec *spec,
+					    uint32_t *valp)
+{
+	if (!spec->channel_cfg_dt_node_exists) {
+		return -ENOTSUP;
+	}
+
+	return conv_func(spec->vref_mv, spec->channel_cfg.resolution, valp);
+}
+
+/**
+ * @brief Convert a millivolts value to raw DAC using information stored
+ * in a struct dac_dt_spec.
+ *
+ * @param[in] spec DAC specification from Devicetree.
+ * @param[in,out] valp Pointer to the raw measurement value on input, and the
+ * corresponding millivolt value on successful conversion. If conversion fails
+ * the stored value is left unchanged.
+ *
+ * @return A value from dac_millivolts_to_raw() or -ENOTSUP if information from
+ * Devicetree is not valid.
+ * @see dac_millivolts_to_raw()
+ */
+static inline int dac_millivolts_to_raw_dt(const struct dac_dt_spec *spec, uint32_t *valp)
+{
+	return dac_x_to_raw_dt_chan(dac_millivolts_to_raw, spec, valp);
+}
+
+/**
+ * @brief Convert a microvolts value to raw DAC value using information stored
+ * in a struct dac_dt_spec.
+ *
+ * @param[in] spec DAC specification from Devicetree.
+ * @param[in,out] valp Pointer to the raw measurement value on input, and the
+ * corresponding microvolt value on successful conversion. If conversion fails
+ * the stored value is left unchanged.
+ *
+ * @return A value from dac_microvolts_to_raw() or -ENOTSUP if information from
+ * Devicetree is not valid.
+ * @see dac_microvolts_to_raw()
+ */
+static inline int dac_microvolts_to_raw_dt(const struct dac_dt_spec *spec, uint32_t *valp)
+{
+	return dac_x_to_raw_dt_chan(dac_microvolts_to_raw, spec, valp);
 }
 
 /**
