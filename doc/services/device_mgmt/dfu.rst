@@ -36,8 +36,17 @@ The API provides the following functionality:
 * Querying swap type status
 * Flash area and slot management utilities
 
-Currently, MCUboot is the supported backend implementation, but the abstraction
-allows for other bootloader backends to be added in the future.
+Currently supported backend implementations:
+
+* **MCUboot** - Open source, cross-RTOS bootloader with swap/revert support.
+  See :ref:`mcuboot` for details.
+
+* **NXP ROM Bootloader** - Built-in ROM bootloader for NXP MCXW series devices
+  with SB3.1 secure container support. Features a unique hybrid mode that
+  combines MCUboot for Zephyr image management with ROM bootloader capabilities
+  for updating other cores or MCUboot itself. See :ref:`nxp_rom_boot` for details.
+
+The abstraction allows for other bootloader backends to be added in the future.
 
 API Reference
 -------------
@@ -126,8 +135,30 @@ In order to use MCUboot with Zephyr you need to take the following into account:
    to flash the Zephyr application image at the correct offset (right after the
    bootloader)
 
-More detailed information regarding the use of MCUboot with Zephyr  can be found
+More detailed information regarding the use of MCUboot with Zephyr can be found
 in the `MCUboot with Zephyr`_ documentation page on the MCUboot website.
+
+.. _nxp_rom_boot:
+
+NXP ROM Bootloader
+==================
+
+Zephyr supports the NXP ROM bootloader found on MCXW series devices. This
+bootloader is built into the device ROM and provides OTA (Over-The-Air)
+firmware update capabilities using the NXP Secure Binary (SB3.1) image format.
+
+The NXP ROM bootloader backend supports a unique **hybrid mode** that combines
+MCUboot for Zephyr application image management with the ROM bootloader's
+ability to update components that MCUboot cannot access, such as:
+
+* Other processor cores in multi-core systems
+* MCUboot itself
+* Memory regions not accessible from the application core
+
+This makes it ideal for complex multi-core SoCs where different update
+mechanisms are needed for different components.
+
+For complete documentation, see :ref:`nxp_rom_boot_detailed`.
 
 Adding New Bootloader Backends
 ==============================
@@ -145,6 +176,11 @@ Common utility functions like ``dfu_boot_get_flash_area_id()``,
 ``dfu_boot_get_erased_val()``, ``dfu_boot_read()``, and ``dfu_boot_erase_slot()``
 are provided in :zephyr_file:`subsys/dfu/boot/dfu_boot_utils.c` and can be
 reused by different bootloader backends.
+
+For reference implementations, see:
+
+* :zephyr_file:`subsys/dfu/boot/mcuboot.c` - MCUboot backend
+* :zephyr_file:`subsys/dfu/boot/nxp_boot.c` - NXP ROM bootloader backend
 
 .. _MCUboot boot loader: https://mcuboot.com/
 .. _MCUboot with Zephyr: https://docs.mcuboot.com/readme-zephyr

@@ -1,0 +1,10 @@
+description: NXP MCXW Flash IFR Node
+
+compatible: "nxp,mcxw-ifr"
+
+include: [base.yaml, soc-nv-flash.yaml]
+
+properties:
+  ota-cfg-sector:
+    type: int
+    description: sector number used for OTA configuration storage

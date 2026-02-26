@@ -31,6 +31,14 @@ config MCUBOOT_IMG_MANAGER
 	help
 	  Enable support for managing DFU image downloaded using mcuboot.
 
+config NXPBOOT_IMG_MANAGER
+	bool "Image manager for NXP bootloader"
+	depends on FLASH_MAP
+	select USE_DT_CODE_PARTITION
+	select NXPBOOT_HYBRID_MCUBOOT if BOOTLOADER_MCUBOOT
+	help
+	  Enable support for managing DFU image downloaded using NXP bootloader.
+
 endchoice
 
 config IMG_BLOCK_BUF_SIZE
@@ -58,6 +66,25 @@ config IMG_ENABLE_IMAGE_CHECK
 	  a new firmware.  This is useful to avoid firmware reboot and test.
 	  Another use is to ensure that firmware upgrade routines from internet
 	  server to flash slot are performing properly.
+
+if NXPBOOT_IMG_MANAGER
+
+config NXPBOOT_HYBRID_MCUBOOT
+	bool "NXP Boot ROM with MCUboot hybrid support"
+	select MCUBOOT_BOOTUTIL_LIB
+	help
+	  Enable hybrid boot support that allows both NXP Boot ROM (SB3)
+	  and MCUboot image formats. When enabled, the system will detect
+	  the image format in slot1 and use the appropriate upgrade path.
+	  SB3 images will use the NXP Boot ROM OTA mechanism via IFR0 OTACFG.
+	  MCUboot images will use the standard MCUboot swap mechanism.
+	  The Boot ROM OTA can be used to upgrade MCUboot itself or another core
+	  image which cannot be handled by MCUboot (e.g when the second core flash
+	  can't be written by the core running MCUboot).
+	  Note: SB3 upgrades are only allowed when the active MCUboot image
+	  is confirmed. This prevents SB3 upgrades while in test mode.
+
+endif
 
 if MCUBOOT_IMG_MANAGER
 
