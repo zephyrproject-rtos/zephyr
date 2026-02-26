@@ -327,6 +327,26 @@ config NRFX_PRS_BOX_4
 	bool "PRS box 4"
 	select NRFX_PRS
 
+config NRFX_PRS_BOX_5
+	bool "PRS box 5"
+	select NRFX_PRS
+
+config NRFX_PRS_BOX_6
+	bool "PRS box 6"
+	select NRFX_PRS
+
+config NRFX_PRS_BOX_7
+	bool "PRS box 7"
+	select NRFX_PRS
+
+config NRFX_PRS_BOX_8
+	bool "PRS box 8"
+	select NRFX_PRS
+
+config NRFX_PRS_BOX_9
+	bool "PRS box 9"
+	select NRFX_PRS
+
 endmenu
 
 config NRFX_RESERVED_RESOURCES_HEADER
