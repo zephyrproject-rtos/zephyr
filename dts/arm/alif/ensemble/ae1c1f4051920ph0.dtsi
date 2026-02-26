@@ -1,0 +1,40 @@
+/*
+ * SPDX-FileCopyrightText: Copyright Alif Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <alif/ensemble/common/ensemble_common.dtsi>
+#include <alif/ensemble/common/ensemble_rtss_he.dtsi>
+
+&syst_aclk {
+	clock-frequency = <DT_FREQ_M(160)>;
+};
+
+&syst_hclk {
+	clock-frequency = <DT_FREQ_M(80)>;
+};
+
+&syst_pclk {
+	clock-frequency = <DT_FREQ_M(40)>;
+};
+
+&itcm {
+	reg = <0x00000000 DT_SIZE_K(512)>;
+};
+
+&dtcm {
+	reg = <0x20000000 DT_SIZE_K(1536)>;
+};
+
+&soc {
+	mram: flash@80000000 {
+		compatible = "zephyr,memory-region", "soc-nv-flash";
+		reg = <0x80000000 DT_SIZE_K(1945)>;
+		zephyr,memory-region = "MRAM";
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x80000000 DT_SIZE_K(1945)>;
+	};
+};
