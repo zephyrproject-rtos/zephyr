@@ -1233,13 +1233,13 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 	flags = zsock_fcntl(client_ctx->sock_fd, ZVFS_F_GETFL, 0);
 	if (flags == -1) {
 		ret = -errno;
-		LOG_ERR("zsock_fcntl(F_GETFL) failed (%d)", ret);
+		LOG_ERR("zsock_fcntl(ZVFS_F_GETFL) failed (%d)", ret);
 		goto error;
 	}
 	ret = zsock_fcntl(client_ctx->sock_fd, ZVFS_F_SETFL, flags | ZVFS_O_NONBLOCK);
 	if (ret == -1) {
 		ret = -errno;
-		LOG_ERR("zsock_fcntl(F_SETFL) failed (%d)", ret);
+		LOG_ERR("zsock_fcntl(ZVFS_F_SETFL) failed (%d)", ret);
 		goto error;
 	}
 
