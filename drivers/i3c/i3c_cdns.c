@@ -3588,9 +3588,9 @@ static int cdns_i3c_bus_init(const struct device *dev)
 	k_sem_init(&data->ibi_hj_complete, 0, 1);
 #ifdef CONFIG_I3C_CONTROLLER
 	k_sem_init(&data->ibi_cr_complete, 0, 1);
-#endif /* CONFIG_I3C_TARGET */
 #endif /* CONFIG_I3C_CONTROLLER */
-#endif
+#endif /* CONFIG_I3C_TARGET */
+#endif /* CONFIG_I3C_USE_IBI */
 
 	cdns_i3c_interrupts_disable(config);
 	cdns_i3c_interrupts_clear(config);
