@@ -359,6 +359,24 @@ exit:
 	return err;
 }
 
+static int cmd_mv(const struct shell *sh, size_t argc, char **argv)
+{
+	int err;
+	char path_src[MAX_PATH_LEN];
+	char path_dst[MAX_PATH_LEN];
+
+	create_abs_path(argv[1], path_src, sizeof(path_src));
+	create_abs_path(argv[2], path_dst, sizeof(path_dst));
+
+	err = fs_rename(path_src, path_dst);
+	if (err != 0) {
+		shell_error(sh, "Failed to move/rename %s to %s (%d)", path_src, path_dst, err);
+		err = -EIO;
+	}
+
+	return err;
+}
+
 static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 {
 	char path[MAX_PATH_LEN];
@@ -919,6 +937,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs,
 		      cmd_cat, 2, 255),
 	SHELL_CMD_ARG(rm, NULL, SHELL_HELP("Remove file", "<path>"), cmd_rm, 2, 0),
 	SHELL_CMD_ARG(cp, NULL, SHELL_HELP("Copy file", "<source> <dest>"), cmd_cp, 3, 0),
+	SHELL_CMD_ARG(mv, NULL, SHELL_HELP("Move file", "<source> <dest>"), cmd_mv, 3, 0),
 	SHELL_CMD_ARG(statvfs, NULL, SHELL_HELP("Show file system state", "<path>"),
 		      cmd_statvfs, 2, 0),
 	SHELL_CMD_ARG(trunc, NULL, SHELL_HELP("Truncate file", "<path> [<length>]"),
