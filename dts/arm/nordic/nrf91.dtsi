@@ -32,6 +32,8 @@
 	};
 
 	soc {
+		compatible = "simple-bus";
+
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 			#address-cells = <1>;
@@ -46,6 +48,26 @@
 
 			/* Common nRF91 peripherals description. */
 			#include "nrf91_peripherals.dtsi"
+		};
+
+		flash_controller: flash-controller@50039000 {
+			compatible = "nordic,nrf91-flash-controller";
+			reg = <0x50039000 0x1000>;
+			ranges;
+			partial-erase;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				erase-block-size = <4096>;
+				write-block-size = <4>;
+				reg = <0x00000000 DT_SIZE_K(1024)>;
+				ranges = <0x0 0x00000000 DT_SIZE_K(1024)>;
+				status = "okay";
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
 		};
 
 		/* Additional Secure peripherals */
