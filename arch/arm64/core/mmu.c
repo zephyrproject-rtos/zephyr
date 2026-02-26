@@ -1234,6 +1234,30 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 	return 0;
 }
 
+int arch_mem_domain_deinit(struct k_mem_domain *domain)
+{
+	struct arm_mmu_ptables *domain_ptables = &domain->arch.ptables;
+	k_spinlock_key_t key;
+
+	if (domain_ptables->base_xlat_table == NULL) {
+		return -EINVAL;
+	}
+
+	key = k_spin_lock(&xlat_lock);
+
+	sys_slist_find_and_remove(&domain_list, &domain->arch.node);
+
+	discard_table(domain_ptables->base_xlat_table, BASE_XLAT_LEVEL);
+	dec_table_ref(domain_ptables->base_xlat_table);
+
+	domain_ptables->base_xlat_table = NULL;
+	domain_ptables->ttbr0 = 0;
+
+	k_spin_unlock(&xlat_lock, key);
+
+	return 0;
+}
+
 static int private_map(struct arm_mmu_ptables *ptables, const char *name,
 		       uintptr_t phys, uintptr_t virt, size_t size, uint32_t attrs)
 {
