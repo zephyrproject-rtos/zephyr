@@ -146,7 +146,7 @@ int i3c_ccc_do_rstdaa(struct i3c_device_desc *target)
 	__ASSERT_NO_MSG(target->bus != NULL);
 
 	ccc_tgt_payload.addr = target->dynamic_addr;
-	ccc_tgt_payload.rnw = 1;
+	ccc_tgt_payload.rnw = 0;
 	ccc_tgt_payload.data_len = 0;
 
 	memset(&ccc_payload, 0, sizeof(ccc_payload));
