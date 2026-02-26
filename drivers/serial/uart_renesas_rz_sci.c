@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Renesas Electronics Corporation
+ * Copyright (c) 2025-2026 Renesas Electronics Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -7,6 +7,7 @@
 
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/interrupt_controller/intc_rz_icu.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #if defined(CONFIG_UART_RENESAS_RZ_SCI_B)
@@ -470,6 +471,15 @@ static int uart_rz_init(const struct device *dev)
 
 #define SCI_NODE(idx) DT_INST_PARENT(idx)
 
+#ifdef CONFIG_DT_HAS_RENESAS_RZ_ICU_V2_ENABLED
+#define EVENT_SCI(channel, IRQ_NAME) CONCAT(ELC_EVENT_SCI, channel, _##IRQ_NAME)
+#define UART_RZ_CONNECT_IRQ_EVENT(n, irq_name, IRQ_NAME) \
+	icu_connect_irq_event(DT_IRQ_BY_NAME(SCI_NODE(n), irq_name, irq), \
+				(EVENT_SCI(DT_PROP(SCI_NODE(n), channel), IRQ_NAME)))
+#else
+#define UART_RZ_CONNECT_IRQ_EVENT(n, irq_name, IRQ_NAME)
+#endif /* CONFIG_DT_HAS_RENESAS_RZ_ICU_V2_ENABLED */
+
 #ifdef CONFIG_CPU_CORTEX_M
 #define GET_IRQ_FLAGS(index, irq_name) 0
 #else /* Cortex-A/R */
@@ -485,6 +495,10 @@ static int uart_rz_init(const struct device *dev)
 	} while (0)
 
 #define UART_RZ_CONFIG_FUNC(n)                                                                     \
+	UART_RZ_CONNECT_IRQ_EVENT(n, rxi, RXI);                                                    \
+	UART_RZ_CONNECT_IRQ_EVENT(n, txi, TXI);                                                    \
+	UART_RZ_CONNECT_IRQ_EVENT(n, tei, TEI);                                                    \
+	UART_RZ_CONNECT_IRQ_EVENT(n, eri, ERI);                                                    \
 	UART_RZ_IRQ_CONNECT(n, eri, uart_rz_sci_eri_isr);                                          \
 	UART_RZ_IRQ_CONNECT(n, rxi, uart_rz_sci_rxi_isr);                                          \
 	UART_RZ_IRQ_CONNECT(n, txi, uart_rz_sci_txi_isr);                                          \
