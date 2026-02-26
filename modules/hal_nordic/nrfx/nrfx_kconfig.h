@@ -259,6 +259,21 @@
 #ifdef CONFIG_NRFX_PRS_BOX_4
 #define NRFX_PRS_BOX_4_ENABLED 1
 #endif
+#ifdef CONFIG_NRFX_PRS_BOX_5
+#define NRFX_PRS_BOX_5_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_PRS_BOX_6
+#define NRFX_PRS_BOX_6_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_PRS_BOX_7
+#define NRFX_PRS_BOX_7_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_PRS_BOX_8
+#define NRFX_PRS_BOX_8_ENABLED 1
+#endif
+#ifdef CONFIG_NRFX_PRS_BOX_9
+#define NRFX_PRS_BOX_9_ENABLED 1
+#endif
 
 #ifdef CONFIG_NRFX_PWM
 #define NRFX_PWM_ENABLED 1
