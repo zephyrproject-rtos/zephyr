@@ -12,6 +12,7 @@
 
 #include <hal/cache_hal.h>
 #include <hal/mmu_hal.h>
+#include <hal/mmu_ll.h>
 
 #include <bootloader_clock.h>
 #include <bootloader_flash.h>
@@ -36,6 +37,7 @@ int hardware_init(void)
 	WSR(MEMCTL, memctl);
 #endif /*XCHAL_ERRATUM_572*/
 
+	soc_hw_init();
 	ana_reset_config();
 	super_wdt_auto_feed();
 
@@ -51,9 +53,22 @@ int hardware_init(void)
 	print_banner();
 #endif /* CONFIG_ESP_CONSOLE */
 
-	cache_hal_init();
-
-	mmu_hal_init();
+	/*
+	 * Initialize MMU context and page size but skip mmu_hal_unmap_all().
+	 * In simple boot mode, ROM bootloader has already set up MMU mappings
+	 * for flash access. Calling mmu_hal_unmap_all() would invalidate those
+	 * mappings and break access to flash-based code and data (IROM/DROM).
+	 *
+	 * Note: cache_hal_init() is NOT called here because soc.c will call
+	 * esp_config_instruction_cache_mode() and esp_config_data_cache_mode()
+	 * which configure the cache appropriately.
+	 */
+	mmu_hal_config_t mmu_config = {
+		.core_nums = 1,
+		.mmu_page_size = CONFIG_MMU_PAGE_SIZE,
+	};
+	mmu_hal_ctx_init(&mmu_config);
+	mmu_ll_set_page_size(0, CONFIG_MMU_PAGE_SIZE);
 
 	flash_update_id();
 
