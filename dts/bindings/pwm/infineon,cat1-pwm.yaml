@@ -1,15 +1,13 @@
-# Copyright (c) 2024 Cypress Semiconductor Corporation (an Infineon company) or
-# an affiliate of Cypress Semiconductor Corporation
-#
-# SPDX-License-Identifier: Apache-2.0
-
-description: Infineon CAT1 PWM
-
-compatible: "infineon,cat1-pwm"
-
 include: [pwm-controller.yaml, pinctrl-device.yaml, "infineon,system-interrupts.yaml"]
 
+
 properties:
+  reg:
+    type: array
+    required: true
+    description: Register base address and size information
+
+
   pinctrl-0:
     description: |
       PORT pin configuration for the PWM signal.
@@ -18,12 +16,24 @@ properties:
       defines and have following
       format: p<port>_<pin>_<peripheral inst>_<signal>.
 
+
       Examples:
         pinctrl-0 = <&p1_1_pwm0_0>;
     required: true
 
+
   pinctrl-names:
     required: true
+
+
+  resolution:
+    type: int
+    required: true
+    description: Counter/timer resolution (16 or 32 bits)
+    enum:
+      - 16
+      - 32
+
 
   "#pwm-cells":
     const: 3
@@ -32,6 +42,7 @@ properties:
       - channel of the timer used for PWM (not used)
       - period to set in ns
       - flags: standard flags like PWM_POLARITY_NORMAL
+
 
 pwm-cells:
   - channel
