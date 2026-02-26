@@ -66,7 +66,7 @@
 #error "Unsupported configuration"
 #endif
 
-#define EXPECTED_SIZE	512
+#define EXPECTED_SIZE	MAX(256, CONFIG_FLASH_FILL_BUFFER_SIZE)
 
 #if !defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE) &&		\
 	!defined(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE)
