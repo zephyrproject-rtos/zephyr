@@ -267,6 +267,9 @@ SECTIONS
     *libzephyr.a:memspi_host_driver.*(.literal .literal.* .text .text.*)
     *libzephyr.a:flash_brownout_hook.*(.literal .literal.* .text .text.*)
     *libzephyr.a:spi_flash_wrap.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:flash_ops.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:spi_flash_os_func_app.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:spi_flash_os_func_noos.*(.literal .literal.* .text .text.*)
     *libzephyr.a:flash_mmap.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_flash_api.*(.literal .text .literal.* .text.*)
 
@@ -301,7 +304,8 @@ SECTIONS
     *libzephyr.a:esp_rom_wdt.*(.literal .literal.* .text .text.*)
 
     /* [mapping:esp_mm] */
-    *libzephyr.a:esp_cache.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_cache_utils.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_cache_msync.*(.literal .literal.* .text .text.*)
     *libzephyr.a:cache_utils.*(.literal .text .literal.* .text.*)
 
     *libzephyr.a:bootloader_soc.*(.literal .text .literal.* .text.*)
@@ -328,6 +332,7 @@ SECTIONS
     *libpp.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
 #endif /* CONFIG_ESP32_WIFI_RX_IRAM_OPT */
 
+    *libbtbb.a:(.iram1 .iram1.*)
     *libble_app.a:(.isr_iram1.* .conn_iram1.* .sleep_iram1.*)
 
     . = ALIGN(4) + 16;
@@ -493,12 +498,16 @@ SECTIONS
     *libzephyr.a:memspi_host_driver.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:flash_brownout_hook.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:spi_flash_wrap.*(.rodata .rodata.* .srodata .srodata.*)
+    *libzephyr.a:flash_ops.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:flash_qio_mode.*(.rodata .rodata.* .srodata .srodata.*)
+    *libzephyr.a:spi_flash_os_func_app.*(.rodata .rodata.* .srodata .srodata.*)
+    *libzephyr.a:spi_flash_os_func_noos.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:flash_mmap.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:esp_flash_api.*(.rodata .rodata.* .srodata .srodata.*)
 
     /* [mapping:esp_mm] */
-    *libzephyr.a:esp_cache.*(.rodata .rodata.* .srodata .srodata.*)
+    *libzephyr.a:esp_cache_utils.*(.rodata .rodata.* .srodata .srodata.*)
+    *libzephyr.a:esp_cache_msync.*(.rodata .rodata.* .srodata .srodata.*)
 
     /* [mapping:esp_hw_support] */
     *(.rodata.esp_cpu_stall)

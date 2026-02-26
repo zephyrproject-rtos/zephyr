@@ -9,9 +9,11 @@
 #include <esp_cpu.h>
 #include <soc/rtc.h>
 #include <esp_rom_sys.h>
+#include <soc/rtc_cntl_reg.h>
 
 #include <hal/cache_hal.h>
 #include <hal/mmu_hal.h>
+#include <hal/mmu_ll.h>
 
 #include <bootloader_clock.h>
 #include <bootloader_flash.h>
@@ -30,12 +32,21 @@ int hardware_init(void)
 {
 	int err = 0;
 
+	soc_hw_init();
+
+	/* Clear any pending RTC/WDT interrupts first */
+	REG_WRITE(RTC_CNTL_INT_ENA_REG, 0);
+	REG_WRITE(RTC_CNTL_INT_CLR_REG, UINT32_MAX);
+
 	ana_reset_config();
 	super_wdt_auto_feed();
 
-#ifdef CONFIG_BOOTLOADER_REGION_PROTECTION_ENABLE
-	esp_cpu_configure_region_protection();
-#endif
+	/*
+	 * Note: esp_cpu_configure_region_protection() is not called here
+	 * because it requires a debugger check (assist_debug peripheral)
+	 * which needs additional setup on ESP32-C2. The PMP region
+	 * protection will be configured later in the boot process.
+	 */
 
 	bootloader_clock_configure();
 
@@ -45,8 +56,17 @@ int hardware_init(void)
 	print_banner();
 #endif /* CONFIG_ESP_CONSOLE */
 
-	cache_hal_init();
-	mmu_hal_init();
+	cache_hal_config_t cache_config = {
+		.core_nums = 1,
+	};
+	cache_hal_init(&cache_config);
+
+	mmu_hal_config_t mmu_config = {
+		.core_nums = 1,
+		.mmu_page_size = CONFIG_MMU_PAGE_SIZE,
+	};
+	mmu_hal_ctx_init(&mmu_config);
+	mmu_ll_set_page_size(0, CONFIG_MMU_PAGE_SIZE);
 
 	flash_update_id();
 
