@@ -16,3 +16,15 @@ examples:
                     status = "okay";
             };
     };
+
+    &clk_lptmr0 {
+            clock-frequency = <32768>;
+            status = "okay";
+    };
+
+    &lptimer0 {
+            clock-source = <ADI_MAX32_PRPH_CLK_SRC_EXTCLK>;
+            counter1: counter {
+                    status = "okay";
+            };
+    };
