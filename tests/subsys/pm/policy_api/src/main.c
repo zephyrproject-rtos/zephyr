@@ -290,6 +290,26 @@ ZTEST(policy_api, test_pm_policy_next_state_default_latency)
 	zassert_equal(latency_cb_call_cnt, 1);
 }
 
+ZTEST(policy_api, test_pm_policy_latency_subscribe_null_disables)
+{
+	struct pm_policy_latency_request req;
+	struct pm_policy_latency_subscription sreq;
+
+	pm_policy_latency_changed_subscribe(&sreq, on_pm_policy_latency_changed);
+
+	latency_cb_call_cnt = 0;
+	expected_latency = 10000;
+	pm_policy_latency_request_add(&req, 10000);
+	zassert_equal(latency_cb_call_cnt, 1);
+
+	pm_policy_latency_changed_subscribe(&sreq, NULL);
+
+	latency_cb_call_cnt = 0;
+	expected_latency = SYS_FOREVER_US;
+	pm_policy_latency_request_remove(&req);
+	zassert_equal(latency_cb_call_cnt, 0);
+}
+
 /**
  * @brief Test pm_policy_state_constraints_get/put functions using devicetree
  * test-states property and PM_STATE_CONSTRAINTS macros.
@@ -407,6 +427,11 @@ ZTEST(policy_api, test_pm_policy_next_state_default_allowed)
 }
 
 ZTEST(policy_api, test_pm_policy_next_state_default_latency)
+{
+	ztest_test_skip();
+}
+
+ZTEST(policy_api, test_pm_policy_latency_subscribe_null_disables)
 {
 	ztest_test_skip();
 }
