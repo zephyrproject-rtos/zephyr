@@ -18,6 +18,10 @@
 #
 # If BabbleSim cannot be found we error right away with a message trying to guide users
 
+if(DEFINED CACHE{BabbleSim_FOUND})
+  return()
+endif()
+
 zephyr_get(BSIM_COMPONENTS_PATH)
 zephyr_get(BSIM_OUT_PATH)
 
@@ -60,9 +64,13 @@ if((NOT DEFINED BSIM_COMPONENTS_PATH) OR (NOT DEFINED BSIM_OUT_PATH))
   )
 endif()
 
-# Many apps cmake files (in and out of tree) expect these environment variables. Lets provide them:
+# Many apps cmake files (in and out of tree) expect these either as environment variables or cmake
+# variables. Lets provide them in any case:
 set(ENV{BSIM_COMPONENTS_PATH} ${BSIM_COMPONENTS_PATH})
 set(ENV{BSIM_OUT_PATH} ${BSIM_OUT_PATH})
+set(BSIM_COMPONENTS_PATH ${BSIM_COMPONENTS_PATH} CACHE PATH "BabbleSim components folder" FORCE)
+set(BSIM_OUT_PATH ${BSIM_OUT_PATH} CACHE PATH "BabbleSim build output folder" FORCE)
+set(BabbleSim_FOUND TRUE CACHE BOOL "BabbleSim has been found")
 
 # Let's check that it is new enough and built,
 # so we provide better information to users than a compile error:
