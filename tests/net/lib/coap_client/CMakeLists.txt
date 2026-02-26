@@ -20,6 +20,7 @@ target_compile_definitions(app PRIVATE _POSIX_C_SOURCE=200809L)
 
 add_compile_definitions(CONFIG_ZVFS_POLL_MAX=3)
 add_compile_definitions(CONFIG_COAP_CLIENT=1)
+add_compile_definitions(CONFIG_COAP_CLIENT_MULTICAST=1)
 add_compile_definitions(CONFIG_COAP_CLIENT_BLOCK_SIZE=256)
 add_compile_definitions(CONFIG_COAP_CLIENT_MESSAGE_SIZE=256)
 add_compile_definitions(CONFIG_COAP_CLIENT_MESSAGE_HEADER_SIZE=48)
