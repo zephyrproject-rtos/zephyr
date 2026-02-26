@@ -7,6 +7,7 @@
 /* Include esp-idf headers first to avoid redefining BIT() macro */
 #include <soc.h>
 #include <soc/rtc_cntl_reg.h>
+#include <soc/interrupts.h>
 #include <soc/timer_group_reg.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <xtensa/config/core-isa.h>
@@ -20,9 +21,9 @@
 #include <zephyr/arch/common/init.h>
 #include <zephyr/zsr.h>
 
+#include <esp32/rom/cache.h>
 #include <esp_private/system_internal.h>
-#include <esp32s3/rom/cache.h>
-#include <esp32s3/rom/rtc.h>
+#include <esp32/rom/rtc.h>
 #include <soc/syscon_reg.h>
 #include <hal/soc_hal.h>
 #include <hal/wdt_hal.h>
