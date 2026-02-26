@@ -1182,6 +1182,7 @@ int i3c_bus_setmrl(struct i3c_device_desc *desc, uint16_t mrl, uint8_t ibi_len)
 	int ret;
 
 	mrl_cmd.len = mrl;
+	mrl_cmd.ibi_len = ibi_len;
 
 	ret = i3c_ccc_do_setmrl(desc, &mrl_cmd);
 	if (ret != 0) {
