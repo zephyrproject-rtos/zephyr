@@ -60,6 +60,7 @@ struct mbox_xlnx_ipi_child_config {
 	uint32_t remote_ipi_bitmask; /**< Remote IPI Bitmask */
 	mem_addr_t parent_ipi_reg;   /**< Host Control register base address */
 	uint8_t *parent_ipi_msg;     /**< Pointer to Host message buffer */
+	uint32_t parent_ipi_id;      /**< Parent (local) IPI agent ID */
 };
 
 /**
@@ -118,8 +119,8 @@ static void mbox_xlnx_ipi_isr(const struct device *pdev)
 
 		/* Read the message if buffered IPI */
 		if ((pcfg->msg_base != NULL) && (cdev_conf->msg_base != NULL)) {
-			off = (mem_addr_t)cdev_conf->msg_base + IPI_REQ_OFF;
-			off += (pcfg->ipi_id) * IPI_BUF_STRIDE;
+			off = (mem_addr_t)pcfg->msg_base + IPI_REQ_OFF;
+			off += cdev_conf->remote_ipi_id * IPI_BUF_STRIDE;
 			buf_ptr = (uint8_t *)ipi_msg_buf;
 			for (buf_idx = 0; buf_idx < IPI_MAX_MSG_BYTES; buf_idx += 4) {
 				*(uint32_t *)(buf_ptr + buf_idx) = sys_read32(off + buf_idx);
@@ -177,8 +178,8 @@ static int mbox_xlnx_ipi_send(const struct device *cdev, uint32_t channel,
 
 	data = (uint32_t *)msg->data;
 	len = msg->size;
-	off = (mem_addr_t)(cfg->parent_ipi_msg) + IPI_REQ_OFF;
-	off += (cfg->remote_ipi_id * IPI_BUF_STRIDE);
+	off = (mem_addr_t)(cfg->msg_base) + IPI_REQ_OFF;
+	off += (cfg->parent_ipi_id * IPI_BUF_STRIDE);
 
 	/* send msg data in 4-byte chunks */
 	while (len >= 4U) {
@@ -332,6 +333,7 @@ static DEVICE_API(mbox, mbox_xlnx_ipi_driver_api) = {
 		.parent_ipi_reg = DT_REG_ADDR_BY_NAME(DT_PARENT(ch_node), ctrl),                   \
 		.parent_ipi_msg =                                                                  \
 			(uint8_t *)DT_REG_ADDR_BY_NAME_OR(DT_PARENT(ch_node), msg, NULL),          \
+		.parent_ipi_id = DT_PROP(DT_PARENT(ch_node), xlnx_ipi_id),                         \
 	};                                                                                         \
 	DEVICE_DT_DEFINE(ch_node, NULL, NULL, &mbox_xlnx_ipi_child_data##ch_node,                  \
 			 &mbox_xlnx_ipi_child_config##ch_node, POST_KERNEL,                        \
