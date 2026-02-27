@@ -617,8 +617,8 @@ struct udc_dwc3_vendor_quirks {
 	int (*shutdown)(const struct device *const dev);
 };
 
-#if DT_HAS_COMPAT_STATUS_OKAY(snps_dwc3 /* <- replace with your more specific compatible */)
-#include "udc_dwc3_qemu.h"
+#ifdef CONFIG_UDC_DWC3_TI_AM62
+#include "udc_dwc3_ti_am62.h"
 #endif
 
 /* Wrapper functions that fallback to returning 0 if no quirk is needed */
