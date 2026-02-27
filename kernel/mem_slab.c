@@ -126,7 +126,7 @@ static int create_free_list(struct k_mem_slab *slab)
 	slab->free_list = NULL;
 	p = (char *)(total_size - slab->info.block_size);
 
-	for (int i = slab->info.num_blocks - 1; i >= 0; i--) {
+	for (uint32_t i = 0; i < slab->info.num_blocks; i++) {
 		*(char **)p = slab->free_list;
 		slab->free_list = p;
 		p -= slab->info.block_size;
