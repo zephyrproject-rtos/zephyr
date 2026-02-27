@@ -22,38 +22,57 @@
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/__assert.h>
 
+/*
+ * Generic macrobatic utilities used later on
+ */
+
+/* `idx` if `mapper(elem)` is 1, else nothing */
+#define ZIDX_IF_MAPPER_RET_1(idx, elem, mapper) COND_CODE_1(mapper(elem), (idx), ())
+
+/* produces a comma-separated list of indices for elements equal to 1 */
+#define ZFILTERED_INDICES(mapper, ...) \
+	LIST_DROP_EMPTY(FOR_EACH_IDX_FIXED_ARG(ZIDX_IF_MAPPER_RET_1, (,), mapper, __VA_ARGS__))
+
+#define LAST_LIST_ELEM_INDEX_INNER(_fi_list, _list_sz) \
+	COND_CODE_0(_list_sz, (-1), (GET_ARG_N(_list_sz, _fi_list)))
+
+/**
+ * Returns the zero-based index of the last `1` in a list which
+ * contains only zeroes and ones after per-element mapping.
+ *
+ * @param mapper Name of a macro `#define MAPPER(e)` that maps an
+ * element `e` from the list to the value `0` or `1`
+ * @param ...    List of elements
+ * @return zero-based index of last `1` in list after mapping,
+ * or `-1` if the list contains only `0`s after mapping
+ */
+#define LAST_LIST_ELEM_INDEX(mapper, ...)				\
+	LAST_LIST_ELEM_INDEX_INNER(					\
+		ZFILTERED_INDICES(mapper, __VA_ARGS__),			\
+		NUM_VA_ARGS(ZFILTERED_INDICES(mapper, __VA_ARGS__)))
+
+/*
+ * End of the generic macrobatics
+ */
+
+#define GPIOPORT_DEVICE_IS_ACTIVE(port)					\
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio##port))
+#define GET_GPIOPORT_DEVICE_OR_NULL(port)				\
+	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpio##port))
+
+/* UTIL_INC() is needed because LAST_LIST_ELEM_INDEX() is zero-based */
+#define LAST_ACTIVE_GPIO_PORT_IDX	\
+	UTIL_INC(LAST_LIST_ELEM_INDEX(GPIOPORT_DEVICE_IS_ACTIVE, STM32_GPIO_PORTS_LIST_LWR))
 /**
  * @brief Array containing pointers to each GPIO port.
  *
  * Entries will be NULL if the GPIO port is not enabled.
+ * Entries past the last enabled GPIO port don't exist
+ * (e.g., only 2 entries if GPIOB is last enabled).
  */
 static const struct device *const gpio_ports[] = {
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioa)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiob)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioc)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiod)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioe)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiof)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiog)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioh)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioi)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioj)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiok)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiol)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiom)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpion)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioo)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiop)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioq)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpior)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpios)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiot)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiou)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiov)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiow)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiox)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioy)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioz)),
+	FOR_EACH(GET_GPIOPORT_DEVICE_OR_NULL, (,),
+		 GET_ARGS_FIRST_N(LAST_ACTIVE_GPIO_PORT_IDX, STM32_GPIO_PORTS_LIST_LWR))
 };
 
 static void ll_gpio_set_pin_pull(GPIO_TypeDef *GPIOx, uint32_t Pin, uint32_t Pull)
