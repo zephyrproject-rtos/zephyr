@@ -35,6 +35,15 @@ if BT
 config NUM_METAIRQ_PRIORITIES
 	default 1
 
-endif
+config MAIN_STACK_SIZE
+	default 2048
+
+config BT_BUF_ACL_TX_COUNT
+	default 10
+
+config BT_BUF_EVT_RX_COUNT
+	default 16
+
+endif # BT
 
 endif # SOC_SERIES_RTL87X2G
