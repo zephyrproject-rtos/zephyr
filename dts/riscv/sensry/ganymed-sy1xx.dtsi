@@ -219,6 +219,11 @@
 			status = "disabled";
 		};
 
+		sysctrl: syscon@1a140000 {
+			compatible = "syscon";
+			reg = <0x1a140000 0x20>;
+		};
+
 		trng: random@1d030100 {
 			compatible = "sensry,sy1xx-trng";
 			reg = <0x1d030100 0x100>;
