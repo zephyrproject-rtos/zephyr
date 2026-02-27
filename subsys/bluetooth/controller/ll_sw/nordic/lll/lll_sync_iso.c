@@ -763,6 +763,7 @@ static void isr_rx(void *param)
 
 isr_rx_done:
 	uint8_t bis_idx_old = bis_idx;
+	uint8_t bis_idx_new = bis_idx;
 
 	new_burst = 0U;
 	skipped = 0U;
@@ -908,12 +909,16 @@ isr_rx_find_subevent:
 			if (sync_stream->bis_index <= lll->num_bis) {
 				uint32_t payload_offset;
 				uint16_t payload_index;
-				uint8_t bis_idx_new;
 
 				lll->bis_curr = sync_stream->bis_index;
 				lll->bn_curr = 1U;
 				lll->irc_curr = 1U;
 				lll->ptc_curr = 0U;
+
+				/* flag that subevent where skipped */
+				if (skipped != 0U) {
+					skipped = 1U;
+				}
 
 				/* new BIS index */
 				bis_idx_new = lll->bis_curr - 1U;
@@ -940,11 +945,6 @@ isr_rx_find_subevent:
 				 * received.
 				 */
 				if (!lll->payload[stream_curr][payload_index]) {
-					/* bn = 1 Rx PDU not received */
-					skipped = (bis_idx_new - bis_idx) *
-						  ((lll->bn * lll->irc) +
-						   lll->ptc);
-
 					/* Receive the (irc_curr)th bn = 1 Rx
 					 * PDU of bis_curr.
 					 */
@@ -952,15 +952,17 @@ isr_rx_find_subevent:
 
 					goto isr_rx_next_subevent;
 				} else {
-					/* bn = 1 Rx PDU already received, skip
-					 * subevent.
-					 */
-					skipped = ((bis_idx_new - bis_idx) *
-						   ((lll->bn * lll->irc) +
-						    lll->ptc)) + 1U;
+					skipped++;
+
+					/* flag to skip successive repetitions */
+					if (lll->bn_curr >= lll->bn) {
+						skipped++;
+
+						new_burst = 1U;
+					}
 
 					/* BIS index */
-					bis_idx = lll->bis_curr - 1U;
+					bis_idx = bis_idx_new;
 
 					/* Find the missing (bn_curr)th Rx PDU
 					 * of bis_curr
@@ -1193,29 +1195,34 @@ isr_rx_next_subevent:
 	} else if (!skipped) {
 		data_chan_use = lll->next_chan_use;
 	} else {
-		uint8_t bis_idx_new = lll->bis_curr - 1U;
+		uint8_t skip = skipped;
 
 		/* Initialise to avoid compile error */
 		data_chan_use = 0U;
 
 		if (bis_idx_old != bis_idx_new) {
-			const uint16_t event_counter =
-				(lll->payload_count / lll->bn) - 1U;
+			if (skip != 0U) {
+				const uint16_t event_counter = (lll->payload_count / lll->bn) - 1U;
 
-			/* Calculate the radio channel to use for next BIS */
-			data_chan_use = lll_chan_iso_event(event_counter,
-						data_chan_id,
-						lll->data_chan_map,
-						lll->data_chan_count,
-						&lll->data_chan.prn_s,
-						&lll->data_chan.remap_idx);
+				/* Calculate the radio channel to use for next BIS */
+				data_chan_use = lll_chan_iso_event(event_counter,
+								   data_chan_id,
+								   lll->data_chan_map,
+								   lll->data_chan_count,
+								   &lll->data_chan.prn_s,
+								   &lll->data_chan.remap_idx);
+				/* reset flagged skipped value */
+				skip--;
+			} else {
+				data_chan_use = lll->next_chan_use;
+			}
 
-			skipped -= (bis_idx_new - bis_idx_old) *
-				   ((lll->bn * lll->irc) + lll->ptc);
 		}
 
-		while (skipped--) {
-			/* Calculate the radio channel to use for subevent */
+		/* Calculate the radio channel to use for subevent */
+		while (skip != 0U) {
+			skip--;
+
 			data_chan_use = lll_chan_iso_subevent(data_chan_id,
 						lll->data_chan_map,
 						lll->data_chan_count,
