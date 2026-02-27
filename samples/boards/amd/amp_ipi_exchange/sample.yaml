@@ -1,0 +1,27 @@
+sample:
+  name: AMD RPU AMP IPI Exchange Demo
+  description: |
+    Dual-core AMP demonstration for AMD RPU platforms using IPI mailbox
+    for inter-core communication.  Two independent Zephyr instances
+    (one per core) exchange sensor data via the Xilinx IPI hardware
+    mailbox, demonstrating workload isolation with structured data flow.
+    Core 0 acts as a producer (sends data), Core 1 as a consumer
+    (receives data, sends ACK).  Round-trip latency is measured.
+    Supports Versal RPU (Cortex-R5, GICv1), VersalNet RPU,
+    and Versal Gen 2 RPU (Cortex-R52, GICv3).
+    Requires two separate ELFs (core0 + core1) loaded via XSDB.
+tests:
+  sample.board.amp_ipi_exchange:
+    platform_allow:
+      - versal_rpu/versal_rpu/amp/core0
+      - versal_rpu/versal_rpu/amp/core1
+      - versalnet_rpu/amd_versalnet_rpu/amp/core0
+      - versalnet_rpu/amd_versalnet_rpu/amp/core1
+      - versal2_rpu/amd_versal2_rpu/amp/core0
+      - versal2_rpu/amd_versal2_rpu/amp/core1
+    tags: boards amd amp mbox
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - ".*Overall: ALL PASS.*"

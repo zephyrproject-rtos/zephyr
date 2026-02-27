@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2026 Advanced Micro Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * VersalNet RPU AMP Core 1 — IPI mailbox overlay
+ *
+ * Local agent:  IPI2 (id=4, ctrl=0xeb350000)
+ * Remote agent: IPI1 (id=3, ctrl=0xeb340000)
+ *
+ * Core 1 sends via IPI2→IPI1 (triggers IPI1 interrupt on Core 0).
+ * Core 1 receives via IPI2 when Core 0 triggers IPI2 from IPI1.
+ */
+
+&ipi2 {
+	status = "okay";
+
+	ipi2_to_ipi1: mailbox@eb340000 {
+		compatible = "xlnx,mbox-versal-ipi-dest-mailbox";
+		reg = <0xeb340000 0x20>, <0xeb3f0600 0x1000>;
+		reg-names = "ctrl", "msg";
+		xlnx,ipi-id = <3>;
+		#mbox-cells = <1>;
+	};
+};
+
+/ {
+	mbox-consumer {
+		compatible = "vnd,mbox-consumer";
+		mboxes = <&ipi2_to_ipi1 0>, <&ipi2_to_ipi1 1>;
+		mbox-names = "tx", "rx";
+	};
+};

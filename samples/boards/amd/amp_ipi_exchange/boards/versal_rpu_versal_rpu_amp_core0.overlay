@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2026 Advanced Micro Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Versal RPU AMP Core 0 — IPI mailbox overlay
+ *
+ * Local agent:  IPI1 (id=3, ctrl=0xff340000, SPI 31)
+ * Remote agent: IPI2 (id=4, ctrl=0xff350000)
+ *
+ * Versal RPU DTSI does not include IPI nodes, so we define
+ * the full parent + child here.
+ *
+ * Core 0 sends via IPI1→IPI2 (triggers IPI2 interrupt on Core 1).
+ * Core 0 receives via IPI1 when Core 1 triggers IPI1 from IPI2.
+ */
+
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+&soc {
+	ipi1: mailbox@ff340000 {
+		compatible = "xlnx,mbox-versal-ipi-mailbox";
+		status = "okay";
+		interrupts = <GIC_SPI 31 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		reg = <0xff340000 0x10000>, <0xff3f0600 0x200>;
+		reg-names = "ctrl", "msg";
+		xlnx,ipi-id = <3>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		ipi1_to_ipi2: mailbox@ff350000 {
+			compatible = "xlnx,mbox-versal-ipi-dest-mailbox";
+			reg = <0xff350000 0x10000>, <0xff3f0800 0x200>;
+			reg-names = "ctrl", "msg";
+			xlnx,ipi-id = <4>;
+			#mbox-cells = <1>;
+		};
+	};
+};
+
+/ {
+	mbox-consumer {
+		compatible = "vnd,mbox-consumer";
+		mboxes = <&ipi1_to_ipi2 0>, <&ipi1_to_ipi2 1>;
+		mbox-names = "tx", "rx";
+	};
+};
