@@ -145,7 +145,7 @@ stat_mgmt_show(struct smp_streamer *ctxt)
 
 	if (stat_mgmt_count(stat_name, &counter) != 0) {
 		LOG_ERR("Invalid stat name: %s", stat_name);
-		ok = smp_add_cmd_err(zse, ZEPHYR_MGMT_GRP_BASIC,
+		ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_STAT,
 				     STAT_MGMT_ERR_INVALID_STAT_NAME);
 		goto end;
 	}
@@ -172,7 +172,7 @@ stat_mgmt_show(struct smp_streamer *ctxt)
 				rc = STAT_MGMT_ERR_WALK_ABORTED;
 			}
 
-			ok = smp_add_cmd_err(zse, ZEPHYR_MGMT_GRP_BASIC, rc);
+			ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_STAT, rc);
 		}
 	}
 
