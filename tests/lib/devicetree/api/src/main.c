@@ -9,6 +9,7 @@
 #include <zephyr/devicetree/nvmem.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/devicetree/partitions.h>
 
 #include <stdlib.h>
 
@@ -98,6 +99,7 @@
 
 #define TEST_MTD_0 DT_PATH(test, test_mtd_ffeeddcc)
 #define TEST_MTD_1 DT_PATH(test, test_mtd_33221100)
+#define TEST_MTD_2 DT_PATH(test_mtd_12830)
 
 #define TEST_MEM_0 DT_CHILD(TEST_MTD_0, flash_20000000)
 
@@ -111,6 +113,22 @@
 				    partition_100, partition_0)
 #define TEST_SUBPARTITION_1 DT_PATH(test, test_mtd_ffeeddcc, flash_20000000, partitions, \
 				    partition_100, partition_40)
+
+#define TEST_FLASH_0 DT_PATH(test, test_mtd_ffeeddcc, flash_0)
+#define TEST_FLASH_1 DT_PATH(test_mtd_12830, flash_10000000)
+
+#define TEST_MAPPED_PARTITION_1 DT_PATH(test, test_mtd_ffeeddcc, flash_0, partition_0)
+#define TEST_MAPPED_PARTITION_2 DT_PATH(test, test_mtd_ffeeddcc, flash_0, partition_c000)
+#define TEST_MAPPED_PARTITION_3 DT_PATH(test, test_mtd_ffeeddcc, flash_0, partition_82000)
+#define TEST_MAPPED_PARTITION_4 DT_PATH(test_mtd_12830, flash_10000000, partitions, \
+					partition_f8000)
+#define TEST_MAPPED_PARTITION_5 DT_PATH(test_mtd_12830, flash_10000000, partitions, \
+					partition_f8000, partition_0)
+#define TEST_MAPPED_PARTITION_6 DT_PATH(test_mtd_12830, flash_10000000, partitions, \
+					partition_f8000, partition_0, partition_1000)
+#define TEST_MAPPED_PARTITION_7 DT_PATH(test_mtd_12830, flash_10000000, partitions, \
+					partition_f8000, partition_3000)
+#define TEST_DISABLED_MAPPED_PARTITION DT_PATH(test, test_mtd_ffeeddcc, flash_0, partition_89000)
 
 #define TEST_GPIO_CONNECTOR  DT_PATH(gpio_map_test, connector)
 #define TEST_INTERRUPT_NEXUS DT_PATH(interrupt_map_test, nexus)
@@ -3329,23 +3347,6 @@ ZTEST(devicetree_api, test_fixed_partitions)
 	zassert_equal(DT_FIXED_PARTITION_ADDR(TEST_PARTITION_0), 0x20000000);
 	zassert_equal(DT_FIXED_PARTITION_ADDR(TEST_PARTITION_1), 0x200000c0);
 	zassert_equal(DT_FIXED_PARTITION_ADDR(TEST_PARTITION_2), 0x33291080);
-
-	/* Test that all DT_FIXED_PARTITION_ID are defined and unique. */
-#define FIXED_PARTITION_ID_COMMA(node_id) DT_FIXED_PARTITION_ID(node_id),
-
-	static const int ids[] = {
-		DT_FOREACH_STATUS_OKAY_VARGS(fixed_partitions, DT_FOREACH_CHILD,
-					     FIXED_PARTITION_ID_COMMA)
-	};
-	bool found[ARRAY_SIZE(ids)] = { false };
-
-	for (int i = 0; i < ARRAY_SIZE(ids); i++) {
-		zassert_between_inclusive(ids[i], 0, ARRAY_SIZE(ids) - 1, "");
-		zassert_false(found[ids[i]]);
-		found[ids[i]] = true;
-	}
-
-#undef FIXED_PARTITION_ID_COMMA
 }
 
 ZTEST(devicetree_api, test_fixed_subpartitions)
@@ -3377,6 +3378,137 @@ ZTEST(devicetree_api, test_fixed_subpartitions)
 	/* Check sizes match */
 	zassert_equal(DT_REG_SIZE(TEST_SUBPARTITION_COMBINED),
 		      (DT_REG_SIZE(TEST_SUBPARTITION_0) + DT_REG_SIZE(TEST_SUBPARTITION_1)));
+}
+
+ZTEST(devicetree_api, test_mapped_partition)
+{
+	/* Test finding fixed partitions by the 'label' property. */
+	zassert_false(DT_HAS_MAPPED_PARTITION_LABEL(mapped_partition_0));
+	zassert_true(DT_HAS_MAPPED_PARTITION_LABEL(mapped_partition_1));
+	zassert_true(DT_HAS_MAPPED_PARTITION_LABEL(mapped_partition_1));
+	zassert_true(DT_HAS_MAPPED_PARTITION_LABEL(mapped_partition_2));
+	zassert_true(DT_HAS_MAPPED_PARTITION_LABEL(mapped_partition_3));
+	zassert_true(DT_HAS_MAPPED_PARTITION_LABEL(mapped_partition_4));
+	zassert_true(DT_HAS_MAPPED_PARTITION_LABEL(mapped_partition_5));
+	zassert_true(DT_HAS_MAPPED_PARTITION_LABEL(mapped_partition_6));
+	zassert_true(DT_HAS_MAPPED_PARTITION_LABEL(mapped_partition_7));
+	zassert_true(DT_HAS_MAPPED_PARTITION_LABEL(disabled_mapped_partition));
+
+	zassert_true(DT_SAME_NODE(TEST_MAPPED_PARTITION_1,
+				  DT_NODE_BY_MAPPED_PARTITION_LABEL(mapped_partition_1)));
+	zassert_true(DT_SAME_NODE(TEST_MAPPED_PARTITION_2,
+				  DT_NODE_BY_MAPPED_PARTITION_LABEL(mapped_partition_2)));
+	zassert_true(DT_SAME_NODE(TEST_MAPPED_PARTITION_3,
+				  DT_NODE_BY_MAPPED_PARTITION_LABEL(mapped_partition_3)));
+	zassert_true(DT_SAME_NODE(TEST_MAPPED_PARTITION_4,
+				  DT_NODE_BY_MAPPED_PARTITION_LABEL(mapped_partition_4)));
+	zassert_true(DT_SAME_NODE(TEST_MAPPED_PARTITION_5,
+				  DT_NODE_BY_MAPPED_PARTITION_LABEL(mapped_partition_5)));
+	zassert_true(DT_SAME_NODE(TEST_MAPPED_PARTITION_6,
+				  DT_NODE_BY_MAPPED_PARTITION_LABEL(mapped_partition_6)));
+	zassert_true(DT_SAME_NODE(TEST_MAPPED_PARTITION_7,
+				  DT_NODE_BY_MAPPED_PARTITION_LABEL(mapped_partition_7)));
+	zassert_true(DT_SAME_NODE(TEST_DISABLED_MAPPED_PARTITION,
+				  DT_NODE_BY_MAPPED_PARTITION_LABEL(disabled_mapped_partition)));
+
+	zassert_true(DT_MAPPED_PARTITION_EXISTS(TEST_MAPPED_PARTITION_1));
+	zassert_true(DT_MAPPED_PARTITION_EXISTS(TEST_MAPPED_PARTITION_2));
+	zassert_true(DT_MAPPED_PARTITION_EXISTS(TEST_MAPPED_PARTITION_3));
+	zassert_true(DT_MAPPED_PARTITION_EXISTS(TEST_MAPPED_PARTITION_4));
+	zassert_true(DT_MAPPED_PARTITION_EXISTS(TEST_MAPPED_PARTITION_5));
+	zassert_true(DT_MAPPED_PARTITION_EXISTS(TEST_MAPPED_PARTITION_6));
+	zassert_true(DT_MAPPED_PARTITION_EXISTS(TEST_MAPPED_PARTITION_7));
+	zassert_true(DT_MAPPED_PARTITION_EXISTS(TEST_DISABLED_MAPPED_PARTITION));
+
+	/* There should not be a node with `label = "mapped-partition-8"`. */
+	zassert_false(DT_HAS_MAPPED_PARTITION_LABEL(mapped_partition_8));
+	zassert_false(DT_NODE_EXISTS(DT_NODE_BY_MAPPED_PARTITION_LABEL(mapped_partition_8)));
+
+	/* Test DT_MTD_FROM_MAPPED_PARTITION. */
+	zassert_true(DT_NODE_EXISTS(DT_MTD_FROM_MAPPED_PARTITION(TEST_MAPPED_PARTITION_1)));
+	zassert_true(DT_NODE_EXISTS(DT_MTD_FROM_MAPPED_PARTITION(TEST_MAPPED_PARTITION_2)));
+	zassert_true(DT_NODE_EXISTS(DT_MTD_FROM_MAPPED_PARTITION(TEST_MAPPED_PARTITION_3)));
+	zassert_true(DT_NODE_EXISTS(DT_MTD_FROM_MAPPED_PARTITION(TEST_MAPPED_PARTITION_4)));
+	zassert_true(DT_NODE_EXISTS(DT_MTD_FROM_MAPPED_PARTITION(TEST_MAPPED_PARTITION_5)));
+	zassert_true(DT_NODE_EXISTS(DT_MTD_FROM_MAPPED_PARTITION(TEST_MAPPED_PARTITION_6)));
+	zassert_true(DT_NODE_EXISTS(DT_MTD_FROM_MAPPED_PARTITION(TEST_MAPPED_PARTITION_7)));
+	zassert_true(DT_NODE_EXISTS(DT_MTD_FROM_MAPPED_PARTITION(TEST_DISABLED_MAPPED_PARTITION)));
+
+	zassert_true(DT_SAME_NODE(TEST_MTD_0, DT_MTD_FROM_MAPPED_PARTITION(
+							TEST_MAPPED_PARTITION_1)));
+	zassert_true(DT_SAME_NODE(TEST_MTD_0, DT_MTD_FROM_MAPPED_PARTITION(
+							TEST_MAPPED_PARTITION_2)));
+	zassert_true(DT_SAME_NODE(TEST_MTD_0, DT_MTD_FROM_MAPPED_PARTITION(
+							TEST_MAPPED_PARTITION_3)));
+	zassert_true(DT_SAME_NODE(TEST_MTD_2, DT_MTD_FROM_MAPPED_PARTITION(
+							TEST_MAPPED_PARTITION_4)));
+	zassert_true(DT_SAME_NODE(TEST_MTD_2, DT_MTD_FROM_MAPPED_PARTITION(
+							TEST_MAPPED_PARTITION_5)));
+	zassert_true(DT_SAME_NODE(TEST_MTD_2, DT_MTD_FROM_MAPPED_PARTITION(
+							TEST_MAPPED_PARTITION_6)));
+	zassert_true(DT_SAME_NODE(TEST_MTD_2, DT_MTD_FROM_MAPPED_PARTITION(
+							TEST_MAPPED_PARTITION_7)));
+	zassert_true(DT_SAME_NODE(TEST_MTD_0, DT_MTD_FROM_MAPPED_PARTITION(
+							TEST_DISABLED_MAPPED_PARTITION)));
+
+	/* Test DT_MEM_FROM_MAPPED_PARTITION. */
+	zassert_true(DT_NODE_EXISTS(DT_MEM_FROM_MAPPED_PARTITION(TEST_MAPPED_PARTITION_1)));
+	zassert_true(DT_NODE_EXISTS(DT_MEM_FROM_MAPPED_PARTITION(TEST_MAPPED_PARTITION_2)));
+	zassert_true(DT_NODE_EXISTS(DT_MEM_FROM_MAPPED_PARTITION(TEST_MAPPED_PARTITION_3)));
+	zassert_true(DT_NODE_EXISTS(DT_MEM_FROM_MAPPED_PARTITION(TEST_MAPPED_PARTITION_4)));
+	zassert_true(DT_NODE_EXISTS(DT_MEM_FROM_MAPPED_PARTITION(TEST_MAPPED_PARTITION_5)));
+	zassert_true(DT_NODE_EXISTS(DT_MEM_FROM_MAPPED_PARTITION(TEST_MAPPED_PARTITION_6)));
+	zassert_true(DT_NODE_EXISTS(DT_MEM_FROM_MAPPED_PARTITION(TEST_MAPPED_PARTITION_7)));
+	zassert_true(DT_NODE_EXISTS(DT_MEM_FROM_MAPPED_PARTITION(TEST_DISABLED_MAPPED_PARTITION)));
+
+	zassert_true(DT_SAME_NODE(TEST_FLASH_0, DT_MEM_FROM_MAPPED_PARTITION(
+							TEST_MAPPED_PARTITION_1)));
+	zassert_true(DT_SAME_NODE(TEST_FLASH_0, DT_MEM_FROM_MAPPED_PARTITION(
+							TEST_MAPPED_PARTITION_2)));
+	zassert_true(DT_SAME_NODE(TEST_FLASH_0, DT_MEM_FROM_MAPPED_PARTITION(
+							TEST_MAPPED_PARTITION_3)));
+	zassert_true(DT_SAME_NODE(TEST_FLASH_1, DT_MEM_FROM_MAPPED_PARTITION(
+							TEST_MAPPED_PARTITION_4)));
+	zassert_true(DT_SAME_NODE(TEST_FLASH_1, DT_MEM_FROM_MAPPED_PARTITION(
+							TEST_MAPPED_PARTITION_5)));
+	zassert_true(DT_SAME_NODE(TEST_FLASH_1, DT_MEM_FROM_MAPPED_PARTITION(
+							TEST_MAPPED_PARTITION_6)));
+	zassert_true(DT_SAME_NODE(TEST_FLASH_1, DT_MEM_FROM_MAPPED_PARTITION(
+							TEST_MAPPED_PARTITION_7)));
+	zassert_true(DT_SAME_NODE(TEST_FLASH_0, DT_MEM_FROM_MAPPED_PARTITION(
+							TEST_DISABLED_MAPPED_PARTITION)));
+
+	/* Test DT_MAPPED_PARTITION_ADDR. */
+	zassert_equal(DT_MAPPED_PARTITION_ADDR(TEST_MAPPED_PARTITION_1), 0x0);
+	zassert_equal(DT_MAPPED_PARTITION_ADDR(TEST_MAPPED_PARTITION_2), 0xc000);
+	zassert_equal(DT_MAPPED_PARTITION_ADDR(TEST_MAPPED_PARTITION_3), 0x82000);
+	zassert_equal(DT_MAPPED_PARTITION_ADDR(TEST_MAPPED_PARTITION_4), 0x100f8000);
+	zassert_equal(DT_MAPPED_PARTITION_ADDR(TEST_MAPPED_PARTITION_5), 0x100f8000);
+	zassert_equal(DT_MAPPED_PARTITION_ADDR(TEST_MAPPED_PARTITION_6), 0x100f9000);
+	zassert_equal(DT_MAPPED_PARTITION_ADDR(TEST_MAPPED_PARTITION_7), 0x100fb000);
+	zassert_equal(DT_MAPPED_PARTITION_ADDR(TEST_DISABLED_MAPPED_PARTITION), 0x89000);
+
+	/* Test that all DT_MAPPED_PARTITION_ID are defined and unique. */
+#define FIXED_PARTITION_ID_COMMA(node_id) DT_FIXED_PARTITION_ID(node_id),
+#define MAPPED_PARTITION_ID_COMMA(node_id) DT_MAPPED_PARTITION_ID(node_id),
+
+	static const int ids[] = {
+		DT_FOREACH_STATUS_OKAY_VARGS(fixed_partitions, DT_FOREACH_CHILD,
+					     FIXED_PARTITION_ID_COMMA)
+		DT_FOREACH_STATUS_OKAY_VARGS(fixed_subpartitions, DT_FOREACH_CHILD,
+					     FIXED_PARTITION_ID_COMMA)
+		DT_FOREACH_STATUS_OKAY_VARGS(zephyr_mapped_partitions, DT_FOREACH_CHILD,
+					     MAPPED_PARTITION_ID_COMMA)
+	};
+	bool found[20] = { false };
+
+	for (int i = 0; i < ARRAY_SIZE(ids); i++) {
+		zassert_between_inclusive(ids[i], 0, ARRAY_SIZE(found) - 1, "");
+		zassert_false(found[ids[i]]);
+		found[ids[i]] = true;
+	}
+
+#undef FIXED_PARTITION_ID_COMMA
 }
 
 ZTEST(devicetree_api, test_string_token)
