@@ -2,6 +2,14 @@
 
 zephyr_library()
 
+if(CONFIG_SLOW_FLASH_DATA)
+  if(COMPILER STREQUAL gcc)
+    zephyr_compile_options(-mslow-flash-data)
+  elseif(COMPILER STREQUAL iar)
+    zephyr_compile_options(--no_literal_pool)
+  endif()
+endif()
+
 zephyr_library_sources(
   fatal.c
   nmi.c
