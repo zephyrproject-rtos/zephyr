@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Nordic Semiconductor ASA
  * Copyright (c) 2016 Linaro Limited
+ * Copyright (c) 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +22,8 @@
 #include <sys/types.h>
 
 #include <zephyr/types.h>
+
+#include <zephyr/dfu/dfu_boot.h>
 
 /**
  * @brief MCUboot public API for MCUboot control of image boot process
@@ -83,6 +86,17 @@ extern "C" {
 
 /** Sector at which firmware update should be placed by application in swap using offset mode */
 #define SWAP_USING_OFFSET_SECTOR_UPDATE_BEGIN 1
+
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) || defined(__DOXYGEN__)
+/** Slot has no valid boot state set (magic not written) */
+#define MCUBOOT_DIRECT_XIP_BOOT_UNSET   0
+/** Slot is marked for one-time test boot, will revert if not confirmed */
+#define MCUBOOT_DIRECT_XIP_BOOT_ONCE    1
+/** Slot is pending revert to the other slot on next boot */
+#define MCUBOOT_DIRECT_XIP_BOOT_REVERT  2
+/** Slot is confirmed and will boot permanently */
+#define MCUBOOT_DIRECT_XIP_BOOT_FOREVER 3
+#endif
 
 /**
  * @brief MCUboot image header representation for image version
@@ -301,6 +315,17 @@ ssize_t boot_get_trailer_status_offset(size_t area_size);
 size_t boot_get_image_start_offset(uint8_t area_id);
 #else
 #define boot_get_image_start_offset(...) 0
+#endif
+
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT) || defined(__DOXYGEN__)
+/**
+ * @brief Read the Direct XIP state of a slot
+ *
+ * @param slot Slot number to read state from
+ *
+ * @return MCUBOOT_DIRECT_XIP_BOOT_* value on success, negative errno on failure
+ */
+int mcuboot_read_directxip_state(int slot);
 #endif
 
 #ifdef __cplusplus
