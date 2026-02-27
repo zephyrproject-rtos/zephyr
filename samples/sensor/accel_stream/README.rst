@@ -1,8 +1,8 @@
-.. zephyr:code-sample:: accel_polling
-   :name: Generic 3-Axis accelerometer polling
+.. zephyr:code-sample:: accel_stream
+   :name: Generic 3-Axis accelerometer streaming
    :relevant-api: sensor_interface
 
-   Get 3-Axis accelerometer data from a sensor (polling mode).
+   Get 3-Axis accelerometer data from a sensor (stream mode).
 
 Overview
 ********
@@ -26,7 +26,7 @@ to be aliased as ``accelN`` where ``N`` goes from ``0`` to ``9``. For example:
 Make sure the aliases are in devicetree, then build and run with:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/sensor/accel_polling
+   :zephyr-app: samples/sensor/accel_stream
    :board: <board to use>
    :goals: build flash
    :compact:

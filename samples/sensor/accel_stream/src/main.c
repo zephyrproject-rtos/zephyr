@@ -195,7 +195,7 @@ int main(void)
 #ifndef CONFIG_COVERAGE
 	while (1) {
 #else
-	for (int i = 0; i < 5; i++) {
+	for (int k = 0; k < 5; k++) {
 #endif
 		for (size_t i = 0; i < ARRAY_SIZE(sensors); i++) {
 #ifdef CONFIG_SENSOR_ASYNC_API
