@@ -9,7 +9,18 @@ config PWM_INFINEON_TCPWM
 	bool "Infineon TCPWM driver"
 	default y
 	depends on DT_HAS_INFINEON_TCPWM_PWM_ENABLED
+	depends on !SOC_FAMILY_INFINEON_PSOC4
 	select USE_INFINEON_PWM
 	select PINCTRL
 	help
 	  This option enables the PWM driver in the Infineon TCPWM peripheral.
+
+config PWM_INFINEON_TCPWM_PSOC4
+	bool "Infineon TCPWM driver for PSOC4"
+	default y
+	depends on DT_HAS_INFINEON_TCPWM_PWM_ENABLED
+	depends on SOC_FAMILY_INFINEON_PSOC4
+	select USE_INFINEON_PWM
+	select PINCTRL
+	help
+	  This option enables the PWM driver in the Infineon TCPWM peripheral for PSOC4 family.
