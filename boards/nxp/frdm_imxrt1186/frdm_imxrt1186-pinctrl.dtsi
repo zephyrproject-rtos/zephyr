@@ -58,14 +58,15 @@
 	/* QSPI Flash on FlexSPI2 - GPIO_AON_22/23/24/25/26/27 */
 	pinmux_flexspi2: pinmux_flexspi2 {
 		group0 {
-			pinmux = <&iomuxc_aon_gpio_aon_22_flexspi2_a_ss0_b>,
+			pinmux = <&iomuxc_aon_gpio_aon_21_flexspi2_a_dqs>,
+				 <&iomuxc_aon_gpio_aon_22_flexspi2_a_ss0_b>,
 				 <&iomuxc_aon_gpio_aon_23_flexspi2_a_sclk>,
 				 <&iomuxc_aon_gpio_aon_24_flexspi2_a_data0>,
 				 <&iomuxc_aon_gpio_aon_25_flexspi2_a_data1>,
 				 <&iomuxc_aon_gpio_aon_26_flexspi2_a_data2>,
 				 <&iomuxc_aon_gpio_aon_27_flexspi2_a_data3>;
-			drive-strength = "high";
-			slew-rate = "fast";
+			bias-pull-down;
+			input-enable;
 		};
 	};
 

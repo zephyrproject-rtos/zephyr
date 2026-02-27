@@ -16,6 +16,7 @@ ram: 8192
 flash: 16384
 supported:
   - adc
+  - flash
   - gpio
   - can
   - uart

@@ -48,6 +48,10 @@
 	current-speed = <115200>;
 };
 
+&flexspi2 {
+	status = "okay";
+};
+
 &lpadc1 {
 	status = "okay";
 };
