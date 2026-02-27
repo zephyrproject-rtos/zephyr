@@ -600,14 +600,25 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 			 "msr   PSP, %1\n" /* __set_PSP(stack_ptr) */
 
 			 "movs  r0,  #0\n" /* arch_irq_unlock(0) */
+#ifdef CONFIG_SLOW_FLASH_DATA
+			 "movw  r3, #:lower16:arch_irq_unlock_outlined\n"
+			 "movt  r3, #:upper16:arch_irq_unlock_outlined\n"
+#else
 			 "ldr   r3, =arch_irq_unlock_outlined\n"
+#endif
 			 "blx   r3\n"
 
 			 "mov   r0, r4\n" /* z_thread_entry(_main, NULL, NULL, NULL) */
 			 "movs  r1, #0\n"
 			 "movs  r2, #0\n"
 			 "movs  r3, #0\n"
+#ifdef CONFIG_SLOW_FLASH_DATA
+			 "movw  r4, #:lower16:z_thread_entry\n"
+			 "movt  r4, #:upper16:z_thread_entry\n"
+#else
 			 "ldr   r4, =z_thread_entry\n"
+#endif
+
 			 /* We don’t intend to return, so there is no need to link. */
 			 "bx    r4\n"
 			 /* Force a literal pool placement for the addresses referenced above */
