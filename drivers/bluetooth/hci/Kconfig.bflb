@@ -1,10 +1,18 @@
-# Copyright (c) 2026 William Markezana
+# Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
+
+config BT_BFLB
+	bool
+	select HWINFO
+	help
+	  Common symbol for all Bouffalo Lab on-chip BLE controllers.
+	  Selected automatically by the SoC-specific HCI driver configs.
 
 config BT_BFLB_BL70X
 	bool
 	default y
-	depends on DT_HAS_BFLB_BL70X_BT_HCI_ENABLED
+	depends on DT_HAS_BFLB_BT_HCI_ENABLED && SOC_SERIES_BL70X
+	select BT_BFLB
 	select HAS_BT_CTLR
 	select DYNAMIC_INTERRUPTS
 	select FPU_SHARING
@@ -64,6 +72,121 @@ config BFLB_BL70X_BLE_UARTHCI
 
 endchoice
 
+endif # BT_BFLB_BL70X
+
+config BT_BFLB_BL70XL
+	bool
+	default y
+	depends on DT_HAS_BFLB_BT_HCI_ENABLED && SOC_SERIES_BL70XL
+	select BT_BFLB
+	select HAS_BT_CTLR
+	select DYNAMIC_INTERRUPTS
+	select FPU_SHARING
+	select BFLB_BTBLE_PORT_OS_SHIM
+	help
+	  Bouffalo Lab BL70XL on-chip BLE controller HCI driver.
+	  Uses precompiled binary blobs from the hal_bouffalolab module.
+
+if BT_BFLB_BL70XL
+
+choice BFLB_BL70XL_SILICON_REV
+	prompt "BL70XL silicon revision"
+	default BFLB_BL70XL_REV_A1
+	help
+	  Select the BL70XL silicon revision. This determines the ROM
+	  data addresses used by the BLE controller binary blob.
+
+config BFLB_BL70XL_REV_A0
+	bool "A0"
+
+config BFLB_BL70XL_REV_A1
+	bool "A1"
+
+endchoice
+
+choice BFLB_BL70XL_BLE_VARIANT
+	prompt "BLE controller variant"
+	default BFLB_BL70XL_BLE_M8S1P if BT_HCI_RAW
+	default BFLB_BL70XL_BLE_M8S1P if BT_CENTRAL && BT_PERIPHERAL
+	default BFLB_BL70XL_BLE_M0S1SP if !BT_CONN && BT_OBSERVER
+	default BFLB_BL70XL_BLE_M0S1SP if BT_PERIPHERAL && BT_OBSERVER && BT_MAX_CONN = 1
+	default BFLB_BL70XL_BLE_M0S1P if BT_PERIPHERAL && BT_MAX_CONN = 1
+	default BFLB_BL70XL_BLE_M1S1P
+	help
+	  Select the BLE controller binary variant. This determines the
+	  maximum number of connections, supported roles, and features.
+	  The naming convention is m<master>s<slave>[suffix]:
+	    m = max master connections, s = max slave connections
+	    p = PDS (power down sleep), r = ROM code, s = scan/observer
+
+config BFLB_BL70XL_BLE_M0S1P
+	bool "m0s1p: Peripheral only, 1 connection"
+	help
+	  1 BLE connection, slave/peripheral only. All controller code
+	  in flash. Supports PDS.
+
+config BFLB_BL70XL_BLE_M0S1RP
+	bool "m0s1rp: Peripheral only, 1 connection (ROM code)"
+	depends on BFLB_BL70XL_REV_A1
+	help
+	  1 BLE connection, slave/peripheral only. Some controller code
+	  in ROM for reduced flash usage. Requires A1 silicon. Supports PDS.
+
+config BFLB_BL70XL_BLE_M0S1SP
+	bool "m0s1sp: Peripheral + Observer, 1 connection"
+	help
+	  1 BLE connection, slave/peripheral + observer/scanner.
+	  All controller code in flash. Supports PDS.
+
+config BFLB_BL70XL_BLE_M0S2P
+	bool "m0s2p: Peripheral only, 2 connections"
+	help
+	  2 BLE connections, slave/peripheral only. All controller code
+	  in flash. Supports PDS.
+
+config BFLB_BL70XL_BLE_M0S4P
+	bool "m0s4p: Peripheral only, 4 connections"
+	help
+	  4 BLE connections, slave/peripheral only. All controller code
+	  in flash. Supports PDS.
+
+config BFLB_BL70XL_BLE_M1S1P
+	bool "m1s1p: All roles, 1 connection"
+	help
+	  1 BLE connection, master or slave. All controller code in flash.
+	  Supports PDS.
+
+config BFLB_BL70XL_BLE_M2S1P
+	bool "m2s1p: All roles, 2 connections"
+	help
+	  2 BLE connections, master or slave. All controller code in flash.
+	  Supports PDS.
+
+config BFLB_BL70XL_BLE_M4S1P
+	bool "m4s1p: All roles, 4 connections"
+	help
+	  4 BLE connections, master or slave. All controller code in flash.
+	  Supports PDS.
+
+config BFLB_BL70XL_BLE_M8S1P
+	bool "m8s1p: All roles, 8 connections"
+	help
+	  8 BLE connections, master or slave. All controller code in flash.
+	  Supports PDS. Uses 16KB exchange memory (vs 8KB for other variants).
+
+endchoice
+
+config BFLB_BL70XL_BLE_EM_16K
+	bool
+	default y if BFLB_BL70XL_BLE_M8S1P
+	help
+	  Use 16KB exchange memory for BLE controller.
+	  Only needed for the m8s1p variant (8 connections).
+
+endif # BT_BFLB_BL70XL
+
+if BT_BFLB
+
 config BT_BUF_ACL_TX_COUNT
 	default 2
 
@@ -81,4 +204,11 @@ config BT_BFLB_CTLR_TASK_PRIO
 	  Priority passed to the BLE controller init function. The RTOS
 	  shim layer maps this to a Zephyr preemptive priority.
 
-endif # BT_BFLB_BL70X
+config BT_BFLB_RX_THREAD_STACK_SIZE
+	int "BLE HCI RX thread stack size"
+	default 1024
+	help
+	  Stack size for the HCI RX processing thread. The recv()
+	  callback reaches into host code, so adjust if needed.
+
+endif # BT_BFLB
