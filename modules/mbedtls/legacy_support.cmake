@@ -57,6 +57,23 @@ if(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT)
   set(MBEDTLS_EXPORT_REMOVED_HEADERS  ON)
 endif()
 
+# This is required because ESP32 drivers for BT and WiFi still rely on legacy
+# crypto.
+if(CONFIG_ESP32_BT_LE_CRYPTO_STACK_MBEDTLS OR CONFIG_ESP32_WIFI_MBEDTLS_CRYPTO)
+  target_sources(builtin PRIVATE ${MBEDTLS_REMOVED_MODULES_PATH}/ecdh.c)
+  target_compile_definitions(builtin PRIVATE
+    # Setting legacy build symbols is not allowed so we need to set this
+    # to bypass the check.
+    -DTF_PSA_CRYPTO_CONFIG_CHECK_BYPASS
+    -DMBEDTLS_ENTROPY_C
+    -DMBEDTLS_BIGNUM_C
+    -DMBEDTLS_ECP_C
+    -DMBEDTLS_ECDH_C
+    -DMBEDTLS_ECP_DP_SECP256R1_ENABLED
+  )
+  set(MBEDTLS_EXPORT_REMOVED_HEADERS  ON)
+endif()
+
 if(MBEDTLS_EXPORT_REMOVED_HEADERS)
   target_include_directories(builtin PRIVATE ${MBEDTLS_REMOVED_MODULES_PATH})
   target_include_directories(mbedTLS INTERFACE
