@@ -11,6 +11,7 @@
 #include <zephyr/dt-bindings/pinctrl/ti-k3-pinctrl.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <ti/k3-am62-main.dtsi>
+#include <ti/k3-am62-wkup.dtsi>
 
 / {
 	#address-cells = <1>;
@@ -137,5 +138,10 @@
 
 &main_i2c3 {
 	interrupts = <GIC_SPI 164 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};
+
+&main_usb0 {
+	interrupts = <GIC_SPI 188 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&gic>;
 };

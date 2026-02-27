@@ -49,3 +49,9 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+zephyr_udc0: &main_usb0 {
+	status = "okay";
+	ti,syscon-phy-pll-refclk = <&usb0_phy_ctrl>;
+	ti,vbus-divider;
+};

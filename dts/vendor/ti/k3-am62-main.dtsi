@@ -298,4 +298,19 @@
 		#size-cells = <0>;
 		status = "disabled";
 	};
+
+	main_usb0: usb@31000000 {
+		compatible = "ti,dwc3-am62", "snps,dwc3";
+		reg = <0x31000000 0x50000>,
+		      <0x0f900000 0x800>,
+		      <0x0f908000 0x400>;
+		reg-names = "base", "usbss", "phy";
+		clocks = <&k3_clks 161 3>;
+		clock-names = "ref";
+		maximum-speed = "high-speed";
+		num-in-endpoints = <15>;
+		num-out-endpoints = <15>;
+		num-bidir-endpoints = <1>;
+		status = "disabled";
+	};
 };
