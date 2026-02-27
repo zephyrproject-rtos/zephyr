@@ -43,11 +43,15 @@ USBD_CONFIGURATION_DEFINE(cdc_acm_serial_hs_config,
 			  attributes,
 			  CONFIG_CDC_ACM_SERIAL_MAX_POWER, &hs_cfg_desc);
 
+BUILD_ASSERT(CONFIG_CDC_ACM_SERIAL_INSTANCES_NUMBER <= DT_NUM_INST_STATUS_OKAY(zephyr_cdc_acm_uart),
+	     "CONFIG_CDC_ACM_SERIAL_INSTANCES_NUMBER is higher than number of CDC ACM instances");
 
-static int register_cdc_acm_0(struct usbd_context *const uds_ctx,
-			      const enum usbd_speed speed)
+static int register_cdc_acm(struct usbd_context *const uds_ctx,
+			    const enum usbd_speed speed)
 {
 	struct usbd_config_node *cfg_nd;
+	char name[] = "cdc_acm_0";
+	const int idx = 8; /* -^ */
 	int err;
 
 	if (speed == USBD_SPEED_HS) {
@@ -62,10 +66,13 @@ static int register_cdc_acm_0(struct usbd_context *const uds_ctx,
 		return err;
 	}
 
-	err = usbd_register_class(&cdc_acm_serial, "cdc_acm_0", speed, 1);
-	if (err) {
-		LOG_ERR("Failed to register classes");
-		return err;
+	for (int n = 0; n < CONFIG_CDC_ACM_SERIAL_INSTANCES_NUMBER; n++) {
+		name[idx] = '0' + n;
+		err = usbd_register_class(&cdc_acm_serial, name, speed, 1);
+		if (err) {
+			LOG_ERR("Failed to register %s", name);
+			return err;
+		}
 	}
 
 	return usbd_device_set_code_triple(uds_ctx, speed,
@@ -105,13 +112,13 @@ static int cdc_acm_serial_init_device(void)
 
 	if (USBD_SUPPORTS_HIGH_SPEED &&
 	    usbd_caps_speed(&cdc_acm_serial) == USBD_SPEED_HS) {
-		err = register_cdc_acm_0(&cdc_acm_serial, USBD_SPEED_HS);
+		err = register_cdc_acm(&cdc_acm_serial, USBD_SPEED_HS);
 		if (err) {
 			return err;
 		}
 	}
 
-	err = register_cdc_acm_0(&cdc_acm_serial, USBD_SPEED_FS);
+	err = register_cdc_acm(&cdc_acm_serial, USBD_SPEED_FS);
 	if (err) {
 		return err;
 	}

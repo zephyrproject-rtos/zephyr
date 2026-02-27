@@ -97,6 +97,13 @@ As the configuration would be identical for any board, there are common
 :zephyr_file:`Kconfig file <boards/common/usb/Kconfig.cdc_acm_serial.defconfig>`
 that must be included in the board's devicetree and Kconfig.defconfig files.
 
+The number of initialized CDC ACM instances is one by default.
+If the application requires multiple CDC ACM serial backends, the number of
+registered and initialized instances can be increased using
+:kconfig:option:`CONFIG_CDC_ACM_SERIAL_INSTANCES_NUMBER`.
+The order of the instances is not guaranteed. For identification purposes, a
+host application needs to use the label property of the CDC ACM UART node.
+
 Using CDC ACM UART in the application
 =====================================
 
