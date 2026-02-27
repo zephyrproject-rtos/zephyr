@@ -427,7 +427,9 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
 #define PARTITION_NODE_ADDRESS(node)						\
 	COND_CODE_1(DT_NODE_HAS_COMPAT(node, zephyr_mapped_partition),		\
 		    (DT_MAPPED_PARTITION_ADDR(node)),				\
-		    (DT_REG_ADDR(node)))
+		    (COND_CODE_1(DT_FIXED_SUBPARTITION_EXISTS(node),		\
+				 (DT_FIXED_SUBPARTITION_ADDR(node)),		\
+				 (DT_FIXED_PARTITION_ADDR(node)))))
 
 /** Deprecated macro, replace with PARTITION_NODE_ADDRESS() */
 #define FIXED_PARTITION_NODE_ADDRESS(node) PARTITION_NODE_ADDRESS(node) __DEPRECATED_MACRO
@@ -447,10 +449,7 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
 #define PARTITION_NODE_OFFSET(node)						\
 	COND_CODE_1(DT_NODE_HAS_COMPAT(node, zephyr_mapped_partition),		\
 		    (DT_MAPPED_PARTITION_OFFSET(node)),				\
-		    (COND_CODE_1(DT_FIXED_SUBPARTITION_EXISTS(node),		\
-				 (DT_PROP_BY_IDX(DT_PARENT(node), reg, 0) +	\
-				  DT_PROP_BY_IDX(node, reg, 0)),		\
-				 (DT_PROP_BY_IDX(node, reg, 0)))))
+		    (DT_REG_ADDR(node)))
 
 /** Deprecated macro, replace with PARTITION_NODE_OFFSET() */
 #define FIXED_PARTITION_NODE_OFFSET(label) PARTITION_NODE_OFFSET(label) __DEPRECATED_MACRO
