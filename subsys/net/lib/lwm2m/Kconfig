@@ -640,6 +640,15 @@ config LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
 	  block transfer and "FIRMWARE PACKAGE URI" resource.  This option
 	  adds another UDP context and packet handling.
 
+config LWM2M_FIRMWARE_UPDATE_PULL_THREAD_STACK_SIZE
+	int "Stack size for the firmware pull thread"
+	default 2048
+	depends on LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
+	help
+	  Stack size in bytes for the dedicated firmware pull thread. This
+	  thread handles DNS resolution and socket setup for firmware downloads,
+	  keeping the LwM2M engine thread free to ACK CoAP writes promptly.
+
 config LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT
 	bool "Firmware Update object pull via CoAP-CoAP/HTTP proxy support"
 	depends on LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT

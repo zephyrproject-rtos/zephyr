@@ -22,7 +22,23 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "lwm2m_engine.h"
 #include "lwm2m_util.h"
 
+/*
+ * lwm2m_pull_sem guards against concurrent downloads.
+ * It is taken (count→0) inside lwm2m_pull_context_start_transfer() once a
+ * transfer has been accepted, and given back (count→1) by cleanup_context()
+ * after the download finishes or fails.  No code path in the LwM2M engine
+ * callback context ever blocks on this semaphore.
+ */
 static K_SEM_DEFINE(lwm2m_pull_sem, 1, 1);
+
+/*
+ * pull_start_sem is the trigger from the write callback to the pull thread.
+ * start_transfer() signals it (non-blocking give), and the pull thread waits
+ * on it.  Because the pull thread runs at the same priority as the LwM2M
+ * engine (lowest preemptive), it only gets scheduled after the engine has
+ * finished processing the current CoAP message — including sending the ACK.
+ */
+static K_SEM_DEFINE(pull_start_sem, 0, 1);
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
 #define COAP2COAP_PROXY_URI_PATH "coap2coap"
@@ -32,6 +48,7 @@ static char proxy_uri[LWM2M_PACKAGE_URI_LEN];
 #endif
 
 static void do_transmit_timeout_cb(struct lwm2m_message *msg);
+static void firmware_transfer(void);
 
 static struct firmware_pull_context {
 	uint8_t obj_inst_id;
@@ -43,6 +60,22 @@ static struct firmware_pull_context {
 	struct lwm2m_ctx firmware_ctx;
 	struct coap_block_context block_ctx;
 } context;
+
+static K_THREAD_STACK_DEFINE(pull_thread_stack,
+			     CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_THREAD_STACK_SIZE);
+static struct k_thread pull_thread_data;
+
+/*
+ * Pull thread priority: must equal the LwM2M engine thread priority so that
+ * the pull thread does not preempt the engine between write_cb returning and
+ * the CoAP 2.04 Changed ACK being sent.  At equal FIFO priority the pull
+ * thread only gets scheduled once the engine yields (blocking on socket I/O).
+ */
+#if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
+#define PULL_THREAD_PRIORITY K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
+#else
+#define PULL_THREAD_PRIORITY K_PRIO_PREEMPT(CONFIG_NUM_PREEMPT_PRIORITIES - 1)
+#endif
 
 static enum service_state {
 	NOT_STARTED,
@@ -56,15 +89,17 @@ static void pull_service(struct k_work *work)
 	switch (pull_service_state) {
 	case NOT_STARTED:
 		pull_service_state = IDLE;
-		/* Set a long 5s time for a service that does not do anything*/
-		/* Will be set to smaller, when there is time to clena up */
 		lwm2m_engine_update_service_period(pull_service, 5000);
 		break;
 	case IDLE:
-		/* Nothing to do */
 		break;
 	case STOPPING:
-		/* Clean up the current socket context */
+		/*
+		 * lwm2m_engine_stop() must be called from the engine thread
+		 * context, never from a CoAP reply/timeout callback or an
+		 * external thread, because it removes the socket from the list
+		 * that the engine socket loop is iterating.
+		 */
 		lwm2m_engine_stop(&context.firmware_ctx);
 		lwm2m_engine_update_service_period(pull_service, 5000);
 		pull_service_state = IDLE;
@@ -73,22 +108,58 @@ static void pull_service(struct k_work *work)
 	}
 }
 
-static int start_service(void)
-{
-	if (pull_service_state != NOT_STARTED) {
-		return 0;
-	}
-
-	return lwm2m_engine_add_service(pull_service, 1);
-}
-
 /**
- * Close all open connections and release the context semaphore
+ * Schedule cleanup of the download socket and release the concurrency guard.
+ *
+ * Safe to call from any context (engine callbacks or pull thread).  The
+ * actual lwm2m_engine_stop() is deferred to the engine service poll so it
+ * runs from the engine thread — closing the socket from a CoAP reply/timeout
+ * callback would corrupt the socket list the engine loop is iterating over.
  */
 static void cleanup_context(void)
 {
 	pull_service_state = STOPPING;
 	lwm2m_engine_update_service_period(pull_service, 1);
+}
+
+static void pull_thread_fn(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	while (true) {
+		/*
+		 * Wait for lwm2m_pull_context_start_transfer() to signal that
+		 * a new download has been set up.  At this point the LwM2M
+		 * engine has already sent the CoAP ACK for the Package URI
+		 * write, and any pre-download hooks (e.g. GPS disable) have
+		 * already run.
+		 */
+		k_sem_take(&pull_start_sem, K_FOREVER);
+		firmware_transfer();
+	}
+}
+
+static int start_service(void)
+{
+	static bool thread_started;
+
+	if (pull_service_state != NOT_STARTED) {
+		return 0;
+	}
+
+	if (!thread_started) {
+		k_thread_create(&pull_thread_data, pull_thread_stack,
+				K_THREAD_STACK_SIZEOF(pull_thread_stack),
+				pull_thread_fn, NULL, NULL, NULL,
+				PULL_THREAD_PRIORITY,
+				0, K_NO_WAIT);
+		k_thread_name_set(&pull_thread_data, "lwm2m_pull");
+		thread_started = true;
+	}
+
+	return lwm2m_engine_add_service(pull_service, 1);
 }
 
 static int transfer_request(struct coap_block_context *ctx, uint8_t *token, uint8_t tkl,
@@ -370,7 +441,10 @@ static void firmware_transfer(void)
 	int ret;
 	char *server_addr;
 
-	ret = k_sem_take(&lwm2m_pull_sem, K_FOREVER);
+	/*
+	 * lwm2m_pull_sem was already taken (count→0) by start_transfer()
+	 * before signalling this thread.  No blocking wait needed here.
+	 */
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
 	server_addr = CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_ADDR;
@@ -432,13 +506,28 @@ int lwm2m_pull_context_start_transfer(char *uri, struct requesting_object req, k
 		return ret;
 	}
 
-	/* Check if we are not in the middle of downloading */
+	/*
+	 * Guard against concurrent downloads.  Use K_NO_WAIT: the caller is
+	 * the LwM2M engine thread handling a CoAP write to the Package URI
+	 * resource.  It must not block — it needs to return promptly so the
+	 * engine can send the CoAP 2.04 Changed ACK to the server.
+	 */
 	ret = k_sem_take(&lwm2m_pull_sem, K_NO_WAIT);
 	if (ret) {
-		context.result_cb(req.obj_inst_id, -EALREADY);
+		/*
+		 * A download is already running.  Return an error so the
+		 * caller can propagate a CoAP error response.  Do NOT touch
+		 * context.result_cb here — calling the in-flight download's
+		 * result callback would incorrectly trigger its state machine
+		 * teardown (EVENT_DOWNLOAD_FAILED on the wrong instance).
+		 */
+		LOG_WRN("Firmware download already in progress");
 		return -EALREADY;
 	}
-	k_sem_give(&lwm2m_pull_sem);
+
+	/* lwm2m_pull_sem is now taken (count→0) and will be released by
+	 * cleanup_context() → STOPPING service poll.
+	 */
 
 	context.obj_inst_id = req.obj_inst_id;
 	memcpy(context.uri, uri, LWM2M_PACKAGE_URI_LEN);
@@ -449,7 +538,16 @@ int lwm2m_pull_context_start_transfer(char *uri, struct requesting_object req, k
 	(void)memset(&context.block_ctx, 0, sizeof(struct coap_block_context));
 	context.firmware_ctx.sock_fd = -1;
 
-	firmware_transfer();
+	/*
+	 * Signal the dedicated pull thread to start the download.
+	 * The pull thread is scheduled at the same (lowest preemptive)
+	 * priority as the LwM2M engine, so it will only run after this
+	 * function returns and the engine has sent the CoAP ACK.
+	 * Any registered post_write hooks (e.g. GPS disable) execute
+	 * between this give and the pull thread becoming runnable, so
+	 * they complete before any blocking network I/O begins.
+	 */
+	k_sem_give(&pull_start_sem);
 
 	return 0;
 }
