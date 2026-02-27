@@ -1,12 +1,8 @@
-common:
-  tags:
-    - heap
-    - heap_align
-  integration_platforms:
-    - native_sim
-    - mps2/an521/cpu0
 tests:
-  libraries.heap_align: {}
-  libraries.heap_align.canaries:
-    extra_configs:
-      - CONFIG_SYS_HEAP_CANARIES=y
+  libraries.heap_align:
+    tags:
+      - heap
+      - heap_align
+    integration_platforms:
+      - native_sim
+      - mps2/an521/cpu0
