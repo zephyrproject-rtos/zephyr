@@ -1736,6 +1736,20 @@ static inline bool net_ipv6_addr_is_v4_mapped(const struct net_in6_addr *addr)
 }
 
 /**
+ *  @brief Get the IPv4 address from an IPv4 mapped IPv6 address.
+ *         The v4 mapped addresses look like \::ffff:a.b.c.d
+ *
+ *  @param addr6 IPv6 address (must be a v4-mapped address, see
+ *               net_ipv6_addr_is_v4_mapped())
+ *  @param addr4 IPv4 address to be filled in
+ */
+static inline void net_ipv6_addr_get_v4_mapped(const struct net_in6_addr *addr6,
+					       struct net_in_addr *addr4)
+{
+	addr4->s_addr = UNALIGNED_GET(&addr6->s6_addr32[3]);
+}
+
+/**
  *  @brief Generate IPv6 address using a prefix and interface identifier.
  *         Interface identifier is either generated from EUI-64 (MAC) defined
  *         in RFC 4291 or from randomized value defined in RFC 7217.
