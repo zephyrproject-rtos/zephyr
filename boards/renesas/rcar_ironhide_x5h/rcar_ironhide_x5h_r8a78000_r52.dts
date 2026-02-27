@@ -82,6 +82,7 @@
 	pinctrl-0 = <&hscif1_data_tx_default
 		     &hscif1_data_rx_default>;
 	pinctrl-names = "default";
+	clock-frequency = <266666666>;
 	status = "okay";
 };
 
