@@ -171,11 +171,13 @@ static void wifi_setup(void)
 
 #endif
 
+#if defined(CONFIG_SOC_NRF71_WIFI_BOOT)
 	/* Kickstart the LMAC processor */
 	NRF_WIFICORE_LRCCONF_LRC0->POWERON =
 		(LRCCONF_POWERON_MAIN_AlwaysOn << LRCCONF_POWERON_MAIN_Pos);
 	NRF_WIFICORE_LMAC_VPR->INITPC = NRF_WICR->RESERVED[0];
 	NRF_WIFICORE_LMAC_VPR->CPURUN = (VPR_CPURUN_EN_Running << VPR_CPURUN_EN_Pos);
+#endif
 }
 #endif
 
@@ -198,7 +200,7 @@ void soc_early_init_hook(void)
 	nrf_lfxo_cload_set(NRF_LFXO,
 			(uint8_t)(DT_PROP(LFXO_NODE, load_capacitance_femtofarad) / 1000));
 #endif
-#endif
+#endif /* !CONFIG_TRUSTED_EXECUTION_NONSECURE || __NRF_TFM__ */
 
 #ifdef __NRF_TFM__
 	/* TF-M enables the instruction cache from target_cfg_71.c, so we
