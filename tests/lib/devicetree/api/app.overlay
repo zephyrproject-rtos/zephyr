@@ -883,8 +883,44 @@
 
 		test-mtd@ffeeddcc {
 			reg = <0xffeeddcc 0x1000>;
+			ranges = <0x0 0x0 0x100000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+
+			flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0x0 0x100000>;
+				ranges;
+				status = "okay";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				/* Purposely not using a partitions {} grouping node */
+				partition@0 {
+					compatible = "zephyr,mapped-partition";
+					label = "mapped-partition-1";
+					reg = <0x00000000 0x0000c000>;
+				};
+
+				partition@c000 {
+					compatible = "zephyr,mapped-partition";
+					label = "mapped-partition-2";
+					reg = <0x0000c000 0x00076000>;
+				};
+
+				partition@82000 {
+					compatible = "zephyr,mapped-partition";
+					label = "mapped-partition-3";
+					reg = <0x00082000 0x00007000>;
+				};
+
+				partition@89000 {
+					compatible = "zephyr,mapped-partition";
+					label = "disabled-mapped-partition";
+					status = "disabled";
+					reg = <0x00089000 0x00007000>;
+				};
+			};
 
 			flash@20000000 {
 				compatible = "soc-nv-flash";
@@ -929,6 +965,8 @@
 
 		test-mtd@33221100 {
 			reg = <0x33221100 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 
 			partitions {
 				compatible = "fixed-partitions";
@@ -999,6 +1037,59 @@
 			compatible = "gpio-dst";
 			gpio-controller;
 			#gpio-cells = <1>;
+		};
+	};
+
+	/* Node purposely not put in test area due to lines being too long for compliance CI */
+	test-mtd@12830 {
+		reg = <0x13830 0x1000>;
+		ranges = <0x10000000 0x10000000 0x100000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flash@10000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x10000000 0x100000>;
+			ranges = <0x0 0x10000000 0x100000>;
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partitions {
+				ranges;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@f8000 {
+					compatible = "zephyr,mapped-partition";
+					label = "mapped-partition-4";
+					reg = <0x000f8000 0x00008000>;
+					ranges = <0x0 0x000f8000 0x00008000>;
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					partition@0 {
+						compatible = "zephyr,mapped-partition";
+						label = "mapped-partition-5";
+						reg = <0x00000000 0x00003000>;
+						ranges = <0x0 0x00000000 0x00003000>;
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						partition@1000 {
+							compatible = "zephyr,mapped-partition";
+							label = "mapped-partition-6";
+							reg = <0x00001000 0x00001000>;
+						};
+					};
+
+					partition@3000 {
+						compatible = "zephyr,mapped-partition";
+						label = "mapped-partition-7";
+						reg = <0x00003000 0x00002000>;
+					};
+				};
+			};
 		};
 	};
 
