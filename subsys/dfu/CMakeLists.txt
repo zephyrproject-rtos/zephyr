@@ -5,6 +5,7 @@ zephyr_library()
 if(CONFIG_MCUBOOT_IMG_MANAGER)
     zephyr_library_sources(
         boot/mcuboot.c
+        boot/dfu_boot_utils.c
         img_util/flash_img.c
     )
     zephyr_library_sources_ifdef(CONFIG_MCUBOOT_SHELL boot/mcuboot_shell.c)
