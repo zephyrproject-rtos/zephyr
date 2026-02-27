@@ -47,3 +47,10 @@ tests:
       - nrf54l15dk/nrf54l15/cpuapp
     extra_configs:
       - CONFIG_SEQUENCE_RESOLUTION=8
+  sample.drivers.adc.adc_sequence.rtio:
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp
+    extra_configs:
+      - CONFIG_ADC_STREAM=y # TODO this should be ADC_RTIO
