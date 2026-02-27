@@ -729,6 +729,9 @@ struct bt_iso_chan_ops {
 	 *
 	 * For the above reason it is still possible to use bt_iso_chan_get_info() on the @p chan.
 	 *
+	 * If the @p chan is a unicast (CIS) channel, then this callback will always be called
+	 * before @ref bt_conn_cb.disconnected when the associated ACL connection also disconnects.
+	 *
 	 * @param chan   The channel that has been Disconnected
 	 * @param reason BT_HCI_ERR_* reason for the disconnection.
 	 */

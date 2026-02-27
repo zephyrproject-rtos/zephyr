@@ -1156,13 +1156,48 @@ int bt_iso_chan_disconnect(struct bt_iso_chan *chan)
 	return err;
 }
 
+static bool bt_iso_acl_has_cis(const struct bt_conn *acl)
+{
+	ARRAY_FOR_EACH_PTR(iso_conns, iso_conn) {
+		struct bt_conn *iso = bt_conn_ref(iso_conn);
+
+		if (iso == NULL) {
+			continue;
+		}
+
+		if (iso->iso.acl == acl) {
+			bt_conn_unref(iso);
+
+			return true;
+		}
+
+		bt_conn_unref(iso);
+	}
+
+	return false;
+}
+
 void bt_iso_cleanup_acl(struct bt_conn *iso)
 {
+	struct bt_conn *acl = iso->iso.acl;
 	LOG_DBG("%p", iso);
 
-	if (iso->iso.acl) {
-		bt_conn_unref(iso->iso.acl);
+	if (acl != NULL) {
 		iso->iso.acl = NULL;
+
+		/* If we have removed the last ACL reference, trigger the deferred work to finalize
+		 * the ACL disconnection
+		 */
+		if (acl->state == BT_CONN_DISCONNECTED && !bt_iso_acl_has_cis(acl)) {
+			LOG_DBG("Trigger disconnect work for ACL %p", acl);
+
+			__maybe_unused const int err =
+				k_work_schedule(&acl->deferred_work, K_NO_WAIT);
+
+			__ASSERT(err >= 0, "Failed to retrigger conn->deferred_work for %p", acl);
+		}
+
+		bt_conn_unref(acl);
 	}
 }
 
