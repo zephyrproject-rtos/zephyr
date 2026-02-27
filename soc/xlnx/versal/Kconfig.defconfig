@@ -23,6 +23,12 @@ endif # SOC_VERSAL_RPU
 
 if SOC_VERSAL_APU
 
+configdefault DCACHE_LINE_SIZE
+	default 64
+
+configdefault ICACHE_LINE_SIZE
+	default 64
+
 config CACHE_MANAGEMENT
 	default y
 
