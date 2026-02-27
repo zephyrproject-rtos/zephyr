@@ -26,7 +26,17 @@ config ADC_NRFX_SAADC
 	bool "nRF SAADC nrfx driver"
 	default y
 	depends on DT_HAS_NORDIC_NRF_SAADC_ENABLED
+	depends on !ADC_STREAM
 	select ADC_CONFIGURABLE_INPUTS
 	select NRFX_SAADC
 	help
 	  Enable support for nrfx SAADC driver.
+
+config ADC_NRFX_SAADC_RTIO
+	bool "nRF SAADC nrfx RTIO device driver"
+	default y
+	depends on DT_HAS_NORDIC_NRF_SAADC_ENABLED
+	depends on ADC_STREAM
+	select ADC_CONFIGURABLE_INPUTS
+	select NRFX_SAADC
+	select ADC_RTIO
