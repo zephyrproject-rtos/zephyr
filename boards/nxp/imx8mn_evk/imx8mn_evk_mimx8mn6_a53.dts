@@ -15,6 +15,10 @@
 	model = "NXP i.MX8MN A53";
 	compatible = "fsl,mimx8mn";
 
+	aliases {
+		watchdog0 = &wdog1;
+	};
+
 	chosen {
 		zephyr,console = &uart4;
 		zephyr,shell-uart = &uart4;
@@ -92,4 +96,8 @@
 		int-gpios = <&gpio1 12 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		status = "okay";
 	};
+};
+
+&wdog1 {
+	status = "okay";
 };
