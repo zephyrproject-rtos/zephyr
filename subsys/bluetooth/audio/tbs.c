@@ -359,11 +359,11 @@ static struct tbs_inst *lookup_inst_by_uri_scheme(const uint8_t *uri, uint8_t ur
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	/* Clear pending notifications */
-	for (size_t i = 0U; i < ARRAY_SIZE(svc_insts); i++) {
-		const uint8_t conn_index = bt_conn_index(conn);
-		int err;
+	const uint8_t conn_index = bt_conn_index(conn);
+	int err;
 
+	/* Clear pending TBS notifications */
+	for (size_t i = 0U; i < ARRAY_SIZE(svc_insts); i++) {
 		err = k_mutex_lock(&svc_insts[i].mutex, MUTEX_TIMEOUT);
 		if (err != 0) {
 			LOG_WRN("Failed to take mutex: %d", err);
@@ -373,10 +373,11 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		}
 
 		if (svc_insts[i].cp_ntf.pending && conn_index == svc_insts[i].cp_ntf.conn_index) {
-			memset(&svc_insts[i].cp_ntf, 0, sizeof(svc_insts[i].cp_ntf));
+			(void)memset(&svc_insts[i].cp_ntf, 0, sizeof(svc_insts[i].cp_ntf));
 		}
 
-		memset(&svc_insts[i].flags[conn_index], 0, sizeof(svc_insts[i].flags[conn_index]));
+		(void)memset(&svc_insts[i].flags[conn_index], 0,
+			     sizeof(svc_insts[i].flags[conn_index]));
 
 		if (err == 0) { /* if mutex was locked */
 			/* Try to promote after clearing flags */
@@ -386,10 +387,22 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		}
 	}
 
-	/* Also try GTBS after cleanup */
-	int err = k_mutex_lock(&gtbs_inst.mutex, MUTEX_TIMEOUT);
+	/* Clear pending GTBS notifications */
+	err = k_mutex_lock(&gtbs_inst.mutex, MUTEX_TIMEOUT);
+	if (err != 0) {
+		LOG_WRN("Failed to take mutex: %d", err);
+		/* In this case we still need to clear the data, so continue and hope for
+		 * the best
+		 */
+	}
 
-	if (err == 0) {
+	if (gtbs_inst.cp_ntf.pending && conn_index == gtbs_inst.cp_ntf.conn_index) {
+		(void)memset(&gtbs_inst.cp_ntf, 0, sizeof(gtbs_inst.cp_ntf));
+	}
+
+	(void)memset(&gtbs_inst.flags[conn_index], 0, sizeof(gtbs_inst.flags[conn_index]));
+
+	if (err == 0) { /* if mutex was locked */
 		(void)try_change_dialing_call_to_alerting(&gtbs_inst);
 		err = k_mutex_unlock(&gtbs_inst.mutex);
 		__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
