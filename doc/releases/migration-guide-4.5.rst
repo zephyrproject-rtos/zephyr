@@ -84,6 +84,14 @@ Bluetooth Audio
   :c:member:`bt_cap_commander_cb.broadcast_reception_start` is called. This also applies for
   :c:func:`bt_cap_commander_broadcast_reception_stop` in a similar manner. (:github:`101070`)
 
+Bluetooth HCI
+=============
+
+* The devicetree compatible ``bflb,bl70x-bt-hci`` has been renamed to
+  :dtcompatible:`bflb,bt-hci`, now that a single binding covers all Bouffalo Lab
+  on-chip BLE controllers (BL60x/BL70x/BL70XL). Out-of-tree boards and shields
+  must update their devicetree nodes accordingly.
+
 Networking
 **********
 
