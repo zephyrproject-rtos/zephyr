@@ -1,0 +1,150 @@
+# Copyright (c) 2025-2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: PIC32CK_SG_GC Crystal Oscillator (XOSC)
+
+description: |
+  Supports 4-48 MHz Crystal Oscillators (XOSC).
+
+  Provides configuration for the automatic gain control loop,
+  crystal/external-clock selection, start-up time, clock-failure detection
+  with safe-clock fallback, and the USB HS PLL reference divider. The XOSC
+  output can be used as a source for the PLL and the generic clock generators.
+
+  Example:
+
+    xosc: xosc {
+      compatible = "microchip,pic32ck-sg-gc-xosc";
+      xosc-enable = <1>;
+      xosc-xtal-en = <1>;
+      xosc-frequency = <12000000>;
+      xosc-safe-clock-frequency = <48>
+    };
+
+include: [base.yaml]
+
+compatible: "microchip,pic32ck-sg-gc-xosc"
+
+properties:
+  xosc-enable:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Oscillator Enable
+      0: to disable, 1: to enable
+
+  xosc-auto-gain-control-loop-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      The oscillator auto gain control loop enable
+
+      0: to disable
+      1: to enable
+        the Primary Oscillator will automatically do a linear search to find the lowest
+        power/gain setting to guarantee stable oscillation with the user’s crystal.
+
+  xosc-clock-switch-back-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Switch back to the external clock or crystal oscillator for clock recovery
+
+      0: The clock switch back is disabled.
+      1: The clock switch back is enabled.
+
+  xosc-xtal-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Selects external clock or crystal oscillator
+
+      0: External clock connected on XIN. XOUT can be used as general-purpose I/O.
+      1: Crystal connected to XIN/XOUT.
+
+  xosc-frequency:
+    type: int
+    default: 0
+    description: |
+      Crystal/External clock frequency  in MHz for XOSC Controller
+
+  xosc-on-demand-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      0: The XOSC is always on.
+      1: The XOSC is running when a peripheral is requesting the XOSC to be used as a clock source.
+
+  xosc-startup-time:
+    type: int
+    enum:
+      - 31
+      - 61
+      - 122
+      - 244
+      - 488
+      - 977
+      - 1953
+      - 3906
+      - 7813
+      - 15625
+      - 31250
+      - 62500
+      - 125000
+      - 250000
+      - 500000
+      - 1000000
+    default: 31
+    description: |
+      XOSC start-up time in micro seconds
+
+  xosc-clock-failure-detection-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Clock Failure Detector Enable
+      0: to disable, 1: to enable
+
+  xosc-safe-clock-frequency:
+    type: int
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 6
+      - 12
+      - 24
+      - 48
+    default: 0
+    description: |
+      xosc safe clock frequency in MHz
+
+  xosc-usbhs-ref-clock-div:
+    type: string
+    enum:
+      - "usbhs-pll-ref-xosc-clock-disabled"
+      - "usbhs-pll-ref-xosc-clock-div-1"
+      - "usbhs-pll-ref-xosc-clock-div-2"
+      - "usbhs-pll-ref-xosc-clock-div-4"
+    default: "usbhs-pll-ref-xosc-clock-disabled"
+    description: |
+      usbhs pll reference xosc clock

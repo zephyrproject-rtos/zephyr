@@ -1,0 +1,179 @@
+# Copyright (c) 2025-2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: PIC32CK_SG_GC PLL clock
+
+description: |
+  PIC32CK_SG_GC Phase-Locked Loop (PLL).
+
+  Generates a high-frequency output clock (12.7 MHz to 200 MHz, or up to
+  1.6 GHz when the fractional divider module is used) from a 4 MHz to 48 MHz
+  reference input clock. The reference can be sourced from a GCLK generator,
+  XOSC or DFLL48M.
+
+  The PLL is described hierarchically: the PLL node contains a child node per
+  PLL instance, which in turn contains a child node per PLL output.
+
+  Example:
+
+    pll: pll {
+      compatible = "microchip,pic32ck-sg-gc-pll";
+
+      pll0: pll0 {
+        compatible = "microchip,pic32ck-sg-gc-pllchild";
+        subsystem = <CLOCK_MCHP_PLL_ID_PLL0>;
+        pll-enable = <1>;
+        pll-src = "xosc";
+        pll-ref-division-factor = <1>;
+        pll-feedback-divider-factor = <50>;
+
+        pll0out0: pll0out0 {
+          compatible = "microchip,pic32ck-sg-gc-pll0out";
+          subsystem = <CLOCK_MCHP_PLL0_ID_OUT0>;
+          pll-output-en = <1>;
+          pll-output-division-factor = <8>;
+        };
+      };
+    };
+
+include: [base.yaml]
+
+compatible: "microchip,pic32ck-sg-gc-pll"
+
+child-binding:
+  compatible: "microchip,pic32ck-sg-gc-pllchild"
+  properties:
+    subsystem:
+      type: int
+      required: true
+      description: Clock subsystem
+
+    pll-enable:
+      type: int
+      enum:
+        - 0
+        - 1
+      default: 0
+      description: |
+        Oscillator Enable
+        0: to disable, 1: to enable
+
+    pll-on-demand-en:
+      type: int
+      enum:
+        - 0
+        - 1
+      default: 0
+      description: |
+        0: The oscillator is always on
+        1: The oscillator is running when a peripheral is requesting the oscillator to be used as a
+        clock source. The oscillator is not running if no peripheral is requesting the clock source.
+        Important: Initializing it with 1, along with clock enabled, can lead to indefinite wait
+        for the clock to be on, if there is no peripheral request for the clock in the sequence of
+        clock Initialization. If required, better to turn on the clock using API, instead of
+        enabling both during startup.
+
+    pll-bandwidth-sel:
+      type: string
+      enum:
+        - "bwsel-0"
+        - "bwsel-1"
+        - "bwsel-2"
+        - "bwsel-3"
+        - "bwsel-4"
+        - "bwsel-5"
+        - "bwsel-6"
+        - "bwsel-7"
+      default: "bwsel-0"
+      description: |
+        Select the pll0 closed loop filter bandwidth.
+
+        Depending on the frequency after the reference divider FPFD. Selecting the correct filter
+        bandwidth is important to operate the pll0'VCO in its best range.
+
+    pll-src:
+      type: string
+      enum:
+        - "gclk0"
+        - "gclk1"
+        - "gclk2"
+        - "gclk3"
+        - "gclk4"
+        - "gclk5"
+        - "gclk6"
+        - "gclk7"
+        - "gclk8"
+        - "gclk9"
+        - "gclk10"
+        - "gclk11"
+        - "xosc"
+        - "dfll48m"
+      default: "xosc"
+      description: |
+        Reference source clock selection
+
+    pll-feedback-divider-factor:
+      type: int
+      default: 0
+      description: |
+        This field determines the ratio of the pll0's VCO output frequency to the pll0 Reference
+        input frequency.
+
+        Writing to the FBDIV(feedback-divider-factor) bits will cause lock to be lost.
+        The value of FBDIV, (i.e. pll0FBDIV) must be within the range 21 ≤ FBDIV ≤ 1023.
+        The frequency of the Voltage Controlled Oscillator (VCO) giving the pll0 oscillation is
+        given by the formula: FVCO = FCKR * (FBDIV / REFDIV), (i.e., Must be between 800 MHz and
+        1600 MHz).
+        fCKR(source clock), REFDIV(ref-division-factor) and FBDIV must be selected to satisfy this
+        condition.
+
+    pll-ref-division-factor:
+      type: int
+      default: 0
+      description: |
+        This field determines the division factor of the pll0 input reference frequency.
+
+        Writing to the REFDIV bits will cause lock to be lost.
+        REFDIV value must be in the range of 1 ≤ REFDIV ≤ 63.
+        The frequency after the reference divider (FPFD) is given by the formula:
+        FPFD = FCKR / REFDIV (i.e., FPFD must always be between 4 MHz to 48 MHz.
+
+    pll-freq-division-factor-int:
+      type: int
+      default: 0
+      description: |
+        This field determines the ratio of the pll0's VCO output frequency to the pll0 Reference
+        input frequency.
+
+    pll-freq-division-factor-rem:
+      type: int
+      default: 0
+      description: |
+        This field determines the ratio of the pll0's VCO output frequency to the pll0 Reference
+        input frequency.
+
+  child-binding:
+    compatible: "microchip,pic32ck-sg-gc-pll0out"
+    properties:
+      subsystem:
+        type: int
+        required: true
+        description: Clock subsystem
+
+      pll-output-en:
+        type: int
+        enum:
+          - 0
+          - 1
+        default: 0
+        description: |
+          0: Output disabled
+          1: Output enabled
+
+      pll-output-division-factor:
+        type: int
+        default: 0
+        description: |
+          This field determines the division factor of the PLL0 FVCO output that
+          creates FCLK_PLL0 and CLK_PLL0_CLKOUTn.
+          The POSTDIV value must be between 1 ≤ POSTDIV ≤ 63.

@@ -1,0 +1,39 @@
+# Copyright (c) 2025-2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: PIC32CK_SG_GC Main clock domains
+
+description: |
+  The Main Clock Controller provides the synchronous system clocks to the CPU
+  and peripherals. It takes a generic clock as its input and applies a
+  configurable prescaler to derive the CPU clock domain, which in turn feeds
+  the AHB and APB bus clocks used throughout the SoC.
+
+  Example:
+
+    mclkcpu: mclkcpu {
+      compatible = "microchip,pic32ck-sg-gc-mclkcpu";
+      mclk-div = "DIV1";
+    };
+
+include: [base.yaml]
+
+compatible: "microchip,pic32ck-sg-gc-mclkcpu"
+
+properties:
+  mclk-div:
+    type: string
+    enum:
+      - "DIV1"
+      - "DIV2"
+      - "DIV4"
+      - "DIV8"
+      - "DIV16"
+      - "DIV32"
+      - "DIV64"
+      - "DIV128"
+    default: "DIV1"
+    description: |
+      CPU Clock Domain Division Factor
+      These bits define the division ratio of the main clock (MCLK) prescaler
+      related to the CPU Clock Domain controlled by the CLKDIVn register.

@@ -1,0 +1,64 @@
+# Copyright (c) 2025-2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: PIC32CK_SG_GC MCLK (Main Clock) peripheral
+
+description: |
+  Microchip PIC32CK_SG_GC Main Clock peripheral channels (MCLK_PERIPH).
+
+  The Main Clock Controller provides the synchronous system clocks to the
+  modules connected to the AHBx and APBx buses. Each peripheral channel gates
+  the main clock to an individual peripheral and can be enabled or disabled
+  independently. Peripherals reference a channel through their "clocks"
+  property using the channel's subsystem identifier.
+
+  Each peripheral channel is described by a child node.
+
+  Example:
+
+    mclkperiph: mclkperiph {
+      compatible = "microchip,pic32ck-sg-gc-mclkperiph";
+      #clock-cells = <1>;
+
+      sercom0 {
+        subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_SERCOM0_APB>;
+        mclk-en = <1>;
+      };
+    };
+
+include: [base.yaml]
+
+compatible: "microchip,pic32ck-sg-gc-mclkperiph"
+
+properties:
+  "#clock-cells":
+    const: 1
+    type: int
+    description: |
+      The subsystem cell is to identify a clock controller sub-system.
+
+      The subsystem can be referred from include\zephyr\dt-bindings\clock\mchp_pic32ck_gc_clock.h,
+      under the MCLKPERIPH_TYPE section of ids.
+      All clock control API use this value to specify the clock on which the API operates.
+      Since subsystem is opaque to the user, it can be accessed from the devicetree node and used.
+
+clock-cells:
+  - subsystem
+
+child-binding:
+  properties:
+    subsystem:
+      type: int
+      required: true
+      description: Clock subsystem
+
+    mclk-en:
+      type: int
+      enum:
+        - 0
+        - 1
+      default: 1
+      description: |
+        Enable mclk to the peripheral
+        0 - disable
+        1 - Enable

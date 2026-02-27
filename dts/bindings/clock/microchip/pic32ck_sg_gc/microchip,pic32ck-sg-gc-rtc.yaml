@@ -1,0 +1,45 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: PIC32CK_SG_GC RTC clock
+
+description: |
+  RTC clock configuration.
+
+  Selects and provides the low-frequency clock source used by the Real-Time
+  Counter (RTC). The source can be one of the internal 32 kHz/1 kHz ultra-low-
+  power oscillators or the external 32 kHz crystal (divided to 32 kHz or 1 kHz).
+  Peripherals reference this clock through their "clocks" property using the
+  subsystem identifier.
+
+  Example:
+
+    rtc: rtc {
+      compatible = "microchip,pic32ck-sg-gc-rtc";
+      #clock-cells = <1>;
+      rtc-src = <1>;
+    };
+
+include: [base.yaml]
+
+compatible: "microchip,pic32ck-sg-gc-rtc"
+
+properties:
+  "#clock-cells":
+    type: int
+    const: 1
+    description: |
+      clock subsystem
+
+  rtc-src:
+    type: int
+    default: 1
+    description: |
+      RTC source clock selection
+      0: ulp32k
+      1: ulp1k
+      2: xosc32k
+      3: xosc1k
+
+clock-cells:
+  - subsystem
