@@ -1,0 +1,30 @@
+identifier: lp_em_cc2340r5moda
+name: TI SimpleLink CC2340R5 Module LaunchPad
+type: mcu
+arch: arm
+ram: 64
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - adc
+  - gpio
+  - pwm
+  - counter
+  - dma
+  - crypto
+  - spi
+  - watchdog
+  - rtc
+  - nvs
+  - pm
+  - entropy
+  - flash
+  - pinctrl
+  - serial
+  - timer
+  - i2c
+  - uart
+vendor: ti
