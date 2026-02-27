@@ -1,16 +1,16 @@
 /*
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
-#include <vendor/nordic/nrf54l15_cpuflpr.dtsi>
+#include <vendor/nordic/nrf54l10_cpuflpr.dtsi>
 #include "nrf54l15dk_common.dtsi"
 
 / {
-	model = "Nordic nRF54L15 DK nRF54L15 FLPR MCU";
-	compatible = "nordic,nrf54l15dk_nrf54l15-cpuflpr";
+	model = "Nordic nRF54L15 DK nRF54L10 FLPR MCU";
+	compatible = "nordic,nrf54l15dk_nrf54l10-cpuflpr";
 
 	chosen {
 		zephyr,console = &uart30;
@@ -30,7 +30,7 @@
 		cpuflpr_code_partition: partition@0 {
 			label = "image-0";
 			compatible = "zephyr,mapped-partition";
-			reg = <0x0 DT_SIZE_K(96)>;
+			reg = <0x0 DT_SIZE_K(64)>;
 		};
 	};
 };
@@ -62,15 +62,4 @@
 
 &gpiote30 {
 	status = "okay";
-};
-
-/*
- * Note this SPI instance conflicts with UART30. Disable or reconfigure pinctrl for UART30
- * to use this SPI instance.
- */
-nordic_expansion_spi: &spi22 {
-	cs-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
-	pinctrl-0 = <&spi22_default>;
-	pinctrl-1 = <&spi22_sleep>;
-	pinctrl-names = "default", "sleep";
 };
