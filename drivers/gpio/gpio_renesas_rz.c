@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Renesas Electronics Corporation
+ * Copyright (c) 2024-2026 Renesas Electronics Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,10 +39,17 @@ LOG_MODULE_REGISTER(rz_gpio, CONFIG_GPIO_LOG_LEVEL);
 #define REG_P_WRITE(base, port, v)      sys_write8((v), (base) + regs.p + (port))
 #define REG_PM_READ(base, port)         sys_read16((base) + regs.pm + (port) * 2)
 #define REG_PM_WRITE(base, port, v)     sys_write16((v), (base) + regs.pm + (port) * 2)
-#define REG_PFC_READ(base, port)        sys_read32((base) + regs.pfc + (port) * 4)
-#define REG_PFC_WRITE(base, port, v)    sys_write32((v), (base) + regs.pfc + (port) * 4)
 #define REG_RSELP_READ(rselp, port)     sys_read8(rselp + (port))
 #define REG_RSELP_WRITE(rselp, port, v) sys_write8((v), (rselp) + (port))
+
+#ifdef CONFIG_GPIO_RENESAS_RZ_TYPE3
+#define NONSAFETY_PORT_START            13
+#define REG_PFC_READ(base, port)        sys_read64((base) + regs.pfc + (port) * 8)
+#define REG_PFC_WRITE(base, port, v)    sys_write64((v), (base) + regs.pfc + (port) * 8)
+#else /* CONFIG_GPIO_RENESAS_RZ_TYPE1 || CONFIG_GPIO_RENESAS_RZ_TYPE2 */
+#define REG_PFC_READ(base, port)        sys_read32((base) + regs.pfc + (port) * 4)
+#define REG_PFC_WRITE(base, port, v)    sys_write32((v), (base) + regs.pfc + (port) * 4)
+#endif /* CONFIG_GPIO_RENESAS_RZ_TYPE3 */
 
 #define PORT(port_pin) FIELD_GET(BIT_MASK(8) << 8, port_pin)
 #define PIN(port_pin)  FIELD_GET(BIT_MASK(8), port_pin)
@@ -90,6 +97,14 @@ struct gpio_rz_regs {
 		mem_addr_t s;
 	} base;
 #endif
+#ifdef CONFIG_GPIO_RENESAS_RZ_TYPE3
+	mem_addr_t rselp;
+	struct {
+		mem_addr_t srs;
+		mem_addr_t srn;
+		mem_addr_t nsr;
+	} base;
+#endif
 } regs = {
 	.p = DT_REG_ADDR_BY_NAME(DT_NODELABEL(gpio), p),
 	.pm = DT_REG_ADDR_BY_NAME(DT_NODELABEL(gpio), pm),
@@ -102,6 +117,14 @@ struct gpio_rz_regs {
 	.base = {
 		.ns = DT_REG_ADDR_BY_NAME(DT_NODELABEL(gpio), base_ns),
 		.s = DT_REG_ADDR_BY_NAME(DT_NODELABEL(gpio), base_s),
+	},
+#endif
+#ifdef CONFIG_GPIO_RENESAS_RZ_TYPE3
+	.rselp = DT_REG_ADDR_BY_NAME(DT_NODELABEL(gpio), rselp),
+	.base = {
+		.srs = DT_REG_ADDR_BY_NAME(DT_NODELABEL(gpio), base_srs),
+		.srn = DT_REG_ADDR_BY_NAME(DT_NODELABEL(gpio), base_srn),
+		.nsr = DT_REG_ADDR_BY_NAME(DT_NODELABEL(gpio), base_nsr),
 	},
 #endif
 };
@@ -121,7 +144,11 @@ static inline uint32_t gpio_rz_get_mode(mem_addr_t base, uint8_t port, gpio_pin_
 /* Helper function to get pin function from PFC register */
 static inline uint32_t gpio_rz_get_func(mem_addr_t base, uint8_t port, gpio_pin_t pin)
 {
+#ifdef CONFIG_GPIO_RENESAS_RZ_TYPE3
+	return FIELD_GET(BIT_MASK(6) << (pin * 8), REG_PFC_READ(base, port));
+#else
 	return FIELD_GET(BIT_MASK(4) << (pin * 4), REG_PFC_READ(base, port));
+#endif
 }
 
 static __maybe_unused int gpio_rz_pincfg_to_flags(const struct gpio_rz_pin *pincfg,
@@ -156,7 +183,7 @@ static int gpio_rz_pin_config_get_raw(bsp_io_port_pin_t port_pin, struct gpio_rz
 	pincfg->mode = gpio_rz_get_mode(regs.base, port, pin);
 	pincfg->func = gpio_rz_get_func(regs.base, port, pin);
 	pincfg->out_state = gpio_rz_get_out_state(regs.base, port, pin);
-#else /* CONFIG_GPIO_RENESAS_RZ_TYPE2 */
+#elif CONFIG_GPIO_RENESAS_RZ_TYPE2
 	pincfg->mode = gpio_rz_get_mode(regs.base.ns, port, pin);
 	pincfg->mode |= gpio_rz_get_mode(regs.base.s, port, pin);
 
@@ -165,6 +192,21 @@ static int gpio_rz_pin_config_get_raw(bsp_io_port_pin_t port_pin, struct gpio_rz
 
 	pincfg->out_state = gpio_rz_get_out_state(regs.base.ns, port, pin);
 	pincfg->out_state |= gpio_rz_get_out_state(regs.base.s, port, pin);
+#else /* CONFIG_GPIO_RENESAS_RZ_TYPE3 */
+	if (port >= NONSAFETY_PORT_START) {
+		pincfg->mode = gpio_rz_get_mode(regs.base.nsr, port, pin);
+		pincfg->func = gpio_rz_get_func(regs.base.nsr, port, pin);
+		pincfg->out_state = gpio_rz_get_out_state(regs.base.nsr, port, pin);
+	} else {
+		pincfg->mode = gpio_rz_get_mode(regs.base.srn, port, pin);
+		pincfg->mode |= gpio_rz_get_mode(regs.base.srs, port, pin);
+
+		pincfg->func = gpio_rz_get_func(regs.base.srn, port, pin);
+		pincfg->func |= gpio_rz_get_func(regs.base.srs, port, pin);
+
+		pincfg->out_state = gpio_rz_get_out_state(regs.base.srn, port, pin);
+		pincfg->out_state |= gpio_rz_get_out_state(regs.base.srs, port, pin);
+	}
 #endif
 
 	return 0;
@@ -212,7 +254,8 @@ static int gpio_rz_flags_to_cfg(const gpio_flags_t flags, const struct gpio_rz_p
 			pincfg.cfg_b.isel_reg = 1;
 		))
 
-		IF_ENABLED(CONFIG_GPIO_RENESAS_RZ_TYPE2, (
+		IF_ENABLED(UTIL_OR(IS_ENABLED(CONFIG_GPIO_RENESAS_RZ_TYPE2),
+				   IS_ENABLED(CONFIG_GPIO_RENESAS_RZ_TYPE3)), (
 			pincfg.cfg_b.pmc_reg = 1;
 		))
 	} else if (flags & GPIO_INT_DISABLE) {
@@ -220,7 +263,8 @@ static int gpio_rz_flags_to_cfg(const gpio_flags_t flags, const struct gpio_rz_p
 			pincfg.cfg_b.isel_reg = 0;
 		))
 
-		IF_ENABLED(CONFIG_GPIO_RENESAS_RZ_TYPE2, (
+		IF_ENABLED(UTIL_OR(IS_ENABLED(CONFIG_GPIO_RENESAS_RZ_TYPE2),
+				   IS_ENABLED(CONFIG_GPIO_RENESAS_RZ_TYPE3)), (
 			pincfg.cfg_b.pmc_reg = 0;
 		))
 	}
@@ -235,9 +279,10 @@ static int gpio_rz_flags_to_cfg(const gpio_flags_t flags, const struct gpio_rz_p
 		pincfg.cfg_b.filclksel_reg = FIELD_GET(GENMASK(14, 13), flags);
 	))
 
-	IF_ENABLED(CONFIG_GPIO_RENESAS_RZ_TYPE2, (
+	IF_ENABLED(UTIL_OR(IS_ENABLED(CONFIG_GPIO_RENESAS_RZ_TYPE2),
+			   IS_ENABLED(CONFIG_GPIO_RENESAS_RZ_TYPE3)), (
 		/* Must use OR for DRCTL since it is already updated for pull-up/down above */
-		pincfg.cfg_b.drct_reg |= FIELD_GET(GENMASK(9, 8), flags);
+		pincfg.cfg_b.drct_reg |= FIELD_GET(GENMASK(13, 8), flags);
 		pincfg.cfg_b.rsel_reg = FIELD_GET(BIT(14), flags);
 	))
 
@@ -277,6 +322,14 @@ static int gpio_rz_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_
 
 	/* Get the current pin config */
 	gpio_rz_pin_config_get_raw(port_pin, &curr_pincfg);
+
+	IF_ENABLED(CONFIG_GPIO_RENESAS_RZ_TYPE3, (
+		/* For nonsafety ports, always mark bit[14] (1=Nonsafety, 0=Safety)
+		 * of flag as '1' to let the HAL (FSP) handle it differently since
+		 * they have a different address base
+		 */
+		flags |= PORT(port_pin) >= NONSAFETY_PORT_START ? BIT(14) : 0;
+	))
 
 	/* Convert flags and current pin config to pin config */
 	ret = gpio_rz_flags_to_cfg(flags, &curr_pincfg, &cfg);
@@ -366,7 +419,7 @@ static int gpio_rz_port_toggle_bits(const struct device *dev, gpio_port_pins_t p
 #ifdef CONFIG_GPIO_RENESAS_RZ_TYPE1
 	val = REG_P_READ(regs.base, port);
 	REG_P_WRITE(regs.base, port, val ^ pins);
-#else /* CONFIG_GPIO_RENESAS_RZ_TYPE2 */
+#elif CONFIG_GPIO_RENESAS_RZ_TYPE2
 	uint8_t rselp = REG_RSELP_READ(regs.rselp, port);
 
 	uint8_t pins_ns = rselp & pins;
@@ -377,6 +430,22 @@ static int gpio_rz_port_toggle_bits(const struct device *dev, gpio_port_pins_t p
 
 	val = REG_P_READ(regs.base.s, port);
 	REG_P_WRITE(regs.base.s, port, val ^ pins_s);
+#else /* CONFIG_GPIO_RENESAS_RZ_TYPE3 */
+	if (port >= NONSAFETY_PORT_START) {
+		val = REG_P_READ(regs.base.nsr, port);
+		REG_P_WRITE(regs.base.nsr, port, val ^ pins);
+	} else {
+		uint8_t rselp = REG_RSELP_READ(regs.rselp, port);
+
+		uint8_t pins_ns = rselp & pins;
+		uint8_t pins_s = ~rselp & pins;
+
+		val = REG_P_READ(regs.base.srn, port);
+		REG_P_WRITE(regs.base.srn, port, val ^ pins_ns);
+
+		val = REG_P_READ(regs.base.srs, port);
+		REG_P_WRITE(regs.base.srs, port, val ^ pins_s);
+	}
 #endif /* CONFIG_GPIO_RENESAS_RZ_TYPE1 */
 
 	return 0;
