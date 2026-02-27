@@ -81,23 +81,38 @@ static void gpio_cat1_select_input_drive_mode(gpio_flags_t flags, uint32_t *driv
  * @brief Select the PDL drive mode for an output pin.
  *
  * Maps push-pull, open-drain, and open-source configurations to the
- * corresponding PDL drive mode.
+ * corresponding PDL drive mode.  Pull-up is only valid with open-drain;
+ * pull-down is only valid with open-source.
  *
  * @param[in]  flags      GPIO configuration flags.
  * @param[out] drive_mode PDL drive mode constant.
  *
- * @retval 0 Always succeeds.
+ * @retval 0        Success.
+ * @retval -ENOTSUP Unsupported pull direction for the requested mode.
  */
 static int gpio_cat1_select_output_drive_mode(gpio_flags_t flags, uint32_t *drive_mode)
 {
-	if (flags & GPIO_SINGLE_ENDED) {
-		if (flags & GPIO_LINE_OPEN_DRAIN) {
-			*drive_mode = CY_GPIO_DM_OD_DRIVESLOW;
-		} else {
-			*drive_mode = CY_GPIO_DM_OD_DRIVESHIGH;
+	if (!(flags & GPIO_SINGLE_ENDED)) {
+		if (flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) {
+			LOG_WRN("Pull-up/pull-down flags ignored"
+				" in push-pull output mode");
 		}
-	} else {
 		*drive_mode = CY_GPIO_DM_STRONG;
+		return 0;
+	}
+
+	if (flags & GPIO_LINE_OPEN_DRAIN) {
+		if (flags & GPIO_PULL_DOWN) {
+			return -ENOTSUP;
+		}
+		*drive_mode = (flags & GPIO_PULL_UP) ? CY_GPIO_DM_PULLUP : CY_GPIO_DM_OD_DRIVESLOW;
+	} else {
+		/* Open-source */
+		if (flags & GPIO_PULL_UP) {
+			return -ENOTSUP;
+		}
+		*drive_mode =
+			(flags & GPIO_PULL_DOWN) ? CY_GPIO_DM_PULLDOWN : CY_GPIO_DM_OD_DRIVESHIGH;
 	}
 
 	return 0;
@@ -117,19 +132,31 @@ static int gpio_cat1_configure(const struct device *dev, gpio_pin_t pin, gpio_fl
 	switch (flags & (GPIO_INPUT | GPIO_OUTPUT | GPIO_DISCONNECTED)) {
 	case GPIO_INPUT:
 		gpio_cat1_select_input_drive_mode(flags, &drive_mode);
-		if ((flags & GPIO_PULL_UP) && !(flags & GPIO_PULL_DOWN)) {
-			pin_val = true;
-		}
+		/*
+		 * The data register must match the pull direction for resistive pull-up/pull-down
+		 * modes to work correctly: DR=1 for pull-up, DR=0 for pull-down.
+		 * For high-Z, DR is don't-care.
+		 */
+		pin_val = (flags & GPIO_PULL_UP) ? true : false;
 		break;
 
+	case (GPIO_INPUT | GPIO_OUTPUT):
+		__fallthrough;
 	case GPIO_OUTPUT:
 		if (gpio_cat1_select_output_drive_mode(flags, &drive_mode) != 0) {
 			return -ENOTSUP;
 		}
-		if (flags & GPIO_SINGLE_ENDED) {
-			pin_val = (flags & GPIO_LINE_OPEN_DRAIN) != 0;
+
+		if (flags & GPIO_OUTPUT_INIT_HIGH) {
+			pin_val = true;
+		} else if (flags & GPIO_OUTPUT_INIT_LOW) {
+			pin_val = false;
 		} else {
-			pin_val = (flags & GPIO_OUTPUT_INIT_HIGH);
+			/*
+			 * If high or low init is not specified, the API expects the current output
+			 * pin state to be retained.
+			 */
+			pin_val = Cy_GPIO_ReadOut(base, pin);
 		}
 		break;
 
