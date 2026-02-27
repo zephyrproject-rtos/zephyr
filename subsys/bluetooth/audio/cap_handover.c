@@ -164,7 +164,7 @@ void bt_cap_handover_broadcast_source_stopped(uint8_t reason)
 				bt_cap_handover_broadcast_audio_stopped();
 			}
 		} else {
-			proc_param->unicast_to_broadcast.broadcast_source = NULL;
+			proc_param->broadcast_to_unicast.broadcast_source = NULL;
 			active_proc->err = reason;
 			bt_cap_handover_complete();
 		}
