@@ -1,0 +1,60 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon LPComp channel node (child of infineon,lp-comp).
+  Device node shall be a child of a "infineon,lp-comp" compatible node.
+
+compatible: "infineon,lp-comp-channel"
+
+properties:
+  channel:
+    type: int
+    required: true
+    description: LPComp channel index (0 or 1).
+  power:
+    type: string
+    enum: ["off", "ulp", "lp", "normal"]
+    description: |
+      Power mode for the comparator channel:
+        - "off": Power off
+        - "ulp": Ultra Low Power mode, uses local Ibias
+        - "lp": Low Power mode
+        - "normal": Normal mode
+  hysteresis:
+    type: boolean
+    description: Enable or disable hysteresis.
+  output-mode:
+    type: string
+    enum: ["pulse", "direct", "sync"]
+    description: |
+      Output mode selection for the LPComp:
+        - "pulse": DSI output with the pulse option, no bypass.
+        - "direct": Bypass mode, direct comparator output.
+        - "sync": DSI output with the level option, similar to bypass but 1 cycle slower.
+  intr-type:
+    type: string
+    enum: ["disable", "rising", "falling", "both"]
+    description: Interrupt trigger type.
+  input-p:
+    type: string
+    enum: ["open", "gpio", "amux_a", "amux_b", "local_vref"]
+    description: |
+      Positive input selection for the comparator.
+      - "open": The low-power comparator input is not connected.
+      - "gpio": The low-power comparator input connects to GPIO pin.
+      - "amux_a": The low-power comparator input connects to AMUXBUSA.
+      - "amux_b": The low-power comparator input connects to AMUXBUSB.
+      - "local_vref": The low-power comparator input connects to local VREF.
+  input-n:
+    type: string
+    enum: ["open", "gpio", "amux_a", "amux_b", "local_vref"]
+    description: |
+      Negative input selection for the comparator.
+      - "open": The low-power comparator input is not connected.
+      - "gpio": The low-power comparator input connects to GPIO pin.
+      - "amux_a": The low-power comparator input connects to AMUXBUSA.
+      - "amux_b": The low-power comparator input connects to AMUXBUSB.
+      - "local_vref": The low-power comparator input connects to local VREF.
