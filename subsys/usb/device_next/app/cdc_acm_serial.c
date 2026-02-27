@@ -43,9 +43,69 @@ USBD_CONFIGURATION_DEFINE(cdc_acm_serial_hs_config,
 			  attributes,
 			  CONFIG_CDC_ACM_SERIAL_MAX_POWER, &hs_cfg_desc);
 
+/*
+ * The CDC ACM instances are registered in the same order that they appear in
+ * this array. Therefore, they are always presented in the same order on the
+ * host side. Add new entries at the end.
+ */
+const static struct device *uart_devs[] = {
+	DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_console)),
+	DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_shell_uart)),
+	DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_uart_mcumgr)),
+};
 
-static int register_cdc_acm_0(struct usbd_context *const uds_ctx,
-			      const enum usbd_speed speed)
+/*
+ * The class data stores a reference to the implemented UART device for
+ * internal purposes. Iterate over all class instances and compare the dev
+ * parameter with the referenced UART device. Then, try to register the
+ * instance. If multiple chosen node properties reference the same device,
+ * usbd_register_class() will fail with -EALREADY.
+ */
+static int register_chosen(struct usbd_context *const uds_ctx,
+			   const enum usbd_speed speed,
+			   const struct device *const dev)
+{
+	int err;
+
+	if (speed == USBD_SPEED_HS) {
+		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_hs, usbd_class_node, c_nd) {
+			struct usbd_class_data *c_data = c_nd->c_data;
+
+			if (usbd_class_get_private(c_data) == dev) {
+				err = usbd_register_class(&cdc_acm_serial,
+							  c_data->name, speed, 1);
+				if (err != 0 && err != -EALREADY) {
+					LOG_ERR("Failed to register %s", c_data->name);
+					return err;
+				}
+
+				break;
+			}
+		}
+	}
+
+	if (speed == USBD_SPEED_FS) {
+		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_fs, usbd_class_node, c_nd) {
+			struct usbd_class_data *c_data = c_nd->c_data;
+
+			if (usbd_class_get_private(c_data) == dev) {
+				err = usbd_register_class(&cdc_acm_serial,
+							  c_data->name, speed, 1);
+				if (err != 0 && err != -EALREADY) {
+					LOG_ERR("Failed to register %s", c_data->name);
+					return err;
+				}
+
+				break;
+			}
+		}
+	}
+
+	return 0;
+}
+
+static int register_cdc_acm(struct usbd_context *const uds_ctx,
+			    const enum usbd_speed speed)
 {
 	struct usbd_config_node *cfg_nd;
 	int err;
@@ -62,10 +122,28 @@ static int register_cdc_acm_0(struct usbd_context *const uds_ctx,
 		return err;
 	}
 
-	err = usbd_register_class(&cdc_acm_serial, "cdc_acm_0", speed, 1);
-	if (err) {
-		LOG_ERR("Failed to register classes");
-		return err;
+	if (IS_ENABLED(CONFIG_CDC_ACM_SERIAL_MULTIPLE_INSTANCES)) {
+		for (int n = 0; n < ARRAY_SIZE(uart_devs); n++) {
+			if (uart_devs[n] == NULL) {
+				continue;
+			}
+
+			err = register_chosen(uds_ctx, speed, uart_devs[n]);
+			if (err) {
+				return err;
+			}
+		}
+	} else {
+		/*
+		 * Only register the first instance to maintain the legacy
+		 * stack behavior when using CDC ACM as a serial backend for
+		 * different applications.
+		 */
+		err = usbd_register_class(&cdc_acm_serial, "cdc_acm_0", speed, 1);
+		if (err) {
+			LOG_ERR("Failed to register %s", "cdc_acm_0");
+			return err;
+		}
 	}
 
 	return usbd_device_set_code_triple(uds_ctx, speed,
@@ -105,13 +183,13 @@ static int cdc_acm_serial_init_device(void)
 
 	if (USBD_SUPPORTS_HIGH_SPEED &&
 	    usbd_caps_speed(&cdc_acm_serial) == USBD_SPEED_HS) {
-		err = register_cdc_acm_0(&cdc_acm_serial, USBD_SPEED_HS);
+		err = register_cdc_acm(&cdc_acm_serial, USBD_SPEED_HS);
 		if (err) {
 			return err;
 		}
 	}
 
-	err = register_cdc_acm_0(&cdc_acm_serial, USBD_SPEED_FS);
+	err = register_cdc_acm(&cdc_acm_serial, USBD_SPEED_FS);
 	if (err) {
 		return err;
 	}
