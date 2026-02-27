@@ -25,12 +25,12 @@
 		ranges = <0x0 0x0 DT_SIZE_K(256)>;
 	};
 
-	sram0_ns: image_ns@20000 {
+	sram0_ns: image_ns@40000 {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		/* Non-Secure image memory */
-		reg = <0x20000 DT_SIZE_K(256)>;
-		ranges = <0x0 0x20000 DT_SIZE_K(256)>;
+		reg = <0x40000 DT_SIZE_K(256)>;
+		ranges = <0x0 0x40000 DT_SIZE_K(256)>;
 	};
 };
 
