@@ -34,4 +34,12 @@ config SOC_NRF71_WIFI_DAP
 	help
 	  This controls the Wi-Fi AHB Debug AP (DAP) for debugging nRF71 Wi-Fi cores.
 
+config SOC_NRF71_WIFI_BOOT
+	bool "nRF71 start Wi-Fi on system initialization"
+	default y if !BUILD_WITH_TFM
+	help
+	  This controls whether the Wi-Fi core is started on system initialization. If
+	  disabled, the Wi-Fi core must be started by the application before it can be
+	  used.
+
 endif # SOC_SERIES_NRF71
