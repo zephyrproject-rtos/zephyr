@@ -619,6 +619,14 @@ __weak void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Flexspi1, &rootCfg);
 #endif
 
+#if !(DT_NODE_HAS_COMPAT(DT_PARENT(DT_CHOSEN(zephyr_flash)), nxp_imx_flexspi_nor)) &&  \
+	defined(CONFIG_MEMC_MCUX_FLEXSPI) && DT_NODE_HAS_STATUS(DT_NODELABEL(flexspi2), okay)
+	/* Configure FLEXSPI2 using SYS_PLL3_PFD2_CLK */
+	rootCfg.mux = kCLOCK_FLEXSPI2_ClockRoot_MuxSysPll3Pfd2;
+	rootCfg.div = 2;
+	CLOCK_SetRootClock(kCLOCK_Root_Flexspi2, &rootCfg);
+#endif
+
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(tpm2), okay)
 	/* Configure TPM2 using SYS_PLL3_DIV2_CLK */
 	rootCfg.mux = kCLOCK_TPM2_ClockRoot_MuxSysPll3Div2;
