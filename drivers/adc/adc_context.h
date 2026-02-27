@@ -52,38 +52,26 @@ static void adc_context_on_complete(struct adc_context *ctx, int status);
 #define ADC_CONTEXT_WAIT_FOR_COMPLETION_TIMEOUT K_FOREVER
 #endif
 
-struct adc_context {
-	atomic_t sampling_requested;
-#ifdef ADC_CONTEXT_USES_KERNEL_TIMER
-	struct k_timer timer;
-#endif /* ADC_CONTEXT_USES_KERNEL_TIMER */
-
-	struct k_sem lock;
-	struct k_sem sync;
-	int status;
-
-#ifdef CONFIG_ADC_ASYNC
-	struct k_poll_signal *signal;
-	bool asynchronous;
-#endif /* CONFIG_ADC_ASYNC */
-
-	struct adc_sequence sequence;
-	struct adc_sequence_options options;
-	uint16_t sampling_index;
-};
-
-#ifdef ADC_CONTEXT_USES_KERNEL_TIMER
-#define ADC_CONTEXT_INIT_TIMER(_data, _ctx_name) \
-	._ctx_name.timer = Z_TIMER_INITIALIZER(_data._ctx_name.timer, \
-						adc_context_on_timer_expired, \
-						NULL)
-#endif /* ADC_CONTEXT_USES_KERNEL_TIMER */
-
-#define ADC_CONTEXT_INIT_LOCK(_data, _ctx_name) \
-	._ctx_name.lock = Z_SEM_INITIALIZER(_data._ctx_name.lock, 0, 1)
-
-#define ADC_CONTEXT_INIT_SYNC(_data, _ctx_name) \
-	._ctx_name.sync = Z_SEM_INITIALIZER(_data._ctx_name.sync, 0, 1)
+/*
+ * If the adc_context is shared between multiple modules, it can be declared
+ * once in a common header, then implemented and used in a specific module.
+ * In the common header, define the ADC_CONTEXT_DECLARE_IN_HEADER option and
+ * any optional ADC_CONTEXT_ options, then include "adc_context_declare.h".
+ *
+ *   #define ADC_CONTEXT_DECLARE_IN_HEADER
+ *   #define ADC_CONTEXT_ENABLE_ON_COMPLETE
+ *
+ *   #include "adc_context_declare.h"
+ *
+ * The struct adc_context can then be nested in a common struct defined in
+ * the common header.
+ *
+ * The module which implements and uses the adc_context includes
+ * "adc_context.h" as usual.
+ */
+#ifndef ADC_CONTEXT_DECLARE_IN_HEADER
+#include "adc_context_declare.h"
+#endif /* ADC_CONTEXT_DECLARE_IN_HEADER */
 
 #ifdef ADC_CONTEXT_USES_KERNEL_TIMER
 static void adc_context_on_timer_expired(struct k_timer *timer_id);
