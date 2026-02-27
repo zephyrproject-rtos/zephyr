@@ -1446,22 +1446,21 @@ isr_rx_next_subevent:
 
 static void isr_rx_done(void *param)
 {
-	struct node_rx_pdu *node_rx;
 	struct event_done_extra *e;
 	struct lll_sync_iso *lll;
 	uint16_t latency_event;
 	uint16_t payload_index;
+	uint8_t has_iso_rx;
 	uint8_t bis_idx;
 
-	/* Enqueue PDUs to ULL */
-	node_rx = NULL;
-
-	/* Dequeue sliding window */
 	lll = param;
-	payload_index = lll->payload_tail;
 
 	/* Catchup with ISO event latencies */
 	latency_event = lll->latency_event;
+
+	/* Dequeue sliding window */
+	has_iso_rx = 0U;
+	payload_index = lll->payload_tail;
 	do {
 		uint8_t stream_curr;
 
@@ -1484,11 +1483,17 @@ static void isr_rx_done(void *param)
 			payload_tail = lll->payload_tail;
 			for (uint8_t bn = 0U; bn < lll->bn; bn++) {
 				if (lll->payload[stream_curr][payload_tail]) {
+					struct node_rx_pdu *node_rx;
+
 					node_rx = lll->payload[stream_curr][payload_tail];
 					lll->payload[stream_curr][payload_tail] = NULL;
 
 					iso_rx_put(node_rx->hdr.link, node_rx);
+
+					has_iso_rx = 1U;
 				} else {
+					struct node_rx_pdu *node_rx;
+
 					/* Check if there are 2 free rx buffers, one
 					 * will be consumed to generate PDU with invalid
 					 * status, and the other is to ensure a PDU can
@@ -1511,6 +1516,8 @@ static void isr_rx_done(void *param)
 									handle, node_rx);
 
 						iso_rx_put(node_rx->hdr.link, node_rx);
+
+						has_iso_rx = 1U;
 					}
 				}
 
@@ -1529,7 +1536,7 @@ static void isr_rx_done(void *param)
 		lll->payload_tail = payload_index;
 	} while (latency_event--);
 
-	if (node_rx) {
+	if (has_iso_rx != 0U) {
 		iso_rx_sched();
 	}
 
