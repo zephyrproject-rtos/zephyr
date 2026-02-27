@@ -58,6 +58,51 @@ static inline uint32_t gpio_cat1_valid_mask(uint8_t ngpios)
 #endif
 }
 
+/**
+ * @brief Select the PDL drive mode for an input pin.
+ *
+ * @param[in]  flags      GPIO configuration flags.
+ * @param[out] drive_mode PDL drive mode constant.
+ */
+static void gpio_cat1_select_input_drive_mode(gpio_flags_t flags, uint32_t *drive_mode)
+{
+	if ((flags & GPIO_PULL_UP) && (flags & GPIO_PULL_DOWN)) {
+		*drive_mode = CY_GPIO_DM_PULLUP_DOWN;
+	} else if (flags & GPIO_PULL_UP) {
+		*drive_mode = CY_GPIO_DM_PULLUP;
+	} else if (flags & GPIO_PULL_DOWN) {
+		*drive_mode = CY_GPIO_DM_PULLDOWN;
+	} else {
+		*drive_mode = CY_GPIO_DM_HIGHZ;
+	}
+}
+
+/**
+ * @brief Select the PDL drive mode for an output pin.
+ *
+ * Maps push-pull, open-drain, and open-source configurations to the
+ * corresponding PDL drive mode.
+ *
+ * @param[in]  flags      GPIO configuration flags.
+ * @param[out] drive_mode PDL drive mode constant.
+ *
+ * @retval 0 Always succeeds.
+ */
+static int gpio_cat1_select_output_drive_mode(gpio_flags_t flags, uint32_t *drive_mode)
+{
+	if (flags & GPIO_SINGLE_ENDED) {
+		if (flags & GPIO_LINE_OPEN_DRAIN) {
+			*drive_mode = CY_GPIO_DM_OD_DRIVESLOW;
+		} else {
+			*drive_mode = CY_GPIO_DM_OD_DRIVESHIGH;
+		}
+	} else {
+		*drive_mode = CY_GPIO_DM_STRONG;
+	}
+
+	return 0;
+}
+
 static int gpio_cat1_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	uint32_t drive_mode = CY_GPIO_DM_HIGHZ;
@@ -71,29 +116,19 @@ static int gpio_cat1_configure(const struct device *dev, gpio_pin_t pin, gpio_fl
 
 	switch (flags & (GPIO_INPUT | GPIO_OUTPUT | GPIO_DISCONNECTED)) {
 	case GPIO_INPUT:
-		if ((flags & GPIO_PULL_UP) && (flags & GPIO_PULL_DOWN)) {
-			drive_mode = CY_GPIO_DM_PULLUP_DOWN;
-		} else if (flags & GPIO_PULL_UP) {
-			drive_mode = CY_GPIO_DM_PULLUP;
+		gpio_cat1_select_input_drive_mode(flags, &drive_mode);
+		if ((flags & GPIO_PULL_UP) && !(flags & GPIO_PULL_DOWN)) {
 			pin_val = true;
-		} else if (flags & GPIO_PULL_DOWN) {
-			drive_mode = CY_GPIO_DM_PULLDOWN;
-		} else {
-			drive_mode = CY_GPIO_DM_HIGHZ;
 		}
 		break;
 
 	case GPIO_OUTPUT:
+		if (gpio_cat1_select_output_drive_mode(flags, &drive_mode) != 0) {
+			return -ENOTSUP;
+		}
 		if (flags & GPIO_SINGLE_ENDED) {
-			if (flags & GPIO_LINE_OPEN_DRAIN) {
-				drive_mode = CY_GPIO_DM_OD_DRIVESLOW;
-				pin_val = true;
-			} else {
-				drive_mode = CY_GPIO_DM_OD_DRIVESHIGH;
-				pin_val = false;
-			}
+			pin_val = (flags & GPIO_LINE_OPEN_DRAIN) != 0;
 		} else {
-			drive_mode = CY_GPIO_DM_STRONG;
 			pin_val = (flags & GPIO_OUTPUT_INIT_HIGH);
 		}
 		break;
