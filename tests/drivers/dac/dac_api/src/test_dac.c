@@ -115,6 +115,12 @@
 #define DAC_RESOLUTION		12
 #define DAC_CHANNEL_ID		0
 
+#elif defined(CONFIG_DAC_NXP_HPDAC)
+
+#define DAC_DEVICE_NODE		DT_NODELABEL(dac2)
+#define DAC_RESOLUTION		14
+#define DAC_CHANNEL_ID		0
+
 #else
 #error "Unsupported board."
 #endif
