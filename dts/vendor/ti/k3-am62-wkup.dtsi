@@ -1,0 +1,22 @@
+/*
+ * Device Tree Source for AM625 SoC Family Wakeup Domain peripherals
+ *
+ * Copyright (c) 2026 Texas Instruments
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	wkup_ctrl_mmr0: syscon@43000000 {
+		compatible = "ti,control-module", "syscon";
+		reg = <0x43000000 DT_SIZE_K(128)>;
+		ti,unlock-offsets = <0x5008>;
+		reg-io-width = <0x4>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		usb0_phy_ctrl: register@4008 {
+			reg = <0x4008>;
+		};
+	};
+};
