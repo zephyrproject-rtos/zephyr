@@ -18,7 +18,7 @@
 		       11 /* DataLaneHS2LPTime */
 		       21 /* DataLaneLP2HSTime */
 		       0 /* DataLaneMaxReadTime */
-		       7 /* StopWaitTime */ >;
+		       7 /* StopWaitTime */>;
 
 	host-timeouts = <1 /* TimeoutCkdiv */
 			 0 /* HighSpeedTransmissionTimeout */
@@ -28,7 +28,7 @@
 			 0 /* HighSpeedWriteTimeout */
 			 0 /* HighSpeedWritePrespMode */
 			 0 /* LowPowerWriteTimeout */
-			 0 /* BTATimeout */ >;
+			 0 /* BTATimeout */>;
 
 	vs-active-high;
 	hs-active-high;

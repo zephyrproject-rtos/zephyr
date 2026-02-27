@@ -324,7 +324,7 @@
 			#address-cells = <1>;
 			ranges = <1 0xa 0xb 1 /* 1    -> 0xA 0xB */
 				  2 0xc 0xd 2 /* 2..3 -> 0xC 0xD */
-				  4 0xe 0xf 1 /* 4    -> 0xE 0xF */ >;
+				  4 0xe 0xf 1 /* 4    -> 0xE 0xF */>;
 
 			node {
 				reg = <5 1 /* Matches no range */
@@ -332,7 +332,7 @@
 				       3 1 /* Matches second range */
 				       2 1 /* Matches second range */
 				       1 1 /* Matches first range */
-				       0 1 /* Matches no range */ >;
+				       0 1 /* Matches no range */>;
 			};
 		};
 	};
