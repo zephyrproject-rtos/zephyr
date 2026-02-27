@@ -409,6 +409,19 @@ DeviceTree
 * :c:macro:`DT_CHILD_BY_UNIT_ADDR_INT`
 * :c:macro:`DT_INST_CHILD_BY_UNIT_ADDR_INT`
 
+Kernel
+******
+
+* :ref:`cleanup_api`
+
+  * :c:macro:`SCOPE_VAR_DEFINE`
+  * :c:macro:`SCOPE_GUARD_DEFINE`
+  * :c:macro:`SCOPE_DEFER_DEFINE`
+  * :c:macro:`scope_var`
+  * :c:macro:`scope_var_init`
+  * :c:macro:`scope_guard`
+  * :c:macro:`scope_defer`
+
 Libraries / Subsystems
 **********************
 
