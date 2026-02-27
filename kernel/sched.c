@@ -900,7 +900,7 @@ static inline void set_current(struct k_thread *new_thread)
  * copy before calling this function.
  *
  * @param interrupted Handle for the thread that was interrupted or NULL.
- * @retval Handle for the next thread to execute, or @p interrupted when
+ * @return Handle for the next thread to execute, or @p interrupted when
  *         no new thread is to be scheduled.
  */
 void *z_get_next_switch_handle(void *interrupted)
