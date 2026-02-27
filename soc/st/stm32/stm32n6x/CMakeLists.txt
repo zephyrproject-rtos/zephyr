@@ -21,7 +21,7 @@ set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/li
 
 zephyr_linker_sources_ifdef(CONFIG_BOOTLOADER_MCUBOOT SECTIONS ram_check.ld)
 
-if(NOT CONFIG_BOOTLOADER_MCUBOOT)
+if(NOT CONFIG_BOOTLOADER_MCUBOOT AND CONFIG_TRUSTED_EXECUTION_SECURE)
 
   set(signing_tool STM32_SigningTool_CLI)
 
