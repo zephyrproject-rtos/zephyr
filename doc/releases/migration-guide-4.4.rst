@@ -178,6 +178,12 @@ Boards
   ``zephyr,code-partition`` chosen devices. Support for using fixed-partitions as the chosen
   ``zephyr,code-partition`` node will be deprecated in the future.
 
+* Boards or projects based on STM32N6x SoCs (:kconfig:option:`CONFIG_SOC_SERIES_STM32N6X`) now need
+  to explicitly enable :kconfig:option:`CONFIG_TRUSTED_EXECUTION_SECURE` when the Zephyr
+  application is expected to execute in the secure state of the process. Alternatively, if the
+  Zephyr is expected to execute in the non-secure state of the processor, the board or project
+  must explicitly enable :kconfig:option:`CONFIG_TRUSTED_EXECUTION_NON_SECURE`.
+
 Device Drivers and Devicetree
 *****************************
 
