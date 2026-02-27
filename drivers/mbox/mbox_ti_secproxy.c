@@ -381,7 +381,7 @@ static DEVICE_API(mbox, secproxy_mailbox_driver_api) = {
 	}                                                                                          \
 	DEVICE_DT_INST_DEFINE(idx, secproxy_mailbox_##idx##_init, NULL,                            \
 			      &secproxy_mailbox_##idx##_data, &secproxy_mailbox_##idx##_config,    \
-			      PRE_KERNEL_1, CONFIG_MBOX_TI_SECURE_PROXY_PRIORITY,                  \
+			      PRE_KERNEL_1, CONFIG_MBOX_INIT_PRIORITY,                             \
 			      &secproxy_mailbox_driver_api)
 
 #define MAILBOX_INST(idx) MAILBOX_INSTANCE_DEFINE(idx);
