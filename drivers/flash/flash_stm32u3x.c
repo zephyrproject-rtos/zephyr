@@ -251,11 +251,9 @@ void flash_stm32_page_layout(const struct device *dev,
 	static struct flash_pages_layout stm32_flash_layout[1];
 
 	if (stm32_flash_layout[0].pages_count == 0) {
-		if (stm32_flash_has_2_banks(dev)) {
-			stm32_flash_layout[0].pages_count = FLASH_PAGE_NB * 2;
-		} else {
-			stm32_flash_layout[0].pages_count = FLASH_PAGE_NB;
-		}
+		/* Considering one layout of full flash size, even with 2 banks */
+		stm32_flash_layout[0].pages_count = FLASH_SIZE / FLASH_PAGE_SIZE;
+		/* stm32U3 flash pages are always 4 kB in size */
 		stm32_flash_layout[0].pages_size = FLASH_PAGE_SIZE;
 	}
 
