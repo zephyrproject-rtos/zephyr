@@ -112,7 +112,6 @@ static void mfd_rv3032_work_cb(struct k_work *work)
 
 	/* Periodic counter - COUNTER*/
 	if (status & RV3032_STATUS_TF) {
-		ret = mfd_rv3032_clear_status(data->dev, RV3032_STATUS_TF);
 		mfd_rv3032_fire_child_callback(data, RV3032_DEV_COUNTER);
 		LOG_DBG("(STATUS) Periodic counter (%x)\n", status);
 	}

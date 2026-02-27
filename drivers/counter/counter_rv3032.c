@@ -14,6 +14,8 @@
  * driver.
  *
  * Remarks:
+ * - Alarms are implemented by changing the top value. If an alarm is set, the
+ *   top value callback is replaced with the alarm's callback.
  * - The duration of the first countdown after (re)starting the timer can be
  *   off by ~1 tick. See 4.8.3. FIRST PERIOD DURATION in the data sheet. This
  *   applies each time the timer is enabled (CONTROL1 TE bit set) or when a new
@@ -47,10 +49,56 @@ struct rv3032_counter_data {
 	bool counter_is_enabled;
 	uint16_t top_value;
 
+	struct k_sem lock;
+
 	bool alarm_is_pending;
-	counter_alarm_callback_t callback;
+	void *callback;
 	void *user_data;
 };
+
+static void rv3032_counter_lock_sem(const struct device *dev)
+{
+	struct rv3032_counter_data *data = dev->data;
+	(void)k_sem_take(&data->lock, K_FOREVER);
+}
+
+static void rv3032_counter_unlock_sem(const struct device *dev)
+{
+	struct rv3032_counter_data *data = dev->data;
+	(void)k_sem_give(&data->lock);
+}
+
+/* Prevent the RV-3032 from generating periodic countdown timer interrupt pulses
+ * without disabling the counter. TIE is zeroed first to prevent an interrupt
+ * pulse from being generated when we then zero the TIMER_VALUE_* registers.
+ *
+ * This function is intended to be called from within a locked context.
+ * This function causes the TF flag to be set in the STATUS register.
+ */
+static int rv3032_counter_disable_interrupts_unsafe(const struct device *dev)
+{
+	const struct rv3032_counter_config *config = dev->config;
+	struct rv3032_counter_data *data = dev->data;
+	int err;
+
+	err = mfd_rv3032_update_reg8(config->mfd, RV3032_REG_CONTROL2, RV3032_CONTROL2_TIE, 0);
+	if (err) {
+		LOG_ERR("Failed to disable counter interrupt signals : %d", err);
+		return err;
+	}
+
+	uint8_t time_val[2] = {0};
+
+	err = mfd_rv3032_write_regs(config->mfd, RV3032_REG_TIMER_VALUE_0, time_val,
+				    sizeof(time_val));
+	if (err) {
+		LOG_ERR("Failed to zero TIMER_VALUE_* registers : %d", err);
+		return err;
+	}
+	data->top_value = 0;
+
+	return 0;
+}
 
 static int rv3032_counter_start(const struct device *dev)
 {
@@ -111,23 +159,79 @@ static int rv3032_counter_reset(const struct device *dev)
 		return 0;
 	}
 
+	rv3032_counter_lock_sem(dev);
+
 	const uint8_t timer_value_0 = data->top_value & 0xff;
 
 	err = mfd_rv3032_write_reg8(config->mfd, RV3032_REG_TIMER_VALUE_0, timer_value_0);
 	if (err) {
 		LOG_ERR("Failed reset counter : %d", err);
-		return err;
+		goto unlock;
 	}
 
-	return 0;
+unlock:
+	rv3032_counter_unlock_sem(dev);
+
+	return err;
 }
 
 static void rv3032_counter_isr(const struct device *dev)
 {
+	const struct rv3032_counter_config *config = dev->config;
 	struct rv3032_counter_data *data = dev->data;
+	uint8_t status;
+	int err;
 
-	if (data->callback) {
-		data->callback(dev, 0, 0, data->user_data);
+	rv3032_counter_lock_sem(dev);
+
+	const bool is_alarm = data->alarm_is_pending;
+	void *callback = data->callback;
+	void *user_data = data->user_data;
+
+	err = mfd_rv3032_read_reg8(config->mfd, RV3032_REG_STATUS, &status);
+	if (err) {
+		LOG_ERR("Failed to read status register : %d", err);
+		goto unlock;
+	}
+	if (!(status & RV3032_STATUS_TF)) {
+		/* Nothing to do: interrupt was already handled or alarm was
+		 * cancelled.
+		 */
+		err = 1;
+		goto unlock;
+	}
+
+	if (is_alarm) {
+		data->alarm_is_pending = false;
+		data->callback = NULL;
+		data->user_data = NULL;
+
+		/* Disable counter interrupts (alarms should be one shot) */
+		err = rv3032_counter_disable_interrupts_unsafe(dev);
+		if (err) {
+			LOG_ERR("Failed to disable counter interrupts in counter alarm ISR : %d",
+				err);
+			goto unlock;
+		}
+	}
+
+	err = mfd_rv3032_write_reg8(config->mfd, RV3032_REG_STATUS, (uint8_t)~RV3032_STATUS_TF);
+	if (err) {
+		LOG_ERR("Failed to clear TF flag from status register : %d", err);
+		goto unlock;
+	}
+
+unlock:
+	rv3032_counter_unlock_sem(dev);
+
+	if (err || !callback) {
+		return;
+	}
+
+	if (is_alarm) {
+		((counter_alarm_callback_t)callback)(dev, 0, 0, user_data);
+	} else {
+		((counter_top_callback_t)callback)(dev, user_data);
 	}
 }
 
@@ -154,8 +258,11 @@ static int rv3032_counter_set_alarm(const struct device *dev, uint8_t chan_id,
 		return -ENOTSUP;
 	}
 
+	rv3032_counter_lock_sem(dev);
+
 	if (data->alarm_is_pending) {
-		return -EBUSY;
+		err = -EBUSY;
+		goto unlock;
 	}
 
 	/* Pause the countdown timer if it is running to avoid triggering an
@@ -165,7 +272,7 @@ static int rv3032_counter_set_alarm(const struct device *dev, uint8_t chan_id,
 		err = rv3032_counter_stop(dev);
 		if (err) {
 			LOG_ERR("Failed to pause counter : %d", err);
-			return err;
+			goto unlock;
 		}
 		counter_was_enabled = true;
 	}
@@ -173,7 +280,7 @@ static int rv3032_counter_set_alarm(const struct device *dev, uint8_t chan_id,
 	err = mfd_rv3032_write_reg8(config->mfd, RV3032_REG_STATUS, (uint8_t)~RV3032_STATUS_TF);
 	if (err) {
 		LOG_ERR("Failed to clear TF flag from status register : %d", err);
-		return err;
+		goto unlock;
 	}
 
 	uint8_t time_val[2] = {alarm_cfg->ticks & 0xff, (alarm_cfg->ticks >> 8) & 0xf};
@@ -182,14 +289,14 @@ static int rv3032_counter_set_alarm(const struct device *dev, uint8_t chan_id,
 				    sizeof(time_val));
 	if (err) {
 		LOG_ERR("Failed to write TIMER_VALUE_* registers : %d", err);
-		return err;
+		goto unlock;
 	}
 
 	err = mfd_rv3032_update_reg8(config->mfd, RV3032_REG_CONTROL2, RV3032_CONTROL2_TIE,
 				     RV3032_CONTROL2_TIE);
 	if (err) {
 		LOG_ERR("Failed to enable interrupt signals : %d", err);
-		return err;
+		goto unlock;
 	}
 
 	data->alarm_is_pending = true;
@@ -201,11 +308,14 @@ static int rv3032_counter_set_alarm(const struct device *dev, uint8_t chan_id,
 		err = rv3032_counter_start(dev);
 		if (err) {
 			LOG_ERR("Failed to restart counter : %d", err);
-			return err;
+			goto unlock;
 		}
 	}
 
-	return 0;
+unlock:
+	rv3032_counter_unlock_sem(dev);
+
+	return err;
 }
 
 static int rv3032_counter_cancel_alarm(const struct device *dev, uint8_t chan_id)
@@ -216,25 +326,31 @@ static int rv3032_counter_cancel_alarm(const struct device *dev, uint8_t chan_id
 
 	/* Don't need to check channel ID, this is handled by the Counter API */
 
+	rv3032_counter_lock_sem(dev);
+
 	if (!data->alarm_is_pending) {
-		return 0;
+		err = 0;
+		goto unlock;
 	}
 
-	err = rv3032_counter_stop(dev);
+	err = rv3032_counter_disable_interrupts_unsafe(dev);
 	if (err) {
-		LOG_ERR("Failed to stop counter while cancelling alarm : %d", err);
-		return err;
+		LOG_ERR("Error disabling counter interrupts while cancelling alarm : %d", err);
+		goto unlock;
 	}
 
 	err = mfd_rv3032_write_reg8(config->mfd, RV3032_REG_STATUS, (uint8_t)~RV3032_STATUS_TF);
 	if (err) {
 		LOG_ERR("Failed to clear TF flag from status register : %d", err);
-		return err;
+		goto unlock;
 	}
 
 	data->alarm_is_pending = false;
 	data->callback = NULL;
 	data->user_data = NULL;
+
+unlock:
+	rv3032_counter_unlock_sem(dev);
 
 	return err;
 }
@@ -260,18 +376,79 @@ static uint32_t rv3032_counter_get_pending_int(const struct device *dev)
 static int rv3032_counter_set_top_value(const struct device *dev, const struct counter_top_cfg *cfg)
 {
 	const struct rv3032_counter_config *config = dev->config;
-	uint8_t timer[2];
+	struct rv3032_counter_data *data = dev->data;
+	bool counter_was_enabled = false;
 	int err;
 
-	timer[0] = cfg->ticks & 0xff;
-	timer[1] = (cfg->ticks >> 8) & 0xff;
+	/* Don't need to check cfg->ticks, this is handled by the Counter API */
 
-	err = mfd_rv3032_write_regs(config->mfd, RV3032_REG_TIMER_VALUE_0, timer, 2);
-	if (err) {
-		LOG_ERR("TIMER register read failed : %d", err);
+	/* The RV-3032 restarts the countdown automatically when a new top value
+	 * is written, so these flags are unsupported.
+	 */
+	if (cfg->flags & (COUNTER_TOP_CFG_RESET_WHEN_LATE | COUNTER_TOP_CFG_DONT_RESET)) {
+		LOG_ERR("Unsupported cfg->flags: 0x%X (COUNTER_TOP_CFG_RESET_WHEN_LATE and"
+			" COUNTER_TOP_CFG_DONT_RESET are not supported)",
+			cfg->flags);
+		return -ENOTSUP;
 	}
 
-	return 0;
+	rv3032_counter_lock_sem(dev);
+
+	if (data->alarm_is_pending) {
+		err = -EBUSY;
+		goto unlock;
+	}
+
+	/* Pause the countdown timer if it is running to avoid triggering an
+	 * interrupt before we've updated the callback.
+	 */
+	if (data->counter_is_enabled) {
+		err = rv3032_counter_stop(dev);
+		if (err) {
+			LOG_ERR("Failed to pause counter : %d", err);
+			goto unlock;
+		}
+		counter_was_enabled = true;
+	}
+
+	err = mfd_rv3032_write_reg8(config->mfd, RV3032_REG_STATUS, (uint8_t)~RV3032_STATUS_TF);
+	if (err) {
+		LOG_ERR("Failed to clear TF flag from status register : %d", err);
+		goto unlock;
+	}
+
+	uint8_t time_val[2] = {cfg->ticks & 0xff, (cfg->ticks >> 8) & 0xf};
+
+	err = mfd_rv3032_write_regs(config->mfd, RV3032_REG_TIMER_VALUE_0, time_val,
+				    sizeof(time_val));
+	if (err) {
+		LOG_ERR("Failed to write TIMER_VALUE_* registers : %d", err);
+		goto unlock;
+	}
+
+	err = mfd_rv3032_update_reg8(config->mfd, RV3032_REG_CONTROL2, RV3032_CONTROL2_TIE,
+				     RV3032_CONTROL2_TIE);
+	if (err) {
+		LOG_ERR("Failed to enable interrupt signals : %d", err);
+		goto unlock;
+	}
+
+	data->callback = cfg->callback;
+	data->user_data = cfg->user_data;
+	data->top_value = cfg->ticks;
+
+	if (counter_was_enabled) {
+		err = rv3032_counter_start(dev);
+		if (err) {
+			LOG_ERR("Failed to restart counter : %d", err);
+			goto unlock;
+		}
+	}
+
+unlock:
+	rv3032_counter_unlock_sem(dev);
+
+	return err;
 }
 
 static uint32_t rv3032_counter_get_top_value(const struct device *dev)
@@ -284,6 +461,7 @@ static uint32_t rv3032_counter_get_top_value(const struct device *dev)
 static int rv3032_counter_init(const struct device *dev)
 {
 	const struct rv3032_counter_config *config = dev->config;
+	struct rv3032_counter_data *data = dev->data;
 	uint8_t freq_config;
 	int err;
 
@@ -329,6 +507,8 @@ static int rv3032_counter_init(const struct device *dev)
 		LOG_ERR("Failed to zero TIMER_VALUE_* registers : %d", err);
 		return err;
 	}
+
+	k_sem_init(&data->lock, 1, 1);
 
 	mfd_rv3032_set_irq_handler(config->mfd, dev, RV3032_DEV_COUNTER, rv3032_counter_isr);
 
