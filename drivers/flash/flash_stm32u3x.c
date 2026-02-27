@@ -11,6 +11,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #include <soc.h>
 #include <stm32_ll_icache.h>
+#include <stm32_ll_pwr.h>
 #include <stm32_ll_system.h>
 #include <string.h>
 #include <zephyr/cache.h>
@@ -200,6 +201,17 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 
 	sys_cache_instr_disable();
 
+	/* Prior to erase operation, the voltage range must be set to range 1. */
+	uint32_t voltage_scale = LL_PWR_GetRegulVoltageScaling();;
+
+	if (voltage_scale != LL_PWR_REGU_VOLTAGE_SCALE1) {
+		/* If not, then set the voltage scale 1 */
+		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
+		while (LL_PWR_GetRegulCurrentVOS() != LL_PWR_REGU_VOLTAGE_SCALE1) {
+			/* and wait for the R1RDY flag */
+		}
+	}
+
 	for (address = offset; address <= offset + len - 1; address += FLASH_PAGE_SIZE) {
 		rc = erase_page(dev, address);
 		if (rc < 0) {
@@ -209,6 +221,15 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 
 	if (cache_enabled) {
 		sys_cache_instr_enable();
+	}
+
+	/* Restore the voltage scale at its initial range : LL_PWR_REGU_VOLTAGE_SCALE2 */
+	if (voltage_scale != LL_PWR_REGU_VOLTAGE_SCALE1) {
+		/* If not, then restore the voltage scale */
+		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE2);
+		while (LL_PWR_GetRegulCurrentVOS() != LL_PWR_REGU_VOLTAGE_SCALE2) {
+			/* and wait for the R2RDY flag */
+		}
 	}
 
 	return rc;
@@ -229,6 +250,17 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 
 	sys_cache_instr_disable();
 
+	/* Prior to write operation, the voltage range must be set to range 1. */
+	uint32_t voltage_scale = LL_PWR_GetRegulVoltageScaling();
+
+	if (voltage_scale != LL_PWR_REGU_VOLTAGE_SCALE1) {
+		/* If not, then set the voltage scale 1 */
+		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE1);
+		while (LL_PWR_GetRegulCurrentVOS() != LL_PWR_REGU_VOLTAGE_SCALE1) {
+			/* and wait for the R1RDY flag */
+		}
+	}
+
 	for (i = 0; i < len; i += FLASH_STM32_WRITE_BLOCK_SIZE) {
 		rc = write_nwords(dev, offset + i, ((const uint32_t *)data + (i >> 2)),
 				  FLASH_STM32_WRITE_BLOCK_SIZE / 4);
@@ -239,6 +271,15 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 
 	if (cache_enabled) {
 		sys_cache_instr_enable();
+	}
+
+	/* Restore the volatge scale at its initial range : LL_PWR_REGU_VOLTAGE_SCALE2 */
+	if (voltage_scale != LL_PWR_REGU_VOLTAGE_SCALE1) {
+		/* If not, then restore the voltage scale */
+		LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE2);
+		while (LL_PWR_GetRegulCurrentVOS() != LL_PWR_REGU_VOLTAGE_SCALE2) {
+			/* and wait for the R2RDY flag */
+		}
 	}
 
 	return rc;
