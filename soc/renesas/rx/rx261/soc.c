@@ -31,6 +31,7 @@ void soc_early_init_hook(void)
 	bsp_ram_initialize();
 	bsp_interrupt_open();
 	bsp_register_protect_open();
+	mcu_clock_setup();
 #ifdef CONFIG_RENESAS_NONE_USED_PORT_INIT
 	/*
 	 * This is the function that initializes the unused port.
