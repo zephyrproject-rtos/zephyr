@@ -78,6 +78,14 @@
 				write-block-size = <16>;
 				erase-block-size = <DT_SIZE_K(8)>;
 			};
+
+			ifr0: flash@2000000 {
+				compatible = "nxp,mcxw-ifr";
+				write-block-size = <16>;
+				erase-block-size = <DT_SIZE_K(8)>;
+				ota-cfg-sector = <3>;
+				reg = <0x2000000 DT_SIZE_K(32)>;
+			};
 		};
 
 		ctcm: sram@14000000 {
