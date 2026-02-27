@@ -319,8 +319,13 @@ if(CONFIG_SILABS_SISDK_I2C)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_LETIMER   ${PERIPHERAL_DIR}/src/sl_hal_letimer.c)
-zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_TIMER     ${PERIPHERAL_DIR}/src/sl_hal_timer.c)
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_VDAC      ${PERIPHERAL_DIR}/src/sl_hal_vdac.c)
+
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_TIMER
+  ${PERIPHERAL_DIR}/src/sl_hal_timer.c
+  # em_timer.c is still needed e.g. by RAIL for Bluetooth CS
+  ${EMLIB_DIR}/src/em_timer.c
+)
 
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_LDMA
   ${EMDRV_DIR}/dmadrv/src/dmadrv.c
