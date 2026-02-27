@@ -4,22 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nordic/nrf54lm20_a_b_cpuflpr.dtsi>
+#include <vendor/nordic/nrf54lm20_a_b_cpuflpr.dtsi>
 #include "nrf54lm20dk_common.dtsi"
-
-&cpuflpr_sram {
-	status = "okay";
-};
 
 &cpuflpr_rram {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges;
 
 		cpuflpr_code_partition: partition@0 {
 			label = "image-0";
+			compatible = "zephyr,mapped-partition";
 			reg = <0x0 DT_SIZE_K(96)>;
 		};
 	};

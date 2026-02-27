@@ -6,7 +6,6 @@
 
 /dts-v1/;
 
-#include <nordic/nrf54lm20a_cpuflpr.dtsi>
 #include "nrf54lm20_a_b_cpuflpr_common.dtsi"
 
 / {
