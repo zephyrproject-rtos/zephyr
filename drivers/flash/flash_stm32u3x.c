@@ -157,6 +157,10 @@ static int erase_page(const struct device *dev, unsigned int offset)
 			return -EINVAL;
 		}
 	} else {
+		/* On 512-Kbyte flash single-bank, set BKER = 0 to select bank 1. */
+		if (FLASH_SIZE ==  512 * 1024) {
+			regs->CR &= ~FLASH_STM32_NSBKER_MSK;
+		}
 		page = offset / FLASH_PAGE_SIZE_128_BITS;
 		LOG_DBG("Erase page %d", page);
 	}
@@ -202,7 +206,7 @@ int flash_stm32_block_erase_loop(const struct device *dev,
 	sys_cache_instr_disable();
 
 	/* Prior to erase operation, the voltage range must be set to range 1. */
-	uint32_t voltage_scale = LL_PWR_GetRegulVoltageScaling();;
+	uint32_t voltage_scale = LL_PWR_GetRegulVoltageScaling();
 
 	if (voltage_scale != LL_PWR_REGU_VOLTAGE_SCALE1) {
 		/* If not, then set the voltage scale 1 */
