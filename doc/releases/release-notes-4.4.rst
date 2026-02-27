@@ -408,6 +408,7 @@ New Samples
 * :zephyr:code-sample:`cpu_freq_pressure`
 * :zephyr:code-sample:`6dof_fifo_stream` (renamed from ``stream_fifo``)
 * :zephyr:code-sample:`accel_stream` (renamed from ``accel_polling``)
+* :zephyr:code-sample:`accel_polling` (it uses sensor_read() API)
 
 ..
   Same as above, this will also be recomputed at the time of the release.
