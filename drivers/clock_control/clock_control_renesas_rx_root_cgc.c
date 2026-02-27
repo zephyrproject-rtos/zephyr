@@ -37,16 +37,6 @@ static int clock_control_renesas_rx_root_get_rate(const struct device *dev,
 	return 0;
 }
 
-static int clock_control_rx_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-#if CONFIG_HAS_RENESAS_RX_RDP
-	/* Call to HAL layer to initialize system clock and peripheral clock */
-	mcu_clock_setup();
-#endif
-	return 0;
-}
-
 static DEVICE_API(clock_control, clock_control_renesas_rx_root_api) = {
 	.on = clock_control_renesas_rx_root_on,
 	.off = clock_control_renesas_rx_root_off,
@@ -57,7 +47,7 @@ static DEVICE_API(clock_control, clock_control_renesas_rx_root_api) = {
 	static const struct clock_control_rx_root_cfg clock_control_rx_root_cfg##idx = {           \
 		.rate = DT_INST_PROP(idx, clock_frequency),                                        \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(idx, &clock_control_rx_init, NULL, NULL,                             \
+	DEVICE_DT_INST_DEFINE(idx, NULL, NULL, NULL,                             \
 			      &clock_control_rx_root_cfg##idx, PRE_KERNEL_1,                       \
 			      CONFIG_CLOCK_CONTROL_INIT_PRIORITY,                                  \
 			      &clock_control_renesas_rx_root_api);
