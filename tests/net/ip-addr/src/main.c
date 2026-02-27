@@ -967,6 +967,32 @@ ZTEST(ip_addr_fn, test_private_ipv4_addresses)
 
 }
 
+ZTEST(ip_addr_fn, test_ipv6_v4_mapped)
+{
+	struct net_in6_addr addr6;
+	struct net_in_addr addr4_in;
+	struct net_in_addr addr4_out;
+
+	/* A regular IPv6 address must not be reported as v4-mapped */
+	addr6 = (struct net_in6_addr){
+		{ { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1 } }
+	};
+
+	zassert_false(net_ipv6_addr_is_v4_mapped(&addr6),
+		      "Plain IPv6 address must not be v4-mapped");
+
+	addr4_in = (struct net_in_addr){ { { 192, 168, 0, 1 } } };
+	net_ipv6_addr_create_v4_mapped(&addr4_in, &addr6);
+
+	zassert_true(net_ipv6_addr_is_v4_mapped(&addr6),
+		     "Created v4-mapped address not detected as v4-mapped");
+
+	net_ipv6_addr_get_v4_mapped(&addr6, &addr4_out);
+
+	zassert_equal(addr4_out.s_addr, addr4_in.s_addr,
+		      "Extracted IPv4 address does not match original (192.168.0.1)");
+}
+
 void clear_addr4(struct net_if *iface, struct net_if_addr *addr, void *user_data)
 {
 	addr->is_used = false;
