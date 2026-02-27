@@ -7,9 +7,3 @@ config MBOX_TI_SECURE_PROXY
 	depends on DT_HAS_TI_SECURE_PROXY_ENABLED
 	help
 	  Driver for TI Secure Proxy Mailbox.
-
-config MBOX_TI_SECURE_PROXY_PRIORITY
-	int "MBOX_TI_SECURE_PROXY_PRIORITY"
-	default KERNEL_INIT_PRIORITY_OBJECTS
-	help
-	  Mbox secproxy initialization priority.
