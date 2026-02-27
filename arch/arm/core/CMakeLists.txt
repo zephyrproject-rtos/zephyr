@@ -4,9 +4,9 @@ zephyr_library()
 
 if(CONFIG_SLOW_FLASH_DATA)
   if(COMPILER STREQUAL gcc)
-    zephyr_compile_options(-mslow-flash-data)
+    zephyr_compile_options(-mslow-flash-data -fno-jump-tables)
   elseif(COMPILER STREQUAL iar)
-    zephyr_compile_options(--no_literal_pool)
+    zephyr_compile_options(--no_literal_pool --no_switch_tables)
   endif()
 endif()
 
