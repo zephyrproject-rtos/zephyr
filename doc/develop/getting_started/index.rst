@@ -240,6 +240,10 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
                cd ~/zephyrproject
                west update
 
+            .. tip::
+
+               To check out a specific revision, use ``west init ~/zephyrproject --mr <revision>``
+
          .. only:: release
 
             .. We need to use a parsed-literal here because substitutions do not work in code
@@ -301,11 +305,25 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
 
       #. Get the Zephyr source code:
 
-         .. code-block:: bash
+         .. only:: not release
 
-            west init ~/zephyrproject
-            cd ~/zephyrproject
-            west update
+            .. code-block:: bash
+
+               west init ~/zephyrproject
+               cd ~/zephyrproject
+               west update
+
+            .. tip::
+
+               To check out a specific revision, use ``west init ~/zephyrproject --mr <revision>``
+
+         .. only:: release
+
+            .. parsed-literal::
+
+               west init ~/zephyrproject --mr v |zephyr-version-ltrim|
+               cd ~/zephyrproject
+               west update
 
       #. Export a :ref:`Zephyr CMake package <cmake_pkg>`. This allows CMake to
          automatically load boilerplate code required for building Zephyr
@@ -381,11 +399,25 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
 
       #. Get the Zephyr source code:
 
-         .. code-block:: bat
+         .. only:: not release
 
-            west init zephyrproject
-            cd zephyrproject
-            west update
+            .. code-block:: bat
+
+               west init zephyrproject
+               cd zephyrproject
+               west update
+
+            .. tip::
+
+               To check out a specific revision, use ``west init zephyrproject --mr <revision>``
+
+         .. only:: release
+
+            .. parsed-literal::
+
+               west init zephyrproject --mr v |zephyr-version-ltrim|
+               cd zephyrproject
+               west update
 
       #. Export a :ref:`Zephyr CMake package <cmake_pkg>`. This allows CMake to
          automatically load boilerplate code required for building Zephyr
