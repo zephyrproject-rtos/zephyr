@@ -17,12 +17,12 @@ void gpio_stepper_trigger_callback(const struct device *dev, enum stepper_ctrl_e
 		return;
 	}
 
+#ifdef CONFIG_STEPPER_GPIO_STEPPER_GENERATE_ISR_SAFE_EVENTS
 	if (!k_is_in_isr()) {
 		data->callback(dev, event, data->event_cb_user_data);
 		return;
 	}
 
-#ifdef CONFIG_STEPPER_GPIO_STEPPER_GENERATE_ISR_SAFE_EVENTS
 	/* Dispatch to msgq instead of raising directly */
 	int ret = k_msgq_put(&data->event_msgq, &event, K_NO_WAIT);
 
@@ -35,7 +35,7 @@ void gpio_stepper_trigger_callback(const struct device *dev, enum stepper_ctrl_e
 		LOG_ERR("Failed to submit work item: %d", ret);
 	}
 #else
-	LOG_WRN_ONCE("Event callback called from ISR context without ISR safe events enabled");
+	data->callback(dev, event, data->event_cb_user_data);
 #endif /* CONFIG_STEPPER_GPIO_STEPPER_GENERATE_ISR_SAFE_EVENTS */
 }
 
