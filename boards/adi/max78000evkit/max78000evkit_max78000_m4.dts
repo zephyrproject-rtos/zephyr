@@ -130,3 +130,7 @@
 	pinctrl-0 = <&owm_io_p0_18 &owm_pe_p0_19>;
 	pinctrl-names = "default";
 };
+
+&rtc_counter {
+	status = "okay";
+};
