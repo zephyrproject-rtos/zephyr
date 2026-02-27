@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Nordic Semiconductor ASA
  * Copyright (c) 2016-2017 Linaro Limited
+ * Copyright (c) 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +20,7 @@
 
 #include "bootutil/bootutil_public.h"
 #include <zephyr/dfu/mcuboot.h>
+#include <zephyr/dfu/dfu_boot.h>
 
 #if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) || \
 	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)
@@ -44,9 +46,20 @@
 #define SLOT15_PARTITION	slot15_partition
 #endif
 
+#define ERASED_VAL_32(x) (((x) << 24) | ((x) << 16) | ((x) << 8) | (x))
+
+#ifdef CONFIG_MCUBOOT_BOOTLOADER_USES_SHA512
+#define IMAGE_TLV_SHA		IMAGE_TLV_SHA512
+#else
+#define IMAGE_TLV_SHA		IMAGE_TLV_SHA256
+#endif
+
 #include "mcuboot_priv.h"
 
 LOG_MODULE_REGISTER(mcuboot_dfu, CONFIG_IMG_MANAGER_LOG_LEVEL);
+
+BUILD_ASSERT(sizeof(struct image_header) == IMAGE_HEADER_SIZE,
+	     "struct image_header not required size");
 
 /*
  * Helpers for image headers and trailers, as defined by mcuboot.
@@ -117,100 +130,22 @@ uint8_t boot_fetch_active_slot(void)
 
 	if (rc <= 0) {
 		LOG_ERR("Failed to fetch active slot: %d", rc);
-
 		return INVALID_SLOT_ID;
 	}
 
 	LOG_DBG("Active slot: %d", slot);
-	/* Map slot number back to flash area ID */
-	switch (slot) {
-	case 0:
-		return PARTITION_ID(SLOT0_PARTITION);
 
-#if PARTITION_EXISTS(SLOT1_PARTITION)
-	case 1:
-		return PARTITION_ID(SLOT1_PARTITION);
-#endif
-
-#if PARTITION_EXISTS(SLOT2_PARTITION)
-	case 2:
-		return PARTITION_ID(SLOT2_PARTITION);
-#endif
-
-#if PARTITION_EXISTS(SLOT3_PARTITION)
-	case 3:
-		return PARTITION_ID(SLOT3_PARTITION);
-#endif
-
-#if PARTITION_EXISTS(SLOT4_PARTITION)
-	case 4:
-		return PARTITION_ID(SLOT4_PARTITION);
-#endif
-
-#if PARTITION_EXISTS(SLOT5_PARTITION)
-	case 5:
-		return PARTITION_ID(SLOT5_PARTITION);
-#endif
-
-#if PARTITION_EXISTS(SLOT6_PARTITION)
-	case 6:
-		return PARTITION_ID(SLOT6_PARTITION);
-#endif
-
-#if PARTITION_EXISTS(SLOT7_PARTITION)
-	case 7:
-		return PARTITION_ID(SLOT7_PARTITION);
-#endif
-
-#if PARTITION_EXISTS(SLOT8_PARTITION)
-	case 8:
-		return PARTITION_ID(SLOT8_PARTITION);
-#endif
-
-#if PARTITION_EXISTS(SLOT9_PARTITION)
-	case 9:
-		return PARTITION_ID(SLOT9_PARTITION);
-#endif
-
-#if PARTITION_EXISTS(SLOT10_PARTITION)
-	case 10:
-		return PARTITION_ID(SLOT10_PARTITION);
-#endif
-
-#if PARTITION_EXISTS(SLOT11_PARTITION)
-	case 11:
-		return PARTITION_ID(SLOT11_PARTITION);
-#endif
-
-#if PARTITION_EXISTS(SLOT12_PARTITION)
-	case 12:
-		return PARTITION_ID(SLOT12_PARTITION);
-#endif
-
-#if PARTITION_EXISTS(SLOT13_PARTITION)
-	case 13:
-		return PARTITION_ID(SLOT13_PARTITION);
-#endif
-
-#if PARTITION_EXISTS(SLOT14_PARTITION)
-	case 14:
-		return PARTITION_ID(SLOT14_PARTITION);
-#endif
-
-#if PARTITION_EXISTS(SLOT15_PARTITION)
-	case 15:
-		return PARTITION_ID(SLOT15_PARTITION);
-#endif
-
-	default:
-		break;
+	rc = dfu_boot_get_flash_area_id(slot);
+	if (rc < 0) {
+		return INVALID_SLOT_ID;
 	}
 
-	return INVALID_SLOT_ID;
+	return (uint8_t)rc;
 }
 #else  /* CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD ||
 	* CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT
 	*/
+
 uint8_t boot_fetch_active_slot(void)
 {
 	return ACTIVE_SLOT_FLASH_AREA_ID;
@@ -281,7 +216,7 @@ size_t boot_get_image_start_offset(uint8_t area_id)
 			 */
 			rc = flash_area_get_sectors(area_id, &num_sectors, &sector_data);
 			if ((rc != 0 && rc != -ENOMEM) ||
-			    num_sectors != SWAP_USING_OFFSET_SECTOR_UPDATE_BEGIN) {
+				num_sectors != SWAP_USING_OFFSET_SECTOR_UPDATE_BEGIN) {
 				LOG_ERR("Failed to get sector details: %d", rc);
 			} else {
 				off = sector_data.fs_size;
@@ -386,6 +321,42 @@ int boot_read_bank_header(uint8_t area_id,
 	sem_ver->build_num = v1_raw.version.build_num;
 	return 0;
 }
+
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)
+int mcuboot_read_directxip_state(int slot)
+{
+	struct boot_swap_state bss;
+	int fa_id = dfu_boot_get_flash_area_id(slot);
+	const struct flash_area *fa;
+	int rc;
+
+	__ASSERT(fa_id >= 0, "Could not map slot to area ID");
+
+	rc = flash_area_open(fa_id, &fa);
+	if (rc < 0) {
+		return rc;
+	}
+
+	rc = boot_read_swap_state(fa, &bss);
+	flash_area_close(fa);
+
+	if (rc != 0) {
+		LOG_ERR("Failed to read state of slot %d with error %d", slot, rc);
+		return -EIO;
+	}
+
+	if (bss.magic == BOOT_MAGIC_GOOD) {
+		if (bss.image_ok == BOOT_FLAG_SET) {
+			return MCUBOOT_DIRECT_XIP_BOOT_FOREVER;
+		} else if (bss.copy_done == BOOT_FLAG_SET) {
+			return MCUBOOT_DIRECT_XIP_BOOT_REVERT;
+		}
+		return MCUBOOT_DIRECT_XIP_BOOT_ONCE;
+	}
+
+	return MCUBOOT_DIRECT_XIP_BOOT_UNSET;
+}
+#endif /* CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT */
 
 int mcuboot_swap_type_multi(int image_index)
 {
@@ -524,4 +495,226 @@ ssize_t boot_get_area_trailer_status_offset(uint8_t area_id)
 	}
 
 	return offset;
+}
+
+/**
+ * Finds the TLVs in the specified image slot, if any.
+ */
+static int mcuboot_find_tlvs(int slot, size_t *start_off, size_t *end_off, uint16_t magic)
+{
+	struct image_tlv_info tlv_info;
+	int rc;
+
+	rc = dfu_boot_read(slot, *start_off, &tlv_info, sizeof(tlv_info));
+	if (rc != 0) {
+		return rc;
+	}
+
+	if (tlv_info.it_magic != magic) {
+		/* No TLVs. */
+		return -ENOENT;
+	}
+
+	*start_off += sizeof(tlv_info);
+	*end_off = *start_off + tlv_info.it_tlv_tot;
+
+	return 0;
+}
+
+/**
+ * Helper to populate dfu_boot_img_info from an image_header
+ */
+static void populate_img_info_from_header(const struct image_header *hdr,
+							struct dfu_boot_img_info *info)
+{
+	BUILD_ASSERT(sizeof(struct image_version) == sizeof(struct dfu_boot_img_version),
+		"image_version must match dfu_boot_img_version size");
+	memcpy(&info->version, &hdr->ih_ver, sizeof(struct dfu_boot_img_version));
+
+	info->img_size = hdr->ih_img_size;
+	info->hdr_size = hdr->ih_hdr_size;
+	info->load_addr = hdr->ih_load_addr;
+
+	info->flags = 0;
+	if (hdr->ih_flags & IMAGE_F_NON_BOOTABLE) {
+		info->flags |= DFU_BOOT_IMG_F_NON_BOOTABLE;
+	}
+	if (hdr->ih_flags & IMAGE_F_ROM_FIXED) {
+		info->flags |= DFU_BOOT_IMG_F_ROM_FIXED;
+	}
+
+	info->valid = true;
+}
+
+int dfu_boot_read_img_info(int slot, struct dfu_boot_img_info *info)
+{
+	struct image_header hdr;
+	struct image_tlv tlv;
+	size_t data_off;
+	size_t data_end;
+	bool hash_found;
+	int rc;
+
+	if (info == NULL) {
+		return -EINVAL;
+	}
+
+	memset(info, 0, sizeof(*info));
+
+	rc = dfu_boot_read(slot,
+			   boot_get_image_start_offset(dfu_boot_get_flash_area_id(slot)),
+			   &hdr, sizeof(hdr));
+
+	if (rc != 0) {
+		return rc;
+	}
+
+	if (hdr.ih_magic != IMAGE_MAGIC) {
+		return -ENOENT;
+	}
+
+	/* Use shared helper to populate basic info */
+	populate_img_info_from_header(&hdr, info);
+
+	/* Read the image's TLVs. We first try to find the protected TLVs, if the protected
+	 * TLV does not exist, we try to find non-protected TLV which also contains the hash
+	 * TLV. All images are required to have a hash TLV.  If the hash is missing, the image
+	 * is considered invalid.
+	 */
+	data_off = hdr.ih_hdr_size + hdr.ih_img_size +
+		   boot_get_image_start_offset(dfu_boot_get_flash_area_id(slot));
+
+	rc = mcuboot_find_tlvs(slot, &data_off, &data_end, IMAGE_TLV_PROT_INFO_MAGIC);
+	if (!rc) {
+		/* The data offset should start after the header bytes after the end of
+		 * the protected TLV, if one exists.
+		 */
+		data_off = data_end - sizeof(struct image_tlv_info);
+	}
+
+	rc = mcuboot_find_tlvs(slot, &data_off, &data_end, IMAGE_TLV_INFO_MAGIC);
+	if (rc != 0) {
+		return rc;
+	}
+
+	hash_found = false;
+	while (data_off + sizeof(tlv) <= data_end) {
+		rc = dfu_boot_read(slot, data_off, &tlv, sizeof(tlv));
+		if (rc != 0) {
+			return rc;
+		}
+		if (tlv.it_type == 0xff && tlv.it_len == 0xffff) {
+			return -EINVAL;
+		}
+		if (tlv.it_type != IMAGE_TLV_SHA || tlv.it_len != DFU_BOOT_IMG_SHA_LEN) {
+			/* Non-hash TLV.  Skip it. */
+			data_off += sizeof(tlv) + tlv.it_len;
+			continue;
+		}
+
+		if (hash_found) {
+			/* More than one hash. */
+			return -EINVAL;
+		}
+
+		data_off += sizeof(tlv);
+		if (data_off + DFU_BOOT_IMG_SHA_LEN > data_end) {
+			return -EINVAL;
+		}
+
+		rc = dfu_boot_read(slot, data_off, info->hash, DFU_BOOT_IMG_SHA_LEN);
+		if (rc != 0) {
+			return rc;
+		}
+
+		info->hash_len = DFU_BOOT_IMG_SHA_LEN;
+		hash_found = true;
+		data_off += DFU_BOOT_IMG_SHA_LEN;
+	}
+
+	if (!hash_found) {
+		return -ENOENT;
+	}
+
+	return 0;
+}
+
+int dfu_boot_validate_header(const void *data, size_t len, struct dfu_boot_img_info *info)
+{
+	const struct image_header *hdr = (const struct image_header *)data;
+
+	if (data == NULL || len < sizeof(struct image_header)) {
+		return -EINVAL;
+	}
+
+	if (hdr->ih_magic != IMAGE_MAGIC) {
+		return -EINVAL;
+	}
+
+	if (info != NULL) {
+		memset(info, 0, sizeof(*info));
+		populate_img_info_from_header(hdr, info);
+	}
+
+	return 0;
+}
+
+int dfu_boot_get_swap_type(int image_index)
+{
+	switch (boot_swap_type_multi(image_index)) {
+	case BOOT_SWAP_TYPE_NONE:
+		return DFU_BOOT_SWAP_TYPE_NONE;
+	case BOOT_SWAP_TYPE_TEST:
+		return DFU_BOOT_SWAP_TYPE_TEST;
+	case BOOT_SWAP_TYPE_PERM:
+		return DFU_BOOT_SWAP_TYPE_PERM;
+	case BOOT_SWAP_TYPE_REVERT:
+		return DFU_BOOT_SWAP_TYPE_REVERT;
+	default:
+		return DFU_BOOT_SWAP_TYPE_UNKNOWN;
+	}
+}
+
+static int slot_to_image(int slot)
+{
+	__ASSERT(slot >= 0 && slot < (CONFIG_UPDATEABLE_IMAGE_NUMBER << 1),
+		 "Impossible slot number");
+
+	return (slot >> 1);
+}
+
+int dfu_boot_set_next(int slot, bool active, bool confirm)
+{
+	int rc;
+	const struct flash_area *fa;
+
+	if (flash_area_open(dfu_boot_get_flash_area_id(slot), &fa) != 0) {
+		return -EIO;
+	}
+
+	rc = boot_set_next(fa, active, confirm);
+
+	flash_area_close(fa);
+
+	return rc;
+}
+
+int dfu_boot_set_pending(int slot, bool permanent)
+{
+	return boot_set_pending_multi(slot_to_image(slot), permanent);
+}
+
+int dfu_boot_confirm(void)
+{
+	return boot_write_img_confirmed();
+}
+
+size_t dfu_boot_get_image_start_offset(int slot)
+{
+	return boot_get_image_start_offset(dfu_boot_get_flash_area_id(slot));
+}
+
+size_t dfu_boot_get_trailer_status_offset(size_t area_size)
+{
+	return boot_get_trailer_status_offset(area_size);
 }
