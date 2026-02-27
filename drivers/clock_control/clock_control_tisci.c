@@ -95,6 +95,6 @@ static DEVICE_API(clock_control, tisci_clock_driver_api) = {
 
 #define TI_K2G_SCI_CLK_INIT(_n)                                                                    \
 	DEVICE_DT_INST_DEFINE(_n, NULL, NULL, NULL, NULL, PRE_KERNEL_1,                            \
-			      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &tisci_clock_driver_api);
+			      CONFIG_CLOCK_CONTROL_TISCI_PRIORITY, &tisci_clock_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TI_K2G_SCI_CLK_INIT)
