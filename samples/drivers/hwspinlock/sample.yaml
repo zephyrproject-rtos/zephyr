@@ -18,7 +18,9 @@ tests:
       - mcx_n9xx_evk/mcxn947/cpu0
       - frdm_mcxn947/mcxn947/cpu0
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
+      - mimxrt1180_evk/mimxrt1189/cm33
     integration_platforms:
       - mcx_n9xx_evk/mcxn947/cpu0
       - frdm_mcxn947/mcxn947/cpu0
       - mimxrt700_evk/mimxrt798s/cm33_cpu0
+      - mimxrt1180_evk/mimxrt1189/cm33
