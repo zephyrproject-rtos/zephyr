@@ -15,6 +15,19 @@ if SOC_FAMILY_SILABS_SIWX91X
 
 rsource "*/Kconfig"
 
+config SILABS_SIWX91X_SLOW_FLASH_DATA
+	bool "Limit access to data in flash (EXPERIMENTAL)"
+	select SLOW_FLASH_DATA
+	help
+	  The main flash on siwx91x does not have a data cache. Use this option to request the
+	  compiler to limit access to data in flash.
+
+	  The benefit depends on the workload. Some kernel benchmarks (tests/benchmarks/app_kernel/)
+	  run up to 300% faster, while the typical improvement is around 10-50%.
+
+	  This option pulls the limitations described in CONFIG_SLOW_FLASH_DATA. The users have to
+	  make sure they are aware of them.
+
 config SILABS_SIWX91X_NWP
 	bool "Silabs Network Coprocessor"
 	depends on DT_HAS_SILABS_SIWX91X_NWP_ENABLED
