@@ -19,7 +19,9 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/opamp.h>
 #include <zephyr/pm/policy.h>
-
+#if CONFIG_PM_DEVICE
+#include <zephyr/pm/device.h>
+#endif
 #ifdef CONFIG_ADC_MCUX_LPADC_DMA_DRIVEN
 #include <zephyr/drivers/dma.h>
 #endif
@@ -804,6 +806,56 @@ static void mcux_lpadc_isr(const struct device *dev)
 	}
 }
 
+#if CONFIG_PM_DEVICE
+static int mcux_lpadc_pm_callback(const struct device *dev, enum pm_device_action action)
+{
+	const struct mcux_lpadc_config *config = dev->config;
+	const struct device *regulator = config->ref_supplies;
+	int err;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+
+		if (regulator != NULL) {
+			err = regulator_enable(regulator);
+			if (err < 0) {
+				return err;
+			}
+		}
+
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
+
+		LPADC_Enable(config->base, true);
+
+		return 0;
+
+	case PM_DEVICE_ACTION_SUSPEND:
+
+		LPADC_Enable(config->base, false);
+
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
+
+		if (regulator != NULL) {
+			err = regulator_disable(regulator);
+			if (err < 0) {
+				return err;
+			}
+		}
+
+		return 0;
+
+	default:
+		return -ENOTSUP;
+	}
+}
+#endif
+
 static int mcux_lpadc_init(const struct device *dev)
 {
 	const struct mcux_lpadc_config *config = dev->config;
@@ -906,6 +958,23 @@ static int mcux_lpadc_init(const struct device *dev)
 
 	adc_context_unlock_unconditionally(&data->ctx);
 
+
+
+#if CONFIG_PM_DEVICE
+	/* Disable LPADC here, in pm_device_driver_init,
+	 * - if device runtime PM is enabled, the LPADC state will be set to SUSPEND,
+	 *   we should keep same state in hardware.
+	 * - if device runtime PM is not enabled, pm_device_driver_init will resume LPADC.
+	 * - if the LPADC is in a power domain, and the power domain is off, the LPADC
+	 *   state will set to OFF, disabled LPADC matches the state.
+	 */
+	LPADC_Enable(config->base, false);
+
+	return pm_device_driver_init(dev, mcux_lpadc_pm_callback);
+#else
+	return 0;
+#endif
+
 	return 0;
 }
 
@@ -953,6 +1022,14 @@ static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 #define PM_POLICY_DEVICE_CONSTRAINTS_INIT(n)
 #endif
 
+#if CONFIG_PM_DEVICE
+#define LPADC_PM_DEVICE_DEFINE		PM_DEVICE_DT_INST_DEFINE(n, mcux_lpadc_pm_callback);
+#define LPADC_PM_DEVICE_GET		PM_DEVICE_DT_INST_GET(n)
+#else
+#define LPADC_PM_DEVICE_DEFINE
+#define LPADC_PM_DEVICE_GET		NULL
+#endif
+
 #define LPADC_MCUX_INIT(n)									\
 												\
 	static void mcux_lpadc_config_func_##n(const struct device *dev);			\
@@ -997,7 +1074,9 @@ static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 		ADC_CONTEXT_INIT_SYNC(mcux_lpadc_data_##n, ctx),				\
 	};											\
 												\
-	DEVICE_DT_INST_DEFINE(n, mcux_lpadc_init, NULL, &mcux_lpadc_data_##n,			\
+	LPADC_PM_DEVICE_DEFINE									\
+												\
+	DEVICE_DT_INST_DEFINE(n, mcux_lpadc_init, LPADC_PM_DEVICE_GET, &mcux_lpadc_data_##n,	\
 			      &mcux_lpadc_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,	\
 			      &mcux_lpadc_driver_api);						\
 												\
