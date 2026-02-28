@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - adc
+    - rtio
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+    - qemu_x86
+    - qemu_cortex_m3
+tests:
+  drivers.adc.adc_rtio:
+    extra_configs:
+      - CONFIG_ADC_RTIO_WRAPPER=n
+  drivers.adc.adc_rtio.wrapper: {}
