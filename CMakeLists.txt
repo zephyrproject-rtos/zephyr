@@ -1045,8 +1045,9 @@ target_include_directories(${OFFSETS_LIB} PRIVATE
   ${ARCH_DIR}/${ARCH}/include
   )
 
-# Make sure that LTO will never be enabled when compiling offsets.c
-set_source_files_properties(${OFFSETS_C_PATH} PROPERTIES COMPILE_OPTIONS $<TARGET_PROPERTY:compiler,prohibit_lto>)
+# Make sure that LTO will never be enabled when compiling offsets sources
+set_source_files_properties(${OFFSETS_C_PATH} ${ZEPHYR_BASE}/lib/heap/heap_constants.c
+  PROPERTIES COMPILE_OPTIONS $<TARGET_PROPERTY:compiler,prohibit_lto>)
 
 target_sources(${OFFSETS_LIB} PRIVATE ${ZEPHYR_BASE}/lib/heap/heap_constants.c)
 
