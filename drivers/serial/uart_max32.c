@@ -488,12 +488,19 @@ static void api_irq_rx_disable(const struct device *dev)
 static void uart_max32_isr(const struct device *dev)
 {
 	struct max32_uart_data *data = dev->data;
+#if (defined(CONFIG_PM) && defined(CONFIG_UART_CONSOLE_INPUT_EXPIRED)) || \
+	defined(CONFIG_UART_ASYNC_API)
+	const struct max32_uart_config *cfg = dev->config;
+	uint32_t intfl;
+#endif
+
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	if (data->cb) {
 		data->cb(dev, data->cb_data);
 	}
 #if defined(CONFIG_PM) && defined(CONFIG_UART_CONSOLE_INPUT_EXPIRED)
+	intfl = MXC_UART_GetFlags(cfg->regs);
 	if (intfl & ADI_MAX32_UART_INT_RX) {
 		k_timeout_t delay = K_MSEC(CONFIG_UART_CONSOLE_INPUT_EXPIRED_TIMEOUT);
 
@@ -504,9 +511,6 @@ static void uart_max32_isr(const struct device *dev)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 #ifdef CONFIG_UART_ASYNC_API
-	const struct max32_uart_config *cfg = dev->config;
-	uint32_t intfl;
-
 	intfl = MXC_UART_GetFlags(cfg->regs);
 	if (data->async.rx.timeout != SYS_FOREVER_US && data->async.rx.timeout != 0 &&
 	    (intfl & ADI_MAX32_UART_INT_RX)) {
