@@ -6,11 +6,14 @@ description: |
 
 compatible: "sifli,sf32lb-wdt"
 
-include: base.yaml
+include: [base.yaml, sifli-sf32lb-pmuc.yaml]
 
 properties:
   reg:
     required: true
 
   interrupts:
+    required: true
+
+  sifli,pmuc:
     required: true
