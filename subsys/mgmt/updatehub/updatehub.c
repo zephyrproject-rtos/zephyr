@@ -651,7 +651,7 @@ static int report(enum updatehub_state state)
 		break;
 	}
 
-	if (strncmp(report.previous_state, "", sizeof("") - 1) != 0) {
+	if (report.previous_state != NULL && report.previous_state[0] != '\0') {
 		report.error_message = updatehub_response(ctx.code_status);
 	} else {
 		report.error_message = "";
