@@ -552,12 +552,12 @@ do {                                                                    \
  */
 
 #define GEN_ABSOLUTE_SYM(name, value)               \
-	__asm__(".globl\t" #name "\n\t.equ\t" #name \
+	__asm__ __volatile__(".globl\t" #name "\n\t.equ\t" #name \
 		",%B0"                              \
 		"\n\t.type\t" #name ",%%object" :  : "n"(~(value)))
 
 #define GEN_ABSOLUTE_SYM_KCONFIG(name, value)       \
-	__asm__(".globl\t" #name                    \
+	__asm__ __volatile__(".globl\t" #name                    \
 		"\n\t.equ\t" #name "," #value       \
 		"\n\t.type\t" #name ",%object")
 
@@ -566,12 +566,12 @@ do {                                                                    \
 	|| defined(CONFIG_X86)
 
 #define GEN_ABSOLUTE_SYM(name, value)               \
-	__asm__(".globl\t" #name "\n\t.equ\t" #name \
+	__asm__ __volatile__(".globl\t" #name "\n\t.equ\t" #name \
 		",%c0"                              \
 		"\n\t.type\t" #name ",@object" :  : "n"(value))
 
 #define GEN_ABSOLUTE_SYM_KCONFIG(name, value)       \
-	__asm__(".globl\t" #name                    \
+	__asm__ __volatile__(".globl\t" #name                    \
 		"\n\t.equ\t" #name "," #value       \
 		"\n\t.type\t" #name ",@object")
 
@@ -579,34 +579,34 @@ do {                                                                    \
 
 /* No special prefixes necessary for constants in this arch AFAICT */
 #define GEN_ABSOLUTE_SYM(name, value)		\
-	__asm__(".globl\t" #name "\n\t.equ\t" #name \
+	__asm__ __volatile__(".globl\t" #name "\n\t.equ\t" #name \
 		",%0"                              \
 		"\n\t.type\t" #name ",%%object" :  : "n"(value))
 
 #define GEN_ABSOLUTE_SYM_KCONFIG(name, value)       \
-	__asm__(".globl\t" #name                    \
+	__asm__ __volatile__(".globl\t" #name                    \
 		"\n\t.equ\t" #name "," #value       \
 		"\n\t.type\t" #name ",%object")
 
 #elif defined(CONFIG_SPARC)
 #define GEN_ABSOLUTE_SYM(name, value)			\
-	__asm__(".global\t" #name "\n\t.equ\t" #name	\
+	__asm__ __volatile__(".global\t" #name "\n\t.equ\t" #name	\
 		",%0"					\
 		"\n\t.type\t" #name ",#object" : : "n"(value))
 
 #define GEN_ABSOLUTE_SYM_KCONFIG(name, value)       \
-	__asm__(".globl\t" #name                    \
+	__asm__ __volatile__(".globl\t" #name                    \
 		"\n\t.equ\t" #name "," #value       \
 		"\n\t.type\t" #name ",#object")
 
 #elif defined(CONFIG_RX)
 #define GEN_ABSOLUTE_SYM(name, value)                \
-	__asm__(".global\t" #name "\n\t.equ\t" #name \
+	__asm__ __volatile__(".global\t" #name "\n\t.equ\t" #name \
 		",%c0"                               \
 		"\n\t.type\t" #name ",%%object" :  : "n"(value))
 
 #define GEN_ABSOLUTE_SYM_KCONFIG(name, value)        \
-	__asm__(".global\t" #name                    \
+	__asm__ __volatile__(".global\t" #name                    \
 		"\n\t.equ\t" #name "," #value        \
 		"\n\t.type\t" #name ",#object")
 
