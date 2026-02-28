@@ -6,6 +6,6 @@
 if BOARD_STM32F429I_DISC1
 
 config MEMC
-	default y if DISPLAY
+	default y if STM32_LTDC
 
 endif # BOARD_STM32F429I_DISC1
