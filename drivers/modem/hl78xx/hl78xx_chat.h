@@ -132,7 +132,13 @@ int hl78xx_run_gnss_init_chat_script_async(struct hl78xx_data *data);
 int hl78xx_run_gnss_stop_search_chat_script(struct hl78xx_data *data);
 int hl78xx_run_gnss_terminate_nmea_chat_script(struct hl78xx_data *data);
 int hl78xx_run_gnss_gnssloc_script(struct hl78xx_data *data);
+#if defined(CONFIG_MODEM_HL78XX_00) /* && defined(CONFIG_MODEM_HL78XX_EDRX) */
+int hl78xx_run_rrc_query_script_async(struct hl78xx_data *data);
+#endif /* CONFIG_MODEM_HL78XX_00 && CONFIG_MODEM_HL78XX_EDRX */
 #endif /* CONFIG_HL78XX_GNSS */
+#ifndef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+int hl78xx_disable_pmc(struct hl78xx_data *data);
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 /* Getter for ksrat match (moved into chat TU) */
 const struct modem_chat_match *hl78xx_get_ksrat_match(void);
 

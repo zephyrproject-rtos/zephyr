@@ -16,6 +16,9 @@
 #ifdef CONFIG_HL78XX_GNSS
 #include "hl78xx_gnss.h"
 #endif /* CONFIG_HL78XX_GNSS */
+#include "hl78xx_cfg.h"
+#include <zephyr/drivers/modem/hl78xx_apis.h>
+
 LOG_MODULE_REGISTER(hl78xx_apis, CONFIG_MODEM_LOG_LEVEL);
 
 /* Wrapper to centralize modem_dynamic_cmd_send calls and reduce repetition.
@@ -277,6 +280,7 @@ int hl78xx_api_func_set_phone_functionality(const struct device *dev,
 			      hl78xx_get_ok_match_size());
 	if (ret == 0) {
 		data->status.phone_functionality.in_progress = true;
+		data->status.phone_functionality.functionality = functionality;
 	}
 
 	return ret;
@@ -339,6 +343,46 @@ int hl78xx_stop_airvantage_dm_session(const struct device *dev)
 	return 0;
 }
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
+
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+int hl78xx_wakeup_modem(const struct device *dev)
+{
+	struct hl78xx_data *data = (struct hl78xx_data *)dev->data;
+
+	if (data == NULL) {
+		return -EINVAL;
+	}
+
+	if (data->status.state != MODEM_HL78XX_STATE_SLEEP &&
+	    data->status.state != MODEM_HL78XX_STATE_IDLE) {
+		LOG_DBG("Modem not in sleep state (state=%d), wakeup not needed",
+			data->status.state);
+		return -EALREADY;
+	}
+
+	LOG_INF("User-initiated modem wakeup from low power mode");
+	hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_RESUME);
+	return 0;
+}
+
+#ifdef CONFIG_MODEM_HL78XX_EDRX
+int hl78xx_edrx_get_time_to_sleep(const struct device *dev)
+{
+	struct hl78xx_data *data = (struct hl78xx_data *)dev->data;
+
+	if (data == NULL) {
+		return -EINVAL;
+	}
+
+	if (!hl78xx_is_edrx_idle_scheduled(data)) {
+		LOG_DBG("Not scheduled eDRX idle state, time to sleep not available");
+		return -ENODATA;
+	}
+
+	return hl78xx_edrx_idle_get_remaining_timetosleep(data);
+}
+#endif /* CONFIG_MODEM_HL78XX_EDRX */
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 
 #ifdef CONFIG_HL78XX_GNSS
 

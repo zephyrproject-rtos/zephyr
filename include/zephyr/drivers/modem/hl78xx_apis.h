@@ -249,6 +249,65 @@ struct hl78xx_agnss_status {
 };
 #endif /* CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE */
 
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+/**
+ * @brief Power down event types
+ *
+ * Types of power down events reported by the modem
+ */
+enum power_down_event {
+	/** Power down event: Modem is entering power down mode */
+	POWER_DOWN_EVENT_ENTER = 0,
+	/** Power down event: Modem is exiting power down mode */
+	POWER_DOWN_EVENT_EXIT,
+	/** No power down event */
+	POWER_DOWN_EVENT_NONE,
+};
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
+
+#ifdef CONFIG_MODEM_HL78XX_EDRX
+/**
+ * @brief eDRX event types
+ *
+ * Types of eDRX events reported by the modem
+ */
+enum hl78xx_edrx_event {
+	/** Modem exited eDRX idle mode */
+	HL78XX_EDRX_EVENT_IDLE_EXIT = 0,
+	/** Modem entered eDRX idle mode */
+	HL78XX_EDRX_EVENT_IDLE_ENTER,
+	/** No eDRX event */
+	HL78XX_EDRX_EVENT_IDLE_NONE,
+};
+#endif /* CONFIG_MODEM_HL78XX_EDRX */
+#ifdef CONFIG_MODEM_HL78XX_PSM
+/**
+ * @brief PSM event types
+ *
+ * Types of Power Saving Mode events reported by the modem
+ */
+enum hl78xx_psmev_event {
+	/** Modem exited PSM mode */
+	HL78XX_PSM_EVENT_EXIT = 0,
+	/** Modem entered PSM mode */
+	HL78XX_PSM_EVENT_ENTER,
+	/** No PSM event */
+	HL78XX_PSM_EVENT_NONE,
+};
+#endif /* CONFIG_MODEM_HL78XX_PSM */
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+
+/**
+ * @brief Cellular measurement signal information.
+ *
+ * Holds received signal power values reported by the modem during
+ * cell measurement procedures.
+ */
+struct k_cellmeas_signal_info {
+	/** Reference Signal Received Power (RSRP) in dBm. */
+	int16_t rsrp;
+};
 /**
  * @brief Cellular network structure
  *
@@ -301,6 +360,20 @@ enum hl78xx_evt_type {
 	/** GNSS mode exited - modem is now in airplane mode, user can decide next step */
 	HL78XX_GNSS_EVENT_MODE_EXITED,
 #endif /* CONFIG_HL78XX_GNSS */
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+#ifdef CONFIG_MODEM_HL78XX_EDRX
+	/** eDRX idle mode entered */
+	HL78XX_EDRX_IDLE_UPDATE,
+#endif /* CONFIG_MODEM_HL78XX_EDRX */
+#ifdef CONFIG_MODEM_HL78XX_PSM
+	/** Modem PSM event update */
+	HL78XX_LTE_PSMEV_UPDATE,
+#endif /* CONFIG_MODEM_HL78XX_PSM */
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+	/** Cellular measurement update */
+	HL78XX_CELLMEAS_UPDATE,
+	/** Event type count */
+	HL78XX_EVT_TYPE_COUNT
 };
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 /**
@@ -422,6 +495,18 @@ struct hl78xx_evt {
 		/** GNSS position event type */
 		enum gnss_position_events position_event;
 #endif /* CONFIG_HL78XX_GNSS */
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+#ifdef CONFIG_MODEM_HL78XX_PSM
+		/* PSM event */
+		enum hl78xx_psmev_event psm_event;
+#endif /* CONFIG_MODEM_HL78XX_PSM */
+#ifdef CONFIG_MODEM_HL78XX_EDRX
+		/* eDRX event */
+		enum hl78xx_edrx_event edrx_event;
+#endif /* CONFIG_MODEM_HL78XX_EDRX */
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+		/** Cellular measurement event content */
+		struct k_cellmeas_signal_info cellmeas;
 		/** Boolean status value */
 		bool status;
 		/** Integer value */
@@ -1026,6 +1111,42 @@ int hl78xx_start_airvantage_dm_session(const struct device *dev);
  */
 int hl78xx_stop_airvantage_dm_session(const struct device *dev);
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
+
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+/**
+ * @brief Wake the modem from PSM sleep
+ *
+ * Sends a wakeup signal to the modem, triggering the RESUME event in the
+ * driver state machine. The modem will re-open the UART bus and proceed
+ * to either GNSS (if a GNSS request is pending in post-PSM mode) or
+ * LTE registration (AWAIT_REGISTERED).
+ *
+ * This is the user-facing API for the POST-PSM GNSS workflow:
+ * 1. hl78xx_enter_gnss_mode() — queues GNSS, modem enters PSM
+ * 2. (modem sleeps, waits for user trigger)
+ * 3. hl78xx_wakeup_modem() — wakes the modem, GNSS runs before LTE
+ * 4. GNSS completes, modem returns to LTE registration
+ *
+ * Can also be used independently of GNSS to wake the modem for any
+ * purpose (e.g. sending data earlier than the next PSM cycle).
+ *
+ * @param dev Pointer to the modem device
+ * @return 0 on success
+ * @return -EALREADY if modem is not in sleep state
+ * @return -EINVAL if dev is invalid
+ */
+int hl78xx_wakeup_modem(const struct device *dev);
+
+#ifdef CONFIG_MODEM_HL78XX_EDRX
+/**
+ * @brief Get the remaining time for the modem to go in eDRX idle state
+ *
+ * @param dev Pointer to the modem device
+ * @return Remaining time in milliseconds, or negative errno on failure
+ */
+int hl78xx_edrx_get_time_to_sleep(const struct device *dev);
+#endif /* CONFIG_MODEM_HL78XX_EDRX */
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 
 #ifdef CONFIG_HL78XX_GNSS
 /**
