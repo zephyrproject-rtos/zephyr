@@ -265,7 +265,7 @@ static int send_request(enum coap_msgtype msgtype, enum coap_method method,
 	}
 
 	ret = coap_packet_init(&request_packet, data, MAX_PAYLOAD_SIZE,
-			       COAP_VERSION_1, COAP_TYPE_CON,
+			       COAP_VERSION_1, msgtype,
 			       COAP_TOKEN_MAX_LEN, coap_next_token(), method,
 			       coap_next_id());
 	if (ret < 0) {
