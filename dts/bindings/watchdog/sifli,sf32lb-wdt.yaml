@@ -20,3 +20,9 @@ properties:
 
   sifli,cfg:
     required: true
+
+  sifli,reset-all:
+    type: boolean
+    description: |
+      If set, the watchdog will be configured to reset the whole chip, including
+      LCPU. Otherwise, it will only reset HCPU.
