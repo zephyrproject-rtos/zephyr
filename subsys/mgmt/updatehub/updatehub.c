@@ -149,8 +149,8 @@ is_compatible_hardware(struct resp_probe_some_boards *metadata_some_boards)
 	int i;
 
 	for (i = 0; i < metadata_some_boards->supported_hardware_len; i++) {
-		if (strncmp(metadata_some_boards->supported_hardware[i],
-			    CONFIG_BOARD, strlen(CONFIG_BOARD)) == 0) {
+		if (strcmp(metadata_some_boards->supported_hardware[i],
+			  CONFIG_BOARD) == 0) {
 			return true;
 		}
 	}
