@@ -146,6 +146,7 @@ set_variable_ifdef(CONFIG_DAI_NXP_MICFIL        CONFIG_MCUX_COMPONENT_driver.pdm
 set_variable_ifdef(CONFIG_PINCTRL_NXP_PORT      CONFIG_MCUX_COMPONENT_driver.port)
 set_variable_ifdef(CONFIG_INPUT_MCUX_KPP        CONFIG_MCUX_COMPONENT_driver.kpp)
 set_variable_ifdef(CONFIG_DMA_NXP_EDMA          CONFIG_MCUX_COMPONENT_driver.edma_soc_rev2)
+set_variable_ifdef(CONFIG_DISPLAY_MCUX_LCDIFV2  CONFIG_MCUX_COMPONENT_driver.lcdifv2)
 set_variable_ifdef(CONFIG_DISPLAY_MCUX_LCDIFV3  CONFIG_MCUX_COMPONENT_driver.lcdifv3)
 set_variable_ifdef(CONFIG_COUNTER_MCUX_SNVS_SRTC    CONFIG_MCUX_COMPONENT_driver.snvs_lp)
 set_variable_ifdef(CONFIG_DISPLAY_MCUX_DCNANO_LCDIF CONFIG_MCUX_COMPONENT_driver.lcdif)
