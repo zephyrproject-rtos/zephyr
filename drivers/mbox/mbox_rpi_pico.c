@@ -10,7 +10,7 @@
 #include <zephyr/irq.h>
 /* pico-sdk includes */
 #include <hardware/structs/sio.h>
-
+#include <zephyr/drivers/misc/mbox_rpi_pico/mbox_rpi_pico.h>
 
 #define DT_DRV_COMPAT raspberrypi_pico_mbox
 
@@ -43,32 +43,6 @@ static inline void fifo_clear_status(void)
 	mbox_sio_hw->fifo_st = 0xff;
 }
 
-/*
- * Returns true if the write FIFO isn't full. Returns false otherwise.
- */
-static inline bool fifo_write_ready(void)
-{
-	return mbox_sio_hw->fifo_st & SIO_FIFO_ST_RDY_BITS;
-}
-
-/*
- * Returns true if the read FIFO has data available, ie. sent by the
- * other core. Returns false otherwise.
- */
-static inline bool fifo_read_valid(void)
-{
-	return mbox_sio_hw->fifo_st & SIO_FIFO_ST_VLD_BITS;
-}
-
-/*
- * Discard any data in the read FIFO.
- */
-static inline void fifo_drain(void)
-{
-	while (fifo_read_valid()) {
-		(void)mbox_sio_hw->fifo_rd;
-	}
-}
 
 static int rpi_pico_mbox_send(const struct device *dev,
 				mbox_channel_id_t channel,
@@ -77,13 +51,13 @@ static int rpi_pico_mbox_send(const struct device *dev,
 	ARG_UNUSED(dev);
 	ARG_UNUSED(channel);
 
-	if (!fifo_write_ready()) {
+	if (!rpi_pico_mbox_write_ready(mbox_sio_hw)) {
 		return -EBUSY;
 	}
 	/* Signalling mode: send 0 as dummy data. */
 	if (msg == NULL) {
 		LOG_DBG("CPU %d: send IP signal", mbox_sio_hw->cpuid);
-		mbox_sio_hw->fifo_wr = 0;
+		rpi_pico_mbox_write(mbox_sio_hw, 0);
 		__SEV();
 		return 0;
 	}
@@ -92,7 +66,7 @@ static int rpi_pico_mbox_send(const struct device *dev,
 		return -EMSGSIZE;
 	}
 	LOG_DBG("CPU %d: send IP data: %d", mbox_sio_hw->cpuid, *((int *)msg->data));
-	mbox_sio_hw->fifo_wr = *((uint32_t *)(msg->data));
+	rpi_pico_mbox_write(mbox_sio_hw, *((uint32_t *)(msg->data)));
 	__SEV();
 
 	return 0;
@@ -157,19 +131,19 @@ static void rpi_pico_mbox_isr(const struct device *dev)
 	 * NOTE: the interrupt seems to be triggered when it's first
 	 * enabled even when the FIFO is empty.
 	 */
-	if (!fifo_read_valid()) {
+	if (!rpi_pico_mbox_read_valid(mbox_sio_hw)) {
 		LOG_DBG("Interrupt received on empty FIFO: ignored.");
 		return;
 	}
 
 	if (data->cb != NULL) {
-		uint32_t d = mbox_sio_hw->fifo_rd;
+		uint32_t d = rpi_pico_mbox_read(mbox_sio_hw);
 		struct mbox_msg msg = {
 			.data = &d,
 			.size = sizeof(d)};
 		data->cb(dev, 0, data->user_data, &msg);
 	}
-	fifo_drain();
+	rpi_pico_mbox_drain(mbox_sio_hw);
 }
 
 static int rpi_pico_mbox_init(const struct device *dev)
@@ -179,7 +153,7 @@ static int rpi_pico_mbox_init(const struct device *dev)
 	LOG_DBG("Initial FIFO status: 0x%x", mbox_sio_hw->fifo_st);
 	LOG_DBG("FIFO depth: %d", DT_INST_PROP(0, fifo_depth));
 	irq_disable(DT_INST_IRQ_BY_NAME(0, MAILBOX_DEV_NAME, irq));
-	fifo_drain();
+	rpi_pico_mbox_drain(mbox_sio_hw);
 	fifo_clear_status();
 	LOG_DBG("FIFO status after setup: 0x%x", mbox_sio_hw->fifo_st);
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, MAILBOX_DEV_NAME, irq),
