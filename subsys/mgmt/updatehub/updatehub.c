@@ -847,6 +847,7 @@ enum updatehub_response z_impl_updatehub_probe(void)
 	LOG_DBG("metadata size: %d", strlen(metadata));
 	LOG_HEXDUMP_DBG(metadata, MAX_DOWNLOAD_DATA, "metadata");
 
+	memset(metadata_copy, 0, MAX_DOWNLOAD_DATA);
 	memcpy(metadata_copy, metadata, strlen(metadata));
 	if (json_obj_parse(metadata, strlen(metadata),
 			   recv_probe_sh_array_descr,
