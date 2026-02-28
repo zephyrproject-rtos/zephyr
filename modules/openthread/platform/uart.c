@@ -124,6 +124,8 @@ static void uart_callback(const struct device *dev, void *user_data)
 	}
 }
 #else
+
+#define RX_TIMEOUT 100
 /* UART with async rx buffer */
 static uint8_t rx_buf[CONFIG_OPENTHREAD_COPROCESSOR_UART_RX_BUFFER_SIZE];
 
@@ -138,7 +140,7 @@ static void uart_async_cb(const struct device *dev,
 	switch (evt->type) {
 	case UART_RX_RDY: {
 		size_t len = ring_buf_put(ot_uart.rx_ringbuf,
-					  evt->data.rx.buf,
+					  evt->data.rx.buf + evt->data.rx.offset,
 					  evt->data.rx.len);
 
 		if (len > 0) {
@@ -153,7 +155,7 @@ static void uart_async_cb(const struct device *dev,
 	}
 	case UART_RX_DISABLED:
 		if (uart_enabled) {
-			uart_rx_enable(dev, rx_buf, sizeof(rx_buf), SYS_FOREVER_MS);
+			uart_rx_enable(dev, rx_buf, sizeof(rx_buf), RX_TIMEOUT);
 		}
 		break;
 
@@ -232,7 +234,7 @@ otError otPlatUartEnable(void)
 	uart_irq_rx_enable(ot_uart.dev);
 #else
 	uart_callback_set(ot_uart.dev, uart_async_cb, NULL);
-	uart_rx_enable(ot_uart.dev, rx_buf, sizeof(rx_buf), SYS_FOREVER_MS);
+	uart_rx_enable(ot_uart.dev, rx_buf, sizeof(rx_buf), RX_TIMEOUT);
 #endif
 
 	return OT_ERROR_NONE;
