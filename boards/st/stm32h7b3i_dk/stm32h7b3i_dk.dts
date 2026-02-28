@@ -313,3 +313,7 @@ st_cam_dvp: &dcmi {
 		     &dcmi_d4_pc11 &dcmi_d5_pd3 &dcmi_d6_pb8 &dcmi_d7_pb9>;
 	pinctrl-names = "default";
 };
+
+&dma2d {
+	status = "okay";
+};
