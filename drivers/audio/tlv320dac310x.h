@@ -86,6 +86,9 @@ extern "C" {
 #define BEEP_LEN_MIB_ADDR	(struct reg_addr){0, 74}
 #define BEEP_LEN_LSB_ADDR	(struct reg_addr){0, 75}
 
+#define VOL_MICDET_ADC_CTRL_ADDR (struct reg_addr){0, 116}
+#define VOL_MICDET_VOL_CTRL_PIN  (BIT(7))
+
 /* Page 1 registers */
 #define HEADPHONE_DRV_ADDR	(struct reg_addr){1, 31}
 #define HEADPHONE_DRV_POWERUP	(BIT(7) | BIT(6))
