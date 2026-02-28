@@ -212,15 +212,11 @@ static bool start_coap_client(void)
 		return false;
 	}
 
-	ret = 1;
-
 	ctx.sock = zsock_socket(addr->ai_family, NET_SOCK_DGRAM, protocol);
 	if (ctx.sock < 0) {
 		LOG_ERR("Failed to create UDP socket");
 		goto error;
 	}
-
-	ret = -1;
 
 #if defined(CONFIG_UPDATEHUB_DTLS)
 	if (zsock_setsockopt(ctx.sock, ZSOCK_SOL_TLS, ZSOCK_TLS_SEC_TAG_LIST,
@@ -242,7 +238,6 @@ static bool start_coap_client(void)
 	}
 
 	if (prepare_fds() < 0) {
-		ret = 1;
 		goto error;
 	}
 
@@ -250,7 +245,7 @@ static bool start_coap_client(void)
 error:
 	zsock_freeaddrinfo(addr);
 
-	if (ret > 0) {
+	if (ret != 0 && ctx.sock >= 0) {
 		cleanup_connection();
 	}
 
