@@ -243,6 +243,7 @@
 			reg = <0x50094000 0x1000>;
 			interrupts = <26 0>;
 			sifli,pmuc = <&pmuc>;
+			sifli,cfg = <&cfg>;
 			status = "disabled";
 		};
 
