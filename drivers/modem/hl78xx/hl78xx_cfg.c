@@ -20,16 +20,49 @@
 #include "hl78xx_chat.h"
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_DECLARE(hl78xx_dev);
+LOG_MODULE_DECLARE(hl78xx_dev, CONFIG_MODEM_LOG_LEVEL);
 
 #define ICCID_PREFIX_LEN            7
 #define IMSI_PREFIX_LEN             6
 #define MAX_BANDS                   32
 #define MDM_APN_FULL_STRING_MAX_LEN 256
-#define HL78XX_AT_CMD_MAX_LEN       64
 
 /* Delay after AT+IPR command for new rate to take effect */
 #define BAUDRATE_SWITCH_DELAY_MS    2500
+
+int hl78xx_enable_lte_coverage_urc(struct hl78xx_data *data, bool *modem_require_restart,
+				   uint16_t timeout_s)
+{
+	int ret = 0;
+	char cmd[HL78XX_AT_CMD_MAX_LEN] = {0};
+
+	if (timeout_s > 1200) {
+		return -EINVAL;
+	}
+
+	if (data->status.kcellmeas_timeout == timeout_s) {
+		/* No update needed */
+		*modem_require_restart |= false;
+		return 0;
+	}
+	if (IS_ENABLED(CONFIG_MODEM_HL78XX_LOW_POWER_MODE) && !IS_ENABLED(CONFIG_HL78XX_GNSS)) {
+		/* Additional configuration for low power mode with GNSS enabled */
+		snprintk(cmd, sizeof(cmd), "AT+KCELLMEAS=1,%d", timeout_s);
+	} else {
+		snprintk(cmd, sizeof(cmd), "AT+KCELLMEAS=1,0");
+	}
+
+	ret = modem_dynamic_cmd_send(data, NULL, cmd, strlen(cmd), hl78xx_get_ok_match(),
+				     hl78xx_get_ok_match_size(), MDM_CMD_TIMEOUT, false);
+	if (ret < 0) {
+		LOG_ERR("Failed to enable LTE coverage URC: %d", ret);
+	} else {
+		data->status.kcellmeas_timeout = timeout_s;
+	}
+	*modem_require_restart = true;
+
+	return ret;
+}
 
 int hl78xx_rat_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 		   enum hl78xx_cell_rat_mode *rat_request)
@@ -394,7 +427,307 @@ int modem_detect_apn(struct hl78xx_data *data, const char *associated_number)
 	return rc;
 }
 #endif /* CONFIG_MODEM_HL78XX_APN_SOURCE_ICCID || CONFIG_MODEM_HL78XX_APN_SOURCE_IMSI */
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+int hl78xx_enable_pmc(struct hl78xx_data *data)
+{
+	const char *turn_on_pmc_cmd = "AT+KSLEEP=1,2,0";
 
+	LOG_DBG("%d Enabling Power Management Config", __LINE__);
+	return modem_dynamic_cmd_send(data, NULL, turn_on_pmc_cmd, strlen(turn_on_pmc_cmd),
+				      hl78xx_get_ok_match(), hl78xx_get_ok_match_size(),
+				      MDM_CMD_TIMEOUT, false);
+}
+
+int hl78xx_psm_settings(struct hl78xx_data *data)
+{
+	if (data->status.registration.rat_mode != HL78XX_RAT_NB1 &&
+	    data->status.registration.rat_mode != HL78XX_RAT_CAT_M1) {
+		LOG_DBG("PSM is not supported for RAT mode: %d",
+			data->status.registration.rat_mode);
+		return 0;
+	}
+#ifdef CONFIG_MODEM_HL78XX_PSM
+	if (data->status.pmc_cpsms.mode == false) {
+		const char *turn_on_psm_cmd = "AT+CPSMS=1,,,\"" CONFIG_MODEM_HL78XX_PSM_PERIODIC_TAU
+					      "\",\"" CONFIG_MODEM_HL78XX_PSM_ACTIVE_TIME "\"";
+
+		return modem_dynamic_cmd_send(data, NULL, turn_on_psm_cmd, strlen(turn_on_psm_cmd),
+					      hl78xx_get_ok_match(), hl78xx_get_ok_match_size(),
+					      MDM_CMD_TIMEOUT, false);
+	}
+#else
+	if (data->status.pmc_cpsms.mode == true) {
+		const char *turn_off_psm_cmd = "AT+CPSMS=0";
+
+		return modem_dynamic_cmd_send(data, NULL, turn_off_psm_cmd,
+					      strlen(turn_off_psm_cmd), hl78xx_get_ok_match(),
+					      hl78xx_get_ok_match_size(), MDM_CMD_TIMEOUT, false);
+	}
+#endif
+	LOG_DBG("PSM is already configured for RAT mode: %d", data->status.registration.rat_mode);
+	return 0; /* PSM already disabled */
+}
+
+int hl78xx_edrx_settings(struct hl78xx_data *data)
+{
+	if (data->status.registration.rat_mode != HL78XX_RAT_NB1 &&
+	    data->status.registration.rat_mode != HL78XX_RAT_CAT_M1) {
+		LOG_DBG("eDRX is not supported for RAT mode: %d",
+			data->status.registration.rat_mode);
+		return 0;
+	}
+#ifdef CONFIG_MODEM_HL78XX_EDRX
+	if (data->status.pmc_kedrxcfg[data->status.registration.rat_mode].mode ==
+		    HL78XX_KEDRX_MODE_DISABLE ||
+	    data->status.pmc_kedrxcfg[data->status.registration.rat_mode].mode ==
+		    HL78XX_KEDRX_MODE_DISABLE_AND_ERASE_CFG) {
+		char turn_on_edrx_cmd[sizeof("AT+KEDRXCFG=1,X,XXXX,XXXX")] = {0};
+		uint8_t ack_type = 4;
+
+		ack_type = (data->status.registration.rat_mode == HL78XX_RAT_NB1) ? 5 : ack_type;
+
+		snprintf(turn_on_edrx_cmd, sizeof(turn_on_edrx_cmd), "AT+KEDRXCFG=1,%hhu,%s,%d",
+			 ack_type, CONFIG_MODEM_HL78XX_EDRX_VALUE, CONFIG_MODEM_HL78XX_PTW_VALUE);
+
+		return modem_dynamic_cmd_send(data, NULL, turn_on_edrx_cmd,
+					      strlen(turn_on_edrx_cmd), hl78xx_get_ok_match(),
+					      hl78xx_get_ok_match_size(), MDM_CMD_TIMEOUT, false);
+	}
+#else
+	if (data->status.pmc_kedrxcfg[data->status.registration.rat_mode].mode ==
+		    HL78XX_KEDRX_MODE_ENABLE ||
+	    data->status.pmc_kedrxcfg[data->status.registration.rat_mode].mode ==
+		    HL78XX_KEDRX_MODE_ENABLE_W_URC) {
+		char *turn_off_edrx_cmd = "AT+KEDRXCFG=0";
+
+		return modem_dynamic_cmd_send(data, NULL, turn_off_edrx_cmd,
+					      strlen(turn_off_edrx_cmd), hl78xx_get_ok_match(),
+					      hl78xx_get_ok_match_size(), MDM_CMD_TIMEOUT, false);
+	}
+#endif
+
+	LOG_DBG("eDRX is already configured for RAT mode: %d", data->status.registration.rat_mode);
+	return 0;
+}
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+static void hl78xx_power_down_work_handler(struct k_work *work_item)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work_item);
+	struct hl78xx_data *data = CONTAINER_OF(dwork, struct hl78xx_data, hl78xx_pwr_dwn_work);
+
+	LOG_DBG("%d: Power down work handler called", __LINE__);
+	hl78xx_enter_state(data, MODEM_HL78XX_STATE_INIT_POWER_OFF);
+	data->status.power_down.previous = data->status.power_down.current;
+	data->status.power_down.current = POWER_DOWN_EVENT_ENTER;
+	data->status.power_down.is_power_down_requested = true;
+}
+
+int hl78xx_init_power_down(struct hl78xx_data *data)
+{
+	LOG_DBG("%d Initializing Power Down", __LINE__);
+	k_work_init_delayable(&data->hl78xx_pwr_dwn_work, hl78xx_power_down_work_handler);
+	data->status.power_down.current = POWER_DOWN_EVENT_NONE;
+	data->status.power_down.previous = POWER_DOWN_EVENT_NONE;
+	data->status.power_down.is_power_down_requested = false;
+	return 0;
+}
+
+void hl78xx_power_down_ignore_feeding(struct hl78xx_data *data)
+{
+	LOG_DBG("Ignoring Power Down timer feeding for the next command");
+	data->status.ignore_power_down_feeding = true;
+}
+
+void hl78xx_power_down_allow_feeding(struct hl78xx_data *data)
+{
+	LOG_DBG("Allowing Power Down timer feeding for the next command");
+	data->status.ignore_power_down_feeding = false;
+}
+
+bool hl78xx_power_down_is_ignoring_feeding(struct hl78xx_data *data)
+{
+	return data->status.ignore_power_down_feeding;
+}
+
+int hl78xx_cancel_power_down(struct hl78xx_data *data)
+{
+	LOG_DBG("%d Canceling Power Down", __LINE__);
+	return k_work_cancel_delayable(&data->hl78xx_pwr_dwn_work);
+}
+
+int hl78xx_is_power_down_scheduled(struct hl78xx_data *data)
+{
+	return k_work_delayable_is_pending(&data->hl78xx_pwr_dwn_work);
+}
+
+int hl78xx_power_down_feed_timer(struct hl78xx_data *data, uint32_t cmd_timeout_s)
+{
+	const struct hl78xx_config *config = (const struct hl78xx_config *)data->dev->config;
+#ifdef CONFIG_MODEM_HL78XX_USE_DELAY_BASED_POWER_DOWN
+	uint32_t total_timeout_s = CONFIG_MODEM_HL78XX_POWER_DOWN_DELAY + cmd_timeout_s;
+#endif /* CONFIG_MODEM_HL78XX_USE_DELAY_BASED_POWER_DOWN */
+	if (hl78xx_is_registered(data) == false) {
+		LOG_DBG("Not feeding timer because modem is not registered");
+		return 0;
+	}
+	/* If the modem was sleeping, pull WAKE HIGH first to wake it */
+	if (data->status.power_down.current == POWER_DOWN_EVENT_ENTER) {
+		if (hl78xx_gpio_is_enabled(&config->mdm_gpio_wake)) {
+			gpio_pin_set_dt(&config->mdm_gpio_wake, 1);
+			LOG_DBG("Set WAKE pin to 1 (power down wakeup)");
+		}
+	}
+#ifdef CONFIG_MODEM_HL78XX_USE_DELAY_BASED_POWER_DOWN
+	LOG_DBG("%d Feeding Power Down Timer %d + %d = %d", __LINE__,
+		CONFIG_MODEM_HL78XX_POWER_DOWN_DELAY, cmd_timeout_s, total_timeout_s);
+	k_work_reschedule(&data->hl78xx_pwr_dwn_work, K_SECONDS(total_timeout_s));
+#else
+	k_work_reschedule(&data->hl78xx_pwr_dwn_work,
+			  K_SECONDS(CONFIG_MODEM_HL78XX_POWER_DOWN_ACTIVE_TIME));
+#endif
+	return 0;
+}
+
+int hl78xx_power_down_settings(struct hl78xx_data *data)
+{
+	LOG_DBG("%d Modem Power Down Settings", __LINE__);
+	return 0;
+}
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
+
+#if defined(CONFIG_MODEM_HL78XX_EDRX)
+/**
+ * eDRX idle-sleep timer
+ *
+ * Unlike PSM (which sends +PSMEV:1 to signal readiness for sleep), eDRX
+ * provides no URC. We use an inactivity timer instead: every AT command
+ * resets the timer via hl78xx_edrx_idle_feed_timer(). When the timer
+ * expires (no AT activity for MODEM_HL78XX_EDRX_IDLE_TIMEOUT seconds),
+ * the WAKE pin is pulled LOW so the modem can enter eDRX low-power sleep.
+ *
+ * GNSS interaction (idle-eDRX mode per HL78xx GNSS App Note 5.3):
+ *   During eDRX idle periods the RF path is free for GNSS. When the LTE
+ *   modem wakes for a paging cycle, GNSS automatically shuts off and
+ *   restarts when LTE returns to idle. GNSS assistance data can improve
+ *   performance. The driver dispatches DEVICE_ASLEEP on timer expiry so
+ *   the state machine can process pending GNSS requests the same way it
+ *   does for PSM sleep.
+ */
+static void hl78xx_edrx_idle_work_handler(struct k_work *work_item)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work_item);
+	struct hl78xx_data *data = CONTAINER_OF(dwork, struct hl78xx_data, hl78xx_edrx_idle_work);
+	const struct hl78xx_config *config = (const struct hl78xx_config *)data->dev->config;
+
+	LOG_DBG("eDRX idle timer expired - allowing modem to sleep");
+
+	/* Pull WAKE pin LOW to allow the modem to enter eDRX sleep */
+	if (hl78xx_gpio_is_enabled(&config->mdm_gpio_wake)) {
+		gpio_pin_set_dt(&config->mdm_gpio_wake, 0);
+		LOG_DBG("Set WAKE pin to 0 (eDRX idle sleep)");
+	}
+
+	data->status.edrxev.is_edrx_idle_requested = true;
+
+	/* Notify the state machine so it can transition to SLEEP (and
+	 * optionally start GNSS if a search is pending).
+	 */
+	if (data->status.state != MODEM_HL78XX_STATE_SLEEP &&
+	    data->status.state != MODEM_HL78XX_STATE_IDLE) {
+		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_DEVICE_ASLEEP);
+	}
+}
+
+void hl78xx_edrx_idle_init(struct hl78xx_data *data)
+{
+	LOG_DBG("Initializing eDRX idle timer");
+	data->status.edrxev.is_edrx_idle_requested = false;
+	data->status.edrxev.current = HL78XX_EDRX_EVENT_IDLE_NONE;
+	data->status.edrxev.previous = HL78XX_EDRX_EVENT_IDLE_NONE;
+
+	k_work_init_delayable(&data->hl78xx_edrx_idle_work, hl78xx_edrx_idle_work_handler);
+}
+
+void hl78xx_edrx_idle_ignore_feeding(struct hl78xx_data *data)
+{
+	LOG_DBG("Ignoring eDRX idle timer feeding for the next command");
+	data->status.ignore_edrx_idle_feeding = true;
+}
+
+void hl78xx_edrx_idle_allow_feeding(struct hl78xx_data *data)
+{
+	LOG_DBG("Allowing eDRX idle timer feeding for the next command");
+	data->status.ignore_edrx_idle_feeding = false;
+}
+
+bool hl78xx_edrx_idle_is_ignoring_feeding(struct hl78xx_data *data)
+{
+	return data->status.ignore_edrx_idle_feeding;
+}
+
+int hl78xx_edrx_idle_feed_timer(struct hl78xx_data *data, uint32_t cmd_timeout_s)
+{
+	const struct hl78xx_config *config = (const struct hl78xx_config *)data->dev->config;
+	uint32_t total_timeout_s = CONFIG_MODEM_HL78XX_EDRX_IDLE_TIMEOUT + cmd_timeout_s;
+
+	if (hl78xx_is_registered(data) == false) {
+		LOG_DBG("Not feeding eDRX idle timer because modem is not registered");
+		return 0;
+	}
+	/* If the modem was sleeping, pull WAKE HIGH first to wake it */
+	if (data->status.edrxev.current == HL78XX_EDRX_EVENT_IDLE_ENTER) {
+		if (hl78xx_gpio_is_enabled(&config->mdm_gpio_wake)) {
+			gpio_pin_set_dt(&config->mdm_gpio_wake, 1);
+			LOG_DBG("Set WAKE pin to 1 (eDRX wakeup)");
+		}
+	}
+
+	LOG_DBG("Feeding eDRX idle timer (%u s = %d idle + %u cmd)", total_timeout_s,
+		CONFIG_MODEM_HL78XX_EDRX_IDLE_TIMEOUT, cmd_timeout_s);
+	k_work_reschedule(&data->hl78xx_edrx_idle_work, K_SECONDS(total_timeout_s));
+	return 0;
+}
+
+int hl78xx_is_edrx_idle_scheduled(struct hl78xx_data *data)
+{
+	return k_work_delayable_is_pending(&data->hl78xx_edrx_idle_work);
+}
+
+int hl78xx_edrx_idle_cancel(struct hl78xx_data *data)
+{
+	LOG_DBG("Canceling eDRX idle timer");
+	return k_work_cancel_delayable(&data->hl78xx_edrx_idle_work);
+}
+
+bool hl78xx_edrx_idle_is_sleeping(struct hl78xx_data *data)
+{
+	return data->status.edrxev.current == HL78XX_EDRX_EVENT_IDLE_ENTER;
+}
+
+uint32_t hl78xx_edrx_idle_get_remaining_timetosleep(struct hl78xx_data *data)
+{
+	return k_ticks_to_ms_floor32(k_work_delayable_remaining_get(&data->hl78xx_edrx_idle_work));
+}
+
+#endif /* CONFIG_MODEM_HL78XX_EDRX */
+
+#ifdef CONFIG_MODEM_HL78XX_PSM
+
+void hl78xx_psmev_init(struct hl78xx_data *data)
+{
+	LOG_DBG("Initializing PSM settings");
+	data->status.psmev.current = HL78XX_PSM_EVENT_NONE;
+	data->status.psmev.previous = HL78XX_PSM_EVENT_NONE;
+	data->status.psmev.is_psm_active = false;
+}
+
+#endif /* CONFIG_MODEM_HL78XX_PSM */
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+
+bool hl78xx_is_rsrp_valid(struct hl78xx_data *data)
+{
+	return (data->status.rsrp >= CONFIG_MODEM_MIN_ALLOWED_SIGNAL_STRENGTH);
+}
 void set_band_bit(uint8_t *bitmap, uint16_t band_num)
 {
 	uint16_t bit_pos;
@@ -891,3 +1224,40 @@ int hl78xx_switch_baudrate(struct hl78xx_data *data, uint32_t target_baudrate)
 	return 0;
 }
 #endif /* CONFIG_MODEM_HL78XX_AUTO_BAUDRATE */
+
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+/* Convert 8-character binary string to byte (0–255) */
+int binary_str_to_byte(const char *bin_str)
+{
+	if (strlen(bin_str) != 8) {
+		return -EINVAL; /*  Invalid input length */
+	}
+
+	int value = 0;
+
+	for (int i = 0; i < 8; i++) {
+		if (bin_str[i] == '1') {
+			value = (value << 1) | 1;
+		} else if (bin_str[i] == '0') {
+			value = value << 1;
+		} else {
+			return -EINVAL; /*  Invalid character */
+		}
+	}
+
+	return value;
+}
+
+/* Convert byte to 8-character binary string */
+void byte_to_binary_str(uint8_t byte, char *output)
+{
+	if (output == NULL) {
+		return; /*  Invalid output pointer */
+	}
+
+	for (int i = 7; i >= 0; i--) {
+		output[7 - i] = (byte & (1 << i)) ? '1' : '0';
+	}
+	output[8] = '\0';
+}
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */

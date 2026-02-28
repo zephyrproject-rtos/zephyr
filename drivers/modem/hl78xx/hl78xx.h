@@ -129,6 +129,10 @@
 /* PDP Context commands */
 #define DEACTIVATE_PDP_CONTEXT             "AT+CGACT=0"
 #define ACTIVATE_PDP_CONTEXT               "AT+CGACT=1"
+/* LTE coverage check command */
+#define CHECK_LTE_COVERAGE_CMD             "AT+KCELLMEAS=1"
+#define WAKE_LTE_LAYER_CMD                 "AT%PINGCMD=0,\"8.8.8.8\",1"
+
 /**
  * Airvantage commands
  * User initiated connection start/stop
@@ -142,6 +146,8 @@
 /* Helper macros */
 #define ATOI(s_, value_, desc_) modem_atoi(s_, value_, desc_, __func__)
 #define ATOD(s_, value_, desc_) modem_atod(s_, value_, desc_, __func__)
+/* Default dynamic AT command maximum length */
+#define HL78XX_AT_CMD_MAX_LEN       64
 
 #define HL78XX_LOG_DBG(str, ...)                                                                   \
 	COND_CODE_1(CONFIG_MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG, \
@@ -160,6 +166,7 @@ enum hl78xx_state {
 	MODEM_HL78XX_STATE_RUN_INIT_SCRIPT,
 	MODEM_HL78XX_STATE_RUN_INIT_FAIL_DIAGNOSTIC_SCRIPT,
 	MODEM_HL78XX_STATE_RUN_RAT_CONFIG_SCRIPT,
+	MODEM_HL78XX_STATE_RUN_PMC_CONFIG_SCRIPT,
 	MODEM_HL78XX_STATE_RUN_ENABLE_GPRS_SCRIPT,
 	/* Full functionality, searching
 	 * CFUN=1
@@ -177,6 +184,7 @@ enum hl78xx_state {
 	 * CFUN=4
 	 */
 	MODEM_HL78XX_STATE_AIRPLANE,
+	MODEM_HL78XX_STATE_SLEEP,
 #ifdef CONFIG_HL78XX_GNSS
 	MODEM_HL78XX_STATE_RUN_GNSS_INIT_SCRIPT,
 	MODEM_HL78XX_STATE_GNSS_SEARCH_STARTED,
@@ -184,6 +192,7 @@ enum hl78xx_state {
 	MODEM_HL78XX_STATE_INIT_POWER_OFF,
 	MODEM_HL78XX_STATE_POWER_OFF_PULSE,
 	MODEM_HL78XX_STATE_AWAIT_POWER_OFF,
+	MODEM_HL78XX_STATE_COUNT
 };
 
 enum hl78xx_event {
@@ -216,6 +225,10 @@ enum hl78xx_event {
 	MODEM_HL78XX_EVENT_GNSS_MODE_ENTER_REQUESTED,
 	MODEM_HL78XX_EVENT_GNSS_MODE_EXIT_REQUESTED,
 #endif /* CONFIG_HL78XX_GNSS */
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+	MODEM_HL78XX_EVENT_DEVICE_ASLEEP,
+	MODEM_HL78XX_EVENT_DEVICE_AWAKE,
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 
 	/* WDSI FOTA events */
@@ -282,7 +295,62 @@ struct kband_syntax {
 	 */
 	uint8_t bnd_bitmap[MDM_BAND_HEX_STR_LEN];
 };
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+#ifdef CONFIG_MODEM_HL78XX_PSM
+struct hl78xx_psm_status {
+	enum hl78xx_psmev_event current;
+	enum hl78xx_psmev_event previous;
+	bool is_psm_active;
+};
+#endif /* CONFIG_MODEM_HL78XX_PSM */
 
+#ifdef CONFIG_MODEM_HL78XX_EDRX
+struct hl78xx_edrx_status {
+	enum hl78xx_edrx_event current;
+	enum hl78xx_edrx_event previous;
+	bool is_edrx_idle_requested;
+};
+#endif /* CONFIG_MODEM_HL78XX_EDRX */
+
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+struct hl78xx_power_down_status {
+	enum power_down_event current;
+	enum power_down_event previous;
+	bool is_power_down_requested;
+};
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
+
+enum hl78xx_kedrx_mode {
+	HL78XX_KEDRX_MODE_DISABLE = 0,
+	HL78XX_KEDRX_MODE_ENABLE = 1,
+	HL78XX_KEDRX_MODE_ENABLE_W_URC = 2,
+	HL78XX_KEDRX_MODE_DISABLE_AND_ERASE_CFG = 3,
+};
+
+enum hl78xx_kedrx_ack_type {
+	HL78XX_KEDRX_ACK_TYPE_CATM = 4,
+	HL78XX_KEDRX_ACK_TYPE_NB = 5,
+};
+struct ksleep_syntax {
+	uint8_t mngt;
+	uint8_t level;
+	uint8_t delay;
+};
+struct cpsms_syntax {
+	/* Indication to disable or enable the use of PSM in the UE; */
+	bool mode;
+	/* TAU value (T3412) */
+	uint8_t periodic_tau;
+	/* Active Time value (T3324) */
+	uint8_t active_time;
+};
+
+struct kedrxcfg_syntax {
+	enum hl78xx_kedrx_mode mode;
+	enum hl78xx_kedrx_ack_type ack_type;
+	uint8_t requested_edrx;
+};
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 enum apn_state_enum_t {
 	APN_STATE_NOT_CONFIGURED = 0,
 	APN_STATE_CONFIGURED,
@@ -410,6 +478,29 @@ struct modem_status {
 	struct ntn_rat_state ntn_rat;
 #endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
 	struct hl78xx_modem_uart_status uart;
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+	/* Power Management Control */
+	struct ksleep_syntax pmc_sleep;
+	struct cpsms_syntax pmc_cpsms;
+	struct kedrxcfg_syntax pmc_kedrxcfg[2];
+#ifdef CONFIG_MODEM_HL78XX_PSM
+	struct hl78xx_psm_status psmev;
+	bool awaiting_psm_confirmation;
+#endif /* CONFIG_MODEM_HL78XX_PSM */
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+	struct hl78xx_power_down_status power_down;
+	bool ignore_power_down_feeding;
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
+#ifdef CONFIG_MODEM_HL78XX_EDRX
+	struct hl78xx_edrx_status edrxev;
+	bool ignore_edrx_idle_feeding;
+#endif /* CONFIG_MODEM_HL78XX_EDRX */
+#if defined(CONFIG_MODEM_HL78XX_00) && defined(CONFIG_HL78XX_GNSS)
+	bool rrc_idle;
+#endif /* CONFIG_MODEM_HL78XX_00 && CONFIG_HL78XX_GNSS */
+	bool lpm_restore_pending;
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+	uint16_t kcellmeas_timeout;
 };
 
 struct modem_gpio_callbacks {
@@ -448,6 +539,12 @@ struct hl78xx_data {
 	struct modem_gpio_callbacks gpio_cbs;
 	struct modem_event_system events;
 	struct k_work_delayable timeout_work;
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+	struct k_work_delayable hl78xx_pwr_dwn_work;
+#endif
+#ifdef CONFIG_MODEM_HL78XX_EDRX
+	struct k_work_delayable hl78xx_edrx_idle_work;
+#endif
 	/* Track leftover socket data state previously stored as a TU-global.
 	 * Moving this into the per-modem data reduces global BSS and keeps
 	 * state colocated with the modem instance.
@@ -489,6 +586,14 @@ struct hl78xx_config {
 	const struct modem_chat_script *init_chat_script;
 	const struct modem_chat_script *periodic_chat_script;
 };
+
+/**
+ * @brief Check whether a GPIO is available (has a valid port binding).
+ */
+static inline bool hl78xx_gpio_is_enabled(const struct gpio_dt_spec *gpio)
+{
+	return (gpio->port != NULL);
+}
 
 /* socket read callback data */
 struct socket_read_data {
@@ -822,10 +927,31 @@ int check_if_any_socket_connected(const struct device *dev);
  *
  */
 void hl78xx_start_timer(struct hl78xx_data *data, k_timeout_t timeout);
+
+/**
+ * @brief Stop the timer.
+ * @param data pointer to hl78xx_data.
+ */
+void hl78xx_stop_timer(struct hl78xx_data *data);
+
 /**
  * @brief Dispatch an event
  * @param notif event information.
  */
 void event_dispatcher_dispatch(struct hl78xx_evt *notif);
+
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+
+#ifdef CONFIG_MODEM_HL78XX_PSM
+
+static inline bool hl78xx_psm_is_active(struct hl78xx_data *data)
+{
+	return data->status.psmev.current != HL78XX_PSM_EVENT_NONE;
+}
+
+#endif /* CONFIG_MODEM_HL78XX_PSM */
+
+void hl78xx_release_socket_comms(struct hl78xx_data *data);
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 
 #endif /* HL78XX_H */
