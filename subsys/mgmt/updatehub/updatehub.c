@@ -161,8 +161,10 @@ static void cleanup_connection(void)
 {
 	int i;
 
-	if (zsock_close(ctx.sock) < 0) {
-		LOG_ERR("Could not close the socket");
+	if (ctx.sock >= 0) {
+		if (zsock_close(ctx.sock) < 0) {
+			LOG_ERR("Could not close the socket");
+		}
 	}
 
 	for (i = 0; i < ctx.nfds; i++) {
@@ -170,7 +172,7 @@ static void cleanup_connection(void)
 	}
 
 	ctx.nfds = 0;
-	ctx.sock = 0;
+	ctx.sock = -1;
 }
 
 static bool start_coap_client(void)
