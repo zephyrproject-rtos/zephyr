@@ -195,6 +195,9 @@ endif # LV_Z_RUN_LVGL_ON_WORKQUEUE
 config LV_USE_DRAW_DMA2D
 	bool
 
+config LV_USE_DRAW_DMA2D_INTERRUPT
+	bool
+
 config LV_DRAW_DMA2D_HAL_INCLUDE
 	string
 	help
