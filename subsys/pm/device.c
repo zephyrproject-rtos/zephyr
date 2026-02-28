@@ -418,12 +418,14 @@ int pm_device_driver_init(const struct device *dev,
 
 	/* Startup into active mode */
 	rc = action_cb(dev, PM_DEVICE_ACTION_RESUME);
+	if (rc < 0) {
+		return rc;
+	}
 
 	/* Device is now in the ACTIVE state */
 	pm->state = PM_DEVICE_STATE_ACTIVE;
 
-	/* Return the PM_DEVICE_ACTION_RESUME result */
-	return rc;
+	return 0;
 }
 
 int pm_device_driver_deinit(const struct device *dev,
