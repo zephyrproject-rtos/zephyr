@@ -1,0 +1,54 @@
+# Copyright 2026 Shankar Sridhar
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Arduino UNO Q LED Matrix Driver
+  
+  8x13 LED matrix (104 LEDs total) controlled through a packed binary format.
+  The matrix is managed by dedicated hardware on the STM32U585 MCU.
+  
+  Example:
+    led_matrix: led-matrix {
+        compatible = "arduino,uno-q-ledmatrix";
+        rows = <8>;
+        columns = <13>;
+        status = "okay";
+    };
+
+compatible: "arduino,uno-q-ledmatrix"
+
+properties:
+  gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Array of 11 GPIO pins used for charlieplexing the LED matrix.
+      These must be PF0-PF10 on the STM32U585.
+      Order: LED_MATRIX_0 to LED_MATRIX_10
+      
+  rows:
+    type: int
+    required: true
+    description: Number of rows in the LED matrix
+    const: 8
+
+  columns:
+    type: int
+    required: true  
+    description: Number of columns in the LED matrix
+    const: 13
+
+  brightness:
+    type: int
+    default: 255
+    description: |
+      Default brightness level (0-255).
+      Note: The UNO Q matrix supports 8-bit grayscale.
+      
+  refresh-rate-hz:
+    type: int
+    default: 800
+    description: |
+      Refresh rate in Hz for charlieplexing multiplexing.
+      Higher values provide better brightness but consume more CPU.
+      Typical range: 500-1000 Hz
