@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+ * Copyright (c) 2025-2026 MASSDRIVER EI (massdriver.space)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(clock_control_bl60x, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #include <bouffalolab/bl60x/pds_reg.h>
 #include <bouffalolab/bl60x/l1c_reg.h>
 #include <bouffalolab/bl60x/extra_defines.h>
+#include <bouffalolab/bl60x/sf_ctrl_reg.h>
 #include <zephyr/drivers/clock_control/clock_control_bflb_common.h>
 
 #define CLK_SRC_IS(clk, src)                                                                       \
@@ -41,6 +42,8 @@ LOG_MODULE_REGISTER(clock_control_bl60x, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #define CRYSTAL_ID_FREQ_26000000 4
 
 #define CRYSTAL_FREQ_TO_ID(freq) CONCAT(CRYSTAL_ID_FREQ_, freq)
+
+#define PLL_OVERCLOCK_MASK	0x10
 
 enum bl60x_clkid {
 	bl60x_clkid_clk_root = BL60X_CLKID_CLK_ROOT,
@@ -69,12 +72,21 @@ struct clock_control_bl60x_config {
 	uint32_t crystal_id;
 };
 
+struct clock_control_bl60x_flashclk_config {
+	enum bl60x_clkid	source;
+	uint8_t			divider;
+	uint8_t			read_delay;
+	bool			clock_invert;
+	bool			rx_clock_invert;
+};
+
 struct clock_control_bl60x_data {
 	bool crystal_enabled;
 	bool pll_enabled;
-	struct clock_control_bl60x_pll_config pll;
-	struct clock_control_bl60x_root_config root;
-	struct clock_control_bl60x_bclk_config bclk;
+	struct clock_control_bl60x_pll_config		pll;
+	struct clock_control_bl60x_root_config		root;
+	struct clock_control_bl60x_bclk_config		bclk;
+	struct clock_control_bl60x_flashclk_config	flashclk;
 };
 
 const static uint32_t clock_control_bl60x_crystal_SDMIN_table[5] = {
@@ -88,6 +100,19 @@ const static uint32_t clock_control_bl60x_crystal_SDMIN_table[5] = {
 	0x300000,
 	/* 26M */
 	0x49D39D,
+};
+
+const static uint32_t clock_control_bl60x_crystal_SDMIN_table_240M[5] = {
+	/* 32M */
+	0x4B0000,
+	/* 24M */
+	0x640000,
+	/* 38.4M */
+	0x3E8000,
+	/* 40M */
+	0x3C0000,
+	/* 26M */
+	0x5C4884,
 };
 
 static int clock_control_bl60x_deinit_crystal(void)
@@ -245,10 +270,13 @@ static void clock_control_bl60x_set_pll_source(uint32_t source)
 	sys_write32(tmp, PDS_BASE + PDS_CLKPLL_TOP_CTRL_OFFSET);
 }
 
-static void clock_control_bl60x_init_pll(enum bl60x_clkid source, uint32_t crystal_id)
+static void clock_control_bl60x_init_pll(enum bl60x_clkid source, uint32_t crystal_id,
+					 bool overclock)
 {
 	uint32_t tmp;
 	uint32_t old_rootclk;
+	const uint32_t *sdmin_table = overclock ? clock_control_bl60x_crystal_SDMIN_table_240M
+						: clock_control_bl60x_crystal_SDMIN_table;
 
 	old_rootclk = clock_bflb_get_root_clock();
 
@@ -304,11 +332,11 @@ static void clock_control_bl60x_init_pll(enum bl60x_clkid source, uint32_t cryst
 	tmp = sys_read32(PDS_BASE + PDS_CLKPLL_SDM_OFFSET);
 	if (source == BL60X_CLKID_CLK_CRYSTAL) {
 		tmp = (tmp & PDS_CLKPLL_SDMIN_UMSK) |
-		      (clock_control_bl60x_crystal_SDMIN_table[crystal_id]
+		      (sdmin_table[crystal_id]
 		       << PDS_CLKPLL_SDMIN_POS);
 	} else {
 		tmp = (tmp & PDS_CLKPLL_SDMIN_UMSK) |
-		      (clock_control_bl60x_crystal_SDMIN_table[CRYSTAL_ID_FREQ_32000000]
+		      (sdmin_table[CRYSTAL_ID_FREQ_32000000]
 		       << PDS_CLKPLL_SDMIN_POS);
 	}
 	sys_write32(tmp, PDS_BASE + PDS_CLKPLL_SDM_OFFSET);
@@ -430,6 +458,7 @@ static uint32_t clock_control_bl60x_get_xclk(const struct device *dev)
 
 static uint32_t clock_control_bl60x_get_clk(const struct device *dev)
 {
+	struct clock_control_bl60x_data *data = dev->data;
 	uint32_t tmp;
 	uint32_t hclk_div;
 
@@ -446,14 +475,28 @@ static uint32_t clock_control_bl60x_get_clk(const struct device *dev)
 	}
 	tmp = sys_read32(GLB_BASE + GLB_CLK_CFG0_OFFSET);
 	tmp = (tmp & GLB_REG_PLL_SEL_MSK) >> GLB_REG_PLL_SEL_POS;
-	if (tmp == 3) {
-		return MHZ(192) / (hclk_div + 1);
-	} else if (tmp == 2) {
-		return MHZ(160) / (hclk_div + 1);
-	} else if (tmp == 1) {
-		return MHZ(120) / (hclk_div + 1);
-	} else if (tmp == 0) {
-		return MHZ(48) / (hclk_div + 1);
+
+	if (data->pll.overclock) {
+		if (tmp == 3) {
+			return MHZ(240) / (hclk_div + 1);
+		} else if (tmp == 2) {
+			return MHZ(200) / (hclk_div + 1);
+		} else if (tmp == 1) {
+			return MHZ(150) / (hclk_div + 1);
+		} else if (tmp == 0) {
+			return MHZ(60) / (hclk_div + 1);
+		}
+
+	} else {
+		if (tmp == 3) {
+			return MHZ(192) / (hclk_div + 1);
+		} else if (tmp == 2) {
+			return MHZ(160) / (hclk_div + 1);
+		} else if (tmp == 1) {
+			return MHZ(120) / (hclk_div + 1);
+		} else if (tmp == 0) {
+			return MHZ(48) / (hclk_div + 1);
+		}
 	}
 	return 0;
 }
@@ -508,7 +551,7 @@ static void clock_control_bl60x_init_root_as_pll(const struct device *dev)
 	const struct clock_control_bl60x_config *config = dev->config;
 	uint32_t tmp;
 
-	clock_control_bl60x_init_pll(data->pll.source, config->crystal_id);
+	clock_control_bl60x_init_pll(data->pll.source, config->crystal_id, data->pll.overclock);
 
 	/* enable all 'PDS' clocks */
 	tmp = sys_read32(PDS_BASE + PDS_CLKPLL_OUTPUT_EN_OFFSET);
@@ -540,6 +583,56 @@ static void clock_control_bl60x_init_root_as_crystal(const struct device *dev)
 {
 	clock_bflb_set_root_clock(BFLB_MAIN_CLOCK_XTAL);
 	sys_write32(clock_control_bl60x_get_clk(dev), CORECLOCKREGISTER);
+}
+
+static __ramfunc void clock_control_bl60x_update_flash_clk(const struct device *dev)
+{
+	struct clock_control_bl60x_data *data = dev->data;
+	uint32_t tmp;
+
+	tmp = *(uint32_t *)(GLB_BASE + GLB_CLK_CFG2_OFFSET);
+	tmp &= GLB_SF_CLK_DIV_UMSK;
+	tmp &= GLB_SF_CLK_EN_UMSK;
+	tmp |= (data->flashclk.divider - 1) << GLB_SF_CLK_DIV_POS;
+	*(uint32_t *)(GLB_BASE + GLB_CLK_CFG2_OFFSET) = tmp;
+
+	tmp = *(uint32_t *)(SF_CTRL_BASE + SF_CTRL_0_OFFSET);
+	tmp |= SF_CTRL_SF_IF_READ_DLY_EN_MSK;
+	tmp &= ~SF_CTRL_SF_IF_READ_DLY_N_MSK;
+	tmp |= (data->flashclk.read_delay << SF_CTRL_SF_IF_READ_DLY_N_POS);
+	if (data->flashclk.clock_invert) {
+		tmp &= ~SF_CTRL_SF_CLK_OUT_INV_SEL_MSK;
+	} else {
+		tmp |= SF_CTRL_SF_CLK_OUT_INV_SEL_MSK;
+	}
+	if (data->flashclk.rx_clock_invert) {
+		tmp |= SF_CTRL_SF_CLK_SF_RX_INV_SEL_MSK;
+	} else {
+		tmp &= ~SF_CTRL_SF_CLK_SF_RX_INV_SEL_MSK;
+	}
+	*(uint32_t *)(SF_CTRL_BASE + SF_CTRL_0_OFFSET) = tmp;
+
+	tmp = *(uint32_t *)(GLB_BASE + GLB_CLK_CFG2_OFFSET);
+	tmp &= GLB_SF_CLK_SEL_UMSK;
+	tmp &= GLB_SF_CLK_SEL2_UMSK;
+	if (data->flashclk.source == bl60x_clkid_clk_pll) {
+		tmp |= 0U << GLB_SF_CLK_SEL_POS;
+		tmp |= 0U << GLB_SF_CLK_SEL_POS;
+	} else if (data->flashclk.source == bl60x_clkid_clk_crystal) {
+		tmp |= 0U << GLB_SF_CLK_SEL_POS;
+		tmp |= 1U << GLB_SF_CLK_SEL2_POS;
+	} else {
+		/* If using RC32M or BCLK, use BCLK */
+		tmp |= 2U << GLB_SF_CLK_SEL_POS;
+	}
+
+	*(uint32_t *)(GLB_BASE + GLB_CLK_CFG2_OFFSET) = tmp;
+
+	tmp = *(uint32_t *)(GLB_BASE + GLB_CLK_CFG2_OFFSET);
+	tmp |= GLB_SF_CLK_EN_MSK;
+	*(uint32_t *)(GLB_BASE + GLB_CLK_CFG2_OFFSET) = tmp;
+
+	clock_bflb_settle();
 }
 
 static int clock_control_bl60x_update_root(const struct device *dev)
@@ -820,6 +913,8 @@ static int clock_control_bl60x_init(const struct device *dev)
 
 	clock_bflb_settle();
 
+	clock_control_bl60x_update_flash_clk(dev);
+
 	irq_unlock(key);
 
 	return 0;
@@ -843,27 +938,49 @@ static struct clock_control_bl60x_data clock_control_bl60x_data = {
 
 	.root = {
 #if CLK_SRC_IS(root, pll_192)
-			.source = bl60x_clkid_clk_pll,
-			.pll_select = DT_CLOCKS_CELL(DT_INST_CLOCKS_CTLR_BY_NAME(0, root), select),
+		.source = bl60x_clkid_clk_pll,
+		.pll_select = DT_CLOCKS_CELL(DT_INST_CLOCKS_CTLR_BY_NAME(0, root), select) & 0xF,
 #elif CLK_SRC_IS(root, crystal)
-			.source = bl60x_clkid_clk_crystal,
+		.source = bl60x_clkid_clk_crystal,
 #else
-			.source = bl60x_clkid_clk_rc32m,
+		.source = bl60x_clkid_clk_rc32m,
 #endif
-			.divider = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, root), divider),
-		},
+		.divider = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, root), divider),
+	},
 
 	.pll = {
 #if CLK_SRC_IS(pll_192, crystal)
-			.source = bl60x_clkid_clk_crystal,
+		.source = bl60x_clkid_clk_crystal,
 #else
-			.source = bl60x_clkid_clk_rc32m,
+		.source = bl60x_clkid_clk_rc32m,
 #endif
-		},
+#if CLK_SRC_IS(root, pll_192)
+		.overclock = DT_CLOCKS_CELL(DT_INST_CLOCKS_CTLR_BY_NAME(0, root), select)
+			     & PLL_OVERCLOCK_MASK ? true : false,
+#else
+		.overclock = false,
+#endif
+	},
 
 	.bclk = {
-			.divider = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, bclk), divider),
-		},
+		.divider = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, bclk), divider),
+	},
+
+	.flashclk = {
+#if CLK_SRC_IS(flash, crystal)
+		.source = bl60x_clkid_clk_crystal,
+#elif CLK_SRC_IS(flash, bclk)
+		.source = bl60x_clkid_clk_bclk,
+#elif CLK_SRC_IS(flash, pll_192)
+		.source = bl60x_clkid_clk_pll,
+#else
+		.source = bl60x_clkid_clk_rc32m,
+#endif
+		.read_delay = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, flash), read_delay),
+		.clock_invert = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, flash), clock_invert),
+		.rx_clock_invert = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, flash), rx_clock_invert),
+		.divider = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, flash), divider),
+	},
 };
 
 BUILD_ASSERT(CLK_SRC_IS(pll_192, crystal) || CLK_SRC_IS(root, crystal)
