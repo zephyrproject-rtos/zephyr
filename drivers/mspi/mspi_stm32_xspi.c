@@ -1047,7 +1047,7 @@ static int mspi_stm32_assign_cfg(struct mspi_stm32_data *data,
 	}
 	if ((param_mask & MSPI_DEVICE_CONFIG_CE_POL) != 0) {
 		ret = mspi_stm32_xspi_validate_ce_polarity(dev_cfg->ce_polarity);
-		if (ret == 0) {
+		if (ret != 0) {
 			goto end;
 		}
 		data->dev_cfg.ce_polarity = dev_cfg->ce_polarity;
