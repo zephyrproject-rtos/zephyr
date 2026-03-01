@@ -138,4 +138,16 @@ config NRF_PERIPHCONF_SECTION_KEEP_BY_DEFAULT
 	  CONFIG_NRF_PERIPHCONF_SECTION_STRIP=n unless explicitly configured otherwise.
 	  To override this behavior, set CONFIG_NRF_PERIPHCONF_SECTION_STRIP=y directly.
 
+config NRF_MPCCONF_API_IN_RAM
+	bool "MPCCONF API in RAM"
+	depends on IRONSIDE_SE_CALL
+	depends on !IRONSIDE_SE_CALL_ZEPHYR || !XIP
+	help
+	  Ensure that the functions used to modify and lock the MPC configuration
+	  - namely, ironside_se_mpcconf_write() and ironside_se_mpcconf_finish_init() -
+	  are placed in RAM. This may be needed to reconfigure permissions for XIP memory.
+
+	  This is not supported with the default IronSide call driver in Zephyr,
+	  unless it and all of its dependencies are also relocated to be executed from RAM.
+
 endmenu # IronSide SE
