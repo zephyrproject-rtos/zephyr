@@ -115,6 +115,7 @@ config SYS_HEAP_HARDENING_MODERATE
 
 config SYS_HEAP_HARDENING_FULL
 	bool "Full"
+	depends on ENTROPY_GENERATOR || TEST_RANDOM_GENERATOR
 	select SYS_HEAP_CANARIES
 	help
 	  In addition to moderate checks, enable per-chunk trailer
@@ -126,6 +127,7 @@ config SYS_HEAP_HARDENING_FULL
 
 config SYS_HEAP_HARDENING_EXTREME
 	bool "Extreme"
+	depends on ENTROPY_GENERATOR || TEST_RANDOM_GENERATOR
 	select SYS_HEAP_CANARIES
 	select SYS_HEAP_VALIDATE
 	help
