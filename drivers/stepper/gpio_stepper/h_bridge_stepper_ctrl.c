@@ -24,23 +24,23 @@ static const uint8_t
 	 {1u, 1u, 0u, 0u}, {0u, 1u, 0u, 0u}, {0u, 1u, 1u, 0u}, {0u, 0u, 1u, 0u},
 	 {0u, 0u, 1u, 1u}, {0u, 0u, 0u, 1u}, {1u, 0u, 0u, 1u}, {1u, 0u, 0u, 0u}};
 
-struct h_bridge_stepper_config {
+struct h_bridge_stepper_ctrl_config {
 	struct gpio_stepper_common_config common;
 	const struct gpio_dt_spec *control_pins;
 	uint8_t step_gap;
 };
 
-struct h_bridge_stepper_data {
+struct h_bridge_stepper_ctrl_data {
 	struct gpio_stepper_common_data common;
 	uint8_t coil_charge;
 };
 
-GPIO_STEPPER_STRUCT_CHECK(struct h_bridge_stepper_config, struct h_bridge_stepper_data);
+GPIO_STEPPER_STRUCT_CHECK(struct h_bridge_stepper_ctrl_config, struct h_bridge_stepper_ctrl_data);
 
 static int stepper_ctrl_set_coil_charge(const struct device *dev)
 {
-	struct h_bridge_stepper_data *data = dev->data;
-	const struct h_bridge_stepper_config *config = dev->config;
+	struct h_bridge_stepper_ctrl_data *data = dev->data;
+	const struct h_bridge_stepper_ctrl_config *config = dev->config;
 	int ret;
 
 	for (int i = 0; i < NUM_CONTROL_PINS; i++) {
@@ -57,8 +57,8 @@ static int stepper_ctrl_set_coil_charge(const struct device *dev)
 
 static void increment_coil_charge(const struct device *dev)
 {
-	const struct h_bridge_stepper_config *config = dev->config;
-	struct h_bridge_stepper_data *data = dev->data;
+	const struct h_bridge_stepper_ctrl_config *config = dev->config;
+	struct h_bridge_stepper_ctrl_data *data = dev->data;
 
 	if (data->coil_charge == NUM_CONTROL_PINS * LUT_MAX_STEP_GAP - config->step_gap) {
 		data->coil_charge = 0;
@@ -69,8 +69,8 @@ static void increment_coil_charge(const struct device *dev)
 
 static void decrement_coil_charge(const struct device *dev)
 {
-	const struct h_bridge_stepper_config *config = dev->config;
-	struct h_bridge_stepper_data *data = dev->data;
+	const struct h_bridge_stepper_ctrl_config *config = dev->config;
+	struct h_bridge_stepper_ctrl_data *data = dev->data;
 
 	if (data->coil_charge == 0) {
 		data->coil_charge = NUM_CONTROL_PINS * LUT_MAX_STEP_GAP - config->step_gap;
@@ -121,7 +121,7 @@ static void stepper_work_step_handler(const struct device *dev)
 	}
 }
 
-static int h_bridge_stepper_move_by(const struct device *dev, int32_t micro_steps)
+static int h_bridge_stepper_ctrl_move_by(const struct device *dev, int32_t micro_steps)
 {
 	const struct gpio_stepper_common_config *config = dev->config;
 	struct gpio_stepper_common_data *data = dev->data;
@@ -224,7 +224,7 @@ static int h_bridge_stepper_ctrl_stop(const struct device *dev)
 static int h_bridge_stepper_init(const struct device *dev)
 {
 	struct gpio_stepper_common_data *data = dev->data;
-	const struct h_bridge_stepper_config *config = dev->config;
+	const struct h_bridge_stepper_ctrl_config *config = dev->config;
 	int err;
 
 	data->dev = dev;
@@ -249,27 +249,29 @@ static DEVICE_API(stepper_ctrl, h_bridge_stepper_ctrl_api) = {
 	.get_actual_position = gpio_stepper_common_get_actual_position,
 	.set_event_cb = gpio_stepper_common_set_event_cb,
 	.set_microstep_interval = h_bridge_stepper_ctrl_set_microstep_interval,
-	.move_by = h_bridge_stepper_move_by,
+	.move_by = h_bridge_stepper_ctrl_move_by,
 	.move_to = gpio_stepper_common_move_to,
 	.run = h_bridge_stepper_ctrl_run,
 	.stop = h_bridge_stepper_ctrl_stop,
 	.is_moving = gpio_stepper_common_is_moving,
 };
 
-#define H_BRIDGE_STEPPER_DEFINE(inst)                                                              \
-	static const struct gpio_dt_spec h_bridge_stepper_ctrl_control_pins_##inst[] = {          \
-		DT_INST_FOREACH_PROP_ELEM_SEP(inst, gpios, GPIO_DT_SPEC_GET_BY_IDX, (,)),          \
-	};                                                                                         \
-	BUILD_ASSERT(ARRAY_SIZE(h_bridge_stepper_ctrl_control_pins_##inst) == 4,                  \
-		     "h_bridge stepper driver currently supports only 4 wire configuration");      \
-	static const struct h_bridge_stepper_config h_bridge_stepper_config_##inst = {             \
-		.common = GPIO_STEPPER_DT_INST_COMMON_CONFIG_INIT(inst),                           \
-		.common.timing_source_cb = stepper_work_step_handler,                              \
-		.step_gap = DT_INST_PROP(inst, lut_step_gap),                                      \
-		.control_pins = h_bridge_stepper_ctrl_control_pins_##inst};                       \
-	static struct h_bridge_stepper_data h_bridge_stepper_data_##inst;                          \
-	DEVICE_DT_INST_DEFINE(inst, h_bridge_stepper_init, NULL, &h_bridge_stepper_data_##inst,    \
-			      &h_bridge_stepper_config_##inst, POST_KERNEL,                        \
+#define H_BRIDGE_STEPPER_DEFINE(inst)								   \
+	static const struct gpio_dt_spec h_bridge_stepper_ctrl_control_pins_##inst[] = {	   \
+		DT_INST_FOREACH_PROP_ELEM_SEP(inst, gpios, GPIO_DT_SPEC_GET_BY_IDX, (,)),	   \
+	};											   \
+	BUILD_ASSERT(ARRAY_SIZE(h_bridge_stepper_ctrl_control_pins_##inst) == 4,		   \
+		 "h_bridge stepper driver currently supports only 4 wire configuration");	   \
+	static const struct h_bridge_stepper_ctrl_config h_bridge_stepper_ctrl_config_##inst = {   \
+		.common = GPIO_STEPPER_DT_INST_COMMON_CONFIG_INIT(inst),			   \
+		.common.timing_source_cb = stepper_work_step_handler,				   \
+		.step_gap = DT_INST_PROP(inst, lut_step_gap),					   \
+		.control_pins = h_bridge_stepper_ctrl_control_pins_##inst			   \
+	};											   \
+	static struct h_bridge_stepper_ctrl_data h_bridge_stepper_ctrl_data_##inst;		   \
+	DEVICE_DT_INST_DEFINE(inst, h_bridge_stepper_init, NULL,				   \
+			      &h_bridge_stepper_ctrl_data_##inst,				   \
+			      &h_bridge_stepper_ctrl_config_##inst, POST_KERNEL,		   \
 			      CONFIG_STEPPER_INIT_PRIORITY, &h_bridge_stepper_ctrl_api);
 
 DT_INST_FOREACH_STATUS_OKAY(H_BRIDGE_STEPPER_DEFINE)
