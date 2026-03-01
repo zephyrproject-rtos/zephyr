@@ -16,6 +16,9 @@ LOG_MODULE_REGISTER(os_heap, CONFIG_SYS_HEAP_LOG_LEVEL);
 #include <sanitizer/msan_interface.h>
 #endif
 
+#ifdef CONFIG_SYS_HEAP_CANARIES
+#include <zephyr/random/random.h>
+#endif
 
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 static inline void increase_allocated_bytes(struct z_heap *h, size_t num_bytes)
@@ -26,22 +29,17 @@ static inline void increase_allocated_bytes(struct z_heap *h, size_t num_bytes)
 #endif
 
 #ifdef CONFIG_SYS_HEAP_CANARIES
-#define HEAP_CANARY_MAGIC 0x5A6B7C8D9EAFB0C1ULL
-#define HEAP_CANARY_POISON 0xDEADBEEFDEADBEEFULL
+#define HEAP_CANARY_POISON 0xDEADBEEFU
 
 /*
- * Compute a per-chunk canary from its address and size.  This is
- * sufficient to detect accidental corruption but is not cryptographically
- * secure — a determined attacker who knows the heap layout could forge
- * a valid canary.  A stronger scheme (e.g. SipHash with a random key)
- * could replace this if needed.
+ * Compute a per-chunk canary from its address and size as well as the
+ * base canary, which gets generated randomly at heap initialization.
+ * Similar to stack canaries, this prevents attackers from forging
+ * heap canaries without an information disclosure vulnerability.
  */
-static inline uint64_t compute_canary(struct z_heap *h, chunkid_t c)
+static inline uint32_t compute_canary(struct z_heap *h, chunkid_t c)
 {
-	uintptr_t addr = (uintptr_t)&chunk_buf(h)[c];
-	chunksz_t size = chunk_size(h, c);
-
-	return (addr ^ size) ^ HEAP_CANARY_MAGIC;
+	return ((c >> 16) | (c << 16)) ^ chunk_size(h, c) ^ h->canary_base;
 }
 
 static inline void set_chunk_canary(struct z_heap *h, chunkid_t c)
@@ -51,8 +49,8 @@ static inline void set_chunk_canary(struct z_heap *h, chunkid_t c)
 
 static inline void verify_chunk_canary(struct z_heap *h, chunkid_t c, void *mem)
 {
-	uint64_t expected = compute_canary(h, c);
-	uint64_t found = chunk_trailer(h, c)->canary;
+	uint32_t expected = compute_canary(h, c);
+	uint32_t found = chunk_trailer(h, c)->canary;
 
 	if (found != expected) {
 		if (found == HEAP_CANARY_POISON) {
@@ -772,6 +770,10 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 	for (int i = 0; i < nb_buckets; i++) {
 		h->buckets[i].next = 0;
 	}
+
+#ifdef CONFIG_SYS_HEAP_CANARIES
+	sys_rand_get(&h->canary_base, sizeof(h->canary_base));
+#endif
 
 	/* chunk containing our struct z_heap */
 	set_chunk_size(h, 0, chunk0_size);
