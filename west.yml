@@ -381,7 +381,7 @@ manifest:
         - testing
         - tee
     - name: trusted-firmware-a
-      revision: 0a29cac8fe0f7bdb835b469d9ea11b8e17377a92
+      revision: 44bcc378b6ec4af8693d008f43983e488f1f5740
       path: modules/tee/tf-a/trusted-firmware-a
       groups:
         - tee
