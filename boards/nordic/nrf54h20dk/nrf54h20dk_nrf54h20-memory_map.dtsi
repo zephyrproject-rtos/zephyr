@@ -176,6 +176,14 @@
 			reg = <0x1c0000 DT_SIZE_K(8)>;
 		};
 
+		mpcconf_partition: partition@1c2000 {
+			reg = <0x1c2000 512>;
+		};
+
+		secondary_mpcconf_partition: partition@1c2200 {
+			reg = <0x1c2200 512>;
+		};
+
 		/* NB: A gap has been left here for future partitions */
 
 		/* 0x1fd000 was chosen for secure_storage_partition such that
