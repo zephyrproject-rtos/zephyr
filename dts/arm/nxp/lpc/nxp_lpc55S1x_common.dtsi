@@ -37,6 +37,12 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	/* lpc55_1x Memory configurations:
+	 *
+	 * LPC55x12: RAMX: 16K, SRAM0: 32K
+	 * LPC55x14: RAMX: 16K, SRAM0: 32K, SRAM1: 16K, USBRAM: 16k
+	 * LPC55x16: RAMX: 16K, SRAM0: 32K, SRAM1: 16K, SRAM2: 16K, USBRAM: 16k
+	 */
 	sramx: memory@4000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x4000000 DT_SIZE_K(16)>;
@@ -85,6 +91,12 @@
 		};
 	};
 
+	/* lpc55_1x Flash memory configurations:
+	 *
+	 * LPC55x12: CODE:  64K, PFR: 12K, BOOT: 128K
+	 * LPC55x14: CODE: 128K, PFR: 12K, BOOT: 128K
+	 * LPC55x16: CODE: 224K, PFR: 12K, BOOT: 128K
+	 */
 	iap: flash-controller@34000 {
 		compatible = "nxp,iap-fmc55";
 		reg = <0x34000 0x18>;
@@ -94,14 +106,14 @@
 
 		flash0: flash@0 {
 			compatible = "soc-nv-flash";
-			reg = <0x0 DT_SIZE_K(246)>;
+			reg = <0x0 DT_SIZE_K(244)>;
 			erase-block-size = <512>;
 			write-block-size = <512>;
 		};
 
-		flash_reserved: flash@3d800 {
+		flash_reserved: flash@3d000 {
 			compatible = "soc-nv-flash";
-			reg = <0x0003d800 DT_SIZE_K(10)>;
+			reg = <0x0003d000 DT_SIZE_K(12)>;
 			status = "disabled";
 		};
 
