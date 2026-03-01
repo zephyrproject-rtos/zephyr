@@ -48,7 +48,6 @@ struct sdhc_stm32_config {
 struct sdhc_stm32_data {
 	struct k_mutex bus_mutex;      /* Sync between commands */
 	struct sdhc_io host_io;        /* Input/Output host configuration */
-	uint32_t cmd_index;            /* current command opcode */
 	struct sdhc_host_props props;  /* current host properties */
 	struct k_sem device_sync_sem;  /* Sync between device communication messages */
 	void *sdio_dma_buf;            /* DMA buffer for SDIO data transfer */
@@ -401,7 +400,6 @@ static int sdhc_stm32_request(const struct device *dev, struct sdhc_command *cmd
 	/* Prevent the clocks to be stopped during the request */
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 
-	dev_data->cmd_index = cmd->opcode;
 	switch (cmd->opcode) {
 	case SD_GO_IDLE_STATE:
 		sdmmc_res = sdhc_stm32_go_idle_state(dev);
