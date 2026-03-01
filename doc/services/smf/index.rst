@@ -610,6 +610,71 @@ state. The statechart for this test is below.
    }
 
 
+Test Instrumentation
+====================
+
+The SMF provides optional instrumentation hooks for observing state machine
+behavior during testing. To enable them, set
+:kconfig:option:`CONFIG_SMF_INSTRUMENTATION`.
+
+When enabled, three hook callbacks can be registered on a state machine context
+via :c:func:`smf_set_hooks`:
+
+- **on_action** — called before each entry, run, or exit action executes.
+- **on_transition** — called after the current state pointer is updated but
+  before the new state's entry actions execute.
+- **on_error** — called when an invalid operation is detected (e.g. a NULL
+  transition target or a transition attempted from an exit action).
+
+.. important:: :c:func:`smf_set_hooks` must be called **after**
+   :c:func:`smf_set_initial`, because :c:func:`smf_set_initial` resets the
+   hooks pointer to ``NULL``. As a consequence, entry actions executed during
+   :c:func:`smf_set_initial` (i.e. the initial state's entry actions and those
+   of its ancestors) will **not** be captured by the hooks.
+
+Example::
+
+	#include <zephyr/smf.h>
+
+	static void on_action(struct smf_ctx *ctx,
+			      const struct smf_state *state,
+			      smf_action_type action_type)
+	{
+		/* Log or record the action */
+	}
+
+	static void on_transition(struct smf_ctx *ctx,
+				  const struct smf_state *source,
+				  const struct smf_state *dest)
+	{
+		/* Log or record the transition */
+	}
+
+	static const struct smf_hooks hooks = {
+		.on_action = on_action,
+		.on_transition = on_transition,
+		/* .on_error = NULL — any member may be NULL */
+	};
+
+	void test_example(void)
+	{
+		struct s_object s_obj;
+
+		/* Set the initial state first */
+		smf_set_initial(SMF_CTX(&s_obj), &demo_states[S0]);
+
+		/* Install hooks after init — initial entry actions are not captured */
+		smf_set_hooks(SMF_CTX(&s_obj), &hooks);
+
+		/* Run the state machine — hooks fire on every action and transition */
+		while (!smf_run_state(SMF_CTX(&s_obj))) {
+			/* ... */
+		}
+	}
+
+When :kconfig:option:`CONFIG_SMF_INSTRUMENTATION` is not set, all
+instrumentation code is compiled out and there is zero runtime overhead.
+
 API Reference
 =============
 
