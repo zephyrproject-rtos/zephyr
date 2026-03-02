@@ -697,6 +697,33 @@ enum flash_ex_op_types {
 	 * Reset flash device.
 	 */
 	FLASH_EX_OP_RESET = 0,
+
+	/**
+	 * Checks whether a block is marked as bad. As input it takes the address of the block
+	 * (off_t *). As output it returns @ref flash_block_status (enum flash_block_status *).
+	 */
+	FLASH_EX_OP_IS_BAD_BLOCK = 1,
+
+	/**
+	 * Marks a block as bad. As input it takes the address of the block (off_t *). There is no
+	 * output.
+	 */
+	FLASH_EX_OP_MARK_BAD_BLOCK = 2,
+};
+
+/**
+ * @brief Enumeration for flash block status.
+ */
+enum flash_block_status {
+	/**
+	 * Block is functional.
+	 */
+	FLASH_BLOCK_GOOD = 0,
+
+	/**
+	 * Block is marked as bad.
+	 */
+	FLASH_BLOCK_BAD = 1,
 };
 
 static inline int z_impl_flash_ex_op(const struct device *dev, uint16_t code,
