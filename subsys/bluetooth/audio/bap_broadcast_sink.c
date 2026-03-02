@@ -695,18 +695,16 @@ static bool pa_decode_base(struct bt_data *data, void *user_data)
 			if (ret < 0) {
 				LOG_DBG("Invalid BASE: %d", ret);
 				return false;
-			} else if (ret != sink->biginfo_num_bis) {
+			} else if (ret != sink->biginfo.num_bis) {
 				LOG_DBG("BASE contains different amount of BIS (%u) than reported "
 					"by BIGInfo (%u)",
-					ret, sink->biginfo_num_bis);
+					ret, sink->biginfo.num_bis);
 				return false;
 			}
 		}
 
 		/* Store newest BASE info until we are BIG synced */
 		if (sink->big == NULL) {
-			sink->qos_cfg.pd = bt_bap_base_get_pres_delay(base);
-
 			sink->subgroup_count = 0;
 			sink->valid_indexes_bitfield = 0;
 			bt_bap_base_foreach_subgroup(base, base_decode_subgroup_cb, sink);
@@ -834,10 +832,7 @@ static void biginfo_recv(struct bt_le_per_adv_sync *sync,
 		return;
 	}
 
-	atomic_set_bit(sink->flags,
-		       BT_BAP_BROADCAST_SINK_FLAG_BIGINFO_RECEIVED);
-	sink->iso_interval = biginfo->iso_interval;
-	sink->biginfo_num_bis = biginfo->num_bis;
+	atomic_set_bit(sink->flags, BT_BAP_BROADCAST_SINK_FLAG_BIGINFO_RECEIVED);
 	if (biginfo->encryption != atomic_test_bit(sink->flags,
 						   BT_BAP_BROADCAST_SINK_FLAG_BIG_ENCRYPTED)) {
 		atomic_set_bit_to(sink->flags,
@@ -850,10 +845,7 @@ static void biginfo_recv(struct bt_le_per_adv_sync *sync,
 		}
 	}
 
-	sink->qos_cfg.framing = biginfo->framing;
-	sink->qos_cfg.phy = biginfo->phy;
-	sink->qos_cfg.sdu = biginfo->max_sdu;
-	sink->qos_cfg.interval = biginfo->sdu_interval;
+	(void)memcpy(&sink->biginfo, biginfo, sizeof(sink->biginfo));
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&sink_cbs, listener, _node) {
 		if (listener->syncable != NULL) {
@@ -1014,13 +1006,26 @@ static int bt_bap_broadcast_sink_setup_stream(struct bt_bap_broadcast_sink *sink
 	stream->iso = &iso->chan;
 	ep->id = id;
 
-	bt_bap_qos_cfg_to_iso_qos(iso->chan.qos->rx, &sink->qos_cfg);
+	(void)memset(&ep->qos, 0, sizeof(ep->qos));
+	ep->qos.pd = bt_bap_base_get_pres_delay((const struct bt_bap_base *)sink->base);
+	ep->qos.framing = sink->biginfo.framing;
+	ep->qos.phy = sink->biginfo.phy;
+	ep->qos.rtn = 0U; /* unknown for broadcast sinks */
+	ep->qos.sdu = sink->biginfo.max_sdu;
+	ep->qos.interval = sink->biginfo.sdu_interval;
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	ep->qos.max_pdu = sink->biginfo.max_pdu;
+	ep->qos.burst_number = sink->biginfo.burst_number;
+	ep->qos.num_subevents = sink->biginfo.sub_evt_count;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
+	bt_bap_qos_cfg_to_iso_qos(iso->chan.qos->rx, &ep->qos);
 	(void)memcpy(&ep->codec_cfg, codec_cfg, sizeof(*codec_cfg));
 
 	bt_bap_iso_unref(iso);
 
 	bt_bap_stream_attach(NULL, stream, ep);
-	stream->qos = &sink->qos_cfg;
+	stream->codec_cfg = &ep->codec_cfg;
+	stream->qos = &ep->qos;
 	stream->group = sink;
 
 	return 0;
@@ -1378,7 +1383,7 @@ int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t inde
 	param.num_bis = sink->stream_count;
 	param.bis_bitfield = indexes_bitfield;
 	param.mse = 0; /* Let controller decide */
-	param.sync_timeout = interval_to_sync_timeout(sink->iso_interval);
+	param.sync_timeout = interval_to_sync_timeout(sink->biginfo.iso_interval);
 	param.encryption = atomic_test_bit(sink->flags,
 					   BT_BAP_BROADCAST_SINK_FLAG_BIG_ENCRYPTED);
 	if (param.encryption) {
