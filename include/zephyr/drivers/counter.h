@@ -813,9 +813,9 @@ static inline int z_impl_counter_set_top_value(const struct device *dev,
  * @retval 1 if any counter interrupt is pending.
  * @retval 0 if no counter interrupt is pending.
  */
-__syscall int counter_get_pending_int(const struct device *dev);
+__syscall uint32_t counter_get_pending_int(const struct device *dev);
 
-static inline int z_impl_counter_get_pending_int(const struct device *dev)
+static inline uint32_t z_impl_counter_get_pending_int(const struct device *dev)
 {
 	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
 
