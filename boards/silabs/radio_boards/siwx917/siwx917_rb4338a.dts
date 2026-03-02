@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2023 Antmicro
+ * Copyright (c) 2024 Silicon Laboratories Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pinctrl/silabs/siwx91x-pinctrl.h>
+#include "common.dtsi"
+
+/ {
+	model = "Silicon Labs BRD4338A (SiWG917 Radio Board)";
+	compatible = "silabs,x917_rb4338a", "silabs,siwg917";
+
+	aliases {
+		led1 = &led1;
+		sw1 = &button1;
+	};
+
+	leds {
+		led1: led_1 {
+			gpios = <&gpioa 10 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	buttons {
+		button1: button_1 {
+			gpios = <&gpioa 11 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
