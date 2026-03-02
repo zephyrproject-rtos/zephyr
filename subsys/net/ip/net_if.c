@@ -1156,6 +1156,7 @@ out:
 #if defined(CONFIG_NET_IPV6_MLD)
 static void join_mcast_allnodes(struct net_if *iface)
 {
+	struct net_if_mcast_addr *maddr;
 	struct net_in6_addr addr;
 	int ret;
 
@@ -1164,6 +1165,12 @@ static void join_mcast_allnodes(struct net_if *iface)
 	}
 
 	net_ipv6_addr_create_ll_allnodes_mcast(&addr);
+
+	maddr = net_if_ipv6_maddr_lookup(&addr, &iface);
+	if (maddr != NULL) {
+		/* Address already present. */
+		return;
+	}
 
 	ret = net_ipv6_mld_join(iface, &addr);
 	if (ret < 0 && ret != -EALREADY && ret != -ENETDOWN) {
@@ -1176,6 +1183,7 @@ static void join_mcast_allnodes(struct net_if *iface)
 static void join_mcast_solicit_node(struct net_if *iface,
 				    struct net_in6_addr *my_addr)
 {
+	struct net_if_mcast_addr *maddr;
 	struct net_in6_addr addr;
 	int ret;
 
@@ -1185,6 +1193,12 @@ static void join_mcast_solicit_node(struct net_if *iface,
 
 	/* Join to needed multicast groups, RFC 4291 ch 2.8 */
 	net_ipv6_addr_create_solicited_node(my_addr, &addr);
+
+	maddr = net_if_ipv6_maddr_lookup(&addr, &iface);
+	if (maddr != NULL) {
+		/* Address already present. */
+		return;
+	}
 
 	ret = net_ipv6_mld_join(iface, &addr);
 	if (ret < 0) {
