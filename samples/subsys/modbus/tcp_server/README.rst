@@ -30,7 +30,7 @@ The following commands build and flash TCP server sample.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/modbus/tcp_server
-   :board: frdm_k64f
+   :board: frdm_k64f, nucleo-h723zg
    :goals: build flash
    :compact:
 
@@ -39,48 +39,39 @@ to the TCP server.
 
 .. code-block:: console
 
-   # pymodbus.console tcp --host 192.0.2.1 --port 502
+   # python3
+   > from pymodbus.client import ModbusTcpClient
+   > client = ModbusTcpClient(host="192.0.2.1",port=502)
 
 The LEDs on the board are controlled by Modbus commands FC01, FC05, FC15.
 For example, to set LED0 on use FC01 command (write_coil).
 
 .. code-block:: console
 
-   > client.connect
-   > client.write_coil address=0 value=1 slave=1
+   > client.connect()
+   > result = client.write_coil(address=0, value=1, slave=1)
 
 Client should confirm successful communication and LED0 should light.
 
 .. code-block:: console
 
-   {
-       "address": 0,
-       "value": true
-   }
+   > result.isError()
+     False
 
 To set LED0 off but LED1 and LED2 on use FC15 command (write_coils).
 
 .. code-block:: console
 
-   > client.write_coils address=0 values=0,1,1 slave=1
+   > client.write_coils(address=0, values=[0,1,1], slave=1)
 
 To read LED0, LED1, LED2 state FC05 command (read_coils) can be used.
 
 .. code-block:: console
 
-   > client.read_coils address=0 count=3 slave=1
-   {
-       "bits": [
-           false,
-           true,
-           true,
-           false,
-           false,
-           false,
-           false,
-           false
-       ]
-   }
+   > result = client.read_coils(address=0, count=3, slave=1)
+   > result.bits
+     [False, True, True, False, False, False, False, False]
+
 
 It is also possible to write and read the holding registers.
 This however does not involve any special interaction
@@ -90,25 +81,20 @@ To write single holding registers use FC06 command (write_register),
 
 .. code-block:: console
 
-   > client.write_register address=0 value=42 slave=1
+   > result = client.write_register(address=0, value=42, slave=1)
 
 or FC16 command (write_registers).
 
 .. code-block:: console
 
-   > client.write_registers address=0 values=42,42,42 slave=1
+   > result = client.write_registers(address=0, values=[42,42,42], slave=1)
 
 To read holding registers use FC03 command (read_holding_registers).
 
 .. code-block:: console
 
-   > client.read_holding_registers address=0 count=3 slave=1
-   {
-       "registers": [
-           42,
-           42,
-           42
-       ]
-   }
+   > result = client.read_holding_registers(address=0, count=3, slave=1)
+   > result.registers
+     [42, 42, 42]
 
 .. _`PyModbus`: https://github.com/pymodbus-dev/pymodbus
