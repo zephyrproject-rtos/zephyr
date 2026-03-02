@@ -442,11 +442,22 @@ config MBEDTLS_PLATFORM_SNPRINTF_ALT
 
 endif # MBEDTLS_PLATFORM_NO_STD_FUNCTIONS
 
-config MBEDTLS_PEM_CERTIFICATE_FORMAT
-	bool "Support for PEM certificate format"
+config MBEDTLS_BASE64_C
+	bool "Base64 module"
 	help
-	  By default only DER (binary) format of certificates is supported. Enable
-	  this option to enable support for PEM format.
+	  This module is required for PEM support (required by X.509).
+
+config MBEDTLS_PEM_PARSE_C
+	bool "PEM decoding / parsing"
+	select MBEDTLS_BASE64_C
+	help
+	  This module adds support for decoding / parsing PEM files.
+
+config MBEDTLS_PEM_WRITE_C
+	bool "PEM encoding / writing"
+	select MBEDTLS_BASE64_C
+	help
+	  This module adds support for encoding / writing PEM files.
 
 config MBEDTLS_HAVE_ASM
 	bool "Use of assembly code"

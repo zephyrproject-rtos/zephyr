@@ -401,11 +401,16 @@
 #define MBEDTLS_DHM_C
 #endif
 
-#if defined(CONFIG_MBEDTLS_PEM_CERTIFICATE_FORMAT) && \
-    defined(MBEDTLS_X509_CRT_PARSE_C)
-#define MBEDTLS_PEM_PARSE_C
-#define MBEDTLS_PEM_WRITE_C
+#if defined(CONFIG_MBEDTLS_BASE64_C)
 #define MBEDTLS_BASE64_C
+#endif
+
+#if defined(CONFIG_MBEDTLS_PEM_PARSE_C)
+#define MBEDTLS_PEM_PARSE_C
+#endif
+
+#if defined(CONFIG_MBEDTLS_PEM_WRITE_C)
+#define MBEDTLS_PEM_WRITE_C
 #endif
 
 #if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C) || \
