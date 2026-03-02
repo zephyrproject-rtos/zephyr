@@ -88,10 +88,13 @@ extern "C" {
 #define CRC24_PGP_INIT_VALUE 0x00B704CEU
 
 /** CRC32_C initial value */
+#define CRC32_C_INIT_VAL 0xFFFFFFFFU
+
+/** CRC32_IEEE initial value */
 #define CRC32_IEEE_INIT_VAL 0xFFFFFFFFU
 
 /** CRC32_K_4_2 initial value */
-#define CRC32_C_INIT_VAL 0xFFFFFFFFU
+#define CRC32_K_4_2_INIT_VAL 0xFFFFFFFFU
 
 /** @endcond */
 
