@@ -38,9 +38,6 @@ extern "C" {
  * @param addr Multicast group to join
  *
  * @retval 0 If multicast address was registered and joined successfully.
- * @retval -EALREADY If multicast address was already registered and joined.
- *                   This is non-fatal return code, the caller should still release
- *                   the address with net_ipv6_mld_leave() if no longer needed.
  * @retval -ENETDOWN If multicast address was registered but not joined yet due to
  *                   network interface being down. The address will be joined when
  *                   interface is up again.
