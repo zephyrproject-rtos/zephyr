@@ -642,4 +642,31 @@ ZTEST_USER(net_igmp, test_group_rejoin)
 	socket_leave_group_with_index(&my_addr);
 }
 
+ZTEST(net_igmp, test_igmp_multi_join)
+{
+	is_join_msg_ok = false;
+	ignore_already = false;
+	join_group();
+	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Timeout while waiting join event");
+	zassert_true(is_join_msg_ok, "Join msg invalid");
+
+	/* Second join would give -EALREADY, no report sent, still ref count will be increased */
+	is_join_msg_ok = false;
+	ignore_already = true;
+	join_group();
+	k_msleep(THREAD_SLEEP);
+	zassert_false(is_join_msg_ok, "Unexpected join msg");
+
+	/* First leave should not send report due to two refs on the address */
+	is_leave_msg_ok = false;
+	leave_group();
+	k_msleep(THREAD_SLEEP);
+	zassert_false(is_leave_msg_ok, "Unexpected leave msg");
+
+	is_leave_msg_ok = false;
+	leave_group();
+	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Timeout while waiting leave event");
+	zassert_true(is_leave_msg_ok, "Leave msg invalid");
+}
+
 ZTEST_SUITE(net_igmp, NULL, igmp_setup, NULL, NULL, igmp_teardown);
