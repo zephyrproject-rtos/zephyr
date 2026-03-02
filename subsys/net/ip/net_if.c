@@ -4885,6 +4885,9 @@ struct net_if_mcast_addr *net_if_ipv4_maddr_add(struct net_if *iface,
 		maddr->is_used = true;
 		maddr->address.family = NET_AF_INET;
 		maddr->address.in_addr.s4_addr32[0] = addr->s4_addr32[0];
+#if defined(CONFIG_NET_IPV4_IGMPV3)
+		maddr->sources_len = 0;
+#endif
 		net_if_maddr_ref_init(maddr);
 
 		NET_DBG("interface %d (%p) address %s added",
