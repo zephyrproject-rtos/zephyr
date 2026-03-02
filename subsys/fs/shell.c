@@ -845,6 +845,10 @@ static int cmd_mount_fat(const struct shell *sh, size_t argc, char **argv)
 	char *mntpt;
 	int res;
 
+	if (fatfs_mnt.mnt_point != NULL) {
+		return -EBUSY;
+	}
+
 	mntpt = mntpt_prepare(argv[1]);
 	if (mntpt == NULL) {
 		shell_error(sh, "Failed to allocate buffer for mount point");
