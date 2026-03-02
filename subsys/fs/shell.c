@@ -306,8 +306,7 @@ static int cmd_cp(const struct shell *sh, size_t argc, char **argv)
 	err = fs_open(&file_src, path_src, FS_O_READ);
 	if (err != 0) {
 		shell_error(sh, "Failed to open %s (%d)", path_src, err);
-		err = -EIO;
-		goto exit;
+		return -EIO;
 	}
 
 	err = fs_open(&file_dst, path_dst, FS_O_CREATE | FS_O_TRUNC | FS_O_WRITE);
@@ -322,26 +321,20 @@ static int cmd_cp(const struct shell *sh, size_t argc, char **argv)
 		if (buf_len < 0) {
 			shell_error(sh, "Failed to read %s (%d)", path_src, (int)buf_len);
 			err = -EIO;
-			goto close;
+			break;
 		}
 		if (buf_len == 0) {
 			break;
 		}
 
 		num_written = fs_write(&file_dst, buf, buf_len);
-		if (num_written < 0) {
+		if (num_written != buf_len) {
 			shell_error(sh, "Failed to write %s (%d)", path_dst, (int)num_written);
 			err = -EIO;
-			goto close;
-		}
-		if (num_written != buf_len) {
-			shell_error(sh, "Failed to write %s", path_dst);
-			err = -EIO;
-			goto close;
+			break;
 		}
 	}
 
-close:
 	close_err = fs_close(&file_dst);
 	if (close_err != 0) {
 		shell_error(sh, "Failed to close %s", path_dst);
@@ -355,7 +348,6 @@ close_src:
 		err = -EIO;
 	}
 
-exit:
 	return err;
 }
 
