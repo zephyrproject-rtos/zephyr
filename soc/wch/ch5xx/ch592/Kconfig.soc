@@ -1,13 +1,13 @@
 # Copyright (c) 2026 Mike Kasprzak (distraction.engineer)
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SERIES_CH59X
+config SOC_SERIES_CH592
 	bool
 	select SOC_FAMILY_CH5XX
 	select SOC_HAS_BOOTLOADER
 	select SOC_HAS_SRAM1
 
 config SOC_SERIES
-	default "ch59x" if SOC_SERIES_CH59X
+	default "ch592" if SOC_SERIES_CH592
 
 rsource "Kconfig.soc.*"
