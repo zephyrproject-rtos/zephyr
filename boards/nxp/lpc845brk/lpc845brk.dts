@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nxp/lpc/nxp_lpc845.dtsi>
+#include <zephyr/dt-bindings/pinctrl/lpc84x-pinctrl.h>
 
 / {
 	model = "NXP LPC845-BRK Board";
@@ -15,9 +16,34 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
 	};
 };
 
 &syscon {
 	status = "okay";
+};
+
+&iocon {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	clock-source = "frg0";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&swm {
+	status = "okay";
+
+	uart0_default: uart0_default {
+		group0 {
+			pinmux = <LPC84X_PINMUX_M(LPC84X_SWM_USART0_TXD, P0_25)>,
+				 <LPC84X_PINMUX_M(LPC84X_SWM_USART0_RXD, P0_24)>;
+		};
+	};
 };
