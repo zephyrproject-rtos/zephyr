@@ -1050,6 +1050,7 @@ set_source_files_properties(${OFFSETS_C_PATH} ${ZEPHYR_BASE}/lib/heap/heap_const
   PROPERTIES COMPILE_OPTIONS $<TARGET_PROPERTY:compiler,prohibit_lto>)
 
 target_sources(${OFFSETS_LIB} PRIVATE ${ZEPHYR_BASE}/lib/heap/heap_constants.c)
+target_compile_definitions(${OFFSETS_LIB} PRIVATE _ZEPHYR_OFFSETS_LIB)
 
 target_link_libraries(${OFFSETS_LIB} zephyr_interface)
 add_dependencies(zephyr_interface
