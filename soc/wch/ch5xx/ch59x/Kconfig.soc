@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Mike Kasprzak (distraction.engineer)
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_CH59X
+  bool
+  select SOC_FAMILY_CH5XX
+
+config SOC_SERIES
+  default "ch59x" if SOC_SERIES_CH59X
+
+rsource "Kconfig.soc.*"

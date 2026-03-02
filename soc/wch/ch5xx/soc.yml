@@ -3,10 +3,14 @@
 
 # NOTE: SOC names are sorted in decending order, as they are in the datasheets
 
+vendor: wch
+comment: "WCH (WinChipHead) SOC"
 family:
-  # Reference: https://www.wch-ic.com/downloads/CH592DS1_PDF.html
-  - name: ch59x-v4b
+  - name: ch5xx
     series:
+      # Reference: https://www.wch-ic.com/downloads/CH592DS1_PDF.html
+      # cpuclusters:
+      #   - name: qingxe-v4b
       - name: ch592
         socs:
           - name: ch592x
@@ -18,9 +22,9 @@ family:
           - name: ch591f
           - name: ch591d
           - name: ch591r
-  # Reference: https://www.wch-ic.com/downloads/CH583DS1_PDF.html
-  - name: ch58x-v4a
-    series:
+      # Reference: https://www.wch-ic.com/downloads/CH583DS1_PDF.html
+      # cpuclusters:
+      #   - name: qingxe-v4a
       - name: ch583
         socs:
           - name: ch583m
@@ -28,9 +32,9 @@ family:
         socs:
           - name: ch582m
           - name: ch582f
-  # Reference: https://www.wch-ic.com/downloads/CH585DS1_PDF.html
-  - name: ch58x-v3c
-    series:
+      # Reference: https://www.wch-ic.com/downloads/CH585DS1_PDF.html
+      # cpuclusters:
+      #   - name: qingxe-v3c
       - name: ch585
         socs:
           - name: ch585m
@@ -42,9 +46,9 @@ family:
           - name: ch584m
           - name: ch584x
           - name: ch584f
-  # Reference: https://www.wch-ic.com/downloads/CH572DS1_PDF.html
-  - name: ch57x-v3c
-    series:
+      # Reference: https://www.wch-ic.com/downloads/CH572DS1_PDF.html
+      # cpuclusters:
+      #   - name: qingxe-v3c
       - name: ch572
         socs:
           - name: ch572d
@@ -55,9 +59,9 @@ family:
           - name: ch570d
           - name: ch570q
           - name: ch570e
-  # Reference: https://www.wch-ic.com/downloads/CH573DS1_PDF.html
-  - name: ch57x-v3a
-    series:
+      # Reference: https://www.wch-ic.com/downloads/CH573DS1_PDF.html
+      # cpuclusters:
+      #   - name: qingxe-v3a
       - name: ch573
         socs:
           - name: ch573x

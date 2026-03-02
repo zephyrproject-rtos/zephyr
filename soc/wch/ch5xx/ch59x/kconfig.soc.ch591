@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Mike Kasprzak (distraction.engineer)
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_CH591
+  bool
+  select SOC_SERIES_CH59X
+
+config SOC
+  default "ch591" if SOC_CH591
