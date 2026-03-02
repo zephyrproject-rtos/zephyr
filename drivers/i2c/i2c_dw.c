@@ -1466,7 +1466,7 @@ static int i2c_dw_initialize(const struct device *dev)
 		I2C_CONFIG_REG_INIT(n).config_func = i2c_config_##n,                               \
 		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
 		.sda_hold_tx = DT_INST_PROP_OR(n, sda_hold_tx, SDA_HOLD_INVALID),                  \
-		.sda_hold_rx = DT_INST_PROP_OR(n, scl_hold_rx, SDA_HOLD_INVALID),                  \
+		.sda_hold_rx = DT_INST_PROP_OR(n, sda_hold_rx, SDA_HOLD_INVALID),                  \
 		.irqnumber = DT_INST_IRQN(n),                                                      \
 		.lcnt_offset = (int16_t)DT_INST_PROP_OR(n, lcnt_offset, 0),                        \
 		.hcnt_offset = (int16_t)DT_INST_PROP_OR(n, hcnt_offset, 0),                        \
