@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 NXP
+ * Copyright 2023-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -10,10 +10,14 @@
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/dt-bindings/regulator/nxp_vref.h>
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/linear_range.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/logging/log.h>
 
 #include <fsl_device_registers.h>
+
+LOG_MODULE_REGISTER(nxp_vref, CONFIG_REGULATOR_LOG_LEVEL);
 
 static const struct linear_range utrim_range = LINEAR_RANGE_INIT(1000000, 100000U, 0x0U, 0xBU);
 
@@ -29,6 +33,8 @@ struct regulator_nxp_vref_config {
 	bool current_compensation_en;
 	bool chop_oscillator_en;
 	bool internal_voltage_regulator_en;
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 };
 
 static int regulator_nxp_vref_enable(const struct device *dev)
@@ -176,6 +182,26 @@ static int regulator_nxp_vref_init(const struct device *dev)
 
 	regulator_common_data_init(dev);
 
+	if (config->clock_dev) {
+		if (!device_is_ready(config->clock_dev)) {
+			LOG_ERR("clock device not ready");
+			return -ENODEV;
+		}
+
+		ret = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
+		if (ret && ret != -ENOSYS) {
+			/* Real error occurred */
+			LOG_ERR("Failed to configure clock: %d", ret);
+			return ret;
+		}
+
+		ret = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (ret) {
+			LOG_ERR("Failed to enable clock: %d", ret);
+			return ret;
+		}
+	}
+
 	ret = regulator_nxp_vref_disable(dev);
 	if (ret < 0) {
 		return ret;
@@ -215,6 +241,12 @@ static int regulator_nxp_vref_init(const struct device *dev)
 				nxp_chop_oscillator_en),			\
 		.internal_voltage_regulator_en = DT_INST_PROP(inst,		\
 				nxp_internal_voltage_regulator_en),		\
+		.clock_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clocks), \
+				(DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst))), \
+				(NULL)),                        \
+		.clock_subsys = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clocks), \
+			((clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, name)), \
+			((clock_control_subsys_t)0)),                                    \
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(inst, regulator_nxp_vref_init, NULL, &data_##inst,\
