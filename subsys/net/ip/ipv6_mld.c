@@ -228,10 +228,6 @@ int net_ipv6_mld_join(struct net_if *iface, const struct net_in6_addr *addr)
 		return 0;
 	}
 
-	if (!net_if_is_up(iface)) {
-		return -ENETDOWN;
-	}
-
 	if (net_if_is_offloaded(iface)) {
 		goto out;
 	}
