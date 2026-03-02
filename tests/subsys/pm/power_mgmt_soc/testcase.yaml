@@ -4,6 +4,7 @@ tests:
       - cc26x2r1_launchxl
       - cc1352r1_launchxl
       - lp_em_cc2340r5
+      - lp_em_cc2340r5moda
       - lp_em_cc2340r53
       - lp_em_cc2745r10_q1/cc2745r10_q1
       - lp_em_cc2745r10_q1/cc2755r10
