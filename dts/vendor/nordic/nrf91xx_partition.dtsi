@@ -1,5 +1,6 @@
 /*
  * Copyright 2024 Embeint Inc
+ * Copyright (c) 2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -8,21 +9,10 @@
 
 &flash0 {
 	/*
-	 * Default Flash planning for nRF91 series SoCs.
-	 * This layout matches (by necessity) that in the TF-M repository:
-	 *
-	 * 0x0000_0000 BL2 - MCUBoot (64 KB)
-	 * 0x0001_0000 Primary image area (448 KB):
-	 *    0x0001_0000 Secure     image primary (256 KB)
-	 *    0x0005_0000 Non-secure image primary (192 KB)
-	 * 0x0008_0000 Secondary image area (448 KB):
-	 *    0x0008_0000 Secure     image secondary (256 KB)
-	 *    0x000c_0000 Non-secure image secondary (192 KB)
-	 * 0x000f_0000 Protected Storage Area (16 KB)
-	 * 0x000f_4000 Internal Trusted Storage Area (8 KB)
-	 * 0x000f_6000 OTP / NV counters area (8 KB)
-	 * 0x000f_8000 Non-secure storage, used when built with NRF_NS_STORAGE=ON,
-	 *             otherwise unused (32 KB)
+	 * Default Flash planning for nRF91 series SoCs with MCU boot and minimal TFM.
+	 * - Lowest 64 kB allocated to MCU boot.
+	 * - Two images, each with Lowest 32 kB allocated to Secure image.
+	 * - Highest 32 kB allocated for settings storage.
 	 */
 	partitions {
 		compatible = "fixed-partitions";
@@ -35,56 +25,23 @@
 		};
 
 		slot0_partition: partition@10000 {
-			compatible = "fixed-subpartitions";
-			label = "image-0";
-			reg = <0x00010000 0x70000>;
-			ranges = <0x0 0x10000 0x70000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			slot0_s_partition: partition@0 {
-				label = "image-0-secure";
-				reg = <0x00000000 0x40000>;
-			};
-
-			slot0_ns_partition: partition@40000 {
-				label = "image-0-nonsecure";
-				reg = <0x00040000 0x30000>;
-			};
+			label = "image-0-secure";
+			reg = <0x00010000 0x8000>;
 		};
 
-		slot1_partition: partition@80000 {
-			compatible = "fixed-subpartitions";
-			label = "image-1";
-			reg = <0x00080000 0x70000>;
-			ranges = <0x0 0x80000 0x70000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			slot1_s_partition: partition@0 {
-				label = "image-1-secure";
-				reg = <0x00000000 0x40000>;
-			};
-
-			slot1_ns_partition: partition@40000 {
-				label = "image-1-nonsecure";
-				reg = <0x00040000 0x30000>;
-			};
+		slot0_ns_partition: partition@18000 {
+			label = "image-0-nonsecure";
+			reg = <0x00018000 0x6c000>;
 		};
 
-		tfm_ps_partition: partition@f0000 {
-			label = "tfm-ps";
-			reg = <0x000f0000 0x00004000>;
+		slot1_partition: partition@84000 {
+			label = "image-1-secure";
+			reg = <0x00084000 0x8000>;
 		};
 
-		tfm_its_partition: partition@f4000 {
-			label = "tfm-its";
-			reg = <0x000f4000 0x00002000>;
-		};
-
-		tfm_otp_partition: partition@f6000 {
-			label = "tfm-otp";
-			reg = <0x000f6000 0x00002000>;
+		slot1_ns_partition: partition@8c000 {
+			label = "image-1-nonsecure";
+			reg = <0x0008c000 0x6c0000>;
 		};
 
 		storage_partition: partition@f8000 {
@@ -96,34 +53,48 @@
 
 &sram0 {
 	/*
-	 * Default SRAM planning when building for nRF91xx with
-	 * ARM TrustZone-M support
-	 * - Lowest 88 kB SRAM allocated to Secure image (sram0_s).
-	 * - Upper 168 kB SRAM allocated to Non-Secure image (sram0_ns).
-	 * Of the memory allocated to the Non-Secure image
-	 * - 40 kB SRAM reserved for and used by the modem library (sram0_ns_modem).
-	 * - 128 kB allocated to the application (sram0_ns_app).
+	 * Default SRAM planning for nRF91 series SoCs without MCU boot and minimal TFM.
+	 * - Lowest 32 kB SRAM allocated to Secure image (sram0_s).
+	 * - Shared section between modem and app cores needs to be in the lower 128 kB.
 	 */
 	sram0_s: sram@0 {
 		/* Secure image memory */
-		reg = <0x0 DT_SIZE_K(88)>;
+		reg = <0x0 0x8000>;
 	};
 
-	sram0_ns: sram@16000 {
+	sram0_ns: sram@8000 {
 		/* Non-Secure image memory */
-		reg = <0x16000 DT_SIZE_K(168)>;
+		reg = <0x8000 0x38000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x16000 DT_SIZE_K(168)>;
+		ranges = <0x0 0x8000 0x38000>;
 
 		sram0_ns_modem: sram0_ns@0 {
 			/* Modem (shared) memory */
-			reg = <0x0 DT_SIZE_K(40)>;
+			reg = <0x0 0x4800>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x0 0x4800>;
+
+			cpuapp_cpucell_ipc_shm_ctrl: sram0_ns_modem@0 {
+				/* Modem IPC control */
+				reg = <0x0 0x4e8>;
+			};
+
+			cpuapp_cpucell_ipc_shm_heap: sram0_ns_modem@4e8 {
+				/* Modem IPC transmit */
+				reg = <0x4e8 0x2080>;
+			};
+
+			cpucell_cpuapp_ipc_shm_heap: sram0_ns_modem@2568 {
+				/* Modem IPC receive */
+				reg = <0x2568 0x2000>;
+			};
 		};
 
-		sram0_ns_app: sram0_ns@a000 {
+		sram0_ns_app: sram0_ns@4800 {
 			/* Non-Secure application memory */
-			reg = <0xa000 DT_SIZE_K(128)>;
+			reg = <0x4800 0x33800>;
 		};
 	};
 };

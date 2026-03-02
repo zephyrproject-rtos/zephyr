@@ -20,4 +20,80 @@ config BT_WAIT_NOP
 config I2C
 	default $(dt_compat_on_bus,$(DT_COMPAT_NXP_PCAL6408A),i2c)
 
+# minimal TFM
+config TFM_PARTITION_PROTECTED_STORAGE
+	default n
+
+config TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
+	default n
+
+config TFM_PARTITION_CRYPTO
+	default n
+
+config TFM_PARTITION_PLATFORM
+	default n
+
+
+config TFM_CRYPTO_RNG_MODULE_ENABLED
+	default n
+
+config TFM_CRYPTO_KEY_MODULE_ENABLED
+	default n
+
+config TFM_CRYPTO_AEAD_MODULE_ENABLED
+	default n
+
+config TFM_CRYPTO_MAC_MODULE_ENABLED
+	default n
+
+config TFM_CRYPTO_HASH_MODULE_ENABLED
+	default n
+
+config TFM_CRYPTO_CIPHER_MODULE_ENABLED
+	default n
+
+config TFM_CRYPTO_ASYM_ENCRYPT_MODULE_ENABLED
+	default n
+
+config TFM_CRYPTO_ASYM_SIGN_MODULE_ENABLED
+	default n
+
+config TFM_CRYPTO_KEY_DERIVATION_MODULE_ENABLED
+	default n
+
+
+# config TFM_PLATFORM_NV_COUNTER_MODULE_DISABLED
+# 	default n
+
+# config TFM_CRYPTO_BUILTIN_KEYS
+# 	default n
+
+# config TFM_CRYPTO_ENGINE_BUF_SIZE
+# 	default 1
+
+# config TFM_CRYPTO_CONC_OPER_NUM
+# 	default 1
+
+# config TFM_CRYPTO_IOVEC_BUFFER_SIZE
+# 	default 1024
+
+# config TFM_CRYPTO_PARTITION_STACK_SIZE
+# 	default 0x800
+
+
+# config PSA_DEFAULT_OFF
+# 	default y
+
+# config PSA_WANT_GENERATE_RANDOM
+# 	default y
+
+# config PSA_WANT_ALG_HMAC_DRBG
+# 	default y
+
+
+# config TFM_EXPERIMENTAL
+# 	default n
+config MBEDTLS_PSA_CRYPTO_CLIENT
+	default n
+
 endif # BOARD_NRF9151DK_NRF9151 || BOARD_NRF9151DK_NRF9151_NS
