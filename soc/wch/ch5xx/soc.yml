@@ -1,0 +1,57 @@
+# Copyright (c) 2026 Mike Kasprzak (distraction.engineer)
+# SPDX-License-Identifier: Apache-2.0
+
+# NOTE: SOC names are sorted in decending order, as they are in the datasheets
+
+family:
+  # Reference: https://www.wch-ic.com/downloads/CH592DS1_PDF.html
+  - name: ch59x-v4b
+    series:
+      - name: ch592
+        socs:
+          - name: ch592x
+          - name: ch592f
+          - name: ch592a
+          - name: ch592d
+      - name: ch591
+        socs:
+          - name: ch591f
+          - name: ch591d
+          - name: ch591r
+  # Reference: https://www.wch-ic.com/downloads/CH583DS1_PDF.html
+  - name: ch58x-v4a
+    series:
+      - name: ch583
+        socs:
+          - name: ch583m
+      - name: ch582
+        socs:
+          - name: ch582m
+          - name: ch582f
+  # Reference: https://www.wch-ic.com/downloads/CH585DS1_PDF.html
+  - name: ch58x-v3c
+    series:
+      - name: ch585
+        socs:
+          - name: ch585m
+          - name: ch585f
+          - name: ch585c
+          - name: ch585d
+      - name: ch584
+        socs:
+          - name: ch584m
+          - name: ch584x
+          - name: ch584f
+  # Reference: https://www.wch-ic.com/downloads/CH573DS1_PDF.html
+  - name: ch57x-v3a
+    series:
+      - name: ch573
+        socs:
+          - name: ch573x
+          - name: ch573f
+          - name: ch573q
+      - name: ch571
+        socs:
+          - name: ch571f
+          - name: ch573d
+          - name: ch573k
