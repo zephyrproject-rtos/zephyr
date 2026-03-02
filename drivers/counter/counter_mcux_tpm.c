@@ -8,6 +8,7 @@
 
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/nxp_mcux_clock_subsys.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/barrier.h>
@@ -30,7 +31,10 @@ struct mcux_tpm_config {
 	DEVICE_MMIO_NAMED_ROM(tpm_mmio);
 
 	const struct device *clock_dev;
+	/* Register clock (gate) token for clock_control_on/off(). */
 	clock_control_subsys_t clock_subsys;
+	/* Function clock (rate) token for clock_control_get_rate(). */
+	clock_control_subsys_t clock_subsys_rate;
 
 	tpm_clock_source_t tpm_clock_source;
 	tpm_clock_prescale_t prescale;
@@ -218,9 +222,30 @@ static uint32_t mcux_tpm_get_top_value(const struct device *dev)
 	return base->MOD;
 }
 
+static int mcux_tpm_calc_freq(const struct device *dev, uint32_t *freq)
+{
+	const struct mcux_tpm_config *config = dev->config;
+	uint32_t input_clock_freq;
+	int err;
+
+	err = clock_control_get_rate(config->clock_dev, config->clock_subsys_rate,
+				   &input_clock_freq);
+	if (err != 0) {
+		return err;
+	}
+
+	*freq = input_clock_freq / (1U << config->prescale);
+	return 0;
+}
+
 static uint32_t mcux_tpm_get_freq(const struct device *dev)
 {
 	struct mcux_tpm_data *data = dev->data;
+	uint32_t freq;
+
+	if (mcux_tpm_calc_freq(dev, &freq) == 0) {
+		data->freq = freq;
+	}
 
 	return data->freq;
 }
@@ -230,7 +255,6 @@ static int mcux_tpm_init(const struct device *dev)
 	const struct mcux_tpm_config *config = dev->config;
 	struct mcux_tpm_data *data = dev->data;
 	tpm_config_t tpmConfig;
-	uint32_t input_clock_freq;
 	TPM_Type *base;
 
 	DEVICE_MMIO_NAMED_MAP(dev, tpm_mmio, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
@@ -261,13 +285,11 @@ static int mcux_tpm_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
-				   &input_clock_freq)) {
-		LOG_ERR("Could not get clock frequency");
+	err = mcux_tpm_calc_freq(dev, &data->freq);
+	if (err != 0) {
+		LOG_ERR("Could not get clock frequency: %d", err);
 		return -EINVAL;
 	}
-
-	data->freq = input_clock_freq / (1U << config->prescale);
 
 	TPM_GetDefaultConfig(&tpmConfig);
 	tpmConfig.prescale = config->prescale;
@@ -303,8 +325,10 @@ static DEVICE_API(counter, mcux_tpm_driver_api) = {
 	static const struct mcux_tpm_config mcux_tpm_config_ ## n = {		\
 		DEVICE_MMIO_NAMED_ROM_INIT(tpm_mmio, DT_DRV_INST(n)),		\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
-		.clock_subsys =							\
-			(clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
+		.clock_subsys =						\
+			NXP_MCUX_DT_INST_CLOCK_GATE_SUBSYS_PTR(n),	\
+		.clock_subsys_rate =					\
+			NXP_MCUX_DT_INST_CLOCK_RATE_SUBSYS_PTR(n),	\
 		.tpm_clock_source = kTPM_SystemClock,				\
 		.prescale = TO_TPM_PRESCALE_DIVIDE(DT_INST_PROP(n, prescaler)),	\
 		.info = {							\
