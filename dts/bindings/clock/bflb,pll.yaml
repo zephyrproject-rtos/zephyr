@@ -1,0 +1,27 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: Bouffalolab PLL settings
+
+compatible: "bflb,pll"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  clocks:
+    type: phandle-array
+    required: true
+    description: |
+      Source of the PLL, phandle pointing to either crystal, or RC32M clock.
+
+  top-frequency:
+    type: int
+    description: |
+      Targeted highest output clock frequency (Hz)
+    required: true
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - select # SoC-Specific PLL source ID

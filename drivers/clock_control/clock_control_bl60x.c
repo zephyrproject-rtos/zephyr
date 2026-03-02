@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+ * Copyright (c) 2025-2026 MASSDRIVER EI (massdriver.space)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,24 +21,26 @@ LOG_MODULE_REGISTER(clock_control_bl60x, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #include <bouffalolab/bl60x/pds_reg.h>
 #include <bouffalolab/bl60x/l1c_reg.h>
 #include <bouffalolab/bl60x/extra_defines.h>
+#include <bouffalolab/bl60x/sf_ctrl_reg.h>
 #include <zephyr/drivers/clock_control/clock_control_bflb_common.h>
 
 #define CLK_SRC_IS(clk, src)                                                                       \
 	DT_SAME_NODE(DT_CLOCKS_CTLR_BY_IDX(DT_INST_CLOCKS_CTLR_BY_NAME(0, clk), 0),                \
 		     DT_INST_CLOCKS_CTLR_BY_NAME(0, src))
 
-#define CLOCK_TIMEOUT               1024
-#define EFUSE_RC32M_TRIM_OFFSET     0x0C
-#define EFUSE_RC32M_TRIM_EN_POS     19
-#define EFUSE_RC32M_TRIM_PARITY_POS 18
-#define EFUSE_RC32M_TRIM_POS        10
-#define EFUSE_RC32M_TRIM_MSK        0x3FC00
+#define CLOCK_TIMEOUT			1024
+#define EFUSE_RC32M_TRIM_OFFSET		0x0C
+#define EFUSE_RC32M_TRIM_EN_POS		19
+#define EFUSE_RC32M_TRIM_PARITY_POS	18
+#define EFUSE_RC32M_TRIM_POS		10
+#define EFUSE_RC32M_TRIM_MSK		0x3FC00
 
-#define CRYSTAL_ID_FREQ_32000000 0
-#define CRYSTAL_ID_FREQ_24000000 1
-#define CRYSTAL_ID_FREQ_38400000 2
-#define CRYSTAL_ID_FREQ_40000000 3
-#define CRYSTAL_ID_FREQ_26000000 4
+#define CRYSTAL_ID_FREQ_32000000	0
+#define CRYSTAL_ID_FREQ_24000000	1
+#define CRYSTAL_ID_FREQ_38400000	2
+#define CRYSTAL_ID_FREQ_40000000	3
+#define CRYSTAL_ID_FREQ_26000000	4
+#define CRYSTAL_VALUES_CNT		5
 
 #define CRYSTAL_FREQ_TO_ID(freq) CONCAT(CRYSTAL_ID_FREQ_, freq)
 
@@ -51,8 +53,8 @@ enum bl60x_clkid {
 };
 
 struct clock_control_bl60x_pll_config {
-	enum bl60x_clkid source;
-	bool overclock;
+	enum bl60x_clkid	source;
+	uint32_t		top_frequency;
 };
 
 struct clock_control_bl60x_root_config {
@@ -72,12 +74,12 @@ struct clock_control_bl60x_config {
 struct clock_control_bl60x_data {
 	bool crystal_enabled;
 	bool pll_enabled;
-	struct clock_control_bl60x_pll_config pll;
-	struct clock_control_bl60x_root_config root;
-	struct clock_control_bl60x_bclk_config bclk;
+	struct clock_control_bl60x_pll_config		pll;
+	struct clock_control_bl60x_root_config		root;
+	struct clock_control_bl60x_bclk_config		bclk;
 };
 
-const static uint32_t clock_control_bl60x_crystal_SDMIN_table[5] = {
+const static uint32_t clock_control_bl60x_crystal_SDMIN_table[CRYSTAL_VALUES_CNT] = {
 	/* 32M */
 	0x3C0000,
 	/* 24M */
@@ -245,7 +247,8 @@ static void clock_control_bl60x_set_pll_source(uint32_t source)
 	sys_write32(tmp, PDS_BASE + PDS_CLKPLL_TOP_CTRL_OFFSET);
 }
 
-static void clock_control_bl60x_init_pll(enum bl60x_clkid source, uint32_t crystal_id)
+static void clock_control_bl60x_init_pll(const enum bl60x_clkid source, const int32_t crystal_id,
+					 const uint32_t sdmin)
 {
 	uint32_t tmp;
 	uint32_t old_rootclk;
@@ -304,12 +307,10 @@ static void clock_control_bl60x_init_pll(enum bl60x_clkid source, uint32_t cryst
 	tmp = sys_read32(PDS_BASE + PDS_CLKPLL_SDM_OFFSET);
 	if (source == BL60X_CLKID_CLK_CRYSTAL) {
 		tmp = (tmp & PDS_CLKPLL_SDMIN_UMSK) |
-		      (clock_control_bl60x_crystal_SDMIN_table[crystal_id]
-		       << PDS_CLKPLL_SDMIN_POS);
+		      (sdmin << PDS_CLKPLL_SDMIN_POS);
 	} else {
 		tmp = (tmp & PDS_CLKPLL_SDMIN_UMSK) |
-		      (clock_control_bl60x_crystal_SDMIN_table[CRYSTAL_ID_FREQ_32000000]
-		       << PDS_CLKPLL_SDMIN_POS);
+		      (sdmin << PDS_CLKPLL_SDMIN_POS);
 	}
 	sys_write32(tmp, PDS_BASE + PDS_CLKPLL_SDM_OFFSET);
 
@@ -324,7 +325,7 @@ static void clock_control_bl60x_init_pll(enum bl60x_clkid source, uint32_t cryst
 	sys_write32(tmp, PDS_BASE + PDS_PU_RST_CLKPLL_OFFSET);
 	clock_bflb_settle();
 
-	/* enable PPL clock actual? */
+	/* enable PLL clock actual? */
 	tmp = sys_read32(PDS_BASE + PDS_PU_RST_CLKPLL_OFFSET);
 	tmp = (tmp & PDS_PU_CLKPLL_UMSK) | (1U << PDS_PU_CLKPLL_POS);
 	sys_write32(tmp, PDS_BASE + PDS_PU_RST_CLKPLL_OFFSET);
@@ -430,6 +431,7 @@ static uint32_t clock_control_bl60x_get_xclk(const struct device *dev)
 
 static uint32_t clock_control_bl60x_get_clk(const struct device *dev)
 {
+	struct clock_control_bl60x_data *data = dev->data;
 	uint32_t tmp;
 	uint32_t hclk_div;
 
@@ -446,15 +448,21 @@ static uint32_t clock_control_bl60x_get_clk(const struct device *dev)
 	}
 	tmp = sys_read32(GLB_BASE + GLB_CLK_CFG0_OFFSET);
 	tmp = (tmp & GLB_REG_PLL_SEL_MSK) >> GLB_REG_PLL_SEL_POS;
-	if (tmp == 3) {
-		return MHZ(192) / (hclk_div + 1);
-	} else if (tmp == 2) {
-		return MHZ(160) / (hclk_div + 1);
-	} else if (tmp == 1) {
-		return MHZ(120) / (hclk_div + 1);
-	} else if (tmp == 0) {
-		return MHZ(48) / (hclk_div + 1);
+
+	if (tmp == BL60X_PLL_ID_DIV1) {
+		return BFLB_MUL_CLK(MHZ(192), data->pll.top_frequency, BL60X_PLL_TOP_FREQ)
+			/ (hclk_div + 1);
+	} else if (tmp == BL60X_PLL_ID_DIV5_3) {
+		return BFLB_MUL_CLK(MHZ(160), data->pll.top_frequency, BL60X_PLL_TOP_FREQ)
+			/ (hclk_div + 1);
+	} else if (tmp == BL60X_PLL_ID_DIV5_8) {
+		return BFLB_MUL_CLK(MHZ(120), data->pll.top_frequency, BL60X_PLL_TOP_FREQ)
+			/ (hclk_div + 1);
+	} else if (tmp == BL60X_PLL_ID_DIV4) {
+		return BFLB_MUL_CLK(MHZ(48), data->pll.top_frequency, BL60X_PLL_TOP_FREQ)
+			/ (hclk_div + 1);
 	}
+
 	return 0;
 }
 
@@ -504,11 +512,20 @@ static void clock_control_bl60x_set_PKA_clock(uint32_t pka_clock)
 
 static void clock_control_bl60x_init_root_as_pll(const struct device *dev)
 {
-	struct clock_control_bl60x_data *data = dev->data;
 	const struct clock_control_bl60x_config *config = dev->config;
+	struct clock_control_bl60x_data *data = dev->data;
 	uint32_t tmp;
 
-	clock_control_bl60x_init_pll(data->pll.source, config->crystal_id);
+	if (data->pll.source == BL60X_CLKID_CLK_CRYSTAL) {
+		clock_control_bl60x_init_pll(data->pll.source, config->crystal_id,
+			BFLB_MUL_CLK(clock_control_bl60x_crystal_SDMIN_table[config->crystal_id],
+				     data->pll.top_frequency, BL60X_PLL_TOP_FREQ));
+	} else {
+		clock_control_bl60x_init_pll(data->pll.source, CRYSTAL_ID_FREQ_32000000,
+			BFLB_MUL_CLK(
+				clock_control_bl60x_crystal_SDMIN_table[CRYSTAL_ID_FREQ_32000000],
+				data->pll.top_frequency, BL60X_PLL_TOP_FREQ));
+	}
 
 	/* enable all 'PDS' clocks */
 	tmp = sys_read32(PDS_BASE + PDS_CLKPLL_OUTPUT_EN_OFFSET);
@@ -839,40 +856,41 @@ static const struct clock_control_bl60x_config clock_control_bl60x_config = {
 
 static struct clock_control_bl60x_data clock_control_bl60x_data = {
 	.crystal_enabled = DT_NODE_HAS_STATUS_OKAY(DT_INST_CLOCKS_CTLR_BY_NAME(0, crystal)),
-	.pll_enabled = DT_NODE_HAS_STATUS_OKAY(DT_INST_CLOCKS_CTLR_BY_NAME(0, pll_192)),
+	.pll_enabled = DT_NODE_HAS_STATUS_OKAY(DT_INST_CLOCKS_CTLR_BY_NAME(0, pll_top)),
 
 	.root = {
-#if CLK_SRC_IS(root, pll_192)
-			.source = bl60x_clkid_clk_pll,
-			.pll_select = DT_CLOCKS_CELL(DT_INST_CLOCKS_CTLR_BY_NAME(0, root), select),
+#if CLK_SRC_IS(root, pll_top)
+		.source = bl60x_clkid_clk_pll,
+		.pll_select = DT_CLOCKS_CELL(DT_INST_CLOCKS_CTLR_BY_NAME(0, root), select),
 #elif CLK_SRC_IS(root, crystal)
-			.source = bl60x_clkid_clk_crystal,
+		.source = bl60x_clkid_clk_crystal,
 #else
-			.source = bl60x_clkid_clk_rc32m,
+		.source = bl60x_clkid_clk_rc32m,
 #endif
-			.divider = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, root), divider),
-		},
+		.divider = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, root), divider),
+	},
 
 	.pll = {
-#if CLK_SRC_IS(pll_192, crystal)
-			.source = bl60x_clkid_clk_crystal,
+#if CLK_SRC_IS(pll_top, crystal)
+		.source = bl60x_clkid_clk_crystal,
 #else
-			.source = bl60x_clkid_clk_rc32m,
+		.source = bl60x_clkid_clk_rc32m,
 #endif
-		},
+		.top_frequency = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, pll_top), top_frequency),
+	},
 
 	.bclk = {
-			.divider = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, bclk), divider),
-		},
+		.divider = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, bclk), divider),
+	},
 };
 
-BUILD_ASSERT(CLK_SRC_IS(pll_192, crystal) || CLK_SRC_IS(root, crystal)
+BUILD_ASSERT((CLK_SRC_IS(pll_top, crystal) || CLK_SRC_IS(root, crystal))
 		     ? DT_NODE_HAS_STATUS_OKAY(DT_INST_CLOCKS_CTLR_BY_NAME(0, crystal))
 		     : 1,
 	     "Crystal must be enabled to use it");
 
-BUILD_ASSERT(CLK_SRC_IS(root, pll_192) ?
-	DT_NODE_HAS_STATUS_OKAY(DT_INST_CLOCKS_CTLR_BY_NAME(0, pll_192)) : 1,
+BUILD_ASSERT(CLK_SRC_IS(root, pll_top) ?
+	DT_NODE_HAS_STATUS_OKAY(DT_INST_CLOCKS_CTLR_BY_NAME(0, pll_top)) : 1,
 	"PLL must be enabled to use it");
 
 BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_INST_CLOCKS_CTLR_BY_NAME(0, rc32m)), "RC32M is always on");
