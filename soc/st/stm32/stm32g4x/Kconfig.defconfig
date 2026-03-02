@@ -5,7 +5,8 @@
 
 if SOC_SERIES_STM32G4X
 
-rsource "Kconfig.defconfig.stm32g4*"
+configdefault NUM_IRQS
+	default 102
 
 configdefault SHARED_INTERRUPTS
 	default y if $(dt_nodelabel_enabled,timers1) && $(dt_nodelabel_enabled,timers15)
