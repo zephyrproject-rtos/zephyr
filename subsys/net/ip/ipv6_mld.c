@@ -210,6 +210,41 @@ drop:
 	return ret;
 }
 
+int net_ipv6_mld_rejoin(struct net_if *iface, const struct net_in6_addr *addr)
+{
+	struct net_if_mcast_addr *maddr;
+	int ret = 0;
+
+	maddr = net_if_ipv6_maddr_lookup(addr, &iface);
+	if (maddr == NULL) {
+		return -ENOENT;
+	}
+
+	if (net_if_flag_is_set(iface, NET_IF_IPV6_NO_MLD)) {
+		return 0;
+	}
+
+	if (net_if_is_offloaded(iface)) {
+		goto out;
+	}
+
+	ret = net_ipv6_mld_send_single(iface, addr, NET_IPV6_MLDv2_CHANGE_TO_EXCLUDE_MODE);
+	if (ret < 0) {
+		return ret;
+	}
+
+out:
+	net_if_ipv6_maddr_join(iface, maddr);
+
+	net_if_mcast_monitor(iface, &maddr->address, true);
+
+	net_mgmt_event_notify_with_info(NET_EVENT_IPV6_MCAST_JOIN, iface,
+					&maddr->address.in6_addr,
+					sizeof(struct net_in6_addr));
+
+	return ret;
+}
+
 int net_ipv6_mld_join(struct net_if *iface, const struct net_in6_addr *addr)
 {
 	struct net_if_mcast_addr *maddr;
