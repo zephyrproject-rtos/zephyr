@@ -42,6 +42,19 @@ family:
           - name: ch584m
           - name: ch584x
           - name: ch584f
+  # Reference: https://www.wch-ic.com/downloads/CH572DS1_PDF.html
+  - name: ch57x-v3c
+    series:
+      - name: ch572
+        socs:
+          - name: ch572d
+          - name: ch572q
+          - name: ch572r
+      - name: ch570
+        socs:
+          - name: ch570d
+          - name: ch570q
+          - name: ch570e
   # Reference: https://www.wch-ic.com/downloads/CH573DS1_PDF.html
   - name: ch57x-v3a
     series:
