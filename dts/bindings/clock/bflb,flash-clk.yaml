@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  The BL61x Flash Clock
+  BFLB Flash Clock
   Source -> divider -> CLK
-  Only has settings for Bank 1 (boot flash) at the moment.
+  Only has settings for Bank 1 on BL61x (boot flash) at the moment.
 
-compatible: "bflb,bl61x-flash-clk"
+compatible: "bflb,flash-clk"
 
 include: [base.yaml, clock-controller.yaml]
 
@@ -15,7 +15,8 @@ properties:
     type: phandle-array
     required: true
     description: Source clocks.
-      Using WIFIPLL results in WIFIPLL x 0.375 (120M).
+      Using PLL as source results in using the 120M output on BL61x and BL60x,
+      and 144M output on BL70x
       When using RC32M main clock, use BCLK.
 
   divider:
