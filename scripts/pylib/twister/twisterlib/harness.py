@@ -480,6 +480,9 @@ class Pytest(Harness):
         if runner := hardware.runner or options.west_runner:
             command.append(f'--runner={runner}')
 
+        if west_flash_cmd := options.west_flash_cmd or hardware.west_flash_cmd:
+            command.append(f'--west-flash-cmd={west_flash_cmd}')
+
         if hardware.runner_params:
             for param in hardware.runner_params:
                 command.append(f'--runner-params={param}')
