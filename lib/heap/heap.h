@@ -253,17 +253,9 @@ static inline chunksz_t min_chunk_size(struct z_heap *h)
 	return chunksz(chunk_header_bytes(h) + 1);
 }
 
-static inline size_t chunk_usable_bytes(struct z_heap *h, chunkid_t c)
+static inline size_t chunksz_to_bytes(struct z_heap *h, chunksz_t chunksz_in)
 {
-	return chunk_size(h, c) * CHUNK_UNIT - chunk_header_bytes(h);
-}
-
-static inline size_t mem_align_gap(struct z_heap *h, void *mem)
-{
-	if (chunk_header_bytes(h) == CHUNK_UNIT) {
-		return 0;
-	}
-	return ((uintptr_t)mem - chunk_header_bytes(h)) & (CHUNK_UNIT - 1);
+	return chunksz_in * CHUNK_UNIT;
 }
 
 static inline int bucket_idx(struct z_heap *h, chunksz_t sz)
@@ -282,9 +274,9 @@ static inline void get_alloc_info(struct z_heap *h, size_t *alloc_bytes,
 
 	for (c = right_chunk(h, 0); c < h->end_chunk; c = right_chunk(h, c)) {
 		if (chunk_used(h, c)) {
-			*alloc_bytes += chunk_usable_bytes(h, c);
+			*alloc_bytes += chunksz_to_bytes(h, chunk_size(h, c));
 		} else if (!solo_free_header(h, c)) {
-			*free_bytes += chunk_usable_bytes(h, c);
+			*free_bytes += chunksz_to_bytes(h, chunk_size(h, c));
 		}
 	}
 }
