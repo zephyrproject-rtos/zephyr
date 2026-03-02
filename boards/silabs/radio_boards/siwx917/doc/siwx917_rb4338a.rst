@@ -46,9 +46,25 @@ Programming and Debugging
 Flashing
 ========
 
-Applications for the ``siwx917_rb4338a`` board can be built in the usual
-way. The flash method requires on `Simplicity Commander`_ installed on the host.
+First, ensure `Simplicity Commander`_ is properly installed on the host.
 
+The SiWG917 contains a Network Co-Processor (NWP). Ensure the NWP is flashed
+with the firmware associated with the current Zephyr version. The firmware is
+provided with the blobs of hal_silabs:
+
+.. code-block:: console
+
+   west blobs fetch hal_silabs
+
+Then, flash the firmware with:
+
+.. code-block:: console
+
+   commander flash modules/hal/silabs/zephyr/blobs/wiseconnect/connectivity_firmware/standard/SiWG917-*.rps
+
+This operation has to be done once, until the user update the Zephyr release.
+
+Applications for the ``siwx917_rb4338a`` board can be built in the usual way.
 Then, connect the BRD4002A board with a mounted BRD4338A radio module to your
 host computer using the USB port.
 
