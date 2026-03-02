@@ -55,8 +55,7 @@
 #define MBEDTLS_PLATFORM_MS_TIME_ALT
 #endif
 
-#if defined(CONFIG_MBEDTLS_TEST)
-#define MBEDTLS_SELF_TEST
+#if defined(CONFIG_MBEDTLS_DEBUG_C)
 #define MBEDTLS_DEBUG_C
 #endif
 
@@ -351,7 +350,6 @@
 
 #if defined(CONFIG_MBEDTLS_DEBUG)
 #define MBEDTLS_ERROR_C
-#define MBEDTLS_DEBUG_C
 #define MBEDTLS_SSL_DEBUG_ALL
 #define MBEDTLS_SSL_ALL_ALERT_MESSAGES
 #endif

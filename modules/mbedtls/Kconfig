@@ -86,6 +86,7 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config MBEDTLS_DEBUG
 	bool "mbed TLS debug activation"
+	imply MBEDTLS_DEBUG_C
 	help
 	  Enable debugging activation for mbed TLS configuration. If you use
 	  mbedTLS/Zephyr integration (e.g. native TLS sockets), this will
@@ -165,11 +166,8 @@ config MBEDTLS_MEMORY_DEBUG
 	  prints (to stderr) all (fatal) messages on memory allocation
 	  issues. Enables function for 'debug output' of allocated memory.
 
-config MBEDTLS_TEST
-	bool "Compile internal self test functions"
-	depends on MBEDTLS_BUILTIN
-	help
-	  Enable self test function for the crypto algorithms
+config MBEDTLS_DEBUG_C
+	bool "Debug functions (only for TLS and X.509)"
 
 config MBEDTLS_INSTALL_PATH
 	string "mbedTLS install path"
