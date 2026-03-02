@@ -556,8 +556,8 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 		if (unlikely(!lll->duration_reload || lll->duration_expire))
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 		{
-			/* Put back to resume state for continuous scanning */
-			if (!lll->ticks_window) {
+			/* Put back to resume state for continuous scanning if not being stopped. */
+			if ((lll->ticks_window == 0U) && (lll->is_stop == 0U)) {
 				int err;
 
 				/* Set the resume prepare function to use for

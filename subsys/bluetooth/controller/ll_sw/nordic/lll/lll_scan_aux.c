@@ -646,8 +646,6 @@ sync_aux_prepare_done:
 
 static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 {
-	struct lll_scan *lll;
-
 	/* Auxiliary context shall not resume when being preempted, i.e. they
 	 * shall not use -EAGAIN as return value.
 	 */
@@ -658,8 +656,25 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 	 */
 	LL_ASSERT_DBG(next != curr);
 
+	struct lll_scan *lll;
+
+#if defined(CONFIG_BT_CENTRAL)
+	struct lll_scan_aux *lll_aux;
+	uint8_t is_lll_scan;
+
+	lll_aux = curr;
+	lll = ull_scan_aux_lll_parent_get(lll_aux, &is_lll_scan);
+	if ((is_lll_scan != 0U) && (lll->conn != NULL) && (lll->conn->central.initiated != 0U)) {
+		/* If a CONNECT_REQ PDU has been enqueued for transmission then initiator shall not
+		 * abort.
+		 */
+		return 0;
+	}
+
+#endif /* CONFIG_BT_CENTRAL */
+
 	lll = ull_scan_lll_is_valid_get(next);
-	if (lll) {
+	if (lll != NULL) {
 		/* Next event is scan context, let the current auxiliary scan
 		 * continue.
 		 */
@@ -677,6 +692,44 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 
 	/* NOTE: This is not a prepare being cancelled */
 	if (!prepare_param) {
+#if defined(CONFIG_BT_CENTRAL)
+		/* If a CONNECT_REQ PDU has been enqueued for transmission and are being aborted,
+		 * say by scan disable, then release reserved rx nodes that would be used for
+		 * connection complete and channel selection algorithm event.
+		 */
+		struct lll_scan_aux *lll_aux;
+		struct lll_scan *lll;
+		uint8_t is_lll_scan;
+
+		lll_aux = param;
+		lll = ull_scan_aux_lll_parent_get(lll_aux, &is_lll_scan);
+		if ((is_lll_scan != 0U) && (lll->conn != NULL) &&
+		    (lll->conn->central.initiated != 0U)) {
+			struct node_rx_ftr *ftr;
+			struct node_rx_pdu *rx;
+
+			/* `abort_cb` without `is_abort_cb` call shall only happen for scan disable,
+			 * hence, `initiated` and `is_stop` flags are not reset here.
+			 */
+
+			/* Use the reserved/saved node rx for connection complete, release it */
+			rx = lll_aux->node_conn_rx;
+			LL_ASSERT_DBG(rx);
+			lll_aux->node_conn_rx = NULL;
+
+			ftr = &(rx->rx_ftr);
+
+			rx->hdr.type = NODE_RX_TYPE_RELEASE;
+			ull_rx_put(rx->hdr.link, rx);
+
+			/* Use the reserved/saved node rs for CSA event, release it */
+			rx = ftr->extra;
+			LL_ASSERT_DBG(rx);
+			rx->hdr.type = NODE_RX_TYPE_RELEASE;
+			ull_rx_put_sched(rx->hdr.link, rx);
+		}
+#endif /* CONFIG_BT_CENTRAL */
+
 		/* Perform event abort here.
 		 * After event has been cleanly aborted, clean up resources
 		 * and dispatch event done.
@@ -1646,10 +1699,11 @@ static void isr_rx_connect_rsp(void *param)
 isr_rx_connect_rsp_do_close:
 	ull_rx_put_sched(rx->hdr.link, rx);
 
-	/* Check if LLL scheduled auxiliary PDU reception by scan
-	 * context or auxiliary PDU reception by aux context
+	/* Put back to resume state if LLL scheduled auxiliary PDU reception by scan context, or
+	 * subsequent auxiliary PDU reception by LLL aux context, and not being stop due to
+	 * connection creation or scan disable. Otherwise, the radio event is done.
 	 */
-	if (lll->is_aux_sched) {
+	if ((lll->is_aux_sched != 0U) && (lll->is_stop == 0U)) {
 		struct node_rx_pdu *node_rx;
 
 		lll->is_aux_sched = 0U;
