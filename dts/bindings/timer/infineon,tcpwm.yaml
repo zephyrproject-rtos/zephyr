@@ -31,3 +31,7 @@ properties:
     type: int
     required: true
     description: Peripheral clock destination ID for this TCPWM instance
+
+  index:
+    type: int
+    description: Index of the TCPWM channel
