@@ -71,8 +71,14 @@
 #define BL60X_CLKID_CLK_CRYSTAL	BFLB_CLKID_CLK_CRYSTAL
 /** Bus Clock */
 #define BL60X_CLKID_CLK_BCLK	BFLB_CLKID_CLK_BCLK
+/** F32K Clock */
+#define BL60X_CLKID_CLK_F32K	BFLB_CLKID_CLK_F32K
+/** XTAL32K Clock */
+#define BL60X_CLKID_CLK_XTAL32K	BFLB_CLKID_CLK_XTAL32K
+/** RC32K Clock */
+#define BL60X_CLKID_CLK_RC32K	BFLB_CLKID_CLK_RC32K
 /** PLL clock, the standard root frequency of the PLL is 480MHz */
-#define BL60X_CLKID_CLK_PLL	4
+#define BL60X_CLKID_CLK_PLL	BFLB_CLKID_CLK_PRIVATE
 
 /** The reference top frequency for the PLL at the root clock (PLL root / 2.5 here) */
 #define BL60X_PLL_TOP_FREQ	(DT_FREQ_M(192))

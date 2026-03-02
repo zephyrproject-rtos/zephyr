@@ -34,6 +34,11 @@ LOG_MODULE_REGISTER(clock_control_bl60x, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #define EFUSE_RC32M_TRIM_PARITY_POS	18
 #define EFUSE_RC32M_TRIM_POS		10
 #define EFUSE_RC32M_TRIM_MSK		0x3FC00
+#define EFUSE_RC32K_TRIM_OFFSET		0x0C
+#define EFUSE_RC32K_TRIM_EN_POS		31
+#define EFUSE_RC32K_TRIM_PARITY_POS	30
+#define EFUSE_RC32K_TRIM_POS		20
+#define EFUSE_RC32K_TRIM_MSK		0x3FF00000
 
 #define CRYSTAL_ID_FREQ_32000000	0
 #define CRYSTAL_ID_FREQ_24000000	1
@@ -50,6 +55,9 @@ enum bl60x_clkid {
 	bl60x_clkid_clk_crystal = BL60X_CLKID_CLK_CRYSTAL,
 	bl60x_clkid_clk_pll = BL60X_CLKID_CLK_PLL,
 	bl60x_clkid_clk_bclk = BL60X_CLKID_CLK_BCLK,
+	bl60x_clkid_clk_f32k = BL60X_CLKID_CLK_F32K,
+	bl60x_clkid_clk_xtal32k = BL60X_CLKID_CLK_XTAL32K,
+	bl60x_clkid_clk_rc32k = BL60X_CLKID_CLK_RC32K,
 };
 
 struct clock_control_bl60x_pll_config {
@@ -80,12 +88,18 @@ struct clock_control_bl60x_flashclk_config {
 	bool			rx_clock_invert;
 };
 
+struct clock_control_bl60x_f32k_config {
+	enum bl60x_clkid	source;
+	bool			xtal_enabled;
+};
+
 struct clock_control_bl60x_data {
 	bool crystal_enabled;
 	struct clock_control_bl60x_pll_config		pll;
 	struct clock_control_bl60x_root_config		root;
 	struct clock_control_bl60x_bclk_config		bclk;
 	struct clock_control_bl60x_flashclk_config	flashclk;
+	struct clock_control_bl60x_f32k_config		f32k;
 };
 
 const static uint32_t clock_control_bl60x_crystal_SDMIN_table[CRYSTAL_VALUES_CNT] = {
@@ -100,6 +114,44 @@ const static uint32_t clock_control_bl60x_crystal_SDMIN_table[CRYSTAL_VALUES_CNT
 	/* 26M */
 	0x49D39D,
 };
+
+static void clock_control_bl60x_clock_at_least_us(uint32_t us)
+{
+	for (uint32_t i = 0; i < us * 16; i++) {
+		clock_bflb_settle();
+	}
+}
+
+/* 0: rc32k
+ * 1: xtal32k
+ * 3: dig32k
+ */
+static void clock_control_bl60x_set_f32k_src(uint8_t src)
+{
+	uint32_t tmp;
+
+	tmp = sys_read32(HBN_BASE + HBN_GLB_OFFSET);
+	tmp &= HBN_F32K_SEL_UMSK;
+	tmp |= src << HBN_F32K_SEL_POS;
+	sys_write32(tmp, HBN_BASE + HBN_GLB_OFFSET);
+}
+
+static void clock_control_bl60x_rc32k_enabled(bool yes)
+{
+	uint32_t tmp;
+
+	tmp = sys_read32(HBN_BASE + HBN_GLB_OFFSET);
+	tmp &= HBN_PU_RC32K_UMSK;
+	if (yes) {
+		tmp |= HBN_PU_RC32K_MSK;
+	}
+	sys_write32(tmp, HBN_BASE + HBN_GLB_OFFSET);
+}
+
+static bool clock_control_bl60x_rc32k_is_enabled(void)
+{
+	return (sys_read32(HBN_BASE + HBN_GLB_OFFSET) & HBN_PU_RC32K_MSK) != 0;
+}
 
 static int clock_control_bl60x_deinit_crystal(void)
 {
@@ -623,6 +675,91 @@ static __ramfunc void clock_control_bl60x_update_flash_clk(const struct device *
 	clock_bflb_settle();
 }
 
+static int clock_control_bl60x_clock_trim_32K(void)
+{
+	uint32_t tmp;
+	int err;
+	uint32_t trim, trim_parity;
+	const struct device *efuse = DEVICE_DT_GET_ONE(bflb_efuse);
+
+	err = syscon_read_reg(efuse, EFUSE_RC32K_TRIM_OFFSET, &trim);
+	if (err < 0) {
+		LOG_ERR("Error: Couldn't read efuses: err: %d.\n", err);
+		return err;
+	}
+	if (!((trim >> EFUSE_RC32K_TRIM_EN_POS) & 1)) {
+		LOG_ERR("RC32K trim disabled!");
+		return -EINVAL;
+	}
+
+	trim_parity = (trim >> EFUSE_RC32K_TRIM_PARITY_POS) & 1;
+	trim = (trim & EFUSE_RC32K_TRIM_MSK) >> EFUSE_RC32K_TRIM_POS;
+
+	if (trim_parity != (POPCOUNT(trim) & 1)) {
+		LOG_ERR("Bad trim parity");
+		return -EINVAL;
+	}
+
+	tmp = sys_read32(HBN_BASE + HBN_RC32K_CTRL0_OFFSET);
+	tmp |= HBN_RC32K_EXT_CODE_EN_MSK;
+	tmp = (tmp & HBN_RC32K_CODE_FR_EXT_UMSK) | trim << HBN_RC32K_CODE_FR_EXT_POS;
+	sys_write32(tmp, HBN_BASE + HBN_RC32K_CTRL0_OFFSET);
+
+	clock_bflb_settle();
+
+	return 0;
+}
+
+static int clock_control_bl60x_update_f32k(const struct device *dev)
+{
+	struct clock_control_bl60x_data *data = dev->data;
+	bool wait_change = false;
+	uint32_t tmp, tmpold;
+	int ret;
+
+	if (data->f32k.source != bl60x_clkid_clk_xtal32k
+		&& data->f32k.source != bl60x_clkid_clk_rc32k) {
+		return -EINVAL;
+	}
+
+	if (!clock_control_bl60x_rc32k_is_enabled()) {
+		clock_control_bl60x_rc32k_enabled(true);
+		wait_change = true;
+	}
+
+	if (data->f32k.xtal_enabled) {
+		tmp = sys_read32(HBN_BASE + HBN_XTAL32K_OFFSET);
+		tmpold = tmp;
+		tmp |= HBN_PU_XTAL32K_MSK;
+		tmp |= HBN_PU_XTAL32K_BUF_MSK;
+		if (tmpold != tmp) {
+			sys_write32(tmp, HBN_BASE + HBN_XTAL32K_OFFSET);
+			wait_change = true;
+		}
+	} else {
+		tmp = sys_read32(HBN_BASE + HBN_XTAL32K_OFFSET);
+		tmp &= HBN_PU_XTAL32K_UMSK;
+		tmp &= HBN_PU_XTAL32K_BUF_UMSK;
+		sys_write32(tmp, HBN_BASE + HBN_XTAL32K_OFFSET);
+	}
+
+	if (wait_change) {
+		clock_control_bl60x_clock_at_least_us(1000);
+	}
+
+	if (data->f32k.source == bl60x_clkid_clk_rc32k) {
+		ret = clock_control_bl60x_clock_trim_32K();
+		if (ret < 0) {
+			return ret;
+		}
+		clock_control_bl60x_set_f32k_src(0);
+	} else {
+		clock_control_bl60x_set_f32k_src(1);
+	}
+
+	return 0;
+}
+
 static int clock_control_bl60x_update_clocks(const struct device *dev)
 {
 	struct clock_control_bl60x_data *data = dev->data;
@@ -643,6 +780,11 @@ static int clock_control_bl60x_update_clocks(const struct device *dev)
 
 	clock_control_bl60x_set_PKA_clock(0);
 	clock_control_bl60x_cache_2T(false);
+
+	ret = clock_control_bl60x_update_f32k(dev);
+	if (ret < 0) {
+		return ret;
+	}
 
 	if (data->crystal_enabled) {
 		if (clock_control_bl60x_init_crystal() < 0) {
@@ -978,6 +1120,15 @@ static struct clock_control_bl60x_data clock_control_bl60x_data = {
 		.rx_clock_invert = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, flash), rx_clock_invert),
 		.divider = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, flash), divider),
 	},
+
+	.f32k = {
+#if CLK_SRC_IS(f32k, xtal32k)
+		.source = bl60x_clkid_clk_xtal32k,
+#else
+		.source = bl60x_clkid_clk_rc32k,
+#endif
+		.xtal_enabled = DT_NODE_HAS_STATUS_OKAY(DT_INST_CLOCKS_CTLR_BY_NAME(0, xtal32k)),
+	},
 };
 
 BUILD_ASSERT((CLK_SRC_IS(pll_top, crystal) || CLK_SRC_IS(root, crystal))
@@ -991,6 +1142,11 @@ BUILD_ASSERT((CLK_SRC_IS(root, pll_top)
 	"PLL must be enabled to use it");
 
 BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_INST_CLOCKS_CTLR_BY_NAME(0, rc32m)), "RC32M is always on");
+BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_INST_CLOCKS_CTLR_BY_NAME(0, rc32k)), "RC32K is always on");
+
+BUILD_ASSERT(CLK_SRC_IS(f32k, xtal32k)
+	? DT_NODE_HAS_STATUS_OKAY(DT_INST_CLOCKS_CTLR_BY_NAME(0, xtal32k)) : 1,
+	"XTAL32K must be enabled to use it");
 
 BUILD_ASSERT(DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, rc32m), clock_frequency)
 	== BFLB_RC32M_FREQUENCY, "RC32M must be 32M");
