@@ -8,6 +8,7 @@
 
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/nxp_mcux_clock_subsys.h>
 #include <zephyr/irq.h>
 #include <fsl_pit.h>
 
@@ -46,7 +47,10 @@ struct nxp_pit_config {
 	void (**irq_config_func)(const struct device *dev);
 #endif
 	const struct device *clock_dev;
+	/* Register clock (gate) token for clock_control_on/off(). */
 	clock_control_subsys_t clock_subsys;
+	/* Function clock (rate) token for clock_control_get_rate(). */
+	clock_control_subsys_t clock_subsys_rate;
 	struct nxp_pit_channel_data *const *data;
 	const struct device *const *channels;
 };
@@ -146,7 +150,7 @@ static uint32_t nxp_pit_get_frequency(const struct device *dev)
 	const struct nxp_pit_config *config = dev->config;
 	uint32_t clock_rate;
 
-	if (clock_control_get_rate(config->clock_dev, config->clock_subsys, &clock_rate)) {
+	if (clock_control_get_rate(config->clock_dev, config->clock_subsys_rate, &clock_rate)) {
 		LOG_ERR("Failed to get clock rate");
 		return 0;
 	}
@@ -359,8 +363,8 @@ static DEVICE_API(counter, nxp_pit_driver_api) = {
 		.num_channels = DT_INST_FOREACH_CHILD_SEP_VARGS(				\
 			n, DT_NODE_HAS_COMPAT, (+), nxp_pit_channel),				\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),				\
-		.clock_subsys = (clock_control_subsys_t)					\
-				DT_INST_CLOCKS_CELL(n, name),					\
+		.clock_subsys = NXP_MCUX_DT_INST_CLOCK_GATE_SUBSYS_PTR(n),\
+		.clock_subsys_rate = NXP_MCUX_DT_INST_CLOCK_RATE_SUBSYS_PTR(n),\
 		.data = nxp_pit_##n##_channel_datas,						\
 		.channels = nxp_pit_##n##_channels,						\
 	};											\
