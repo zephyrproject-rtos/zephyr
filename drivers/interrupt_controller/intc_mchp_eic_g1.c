@@ -60,6 +60,8 @@ LOG_MODULE_REGISTER(intc_mchp_eic_g1, CONFIG_INTC_LOG_LEVEL);
 #define PORTD_SPECIAL_PINS_1_OFFSET DT_INST_PROP_BY_IDX(0, portd_special_pins_1, 1)
 #define PORTD_SPECIAL_PINS_2_OFFSET DT_INST_PROP_BY_IDX(0, portd_special_pins_2, 1)
 
+#define EIC_LINES_PER_PORT 16
+
 #define TIMEOUT_VALUE_US 1000
 #define DELAY_US         2
 
@@ -119,7 +121,7 @@ struct eic_mchp_dev_data {
  */
 uint8_t find_eic_line_from_pin(int port, int pin)
 {
-	uint8_t eic_line = pin % 16;
+	uint8_t eic_line = pin % EIC_LINES_PER_PORT;
 	uint32_t pin_mask = BIT(pin);
 
 	switch (port) {
@@ -303,21 +305,39 @@ int eic_mchp_config_interrupt(struct eic_config_params *eic_pin_config)
 		return -EBUSY;
 	}
 	eic_disable(eic_cfg->regs);
+	eic_sync_wait(eic_cfg->regs);
 
 	/* Configure the pin as input and connect it to eic peripheral */
 	eic_pin_config->port_addr->PORT_PINCFG[pin] |= PORT_PINCFG_PMUXEN(1) | PORT_PINCFG_INEN(1);
 	eic_pin_config->port_addr->PORT_PMUX[pmux_offset] &=
 		((pin & 1) == 0) ? (~PORT_PMUX_PMUXE_Msk) : (~PORT_PMUX_PMUXO_Msk);
 
-	/* - The bit position for respective eic line in the config
-	 * register is calculated and written into the respective config
-	 * register
-	 */
+/* The bit position for respective eic line in the config
+ * register is calculated and written into the respective config
+ * register
+ */
+#ifdef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG
+	if (EIC_CONFIG_REG_IDX(eic_line) == 0) {
+		eic_cfg->regs->EIC_CONFIG0 &=
+			~(EIC_CONFIG_EIC_LINE_MSK << EIC_TRIG_TYPE_BIT_POS(eic_line));
+
+		eic_cfg->regs->EIC_CONFIG0 |=
+			((eic_pin_config->trig_type) << EIC_TRIG_TYPE_BIT_POS(eic_line));
+	} else {
+		eic_cfg->regs->EIC_CONFIG1 &=
+			~(EIC_CONFIG_EIC_LINE_MSK << EIC_TRIG_TYPE_BIT_POS(eic_line));
+
+		eic_cfg->regs->EIC_CONFIG1 |=
+			((eic_pin_config->trig_type) << EIC_TRIG_TYPE_BIT_POS(eic_line));
+	}
+#else
 	eic_cfg->regs->EIC_CONFIG[EIC_CONFIG_REG_IDX(eic_line)] &=
 		~(EIC_CONFIG_EIC_LINE_MSK << EIC_TRIG_TYPE_BIT_POS(eic_line));
 
 	eic_cfg->regs->EIC_CONFIG[EIC_CONFIG_REG_IDX(eic_line)] |=
 		((eic_pin_config->trig_type) << EIC_TRIG_TYPE_BIT_POS(eic_line));
+
+#endif /*CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG*/
 
 	/* Set the debouncing feature of the eic line if required */
 	if (eic_pin_config->debounce != 0) {
@@ -328,6 +348,7 @@ int eic_mchp_config_interrupt(struct eic_config_params *eic_pin_config)
 	enable_interrupt_line(eic_cfg->regs, eic_line);
 
 	eic_enable(eic_cfg->regs);
+	eic_sync_wait(eic_cfg->regs);
 
 	/*House keeping */
 	eic_data->line_busy |= BIT(eic_line);
@@ -362,7 +383,7 @@ static int eic_mchp_init(const struct device *dev)
 	if (eic_cfg->low_power_mode == true) {
 		eic_cfg->regs->EIC_CTRLA = EIC_CTRLA_CKSEL(EIC_CTRLA_CKSEL_CLK_ULP32K);
 	}
-	eic_cfg->regs->EIC_CTRLA |= EIC_CTRLA_ENABLE(EIC_CTRLA_ENABLE_Msk);
+	eic_enable(eic_cfg->regs);
 	eic_sync_wait(eic_cfg->regs);
 	LOG_DBG("EIC initialisation done 0x%p", eic_cfg->regs);
 
