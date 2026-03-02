@@ -890,15 +890,15 @@ static void clock_control_bl61x_init_root_as_crystal(const struct device *dev)
 static __ramfunc void clock_control_bl61x_update_flash_clk(const struct device *dev)
 {
 	struct clock_control_bl61x_data *data = dev->data;
-	uint32_t tmp;
+	volatile uint32_t tmp;
 
-	tmp = *(uint32_t *)(GLB_BASE + GLB_SF_CFG0_OFFSET);
+	tmp = *(volatile uint32_t *)(GLB_BASE + GLB_SF_CFG0_OFFSET);
 	tmp &= GLB_SF_CLK_DIV_UMSK;
 	tmp &= GLB_SF_CLK_EN_UMSK;
 	tmp |= (data->flashclk.divider - 1) << GLB_SF_CLK_DIV_POS;
-	*(uint32_t *)(GLB_BASE + GLB_SF_CFG0_OFFSET) = tmp;
+	*(volatile uint32_t *)(GLB_BASE + GLB_SF_CFG0_OFFSET) = tmp;
 
-	tmp = *(uint32_t *)(SF_CTRL_BASE + SF_CTRL_0_OFFSET);
+	tmp = *(volatile uint32_t *)(SF_CTRL_BASE + SF_CTRL_0_OFFSET);
 	tmp |= SF_CTRL_SF_IF_READ_DLY_EN_MSK;
 	tmp &= ~SF_CTRL_SF_IF_READ_DLY_N_MSK;
 	tmp |= (data->flashclk.bank1_read_delay << SF_CTRL_SF_IF_READ_DLY_N_POS);
@@ -912,14 +912,14 @@ static __ramfunc void clock_control_bl61x_update_flash_clk(const struct device *
 	} else {
 		tmp &= ~SF_CTRL_SF_CLK_SF_RX_INV_SEL_MSK;
 	}
-	*(uint32_t *)(SF_CTRL_BASE + SF_CTRL_0_OFFSET) = tmp;
+	*(volatile uint32_t *)(SF_CTRL_BASE + SF_CTRL_0_OFFSET) = tmp;
 
-	tmp = *(uint32_t *)(GLB_BASE + GLB_SF_CFG0_OFFSET);
+	tmp = *(volatile uint32_t *)(GLB_BASE + GLB_SF_CFG0_OFFSET);
 	tmp &= GLB_SF_CLK_SEL_UMSK;
 	tmp &= GLB_SF_CLK_SEL2_UMSK;
 	if (data->flashclk.source == bl61x_clkid_clk_wifipll) {
 		tmp |= 0U << GLB_SF_CLK_SEL_POS;
-		tmp |= 0U << GLB_SF_CLK_SEL_POS;
+		tmp |= 0U << GLB_SF_CLK_SEL2_POS;
 	} else if (data->flashclk.source == bl61x_clkid_clk_crystal) {
 		tmp |= 0U << GLB_SF_CLK_SEL_POS;
 		tmp |= 1U << GLB_SF_CLK_SEL2_POS;
@@ -928,11 +928,11 @@ static __ramfunc void clock_control_bl61x_update_flash_clk(const struct device *
 		tmp |= 2U << GLB_SF_CLK_SEL_POS;
 	}
 
-	*(uint32_t *)(GLB_BASE + GLB_SF_CFG0_OFFSET) = tmp;
+	*(volatile uint32_t *)(GLB_BASE + GLB_SF_CFG0_OFFSET) = tmp;
 
-	tmp = *(uint32_t *)(GLB_BASE + GLB_SF_CFG0_OFFSET);
+	tmp = *(volatile uint32_t *)(GLB_BASE + GLB_SF_CFG0_OFFSET);
 	tmp |= GLB_SF_CLK_EN_MSK;
-	*(uint32_t *)(GLB_BASE + GLB_SF_CFG0_OFFSET) = tmp;
+	*(volatile uint32_t *)(GLB_BASE + GLB_SF_CFG0_OFFSET) = tmp;
 
 	clock_bflb_settle();
 }
