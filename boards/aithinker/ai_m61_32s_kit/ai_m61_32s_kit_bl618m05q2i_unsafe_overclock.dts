@@ -9,9 +9,9 @@
 #include "ai_m61_32s.dtsi"
 #include "ai_m61_32s_kit_common.dtsi"
 
-&clk_root {
-	/* Increased PLL speed used as FCLK */
-	clocks = <&clk_wifipll BL61X_WIFIPLL_OCMAX_640MHz>;
+&clk_wifipll {
+	/* Increased PLL top output frequency to 640MHz */
+	top-frequency = <BL61X_WIFIPLL_TOP_FREQ_OC2>;
 };
 
 &reg_soc {
