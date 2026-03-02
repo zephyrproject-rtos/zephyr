@@ -55,6 +55,7 @@ enum bl60x_clkid {
 struct clock_control_bl60x_pll_config {
 	enum bl60x_clkid	source;
 	uint32_t		top_frequency;
+	bool			enabled;
 };
 
 struct clock_control_bl60x_root_config {
@@ -81,7 +82,6 @@ struct clock_control_bl60x_flashclk_config {
 
 struct clock_control_bl60x_data {
 	bool crystal_enabled;
-	bool pll_enabled;
 	struct clock_control_bl60x_pll_config		pll;
 	struct clock_control_bl60x_root_config		root;
 	struct clock_control_bl60x_bclk_config		bclk;
@@ -519,7 +519,7 @@ static void clock_control_bl60x_set_PKA_clock(uint32_t pka_clock)
 	sys_write32(tmp, GLB_BASE + GLB_SWRST_CFG2_OFFSET);
 }
 
-static void clock_control_bl60x_init_root_as_pll(const struct device *dev)
+static void clock_control_bl60x_setup_pll(const struct device *dev)
 {
 	const struct clock_control_bl60x_config *config = dev->config;
 	struct clock_control_bl60x_data *data = dev->data;
@@ -545,6 +545,11 @@ static void clock_control_bl60x_init_root_as_pll(const struct device *dev)
 	tmp = sys_read32(GLB_BASE + GLB_CLK_CFG0_OFFSET);
 	tmp = (tmp & GLB_REG_PLL_EN_UMSK) | (1U << GLB_REG_PLL_EN_POS);
 	sys_write32(tmp, GLB_BASE + GLB_CLK_CFG0_OFFSET);
+}
+
+static void clock_control_bl60x_init_root_as_pll(const struct device *dev)
+{
+	struct clock_control_bl60x_data *data = dev->data;
 
 	clock_control_bl60x_select_PLL(data->root.pll_select);
 
@@ -618,7 +623,7 @@ static __ramfunc void clock_control_bl60x_update_flash_clk(const struct device *
 	clock_bflb_settle();
 }
 
-static int clock_control_bl60x_update_root(const struct device *dev)
+static int clock_control_bl60x_update_clocks(const struct device *dev)
 {
 	struct clock_control_bl60x_data *data = dev->data;
 	uint32_t tmp;
@@ -637,6 +642,7 @@ static int clock_control_bl60x_update_root(const struct device *dev)
 	sys_write32(BFLB_RC32M_FREQUENCY, CORECLOCKREGISTER);
 
 	clock_control_bl60x_set_PKA_clock(0);
+	clock_control_bl60x_cache_2T(false);
 
 	if (data->crystal_enabled) {
 		if (clock_control_bl60x_init_crystal() < 0) {
@@ -648,9 +654,21 @@ static int clock_control_bl60x_update_root(const struct device *dev)
 
 	clock_control_bl60x_set_root_clock_dividers(data->root.divider - 1, data->bclk.divider - 1);
 
+	if (data->pll.enabled) {
+		clock_control_bl60x_setup_pll(dev);
+	} else {
+		clock_control_bl60x_deinit_pll();
+	}
+
 	if (data->root.source == bl60x_clkid_clk_pll) {
+		if (!data->pll.enabled) {
+			return -EINVAL;
+		}
 		clock_control_bl60x_init_root_as_pll(dev);
 	} else if (data->root.source == bl60x_clkid_clk_crystal) {
+		if (!data->crystal_enabled) {
+			return -EINVAL;
+		}
 		clock_control_bl60x_init_root_as_crystal(dev);
 	} else {
 		/* Root clock already setup as RC32M */
@@ -660,6 +678,7 @@ static int clock_control_bl60x_update_root(const struct device *dev)
 	if (ret < 0) {
 		return ret;
 	}
+
 	clock_control_bl60x_set_machine_timer_clock(
 		1, 0, clock_control_bl60x_mtimer_get_clk_src_div(dev));
 
@@ -752,19 +771,19 @@ static int clock_control_bl60x_on(const struct device *dev, clock_control_subsys
 			ret = 0;
 		} else {
 			data->crystal_enabled = true;
-			ret = clock_control_bl60x_update_root(dev);
+			ret = clock_control_bl60x_update_clocks(dev);
 			if (ret < 0) {
 				data->crystal_enabled = false;
 			}
 		}
 	} else if ((enum bl60x_clkid)sys == bl60x_clkid_clk_pll) {
-		if (data->pll_enabled) {
+		if (data->pll.enabled) {
 			ret = 0;
 		} else {
-			data->pll_enabled = true;
-			ret = clock_control_bl60x_update_root(dev);
+			data->pll.enabled = true;
+			ret = clock_control_bl60x_update_clocks(dev);
 			if (ret < 0) {
-				data->pll_enabled = false;
+				data->pll.enabled = false;
 			}
 		}
 	} else if ((int)sys == BFLB_FORCE_ROOT_RC32M) {
@@ -773,7 +792,7 @@ static int clock_control_bl60x_on(const struct device *dev, clock_control_subsys
 		} else {
 			/* Cannot fail to set root to rc32m */
 			data->root.source = bl60x_clkid_clk_rc32m;
-			ret = clock_control_bl60x_update_root(dev);
+			ret = clock_control_bl60x_update_clocks(dev);
 		}
 	} else if ((int)sys == BFLB_FORCE_ROOT_CRYSTAL) {
 		if (data->root.source == bl60x_clkid_clk_crystal) {
@@ -781,7 +800,7 @@ static int clock_control_bl60x_on(const struct device *dev, clock_control_subsys
 		} else {
 			oldroot = data->root.source;
 			data->root.source = bl60x_clkid_clk_crystal;
-			ret = clock_control_bl60x_update_root(dev);
+			ret = clock_control_bl60x_update_clocks(dev);
 			if (ret < 0) {
 				data->root.source = oldroot;
 			}
@@ -792,7 +811,7 @@ static int clock_control_bl60x_on(const struct device *dev, clock_control_subsys
 		} else {
 			oldroot = data->root.source;
 			data->root.source = bl60x_clkid_clk_pll;
-			ret = clock_control_bl60x_update_root(dev);
+			ret = clock_control_bl60x_update_clocks(dev);
 			if (ret < 0) {
 				data->root.source = oldroot;
 			}
@@ -816,19 +835,19 @@ static int clock_control_bl60x_off(const struct device *dev, clock_control_subsy
 			ret = 0;
 		} else {
 			data->crystal_enabled = false;
-			ret = clock_control_bl60x_update_root(dev);
+			ret = clock_control_bl60x_update_clocks(dev);
 			if (ret < 0) {
 				data->crystal_enabled = true;
 			}
 		}
 	} else if ((enum bl60x_clkid)sys == bl60x_clkid_clk_pll) {
-		if (!data->pll_enabled) {
+		if (!data->pll.enabled) {
 			ret = 0;
 		} else {
-			data->pll_enabled = false;
-			ret = clock_control_bl60x_update_root(dev);
+			data->pll.enabled = false;
+			ret = clock_control_bl60x_update_clocks(dev);
 			if (ret < 0) {
-				data->pll_enabled = true;
+				data->pll.enabled = true;
 			}
 		}
 	}
@@ -853,7 +872,7 @@ static enum clock_control_status clock_control_bl60x_get_status(const struct dev
 		}
 		return CLOCK_CONTROL_STATUS_OFF;
 	case bl60x_clkid_clk_pll:
-		if (data->pll_enabled) {
+		if (data->pll.enabled) {
 			return CLOCK_CONTROL_STATUS_ON;
 		}
 		return CLOCK_CONTROL_STATUS_OFF;
@@ -886,7 +905,7 @@ static int clock_control_bl60x_init(const struct device *dev)
 
 	key = irq_lock();
 
-	ret = clock_control_bl60x_update_root(dev);
+	ret = clock_control_bl60x_update_clocks(dev);
 	if (ret < 0) {
 		irq_unlock(key);
 		return ret;
@@ -917,7 +936,6 @@ static const struct clock_control_bl60x_config clock_control_bl60x_config = {
 
 static struct clock_control_bl60x_data clock_control_bl60x_data = {
 	.crystal_enabled = DT_NODE_HAS_STATUS_OKAY(DT_INST_CLOCKS_CTLR_BY_NAME(0, crystal)),
-	.pll_enabled = DT_NODE_HAS_STATUS_OKAY(DT_INST_CLOCKS_CTLR_BY_NAME(0, pll_top)),
 
 	.root = {
 #if CLK_SRC_IS(root, pll_top)
@@ -938,6 +956,7 @@ static struct clock_control_bl60x_data clock_control_bl60x_data = {
 		.source = bl60x_clkid_clk_rc32m,
 #endif
 		.top_frequency = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, pll_top), top_frequency),
+		.enabled = DT_NODE_HAS_STATUS_OKAY(DT_INST_CLOCKS_CTLR_BY_NAME(0, pll_top)),
 	},
 
 	.bclk = {
@@ -966,8 +985,9 @@ BUILD_ASSERT((CLK_SRC_IS(pll_top, crystal) || CLK_SRC_IS(root, crystal))
 		     : 1,
 	     "Crystal must be enabled to use it");
 
-BUILD_ASSERT(CLK_SRC_IS(root, pll_top) ?
-	DT_NODE_HAS_STATUS_OKAY(DT_INST_CLOCKS_CTLR_BY_NAME(0, pll_top)) : 1,
+BUILD_ASSERT((CLK_SRC_IS(root, pll_top)
+	|| CLK_SRC_IS(flash, pll_top)
+	) ? DT_NODE_HAS_STATUS_OKAY(DT_INST_CLOCKS_CTLR_BY_NAME(0, pll_top)) : 1,
 	"PLL must be enabled to use it");
 
 BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_INST_CLOCKS_CTLR_BY_NAME(0, rc32m)), "RC32M is always on");
