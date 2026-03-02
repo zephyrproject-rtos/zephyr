@@ -2,21 +2,33 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config WCH_HAS_CODEFLASH
-  bool
+	bool
+	help
+	  Read-only user region in flash memory.
 
 config WCH_HAS_DATAFLASH
-  bool
+	bool
+	  Read-write user region in flash memory.
 
 config WCH_HAS_BOOTLOADER
-  bool
+	bool
+	help
+	  Read-only system Bootloader region in flash memory.
 
 config WCH_HAS_INFOFLASH
-  bool
+	bool
+	  Read-write system region in flash memory.
 
-# High powered RAM. AKA RAM12K, RAM16K, RAM30K, etc
 config WCH_HAS_SRAM0
-  bool
+	bool
+	help
+	  Main volatile memory.
+	  Typically larger and requires the most power to maintain in low power modes.
+	  In the datasheets this is often named RAM12K, RAM16K, RAM30K, RAM96K, etc.
 
-# Low powered RAM. AKA RAM2K
 config WCH_HAS_SRAM1
-  bool
+	bool
+	help
+	  Secondary volatile memory.
+	  Typically smaller than SRAM0, but requires less power to maintain in low power modes.
+	  In the datasheets this is often named RAM2K, RAM32K, etc.

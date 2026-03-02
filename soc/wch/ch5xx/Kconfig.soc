@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FAMILY_CH5XX
-  bool
+	bool
 
 config SOC_FAMILY
-  default "ch5xx" if SOC_FAMILY_CH5XX
+	default "ch5xx" if SOC_FAMILY_CH5XX
 
 rsource "ch5*/Kconfig.soc"

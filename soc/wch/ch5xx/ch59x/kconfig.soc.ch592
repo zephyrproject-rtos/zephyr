@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_CH592
-  bool
-  select SOC_SERIES_CH59X
+	bool
+	select SOC_SERIES_CH59X
 
 config SOC
-  default "ch592" if SOC_CH592
+	default "ch592" if SOC_CH592
