@@ -1,9 +1,17 @@
 # Copyright (c) 2026 Mike Kasprzak (distraction.engineer)
 # SPDX-License-Identifier: Apache-2.0
 
+rsource "Kconfig_wch"
+
 config SOC_FAMILY_CH5XX
   select RISCV
   select BUILD_OUTPUT_HEX
+  select WCH_HAS_CODEFLASH
+  select WCH_HAS_DATAFLASH
+  select WCH_HAS_INFOFLASH
+  select WCH_HAS_SRAM0
+
+if SOC_FAMILY_CH5XX
 
 config VECTOR_TABLE_SIZE
   int "Number of Interrupt and Exception Vectors"
@@ -13,3 +21,5 @@ config VECTOR_TABLE_SIZE
     vectors in the vector table.
 
 rsource "ch5*/Kconfig"
+
+endif # SOC_FAMILY_CH5XX

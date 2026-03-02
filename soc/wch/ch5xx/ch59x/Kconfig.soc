@@ -4,6 +4,8 @@
 config SOC_SERIES_CH59X
   bool
   select SOC_FAMILY_CH5XX
+  select SOC_HAS_BOOTLOADER
+  select SOC_HAS_SRAM1
 
 config SOC_SERIES
   default "ch59x" if SOC_SERIES_CH59X

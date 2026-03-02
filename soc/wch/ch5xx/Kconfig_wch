@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Mike Kasprzak (distraction.engineer)
+# SPDX-License-Identifier: Apache-2.0
+
+config WCH_HAS_CODEFLASH
+  bool
+
+config WCH_HAS_DATAFLASH
+  bool
+
+config WCH_HAS_BOOTLOADER
+  bool
+
+config WCH_HAS_INFOFLASH
+  bool
+
+# High powered RAM. AKA RAM12K, RAM16K, RAM30K, etc
+config WCH_HAS_SRAM0
+  bool
+
+# Low powered RAM. AKA RAM2K
+config WCH_HAS_SRAM1
+  bool
