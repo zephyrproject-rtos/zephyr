@@ -58,6 +58,14 @@
 			divider = <2>;
 			status = "okay";
 		};
+
+		clk_flash: clk-flash {
+			#clock-cells = <0>;
+			compatible = "bflb,flash-clk";
+			clocks = <&clk_bclk>;
+			divider = <2>;
+			status = "okay";
+		};
 	};
 
 	chosen {
@@ -141,9 +149,11 @@
 			#clock-cells = <1>;
 			status = "okay";
 			clocks = <&clk_rc32m>, <&clk_crystal>, <&clk_root>, <&clk_bclk>,
-				 <&clk_pll BL60X_PLL_ID_DIV1>;
+				 <&clk_pll BL60X_PLL_ID_DIV1>,
+				 <&clk_flash>;
 			clock-names = "rc32m", "crystal", "root", "bclk",
-				      "pll_top";
+				      "pll_top",
+				      "flash";
 		};
 
 		adc0: adc@40002000 {

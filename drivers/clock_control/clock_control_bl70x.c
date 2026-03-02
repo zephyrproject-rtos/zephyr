@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+ * Copyright (c) 2025-2026 MASSDRIVER EI (massdriver.space)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(clock_control_bl70x, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #include <bouffalolab/bl70x/pds_reg.h>
 #include <bouffalolab/bl70x/l1c_reg.h>
 #include <bouffalolab/bl70x/extra_defines.h>
+#include <bouffalolab/bl70x/sf_ctrl_reg.h>
 #include <zephyr/drivers/clock_control/clock_control_bflb_common.h>
 
 #define CLK_SRC_IS(clk, src)                                                                       \
@@ -57,12 +58,21 @@ struct clock_control_bl70x_bclk_config {
 	uint8_t divider;
 };
 
+struct clock_control_bl70x_flashclk_config {
+	enum bl70x_clkid	source;
+	uint8_t			divider;
+	uint8_t			read_delay;
+	bool			clock_invert;
+	bool			rx_clock_invert;
+};
+
 struct clock_control_bl70x_data {
 	bool crystal_enabled;
 	bool dll_enabled;
-	struct clock_control_bl70x_dll_config dll;
-	struct clock_control_bl70x_root_config root;
-	struct clock_control_bl70x_bclk_config bclk;
+	struct clock_control_bl70x_dll_config		dll;
+	struct clock_control_bl70x_root_config		root;
+	struct clock_control_bl70x_bclk_config		bclk;
+	struct clock_control_bl70x_flashclk_config	flashclk;
 };
 
 static int clock_control_bl70x_deinit_crystal(void)
@@ -424,6 +434,56 @@ static void clock_control_bl70x_init_root_as_crystal(const struct device *dev)
 	sys_write32(clock_control_bl70x_get_clk(dev), CORECLOCKREGISTER);
 }
 
+static __ramfunc void clock_control_bl70x_update_flash_clk(const struct device *dev)
+{
+	struct clock_control_bl70x_data *data = dev->data;
+	volatile uint32_t tmp;
+
+	tmp = *(volatile uint32_t *)(GLB_BASE + GLB_CLK_CFG2_OFFSET);
+	tmp &= GLB_SF_CLK_DIV_UMSK;
+	tmp &= GLB_SF_CLK_EN_UMSK;
+	tmp |= (data->flashclk.divider - 1) << GLB_SF_CLK_DIV_POS;
+	*(volatile uint32_t *)(GLB_BASE + GLB_CLK_CFG2_OFFSET) = tmp;
+
+	tmp = *(volatile uint32_t *)(SF_CTRL_BASE + SF_CTRL_0_OFFSET);
+	tmp |= SF_CTRL_SF_IF_READ_DLY_EN_MSK;
+	tmp &= ~SF_CTRL_SF_IF_READ_DLY_N_MSK;
+	tmp |= (data->flashclk.read_delay << SF_CTRL_SF_IF_READ_DLY_N_POS);
+	if (data->flashclk.clock_invert) {
+		tmp &= ~SF_CTRL_SF_CLK_OUT_INV_SEL_MSK;
+	} else {
+		tmp |= SF_CTRL_SF_CLK_OUT_INV_SEL_MSK;
+	}
+	if (data->flashclk.rx_clock_invert) {
+		tmp |= SF_CTRL_SF_CLK_SF_RX_INV_SEL_MSK;
+	} else {
+		tmp &= ~SF_CTRL_SF_CLK_SF_RX_INV_SEL_MSK;
+	}
+	*(volatile uint32_t *)(SF_CTRL_BASE + SF_CTRL_0_OFFSET) = tmp;
+
+	tmp = *(volatile uint32_t *)(GLB_BASE + GLB_CLK_CFG2_OFFSET);
+	tmp &= GLB_SF_CLK_SEL_UMSK;
+	tmp &= GLB_SF_CLK_SEL2_UMSK;
+	if (data->flashclk.source == bl70x_clkid_clk_dll) {
+		tmp |= 0U << GLB_SF_CLK_SEL_POS;
+		tmp |= 0U << GLB_SF_CLK_SEL2_POS;
+	} else if (data->flashclk.source == bl70x_clkid_clk_crystal) {
+		tmp |= 0U << GLB_SF_CLK_SEL_POS;
+		tmp |= 1U << GLB_SF_CLK_SEL2_POS;
+	} else {
+		/* If using RC32M or BCLK, use BCLK */
+		tmp |= 2U << GLB_SF_CLK_SEL_POS;
+	}
+
+	*(volatile uint32_t *)(GLB_BASE + GLB_CLK_CFG2_OFFSET) = tmp;
+
+	tmp = *(volatile uint32_t *)(GLB_BASE + GLB_CLK_CFG2_OFFSET);
+	tmp |= GLB_SF_CLK_EN_MSK;
+	*(volatile uint32_t *)(GLB_BASE + GLB_CLK_CFG2_OFFSET) = tmp;
+
+	clock_bflb_settle();
+}
+
 static int clock_control_bl70x_update_root(const struct device *dev)
 {
 	struct clock_control_bl70x_data *data = dev->data;
@@ -700,6 +760,8 @@ static int clock_control_bl70x_init(const struct device *dev)
 
 	clock_bflb_settle();
 
+	clock_control_bl70x_update_flash_clk(dev);
+
 	irq_unlock(key);
 
 	return 0;
@@ -739,6 +801,22 @@ static struct clock_control_bl70x_data clock_control_bl70x_data = {
 	.bclk = {
 			.divider = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, bclk), divider),
 		},
+
+	.flashclk = {
+#if CLK_SRC_IS(flash, crystal)
+		.source = bl70x_clkid_clk_crystal,
+#elif CLK_SRC_IS(flash, bclk)
+		.source = bl70x_clkid_clk_bclk,
+#elif CLK_SRC_IS(flash, dll_144)
+		.source = bl70x_clkid_clk_dll,
+#else
+		.source = bl70x_clkid_clk_rc32m,
+#endif
+		.read_delay = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, flash), read_delay),
+		.clock_invert = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, flash), clock_invert),
+		.rx_clock_invert = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, flash), rx_clock_invert),
+		.divider = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, flash), divider),
+	},
 };
 
 BUILD_ASSERT((CLK_SRC_IS(dll_144, crystal) || CLK_SRC_IS(root, crystal))

@@ -68,7 +68,7 @@
 
 		clk_flash: clk-flash {
 			#clock-cells = <0>;
-			compatible = "bflb,bl61x-flash-clk";
+			compatible = "bflb,flash-clk";
 			clocks = <&clk_bclk>;
 			divider = <2>;
 			status = "okay";
