@@ -162,6 +162,11 @@ struct net_if_mcast_addr {
 	/** IP address */
 	struct net_addr address;
 
+	/** Reference counter. Used to track multicast group joining/leaving
+	 *  from various subsystems.
+	 */
+	atomic_t atomic_ref;
+
 	/** Rejoining multicast groups list node */
 	sys_snode_t rejoin_node;
 
