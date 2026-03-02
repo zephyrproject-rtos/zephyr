@@ -14,6 +14,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/nxp_mcux_clock_subsys.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/policy.h>
@@ -63,7 +64,10 @@ struct mcux_lpuart_config {
 	LPUART_Type *base;
 	const struct device *clock_dev;
 	const struct pinctrl_dev_config *pincfg;
+	/* Register clock (gate) token for clock_control_on/off(). */
 	clock_control_subsys_t clock_subsys;
+	/* Function clock (rate) token for clock_control_get_rate()/configure(). */
+	clock_control_subsys_t clock_subsys_rate;
 	uint32_t baud_rate;
 	uint8_t flow_ctrl;
 	uint8_t parity;
@@ -1226,7 +1230,7 @@ static int mcux_lpuart_configure_init(const struct device *dev, const struct uar
 		return -ENODEV;
 	}
 
-	ret = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
+	ret = clock_control_configure(config->clock_dev, config->clock_subsys_rate, NULL);
 	if (ret != 0) {
 		/* Check if error is due to lack of support */
 		if (ret != -ENOSYS) {
@@ -1248,7 +1252,7 @@ static int mcux_lpuart_configure_init(const struct device *dev, const struct uar
 		return ret;
 	}
 
-	ret = clock_control_get_rate(config->clock_dev, config->clock_subsys,
+	ret = clock_control_get_rate(config->clock_dev, config->clock_subsys_rate,
 								&clock_freq);
 	if (ret) {
 		LOG_ERR("Failed to get clock rate: %d", ret);
@@ -1607,9 +1611,8 @@ static DEVICE_API(uart, mcux_lpuart_driver_api) = {
 static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {     \
 	.base = (LPUART_Type *) DT_INST_REG_ADDR(n),                          \
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                   \
-	.clock_subsys = (clock_control_subsys_t)COND_CODE_1(                  \
-		DT_PHA_HAS_CELL(DT_DRV_INST(n), clocks, name),                \
-		(DT_INST_CLOCKS_CELL(n, name)), (0U)),                        \
+	.clock_subsys = NXP_MCUX_DT_INST_CLOCK_GATE_SUBSYS_PTR(n), \
+	.clock_subsys_rate = NXP_MCUX_DT_INST_CLOCK_RATE_SUBSYS_PTR(n), \
 	.baud_rate = DT_INST_PROP(n, current_speed),                          \
 	.flow_ctrl = FLOW_CONTROL(n),                                         \
 	.parity = DT_INST_ENUM_IDX(n, parity),                                \
