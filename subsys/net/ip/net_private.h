@@ -444,3 +444,10 @@ static inline void net_pkt_print_buffer_info(struct net_pkt *pkt, const char *st
  * @param pkt The network packet to initialize.
  */
 void net_pkt_tx_init(struct net_pkt *pkt);
+
+/** Rejoin IGMP mcast group w/o registering address, for internal use only. */
+#if defined(CONFIG_NET_IPV4_IGMP)
+int net_ipv4_igmp_rejoin(struct net_if *iface, const struct net_in_addr *addr);
+#else
+#define net_ipv4_igmp_rejoin(...) -ENOSYS
+#endif
