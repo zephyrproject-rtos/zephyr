@@ -19,10 +19,8 @@
 
 COUNTER_HANDLER(stop)
 COUNTER_HANDLER(start)
-COUNTER_HANDLER(get_pending_int)
 COUNTER_HANDLER(reset)
 
-#include <zephyr/syscalls/counter_get_pending_int_mrsh.c>
 #include <zephyr/syscalls/counter_stop_mrsh.c>
 #include <zephyr/syscalls/counter_start_mrsh.c>
 
@@ -238,6 +236,14 @@ static inline uint32_t z_vrfy_counter_get_max_top_value(const struct device *dev
 	return z_impl_counter_get_max_top_value((const struct device *)dev);
 }
 #include <zephyr/syscalls/counter_get_max_top_value_mrsh.c>
+
+static inline uint32_t z_vrfy_counter_get_pending_int(const struct device *dev)
+{
+	K_OOPS(K_SYSCALL_DRIVER_COUNTER(dev, get_pending_int));
+	return z_impl_counter_get_pending_int((const struct device *)dev);
+}
+
+#include <zephyr/syscalls/counter_get_pending_int_mrsh.c>
 
 static inline uint32_t z_vrfy_counter_get_guard_period(const struct device *dev, uint32_t flags)
 {
