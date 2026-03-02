@@ -318,7 +318,7 @@
 	};
 
 	flexcan_0: flexcan@304000 {
-		compatible = "nxp,flexcan";
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
 		reg = <0x304000 0x321c>;
 		interrupts = <109 0>, <110 0>, <111 0>, <112 0>;
 		interrupt-names = "flexcan0-0", "flexcan0-1", "flexcan0-2", "flexcan0-3";
@@ -327,7 +327,7 @@
 	};
 
 	flexcan_1: flexcan@308000 {
-		compatible = "nxp,flexcan";
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
 		reg = <0x308000 0xd4c>;
 		interrupts = <113 0>, <114 0>, <115 0>;
 		interrupt-names = "flexcan1-0", "flexcan1-1", "flexcan1-2";
@@ -336,7 +336,7 @@
 	};
 
 	flexcan_2: flexcan@30c000 {
-		compatible = "nxp,flexcan";
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
 		reg = <0x30c000 0xd4c>;
 		interrupts = <116 0>, <117 0>, <118 0>;
 		interrupt-names = "flexcan2-0", "flexcan2-1", "flexcan2-2";
@@ -345,7 +345,7 @@
 	};
 
 	flexcan_3: flexcan@310000 {
-		compatible = "nxp,flexcan";
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
 		reg = <0x310000 0xccc>;
 		interrupts = <119 0>, <120 0>;
 		interrupt-names = "flexcan3-0", "flexcan3-1";
@@ -354,7 +354,7 @@
 	};
 
 	flexcan_4: flexcan@314000 {
-		compatible = "nxp,flexcan";
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
 		reg = <0x314000 0xccc>;
 		interrupts = <121 0>, <122 0>;
 		interrupt-names = "flexcan4-0", "flexcan4-1";
@@ -363,7 +363,7 @@
 	};
 
 	flexcan_5: flexcan@318000 {
-		compatible = "nxp,flexcan";
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
 		reg = <0x318000 0xccc>;
 		interrupts = <123 0>, <124 0>;
 		interrupt-names = "flexcan5-0", "flexcan5-1";
