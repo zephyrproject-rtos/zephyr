@@ -81,7 +81,6 @@ static bool is_join_msg_ok;
 static bool is_leave_msg_ok;
 static bool is_query_received;
 static bool is_report_sent;
-static bool ignore_already;
 
 static struct mld_report_handler *report_handler;
 
@@ -326,13 +325,7 @@ static void test_join_group(void)
 	net_ipv6_addr_create(&mcast_addr, 0xff10, 0, 0, 0, 0, 0, 0, 0x0001);
 
 	ret = net_ipv6_mld_join(net_iface, &mcast_addr);
-
-	if (ignore_already) {
-		zassert_true(ret == 0 || ret == -EALREADY,
-			     "Cannot join IPv6 multicast group");
-	} else {
-		zassert_equal(ret, 0, "Cannot join IPv6 multicast group");
-	}
+	zassert_equal(ret, 0, "Cannot join IPv6 multicast group");
 
 	/* Let the network stack to proceed */
 	k_msleep(THREAD_SLEEP);
@@ -354,8 +347,6 @@ static void test_leave_group(void)
 static void test_catch_join_group(void)
 {
 	is_group_joined = false;
-
-	ignore_already = false;
 
 	test_join_group();
 
@@ -390,8 +381,6 @@ static void test_catch_leave_group(void)
 static void test_verify_join_group(void)
 {
 	is_join_msg_ok = false;
-
-	ignore_already = false;
 
 	test_join_group();
 
@@ -587,8 +576,6 @@ static void test_verify_send_report(void)
 
 	is_query_received = false;
 	is_report_sent = false;
-
-	ignore_already = true;
 
 	k_sem_reset(&wait_data);
 
@@ -1060,15 +1047,9 @@ static void socket_group_with_index(const struct net_in6_addr *local_addr, bool 
 			       (void *)&mreq, sizeof(mreq));
 
 	if (do_join) {
-		if (ignore_already) {
-			zassert_true(ret == 0 || ret == -EALREADY,
-				     "Cannot join IPv6 multicast group (%d)",
-				     -errno);
-		} else {
-			zassert_equal(ret, 0,
-				      "Cannot join IPv6 multicast group (%d)",
-				      -errno);
-		}
+		zassert_equal(ret, 0,
+			      "Cannot join IPv6 multicast group (%d)",
+			      -errno);
 	} else {
 		zassert_equal(ret, 0, "Cannot leave IPv6 multicast group (%d)",
 			      -errno);
@@ -1108,14 +1089,11 @@ ZTEST_USER(net_mld_test_suite, test_socket_catch_join_with_index)
 ZTEST(net_mld_test_suite, test_mld_multi_join)
 {
 	is_join_msg_ok = false;
-	ignore_already = false;
 	test_join_group();
 	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Timeout while waiting join event");
 	zassert_true(is_join_msg_ok, "Join msg invalid");
 
-	/* Second join would give -EALREADY, no report sent, still ref count will be increased */
 	is_join_msg_ok = false;
-	ignore_already = true;
 	test_join_group();
 	k_msleep(THREAD_SLEEP);
 	zassert_false(is_join_msg_ok, "Unexpected join msg");
