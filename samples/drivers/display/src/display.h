@@ -7,9 +7,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "display.h"
+#ifndef __SAMPLE_DISPLAY_H__
+#define __SAMPLE_DISPLAY_H__
 
-int main(void)
-{
-	return sample_display_draw();
-}
+int sample_display_draw(void);
+
+#endif
