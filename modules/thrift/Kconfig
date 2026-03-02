@@ -19,7 +19,7 @@ if THRIFT
 config THRIFT_SSL_SOCKET
 	bool "TSSLSocket support for Thrift"
 	depends on MBEDTLS
-	depends on MBEDTLS_PEM_CERTIFICATE_FORMAT
+	depends on MBEDTLS_PEM_PARSE_C && MBEDTLS_PEM_WRITE_C
 	depends on NET_SOCKETS_SOCKOPT_TLS
 	help
 	  Enable this option to support TSSLSocket for Thrift

@@ -401,7 +401,7 @@ X509
   When X509 certificates are used, set Security Mode (ID 2) to ``2`` (Certificate mode).
   Identity (ID 3) is used to store the client certificate and Secret key (ID 5) must have a private key associated with the certificate.
   Server Public Key resource (ID 4) must contain a server certificate or CA certificate used to sign the certificate chain.
-  If the :kconfig:option:`CONFIG_MBEDTLS_PEM_CERTIFICATE_FORMAT` Kconfig option is enabled, certificates and private key can be entered in PEM format.
+  If the :kconfig:option:`CONFIG_MBEDTLS_PEM_PARSE_C` / :kconfig:option:`CONFIG_MBEDTLS_PEM_WRITE_C` Kconfig options are enabled, certificates and private keys can be entered in PEM format.
   Otherwise, they must be in binary DER format.
 
 NoSec
