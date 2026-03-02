@@ -1707,7 +1707,7 @@ static void rejoin_ipv6_mcast_groups(struct net_if *iface)
 					  ifaddr, next, rejoin_node) {
 		int ret;
 
-		ret = net_ipv6_mld_join(iface, &ifaddr->address.in6_addr);
+		ret = net_ipv6_mld_rejoin(iface, &ifaddr->address.in6_addr);
 		if (ret < 0) {
 			NET_ERR("Cannot join mcast address %s for %d (%d)",
 				net_sprint_ipv6_addr(&ifaddr->address.in6_addr),
@@ -5214,7 +5214,7 @@ static void rejoin_ipv4_mcast_groups(struct net_if *iface)
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&rejoin_needed, ifaddr, next, rejoin_node) {
 		int ret;
 
-		ret = net_ipv4_igmp_join(iface, &ifaddr->address.in_addr, NULL);
+		ret = net_ipv4_igmp_rejoin(iface, &ifaddr->address.in_addr);
 		if (ret < 0) {
 			NET_ERR("Cannot join mcast address %s for %d (%d)",
 				net_sprint_ipv4_addr(&ifaddr->address.in_addr),
