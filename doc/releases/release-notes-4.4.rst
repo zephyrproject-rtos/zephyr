@@ -170,6 +170,12 @@ New APIs and options
     * :c:func:`bt_gatt_cb_unregister` Added an API to unregister GATT callback handlers.
     * :c:func:`bt_le_per_adv_sync_cb_unregister`
 
+  * ISO
+
+    * :c:member:`bt_iso_chan_ops.disconnected` will now always be called before
+      :c:member:`bt_conn_cb.disconnected` for unicast (CIS) channels,
+      to provide a more deterministic order of callback events. (:github:`104695`).
+
   * Mesh
 
     * :c:func:`bt_mesh_input_numeric` to provide provisioning numeric input OOB value.
