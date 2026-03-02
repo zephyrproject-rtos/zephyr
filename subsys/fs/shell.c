@@ -842,29 +842,30 @@ static char *mntpt_prepare(char *mntpt)
 #if defined(CONFIG_FAT_FILESYSTEM_ELM)
 static int cmd_mount_fat(const struct shell *sh, size_t argc, char **argv)
 {
-	char *mntpt;
-	int res;
-
 	if (fatfs_mnt.mnt_point != NULL) {
+		shell_error(sh, "%s already mounted at %s", "FAT fs", fatfs_mnt.mnt_point);
 		return -EBUSY;
 	}
 
-	mntpt = mntpt_prepare(argv[1]);
+	char *mntpt = mntpt_prepare(argv[1]);
+
 	if (mntpt == NULL) {
 		shell_error(sh, "Failed to allocate buffer for mount point");
 		return -EIO;
 	}
 
-	fatfs_mnt.mnt_point = (const char *)mntpt;
-	res = fs_mount(&fatfs_mnt);
+	fatfs_mnt.mnt_point = mntpt;
+
+	int res = fs_mount(&fatfs_mnt);
+
 	if (res != 0) {
-		shell_error(sh, "Error mounting FAT fs. Error Code [%d]", res);
+		shell_error(sh, "Error mounting %s: %d", "FAT fs", res);
 		k_free((void *)fatfs_mnt.mnt_point);
 		fatfs_mnt.mnt_point = NULL;
 		return -EIO;
 	}
 
-	shell_print(sh, "Successfully mounted fat fs:%s", fatfs_mnt.mnt_point);
+	shell_print(sh, "Successfully mounted %s at %s", "FAT fs", fatfs_mnt.mnt_point);
 
 	return 0;
 }
@@ -874,28 +875,31 @@ static int cmd_mount_fat(const struct shell *sh, size_t argc, char **argv)
 static int cmd_mount_littlefs(const struct shell *sh, size_t argc, char **argv)
 {
 	if (littlefs_mnt.mnt_point != NULL) {
+		shell_error(sh, "%s already mounted at %s", "littlefs", littlefs_mnt.mnt_point);
 		return -EBUSY;
 	}
 
 	char *mntpt = mntpt_prepare(argv[1]);
 
 	if (mntpt == NULL) {
-		shell_error(sh, "Failed to allocate mount point");
+		shell_error(sh, "Failed to allocate buffer for mount point");
 		return -EIO;
 	}
 
 	littlefs_mnt.mnt_point = mntpt;
 
-	int rc = fs_mount(&littlefs_mnt);
+	int res = fs_mount(&littlefs_mnt);
 
-	if (rc != 0) {
-		shell_error(sh, "Error mounting as littlefs: %d", rc);
+	if (res != 0) {
+		shell_error(sh, "Error mounting %s: %d", "littlefs", res);
 		k_free((void *)littlefs_mnt.mnt_point);
 		littlefs_mnt.mnt_point = NULL;
 		return -EIO;
 	}
 
-	return rc;
+	shell_print(sh, "Successfully mounted %s at %s", "littlefs", littlefs_mnt.mnt_point);
+
+	return 0;
 }
 #endif
 
