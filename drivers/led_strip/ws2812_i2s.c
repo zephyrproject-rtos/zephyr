@@ -199,6 +199,15 @@ static size_t ws2812_strip_length(const struct device *dev)
 	return cfg->length;
 }
 
+static int ws2812_strip_color_mapping(const struct device *dev, const uint8_t **mapping)
+{
+	const struct ws2812_i2s_cfg *cfg = dev->config;
+
+	*mapping = cfg->color_mapping;
+
+	return cfg->num_colors;
+}
+
 static int ws2812_i2s_init(const struct device *dev)
 {
 	const struct ws2812_i2s_cfg *cfg = dev->config;
@@ -248,6 +257,7 @@ static DEVICE_API(led_strip, ws2812_i2s_api) = {
 	.update_rgb = ws2812_strip_update_rgb,
 	.length = ws2812_strip_length,
 	.update_channels = ws2812_strip_update_channels,
+	.color_mapping = ws2812_strip_color_mapping,
 };
 
 #define WS2812_I2S_LRCK_PERIOD_US(idx) DT_INST_PROP(idx, lrck_period)
