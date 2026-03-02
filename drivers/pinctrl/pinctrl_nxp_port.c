@@ -8,9 +8,9 @@
 #define DT_DRV_COMPAT nxp_port_pinmux
 
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/nxp_mcux_clock_subsys.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
-#include <fsl_clock.h>
 
 LOG_MODULE_REGISTER(pinctrl_nxp_port, CONFIG_PINCTRL_LOG_LEVEL);
 
@@ -71,26 +71,10 @@ static int pinctrl_mcux_init(const struct device *dev)
 	return 0;
 }
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_kinetis_sim))
-#define PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n)                                                       \
-	CLK_GATE_DEFINE(DT_INST_CLOCKS_CELL(n, offset), DT_INST_CLOCKS_CELL(n, bits))
-#elif DT_HAS_COMPAT_STATUS_OKAY(nxp_scg_k4)
-#define PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n)                                                       \
-	(DT_INST_CLOCKS_CELL(n, mrcc_offset) == 0                                                  \
-		 ? 0                                                                               \
-		 : MAKE_MRCC_REGADDR(MRCC_BASE, DT_INST_CLOCKS_CELL(n, mrcc_offset)))
-#else
-#define PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n)			\
-	COND_CODE_1(						\
-		DT_PHA_HAS_CELL(DT_DRV_INST(n), clocks, name),	\
-		(DT_INST_CLOCKS_CELL(n, name)), (0U))
-#endif
-
 #define PINCTRL_MCUX_INIT(n)						\
 	static const struct pinctrl_mcux_config pinctrl_mcux_##n##_config = {\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),	\
-		.clock_subsys = (clock_control_subsys_t)		\
-				PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n),	\
+		.clock_subsys = NXP_MCUX_DT_INST_CLOCK_GATE_SUBSYS_PTR(n),\
 	};								\
 									\
 	DEVICE_DT_INST_DEFINE(n,					\
