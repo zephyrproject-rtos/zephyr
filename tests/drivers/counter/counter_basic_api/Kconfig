@@ -16,4 +16,18 @@ config TEST_DRIVER_COUNTER_TOLERANCE
 	  to verify accuracy. Tolerance is a percentage of deviation allowed for
 	  the number of expected ticks.
 
+config TEST_GUARD_PERIOD_US
+	int "Guard Period in us"
+	default 16000 if COUNTER_MCHP_RTC_G1
+	default 200
+	help
+	  Guard period in us
+
+config TEST_PROCESSING_LIMIT_US
+	int "Processing limit in us"
+	default 20000 if COUNTER_MCHP_RTC_G1
+	default 1000
+	help
+	  Processing limit in us
+
 source "Kconfig.zephyr"

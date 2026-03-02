@@ -30,14 +30,6 @@ enum corner {
 typedef void (*fill_buffer)(enum corner corner, uint8_t grey, uint8_t *buf,
 			    size_t buf_size);
 
-
-#ifdef CONFIG_ARCH_POSIX
-static void posix_exit_main(int exit_code)
-{
-	posix_exit(exit_code);
-}
-#endif
-
 static void fill_buffer_argb8888(enum corner corner, uint8_t grey, uint8_t *buf,
 				 size_t buf_size)
 {
@@ -223,7 +215,7 @@ int test_display(void)
 		LOG_ERR("Device %s not found. Aborting test.",
 			display_dev->name);
 #ifdef CONFIG_ARCH_POSIX
-		posix_exit_main(1);
+		posix_exit(1);
 #else
 		return 0;
 #endif
@@ -316,7 +308,7 @@ int test_display(void)
 	default:
 		LOG_ERR("Unsupported pixel format. Aborting test.");
 #ifdef CONFIG_ARCH_POSIX
-		posix_exit_main(1);
+		posix_exit(1);
 #else
 		return 0;
 #endif
@@ -327,7 +319,7 @@ int test_display(void)
 	if (buf == NULL) {
 		LOG_ERR("Could not allocate memory. Aborting test.");
 #ifdef CONFIG_ARCH_POSIX
-		posix_exit_main(1);
+		posix_exit(1);
 #else
 		return 0;
 #endif
@@ -400,7 +392,7 @@ int test_display(void)
 	}
 
 #ifdef CONFIG_ARCH_POSIX
-	posix_exit_main(0);
+	posix_exit(0);
 #endif
 	return 0;
 }

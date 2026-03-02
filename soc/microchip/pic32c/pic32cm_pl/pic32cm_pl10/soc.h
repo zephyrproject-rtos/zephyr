@@ -23,6 +23,8 @@
 #error "Library does not support the specified device."
 #endif
 
+#include "pic32cm_pl.h"
+
 #endif /* _ASMLANGUAGE */
 
 #endif /* SOC_MICROCHIP_PIC32CM_PL10_SOC_H_ */

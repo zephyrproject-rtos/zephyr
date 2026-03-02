@@ -89,13 +89,13 @@ typedef size_t (*led_api_length)(const struct device *dev);
 
 /**
  * @brief LED strip driver API
- *
- * This is the mandatory API any LED strip driver needs to expose.
  */
 __subsystem struct led_strip_driver_api {
+	/* Mandatory callbacks. */
 	led_api_update_rgb update_rgb;
-	led_api_update_channels update_channels;
 	led_api_length length;
+	/* Optional callbacks. */
+	led_api_update_channels update_channels;
 };
 
 /**

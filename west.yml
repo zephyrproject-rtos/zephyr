@@ -195,7 +195,7 @@ manifest:
       groups:
         - hal
     - name: hal_microchip
-      revision: 10920fe424f320067e95ae9480a30df9bbe63684
+      revision: f35096e9b10a002bc4f319ac22382c1abaaf6af7
       path: modules/hal/microchip
       groups:
         - hal
@@ -231,7 +231,7 @@ manifest:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 9c6c922fe1f3a814eb07a4469fb66b00d694610f
+      revision: cb3db9529c52e80ccc3858df971089165510ce13
       groups:
         - hal
     - name: hal_rpi_pico
