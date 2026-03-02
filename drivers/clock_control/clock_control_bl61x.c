@@ -28,13 +28,18 @@ LOG_MODULE_REGISTER(clock_control_bl61x, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 	DT_SAME_NODE(DT_CLOCKS_CTLR_BY_IDX(DT_INST_CLOCKS_CTLR_BY_NAME(0, clk), 0),                \
 		     DT_INST_CLOCKS_CTLR_BY_NAME(0, src))
 
-#define CLOCK_TIMEOUT                  1024
-#define EFUSE_RC32M_TRIM_OFFSET        0x7C
-#define EFUSE_RC32M_TRIM_EP_OFFSET     0x78
-#define EFUSE_RC32M_TRIM_EP_EN_POS     1
-#define EFUSE_RC32M_TRIM_EP_PARITY_POS 0
-#define EFUSE_RC32M_TRIM_POS           4
-#define EFUSE_RC32M_TRIM_MSK           0xFF0
+#define CLOCK_TIMEOUT			1024
+#define EFUSE_RC32M_TRIM_OFFSET		0x7C
+#define EFUSE_RC32M_TRIM_EP_OFFSET	0x78
+#define EFUSE_RC32M_TRIM_EP_EN_POS	1
+#define EFUSE_RC32M_TRIM_EP_PARITY_POS	0
+#define EFUSE_RC32M_TRIM_POS		4
+#define EFUSE_RC32M_TRIM_MSK		0xFF0
+#define EFUSE_RC32K_TRIM_OFFSET		0xEC
+#define EFUSE_RC32K_TRIM_EN_POS		19
+#define EFUSE_RC32K_TRIM_PARITY_POS	18
+#define EFUSE_RC32K_TRIM_POS		8
+#define EFUSE_RC32K_TRIM_MSK		0x3FF00
 
 #define CRYSTAL_ID_FREQ_32000000	0
 #define CRYSTAL_ID_FREQ_24000000	1
@@ -70,6 +75,9 @@ enum bl61x_clkid {
 	bl61x_clkid_clk_aupll = BL61X_CLKID_CLK_AUPLL,
 	bl61x_clkid_clk_bclk = BL61X_CLKID_CLK_BCLK,
 	bl61x_clkid_clk_160mux = BL61X_CLKID_CLK_160M,
+	bl61x_clkid_clk_f32k = BL61X_CLKID_CLK_F32K,
+	bl61x_clkid_clk_xtal32k = BL61X_CLKID_CLK_XTAL32K,
+	bl61x_clkid_clk_rc32k = BL61X_CLKID_CLK_RC32K,
 };
 
 struct clock_control_bl61x_pll_config {
@@ -100,6 +108,11 @@ struct clock_control_bl61x_config {
 	uint32_t	crystal_id;
 };
 
+struct clock_control_bl61x_f32k_config {
+	enum bl61x_clkid	source;
+	bool			xtal_enabled;
+};
+
 struct clock_control_bl61x_data {
 	bool	crystal_enabled;
 	struct clock_control_bl61x_pll_config		wifipll;
@@ -107,6 +120,7 @@ struct clock_control_bl61x_data {
 	struct clock_control_bl61x_root_config		root;
 	struct clock_control_bl61x_bclk_config		bclk;
 	struct clock_control_bl61x_flashclk_config	flashclk;
+	struct clock_control_bl61x_f32k_config		f32k;
 };
 
 typedef struct {
@@ -330,6 +344,20 @@ static void clock_control_bl61x_clock_at_least_us(uint32_t us)
 	for (uint32_t i = 0; i < us * CLK_AT_LEAST_MUL; i++) {
 		clock_bflb_settle();
 	}
+}
+
+/* 0: rc32k
+ * 1: xtal32k
+ * 3: dig32k
+ */
+static void clock_control_bl61x_set_f32k_src(uint8_t src)
+{
+	uint32_t tmp;
+
+	tmp = sys_read32(HBN_BASE + HBN_GLB_OFFSET);
+	tmp &= HBN_F32K_SEL_UMSK;
+	tmp |= src << HBN_F32K_SEL_POS;
+	sys_write32(tmp, HBN_BASE + HBN_GLB_OFFSET);
 }
 
 static int clock_control_bl61x_deinit_crystal(void)
@@ -941,6 +969,101 @@ static __ramfunc void clock_control_bl61x_update_flash_clk(const struct device *
 	clock_bflb_settle();
 }
 
+static int clock_control_bl61x_clock_trim_32K(void)
+{
+	uint32_t tmp;
+	int err;
+	uint32_t trim, trim_parity;
+	const struct device *efuse = DEVICE_DT_GET_ONE(bflb_efuse);
+
+	err = syscon_read_reg(efuse, EFUSE_RC32K_TRIM_OFFSET, &trim);
+	if (err < 0) {
+		LOG_ERR("Error: Couldn't read efuses: err: %d.\n", err);
+		return err;
+	}
+	if (!((trim >> EFUSE_RC32K_TRIM_EN_POS) & 1)) {
+		LOG_ERR("RC32K trim disabled!");
+		return -EINVAL;
+	}
+
+	trim_parity = (trim >> EFUSE_RC32K_TRIM_PARITY_POS) & 1;
+	trim = (trim & EFUSE_RC32K_TRIM_MSK) >> EFUSE_RC32K_TRIM_POS;
+
+	if (trim_parity != (POPCOUNT(trim) & 1)) {
+		LOG_ERR("Bad trim parity");
+		return -EINVAL;
+	}
+
+	tmp = sys_read32(HBN_BASE + HBN_RC32K_CTRL0_OFFSET);
+	tmp |= HBN_RC32K_EXT_CODE_EN_MSK;
+	tmp = (tmp & HBN_RC32K_CODE_FR_EXT_UMSK) | trim << HBN_RC32K_CODE_FR_EXT_POS;
+	sys_write32(tmp, HBN_BASE + HBN_RC32K_CTRL0_OFFSET);
+
+	clock_bflb_settle();
+
+	return 0;
+}
+
+static int clock_control_bl61x_update_f32k(const struct device *dev)
+{
+	struct clock_control_bl61x_data *data = dev->data;
+	uint32_t tmp, tmpold;
+	int ret;
+
+	if (data->f32k.source != bl61x_clkid_clk_xtal32k
+		&& data->f32k.source != bl61x_clkid_clk_rc32k) {
+		return -EINVAL;
+	}
+
+	/* Reset to RC32K for safety */
+	clock_control_bl61x_set_f32k_src(0);
+
+	if (data->f32k.xtal_enabled) {
+		/* Ensure XTAL32K muxing is enabled */
+		tmp = sys_read32(HBN_BASE + HBN_PAD_CTRL_0_OFFSET);
+		tmp |= (0x3 << HBN_REG_EN_AON_CTRL_GPIO_POS);
+		sys_write32(tmp, HBN_BASE + HBN_PAD_CTRL_0_OFFSET);
+
+		/* Disable HBN pull up */
+		tmp = sys_read32(HBN_BASE + HBN_IRQ_MODE_OFFSET);
+		tmp &= HBN_REG_EN_HW_PU_PD_UMSK;
+		sys_write32(tmp, HBN_BASE + HBN_IRQ_MODE_OFFSET);
+
+		tmp = sys_read32(HBN_BASE + HBN_XTAL32K_OFFSET);
+		tmpold = tmp;
+		tmp &= HBN_XTAL32K_HIZ_EN_UMSK;
+		tmp &= HBN_XTAL32K_INV_STRE_UMSK;
+		tmp &= HBN_XTAL32K_REG_UMSK;
+		/* Always 3 */
+		tmp |= 3U << HBN_XTAL32K_INV_STRE_POS;
+		tmp |= 3U << HBN_XTAL32K_REG_POS;
+		tmp |= HBN_PU_XTAL32K_MSK;
+		tmp |= HBN_PU_XTAL32K_BUF_MSK;
+		if (tmpold != tmp) {
+			sys_write32(tmp, HBN_BASE + HBN_XTAL32K_OFFSET);
+			clock_control_bl61x_clock_at_least_us(1000);
+		}
+	} else {
+		tmp = sys_read32(HBN_BASE + HBN_XTAL32K_OFFSET);
+		tmp |= HBN_XTAL32K_HIZ_EN_MSK;
+		tmp &= HBN_PU_XTAL32K_UMSK;
+		tmp &= HBN_PU_XTAL32K_BUF_UMSK;
+		sys_write32(tmp, HBN_BASE + HBN_XTAL32K_OFFSET);
+	}
+
+	if (data->f32k.source == bl61x_clkid_clk_rc32k) {
+		ret = clock_control_bl61x_clock_trim_32K();
+		if (ret < 0) {
+			return ret;
+		}
+		clock_control_bl61x_set_f32k_src(0);
+	} else {
+		clock_control_bl61x_set_f32k_src(1);
+	}
+
+	return 0;
+}
+
 static int clock_control_bl61x_update_clocks(const struct device *dev)
 {
 	struct clock_control_bl61x_data *data = dev->data;
@@ -958,6 +1081,11 @@ static int clock_control_bl61x_update_clocks(const struct device *dev)
 	clock_bflb_set_root_clock(BFLB_MAIN_CLOCK_RC32M);
 	if (clock_bflb_set_root_clock_dividers(0, 0) != 0) {
 		return -EIO;
+	}
+
+	ret = clock_control_bl61x_update_f32k(dev);
+	if (ret < 0) {
+		return ret;
 	}
 
 	if (data->crystal_enabled) {
@@ -1402,6 +1530,15 @@ static struct clock_control_bl61x_data clock_control_bl61x_data = {
 			DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, flash), rx_clock_invert),
 		.divider = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, flash), divider),
 	},
+
+	.f32k = {
+#if CLK_SRC_IS(f32k, xtal32k)
+		.source = bl61x_clkid_clk_xtal32k,
+#else
+		.source = bl61x_clkid_clk_rc32k,
+#endif
+		.xtal_enabled = DT_NODE_HAS_STATUS_OKAY(DT_INST_CLOCKS_CTLR_BY_NAME(0, xtal32k)),
+	},
 };
 
 BUILD_ASSERT((CLK_SRC_IS(aupll_top, crystal)
@@ -1420,8 +1557,12 @@ BUILD_ASSERT((CLK_SRC_IS(root, aupll_top)
 	) ? DT_NODE_HAS_STATUS_OKAY(DT_INST_CLOCKS_CTLR_BY_NAME(0, aupll_top)) : 1,
 	     "Audio PLL must be enabled to use it");
 
-BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_INST_CLOCKS_CTLR_BY_NAME(0, rc32m)),
-	     "RC32M is always on");
+BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_INST_CLOCKS_CTLR_BY_NAME(0, rc32m)), "RC32M is always on");
+BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_INST_CLOCKS_CTLR_BY_NAME(0, rc32k)), "RC32K is always on");
+
+BUILD_ASSERT(CLK_SRC_IS(f32k, xtal32k)
+	? DT_NODE_HAS_STATUS_OKAY(DT_INST_CLOCKS_CTLR_BY_NAME(0, xtal32k)) : 1,
+	"XTAL32K must be enabled to use it");
 
 BUILD_ASSERT(!DT_NODE_HAS_STATUS_OKAY(DT_INST_CLOCKS_CTLR_BY_NAME(0, aupll_top)),
 	     "Audio PLL is unsupported");
