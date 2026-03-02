@@ -154,7 +154,7 @@ otError infra_if_init(otInstance *instance, struct net_if *ail_iface)
 	net_ipv6_addr_create_ll_allrouters_mcast(&mcast_addr);
 	ret = net_ipv6_mld_join(ail_iface, &mcast_addr);
 
-	VerifyOrExit((ret == 0 || ret == -EALREADY), error = OT_ERROR_FAILED);
+	VerifyOrExit((ret == 0), error = OT_ERROR_FAILED);
 exit:
 	return error;
 }

@@ -256,7 +256,7 @@ int net_ipv6_mld_join(struct net_if *iface, const struct net_in6_addr *addr)
 	}
 
 	if (net_if_ipv6_maddr_is_joined(maddr)) {
-		return -EALREADY;
+		return 0;
 	}
 
 	if (net_if_flag_is_set(iface, NET_IF_IPV6_NO_MLD)) {
