@@ -268,6 +268,37 @@ init_exit:
 	return ret;
 }
 
+static int usbd_preallocate(struct usbd_context *const uds_ctx)
+{
+	/* SETUP buffer allocation must not fail. Ensure SETUP buffer is always
+	 * available by pre-allocating it. USB stack effectively resubmits the
+	 * same buffer after each control transfer. This ensures that SETUP
+	 * stage can always be received regardless of UDC memory usage.
+	 *
+	 * Preallocation happens in usbd_enable() because bMaxPacketSize0 must
+	 * be known at allocation time. The buffer is kept until usbd_shutdown()
+	 * to not reallocate it on udc_disable()/udc_enable() cycles.
+	 */
+	if (uds_ctx->setup_buf == NULL) {
+		uds_ctx->setup_buf = udc_ctrl_setup_alloc(uds_ctx->dev);
+	}
+
+	if (uds_ctx->setup_buf == NULL) {
+		return -ENOMEM;
+	}
+
+	return 0;
+}
+
+static void usbd_free_preallocated(struct usbd_context *const uds_ctx)
+{
+	/* Release reference to pre-allocated setup buffer */
+	if (uds_ctx->setup_buf != NULL) {
+		net_buf_unref(uds_ctx->setup_buf);
+		uds_ctx->setup_buf = NULL;
+	}
+}
+
 int usbd_enable(struct usbd_context *const uds_ctx)
 {
 	bool ep0_empty;
@@ -298,6 +329,13 @@ int usbd_enable(struct usbd_context *const uds_ctx)
 	ret = udc_enable(uds_ctx->dev);
 	if (ret != 0) {
 		LOG_ERR("Failed to enable controller");
+		goto enable_exit;
+	}
+
+	ret = usbd_preallocate(uds_ctx);
+	if (ret != 0) {
+		LOG_ERR("Buffer preallocation failed");
+		udc_disable(uds_ctx->dev);
 		goto enable_exit;
 	}
 
@@ -359,6 +397,8 @@ int usbd_shutdown(struct usbd_context *const uds_ctx)
 	if (ret) {
 		LOG_ERR("Failed to purge endpoint queues");
 	}
+
+	usbd_free_preallocated(uds_ctx);
 
 	uds_ctx->status.initialized = false;
 	usbd_device_unlock(uds_ctx);
