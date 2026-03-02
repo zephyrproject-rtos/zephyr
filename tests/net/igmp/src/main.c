@@ -76,7 +76,6 @@ static bool is_query_received;
 static bool is_report_sent;
 static bool is_igmpv2_query_sent;
 static bool is_igmpv3_query_sent;
-static bool ignore_already;
 K_SEM_DEFINE(wait_data, 0, UINT_MAX);
 
 #define WAIT_TIME 500
@@ -331,13 +330,7 @@ static void join_group(void)
 	int ret;
 
 	ret = net_ipv4_igmp_join(net_iface, &mcast_addr, NULL);
-
-	if (ignore_already) {
-		zassert_true(ret == 0 || ret == -EALREADY,
-			     "Cannot join IPv4 multicast group");
-	} else {
-		zassert_ok(ret, "Cannot join IPv4 multicast group");
-	}
+	zassert_ok(ret, "Cannot join IPv4 multicast group");
 
 	/* Let the network stack to proceed */
 	k_msleep(THREAD_SLEEP);
@@ -362,8 +355,6 @@ static void leave_group(void)
 static void catch_join_group(void)
 {
 	is_group_joined = false;
-
-	ignore_already = false;
 
 	join_group();
 
@@ -390,8 +381,6 @@ static void catch_leave_group(void)
 static void verify_join_group(void)
 {
 	is_join_msg_ok = false;
-
-	ignore_already = false;
 
 	join_group();
 
@@ -471,15 +460,10 @@ static void socket_group_with_address(struct net_in_addr *local_addr, bool do_jo
 			       (void *)&mreqn, sizeof(mreqn));
 
 	if (do_join) {
-		if (ignore_already) {
-			zassert_true(ret == 0 || ret == -EALREADY,
-				     "Cannot join IPv4 multicast group (%d)", -errno);
-		} else {
-			zassert_ok(ret,
-				   "Cannot join IPv4 multicast group (%d) "
-				   "with local addr %s",
-				   -errno, net_sprint_ipv4_addr(local_addr));
-		}
+		zassert_ok(ret,
+			   "Cannot join IPv4 multicast group (%d) "
+			   "with local addr %s",
+			   -errno, net_sprint_ipv4_addr(local_addr));
 	} else {
 		zassert_ok(ret, "Cannot leave IPv4 multicast group (%d)", -errno);
 
@@ -519,12 +503,7 @@ static void socket_group_with_index(struct net_in_addr *local_addr, bool do_join
 			       (void *)&mreqn, sizeof(mreqn));
 
 	if (do_join) {
-		if (ignore_already) {
-			zassert_true(ret == 0 || ret == -EALREADY,
-				     "Cannot join IPv4 multicast group (%d)", -errno);
-		} else {
-			zassert_ok(ret, "Cannot join IPv4 multicast group (%d)", -errno);
-		}
+		zassert_ok(ret, "Cannot join IPv4 multicast group (%d)", -errno);
 	} else {
 		zassert_ok(ret, "Cannot leave IPv4 multicast group (%d)", -errno);
 
@@ -645,14 +624,11 @@ ZTEST_USER(net_igmp, test_group_rejoin)
 ZTEST(net_igmp, test_igmp_multi_join)
 {
 	is_join_msg_ok = false;
-	ignore_already = false;
 	join_group();
 	zassert_ok(k_sem_take(&wait_data, K_MSEC(WAIT_TIME)), "Timeout while waiting join event");
 	zassert_true(is_join_msg_ok, "Join msg invalid");
 
-	/* Second join would give -EALREADY, no report sent, still ref count will be increased */
 	is_join_msg_ok = false;
-	ignore_already = true;
 	join_group();
 	k_msleep(THREAD_SLEEP);
 	zassert_false(is_join_msg_ok, "Unexpected join msg");

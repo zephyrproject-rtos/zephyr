@@ -646,10 +646,10 @@ int net_ipv4_igmp_join(struct net_if *iface, const struct net_in_addr *addr,
 	if (net_if_ipv4_maddr_is_joined(maddr)) {
 #if defined(CONFIG_NET_IPV4_IGMPV3)
 		if (param == NULL) {
-			return -EALREADY;
+			return 0;
 		}
 #else
-		return -EALREADY;
+		return 0;
 #endif
 	}
 
