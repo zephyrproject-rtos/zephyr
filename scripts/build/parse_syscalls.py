@@ -53,37 +53,11 @@ struct\s+                       # struct keyword is next
 [{]                             # Open curly bracket
 '''
 
-# Matches C/C++ string or character literals (single‑ or double‑quoted),
-# correctly handling escaped quotes and backslashes.
-c_string_pattern = r'(?P<string>"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\')'
-# Matches C/C++ comments: either a block comment /* … */ (spanning any number
-# of lines) or a line comment // … that ends at the newline (with optional \r)
-c_comment_pattern = r"(?P<comment>/\*.*?\*/|//[^\n]*\r?$)"
-c_string_or_comment_regex = re.compile(
-    c_string_pattern + r'|' + c_comment_pattern, re.MULTILINE | re.DOTALL
-)
-
 
 def tagged_struct_update(target_list, tag, contents):
     regex = re.compile(tagged_struct_decl_template % tag, regex_flags)
     items = [mo.groups()[0].strip() for mo in regex.finditer(contents)]
     target_list.extend(items)
-
-
-def remove_c_comments(string):
-    """
-    Remove C style comments from input string
-    """
-
-    def _replace_match(m):
-        if m.lastgroup != "comment":
-            return m.group()
-        # Replace all non-newline characters in comments with spaces,
-        # preserving newlines to avoid merging lines.
-        text = m.group()
-        return "".join(ch if ch in ("\n", "\r") else " " for ch in text)
-
-    return c_string_or_comment_regex.sub(_replace_match, string)
 
 
 def analyze_headers(include_dir, scan_dir, file_list):
@@ -155,13 +129,10 @@ def analyze_headers(include_dir, scan_dir, file_list):
 
         try:
             to_emit = syscall_files[one_file]["emit"] | args.emit_all_syscalls
-            contents_no_comments = remove_c_comments(contents)
 
-            syscall_result = [
-                (mo.groups(), fn, to_emit) for mo in syscall_regex.finditer(contents_no_comments)
-            ]
+            syscall_result = [(mo.groups(), fn, to_emit) for mo in syscall_regex.finditer(contents)]
             for tag in struct_tags:
-                tagged_struct_update(tagged_ret[tag], tag, contents_no_comments)
+                tagged_struct_update(tagged_ret[tag], tag, contents)
         except Exception as e:
             sys.stderr.write(f"While parsing {fn}\n")
             raise e
