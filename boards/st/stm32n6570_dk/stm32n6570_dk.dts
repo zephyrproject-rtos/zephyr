@@ -13,5 +13,21 @@
 
 	chosen {
 		zephyr,sram = &axisram1;
+		zephyr,flash-controller = &mx66uw1g45g_xspi1;
+		zephyr,flash = &mx66uw1g45g_xspi1;
 	};
+};
+
+&mx66uw1g45g_xspi1{
+	#include "partitions.dtsi"
+};
+
+&xspi2 {
+	/* Required to be able to retrieve FLASH_BASE_ADDRESS */
+	status = "okay";
+	memory-mapped;
+};
+
+&xspi1 {
+	status = "okay";
 };

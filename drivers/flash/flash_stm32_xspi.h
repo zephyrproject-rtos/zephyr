@@ -70,6 +70,7 @@ struct flash_stm32_xspi_config {
 	const struct stm32_pclken pclken;
 	const struct stm32_pclken pclken_ker;
 	const struct stm32_pclken pclken_mgr;
+	const struct stm32_pclken pclken_xspix_alt;
 	irq_config_func_t irq_config;
 	size_t flash_size;
 	uint32_t max_frequency;
@@ -78,6 +79,7 @@ struct flash_stm32_xspi_config {
 	const struct pinctrl_dev_config *pcfg;
 	bool four_byte_opcodes;
 	bool requires_ulbpr;
+	bool memory_mapped;
 	uint32_t mem_map_based_address;
 #if STM32_XSPI_RESET_GPIO
 	const struct gpio_dt_spec reset;
@@ -85,6 +87,8 @@ struct flash_stm32_xspi_config {
 #endif /* STM32_XSPI_RESET_GPIO */
 	bool has_pclken_ker;
 	bool has_pclken_mgr;
+	bool has_pclken_xspix_alt;
+	bool read_while_write;
 };
 
 struct flash_stm32_xspi_data {
@@ -115,6 +119,7 @@ struct flash_stm32_xspi_data {
 	struct stream dma_tx;
 	struct stream dma_rx;
 #endif /* CONFIG_FLASH_STM32_XSPI_DMA */
+	struct flash_parameters parameters;
 };
 
 #endif /* ZEPHYR_DRIVERS_FLASH_XSPI_STM32_H_ */

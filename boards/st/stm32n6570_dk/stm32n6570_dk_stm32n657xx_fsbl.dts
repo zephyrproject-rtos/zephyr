@@ -10,4 +10,31 @@
 / {
 	model = "STMicroelectronics STM32N6570 Discovery Kit board";
 	compatible = "st,stm32n6570-dk-fsbl";
+
+	chosen {
+		zephyr,flash-controller = &mx66uw1g45g_xspi1;
+		zephyr,flash = &mx66uw1g45g_xspi1;
+		zephyr,uart-mcumgr = &usart1;
+	};
+};
+
+&xspim {
+	io-port-1 = <&xspi3>;
+	io-port-2 = <&xspi2>, <&xspi1>;
+	status = "okay";
+	req2ack-time = <10>;
+};
+
+&xspi2 {
+	/* Enable memory mapping which will be used for chainloaded app */
+	status = "okay";
+	memory-mapped;
+};
+
+&xspi1 {
+	status = "okay";
+};
+
+&mx66uw1g45g_xspi1{
+	#include "partitions.dtsi"
 };

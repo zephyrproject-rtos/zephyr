@@ -10,4 +10,24 @@
 / {
 	model = "STMicroelectronics STM32N6570 Discovery Kit board";
 	compatible = "st,stm32n6570-dk-serial-boot";
+
+	chosen {
+		zephyr,flash-controller = &mx66uw1g45g_xspi2;
+		zephyr,flash = &mx66uw1g45g_xspi2;
+	};
+
+};
+
+&xspim {
+	io-port-1 = <&xspi1>;
+	io-port-2 = <&xspi2>;
+	status = "okay";
+};
+
+&xspi2 {
+	status = "okay";
+};
+
+&mx66uw1g45g_xspi2{
+	#include "partitions.dtsi"
 };

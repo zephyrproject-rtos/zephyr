@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+partitions {
+	compatible = "fixed-partitions";
+	#address-cells = <1>;
+	#size-cells = <1>;
+	/* Bank 0: 0-0x01FFFFFF */
+	boot_partition: partition@0 {
+		label = "mcuboot";
+		reg = <0x00000000 DT_SIZE_K(64)>;
+	};
+	/* Swap using offset, with max number of sectors: 512  */
+	slot0_partition: partition@10000 {
+		label = "image-0";
+		reg = <0x10000 DT_SIZE_K(2044)>;
+	};
+	/* Bank 1: 0x02000000-0x03FFFFFF */
+	slot1_partition: partition@2000000 {
+		label = "image-1";
+		reg = <0x2000000 DT_SIZE_K(2048)>;
+	};
+	storage_partition: partition@21f4000 {
+		label = "storage";
+		reg = <0x21f4000 DT_SIZE_M(1)>;
+	};
+	/* Bank 2: 0x04000000-0x05FFFFFF */
+	/* Bank 3: 0x06000000-0x07FFFFFF */
+};
