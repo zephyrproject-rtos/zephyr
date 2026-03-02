@@ -24,7 +24,7 @@
 		clk_rc32m: clk-rc32m {
 			#clock-cells = <0>;
 			compatible = "fixed-clock";
-			clock-frequency = <DT_FREQ_M(32)>;
+			clock-frequency = <BFLB_RC32M_FREQUENCY>;
 			status = "okay";
 		};
 
@@ -44,7 +44,7 @@
 
 		clk_root: clk-root {
 			#clock-cells = <0>;
-			compatible = "bflb,bl70x-root-clk";
+			compatible = "bflb,root-clk";
 			clocks = <&clk_pll BL70X_DLL_144MHz>;
 			divider = <1>;
 			status = "okay";

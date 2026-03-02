@@ -741,7 +741,7 @@ static struct clock_control_bl70x_data clock_control_bl70x_data = {
 		},
 };
 
-BUILD_ASSERT(CLK_SRC_IS(dll_144, crystal) || CLK_SRC_IS(root, crystal)
+BUILD_ASSERT((CLK_SRC_IS(dll_144, crystal) || CLK_SRC_IS(root, crystal))
 		     ? DT_NODE_HAS_STATUS_OKAY(DT_INST_CLOCKS_CTLR_BY_NAME(0, crystal))
 		     : 1,
 	     "Crystal must be enabled to use it");

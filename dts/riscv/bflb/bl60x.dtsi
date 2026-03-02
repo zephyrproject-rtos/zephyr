@@ -25,7 +25,7 @@
 		clk_rc32m: clk-rc32m {
 			#clock-cells = <0>;
 			compatible = "fixed-clock";
-			clock-frequency = <DT_FREQ_M(32)>;
+			clock-frequency = <BFLB_RC32M_FREQUENCY>;
 			status = "okay";
 		};
 
@@ -38,15 +38,16 @@
 
 		clk_pll: clk-pll {
 			#clock-cells = <1>;
-			compatible = "bflb,bl60x-pll";
+			compatible = "bflb,pll";
 			clocks = <&clk_crystal>;
+			top-frequency = <BL60X_PLL_TOP_FREQ>;
 			status = "okay";
 		};
 
 		clk_root: clk-root {
 			#clock-cells = <0>;
-			compatible = "bflb,bl60x-root-clk";
-			clocks = <&clk_pll BL60X_PLL_192MHz>;
+			compatible = "bflb,root-clk";
+			clocks = <&clk_pll BL60X_PLL_ID_DIV1>;
 			divider = <1>;
 			status = "okay";
 		};
@@ -54,7 +55,7 @@
 		clk_bclk: clk-bclk {
 			#clock-cells = <0>;
 			compatible = "bflb,bclk";
-			divider = <4>;
+			divider = <2>;
 			status = "okay";
 		};
 	};
@@ -140,11 +141,9 @@
 			#clock-cells = <1>;
 			status = "okay";
 			clocks = <&clk_rc32m>, <&clk_crystal>, <&clk_root>, <&clk_bclk>,
-				 <&clk_pll BL60X_PLL_192MHz>, <&clk_pll BL60X_PLL_160MHz>,
-				 <&clk_pll BL60X_PLL_120MHz>, <&clk_pll BL60X_PLL_48MHz>;
+				 <&clk_pll BL60X_PLL_ID_DIV1>;
 			clock-names = "rc32m", "crystal", "root", "bclk",
-				      "pll_192", "pll_160",
-				      "pll_120", "pll_48";
+				      "pll_top";
 		};
 
 		adc0: adc@40002000 {
