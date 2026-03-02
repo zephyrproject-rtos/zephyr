@@ -616,6 +616,7 @@ static void test_verify_send_report(void)
 	zassert_true(is_report_sent, "Report not sent");
 
 	leave_mldv2_capable_routers_group();
+	test_leave_group();
 }
 
 /* This value should be longer that the one in net_if.c when DAD timeouts */
