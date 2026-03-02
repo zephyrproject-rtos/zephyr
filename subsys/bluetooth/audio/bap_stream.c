@@ -87,7 +87,7 @@ void bt_bap_stream_attach(struct bt_conn *conn, struct bt_bap_stream *stream, st
 			stream->conn = bt_conn_ref(conn);
 		}
 	}
-	stream->codec_cfg = &ep->codec_cfg;
+
 	stream->ep = ep;
 	ep->stream = stream;
 }
