@@ -28,12 +28,18 @@
 #define BL61X_CLKID_CLK_CRYSTAL BFLB_CLKID_CLK_CRYSTAL
 /** Bus Clock */
 #define BL61X_CLKID_CLK_BCLK    BFLB_CLKID_CLK_BCLK
+/** F32K Clock */
+#define BL61X_CLKID_CLK_F32K	BFLB_CLKID_CLK_F32K
+/** XTAL32K Clock */
+#define BL61X_CLKID_CLK_XTAL32K	BFLB_CLKID_CLK_XTAL32K
+/** RC32K Clock */
+#define BL61X_CLKID_CLK_RC32K	BFLB_CLKID_CLK_RC32K
 /** WIFIPLL clock, the standard root frequency of this PLL is 960MHz */
-#define BL61X_CLKID_CLK_WIFIPLL 4
+#define BL61X_CLKID_CLK_WIFIPLL BFLB_CLKID_CLK_PRIVATE
 /** AUPLL clock, it has no standard root frequency */
-#define BL61X_CLKID_CLK_AUPLL   5
+#define BL61X_CLKID_CLK_AUPLL   (BFLB_CLKID_CLK_PRIVATE + 1)
 /** This clock is muxed off the PLLs to provide 160MHz */
-#define BL61X_CLKID_CLK_160M    6
+#define BL61X_CLKID_CLK_160M    (BFLB_CLKID_CLK_PRIVATE + 2)
 
 /** ID 0, AUPLL / 2  */
 #define BL61X_AUPLL_ID_DIV2	0

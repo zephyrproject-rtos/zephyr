@@ -29,6 +29,28 @@
 			status = "okay";
 		};
 
+		clk_xtal32k: clk-xtal32k {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <BFLB_F32K_FREQUENCY>;
+			status = "disabled";
+		};
+
+		clk_rc32k: clk-rc32k {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <BFLB_F32K_FREQUENCY>;
+			status = "okay";
+		};
+
+		clk_f32k: clk-f32k {
+			#clock-cells = <0>;
+			compatible = "bflb,f32k";
+			clock-frequency = <BFLB_F32K_FREQUENCY>;
+			clocks = <&clk_rc32k>;
+			status = "okay";
+		};
+
 		clk_crystal: clk-crystal {
 			#clock-cells = <0>;
 			compatible = "fixed-clock";
@@ -149,9 +171,11 @@
 			#clock-cells = <1>;
 			status = "okay";
 			clocks = <&clk_rc32m>, <&clk_crystal>, <&clk_root>, <&clk_bclk>,
+				 <&clk_rc32k>, <&clk_xtal32k>, <&clk_f32k>,
 				 <&clk_pll BL60X_PLL_ID_DIV1>,
 				 <&clk_flash>;
 			clock-names = "rc32m", "crystal", "root", "bclk",
+				      "rc32k", "xtal32k", "f32k",
 				      "pll_top",
 				      "flash";
 		};
