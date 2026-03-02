@@ -215,16 +215,13 @@ int net_ipv6_mld_join(struct net_if *iface, const struct net_in6_addr *addr)
 	struct net_if_mcast_addr *maddr;
 	int ret = 0;
 
-	maddr = net_if_ipv6_maddr_lookup(addr, &iface);
-	if (maddr && net_if_ipv6_maddr_is_joined(maddr)) {
-		return -EALREADY;
+	maddr = net_if_ipv6_maddr_add(iface, addr);
+	if (maddr == NULL) {
+		return -ENOMEM;
 	}
 
-	if (!maddr) {
-		maddr = net_if_ipv6_maddr_add(iface, addr);
-		if (!maddr) {
-			return -ENOMEM;
-		}
+	if (net_if_ipv6_maddr_is_joined(maddr)) {
+		return -EALREADY;
 	}
 
 	if (net_if_flag_is_set(iface, NET_IF_IPV6_NO_MLD)) {
@@ -241,6 +238,15 @@ int net_ipv6_mld_join(struct net_if *iface, const struct net_in6_addr *addr)
 
 	ret = net_ipv6_mld_send_single(iface, addr, NET_IPV6_MLDv2_CHANGE_TO_EXCLUDE_MODE);
 	if (ret < 0) {
+		/* -ENETDOWN Indicate that network interface is down - this may
+		 * happen and should not be considered fatal, address group will
+		 * be joined when the interface goes up. Any other error should
+		 * be considered fatal though and address should be cleaned up.
+		 */
+		if (ret != -ENETDOWN) {
+			net_if_ipv6_maddr_rm(iface, addr);
+		}
+
 		return ret;
 	}
 
@@ -259,15 +265,18 @@ out:
 int net_ipv6_mld_leave(struct net_if *iface, const struct net_in6_addr *addr)
 {
 	struct net_if_mcast_addr *maddr;
+	struct net_addr removed_addr;
 	int ret = 0;
 
 	maddr = net_if_ipv6_maddr_lookup(addr, &iface);
-	if (!maddr) {
+	if (maddr == NULL) {
 		return -ENOENT;
 	}
 
+	removed_addr = maddr->address;
 	if (!net_if_ipv6_maddr_rm(iface, addr)) {
-		return -EINVAL;
+		/* Address still in use */
+		return 0;
 	}
 
 	if (net_if_flag_is_set(iface, NET_IF_IPV6_NO_MLD)) {
@@ -284,10 +293,10 @@ int net_ipv6_mld_leave(struct net_if *iface, const struct net_in6_addr *addr)
 	}
 
 out:
-	net_if_mcast_monitor(iface, &maddr->address, false);
+	net_if_mcast_monitor(iface, &removed_addr, false);
 
 	net_mgmt_event_notify_with_info(NET_EVENT_IPV6_MCAST_LEAVE, iface,
-					&maddr->address.in6_addr,
+					&removed_addr.in6_addr,
 					sizeof(struct net_in6_addr));
 
 	return ret;
