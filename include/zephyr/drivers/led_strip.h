@@ -21,7 +21,7 @@
  * @brief Interfaces for LED strips.
  * @defgroup led_strip_interface LED Strip
  * @since 1.10
- * @version 1.0.0
+ * @version 1.1.0
  * @ingroup io_interfaces
  * @{
  *
@@ -85,6 +85,13 @@ typedef int (*led_api_update_channels)(const struct device *dev,
 				       size_t num_channels);
 
 /**
+ * @brief Callback API for receiving color mapping.
+ *
+ * See @a led_strip_color_mapping() for argument descriptions.
+ */
+typedef int (*led_api_color_mapping)(const struct device *dev, const uint8_t **mapping);
+
+/**
  * @brief Callback API for getting length of an LED strip.
  *
  * See @a led_strip_length() for argument descriptions.
@@ -107,6 +114,10 @@ __subsystem struct led_strip_driver_api {
 	 * @driver_ops_optional @copybrief led_strip_update_channels
 	 */
 	led_api_update_channels update_channels;
+	/**
+	 * @driver_ops_optional @copybrief led_strip_color_mapping
+	 */
+	led_api_color_mapping color_mapping;
 };
 /**
  * @}
@@ -169,6 +180,27 @@ static inline int led_strip_update_channels(const struct device *dev,
 	}
 
 	return api->update_channels(dev, channels, num_channels);
+}
+
+/**
+ * @brief		Receive LED strip color mapping.
+ *
+ * @param dev		LED strip device.
+ * @param[out] mapping	Pixel color mapping. E.g. LED_COLOR_ID_RED, LED_COLOR_ID_GREEN,
+ * LED_COLOR_ID_BLUE, LED_COLOR_ID_WHITE.
+ *
+ * @retval		Mapping length on success.
+ * @retval		-ENOSYS if not implemented.
+ */
+static inline int led_strip_color_mapping(const struct device *dev, const uint8_t **mapping)
+{
+	const struct led_strip_driver_api *api = DEVICE_API_GET(led_strip, dev);
+
+	if (api->color_mapping == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->color_mapping(dev, mapping);
 }
 
 /**
