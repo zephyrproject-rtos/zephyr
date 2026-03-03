@@ -1,0 +1,60 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		qdec0 = &eqdc0;
+		qenca = &phase_a;
+		qencb = &phase_b;
+	};
+
+	encoder-emulate {
+		compatible = "gpio-leds";
+
+		phase_a: phase_a {
+			gpios = <&gpio3 12 GPIO_ACTIVE_LOW>;
+		};
+
+		phase_b: phase_b {
+			gpios = <&gpio3 13 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+/* Wire J1 12 <-> J4 1 and J1 14 <-> J4 3 */
+&pinctrl {
+	eqdc_pinmux: eqdc_pinmux {
+		group0 {
+			pinmux =  <TRIG_IN5_P2_7>;
+			drive-strength = "high";
+			slew-rate = "fast";
+			input-enable;
+		};
+		group1 {
+			pinmux = <TRIG_IN10_P3_31>;
+			drive-strength = "high";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+};
+
+&eqdc0 {
+	status = "okay";
+	pinctrl-0 = <&eqdc_pinmux>;
+	pinctrl-names = "default";
+	counts-per-revolution = <120>;
+	reverse-direction;
+	revolution-count-mode = <1>;
+	prescaler = <15>;
+	input-filter-period = <1>;
+	mux-states = <&inputmux 0x370 0x3f 34>,
+		<&inputmux 0x36C 0x3f 29>;
+};
+
+&inputmux {
+	status = "okay";
+};
