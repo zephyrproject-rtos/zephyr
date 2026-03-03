@@ -137,6 +137,24 @@
 			channels = <0 1>;
 		};
 
+		inputmux: mux@40001000 {
+			compatible = "nxp,inputmux";
+			reg = <0x40001000 0x4000>;
+			#mux-control-cells = <2>;
+			#mux-state-cells = <3>;
+			clocks = <&syscon MCUX_INPUTMUX_CLK>;
+			resets = <&reset NXP_SYSCON_RESET(0, 0)>;
+			status = "disabled";
+		};
+
+		eqdc0: eqdc@400A7000 {
+			compatible = "nxp,mcux-eqdc";
+			reg = <0x400A7000 0x4000>;
+			interrupts = <185 0>;
+			clocks = <&syscon MCUX_EQDC_CLK>;
+			status = "disabled";
+		};
+
 		flexpwm0: flexpwm@400a9000 {
 			compatible = "nxp,flexpwm";
 			reg = <0x400a9000 0x1000>;
