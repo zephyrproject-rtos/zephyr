@@ -16,6 +16,11 @@
 
 #ifdef CONFIG_RISCV_ISA_EXT_SMCSRIND
 
+/**
+ * @brief Read an indirect CSR register atomically
+ * @param index The CSR index to read
+ * @return The value of the indirect CSR register
+ */
 static inline unsigned long micsr_read(unsigned int index)
 {
 	unsigned int key = irq_lock();
@@ -27,6 +32,11 @@ static inline unsigned long micsr_read(unsigned int index)
 	return val;
 }
 
+/**
+ * @brief Write an indirect CSR register atomically
+ * @param index The CSR index to write
+ * @param value The value to write to the indirect CSR register
+ */
 static inline void micsr_write(unsigned int index, unsigned long value)
 {
 	unsigned int key = irq_lock();
@@ -37,6 +47,11 @@ static inline void micsr_write(unsigned int index, unsigned long value)
 	irq_unlock(key);
 }
 
+/**
+ * @brief Set bits in an indirect CSR register atomically
+ * @param index The CSR index to modify
+ * @param mask The bitmask of bits to set
+ */
 static inline void micsr_set(unsigned int index, unsigned long mask)
 {
 	unsigned int key = irq_lock();
@@ -47,6 +62,11 @@ static inline void micsr_set(unsigned int index, unsigned long mask)
 	irq_unlock(key);
 }
 
+/**
+ * @brief Clear bits in an indirect CSR register atomically
+ * @param index The CSR index to modify
+ * @param mask The bitmask of bits to clear
+ */
 static inline void micsr_clear(unsigned int index, unsigned long mask)
 {
 	unsigned int key = irq_lock();
@@ -57,6 +77,12 @@ static inline void micsr_clear(unsigned int index, unsigned long mask)
 	irq_unlock(key);
 }
 
+/**
+ * @brief Read an indirect CSR register and set bits atomically
+ * @param index The CSR index to modify
+ * @param mask The bitmask of bits to set
+ * @return The previous value of the indirect CSR register
+ */
 static inline unsigned long micsr_read_set(unsigned int index, unsigned long mask)
 {
 	unsigned int key = irq_lock();
@@ -68,6 +94,12 @@ static inline unsigned long micsr_read_set(unsigned int index, unsigned long mas
 	return val;
 }
 
+/**
+ * @brief Read an indirect CSR register and clear bits atomically
+ * @param index The CSR index to modify
+ * @param mask The bitmask of bits to clear
+ * @return The previous value of the indirect CSR register
+ */
 static inline unsigned long micsr_read_clear(unsigned int index, unsigned long mask)
 {
 	unsigned int key = irq_lock();
@@ -79,6 +111,11 @@ static inline unsigned long micsr_read_clear(unsigned int index, unsigned long m
 	return val;
 }
 
+/**
+ * @brief Read an indirect CSR register via MIREG2 atomically
+ * @param index The CSR index to read
+ * @return The value of the indirect CSR register
+ */
 static inline unsigned long micsr2_read(unsigned int index)
 {
 	unsigned int key = irq_lock();
@@ -90,6 +127,11 @@ static inline unsigned long micsr2_read(unsigned int index)
 	return val;
 }
 
+/**
+ * @brief Write an indirect CSR register via MIREG2 atomically
+ * @param index The CSR index to write
+ * @param value The value to write to the indirect CSR register
+ */
 static inline void micsr2_write(unsigned int index, unsigned long value)
 {
 	unsigned int key = irq_lock();
@@ -100,6 +142,11 @@ static inline void micsr2_write(unsigned int index, unsigned long value)
 	irq_unlock(key);
 }
 
+/**
+ * @brief Set bits in an indirect CSR register via MIREG2 atomically
+ * @param index The CSR index to modify
+ * @param mask The bitmask of bits to set
+ */
 static inline void micsr2_set(unsigned int index, unsigned long mask)
 {
 	unsigned int key = irq_lock();
@@ -110,6 +157,11 @@ static inline void micsr2_set(unsigned int index, unsigned long mask)
 	irq_unlock(key);
 }
 
+/**
+ * @brief Clear bits in an indirect CSR register via MIREG2 atomically
+ * @param index The CSR index to modify
+ * @param mask The bitmask of bits to clear
+ */
 static inline void micsr2_clear(unsigned int index, unsigned long mask)
 {
 	unsigned int key = irq_lock();
@@ -120,6 +172,12 @@ static inline void micsr2_clear(unsigned int index, unsigned long mask)
 	irq_unlock(key);
 }
 
+/**
+ * @brief Read an indirect CSR register and set bits via MIREG2 atomically
+ * @param index The CSR index to modify
+ * @param mask The bitmask of bits to set
+ * @return The previous value of the indirect CSR register
+ */
 static inline unsigned long micsr2_read_set(unsigned int index, unsigned long mask)
 {
 	unsigned int key = irq_lock();
@@ -131,6 +189,12 @@ static inline unsigned long micsr2_read_set(unsigned int index, unsigned long ma
 	return val;
 }
 
+/**
+ * @brief Read an indirect CSR register and clear bits via MIREG2 atomically
+ * @param index The CSR index to modify
+ * @param mask The bitmask of bits to clear
+ * @return The previous value of the indirect CSR register
+ */
 static inline unsigned long micsr2_read_clear(unsigned int index, unsigned long mask)
 {
 	unsigned int key = irq_lock();
