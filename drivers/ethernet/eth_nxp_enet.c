@@ -515,9 +515,7 @@ static void eth_nxp_enet_iface_init(struct net_if *iface)
 			     sizeof(data->mac_addr),
 			     NET_LINK_ETHERNET);
 
-	if (data->iface == NULL) {
-		data->iface = iface;
-	}
+	data->iface = iface;
 
 #if defined(CONFIG_NET_DSA_DEPRECATED)
 	dsa_register_master_tx(iface, &eth_nxp_enet_tx);
