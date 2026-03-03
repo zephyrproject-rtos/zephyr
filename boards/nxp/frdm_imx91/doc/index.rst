@@ -101,6 +101,26 @@ uSDHC2 for testing:
    :goals: build
    :gen-args: -DEXTRA_DTC_OVERLAY_FILE=usdhc2.overlay
 
+User Button
+-----------------------
+
+The user buttons K2 is connected to onboard GPIO expander PCAL6524, use the following command
+to test user buttons:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/button
+   :host-os: unix
+   :board: frdm_imx91/mimx9131
+   :goals: build
+
+Run the app, press and release K2 button, then the following log could be found on Zephyr console:
+.. code-block:: console
+
+    *** Booting Zephyr OS build v4.3.0-6943-gc384779e39ac ***
+    Press the button
+    Button 11 pressed at 3058829772
+    Button 11 released at 3064215344
+
 Programming and Debugging
 *************************
 
