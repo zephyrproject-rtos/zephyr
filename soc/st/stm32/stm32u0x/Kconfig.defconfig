@@ -5,9 +5,6 @@
 
 if SOC_SERIES_STM32U0X
 
-configdefault NUM_IRQS
-	default 32
-
 if I2C_STM32
 
 configdefault SHARED_INTERRUPTS
