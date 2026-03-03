@@ -246,9 +246,7 @@ static void eth_iface_init(struct net_if *iface)
 	struct eth_litex_dev_data *context = port->data;
 
 	/* set interface */
-	if (context->iface == NULL) {
-		context->iface = iface;
-	}
+	context->iface = iface;
 
 	/* initialize ethernet L2 */
 	ethernet_init(iface);

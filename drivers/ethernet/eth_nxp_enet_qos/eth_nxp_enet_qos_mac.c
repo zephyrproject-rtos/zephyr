@@ -92,9 +92,7 @@ static void eth_nxp_enet_qos_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, data->mac_addr.addr,
 			     sizeof(((struct net_eth_addr *)NULL)->addr), NET_LINK_ETHERNET);
 
-	if (data->iface == NULL) {
-		data->iface = iface;
-	}
+	data->iface = iface;
 
 	ethernet_init(iface);
 

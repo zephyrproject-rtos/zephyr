@@ -798,9 +798,7 @@ static void eth_enc28j60_iface_init(struct net_if *iface)
 			     sizeof(context->mac_address),
 			     NET_LINK_ETHERNET);
 
-	if (context->iface == NULL) {
-		context->iface = iface;
-	}
+	context->iface = iface;
 
 	ethernet_init(iface);
 
