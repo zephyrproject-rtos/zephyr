@@ -26,6 +26,7 @@ from twisterlib.harness import (
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
 from twisterlib.testsuite import TestCase, TestSuite
+from twisterlib.testsuitedata import HarnessConfig
 
 GTEST_START_STATE = " RUN      "
 GTEST_PASS_STATE = "       OK "
@@ -590,10 +591,9 @@ def test_pytest_run(tmp_path, caplog):
     mock_platform.normalized_name = "mock_platform"
 
     mock_testsuite = mock.Mock(
-        id="id", testcases=[], source_dir="source_dir", harness_config={}
+        id="id", testcases=[], source_dir="source_dir", harness_config=HarnessConfig()
     )
     mock_testsuite.name = "mock_testsuite"
-    mock_testsuite.harness_config = {}
 
     handler = mock.Mock(options=mock.Mock(verbose=0), type_str="handler_type")
 

@@ -15,6 +15,7 @@ from pathlib import Path
 from twisterlib.constants import canonical_zephyr_base
 from twisterlib.error import StatusAttributeError, TwisterException, TwisterRuntimeError
 from twisterlib.statuses import TwisterStatus
+from twisterlib.testsuitedata import HarnessConfig
 
 logger = logging.getLogger('twister')
 
@@ -452,6 +453,8 @@ class TestSuite:
 
         self._status = TwisterStatus.NONE
 
+        self.harness_config: HarnessConfig | None = None
+
         if data:
             self.load(data)
 
@@ -477,6 +480,8 @@ class TestSuite:
             raise Exception(
                 'Harness config error: console harness defined without a configuration.'
             )
+        self.harness_config = HarnessConfig.from_dict(self.harness_config)
+
 
     def compose_case_name(self, tc_name) -> str:
         return f"{self.id}.{tc_name}" if self.id != tc_name else tc_name

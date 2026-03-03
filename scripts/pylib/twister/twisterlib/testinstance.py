@@ -16,6 +16,7 @@ import random
 from enum import Enum
 
 from twisterlib.constants import (
+    SUPPORTED_HARNESSES,
     SUPPORTED_SIMS,
     SUPPORTED_SIMS_IN_PYTEST,
     SUPPORTED_SIMS_WITH_EXEC,
@@ -31,6 +32,8 @@ from twisterlib.handlers import (
     SimulationHandler,
 )
 from twisterlib.hardwaredata import CompoundHardwareData
+from twisterlib.hardwaremap import HardwareMap
+from twisterlib.hardwareutil import HardwareReservationManager
 from twisterlib.platform import Platform
 from twisterlib.size_calc import SizeCalculator
 from twisterlib.statuses import TwisterStatus
@@ -217,31 +220,6 @@ class TestInstance:
         self.testcases.append(tc)
         return tc
 
-    @staticmethod
-    def testsuite_runnable(testsuite, fixtures):
-        can_run = False
-        # console harness allows us to run the test and capture data.
-        if testsuite.harness in [
-            'console',
-            'display_capture',
-            'ztest',
-            'pytest',
-            'power',
-            'test',
-            'gtest',
-            'robot',
-            'ctest',
-            'shell'
-            ]:
-            can_run = True
-            # if we have a fixture that is also being supplied on the
-            # command-line, then we need to run the test, not just build it.
-            fixture = testsuite.harness_config.get('fixture')
-            if fixture:
-                can_run = fixture in map(lambda f: f.split(sep=':')[0], fixtures)
-
-        return can_run
-
     def setup_handler(self, env: TwisterEnv):
         # only setup once.
         if self.handler:
@@ -283,11 +261,11 @@ class TestInstance:
     # Global testsuite parameters
     def check_runnable(self,
                        options: TwisterEnv,
-                       hardware_map=None):
+                       hardware_map: HardwareMap):
 
         enable_slow = options.enable_slow
         filter = options.filter
-        fixtures = options.fixture
+        cli_fixtures = options.fixture
         device_testing = options.device_testing
         simulation = options.sim_name
 
@@ -329,14 +307,15 @@ class TestInstance:
                 not simulator.is_runnable():
             target_ready = False
 
-        testsuite_runnable = self.testsuite_runnable(self.testsuite, fixtures)
+        if testsuite_runnable := self.testsuite.harness in SUPPORTED_HARNESSES:
+            if device_testing:
+                testsuite_runnable = HardwareReservationManager(
+                    hardware_map, self.platform.name, self.testsuite.harness_config).is_runnable()
 
-        if hardware_map:
-            for h in hardware_map.duts:
-                if (h.platform in self.platform.aliases and
-                        self.testsuite_runnable(self.testsuite, h.fixtures)):
-                    testsuite_runnable = True
-                    break
+            elif fixture := self.testsuite.harness_config.fixture:
+                # if we have a fixture that is also being supplied on the
+                # command-line, then we need to run the test, not just build it.
+                testsuite_runnable = all(f in set(cli_fixtures) for f in fixture)
 
         return testsuite_runnable and target_ready
 
