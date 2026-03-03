@@ -15,6 +15,9 @@
 #include <fsl_ccm32k.h>
 #include <fsl_common.h>
 #include <fsl_clock.h>
+#include <fsl_cmc.h>
+
+#define MCXW7_CMC_ADDR (CMC_Type *)DT_REG_ADDR(DT_INST(0, nxp_cmc))
 
 extern uint32_t SystemCoreClock;
 extern void nxp_nbu_init(void);
@@ -324,7 +327,7 @@ static int soc_nbu_init(void)
 {
 #if defined(CONFIG_NXP_NBU)
 	nxp_nbu_init();
-#else
+#elif defined(CONFIG_PM)
 	/* Shutdown NBU as not used */
 
 	/* Reset all RFMC registers and put the NBU CM3 in reset */
@@ -346,6 +349,11 @@ static int soc_nbu_init(void)
 	/* Force low power entry request to the radio domain */
 	RF_CMC1->RADIO_LP |= RF_CMC1_RADIO_LP_CK(0x2);
 	RFMC->RF2P4GHZ_CTRL |= RFMC_RF2P4GHZ_CTRL_LP_ENTER(0x1U);
+#endif
+#if !defined(CONFIG_SOC_MCXW716C)
+	/* Allow wakeup from the debugger */
+	RFMC->RF2P4GHZ_CFG |= RFMC_RF2P4GHZ_CFG_FORCE_DBG_PWRUP_ACK_MASK;
+	CMC_EnableDebugOperation(MCXW7_CMC_ADDR, true);
 #endif
 	return 0;
 }
