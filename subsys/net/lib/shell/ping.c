@@ -35,6 +35,7 @@ static struct ping_context {
 	/* Ping parameters */
 	uint32_t count;
 	uint32_t interval;
+	uint16_t identifier;
 	uint32_t sequence;
 	uint16_t payload_size;
 	uint8_t tos;
@@ -61,7 +62,12 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
 	icmp_echo = (struct net_icmpv6_echo_req *)net_pkt_get_data(pkt,
 								&icmp_access);
 	if (icmp_echo == NULL) {
-		return NET_DROP;
+		return NET_CONTINUE;
+	}
+
+	if (net_ntohs(icmp_echo->identifier) != ping_ctx.identifier ||
+	    net_ntohs(icmp_echo->sequence) != ping_ctx.sequence) {
+		return NET_CONTINUE;
 	}
 
 	net_pkt_skip(pkt, sizeof(*icmp_echo));
@@ -141,8 +147,14 @@ static enum net_verdict handle_ipv4_echo_reply(struct net_icmp_ctx *ctx,
 	icmp_echo = (struct net_icmpv4_echo_req *)net_pkt_get_data(pkt,
 								&icmp_access);
 	if (icmp_echo == NULL) {
-		return NET_DROP;
+		return NET_CONTINUE;
 	}
+
+	if (net_ntohs(icmp_echo->identifier) != ping_ctx.identifier ||
+	    net_ntohs(icmp_echo->sequence) != ping_ctx.sequence) {
+		return NET_CONTINUE;
+	}
+
 
 	net_pkt_skip(pkt, sizeof(*icmp_echo));
 
@@ -251,6 +263,7 @@ static void ping_work(struct k_work *work)
 	struct net_icmp_ping_params params;
 	int ret;
 
+	ctx->identifier = sys_rand16_get();
 	ctx->sequence++;
 
 	if (ctx->sequence > ctx->count) {
@@ -265,7 +278,7 @@ static void ping_work(struct k_work *work)
 		k_work_reschedule(&ctx->work, K_SECONDS(2));
 	}
 
-	params.identifier = sys_rand32_get();
+	params.identifier = ctx->identifier;
 	params.sequence = ctx->sequence;
 	params.tc_tos = ctx->tos;
 	params.priority = ctx->priority;
