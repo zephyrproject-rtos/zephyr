@@ -1,0 +1,97 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	sci8_default: sci8_default {
+		group1 {
+			/* TX8 RX8 */
+			psels = <RA_PSEL(RA_PSEL_SCI_8, 8, 5)>,
+				<RA_PSEL(RA_PSEL_SCI_8, 8, 6)>;
+			drive-strength = "high";
+		};
+	};
+
+	sci7_default: sci7_default {
+		group1 {
+			/* TX7 RX7 */
+			psels = <RA_PSEL(RA_PSEL_SCI_7, 8, 9)>,
+				<RA_PSEL(RA_PSEL_SCI_7, 8, 8)>;
+			drive-strength = "high";
+		};
+	};
+
+	sci6_default: sci6_default {
+		group1 {
+			/* TX6 RX6 */
+			psels = <RA_PSEL(RA_PSEL_SCI_6, 12, 14)>,
+				<RA_PSEL(RA_PSEL_SCI_6, 12, 13)>;
+			drive-strength = "high";
+		};
+	};
+
+	spi0_default: spi0_default {
+		group1 {
+			/* MISOA MOSIA SSLA0 */
+			psels = <RA_PSEL(RA_PSEL_SPI, 3, 13)>,
+				<RA_PSEL(RA_PSEL_SPI, 2, 2)>,
+				<RA_PSEL(RA_PSEL_SPI, 2, 4)>;
+			drive-strength = "high";
+		};
+
+		group2 {
+			/* RSPCKA */
+			psels = <RA_PSEL(RA_PSEL_SPI, 2, 3)>;
+			drive-strength = "highspeed-high";
+		};
+	};
+
+	pwm6_default: pwm6_default {
+		group1 {
+			/* GTIOC6A */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 6, 1)>;
+		};
+
+		group2 {
+			/* GTIOC6B */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 6, 0)>;
+		};
+	};
+
+	iic0_default: iic0_default {
+		group1 {
+			/* SCL0 SDA0*/
+			psels = <RA_PSEL(RA_PSEL_I2C, 4, 10)>,
+				<RA_PSEL(RA_PSEL_I2C, 4, 9)>;
+			drive-strength = "medium";
+		};
+	};
+
+	canfd0_default: canfd0_default {
+		group1 {
+			/* CRX0 CTX0 */
+			psels = <RA_PSEL(RA_PSEL_CANFD, 2, 2)>,
+				<RA_PSEL(RA_PSEL_CANFD, 2, 3)>;
+			drive-strength = "low";
+		};
+	};
+
+	canfd1_default: canfd1_default {
+		group1 {
+			/* CRX1 CTX1 */
+			psels = <RA_PSEL(RA_PSEL_CANFD, 4, 14)>,
+				<RA_PSEL(RA_PSEL_CANFD, 4, 15)>;
+			drive-strength = "low";
+		};
+	};
+
+	usbfs_default: usbfs_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_USBFS, 8, 15)>, /* USB_DM */
+				<RA_PSEL(RA_PSEL_USBFS, 8, 14)>, /* USB_DP */
+				<RA_PSEL(RA_PSEL_USBFS, 4, 7)>;	 /* VBUS */
+			drive-strength = "high";
+		};
+	};
+};
