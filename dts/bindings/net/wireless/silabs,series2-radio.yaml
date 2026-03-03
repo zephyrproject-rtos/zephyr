@@ -23,6 +23,12 @@ properties:
     description: |
       Initial Power Amplifier power in dBm.
 
+  pa-max-power-dbm:
+    type: int
+    required: true
+    description: |
+      Maximum Power Amplifier power in dBm.
+
   pa-ramp-time-us:
     type: int
     required: true
@@ -39,7 +45,9 @@ properties:
     type: string
     description: |
       Power Amplifier selection for 2.4 GHz. A value of 'highest' selects the highest
-      available PA on the given device. Other values explicitly select a specific PA.
+      available PA on the given device. A value of 'auto' dynamically selects the
+      optimal PA based on the output power configuration. Other values explicitly
+      select a specific PA.
       Not all PAs are available on all devices, check device specific documentation.
       If this property is not set, no 2.4 GHz PA is enabled.
     enum:
@@ -47,12 +55,17 @@ properties:
       - hp
       - mp
       - lp
+      - auto
 
   pa-subghz:
     type: string
     description: |
       Power Amplifier selection for sub-GHz. A value of 'highest' selects the highest
-      available PA on the given device. This is the only available option. If this
-      property is not set, no sub-GHz PA is enabled.
+      available PA on the given device. Other values explicitly select a specific PA. If
+      this property is not set, no sub-GHz PA is enabled.
     enum:
       - highest
+      - hp
+      - mp
+      - lp
+      - llp

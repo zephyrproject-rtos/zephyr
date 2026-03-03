@@ -17,6 +17,7 @@
 			interrupts = <31 1>, <32 1>, <33 1>, <34 1>, <35 1>, <36 1>, <37 1>,
 				     <38 1>, <39 1>, <40 1>, <74 1>, <75 1>;
 			pa-initial-power-dbm = <10>;
+			pa-max-power-dbm = <20>;
 			pa-ramp-time-us = <10>;
 			pa-subghz = "highest";
 			pa-voltage-mv = <3300>;
