@@ -49,7 +49,7 @@ menuconfig HTTP_SERVER
 	select ZVFS_EVENTFD
 	imply NET_IPV4_MAPPING_TO_IPV6 if NET_IPV4 && NET_IPV6
 	help
-	  HTTP1 and HTTP2 server support.
+	  HTTP1, HTTP2 and HTTP3 server support.
 
 if HTTP_SERVER
 
@@ -65,11 +65,23 @@ config HTTP_SERVER_VERSION_2
 	help
 	  Support HTTP/2 version.
 
+config HTTP_SERVER_VERSION_3
+	bool "HTTP/3 support"
+	depends on QUIC
+	select NET_SOCKETS_SOCKOPT_TLS
+	default y
+	help
+	  Support HTTP/3 version. This depends on QUIC transport protocol support.
+
 config HTTP_SERVER_VERSION
 	int
-	default 12 if HTTP_SERVER_VERSION_1 && HTTP_SERVER_VERSION_2
-	default 2 if !HTTP_SERVER_VERSION_1 && HTTP_SERVER_VERSION_2
-	default 1 if HTTP_SERVER_VERSION_1 && !HTTP_SERVER_VERSION_2
+	default 123 if HTTP_SERVER_VERSION_1 && HTTP_SERVER_VERSION_2 && HTTP_SERVER_VERSION_3
+	default 23 if !HTTP_SERVER_VERSION_1 && HTTP_SERVER_VERSION_2 && HTTP_SERVER_VERSION_3
+	default 13 if HTTP_SERVER_VERSION_1 && !HTTP_SERVER_VERSION_2 && HTTP_SERVER_VERSION_3
+	default 12 if HTTP_SERVER_VERSION_1 && HTTP_SERVER_VERSION_2 && !HTTP_SERVER_VERSION_3
+	default 3 if !HTTP_SERVER_VERSION_1 && !HTTP_SERVER_VERSION_2 && HTTP_SERVER_VERSION_3
+	default 2 if !HTTP_SERVER_VERSION_1 && HTTP_SERVER_VERSION_2 && !HTTP_SERVER_VERSION_3
+	default 1 if HTTP_SERVER_VERSION_1 && !HTTP_SERVER_VERSION_2 && !HTTP_SERVER_VERSION_3
 	default 0
 	help
 	  What HTTP version is supported in HTTP server.
@@ -83,24 +95,33 @@ config HTTP_SERVER_STACK_SIZE
 
 config HTTP_SERVER_NUM_SERVICES
 	int "Number of HTTP Server Instances"
+	default QUIC_MAX_CONTEXTS if HTTP_SERVER_VERSION_3 && !HTTP_SERVER_VERSION_2 && \
+		!HTTP_SERVER_VERSION_1
+	default 3 if HTTP_SERVER_VERSION_3 && HTTP_SERVER_VERSION_2 && HTTP_SERVER_VERSION_1
+	default 2 if HTTP_SERVER_VERSION_3 && HTTP_SERVER_VERSION_2 && !HTTP_SERVER_VERSION_1
+	default 2 if HTTP_SERVER_VERSION_3 && !HTTP_SERVER_VERSION_2 && HTTP_SERVER_VERSION_1
+	default 2 if !HTTP_SERVER_VERSION_3 && HTTP_SERVER_VERSION_2 && HTTP_SERVER_VERSION_1
 	default 1
 	range 1 100
 	help
 	  This setting determines the number of http services that the server supports.
 
 config HTTP_SERVER_MAX_CLIENTS
-	int "Max number of HTTP/2 clients"
+	int "Max number of HTTP/2/3 clients"
+	default QUIC_MAX_ENDPOINTS if HTTP_SERVER_VERSION_3
 	default 3
 	range 1 100
 	help
-	  This setting determines the maximum number of HTTP/2 clients that the server can handle at once.
+	  This setting determines the maximum number of HTTP/2 or HTTP/3 clients that
+	  the server can handle at once.
 
 config HTTP_SERVER_MAX_STREAMS
 	int "Max number of HTTP/2 streams"
 	default 10
 	range 1 100
 	help
-	  This setting determines the maximum number of HTTP/2 streams for each client.
+	  This setting determines the maximum number of HTTP/2 streams
+	  for each client.
 
 config HTTP_SERVER_CLIENT_BUFFER_SIZE
 	int "Client Buffer Size"
@@ -179,6 +200,7 @@ config HTTP_SERVER_CAPTURE_HEADER_COUNT
 
 config HTTP_SERVER_CLIENT_INACTIVITY_TIMEOUT
 	int "Client inactivity timeout (seconds)"
+	default 5 if HTTP_SERVER_VERSION_3
 	default 10
 	range 1 86400
 	help
@@ -219,11 +241,12 @@ config HTTP_SERVER_RESTART_DELAY
 config HTTP_SERVER_TLS_USE_ALPN
 	bool "ALPN support for HTTPS server"
 	depends on NET_SOCKETS_SOCKOPT_TLS
-	depends on MBEDTLS_SSL_ALPN
+#	depends on MBEDTLS_SSL_ALPN
+	default y if HTTP_SERVER_VERSION_3
 	help
-	  Use ALPN (application layer protocol negotiation) to negotiate HTTP2
+	  Use ALPN (application layer protocol negotiation) to negotiate HTTP2/3
 	  protocol for TLS connections. Web browsers use this mechanism to determine
-	  whether HTTP2 is supported.
+	  whether HTTP2 or HTTP3 is supported.
 
 config HTTP_SERVER_REPORT_FAILURE_REASON
 	bool "Report failure reason in HTTP 500 Internal Server Error reply"

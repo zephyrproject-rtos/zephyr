@@ -96,6 +96,7 @@ enum http_version {
 	HTTP_VERSION_ANY = 0,  /**< Support any HTTP version configured in the system. */
 	HTTP_VERSION_1 = 0x01, /**< Support HTTP/1.0 and HTTP/1.1 */
 	HTTP_VERSION_2 = 0x02, /**< Support HTTP/2 */
+	HTTP_VERSION_3 = 0x04, /**< Support HTTP/3 */
 };
 
 /** HTTP service configuration */
@@ -114,6 +115,13 @@ struct http_service_desc {
 	const char *host;
 	uint16_t *port;
 	int *fd;
+	/* QUIC listening connection socket for HTTP/3. It is used to accept
+	 * new connections for this service.
+	 * Set to NULL if HTTP/3 is not supported, and set to -1 if HTTP/3 is
+	 * not yet initialized or enabled for this service. If HTTP/3 is supported then
+	 * this pointer cannot be null.
+	 */
+	int *fd_h3;
 	void *detail;
 	size_t concurrent;
 	size_t backlog;
@@ -134,11 +142,13 @@ struct http_service_desc {
 		     "can't accept more then MAX_CLIENTS");                                        \
 	BUILD_ASSERT(_backlog > 0, "backlog can't be 0");                                          \
 	static int _name##_fd = -1;                                                                \
+	IF_ENABLED(CONFIG_HTTP_SERVER_VERSION_3, (static int _name##_fd_h3 = -1;))                 \
 	static struct http_service_runtime_data _name##_data = {0};                                \
 	const STRUCT_SECTION_ITERABLE(http_service_desc, _name) = {                                \
 		.host = _host,                                                                     \
 		.port = (uint16_t *)(_port),                                                       \
 		.fd = &_name##_fd,                                                                 \
+		IF_ENABLED(CONFIG_HTTP_SERVER_VERSION_3, (.fd_h3 = &_name##_fd_h3,))               \
 		.detail = (void *)(_detail),                                                       \
 		.concurrent = (_concurrent),                                                       \
 		.backlog = (_backlog),                                                             \

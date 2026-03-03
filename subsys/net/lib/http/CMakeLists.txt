@@ -16,8 +16,11 @@ zephyr_library_sources_ifdef(CONFIG_HTTP_SERVER_VERSION_1 http_server_http1.c)
 zephyr_library_sources_ifdef(CONFIG_HTTP_SERVER_VERSION_2
   http_server_http2.c
   http_hpack.c
-  http_huffman.c
 )
+zephyr_library_sources_ifdef(CONFIG_HTTP_SERVER_VERSION_3 http_server_http3.c)
+if(CONFIG_HTTP_SERVER AND (CONFIG_HTTP_SERVER_VERSION_2 OR CONFIG_HTTP_SERVER_VERSION_3))
+  zephyr_library_sources(http_huffman.c)
+endif()
 zephyr_library_sources_ifdef(CONFIG_HTTP_SERVER_COMPRESSION http_compression.c)
 if(CONFIG_HTTP_SERVER AND CONFIG_WEBSOCKET)
   zephyr_library_sources(http_server_ws.c)

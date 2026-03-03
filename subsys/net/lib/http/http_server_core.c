@@ -21,6 +21,7 @@
 #include <zephyr/net/net_log.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
+#include <zephyr/net/quic.h>
 #include <zephyr/zvfs/eventfd.h>
 #include <zephyr/posix/fnmatch.h>
 #include <zephyr/sys/util_macro.h>
@@ -31,7 +32,7 @@ LOG_MODULE_REGISTER(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 #include "headers/server_internal.h"
 
 BUILD_ASSERT(CONFIG_HTTP_SERVER_VERSION > 0,
-	     "HTTP server requires at least HTTP/1.x or HTTP/2 support");
+	     "HTTP server requires at least HTTP/1.x, HTTP/2 or HTTP/3 support");
 
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 /* Lowest priority cooperative thread */
@@ -40,19 +41,20 @@ BUILD_ASSERT(CONFIG_HTTP_SERVER_VERSION > 0,
 #define THREAD_PRIORITY K_PRIO_PREEMPT(CONFIG_NUM_PREEMPT_PRIORITIES - 1)
 #endif
 
-#define INVALID_SOCK -1
 #define INACTIVITY_TIMEOUT K_SECONDS(CONFIG_HTTP_SERVER_CLIENT_INACTIVITY_TIMEOUT)
 
 #define HTTP_SERVER_MAX_SERVICES CONFIG_HTTP_SERVER_NUM_SERVICES
 #define HTTP_SERVER_MAX_CLIENTS  CONFIG_HTTP_SERVER_MAX_CLIENTS
-#define HTTP_SERVER_SOCK_COUNT (1 + HTTP_SERVER_MAX_SERVICES + HTTP_SERVER_MAX_CLIENTS)
-
+#define HTTP_SERVER_SOCK_COUNT (1 + HTTP_SERVER_MAX_SERVICES + \
+				HTTP_SERVER_MAX_CLIENTS  + HTTP3_SERVER_MAX_STREAMS)
 struct http_server_ctx {
 	int listen_fds; /* max value of 1 + MAX_SERVICES */
+	int client_fds; /* max value of 1 + MAX_CLIENTS */
 
 	/* First pollfd is eventfd that can be used to stop the server,
 	 * then we have the server listen sockets,
 	 * and then the accepted sockets.
+	 * If HTTP/3 is enabled, the rest are for accepted streams.
 	 */
 	struct zsock_pollfd fds[HTTP_SERVER_SOCK_COUNT];
 	struct http_client_ctx clients[HTTP_SERVER_MAX_CLIENTS];
@@ -63,7 +65,11 @@ static K_SEM_DEFINE(server_start, 0, 1);
 static bool server_running;
 
 #if defined(CONFIG_HTTP_SERVER_TLS_USE_ALPN)
-static const char *const alpn_list[] = {"h2", "http/1.1"};
+static const char *const alpn_list[] = {
+	IF_ENABLED(CONFIG_HTTP_SERVER_VERSION_3, ("h3",))
+	IF_ENABLED(CONFIG_HTTP_SERVER_VERSION_2, ("h2",))
+	IF_ENABLED(CONFIG_HTTP_SERVER_VERSION_1, ("http/1.1",))
+};
 #endif
 
 static void close_client_connection(struct http_client_ctx *client);
@@ -75,13 +81,165 @@ HTTP_SERVER_CONTENT_TYPE(jpg, "image/jpeg")
 HTTP_SERVER_CONTENT_TYPE(png, "image/png")
 HTTP_SERVER_CONTENT_TYPE(svg, "image/svg+xml")
 
-int http_server_init(struct http_server_ctx *ctx)
+
+static int setup_h1_h2_socket(const struct http_service_desc *svc, int af,
+			      struct net_sockaddr *addr, net_socklen_t len)
 {
 	int proto;
+	int fd;
+
+	/* Create a socket */
+	if (COND_CODE_1(CONFIG_NET_SOCKETS_SOCKOPT_TLS,
+			(svc->sec_tag_list != NULL),
+			(0))) {
+		proto = NET_IPPROTO_TLS_1_2;
+	} else {
+		proto = NET_IPPROTO_TCP;
+	}
+
+	if (svc->config != NULL && svc->config->socket_create != NULL) {
+		fd = svc->config->socket_create(svc, af, proto);
+	} else {
+		fd = zsock_socket(af, NET_SOCK_STREAM, proto);
+	}
+
+	if (fd < 0) {
+		fd = -errno;
+		LOG_ERR("socket: %d", fd);
+		return fd;
+	}
+
+	/* If IPv4-to-IPv6 mapping is enabled, then turn off V6ONLY option
+	 * so that IPv6 socket can serve IPv4 connections.
+	 */
+	if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6)) {
+		int optval = 0;
+
+		(void)zsock_setsockopt(fd, NET_IPPROTO_IPV6, ZSOCK_IPV6_V6ONLY, &optval,
+				       sizeof(optval));
+	}
+
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	if (svc->sec_tag_list != NULL) {
+		if (zsock_setsockopt(fd, ZSOCK_SOL_TLS, ZSOCK_TLS_SEC_TAG_LIST,
+				     svc->sec_tag_list,
+				     svc->sec_tag_list_size) < 0) {
+			LOG_ERR("setsockopt: %d", errno);
+			zsock_close(fd);
+			return -errno;
+		}
+
+#if defined(CONFIG_HTTP_SERVER_TLS_USE_ALPN)
+		if (zsock_setsockopt(fd, ZSOCK_SOL_TLS, ZSOCK_TLS_ALPN_LIST, alpn_list,
+				     sizeof(alpn_list)) < 0) {
+			LOG_ERR("setsockopt: %d", errno);
+			zsock_close(fd);
+			return -errno;
+		}
+#endif /* defined(CONFIG_HTTP_SERVER_TLS_USE_ALPN) */
+	}
+#endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
+
+	if (zsock_setsockopt(fd, ZSOCK_SOL_SOCKET, ZSOCK_SO_REUSEADDR, &(int){1},
+			     sizeof(int)) < 0) {
+		LOG_ERR("setsockopt: %d", errno);
+		zsock_close(fd);
+		return -errno;
+	}
+
+	if (zsock_bind(fd, addr, len) < 0) {
+		LOG_ERR("bind: %d", errno);
+		zsock_close(fd);
+		return -errno;
+	}
+
+	if (*svc->port == 0) {
+		/* Ephemeral port, read back the port number */
+		net_socklen_t slen = sizeof(struct net_sockaddr_storage);
+
+		if (zsock_getsockname(fd, addr, &slen) < 0) {
+			LOG_ERR("getsockname: %d", errno);
+			zsock_close(fd);
+			return -errno;
+		}
+
+		*svc->port = net_ntohs(net_sin(addr)->sin_port);
+	}
+
+	svc->data->num_clients = 0;
+	if (zsock_listen(fd, svc->backlog) < 0) {
+		LOG_ERR("listen: %d", errno);
+		zsock_close(fd);
+		return -errno;
+	}
+
+	return fd;
+}
+
+static int setup_h3_socket(const struct http_service_desc *svc, int af,
+			   struct net_sockaddr *addr, net_socklen_t len)
+{
+	int quic_sock;
+	int ret;
+
+	if (net_sin(addr)->sin_port == 0) {
+		NET_ERR("No local port specified for QUIC service");
+		return -EINVAL;
+	}
+
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	if (svc->sec_tag_list == NULL) {
+		NET_ERR("QUIC service requires TLS credentials, "
+			"skipping HTTP/3 support for port %d",
+			net_ntohs(net_sin(addr)->sin_port));
+		return -EINVAL;
+	}
+#endif
+
+	quic_sock = quic_connection_open(NULL, addr);
+	if (quic_sock < 0) {
+		NET_ERR("Failed to open QUIC connection socket (%d)", quic_sock);
+		ret = quic_sock;
+		goto out;
+	}
+
+	NET_INFO("QUIC %s local connection socket %d opened successfully",
+		 addr->sa_family == NET_AF_INET6 ? "IPv6" : "IPv4",
+		 quic_sock);
+
+#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
+	if (zsock_setsockopt(quic_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_SEC_TAG_LIST,
+			     svc->sec_tag_list,
+			     svc->sec_tag_list_size) < 0) {
+		ret = -errno;
+		LOG_ERR("setsockopt: %d", ret);
+		zsock_close(quic_sock);
+		goto out;
+	}
+
+#if defined(CONFIG_HTTP_SERVER_TLS_USE_ALPN)
+	if (zsock_setsockopt(quic_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_ALPN_LIST,
+			     alpn_list, sizeof(alpn_list)) < 0) {
+		ret = -errno;
+		LOG_ERR("setsockopt: %d", ret);
+		zsock_close(quic_sock);
+		goto out;
+	}
+#endif /* defined(CONFIG_HTTP_SERVER_TLS_USE_ALPN) */
+#endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
+
+	ret = quic_sock;
+out:
+	return ret;
+}
+
+int http_server_init(struct http_server_ctx *ctx)
+{
 	int failed = 0, count = 0;
 	int svc_count;
 	net_socklen_t len;
 	int fd, af, i;
+	bool h3 = false, h2 = false, h1 = false;
 	struct net_sockaddr_storage addr_storage;
 	const union {
 		struct net_sockaddr *addr;
@@ -92,6 +250,13 @@ int http_server_init(struct http_server_ctx *ctx)
 	};
 
 	HTTP_SERVICE_COUNT(&svc_count);
+
+	if (svc_count > HTTP_SERVER_MAX_SERVICES) {
+		LOG_ERR("Found %d HTTP services, but "
+			"CONFIG_HTTP_SERVER_NUM_SERVICES only allows %d",
+			svc_count, HTTP_SERVER_MAX_SERVICES);
+		return -EINVAL;
+	}
 
 	/* Initialize fds */
 	memset(ctx->fds, 0, sizeof(ctx->fds));
@@ -151,110 +316,91 @@ int http_server_init(struct http_server_ctx *ctx)
 			break;
 		}
 
-		/* Create a socket */
-		if (COND_CODE_1(CONFIG_NET_SOCKETS_SOCKOPT_TLS,
-				(svc->sec_tag_list != NULL),
-				(0))) {
-			proto = NET_IPPROTO_TLS_1_2;
-		} else {
-			proto = NET_IPPROTO_TCP;
-		}
-
-		if (svc->config != NULL && svc->config->socket_create != NULL) {
-			fd = svc->config->socket_create(svc, af, proto);
-		} else {
-			if (svc->config != NULL &&
-			    svc->config.http_ver == HTTP_VERSION_1 &&
-			    !IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_1)) {
-				NET_WARN("HTTP/%d is not enabled but service requires it!", 1);
-			}
-
-			if (svc->config != NULL &&
-			    svc->config.http_ver == HTTP_VERSION_2 &&
-			    !IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2)) {
-				NET_WARN("HTTP/%d is not enabled but service requires it!", 2);
-			}
-
-			fd = zsock_socket(af, NET_SOCK_STREAM, proto);
-		}
-		if (fd < 0) {
-			LOG_ERR("socket: %d", errno);
-			failed++;
-			continue;
-		}
-
-		/* If IPv4-to-IPv6 mapping is enabled, then turn off V6ONLY option
-		 * so that IPv6 socket can serve IPv4 connections.
+		/* Allow application to specify which HTTP versions to support
+		 * at runtime. If not specified, support all enabled versions.
 		 */
-		if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6)) {
-			int optval = 0;
-
-			(void)zsock_setsockopt(fd, NET_IPPROTO_IPV6, ZSOCK_IPV6_V6ONLY, &optval,
-					       sizeof(optval));
-		}
-
-#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
-		if (svc->sec_tag_list != NULL) {
-			if (zsock_setsockopt(fd, ZSOCK_SOL_TLS, ZSOCK_TLS_SEC_TAG_LIST,
-					     svc->sec_tag_list,
-					     svc->sec_tag_list_size) < 0) {
-				LOG_ERR("setsockopt: %d", errno);
-				zsock_close(fd);
-				continue;
+		if (svc->config != NULL) {
+			if (svc->config->http_ver & HTTP_VERSION_3) {
+				if (!IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_3)) {
+					NET_WARN("HTTP/%d is not enabled but service requires it!",
+						 3);
+				} else {
+					h3 = true;
+				}
 			}
 
-#if defined(CONFIG_HTTP_SERVER_TLS_USE_ALPN)
-			if (zsock_setsockopt(fd, ZSOCK_SOL_TLS, ZSOCK_TLS_ALPN_LIST, alpn_list,
-					     sizeof(alpn_list)) < 0) {
-				LOG_ERR("setsockopt: %d", errno);
-				zsock_close(fd);
-				continue;
-			}
-#endif /* defined(CONFIG_HTTP_SERVER_TLS_USE_ALPN) */
-		}
-#endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
-
-		if (zsock_setsockopt(fd, ZSOCK_SOL_SOCKET, ZSOCK_SO_REUSEADDR, &(int){1},
-				     sizeof(int)) < 0) {
-			LOG_ERR("setsockopt: %d", errno);
-			zsock_close(fd);
-			continue;
-		}
-
-		if (zsock_bind(fd, addr.addr, len) < 0) {
-			LOG_ERR("bind: %d", errno);
-			failed++;
-			zsock_close(fd);
-			continue;
-		}
-
-		if (*svc->port == 0) {
-			/* ephemeral port - read back the port number */
-			len = sizeof(addr_storage);
-			if (zsock_getsockname(fd, addr.addr, &len) < 0) {
-				LOG_ERR("getsockname: %d", errno);
-				zsock_close(fd);
-				continue;
+			if (svc->config->http_ver & HTTP_VERSION_2) {
+				if (!IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2)) {
+					NET_WARN("HTTP/%d is not enabled but service requires it!",
+						 2);
+				} else {
+					h2 = true;
+				}
 			}
 
-			*svc->port = net_ntohs(addr.addr4->sin_port);
+			if (svc->config->http_ver & HTTP_VERSION_1) {
+				if (!IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_1)) {
+					NET_WARN("HTTP/%d is not enabled but service requires it!",
+						 1);
+				} else {
+					h1 = true;
+				}
+			}
+
+			if (svc->config->http_ver == HTTP_VERSION_ANY) {
+				h1 = IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_1);
+				h2 = IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2);
+				h3 = IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_3);
+			}
+		} else {
+			h1 = IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_1);
+			h2 = IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2);
+			h3 = IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_3);
 		}
 
-		svc->data->num_clients = 0;
-		if (zsock_listen(fd, svc->backlog) < 0) {
-			LOG_ERR("listen: %d", errno);
-			failed++;
-			zsock_close(fd);
-			continue;
+		if (h1 || h2) {
+			fd = setup_h1_h2_socket(svc, af, addr.addr, len);
+			if (fd < 0) {
+				failed++;
+			} else {
+				if (IS_ENABLED(CONFIG_NET_HTTP_SERVER_LOG_LEVEL_DBG)) {
+					char ver_str[sizeof("/1.1/2")] = {0};
+
+					if (h1) {
+						strcat(ver_str, "/1.1");
+					}
+
+					if (h2) {
+						strcat(ver_str, "/2");
+					}
+
+					LOG_DBG("Initialized HTTP%s Service %s:%u",
+						ver_str,
+						svc->host ? svc->host : "<any>",
+						*svc->port);
+				}
+
+				*svc->fd = fd;
+				ctx->fds[count].fd = fd;
+				ctx->fds[count].events = ZSOCK_POLLIN;
+				count++;
+			}
 		}
 
-		LOG_DBG("Initialized HTTP Service %s:%u",
-			svc->host ? svc->host : "<any>", *svc->port);
+		if (h3 && IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_3)) {
+			fd = setup_h3_socket(svc, af, addr.addr, len);
+			if (fd < 0) {
+				failed++;
+			} else {
+				LOG_DBG("Initialized HTTP%s Service %s:%u", "/3",
+					svc->host ? svc->host : "<any>", *svc->port);
 
-		*svc->fd = fd;
-		ctx->fds[count].fd = fd;
-		ctx->fds[count].events = ZSOCK_POLLIN;
-		count++;
+				*svc->fd_h3 = fd;
+				ctx->fds[count].fd = fd;
+				ctx->fds[count].events = ZSOCK_POLLIN;
+				count++;
+			}
+		}
 	}
 
 	if (failed >= svc_count) {
@@ -265,6 +411,13 @@ int http_server_init(struct http_server_ctx *ctx)
 	}
 
 	ctx->listen_fds = count;
+	ctx->client_fds = ctx->listen_fds + HTTP_SERVER_MAX_CLIENTS;
+
+	if (!IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_3) &&
+	    ctx->client_fds > ARRAY_SIZE(ctx->fds)) {
+		LOG_ERR("HTTP server fd table size mismatch: %d slots required, %zu allocated",
+			ctx->client_fds, ARRAY_SIZE(ctx->fds));
+	}
 
 	return 0;
 }
@@ -305,11 +458,14 @@ static void close_all_sockets(struct http_server_ctx *ctx)
 
 		if (i < ctx->listen_fds) {
 			zsock_close(ctx->fds[i].fd);
-		} else {
+		} else if (i < ctx->client_fds) {
 			struct http_client_ctx *client =
 				&server_ctx.clients[i - ctx->listen_fds];
 
 			close_client_connection(client);
+		} else {
+			/* HTTP/3 stream sockets */
+			zsock_close(ctx->fds[i].fd);
 		}
 
 		ctx->fds[i].fd = -1;
@@ -317,6 +473,10 @@ static void close_all_sockets(struct http_server_ctx *ctx)
 
 	HTTP_SERVICE_FOREACH(svc) {
 		*svc->fd = -1;
+
+		if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_3)) {
+			*svc->fd_h3 = -1;
+		}
 	}
 }
 
@@ -372,15 +532,43 @@ void http_server_release_client(struct http_client_ctx *client)
 	client->service->data->num_clients--;
 
 	for (i = 0; i < server_ctx.listen_fds; i++) {
-		if (server_ctx.fds[i].fd == *client->service->fd) {
+		int listen_fd;
+
+		if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_3) &&
+		    client->is_h3) {
+			listen_fd = *client->service->fd_h3;
+		} else {
+			listen_fd = *client->service->fd;
+		}
+
+		if (server_ctx.fds[i].fd == listen_fd) {
 			server_ctx.fds[i].events = ZSOCK_POLLIN;
 			break;
 		}
 	}
-	for (i = server_ctx.listen_fds; i < ARRAY_SIZE(server_ctx.fds); i++) {
+
+	for (i = server_ctx.listen_fds; i < server_ctx.client_fds; i++) {
 		if (server_ctx.fds[i].fd == client->fd) {
 			server_ctx.fds[i].fd = INVALID_SOCK;
 			break;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_3)) {
+		for (i = server_ctx.client_fds; i < ARRAY_SIZE(server_ctx.fds); i++) {
+			for (int j = 0; j < ARRAY_SIZE(client->h3.stream_sock); j++) {
+				if (server_ctx.fds[i].fd == client->h3.stream_sock[j]) {
+					server_ctx.fds[i].fd = INVALID_SOCK;
+
+					/* Close the fd to trigger quic_stream_unref() */
+					if (client->h3.stream_sock[j] != INVALID_SOCK) {
+						(void)zsock_close(client->h3.stream_sock[j]);
+						client->h3.stream_sock[j] = INVALID_SOCK;
+					}
+
+					break;
+				}
+			}
 		}
 	}
 
@@ -399,6 +587,23 @@ static void close_client_connection(struct http_client_ctx *client)
 	}
 }
 
+/*
+ * Close an HTTP/3 client, cleaning up all stream fds first so that
+ * quic_stream_unref() fires for every stream before the connection fd
+ * is closed. For HTTP/1.x and HTTP/2 clients this is identical to
+ * close_client_connection().
+ */
+static void close_h3_or_plain_client(struct http_client_ctx *client,
+				     struct zsock_pollfd fds[],
+				     int max_fds)
+{
+	if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_3) && client->is_h3) {
+		h3_client_cleanup(client, fds, max_fds);
+	}
+
+	close_client_connection(client);
+}
+
 static void client_timeout(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
@@ -407,10 +612,18 @@ static void client_timeout(struct k_work *work)
 
 	LOG_DBG("Client %p timeout", client);
 
-	/* Shutdown the socket. This will be detected by poll() and a proper
-	 * cleanup will proceed.
-	 */
-	(void)zsock_shutdown(client->fd, ZSOCK_SHUT_RD);
+	if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_3) && client->is_h3) {
+		LOG_DBG("[%p] %s client connection closing", client, "HTTP/3");
+
+		close_h3_or_plain_client(client, server_ctx.fds, ARRAY_SIZE(server_ctx.fds));
+	} else {
+		LOG_DBG("[%p] %s client connection closing", client, "HTTP/1.x/2");
+
+		/* Shutdown the socket. This will be detected by poll() and a proper
+		 * cleanup will proceed.
+		 */
+		(void)zsock_shutdown(client->fd, ZSOCK_SHUT_RD);
+	}
 }
 
 void http_client_timer_restart(struct http_client_ctx *client)
@@ -423,12 +636,34 @@ void http_client_timer_restart(struct http_client_ctx *client)
 static const struct http_service_desc *lookup_service(int server_fd)
 {
 	HTTP_SERVICE_FOREACH(svc) {
-		if (*svc->fd == server_fd) {
+		if ((IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_1) ||
+		     IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2)) &&
+		    *svc->fd == server_fd) {
+			return svc;
+		}
+
+		if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_3) &&
+		    *svc->fd_h3 == server_fd) {
 			return svc;
 		}
 	}
 
 	return NULL;
+}
+
+static bool is_h3_socket(int fd)
+{
+	if (!IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_3)) {
+		return false;
+	}
+
+	HTTP_SERVICE_FOREACH(svc) {
+		if (*svc->fd_h3 == fd) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 static void init_client_ctx(struct http_client_ctx *client, const struct http_service_desc *svc,
@@ -441,6 +676,15 @@ static void init_client_ctx(struct http_client_ctx *client, const struct http_se
 	client->has_upgrade_header = false;
 	client->preface_sent = false;
 	client->window_size = HTTP_SERVER_INITIAL_WINDOW_SIZE;
+
+	if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_3)) {
+		client->is_h3 = false;
+		client->h3.conn_sock = INVALID_SOCK;
+
+		for (int i = 0; i < ARRAY_SIZE(client->h3.stream_sock); i++) {
+			client->h3.stream_sock[i] = INVALID_SOCK;
+		}
+	}
 
 	memset(client->buffer, 0, sizeof(client->buffer));
 	memset(client->url_buffer, 0, sizeof(client->url_buffer));
@@ -573,6 +817,89 @@ static int handle_http_request(struct http_client_ctx *client)
 	return 0;
 }
 
+struct http_client_ctx *h3_find_client(int conn_sock, int *idx)
+{
+	struct http_server_ctx *ctx = &server_ctx;
+
+	for (int j = ctx->listen_fds; j < ctx->client_fds; j++) {
+		struct http_client_ctx *h3_client;
+
+		if (ctx->fds[j].fd == INVALID_SOCK) {
+			continue;
+		}
+
+		*idx = j - ctx->listen_fds;
+		h3_client = &ctx->clients[*idx];
+
+		/* Match by connection socket (all streams on same connection share context) */
+		if (h3_client->is_h3 && h3_client->h3.conn_sock == conn_sock) {
+			return h3_client;
+		}
+	}
+
+	return NULL;
+}
+
+struct http_client_ctx *get_h3_client_by_stream_fd(struct http_server_ctx *ctx,
+						   int stream_fd,
+						   int *idx)
+{
+	for (int i = ctx->listen_fds; i < ctx->client_fds; i++) {
+		struct http_client_ctx *h3_client;
+
+		h3_client = &ctx->clients[i - ctx->listen_fds];
+
+		for (int j = 0; j < ARRAY_SIZE(h3_client->h3.stream_sock); j++) {
+			if (stream_fd == h3_client->h3.stream_sock[j]) {
+				*idx = i - ctx->listen_fds;
+
+				LOG_DBG("Found stream fd %d client #%d",
+					stream_fd, *idx);
+				return h3_client;
+			}
+		}
+	}
+
+	return NULL;
+}
+
+static int add_h3_stream_poll(struct http_client_ctx *client,
+			      struct zsock_pollfd *fds,
+			      int fd_count,
+			      int stream_sock)
+{
+	int pos = INVALID_SOCK;
+
+	for (int i = 0; i < ARRAY_SIZE(client->h3.stream_sock); i++) {
+		if (client->h3.stream_sock[i] == INVALID_SOCK) {
+			client->h3.stream_sock[i] = stream_sock;
+			pos = i;
+			break;
+		}
+	}
+
+	if (pos == INVALID_SOCK) {
+		LOG_ERR("No space for new H3 stream sock in client context");
+		return -ENOMEM;
+	}
+
+	for (int i = 0; i < fd_count; i++) {
+		if (fds[i].fd != INVALID_SOCK) {
+			continue;
+		}
+
+		fds[i].fd = stream_sock;
+		fds[i].events = ZSOCK_POLLIN;
+		fds[i].revents = 0;
+
+		return 0;
+	}
+
+	client->h3.stream_sock[pos] = INVALID_SOCK;
+
+	return -ENOMEM;
+}
+
 static int http_server_run(struct http_server_ctx *ctx)
 {
 	struct http_client_ctx *client;
@@ -582,12 +909,13 @@ static int http_server_run(struct http_server_ctx *ctx)
 	int new_socket;
 	int ret, i, j;
 	int sock_error;
+	int idx;
 	net_socklen_t optlen = sizeof(int);
 
 	value = 0;
 
 	while (1) {
-		ret = zsock_poll(ctx->fds, HTTP_SERVER_SOCK_COUNT, -1);
+		ret = zsock_poll(ctx->fds, ARRAY_SIZE(ctx->fds), -1);
 		if (ret < 0) {
 			ret = -errno;
 			LOG_DBG("poll failed (%d)", ret);
@@ -606,18 +934,24 @@ static int http_server_run(struct http_server_ctx *ctx)
 			goto closing;
 		}
 
-		for (i = 1; i < ARRAY_SIZE(ctx->fds); i++) {
+		/* Only check client sockets in this loop. The HTTP/3 stream
+		 * sockets will be handled separately in the loop below this
+		 * one.
+		 */
+		for (i = 1; i < ctx->client_fds; i++) {
 			if (ctx->fds[i].fd < 0) {
 				continue;
 			}
 
 			if (ctx->fds[i].revents & ZSOCK_POLLHUP) {
+
 				if (i >= ctx->listen_fds) {
 					LOG_DBG("Client #%d has disconnected",
 						i - ctx->listen_fds);
-
 					client = &ctx->clients[i - ctx->listen_fds];
-					close_client_connection(client);
+
+					close_h3_or_plain_client(client, server_ctx.fds,
+								 ARRAY_SIZE(server_ctx.fds));
 				}
 
 				continue;
@@ -630,7 +964,9 @@ static int http_server_run(struct http_server_ctx *ctx)
 
 				if (i >= ctx->listen_fds) {
 					client = &ctx->clients[i - ctx->listen_fds];
-					close_client_connection(client);
+
+					close_h3_or_plain_client(client, server_ctx.fds,
+								 ARRAY_SIZE(server_ctx.fds));
 					continue;
 				}
 
@@ -652,24 +988,68 @@ static int http_server_run(struct http_server_ctx *ctx)
 
 			/* First check if we have something to accept */
 			if (i < ctx->listen_fds) {
+				bool is_h3_conn;
+
+				is_h3_conn = COND_CODE_1(CONFIG_HTTP_SERVER_VERSION_3,
+							 (is_h3_socket(ctx->fds[i].fd)),
+							 (false));
+
 				service = lookup_service(ctx->fds[i].fd);
-				__ASSERT(NULL != service, "fd not associated with a service");
+				if (service == NULL) {
+					LOG_ERR("Received event on fd %d which is "
+						"not associated with any service",
+						ctx->fds[i].fd);
+					continue;
+				}
 
 				if (service->data->num_clients >= service->concurrent) {
 					ctx->fds[i].events = 0;
 					continue;
 				}
 
-				new_socket = accept_new_client(ctx->fds[i].fd);
+				if (is_h3_conn) {
+					/* For HTTP/3, we have two connection sockets,
+					 * one listening new connections and one for
+					 * accepting new streams. We need to handle them
+					 * differently in the code. Only the listening socket
+					 * can be checked here because only it is added to the
+					 * poll list below listen_fds count.
+					 */
+					if (ctx->fds[i].fd == *service->fd_h3) {
+						/* We are accepting a new QUIC connection */
+						LOG_DBG("Accepting new QUIC client %s on fd %d",
+							"connection", ctx->fds[i].fd);
+
+						new_socket = accept_h3_connection(ctx->fds[i].fd);
+						if (new_socket < 0) {
+							LOG_DBG("%saccept fail: %d",
+								"H3 conn ", new_socket);
+							continue;
+						}
+
+						/* A new client is created further down */
+						LOG_DBG("New QUIC connection socket %d accepted",
+							new_socket);
+					} else {
+						new_socket = -1;
+						errno = ENOENT;
+					}
+				} else {
+					new_socket = accept_new_client(ctx->fds[i].fd);
+				}
+
 				if (new_socket < 0) {
 					ret = -errno;
-					LOG_DBG("accept: %d", ret);
+					LOG_DBG("%saccept: %d", "", ret);
 					continue;
 				}
 
 				found_slot = false;
 
-				for (j = ctx->listen_fds; j < ARRAY_SIZE(ctx->fds); j++) {
+				/* Go through the polled sockets and find a free slot for
+				 * the new client.
+				 */
+				for (j = ctx->listen_fds; j < ctx->client_fds; j++) {
 					if (ctx->fds[j].fd != INVALID_SOCK) {
 						continue;
 					}
@@ -679,11 +1059,35 @@ static int http_server_run(struct http_server_ctx *ctx)
 					ctx->fds[j].revents = 0;
 
 					service->data->num_clients++;
+					idx = j - ctx->listen_fds;
 
-					LOG_DBG("Init client #%d", j - ctx->listen_fds);
+					LOG_DBG("Init client #%d", idx);
 
-					init_client_ctx(&ctx->clients[j - ctx->listen_fds], service,
-							new_socket);
+					init_client_ctx(&ctx->clients[idx], service, new_socket);
+
+					if (is_h3_conn) {
+						ctx->clients[idx].is_h3 = true;
+						ctx->clients[idx].server_state =
+							HTTP_SERVER_H3_STREAM_STATE;
+						ctx->clients[idx].h3.conn_sock = new_socket;
+
+						/* Open our H3 unidirectional streams (control,
+						 * QPACK encoder/decoder) for this connection.
+						 * We use the connection socket to open
+						 * streams on the same QUIC connection.
+						 */
+						ret = h3_open_uni_streams(&ctx->clients[idx],
+									  new_socket);
+						if (ret < 0) {
+							LOG_DBG("H3: Failed to open uni streams "
+								"(%d)", ret);
+
+							/* This is non-fatal, continue without
+							 * uni streams
+							 */
+						}
+					}
+
 					found_slot = true;
 					break;
 				}
@@ -696,8 +1100,108 @@ static int http_server_run(struct http_server_ctx *ctx)
 				continue;
 			}
 
-			/* Client sock */
-			client = &ctx->clients[i - ctx->listen_fds];
+			idx = i - ctx->listen_fds;
+			client = &ctx->clients[idx];
+
+			if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_3) &&
+			    quic_is_connection_socket(ctx->fds[i].fd)) {
+				/* For HTTP/3, we need to check if the event is for accepting
+				 * a new stream on an existing connection. If so, we
+				 * need to call accept_h3_stream() to accept the new
+				 * stream and add it to the poll list, instead of
+				 * handling it as client data.
+				 */
+				if (ctx->fds[i].revents & ZSOCK_POLLIN) {
+					/* We are accepting a stream */
+					LOG_DBG("Accepting new QUIC client %s on fd %d",
+						"stream", ctx->fds[i].fd);
+
+					new_socket = INVALID_SOCK;
+
+					ret = accept_h3_stream(ctx->fds[i].fd, &new_socket);
+					if (ret < 0 && ret != -EAGAIN) {
+						/* Connection is closing, clean up the H3 client */
+						client = h3_find_client(ctx->fds[i].fd, &idx);
+						if (client != NULL) {
+							close_h3_or_plain_client(client,
+								       server_ctx.fds,
+								       ARRAY_SIZE(server_ctx.fds));
+						}
+					} else if (ret == -EAGAIN) {
+						/*
+						 * No stream in the accept queue, but POLLIN fired.
+						 * This can mean the connection is closed,
+						 * quic_endpoint_notify_streams_closed()
+						 * gives the semaphore with no stream to wake any
+						 * blocked accept, which surfaces here as -EAGAIN.
+						 * Check SO_ERROR to tell the two cases apart.
+						 */
+						optlen = sizeof(sock_error);
+						sock_error = 0;
+						zsock_getsockopt(ctx->fds[i].fd, ZSOCK_SOL_SOCKET,
+								 ZSOCK_SO_ERROR, &sock_error,
+								 &optlen);
+						if (sock_error != 0) {
+							LOG_DBG("QUIC connection fd %d closed "
+								"during accept (err=%d)",
+								ctx->fds[i].fd, sock_error);
+
+							client = h3_find_client(ctx->fds[i].fd,
+										&idx);
+							if (client != NULL) {
+								close_h3_or_plain_client(client,
+								       server_ctx.fds,
+								       ARRAY_SIZE(server_ctx.fds));
+							} else {
+								zsock_close(ctx->fds[i].fd);
+								ctx->fds[i].fd = INVALID_SOCK;
+								ctx->fds[i].events = 0;
+							}
+						}
+					} else if (new_socket != INVALID_SOCK) {
+						/* real stream accepted (bidi or uni) */
+						ret = add_h3_stream_poll(client,
+							    &ctx->fds[ctx->client_fds],
+							    ARRAY_SIZE(ctx->fds) - ctx->client_fds,
+							    new_socket);
+						if (ret == -ENOMEM) {
+							LOG_DBG("No free slot for new H3 stream %d",
+								new_socket);
+							zsock_close(new_socket);
+						}
+					} else if (new_socket == INVALID_SOCK) {
+						optlen = sizeof(sock_error);
+						sock_error = 0;
+
+						zsock_getsockopt(ctx->fds[i].fd, ZSOCK_SOL_SOCKET,
+								 ZSOCK_SO_ERROR, &sock_error,
+								 &optlen);
+						if (sock_error != 0) {
+							LOG_DBG("QUIC connection fd %d closed "
+								"(err=%d)",
+								ctx->fds[i].fd, sock_error);
+							client = h3_find_client(ctx->fds[i].fd,
+										&idx);
+							if (client != NULL) {
+								close_h3_or_plain_client(client,
+								       server_ctx.fds,
+								       ARRAY_SIZE(server_ctx.fds));
+							} else {
+								/* No client yet, close the
+								 * connection fd
+								 */
+								zsock_close(ctx->fds[i].fd);
+								ctx->fds[i].fd = INVALID_SOCK;
+								ctx->fds[i].events = 0;
+							}
+						}
+					}
+				}
+
+				continue;
+			}
+
+			/* This is client data on an established connection (HTTP/1.x or HTTP/2) */
 
 			ret = zsock_recv(client->fd, client->buffer + client->data_len,
 					 sizeof(client->buffer) - client->data_len, 0);
@@ -707,7 +1211,8 @@ static int http_server_run(struct http_server_ctx *ctx)
 						i - ctx->listen_fds);
 				} else {
 					ret = -errno;
-					LOG_DBG("ERROR reading from socket (%d)", ret);
+					LOG_DBG("[%p] Error reading from socket %d (%d)",
+						client, client->fd, ret);
 				}
 
 				close_client_connection(client);
@@ -725,14 +1230,210 @@ static int http_server_run(struct http_server_ctx *ctx)
 				} else {
 					LOG_ERR("HTTP request handling error (%d)", ret);
 				}
-				close_client_connection(client);
+
+				close_h3_or_plain_client(client, server_ctx.fds,
+							 ARRAY_SIZE(server_ctx.fds));
+
 			} else if (client->data_len == sizeof(client->buffer)) {
 				/* If the RX buffer is still full after parsing,
 				 * it means we won't be able to handle this request
 				 * with the current buffer size.
 				 */
 				LOG_ERR("RX buffer too small to handle request");
-				close_client_connection(client);
+
+				close_h3_or_plain_client(client, server_ctx.fds,
+							 ARRAY_SIZE(server_ctx.fds));
+			}
+		}
+
+		if (!IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_3)) {
+			continue;
+		}
+
+		/* Check if any of the HTTP/3 stream sockets have events. */
+		for (i = ctx->client_fds; i < ARRAY_SIZE(ctx->fds); i++) {
+			int conn_fd;
+
+			if (ctx->fds[i].fd < 0) {
+				continue;
+			}
+
+			/* TODO: Make sure we get pollhup if stream is closed by peer */
+			if (ctx->fds[i].revents & ZSOCK_POLLHUP) {
+				LOG_DBG("Stream #%d is closed", i - ctx->client_fds);
+				ctx->fds[i].fd = INVALID_SOCK;
+				ctx->fds[i].events = 0;
+				continue;
+			}
+
+			if (!(ctx->fds[i].revents & ZSOCK_POLLIN)) {
+				continue;
+			}
+
+			client = get_h3_client_by_stream_fd(ctx, ctx->fds[i].fd, &idx);
+			if (client == NULL) {
+				/* May be a uni stream, try the conn ctx lookup */
+				client = h3_find_client_for_uni_stream(ctx->fds[i].fd);
+				if (client == NULL) {
+					LOG_DBG("No client found for stream fd %d",
+						ctx->fds[i].fd);
+
+					/* Nobody owns this fd, remove it to stop the spin */
+					ctx->fds[i].fd = INVALID_SOCK;
+					ctx->fds[i].events = 0;
+					continue;
+				}
+			}
+
+			if (h3_is_unidirectional_stream(ctx->fds[i].fd)) {
+				struct h3_conn_ctx *h3_ctx = h3_get_conn_ctx(client);
+				int stream_fd = ctx->fds[i].fd;
+				bool identified = h3_ctx != NULL &&
+					(stream_fd == h3_ctx->peer_control_stream ||
+					 stream_fd == h3_ctx->peer_qpack_encoder_stream ||
+					 stream_fd == h3_ctx->peer_qpack_decoder_stream);
+
+				/* Remove from h3.stream_sock[] now so that it is not left in
+				 * there if the stream is closed while we are processing it.
+				 * It will be added back if it's still open after processing.
+				 */
+				for (j = 0; j < ARRAY_SIZE(client->h3.stream_sock); j++) {
+					if (client->h3.stream_sock[j] == stream_fd) {
+						client->h3.stream_sock[j] = INVALID_SOCK;
+						break;
+					}
+				}
+
+				if (!identified) {
+					ret = h3_identify_uni_stream(client, stream_fd);
+					if (ret == -EAGAIN) {
+						/* Put it back, still not identified */
+						for (j = 0;
+						     j < ARRAY_SIZE(client->h3.stream_sock); j++) {
+							if (client->h3.stream_sock[j] ==
+							    INVALID_SOCK) {
+							      client->h3.stream_sock[j] = stream_fd;
+							      break;
+							}
+						}
+
+						continue;
+					}
+
+					if (ret < 0) {
+						zsock_close(stream_fd);
+						ctx->fds[i].fd = INVALID_SOCK;
+						ctx->fds[i].events = 0;
+					}
+
+					continue;
+				}
+
+				/* Uni stream has its own handler and its own recv buffer */
+				ret = h3_handle_uni_stream_data(client, stream_fd);
+				if (ret < 0) {
+					/* Stream ended or errored, close and remove poll slot */
+					zsock_close(stream_fd);
+					ctx->fds[i].fd = INVALID_SOCK;
+					ctx->fds[i].events = 0;
+				} else {
+					/* ret == 0 means recv returned EAGAIN (no stream data).
+					 * Disable POLLIN to avoid spinning - the fd will be cleaned
+					 * up when the connection closes via h3_client_cleanup.
+					 */
+					ctx->fds[i].events = 0;
+				}
+
+				continue;
+			}
+
+			/* Bidi request stream: recv into client->buffer and process */
+			ret = zsock_recv(ctx->fds[i].fd, client->buffer + client->data_len,
+					 sizeof(client->buffer) - client->data_len, 0);
+			if (ret <= 0) {
+				int closed_fd = ctx->fds[i].fd;
+
+				if (ret == 0) {
+					LOG_DBG("Stream closed for client #%d", idx);
+				} else {
+					ret = -errno;
+					LOG_DBG("[%p] Error reading from socket %d (%d)",
+						client, ctx->fds[i].fd, ret);
+				}
+
+				zsock_close(ctx->fds[i].fd);
+
+				/* Clear the poll slot so the fd number can be safely reused */
+				ctx->fds[i].fd = INVALID_SOCK;
+				ctx->fds[i].events = 0;
+				ctx->fds[i].revents = 0;
+
+				/* Remove from h3.stream_sock[] so a reused fd number
+				 * is not mistakenly matched to this client
+				 */
+				for (int k = 0; k < ARRAY_SIZE(client->h3.stream_sock); k++) {
+					if (client->h3.stream_sock[k] == closed_fd) {
+						client->h3.stream_sock[k] = INVALID_SOCK;
+						break;
+					}
+				}
+
+				continue;
+			}
+
+			client->data_len += ret;
+
+			http_client_timer_restart(client);
+
+			/* Temporarily point client->fd at the stream for sending */
+			conn_fd = client->fd;
+			client->fd = ctx->fds[i].fd;
+			ret = handle_http3_request(client);
+			client->fd = conn_fd;
+
+			if (ret < 0 && ret != -EAGAIN) {
+				if (ret == -ENOTCONN) {
+					LOG_DBG("Client closed connection while handling request");
+				} else {
+					LOG_ERR("HTTP request handling error (%d)", ret);
+				}
+
+				close_h3_or_plain_client(client, server_ctx.fds,
+							 ARRAY_SIZE(server_ctx.fds));
+			} else if (ret == 0) {
+				/*
+				 * Response is complete. h3_end_response() already closed the
+				 * stream fd via zsock_close(). Just clear the poll slot so we
+				 * do not spin on a dead (and potentially reused) fd number.
+				 */
+				int closed_fd = ctx->fds[i].fd;
+
+				zsock_close(closed_fd); /* safe: shutdown already sent FIN */
+
+				ctx->fds[i].fd = INVALID_SOCK;
+				ctx->fds[i].events = 0;
+				ctx->fds[i].revents = 0;
+
+				/* Remove from h3.stream_sock[] */
+				for (int k = 0; k < ARRAY_SIZE(client->h3.stream_sock); k++) {
+					if (client->h3.stream_sock[k] == closed_fd) {
+						client->h3.stream_sock[k] = INVALID_SOCK;
+						break;
+					}
+				}
+
+				LOG_DBG("[%p] H3: stream fd %d closed after complete response",
+					client, closed_fd);
+
+			} else if (client->data_len == sizeof(client->buffer)) {
+				/* If the RX buffer is still full after parsing,
+				 * it means we won't be able to handle this request
+				 * with the current buffer size.
+				 */
+				LOG_ERR("RX buffer too small to handle request");
+
+				close_h3_or_plain_client(client, server_ctx.fds,
+							 ARRAY_SIZE(server_ctx.fds));
 			}
 		}
 	}
@@ -1095,7 +1796,7 @@ static void http_server_thread(void *p1, void *p2, void *p3)
 		while (server_running) {
 			ret = http_server_init(&server_ctx);
 			if (ret < 0) {
-				LOG_ERR("Failed to initialize HTTP2 server");
+				LOG_ERR("Failed to initialize HTTP server");
 				goto again;
 			}
 
