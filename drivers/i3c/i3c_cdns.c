@@ -1445,8 +1445,8 @@ static void cdns_i3c_start_transfer(const struct device *dev)
 	}
 
 	/* kickoff transfer */
-	sys_write32(CTRL_MCS | sys_read32(config->base + CTRL), config->base + CTRL);
 	sys_write32(MST_INT_CMDD_EMP, config->base + MST_IER);
+	sys_write32(CTRL_MCS | sys_read32(config->base + CTRL), config->base + CTRL);
 }
 
 /**
