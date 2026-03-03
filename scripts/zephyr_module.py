@@ -116,7 +116,7 @@ properties:
         click-through:
           type: boolean
         url:
-          type: string
+          type: ['string', 'array']
         description:
           type: string
         doc-url:

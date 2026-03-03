@@ -60,7 +60,7 @@ class Blobs(WestCommand):
             - license_path: path to the license file for the blob
             - license-abspath: absolute path to the license file for the blob
             - click-through: need license click-through or not
-            - uri: URI to the remote location of the blob
+            - uri: URI(s) to the remote location(s) of the blob
             - description: blob text description
             - doc-url: URL to the documentation for this blob
             '''),
@@ -193,16 +193,34 @@ class Blobs(WestCommand):
 
     def download_blob(self, blob, path):
         '''Download a blob from its url to a given path.'''
-        url = blob['url']
-        scheme = urlparse(url).scheme
-        self.dbg(f'Fetching blob from url {url} with {scheme} to path: {path}')
-        import fetchers
+        urls = blob['url']
+        if not isinstance(urls, list):
+            urls = (urls,)
 
-        fetcher = fetchers.get_fetcher_cls(scheme)
-        self.dbg(f'Found fetcher: {fetcher}')
-        inst = fetcher()
-        self.ensure_folder(path)
-        inst.fetch(url, path)
+        found = False
+        exception = None
+        for url in urls:
+            scheme = urlparse(url).scheme
+            self.dbg(f'Fetching blob from url {url} with {scheme} to path: {path}')
+            import fetchers
+
+            fetcher = fetchers.get_fetcher_cls(scheme)
+            self.dbg(f'Found fetcher: {fetcher}')
+            inst = fetcher()
+            self.ensure_folder(path)
+            try:
+                inst.fetch(url, path)
+            except BaseException as e:
+                exception = e
+            else:
+                valid_url = url
+                found = True
+                break
+
+        if not found:
+            raise exception
+        if found and exception is not None:
+            self.inf(f'Fallback URL worked: {valid_url}')
 
     def fetch_blob(self, args, blob):
         """
