@@ -46,6 +46,162 @@ Here is information about serial ports provided on Sparrow Hawk board :
    By default, Zephyr console output is assigned to HSCIF1 with 921600 8N1 without
    hardware flow control.
 
+Pins Configuration
+------------------
+
+The below table describes the pin layout and the supported function of Sparrow Hawk board.
+
++--------------------------+-----+-----+------------------------+
+|      Pin function        | Pin number|      Pin function      |
++==========================+=====+=====+========================+
+|          3.3V            |  1  |  2  |          5V            |
++--------------------------+-----+-----+------------------------+
+|                          |  3  |  4  |          5V            |
++--------------------------+-----+-----+------------------------+
+|                          |  5  |  6  |          GND           |
++--------------------------+-----+-----+------------------------+
+|                          |  7  |  8  |                        |
++--------------------------+-----+-----+------------------------+
+|                          |  9  | 10  |                        |
++--------------------------+-----+-----+------------------------+
+|         GPIO 17          | 11  | 12  |        PWM3            |
++--------------------------+-----+-----+------------------------+
+|         GPIO 27          | 13  | 14  |                        |
++--------------------------+-----+-----+------------------------+
+|         GPIO 22          | 15  | 16  |        GPIO 23         |
++--------------------------+-----+-----+------------------------+
+|                          | 17  | 18  |        GPIO 24         |
++--------------------------+-----+-----+------------------------+
+|                          | 19  | 20  |                        |
++--------------------------+-----+-----+------------------------+
+|                          | 21  | 22  |        GPIO 25         |
++--------------------------+-----+-----+------------------------+
+|                          | 23  | 24  |                        |
++--------------------------+-----+-----+------------------------+
+|                          | 25  | 26  |                        |
++--------------------------+-----+-----+------------------------+
+|                          | 27  | 28  |                        |
++--------------------------+-----+-----+------------------------+
+|                          | 29  | 30  |        PWM0            |
++--------------------------+-----+-----+------------------------+
+|         GPIO 6           | 31  | 32  |                        |
++--------------------------+-----+-----+------------------------+
+|         PWM1             | 33  | 34  |                        |
++--------------------------+-----+-----+------------------------+
+|                          | 35  | 36  |        GPIO 16         |
++--------------------------+-----+-----+------------------------+
+|         GPIO 26          | 37  | 38  |                        |
++--------------------------+-----+-----+------------------------+
+|                          | 39  | 40  |                        |
++--------------------------+-----+-----+------------------------+
+
+Counter
+-------
+
+R-Car V4H provides 3 timer modules that can be used with Counter API. Each timer
+support the following features:
+
+* 32-bit counter.
+* Counter frequency is fixed at 2,082,500 Hz
+* 4 channels each module.
+* Each channel provide an independent alarm interrupt.
+
+You can enable the timer instances through a Devicetree overlay:
+
+.. code-block:: devicetree
+
+   &cmt1 {
+      status = "okay";
+   };
+
+   &cmt2 {
+      status = "okay";
+   };
+
+   &cmt3 {
+      status = "okay";
+   };
+
+
+GPIO
+----
+
+There are 9 pins can be used as GPIO. Avialable pin names are listed in the
+Pins Configuration section.
+
+**Supported features:**
+
+* GPIO Output: Push-pull, open-drain with internal pull-up resistor.
+  Active high and active low polarity.
+* GPIO Input: Only input with internal pull-up. Active high and active low polarity.
+* Input interrupt with level and edge trigger.
+
+To use GPIO, you must activate GPIO nodes (gpio0, gpio1, gpio2) in Devivetree overlay:
+
+.. code-block:: devicetree
+
+   &gpio0 {
+      status = "okay";
+   };
+
+   &gpio1 {
+      status = "okay";
+   };
+
+   &gpio2 {
+      status = "okay";
+   };
+
+For convenience, you can create a user-defined node to associate a name with pin number:
+
+.. code-block:: devicetree
+
+   #include <zephyr/dt-bindings/gpio/gpio.h>
+
+   / {
+      zephyr,user {
+         gp6-gpios  = <&sparrowhawkgpio  6 GPIO_ACTIVE_HIGH>;
+         gp16-gpios = <&sparrowhawkgpio 16 GPIO_ACTIVE_LOW>;
+         gp17-gpios = <&sparrowhawkgpio 17 GPIO_ACTIVE_HIGH>;
+         gp22-gpios = <&sparrowhawkgpio 22 GPIO_ACTIVE_LOW>;
+         gp23-gpios = <&sparrowhawkgpio 23 GPIO_ACTIVE_HIGH>;
+         gp24-gpios = <&sparrowhawkgpio 24 GPIO_ACTIVE_LOW>;
+         gp25-gpios = <&sparrowhawkgpio 25 GPIO_ACTIVE_HIGH>;
+         gp26-gpios = <&sparrowhawkgpio 26 GPIO_ACTIVE_LOW>;
+         gp27-gpios = <&sparrowhawkgpio 27 GPIO_ACTIVE_HIGH>;
+      };
+   };
+
+and get references to it using ``gpio_dt_spec`` struct:
+
+.. code-block:: C
+
+   static const struct gpio_dt_spec gp16 =
+      GPIO_DT_SPEC_GET(ZEPHYR_USER_NODE, gp16_gpios);
+
+Pulse Width Modulation (PWM)
+----------------------------
+
+V4H Sparrow Hawk provides 3 pins for PWM function. You must activate the PWM
+node in your Devicetree overlay:
+
+.. code-block:: devicetree
+
+   &pwm {
+       status = "okay";
+   };
+
+The pin names are defined: ``pwm0_io``, ``pwm1_io``, ``pwm3_io``. Get the reference
+using pwm_dt_spec struct:
+
+.. code-block:: devicetree
+
+   const struct pwm_dt_spec pwm0 =
+      PWM_DT_SPEC_GET_BY_NAME(DT_NODELABEL(pwm_io), pwm0_io);
+
+This provides a fully initialized pwm_dt_spec that you can use with Zephyr's PWM
+API functions such as: ``pwm_set_dt()``, ``pwm_set_cycles_dt()``, ``pwm_is_ready_dt()``
+
 Programming and Debugging
 *************************
 
