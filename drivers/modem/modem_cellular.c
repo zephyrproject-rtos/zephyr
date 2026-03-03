@@ -37,7 +37,7 @@ LOG_MODULE_REGISTER(modem_cellular, CONFIG_MODEM_LOG_LEVEL);
 #define CESQ_RSRQ_UNKNOWN		     (255)
 
 /* Magic numbers to units conversions */
-#define CSQ_RSSI_TO_DB(v) (-113 + (2 * (rssi)))
+#define CSQ_RSSI_TO_DB(v) (-113 + (2 * (v)))
 #define CESQ_RSRP_TO_DB(v) (-140 + (v))
 #define CESQ_RSRQ_TO_DB(v) (-20 + ((v) / 2))
 
