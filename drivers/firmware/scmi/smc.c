@@ -68,7 +68,7 @@ struct scmi_smc_channel {
 	DT_INST_SCMI_TRANSPORT_DEFINE(inst, NULL, NULL, NULL, level, prio, api)
 
 static int scmi_smc_send_message(const struct device *transport, struct scmi_channel *chan,
-				 struct scmi_message *msg)
+				 struct scmi_message *msg, bool use_polling)
 {
 	struct scmi_smc_channel *smc_chan;
 	struct arm_smccc_res res;
@@ -76,7 +76,7 @@ static int scmi_smc_send_message(const struct device *transport, struct scmi_cha
 
 	smc_chan = chan->data;
 
-	ret = scmi_shmem_write_message(smc_chan->shmem, msg);
+	ret = scmi_shmem_write_message(smc_chan->shmem, msg, use_polling);
 	if (ret < 0) {
 		LOG_ERR("failed to write message to shmem: %d", ret);
 		return ret;
@@ -126,6 +126,12 @@ static int scmi_smc_setup_chan(const struct device *transport, struct scmi_chann
 	 * Force polling mode for SMC transport.
 	 * SMC/HVC calls are synchronous and don't support interrupts,
 	 * so we must use polling instead of IRQ-based communication.
+	 */
+	chan->polling_only = true;
+
+	/*
+	 * Disable interrupt flag in shared memory to indicate
+	 * polling-only operation to platform.
 	 */
 	scmi_shmem_update_flags(smc_chan->shmem, SCMI_SHMEM_CHAN_FLAG_IRQ_BIT, 0);
 

@@ -79,6 +79,12 @@ struct scmi_channel {
 	/** is the channel ready to be used by a protocol? */
 	bool ready;
 	/** @endcond */
+	/**
+	 * indicates if the channel requires polling-only operation.
+	 * When set to true, the channel cannot use interrupt-based
+	 * messaging and must always poll for responses.
+	 */
+	bool polling_only;
 };
 
 /**
