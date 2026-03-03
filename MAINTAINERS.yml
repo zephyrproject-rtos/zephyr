@@ -6315,11 +6315,21 @@ West:
     - tests/crypto/secp256r1/
     - tests/benchmarks/mbedtls/
   labels:
-    - "area: mbedTLS / PSA Crypto"
+    - "area: Mbed TLS"
   tests:
     - benchmark.crypto.mbedtls
     - crypto.mbedtls
     - psa.secure_storage
+
+"West project: mbedtls-framework":
+  status: maintained
+  maintainers:
+    - ceolin
+    - valeriosetti
+    - tomi-font
+  files: []
+  labels:
+    - "area: Mbed TLS"
 
 "West project: mcuboot":
   status: maintained
@@ -6471,6 +6481,16 @@ West:
   files: []
   labels:
     - "area: TF-M"
+
+"West project: tf-psa-crypto":
+  status: maintained
+  maintainers:
+    - ceolin
+    - valeriosetti
+    - tomi-font
+  files: []
+  labels:
+    - "area: TF-PSA-Crypto"
 
 "West project: tflite-micro":
   status: maintained
