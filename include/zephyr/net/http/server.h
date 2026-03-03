@@ -336,6 +336,7 @@ enum http_server_state {
 	HTTP_SERVER_FRAME_GOAWAY_STATE,
 	HTTP_SERVER_FRAME_PADDING_STATE,
 	HTTP_SERVER_DONE_STATE,
+	HTTP_SERVER_H3_STREAM_STATE,
 };
 
 enum http1_parser_state {
@@ -494,6 +495,37 @@ struct http_client_ctx {
 	/** Client supported compression. */
 	IF_ENABLED(CONFIG_HTTP_SERVER_COMPRESSION, (uint8_t supported_compression));
 /** @endcond */
+
+	/** HTTP/3 connection and stream information. */
+	struct {
+#if defined(CONFIG_HTTP_SERVER_VERSION_3) || defined(__DOXYGEN__)
+		/** QUIC connection socket for HTTP/3. It is used to open streams
+		 *  on the same connection.
+		 */
+		int conn_sock;
+
+/** @cond INTERNAL_HIDDEN */
+#define HTTP3_SERVER_MAX_STREAMS (CONFIG_QUIC_MAX_STREAMS_UNI + CONFIG_QUIC_MAX_STREAMS_BIDI)
+/** @endcond */
+
+		/** HTTP/3 client stream sockets.
+		 */
+		int stream_sock[HTTP3_SERVER_MAX_STREAMS];
+#else
+		/* This is here in order to avoid adding #ifdefs in the code related
+		 * to the HTTP/3.
+		 */
+		union {
+			int conn_sock;
+			int stream_sock[1];
+		};
+
+#define HTTP3_SERVER_MAX_STREAMS 0
+#endif /* CONFIG_HTTP_SERVER_VERSION_3 */
+	} h3;
+
+	/** Flag indicating this is an HTTP/3 (QUIC stream) client. */
+	bool is_h3 : 1;
 
 	/** Flag indicating that HTTP2 preface was sent. */
 	bool preface_sent : 1;

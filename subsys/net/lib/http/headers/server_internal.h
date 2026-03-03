@@ -16,6 +16,8 @@
 #include <zephyr/net/http/hpack.h>
 #include <zephyr/net/http/frame.h>
 
+#define INVALID_SOCK -1
+
 /* HTTP1/HTTP2 state handling */
 int handle_http_frame_rst_stream(struct http_client_ctx *client);
 int handle_http_frame_goaway(struct http_client_ctx *client);
@@ -35,6 +37,57 @@ void http_server_release_client(struct http_client_ctx *client);
 int enter_http1_request(struct http_client_ctx *client);
 int enter_http2_request(struct http_client_ctx *client);
 int enter_http_done_state(struct http_client_ctx *client);
+
+/* HTTP/3 state handling */
+/**
+ * HTTP/3 peer settings received from SETTINGS frame.
+ */
+struct h3_peer_settings {
+	uint64_t qpack_max_table_capacity;  /* Default: 0 */
+	uint64_t max_field_section_size;    /* Default: unlimited (UINT64_MAX) */
+	uint64_t qpack_blocked_streams;     /* Default: 0 */
+	bool received;                      /* True if SETTINGS has been received */
+};
+
+/**
+ * HTTP/3 connection context for tracking unidirectional streams.
+ * This is stored per H3 connection (QUIC context socket).
+ */
+struct h3_conn_ctx {
+	/* Peer's unidirectional streams (accepted by us) */
+	int peer_control_stream;
+	int peer_qpack_encoder_stream;
+	int peer_qpack_decoder_stream;
+
+	/* Our unidirectional streams (opened by us) */
+	int local_control_stream;
+	int local_qpack_encoder_stream;
+	int local_qpack_decoder_stream;
+
+	/* Peer settings */
+	struct h3_peer_settings peer_settings;
+
+	/* State flags */
+	bool settings_sent;
+	bool initialized;
+};
+
+int accept_h3_connection(int h3_listen_sock);
+int accept_h3_stream(int h3_conn_sock, int *stream_sock);
+int handle_http3_request(struct http_client_ctx *client);
+int h3_open_uni_streams(struct http_client_ctx *client, int quic_sock);
+int h3_identify_uni_stream(struct http_client_ctx *client, int fd);
+int h3_handle_control_stream(struct http_client_ctx *client, int fd);
+int h3_handle_qpack_encoder_stream(struct http_client_ctx *client, int fd);
+int h3_handle_qpack_decoder_stream(struct http_client_ctx *client, int fd);
+struct http_client_ctx *h3_find_client(int conn_sock, int *idx);
+int h3_client_cleanup(struct http_client_ctx *client,
+		      struct zsock_pollfd fds[],
+		      int max_fds_count);
+int h3_handle_uni_stream_data(struct http_client_ctx *client, int fd);
+bool h3_is_unidirectional_stream(int fd);
+struct http_client_ctx *h3_find_client_for_uni_stream(int fd);
+struct h3_conn_ctx *h3_get_conn_ctx(struct http_client_ctx *client);
 
 /* HTTP Compression handling */
 #define HTTP_COMPRESSION_MAX_STRING_LEN 8
