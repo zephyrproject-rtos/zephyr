@@ -143,6 +143,9 @@ struct coap_client_request {
 
 /** @cond INTERNAL_HIDDEN */
 struct coap_client_internal_request {
+	struct net_sockaddr_storage addr;
+	net_socklen_t addrlen;
+
 	uint8_t request_token[COAP_TOKEN_MAX_LEN];
 	uint32_t offset;
 	uint16_t last_id;
@@ -161,18 +164,21 @@ struct coap_client_internal_request {
 	bool is_observe;
 	int last_response_id;
 };
+/** @endcond */
 
+/**
+ * @brief Representation of a CoAP client.
+ */
 struct coap_client {
+	/** @cond INTERNAL_HIDDEN */
 	int fd;
-	struct net_sockaddr address;
-	net_socklen_t socklen;
 	struct k_mutex lock;
 	uint8_t recv_buf[MAX_COAP_MSG_LEN];
 	struct coap_client_internal_request requests[CONFIG_COAP_CLIENT_MAX_REQUESTS];
 	struct coap_option echo_option;
 	bool send_echo;
+	/** @endcond */
 };
-/** @endcond */
 
 /**
  * @brief Initialize the CoAP client.
