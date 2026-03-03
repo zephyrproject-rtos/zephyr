@@ -132,6 +132,8 @@
 
 	pinctrl-0 = <&i2c00_scl_gpio004 &i2c00_sda_gpio003>;
 	pinctrl-names = "default";
+	scl-gpios = <MCHP_GPIO_DECODE_004 GPIO_OPEN_DRAIN>;
+	sda-gpios = <MCHP_GPIO_DECODE_003 GPIO_OPEN_DRAIN>;
 };
 
 &i2c00_scl_gpio004 {
@@ -151,6 +153,8 @@
 	port-sel = <1>;
 	pinctrl-0 = <&i2c01_scl_gpio131 &i2c01_sda_gpio130>;
 	pinctrl-names = "default";
+	scl-gpios = <MCHP_GPIO_DECODE_131 GPIO_OPEN_DRAIN>;
+	sda-gpios = <MCHP_GPIO_DECODE_130 GPIO_OPEN_DRAIN>;
 
 	pca9555@26 {
 		compatible = "nxp,pca95xx";
@@ -186,6 +190,8 @@
 	port-sel = <7>;
 	pinctrl-0 = <&i2c07_scl_gpio013 &i2c07_sda_gpio012>;
 	pinctrl-names = "default";
+	scl-gpios = <MCHP_GPIO_DECODE_013 GPIO_OPEN_DRAIN>;
+	sda-gpios = <MCHP_GPIO_DECODE_012 GPIO_OPEN_DRAIN>;
 };
 
 &i2c07_scl_gpio013 {
