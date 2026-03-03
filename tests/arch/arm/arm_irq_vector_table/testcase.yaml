@@ -21,3 +21,4 @@ tests:
       - lp_em_cc2340r5
       - lp_em_cc2340r5moda
       - lp_em_cc2340r53
+      - lp_em_cc2340r53_wcsp
