@@ -1,4 +1,4 @@
-# Copyright NXP 2025
+# Copyright NXP 2026
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig MUX_CONTROL
@@ -22,6 +22,7 @@ source "subsys/logging/Kconfig.template.log_config"
 
 source "drivers/mux/Kconfig.reg_mux"
 source "drivers/mux/Kconfig.nxp_inputmux"
+source "drivers/mux/Kconfig.nxp_xbar"
 source "drivers/mux/Kconfig.gpio_mux"
 
 endif # MUX_CONTROL

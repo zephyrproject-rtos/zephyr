@@ -1,0 +1,11 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MUX_NXP_XBAR
+	bool "NXP XBAR driver"
+	default y
+	depends on DT_HAS_NXP_MCUX_XBAR_ENABLED
+	help
+	  Enable support for NXP XBAR (crossbar switch) peripheral.
+	  The XBAR driver uses the MUX subsystem to route signals between
+	  different peripherals and subsystems on NXP SoCs.

@@ -1,0 +1,77 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP MCUX XBAR (Crossbar Switch) peripheral binding.
+
+  The XBAR peripheral routes signals between different on-chip peripherals,
+  enabling flexible interconnection of timers, ADCs, DMA, and other peripherals.
+
+  This driver uses the Zephyr MUX subsystem to provide devicetree-driven signal
+  routing configuration.
+
+  The XBAR uses a 2-cell format for mux-controls:
+    - Cell 0: Input signal index (xbar_input_signal_t from MCUX HAL)
+    - Cell 1: Output signal index (xbar_output_signal_t from MCUX HAL)
+
+  The XBAR uses a 3-cell format for mux-states:
+    - Cell 0: Input signal index
+    - Cell 1: Output signal index
+    - Cell 2: Enable (1 to configure XBAR output, 0 to skip configuration)
+
+  Example usage:
+
+    xbar0: xbar@40055000 {
+        compatible = "nxp,mcux-xbar";
+        reg = <0x40055000 0x1000>;
+        clocks = <&syscon MCUX_XBAR_CLK>;
+        #mux-control-cells = <2>;
+        #mux-state-cells = <3>;
+    };
+
+    /* Configure XBAR at boot to route TMR0 output to ADC trigger (enable=1) */
+    peripheral {
+        mux-states = <&xbar0 XBAR_INPUT_TMR0_OUT XBAR_OUTPUT_ADC_TRIG 1>;
+    };
+
+    /* Runtime configuration using mux-controls */
+    peripheral2 {
+        mux-controls = <&xbar0 XBAR_INPUT_DMA_REQ XBAR_OUTPUT_GPIO>;
+    };
+
+compatible: "nxp,mcux-xbar"
+
+include: [mux-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: XBAR peripheral register base address and size
+
+  clocks:
+    required: true
+    description: Clock configuration for XBAR peripheral
+
+  '#mux-control-cells':
+    const: 2
+    description: |
+      Number of cells in mux-controls property.
+      Cell 0: Input signal index
+      Cell 1: Output signal index
+
+  '#mux-state-cells':
+    const: 3
+    description: |
+      Number of cells in mux-states property.
+      Cell 0: Input signal index
+      Cell 1: Output signal index
+      Cell 2: Enable (1 to configure XBAR output, 0 to skip configuration)
+
+mux-control-cells:
+  - input
+  - output
+
+mux-state-cells:
+  - input
+  - output
+  - enable
