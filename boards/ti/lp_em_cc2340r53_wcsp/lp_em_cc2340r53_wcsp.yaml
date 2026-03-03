@@ -1,0 +1,29 @@
+identifier: lp_em_cc2340r53_wcsp
+name: TI SimpleLink CC2340R53 WCSP on LP_EM_CC2340R5
+type: mcu
+arch: arm
+ram: 64
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - counter
+  - pwm
+  - dma
+  - crypto
+  - spi
+  - watchdog
+  - rtc
+  - nvs
+  - pm
+  - entropy
+  - flash
+  - pinctrl
+  - serial
+  - timer
+  - i2c
+  - uart
+vendor: ti
