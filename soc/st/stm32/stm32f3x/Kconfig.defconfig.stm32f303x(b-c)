@@ -7,9 +7,6 @@
 # size differ).
 if SOC_STM32F303XB || SOC_STM32F303XC
 
-config NUM_IRQS
-	default 82
-
 config CPU_HAS_ARM_MPU
 	default y
 

@@ -7,9 +7,6 @@
 
 if SOC_SERIES_STM32H7RSX
 
-configdefault NUM_IRQS
-	default 156
-
 config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT
 	default 0x0   if !BOOTLOADER_MCUBOOT

@@ -7,8 +7,6 @@
 
 if SOC_SERIES_STM32F0X
 
-rsource "Kconfig.defconfig.stm32f0*"
-
 config SRAM_VECTOR_TABLE
 	default y
 

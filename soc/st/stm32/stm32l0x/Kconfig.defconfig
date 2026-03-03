@@ -7,8 +7,6 @@
 
 if SOC_SERIES_STM32L0X
 
-rsource "Kconfig.defconfig.stm32l0*"
-
 # adjust the fallback because of the LSI oscillator characteristics
 config TASK_WDT_HW_FALLBACK_DELAY
 	depends on TASK_WDT_HW_FALLBACK

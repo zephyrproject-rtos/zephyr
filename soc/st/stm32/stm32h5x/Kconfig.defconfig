@@ -5,8 +5,6 @@
 
 if SOC_SERIES_STM32H5X
 
-rsource "Kconfig.defconfig.stm32h5*"
-
 config ICACHE
 	default y
 
