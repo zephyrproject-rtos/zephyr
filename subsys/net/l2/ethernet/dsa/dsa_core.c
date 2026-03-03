@@ -26,7 +26,7 @@ int dsa_xmit(const struct device *dev, struct net_pkt *pkt)
 	struct net_if *iface = net_if_lookup_by_dev(dev);
 	struct net_if *iface_conduit = dsa_switch_ctx->iface_conduit;
 	const struct device *dev_conduit = net_if_get_device(iface_conduit);
-	const struct ethernet_api *eth_api_conduit = dev_conduit->api;
+	const struct ethernet_driver_api *eth_api_conduit = dev_conduit->api;
 	struct net_pkt *dsa_pkt;
 	struct net_pkt *clone;
 	int ret;
@@ -57,7 +57,7 @@ int dsa_xmit(const struct device *dev, struct net_pkt *pkt)
 	dsa_pkt = dsa_tag_xmit(iface, clone);
 
 	/* Transmit from conduit port */
-	ret = eth_api_conduit->send(dev_conduit, dsa_pkt);
+	ret = eth_api_conduit->l2.send(dev_conduit, dsa_pkt);
 
 	/* Release the cloned pkt */
 	net_pkt_unref(clone);

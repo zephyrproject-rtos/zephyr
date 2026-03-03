@@ -638,7 +638,7 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 #if defined(CONFIG_NET_STATISTICS_ETHERNET) && \
 					defined(CONFIG_NET_STATISTICS_USER_API)
 	if (iface && net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
-		const struct ethernet_api *eth_api;
+		const struct ethernet_driver_api *eth_api;
 		struct net_stats_eth *eth_data = NULL;
 		uint32_t type = ETHERNET_STATS_TYPE_ALL;
 
@@ -651,11 +651,11 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 		eth_api = net_if_get_device(iface)->api;
 		if (eth_api != NULL) {
 			/* Use get_stats_type if available for type filtering */
-			if (eth_api->get_stats_type != NULL) {
-				eth_data = eth_api->get_stats_type(
+			if (eth_api->l2.get_stats_type != NULL) {
+				eth_data = eth_api->l2.get_stats_type(
 					net_if_get_device(iface), type);
-			} else if (eth_api->get_stats != NULL) {
-				eth_data = eth_api->get_stats(
+			} else if (eth_api->l2.get_stats != NULL) {
+				eth_data = eth_api->l2.get_stats(
 					net_if_get_device(iface));
 			}
 		}

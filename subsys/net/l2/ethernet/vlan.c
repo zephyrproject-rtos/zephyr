@@ -385,7 +385,7 @@ static void setup_link_address(struct vlan_context *ctx)
 int net_eth_vlan_enable(struct net_if *iface, uint16_t tag)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
-	const struct ethernet_api *eth = net_if_get_device(iface)->api;
+	const struct ethernet_driver_api *eth = net_if_get_device(iface)->api;
 	struct vlan_context *vlan;
 	int ret;
 
@@ -449,8 +449,8 @@ int net_eth_vlan_enable(struct net_if *iface, uint16_t tag)
 		 */
 		setup_link_address(vlan);
 
-		if (eth->vlan_setup) {
-			eth->vlan_setup(net_if_get_device(iface),
+		if (eth->l2.vlan_setup) {
+			eth->l2.vlan_setup(net_if_get_device(iface),
 					iface, vlan->tag, true);
 		}
 
@@ -467,7 +467,7 @@ int net_eth_vlan_enable(struct net_if *iface, uint16_t tag)
 
 int net_eth_vlan_disable(struct net_if *iface, uint16_t tag)
 {
-	const struct ethernet_api *eth;
+	const struct ethernet_driver_api *eth;
 	struct vlan_context *vlan;
 
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET) &&
@@ -494,8 +494,8 @@ int net_eth_vlan_disable(struct net_if *iface, uint16_t tag)
 
 	vlan->tag = NET_VLAN_TAG_UNSPEC;
 
-	if (eth->vlan_setup) {
-		eth->vlan_setup(net_if_get_device(vlan->attached_to),
+	if (eth->l2.vlan_setup) {
+		eth->l2.vlan_setup(net_if_get_device(vlan->attached_to),
 				vlan->attached_to, tag, false);
 	}
 

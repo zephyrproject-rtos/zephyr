@@ -176,14 +176,16 @@ static int dsa_get_config(const struct device *dev, enum ethernet_config_type ty
 	return dsa_switch_ctx->dapi->get_config(dev, type, config);
 }
 
-const struct ethernet_api dsa_eth_api = {
-	.iface_api.init = dsa_port_iface_init,
-	.get_phy = dsa_port_get_phy,
-	.send = dsa_xmit,
+DEVICE_API(ethernet, dsa_eth_api) = {
+	.l2 = {
+		.iface_api.init = dsa_port_iface_init,
+		.get_phy = dsa_port_get_phy,
+		.send = dsa_xmit,
 #ifdef CONFIG_NET_L2_PTP
-	.get_ptp_clock = dsa_port_get_ptp_clock,
+		.get_ptp_clock = dsa_port_get_ptp_clock,
 #endif
-	.get_capabilities = dsa_port_get_capabilities,
-	.set_config = dsa_set_config,
-	.get_config = dsa_get_config,
+		.get_capabilities = dsa_port_get_capabilities,
+		.set_config = dsa_set_config,
+		.get_config = dsa_get_config,
+	},
 };
