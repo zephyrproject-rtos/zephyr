@@ -1017,8 +1017,9 @@ maps, each of which has the following entries:
 - ``version``: A version string
 - ``license-path``: Path to the license file for this blob, relative to the root
   of the module repository
-- ``url``: URL that identifies the location the blob will be fetched from, as
-  well as the fetching scheme to use
+- ``url``: URL(s) that identify the location the blob will be fetched from, as
+  well as the fetching scheme to use. If it contains a list instead of a single string,
+  each URL will be considered as a fallback for fetching the same blob.
 - ``description``: Human-readable description of the binary blob
 - ``doc-url``: A URL pointing to the location of the official documentation for
   this blob

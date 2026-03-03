@@ -1,12 +1,9 @@
 # Copyright (c) 2025 Silicon Laboratories Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-import os
-import sys
-
 import requests
 
-from fetchers.core import ZephyrBlobFetcher
+from fetchers.core import ZephyrBlobException, ZephyrBlobFetcher
 
 
 class GitLFSFetcher(ZephyrBlobFetcher):
@@ -30,8 +27,7 @@ class GitLFSFetcher(ZephyrBlobFetcher):
         if "size" in blob:
             size = blob["size"]
         else:
-            west_command.err(f"'size' field missing for blob {path}, unable to fetch")
-            sys.exit(os.EX_USAGE)
+            raise ZephyrBlobException(f"'size' field missing for blob {path}, unable to fetch")
 
         west_command.dbg(f'GitLFSFetcher fetching {oid} from {url}')
 
@@ -57,39 +53,34 @@ class GitLFSFetcher(ZephyrBlobFetcher):
             resp = requests.post(url + "/objects/batch", json=request, headers=headers)
             resp.raise_for_status()  # Raises an HTTPError for bad status codes (4xx or 5xx)
         except requests.exceptions.HTTPError as e:
-            west_command.err(f'HTTP error occurred: {e}')
-            sys.exit(os.EX_DATAERR)
+            raise ZephyrBlobException(f'HTTP error occurred: {e}') from e
         except requests.exceptions.RequestException as e:
-            west_command.err(f'An error occurred: {e}')
-            sys.exit(os.EX_DATAERR)
+            raise ZephyrBlobException(f'An error occurred: {e}') from e
 
         # Download the LFS object
         # see https://github.com/git-lfs/git-lfs/blob/main/docs/api/batch.md#successful-responses
         for obj in resp.json().get("objects", []):
             if obj["oid"] == oid:
                 if "error" in obj:
-                    west_command.err(f'Failed to download LFS object {oid}: {obj["error"]}')
-                    sys.exit(os.EX_DATAERR)
+                    raise ZephyrBlobException(
+                        f'Failed to download LFS object {oid}: {obj["error"]}'
+                    )
 
                 try:
                     download = obj["actions"]["download"]
-                except KeyError:
-                    west_command.err(f'Unexpected response from LFS server: {obj}')
-                    sys.exit(os.EX_DATAERR)
+                except KeyError as e:
+                    raise ZephyrBlobException(f'Unexpected response from LFS server: {obj}') from e
 
                 west_command.dbg(f'GitLFSFetcher fetching {download["href"]} to {path}')
                 try:
                     resp = requests.get(download["href"], headers=download.get("header", {}))
                     resp.raise_for_status()  # Raises an HTTPError for bad status codes (4xx or 5xx)
                 except requests.exceptions.HTTPError as e:
-                    west_command.err(f'HTTP error occurred: {e}')
-                    sys.exit(os.EX_DATAERR)
+                    raise ZephyrBlobException(f'HTTP error occurred: {e}') from e
                 except requests.exceptions.RequestException as e:
-                    west_command.err(f'An error occurred: {e}')
-                    sys.exit(os.EX_DATAERR)
+                    raise ZephyrBlobException(f'An error occurred: {e}') from e
                 with open(path, "wb") as f:
                     f.write(resp.content)
                 break
         else:
-            west_command.err(f'Failed to download LFS object {oid}')
-            sys.exit(os.EX_DATAERR)
+            raise ZephyrBlobException(f'Failed to download LFS object {oid}')
