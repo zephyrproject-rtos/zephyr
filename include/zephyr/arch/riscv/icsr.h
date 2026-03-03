@@ -79,6 +79,69 @@ static inline unsigned long micsr_read_clear(unsigned int index, unsigned long m
 	return val;
 }
 
+static inline unsigned long micsr2_read(unsigned int index)
+{
+	unsigned int key = irq_lock();
+
+	csr_write(MISELECT, index);
+	unsigned long val = csr_read(MIREG2);
+
+	irq_unlock(key);
+	return val;
+}
+
+static inline void micsr2_write(unsigned int index, unsigned long value)
+{
+	unsigned int key = irq_lock();
+
+	csr_write(MISELECT, index);
+	csr_write(MIREG2, value);
+
+	irq_unlock(key);
+}
+
+static inline void micsr2_set(unsigned int index, unsigned long mask)
+{
+	unsigned int key = irq_lock();
+
+	csr_write(MISELECT, index);
+	csr_set(MIREG2, mask);
+
+	irq_unlock(key);
+}
+
+static inline void micsr2_clear(unsigned int index, unsigned long mask)
+{
+	unsigned int key = irq_lock();
+
+	csr_write(MISELECT, index);
+	csr_clear(MIREG2, mask);
+
+	irq_unlock(key);
+}
+
+static inline unsigned long micsr2_read_set(unsigned int index, unsigned long mask)
+{
+	unsigned int key = irq_lock();
+
+	csr_write(MISELECT, index);
+	unsigned long val = csr_read_set(MIREG2, mask);
+
+	irq_unlock(key);
+	return val;
+}
+
+static inline unsigned long micsr2_read_clear(unsigned int index, unsigned long mask)
+{
+	unsigned int key = irq_lock();
+
+	csr_write(MISELECT, index);
+	unsigned long val = csr_read_clear(MIREG2, mask);
+
+	irq_unlock(key);
+	return val;
+}
+
 #endif /* CONFIG_RISCV_ISA_EXT_SMCSRIND */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_RISCV_ICSR_H_ */
