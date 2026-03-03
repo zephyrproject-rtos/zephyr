@@ -84,7 +84,7 @@ int dwmac_probe(const struct device *dev);
 int dwmac_bus_init(struct dwmac_priv *p);
 void dwmac_platform_init(struct dwmac_priv *p);
 void dwmac_isr(const struct device *ddev);
-extern const struct ethernet_api dwmac_api;
+extern const struct ethernet_driver_api dwmac_api;
 
 /*
  * MAC Register Definitions

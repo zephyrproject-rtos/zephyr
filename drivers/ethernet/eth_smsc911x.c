@@ -506,14 +506,16 @@ error:
 	return -1;
 }
 
-static const struct ethernet_api api_funcs = {
-	.iface_api.init = eth_initialize,
+static DEVICE_API(ethernet, api_funcs) = {
+	.l2 = {
+		.iface_api.init = eth_initialize,
 
-	.get_capabilities = eth_smsc911x_get_capabilities,
-	.send = eth_tx,
+		.get_capabilities = eth_smsc911x_get_capabilities,
+		.send = eth_tx,
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-	.get_stats = get_stats,
+		.get_stats = get_stats,
 #endif
+	},
 };
 
 static void smsc_discard_pkt(void)

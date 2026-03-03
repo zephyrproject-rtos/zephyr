@@ -1137,12 +1137,16 @@ static int eth_cyclonev_stop(const struct device *dev)
 	return 0;
 }
 
-const struct ethernet_api eth_cyclonev_api = {.iface_api.init = eth_cyclonev_iface_init,
-					      .get_capabilities = eth_cyclonev_caps,
-					      .send = eth_cyclonev_send,
-					      .start = eth_cyclonev_start,
-					      .stop = eth_cyclonev_stop,
-					      .set_config = eth_cyclonev_set_config};
+const DEVICE_API(ethernet, eth_cyclonev_api) = {
+	.l2 = {
+		.iface_api.init = eth_cyclonev_iface_init,
+		.get_capabilities = eth_cyclonev_caps,
+		.send = eth_cyclonev_send,
+		.start = eth_cyclonev_start,
+		.stop = eth_cyclonev_stop,
+		.set_config = eth_cyclonev_set_config
+	},
+};
 
 #define CYCLONEV_ETH_INIT(inst) \
 	static struct eth_cyclonev_priv eth_cyclonev_##inst##_data; \

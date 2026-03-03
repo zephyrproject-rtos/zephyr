@@ -565,13 +565,15 @@ static int xilinx_axienet_probe(const struct device *dev)
 }
 
 /* TODO PTP, VLAN not supported yet */
-static const struct ethernet_api xilinx_axienet_api = {
-	.iface_api.init = xilinx_axienet_iface_init,
-	.get_capabilities = xilinx_axienet_caps,
-	.get_config = xilinx_axienet_get_config,
-	.set_config = xilinx_axienet_set_config,
-	.get_phy = xilinx_axienet_get_phy,
-	.send = xilinx_axienet_send,
+static DEVICE_API(ethernet, xilinx_axienet_api) = {
+	.l2 = {
+		.iface_api.init = xilinx_axienet_iface_init,
+		.get_capabilities = xilinx_axienet_caps,
+		.get_config = xilinx_axienet_get_config,
+		.set_config = xilinx_axienet_set_config,
+		.get_phy = xilinx_axienet_get_phy,
+		.send = xilinx_axienet_send,
+	},
 };
 
 #define SETUP_IRQS(inst)                                                                           \

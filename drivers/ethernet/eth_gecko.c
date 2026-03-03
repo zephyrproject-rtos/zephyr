@@ -634,10 +634,12 @@ static enum ethernet_hw_caps eth_gecko_get_capabilities(const struct device *dev
 	return (ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE);
 }
 
-static const struct ethernet_api eth_api = {
-	.iface_api.init = eth_iface_init,
-	.get_capabilities = eth_gecko_get_capabilities,
-	.send = eth_tx,
+static DEVICE_API(ethernet, eth_api) = {
+	.l2 = {
+		.iface_api.init = eth_iface_init,
+		.get_capabilities = eth_gecko_get_capabilities,
+		.send = eth_tx,
+	},
 };
 
 static void eth0_irq_config(void)

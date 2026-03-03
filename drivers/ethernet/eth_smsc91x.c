@@ -774,12 +774,14 @@ static void eth_initialize(struct net_if *iface)
 	}
 }
 
-static const struct ethernet_api api_funcs = {
-	.iface_api.init   = eth_initialize,
-	.get_capabilities = eth_smsc_get_caps,
-	.get_phy          = eth_get_phy,
-	.set_config       = eth_smsc_set_config,
-	.send             = eth_tx,
+static DEVICE_API(ethernet, api_funcs) = {
+	.l2 = {
+		.iface_api.init   = eth_initialize,
+		.get_capabilities = eth_smsc_get_caps,
+		.get_phy          = eth_get_phy,
+		.set_config       = eth_smsc_set_config,
+		.send             = eth_tx,
+	},
 };
 
 static void eth_smsc_isr(const struct device *dev)

@@ -1200,15 +1200,17 @@ static int eth_intel_igc_init(const struct device *dev)
 	return 0;
 }
 
-static const struct ethernet_api eth_api = {
-	.iface_api.init = eth_intel_igc_iface_init,
-	.get_capabilities = eth_intel_igc_get_caps,
-	.set_config = eth_intel_igc_set_config,
-	.send = eth_intel_igc_tx_data,
-	.get_phy = eth_intel_igc_get_phy,
+static DEVICE_API(ethernet, eth_api) = {
+	.l2 = {
+		.iface_api.init = eth_intel_igc_iface_init,
+		.get_capabilities = eth_intel_igc_get_caps,
+		.set_config = eth_intel_igc_set_config,
+		.send = eth_intel_igc_tx_data,
+		.get_phy = eth_intel_igc_get_phy,
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-	.get_stats = eth_intel_igc_get_stats,
+		.get_stats = eth_intel_igc_get_stats,
 #endif
+	},
 };
 
 #define NUM_QUEUES(n)  DT_INST_PROP(n, num_queues)

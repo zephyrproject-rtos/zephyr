@@ -228,10 +228,12 @@ static int virtnet_dev_init(const struct device *dev)
 	return 0;
 }
 
-static struct ethernet_api virtnet_api = {
-	.iface_api.init = virtnet_if_init,
-	.get_capabilities = virtnet_get_capabilities,
-	.send = virtnet_send,
+static DEVICE_API(ethernet, virtnet_api) = {
+	.l2 = {
+		.iface_api.init = virtnet_if_init,
+		.get_capabilities = virtnet_get_capabilities,
+		.send = virtnet_send,
+	},
 };
 
 #define VIRTIO_NET_DEFINE(inst)                                                                    \
