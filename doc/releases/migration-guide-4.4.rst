@@ -945,6 +945,9 @@ Networking
   code cannot use POSIX APIs, then the relevant network API prefix needs to be added to the
   code calling a network API.
 
+* The return type of :c:type:`net_icmp_handler_t` has changed from ``int`` to
+  :c:enum:`net_verdict`. (:github:`104815`)
+
 * The enum for HTTP server transaction status has been renamed from ``http_data_status``
   to ``http_transaction_status`` to better reflect its purpose. The enum values have also been
   renamed as follows:
