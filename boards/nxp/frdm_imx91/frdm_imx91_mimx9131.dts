@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nxp/nxp_mimx9131.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "frdm_imx91-pinctrl.dtsi"
 
 / {
@@ -25,6 +26,17 @@
 
 	aliases {
 		watchdog0 = &wdog4;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		/* K2 button on the board */
+		btn_1: btn_1 {
+			label = "BTN1";
+			gpios = <&gpio_exp0 5 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
 	};
 
 	can_phy0: can-phy0 {
