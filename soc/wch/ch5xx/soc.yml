@@ -4,70 +4,70 @@
 # NOTE: SOC names are sorted in decending order, as they are in the datasheets
 
 vendor: wch
-comment: "WCH (WinChipHead) SOC"
+comment: "WCH (WinChipHead)"
 family:
   - name: ch5xx
     series:
       # Reference: https://www.wch-ic.com/downloads/CH592DS1_PDF.html
-      # cpuclusters:
-      #   - name: qingxe-v4b
       - name: ch592
+        # qingxe-v4b
         socs:
           - name: ch592x
           - name: ch592f
           - name: ch592a
           - name: ch592d
       - name: ch591
+        # qingxe-v4b
         socs:
           - name: ch591f
           - name: ch591d
           - name: ch591r
       # Reference: https://www.wch-ic.com/downloads/CH583DS1_PDF.html
-      # cpuclusters:
-      #   - name: qingxe-v4a
       - name: ch583
+        # qingxe-v4a
         socs:
           - name: ch583m
       - name: ch582
+        # qingxe-v4a
         socs:
           - name: ch582m
           - name: ch582f
       # Reference: https://www.wch-ic.com/downloads/CH585DS1_PDF.html
-      # cpuclusters:
-      #   - name: qingxe-v3c
       - name: ch585
+        # qingxe-v3c
         socs:
           - name: ch585m
           - name: ch585f
           - name: ch585c
           - name: ch585d
       - name: ch584
+        # qingxe-v3c
         socs:
           - name: ch584m
           - name: ch584x
           - name: ch584f
       # Reference: https://www.wch-ic.com/downloads/CH572DS1_PDF.html
-      # cpuclusters:
-      #   - name: qingxe-v3c
       - name: ch572
+        # qingxe-v3c
         socs:
           - name: ch572d
           - name: ch572q
           - name: ch572r
       - name: ch570
+        # qingxe-v3c
         socs:
           - name: ch570d
           - name: ch570q
           - name: ch570e
       # Reference: https://www.wch-ic.com/downloads/CH573DS1_PDF.html
-      # cpuclusters:
-      #   - name: qingxe-v3a
       - name: ch573
+        # qingxe-v3a
         socs:
           - name: ch573x
           - name: ch573f
           - name: ch573q
       - name: ch571
+        # qingxe-v3a
         socs:
           - name: ch571f
           - name: ch573d
