@@ -43,6 +43,27 @@ menuconfig HTTP_SERVER
 
 if HTTP_SERVER
 
+config HTTP_SERVER_VERSION_1
+	bool "HTTP/1.x support"
+	default y
+	help
+	  Support HTTP 1.x version.
+
+config HTTP_SERVER_VERSION_2
+	bool "HTTP/2 support"
+	default y
+	help
+	  Support HTTP/2 version.
+
+config HTTP_SERVER_VERSION
+	int
+	default 12 if HTTP_SERVER_VERSION_1 && HTTP_SERVER_VERSION_2
+	default 2 if !HTTP_SERVER_VERSION_1 && HTTP_SERVER_VERSION_2
+	default 1 if HTTP_SERVER_VERSION_1 && !HTTP_SERVER_VERSION_2
+	default 0
+	help
+	  What HTTP version is supported in HTTP server.
+
 config HTTP_SERVER_STACK_SIZE
 	int "HTTP server thread stack size"
 	default 4096 if FILE_SYSTEM
