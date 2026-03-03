@@ -28,8 +28,9 @@
 
 		sram: memory@20000000 {
 			compatible = "mmio-sram";
-			reg = <0x20000000 0x10000>;
-			#size-cells = <0>;
+			reg = <0x20000000 0x400>;
+			#address-cells = <0>;
+			#size-cells = <1>;
 
 			sram0: sram@0 {
 				reg = <SOC_SRAM_SIZE>;
@@ -43,10 +44,12 @@
 			compatible = "wch,ch5xx-flash-controller";
 			reg = <0x40001800 0x400>;
 			#address-cells = <1>;
-			#size-cells = <1>;
+			#size-cells = <0>;
 
 			flash0: flash@00000000 {
-				reg = <0x00000000 0>;
+				reg = <0x00000000>;
+				#address-cells = <0>;
+				#size-cells = <1>;
 
 				codeflash: flash0@code {
 					compatible = "soc-nv-flash";
@@ -73,7 +76,7 @@
 		};
 
 		pfic: interrupt-controller@e000e000 {
-			compatible = "wch,ch5xx-pfic";
+			compatible = "wch,pfic";
 			#address-cells = <0>;
 			#interrupt-cells = <1>;
 			interrupt-controller;
@@ -96,7 +99,7 @@
 			#size-cells = <1>;
 
 			gpioa: gpio@400010A0 {
-				compatible = "wch,ch5xx-gpio";
+				compatible = "wch,gpio";
 				reg = <0x400010A0 0x20>;
 				gpio-controller;
 				#gpio-cells = <2>;
@@ -104,36 +107,35 @@
 				gpio-reserved-ranges = <0 4>;
 			};
 			gpiob: gpio@400010C0 {
-				compatible = "wch,ch5xx-gpio";
+				compatible = "wch,gpio";
 				reg = <0x400010C0 0x20>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <24>;
 				gpio-reserved-ranges = <1 3>, <5 1>, <8 2>, <16 6>;
 			};
-
 		};
 
 		uart0: uart@40003000 {
-			compatible = "wch,ch5xx-uart";
+			compatible = "wch,uart";
 			reg = <0x40003000 0x400>;
 			interrupt-parent = <&pfic>;
 			interrupts = <26>;
 		};
 		uart1: uart@40003400 {
-			compatible = "wch,ch5xx-uart";
+			compatible = "wch,uart";
 			reg = <0x40003400 0x400>;
 			interrupt-parent = <&pfic>;
 			interrupts = <27>;
 		};
 		uart2: uart@40003800 {
-			compatible = "wch,ch5xx-uart";
+			compatible = "wch,uart";
 			reg = <0x40003800 0x400>;
 			interrupt-parent = <&pfic>;
 			interrupts = <33>;
 		};
 		uart3: uart@40003C00 {
-			compatible = "wch,ch5xx-uart";
+			compatible = "wch,uart";
 			reg = <0x40003C00 0x400>;
 			interrupt-parent = <&pfic>;
 			interrupts = <34>;
@@ -165,17 +167,16 @@
 		};
 
 		usb0: usb@40008000 {
-			compatible = "wch,ch5xx-i2c";
+			compatible = "wch,ch5xx-usb";
 			reg = <0x40008000 0x400>;
 			interrupt-parent = <&pfic>;
 			interrupts = <22>;
 		};
 		usb1: usb@40008400 {
-			compatible = "wch,ch5xx-i2c";
+			compatible = "wch,ch5xx-usb";
 			reg = <0x40008400 0x400>;
 			interrupt-parent = <&pfic>;
 			interrupts = <23>;
 		};
-
 	};
 };
