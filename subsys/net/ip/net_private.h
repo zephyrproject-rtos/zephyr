@@ -66,12 +66,12 @@ extern void net_process_tx_packet(struct net_pkt *pkt);
 
 extern struct net_if_addr *net_if_ipv4_addr_get_first_by_index(int ifindex);
 
-extern int net_icmp_call_ipv4_handlers(struct net_pkt *pkt,
-				       struct net_ipv4_hdr *ipv4_hdr,
-				       struct net_icmp_hdr *icmp_hdr);
-extern int net_icmp_call_ipv6_handlers(struct net_pkt *pkt,
-				       struct net_ipv6_hdr *ipv6_hdr,
-				       struct net_icmp_hdr *icmp_hdr);
+extern enum net_verdict net_icmp_call_ipv4_handlers(struct net_pkt *pkt,
+						    struct net_ipv4_hdr *ipv4_hdr,
+						    struct net_icmp_hdr *icmp_hdr);
+extern enum net_verdict net_icmp_call_ipv6_handlers(struct net_pkt *pkt,
+						    struct net_ipv6_hdr *ipv6_hdr,
+						    struct net_icmp_hdr *icmp_hdr);
 
 extern struct net_if *net_ipip_get_virtual_interface(struct net_if *input_iface);
 

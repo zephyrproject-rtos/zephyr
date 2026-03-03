@@ -45,11 +45,11 @@ static void ping_done(struct ping_context *ctx);
 
 #if defined(CONFIG_NET_NATIVE_IPV6)
 
-static int handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
-				  struct net_pkt *pkt,
-				  struct net_icmp_ip_hdr *hdr,
-				  struct net_icmp_hdr *icmp_hdr,
-				  void *user_data)
+static enum net_verdict handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
+					       struct net_pkt *pkt,
+					       struct net_icmp_ip_hdr *hdr,
+					       struct net_icmp_hdr *icmp_hdr,
+					       void *user_data)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmp_access,
 					      struct net_icmpv6_echo_req);
@@ -61,14 +61,14 @@ static int handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
 	icmp_echo = (struct net_icmpv6_echo_req *)net_pkt_get_data(pkt,
 								&icmp_access);
 	if (icmp_echo == NULL) {
-		return -EIO;
+		return NET_DROP;
 	}
 
 	net_pkt_skip(pkt, sizeof(*icmp_echo));
 
 	if (net_pkt_remaining_data(pkt) >= sizeof(uint32_t)) {
 		if (net_pkt_read_be32(pkt, &cycles)) {
-			return -EIO;
+			return NET_DROP;
 		}
 
 		cycles = k_cycle_get_32() - cycles;
@@ -104,14 +104,14 @@ static int handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
 		ping_done(&ping_ctx);
 	}
 
-	return 0;
+	return NET_OK;
 }
 #else
-static int handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
-				  struct net_pkt *pkt,
-				  struct net_icmp_ip_hdr *hdr,
-				  struct net_icmp_hdr *icmp_hdr,
-				  void *user_data)
+static enum net_verdict handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
+					       struct net_pkt *pkt,
+					       struct net_icmp_ip_hdr *hdr,
+					       struct net_icmp_hdr *icmp_hdr,
+					       void *user_data)
 {
 	ARG_UNUSED(ctx);
 	ARG_UNUSED(pkt);
@@ -119,17 +119,17 @@ static int handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
 	ARG_UNUSED(icmp_hdr);
 	ARG_UNUSED(user_data);
 
-	return -ENOTSUP;
+	return NET_CONTINUE;
 }
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_NATIVE_IPV4)
 
-static int handle_ipv4_echo_reply(struct net_icmp_ctx *ctx,
-				  struct net_pkt *pkt,
-				  struct net_icmp_ip_hdr *hdr,
-				  struct net_icmp_hdr *icmp_hdr,
-				  void *user_data)
+static enum net_verdict handle_ipv4_echo_reply(struct net_icmp_ctx *ctx,
+					       struct net_pkt *pkt,
+					       struct net_icmp_ip_hdr *hdr,
+					       struct net_icmp_hdr *icmp_hdr,
+					       void *user_data)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmp_access,
 					      struct net_icmpv4_echo_req);
@@ -141,14 +141,14 @@ static int handle_ipv4_echo_reply(struct net_icmp_ctx *ctx,
 	icmp_echo = (struct net_icmpv4_echo_req *)net_pkt_get_data(pkt,
 								&icmp_access);
 	if (icmp_echo == NULL) {
-		return -EIO;
+		return NET_DROP;
 	}
 
 	net_pkt_skip(pkt, sizeof(*icmp_echo));
 
 	if (net_pkt_remaining_data(pkt) >= sizeof(uint32_t)) {
 		if (net_pkt_read_be32(pkt, &cycles)) {
-			return -EIO;
+			return NET_DROP;
 		}
 
 		cycles = k_cycle_get_32() - cycles;
@@ -178,14 +178,14 @@ static int handle_ipv4_echo_reply(struct net_icmp_ctx *ctx,
 		ping_done(&ping_ctx);
 	}
 
-	return 0;
+	return NET_OK;
 }
 #else
-static int handle_ipv4_echo_reply(struct net_icmp_ctx *ctx,
-				  struct net_pkt *pkt,
-				  struct net_icmp_ip_hdr *hdr,
-				  struct net_icmp_hdr *icmp_hdr,
-				  void *user_data)
+static enum net_verdict handle_ipv4_echo_reply(struct net_icmp_ctx *ctx,
+					       struct net_pkt *pkt,
+					       struct net_icmp_ip_hdr *hdr,
+					       struct net_icmp_hdr *icmp_hdr,
+					       void *user_data)
 {
 	ARG_UNUSED(ctx);
 	ARG_UNUSED(pkt);
@@ -193,7 +193,7 @@ static int handle_ipv4_echo_reply(struct net_icmp_ctx *ctx,
 	ARG_UNUSED(icmp_hdr);
 	ARG_UNUSED(user_data);
 
-	return -ENOTSUP;
+	return NET_CONTINUE;
 }
 #endif /* CONFIG_NET_IPV4 */
 

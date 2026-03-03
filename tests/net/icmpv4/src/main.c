@@ -116,11 +116,11 @@ static uint8_t current = TEST_ICMPV4_UNKNOWN;
 static struct net_in_addr my_addr  = { { { 192, 0, 2, 1 } } };
 static struct net_if *net_iface;
 
-static int handle_reply_msg(struct net_icmp_ctx *ctx,
-			    struct net_pkt *pkt,
-			    struct net_icmp_ip_hdr *hdr,
-			    struct net_icmp_hdr *icmp_hdr,
-			    void *user_data)
+static enum net_verdict handle_reply_msg(struct net_icmp_ctx *ctx,
+					 struct net_pkt *pkt,
+					 struct net_icmp_ip_hdr *hdr,
+					 struct net_icmp_hdr *icmp_hdr,
+					 void *user_data)
 {
 	ARG_UNUSED(ctx);
 	ARG_UNUSED(hdr);
@@ -128,10 +128,10 @@ static int handle_reply_msg(struct net_icmp_ctx *ctx,
 	ARG_UNUSED(user_data);
 
 	if (net_pkt_get_len(pkt) != sizeof(icmpv4_echo_rep)) {
-		return -ENOMSG;
+		return NET_DROP;
 	}
 
-	return 0;
+	return NET_OK;
 }
 
 struct net_icmpv4_context {
