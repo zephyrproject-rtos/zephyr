@@ -254,13 +254,10 @@ static void eth_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
+	const struct eth_stm32_hal_dev_cfg *cfg = dev->config;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
-	bool is_first_init = false;
 
-	if (dev_data->iface == NULL) {
-		dev_data->iface = iface;
-		is_first_init = true;
-	}
+	dev_data->iface = iface;
 
 	/* Register Ethernet MAC Address with the upper layer */
 	net_if_set_link_addr(iface, dev_data->mac_addr,
@@ -285,23 +282,20 @@ static void eth_iface_init(struct net_if *iface)
 		LOG_ERR("PHY device not ready");
 	}
 
-	if (is_first_init) {
-		const struct eth_stm32_hal_dev_cfg *cfg = dev->config;
-		/* Now that the iface is setup, we are safe to enable IRQs. */
-		__ASSERT_NO_MSG(cfg->config_func != NULL);
-		cfg->config_func();
+	/* Now that the iface is setup, we are safe to enable IRQs. */
+	__ASSERT_NO_MSG(cfg->config_func != NULL);
+	cfg->config_func();
 
-		/* Start interruption-poll thread */
-		k_thread_create(&dev_data->rx_thread, dev_data->rx_thread_stack,
-				K_KERNEL_STACK_SIZEOF(dev_data->rx_thread_stack),
-				rx_thread, (void *) dev, NULL, NULL,
-				IS_ENABLED(CONFIG_ETH_STM32_HAL_RX_THREAD_PREEMPTIVE)
-					? K_PRIO_PREEMPT(CONFIG_ETH_STM32_HAL_RX_THREAD_PRIO)
-					: K_PRIO_COOP(CONFIG_ETH_STM32_HAL_RX_THREAD_PRIO),
-				0, K_NO_WAIT);
+	/* Start interruption-poll thread */
+	k_thread_create(&dev_data->rx_thread, dev_data->rx_thread_stack,
+			K_KERNEL_STACK_SIZEOF(dev_data->rx_thread_stack),
+			rx_thread, (void *) dev, NULL, NULL,
+			IS_ENABLED(CONFIG_ETH_STM32_HAL_RX_THREAD_PREEMPTIVE)
+				? K_PRIO_PREEMPT(CONFIG_ETH_STM32_HAL_RX_THREAD_PRIO)
+				: K_PRIO_COOP(CONFIG_ETH_STM32_HAL_RX_THREAD_PRIO),
+			0, K_NO_WAIT);
 
-		k_thread_name_set(&dev_data->rx_thread, "stm_eth");
-	}
+	k_thread_name_set(&dev_data->rx_thread, "stm_eth");
 }
 
 static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device *dev)

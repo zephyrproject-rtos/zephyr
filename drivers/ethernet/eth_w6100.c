@@ -355,9 +355,7 @@ static void w6100_iface_init(struct net_if *iface)
 			     sizeof(ctx->mac_addr),
 			     NET_LINK_ETHERNET);
 
-	if (ctx->iface == NULL) {
-		ctx->iface = iface;
-	}
+	ctx->iface = iface;
 
 	ethernet_init(iface);
 
