@@ -1219,6 +1219,7 @@ def test_testplan_add_configurations(
     env.board_roots = [tmp_path / 'boards']
     env.soc_roots = [tmp_path]
     env.arch_roots = [tmp_path]
+    env.hwm = mock.Mock(duts=[])
     testplan = TestPlan(env=env)
     testplan.test_config = mock.Mock()
     testplan.test_config.override_default_platforms = override_default_platforms
