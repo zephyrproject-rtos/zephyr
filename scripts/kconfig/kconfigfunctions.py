@@ -1076,6 +1076,47 @@ def dt_gpio_hogs_enabled(kconf, _):
 
     return "n"
 
+def dt_highest_controller_irq_number(kconfig, _, path, irq_cell_name):
+    """
+    Given the path to an interrupt controller node and the name of an
+    `interrupts` cell containing the "IRQ number" (an integer), returns
+    the highest "IRQ number" value among all enabled nodes that generate
+    an interrupt on the specified controller.
+
+    If the interrupt controller node does not exist, the provided cell name
+    is invalid, or the cell type is invalid, 0 will be returned.
+    """
+    if doc_mode or edt is None:
+        return "0"
+
+    try:
+        irqc = edt.get_node(path)
+    except edtlib.EDTError:
+        return "0"
+
+    irqns = set()
+    for node in irqc.required_by:
+        # Only examine active nodes
+        if node.status != "okay":
+            continue
+
+        for irq in node.interrupts:
+            # Only examine cells pointing to target interrupt controller
+            if irq.controller != irqc:
+                continue
+
+            if (irqn := irq.data.get(irq_cell_name)) is None:
+                continue
+
+            if not isinstance(irqn, int):
+                continue
+
+            irqns.add(irqn)
+
+    if len(irqns) == 0:
+        return "0"
+
+    return str(max(irqns))
 
 def normalize_upper(kconf, _, string):
     """
@@ -1258,6 +1299,7 @@ functions = {
         "dt_gpio_hogs_enabled": (dt_gpio_hogs_enabled, 0, 0),
         "dt_chosen_partition_addr_int": (dt_chosen_partition_addr, 1, 3),
         "dt_chosen_partition_addr_hex": (dt_chosen_partition_addr, 1, 3),
+        "dt_highest_controller_irq_number": (dt_highest_controller_irq_number, 2, 2),
         "normalize_upper": (normalize_upper, 1, 1),
         "shields_list_contains": (shields_list_contains, 1, 1),
         "substring": (substring, 2, 3),
