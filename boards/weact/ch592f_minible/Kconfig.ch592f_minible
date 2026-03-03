@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Mike Kasprzak (distraction.engineer)
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CH592F_MINIBLE
+	select SOC_CH592F

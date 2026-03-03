@@ -1,0 +1,6 @@
+board:
+  name: ch592f_minible
+  full_name: WeActStudio CH592F Mini BLE Core Board
+  vendor: weact
+  socs:
+    - name: ch592f

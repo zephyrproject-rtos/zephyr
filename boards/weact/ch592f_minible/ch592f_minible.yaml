@@ -1,0 +1,26 @@
+identifier: ch592f_minible
+name: WeActStudio CH592F Mini BLE Core Board
+type: mcu
+arch: riscv
+toolchain:
+  - cross-compile
+  - zephyr
+ram: 24
+flash: 448
+supported:
+  - gpio
+  - uart
+# - i2c
+# - pwm
+# - spi
+# - usb
+# - bluetooth
+# - watchdog
+# - rtc
+# - lcd80 (20x4)
+# - dma
+# - crypto
+# - adc
+# - led
+# - touch key?
+# - temperature?
