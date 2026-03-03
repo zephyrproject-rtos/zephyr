@@ -17,3 +17,7 @@
 		};
 	};
 };
+
+&lp_gpio {
+	status = "okay";
+};
