@@ -206,9 +206,6 @@ static void init(void)
 	for (size_t i = 0U; i < ARRAY_SIZE(iso_chans); i++) {
 		iso_chans[i].ops = &iso_ops;
 		iso_chans[i].qos = &iso_qos;
-#if defined(CONFIG_BT_SMP)
-		iso_chans[i].required_sec_level = BT_SECURITY_L2;
-#endif /* CONFIG_BT_SMP */
 	}
 }
 

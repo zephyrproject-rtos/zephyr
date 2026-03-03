@@ -2564,9 +2564,6 @@ void bt_conn_security_changed(struct bt_conn *conn, uint8_t hci_err,
 {
 	reset_pairing(conn);
 	bt_l2cap_security_changed(conn, hci_err);
-	if (IS_ENABLED(CONFIG_BT_ISO_CENTRAL)) {
-		bt_iso_security_changed(conn, hci_err);
-	}
 
 	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
 		if (callback->security_changed) {
