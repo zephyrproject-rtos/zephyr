@@ -10,6 +10,12 @@ config USBD_AUDIO2_CLASS
 
 if USBD_AUDIO2_CLASS
 
+config USBD_UAC2_FS_WINDOWS_WORKAROUND
+	bool "Workaround Windows Full-Speed wMaxPacketSize bug"
+	help
+	  Sets the feedback endpoint size for UAC2 on Full-Speed USB link to be 4 bytes.
+	  USB2.0 specification mandates length of 3, non-compliant Windows UAC2 driver expects 4.
+
 module = USBD_UAC2
 module-str = usbd uac2
 source "subsys/logging/Kconfig.template.log_config"
