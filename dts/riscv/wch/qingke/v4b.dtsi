@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <wch/ch5xx/qingke/common.dtsi>
+#include "common.dtsi"
 
 / {
 	#address-cells = <1>;
