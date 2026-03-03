@@ -10,8 +10,6 @@ common:
   platform_exclude:
     - m2gl025_miv
     - qemu_xtensa/dc233c
-    - esp32s2_saola
-    - esp32s2_lolin_mini
   timeout: 480
   integration_platforms:
     - native_sim
