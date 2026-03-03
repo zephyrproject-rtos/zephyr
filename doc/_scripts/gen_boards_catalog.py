@@ -122,6 +122,7 @@ def guess_image(board_or_shield):
         prefix_matches.append(f"**/{partial_name}.{{ext}}")
 
     patterns = (
+        "**/{name}.{ext}",
         *prefix_matches,
         "**/*{name}*.{ext}",
         "**/*.{ext}",
