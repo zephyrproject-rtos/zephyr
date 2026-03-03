@@ -163,6 +163,18 @@ int http_server_init(struct http_server_ctx *ctx)
 		if (svc->config != NULL && svc->config->socket_create != NULL) {
 			fd = svc->config->socket_create(svc, af, proto);
 		} else {
+			if (svc->config != NULL &&
+			    svc->config.http_ver == HTTP_VERSION_1 &&
+			    !IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_1)) {
+				NET_WARN("HTTP/%d is not enabled but service requires it!", 1);
+			}
+
+			if (svc->config != NULL &&
+			    svc->config.http_ver == HTTP_VERSION_2 &&
+			    !IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2)) {
+				NET_WARN("HTTP/%d is not enabled but service requires it!", 2);
+			}
+
 			fd = zsock_socket(af, NET_SOCK_STREAM, proto);
 		}
 		if (fd < 0) {
