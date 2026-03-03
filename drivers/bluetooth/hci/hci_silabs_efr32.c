@@ -9,7 +9,7 @@
 
 #include <sl_btctrl_linklayer.h>
 #include <sl_hci_common_transport.h>
-#include <pa_conversions_efr32.h>
+#include <sl_rail_util_pa_conversions.h>
 #include <rail.h>
 #include <soc_radio.h>
 
