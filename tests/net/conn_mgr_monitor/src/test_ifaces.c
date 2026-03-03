@@ -42,8 +42,10 @@ static struct dummy_api test_iface_api = {
 	.send = test_iface_send,
 };
 
-static struct ethernet_api dummy_eth_api = {
-	.iface_api.init = test_iface_init,
+static DEVICE_API(ethernet, dummy_eth_api) = {
+	.l2 = {
+		.iface_api.init = test_iface_init,
+	},
 };
 
 NET_DEVICE_INIT(test_if_simple_a,

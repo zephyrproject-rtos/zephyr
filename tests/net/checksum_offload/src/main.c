@@ -424,18 +424,22 @@ static enum ethernet_hw_caps eth_offloading_disabled(const struct device *dev)
 	return 0;
 }
 
-static struct ethernet_api api_funcs_offloading_disabled = {
-	.iface_api.init = eth_iface_init,
+static DEVICE_API(ethernet, api_funcs_offloading_disabled) = {
+	.l2 = {
+		.iface_api.init = eth_iface_init,
 
-	.get_capabilities = eth_offloading_disabled,
-	.send = eth_tx_offloading_disabled,
+		.get_capabilities = eth_offloading_disabled,
+		.send = eth_tx_offloading_disabled,
+	},
 };
 
-static struct ethernet_api api_funcs_offloading_enabled = {
-	.iface_api.init = eth_iface_init,
+static DEVICE_API(ethernet, api_funcs_offloading_enabled) = {
+	.l2 = {
+		.iface_api.init = eth_iface_init,
 
-	.get_capabilities = eth_offloading_enabled,
-	.send = eth_tx_offloading_enabled,
+		.get_capabilities = eth_offloading_enabled,
+		.send = eth_tx_offloading_enabled,
+	},
 };
 
 static void generate_mac(uint8_t *mac_addr)

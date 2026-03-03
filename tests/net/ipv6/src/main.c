@@ -384,9 +384,11 @@ out:
 /* Ethernet interface (interface under test) */
 struct net_test_ipv6 net_test_data;
 
-static const struct ethernet_api net_test_if_api = {
-	.iface_api.init = net_test_iface_init,
-	.send = tester_send,
+static DEVICE_API(ethernet, net_test_if_api) = {
+	.l2 = {
+		.iface_api.init = net_test_iface_init,
+		.send = tester_send,
+	},
 };
 
 #define _ETH_L2_LAYER ETHERNET_L2

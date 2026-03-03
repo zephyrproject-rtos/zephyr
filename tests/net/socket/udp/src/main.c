@@ -1000,9 +1000,11 @@ static int eth_fake_send(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static struct ethernet_api eth_fake_api_funcs = {
-	.iface_api.init = eth_fake_iface_init,
-	.send = eth_fake_send,
+static DEVICE_API(ethernet, eth_fake_api_funcs) = {
+	.l2 = {
+		.iface_api.init = eth_fake_iface_init,
+		.send = eth_fake_send,
+	},
 };
 
 ETH_NET_DEVICE_INIT(eth_fake, "eth_fake", NULL, NULL, &eth_fake_data, NULL,

@@ -56,9 +56,11 @@ int fake_dev_init(const struct device *dev)
 }
 
 #if defined(CONFIG_NET_L2_ETHERNET)
-static const struct ethernet_api fake_dev_api = {
-	.iface_api.init = fake_dev_iface_init,
-	.send = fake_dev_send,
+static DEVICE_API(ethernet, fake_dev_api) = {
+	.l2 = {
+		.iface_api.init = fake_dev_iface_init,
+		.send = fake_dev_send,
+	},
 };
 
 #define _ETH_L2_LAYER ETHERNET_L2
