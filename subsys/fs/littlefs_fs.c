@@ -1133,7 +1133,7 @@ struct fs_mount_t FS_FSTAB_ENTRY(DT_DRV_INST(inst)) = { \
 	.type = FS_LITTLEFS, \
 	.mnt_point = FSTAB_ENTRY_DT_INST_MOUNT_POINT(inst), \
 	.fs_data = &fs_data_##inst, \
-	.storage_dev = (void *)DT_FIXED_PARTITION_ID(FS_PARTITION(inst)), \
+	.storage_dev = (void *)DT_PARTITION_ID(FS_PARTITION(inst)), \
 	.flags = FSTAB_ENTRY_DT_MOUNT_FLAGS(DT_DRV_INST(inst)), \
 };
 

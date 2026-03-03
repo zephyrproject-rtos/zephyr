@@ -12,7 +12,7 @@
 #include <zephyr/storage/flash_map.h>
 
 #define TEST_PARTITION		storage_partition
-#define TEST_PARTITION_ID	FIXED_PARTITION_ID(TEST_PARTITION)
+#define TEST_PARTITION_ID	PARTITION_ID(TEST_PARTITION)
 
 uint8_t val8;
 uint8_t val8_un;

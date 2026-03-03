@@ -14,8 +14,8 @@ BUILD_ASSERT(CONFIG_SECURE_STORAGE_ITS_STORE_ZMS_SECTOR_SIZE
 #define PARTITION_DT_NODE DT_CHOSEN(secure_storage_its_partition)
 
 static struct zms_fs s_zms = {
-	.flash_device = FIXED_PARTITION_NODE_DEVICE(PARTITION_DT_NODE),
-	.offset = FIXED_PARTITION_NODE_OFFSET(PARTITION_DT_NODE),
+	.flash_device = PARTITION_NODE_DEVICE(PARTITION_DT_NODE),
+	.offset = PARTITION_NODE_OFFSET(PARTITION_DT_NODE),
 	.sector_size = CONFIG_SECURE_STORAGE_ITS_STORE_ZMS_SECTOR_SIZE,
 };
 
@@ -23,7 +23,7 @@ static int init_zms(void)
 {
 	int ret;
 
-	s_zms.sector_count = FIXED_PARTITION_NODE_SIZE(PARTITION_DT_NODE) / s_zms.sector_size;
+	s_zms.sector_count = PARTITION_NODE_SIZE(PARTITION_DT_NODE) / s_zms.sector_size;
 
 	ret = zms_mount(&s_zms);
 	if (ret) {

@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(settings_basic_test);
 #if defined(CONFIG_SETTINGS_FCB) || defined(CONFIG_SETTINGS_NVS) || defined(CONFIG_SETTINGS_ZMS)
 #include <zephyr/storage/flash_map.h>
 #if DT_HAS_CHOSEN(zephyr_settings_partition)
-#define TEST_FLASH_AREA_ID DT_FIXED_PARTITION_ID(DT_CHOSEN(zephyr_settings_partition))
+#define TEST_FLASH_AREA_ID DT_PARTITION_ID(DT_CHOSEN(zephyr_settings_partition))
 #endif
 #elif defined(CONFIG_SETTINGS_FILE)
 #include <zephyr/fs/fs.h>
@@ -56,7 +56,7 @@ LOG_MODULE_REGISTER(settings_basic_test);
 
 #ifndef TEST_FLASH_AREA_ID
 #define TEST_FLASH_AREA		storage_partition
-#define TEST_FLASH_AREA_ID	FIXED_PARTITION_ID(TEST_FLASH_AREA)
+#define TEST_FLASH_AREA_ID	PARTITION_ID(TEST_FLASH_AREA)
 #endif
 
 /* The standard test expects a cleared flash area.  Make sure it has

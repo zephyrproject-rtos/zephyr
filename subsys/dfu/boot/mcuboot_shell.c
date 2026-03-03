@@ -93,15 +93,15 @@ static int cmd_mcuboot_erase(const struct shell *sh, size_t argc,
 	id = strtoul(argv[1], NULL, 0);
 
 	/* Check if this is the parent (MCUboot) or own slot and if so, deny the request */
-#if FIXED_PARTITION_EXISTS(boot_partition)
-	if (id == FIXED_PARTITION_ID(boot_partition)) {
+#if PARTITION_EXISTS(boot_partition)
+	if (id == PARTITION_ID(boot_partition)) {
 		shell_error(sh, "Cannot erase boot partition");
 		return -EACCES;
 	}
 #endif
 
-#if DT_FIXED_PARTITION_EXISTS(DT_CHOSEN(zephyr_code_partition))
-	if (id == DT_FIXED_PARTITION_ID(DT_CHOSEN(zephyr_code_partition))) {
+#if DT_PARTITION_EXISTS(DT_CHOSEN(zephyr_code_partition))
+	if (id == DT_PARTITION_ID(DT_CHOSEN(zephyr_code_partition))) {
 		shell_error(sh, "Cannot erase active partitions");
 		return -EACCES;
 	}

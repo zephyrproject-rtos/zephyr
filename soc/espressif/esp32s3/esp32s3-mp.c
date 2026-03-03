@@ -68,9 +68,9 @@ static int load_segment(uint32_t src_addr, uint32_t src_len, uint32_t dst_addr)
 
 int IRAM_ATTR esp_appcpu_image_load(unsigned int hdr_offset, unsigned int *entry_addr)
 {
-	const uint32_t fa_offset = FIXED_PARTITION_OFFSET(slot0_appcpu_partition);
-	const uint32_t fa_size = FIXED_PARTITION_SIZE(slot0_appcpu_partition);
-	const uint8_t fa_id = FIXED_PARTITION_ID(slot0_appcpu_partition);
+	const uint32_t fa_offset = PARTITION_OFFSET(slot0_appcpu_partition);
+	const uint32_t fa_size = PARTITION_SIZE(slot0_appcpu_partition);
+	const uint8_t fa_id = PARTITION_ID(slot0_appcpu_partition);
 
 	if (entry_addr == NULL) {
 		ESP_EARLY_LOGE(TAG, "Can't return the entry address. Aborting!");

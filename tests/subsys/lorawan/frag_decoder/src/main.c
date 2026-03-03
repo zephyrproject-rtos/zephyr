@@ -28,7 +28,7 @@
 #define FRAG_TRANSPORT_PORT    (201)
 #define FRAG_SESSION_INDEX     (1)
 
-#define TARGET_IMAGE_AREA FIXED_PARTITION_ID(slot1_partition)
+#define TARGET_IMAGE_AREA PARTITION_ID(slot1_partition)
 
 /* below array would normally hold the actual firmware binary */
 static uint8_t fw_uncoded[FIRMWARE_SIZE];

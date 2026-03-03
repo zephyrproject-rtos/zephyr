@@ -17,7 +17,7 @@
 	defined(CONFIG_BOARD_ARTY_A7_DESIGNSTART_FPGA_CORTEX_M3)
 /* The FPGA bitstream is stored in the lower 536 sectors of the flash. */
 #define SPI_FLASH_TEST_REGION_OFFSET \
-	DT_REG_SIZE(DT_NODE_BY_FIXED_PARTITION_LABEL(fpga_bitstream))
+	DT_REG_SIZE(DT_NODE_BY_PARTITION_LABEL(fpga_bitstream))
 #elif defined(CONFIG_BOARD_NPCX9M6F_EVB) || \
 	defined(CONFIG_BOARD_NPCX7M6FB_EVB)
 #define SPI_FLASH_TEST_REGION_OFFSET 0x7F000
