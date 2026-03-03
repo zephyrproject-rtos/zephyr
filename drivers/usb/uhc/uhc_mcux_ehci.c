@@ -176,10 +176,13 @@ static void uhc_mcux_transfer_callback(void *param, usb_host_transfer_t *transfe
 		memcpy(net_buf_tail(xfer->buf), transfer->transferBuffer, transfer->transferSofar);
 #endif
 		net_buf_add(xfer->buf, transfer->transferSofar);
-#if defined(CONFIG_NOCACHE_MEMORY)
-		uhc_mcux_nocache_free(transfer->transferBuffer);
-#endif
 	}
+
+#if defined(CONFIG_NOCACHE_MEMORY)
+	if (transfer->transferBuffer != NULL && transfer->transferLength != 0) {
+		uhc_mcux_nocache_free(transfer->transferBuffer);
+	}
+#endif
 
 	transfer->setupPacket = NULL;
 	transfer->transferBuffer = NULL;
