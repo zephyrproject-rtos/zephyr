@@ -20,7 +20,7 @@
 #include <zephyr/fs/littlefs.h>
 
 #define MKFS_FS_TYPE FS_LITTLEFS
-#define MKFS_DEV_ID FIXED_PARTITION_ID(storage_partition)
+#define MKFS_DEV_ID PARTITION_ID(storage_partition)
 #define MKFS_FLAGS 0
 
 #elif defined(CONFIG_FAT_FILESYSTEM_ELM)

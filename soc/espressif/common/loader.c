@@ -89,10 +89,10 @@
 #if DT_NODE_EXISTS(DT_CHOSEN(zephyr_code_partition))
 #define PART_OFFSET DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition))
 #else
-#define PART_OFFSET FIXED_PARTITION_OFFSET(slot0_partition)
+#define PART_OFFSET PARTITION_OFFSET(slot0_partition)
 #endif
 #else
-#define PART_OFFSET FIXED_PARTITION_OFFSET(slot0_appcpu_partition)
+#define PART_OFFSET PARTITION_OFFSET(slot0_appcpu_partition)
 #endif
 
 void __start(void);
@@ -127,7 +127,7 @@ void map_rom_segments(int core, struct rom_segments *map)
 	/* Traverse segments to fix flash offset changes due to post-build processing */
 #ifndef CONFIG_BOOTLOADER_MCUBOOT
 	esp_image_segment_header_t WORD_ALIGNED_ATTR segment_hdr;
-	size_t offset = FIXED_PARTITION_OFFSET(boot_partition);
+	size_t offset = PARTITION_OFFSET(boot_partition);
 	bool checksum = false;
 	unsigned int segments = 0;
 	unsigned int ram_segments = 0;

@@ -10,7 +10,7 @@
 #include <zephyr/fs/littlefs.h>
 
 #define LITTLEFS_PARTITION	settings_file_partition
-#define LITTLEFS_PARTITION_ID	FIXED_PARTITION_ID(LITTLEFS_PARTITION)
+#define LITTLEFS_PARTITION_ID	PARTITION_ID(LITTLEFS_PARTITION)
 
 /* LittleFS work area struct */
 FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(cstorage);
