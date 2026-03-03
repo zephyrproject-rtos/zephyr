@@ -61,6 +61,10 @@
 		status = "okay";
 	};
 
+	cmc {
+		compatible = "nxp,cmc-reset-cause";
+	};
+
 	soc {
 		syscon: syscon@40091000 {
 			compatible = "nxp,lpc-syscon";
