@@ -4,5 +4,5 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <wch/qingke/v4a.dtsi>
+#include <wch/qingke/v3a.dtsi>
 #include "ch5xx.dtsi"

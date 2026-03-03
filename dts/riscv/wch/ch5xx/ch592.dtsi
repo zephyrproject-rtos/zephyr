@@ -5,3 +5,4 @@
  */
 
 #include <wch/qingke/v4c.dtsi>
+#include "ch5xx.dtsi"

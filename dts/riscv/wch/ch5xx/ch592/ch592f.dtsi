@@ -4,4 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define SOC_CODEFLASH_SIZE	DT_SIZE_K(448)
+#define SOC_SRAM_SIZE		DT_SIZE_K(24)
+
 #include "../ch592.dtsi"
