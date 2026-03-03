@@ -275,7 +275,7 @@ __net_socket struct tls_context {
 	/** mbedTLS configuration. */
 	mbedtls_ssl_config config;
 
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
+#if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C)
 	/** mbedTLS structure for CA chain. */
 	mbedtls_x509_crt ca_chain;
 
@@ -284,7 +284,7 @@ __net_socket struct tls_context {
 
 	/** mbedTLS structure for own private key. */
 	mbedtls_pk_context priv_key;
-#endif /* MBEDTLS_X509_CRT_PARSE_C */
+#endif /* CONFIG_MBEDTLS_X509_CRT_PARSE_C */
 #endif /* CONFIG_MBEDTLS */
 };
 
@@ -577,7 +577,7 @@ static struct tls_context *tls_alloc(void)
 		tls->options.dtls_cid.enabled = false;
 		tls->options.dtls_handshake_on_connect = true;
 #endif
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
+#if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C)
 		mbedtls_x509_crt_init(&tls->ca_chain);
 		mbedtls_x509_crt_init(&tls->own_cert);
 		mbedtls_pk_init(&tls->priv_key);
@@ -609,7 +609,7 @@ static struct tls_context *tls_clone(struct tls_context *source_tls)
 	memcpy(&target_tls->options, &source_tls->options,
 	       sizeof(target_tls->options));
 
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
+#if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C)
 	if (target_tls->options.is_hostname_set) {
 		mbedtls_ssl_set_hostname(&target_tls->active_session->ssl,
 					 source_tls->active_session->ssl.hostname);
@@ -638,7 +638,7 @@ static int tls_release(struct tls_context *tls)
 	mbedtls_ssl_cookie_free(&tls->cookie);
 #endif
 	mbedtls_ssl_config_free(&tls->config);
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
+#if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C)
 	mbedtls_x509_crt_free(&tls->ca_chain);
 	mbedtls_x509_crt_free(&tls->own_cert);
 	mbedtls_pk_free(&tls->priv_key);
@@ -1140,7 +1140,7 @@ static int dtls_server_new_active_session(struct tls_context *tls_ctx,
 		return -ENOMEM;
 	}
 
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
+#if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C)
 	if (tls_ctx->options.is_hostname_set) {
 		mbedtls_ssl_set_hostname(&session_ctx->ssl,
 					 tls_ctx->active_session->ssl.hostname);
@@ -1354,7 +1354,7 @@ static int tls_rx(void *ctx, unsigned char *buf, size_t len)
 	return received;
 }
 
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
+#if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C)
 static bool crt_is_pem(const unsigned char *buf, size_t buflen)
 {
 	return (buflen != 0 && buf[buflen - 1] == '\0' &&
@@ -1365,7 +1365,7 @@ static bool crt_is_pem(const unsigned char *buf, size_t buflen)
 static int tls_add_ca_certificate(struct tls_context *tls,
 				  struct tls_credential *ca_cert)
 {
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
+#if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C)
 	int err;
 
 	if (tls->options.cert_nocopy == ZSOCK_TLS_CERT_NOCOPY_NONE ||
@@ -1384,24 +1384,24 @@ static int tls_add_ca_certificate(struct tls_context *tls,
 	}
 
 	return 0;
-#endif /* MBEDTLS_X509_CRT_PARSE_C */
+#endif /* CONFIG_MBEDTLS_X509_CRT_PARSE_C */
 
 	return -ENOTSUP;
 }
 
 static void tls_set_ca_chain(struct tls_context *tls)
 {
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
+#if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C)
 	mbedtls_ssl_conf_ca_chain(&tls->config, &tls->ca_chain, NULL);
 	mbedtls_ssl_conf_cert_profile(&tls->config,
 				      &mbedtls_x509_crt_profile_default);
-#endif /* MBEDTLS_X509_CRT_PARSE_C */
+#endif /* CONFIG_MBEDTLS_X509_CRT_PARSE_C */
 }
 
 static int tls_add_own_cert(struct tls_context *tls,
 			    struct tls_credential *own_cert)
 {
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
+#if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C)
 	int err;
 
 	if (tls->options.cert_nocopy == ZSOCK_TLS_CERT_NOCOPY_NONE ||
@@ -1419,14 +1419,14 @@ static int tls_add_own_cert(struct tls_context *tls,
 	}
 
 	return 0;
-#endif /* MBEDTLS_X509_CRT_PARSE_C */
+#endif /* CONFIG_MBEDTLS_X509_CRT_PARSE_C */
 
 	return -ENOTSUP;
 }
 
 static int tls_set_own_cert(struct tls_context *tls)
 {
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
+#if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C)
 	int err = mbedtls_ssl_conf_own_cert(&tls->config, &tls->own_cert,
 					    &tls->priv_key);
 	if (err != 0) {
@@ -1434,7 +1434,7 @@ static int tls_set_own_cert(struct tls_context *tls)
 	}
 
 	return err;
-#endif /* MBEDTLS_X509_CRT_PARSE_C */
+#endif /* CONFIG_MBEDTLS_X509_CRT_PARSE_C */
 
 	return -ENOTSUP;
 }
@@ -1442,7 +1442,7 @@ static int tls_set_own_cert(struct tls_context *tls)
 static int tls_set_private_key(struct tls_context *tls,
 			       struct tls_credential *priv_key)
 {
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
+#if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C)
 	int err;
 
 	err = mbedtls_pk_parse_key(&tls->priv_key, priv_key->buf,
@@ -1453,7 +1453,7 @@ static int tls_set_private_key(struct tls_context *tls,
 	}
 
 	return 0;
-#endif /* MBEDTLS_X509_CRT_PARSE_C */
+#endif /* CONFIG_MBEDTLS_X509_CRT_PARSE_C */
 
 	return -ENOTSUP;
 }
@@ -1711,7 +1711,7 @@ static int tls_mbedtls_session_init(struct tls_session_context *session_ctx,
 {
 	int ret;
 
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
+#if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C)
 	/* For TLS clients, set hostname to empty string to enforce it's
 	 * verification - only if hostname option was not set. Otherwise
 	 * depend on user configuration.
@@ -1918,7 +1918,7 @@ static int tls_mbedtls_init(struct tls_context *context, bool is_server)
 
 static int tls_check_cert(struct tls_credential *cert)
 {
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
+#if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C)
 	mbedtls_x509_crt cert_ctx;
 	int err;
 
@@ -1948,12 +1948,12 @@ static int tls_check_cert(struct tls_credential *cert)
 		"Reconfigure mbed TLS to support certificate based key exchange.");
 
 	return -ENOTSUP;
-#endif /* MBEDTLS_X509_CRT_PARSE_C */
+#endif /* CONFIG_MBEDTLS_X509_CRT_PARSE_C */
 }
 
 static int tls_check_priv_key(struct tls_credential *priv_key)
 {
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
+#if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C)
 	mbedtls_pk_context key_ctx;
 	int err;
 
@@ -1976,7 +1976,7 @@ static int tls_check_priv_key(struct tls_credential *priv_key)
 		"Reconfigure mbed TLS to support certificate based key exchange.");
 
 	return -ENOTSUP;
-#endif /* MBEDTLS_X509_CRT_PARSE_C */
+#endif /* CONFIG_MBEDTLS_X509_CRT_PARSE_C */
 }
 
 static int tls_check_psk(struct tls_credential *psk)
@@ -2134,7 +2134,7 @@ static int tls_opt_hostname_set(struct tls_context *context,
 {
 	ARG_UNUSED(optlen);
 
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
+#if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C)
 	if (mbedtls_ssl_set_hostname(&context->active_session->ssl, optval) != 0) {
 		return -EINVAL;
 	}
