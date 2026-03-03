@@ -25,5 +25,5 @@ int sensor_clock_get_cycles(uint64_t *cycles)
 
 uint64_t sensor_clock_cycles_to_ns(uint64_t cycles)
 {
-	return (cycles * NSEC_PER_SEC) / sys_clock_hw_cycles_per_sec();
+	return k_cyc_to_ns_near64(cycles);
 }

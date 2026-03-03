@@ -58,9 +58,23 @@ int sensor_clock_get_cycles(uint64_t *cycles)
 	return rc;
 }
 
+/*
+ * Convert external clock cycles to nanoseconds.
+ *
+ * Unlike for sys clocks, which have k_cyc_to_ns_near64(), there isn't a similar conversion macro
+ * for external clocks. In practice this will always choose the slower conversion path since clock
+ * frequency (f) is not known at compile time. The conversion is done in a way that doesn't overflow
+ * the value.
+ *
+ * @param t Time in cycles
+ * @param f Clock frequency
+ * @return Time in nanoseconds rounded to nearest
+ */
+#define sensor_clk_ext_cyc_to_ns_near64(t, f) z_tmcvt_64(t, f, Z_HZ_ns, false, false, true)
+
 uint64_t sensor_clock_cycles_to_ns(uint64_t cycles)
 {
-	return (cycles * NSEC_PER_SEC) / freq;
+	return sensor_clk_ext_cyc_to_ns_near64(cycles, freq);
 }
 
 SYS_INIT(external_sensor_clock_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
