@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,12 +11,15 @@
 #include <zephyr/drivers/interrupt_controller/nxp_pint.h>
 #include <fsl_power.h>
 #include <zephyr/logging/log.h>
+#if defined(CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_HOOKS)
+#include "fsl_ostimer.h"
+#endif
 
 #if CONFIG_PM_POLICY_CUSTOM
 #include <zephyr/pm/policy.h>
 #endif /* CONFIG_PM_POLICY_CUSTOM */
 
-#ifdef CONFIG_BT
+#if defined(CONFIG_BT)
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <ble_controller.h>
@@ -37,9 +40,105 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 static const struct gpio_dt_spec wakeup_pin_dt = GPIO_DT_SPEC_GET(WAKEUP_BUTTON_NODE, gpios);
 #endif /* WAKEUP_PIN_ENABLE */
 
-#if defined(CONFIG_BT) && !defined(CONFIG_PM_POLICY_CUSTOM)
-#error Select CONFIG_PM_POLICY_CUSTOM when CONFIG_BT is selected
+#if !defined(CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_HOOKS)
+#error "LPM hooks are needed. OS timer will replace SYSTICK during low power."
+#else
+/* OS Timer configuration for low power wakeup */
+#define OSTIMER_NODE DT_NODELABEL(os_timer)
+
+#if DT_NODE_HAS_STATUS(OSTIMER_NODE, okay)
+#define OSTIMER_IRQ_NUM  DT_IRQN(OSTIMER_NODE)
+#define OSTIMER_IRQ_PRIO DT_IRQ(OSTIMER_NODE, priority)
+static OSTIMER_Type *lptim_base = (OSTIMER_Type *)DT_REG_ADDR(OSTIMER_NODE);
+#else
+#error "OSTIMER is required for low power operation"
 #endif
+
+/* Store OS timer count at low power entry for sleep duration calculation */
+static uint64_t lptim_count;
+
+/**
+ * @brief SYSTICK hook called on lp entry
+ *
+ * Configures the OS timer to wake up the system after the specified time.
+ * Coordinates with BLE link layer to ensure wakeup happens before next BLE event.
+ */
+void z_cms_lptim_hook_on_lpm_entry(uint64_t max_lpm_time_us)
+{
+	uint32_t lptim_freq;
+
+#if defined(CONFIG_BT)
+	blec_result_t ll_status;
+	uint32_t ll_remaining_time;
+	uint32_t next_pm_state_exit_latency_us;
+
+	if (bt_is_ready()) {
+		ll_status = BLEController_GetRemainingTimeForNextEventUnsafe(&ll_remaining_time);
+
+		/* Is link layer busy? */
+		if ((ll_status == kBLEC_Success) && (ll_remaining_time > 0U)) {
+			next_pm_state_exit_latency_us =
+				pm_state_next_get(_current_cpu->id)->exit_latency_us;
+			/* Account for exit latency to ensure system wakes before BLE event */
+			if (ll_remaining_time > next_pm_state_exit_latency_us) {
+				ll_remaining_time -= next_pm_state_exit_latency_us;
+			} else {
+				/* This should never happen, as we already validated timing
+				 * during pm_policy_next_state execution.
+				 */
+				assert(0);
+			}
+
+			if (ll_remaining_time < max_lpm_time_us) {
+				max_lpm_time_us = ll_remaining_time;
+			}
+		}
+	}
+#endif
+	/* Get OS timer frequency */
+	lptim_freq = CLOCK_GetOSTimerClkFreq();
+	assert(lptim_freq != 0U);
+
+	/* Save current timer value for sleep duration calculation on exit */
+	lptim_count = OSTIMER_GetCurrentTimerValue(lptim_base);
+	OSTIMER_ClearStatusFlags(lptim_base, kOSTIMER_MatchInterruptFlag);
+
+	/* Enable OS timer interrupt */
+	irq_enable(OSTIMER_IRQ_NUM);
+
+	/* Set the match value to wake up the system*/
+	OSTIMER_SetMatchValue(lptim_base, lptim_count + USEC_TO_COUNT(max_lpm_time_us, lptim_freq),
+			      NULL);
+}
+
+/**
+ * @brief Hook called on lp exit
+ *
+ * This function is called by the SYSTICK timer after exiting low power mode.
+ * Calculates the sleep duration.
+ */
+uint64_t z_cms_lptim_hook_on_lpm_exit(void)
+{
+	uint64_t lptim_sleep_cnt;
+	uint32_t lptim_freq;
+
+	/* Check if woken up by OS timer match interrupt */
+	if ((OSTIMER_GetStatusFlags(lptim_base) & (uint32_t)kOSTIMER_MatchInterruptFlag) == 0U) {
+		/* Not woken up by the low power timer (woken by other interrupt source),
+		 * disable further OS timer interrupts.
+		 */
+		irq_disable(OSTIMER_IRQ_NUM);
+	}
+
+	/* Calculate actual sleep duration */
+	lptim_sleep_cnt = OSTIMER_GetCurrentTimerValue(lptim_base) - lptim_count;
+	lptim_freq = CLOCK_GetOSTimerClkFreq();
+	assert(lptim_freq != 0U);
+
+	/* Return sleep duration in microseconds */
+	return COUNT_TO_USEC(lptim_sleep_cnt, lptim_freq);
+}
+#endif /* CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_HOOKS */
 
 #if CONFIG_PM_POLICY_CUSTOM
 __weak const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)
@@ -54,7 +153,7 @@ __weak const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t tic
 	}
 #endif
 
-#ifdef CONFIG_BT
+#if defined(CONFIG_BT)
 	if (bt_is_ready()) {
 		uint32_t ll_remaining_time;
 		blec_result_t stat;
@@ -107,16 +206,13 @@ static void pm_get_lowpower_resource_list(uint32_t *exclude_from_pd,
 	*exclude_from_pd = kLOWPOWERCFG_DCDC_BYPASS;
 	*wakeup_sources  = 0;
 
-#ifdef CONFIG_BT
+#if defined(CONFIG_BT)
 	/* BT needs 32kHz clock. */
 	*exclude_from_pd |= (kLOWPOWERCFG_XTAL32K | kLOWPOWERCFG_BLE_WUP);
 #endif
-
-#ifdef CONFIG_MCUX_OS_TIMER
 	/* OS_TIMER uses 32K clock as clock source, keep it running. */
 	*exclude_from_pd |= kLOWPOWERCFG_XTAL32K;
 	*wakeup_sources  |= kWAKEUP_OS_EVENT;
-#endif
 
 #if WAKEUP_PIN_ENABLE
 	static const wakeup_irq_t pint_wakeup_sources[] = {
@@ -141,54 +237,6 @@ static void pm_get_lowpower_resource_list(uint32_t *exclude_from_pd,
 #endif
 }
 
-static bool pm_connectivity_lp_prepare(enum pm_state state)
-{
-	bool ret = true;
-#ifdef CONFIG_BT
-	uint32_t ll_remaining_time;
-	blec_result_t ll_status;
-	int32_t timeout_expiry;
-	uint32_t exit_latency_ticks;
-	const struct pm_state_info *state_info;
-
-	do {
-		if (!bt_is_ready()) {
-			break;
-		}
-
-		state_info = pm_state_get(0, state, 0);
-		ll_status = BLEController_GetRemainingTimeForNextEventUnsafe(&ll_remaining_time);
-		timeout_expiry = z_get_next_timeout_expiry();
-		exit_latency_ticks = k_us_to_ticks_ceil32(state_info->exit_latency_us);
-
-		/* Is link layer busy? */
-		if ((ll_status != kBLEC_Success) || (ll_remaining_time == 0)) {
-			ret = false;
-			break;
-		}
-		/* Enough time to go to this state? */
-		if (ll_remaining_time <
-		    state_info->min_residency_us + state_info->exit_latency_us) {
-			ret = false;
-			break;
-		}
-
-		/* Convert to ticks */
-		ll_remaining_time = k_us_to_ticks_floor32(ll_remaining_time) - exit_latency_ticks;
-
-		/* Any close activity? */
-		if (ll_remaining_time < (uint32_t)timeout_expiry - exit_latency_ticks) {
-			if ((ll_remaining_time <= 1)) {
-				ret = false;
-				break;
-			}
-			sys_clock_set_timeout(ll_remaining_time, true);
-		}
-	} while (false);
-#endif
-	return ret;
-}
-
 __weak void pm_state_set(enum pm_state state, uint8_t id)
 {
 	ARG_UNUSED(id);
@@ -208,21 +256,17 @@ __weak void pm_state_set(enum pm_state state, uint8_t id)
 
 	case PM_STATE_SUSPEND_TO_IDLE:
 		pm_get_lowpower_resource_list(&exclude_from_pd, &wakeup_sources, false);
-		if (pm_connectivity_lp_prepare(PM_STATE_SUSPEND_TO_IDLE)) {
-			status = POWER_EnterDeepSleep(exclude_from_pd, wakeup_sources);
-			if (status != kStatus_Success) {
-				LOG_ERR("Failed to enter deep sleep mode: %d", status);
-			}
+		status = POWER_EnterDeepSleep(exclude_from_pd, wakeup_sources);
+		if (status != kStatus_Success) {
+			LOG_ERR("Failed to enter deep sleep mode: %d", status);
 		}
 		break;
 
 	case PM_STATE_STANDBY:
 		pm_get_lowpower_resource_list(&exclude_from_pd, &wakeup_sources, true);
-		if (pm_connectivity_lp_prepare(PM_STATE_STANDBY)) {
-			status = POWER_EnterPowerDown(exclude_from_pd, wakeup_sources, 1);
-			if (status != kStatus_Success) {
-				LOG_ERR("Failed to enter power down mode: %d", status);
-			}
+		status = POWER_EnterPowerDown(exclude_from_pd, wakeup_sources, 1);
+		if (status != kStatus_Success) {
+			LOG_ERR("Failed to enter power down mode: %d", status);
 		}
 		break;
 
@@ -265,6 +309,16 @@ static void init_wakeup_gpio_pins(void)
 }
 #endif
 
+#if defined(CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_HOOKS)
+static void nxp_ostimer_isr(const void *arg)
+{
+	ARG_UNUSED(arg);
+
+	/* Disable match interrupt after wakeup */
+	OSTIMER_DisableMatchInterrupt(lptim_base);
+}
+#endif
+
 static int nxp_mcxw2xx_power_init(void)
 {
 #if WAKEUP_PIN_ENABLE
@@ -276,6 +330,13 @@ static int nxp_mcxw2xx_power_init(void)
 
 void nxp_mcxw2xx_power_early_init(void)
 {
+#if defined(CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_HOOKS)
+	/* Initialize the OS timer */
+	OSTIMER_Init(lptim_base);
+
+	/* Configure OS timer interrupt for low power wakeup */
+	IRQ_CONNECT(OSTIMER_IRQ_NUM, OSTIMER_IRQ_PRIO, nxp_ostimer_isr, NULL, 0);
+#endif
 	POWER_Init();
 }
 
