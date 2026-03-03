@@ -42,7 +42,7 @@ Supported Boards
 ****************
 
 - esp32_devkitc/esp32/procpu
-- esp32s2_saola
+- esp32s2_devkitc
 - esp32s3_devkitc/esp32s3/procpu
 
 Building and Running

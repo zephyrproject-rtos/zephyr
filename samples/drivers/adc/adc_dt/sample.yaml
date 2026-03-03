@@ -33,7 +33,7 @@ tests:
       - gd32vf103v_eval
       - gd32f403z_eval
       - esp32_devkitc/esp32/procpu
-      - esp32s2_saola
+      - esp32s2_devkitc
       - esp32c3_devkitm
       - gd32l233r_eval
       - lpcxpresso55s36

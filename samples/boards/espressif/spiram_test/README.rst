@@ -31,7 +31,7 @@ Make sure you have your board connected over USB port.
    west flash
 
 If using another supported Espressif board, replace the argument in the above
-command with a proper board name (e.g., ``esp32s2_saola``).
+command with a proper board name (e.g., ``esp32s2_devkitc``).
 
 Sample Output
 =============
