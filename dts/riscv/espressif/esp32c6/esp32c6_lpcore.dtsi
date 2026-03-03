@@ -104,7 +104,7 @@
 		};
 
 		lp_gpio: gpio@600b2000 {
-			compatible = "espressif,esp32-gpio";
+			compatible = "espressif,esp32-lpgpio";
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x600b2000 DT_SIZE_K(4)>;
