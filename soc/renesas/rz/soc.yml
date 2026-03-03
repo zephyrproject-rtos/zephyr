@@ -54,6 +54,11 @@ family:
           - name: r9a09g087m44gbg
             cpuclusters:
               - name: cr52_0
+      - name: rzt2h
+        socs:
+          - name: r9a09g077m44gbg
+            cpuclusters:
+              - name: cr52_0
       - name: rzt2l
         socs:
           - name: r9a07g074m04gbg
