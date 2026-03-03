@@ -56,9 +56,17 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
 
   zephyr_include_directories(
     ${RADIO_DIR}/rail_lib/common
-    ${RADIO_DIR}/rail_lib/plugin/pa-conversions
     ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_compatible_pa
     ${BLUETOOTH_DIR}/bgstack/ll/inc
+  )
+
+  zephyr_include_directories_ifdef(CONFIG_SILABS_DEVICE_IS_MODULE
+    ${RADIO_DIR}/rail_lib/plugin/pa-conversions
+  )
+  zephyr_include_directories_ifndef(CONFIG_SILABS_DEVICE_IS_MODULE
+    ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_pa_conversions
+    ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_pa_tables
+    ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_pa_tables/efr32xg${SILABS_DEVICE_FAMILY_NUMBER}
   )
 
   # sl_protocol_crypto
@@ -97,10 +105,13 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
   if(CONFIG_SOC_GECKO_USE_RAIL)
     # rail
     # PA curve for the modules comes from their config archive - omit the compilation of the SoC curves on modules
-    if(NOT CONFIG_SILABS_DEVICE_IS_MODULE)
-      zephyr_library_sources(${RADIO_DIR}/rail_lib/plugin/pa-conversions/pa_curves_efr32.c)
-    endif()
-    zephyr_library_sources(${RADIO_DIR}/rail_lib/plugin/pa-conversions/pa_conversions_efr32.c)
+    zephyr_library_sources_ifdef(CONFIG_SILABS_DEVICE_IS_MODULE
+      ${RADIO_DIR}/rail_lib/plugin/pa-conversions/pa_conversions_efr32.c
+    )
+    zephyr_library_sources_ifndef(CONFIG_SILABS_DEVICE_IS_MODULE
+      ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_pa_conversions/sl_rail_util_pa_conversions.c
+      ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_pa_conversions/sl_rail_util_pa_tables.c
+    )
 
     if(CONFIG_SILABS_SISDK_RAIL_MULTIPROTOCOL)
       zephyr_compile_definitions(SL_RAIL_LIB_MULTIPROTOCOL_SUPPORT=1)
@@ -370,6 +381,12 @@ zephyr_library_sources_ifdef(
   CONFIG_BUILD_ONLY_NO_BLOBS
   src/blob_stubs.c
 )
+if(CONFIG_SILABS_DEVICE_IS_MODULE)
+  zephyr_library_sources_ifdef(
+    CONFIG_BUILD_ONLY_NO_BLOBS
+    src/blob_stubs_module.c
+  )
+endif()
 
 zephyr_linker_sources(ROM_SECTIONS linker/code_classification_text.ld)
 zephyr_linker_sources(RAMFUNC_SECTION linker/code_classification_ramfunc.ld)
