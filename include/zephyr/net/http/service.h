@@ -71,7 +71,20 @@ struct http_service_runtime_data {
 
 struct http_service_desc;
 
-/** Custom socket creation function type */
+/** @endcond */
+
+/**
+ * @brief Custom socket creation function type
+ *
+ * @details Allow HTTP service to be customized according to user needs.
+ * For example, this can be used to create a socket with custom options or
+ * to create a socket of a different type for a specific service.
+ *
+ * @param svc HTTP service description for which the socket is being created.
+ * @param af Address family (e.g., AF_INET or AF_INET6) for the socket to be created.
+ * @param proto Protocol (e.g., IPPROTO_TCP) for the socket to be created.
+ * @return Valid socket file descriptor on success, or a negative error code on failure.
+ */
 typedef int (*http_socket_create_fn)(const struct http_service_desc *svc, int af, int proto);
 
 /** HTTP service configuration */
@@ -80,6 +93,8 @@ struct http_service_config {
 	http_socket_create_fn socket_create;
 	/* If any more service-specific configuration is needed, it can be added here. */
 };
+
+/** @cond INTERNAL_HIDDEN */
 
 struct http_service_desc {
 	const char *host;
