@@ -3183,7 +3183,6 @@ static int control_point_notify(struct bt_conn *conn, const void *data, uint16_t
 }
 
 static struct bt_iso_server iso_server = {
-	.sec_level = BT_SECURITY_L2,
 	.accept = ascs_iso_accept,
 };
 

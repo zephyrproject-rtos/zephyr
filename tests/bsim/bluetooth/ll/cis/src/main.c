@@ -437,9 +437,6 @@ static void test_cis_central(void)
 
 		iso_chan[i].ops = &iso_ops;
 		iso_chan[i].qos = &iso_qos[i];
-#if defined(CONFIG_BT_SMP)
-		iso_chan[i].required_sec_level = BT_SECURITY_L2,
-#endif /* CONFIG_BT_SMP */
 
 		channels[i] = &iso_chan[i];
 	}
@@ -684,9 +681,6 @@ static int iso_accept(const struct bt_iso_accept_info *info,
 }
 
 static struct bt_iso_server iso_server = {
-#if defined(CONFIG_BT_SMP)
-	.sec_level = BT_SECURITY_L1,
-#endif /* CONFIG_BT_SMP */
 	.accept = iso_accept,
 };
 

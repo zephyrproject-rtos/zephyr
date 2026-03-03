@@ -137,9 +137,6 @@ static void init(void)
 		.sdu = CONFIG_BT_ISO_TX_MTU,
 	};
 	static struct bt_iso_server iso_server = {
-#if defined(CONFIG_BT_SMP)
-		.sec_level = BT_SECURITY_L2,
-#endif /* CONFIG_BT_SMP */
 		.accept = iso_accept,
 	};
 	static struct bt_iso_chan_ops iso_ops = {
@@ -162,9 +159,6 @@ static void init(void)
 
 	iso_chan.ops = &iso_ops;
 	iso_chan.qos = &iso_qos;
-#if defined(CONFIG_BT_SMP)
-	iso_chan.required_sec_level = BT_SECURITY_L2,
-#endif /* CONFIG_BT_SMP */
 
 	err = bt_iso_server_register(&iso_server);
 	if (err) {
