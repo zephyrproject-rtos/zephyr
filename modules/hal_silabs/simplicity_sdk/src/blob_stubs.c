@@ -9,16 +9,15 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include <rail.h>
 #include <sl_rail.h>
 #include <sl_status.h>
 
-RAIL_Status_t RAIL_VerifyTxPowerCurves(const struct RAIL_TxPowerCurvesConfigAlt *config)
+sl_rail_status_t sl_rail_verify_tx_power_conversion(const struct sl_rail_tx_power_table_config *cfg)
 {
-	return RAIL_STATUS_NO_ERROR;
+	return SL_RAIL_STATUS_NO_ERROR;
 }
 
-void RAIL_EnablePaCal(bool enable)
+void sl_rail_enable_pa_cal(sl_rail_handle_t rail_handle, bool enable)
 {
 }
 
