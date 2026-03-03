@@ -317,6 +317,6 @@ change is related to safety.
    Safety should not block the project and minimize the room to grow in any way.
 
 .. important::
-   **NOTE:** Find and define ways, guidelines and processes which minimally impact the daily work
+   **TODO:** Find and define ways, guidelines and processes which minimally impact the daily work
    of the maintainers, reviewers and contributors and also the safety architect itself.
    But which are also suitable for safety.

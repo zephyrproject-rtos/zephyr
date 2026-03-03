@@ -12,7 +12,7 @@ from docutils.parsers.rst import Directive, directives
 ZEPHYR_BASE = Path(__file__).parents[3]
 
 
-# NOTE: extend and modify this for Windows.
+# TODO: extend and modify this for Windows.
 #
 # This could be as simple as generating a couple of sets of instructions, one
 # for Unix environments, and another for Windows.

@@ -22,7 +22,7 @@ POSIX System Interfaces
     _POSIX_NO_TRUNC, 0,
     _POSIX_VDISABLE, ``'\0'``,
 
-.. NOTE: POSIX_ASYNCHRONOUS_IO, and other interfaces below, are mandatory. That means that a
+.. TODO: POSIX_ASYNCHRONOUS_IO, and other interfaces below, are mandatory. That means that a
    strictly conforming application need not be modified in order to compile against Zephyr.
    However, we may add implementations that simply fail with ENOSYS as long as the functional
    modification is clearly documented. The implementation is not required for PSE51 or PSE52
