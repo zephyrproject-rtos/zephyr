@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2024-2026 Espressif Systems (Shanghai) Co., Ltd.
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -19,11 +19,22 @@
 			bias-pull-up;
 		};
 	};
+
+	uart1_sleep: uart1_sleep {
+		group1 {
+			pinmux = <UART1_TX_GPIO2>,
+				 <UART1_RTS_GPIO3>,
+				 <UART1_RX_GPIO2>,
+				 <UART1_CTS_GPIO3>;
+			drive-open-drain;
+		};
+	};
 };
 
 dut: &uart1 {
 	status = "okay";
 	pinctrl-0 = <&uart1_test>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
 	current-speed = <115200>;
 };
