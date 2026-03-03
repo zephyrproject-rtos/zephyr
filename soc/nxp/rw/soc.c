@@ -166,6 +166,10 @@ __weak __ramfunc void clock_init(void)
 	GAU_BG->CTRL &= ~BG_CTRL_PD_MASK;
 #endif /* GAU */
 
+#if (DT_NODE_HAS_STATUS(DT_NODELABEL(gdma), okay))
+	RESET_PeripheralReset(kGDMA_RST_SHIFT_RSTn);
+#endif
+
 /* Any flexcomm can be USART */
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_usart, okay)) && CONFIG_SERIAL
 	CLOCK_SetFRGClock(&(const clock_frg_clk_config_t){0, kCLOCK_FrgPllDiv, 255, 0});
