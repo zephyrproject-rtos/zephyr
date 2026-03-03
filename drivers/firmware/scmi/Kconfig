@@ -20,6 +20,16 @@ config ARM_SCMI_MAILBOX_TRANSPORT
 	  Enable support for SCMI transport based on shared memory
 	  and doorbells.
 
+config ARM_SCMI_SMCC_TRANSPORT
+	bool "SCMI transport based on shared memory and doorbells"
+	default y
+	depends on DT_HAS_ARM_SCMI_SMC_ENABLED
+	depends on ARM_SCMI_SHMEM
+	select ARM_SCMI_TRANSPORT_HAS_STATIC_CHANNELS
+	help
+	  Enable support for SCMI transport based on shared memory
+	  and arm-smcc as doorbell.
+
 config ARM_SCMI_PINCTRL_HELPERS
 	bool "Helper functions for SCMI pinctrl protocol"
 	default y

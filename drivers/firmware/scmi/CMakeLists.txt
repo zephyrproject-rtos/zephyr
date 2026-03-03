@@ -6,6 +6,7 @@ zephyr_library()
 zephyr_library_sources_ifdef(CONFIG_ARM_SCMI core.c common.c)
 zephyr_library_sources_ifdef(CONFIG_ARM_SCMI_MAILBOX_TRANSPORT mailbox.c)
 zephyr_library_sources_ifdef(CONFIG_ARM_SCMI_SHMEM shmem.c)
+zephyr_library_sources_ifdef(CONFIG_ARM_SCMI_SMCC_TRANSPORT smc.c)
 
 # SCMI protocol helper files
 zephyr_library_sources_ifdef(CONFIG_ARM_SCMI_CLK_HELPERS clk.c)
