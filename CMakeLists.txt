@@ -92,11 +92,14 @@ endif()
 set(ZEPHYR_FINAL_EXECUTABLE zephyr_final)
 
 # Set some phony targets to collect dependencies
-set(OFFSETS_H_TARGET           offsets_h)
 set(SYSCALL_LIST_H_TARGET      syscall_list_h_target)
 set(DRIVER_VALIDATION_H_TARGET driver_validation_h_target)
 set(KOBJ_TYPES_H_TARGET        kobj_types_h_target)
 set(DEVICE_API_LD_TARGET       device_api_ld_target)
+# Backward compatibility: open-amp explicitly depends on OFFSETS_H_TARGET
+# which is redundant as zephyr_generated_headers already provides this to
+# all Zephyr libraries.  Remove once open-amp drops this.
+set(OFFSETS_H_TARGET           offsets_h)
 
 define_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT BRIEF_DOCS " " FULL_DOCS " ")
 set_property(   GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-little${ARCH}) # BFD format
@@ -746,6 +749,15 @@ endif()
 # of global properties such as ZEPHYR_LIBS or
 # GENERATED_KERNEL_OBJECT_FILES.
 #
+# Create an interface library which collects the dependencies to Zephyr
+# generated headers. Libraries containing files that include these headers can
+# use add_dependencies or target_link_libraries against this target to ensure
+# that generated headers are up-to-date before the libraries are built. This
+# ordering dependency can be propagated to these libraries' dependenents via
+# the PUBLIC or INTERFACE option of target_link_libraries.
+add_library(zephyr_generated_headers INTERFACE)
+add_dependencies(zephyr_generated_headers version_h)
+
 # Arch is placed early because it defines important compiler flags
 # that must be exported to external build systems defined in
 # e.g. subsys/.
@@ -1019,36 +1031,6 @@ add_custom_target(${DEVICE_API_LD_TARGET}
 
 zephyr_linker_include_generated(CMAKE ${DEVICE_API_LINKER_SECTIONS_CMAKE})
 
-# Create an interface library which collects the dependencies to Zephyr
-# generated headers. Libraries containing files that include these headers can
-# use add_dependencies or target_link_libraries against this target to ensure
-# that generated headers are up-to-date before the libraries are built. This
-# ordering dependency can be propagated to these libraries' dependenents via
-# the PUBLIC or INTERFACE option of target_link_libraries.
-
-add_library(zephyr_generated_headers INTERFACE)
-add_dependencies(zephyr_generated_headers
-  offsets_h version_h
-  )
-
-# Generate offsets.c.obj from offsets.c
-# Generate offsets.h     from offsets.c.obj
-
-set(OFFSETS_LIB offsets)
-
-set(OFFSETS_C_PATH ${ARCH_DIR}/${ARCH}/core/offsets/offsets.c)
-set(OFFSETS_H_PATH ${PROJECT_BINARY_DIR}/include/generated/zephyr/offsets.h)
-
-add_library(          ${OFFSETS_LIB} OBJECT ${OFFSETS_C_PATH})
-target_include_directories(${OFFSETS_LIB} PRIVATE
-  kernel/include
-  ${ARCH_DIR}/${ARCH}/include
-  )
-
-# Make sure that LTO will never be enabled when compiling offsets.c
-set_source_files_properties(${OFFSETS_C_PATH} PROPERTIES COMPILE_OPTIONS $<TARGET_PROPERTY:compiler,prohibit_lto>)
-
-target_link_libraries(${OFFSETS_LIB} zephyr_interface)
 add_dependencies(zephyr_interface
   ${SYSCALL_LIST_H_TARGET}
   ${DRIVER_VALIDATION_H_TARGET}
@@ -1056,16 +1038,15 @@ add_dependencies(zephyr_interface
   ${DEVICE_API_LD_TARGET}
   )
 
-add_custom_command(
-  OUTPUT ${OFFSETS_H_PATH}
-  COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/gen_offset_header.py
-  -i $<TARGET_OBJECTS:${OFFSETS_LIB}>
-  -o ${OFFSETS_H_PATH}
-  DEPENDS
-  ${OFFSETS_LIB}
-  $<TARGET_OBJECTS:${OFFSETS_LIB}>
+# Generate offsets.h from arch-specific offsets.c.
+# The offsets OBJECT library is also linked into the final executable
+# by toolchain linker scripts (cmake/linker/*/target.cmake).
+zephyr_constants_library(
+  NAME offsets
+  SOURCE ${ARCH_DIR}/${ARCH}/core/offsets/offsets.c
+  INCLUDES ${ARCH_DIR}/${ARCH}/include
 )
-add_custom_target(${OFFSETS_H_TARGET} DEPENDS ${OFFSETS_H_PATH})
+set(OFFSETS_LIB offsets)
 
 zephyr_get_include_directories_for_lang(C ZEPHYR_INCLUDES)
 
@@ -1485,7 +1466,7 @@ if(CONFIG_USERSPACE OR CONFIG_DEVICE_DEPS)
                     BYPRODUCTS ${PROJECT_BINARY_DIR}/${ZEPHYR_LINK_STAGE_EXECUTABLE}.map
   )
   set_property(TARGET ${ZEPHYR_LINK_STAGE_EXECUTABLE} PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/${ZEPHYR_CURRENT_LINKER_CMD})
-  add_dependencies(${ZEPHYR_LINK_STAGE_EXECUTABLE} linker_zephyr_pre${ZEPHYR_CURRENT_LINKER_PASS}_script ${OFFSETS_LIB})
+  add_dependencies(${ZEPHYR_LINK_STAGE_EXECUTABLE} linker_zephyr_pre${ZEPHYR_CURRENT_LINKER_PASS}_script)
 
   math(EXPR ZEPHYR_CURRENT_LINKER_PASS "1 + ${ZEPHYR_CURRENT_LINKER_PASS}")
 endif()
@@ -1711,7 +1692,6 @@ set_property(TARGET
 add_dependencies(
   ${ZEPHYR_LINK_STAGE_EXECUTABLE}
   linker_zephyr_prebuilt_script_target
-  ${OFFSETS_LIB}
   )
 
 set(generated_kernel_files ${GKSF} ${GKOF})

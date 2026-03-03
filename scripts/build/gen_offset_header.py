@@ -13,6 +13,7 @@ intended for use in assembly code.
 """
 
 import argparse
+import os
 import sys
 
 from elftools.elf.elffile import ELFFile
@@ -27,8 +28,9 @@ def get_symbol_table(obj):
     raise LookupError("Could not find symbol table")
 
 
-def gen_offset_header(input_name, input_file, output_file):
-    include_guard = "__GEN_OFFSETS_H__"
+def gen_offset_header(input_file, output_file):
+    basename = os.path.basename(output_file.name).upper().replace('.', '_').replace('-', '_')
+    include_guard = f"__GEN_{basename}__"
     output_file.write(
         f"""/* THIS FILE IS AUTO GENERATED.  PLEASE DO NOT EDIT.
  *
@@ -73,6 +75,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     with open(args.input, 'rb') as input_file, open(args.output, 'w') as output_file:
-        ret = gen_offset_header(args.input, input_file, output_file)
+        ret = gen_offset_header(input_file, output_file)
 
     sys.exit(ret)
