@@ -5,7 +5,7 @@ description: NXP MCUX QDEC
 
 compatible: "nxp,mcux-qdec"
 
-include: [pinctrl-device.yaml, sensor-device.yaml]
+include: [pinctrl-device.yaml, sensor-device.yaml, mux-consumer.yaml]
 
 properties:
   reg:
@@ -47,8 +47,5 @@ properties:
       frequency. Turning on the input filter introduces a latency of:
       ((FILT_CNT + 3) * FILT_PER) FILT clock cycles + 2 IPBus clock periods.
 
-  xbar:
-    type: phandle
+  mux-states:
     required: true
-    description: |
-      The xbar phandle.

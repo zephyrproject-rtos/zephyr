@@ -9,7 +9,7 @@
 #include <stdint.h>
 
 #include <fsl_enc.h>
-#include <fsl_xbara.h>
+#include <zephyr/drivers/mux.h>
 
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/sensor.h>
@@ -22,9 +22,9 @@ LOG_MODULE_REGISTER(qdec_mcux, CONFIG_SENSOR_LOG_LEVEL);
 struct qdec_mcux_config {
 	ENC_Type *base;
 	const struct pinctrl_dev_config *pincfg;
-	XBARA_Type *xbar;
-	size_t xbar_maps_len;
-	int xbar_maps[];
+	const struct device *mux_dev;
+	struct mux_control **mux_controls;
+	size_t num_muxes;
 };
 
 struct qdec_mcux_data {
@@ -139,15 +139,14 @@ static void init_inputs(const struct device *dev)
 	i = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	assert(i == 0);
 
-	/* Quadrature Encoder inputs are only accessible via crossbar */
-	XBARA_Init(config->xbar);
-	for (i = 0; i < config->xbar_maps_len; i += 2) {
-		XBARA_SetSignalsConnection(config->xbar, config->xbar_maps[i],
-					   config->xbar_maps[i + 1]);
+	/* Set input signal for Quadrature Encoder via MUX driver */
+	for (i = 0; i < config->num_muxes; i++) {
+		mux_configure_default(config->mux_dev, config->mux_controls[i]);
 	}
 }
 
-#define XBAR_PHANDLE(n)	DT_INST_PHANDLE(n, xbar)
+#define QDEC_MCUX_MUX_DEFINE(n) MUX_CONTROL_DT_INST_DEFINE_BY_PROP(qdec_mcux, n, mux_states)
+DT_INST_FOREACH_STATUS_OKAY(QDEC_MCUX_MUX_DEFINE)
 
 #define QDEC_CHECK_COND(n, p, min, max)						\
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, p), (				\
@@ -159,8 +158,6 @@ static void init_inputs(const struct device *dev)
 
 #define QDEC_MCUX_INIT(n)							\
 										\
-	BUILD_ASSERT((DT_PROP_LEN(XBAR_PHANDLE(n), xbar_maps) % 2) == 0,	\
-			"xbar_maps length must be an even number");		\
 	QDEC_CHECK_COND(n, counts_per_revolution, 1, UINT16_MAX);		\
 	QDEC_CHECK_COND(n, filter_sample_period, 0, UINT8_MAX);			\
 										\
@@ -172,9 +169,9 @@ static void init_inputs(const struct device *dev)
 										\
 	static const struct qdec_mcux_config qdec_mcux_##n##_config = {		\
 		.base = (ENC_Type *)DT_INST_REG_ADDR(n),			\
-		.xbar = (XBARA_Type *)DT_REG_ADDR(XBAR_PHANDLE(n)),		\
-		.xbar_maps_len = DT_PROP_LEN(XBAR_PHANDLE(n), xbar_maps),	\
-		.xbar_maps = DT_PROP(XBAR_PHANDLE(n), xbar_maps),		\
+		.mux_dev = MUX_CONTROL_DT_INST_DEV_GET_BY_PROP(n, mux_states),	\
+		.mux_controls = MUX_CONTROL_DT_INST_ARRAY_GET(qdec_mcux, n),	\
+		.num_muxes = MUX_CONTROL_DT_INST_COUNT_BY_PROP(n, mux_states),	\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
 	};									\
 										\

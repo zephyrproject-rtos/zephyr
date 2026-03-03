@@ -1159,18 +1159,27 @@
 			compatible = "nxp,mcux-xbar";
 			reg = <0x403bc000 0x4000>;
 			interrupts = <116 0>, <117 0>;
+			clocks = <&ccm IMX_CCM_XBAR1_CLK 0x70 22>;
+			#mux-control-cells = <2>;
+			#mux-state-cells = <3>;
 			status = "disabled";
 		};
 
 		xbar2: xbar2@403c0000 {
 			compatible = "nxp,mcux-xbar";
 			reg = <0x403c0000 0x4000>;
+			clocks = <&ccm IMX_CCM_XBAR2_CLK 0x70 24>;
+			#mux-control-cells = <2>;
+			#mux-state-cells = <3>;
 			status = "disabled";
 		};
 
 		xbar3: xbar3@403c4000 {
 			compatible = "nxp,mcux-xbar";
 			reg = <0x403c4000 0x4000>;
+			clocks = <&ccm IMX_CCM_XBAR2_CLK 0x70 14>;
+			#mux-control-cells = <2>;
+			#mux-state-cells = <3>;
 			status = "disabled";
 		};
 
