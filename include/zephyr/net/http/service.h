@@ -87,10 +87,24 @@ struct http_service_desc;
  */
 typedef int (*http_socket_create_fn)(const struct http_service_desc *svc, int af, int proto);
 
+/** Supported HTTP version for this service. If not set, then any configured
+ * version is supported. User can also specify a specific version to only support
+ * that version for the service. The values can be ORed together to support multiple
+ * specific versions.
+ */
+enum http_version {
+	HTTP_VERSION_ANY = 0,  /**< Support any HTTP version configured in the system. */
+	HTTP_VERSION_1 = 0x01, /**< Support HTTP/1.0 and HTTP/1.1 */
+	HTTP_VERSION_2 = 0x02, /**< Support HTTP/2 */
+};
+
 /** HTTP service configuration */
 struct http_service_config {
 	/** Custom socket creation for the service if needed */
 	http_socket_create_fn socket_create;
+	/** What HTTP version to use for the service. */
+	enum http_version http_ver;
+
 	/* If any more service-specific configuration is needed, it can be added here. */
 };
 
