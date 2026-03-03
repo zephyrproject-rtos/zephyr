@@ -55,3 +55,8 @@
 &lpadc1 {
 	status = "okay";
 };
+
+&sema1 {
+	domain-id = <9>;
+	status = "okay";
+};
