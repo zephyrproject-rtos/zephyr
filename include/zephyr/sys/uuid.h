@@ -23,8 +23,8 @@ extern "C" {
 
 /**
  * @defgroup uuid UUID
- * @since 4.0
- * @version 0.1.0
+ * @since 4.2
+ * @version 0.8.0
  * @ingroup utilities
  * @{
  */
