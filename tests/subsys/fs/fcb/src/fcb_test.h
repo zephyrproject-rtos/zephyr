@@ -21,7 +21,7 @@ extern "C" {
 #endif
 
 #define TEST_FCB_FLASH_AREA		slot1_partition
-#define TEST_FCB_FLASH_AREA_ID		FIXED_PARTITION_ID(TEST_FCB_FLASH_AREA)
+#define TEST_FCB_FLASH_AREA_ID		PARTITION_ID(TEST_FCB_FLASH_AREA)
 
 extern struct fcb test_fcb;
 #if defined(CONFIG_FCB_ALLOW_FIXED_ENDMARKER)

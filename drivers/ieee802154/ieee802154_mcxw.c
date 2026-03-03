@@ -70,7 +70,7 @@ static uint16_t rf_compute_csl_phase(uint32_t aTimeUs);
 #endif /* CONFIG_IEEE802154_CSL_ENDPOINT */
 
 /* Hardware parameters partition and offsets */
-#define HW_PARAMS_PARTITION_ID FIXED_PARTITION_ID(hw_params_partition)
+#define HW_PARAMS_PARTITION_ID PARTITION_ID(hw_params_partition)
 #define MAC_ADDRESS_OFFSET     0x00
 #define MAC_ADDRESS_LEN        8
 

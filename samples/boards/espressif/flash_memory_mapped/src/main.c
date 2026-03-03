@@ -22,8 +22,8 @@ int main(void)
 	const struct device *flash_device;
 	const void *mem_ptr;
 	spi_flash_mmap_handle_t handle;
-	off_t address = FIXED_PARTITION_OFFSET(scratch_partition);
-	size_t size = FIXED_PARTITION_SIZE(scratch_partition);
+	off_t address = PARTITION_OFFSET(scratch_partition);
+	size_t size = PARTITION_SIZE(scratch_partition);
 
 	flash_device = DEVICE_DT_GET(DT_CHOSEN(zephyr_flash_controller));
 	if (!device_is_ready(flash_device)) {

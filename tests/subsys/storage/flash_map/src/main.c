@@ -12,11 +12,11 @@
 #include <zephyr/storage/flash_map.h>
 
 #define SLOT1_PARTITION		slot1_partition
-#define SLOT1_PARTITION_ID	FIXED_PARTITION_ID(SLOT1_PARTITION)
-#define SLOT1_PARTITION_DEV	FIXED_PARTITION_DEVICE(SLOT1_PARTITION)
+#define SLOT1_PARTITION_ID	PARTITION_ID(SLOT1_PARTITION)
+#define SLOT1_PARTITION_DEV	PARTITION_DEVICE(SLOT1_PARTITION)
 #define SLOT1_PARTITION_NODE	DT_NODELABEL(SLOT1_PARTITION)
-#define SLOT1_PARTITION_OFFSET	FIXED_PARTITION_OFFSET(SLOT1_PARTITION)
-#define SLOT1_PARTITION_SIZE	FIXED_PARTITION_SIZE(SLOT1_PARTITION)
+#define SLOT1_PARTITION_OFFSET	PARTITION_OFFSET(SLOT1_PARTITION)
+#define SLOT1_PARTITION_SIZE	PARTITION_SIZE(SLOT1_PARTITION)
 
 #define FLASH_AREA_COPY_SIZE	MIN((SLOT1_PARTITION_SIZE / 2), 128)
 
@@ -37,20 +37,20 @@ ZTEST(flash_map, test_flash_area_disabled_device)
 	int rc;
 
 	/* Test that attempting to open a disabled flash area fails */
-	rc = flash_area_open(FIXED_PARTITION_ID(disabled_a), &fa);
+	rc = flash_area_open(PARTITION_ID(disabled_a), &fa);
 	zassert_equal(rc, -ENOENT, "Open did not fail");
-	rc = flash_area_open(FIXED_PARTITION_ID(disabled_a_a), &fa);
+	rc = flash_area_open(PARTITION_ID(disabled_a_a), &fa);
 	zassert_equal(rc, -ENOENT, "Open did not fail");
-	rc = flash_area_open(FIXED_PARTITION_ID(disabled_a_b), &fa);
+	rc = flash_area_open(PARTITION_ID(disabled_a_b), &fa);
 	zassert_equal(rc, -ENOENT, "Open did not fail");
-	rc = flash_area_open(FIXED_PARTITION_ID(disabled_b), &fa);
+	rc = flash_area_open(PARTITION_ID(disabled_b), &fa);
 	zassert_equal(rc, -ENOENT, "Open did not fail");
-	rc = flash_area_open(FIXED_PARTITION_ID(disabled_b_a), &fa);
+	rc = flash_area_open(PARTITION_ID(disabled_b_a), &fa);
 	zassert_equal(rc, -ENOENT, "Open did not fail");
-	rc = flash_area_open(FIXED_PARTITION_ID(disabled_b_b), &fa);
+	rc = flash_area_open(PARTITION_ID(disabled_b_b), &fa);
 	zassert_equal(rc, -ENOENT, "Open did not fail");
 
-	/* Note lack of tests for FIXED_PARTITION(...) instantiation,
+	/* Note lack of tests for PARTITION(...) instantiation,
 	 * because this macro will fail, at compile time, if node does not
 	 * exist or is disabled.
 	 */
@@ -71,7 +71,7 @@ ZTEST(flash_map, test_flash_area_device_is_ready)
 	 * all devices are already initialized and ready.
 	 */
 	zassert_true(flash_area_device_is_ready(
-			FIXED_PARTITION(SLOT1_PARTITION)));
+			PARTITION(SLOT1_PARTITION)));
 }
 
 static void layout_match(const struct device *flash_dev, uint32_t sec_cnt)
@@ -104,7 +104,7 @@ ZTEST(flash_map, test_flash_area_get_sectors)
 	uint32_t sec_cnt;
 	int rc;
 
-	fa = FIXED_PARTITION(SLOT1_PARTITION);
+	fa = PARTITION(SLOT1_PARTITION);
 
 	zassert_true(flash_area_device_is_ready(fa));
 
@@ -129,7 +129,7 @@ ZTEST(flash_map, test_flash_area_sectors)
 	int rc;
 	const struct device *flash_dev_a = SLOT1_PARTITION_DEV;
 
-	fa = FIXED_PARTITION(SLOT1_PARTITION);
+	fa = PARTITION(SLOT1_PARTITION);
 
 	zassert_true(flash_area_device_is_ready(fa));
 
@@ -151,7 +151,7 @@ ZTEST(flash_map, test_flash_area_erased_val)
 	const struct flash_area *fa;
 	uint8_t val;
 
-	fa = FIXED_PARTITION(SLOT1_PARTITION);
+	fa = PARTITION(SLOT1_PARTITION);
 
 	val = flash_area_erased_val(fa);
 
@@ -169,16 +169,16 @@ ZTEST(flash_map, test_fixed_partition_node_macros)
 	 */
 #if defined(CONFIG_TEST_FLASH_MAP_NODE_MACROS)
 	/* Test against changes in API */
-	zassert_equal(FIXED_PARTITION_NODE_OFFSET(SLOT1_PARTITION_NODE),
+	zassert_equal(PARTITION_NODE_OFFSET(SLOT1_PARTITION_NODE),
 		DT_REG_ADDR(SLOT1_PARTITION_NODE));
-	zassert_equal(FIXED_PARTITION_NODE_SIZE(SLOT1_PARTITION_NODE),
+	zassert_equal(PARTITION_NODE_SIZE(SLOT1_PARTITION_NODE),
 		DT_REG_SIZE(SLOT1_PARTITION_NODE));
-	zassert_equal(FIXED_PARTITION_NODE_DEVICE(SLOT1_PARTITION_NODE),
-		DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(SLOT1_PARTITION_NODE)));
+	zassert_equal(PARTITION_NODE_DEVICE(SLOT1_PARTITION_NODE),
+		DEVICE_DT_GET(DT_MTD_FROM_PARTITION(SLOT1_PARTITION_NODE)));
 
 	/* Taking by node and taking by label should give same device */
-	zassert_equal(FIXED_PARTITION_BY_NODE(DT_NODELABEL(SLOT1_PARTITION)),
-		      FIXED_PARTITION(SLOT1_PARTITION));
+	zassert_equal(PARTITION_BY_NODE(DT_NODELABEL(SLOT1_PARTITION)),
+		      PARTITION(SLOT1_PARTITION));
 #else
 	ztest_test_skip();
 #endif
@@ -192,31 +192,31 @@ ZTEST(flash_map, test_fixed_subpartition_node_macros)
 	 */
 #if defined(CONFIG_TEST_FLASH_MAP_NODE_MACROS)
 	/* Test that both partitions and subpartitions exist */
-	zassert_true(FIXED_PARTITION_EXISTS(disabled_a));
-	zassert_true(FIXED_PARTITION_EXISTS(disabled_a_a));
-	zassert_true(FIXED_PARTITION_EXISTS(disabled_a_b));
+	zassert_true(PARTITION_EXISTS(disabled_a));
+	zassert_true(PARTITION_EXISTS(disabled_a_a));
+	zassert_true(PARTITION_EXISTS(disabled_a_b));
 
 	/* Test that the subpartition offset is relative to the parent */
-	zassert_equal(FIXED_PARTITION_OFFSET(disabled_b),
-		      FIXED_PARTITION_OFFSET(disabled_b_a));
-	zassert_equal(FIXED_PARTITION_OFFSET(disabled_b) + 0x100,
-		      FIXED_PARTITION_OFFSET(disabled_b_b));
-	zassert_equal(FIXED_PARTITION_NODE_OFFSET(DT_NODELABEL(disabled_b)),
-		      FIXED_PARTITION_NODE_OFFSET(DT_NODELABEL(disabled_b_a)));
+	zassert_equal(PARTITION_OFFSET(disabled_b),
+		      PARTITION_OFFSET(disabled_b_a));
+	zassert_equal(PARTITION_OFFSET(disabled_b) + 0x100,
+		      PARTITION_OFFSET(disabled_b_b));
+	zassert_equal(PARTITION_NODE_OFFSET(DT_NODELABEL(disabled_b)),
+		      PARTITION_NODE_OFFSET(DT_NODELABEL(disabled_b_a)));
 	zassert_equal(
-		FIXED_PARTITION_NODE_OFFSET(DT_NODELABEL(disabled_b)) + 0x100,
-		FIXED_PARTITION_NODE_OFFSET(DT_NODELABEL(disabled_b_b)));
+		PARTITION_NODE_OFFSET(DT_NODELABEL(disabled_b)) + 0x100,
+		PARTITION_NODE_OFFSET(DT_NODELABEL(disabled_b_b)));
 
 	/* Test that the subpartition address is relative to the parent */
-	zassert_equal(FIXED_PARTITION_ADDRESS(disabled_b),
-		      FIXED_PARTITION_ADDRESS(disabled_b_a));
-	zassert_equal(FIXED_PARTITION_ADDRESS(disabled_b) + 0x100,
-		      FIXED_PARTITION_ADDRESS(disabled_b_b));
-	zassert_equal(FIXED_PARTITION_NODE_ADDRESS(DT_NODELABEL(disabled_b)),
-		      FIXED_PARTITION_NODE_ADDRESS(DT_NODELABEL(disabled_b_a)));
+	zassert_equal(PARTITION_ADDRESS(disabled_b),
+		      PARTITION_ADDRESS(disabled_b_a));
+	zassert_equal(PARTITION_ADDRESS(disabled_b) + 0x100,
+		      PARTITION_ADDRESS(disabled_b_b));
+	zassert_equal(PARTITION_NODE_ADDRESS(DT_NODELABEL(disabled_b)),
+		      PARTITION_NODE_ADDRESS(DT_NODELABEL(disabled_b_a)));
 	zassert_equal(
-		FIXED_PARTITION_NODE_ADDRESS(DT_NODELABEL(disabled_b)) + 0x100,
-		FIXED_PARTITION_NODE_ADDRESS(DT_NODELABEL(disabled_b_b)));
+		PARTITION_NODE_ADDRESS(DT_NODELABEL(disabled_b)) + 0x100,
+		PARTITION_NODE_ADDRESS(DT_NODELABEL(disabled_b_b)));
 #else
 	ztest_test_skip();
 #endif
@@ -230,7 +230,7 @@ ZTEST(flash_map, test_flash_area_erase_and_flatten)
 	const struct flash_area *fa;
 	const struct device *flash_dev;
 
-	fa = FIXED_PARTITION(SLOT1_PARTITION);
+	fa = PARTITION(SLOT1_PARTITION);
 
 	/* First erase the area so it's ready for use. */
 	flash_dev = flash_area_get_device(fa);
@@ -299,7 +299,7 @@ ZTEST(flash_map, test_flash_area_copy)
 	int rc;
 
 	/* Get source and destination flash areas */
-	fa = FIXED_PARTITION(SLOT1_PARTITION);
+	fa = PARTITION(SLOT1_PARTITION);
 
 	/* First erase the area so it's ready for use. */
 	rc = flash_area_erase(fa, 0, fa->fa_size);
@@ -327,7 +327,7 @@ ZTEST(flash_map, test_parameter_overflows)
 	uint8_t dst_buf[FLASH_AREA_COPY_SIZE];
 	int rc;
 
-	fa = FIXED_PARTITION(SLOT1_PARTITION);
+	fa = PARTITION(SLOT1_PARTITION);
 	/* -1 cast to size_t gives us max size_t value, added to offset of 1,
 	 * it will overflow to 0.
 	 */

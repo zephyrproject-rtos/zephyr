@@ -2525,7 +2525,7 @@ ZTEST(server_function_tests_no_init, test_parse_http_frames)
 FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(storage);
 
 #define TEST_PARTITION		storage_partition
-#define TEST_PARTITION_ID	FIXED_PARTITION_ID(TEST_PARTITION)
+#define TEST_PARTITION_ID	PARTITION_ID(TEST_PARTITION)
 
 #define LFS_MNTP		"/littlefs"
 #define TEST_FILE		"static_file.html"

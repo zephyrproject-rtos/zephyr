@@ -21,7 +21,7 @@ void IRAM_ATTR lp_core_image_init(void)
 		return;
 	}
 
-	const uint32_t lpcore_img_off = FIXED_PARTITION_OFFSET(slot0_lpcore_partition);
+	const uint32_t lpcore_img_off = PARTITION_OFFSET(slot0_lpcore_partition);
 	const uint32_t lpcore_img_size = CONFIG_ESP32_ULP_COPROC_RESERVE_MEM;
 
 	const uint8_t *data = (const uint8_t *)bootloader_mmap(lpcore_img_off, lpcore_img_size);

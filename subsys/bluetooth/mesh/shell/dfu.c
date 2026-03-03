@@ -136,7 +136,7 @@ void bt_mesh_shell_dfu_cmds_init(void)
 #if defined(CONFIG_BT_MESH_SHELL_DFU_SRV) && defined(CONFIG_BOOTLOADER_MCUBOOT)
 	struct mcuboot_img_header img_header;
 
-	int err = boot_read_bank_header(FIXED_PARTITION_ID(slot0_partition),
+	int err = boot_read_bank_header(PARTITION_ID(slot0_partition),
 					&img_header, sizeof(img_header));
 	if (!err) {
 		struct shell_dfu_fwid *fwid =

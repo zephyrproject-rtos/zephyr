@@ -44,7 +44,7 @@ static struct fs_mount_t mnt = {
 #define IMG_FILE_PATH "/mnt/img.bin"
 
 #define LVGL_PARTITION		storage_partition
-#define LVGL_PARTITION_ID	FIXED_PARTITION_ID(LVGL_PARTITION)
+#define LVGL_PARTITION_ID	PARTITION_ID(LVGL_PARTITION)
 
 FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(cstorage);
 
