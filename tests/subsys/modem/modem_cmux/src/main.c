@@ -115,6 +115,8 @@ static uint8_t cmux_frame_control_sabm_cmd[] = {0xF9, 0x03, 0x3F, 0x01, 0x1C, 0x
 static uint8_t cmux_frame_control_sabm_ack[] = {0xF9, 0x03, 0x73, 0x01, 0xD7, 0xF9};
 static uint8_t cmux_frame_control_cld_cmd[] = {0xF9, 0x03, 0xEF, 0x05, 0xC3, 0x01, 0xF2, 0xF9};
 static uint8_t cmux_frame_control_cld_ack[] = {0xF9, 0x03, 0xEF, 0x05, 0xC1, 0x01, 0xF2, 0xF9};
+static uint8_t cmux_frame_dlci0_disc_cmd[] = {0xF9, 0x01, 0x53, 0x01, 0x9C, 0xF9};
+static uint8_t cmux_frame_dlci0_ua_ack[] = {0xF9, 0x01, 0x73, 0x01, 0xB6, 0xF9};
 static uint8_t cmux_frame_dlci1_sabm_cmd[] = {0xF9, 0x07, 0x3F, 0x01, 0xDE, 0xF9};
 static uint8_t cmux_frame_dlci1_sabm_ack[] = {0xF9, 0x07, 0x73, 0x01, 0x15, 0xF9};
 static uint8_t cmux_frame_dlci1_disc_cmd[] = {0xF9, 0x07, 0x53, 0x01, 0x3F, 0xF9};
@@ -975,6 +977,28 @@ ZTEST(modem_cmux, test_modem_cmux_invalid_command)
 
 	/* Invalid command should not cause any response */
 	zassert_equal(0, modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1)));
+}
+
+ZTEST(modem_cmux, test_modem_cmux_dlc0_disc)
+{
+	int ret;
+	uint32_t events;
+
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci0_disc_cmd,
+			       sizeof(cmux_frame_dlci0_disc_cmd));
+
+	k_msleep(TRANSMISSION_DELAY_MS);
+
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_true(ret == sizeof(cmux_frame_dlci0_ua_ack),
+		     "Incorrect number of bytes received");
+
+	zassert_mem_equal(buffer1, cmux_frame_dlci0_ua_ack,
+			    sizeof(cmux_frame_dlci0_ua_ack),
+		     "Incorrect UA ACK received");
+	events = k_event_wait(&cmux_event, EVENT_CMUX_DISCONNECTED, false, K_SECONDS(1));
+	zassert_equal(events, EVENT_CMUX_DISCONNECTED,
+		      "DLCI0 DISC should cause CMUX disconnection");
 }
 
 ZTEST_SUITE(modem_cmux, NULL, test_modem_cmux_setup, test_modem_cmux_before, NULL, NULL);
