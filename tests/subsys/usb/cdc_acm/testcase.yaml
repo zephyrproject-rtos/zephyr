@@ -1,0 +1,20 @@
+common:
+  tags:
+    - usb
+    - uart
+  platform_allow:
+    - native_sim/native
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim/native
+tests:
+  usb.cdc_acm: {}
+  usb.cdc_acm.no_line_ctrl:
+    # Build without runtime configure and line control support.
+    extra_configs:
+      - CONFIG_UART_USE_RUNTIME_CONFIGURE=n
+      - CONFIG_UART_LINE_CTRL=n
+  usb.cdc_acm.no_bounce:
+    # Build without bounce buffers, unaligned buffers are rejected.
+    extra_configs:
+      - CONFIG_USBH_CDC_ACM_BOUNCE=n
