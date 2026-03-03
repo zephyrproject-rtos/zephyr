@@ -64,6 +64,7 @@
 	ble-coded-phy-supported;
 	ble-cte-rx-supported;
 	ble-cte-tx-supported;
+	pa-max-power-dbm = <8>;
 	pa-voltage-mv = <1800>;
 };
 
