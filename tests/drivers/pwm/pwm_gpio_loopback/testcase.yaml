@@ -18,6 +18,7 @@ tests:
 
   drivers.pwm.gpio_loopback.nrf:
     platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp/ns
