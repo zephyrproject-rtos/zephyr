@@ -36,6 +36,7 @@ from devicetree import edtlib  # pylint: disable=unused-import
 from twisterlib.config_parser import TwisterConfigParser
 from twisterlib.environment import TwisterEnv
 from twisterlib.error import TwisterRuntimeError
+from twisterlib.hardwaremap import HardwareMap
 from twisterlib.platform import Platform, generate_platforms
 from twisterlib.quarantine import Quarantine
 from twisterlib.statuses import TwisterStatus
@@ -176,7 +177,7 @@ class TestPlan:
 
         self.scenarios = []
 
-        self.hwm = env.hwm
+        self.hwm: HardwareMap = env.hwm
         # used during creating shorter build paths
         self.link_dir_counter = 0
         self.modules = [module.get('name') for module in self.env.modules]
@@ -470,6 +471,11 @@ class TestPlan:
                     self.default_platforms.append(platform.name)
 
         self.platform_names = [a for p in self.platforms for a in p.aliases]
+
+        # Convert short platform names from hardware map to full target names.
+        for d in self.hwm.duts:
+            if d.platform in self.platform_names:
+                d.platform = self.get_platform(d.platform).name
 
     def get_all_tests(self):
         testcases = []
