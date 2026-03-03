@@ -327,6 +327,9 @@ static enum ieee802154_hw_caps stm32wba_802154_get_capabilities(const struct dev
 #if (STM32WBA_802154_CSL_RECEIVER_ENABLE == 1)
 		IEEE802154_HW_RXTIME |
 #endif
+#if (SUPPORT_RADIO_SECURITY_OT_1_2 == 1)
+		IEEE802154_HW_TX_SEC |
+#endif
 		IEEE802154_HW_SLEEP_TO_TX |
 		IEEE802154_RX_ON_WHEN_IDLE;
 }
@@ -841,6 +844,34 @@ static int stm32wba_802154_configure_ack_fpb(const struct ieee802154_config *con
 	return ret;
 }
 
+#if (SUPPORT_RADIO_SECURITY_OT_1_2 == 1)
+static void stm32wba_802154_configure_mac_key(struct ieee802154_key *mac_keys)
+{
+	uint8_t aPrevKey[16] = {0};
+	uint8_t aCurrKey[16] = {0};
+	uint8_t aNextKey[16] = {0};
+	uint8_t aKeyIdMode = 0;
+	uint8_t aKeyId = 0;
+
+	if ((mac_keys[0].key_value) != NULL) {
+		memcpy(aPrevKey, mac_keys[0].key_value, 16);
+	}
+	if ((mac_keys[1].key_value) != NULL) {
+		aKeyIdMode = mac_keys[0].key_id_mode;
+		aKeyId = *(mac_keys[1].key_id);
+		memcpy(aCurrKey, mac_keys[1].key_value, 16);
+	}
+	if ((mac_keys[2].key_value) != NULL) {
+		memcpy(aNextKey, mac_keys[2].key_value, 16);
+	}
+	stm32wba_802154_ral_set_mac_key(aKeyIdMode,
+					aKeyId,
+					aPrevKey,
+					aCurrKey,
+					aNextKey);
+}
+#endif
+
 static int stm32wba_802154_configure(const struct device *dev,
 				     enum ieee802154_config_type type,
 				     const struct ieee802154_config *config)
@@ -880,7 +911,19 @@ static int stm32wba_802154_configure(const struct device *dev,
 		stm32wba_802154_data.rx_on_when_idle = config->rx_on_when_idle;
 		stm32wba_802154_ral_set_continuous_reception(config->rx_on_when_idle);
 		break;
+#if (SUPPORT_RADIO_SECURITY_OT_1_2 == 1)
+	case IEEE802154_CONFIG_FRAME_COUNTER_IF_LARGER:
+		stm32wba_802154_ral_set_mac_frame_counter_if_larger(config->frame_counter);
+		break;
 
+	case IEEE802154_CONFIG_FRAME_COUNTER:
+		stm32wba_802154_ral_set_mac_frame_counter(config->frame_counter);
+		break;
+
+	case IEEE802154_CONFIG_MAC_KEYS:
+		stm32wba_802154_configure_mac_key(config->mac_keys);
+		break;
+#endif
 	default:
 #if defined(CONFIG_NET_L2_CUSTOM_IEEE802154)
 		ret = stm32wba_802154_configure_extended(
