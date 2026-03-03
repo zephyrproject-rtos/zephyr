@@ -1,0 +1,15 @@
+sample:
+  description: Demonstrate TFTP server initialization and passive operation
+  name: TFTP server sample app
+tests:
+  sample.net.tftp_server:
+    harness: build
+    depends_on: netif
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    tags:
+      - net
+      - tftp
+      - server

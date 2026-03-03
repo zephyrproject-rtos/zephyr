@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2026 Guy Shilman
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	fstab {
+		compatible = "zephyr,fstab";
+
+		tftp_ramfs: tftp_ramfs {
+			compatible = "zephyr,fstab,ext2";
+			disk-access;
+			disk-name = "RAM";
+			mount-point = "/RAM";
+		};
+	};
+
+	ramdisk0 {
+		compatible = "zephyr,ram-disk";
+		disk-name = "RAM";
+		sector-size = <512>;
+		sector-count = <256>;
+	};
+};

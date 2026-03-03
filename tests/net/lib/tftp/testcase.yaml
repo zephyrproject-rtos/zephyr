@@ -1,0 +1,5 @@
+tests:
+  net.lib.tftp.server:
+    tags: net tftp
+    platform_allow: native_sim
+    harness: ztest
