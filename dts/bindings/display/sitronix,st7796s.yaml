@@ -117,3 +117,12 @@ properties:
       as the inverted value of the RGB pixel-format specified in MADCTL.
       This option is convenient for supporting displays with bugs
       where the actual color is different from the pixel format of MADCTL.
+
+  tear-scanline:
+    type: int
+    default: 0
+    description: |
+      Set Tear ScanLine (STE) command value. This configures the scanline
+      where the Tearing Effect (TE) signal becomes active. The value ranges
+      from 0 to 0xFFFF, representing the scanline number N where TE output
+      is generated. Default is 0 (TE signal disabled).

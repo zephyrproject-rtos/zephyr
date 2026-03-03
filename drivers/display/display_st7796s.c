@@ -48,6 +48,7 @@ struct st7796s_config {
 	uint8_t madctl; /* Memory data access control */
 	uint8_t te_mode; /* Tearing enable mode */
 	uint32_t te_delay; /* Tearing enable delay */
+	uint16_t te_scanline; /* Tear scanline */
 	bool rgb_is_inverted;
 };
 
@@ -288,6 +289,21 @@ static int st7796s_lcd_config(const struct device *dev)
 		return ret;
 	}
 
+	/* Configure tear scanline if specified */
+	if (config->te_scanline > 0) {
+		uint8_t scanline_params[2];
+
+		/* STE command takes two parameters: N15-N8 and N7-N0 */
+		scanline_params[0] = (config->te_scanline >> 8) & 0xFF; /* N15-N8 */
+		scanline_params[1] = config->te_scanline & 0xFF;        /* N7-N0 */
+
+		ret = st7796s_send_cmd(dev, ST7796S_CMD_STE, scanline_params,
+				       sizeof(scanline_params));
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	/* Attempt to enable TE signal */
 	ret = mipi_dbi_configure_te(config->mipi_dbi, config->te_mode,
 				    config->te_delay);
@@ -422,6 +438,7 @@ static DEVICE_API(display, st7796s_api) = {
 		.rgb_is_inverted = DT_INST_PROP(n, rgb_is_inverted),		\
 		.te_mode = MIPI_DBI_TE_MODE_DT_INST(n, te_mode),                \
 		.te_delay = DT_INST_PROP(n, te_delay),                          \
+		.te_scanline = DT_INST_PROP(n, tear_scanline),                  \
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(n, st7796s_init,					\
