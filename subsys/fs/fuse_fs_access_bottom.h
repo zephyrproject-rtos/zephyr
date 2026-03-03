@@ -16,9 +16,9 @@ extern "C" {
 #define INVALID_FILE_HANDLE (INT32_MAX)
 
 struct ffa_dirent {
-	bool is_directory;
+	uint64_t size;
 	char *name;
-	size_t size;
+	bool is_directory;
 };
 
 struct ffa_op_callbacks {
@@ -30,10 +30,10 @@ struct ffa_op_callbacks {
 	int (*mkdir)(const char *path);
 	int (*create)(const char *path, uint64_t *fh);
 	int (*release)(uint64_t fh);
-	int (*read)(uint64_t fh, char *buf, size_t size, off_t off);
-	int (*write)(uint64_t fh, const char *buf, size_t size, off_t off);
-	int (*ftruncate)(uint64_t fh, off_t size);
-	int (*truncate)(const char *path, off_t size);
+	int (*read)(uint64_t fh, char *buf, uint64_t size, int64_t off);
+	int (*write)(uint64_t fh, const char *buf, uint64_t size, int64_t off);
+	int (*ftruncate)(uint64_t fh, int64_t size);
+	int (*truncate)(const char *path, int64_t size);
 	int (*unlink)(const char *path);
 	int (*rmdir)(const char *path);
 };

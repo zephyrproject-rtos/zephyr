@@ -146,40 +146,40 @@ static int ffa_release_top(uint64_t fh)
 	return 0;
 }
 
-static int ffa_read_top(uint64_t fh, char *buf, size_t size, off_t off)
+static int ffa_read_top(uint64_t fh, char *buf, uint64_t size, int64_t off)
 {
 	int err;
 
-	err = fs_seek(&files[fh], off, FS_SEEK_SET);
+	err = fs_seek(&files[fh], (off_t)off, FS_SEEK_SET);
 
 	if (err == 0) {
-		err = fs_read(&files[fh], buf, size);
+		err = fs_read(&files[fh], buf, (size_t)size);
 	}
 
 	return nsi_errno_to_mid(-err);
 }
 
-static int ffa_write_top(uint64_t fh, const char *buf, size_t size, off_t off)
+static int ffa_write_top(uint64_t fh, const char *buf, uint64_t size, int64_t off)
 {
 	int err;
 
-	err = fs_seek(&files[fh], off, FS_SEEK_SET);
+	err = fs_seek(&files[fh], (off_t)off, FS_SEEK_SET);
 
 	if (err == 0) {
-		err = fs_write(&files[fh], buf, size);
+		err = fs_write(&files[fh], buf, (size_t)size);
 	}
 
 	return nsi_errno_to_mid(-err);
 }
 
-static int ffa_ftruncate_top(uint64_t fh, off_t size)
+static int ffa_ftruncate_top(uint64_t fh, int64_t size)
 {
-	int err = fs_truncate(&files[fh], size);
+	int err = fs_truncate(&files[fh], (off_t)size);
 
 	return nsi_errno_to_mid(-err);
 }
 
-static int ffa_truncate_top(const char *path, off_t size)
+static int ffa_truncate_top(const char *path, int64_t size)
 {
 	int err;
 	static struct fs_file_t file;
@@ -189,7 +189,7 @@ static int ffa_truncate_top(const char *path, off_t size)
 		return nsi_errno_to_mid(-err);
 	}
 
-	err = fs_truncate(&file, size);
+	err = fs_truncate(&file, (off_t)size);
 	if (err != 0) {
 		fs_close(&file);
 	} else {
