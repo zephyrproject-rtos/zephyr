@@ -3567,8 +3567,9 @@ sub process {
 #  2) indented preprocessor commands
 #  3) hanging labels
 #  4) empty lines in multi-line macros
+#  5) lines starting with 4 spaces and 'defined('
 		if ($rawline =~ /^\+ / && $line !~ /^\+ *(?:$;|#|$Ident:)/ &&
-		    $rawline !~ /^\+\s+\\$/) {
+		    $rawline !~ /^\+\s+\\$/ && $rawline !~ /^\+ {4}defined\(/) {
 			my $herevet = "$here\n" . cat_vet($rawline) . "\n";
 			if (WARN("LEADING_SPACE",
 				 "please, no spaces at the start of a line\n" . $herevet) &&
