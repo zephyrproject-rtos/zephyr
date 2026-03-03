@@ -12,8 +12,6 @@ The sample scans for a peripheral, establishes a connection, and sets up a conne
 Once the isochronous channel is connected, isochronous data is transferred to the peer device every 10 milliseconds.
 It is recommended to run this sample together with the :zephyr:code-sample:`ble_peripheral_iso` sample.
 
-To run the sample with an encrypted isochronous channel, enable :kconfig:option:`CONFIG_BT_SMP`.
-
 Requirements
 ************
 
