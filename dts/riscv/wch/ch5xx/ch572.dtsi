@@ -6,6 +6,7 @@
 
 #include <wch/qingke/v3c.dtsi>
 #include "ch5xx.dtsi"
+#include <mem.h>
 
 &sram1 {
 	reg = <0>

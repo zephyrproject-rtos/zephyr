@@ -11,6 +11,14 @@
 #include <freq.h>
 #include <mem.h>
 
+#ifndef SOC_SRAM_SIZE
+#error "SOC_SRAM_SIZE is required"
+#endif /* SOC_SRAM_SIZE */
+
+#ifndef SOC_CODEFLASH_SIZE
+#error "SOC_CODEFLASH_SIZE is required"
+#endif /* SOC_CODEFLASH_SIZE */
+
 / {
 	soc {
 		sram: memory@20000000 {
