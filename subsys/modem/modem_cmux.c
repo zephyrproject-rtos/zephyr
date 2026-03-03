@@ -1025,6 +1025,24 @@ static void modem_cmux_on_control_frame_sabm(struct modem_cmux *cmux)
 	modem_cmux_raise_event(cmux, MODEM_CMUX_EVENT_CONNECTED);
 }
 
+static void modem_cmux_on_control_frame_disc(struct modem_cmux *cmux)
+{
+	modem_cmux_connect_response_transmit(cmux);
+
+	if (cmux->state != MODEM_CMUX_STATE_DISCONNECTING &&
+	    cmux->state != MODEM_CMUX_STATE_CONNECTED) {
+		LOG_WRN("Unexpected close down");
+		return;
+	}
+
+	if (cmux->state == MODEM_CMUX_STATE_DISCONNECTING) {
+		disconnect(cmux);
+	} else {
+		set_state(cmux, MODEM_CMUX_STATE_DISCONNECTING);
+		k_work_schedule(&cmux->disconnect_work, MODEM_CMUX_T1_TIMEOUT);
+	}
+}
+
 static void modem_cmux_on_control_frame(struct modem_cmux *cmux)
 {
 	modem_cmux_log_received_frame(&cmux->frame);
@@ -1045,6 +1063,9 @@ static void modem_cmux_on_control_frame(struct modem_cmux *cmux)
 
 	case MODEM_CMUX_FRAME_TYPE_SABM:
 		modem_cmux_on_control_frame_sabm(cmux);
+		break;
+	case MODEM_CMUX_FRAME_TYPE_DISC:
+		modem_cmux_on_control_frame_disc(cmux);
 		break;
 
 	default:
