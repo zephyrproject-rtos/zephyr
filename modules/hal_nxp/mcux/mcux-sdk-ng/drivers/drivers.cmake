@@ -371,6 +371,8 @@ endif()
 if(CONFIG_SOC_MCXW236 OR CONFIG_SOC_MCXW235)
   set(CONFIG_MCUX_COMPONENT_driver.lpc_iocon ON)
   set(CONFIG_MCUX_COMPONENT_driver.romapi ON)
+  # OS timer is used to replace SYSTICK during low power events for system wakeup.
+  set_variable_ifdef(CONFIG_PM CONFIG_MCUX_COMPONENT_driver.ostimer)
 endif()
 
 if((DEFINED CONFIG_FLASH_MCUX_XSPI_XIP) AND (DEFINED CONFIG_FLASH))
