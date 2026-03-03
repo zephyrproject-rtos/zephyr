@@ -1257,11 +1257,11 @@ static void ns_routing_info(struct net_pkt *pkt,
 	}
 }
 
-static int handle_ns_input(struct net_icmp_ctx *ctx,
-			   struct net_pkt *pkt,
-			   struct net_icmp_ip_hdr *hdr,
-			   struct net_icmp_hdr *icmp_hdr,
-			   void *user_data)
+static enum net_verdict handle_ns_input(struct net_icmp_ctx *ctx,
+					struct net_pkt *pkt,
+					struct net_icmp_ip_hdr *hdr,
+					struct net_icmp_hdr *icmp_hdr,
+					void *user_data)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ns_access,
 					      struct net_icmpv6_ns_hdr);
@@ -1278,8 +1278,11 @@ static int handle_ns_input(struct net_icmp_ctx *ctx,
 	struct net_in6_addr *tgt;
 	struct net_in6_addr ns_tgt, ns_src, ns_dst;
 	struct net_linkaddr src_lladdr;
+	struct net_pkt_cursor backup;
 
 	src_lladdr.len = 0;
+
+	net_pkt_cursor_backup(pkt, &backup);
 
 	if (net_if_flag_is_set(net_pkt_iface(pkt), NET_IF_IPV6_NO_ND)) {
 		goto drop;
@@ -1500,25 +1503,27 @@ send_na:
 
 	if (!net_ipv6_send_na(net_pkt_iface(pkt), na_src,
 			      na_dst, tgt, flags)) {
-		return 0;
+		net_pkt_cursor_restore(pkt, &backup);
+		return NET_CONTINUE;
 	}
 
 	NET_DBG("DROP: Cannot send NA");
 
-	return -EIO;
+	return NET_DROP;
 
 drop:
 	net_stats_update_ipv6_nd_drop(net_pkt_iface(pkt));
 
-	return -EIO;
+	return NET_DROP;
 
 silent_drop:
 	/* If the event is not really an error then just ignore it and
-	 * return 0 so that icmpv6 module will not complain about it.
+	 * return NET_CONTINUE so that icmpv6 module will not complain about it.
 	 */
 	net_stats_update_ipv6_nd_drop(net_pkt_iface(pkt));
 
-	return 0;
+	net_pkt_cursor_restore(pkt, &backup);
+	return NET_CONTINUE;
 }
 #endif /* CONFIG_NET_IPV6_NBR_CACHE */
 
@@ -1880,11 +1885,11 @@ err:
 	return false;
 }
 
-static int handle_na_input(struct net_icmp_ctx *ctx,
-			   struct net_pkt *pkt,
-			   struct net_icmp_ip_hdr *hdr,
-			   struct net_icmp_hdr *icmp_hdr,
-			   void *user_data)
+static enum net_verdict handle_na_input(struct net_icmp_ctx *ctx,
+					struct net_pkt *pkt,
+					struct net_icmp_ip_hdr *hdr,
+					struct net_icmp_hdr *icmp_hdr,
+					void *user_data)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(na_access,
 					      struct net_icmpv6_na_hdr);
@@ -1896,10 +1901,13 @@ static int handle_na_input(struct net_icmp_ctx *ctx,
 	struct net_icmpv6_na_hdr *na_hdr;
 	struct net_in6_addr na_tgt, na_dst;
 	struct net_if_addr *ifaddr;
+	struct net_pkt_cursor backup;
 
 	if (net_if_flag_is_set(net_pkt_iface(pkt), NET_IF_IPV6_NO_ND)) {
 		goto drop;
 	}
+
+	net_pkt_cursor_backup(pkt, &backup);
 
 	na_hdr = (struct net_icmpv6_na_hdr *)net_pkt_get_data(pkt, &na_access);
 	if (!na_hdr) {
@@ -1993,12 +2001,13 @@ static int handle_na_input(struct net_icmp_ctx *ctx,
 		net_stats_update_ipv6_nd_drop(net_pkt_iface(pkt));
 	}
 
-	return 0;
+	net_pkt_cursor_restore(pkt, &backup);
+	return NET_CONTINUE;
 
 drop:
 	net_stats_update_ipv6_nd_drop(net_pkt_iface(pkt));
 
-	return -EIO;
+	return NET_DROP;
 }
 
 int net_ipv6_send_ns(struct net_if *iface,
@@ -2613,11 +2622,11 @@ static inline bool handle_ra_rdnss(struct net_pkt *pkt, uint8_t len)
 }
 #endif
 
-static int handle_ra_input(struct net_icmp_ctx *ctx,
-			   struct net_pkt *pkt,
-			   struct net_icmp_ip_hdr *hdr,
-			   struct net_icmp_hdr *icmp_hdr,
-			   void *user_data)
+static enum net_verdict handle_ra_input(struct net_icmp_ctx *ctx,
+					struct net_pkt *pkt,
+					struct net_icmp_ip_hdr *hdr,
+					struct net_icmp_hdr *icmp_hdr,
+					void *user_data)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ra_access,
 					      struct net_icmpv6_ra_hdr);
@@ -2631,12 +2640,15 @@ static int handle_ra_input(struct net_icmp_ctx *ctx,
 	uint32_t mtu, reachable_time, retrans_timer;
 	uint16_t router_lifetime;
 	struct net_in6_addr ra_src;
+	struct net_pkt_cursor backup;
 
 	ARG_UNUSED(user_data);
 
 	if (net_if_flag_is_set(net_pkt_iface(pkt), NET_IF_IPV6_NO_ND)) {
 		goto drop;
 	}
+
+	net_pkt_cursor_backup(pkt, &backup);
 
 	ra_hdr = (struct net_icmpv6_ra_hdr *)net_pkt_get_data(pkt, &ra_access);
 	if (!ra_hdr) {
@@ -2847,21 +2859,22 @@ static int handle_ra_input(struct net_icmp_ctx *ctx,
 	/* Cancel the RS timer on iface */
 	net_if_stop_rs(net_pkt_iface(pkt));
 
-	return 0;
+	net_pkt_cursor_restore(pkt, &backup);
+	return NET_CONTINUE;
 
 drop:
 	net_stats_update_ipv6_nd_drop(net_pkt_iface(pkt));
 
-	return -EIO;
+	return NET_DROP;
 }
 #endif /* CONFIG_NET_IPV6_ND */
 
 #if defined(CONFIG_NET_IPV6_PMTU)
 /* Packet format described in RFC 4443 ch 3.2. Packet Too Big Message */
-static int handle_ptb_input(struct net_icmp_ctx *ctx,
-			    struct net_pkt *pkt,
-			    struct net_icmp_ip_hdr *hdr,
-			    struct net_icmp_hdr *icmp_hdr,
+static enum net_verdict handle_ptb_input(struct net_icmp_ctx *ctx,
+					 struct net_pkt *pkt,
+					 struct net_icmp_ip_hdr *hdr,
+					 struct net_icmp_hdr *icmp_hdr,
 			    void *user_data)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ptb_access, struct net_icmpv6_ptb);
@@ -2872,10 +2885,13 @@ static int handle_ptb_input(struct net_icmp_ctx *ctx,
 		.sin6_family = NET_AF_INET6,
 	};
 	struct net_pmtu_entry *entry;
+	struct net_pkt_cursor backup;
 	uint32_t mtu;
 	int ret;
 
 	ARG_UNUSED(user_data);
+
+	net_pkt_cursor_backup(pkt, &backup);
 
 	ptb_hdr = (struct net_icmpv6_ptb *)net_pkt_get_data(pkt, &ptb_access);
 	if (!ptb_hdr) {
@@ -2932,19 +2948,21 @@ static int handle_ptb_input(struct net_icmp_ctx *ctx,
 			net_sprint_ipv6_addr(&ip_hdr->src), ret, mtu);
 	}
 
-	return 0;
+	net_pkt_cursor_restore(pkt, &backup);
+	return NET_CONTINUE;
 drop:
 	net_stats_update_ipv6_pmtu_drop(net_pkt_iface(pkt));
 
-	return -EIO;
+	return NET_DROP;
 
 silent_drop:
 	/* If the event is not really an error then just ignore it and
-	 * return 0 so that icmpv6 module will not complain about it.
+	 * return NET_CONTINUE so that icmpv6 module will not complain about it.
 	 */
 	net_stats_update_ipv6_pmtu_drop(net_pkt_iface(pkt));
 
-	return 0;
+	net_pkt_cursor_restore(pkt, &backup);
+	return NET_CONTINUE;
 }
 #endif /* CONFIG_NET_IPV6_PMTU */
 

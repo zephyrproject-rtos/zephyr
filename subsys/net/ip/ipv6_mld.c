@@ -446,19 +446,22 @@ drop:
 #define dbg_addr_recv(pkt_str, src, dst)	\
 	dbg_addr("Received", pkt_str, src, dst)
 
-static int handle_mld_query(struct net_icmp_ctx *ctx,
-			    struct net_pkt *pkt,
-			    struct net_icmp_ip_hdr *hdr,
-			    struct net_icmp_hdr *icmp_hdr,
-			    void *user_data)
+static enum net_verdict handle_mld_query(struct net_icmp_ctx *ctx,
+					 struct net_pkt *pkt,
+					 struct net_icmp_ip_hdr *hdr,
+					 struct net_icmp_hdr *icmp_hdr,
+					 void *user_data)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(mld_access,
 					      struct net_icmpv6_mld_query);
 	struct net_ipv6_hdr *ip_hdr = hdr->ipv6;
 	uint16_t length = net_pkt_get_len(pkt);
 	struct net_icmpv6_mld_query *mld_query;
+	struct net_pkt_cursor backup;
 	uint16_t pkt_len;
 	int ret = -EIO;
+
+	net_pkt_cursor_backup(pkt, &backup);
 
 	if (net_pkt_remaining_data(pkt) < sizeof(struct net_icmpv6_mld_query)) {
 		/* MLDv1 query, drop. */
@@ -498,12 +501,20 @@ static int handle_mld_query(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
-	return send_mld_report(net_pkt_iface(pkt));
+	ret = send_mld_report(net_pkt_iface(pkt));
+	if (ret < 0) {
+		NET_DBG("DROP: failed to send MLD report (%d)", ret);
+		goto drop;
+	}
+
+	net_pkt_cursor_restore(pkt, &backup);
+	return NET_CONTINUE;
 
 drop:
 	net_stats_update_ipv6_mld_drop(net_pkt_iface(pkt));
 
-	return ret;
+	net_pkt_cursor_restore(pkt, &backup);
+	return ret < 0 ? NET_DROP : NET_CONTINUE;
 }
 
 void net_ipv6_mld_init(void)

@@ -120,11 +120,11 @@ NET_DEVICE_INIT(net_icmpv6_test, "net_icmpv6_test",
 		&net_icmpv6_if_api, DUMMY_L2,
 		NET_L2_GET_CTX_TYPE(DUMMY_L2), 127);
 
-static int handle_test_msg(struct net_icmp_ctx *ctx,
-			   struct net_pkt *pkt,
-			   struct net_icmp_ip_hdr *hdr,
-			   struct net_icmp_hdr *icmp_hdr,
-			   void *user_data)
+static enum net_verdict handle_test_msg(struct net_icmp_ctx *ctx,
+					struct net_pkt *pkt,
+					struct net_icmp_ip_hdr *hdr,
+					struct net_icmp_hdr *icmp_hdr,
+					void *user_data)
 {
 	ARG_UNUSED(ctx);
 	ARG_UNUSED(hdr);
@@ -132,19 +132,17 @@ static int handle_test_msg(struct net_icmp_ctx *ctx,
 	ARG_UNUSED(user_data);
 
 	struct net_buf *last = net_buf_frag_last(pkt->buffer);
-	int ret;
 
 	if (last->len != ICMPV6_MSG_SIZE) {
 		handler_status = -EINVAL;
-		ret = -EINVAL;
-	} else {
-		handler_status = 0;
-		ret = 0;
+		handler_called++;
+		return NET_DROP;
 	}
 
+	handler_status = 0;
 	handler_called++;
 
-	return ret;
+	return NET_OK;
 }
 
 static struct net_pkt *create_pkt(uint8_t *data, int len,

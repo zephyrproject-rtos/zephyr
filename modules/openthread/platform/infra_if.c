@@ -239,9 +239,9 @@ static void handle_ra_from_ot(const uint8_t *buffer, uint16_t buffer_length)
 	}
 }
 
-static int handle_icmp6_input(struct net_icmp_ctx *ctx, struct net_pkt *pkt,
-			      struct net_icmp_ip_hdr *hdr,
-			      struct net_icmp_hdr *icmp_hdr, void *user_data)
+static enum net_verdict handle_icmp6_input(struct net_icmp_ctx *ctx, struct net_pkt *pkt,
+					   struct net_icmp_ip_hdr *hdr,
+					   struct net_icmp_hdr *icmp_hdr, void *user_data)
 {
 	uint16_t length = net_pkt_get_len(pkt);
 	struct otbr_msg_ctx *req = NULL;
@@ -264,10 +264,10 @@ static int handle_icmp6_input(struct net_icmp_ctx *ctx, struct net_pkt *pkt,
 
 exit:
 	if (error == OT_ERROR_NONE) {
-		return 0;
+		return NET_CONTINUE;
 	}
 
-	return -1;
+	return NET_DROP;
 }
 
 static void infra_if_handle_backbone_icmp6(struct otbr_msg_ctx *msg_ctx_ptr)

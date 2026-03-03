@@ -810,11 +810,11 @@ ZTEST(net_chksum_offload, test_tx_chksum_offload_enabled_test_v4_udp_frag)
 	test_tx_chksum_udp_frag(NET_AF_INET, true);
 }
 
-static int dummy_icmp_handler(struct net_icmp_ctx *ctx,
-			      struct net_pkt *pkt,
-			      struct net_icmp_ip_hdr *hdr,
-			      struct net_icmp_hdr *icmp_hdr,
-			      void *user_data)
+static enum net_verdict dummy_icmp_handler(struct net_icmp_ctx *ctx,
+					   struct net_pkt *pkt,
+					   struct net_icmp_ip_hdr *hdr,
+					   struct net_icmp_hdr *icmp_hdr,
+					   void *user_data)
 {
 	ARG_UNUSED(ctx);
 	ARG_UNUSED(pkt);
@@ -822,7 +822,7 @@ static int dummy_icmp_handler(struct net_icmp_ctx *ctx,
 	ARG_UNUSED(icmp_hdr);
 	ARG_UNUSED(user_data);
 
-	return 0;
+	return NET_OK;
 }
 
 static void test_icmp_init(net_sa_family_t family, bool offloaded,
@@ -1162,11 +1162,11 @@ ZTEST(net_chksum_offload, test_tx_chksum_offload_enabled_test_v4_udp_frag_bad)
 	test_rx_chksum_udp_frag_bad(NET_AF_INET, true);
 }
 
-static int icmp_handler(struct net_icmp_ctx *ctx,
-			struct net_pkt *pkt,
-			struct net_icmp_ip_hdr *hdr,
-			struct net_icmp_hdr *icmp_hdr,
-			void *user_data)
+static enum net_verdict icmp_handler(struct net_icmp_ctx *ctx,
+				     struct net_pkt *pkt,
+				     struct net_icmp_ip_hdr *hdr,
+				     struct net_icmp_hdr *icmp_hdr,
+				     void *user_data)
 {
 	struct k_sem *wait_data = user_data;
 
@@ -1196,7 +1196,7 @@ static int icmp_handler(struct net_icmp_ctx *ctx,
 
 	k_sem_give(wait_data);
 
-	return 0;
+	return NET_OK;
 }
 
 static void test_rx_chksum_icmp_frag(net_sa_family_t family, bool offloaded)

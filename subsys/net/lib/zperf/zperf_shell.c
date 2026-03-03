@@ -761,11 +761,11 @@ static void tcp_upload_cb(enum zperf_status status,
 	}
 }
 
-static int ping_handler(struct net_icmp_ctx *ctx,
-			struct net_pkt *pkt,
-			struct net_icmp_ip_hdr *ip_hdr,
-			struct net_icmp_hdr *icmp_hdr,
-			void *user_data)
+static enum net_verdict ping_handler(struct net_icmp_ctx *ctx,
+				     struct net_pkt *pkt,
+				     struct net_icmp_ip_hdr *ip_hdr,
+				     struct net_icmp_hdr *icmp_hdr,
+				     void *user_data)
 {
 	struct k_sem *sem_wait = user_data;
 
@@ -776,7 +776,7 @@ static int ping_handler(struct net_icmp_ctx *ctx,
 
 	k_sem_give(sem_wait);
 
-	return 0;
+	return NET_CONTINUE;
 }
 
 static void send_ping(const struct shell *sh,

@@ -96,20 +96,23 @@ int net_icmpv6_create(struct net_pkt *pkt, uint8_t icmp_type, uint8_t icmp_code)
 	return net_pkt_set_data(pkt, &icmp_access);
 }
 
-static int icmpv6_handle_echo_request(struct net_icmp_ctx *ctx,
-				      struct net_pkt *pkt,
-				      struct net_icmp_ip_hdr *hdr,
-				      struct net_icmp_hdr *icmp_hdr,
-				      void *user_data)
+static enum net_verdict icmpv6_handle_echo_request(struct net_icmp_ctx *ctx,
+						   struct net_pkt *pkt,
+						   struct net_icmp_ip_hdr *hdr,
+						   struct net_icmp_hdr *icmp_hdr,
+						   void *user_data)
 {
 	struct net_pkt *reply = NULL;
 	struct net_ipv6_hdr *ip_hdr = hdr->ipv6;
 	struct net_in6_addr req_src, req_dst;
 	const struct net_in6_addr *src;
+	struct net_pkt_cursor backup;
 	int16_t payload_len;
 
 	ARG_UNUSED(user_data);
 	ARG_UNUSED(icmp_hdr);
+
+	net_pkt_cursor_backup(pkt, &backup);
 
 	net_ipv6_addr_copy_raw(req_src.s6_addr, ip_hdr->src);
 	net_ipv6_addr_copy_raw(req_dst.s6_addr, ip_hdr->dst);
@@ -179,7 +182,8 @@ static int icmpv6_handle_echo_request(struct net_icmp_ctx *ctx,
 
 	net_stats_update_icmp_sent(net_pkt_iface(reply));
 
-	return 0;
+	net_pkt_cursor_restore(pkt, &backup);
+	return NET_CONTINUE;
 
 drop:
 	if (reply) {
@@ -188,7 +192,7 @@ drop:
 
 	net_stats_update_icmp_drop(net_pkt_iface(pkt));
 
-	return -EIO;
+	return NET_DROP;
 }
 
 int net_icmpv6_send_error(struct net_pkt *orig, uint8_t type, uint8_t code,
@@ -349,7 +353,7 @@ enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmp_access,
 					      struct net_icmp_hdr);
 	struct net_icmp_hdr *icmp_hdr;
-	int ret;
+	enum net_verdict verdict;
 
 	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data(pkt, &icmp_access);
 	if (!icmp_hdr) {
@@ -374,9 +378,10 @@ enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 
 	net_stats_update_icmp_recv(net_pkt_iface(pkt));
 
-	ret = net_icmp_call_ipv6_handlers(pkt, ip_hdr, icmp_hdr);
-	if (ret < 0 && ret != -ENOENT) {
-		NET_ERR("ICMPv6 handling failure (%d)", ret);
+	verdict = net_icmp_call_ipv6_handlers(pkt, ip_hdr, icmp_hdr);
+	if (verdict == NET_DROP) {
+		NET_DBG("ICMPv6 handling failure");
+		goto drop;
 	}
 
 	net_pkt_unref(pkt);
