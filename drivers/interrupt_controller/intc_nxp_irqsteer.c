@@ -507,7 +507,7 @@ static void irqstr_l1_irq_enable_disable(uint32_t irq,
 					 struct irqsteer_dispatcher *disp,
 					 bool enable)
 {
-	const struct irqsteer_config *cfg;
+	const struct irqsteer_config *cfg = NULL;
 
 	if (disp) {
 		cfg = disp->dev->config;
