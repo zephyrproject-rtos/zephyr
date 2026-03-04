@@ -1181,16 +1181,17 @@ static void unicast_client_ep_streaming_state(struct bt_bap_ep *ep, struct net_b
 
 	LOG_DBG("dir %s cig 0x%02x cis 0x%02x", bt_audio_dir_str(ep->dir), ep->cig_id, ep->cis_id);
 
-	/* Setup the ISO data path when the stream is started. We could do it earlier when the CIS
-	 * is connected, but then we would just receive audio data that we would then just discard
-	 */
-	bt_bap_setup_iso_data_path(stream);
-
-	/* Notify upper layer
-	 *
-	 * If the state did not change then only the metadata was changed
+	/* If there is a state change (i.e. going from non-streaming to streaming) we setup the data
+	 * path and notify the upper layers with the started callback, and if there is no state
+	 * change then that indicates that it is just a metadata update
 	 */
 	if (state_changed) {
+		/* Setup the ISO data path when the stream is started. We could do it earlier when
+		 * the CIS is connected, but then we would just receive audio data that we would
+		 * then just discard
+		 */
+		bt_bap_setup_iso_data_path(stream);
+
 		if (stream->ops != NULL && stream->ops->started != NULL) {
 			stream->ops->started(stream);
 		} else {
