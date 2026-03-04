@@ -347,8 +347,8 @@ static int
 broadcast_source_setup_stream(uint8_t index, struct bt_bap_stream *stream,
 			      const struct bt_audio_codec_cfg *subgroup_codec_cfg,
 			      const struct bt_bap_broadcast_source_stream_param *stream_param,
-			      struct bt_bap_qos_cfg *qos, struct bt_bap_broadcast_source *source,
-			      uint8_t id)
+			      const struct bt_bap_qos_cfg *qos,
+			      struct bt_bap_broadcast_source *source, uint8_t id)
 {
 	struct bt_bap_iso *iso;
 	struct bt_bap_ep *ep;
@@ -766,7 +766,7 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_param *param,
 				   struct bt_bap_broadcast_source **out_source)
 {
 	struct bt_bap_broadcast_source *source;
-	struct bt_bap_qos_cfg *qos;
+	const struct bt_bap_qos_cfg *qos;
 	size_t stream_count;
 	uint8_t index;
 	int err;
@@ -993,7 +993,7 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 {
 	struct bt_bap_broadcast_subgroup *subgroup = NULL;
 	enum bt_bap_ep_state broadcast_state;
-	struct bt_bap_qos_cfg *qos;
+	const struct bt_bap_qos_cfg *qos;
 
 	if (source == NULL) {
 		LOG_DBG("source is NULL");
