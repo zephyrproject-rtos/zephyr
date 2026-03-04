@@ -203,12 +203,8 @@ static int mc_cgm_clock_control_on(const struct device *dev, clock_control_subsy
 		CLOCK_EnableClock(kCLOCK_Pit2Clk);
 		break;
 #endif
-	default:
-		return -ENOTSUP;
-	}
 
 #if defined(CONFIG_COMPARATOR_NXP_LPCMP)
-	switch ((uint32_t)sub_system) {
 	case MCUX_CMP0_CLK:
 		CLOCK_EnableClock(kCLOCK_Lpcmp0);
 		break;
@@ -222,13 +218,9 @@ static int mc_cgm_clock_control_on(const struct device *dev, clock_control_subsy
 		CLOCK_EnableClock(kCLOCK_Lpcmp2);
 		break;
 #endif /* FSL_FEATURE_SOC_LPCMP_COUNT > 2U */
-	default:
-		break;
-	}
 #endif /* CONFIG_COMPARATOR_NXP_HSCMP */
 
 #if defined(CONFIG_ADC_NXP_SAR_ADC)
-	switch ((uint32_t)sub_system) {
 	case MCUX_ADC0_CLK:
 		CLOCK_EnableClock(kCLOCK_Adc0);
 		break;
@@ -240,16 +232,16 @@ static int mc_cgm_clock_control_on(const struct device *dev, clock_control_subsy
 		CLOCK_EnableClock(kCLOCK_Adc2);
 		break;
 #endif /* FSL_FEATURE_SOC_ADC_COUNT > 2U */
-	default:
-		break;
-	}
 #endif /* CONFIG_ADC_NXP_SAR_ADC */
 
 #if defined(CONFIG_NXP_TEMPSENSE)
-	if ((uint32_t)sub_system == MCUX_TEMPSENSE_CLK) {
+	case MCUX_TEMPSENSE_CLK:
 		CLOCK_EnableClock(kCLOCK_TempSensor);
-	}
+		break;
 #endif /* CONFIG_NXP_TEMPSENSE */
+	default:
+		return -ENOTSUP;
+	}
 
 	return 0;
 }
