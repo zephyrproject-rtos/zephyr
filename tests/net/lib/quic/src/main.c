@@ -1085,6 +1085,7 @@ ZTEST(net_socket_quic, test_15_header_protection_rfc9001)
 }
 
 #define MAX_BUF_SIZE 1024
+#define POLL_TIMEOUT_MS 1000
 
 struct config {
 	int sock;             /* Server listening socket */
@@ -1309,7 +1310,7 @@ static void quic_server_and_client(const char *server, const char *client,
 					int poll_ret;
 					int drain_ret;
 
-					poll_ret = zsock_poll(&pfd, 1, 1000);
+					poll_ret = zsock_poll(&pfd, 1, POLL_TIMEOUT_MS);
 					zassert_true(poll_ret >= 0, "poll failed (%d)", -errno);
 
 					/* Drain any incoming data while waiting to send.
@@ -1351,7 +1352,7 @@ static void quic_server_and_client(const char *server, const char *client,
 						.events = ZSOCK_POLLIN,
 					};
 
-					ret = zsock_poll(&pfd, 1, 1000);
+					ret = zsock_poll(&pfd, 1, POLL_TIMEOUT_MS);
 					zassert_true(ret >= 0, "poll failed (%d)", -errno);
 					continue;
 				}
@@ -1582,6 +1583,366 @@ ZTEST(net_socket_quic, test_19_quic_check_retransmissions)
 	quic_server_and_client(LOCAL_ADDR_IPV4_STR, REMOTE_ADDR_IPV4_STR,
 			       tx_buf, sizeof(tx_buf), rx_buf, sizeof(rx_buf),
 			       MAX_BUF_SIZE);
+}
+
+static void server_uni_thread(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct config *data = (struct config *)p1;
+	int server_sock = data->sock;
+	int connected_sock;
+	struct net_sockaddr_storage client_addr;
+	net_socklen_t client_addr_len = sizeof(client_addr);
+	static uint8_t buf[MAX_BUF_SIZE];
+	ssize_t len = 0;
+	int stream_recv_sock, stream_send_sock = -1, ret;
+
+	k_sem_give(&data->sem);
+
+	struct zsock_pollfd pfd = {
+		.fd = server_sock,
+		.events = ZSOCK_POLLIN,
+	};
+
+	/* First accept the incoming client connection */
+	ret = zsock_poll(&pfd, 1, SYS_FOREVER_MS);
+	if (!(pfd.revents & ZSOCK_POLLIN)) {
+		data->error = -ETIMEDOUT;
+		LOG_DBG("Poll error while waiting for client connection");
+		return;
+	}
+
+	connected_sock = zsock_accept(server_sock,
+				      (struct net_sockaddr *)&client_addr,
+				      &client_addr_len);
+	if (connected_sock < 0) {
+		data->error = errno;
+		LOG_DBG("Connection accept failed (%d)", -data->error);
+		goto out;
+	}
+
+	data->connected_sock = connected_sock;
+
+	/* Wait that the client creates a stream */
+	pfd.fd = connected_sock;
+	pfd.events = ZSOCK_POLLIN;
+	pfd.revents = 0;
+
+	ret = zsock_poll(&pfd, 1, SYS_FOREVER_MS);
+	if (!(pfd.revents & ZSOCK_POLLIN)) {
+		data->error = -ETIMEDOUT;
+		LOG_DBG("Poll error while waiting for client stream");
+		goto out;
+	}
+
+	/* Then accept the incoming client stream */
+	stream_recv_sock = zsock_accept(connected_sock,
+					(struct net_sockaddr *)&client_addr,
+					&client_addr_len);
+	if (stream_recv_sock < 0) {
+		data->error = errno;
+		LOG_DBG("Stream accept failed (%d)", -data->error);
+		goto out;
+	}
+
+	data->stream_recv_sock = stream_recv_sock;
+
+	/* Now open a server unidirectional stream on the same connection
+	 * by using the accepted stream socket to derive the endpoint
+	 */
+	stream_send_sock = quic_stream_open(connected_sock, QUIC_STREAM_SERVER,
+					    QUIC_STREAM_UNIDIRECTIONAL, 0);
+	if (stream_send_sock < 0) {
+		LOG_ERR("Failed to open server stream send sock (%d)",
+			stream_send_sock);
+		data->error = stream_send_sock;
+		goto out;
+	}
+
+	while (true) {
+		len = zsock_recv(stream_recv_sock, buf, sizeof(buf), 0);
+		if (len == 0) {
+			/* FIN received — client closed its send side cleanly */
+			break;
+		}
+
+		if (len < 0) {
+			data->error = -errno;
+			LOG_DBG("Stream recv failed (%d)", data->error);
+			break;
+		}
+
+		ret = zsock_send(stream_send_sock, buf, len, 0);
+		if (ret < 0) {
+			data->error = -errno;
+			LOG_DBG("Stream send failed (%d)", data->error);
+			break;
+		}
+
+		k_msleep(10);
+
+		if (data->test_done) {
+			break;
+		}
+	}
+
+out:
+	if (stream_send_sock >= 0) {
+		ret = zsock_close(stream_send_sock);
+		if (ret < 0) {
+			ret = -errno;
+			LOG_ERR("Failed to close server stream send sock (%d)", ret);
+			if (data->error == 0) {
+				data->error = ret;
+			}
+		}
+	}
+}
+
+static void quic_server_and_client_uni(const char *server, const char *client,
+				       char *tx_buf, size_t tx_buf_len,
+				       char *rx_buf, size_t rx_buf_len,
+				       size_t batch_size)
+{
+	/* Implement a test that sets up a QUIC server and client
+	 * using the socket API, performs a handshake, and exchanges
+	 * some data via unidirectional streams. This would be an
+	 * end-to-end test of the QUIC implementation.
+	 */
+	struct net_sockaddr_storage server_addr;
+	struct net_sockaddr_storage client_addr;
+	struct net_sockaddr_storage peer_addr;
+	sec_tag_t server_sec_tags[] = {
+		SERVER_CERTIFICATE_TAG,
+	};
+	sec_tag_t client_sec_tags[] = {
+		CA_CERTIFICATE_TAG,
+	};
+	static const char * const alpn_list[] = {
+		"test-quic",
+		NULL
+	};
+
+	int server_sock, client_sock, server_connected_sock;
+	int client_stream_send_sock, client_stream_recv_sock;
+	int server_stream_recv_sock;
+	net_socklen_t peer_addr_len = sizeof(peer_addr);
+	k_tid_t tid;
+	int counter = 5;
+	int ret;
+
+	static K_THREAD_STACK_DEFINE(server_thread_stack, STACK_SIZE);
+	static struct k_thread server_thread_data;
+
+	static struct config data;
+
+	ret = k_sem_init(&data.sem, 0, 1);
+	zassert_ok(ret, "Failed to initialize semaphore (%d)", ret);
+
+	ret = net_ipaddr_parse(server, strlen(server),
+			       (struct net_sockaddr *)&server_addr);
+	zassert_true(ret, "Failed to parse server IP address %s (%d)",
+		     server, ret);
+
+	ret = net_ipaddr_parse(client, strlen(client),
+			       (struct net_sockaddr *)&client_addr);
+	zassert_true(ret, "Failed to parse client IP address %s (%d)",
+		     client, ret);
+
+	prepare_quic_socket(&server_sock,
+			    NULL,
+			    (const struct net_sockaddr *)&server_addr);
+	prepare_quic_socket(&client_sock,
+			    (const struct net_sockaddr *)&server_addr,
+			    (const struct net_sockaddr *)&client_addr);
+
+	zassert_true(server_sock >= 0, "Failed to create server socket");
+	zassert_true(client_sock >= 0, "Failed to create client socket");
+
+	setup_quic_certs(server_sock, server_sec_tags, ARRAY_SIZE(server_sec_tags));
+	setup_alpn(server_sock, alpn_list, ARRAY_SIZE(alpn_list));
+
+	data.sock = server_sock;
+	data.counter = counter * ((tx_buf_len + batch_size - 1) / batch_size);
+	data.error = 0;
+	data.stream_recv_sock = -1;
+	data.connected_sock = -1;
+	data.test_done = false;
+
+	/* Start listening on the server socket in a separate thread */
+	tid = k_thread_create(&server_thread_data, server_thread_stack,
+			      K_THREAD_STACK_SIZEOF(server_thread_stack),
+			      server_uni_thread, &data, NULL, NULL,
+			      K_PRIO_PREEMPT(1), 0, K_FOREVER);
+
+	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+		char name[MAX_NAME_LEN];
+
+		snprintk(name, sizeof(name), "quic%d_uni[%d]",
+			 server_addr.ss_family == NET_AF_INET6 ? 6 : 4,
+			 server_sock);
+		k_thread_name_set(&server_thread_data, name);
+	}
+
+	k_thread_start(tid);
+
+	ret = k_sem_take(&data.sem, K_FOREVER);
+	zassert_ok(ret, "Failed to take semaphore (%d)", ret);
+
+	setup_quic_certs(client_sock, client_sec_tags, ARRAY_SIZE(client_sec_tags));
+	setup_alpn(client_sock, alpn_list, ARRAY_SIZE(alpn_list));
+
+	/* Create a stream on the client and send some data to server */
+	client_stream_send_sock = quic_stream_open(client_sock, QUIC_STREAM_CLIENT,
+						   QUIC_STREAM_UNIDIRECTIONAL, 0);
+	zassert_true(client_stream_send_sock >= 0, "Failed to open client stream send sock");
+
+	/* Client recv socket will be set once we accept the server's response stream */
+	client_stream_recv_sock = -1;
+
+	for (int i = 0; i < counter; i++) {
+		int sent = tx_buf_len;
+		int idx = 0;
+
+		do {
+			int to_send = MIN((int)batch_size, sent);
+			int actually_sent;
+			int recvd;
+
+			/* Send data on client's unidirectional stream */
+			while (true) {
+				ret = zsock_send(client_stream_send_sock, tx_buf + idx, to_send, 0);
+				if (ret > 0) {
+					break;
+				}
+				if (errno == EAGAIN || errno == EWOULDBLOCK) {
+					struct zsock_pollfd pfd = {
+						.fd = client_sock,
+						.events = ZSOCK_POLLIN,
+					};
+					int poll_ret;
+
+					poll_ret = zsock_poll(&pfd, 1, POLL_TIMEOUT_MS);
+					zassert_true(poll_ret >= 0, "poll failed (%d)", -errno);
+
+					/* Try to accept server's response stream if not yet */
+					if (client_stream_recv_sock < 0) {
+						client_stream_recv_sock = zsock_accept(client_sock,
+							(struct net_sockaddr *)&peer_addr,
+							&peer_addr_len);
+					}
+					continue;
+				}
+
+				zassert_true(false, "Failed to send data on client stream %d (%d)",
+					     client_stream_send_sock, -errno);
+			}
+
+			actually_sent = ret;
+
+			/* Now try to accept server's response stream if not yet done */
+			if (client_stream_recv_sock < 0) {
+				client_stream_recv_sock = zsock_accept(client_sock,
+					(struct net_sockaddr *)&peer_addr,
+					&peer_addr_len);
+				zassert_true(client_stream_recv_sock >= 0,
+					     "Failed to accept client stream recv sock");
+			}
+
+			/* Receive echoed data from server's unidirectional stream */
+			recvd = 0;
+			while (recvd < actually_sent) {
+				ret = zsock_recv(client_stream_recv_sock, rx_buf + idx + recvd,
+						 actually_sent - recvd, 0);
+				if (ret < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+					struct zsock_pollfd pfd = {
+						.fd = client_stream_recv_sock,
+						.events = ZSOCK_POLLIN,
+					};
+
+					ret = zsock_poll(&pfd, 1, POLL_TIMEOUT_MS);
+					zassert_true(ret >= 0, "poll failed (%d)", -errno);
+					continue;
+				}
+				zassert_true(ret > 0,
+					     "Failed to recv data on client stream %d (%d)",
+					     client_stream_recv_sock, -errno);
+				recvd += ret;
+			}
+
+			zassert_mem_equal(rx_buf + idx, tx_buf + idx, actually_sent,
+					  "Data mismatch on client stream %d",
+					  client_stream_recv_sock);
+
+			idx  += actually_sent;
+			sent -= actually_sent;
+
+			k_msleep(10);
+		} while (sent > 0);
+
+		zassert_mem_equal(rx_buf, tx_buf, MIN(tx_buf_len, rx_buf_len),
+				  "Received data does not match sent data on "
+				  "client stream %d",
+				  client_stream_recv_sock);
+	}
+
+	data.test_done = true;
+
+	memset(rx_buf, 0, rx_buf_len);
+	memset(tx_buf, 0, tx_buf_len);
+
+	/* We could also use zsock_close() here to close the stream and
+	 * the connection.
+	 */
+	ret = quic_stream_close(client_stream_recv_sock);
+	zassert_equal(ret, 0, "Failed to close client recv stream %d (%d)",
+		      client_stream_recv_sock, ret);
+
+	ret = quic_stream_close(client_stream_send_sock);
+	zassert_equal(ret, 0, "Failed to close client send stream %d (%d)",
+		      client_stream_send_sock, ret);
+
+	ret = k_thread_join(tid, K_MSEC(5000));
+	zassert_equal(ret, 0, "Cannot join thread (%d)", ret);
+
+	server_stream_recv_sock = data.stream_recv_sock;
+	server_connected_sock = data.connected_sock;
+
+	zassert_equal(data.error, 0, "Server thread reported error (%d)", data.error);
+
+	ret = quic_stream_close(server_stream_recv_sock);
+	zassert_equal(ret, 0, "Failed to close server stream %d (%d)",
+		      server_stream_recv_sock, ret);
+
+	ret = quic_connection_close(server_connected_sock);
+	zassert_equal(ret, 0, "Failed to close server connection (%d)", ret);
+
+	ret = quic_connection_close(client_sock);
+	zassert_equal(ret, 0, "Failed to close client connection (%d)", ret);
+
+	ret = quic_connection_close(server_sock);
+	zassert_equal(ret, 0, "Failed to close server connection (%d)", ret);
+}
+
+ZTEST(net_socket_quic, test_20_quic_unidirectional_streams)
+{
+	static uint8_t tx_buf[sizeof(LOREM_IPSUM_LONG)];
+	static uint8_t rx_buf[sizeof(LOREM_IPSUM_LONG)];
+	int ret;
+
+	/* Disable packet drop for this test. We focus is on unidirectional stream
+	 * functionality, not retransmission handling under packet loss.
+	 */
+	ret = loopback_set_packet_drop_ratio(0.0);
+	zassert_ok(ret, "Failed to set packet drop ratio (%d)", ret);
+
+	memcpy(tx_buf, LOREM_IPSUM_LONG, sizeof(LOREM_IPSUM_LONG));
+
+	quic_server_and_client_uni(LOCAL_ADDR_IPV4_STR, REMOTE_ADDR_IPV4_STR,
+				   tx_buf, sizeof(tx_buf), rx_buf, sizeof(rx_buf),
+				   MAX_BUF_SIZE);
 }
 
 ZTEST_SUITE(net_socket_quic, NULL, setup, before, after, NULL);
