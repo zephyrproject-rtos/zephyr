@@ -3491,6 +3491,14 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 		    NET_STATS_PROMETHEUS(NET_IF_GET(dev_id, sfx),	\
 					 dev_id, sfx);))
 
+#ifdef CONFIG_NET_INIT_PRIO
+#define NET_IF_INIT_PRIO_CHECK(prio)					\
+	BUILD_ASSERT((prio) < CONFIG_NET_INIT_PRIO,			\
+		     "Device initialization must occur before network "	\
+		      "initialization");
+#else
+#define NET_IF_INIT_PRIO_CHECK(prio)
+#endif /* CONFIG_NET_INIT_PRIO */
 
 /** @endcond */
 
@@ -3515,7 +3523,8 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
 			config, POST_KERNEL, prio, api,			\
 			&Z_DEVICE_STATE_NAME(dev_id));			\
 	NET_L2_DATA_INIT(dev_id, instance, l2_ctx_type);		\
-	NET_IF_INIT(dev_id, instance, l2, mtu, NET_IF_MAX_CONFIGS)
+	NET_IF_INIT(dev_id, instance, l2, mtu, NET_IF_MAX_CONFIGS)	\
+	NET_IF_INIT_PRIO_CHECK(prio)
 
 #define Z_NET_DEVICE_INIT(node_id, dev_id, name, init_fn, pm, data,	\
 			  config, prio, api, l2, l2_ctx_type, mtu)	\
