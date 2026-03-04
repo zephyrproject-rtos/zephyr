@@ -4,8 +4,16 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-board_set_debugger_ifnset(jlink)
-board_set_flasher_ifnset(jlink)
+if(CONFIG_BOARD_PHYBOARD_POLIS_MIMX8MM6_M4)
+  board_set_debugger_ifnset(jlink)
+  board_set_flasher_ifnset(jlink)
 
-board_runner_args(jlink "--device=MIMX8MD6_M4")
-include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
+  board_runner_args(jlink "--device=MIMX8MD6_M4")
+  include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
+endif()
+
+if(CONFIG_SOC_MIMX8MM6_A53)
+  board_runner_args(jlink "--device=MIMX8MM6_A53_0" "--no-reset" "--flash-sram")
+
+  include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
+endif()
