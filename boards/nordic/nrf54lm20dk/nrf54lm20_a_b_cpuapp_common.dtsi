@@ -24,6 +24,7 @@
 	aliases {
 		mcuboot-button0 = &button0;
 		mcuboot-led0 = &led0;
+		adc = &adc;
 	};
 };
 
@@ -132,6 +133,10 @@ zephyr_udc0: &usbhs {
 		t-exit-dpd = <35000>;
 		reset-gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
 	};
+};
+
+&adc {
+	status = "okay";
 };
 
 /*
