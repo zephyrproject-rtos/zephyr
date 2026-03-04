@@ -93,7 +93,7 @@
 	status = "okay";
 };
 
-&temp {
+temp_sensor: &temp {
 	status = "okay";
 };
 
