@@ -8,6 +8,7 @@ config SOC_SERIES_RTL87X2G
 	select CPU_HAS_FPU
 	select CPU_HAS_ARM_MPU
 	select CLOCK_CONTROL
+	select GEN_ISR_TABLES
 	select DYNAMIC_INTERRUPTS
 	select ARMV8_M_DSP
 	select ARMV8_1_M_MVEI
