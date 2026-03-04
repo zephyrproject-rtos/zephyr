@@ -31,6 +31,7 @@
 		led0 = &green_led_1;
 		led1 = &red_led_2;
 		sw0 = &user_button;
+		watchdog0 = &iwdg;
 	};
 
 	psram: memory@90000000 {
@@ -572,5 +573,9 @@ zephyr_jpegenc: &jpeg {
 };
 
 &rng {
+	status = "okay";
+};
+
+&iwdg {
 	status = "okay";
 };
