@@ -170,6 +170,15 @@ config COAP_CLIENT_TRUNCATE_MSGS
 	  receive network stack notifications about block truncation.
 	  Otherwise it happens silently.
 
+config COAP_CLIENT_MULTICAST
+	bool "CoAP client multicast support"
+	help
+	  Enable multicast request support for the CoAP client. When enabled,
+	  requests can specify a multicast_timeout_ms to receive multiple
+	  responses from different servers within a timeout period.
+
+	  Per RFC 7252, multicast requests are always non-confirmable.
+
 endif # COAP_CLIENT
 
 config COAP_SERVER
