@@ -879,9 +879,15 @@ static inline void add_arm_mmu_region(struct arm_mmu_ptables *ptables,
 				      uint32_t extra_flags)
 {
 	if (region->size || region->attrs) {
+		uintptr_t pa = ROUND_DOWN(region->base_pa, CONFIG_MMU_PAGE_SIZE);
+		uintptr_t va = ROUND_DOWN(region->base_va, CONFIG_MMU_PAGE_SIZE);
+		size_t pa_offset = region->base_pa - pa;
+		size_t size = ROUND_UP(region->size + pa_offset,
+				       CONFIG_MMU_PAGE_SIZE);
+
 		/* MMU not yet active: must use unlocked version */
-		__add_map(ptables, region->name, region->base_pa, region->base_va,
-			  region->size, region->attrs | extra_flags);
+		__add_map(ptables, region->name, pa, va,
+			  size, region->attrs | extra_flags);
 	}
 }
 
