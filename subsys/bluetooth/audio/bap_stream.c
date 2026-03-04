@@ -525,14 +525,6 @@ bool bt_bap_stream_can_disconnect(const struct bt_bap_stream *stream)
 	return false;
 }
 
-static bool bt_bap_stream_is_broadcast(const struct bt_bap_stream *stream)
-{
-	return (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE) &&
-		bt_bap_broadcast_source_has_ep(stream->ep)) ||
-	       (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK) &&
-		bt_bap_broadcast_sink_has_ep(stream->ep));
-}
-
 enum bt_bap_ascs_reason bt_bap_stream_verify_qos(const struct bt_bap_stream *stream,
 						 const struct bt_bap_qos_cfg *qos)
 {
@@ -554,8 +546,6 @@ enum bt_bap_ascs_reason bt_bap_stream_verify_qos(const struct bt_bap_stream *str
 
 void bt_bap_stream_detach(struct bt_bap_stream *stream)
 {
-	const bool is_broadcast = bt_bap_stream_is_broadcast(stream);
-
 	LOG_DBG("stream %p conn %p ep %p", stream, (void *)stream->conn, (void *)stream->ep);
 
 	if (stream->conn != NULL) {
@@ -567,14 +557,6 @@ void bt_bap_stream_detach(struct bt_bap_stream *stream)
 	if (stream->ep != NULL) {
 		stream->ep->stream = NULL;
 		stream->ep = NULL;
-	}
-
-	if (!is_broadcast) {
-		const int err = bt_bap_stream_disconnect(stream);
-
-		if (err != 0) {
-			LOG_DBG("Failed to disconnect stream %p: %d", stream, err);
-		}
 	}
 }
 
