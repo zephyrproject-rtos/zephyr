@@ -395,6 +395,11 @@ static int mc_cgm_get_subsys_rate(const struct device *dev, clock_control_subsys
 		*rate = CLOCK_GetAipsSlowClkFreq();
 		break;
 #endif /* defined(CONFIG_COUNTER_NXP_PIT) */
+#if defined(CONFIG_MCUX_FLEXIO)
+	case MCUX_FLEXIO_CLK:
+		*rate = CLOCK_GetCoreClkFreq();
+		break;
+#endif /* defined(CONFIG_MCUX_FLEXIO) */
 
 	default:
 		return -ENOTSUP;
