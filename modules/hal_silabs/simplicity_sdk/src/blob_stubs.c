@@ -11,6 +11,7 @@
 
 #include <sl_rail.h>
 #include <sl_status.h>
+#include <sl_rail.h>
 
 sl_rail_status_t sl_rail_verify_tx_power_conversion(const struct sl_rail_tx_power_table_config *cfg)
 {
@@ -102,4 +103,32 @@ void HOSTMAILBOX_IRQHandler(void)
 
 void RDMAILBOX_IRQHandler(void)
 {
+}
+
+/* RAIL timer API stubs (e.g. for counter_silabs_protimer when no blobs) */
+sl_rail_time_t sl_rail_get_time(sl_rail_handle_t rail_handle)
+{
+	return 0U;
+}
+
+sl_rail_status_t sl_rail_set_multi_timer(sl_rail_handle_t rail_handle,
+					 sl_rail_multi_timer_t *timer,
+					 sl_rail_time_t expiration_time,
+					 sl_rail_time_mode_t mode,
+					 sl_rail_multi_timer_callback_t callback,
+					 void *user_data)
+{
+	return SL_RAIL_STATUS_NO_ERROR;
+}
+
+sl_rail_status_t sl_rail_cancel_multi_timer(sl_rail_handle_t rail_handle,
+					    sl_rail_multi_timer_t *timer)
+{
+	return SL_RAIL_STATUS_NO_ERROR;
+}
+
+bool sl_rail_is_multi_timer_running(sl_rail_handle_t rail_handle,
+				    sl_rail_multi_timer_t *timer)
+{
+	return false;
 }
