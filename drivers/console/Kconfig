@@ -266,6 +266,15 @@ config POSIX_ARCH_CONSOLE_INIT_PRIORITY
 	help
 	  Device driver initialization priority.
 
+config POSIX_ARCH_CONSOLE_STDOUT_BUF_SIZE
+	int "Standard output buffer size"
+	default 256
+	depends on POSIX_ARCH_CONSOLE
+	help
+	  Size of the buffer used to buffer printk messages before flushing
+	  to the host terminal. Messages are flushed on newline or when the
+	  buffer is full.
+
 config SEMIHOST_CONSOLE
 	bool "Use semihosting for console"
 	select CONSOLE_HAS_DRIVER

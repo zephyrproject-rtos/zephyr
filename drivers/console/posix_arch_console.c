@@ -10,7 +10,7 @@
 #include <zephyr/sys/printk-hooks.h>
 #include <zephyr/sys/libc-hooks.h>
 
-#define _STDOUT_BUF_SIZE 256
+#define _STDOUT_BUF_SIZE CONFIG_POSIX_ARCH_CONSOLE_STDOUT_BUF_SIZE
 static char stdout_buff[_STDOUT_BUF_SIZE];
 static int n_pend; /* Number of pending characters in buffer */
 
