@@ -137,7 +137,11 @@ mikrobus_serial: &flexcomm0 {};
 };
 
 &flexspi {
+	compatible = "nxp,flexspi-mspi-controller";
 	status = "okay";
+	clock-frequency = <DT_FREQ_M(104)>;
+	op-mode = "MSPI_OP_MODE_CONTROLLER";
+	duplex = "MSPI_HALF_DUPLEX";
 	ahb-bufferable;
 	ahb-prefetch;
 	ahb-cacheable;
@@ -148,14 +152,17 @@ mikrobus_serial: &flexcomm0 {};
 
 	/* Winbond external flash */
 	w25q512jvfiq: w25q512jvfiq@0 {
-		compatible = "nxp,imx-flexspi-nor";
+		compatible = "jedec,mspi-nor";
 		reg = <0>;
 		size = <DT_SIZE_M(64 * 8)>;
 		status = "okay";
 		jedec-id = [ef 40 20];
-		erase-block-size = <4096>;
-		write-block-size = <1>;
-		spi-max-frequency = <DT_FREQ_M(104)>;
+		mspi-max-frequency = <DT_FREQ_M(104)>;
+		mspi-io-mode = "MSPI_IO_MODE_SINGLE";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		read-command = <0x03>;
+		write-command = <0x02>;
+		rx-dummy = <0>;
 
 		partitions {
 			compatible = "fixed-partitions";

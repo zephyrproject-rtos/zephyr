@@ -105,6 +105,7 @@ set_variable_ifdef(CONFIG_GPIO_MCUX_RGPIO       CONFIG_MCUX_COMPONENT_driver.rgp
 set_variable_ifdef(CONFIG_I2S_MCUX_SAI          CONFIG_MCUX_COMPONENT_driver.sai)
 set_variable_ifdef(CONFIG_DAI_NXP_SAI           CONFIG_MCUX_COMPONENT_driver.sai)
 set_variable_ifdef(CONFIG_MEMC_MCUX_FLEXSPI     CONFIG_MCUX_COMPONENT_driver.flexspi)
+set_variable_ifdef(CONFIG_MSPI_MCUX_FLEXSPI     CONFIG_MCUX_COMPONENT_driver.flexspi)
 set_variable_ifdef(CONFIG_PWM_MCUX              CONFIG_MCUX_COMPONENT_driver.pwm)
 set_variable_ifdef(CONFIG_VIDEO_MCUX_CSI        CONFIG_MCUX_COMPONENT_driver.csi)
 set_variable_ifdef(CONFIG_WDT_MCUX_IMX_WDOG     CONFIG_MCUX_COMPONENT_driver.wdog01)
@@ -158,6 +159,12 @@ set_variable_ifdef(CONFIG_OPAMP_MCUX_OPAMP          CONFIG_MCUX_COMPONENT_driver
 set_variable_ifdef(CONFIG_OPAMP_MCUX_OPAMP_FAST     CONFIG_MCUX_COMPONENT_driver.opamp_fast)
 set_variable_ifdef(CONFIG_CRC_DRIVER_NXP        CONFIG_MCUX_COMPONENT_driver.crc)
 set_variable_ifdef(CONFIG_CRC_DRIVER_NXP_LPC    CONFIG_MCUX_COMPONENT_driver.lpc_crc)
+
+if(CONFIG_MSPI_MCUX_FLEXSPI AND CONFIG_FLASH_MCUX_FLEXSPI_XIP)
+  zephyr_code_relocate(
+    FILES ${MCUX_SDK_NG_DIR}/drivers/flexspi/fsl_flexspi.c
+    LOCATION ${CONFIG_FLASH_MCUX_FLEXSPI_XIP_MEM}_TEXT)
+endif()
 
 if(NOT CONFIG_SOC_MIMX9596)
   set_variable_ifdef(CONFIG_ETH_NXP_IMX_NETC          CONFIG_MCUX_COMPONENT_driver.netc_switch)
