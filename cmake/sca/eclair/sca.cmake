@@ -186,3 +186,7 @@ add_custom_target(eclair_summary_print ALL
 
 add_dependencies(eclair_report eclair_project_analysis)
 add_dependencies(eclair_summary_print eclair_report)
+
+# Ensure analysis directory is created before running analysis/report targets
+add_dependencies(eclair_project_analysis eclair_setup_analysis_dir)
+add_dependencies(eclair_report eclair_setup_analysis_dir)
