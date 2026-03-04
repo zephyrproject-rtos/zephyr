@@ -1,11 +1,12 @@
 /*
- * Copyright 2022, 2024-25 NXP
+ * Copyright 2022, 2024-26 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/pm/pm.h>
 #include <fsl_power.h>
 #include <fsl_common.h>
+#include "pmu.h"
 
 static void frdm_rw612_power_init_config(void)
 {
@@ -16,7 +17,7 @@ static void frdm_rw612_power_init_config(void)
 		.gateCauRefClk = false,
 	};
 
-	POWER_InitPowerConfig(&initCfg);
+	nxp_pmu_init_power_config(&initCfg);
 }
 
 #if CONFIG_PM
@@ -39,7 +40,7 @@ void board_early_init_hook(void)
 	/* If this is a wakeup from PM3 then return after configuring
 	 * the power supplies.
 	 */
-	if (PMU->PWR_MODE_STATUS == 2U) {
+	if (nxp_pmu_get_power_mode_status() == 2U) {
 		return;
 	}
 
