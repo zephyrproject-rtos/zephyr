@@ -6,6 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include <zephyr/bluetooth/audio/audio.h>

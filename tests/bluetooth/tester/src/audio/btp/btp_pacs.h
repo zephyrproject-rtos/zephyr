@@ -8,6 +8,8 @@
 
 #include <stdint.h>
 
+#include <zephyr/sys/util.h>
+
 /* PACS commands */
 #define BTP_PACS_READ_SUPPORTED_COMMANDS			0x01
 struct btp_pacs_read_supported_commands_rp {
