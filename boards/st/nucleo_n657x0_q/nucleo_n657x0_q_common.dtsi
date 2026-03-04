@@ -54,6 +54,7 @@
 		led1 = &blue_led;
 		led2 = &red_led;
 		sw0 = &user_button;
+		watchdog0 = &iwdg;
 	};
 
 	csi_connector: connector_csi {
@@ -332,5 +333,9 @@ csi_interface: &dcmipp {
 };
 
 &rng {
+	status = "okay";
+};
+
+&iwdg {
 	status = "okay";
 };
