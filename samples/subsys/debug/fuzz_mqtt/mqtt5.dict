@@ -1,0 +1,134 @@
+# MQTT 5.0 libFuzzer dictionary
+#
+# Provides libFuzzer with MQTT-specific byte sequences so that mutations
+# are more likely to produce structurally valid (or interestingly invalid)
+# MQTT packets without having to rediscover these magic values from scratch.
+#
+# Usage:
+#   ./zephyr.exe corpus/ -dict=mqtt5.dict [other libfuzzer flags]
+
+# Mode selector bytes (bits [1:0] of first byte)
+"\x00"
+"\x01"
+"\x02"
+"\x03"
+
+# MQTT packet type bytes (upper nibble of fixed header byte 0)
+"\x20"
+"\x30"
+"\x32"
+"\x34"
+"\x38"
+"\x3A"
+"\x31"
+"\x40"
+"\x50"
+"\x62"
+"\x70"
+"\x90"
+"\xB0"
+"\xD0"
+"\xE0"
+"\xF0"
+
+# Variable-length integer encodings (remaining-length / property-length)
+"\x7F"
+"\x80\x01"
+"\xFF\x7F"
+"\x80\x80\x01"
+"\x03"
+"\x02"
+
+# MQTT 5.0 property IDs
+"\x01"
+"\x02"
+"\x03"
+"\x08"
+"\x09"
+"\x0B"
+"\x11"
+"\x12"
+"\x13"
+"\x15"
+"\x16"
+"\x17"
+"\x18"
+"\x19"
+"\x1A"
+"\x1C"
+"\x1F"
+"\x21"
+"\x22"
+"\x23"
+"\x24"
+"\x25"
+"\x26"
+"\x27"
+"\x28"
+"\x29"
+"\x2A"
+
+# MQTT 5.0 CONNACK reason codes
+"\x80"
+"\x81"
+"\x82"
+"\x83"
+"\x84"
+"\x85"
+"\x86"
+"\x87"
+"\x88"
+"\x89"
+"\x8A"
+"\x8C"
+"\x90"
+"\x95"
+"\x97"
+"\x99"
+"\x9A"
+"\x9B"
+"\x9C"
+"\x9D"
+"\x9F"
+
+# MQTT 5.0 DISCONNECT reason codes
+"\x04"
+"\x8B"
+"\x8D"
+"\x8E"
+"\x8F"
+"\x93"
+"\x94"
+"\x96"
+"\x98"
+"\x9E"
+"\xA0"
+"\xA1"
+"\xA2"
+
+# MQTT 5.0 AUTH reason codes
+"\x18"
+"\x19"
+
+# Common uint16 big-endian values (message IDs, string lengths, aliases)
+"\x00\x01"
+"\x00\x02"
+"\x00\x05"
+"\x00\x0A"
+"\x00\xFF"
+"\xFF\xFF"
+"\x00\x00"
+
+# Common uint32 big-endian values (expiry intervals, packet sizes)
+"\x00\x00\x00\x00"
+"\x00\x00\x00\x3C"
+"\x00\x00\x0E\x10"
+"\xFF\xFF\xFF\xFF"
+
+# Common topic strings (length-prefixed UTF-8)
+"\x00\x01/"
+"\x00\x03""a/b"
+"\x00\x01#"
+"\x00\x01+"
+"\x00\x0C""sensors/temp"
+"\x00\x00"

@@ -11,12 +11,13 @@ config ARCH_POSIX_FUZZ_IRQ
 
 config ARCH_POSIX_FUZZ_TICKS
 	int "Ticks to allow for fuzz case processing"
-	default 2
+	default 10
 	help
 	  Fuzz interrupts are delivered, from the perspective of the
-	  OS, at a steady cadence in simulated time.  In general most
-	  apps won't require much time to reach an idle state
-	  following a unit-test style case, so the default is short to
-	  prevent interaction with regular timer workloads.
+	  OS, at a steady cadence in simulated time.  The default of 10
+	  ticks gives enough simulated time for multi-step processing
+	  (e.g. DISCONNECT triggering a transport disconnect callback,
+	  CONNACK advancing the state machine, and payload draining) to
+	  complete before the next fuzz case is delivered.
 
 source "Kconfig.zephyr"
