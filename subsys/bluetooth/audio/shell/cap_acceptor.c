@@ -14,6 +14,7 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/csip.h>
 #include <zephyr/bluetooth/gap.h>

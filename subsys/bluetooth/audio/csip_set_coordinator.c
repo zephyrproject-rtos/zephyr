@@ -26,6 +26,7 @@
 #include <string.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/audio/csip.h>
 #include <zephyr/bluetooth/bluetooth.h>

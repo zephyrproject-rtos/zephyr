@@ -12,6 +12,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/pbp.h>
 #include <zephyr/bluetooth/bluetooth.h>
@@ -27,14 +28,13 @@
 
 #define PBS_DEMO                'P', 'B', 'P'
 
-const uint8_t pba_metadata[] = {
-	BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_PROGRAM_INFO, PBS_DEMO)
-};
+static const uint8_t pba_metadata[] = {
+	BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_PROGRAM_INFO, PBS_DEMO)};
 
 /* Buffer to hold the Public Broadcast Announcement */
 NET_BUF_SIMPLE_DEFINE_STATIC(pbp_ad_buf, BT_PBP_MIN_PBA_SIZE + ARRAY_SIZE(pba_metadata));
 
-enum bt_pbp_announcement_feature pbp_features;
+static enum bt_pbp_announcement_feature pbp_features;
 
 static int cmd_pbp_set_features(const struct shell *sh, size_t argc, char **argv)
 {
