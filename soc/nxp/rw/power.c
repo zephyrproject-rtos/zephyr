@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 NXP
+ * Copyright 2023-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,11 +19,47 @@
 #include <zephyr/drivers/timer/nxp_os_timer.h>
 #include <zephyr/platform/hooks.h>
 #include "fsl_power.h"
+#include "pmu.h"
 
 #if defined(CONFIG_MCUX_ELS_PKC) && !defined(CONFIG_BUILD_WITH_TFM)
 #include "mcux_els.h"
 #include "mcux_pkc.h"
 #endif
+
+/*
+ * TFM IOCTL stubs for NS -> S power management.
+ *
+ * PM3 resets CPU and TrustZone config. The secure side must
+ * save/restore NS banked registers, SAU/MPC/PPC, and its own
+ * clocks before NS can resume. PM1/PM2 are also routed through
+ * the same IOCTL for consistency.
+ */
+#ifdef CONFIG_TRUSTED_EXECUTION_NONSECURE
+typedef int32_t tfm_platform_ioctl_req_t;
+
+typedef struct psa_invec {
+	const void *base;
+	size_t len;
+} psa_invec;
+
+enum tfm_platform_err_t {
+	TFM_PLATFORM_ERR_SUCCESS = 0,
+};
+
+typedef struct psa_outvec psa_outvec;
+
+enum tfm_platform_err_t tfm_platform_ioctl(tfm_platform_ioctl_req_t request,
+					    psa_invec *input,
+					    psa_outvec *output);
+
+#define TFM_PLATFORM_IOCTL_RW61X_SET_PM 2
+
+struct rw61x_pm_ioctl_in {
+	uint8_t pm_mode;      /* 1=PM1 (idle), 2=PM2 (standby), 3=PM3 (deep sleep) */
+	uint32_t idle_us;     /* optional: expected idle time, can be 0 */
+	power_sleep_config_t slp_cfg;
+};
+#endif /* CONFIG_TRUSTED_EXECUTION_NONSECURE */
 
 #include <zephyr/logging/log.h>
 
@@ -51,33 +87,72 @@ pinctrl_soc_pin_t pin_cfg;
 #if CONFIG_GPIO
 const struct device *gpio;
 #endif
+#ifdef CONFIG_TRUSTED_EXECUTION_NONSECURE
+static struct k_work pin_pmu_work;
+
+static void pin_pmu_work_handler(struct k_work *work)
+{
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin0))
+	nxp_pmu_config_wakeup_pin(kPOWER_WakeupPin0,
+		~(DT_ENUM_IDX(DT_NODELABEL(pin0), wakeup_level)) & 0x1);
+	nxp_pmu_disable_wakeup(DT_IRQN(DT_NODELABEL(pin0)));
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin1))
+	nxp_pmu_config_wakeup_pin(kPOWER_WakeupPin1,
+		~(DT_ENUM_IDX(DT_NODELABEL(pin1), wakeup_level)) & 0x1);
+	nxp_pmu_disable_wakeup(DT_IRQN(DT_NODELABEL(pin1)));
+#endif
+}
+#endif
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin0))
 static void pin0_isr(const struct device *dev)
 {
+	NVIC_ClearPendingIRQ(DT_IRQN(DT_NODELABEL(pin0)));
+	DisableIRQ(DT_IRQN(DT_NODELABEL(pin0)));
+#ifdef CONFIG_TRUSTED_EXECUTION_NONSECURE
+	if (k_is_in_isr()) {
+		k_work_submit(&pin_pmu_work);
+	} else {
+		uint8_t level = ~(DT_ENUM_IDX(DT_NODELABEL(pin0), wakeup_level)) & 0x1;
+
+		nxp_pmu_config_wakeup_pin(kPOWER_WakeupPin0, level);
+		nxp_pmu_disable_wakeup(DT_IRQN(DT_NODELABEL(pin0)));
+	}
+#else
 	uint8_t level = ~(DT_ENUM_IDX(DT_NODELABEL(pin0), wakeup_level)) & 0x1;
 
 	POWER_ConfigWakeupPin(kPOWER_WakeupPin0, level);
-	NVIC_ClearPendingIRQ(DT_IRQN(DT_NODELABEL(pin0)));
-	DisableIRQ(DT_IRQN(DT_NODELABEL(pin0)));
 	POWER_DisableWakeup(DT_IRQN(DT_NODELABEL(pin0)));
+#endif
 }
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin1))
 static void pin1_isr(const struct device *dev)
 {
+	NVIC_ClearPendingIRQ(DT_IRQN(DT_NODELABEL(pin1)));
+	DisableIRQ(DT_IRQN(DT_NODELABEL(pin1)));
+#ifdef CONFIG_TRUSTED_EXECUTION_NONSECURE
+	if (k_is_in_isr()) {
+		k_work_submit(&pin_pmu_work);
+	} else {
+		uint8_t level = ~(DT_ENUM_IDX(DT_NODELABEL(pin1), wakeup_level)) & 0x1;
+
+		nxp_pmu_config_wakeup_pin(kPOWER_WakeupPin1, level);
+		nxp_pmu_disable_wakeup(DT_IRQN(DT_NODELABEL(pin1)));
+	}
+#else
 	uint8_t level = ~(DT_ENUM_IDX(DT_NODELABEL(pin1), wakeup_level)) & 0x1;
 
 	POWER_ConfigWakeupPin(kPOWER_WakeupPin1, level);
-	NVIC_ClearPendingIRQ(DT_IRQN(DT_NODELABEL(pin1)));
-	DisableIRQ(DT_IRQN(DT_NODELABEL(pin1)));
 	POWER_DisableWakeup(DT_IRQN(DT_NODELABEL(pin1)));
+#endif
 }
 #endif
 
-#ifdef CONFIG_MPU
+#if defined(CONFIG_MPU) && !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 
 #define MPU_NUM_REGIONS 8
 
@@ -150,7 +225,7 @@ static void restore_mpu_state(void)
 	MPU->CTRL = saved_mpu_conf.CTRL;
 }
 
-#endif /* CONFIG_MPU */
+#endif /* CONFIG_MPU && !CONFIG_TRUSTED_EXECUTION_NONSECURE*/
 static void config_wakeup_gpio_pins(void)
 {
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin0))
@@ -171,18 +246,18 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 	config_wakeup_gpio_pins();
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin0))
-	POWER_ConfigWakeupPin(kPOWER_WakeupPin0, DT_ENUM_IDX(DT_NODELABEL(pin0), wakeup_level));
-	POWER_ClearWakeupStatus(DT_IRQN(DT_NODELABEL(pin0)));
+	nxp_pmu_config_wakeup_pin(kPOWER_WakeupPin0, DT_ENUM_IDX(DT_NODELABEL(pin0), wakeup_level));
+	nxp_pmu_clear_wakeup_status(DT_IRQN(DT_NODELABEL(pin0)));
 	NVIC_ClearPendingIRQ(DT_IRQN(DT_NODELABEL(pin0)));
 	EnableIRQ(DT_IRQN(DT_NODELABEL(pin0)));
-	POWER_EnableWakeup(DT_IRQN(DT_NODELABEL(pin0)));
+	nxp_pmu_enable_wakeup(DT_IRQN(DT_NODELABEL(pin0)));
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin1))
-	POWER_ConfigWakeupPin(kPOWER_WakeupPin1, DT_ENUM_IDX(DT_NODELABEL(pin1), wakeup_level));
-	POWER_ClearWakeupStatus(DT_IRQN(DT_NODELABEL(pin1)));
+	nxp_pmu_config_wakeup_pin(kPOWER_WakeupPin1, DT_ENUM_IDX(DT_NODELABEL(pin1), wakeup_level));
+	nxp_pmu_clear_wakeup_status(DT_IRQN(DT_NODELABEL(pin1)));
 	NVIC_ClearPendingIRQ(DT_IRQN(DT_NODELABEL(pin1)));
 	EnableIRQ(DT_IRQN(DT_NODELABEL(pin1)));
-	POWER_EnableWakeup(DT_IRQN(DT_NODELABEL(pin1)));
+	nxp_pmu_enable_wakeup(DT_IRQN(DT_NODELABEL(pin1)));
 #endif
 
 	/* Set PRIMASK */
@@ -190,6 +265,105 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 	/* Set BASEPRI to 0 */
 	irq_unlock(0);
 
+	/*
+	 * TrustZone NS path: PM3 recovery requires the secure side to
+	 * save/restore NS banked registers (only accessible via mrs/msr
+	 * *_ns from secure mode) and re-init SAU/MPC/PPC (secure-only
+	 * by architecture).  We route all PM modes through the same
+	 * IOCTL for consistency.  The secure handler in
+	 * tfm_platform_system.c (rw61x_enter_pm_secure) does the actual
+	 * WFI / clock switch / PM3 entry and recovery.
+	 */
+#ifdef CONFIG_TRUSTED_EXECUTION_NONSECURE
+	{
+		struct rw61x_pm_ioctl_in pm_in = {0};
+
+		/* Map Zephyr PM states to RW61x power mode numbers */
+		switch (state) {
+		case PM_STATE_RUNTIME_IDLE:
+			pm_in.pm_mode = 1;
+			break;
+		case PM_STATE_SUSPEND_TO_IDLE:
+			pm_in.pm_mode = 2;
+			break;
+		case PM_STATE_STANDBY:
+			pm_in.pm_mode = 3;
+			nxp_pmu_enable_wakeup(DT_IRQN(DT_NODELABEL(rtc)));
+			/*
+			 * Switch the system tick source from OSTIMER to the
+			 * low-power RTC counter.
+			 */
+			nxp_pmu_clear_wakeup_status(DT_IRQN(DT_NODELABEL(rtc)));
+			nxp_pmu_enable_wakeup(DT_IRQN(DT_NODELABEL(rtc)));
+			sys_clock_set_timeout(0, true);
+			break;
+		default:
+			LOG_DBG("Unsupported power state %u", state);
+			break;
+		}
+
+		pm_in.idle_us = 0;
+		pm_in.slp_cfg = slp_cfg;
+
+		/* Cross the TrustZone boundary via SVC into the secure side */
+		psa_invec in_vec = {
+			.base = &pm_in,
+			.len = sizeof(pm_in),
+		};
+
+		enum tfm_platform_err_t err =
+			tfm_platform_ioctl((tfm_platform_ioctl_req_t)
+				TFM_PLATFORM_IOCTL_RW61X_SET_PM,
+				&in_vec, NULL);
+
+		if (err != TFM_PLATFORM_ERR_SUCCESS) {
+			/* IOCTL failed (shouldn't happen) — idle minimally */
+			__WFI();
+		}
+
+		/*
+		 * After PM3 wakeup, check if the wake was from the
+		 * RTC overflow counter. If so, re-arm and re-enter
+		 * PM3 to avoid returning to the app prematurely.
+		 */
+		if (state == PM_STATE_STANDBY) {
+			while (z_nxp_os_timer_ignore_timer_wakeup() &&
+			       nxp_pmu_get_wakeup_status(DT_IRQN(DT_NODELABEL(rtc)))) {
+				CLOCK_AttachClk(kLPOSC_to_OSTIMER_CLK);
+				nxp_pmu_clear_wakeup_status(DT_IRQN(DT_NODELABEL(rtc)));
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(standby))
+				RTC_ClearStatusFlags(RTC, kRTC_WakeupFlag);
+#endif
+				NVIC_ClearPendingIRQ(DT_IRQN(DT_NODELABEL(rtc)));
+				sys_clock_idle_exit();
+				sys_clock_set_timeout(0, true);
+				config_wakeup_gpio_pins();
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin0))
+				nxp_pmu_config_wakeup_pin(kPOWER_WakeupPin0,
+					DT_ENUM_IDX(DT_NODELABEL(pin0), wakeup_level));
+				nxp_pmu_enable_wakeup(DT_IRQN(DT_NODELABEL(pin0)));
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin1))
+				nxp_pmu_config_wakeup_pin(kPOWER_WakeupPin1,
+					DT_ENUM_IDX(DT_NODELABEL(pin1), wakeup_level));
+				nxp_pmu_enable_wakeup(DT_IRQN(DT_NODELABEL(pin1)));
+#endif
+				pm_in.pm_mode = 3;
+				pm_in.slp_cfg = slp_cfg;
+				err = tfm_platform_ioctl(
+					(tfm_platform_ioctl_req_t)
+					TFM_PLATFORM_IOCTL_RW61X_SET_PM,
+					&in_vec, NULL);
+				if (err != TFM_PLATFORM_ERR_SUCCESS) {
+					break;
+				}
+			}
+			clock_init();
+			nxp_pmu_disable_wakeup(DT_IRQN(DT_NODELABEL(rtc)));
+			sys_clock_idle_exit();
+		}
+	}
+#else
 	switch (state) {
 	case PM_STATE_RUNTIME_IDLE:
 		POWER_SetSleepMode(POWER_MODE1);
@@ -277,20 +451,19 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		LOG_DBG("Unsupported power state %u", state);
 		break;
 	}
+#endif /* CONFIG_TRUSTED_EXECUTION_NONSECURE */
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
 __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
-	ARG_UNUSED(state);
 	ARG_UNUSED(substate_id);
 
 #if CONFIG_GPIO && (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin0)) || \
-		    DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin1)))
+	 DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin1)))
 	if (state == PM_STATE_STANDBY) {
 		/* GPIO_0_24 & GPIO_0_25 are used for wakeup */
-		uint32_t pins = PMU->WAKEUP_STATUS &
-				(PMU_WAKEUP_STATUS_PIN0_MASK | PMU_WAKEUP_STATUS_PIN1_MASK);
+		uint32_t pins = nxp_pmu_get_wakeup_pins();
 		gpio_mcux_lpc_trigger_cb(gpio, (pins << 24));
 	}
 #endif
@@ -307,6 +480,12 @@ void nxp_rw6xx_power_init(void)
 	slp_cfg.clkGate = suspend_sleepconfig[2];
 	slp_cfg.memPdCfg = suspend_sleepconfig[3];
 	slp_cfg.pm3BuckCfg = suspend_sleepconfig[4];
+
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) && \
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin0)) || \
+	 DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin1)))
+	k_work_init(&pin_pmu_work, pin_pmu_work_handler);
+#endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin0))
 	/* PIN 0 uses GPIO0_24, confiure the pin as GPIO */
@@ -333,8 +512,8 @@ void nxp_rw6xx_power_init(void)
 #endif
 
 	/* Clear the RTC wakeup bits */
-	POWER_ClearWakeupStatus(DT_IRQN(DT_NODELABEL(rtc)));
-	POWER_DisableWakeup(DT_IRQN(DT_NODELABEL(rtc)));
+	nxp_pmu_clear_wakeup_status(DT_IRQN(DT_NODELABEL(rtc)));
+	nxp_pmu_disable_wakeup(DT_IRQN(DT_NODELABEL(rtc)));
 
 #if CONFIG_GPIO && (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin0)) || \
 		    DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin1)))

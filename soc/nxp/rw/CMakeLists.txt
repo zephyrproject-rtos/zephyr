@@ -5,6 +5,7 @@
 zephyr_sources(
   soc.c
   flexspi_clock_setup.c
+  pmu.c
   )
 
 zephyr_sources_ifdef(CONFIG_NXP_NBU
