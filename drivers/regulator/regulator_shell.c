@@ -164,7 +164,7 @@ static int cmd_vlist(const struct shell *sh, size_t argc, char **argv)
 	volt_cnt = regulator_count_voltages(dev);
 
 	for (unsigned int i = 0U; i < volt_cnt; i++) {
-		int32_t volt_uv;
+		int32_t volt_uv = 0;
 
 		(void)regulator_list_voltage(dev, i, &volt_uv);
 
@@ -245,7 +245,7 @@ static int cmd_clist(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
 	unsigned int current_cnt;
-	int32_t last_current_ua;
+	int32_t last_current_ua = 0;
 
 	ARG_UNUSED(argc);
 
@@ -258,7 +258,7 @@ static int cmd_clist(const struct shell *sh, size_t argc, char **argv)
 	current_cnt = regulator_count_current_limits(dev);
 
 	for (unsigned int i = 0U; i < current_cnt; i++) {
-		int32_t current_ua;
+		int32_t current_ua = 0;
 
 		(void)regulator_list_current_limit(dev, i, &current_ua);
 
