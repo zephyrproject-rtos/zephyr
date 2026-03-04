@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_INFINEON_AUTANALOG
+	bool "Infineon AutAnalog multi-function device driver"
+	default y
+	depends on DT_HAS_INFINEON_AUTANALOG_ENABLED
+	select USE_INFINEON_AUTANALOG_SAR_ADC
+	help
+	  Enable the Infineon AutAnalog MFD driver.  The AutAnalog subsystem
+	  contains multiple analog peripherals (SAR ADC, DAC, comparators)
+	  sharing common resources including a shared interrupt and the
+	  Autonomous Controller (AC) state machine.  This driver manages the
+	  shared resources and provides APIs for child peripheral drivers.
+
+config MFD_INFINEON_AUTANALOG_INIT_PRIORITY
+	int "Infineon AutAnalog MFD init priority"
+	default 41
+	depends on MFD_INFINEON_AUTANALOG
+	help
+	  Initialization priority for the AutAnalog MFD driver.  This must be
+	  lower (earlier) than the init priority of child drivers such as
+	  CONFIG_ADC_INIT_PRIORITY to ensure the MFD parent is ready before
+	  children attempt to use it.
