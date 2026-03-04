@@ -1,0 +1,33 @@
+/*
+ * Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &boot_partition;
+/delete-node/ &slot0_partition;
+/delete-node/ &slot1_partition;
+/delete-node/ &storage_partition;
+
+&flash {
+	partitions {
+		/*
+		 * Partition sizes must be aligned
+		 * to the flash memory sector size of 8KB.
+		 */
+		slot0_partition: partition@0 {
+			reg = <0x0 DT_SIZE_K(488)>;
+		};
+
+		/*
+		 * slot1 is a bit larger than slot0 to account
+		 * for the overhead introduced by SB3.1 format.
+		 */
+		slot1_partition: partition@7a000 {
+			reg = <0x7a000 DT_SIZE_K(496)>;
+		};
+
+		storage_partition: partition@f6000 {
+			reg = <0xf6000 DT_SIZE_K(32)>;
+		};
+	};
+};
