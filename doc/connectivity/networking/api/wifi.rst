@@ -15,6 +15,7 @@ The Wi-Fi management API is used to manage Wi-Fi networks. It supports below mod
 Only personal mode security is supported with below types:
 
 * Open
+* WEP
 * WPA2-PSK
 * WPA2-PSK-256
 * WPA3-SAE
@@ -69,6 +70,8 @@ PSA APIs use them; otherwise, legacy MbedTLS APIs are used.
      - Cryptographic API
    * - Open (No security)
      - N/A
+   * - WEP
+     - Legacy MbedTLS
    * - WPA2-PSK
      - PSA APIs
    * - WPA2-PSK-256
@@ -81,6 +84,10 @@ PSA APIs use them; otherwise, legacy MbedTLS APIs are used.
      - Legacy MbedTLS
    * - EAP-PEAP-MSCHAPV2
      - Legacy MbedTLS
+
+.. note::
+
+   **WEP Support:** WEP (Wired Equivalent Privacy) support is provided for backwards compatibility only and must be explicitly enabled with :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_WEP`. WEP is deprecated and insecure; it should not be used in new deployments. It is only supported for connecting to legacy networks that have not been upgraded to more secure protocols.
 
 When PSA crypto is enabled, the following cryptographic operations use
 PSA APIs:
