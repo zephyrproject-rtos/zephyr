@@ -269,7 +269,7 @@ struct bt_cap_unicast_group_stream_param {
 	struct bt_cap_stream *stream;
 
 	/** The QoS settings for the stream object. */
-	struct bt_bap_qos_cfg *qos_cfg;
+	const struct bt_bap_qos_cfg *qos_cfg;
 };
 
 /**
@@ -666,7 +666,7 @@ struct bt_cap_initiator_broadcast_create_param {
 	struct bt_cap_initiator_broadcast_subgroup_param *subgroup_params;
 
 	/** Quality of Service configuration. */
-	struct bt_bap_qos_cfg *qos;
+	const struct bt_bap_qos_cfg *qos;
 
 	/**
 	 * @brief Broadcast Source packing mode.

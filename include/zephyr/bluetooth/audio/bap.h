@@ -1631,7 +1631,7 @@ struct bt_bap_unicast_group_stream_param {
 	struct bt_bap_stream *stream;
 
 	/** The QoS settings for the stream object. */
-	struct bt_bap_qos_cfg *qos;
+	const struct bt_bap_qos_cfg *qos;
 };
 
 /**
@@ -2354,7 +2354,7 @@ struct bt_bap_broadcast_source_param {
 	struct bt_bap_broadcast_source_subgroup_param *params;
 
 	/** Quality of Service configuration. */
-	struct bt_bap_qos_cfg *qos;
+	const struct bt_bap_qos_cfg *qos;
 
 	/**
 	 * @brief Broadcast Source packing mode.
