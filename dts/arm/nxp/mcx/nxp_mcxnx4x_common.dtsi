@@ -930,6 +930,20 @@
 		};
 	};
 
+	qdc0: qdc@cf000 {
+		compatible = "nxp,mcux-qdc";
+		reg = <0xcf000 0x1000>;
+		interrupts = <124 0>, <125 0>, <126 0>, <127 0>;
+		status = "disabled";
+	};
+
+	qdc1: qdc@d1000 {
+		compatible = "nxp,mcux-qdc";
+		reg = <0xd1000 0x1000>;
+		interrupts = <128 0>, <129 0>, <130 0>, <131 0>;
+		status = "disabled";
+	};
+
 	ctimer0: ctimer@c000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0xc000 0x1000>;
