@@ -20,6 +20,7 @@ supported:
   - gpio
   - hwinfo
   - i2c
+  - interrupt_controller
   - pinctrl
   - pwm
   - reset
