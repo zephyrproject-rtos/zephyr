@@ -139,6 +139,7 @@ add_custom_target(eclair_setup_analysis_dir ALL
 
 # configure the cmake script which will be used to replace the compiler call with the eclair_env
 # call which calls the compiler and to generate analysis files.
+list(JOIN ECLAIR_ENV_ADDITIONAL_OPTIONS "\n                        " ECLAIR_ENV_ADDITIONAL_OPTIONS_STR)
 configure_file(${CMAKE_CURRENT_LIST_DIR}/eclair.template ${ECLAIR_OUTPUT_DIR}/eclair.cmake @ONLY)
 
 set(launch_environment ${CMAKE_COMMAND} -P ${ECLAIR_OUTPUT_DIR}/eclair.cmake --)
