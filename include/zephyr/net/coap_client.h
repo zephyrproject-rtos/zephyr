@@ -51,6 +51,19 @@ struct coap_client_response_data {
 	size_t payload_len;
 	/** Indicates the last block of the response. */
 	bool last_block;
+#if defined(CONFIG_COAP_CLIENT_MULTICAST) || defined(__DOXYGEN__)
+	/**
+	 * Source address of the response.
+	 * @kconfig_dep{CONFIG_COAP_CLIENT_MULTICAST}
+	 */
+	const struct net_sockaddr *source;
+
+	/**
+	 * Source address length of the response.
+	 * @kconfig_dep{CONFIG_COAP_CLIENT_MULTICAST}
+	 */
+	net_socklen_t source_len;
+#endif
 };
 
 /**
@@ -61,6 +74,11 @@ struct coap_client_response_data {
  * It is used to indicate errors, response codes from server or to deliver payload.
  * Blockwise transfers cause this callback to be called sequentially with increasing payload offset
  * and only partial content in buffer pointed by payload parameter.
+ *
+ * For multicast requests the callback is invoked once per responding server with
+ * @p source set to the unicast source address of that server. When the collection window
+ * expires, the callback is invoked one final time with @p source set to @c NULL to
+ * signal that no further responses will be delivered for this request.
  *
  * @param data The CoAP response data.
  * @param user_data User provided context.
@@ -139,6 +157,18 @@ struct coap_client_request {
 		options[MAX_EXTRA_OPTIONS];       /**< Extra options to be added to request */
 	uint8_t num_options;                      /**< Number of extra options */
 	void *user_data;                          /**< User provided context */
+#if defined(CONFIG_COAP_CLIENT_MULTICAST) || defined(__DOXYGEN__)
+	/**
+	 * Multicast response timeout in milliseconds. When > 0, indicates a multicast
+	 * request that accepts multiple responses within the timeout period. After the
+	 * timeout, a final callback with source=NULL signals completion, after which
+	 * no further callbacks will be issued. Multicast requests are always
+	 * non-confirmable (RFC 7252).
+	 *
+	 * @kconfig_dep{CONFIG_COAP_CLIENT_MULTICAST}
+	 */
+	uint32_t multicast_timeout_ms;
+#endif
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -163,6 +193,10 @@ struct coap_client_internal_request {
 	/* For GETs with observe option set */
 	bool is_observe;
 	int last_response_id;
+#if defined(CONFIG_COAP_CLIENT_MULTICAST)
+	bool is_mcast;
+	k_timepoint_t mcast_timeout;
+#endif
 };
 /** @endcond */
 
