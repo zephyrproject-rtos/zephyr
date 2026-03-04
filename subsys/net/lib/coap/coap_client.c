@@ -28,7 +28,7 @@ static struct coap_client *clients[CONFIG_COAP_CLIENT_MAX_INSTANCES];
 static int num_clients;
 static K_SEM_DEFINE(coap_client_recv_sem, 0, 1);
 
-static bool timeout_expired(struct coap_client_internal_request *internal_req);
+static bool timeout_expired(const struct coap_client_internal_request *internal_req);
 static void cancel_requests_with(struct coap_client *client, int error);
 static int recv_response(struct coap_client *client, struct net_sockaddr *addr,
 			 net_socklen_t *addrlen, struct coap_packet *response, bool *truncated);
@@ -100,7 +100,7 @@ static void coap_client_schedule_poll(struct coap_client *client, int sock,
 	k_sem_give(&coap_client_recv_sem);
 }
 
-static bool exchange_lifetime_exceeded(struct coap_client_internal_request *internal_req)
+static bool exchange_lifetime_exceeded(const struct coap_client_internal_request *internal_req)
 {
 	int64_t time_since_t0, exchange_lifetime;
 
@@ -119,7 +119,7 @@ static bool exchange_lifetime_exceeded(struct coap_client_internal_request *inte
 	return time_since_t0 > exchange_lifetime;
 }
 
-static bool has_ongoing_request(struct coap_client *client)
+static bool has_ongoing_request(const struct coap_client *client)
 {
 	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
 		if (client->requests[i].request_ongoing == true) {
@@ -130,7 +130,7 @@ static bool has_ongoing_request(struct coap_client *client)
 	return false;
 }
 
-static bool has_ongoing_exchange(struct coap_client *client)
+static bool has_ongoing_exchange(const struct coap_client *client)
 {
 	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
 		if (client->requests[i].request_ongoing == true ||
@@ -142,7 +142,7 @@ static bool has_ongoing_exchange(struct coap_client *client)
 	return false;
 }
 
-static bool has_timeout_expired(struct coap_client *client)
+static bool has_timeout_expired(const struct coap_client *client)
 {
 	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
 		if (timeout_expired(&client->requests[i])) {
@@ -534,7 +534,7 @@ static void report_callback_error(struct coap_client_internal_request *internal_
 	}
 }
 
-static bool timeout_expired(struct coap_client_internal_request *internal_req)
+static bool timeout_expired(const struct coap_client_internal_request *internal_req)
 {
 	if (internal_req->pending.timeout == 0) {
 		return false;
