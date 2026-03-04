@@ -121,7 +121,7 @@ struct tls_session_cache {
 	int64_t timestamp;
 
 	/** Peer address. */
-	struct net_sockaddr peer_addr;
+	struct net_sockaddr_storage peer_addr;
 
 	/** Session buffer. */
 	uint8_t *session;
@@ -164,7 +164,7 @@ struct tls_session_context {
 	struct dtls_timing_context dtls_timing;
 
 	/* DTLS peer address. */
-	struct net_sockaddr dtls_peer_addr;
+	struct net_sockaddr_storage dtls_peer_addr;
 
 	/* DTLS peer address length. */
 	net_socklen_t dtls_peer_addrlen;
@@ -694,7 +694,7 @@ static int tls_session_save(const struct net_sockaddr *peer_addr,
 				entry = &client_cache[i];
 			}
 		} else {
-			if (peer_addr_cmp(&client_cache[i].peer_addr, peer_addr)) {
+			if (peer_addr_cmp(net_sad(&client_cache[i].peer_addr), peer_addr)) {
 				/* Reuse old entry for given address. */
 				entry = &client_cache[i];
 				break;
@@ -748,7 +748,7 @@ static int tls_session_get(const struct net_sockaddr *peer_addr,
 
 	for (int i = 0; i < ARRAY_SIZE(client_cache); i++) {
 		if (client_cache[i].session != NULL &&
-		    peer_addr_cmp(&client_cache[i].peer_addr, peer_addr)) {
+		    peer_addr_cmp(net_sad(&client_cache[i].peer_addr), peer_addr)) {
 			entry = &client_cache[i];
 			break;
 		}
@@ -776,7 +776,7 @@ static void tls_session_store(struct tls_context *context,
 			      net_socklen_t addrlen)
 {
 	mbedtls_ssl_session session;
-	struct net_sockaddr peer_addr = { 0 };
+	struct net_sockaddr_storage peer_addr = { 0 };
 	int ret;
 
 	if (!context->options.cache_enabled) {
@@ -796,7 +796,7 @@ static void tls_session_store(struct tls_context *context,
 		goto exit;
 	}
 
-	ret = tls_session_save(&peer_addr, &session);
+	ret = tls_session_save(net_sad(&peer_addr), &session);
 	if (ret < 0) {
 		NET_ERR("Failed to save session for %p", context);
 	}
@@ -810,7 +810,7 @@ static void tls_session_restore(struct tls_context *context,
 				net_socklen_t addrlen)
 {
 	mbedtls_ssl_session session;
-	struct net_sockaddr peer_addr = { 0 };
+	struct net_sockaddr_storage peer_addr = { 0 };
 	int ret;
 
 	if (!context->options.cache_enabled) {
@@ -824,7 +824,7 @@ static void tls_session_restore(struct tls_context *context,
 	memcpy(&peer_addr, addr, addrlen);
 	mbedtls_ssl_session_init(&session);
 
-	ret = tls_session_get(&peer_addr, &session);
+	ret = tls_session_get(net_sad(&peer_addr), &session);
 	if (ret < 0) {
 		NET_DBG("Session not found for %p", context);
 		goto exit;
@@ -944,7 +944,7 @@ static bool dtls_is_peer_addr_valid(struct tls_session_context *session_ctx,
 		return false;
 	}
 
-	return peer_addr_cmp(&session_ctx->dtls_peer_addr, peer_addr);
+	return peer_addr_cmp(net_sad(&session_ctx->dtls_peer_addr), peer_addr);
 }
 
 static void dtls_peer_address_set(struct tls_session_context *session_ctx,
@@ -977,7 +977,7 @@ static int dtls_tx(void *ctx, const unsigned char *buf, size_t len)
 	}
 
 	sent = zsock_sendto(tls_ctx->sock, buf, len, ZSOCK_MSG_DONTWAIT,
-			    &tls_ctx->active_session->dtls_peer_addr,
+			    net_sad(&tls_ctx->active_session->dtls_peer_addr),
 			    tls_ctx->active_session->dtls_peer_addrlen);
 	if (sent < 0) {
 		if (errno == EAGAIN) {
@@ -1099,7 +1099,7 @@ static int dtls_server_switch_active_session(struct tls_context *tls_ctx,
 
 	NET_DBG("Need to swap session for [%s]:%d (current [%s]:%d)",
 		LOG_ADDR_PORT_HELPER(addr),
-		LOG_ADDR_PORT_HELPER(&tls_ctx->active_session->dtls_peer_addr));
+		LOG_ADDR_PORT_HELPER(net_sad(&tls_ctx->active_session->dtls_peer_addr)));
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&tls_ctx->sessions, session_ctx, node) {
 		if (dtls_is_peer_addr_valid(session_ctx, addr, addrlen)) {
@@ -1208,7 +1208,7 @@ static int dtls_server_switch_active_session_by_cid(struct tls_context *tls_ctx)
 		if (ret == 0) {
 			NET_DBG("Found matching session (CID) for [%s]:%d (was [%s]:%d)",
 				LOG_ADDR_PORT_HELPER(&addr),
-				LOG_ADDR_PORT_HELPER(&session_ctx->dtls_peer_addr));
+				LOG_ADDR_PORT_HELPER(net_sad(&session_ctx->dtls_peer_addr)));
 
 			/* Need to update peer address as CID matched */
 			dtls_peer_address_set(session_ctx, &addr, addrlen);
@@ -3104,7 +3104,7 @@ static ssize_t sendto_dtls_client(struct tls_context *ctx, const void *buf,
 	}
 
 	if (!is_handshake_complete(ctx->active_session)) {
-		tls_session_restore(ctx, &ctx->active_session->dtls_peer_addr,
+		tls_session_restore(ctx, net_sad(&ctx->active_session->dtls_peer_addr),
 				    ctx->active_session->dtls_peer_addrlen);
 
 		/* TODO For simplicity, TLS handshake blocks the socket even for
@@ -3121,7 +3121,7 @@ static ssize_t sendto_dtls_client(struct tls_context *ctx, const void *buf,
 		/* Client socket ready to use again. */
 		ctx->error = 0;
 
-		tls_session_store(ctx, &ctx->active_session->dtls_peer_addr,
+		tls_session_store(ctx, net_sad(&ctx->active_session->dtls_peer_addr),
 				  ctx->active_session->dtls_peer_addrlen);
 	}
 
