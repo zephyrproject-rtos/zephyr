@@ -4,19 +4,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief ADI ADXL313 3-axis accelerometer sensor driver header
+ */
+
 #ifndef ZEPHYR_DRIVERS_SENSOR_ADXL313_ADXL313_H_
 #define ZEPHYR_DRIVERS_SENSOR_ADXL313_ADXL313_H_
 
 /**
- * @file
- * @brief ADI ADXL313 3-axis accelerometer sensor driver header
- *
  * This header file provides the internal API and data structures for the
  * ADXL313 accelerometer driver. It includes register definitions, enumerations
  * for device configuration (ODR, range, FIFO modes), and function declarations
  * for device initialization and operation.
  *
- * @defgroup ADXL313_INTERNAL ADXL313 Sensor Driver Internal API
+ * @defgroup adxl313_api ADXL313 Sensor Driver Internal API
  * @ingroup sensor_interface
  * @{
  */
@@ -88,17 +90,24 @@
 /* bw / rate */
 #define ADXL313_RATE_ODR_MSK GENMASK(3, 0)
 
-enum adxl313_odr { /* Recommended ODR is betwen 12.5Hz and 400Hz */
-	ADXL313_ODR_6_25HZ = ADXL313_DT_ODR_6_25,
-	ADXL313_ODR_12_5HZ = ADXL313_DT_ODR_12_5,
-	ADXL313_ODR_25HZ = ADXL313_DT_ODR_25,
-	ADXL313_ODR_50HZ = ADXL313_DT_ODR_50,
-	ADXL313_ODR_100HZ = ADXL313_DT_ODR_100,
-	ADXL313_ODR_200HZ = ADXL313_DT_ODR_200,
-	ADXL313_ODR_400HZ = ADXL313_DT_ODR_400,
-	ADXL313_ODR_800HZ = ADXL313_DT_ODR_800,
-	ADXL313_ODR_1600HZ = ADXL313_DT_ODR_1600,
-	ADXL313_ODR_3200HZ = ADXL313_DT_ODR_3200,
+/**
+ * @brief The Output Data Rate (ODR).
+ *
+ * How many times per second the sensor outputs a new measurement. It is measured in Hz. Recommended
+ * ODR for impact detection by datasheet is betwen 12.5Hz and 400Hz. The enum is then used to
+ * indicate a selected ODR.
+ */
+enum adxl313_odr {
+	ADXL313_ODR_6_25HZ = ADXL313_DT_ODR_6_25, /**< 6.25 Hz */
+	ADXL313_ODR_12_5HZ = ADXL313_DT_ODR_12_5, /**< 12.5 Hz */
+	ADXL313_ODR_25HZ = ADXL313_DT_ODR_25,     /**< 25 Hz */
+	ADXL313_ODR_50HZ = ADXL313_DT_ODR_50,     /**< 50 Hz */
+	ADXL313_ODR_100HZ = ADXL313_DT_ODR_100,   /**< 100 Hz */
+	ADXL313_ODR_200HZ = ADXL313_DT_ODR_200,   /**< 200 Hz */
+	ADXL313_ODR_400HZ = ADXL313_DT_ODR_400,   /**< 400 Hz */
+	ADXL313_ODR_800HZ = ADXL313_DT_ODR_800,   /**< 800 Hz */
+	ADXL313_ODR_1600HZ = ADXL313_DT_ODR_1600, /**< 1600 Hz */
+	ADXL313_ODR_3200HZ = ADXL313_DT_ODR_3200, /**< 3200 Hz */
 };
 
 /* act/inact ctl */
@@ -126,18 +135,33 @@ enum adxl313_odr { /* Recommended ODR is betwen 12.5Hz and 400Hz */
 #define ADXL313_DATA_FORMAT_3WIRE_SPI  BIT(6) /* enable 3-wire SPI */
 #define ADXL313_DATA_FORMAT_SELF_TEST  BIT(7) /* enable self test */
 
+/**
+ * @brief The sensor g-range selector.
+ *
+ * The g-range specifies the range between the maximum and the minimum acceleration levels the
+ * device can accurately measure and represent in its output. The measurement unit is in ±g units
+ * (where 1 g ≈ 9.80665 m/s²) and will be used in the decoder.
+ * This enum is used to indicate the configured g range. It is used to select a particular g-range
+ * in the array range_to_shift. Its units here are array positions.
+ */
 enum adxl313_range {
-	ADXL313_RANGE_0_5G = 0,
-	ADXL313_RANGE_1G,
-	ADXL313_RANGE_2G,
-	ADXL313_RANGE_4G,
+	ADXL313_RANGE_0_5G = 0, /**< Configures to 0.5 g */
+	ADXL313_RANGE_1G,       /**< Configures to 1 g */
+	ADXL313_RANGE_2G,       /**< Configures to 2 g */
+	ADXL313_RANGE_4G,       /**< Configures to 3 g */
 };
 
+/**
+ * @brief The array holding the valid g-range options.
+ *
+ * Together with the adxl313_range as index, a particular shift in the decoder for a particular
+ * g-range is configured. The unit here is bit positions to shift.
+ */
 static const uint32_t range_to_shift[] = {
-	[ADXL313_RANGE_0_5G] = 5,
-	[ADXL313_RANGE_1G] = 6,
-	[ADXL313_RANGE_2G] = 7,
-	[ADXL313_RANGE_4G] = 8,
+	[ADXL313_RANGE_0_5G] = 5, /**< Positions to shift for 0.5 g */
+	[ADXL313_RANGE_1G] = 6,   /**< Positions to shift for 1 g */
+	[ADXL313_RANGE_2G] = 7,   /**< Positions to shift for 2 g */
+	[ADXL313_RANGE_4G] = 8,   /**< Positions to shift for 4 g */
 };
 
 /* fifo: ctl and status */
@@ -151,46 +175,79 @@ static const uint32_t range_to_shift[] = {
 #define ADXL313_FIFO_STATUS_ENTRIES_MSK GENMASK(5, 0)
 #define ADXL313_FIFO_MAX_SIZE           32
 
+/**
+ * @brief The FIFO mode of the device.
+ *
+ * The FIFO of the device supports four modi. The FIFO can either be BYPASSED and not used. In FIFO
+ * "old saved" mode and STREAM mode, data from measurements of the x-, y- and z-axes are stored in
+ * the FIFO. When the number of samples in the FIFO equals the level specified in the samples bits
+ * of the FIFO_CTL register, the watermark interrupt is set. In FIFO_OLD_SAVED the FIFO then fills
+ * up until 32 samples and stops, where in STREAM mode it continues collecting data, discarding
+ * older data as new data arrives. In FIFO TRIGGER mode, in the context of Analog Devices, the FIFO
+ * accumulates samples, holding the latest 32 samples from measurements of the x-, y-, and z-axes.
+ * After a trigger event occurs and an interrupt is sent to the configured INT pin, FIFO keeps the
+ * last n samples and then operates similar to the FIFO_OLD_SAVED mode.
+ * Note, this refers only to Analog Device's FIFO modes, by the similarity of its naming, it must
+ * not be confused with Zephyr's STREAM or TRIGGER APIs! To this respect, the sensor operates
+ * mainly in BYPASSED (with no interrupt line available) or in STREAM mode when interrupt line is
+ * configured and hence for all Zephyr triggers and zephyr's STREAM API.
+ */
 enum adxl313_fifo_mode {
-	ADXL313_FIFO_BYPASSED,
-	ADXL313_FIFO_OLD_SAVED,
-	ADXL313_FIFO_STREAMED,
-	ADXL313_FIFO_TRIGGERED
+	ADXL313_FIFO_BYPASSED,  /**< FIFO is bypassed */
+	ADXL313_FIFO_OLD_SAVED, /**< Currently unused */
+	ADXL313_FIFO_STREAMED,  /**< FIFO operates for zephyr's STREAM or TIGGER API */
+	ADXL313_FIFO_TRIGGERED  /**< Currently unused */
 };
 
 #define ADXL313_BUS_I2C 0
 #define ADXL313_BUS_SPI 1
 
+/**
+ * @brief Describe the FIFO in the device structure.
+ */
 struct adxl313_fifo_config {
-	enum adxl313_fifo_mode fifo_mode;
-	uint8_t fifo_samples; /* number of entries to read for STREAM */
+	enum adxl313_fifo_mode fifo_mode; /**< The currently configured FIFO mode */
+	uint8_t fifo_samples; /**< The number of entries to read for STREAM */
 };
 
+/**
+ * @brief The FIFO and data environment, mainly used for the hand-over to the decoder.
+ *
+ * Note: Typically this sensor operates always in full-resolution.
+ */
 struct adxl313_fifo_data {
-	uint8_t is_fifo: 1;
-	uint8_t is_full_res: 1;
-	enum adxl313_range selected_range: 2;
-	uint8_t sample_set_size: 4;
-	uint8_t int_status;
-	uint16_t accel_odr: 4;
-	uint16_t fifo_byte_count: 12;
-	uint64_t timestamp;
+	uint8_t is_fifo: 1;                   /**< Is the FIFO enabled */
+	uint8_t is_full_res: 1;               /**< Is full resolution enabled */
+	enum adxl313_range selected_range: 2; /**< The selected g-range */
+	uint8_t sample_set_size: 4;           /**< The FIFO sample size */
+	uint8_t int_status;                   /**< The interrupt status */
+	uint16_t accel_odr: 4;                /**< The ODR used to identify the period */
+	uint16_t fifo_byte_count: 12;         /**< The FIFO byte count */
+	uint64_t timestamp;                   /**< A timestamp */
 } __attribute__((__packed__));
 
+/**
+ * @brief The sample representation for x-, y-, and z-axes measurements.
+ *
+ * Note: Typically this sensor operates always in full-resolution.
+ */
 struct adxl313_xyz_accel_data {
-	enum adxl313_range selected_range;
-	bool is_full_res;
-	int16_t x;
-	int16_t y;
-	int16_t z;
+	enum adxl313_range selected_range; /**< The selected g-range */
+	bool is_full_res; /**< Is full resolution enabled */
+	int16_t x; /**< The x-axis measurement */
+	int16_t y; /**< The y-axis measurement */
+	int16_t z; /**< The z-axis measurement */
 };
 
+/**
+ * @brief The hardware bus representation.
+ */
 union adxl313_bus {
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	struct i2c_dt_spec i2c;
+	struct i2c_dt_spec i2c; /**< I2C bus is configured */
 #endif
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	struct spi_dt_spec spi;
+	struct spi_dt_spec spi; /**< SPI bus is configured */
 #endif
 };
 
@@ -200,64 +257,86 @@ union adxl313_bus {
 #define ADXL313_CACHE_SIZE  (ADXL313_CACHE_END - ADXL313_CACHE_START + 1)
 #define cache_idx(reg)      ((reg) - ADXL313_CACHE_START)
 
+/**
+ * @brief The driver data structure.
+ */
 struct adxl313_dev_data {
-	uint8_t reg_cache[ADXL313_CACHE_SIZE];
-	struct adxl313_xyz_accel_data sample;
-	int8_t fifo_entries; /* the actual read FIFO entries */
-	struct adxl313_fifo_config fifo_config;
-	bool is_full_res;
-	enum adxl313_odr odr;
-	enum adxl313_range selected_range;
+	uint8_t reg_cache[ADXL313_CACHE_SIZE];        /**< Cached bus access */
+	struct adxl313_xyz_accel_data sample;         /**< The current sample */
+	int8_t fifo_entries;                          /**< The actual read FIFO entries */
+	struct adxl313_fifo_config fifo_config;       /**< The current FIFO configuration */
+	bool is_full_res;                             /**< Do we operate in full resolution */
+	enum adxl313_odr odr;                         /**< The configured ODR rate */
+	enum adxl313_range selected_range;            /**< The selected g-range */
 #ifdef CONFIG_ADXL313_TRIGGER
-	struct k_mutex trigger_mutex;
-	struct gpio_callback int1_cb;
-	struct gpio_callback int2_cb;
-	sensor_trigger_handler_t act_handler;
-	const struct sensor_trigger *act_trigger;
-	sensor_trigger_handler_t inact_handler;
-	const struct sensor_trigger *inact_trigger;
-	sensor_trigger_handler_t drdy_handler;
-	const struct sensor_trigger *drdy_trigger;
-	sensor_trigger_handler_t wm_handler;
-	const struct sensor_trigger *wm_trigger;
-	sensor_trigger_handler_t overrun_handler;
-	const struct sensor_trigger *overrun_trigger;
-	const struct device *dev;
-	uint64_t timestamp;
-	uint8_t reg_int_source;
+	struct k_mutex trigger_mutex;                 /**< A mutex used for trigger handling */
+	struct gpio_callback int1_cb;                 /**< The interrupt callback for INT1 */
+	struct gpio_callback int2_cb;                 /**< The interrupt callback for INT2 */
+	sensor_trigger_handler_t act_handler;         /**< The handler for activity events */
+	const struct sensor_trigger *act_trigger;     /**< The trigger for activity events */
+	sensor_trigger_handler_t inact_handler;       /**< The handler for inactivity events */
+	const struct sensor_trigger *inact_trigger;   /**< The trigger for inactivity events */
+	sensor_trigger_handler_t drdy_handler;        /**< The handler for data ready events */
+	const struct sensor_trigger *drdy_trigger;    /**< The trigger for data ready events */
+	sensor_trigger_handler_t wm_handler;          /**< The handler for watermark events */
+	const struct sensor_trigger *wm_trigger;      /**< The trigger for watermark events */
+	sensor_trigger_handler_t overrun_handler;     /**< The handler for overrun events */
+	const struct sensor_trigger *overrun_trigger; /**< The trigger for overrun events */
+	const struct device *dev;                     /**< Pointes to the device */
+	uint64_t timestamp;                           /**< A timestamp holder */
+	uint8_t reg_int_source;                       /**< Content of the INT_SOURCE register */
 #if defined(CONFIG_ADXL313_TRIGGER_OWN_THREAD)
-	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ADXL313_THREAD_STACK_SIZE);
-	struct k_sem gpio_sem;
-	struct k_thread thread;
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ADXL313_THREAD_STACK_SIZE); /**< Thread stack */
+	struct k_sem gpio_sem;                        /**< A semaphor for GPIO handling */
+	struct k_thread thread;                       /**< Holds the thread (for "own thread") */
 #elif defined(CONFIG_ADXL313_TRIGGER_GLOBAL_THREAD)
-	struct k_work work;
+	struct k_work work;                           /**< A work holder for "global thread" */
 #endif
 #endif /* CONFIG_ADXL313_TRIGGER */
 #ifdef CONFIG_ADXL313_STREAM
-	struct rtio_iodev_sqe *iodev_sqe;
-	struct rtio *rtio_ctx;
-	struct rtio_iodev *iodev;
-	uint8_t reg_fifo_status;
-	struct rtio *r_cb;
+	struct rtio_iodev_sqe *iodev_sqe;             /**< RTIO pointer to SQE */
+	struct rtio *rtio_ctx;                        /**< RTIO context */
+	struct rtio_iodev *iodev;                     /**< RTIO used iodev */
+	uint8_t reg_fifo_status;                      /**< Content of the FIFO_STATUS register */
+	struct rtio *r_cb;                            /**< RTIO callback holder */
 #endif /* CONFIG_ADXL313_STREAM */
 };
 
+/**
+ * @brief Function pointer to hold bus ready state in the device config.
+ *
+ * @param bus The used bus. NULL is not allowed.
+ * @return Returns if the bus is ready (true), or not.
+ */
 typedef bool (*adxl313_bus_is_ready_fn)(const union adxl313_bus *bus);
+
+/**
+ * @brief Function pointer to hold register access function in the device config.
+ *
+ * @param dev The device structure. Null is not allowed.
+ * @param cmd The current command.
+ * @param reg_addr The register address to operate the command.
+ * @param[in,out] data The data field to pass or read in. Must point to valid memory.
+ * @param length The length of the valid memory, *data points to.
+ * @return 0 in case of success, or a negative error code.
+ */
 typedef int (*adxl313_reg_access_fn)(const struct device *dev, uint8_t cmd, uint8_t reg_addr,
 				     uint8_t *data, size_t length);
-
+/**
+ * @brief The device configuration for static device data.
+ */
 struct adxl313_dev_config {
-	const union adxl313_bus bus;
-	adxl313_bus_is_ready_fn bus_is_ready;
-	adxl313_reg_access_fn reg_access;
-	enum adxl313_range selected_range;
-	enum adxl313_odr odr;
-	uint8_t bus_type;
+	const union adxl313_bus bus;          /**< The used hardware bus */
+	adxl313_bus_is_ready_fn bus_is_ready; /**< Function to obtain the hardware bus state */
+	adxl313_reg_access_fn reg_access;     /**< Function to access the registers over this bus */
+	enum adxl313_range selected_range;    /**< The selected sensor g-range */
+	enum adxl313_odr odr;                 /**< The configured ODR */
+	uint8_t bus_type;                     /**< The type of hardware bus */
 #ifdef CONFIG_ADXL313_TRIGGER
-	struct gpio_dt_spec gpio_int1;
-	struct gpio_dt_spec gpio_int2;
-	int8_t drdy_pad;
-	uint8_t fifo_samples;
+	struct gpio_dt_spec gpio_int1;        /**< Devicetree handle to the GPIO for INT1 */
+	struct gpio_dt_spec gpio_int2;        /**< Devicetree handle to the GPIO for INT2 */
+	int8_t drdy_pad;                      /**< Data-ready handle used in the devicetree */
+	uint8_t fifo_samples;                 /**< Number of samples in the FIFO */
 #endif
 };
 

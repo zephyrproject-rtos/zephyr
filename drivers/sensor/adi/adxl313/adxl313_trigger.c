@@ -13,6 +13,25 @@
 
 LOG_MODULE_DECLARE(ADXL313, CONFIG_SENSOR_LOG_LEVEL);
 
+/**
+ * @brief Configure interrupt pins for ADXL313 accelerometer
+ *
+ * This function enables or disables interrupts on either INT1 or INT2 pin of the
+ * ADXL313 accelerometer. The configuration is based on the device tree settings.
+ *
+ * @param dev Pointer to the device structure containing driver configuration. NULL is not
+ *        allowed.
+ * @param[in] en Boolean flag: true to enable, false to disable interrupt pins.
+ *
+ * @return 0 if successful, or negative errno code in case of error:
+ *         -ENOTSUP if neither INT1 nor INT2 is configured in device tree
+ *         -EINVAL if drdy_pad value is invalid (neither 1 nor 2)
+ *
+ * @details The function checks the following:
+ *          - If both INT1 and INT2 are not configured, returns ENOTSUP
+ *          - Based on drdy_pad setting (1 or 2), configures either INT1 or INT2
+ *            interrupt using gpio_pin_interrupt_configure_dt()
+ */
 int adxl313_set_gpios_en(const struct device *dev, bool en)
 {
 	const struct adxl313_dev_config *cfg = dev->config;
@@ -189,7 +208,7 @@ static void adxl313_work_cb(struct k_work *work)
 #endif
 
 /**
- * Register an application callback for sensor triggers.
+ * @brief Register an application callback for sensor triggers.
  *
  * This function allows the application to register interrupt service routines
  * (ISRs) for specific sensor events. Supported triggers include:
@@ -206,8 +225,8 @@ static void adxl313_work_cb(struct k_work *work)
  * - FIFO overrun is handled internally by the driver; register a handler only
  *   if the application needs to be notified of this condition.
  *
- * @param dev Pointer to the device structure.
- * @param trig Pointer to the sensor_trigger specifying the event to handle.
+ * @param dev Pointer to the device structure. NULL is not allowed.
+ * @param trig Pointer to the sensor_trigger specifying the event to handle. NULL is not allowed.
  * @param handler Callback function to invoke when the specified trigger occurs.
  *
  * @return 0 on success, or a negative error code on failure.
@@ -295,6 +314,31 @@ done:
 	return adxl313_flush_fifo(dev);
 }
 
+/**
+ * @brief Initialize ADXL313 interrupt handling.
+ *
+ * This function initializes the interrupt handling system for the ADXL313 accelerometer.
+ * It sets up GPIO interrupts and thread management based on configuration options.
+ *
+ * The initialization includes:
+ * - Setting up mutex protection for trigger operations
+ * - Verifying that at least one INT line is defined in device tree
+ * - Checking if configured GPIO lines are ready
+ * - Configuring interrupt pins as input
+ * - Adding callback functions for interrupt handling
+ * - Initializing thread or work queue based on configuration options:
+ *   - CONFIG_ADXL313_TRIGGER_OWN_THREAD: Creates dedicated thread for interrupts
+ *   - CONFIG_ADXL313_TRIGGER_GLOBAL_THREAD: Uses global thread with work queue
+ *
+ * @param dev Pointer to device structure containing configuration and I2C interface. NULL is not
+ *        allowed.
+ *
+ * @return int Status code:
+ *         - 0: Success (interrupt handling initialized)
+ *         - -ENOTSUP: No INT lines defined in device tree
+ *         - -ENODEV: GPIO line is not ready
+ *         - Negative value: Other error occurred during initialization
+ */
 int adxl313_init_interrupt(const struct device *dev)
 {
 	const struct adxl313_dev_config *cfg = dev->config;

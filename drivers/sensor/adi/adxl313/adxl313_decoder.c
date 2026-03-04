@@ -37,6 +37,24 @@ static const uint32_t qscale_factor_full_res[] = {
 	[ADXL313_RANGE_4G] = UINT32_C(321344),
 };
 
+/**
+ * @brief Converts accelerometer raw data to Q31 format
+ *
+ * This function converts the raw accelerometer sample from the ADXL313 sensor into
+ * a fixed-point Q31 format. The conversion takes into account both the range setting
+ * and whether full resolution mode is enabled.
+ *
+ * @param[out] out Pointer to store the converted Q31 value, must point to valid memory.
+ * @param[in] sample Raw 16-bit accelerometer data from ADXL313.
+ * @param[in] range Selected measurement range of the sensor (0.5g, 1g, 2g, or 4g).
+ * @param[in] is_full_res Flag indicating if full resolution mode is enabled.
+ *
+ * @details The function performs two main operations:
+ *          - If in full resolution mode, it applies sign extension based on the
+ *            selected range and sample value.
+ *          - Multiplies the processed sample by an appropriate scale factor to
+ *            convert it into Q31 format.
+ */
 void adxl313_accel_convert_q31(q31_t *out, int16_t sample, enum adxl313_range range,
 			       bool is_full_res)
 {
@@ -293,6 +311,20 @@ SENSOR_DECODER_API_DT_DEFINE() = {
 	.get_size_info = adxl313_get_size_info,
 };
 
+/**
+ * @brief Get pointer to ADXL313 sensor decoder API
+ *
+ * This function provides a reference to the sensor decoder API structure used
+ * by the ADXL313 accelerometer driver. The decoder is responsible for processing
+ * raw sensor data into meaningful acceleration values.
+ *
+ * @param dev Pointer to device structure (unused, provided for consistency). NULL is not allowed.
+ * @param[out] decoder Pointer where the sensor decoder API pointer will be stored. NULL is not
+ *        allowed.
+ *
+ * @return int Status code:
+ *         - 0: Success (decoder API retrieved successfully)
+ */
 int adxl313_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder)
 {
 	ARG_UNUSED(dev);

@@ -51,6 +51,26 @@ static void adxl313_submit_fetch(struct rtio_iodev_sqe *iodev_sqe)
 	rtio_iodev_sqe_ok(iodev_sqe, 0);
 }
 
+/**
+ * @brief Submit a sensor read request to ADXL313 accelerometer
+ *
+ * This function handles submission of RTIO (Real-Time IO) requests to the ADXL313.
+ * The behavior depends on whether streaming is enabled or not:
+ *
+ * - For non-streaming mode:
+ *   - Allocates and submits an RTIO work request for single sample fetching
+ *   - Uses adxl313_submit_fetch() as the callback function
+ *
+ * - For streaming mode (CONFIG_ADXL313_STREAM defined):
+ *   - Calls adxl313_submit_stream() to set up continuous data collection
+ *
+ * - If neither streaming nor work queue is supported:
+ *   - Returns an error indicating unsupported operation (-ENOTSUP)
+ *
+ * @param dev Pointer to device structure containing configuration. NULL is not allowed.
+ * @param[in] iodev_sqe RTIO stream queue entry containing the read request details. NULL is not
+ *        allowed.
+ */
 void adxl313_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;

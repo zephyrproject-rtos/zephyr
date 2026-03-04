@@ -39,6 +39,15 @@ static bool adxl313_bus_is_ready_i2c(const union adxl313_bus *bus)
 	return device_is_ready(bus->i2c.bus);
 }
 
+/**
+ * @brief Provide read or write access to the I2C bus.
+ * @param dev The device structure. Null is not allowed.
+ * @param cmd The current command.
+ * @param reg_addr The register address to operate the command.
+ * @param[in,out] data The data field to pass or read in. Must point to valid memory.
+ * @param length The length of the valid memory, *data points to.
+ * @return 0 in case of success, or a negative error code.
+ */
 static int adxl313_reg_access_i2c(const struct device *dev, uint8_t cmd, uint8_t reg_addr,
 				  uint8_t *data, size_t length)
 {
@@ -58,6 +67,15 @@ static bool adxl313_bus_is_ready_spi(const union adxl313_bus *bus)
 	return spi_is_ready_dt(&bus->spi);
 }
 
+/**
+ * @brief Provide read or write access to the SPI bus.
+ * @param dev The device structure. Null is not allowed.
+ * @param cmd The current command.
+ * @param reg_addr The register address to operate the command.
+ * @param[in,out] data The data field to pass or read in. Must point to valid memory.
+ * @param length The length of the valid memory, *data points to.
+ * @return 0 in case of success, or a negative error code.
+ */
 int adxl313_reg_access_spi(const struct device *dev, uint8_t cmd, uint8_t reg_addr, uint8_t *data,
 			   size_t length)
 {
@@ -82,6 +100,27 @@ int adxl313_reg_access_spi(const struct device *dev, uint8_t cmd, uint8_t reg_ad
 }
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 
+/**
+ * @brief Perform register access operation on ADXL313 accelerometer
+ *
+ * This function provides a generic interface to perform read or write operations
+ * on ADXL313 registers. It delegates the actual register access implementation
+ * to the device configuration's reg_access() callback.
+ *
+ * The function supports both reading from and writing to registers, depending on
+ * the command specified in @p cmd.
+ *
+ * @param dev Pointer to device structure containing configuration and I2C interface,
+ *        NULL not allowed.
+ * @param cmd Command type (typically read or write operation)
+ * @param addr Register address within ADXL313
+ * @param[in,out] data Buffer for storing/read data from register(s), must point to valid memory.
+ * @param len Number of bytes to read/write
+ *
+ * @return int Status code:
+ *         - 0: Success (operation completed successfully)
+ *         - Negative value: Error occurred during operation
+ */
 int adxl313_reg_access(const struct device *dev, uint8_t cmd, uint8_t addr, uint8_t *data,
 		       size_t len)
 {
@@ -93,9 +132,9 @@ int adxl313_reg_access(const struct device *dev, uint8_t cmd, uint8_t addr, uint
 /**
  * @brief Write data to ADXL313 register.
  *
- * @param dev Pointer to the device structure.
+ * @param dev Pointer to the device structure, NULL not allowed.
  * @param addr Register address.
- * @param data Pointer to buffer with data to write.
+ * @param[in] data Pointer to buffer with data to write, must point to valid memory.
  * @param len Number of bytes.
  * @return 0 on success, negative error code otherwise.
  */
@@ -104,6 +143,25 @@ int adxl313_reg_write(const struct device *dev, uint8_t addr, uint8_t *data, uin
 	return adxl313_reg_access(dev, ADXL313_WRITE_CMD, addr, data, len);
 }
 
+/**
+ * @brief Read raw register values from ADXL313 accelerometer
+ *
+ * This function reads raw data directly from a specified register or sequence of registers
+ * in the ADXL313. It uses the generic register access mechanism to perform the read operation.
+ *
+ * The function is particularly useful when reading sensor data that hasn't been processed
+ * by any internal scaling or filtering.
+ *
+ * @param dev Pointer to device structure containing configuration and I2C interface, NULL
+ *        not allowed.
+ * @param addr Starting register address in ADXL313 (8-bit).
+ * @param[out] data Buffer where the read data will be stored, must point to valid memory.
+ * @param len Number of bytes to read from the specified register(s).
+ *
+ * @return int Status code:
+ *         - 0: Success (data read successfully)
+ *         - Negative value: Error occurred during operation
+ */
 int adxl313_raw_reg_read(const struct device *dev, uint8_t addr, uint8_t *data, uint8_t len)
 {
 	return adxl313_reg_access(dev, ADXL313_READ_CMD, addr, data, len);
@@ -171,6 +229,23 @@ static enum adxl313_cache_res adxl313_cache_put(struct adxl313_dev_data *data, u
 	return ADXL313_CACHE_HIT;
 }
 
+/**
+ * @brief Read a single byte from an ADXL313 register using cache if available
+ *
+ * This function reads a single byte value from a specified register in the ADXL313.
+ * It first checks if the requested register value is already cached. If it exists
+ * in the cache, the cached value is returned immediately. Otherwise, it performs
+ * a raw read operation to fetch the current value and updates the cache before returning.
+ *
+ * @param dev Pointer to device structure containing configuration and I2C interface,
+ *        NULL not allowed.
+ * @param addr Register address in ADXL313 (8-bit).
+ * @param[out] buf Buffer where the read byte will be stored, must point to valid memory.
+ *
+ * @return int Status code:
+ *         - 0: Success (value read successfully from cache or register)
+ *         - Negative value: Error occurred during operation
+ */
 int adxl313_reg_read_byte(const struct device *dev, uint8_t addr, uint8_t *buf)
 {
 	if (adxl313_cache_get(dev->data, addr, buf) != ADXL313_CACHE_HIT) {
@@ -180,6 +255,23 @@ int adxl313_reg_read_byte(const struct device *dev, uint8_t addr, uint8_t *buf)
 	return 0;
 }
 
+/**
+ * @brief Write a single byte to an ADXL313 register
+ *
+ * This function writes a single byte value to a specified register in the ADXL313.
+ * It also updates the device data cache with the new value before performing the write operation.
+ *
+ * The function is a wrapper around adxl313_reg_write() that simplifies writing single bytes.
+ *
+ * @param dev Pointer to device structure containing configuration and I2C interface, NULL
+ *        not allowed.
+ * @param addr Register address in ADXL313 (8-bit).
+ * @param val Value to be written to the specified register (8-bit).
+ *
+ * @return int Status code:
+ *         - 0: Success (register written successfully)
+ *         - Negative value: Error occurred during operation
+ */
 int adxl313_reg_write_byte(const struct device *dev, uint8_t addr, uint8_t val)
 {
 	adxl313_cache_put(dev->data, addr, val);
@@ -187,6 +279,26 @@ int adxl313_reg_write_byte(const struct device *dev, uint8_t addr, uint8_t val)
 	return adxl313_reg_write(dev, addr, &val, 1);
 }
 
+/**
+ * @brief Write to a specific bit field in an ADXL313 register
+ *
+ * This function writes data to a specified mask of bits within a given register.
+ * It performs a read-modify-write operation:
+ * 1. Reads the current value of the target register
+ * 2. Clears the bits defined by the mask using bitwise AND with inverted mask
+ * 3. Sets the desired bits using bitwise OR with data and mask
+ * 4. Writes the modified value back to the register
+ *
+ * @param dev Pointer to device structure containing configuration and I2C interface, NULL
+ *        not allowed.
+ * @param reg Register address in ADXL313 (8-bit).
+ * @param mask Bitmask defining which bits should be written (0 means keep, 1 means write).
+ * @param data New value to be written into the specified bit positions.
+ *
+ * @return int Status code:
+ *         - 0: Success (register modified successfully)
+ *         - Negative value: Error occurred during operation
+ */
 int adxl313_reg_write_mask(const struct device *dev, uint8_t reg, uint8_t mask, uint8_t data)
 {
 	uint8_t regval, tmp;
@@ -203,6 +315,30 @@ int adxl313_reg_write_mask(const struct device *dev, uint8_t reg, uint8_t mask, 
 	return adxl313_reg_write_byte(dev, reg, tmp);
 }
 
+/**
+ * @brief Assign bits in an ADXL313 register based on enable flag
+ *
+ * This function sets or clears specific bits within a given register using a bitmask.
+ * It uses a simple boolean condition to determine whether to set (enable) or clear
+ * the specified bits:
+ * - If en is true: Sets the bits defined by mask
+ * - If en is false: Clears the bits defined by mask
+ *
+ * This function is a wrapper around adxl313_reg_write_mask() that simplifies bit manipulation
+ * operations based on an enable flag.
+ *
+ * @param dev Pointer to device structure containing configuration and I2C interface, NULL not
+ *        allowed.
+ * @param reg Register address in ADXL313 (8-bit).
+ * @param mask Bitmask defining which bits should be modified.
+ * @param en Boolean flag determining whether to set or clear the specified bits:
+ *           - true: Set the bits
+ *           - false: Clear the bits
+ *
+ * @return int Status code:
+ *         - 0: Success (register bits assigned successfully)
+ *         - Negative value: Error occurred during operation
+ */
 int adxl313_reg_assign_bits(const struct device *dev, uint8_t reg, uint8_t mask, bool en)
 {
 	return adxl313_reg_write_mask(dev, reg, mask, en ? mask : 0x00);
@@ -215,6 +351,22 @@ static inline bool adxl313_bus_is_ready(const struct device *dev)
 	return cfg->bus_is_ready(&cfg->bus);
 }
 
+/**
+ * @brief Check if ADXL313 measurement mode is enabled
+ *
+ * This function reads the POWER_CTL register of the ADXL313 accelerometer and checks
+ * whether the device is in measurement mode.
+ *
+ * @param dev Pointer to the device structure containing driver configuration, NULL not
+ *        allowed.
+ *
+ * @return true if measurement mode is enabled, false otherwise or on error.
+ *
+ * @details The function:
+ *          - Reads the POWER_CTL register using adxl313_reg_read_byte()
+ *          - Extracts the MEASURE bit field from the register value
+ *          - Returns true only if the MEASURE bit is set (measurement mode active)
+ */
 bool adxl313_is_measure_en(const struct device *dev)
 {
 	uint8_t regval;
@@ -228,11 +380,42 @@ bool adxl313_is_measure_en(const struct device *dev)
 	return !!(FIELD_GET(ADXL313_POWER_CTL_MEASURE, regval));
 }
 
+/**
+ * @brief Enable or disable measurement mode on ADXL313 accelerometer
+ *
+ * This function controls whether measurements are enabled or disabled in the ADXL313.
+ * It modifies the MEASURE bit in the POWER_CTL register.
+ *
+ * @param dev Pointer to device structure containing configuration and I2C interface, NULL
+ *         not allowed.
+ * @param en True to enable measurement mode, False to disable it.
+ *
+ * @return int Status code:
+ *         - 0: Success
+ *         - Negative value: Error occurred during operation
+ */
 int adxl313_set_measure_en(const struct device *dev, bool en)
 {
 	return adxl313_reg_assign_bits(dev, ADXL313_REG_POWER_CTL, ADXL313_POWER_CTL_MEASURE, en);
 }
 
+/**
+ * @brief Get number of entries in ADXL313 FIFO buffer
+ *
+ * This function reads and returns the current number of samples stored in the
+ * ADXL313 accelerometer's FIFO buffer.
+ *
+ * The FIFO status register is read to extract the number of available entries,
+ * which represents the number of 6-axis data samples (X, Y, Z axes) currently
+ * available for reading.
+ *
+ * @param dev Pointer to device structure containing configuration and I2C interface. NULL is not
+ *        allowed.
+ *
+ * @return int Number of entries in FIFO buffer:
+ *         - Non-negative value: Number of available samples
+ *         - Negative value: Error occurred during operation
+ */
 int adxl313_get_fifo_entries(const struct device *dev)
 {
 	uint8_t regval;
@@ -246,11 +429,47 @@ int adxl313_get_fifo_entries(const struct device *dev)
 	return FIELD_GET(ADXL313_FIFO_STATUS_ENTRIES_MSK, regval);
 }
 
+/**
+ * @brief Read ADXL313 interrupt source register
+ *
+ * This function reads the INT_SOURCE register of the ADXL313 accelerometer,
+ * which contains information about active interrupts and status flags.
+ *
+ * The read value can be used to determine which interrupts are currently active
+ * or to check various status conditions as defined in the datasheet.
+ *
+ * @param dev Pointer to device structure containing configuration and I2C interface, NULL not
+ *        allowed.
+ * @param[out] status Pointer to store the interrupt source register value, must point to valid
+ *        memory.
+ *
+ * @return int Status code:
+ *         - 0: Success (status read successfully)
+ *         - Negative value: Error occurred during operation
+ */
 int adxl313_get_status(const struct device *dev, uint8_t *status)
 {
 	return adxl313_reg_read_byte(dev, ADXL313_REG_INT_SOURCE, status);
 }
 
+/**
+ * @brief Flush FIFO buffer of ADXL313 accelerometer
+ *
+ * This function ensures that the FIFO buffer is completely emptied. It reads all
+ * remaining samples from the FIFO until it is empty, which is necessary to fully
+ * reset its status and control registers.
+ *
+ * When CONFIG_ADXL313_TRIGGER is defined, simply toggling the FIFO state (BYPASSED
+ * to STREAM) does not trigger watermark or overrun events. Therefore, this function
+ * performs a complete flush by reading all remaining samples from the FIFO.
+ *
+ * @param dev Pointer to device structure containing configuration and I2C interface, NULL not
+ *        allowed.
+ *
+ * @return int Status code:
+ *         - 0: Success (FIFO flushed)
+ *         - Negative value: Error occurred during operation
+ */
 int adxl313_flush_fifo(const struct device *dev)
 {
 #if defined(CONFIG_ADXL313_TRIGGER)
@@ -299,20 +518,18 @@ int adxl313_flush_fifo(const struct device *dev)
 }
 
 /**
- * adxl313_configure_fifo - Configure the FIFO operating parameters.
+ * @brief Configure the FIFO operating parameters.
  *
  * This function sets the FIFO mode and watermark level used to control FIFO
  * behavior. Depending on the selected mode, the FIFO may be bypassed or operated
  * in a streamed configuration. When the FIFO is bypassed, the watermark level
  * is reset accordingly.
  *
- * @param dev Pointer to the device structure.
- * @param mode FIFO operating mode. Typically either
- *             ADXL313_FIFO_BYPASSED or ADXL313_FIFO_STREAMED.
- * @param fifo_samples FIFO watermark level, expressed as the number of samples
- *                     required to trigger a FIFO_FULL condition. Valid values
- *                     range from 0 to 32; selecting ADXL313_FIFO_BYPASSED
- *                     implicitly resets this value to 0.
+ * @param dev Pointer to the device structure. NULL is not allowed.
+ * @param mode FIFO operating mode. Typically either ADXL313_FIFO_BYPASSED or ADXL313_FIFO_STREAMED.
+ * @param fifo_samples FIFO watermark level, expressed as the number of samples required to trigger
+ *        a FIFO_FULL condition. Valid values range from 0 to 32; selecting ADXL313_FIFO_BYPASSED
+ *        implicitly resets this value to 0.
  *
  * @return 0 on success, or a negative error code on failure.
  */
@@ -381,7 +598,7 @@ static int adxl313_attr_set_odr(const struct device *dev, const struct sensor_va
 }
 
 /**
- * Set the FIFO watermark level via sensor attributes.
+ * @brief Set the FIFO watermark level via sensor attributes.
  *
  * In RTIO mode, the FIFO watermark (i.e. the number of FIFO entries) is used to
  * size the memory pool that holds FIFO elements. For this reason, the watermark
@@ -389,12 +606,12 @@ static int adxl313_attr_set_odr(const struct device *dev, const struct sensor_va
  * value greater than the statically reserved memory capacity via attributes may
  * lead to a system crash.
  *
- * @param dev Pointer to the device structure.
- * @param val Pointer to a sensor_value containing the desired watermark level
- *            in val1.
+ * @param dev Pointer to the device structure. NULL is not allowed.
+ * @param[in] val Pointer to a sensor_value containing the desired watermark level in val1. NULL not
+ *        allowed.
  *
- * @return 0 on success, or a negative error code if the value is out of range or
- *         the register update fails.
+ * @return 0 on success, or a negative error code if the value is out of range or the register
+ *         update fails.
  */
 static int adxl313_attr_set_watermark(const struct device *dev, const struct sensor_value *val)
 {
@@ -480,7 +697,7 @@ static int adxl313_act_inact_linkbit(const struct device *dev)
 }
 
 /**
- * Set the activity detection threshold.
+ * @brief Set the activity detection threshold.
  *
  * The activity threshold is specified in raw LSB counts and written directly
  * to an 8-bit register. No scaling is applied by this function; the effective
@@ -490,9 +707,9 @@ static int adxl313_act_inact_linkbit(const struct device *dev)
  * events are linked and automatic sleep mode (power save) is enabled. In this
  * configuration, only state changes generate interrupts.
  *
- * @param dev Pointer to the device structure.
- * @param val Pointer to a sensor_value containing the activity threshold.
- *            A value of 0 disables activity detection.
+ * @param dev Pointer to the device structure. NULL is not allowed.
+ * @param val Pointer to a sensor_value containing the activity threshold. A value of 0 disables
+ *        activity detection. NULL not allowed.
  *
  * @return 0 on success, or a negative error code on failure.
  */
@@ -548,7 +765,7 @@ static int adxl313_attr_set_act_threshold(const struct device *dev, const struct
 }
 
 /**
- * Set the inactivity detection threshold.
+ * @brief Set the inactivity detection threshold.
  *
  * The inactivity threshold is specified in raw LSB counts and written directly
  * to an 8-bit register. No scaling is applied by this function; the effective
@@ -558,10 +775,10 @@ static int adxl313_attr_set_act_threshold(const struct device *dev, const struct
  * events are linked and automatic sleep mode is enabled. In this configuration,
  * only state changes generate interrupts.
  *
- * @param dev Pointer to the device structure.
- * @param val Pointer to a sensor_value containing the inactivity threshold.
- *            A value of 0 disables inactivity detection. Note that a valid
- *            inactivity timeout must also be configured.
+ * @param dev Pointer to the device structure. NULL is not allowed.
+ * @param val Pointer to a sensor_value containing the inactivity threshold. A value of 0 disables
+ *        inactivity detection. Note that a valid inactivity timeout must also be configured. NULL
+ *        not allowed.
  *
  * @return 0 on success, or a negative error code on failure.
  */
@@ -616,7 +833,7 @@ static int adxl313_attr_set_inact_threshold(const struct device *dev,
 }
 
 /**
- * Set the inactivity detection timeout.
+ * @brief Set the inactivity detection timeout.
  *
  * The inactivity timeout is specified in raw LSB counts and written directly
  * to the corresponding register. With a scale factor of 1 second per LSB, the
@@ -626,10 +843,10 @@ static int adxl313_attr_set_inact_threshold(const struct device *dev,
  * events are linked and automatic sleep mode is enabled. In this configuration,
  * only state changes generate interrupts.
  *
- * @param dev Pointer to the device structure.
- * @param val Pointer to a sensor_value containing the inactivity timeout.
- *            A value of 0 disables inactivity detection. Note that a valid
- *            inactivity threshold must also be configured.
+ * @param dev Pointer to the device structure. NULL is not allowed.
+ * @param val Pointer to a sensor_value containing the inactivity timeout. NULL not allowed. A value
+ *        of 0 disables inactivity detection. Note that a valid inactivity threshold must also be
+ *        configured.
  *
  * @return 0 on success, or a negative error code on failure.
  */
@@ -683,31 +900,32 @@ static int adxl313_attr_set_inact_timeout(const struct device *dev, const struct
 }
 
 /**
- * adxl313_attr_set - Set sensor attributes from an application.
+ * @brief Set sensor attributes from an application.
  *
  * This function allows the application to configure key features of the ADXL313
  * sensor by setting the appropriate attributes. The available attributes and
  * their effects are:
  *
  * - SENSOR_ATTR_SAMPLING_FREQUENCY: Configures the output data rate (ODR) of
- *	the sensor.
+ *   the sensor.
  * - SENSOR_ATTR_UPPER_THRESH: Sets the activity threshold, enabling activity
- *	interrupts.
+ *   interrupts.
  * - SENSOR_ATTR_LOWER_THRESH: Sets the inactivity threshold.
  * - SENSOR_ATTR_HYSTERESIS: Sets the inactivity timeout. When both threshold
- *	and timeout are configured, inactivity interrupts are enabled.
+ *   and timeout are configured, inactivity interrupts are enabled.
  * - SENSOR_ATTR_MAX: Sets the FIFO
- *	watermark level.
+ *   watermark level.
  *
  * When both activity and inactivity are enabled, the sensor links the two
  * events and enables the internal power-save mini-state machine. If only one of
  * them is enabled, interrupts will occur on each activity exceeding the
  * threshold or on each inactivity timeout.
  *
- * @param dev Pointer to the device structure.
+ * @param dev Pointer to the device structure. NULL is not allowed.
  * @param chan The sensor channel (currently unused, reserved for future expansion).
  * @param attr The attribute to configure (one of the SENSOR_ATTR_* options above).
- * @param val Pointer to a sensor_value containing the desired value for the attribute.
+ * @param val Pointer to a sensor_value containing the desired value for the attribute. NULL is not
+ *        allowed.
  *
  * @return 0 on success, or a negative error code if the attribute is unsupported
  *         or the configuration fails.
@@ -731,6 +949,24 @@ static int adxl313_attr_set(const struct device *dev, enum sensor_channel chan,
 	}
 }
 
+/**
+ * @brief Read a single accelerometer sample from ADXL313
+ *
+ * This function reads a complete acceleration measurement (X, Y, Z axes) from the
+ * ADXL313 accelerometer. The data is read directly from the DATA_XYZ registers and
+ * combined into 16-bit values for each axis.
+ *
+ * @param dev Pointer to device structure containing configuration and I2C interface. NULL is not
+ *        allowed.
+ * @param[out] sample Structure where the acceleration data will be stored (NULL is not allowed):
+ *                     - x: X-axis acceleration value (LSB in first byte, MSB in second)
+ *                     - y: Y-axis acceleration value (LSB in third byte, MSB in fourth)
+ *                     - z: Z-axis acceleration value (LSB in fifth byte, MSB in sixth)
+ *
+ * @return int Status code:
+ *         - 0: Success (sample read successfully)
+ *         - Negative value: Error occurred during operation
+ */
 int adxl313_read_sample(const struct device *dev, struct adxl313_xyz_accel_data *sample)
 {
 	uint8_t axis_data[ADXL313_FIFO_SAMPLE_SIZE];
@@ -758,7 +994,7 @@ int adxl313_read_sample(const struct device *dev, struct adxl313_xyz_accel_data 
 }
 
 /**
- * adxl313_accel_convert - Convert a raw acceleration sample to a sensor_value.
+ * @brief Convert a raw acceleration sample to a sensor_value.
  *
  * This function provides a fallback conversion path for raw acceleration
  * samples when no decoder is available, i.e. when neither TRIGGER nor STREAM
@@ -769,9 +1005,9 @@ int adxl313_read_sample(const struct device *dev, struct adxl313_xyz_accel_data 
  * to the provided @ref sensor_value structure, including the fractional
  * component.
  *
- * @param[out] out Pointer to the sensor_value structure to be populated.
- * @param sample  Raw acceleration sample read from the sensor.
- * @param range   Configured acceleration range of the device.
+ * @param[out] out Pointer to the sensor_value structure to be populated. NULL is not allowed.
+ * @param sample Raw acceleration sample read from the sensor.
+ * @param range Configured acceleration range of the device.
  * @param is_full_res Indicates whether full-resolution mode is enabled.
  */
 static void adxl313_accel_convert(struct sensor_value *out, int16_t sample,
@@ -799,12 +1035,12 @@ static void adxl313_accel_convert(struct sensor_value *out, int16_t sample,
 }
 
 /**
- * adxl313_sample_fetch - Fetch raw sensor samples.
+ * @brief Fetch raw sensor samples.
  *
  * Fetches a set of raw (unscaled) sensor samples. Each set consists of three
  * axis values read in a burst.
  *
- * @param dev The device structure.
+ * @param dev The device structure. NULL is not allowed.
  * @param chan The sensor channel.
  *
  * @returns 0 for success, else a negative error code.
@@ -829,12 +1065,12 @@ static int adxl313_sample_fetch(const struct device *dev, enum sensor_channel ch
 }
 
 /**
- * adxl313_channel_get - Read a single element of one or three axis.
+ * @brief Read a single element of one or three axis.
  *
- * @param dev The sensor device.
+ * @param dev The sensor device. NULL is not allowed.
  * @param chan The axis channel, can be x, y, z or xyz.
- * @param val The resulting value after conversion of the raw axis data. Val can
- *	be a single value or an array of three values.
+ * @param[out] val The resulting value after conversion of the raw axis data. Val can be a single
+ *        value or an array of three values. NULL is not allowed.
  *
  * @returns 0 for success, else a negative error value.
  */
@@ -902,7 +1138,7 @@ static DEVICE_API(sensor, adxl313_api_funcs) = {
 };
 
 /**
- * adxl313_init - Initialize the ADXL313 sensor device
+ * @brief Initialize the ADXL313 sensor device.
  *
  * This function initializes the ADXL313 accelerometer sensor by performing the
  * following steps:
@@ -918,7 +1154,7 @@ static DEVICE_API(sensor, adxl313_api_funcs) = {
  * ready for operation. If TRIGGER or STREAM mode is enabled via Kconfig,
  * the driver will attempt to initialize GPIO interrupt lines.
  *
- * @param dev Pointer to the device structure for this ADXL313 instance
+ * @param dev Pointer to the device structure for this ADXL313 instance. NULL is not allowed.
  *
  * @return 0 on success
  * @return -ENODEV if the device is not ready or device ID verification fails
