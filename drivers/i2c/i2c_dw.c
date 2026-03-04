@@ -54,6 +54,8 @@ LOG_MODULE_REGISTER(i2c_dw);
 
 #include "i2c-priv.h"
 
+BUILD_ASSERT_INVALID_I2C_TRANSFER_TIMEOUT();
+
 static inline uint32_t get_regs(const struct device *dev)
 {
 	return (uint32_t)DEVICE_MMIO_GET(dev);
@@ -912,7 +914,7 @@ static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 		}
 
 		/* Wait for transfer to be done */
-		ret = k_sem_take(&dw->device_sync_sem, K_MSEC(CONFIG_I2C_DW_RW_TIMEOUT_MS));
+		ret = k_sem_take(&dw->device_sync_sem, K_MSEC(CONFIG_I2C_TRANSFER_TIMEOUT_MS));
 		if (ret != 0) {
 			if (test_bit_con_master_mode(reg_base)) {
 				/* Trigger abort and wait for it to complete. */
@@ -1256,8 +1258,8 @@ static int i2c_dw_initialize(const struct device *dev)
 	union ic_con_register ic_con;
 	int ret = 0;
 #ifdef CONFIG_I2C_DW_EXTENDED_SUPPORT
-	uint32_t sda_timeout = rom->sda_timeout_value * CONFIG_I2C_DW_CLOCK_SPEED * 1000;
-	uint32_t scl_timeout = rom->scl_timeout_value * CONFIG_I2C_DW_CLOCK_SPEED * 1000;
+	uint32_t sda_timeout = CONFIG_I2C_TRANSFER_TIMEOUT_MS * CONFIG_I2C_DW_CLOCK_SPEED * 1000;
+	uint32_t scl_timeout = CONFIG_I2C_TRANSFER_TIMEOUT_MS * CONFIG_I2C_DW_CLOCK_SPEED * 1000;
 #endif
 
 #if defined(CONFIG_RESET)
@@ -1450,14 +1452,6 @@ static int i2c_dw_initialize(const struct device *dev)
 	(.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(n, 0)),),	\
 	())), ())
 
-#ifdef CONFIG_I2C_DW_EXTENDED_SUPPORT
-#define TIMEOUT_DW_CONFIG(n)                                                                       \
-	.sda_timeout_value = DT_INST_PROP_OR(n, sda_timeout_value, __UINT32_MAX__),                \
-	.scl_timeout_value = DT_INST_PROP_OR(n, scl_timeout_value, __UINT32_MAX__),
-#else
-#define TIMEOUT_DW_CONFIG(n)
-#endif
-
 #define I2C_DEVICE_INIT_DW(n)                                                                      \
 	PINCTRL_DW_DEFINE(n);                                                                      \
 	I2C_PCIE_DEFINE(n);                                                                        \
@@ -1472,7 +1466,7 @@ static int i2c_dw_initialize(const struct device *dev)
 		.hcnt_offset = (int16_t)DT_INST_PROP_OR(n, hcnt_offset, 0),                        \
 		.fs_spk_len = MAX((uint8_t)DT_INST_PROP_OR(n, fs_spike_len, 0), DW_IC_SPKLEN_MIN), \
 		.hs_spk_len = MAX((uint8_t)DT_INST_PROP_OR(n, hs_spike_len, 0), DW_IC_SPKLEN_MIN), \
-		TIMEOUT_DW_CONFIG(n) RESET_DW_CONFIG(n) PINCTRL_DW_CONFIG(n) I2C_DW_INIT_PCIE(n)   \
+		RESET_DW_CONFIG(n) PINCTRL_DW_CONFIG(n) I2C_DW_INIT_PCIE(n)                        \
 			I2C_CONFIG_DMA_INIT(n)};                                                   \
 	BUILD_ASSERT(DT_INST_PROP_OR(n, sda_hold_tx, 0) <= 0xffff, "Invalid SDA_HOLD_TX value");   \
 	BUILD_ASSERT(DT_INST_PROP_OR(n, sda_hold_rx, 0) <= 0xff, "Invalid SDA_HOLD_RX value");     \

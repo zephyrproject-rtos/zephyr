@@ -111,11 +111,12 @@ LOG_MODULE_REGISTER(i2c_cadence, CONFIG_I2C_LOG_LEVEL);
 #define CDNS_I2C_CLK_DIV_FACTOR 22U
 
 #define CDNS_I2C_TIMEOUT_MAX 0xFFU   /* Maximum value for Timeout Register */
-#define CDNS_I2C_POLL_US     100000U /* Polling interval in microseconds */
-#define CDNS_I2C_TIMEOUT_US  500000U /* Timeout value for I2C operations */
+#define CDNS_I2C_POLL_MS     100U    /* Polling interval in milliseconds */
 
 /* Event flag for I2C transfer completion */
 #define I2C_XFER_COMPLETION_EVENT BIT(0)
+
+BUILD_ASSERT_INVALID_I2C_TRANSFER_TIMEOUT();
 
 #if defined(CONFIG_I2C_TARGET)
 /**
@@ -1147,20 +1148,20 @@ out:
 /**
  * cdns_i2c_wait_for_bus_free - Wait for the I2C bus to become free.
  * @dev: Pointer to I2C device
- * @timeout_us: Maximum time (in microseconds) to wait for the bus to become free.
  *
  * This function waits for the I2C bus to become idle. It checks the bus state
  * register periodically until the bus is free or the timeout occurs.
  *
  * Return: true if the bus is free within the timeout, false otherwise.
  */
-static bool cdns_i2c_wait_for_bus_free(const struct device *dev, uint32_t timeout_us)
+static bool cdns_i2c_wait_for_bus_free(const struct device *dev)
 {
 	bool ret_flag = false;
 	uint32_t reg;
+	k_timepoint_t end = sys_timepoint_calc(K_MSEC(CONFIG_I2C_TRANSFER_TIMEOUT_MS));
 
 	/* Poll until the bus is free or the timeout is reached */
-	while (timeout_us > 0U) {
+	while (!sys_timepoint_expired(end)) {
 		reg = cdns_i2c_readreg(dev, CDNS_I2C_SR_OFFSET);
 		if ((reg & CDNS_I2C_SR_BA) == 0U) {
 			/* Bus Available (BA) bit is cleared, the bus is free */
@@ -1169,11 +1170,10 @@ static bool cdns_i2c_wait_for_bus_free(const struct device *dev, uint32_t timeou
 		}
 
 		/* Wait for a small period before checking again */
-		(void)k_usleep((int32_t)CDNS_I2C_POLL_US);
-		timeout_us -= CDNS_I2C_POLL_US;
+		(void)k_sleep(K_MSEC(CDNS_I2C_POLL_MS));
 	}
 
-	if (timeout_us == 0U) {
+	if (sys_timepoint_expired(end)) {
 		/* Timeout reached, bus not available */
 		ret_flag = false;
 	}
@@ -1284,7 +1284,7 @@ static int32_t cdns_i2c_master_transfer(const struct device *dev, struct i2c_msg
 #endif /* CONFIG_I2C_TARGET */
 
 	/* Wait for the bus to be free */
-	if (cdns_i2c_wait_for_bus_free(dev, CDNS_I2C_TIMEOUT_US) == false) {
+	if (cdns_i2c_wait_for_bus_free(dev) == false) {
 		ret = -EAGAIN;
 		goto out;
 	}

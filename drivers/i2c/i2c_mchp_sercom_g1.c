@@ -30,11 +30,6 @@ LOG_MODULE_REGISTER(i2c_mchp_sercom_g1, CONFIG_I2C_LOG_LEVEL);
 #define I2C_MCHP_START_CONDITION_SETUP_TIME (100.0f / 1000000000.0f)
 #define I2C_INVALID_ADDR                    0x00
 #define I2C_MESSAGE_DIR_READ                1U
-#ifdef CONFIG_I2C_MCHP_TRANSFER_TIMEOUT
-#define I2C_TRANSFER_TIMEOUT_MSEC K_MSEC(CONFIG_I2C_MCHP_TRANSFER_TIMEOUT)
-#else
-#define I2C_TRANSFER_TIMEOUT_MSEC K_FOREVER
-#endif /*CONFIG_I2C_MCHP_TRANSFER_TIMEOUT*/
 #define I2C_MCHP_TARGET_ACK_STATUS_RECEIVED_ACK  0
 #define I2C_MCHP_TARGET_ACK_STATUS_RECEIVED_NACK 1
 
@@ -1632,7 +1627,7 @@ static int i2c_mchp_transfer(const struct device *dev, struct i2c_msg *msgs, uin
 		i2c_controller_int_enable(dev, SERCOM_I2CM_INTENSET_Msk);
 
 		/* Wait for transfer completion */
-		retval = k_sem_take(&data->i2c_sync_sem, I2C_TRANSFER_TIMEOUT_MSEC);
+		retval = k_sem_take(&data->i2c_sync_sem, I2C_TRANSFER_TIMEOUT);
 		if (retval != 0) {
 			LOG_ERR("Transfer timeout on %s", dev->name);
 			i2c_controller_transfer_stop(dev);

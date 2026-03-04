@@ -33,6 +33,8 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_v2);
 #include "i2c_stm32.h"
 #include "i2c-priv.h"
 
+BUILD_ASSERT_INVALID_I2C_TRANSFER_TIMEOUT();
+
 #ifdef CONFIG_I2C_STM32_V2_TIMING
 /* Use the algorithm to calcuate the I2C timing */
 #ifndef I2C_STM32_VALID_TIMING_NBR
@@ -675,7 +677,7 @@ static int stm32_i2c_irq_msg_finish(const struct device *dev, struct i2c_msg *ms
 	int ret;
 
 	/* Wait for IRQ to complete or timeout */
-	ret = k_sem_take(&data->device_sync_sem, K_MSEC(CONFIG_I2C_STM32_TRANSFER_TIMEOUT_MSEC));
+	ret = k_sem_take(&data->device_sync_sem, K_MSEC(CONFIG_I2C_TRANSFER_TIMEOUT_MS));
 
 #ifdef CONFIG_I2C_STM32_V2_DMA
 	/* Stop DMA and invalidate cache if needed */
@@ -946,7 +948,7 @@ static inline int msg_done(const struct device *dev,
 			return -EIO;
 		}
 		if ((k_uptime_get() - start_time) >
-		    CONFIG_I2C_STM32_TRANSFER_TIMEOUT_MSEC) {
+		    CONFIG_I2C_TRANSFER_TIMEOUT_MS) {
 			return -ETIMEDOUT;
 		}
 	}
@@ -955,7 +957,7 @@ static inline int msg_done(const struct device *dev,
 		LL_I2C_GenerateStopCondition(i2c);
 		while (!LL_I2C_IsActiveFlag_STOP(i2c)) {
 			if ((k_uptime_get() - start_time) >
-			    CONFIG_I2C_STM32_TRANSFER_TIMEOUT_MSEC) {
+			    CONFIG_I2C_TRANSFER_TIMEOUT_MS) {
 				return -ETIMEDOUT;
 			}
 		}
@@ -990,7 +992,7 @@ static int i2c_stm32_msg_write(const struct device *dev, struct i2c_msg *msg,
 			}
 
 			if ((k_uptime_get() - start_time) >
-			    CONFIG_I2C_STM32_TRANSFER_TIMEOUT_MSEC) {
+			    CONFIG_I2C_TRANSFER_TIMEOUT_MS) {
 				return -ETIMEDOUT;
 			}
 		}
@@ -1021,7 +1023,7 @@ static int i2c_stm32_msg_read(const struct device *dev, struct i2c_msg *msg,
 				return -EIO;
 			}
 			if ((k_uptime_get() - start_time) >
-			    CONFIG_I2C_STM32_TRANSFER_TIMEOUT_MSEC) {
+			    CONFIG_I2C_TRANSFER_TIMEOUT_MS) {
 				return -ETIMEDOUT;
 			}
 		}

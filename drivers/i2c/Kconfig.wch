@@ -6,10 +6,6 @@ config I2C_WCH
 	default y
 	depends on DT_HAS_WCH_I2C_ENABLED
 	select PINCTRL
+	select I2C_TRANSFER_TIMEOUT_SUPPORTED
 	help
 	  Enable I2C support on WCH platforms
-
-config I2C_WCH_XFER_TIMEOUT_MS
-	int "Set the transfer timeout in milliseconds"
-	depends on I2C_WCH
-	default 500

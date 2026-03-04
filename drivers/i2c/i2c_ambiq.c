@@ -24,8 +24,6 @@
 
 LOG_MODULE_REGISTER(ambiq_i2c, CONFIG_I2C_LOG_LEVEL);
 
-#define I2C_TRANSFER_TIMEOUT_MSEC 500 /* Transfer timeout period */
-
 #include "i2c-priv.h"
 
 #include <soc.h>
@@ -135,7 +133,7 @@ static int i2c_ambiq_read(const struct device *dev, struct i2c_msg *hdr_msg,
 		data->transfer_status = -EFAULT;
 		ret = am_hal_iom_nonblocking_transfer(data->iom_handler, &trans, i2c_ambiq_callback,
 						      (void *)dev);
-		if (k_sem_take(&data->transfer_sem, K_MSEC(I2C_TRANSFER_TIMEOUT_MSEC))) {
+		if (k_sem_take(&data->transfer_sem, I2C_TRANSFER_TIMEOUT)) {
 			LOG_ERR("Timeout waiting for transfer complete");
 			/* cancel timed out transaction */
 			am_hal_iom_disable(data->iom_handler);
@@ -195,7 +193,7 @@ static int i2c_ambiq_write(const struct device *dev, struct i2c_msg *hdr_msg,
 		ret = am_hal_iom_nonblocking_transfer(data->iom_handler, &trans, i2c_ambiq_callback,
 						      (void *)dev);
 
-		if (k_sem_take(&data->transfer_sem, K_MSEC(I2C_TRANSFER_TIMEOUT_MSEC))) {
+		if (k_sem_take(&data->transfer_sem, I2C_TRANSFER_TIMEOUT)) {
 			LOG_ERR("Timeout waiting for transfer complete");
 			/* cancel timed out transaction */
 			am_hal_iom_disable(data->iom_handler);

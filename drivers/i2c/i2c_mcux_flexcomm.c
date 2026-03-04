@@ -28,10 +28,6 @@ LOG_MODULE_REGISTER(mcux_flexcomm);
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
 
-#define I2C_TRANSFER_TIMEOUT_MSEC                                                                  \
-	COND_CODE_0(CONFIG_I2C_NXP_TRANSFER_TIMEOUT, (K_FOREVER),                                  \
-		    (K_MSEC(CONFIG_I2C_NXP_TRANSFER_TIMEOUT)))
-
 #define MCUX_FLEXCOMM_MAX_TARGETS 4
 
 struct mcux_flexcomm_config {
@@ -198,7 +194,7 @@ static int mcux_flexcomm_transfer(const struct device *dev,
 		}
 
 		/* Wait for the transfer to complete */
-		k_sem_take(&data->device_sync_sem, I2C_TRANSFER_TIMEOUT_MSEC);
+		k_sem_take(&data->device_sync_sem, I2C_TRANSFER_TIMEOUT);
 
 		/* Return an error if the transfer didn't complete
 		 * successfully. e.g., nak, timeout, lost arbitration

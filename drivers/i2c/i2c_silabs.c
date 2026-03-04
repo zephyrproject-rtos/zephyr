@@ -23,6 +23,10 @@
 LOG_MODULE_REGISTER(silabs);
 #include "i2c-priv.h"
 
+#define TRANSFER_TIMEOUT_MS CONFIG_I2C_TRANSFER_TIMEOUT_MS
+
+BUILD_ASSERT_INVALID_I2C_TRANSFER_TIMEOUT();
+
 /* Structure for DMA configuration */
 struct i2c_silabs_dma_config {
 	const struct device *dma_dev; /* Pointer to the DMA device structure */
@@ -199,7 +203,7 @@ static int i2c_silabs_transfer_dma(const struct device *dev, struct i2c_msg *msg
 		}
 		if (!asynchronous) {
 			/* Wait for DMA transfer to complete */
-			if (k_sem_take(&data->transfer_sem, K_MSEC(CONFIG_I2C_SILABS_TIMEOUT))) {
+			if (k_sem_take(&data->transfer_sem, K_MSEC(TRANSFER_TIMEOUT_MS))) {
 				err = -ETIMEDOUT;
 			}
 			if (data->i2c_handle.state == SL_I2C_STATE_ERROR) {
@@ -237,7 +241,7 @@ static int i2c_silabs_transfer_sync(const struct device *dev, struct i2c_msg *ms
 			if (sl_i2c_leader_transfer_blocking(&data->i2c_handle, addr, msgs[i].buf,
 							    msgs[i].len, msgs[i + 1].buf,
 							    msgs[i + 1].len,
-							    CONFIG_I2C_SILABS_TIMEOUT) != 0) {
+							    TRANSFER_TIMEOUT_MS) != 0) {
 				err = -EIO;
 				goto out;
 			}
@@ -246,14 +250,14 @@ static int i2c_silabs_transfer_sync(const struct device *dev, struct i2c_msg *ms
 			if (IS_ENABLED(CONFIG_I2C_TARGET)) {
 				if (sl_i2c_follower_receive_blocking(
 					    &data->i2c_handle, msgs[i].buf, msgs[i].len,
-					    CONFIG_I2C_SILABS_TIMEOUT) != 0) {
+					    TRANSFER_TIMEOUT_MS) != 0) {
 					err = -ETIMEDOUT;
 					goto out;
 				}
 			} else {
 				if (sl_i2c_leader_receive_blocking(
 					    &data->i2c_handle, addr, msgs[i].buf, msgs[i].len,
-					    CONFIG_I2C_SILABS_TIMEOUT) != 0) {
+					    TRANSFER_TIMEOUT_MS) != 0) {
 					err = -ETIMEDOUT;
 					goto out;
 				}
@@ -262,14 +266,14 @@ static int i2c_silabs_transfer_sync(const struct device *dev, struct i2c_msg *ms
 			if (IS_ENABLED(CONFIG_I2C_TARGET)) {
 				if (sl_i2c_follower_send_blocking(&data->i2c_handle, msgs[i].buf,
 								  msgs[i].len,
-								  CONFIG_I2C_SILABS_TIMEOUT) != 0) {
+								  TRANSFER_TIMEOUT_MS) != 0) {
 					err = -ETIMEDOUT;
 					goto out;
 				}
 			} else {
 				if (sl_i2c_leader_send_blocking(&data->i2c_handle, addr,
 								msgs[i].buf, msgs[i].len,
-								CONFIG_I2C_SILABS_TIMEOUT) != 0) {
+								TRANSFER_TIMEOUT_MS) != 0) {
 					err = -ETIMEDOUT;
 					goto out;
 				}

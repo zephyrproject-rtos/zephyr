@@ -19,7 +19,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_nios2);
 
-#define NIOS2_I2C_TIMEOUT_USEC		1000
+#define NIOS2_I2C_TIMEOUT_USEC (CONFIG_I2C_TRANSFER_TIMEOUT_MS * 1000)
+
+BUILD_ASSERT_INVALID_I2C_TRANSFER_TIMEOUT();
 
 struct i2c_nios2_data {
 	ALT_AVALON_I2C_DEV_t i2c_dev;

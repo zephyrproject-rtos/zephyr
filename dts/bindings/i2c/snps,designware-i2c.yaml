@@ -35,18 +35,6 @@ properties:
     description: |
       A fixed offset to apply to the SCL hcnt setting.
 
-  sda-timeout-value:
-    type: int
-    default: 30
-    description: |
-      Describe the SDA stuck at low timeout value, unit in ms
-
-  scl-timeout-value:
-    type: int
-    default: 30
-    description: |
-      Describe the SCL stuck at low timeout value, unit in ms
-
   fs-spike-len:
     type: int
     description: |

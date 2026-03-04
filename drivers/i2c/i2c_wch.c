@@ -248,7 +248,7 @@ static int32_t wch_i2c_begin_transfer(const struct device *dev, struct i2c_msg *
 
 	wch_i2c_config_interrupts(regs, true);
 
-	if (k_sem_take(&data->xfer_done, K_MSEC(CONFIG_I2C_WCH_XFER_TIMEOUT_MS)) < 0) {
+	if (k_sem_take(&data->xfer_done, I2C_TRANSFER_TIMEOUT) < 0) {
 		return -ETIMEDOUT;
 	}
 

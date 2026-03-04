@@ -556,6 +556,27 @@ GPIO
          irqs = <&tint7 3>;
      };
 
+I2C
+====
+
+* Unified various I2C transfer timeout configuration under a common
+  (:kconfig:option:`CONFIG_I2C_TRANSFER_TIMEOUT_MS` Kconfig option. Defaults to
+  500ms, it may have to be changed to match the previous driver specific
+  default. Removed:
+
+  * ``CONFIG_I2C_DW_RW_TIMEOUT_MS`` (100ms)
+  * ``CONFIG_I2C_GPIO_CLOCK_STRETCHING_TIMEOUT_US`` (100ms)
+  * ``CONFIG_I2C_MCHP_TRANSFER_TIMEOUT`` (500ms)
+  * ``CONFIG_I2C_NXP_TRANSFER_TIMEOUT`` (0, wait forever)
+  * ``CONFIG_I2C_NRFX_TRANSFER_TIMEOUT`` (500ms)
+  * ``CONFIG_I2C_SAM0_TRANSFER_TIMEOUT`` (500ms)
+  * ``CONFIG_I2C_SILABS_TIMEOUT`` (1000ms)
+  * ``CONFIG_I2C_STM32_TRANSFER_TIMEOUT_MSEC`` (500ms)
+  * ``CONFIG_I2C_WCH_XFER_TIMEOUT_MS`` (500ms)
+  * ``transfer-timeout-ms`` property from ITE platforms (100ms)
+  * ``sda-timeout-value`` and ``scl-timeout-value`` properties from DW based
+    platforms (30ms)
+
 Infineon
 ========
 
