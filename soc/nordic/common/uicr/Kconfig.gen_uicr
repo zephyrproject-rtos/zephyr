@@ -4,9 +4,19 @@
 menu "UICR generator options"
 	depends on IS_GEN_UICR_IMAGE
 
+config GEN_UICR_PERIPHCONF
+	bool "UICR.PERIPHCONF"
+	default y
+	depends on $(dt_nodelabel_enabled,periphconf_partition)
+	help
+	  When enabled, the UICR generator will configure the location
+	  of the peripheral configuration data, based on the
+	  periphconf_partition in device tree.
+
 config GEN_UICR_GENERATE_PERIPHCONF
 	bool "Generate PERIPHCONF hex alongside UICR"
 	default y
+	depends on GEN_UICR_PERIPHCONF
 	help
 	  When enabled, the UICR generator will populate the
 	  periphconf_partition partition.
@@ -105,6 +115,25 @@ config GEN_UICR_PROTECTEDMEM_SIZE_BYTES
 	  Size of the protected memory region in bytes.
 	  This value must be divisible by 4096 (4 kiB).
 
+config GEN_UICR_MPCCONF
+	bool "UICR.MPCCONF"
+	depends on $(dt_nodelabel_enabled,mpcconf_partition)
+	help
+	  When enabled, the UICR generator will configure the location
+	  of the MPC configuration data, based on the
+	  mpcconf_partition in device tree.
+
+	  Enabling this option causes the generated UICR format version to be set
+	  to >= 2.2, which requires IronSide SE v23.4.0+27 or higher to be installed.
+
+config GEN_UICR_GENERATE_MPCCONF
+	bool "Generate MPCCONF hex alongside UICR"
+	default y
+	depends on GEN_UICR_MPCCONF
+	help
+	  When enabled, the UICR generator will populate the
+	  mpcconf_partition partition.
+
 config GEN_UICR_WDTSTART
 	bool "UICR.WDTSTART"
 	help
@@ -197,9 +226,19 @@ config GEN_UICR_SECONDARY
 
 if GEN_UICR_SECONDARY
 
+config GEN_UICR_SECONDARY_PERIPHCONF
+	bool "UICR.SECONDARY.PERIPHCONF"
+	default y
+	depends on $(dt_nodelabel_enabled,secondary_periphconf_partition)
+	help
+	  When enabled, the UICR generator will configure the location
+	  of the peripheral configuration data for the secondary firmware,
+	  based on the secondary_periphconf_partition in device tree.
+
 config GEN_UICR_SECONDARY_GENERATE_PERIPHCONF
 	bool "Generate SECONDARY.PERIPHCONF hex alongside UICR"
 	default y
+	depends on GEN_UICR_SECONDARY_PERIPHCONF
 	help
 	  When enabled, the UICR generator will populate the
 	  secondary_periphconf_partition partition.
@@ -283,6 +322,25 @@ config GEN_UICR_SECONDARY_PROTECTEDMEM_SIZE_BYTES
 	  Size of the secondary protected memory region in bytes.
 	  This value must be divisible by 4096 (4 kiB).
 
+config GEN_UICR_SECONDARY_MPCCONF
+	bool "UICR.SECONDARY.MPCCONF"
+	depends on $(dt_nodelabel_enabled,secondary_mpcconf_partition)
+	help
+	  When enabled, the UICR generator will configure the location
+	  of the MPC configuration data for the secondary firmware,
+	  based on the secondary_mpcconf_partition in device tree.
+
+	  Enabling this option causes the generated UICR format version to be set
+	  to >= 2.2, which requires IronSide SE v23.4.0+27 or higher to be installed.
+
+config GEN_UICR_SECONDARY_GENERATE_MPCCONF
+	bool "Generate SECONDARY.MPCCONF hex alongside UICR"
+	default y
+	depends on GEN_UICR_SECONDARY_MPCCONF
+	help
+	  When enabled, the UICR generator will populate the
+	  secondary_mpcconf_partition partition.
+
 endif # GEN_UICR_SECONDARY
 
 choice GEN_UICR_POLICY_PERIPHCONF_STAGE
@@ -314,6 +372,36 @@ config GEN_UICR_POLICY_PERIPHCONF_STAGE_VALUE
 	hex
 	default 0xBD2328A8 if GEN_UICR_POLICY_PERIPHCONF_STAGE_INIT
 	default 0x1730C77F if GEN_UICR_POLICY_PERIPHCONF_STAGE_NORMAL
+	default 0
+
+choice GEN_UICR_POLICY_MPCCONF_STAGE
+	bool "UICR.POLICY_MPCCONFSTAGE"
+	default GEN_UICR_POLICY_MPCCONF_STAGE_NORMAL
+	help
+	  Sets the behavior of the IronSide SE MPCCONF service APIs at boot.
+
+config GEN_UICR_POLICY_MPCCONF_STAGE_NORMAL
+	bool "Normal operation stage"
+	help
+	  The API starts in the normal operation stage, meaning that no explicit
+	  API call is needed to finish initialization.
+
+config GEN_UICR_POLICY_MPCCONF_STAGE_INIT
+	bool "Initialization stage"
+	help
+	  The API starts in the initialization stage, which gives permission
+	  to update the global domain MPC configuration. To finish initialization,
+	  the application must notify IronSide SE via the ironside_se_mpcconf_finish_init() API.
+
+	  Enabling this policy option causes the generated UICR format version to be set
+	  to >= 2.2, which requires IronSide SE v23.4.0+27 or higher to be installed.
+
+endchoice
+
+config GEN_UICR_POLICY_MPCCONF_STAGE_VALUE
+	hex
+	default 0xBD2328A8 if GEN_UICR_POLICY_MPCCONF_STAGE_INIT
+	default 0x1730C77F if GEN_UICR_POLICY_MPCCONF_STAGE_NORMAL
 	default 0
 
 endmenu
