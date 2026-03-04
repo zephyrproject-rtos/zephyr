@@ -30,3 +30,17 @@ test_spi_cs40l53@3 {
 	spi-max-frequency = <5000000>;
 	status = "okay";
 };
+
+test_spi_cs40l26@4 {
+	compatible = "cirrus,cs40l26";
+	reg = <0x4>;
+	spi-max-frequency = <5000000>;
+	status = "okay";
+};
+
+test_spi_cs40l27@5 {
+	compatible = "cirrus,cs40l27";
+	reg = <0x5>;
+	spi-max-frequency = <5000000>;
+	status = "okay";
+};

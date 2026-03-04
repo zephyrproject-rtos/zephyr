@@ -39,3 +39,15 @@ test_i2c_cs40l53@4 {
 	reg = <0x4>;
 	status = "okay";
 };
+
+test_i2c_cs40l26@5 {
+	compatible = "cirrus,cs40l26";
+	reg = <0x5>;
+	status = "okay";
+};
+
+test_cs40l27@6 {
+	compatible = "cirrus,cs40l27";
+	reg = <0x6>;
+	status = "okay";
+};
