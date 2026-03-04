@@ -3,76 +3,264 @@
 
 .. zephyr:code-sample:: fuzzing
    :name: Fuzzing
+   :relevant-api: mqtt_socket
 
-   Integrate fuzz testing with Zephyr apps.
+   Fuzz the Zephyr MQTT decoder using LLVM libFuzzer.
 
 Overview
 ********
 
-This is a simple example of fuzz test integration with Zephyr apps
-that displays LLVM libfuzzer's most important feature: its ability to
-detect and explore deep and complicated call trees by exploiting
-coverage information gleaned from instrumented binaries.
+This sample implements a libFuzzer harness that targets the Zephyr MQTT
+decoder (``subsys/net/lib/mqtt``).  The objective is to discover parsing
+bugs, assertion failures, and undefined behaviour in the MQTT packet
+decoding logic by feeding coverage-guided, mutated byte streams directly
+into the MQTT state machine.
+
+Both MQTT 5.0 and MQTT 3.1.0 protocol variants are exercised.  A custom
+in-memory transport replaces real TCP sockets so that libFuzzer can
+inject arbitrary bytes without any network stack involvement.
+
+Fuzzing Modes
+=============
+
+The first byte of every fuzz input selects one of four operating modes
+via its two least-significant bits:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 10 20 70
+
+   * - Bits ``[1:0]``
+     - Mode
+     - Description
+   * - ``0x00``
+     - Pre-connected, MQTT 5.0
+     - Client starts in the pre-connected state; fuzz data is fed as the
+       server response (exercises CONNACK parsing).
+   * - ``0x01``
+     - Connected, MQTT 5.0
+     - A synthetic CONNACK is injected first to bring the client to the
+       connected state; fuzz data is then fed as subsequent server
+       packets in a multi-packet loop.
+   * - ``0x02``
+     - Pre-connected, MQTT 3.1.0
+     - Same as ``0x00`` but using the MQTT 3.1.0 protocol branch.
+   * - ``0x03``
+     - Connected, MQTT 3.1.0
+     - Same as ``0x01`` but using the MQTT 3.1.0 protocol branch.
+
+The harness is guided by a seed corpus of ~1,345 entries
+(``corpus/``) and an MQTT 5.0 mutation dictionary (``mqtt5.dict``)
+that provides structured byte sequences for packet types, property IDs,
+reason codes, and common field values.
 
 Building and Running
 ********************
 
-Right now, the only toolchain that works with libfuzzer is a recent 64
-bit clang (clang 14 was used at development time).  Make sure such a
-toolchain is installed in your host environment, and build with:
+Set up the environment
+======================
 
 .. code-block:: console
 
-   $ clang --version
-   clang version 14.0.6
-   Target: x86_64-pc-linux-gnu
-   Thread model: posix
-   InstalledDir: /usr/bin
+   $ export ZEPHYR_BASE=/path/to/zephyr
    $ export ZEPHYR_TOOLCHAIN_VARIANT=llvm
-   $ west build -t run -b native_sim/native/64 samples/subsys/debug/fuzz
+   $ export PATH="/usr/lib/llvm-18/bin:${PATH}"
 
-Over 10-20 seconds or so (runtimes can be quite variable) you will see
-it discover and recurse deeper into the test's deliberately
-constructed call tree, eventually crashing when it reaches the final
-state and reporting the failure.
-
-Example output:
+Build
+=====
 
 .. code-block:: console
 
-   -- west build: running target run
-   [0/1] cd /home/andy/z/zephyr/build && .../andy/z/zephyr/build/zephyr/zephyr.exe
+   $ west build -p always -b native_sim/native/64 \
+         samples/subsys/debug/fuzz \
+         -- -DCONFIG_COVERAGE=y \
+            -DCONFIG_LOG=n \
+            -DCONFIG_BOOT_BANNER=n
+
+The ``-DCONFIG_COVERAGE=y`` flag instruments the binary with
+``-fprofile-instr-generate`` and ``-fcoverage-mapping`` so that raw
+profile data (``fuzz-<pid>.profraw``) is written when the fuzzer exits.
+
+Run the fuzzer
+==============
+
+.. code-block:: console
+
+   $ ./build/zephyr/zephyr.exe \
+         samples/subsys/debug/fuzz/corpus \
+         -dict=samples/subsys/debug/fuzz/mqtt5.dict \
+         -max_len=4096 \
+         -verbosity=0 \
+         -print_final_stats=1
+
+Example output
+==============
+
+.. code-block:: console
+
    INFO: Running with entropic power schedule (0xFF, 100).
-   INFO: Seed: 108038547
-   INFO: Loaded 1 modules   (2112 inline 8-bit counters): 2112 [0x55cbe336ec55, 0x55cbe336f495),
-   INFO: Loaded 1 PC tables (2112 PCs): 2112 [0x55cbe336f498,0x55cbe3377898),
-   INFO: -max_len is not provided; libFuzzer will not generate inputs larger than 4096 bytes
-   *** Booting Zephyr OS build zephyr-v3.1.0-3976-g806034e02865  ***
-   Hello World! native_sim/native/64
-   INFO: A corpus is not provided, starting from an empty corpus
-   #2	INITED cov: 101 ft: 102 corp: 1/1b exec/s: 0 rss: 30Mb
-   #
-   # Found key 0
-   #
-   NEW_FUNC[1/6]: 0x55cbe3339c45 in check1 /home/andy/z/zephyr/samples/subsys/debug/fuzz/src/main.c:43
-   NEW_FUNC[2/6]: 0x55cbe333c8d8 in char_out /home/andy/z/zephyr/lib/os/printk.c:108
+   INFO: Seed: 3271501816
+   INFO: Loaded 1 modules   (8765 inline 8-bit counters): 8765 [0x...)
+   INFO: Loaded 1 PC tables (8765 PCs): 8765 [0x...)
+   INFO: 1345 files loaded, total size: 246732 bytes
+   #1345   INITED cov: 724 ft: 2653 corp: 412/75Kb exec/s: 0 rss: 52Mb
+   #1408   NEW    cov: 725 ft: 2657 corp: 413/75Kb ...
    ...
-   ...
-   ...
-   #418965	REDUCE cov: 165 ft: 166 corp: 15/400b lim: 4052 exec/s: 38087 rss: 31Mb L: 5/256 MS: 1 EraseBytes-
-   #524288	pulse  cov: 165 ft: 166 corp: 15/400b lim: 4096 exec/s: 40329 rss: 31Mb
-   #
-   # Found key 5
-   #
-   NEW_FUNC[1/1]: 0x55cbe3339ff7 in check6 /home/andy/z/zephyr/samples/subsys/debug/fuzz/src/main.c:48
-   #579131	NEW    cov: 168 ft: 169 corp: 16/406b lim: 4096 exec/s: 38608 rss: 31Mb L: 6/256 MS: 1 InsertByte-
-   #579432	NEW    cov: 170 ft: 171 corp: 17/414b lim: 4096 exec/s: 38628 rss: 31Mb L: 8/256 MS: 1 PersAutoDict- DE: "\000\000"-
-   #579948	REDUCE cov: 170 ft: 171 corp: 17/413b lim: 4096 exec/s: 38663 rss: 31Mb L: 7/256 MS: 1 EraseBytes-
-   #
-   # Found key 6
-   #
-   UndefinedBehaviorSanitizer:DEADLYSIGNAL
-   ==3243305==ERROR: UndefinedBehaviorSanitizer: SEGV on unknown address 0x000000000000 (pc 0x55cbe333a09d bp 0x7f3114afadf0 sp 0x7f3114afade0 T3243308)
-   ==3243305==The signal is caused by a WRITE memory access.
-   ==3243305==Hint: address points to the zero page.
-       #0 0x55cbe333a09d in check6 /home/andy/z/zephyr/samples/subsys/debug/fuzz/src/main.c:48:1
+   stat::number_of_executed_units: 386801
+   stat::average_exec_per_sec:     38291
+   stat::new_units_added:          847
+   stat::slowest_unit_time_sec:    0
+   stat::peak_rss_mb:              56
+
+Collecting Coverage
+*******************
+
+After the fuzzer exits (or is interrupted with ``Ctrl-C``), a raw
+profile file ``fuzz-<pid>.profraw`` is written to the working directory.
+Follow these steps to produce an HTML coverage report.
+
+Step 1 — Merge raw profile data
+================================
+
+.. code-block:: console
+
+   $ mkdir -p coverage
+   $ mv fuzz-*.profraw coverage/
+   $ llvm-profdata merge -sparse coverage/fuzz-*.profraw \
+         -o coverage/fuzz.profdata
+
+Step 2 — Export to LCOV format
+================================
+
+.. code-block:: console
+
+   $ mkdir -p coverage_report
+   $ llvm-cov export build/zephyr/zephyr.exe \
+         -instr-profile=coverage/fuzz.profdata \
+         --format=lcov \
+         > coverage_report/lcov_raw.info
+
+Step 3 — Filter to MQTT sources
+================================
+
+.. code-block:: console
+
+   $ lcov --extract coverage_report/lcov_raw.info \
+         '*/subsys/net/lib/mqtt/*' \
+         '*/samples/subsys/debug/fuzz/src/*' \
+         -o coverage_report/lcov_mqtt.info
+
+Step 4 — Generate HTML report
+================================
+
+.. code-block:: console
+
+   $ genhtml coverage_report/lcov_mqtt.info \
+         --output-directory coverage_report/html
+   $ xdg-open coverage_report/html/index.html
+
+Current Coverage Status
+***********************
+
+The figures below reflect the most recent fuzzing run
+(report date: 2026-03-03).
+
+Overall
+=======
+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 15 15 15
+
+   * - Metric
+     - Hit
+     - Total
+     - Coverage
+   * - Lines
+     - 1,239
+     - 2,131
+     - **58.1 %**
+   * - Functions
+     - 99
+     - 162
+     - **61.1 %**
+   * - Branches
+     - 381
+     - 881
+     - **43.2 %**
+
+Per-file breakdown
+==================
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 14 14 14 14
+
+   * - File
+     - Lines
+     - Functions
+     - Branches
+     - Notes
+   * - ``mqtt_decoder.c``
+     - 98.0 %
+     - 100.0 %
+     - 92.7 %
+     - Primary target; near-complete coverage.
+   * - ``mqtt_rx.c``
+     - 97.3 %
+     - 100.0 %
+     - 85.9 %
+     - Receive path fully exercised.
+   * - ``mqtt_internal.h``
+     - 100.0 %
+     - 100.0 %
+     - N/A
+     - Small inline helpers; fully covered.
+   * - ``src/main.c`` (harness)
+     - 87.1 %
+     - 55.6 %
+     - 42.7 %
+     - Harness itself well covered.
+   * - ``mqtt_transport.c``
+     - 83.3 %
+     - 80.0 %
+     - N/A
+     - Custom transport dispatch covered.
+   * - ``mqtt_os.h``
+     - 68.4 %
+     - 80.0 %
+     - 0.0 %
+     - OS abstraction layer.
+   * - ``mqtt.c``
+     - 31.7 %
+     - 41.9 %
+     - 20.0 %
+     - Higher-level API (publish, subscribe,
+       ping, abort) not called by harness.
+   * - ``mqtt_encoder.c``
+     - 32.6 %
+     - 46.4 %
+     - 20.9 %
+     - Only connect/disconnect encoders
+       exercised; publish/subscribe/auth
+       encoders untouched.
+   * - ``mqtt_transport_socket_tcp.c``
+     - 0.0 %
+     - 0.0 %
+     - 0.0 %
+     - Real TCP transport; never invoked
+       because a custom transport is used.
+
+Coverage gaps and next steps
+=============================
+
+* ``mqtt.c`` and ``mqtt_encoder.c`` coverage is low (~32 %) because the
+  harness only drives the *receive* path.  Adding fuzzing modes that
+  call ``mqtt_publish()``, ``mqtt_subscribe()``, and ``mqtt_ping()``
+  would close this gap.
+* ``mqtt_transport_socket_tcp.c`` is intentionally uncovered; a
+  separate network-level fuzzer would be needed to exercise it.
+* Branch coverage across all files sits at **43.2 %**; adding
+  corpus seeds that trigger error-return paths (malformed remaining
+  lengths, unknown property IDs, reason-code edge cases) would improve
+  this metric.
