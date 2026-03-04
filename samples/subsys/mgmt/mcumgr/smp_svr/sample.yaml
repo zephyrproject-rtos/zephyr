@@ -29,6 +29,40 @@ tests:
       - mg100
     integration_platforms:
       - nrf52840dk/nrf52840
+  sample.mcumgr.smp_svr.bt.nxpboot:
+    harness: bluetooth
+    tags: bluetooth
+    sysbuild: false
+    extra_args:
+      - FILE_SUFFIX="nxpboot"
+      - EXTRA_CONF_FILE="bt.conf"
+    platform_allow:
+      - frdm_mcxw71
+    integration_platforms:
+      - frdm_mcxw71
+  sample.mcumgr.smp_svr.bt.nxpboot.extflash:
+    harness: bluetooth
+    tags: bluetooth
+    sysbuild: false
+    extra_args:
+      - CONF_FILE="prj_nxpboot.conf"
+      - FILE_SUFFIX="nxpboot_extflash"
+      - EXTRA_CONF_FILE="bt.conf"
+      - CONFIG_IMG_ERASE_PROGRESSIVELY=y
+    platform_allow:
+      - frdm_mcxw71
+    integration_platforms:
+      - frdm_mcxw71
+  sample.mcumgr.smp_svr.bt.nxpboot.hybrid:
+    harness: bluetooth
+    tags: bluetooth
+    extra_args:
+      - EXTRA_CONF_FILE="bt.conf"
+      - CONFIG_NXPBOOT_IMG_MANAGER=y
+    platform_allow:
+      - frdm_mcxw71
+    integration_platforms:
+      - frdm_mcxw71
   sample.mcumgr.smp_svr.udp:
     extra_args: EXTRA_CONF_FILE="udp.conf"
     platform_allow:
