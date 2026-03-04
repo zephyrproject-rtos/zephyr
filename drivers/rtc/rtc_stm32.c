@@ -859,12 +859,11 @@ static int rtc_stm32_alarm_set_time(const struct device *dev, uint16_t id, uint1
 
 		stm32_backup_domain_enable_access();
 
-		if (rtc_stm32_is_active_alarm(RTC, id)) {
-			LL_RTC_DisableWriteProtection(RTC);
-			rtc_stm32_disable_alarm(RTC, id);
-			rtc_stm32_disable_interrupt_alarm(RTC, id);
-			LL_RTC_EnableWriteProtection(RTC);
-		}
+		LL_RTC_DisableWriteProtection(RTC);
+		rtc_stm32_disable_alarm(RTC, id);
+		rtc_stm32_disable_interrupt_alarm(RTC, id);
+		LL_RTC_EnableWriteProtection(RTC);
+
 		LOG_DBG("Alarm %d has been disabled", id);
 		goto disable_bkup_access;
 	}
