@@ -10,8 +10,9 @@ if(CONFIG_SOC_FAMILY_INFINEON_EDGE)
   zephyr_include_directories(${zephyr_ifx_cycfg_dir}/device_headers)
   zephyr_library_sources(${zephyr_ifx_cycfg_dir}/cycfg_qspi_memslot.c)
   zephyr_library_sources(${zephyr_ifx_cycfg_dir}/ifx_cycfg_init.c)
-  zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_AUTANALOG_SAR_ADC
-    ${zephyr_ifx_cycfg_dir}/ifx_autanalog.c)
+  if(CONFIG_USE_INFINEON_AUTANALOG_SAR_ADC AND NOT CONFIG_MFD_INFINEON_AUTANALOG)
+    zephyr_library_sources(${zephyr_ifx_cycfg_dir}/ifx_autanalog.c)
+  endif()
 endif()
 
 if(CONFIG_SOC_SERIES_PSC3)
