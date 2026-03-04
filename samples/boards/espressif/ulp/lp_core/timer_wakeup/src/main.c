@@ -20,7 +20,7 @@ int main(void)
 
 	if (cause & RESET_LOW_POWER_WAKE) {
 		wake_count++;
-		printf("Woke up from LP core (LP timer)! Wake count: %d\n", wake_count);
+		printf("Woke up from LP core! Wake count: %d\n", wake_count);
 	} else {
 		wake_count = 0;
 		printf("First boot, LP core will wake us every %d ms\n",
