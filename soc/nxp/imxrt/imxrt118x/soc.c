@@ -99,9 +99,10 @@ const __imx_boot_container_section container boot_header = {
 	},
 	.array = {
 		{
-			(uint32_t)(-1 * CONFIG_IMAGE_CONTAINER_OFFSET),
-			(uint32_t)_flash_used,
-			(uint32_t)__rom_region_start,
+			(uint32_t)CONFIG_CONTAINER_USER_IMAGE_OFFSET,
+			(uint32_t)(_flash_used - CONFIG_CONTAINER_USER_IMAGE_OFFSET -
+				CONFIG_IMAGE_CONTAINER_OFFSET),
+			(uint32_t)_vector_start,
 			0x00000000,
 			(uint32_t)__start,
 			0x00000000,
