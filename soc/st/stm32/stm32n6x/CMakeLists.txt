@@ -71,3 +71,15 @@ if(NOT CONFIG_BOOTLOADER_MCUBOOT AND CONFIG_TRUSTED_EXECUTION_SECURE)
   endif()
 
 endif()
+
+if(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+  dt_nodelabel(pinctrl_path NODELABEL "pinctrl" REQUIRED)
+  dt_reg_addr(pinctrl_addr PATH ${pinctrl_path})
+  math(EXPR check_nsec_addr "${pinctrl_addr} - 0x46020000")
+  if(NOT "${check_nsec_addr}" STREQUAL "0")
+    message(FATAL_ERROR
+      "Non-secure execution requires non-secure SoC address ranges.\n"
+      "Possibly missing st/n6/stm32n6*_ns.dtsi overlay file in board DTS."
+    )
+  endif()
+endif()
