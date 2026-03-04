@@ -8,6 +8,7 @@
 #define MOCKS_BAP_STREAM_EXPECTS_H_
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/iso.h>

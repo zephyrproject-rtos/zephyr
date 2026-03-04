@@ -7,7 +7,9 @@
 #ifndef MOCKS_BAP_UNICAST_SERVER_EXPECTS_H_
 #define MOCKS_BAP_UNICAST_SERVER_EXPECTS_H_
 
+#include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/ztest_assert.h>
 
 #include "bap_unicast_server.h"

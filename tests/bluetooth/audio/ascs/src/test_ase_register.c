@@ -8,8 +8,6 @@
  */
 
 #include <errno.h>
-#include <stdlib.h>
-#include <string.h>
 
 #include <zephyr/autoconf.h>
 #include <zephyr/fff.h>
