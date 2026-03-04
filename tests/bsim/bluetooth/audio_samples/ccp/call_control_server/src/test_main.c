@@ -4,9 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <inttypes.h>
 #include <stddef.h>
-#include <stdint.h>
 
 #include "bs_types.h"
 #include "bs_tracing.h"
