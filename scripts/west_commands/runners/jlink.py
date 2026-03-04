@@ -5,6 +5,7 @@
 '''Runner for debugging with J-Link.'''
 
 import argparse
+import errno
 import ipaddress
 import logging
 import os
@@ -377,17 +378,29 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
             server_cmd += ['-nohalt']
             server_proc = self.popen_ignore_int(server_cmd)
             try:
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock = None
                 # wait for the port to be open
                 while server_proc.poll() is None:
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     try:
                         sock.connect(('localhost', self.rtt_port))
                         break
-                    except ConnectionRefusedError:
-                        time.sleep(0.1)
+                    except OSError as e:
+                        sock.close()
+                        # On at least macOS sock.connect() can fail with the
+                        # exception OSError(22, 'Invalid argument'), which
+                        # corresponds to errno EINVAL, by leaving the socket in
+                        # a non-recoverable state, hence let's wait and try
+                        # again.
+                        if e.errno in (errno.ECONNREFUSED, errno.EINVAL):
+                            time.sleep(0.1)
+                        else:
+                            raise e
                 self.run_telnet_client('localhost', self.rtt_port, sock)
-            except Exception as e:
-                self.logger.error(e)
+            except OSError as e:
+                self.logger.error(
+                    f'Failed to connect to the localhost:{self.rtt_port} socket: {e}',
+                )
             finally:
                 server_proc.terminate()
                 server_proc.wait()
