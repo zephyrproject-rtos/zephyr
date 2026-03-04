@@ -16,6 +16,10 @@ tests:
     extra_args: EXTRA_CONF_FILE=sensors_trigger_global.conf;sensors_die_temp.conf
   drivers.sensor.trigger.none.build:
     extra_args: EXTRA_CONF_FILE=sensors_trigger_none.conf;sensors_die_temp.conf
+  drivers.sensor.counter_capture.build:
+    extra_args:
+      - EXTRA_CONF_FILE=sensors_counter_capture.conf
+      - EXTRA_DTC_OVERLAY_FILE=counter_capture.overlay
   drivers.sensor.no_default.build:
     extra_args: EXTRA_CONF_FILE=sensors_no_default.conf
   drivers.sensor.async_api:

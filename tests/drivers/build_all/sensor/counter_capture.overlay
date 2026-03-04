@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2026 Meta Platforms
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for testing counter-capture trigger builds
+ */
+
+#include <zephyr/dt-bindings/sensor/lsm6dsv16x.h>
+
+/ {
+	test {
+		test_counter: counter@cafecafe {
+			compatible = "vnd,counter";
+			reg = <0xcafecafe 0x1000>;
+			#counter-capture-cells = <2>;
+			status = "okay";
+		};
+	};
+};
+
+&test_i2c {
+	test_i2c_lsm6dsv16x_counter_capture: lsm6dsv16x@ca {
+		compatible = "st,lsm6dsv16x";
+		reg = <0xca>;
+		int1-counter-capture = <&test_counter 0 0>;
+		accel-range = <LSM6DSV16X_DT_FS_8G>;
+		accel-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
+		gyro-range = <LSM6DSV16X_DT_FS_2000DPS>;
+		gyro-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
+	};
+};

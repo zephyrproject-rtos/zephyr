@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test counter node with capture support
+
+compatible: "vnd,counter"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  "#counter-capture-cells":
+    type: int
+    const: 2
+
+counter-capture-cells:
+  - channel
+  - flags
