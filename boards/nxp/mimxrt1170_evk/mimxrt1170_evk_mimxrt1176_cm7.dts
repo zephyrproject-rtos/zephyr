@@ -87,6 +87,7 @@
 	status = "okay";
 };
 
+/* Choose lcdif as default controller. Change to lcdifv2 to switch controller. */
 zephyr_lcdif: &lcdif {};
 
 zephyr_mipi_dsi: &mipi_dsi {

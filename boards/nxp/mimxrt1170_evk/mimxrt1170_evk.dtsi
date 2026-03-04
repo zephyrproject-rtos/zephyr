@@ -215,6 +215,11 @@ arduino_serial: &lpuart2 {
 	pinctrl-names = "default";
 };
 
+&lcdifv2 {
+	pinctrl-0 = <&pinmux_lcdif>;
+	pinctrl-names = "default";
+};
+
 &lpi2c1 {
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
