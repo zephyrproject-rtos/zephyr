@@ -80,14 +80,19 @@ set(eraseprotect_args)
 set(approtect_args)
 set(protectedmem_args)
 set(periphconf_args)
+set(mpcconf_args)
 set(wdtstart_args)
 set(periphconf_elfs)
+set(mpcconf_elfs)
 set(policy_args)
 set(merged_hex_file ${APPLICATION_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.hex)
 set(secondary_periphconf_elfs)
+set(secondary_mpcconf_elfs)
 set(uicr_hex_file ${APPLICATION_BINARY_DIR}/zephyr/uicr.hex)
 set(periphconf_hex_file ${APPLICATION_BINARY_DIR}/zephyr/periphconf.hex)
 set(secondary_periphconf_hex_file ${APPLICATION_BINARY_DIR}/zephyr/secondary_periphconf.hex)
+set(mpcconf_hex_file ${APPLICATION_BINARY_DIR}/zephyr/mpcconf.hex)
+set(secondary_mpcconf_hex_file ${APPLICATION_BINARY_DIR}/zephyr/secondary_mpcconf.hex)
 
 # Get UICR absolute address from this image's devicetree
 dt_nodelabel(uicr_path NODELABEL "uicr" REQUIRED)
@@ -155,7 +160,28 @@ if(CONFIG_GEN_UICR_WDTSTART)
   list(APPEND wdtstart_args --wdtstart-crv ${CONFIG_GEN_UICR_WDTSTART_CRV})
 endif()
 
-if(CONFIG_GEN_UICR_GENERATE_PERIPHCONF)
+if(CONFIG_GEN_UICR_MPCCONF)
+  list(APPEND mpcconf_args --mpcconf)
+
+  # Compute MPCCONF absolute address and size from this image's devicetree
+  compute_partition_address_and_size("mpcconf_partition" MPCCONF_ADDRESS MPCCONF_SIZE)
+
+  list(APPEND mpcconf_args --mpcconf-address ${MPCCONF_ADDRESS})
+  list(APPEND mpcconf_args --mpcconf-size ${MPCCONF_SIZE})
+endif()
+
+if(CONFIG_GEN_UICR_PERIPHCONF)
+  list(APPEND periphconf_args --periphconf)
+
+  # Compute PERIPHCONF absolute address and size from this image's devicetree
+  compute_partition_address_and_size("periphconf_partition" PERIPHCONF_ADDRESS PERIPHCONF_SIZE)
+
+  list(APPEND periphconf_args --periphconf-address ${PERIPHCONF_ADDRESS})
+  list(APPEND periphconf_args --periphconf-size ${PERIPHCONF_SIZE})
+endif()
+
+if(CONFIG_GEN_UICR_GENERATE_PERIPHCONF OR CONFIG_GEN_UICR_SECONDARY_GENERATE_PERIPHCONF OR
+   CONFIG_GEN_UICR_GENERATE_MPCCONF OR CONFIG_GEN_UICR_SECONDARY_GENERATE_MPCCONF)
   # gen_uicr.py parses all zephyr.elf files. To find these files (which
   # have not been built yet) we scan sibling build directories for
   # zephyr.dts
@@ -176,6 +202,9 @@ if(CONFIG_GEN_UICR_GENERATE_PERIPHCONF)
         continue()
       endif()
 
+      parse_kconfig_value(${_dir}/zephyr/.config CONFIG_NRF_PERIPHCONF_SECTION has_periphconf)
+      parse_kconfig_value(${_dir}/zephyr/.config CONFIG_NRF_MPCCONF_SECTION has_mpcconf)
+
       # Read CONFIG_KERNEL_BIN_NAME from the sibling's .config file
       parse_kconfig_value(${_dir}/zephyr/.config CONFIG_KERNEL_BIN_NAME kernel_bin_name)
       set(kernel_elf_path ${_dir}/zephyr/${kernel_bin_name}.elf)
@@ -183,25 +212,40 @@ if(CONFIG_GEN_UICR_GENERATE_PERIPHCONF)
       # Check if this is secondary firmware by reading the Kconfig from .config
       parse_kconfig_value(${_dir}/zephyr/.config CONFIG_IS_IRONSIDE_SE_SECONDARY_IMAGE is_secondary)
       if(is_secondary STREQUAL "y")
-        list(APPEND secondary_periphconf_elfs ${kernel_elf_path})
+        if(has_periphconf)
+          list(APPEND secondary_periphconf_elfs ${kernel_elf_path})
+        endif()
+        if(has_mpcconf)
+          list(APPEND secondary_mpcconf_elfs ${kernel_elf_path})
+        endif()
       else()
-        list(APPEND periphconf_elfs ${kernel_elf_path})
+        if(has_periphconf)
+          list(APPEND periphconf_elfs ${kernel_elf_path})
+        endif()
+        if(has_mpcconf)
+          list(APPEND mpcconf_elfs ${kernel_elf_path})
+        endif()
       endif()
     endif()
   endforeach()
 
-  # Compute PERIPHCONF absolute address and size from this image's devicetree
-  compute_partition_address_and_size("periphconf_partition" PERIPHCONF_ADDRESS PERIPHCONF_SIZE)
+  if(CONFIG_GEN_UICR_GENERATE_PERIPHCONF)
+    # Set up periphconf arguments for gen_uicr.py
+    list(APPEND periphconf_args --out-periphconf-hex ${periphconf_hex_file})
 
-  # Set up periphconf arguments for gen_uicr.py
-  list(APPEND periphconf_args --periphconf-address ${PERIPHCONF_ADDRESS})
-  list(APPEND periphconf_args --periphconf-size ${PERIPHCONF_SIZE})
-  list(APPEND periphconf_args --out-periphconf-hex ${periphconf_hex_file})
+    foreach(elf ${periphconf_elfs})
+      list(APPEND periphconf_args --in-periphconf-elf ${elf})
+    endforeach()
+  endif()
+  if(CONFIG_GEN_UICR_GENERATE_MPCCONF)
+    # Set up mpcconf arguments for gen_uicr.py
+    list(APPEND mpcconf_args --out-mpcconf-hex ${mpcconf_hex_file})
 
-  foreach(elf ${periphconf_elfs})
-    list(APPEND periphconf_args --in-periphconf-elf ${elf})
-  endforeach()
-endif(CONFIG_GEN_UICR_GENERATE_PERIPHCONF)
+    foreach(elf ${mpcconf_elfs})
+      list(APPEND mpcconf_args --in-mpcconf-elf ${elf})
+    endforeach()
+  endif()
+endif()
 
 if(CONFIG_GEN_UICR_SECONDARY)
   set(secondary_args --secondary)
@@ -254,22 +298,50 @@ if(CONFIG_GEN_UICR_SECONDARY)
     list(APPEND secondary_args --secondary-protectedmem-size ${CONFIG_GEN_UICR_SECONDARY_PROTECTEDMEM_SIZE_BYTES})
   endif()
 
-  if(CONFIG_GEN_UICR_SECONDARY_GENERATE_PERIPHCONF)
+  # Handle secondary MPCCONF configuration
+  if(CONFIG_GEN_UICR_SECONDARY_MPCCONF)
+    list(APPEND secondary_args --secondary-mpcconf)
+
+    # Compute SECONDARY_MPCCONF absolute address and size from this image's devicetree
+    compute_partition_address_and_size("secondary_mpcconf_partition" SECONDARY_MPCCONF_ADDRESS SECONDARY_MPCCONF_SIZE)
+
+    list(APPEND secondary_args --secondary-mpcconf-address ${SECONDARY_MPCCONF_ADDRESS})
+    list(APPEND secondary_args --secondary-mpcconf-size ${SECONDARY_MPCCONF_SIZE})
+  endif()
+
+  # Handle secondary PERIPHCONF configuration
+  if(CONFIG_GEN_UICR_SECONDARY_PERIPHCONF)
+    list(APPEND secondary_args --secondary-periphconf)
+
     # Compute SECONDARY_PERIPHCONF absolute address and size from this image's devicetree
     compute_partition_address_and_size("secondary_periphconf_partition" SECONDARY_PERIPHCONF_ADDRESS SECONDARY_PERIPHCONF_SIZE)
 
     list(APPEND secondary_args --secondary-periphconf-address ${SECONDARY_PERIPHCONF_ADDRESS})
     list(APPEND secondary_args --secondary-periphconf-size ${SECONDARY_PERIPHCONF_SIZE})
+  endif()
+
+  if(CONFIG_GEN_UICR_SECONDARY_GENERATE_PERIPHCONF)
     list(APPEND secondary_args --out-secondary-periphconf-hex ${secondary_periphconf_hex_file})
 
     foreach(elf ${secondary_periphconf_elfs})
       list(APPEND secondary_args --in-secondary-periphconf-elf ${elf})
     endforeach()
   endif()
+  if(CONFIG_GEN_UICR_SECONDARY_GENERATE_MPCCONF)
+    list(APPEND secondary_args --out-secondary-mpcconf-hex ${secondary_mpcconf_hex_file})
+
+    foreach(elf ${secondary_mpcconf_elfs})
+      list(APPEND secondary_args --in-secondary-mpcconf-elf ${elf})
+    endforeach()
+  endif()
 endif()
 
 if(CONFIG_GEN_UICR_POLICY_PERIPHCONF_STAGE_INIT OR CONFIG_GEN_UICR_POLICY_PERIPHCONF_STAGE_NORMAL)
   list(APPEND policy_args --policy-periphconf-stage ${CONFIG_GEN_UICR_POLICY_PERIPHCONF_STAGE_VALUE})
+endif()
+
+if(CONFIG_GEN_UICR_POLICY_MPCCONF_STAGE_INIT OR CONFIG_GEN_UICR_POLICY_MPCCONF_STAGE_NORMAL)
+  list(APPEND policy_args --policy-mpcconf-stage ${CONFIG_GEN_UICR_POLICY_MPCCONF_STAGE_VALUE})
 endif()
 
 # Generate hex files (merged, uicr-only, periphconf-only, and secondary-periphconf-only)
@@ -281,11 +353,13 @@ add_custom_command(
           --out-merged-hex ${merged_hex_file}
           --out-uicr-hex ${uicr_hex_file}
           --periphconf-section-name "periphconf_entry"
+          --mpcconf-section-name "mpcconf_entry"
           --periphconf-ipcmap-reallocate
           ${lock_args}
           ${eraseprotect_args}
           ${approtect_args}
           ${wdtstart_args}
+          ${mpcconf_args}
           ${periphconf_args}
           ${securestorage_args}
           ${protectedmem_args}
