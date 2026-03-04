@@ -111,6 +111,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_SILABS_BURTC
 	DEVS_FOR_DT_COMPAT(silabs_burtc_counter)
 #endif
+#ifdef CONFIG_COUNTER_SILABS_PROTIMER
+	DEVS_FOR_DT_COMPAT(silabs_protimer)
+#endif
 #ifdef CONFIG_COUNTER_SILABS_TIMER
 	DEVS_FOR_DT_COMPAT(silabs_timer_counter)
 #endif
