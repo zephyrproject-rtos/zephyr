@@ -591,6 +591,7 @@ class PropertySpec:
         self.binding: Binding = binding
         self.name: str = name
         self._raw: dict[str, Any] = self.binding.raw["properties"][name]
+        self._check_special_properties()
 
     def __repr__(self) -> str:
         return f"<PropertySpec {self.name} type '{self.type}'>"
@@ -669,6 +670,20 @@ class PropertySpec:
     def specifier_space(self) -> Optional[str]:
         "See the class docstring"
         return self._raw.get("specifier-space")
+
+    def _check_special_properties(self):
+        # Add checks for properties which have special meaning
+        # according to the specification.
+        def invalid_cells_default(prop, default):
+            _err(f"invalid default value '{default}' specified for property '{prop}' "
+                 f"in binding {self.binding.path}; this property's default behavior is "
+                 "defined in DT Specification §2.3.5 and a default in a binding is invalid")
+
+        if self.name == "#address-cells" and self.default is not None:
+            invalid_cells_default("#address-cells", self.default)
+
+        if self.name == "#size-cells" and self.default is not None:
+            invalid_cells_default("#size-cells", self.default)
 
 PropertyValType = Union[int, str,
                         list[int], list[str],
