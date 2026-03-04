@@ -47,6 +47,17 @@ config IRONSIDE_SE_DVFS_ABB_STATUSANA_CHECK_MAX_ATTEMPTS
 
 endif # IRONSIDE_SE_DVFS
 
+config NRF_MPCCONF_SECTION
+	bool "Global Memory Privilege Controller (MPC) initialization section"
+	depends on LINKER_DEVNULL_SUPPORT
+	imply LINKER_DEVNULL_MEMORY
+	help
+	  Include static global Memory Privilege Controller (MPC) peripheral
+	  initialization values from the build in a dedicated section. The section is
+	  stripped from the firmware binary. If the UICR generator image is enabled,
+	  it will include the stripped section in the generated UICR MPCCONF blob.
+	  Currently the UICR generator supports at most one image setting this.
+
 menuconfig NRF_PERIPHCONF_SECTION
 	bool "Global peripheral initialization section"
 	depends on LINKER_DEVNULL_SUPPORT
