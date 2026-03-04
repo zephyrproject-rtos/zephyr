@@ -1050,7 +1050,7 @@ static struct nxp_enet_mod_data nxp_enet_mod_data_##n;					\
 /* Init the module before any of the MAC, MDIO, or PTP clock */				\
 DEVICE_DT_INST_DEFINE(n, nxp_enet_mod_init, NULL,					\
 		&nxp_enet_mod_data_##n, &nxp_enet_mod_cfg_##n,				\
-		POST_KERNEL, 0, NULL);
+		POST_KERNEL, 20, NULL);
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT nxp_enet
@@ -1071,7 +1071,7 @@ static struct nxp_enet_mod_data nxp_enet1g_mod_data_##n;				\
 /* Init the module before any of the MAC, MDIO, or PTP clock */				\
 DEVICE_DT_INST_DEFINE(n, nxp_enet_mod_init, NULL,					\
 		&nxp_enet1g_mod_data_##n, &nxp_enet1g_mod_cfg_##n,			\
-		POST_KERNEL, 0, NULL);
+		POST_KERNEL, 20, NULL);
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT nxp_enet1g
