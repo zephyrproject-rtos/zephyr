@@ -14,7 +14,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/arch/posix/posix_trace.h>
 
-#define _STDOUT_BUF_SIZE 256
+#define _STDOUT_BUF_SIZE CONFIG_LOG_BACKEND_NATIVE_POSIX_STDOUT_BUF_SIZE
 static char stdout_buff[_STDOUT_BUF_SIZE];
 static int n_pend; /* Number of pending characters in buffer */
 static uint32_t log_format_current = CONFIG_LOG_BACKEND_NATIVE_POSIX_OUTPUT_DEFAULT;
