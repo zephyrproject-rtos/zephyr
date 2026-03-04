@@ -16,9 +16,15 @@ struct numaker_uid {
 ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 	struct numaker_uid dev_id;
+	bool was_reg_locked = (SYS->REGLCTL == 0);
+	bool was_fmc_opened = (FMC->ISPCTL & FMC_ISPCTL_ISPEN_Msk);
 
-	SYS_UnlockReg();
-	FMC_Open();
+	if (was_reg_locked) {
+		SYS_UnlockReg();
+	}
+	if (!was_fmc_opened) {
+		FMC_Open();
+	}
 
 	dev_id.id[0] = sys_cpu_to_be32(FMC_ReadUID(0));
 	dev_id.id[1] = sys_cpu_to_be32(FMC_ReadUID(1));
@@ -27,8 +33,12 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	length = MIN(length, sizeof(dev_id.id));
 	memcpy(buffer, dev_id.id, length);
 
-	FMC_Close();
-	SYS_LockReg();
+	if (!was_fmc_opened) {
+		FMC_Close();
+	}
+	if (was_reg_locked) {
+		SYS_LockReg();
+	}
 
 	return length;
 }
