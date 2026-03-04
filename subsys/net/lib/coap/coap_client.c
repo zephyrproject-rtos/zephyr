@@ -449,9 +449,15 @@ int coap_client_req(struct coap_client *client, int sock, const struct net_socka
 		switch (addr->sa_family) {
 		case NET_AF_INET:
 			internal_req->addrlen = sizeof(struct net_sockaddr_in);
+#if defined(CONFIG_COAP_CLIENT_MULTICAST)
+			internal_req->is_mcast = net_ipv4_is_addr_mcast(&net_sin(addr)->sin_addr);
+#endif
 			break;
 		case NET_AF_INET6:
 			internal_req->addrlen = sizeof(struct net_sockaddr_in6);
+#if defined(CONFIG_COAP_CLIENT_MULTICAST)
+			internal_req->is_mcast = net_ipv6_is_addr_mcast(&net_sin6(addr)->sin6_addr);
+#endif
 			break;
 		default:
 			ret = -ENOTSUP;
@@ -460,6 +466,24 @@ int coap_client_req(struct coap_client *client, int sock, const struct net_socka
 
 		memcpy(&internal_req->addr, addr, internal_req->addrlen);
 	}
+
+#if defined(CONFIG_COAP_CLIENT_MULTICAST)
+	if (internal_req->is_mcast) {
+		if (req->confirmable) {
+			LOG_ERR("Multicast requests must be non-confirmable");
+			ret = -EINVAL;
+			goto release;
+		}
+
+		internal_req->mcast_timeout = sys_timepoint_calc(K_MSEC(req->multicast_timeout_ms));
+	} else {
+		if (req->multicast_timeout_ms > 0) {
+			LOG_ERR("Multicast timeout not supported for unicast");
+			ret = -EINVAL;
+			goto release;
+		}
+	}
+#endif
 
 	ret = coap_client_init_request(client, req, internal_req);
 	if (ret < 0) {
@@ -495,6 +519,15 @@ int coap_client_req(struct coap_client *client, int sock, const struct net_socka
 	}
 	coap_pending_cycle(&internal_req->pending);
 	internal_req->is_observe = coap_request_is_observe(&internal_req->request);
+
+#if defined(CONFIG_COAP_CLIENT_MULTICAST)
+	if (internal_req->is_observe && internal_req->is_mcast) {
+		LOG_ERR("Multicast requests can't observe");
+		ret = -EINVAL;
+		goto release;
+	}
+#endif
+
 	LOG_DBG("Request is_observe %d", internal_req->is_observe);
 
 	ret = send_request(sock, internal_req->request.data, internal_req->request.offset, 0,
@@ -534,8 +567,30 @@ static void report_callback_error(struct coap_client_internal_request *internal_
 	}
 }
 
+#if defined(CONFIG_COAP_CLIENT_MULTICAST)
+static void report_multicast_complete(struct coap_client_internal_request *internal_req)
+{
+	if (internal_req->coap_request.cb != NULL &&
+	    !atomic_set(&internal_req->in_callback, 1)) {
+		const struct coap_client_response_data resp_data = {
+			.source = NULL,
+		};
+
+		internal_req->coap_request.cb(&resp_data, internal_req->coap_request.user_data);
+		atomic_clear(&internal_req->in_callback);
+	}
+}
+#endif
+
 static bool timeout_expired(const struct coap_client_internal_request *internal_req)
 {
+#if defined(CONFIG_COAP_CLIENT_MULTICAST)
+	if (internal_req->is_mcast && internal_req->request_ongoing &&
+	    sys_timepoint_expired(internal_req->mcast_timeout)) {
+		return true;
+	}
+#endif
+
 	if (internal_req->pending.timeout == 0) {
 		return false;
 	}
@@ -585,16 +640,26 @@ static void coap_client_resend_handler(struct coap_client *client)
 	k_mutex_lock(&client->lock, K_FOREVER);
 
 	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
-		if (timeout_expired(&client->requests[i])) {
-			if (!client->requests[i].coap_request.confirmable) {
-				release_internal_request(&client->requests[i]);
+		struct coap_client_internal_request *internal_req = &client->requests[i];
+
+		if (timeout_expired(internal_req)) {
+#if defined(CONFIG_COAP_CLIENT_MULTICAST)
+			if (internal_req->is_mcast) {
+				report_multicast_complete(internal_req);
+				release_internal_request(internal_req);
+				continue;
+			}
+#endif
+
+			if (!internal_req->coap_request.confirmable) {
+				release_internal_request(internal_req);
 				continue;
 			}
 
-			ret = resend_request(client, &client->requests[i]);
+			ret = resend_request(client, internal_req);
 			if (ret < 0) {
-				report_callback_error(&client->requests[i], ret);
-				release_internal_request(&client->requests[i]);
+				report_callback_error(internal_req, ret);
+				release_internal_request(internal_req);
 			}
 		}
 	}
@@ -867,8 +932,12 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 	if (payload_len == 0 && response_type == COAP_TYPE_ACK &&
 	    response_code == COAP_CODE_EMPTY) {
 		internal_req = get_request_with_mid(client, response_id);
-		if (!internal_req) {
+		if (internal_req == NULL) {
 			LOG_WRN("No matching request for ACK");
+			return 0;
+		}
+		if (!internal_req->coap_request.confirmable) {
+			LOG_WRN("Unexpected ACK for non-confirmable request");
 			return 0;
 		}
 		internal_req->pending.t0 = k_uptime_get();
@@ -938,6 +1007,15 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 
 	/* Send ack for CON */
 	if (response_type == COAP_TYPE_CON) {
+#if defined(CONFIG_COAP_CLIENT_MULTICAST)
+		if (internal_req->is_mcast) {
+			/* RFC 7252 Section 8.2: Responses to multicast requests MUST NOT be
+			 * Confirmable. Drop the invalid response.
+			 */
+			LOG_WRN("Dropping CON response to multicast request (RFC 7252 violation)");
+			return 0;
+		}
+#endif
 		/* CON response is always a separate response, respond with empty ACK. */
 		ret = send_ack(client->fd, addr, addrlen, response, COAP_CODE_EMPTY);
 		if (ret < 0) {
@@ -946,7 +1024,8 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 	}
 
 	/* MID-based deduplication */
-	if (response_id == internal_req->last_response_id) {
+	if (response_id == internal_req->last_response_id &&
+	    COND_CODE_1(CONFIG_COAP_CLIENT_MULTICAST, (!internal_req->is_mcast), (true))) {
 		LOG_WRN("Duplicate MID, dropping");
 		return 0;
 	}
@@ -965,6 +1044,22 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 	if (internal_req->pending.timeout != 0) {
 		coap_pending_clear(&internal_req->pending);
 	}
+
+#if defined(CONFIG_COAP_CLIENT_MULTICAST)
+	if (internal_req->is_mcast) {
+		/* RFC 7959 Section 2.8: Block-wise transfers are not defined for use with IP
+		 * multicast. Drop any response that carries Block1/Block2 options or is
+		 * truncated (which would otherwise trigger blockwise receive logic).
+		 */
+		if (coap_get_option_int(response, COAP_OPTION_BLOCK2) > 0 ||
+		    coap_get_option_int(response, COAP_OPTION_BLOCK1) > 0 ||
+		    response_truncated) {
+			LOG_WRN("Dropping blockwise response in multicast mode (RFC 7959 "
+				"violation)");
+			return 0;
+		}
+	}
+#endif
 
 	/* Check if block2 exists */
 	block_option = coap_get_option_int(response, COAP_OPTION_BLOCK2);
@@ -1029,6 +1124,10 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 				.payload = payload,
 				.payload_len = payload_len,
 				.last_block = last_block,
+#if defined(CONFIG_COAP_CLIENT_MULTICAST)
+				.source = addr,
+				.source_len = addrlen,
+#endif
 			};
 
 			internal_req->coap_request.cb(&resp_data,
@@ -1077,17 +1176,29 @@ fail:
 	if (ret < 0) {
 		report_callback_error(internal_req, ret);
 	}
-	if (!internal_req->is_observe) {
-		if (response_type == COAP_TYPE_ACK) {
-			/* This is piggybacked ACK,
-			 * no need to wait for lifetime to expire, all data is already transferred
-			 * and acknowledged
-			 */
-			reset_internal_request(internal_req);
-		} else {
-			release_internal_request(internal_req);
-		}
+
+#if defined(CONFIG_COAP_CLIENT_MULTICAST)
+	if (internal_req->is_mcast) {
+		/* Multicast: keep request active until timeout */
+		return ret;
 	}
+#endif
+
+	if (internal_req->is_observe) {
+		/* Observer: keep request active until unobserve */
+		return ret;
+	}
+
+	if (response_type == COAP_TYPE_ACK) {
+		/* This is piggybacked ACK,
+		 * no need to wait for lifetime to expire, all data is already transferred
+		 * and acknowledged
+		 */
+		reset_internal_request(internal_req);
+	} else {
+		release_internal_request(internal_req);
+	}
+
 	return ret;
 }
 
