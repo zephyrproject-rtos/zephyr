@@ -1411,6 +1411,21 @@
 			resets = <&rctl STM32_RESET(AHB5, 3)>;
 			status = "disabled";
 		};
+
+		iwdg: watchdog@56004800 {
+			compatible = "st,stm32-watchdog";
+			reg = <0x56004800 0x400>;
+			interrupts = <18 0>;
+			status = "disabled";
+		};
+
+		wwdg: watchdog@50002c00 {
+			compatible = "st,stm32-window-watchdog";
+			reg = <0x50002c00 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 11)>;
+			interrupts = <19 0>;
+			status = "disabled";
+		};
 	};
 
 	iocell: iocell {
