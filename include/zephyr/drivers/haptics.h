@@ -42,24 +42,13 @@ enum haptics_error_type {
 	HAPTICS_ERROR_DC = BIT(4),              /**< Output direct-current error */
 
 	/* Device-specific error codes can follow, refer to the device’s header file */
+	/** @cond INTERNAL_HIDDEN */
 	HAPTICS_ERROR_PRIV_START = BIT(5),
+	/** @endcond */
 };
 
 /**
- * @typedef haptics_stop_output_t
- * @brief Set the haptic device to stop output
- */
-typedef int (*haptics_stop_output_t)(const struct device *dev);
-
-/**
- * @typedef haptics_start_output_t
- * @brief Set the haptic device to start output for a playback event
- */
-typedef int (*haptics_start_output_t)(const struct device *dev);
-
-/**
- * @typedef haptics_error_callback_t
- * @brief Callback function for error interrupt
+ * @brief Function type of callback invoked when a haptic device error occurs.
  *
  * @param dev Pointer to the haptic device
  * @param errors Device errors (bitmask of @ref haptics_error_type values)
@@ -69,21 +58,51 @@ typedef void (*haptics_error_callback_t)(const struct device *dev, const uint32_
 					 void *const user_data);
 
 /**
- * @typedef haptics_register_error_callback_t
- * @brief Register a callback function for haptics errors
+ * @def_driverbackendgroup{Haptics,haptics_interface}
+ * @{
+ */
+
+/**
+ * @brief Set the haptic device to stop output.
+ * See haptics_stop_output() for argument description.
+ */
+typedef int (*haptics_stop_output_t)(const struct device *dev);
+
+/**
+ * @brief Set the haptic device to start output for a playback event.
+ * See haptics_start_output() for argument description.
+ */
+typedef int (*haptics_start_output_t)(const struct device *dev);
+
+/**
+ * @brief Register a callback function for haptics errors.
+ * See haptics_register_error_callback() for argument description.
  */
 typedef int (*haptics_register_error_callback_t)(const struct device *dev,
 						 haptics_error_callback_t cb,
 						 void *const user_data);
 
 /**
- * @brief Haptic device API
+ * @driver_ops{Haptics}
  */
 __subsystem struct haptics_driver_api {
+	/**
+	 * @driver_ops_mandatory @copybrief haptics_start_output
+	 */
 	haptics_start_output_t start_output;
+	/**
+	 * @driver_ops_mandatory @copybrief haptics_stop_output
+	 */
 	haptics_stop_output_t stop_output;
+	/**
+	 * @driver_ops_optional @copybrief haptics_register_error_callback
+	 */
 	haptics_register_error_callback_t register_error_callback;
 };
+
+/**
+ * @}
+ */
 
 /**
  * @brief Set the haptic device to start output for a playback event
