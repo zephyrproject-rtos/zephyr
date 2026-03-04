@@ -20,16 +20,15 @@ LOG_MODULE_DECLARE(espi, CONFIG_ESPI_LOG_LEVEL);
 
 /* Device bindings */
 static const struct device *const qspi_dev = DEVICE_DT_GET(DT_NODELABEL(qspi0));
-static const struct device *const espi_saf_dev = DEVICE_DT_GET(DT_NODELABEL(espi_saf0));
+static const struct device *const espi_taf_dev = DEVICE_DT_GET(DT_NODELABEL(espi_saf0));
 
 /* Test buffers */
-static uint8_t safbuf[SAF_TEST_BUF_SIZE] __aligned(4);
-static uint8_t safbuf2[SAF_TEST_BUF_SIZE] __aligned(4);
-
+static uint8_t tafbuf[TAF_TEST_BUF_SIZE] __aligned(4);
+static uint8_t tafbuf2[TAF_TEST_BUF_SIZE] __aligned(4);
 /*
- * W25Q128 SPI flash SAF configuration.
+ * W25Q128 SPI flash TAF configuration.
  * Size is 16Mbytes, it requires no continuous mode prefix, or
- * other special SAF configuration.
+ * other special TAF configuration.
  */
 static const struct espi_saf_flash_cfg flash_w25q128 = {
 	.flashsz = 0x1000000U,
@@ -44,14 +43,14 @@ static const struct espi_saf_flash_cfg flash_w25q128 = {
 		  MCHP_W25Q128_ENTER_CM_D0, MCHP_W25Q128_ENTER_CM_D1, MCHP_W25Q128_ENTER_CM_D2}};
 
 /*
- * SAF driver configuration.
+ * TAF driver configuration.
  * One SPI flash device.
  * Use QMSPI frequency, chip select timing, and signal sampling configured
  * by QMSPI driver.
- * Use SAF hardware default TAG map.
+ * Use TAF hardware default TAG map.
  */
 #ifdef CONFIG_ESPI_TAF_XEC_V2
-static const struct espi_saf_cfg saf_cfg1 = {
+static const struct espi_saf_cfg taf_cfg1 = {
 	.nflash_devices = 1U,
 	.hwcfg = {.version = 2U,
 		  .flags = 0U,
@@ -64,7 +63,7 @@ static const struct espi_saf_cfg saf_cfg1 = {
 		  .tag_map = {0U, 0U, 0U}},
 	.flash_cfgs = (struct espi_saf_flash_cfg *)&flash_w25q128};
 #else
-static const struct espi_saf_cfg saf_cfg1 = {
+static const struct espi_saf_cfg taf_cfg1 = {
 	.nflash_devices = 1U,
 	.hwcfg = {.qmspi_freq_hz = 0U,
 		  .qmspi_cs_timing = 0U,
@@ -77,7 +76,7 @@ static const struct espi_saf_cfg saf_cfg1 = {
 #endif
 
 /*
- * Example for SAF driver set protection regions API.
+ * Example for TAF driver set protection regions API.
  */
 static const struct espi_saf_pr w25q128_protect_regions[2] = {
 	{
@@ -101,7 +100,7 @@ static const struct espi_saf_pr w25q128_protect_regions[2] = {
 static const struct espi_saf_protection saf_pr_w25q128 = {.nregions = 2U,
 							  .pregions = w25q128_protect_regions};
 
-int spi_saf_init(void)
+int spi_taf_init(void)
 {
 	struct spi_config spi_cfg;
 	struct spi_buf_set tx_bufs;
@@ -113,10 +112,10 @@ int spi_saf_init(void)
 	int ret;
 
 	/* Read JEDEC ID command and fill read buffer */
-	safbuf[0] = SPI_READ_JEDEC_ID;
-	memset(safbuf2, 0x55, 4U);
+	tafbuf[0] = SPI_READ_JEDEC_ID;
+	memset(tafbuf2, 0x55, 4U);
 
-	spi_cfg.frequency = SAF_TEST_FREQ_HZ;
+	spi_cfg.frequency = TAF_TEST_FREQ_HZ;
 	spi_cfg.operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8);
 
 	/*
@@ -130,7 +129,7 @@ int spi_saf_init(void)
 	spi_cfg.cs.gpio.dt_flags = 0;
 	spi_cfg.cs.gpio.port = NULL;
 
-	txb.buf = &safbuf;
+	txb.buf = &tafbuf;
 	txb.len = 1U;
 
 	tx_bufs.buffers = (const struct spi_buf *)&txb;
@@ -151,21 +150,21 @@ int spi_saf_init(void)
 	}
 
 	if (jedec_id != W25Q128_JEDEC_ID) {
-		LOG_ERR("JEDIC ID does not match W25Q128 %0x", safbuf2[0]);
+		LOG_ERR("JEDIC ID does not match W25Q128 %0x", tafbuf2[0]);
 		return -1;
 	}
 
 	/* Read STATUS2 to get quad enable bit */
-	safbuf[0] = SPI_READ_STATUS2;
-	memset(safbuf2, 0, 4U);
+	tafbuf[0] = SPI_READ_STATUS2;
+	memset(tafbuf2, 0, 4U);
 
-	txb.buf = &safbuf;
+	txb.buf = &tafbuf;
 	txb.len = 1U;
 
 	tx_bufs.buffers = (const struct spi_buf *)&txb;
 	tx_bufs.count = 1U;
 
-	rxb.buf = &safbuf2;
+	rxb.buf = &tafbuf2;
 	rxb.len = 1U;
 
 	rx_bufs.buffers = (const struct spi_buf *)&rxb;
@@ -179,18 +178,18 @@ int spi_saf_init(void)
 		return ret;
 	}
 
-	spi_status2 = safbuf2[0];
+	spi_status2 = tafbuf2[0];
 
 	/*
 	 * If QE not set then write the volatile QE bit.
-	 * SAF test requires SPI flash quad enabled so the WP#/HOLD# signals
+	 * TAF test requires SPI flash quad enabled so the WP#/HOLD# signals
 	 * will act as IO2/IO3. We will write the volatile QE bit for less
 	 * wear of the STATUS2 register
 	 */
 	if ((spi_status2 & SPI_STATUS2_QE) == 0U) {
-		safbuf[0] = SPI_WRITE_ENABLE_VS;
+		tafbuf[0] = SPI_WRITE_ENABLE_VS;
 
-		txb.buf = &safbuf;
+		txb.buf = &tafbuf;
 		txb.len = 1U;
 
 		tx_bufs.buffers = (const struct spi_buf *)&txb;
@@ -209,10 +208,10 @@ int spi_saf_init(void)
 			return ret;
 		}
 
-		safbuf[0] = SPI_WRITE_STATUS2;
-		safbuf[1] = spi_status2 | SPI_STATUS2_QE;
+		tafbuf[0] = SPI_WRITE_STATUS2;
+		tafbuf[1] = spi_status2 | SPI_STATUS2_QE;
 
-		txb.buf = &safbuf;
+		txb.buf = &tafbuf;
 		txb.len = 2U;
 
 		tx_bufs.buffers = (const struct spi_buf *)&txb;
@@ -232,16 +231,16 @@ int spi_saf_init(void)
 		}
 
 		/* Write to volatile status is fast, expect BUSY to be clear */
-		safbuf[0] = SPI_READ_STATUS1;
-		memset(safbuf2, 0, 4U);
+		tafbuf[0] = SPI_READ_STATUS1;
+		memset(tafbuf2, 0, 4U);
 
-		txb.buf = &safbuf;
+		txb.buf = &tafbuf;
 		txb.len = 1U;
 
 		tx_bufs.buffers = (const struct spi_buf *)&txb;
 		tx_bufs.count = 1U;
 
-		rxb.buf = &safbuf2;
+		rxb.buf = &tafbuf2;
 		/* read 2 bytes both will be STATUS1 */
 		rxb.len = 2U;
 
@@ -258,7 +257,7 @@ int spi_saf_init(void)
 			return ret;
 		}
 
-		spi_status1 = safbuf2[0];
+		spi_status1 = tafbuf2[0];
 		if (spi_status1 & SPI_STATUS1_BUSY) {
 			LOG_ERR("SPI BUSY set after write to volatile STATUS2:"
 				" STATUS1=0x%02X",
@@ -267,16 +266,16 @@ int spi_saf_init(void)
 		}
 
 		/* Read STATUS2 to make sure QE is set */
-		safbuf[0] = SPI_READ_STATUS2;
-		memset(safbuf2, 0, 4U);
+		tafbuf[0] = SPI_READ_STATUS2;
+		memset(tafbuf2, 0, 4U);
 
-		txb.buf = &safbuf;
+		txb.buf = &tafbuf;
 		txb.len = 1U;
 
 		tx_bufs.buffers = (const struct spi_buf *)&txb;
 		tx_bufs.count = 1U;
 
-		rxb.buf = &safbuf2;
+		rxb.buf = &tafbuf2;
 		/* read 2 bytes both will be STATUS2 */
 		rxb.len = 2U;
 
@@ -293,7 +292,7 @@ int spi_saf_init(void)
 			return ret;
 		}
 
-		spi_status2 = safbuf2[0];
+		spi_status2 = tafbuf2[0];
 		if (!(spi_status2 & SPI_STATUS2_QE)) {
 			LOG_ERR("Read back of SPI STATUS2 after setting "
 				"volatile QE bit shows QE not set: 0x%02X",
@@ -305,22 +304,22 @@ int spi_saf_init(void)
 	return 0;
 }
 
-int espi_saf_init(void)
+int espi_taf_init(void)
 {
 	int ret;
 
-	ret = espi_saf_config(espi_saf_dev, (struct espi_saf_cfg *)&saf_cfg1);
+	ret = espi_saf_config(espi_taf_dev, (struct espi_saf_cfg *)&taf_cfg1);
 	if (ret) {
-		LOG_ERR("Failed to configure eSPI SAF error %d", ret);
+		LOG_ERR("Failed to configure eSPI TAF error %d", ret);
 	} else {
-		LOG_INF("eSPI SAF configured successfully!");
+		LOG_INF("eSPI TAF configured successfully!");
 	}
 
-	ret = espi_saf_set_protection_regions(espi_saf_dev, &saf_pr_w25q128);
+	ret = espi_saf_set_protection_regions(espi_taf_dev, &saf_pr_w25q128);
 	if (ret) {
-		LOG_ERR("Failed to set SAF protection region(s) %d", ret);
+		LOG_ERR("Failed to set TAF protection region(s) %d", ret);
 	} else {
-		LOG_INF("eSPI SAF protection regions(s) configured!");
+		LOG_INF("eSPI TAF protection regions(s) configured!");
 	}
 
 	return ret;
@@ -390,43 +389,43 @@ static int pr_check_master_bm(struct mchp_espi_saf *regs, const struct espi_saf_
 	return 0;
 }
 
-static int espi_saf_test_pr1(const struct espi_saf_protection *spr)
+static int espi_taf_test_pr1(const struct espi_saf_protection *spr)
 {
-	struct mchp_espi_saf *saf_regs;
+	struct mchp_espi_saf *taf_regs;
 	const struct espi_saf_pr *pr;
 	int rc;
 
-	LOG_INF("espi_saf_test_pr1");
+	LOG_INF("espi_taf_test_pr1");
 
 	if (spr == NULL) {
 		return 0;
 	}
 
-	saf_regs = (struct mchp_espi_saf *)(SAF_BASE_ADDR);
+	taf_regs = (struct mchp_espi_saf *)(TAF_BASE_ADDR);
 	pr = spr->pregions;
 
 	for (size_t n = 0U; n < spr->nregions; n++) {
-		rc = pr_check_range(saf_regs, pr);
+		rc = pr_check_range(taf_regs, pr);
 		if (rc) {
-			LOG_INF("SAF Protection region %u range fail", pr->pr_num);
+			LOG_INF("TAF Protection region %u range fail", pr->pr_num);
 			return rc;
 		}
 
-		rc = pr_check_enable(saf_regs, pr);
+		rc = pr_check_enable(taf_regs, pr);
 		if (rc) {
-			LOG_INF("SAF Protection region %u enable fail", pr->pr_num);
+			LOG_INF("TAF Protection region %u enable fail", pr->pr_num);
 			return rc;
 		}
 
-		rc = pr_check_lock(saf_regs, pr);
+		rc = pr_check_lock(taf_regs, pr);
 		if (rc) {
-			LOG_INF("SAF Protection region %u lock check fail", pr->pr_num);
+			LOG_INF("TAF Protection region %u lock check fail", pr->pr_num);
 			return rc;
 		}
 
-		rc = pr_check_master_bm(saf_regs, pr);
+		rc = pr_check_master_bm(taf_regs, pr);
 		if (rc) {
-			LOG_INF("SAF Protection region %u Master select fail", pr->pr_num);
+			LOG_INF("TAF Protection region %u Master select fail", pr->pr_num);
 			return rc;
 		}
 
@@ -437,19 +436,19 @@ static int espi_saf_test_pr1(const struct espi_saf_protection *spr)
 }
 
 /*
- * SAF hardware limited to 1 to 64 byte read requests.
+ * TAF hardware limited to 1 to 64 byte read requests.
  */
-static int saf_read(uint32_t spi_addr, uint8_t *dest, int len)
+static int taf_read(uint32_t spi_addr, uint8_t *dest, int len)
 {
 	int rc, chunk_len, n;
-	struct espi_saf_packet saf_pkt = {0};
+	struct espi_saf_packet taf_pkt = {0};
 
 	if ((dest == NULL) || (len < 0)) {
 		return -EINVAL;
 	}
 
-	saf_pkt.flash_addr = spi_addr;
-	saf_pkt.buf = dest;
+	taf_pkt.flash_addr = spi_addr;
+	taf_pkt.buf = dest;
 
 	n = len;
 	while (n) {
@@ -458,9 +457,9 @@ static int saf_read(uint32_t spi_addr, uint8_t *dest, int len)
 			chunk_len = n;
 		}
 
-		saf_pkt.len = chunk_len;
+		taf_pkt.len = chunk_len;
 
-		rc = espi_saf_flash_read(espi_saf_dev, &saf_pkt);
+		rc = espi_saf_flash_read(espi_taf_dev, &taf_pkt);
 		if (rc != 0) {
 			LOG_INF("%s: error = %d: chunk_len = %d "
 				"spi_addr = %x",
@@ -468,8 +467,8 @@ static int saf_read(uint32_t spi_addr, uint8_t *dest, int len)
 			return rc;
 		}
 
-		saf_pkt.flash_addr += chunk_len;
-		saf_pkt.buf += chunk_len;
+		taf_pkt.flash_addr += chunk_len;
+		taf_pkt.buf += chunk_len;
 		n -= chunk_len;
 	}
 
@@ -477,37 +476,37 @@ static int saf_read(uint32_t spi_addr, uint8_t *dest, int len)
 }
 
 /*
- * SAF hardware limited to 4KB(mandatory), 32KB, and 64KB erase sizes.
+ * TAF hardware limited to 4KB(mandatory), 32KB, and 64KB erase sizes.
  * eSPI configuration has flags the Host can read specifying supported
  * erase sizes.
  */
-static int saf_erase_block(uint32_t spi_addr, enum saf_erase_size ersz)
+static int taf_erase_block(uint32_t spi_addr, enum taf_erase_size ersz)
 {
 	int rc;
-	struct espi_saf_packet saf_pkt = {0};
+	struct espi_saf_packet taf_pkt = {0};
 
 	switch (ersz) {
-	case SAF_ERASE_4K:
-		saf_pkt.len = 4096U;
+	case TAF_ERASE_4K:
+		taf_pkt.len = 4096U;
 		spi_addr &= ~(4096U - 1U);
 		break;
-	case SAF_ERASE_32K:
-		saf_pkt.len = (32U * 1024U);
+	case TAF_ERASE_32K:
+		taf_pkt.len = (32U * 1024U);
 		spi_addr &= ~((32U * 1024U) - 1U);
 		break;
-	case SAF_ERASE_64K:
-		saf_pkt.len = (64U * 1024U);
+	case TAF_ERASE_64K:
+		taf_pkt.len = (64U * 1024U);
 		spi_addr &= ~((64U * 1024U) - 1U);
 		break;
 	default:
 		return -EINVAL;
 	}
 
-	saf_pkt.flash_addr = spi_addr;
+	taf_pkt.flash_addr = spi_addr;
 
-	rc = espi_saf_flash_erase(espi_saf_dev, &saf_pkt);
+	rc = espi_saf_flash_erase(espi_taf_dev, &taf_pkt);
 	if (rc != 0) {
-		LOG_INF("espi_saf_test1: erase fail = %d", rc);
+		LOG_INF("espi_taf_test1: erase fail = %d", rc);
 		return rc;
 	}
 
@@ -515,12 +514,12 @@ static int saf_erase_block(uint32_t spi_addr, enum saf_erase_size ersz)
 }
 
 /*
- * SAF hardware limited to 1 to 64 byte programming within a 256 byte page.
+ * TAF hardware limited to 1 to 64 byte programming within a 256 byte page.
  */
-static int saf_page_prog(uint32_t spi_addr, const uint8_t *src, int progsz)
+static int taf_page_prog(uint32_t spi_addr, const uint8_t *src, int progsz)
 {
 	int rc, chunk_len, n;
-	struct espi_saf_packet saf_pkt = {0};
+	struct espi_saf_packet taf_pkt = {0};
 
 	if ((src == NULL) || (progsz < 0) || (progsz > 256)) {
 		return -EINVAL;
@@ -530,8 +529,8 @@ static int saf_page_prog(uint32_t spi_addr, const uint8_t *src, int progsz)
 		return 0;
 	}
 
-	saf_pkt.flash_addr = spi_addr;
-	saf_pkt.buf = (uint8_t *)src;
+	taf_pkt.flash_addr = spi_addr;
+	taf_pkt.buf = (uint8_t *)src;
 
 	n = progsz;
 	while (n) {
@@ -540,30 +539,30 @@ static int saf_page_prog(uint32_t spi_addr, const uint8_t *src, int progsz)
 			chunk_len = n;
 		}
 
-		saf_pkt.len = (uint32_t)chunk_len;
+		taf_pkt.len = (uint32_t)chunk_len;
 
-		rc = espi_saf_flash_write(espi_saf_dev, &saf_pkt);
+		rc = espi_saf_flash_write(espi_taf_dev, &taf_pkt);
 		if (rc != 0) {
 			LOG_INF("%s: error = %d: erase fail spi_addr = 0x%X", __func__, rc,
 				spi_addr);
 			return rc;
 		}
 
-		saf_pkt.flash_addr += chunk_len;
-		saf_pkt.buf += chunk_len;
+		taf_pkt.flash_addr += chunk_len;
+		taf_pkt.buf += chunk_len;
 		n -= chunk_len;
 	}
 
 	return progsz;
 }
 
-int espi_saf_test1(uint32_t spi_addr)
+int espi_taf_test1(uint32_t spi_addr)
 {
 	int rc, retries;
 	bool erased;
 	uint32_t n, saddr, progsz, chunksz;
 
-	rc = espi_saf_activate(espi_saf_dev);
+	rc = espi_saf_activate(espi_taf_dev);
 	LOG_INF("%s: activate = %d", __func__, rc);
 
 	if (spi_addr & 0xfffU) {
@@ -572,14 +571,14 @@ int espi_saf_test1(uint32_t spi_addr)
 		LOG_INF("%s: Aligned SPI address to 0x%08x", __func__, spi_addr);
 	}
 
-	memset(safbuf, 0x55, sizeof(safbuf));
-	memset(safbuf2, 0, sizeof(safbuf2));
+	memset(tafbuf, 0x55, sizeof(tafbuf));
+	memset(tafbuf2, 0, sizeof(tafbuf2));
 
 	erased = false;
 	retries = 3;
 	while (!erased && (retries-- > 0)) {
 		/* read 4KB sector at 0 */
-		rc = saf_read(spi_addr, safbuf, 4096);
+		rc = taf_read(spi_addr, tafbuf, READ_4KB_SECTOR);
 		if (rc != 4096) {
 			LOG_INF("%s: error=%d Read 4K sector at 0x%X failed", __func__, rc,
 				spi_addr);
@@ -587,8 +586,8 @@ int espi_saf_test1(uint32_t spi_addr)
 		}
 
 		rc = 0;
-		for (n = 0; n < 4096U; n++) {
-			if (safbuf[n] != 0xffUL) {
+		for (n = 0; n < READ_4KB_SECTOR; n++) {
+			if (tafbuf[n] != 0xffUL) {
 				rc = -1;
 				break;
 			}
@@ -603,9 +602,9 @@ int espi_saf_test1(uint32_t spi_addr)
 			LOG_INF("4KB sector at 0x%x not in erased state. "
 				"Send 4K erase.",
 				spi_addr);
-			rc = saf_erase_block(spi_addr, SAF_ERASE_4K);
+			rc = taf_erase_block(spi_addr, TAF_ERASE_4K);
 			if (rc != 0) {
-				LOG_INF("SAF erase block at 0x%x returned "
+				LOG_INF("TAF erase block at 0x%x returned "
 					"error %d",
 					spi_addr, rc);
 				return rc;
@@ -622,7 +621,7 @@ int espi_saf_test1(uint32_t spi_addr)
 	 * Page program test pattern every 256 bytes = 0,1,...,255
 	 */
 	for (n = 0; n < 4096U; n++) {
-		safbuf[n] = n % 256U;
+		tafbuf[n] = n % 256U;
 	}
 
 	/* SPI flash sector erase size is 4KB, page program is 256 bytes */
@@ -630,14 +629,14 @@ int espi_saf_test1(uint32_t spi_addr)
 	chunksz = 256U;
 	saddr = spi_addr;
 	n = 0;
-	const uint8_t *src = (const uint8_t *)safbuf;
+	const uint8_t *src = (const uint8_t *)tafbuf;
 
 	LOG_INF("%s: Program 4KB sector at 0x%X", __func__, saddr);
 
 	while (n < progsz) {
-		rc = saf_page_prog(saddr, (const uint8_t *)src, (int)chunksz);
+		rc = taf_page_prog(saddr, (const uint8_t *)src, (int)chunksz);
 		if (rc != chunksz) {
-			LOG_INF("saf_page_prog error=%d at 0x%X", rc, saddr);
+			LOG_INF("taf_page_prog error=%d at 0x%X", rc, saddr);
 			break;
 		}
 		saddr += chunksz;
@@ -648,9 +647,9 @@ int espi_saf_test1(uint32_t spi_addr)
 	/* read back and check */
 	LOG_INF("%s: Read back 4K sector at 0x%X", __func__, spi_addr);
 
-	rc = saf_read(spi_addr, safbuf2, progsz);
+	rc = taf_read(spi_addr, tafbuf2, progsz);
 	if (rc == progsz) {
-		rc = memcmp(safbuf, safbuf2, progsz);
+		rc = memcmp(tafbuf, tafbuf2, progsz);
 		if (rc == 0) {
 			LOG_INF("%s: Read back match: PASS", __func__);
 		} else {
@@ -662,7 +661,7 @@ int espi_saf_test1(uint32_t spi_addr)
 	}
 
 	/* Run protection region test */
-	rc = espi_saf_test_pr1(&saf_pr_w25q128);
+	rc = espi_taf_test_pr1(&saf_pr_w25q128);
 	if (rc) {
 		LOG_INF("eSPI SAF test pr1 returned error %d", rc);
 	}
