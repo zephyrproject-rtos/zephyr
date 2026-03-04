@@ -819,6 +819,7 @@ zb	Zbit Semiconductor, Inc.
 zealz	Zealz
 zeitec	ZEITEC Semiconductor Co., LTD.
 zephyr	Zephyr Project
+zhaw	Zurich University of Applied Sciences
 zhiantec	Hangzhou Zhian Technology Co., Ltd.
 zidoo	Shenzhen Zidoo Technology Co., Ltd.
 zii	Zodiac Inflight Innovations
