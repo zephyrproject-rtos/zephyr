@@ -92,6 +92,15 @@ PRs that are too large or complicated.
 PR Requirements
 ***************
 
+.. important::
+
+   Pull requests that do not meet the quality expectations outlined below are less likely to receive
+   reviewer engagement, and reviewers may request changes on such pull requests without detailed
+   feedback.
+
+   Contributors are expected to self-review their changes and ensure all requirements are met before
+   requesting a review.
+
 - Each commit in the PR must provide a commit message following the
   :ref:`commit-guidelines`.
 
