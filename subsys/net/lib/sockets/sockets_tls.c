@@ -678,6 +678,10 @@ static void tls_session_store(struct tls_context *context,
 		return;
 	}
 
+	if (addrlen > sizeof(peer_addr)) {
+		return;
+	}
+
 	memcpy(&peer_addr, addr, addrlen);
 	mbedtls_ssl_session_init(&session);
 
@@ -705,6 +709,10 @@ static void tls_session_restore(struct tls_context *context,
 	int ret;
 
 	if (!context->options.cache_enabled) {
+		return;
+	}
+
+	if (addrlen > sizeof(peer_addr)) {
 		return;
 	}
 
