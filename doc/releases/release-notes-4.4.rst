@@ -477,8 +477,10 @@ Libraries / Subsystems
    * :c:func:`lora_airtime`
    * Added Channel Activity Detection (CAD) support to the LoRa API:
      :c:func:`lora_cad`, :c:func:`lora_cad_async`.
-     CAD parameters and mode (``LORA_CAD_RX``, ``LORA_CAD_LBT``) are
-     configured via :c:struct:`lora_modem_config`.
+     CAD parameters and LBT mode are configured via
+     :c:struct:`lora_modem_config`.
+   * Added :c:func:`lora_recv_duty_cycle` for hardware-driven
+     wake-on-radio (RX duty cycling).
 
 * Mbed TLS
 

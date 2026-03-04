@@ -300,6 +300,17 @@ typedef int (*lora_api_cad_async)(const struct device *dev, lora_cad_cb cb,
 				  void *user_data);
 
 /**
+ * @typedef lora_api_recv_duty_cycle()
+ * @brief Callback API for receive duty cycling (wake-on-radio)
+ *
+ * @see lora_recv_duty_cycle() for argument descriptions.
+ */
+typedef int (*lora_api_recv_duty_cycle)(const struct device *dev,
+				       k_timeout_t rx_period,
+				       k_timeout_t sleep_period,
+				       lora_recv_cb cb, void *user_data);
+
+/**
  * @typedef lora_api_test_cw()
  * @brief Callback API for transmitting a continuous wave
  *
@@ -317,6 +328,7 @@ __subsystem struct lora_driver_api {
 	lora_api_recv_async recv_async;
 	lora_api_cad cad;
 	lora_api_cad_async cad_async;
+	lora_api_recv_duty_cycle recv_duty_cycle;
 	lora_api_test_cw test_cw;
 };
 
@@ -506,6 +518,39 @@ static inline int lora_cad_async(const struct device *dev, lora_cad_cb cb,
 	}
 
 	return api->cad_async(dev, cb, user_data);
+}
+
+/**
+ * @brief Start receive duty cycling (wake-on-radio)
+ *
+ * The radio autonomously alternates between sleep and listening for
+ * a LoRa preamble. When a valid packet is received, @p cb is invoked.
+ * The duty cycle continues until cancelled by calling this function
+ * with @p cb = NULL.
+ *
+ * The transmitter must use a preamble longer than
+ * (@p sleep_period + @p rx_period) to guarantee detection.
+ *
+ * @param dev           LoRa device
+ * @param rx_period     Listen window duration
+ * @param sleep_period  Sleep duration between listen windows
+ * @param cb            Callback on packet reception. NULL to cancel.
+ * @param user_data     User data passed to callback
+ * @return 0 on success, negative on error
+ */
+static inline int lora_recv_duty_cycle(const struct device *dev,
+				       k_timeout_t rx_period,
+				       k_timeout_t sleep_period,
+				       lora_recv_cb cb, void *user_data)
+{
+	const struct lora_driver_api *api =
+		(const struct lora_driver_api *)dev->api;
+
+	if (api->recv_duty_cycle == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->recv_duty_cycle(dev, rx_period, sleep_period, cb, user_data);
 }
 
 /**
