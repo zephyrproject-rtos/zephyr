@@ -994,7 +994,7 @@ static int dtls_server_rx(void *ctx, unsigned char *buf, size_t len)
 {
 	struct tls_context *tls_ctx = ctx;
 	net_socklen_t addrlen = sizeof(struct net_sockaddr);
-	struct net_sockaddr addr;
+	struct net_sockaddr_storage addr;
 	int err;
 	ssize_t received;
 	uint8_t tmp_buf;
@@ -1002,7 +1002,7 @@ static int dtls_server_rx(void *ctx, unsigned char *buf, size_t len)
 	/* Peek the packet first to check the peer address. */
 	received = zsock_recvfrom(tls_ctx->sock, &tmp_buf, sizeof(tmp_buf),
 				  ZSOCK_MSG_DONTWAIT | ZSOCK_MSG_PEEK,
-				  &addr, &addrlen);
+				  net_sad(&addr), &addrlen);
 	if (received < 0) {
 		if (errno == EAGAIN) {
 			return MBEDTLS_ERR_SSL_WANT_READ;
@@ -1014,7 +1014,7 @@ static int dtls_server_rx(void *ctx, unsigned char *buf, size_t len)
 
 	/* Check if the peer address matches the current session. */
 	if (tls_ctx->active_session->dtls_peer_addrlen != 0 &&
-	    !dtls_is_peer_addr_valid(tls_ctx->active_session, &addr, addrlen)) {
+	    !dtls_is_peer_addr_valid(tls_ctx->active_session, net_sad(&addr), addrlen)) {
 		/* Peer address does not match the current session, exit now
 		 * and try to find the appropriate session or allocate a new one.
 		 */
@@ -1023,7 +1023,7 @@ static int dtls_server_rx(void *ctx, unsigned char *buf, size_t len)
 
 	/* If the session matches, read the actual packet. */
 	received = zsock_recvfrom(tls_ctx->sock, buf, len,
-				  ZSOCK_MSG_DONTWAIT, &addr, &addrlen);
+				  ZSOCK_MSG_DONTWAIT, net_sad(&addr), &addrlen);
 	if (received < 0) {
 		NET_ERR("DTLS server RX: failure %d", errno);
 		return MBEDTLS_ERR_NET_RECV_FAILED;
@@ -1033,7 +1033,7 @@ static int dtls_server_rx(void *ctx, unsigned char *buf, size_t len)
 
 	/* Only allow to store peer address for DTLS servers. */
 	if (tls_ctx->active_session->dtls_peer_addrlen == 0) {
-		dtls_peer_address_set(tls_ctx->active_session, &addr, addrlen);
+		dtls_peer_address_set(tls_ctx->active_session, net_sad(&addr), addrlen);
 
 		err = mbedtls_ssl_set_client_transport_id(&tls_ctx->active_session->ssl,
 							 (const unsigned char *)&addr,
@@ -1050,11 +1050,11 @@ static int dtls_client_rx(void *ctx, unsigned char *buf, size_t len)
 {
 	struct tls_context *tls_ctx = ctx;
 	net_socklen_t addrlen = sizeof(struct net_sockaddr);
-	struct net_sockaddr addr;
+	struct net_sockaddr_storage addr;
 	ssize_t received;
 
 	received = zsock_recvfrom(tls_ctx->sock, buf, len,
-				  ZSOCK_MSG_DONTWAIT, &addr, &addrlen);
+				  ZSOCK_MSG_DONTWAIT, net_sad(&addr), &addrlen);
 	if (received < 0) {
 		if (errno == EAGAIN) {
 			return MBEDTLS_ERR_SSL_WANT_READ;
@@ -1070,7 +1070,7 @@ static int dtls_client_rx(void *ctx, unsigned char *buf, size_t len)
 		return MBEDTLS_ERR_SSL_PEER_VERIFY_FAILED;
 	}
 
-	if (!dtls_is_peer_addr_valid(tls_ctx->active_session, &addr, addrlen)) {
+	if (!dtls_is_peer_addr_valid(tls_ctx->active_session, net_sad(&addr), addrlen)) {
 		/* Received packet from a different peer, drop and retry. */
 		return MBEDTLS_ERR_SSL_WANT_READ;
 	}
@@ -1168,7 +1168,7 @@ static int dtls_server_switch_active_session_by_cid(struct tls_context *tls_ctx)
 	k_mutex_lock(&dtls_helper_buf_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&tls_ctx->sessions, session_ctx, node) {
-		struct net_sockaddr addr;
+		struct net_sockaddr_storage addr;
 		net_socklen_t addrlen;
 		int cid_enabled;
 		ssize_t len;
@@ -1198,7 +1198,7 @@ static int dtls_server_switch_active_session_by_cid(struct tls_context *tls_ctx)
 		addrlen = sizeof(struct net_sockaddr);
 		len = zsock_recvfrom(tls_ctx->sock, &dtls_helper_buf, sizeof(dtls_helper_buf),
 				     ZSOCK_MSG_DONTWAIT | ZSOCK_MSG_PEEK,
-				     &addr, &addrlen);
+				     net_sad(&addr), &addrlen);
 		if (len < 0) {
 			result = -errno;
 			break;
@@ -1207,11 +1207,11 @@ static int dtls_server_switch_active_session_by_cid(struct tls_context *tls_ctx)
 		ret = mbedtls_ssl_check_record(&session_ctx->ssl, dtls_helper_buf, len);
 		if (ret == 0) {
 			NET_DBG("Found matching session (CID) for [%s]:%d (was [%s]:%d)",
-				LOG_ADDR_PORT_HELPER(&addr),
+				LOG_ADDR_PORT_HELPER(net_sad(&addr)),
 				LOG_ADDR_PORT_HELPER(net_sad(&session_ctx->dtls_peer_addr)));
 
 			/* Need to update peer address as CID matched */
-			dtls_peer_address_set(session_ctx, &addr, addrlen);
+			dtls_peer_address_set(session_ctx, net_sad(&addr), addrlen);
 			tls_ctx->active_session = session_ctx;
 			result = 0;
 			break;
@@ -1234,20 +1234,20 @@ static int dtls_server_switch_active_session_by_cid(struct tls_context *tls_ctx)
 static int dtls_server_switch_session_on_rx(struct tls_context *tls_ctx)
 {
 	net_socklen_t addrlen = sizeof(struct net_sockaddr);
-	struct net_sockaddr addr;
+	struct net_sockaddr_storage addr;
 	uint8_t tmp_buf;
 	int ret;
 
 	/* Peek a dummy byte first to get peer address. */
 	ret = zsock_recvfrom(tls_ctx->sock, &tmp_buf, sizeof(tmp_buf),
 			     ZSOCK_MSG_DONTWAIT | ZSOCK_MSG_PEEK,
-			     &addr, &addrlen);
+			     net_sad(&addr), &addrlen);
 	if (ret < 0) {
 		return -errno;
 	}
 
 	/* Try to match existing session by peer address. */
-	ret = dtls_server_switch_active_session(tls_ctx, &addr, addrlen);
+	ret = dtls_server_switch_active_session(tls_ctx, net_sad(&addr), addrlen);
 	if (ret == 0 || ret == 1) {
 		return ret;
 	}
@@ -1262,7 +1262,7 @@ static int dtls_server_switch_session_on_rx(struct tls_context *tls_ctx)
 
 	NET_DBG("No session found (RX), allocating new");
 
-	ret = dtls_server_new_active_session(tls_ctx, &addr, addrlen);
+	ret = dtls_server_new_active_session(tls_ctx, net_sad(&addr), addrlen);
 	if (ret < 0) {
 		NET_ERR("Failed to allocate new session for DTLS server, "
 			"dropping packet (err: %d)", ret);
@@ -3613,8 +3613,8 @@ static ssize_t recvfrom_dtls_server(struct tls_context *ctx, void *buf,
 	 * a socket.
 	 */
 	do {
-		net_socklen_t peer_addrlen = sizeof(struct net_sockaddr);
-		struct net_sockaddr peer_addr;
+		struct net_sockaddr_storage peer_addr;
+		net_socklen_t peer_addrlen = sizeof(peer_addr);
 
 		repeat = false;
 
@@ -3652,7 +3652,7 @@ static ssize_t recvfrom_dtls_server(struct tls_context *ctx, void *buf,
 		}
 
 		/* Backup peer address (to verify later if it changed). */
-		dtls_peer_address_get(ctx->active_session, &peer_addr, &peer_addrlen);
+		dtls_peer_address_get(ctx->active_session, net_sad(&peer_addr), &peer_addrlen);
 
 		ret = recvfrom_dtls_common(ctx, buf, max_len, flags,
 					   src_addr, addrlen);
@@ -3682,7 +3682,7 @@ static ssize_t recvfrom_dtls_server(struct tls_context *ctx, void *buf,
 		case MBEDTLS_ERR_SSL_ASYNC_IN_PROGRESS:
 		case MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS:
 			if (peer_addrlen > 0 &&
-			    !dtls_is_peer_addr_valid(ctx->active_session, &peer_addr,
+			    !dtls_is_peer_addr_valid(ctx->active_session, net_sad(&peer_addr),
 						     peer_addrlen)) {
 				/* Current peer changed, repeat the loop. */
 				repeat = true;
