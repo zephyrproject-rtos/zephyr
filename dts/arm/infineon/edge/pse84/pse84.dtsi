@@ -266,11 +266,11 @@
 		};
 
 		autanalog: analog@42e00000 {
+			compatible = "infineon,autanalog";
 			reg = <0x42e00000 0x100000>;
 			interrupts = <57 4>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			#io-channel-cells = <1>;
 			ranges;
 
 			adc0: adc0@80000 {
