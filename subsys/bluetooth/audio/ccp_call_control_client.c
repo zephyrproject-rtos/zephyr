@@ -31,7 +31,7 @@ static struct bt_tbs_client_cb tbs_client_cbs;
 
 static struct bt_tbs_client_cb tbs_client_cbs;
 
-/* A service instance can either be a GTBS or a TBS insttance */
+/* A service instance can either be a GTBS or a TBS instance */
 struct bt_ccp_call_control_client_bearer {
 	uint8_t tbs_index;
 	bool discovered;

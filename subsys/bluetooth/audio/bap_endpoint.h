@@ -21,7 +21,6 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/types.h>
 
-#include "ascs_internal.h"
 #include "bap_stream.h"
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
