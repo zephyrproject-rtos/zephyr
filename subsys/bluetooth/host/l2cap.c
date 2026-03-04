@@ -2756,6 +2756,15 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 			bt_l2cap_chan_disconnect(&chan->chan);
 			return;
 		}
+
+		if (chan->_sdu->user_data_size < sizeof(uint16_t)) {
+			LOG_ERR("SDU buffer user_data_size %u is too small",
+				chan->_sdu->user_data_size);
+			net_buf_unref(chan->_sdu);
+			chan->_sdu = NULL;
+			bt_l2cap_chan_disconnect(&chan->chan);
+			return;
+		}
 		chan->_sdu_len = sdu_len;
 
 		/* Send sdu_len/mps worth of credits */
