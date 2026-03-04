@@ -933,8 +933,12 @@ struct bt_bap_stream {
 	 */
 	const struct bt_audio_codec_cfg *codec_cfg;
 
-	/** QoS Configuration */
-	struct bt_bap_qos_cfg *qos;
+	/** QoS Configuration
+	 *
+	 * Only valid if the endpoint for this stream is non-NULL and the state is
+	 * @ref BT_BAP_EP_STATE_QOS_CONFIGURED or higher.
+	 */
+	const struct bt_bap_qos_cfg *qos;
 
 	/** Audio stream operations */
 	struct bt_bap_stream_ops *ops;
