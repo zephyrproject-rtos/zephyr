@@ -17,7 +17,25 @@ extern "C" {
 #endif
 
 #define I2C_NRFX_TWIM_INVALID_FREQUENCY ((nrf_twim_frequency_t)-1)
-#define I2C_NRFX_TWIM_FREQUENCY(bitrate)                                                           \
+
+/* Formula for getting the frequency settings is following:
+ * 2^12 * (2^20 / (f_PCLK / desired_frequency)) where f_PCLK is a frequency that
+ * drives the TWIM.
+ *
+ * @param f_pclk Frequency of the clock that drives the peripheral.
+ * @param baudrate Desired baudrate.
+ *
+ * @return Frequency setting to be written to the FREQUENCY register
+ */
+#define I2C_NRFX_TWIM_FREQUENCY_CALCULATE(bitrate, f_pclk) \
+	((nrf_twim_frequency_t)((BIT(20) / DIV_ROUND_CLOSEST(f_pclk, bitrate)) << 12))
+
+#define I2C_NRFX_TWIM_FREQUENCY_CALCULATE_CORRECTED(bitrate, f_pclk, tolerance_percent)		\
+	I2C_NRFX_TWIM_FREQUENCY_CALCULATE(bitrate,						\
+					  DIV_ROUND_CLOSEST(f_pclk * (100 + tolerance_percent), \
+					  100))
+
+#define I2C_NRFX_TWIM_FREQUENCY_ENUM_GET(bitrate, f_pclk)                                          \
 	(bitrate == I2C_BITRATE_STANDARD ? NRF_TWIM_FREQ_100K                                      \
 	 : bitrate == 250000             ? NRF_TWIM_FREQ_250K                                      \
 	 : bitrate == I2C_BITRATE_FAST                                                             \
@@ -26,8 +44,16 @@ extern "C" {
 			      (bitrate == I2C_BITRATE_FAST_PLUS ? NRF_TWIM_FREQ_1000K :))          \
 			   I2C_NRFX_TWIM_INVALID_FREQUENCY)
 
-#define I2C_FREQUENCY(inst) \
-	I2C_NRFX_TWIM_FREQUENCY(DT_INST_PROP_OR(inst, clock_frequency, I2C_BITRATE_STANDARD))
+#define INTENDED_CLOCK_FREQUENCY(inst) DT_INST_PROP_OR(inst, clock_frequency, I2C_BITRATE_STANDARD)
+#define CLOCK_TOLERANCE(inst) DT_INST_PROP(inst, clock_tolerance_percent)
+
+#define I2C_FREQUENCY(inst)									 \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clock_tolerance_percent),			 \
+		    (I2C_NRFX_TWIM_FREQUENCY_CALCULATE_CORRECTED(INTENDED_CLOCK_FREQUENCY(inst), \
+								 NRF_PERIPH_GET_FREQUENCY(inst), \
+								 CLOCK_TOLERANCE(inst))),	 \
+		    (I2C_NRFX_TWIM_FREQUENCY_ENUM_GET(INTENDED_CLOCK_FREQUENCY(inst),		 \
+						      NRF_PERIPH_GET_FREQUENCY(inst))))
 
 /* Macro determines PM actions interrupt safety level.
  *
