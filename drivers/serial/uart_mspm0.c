@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Texas Instruments
+ * Copyright (c) 2025-2026 Texas Instruments
  * Copyright (c) 2025 Linumiz
  * Copyright (c) 2025 Bang & Olufsen A/S, Denmark
  *
@@ -325,8 +325,8 @@ static int uart_mspm0_irq_tx_ready(const struct device *dev)
 	const struct uart_mspm0_config *config = dev->config;
 	struct uart_mspm0_data *data = dev->data;
 
-	return (data->pending_interrupt &
-		(DL_UART_MAIN_IIDX_TX | DL_UART_MAIN_IIDX_EOT_DONE))
+	return ((data->pending_interrupt == DL_UART_MAIN_IIDX_TX) ||
+			(data->pending_interrupt == DL_UART_MAIN_IIDX_EOT_DONE))
 		&& !DL_UART_Main_isTXFIFOFull(config->regs) ? 1 : 0;
 }
 
@@ -356,7 +356,7 @@ static int uart_mspm0_irq_rx_ready(const struct device *dev)
 	const struct uart_mspm0_config *config = dev->config;
 	struct uart_mspm0_data *data = dev->data;
 
-	return (data->pending_interrupt & DL_UART_MAIN_IIDX_RX) &&
+	return (data->pending_interrupt == DL_UART_MAIN_IIDX_RX) &&
 		!DL_UART_Main_isRXFIFOEmpty(config->regs) ? 1 : 0;
 }
 
@@ -409,21 +409,12 @@ static void uart_mspm0_irq_error_disable(const struct device *dev)
 
 static void uart_mspm0_isr(const struct device *dev)
 {
-	const struct uart_mspm0_config *config = dev->config;
 	struct uart_mspm0_data *const dev_data = dev->data;
-	uint32_t int_status;
 
 	/* Perform callback if defined */
 	if (dev_data->cb) {
 		dev_data->cb(dev, dev_data->cb_data);
 	}
-
-	/* Unilaterally clearing the interrupt status */
-	int_status = DL_UART_Main_getEnabledInterruptStatus(config->regs,
-				UART_MSPM0_TX_INTERRUPTS | UART_MSPM0_RX_INTERRUPTS);
-	DL_UART_Main_clearInterruptStatus(config->regs, int_status);
-
-	dev_data->pending_interrupt = DL_UART_MAIN_IIDX_NO_INTERRUPT;
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
