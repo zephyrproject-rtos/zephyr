@@ -446,6 +446,11 @@ New Drivers
     (:github:`101926`)
   * :dtcompatible:`nxp,ocotp` (:github:`102567` & :github:`103089`)
 
+* Partitions
+
+  * Added new :dtcompatible:`zephyr,mapped-partition` compatible for memory-mapped partitions
+    (:github:`104398`).
+
 New Samples
 ***********
 
