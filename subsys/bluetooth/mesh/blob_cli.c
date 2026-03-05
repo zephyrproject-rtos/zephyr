@@ -1248,6 +1248,16 @@ static int handle_xfer_status(const struct bt_mesh_model *mod, struct bt_mesh_ms
 
 	if (cli->state == BT_MESH_BLOB_CLI_STATE_START) {
 		expected_phase = BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_BLOCK;
+		/* If a transfer is resumed quickly (before the server's rx_timeout
+		 * fires), the server is still in WAITING_FOR_CHUNK. The server's
+		 * idempotency logic replies Success without changing its phase.
+		 * Accept WAITING_FOR_CHUNK here so the client can proceed to
+		 * BLOCK_START, which will reset the server's timeout timer.
+		 */
+		if (info.status == BT_MESH_BLOB_SUCCESS &&
+		    info.phase == BT_MESH_BLOB_XFER_PHASE_WAITING_FOR_CHUNK) {
+			expected_phase = info.phase;
+		}
 	} else if (cli->state == BT_MESH_BLOB_CLI_STATE_XFER_CHECK) {
 		expected_phase = BT_MESH_BLOB_XFER_PHASE_COMPLETE;
 	} else if (cli->state != BT_MESH_BLOB_CLI_STATE_XFER_PROGRESS_GET) {
