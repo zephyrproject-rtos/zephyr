@@ -172,11 +172,12 @@ config PHY_VERIFY_DEVICE_IDENTIFICATION
 	  by the phy chip.
 
 config PHY_MOTORCOMM_YT8521
-	bool "Motorcomm YT8521 Ethernet PHY Driver"
+	bool "Motorcomm YT8521/YT8531 Ethernet PHY Driver"
 	default y
-	depends on DT_HAS_MOTORCOMM_YT8521_ENABLED
+	depends on DT_HAS_MOTORCOMM_YT8521_ENABLED || DT_HAS_MOTORCOMM_YT8531_ENABLED
 	select MDIO
 	help
-	  Enable Motorcomm YT8521 Ethernet PHY Driver
+	  Enable Motorcomm YT8521/YT8531 Ethernet PHY Driver.
+	  This driver supports both YT8521 and YT8531 PHY chips.
 
 endif # "Ethernet PHY Drivers"
