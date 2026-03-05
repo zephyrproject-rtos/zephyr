@@ -20,6 +20,13 @@ config BFLB_BTBLE_TASK_PRIO
 	  Priority level reported to the BLE controller blob via the
 	  FreeRTOS shim uxTaskPriorityGet() function.
 
+config BFLB_BTBLE_PORT_OS_SHIM
+	bool
+	help
+	  Zephyr RTOS port for the btblecontroller binary blob.
+	  Implements the btblecontroller_* OS abstraction for BL702L/BL616.
+	  Selected by SoC-specific BLE drivers that use the btblecontroller API.
+
 config BFLB_SHIM_HEAP_SIZE
 	int "BLE shim heap size"
 	default 8192
