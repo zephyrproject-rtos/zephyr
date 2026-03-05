@@ -894,6 +894,18 @@ struct bt_hci_cp_write_page_scan_type {
 	uint8_t type;
 } __packed;
 
+/** Maximum length of Extended Inquiry Response data. */
+#define BT_HCI_EIR_MAX_DATA_LEN                 240
+/** HCI opcode for Write Extended Inquiry Response. */
+#define BT_HCI_OP_WRITE_EXT_INQUIRY_RESPONSE    BT_OP(BT_OGF_BASEBAND, 0x0052) /* 0x0c52 */
+/** HCI command parameters for Write Extended Inquiry Response. */
+struct bt_hci_cp_write_ext_inquiry_response {
+	/** FEC encoding required. */
+	uint8_t fec_required;
+	/** Extended inquiry response data. */
+	uint8_t eir[BT_HCI_EIR_MAX_DATA_LEN];
+} __packed;
+
 #define BT_HCI_OP_WRITE_SSP_MODE                BT_OP(BT_OGF_BASEBAND, 0x0056) /* 0x0c56 */
 struct bt_hci_cp_write_ssp_mode {
 	uint8_t mode;

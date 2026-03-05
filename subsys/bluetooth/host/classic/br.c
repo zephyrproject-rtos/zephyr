@@ -1642,3 +1642,35 @@ int bt_br_write_local_name(const char *name)
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_LOCAL_NAME, buf, NULL);
 }
+
+int bt_br_write_eir(const struct bt_data *eir, size_t eir_count, bool fec_required)
+{
+	struct bt_hci_cp_write_ext_inquiry_response *cp;
+	struct net_buf *buf;
+	size_t offset = 0;
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	if (net_buf_tailroom(buf) < sizeof(*cp)) {
+		net_buf_unref(buf);
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->fec_required = fec_required ? 0x01 : 0x00;
+	(void)memset(cp->eir, 0, sizeof(cp->eir));
+
+	for (size_t i = 0; i < eir_count; i++) {
+		if (offset + BT_DATA_SERIALIZED_SIZE(eir[i].data_len) > BT_HCI_EIR_MAX_DATA_LEN) {
+			net_buf_unref(buf);
+			return -EINVAL;
+		}
+
+		offset += bt_data_serialize(&eir[i], &cp->eir[offset]);
+	}
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_EXT_INQUIRY_RESPONSE, buf, NULL);
+}
