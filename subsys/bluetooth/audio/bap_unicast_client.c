@@ -393,21 +393,7 @@ static void unicast_client_ep_iso_disconnected(struct bt_bap_ep *ep, uint8_t rea
 	 * the ISO has finalized the disconnection
 	 */
 	if (ep->state == BT_BAP_EP_STATE_IDLE) {
-
 		unicast_client_ep_idle_state(ep);
-
-		if (stream->conn != NULL) {
-			struct bt_conn_info conn_info;
-			int err;
-
-			err = bt_conn_get_info(stream->conn, &conn_info);
-			if (err != 0 || conn_info.state == BT_CONN_STATE_DISCONNECTED) {
-				/* Retrigger the reset of the EP if the ACL is disconnected before
-				 * the ISO is disconnected
-				 */
-				unicast_client_reset(ep, reason);
-			}
-		}
 	}
 }
 
@@ -2318,10 +2304,7 @@ static void unicast_client_reset(struct bt_bap_ep *ep, uint8_t reason)
 	/* Pretend we received an idle state notification from the server to trigger all cleanup */
 	unicast_client_ep_set_local_idle_state(ep);
 
-	if (ep->iso != NULL && ep->iso->chan.state == BT_ISO_STATE_DISCONNECTING) {
-		/* Wait for ISO disconnected event */
-		return;
-	}
+	__ASSERT(ep->iso == NULL, "CIS for ep %p was not disconnected before ACL", ep);
 
 	(void)k_work_cancel_delayable(&client_ep->ase_read_work);
 	(void)memset(ep, 0, sizeof(*ep));
