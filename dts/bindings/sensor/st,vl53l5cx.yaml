@@ -1,0 +1,23 @@
+# Copyright (c) 2024 Fabian Blatz <fabianblatz@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: STMicroelectronics VL53l5CX Time of Flight sensor
+
+compatible: "st,vl53l5cx"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+
+  int-gpios:
+    type: phandle-array
+    description: |
+      An interrupt is raised when a distance measurement is ready.
+      GPIO1 is the interrupt pin on the VL53L5CX (active low). This
+      can be disabled if the user prefers to use polling instead.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Driving the RST pin low resets the VL53L5CX. This is optional
+      and can be omitted if the sensor is reset by other means.

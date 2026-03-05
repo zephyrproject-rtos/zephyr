@@ -1,0 +1,28 @@
+menuconfig VL53L5CX
+	bool "VL53L5CX Time-of-Flight sensor"
+	default y
+	depends on DT_HAS_ST_VL53L5CX_ENABLED
+	depends on ZEPHYR_HAL_ST_MODULE
+	select I2C
+	select HAS_STLIB
+	help
+	  Enable support for the VL53L5CX Time-of-Flight sensor.
+
+if VL53L5CX
+
+config VL53L5CX_BUFFER_ALIGN
+	int "Alignment for firmware and config buffer"
+	default 4
+	help
+	  Alignment for the larger firmware and configuration
+	  buffers.
+
+config VL53L5CX_BUFFER_CUSTOM_SECTION
+	bool "Link buffers to custom section"
+	help
+	  Place the firmware and configuration buffer in a
+	  custom section with tag ".vl53l5cx_buf". This can used
+	  with linker scripts to relocate the firmware and configuration
+	  buffers into a custom location, for example DMA memory.
+
+endif # VL53L5CX
