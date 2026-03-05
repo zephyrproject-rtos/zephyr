@@ -1214,8 +1214,16 @@ static int mcux_flexcomm_pm_action(const struct device *dev, enum pm_device_acti
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+		ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0 && ret != -ENOENT) {
+			return ret;
+		}
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
+		ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
+		if (ret < 0 && ret != -ENOENT) {
+			return ret;
+		}
 		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
 		data->usart_intenset = USART_GetEnabledInterrupts(config->base);
