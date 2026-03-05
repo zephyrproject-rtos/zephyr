@@ -65,6 +65,6 @@ static int axisram_stm32_init(const struct device *dev)
  * perform our own instantiation only if so thanks to COND_CODE.
  */
 #define STM32N6_AXISRAM_MAYBE_INIT(idx)							\
-	IF_ENABLED(DT_INST_CHILD_NUM_STATUS_OKAY(idx), (STM32N6_AXISRAM_INIT(idx)))
+	COND_CODE_0(DT_INST_CHILD_NUM_STATUS_OKAY(idx), (), (STM32N6_AXISRAM_INIT(idx)))
 
 DT_INST_FOREACH_STATUS_OKAY(STM32N6_AXISRAM_MAYBE_INIT)
