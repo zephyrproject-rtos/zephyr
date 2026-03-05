@@ -74,3 +74,18 @@ config STM32_IOCELL_CHECK_ENABLE
 	  Enables logging of I/O cell driver. This can be useful for reporting
 	  discrepancy between device-tree configuration and value stored in
 	  device OTP/option bytes
+
+config STM32_XSPIM
+	bool "STM32 XSPI Manager"
+	select USE_STM32_HAL_XSPI
+	default y if DT_HAS_ST_STM32_XSPIM_ENABLED
+	help
+	  Enables support for XSPI Manager.
+
+if STM32_XSPIM
+
+module = STM32_XSPIM
+module-str = stm32_xpsim
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # STM32_XSPIM

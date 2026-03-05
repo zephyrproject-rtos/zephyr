@@ -272,6 +272,11 @@ zephyr_udc0: &usbotg_hs1 {
 	};
 };
 
+&xspim {
+	/* To be moved to sb/fsbl target once sysbuild added to the board */
+	status = "okay";
+};
+
 &xspi2 {
 	pinctrl-0 = <&xspim_p2_ncs1_pn1 &xspim_p2_dqs0_pn0 &xspim_p2_clk_pn6
 		     &xspim_p2_io0_pn2 &xspim_p2_io1_pn3 &xspim_p2_io2_pn4
