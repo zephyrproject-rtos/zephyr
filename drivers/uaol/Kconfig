@@ -8,7 +8,6 @@
 #
 menuconfig UAOL
 	bool "UAOL drivers"
-	default y
 	help
 	  Enable support for USB Audio Offload Link (UAOL) drivers.
 
