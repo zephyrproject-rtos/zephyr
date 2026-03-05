@@ -315,6 +315,10 @@ static int wdt_atcwdt200_init(const struct device *dev)
 
 	counter_start(pit_counter_dev);
 
+#ifdef CONFIG_WDT_DISABLE_AT_BOOT
+	wdt_atcwdt200_disable(dev);
+#endif
+
 	return 0;
 }
 
