@@ -4655,6 +4655,41 @@ int bt_conn_br_exit_sniff_mode(struct bt_conn *conn)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_EXIT_SNIFF_MODE, buf, NULL);
 }
 
+int bt_conn_br_set_sniff_subrating(struct bt_conn *conn, uint16_t max_latency,
+				   uint16_t min_remote_timeout,
+				   uint16_t min_local_timeout)
+{
+	struct bt_hci_cp_sniff_subrating *cp;
+	struct net_buf *buf;
+
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
+		return -EINVAL;
+	}
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	/* Core Spec Vol 2, Part E, 7.2.14 */
+	if (max_latency < 0x0002 || max_latency > 0xFFFE ||
+	    min_remote_timeout > 0xFFFE || min_local_timeout > 0xFFFE) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->max_latency = sys_cpu_to_le16(max_latency);
+	cp->min_remote_timeout = sys_cpu_to_le16(min_remote_timeout);
+	cp->min_local_timeout = sys_cpu_to_le16(min_local_timeout);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_SNIFF_SUBRATING, buf, NULL);
+}
+
 void bt_conn_notify_mode_changed(struct bt_conn *conn, uint8_t mode, uint16_t interval)
 {
 	BT_CONN_CB_DYNAMIC_FOREACH(callback) {

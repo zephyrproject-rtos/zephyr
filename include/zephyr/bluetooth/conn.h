@@ -3331,6 +3331,29 @@ int bt_conn_br_enter_sniff_mode(struct bt_conn *conn, uint16_t min_interval,
  *  @return  Zero for success, non-zero otherwise.
  */
 int bt_conn_br_exit_sniff_mode(struct bt_conn *conn);
+
+/** @brief Set BR/EDR sniff subrating parameters.
+ *
+ *  Configure sniff subrating parameters for a BR/EDR connection.
+ *  Sniff subrating allows further power savings by reducing the
+ *  number of sniff anchor points the device needs to listen on.
+ *
+ *  @param conn               Connection object.
+ *  @param max_latency        Maximum allowed sniff subrate latency
+ *                            (in baseband slots of 0.625 ms).
+ *                            Range: 0x0002 to 0xFFFE.
+ *  @param min_remote_timeout Minimum sniff mode timeout for remote device
+ *                            (in baseband slots of 0.625 ms).
+ *                            Range: 0x0000 to 0xFFFE.
+ *  @param min_local_timeout  Minimum sniff mode timeout for local device
+ *                            (in baseband slots of 0.625 ms).
+ *                            Range: 0x0000 to 0xFFFE.
+ *
+ *  @return  Zero for success, non-zero otherwise.
+ */
+int bt_conn_br_set_sniff_subrating(struct bt_conn *conn, uint16_t max_latency,
+				   uint16_t min_remote_timeout,
+				   uint16_t min_local_timeout);
 #endif /* CONFIG_BT_POWER_MODE_CONTROL */
 
 /** @brief Read BR/EDR supervision timeout.
