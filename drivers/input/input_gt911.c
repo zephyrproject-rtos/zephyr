@@ -33,7 +33,12 @@ LOG_MODULE_REGISTER(gt911, CONFIG_INPUT_LOG_LEVEL);
 #define GT911_REG_CONFIG_VERSION          GT911_REG_CONFIG
 #define GT911_REG_CONFIG_TOUCH_NUM_OFFSET 0x5
 #define GT911_REG_CONFIG_SIZE             186U
-#define GT911_PRODUCT_ID            0x00313139U
+#define GT911_PRODUCT_ID                  0x00313139U
+#define GT9271_PRODUCT_ID                 0x31373239U
+#define GT912_PRODUCT_ID                  0x00323139U
+#define GT927_PRODUCT_ID                  0x00373239U
+#define GT928_PRODUCT_ID                  0x00383239U
+#define GT967_PRODUCT_ID                  0x00373639U
 
 /* Points registers */
 #define GT911_REG_POINT_0       0x814F
@@ -385,8 +390,16 @@ static int gt911_init(const struct device *dev)
 		LOG_ERR("Device did not respond to I2C request");
 		return r;
 	}
-	if (reg_id != GT911_PRODUCT_ID) {
-		LOG_ERR("The Device ID is not correct");
+	switch (reg_id) {
+	case GT911_PRODUCT_ID:
+	case GT912_PRODUCT_ID:
+	case GT927_PRODUCT_ID:
+	case GT928_PRODUCT_ID:
+	case GT967_PRODUCT_ID:
+	case GT9271_PRODUCT_ID:
+		break;
+	default:
+		LOG_ERR("Unexpected device id: %08x ", reg_id);
 		return -ENODEV;
 	}
 
