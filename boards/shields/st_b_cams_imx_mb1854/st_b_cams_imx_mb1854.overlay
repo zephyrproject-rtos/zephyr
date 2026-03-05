@@ -45,6 +45,12 @@
 			};
 		};
 	};
+
+	vl53l5cx: sensor@29 {
+		compatible = "st,vl53l5cx";
+		friendly-name = "TOF_mb1854_vl53l5cx";
+		reg = <0x29>;
+	};
 };
 
 /* Power the camera module */
