@@ -13,9 +13,18 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - adc
+  - clock_control
+  - counter
+  - dma
+  - flash
   - gpio
+  - i2c
+  - pinctrl
+  - pwm
+  - rtc
   - spi
   - timer
   - uart
-  - dma
+  - watchdog
 vendor: infineon
