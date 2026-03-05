@@ -319,6 +319,7 @@ REDIRECTS = (
     ('samples/modules/pmci/mctp/i2c_gpio_bus_owner/README', 'samples/subsys/pmci/mctp/i2c_gpio_bus_owner/README'),
     ('samples/net/cloud/google_iot_mqtt/README', 'samples/net/net'),
     ('samples/sensor/max44009/README', 'samples/sensor/light_polling/README'),
+    ('samples/sensor/mpr/README', 'samples/sensor/pressure_polling/README'),
     ('samples/sensor/wsen_hids/README', 'samples/sensor/sensor'),
     ('samples/sensor/wsen_itds/README', 'samples/sensor/sensor'),
     ('samples/shields/npm1300_ek/doc/index', 'samples/shields/npm13xx_ek/doc/index'),
