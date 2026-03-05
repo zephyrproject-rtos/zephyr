@@ -51,10 +51,18 @@ static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
+#define SERVICES_BITMAP_BYTES ROUND_UP((BTP_SERVICE_ID_MAX + 1), BITS_PER_BYTE) / BITS_PER_BYTE
+#define SUPPORTED_SERVICES_RSP_LEN (sizeof(struct btp_core_read_supported_services_rp) + \
+		SERVICES_BITMAP_BYTES)
+
+BUILD_ASSERT(SUPPORTED_SERVICES_RSP_LEN <= BTP_DATA_MAX_SIZE, "Services too large");
+
 static uint8_t supported_services(const void *cmd, uint16_t cmd_len,
 				  void *rsp, uint16_t *rsp_len)
 {
 	struct btp_core_read_supported_services_rp *rp = rsp;
+
+	memset(rp->data, 0, SERVICES_BITMAP_BYTES);
 
 	/* octet 0 */
 	tester_set_bit(rp->data, BTP_SERVICE_ID_CORE);
@@ -145,7 +153,12 @@ static uint8_t supported_services(const void *cmd, uint16_t cmd_len,
 	tester_set_bit(rp->data, BTP_SERVICE_ID_SDP);
 #endif /* CONFIG_BT_CLASSIC */
 
-	*rsp_len = sizeof(*rp) + 4U;
+	/* octet 4 */
+#if defined(CONFIG_BT_RFCOMM)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_RFCOMM);
+#endif /* CONFIG_BT_RFCOMM */
+
+	*rsp_len = SUPPORTED_SERVICES_RSP_LEN;
 
 	return BTP_STATUS_SUCCESS;
 }
