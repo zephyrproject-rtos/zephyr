@@ -548,6 +548,53 @@ struct bt_hci_rp_pin_code_neg_reply {
 	bt_addr_t bdaddr;
 } __packed;
 
+/** HCI Change Connection Packet Type opcode */
+#define BT_HCI_OP_CHANGE_CONN_PACKET_TYPE       BT_OP(BT_OGF_LINK_CTRL, 0x000f) /* 0x040f */
+/** HCI Change Connection Packet Type command parameters */
+struct bt_hci_cp_change_conn_packet_type {
+	/** Connection handle */
+	uint16_t handle;
+	/** Packet type bitmask */
+	uint16_t packet_type;
+} __packed;
+
+/* ACL packet type bits for HCI_Change_Connection_Packet_Type command.
+ * BR packet types (set bit = may be used):
+ *   See Core Spec v6.0, Vol 4, Part E, Section 7.1.14
+ * EDR packet types (set bit = shall NOT be used):
+ *   Note: EDR bits use reverse logic compared to BR bits.
+ */
+/** 2-DH1 shall not be used */
+#define BT_HCI_ACL_PKT_TYPE_NO_2DH1            BIT(1)
+/** 3-DH1 shall not be used */
+#define BT_HCI_ACL_PKT_TYPE_NO_3DH1            BIT(2)
+/** DM1 may be used */
+#define BT_HCI_ACL_PKT_TYPE_DM1                BIT(3)
+/** DH1 may be used */
+#define BT_HCI_ACL_PKT_TYPE_DH1                BIT(4)
+/** 2-DH3 shall not be used */
+#define BT_HCI_ACL_PKT_TYPE_NO_2DH3            BIT(8)
+/** 3-DH3 shall not be used */
+#define BT_HCI_ACL_PKT_TYPE_NO_3DH3            BIT(9)
+/** DM3 may be used */
+#define BT_HCI_ACL_PKT_TYPE_DM3                BIT(10)
+/** DH3 may be used */
+#define BT_HCI_ACL_PKT_TYPE_DH3                BIT(11)
+/** 2-DH5 shall not be used */
+#define BT_HCI_ACL_PKT_TYPE_NO_2DH5            BIT(12)
+/** 3-DH5 shall not be used */
+#define BT_HCI_ACL_PKT_TYPE_NO_3DH5            BIT(13)
+/** DM5 may be used */
+#define BT_HCI_ACL_PKT_TYPE_DM5                BIT(14)
+/** DH5 may be used */
+#define BT_HCI_ACL_PKT_TYPE_DH5                BIT(15)
+
+/** Bitmask of all BR basic rate ACL packet types */
+#define BT_HCI_ACL_PKT_TYPE_BR_MASK \
+	(BT_HCI_ACL_PKT_TYPE_DM1 | BT_HCI_ACL_PKT_TYPE_DH1 | \
+	 BT_HCI_ACL_PKT_TYPE_DM3 | BT_HCI_ACL_PKT_TYPE_DH3 | \
+	 BT_HCI_ACL_PKT_TYPE_DM5 | BT_HCI_ACL_PKT_TYPE_DH5)
+
 #define BT_HCI_OP_AUTH_REQUESTED                BT_OP(BT_OGF_LINK_CTRL, 0x0011) /* 0x0411 */
 struct bt_hci_cp_auth_requested {
 	uint16_t handle;
@@ -3281,6 +3328,18 @@ struct bt_hci_evt_data_buf_overflow {
 	uint8_t  link_type;
 } __packed;
 
+/** HCI Connection Packet Type Changed event. */
+#define BT_HCI_EVT_CONN_PKT_TYPE_CHANGED        0x1d
+/** HCI Connection Packet Type Changed event parameters. */
+struct bt_hci_evt_conn_pkt_type_changed {
+	/** HCI status. */
+	uint8_t  status;
+	/** Connection handle. */
+	uint16_t handle;
+	/** Packet type bitmask. */
+	uint16_t packet_type;
+} __packed;
+
 #define BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI     0x22
 struct bt_hci_evt_inquiry_result_with_rssi {
 	bt_addr_t addr;
@@ -4432,6 +4491,8 @@ struct bt_hci_evt_le_conn_rate_change {
 #define BT_EVT_MASK_LINK_KEY_REQ                 BT_EVT_BIT(22)
 #define BT_EVT_MASK_LINK_KEY_NOTIFY              BT_EVT_BIT(23)
 #define BT_EVT_MASK_DATA_BUFFER_OVERFLOW         BT_EVT_BIT(25)
+/** Event mask bit for Connection Packet Type Changed event. */
+#define BT_EVT_MASK_CONN_PKT_TYPE_CHANGED        BT_EVT_BIT(28)
 #define BT_EVT_MASK_INQUIRY_RESULT_WITH_RSSI     BT_EVT_BIT(33)
 #define BT_EVT_MASK_REMOTE_EXT_FEATURES          BT_EVT_BIT(34)
 #define BT_EVT_MASK_SYNC_CONN_COMPLETE           BT_EVT_BIT(43)
