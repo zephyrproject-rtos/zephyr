@@ -26,6 +26,7 @@ LOG_MODULE_REGISTER(display_st7789v);
 struct st7789v_config {
 	const struct device *mipi_dbi;
 	const struct mipi_dbi_config dbi_config;
+	uint8_t *nocache_buf;
 	uint8_t vcom;
 	uint8_t gctrl;
 	bool vdv_vrh_enable;
@@ -126,24 +127,24 @@ static int st7789v_blanking_off(const struct device *dev)
 static int st7789v_set_mem_area(const struct device *dev, const uint16_t x,
 				 const uint16_t y, const uint16_t w, const uint16_t h)
 {
+	const struct st7789v_config *config = dev->config;
 	struct st7789v_data *data = dev->data;
-	uint16_t spi_data[2];
 
 	uint16_t ram_x = x + data->x_offset;
 	uint16_t ram_y = y + data->y_offset;
-
+	uint8_t *buf_nocache = config->nocache_buf;
 	int ret;
 
-	spi_data[0] = sys_cpu_to_be16(ram_x);
-	spi_data[1] = sys_cpu_to_be16(ram_x + w - 1);
-	ret = st7789v_transmit(dev, ST7789V_CMD_CASET, (uint8_t *)&spi_data[0], 4);
+	((uint16_t*)buf_nocache)[0] = sys_cpu_to_be16(ram_x);
+	((uint16_t*)buf_nocache)[1] = sys_cpu_to_be16(ram_x + w - 1);
+	ret = st7789v_transmit(dev, ST7789V_CMD_CASET, (uint8_t *)buf_nocache, 4);
 	if (ret < 0) {
 		return ret;
 	}
 
-	spi_data[0] = sys_cpu_to_be16(ram_y);
-	spi_data[1] = sys_cpu_to_be16(ram_y + h - 1);
-	return st7789v_transmit(dev, ST7789V_CMD_RASET, (uint8_t *)&spi_data[0], 4);
+	((uint16_t*)buf_nocache)[0] = sys_cpu_to_be16(ram_y);
+	((uint16_t*)buf_nocache)[1] = sys_cpu_to_be16(ram_y + h - 1);
+	return st7789v_transmit(dev, ST7789V_CMD_RASET, (uint8_t *)buf_nocache, 4);
 }
 
 static int st7789v_write(const struct device *dev,
@@ -265,101 +266,97 @@ static int st7789v_lcd_init(const struct device *dev)
 {
 	struct st7789v_data *data = dev->data;
 	const struct st7789v_config *config = dev->config;
-	uint8_t tmp;
+	uint8_t *buf_nocache = config->nocache_buf;
 	int ret;
 
-	st7789v_set_lcd_margins(dev, data->x_offset,
-				data->y_offset);
+	st7789v_set_lcd_margins(dev, data->x_offset, data->y_offset);
 
-	ret = st7789v_transmit(dev, ST7789V_CMD_CMD2EN,
-			       (uint8_t *)config->cmd2en_param,
-			       sizeof(config->cmd2en_param));
+	memcpy(buf_nocache, config->cmd2en_param, sizeof(config->cmd2en_param));
+	ret = st7789v_transmit(dev, ST7789V_CMD_CMD2EN, buf_nocache, sizeof(config->cmd2en_param));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = st7789v_transmit(dev, ST7789V_CMD_PORCTRL,
-			       (uint8_t *)config->porch_param,
-			       sizeof(config->porch_param));
+	memcpy(buf_nocache, config->porch_param, sizeof(config->porch_param));
+	ret = st7789v_transmit(dev, ST7789V_CMD_PORCTRL, buf_nocache, sizeof(config->porch_param));
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Digital Gamma Enable, default disabled */
-	tmp = 0x00;
-	ret = st7789v_transmit(dev, ST7789V_CMD_DGMEN, &tmp, 1);
+	buf_nocache[0] = 0x00;
+	ret = st7789v_transmit(dev, ST7789V_CMD_DGMEN, buf_nocache, 1);
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Frame Rate Control in Normal Mode, default value */
-	tmp = 0x0f;
-	ret = st7789v_transmit(dev, ST7789V_CMD_FRCTRL2, &tmp, 1);
+	buf_nocache[0] = 0x0f;
+	ret = st7789v_transmit(dev, ST7789V_CMD_FRCTRL2, buf_nocache, 1);
 	if (ret < 0) {
 		return ret;
 	}
 
-	tmp = config->gctrl;
-	ret = st7789v_transmit(dev, ST7789V_CMD_GCTRL, &tmp, 1);
+	buf_nocache[0] = config->gctrl;
+	ret = st7789v_transmit(dev, ST7789V_CMD_GCTRL, buf_nocache, 1);
 	if (ret < 0) {
 		return ret;
 	}
 
-	tmp = config->vcom;
-	ret = st7789v_transmit(dev, ST7789V_CMD_VCOMS, &tmp, 1);
+	buf_nocache[0] = config->vcom;
+	ret = st7789v_transmit(dev, ST7789V_CMD_VCOMS, buf_nocache, 1);
 	if (ret < 0) {
 		return ret;
 	}
 
 	if (config->vdv_vrh_enable) {
-		tmp = 0x01;
-		ret = st7789v_transmit(dev, ST7789V_CMD_VDVVRHEN, &tmp, 1);
+		buf_nocache[0] = 0x01;
+		ret = st7789v_transmit(dev, ST7789V_CMD_VDVVRHEN, buf_nocache, 1);
 		if (ret < 0) {
 			return ret;
 		}
 
-		tmp = config->vrh_value;
-		ret = st7789v_transmit(dev, ST7789V_CMD_VRH, &tmp, 1);
+		buf_nocache[0] = config->vrh_value;
+		ret = st7789v_transmit(dev, ST7789V_CMD_VRH, buf_nocache, 1);
 		if (ret < 0) {
 			return ret;
 		}
 
-		tmp = config->vdv_value;
-		ret = st7789v_transmit(dev, ST7789V_CMD_VDS, &tmp, 1);
+		buf_nocache[0] = config->vdv_value;
+		ret = st7789v_transmit(dev, ST7789V_CMD_VDS, buf_nocache, 1);
 		if (ret < 0) {
 			return ret;
 		}
 	}
 
-	ret = st7789v_transmit(dev, ST7789V_CMD_PWCTRL1,
-			       (uint8_t *)config->pwctrl1_param,
-			       sizeof(config->pwctrl1_param));
+	memcpy(buf_nocache, config->pwctrl1_param, sizeof(config->pwctrl1_param));
+	ret = st7789v_transmit(dev, ST7789V_CMD_PWCTRL1, buf_nocache, sizeof(config->pwctrl1_param));
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Memory Data Access Control */
-	tmp = config->mdac;
-	ret = st7789v_transmit(dev, ST7789V_CMD_MADCTL, &tmp, 1);
+	buf_nocache[0] = config->mdac;
+	ret = st7789v_transmit(dev, ST7789V_CMD_MADCTL, buf_nocache, 1);
 	if (ret < 0) {
 		return ret;
 	}
 
 	/* Interface Pixel Format */
-	tmp = config->colmod;
-	ret = st7789v_transmit(dev, ST7789V_CMD_COLMOD, &tmp, 1);
+	buf_nocache[0] = config->colmod;
+	ret = st7789v_transmit(dev, ST7789V_CMD_COLMOD, buf_nocache, 1);
 	if (ret < 0) {
 		return ret;
 	}
 
-	tmp = config->lcm;
-	ret = st7789v_transmit(dev, ST7789V_CMD_LCMCTRL, &tmp, 1);
+	buf_nocache[0] = config->lcm;
+	ret = st7789v_transmit(dev, ST7789V_CMD_LCMCTRL, buf_nocache, 1);
 	if (ret < 0) {
 		return ret;
 	}
 
-	tmp = config->gamma;
-	ret = st7789v_transmit(dev, ST7789V_CMD_GAMSET, &tmp, 1);
+	buf_nocache[0] = config->gamma;
+	ret = st7789v_transmit(dev, ST7789V_CMD_GAMSET, buf_nocache, 1);
 	if (ret < 0) {
 		return ret;
 	}
@@ -373,30 +370,28 @@ static int st7789v_lcd_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = st7789v_transmit(dev, ST7789V_CMD_PVGAMCTRL,
-			       (uint8_t *)config->pvgam_param,
+	memcpy(buf_nocache, config->pvgam_param, sizeof(config->pvgam_param));
+	ret = st7789v_transmit(dev, ST7789V_CMD_PVGAMCTRL, buf_nocache,
 			       sizeof(config->pvgam_param));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = st7789v_transmit(dev, ST7789V_CMD_NVGAMCTRL,
-			       (uint8_t *)config->nvgam_param,
+	memcpy(buf_nocache, config->nvgam_param, sizeof(config->nvgam_param));
+	ret = st7789v_transmit(dev, ST7789V_CMD_NVGAMCTRL, buf_nocache,
 			       sizeof(config->nvgam_param));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = st7789v_transmit(dev, ST7789V_CMD_RAMCTRL,
-			       (uint8_t *)config->ram_param,
-			       sizeof(config->ram_param));
+	memcpy(buf_nocache, config->ram_param, sizeof(config->ram_param));
+	ret = st7789v_transmit(dev, ST7789V_CMD_RAMCTRL, buf_nocache, sizeof(config->ram_param));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = st7789v_transmit(dev, ST7789V_CMD_RGBCTRL,
-			       (uint8_t *)config->rgb_param,
-			       sizeof(config->rgb_param));
+	memcpy(buf_nocache, config->rgb_param, sizeof(config->rgb_param));
+	ret = st7789v_transmit(dev, ST7789V_CMD_RGBCTRL, buf_nocache, sizeof(config->rgb_param));
 	return ret;
 }
 
@@ -474,11 +469,14 @@ static DEVICE_API(display, st7789v_api) = {
 	((DT_INST_STRING_UPPER_TOKEN(inst, mipi_mode) == MIPI_DBI_MODE_SPI_4WIRE) ?     \
 	SPI_WORD_SET(8) : SPI_WORD_SET(9))
 #define ST7789V_INIT(inst)								\
+	static uint8_t st7789v_nocache_buf_##inst[16] __aligned(4) __nocache;		\
+											\
 	static const struct st7789v_config st7789v_config_ ## inst = {			\
 		.mipi_dbi = DEVICE_DT_GET(DT_INST_PARENT(inst)),                        \
 		.dbi_config = MIPI_DBI_CONFIG_DT_INST(inst,                             \
 						      ST7789V_WORD_SIZE(inst) |         \
 						      SPI_OP_MODE_MASTER, 0),           \
+		.nocache_buf = st7789v_nocache_buf_##inst,				\
 		.vcom = DT_INST_PROP(inst, vcom),					\
 		.gctrl = DT_INST_PROP(inst, gctrl),					\
 		.vdv_vrh_enable = (DT_INST_NODE_HAS_PROP(inst, vrhs)			\
