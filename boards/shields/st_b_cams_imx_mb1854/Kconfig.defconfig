@@ -15,3 +15,11 @@ configdefault VIDEO_STM32_DCMIPP_SENSOR_HEIGHT
 # GPIO driver is needed for the shield's GPIO hogs
 configdefault GPIO
 	default y if VIDEO_STM32_DCMIPP
+
+# Increase the I2C TIMEOUT DELAY due to large VL53L5CX init sequence
+if SENSOR
+
+config I2C_TRANSFER_TIMEOUT_MS
+	default 1000
+
+endif
