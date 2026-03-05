@@ -230,3 +230,7 @@ arducam_ffc_40pin_dvp_xclk: &cam_clock {};
 	interrupts = <28 12>;
 	status = "okay";
 };
+
+&trng {
+	status = "okay";
+};
