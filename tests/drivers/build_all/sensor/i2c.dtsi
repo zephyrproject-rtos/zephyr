@@ -1536,3 +1536,9 @@ test_i2c_stcc4: stcc4@ca {
 	reg = <0xca>;
 	measurement-mode = <0>;
 };
+
+test_i2c_qmi8658a: qmi8658a@cb {
+	compatible = "qst,qmi8658a";
+	reg = <0xcb>;
+	int-gpios = <&test_gpio 0 0>;
+};
