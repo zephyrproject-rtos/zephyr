@@ -1530,3 +1530,9 @@ test_i2c_ltr553: ltr553@c9 {
 	compatible = "liteon,ltr553";
 	reg = <0xc9>;
 };
+
+test_i2c_stcc4: stcc4@ca {
+	compatible = "sensirion,stcc4";
+	reg = <0xca>;
+	measurement-mode = <0>;
+};
