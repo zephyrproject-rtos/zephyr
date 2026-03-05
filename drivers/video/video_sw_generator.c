@@ -34,7 +34,7 @@ LOG_MODULE_REGISTER(video_sw_generator, CONFIG_VIDEO_LOG_LEVEL);
 /* Default frame configuration */
 #define DEFAULT_FRAME_WIDTH  320
 #define DEFAULT_FRAME_HEIGHT 160
-#define JPEG_FRAME_SIZE      0x522 /* Fixed size for each JPEG frame */
+#define JPEG_FRAME_SIZE      1314 /* Fixed size for each JPEG frame */
 #define PNG_FRAME_SIZE       0x164 /* Fixed size for each PNG frame */
 
 struct sw_ctrls {
