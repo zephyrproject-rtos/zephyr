@@ -31,6 +31,9 @@
 };
 
 &csi_i2c {
+	/* Use I2C Fast mode for faster sensor startup */
+	clock-frequency = <I2C_BITRATE_FAST>;
+
 	imx335: camera@1a {
 		compatible = "sony,imx335";
 		clocks = <&imx335_input_clock>;
@@ -44,6 +47,12 @@
 				data-lanes = <1 2>;
 			};
 		};
+	};
+
+	vl53l5cx: sensor@29 {
+		compatible = "st,vl53l5cx";
+		friendly-name = "mb1854_vl53l5cx";
+		reg = <0x29>;
 	};
 };
 
