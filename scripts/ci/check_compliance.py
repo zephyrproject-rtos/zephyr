@@ -448,7 +448,7 @@ class ClangFormatCheck(ComplianceTest):
 
 class DevicetreeBindingsCheck(ComplianceTest):
     """
-    Checks if we are introducing any unwanted properties in Devicetree Bindings.
+    Checks for devicetree bindings.
     """
 
     name = "DevicetreeBindings"
@@ -466,15 +466,17 @@ class DevicetreeBindingsCheck(ComplianceTest):
         if nodiff:
             self.skip('no changes to bindings were made')
 
-        for binding in bindings:
-            self.check(binding, self.check_yaml_property_name)
-            self.check(binding, self.required_false_check)
+        def check(binding, callback, children=True):
+            if children:
+                while binding is not None:
+                    callback(binding)
+                    binding = binding.child_binding
+            else:
+                callback(binding)
 
-    @staticmethod
-    def check(binding, callback):
-        while binding is not None:
-            callback(binding)
-            binding = binding.child_binding
+        for binding in bindings:
+            check(binding, self.check_yaml_property_name)
+            check(binding, self.required_false_check)
 
     def get_yaml_bindings(self):
         """
