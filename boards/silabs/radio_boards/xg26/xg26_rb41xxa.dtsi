@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <silabs/xg26/clock-hfrcodpll.dtsi>
+#include <silabs/xg26/clock-lfxo.dtsi>
 #include <zephyr/dt-bindings/adc/silabs-adc.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
@@ -141,14 +143,9 @@
 	};
 };
 
-&cpu0 {
-	clock-frequency = <DT_FREQ_M(78)>;
-};
-
 &itm {
 	pinctrl-0 = <&itm_default>;
 	pinctrl-names = "default";
-	swo-ref-frequency = <DT_FREQ_M(78)>;
 };
 
 &hfxo {
@@ -161,36 +158,6 @@
 	ctune = <63>;
 	precision = <50>;
 	status = "okay";
-};
-
-&hfrcodpll {
-	clock-frequency = <DT_FREQ_M(78)>;
-	clocks = <&hfxo>;
-	dpll-autorecover;
-	dpll-edge = "fall";
-	dpll-lock = "phase";
-	dpll-m = <1919>;
-	dpll-n = <3839>;
-};
-
-&em23grpaclk {
-	clocks = <&lfxo>;
-};
-
-&em4grpaclk {
-	clocks = <&lfxo>;
-};
-
-&sysrtcclk {
-	clocks = <&lfxo>;
-};
-
-&wdog0clk {
-	clocks = <&lfxo>;
-};
-
-&wdog1clk {
-	clocks = <&lfxo>;
 };
 
 &usart0 {
