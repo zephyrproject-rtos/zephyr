@@ -12,4 +12,18 @@ flash: 8384
 toolchain:
   - zephyr
   - gnuarmemb
+supported:
+  - clock_control
+  - counter
+  - dma
+  - flash
+  - gpio
+  - i2c
+  - pinctrl
+  - pwm
+  - sdhc
+  - spi
+  - timer
+  - uart
+  - watchdog
 vendor: infineon
