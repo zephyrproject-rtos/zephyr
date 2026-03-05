@@ -75,6 +75,15 @@ tests:
       - thingy53/nrf5340/cpuapp
     integration_platforms:
       - thingy53/nrf5340/cpuapp
+  sample.net.wifi.nrf7002eb2:
+    extra_args:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+      - SHIELD=nrf7002eb2
+    platform_allow:
+      - nrf54lm20dk/nrf54lm20b/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp/ns
+    integration_platforms:
+      - nrf54lm20dk/nrf54lm20b/cpuapp
   sample.net.wifi.nxp_wifi:
     extra_args:
       - CONFIG_BUILD_ONLY_NO_BLOBS=y
