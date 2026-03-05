@@ -34,6 +34,7 @@ config CPU_CORTEX_M
 	select ARCH_HAS_SUSPEND_TO_RAM
 	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_SUPPORTS_ROM_START
+	select ARCH_HAS_LLEXT_VENEERS
 	imply XIP
 	help
 	  This option signifies the use of a CPU of the Cortex-M family.

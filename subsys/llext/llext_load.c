@@ -39,6 +39,11 @@ LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 
 static const char ELF_MAGIC[] = {0x7f, 'E', 'L', 'F'};
 
+__weak int arch_elf_veneer_init(struct llext_loader *ldr, struct llext *ext)
+{
+	return 0;
+}
+
 const void *llext_loaded_sect_ptr(struct llext_loader *ldr, struct llext *ext, unsigned int sh_ndx)
 {
 	enum llext_mem mem_idx = ldr->sect_map[sh_ndx].mem_idx;
@@ -830,6 +835,13 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 	ret = llext_map_sections(ldr, ext, ldr_parm);
 	if (ret != 0) {
 		LOG_ERR("Failed to map ELF sections, ret %d", ret);
+		goto out;
+	}
+
+	LOG_DBG("Initializing veneer table...");
+	ret = arch_elf_veneer_init(ldr, ext);
+	if (ret != 0) {
+		LOG_ERR("Failed to initialize veneer table, ret %d", ret);
 		goto out;
 	}
 
