@@ -1,0 +1,19 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	gpio_mux_test: gpio-mux-test {
+		compatible = "gpio-mux";
+		status = "okay";
+		mux-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>, /* J2_1 */
+			    <&gpio1 5 GPIO_ACTIVE_HIGH>, /* J2_3 */
+			    <&gpio2 4 GPIO_ACTIVE_HIGH>; /* J1_6 */
+		#mux-control-cells = <0>;
+		#mux-state-cells = <1>;
+	};
+};
