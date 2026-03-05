@@ -2,5 +2,18 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+# Enable clock control subsystem
 CONFIG_CLOCK_CONTROL=y
+
+# Enable serial subsystem
+CONFIG_SERIAL=y
+
+# Enable LPC84x UART driver
+CONFIG_UART_LPC84X=y
+
+# Enable console over UART
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# Build additional HEX output image
 CONFIG_BUILD_OUTPUT_HEX=y
