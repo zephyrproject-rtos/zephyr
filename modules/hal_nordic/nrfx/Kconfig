@@ -114,37 +114,7 @@ config NRFX_EGU130
 	select NRFX_EGU
 
 config NRFX_GPIOTE
-	bool
-
-config NRFX_GPIOTE0
-	bool "GPIOTE0 driver instance"
-	depends on $(dt_nodelabel_exists,gpiote0)
-	select NRFX_GPIOTE
-
-config NRFX_GPIOTE1
-	bool "GPIOTE1 driver instance"
-	depends on $(dt_nodelabel_exists,gpiote1)
-	select NRFX_GPIOTE
-
-config NRFX_GPIOTE20
-	bool "NRFX_GPIOTE20 driver instance"
-	depends on $(dt_nodelabel_exists,gpiote20)
-	select NRFX_GPIOTE
-
-config NRFX_GPIOTE30
-	bool "NRFX_GPIOTE30 driver instance"
-	depends on $(dt_nodelabel_exists,gpiote30)
-	select NRFX_GPIOTE
-
-config NRFX_GPIOTE130
-	bool "NRFX_GPIOTE130 driver instance"
-	depends on $(dt_nodelabel_exists,gpiote130)
-	select NRFX_GPIOTE
-
-config NRFX_GPIOTE131
-	bool "NRFX_GPIOTE131 driver instance"
-	depends on $(dt_nodelabel_exists,gpiote131)
-	select NRFX_GPIOTE
+	bool "GPIOTE driver"
 
 config NRFX_GPIOTE_NONUNIFORM_INSTANCES
 	def_bool $(dt_nodelabel_enabled,gpiote0)
