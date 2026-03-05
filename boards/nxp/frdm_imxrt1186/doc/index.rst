@@ -156,6 +156,49 @@ For example, this overlay moves the CM33 ``zephyr,sram`` to DTCM:
 
    boards/nxp/frdm_imxrt1186/cm33_sram_dtcm.overlay
 
+Ethernet
+========
+
+NETC Ethernet driver supports to manage the Physical Station Interface (PSI).
+NETC DSA driver supports to manage switch ports. Current DSA support is with
+limitation that only switch function is available without management via
+DSA master port. DSA master port support is TODO work.
+
+For FRDM-iMXRT1186, the following network interfaces present:
+
+- ``swp0`` and ``swp2``: user ports which can be used.
+- ``swp4``: DSA CPU port. Not a user port.
+- ``eth0``: DSA conduit port. Not a user port.
+
+.. note::
+
+   DHCP is expected to work on ``swp0`` and ``swp2``.
+
+.. code-block:: none
+
+                   +--------+                  +--------+
+                   | ENETC1 |                  | ENETC0 |
+                   |        |                  |        |
+                   | Pseudo |                  |  1G    |
+                   |  MAC   |                  |  MAC   |
+                   +--------+                  +--------+
+                       | zero copy interface       |
+   +-------------- +--------+----------------+     |
+   |               | Pseudo |                |     |
+   |               |  MAC   |                |     |
+   |               |        |                |     |
+   |               | Port 4 |                |     |
+   |               +--------+                |     |
+   |           SWITCH       CORE             |     |
+   +--------+ +--------+ +--------+ +--------+     |
+   | Port 0 | | Port 1 | | Port 2 | | Port 3 |     |
+   |        | |        | |        | |        |     |
+   |  1G    | |  1G    | |  1G    | |  1G    |     |
+   |  MAC   | |  MAC   | |  MAC   | |  MAC   |     |
+   +--------+-+--------+-+--------+-+--------+     |
+       |          |          |          |          |
+   NETC External Interfaces (4 switch ports, 1 end-point port)
+
 Serial Port
 ===========
 

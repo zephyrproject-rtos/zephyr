@@ -176,3 +176,63 @@
 	pinctrl-0 = <&pinmux_lpadc1>;
 	pinctrl-names = "default";
 };
+
+&emdio {
+	pinctrl-0 = <&emdio_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy0: phy@5 {
+		compatible = "motorcomm,yt8531";
+		reg = <0x5>;
+		motorcomm,rx-delay-sel = <13>;
+		motorcomm,tx-delay-sel = <13>;
+		status = "okay";
+	};
+
+	phy2: phy@4 {
+		compatible = "motorcomm,yt8531";
+		reg = <0x4>;
+		motorcomm,rx-delay-sel = <13>;
+		motorcomm,tx-delay-sel = <13>;
+		status = "okay";
+	};
+};
+
+/* Internal port */
+&enetc_psi1 {
+	local-mac-address = [00 00 00 01 03 00];
+	status = "okay";
+};
+
+&netc_ptp_clock0 {
+	status = "okay";
+};
+
+&switch {
+	status = "okay";
+};
+
+&switch_port0 {
+	local-mac-address = [00 00 00 01 05 00];
+	pinctrl-0 = <&eth0_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy0>;
+	phy-connection-type = "rgmii";
+	status = "okay";
+};
+
+&switch_port2 {
+	local-mac-address = [00 00 00 01 07 00];
+	pinctrl-0 = <&eth2_default>;
+	pinctrl-names = "default";
+	phy-handle = <&phy2>;
+	phy-connection-type = "rgmii";
+	status = "okay";
+};
+
+/* Internal port connecting switch to CPU */
+&switch_port4 {
+	local-mac-address = [00 00 00 01 08 00];
+	status = "okay";
+};

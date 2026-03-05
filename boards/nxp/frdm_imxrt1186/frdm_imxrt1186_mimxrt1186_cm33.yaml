@@ -22,4 +22,5 @@ supported:
   - can
   - uart
   - mbox
+  - netif:eth
 vendor: nxp
