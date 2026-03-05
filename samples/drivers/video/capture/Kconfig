@@ -80,7 +80,23 @@ choice VIDEO_TRANSFORM
 	  The implementation could include "transform.h" which provides helper functions
 	  for setting up and executing the transformation.
 
+config VIDEO_TRANSFORM_NXP_JPEGDEC
+	bool "Use NXP JPEG decoder for video transform"
+	depends on VIDEO_MCUX_JPEGDEC
+	help
+	  Use NXP JPEG decoder to decompress JPEG frames
+
+config VIDEO_TRANSFORM_NXP_PNGDEC
+	bool "Use NXP PNG decoder for video transform"
+	depends on VIDEO_MCUX_PNGDEC
+	help
+	  Use NXP PNG decoder to decompress PNG frames
+
 endchoice
+
+if VIDEO_MCUX_JPEGDEC
+rsource "boards/Kconfig.nxp_jpegdec"
+endif
 
 endmenu
 
