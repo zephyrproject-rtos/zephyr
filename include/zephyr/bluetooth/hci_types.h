@@ -1358,8 +1358,10 @@ struct bt_hci_rp_le_rand {
 #define BT_HCI_OP_LE_START_ENCRYPTION           BT_OP(BT_OGF_LE, 0x0019) /* 0x2019 */
 struct bt_hci_cp_le_start_encryption {
 	uint16_t handle;
-	uint64_t rand;
-	uint16_t ediv;
+	/** 64-bit random number for LTK identification. */
+	uint8_t  rand[8];
+	/** 16-bit encrypted diversifier for LTK identification. */
+	uint8_t  ediv[2];
 	uint8_t  ltk[16];
 } __packed;
 
