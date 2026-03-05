@@ -70,6 +70,7 @@ struct ili9xxx_config {
 	const struct ili9xxx_quirks *quirks;
 	const struct device *mipi_dev;
 	struct mipi_dbi_config dbi_config;
+	uint8_t *nocache_buf;
 	uint8_t pixel_format;
 	uint16_t rotation;
 	uint16_t x_resolution;

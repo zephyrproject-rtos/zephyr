@@ -16,120 +16,138 @@ int ili9341_regs_init(const struct device *dev)
 {
 	const struct ili9xxx_config *config = dev->config;
 	const struct ili9341_regs *regs = config->regs;
-
+	uint8_t *buf_nocache = config->nocache_buf;
 	int r;
 
 	LOG_HEXDUMP_DBG(regs->pwseqctrl, ILI9341_PWSEQCTRL_LEN, "PWSEQCTRL");
-	r = ili9xxx_transmit(dev, ILI9341_PWSEQCTRL, regs->pwseqctrl, ILI9341_PWSEQCTRL_LEN);
+	memcpy(buf_nocache, regs->pwseqctrl, ILI9341_PWSEQCTRL_LEN);
+	r = ili9xxx_transmit(dev, ILI9341_PWSEQCTRL, buf_nocache, ILI9341_PWSEQCTRL_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(regs->timctrla, ILI9341_TIMCTRLA_LEN, "TIMCTRLA");
-	r = ili9xxx_transmit(dev, ILI9341_TIMCTRLA, regs->timctrla, ILI9341_TIMCTRLA_LEN);
+	memcpy(buf_nocache, regs->timctrla, ILI9341_TIMCTRLA_LEN);
+	r = ili9xxx_transmit(dev, ILI9341_TIMCTRLA, buf_nocache, ILI9341_TIMCTRLA_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(regs->timctrlb, ILI9341_TIMCTRLB_LEN, "TIMCTRLB");
-	r = ili9xxx_transmit(dev, ILI9341_TIMCTRLB, regs->timctrlb, ILI9341_TIMCTRLB_LEN);
+	memcpy(buf_nocache, regs->timctrlb, ILI9341_TIMCTRLB_LEN);
+	r = ili9xxx_transmit(dev, ILI9341_TIMCTRLB, buf_nocache, ILI9341_TIMCTRLB_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(regs->pumpratioctrl, ILI9341_PUMPRATIOCTRL_LEN, "PUMPRATIOCTRL");
-	r = ili9xxx_transmit(dev, ILI9341_PUMPRATIOCTRL, regs->pumpratioctrl,
-			     ILI9341_PUMPRATIOCTRL_LEN);
+	memcpy(buf_nocache, regs->pumpratioctrl, ILI9341_PUMPRATIOCTRL_LEN);
+	r = ili9xxx_transmit(dev, ILI9341_PUMPRATIOCTRL, buf_nocache, ILI9341_PUMPRATIOCTRL_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(regs->pwctrla, ILI9341_PWCTRLA_LEN, "PWCTRLA");
-	r = ili9xxx_transmit(dev, ILI9341_PWCTRLA, regs->pwctrla, ILI9341_PWCTRLA_LEN);
+	memcpy(buf_nocache, regs->pwctrla, ILI9341_PWCTRLA_LEN);
+	r = ili9xxx_transmit(dev, ILI9341_PWCTRLA, buf_nocache, ILI9341_PWCTRLA_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(regs->pwctrlb, ILI9341_PWCTRLB_LEN, "PWCTRLB");
-	r = ili9xxx_transmit(dev, ILI9341_PWCTRLB, regs->pwctrlb, ILI9341_PWCTRLB_LEN);
+	memcpy(buf_nocache, regs->pwctrlb, ILI9341_PWCTRLB_LEN);
+	r = ili9xxx_transmit(dev, ILI9341_PWCTRLB, buf_nocache, ILI9341_PWCTRLB_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(regs->gamset, ILI9341_GAMSET_LEN, "GAMSET");
-	r = ili9xxx_transmit(dev, ILI9341_GAMSET, regs->gamset, ILI9341_GAMSET_LEN);
+	memcpy(buf_nocache, regs->gamset, ILI9341_GAMSET_LEN);
+	r = ili9xxx_transmit(dev, ILI9341_GAMSET, buf_nocache, ILI9341_GAMSET_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(regs->frmctr1, ILI9341_FRMCTR1_LEN, "FRMCTR1");
-	r = ili9xxx_transmit(dev, ILI9341_FRMCTR1, regs->frmctr1, ILI9341_FRMCTR1_LEN);
+	memcpy(buf_nocache, regs->frmctr1, ILI9341_FRMCTR1_LEN);
+	r = ili9xxx_transmit(dev, ILI9341_FRMCTR1, buf_nocache, ILI9341_FRMCTR1_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(regs->disctrl, ILI9341_DISCTRL_LEN, "DISCTRL");
-	r = ili9xxx_transmit(dev, ILI9341_DISCTRL, regs->disctrl, ILI9341_DISCTRL_LEN);
+	memcpy(buf_nocache, regs->disctrl, ILI9341_DISCTRL_LEN);
+	r = ili9xxx_transmit(dev, ILI9341_DISCTRL, buf_nocache, ILI9341_DISCTRL_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(regs->pwctrl1, ILI9341_PWCTRL1_LEN, "PWCTRL1");
-	r = ili9xxx_transmit(dev, ILI9341_PWCTRL1, regs->pwctrl1, ILI9341_PWCTRL1_LEN);
+	memcpy(buf_nocache, regs->pwctrl1, ILI9341_PWCTRL1_LEN);
+	r = ili9xxx_transmit(dev, ILI9341_PWCTRL1, buf_nocache, ILI9341_PWCTRL1_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(regs->pwctrl2, ILI9341_PWCTRL2_LEN, "PWCTRL2");
-	r = ili9xxx_transmit(dev, ILI9341_PWCTRL2, regs->pwctrl2, ILI9341_PWCTRL2_LEN);
+	memcpy(buf_nocache, regs->pwctrl2, ILI9341_PWCTRL2_LEN);
+	r = ili9xxx_transmit(dev, ILI9341_PWCTRL2, buf_nocache, ILI9341_PWCTRL2_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(regs->vmctrl1, ILI9341_VMCTRL1_LEN, "VMCTRL1");
-	r = ili9xxx_transmit(dev, ILI9341_VMCTRL1, regs->vmctrl1, ILI9341_VMCTRL1_LEN);
+	memcpy(buf_nocache, regs->vmctrl1, ILI9341_VMCTRL1_LEN);
+	r = ili9xxx_transmit(dev, ILI9341_VMCTRL1, buf_nocache, ILI9341_VMCTRL1_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(regs->vmctrl2, ILI9341_VMCTRL2_LEN, "VMCTRL2");
-	r = ili9xxx_transmit(dev, ILI9341_VMCTRL2, regs->vmctrl2, ILI9341_VMCTRL2_LEN);
+	memcpy(buf_nocache, regs->vmctrl2, ILI9341_VMCTRL2_LEN);
+	r = ili9xxx_transmit(dev, ILI9341_VMCTRL2, buf_nocache, ILI9341_VMCTRL2_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(regs->pgamctrl, ILI9341_PGAMCTRL_LEN, "PGAMCTRL");
-	r = ili9xxx_transmit(dev, ILI9341_PGAMCTRL, regs->pgamctrl, ILI9341_PGAMCTRL_LEN);
+	memcpy(buf_nocache, regs->pgamctrl, ILI9341_PGAMCTRL_LEN);
+	r = ili9xxx_transmit(dev, ILI9341_PGAMCTRL, buf_nocache, ILI9341_PGAMCTRL_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(regs->ngamctrl, ILI9341_NGAMCTRL_LEN, "NGAMCTRL");
-	r = ili9xxx_transmit(dev, ILI9341_NGAMCTRL, regs->ngamctrl, ILI9341_NGAMCTRL_LEN);
+	memcpy(buf_nocache, regs->ngamctrl, ILI9341_NGAMCTRL_LEN);
+	r = ili9xxx_transmit(dev, ILI9341_NGAMCTRL, buf_nocache, ILI9341_NGAMCTRL_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(regs->enable3g, ILI9341_ENABLE3G_LEN, "ENABLE3G");
-	r = ili9xxx_transmit(dev, ILI9341_ENABLE3G, regs->enable3g, ILI9341_ENABLE3G_LEN);
+	memcpy(buf_nocache, regs->enable3g, ILI9341_ENABLE3G_LEN);
+	r = ili9xxx_transmit(dev, ILI9341_ENABLE3G, buf_nocache, ILI9341_ENABLE3G_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(regs->ifmode, ILI9341_IFMODE_LEN, "IFMODE");
-	r = ili9xxx_transmit(dev, ILI9341_IFMODE, regs->ifmode, ILI9341_IFMODE_LEN);
+	memcpy(buf_nocache, regs->ifmode, ILI9341_IFMODE_LEN);
+	r = ili9xxx_transmit(dev, ILI9341_IFMODE, buf_nocache, ILI9341_IFMODE_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(regs->ifctl, ILI9341_IFCTL_LEN, "IFCTL");
-	r = ili9xxx_transmit(dev, ILI9341_IFCTL, regs->ifctl, ILI9341_IFCTL_LEN);
+	memcpy(buf_nocache, regs->ifctl, ILI9341_IFCTL_LEN);
+	r = ili9xxx_transmit(dev, ILI9341_IFCTL, buf_nocache, ILI9341_IFCTL_LEN);
 	if (r < 0) {
 		return r;
 	}
 
 	LOG_HEXDUMP_DBG(regs->etmod, ILI9341_ETMOD_LEN, "ETMOD");
-	r = ili9xxx_transmit(dev, ILI9341_ETMOD, regs->etmod, ILI9341_ETMOD_LEN);
+	memcpy(buf_nocache, regs->etmod, ILI9341_ETMOD_LEN);
+	r = ili9xxx_transmit(dev, ILI9341_ETMOD, buf_nocache, ILI9341_ETMOD_LEN);
 	if (r < 0) {
 		return r;
 	}
