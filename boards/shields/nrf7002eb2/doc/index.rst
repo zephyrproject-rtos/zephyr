@@ -56,7 +56,7 @@ UART20 and reroutes the application console (including shell, mcumgr, and Blueto
 UART30, which maps to VCOM0.
 
 Key changes and requirements
-============================
+----------------------------
 
 - **Virtual Serial Port Swap**: The application console moves from the secondary port to the
   primary port (the first enumerated VCOM port on your OS). You must use this primary port (e.g.
@@ -75,7 +75,7 @@ Key changes and requirements
   shield, use the ``rtt-console`` snippet.
 
 UART and port mapping
-=====================
+---------------------
 
 .. list-table:: UART and port mapping with shield
    :header-rows: 1
