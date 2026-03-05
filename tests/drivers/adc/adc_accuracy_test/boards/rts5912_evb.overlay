@@ -1,0 +1,33 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2025 Realtek Semiconductor Corporation, SIBG-SD7
+ *
+ * ADC Accuracy Test Configuration
+ *
+ */
+
+/ {
+	zephyr,user {
+		io-channels = <&adc0 0>; // RTK EVB PIN J156.2
+		/* Expected voltage from potentiometer (verified by multimeter on pin) */
+		reference-mv = <1175>;
+		/* Tolerance: ±32 mV (based on observed ADC consistency) */
+		expected-accuracy = <64>;
+	};
+};
+
+&adc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		/* Internal reference - only reference source supported by RTS5912 ADC */
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <10>;
+	};
+};
