@@ -10,6 +10,7 @@
 #include <cmsis_core.h>
 #endif
 #include <zephyr/irq.h>
+#include <zephyr/sys/barrier.h>
 
 /* Abstraction layer for interrupt controller operations */
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) || defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
@@ -21,7 +22,6 @@
 #elif defined(CONFIG_ARMV7_R)
 /* Cortex-R: Use GIC Software Generated Interrupts (SGIs 0-15) */
 #include <zephyr/drivers/interrupt_controller/gic.h>
-#include <zephyr/sys/barrier.h>
 
 static volatile bool actually_trigger_sgi;
 
@@ -370,10 +370,8 @@ ZTEST(arm_interrupt, test_arm_interrupt)
 	irq_controller_clear_pending(i);
 	irq_enable(i);
 	irq_controller_set_pending(i);
-#if defined(CONFIG_ARMV7_R)
 	barrier_dsync_fence_full();
 	barrier_isync_fence_full();
-#endif
 
 	/* Verify that the spurious ISR has led to the fault and the
 	 * expected reason variable is reset.
@@ -398,10 +396,8 @@ ZTEST(arm_interrupt, test_arm_interrupt)
 		 * Instruction barriers to make sure the NVIC IRQ is
 		 * set to pending state before 'test_flag' is checked.
 		 */
-#if defined(CONFIG_ARMV7_R)
 		barrier_dsync_fence_full();
 		barrier_isync_fence_full();
-#endif
 
 #if defined(CONFIG_ARMV7_R)
 		/* On Cortex-R, SGI is sent immediately - allow time for processing */
@@ -449,10 +445,8 @@ ZTEST(arm_interrupt, test_arm_interrupt)
 #endif
 
 	__enable_irq();
-#if defined(CONFIG_ARMV7_R)
 	barrier_dsync_fence_full();
 	barrier_isync_fence_full();
-#endif
 
 	/* No stack variable access below this point.
 	 * The IRQ will handle the verification.
