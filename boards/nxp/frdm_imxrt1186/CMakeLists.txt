@@ -4,9 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if(CONFIG_BOARD_NXP_SPECIFIC_MPU_SETTINGS OR CONFIG_NXP_IMXRT_BOOT_HEADER)
-  zephyr_library()
-endif()
+zephyr_library()
+zephyr_library_sources(board.c)
 
 if(CONFIG_BOARD_NXP_SPECIFIC_MPU_SETTINGS)
   if(CONFIG_SOC_MIMXRT1186_CM7)

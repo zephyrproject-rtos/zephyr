@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_FRDM_IMXRT1186
+	select BOARD_EARLY_INIT_HOOK
 
 # CM7 execution mode
 config CM7_BOOT_FROM_FLASH
