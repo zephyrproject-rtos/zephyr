@@ -661,9 +661,9 @@ static int onfi_parameters_load(const struct device *dev)
 		LOG_WRN("On-chip ECC not enabled");
 	}
 
-	/* Load parameter info into cache */
+	/* Load parameter info into cache (ignoring ECC errors) */
 	ret = spi_nand_page_read_to_cache(dev, 1);
-	if (ret != 0) {
+	if ((ret != 0) && (ret != -EBADMSG)) {
 		return ret;
 	}
 
