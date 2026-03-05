@@ -209,6 +209,8 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		save_mpu_state();
 #endif /* CONFIG_MPU */
 
+		/* Clear RTC wakeup status from previous wake before re-arming */
+		POWER_ClearWakeupStatus(DT_IRQN(DT_NODELABEL(rtc)));
 		POWER_EnableWakeup(DT_IRQN(DT_NODELABEL(rtc)));
 
 		sys_clock_set_timeout(0, true);
@@ -249,8 +251,6 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 			sys_clock_idle_exit();
 		}
 
-		/* Clear the RTC wakeup bits */
-		POWER_ClearWakeupStatus(DT_IRQN(DT_NODELABEL(rtc)));
 		POWER_DisableWakeup(DT_IRQN(DT_NODELABEL(rtc)));
 
 		break;
