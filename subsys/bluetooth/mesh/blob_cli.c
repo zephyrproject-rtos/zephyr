@@ -1611,7 +1611,14 @@ int bt_mesh_blob_cli_resume(struct bt_mesh_blob_cli *cli)
 		return -ENODEV;
 	}
 
-	block_set(cli, 0);
+	/* Resume from the current block, not block 0. If the server hasn't
+	 * timed out yet (still in WAITING_FOR_CHUNK), it will reject a
+	 * BLOCK_START for a different block number with WRONG_PHASE
+	 * (MshMBTv1.0 5.2.2.3). Starting from the same block the client
+	 * was on when it suspended avoids this mismatch. Earlier blocks
+	 * are already completed by all active targets.
+	 */
+	block_set(cli, cli->block.number);
 	return xfer_start(cli);
 }
 
