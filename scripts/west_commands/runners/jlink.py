@@ -56,7 +56,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                  gdb_host='',
                  gdb_port=DEFAULT_JLINK_GDB_PORT,
                  rtt_port=DEFAULT_JLINK_RTT_PORT,
-                 tui=False, tool_opt=None, dev_id_type=None, batch=False):
+                 tui=False, tool_opt=None, dev_id_type=None, batch=False,
+                 pre_script_cmds=None):
         super().__init__(cfg)
         self.file = cfg.file
         self.file_type = cfg.file_type
@@ -84,6 +85,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.rtt_port = rtt_port
         self.dev_id_type = dev_id_type
         self.is_batch = batch
+        self.pre_script_cmds = pre_script_cmds
 
         self.tool_opt = []
         if tool_opt is not None:
@@ -204,6 +206,9 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--dev-id-type', choices=['auto', 'serialno', 'tty', 'ip', 'tunnel'],
                             default='auto', help='Device type. "auto" (default) auto-detects '
                             'the type, or specify explicitly')
+        parser.add_argument('--pre-script-cmd', action='append', dest='pre_script_cmds',
+                            help='Custom JLink command to prepend to the runner.jlink. Can be '
+                            'given multiple times. ArgParse should preserve their order.')
 
         parser.set_defaults(reset=False)
 
@@ -226,7 +231,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                                  rtt_port=args.rtt_port,
                                  tui=args.tui, tool_opt=args.tool_opt,
                                  dev_id_type=args.dev_id_type,
-                                 batch=args.batch)
+                                 batch=args.batch,
+                                 pre_script_cmds=args.pre_script_cmds)
 
     def print_gdbserver_message(self):
         if not self.thread_info_enabled:
@@ -447,7 +453,9 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                 self.run_client(client_cmd)
 
     def get_default_flash_commands(self):
-        lines = [
+        lines = self.pre_script_cmds or [] # Prepend custom script commands
+
+        lines += [
             'ExitOnError 1',  # Treat any command-error as fatal
             'r',  # Reset and halt the target
             'BE' if self.build_conf.getboolean('CONFIG_BIG_ENDIAN') else 'LE'
