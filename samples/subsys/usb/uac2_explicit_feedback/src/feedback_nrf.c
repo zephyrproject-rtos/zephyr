@@ -132,13 +132,19 @@ static int feedback_edge_counter_setup(void)
 		.p_trigger_config = &trigger_config,
 	};
 	int err;
-	uint32_t eep = nrfx_gpiote_in_event_address_get(gpiote, FEEDBACK_PIN);
-	uint32_t tep = nrfx_timer_task_address_get(&feedback_timer_instance, NRF_TIMER_TASK_COUNT);
+	uint32_t eep, tep;
 
 	err = nrfx_gpiote_channel_alloc(gpiote, &feedback_gpiote_channel);
 	if (err != 0) {
 		return err;
 	}
+
+#if NRF_GPIO_HAS_RETENTION_SETCLEAR
+	uint32_t pin = FEEDBACK_PIN;
+	NRF_GPIO_Type *p_reg = nrf_gpio_pin_port_decode(&pin);
+
+	nrf_gpio_port_retain_disable(p_reg, BIT(pin));
+#endif
 
 	nrfx_gpiote_input_configure(gpiote, FEEDBACK_PIN, &input_pin_config);
 	nrfx_gpiote_trigger_enable(gpiote, FEEDBACK_PIN, false);
@@ -159,6 +165,8 @@ static int feedback_edge_counter_setup(void)
 	}
 
 	/* Subscribe TIMER COUNT task to GPIOTE IN event */
+	eep = nrfx_gpiote_in_event_address_get(gpiote, FEEDBACK_PIN);
+	tep = nrfx_timer_task_address_get(&feedback_timer_instance, NRF_TIMER_TASK_COUNT);
 	err = nrfx_gppi_conn_alloc(eep, tep, &feedback_gppi_handle);
 	if (err < 0) {
 		LOG_ERR("gppi_conn_alloc failed with: %d\n", err);
@@ -425,7 +433,6 @@ void feedback_process(struct feedback_ctx *ctx)
 		ctx->fb_periods++;
 
 		if (ctx->fb_periods == feedback_period(ctx)) {
-
 			if (ctx->high_speed) {
 				fb = ctx->fb_counter << FEEDBACK_HS_SHIFT;
 			} else {
