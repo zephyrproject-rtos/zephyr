@@ -68,6 +68,10 @@ struct mipi_dbi_spi_config {
 	const struct gpio_dt_spec reset;
 	/* Minimum transfer bits */
 	const uint8_t xfr_min_bits;
+	/* Intermediate data buffer to be spi-dma compatible */
+	uint16_t * const spi_word_nocache;
+	/* Intermediate data buffer to be spi-dma compatible */
+	uint8_t * const spi_cmd_nocache;
 };
 
 struct mipi_dbi_spi_data {
@@ -78,8 +82,6 @@ struct mipi_dbi_spi_data {
 	atomic_t in_active_area;
 	struct gpio_callback te_cb_data;
 #endif
-	/* Used for 3 wire mode */
-	uint16_t spi_byte;
 };
 
 #if MIPI_DBI_SPI_TE_REQUIRED
@@ -111,7 +113,6 @@ mipi_dbi_spi_write_helper_3wire(const struct device *dev,
 				const uint8_t *data_buf, size_t len)
 {
 	const struct mipi_dbi_spi_config *config = dev->config;
-	struct mipi_dbi_spi_data *data = dev->data;
 	struct spi_buf buffer;
 	struct spi_buf_set buf_set = {
 		.buffers = &buffer,
@@ -128,12 +129,12 @@ mipi_dbi_spi_write_helper_3wire(const struct device *dev,
 	    != SPI_WORD_SET(9)) {
 		return -ENOTSUP;
 	}
-	buffer.buf = &data->spi_byte;
+	buffer.buf = config->spi_word_nocache;
 	buffer.len = 2;
 
 	/* Send command */
 	if (cmd_present) {
-		data->spi_byte = cmd;
+		*config->spi_word_nocache = cmd;
 		ret = spi_write(config->spi_dev, &dbi_config->config, &buf_set);
 		if (ret < 0) {
 			goto out;
@@ -141,7 +142,7 @@ mipi_dbi_spi_write_helper_3wire(const struct device *dev,
 	}
 	/* Write data, byte by byte */
 	for (size_t i = 0; i < len; i++) {
-		data->spi_byte = MIPI_DBI_DC_BIT | data_buf[i];
+		*config->spi_word_nocache = MIPI_DBI_DC_BIT | data_buf[i];
 		ret = spi_write(config->spi_dev, &dbi_config->config, &buf_set);
 		if (ret < 0) {
 			goto out;
@@ -173,10 +174,11 @@ mipi_dbi_spi_write_helper_4wire_8bit(const struct device *dev,
 	 * a command or data
 	 */
 
-	buffer.buf = &cmd;
-	buffer.len = sizeof(cmd);
-
 	if (cmd_present) {
+		*config->spi_cmd_nocache = cmd;
+		buffer.buf = config->spi_cmd_nocache;
+		buffer.len = 1;
+
 		/* Set CD pin low for command */
 		gpio_pin_set_dt(&config->cmd_data, 0);
 		ret = spi_write(config->spi_dev, &dbi_config->config, &buf_set);
@@ -216,7 +218,6 @@ mipi_dbi_spi_write_helper_4wire_16bit(const struct device *dev,
 		.buffers = &buffer,
 		.count = 1,
 	};
-	uint16_t data16;
 	int ret = 0;
 
 	/*
@@ -226,9 +227,9 @@ mipi_dbi_spi_write_helper_4wire_16bit(const struct device *dev,
 	 */
 
 	if (cmd_present) {
-		data16 = sys_cpu_to_be16(cmd);
-		buffer.buf = &data16;
-		buffer.len = sizeof(data16);
+		*config->spi_word_nocache = sys_cpu_to_be16(cmd);
+		buffer.buf = config->spi_word_nocache;
+		buffer.len = 2;
 
 		/* Set CD pin low for command */
 		gpio_pin_set_dt(&config->cmd_data, 0);
@@ -245,7 +246,7 @@ mipi_dbi_spi_write_helper_4wire_16bit(const struct device *dev,
 
 		/* iterate command data */
 		for (int i = 0; i < len; i++) {
-			data16 = sys_cpu_to_be16(data_buf[i]);
+			*config->spi_word_nocache = sys_cpu_to_be16(data_buf[i]);
 
 			ret = spi_write(config->spi_dev, &dbi_config->config,
 					&buf_set);
@@ -254,7 +255,7 @@ mipi_dbi_spi_write_helper_4wire_16bit(const struct device *dev,
 			}
 		}
 	} else {
-		int stuffing = len % sizeof(data16);
+		int stuffing = len % 2;
 
 		/* Set CD pin high for data, if there are any */
 		if (len > 0) {
@@ -275,9 +276,9 @@ mipi_dbi_spi_write_helper_4wire_16bit(const struct device *dev,
 
 		/* iterate remaining data with stuffing */
 		for (int i = len - stuffing; i < len; i++) {
-			data16 = sys_cpu_to_be16(data_buf[i]);
-			buffer.buf = &data16;
-			buffer.len = sizeof(data16);
+			*config->spi_word_nocache = sys_cpu_to_be16(data_buf[i]);
+			buffer.buf = config->spi_word_nocache;
+			buffer.len = 2;
 
 			ret = spi_write(config->spi_dev, &dbi_config->config,
 					&buf_set);
@@ -400,7 +401,6 @@ mipi_dbi_spi_read_helper_3wire(const struct device *dev,
 			       uint8_t *response, size_t len)
 {
 	const struct mipi_dbi_spi_config *config = dev->config;
-	struct mipi_dbi_spi_data *data = dev->data;
 	struct spi_config tmp_config;
 	struct spi_buf buffer;
 	struct spi_buf_set buf_set = {
@@ -424,12 +424,12 @@ mipi_dbi_spi_read_helper_3wire(const struct device *dev,
 	tmp_config.operation &= ~SPI_WORD_SIZE_MASK;
 	tmp_config.operation |= SPI_WORD_SET(9);
 
-	buffer.buf = &data->spi_byte;
+	buffer.buf = config->spi_word_nocache;
 	buffer.len = 1;
 
 	/* Send each command */
 	for (size_t i = 0; i < num_cmds; i++) {
-		data->spi_byte = cmds[i];
+		*config->spi_word_nocache = cmds[i];
 		ret = spi_write(config->spi_dev, &tmp_config, &buf_set);
 		if (ret < 0) {
 			goto out;
@@ -683,14 +683,17 @@ static DEVICE_API(mipi_dbi, mipi_dbi_spi_driver_api) = {
 };
 
 #define MIPI_DBI_SPI_INIT(n)							\
+	static uint16_t mipi_dbi_spi_nocache_buf_##n  __nocache;		\
 	static const struct mipi_dbi_spi_config					\
 	    mipi_dbi_spi_config_##n = {						\
 		    .spi_dev = DEVICE_DT_GET(					\
 				    DT_INST_PHANDLE(n, spi_dev)),		\
 		    .cmd_data = GPIO_DT_SPEC_INST_GET_OR(n, dc_gpios, {}),	\
-		    .tearing_effect = GPIO_DT_SPEC_INST_GET_OR(n, te_gpios, {}),  \
+		    .tearing_effect = GPIO_DT_SPEC_INST_GET_OR(n, te_gpios, {}),\
 		    .reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {}),	\
-		    .xfr_min_bits = DT_INST_STRING_UPPER_TOKEN(n, xfr_min_bits) \
+		    .xfr_min_bits = DT_INST_STRING_UPPER_TOKEN(n, xfr_min_bits),\
+		    .spi_word_nocache = &mipi_dbi_spi_nocache_buf_##n,		\
+		    .spi_cmd_nocache = (uint8_t *)&mipi_dbi_spi_nocache_buf_##n	\
 	};									\
 	static struct mipi_dbi_spi_data mipi_dbi_spi_data_##n;			\
 										\
