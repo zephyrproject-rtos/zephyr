@@ -192,6 +192,9 @@ bool bt_mesh_prov_active(void);
 
 int bt_mesh_prov_auth(bool is_provisioner, uint8_t method, uint8_t action, size_t size);
 
+int bt_mesh_provisionee_suspend(void);
+int bt_mesh_provisionee_resume(void);
+
 int bt_mesh_pb_remote_open(struct bt_mesh_rpr_cli *cli,
 			   const struct bt_mesh_rpr_node *srv, const uint8_t uuid[16],
 			   uint16_t net_idx, uint16_t addr);
