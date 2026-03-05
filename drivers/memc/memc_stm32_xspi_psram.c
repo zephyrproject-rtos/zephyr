@@ -305,6 +305,7 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 		return -EIO;
 	}
 
+#if !defined(CONFIG_STM32_XSPIM)
 	if (!IS_ENABLED(CONFIG_STM32_APP_IN_EXT_FLASH)) {
 		/*
 		 * Do not configure the XSPIManager if running on the ext flash
@@ -325,6 +326,7 @@ static int memc_stm32_xspi_psram_init(const struct device *dev)
 			return -EIO;
 		}
 	}
+#endif /* !CONFIG_STM32_XSPIM */
 
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
 	/* DELAYBlock Enable for the stm32H5 boards */
