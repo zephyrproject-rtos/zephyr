@@ -117,7 +117,6 @@ enum dai_type {
 	DAI_INTEL_HDA_NHLT,	/**< nhlt Intel HD/A */
 	DAI_INTEL_ALH_NHLT,	/**< nhlt Intel ALH */
 	DAI_IMX_MICFIL,		/**< i.MX PDM MICFIL */
-	DAI_INTEL_UAOL,		/**< Intel UAOL */
 };
 
 /**
