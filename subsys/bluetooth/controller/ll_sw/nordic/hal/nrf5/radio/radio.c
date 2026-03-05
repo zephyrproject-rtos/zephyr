@@ -2893,7 +2893,8 @@ static void ar_end_wait(void)
 		 * For all other platforms, interrupt on END is enabled by the caller of this
 		 * function, we will be woken up when the EVENTS_END occurs.
 		 */
-		if (!IS_ENABLED(CONFIG_SOC_SERIES_NRF54L)) {
+		if (!IS_ENABLED(CONFIG_SOC_SERIES_NRF54L) &&
+		    !IS_ENABLED(CONFIG_SOC_SERIES_NRF54H)) {
 			cpu_sleep();
 		}
 	}

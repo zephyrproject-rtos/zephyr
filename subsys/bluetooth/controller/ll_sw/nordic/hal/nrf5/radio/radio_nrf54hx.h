@@ -413,7 +413,14 @@ static inline void hal_radio_stop(void)
 
 static inline void hal_radio_ram_prio_setup(void)
 {
-	/* TODO */
+	/* TODO: Add any required setup after reset and before enabling */
+
+#if defined(CONFIG_BT_CTLR_LE_ENC) || defined(CONFIG_BT_CTLR_BROADCAST_ISO_ENC)
+	/* DMASEC is set to non-secure by default, which prevents the ECB, CCM and AAR from
+	 * accessing secure memory. Change the DMASEC to secure.
+	 */
+	nrf_spu_periph_perm_dmasec_set(NRF_SPU030, 10, true);
+#endif /* CONFIG_BT_CTLR_LE_ENC || CONFIG_BT_CTLR_BROADCAST_ISO_ENC */
 }
 
 static inline uint32_t hal_radio_phy_mode_get(uint8_t phy, uint8_t flags)
