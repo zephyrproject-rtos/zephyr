@@ -53,7 +53,7 @@ static struct btp_buf *delayed_cmd;
 static struct {
 	const struct btp_handler *handlers;
 	size_t num;
-} service_handler[BTP_SERVICE_ID_MAX + 1];
+} service_handler[BTP_SERVICE_ID_COUNT];
 
 static struct net_buf_simple *rsp_buf = NET_BUF_SIMPLE(BTP_MTU);
 static K_MUTEX_DEFINE(rsp_buf_mutex);
