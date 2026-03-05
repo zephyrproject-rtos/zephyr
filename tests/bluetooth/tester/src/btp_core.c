@@ -51,6 +51,10 @@ static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 	return BTP_STATUS_SUCCESS;
 }
 
+#define SERVICES_BITMAP_BYTES DIV_ROUND_UP(BTP_SERVICE_ID_COUNT, BITS_PER_BYTE)
+#define SUPPORTED_SERVICES_RSP_LEN (sizeof(struct btp_core_read_supported_services_rp) + \
+		SERVICES_BITMAP_BYTES)
+
 static uint8_t supported_services(const void *cmd, uint16_t cmd_len,
 				  void *rsp, uint16_t *rsp_len)
 {
@@ -145,7 +149,12 @@ static uint8_t supported_services(const void *cmd, uint16_t cmd_len,
 	tester_set_bit(rp->data, BTP_SERVICE_ID_SDP);
 #endif /* CONFIG_BT_CLASSIC */
 
-	*rsp_len = sizeof(*rp) + 4U;
+	/* octet 4 */
+#if defined(CONFIG_BT_RFCOMM)
+	tester_set_bit(rp->data, BTP_SERVICE_ID_RFCOMM);
+#endif /* CONFIG_BT_RFCOMM */
+
+	*rsp_len = SUPPORTED_SERVICES_RSP_LEN;
 
 	return BTP_STATUS_SUCCESS;
 }
