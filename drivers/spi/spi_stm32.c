@@ -1737,10 +1737,68 @@ static int transceive_dma(const struct device *dev,
 	/* Set buffers info */
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, bits2bytes(config->operation));
 
+	/*
+	 * DMA data-size setup is done here, before SPE, so that dfs is
+	 * available for the TxFIFO pre-load below and burst lengths are
+	 * applied before the first DMA transfer in the loop.
+	 */
+	uint8_t dfs = bits2bytes(config->operation);
+	struct dma_config *rx_cfg = &data->dma_rx.dma_cfg, *tx_cfg = &data->dma_tx.dma_cfg;
+
+	rx_cfg->source_data_size = rx_cfg->source_burst_length = dfs;
+	rx_cfg->dest_data_size = rx_cfg->dest_burst_length = dfs;
+	tx_cfg->source_data_size = tx_cfg->source_burst_length = dfs;
+	tx_cfg->dest_data_size = tx_cfg->dest_burst_length = dfs;
+
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	/* set request before enabling (else SPI CFG1 reg is write protected) */
 	spi_dma_enable_requests(spi);
 
+	/*
+	 * Pre-load the first TX frame directly into TxFIFO while SPE=0.
+	 *
+	 * Root cause: when SPE=1 is set (below), the SPI peripheral
+	 * immediately drives MOSI to the MSB of its shift register - which
+	 * still holds the last byte of the previous transfer.  The DMA only
+	 * starts filling TxFIFO several microseconds later (after dma_config +
+	 * dma_start in the loop below), so MOSI floats at that stale value
+	 * for the entire DMA-setup window, corrupting the first transmitted
+	 * bit.
+	 *
+	 * Fix: write the first frame to SPI_TXDR directly from CPU while
+	 * SPE=0.  Per RM0481 §52.4.14, TxFIFO accepts writes when SPE=0.
+	 * When SPE=1 is set, the TxFIFO is already non-empty so MOSI is
+	 * pre-driven from the correct first byte, not from stale state.
+	 * The DMA then continues from the second frame onwards.
+	 *
+	 * Applied only to TX-only transfers (HALF_DUPLEX_TX, or FULL_DUPLEX
+	 * with no RX buffers).  For true bidirectional transfers the pre-load
+	 * would advance ctx.tx_len without advancing ctx.rx_len, shifting the
+	 * RX window by one frame; those transfers rely on the delayed-SPE path
+	 * below (fifo + full-duplex + master).
+	 */
+	if ((transfer_dir == LL_SPI_HALF_DUPLEX_TX ||
+	     (transfer_dir == LL_SPI_FULL_DUPLEX && data->ctx.rx_len == 0)) &&
+	    LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER &&
+	    data->ctx.tx_buf != NULL && data->ctx.tx_len > 0) {
+		if (dfs == 1) {
+			LL_SPI_TransmitData8(spi,
+				*(const uint8_t *)data->ctx.tx_buf);
+		} else if (dfs == 2) {
+			LL_SPI_TransmitData16(spi,
+				*(const uint16_t *)data->ctx.tx_buf);
+		} else {
+			LL_SPI_TransmitData32(spi,
+				*(const uint32_t *)data->ctx.tx_buf);
+		}
+		spi_context_update_tx(&data->ctx, dfs, 1);
+	}
+
+	/*
+	 * For fifo+full-duplex+master: delay SPE until after DMA is running
+	 * (handled inside the loop below).  For all other modes, enable now
+	 * while TxFIFO already has the pre-loaded first frame.
+	 */
 	if (!cfg->fifo_enabled || transfer_dir != LL_SPI_FULL_DUPLEX ||
 	    SPI_OP_MODE_GET(config->operation) != SPI_OP_MODE_MASTER) {
 		LL_SPI_Enable(spi);
@@ -1758,14 +1816,6 @@ static int transceive_dma(const struct device *dev,
 
 	/* This is turned off in spi_stm32_complete(). */
 	spi_stm32_cs_control(dev, true);
-
-	uint8_t dfs = bits2bytes(config->operation);
-	struct dma_config *rx_cfg = &data->dma_rx.dma_cfg, *tx_cfg = &data->dma_tx.dma_cfg;
-
-	rx_cfg->source_data_size = rx_cfg->source_burst_length = dfs;
-	rx_cfg->dest_data_size = rx_cfg->dest_burst_length = dfs;
-	tx_cfg->source_data_size = tx_cfg->source_burst_length = dfs;
-	tx_cfg->dest_data_size = tx_cfg->dest_burst_length = dfs;
 
 	while (data->ctx.rx_len > 0 || data->ctx.tx_len > 0) {
 		size_t dma_len;
