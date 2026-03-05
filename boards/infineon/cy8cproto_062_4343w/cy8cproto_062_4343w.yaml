@@ -14,17 +14,23 @@ toolchain:
   - gnuarmemb
 supported:
   - adc
-  - bluetooth
-  - wifi
   - airoc
-  - cyw4343w
+  - bluetooth
+  - clock_control
   - counter
-  - gpio
-  - uart
-  - i2c
-  - thermistor
-  - uart
+  - cyw4343w
   - dma
+  - flash
+  - gpio
+  - i2c
+  - pinctrl
+  - pwm
+  - rtc
+  - sdhc
+  - spi
+  - thermistor
   - timer
+  - uart
   - watchdog
+  - wifi
 vendor: infineon
