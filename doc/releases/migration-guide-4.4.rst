@@ -68,6 +68,9 @@ Boards
   * The ``--file-type`` option can now be used without ``--file`` to select between build artifacts
     (hex, elf, bin).
 
+* native_sim: host FUSE access: Defaults to using libfusev3 now instead of v2. But can be chosen
+  with :kconfig:option:`CONFIG_FUSE_LIBRARY_VERSION` (:github:`104965`).
+
 * m5stack_fire: Removed unused pinctrl entries for UART2, and updated the UART1
   pin mapping from GPIO32/GPIO33 to GPIO16/GPIO17 to match the documented Grove
   PORT.C wiring.
