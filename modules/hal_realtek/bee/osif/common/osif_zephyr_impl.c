@@ -1,28 +1,25 @@
 /*
- * Copyright (c) 2024 Realtek Semiconductor Corp.
- *
+ * Copyright (c) 2026 Realtek Semiconductor Corp.
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * @file osif_zephyr_impl.c
+ * @brief Common Realtek OSIF implementation over Zephyr Kernel.
+ *
+ * This file implements the core OSIF primitives (Semaphores, Mutexes,
+ * Tasks, Timers) by mapping them to standard Zephyr Kernel APIs.
+ * This implementation is shared across multiple Realtek SoCs.
  */
 
-#include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
 
-#include "zephyr/kernel.h"
-#include <zephyr/devicetree.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 
-#include "os_queue.h"
-#include "os_msg.h"
-#include "os_mem.h"
-#include "os_sched.h"
-#include "os_sync.h"
-#include "os_timer.h"
-#include "os_task.h"
-
-#include "osif_zephyr.h"
+#include "osif_zephyr_impl.h"
 #include "mem_types.h"
 
-#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(osif);
 
 #ifdef CONFIG_BT
@@ -30,44 +27,12 @@ BUILD_ASSERT(CONFIG_NUM_METAIRQ_PRIORITIES == 1,
 	     "When CONFIG_BT is enabled, CONFIG_NUM_METAIRQ_PRIORITIES must be set to 1");
 #endif
 
-/* Memory Regions Definitions */
-#define DATA_ON_HEAP_ADDR DT_REG_ADDR(DT_NODELABEL(tcm_heap))
-#define DATA_ON_HEAP_SIZE DT_REG_SIZE(DT_NODELABEL(tcm_heap))
-
-#define BUFFER_RAM_ADDR DT_REG_ADDR(DT_NODELABEL(buffer_ram))
-#define BUFFER_RAM_SIZE DT_REG_SIZE(DT_NODELABEL(buffer_ram))
-
-#define BUFFER_ON_GLOBAL_SIZE (1024 + 512)
-#define BUFFER_ON_HEAP_ADDR   (BUFFER_RAM_ADDR + BUFFER_ON_GLOBAL_SIZE)
-#define BUFFER_ON_HEAP_SIZE   (BUFFER_RAM_SIZE - BUFFER_ON_GLOBAL_SIZE)
-
 /* Helper Macro for Timeout Conversion */
 #define OSIF_WAIT_TO_TICKS(ms) ((ms == 0xFFFFFFFFUL) ? K_FOREVER : K_MSEC(ms))
 
 /************************************************************
  * MEMORY MANAGEMENT
  ************************************************************/
-static struct k_heap data_on_heap;
-static struct k_heap buffer_on_heap;
-
-void osif_heap_init_zephyr(void)
-{
-	k_heap_init(&data_on_heap, (void *)DATA_ON_HEAP_ADDR, DATA_ON_HEAP_SIZE);
-	k_heap_init(&buffer_on_heap, (void *)BUFFER_ON_HEAP_ADDR, BUFFER_ON_HEAP_SIZE);
-}
-
-static struct k_heap *get_heap_by_type(RAM_TYPE ram_type)
-{
-	switch (ram_type) {
-	case RAM_TYPE_DATA_ON:
-		return &data_on_heap;
-	case RAM_TYPE_BUFFER_ON:
-		return &buffer_on_heap;
-	default:
-		return NULL;
-	}
-}
-
 void *os_mem_alloc_intern_zephyr(RAM_TYPE ram_type, size_t size, const char *p_func,
 				 uint32_t file_line)
 {
@@ -117,19 +82,19 @@ void *os_mem_aligned_alloc_intern_zephyr(RAM_TYPE ram_type, size_t size, uint8_t
 
 void os_mem_free_zephyr(void *block)
 {
+	struct k_heap *h;
+
 	if (block == NULL) {
 		return;
 	}
 
-	/* Check pointer range to decide which heap to free from */
-	if ((uintptr_t)block >= BUFFER_ON_HEAP_ADDR &&
-	    (uintptr_t)block < BUFFER_ON_HEAP_ADDR + BUFFER_ON_HEAP_SIZE) {
-		k_heap_free(&buffer_on_heap, block);
-	} else if ((uintptr_t)block >= DATA_ON_HEAP_ADDR &&
-		   (uintptr_t)block < DATA_ON_HEAP_ADDR + DATA_ON_HEAP_SIZE) {
-		k_heap_free(&data_on_heap, block);
+	/* Use chip-specific address-to-heap mapping */
+	h = get_heap_by_address(block);
+	if (h) {
+		k_heap_free(h, block);
 	} else {
 		LOG_ERR("Invalid pointer free attempt: %p", block);
+		__ASSERT(false, "Attempted to free invalid memory address");
 	}
 }
 
@@ -157,7 +122,7 @@ size_t os_mem_peek_zephyr(RAM_TYPE ram_type)
 #endif
 }
 
-static void print_heap_stats(const char *heap_name, struct sys_heap *heap, size_t capacity)
+void print_heap_stats(const char *heap_name, struct sys_heap *heap, size_t capacity)
 {
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 	struct sys_memory_stats stats;
@@ -170,12 +135,6 @@ static void print_heap_stats(const char *heap_name, struct sys_heap *heap, size_
 	LOG_INF("[%s] Cap: %zu | Stats: N/A (Enable CONFIG_SYS_HEAP_RUNTIME_STATS)", heap_name,
 		capacity);
 #endif
-}
-
-void os_mem_peek_printf_zephyr(void)
-{
-	print_heap_stats("DATA_ON", &data_on_heap.heap, DATA_ON_HEAP_SIZE);
-	print_heap_stats("BUFFER_ON", &buffer_on_heap.heap, BUFFER_ON_HEAP_SIZE);
 }
 
 /************************************************************
@@ -257,6 +216,7 @@ bool os_task_create_zephyr(void **handle_ptr, const char *name, void (*routine)(
 	int zephyr_prio;
 	k_timeout_t startup_delay = K_NO_WAIT;
 	k_tid_t thread_id;
+	int heap_type = RAM_TYPE_DATA_ON;
 
 	if (priority > OSIF_TASK_MAX_PRIORITY || priority < OSIF_TASK_MIN_PRIORITY) {
 		LOG_ERR("Invalid priority. OSIF Task Priority is expected to %d ~ %d.",
@@ -271,9 +231,15 @@ bool os_task_create_zephyr(void **handle_ptr, const char *name, void (*routine)(
 	}
 	memset(task, 0, sizeof(struct osif_task));
 
+#ifdef CONFIG_SOC_SERIES_RTL8752H
+	if (name && strcmp(name, "low_stack_task") == 0) {
+		heap_type = RAM_TYPE_BUFFER_ON;
+	}
+#endif
+
 	/* Dynamic stack allocation */
 	stack_buffer = (k_thread_stack_t *)k_heap_aligned_alloc(
-		&data_on_heap, Z_KERNEL_STACK_OBJ_ALIGN, stack_size, K_NO_WAIT);
+		get_heap_by_type(heap_type), Z_KERNEL_STACK_OBJ_ALIGN, stack_size, K_NO_WAIT);
 
 	if (stack_buffer == NULL) {
 		k_mem_slab_free(&osif_task_slab, (void *)task);
@@ -317,17 +283,16 @@ void osif_task_delete_handler(struct k_work *work)
 	struct osif_task_delete_context *ctx =
 		CONTAINER_OF(work, struct osif_task_delete_context, work);
 
-	k_thread_abort(&ctx->task_to_free->zthread);
-
-	if (ctx->stack_to_free) {
-		k_heap_free(&data_on_heap, ctx->stack_to_free);
-	}
-
 	if (ctx->task_to_free) {
+		k_thread_abort(&ctx->task_to_free->zthread);
 		k_mem_slab_free(&osif_task_slab, (void *)ctx->task_to_free);
 	}
 
-	k_heap_free(&data_on_heap, ctx);
+	if (ctx->stack_to_free) {
+		k_heap_free(get_heap_by_type(RAM_TYPE_DATA_ON), ctx->stack_to_free);
+	}
+
+	k_heap_free(get_heap_by_type(RAM_TYPE_DATA_ON), ctx);
 }
 
 bool os_task_delete_zephyr(void *handle)
@@ -347,8 +312,9 @@ bool os_task_delete_zephyr(void *handle)
 	}
 
 	if (is_self_delete) {
-		struct osif_task_delete_context *ctx = k_heap_alloc(
-			&data_on_heap, sizeof(struct osif_task_delete_context), K_NO_WAIT);
+		struct osif_task_delete_context *ctx =
+			k_heap_alloc(get_heap_by_type(RAM_TYPE_DATA_ON),
+				     sizeof(struct osif_task_delete_context), K_NO_WAIT);
 
 		if (!ctx) {
 			k_thread_abort(current_tid);
@@ -370,7 +336,7 @@ bool os_task_delete_zephyr(void *handle)
 		k_thread_abort(&task->zthread);
 
 		if (task->stack_start) {
-			k_heap_free(&data_on_heap, task->stack_start);
+			k_heap_free(get_heap_by_type(RAM_TYPE_DATA_ON), task->stack_start);
 		}
 		k_mem_slab_free(&osif_task_slab, (void *)task);
 
@@ -534,6 +500,7 @@ bool os_task_notify_give_zephyr(void *handle)
 /* Stubs */
 void os_task_status_dump_zephyr(void)
 {
+	return;
 }
 
 bool os_alloc_secure_ctx_zephyr(uint32_t stack_size)
@@ -711,7 +678,8 @@ bool os_msg_queue_create_intern_zephyr(void **handle_ptr, const char *name, uint
 	}
 	memset(msgq, 0, sizeof(struct k_msgq));
 
-	queue_buffer = k_heap_aligned_alloc(&data_on_heap, 4, total_size, K_NO_WAIT);
+	queue_buffer =
+		k_heap_aligned_alloc(get_heap_by_type(RAM_TYPE_DATA_ON), 4, total_size, K_NO_WAIT);
 	if (!queue_buffer) {
 		k_mem_slab_free(&osif_msgq_slab, (void *)msgq);
 		LOG_ERR("alloc queue buffer failed");
@@ -736,7 +704,7 @@ bool os_msg_queue_delete_intern_zephyr(void *handle, const char *func, uint32_t 
 	}
 
 	if ((msgq->flags & K_MSGQ_FLAG_ALLOC) != 0U) {
-		k_heap_free(&data_on_heap, msgq->buffer_start);
+		k_heap_free(get_heap_by_type(RAM_TYPE_DATA_ON), msgq->buffer_start);
 		msgq->buffer_start = NULL;
 		msgq->flags &= ~K_MSGQ_FLAG_ALLOC;
 		k_mem_slab_free(&osif_msgq_slab, (void *)msgq);
@@ -995,103 +963,4 @@ bool os_timer_dump_zephyr(void)
 void os_timer_init_zephyr(void)
 {
 	__ASSERT(false, "os_timer_init() is invalid in Zephyr");
-}
-
-/*
- * OSIF PATCH Function Assignments
- */
-void osif_mem_func_init_zephyr(void)
-{
-	os_mem_alloc_intern = os_mem_alloc_intern_zephyr;
-	os_mem_zalloc_intern = os_mem_zalloc_intern_zephyr;
-	os_mem_aligned_alloc_intern = os_mem_aligned_alloc_intern_zephyr;
-	os_mem_free = os_mem_free_zephyr;
-	os_mem_aligned_free = os_mem_aligned_free_zephyr;
-	os_mem_peek = os_mem_peek_zephyr;
-	os_mem_peek_printf = os_mem_peek_printf_zephyr;
-	os_mem_check_heap_usage = os_mem_peek_printf_zephyr;
-}
-
-void osif_msg_func_init_zephyr(void)
-{
-	os_msg_queue_create_intern = os_msg_queue_create_intern_zephyr;
-	os_msg_queue_delete_intern = os_msg_queue_delete_intern_zephyr;
-	os_msg_queue_peek_intern = os_msg_queue_peek_intern_zephyr;
-	os_msg_send_intern = os_msg_send_intern_zephyr;
-	os_msg_recv_intern = os_msg_recv_intern_zephyr;
-}
-
-void osif_sched_func_init_zephyr(void)
-{
-	os_delay = os_delay_zephyr;
-	os_sys_time_get = os_sys_time_get_zephyr;
-	os_sys_tick_get = os_sys_tick_get_zephyr;
-	os_sched_start = os_sched_start_zephyr;
-	os_sched_stop = os_sched_stop_zephyr;
-	os_sched_suspend = os_sched_suspend_zephyr;
-	os_sched_resume = os_sched_resume_zephyr;
-	os_sched_state_get = os_sched_state_get_zephyr;
-	os_sched_is_start = os_sched_is_start_zephyr;
-}
-
-void osif_sync_func_init_zephyr(void)
-{
-	os_lock = os_lock_zephyr;
-	os_unlock = os_unlock_zephyr;
-	os_sem_create = os_sem_create_zephyr;
-	os_sem_delete = os_sem_delete_zephyr;
-	os_sem_take = os_sem_take_zephyr;
-	os_sem_give = os_sem_give_zephyr;
-	os_mutex_create = os_mutex_create_zephyr;
-	os_mutex_delete = os_mutex_delete_zephyr;
-	os_mutex_take = os_mutex_take_zephyr;
-	os_mutex_give = os_mutex_give_zephyr;
-}
-
-void osif_task_func_init_zephyr(void)
-{
-	os_task_create = os_task_create_zephyr;
-	os_task_delete = os_task_delete_zephyr;
-	os_task_suspend = os_task_suspend_zephyr;
-	os_task_resume = os_task_resume_zephyr;
-	os_task_yield = os_task_yield_zephyr;
-	os_task_handle_get = os_task_handle_get_zephyr;
-	os_task_priority_get = os_task_priority_get_zephyr;
-	os_task_priority_set = os_task_priority_set_zephyr;
-	os_task_signal_send = os_task_signal_send_zephyr;
-	os_task_signal_recv = os_task_signal_recv_zephyr;
-	os_task_signal_clear = os_task_signal_clear_zephyr;
-	os_task_signal_create = os_task_signal_create_zephyr;
-	os_task_notify_take = os_task_notify_take_zephyr;
-	os_task_notify_give = os_task_notify_give_zephyr;
-	os_task_status_dump = os_task_status_dump_zephyr;
-	os_alloc_secure_ctx = os_alloc_secure_ctx_zephyr;
-}
-
-void osif_timer_func_init_zephyr(void)
-{
-	os_timer_create = os_timer_create_zephyr;
-	os_timer_start = os_timer_start_zephyr;
-	os_timer_restart = os_timer_restart_zephyr;
-	os_timer_stop = os_timer_stop_zephyr;
-	os_timer_delete = os_timer_delete_zephyr;
-	os_timer_id_get = os_timer_id_get_zephyr;
-	os_timer_is_timer_active = os_timer_is_timer_active_zephyr;
-	os_timer_state_get = os_timer_state_get_zephyr;
-	os_timer_get_auto_reload = os_timer_get_auto_reload_zephyr;
-	os_timer_get_timer_number = os_timer_get_timer_number_zephyr;
-	os_timer_dump = os_timer_dump_zephyr;
-	os_timer_init = os_timer_init_zephyr;
-}
-
-void os_zephyr_patch_init(void)
-{
-	osif_mem_func_init_zephyr();
-	osif_msg_func_init_zephyr();
-	osif_sched_func_init_zephyr();
-	osif_sync_func_init_zephyr();
-	osif_task_func_init_zephyr();
-	osif_timer_func_init_zephyr();
-
-	osif_heap_init_zephyr();
 }
