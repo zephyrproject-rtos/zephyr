@@ -14,10 +14,18 @@ toolchain:
   - gnuarmemb
 supported:
   - adc
+  - bluetooth
+  - clock_control
+  - counter
+  - dma
+  - flash
   - gpio
-  - uart
   - i2c
-  - watchdog
+  - pinctrl
+  - pwm
+  - sdhc
   - spi
   - timer
+  - uart
+  - watchdog
 vendor: infineon
