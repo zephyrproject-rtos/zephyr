@@ -477,6 +477,7 @@ class DevicetreeBindingsCheck(ComplianceTest):
         for binding in bindings:
             check(binding, self.check_yaml_property_name)
             check(binding, self.required_false_check)
+            check(binding, self.compatible_and_file_name_match_check, children=False)
 
     def get_yaml_bindings(self):
         """
@@ -527,6 +528,26 @@ class DevicetreeBindingsCheck(ComplianceTest):
                 self.failure(
                     f'{binding.path}: property "{prop_name}": '
                     "'required: false' is redundant, please remove"
+                )
+
+    def compatible_and_file_name_match_check(self, binding):
+        allowed = [f"{binding.compatible}.yaml"]
+        if binding.on_bus is not None:
+            allowed.append(f"{binding.compatible}-{binding.on_bus}.yaml")
+
+        actual_filename = Path(binding.path).name
+
+        if actual_filename not in allowed:
+            if len(allowed) > 1:
+                allowed_names = ", ".join(f"'{filename}'" for filename in allowed)
+                self.failure(
+                    f"{binding.path}: bad file name for compatible '{binding.compatible}'.\n"
+                    f"\tThe allowed file names for this binding are: {allowed_names}"
+                )
+            else:
+                self.failure(
+                    f"{binding.path}: bad file name for compatible '{binding.compatible}'; "
+                    f"this should be named '{allowed[0]}' instead"
                 )
 
 
