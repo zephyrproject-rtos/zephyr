@@ -154,3 +154,6 @@ uint8_t tester_unregister_rfcomm(void);
 
 uint8_t tester_init_a2dp(void);
 uint8_t tester_unregister_a2dp(void);
+
+uint8_t tester_init_avdtp(void);
+uint8_t tester_unregister_avdtp(void);
