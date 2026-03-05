@@ -513,6 +513,7 @@ Ethernet
   defaulting to the value of :kconfig:option:`CONFIG_ETH_INIT_PRIORITY`. Same for
   :kconfig:option:`CONFIG_PTP_CLOCK_INIT_PRIORITY`,  but only if :kconfig:option:`CONFIG_ETH_DRIVER`
   is enabled. This way the priority is based on the dependencies in the devicetree.
+  (:github:`104310`)
 
 File System
 ===========
@@ -520,12 +521,13 @@ File System
 * :kconfig:option:`CONFIG_FS_FATFS_FSTAB_AUTOMOUNT` is now enabled by default, if any enabled
   :dtcompatible:`zephyr,fstab,fatfs` with the ``automount`` property are present in the devicetree.
   Applications that do not want this behavior need to explicitly disable this option.
+  (:github:`103139`)
 
 * NVS and ZMS have been moved to the new Key-Value Storage Systems (KVSS) subsystem; the move
   affects NVS and ZMS interface header paths which have been moved from
   ``zephyr/fs/`` to ``zephyr/kvss/``.
   Kconfig options for NVS and ZMS have been moved from underneath "File Systems" menu to
-  "Key-Value Storage Systems" menu, no Kconfigs have been affected.
+  "Key-Value Storage Systems" menu, no Kconfigs have been affected. (:github:`103244`)
 
 GPIO
 ====
