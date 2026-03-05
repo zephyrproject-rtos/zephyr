@@ -280,6 +280,7 @@ static int vl53l0x_channel_get(const struct device *dev,
 			       struct sensor_value *val)
 {
 	struct vl53l0x_data *drv_data = dev->data;
+	int ret = 0;
 
 	if (chan == SENSOR_CHAN_PROX) {
 		if (drv_data->RangingMeasurementData.RangeMilliMeter <=
@@ -290,8 +291,8 @@ static int vl53l0x_channel_get(const struct device *dev,
 		}
 		val->val2 = 0;
 	} else if (chan == SENSOR_CHAN_DISTANCE) {
-		val->val1 = drv_data->RangingMeasurementData.RangeMilliMeter / 1000;
-		val->val2 = (drv_data->RangingMeasurementData.RangeMilliMeter % 1000) * 1000;
+		ret = sensor_value_from_milli(val,
+					      drv_data->RangingMeasurementData.RangeMilliMeter);
 	} else if ((enum sensor_channel_vl53l0x)chan ==
 			SENSOR_CHAN_VL53L0X_EFFECTIVE_SPAD_RTN_COUNT) {
 		val->val1 = drv_data->RangingMeasurementData.EffectiveSpadRtnCount / 256;
@@ -307,16 +308,16 @@ static int vl53l0x_channel_get(const struct device *dev,
 			  VL53L0X_SENSOR_CHANNEL_VAL2_FACTOR) / VL53L0X_FIXPOINT1616_SCALE_FACTOR);
 		val->val2 = 0;
 	} else if ((enum sensor_channel_vl53l0x)chan == SENSOR_CHAN_VL53L0X_RANGE_DMAX) {
-		val->val1 = drv_data->RangingMeasurementData.RangeDMaxMilliMeter / 1000;
-		val->val2 = (drv_data->RangingMeasurementData.RangeDMaxMilliMeter % 1000) * 1000;
+		ret = sensor_value_from_milli(val,
+					      drv_data->RangingMeasurementData.RangeDMaxMilliMeter);
 	} else if ((enum sensor_channel_vl53l0x)chan == SENSOR_CHAN_VL53L0X_RANGE_STATUS) {
 		val->val1 = drv_data->RangingMeasurementData.RangeStatus;
 		val->val2 = 0;
 	} else {
-		return -ENOTSUP;
+		ret = -ENOTSUP;
 	}
 
-	return 0;
+	return ret;
 }
 
 static DEVICE_API(sensor, vl53l0x_api_funcs) = {
