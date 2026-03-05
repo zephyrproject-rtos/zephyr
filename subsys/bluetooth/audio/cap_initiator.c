@@ -33,6 +33,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 #include <sys/errno.h>
 
 #include "bap_endpoint.h"
@@ -591,6 +592,40 @@ get_proc_param_by_cap_stream(struct bt_cap_common_proc *active_proc,
 	return NULL;
 }
 
+/**
+ * @brief Compare two @ref bt_audio_codec_cfg and return whether they are equal, excluding metadata
+ *
+ * Since metadata is set at a different point in time than the actual codec configuration, it cannot
+ * be checked at the same time.
+ *
+ * @param a The first codec config to compare with
+ * @param b The second codec config to compare with
+ *
+ * @retval true @p a and @p b points to the same memory (including NULL),
+	   or all fields are identical.
+ * @retval false Either @p a or @p b is NULL or any of the fields are not identical.
+ */
+static bool codec_cfg_and_data_eq(const struct bt_audio_codec_cfg *a,
+				  const struct bt_audio_codec_cfg *b)
+{
+	if (a == b) {
+		return true;
+	}
+
+	if (a == NULL || b == NULL) {
+		return false;
+	}
+
+	/* Values like path_id, ctlr_transcode, target_latency and target_phy are local only, but
+	 * the only way to update them in BAP is to perform a new codec configuration, so we need to
+	 * consider them here too.
+	 */
+	return a->path_id == b->path_id && a->ctlr_transcode == b->ctlr_transcode &&
+	       a->target_latency == b->target_latency && a->target_phy == b->target_phy &&
+	       a->id == b->id && a->cid == b->cid && a->vid == b->vid &&
+	       util_eq(a->data, a->data_len, b->data, b->data_len);
+}
+
 static void update_proc_done_cnt(struct bt_cap_common_proc *active_proc)
 {
 	const enum bt_cap_common_subproc_type subproc_type = active_proc->subproc_type;
@@ -616,20 +651,38 @@ static void update_proc_done_cnt(struct bt_cap_common_proc *active_proc)
 
 			switch (subproc_type) {
 			case BT_CAP_COMMON_SUBPROC_TYPE_CODEC_CONFIG:
-				if (state > BT_BAP_EP_STATE_IDLE) {
+				if (state > BT_BAP_EP_STATE_IDLE &&
+				    codec_cfg_and_data_eq(bap_stream->codec_cfg,
+							  proc_param->start.codec_cfg)) {
 					proc_done_cnt++;
 				}
 				break;
 			case BT_CAP_COMMON_SUBPROC_TYPE_QOS_CONFIG:
 				if (state > BT_BAP_EP_STATE_CODEC_CONFIGURED) {
-					proc_done_cnt++;
+					struct bt_bap_qos_cfg qos;
+					__maybe_unused int err;
+
+					err = bt_bap_unicast_client_qos_from_group(bap_stream,
+										   &qos);
+					/* May only happen if the stream is modified by another
+					 * thread, in which case everything else may be broken...
+					 */
+					__ASSERT(err == 0, "Failed to get QoS from stream %p: %d",
+						 bap_stream, err);
+					if (bt_bap_qos_cfg_eq(bap_stream->qos, &qos)) {
+						proc_done_cnt++;
+					}
 				} else if (state < BT_BAP_EP_STATE_CODEC_CONFIGURED) {
 					/* Unexpected state - Abort */
 					bt_cap_common_abort_proc(bap_stream->conn, -EBADMSG);
 				}
 				break;
 			case BT_CAP_COMMON_SUBPROC_TYPE_ENABLE:
-				if (state > BT_BAP_EP_STATE_QOS_CONFIGURED) {
+				if (state > BT_BAP_EP_STATE_QOS_CONFIGURED &&
+				    util_eq(bap_stream->codec_cfg->meta,
+					    bap_stream->codec_cfg->meta_len,
+					    proc_param->start.codec_cfg->meta,
+					    proc_param->start.codec_cfg->meta_len)) {
 					proc_done_cnt++;
 				} else if (state < BT_BAP_EP_STATE_QOS_CONFIGURED) {
 					/* Unexpected state - Abort */
@@ -716,7 +769,12 @@ static void update_proc_done_cnt(struct bt_cap_common_proc *active_proc)
 		case BT_CAP_COMMON_SUBPROC_TYPE_META_UPDATE:
 			if (state == BT_BAP_EP_STATE_ENABLING ||
 			    state == BT_BAP_EP_STATE_STREAMING) {
-				proc_done_cnt = active_proc->proc_done_cnt + 1U;
+				if (util_eq(bap_stream->codec_cfg->meta,
+					    bap_stream->codec_cfg->meta_len,
+					    proc_param->meta_update.meta,
+					    proc_param->meta_update.meta_len)) {
+					proc_done_cnt = active_proc->proc_done_cnt + 1U;
+				}
 			} else {
 				/* Unexpected state - Abort */
 				bt_cap_common_abort_proc(bap_stream->conn, -EBADMSG);
@@ -761,49 +819,99 @@ get_next_proc_param(struct bt_cap_common_proc *active_proc)
 
 		switch (subproc_type) {
 		case BT_CAP_COMMON_SUBPROC_TYPE_CODEC_CONFIG:
+			__ASSERT_NO_MSG(active_proc->proc_type == BT_CAP_COMMON_PROC_TYPE_START);
+
 			if (state == BT_BAP_EP_STATE_IDLE) {
+				return proc_param;
+			}
+
+			if (state == BT_BAP_EP_STATE_CODEC_CONFIGURED &&
+			    bap_stream->codec_cfg != NULL &&
+			    !codec_cfg_and_data_eq(bap_stream->codec_cfg,
+						   proc_param->start.codec_cfg)) {
 				return proc_param;
 			}
 			break;
 		case BT_CAP_COMMON_SUBPROC_TYPE_QOS_CONFIG:
+			__ASSERT_NO_MSG(active_proc->proc_type == BT_CAP_COMMON_PROC_TYPE_START);
+
 			if (state == BT_BAP_EP_STATE_CODEC_CONFIGURED) {
 				return proc_param;
 			}
+
+			if (state == BT_BAP_EP_STATE_QOS_CONFIGURED && bap_stream->qos != NULL) {
+				struct bt_bap_qos_cfg qos;
+				__maybe_unused int err;
+
+				err = bt_bap_unicast_client_qos_from_group(bap_stream, &qos);
+				/* May only happen if the stream is modified by another thread, in
+				 * which case everything else may be broken...
+				 */
+				__ASSERT(err == 0, "Failed to get QoS from stream %p: %d",
+					 bap_stream, err);
+				if (!bt_bap_qos_cfg_eq(bap_stream->qos, &qos)) {
+					return proc_param;
+				}
+			}
 			break;
 		case BT_CAP_COMMON_SUBPROC_TYPE_ENABLE:
+			__ASSERT_NO_MSG(active_proc->proc_type == BT_CAP_COMMON_PROC_TYPE_START);
+
 			if (state == BT_BAP_EP_STATE_QOS_CONFIGURED) {
+				return proc_param;
+			}
+
+			if (state == BT_BAP_EP_STATE_ENABLING && bap_stream->codec_cfg != NULL &&
+			    !util_eq(bap_stream->codec_cfg->meta, bap_stream->codec_cfg->meta_len,
+				     proc_param->start.codec_cfg->meta,
+				     proc_param->start.codec_cfg->meta_len)) {
 				return proc_param;
 			}
 			break;
 		case BT_CAP_COMMON_SUBPROC_TYPE_CONNECT:
+			__ASSERT_NO_MSG(active_proc->proc_type == BT_CAP_COMMON_PROC_TYPE_START);
+
 			if (state == BT_BAP_EP_STATE_ENABLING && !proc_param->start.connected) {
 				return proc_param;
 			}
 			break;
 		case BT_CAP_COMMON_SUBPROC_TYPE_START:
+			__ASSERT_NO_MSG(active_proc->proc_type == BT_CAP_COMMON_PROC_TYPE_START);
+
 			if (state == BT_BAP_EP_STATE_ENABLING) {
 				/* TODO: Add check for connected */
 				return proc_param;
 			}
 			break;
 		case BT_CAP_COMMON_SUBPROC_TYPE_META_UPDATE:
-			if (state == BT_BAP_EP_STATE_ENABLING ||
-			    state == BT_BAP_EP_STATE_STREAMING) {
+			__ASSERT_NO_MSG(active_proc->proc_type == BT_CAP_COMMON_PROC_TYPE_UPDATE);
+
+			if ((state == BT_BAP_EP_STATE_ENABLING ||
+			     state == BT_BAP_EP_STATE_STREAMING) &&
+			    !util_eq(bap_stream->codec_cfg->meta, bap_stream->codec_cfg->meta_len,
+				     proc_param->meta_update.meta,
+				     proc_param->meta_update.meta_len)) {
 				return proc_param;
 			}
 			break;
 		case BT_CAP_COMMON_SUBPROC_TYPE_DISABLE:
+			__ASSERT_NO_MSG(active_proc->proc_type == BT_CAP_COMMON_PROC_TYPE_STOP);
+
 			if (state == BT_BAP_EP_STATE_ENABLING ||
 			    state == BT_BAP_EP_STATE_STREAMING) {
 				return proc_param;
 			}
 			break;
 		case BT_CAP_COMMON_SUBPROC_TYPE_STOP:
+			__ASSERT_NO_MSG(active_proc->proc_type == BT_CAP_COMMON_PROC_TYPE_STOP);
+
 			if (state == BT_BAP_EP_STATE_DISABLING) {
 				return proc_param;
 			}
 			break;
 		case BT_CAP_COMMON_SUBPROC_TYPE_RELEASE:
+			__ASSERT_NO_MSG(active_proc->proc_type == BT_CAP_COMMON_PROC_TYPE_STOP);
+
 			if (proc_param->stop.release && !proc_param->stop.completed) {
 				return proc_param;
 			}
@@ -1394,12 +1502,17 @@ cap_initiator_unicast_audio_configure(struct bt_cap_common_proc *active_proc,
 	active_proc->proc_initiated_cnt++;
 	proc_param->in_progress = true;
 
-	/* Since BAP operations may require a write long or a read long on the notification,
-	 * we cannot assume that we can do multiple streams at once, thus do it one at a time.
-	 * TODO: We should always be able to do one per ACL, so there is room for optimization.
-	 * This applies to all BAP calls in this file.
-	 */
-	err = bt_bap_stream_config(conn, bap_stream, ep, codec_cfg);
+	if (bap_stream->conn == NULL) {
+		/* Since BAP operations may require a write long or a read long on the notification,
+		 * we cannot assume that we can do multiple streams at once, thus do it one at a
+		 * time.
+		 * TODO: We should always be able to do one per ACL, so there is room for
+		 * optimization. This applies to all BAP calls in this file.
+		 */
+		err = bt_bap_stream_config(conn, bap_stream, ep, codec_cfg);
+	} else {
+		err = bt_bap_stream_reconfig(bap_stream, codec_cfg);
+	}
 	if (err != 0) {
 		LOG_DBG("Failed to config stream %p: %d", proc_param->stream, err);
 	}
@@ -1522,7 +1635,12 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 		active_proc->proc_initiated_cnt++;
 		proc_param->in_progress = true;
 
-		err = bt_bap_stream_config(conn, next_bap_stream, ep, codec_cfg);
+		if (next_bap_stream->conn == NULL) {
+			err = bt_bap_stream_config(conn, next_bap_stream, ep, codec_cfg);
+		} else {
+			err = bt_bap_stream_reconfig(next_bap_stream, codec_cfg);
+		}
+
 		if (err != 0) {
 			LOG_DBG("Failed to config stream %p: %d", next_cap_stream, err);
 

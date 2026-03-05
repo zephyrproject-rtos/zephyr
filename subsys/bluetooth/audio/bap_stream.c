@@ -172,6 +172,32 @@ int bt_bap_ep_get_info(const struct bt_bap_ep *ep, struct bt_bap_ep_info *info)
 	return 0;
 }
 
+bool bt_bap_qos_cfg_eq(const struct bt_bap_qos_cfg *a, const struct bt_bap_qos_cfg *b)
+{
+	if (a == b) {
+		return true;
+	}
+
+	if (a == NULL || b == NULL) {
+		return false;
+	}
+
+	return a->pd == b->pd &&
+	       a->framing == b->framing &&
+	       a->phy == b->phy &&
+	       a->rtn == b->rtn &&
+	       a->sdu == b->sdu &&
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+	       a->latency == b->latency &&
+#endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	       a->max_pdu == b->max_pdu &&
+	       a->burst_number == b->burst_number &&
+	       a->num_subevents == b->num_subevents &&
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
+	       a->interval == b->interval;
+}
+
 struct bt_conn *bt_bap_ep_get_conn(const struct bt_bap_ep *ep)
 {
 	struct bt_conn *conn;

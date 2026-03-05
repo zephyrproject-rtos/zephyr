@@ -8,6 +8,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
@@ -17,6 +18,7 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/fff.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/ztest_assert.h>
 
 #include "audio/bap_endpoint.h"
@@ -49,7 +51,7 @@ void test_conn_init(struct bt_conn *conn, uint8_t index)
 }
 
 void test_unicast_set_state(struct bt_cap_stream *cap_stream, struct bt_conn *conn,
-			    struct bt_bap_ep *ep, struct bt_bap_lc3_preset *preset,
+			    struct bt_bap_ep *ep, const struct bt_audio_codec_cfg *codec_cfg,
 			    enum bt_bap_ep_state state)
 {
 	struct bt_bap_stream *bap_stream = &cap_stream->bap_stream;
@@ -64,15 +66,30 @@ void test_unicast_set_state(struct bt_cap_stream *cap_stream, struct bt_conn *co
 	zassert_not_null(cap_stream);
 	zassert_not_null(conn);
 	zassert_not_null(ep);
-	zassert_not_null(preset);
+	zassert_not_null(codec_cfg);
 
-	err = bt_bap_stream_config(conn, &cap_stream->bap_stream, ep, &preset->codec_cfg);
+	err = bt_bap_stream_config(conn, &cap_stream->bap_stream, ep, codec_cfg);
 	zassert_equal(err, 0, "Unexpected return value %d", err);
 
-	bap_stream->conn = conn;
-	bap_stream->ep = ep;
-	bap_stream->qos = &preset->qos;
-	bap_stream->codec_cfg = &preset->codec_cfg;
+	/* Verify that the codec config data was updated */
+	zassert_true(util_eq(codec_cfg->data, codec_cfg->data_len, bap_stream->codec_cfg->data,
+			     bap_stream->codec_cfg->data_len));
+
+	if (state > BT_BAP_EP_STATE_CODEC_CONFIGURED) {
+		err = bt_bap_unicast_client_qos_from_group(bap_stream, &bap_stream->ep->qos);
+		zassert_equal(err, 0, "Unexpected return value %d", err);
+		bap_stream->qos = &bap_stream->ep->qos;
+	}
+
+	if (state > BT_BAP_EP_STATE_ENABLING) {
+		zassert_true(codec_cfg->meta_len <= CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE,
+			     "codec_cfg metadata too large: %u > %d", codec_cfg->meta_len,
+			     CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE);
+
+		(void)memcpy(bap_stream->ep->codec_cfg.meta, codec_cfg->meta, codec_cfg->meta_len);
+		bap_stream->ep->codec_cfg.meta_len = codec_cfg->meta_len;
+	}
+
 	bap_stream->ep->state = state;
 }
 

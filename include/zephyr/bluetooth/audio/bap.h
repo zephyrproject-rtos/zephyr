@@ -2063,6 +2063,34 @@ int bt_bap_unicast_client_unregister_cb(struct bt_bap_unicast_client_cb *cb);
  */
 int bt_bap_unicast_client_discover(struct bt_conn *conn, enum bt_audio_dir dir);
 
+/**
+ * @brief Get a copy of the QoS configured for the group of the stream
+ *
+ * This may be different from @p stream->qos if the stream has not been QoS configured or if group
+ * has been reconfigured with bt_bap_unicast_group_reconfig(). The QoS returned from this is what
+ * will be applied when bt_bap_stream_qos() is called for the group.
+ *
+ * @param[in] stream The stream to get the QoS configuration information from
+ * @param[out] qos The copy of the QoS configuration data
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p stream or @p qos are NULL, or @p stream is not part of a group.
+ */
+int bt_bap_unicast_client_qos_from_group(const struct bt_bap_stream *stream,
+					 struct bt_bap_qos_cfg *qos);
+
+/**
+ * @brief Compare two @ref bt_bap_qos_cfg and return whether they are equal
+ *
+ * @param a The first QoS config to compare with
+ * @param b The second QoS config to compare with
+ *
+ * @retval true @p a and @p b points to the same memory (including NULL),
+	   or all fields are identical.
+ * @retval false Either @p a or @p b is NULL or any of the fields are not identical.
+ */
+bool bt_bap_qos_cfg_eq(const struct bt_bap_qos_cfg *a, const struct bt_bap_qos_cfg *b);
+
 /** @} */ /* End of group bt_bap_unicast_client */
 /**
  * @brief BAP Broadcast APIs
