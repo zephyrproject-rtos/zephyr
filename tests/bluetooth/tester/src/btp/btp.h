@@ -88,6 +88,12 @@
 
 #define BTP_SERVICE_ID_MAX	BTP_SERVICE_ID_RFCOMM
 
+/* Service ID starts from index 0.
+ * BTP_SERVICE_ID_MAX is the last service ID.
+ * The Service ID count should be BTP_SERVICE_ID_MAX + 1.
+ */
+#define BTP_SERVICE_ID_COUNT (BTP_SERVICE_ID_MAX + 1)
+
 #define BTP_STATUS_SUCCESS	0x00
 #define BTP_STATUS_FAILED	0x01
 #define BTP_STATUS_UNKNOWN_CMD	0x02

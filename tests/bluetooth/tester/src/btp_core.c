@@ -38,7 +38,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 #define CAP_SUPPORTED 1
 #endif
 
-static ATOMIC_DEFINE(registered_services, BTP_SERVICE_ID_MAX);
+static ATOMIC_DEFINE(registered_services, BTP_SERVICE_ID_COUNT);
 
 static uint8_t supported_commands(const void *cmd, uint16_t cmd_len,
 				  void *rsp, uint16_t *rsp_len)
