@@ -2168,10 +2168,11 @@ try_resolve:
 			continue;
 		}
 
-		/* Send query to all configured DNS servers. The first valid
-		 * response will be used, subsequent responses are ignored
-		 * as the query slot will already be released.
+		/* Do one concurrent query only for each name resolve.
+		 * TODO: Change the i (query index) to do multiple concurrent
+		 *       to each server.
 		 */
+		break;
 	}
 
 	if (nfail > 0) {
