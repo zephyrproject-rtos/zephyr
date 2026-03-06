@@ -12,6 +12,9 @@
 extern "C" {
 #endif /* __cplusplus */
 
+#define CS40L5X_REG_WIDTH  4
+#define CS40L5X_ADDR_WIDTH 4
+
 struct cs40l5x_calibration {
 	/* Coil DC resistance in signed Q6.17 format (Ohms * (24 / 2.9)) */
 	uint32_t redc;
