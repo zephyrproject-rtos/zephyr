@@ -3490,8 +3490,10 @@ struct bt_hci_evt_le_remote_feat_complete {
 #define BT_HCI_EVT_LE_LTK_REQUEST               0x05
 struct bt_hci_evt_le_ltk_request {
 	uint16_t handle;
-	uint64_t rand;
-	uint16_t ediv;
+	/** 64-bit random number used to identify the LTK. */
+	uint8_t  rand[8];
+	/** 16-bit encrypted diversifier used to identify the LTK. */
+	uint8_t  ediv[2];
 } __packed;
 
 #define BT_HCI_EVT_LE_CONN_PARAM_REQ            0x06
