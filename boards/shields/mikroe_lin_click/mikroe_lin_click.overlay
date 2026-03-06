@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	mikroe_lin_click: mikroe_lin_click {
+		compatible = "infineon,tle72593ge", "lin-transceiver-gpio";
+		wakeup-gpios = <&mikrobus_header 6 GPIO_ACTIVE_HIGH>;
+		enable-gpios = <&mikrobus_header 2 GPIO_ACTIVE_HIGH>;
+		min-bitrate = <2400>;
+		max-bitrate = <20000>;
+		#phy-cells = <0>;
+	};
+};
+
+&mikrobus_lin {
+	phys = <&mikroe_lin_click>;
+	status = "okay";
+};
