@@ -31,11 +31,13 @@
 LOG_MODULE_REGISTER(CS40L5X, CONFIG_HAPTICS_LOG_LEVEL);
 
 /* Supported devices */
-#define CS40L5X_DEVID_50 0x40A50U
-#define CS40L5X_DEVID_51 0x40A51U
-#define CS40L5X_DEVID_52 0x40A52U
-#define CS40L5X_DEVID_53 0x40A53U
-#define CS40L5X_REVID_B0 0xB0U
+#define CS40L5X_DEVID_50  0x40A50U
+#define CS40L5X_DEVID_51  0x40A51U
+#define CS40L5X_DEVID_52  0x40A52U
+#define CS40L5X_DEVID_53  0x40A53U
+#define CS40L5X_REVID_B0  0xB0U
+#define CS40L5X_OTPID_MIN 0x1U
+#define CS40L5X_OTPID_MAX 0xEU
 
 /* Helper macros */
 #define CS40L5X_ANY_DEV_USE_HIBERNATION                                                            \
@@ -1329,10 +1331,15 @@ static int cs40l5x_fingerprint(const struct device *const dev)
 {
 	__maybe_unused const struct cs40l5x_config *const config = dev->config;
 	struct cs40l5x_data *const data = dev->data;
-	uint32_t rx[2];
+	uint32_t otpid, rx[2];
 	int ret;
 
 	ret = cs40l5x_burst_read(dev, CS40L5X_REG_DEVID, rx, ARRAY_SIZE(rx));
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = cs40l5x_read(dev, CS40L5X_REG_OTPID, &otpid);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1356,10 +1363,15 @@ static int cs40l5x_fingerprint(const struct device *const dev)
 		return -ENOTSUP;
 	}
 
+	if (!IN_RANGE(otpid, CS40L5X_OTPID_MIN, CS40L5X_OTPID_MAX)) {
+		LOG_INST_ERR(config->log, "unsupported OTP: 0x%01X", otpid);
+		return -ENOTSUP;
+	}
+
 	data->rev_id = FIELD_GET(GENMASK(7, 0), rx[1]);
 
-	LOG_INST_INF(config->log, "Cirrus Logic CS40L%02X Revision %X",
-		     (uint8_t)FIELD_GET(GENMASK(7, 0), config->dev_id), data->rev_id);
+	LOG_INST_INF(config->log, "Cirrus Logic CS40L%02X Revision %X (OTP %01X)",
+		     (uint8_t)FIELD_GET(GENMASK(7, 0), config->dev_id), data->rev_id, otpid);
 
 	return 0;
 }
