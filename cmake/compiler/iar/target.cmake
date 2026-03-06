@@ -32,15 +32,29 @@ find_program(CMAKE_AR
 
 set(CMAKE_ASM_COMPILER)
 if("${IAR_TOOLCHAIN_VARIANT}" STREQUAL "iccarm")
-  find_program(CMAKE_ASM_COMPILER
-    arm-zephyr-eabi-gcc
-    PATHS ${ZEPHYR_SDK_INSTALL_DIR}/arm-zephyr-eabi/bin
-    NO_DEFAULT_PATH )
+  if(EXISTS ${ZEPHYR_SDK_INSTALL_DIR}/gnu/arm-zephyr-eabi/bin)
+    find_program(CMAKE_ASM_COMPILER
+      arm-zephyr-eabi-gcc
+      PATHS ${ZEPHYR_SDK_INSTALL_DIR}/gnu/arm-zephyr-eabi/bin
+      NO_DEFAULT_PATH)
+  else()
+    find_program(CMAKE_ASM_COMPILER
+      arm-zephyr-eabi-gcc
+      PATHS ${ZEPHYR_SDK_INSTALL_DIR}/arm-zephyr-eabi/bin
+      NO_DEFAULT_PATH)
+  endif()
 else()
-  find_program(CMAKE_ASM_COMPILER
-    riscv64-zephyr-elf-gcc
-    PATHS ${ZEPHYR_SDK_INSTALL_DIR}/riscv64-zephyr-elf/bin
-    NO_DEFAULT_PATH )
+  if(EXISTS ${ZEPHYR_SDK_INSTALL_DIR}/gnu/arm-zephyr-eabi/bin)
+    find_program(CMAKE_ASM_COMPILER
+      riscv64-zephyr-elf-gcc
+      PATHS ${ZEPHYR_SDK_INSTALL_DIR}/gnu/riscv64-zephyr-elf/bin
+      NO_DEFAULT_PATH )
+  else()
+    find_program(CMAKE_ASM_COMPILER
+      riscv64-zephyr-elf-gcc
+      PATHS ${ZEPHYR_SDK_INSTALL_DIR}/riscv64-zephyr-elf/bin
+      NO_DEFAULT_PATH )
+  endif()
 endif()
 
 message(STATUS "Found assembler ${CMAKE_ASM_COMPILER}")
