@@ -1154,6 +1154,11 @@ Libsbc
 Management
 ==========
 
+* hawkBit
+
+  * The deprecated Kconfig option ``CONFIG_HAWKBIT_DDI_NO_SECURITY`` has been removed.
+    (:github:`105150`)
+
 * MCUmgr
 
   * If using :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_UART` then
