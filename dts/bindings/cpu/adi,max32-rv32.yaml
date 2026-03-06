@@ -6,4 +6,4 @@ description: MAX32 RV32 core
 
 compatible: "adi,max32-rv32"
 
-include: ["riscv,cpus.yaml", "pinctrl-device.yaml"]
+include: ["riscv.yaml", "pinctrl-device.yaml"]

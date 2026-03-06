@@ -6,4 +6,4 @@ description: OpenISA Zero-RI5CY core
 
 compatible: "openisa,zero-ri5cy"
 
-include: riscv,cpus.yaml
+include: riscv-common.yaml
