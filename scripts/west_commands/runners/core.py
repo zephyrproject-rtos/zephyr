@@ -998,14 +998,21 @@ class ZephyrBinaryRunner(abc.ABC):
         # RuntimeError avoids a stack trace saved in run_common.
         raise RuntimeError(err)
 
-    def run_telnet_client(self, host: str, port: int, active_sock=None) -> None:
+    def run_telnet_client(
+        self, host: str, port: int, active_sock=None,
+        send_on_connect: str | None = None,
+    ) -> None:
         '''
         Run a telnet client for user interaction.
+
+        :param send_on_connect: Send the given string right after connecting to
+                                the given socket. If provided, it will result in
+                                avoiding using `nc` as the client.
         '''
         # If the caller passed in an active socket, use that
         if active_sock is not None:
             sock = active_sock
-        elif shutil.which('nc') is not None:
+        elif send_on_connect is None and shutil.which('nc') is not None:
             # If a `nc` command is available, run it, as it will provide the
             # best support for CONFIG_SHELL_VT100_COMMANDS etc.
             client_cmd = ['nc', host, str(port)]
@@ -1016,6 +1023,10 @@ class ZephyrBinaryRunner(abc.ABC):
             # Start a new socket connection
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect((host, port))
+
+        if send_on_connect is not None:
+            # Send the given string before entering the interactive mode
+            sock.sendall(send_on_connect.encode('ascii'))
 
         # Otherwise, use a pure python implementation. This will work well for logging,
         # but input is line based only.
