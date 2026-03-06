@@ -42,15 +42,8 @@ config MBEDTLS_LIBRARY
 
 endchoice
 
-config CUSTOM_MBEDTLS_CFG_FILE
-	bool "Custom mbed TLS configuration file"
-	help
-	  Allow user defined input for the MBEDTLS_CFG_FILE setting.
-	  You can specify the actual configuration file using the
-	  MBEDTLS_CFG_FILE setting.
-
 config MBEDTLS_CFG_FILE
-	string "mbed TLS configuration file" if CUSTOM_MBEDTLS_CFG_FILE
+	string "mbed TLS configuration file"
 	depends on MBEDTLS_BUILTIN
 	default "config-mbedtls.h"
 	help
