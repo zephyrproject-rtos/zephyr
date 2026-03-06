@@ -111,6 +111,19 @@ The i.MX RT1186 SoC is configured to use SysTick as the system clock source.
 The Cortex-M33 core can run up to 300 MHz, and the Cortex-M7 core can run up
 to 800 MHz.
 
+ELE Active Timer Requirement
+=============================
+
+The RT1180 platform requires periodic communication with the EdgeLock Enclave (ELE)
+to prevent system reset. According to the RT1180 System Reference Manual (SRM) section
+3.11 "ELE active timer", the ELE must be pinged at least once every 24 hours.
+
+Zephyr implements this requirement using a software timer that automatically pings the
+ELE every 23 hours (instead of 24 hours) to account for potential clock inaccuracies.
+This is transparent to the application and requires no user intervention.
+
+For more details, refer to the RT1180 SRM section 3.11.
+
 ITCM and DTCM
 =============
 
