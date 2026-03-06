@@ -482,6 +482,7 @@ config ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
 config ISR_TABLES_LOCAL_DECLARATION
 	bool "ISR tables created locally and placed by linker"
 	depends on ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
+	depends on GEN_IRQ_VECTOR_TABLE
 	help
 	  Enable new scheme of interrupt tables generation.
 	  This is totally different generator that would create tables entries locally
