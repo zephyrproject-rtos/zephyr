@@ -286,25 +286,78 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	lw t2, 0(t0)		/* t0 = RV_EPC */
 1:
 #endif
-	andi t0, t2, 0x7f	/* keep only the opcode bits */
-	/*
+	/* RISC-V base floating-point opcodes are 7 bits long. We map them
+	 * into a 32-bit O(1) lookup table by shifting the opcode right by 2.
+	 *
+	 * Opcodes and their resulting lookup bit indices:
 	 * Major FP opcodes:
-	 * 0000111 = LOAD-FP
-	 * 0100111 = STORE-FP
-	 * 1000011 = MADD
-	 * 1000111 = MSUB
-	 * 1001011 = NMSUB
-	 * 1001111 = NMADD
-	 * 1010011 = OP-FP
+	 * 0000111 = LOAD-FP  >> 2 -> 1
+	 * 0100111 = STORE-FP >> 2 -> 9
+	 * 1000011 = MADD     >> 2 -> 16
+	 * 1000111 = MSUB     >> 2 -> 17
+	 * 1001011 = NMSUB    >> 2 -> 18
+	 * 1001111 = NMADD    >> 2 -> 19
+	 * 1010011 = OP-FP    >> 2 -> 20
+	 *
+	 * Combined Bitmask: 0x001F0202
+	 *
+	 * When funct3 is not 1, 2, 3 or 4, 0*00111 is not floating point
+	 * Combined Bitmask in this case: 0x001F0202
 	 */
-	xori t1, t0, 0b1010011	/* OP-FP */
-	beqz t1, is_fp
-	ori  t1, t0, 0b0100000
-	xori t1, t1, 0b0100111	/* LOAD-FP / STORE-FP */
-	beqz t1, is_fp
-	ori  t1, t0, 0b0001100
-	xori t1, t1, 0b1001111	/* MADD / MSUB / NMSUB / NMADD */
-	beqz t1, is_fp
+	/* 1. Preparing the Bitmask (Done first for efficient register usage) */
+	/* Lower 12 bit masks should be 0 for vector instructions */
+	li t0, 0x3c3c
+	srli t1, t2, 12
+	andi t1, t1, 7
+	srl t0, t0, t1
+	andi t0, t0, 0x202 /* 0 for vector instructions with opcode 0b0*00111 */
+	li   t1, 0x001F0000 /* Load the pre-calculated O(1) upper 20 bits of FP opcode bitmask */
+	or t1, t1, t0       /* Final bitmask which accounts for vector instructions */
+
+	/* 2. Preparing t2 for lookup index and 32-bit instruction validation */
+	/*
+	 * Rotation shifting by 2 of t2 to move upper 5 bits of opcode to the lowest 5
+	 * significant bits for opcode indexing. Preserving 2 bits in t2 to avoid
+	 * using another register.
+	 */
+	slli t0, t2, 30 /* saving the lowest 2 bits in t0 */
+	/* Making space for lower two bits of instruction in upper two bits of t2 */
+#if defined(CONFIG_64BIT)
+	srliw t2, t2, 2
+#else
+	srli t2, t2, 2
+#endif
+	or t2, t2, t0 /* In 64-bit systems the whole instruction can be found in [61:30] of t2 */
+
+	/* 3. Validate the instruction is a standard 32-bit instruction (ends in 11) */
+	/* lower 2 bits are in the MSB now */
+#if defined(CONFIG_64BIT)
+	sraiw t0, t2, 30
+#else
+	srai t0, t2, 30
+#endif
+	/* t0 = -1 only if t2[31:30] = 0b11 */
+	sltiu t0, t0, -1 /* t0 = 0 only if t0 = -1 */
+	xori t0, t0, 1 /* Boolean flag: t0 = 1 if valid 32-bit, 0 if invalid */
+
+	/* 4. Perform the O(1) branchless lookup */
+	/* Shift validity flag by index: t0 = (1 << index).
+	* If invalid (t0=0), t0 becomes 0, neutralizing false positives. */
+#if defined(CONFIG_64BIT)
+	sllw  t0, t0, t2
+#else
+	sll   t0, t0, t2
+#endif
+	and  t1, t0, t1     /* Intersect the generated mask with our FP bitmask */
+	bnez t1, is_fp      /* If match, jump to floating-point exception handler */
+	/* 5. Restore t2 */
+#if defined(CONFIG_64BIT)
+	srai t2, t2, 30
+#else
+	srl t1, t2, 30
+	sll t2, t2, 2
+	or t2, t2, t1
+#endif
 	/*
 	 * The FRCSR, FSCSR, FRRM, FSRM, FSRMI, FRFLAGS, FSFLAGS and FSFLAGSI
 	 * are in fact CSR instructions targeting the fcsr, frm and fflags
@@ -314,8 +367,13 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	 * SYSTEM = 0b1110011, op = 0b.xx where xx is never 0
 	 * The csr# of interest are: 1=fflags, 2=frm, 3=fcsr
 	 */
-	xori t1, t0, 0b1110011	/* SYSTEM opcode */
-	bnez t1, 2f		/* not a CSR insn */
+	/* * Due to the logic above, t0 currently holds the validated
+	 * bitmask of the instruction's opcode: (1 << (opcode >> 2)).
+	 * * For the SYSTEM opcode (0x73), the index is 28 (0x73 >> 2).
+	 * Therefore, we just check if t0 equals exactly (1 << 28).
+	 */
+	li t1, 0x10000000	/* Load (1 << 28) to check for SYSTEM opcode */
+	bne t1, t0, 2f		/* not a CSR insn */
 	srli t0, t2, 12
 	andi t0, t0, 0x3
 	beqz t0, 2f		/* not a CSR insn */
