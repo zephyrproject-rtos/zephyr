@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 NXP
+ * Copyright 2020-2023, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -320,6 +320,16 @@ __weak void clock_init(void)
 			DT_PROP(DT_NODELABEL(i3c0), clk_divider_slow));
 	CLOCK_SetClkDiv(kCLOCK_DivI3cTcClk,
 			DT_PROP(DT_NODELABEL(i3c0), clk_divider_tc));
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(acmp), nxp_kinetis_acmp, okay)
+	CLOCK_AttachClk(kMAIN_CLK_to_ACMP_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivAcmpClk, 2);
+	POWER_DisablePD(kPDRUNCFG_PD_ACMP);
+	POWER_ApplyPD();
+	RESET_PeripheralReset(kACMP0_RST_SHIFT_RSTn);
+	/* Make sure ACMP voltage reference available*/
+	POWER_SetAnalogBuffer(true);
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpadc0), nxp_lpc_lpadc, okay)
