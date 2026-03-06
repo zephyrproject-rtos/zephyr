@@ -68,4 +68,4 @@ const struct cs40l5x_bus_io cs40l5x_bus_io_i2c = {
 	.read = cs40l5x_read_i2c,
 	.write = cs40l5x_write_i2c,
 };
-#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
+#endif /* CONFIG_HAPTICS_CS40L5X_I2C */
