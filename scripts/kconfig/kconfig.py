@@ -39,6 +39,9 @@ from kconfiglib import (
     split_expr,
 )
 
+# store warnings separately from kconf.warnings
+warnings = []
+
 
 def main():
     args = parse_args()
@@ -109,10 +112,7 @@ def main():
     warn_only = r"warning:.*set more than once."
 
     if kconf.warnings:
-        if args.forced_input_configs:
-            error_out = False
-        else:
-            error_out = True
+        error_out = not args.forced_input_configs
 
         # Put a blank line between warnings to make them easier to read
         for warning in kconf.warnings:
@@ -130,6 +130,12 @@ def main():
         # warning for now.
         if error_out:
             err("Aborting due to Kconfig warnings")
+
+    # All warnings have already been printed above, either by warn() or by the
+    # kconf.warnings loop. With --warning-as-error, any of them is fatal, also
+    # the ones which are tolerated by default.
+    if args.werror and (warnings or kconf.warnings):
+        err("Aborting due to Kconfig warnings (--warning-as-error)")
 
     # Write the merged configuration and the C header
     print(kconf.write_config(args.config_out))
@@ -375,6 +381,12 @@ def parse_args():
         "pre-defined value and thereby remove any user "
         " adjustments.",
     )
+    parser.add_argument(
+        "--warning-as-error",
+        action=argparse.BooleanOptionalAction,
+        dest='werror',
+        help="Turn Kconfig warnings into errors",
+    )
     parser.add_argument("--zephyr-base", help="Path to current Zephyr installation")
     parser.add_argument("kconfig_file", help="Top-level Kconfig file")
     parser.add_argument("config_out", help="Output configuration file")
@@ -392,7 +404,13 @@ def warn(msg):
     # reference link, and add some extra newlines to set the message off from
     # surrounding text (this usually gets printed as part of spammy CMake
     # output)
-    print("\n" + textwrap.fill("warning: " + msg, 100) + "\n", file=sys.stderr)
+    warning = "warning: " + msg
+
+    # store the warning unwrapped, so that --warning-as-error can tell whether
+    # any warning was emitted at all
+    warnings.append(warning)
+
+    print("\n" + textwrap.fill(warning, 100) + "\n", file=sys.stderr)
 
 
 def err(msg):
