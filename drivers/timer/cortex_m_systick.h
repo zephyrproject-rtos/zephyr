@@ -25,16 +25,20 @@
  *
  * |------(1)---(2)--------------------(3)-------(4)--------------> Time
  *
- * (1) cmsd_hook_on_lpm_entry() is invoked
+ * (1) z_cms_lptim_hook_on_lpm_entry() is invoked
  * (2) The system enters in low-power mode
  * (3) The system exits low-power mode (due to timeout or HW event)
- * (4) cmsd_hook_lpm_time_elapsed() is called
+ * (4) z_cms_lptim_hook_on_lpm_exit() is called
  *
- * The return value of cmsd_hook_lpm_time_elapsed() should be as close
+ * The return value of z_cms_lptim_hook_on_lpm_exit() should be as close
  * as possible to the real time interval between events (1) and (4).
  *
- * These hooks should be implemented by the application if and only if
- * CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_HOOKS is enabled.
+ * These hooks should be implemented by the platform/application if and
+ * only if CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_HOOKS is enabled.
+ *
+ * If CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_COUNTER is enabled instead, the
+ * SysTick driver provides these functions and implements them using the
+ * Counter API.
  *
  * NOTE: the hooks are not invoked when the system enters in low-power
  * mode for an indefinite amount of time (requires CONFIG_TICKLESS_KERNEL
@@ -55,6 +59,7 @@
  * mode for an indefinite amount of time (i.e., when no threads are
  * runnable or waiting with timeout).
  */
+#if !defined(CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_NONE)
 void z_cms_lptim_hook_on_lpm_entry(uint64_t max_lpm_time_us);
 
 /**
@@ -62,7 +67,8 @@ void z_cms_lptim_hook_on_lpm_entry(uint64_t max_lpm_time_us);
  *
  * This function should return the time elapsed, in microseconds,
  * since entry in low-power mode occurred (i.e., since the call
- * to @ref{cmsd_hook_on_lpm_entry}).
+ * to z_cms_lptim_hook_on_lpm_entry().
  */
 uint64_t z_cms_lptim_hook_on_lpm_exit(void);
+#endif /* !CONFIG_CORTEX_M_SYSTICK_LPM_TIMER_NONE */
 #endif /* ZEPHYR_INCLUDE_DRIVERS_TIMER_CORTEX_M_SYSTICK_H_ */
