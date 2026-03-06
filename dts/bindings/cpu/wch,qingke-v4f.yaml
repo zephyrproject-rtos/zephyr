@@ -5,4 +5,4 @@ description: WCH QingKe V4F RISC-V MCU
 
 compatible: "wch,qingke-v4f"
 
-include: riscv,cpus.yaml
+include: riscv-common.yaml
