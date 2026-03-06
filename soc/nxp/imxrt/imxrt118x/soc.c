@@ -26,6 +26,57 @@
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
+/*
+ * RT118x ELE requires ping every 24 hours, which is mandatory,
+ * otherwise soc may reset.
+ *
+ * Note:
+ *   1. This is generic rule for all RT118x demos.
+ *   2. We ping ELE every 23 (but not 24) hours, in case of any clock inaccuracy.
+ *   3. This requirement comes from RT1180 SRM section 3.11 "ELE active timer".
+ *      Refer to the SRM for more details.
+ */
+#define ELE_PING_INTERVAL_HOURS 23U
+#define ELE_PING_INTERVAL_MS    (ELE_PING_INTERVAL_HOURS * 60UL * 60UL * 1000UL)
+
+/* Software timer for ELE ping */
+static struct k_timer ele_ping_timer;
+
+/* ELE ping timer callback function */
+static void ele_ping_timer_handler(struct k_timer *timer)
+{
+	ARG_UNUSED(timer);
+
+	status_t status;
+
+	/* Ping ELE to prevent SOC reset */
+	status = ELE_BaseAPI_Ping(MU_RT_S3MUA);
+
+	if (status == kStatus_Success) {
+		LOG_DBG("ELE ping successful");
+	} else {
+		LOG_ERR("ELE ping failed with status: %d", status);
+	}
+}
+
+/* Initialize ELE ping timer */
+static int ele_ping_timer_init(void)
+{
+	/* Initialize the timer */
+	k_timer_init(&ele_ping_timer, ele_ping_timer_handler, NULL);
+
+	/* Start the periodic timer with 23-hour interval */
+	k_timer_start(&ele_ping_timer, K_MSEC(ELE_PING_INTERVAL_MS),
+		      K_MSEC(ELE_PING_INTERVAL_MS));
+
+	LOG_DBG("ELE ping timer initialized, interval: %u hours", ELE_PING_INTERVAL_HOURS);
+
+	return 0;
+}
+
+/* Initialize ELE ping timer at POST_KERNEL level to ensure kernel services are available */
+SYS_INIT(ele_ping_timer_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+
 #if defined(CONFIG_NXP_IMXRT_BOOT_HEADER) && defined(CONFIG_CPU_CORTEX_M33)
 #include <fsl_flexspi_nor_boot.h>
 
