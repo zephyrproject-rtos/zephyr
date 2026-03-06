@@ -68,6 +68,7 @@ tests:
       - nucleo_u575zi_q
       - nucleo_c031c6
       - nucleo_wba55cg
+      - stm32n6570_dk/stm32n657xx/sb
     integration_platforms:
       - nucleo_f091rc
   drivers.watchdog.stm32wwdg_h7:
@@ -107,6 +108,7 @@ tests:
       - stm32h7s78_dk
       - nucleo_u385rg_q
       - nucleo_wba55cg
+      - stm32n6570_dk/stm32n657xx/sb
     integration_platforms:
       - nucleo_f091rc
   drivers.watchdog.mec15xxevb_assy6853:
