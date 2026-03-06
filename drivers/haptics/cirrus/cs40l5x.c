@@ -11,6 +11,7 @@
 
 #define DT_DRV_COMPAT cirrus_cs40l5x
 
+#include "cs40l5x.h"
 #include <stdlib.h>
 #include <zephyr/arch/common/ffs.h>
 #include <zephyr/device.h>

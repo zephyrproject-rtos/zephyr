@@ -10,7 +10,7 @@
  */
 
 #if CONFIG_HAPTICS_CS40L5X_SPI
-#include <zephyr/drivers/haptics/cs40l5x.h>
+#include "cs40l5x.h"
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(CS40L5X_SPI, CONFIG_HAPTICS_LOG_LEVEL);

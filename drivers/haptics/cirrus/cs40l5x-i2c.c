@@ -10,7 +10,7 @@
  */
 
 #if CONFIG_HAPTICS_CS40L5X_I2C
-#include <zephyr/drivers/haptics/cs40l5x.h>
+#include "cs40l5x.h"
 #include <zephyr/sys/byteorder.h>
 
 #define CS40L5X_REG_WIDTH  4
