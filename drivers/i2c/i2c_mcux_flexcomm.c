@@ -625,10 +625,21 @@ static int mcux_flexcomm_init_common(const struct device *dev)
 
 static int i2c_mcux_flexcomm_pm_action(const struct device *dev, enum pm_device_action action)
 {
+	const struct mcux_flexcomm_config *config = dev->config;
+	int error;
+
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+		error = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+		if (error < 0 && error != -ENOENT) {
+			return error;
+		}
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
+		error = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
+		if (error < 0 && error != -ENOENT) {
+			return error;
+		}
 		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
 		return 0;
