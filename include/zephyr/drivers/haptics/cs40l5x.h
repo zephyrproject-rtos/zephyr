@@ -261,8 +261,6 @@ struct cs40l5x_bus {
 struct cs40l5x_config {
 	/**< Pointer to CS40L5x device instance */
 	const struct device *const dev;
-	/**< Pointer to data structure for CS40L5x device instance */
-	struct cs40l5x_data *const data;
 	/**< Logger configuration for instance-based logging */
 	LOG_INSTANCE_PTR_DECLARE(log);
 	/**< Control port devices */
@@ -289,8 +287,6 @@ struct cs40l5x_config {
 struct cs40l5x_data {
 	/**< Pointer to CS40L5x device instance */
 	const struct device *const dev;
-	/**< Pointer to configuration structure for CS40L5x device instance */
-	const struct cs40l5x_config *const config;
 	/**< Lock to deconflict haptic playback, device calibration, and configuration changes */
 	struct k_mutex lock;
 	/**< Device ID corresponding to the part number */
