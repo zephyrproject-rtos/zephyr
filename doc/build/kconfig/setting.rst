@@ -191,6 +191,29 @@ configuration that gets modified when making changes in the :ref:`interactive
 configuration interfaces <menuconfig>`.
 
 
+.. _kconfig_warning_as_error:
+
+Treating Kconfig warnings as errors
+***********************************
+
+Some Kconfig warnings abort the build by default, for example assignments to
+undefined symbols. Others are only printed, for example when a symbol is set
+more than once, or when an assignment is ignored because the dependencies of
+the symbol are not satisfied.
+
+Set the :makevar:`KCONFIG_WARNING_AS_ERROR` CMake variable to treat *every*
+Kconfig warning as an error:
+
+.. code-block:: console
+
+   west build -b <board> <app> -- -DKCONFIG_WARNING_AS_ERROR=y
+
+This is useful in CI, where a silently ignored configuration setting is likely
+to be a mistake. It is read with ``zephyr_get()``, so it can also be given as
+an :ref:`environment variable <env_vars>` or through a
+:ref:`cmake_build_config_package`.
+
+
 Tracking Kconfig symbols
 ************************
 
