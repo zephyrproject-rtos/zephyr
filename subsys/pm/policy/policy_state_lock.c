@@ -63,7 +63,6 @@ void pm_policy_state_all_lock_put(void)
 #endif
 }
 
-
 void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
