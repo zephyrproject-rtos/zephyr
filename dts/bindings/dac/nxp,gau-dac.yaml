@@ -42,4 +42,7 @@ properties:
       Default is "62.5K" because that is the reset value.
 
   "#io-channel-cells":
-    const: 0
+    const: 1
+
+io-channel-cells:
+  - output
