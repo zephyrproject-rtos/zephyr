@@ -1745,6 +1745,7 @@ New Samples
 * :zephyr:code-sample:`zms-cycle-count`
 * :zephyr_file:`samples/drivers/clock_monitor/check_freq`
 * :zephyr_file:`samples/drivers/clock_monitor/measure_freq`
+* :zephyr:code-sample:`wireless-coex-shell` (renamed from ``coex_shell``)
 
 Libraries / Subsystems
 **********************
