@@ -452,6 +452,36 @@ ZTEST(flash_sim_api, test_get_erase_value)
 		      FLASH_SIMULATOR_ERASE_VALUE);
 }
 
+ZTEST(flash_sim_api, test_erase_capability)
+{
+	/* Verify that the runtime device capability matches the build configuration.
+	 * This is the test that was missing and resulted in issue #100352 not being caught:
+	 * the driver was incorrectly setting no_explicit_erase for all instances based
+	 * on a global Kconfig rather than per-instance properties.
+	 */
+	const struct flash_parameters *fp = flash_get_parameters(flash_dev);
+	int erase_cap;
+
+	zassert_not_null(fp, "flash_get_parameters() returned NULL");
+
+	erase_cap = flash_params_get_erase_cap(fp);
+
+#if defined(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE)
+	/* Erase-type (classic Flash) device: must report explicit erase required */
+	zassert_false(fp->caps.no_explicit_erase,
+		      "Device is configured as explicit-erase but caps.no_explicit_erase=true");
+	zassert_equal(FLASH_ERASE_C_EXPLICIT, erase_cap,
+		      "Expected FLASH_ERASE_C_EXPLICIT (0x%x), got 0x%x",
+		      FLASH_ERASE_C_EXPLICIT, erase_cap);
+#else
+	/* RAM-like device: must report no explicit erase required */
+	zassert_true(fp->caps.no_explicit_erase,
+		     "Device is configured as RAM-like but caps.no_explicit_erase=false");
+	zassert_equal(0, erase_cap,
+		      "Expected erase capability 0 for RAM-like device, got 0x%x", erase_cap);
+#endif
+}
+
 ZTEST(flash_sim_api, test_flash_fill)
 {
 	off_t i;

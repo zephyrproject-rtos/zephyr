@@ -545,6 +545,14 @@ const struct flash_simulator_params *z_vrfy_flash_simulator_get_params(const str
 #define FLASH_SIMULATOR_PAGE_COUNT(n)                                                              \
 	(FLASH_SIMULATOR_FLASH_SIZE(n) / FLASH_SIMULATOR_ERASE_UNIT(n))
 
+/* Resolve the no_explicit_erase capability per device instance.
+ * DT_INST_PROP for a boolean type is 0 when absent, 1 when set in DTS,
+ * so a logical OR with the Kconfig fallback covers all cases correctly.
+ */
+#define FLASH_SIMULATOR_NO_EXPLICIT_ERASE(n)                                                       \
+	(DT_INST_PROP(n, no_explicit_erase) ||                                                     \
+	 !IS_ENABLED(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE))
+
 #define MOCK_FLASH_SECTION(n)                                                                      \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, memory_region),                                       \
 	(Z_GENERIC_SECTION(LINKER_DT_NODE_REGION_NAME(DT_INST_PHANDLE(n, memory_region)))), ())
@@ -566,7 +574,7 @@ const struct flash_simulator_params *z_vrfy_flash_simulator_get_params(const str
 		.write_block_size = FLASH_SIMULATOR_PROG_UNIT(n),                                  \
 		.erase_value = FLASH_SIMULATOR_ERASE_VALUE(n),                                     \
 		.caps = {                                                                          \
-			.no_explicit_erase = !IS_ENABLED(CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE),   \
+			.no_explicit_erase = FLASH_SIMULATOR_NO_EXPLICIT_ERASE(n),                 \
 		},                                                                                 \
 	};                                                                                         \
                                                                                                    \
