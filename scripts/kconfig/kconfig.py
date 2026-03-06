@@ -47,8 +47,7 @@ def main():
         os.environ['ZEPHYR_BASE'] = args.zephyr_base
 
     print("Parsing " + args.kconfig_file)
-    kconf = Kconfig(args.kconfig_file, warn_to_stderr=False,
-                    suppress_traceback=True)
+    kconf = Kconfig(args.kconfig_file, warn_to_stderr=False, suppress_traceback=True)
 
     if args.handwritten_input_configs:
         # Warn for assignments to undefined symbols, but only for handwritten
@@ -152,10 +151,13 @@ def check_no_promptless_assign(kconf):
 
     for sym in kconf.unique_defined_syms:
         if sym.user_value is not None and promptless(sym):
-            err(f"""\
+            err(
+                f"""\
 {sym.name_and_loc} is assigned in a configuration file, but is not directly
 user-configurable (has no prompt). It gets its value indirectly from other
-symbols. """ + SYM_INFO_HINT.format(sym))
+symbols. """
+                + SYM_INFO_HINT.format(sym)
+            )
 
 
 def check_assigned_sym_values(kconf):
@@ -177,8 +179,10 @@ def check_assigned_sym_values(kconf):
             user_value = TRI_TO_STR[user_value]
 
         if user_value != sym.str_value:
-            msg = f"{sym.name_and_loc} was assigned the value '{user_value}'" \
-                  f" but got the value '{sym.str_value}'. "
+            msg = (
+                f"{sym.name_and_loc} was assigned the value '{user_value}'"
+                f" but got the value '{sym.str_value}'. "
+            )
 
             # List any unsatisfied 'depends on' dependencies in the warning
             mdeps = missing_deps(sym)
@@ -191,11 +195,9 @@ def check_assigned_sym_values(kconf):
                         # Gives '(FOO || BAR) (=n)' instead of
                         # 'FOO || BAR (=n)', which might be clearer.
                         estr = f"({estr})"
-                    expr_strs.append(f"{estr} "
-                                     f"(={TRI_TO_STR[expr_value(expr)]})")
+                    expr_strs.append(f"{estr} (={TRI_TO_STR[expr_value(expr)]})")
 
-                msg += "Check these unsatisfied dependencies: " + \
-                    ", ".join(expr_strs) + ". "
+                msg += "Check these unsatisfied dependencies: " + ", ".join(expr_strs) + ". "
 
             warn(msg + SYM_INFO_HINT.format(sym))
 
@@ -239,13 +241,14 @@ def check_assigned_choice_values(kconf):
     # y ended up as n, and print a spurious warning.
 
     for choice in kconf.unique_choices:
-        if choice.user_selection and \
-           choice.user_selection is not choice.selection:
-
-            warn(f"""\
+        if choice.user_selection and choice.user_selection is not choice.selection:
+            warn(
+                f"""\
 The choice symbol {choice.user_selection.name_and_loc} was selected (set =y),
 but {choice.selection.name_and_loc if choice.selection else "no symbol"} ended
-up as the choice selection. """ + SYM_INFO_HINT.format(choice.user_selection))
+up as the choice selection. """
+                + SYM_INFO_HINT.format(choice.user_selection)
+            )
 
 
 # Hint on where to find symbol information. Used like
@@ -278,6 +281,7 @@ def check_experimental(kconf):
         for selector in selectors:
             selector_name = split_expr(selector, AND)[0].name
             warn(f'Experimental symbol {selector_name} is enabled.')
+
 
 def check_not_secure(kconf):
     not_secure = kconf.syms.get('NOT_SECURE')
@@ -328,8 +332,7 @@ def collect_trace_data(kconf):
         kind, loc = origin
         value = None if kind == "unset" else item.str_value
 
-        trace_entry = (name, TRI_TO_STR[item.visibility],
-                       TYPE_TO_STR[item.type], value, kind, loc)
+        trace_entry = (name, TRI_TO_STR[item.visibility], TYPE_TO_STR[item.type], value, kind, loc)
         trace_data.append(trace_entry)
 
     return trace_data
@@ -342,42 +345,44 @@ def write_kconfig_filenames(kconf, kconfig_list_path):
     # needs to be deterministic.
 
     with open(kconfig_list_path, 'w') as out:
-        for path in sorted({os.path.realpath(os.path.join(kconf.srctree, path))
-                            for path in set(kconf.kconfig_filenames)}):
+        for path in sorted(
+            {
+                os.path.realpath(os.path.join(kconf.srctree, path))
+                for path in set(kconf.kconfig_filenames)
+            }
+        ):
             print(path, file=out)
 
 
 def parse_args():
     parser = argparse.ArgumentParser(allow_abbrev=False)
 
-    parser.add_argument("--handwritten-input-configs",
-                        action="store_true",
-                        help="Assume the input configuration fragments are "
-                             "handwritten fragments and do additional checks "
-                             "on them, like no promptless symbols being "
-                             "assigned")
-    parser.add_argument("--forced-input-configs",
-                        action="store_true",
-                        help="Indicate the input configuration files are "
-                             "followed by an forced configuration file."
-                             "The forced configuration is used to forcefully "
-                             "set specific configuration settings to a "
-                             "pre-defined value and thereby remove any user "
-                             " adjustments.")
-    parser.add_argument("--zephyr-base",
-                        help="Path to current Zephyr installation")
-    parser.add_argument("kconfig_file",
-                        help="Top-level Kconfig file")
-    parser.add_argument("config_out",
-                        help="Output configuration file")
-    parser.add_argument("header_out",
-                        help="Output header file")
-    parser.add_argument("kconfig_list_out",
-                        help="Output file for list of parsed Kconfig files")
-    parser.add_argument("configs_in",
-                        nargs="+",
-                        help="Input configuration fragments. Will be merged "
-                             "together.")
+    parser.add_argument(
+        "--handwritten-input-configs",
+        action="store_true",
+        help="Assume the input configuration fragments are "
+        "handwritten fragments and do additional checks "
+        "on them, like no promptless symbols being "
+        "assigned",
+    )
+    parser.add_argument(
+        "--forced-input-configs",
+        action="store_true",
+        help="Indicate the input configuration files are "
+        "followed by an forced configuration file."
+        "The forced configuration is used to forcefully "
+        "set specific configuration settings to a "
+        "pre-defined value and thereby remove any user "
+        " adjustments.",
+    )
+    parser.add_argument("--zephyr-base", help="Path to current Zephyr installation")
+    parser.add_argument("kconfig_file", help="Top-level Kconfig file")
+    parser.add_argument("config_out", help="Output configuration file")
+    parser.add_argument("header_out", help="Output header file")
+    parser.add_argument("kconfig_list_out", help="Output file for list of parsed Kconfig files")
+    parser.add_argument(
+        "configs_in", nargs="+", help="Input configuration fragments. Will be merged together."
+    )
 
     return parser.parse_args()
 
