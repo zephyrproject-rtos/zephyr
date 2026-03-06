@@ -37,116 +37,105 @@ LOG_MODULE_REGISTER(CS40L5X, CONFIG_HAPTICS_LOG_LEVEL);
 #define CS40L5X_DEVID_53 0x40A53U
 #define CS40L5X_REVID_B0 0xB0U
 
+/* Helper macros */
 #define CS40L5X_ANY_DEV_USE_HIBERNATION                                                            \
 	(IS_ENABLED(CONFIG_PM_DEVICE) && IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME))
 
-#define CS40L5X_REG_DEVID              0x00000000
-#define CS40L5X_REG_REVID              (CS40L5X_REG_DEVID + 0x4)
-#define CS40L5X_REG_IRQ1_STATUS        0x0000E004
-#define CS40L5X_REG_IRQ1_INT1          0x0000E010
-#define CS40L5X_REG_IRQ1_INT2          (CS40L5X_REG_IRQ1_INT1 + 0x4)
-#define CS40L5X_REG_IRQ1_INT8          (CS40L5X_REG_IRQ1_INT2 + 0x18)
-#define CS40L5X_REG_IRQ1_INT9          (CS40L5X_REG_IRQ1_INT8 + 0x4)
-#define CS40L5X_REG_IRQ1_INT10         (CS40L5X_REG_IRQ1_INT9 + 0x4)
-#define CS40L5X_REG_IRQ1_INT14         0x0000E044
-#define CS40L5X_REG_IRQ1_INT18         0x0000E054
-#define CS40L5X_REG_IRQ1_MASK1         0x0000E090
-#define CS40L5X_REG_IRQ1_MASK2         (CS40L5X_REG_IRQ1_MASK1 + 0x4)
-#define CS40L5X_REG_IRQ1_MASK3         (CS40L5X_REG_IRQ1_MASK2 + 0x4)
-#define CS40L5X_REG_IRQ1_MASK4         (CS40L5X_REG_IRQ1_MASK3 + 0x4)
-#define CS40L5X_REG_IRQ1_MASK5         (CS40L5X_REG_IRQ1_MASK4 + 0x4)
-#define CS40L5X_REG_IRQ1_MASK6         (CS40L5X_REG_IRQ1_MASK5 + 0x4)
-#define CS40L5X_REG_IRQ1_MASK7         (CS40L5X_REG_IRQ1_MASK6 + 0x4)
-#define CS40L5X_REG_IRQ1_MASK8         (CS40L5X_REG_IRQ1_MASK7 + 0x4)
-#define CS40L5X_REG_IRQ1_MASK14        0x0000E0C4
-#define CS40L5X_REG_IRQ1_MASK18        0x0000E0D4
-#define CS40L5X_REG_IRQ1_MASK19        (CS40L5X_REG_IRQ1_MASK18 + 0x4)
-#define CS40L5X_REG_IRQ1_MASK20        (CS40L5X_REG_IRQ1_MASK19 + 0x4)
-#define CS40L5X_REG_DSP_MBOX_BASE      0x00011004
-#define CS40L5X_REG_DSP_MBOX_END       (CS40L5X_REG_DSP_MBOX_BASE + 0x1C)
-#define CS40L5X_REG_DSP_V1MBOX         0x00011020
-#define CS40L5X_REG_DSP_HALO_STATE     0x028021E0
-#define CS40L5X_REG_BUZZ_FREQ          0x028027A0
-#define CS40L5X_REG_BUZZ_LEVEL         (CS40L5X_REG_BUZZ_FREQ + 0x4)
-#define CS40L5X_REG_BUZZ_DURATION      (CS40L5X_REG_BUZZ_LEVEL + 0x4)
-#define CS40L5X_REG_BUZZ_RES           (CS40L5X_REG_BUZZ_FREQ + 0x4C)
-#define CS40L5X_REG_DYNAMIC_F0         0x0280285C
-#define CS40L5X_REG_CALIB_F0_EST_REDC  0x02802F7C
-#define CS40L5X_REG_CALIB_F0_EST       0x02802F84
-#define CS40L5X_REG_SOURCE_ATTENUATION 0x028030B8
-#define CS40L5X_REG_LOGGER_ENABLE      0x028033E8
-#define CS40L5X_REG_LOGGER_DATA        0x02803440
-#define CS40L5X_REG_CALIB_REDC_EST     0x03401110
-#define CS40L5X_REG_GPIO_EVENT_BASE    0x02803E00
-#define CS40L5X_REG_STDBY_TIMEOUT      0x028042F8
-#define CS40L5X_REG_ACTIVE_TIMEOUT     (CS40L5X_REG_STDBY_TIMEOUT + 0x8)
-#define CS40L5X_REG_MBOX_Q_WRITE       0x028042C8
-#define CS40L5X_REG_MBOX_Q_READ        (CS40L5X_REG_MBOX_Q_WRITE + 0x4)
-#define CS40L5X_REG_MBOX_Q_STATUS      (CS40L5X_REG_MBOX_Q_READ + 0x4)
-#define CS40L5X_REG_WSEQ_POWER         0x02804348
-#define CS40L5X_REG_VIBEGEN_F0_OTP     0x02805C00
-#define CS40L5X_REG_VIBEGEN_REDC_OTP   (CS40L5X_REG_VIBEGEN_F0_OTP + 0x8)
-#define CS40L5X_REG_VIBEGEN_ENABLE     (CS40L5X_REG_VIBEGEN_F0_OTP + 0x30)
-#define CS40L5X_REG_CUSTOM_HEADER1_0   0x02807770
-#define CS40L5X_REG_CUSTOM_HEADER2_0   (CS40L5X_REG_CUSTOM_HEADER1_0 + 0xC)
-#define CS40L5X_REG_CUSTOM_DATA_0      (CS40L5X_REG_CUSTOM_HEADER1_0 + 0x14)
-#define CS40L5X_REG_CUSTOM_HEADER1_1   0x0280797C
-#define CS40L5X_REG_CUSTOM_HEADER2_1   (CS40L5X_REG_CUSTOM_HEADER1_1 + 0xC)
-#define CS40L5X_REG_CUSTOM_DATA_1      (CS40L5X_REG_CUSTOM_HEADER1_1 + 0x14)
+/* Register map */
+#define CS40L5X_REG_DEVID                       0x00000000U
+#define CS40L5X_REG_REVID                       (CS40L5X_REG_DEVID + 0x4)
+#define CS40L5X_REG_OTPID                       (CS40L5X_REG_REVID + 0xC)
+#define CS40L5X_REG_IRQ1_STATUS                 0x0000E004U
+#define CS40L5X_REG_IRQ1_INT_1                  0x0000E010U
+#define CS40L5X_REG_IRQ1_INT_2                  (CS40L5X_REG_IRQ1_INT_1 + 0x4)
+#define CS40L5X_REG_IRQ1_INT_8                  (CS40L5X_REG_IRQ1_INT_2 + 0x18)
+#define CS40L5X_REG_IRQ1_INT_9                  (CS40L5X_REG_IRQ1_INT_8 + 0x4)
+#define CS40L5X_REG_IRQ1_INT_10                 (CS40L5X_REG_IRQ1_INT_9 + 0x4)
+#define CS40L5X_REG_IRQ1_INT_14                 0x0000E044U
+#define CS40L5X_REG_IRQ1_INT_18                 0x0000E054U
+#define CS40L5X_REG_IRQ1_MASK_1                 0x0000E090U
+#define CS40L5X_REG_IRQ1_MASK_2                 (CS40L5X_REG_IRQ1_MASK_1 + 0x4)
+#define CS40L5X_REG_IRQ1_MASK_3                 (CS40L5X_REG_IRQ1_MASK_2 + 0x4)
+#define CS40L5X_REG_IRQ1_MASK_4                 (CS40L5X_REG_IRQ1_MASK_3 + 0x4)
+#define CS40L5X_REG_IRQ1_MASK_5                 (CS40L5X_REG_IRQ1_MASK_4 + 0x4)
+#define CS40L5X_REG_IRQ1_MASK_6                 (CS40L5X_REG_IRQ1_MASK_5 + 0x4)
+#define CS40L5X_REG_IRQ1_MASK_7                 (CS40L5X_REG_IRQ1_MASK_6 + 0x4)
+#define CS40L5X_REG_IRQ1_MASK_8                 (CS40L5X_REG_IRQ1_MASK_7 + 0x4)
+#define CS40L5X_REG_IRQ1_MASK_14                0x0000E0C4U
+#define CS40L5X_REG_IRQ1_MASK_18                0x0000E0D4U
+#define CS40L5X_REG_IRQ1_MASK_19                (CS40L5X_REG_IRQ1_MASK_18 + 0x4)
+#define CS40L5X_REG_IRQ1_MASK_20                (CS40L5X_REG_IRQ1_MASK_19 + 0x4)
+#define CS40L5X_REG_DSP_MBOX_2                  0x00011004U
+#define CS40L5X_REG_DSP_MBOX_8                  (CS40L5X_REG_DSP_MBOX_2 + 0x18)
+#define CS40L5X_REG_DSP_VIRTUAL1_MBOX_1         0x00011020U
+#define CS40L5X_REG_HALO_STATE                  0x028021E0U
+#define CS40L5X_REG_BUZZ_FREQ                   0x028027A0U
+#define CS40L5X_REG_BUZZ_LEVEL                  (CS40L5X_REG_BUZZ_FREQ + 0x4)
+#define CS40L5X_REG_BUZZ_DURATION               (CS40L5X_REG_BUZZ_LEVEL + 0x4)
+#define CS40L5X_REG_BUZZ_RES                    (CS40L5X_REG_BUZZ_FREQ + 0x4C)
+#define CS40L5X_REG_DYNAMIC_F0                  0x0280285CU
+#define CS40L5X_REG_REDC                        0x02802F7CU
+#define CS40L5X_REG_F0_EST                      0x02802F84U
+#define CS40L5X_REG_SOURCE_ATTENUATION          0x028030B8U
+#define CS40L5X_REG_LOGGER_ENABLE               0x028033E8U
+#define CS40L5X_REG_LOGGER_DATA                 0x02803440U
+#define CS40L5X_REG_GPIO_EVENT_BASE             0x02803E00U
+#define CS40L5X_REG_STDBY_TIMEOUT               0x028042F8U
+#define CS40L5X_REG_ACTIVE_TIMEOUT              (CS40L5X_REG_STDBY_TIMEOUT + 0x8)
+#define CS40L5X_REG_MAILBOX_QUEUE_WT            0x028042C8U
+#define CS40L5X_REG_MAILBOX_QUEUE_RD            (CS40L5X_REG_MAILBOX_QUEUE_WT + 0x4)
+#define CS40L5X_REG_MAILBOX_STATUS              (CS40L5X_REG_MAILBOX_QUEUE_RD + 0x4)
+#define CS40L5X_REG_WSEQ_POWER                  0x02804348U
+#define CS40L5X_REG_VIBEGEN_F0_OTP_STORED       0x02805C00U
+#define CS40L5X_REG_VIBEGEN_REDC_OTP_STORED     (CS40L5X_REG_VIBEGEN_F0_OTP_STORED + 0x8)
+#define CS40L5X_REG_VIBEGEN_COMPENSATION_ENABLE (CS40L5X_REG_VIBEGEN_F0_OTP_STORED + 0x30)
+#define CS40L5X_REG_CUSTOM_HEADER1_0            0x02807770U
+#define CS40L5X_REG_CUSTOM_HEADER2_0            (CS40L5X_REG_CUSTOM_HEADER1_0 + 0xC)
+#define CS40L5X_REG_CUSTOM_DATA_0               (CS40L5X_REG_CUSTOM_HEADER1_0 + 0x14)
+#define CS40L5X_REG_CUSTOM_HEADER1_1            0x0280797CU
+#define CS40L5X_REG_CUSTOM_HEADER2_1            (CS40L5X_REG_CUSTOM_HEADER1_1 + 0xC)
+#define CS40L5X_REG_CUSTOM_DATA_1               (CS40L5X_REG_CUSTOM_HEADER1_1 + 0x14)
+#define CS40L5X_REG_CALIB_REDC_EST              0x03401110U
 
-#define CS40L5X_MASK_IRQ1_AMPLIFIER_SHORT BIT(31)
-#define CS40L5X_MASK_IRQ8_OVERTEMPERATURE BIT(31)
-#define CS40L5X_MASK_IRQ9_UNDERVOLTAGE    BIT(6)
-#define CS40L5X_MASK_IRQ9_INDUCTOR_SHORT  BIT(7)
-#define CS40L5X_MASK_IRQ9_OVERCURRENT     BIT(8)
-#define CS40L5X_MASK_IRQ10_VDDB           BIT(16)
-#define CS40L5X_MASK_IRQ1_V2MBOX1         BIT(21)
-#define CS40L5X_MASK_INDEX                GENMASK(7, 0)
-#define CS40L5X_MASK_BANK                 (GENMASK(27, 20) | BIT(7))
-#define CS40L5X_MASK_ATTENUATION          GENMASK(11, 9)
-#define CS40L5X_MASK_CUSTOM_PLAYBACK      BIT(16)
+/* Masks */
+#define CS40L5X_MASK_AMP_SHORT_ERR_INT1        BIT(31)
+#define CS40L5X_MASK_TEMP_ERR_INT1             BIT(31)
+#define CS40L5X_MASK_BST_UVP_ERR_INT1          BIT(6)
+#define CS40L5X_MASK_BST_SHORT_ERR_INT1        BIT(7)
+#define CS40L5X_MASK_BST_ILIMIT_ERR_INT1       BIT(8)
+#define CS40L5X_MASK_UVLO_VDDBATT_ERR_INT1     BIT(16)
+#define CS40L5X_MASK_DSP_VIRTUAL2_MBOX_WR_INT1 BIT(21)
+#define CS40L5X_MASK_INDEX                     GENMASK(7, 0)
+#define CS40L5X_MASK_BANK                      (GENMASK(27, 20) | BIT(7))
+#define CS40L5X_MASK_ATTENUATION               GENMASK(11, 9)
+#define CS40L5X_MASK_CUSTOM_PLAYBACK           BIT(16)
 
-#define CS40L5X_MBOX_PREVENT_HIBERNATION 0x02000003
-#define CS40L5X_MBOX_ALLOW_HIBERNATION   0x02000004
-#define CS40L5X_MBOX_START_F0_EST        0x07000001
-#define CS40L5X_MBOX_START_REDC_EST      0x07000002
+/* Outbound mailbox codes */
+#define CS40L5X_MBOX_PREVENT_HIBERNATION 0x02000003U
+#define CS40L5X_MBOX_ALLOW_HIBERNATION   0x02000004U
+#define CS40L5X_MBOX_START_F0_EST        0x07000001U
+#define CS40L5X_MBOX_START_REDC_EST      0x07000002U
 
-#define CS40L5X_MBOX_PLAYBACK_COMPLETE_MBOX   0x01000000
-#define CS40L5X_MBOX_PLAYBACK_COMPLETE_GPIO   0x01000001
-#define CS40L5X_MBOX_PLAYBACK_START_MBOX      0x01000010
-#define CS40L5X_MBOX_PLAYBACK_START_GPIO      0x01000011
-#define CS40L5X_MBOX_INIT                     0x02000000
-#define CS40L5X_MBOX_AWAKE                    0x02000002
-#define CS40L5X_MBOX_F0_EST_START             0x07000011
-#define CS40L5X_MBOX_F0_EST_DONE              0x07000021
-#define CS40L5X_MBOX_REDC_EST_START           0x07000012
-#define CS40L5X_MBOX_REDC_EST_DONE            0x07000022
-#define CS40L5X_MBOX_PERMANENT_SHORT_DETECTED 0x0C000C1C
-#define CS40L5X_MBOX_RUNTIME_SHORT_DETECTED   0x0C000C1D
+/* Inbound mailbox codes */
+#define CS40L5X_MBOX_PLAYBACK_COMPLETE_MBOX   0x01000000U
+#define CS40L5X_MBOX_PLAYBACK_COMPLETE_GPIO   0x01000001U
+#define CS40L5X_MBOX_PLAYBACK_START_MBOX      0x01000010U
+#define CS40L5X_MBOX_PLAYBACK_START_GPIO      0x01000011U
+#define CS40L5X_MBOX_INIT                     0x02000000U
+#define CS40L5X_MBOX_AWAKE                    0x02000002U
+#define CS40L5X_MBOX_F0_EST_START             0x07000011U
+#define CS40L5X_MBOX_F0_EST_DONE              0x07000021U
+#define CS40L5X_MBOX_REDC_EST_START           0x07000012U
+#define CS40L5X_MBOX_REDC_EST_DONE            0x07000022U
+#define CS40L5X_MBOX_PERMANENT_SHORT_DETECTED 0x0C000C1CU
+#define CS40L5X_MBOX_RUNTIME_SHORT_DETECTED   0x0C000C1DU
 
-#define CS40L5X_WRITE_LOGGER_DISABLE    0x00000000
-#define CS40L5X_WRITE_LOGGER_ENABLE     0x00000001
-#define CS40L5X_WRITE_DYNAMIC_F0_ENABLE 0x00000001
-#define CS40L5X_WRITE_F0_COMP_ENABLE    0x00000001
-#define CS40L5X_WRITE_REDC_COMP_ENABLE  0x00000002
-#define CS40L5X_WRITE_PAUSE_PLAYBACK    0x05000000
-#define CS40L5X_WRITE_UNMASK            0x00000000
-#define CS40L5X_WRITE_MASK              0xFFFFFFFF
-#define CS40L5X_WRITE_PCM               0x00000008
-#define CS40L5X_WRITE_PWLE              0x0000000C
+/* Wavetable commands */
+#define CS40L5X_ROM_BANK_CMD    0x01800000U
+#define CS40L5X_CUSTOM_BANK_CMD 0x01400000U
+#define CS40L5X_BUZ_BANK_CMD    0x01000080U
 
-#define CS40L5X_EXP_MBOX_CLEAR     0x00000000
-#define CS40L5X_EXP_DSP_STANDBY    0x00000002
-#define CS40L5X_EXP_MBOX_OVERFLOW  0x00000006
-#define CS40L5X_EXP_REDC_EST_START 0x07000012
-#define CS40L5X_EXP_REDC_EST_DONE  0x07000022
-#define CS40L5X_EXP_F0_EST_START   0x07000011
-#define CS40L5X_EXP_F0_EST_DONE    0x07000021
-
-#define CS40L5X_ROM_BANK_CMD    0x01800000
-#define CS40L5X_CUSTOM_BANK_CMD 0x01400000
-#define CS40L5X_BUZ_BANK_CMD    0x01000080
-
+/* Timing specifications */
 #define CS40L5X_T_DEFAULT_DELAY       K_MSEC(1)
 #define CS40L5X_T_RLPW                K_MSEC(1)
 #define CS40L5X_T_IRS                 K_MSEC(3)
@@ -161,41 +150,47 @@ LOG_MODULE_REGISTER(CS40L5X, CONFIG_HAPTICS_LOG_LEVEL);
 #define CS40L5X_T_WAIT                K_MSEC(5000)
 #define CS40L5X_T_INTERRUPT_DEBOUNCER K_USEC(500)
 
-#define CS40L5X_REG_WIDTH 4
-
-#define CS40L5X_GPIO_LOGIC_LOW  0
-#define CS40L5X_GPIO_LOGIC_HIGH 1
-#define CS40L5X_GPIO_INACTIVE   CS40L5X_GPIO_LOGIC_LOW
-#define CS40L5X_GPIO_ACTIVE     CS40L5X_GPIO_LOGIC_HIGH
-
-#define CS40L5X_LOGGER_SOURCE_STEP 12
-#define CS40L5X_LOGGER_TYPE_STEP   4
-
-#define CS40L5X_MAX_GAIN        100
-#define CS40L5X_MAX_ATTENUATION 0x7FFFFF
-
-#define CS40L5X_SEMAPHORE_MAX 1
-
-#define CS40L5X_NUM_ROM_EFFECTS 27
-#define CS40L5X_NUM_BUZ_EFFECTS 1
-
-#define CS40L5X_BUZ_1MS_RES      0x000020C5
-#define CS40L5X_BUZ_INF_DURATION 0
-
-#define CS40L5X_WSEQ_TERMINATOR 0x00FF0000
-
-#define CS40L5X_HEADER_1            1
-#define CS40L5X_HEADER_2            2
-#define CS40L5X_HEADER_ERROR        0xFFFFFFFF
-#define CS40L5X_MAX_PCM_SAMPLES     378
-#define CS40L5X_MAX_PWLE_SECTIONS   63
-#define CS40L5X_PWLE_DEFAULT_FREQ   0x0320
-#define CS40L5X_PWLE_DEFAULT_FLAGS  0x1
-#define CS40L5X_PWLE_RESERVED_VALUE 0x003FFFFF
-
-#define CS40L5X_FLASH_MEMORY_ERASED 0xFFFFFFFF
-
-#define CS40L5X_NUM_IRQ1_INT 16
+/* Miscellaneous helpers */
+#define CS40L5X_WRITE_LOGGER_DISABLE    0x00000000U
+#define CS40L5X_WRITE_LOGGER_ENABLE     0x00000001U
+#define CS40L5X_WRITE_DYNAMIC_F0_ENABLE 0x00000001U
+#define CS40L5X_WRITE_F0_COMP_ENABLE    0x00000001U
+#define CS40L5X_WRITE_REDC_COMP_ENABLE  0x00000002U
+#define CS40L5X_WRITE_PAUSE_PLAYBACK    0x05000000U
+#define CS40L5X_WRITE_UNMASK            0x00000000U
+#define CS40L5X_WRITE_MASK              0xFFFFFFFFU
+#define CS40L5X_WRITE_PCM               0x00000008U
+#define CS40L5X_WRITE_PWLE              0x0000000CU
+#define CS40L5X_EXP_MBOX_CLEAR          0x00000000U
+#define CS40L5X_EXP_DSP_STANDBY         0x00000002U
+#define CS40L5X_EXP_MBOX_OVERFLOW       0x00000006U
+#define CS40L5X_EXP_REDC_EST_START      0x07000012U
+#define CS40L5X_EXP_REDC_EST_DONE       0x07000022U
+#define CS40L5X_EXP_F0_EST_START        0x07000011U
+#define CS40L5X_EXP_F0_EST_DONE         0x07000021U
+#define CS40L5X_GPIO_LOGIC_LOW          0
+#define CS40L5X_GPIO_LOGIC_HIGH         1
+#define CS40L5X_GPIO_INACTIVE           CS40L5X_GPIO_LOGIC_LOW
+#define CS40L5X_GPIO_ACTIVE             CS40L5X_GPIO_LOGIC_HIGH
+#define CS40L5X_LOGGER_SOURCE_STEP      12
+#define CS40L5X_LOGGER_TYPE_STEP        4
+#define CS40L5X_MAX_GAIN                100
+#define CS40L5X_MAX_ATTENUATION         0x007FFFFFU
+#define CS40L5X_NUM_ROM_EFFECTS         27
+#define CS40L5X_NUM_BUZ_EFFECTS         1
+#define CS40L5X_BUZ_1MS_RES             0x000020C5U
+#define CS40L5X_BUZ_INF_DURATION        0
+#define CS40L5X_WSEQ_TERMINATOR         0x00FF0000U
+#define CS40L5X_HEADER_1                1
+#define CS40L5X_HEADER_2                2
+#define CS40L5X_HEADER_ERROR            0xFFFFFFFFU
+#define CS40L5X_MAX_PCM_SAMPLES         378
+#define CS40L5X_MAX_PWLE_SECTIONS       63
+#define CS40L5X_PWLE_DEFAULT_FREQ       0x0320U
+#define CS40L5X_PWLE_DEFAULT_FLAGS      0x1
+#define CS40L5X_PWLE_RESERVED_VALUE     0x003FFFFFU
+#define CS40L5X_FLASH_MEMORY_ERASED     0xFFFFFFFFU
+#define CS40L5X_NUM_IRQ1_INT            16
 
 enum cs40l5x_irq {
 	CS40L5X_INT1,
@@ -268,22 +263,22 @@ static const struct cs40l5x_multi_write cs40l5x_b0_errata_external_boost[] = {
 	 .len = 18}};
 
 static const struct cs40l5x_multi_write cs40l5x_irq_clear[] = {
-	{.buf = (uint32_t[]){CS40L5X_REG_IRQ1_INT1, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU,
+	{.buf = (uint32_t[]){CS40L5X_REG_IRQ1_INT_1, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU,
 			     0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU,
 			     0xFFFFFFFFU, 0xFFFFFFFFU},
 	 .len = 11},
-	{.buf = (uint32_t[]){CS40L5X_REG_IRQ1_INT14, 0xFFFFFFFFU}, .len = 2},
-	{.buf = (uint32_t[]){CS40L5X_REG_IRQ1_INT18, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU,
+	{.buf = (uint32_t[]){CS40L5X_REG_IRQ1_INT_14, 0xFFFFFFFFU}, .len = 2},
+	{.buf = (uint32_t[]){CS40L5X_REG_IRQ1_INT_18, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU,
 			     0xFFFFFFFFU, 0xFFFFFFFFU},
 	 .len = 6},
 };
 
 static const struct cs40l5x_multi_write cs40l5x_irq_masks[] = {
-	{.buf = (uint32_t[]){CS40L5X_REG_IRQ1_MASK1, 0x03FFFFFFU, 0xFFDF7FFFU}, .len = 3},
-	{.buf = (uint32_t[]){CS40L5X_REG_IRQ1_MASK4, 0xE0FFFFFFU}, .len = 2},
-	{.buf = (uint32_t[]){CS40L5X_REG_IRQ1_MASK8, 0x7C000FFFU, 0x0101C033U, 0x0000F00CU},
+	{.buf = (uint32_t[]){CS40L5X_REG_IRQ1_MASK_1, 0x03FFFFFFU, 0xFFDF7FFFU}, .len = 3},
+	{.buf = (uint32_t[]){CS40L5X_REG_IRQ1_MASK_4, 0xE0FFFFFFU}, .len = 2},
+	{.buf = (uint32_t[]){CS40L5X_REG_IRQ1_MASK_8, 0x7C000FFFU, 0x0101C033U, 0x0000F00CU},
 	 .len = 4},
-	{.buf = (uint32_t[]){CS40L5X_REG_IRQ1_MASK20, 0x15FFF000U}, .len = 2},
+	{.buf = (uint32_t[]){CS40L5X_REG_IRQ1_MASK_20, 0x15FFF000U}, .len = 2},
 };
 
 static const struct cs40l5x_multi_write cs40l5x_pseq[] = {
@@ -532,10 +527,10 @@ static int cs40l5x_write_mailbox(const struct device *const dev, const uint32_t 
 	int ret;
 
 	do {
-		ret = cs40l5x_write(dev, CS40L5X_REG_DSP_V1MBOX, mailbox_command);
+		ret = cs40l5x_write(dev, CS40L5X_REG_DSP_VIRTUAL1_MBOX_1, mailbox_command);
 		if (ret >= 0) {
-			return cs40l5x_poll(dev, CS40L5X_REG_DSP_V1MBOX, CS40L5X_EXP_MBOX_CLEAR,
-					    CS40L5X_T_MBOX_CLEAR);
+			return cs40l5x_poll(dev, CS40L5X_REG_DSP_VIRTUAL1_MBOX_1,
+					    CS40L5X_EXP_MBOX_CLEAR, CS40L5X_T_MBOX_CLEAR);
 		}
 
 		(void)k_sleep(CS40L5X_T_DEFAULT_DELAY);
@@ -548,13 +543,13 @@ static int cs40l5x_write_mailbox(const struct device *const dev, const uint32_t 
 
 static int cs40l5x_increment_mailbox(const struct device *const dev, uint32_t *const mbox_ptr)
 {
-	if (*mbox_ptr + CS40L5X_REG_WIDTH < CS40L5X_REG_DSP_MBOX_END) {
+	if (*mbox_ptr < CS40L5X_REG_DSP_MBOX_8) {
 		*mbox_ptr += CS40L5X_REG_WIDTH;
 	} else {
-		*mbox_ptr = CS40L5X_REG_DSP_MBOX_BASE;
+		*mbox_ptr = CS40L5X_REG_DSP_MBOX_2;
 	}
 
-	return cs40l5x_write(dev, CS40L5X_REG_MBOX_Q_READ, *mbox_ptr);
+	return cs40l5x_write(dev, CS40L5X_REG_MAILBOX_QUEUE_RD, *mbox_ptr);
 }
 
 static int cs40l5x_poll_mailbox(const struct device *const dev, const uint32_t mailbox_command,
@@ -563,7 +558,7 @@ static int cs40l5x_poll_mailbox(const struct device *const dev, const uint32_t m
 	uint32_t mbox_rd_ptr;
 	int ret;
 
-	ret = cs40l5x_read(dev, CS40L5X_REG_MBOX_Q_READ, &mbox_rd_ptr);
+	ret = cs40l5x_read(dev, CS40L5X_REG_MAILBOX_QUEUE_RD, &mbox_rd_ptr);
 	if (ret < 0) {
 		return ret;
 	}
@@ -581,12 +576,12 @@ static int cs40l5x_reset_mailbox(const struct device *const dev)
 	uint32_t mbox_ptr;
 	int ret;
 
-	ret = cs40l5x_read(dev, CS40L5X_REG_MBOX_Q_WRITE, &mbox_ptr);
+	ret = cs40l5x_read(dev, CS40L5X_REG_MAILBOX_QUEUE_WT, &mbox_ptr);
 	if (ret < 0) {
 		return ret;
 	}
 
-	return cs40l5x_write(dev, CS40L5X_REG_MBOX_Q_READ, mbox_ptr);
+	return cs40l5x_write(dev, CS40L5X_REG_MAILBOX_QUEUE_RD, mbox_ptr);
 }
 
 static int cs40l5x_wait_for_amplifier(const struct device *const dev)
@@ -781,19 +776,19 @@ static int cs40l5x_process_mailbox(const struct device *const dev)
 	struct cs40l5x_data *const data = dev->data;
 	int ret;
 
-	ret = cs40l5x_read(dev, CS40L5X_REG_MBOX_Q_STATUS, &mbox_status);
+	ret = cs40l5x_read(dev, CS40L5X_REG_MAILBOX_STATUS, &mbox_status);
 	if (ret < 0) {
 		LOG_INST_DBG(config->log, "failed to get mailbox status (%d)", ret);
 		return ret;
 	}
 
-	ret = cs40l5x_read(dev, CS40L5X_REG_MBOX_Q_READ, &mbox_rd_ptr);
+	ret = cs40l5x_read(dev, CS40L5X_REG_MAILBOX_QUEUE_RD, &mbox_rd_ptr);
 	if (ret < 0) {
 		LOG_INST_DBG(config->log, "failed to get mailbox read pointer (%d)", ret);
 		return ret;
 	}
 
-	ret = cs40l5x_read(dev, CS40L5X_REG_MBOX_Q_WRITE, &mbox_wr_ptr);
+	ret = cs40l5x_read(dev, CS40L5X_REG_MAILBOX_QUEUE_WT, &mbox_wr_ptr);
 	if (ret < 0) {
 		LOG_INST_DBG(config->log, "failed to get mailbox write pointer (%d)", ret);
 		return ret;
@@ -869,7 +864,7 @@ static int cs40l5x_process_mailbox(const struct device *const dev)
 		}
 	} while (mbox_rd_ptr != mbox_wr_ptr);
 
-	return cs40l5x_write(dev, CS40L5X_REG_IRQ1_INT2, CS40L5X_MASK_IRQ1_V2MBOX1);
+	return cs40l5x_write(dev, CS40L5X_REG_IRQ1_INT_2, CS40L5X_MASK_DSP_VIRTUAL2_MBOX_WR_INT1);
 }
 
 static int cs40l5x_process_interrupts(const struct device *const dev,
@@ -879,67 +874,68 @@ static int cs40l5x_process_interrupts(const struct device *const dev,
 	uint32_t error_bitmask = 0;
 	int ret;
 
-	if (FIELD_GET(CS40L5X_MASK_IRQ1_AMPLIFIER_SHORT, irq_ints[CS40L5X_INT1]) != 0) {
+	if (FIELD_GET(CS40L5X_MASK_AMP_SHORT_ERR_INT1, irq_ints[CS40L5X_INT1]) != 0) {
 		LOG_INST_WRN(config->log, "amplifier short detected");
 
 		error_bitmask |= HAPTICS_ERROR_OVERCURRENT;
 
-		ret = cs40l5x_write(dev, CS40L5X_REG_IRQ1_INT1, CS40L5X_MASK_IRQ1_AMPLIFIER_SHORT);
+		ret = cs40l5x_write(dev, CS40L5X_REG_IRQ1_INT_1, CS40L5X_MASK_AMP_SHORT_ERR_INT1);
 		if (ret < 0) {
 			return ret;
 		}
 	}
 
-	if (FIELD_GET(CS40L5X_MASK_IRQ8_OVERTEMPERATURE, irq_ints[CS40L5X_INT8]) != 0) {
+	if (FIELD_GET(CS40L5X_MASK_TEMP_ERR_INT1, irq_ints[CS40L5X_INT8]) != 0) {
 		LOG_INST_WRN(config->log, "overtemperature detected");
 
 		error_bitmask |= HAPTICS_ERROR_OVERTEMPERATURE;
 
-		ret = cs40l5x_write(dev, CS40L5X_REG_IRQ1_INT8, CS40L5X_MASK_IRQ8_OVERTEMPERATURE);
+		ret = cs40l5x_write(dev, CS40L5X_REG_IRQ1_INT_8, CS40L5X_MASK_TEMP_ERR_INT1);
 		if (ret < 0) {
 			return ret;
 		}
 	}
 
-	if (FIELD_GET(CS40L5X_MASK_IRQ9_UNDERVOLTAGE, irq_ints[CS40L5X_INT9]) != 0) {
+	if (FIELD_GET(CS40L5X_MASK_BST_UVP_ERR_INT1, irq_ints[CS40L5X_INT9]) != 0) {
 		LOG_INST_WRN(config->log, "undervoltage detected");
 
 		error_bitmask |= HAPTICS_ERROR_UNDERVOLTAGE;
 
-		ret = cs40l5x_write(dev, CS40L5X_REG_IRQ1_INT9, CS40L5X_MASK_IRQ9_UNDERVOLTAGE);
+		ret = cs40l5x_write(dev, CS40L5X_REG_IRQ1_INT_9, CS40L5X_MASK_BST_UVP_ERR_INT1);
 		if (ret < 0) {
 			return ret;
 		}
 	}
 
-	if (FIELD_GET(CS40L5X_MASK_IRQ9_INDUCTOR_SHORT, irq_ints[CS40L5X_INT9]) != 0) {
+	if (FIELD_GET(CS40L5X_MASK_BST_SHORT_ERR_INT1, irq_ints[CS40L5X_INT9]) != 0) {
 		LOG_INST_WRN(config->log, "inductor short detected");
 
 		error_bitmask |= HAPTICS_ERROR_OVERCURRENT;
 
-		ret = cs40l5x_write(dev, CS40L5X_REG_IRQ1_INT9, CS40L5X_MASK_IRQ9_INDUCTOR_SHORT);
+		ret = cs40l5x_write(dev, CS40L5X_REG_IRQ1_INT_9, CS40L5X_MASK_BST_SHORT_ERR_INT1);
 		if (ret < 0) {
 			return ret;
 		}
 	}
 
-	if (FIELD_GET(CS40L5X_MASK_IRQ9_OVERCURRENT, irq_ints[CS40L5X_INT9]) != 0) {
+	if (FIELD_GET(CS40L5X_MASK_BST_ILIMIT_ERR_INT1, irq_ints[CS40L5X_INT9]) != 0) {
 		LOG_INST_WRN(config->log, "overcurrent condition detected");
 
 		error_bitmask |= HAPTICS_ERROR_OVERCURRENT;
 
-		ret = cs40l5x_write(dev, CS40L5X_REG_IRQ1_INT9, CS40L5X_MASK_IRQ9_OVERCURRENT);
+		ret = cs40l5x_write(dev, CS40L5X_REG_IRQ1_INT_9, CS40L5X_MASK_BST_ILIMIT_ERR_INT1);
 		if (ret < 0) {
 			return ret;
 		}
 	}
 
-	if (FIELD_GET(CS40L5X_MASK_IRQ10_VDDB, irq_ints[CS40L5X_INT10]) != 0) {
+	if (FIELD_GET(CS40L5X_MASK_UVLO_VDDBATT_ERR_INT1, irq_ints[CS40L5X_INT10]) != 0) {
 		LOG_INST_WRN(config->log, "battery undervoltage detected");
 
 		error_bitmask |= HAPTICS_ERROR_UNDERVOLTAGE;
 
-		ret = cs40l5x_write(dev, CS40L5X_REG_IRQ1_INT10, CS40L5X_MASK_IRQ10_VDDB);
+		ret = cs40l5x_write(dev, CS40L5X_REG_IRQ1_INT_10,
+				    CS40L5X_MASK_UVLO_VDDBATT_ERR_INT1);
 		if (ret < 0) {
 			return ret;
 		}
@@ -958,32 +954,32 @@ static int cs40l5x_retrieve_interrupt_statuses(const struct device *const dev,
 	uint32_t irq_masks[CS40L5X_NUM_IRQ1_INT];
 	int ret;
 
-	ret = cs40l5x_burst_read(dev, CS40L5X_REG_IRQ1_INT1, irq_ints, 10);
+	ret = cs40l5x_burst_read(dev, CS40L5X_REG_IRQ1_INT_1, irq_ints, 10);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = cs40l5x_read(dev, CS40L5X_REG_IRQ1_INT14, &irq_ints[CS40L5X_INT14]);
+	ret = cs40l5x_read(dev, CS40L5X_REG_IRQ1_INT_14, &irq_ints[CS40L5X_INT14]);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = cs40l5x_burst_read(dev, CS40L5X_REG_IRQ1_INT18, &irq_ints[CS40L5X_INT18], 5);
+	ret = cs40l5x_burst_read(dev, CS40L5X_REG_IRQ1_INT_18, &irq_ints[CS40L5X_INT18], 5);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = cs40l5x_burst_read(dev, CS40L5X_REG_IRQ1_MASK1, irq_masks, 10);
+	ret = cs40l5x_burst_read(dev, CS40L5X_REG_IRQ1_MASK_1, irq_masks, 10);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = cs40l5x_read(dev, CS40L5X_REG_IRQ1_MASK14, &irq_masks[CS40L5X_INT14]);
+	ret = cs40l5x_read(dev, CS40L5X_REG_IRQ1_MASK_14, &irq_masks[CS40L5X_INT14]);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = cs40l5x_burst_read(dev, CS40L5X_REG_IRQ1_MASK18, &irq_masks[CS40L5X_INT18], 5);
+	ret = cs40l5x_burst_read(dev, CS40L5X_REG_IRQ1_MASK_18, &irq_masks[CS40L5X_INT18], 5);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1037,7 +1033,7 @@ static void cs40l5x_interrupt_worker(struct k_work *work)
 		goto exit_pm;
 	}
 
-	if (irq_ints[CS40L5X_INT2] & CS40L5X_MASK_IRQ1_V2MBOX1) {
+	if (irq_ints[CS40L5X_INT2] & CS40L5X_MASK_DSP_VIRTUAL2_MBOX_WR_INT1) {
 		ret = cs40l5x_process_mailbox(data->dev);
 		if (ret < 0) {
 			LOG_INST_DBG(config->log, "failed to read process mailbox (%d)", ret);
@@ -1123,15 +1119,15 @@ static int cs40l5x_click_compensation(const struct device *const dev)
 		return 0;
 	}
 
-	if (cs40l5x_write(dev, CS40L5X_REG_VIBEGEN_F0_OTP, data->calibration.f0) >= 0) {
+	if (cs40l5x_write(dev, CS40L5X_REG_VIBEGEN_F0_OTP_STORED, data->calibration.f0) >= 0) {
 		enable |= CS40L5X_WRITE_F0_COMP_ENABLE;
 	}
 
-	if (cs40l5x_write(dev, CS40L5X_REG_VIBEGEN_REDC_OTP, data->calibration.redc) >= 0) {
+	if (cs40l5x_write(dev, CS40L5X_REG_VIBEGEN_REDC_OTP_STORED, data->calibration.redc) >= 0) {
 		enable |= CS40L5X_WRITE_REDC_COMP_ENABLE;
 	}
 
-	return cs40l5x_write(dev, CS40L5X_REG_VIBEGEN_ENABLE, enable);
+	return cs40l5x_write(dev, CS40L5X_REG_VIBEGEN_COMPENSATION_ENABLE, enable);
 }
 
 static inline bool cs40l5x_is_memory_erased(const struct cs40l5x_calibration *const calibration)
@@ -1394,7 +1390,7 @@ static int cs40l5x_reset(const struct device *const dev)
 		return ret;
 	}
 
-	ret = cs40l5x_poll(dev, CS40L5X_REG_DSP_HALO_STATE, CS40L5X_EXP_DSP_STANDBY,
+	ret = cs40l5x_poll(dev, CS40L5X_REG_HALO_STATE, CS40L5X_EXP_DSP_STANDBY,
 			   CS40L5X_T_DSP_READY);
 	if (ret < 0) {
 		LOG_INST_DBG(config->log, "expected standby after hardware reset (%d)", ret);
@@ -1616,7 +1612,7 @@ static int cs40l5x_calibrate_f0(const struct device *const dev, uint32_t *const 
 		return ret;
 	}
 
-	return cs40l5x_read(dev, CS40L5X_REG_CALIB_F0_EST, f0);
+	return cs40l5x_read(dev, CS40L5X_REG_F0_EST, f0);
 }
 
 static int cs40l5x_run_calibration(const struct device *const dev, uint32_t *const redc,
@@ -1630,7 +1626,7 @@ static int cs40l5x_run_calibration(const struct device *const dev, uint32_t *con
 		return ret;
 	}
 
-	ret = cs40l5x_write(dev, CS40L5X_REG_CALIB_F0_EST_REDC, *redc);
+	ret = cs40l5x_write(dev, CS40L5X_REG_REDC, *redc);
 	if (ret < 0) {
 		LOG_INST_DBG(config->log, "failed to update ReDC for F0 estimation (%d)", ret);
 		return ret;
@@ -2360,7 +2356,7 @@ static int cs40l5x_pm_resume(const struct device *const dev)
 
 	LOG_INST_DBG(config->log, "disabling hibernation");
 
-	ret = cs40l5x_poll(dev, CS40L5X_REG_DSP_HALO_STATE, CS40L5X_EXP_DSP_STANDBY,
+	ret = cs40l5x_poll(dev, CS40L5X_REG_HALO_STATE, CS40L5X_EXP_DSP_STANDBY,
 			   CS40L5X_T_DSP_READY);
 	if (ret < 0) {
 		LOG_INST_DBG(config->log, "expected standby state upon wakeup (%d)", ret);
@@ -2487,7 +2483,7 @@ static int cs40l5x_init(const struct device *dev)
 	}
 
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_CALIBRATION) &&
-	    k_sem_init(&data->calibration_semaphore, 0, CS40L5X_SEMAPHORE_MAX) < 0) {
+	    k_sem_init(&data->calibration_semaphore, 0, 1) < 0) {
 		return -ENOMEM;
 	}
 
