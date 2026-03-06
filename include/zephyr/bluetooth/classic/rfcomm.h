@@ -233,6 +233,16 @@ struct bt_rfcomm_rpn {
  */
 int bt_rfcomm_server_register(struct bt_rfcomm_server *server);
 
+/** @brief Unregister RFCOMM server
+ *
+ *  Unregister RFCOMM server for a channel.
+ *
+ *  @param server Server structure.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_rfcomm_server_unregister(struct bt_rfcomm_server *server);
+
 /** @brief Connect RFCOMM channel
  *
  *  Connect RFCOMM dlc by channel, once the connection is completed dlc

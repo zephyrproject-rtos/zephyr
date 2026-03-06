@@ -233,6 +233,15 @@ int bt_rfcomm_server_register(struct bt_rfcomm_server *server)
 	return 0;
 }
 
+int bt_rfcomm_server_unregister(struct bt_rfcomm_server *server)
+{
+	if (!sys_slist_find_and_remove(&servers, &server->node)) {
+		return -ENOENT;
+	}
+
+	return 0;
+}
+
 static void rfcomm_dlc_tx_trigger(struct bt_rfcomm_dlc *dlc)
 {
 	int err;
