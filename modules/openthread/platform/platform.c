@@ -22,13 +22,15 @@ void otSysInit(int argc, char *argv[])
 	ARG_UNUSED(argv);
 
 	platformRadioInit();
-	platformAlarmInit();
+	platformAlarmMicroInit();
+	platformAlarmMilliInit();
 }
 
 void otSysProcessDrivers(otInstance *aInstance)
 {
 	platformRadioProcess(aInstance);
-	platformAlarmProcess(aInstance);
+	platformAlarmMicroProcess(aInstance);
+	platformAlarmMilliProcess(aInstance);
 
 	if (IS_ENABLED(CONFIG_OPENTHREAD_COPROCESSOR)) {
 		platformUartProcess(aInstance);

@@ -2,7 +2,8 @@
 
 zephyr_library_named(openthread_platform)
 zephyr_library_sources(
-  alarm.c
+  alarm_micro.c
+  alarm_milli.c
   entropy.c
   misc.c
   platform.c
