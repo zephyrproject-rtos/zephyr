@@ -69,18 +69,19 @@ Sample shell interaction
    1
    uart:~$ usbh device descriptor device 1
    host: USB device with address 1
-   bLength                 18
-   bDescriptorType         1
-   bcdUSB                  200
-   bDeviceClass            239
-   bDeviceSubClass         2
-   bDeviceProtocol         1
-   bMaxPacketSize0         64
-   idVendor                2fe3
-   idProduct               ffff
-   bcdDevice               402
-   iManufacturer           1
-   iProduct                2
-   iSerial                 3
-   bNumConfigurations      1
+   Device Descriptor:
+     bLength                        18
+     bDescriptorType                 1
+     bcdUSB                       2.00
+     bDeviceClass                  239
+     bDeviceSubClass                 2
+     bDeviceProtocol                 1
+     bMaxPacketSize0                64
+     idVendor                   0x2FE3
+     idProduct                  0xFFFF
+     bcdDevice                    4.02
+     iManufacturer                   1
+     iProduct                        2
+     iSerial                         3
+     bNumConfigurations              1
    uart:~$
