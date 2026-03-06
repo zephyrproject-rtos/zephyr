@@ -101,15 +101,7 @@ config HAWKBIT_DOMAIN_NAME_MAX_LEN
 
 choice HAWKBIT_DDI_SECURITY
 	prompt "hawkBit DDI API authentication modes"
-	default HAWKBIT_DDI_NO_SECURITY
-
-config HAWKBIT_DDI_NO_SECURITY
-	bool "No authentication security"
-	select DEPRECATED
-	help
-	  No authentication security for the hawkBit DDI API. Support for this
-	  had been removed from the hawkBit server in version 0.8.0. Use gateway
-	  security token authentication instead, if you want something similar.
+	default HAWKBIT_DDI_TARGET_SECURITY
 
 config HAWKBIT_DDI_TARGET_SECURITY
 	bool "Use target security token authentication"
@@ -132,7 +124,6 @@ endchoice
 
 config HAWKBIT_DDI_SECURITY_TOKEN
 	string "Authentication security token"
-	depends on HAWKBIT_DDI_TARGET_SECURITY || HAWKBIT_DDI_GATEWAY_SECURITY
 	default ""
 	help
 	  Authentication security token for the configured hawkBit DDI
