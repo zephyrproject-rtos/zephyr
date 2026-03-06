@@ -2,14 +2,21 @@
 # SPDX-License-Identifier: Apache-2.0
 
 set(jlinkscript ${CMAKE_CURRENT_LIST_DIR}/jlinkscript)
-if(CONFIG_BOARD_FRDM_IMXRT1186_MIMXRT1186_CM7)
+
+# Determine the core type for conditional configuration
+set(is_cm7 FALSE)
+if(CONFIG_BOARD_FRDM_IMXRT1186_MIMXRT1186_CM7 OR CONFIG_BOARD_FRDM_IMXRT1186_MIMXRT1186_CM7_EXTMEM)
+  set(is_cm7 TRUE)
+endif()
+
+if(is_cm7)
   board_runner_args(jlink "--device=MIMXRT1186xxx8_M7" "--no-reset" "--tool-opt=-jlinkscriptfile ${jlinkscript}/frdmimxrt1186_cm7.jlinkscript")
 elseif(CONFIG_BOARD_FRDM_IMXRT1186_MIMXRT1186_CM33)
   board_runner_args(jlink "--device=MIMXRT1186xxx8_M33" "--tool-opt=-jlinkscriptfile ${jlinkscript}/frdmimxrt1186_cm33.jlinkscript")
 endif()
 
 board_runner_args(linkserver "--device=MIMXRT1186xxxxx:FRDM-IMXRT1186")
-if(CONFIG_BOARD_FRDM_IMXRT1186_MIMXRT1186_CM7)
+if(is_cm7)
   board_runner_args(linkserver "--core=cm7")
 endif()
 
