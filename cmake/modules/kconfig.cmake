@@ -402,12 +402,18 @@ if(NOT EXISTS ${autoconf_h_path})
   file(MAKE_DIRECTORY ${autoconf_h_path})
 endif()
 
+zephyr_get(KCONFIG_WARNING_AS_ERROR)
+if(KCONFIG_WARNING_AS_ERROR)
+  set(kconfig_py_flags --warning-as-error)
+endif()
+
 execute_process(
   COMMAND ${CMAKE_COMMAND} -E env
   ${COMMON_KCONFIG_ENV_SETTINGS}
   SHIELD_AS_LIST=${SHIELD_AS_LIST_ESCAPED_COMMAND}
   ${PYTHON_EXECUTABLE}
   ${ZEPHYR_BASE}/scripts/kconfig/kconfig.py
+  ${kconfig_py_flags}
   --zephyr-base=${ZEPHYR_BASE}
   ${input_configs_flags}
   ${KCONFIG_ROOT}
