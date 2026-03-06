@@ -46,6 +46,36 @@ config RENESAS_RA_BATTERY_BACKUP_MANUAL_CONFIGURE
 	  Enable if this SoC's battery backup domain allows switching to VBAT manually.
 	  Leave disabled if switching is automatic.
 
+if CPU_HAS_DCACHE
+
+config CPU_RA_HAS_DCACHE_WRITETHROUGH
+	bool
+	help
+	  Indicates that the SoC supports forcing the data cache to operate in write-through mode.
+
+choice CPU_RA_DCACHE_WRITE_POLICY
+	bool "Renesas RA data cache write policy"
+	default CPU_RA_DCACHE_FORCE_WRITETHROUGH
+	help
+	  Select the DCACHE write policy.
+
+config CPU_RA_DCACHE_FORCE_WRITETHROUGH
+	bool "Force data cache to be write-through"
+	depends on CPU_RA_HAS_DCACHE_WRITETHROUGH
+	help
+	  Force the data cache to operate in write-through mode. This may be necessary for some
+	  SoCs to ensure proper operation of peripherals that directly access memory.
+
+config CPU_RA_DCACHE_WRITEBACK
+	bool "Allow data cache to operate in write-back mode"
+	help
+	  Allow the data cache to operate in write-back mode, which may improve performance but
+	  requires proper cache management to ensure data consistency.
+
+endchoice # CPU_RA_DCACHE_WRITE_POLICY
+
+endif # CPU_HAS_DCACHE
+
 # Promptless (non-user) config options
 
 config SOC_RA_DYNAMIC_INTERRUPT_NUMBER
