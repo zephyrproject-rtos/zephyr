@@ -7,6 +7,17 @@
 menu "Mbed TLS configuration"
 	depends on MBEDTLS_BUILTIN
 
+config MBEDTLS_CFG_FILE
+	string "mbed TLS configuration file"
+	default "config-mbedtls.h"
+	help
+	  Use a specific mbedTLS configuration file. The default config file
+	  file can be tweaked with Kconfig. The default configuration is
+	  suitable to communicate with majority of HTTPS servers on the Internet,
+	  but has relatively many features enabled. To optimize resources for
+	  special TLS usage, use available Kconfig options, or select an
+	  alternative config.
+
 menu "TLS"
 
 config MBEDTLS_SSL_PROTO_TLS1_2
@@ -18,6 +29,17 @@ if MBEDTLS_SSL_PROTO_TLS1_2
 
 config MBEDTLS_SSL_PROTO_DTLS
 	bool "Support for DTLS"
+
+if MBEDTLS_SSL_PROTO_DTLS
+
+config MBEDTLS_SSL_DTLS_CONNECTION_ID
+	bool "DTLS Connection ID extension"
+	help
+	  Enable support for the DTLS Connection ID extension
+	  which allows to identify DTLS connections across changes
+	  in the underlying transport.
+
+endif # MBEDTLS_SSL_PROTO_DTLS
 
 endif # MBEDTLS_SSL_PROTO_TLS1_2
 
@@ -37,6 +59,20 @@ config MBEDTLS_SSL_ALPN
 	bool "Support for setting the supported Application Layer Protocols"
 
 endif # MBEDTLS_SSL_PROTO_TLS1_2 || MBEDTLS_SSL_PROTO_TLS1_3
+
+config MBEDTLS_SSL_MAX_CONTENT_LEN
+	int "Max payload size for TLS protocol message"
+	default 1500
+	help
+	  The TLS standards mandate max payload size of 16384 bytes. So, for
+	  maximum operability and for general-purpose usage, that value must
+	  be used. For specific usages, that value can be largely decreased.
+	  E.g. for DTLS, payload size is limited by UDP datagram size, and
+	  even for HTTPS REST API, the payload can be limited to max size of
+	  (REST request, REST response, server certificate(s)).
+	  mbedTLS uses this value separate for input and output buffers, so
+	  twice this value will be allocated (on mbedTLS own heap, so the
+	  value of MBEDTLS_HEAP_SIZE should accommodate that).
 
 endmenu # TLS
 
@@ -410,6 +446,16 @@ config MBEDTLS_HMAC_DRBG_C
 
 comment "Other configurations"
 
+config MBEDTLS_MEMORY_DEBUG
+	bool "mbed TLS memory debug activation"
+	help
+	  Enable debugging of buffer allocator memory issues. Automatically
+	  prints (to stderr) all (fatal) messages on memory allocation
+	  issues. Enables function for 'debug output' of allocated memory.
+
+config MBEDTLS_DEBUG_C
+	bool "Debug functions (only for TLS and X.509)"
+
 config MBEDTLS_CIPHER
 	bool "Generic cipher layer"
 	default y if PSA_WANT_ALG_CMAC
@@ -441,6 +487,12 @@ config MBEDTLS_PLATFORM_SNPRINTF_ALT
 	  Include `mbedtls/platform.h` for the prototype of this function.
 
 endif # MBEDTLS_PLATFORM_NO_STD_FUNCTIONS
+
+config MBEDTLS_ZEROIZE_ALT
+	bool "mbed TLS alternate mbedtls_platform_zeroize implementation"
+	help
+	  mbed TLS configuration supplies an alternate implementation of
+	  mbedtls_platform_zeroize.
 
 config MBEDTLS_BASE64_C
 	bool "Base64 module"
@@ -698,15 +750,6 @@ config MBEDTLS_PSA_CRYPTO_BUILTIN_KEYS
 	  implement mbedtls_psa_platform_get_builtin_key().
 
 endif # MBEDTLS_PSA_CRYPTO_C
-
-config MBEDTLS_SSL_DTLS_CONNECTION_ID
-	bool "DTLS Connection ID extension"
-	depends on MBEDTLS_SSL_PROTO_DTLS
-	help
-	  Enable support for the DTLS Connection ID extension
-	  which allows to identify DTLS connections across changes
-	  in the underlying transport.
-
 
 config MBEDTLS_NIST_KW_C
 	bool "NIST key wrap"
