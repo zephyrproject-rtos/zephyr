@@ -19,7 +19,9 @@
 
 LOG_MODULE_REGISTER(iocell, CONFIG_SOC_LOG_LEVEL);
 
-#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+#include <zephyr/dt-bindings/power/stm32h5_iocell.h>
+#elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
 #include <zephyr/dt-bindings/power/stm32h7rs_iocell.h>
 #elif defined(CONFIG_SOC_SERIES_STM32N6X)
 #include <zephyr/dt-bindings/power/stm32n6_iocell.h>
@@ -104,6 +106,8 @@ static int iocell_is_hslv_allowed(uint16_t domain)
 	default:
 		return -EINVAL;
 	}
+#else
+	return -EINVAL;
 #endif /* CONFIG_SOC_SERIES_... */
 }
 
@@ -148,6 +152,8 @@ static int iocell_enable_hslv_runtime(uint16_t domain)
 		return -EINVAL;
 	}
 	return 0;
+#else
+	return -EINVAL;
 #endif /* CONFIG_SOC_SERIES_... */
 }
 
@@ -167,15 +173,21 @@ static int iocell_config_domain_auto(uint16_t domain, const char *domain_name)
 
 static int iocell_enable_compensation(uint16_t domain)
 {
-#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
-	/* Currently targets MCU revisions Y & B */
-
-	/* This implements workaround described in ES0596:
-	 * 2.2.15. I/O compensation could alter duty-cycle of high-frequency output signal
-	 */
+#if defined(CONFIG_SOC_SERIES_STM32H5X) || defined(CONFIG_SOC_SERIES_STM32H7RSX)
 	uint32_t shift;
-	uint32_t nmos, pmos;
 
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+	switch (domain) {
+	case STM32_DT_IOCELL_VDDIO:
+		shift = 0;
+		break;
+	case STM32_DT_IOCELL_VDDIO2:
+		shift = 1;
+		break;
+	default:
+		return -EINVAL;
+	}
+#elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
 	switch (domain) {
 	case STM32_DT_IOCELL_VDDIO:
 		shift = 0;
@@ -189,6 +201,7 @@ static int iocell_enable_compensation(uint16_t domain)
 	default:
 		return -EINVAL;
 	}
+#endif /* CONFIG_SOC_SERIES_... */
 
 	uint32_t codesel_bit = BIT((shift * 2) + 1);
 	uint32_t en_bit = BIT(shift * 2);
@@ -207,6 +220,13 @@ static int iocell_enable_compensation(uint16_t domain)
 	while ((SBS->CCCSR & BIT(shift + 8)) == 0) {
 	}
 
+	/* This implements workaround described in ES0596 for revisions Y & B of STM32H7RS:
+	 * 2.2.15. I/O compensation could alter duty-cycle of high-frequency output signal
+	 *
+	 * STM32H5 series is also affected by this issue.
+	 */
+	uint32_t nmos, pmos;
+
 	/* Read and adjust PMOS and NMOS values*/
 	nmos = (SBS->CCVALR >> (8 * shift)) & 0xF;
 	pmos = (SBS->CCVALR >> (8 * shift + 4)) & 0xF;
@@ -215,8 +235,13 @@ static int iocell_enable_compensation(uint16_t domain)
 	pmos = (pmos > 0x2) ? (pmos - 2) : 0x0;
 
 	/* Write modified values back */
-	stm32_reg_modify_bits(&SBS->CCSWVALR, 0xFF << (shift * 8),
-			      ((pmos << 4) | nmos) << (shift * 8));
+	stm32_reg_modify_bits(
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+		&SBS->CCSWCR,
+#elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
+		&SBS->CCSWVALR,
+#endif
+		0xFF << (shift * 8), ((pmos << 4) | nmos) << (shift * 8));
 
 	/* Configure Cell selection for register
 	 * Set COMP_CODESEL bit.
@@ -250,9 +275,7 @@ __maybe_unused static void iocell_hslv_check_log(int domain_id, int is_allowed, 
 	}
 }
 
-#define STM32_IOCELL_INIT(node_id)                                                                 \
-	BUILD_ASSERT(STM32_DT_IOCELL_DOMAIN_VALID(DT_PROP(node_id, domain)),                       \
-		     "Invalid domain ID for: " DT_NODE_FULL_NAME(node_id));                        \
+#define STM32_IOCELL_INIT_HSLV(node_id)                                                            \
 	if (DT_ENUM_HAS_VALUE(node_id, hslv_mode, auto)) {                                         \
 		result = iocell_config_domain_auto(DT_PROP(node_id, domain),                       \
 						   DT_NODE_FULL_NAME(node_id));                    \
@@ -261,23 +284,30 @@ __maybe_unused static void iocell_hslv_check_log(int domain_id, int is_allowed, 
 	}                                                                                          \
 	if (result < 0)                                                                            \
 		ret = result;                                                                      \
-	if (DT_PROP(node_id, compensation_enabled)) {                                              \
-		result = iocell_enable_compensation(DT_PROP(node_id, domain));                     \
-	}                                                                                          \
 	if (IS_ENABLED(CONFIG_STM32_IOCELL_CHECK_ENABLE)) {                                        \
 		iocell_hslv_check_log(DT_PROP(node_id, domain),                                    \
 				      iocell_is_hslv_allowed(DT_PROP(node_id, domain)),            \
 				      DT_ENUM_HAS_VALUE(node_id, hslv_mode, on),                   \
 				      DT_NODE_FULL_NAME(node_id));                                 \
+	}
+
+#define STM32_IOCELL_INIT(node_id)                                                                 \
+	BUILD_ASSERT(STM32_DT_IOCELL_DOMAIN_VALID(DT_PROP(node_id, domain)),                       \
+		     "Invalid domain ID for: " DT_NODE_FULL_NAME(node_id));                        \
+	if (DT_PROP(node_id, compensation_enabled)) {                                              \
+		result = iocell_enable_compensation(DT_PROP(node_id, domain));                     \
 	}                                                                                          \
 	if (result < 0)                                                                            \
-		ret = result;
+		ret = result;                                                                      \
+	if (!DT_HAS_COMPAT_STATUS_OKAY(st_stm32h5_iocell)) {                                       \
+		STM32_IOCELL_INIT_HSLV(node_id)                                                    \
+	}
 
 static int iocell_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	int ret = 0, result = 0;
-#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+#if defined(CONFIG_SOC_SERIES_STM32H5X) || defined(CONFIG_SOC_SERIES_STM32H7RSX)
 	__HAL_RCC_SBS_CLK_ENABLE();
 	/* CSI is required by IO compensation cell */
 	__HAL_RCC_CSI_ENABLE();
