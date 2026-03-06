@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/reset/stm32h5_reset.h>
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/power/stm32h5_iocell.h>
 #include <freq.h>
 #include <mem.h>
 
@@ -120,6 +121,19 @@
 	};
 
 	soc {
+		iocell: iocell {
+			compatible = "st,stm32h5-iocell", "st,stm32-iocell";
+			status = "disabled";
+
+			vddio {
+				domain = <STM32_DT_IOCELL_VDDIO>;
+			};
+
+			vddio2 {
+				domain = <STM32_DT_IOCELL_VDDIO2>;
+			};
+		};
+
 		flash: flash-controller@40022000 {
 			compatible = "st,stm32-flash-controller", "st,stm32l5-flash-controller";
 			reg = <0x40022000 0x400>;
