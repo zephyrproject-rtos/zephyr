@@ -52,6 +52,8 @@ static void soc_rif_config(void)
 	/* Enable the clock for the RIFSC (RIF Security Controller) */
 	__HAL_RCC_RIFSC_CLK_ENABLE();
 
+	/* ADC */
+	RIF_SLAVE_SEC_PRIV(ADC12);
 	/* DCMIPP */
 	RIF_MASTER_CID1_SEC_PRIV(DCMIPP);
 	RIF_SLAVE_SEC_PRIV(DCMIPP);
