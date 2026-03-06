@@ -1016,6 +1016,13 @@ USB
 
 * :dtcompatible:`maxim,max3421e_spi` has been renamed to :dtcompatible:`maxim,max3421e-spi`.
 
+* UVC device application API got modified:
+
+  * ``uvc_set_video_dev`` has been renamed to :c:func:`uvc_device_init`
+  * ``uvc_add_format`` has been renamed to :c:func:`uvc_device_add_format`
+  * :c:func:`uvc_device_enable` has been introduced
+  * :c:func:`uvc_device_shutdown` has been introduced
+
 USB-C
 =====
 
