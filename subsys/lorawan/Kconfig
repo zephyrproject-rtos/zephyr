@@ -53,6 +53,8 @@ endmenu
 
 rsource "loramac-node/Kconfig"
 
+rsource "native/Kconfig"
+
 rsource "emul/Kconfig"
 
 rsource "nvm/Kconfig"
