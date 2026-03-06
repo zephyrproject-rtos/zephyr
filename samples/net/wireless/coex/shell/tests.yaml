@@ -1,0 +1,61 @@
+common:
+  build_only: true
+  tags:
+    - net
+    - bluetooth
+    - wifi
+    - openthread
+    - coex
+sample:
+  description: Test Bluetooth, Wi-Fi, and OpenThread coexistence shell functionality
+  name: Wireless coexistence shell
+tests:
+  sample.net.wireless.coex.shell.wifi_ble_ot.nxp:
+    platform_allow:
+      - frdm_rw612
+      - rd_rw612_bga
+      - mimxrt1060_evk@C/mimxrt1062/qspi
+    integration_platforms:
+      - rd_rw612_bga
+    extra_args:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+      - EXTRA_CONF_FILE="
+          nxp/overlay_wifi_rw612.conf
+          nxp/overlay_wifi_hostap_rw612.conf
+          nxp/overlay_ot_rw612.conf"
+
+  sample.net.wireless.coex.shell.wifi_ble_br_ot.nxp:
+    platform_allow:
+      - frdm_rw612
+      - rd_rw612_bga
+      - mimxrt1060_evk@C/mimxrt1062/qspi
+    integration_platforms:
+      - rd_rw612_bga
+    extra_args:
+      - CONF_FILE="prj_br.conf"
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+      - EXTRA_CONF_FILE="
+          nxp/overlay_wifi_rw612.conf
+          nxp/overlay_wifi_hostap_rw612.conf
+          nxp/overlay_ot_rw612.conf"
+
+  # Auto-PTS test variant with privacy and MITM configurations
+  sample.net.wireless.coex.shell.auto_pts.nxp:
+    harness: bluetooth
+    platform_allow:
+      - frdm_rw612
+      - rd_rw612_bga
+      - mimxrt1060_evk@C/mimxrt1062/qspi
+    integration_platforms:
+      - rd_rw612_bga
+    extra_args:
+      - EXTRA_CONF_FILE="nxp/overlay_bt_auto_pts.conf"
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+
+  sample.net.wireless.coex.shell.ble_ot.nxp.mcxw72:
+    platform_allow:
+      - mcxw72_evk
+    integration_platforms:
+      - mcxw72_evk
+    extra_args:
+      - EXTRA_CONF_FILE="nxp/overlay_ot_host_mcxw72.conf"
