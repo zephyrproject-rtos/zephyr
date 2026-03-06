@@ -30,6 +30,8 @@ set(ECLAIR_REPORT_ADDITIONAL_OPTIONS "")
 # Get eclair specific option file variables, also needed if invoked with sysbuild
 zephyr_get(ECLAIR_OPTIONS_FILE)
 
+include(${CMAKE_CURRENT_LIST_DIR}/sca_options.cmake)
+
 if(ECLAIR_OPTIONS_FILE)
   if(IS_ABSOLUTE ${ECLAIR_OPTIONS_FILE})
     set(ECLAIR_OPTIONS ${ECLAIR_OPTIONS_FILE})
@@ -37,8 +39,32 @@ if(ECLAIR_OPTIONS_FILE)
     set(ECLAIR_OPTIONS ${APPLICATION_CONFIG_DIR}/${ECLAIR_OPTIONS_FILE})
   endif()
   include(${ECLAIR_OPTIONS})
-else()
-  include(${CMAKE_CURRENT_LIST_DIR}/sca_options.cmake)
+endif()
+
+# Ensure that exactly one ECLAIR_RULESET is selected
+set(ECLAIR_RULESETS
+    ECLAIR_RULESET_FIRST_ANALYSIS
+    ECLAIR_RULESET_STU
+    ECLAIR_RULESET_STU_HEAVY
+    ECLAIR_RULESET_WP
+    ECLAIR_RULESET_STD_LIB
+    ECLAIR_RULESET_ZEPHYR_GUIDELINES
+    ECLAIR_RULESET_USER
+)
+
+set(selected_rulesets "")
+foreach(ruleset ${ECLAIR_RULESETS})
+  if(${ruleset})
+    list(APPEND selected_rulesets ${ruleset})
+  endif()
+endforeach()
+
+list(LENGTH selected_rulesets selected_count)
+if(selected_count EQUAL 0)
+  message(FATAL_ERROR "No ECLAIR_RULESET is selected. Please select exactly one.")
+elseif(selected_count GREATER 1)
+  message(FATAL_ERROR "Only one ECLAIR_RULESET can be selected at a time.
+                       Selected: ${selected_rulesets}")
 endif()
 
 # Default value
