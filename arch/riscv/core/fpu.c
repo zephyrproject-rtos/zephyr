@@ -187,6 +187,71 @@ void z_riscv_fpu_enter_exc(void)
 	z_riscv_fpu_disable();
 }
 
+#ifdef CONFIG_RISCV_FPU_INSN_VALIDATE
+/* * Rigorous FP instruction validation used only during debug/assertion builds.
+ * It ensures the fast-path assembly hasn't accidentally trapped a non-FP
+ * instruction (like a Vector instruction) into the FPU context switch.
+ */
+static inline int debug_is_fp_insn(uint32_t instruction)
+{
+	/* 1. Check for Compressed (16-bit) Instructions */
+	if ((instruction & 0x3) != 0x3) {
+#ifdef CONFIG_RISCV_ISA_EXT_C
+		/* RVC Quadrants 00 and 10 are the only ones with FP loads/stores */
+		if ((instruction & 0x1) != 0) {
+			return 0;
+		}
+
+		uint32_t op = (instruction >> 13) & 0x7;
+#ifdef CONFIG_64BIT
+		/* valid FP instructions */
+		/* 00: C.FLD (001) C.FSD (101) */
+		/* 10: C.FLDSP (001) C.FSDSP (101) */
+		return (op & 3) == 0b01;
+#else
+		/* valid FP instructions */
+		/* 00: C.FLD (001) C.FSD (101) 
+		 * C.FLW (011) C.FSW (111) */
+		/* 10: C.FLDSP (001) C.FSDSP (101) 
+		 * C.FLWSP (011) C.FSWSP (111) */
+		return (op & 1) == 1;
+#endif
+#else
+		return 0;
+#endif
+	}
+
+	/* 2. Check Standard 32-bit Instructions */
+	uint32_t opcode = instruction & 0x7F;
+
+	switch (opcode) {
+	case 0b0000111: /* LOAD-FP */
+	case 0b0100111: /* STORE-FP */
+	{
+		/* Valid FP widths: 
+		 * Half (1), Single (2), Double (3), Quad (4) */
+		uint32_t funct3 = (instruction >> 12) & 7;
+		return (funct3 >= 1 && funct3 <= 4);
+	}
+	case 0b1000011: /* FMADD */
+	case 0b1000111: /* FMSUB */
+	case 0b1001011: /* FNMSUB */
+	case 0b1010011: /* FP-OP */
+		return 1;
+
+	case 0b1110011: /* SYSTEM (CSR accesses) */
+	{
+		/* Accessing fflags (1), frm (2), or fcsr (3) traps if FPU is off */
+		uint32_t funct3 = (instruction >> 12) & 0x7;
+		uint32_t csr = instruction >> 20;
+		return ((funct3 & 3) != 0) && (csr >= 1 && csr <= 3);
+	}
+	default:
+		return 0;
+	}
+}
+#endif
+
 /*
  * Process the FPU trap.
  *
@@ -209,6 +274,28 @@ void z_riscv_fpu_trap(struct arch_esf *esf)
 	__ASSERT((esf->mstatus & MSTATUS_FS) == 0 &&
 		 (csr_read(mstatus) & MSTATUS_FS) == 0,
 		 "called despite FPU being accessible");
+
+#ifdef CONFIG_RISCV_FPU_INSN_VALIDATE
+	/* Safely fetch instruction to avoid unaligned access faults */
+#ifdef CONFIG_RISC_V_NO_MTVAL_ON_FP_TRAP
+	uint32_t instruction = *(uint16_t *)(esf->mepc);
+	if ((instruction & 3) == 3) {
+		/* It's a 32-bit instruction, fetch the upper 16 bits */
+		instruction |= ((uint32_t)*(uint16_t *)(esf->mepc + 2)) << 16;
+	}
+#else
+	uint32_t instruction = csr_read(mtval);
+#endif
+
+	/* Force a fatal error if the trap was triggered by a non-FPU instruction */
+	if (!debug_is_fp_insn(instruction)) {
+		LOG_ERR("Fatal Error: Non-FPU instruction (0x%08x) incorrectly routed to FPU trap "
+			"handler.\n",
+			instruction);
+
+		CODE_UNREACHABLE;
+	}
+#endif
 
 	/* save current owner's content  if any */
 	arch_flush_local_fpu();
