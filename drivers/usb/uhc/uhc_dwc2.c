@@ -980,6 +980,49 @@ static int uhc_dwc2_channel_start_transfer_ctrl(struct uhc_dwc2_channel *channel
 	return 0;
 }
 
+static int uhc_dwc2_channel_start_transfer_bulk_intr(struct uhc_dwc2_channel *channel)
+{
+	struct uhc_transfer *const xfer = channel->xfer;
+	size_t size;
+
+	/* Channel has a type already */
+	LOG_WRN("Submit channel type: %d", channel->type);
+
+	LOG_HEXDUMP_WRN(xfer->buf->data, xfer->buf->len, "BULK OUT");
+
+	/* TODO: Do split and calculate lenght? */
+	if (false /* do split? */) {
+		/* TODO: */
+	} else {
+		size = xfer->buf->len;
+	}
+	/* TODO: Calculate num packets */
+	const uint16_t pkt_cnt = calc_packet_count(size, channel->ep_mps);
+
+	/* TODO: Do we need to toggle PID? */
+	enum uhc_dwc2_channel_pid pid = UHC_DWC2_PID_DATA0;
+
+	uint32_t hctsiz = usb_dwc2_set_hctsiz_pid(pid) |
+		usb_dwc2_set_hctsiz_pktcnt(pkt_cnt) |
+		usb_dwc2_set_hctsiz_xfersize(size);
+
+	sys_write32(hctsiz, (mem_addr_t)&channel->regs->hctsiz);
+	sys_write32((uint32_t)xfer->buf->data, (mem_addr_t)&channel->regs->hcdma);
+
+	/* TODO: Verify the frame */
+
+	/* Start transfer */
+	uint32_t hcchar = sys_read32((mem_addr_t)&channel->regs->hcchar);
+
+	hcchar |= USB_DWC2_HCCHAR_CHENA;
+	hcchar &= ~USB_DWC2_HCCHAR_CHDIS;
+	sys_write32(hcchar, (mem_addr_t)&channel->regs->hcchar);
+
+	channel->executing = 1;
+
+	return 0;
+}
+
 struct uhc_dwc2_channel *uhc_dwc2_channel_get_pending(const struct device *dev)
 {
 	struct uhc_dwc2_data *priv = uhc_get_private(dev);
@@ -1043,13 +1086,13 @@ static int uhc_dwc2_submit_xfer(const struct device *const dev, struct uhc_trans
 		xfer->ep, xfer->mps, xfer->interval,
 		xfer->start_frame, xfer->stage, xfer->no_status);
 
-	/* TODO: dma requirement, setup packet must be aligned 4 bytes */
+	/* DMA requirement, setup packet must be aligned 4 bytes */
 	if (((uintptr_t)xfer->setup_pkt % 4)) {
 		LOG_WRN("Setup packet address %p is not 4-byte aligned",
 					xfer->setup_pkt);
 	}
 
-	/* TODO: dma requirement, buffer addr that will used as dma addr also should be aligned */
+	/* DMA requirement, buffer addr that will used as dma addr also should be aligned */
 	if ((xfer->buf != NULL) && ((uintptr_t)net_buf_tail(xfer->buf) % 4)) {
 		LOG_WRN("Buffer address %08lXh is not 4-byte aligned",
 					(uintptr_t)net_buf_tail(xfer->buf));
@@ -1066,6 +1109,8 @@ static int uhc_dwc2_submit_xfer(const struct device *const dev, struct uhc_trans
 		ret = uhc_dwc2_channel_start_transfer_ctrl(channel);
 		break;
 	case USB_EP_TYPE_BULK:
+		ret = uhc_dwc2_channel_start_transfer_bulk_intr(channel);
+		break;
 	case USB_EP_TYPE_INTERRUPT:
 	case USB_EP_TYPE_ISO:
 	default:
