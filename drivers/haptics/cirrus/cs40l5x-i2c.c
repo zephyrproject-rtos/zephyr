@@ -13,9 +13,6 @@
 #include "cs40l5x.h"
 #include <zephyr/sys/byteorder.h>
 
-#define CS40L5X_REG_WIDTH  4
-#define CS40L5X_ADDR_WIDTH CS40L5X_REG_WIDTH
-
 static bool cs40l5x_is_ready_i2c(const struct device *const dev)
 {
 	const struct cs40l5x_config *const config = dev->config;
