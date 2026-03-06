@@ -139,6 +139,15 @@
 			fdpll-src = "xosc1";
 			fdpll-en = <1>;
 		};
+
+		fdpll1 {
+			subsystem = <CLOCK_MCHP_FDPLL_ID_FDPLL1>;
+			fdpll-divider-ratio-int = <15>;
+			fdpll-lock-bypass-en = <1>;
+			fdpll-wakeup-fast-en = <1>;
+			fdpll-src = "xosc1";
+			fdpll-en = <1>;
+		};
 	};
 
 	xosc32k: xosc32k {
@@ -169,6 +178,14 @@
 			gclkgen-run-in-standby-en = <1>;
 			gclkgen-en = <1>;
 		};
+
+		gclkgen2 {
+			subsystem = <CLOCK_MCHP_GCLKGEN_ID_GEN2>;
+			gclkgen-div-factor = <2>;
+			gclkgen-src = "fdpll1";
+			gclkgen-run-in-standby-en = <1>;
+			gclkgen-en = <1>;
+		};
 	};
 
 	gclkperiph: gclkperiph {
@@ -192,11 +209,22 @@
 			gclkperiph-src = "gclk1";
 			gclkperiph-en = <0>;
 		};
+
+		usb0 {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_USB>;
+			gclkperiph-src = "gclk2";
+			gclkperiph-en = <0>;
+		};
 	};
 
 	mclkperiph: mclkperiph {
 		compatible = "microchip,sam-d5x-e5x-mclkperiph";
 		#clock-cells = <1>;
+
+		usb0 {
+			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_APBB_USB>;
+			mclk-en = <1>;
+		};
 	};
 };
 
@@ -318,5 +346,11 @@
 	pinctrl-0 = <&sercom0_spi_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&portc 24 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+zephyr_udc0: &usb0 {
+	pinctrl-0 = <&usb_dc_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
