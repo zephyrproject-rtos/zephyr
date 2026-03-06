@@ -286,25 +286,45 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	lw t2, 0(t0)		/* t0 = RV_EPC */
 1:
 #endif
-	andi t0, t2, 0x7f	/* keep only the opcode bits */
-	/*
+	/* Move to RVC check if the instruction is not 32-bit encoded */
+	andi t0, t2, 3
+	xori t0, t0, 3
+	bnez t0, 2f		/* not a 32-bit encoding, RVC check below */
+
+	/* RISC-V base floating-point opcodes are 7 bits long. We map them
+	 * into a 32-bit O(1) lookup table by shifting the opcode right by 2.
+	 *
+	 * Opcodes and their resulting lookup bit indices:
 	 * Major FP opcodes:
-	 * 0000111 = LOAD-FP
-	 * 0100111 = STORE-FP
-	 * 1000011 = MADD
-	 * 1000111 = MSUB
-	 * 1001011 = NMSUB
-	 * 1001111 = NMADD
-	 * 1010011 = OP-FP
+	 * 0000111 = LOAD-FP  >> 2 -> 1
+	 * 0100111 = STORE-FP >> 2 -> 9
+	 * 1000011 = MADD     >> 2 -> 16
+	 * 1000111 = MSUB     >> 2 -> 17
+	 * 1001011 = NMSUB    >> 2 -> 18
+	 * 1001111 = NMADD    >> 2 -> 19
+	 * 1010011 = OP-FP    >> 2 -> 20
+	 *
+	 * Combined Bitmask: 0x001F0202
+	 *
+	 * When funct3 is not 1, 2, 3 or 4, 0*00111 is not floating point
+	 * Combined Bitmask in this case: 0x001F0000
 	 */
-	xori t1, t0, 0b1010011	/* OP-FP */
-	beqz t1, is_fp
-	ori  t1, t0, 0b0100000
-	xori t1, t1, 0b0100111	/* LOAD-FP / STORE-FP */
-	beqz t1, is_fp
-	ori  t1, t0, 0b0001100
-	xori t1, t1, 0b1001111	/* MADD / MSUB / NMSUB / NMADD */
-	beqz t1, is_fp
+	/* 1. Preparing the Bitmask (Done first for efficient register usage) */
+	/* Lower 12 bit masks should be 0 for vector instructions */
+	li t0, 0x3c3c
+	srli t1, t2, 12
+	andi t1, t1, 7
+	srl t0, t0, t1
+	andi t0, t0, 0x202 /* 0 for vector instructions with opcode 0b0*00111 */
+	li   t1, 0x001F0000 /* Load the pre-calculated O(1) upper 20 bits of FP opcode bitmask */
+	or t1, t1, t0       /* Final bitmask which accounts for vector instructions */
+
+	/* 2. Perform the O(1) branchless lookup */
+	srli t0, t2, 2
+	andi t0, t0, 0x1f
+	srl  t1, t1, t0		/* bit 0 set = FP major opcode */
+	andi t1, t1, 1
+	bnez t1, is_fp
 	/*
 	 * The FRCSR, FSCSR, FRRM, FSRM, FSRMI, FRFLAGS, FSFLAGS and FSFLAGSI
 	 * are in fact CSR instructions targeting the fcsr, frm and fflags
@@ -314,7 +334,8 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	 * SYSTEM = 0b1110011, op = 0b.xx where xx is never 0
 	 * The csr# of interest are: 1=fflags, 2=frm, 3=fcsr
 	 */
-	xori t1, t0, 0b1110011	/* SYSTEM opcode */
+	/* t0 holds t2[6:2]. Check for SYSTEM opcode (28) since its verified t2[1:0] == 0b11 */
+	xori t1, t0, 0b11100
 	bnez t1, 2f		/* not a CSR insn */
 	srli t0, t2, 12
 	andi t0, t0, 0x3
