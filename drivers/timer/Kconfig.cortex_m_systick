@@ -91,7 +91,7 @@ config CORTEX_M_SYSTICK_LPM_TIMER_HOOKS
 	bool "Hook-based timer"
 	help
 	  Use hooks in the SysTick driver to configure the low-power mode timer.
-	  Refer to `include/drivers/timer/cortex_m_systick.h` for more details.
+	  Refer to `drivers/timer/cortex_m_systick.h` for more details.
 
 endif # PM
 endchoice # CORTEX_M_SYSTICK_LPM_TIMER
