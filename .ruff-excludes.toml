@@ -918,7 +918,6 @@ exclude = [
     "./scripts/github_helpers.py",
     "./scripts/gitlint/zephyr_commit_rules.py",
     "./scripts/kconfig/guiconfig.py",
-    "./scripts/kconfig/kconfig.py",
     "./scripts/kconfig/kconfigfunctions.py",
     "./scripts/kconfig/kconfiglib.py",
     "./scripts/kconfig/lint.py",
