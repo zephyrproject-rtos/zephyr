@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Microchip Technology Inc.
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -378,6 +378,26 @@
 	dmas = <&dmac 10 0x12>, <&dmac 11 0x13>;
 	dma-names = "rx", "tx";
 	status = "okay";
+
+	eeprom: eeprom@5e {
+		compatible = "atmel,at24", "atmel,24mac402";
+		reg = <0x5e>;
+		size = <256>;
+		pagesize = <16>;
+		address-width = <8>;
+		timeout = <5>;
+
+		nvmem-layout {
+			compatible = "fixed-layout";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mac_address: mac-address@9a {
+				reg = <0x9a 6>;
+				#nvmem-cell-cells = <0>;
+			};
+		};
+	};
 };
 
 &tcc0 {
@@ -427,8 +447,36 @@
 	pinctrl-names = "default";
 };
 
+&gmac {
+	compatible = "microchip,gmac-g1-eth";
+	pinctrl-0 = <&gmac_rmii>;
+	pinctrl-names = "default";
+
+	nvmem-cells = <&mac_address>;
+	nvmem-cell-names = "mac-address";
+	phy-handle = <&phy>;
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
 ext1_serial: &sercom0 {};
 
 ext2_serial: &sercom5 {};
 
 ext3_serial: &sercom1 {};
+
+&mdio {
+	compatible = "microchip,gmac-g1-mdio";
+	pinctrl-0 = <&mdio_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		status = "okay";
+		reg = <0>;
+	};
+};
