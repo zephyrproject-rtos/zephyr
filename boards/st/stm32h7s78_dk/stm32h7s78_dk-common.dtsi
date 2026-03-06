@@ -206,10 +206,6 @@
 	status = "okay";
 };
 
-&wwdg {
-	status = "okay";
-};
-
 &adc1 {
 	pinctrl-0 = <&adc1_inp6_pf12>; /* Arduino A3 */
 	pinctrl-names = "default";
