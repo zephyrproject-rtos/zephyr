@@ -22,26 +22,13 @@ struct cs40l5x_calibration {
 	uint32_t f0;
 };
 
-struct cs40l5x_trigger_config {
-	/**< Wavetable source for desired haptic effect */
-	enum cs40l5x_bank bank;
-	/**< Wavetable index for desired haptic effect */
-	uint8_t index;
-	/**< Attenuation to be applied to haptic effect */
-	int attenuation;
-	/**< Offset register address that stores the GPIO trigger configuration */
-	uint8_t address;
-};
-
 struct cs40l5x_trigger_gpios {
 	struct gpio_dt_spec *gpio;
 	const uint8_t num_gpio;
-	/**< Trigger configurations for rising-edge events */
-	struct cs40l5x_trigger_config *rising_edge;
-	/**< Trigger configurations for falling-edge events */
-	struct cs40l5x_trigger_config *falling_edge;
-	/**< GPIO statuses */
 	bool *ready;
+	/* Addresses for rising- and falling-edge events */
+	uint8_t *rising_edge;
+	uint8_t *falling_edge;
 };
 
 typedef bool (*cs40l5x_io_bus_is_ready)(const struct device *const dev);
@@ -96,26 +83,12 @@ struct cs40l5x_data {
 	uint8_t rev_id;
 	struct gpio_callback interrupt_callback;
 	struct k_work_delayable interrupt_worker;
-	/**< Callback handler for trigger logging */
-	struct gpio_callback trigger_callback;
-	/**< Application-provided callback to recover from fatal hardware errors */
 	haptics_error_callback_t error_callback;
 	void *user_data;
 	struct k_sem calibration_semaphore;
 	struct cs40l5x_calibration calibration;
 	uint32_t output;
-	/**< Ring buffer to cache mailbox playback history */
-	struct ring_buf rb_mailbox_history;
-	/**< Ring buffer to cache trigger playback history */
-	struct ring_buf rb_trigger_history;
-	/**< Ring buffer storage for cached mailbox playback history */
-	uint8_t buf_mailbox_history[CONFIG_HAPTICS_CS40L5X_METADATA_CACHE_LEN];
-	/**< Ring buffer storage for cached trigger playback history */
-	uint8_t buf_trigger_history[CONFIG_HAPTICS_CS40L5X_METADATA_CACHE_LEN];
-	/**< Upload status for custom effects at indices 0 and 1 */
 	bool custom_effects[CS40L5X_NUM_CUSTOM_EFFECTS];
-	/**< Number of haptic effects playing or suspended */
-	int effects_in_flight;
 };
 
 #ifdef __cplusplus
