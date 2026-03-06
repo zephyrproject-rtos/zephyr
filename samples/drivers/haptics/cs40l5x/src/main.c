@@ -5,15 +5,11 @@
  */
 
 #include <errno.h>
-#include <inttypes.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
-#include <zephyr/drivers/flash.h>
 #include <zephyr/drivers/haptics/cs40l5x.h>
-#include <zephyr/drivers/i2c.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/util.h>
@@ -30,12 +26,12 @@
 
 LOG_MODULE_REGISTER(main);
 
-#define CS40L5X_DEMO_REDC              (0xCC)
-#define CS40L5X_DEMO_F0                (0x258)
-#define CS40L5X_DEMO_INDEX             (17)
-#define CS40L5X_DEMO_INFINITE_DURATION (0)
-#define CS40L5X_DEMO_FREQUENCY         (240)
-#define CS40L5X_DEMO_LEVEL             (27)
+#define CS40L5X_DEMO_REDC              0xCC
+#define CS40L5X_DEMO_F0                0x258
+#define CS40L5X_DEMO_INDEX             17
+#define CS40L5X_DEMO_INFINITE_DURATION 0
+#define CS40L5X_DEMO_FREQUENCY         240
+#define CS40L5X_DEMO_LEVEL             27
 
 const struct device *cs40l5x = DEVICE_DT_GET(DT_ALIAS(haptic0));
 
@@ -296,7 +292,7 @@ static void cs40l5x_dummy_callback(const struct device *const dev, const uint32_
 
 int main(void)
 {
-	int error;
+	int ret;
 
 	if (!cs40l5x || !device_is_ready(cs40l5x)) {
 		LOG_ERR("device not available: %s", cs40l5x->name);
@@ -304,74 +300,74 @@ int main(void)
 	}
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		error = pm_device_runtime_enable(cs40l5x);
-		if (error < 0) {
-			LOG_ERR("PM runtime disabled for %s (%d)", cs40l5x->name, error);
-			return -EIO;
+		ret = pm_device_runtime_enable(cs40l5x);
+		if (ret < 0) {
+			LOG_ERR("PM runtime disabled for %s (%d)", cs40l5x->name, ret);
+			return ret;
 		}
 	}
 
 	(void)haptics_register_error_callback(cs40l5x, cs40l5x_dummy_callback, NULL);
 
 	/* Demonstration of PCM upload (CUSTOM0) */
-	error = cs40l5x_upload_pcm(cs40l5x, CS40L5X_CUSTOM_0, CS40L5X_DEMO_REDC, CS40L5X_DEMO_F0,
+	ret = cs40l5x_upload_pcm(cs40l5x, CS40L5X_CUSTOM_0, CS40L5X_DEMO_REDC, CS40L5X_DEMO_F0,
 				   pcm_samples, ARRAY_SIZE(pcm_samples));
-	if (error < 0) {
-		LOG_WRN("upload PCM failure (%d)", error);
+	if (ret < 0) {
+		LOG_WRN("upload PCM failure (%d)", ret);
 	}
 
 	/* Demonstration of PWLE upload (CUSTOM1) */
-	error = cs40l5x_upload_pwle(cs40l5x, CS40L5X_CUSTOM_1, pwle_sections,
+	ret = cs40l5x_upload_pwle(cs40l5x, CS40L5X_CUSTOM_1, pwle_sections,
 				    ARRAY_SIZE(pwle_sections));
-	if (error < 0) {
-		LOG_WRN("upload PWLE failure (%d)", error);
+	if (ret < 0) {
+		LOG_WRN("upload PWLE failure (%d)", ret);
 	}
 
 	/* Demonstration of buzz configuration (BUZ0) */
-	error = cs40l5x_configure_buzz(cs40l5x, CS40L5X_DEMO_FREQUENCY, CS40L5X_DEMO_LEVEL,
+	ret = cs40l5x_configure_buzz(cs40l5x, CS40L5X_DEMO_FREQUENCY, CS40L5X_DEMO_LEVEL,
 				       CS40L5X_DEMO_INFINITE_DURATION);
-	if (error < 0) {
-		LOG_WRN("buzz configuration failure (%d)", error);
+	if (ret < 0) {
+		LOG_WRN("buzz configuration failure (%d)", ret);
 	}
 
 #if CS40L5X_DEMO_TRIGGER
 	/* Demonstration of GPIO configuration for edge-triggered haptic effects */
-	error = cs40l5x_configure_trigger(cs40l5x, &demo_gpio, CS40L5X_ROM_BANK, CS40L5X_DEMO_INDEX,
+	ret = cs40l5x_configure_trigger(cs40l5x, &demo_gpio, CS40L5X_ROM_BANK, CS40L5X_DEMO_INDEX,
 					  CS40L5X_ATTENUATION_3DB, CS40L5X_RISING_EDGE);
-	if (error < 0) {
-		LOG_WRN("configure GPIO trigger failure (%d)", error);
+	if (ret < 0) {
+		LOG_WRN("configure GPIO trigger failure (%d)", ret);
 	}
 #endif /* CS40L5X_DEMO_TRIGGER */
 
 	/* Basic demonstration if not using the custom shell interface. */
 	if (!IS_ENABLED(CONFIG_SHELL)) {
-		error = cs40l5x_select_output(cs40l5x, CS40L5X_BUZ_BANK, 0);
-		if (error < 0) {
-			LOG_WRN("failed to select output (%d)", error);
+		ret = cs40l5x_select_output(cs40l5x, CS40L5X_BUZ_BANK, 0);
+		if (ret < 0) {
+			LOG_WRN("failed to select output (%d)", ret);
 		}
 
-		error = haptics_start_output(cs40l5x);
-		if (error < 0) {
-			LOG_WRN("failed to start output (%d)", error);
-		}
-
-		(void)k_msleep(2000);
-
-		error = cs40l5x_select_output(cs40l5x, CS40L5X_ROM_BANK, 17);
-		if (error < 0) {
-			LOG_WRN("failed to select output during playback (%d)", error);
-		}
-
-		error = haptics_start_output(cs40l5x);
-		if (error < 0) {
-			LOG_WRN("failed to preempt output (%d)", error);
+		ret = haptics_start_output(cs40l5x);
+		if (ret < 0) {
+			LOG_WRN("failed to start output (%d)", ret);
 		}
 
 		(void)k_msleep(2000);
 
-		error = haptics_stop_output(cs40l5x);
-		if (error < 0) {
-			LOG_WRN("failed to stop output (%d)", error);
+		ret = cs40l5x_select_output(cs40l5x, CS40L5X_ROM_BANK, 17);
+		if (ret < 0) {
+			LOG_WRN("failed to select output during playback (%d)", ret);
+		}
+
+		ret = haptics_start_output(cs40l5x);
+		if (ret < 0) {
+			LOG_WRN("failed to preempt output (%d)", ret);
+		}
+
+		(void)k_msleep(2000);
+
+		ret = haptics_stop_output(cs40l5x);
+		if (ret < 0) {
+			LOG_WRN("failed to stop output (%d)", ret);
 		}
 	}
 
