@@ -9,8 +9,6 @@
  * @brief Core Driver for Cirrus Logic CS40L5x Haptic Devices
  */
 
-#define DT_DRV_COMPAT cirrus_cs40l5x
-
 #include "cs40l5x.h"
 #include <stdlib.h>
 #include <zephyr/arch/common/ffs.h>
@@ -32,13 +30,14 @@
 
 LOG_MODULE_REGISTER(CS40L5X, CONFIG_HAPTICS_LOG_LEVEL);
 
-#define CS40L5X_ANY_DEV_USE_INTERRUPTS     DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
-#define CS40L5X_ANY_DEV_USE_TRIGGER_GPIOS  DT_ANY_INST_HAS_PROP_STATUS_OKAY(trigger_gpios)
-#define CS40L5X_ANY_DEV_USE_EXTERNAL_BOOST DT_ANY_INST_HAS_PROP_STATUS_OKAY(external_boost)
-#define CS40L5X_ANY_DEV_USE_INTERNAL_BOOST !DT_ALL_INST_HAS_PROP_STATUS_OKAY(external_boost)
-#define CS40L5X_ANY_DEV_USE_FLASH_STORAGE  DT_ANY_INST_HAS_PROP_STATUS_OKAY(flash_storage)
+/* Supported devices */
+#define CS40L5X_DEVID_50 0x40A50U
+#define CS40L5X_DEVID_51 0x40A51U
+#define CS40L5X_DEVID_52 0x40A52U
+#define CS40L5X_DEVID_53 0x40A53U
+#define CS40L5X_REVID_B0 0xB0U
 
-#define CS40L5X_ANY_DEV_USE_HIBERNATION \
+#define CS40L5X_ANY_DEV_USE_HIBERNATION                                                            \
 	(IS_ENABLED(CONFIG_PM_DEVICE) && IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME))
 
 #define CS40L5X_REG_DEVID              0x00000000
@@ -161,12 +160,6 @@ LOG_MODULE_REGISTER(CS40L5X, CONFIG_HAPTICS_LOG_LEVEL);
 #define CS40L5X_T_F0_CALIBRATION      K_MSEC(2500)
 #define CS40L5X_T_WAIT                K_MSEC(5000)
 #define CS40L5X_T_INTERRUPT_DEBOUNCER K_USEC(500)
-
-#define CS40L5X_DEVID_50 0x40A50
-#define CS40L5X_DEVID_51 0x40A51
-#define CS40L5X_DEVID_52 0x40A52
-#define CS40L5X_DEVID_53 0x40A53
-#define CS40L5X_REVID_B0 0xB0
 
 #define CS40L5X_REG_WIDTH 4
 
@@ -1247,7 +1240,7 @@ static void cs40l5x_dsp_config(const struct device *const dev)
 	const struct cs40l5x_config *const config = dev->config;
 	int ret;
 
-	if (CS40L5X_ANY_DEV_USE_FLASH_STORAGE && config->flash != NULL) {
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_FLASH) && config->flash != NULL) {
 		ret = cs40l5x_load_calibration(dev);
 		if (ret < 0) {
 			LOG_INST_DBG(config->log, "failed to load calibration (%d)", ret);
@@ -1308,7 +1301,7 @@ static int cs40l5x_write_errata(const struct device *const dev)
 		return ret;
 	}
 
-	if (CS40L5X_ANY_DEV_USE_EXTERNAL_BOOST && config->external_boost != NULL) {
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_EXTERNAL_BOOST) && config->external_boost != NULL) {
 		ret = cs40l5x_multi_write(dev, cs40l5x_b0_errata_external_boost,
 					  ARRAY_SIZE(cs40l5x_b0_errata_external_boost));
 		if (ret < 0) {
@@ -1328,7 +1321,8 @@ static int cs40l5x_boost_configuration(const struct device *const dev)
 		return -ENOTSUP;
 	}
 
-	return (!CS40L5X_ANY_DEV_USE_INTERNAL_BOOST || config->external_boost != NULL)
+	return (!IS_ENABLED(CONFIG_HAPTICS_CS40L5X_INTERNAL_BOOST) ||
+		config->external_boost != NULL)
 		       ? cs40l5x_multi_write(dev, cs40l5x_b0_external_boost,
 					     ARRAY_SIZE(cs40l5x_b0_external_boost))
 		       : cs40l5x_multi_write(dev, cs40l5x_b0_internal_boost,
@@ -1349,8 +1343,11 @@ static int cs40l5x_fingerprint(const struct device *const dev)
 
 	switch (rx[0]) {
 	case CS40L5X_DEVID_50:
+		__fallthrough;
 	case CS40L5X_DEVID_51:
+		__fallthrough;
 	case CS40L5X_DEVID_52:
+		__fallthrough;
 	case CS40L5X_DEVID_53:
 		break;
 	default:
@@ -1363,11 +1360,10 @@ static int cs40l5x_fingerprint(const struct device *const dev)
 		return -ENOTSUP;
 	}
 
-	data->dev_id = rx[0];
 	data->rev_id = FIELD_GET(GENMASK(7, 0), rx[1]);
 
 	LOG_INST_INF(config->log, "Cirrus Logic CS40L%02X Revision %X",
-		     (uint8_t)FIELD_GET(GENMASK(7, 0), data->dev_id), data->rev_id);
+		     (uint8_t)FIELD_GET(GENMASK(7, 0), config->dev_id), data->rev_id);
 
 	return 0;
 }
@@ -1430,7 +1426,7 @@ static int cs40l5x_bringup(const struct device *const dev)
 		return ret;
 	}
 
-	if (CS40L5X_ANY_DEV_USE_INTERRUPTS && config->interrupt_gpio.port != NULL) {
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_INTERRUPT) && config->interrupt_gpio.port != NULL) {
 		ret = cs40l5x_irq_config(dev);
 		if (ret < 0) {
 			LOG_INST_WRN(config->log, "failed IRQ configuration (%d)", ret);
@@ -1461,7 +1457,7 @@ static int cs40l5x_bringup(const struct device *const dev)
 		}
 	}
 
-	if (CS40L5X_ANY_DEV_USE_TRIGGER_GPIOS && config->trigger_gpios.num_gpio > 0) {
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_TRIGGER) && config->trigger_gpios.num_gpio > 0) {
 		ret = cs40l5x_trigger_config(dev);
 		if (ret < 0) {
 			LOG_INST_WRN(config->log, "failed trigger configuration (%d)", ret);
@@ -1526,14 +1522,14 @@ static int cs40l5x_teardown(const struct device *const dev)
 	const struct cs40l5x_config *const config = dev->config;
 	int ret;
 
-	if (CS40L5X_ANY_DEV_USE_INTERRUPTS && config->interrupt_gpio.port != NULL) {
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_INTERRUPT) && config->interrupt_gpio.port != NULL) {
 		ret = cs40l5x_disable_irq(dev);
 		if (ret < 0) {
 			LOG_INST_DBG(config->log, "failed to disable IRQ (%d)", ret);
 		}
 	}
 
-	if (CS40L5X_ANY_DEV_USE_TRIGGER_GPIOS) {
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_TRIGGER)) {
 		ret = cs40l5x_disable_trigger_irq(dev);
 		if (ret < 0) {
 			LOG_INST_DBG(config->log, "failed to disable trigger IRQ (%d)", ret);
@@ -1570,7 +1566,7 @@ static int cs40l5x_calibrate_redc(const struct device *const dev, uint32_t *cons
 		return ret;
 	}
 
-	if (CS40L5X_ANY_DEV_USE_INTERRUPTS && config->interrupt_gpio.port != NULL) {
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_INTERRUPT) && config->interrupt_gpio.port != NULL) {
 		ret = k_sem_take(&data->calibration_semaphore, CS40L5X_T_REDC_CALIBRATION);
 	} else {
 		ret = cs40l5x_poll_mailbox(dev, CS40L5X_MBOX_REDC_EST_START,
@@ -1603,7 +1599,7 @@ static int cs40l5x_calibrate_f0(const struct device *const dev, uint32_t *const 
 		return ret;
 	}
 
-	if (CS40L5X_ANY_DEV_USE_INTERRUPTS && config->interrupt_gpio.port != NULL) {
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_INTERRUPT) && config->interrupt_gpio.port != NULL) {
 		ret = k_sem_take(&data->calibration_semaphore, CS40L5X_T_F0_CALIBRATION);
 	} else {
 		ret = cs40l5x_poll_mailbox(dev, CS40L5X_MBOX_F0_EST_START,
@@ -1699,7 +1695,7 @@ int cs40l5x_calibrate(const struct device *const dev)
 
 	LOG_INST_INF(config->log, "result    | ReDC: 0x%06X, F0: 0x%06X", redc, f0);
 
-	if (CS40L5X_ANY_DEV_USE_FLASH_STORAGE && config->flash != NULL) {
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_FLASH) && config->flash != NULL) {
 		warning = cs40l5x_store_calibration(dev);
 		if (warning < 0) {
 			LOG_INST_DBG(config->log, "failed to store calibration (%d)", warning);
@@ -1781,7 +1777,7 @@ int cs40l5x_configure_trigger(const struct device *const dev, const struct gpio_
 	uint8_t i;
 	int ret;
 
-	if (!CS40L5X_ANY_DEV_USE_TRIGGER_GPIOS || gpios->num_gpio == 0) {
+	if (!IS_ENABLED(CONFIG_HAPTICS_CS40L5X_TRIGGER) || gpios->num_gpio == 0) {
 		LOG_INST_ERR(config->log, "no trigger GPIOs provided (%d)", -EPERM);
 		return -EPERM;
 	}
@@ -2037,7 +2033,7 @@ static int cs40l5x_start_output(const struct device *const dev)
 		item.bank = (uint8_t)cs40l5x_bank_from_cmd(data->output);
 		item.index = (uint8_t)FIELD_GET(CS40L5X_MASK_INDEX, data->output);
 
-		if (CS40L5X_ANY_DEV_USE_INTERRUPTS) {
+		if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_IRQ)) {
 			warning = ring_buf_put(&data->rb_mailbox_history, (uint8_t *)&item, 1);
 			if (warning < 0) {
 				LOG_INST_DBG(config->log, "failed to cache playback (%d)", warning);
@@ -2342,7 +2338,7 @@ static int cs40l5x_pm_resume(const struct device *const dev)
 	const struct cs40l5x_config *const config = dev->config;
 	int ret;
 
-	if (CS40L5X_ANY_DEV_USE_EXTERNAL_BOOST && config->external_boost != NULL) {
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_EXTERNAL_BOOST) && config->external_boost != NULL) {
 		ret = regulator_enable(config->external_boost);
 		if (ret < 0) {
 			LOG_INST_DBG(config->log, "failed to enable regulator (%d)", ret);
@@ -2388,7 +2384,7 @@ static int cs40l5x_pm_suspend(const struct device *const dev)
 
 	(void)pm_device_runtime_put(cs40l5x_get_control_port(dev));
 
-	if (CS40L5X_ANY_DEV_USE_EXTERNAL_BOOST && config->external_boost != NULL) {
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_EXTERNAL_BOOST) && config->external_boost != NULL) {
 		warning = regulator_disable(config->external_boost);
 		if (warning < 0) {
 			LOG_INST_DBG(config->log, "failed to disable regulator (%d)", warning);
@@ -2416,7 +2412,7 @@ static int cs40l5x_pm_turn_off(const struct device *const dev)
 
 	(void)pm_device_runtime_put(config->reset_gpio.port);
 
-	if (CS40L5X_ANY_DEV_USE_INTERRUPTS && config->interrupt_gpio.port != NULL) {
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_INTERRUPT) && config->interrupt_gpio.port != NULL) {
 		(void)pm_device_runtime_put(config->interrupt_gpio.port);
 	}
 
@@ -2441,7 +2437,7 @@ static int cs40l5x_pm_turn_on(const struct device *const dev)
 		goto error_pm_reset;
 	}
 
-	if (CS40L5X_ANY_DEV_USE_INTERRUPTS && config->interrupt_gpio.port != NULL) {
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_INTERRUPT) && config->interrupt_gpio.port != NULL) {
 		ret = pm_device_runtime_get(config->interrupt_gpio.port);
 		if (ret < 0) {
 			LOG_INST_DBG(config->log, "failed PM get for interrupt GPIO (%d)", ret);
@@ -2499,12 +2495,13 @@ static int cs40l5x_init(const struct device *dev)
 		k_work_init_delayable(&data->interrupt_worker, cs40l5x_interrupt_worker);
 	}
 
-	if (CS40L5X_ANY_DEV_USE_INTERRUPTS && config->interrupt_gpio.port != NULL) {
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_INTERRUPT) && config->interrupt_gpio.port != NULL) {
 		(void)ring_buf_init(&data->rb_mailbox_history,
 				    CONFIG_HAPTICS_CS40L5X_METADATA_CACHE_LEN,
 				    data->buf_mailbox_history);
 
-		if (CS40L5X_ANY_DEV_USE_TRIGGER_GPIOS && config->trigger_gpios.num_gpio > 0) {
+		if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_TRIGGER) &&
+		    config->trigger_gpios.num_gpio > 0) {
 			(void)ring_buf_init(&data->rb_trigger_history,
 					    CONFIG_HAPTICS_CS40L5X_METADATA_CACHE_LEN,
 					    data->buf_trigger_history);
@@ -2521,13 +2518,13 @@ static int cs40l5x_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (CS40L5X_ANY_DEV_USE_INTERRUPTS && config->interrupt_gpio.port != NULL &&
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_INTERRUPT) && config->interrupt_gpio.port != NULL &&
 	    !gpio_is_ready_dt(&config->interrupt_gpio)) {
 		LOG_INST_DBG(config->log, "interrupt GPIO is not ready");
 		return -ENODEV;
 	}
 
-	if (CS40L5X_ANY_DEV_USE_TRIGGER_GPIOS) {
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_TRIGGER)) {
 		for (int i = 0; i < config->trigger_gpios.num_gpio; i++) {
 			if (!gpio_is_ready_dt(&config->trigger_gpios.gpio[i])) {
 				LOG_INST_WRN(config->log, "trigger GPIO is not ready (%s)",
@@ -2536,7 +2533,7 @@ static int cs40l5x_init(const struct device *dev)
 		}
 	}
 
-	if (CS40L5X_ANY_DEV_USE_FLASH_STORAGE && config->flash != NULL &&
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_FLASH) && config->flash != NULL &&
 	    !device_is_ready(config->flash)) {
 		LOG_INST_WRN(config->log, "flash device is not ready (%s)", config->flash->name);
 	}
@@ -2690,17 +2687,17 @@ __maybe_unused static int cs40l5x_deinit(const struct device *dev)
 		HAPTICS_CS40L5X_BUS(inst) HAPTICS_CS40L5X_TRIGGER_GPIOS(inst)                      \
 			HAPTICS_CS40L5X_FLASH(inst)
 
-#define HAPTICS_CS40L5X_INIT(inst)                                                                 \
+#define HAPTICS_CS40L5X_INIT(inst, name)                                                           \
 	PM_DEVICE_DT_INST_DEFINE(inst, cs40l5x_pm_action);                                         \
 	COND_CODE_1(CONFIG_PM_DEVICE,								   \
 		(DEVICE_DT_INST_DEINIT_DEFINE(inst, cs40l5x_init, cs40l5x_deinit,		   \
-			PM_DEVICE_DT_INST_GET(inst), &cs40l5x_data_##inst, &cs40l5x_config_##inst, \
+			PM_DEVICE_DT_INST_GET(inst), &name##_data_##inst, &name##_config_##inst,   \
 			POST_KERNEL, CONFIG_HAPTICS_INIT_PRIORITY, &cs40l5x_driver_api);),	   \
 		(DEVICE_DT_INST_DEFINE(inst, cs40l5x_init, PM_DEVICE_DT_INST_GET(inst),		   \
-			&cs40l5x_data_##inst, &cs40l5x_config_##inst, POST_KERNEL,		   \
+			&name##_data_##inst, &name##_config_##inst, POST_KERNEL,		   \
 			CONFIG_HAPTICS_INIT_PRIORITY, &cs40l5x_driver_api);))
 
-#define HAPTICS_CS40L5X_DEFINE(inst)                                                               \
+#define HAPTICS_CS40L5X_DEFINE(inst, name, id)                                                     \
 	HAPTICS_CS40L5X_BUILD_ASSERTS(inst)                                                        \
 	LOG_INSTANCE_REGISTER(DT_NODE_FULL_NAME_TOKEN(DT_DRV_INST(inst)), inst,                    \
 			      CONFIG_HAPTICS_LOG_LEVEL);                                           \
@@ -2709,4 +2706,26 @@ __maybe_unused static int cs40l5x_deinit(const struct device *dev)
 	static struct cs40l5x_data name##_data_##inst = {HAPTICS_CS40L5X_DATA(inst, name)};        \
 	HAPTICS_CS40L5X_INIT(inst, name)
 
-DT_INST_FOREACH_STATUS_OKAY(HAPTICS_CS40L5X_DEFINE)
+#define DT_DRV_COMPAT cirrus_cs40l50
+#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(HAPTICS_CS40L5X_DEFINE, cs40l50, CS40L5X_DEVID_50)
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT) */
+#undef DT_DRV_COMPAT
+
+#define DT_DRV_COMPAT cirrus_cs40l51
+#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(HAPTICS_CS40L5X_DEFINE, cs40l51, CS40L5X_DEVID_51)
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT) */
+#undef DT_DRV_COMPAT
+
+#define DT_DRV_COMPAT cirrus_cs40l52
+#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(HAPTICS_CS40L5X_DEFINE, cs40l52, CS40L5X_DEVID_52)
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT) */
+#undef DT_DRV_COMPAT
+
+#define DT_DRV_COMPAT cirrus_cs40l53
+#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(HAPTICS_CS40L5X_DEFINE, cs40l53, CS40L5X_DEVID_53)
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT) */
+#undef DT_DRV_COMPAT

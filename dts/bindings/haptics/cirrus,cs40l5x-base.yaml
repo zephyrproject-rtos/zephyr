@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Cirrus Logic, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-description: CS40L5x Haptic Driver
+description: CS40L5x haptic driver
 
 properties:
   reset-gpios:

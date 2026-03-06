@@ -8,7 +8,7 @@
 
 / {
 	aliases {
-		haptic0 = &cs40l5x_0;
+		haptic0 = &cs40l50_0;
 	};
 };
 
@@ -21,8 +21,8 @@
 	pinctrl-1 = <&analog_pb6 &analog_pb7>;
 	pinctrl-names = "default", "sleep";
 
-	cs40l5x_0: cs40l5x@34 {
-		compatible = "cirrus,cs40l5x";
+	cs40l50_0: cs40l50@34 {
+		compatible = "cirrus,cs40l50";
 		reg = <0x34>;
 
 		reset-gpios = <&gpioc 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
