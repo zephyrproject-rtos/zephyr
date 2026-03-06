@@ -122,6 +122,24 @@
 				reg = <0x0 DT_SIZE_K(120)>;
 				compatible = "mmio-sram";
 			};
+
+			stcm_shared: stcm_shared@1e000 {
+				/* Use non-secure address range */
+				ranges = <0x0 0x2001e000 DT_SIZE_K(8)>;
+				reg = <0x1e000 DT_SIZE_K(8)>;
+				compatible = "zephyr,memory-region", "mmio-sram";
+				zephyr,memory-region = "STCM_SHARED";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				shmem_fwk: memory@200 {
+					reg = <0x200 0x100>;
+				};
+
+				shmem_rpmsg: memory@300 {
+					reg = <0x300 0xa00>;
+				};
+			};
 		};
 
 		peripheral: peripheral@50000000 {
