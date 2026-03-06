@@ -20,8 +20,17 @@ Zephyr provides APIs for LoRa to send raw data packets directly over the
 wireless interface as well as APIs for LoRaWAN to connect the end device
 to the internet through a gateway.
 
-The Zephyr implementation is based on Semtech's `LoRaMac-node library`_, which
-is included as a Zephyr module.
+Zephyr provides two LoRaWAN backend implementations:
+
+* **LoRaMac-node** (default): Based on Semtech's `LoRaMac-node library`_,
+  included as a Zephyr module.  Supports all regions defined by the LoRaWAN
+  specification.  Selected with
+  :kconfig:option:`CONFIG_LORA_MODULE_BACKEND_LORAMAC_NODE`.
+
+* **Native**: A Zephyr-idiomatic LoRaWAN 1.0.x Class A implementation that
+  talks directly to the LoRa radio driver without external dependencies.
+  Currently supports the EU868 region.  Selected with
+  :kconfig:option:`CONFIG_LORA_MODULE_BACKEND_NATIVE`.
 
 .. note::
 
@@ -88,6 +97,21 @@ Related configuration options can be found under
 * :kconfig:option:`CONFIG_LORAWAN_REGION_US915`
 
 * :kconfig:option:`CONFIG_LORAWAN_REGION_RU864`
+
+Native Backend
+--------------
+
+The native backend is selected with
+:kconfig:option:`CONFIG_LORA_MODULE_BACKEND_NATIVE` and has additional options
+under :zephyr_file:`subsys/lorawan/native/Kconfig`:
+
+* :kconfig:option:`CONFIG_LORAWAN_NATIVE_ENGINE_STACK_SIZE`
+
+* :kconfig:option:`CONFIG_LORAWAN_NATIVE_ENGINE_PRIORITY`
+
+* :kconfig:option:`CONFIG_LORAWAN_NATIVE_PUBLIC_NETWORK`
+
+* :kconfig:option:`CONFIG_LORAWAN_NATIVE_DUTY_CYCLE`
 
 API Reference
 *************
