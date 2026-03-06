@@ -1,0 +1,28 @@
+common:
+  harness: net
+  tags:
+    - net
+    - bluetooth
+    - wifi
+    - openthread
+    - coex
+  depends_on: openthread
+sample:
+  description: Test Bluetooth, Wi-Fi, and OpenThread coexistence shell functionality
+  name: Wireless coexistence shell
+tests:
+  sample.net.wireless.coex.shell.nxp:
+    build_only: true
+    harness: bluetooth
+    platform_allow:
+      - frdm_rw612
+      - rd_rw612_bga
+      - mimxrt1060_evk@C/mimxrt1062/qspi
+    integration_platforms:
+      - rd_rw612_bga
+    extra_args: >
+      board:mimxrt1060_evk@C/mimxrt1062/qspi:SHIELD=nxp_m2_2ll_wifi_bt
+      board:frdm_rw612:CONFIG_NXP_MONOLITHIC_WIFI=n
+      board:frdm_rw612:CONFIG_NXP_MONOLITHIC_NBU=n
+      board:rd_rw612_bga:CONFIG_NXP_MONOLITHIC_WIFI=n
+      board:rd_rw612_bga:CONFIG_NXP_MONOLITHIC_NBU=n
