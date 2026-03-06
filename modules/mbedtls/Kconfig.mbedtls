@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menu "Mbed TLS configuration"
-	depends on MBEDTLS_BUILTIN && MBEDTLS_CFG_FILE = "config-mbedtls.h"
+	depends on MBEDTLS_BUILTIN
 
 menu "TLS"
 
@@ -395,7 +395,7 @@ config MBEDTLS_SHA512
 config MBEDTLS_POLY1305
 	bool "Poly1305 hash family"
 
-endmenu
+endmenu # Ciphersuite configuration
 
 comment "Random number generators"
 
@@ -742,4 +742,4 @@ config MBEDTLS_X509_CRT_WRITE_C
 config MBEDTLS_X509_CRT_PARSE_C
 	bool "X.509 certificate persing"
 
-endmenu
+endmenu # Mbed TLS configuration
