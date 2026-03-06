@@ -2226,6 +2226,33 @@ static inline uint8_t net_priority2vlan(enum net_priority priority)
 const char *net_family2str(net_sa_family_t family);
 
 /**
+ * @brief Return network address size for a given family.
+ *
+ * @param family Network address family code
+ *
+ * @return Network address size, or 0 if family is unknown.
+ */
+static inline size_t net_family2size(net_sa_family_t family)
+{
+	switch (family) {
+	case NET_AF_INET:
+		return sizeof(struct net_sockaddr_in);
+	case NET_AF_INET6:
+		return sizeof(struct net_sockaddr_in6);
+	case NET_AF_PACKET:
+		return sizeof(struct net_sockaddr_ll);
+	case NET_AF_UNIX:
+		return sizeof(struct net_sockaddr_un);
+	case NET_AF_CAN:
+		return sizeof(struct net_sockaddr_can);
+	case NET_AF_NET_MGMT:
+		return sizeof(struct net_sockaddr_nm);
+	default:
+		return 0;
+	}
+}
+
+/**
  * @brief Add IPv6 prefix as a privacy extension filter.
  *
  * @details Note that the filters can either allow or deny listing.
