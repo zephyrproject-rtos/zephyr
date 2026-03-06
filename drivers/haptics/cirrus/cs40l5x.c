@@ -755,9 +755,7 @@ static int cs40l5x_process_interrupts(const struct device *const dev,
 	}
 
 	if (FIELD_GET(CS40L5X_MASK_BST_ILIMIT_ERR_INT1, irq_ints[CS40L5X_INT9]) != 0) {
-		LOG_INST_WRN(config->log, "overcurrent condition detected");
-
-		error_bitmask |= HAPTICS_ERROR_OVERCURRENT;
+		LOG_INST_WRN(config->log, "current limited");
 
 		ret = cs40l5x_write(dev, CS40L5X_REG_IRQ1_INT_9, CS40L5X_MASK_BST_ILIMIT_ERR_INT1);
 		if (ret < 0) {
