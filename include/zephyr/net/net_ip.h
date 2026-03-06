@@ -201,6 +201,12 @@ struct net_sockaddr_ll {
 	uint8_t         sll_addr[8];  /**< Physical-layer address, big endian */
 };
 
+/** struct net_sockaddr_can - The net_sockaddr structure for CAN sockets. */
+struct net_sockaddr_can {
+	net_sa_family_t can_family;   /**< Address family */
+	int             can_ifindex;  /**< SocketCAN network interface index */
+};
+
 /** @cond INTERNAL_HIDDEN */
 
 /** Socket address struct for IPv6 where address is a pointer */
