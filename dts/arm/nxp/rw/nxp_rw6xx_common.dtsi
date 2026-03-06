@@ -601,7 +601,7 @@
 			reg = <0x38200 0x30>;
 			interrupts = <108 0>;
 			status = "disabled";
-			#io-channel-cells = <0>;
+			#io-channel-cells = <1>;
 			power-domains = <&peripheral_domain>;
 		};
 
