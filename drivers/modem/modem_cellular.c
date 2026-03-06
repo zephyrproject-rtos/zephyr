@@ -578,7 +578,7 @@ static int append_apn_cmd(struct modem_cellular_data *data, uint8_t *steps, cons
 	if (ret < 0) {
 		return ret;
 	}
-	
+
 	ret = modem_chat_script_chat_set_response_matches(&data->apn_chats[*steps], &ok_match, 1);
 	if (ret < 0) {
 		return ret;
