@@ -204,10 +204,6 @@
 	status = "okay";
 };
 
-&wwdg {
-	status = "okay";
-};
-
 &rtc {
 	clocks = <&rcc STM32_CLOCK(APB1, 30)>,
 		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
