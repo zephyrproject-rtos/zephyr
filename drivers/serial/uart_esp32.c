@@ -41,6 +41,10 @@
 #include <esp32h2/rom/ets_sys.h>
 #include <esp32h2/rom/gpio.h>
 #include <zephyr/dt-bindings/clock/esp32h2_clock.h>
+#elif defined(CONFIG_SOC_SERIES_ESP32P4)
+#include <esp32p4/rom/ets_sys.h>
+#include <esp32p4/rom/gpio.h>
+#include <zephyr/dt-bindings/clock/esp32p4_clock.h>
 #endif
 #ifdef CONFIG_UART_ASYNC_API
 #include <zephyr/drivers/dma.h>
@@ -353,7 +357,15 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 	uint32_t sclk_freq;
 	uint32_t inv_mask = 0;
 
+	/*
+	 * On P4, switching UART clock source (e.g. XTAL to PLL_F80M)
+	 * breaks the reg_update sync mechanism, causing uart_ll_update()
+	 * to spin forever. Keep the ROM-configured clock source (XTAL).
+	 * IDF also does not change UART clock source during driver init.
+	 */
+#if !CONFIG_SOC_SERIES_ESP32P4
 	uart_hal_set_sclk(&data->hal, UART_SCLK_DEFAULT);
+#endif
 	uart_hal_set_rxfifo_full_thr(&data->hal, UART_RX_FIFO_THRESH);
 	uart_hal_set_txfifo_empty_thr(&data->hal, UART_TX_FIFO_THRESH);
 	uart_hal_rxfifo_rst(&data->hal);
