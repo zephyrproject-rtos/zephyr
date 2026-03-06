@@ -1570,6 +1570,7 @@ int cs40l5x_configure_trigger(const struct device *const dev, const struct gpio_
 {
 	const struct cs40l5x_config *const config = dev->config;
 	const struct cs40l5x_trigger_gpios *const gpios = &config->trigger_gpios;
+	struct cs40l5x_data *const data = dev->data;
 	uint8_t *address, i;
 	uint32_t playback;
 	int ret;
@@ -1609,6 +1610,12 @@ int cs40l5x_configure_trigger(const struct device *const dev, const struct gpio_
 		return ret;
 	}
 
+	ret = k_mutex_lock(&data->lock, CS40L5X_T_WAIT);
+	if (ret < 0) {
+		LOG_INST_DBG(config->log, "timed out waiting for lock (%d)", ret);
+		goto error_pm;
+	}
+
 	address = (edge == CS40L5X_RISING_EDGE) ? gpios->rising_edge : gpios->falling_edge;
 
 	ret = cs40l5x_write(dev, CS40L5X_REG_GPIO_EVENT_BASE | (uint32_t)address[i], playback);
@@ -1619,6 +1626,9 @@ int cs40l5x_configure_trigger(const struct device *const dev, const struct gpio_
 	LOG_INST_INF(config->log, "configure | %s %u -> %s %u (%d dB)", gpio->port->name,
 			     gpio->pin, cs40l5x_print_bank(bank), index, attenuation);
 
+	(void)k_mutex_unlock(&data->lock);
+
+error_pm:
 	(void)pm_device_runtime_put(dev);
 
 	return ret;
@@ -1627,6 +1637,7 @@ int cs40l5x_configure_trigger(const struct device *const dev, const struct gpio_
 int cs40l5x_logger(const struct device *const dev, enum cs40l5x_logger logger_state)
 {
 	__maybe_unused const struct cs40l5x_config *const config = dev->config;
+	struct cs40l5x_data *const data = dev->data;
 	uint32_t state, update;
 	int ret;
 
@@ -1641,6 +1652,12 @@ int cs40l5x_logger(const struct device *const dev, enum cs40l5x_logger logger_st
 		return ret;
 	}
 
+	ret = k_mutex_lock(&data->lock, CS40L5X_T_WAIT);
+	if (ret < 0) {
+		LOG_INST_DBG(config->log, "timed out waiting for lock (%d)", ret);
+		goto error_pm;
+	}
+
 	if (logger_state != CS40L5X_LOGGER_NO_CHANGE) {
 		update = (logger_state == CS40L5X_LOGGER_ENABLE) ? CS40L5X_WRITE_LOGGER_ENABLE
 								 : CS40L5X_WRITE_LOGGER_DISABLE;
@@ -1648,20 +1665,23 @@ int cs40l5x_logger(const struct device *const dev, enum cs40l5x_logger logger_st
 		ret = cs40l5x_write(dev, CS40L5X_REG_LOGGER_ENABLE, update);
 		if (ret < 0) {
 			LOG_INST_DBG(config->log, "failed to update logging (%d)", ret);
-			goto error_pm;
+			goto error_mutex;
 		}
 	}
 
 	ret = cs40l5x_read(dev, CS40L5X_REG_LOGGER_ENABLE, &state);
 	if (ret < 0) {
 		LOG_INST_DBG(config->log, "failed to get logging state (%d)", ret);
-		goto error_pm;
+		goto error_mutex;
 	}
 
 	if (logger_state != CS40L5X_LOGGER_NO_CHANGE) {
 		LOG_INST_INF(config->log, "configure | logger -> %s",
 			     (state == CS40L5X_LOGGER_ENABLE) ? "enabled" : "disabled");
 	}
+
+error_mutex:
+	(void)k_mutex_unlock(&data->lock);
 
 error_pm:
 	(void)pm_device_runtime_put(dev);
@@ -1673,6 +1693,7 @@ int cs40l5x_logger_get(const struct device *const dev, enum cs40l5x_logger_sourc
 		       enum cs40l5x_logger_source_type type, uint32_t *const value)
 {
 	__maybe_unused const struct cs40l5x_config *const config = dev->config;
+	struct cs40l5x_data *const data = dev->data;
 	int offset, ret;
 
 	if (!IS_ENABLED(CONFIG_HAPTICS_CS40L5X_DSP_LOGGER)) {
@@ -1688,11 +1709,20 @@ int cs40l5x_logger_get(const struct device *const dev, enum cs40l5x_logger_sourc
 		return ret;
 	}
 
+	ret = k_mutex_lock(&data->lock, CS40L5X_T_WAIT);
+	if (ret < 0) {
+		LOG_INST_DBG(config->log, "timed out waiting for lock (%d)", ret);
+		goto error_pm;
+	}
+
 	ret = cs40l5x_read(dev, CS40L5X_REG_LOGGER_DATA + offset, value);
 	if (ret < 0) {
 		LOG_INST_DBG(config->log, "failed to get logger data (%d)", ret);
 	}
 
+	(void)k_mutex_unlock(&data->lock);
+
+error_pm:
 	(void)pm_device_runtime_put(dev);
 
 	return ret;
