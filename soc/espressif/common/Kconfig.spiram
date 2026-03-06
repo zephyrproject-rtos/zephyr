@@ -1,7 +1,7 @@
 # Copyright (c) 2024-2026 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_ESP32 || SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
+if SOC_SERIES_ESP32 || SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32P4
 
 ESP32_PSRAM0_NODE_PATH := $(dt_nodelabel_path,psram0)
 
@@ -30,20 +30,27 @@ config ESP_SPIRAM_MEMTEST
 	  Runs a memory test on initialization.
 
 choice SPIRAM_MODE
-	prompt "Mode (QUAD/OCT) of SPI RAM chip in use"
+	prompt "Mode (QUAD/OCT/HEX) of SPI RAM chip in use"
+	default SPIRAM_MODE_HEX if SOC_SERIES_ESP32P4
 	default SPIRAM_MODE_QUAD
 
 config SPIRAM_MODE_QUAD
 	bool "Quad Mode PSRAM"
+	depends on !SOC_SERIES_ESP32P4
 
 config SPIRAM_MODE_OCT
 	bool "Octal Mode PSRAM"
 	depends on SOC_SERIES_ESP32S3
 
+config SPIRAM_MODE_HEX
+	bool "16-Line Mode PSRAM"
+	depends on SOC_SERIES_ESP32P4
+
 endchoice # SPIRAM_MODE
 
 choice SPIRAM_TYPE
 	prompt "Type of SPI RAM chip in use"
+	depends on !SOC_SERIES_ESP32P4
 	default SPIRAM_TYPE_ESPPSRAM16 if SPIRAM_MODE_QUAD
 	default SPIRAM_TYPE_ESPPSRAM64
 
@@ -72,13 +79,14 @@ config ESP_SPIRAM_SIZE
 
 choice SPIRAM_SPEED
 	prompt "Set RAM clock speed"
+	default SPIRAM_SPEED_200M if SOC_SERIES_ESP32P4
 	default SPIRAM_SPEED_40M
 	help
 	  Select the speed for the SPI RAM chip.
 
 config SPIRAM_SPEED_20M
 	bool "20MHz clock speed"
-	depends on SOC_SERIES_ESP32S2
+	depends on SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32P4
 
 config SPIRAM_SPEED_26M
 	bool "26MHz clock speed"
@@ -86,23 +94,31 @@ config SPIRAM_SPEED_26M
 
 config SPIRAM_SPEED_40M
 	bool "40MHz clock speed"
+	depends on !SOC_SERIES_ESP32P4
 
 config SPIRAM_SPEED_80M
 	bool "80MHz clock speed"
-	depends on ESPTOOLPY_FLASHFREQ_80M
+	depends on ESPTOOLPY_FLASHFREQ_80M || SOC_SERIES_ESP32P4
 
 config SPIRAM_SPEED_120M
 	bool "120MHz clock speed"
 	depends on SPIRAM_MODE_QUAD && (SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32S3)
 	depends on ESPTOOLPY_FLASHFREQ_120M
 
+config SPIRAM_SPEED_200M
+	bool "200MHz clock speed"
+	depends on SOC_SERIES_ESP32P4
+
 endchoice # SPIRAM_SPEED
 
 config SPIRAM_SPEED
 	int
+	default 200 if SPIRAM_SPEED_200M
 	default 120 if SPIRAM_SPEED_120M
 	default 80 if SPIRAM_SPEED_80M
-	default 40 if SPIRAM_SPEED_40M || SPIRAM_SPEED_26M || SPIRAM_SPEED_20M
+	default 40 if SPIRAM_SPEED_40M
+	default 26 if SPIRAM_SPEED_26M
+	default 20 if SPIRAM_SPEED_20M
 
 config SPIRAM_CLK_IO
 	int
@@ -116,7 +132,7 @@ config SPIRAM_CS_IO
 
 config SPIRAM_FETCH_INSTRUCTIONS
 	bool "Move Instructions in Flash to PSRAM"
-	depends on SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
+	depends on SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32P4
 	help
 	  If enabled, instructions in flash will be moved into PSRAM on startup.
 	  If SPIRAM_RODATA is also enabled, code that requires execution during an SPI1 Flash operation
@@ -125,7 +141,7 @@ config SPIRAM_FETCH_INSTRUCTIONS
 
 config SPIRAM_RODATA
 	bool "Move Read-Only Data in Flash to PSRAM"
-	depends on SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
+	depends on SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32P4
 	help
 	  If enabled, rodata in flash will be moved into PSRAM on startup.
 	  If SPIRAM_FETCH_INSTRUCTIONS is also enabled, code that requires execution during an SPI1 Flash operation
@@ -134,7 +150,7 @@ config SPIRAM_RODATA
 
 config SPIRAM_ECC_ENABLE
 	bool "Allow enabling SPI RAM ECC"
-	depends on SOC_SERIES_ESP32C5 || (SPIRAM_MODE_OCT && SOC_SERIES_ESP32S3)
+	depends on SOC_SERIES_ESP32C5 || (SPIRAM_MODE_OCT && SOC_SERIES_ESP32S3) || SOC_SERIES_ESP32P4
 	help
 	  Enable MSPI Error-Correcting Code function when accessing SPIRAM.
 	  If enabled, 1/16 of the SPI RAM total size will be reserved for
@@ -242,4 +258,4 @@ endmenu # Relocate BSS to PSRAM
 
 endmenu # ESP_SPIRAM
 
-endif # SOC_SERIES_ESP32 || SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
+endif # SOC_SERIES_ESP32 || SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3 || SOC_SERIES_ESP32P4

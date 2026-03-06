@@ -8,7 +8,7 @@ board_runner_args(openocd  --no-halt --no-targets --no-load --target-handle _TAR
 # Set hardware watchpoint limit based on SOC capabilities
 if(CONFIG_SOC_SERIES_ESP32C3)
   set(ESP_HW_WATCHPOINT_LIMIT 8)
-elseif(CONFIG_SOC_SERIES_ESP32C6 OR CONFIG_SOC_SERIES_ESP32H2)
+elseif(CONFIG_SOC_SERIES_ESP32C6 OR CONFIG_SOC_SERIES_ESP32H2 OR CONFIG_SOC_SERIES_ESP32P4)
   set(ESP_HW_WATCHPOINT_LIMIT 4)
 elseif(CONFIG_SOC_SERIES_ESP32C5)
   set(ESP_HW_WATCHPOINT_LIMIT 3)
