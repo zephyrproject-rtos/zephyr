@@ -33,23 +33,34 @@ endif()
 zephyr_linker_include_var(VAR APP_SHARED_ALIGN_BYTES VALUE ${region_min_align})
 zephyr_linker_include_var(VAR SMEM_PARTITION_ALIGN_BYTES VALUE ${MPU_ALIGN_BYTES})
 
-# Note, the `+ 0` in formulas below avoids errors in cases where a Kconfig
-#       variable is undefined and thus expands to nothing.
-math(EXPR FLASH_ADDR
-     "${CONFIG_FLASH_BASE_ADDRESS} + ${CONFIG_FLASH_LOAD_OFFSET} + 0"
-     OUTPUT_FORMAT HEXADECIMAL
-)
+if(CONFIG_FLASH_USES_MAPPED_PARTITION)
+  dt_chosen(chosen_partition_path PROPERTY "zephyr,code-partition")
+  dt_reg_addr(FLASH_ADDR PATH "${chosen_partition_path}")
+  dt_reg_size(chosen_partition_size PATH "${chosen_partition_path}")
 
-if(CONFIG_FLASH_LOAD_SIZE GREATER 0)
   math(EXPR FLASH_SIZE
-       "(${CONFIG_FLASH_LOAD_SIZE} + 0) - (${CONFIG_ROM_END_OFFSET} + 0)"
-       OUTPUT_FORMAT HEXADECIMAL
+    "(${chosen_partition_size} + 0) - (${CONFIG_ROM_END_OFFSET} + 0)"
+    OUTPUT_FORMAT HEXADECIMAL
   )
 else()
-  math(EXPR FLASH_SIZE
-       "(${CONFIG_FLASH_SIZE} + 0) * 1024 - (${CONFIG_FLASH_LOAD_OFFSET} + 0) - (${CONFIG_ROM_END_OFFSET} + 0)"
-       OUTPUT_FORMAT HEXADECIMAL
+  # Note, the `+ 0` in formulas below avoids errors in cases where a Kconfig
+  #       variable is undefined and thus expands to nothing.
+  math(EXPR FLASH_ADDR
+    "${CONFIG_FLASH_BASE_ADDRESS} + ${CONFIG_FLASH_LOAD_OFFSET} + 0"
+    OUTPUT_FORMAT HEXADECIMAL
   )
+
+  if(CONFIG_FLASH_LOAD_SIZE GREATER 0)
+    math(EXPR FLASH_SIZE
+      "(${CONFIG_FLASH_LOAD_SIZE} + 0) - (${CONFIG_ROM_END_OFFSET} + 0)"
+      OUTPUT_FORMAT HEXADECIMAL
+    )
+  else()
+    math(EXPR FLASH_SIZE
+      "(${CONFIG_FLASH_SIZE} + 0) * 1024 - (${CONFIG_FLASH_LOAD_OFFSET} + 0) - (${CONFIG_ROM_END_OFFSET} + 0)"
+      OUTPUT_FORMAT HEXADECIMAL
+    )
+  endif()
 endif()
 
 set(RAM_ADDR ${CONFIG_SRAM_BASE_ADDRESS})
