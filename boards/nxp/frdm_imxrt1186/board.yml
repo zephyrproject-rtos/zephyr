@@ -4,3 +4,6 @@ board:
   vendor: nxp
   socs:
     - name: mimxrt1186
+      variants:
+        - name: extmem
+          cpucluster: cm7
