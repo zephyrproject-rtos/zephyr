@@ -240,37 +240,6 @@
 	};
 
 	soc {
-		iocell: iocell {
-			compatible = "st,stm32-iocell";
-			status = "disabled";
-
-			/* If iocell is enabled,
-			 * the bsec node needs to be enabled as well
-			 */
-			nvmem-cells = <&otp124_hconf1>;
-			nvmem-cell-names = "safeguard";
-
-			vddio {
-				domain = <STM32_DT_IOCELL_VDD>;
-			};
-
-			vddio2 {
-				domain = <STM32_DT_IOCELL_VDDIO2>;
-			};
-
-			vddio3 {
-				domain = <STM32_DT_IOCELL_VDDIO3>;
-			};
-
-			vddio4 {
-				domain = <STM32_DT_IOCELL_VDDIO4>;
-			};
-
-			vddio5 {
-				domain = <STM32_DT_IOCELL_VDDIO5>;
-			};
-		};
-
 		rcc: rcc@56028000 {
 			compatible = "st,stm32n6-rcc";
 			clocks-controller;
@@ -1441,6 +1410,37 @@
 			clocks = <&rcc STM32_CLOCK(AHB5, 3)>;
 			resets = <&rctl STM32_RESET(AHB5, 3)>;
 			status = "disabled";
+		};
+	};
+
+	iocell: iocell {
+		compatible = "st,stm32-iocell";
+		status = "disabled";
+
+		/* If iocell is enabled,
+		 * the bsec node needs to be enabled as well
+		 */
+		nvmem-cells = <&otp124_hconf1>;
+		nvmem-cell-names = "safeguard";
+
+		vddio {
+			domain = <STM32_DT_IOCELL_VDD>;
+		};
+
+		vddio2 {
+			domain = <STM32_DT_IOCELL_VDDIO2>;
+		};
+
+		vddio3 {
+			domain = <STM32_DT_IOCELL_VDDIO3>;
+		};
+
+		vddio4 {
+			domain = <STM32_DT_IOCELL_VDDIO4>;
+		};
+
+		vddio5 {
+			domain = <STM32_DT_IOCELL_VDDIO5>;
 		};
 	};
 };
