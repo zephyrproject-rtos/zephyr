@@ -143,6 +143,26 @@ should see the following message in the terminal:
    *** Booting Zephyr OS build v3.7.0-xxx-xxxx ***
    Hello World! frdm_mcxw72
 
+Entering ISP Mode
+=================
+
+To boot the MCU in ISP mode, follow these steps:
+
+   * Disconnect the ``FRDM-MCXW72`` board from all power sources.
+   * Keep the ``SW3`` button on the board pressed, while connecting
+     the board to the host computer USB port.
+   * Release the ``SW3`` button. The MCXW72 MCU boots in ISP mode.
+   * Reconnect any external power supply, if needed.
+
+Flashing with Low Power Mode
+============================
+
+When running an application with low power mode enabled (``CONFIG_PM=y``), flashing
+via the standard debug probe (MCU-Link or J-Link) may fail. This is because the
+MCU enters low power states where the SWD debug interface becomes unresponsive.
+
+To flash a board running a low power image, enter ISP mode (see ``Entering ISP Mode``).
+
 NBU Flashing
 ============
 
@@ -156,11 +176,7 @@ Two images must be written to the board: one for the host (CM33) and one for the
 - To flash the ``NBU Flashing``, follow the instructions below:
 
    * Install ``blhost`` from NXP's website. This is the tool that will allow you to flash the NBU.
-   * Enter ISP mode. To boot the MCU in ISP mode, follow these steps:
-      - Disconnect the ``FRDM-MCXW72`` board from all power sources.
-      - Keep the ``SW4`` and ``SW1`` buttons on the board pressed, while connecting the board to the host computer USB port.
-      - Release the ``SW4`` and ``SW1`` buttons. The MCXW72 MCU boots in ISP mode.
-      - Reconnect any external power supply, if needed.
+   * Enter ISP mode (see ``Entering ISP Mode``).
    * Use the following command to flash NBU file:
 
 .. tabs::
