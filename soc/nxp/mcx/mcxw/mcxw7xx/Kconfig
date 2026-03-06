@@ -13,10 +13,10 @@ config SOC_MCXW716C
 
 config SOC_MCXW727C
 	select NXP_MULTICORE if NXP_NBU
+	select HAS_PM
 
 config SOC_MCXW70AC
 	select NXP_MULTICORE if NXP_NBU
-	select HAS_PM
 
 config SOC_MCXW70AC
 	bool
