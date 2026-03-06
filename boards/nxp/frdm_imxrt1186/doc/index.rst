@@ -62,6 +62,27 @@ For more information about the i.MX RT1186 SoC and FRDM-iMXRT1186 board, see:
 - `FRDM-iMXRT1186 User Guide`_
 - `FRDM-iMXRT1186 Schematics`_
 
+Board Variants
+==============
+
+This board has three variants available:
+
+- ``frdm_imxrt1186/mimxrt1186/cm33``: Runs on the Cortex-M33 core, using
+  internal SRAM and Flash. This is the default bootable core.
+
+- ``frdm_imxrt1186/mimxrt1186/cm7``: Runs on the Cortex-M7 core, using
+  internal SRAM and Flash. Must be started by the CM33 core.
+
+- ``frdm_imxrt1186/mimxrt1186/cm7/extmem``: Runs on the Cortex-M7 core,
+  using external HyperRAM for ``zephyr,sram`` and external HyperFlash for
+  ``zephyr,flash``. This variant is provided for applications that require
+  more RAM or Flash than available in the internal memory. ITCM and DTCM
+  remain available for time-critical code and data.
+
+.. note::
+   When using the ``extmem`` variant, external memory is initialized through
+   J-Link debug scripts to ensure proper configuration before use.
+
 Supported Features
 ==================
 
