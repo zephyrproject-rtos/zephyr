@@ -20,6 +20,7 @@
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -149,7 +150,9 @@ struct bt_rfcomm_server {
 	int (*accept)(struct bt_conn *conn, struct bt_rfcomm_server *server,
 		      struct bt_rfcomm_dlc **dlc);
 
-	struct bt_rfcomm_server	*_next;
+	/** @cond INTERNAL_HIDDEN */
+	sys_snode_t node;
+	/** @endcond */
 };
 
 /** @brief RFCOMM RPN baud rate values */
