@@ -751,10 +751,6 @@ get_next_proc_param(struct bt_cap_common_proc *active_proc)
 
 		proc_param = &active_proc->proc_param.initiator[i];
 
-		if (proc_param->in_progress) {
-			continue;
-		}
-
 		cap_stream = proc_param->stream;
 		bap_stream = &cap_stream->bap_stream;
 		state = bt_cap_initiator_stream_get_state(bap_stream);
