@@ -89,17 +89,6 @@ config HAPTICS_CS40L5X_DSP_LOGGER
 	  Enable runtime configuration of the DSP logger, which can
 	  report back EMF, voltage, and voltage boost information.
 
-config HAPTICS_CS40L5X_METADATA_CACHE_LEN
-	int "Metadata Storage Length"
-	default 4
-	range 1 10
-	help
-	  Used to log details of GPIO- or mailbox-triggered haptics effects.
-	  If the number of active or queued effects exceeds the number
-	  provided by this option, then generic messages will be logged for
-	  playbacks. This option directly corresponds to the length of the
-	  ring buffer used to store metadata for haptics effects.
-
 config HAPTICS_CS40L5X_PM_ACTIVE_TIMEOUT_MS
 	int "Active Timeout"
 	default 100
@@ -115,12 +104,5 @@ config HAPTICS_CS40L5X_PM_STDBY_TIMEOUT_MS
 	help
 	  When the device enters the standby state with hibernation enabled,
 	  wait the specified amount of time (in ms) before entering hibernation.
-
-config HAPTICS_CS40L5X_TRIGGER_INTERRUPTS
-	bool "Trigger Interrupts"
-	default y
-	help
-	  Enable interrupt processing for edge-triggered events. Required
-	  for detailed logging of trigger events.
 
 endif #HAPTICS_CS40L5X
