@@ -695,6 +695,16 @@ config RISCV_M_MODE_STACK_SIZE
 	  runtime handler. Increase this if the handler is extended with
 	  functionality that requires more stack space.
 
+config RISCV_FPU_INSN_VALIDATE
+	bool
+	default y if ASSERT
+	depends on FPU_SHARING
+	help
+	  When enabled, the FPU trap handler will explicitly decode the
+	  trapping instruction to ensure it is a valid floating-point
+	  instruction. This catches edge cases where non-FPU instructions
+	  (like Vector instructions) might accidentally trigger an FP trap.
+
 rsource "Kconfig.isa"
 
 rsource "custom/Kconfig"
