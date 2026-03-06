@@ -1,8 +1,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_library_named(openthread_platform)
+if(CONFIG_OPENTHREAD_ALARM_COUNTER)
+  zephyr_library_sources(alarm_counter.c)
+else()
+  zephyr_library_sources(alarm_micro.c)
+endif()
 zephyr_library_sources(
-  alarm_micro.c
   alarm_milli.c
   entropy.c
   misc.c
