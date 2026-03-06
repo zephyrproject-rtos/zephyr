@@ -14,23 +14,39 @@ drivers and new USB support.
 Building and flashing
 *********************
 
+The shell can be built with host and/or device stack support by selecting the
+:ref:`application-file-suffixes`, where ``-DFILE_SUFFIX=<mode>`` selects
+``prj_<mode>.conf``.
+
 Assuming the board has a supported USB device controller, the example can be
 built like:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/shell
    :board: reel_board
+   :gen-args: -DFILE_SUFFIX=device
    :goals: flash
    :compact:
 
-For the USB host functionality a supported host controller is required,
-currently it is only MAX3421E. The example can be built as follows:
+Assuming the board has a supported USB host controller, the example can be
+built like:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/shell
    :board: nrf52840dk/nrf52840
    :shield: sparkfun_max3421e
-   :gen-args: -DCONFIG_UHC_DRIVER=y -DCONFIG_USB_HOST_STACK=y
+   :gen-args: -DFILE_SUFFIX=host
+   :goals: flash
+   :compact:
+
+Assuming the board has a supported USB device and host controller,
+the example can be built like:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/usb/shell
+   :board: nrf52840dk/nrf52840
+   :shield: sparkfun_max3421e
+   :gen-args: -DFILE_SUFFIX=device_and_host
    :goals: flash
    :compact:
 
@@ -41,7 +57,7 @@ the platform has already defined or not ``zephyr_uhc0`` or ``zephyr_udc0`` nodel
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/usb/shell
    :board: nrf52840dk/nrf52840
-   :gen-args: -DEXTRA_CONF_FILE=virtual.conf -DDTC_OVERLAY_FILE=virtual.overlay
+   :gen-args: -DFILE_SUFFIX=device_and_host -DDTC_OVERLAY_FILE=virtual.overlay
    :goals: flash
    :compact:
 
