@@ -3409,6 +3409,19 @@ LoRa and LoRaWAN:
     - sample.driver.lora
     - lorawan
 
+LoRaWAN native backend:
+  status: maintained
+  maintainers:
+    - carlocaione
+  collaborators:
+    - JordanYates
+    - martinjaeger
+    - mniestroj
+  files:
+    - subsys/lorawan/native/
+  labels:
+    - "area: LoRa"
+
 Logging:
   status: maintained
   maintainers:

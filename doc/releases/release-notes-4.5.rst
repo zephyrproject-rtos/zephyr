@@ -105,6 +105,13 @@ New Samples
 Libraries / Subsystems
 **********************
 
+* LoRa / LoRaWAN
+
+  * Added a native LoRaWAN backend
+    (:kconfig:option:`CONFIG_LORA_MODULE_BACKEND_NATIVE`) that implements
+    LoRaWAN 1.0.x Class A directly on top of the LoRa radio driver, without
+    the Semtech LoRaMac-node dependency.  Currently supports the EU868 region.
+
 Other notable changes
 *********************
 
