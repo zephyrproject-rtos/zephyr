@@ -24,7 +24,6 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/storage/flash_map.h>
-#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -684,7 +683,8 @@ static void cs40l5x_trigger_handler(const struct device *port, struct gpio_callb
 {
 	struct cs40l5x_data *const data = CONTAINER_OF(cb, struct cs40l5x_data, trigger_callback);
 	struct gpio_dt_spec triggered_gpio = {.port = port, .pin = find_lsb_set(pins) - 1};
-	const struct cs40l5x_config *const config = data->config;
+	const struct device *const dev = data->dev;
+	const struct cs40l5x_config *const config = dev->config;
 	const struct cs40l5x_trigger_gpios *const gpios = &config->trigger_gpios;
 	struct cs40l5x_trigger_item item;
 	uint8_t i;
@@ -737,11 +737,14 @@ static int cs40l5x_trigger_irq_config(const struct device *dev)
 		return -ENODEV;
 	}
 
-	(void)gpio_init_callback(&data->trigger_callback, cs40l5x_trigger_handler, pin_mask);
+	gpio_init_callback(&data->trigger_callback, cs40l5x_trigger_handler, pin_mask);
 
 	for (int i = 0; i < gpios->num_gpio; i++) {
 		if ((pin_mask & BIT(gpios->gpio[i].pin)) != 0) {
-			(void)gpio_add_callback_dt(&gpios->gpio[i], &data->trigger_callback);
+			ret = gpio_add_callback_dt(&gpios->gpio[i], &data->trigger_callback);
+			if (ret < 0) {
+				return ret;
+			}
 		}
 	}
 
@@ -773,7 +776,7 @@ static void cs40l5x_error_callback(const struct device *const dev, const uint32_
 	struct cs40l5x_data *const data = dev->data;
 
 	if (data->error_callback != NULL) {
-		(void)data->error_callback(dev, error_bitmask, data->user_data);
+		data->error_callback(dev, error_bitmask, data->user_data);
 	}
 }
 
@@ -826,12 +829,12 @@ static int cs40l5x_process_mailbox(const struct device *const dev)
 			break;
 		case CS40L5X_MBOX_PLAYBACK_START_MBOX:
 			data->effects_in_flight += 1;
-			(void)cs40l5x_mailbox_log(dev);
+			cs40l5x_mailbox_log(dev);
 			LOG_INST_DBG(config->log, "effects in flight: %d", data->effects_in_flight);
 			break;
 		case CS40L5X_MBOX_PLAYBACK_START_GPIO:
 			data->effects_in_flight += 1;
-			(void)cs40l5x_trigger_log(dev);
+			cs40l5x_trigger_log(dev);
 			LOG_INST_DBG(config->log, "effects in flight: %d", data->effects_in_flight);
 			break;
 		case CS40L5X_MBOX_INIT:
@@ -845,19 +848,19 @@ static int cs40l5x_process_mailbox(const struct device *const dev)
 			break;
 		case CS40L5X_MBOX_REDC_EST_DONE:
 			LOG_INST_DBG(config->log, "complete  | ReDC calibration");
-			(void)k_sem_give(&data->calibration_semaphore);
+			k_sem_give(&data->calibration_semaphore);
 			break;
 		case CS40L5X_MBOX_F0_EST_START:
 			LOG_INST_DBG(config->log, "start     | F0 calibration");
 			break;
 		case CS40L5X_MBOX_F0_EST_DONE:
 			LOG_INST_DBG(config->log, "complete  | F0 calibration");
-			(void)k_sem_give(&data->calibration_semaphore);
+			k_sem_give(&data->calibration_semaphore);
 			break;
 		case CS40L5X_MBOX_PERMANENT_SHORT_DETECTED:
 			__fallthrough;
 		case CS40L5X_MBOX_RUNTIME_SHORT_DETECTED:
-			(void)cs40l5x_error_callback(dev, HAPTICS_ERROR_OVERCURRENT);
+			cs40l5x_error_callback(dev, HAPTICS_ERROR_OVERCURRENT);
 
 			return 0;
 		default:
@@ -949,7 +952,7 @@ static int cs40l5x_process_interrupts(const struct device *const dev,
 	}
 
 	if (error_bitmask != 0) {
-		(void)cs40l5x_error_callback(dev, error_bitmask);
+		cs40l5x_error_callback(dev, error_bitmask);
 	}
 
 	return 0;
@@ -1002,7 +1005,8 @@ static void cs40l5x_interrupt_worker(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct cs40l5x_data *data = CONTAINER_OF(dwork, struct cs40l5x_data, interrupt_worker);
-	const struct cs40l5x_config *const config = data->config;
+	const struct device *const dev = data->dev;
+	const struct cs40l5x_config *const config = dev->config;
 	uint32_t irq1_status, irq_ints[CS40L5X_NUM_IRQ1_INT];
 	int ret;
 
@@ -1070,7 +1074,8 @@ static void cs40l5x_interrupt_handler(const struct device *port, struct gpio_cal
 				      uint32_t pins)
 {
 	struct cs40l5x_data *const data = CONTAINER_OF(cb, struct cs40l5x_data, interrupt_callback);
-	__maybe_unused const struct cs40l5x_config *const config = data->config;
+	const struct device *const dev = data->dev;
+	__maybe_unused const struct cs40l5x_config *const config = dev->config;
 	int ret;
 
 	ret = k_work_schedule(&data->interrupt_worker, CS40L5X_T_INTERRUPT_DEBOUNCER);
@@ -1107,11 +1112,10 @@ static int cs40l5x_irq_config(const struct device *const dev)
 		return ret;
 	}
 
-	(void)gpio_init_callback(&data->interrupt_callback, cs40l5x_interrupt_handler,
-				 BIT(config->interrupt_gpio.pin));
-	(void)gpio_add_callback_dt(&config->interrupt_gpio, &data->interrupt_callback);
+	gpio_init_callback(&data->interrupt_callback, cs40l5x_interrupt_handler,
+			   BIT(config->interrupt_gpio.pin));
 
-	return ret;
+	return gpio_add_callback_dt(&config->interrupt_gpio, &data->interrupt_callback);
 }
 
 static int cs40l5x_click_compensation(const struct device *const dev)
@@ -1442,7 +1446,7 @@ static int cs40l5x_bringup(const struct device *const dev)
 		LOG_INST_WRN(config->log, "failed errata update (%d)", ret);
 	};
 
-	(void)cs40l5x_dsp_config(dev);
+	cs40l5x_dsp_config(dev);
 
 	if (CS40L5X_ANY_DEV_USE_HIBERNATION) {
 		ret = cs40l5x_timeout_config(dev);
@@ -2490,8 +2494,8 @@ static int cs40l5x_init(const struct device *dev)
 		return -ENOMEM;
 	}
 
-	if (CS40L5X_ANY_DEV_USE_INTERRUPTS && config->interrupt_gpio.port != NULL) {
-		(void)k_work_init_delayable(&data->interrupt_worker, cs40l5x_interrupt_worker);
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_INTERRUPT) && config->interrupt_gpio.port != NULL) {
+		k_work_init_delayable(&data->interrupt_worker, cs40l5x_interrupt_worker);
 	}
 
 	if (CS40L5X_ANY_DEV_USE_INTERRUPTS && config->interrupt_gpio.port != NULL) {
@@ -2561,10 +2565,9 @@ __maybe_unused static int cs40l5x_deinit(const struct device *dev)
 		(EMPTY)										   \
 	)
 
-#define HAPTICS_CS40L5X_DATA(inst)                                                                 \
-	.dev = DEVICE_DT_INST_GET(inst), .config = &cs40l5x_config_##inst, .error_callback = NULL, \
-	.output = CS40L5X_ROM_BANK_CMD, .custom_effects = {false, false},                          \
-	.calibration = {.f0 = 0, .redc = 0},
+#define HAPTICS_CS40L5X_DATA(inst, name)                                                           \
+	.dev = DEVICE_DT_INST_GET(inst), .error_callback = NULL, .output = CS40L5X_ROM_BANK_CMD,   \
+	.custom_effects = {false, false}, .calibration = {.f0 = 0, .redc = 0},
 
 #define HAPTICS_CS40L5X_FALLING_DEFAULT(inst, prop, idx)                                           \
 	COND_CODE_1(IS_EQ(3, DT_PROP_BY_IDX(inst, prop, idx)),					   \
@@ -2655,11 +2658,6 @@ __maybe_unused static int cs40l5x_deinit(const struct device *dev)
 			.ready = NULL},)							   \
 	)
 
-#define HAPTICS_CS40L5X_IRQ(inst)                                                                  \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int_gpios),					   \
-		(.interrupt_gpio = GPIO_DT_SPEC_INST_GET(inst, int_gpios),),			   \
-		(.interrupt_gpio = {.port = NULL, .pin = 0},))
-
 #define HAPTICS_CS40L5X_FLASH_DEVICE(inst)                                                         \
 	DEVICE_DT_GET_OR_NULL(DT_MTD_FROM_PARTITION(DT_INST_PHANDLE(inst, flash_storage)))
 
@@ -2682,13 +2680,14 @@ __maybe_unused static int cs40l5x_deinit(const struct device *dev)
 		(.bus.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER),		   \
 			.bus_io = &cs40l5x_bus_io_spi,))
 
-#define HAPTICS_CS40L5X_CONFIG(inst)                                                               \
-	.dev = DEVICE_DT_INST_GET(inst), .data = &cs40l5x_data_##inst,                             \
+#define HAPTICS_CS40L5X_CONFIG(inst, name, id)                                                     \
+	.dev = DEVICE_DT_INST_GET(inst), .dev_id = id,                                             \
 	.reset_gpio = GPIO_DT_SPEC_INST_GET(inst, reset_gpios),                                    \
+	.interrupt_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, 0),                            \
 	.external_boost = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, external_boost)),            \
 	LOG_INSTANCE_PTR_INIT(log, DT_NODE_FULL_NAME_TOKEN(DT_DRV_INST(inst)), inst)               \
-		HAPTICS_CS40L5X_BUS(inst) HAPTICS_CS40L5X_IRQ(inst)                                \
-			HAPTICS_CS40L5X_TRIGGER_GPIOS(inst) HAPTICS_CS40L5X_FLASH(inst)
+		HAPTICS_CS40L5X_BUS(inst) HAPTICS_CS40L5X_TRIGGER_GPIOS(inst)                      \
+			HAPTICS_CS40L5X_FLASH(inst)
 
 #define HAPTICS_CS40L5X_INIT(inst)                                                                 \
 	PM_DEVICE_DT_INST_DEFINE(inst, cs40l5x_pm_action);                                         \
@@ -2704,10 +2703,9 @@ __maybe_unused static int cs40l5x_deinit(const struct device *dev)
 	HAPTICS_CS40L5X_BUILD_ASSERTS(inst)                                                        \
 	LOG_INSTANCE_REGISTER(DT_NODE_FULL_NAME_TOKEN(DT_DRV_INST(inst)), inst,                    \
 			      CONFIG_HAPTICS_LOG_LEVEL);                                           \
-	static const struct cs40l5x_config cs40l5x_config_##inst;                                  \
-	static struct cs40l5x_data cs40l5x_data_##inst;                                            \
-	static const struct cs40l5x_config cs40l5x_config_##inst = {HAPTICS_CS40L5X_CONFIG(inst)}; \
-	static struct cs40l5x_data cs40l5x_data_##inst = {HAPTICS_CS40L5X_DATA(inst)};             \
-	HAPTICS_CS40L5X_INIT(inst)
+	static const struct cs40l5x_config name##_config_##inst = {                                \
+		HAPTICS_CS40L5X_CONFIG(inst, name, id)};                                           \
+	static struct cs40l5x_data name##_data_##inst = {HAPTICS_CS40L5X_DATA(inst, name)};        \
+	HAPTICS_CS40L5X_INIT(inst, name)
 
 DT_INST_FOREACH_STATUS_OKAY(HAPTICS_CS40L5X_DEFINE)
