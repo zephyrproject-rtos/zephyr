@@ -371,6 +371,19 @@ static void send_target_bootdone(void)
 }
 #endif
 
+static void get_pch_temp(const struct device *dev)
+{
+#if defined(CONFIG_ESPI_OOB_CHANNEL)
+	if (IS_ENABLED(CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC)) {
+		/* System with host-initiated OOB Rx traffic */
+		get_pch_temp_async(dev);
+	} else {
+		/* System without host-initiated OOB Rx traffic */
+		get_pch_temp_sync(dev);
+	}
+#endif
+}
+
 int espi_test(void)
 {
 	int ret;
@@ -521,16 +534,8 @@ int espi_test(void)
 		return ret;
 	}
 
-	/*  Attempt to use OOB channel to read temperature, regardless of
-	 * if is enabled or not.
-	 */
-#ifndef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
-	/* System without host-initiated OOB Rx traffic */
-	get_pch_temp_sync(espi_dev);
-#else
-	/* System with host-initiated OOB Rx traffic */
-	get_pch_temp_async(espi_dev);
-#endif
+	/* Use OOB channel, if enabled, to read PCH temperature */
+	get_pch_temp(espi_dev);
 
 	/* Cleanup */
 	k_sleep(K_SECONDS(1));
