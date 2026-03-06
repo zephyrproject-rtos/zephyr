@@ -14,6 +14,7 @@
 
 #include "usbh_device.h"
 #include "usbh_ch9.h"
+#include "usbh_desc.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbh_shell, CONFIG_USBH_LOG_LEVEL);
@@ -24,36 +25,174 @@ LOG_MODULE_REGISTER(usbh_shell, CONFIG_USBH_LOG_LEVEL);
 USBH_CONTROLLER_DEFINE(uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
 static uint8_t vreq_test_buf[1024];
 
-static void print_dev_desc(const struct shell *sh,
-			   const struct usb_device_descriptor *const desc)
+static void print_desc_field(const struct shell *sh, int indent,
+			     const char *name, const char *value,
+			     const char *comment)
 {
-	shell_print(sh, "bLength\t\t\t%u", desc->bLength);
-	shell_print(sh, "bDescriptorType\t\t%u", desc->bDescriptorType);
-	shell_print(sh, "bcdUSB\t\t\t%x", desc->bcdUSB);
-	shell_print(sh, "bDeviceClass\t\t%u", desc->bDeviceClass);
-	shell_print(sh, "bDeviceSubClass\t\t%u", desc->bDeviceSubClass);
-	shell_print(sh, "bDeviceProtocol\t\t%u", desc->bDeviceProtocol);
-	shell_print(sh, "bMaxPacketSize0\t\t%u", desc->bMaxPacketSize0);
-	shell_print(sh, "idVendor\t\t%x", desc->idVendor);
-	shell_print(sh, "idProduct\t\t%x", desc->idProduct);
-	shell_print(sh, "bcdDevice\t\t%x", desc->bcdDevice);
-	shell_print(sh, "iManufacturer\t\t%u", desc->iManufacturer);
-	shell_print(sh, "iProduct\t\t%u", desc->iProduct);
-	shell_print(sh, "iSerial\t\t\t%u", desc->iSerialNumber);
-	shell_print(sh, "bNumConfigurations\t%u", desc->bNumConfigurations);
+	if (comment != NULL && comment[0] != '\0') {
+		shell_print(sh, "%*s%-20s %12s %s",
+			    indent, "", name, value, comment);
+	} else {
+		shell_print(sh, "%*s%-20s %12s",
+			    indent, "", name, value);
+	}
 }
 
-static void print_cfg_desc(const struct shell *sh,
-			   const struct usb_cfg_descriptor *const desc)
+static void print_desc_u(const struct shell *sh, int indent,
+			 const char *name, unsigned int value,
+			 const char *comment)
 {
-	shell_print(sh, "bLength\t\t\t%u", desc->bLength);
-	shell_print(sh, "bDescriptorType\t\t%u", desc->bDescriptorType);
-	shell_print(sh, "wTotalLength\t\t%x", desc->wTotalLength);
-	shell_print(sh, "bNumInterfaces\t\t%u", desc->bNumInterfaces);
-	shell_print(sh, "bConfigurationValue\t%u", desc->bConfigurationValue);
-	shell_print(sh, "iConfiguration\t\t%u", desc->iConfiguration);
-	shell_print(sh, "bmAttributes\t\t%02x", desc->bmAttributes);
-	shell_print(sh, "bMaxPower\t\t%u mA", desc->bMaxPower * 2);
+	char buf[16];
+
+	snprintk(buf, sizeof(buf), "%u", value);
+	print_desc_field(sh, indent, name, buf, comment);
+}
+
+static void print_desc_x8(const struct shell *sh, int indent,
+			  const char *name, uint8_t value,
+			  const char *comment)
+{
+	char buf[16];
+
+	snprintk(buf, sizeof(buf), "0x%02X", value);
+	print_desc_field(sh, indent, name, buf, comment);
+}
+
+static void print_desc_x16(const struct shell *sh, int indent,
+			   const char *name, uint16_t value,
+			   const char *comment)
+{
+	char buf[16];
+
+	snprintk(buf, sizeof(buf), "0x%04X", value);
+	print_desc_field(sh, indent, name, buf, comment);
+}
+
+static void print_desc_bcd(const struct shell *sh, int indent,
+			   const char *name, uint16_t value,
+			   const char *comment)
+{
+	char buf[16];
+
+	snprintk(buf, sizeof(buf), "%x.%02x", value >> 8, value & 0xff);
+	print_desc_field(sh, indent, name, buf, comment);
+}
+
+static void print_dev_desc_indent(const struct shell *sh, const int indent,
+				  const struct usb_device_descriptor *const desc)
+{
+	uint8_t dindent = indent + 2; /* Data has a small indent */
+
+	shell_print(sh, "%*sDevice Descriptor:", indent, "");
+	print_desc_u(sh, dindent, "bLength", desc->bLength, NULL);
+	print_desc_u(sh, dindent, "bDescriptorType", desc->bDescriptorType, NULL);
+	print_desc_bcd(sh, dindent, "bcdUSB", desc->bcdUSB, NULL);
+	print_desc_u(sh, dindent, "bDeviceClass", desc->bDeviceClass, NULL);
+	print_desc_u(sh, dindent, "bDeviceSubClass", desc->bDeviceSubClass, NULL);
+	print_desc_u(sh, dindent, "bDeviceProtocol", desc->bDeviceProtocol, NULL);
+	print_desc_u(sh, dindent, "bMaxPacketSize0", desc->bMaxPacketSize0, NULL);
+	print_desc_x16(sh, dindent, "idVendor", desc->idVendor, NULL);
+	print_desc_x16(sh, dindent, "idProduct", desc->idProduct, NULL);
+	print_desc_bcd(sh, dindent, "bcdDevice", desc->bcdDevice, NULL);
+	print_desc_u(sh, dindent, "iManufacturer", desc->iManufacturer, NULL);
+	print_desc_u(sh, dindent, "iProduct", desc->iProduct, NULL);
+	print_desc_u(sh, dindent, "iSerial", desc->iSerialNumber, NULL);
+	print_desc_u(sh, dindent, "bNumConfigurations", desc->bNumConfigurations, NULL);
+}
+
+static void print_cfg_desc_indent(const struct shell *sh, const int indent,
+				  const struct usb_cfg_descriptor *const desc)
+{
+	uint8_t dindent = indent + 2; /* Data has a small indent */
+
+	shell_print(sh, "%*sConfiguration Descriptor:", indent, "");
+	print_desc_u(sh, dindent, "bLength", desc->bLength, NULL);
+	print_desc_u(sh, dindent, "bDescriptorType", desc->bDescriptorType, NULL);
+	print_desc_x16(sh, dindent, "wTotalLength", desc->wTotalLength, NULL);
+	print_desc_u(sh, dindent, "bNumInterfaces", desc->bNumInterfaces, NULL);
+	print_desc_u(sh, dindent, "bConfigurationValue", desc->bConfigurationValue, NULL);
+	print_desc_u(sh, dindent, "iConfiguration", desc->iConfiguration, NULL);
+	print_desc_x8(sh, dindent, "bmAttributes", desc->bmAttributes, NULL);
+	print_desc_u(sh, dindent, "bMaxPower", desc->bMaxPower * 2, "mA");
+}
+
+static void print_iface_desc_indent(const struct shell *sh, const int indent,
+				    const struct usb_if_descriptor *const desc)
+{
+	uint8_t dindent = indent + 2; /* Data has a small indent */
+
+	shell_print(sh, "%*sInterface Descriptor:", indent, "");
+	print_desc_u(sh, dindent, "bLength", desc->bLength, NULL);
+	print_desc_u(sh, dindent, "bDescriptorType", desc->bDescriptorType, NULL);
+	print_desc_u(sh, dindent, "bInterfaceNumber", desc->bInterfaceNumber, NULL);
+	print_desc_u(sh, dindent, "bAlternateSetting", desc->bAlternateSetting, NULL);
+	print_desc_u(sh, dindent, "bNumEndpoints", desc->bNumEndpoints, NULL);
+	print_desc_u(sh, dindent, "bInterfaceClass", desc->bInterfaceClass, NULL);
+	print_desc_u(sh, dindent, "bInterfaceSubClass", desc->bInterfaceSubClass, NULL);
+	print_desc_u(sh, dindent, "bInterfaceProtocol", desc->bInterfaceProtocol, NULL);
+	print_desc_u(sh, dindent, "iInterface", desc->iInterface, NULL);
+}
+
+static void print_assoc_desc_indent(const struct shell *sh, const int indent,
+				    const struct usb_association_descriptor *const desc)
+{
+	uint8_t dindent = indent + 2; /* Data has a small indent */
+
+	shell_print(sh, "%*sInterface Association:", indent, "");
+	print_desc_u(sh, dindent, "bLength", desc->bLength, NULL);
+	print_desc_u(sh, dindent, "bDescriptorType", desc->bDescriptorType, NULL);
+	print_desc_u(sh, dindent, "bFirstInterface", desc->bFirstInterface, NULL);
+	print_desc_u(sh, dindent, "bInterfaceCount", desc->bInterfaceCount, NULL);
+	print_desc_u(sh, dindent, "bFunctionClass", desc->bFunctionClass, NULL);
+	print_desc_u(sh, dindent, "bFunctionSubClass", desc->bFunctionSubClass, NULL);
+	print_desc_u(sh, dindent, "bFunctionProtocol", desc->bFunctionProtocol, NULL);
+	print_desc_u(sh, dindent, "iFunction", desc->iFunction, NULL);
+}
+
+static void print_ep_desc_indent(const struct shell *sh, const int indent,
+				 const struct usb_ep_descriptor *const desc)
+{
+	uint8_t dindent = indent + 2; /* Data has a small indent */
+
+	shell_print(sh, "%*sEndpoint Descriptor:", indent, "");
+	print_desc_u(sh, dindent, "bLength", desc->bLength, NULL);
+	print_desc_u(sh, dindent, "bDescriptorType", desc->bDescriptorType, NULL);
+	print_desc_x8(sh, dindent, "bEndpointAddress", desc->bEndpointAddress, NULL);
+	print_desc_x8(sh, dindent, "bmAttributes", desc->bmAttributes, NULL);
+	print_desc_u(sh, dindent, "wMaxPacketSize", desc->wMaxPacketSize, NULL);
+	print_desc_u(sh, dindent, "bInterval", desc->bInterval, NULL);
+}
+
+static void print_unhandled_desc_indent(const struct shell *sh, const int indent,
+					const struct usb_desc_header *const dhp)
+{
+	uint8_t dindent = indent + 2; /* Data has a small indent */
+
+	shell_print(sh, "%*sUnhandled Descriptor:", indent, "");
+	print_desc_u(sh, dindent, "bLength", dhp->bLength, NULL);
+	print_desc_u(sh, dindent, "bDescriptorType", dhp->bDescriptorType, NULL);
+}
+
+static void print_desc(const struct shell *sh, const void *const desc)
+{
+	const struct usb_desc_header *const dhp = desc;
+
+	switch (dhp->bDescriptorType) {
+	case USB_DESC_CONFIGURATION:
+		print_cfg_desc_indent(sh, 2, desc);
+		break;
+	case USB_DESC_INTERFACE:
+		print_iface_desc_indent(sh, 4, desc);
+		break;
+	case USB_DESC_ENDPOINT:
+		print_ep_desc_indent(sh, 6, desc);
+		break;
+	case USB_DESC_INTERFACE_ASSOC:
+		print_assoc_desc_indent(sh, 4, desc);
+		break;
+	default:
+		print_unhandled_desc_indent(sh, 4, desc);
+	}
 }
 
 K_SEM_DEFINE(bulk_req_sync, 0, 1);
@@ -228,7 +367,7 @@ static int cmd_desc_device(const struct shell *sh,
 	if (err) {
 		shell_print(sh, "host: Failed to request device descriptor");
 	} else {
-		print_dev_desc(sh, &desc);
+		print_dev_desc_indent(sh, 0, &desc);
 	}
 
 	return err;
@@ -256,7 +395,7 @@ static int cmd_desc_config(const struct shell *sh,
 	if (err) {
 		shell_print(sh, "host: Failed to request configuration descriptor");
 	} else {
-		print_cfg_desc(sh, &desc);
+		print_cfg_desc_indent(sh, 0, &desc);
 	}
 
 	return err;
@@ -579,6 +718,32 @@ static int cmd_device_list(const struct shell *sh,
 	SYS_DLIST_FOR_EACH_CONTAINER(&uhs_ctx.udevs, udev, node) {
 		shell_print(sh, "%u", udev->addr);
 	}
+	return 0;
+}
+
+static int cmd_device_list_dd(const struct shell *sh,
+			      size_t argc, char **argv)
+{
+	struct usb_device *udev;
+	const struct usb_desc_header *dhp;
+	uint8_t addr;
+
+	addr = strtol(argv[1], NULL, 10);
+	udev = usbh_device_get(&uhs_ctx, addr);
+	if (udev == NULL) {
+		shell_error(sh, "host: No USB device with address %u", addr);
+		return -ENOMEM;
+	}
+
+	/* Print device descriptor */
+	print_dev_desc_indent(sh, 0, &udev->dev_desc);
+
+	dhp = udev->cfg_desc;
+	while (dhp != NULL) {
+		/* Print every entry */
+		print_desc(sh, dhp);
+		dhp = usbh_desc_get_next(dhp);
+	}
 
 	return 0;
 }
@@ -726,6 +891,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(config_cmds,
 SHELL_STATIC_SUBCMD_SET_CREATE(device_cmds,
 	SHELL_CMD_ARG(list, NULL, NULL,
 		      cmd_device_list, 1, 0),
+	SHELL_CMD_ARG(list_dd, NULL, "<address>",
+		      cmd_device_list_dd, 2, 0),
 	SHELL_CMD_ARG(address, NULL, "<address> <new address>",
 		      cmd_device_address, 3, 0),
 	SHELL_CMD_ARG(config, &config_cmds, "get|set configuration",
