@@ -109,7 +109,7 @@ endif()
 if(ECLAIR_FULL_ODT)
   list(APPEND ECLAIR_REPORT_ADDITIONAL_OPTIONS "-full_odt=${ECLAIR_OUTPUT_DIR}/report_full_odt")
 endif()
-if(ECLAIR_FULL_HTL)
+if(ECLAIR_FULL_HTML)
   list(APPEND ECLAIR_REPORT_ADDITIONAL_OPTIONS "-full_html=${ECLAIR_OUTPUT_DIR}/report_full_html")
 endif()
 
