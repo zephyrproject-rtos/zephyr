@@ -179,23 +179,6 @@
 	};
 
 	soc {
-		iocell: iocell {
-			compatible = "st,stm32-iocell";
-			status = "disabled";
-
-			vddio {
-				domain = <STM32_DT_IOCELL_VDDIO>;
-			};
-
-			vddxspi1 {
-				domain = <STM32_DT_IOCELL_XSPI1>;
-			};
-
-			vddxspi2 {
-				domain = <STM32_DT_IOCELL_XSPI2>;
-			};
-		};
-
 		flash: flash-controller@52002000 {
 			compatible = "st,stm32-flash-controller", "st,stm32h7-flash-controller";
 			reg = <0x52002000 0x400>;
@@ -1096,6 +1079,23 @@
 					bus-type = <VIDEO_BUS_TYPE_PARALLEL>;
 				};
 			};
+		};
+	};
+
+	iocell: iocell {
+		compatible = "st,stm32-iocell";
+		status = "disabled";
+
+		vddio {
+			domain = <STM32_DT_IOCELL_VDDIO>;
+		};
+
+		vddxspi1 {
+			domain = <STM32_DT_IOCELL_XSPI1>;
+		};
+
+		vddxspi2 {
+			domain = <STM32_DT_IOCELL_XSPI2>;
 		};
 	};
 

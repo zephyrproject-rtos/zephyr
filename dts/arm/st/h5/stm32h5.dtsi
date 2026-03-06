@@ -121,19 +121,6 @@
 	};
 
 	soc {
-		iocell: iocell {
-			compatible = "st,stm32h5-iocell", "st,stm32-iocell";
-			status = "disabled";
-
-			vddio {
-				domain = <STM32_DT_IOCELL_VDDIO>;
-			};
-
-			vddio2 {
-				domain = <STM32_DT_IOCELL_VDDIO2>;
-			};
-		};
-
 		flash: flash-controller@40022000 {
 			compatible = "st,stm32-flash-controller", "st,stm32l5-flash-controller";
 			reg = <0x40022000 0x400>;
@@ -706,6 +693,19 @@
 			interrupt-names = "digi_temp";
 			clocks = <&rcc STM32_CLOCK(APB1_2, 3)>;
 			status = "disabled";
+		};
+	};
+
+	iocell: iocell {
+		compatible = "st,stm32h5-iocell", "st,stm32-iocell";
+		status = "disabled";
+
+		vddio {
+			domain = <STM32_DT_IOCELL_VDDIO>;
+		};
+
+		vddio2 {
+			domain = <STM32_DT_IOCELL_VDDIO2>;
 		};
 	};
 
