@@ -12,6 +12,7 @@ sysbuild: true
 toolchain:
   - zephyr
 supported:
+  - adc
   - bluetooth
   - clock_control
   - dma
