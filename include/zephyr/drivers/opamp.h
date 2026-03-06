@@ -52,13 +52,15 @@ enum opamp_gain {
 };
 
 /**
- * @cond INTERNAL_HIDDEN
- *
- * For internal use only, skip these in public documentation.
+ * @def_driverbackendgroup{OPAMP,opamp_interface}
+ * @{
  */
 
 /**
- * @brief Enumerations for opamp functional mode.
+ * @brief OPAMP functional mode.
+ *
+ * Values correspond 1:1 to the `functional-mode` property in
+ * `dts/bindings/opamp/opamp-controller.yaml`.
  */
 enum opamp_functional_mode {
 	/** Differential amplifier mode */
@@ -77,13 +79,25 @@ enum opamp_functional_mode {
 	OPAMP_FUNCTIONAL_MODE_STANDALONE,
 };
 
+/**
+ * @brief Callback API to set opamp gain.
+ * See opamp_set_gain() for argument description
+ */
 typedef int (*opamp_api_set_gain_t)(const struct device *dev, enum opamp_gain gain);
 
+/**
+ * @driver_ops{OPAMP}
+ */
 __subsystem struct opamp_driver_api {
+	/**
+	 * @driver_ops_mandatory @copybrief opamp_set_gain
+	 */
 	opamp_api_set_gain_t set_gain;
 };
 
-/** @endcond */
+/**
+ * @}
+ */
 
 /**
  * @brief Set opamp gain.
