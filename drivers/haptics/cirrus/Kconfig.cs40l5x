@@ -4,19 +4,58 @@
 menuconfig HAPTICS_CS40L5X
 	bool "CS40L5x Haptics Driver"
 	default y
-	depends on DT_HAS_CIRRUS_CS40L5X_ENABLED
+	depends on DT_HAS_CIRRUS_CS40L50_ENABLED || \
+		   DT_HAS_CIRRUS_CS40L51_ENABLED || \
+		   DT_HAS_CIRRUS_CS40L52_ENABLED || \
+		   DT_HAS_CIRRUS_CS40L53_ENABLED
 	help
 	  Enable CS40L5x haptics driver.
 
 if HAPTICS_CS40L5X
 
 config HAPTICS_CS40L5X_I2C
-	def_bool $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L5X),i2c)
+	def_bool $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L50),i2c) || \
+		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L51),i2c) || \
+		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L52),i2c) || \
+		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L53),i2c)
 	select I2C
 
 config HAPTICS_CS40L5X_SPI
-	def_bool $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L5X),spi)
+	def_bool $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L50),spi) || \
+		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L51),spi) || \
+		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L52),spi) || \
+		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L53),spi)
 	select SPI
+
+config HAPTICS_CS40L5X_INTERRUPT
+	def_bool $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L50),int-gpios) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L51),int-gpios) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L52),int-gpios) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L53),int-gpios)
+
+config HAPTICS_CS40L5X_TRIGGER
+	def_bool $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L50),trigger-gpios) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L51),trigger-gpios) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L52),trigger-gpios) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L53),trigger-gpios)
+
+config HAPTICS_CS40L5X_EXTERNAL_BOOST
+	def_bool $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L50),external-boost) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L51),external-boost) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L52),external-boost) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L53),external-boost)
+
+config HAPTICS_CS40L5X_INTERNAL_BOOST
+	def_bool !$(dt_compat_all_has_prop,$(DT_COMPAT_CIRRUS_CS40L50),external-boost) && \
+		 !$(dt_compat_all_has_prop,$(DT_COMPAT_CIRRUS_CS40L51),external-boost) && \
+		 !$(dt_compat_all_has_prop,$(DT_COMPAT_CIRRUS_CS40L52),external-boost) && \
+		 !$(dt_compat_all_has_prop,$(DT_COMPAT_CIRRUS_CS40L53),external-boost)
+
+config HAPTICS_CS40L5X_FLASH
+	def_bool $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L50),flash-storage) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L51),flash-storage) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L52),flash-storage) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L53),flash-storage)
 
 config HAPTICS_CS40L5X_CALIBRATION
 	bool "Calibration"

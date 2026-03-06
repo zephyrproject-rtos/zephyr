@@ -55,4 +55,4 @@ const struct cs40l5x_bus_io cs40l5x_bus_io_spi = {
 	.read = cs40l5x_read_spi,
 	.write = cs40l5x_write_spi,
 };
-#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
+#endif /* CONFIG_HAPTICS_CS40L5X_SPI */
