@@ -67,6 +67,7 @@ config QUIC_MAX_STREAMS_BIDI
 
 config QUIC_MAX_STREAMS_UNI
 	int "Max number of unidirectional QUIC streams to allocate"
+	default 3 if HTTP_SERVER_VERSION_3
 	default 0
 	range 0 $(UINT8_MAX)
 	help
