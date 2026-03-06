@@ -596,7 +596,7 @@ MODEM_CHAT_MATCHES_DEFINE(__maybe_unused dial_abort_matches,
 static int append_apn_cmd(struct modem_cellular_data *data, uint8_t *steps, const char *fmt,
 			  const char *apn_value)
 {
-	int n;
+	int n, ret;
 
 	if (*steps >= MODEM_CELLULAR_MAX_APN_CMDS) {
 		return -ENOMEM;
@@ -610,8 +610,15 @@ static int append_apn_cmd(struct modem_cellular_data *data, uint8_t *steps, cons
 
 	/* Fill the matching chat entry */
 	modem_chat_script_chat_init(&data->apn_chats[*steps]);
-	modem_chat_script_chat_set_request(&data->apn_chats[*steps], data->apn_buf[*steps]);
-	modem_chat_script_chat_set_response_matches(&data->apn_chats[*steps], &ok_match, 1);
+	ret = modem_chat_script_chat_set_request(&data->apn_chats[*steps], data->apn_buf[*steps]);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = modem_chat_script_chat_set_response_matches(&data->apn_chats[*steps], &ok_match, 1);
+	if (ret < 0) {
+		return ret;
+	}
 
 	(*steps)++;
 	return 0;
