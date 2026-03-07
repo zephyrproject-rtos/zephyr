@@ -23,7 +23,7 @@ endchoice
 config REGULATOR
 	default y
 
-config I2C_STM32_V2_TIMING
+configdefault I2C_STM32_V2_TIMING
 	default y if INPUT
 
 endif # DISPLAY
