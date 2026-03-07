@@ -76,34 +76,39 @@
 			#gpio-cells = <2>;
 		};
 
-		gpio_prt4: gpio@40040400 {
-			compatible = "infineon,gpio";
-			reg = <0x40040400 0x100>;
+		gpio_shared: gpio_shared@40040400 {
+			compatible = "infineon,shared-gpio";
+			reg = <0x40040400 0x300>;
 			interrupts = <4 3>;
-			gpio-controller;
-			ngpios = <8>;
-			status = "disabled";
-			#gpio-cells = <2>;
-		};
+			#address-cells = <1>;
+			#size-cells = <1>;
 
-		gpio_prt5: gpio@40040500 {
-			compatible = "infineon,gpio";
-			reg = <0x40040500 0x100>;
-			interrupts = <4 3>;
-			gpio-controller;
-			ngpios = <8>;
-			status = "disabled";
-			#gpio-cells = <2>;
-		};
+			gpio_prt4: gpio@40040400 {
+				compatible = "infineon,gpio";
+				reg = <0x40040400 0x100>;
+				gpio-controller;
+				ngpios = <8>;
+				status = "disabled";
+				#gpio-cells = <2>;
+			};
 
-		gpio_prt6: gpio@40040600 {
-			compatible = "infineon,gpio";
-			reg = <0x40040600 0x100>;
-			interrupts = <4 3>;
-			gpio-controller;
-			ngpios = <8>;
-			status = "disabled";
-			#gpio-cells = <2>;
+			gpio_prt5: gpio@40040500 {
+				compatible = "infineon,gpio";
+				reg = <0x40040500 0x100>;
+				gpio-controller;
+				ngpios = <8>;
+				status = "disabled";
+				#gpio-cells = <2>;
+			};
+
+			gpio_prt6: gpio@40040600 {
+				compatible = "infineon,gpio";
+				reg = <0x40040600 0x100>;
+				gpio-controller;
+				ngpios = <8>;
+				status = "disabled";
+				#gpio-cells = <2>;
+			};
 		};
 
 		scb0: scb@40240000 {

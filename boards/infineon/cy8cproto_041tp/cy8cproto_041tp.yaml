@@ -16,4 +16,5 @@ supported:
   - uart
   - clock_control
   - pinctrl
+  - gpio
 vendor: infineon

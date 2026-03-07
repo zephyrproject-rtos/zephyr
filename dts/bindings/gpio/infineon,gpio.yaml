@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-description: Infineon CAT1 GPIO Port
+description: Infineon GPIO Port
 
 compatible: "infineon,gpio"
 
@@ -13,9 +13,6 @@ include: [gpio-controller.yaml, base.yaml, "infineon,system-interrupts.yaml"]
 properties:
   reg:
     required: true
-
-  interrupts:
-    description: Required for non-cat1c devices
 
   system-interrupts:
     description: Required for cat1c devices

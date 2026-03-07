@@ -6,9 +6,8 @@
  */
 
 /**
- * @brief GPIO driver for Infineon MCU family.
+ * @brief GPIO driver functions for Infineon MCU family.
  */
-
 #define DT_DRV_COMPAT infineon_gpio
 
 #include <zephyr/drivers/gpio.h>
@@ -250,7 +249,6 @@ static uint32_t __maybe_unused gpio_get_pending_pins(const struct gpio_ifx_confi
 	return pending;
 }
 
-#if (!(CONFIG_SOC_FAMILY_INFINEON_CAT1C && CONFIG_CPU_CORTEX_M0PLUS))
 static void __maybe_unused gpio_ifx_isr(const struct device *dev)
 {
 	const struct gpio_ifx_config *const cfg = dev->config;
@@ -270,7 +268,6 @@ static void __maybe_unused gpio_ifx_isr(const struct device *dev)
 
 	gpio_fire_callbacks(&data->callbacks, dev, pending);
 }
-#endif /* !(CAT1C && M0+) */
 
 static int gpio_ifx_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
 					     enum gpio_int_mode mode, enum gpio_int_trig trig)
@@ -340,36 +337,87 @@ static DEVICE_API(gpio, gpio_ifx_api) = {
 	.get_pending_int = gpio_ifx_get_pending_int,
 };
 
-#if defined(CONFIG_SOC_FAMILY_INFINEON_CAT1C)
-
-#define ENABLE_INT(n)
-
-#else
-
-#define ENABLE_INT(n)                                                                              \
-	IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_ifx_isr,                       \
-		    DEVICE_DT_INST_GET(n), 0);                                                     \
-	irq_enable(DT_INST_IRQN(n));
-
-#endif
-
-#define GPIO_IFX_INIT_FUNC(n)                                                                      \
-	static int gpio_ifx##n##_init(const struct device *dev)                                    \
-	{                                                                                          \
-		ENABLE_INT(n)                                                                      \
-		return 0;                                                                          \
-	}
-
-#define GPIO_IFX_INIT(n)                                                                           \
+#define GPIO_PORT_STRUCTS_DEFINE(n)                                                                \
 	static const struct gpio_ifx_config gpio_ifx_config_##n = {                                \
 		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                                      \
 		.ngpios = DT_INST_PROP_OR(n, ngpios, 8),                                           \
 		.regs = (GPIO_PRT_Type *)DT_INST_REG_ADDR(n),                                      \
-	};											   \
-	static struct gpio_ifx_data gpio_ifx_data_##n;                                             \
-	GPIO_IFX_INIT_FUNC(n)                                                                      \
+	};                                                                                         \
+	static struct gpio_ifx_data gpio_ifx_data_##n;
+
+#define GPIO_PORT_DEFINE(n)                                                                        \
+	static int gpio_ifx##n##_init(const struct device *dev)                                    \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_ifx_isr,               \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+                                                                                                   \
+		return 0;                                                                          \
+	}                                                                                          \
+	GPIO_PORT_STRUCTS_DEFINE(n)                                                                \
 	DEVICE_DT_INST_DEFINE(n, gpio_ifx##n##_init, NULL, &gpio_ifx_data_##n,                     \
 			      &gpio_ifx_config_##n, POST_KERNEL,                                   \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gpio_ifx_api);
 
-DT_INST_FOREACH_STATUS_OKAY(GPIO_IFX_INIT)
+
+#define GPIO_SHARED_PORT_DEFINE(n)                                                                 \
+	GPIO_PORT_STRUCTS_DEFINE(n)                                                                \
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, &gpio_ifx_data_##n,                                   \
+			      &gpio_ifx_config_##n, POST_KERNEL,                                   \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gpio_ifx_api);
+
+/*
+ * A few variants of this define are required due to interrupt connectivity variations.
+ * 1. A gpio port with a dedicated NVIC interrupt (GPIO_PORT_DEFINE)
+ * 2. A gpio port without a dedicated NVIC interrupt (GPIO_SHARED_PORT_DEFINE)
+ * 3. TODO A gpio port with an added interrupt controller/mux before the NVIC (xmc7xxx, psoc6 m0+,)
+ *
+ * For the TODO option we'd likely want to look at the interrupt-parent DT property
+ * where the parent might be a psoc6 m0+ mux or an xmc7xxx system interrupt controller. Along with
+ * perhaps the multi-level IRQ number encoding option in Zephyr.
+ */
+#define GPIO_IFX_DEFINE(n)                                                                         \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, interrupts),                                          \
+		(GPIO_PORT_DEFINE(n)),                                                             \
+		(GPIO_SHARED_PORT_DEFINE(n)))
+
+DT_INST_FOREACH_STATUS_OKAY(GPIO_IFX_DEFINE)
+
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT infineon_shared_gpio
+
+struct gpio_shared_config {
+	size_t port_count;
+	const struct device *ports[];
+};
+
+static __maybe_unused void gpio_shared_isr(const struct device *dev)
+{
+	const struct gpio_shared_config *cfg = dev->config;
+
+	for (size_t i = 0; i < cfg->port_count; i++) {
+		gpio_ifx_isr(cfg->ports[i]);
+	}
+}
+
+#define GPIO_SHARED_PORT_DEVICES(n) DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(n, DEVICE_DT_GET, (,))
+
+#define GPIO_SHARED_INIT(n)                                                                        \
+	const static struct gpio_shared_config gpio_shared##n##_cfg = {                            \
+		.port_count = DT_INST_CHILD_NUM_STATUS_OKAY(n),                           \
+		.ports = {GPIO_SHARED_PORT_DEVICES(n)},                                            \
+	};                                                                                         \
+                                                                                                   \
+	static int gpio_shared##n##_init(const struct device *dev)                                 \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_shared_isr,            \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+		return 0;                                                                          \
+	}                                                                                          \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, gpio_shared##n##_init, NULL, NULL, &gpio_shared##n##_cfg,         \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
+
+DT_INST_FOREACH_STATUS_OKAY(GPIO_SHARED_INIT)
