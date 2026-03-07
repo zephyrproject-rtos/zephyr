@@ -1,16 +1,12 @@
 /*
- * Copyright (c) 2025 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2025 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
- * @brief GPIO driver for Infineon CAT1 MCU family.
- *
- * Note:
- * - Trigger detection on pin rising or falling edge (GPIO_INT_TRIG_BOTH)
- *   is not supported in current version of GPIO CAT1 driver.
+ * @brief GPIO driver for Infineon MCU family.
  */
 
 #define DT_DRV_COMPAT infineon_gpio
@@ -23,21 +19,18 @@
 #include <cy_gpio.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(gpio_cat1, CONFIG_GPIO_LOG_LEVEL);
+LOG_MODULE_REGISTER(gpio_infineon, CONFIG_GPIO_LOG_LEVEL);
 
 /* Device config structure */
-struct gpio_cat1_config {
+struct gpio_ifx_config {
 	/* gpio_driver_config needs to be first */
 	struct gpio_driver_config common;
 	GPIO_PRT_Type *regs;
 	uint8_t ngpios;
-#if (!CONFIG_SOC_FAMILY_INFINEON_CAT1C)
-	uint8_t intr_priority;
-#endif
 };
 
 /* Data structure */
-struct gpio_cat1_data {
+struct gpio_ifx_data {
 	/* gpio_driver_data needs to be first */
 	struct gpio_driver_data common;
 
@@ -48,14 +41,13 @@ struct gpio_cat1_data {
 	sys_slist_t callbacks;
 };
 
-static inline uint32_t gpio_cat1_valid_mask(uint8_t ngpios)
+static inline uint32_t gpio_ifx_valid_mask(uint8_t ngpios)
 {
-#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
-	return BIT_MASK(ngpios);
-#else
-	ARG_UNUSED(ngpios);
-	return 0xFFFFFFFFU;
-#endif
+	if (IS_ENABLED(CONFIG_SOC_FAMILY_INFINEON_PSOC4)) {
+		return BIT_MASK(ngpios);
+	} else {
+		return 0xFFFFFFFFU;
+	}
 }
 
 /**
@@ -64,7 +56,7 @@ static inline uint32_t gpio_cat1_valid_mask(uint8_t ngpios)
  * @param[in]  flags      GPIO configuration flags.
  * @param[out] drive_mode PDL drive mode constant.
  */
-static void gpio_cat1_select_input_drive_mode(gpio_flags_t flags, uint32_t *drive_mode)
+static void gpio_ifx_select_input_drive_mode(gpio_flags_t flags, uint32_t *drive_mode)
 {
 	if ((flags & GPIO_PULL_UP) && (flags & GPIO_PULL_DOWN)) {
 		*drive_mode = CY_GPIO_DM_PULLUP_DOWN;
@@ -90,7 +82,7 @@ static void gpio_cat1_select_input_drive_mode(gpio_flags_t flags, uint32_t *driv
  * @retval 0        Success.
  * @retval -ENOTSUP Unsupported pull direction for the requested mode.
  */
-static int gpio_cat1_select_output_drive_mode(gpio_flags_t flags, uint32_t *drive_mode)
+static int gpio_ifx_select_output_drive_mode(gpio_flags_t flags, uint32_t *drive_mode)
 {
 	if (!(flags & GPIO_SINGLE_ENDED)) {
 		if (flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) {
@@ -118,11 +110,11 @@ static int gpio_cat1_select_output_drive_mode(gpio_flags_t flags, uint32_t *driv
 	return 0;
 }
 
-static int gpio_cat1_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
+static int gpio_ifx_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	uint32_t drive_mode = CY_GPIO_DM_HIGHZ;
 	bool pin_val = false;
-	const struct gpio_cat1_config *const cfg = dev->config;
+	const struct gpio_ifx_config *const cfg = dev->config;
 	GPIO_PRT_Type *const base = cfg->regs;
 
 	if (pin >= cfg->ngpios) {
@@ -131,7 +123,7 @@ static int gpio_cat1_configure(const struct device *dev, gpio_pin_t pin, gpio_fl
 
 	switch (flags & (GPIO_INPUT | GPIO_OUTPUT | GPIO_DISCONNECTED)) {
 	case GPIO_INPUT:
-		gpio_cat1_select_input_drive_mode(flags, &drive_mode);
+		gpio_ifx_select_input_drive_mode(flags, &drive_mode);
 		/*
 		 * The data register must match the pull direction for resistive pull-up/pull-down
 		 * modes to work correctly: DR=1 for pull-up, DR=0 for pull-down.
@@ -143,7 +135,7 @@ static int gpio_cat1_configure(const struct device *dev, gpio_pin_t pin, gpio_fl
 	case (GPIO_INPUT | GPIO_OUTPUT):
 		__fallthrough;
 	case GPIO_OUTPUT:
-		if (gpio_cat1_select_output_drive_mode(flags, &drive_mode) != 0) {
+		if (gpio_ifx_select_output_drive_mode(flags, &drive_mode) != 0) {
 			return -ENOTSUP;
 		}
 
@@ -161,7 +153,7 @@ static int gpio_cat1_configure(const struct device *dev, gpio_pin_t pin, gpio_fl
 		break;
 
 	case GPIO_DISCONNECTED:
-#if !defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+#ifndef CONFIG_SOC_FAMILY_INFINEON_PSOC4
 		Cy_GPIO_SetInterruptMask(base, pin, 0);
 #endif
 		drive_mode = CY_GPIO_DM_ANALOG;
@@ -172,7 +164,7 @@ static int gpio_cat1_configure(const struct device *dev, gpio_pin_t pin, gpio_fl
 		return -ENOTSUP;
 	}
 
-#if defined(CY_PDL_TZ_ENABLED)
+#ifdef CY_PDL_TZ_ENABLED
 	Cy_GPIO_Pin_SecFastInit(base, pin, drive_mode, pin_val, HSIOM_SEL_GPIO);
 #else
 	Cy_GPIO_Pin_FastInit(base, pin, drive_mode, pin_val, HSIOM_SEL_GPIO);
@@ -181,90 +173,89 @@ static int gpio_cat1_configure(const struct device *dev, gpio_pin_t pin, gpio_fl
 	return 0;
 }
 
-static int gpio_cat1_port_get_raw(const struct device *dev, uint32_t *value)
+static int gpio_ifx_port_get_raw(const struct device *dev, uint32_t *value)
 {
-	const struct gpio_cat1_config *const cfg = dev->config;
+	const struct gpio_ifx_config *const cfg = dev->config;
 	GPIO_PRT_Type *const base = cfg->regs;
 
-	*value = GPIO_PRT_IN(base) & gpio_cat1_valid_mask(cfg->ngpios);
+	*value = GPIO_PRT_IN(base) & gpio_ifx_valid_mask(cfg->ngpios);
 
 	return 0;
 }
 
-static int gpio_cat1_port_set_masked_raw(const struct device *dev, uint32_t mask, uint32_t value)
+static int gpio_ifx_port_set_masked_raw(const struct device *dev, uint32_t mask, uint32_t value)
 {
-	const struct gpio_cat1_config *const cfg = dev->config;
+	const struct gpio_ifx_config *const cfg = dev->config;
 	GPIO_PRT_Type *const base = cfg->regs;
 
-	mask &= gpio_cat1_valid_mask(cfg->ngpios);
+	mask &= gpio_ifx_valid_mask(cfg->ngpios);
 
-#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+#ifdef CONFIG_SOC_FAMILY_INFINEON_PSOC4
 	uint32_t tmp = base->DR;
 
 	base->DR = (tmp & ~mask) | (mask & value);
 #else
 	GPIO_PRT_OUT(base) = (GPIO_PRT_OUT(base) & ~mask) | (mask & value);
 #endif
+	return 0;
+}
+
+static int gpio_ifx_port_set_bits_raw(const struct device *dev, uint32_t mask)
+{
+	const struct gpio_ifx_config *const cfg = dev->config;
+	GPIO_PRT_Type *const base = cfg->regs;
+
+	GPIO_PRT_OUT_SET(base) = mask & gpio_ifx_valid_mask(cfg->ngpios);
 
 	return 0;
 }
 
-static int gpio_cat1_port_set_bits_raw(const struct device *dev, uint32_t mask)
+static int gpio_ifx_port_clear_bits_raw(const struct device *dev, uint32_t mask)
 {
-	const struct gpio_cat1_config *const cfg = dev->config;
+	const struct gpio_ifx_config *const cfg = dev->config;
 	GPIO_PRT_Type *const base = cfg->regs;
 
-	GPIO_PRT_OUT_SET(base) = mask & gpio_cat1_valid_mask(cfg->ngpios);
+	GPIO_PRT_OUT_CLR(base) = mask & gpio_ifx_valid_mask(cfg->ngpios);
 
 	return 0;
 }
 
-static int gpio_cat1_port_clear_bits_raw(const struct device *dev, uint32_t mask)
+static int gpio_ifx_port_toggle_bits(const struct device *dev, uint32_t mask)
 {
-	const struct gpio_cat1_config *const cfg = dev->config;
+	const struct gpio_ifx_config *const cfg = dev->config;
 	GPIO_PRT_Type *const base = cfg->regs;
 
-	GPIO_PRT_OUT_CLR(base) = mask & gpio_cat1_valid_mask(cfg->ngpios);
+	GPIO_PRT_OUT_INV(base) = mask & gpio_ifx_valid_mask(cfg->ngpios);
 
 	return 0;
 }
 
-static int gpio_cat1_port_toggle_bits(const struct device *dev, uint32_t mask)
+static uint32_t gpio_ifx_get_pending_int(const struct device *dev)
 {
-	const struct gpio_cat1_config *const cfg = dev->config;
+	const struct gpio_ifx_config *const cfg = dev->config;
 	GPIO_PRT_Type *const base = cfg->regs;
 
-	GPIO_PRT_OUT_INV(base) = mask & gpio_cat1_valid_mask(cfg->ngpios);
-
-	return 0;
-}
-
-static uint32_t gpio_cat1_get_pending_int(const struct device *dev)
-{
-	const struct gpio_cat1_config *const cfg = dev->config;
-	GPIO_PRT_Type *const base = cfg->regs;
-
-#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
-	return base->INTR & gpio_cat1_valid_mask(cfg->ngpios);
+#ifdef CONFIG_SOC_FAMILY_INFINEON_PSOC4
+	return base->INTR & gpio_ifx_valid_mask(cfg->ngpios);
 #else
 	return GPIO_PRT_INTR_MASKED(base);
 #endif
 }
 
-static uint32_t __maybe_unused gpio_get_pending_pins(const struct gpio_cat1_config *const cfg,
+static uint32_t __maybe_unused gpio_get_pending_pins(const struct gpio_ifx_config *const cfg,
 							GPIO_PRT_Type * const base)
 {
-	uint32_t pending = GPIO_PRT_INTR(base) & gpio_cat1_valid_mask(cfg->ngpios);
+	uint32_t pending = GPIO_PRT_INTR(base) & gpio_ifx_valid_mask(cfg->ngpios);
 
 	return pending;
 }
 
 #if (!(CONFIG_SOC_FAMILY_INFINEON_CAT1C && CONFIG_CPU_CORTEX_M0PLUS))
-static void __maybe_unused gpio_cat1_isr(const struct device *dev)
+static void __maybe_unused gpio_ifx_isr(const struct device *dev)
 {
-	const struct gpio_cat1_config *const cfg = dev->config;
+	const struct gpio_ifx_config *const cfg = dev->config;
 	GPIO_PRT_Type *const base = cfg->regs;
-	struct gpio_cat1_data *const data = dev->data;
+	struct gpio_ifx_data *const data = dev->data;
 	uint32_t pending = gpio_get_pending_pins(dev->config, cfg->regs);
 
 	if (pending == 0U) {
@@ -281,11 +272,11 @@ static void __maybe_unused gpio_cat1_isr(const struct device *dev)
 }
 #endif /* !(CAT1C && M0+) */
 
-static int gpio_cat1_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
+static int gpio_ifx_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
 					     enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	uint32_t trig_pdl = CY_GPIO_INTR_DISABLE;
-	const struct gpio_cat1_config *const cfg = dev->config;
+	const struct gpio_ifx_config *const cfg = dev->config;
 	GPIO_PRT_Type *const base = cfg->regs;
 
 	if (pin >= cfg->ngpios) {
@@ -319,65 +310,66 @@ static int gpio_cat1_pin_interrupt_configure(const struct device *dev, gpio_pin_
 	Cy_GPIO_SetInterruptEdge(base, pin, trig_pdl);
 	Cy_GPIO_ClearInterrupt(base, pin);
 
-#if !defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
-	Cy_GPIO_SetInterruptMask(base, pin,
-				 (uint32_t)(mode == GPIO_INT_MODE_DISABLED) ? false : true);
+#ifndef CONFIG_SOC_FAMILY_INFINEON_PSOC4
+	/* Interrupt mask function wants a 0 for disabled, 1 for enabled as the value */
+	uint32_t int_en = (mode == GPIO_INT_MODE_DISABLED ? 0 : 1);
+
+	Cy_GPIO_SetInterruptMask(base, pin, int_en);
 #endif
 
 	return 0;
 }
 
-static int gpio_cat1_manage_callback(const struct device *port, struct gpio_callback *callback,
+static int gpio_ifx_manage_callback(const struct device *port, struct gpio_callback *callback,
 				     bool set)
 {
-	struct gpio_cat1_data *const data = port->data;
+	struct gpio_ifx_data *const data = port->data;
 
 	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
-static DEVICE_API(gpio, gpio_cat1_api) = {
-	.pin_configure = gpio_cat1_configure,
-	.port_get_raw = gpio_cat1_port_get_raw,
-	.port_set_masked_raw = gpio_cat1_port_set_masked_raw,
-	.port_set_bits_raw = gpio_cat1_port_set_bits_raw,
-	.port_clear_bits_raw = gpio_cat1_port_clear_bits_raw,
-	.port_toggle_bits = gpio_cat1_port_toggle_bits,
-	.pin_interrupt_configure = gpio_cat1_pin_interrupt_configure,
-	.manage_callback = gpio_cat1_manage_callback,
-	.get_pending_int = gpio_cat1_get_pending_int,
+static DEVICE_API(gpio, gpio_ifx_api) = {
+	.pin_configure = gpio_ifx_configure,
+	.port_get_raw = gpio_ifx_port_get_raw,
+	.port_set_masked_raw = gpio_ifx_port_set_masked_raw,
+	.port_set_bits_raw = gpio_ifx_port_set_bits_raw,
+	.port_clear_bits_raw = gpio_ifx_port_clear_bits_raw,
+	.port_toggle_bits = gpio_ifx_port_toggle_bits,
+	.pin_interrupt_configure = gpio_ifx_pin_interrupt_configure,
+	.manage_callback = gpio_ifx_manage_callback,
+	.get_pending_int = gpio_ifx_get_pending_int,
 };
 
 #if defined(CONFIG_SOC_FAMILY_INFINEON_CAT1C)
 
-#define INTR_PRIORITY(n)
 #define ENABLE_INT(n)
 
 #else
 
-#define INTR_PRIORITY(n) .intr_priority = DT_INST_IRQ_BY_IDX(n, 0, priority),
 #define ENABLE_INT(n)                                                                              \
-	IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_cat1_isr,                      \
+	IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), gpio_ifx_isr,                       \
 		    DEVICE_DT_INST_GET(n), 0);                                                     \
 	irq_enable(DT_INST_IRQN(n));
 
 #endif
 
-#define GPIO_CAT1_INIT_FUNC(n)                                                                     \
+#define GPIO_IFX_INIT_FUNC(n)                                                                      \
 	static int gpio_ifx##n##_init(const struct device *dev)                                    \
 	{                                                                                          \
 		ENABLE_INT(n)                                                                      \
 		return 0;                                                                          \
 	}
-#define GPIO_CAT1_INIT(n)                                                                          \
-	static const struct gpio_cat1_config gpio_cat1_config_##n = {                              \
+
+#define GPIO_IFX_INIT(n)                                                                           \
+	static const struct gpio_ifx_config gpio_ifx_config_##n = {                                \
 		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                                      \
 		.ngpios = DT_INST_PROP_OR(n, ngpios, 8),                                           \
 		.regs = (GPIO_PRT_Type *)DT_INST_REG_ADDR(n),                                      \
-		INTR_PRIORITY(n)};                                                                 \
-	static struct gpio_cat1_data gpio_cat1_data_##n;                                           \
-	GPIO_CAT1_INIT_FUNC(n)                                                                     \
-	DEVICE_DT_INST_DEFINE(n, gpio_ifx##n##_init, NULL, &gpio_cat1_data_##n,                    \
-			      &gpio_cat1_config_##n, POST_KERNEL,                                  \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gpio_cat1_api);
+	};											   \
+	static struct gpio_ifx_data gpio_ifx_data_##n;                                             \
+	GPIO_IFX_INIT_FUNC(n)                                                                      \
+	DEVICE_DT_INST_DEFINE(n, gpio_ifx##n##_init, NULL, &gpio_ifx_data_##n,                     \
+			      &gpio_ifx_config_##n, POST_KERNEL,                                   \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gpio_ifx_api);
 
-DT_INST_FOREACH_STATUS_OKAY(GPIO_CAT1_INIT)
+DT_INST_FOREACH_STATUS_OKAY(GPIO_IFX_INIT)
