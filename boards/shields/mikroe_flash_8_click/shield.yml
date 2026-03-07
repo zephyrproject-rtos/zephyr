@@ -1,0 +1,6 @@
+shield:
+  name: mikroe_flash_8_click
+  full_name: Flash 8 Click
+  vendor: mikroe
+  supported_features:
+    - mtd
