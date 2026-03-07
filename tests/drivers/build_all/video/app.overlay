@@ -143,10 +143,10 @@
 				compatible = "himax,hm01b0";
 				reg = <0x24>;
 				status = "okay";
-				data-bits = <0x4>;
 
 				port {
 					hm01b0_ep_out: endpoint {
+						bus-width = <4>;
 						remote-endpoint-label = "";
 					};
 				};
