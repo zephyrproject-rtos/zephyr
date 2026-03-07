@@ -18,4 +18,5 @@ supported:
   - timer
   - uart
   - dma
+  - comparator
 vendor: infineon
