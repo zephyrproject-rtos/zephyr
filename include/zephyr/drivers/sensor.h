@@ -1460,6 +1460,40 @@ struct sensor_info {
 #endif /* CONFIG_SENSOR_INFO */
 
 /**
+ * @brief Like SENSOR_DEVICE_DT_DEFINE() with deinit function.
+ *
+ * @param node_id See @ref SENSOR_DEVICE_DT_DEFINE().
+ * @param init_fn See @ref SENSOR_DEVICE_DT_DEFINE().
+ * @param deinit_fn Name of the deinit function of the driver.
+ * @param pm_device See @ref SENSOR_DEVICE_DT_DEFINE().
+ * @param data_ptr See @ref SENSOR_DEVICE_DT_DEFINE().
+ * @param cfg_ptr See @ref SENSOR_DEVICE_DT_DEFINE().
+ * @param level See @ref SENSOR_DEVICE_DT_DEFINE().
+ * @param prio See @ref SENSOR_DEVICE_DT_DEFINE().
+ * @param api_ptr See @ref SENSOR_DEVICE_DT_DEFINE().
+ */
+#define SENSOR_DEVICE_DT_DEINIT_DEFINE(node_id, init_fn, deinit_fn,	\
+				pm_device, data_ptr, cfg_ptr, level,	\
+				prio, api_ptr, ...)			\
+	DEVICE_DT_DEINIT_DEFINE(node_id, init_fn, deinit_fn, pm_device,	\
+				data_ptr, cfg_ptr, level, prio,		\
+				api_ptr, __VA_ARGS__);			\
+									\
+	SENSOR_INFO_DT_DEFINE(node_id);
+
+/**
+ * @brief Like SENSOR_DEVICE_DT_DEINIT_DEFINE() for an instance of a DT_DRV_COMPAT
+ * compatible
+ *
+ * @param inst instance number. This is replaced by
+ * <tt>DT_DRV_COMPAT(inst)</tt> in the call to SENSOR_DEVICE_DT_DEINIT_DEFINE().
+ *
+ * @param ... other parameters as expected by SENSOR_DEVICE_DT_DEINIT_DEFINE().
+ */
+#define SENSOR_DEVICE_DT_INST_DEINIT_DEFINE(inst, ...) \
+	SENSOR_DEVICE_DT_DEINIT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
  * @brief Like DEVICE_DT_DEFINE() with sensor specifics.
  *
  * @details Defines a device which implements the sensor API. May define an
@@ -1489,11 +1523,10 @@ struct sensor_info {
 #define SENSOR_DEVICE_DT_DEFINE(node_id, init_fn, pm_device,		\
 				data_ptr, cfg_ptr, level, prio,		\
 				api_ptr, ...)				\
-	DEVICE_DT_DEFINE(node_id, init_fn, pm_device,			\
-			 data_ptr, cfg_ptr, level, prio,		\
-			 api_ptr, __VA_ARGS__);				\
-									\
-	SENSOR_INFO_DT_DEFINE(node_id);
+	SENSOR_DEVICE_DT_DEINIT_DEFINE(node_id, init_fn, NULL,		\
+				       pm_device, data_ptr, cfg_ptr,	\
+				       level, prio, api_ptr,		\
+				       __VA_ARGS__);
 
 /**
  * @brief Like SENSOR_DEVICE_DT_DEFINE() for an instance of a DT_DRV_COMPAT
