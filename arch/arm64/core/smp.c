@@ -153,7 +153,7 @@ FUNC_NORETURN void arch_secondary_cpu_init(void)
 #endif
 
 #ifdef CONFIG_SMP
-	arm_gic_secondary_init();
+	arm_gic_secondary_init(cpu_num);
 
 	irq_enable(SGI_SCHED_IPI);
 #ifdef CONFIG_USERSPACE
@@ -201,14 +201,12 @@ static void send_ipi(unsigned int ipi, uint32_t cpu_bitmap)
 		}
 
 		uint64_t target_mpidr = cpu_map[i];
-		uint8_t aff0;
 
 		if (mpidr == target_mpidr || target_mpidr == INV_MPID) {
 			continue;
 		}
 
-		aff0 = MPIDR_AFFLVL(target_mpidr, 0);
-		gic_raise_sgi(ipi, target_mpidr, 1 << aff0);
+		gic_raise_sgi(ipi, target_mpidr, i);
 	}
 }
 
@@ -263,14 +261,12 @@ void flush_fpu_ipi_handler(const void *unused)
 void arch_flush_fpu_ipi(unsigned int cpu)
 {
 	const uint64_t mpidr = cpu_map[cpu];
-	uint8_t aff0;
 
 	if (mpidr == INV_MPID) {
 		return;
 	}
 
-	aff0 = MPIDR_AFFLVL(mpidr, 0);
-	gic_raise_sgi(SGI_FPU_IPI, mpidr, 1 << aff0);
+	gic_raise_sgi(SGI_FPU_IPI, mpidr, cpu);
 }
 
 /*

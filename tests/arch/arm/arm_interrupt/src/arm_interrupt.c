@@ -35,8 +35,8 @@ static inline void irq_controller_set_pending(unsigned int irq)
 {
 	/* Only actually send SGI when told to (not during IRQ selection check) */
 	if (irq < 16 && actually_trigger_sgi) {
-		/* Send SGI to this CPU (target_aff=0, target_list=0x01 for CPU 0) */
-		gic_raise_sgi(irq, 0, 0x01);
+		/* Send SGI to this CPU (target_aff=0, cpu=0 for CPU 0) */
+		gic_raise_sgi(irq, 0, 0);
 	}
 }
 
