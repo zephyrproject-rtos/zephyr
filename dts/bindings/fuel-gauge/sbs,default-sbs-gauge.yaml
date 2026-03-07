@@ -16,7 +16,7 @@ description: |
 
 properties:
   battery-cutoff-reg-addr:
-    # For SBS compliant fuel gauges this is usually "ManufactuerAccess"
+    # For SBS compliant fuel gauges this is usually "ManufacturerAccess"
     default: 0x0
   battery-cutoff-payload:
     default: [0x0010, 0x0010]
