@@ -302,11 +302,23 @@ static void test_stream_cb(struct quic_stream *stream, void *user_data)
 	cfg->stream_count++;
 }
 
+static void test_stream_close_cb(struct quic_stream *stream, void *user_data)
+{
+	ARG_UNUSED(user_data);
+	(void)zsock_close(stream->sock);
+}
+
 static void test_connection_cb(struct quic_context *ctx, void *user_data)
 {
 	struct test_config *cfg = user_data;
 
 	cfg->connection_count++;
+}
+
+static void test_connection_close_cb(struct quic_context *ctx, void *user_data)
+{
+	ARG_UNUSED(user_data);
+	(void)quic_connection_close(ctx->sock);
 }
 
 static void before(void *arg)
@@ -366,28 +378,71 @@ static void before(void *arg)
 	}
 }
 
+#define MAX_WAIT_COUNT 3
+#define WAIT_DELAY_MS 100
+
 static void after(void *arg)
 {
 	struct test_config *cfg = arg;
+	int loop = MAX_WAIT_COUNT;
+	bool fail;
 
-	quic_stream_foreach(test_stream_cb, cfg);
-	if (cfg->stream_count != 0) {
+	/* Wait a few iterations to allow any pending cleanup to complete */
+	while (loop-- > 0) {
+		quic_stream_foreach(test_stream_close_cb, cfg);
+		if (cfg->stream_count == 0) {
+			fail = false;
+			break;
+		}
+
+		fail = true;
+		cfg->stream_count = 0;
+		k_sleep(K_MSEC(WAIT_DELAY_MS));
+	}
+
+	if (fail) {
 		LOG_ERR("Expected 0 streams at test end (was %d)",
 			cfg->stream_count);
 		test_failure = true;
 	}
 
-	quic_endpoint_foreach(test_endpoint_cb, cfg);
-	if (cfg->endpoint_count != 0) {
-		LOG_ERR("Expected 0 endpoints at test end (was %d)",
-			cfg->endpoint_count);
+	loop = MAX_WAIT_COUNT;
+
+	while (loop-- > 0) {
+		quic_context_foreach(test_connection_close_cb, cfg);
+		if (cfg->connection_count == 0) {
+			fail = false;
+			break;
+		}
+
+		fail = true;
+		cfg->connection_count = 0;
+		k_sleep(K_MSEC(WAIT_DELAY_MS));
+	}
+
+	if (fail) {
+		LOG_ERR("Expected 0 connections at test end (was %d)",
+			cfg->connection_count);
 		test_failure = true;
 	}
 
-	quic_context_foreach(test_connection_cb, cfg);
-	if (cfg->connection_count != 0) {
-		LOG_ERR("Expected 0 connections at test end (was %d)",
-			cfg->connection_count);
+	loop = MAX_WAIT_COUNT;
+
+	while (loop-- > 0) {
+		quic_endpoint_foreach(test_endpoint_cb, cfg);
+		if (cfg->endpoint_count == 0) {
+			fail = false;
+			break;
+		}
+
+		fail = true;
+		cfg->endpoint_count = 0;
+		k_sleep(K_MSEC(WAIT_DELAY_MS));
+	}
+
+	if (fail) {
+		LOG_ERR("Expected 0 endpoints at test end (was %d)",
+			cfg->endpoint_count);
 		test_failure = true;
 	}
 
@@ -1159,7 +1214,26 @@ static void server_thread(void *p1, void *p2, void *p3)
 
 	data->stream_recv_sock = stream;
 
+	pfd.fd = stream;
+	pfd.events = ZSOCK_POLLIN;
+	pfd.revents = 0;
+
 	while (true) {
+		ret = zsock_poll(&pfd, 1, POLL_TIMEOUT_MS);
+		if (data->test_done) {
+			break;
+		}
+
+		if (ret < 0 && errno != EAGAIN) {
+			data->error = -errno;
+			LOG_DBG("Poll error on stream (%d)", data->error);
+			break;
+		}
+
+		if (!(pfd.revents & ZSOCK_POLLIN)) {
+			continue;
+		}
+
 		len = zsock_recv(stream, buf, sizeof(buf), 0);
 		if (len == 0) {
 			/* FIN received — client closed its send side cleanly */
@@ -1176,12 +1250,6 @@ static void server_thread(void *p1, void *p2, void *p3)
 		if (ret < 0) {
 			data->error = -errno;
 			LOG_DBG("Stream send failed (%d)", data->error);
-			break;
-		}
-
-		k_msleep(10);
-
-		if (data->test_done) {
 			break;
 		}
 	}
@@ -1395,7 +1463,8 @@ static void quic_server_and_client(const char *server, const char *client,
 	zassert_equal(ret, 0, "Failed to close client stream %d (%d)",
 		      client_stream_sock, ret);
 
-	k_thread_join(tid, K_MSEC(500));
+	ret = k_thread_join(tid, K_MSEC(500));
+	zassert_equal(ret, 0, "Cannot join thread (%d)", ret);
 
 	server_stream_sock = data.stream_recv_sock;
 	server_connected_sock = data.connected_sock;
@@ -1943,6 +2012,323 @@ ZTEST(net_socket_quic, test_20_quic_unidirectional_streams)
 	quic_server_and_client_uni(LOCAL_ADDR_IPV4_STR, REMOTE_ADDR_IPV4_STR,
 				   tx_buf, sizeof(tx_buf), rx_buf, sizeof(rx_buf),
 				   MAX_BUF_SIZE);
+}
+
+ZTEST(net_socket_quic, test_21_client_cert_request_option)
+{
+	int sock;
+	int ret;
+	int mode;
+
+	/* Create a server socket */
+	ret = quic_connection_open(NULL,
+				   (struct net_sockaddr *)&local_addr_ipv4);
+	zassert_true(ret >= 0, "Failed to open QUIC connection (%d)", ret);
+	sock = ret;
+
+	/* Test setting client cert request to disabled (0) */
+	mode = MBEDTLS_SSL_VERIFY_NONE;
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_TLS, ZSOCK_TLS_PEER_VERIFY,
+			       &mode, sizeof(mode));
+	zassert_equal(ret, 0, "Failed to set client cert request disabled (%d)", -errno);
+
+	/* Test setting client cert request to optional (1) */
+	mode = MBEDTLS_SSL_VERIFY_OPTIONAL;
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_TLS, ZSOCK_TLS_PEER_VERIFY,
+			       &mode, sizeof(mode));
+	zassert_equal(ret, 0, "Failed to set client cert request optional (%d)", -errno);
+
+	/* Test setting client cert request to required (2) */
+	mode = MBEDTLS_SSL_VERIFY_REQUIRED;
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_TLS, ZSOCK_TLS_PEER_VERIFY,
+			       &mode, sizeof(mode));
+	zassert_equal(ret, 0, "Failed to set client cert request required (%d)", -errno);
+
+	/* Test with invalid optlen */
+	mode = 1;
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_TLS, ZSOCK_TLS_PEER_VERIFY,
+			       &mode, sizeof(char));  /* Wrong size */
+	zassert_equal(ret, -1, "Should fail with invalid optlen");
+	zassert_equal(errno, EINVAL, "Expected EINVAL, got %d", errno);
+
+	ret = quic_connection_close(sock);
+	zassert_equal(ret, 0, "Failed to close connection (%d)", ret);
+}
+
+ZTEST(net_socket_quic, test_22_cert_chain_add_option)
+{
+	int sock;
+	int ret;
+
+	/* Create a server socket */
+	ret = quic_connection_open(NULL,
+				   (struct net_sockaddr *)&local_addr_ipv4);
+	zassert_true(ret >= 0, "Failed to open QUIC connection (%d)", ret);
+	sock = ret;
+
+	/* Add CA certificate as intermediate cert (just for testing the API) */
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_CERT_CHAIN_ADD,
+			       ca_certificate, sizeof(ca_certificate));
+	zassert_equal(ret, 0, "Failed to add intermediate cert (%d)", -errno);
+
+	/* Add same cert again (should succeed, adds to chain) */
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_CERT_CHAIN_ADD,
+			       ca_certificate, sizeof(ca_certificate));
+	zassert_equal(ret, 0, "Failed to add second intermediate cert (%d)", -errno);
+
+	/* Test with NULL/zero length (should fail) */
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_CERT_CHAIN_ADD,
+			       NULL, 0);
+	zassert_equal(ret, -1, "Should fail with NULL cert");
+
+	ret = quic_connection_close(sock);
+	zassert_equal(ret, 0, "Failed to close connection (%d)", ret);
+}
+
+ZTEST(net_socket_quic, test_23_invalid_quic_sockopt)
+{
+	int sock;
+	int ret;
+	int val = 0;
+
+	/* Create a server socket */
+	ret = quic_connection_open(NULL,
+				   (struct net_sockaddr *)&local_addr_ipv4);
+	zassert_true(ret >= 0, "Failed to open QUIC connection (%d)", ret);
+	sock = ret;
+
+	/* Test with invalid option number */
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_QUIC, 999,
+			       &val, sizeof(val));
+	zassert_equal(ret, -1, "Should fail with invalid option");
+	zassert_equal(errno, ENOPROTOOPT, "Expected ENOPROTOOPT, got %d", errno);
+
+	ret = quic_connection_close(sock);
+	zassert_equal(ret, 0, "Failed to close connection (%d)", ret);
+}
+
+/*
+ * Server requests client certificate, client provides it, handshake succeeds,
+ * and data is exchanged successfully.
+ */
+#define LOCAL_ADDR_IPV4_STR3 "127.0.0.1:54323"
+#define REMOTE_ADDR_IPV4_STR3 "127.0.0.1:19993"
+
+static void quic_server_and_client_with_client_cert(const char *server,
+						    const char *client,
+						    int client_cert_mode,
+						    bool setup_client_cert)
+{
+	struct net_sockaddr_storage server_addr;
+	struct net_sockaddr_storage client_addr;
+	/* Server needs its own cert + CA to verify client */
+	sec_tag_t server_sec_tags[] = {
+		SERVER_CERTIFICATE_TAG,
+		CA_CERTIFICATE_TAG,
+	};
+	/* Client needs CA to verify server + its own cert for authentication */
+	sec_tag_t client_sec_tags[] = {
+		CLIENT_CERTIFICATE_TAG,
+		CA_CERTIFICATE_TAG,
+	};
+	static const char * const alpn_list[] = {
+		"test-quic-cert",
+		NULL
+	};
+
+	int server_sock, client_sock, client_stream_sock, server_stream_sock;
+	int server_connected_sock;
+	struct zsock_pollfd pfd;
+	k_tid_t tid;
+	int ret;
+	static uint8_t tx_buf[] = "Hello with client cert!";
+	static uint8_t rx_buf[64];
+
+#define CERT_STACK_SIZE 2048
+	static K_THREAD_STACK_DEFINE(cert_server_thread_stack, CERT_STACK_SIZE);
+	static struct k_thread cert_server_thread_data;
+
+	static struct config cert_data;
+
+	ret = k_sem_init(&cert_data.sem, 0, 1);
+	zassert_ok(ret, "Failed to initialize semaphore (%d)", ret);
+
+	ret = net_ipaddr_parse(server, strlen(server),
+			       (struct net_sockaddr *)&server_addr);
+	zassert_true(ret, "Failed to parse server IP address %s", server);
+
+	ret = net_ipaddr_parse(client, strlen(client),
+			       (struct net_sockaddr *)&client_addr);
+	zassert_true(ret, "Failed to parse client IP address %s", client);
+
+	prepare_quic_socket(&server_sock, NULL,
+			    (const struct net_sockaddr *)&server_addr);
+	prepare_quic_socket(&client_sock,
+			    (const struct net_sockaddr *)&server_addr,
+			    (const struct net_sockaddr *)&client_addr);
+
+	zassert_true(server_sock >= 0, "Failed to create server socket");
+	zassert_true(client_sock >= 0, "Failed to create client socket");
+
+	/* Set up server to request client certificate */
+	ret = zsock_setsockopt(server_sock, ZSOCK_SOL_TLS,
+			       ZSOCK_TLS_PEER_VERIFY,
+			       &client_cert_mode, sizeof(client_cert_mode));
+	zassert_equal(ret, 0, "Failed to set client cert request mode (%d)", -errno);
+
+	/* Set up TLS credentials */
+	ret = zsock_setsockopt(server_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_SEC_TAG_LIST,
+			       server_sec_tags, sizeof(server_sec_tags));
+	zassert_equal(ret, 0, "Failed to set server sec tags (%d)", -errno);
+
+	setup_alpn(server_sock, alpn_list, ARRAY_SIZE(alpn_list));
+
+	cert_data.sock = server_sock;
+	cert_data.counter = 1;
+	cert_data.error = 0;
+	cert_data.connected_sock = -1;
+	cert_data.stream_recv_sock = -1;
+	cert_data.test_done = false;
+
+	/* Start server thread */
+	tid = k_thread_create(&cert_server_thread_data, cert_server_thread_stack,
+			      K_THREAD_STACK_SIZEOF(cert_server_thread_stack),
+			      server_thread, &cert_data, NULL, NULL,
+			      K_PRIO_PREEMPT(1), 0, K_FOREVER);
+
+	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+		k_thread_name_set(&cert_server_thread_data, "quic_cert_srv");
+	}
+
+	k_thread_start(tid);
+
+	ret = k_sem_take(&cert_data.sem, K_FOREVER);
+	zassert_ok(ret, "Failed to take semaphore (%d)", ret);
+
+	if (setup_client_cert) {
+		/* Set up client with its certificate */
+		ret = zsock_setsockopt(client_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_SEC_TAG_LIST,
+				       client_sec_tags, sizeof(client_sec_tags));
+		zassert_equal(ret, 0, "Failed to set client sec tags (%d)", -errno);
+	}
+
+	setup_alpn(client_sock, alpn_list, ARRAY_SIZE(alpn_list));
+
+	/* Open stream which triggers handshake */
+	client_stream_sock = quic_stream_open(client_sock, QUIC_STREAM_CLIENT,
+					      QUIC_STREAM_BIDIRECTIONAL, 0);
+	zassert_true(client_stream_sock >= 0,
+		     "Failed to open client stream with client cert (%d)",
+		     client_stream_sock);
+
+	/* Send data */
+	ret = zsock_send(client_stream_sock, tx_buf, sizeof(tx_buf), 0);
+	zassert_equal(ret, sizeof(tx_buf), "Failed to send data (%d)", -errno);
+
+	pfd.fd = client_stream_sock;
+	pfd.events = ZSOCK_POLLIN | ZSOCK_POLLHUP;
+	pfd.revents = 0;
+
+	ret = zsock_poll(&pfd, 1, SYS_FOREVER_MS);
+	zassert_true(ret >= 0, "Poll failed (%d)", -errno);
+
+	if (client_cert_mode == MBEDTLS_SSL_VERIFY_REQUIRED && !setup_client_cert) {
+		/* If client cert is required but not set up, handshake should fail and
+		 * recv should return error
+		 */
+		zassert_true(pfd.revents & ZSOCK_POLLHUP,
+			     "Expected poll to indicate connection closed (events 0x%02x)",
+			     pfd.revents);
+	} else {
+		/* Receive echo */
+		ret = zsock_recv(client_stream_sock, rx_buf, sizeof(rx_buf), 0);
+
+		zassert_true(ret > 0, "Failed to receive data (%d)", -errno);
+		zassert_mem_equal(tx_buf, rx_buf, sizeof(tx_buf),
+				  "Received data mismatch");
+	}
+
+	/* Clean up */
+	cert_data.test_done = true;
+
+	ret = zsock_close(client_stream_sock);
+	zassert_equal(ret, 0, "Failed to close client stream (%d)", ret);
+
+	ret = k_thread_join(&cert_server_thread_data, K_MSEC(500));
+	if (ret != -EAGAIN) {
+		zassert_equal(ret, 0, "Cannot join thread (%d)", ret);
+	}
+
+	if (setup_client_cert) {
+		server_stream_sock = cert_data.stream_recv_sock;
+		zassert_equal(cert_data.error, 0, "Server thread reported error (%d)",
+			      cert_data.error);
+
+		ret = quic_stream_close(server_stream_sock);
+		zassert_equal(ret, 0, "Failed to close server stream %d (%d)",
+		      server_stream_sock, ret);
+	}
+
+	if (!(client_cert_mode == MBEDTLS_SSL_VERIFY_REQUIRED && !setup_client_cert)) {
+		server_connected_sock = cert_data.connected_sock;
+		zassert_true(server_connected_sock >= 0, "Invalid connected socket (%d)",
+			     server_connected_sock);
+
+		ret = quic_connection_close(server_connected_sock);
+		zassert_equal(ret, 0, "Failed to close server connection %d (%d)",
+			      server_connected_sock, ret);
+	}
+
+	ret = quic_connection_close(client_sock);
+	zassert_equal(ret, 0, "Failed to close client connection (%d)", ret);
+
+	ret = quic_connection_close(server_sock);
+	zassert_equal(ret, 0, "Failed to close server connection (%d)", ret);
+}
+
+ZTEST(net_socket_quic, test_24_client_cert_optional)
+{
+	int ret;
+
+	/* Disable packet drop for this test */
+	ret = loopback_set_packet_drop_ratio(0.0);
+	zassert_ok(ret, "Failed to set packet drop ratio (%d)", ret);
+
+	/* Test with optional client cert (mode=1) */
+	quic_server_and_client_with_client_cert(LOCAL_ADDR_IPV4_STR3,
+						REMOTE_ADDR_IPV4_STR3,
+						MBEDTLS_SSL_VERIFY_OPTIONAL,
+						true /* Set up client cert */);
+}
+
+ZTEST(net_socket_quic, test_25_client_cert_mandatory)
+{
+	int ret;
+
+	/* Disable packet drop for this test */
+	ret = loopback_set_packet_drop_ratio(0.0);
+	zassert_ok(ret, "Failed to set packet drop ratio (%d)", ret);
+
+	/* Test with optional client cert (mode=1) */
+	quic_server_and_client_with_client_cert(LOCAL_ADDR_IPV4_STR3,
+						REMOTE_ADDR_IPV4_STR3,
+						MBEDTLS_SSL_VERIFY_REQUIRED,
+						true /* Set up client cert */);
+}
+
+ZTEST(net_socket_quic, test_26_client_cert_mandatory_and_failing)
+{
+	int ret;
+
+	/* Disable packet drop for this test */
+	ret = loopback_set_packet_drop_ratio(0.0);
+	zassert_ok(ret, "Failed to set packet drop ratio (%d)", ret);
+
+	/* Test with optional client cert (mode=1) */
+	quic_server_and_client_with_client_cert(LOCAL_ADDR_IPV4_STR3,
+						REMOTE_ADDR_IPV4_STR3,
+						MBEDTLS_SSL_VERIFY_REQUIRED,
+						false /* Don't set up client cert */);
 }
 
 ZTEST_SUITE(net_socket_quic, NULL, setup, before, after, NULL);
