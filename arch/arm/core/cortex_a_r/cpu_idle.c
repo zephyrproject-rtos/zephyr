@@ -54,6 +54,10 @@ void arch_cpu_idle(void)
 	/* Enter low power state */
 	SLEEP_IF_ALLOWED(__WFI);
 
+#if defined(CONFIG_TRACING)
+	sys_trace_idle_exit();
+#endif
+
 	/*
 	 * Clear PRIMASK and flush instruction buffer to immediately service
 	 * the wake-up interrupt.
@@ -79,6 +83,10 @@ void arch_cpu_atomic_idle(unsigned int key)
 	/* No BASEPRI, call wfe directly
 	 */
 	SLEEP_IF_ALLOWED(__WFE);
+
+#if defined(CONFIG_TRACING)
+	sys_trace_idle_exit();
+#endif
 
 	if (!key) {
 		__enable_irq();
