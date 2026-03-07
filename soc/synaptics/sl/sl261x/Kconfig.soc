@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Synaptics Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SL261X
+	bool
+	select SOC_FAMILY_SYNA_SL
+
+config SOC_SERIES
+	default "sl261x" if SOC_SERIES_SL261X
+
+config SOC_SL2619
+	bool
+	select SOC_SERIES_SL261X
+
+config SOC_SL2619_A55
+	bool
+	select SOC_SL2619
+	help
+	  SYNA SL2619 A55
+
+config SOC
+	default "sl2619" if SOC_SL2619

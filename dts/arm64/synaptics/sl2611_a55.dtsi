@@ -1,0 +1,84 @@
+/*
+ * Copyright (c) 2026 Synaptics Incorporated
+ * Author: Jisheng Zhang <jszhang@kernel.org>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+#include <arm64/armv8-a.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	interrupt-parent = <&gic>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0>;
+		};
+
+		cpu@100 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0x100>;
+		};
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	};
+
+	psci: psci {
+		compatible = "arm,psci-1.1";
+		method = "smc";
+	};
+
+	gic: interrupt-controller@f7e59000 {
+		compatible = "arm,gic-v2", "arm,gic";
+		reg = <0xf7e59000 0x1000>,
+		      <0xf7e5a000 0x2000>;
+		interrupt-controller;
+		#interrupt-cells = <4>;
+	};
+
+	osc: osc {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <25000000>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		uart0: uart@e5030000 {
+			compatible = "ns16550";
+			reg = <0xe5030000 0x100>;
+			interrupts = <GIC_SPI 130 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&osc>;
+			clock-frequency = <25000000>;
+			reg-shift = <2>;
+			status = "disabled";
+		};
+
+		lram: memory@f7600000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0xf7600000 DT_SIZE_K(512)>;
+			zephyr,memory-region = "LRAM";
+		};
+
+	};
+};

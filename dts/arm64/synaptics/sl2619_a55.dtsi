@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2026 Synaptics Incorporated
+ * Author: Jisheng Zhang <jszhang@kernel.org>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <synaptics/sl2611_a55.dtsi>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	interrupt-parent = <&gic>;
+
+	cpus {
+		cpu@100 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a55";
+			reg = <0x100>;
+		};
+	};
+};
