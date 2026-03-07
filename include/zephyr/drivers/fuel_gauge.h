@@ -14,8 +14,8 @@
  * @brief Main header file for fuel gauge driver API.
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_BATTERY_H_
-#define ZEPHYR_INCLUDE_DRIVERS_BATTERY_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_FUEL_GAUGE_H_
+#define ZEPHYR_INCLUDE_DRIVERS_FUEL_GAUGE_H_
 
 /**
  * @brief Interfaces for fuel gauges.
@@ -96,7 +96,7 @@ enum fuel_gauge_prop_type {
 	FUEL_GAUGE_RUNTIME_TO_FULL,
 	/** Remaining time in minutes until battery reaches full charge */
 	FUEL_GAUGE_RUNTIME_TO_FULL_MINS = FUEL_GAUGE_RUNTIME_TO_FULL,
-	/** Retrieve word from SBS1.1 ManufactuerAccess */
+	/** Retrieve word from SBS1.1 ManufacturerAccess */
 	FUEL_GAUGE_SBS_MFR_ACCESS,
 	/**
 	 * Absolute state of charge (percent, 0-100) - expressed as % of design capacity
@@ -670,7 +670,7 @@ static inline int z_impl_fuel_gauge_set_prop(const struct device *dev, fuel_gaug
  * the fuel gauge device. The vals array is not permuted.
  * @param len number of properties in props array
  *
- * @return return=0 if successful. Otherwise, return array index of failing property.
+ * @return 0 if successful, negative errno code of first failing property.
  */
 __syscall int fuel_gauge_set_props(const struct device *dev, const fuel_gauge_prop_t *props,
 				   const union fuel_gauge_prop_val *vals, size_t len);
@@ -748,4 +748,4 @@ static inline int z_impl_fuel_gauge_battery_cutoff(const struct device *dev)
 
 #include <zephyr/syscalls/fuel_gauge.h>
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_BATTERY_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_FUEL_GAUGE_H_ */
