@@ -7877,6 +7877,141 @@ static inline bool k_thread_cleanup_pop(int execute)
  * @}
  */
 
+/**
+ * @addtogroup k_thread_specific_storage_apis
+ * @{
+ */
+
+/**
+ * @brief Destructor type for the thread-specific storage values associated with a given key.
+ *
+ * @param value Value to destroy.
+ */
+typedef void (*k_thread_key_destructor_t)(void *value);
+
+#if defined(CONFIG_THREAD_SPECIFIC_STORAGE) || defined(__DOXYGEN__)
+/**
+ * @brief Wildcard key selector for thread-specific storage queries.
+ *
+ * Used with @ref k_thread_qspecific and @ref k_thread_key_delete to match any stored key.
+ */
+#define K_THREAD_KEY_ANY ((void *)(-1))
+
+/**
+ * @brief Create a thread-specific storage key.
+ *
+ * Create a thread-specific storage key and optionally associate a destructor with it.
+ *
+ * Destructors are only called during graceful thread termination (when the thread runs to
+ * completion, when @ref k_thread_exit is called, or when a pending cancellation request is
+ * delivered at a cancellation point). They are not called synchronously from
+ * @ref k_thread_cancel. A destructor is only called for a non-NULL value. Each pass over the
+ * values visits those stored when it started, so a destructor may store a value again, and
+ * after @kconfig{CONFIG_THREAD_SPECIFIC_STORAGE_DESTRUCTOR_ITERATIONS} passes any value still
+ * stored is dropped without its destructor.
+ *
+ * @param[out] key Pointer to location where the created key is stored.
+ * @param dtor Optional destructor for values associated with this key.
+ *
+ * @retval 0 on success.
+ * @retval -ENOMEM if no keys are available.
+ */
+__syscall int k_thread_key_create(void **key, k_thread_key_destructor_t dtor);
+
+/**
+ * @brief Delete a thread-specific storage key.
+ *
+ * Values still associated with @p key by any thread are dropped and their destructor is not
+ * called, neither here nor when those threads exit.
+ *
+ * @param key Key to delete.
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL if @p key is invalid.
+ * @retval -ENOENT if @p key is @ref K_THREAD_KEY_ANY and no thread-specific values are stored.
+ */
+__syscall int k_thread_key_delete(void *key);
+
+/**
+ * @brief Set a thread-specific value for the calling thread.
+ *
+ * @param key Key identifying the thread-specific value.
+ * @param value Value to associate with @p key.
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL if @p key is invalid.
+ * @retval -ENOMEM if memory for a new key/value association cannot be allocated.
+ */
+__syscall int k_thread_setspecific(void *key, void *value);
+
+/**
+ * @brief Query a thread-specific value from the calling thread.
+ *
+ * If @p key points to a valid key for which there is an associated thread-specific value, then
+ * the value is written to the memory location pointed to by @p value. The key-value pair remains
+ * associated for the calling thread.
+ *
+ * If @p key points to @ref K_THREAD_KEY_ANY, then any available entry is selected and the
+ * associated key-value pair is removed from thread-specific storage for the calling thread.
+ *
+ * @param[in,out] key On input, Pointer to the key selector. On success, the key associated with @p
+ * value.
+ * @param[out] value Pointer to where the value associated with @p key is stored.
+ * @param[out] dtor Pointer to where the destructor associated with the removed value is stored.
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL if @p key is invalid, or if @p *key has no association in the calling thread.
+ * @retval -ENOENT if @p key is @ref K_THREAD_KEY_ANY and the calling thread has no stored values.
+ */
+__syscall int k_thread_qspecific(void **key, void **value, k_thread_key_destructor_t *dtor);
+
+/**
+ * @brief Remove and return any thread-specific value from the calling thread.
+ *
+ * Convenience wrapper for k_thread_qspecific() with @ref K_THREAD_KEY_ANY.
+ *
+ * @param[in,out] key Pointer to where the key associated with @p value is stored.
+ * @param[out] value Pointer to where the value associated with @p key is stored.
+ * @param[out] dtor Pointer to where the destructor associated with the removed value is stored.
+ *
+ * @retval 0 on success.
+ * @retval -ENOENT if the calling thread has no stored values.
+ */
+static inline int k_thread_popspecific(void **key, void **value, k_thread_key_destructor_t *dtor)
+{
+	*key = K_THREAD_KEY_ANY;
+	return k_thread_qspecific(key, value, dtor);
+}
+
+/**
+ * @brief Count the thread-specific values stored by the calling thread.
+ *
+ * @return The number of key-value associations the calling thread holds.
+ */
+__syscall size_t k_thread_specific_count(void);
+
+/**
+ * @brief Get a thread-specific value for a specific key.
+ *
+ * @param key Key identifying the thread-specific value.
+ * @param[out] value Pointer to where the value associated with @p key is stored.
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL if @p key is invalid, or if @p key has no association in the calling thread.
+ */
+static inline int k_thread_getspecific(void *key, void **value)
+{
+	__maybe_unused k_thread_key_destructor_t dtor;
+
+	return k_thread_qspecific(&key, value, &dtor);
+}
+
+#endif /* CONFIG_THREAD_SPECIFIC_STORAGE */
+
+/**
+ * @}
+ */
+
 #ifdef __cplusplus
 }
 #endif

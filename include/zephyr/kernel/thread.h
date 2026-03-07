@@ -154,6 +154,11 @@ struct _thread_base {
        /** Cleanup handlers */
        sys_slist_t cleanup;
 #endif
+
+#ifdef CONFIG_THREAD_SPECIFIC_STORAGE
+       /** Thread-specific storage keys */
+       sys_dlist_t key_list;
+#endif
 };
 
 typedef struct _thread_base _thread_base_t;

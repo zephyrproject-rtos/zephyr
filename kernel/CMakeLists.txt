@@ -81,6 +81,7 @@ zephyr_compile_definitions(SIGNAL_ACTION_DB_SIZE=${sigaction_min_size})
 # This file cannot be compiled with __ZEPHYR_SUPERVISOR__ when userspace is enabled
 zephyr_sources_ifdef(CONFIG_SIGNAL signal.c)
 zephyr_sources_ifdef(CONFIG_THREAD_CLEANUP cleanup.c)
+zephyr_sources_ifdef(CONFIG_THREAD_SPECIFIC_STORAGE tss.c)
 
 # kernel is a normal CMake library and not a zephyr_library because it
 # should usually not be --whole-archive'd

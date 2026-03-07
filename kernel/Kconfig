@@ -203,6 +203,36 @@ config THREAD_RESULT
 	help
 	  Say 'Y' here to support a thread result or "return value".
 
+config THREAD_SPECIFIC_STORAGE
+	bool "Thread specific storage (TSS)"
+	help
+	  Say 'Y' here to support thread-specific storage. That feature allows the
+	  application to add and remove thread-specific values at runtime, in contrast to
+	  thread-local storage (TLS) which requires values be annotated `__thread` at
+	  compile time. TSS can also be used to emulated TLS on systems which lack hardware TLS
+	  support.
+
+if THREAD_SPECIFIC_STORAGE
+
+config THREAD_SPECIFIC_STORAGE_KEYS_MAX
+	int "Maximum number of thread-specific storage keys"
+	default 1
+	help
+	  Adjust this number based on the maximum number of thread-specific storage keys
+	  that will be needed for the application.
+
+config THREAD_SPECIFIC_STORAGE_DESTRUCTOR_ITERATIONS
+	int "Number of destructor passes at thread exit"
+	default 4
+	range 1 256
+	help
+	  A thread that exits runs the destructors of its remaining values in passes, each
+	  visiting the values stored when it started, since a destructor may store a value
+	  again. After this many passes any values still stored are dropped without calling
+	  their destructors. POSIX sets the minimum at 4 (_POSIX_THREAD_DESTRUCTOR_ITERATIONS).
+
+endif
+
 config THREAD_CANCEL_SIGNAL_NUMBER
 	int "Thread cancellation signal number"
 	def_int 32
