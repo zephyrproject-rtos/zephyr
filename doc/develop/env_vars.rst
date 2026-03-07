@@ -213,6 +213,12 @@ the :ref:`toolchain <gs_toolchain>` used to build Zephyr applications.
 
    Path where Zephyr SDK is installed.
 
+.. envvar:: ZEPHYR_SDK_INSTALL_DIR_FORCE
+
+   Disables the SDK version compatibility check when defined. When :envvar:`ZEPHYR_SDK_INSTALL_DIR`
+   is set, this forces the SDK installation under the specified directory to be used regardless of
+   compatibility.
+
 .. envvar:: ZEPHYR_TOOLCHAIN_VARIANT
 
    The name of the toolchain to use.
