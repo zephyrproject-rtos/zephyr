@@ -19,12 +19,16 @@
 
 void arch_cpu_idle(void)
 {
+#if defined(CONFIG_TRACING)
 	sys_trace_idle();
+#endif
 	irq_unlock(0);
 }
 
 void arch_cpu_atomic_idle(unsigned int key)
 {
+#if defined(CONFIG_TRACING)
 	sys_trace_idle();
+#endif
 	irq_unlock(key);
 }

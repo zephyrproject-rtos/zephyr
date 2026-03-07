@@ -328,7 +328,9 @@ void riscv_idle(enum chip_pll_mode mode, unsigned int key)
 	 * interrupt here to protect the below content.
 	 */
 	csr_clear(mie, MIP_MEIP);
+#if defined(CONFIG_TRACING)
 	sys_trace_idle();
+#endif
 #ifdef CONFIG_ESPI
 	/*
 	 * H2RAM feature requires RAM clock to be active. Since the below doze
@@ -392,7 +394,9 @@ __no_idle:
 	/* CPU has been woken up, the interrupt is no longer needed */
 	espi_ite_ec_enable_trans_irq(ESPI_ITE_SOC_DEV, false);
 #endif
+#if defined(CONFIG_TRACING)
 	sys_trace_idle_exit();
+#endif
 	/*
 	 * Enable M-mode external interrupt
 	 * An interrupt can not be fired yet until we enable global interrupt
