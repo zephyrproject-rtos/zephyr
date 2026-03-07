@@ -137,9 +137,9 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
 }
 
 /* the C entry of secondary cores */
-void arch_secondary_cpu_init(int cpu_num)
+void arch_secondary_cpu_init(void)
 {
-	cpu_num = arm64_cpu_boot_params.cpu_num;
+	int cpu_num = arm64_cpu_boot_params.cpu_num;
 	arch_cpustart_t fn;
 	void *arg;
 
