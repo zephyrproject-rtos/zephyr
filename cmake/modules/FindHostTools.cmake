@@ -52,7 +52,7 @@ if(DEFINED ENV{ZEPHYR_SDK_INSTALL_DIR_FORCE})
   message(STATUS "ZEPHYR_SDK_INSTALL_DIR_FORCE is set, disabling SDK version compatibility check")
   find_package(Zephyr-sdk)
 else()
-  find_package(Zephyr-sdk 0.16)
+  find_package(Zephyr-sdk 1.0)
 endif()
 
 # gperf is an optional dependency
