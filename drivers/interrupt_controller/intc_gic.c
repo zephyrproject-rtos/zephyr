@@ -34,6 +34,12 @@ static const uint64_t cpu_mpid_list[] = {
 BUILD_ASSERT(ARRAY_SIZE(cpu_mpid_list) >= CONFIG_MP_MAX_NUM_CPUS,
 		"The count of CPU Cores nodes in dts is less than CONFIG_MP_MAX_NUM_CPUS\n");
 
+#define GIC_CPU_MAX	8
+static uint8_t gic_cpu_bitmap[GIC_CPU_MAX];
+
+BUILD_ASSERT(GIC_CPU_MAX >= CONFIG_MP_MAX_NUM_CPUS,
+		"The count of CPU Cores supported by GICv2 is less than CONFIG_MP_MAX_NUM_CPUS\n");
+
 /*
  * Read the current CPU's target mask from hardware.
  * GICD_ITARGETSR bytes 0-3 (SGIs, IRQs 0-3) are banked per-CPU
@@ -204,20 +210,58 @@ void arm_gic_eoi(unsigned int irq)
 	sys_write32(irq, GICC_EOIR);
 }
 
-void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
-		uint16_t target_list)
+static int gic_find_cpu_by_mpid(uint64_t mpid)
+{
+	for (int i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
+		if (cpu_mpid_list[i] == mpid) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff, uint16_t target_list)
 {
 	uint32_t sgi_val;
+	uint8_t cpu_mask = target_list;
+	int cpu;
 
-	ARG_UNUSED(target_aff);
+	cpu = gic_find_cpu_by_mpid(MPIDR_TO_CORE(target_aff));
+	if (cpu >= 0 && gic_cpu_bitmap[cpu] != 0) {
+		cpu_mask = gic_cpu_bitmap[cpu];
+	}
 
 	sgi_val = GICD_SGIR_TGTFILT_CPULIST |
-		GICD_SGIR_CPULIST(target_list & GICD_SGIR_CPULIST_MASK) |
+		GICD_SGIR_CPULIST(cpu_mask & GICD_SGIR_CPULIST_MASK) |
 		sgi_id;
 
 	barrier_dsync_fence_full();
 	sys_write32(sgi_val, GICD_SGIR);
 	barrier_isync_fence_full();
+}
+
+static uint8_t gic_get_cpu_bitmap(void)
+{
+	uint32_t reg_val;
+	int i;
+
+	/* read GICD_ITARGETSR0..GICD_ITARGETSR7 */
+	for (i = 0; i < 8; i++) {
+		reg_val = sys_read32(GICD_ITARGETSRn + (i * 4));
+		reg_val |= reg_val >> 16;
+		reg_val |= reg_val >> 8;
+		if (reg_val) {
+			break;
+		}
+	}
+
+	/* uniprocessor? */
+	if (reg_val == 0) {
+		return 1;
+	}
+
+	return reg_val;
 }
 
 static void gic_dist_init(void)
@@ -268,11 +312,8 @@ static void gic_dist_init(void)
 	 */
 	{
 		uint8_t cpu_mask = gic_get_cpu_mask();
-		unsigned int num_cpus = arch_num_cpus();
 
-		for (i = 0; i < num_cpus; i++) {
-			cpu_mask |= BIT(cpu_mpid_list[i]);
-		}
+		cpu_mask = gic_get_cpu_bitmap();
 
 		reg_val = cpu_mask | (cpu_mask << 8) | (cpu_mask << 16) | (cpu_mask << 24);
 	}
@@ -319,6 +360,8 @@ static void gic_dist_init(void)
 
 static void gic_cpu_init(void)
 {
+	uint64_t mpid = MPIDR_TO_CORE(GET_MPIDR());
+	int cpu = gic_find_cpu_by_mpid(mpid);
 	int i;
 	uint32_t val;
 
@@ -331,6 +374,10 @@ static void gic_cpu_init(void)
 #endif
 	sys_write32(0xffff0000, GICD_ICENABLERn);
 	sys_write32(0x0000ffff, GICD_ISENABLERn);
+
+	if (cpu >= 0) {
+		gic_cpu_bitmap[cpu] = gic_get_cpu_bitmap();
+	}
 
 	/*
 	 * Set priority on PPI and SGI interrupts
