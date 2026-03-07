@@ -1,0 +1,6 @@
+tests:
+  drivers.usb.uhc:
+    tags:
+      - drivers
+      - usbh
+    depends_on: usbh
