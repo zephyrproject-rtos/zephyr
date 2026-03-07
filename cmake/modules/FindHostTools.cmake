@@ -48,7 +48,7 @@ if(HostTools_FOUND)
   return()
 endif()
 
-find_package(Zephyr-sdk 0.16)
+find_package(Zephyr-sdk 1.0)
 
 # gperf is an optional dependency
 find_program(GPERF gperf)
