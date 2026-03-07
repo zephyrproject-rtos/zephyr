@@ -9,6 +9,7 @@
 #include "tests_thread_apis.h"
 
 static ZTEST_BMEM int execute_flag;
+static ZTEST_BMEM __maybe_unused int execute_user;
 
 K_SEM_DEFINE(sync_sema, 0, 1);
 K_SEM_DEFINE(cancel_ready, 0, 1);
@@ -409,6 +410,86 @@ ZTEST_USER(threads_lifecycle, test_k_thread_exit)
 	zassert_equal(POINTER_TO_INT(actual_result), POINTER_TO_INT(expected_result),
 		      "result %p instead of %p", actual_result, expected_result);
 	zassert_equal(execute_flag, 1);
+#endif
+}
+
+#ifdef CONFIG_THREAD_CLEANUP
+static void cleanup_handler(void *arg)
+{
+	execute_flag = POINTER_TO_INT(arg);
+	/* a handler runs in its thread's own mode, never in the kernel on a user thread's behalf */
+	execute_user = k_is_user_context();
+}
+
+static void thread_entry_cleanup(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	if (!k_is_user_context()) {
+		/* kernel threads must explicitly opt-in to cancellation */
+		k_thread_cancel_setstate(true);
+	}
+
+	K_THREAD_CLEANUP_PUSH(cleanup_handler, p1);
+
+	int flag = POINTER_TO_INT(p1);
+
+	switch (flag) {
+	case 1:
+		/* handler is run within this scope */
+		break;
+	case 2:
+		/* handler is run in cancellation signal handler */
+		while (true) {
+			k_msleep(1);
+		}
+		break;
+	case 3:
+		/* handler is run in cancellation signal handler */
+		k_thread_exit(NULL);
+		break;
+	}
+
+	K_THREAD_CLEANUP_POP(1);
+}
+#endif
+
+ZTEST_USER(threads_lifecycle, test_k_thread_cleanup_push_pop)
+{
+#ifndef CONFIG_THREAD_CLEANUP
+	ztest_test_skip();
+#else
+	const int expect_user = IS_ENABLED(CONFIG_USERSPACE) ? 1 : 0;
+
+	/* run cleanup as part of thread's function */
+	execute_flag = 0;
+	execute_user = -1;
+	k_thread_create(&tdata, tstack, STACK_SIZE, thread_entry_cleanup, INT_TO_POINTER(1), NULL,
+			NULL, 0, K_USER, K_NO_WAIT);
+	zassert_ok(k_thread_rejoin(&tdata, NULL, K_FOREVER));
+	zassert_equal(execute_flag, 1);
+	zassert_equal(execute_user, expect_user, "cleanup handler ran in the wrong mode");
+
+	/* run cleanup via k_thread_cancel() */
+	execute_flag = 0;
+	execute_user = -1;
+	k_thread_create(&tdata, tstack, STACK_SIZE, thread_entry_cleanup, INT_TO_POINTER(2), NULL,
+			NULL, 0, K_USER, K_NO_WAIT);
+	k_msleep(100);
+	k_thread_cancel(&tdata);
+	zassert_ok(k_thread_rejoin(&tdata, NULL, K_FOREVER));
+	zassert_equal(execute_flag, 2);
+	zassert_equal(execute_user, expect_user, "cleanup handler ran in the wrong mode");
+
+	/* run cleanup via k_thread_exit() */
+	execute_flag = 0;
+	execute_user = -1;
+	k_thread_create(&tdata, tstack, STACK_SIZE, thread_entry_cleanup, INT_TO_POINTER(3), NULL,
+			NULL, 0, K_USER, K_NO_WAIT);
+	zassert_ok(k_thread_rejoin(&tdata, NULL, K_FOREVER));
+	zassert_equal(execute_flag, 3);
+	zassert_equal(execute_user, expect_user, "cleanup handler ran in the wrong mode");
 #endif
 }
 

@@ -983,6 +983,10 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	new_thread->base.result = (atomic_t)NULL;
 #endif
 
+#ifdef CONFIG_THREAD_CLEANUP
+	sys_slist_init(&new_thread->base.cleanup);
+#endif
+
 
 	SYS_PORT_TRACING_OBJ_FUNC(k_thread, create, new_thread);
 

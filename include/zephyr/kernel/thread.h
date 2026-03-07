@@ -149,6 +149,11 @@ struct _thread_base {
        /** Sticky cancellation request pending actuation */
        atomic_t cancel_pending;
 #endif
+
+#ifdef CONFIG_THREAD_CLEANUP
+       /** Cleanup handlers */
+       sys_slist_t cleanup;
+#endif
 };
 
 typedef struct _thread_base _thread_base_t;

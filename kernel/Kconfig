@@ -254,6 +254,14 @@ config SIGNAL_SET_SIZE_MIN_THREAD_CANCEL
 
 endif # THREAD_CANCEL
 
+config THREAD_CLEANUP
+	bool "Thread cleanup"
+	depends on THREAD_CANCEL
+	help
+	  Say 'Y' here to support thread cleanup routines via k_thread_cleanup_push() and
+	  k_thread_cleanup_pop(). Cleanup routines are executed when a cancellation request is
+	  delivered to the thread at a cancellation point, not when k_thread_cancel() returns.
+
 config THREAD_CUSTOM_DATA
 	bool "Thread custom data"
 	help

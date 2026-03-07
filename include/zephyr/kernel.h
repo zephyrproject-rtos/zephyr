@@ -7778,6 +7778,105 @@ FUNC_NORETURN void k_thread_exit(void *result);
 
 #endif /* CONFIG_SIGNAL */
 
+/**
+ * @addtogroup k_thread_cleanup_apis
+ * @{
+ */
+
+typedef void (*k_thread_cleanup_handler_t)(void *arg);
+
+#if defined(CONFIG_THREAD_CLEANUP) || defined(__DOXYGEN__)
+/**
+ * @brief Push a thread cleanup handler onto the calling thread's cleanup stack.
+ *
+ * Most callers will use this via the @ref K_THREAD_CLEANUP_PUSH macro. The @p cleanup parameter
+ * must point to an array of `void *` that is at least 3 elements in size.
+ *
+ * @param cleanup Pointer to the cleanup handler structure.
+ * @param routine Function pointer to the cleanup routine.
+ * @param arg Argument to pass to the cleanup routine.
+ */
+__syscall void k_thread_cleanup_push(void **cleanup, k_thread_cleanup_handler_t routine, void *arg);
+
+/**
+ * @brief Pop a thread cleanup handler from the calling thread's cleanup stack without running it.
+ *
+ * @param[out] routine The popped cleanup routine.
+ * @param[out] arg The argument registered with @p routine.
+ *
+ * @return true if a cleanup handler was popped, false if the cleanup stack was empty.
+ */
+__syscall bool k_thread_cleanup_pop_entry(k_thread_cleanup_handler_t *routine, void **arg);
+
+/**
+ * @brief Pop a thread cleanup handler from the calling thread's cleanup stack.
+ *
+ * The routine runs in the calling thread's own context and privilege level.
+ *
+ * @param execute If non-zero, the cleanup routine is executed.
+ *
+ * @return true if a cleanup handler was popped, false if the cleanup stack was empty.
+ */
+static inline bool k_thread_cleanup_pop(int execute)
+{
+	k_thread_cleanup_handler_t routine;
+	void *arg;
+
+	if (!k_thread_cleanup_pop_entry(&routine, &arg)) {
+		return false;
+	}
+
+	if (execute != 0) {
+		routine(arg);
+	}
+
+	return true;
+}
+
+/**
+ * @brief Push a cleanup handler onto the calling thread's stack.
+ *
+ * Cleanup handlers have the signature below.
+ *
+ * @code{.c}
+ * void cleanup_handler(void *arg);
+ * void *arg = (void *)0x42;
+ *
+ * K_THREAD_CLEANUP_PUSH(cleanup_handler, arg);
+ * .. additional code ..
+ * K_THREAD_CLEANUP_POP(1);
+ * @endcode
+ *
+ * @param routine Function pointer to the cleanup routine.
+ * @param arg Argument to pass to the cleanup routine.
+ *
+ * @note This macro must be followed by a matching call to @ref K_THREAD_CLEANUP_POP in the same
+ * lexical scope.
+ */
+#define K_THREAD_CLEANUP_PUSH(routine, arg)                                                        \
+	do /* enforce '{'-like behaviour */ {                                                      \
+		void *cleanup[3];                                                                  \
+	k_thread_cleanup_push(cleanup, routine, arg)
+
+/**
+ * @brief Pop and optionally execute a cleanup handler from the calling thread's stack.
+ *
+ * @param execute If non-zero, the cleanup routine is executed.
+ *
+ * @note This macro must be preceded by a matching call to @ref K_THREAD_CLEANUP_PUSH in the same
+ * lexical scope.
+ */
+#define K_THREAD_CLEANUP_POP(execute)                                                              \
+	k_thread_cleanup_pop(execute);                                                             \
+	} /* enforce '}'-like behaviour */                                                         \
+	while (0)
+
+#endif /* CONFIG_THREAD_CLEANUP */
+
+/**
+ * @}
+ */
+
 #ifdef __cplusplus
 }
 #endif
