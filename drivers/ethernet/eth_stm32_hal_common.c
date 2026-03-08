@@ -141,7 +141,8 @@ static int eth_initialize(const struct device *dev)
 		return ret;
 	}
 
-	if (cfg->mac_cfg.type == NET_ETH_MAC_DEFAULT) {
+	ret = net_eth_mac_load(&cfg->mac_cfg, dev_data->mac_addr);
+	if (ret == -ENODATA) {
 		uint8_t unique_device_ID_12_bytes[12];
 		uint32_t result_mac_32_bits;
 
@@ -157,12 +158,13 @@ static int eth_initialize(const struct device *dev)
 		hwinfo_get_device_id(unique_device_ID_12_bytes, 12);
 		result_mac_32_bits = crc32_ieee((uint8_t *)unique_device_ID_12_bytes, 12);
 		memcpy(&dev_data->mac_addr[3], &result_mac_32_bits, 3);
-	} else {
-		ret = net_eth_mac_load(&cfg->mac_cfg, dev_data->mac_addr);
-		if (ret < 0) {
-			LOG_ERR("Failed to load MAC (%d)", ret);
-			return ret;
-		}
+
+		ret = 0;
+	}
+
+	if (ret < 0) {
+		LOG_ERR("Failed to load MAC address (%d)", ret);
+		return ret;
 	}
 
 	heth->Init.MACAddr = dev_data->mac_addr;

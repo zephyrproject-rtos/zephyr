@@ -23,10 +23,16 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <ethernet/eth.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/hwinfo.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/sys/crc.h>
 #include <zephyr/irq.h>
 
 #include "eth_dwmac_priv.h"
+
+#define ST_OUI_B0 0x00
+#define ST_OUI_B1 0x80
+#define ST_OUI_B2 0xE1
 
 PINCTRL_DT_INST_DEFINE(0);
 static const struct pinctrl_dev_config *eth0_pcfg =
@@ -104,8 +110,26 @@ int dwmac_platform_init(struct dwmac_priv *p)
 	/* retrieve MAC address */
 	ret = net_eth_mac_load(&mac_cfg, p->mac_addr);
 	if (ret == -ENODATA) {
-		LOG_DBG("No MAC address configured");
-	} else if (ret < 0) {
+		uint8_t unique_device_ID_12_bytes[12];
+		uint32_t result_mac_32_bits;
+
+		/**
+		 * Set MAC address locally administered bit (LAA) as this is not assigned by the
+		 * manufacturer
+		 */
+		p->mac_addr[0] = ST_OUI_B0 | 0x02;
+		p->mac_addr[1] = ST_OUI_B1;
+		p->mac_addr[2] = ST_OUI_B2;
+
+		/* Nothing defined by the user, use device id */
+		hwinfo_get_device_id(unique_device_ID_12_bytes, 12);
+		result_mac_32_bits = crc32_ieee((uint8_t *)unique_device_ID_12_bytes, 12);
+		memcpy(&p->mac_addr[3], &result_mac_32_bits, 3);
+
+		ret = 0;
+	}
+
+	if (ret < 0) {
 		LOG_ERR("Failed to load MAC address (%d)", ret);
 		return ret;
 	}

@@ -32,6 +32,8 @@ config ETH_DWMAC_STM32H7X
 	select ETH_DWMAC
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	select PINCTRL
+	select HWINFO
+	select CRC
 	default y
 	help
 	  This enables the Synopsys DesignWare MAC driver on STM32H7 series
