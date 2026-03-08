@@ -42,11 +42,11 @@ config 3RD_LEVEL_INTERRUPTS
 config NUM_IRQS
 	default 250 # 2ND_LVL_ISR_TBL_OFFSET + MAX_IRQ_PER_AGGREGATOR * NUM_2ND_LEVEL_AGGREGATORS
 
-# LPTMR cannot be shared with both the system timer and the counter simultaneously
-# as they now share the same compatible resource.
-# By default, when LPTMR is not used as a counter, it shows enabling LPTMR as the system clock.
-config MCUX_LPTMR_TIMER
-	default y if !COUNTER_MCUX_LPTMR
+# lptmr1 carries role = "timer"; lptmr2 is a counter (default role).
+# Both drivers can be active simultaneously on i.MX95 since they use separate
+# hardware instances. No mutual-exclusion guard is needed here.
+configdefault MCUX_LPTMR_TIMER
+	default y
 
 config CORTEX_M_SYSTICK
 	default n if MCUX_LPTMR_TIMER
