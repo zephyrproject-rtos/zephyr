@@ -3030,14 +3030,14 @@ def _check_prop_by_type(prop_name: str,
              f"which has type {prop_type}")
 
 
-def _translate(addr: int, node: dtlib_Node) -> int:
-    # Recursively translates 'addr' on 'node' to the address space(s) of its
+def _translate_once(addr: int, node: dtlib_Node) -> tuple[int, bool]:
+    # Translates 'addr' on 'node' to the address space(s) of its
     # parent(s), by looking at 'ranges' properties. Returns the translated
     # address.
 
     if not node.parent or "ranges" not in node.parent.props:
         # No translation
-        return addr
+        return addr, False
 
     if not node.parent.props["ranges"].value:
         # DT spec.: "If the property is defined with an <empty> value, it
@@ -3046,7 +3046,7 @@ def _translate(addr: int, node: dtlib_Node) -> int:
         #
         # Treat this the same as a 'range' that explicitly does a one-to-one
         # mapping, as opposed to there not being any translation.
-        return _translate(addr, node.parent)
+        return addr, True
 
     # Gives the size of each component in a translation 3-tuple in 'ranges'
     child_address_cells = _address_cells(node)
@@ -3072,11 +3072,21 @@ def _translate(addr: int, node: dtlib_Node) -> int:
         if child_addr <= addr < child_addr + child_len:
             # 'addr' is within range of a translation in 'ranges'. Recursively
             # translate it and return the result.
-            return _translate(parent_addr + addr - child_addr, node.parent)
+            return parent_addr + addr - child_addr , True
 
     # 'addr' is not within range of any translation in 'ranges'
-    return addr
+    return addr, False
 
+def _translate(addr: int, node: dtlib_Node) -> int:
+    # Recursively translates 'addr' on 'node' to the address space(s) of its
+    # parent(s), by looking at 'ranges' properties. Returns the translated
+    # address.
+
+    mapped_address, mapped = _translate_once(addr, node)
+    if mapped and node.parent:
+        return _translate(mapped_address, node.parent)
+
+    return mapped_address
 
 def _add_names(node: dtlib_Node, names_ident: str, objs: Any) -> None:
     # Helper for registering names from <foo>-names properties.
