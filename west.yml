@@ -400,7 +400,7 @@ manifest:
       groups:
         - crypto
     - name: trusted-firmware-a
-      revision: 44bcc378b6ec4af8693d008f43983e488f1f5740
+      revision: 4aef38a5bf03edfa615c1f8af5a49e7065f9fb3f
       path: modules/tee/tf-a/trusted-firmware-a
       groups:
         - tee
