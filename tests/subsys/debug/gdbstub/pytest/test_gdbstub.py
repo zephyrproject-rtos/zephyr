@@ -57,7 +57,7 @@ def expected_gdb():
     re.compile(r'Breakpoint 1, test '),
     re.compile(r'Breakpoint 2, main '),
     re.compile(r'GDB:PASSED'),
-    re.compile(r'Breakpoint 3, k_thread_abort '),
+    re.compile(r'Breakpoint 3.*, k_thread_abort '),
     re.compile(r'2 .* breakpoint .* in main '),
     ]
 
