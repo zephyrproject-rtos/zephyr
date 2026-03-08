@@ -96,3 +96,14 @@ properties:
       - restart
       - free-run
     default: restart
+
+  role:
+    type: string
+    default: "counter"
+    enum:
+      - "counter"
+      - "timer"
+    description: |
+      Selects the software role for this LPTMR instance.
+      "counter" (default): instance is managed by COUNTER_MCUX_LPTMR.
+      "timer": instance is managed by MCUX_LPTMR_TIMER as the system timer.
