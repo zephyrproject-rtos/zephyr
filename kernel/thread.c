@@ -1870,6 +1870,11 @@ int z_impl_k_thread_rejoin(struct k_thread *thread, void **result, k_timeout_t t
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, join, thread, timeout);
 
+#ifdef CONFIG_THREAD_DETACH
+	if (k_thread_is_detached(thread)) {
+		ret = -EINVAL;
+	} else
+#endif
 	if (z_is_thread_dead(thread)) {
 		z_sched_switch_spin(thread);
 		ret = 0;
@@ -2198,3 +2203,70 @@ void z_vrfy_k_thread_testcancel(void)
 #endif
 
 #endif /* CONFIG_THREAD_CANCEL */
+
+#ifdef CONFIG_THREAD_DETACH
+int z_impl_k_thread_detach(struct k_thread *th)
+{
+	int ret = 0;
+
+	if (th == NULL) {
+		return -EINVAL;
+	}
+
+	K_SPINLOCK(&_sched_spinlock) {
+		if ((th->base.user_options & K_DETACHED) != 0U) {
+			ret = -EINVAL;
+			K_SPINLOCK_BREAK;
+		}
+
+		th->base.user_options |= K_DETACHED;
+	}
+
+	return ret;
+}
+
+#ifdef CONFIG_USERSPACE
+int z_vrfy_k_thread_detach(struct k_thread *th)
+{
+	if (thread_obj_validate(th)) {
+#ifdef CONFIG_SYS_THREAD
+		return sys_thread_destroy(th);
+#else
+		return -EINVAL;
+#endif
+	}
+
+	return z_impl_k_thread_detach(th);
+}
+#include <zephyr/syscalls/k_thread_detach_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+bool z_impl_k_thread_is_detached(struct k_thread *thread)
+{
+	if (thread == NULL) {
+		return false;
+	}
+
+#if 0
+	bool detached = false;
+
+	K_SPINLOCK(&_sched_spinlock) {
+		detached = (thread->base.user_options & K_DETACHED) != 0;
+	}
+
+	return detached;
+#else
+	return (thread->base.user_options & K_DETACHED) != 0;
+#endif
+}
+
+#ifdef CONFIG_USERSPACE
+bool z_vrfy_k_thread_is_detached(struct k_thread *thread)
+{
+	K_OOPS(K_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+	return z_impl_k_thread_is_detached(thread);
+}
+#include <zephyr/syscalls/k_thread_is_detached_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+#endif /* CONFIG_THREAD_DETACH */

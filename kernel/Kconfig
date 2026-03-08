@@ -292,6 +292,13 @@ config THREAD_CLEANUP
 	  k_thread_cleanup_pop(). Cleanup routines are executed when a cancellation request is
 	  delivered to the thread at a cancellation point, not when k_thread_cancel() returns.
 
+config THREAD_DETACH
+	bool "Detached threads"
+	help
+	  Say 'Y' here to support detached threads. Detached threads are not joinable and
+	  terminate only by running to completion, being aborted, receiving a terminal signal,
+	  or exiting.
+
 config THREAD_CUSTOM_DATA
 	bool "Thread custom data"
 	help

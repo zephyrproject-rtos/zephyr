@@ -427,6 +427,15 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  */
 #define K_CANCEL_ASYNC (BIT(9))
 
+/**
+ * @brief Detached thread
+ *
+ * This option indicates that the thread is detached. Detached threads
+ * are not joinable. This option has no effect if @kconfig{CONFIG_THREAD_DETACH}
+ * is not enabled.
+ */
+#define K_DETACHED (BIT(8))
+
 /* end - thread options */
 
 #if !defined(_ASMLANGUAGE)
@@ -825,6 +834,29 @@ __syscall int k_thread_join(struct k_thread *thread, k_timeout_t timeout);
  *                  is the caller
  */
 __syscall int k_thread_rejoin(struct k_thread *thread, void **result, k_timeout_t timeout);
+
+#if defined(CONFIG_THREAD_DETACH) || defined(__DOXYGEN__)
+/**
+ * @brief Detach a thread.
+ *
+ * A detached thread cannot be joined.
+ *
+ * @param thread Thread to detach.
+ * @retval 0 success
+ * @retval -EINVAL thread is already detached
+ */
+__syscall int k_thread_detach(struct k_thread *thread);
+
+/**
+ * @brief Check whether a thread is detached.
+ *
+ * @param thread Thread to check.
+ * @retval true thread is detached
+ * @retval false thread is joinable
+ */
+__syscall bool k_thread_is_detached(struct k_thread *thread);
+#endif /* defined(CONFIG_THREAD_DETACH) || defined(__DOXYGEN__) */
+
 
 
 /**
