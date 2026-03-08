@@ -47,69 +47,17 @@ Wi-Fi PSA crypto supported build
 
 To enable PSA crypto API supported Wi-Fi build, the :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT` and the :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA` need to be set.
 
-Wi-Fi Security
-**************
+Wi-Fi feature to crypto mapping
+*******************************
 
-The Wi-Fi stack supports various security methods for authentication and
-encryption. The implementation uses either PSA (Platform Security
-Architecture) APIs or legacy MbedTLS APIs depending on the build
-configuration and method support. When
-:kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA` is
-enabled, security methods that have PSA API support use PSA APIs;
-otherwise, all methods use legacy MbedTLS APIs.
+For a mapping of Wi-Fi features (WPA3-SAE, DPP, SAE-PK, WPA2-PSK, Enterprise EAP, etc.) to
+crypto primitives (bignum, ECDH, TLS, hashes, AES) and which use **Legacy crypto** vs **PSA
+crypto**, see the dedicated sub-page:
 
-The following table lists the supported security methods and the
-cryptographic API used. When PSA crypto is enabled, methods that support
-PSA APIs use them; otherwise, legacy MbedTLS APIs are used.
+.. toctree::
+   :maxdepth: 1
 
-.. list-table:: Wi-Fi Security Methods and API Usage
-   :widths: 40 60
-   :header-rows: 1
-
-   * - Security Method
-     - Cryptographic API
-   * - Open (No security)
-     - N/A
-   * - WEP
-     - Legacy MbedTLS
-   * - WPA2-PSK
-     - PSA APIs
-   * - WPA2-PSK-256
-     - PSA APIs
-   * - WPA3-SAE
-     - Legacy MbedTLS
-   * - EAP-TLS
-     - Legacy MbedTLS
-   * - EAP-TTLS-MSCHAPV2
-     - Legacy MbedTLS
-   * - EAP-PEAP-MSCHAPV2
-     - Legacy MbedTLS
-
-.. note::
-
-   **WEP Support:** WEP (Wired Equivalent Privacy) support is provided for backwards compatibility only and must be explicitly enabled with :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_WEP`. WEP is deprecated and insecure; it should not be used in new deployments. It is only supported for connecting to legacy networks that have not been upgraded to more secure protocols.
-
-When PSA crypto is enabled, the following cryptographic operations use
-PSA APIs:
-
-* Message digest operations (MD5, SHA1, SHA256, SHA384, SHA512)
-* HMAC operations (HMAC-SHA1, HMAC-SHA256, etc.)
-* PBKDF2-SHA1 (used for WPA2-PSK key derivation)
-* AES encryption/decryption (AES-128, AES-256, ECB, CTR, CBC modes)
-* OMAC1-AES (used for key wrapping)
-
-The following operations continue to use legacy MbedTLS APIs even when
-PSA crypto is enabled:
-
-* TLS/SSL operations (EAP-TLS, EAP-TTLS, EAP-PEAP)
-* Elliptic curve operations (ECDH, ECDSA) for WPA3-SAE
-* RSA operations
-* X.509 certificate parsing and validation
-* Big number operations
-
-The crypto implementation is located in the hostap module at
-``modules/lib/hostap/src/crypto/crypto_mbedtls_alt.c`` and
-``modules/lib/hostap/src/crypto/tls_mbedtls_alt.c``.
+   wifi_crypto
 
 Wi-Fi Enterprise test: X.509 Certificate management
 ***************************************************
