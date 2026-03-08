@@ -170,18 +170,6 @@ bool stm32_dma_is_ht_irq_active(DMA_TypeDef *dma, uint32_t id)
 		LL_DMA_IsActiveFlag_HT(dma, dma_stm32_id_to_stream(id)));
 }
 
-static inline bool stm32_dma_is_te_irq_active(DMA_TypeDef *dma, uint32_t id)
-{
-	return (
-		(LL_DMA_IsEnabledIT_DTE(dma, dma_stm32_id_to_stream(id)) &&
-		LL_DMA_IsActiveFlag_DTE(dma, dma_stm32_id_to_stream(id))) ||
-		(LL_DMA_IsEnabledIT_ULE(dma, dma_stm32_id_to_stream(id)) &&
-		LL_DMA_IsActiveFlag_ULE(dma, dma_stm32_id_to_stream(id))) ||
-		(LL_DMA_IsEnabledIT_USE(dma, dma_stm32_id_to_stream(id)) &&
-		LL_DMA_IsActiveFlag_USE(dma, dma_stm32_id_to_stream(id)))
-		);
-}
-
 /* check if and irq of any type occurred on the channel */
 #define stm32_dma_is_irq_active LL_DMA_IsActiveFlag_MIS
 
