@@ -31,6 +31,7 @@ supported:
   - sdhc
   - spi
   - usbd
+  - usbh
   - watchdog
   - rtc
 vendor: nxp
