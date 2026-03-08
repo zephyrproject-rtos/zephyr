@@ -33,6 +33,7 @@ static const struct pinctrl_dev_config *eth0_pcfg =
 	PINCTRL_DT_INST_DEV_CONFIG_GET(0);
 
 static const struct stm32_pclken pclken[] = STM32_DT_CLOCKS(DT_INST_PARENT(0));
+static struct net_eth_mac_config mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(0);
 
 int dwmac_bus_init(struct dwmac_priv *p)
 {
@@ -81,6 +82,8 @@ static struct dwmac_dma_desc dwmac_rx_descs[NB_RX_DESCS] __desc_mem;
 
 int dwmac_platform_init(struct dwmac_priv *p)
 {
+	int ret;
+
 	p->tx_descs = dwmac_tx_descs;
 	p->rx_descs = dwmac_rx_descs;
 
@@ -98,8 +101,14 @@ int dwmac_platform_init(struct dwmac_priv *p)
 		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 
-	/* create MAC address */
-	gen_random_mac(p->mac_addr, 0x00, 0x80, 0xE1);
+	/* retrieve MAC address */
+	ret = net_eth_mac_load(&mac_cfg, p->mac_addr);
+	if (ret == -ENODATA) {
+		LOG_DBG("No MAC address configured");
+	} else if (ret < 0) {
+		LOG_ERR("Failed to load MAC address (%d)", ret);
+		return ret;
+	}
 
 	return 0;
 }
