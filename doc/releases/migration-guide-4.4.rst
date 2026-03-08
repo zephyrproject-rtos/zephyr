@@ -494,7 +494,7 @@ Ethernet
   * :dtcompatible:`nxp,enet-mac` (:github:`102775`)
   * :dtcompatible:`sensry,sy1xx-mac` (:github:`100619`)
   * :dtcompatible:`st,stm32n6-ethernet`, :dtcompatible:`st,stm32h7-ethernet`
-    and :dtcompatible:`st,stm32-ethernet` (:github:`102810`)
+    and :dtcompatible:`st,stm32-ethernet` (:github:`102810`, :github:`105090`)
   * :dtcompatible:`virtio,net` (:github:`100106`)
   * :dtcompatible:`vnd,ethernet` (:github:`96598`)
   * :dtcompatible:`wiznet,w5500` (:github:`100919`)
