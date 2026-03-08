@@ -2698,6 +2698,23 @@ Documentation Infrastructure:
   labels:
     - "area: Wi-Fi"
 
+"Drivers: Wuc":
+  status: maintained
+  maintainers:
+    - Albort12138
+  files:
+    - drivers/wuc/
+    - dts/bindings/wuc/
+    - include/zephyr/dt-bindings/wuc/
+    - include/zephyr/drivers/wuc.h
+    - include/zephyr/devicetree/wuc.h
+    - tests/drivers/wuc/
+    - doc/hardware/peripherals/wuc.rst
+  labels:
+    - "area: wuc"
+  tests:
+    - drivers.wuc.api
+
 "Drivers: Wurth Elektronik Sensors":
   status: maintained
   maintainers:
