@@ -580,6 +580,41 @@ ZTEST(mutex_api_1cpu, test_mutex_timeout_race_during_priority_inversion)
 	k_mutex_unlock(&tmutex);
 }
 
+ZTEST(mutex_api, test_mutex_options)
+{
+	static K_MUTEX_DEFINE_EXT(norm_mutex, K_MUTEX_NORMAL);
+	static K_MUTEX_DEFINE_EXT(rec_mutex, K_MUTEX_RECURSIVE);
+	static K_MUTEX_DEFINE_EXT(ec_mutex, K_MUTEX_ERRORCHECK);
+	static K_MUTEX_DEFINE_EXT(zero_mutex, 0);
+	struct k_mutex inval_mutex;
+
+	zassert_equal(K_MUTEX_NORMAL, norm_mutex.options & K_MUTEX_TYPE_MASK);
+	zassert_ok(k_mutex_init_ext(&norm_mutex, K_MUTEX_ERRORCHECK));
+	zassert_equal(K_MUTEX_ERRORCHECK, norm_mutex.options & K_MUTEX_TYPE_MASK);
+	zassert_ok(k_mutex_init_ext(&norm_mutex, K_MUTEX_NORMAL));
+
+	zassert_equal(K_MUTEX_RECURSIVE, rec_mutex.options & K_MUTEX_TYPE_MASK);
+	zassert_equal(K_MUTEX_ERRORCHECK, ec_mutex.options & K_MUTEX_TYPE_MASK);
+	/* this is effectively K_MUTEX_RECURSIVE, but is here for completeness */
+	zassert_equal(0, zero_mutex.options & K_MUTEX_TYPE_MASK);
+
+	/* verify that recursive mutexes (still) work recursively */
+	zassert_ok(k_mutex_lock(&rec_mutex, K_FOREVER));
+	zassert_ok(k_mutex_lock(&rec_mutex, K_FOREVER));
+	zassert_ok(k_mutex_unlock(&rec_mutex));
+	zassert_ok(k_mutex_unlock(&rec_mutex));
+
+	/* verify that errorcheck mutexes detect deadlocks */
+	zassert_ok(k_mutex_lock(&ec_mutex, K_FOREVER));
+	zassert_equal(-EDEADLK, k_mutex_lock(&ec_mutex, K_FOREVER));
+	zassert_ok(k_mutex_unlock(&ec_mutex));
+
+	/* ensure we do not init invalid mutex types */
+	zassert_equal(-EINVAL, k_mutex_init_ext(&inval_mutex, -1));
+
+	/* TODO: add support for robust mutexes */
+}
+
 static void *mutex_api_tests_setup(void)
 {
 #ifdef CONFIG_USERSPACE

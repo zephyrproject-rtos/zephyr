@@ -82,6 +82,9 @@ int z_impl_k_mutex_init(struct k_mutex *mutex)
 {
 	mutex->owner = NULL;
 	mutex->lock_count = 0U;
+#ifdef CONFIG_MUTEX_OPTIONS
+	mutex->options = K_MUTEX_RECURSIVE;
+#endif
 
 	z_waitq_init(&mutex->wait_q);
 
@@ -108,6 +111,46 @@ static inline int z_vrfy_k_mutex_init(struct k_mutex *mutex)
 }
 #include <zephyr/syscalls/k_mutex_init_mrsh.c>
 #endif /* CONFIG_USERSPACE */
+
+#ifdef CONFIG_MUTEX_OPTIONS
+int z_impl_k_mutex_init_ext(struct k_mutex *mutex, uint32_t options)
+{
+	uint32_t type = K_MUTEX_TYPE(options);
+
+	switch (type) {
+	case K_MUTEX_RECURSIVE:
+#if defined(CONFIG_MUTEX_NONRECURSIVE)
+	case K_MUTEX_NORMAL:
+#endif
+#if defined(CONFIG_MUTEX_ERRORCHECK)
+	case K_MUTEX_ERRORCHECK:
+#endif
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	int ret = z_impl_k_mutex_init(mutex);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	mutex->options &= ~K_MUTEX_TYPE_MASK;
+	mutex->options |= type;
+
+	return 0;
+}
+
+#ifdef CONFIG_USERSPACE
+int z_vrfy_k_mutex_init_ext(struct k_mutex *mutex, uint32_t options)
+{
+	K_OOPS(K_SYSCALL_OBJ_INIT(mutex, K_OBJ_MUTEX));
+	return z_impl_k_mutex_init_ext(mutex, options);
+}
+#include <zephyr/syscalls/k_mutex_init_ext_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+#endif /* CONFIG_MUTEX_OPTIONS */
 
 #if Z_MUTEX_PI_ENABLED
 /*
@@ -169,6 +212,14 @@ static int32_t held_mutexes_highest_waiter_prio(struct k_thread *thread,
 }
 #endif
 
+static inline int z_mutex_gettype(struct k_mutex *mutex)
+{
+	ARG_UNUSED(mutex);
+
+	return COND_CODE_1(CONFIG_MUTEX_OPTIONS, (K_MUTEX_TYPE(mutex->options)),
+			   (K_MUTEX_RECURSIVE));
+}
+
 int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 {
 	k_spinlock_key_t key;
@@ -176,13 +227,16 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 	bool resched = false;
 #endif
 
+	const bool recursive = z_mutex_gettype(mutex) == K_MUTEX_RECURSIVE;
+	const bool errorcheck = z_mutex_gettype(mutex) == K_MUTEX_ERRORCHECK;
+
 	__ASSERT(!arch_is_in_isr(), "mutexes cannot be used inside ISRs");
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mutex, lock, mutex, timeout);
 
 	key = k_spin_lock(&mutex_lock);
 
-	if (likely((mutex->lock_count == 0U) || (mutex->owner == _current))) {
+	if (likely((mutex->lock_count == 0U) || (recursive && (mutex->owner == _current)))) {
 
 		mutex->lock_count++;
 		mutex->owner = _current;
@@ -212,6 +266,17 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mutex, lock, mutex, timeout, 0);
 
 		return 0;
+	}
+
+	if (unlikely(!recursive && (mutex->owner == _current))) {
+		if (errorcheck) {
+			/* Deadlock detected */
+			k_spin_unlock(&mutex_lock, key);
+
+			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mutex, lock, mutex, timeout, -EDEADLK);
+
+			return -EDEADLK;
+		}
 	}
 
 	if (unlikely(K_TIMEOUT_EQ(timeout, K_NO_WAIT))) {

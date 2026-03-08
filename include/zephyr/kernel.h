@@ -3411,6 +3411,21 @@ struct k_lifo {
 	lap_ret; \
 	})
 
+/** Mask to isolate mutex type from other mutex flags */
+#define K_MUTEX_TYPE_MASK BIT_MASK(3)
+
+/** Extract mutex type from @p opts */
+#define K_MUTEX_TYPE(opts) ((opts) & K_MUTEX_TYPE_MASK)
+
+/** Mutex option for recursive locking */
+#define K_MUTEX_RECURSIVE 0
+
+/** Mutex option for normal (non-recursive) locking */
+#define K_MUTEX_NORMAL 1
+
+/** Mutex option for error checking */
+#define K_MUTEX_ERRORCHECK 2
+
 /**
  * @brief Get an element from a LIFO queue.
  *
@@ -3623,6 +3638,11 @@ struct k_mutex {
 	/** Current lock count */
 	uint32_t lock_count;
 
+#if defined(CONFIG_MUTEX_OPTIONS) || defined(__DOXYGEN__)
+	/** Mutex options */
+	uint32_t options;
+#endif
+
 #if Z_MUTEX_PI_ENABLED
 	/** Node for linking this mutex into the owner thread's held_mutexes list */
 	sys_snode_t held_node;
@@ -3645,13 +3665,16 @@ struct k_mutex {
 #define Z_MUTEX_HELD_NODE_INIT
 #endif
 
-#define Z_MUTEX_INITIALIZER(obj) \
+#define Z_MUTEX_INITIALIZER_EXT(obj, opts) \
 	{ \
 	.wait_q = Z_WAIT_Q_INIT(&(obj).wait_q), \
 	.owner = NULL, \
 	.lock_count = 0, \
+	COND_CODE_1(CONFIG_MUTEX_OPTIONS, (.options = (opts),), ()) \
 	Z_MUTEX_HELD_NODE_INIT \
 	}
+
+#define Z_MUTEX_INITIALIZER(obj) Z_MUTEX_INITIALIZER_EXT(obj, K_MUTEX_RECURSIVE)
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -3669,6 +3692,28 @@ struct k_mutex {
 	STRUCT_SECTION_ITERABLE(k_mutex, name) = \
 		Z_MUTEX_INITIALIZER(name)
 
+#if defined(CONFIG_MUTEX_OPTIONS) || defined(__DOXYGEN__)
+/**
+ * @brief Statically define and initialize a mutex, with options.
+ *
+ * The mutex can be accessed outside the module where it is defined using:
+ *
+ * @code extern struct k_mutex <name>; @endcode
+ *
+ * @param name Name of the mutex.
+ * @param opts Options for mutex initialization.
+ */
+#define K_MUTEX_DEFINE_EXT(name, opts)                                                             \
+	STRUCT_SECTION_ITERABLE(k_mutex, name) = Z_MUTEX_INITIALIZER_EXT(name, opts);              \
+	BUILD_ASSERT((K_MUTEX_TYPE(opts) != K_MUTEX_NORMAL) ||                                     \
+		     IS_ENABLED(CONFIG_MUTEX_NONRECURSIVE));                                       \
+	BUILD_ASSERT((K_MUTEX_TYPE(opts) != K_MUTEX_ERRORCHECK) ||                                 \
+		     IS_ENABLED(CONFIG_MUTEX_ERRORCHECK));                                         \
+	BUILD_ASSERT((K_MUTEX_TYPE(opts) == K_MUTEX_RECURSIVE) ||                                  \
+		     (K_MUTEX_TYPE(opts) == K_MUTEX_NORMAL) ||                                     \
+		     K_MUTEX_TYPE(opts) == K_MUTEX_ERRORCHECK)
+#endif
+
 /**
  * @brief Initialize a mutex.
  *
@@ -3683,6 +3728,25 @@ struct k_mutex {
  */
 __syscall int k_mutex_init(struct k_mutex *mutex);
 
+#ifdef CONFIG_MUTEX_OPTIONS
+/**
+ * @brief Initialize a mutex with options.
+ *
+ * This routine initializes a mutex object, prior to its first use.
+ *
+ * The main difference between this and @ref k_mutex_init is that this routine
+ * allows the caller to specify options for the mutex, such as
+ * @ref K_MUTEX_RECURSIVE.
+ *
+ * Upon completion, the mutex is available and does not have an owner.
+ *
+ * @param mutex Address of the mutex.
+ * @param options Options for mutex initialization.
+ *
+ * @retval 0 Mutex object created
+ */
+__syscall int k_mutex_init_ext(struct k_mutex *mutex, uint32_t options);
+#endif /* CONFIG_MUTEX_OPTIONS */
 
 /**
  * @brief Lock a mutex.

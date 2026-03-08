@@ -726,6 +726,37 @@ endmenu
 
 menu "Other Kernel Object Options"
 
+config MUTEX_OPTIONS
+	bool "Support optional mutex features"
+	help
+	  Say 'Y' here to support mutex options such as those required for non-recursive,
+	  and error-checking mutex types.
+
+	  This option is not required to support recursive mutexes, which are the default
+	  type in Zephyr.
+
+config MUTEX_NONRECURSIVE
+	bool "Nonrecursive mutexes"
+	depends on MUTEX_OPTIONS
+	default y
+	help
+	  Say 'Y' here to enable nonrecursive (normal) mutex types. When enabled,
+	  mutexes can be configured as error-checking or nonrecursive (normal).
+
+	  This option is required to support the standard C, C++, and POSIX threading models.
+
+config MUTEX_ERRORCHECK
+	bool "Error-check mutexes"
+	depends on MUTEX_OPTIONS
+	depends on MUTEX_NONRECURSIVE
+	default y
+	help
+	  Say 'Y' here to support errorcheck mutex types. When enabled, error-check mutexes will
+	  detect when a thread already holds a mutex and attempts to reacquire it (i.e. will
+	  avoid deadlocks).
+
+	  This option is required to support the standard C, C++, and POSIX threading models.
+
 config POLL
 	bool "Async I/O Framework"
 	help
