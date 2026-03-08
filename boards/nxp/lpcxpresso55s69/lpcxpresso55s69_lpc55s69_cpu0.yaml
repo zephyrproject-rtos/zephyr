@@ -27,6 +27,8 @@ supported:
   - spi
   - sdhc
   - usb_device
+  - usbd
+  - usbh
   - watchdog
   - rtc
   - gint
