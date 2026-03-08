@@ -346,6 +346,7 @@
 		clk-source = <2>;
 		prescale-glitch-filter-bypass;
 		resolution = <32>;
+		role = "timer";
 		status = "disabled";
 	};
 
