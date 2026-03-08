@@ -79,7 +79,7 @@ int dwmac_bus_init(struct dwmac_priv *p)
 static struct dwmac_dma_desc dwmac_tx_descs[NB_TX_DESCS] __desc_mem;
 static struct dwmac_dma_desc dwmac_rx_descs[NB_RX_DESCS] __desc_mem;
 
-void dwmac_platform_init(struct dwmac_priv *p)
+int dwmac_platform_init(struct dwmac_priv *p)
 {
 	p->tx_descs = dwmac_tx_descs;
 	p->rx_descs = dwmac_rx_descs;
@@ -100,6 +100,8 @@ void dwmac_platform_init(struct dwmac_priv *p)
 
 	/* create MAC address */
 	gen_random_mac(p->mac_addr, 0x00, 0x80, 0xE1);
+
+	return 0;
 }
 
 /* Our private device instance */
