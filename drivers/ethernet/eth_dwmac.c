@@ -596,7 +596,10 @@ int dwmac_probe(const struct device *dev)
 	LOG_DBG("hw_feature: 0x%08x 0x%08x 0x%08x 0x%08x",
 		p->feature0, p->feature1, p->feature2, p->feature3);
 
-	dwmac_platform_init(p);
+	ret = dwmac_platform_init(p);
+	if (ret != 0) {
+		return ret;
+	}
 
 	memset(p->tx_descs, 0, NB_TX_DESCS * sizeof(struct dwmac_dma_desc));
 	memset(p->rx_descs, 0, NB_RX_DESCS * sizeof(struct dwmac_dma_desc));

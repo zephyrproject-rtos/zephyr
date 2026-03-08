@@ -38,7 +38,7 @@ static struct dwmac_dma_desc __aligned(CONFIG_DCACHE_LINE_SIZE)
 
 static const uint8_t dwmac_mac_addr[6] = DT_INST_PROP(0, local_mac_address);
 
-void dwmac_platform_init(struct dwmac_priv *p)
+int dwmac_platform_init(struct dwmac_priv *p)
 {
 	uint8_t *desc_uncached_addr;
 	uintptr_t desc_phys_addr;
@@ -84,6 +84,8 @@ void dwmac_platform_init(struct dwmac_priv *p)
 
 	/* retrieve MAC address */
 	memcpy(p->mac_addr, dwmac_mac_addr, sizeof(p->mac_addr));
+
+	return 0;
 }
 
 /* Our private device instance */
