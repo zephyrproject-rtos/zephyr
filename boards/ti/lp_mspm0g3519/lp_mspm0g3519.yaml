@@ -13,4 +13,5 @@ supported:
   - gpio
   - can
   - dac
+  - spi
 vendor: ti
