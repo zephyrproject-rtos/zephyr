@@ -3,11 +3,12 @@ sample:
 common:
   tags:
     - adc
-  depends_on: adc
   filter: dt_node_has_prop("/zephyr,user","io-channels")
 
 tests:
   sample.drivers.adc.adc_dt:
+    depends_on:
+      - adc
     platform_allow:
       - nucleo_l073rz
       - nucleo_h753zi
@@ -68,3 +69,12 @@ tests:
       regex:
         - "ADC reading\\[\\d+\\]:"
         - "- .+, channel \\d+: -?\\d+"
+  sample.drivers.adc.adc_dt.eval_cn0391_ardz:
+    extra_args:
+      - SHIELD=eval_cn0391_ardz
+    depends_on:
+      - arduino_spi
+    platform_allow:
+      - apard32690/max32690/m4
+    integration_platforms:
+      - apard32690/max32690/m4
