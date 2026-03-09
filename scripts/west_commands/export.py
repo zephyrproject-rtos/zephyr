@@ -25,15 +25,13 @@ class ZephyrExport(WestCommand):
     def __init__(self):
         super().__init__(
             'zephyr-export',
-            # Keep this in sync with the string in west-commands.yml.
-            'export Zephyr installation as a CMake config package',
-            EXPORT_DESCRIPTION,
+            '',
+            description=EXPORT_DESCRIPTION,
             accepts_unknown_args=False)
 
     def do_add_parser(self, parser_adder):
         parser = parser_adder.add_parser(
             self.name,
-            help=self.help,
             formatter_class=argparse.RawDescriptionHelpFormatter,
             description=self.description)
         return parser
