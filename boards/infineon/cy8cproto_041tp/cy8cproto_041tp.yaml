@@ -17,4 +17,5 @@ supported:
   - clock_control
   - pinctrl
   - gpio
+  - dma
 vendor: infineon
