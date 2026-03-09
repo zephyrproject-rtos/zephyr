@@ -3,8 +3,6 @@
 
 description: ScioSense ENS160 Digital Metal Oxide Multi-Gas Sensor
 
-compatible: "sciosense,ens160"
-
 include: sensor-device.yaml
 
 properties:
