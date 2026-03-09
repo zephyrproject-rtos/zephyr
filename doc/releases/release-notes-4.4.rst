@@ -424,6 +424,9 @@ DeviceTree
 Kernel
 ******
 
+* Dropped CONFIG_SCHED_DUMB and CONFIG_WAITQ_DUMB options which were deprecated
+  in Zephyr 4.2.0
+
 * :ref:`cleanup_api`
 
   * :c:macro:`SCOPE_VAR_DEFINE`
