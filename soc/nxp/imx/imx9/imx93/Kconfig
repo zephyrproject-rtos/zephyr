@@ -7,6 +7,7 @@ config SOC_MIMX9352_A55
 	select ARM_ARCH_TIMER if SYS_CLOCK_EXISTS
 	select HAS_MCUX if CLOCK_CONTROL
 	select HAS_MCUX_CACHE
+	select HAS_PM
 
 config SOC_MIMX9352_M33
 	select ARM
