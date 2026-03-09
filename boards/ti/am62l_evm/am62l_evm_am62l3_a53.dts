@@ -49,3 +49,7 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&main_rtc0 {
+	status = "okay";
+};
