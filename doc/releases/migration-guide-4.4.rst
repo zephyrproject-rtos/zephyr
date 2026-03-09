@@ -544,6 +544,12 @@ Ethernet
   is enabled. This way the priority is based on the dependencies in the devicetree.
   (:github:`104310`)
 
+* Drivers, that support checksum offloading, now need to select the new Kconfig option
+  :kconfig:option:`CONFIG_NET_CHECKSUM_OFFLOAD_SUPPORTED`.
+  :kconfig:option:`CONFIG_NET_CHECKSUM_OFFLOAD` needs to be enabled to use checksum offloading.
+  It is enabled by default if :kconfig:option:`CONFIG_NET_CHECKSUM_OFFLOAD_SUPPORTED` is selected.
+  (:github:`105051`)
+
 File System
 ===========
 
