@@ -13,6 +13,7 @@ toolchain:
   - zephyr
 supported:
   - clock_control
+  - counter
   - dma
   - gpio
   - pinctrl
