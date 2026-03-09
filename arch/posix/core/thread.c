@@ -53,6 +53,34 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread->callee_saved.thread_status = thread_status;
 
 	thread_status->thread_idx = posix_new_thread((void *)thread_status);
+
+#ifdef CONFIG_ARCH_POSIX_UPDATE_STACK_INFO
+	/*
+	 * Correct the stack_info to reflect the actual pthread stack.
+	 * The POSIX arch uses native pthread stacks instead of the
+	 * Zephyr-allocated stack, so stack_info needs to be updated.
+	 * Save the original values so they can be restored during abort
+	 * for consumers like CMSIS that derive thread identity from
+	 * the stack address.
+	 */
+	void *stack_addr;
+	unsigned long stack_size;
+
+	thread_status->zephyr_stack_start = thread->stack_info.start;
+	thread_status->zephyr_stack_size = thread->stack_info.size;
+
+	posix_arch_get_thread_stack(thread_status->thread_idx, &stack_addr, &stack_size);
+	thread->stack_info.start = (uintptr_t)stack_addr;
+	thread->stack_info.size = stack_size;
+	thread->stack_info.delta = 0;
+#if defined(CONFIG_STACK_SENTINEL)
+	/* Set the stack sentinel again, but now where the kernel will check after updating the
+	 * stack_info. This assumes the stack grows down, which is the case in most architectures
+	 * including x86 and arm/aarch64.
+	 */
+	*((uint32_t *)thread->stack_info.start) = STACK_SENTINEL;
+#endif /* CONFIG_STACK_SENTINEL */
+#endif /* CONFIG_ARCH_POSIX_UPDATE_STACK_INFO */
 }
 
 int arch_thread_name_set(struct k_thread *thread, const char *str)
@@ -149,6 +177,15 @@ void z_impl_k_thread_abort(k_tid_t thread)
 		}
 		posix_abort_thread(thread_idx);
 	}
+
+#ifdef CONFIG_ARCH_POSIX_UPDATE_STACK_INFO
+	/* Restore the original Zephyr stack info so that thread_abort_hook
+	 * consumers (e.g. CMSIS) that derive thread identity from the
+	 * stack address see the expected values.
+	 */
+	thread->stack_info.start = tstatus->zephyr_stack_start;
+	thread->stack_info.size = tstatus->zephyr_stack_size;
+#endif
 
 	z_thread_abort(thread);
 
