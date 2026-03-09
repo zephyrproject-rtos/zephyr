@@ -34,7 +34,7 @@ tests:
       - gd32f403z_eval
       - esp32_devkitc/esp32/procpu
       - esp32s2_devkitc
-      - esp32c3_devkitm
+      - esp32c3_devkitc
       - gd32l233r_eval
       - lpcxpresso55s36
       - mr_canhubk3

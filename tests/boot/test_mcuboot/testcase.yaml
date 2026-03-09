@@ -51,7 +51,7 @@ tests:
       - esp32_devkitc/esp32/procpu
       - esp32s2_devkitc
       - esp32s3_devkitc/esp32s3/procpu
-      - esp32c3_devkitm
+      - esp32c3_devkitc
       - esp32c6_devkitc/esp32c6/hpcore
       - esp8684_devkitm
       - stm32h573i_dk
