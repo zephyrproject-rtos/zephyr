@@ -3,9 +3,44 @@ board:
   full_name: nRF7120 DK
   vendor: nordic
   socs:
-  - name: nrf7120
-    variants:
-    - name: xip
-      cpucluster: cpuflpr
-    - name: ns
-      cpucluster: cpuapp
+    - name: nrf7120
+      variants:
+        - name: xip
+          cpucluster: cpuflpr
+        - name: ns
+          cpucluster: cpuapp
+
+runners:
+  run_once:
+    '--recover':
+      - runners:
+          - nrfutil
+        run: first
+        groups:
+          - boards:
+              - nrf7120dk/nrf7120/cpuapp
+              - nrf7120dk/nrf7120/cpuapp/ns
+              - nrf7120dk/nrf7120/cpuflpr
+              - nrf7120dk/nrf7120/cpuflpr/xip
+    '--erase':
+      - runners:
+          - jlink
+          - nrfutil
+        run: first
+        groups:
+          - boards:
+              - nrf7120dk/nrf7120/cpuapp
+              - nrf7120dk/nrf7120/cpuapp/ns
+              - nrf7120dk/nrf7120/cpuflpr
+              - nrf7120dk/nrf7120/cpuflpr/xip
+    '--reset':
+      - runners:
+          - jlink
+          - nrfutil
+        run: last
+        groups:
+          - boards:
+              - nrf7120dk/nrf7120/cpuapp
+              - nrf7120dk/nrf7120/cpuapp/ns
+              - nrf7120dk/nrf7120/cpuflpr
+              - nrf7120dk/nrf7120/cpuflpr/xip
