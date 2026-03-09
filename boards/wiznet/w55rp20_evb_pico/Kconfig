@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Mason Lee
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_W55RP20_EVB_PICO
+	select RP2_FLASH_W25Q080
