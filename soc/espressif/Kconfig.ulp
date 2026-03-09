@@ -118,7 +118,6 @@ config ESP32_ULP_HP_UART_CONSOLE_PRINT
 config ESP32_ULP_NORESET_UNDER_DEBUG
 	bool "Avoid resetting LP core when debugger is attached"
 	depends on ESP32_ULP_COPROC_TYPE_LP_CORE
-	default y
 	help
 	  Enable this feature to avoid resetting LP core in sleep mode when debugger is attached,
 	  otherwise configured HW breakpoints and dcsr.ebreak* bits will be missed.

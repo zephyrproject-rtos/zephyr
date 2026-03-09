@@ -10,10 +10,11 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/dac.h>
 #include <zephyr/drivers/clock_control.h>
+#include <hal/dac_ll.h>
+#include <hal/dac_types.h>
 #include <hal/rtc_io_types.h>
 #include <hal/rtc_io_hal.h>
 #include <hal/rtc_io_ll.h>
-#include "driver/dac.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(esp32_dac, CONFIG_DAC_LOG_LEVEL);
@@ -29,7 +30,7 @@ static int dac_esp32_write_value(const struct device *dev,
 {
 	ARG_UNUSED(dev);
 
-	dac_output_voltage(channel, value);
+	dac_ll_update_output_value(channel, (uint8_t)value);
 
 	return 0;
 }
@@ -49,7 +50,7 @@ static int dac_esp32_channel_setup(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	dac_output_enable(channel_cfg->channel_id);
+	dac_ll_power_on(channel_cfg->channel_id);
 
 	return 0;
 }

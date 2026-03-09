@@ -21,6 +21,7 @@
 #include <esp_timer.h>
 #include <hal/gpio_hal.h>
 #include <hal/rtc_io_hal.h>
+#include <soc/io_mux_reg.h>
 #include <soc/sdmmc_reg.h>
 #include <esp_memory_utils.h>
 
@@ -891,7 +892,7 @@ static void configure_pin_iomux(int gpio_num)
 	uint32_t reg = GPIO_PIN_MUX_REG[gpio_num];
 
 	PIN_INPUT_ENABLE(reg);
-	gpio_hal_iomux_func_sel(reg, sdmmc_func);
+	PIN_FUNC_SELECT(reg, sdmmc_func);
 	PIN_SET_DRV(reg, drive_strength);
 }
 

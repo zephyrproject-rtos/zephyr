@@ -48,7 +48,7 @@ static int esp32_lcd_cam_init(void)
 
 #if DT_NODE_HAS_STATUS_OKAY(ESP32_LCD_CAM_DVP_INST)
 	if (cam_clk && (ESP32_CLK_CPU_PLL_160M % cam_clk) == 0) {
-		cam_ll_select_clk_src(0, LCD_CLK_SRC_PLL160M);
+		cam_ll_select_clk_src(0, CAM_CLK_SRC_PLL160M);
 		cam_ll_set_group_clock_coeff(0, ESP32_CLK_CPU_PLL_160M / cam_clk, 0, 0);
 	} else {
 		LOG_ERR("Invalid cam_clk value. It must be a non-zero divisor of 160M");

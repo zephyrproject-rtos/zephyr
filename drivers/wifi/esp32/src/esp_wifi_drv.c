@@ -23,8 +23,10 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <soc.h>
 #include "esp_private/wifi.h"
 #include "esp_event.h"
+#include "esp_rom_sys.h"
 #include "esp_timer.h"
 #include "esp_system.h"
+#include "esp_wifi.h"
 #include "esp_wpa.h"
 #include <esp_mac.h>
 #include "wifi/wifi_event.h"
@@ -382,7 +384,7 @@ static void esp_wifi_handle_ap_connect_event(void *event_data)
 	wifi_mgmt_raise_ap_sta_connected_event(iface, &sta_info);
 
 	if (!(esp32_data.ap_connection_cnt++)) {
-		esp_wifi_internal_reg_rxcb(WIFI_IF_AP, esp32_rx);
+		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, esp32_rx);
 	}
 }
 
@@ -405,7 +407,7 @@ static void esp_wifi_handle_ap_disconnect_event(void *event_data)
 	wifi_mgmt_raise_ap_sta_disconnected_event(iface, &sta_info);
 
 	if (!(--esp32_data.ap_connection_cnt)) {
-		esp_wifi_internal_reg_rxcb(WIFI_IF_AP, NULL);
+		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, NULL);
 	}
 }
 
@@ -707,7 +709,7 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 		return -EINVAL;
 	}
 
-	err = esp_wifi_set_config(WIFI_IF_AP, &wifi_config);
+	err = esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config);
 	if (err) {
 		LOG_ERR("Failed to set Wi-Fi configuration (%d)", err);
 		return -EINVAL;
@@ -1009,7 +1011,7 @@ static int esp32_wifi_reset_stats(const struct device *dev)
 static int esp32_wifi_dev_init(const struct device *dev)
 {
 #if CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3
-	adc2_init_code_calibration();
+	adc2_cal_include();
 #endif /* CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3 */
 
 	wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();
@@ -1045,7 +1047,7 @@ static int esp32_wifi_set_config(const struct device *dev, enum ethernet_config_
 			return -EIO;
 		}
 
-		ret = esp_wifi_set_mac(WIFI_IF_STA, config->mac_address.addr);
+		ret = esp_wifi_set_mac(ESP_IF_WIFI_STA, config->mac_address.addr);
 		if (ret != ESP_OK) {
 			LOG_ERR("Failed to set MAC address: %d", ret);
 			return -EIO;

@@ -12,6 +12,7 @@
 
 #include <hal/cache_hal.h>
 #include <hal/mmu_hal.h>
+#include <hal/mmu_ll.h>
 
 #include <soc/hp_apm_reg.h>
 #include <soc/lp_apm_reg.h>
@@ -40,13 +41,6 @@ int hardware_init(void)
 	ana_reset_config();
 	super_wdt_auto_feed();
 
-	/* By default, these access path filters are enable and allow the
-	 * access to masters only if they are in TEE mode. Since all masters
-	 * except HP CPU boots in REE mode, default setting of these filters
-	 * will deny the access to all masters except HP CPU.
-	 * So, at boot disabling these filters. They will enable as per the
-	 * use case by TEE initialization code.
-	 */
 	REG_WRITE(LP_APM_FUNC_CTRL_REG, 0);
 	REG_WRITE(LP_APM0_FUNC_CTRL_REG, 0);
 	REG_WRITE(HP_APM_FUNC_CTRL_REG, 0);
@@ -58,13 +52,21 @@ int hardware_init(void)
 	bootloader_clock_configure();
 
 #ifdef CONFIG_ESP_CONSOLE
-	/* initialize console, from now on, we can log */
 	esp_console_init();
 	print_banner();
 #endif /* CONFIG_ESP_CONSOLE */
 
-	cache_hal_init();
-	mmu_hal_init();
+	cache_hal_config_t cache_config = {
+		.core_nums = 1,
+	};
+	cache_hal_init(&cache_config);
+
+	mmu_hal_config_t mmu_config = {
+		.core_nums = 1,
+		.mmu_page_size = CONFIG_MMU_PAGE_SIZE,
+	};
+	mmu_hal_ctx_init(&mmu_config);
+	mmu_ll_set_page_size(0, CONFIG_MMU_PAGE_SIZE);
 
 	flash_update_id();
 

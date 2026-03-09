@@ -535,7 +535,7 @@ DT_INST_FOREACH_STATUS_OKAY(QUIRK_NRF_USBHS_DEFINE)
 #include <esp_err.h>
 #include <esp_private/usb_phy.h>
 #include <hal/usb_wrap_hal.h>
-#include <soc/usb_dwc_periph.h>
+#include <soc/usb_periph.h>
 
 #include <esp_rom_gpio.h>
 #include <driver/gpio.h>
@@ -609,9 +609,6 @@ static inline int esp32_usb_otg_init(const struct device *dev,
 
 static inline int esp32_usb_otg_enable_clk(struct phy_context_t *phy_ctx)
 {
-	usb_wrap_ll_enable_bus_clock(true);
-
-	usb_wrap_ll_reset_register();
 	usb_wrap_hal_init(&phy_ctx->wrap_hal);
 
 #if USB_WRAP_LL_EXT_PHY_SUPPORTED

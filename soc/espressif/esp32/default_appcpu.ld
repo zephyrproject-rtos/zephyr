@@ -117,6 +117,13 @@ SECTIONS
   #include <zephyr/linker/rel-sections.ld>
   #include <zephyr/linker/llext-sections.ld>
 
+  .rtc.force_slow (NOLOAD) :
+  {
+    . = ALIGN(4);
+    *(.rtc.force_slow .rtc.force_slow.*)
+    . = ALIGN(4);
+  } GROUP_LINK_IN(RAMABLE_REGION)
+
   /* --- START OF IRAM --- */
 
   /* Send .iram0 code to iram */

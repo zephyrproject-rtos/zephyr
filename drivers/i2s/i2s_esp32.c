@@ -484,7 +484,8 @@ static void i2s_esp32_tx_callback(void *arg, int status)
 	}
 
 #if CONFIG_I2S_ESP32_ALLOWED_EMPTY_TX_QUEUE_DEFERRAL_TIME_MS
-	if (k_msgq_num_used_get(&stream->data->queue) == 0) {
+	if (k_msgq_num_used_get(&stream->data->queue) == 0 &&
+	    dev_data->state != I2S_STATE_STOPPING) {
 		k_timer_start(&dev_data->tx_deferred_transfer_timer,
 			      K_MSEC(CONFIG_I2S_ESP32_ALLOWED_EMPTY_TX_QUEUE_DEFERRAL_TIME_MS),
 			      K_NO_WAIT);
@@ -1273,7 +1274,7 @@ static int i2s_esp32_configure(const struct device *dev, enum i2s_dir dir,
 		}
 
 		i2s_hal_std_set_rx_slot(hal, rx_is_target, &slot_cfg);
-		i2s_hal_set_rx_clock(hal, &i2s_hal_clock_info, I2S_ESP32_CLK_SRC);
+		i2s_hal_set_rx_clock(hal, &i2s_hal_clock_info, I2S_ESP32_CLK_SRC, NULL);
 		i2s_ll_rx_enable_std(hal->dev);
 
 		stream = &dev_cfg->rx;
@@ -1285,7 +1286,7 @@ static int i2s_esp32_configure(const struct device *dev, enum i2s_dir dir,
 #if I2S_ESP32_IS_DIR_EN(tx)
 	if (dir == I2S_DIR_TX || dir == I2S_DIR_BOTH) {
 		i2s_hal_std_set_tx_slot(hal, is_target, &slot_cfg);
-		i2s_hal_set_tx_clock(hal, &i2s_hal_clock_info, I2S_ESP32_CLK_SRC);
+		i2s_hal_set_tx_clock(hal, &i2s_hal_clock_info, I2S_ESP32_CLK_SRC, NULL);
 		i2s_ll_tx_enable_std(hal->dev);
 
 		stream = &dev_cfg->tx;

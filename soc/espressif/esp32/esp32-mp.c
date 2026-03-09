@@ -14,7 +14,7 @@
 
 #include <soc.h>
 #include <esp_cpu.h>
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 
 #include "esp_mcuboot_image.h"
 #include "esp_memory_utils.h"
@@ -62,10 +62,10 @@ void smp_log(const char *msg)
 	k_spinlock_key_t key = k_spin_lock(&loglock);
 
 	while (*msg) {
-		esp_rom_uart_tx_one_char(*msg++);
+		esp_rom_output_tx_one_char(*msg++);
 	}
-	esp_rom_uart_tx_one_char('\r');
-	esp_rom_uart_tx_one_char('\n');
+	esp_rom_output_tx_one_char('\r');
+	esp_rom_output_tx_one_char('\n');
 
 	k_spin_unlock(&loglock, key);
 }
@@ -202,9 +202,9 @@ void esp_appcpu_start(void *entry_point)
 	 * Leave this in place until the sequence is understood better.
 	 *
 	 */
-	esp_rom_uart_tx_one_char('\r');
-	esp_rom_uart_tx_one_char('\r');
-	esp_rom_uart_tx_one_char('\n');
+	esp_rom_output_tx_one_char('\r');
+	esp_rom_output_tx_one_char('\r');
+	esp_rom_output_tx_one_char('\n');
 
 	/* Seems weird that you set the boot address AFTER starting
 	 * the CPU, but this is how they do it...
@@ -364,7 +364,7 @@ int IRAM_ATTR esp_appcpu_image_load(unsigned int hdr_offset, unsigned int *entry
 	uint32_t mcuboot_header[8] = {0};
 	esp_image_load_header_t image_header = {0};
 
-	const uint32_t *data = (const uint32_t *)sys_mmap(img_off, 0x40);
+	const uint32_t *data = (const uint32_t *)sys_mmap(img_off, 0x80);
 
 	memcpy((void *)&mcuboot_header, data, sizeof(mcuboot_header));
 	memcpy((void *)&image_header, data + (hdr_offset / sizeof(uint32_t)),
@@ -416,7 +416,7 @@ int IRAM_ATTR esp_appcpu_image_load(unsigned int hdr_offset, unsigned int *entry
 		     image_header.dram_dest_addr);
 
 	ets_printf("Application start=%xh\n\n", image_header.entry_addr);
-	esp_rom_uart_tx_wait_idle(0);
+	esp_rom_output_tx_wait_idle(0);
 
 	assert(entry_addr != NULL);
 	*entry_addr = image_header.entry_addr;

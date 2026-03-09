@@ -54,7 +54,7 @@ int main(void)
 		/* Determine wake up reason */
 		const char *wakeup_reason;
 
-		if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_TIMER) {
+		if (esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_TIMER)) {
 			wakeup_reason = "timer";
 		} else {
 			wakeup_reason = "other";

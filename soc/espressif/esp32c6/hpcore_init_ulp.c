@@ -17,7 +17,7 @@ void IRAM_ATTR lp_core_image_init(void)
 	 * Skip LP core loading on deep sleep wakeup - LP core is already
 	 * running and LP RAM contents are preserved.
 	 */
-	if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_ULP) {
+	if (esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_ULP)) {
 		return;
 	}
 
@@ -42,7 +42,6 @@ void IRAM_ATTR lp_core_image_init(void)
 #elif IS_ENABLED(CONFIG_ESP32_ULP_LP_CORE_WAKEUP_SOURCE_LP_IO)
 	wakeup_source |= ULP_LP_CORE_WAKEUP_SOURCE_LP_IO;
 #endif
-
 	ulp_lp_core_cfg_t cfg = {
 		.wakeup_source = wakeup_source,
 #if IS_ENABLED(CONFIG_ESP32_ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER)

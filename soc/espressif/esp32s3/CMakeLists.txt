@@ -10,7 +10,6 @@ else()
 
   zephyr_sources(
     soc.c
-    soc_cache.c
     esp32s3-mp.c
     ../common/loader.c
     )
