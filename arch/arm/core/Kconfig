@@ -311,7 +311,7 @@ config FP_SOFTABI
 endchoice
 
 config FP16
-	bool "Half-precision floating point support"
+	bool "Half-precision floating point storage support"
 	default y
 	help
 	  This option enables the half-precision (16-bit) floating point support
@@ -342,6 +342,17 @@ config FP16_ALT
 	  Please note that Clang doesn't support the ARM alternative format.
 
 endchoice
+
+config FP16_ARITHMETIC
+	bool "Half-precision floating point arithmetic support"
+	default y
+	depends on FP16
+	depends on ARMV8_1_M_MVEF || CPU_CORTEX_A
+	help
+	  This option indicates that the target supports half-precision
+	  (16-bit) floating-point arithmetic. This requires hardware with
+	  native f16 arithmetic capability, such as Cortex-M processors
+	  with MVE float or Cortex-A processors with NEON.
 
 rsource "cortex_m/Kconfig"
 rsource "cortex_a_r/Kconfig"
