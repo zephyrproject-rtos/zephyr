@@ -777,6 +777,7 @@ Bouffalolab Platforms:
     - VynDragon
   collaborators:
     - josuah
+    - will-tm
   files:
     - boards/aithinker/ai_*/
     - boards/bflb/
@@ -5909,6 +5910,7 @@ West:
     - VynDragon
   collaborators:
     - josuah
+    - will-tm
   files:
     - modules/hal_bouffalolab/
   labels:
