@@ -37,6 +37,13 @@
 /* We need to go up two levels: storage_partition -> partitions -> flash0 */
 #define TEST_FLASH_START (DT_REG_ADDR(DT_PARENT(DT_PARENT(DT_NODELABEL(TEST_AREA)))))
 #define TEST_FLASH_SIZE  (DT_REG_SIZE(DT_PARENT(DT_PARENT(DT_NODELABEL(TEST_AREA)))))
+#elif defined(CONFIG_SOC_SERIES_IMXRT118X)
+/* For i.MX RT118x, storage_partition -> partitions -> external FlexSPI NOR.
+ * Prefer /chosen zephyr,flash-controller for flash geometry.
+ * Flash operations use offsets from 0, not physical addresses.
+ */
+#define TEST_FLASH_START 0
+#define TEST_FLASH_SIZE  DT_PROP(DT_CHOSEN(zephyr_flash_controller), size)
 #else
 #error "Missing definition of TEST_FLASH_START and TEST_FLASH_SIZE for this target"
 #endif
