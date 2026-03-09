@@ -106,6 +106,10 @@
 			status = "okay";
 			#address-cells = <1>;
 			#size-cells = <1>;
+
+			bl_storage: uicr@108 {
+				reg = <0x108 0x280>;
+			};
 		};
 	};
 };
