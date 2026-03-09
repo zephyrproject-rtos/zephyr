@@ -17,6 +17,9 @@
 #define SX126X_STATE_TX   1
 #define SX126X_STATE_RX   2
 
+#define SX126X_MODULATION_LORA  0
+#define SX126X_MODULATION_FSK   1
+
 struct sx126x_tx_result {
 	int status;
 };
@@ -47,6 +50,24 @@ struct sx126x_data {
 	struct k_msgq rx_msgq;
 	struct sx126x_rx_result rx_result;
 
+	/* FSK/GFSK Configuration storage */
+	struct {
+		uint32_t bitrate;
+		uint32_t fdev;
+		uint32_t frequency;
+		uint8_t bandwidth;
+		uint8_t shaping;
+		uint16_t preamble_len;
+		uint8_t preamble_detect;
+		uint8_t sync_word_len;
+		uint8_t addr_comp;
+		uint8_t packet_type;
+		uint8_t payload_len;
+		uint8_t crc_type;
+		uint8_t whitening;
+		int8_t tx_power;
+	} fsk_config;
+
 	/* RX data buffer (shared between IRQ handler and recv) */
 	uint8_t rx_buf[SX126X_MAX_PAYLOAD_LEN];
 
@@ -60,6 +81,9 @@ struct sx126x_data {
 	/* Deferred work for interrupt handling */
 	struct k_work irq_work;
 	const struct device *dev;
+
+	/* Current modulation type */
+	uint8_t current_modulation;
 };
 
 #endif /* ZEPHYR_DRIVERS_LORA_SX126X_SX126X_INTERNAL_H_ */
