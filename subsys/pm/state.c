@@ -16,7 +16,7 @@ BUILD_ASSERT(DT_NODE_EXISTS(DT_PATH(cpus)),
 		= PM_STATE_INFO_LIST_FROM_DT_CPU(n);
 #define CPU_STATE_REF(n) pmstates_##n
 
-DT_FOREACH_CHILD(DT_PATH(cpus), DEFINE_CPU_STATES);
+DT_FOREACH_CHILD_STATUS_OKAY(DT_PATH(cpus), DEFINE_CPU_STATES);
 
 /** CPU power states information for each CPU */
 static const struct pm_state_info *cpus_states[] = {
