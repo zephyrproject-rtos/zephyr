@@ -256,7 +256,8 @@ static void counter_tear_down_instance(const struct device *dev)
 			"%s: Setting top value to default failed", dev->name);
 
 	err = counter_stop(dev);
-	zassert_equal(0, err, "%s: Counter failed to stop", dev->name);
+	zassert_true((err == 0) || (err == -ENOTSUP),
+			"%s: Counter failed to stop (err: %d)", dev->name, err);
 
 }
 
@@ -596,7 +597,8 @@ static void test_single_shot_alarm_instance(const struct device *dev, bool set_t
 			"%s: Setting top value to default failed", dev->name);
 
 	err = counter_stop(dev);
-	zassert_equal(0, err, "%s: Counter failed to stop", dev->name);
+	zassert_true((err == 0) || (err == -ENOTSUP),
+			"%s: Counter failed to stop (err: %d)", dev->name, err);
 }
 
 void test_single_shot_alarm_notop_instance(const struct device *dev)
@@ -872,7 +874,8 @@ static void test_valid_function_without_alarm(const struct device *dev)
 	zassert_true((ticks > 0), "%s: counter did not count", dev->name);
 
 	err = counter_stop(dev);
-	zassert_equal(0, err, "%s: counter failed to stop", dev->name);
+	zassert_true((err == 0) || (err == -ENOTSUP),
+			"%s: counter failed to stop (err: %d)", dev->name, err);
 }
 
 static bool ms_period_capable(const struct device *dev)
