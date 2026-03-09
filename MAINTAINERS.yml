@@ -4471,6 +4471,7 @@ Power management:
     - teburd
     - tmleman
     - JordanYates
+    - ZhaoxiangJin
   files:
     - include/zephyr/pm/
     - samples/subsys/pm/
