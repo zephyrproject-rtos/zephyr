@@ -25,6 +25,7 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
+		zephyr,canbus = &canfd0;
 	};
 
 	leds {
@@ -77,6 +78,12 @@
 	clocks = <&syspll>;
 };
 
+&canclk {
+	clocks = <&syspll>;
+	clock-frequency = <DT_FREQ_M(40)>;
+	status = "okay";
+};
+
 &pinctrl {
 	status = "okay";
 };
@@ -94,5 +101,11 @@
 
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_tx_pa10 &uart0_rx_pa11>;
+	pinctrl-names = "default";
+};
+
+&canfd0 {
+	status = "okay";
+	pinctrl-0 = <&canfd0_cantx_pa12 &canfd0_canrx_pa13>;
 	pinctrl-names = "default";
 };
