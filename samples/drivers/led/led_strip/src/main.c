@@ -19,17 +19,14 @@ LOG_MODULE_REGISTER(main);
 #include <zephyr/drivers/spi.h>
 #include <zephyr/sys/util.h>
 
-#define STRIP_NODE		DT_ALIAS(led_strip)
+#include "common.h"
+#include "optionals.h"
 
-#if DT_NODE_HAS_PROP(DT_ALIAS(led_strip), chain_length)
-#define STRIP_NUM_PIXELS	DT_PROP(DT_ALIAS(led_strip), chain_length)
-#else
-#error Unable to determine length of LED strip
-#endif
-
-#define DELAY_TIME K_MSEC(CONFIG_SAMPLE_LED_UPDATE_DELAY)
+#define TYPE_DELAY K_MSEC(CONFIG_SAMPLE_LED_TYPE_DELAY)
 
 #define RGB(_r, _g, _b) { .r = (_r), .g = (_g), .b = (_b) }
+
+const struct device *const strip = DEVICE_DT_GET(STRIP_NODE);
 
 static const struct led_rgb colors[] = {
 	RGB(CONFIG_SAMPLE_LED_BRIGHTNESS, 0x00, 0x00), /* red */
@@ -39,28 +36,22 @@ static const struct led_rgb colors[] = {
 
 static struct led_rgb pixels[STRIP_NUM_PIXELS];
 
-static const struct device *const strip = DEVICE_DT_GET(STRIP_NODE);
-
 static void set_rbg_colors(void)
 {
-	size_t color = 0;
 	int rc;
 
-	LOG_INF("Displaying pattern on strip");
-	while (1) {
+	for (size_t i = 0; i < ARRAY_SIZE(colors); ++i) {
 		for (size_t cursor = 0; cursor < ARRAY_SIZE(pixels); cursor++) {
 			memset(&pixels, 0x00, sizeof(pixels));
-			memcpy(&pixels[cursor], &colors[color], sizeof(struct led_rgb));
+			memcpy(&pixels[cursor], &colors[i], sizeof(struct led_rgb));
 
 			rc = led_strip_update_rgb(strip, pixels, STRIP_NUM_PIXELS);
 			if (rc) {
 				LOG_ERR("couldn't update strip: %d", rc);
 			}
 
-			k_sleep(DELAY_TIME);
+			k_sleep(UPDATE_DELAY);
 		}
-
-		color = (color + 1) % ARRAY_SIZE(colors);
 	}
 }
 
@@ -73,7 +64,16 @@ int main(void)
 		return 0;
 	}
 
-	set_rbg_colors();
+	LOG_INF("Displaying pattern on strip");
+
+	try_map_channels();
+
+	while (1) {
+		set_rbg_colors();
+		k_sleep(TYPE_DELAY);
+		set_channels();
+		k_sleep(TYPE_DELAY);
+	}
 
 	return 0;
 }
