@@ -4,8 +4,8 @@ Integrated Stepper Motion Control and Driver
 ############################################
 
 A device composed of both motion controller and stepper driver blocks in a single IC is modeled as a
-multi-functional device in devicetree, and has two software drivers implementing :c:group:`stepper_ctrl_interface`
-and :c:group:`stepper_hw_driver_interface` APIs respectively. An example of such device is :dtcompatible:`adi,tmc50xx`.
+multi-functional device in devicetree, and has two software drivers implementing :c:group:`stepper_ctrl`
+and :c:group:`stepper_hw_driver` APIs respectively. An example of such device is :dtcompatible:`adi,tmc50xx`.
 
 .. code-block:: dts
 

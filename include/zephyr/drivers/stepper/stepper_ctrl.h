@@ -5,7 +5,7 @@
 
 /**
  * @file
- * @ingroup stepper_ctrl_interface
+ * @ingroup stepper_ctrl
  * @brief Main header file for stepper motion controller driver API.
  */
 
@@ -14,7 +14,7 @@
 
 /**
  * @brief Interfaces for stepper motion controllers.
- * @defgroup stepper_ctrl_interface Stepper Motion Controller Interface
+ * @defgroup stepper_ctrl Stepper Motion Controller
  * @since 4.0
  * @version 0.9.0
  * @ingroup stepper_interface
