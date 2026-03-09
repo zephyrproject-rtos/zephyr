@@ -15,6 +15,7 @@ supported:
   - adc
   - bluetooth
   - clock_control
+  - counter
   - dma
   - gpio
   - pinctrl
