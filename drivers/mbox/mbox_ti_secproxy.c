@@ -38,9 +38,8 @@ LOG_MODULE_REGISTER(ti_secure_proxy);
 #define THREAD_IS_RX              1
 #define THREAD_IS_TX              0
 
-#define SECPROXY_MAILBOX_NUM_MSGS 5
-#define MAILBOX_MAX_CHANNELS      32
-#define MAILBOX_MBOX_SIZE         60
+#define MAILBOX_MAX_CHANNELS 32
+#define MAILBOX_MBOX_SIZE    60
 
 #define SEC_PROXY_DATA_START_OFFS 0x4
 #define SEC_PROXY_DATA_END_OFFS   0x3c
@@ -130,19 +129,7 @@ static void secproxy_mailbox_isr(const struct device *dev)
 		spt.rt = SEC_PROXY_THREAD(DEV_RT(dev), i_channel);
 		spt.scfg = SEC_PROXY_THREAD(DEV_SCFG(dev), i_channel);
 
-		uint32_t status = sys_read32(spt.rt + RT_THREAD_STATUS);
-
-		if (status & RT_THREAD_STATUS_ERROR_MASK) {
-			LOG_ERR("Thread %d error state detected in ISR", i_channel);
-			continue;
-		}
-
 		if (secproxy_verify_thread(&spt, THREAD_IS_RX)) {
-			LOG_ERR("Thread %d is in error state\n", i_channel);
-			continue;
-		}
-
-		if (!(sys_read32(spt.rt) & 0x7F)) {
 			continue;
 		}
 
@@ -231,13 +218,6 @@ static int secproxy_mailbox_send(const struct device *dev, uint32_t channel,
 	if (status != 0) {
 		k_spin_unlock(&data->lock, key);
 		return status;
-	}
-
-	status = sys_read32(spt.rt + RT_THREAD_STATUS);
-
-	if ((status & RT_THREAD_STATUS_CUR_CNT_MASK) == (SECPROXY_MAILBOX_NUM_MSGS)) {
-		k_spin_unlock(&data->lock, key);
-		return -EBUSY;
 	}
 
 	if (msg->size > MAILBOX_MBOX_SIZE) {
