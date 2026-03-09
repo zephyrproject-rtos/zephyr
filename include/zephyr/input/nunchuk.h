@@ -1,5 +1,8 @@
 #ifndef ZEPHYR_INCLUDE_INPUT_NUNCHUK_H_
 #define ZEPHYR_INCLUDE_INPUT_NUNCHUK_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <zephyr/device.h>
 #include <stdint.h>
@@ -48,4 +51,7 @@ static inline int nunchuk_read(const struct device *dev, struct nunchuk_reading*
     return api->read(dev, reading);
 }
 
+#ifdef __cplusplus
+    }
+#endif
 #endif /* ZEPHYR_INCLUDE_INPUT_NUNCHUK_H_ */
