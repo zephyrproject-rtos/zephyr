@@ -71,9 +71,8 @@ class Build(Forceable):
     def __init__(self):
         super().__init__(
             'build',
-            # Keep this in sync with the string in west-commands.yml.
-            'compile a Zephyr application',
-            BUILD_DESCRIPTION,
+            '',
+            description=BUILD_DESCRIPTION,
             accepts_unknown_args=True)
 
         self.source_dir = None
@@ -101,7 +100,6 @@ class Build(Forceable):
     def do_add_parser(self, parser_adder):
         parser = parser_adder.add_parser(
             self.name,
-            help=self.help,
             formatter_class=argparse.RawDescriptionHelpFormatter,
             description=self.description,
             usage=BUILD_USAGE)
