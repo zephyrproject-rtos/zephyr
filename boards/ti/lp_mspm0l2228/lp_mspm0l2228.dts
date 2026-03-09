@@ -73,6 +73,10 @@
 	status = "okay";
 };
 
+&gpioa {
+	status = "okay";
+};
+
 &gpiob {
 	status = "okay";
 };
@@ -82,4 +86,24 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_tx_pa10 &uart0_rx_pa11>;
 	pinctrl-names = "default";
+};
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_sclk_pb03 &spi0_pico_pb02 &spi0_poci_pa07>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clocks = <&ckm MSPM0_CLOCK_MCLK>;
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_sclk_pa17 &spi1_pico_pb08 &spi1_poci_pb07>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpiob 6 GPIO_ACTIVE_LOW>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clocks = <&ckm MSPM0_CLOCK_MCLK>;
 };
