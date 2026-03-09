@@ -14,8 +14,8 @@
 	compatible = "nordic,nrf7120dk_nrf7120-cpuflpr";
 
 	chosen {
-		zephyr,console = &uart00;
-		zephyr,shell-uart = &uart00;
+		zephyr,console = &uart30;
+		zephyr,shell-uart = &uart30;
 		zephyr,code-partition = &cpuflpr_code_partition;
 		zephyr,flash = &cpuflpr_mram;
 		zephyr,sram = &ram03_sram;
@@ -48,7 +48,7 @@
 	status = "okay";
 };
 
-&uart00 {
+&uart30 {
 	status = "okay";
 };
 
