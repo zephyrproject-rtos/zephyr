@@ -72,4 +72,55 @@ config UDC_STM32_OTG_RXFIFO_BASELINE_SIZE
 	  Refer to STM32 Reference Manuals for more details about the RxFIFO.
 endmenu
 
+menu "ST USB options"
+	depends on DT_HAS_ST_STM32_USB_ENABLED
+
+config UDC_STM32_STUSB_ISO_OUT_EP_NUM
+	int "Number of endpoints reserved for isochronous OUT"
+	default 0
+	range 0 $(UINT8_MAX)
+	help
+	  Number of endpoints reserved for OUT isochronous mode operation
+
+	  This option is used to reserve endpoints for configuration in
+	  isochronous mode, as it requires special handling which cannot
+	  be done easily with the current stack design. This option works
+	  toghether with the CONFIG_UDC_STM32_STUSB_ISO_IN_EP_NUM option.
+
+	  The first CONFIG_UDC_STM32_STUSB_ISO_OUT_EP_NUM endpoints are
+	  reserved and can only be configured as isochronous OUT. The
+	  next UDC_STM32_STUSB_ISO_IN_EP_NUM endpoints are reserved
+	  and can only be configured as isochronous IN. All remaining
+	  endpoints can be configured as bulk/interrupt in any direction
+	  (reservations start at EP1: EP0 is reserved as control endpoint).
+
+	  As an example, if CONFIG_UDC_STM32_STUSB_ISO_OUT_EP_NUM is set
+	  to 1 and CONFIG_UDC_STM32_STUSB_ISO_IN_EP_NUM is also set to 1:
+	    - (EP0 OUT/IN is reserved as control endpoint)
+
+	    - EP1 OUT is reserved for isochronous mode
+	    - EP1 IN is reserved and cannot be used
+
+	    - EP2 OUT is reserved and cannot be used
+	    - EP2 IN is reserved for isochronous mode
+
+	    - EP3~EPn OUT/IN can be used freely in bulk/interrupt mode
+
+	  When this option is set to zero, it is not possible to configure
+	  any endpoint as isochronous OUT.
+
+config UDC_STM32_STUSB_ISO_IN_EP_NUM
+	int "Number of endpoints reserved for isochronous IN"
+	default 0
+	range 0 $(UINT8_MAX)
+	help
+	  Number of endpoints reserved for IN isochronous mode operation
+
+	  When this option is set to zero, it is not possible to configure
+	  any endpoint in isochronous IN mode.
+
+	  Refer to CONFIG_UDC_STM32_STUSB_ISO_OUT_EP_NUM for more details.
+
+endmenu
+
 endif
