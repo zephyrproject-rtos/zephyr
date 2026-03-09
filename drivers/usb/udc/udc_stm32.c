@@ -657,9 +657,22 @@ static int udc_stm32_ep_mem_config(const struct device *dev,
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	const struct udc_stm32_config *cfg = dev->config;
+	const bool isochronous = ep_cfg->caps.iso;
 	uint32_t size;
 
-	size = MIN(udc_mps_ep_size(ep_cfg), cfg->ep_mps);
+	/*
+	 * Round up request size because the PMA must be accessed
+	 * using only word-aligned addresses.
+	 */
+	size = ROUND_UP(MIN(udc_mps_ep_size(ep_cfg), cfg->ep_mps), 4U);
+
+	if (isochronous) {
+		/*
+		 * Isochronous EP must be double-buffered.
+		 * Allocate two buffers of requested size.
+		 */
+		size *= 2;
+	}
 
 	if (!enable) {
 		priv->occupied_mem -= size;
@@ -672,8 +685,24 @@ static int udc_stm32_ep_mem_config(const struct device *dev,
 	}
 
 	/* Configure PMA offset for the endpoint */
-	if (HAL_PCDEx_PMAConfig(&priv->pcd, ep_cfg->addr, PCD_SNG_BUF,
-				priv->occupied_mem) != HAL_OK) {
+	uint32_t buftype, bufs;
+
+	if (isochronous) {
+		/*
+		 * HAL_PCDEx_PMAConfig() `pmaaddress` parameter takes two 16-bit
+		 * PMA addresses in the high/low 16 bits of fourth u32 parameter
+		 */
+		const uint16_t buf1_pma_addr = priv->occupied_mem;
+		const uint16_t buf2_pma_addr = priv->occupied_mem + (size / 2);
+
+		buftype = PCD_DBL_BUF;
+		bufs = ((uint32_t)buf2_pma_addr << 16) | buf1_pma_addr;
+	} else {
+		buftype = PCD_SNG_BUF;
+		bufs = priv->occupied_mem;
+	}
+
+	if (HAL_PCDEx_PMAConfig(&priv->pcd, ep_cfg->addr, buftype, bufs) != HAL_OK) {
 		return -EIO;
 	}
 
@@ -764,6 +793,53 @@ static int udc_stm32_ep_mem_config(const struct device *dev,
 	return 0;
 }
 #endif
+
+/* Initializes ep_cfg->addr and ep_cfg->caps (except caps.mps) */
+static void udc_stm32_init_ep_addr_caps(struct udc_ep_config *ep_cfg, uint8_t ep_addr)
+{
+	const uint8_t ep_idx = USB_EP_GET_IDX(ep_addr);
+	const uint8_t dir = USB_EP_GET_DIR(ep_addr);
+
+	ep_cfg->addr = ep_addr;
+
+	if (dir == USB_EP_DIR_OUT) {
+		ep_cfg->caps.out = 1;
+	} else {
+		ep_cfg->caps.in = 1;
+	}
+
+	if (ep_idx == 0u) {
+		ep_cfg->caps.control = 1;
+	} else {
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)
+		/* OTG IP: non-control endpoints can be used in any mode */
+		ep_cfg->caps.bulk = 1;
+		ep_cfg->caps.interrupt = 1;
+		ep_cfg->caps.iso = 1;
+#else /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb) */
+		/*
+		 * ST USB IP non-control endpoints allocation:
+		 *  - first ISO_OUT_EP_NUM accept isochronous OUT only
+		 *  - next ISO_IN_EP_NUM accept isochronous IN
+		 *  - all others accept bulk/interrupt in any direction
+		 */
+		const uint32_t num_iso_out = CONFIG_UDC_STM32_STUSB_ISO_OUT_EP_NUM;
+		const uint32_t num_iso_in = CONFIG_UDC_STM32_STUSB_ISO_IN_EP_NUM;
+
+		if (ep_idx <= num_iso_out) {
+			/* First M endpoints: ISO OUT only */
+			ep_cfg->caps.iso = (dir == USB_EP_DIR_OUT) ? 1 : 0;
+		} else if (ep_idx <= (num_iso_out + num_iso_in)) {
+			/* Next N endpoints: ISO IN only */
+			ep_cfg->caps.iso = (dir == USB_EP_DIR_IN) ? 1 : 0;
+		} else {
+			/* Remaining endpoints: bulk/interrupt mode */
+			ep_cfg->caps.bulk = 1;
+			ep_cfg->caps.interrupt = 1;
+		}
+#endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb) */
+	}
+}
 
 static void udc_stm32_lock(const struct device *dev)
 {
@@ -1173,18 +1249,13 @@ static int udc_stm32_driver_preinit(const struct device *dev)
 	int err;
 
 	for (unsigned int i = 0; i < cfg->num_endpoints; i++) {
-		cfg->out_eps[i].caps.out = 1;
+		udc_stm32_init_ep_addr_caps(cfg->out_eps + i, USB_EP_DIR_OUT | i);
 		if (i == 0) {
-			cfg->out_eps[i].caps.control = 1;
 			cfg->out_eps[i].caps.mps = UDC_STM32_EP0_MAX_PACKET_SIZE;
 		} else {
-			cfg->out_eps[i].caps.bulk = 1;
-			cfg->out_eps[i].caps.interrupt = 1;
-			cfg->out_eps[i].caps.iso = 1;
 			cfg->out_eps[i].caps.mps = cfg->ep_mps;
 		}
 
-		cfg->out_eps[i].addr = USB_EP_DIR_OUT | i;
 		err = udc_register_ep(dev, cfg->out_eps + i);
 		if (err != 0) {
 			LOG_ERR("Failed to register endpoint");
@@ -1193,18 +1264,13 @@ static int udc_stm32_driver_preinit(const struct device *dev)
 	}
 
 	for (unsigned int i = 0; i < cfg->num_endpoints; i++) {
-		cfg->in_eps[i].caps.in = 1;
+		udc_stm32_init_ep_addr_caps(cfg->in_eps + i, USB_EP_DIR_IN | i);
 		if (i == 0) {
-			cfg->in_eps[i].caps.control = 1;
 			cfg->in_eps[i].caps.mps = UDC_STM32_EP0_MAX_PACKET_SIZE;
 		} else {
-			cfg->in_eps[i].caps.bulk = 1;
-			cfg->in_eps[i].caps.interrupt = 1;
-			cfg->in_eps[i].caps.iso = 1;
 			cfg->in_eps[i].caps.mps = cfg->ep_mps;
 		}
 
-		cfg->in_eps[i].addr = USB_EP_DIR_IN | i;
 		err = udc_register_ep(dev, cfg->in_eps + i);
 		if (err != 0) {
 			LOG_ERR("Failed to register endpoint");
