@@ -491,7 +491,6 @@ static void net_rx(struct net_if *iface, struct net_pkt *pkt)
 	NET_DBG("Received pkt %p len %zu", pkt, pkt_len);
 
 	net_stats_update_bytes_recv(iface, pkt_len);
-	conn_mgr_if_used(iface);
 
 	if (IS_ENABLED(CONFIG_NET_LOOPBACK)) {
 #ifdef CONFIG_NET_L2_DUMMY
