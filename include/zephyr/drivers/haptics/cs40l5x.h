@@ -69,7 +69,6 @@ enum cs40l5x_custom_index {
 enum cs40l5x_logger {
 	CS40L5X_LOGGER_DISABLE,   /**< Disable runtime logging for the device */
 	CS40L5X_LOGGER_ENABLE,    /**< Enable runtime logging for the device */
-	CS40L5X_LOGGER_NO_CHANGE, /**< Use to retrieve haptics logging status without updating */
 };
 
 /**
@@ -162,13 +161,12 @@ int cs40l5x_configure_trigger(const struct device *const dev, const struct gpio_
 			      const enum cs40l5x_trigger_edge edge);
 
 /**
- * @brief Update runtime haptics logging and get current status
+ * @brief Enable or disable runtime haptics logging
  *
  * @param[in] dev Pointer to the device structure for haptic device instance
  * @param[in] logger_state See @ref cs40l5x_logger
  *
- * @retval 1 if logging is enabled
- * @retval 0 if logging is disabled
+ * @retval 0 if success
  * @retval <0 if failed
  */
 int cs40l5x_logger(const struct device *const dev, enum cs40l5x_logger logger_state);
