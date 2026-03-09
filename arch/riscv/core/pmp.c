@@ -669,7 +669,7 @@ void z_riscv_pmp_init(void)
 	attr_cnt = set_pmp_mem_attr(&index, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 #endif /* CONFIG_MEM_ATTR */
 
-#if defined(CONFIG_MEM_ATTR) || defined(CONFIG_PMP_NO_LOCK_GLOBAL)
+#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
 	/*
 	 * This early, we want to protect unlock PMP entries as soon as
 	 * possible. But we need a temporary default "catch all" PMP entry for
