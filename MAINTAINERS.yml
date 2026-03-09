@@ -3579,12 +3579,12 @@ NVMEM:
 NXP Platform Drivers:
   status: maintained
   maintainers:
+    - zejiang0jason
     - mmahadevan108
   collaborators:
     - manuargue
     - dbaluta
     - Holt-Sun
-    - zejiang0jason
     - butok
   files-regex:
     - ^drivers/.*nxp.*
@@ -3615,7 +3615,6 @@ NXP Platform Drivers:
   file-groups:
     - name: NXP USB
       collaborators:
-        - mmahadevan108
         - MarkWangChinese
       files:
         - drivers/usb/
@@ -3626,7 +3625,7 @@ NXP Platform Drivers:
 NXP Platform Wireless:
   status: maintained
   maintainers:
-    - mmahadevan108
+    - axelnxp
   files:
     - boards/nxp/*mcxw*/
     - boards/nxp/*rw*/
@@ -3644,7 +3643,6 @@ NXP Platform Wireless:
   file-groups:
     - name: NXP BLE
       collaborators:
-        - axelnxp
         - yeaissa
       files:
         - drivers/bluetooth/
@@ -3665,7 +3663,6 @@ NXP Platform Wireless:
         - soc/
     - name: MCXW platform
       collaborators:
-        - axelnxp
         - yeaissa
       files:
         - boards/nxp/*mcxw*/
@@ -3673,7 +3670,6 @@ NXP Platform Wireless:
     - name: RW6xx platform
       collaborators:
         - MaochenWang1
-        - axelnxp
         - yeaissa
       files:
         - soc/nxp/rw/
@@ -3684,10 +3680,10 @@ NXP Platform Wireless:
 NXP Platforms (MCU):
   status: maintained
   maintainers:
+    - iuliana-prodan
     - mmahadevan108
   collaborators:
     - butok
-    - DerekSnell
   files:
     - boards/nxp/mimxrt*/
     - boards/nxp/frdm*/
@@ -3758,7 +3754,6 @@ NXP Platforms (MCU):
         - soc/nxp/imxrt/imxrt[567]xx/Kconfig*
     - name: NXP MCU UX
       collaborators:
-        - DerekSnell
         - jacob-wienecke-nxp
       files-regex:
         - \.rst$
@@ -6018,8 +6013,8 @@ West:
 "West project: hal_nxp":
   status: maintained
   maintainers:
-    - mmahadevan108
     - ZhaoxiangJin
+    - mmahadevan108
   collaborators:
     - manuargue
     - PetervdPerk-NXP
