@@ -137,4 +137,18 @@ config NET_QBV
 	  gate during which a packet will be sent, granular control by software of
 	  packet transmission.
 
+config NET_CHECKSUM_OFFLOAD_SUPPORTED
+	bool
+	help
+	  Has to be selected by a drivers, that support checksum
+	  offloading.
+
+config NET_CHECKSUM_OFFLOAD
+	bool "Checksum offload"
+	depends on NET_CHECKSUM_OFFLOAD_SUPPORTED
+	default y
+	help
+	  If supported by the driver checksum checking and calculation
+	  is offloaded.
+
 endif # NET_L2_ETHERNET

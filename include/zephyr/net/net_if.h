@@ -2976,8 +2976,18 @@ enum net_if_checksum_type {
  *
  * @return True if checksum needs to be calculated, false otherwise.
  */
+#if defined(CONFIG_NET_CHECKSUM_OFFLOAD)
 bool net_if_need_calc_rx_checksum(struct net_if *iface,
 				  enum net_if_checksum_type chksum_type);
+#else /* CONFIG_NET_CHECKSUM_OFFLOAD */
+static inline bool net_if_need_calc_rx_checksum(struct net_if *iface,
+						enum net_if_checksum_type chksum_type)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(chksum_type);
+	return true;
+}
+#endif /* CONFIG_NET_CHECKSUM_OFFLOAD */
 
 /**
  * @brief Check if network packet checksum calculation can be avoided or not
@@ -2990,8 +3000,18 @@ bool net_if_need_calc_rx_checksum(struct net_if *iface,
  *
  * @return True if checksum needs to be calculated, false otherwise.
  */
+#if defined(CONFIG_NET_CHECKSUM_OFFLOAD)
 bool net_if_need_calc_tx_checksum(struct net_if *iface,
 				  enum net_if_checksum_type chksum_type);
+#else /* CONFIG_NET_CHECKSUM_OFFLOAD */
+static inline bool net_if_need_calc_tx_checksum(struct net_if *iface,
+						enum net_if_checksum_type chksum_type)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(chksum_type);
+	return true;
+}
+#endif /* CONFIG_NET_CHECKSUM_OFFLOAD */
 
 /**
  * @brief Get interface according to index
