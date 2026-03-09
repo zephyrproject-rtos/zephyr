@@ -48,3 +48,9 @@
 #endif
 	};
 };
+
+&uicr {
+	bl_storage: uicr@500 {
+		reg = <0x500 0x460>;
+	};
+};

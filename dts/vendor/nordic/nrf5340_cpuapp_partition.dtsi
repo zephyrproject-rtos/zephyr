@@ -39,5 +39,11 @@
 	};
 };
 
+&uicr {
+	bl_storage: uicr@100 {
+		reg = <0x100 0x280>;
+	};
+};
+
 #include "nrf5340_sram_partition.dtsi"
 #include "nrf5340_shared_sram_partition.dtsi"
