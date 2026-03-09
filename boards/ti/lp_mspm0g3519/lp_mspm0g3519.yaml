@@ -11,4 +11,5 @@ flash: 512
 supported:
   - uart
   - gpio
+  - can
 vendor: ti
