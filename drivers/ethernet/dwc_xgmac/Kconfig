@@ -11,6 +11,7 @@ config ETH_DWC_XGMAC
 	bool "Synopsys DesignWareCore XGMAC Ethernet driver"
 	default y
 	depends on DT_HAS_SNPS_DWCXGMAC_ENABLED
+	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
 	help
 	  This is a driver for the Synopsys DesignWare XGMAC, also referred to
 	  as "DesignWare Cores Ethernet XGMAC". Hardware versions
@@ -50,12 +51,14 @@ config ETH_XGMAC_MAX_QUEUES
 config ETH_DWC_XGMAC_RX_CS_OFFLOAD
 	bool "RX checksum offload"
 	default y
+	depends on NET_CHECKSUM_OFFLOAD
 	help
 	  Enable receive checksum offload for TCP/UDP/IP packets
 
 config ETH_DWC_XGMAC_TX_CS_OFFLOAD
 	bool "TX checksum offload"
 	default y
+	depends on NET_CHECKSUM_OFFLOAD
 	help
 	  Enable transmit checksum offload for TCP/UDP/IP packets
 
