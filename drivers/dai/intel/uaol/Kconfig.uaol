@@ -6,6 +6,7 @@
 config DAI_INTEL_UAOL
 	bool "Intel USB Audio Offload Link (UAOL) driver support for DAI interface"
 	default y
+	depends on UAOL
 	depends on DT_HAS_INTEL_UAOL_DAI_ENABLED
 	depends on PM_DEVICE_RUNTIME
 	help
