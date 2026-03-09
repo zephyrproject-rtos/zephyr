@@ -18,6 +18,7 @@ supported:
   - gpio
   - pinctrl
   - pwm
+  - spi
   - uart
   - i2s
   - watchdog
