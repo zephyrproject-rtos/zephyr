@@ -72,8 +72,7 @@ static int pinctrl_mcux_init(const struct device *dev)
 }
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_INST(0, nxp_kinetis_sim))
-#define PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n)                                                       \
-	CLK_GATE_DEFINE(DT_INST_CLOCKS_CELL(n, offset), DT_INST_CLOCKS_CELL(n, bits))
+#define PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n) DT_INST_CLOCKS_CELL(n, name)
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_scg_k4)
 #define PINCTRL_MCUX_DT_INST_CLOCK_SUBSYS(n)                                                       \
 	(DT_INST_CLOCKS_CELL(n, mrcc_offset) == 0                                                  \
