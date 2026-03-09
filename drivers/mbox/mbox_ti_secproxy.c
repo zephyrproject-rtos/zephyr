@@ -205,6 +205,7 @@ static int secproxy_mailbox_send(const struct device *dev, uint32_t channel,
 	struct secproxy_mailbox_data *data = DEV_DATA(dev);
 	mem_addr_t data_reg;
 	k_spinlock_key_t key;
+	uint32_t status;
 
 	if (msg == NULL || msg->data == NULL) {
 		LOG_ERR("Invalid parameters");
@@ -226,13 +227,13 @@ static int secproxy_mailbox_send(const struct device *dev, uint32_t channel,
 	spt.rt = SEC_PROXY_THREAD(DEV_RT(dev), channel);
 	spt.scfg = SEC_PROXY_THREAD(DEV_SCFG(dev), channel);
 
-	if (secproxy_verify_thread(&spt, THREAD_IS_TX)) {
-		LOG_ERR("Thread is in error state\n");
+	status = secproxy_verify_thread(&spt, THREAD_IS_TX);
+	if (status != 0) {
 		k_spin_unlock(&data->lock, key);
-		return -EBUSY;
+		return status;
 	}
 
-	uint32_t status = sys_read32(spt.rt + RT_THREAD_STATUS);
+	status = sys_read32(spt.rt + RT_THREAD_STATUS);
 
 	if ((status & RT_THREAD_STATUS_CUR_CNT_MASK) == (SECPROXY_MAILBOX_NUM_MSGS)) {
 		k_spin_unlock(&data->lock, key);
