@@ -1638,7 +1638,6 @@ int cs40l5x_logger(const struct device *const dev, enum cs40l5x_logger logger_st
 {
 	__maybe_unused const struct cs40l5x_config *const config = dev->config;
 	struct cs40l5x_data *const data = dev->data;
-	uint32_t state, update;
 	int ret;
 
 	if (!IS_ENABLED(CONFIG_HAPTICS_CS40L5X_DSP_LOGGER)) {
@@ -1658,35 +1657,17 @@ int cs40l5x_logger(const struct device *const dev, enum cs40l5x_logger logger_st
 		goto error_pm;
 	}
 
-	if (logger_state != CS40L5X_LOGGER_NO_CHANGE) {
-		update = (logger_state == CS40L5X_LOGGER_ENABLE) ? CS40L5X_WRITE_LOGGER_ENABLE
-								 : CS40L5X_WRITE_LOGGER_DISABLE;
-
-		ret = cs40l5x_write(dev, CS40L5X_REG_LOGGER_ENABLE, update);
-		if (ret < 0) {
-			LOG_INST_DBG(config->log, "failed to update logging (%d)", ret);
-			goto error_mutex;
-		}
-	}
-
-	ret = cs40l5x_read(dev, CS40L5X_REG_LOGGER_ENABLE, &state);
+	ret = cs40l5x_write(dev, CS40L5X_REG_LOGGER_ENABLE, (uint32_t)logger_state);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to get logging state (%d)", ret);
-		goto error_mutex;
+		LOG_INST_DBG(config->log, "failed to update logging (%d)", ret);
 	}
 
-	if (logger_state != CS40L5X_LOGGER_NO_CHANGE) {
-		LOG_INST_INF(config->log, "configure | logger -> %s",
-			     (state == CS40L5X_LOGGER_ENABLE) ? "enabled" : "disabled");
-	}
-
-error_mutex:
 	(void)k_mutex_unlock(&data->lock);
 
 error_pm:
 	(void)pm_device_runtime_put(dev);
 
-	return ret < 0 ? ret : (int)state;
+	return ret;
 }
 
 int cs40l5x_logger_get(const struct device *const dev, enum cs40l5x_logger_source source,
