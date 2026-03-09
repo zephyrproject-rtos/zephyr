@@ -26,14 +26,13 @@ class Sdk(WestCommand):
     def __init__(self):
         super().__init__(
             "sdk",
-            "manage Zephyr SDK",
-            "List and Install Zephyr SDK",
+            "",
+            description="List and Install Zephyr SDK",
         )
 
     def do_add_parser(self, parser_adder):
         parser = parser_adder.add_parser(
             self.name,
-            help=self.help,
             description=self.description,
             formatter_class=argparse.RawDescriptionHelpFormatter,
             epilog=textwrap.dedent(

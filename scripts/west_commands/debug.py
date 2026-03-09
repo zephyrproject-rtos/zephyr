@@ -18,9 +18,8 @@ class Debug(WestCommand):
     def __init__(self):
         super().__init__(
             'debug',
-            # Keep this in sync with the string in west-commands.yml.
-            'flash and interactively debug a Zephyr application',
-            dedent('''
+            '',
+            description=dedent('''
             Connect to the board, flash the program, and start a
             debugging session. Use "west attach" instead to attach
             a debugger without reflashing.'''),
@@ -39,9 +38,8 @@ class DebugServer(WestCommand):
     def __init__(self):
         super().__init__(
             'debugserver',
-            # Keep this in sync with the string in west-commands.yml.
-            'connect to board and launch a debug server',
-            dedent('''
+            '',
+            description=dedent('''
             Connect to the board and launch a debug server which accepts
             incoming connections for debugging the connected board.
 
@@ -63,9 +61,8 @@ class Attach(WestCommand):
     def __init__(self):
         super().__init__(
             'attach',
-            # Keep this in sync with the string in west-commands.yml.
-            'interactively debug a board',
-            "Like \"west debug\", but doesn't reflash the program.",
+            '',
+            description="Like \"west debug\", but doesn't reflash the program.",
             accepts_unknown_args=True)
         self.runner_key = 'debug-runner'  # in runners.yaml
 
@@ -81,9 +78,8 @@ class Rtt(WestCommand):
     def __init__(self):
         super().__init__(
             'rtt',
-            # Keep this in sync with the string in west-commands.yml.
-            'open an rtt shell',
-            "",
+            '',
+            description='open an rtt shell',
             accepts_unknown_args=True)
         self.runner_key = 'debug-runner'  # in runners.yaml
 
@@ -99,9 +95,8 @@ class Reset(WestCommand):
     def __init__(self):
         super().__init__(
             'reset',
-            # Keep this in sync with the string in west-commands.yml.
-            'reset the board to reboot',
-            "",
+            '',
+            description='reset the board to reboot',
             accepts_unknown_args=True)
         self.runner_key = 'debug-runner'  # in runners.yaml
 

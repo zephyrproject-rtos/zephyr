@@ -31,9 +31,8 @@ class Twister(WestCommand):
     def __init__(self):
         super(Twister, self).__init__(
             "twister",
-            # Keep this in sync with the string in west-commands.yml.
-            "west twister wrapper",
-            TWISTER_DESCRIPTION,
+            "",
+            description=TWISTER_DESCRIPTION,
             accepts_unknown_args=True,
         )
         python_version_guard()
@@ -41,7 +40,6 @@ class Twister(WestCommand):
     def do_add_parser(self, parser_adder):
         parser = parser_adder.add_parser(
             self.name,
-            help=self.help,
             formatter_class=argparse.RawDescriptionHelpFormatter,
             description=self.description,
             allow_abbrev=False

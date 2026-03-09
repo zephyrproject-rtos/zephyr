@@ -105,16 +105,14 @@ class Sign(Forceable):
     def __init__(self):
         super(Sign, self).__init__(
             'sign',
-            # Keep this in sync with the string in west-commands.yml.
-            'sign a Zephyr binary for bootloader chain-loading',
-            SIGN_DESCRIPTION,
+            '',
+            description=SIGN_DESCRIPTION,
             accepts_unknown_args=False)
 
     def do_add_parser(self, parser_adder):
         parser = parser_adder.add_parser(
             self.name,
             epilog=SIGN_EPILOG,
-            help=self.help,
             formatter_class=argparse.RawDescriptionHelpFormatter,
             description=self.description)
 
