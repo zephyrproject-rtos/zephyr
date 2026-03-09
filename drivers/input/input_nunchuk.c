@@ -6,18 +6,19 @@
 
 #define DT_DRV_COMPAT nintendo_nunchuk
 
+#include <zephyr/input/nunchuk.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/input/input.h>
 #include <zephyr/kernel.h>
 #include <zephyr/timing/timing.h>
-#include <zephyr/input/nunchuk.h>
 
 LOG_MODULE_REGISTER(input_nunchuk, CONFIG_INPUT_LOG_LEVEL);
 
 #define NUNCHUK_DELAY_MS  10
 #define NUNCHUK_READ_SIZE 6
+#define NUNCHUK_MUTEX_WAIT K_MSEC(25)
 
 struct nunchuk_config {
 	struct i2c_dt_spec i2c_bus;
@@ -32,6 +33,7 @@ struct nunchuk_data {
 	bool button_z;
 	struct k_work_delayable work;
 	k_timeout_t interval_ms;
+	struct k_mutex read_mutex;
 };
 
 static int nunchuk_read_registers(const struct device *dev, uint8_t *buffer)
@@ -66,47 +68,56 @@ static void nunchuk_poll(struct k_work *work)
 	bool sync_flag;
 	int ret;
 
-	nunchuk_read_registers(dev, buffer);
+	ret = k_mutex_lock(&data->read_mutex, data->interval_ms.ticks == 0 ? NUNCHUK_MUTEX_WAIT : K_NO_WAIT);
+	if (ret == SUCCESS) {
+		ret = nunchuk_read_registers(dev, buffer);
 
-	joystick_x = buffer[0];
-	joystick_y = buffer[1];
-	y_changed = (joystick_y != data->joystick_y);
+		k_mutex_unlock(&data->read_mutex);
 
-	if (joystick_x != data->joystick_x) {
-		data->joystick_x = joystick_x;
-		sync_flag = !y_changed;
-		ret = input_report_abs(dev, INPUT_ABS_X, data->joystick_x, sync_flag, K_FOREVER);
-	}
+		if (ret == SUCCESS) {
+			joystick_x = buffer[0];
+			joystick_y = buffer[1];
+			y_changed = (joystick_y != data->joystick_y);
 
-	if (y_changed) {
-		data->joystick_y = joystick_y;
-		ret = input_report_abs(dev, INPUT_ABS_Y, data->joystick_y, true, K_FOREVER);
-	}
+			if (joystick_x != data->joystick_x) {
+				data->joystick_x = joystick_x;
+				sync_flag = !y_changed;
+				ret = input_report_abs(dev, INPUT_ABS_X, data->joystick_x, sync_flag, K_FOREVER);
+			}
 
-#	ifdef CONFIG_INPUT_NUNCHUK_ACCEL
- 	{
- 		uint16_t accel_x = buffer[2], accel_y = buffer[3], accel_z = buffer[4];
-#		ifdef CONFIG_INPUT_NUNCHUK_ACCEL_10BIT
-		accel_x = accel_x << 2 | ((buffer[5] >> 2) & 0x03);
-		accel_y = accel_y << 2 | ((buffer[5] >> 4) & 0x03);
-		accel_z = accel_z << 2 | ((buffer[5] >> 6) & 0x03);
-#		endif // CONFIG_INPUT_NUNCHUK_ACCEL_10BIT
-		ret = input_report_abs(dev, INPUT_ABS_RX, accel_x, true, K_FOREVER);
-		ret = input_report_abs(dev, INPUT_ABS_RY, accel_y, true, K_FOREVER);
-		ret = input_report_abs(dev, INPUT_ABS_RZ, accel_z, true, K_FOREVER);
-	}
-#	endif // CONFIG_INPUT_NUNCHUK_ACCEL
+			if (y_changed) {
+				data->joystick_y = joystick_y;
+				ret = input_report_abs(dev, INPUT_ABS_Y, data->joystick_y, true, K_FOREVER);
+			}
 
-	button_z = buffer[5] & BIT(0);
-	if (button_z != data->button_z) {
-		data->button_z = button_z;
-		ret = input_report_key(dev, INPUT_KEY_Z, !data->button_z, true, K_FOREVER);
-	}
+	#		ifdef CONFIG_INPUT_NUNCHUK_ACCEL
+		 	{
+		 		uint16_t accel_x = buffer[2], accel_y = buffer[3], accel_z = buffer[4];
+	#			ifdef CONFIG_INPUT_NUNCHUK_ACCEL_10BIT
+					accel_x = accel_x << 2 | ((buffer[5] >> 2) & 0x03);
+					accel_y = accel_y << 2 | ((buffer[5] >> 4) & 0x03);
+					accel_z = accel_z << 2 | ((buffer[5] >> 6) & 0x03);
+	#			endif // CONFIG_INPUT_NUNCHUK_ACCEL_10BIT
+				ret = input_report_abs(dev, INPUT_ABS_RX, accel_x, false, K_FOREVER);
+				ret = input_report_abs(dev, INPUT_ABS_RY, accel_y, false, K_FOREVER);
+				ret = input_report_abs(dev, INPUT_ABS_RZ, accel_z, true, K_FOREVER);
+			}
+	#		endif // CONFIG_INPUT_NUNCHUK_ACCEL
 
-	button_c = buffer[5] & BIT(1);
-	if (button_c != data->button_c) {
-		data->button_c = button_c;
-		ret = input_report_key(dev, INPUT_KEY_C, !data->button_c, true, K_FOREVER);
+			button_z = buffer[5] & BIT(0);
+			if (button_z != data->button_z) {
+				data->button_z = button_z;
+				ret = input_report_key(dev, INPUT_KEY_Z, !data->button_z, false, K_FOREVER);
+			}
+
+			button_c = buffer[5] & BIT(1);
+			if (button_c != data->button_c) {
+				data->button_c = button_c;
+				ret = input_report_key(dev, INPUT_KEY_C, !data->button_c, true, K_FOREVER);
+			}
+		} else {
+			LOG_ERR("Error reading Nunchuk: %i", ret);
+		}
 	}
 
 	if (data->interval_ms.ticks != 0) {
@@ -125,7 +136,17 @@ static int nunchuk_init(const struct device *dev)
 	uint8_t buffer[NUNCHUK_READ_SIZE];
 
 	data->dev = dev;
-	data->interval_ms = K_MSEC(cfg->polling_interval_ms - 11);
+	if (cfg->polling_interval_ms != 0) {
+		data->interval_ms = K_MSEC(cfg->polling_interval_ms - 11);
+	} else {
+		data->interval_ms = K_NO_WAIT;
+	}
+
+	ret = k_mutex_init(&data->read_mutex);
+	if (ret < 0) {
+		LOG_ERR("Failed to initialize mutex");
+		return ret;
+	}
 
 	if (!i2c_is_ready_dt(&cfg->i2c_bus)) {
 		LOG_ERR("Bus device is not ready");
@@ -164,7 +185,12 @@ static int nunchuk_init(const struct device *dev)
 	data->button_c = buffer[5] & BIT(1);
 
 	k_work_init_delayable(&data->work, nunchuk_poll);
-	ret = k_work_reschedule(&data->work, data->interval_ms);
+
+	if (data->interval_ms.ticks != 0) {
+		ret = k_work_reschedule(&data->work, data->interval_ms);
+	} else {
+		ret = SUCCESS;
+	}
 
 	return ret;
 }
@@ -172,29 +198,39 @@ static int nunchuk_init(const struct device *dev)
 static int nunchuck_fetch_manual(const struct device *dev)
 {
     struct nunchuk_data *data = dev->data;
+    int ret;
 
     if (data->interval_ms.ticks != 0) {
     	return -ENOTSUP;
     }
 
-    return k_work_reschedule(&data->work, data->interval_ms);
+    ret = k_work_reschedule(&data->work, K_NO_WAIT);
+    return ret >= 0 ? SUCCESS : ret;
 }
 
 static int nunchuck_read_manual(const struct device *dev, struct nunchuk_reading* reading)
 {
     int ret;
     uint8_t buffer[NUNCHUK_READ_SIZE];
+    struct nunchuk_data *data = dev->data;
 
     if (reading == NULL) {
         return -EINVAL;
     }
 
+    if (k_mutex_lock(&data->read_mutex, K_MSEC(100)) != SUCCESS) {
+    	return -EBUSY;
+    }
+
     ret = nunchuk_read_registers(dev, buffer);
+
+    k_mutex_unlock(&data->read_mutex);
+
     if (ret != SUCCESS) {
         return ret;
     }
 
-    reading->buttons = buffer[5] & NUNCHUK_BUTTON_ALL;
+    reading->buttons = ~(buffer[5]) & NUNCHUK_BUTTON_ALL;
 
     reading->joystick[0] = buffer[0];
     reading->joystick[1] = buffer[1];
