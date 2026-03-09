@@ -61,7 +61,7 @@ the phyCORE-i.MX 8M Mini/Nano.
     - JTAG 20-pin connector
     - MicroUSB for UART debug, two COM ports for A53 and M4
 
-.. image:: img/phyBOARD-Polis.jpg
+.. image:: img/phyboard_polis.jpg
    :align: center
    :alt: phyBOARD-Polis
    :width: 500
