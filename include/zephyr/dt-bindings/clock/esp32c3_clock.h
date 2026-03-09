@@ -37,40 +37,40 @@
 #define ESP32_RTC_SLOW_CLK_SRC_RC_FAST_D256_FREQ 68359
 
 /* Modules IDs
- * These IDs are actually offsets in CLK and RST Control registers.
- * These IDs shouldn't be changed unless there is a Hardware change
- * from Espressif.
- *
- * Basic Modules
- * Registers: DPORT_PERIP_CLK_EN_REG, DPORT_PERIP_RST_EN_REG
+ * These are used by the clock control driver to identify peripheral modules.
  */
-#define ESP32_LEDC_MODULE              0
-#define ESP32_UART0_MODULE             1
-#define ESP32_UART1_MODULE             2
-#define ESP32_USB_MODULE               3
-#define ESP32_I2C0_MODULE              4
-#define ESP32_I2S1_MODULE              5
-#define ESP32_TIMG0_MODULE             6
-#define ESP32_TIMG1_MODULE             7
-#define ESP32_UHCI0_MODULE             8
-#define ESP32_RMT_MODULE               9
-#define ESP32_SPI_MODULE              10
-#define ESP32_SPI2_MODULE             11
-#define ESP32_TWAI_MODULE             12
-#define ESP32_RNG_MODULE              13
-#define ESP32_WIFI_MODULE             14
-#define ESP32_BT_MODULE               15
-#define ESP32_WIFI_BT_COMMON_MODULE   16
-#define ESP32_BT_BASEBAND_MODULE      17
-#define ESP32_BT_LC_MODULE            18
-#define ESP32_RSA_MODULE              19
-#define ESP32_AES_MODULE              20
-#define ESP32_SHA_MODULE              21
-#define ESP32_HMAC_MODULE             22
-#define ESP32_DS_MODULE               23
-#define ESP32_GDMA_MODULE             24
-#define ESP32_SYSTIMER_MODULE         25
-#define ESP32_SARADC_MODULE           26
-#define ESP32_MODULE_MAX              27
+#define ESP32_UART1_MODULE           0  /**< UART1 module */
+#define ESP32_TIMG0_MODULE           1  /**< Timer group 0 module */
+#define ESP32_TIMG1_MODULE           2  /**< Timer group 1 module */
+#define ESP32_UHCI0_MODULE           3  /**< UHCI0 module */
+#define ESP32_RNG_MODULE             4  /**< RNG module */
+#define ESP32_WIFI_MODULE            5  /**< Wi-Fi module */
+#define ESP32_BT_MODULE              6  /**< Bluetooth module */
+#define ESP32_WIFI_BT_COMMON_MODULE  7  /**< Wi-Fi/BT common module */
+#define ESP32_SYSTIMER_MODULE        8  /**< System timer module */
+#define ESP32_PHY_CALIBRATION_MODULE 9  /**< PHY calibration module */
+#define ESP32_MODULE_MAX             10 /**< Module count */
+
+/* Non-shared peripherals - these have dedicated clock control in their drivers
+ * and don't use periph_module_enable(). Values start after MODULE_MAX.
+ */
+#define ESP32_LEDC_MODULE        100 /**< LEDC module */
+#define ESP32_UART0_MODULE       101 /**< UART0 module */
+#define ESP32_USB_MODULE         102 /**< USB module */
+#define ESP32_I2C0_MODULE        103 /**< I2C0 module */
+#define ESP32_I2S1_MODULE        104 /**< I2S1 module */
+#define ESP32_RMT_MODULE         105 /**< RMT module */
+#define ESP32_SPI_MODULE         106 /**< SPI1 module */
+#define ESP32_SPI2_MODULE        107 /**< SPI2 module */
+#define ESP32_TWAI_MODULE        108 /**< TWAI module */
+#define ESP32_BT_BASEBAND_MODULE 109 /**< BT baseband module */
+#define ESP32_BT_LC_MODULE       110 /**< BT link controller module */
+#define ESP32_RSA_MODULE         111 /**< RSA module */
+#define ESP32_AES_MODULE         112 /**< AES module */
+#define ESP32_SHA_MODULE         113 /**< SHA module */
+#define ESP32_HMAC_MODULE        114 /**< HMAC module */
+#define ESP32_DS_MODULE          115 /**< Digital signature module */
+#define ESP32_GDMA_MODULE        116 /**< GDMA module */
+#define ESP32_SARADC_MODULE      117 /**< SAR ADC module */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ESP32C3_H_ */

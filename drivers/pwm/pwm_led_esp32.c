@@ -8,6 +8,7 @@
 #define DT_DRV_COMPAT espressif_esp32_ledc
 
 #include <hal/ledc_hal.h>
+#include <hal/ledc_ll.h>
 #include <hal/ledc_types.h>
 #include <esp_clk_tree.h>
 #include <soc/rtc.h>
@@ -76,7 +77,7 @@ static void pwm_led_esp32_start(struct pwm_ledc_esp32_data *data,
 				struct pwm_ledc_esp32_channel_config *channel)
 {
 	ledc_hal_set_sig_out_en(&data->hal, channel->channel_num, true);
-	ledc_hal_set_duty_start(&data->hal, channel->channel_num, true);
+	ledc_hal_set_duty_start(&data->hal, channel->channel_num);
 
 	if (channel->speed_mode == LEDC_LOW_SPEED_MODE) {
 		ledc_hal_ls_channel_update(&data->hal, channel->channel_num);
@@ -88,7 +89,6 @@ static void pwm_led_esp32_stop(struct pwm_ledc_esp32_data *data,
 {
 	ledc_hal_set_idle_level(&data->hal, channel->channel_num, idle_level);
 	ledc_hal_set_sig_out_en(&data->hal, channel->channel_num, false);
-	ledc_hal_set_duty_start(&data->hal, channel->channel_num, false);
 
 	if (channel->speed_mode == LEDC_LOW_SPEED_MODE) {
 		ledc_hal_ls_channel_update(&data->hal, channel->channel_num);
@@ -102,10 +102,8 @@ static void pwm_led_esp32_duty_set(const struct device *dev,
 
 	ledc_hal_set_hpoint(&data->hal, channel->channel_num, 0);
 	ledc_hal_set_duty_int_part(&data->hal, channel->channel_num, channel->duty_val);
-	ledc_hal_set_duty_direction(&data->hal, channel->channel_num, 1);
-	ledc_hal_set_duty_num(&data->hal, channel->channel_num, 1);
-	ledc_hal_set_duty_cycle(&data->hal, channel->channel_num, 1);
-	ledc_hal_set_duty_scale(&data->hal, channel->channel_num, 0);
+	/* Set fade parameters: range=0, dir=1, cycle=1, scale=0, step=1 (no fading) */
+	ledc_hal_set_fade_param(&data->hal, channel->channel_num, 0, 1, 1, 0, 1);
 }
 
 static int pwm_led_esp32_calculate_max_resolution(struct pwm_ledc_esp32_channel_config *channel)
@@ -376,6 +374,7 @@ int pwm_led_esp32_init(const struct device *dev)
 
 	/* Enable peripheral */
 	clock_control_on(config->clock_dev, config->clock_subsys);
+	ledc_ll_enable_clock(data->hal.dev, true);
 
 #if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
 	/* Combine clock sources to include timer specific sources */

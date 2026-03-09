@@ -8,7 +8,7 @@
 #include <soc/efuse_reg.h>
 #include <soc/reset_reasons.h>
 #include "esp_system.h"
-#include "rtc.h"
+#include <soc/rtc.h>
 
 #include <zephyr/drivers/hwinfo.h>
 #include <string.h>

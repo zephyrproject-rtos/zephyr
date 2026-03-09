@@ -249,13 +249,12 @@ static int uart_esp32_config_get(const struct device *dev, struct uart_config *c
 	uart_stop_bits_t stop_bit;
 	uart_word_length_t data_bit;
 	uart_hw_flowcontrol_t hw_flow;
-	uart_sclk_t src_clk;
+	soc_module_clk_t src_clk;
 	uint32_t sclk_freq;
 	uint32_t calc_baud;
 
 	uart_hal_get_sclk(&data->hal, &src_clk);
-	esp_clk_tree_src_get_freq_hz((soc_module_clk_t)src_clk,
-		ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq);
+	esp_clk_tree_src_get_freq_hz(src_clk, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq);
 
 	uart_hal_get_baudrate(&data->hal, &calc_baud, sclk_freq);
 	cfg->baudrate = uart_esp32_get_standard_baud(calc_baud);
@@ -320,7 +319,7 @@ static int uart_esp32_config_get(const struct device *dev, struct uart_config *c
 		return -ENOTSUP;
 	}
 
-	if (uart_hal_is_mode_rs485_half_duplex(&data->hal)) {
+	if (uart_ll_is_mode_rs485_half_duplex(data->hal.dev)) {
 		cfg->flow_ctrl = UART_CFG_FLOW_CTRL_RS485;
 	}
 
@@ -332,15 +331,9 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 {
 	const struct uart_esp32_config *config = dev->config;
 	struct uart_esp32_data *data = dev->data;
-	uart_sclk_t src_clk;
+	soc_module_clk_t src_clk;
 	uint32_t sclk_freq;
 	uint32_t inv_mask = 0;
-
-	if (!device_is_ready(config->clock_dev)) {
-		return -ENODEV;
-	}
-
-	clock_control_on(config->clock_dev, config->clock_subsys);
 
 	uart_hal_set_sclk(&data->hal, UART_SCLK_DEFAULT);
 	uart_hal_set_rxfifo_full_thr(&data->hal, UART_RX_FIFO_THRESH);
@@ -410,8 +403,7 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 	}
 
 	uart_hal_get_sclk(&data->hal, &src_clk);
-	esp_clk_tree_src_get_freq_hz((soc_module_clk_t)src_clk,
-		ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq);
+	esp_clk_tree_src_get_freq_hz(src_clk, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sclk_freq);
 	uart_hal_set_baudrate(&data->hal, cfg->baudrate, sclk_freq);
 
 	uart_hal_set_rx_timeout(&data->hal, 0x16);
@@ -671,7 +663,8 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 			   (uint32_t)data->async.rx_buf + data->async.rx_counter,
 			   data->async.rx_len - data->async.rx_counter);
 		dma_start(config->dma_dev, config->rx_dma_channel);
-		data->uhci_dev->pkt_thres.thrs = data->async.rx_len - data->async.rx_counter;
+		uhci_ll_rx_set_packet_threshold(data->uhci_dev,
+						data->async.rx_len - data->async.rx_counter);
 		irq_unlock(key);
 		return;
 	}
@@ -717,7 +710,7 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 		dma_reload(config->dma_dev, config->rx_dma_channel, 0, (uint32_t)data->async.rx_buf,
 			   data->async.rx_len);
 		dma_start(config->dma_dev, config->rx_dma_channel);
-		data->uhci_dev->pkt_thres.thrs = data->async.rx_len;
+		uhci_ll_rx_set_packet_threshold(data->uhci_dev, data->async.rx_len);
 	}
 
 	irq_unlock(key);
@@ -994,13 +987,15 @@ static int uart_esp32_async_rx_enable(const struct device *dev, uint8_t *buf, si
 		goto unlock;
 	}
 
-	data->uhci_dev->pkt_thres.thrs = len;
+	uhci_ll_rx_set_packet_threshold(data->uhci_dev, len);
 
 	/*
 	 * Configure UHCI EOF mode based on timeout setting.
 	 * For SYS_FOREVER_US, only use length-based EOF to avoid spurious
 	 * callbacks when UART goes idle before buffer is full.
 	 * For other timeouts, also enable idle-based EOF.
+	 * Note: Direct register access needed because uhci_ll_rx_set_eof_mode
+	 * only enables bits, it cannot clear them.
 	 */
 	if (timeout == SYS_FOREVER_US) {
 		data->uhci_dev->conf0.len_eof_en = 1;
@@ -1142,14 +1137,19 @@ static int uart_esp32_init(const struct device *dev)
 {
 	int ret;
 	struct uart_esp32_data *data = dev->data;
-#if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API || CONFIG_PM
 	const struct uart_esp32_config *config = dev->config;
-#endif
 
 	ret = pm_device_driver_init(dev, uart_esp32_pm_action);
 	if (ret < 0) {
 		return ret;
 	}
+
+	if (!device_is_ready(config->clock_dev)) {
+		return -ENODEV;
+	}
+
+	clock_control_on(config->clock_dev, config->clock_subsys);
+	uart_ll_sclk_enable(data->hal.dev);
 
 	ret = uart_esp32_configure(dev, &data->uart_config);
 	if (ret < 0) {
@@ -1176,7 +1176,7 @@ static int uart_esp32_init(const struct device *dev)
 
 		clock_control_on(config->clock_dev, (clock_control_subsys_t)ESP32_UHCI0_MODULE);
 		uhci_ll_init(data->uhci_dev);
-		uhci_ll_set_eof_mode(data->uhci_dev, UHCI_RX_IDLE_EOF | UHCI_RX_LEN_EOF);
+		uhci_ll_rx_set_eof_mode(data->uhci_dev, UHCI_RX_IDLE_EOF | UHCI_RX_LEN_EOF);
 
 		/* Configure SLIP encoding/decoding */
 		data->uhci_dev->escape_conf.tx_c0_esc_en = config->uhci_slip_tx ? 1 : 0;

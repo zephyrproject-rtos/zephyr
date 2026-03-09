@@ -107,9 +107,9 @@
 			zephyr,memory-region = "DCACHE0";
 		};
 
-		dcache1: dcache1@3f500000 {
+		dcache1: dcache1@3f800000 {
 			compatible = "zephyr,memory-region";
-			reg = <0x3f500000 DT_SIZE_K(10752)>;
+			reg = <0x3f800000 DT_SIZE_M(4)>;
 			zephyr,memory-region = "DCACHE1";
 
 			psram0: psram0 {

@@ -14,6 +14,7 @@
  * HAL includes go first to
  * avoid BIT macro redefinition
  */
+#include <esp_efuse.h>
 #include <esp_flash.h>
 #include <spi_flash_mmap.h>
 #include <soc/spi_struct.h>
@@ -138,7 +139,7 @@ static int flash_esp32_read_check_enc(off_t address, void *buffer, size_t length
 {
 	int ret = 0;
 
-	if (esp_flash_encryption_enabled()) {
+	if (esp_efuse_is_flash_encryption_enabled()) {
 		LOG_DBG("Flash read ENCRYPTED - address 0x%lx size 0x%x", address, length);
 		ret = esp_flash_read_encrypted(NULL, address, buffer, length);
 	} else {
@@ -158,7 +159,7 @@ static int flash_esp32_write_check_enc(off_t address, const void *buffer, size_t
 {
 	int ret = 0;
 
-	if (esp_flash_encryption_enabled() && !ENCRYPTION_IS_VIRTUAL) {
+	if (esp_efuse_is_flash_encryption_enabled() && !ENCRYPTION_IS_VIRTUAL) {
 		LOG_DBG("Flash write ENCRYPTED - address 0x%lx size 0x%x", address, length);
 		ret = esp_flash_write_encrypted(NULL, address, buffer, length);
 	} else {
@@ -188,7 +189,7 @@ static uint8_t erase_aux_buf[FLASH_SECTOR_SIZE] = {0};
 
 static bool aligned_flash_write(size_t dest_addr, const void *src, size_t size, bool erase)
 {
-	bool flash_encryption_enabled = esp_flash_encryption_enabled();
+	bool flash_encryption_enabled = esp_efuse_is_flash_encryption_enabled();
 
 	/* When flash encryption is enabled, write alignment is 32 bytes, however to avoid
 	 * inconsistences the region may be erased right before writing, thus the alignment
@@ -376,7 +377,7 @@ static int flash_esp32_read(const struct device *dev, off_t address, void *buffe
 	size_t remaining = length;
 	size_t copy_size = 0;
 	size_t aligned_size = 0;
-	bool allow_decrypt = esp_flash_encryption_enabled();
+	bool allow_decrypt = esp_efuse_is_flash_encryption_enabled();
 
 	if (flash_esp32_is_aligned(address, buffer, length)) {
 		ret = esp_rom_flash_read(address, buffer, length, allow_decrypt);
@@ -443,7 +444,7 @@ static int flash_esp32_write(const struct device *dev, off_t address, const void
 		return -EINVAL;
 	}
 
-	bool encrypt = esp_flash_encryption_enabled();
+	bool encrypt = esp_efuse_is_flash_encryption_enabled();
 
 	ret = esp_rom_flash_write(address, (void *)buffer, length, encrypt);
 #else
@@ -452,7 +453,7 @@ static int flash_esp32_write(const struct device *dev, off_t address, const void
 #ifdef CONFIG_ESP_FLASH_ENCRYPTION
 	bool erase = false;
 
-	if (esp_flash_encryption_enabled()) {
+	if (esp_efuse_is_flash_encryption_enabled()) {
 		/* Ensuring flash region has been erased before writing in order to
 		 * avoid inconsistences when hardware flash encryption is enabled.
 		 */
@@ -492,7 +493,7 @@ static int flash_esp32_erase(const struct device *dev, off_t start, size_t len)
 		ret = -EIO;
 	}
 
-	if (esp_flash_encryption_enabled()) {
+	if (esp_efuse_is_flash_encryption_enabled()) {
 		uint8_t erased_val_buf[FLASH_BUFFER_SIZE];
 		uint32_t bytes_remaining = len;
 		uint32_t offset = start;

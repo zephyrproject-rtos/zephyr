@@ -14,7 +14,7 @@
 #include <soc.h>
 #include <esp_log.h>
 #include <esp_cpu.h>
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 
 #include "esp_mcuboot_image.h"
 #include "esp_memory_utils.h"
@@ -153,7 +153,7 @@ int IRAM_ATTR esp_appcpu_image_load(unsigned int hdr_offset, unsigned int *entry
 	map_rom_segments(1, &rom);
 
 	ESP_EARLY_LOGI(TAG, "Application start=%xh\n\n", image_header.entry_addr);
-	esp_rom_uart_tx_wait_idle(0);
+	esp_rom_output_tx_wait_idle(0);
 
 	assert(entry_addr != NULL);
 	*entry_addr = image_header.entry_addr;

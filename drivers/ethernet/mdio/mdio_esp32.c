@@ -16,9 +16,13 @@
 #include <esp_mac.h>
 #include <hal/emac_hal.h>
 #include <hal/emac_ll.h>
+#include <hal/emac_periph.h>
 #include <soc/rtc.h>
+#include <soc/gpio_periph.h>
 #include <soc/io_mux_reg.h>
 #include <clk_ctrl_os.h>
+
+#include "../eth_esp32_priv.h"
 
 LOG_MODULE_REGISTER(mdio_esp32, CONFIG_MDIO_LOG_LEVEL);
 
@@ -116,6 +120,28 @@ static int emac_config_apll_clock(void)
 
 	return 0;
 }
+
+static void mdio_esp32_iomux_rmii_clk_output(int gpio_num)
+{
+	const emac_iomux_info_t *pin = emac_rmii_iomux_pins.clko;
+
+	/*
+	 * GPIO 0 uses a different clock output mechanism (CLK_OUT1),
+	 * so skip IOMUX setup for it. GPIO 16/17 use dedicated IOMUX.
+	 */
+	if (gpio_num == 0 || pin == NULL) {
+		return;
+	}
+
+	/* Find the matching entry in the iomux array */
+	while (pin->gpio_num != GPIO_NUM_MAX) {
+		if (pin->gpio_num == gpio_num) {
+			PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], pin->func);
+			return;
+		}
+		pin++;
+	}
+}
 #endif
 
 static int mdio_esp32_initialize(const struct device *dev)
@@ -146,21 +172,21 @@ static int mdio_esp32_initialize(const struct device *dev)
 	dev_data->hal.mac_regs = &EMAC_MAC;
 
 #if DT_INST_NODE_HAS_PROP(0, ref_clk_output_gpios)
-	emac_hal_init(&dev_data->hal, NULL, NULL, NULL);
-	emac_hal_iomux_init_rmii();
+	emac_hal_init(&dev_data->hal);
+	esp32_emac_iomux_init_rmii();
 	BUILD_ASSERT(DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 0 ||
 	  DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 16 ||
 		DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 17,
 		"Only GPIO0/16/17 are allowed as a GPIO REF_CLK source!");
 	int ref_clk_gpio = DT_INST_GPIO_PIN(0, ref_clk_output_gpios);
-	emac_hal_iomux_rmii_clk_output(ref_clk_gpio);
+	mdio_esp32_iomux_rmii_clk_output(ref_clk_gpio);
 
 	/* Configure REF_CLK output when GPIO0 is used */
 	if (ref_clk_gpio == 0) {
 		REG_SET_FIELD(PIN_CTRL, CLK_OUT1, 6);
 	}
 
-	emac_ll_clock_enable_rmii_output(dev_data->hal.ext_regs);
+	emac_hal_clock_enable_rmii_output(&dev_data->hal);
 	periph_rtc_apll_acquire();
 	res = emac_config_apll_clock();
 	if (res != 0) {
