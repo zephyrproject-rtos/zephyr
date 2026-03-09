@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @ingroup stepper_interface
+ * @ingroup stepper_hw_driver
  * @brief Main header file for stepper hardware driver API.
  */
 
@@ -26,7 +26,7 @@ extern "C" {
  * @defgroup stepper_interface Stepper
  * @ingroup io_interfaces
  *
- * @defgroup stepper_hw_driver_interface Stepper Hardware Driver Interface
+ * @defgroup stepper_hw_driver Stepper Hardware Driver
  * @brief Interfaces for stepper hardware drivers
  * @ingroup stepper_interface
  * @since 4.0
