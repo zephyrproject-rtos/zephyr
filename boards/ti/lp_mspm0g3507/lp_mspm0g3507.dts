@@ -28,6 +28,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,canbus = &canfd0;
 	};
 
 	leds {
@@ -60,6 +61,12 @@
 &mclk {
 	clock-frequency = <DT_FREQ_M(80)>;
 	clocks = <&syspll>;
+};
+
+&canclk {
+	clocks = <&syspll>;
+	clock-frequency = <DT_FREQ_M(40)>;
+	status = "okay";
 };
 
 &flash0 {
@@ -115,4 +122,10 @@
 	ti,cc-index = <0>;
 	ti,pwm-mode = "EDGE_ALIGN";
 	ti,period = <1000>;
+};
+
+&canfd0 {
+	status = "okay";
+	pinctrl-0 = <&canfd0_cantx_pa12 &canfd0_canrx_pa13>;
+	pinctrl-names = "default";
 };
