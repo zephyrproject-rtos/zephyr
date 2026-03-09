@@ -26,6 +26,7 @@ int nct_new_thread(void *this, void *payload);
 void nct_abort_thread(void *this, int thread_idx);
 int nct_get_unique_thread_id(void *this, int thread_idx);
 int nct_thread_name_set(void *this, int thread_idx, const char *str);
+void nct_get_thread_stack(void *this, int thread_idx, void **stack_addr, unsigned long *stack_size);
 
 #ifdef __cplusplus
 }
