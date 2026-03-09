@@ -304,4 +304,21 @@
 		ti,spi-num-cs = <4>;
 		status = "disabled";
 	};
+
+	main_rtc0: rtc@2b1f0000 {
+		compatible = "ti,k3-rtc-counter";
+		reg = <0x2b1f0000 0x64>;
+		clock-frequency = <DT_FREQ_K(32)>;
+		clocks = <&scmi_clk 272>;
+		interrupts = <GIC_SPI 28 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		power-domains = <&main_rtc0_pd>;
+		status = "disabled";
+
+		counter_rtc0: counter_rtc {
+			compatible = "zephyr,rtc-counter";
+			alarms-count = <2>;
+			status = "disabled";
+		};
+	};
 };
