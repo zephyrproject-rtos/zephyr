@@ -1272,6 +1272,8 @@ static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
 {
 	LOG_DBG("chan %p", chan);
 
+	chan->rx.cid = 0U;
+
 	/* Redirect to experimental API. */
 	IF_ENABLED(CONFIG_BT_L2CAP_SEG_RECV, ({
 		if (chan->chan.ops->seg_recv) {
@@ -1447,19 +1449,20 @@ static uint16_t l2cap_chan_accept(struct bt_conn *conn,
 
 	le_chan->required_sec_level = server->sec_level;
 
-	if (!l2cap_chan_add(conn, *chan, l2cap_chan_destroy)) {
-		return BT_L2CAP_LE_ERR_NO_RESOURCES;
-	}
-
 	/* Init TX parameters */
 	l2cap_chan_tx_init(le_chan);
 	le_chan->tx.cid = scid;
 	le_chan->tx.mps = mps;
 	le_chan->tx.mtu = mtu;
-	l2cap_chan_tx_give_credits(le_chan, credits);
 
 	/* Init RX parameters */
 	l2cap_chan_rx_init(le_chan);
+
+	if (!l2cap_chan_add(conn, *chan, l2cap_chan_destroy)) {
+		return BT_L2CAP_LE_ERR_NO_RESOURCES;
+	}
+
+	l2cap_chan_tx_give_credits(le_chan, credits);
 
 	/* Set channel PSM */
 	le_chan->psm = server->psm;
