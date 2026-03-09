@@ -106,6 +106,10 @@ Deprecated APIs and options
     * :c:macro:`BT_HCI_LE_SUPERVISON_TIMEOUT_MIN` and :c:macro:`BT_HCI_LE_SUPERVISON_TIMEOUT_MAX` have been deprecated.
       Use :c:macro:`BT_HCI_LE_SUPERVISION_TIMEOUT_MIN` and :c:macro:`BT_HCI_LE_SUPERVISION_TIMEOUT_MAX` instead.
 
+* Entropy
+
+   * :kconfig:option:`CONFIG_ENTROPY_PSA_CRYPTO_RNG` has been deprecated.
+
 * I2S
 
   * The following macros have been deprecated and are replaced with equivalent macros whose names
