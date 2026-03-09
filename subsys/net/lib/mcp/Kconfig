@@ -1,0 +1,388 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MCP_SERVER
+	bool "Model Context Protocol (MCP) Server support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select JSON_LIBRARY
+	select UUID
+	select UUID_V4
+	help
+	  Support for MCP Server functionality.
+
+if MCP_SERVER
+config MCP_SERVER_COUNT
+	int "Number of MCP server instances"
+	default 1
+	range 1 10
+	help
+	  Number of MCP server instances that can be created and run concurrently.
+
+config MCP_MAX_CLIENTS
+	int "Max number of clients per server"
+	default 3
+	range 1 100
+	help
+	  This setting determines the maximum number of clients that
+	  the server can handle at once.
+
+config MCP_MAX_CLIENT_REQUESTS
+	int "MCP request queue size"
+	default 5
+	range 1 100
+	help
+	  Maximum number of pending MCP requests that can be queued for processing.
+
+config MCP_REQUEST_WORKERS
+	int "Number of MCP request worker threads"
+	default 2
+	range 1 8
+	help
+	  Number of worker threads that process incoming MCP requests.
+	  More workers allow better concurrent handling of client requests.
+
+config MCP_REQUEST_WORKER_STACK_SIZE
+	int "Stack size for MCP request worker threads"
+	default 2048
+	help
+	  Stack size in bytes for each request worker thread.
+
+	  The worker thread itself is lightweight, but it calls
+	  user-provided tool callbacks which may have varying
+	  stack requirements.
+
+config MCP_MAX_MESSAGE_SIZE
+	int "Maximum MCP message size"
+	default 2048
+	help
+	  Size of the buffer for MCP messages in bytes.
+
+choice MCP_ALLOC_METHOD
+	prompt "MCP memory allocation method"
+	default MCP_ALLOC_SLAB
+	help
+	  Select the memory allocation method for MCP internal structures.
+
+config MCP_ALLOC_SLAB
+	bool "Memory slabs (deterministic, pre-allocated)"
+	help
+	  Use memory slabs for MCP allocations. This provides deterministic
+	  allocation time and zero fragmentation but pre-allocates memory
+	  at startup. Memory usage is fixed regardless of actual load.
+
+config MCP_ALLOC_HEAP
+	bool "Heap allocation (on-demand)"
+	help
+	  Use k_malloc/k_free for MCP allocations. This allocates memory
+	  on-demand but may cause fragmentation over time.
+
+endchoice
+
+if MCP_ALLOC_SLAB
+
+config MCP_SLAB_SMALL_SIZE
+	int "Small slab block size (bytes)"
+	default 256
+	help
+	  Block size for small allocations such as error responses
+	  and notification parameters.
+
+config MCP_SLAB_SMALL_COUNT
+	int "Small slab block count"
+	default 10
+	help
+	  Number of blocks in the small memory slab.
+
+config MCP_SLAB_MEDIUM_SIZE
+	int "Medium slab block size (bytes)"
+	default 1024
+	help
+	  Block size for medium allocations such as parsed messages
+	  and response structures.
+
+config MCP_SLAB_MEDIUM_COUNT
+	int "Medium slab block count"
+	default 20
+	help
+	  Number of blocks in the medium memory slab. Should be at least
+	  MCP_MAX_CLIENTS * MCP_MAX_CLIENT_REQUESTS + margin.
+
+config MCP_SLAB_LARGE_COUNT
+	int "Large slab block count"
+	default 22
+	help
+	  Number of blocks in the large memory slab. Block size is
+	  MCP_MAX_MESSAGE_SIZE. Recommended minimum:
+	  (MCP_MAX_CLIENTS * MCP_MAX_CLIENT_REQUESTS) + MCP_REQUEST_WORKERS + margin
+	  to account for queued responses, active workers, and health monitor
+	  notifications.
+
+endif # MCP_ALLOC_SLAB
+
+config MCP_SERVER_INFO_NAME_MAX_LEN
+	int "Maximum server info name length"
+	default 64
+	help
+	  Maximum length for the server name field in serverInfo.
+
+config MCP_SERVER_INFO_NAME
+	string "Server name"
+	default "Zephyr MCP Server"
+	help
+	  The name of the MCP server reported in serverInfo.
+
+config MCP_SERVER_INFO_VERSION_MAX_LEN
+	int "Maximum server info version length"
+	default 16
+	help
+	  Maximum length for the server version field in serverInfo.
+
+config MCP_SERVER_INFO_VERSION
+	string "Server version"
+	default "1.0.0"
+	help
+	  The version of the MCP server reported in serverInfo.
+
+config MCP_SERVER_INFO_TITLE
+	bool "Include server title in serverInfo"
+	help
+	  Include optional title field in the serverInfo section.
+
+if MCP_SERVER_INFO_TITLE
+
+config MCP_SERVER_INFO_TITLE_MAX_LEN
+	int "Maximum server info title length"
+	default 64
+	help
+	  Maximum length for the server title field in serverInfo.
+
+config MCP_SERVER_INFO_TITLE_VALUE
+	string "Server title"
+	default "Zephyr MCP Server"
+	help
+	  The title of the MCP server reported in serverInfo.
+
+endif # MCP_SERVER_INFO_TITLE
+
+config MCP_SERVER_INFO_INSTRUCTIONS
+	bool "Include server instructions in serverInfo"
+	help
+	  Include optional instructions field in the serverInfo section.
+
+if MCP_SERVER_INFO_INSTRUCTIONS
+
+config MCP_SERVER_INFO_INSTRUCTIONS_MAX_LEN
+	int "Maximum server info instructions length"
+	default 256
+	help
+	  Maximum length for the server instructions field in serverInfo.
+
+config MCP_SERVER_INFO_INSTRUCTIONS_VALUE
+	string "Server instructions"
+	default "This is a Zephyr-based MCP server providing tool capabilities."
+	help
+	  The instructions for the MCP server reported in serverInfo.
+
+endif # MCP_SERVER_INFO_INSTRUCTIONS
+
+config MCP_MAX_TOOLS
+	int "Maximum number of registered tools"
+	default 4
+
+config MCP_TOOL_NAME_MAX_LEN
+	int "Maximum tool name length"
+	default 32
+	help
+	  Maximum length for tool name and title fields.
+
+config MCP_TOOL_DESC
+	bool "Include tool description in tools/list response"
+	help
+	  Include optional description field in the tools/list response.
+
+if MCP_TOOL_DESC
+
+config MCP_TOOL_DESC_MAX_LEN
+	int "Maximum tool description length"
+	default 256
+	help
+	  Maximum length for tool description field.
+
+endif # MCP_TOOL_DESC
+
+config MCP_TOOL_SCHEMA_MAX_LEN
+	int "Maximum input/output schema length"
+	default 512
+	help
+	  Maximum length for tool input and output schema fields.
+
+config MCP_TOOL_INPUT_ARGS_MAX_LEN
+	int "Maximum input argument length"
+	default 512
+	help
+	  Maximum length for tool input arguments RPC field.
+
+config MCP_TOOL_TITLE
+	bool "Include tool title field"
+	help
+	  Include optional title field for tools. Adds memory overhead.
+
+config MCP_TOOL_OUTPUT_SCHEMA
+	bool "Include tool output schema field"
+	help
+	  Include optional output schema field for tools. Adds memory overhead.
+
+config MCP_TOOL_RESULT_MAX_LEN
+	int "Maximum tool execution result length"
+	default 256
+	help
+			Maximum length for tool execution result.
+
+config MCP_HEALTH_MONITOR_STACK_SIZE
+	int "Stack size for MCP health monitor thread"
+	default 1024
+	help
+	  Stack size in bytes for the health monitor thread.
+	  This thread performs simple periodic checks and has
+	  minimal stack requirements.
+
+config MCP_HEALTH_CHECK_INTERVAL_MS
+	int "Health monitor check interval in milliseconds"
+	default 3000
+	help
+	  How often the health monitor thread checks execution contexts
+	  for timeout conditions. Default is 3000 ms.
+
+config MCP_TOOL_EXEC_TIMEOUT_MS
+	int "Maximum execution duration in milliseconds"
+	default 600000
+	help
+	  Maximum time allowed for a tool execution before it is canceled.
+	  Default is 10 minutes (600000 ms).
+
+config MCP_TOOL_IDLE_TIMEOUT_MS
+	int "Execution idle timeout in milliseconds"
+	default 5000
+	help
+	  Maximum time allowed since last message from a tool execution
+	  before it is canceled. Default is 5000 ms.
+
+config MCP_TOOL_CANCEL_TIMEOUT_MS
+	int "Execution cancellation timeout in milliseconds"
+	default 10000
+	help
+	  Maximum time allowed for a tool to acknowledge cancellation
+	  before an error is logged. Default is 10000 ms.
+
+config MCP_CLIENT_TIMEOUT_MS
+	int "Maximum idle time for client connections in milliseconds"
+	default 30000
+	help
+	  Maximum time allowed for a client to be idle between. Default
+	  is 30000 ms.
+
+choice MCP_TRANSPORT
+	prompt "MCP Transport Mechanism"
+	default MCP_TRANSPORT_HTTP
+	help
+	  Select the transport mechanism for MCP communication.
+
+config MCP_TRANSPORT_HTTP
+	bool "HTTP transport"
+	depends on NETWORKING
+	select MIN_HEAP
+	select NET_TCP
+	select NET_IPV6
+	select NET_SOCKETS
+	select HTTP_SERVER
+	select HTTP_SERVER_CAPTURE_HEADERS
+	select UUID
+	select UUID_V4
+	select UUID_BASE64
+	select ENTROPY_GENERATOR
+	select MBEDTLS
+	select MBEDTLS_PSA_CRYPTO_C
+	select PSA_WANT_ALG_SHA_1
+	select BASE64
+	help
+	  Use HTTP for MCP transport.
+
+config MCP_TRANSPORT_MOCK
+	bool "Mock transport (for testing only)"
+	help
+	  Mock transport layer for unit testing.
+	  This option should only be used in test builds.
+	  The mock transport implements the transport_binding interface
+	  and tracks all send/disconnect calls for test verification.
+
+endchoice
+
+if MCP_TRANSPORT_HTTP
+
+config MCP_HTTP_PORT
+	int "HTTP server port"
+	default 8080
+	help
+	  Port number for the MCP HTTP server.
+
+config MCP_HTTP_ENDPOINT
+	string "MCP endpoint path"
+	default "/mcp"
+	help
+	  URL path for MCP endpoint.
+
+config MCP_HTTP_TIMEOUT_MS
+	int "HTTP request timeout in milliseconds"
+	default 500
+	help
+	  Maximum time in milliseconds to wait for an HTTP request to complete before switching
+	  from blocking mode (direct response to client) to polling mode (SSE, client has to send
+	  GET requests with an MCP_HTTP_SSE_RETRY_MS interval). To ensure exact timing, make sure
+	  MCP_HTTP_TIMEOUT_MS is divisible by MCP_HTTP_POLL_INTERVAL_MS.
+
+config MCP_HTTP_POLL_INTERVAL_MS
+	int "Response ready poll interval in milliseconds"
+	default 100
+	help
+	  HTTP layer uses a polling loop to check if a response is ready. It goes to sleep for
+	  MCP_HTTP_POLL_INTERVAL_MS at the end of each polling iteration. If no response is
+	  found within the MCP_HTTP_POLL_INTERVAL_MS limit, it switches to SSE mode. To ensure
+	  exact timing, make sure MCP_HTTP_TIMEOUT_MS is divisible by MCP_HTTP_POLL_INTERVAL_MS.
+
+config MCP_HTTP_SSE_RETRY_MS
+	int "SSE reconnection retry interval in milliseconds"
+	default 5000
+	help
+	  Time interval in milliseconds sent to clients via the SSE 'retry' field.
+	  In this implementation, the retry mechanism instructs clients how
+	  frequently to poll for new responses via GET requests. When a client
+	  receives an SSE event with this retry value, it should wait this amount
+	  of time before making the next GET request to check for additional
+	  server responses.
+
+config MCP_HTTP_LOG_ADDRESS
+	bool "Log HTTP server address on startup"
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	help
+	  Log the HTTP server's accessible address when an IP is assigned.
+	  Useful for DHCP configurations where the address is not known in advance.
+
+endif # MCP_TRANSPORT_HTTP
+
+if MCP_TRANSPORT_MOCK
+
+config MCP_MOCK_MAX_CLIENTS
+	int "Max number of mock clients"
+	default 3
+	range 1 100
+	help
+	  Maximum number of clients for mock transport testing.
+
+endif # MCP_TRANSPORT_MOCK
+
+module = MCP
+module-str = MCP Server
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # MCP_SERVER
