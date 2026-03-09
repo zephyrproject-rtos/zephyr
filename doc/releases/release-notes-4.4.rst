@@ -125,6 +125,12 @@ Deprecated APIs and options
 * POSIX
 
   * :kconfig:option:`CONFIG_XOPEN_STREAMS` was deprecated. Instead, use :kconfig:option:`CONFIG_XSI_STREAMS`
+
+* Random
+
+  * :kconfig:option:`CONFIG_CTR_DRBG_CSPRNG_GENERATOR` has been deprecrated. Instead, use
+    :kconfig:option:`CONFIG_PSA_CSPRNG_GENERATOR`.
+
 * Sensors
 
   * NXP
@@ -313,6 +319,10 @@ New APIs and options
   * The new ``voltage-scale`` property of :dtcompatible:`st,stm32u5-pwr` can be used to
     select the voltage scale manually on STM32U5 series via Devicetree. This notably
     enables usage of the USB controller at lower system clock frequencies.
+
+* Random
+
+  * :kconfig:option:`CONFIG_PSA_CSPRNG_GENERATOR`
 
 * Settings
 
