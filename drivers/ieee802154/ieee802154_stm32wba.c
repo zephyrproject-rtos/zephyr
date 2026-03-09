@@ -46,6 +46,14 @@
 
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 
+#if (SUPPORT_RADIO_SECURITY_OT_1_2 == 1)
+#define STM32WBA_MAC_KEY_SIZE           16
+#define STM32WBA_MAC_KEYS_ENTRIES_MAX   3
+#define STM32WBA_MAC_KEY_PREV_INDEX     0
+#define STM32WBA_MAC_KEY_CURR_INDEX     1
+#define STM32WBA_MAC_KEY_NEXT_INDEX     2
+#endif /* SUPPORT_RADIO_SECURITY_OT_1_2 */
+
 extern uint32_t llhwc_cmn_is_dp_slp_enabled(void);
 
 static struct stm32wba_802154_data_t stm32wba_802154_data;
@@ -845,32 +853,36 @@ static int stm32wba_802154_configure_ack_fpb(const struct ieee802154_config *con
 }
 
 #if (SUPPORT_RADIO_SECURITY_OT_1_2 == 1)
+
 static void stm32wba_802154_configure_mac_key(struct ieee802154_key *mac_keys)
 {
-	uint8_t aPrevKey[16] = {0};
-	uint8_t aCurrKey[16] = {0};
-	uint8_t aNextKey[16] = {0};
+	uint8_t aPrevKey[STM32WBA_MAC_KEY_SIZE] = {0};
+	uint8_t aCurrKey[STM32WBA_MAC_KEY_SIZE] = {0};
+	uint8_t aNextKey[STM32WBA_MAC_KEY_SIZE] = {0};
 	uint8_t aKeyIdMode = 0;
 	uint8_t aKeyId = 0;
+	uint8_t *keys[] = {aPrevKey, aCurrKey, aNextKey};
 
-	if ((mac_keys[0].key_value) != NULL) {
-		memcpy(aPrevKey, mac_keys[0].key_value, 16);
+	for (uint8_t i = 0; i < STM32WBA_MAC_KEYS_ENTRIES_MAX; mac_keys++, i++) {
+
+		if (mac_keys->key_value == NULL) {
+			break;
+		}
+
+		if (i == STM32WBA_MAC_KEY_CURR_INDEX) {
+			aKeyIdMode = mac_keys->key_id_mode;
+			aKeyId = *(mac_keys->key_id);
+		}
+		memcpy(keys[i], mac_keys->key_value, STM32WBA_MAC_KEY_SIZE);
 	}
-	if ((mac_keys[1].key_value) != NULL) {
-		aKeyIdMode = mac_keys[0].key_id_mode;
-		aKeyId = *(mac_keys[1].key_id);
-		memcpy(aCurrKey, mac_keys[1].key_value, 16);
-	}
-	if ((mac_keys[2].key_value) != NULL) {
-		memcpy(aNextKey, mac_keys[2].key_value, 16);
-	}
+
 	stm32wba_802154_ral_set_mac_key(aKeyIdMode,
 					aKeyId,
 					aPrevKey,
 					aCurrKey,
 					aNextKey);
 }
-#endif
+#endif /* SUPPORT_RADIO_SECURITY_OT_1_2 */
 
 static int stm32wba_802154_configure(const struct device *dev,
 				     enum ieee802154_config_type type,
