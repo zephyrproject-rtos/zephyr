@@ -300,15 +300,8 @@ endchoice # DYNAMIC_THREAD_PREFER
 
 endif # DYNAMIC_THREADS
 
-config SCHED_DUMB
-	bool "Simple linked-list ready queue"
-	select DEPRECATED
-	help
-	  Deprecated in favour of SCHED_SIMPLE.
-
 choice SCHED_ALGORITHM
 	prompt "Scheduler priority queue algorithm"
-	default SCHED_SIMPLE if SCHED_DUMB
 	default SCHED_SIMPLE
 	help
 	  The kernel can be built with several choices for the
@@ -360,15 +353,8 @@ config SCHED_MULTIQ
 
 endchoice # SCHED_ALGORITHM
 
-config WAITQ_DUMB
-	bool "Simple linked-list wait_q"
-	select DEPRECATED
-	help
-	  Deprecated in favour of WAITQ_SIMPLE.
-
 choice WAITQ_ALGORITHM
 	prompt "Wait queue priority algorithm"
-	default WAITQ_SIMPLE if WAITQ_DUMB
 	default WAITQ_SIMPLE
 	help
 	  The wait_q abstraction used in IPC primitives to pend
