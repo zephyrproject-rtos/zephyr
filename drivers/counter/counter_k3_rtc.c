@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(counter_ti_k3_rtc, CONFIG_COUNTER_LOG_LEVEL);
 #define RTC_UNLOCK_MASK			BIT(23)
 #define RTC_O32K_OSC_MASK		BIT(21)
 #define RTC_SYNCPEND_STATUS_MASK	BIT_MASK(2)
+#define RTC_SUB_S_SHIFT			16
 
 #define RTC_IRQ_ALARM1_MASK		BIT(0)
 #define RTC_IRQ_ALARM2_MASK		BIT(1)
@@ -67,7 +68,6 @@ struct k3_rtc_counter_cfg {
 	DEVICE_MMIO_NAMED_ROM(reg_base);
 
 	void (*irq_config_func)(void);
-	uint32_t osc_freq;
 };
 
 struct k3_rtc_counter_data {
@@ -138,12 +138,15 @@ static int k3_counter_stop(const struct device *dev)
 static int k3_counter_get_value(const struct device *dev, uint32_t *ticks)
 {
 	k3_rtc_regs_t *rtc_regs = DEV_REGS(dev);
+	const uint32_t freq = DEV_CFG(dev)->counter_info.freq;
 
 	if (ticks == NULL) {
 		return -EINVAL;
 	}
 
-	*ticks = rtc_regs->S_CNT_LSW;
+	uint32_t seconds_lsw = rtc_regs->S_CNT_LSW;
+	uint32_t sub_s = rtc_regs->SUB_S_CNT;
+	*ticks = (seconds_lsw * freq) + sub_s;
 
 	return 0;
 }
@@ -155,6 +158,7 @@ static int k3_counter_reset(const struct device *dev)
 
 	rtc_regs->S_CNT_LSW = 0;
 	rtc_regs->S_CNT_MSW = 0;
+	rtc_regs->SUB_S_CNT = 0;
 
 	ret = k3_rtc_fence(dev);
 	if (ret != 0) {
@@ -168,13 +172,15 @@ static int k3_counter_reset(const struct device *dev)
 static int k3_counter_set_value(const struct device *dev, uint32_t ticks)
 {
 	k3_rtc_regs_t *rtc_regs = DEV_REGS(dev);
+	const uint32_t freq = DEV_CFG(dev)->counter_info.freq;
 	int ret;
 
 	if (ticks == 0) {
 		return -EINVAL;
 	}
 
-	rtc_regs->S_CNT_LSW = ticks;
+	rtc_regs->S_CNT_LSW = ticks / freq;
+	rtc_regs->SUB_S_CNT = ticks % freq;
 	rtc_regs->S_CNT_MSW = 0;
 
 	ret = k3_rtc_fence(dev);
@@ -191,6 +197,8 @@ static int k3_counter_set_alarm(const struct device *dev, uint8_t chan_id,
 {
 	k3_rtc_regs_t *rtc_regs = DEV_REGS(dev);
 	struct k3_rtc_counter_data *data = DEV_DATA(dev);
+	const uint32_t freq = DEV_CFG(dev)->counter_info.freq;
+	uint32_t seconds_lsw, seconds_msw;
 	int ret, key;
 
 	if (chan_id > 1) {
@@ -216,15 +224,17 @@ static int k3_counter_set_alarm(const struct device *dev, uint8_t chan_id,
 	}
 
 	key = irq_lock();
+	seconds_lsw = (uint32_t)data->alarm_cfg[chan_id].ticks / freq;
+	seconds_msw = (((uint32_t)data->alarm_cfg[chan_id].ticks) % freq) << RTC_SUB_S_SHIFT;
 
 	if (chan_id == 0) {
-		rtc_regs->ON_OFF_S_CNT_LSW = (uint32_t)data->alarm_cfg[chan_id].ticks;
-		rtc_regs->ON_OFF_S_CNT_MSW = 0;
+		rtc_regs->ON_OFF_S_CNT_LSW = seconds_lsw;
+		rtc_regs->ON_OFF_S_CNT_MSW = seconds_msw;
 		rtc_regs->IRQSTATUS_SYS = RTC_IRQ_ALARM1_MASK;
 		rtc_regs->IRQENABLE_SET_SYS = RTC_IRQ_ALARM1_MASK;
 	} else {
-		rtc_regs->OFF_ON_S_CNT_LSW = (uint32_t)data->alarm_cfg[chan_id].ticks;
-		rtc_regs->OFF_ON_S_CNT_MSW = 0;
+		rtc_regs->OFF_ON_S_CNT_LSW = seconds_lsw;
+		rtc_regs->OFF_ON_S_CNT_MSW = seconds_msw;
 		rtc_regs->IRQSTATUS_SYS = RTC_IRQ_ALARM2_MASK;
 		rtc_regs->IRQENABLE_SET_SYS = RTC_IRQ_ALARM2_MASK;
 	}
@@ -302,6 +312,7 @@ static uint32_t k3_counter_get_frequency(const struct device *dev)
 static int k3_counter_get_value_64(const struct device *dev, uint64_t *ticks)
 {
 	k3_rtc_regs_t *rtc_regs = DEV_REGS(dev);
+	const uint32_t freq = DEV_CFG(dev)->counter_info.freq;
 
 	if (ticks == NULL) {
 		return -EINVAL;
@@ -309,8 +320,9 @@ static int k3_counter_get_value_64(const struct device *dev, uint64_t *ticks)
 
 	uint32_t seconds_low = rtc_regs->S_CNT_LSW;
 	uint32_t seconds_high = rtc_regs->S_CNT_MSW;
+	uint32_t sub_s = rtc_regs->SUB_S_CNT
 
-	*ticks = ((uint64_t)seconds_high << 32) | (uint64_t)seconds_low;
+	*ticks = ((((uint64_t)seconds_high << 32) | (uint64_t)seconds_low) * freq) + sub_s;
 
 	return 0;
 }
@@ -318,14 +330,16 @@ static int k3_counter_get_value_64(const struct device *dev, uint64_t *ticks)
 static int k3_counter_set_value_64(const struct device *dev, uint64_t ticks)
 {
 	k3_rtc_regs_t *rtc_regs = DEV_REGS(dev);
+	const uint32_t freq = DEV_CFG(dev)->counter_info.freq;
 	int ret;
 
 	if (ticks == 0) {
 		return -EINVAL;
 	}
 
-	rtc_regs->S_CNT_LSW = ticks;
-	rtc_regs->S_CNT_MSW = (uint32_t)(ticks >> 32);
+	rtc_regs->S_CNT_LSW = ticks / freq;
+	rtc_regs->SUB_S_CNT = ticks % freq;
+	rtc_regs->S_CNT_MSW = ((uint32_t)(ticks >> 32)) / freq;
 
 	ret = k3_rtc_fence(dev);
 	if (ret != 0) {
@@ -347,6 +361,8 @@ static int k3_counter_set_alarm_64(const struct device *dev, uint8_t chan_id,
 {
 	k3_rtc_regs_t *rtc_regs = DEV_REGS(dev);
 	struct k3_rtc_counter_data *data = DEV_DATA(dev);
+	const uint32_t freq = DEV_CFG(dev)->counter_info.freq;
+	uint32_t seconds_lsw, seconds_msw;
 	int ret, key;
 
 	if (chan_id > 1) {
@@ -372,15 +388,18 @@ static int k3_counter_set_alarm_64(const struct device *dev, uint8_t chan_id,
 	}
 
 	key = irq_lock();
+	seconds_lsw = (uint32_t)data->alarm_cfg[chan_id].ticks / freq;
+	seconds_msw = (((uint32_t)data->alarm_cfg[chan_id].ticks) % freq) << RTC_SUB_S_SHIFT |
+		      ((uint32_t)(data->alarm_cfg[chan_id].ticks >> 32)) / freq;
 
 	if (chan_id == 0) {
-		rtc_regs->ON_OFF_S_CNT_LSW = (uint32_t)data->alarm_cfg[chan_id].ticks;
-		rtc_regs->ON_OFF_S_CNT_MSW = (uint32_t)(data->alarm_cfg[chan_id].ticks >> 32);
+		rtc_regs->ON_OFF_S_CNT_LSW = seconds_lsw;
+		rtc_regs->ON_OFF_S_CNT_MSW = seconds_msw;
 		rtc_regs->IRQSTATUS_SYS = RTC_IRQ_ALARM1_MASK;
 		rtc_regs->IRQENABLE_SET_SYS = RTC_IRQ_ALARM1_MASK;
 	} else {
-		rtc_regs->OFF_ON_S_CNT_LSW = (uint32_t)data->alarm_cfg[chan_id].ticks;
-		rtc_regs->OFF_ON_S_CNT_MSW = (uint32_t)(data->alarm_cfg[chan_id].ticks >> 32);
+		rtc_regs->OFF_ON_S_CNT_LSW = seconds_lsw;
+		rtc_regs->OFF_ON_S_CNT_MSW = seconds_msw;
 		rtc_regs->IRQSTATUS_SYS = RTC_IRQ_ALARM2_MASK;
 		rtc_regs->IRQENABLE_SET_SYS = RTC_IRQ_ALARM2_MASK;
 	}
@@ -453,7 +472,7 @@ static int k3_counter_init(const struct device *dev)
 	}
 
 	/* 4 clock cycles for sync */
-	data->sync_timeout_us = (USEC_PER_SEC / config->osc_freq) * 4;
+	data->sync_timeout_us = (USEC_PER_SEC / config->counter_info.freq) * 4;
 
 	/* Enable 32k oscillator dependency */
 	rtc_regs->GENRAL_CTL |= RTC_O32K_OSC_MASK;
@@ -508,7 +527,7 @@ static const struct counter_driver_api k3_counter_api = {
 	static struct k3_rtc_counter_cfg k3_counter_cfg_##i = {				\
 		.counter_info =								\
 			{								\
-				.freq = 1,						\
+				.freq = DT_INST_PROP(i, clock_frequency),		\
 				COND_CODE_1(CONFIG_COUNTER_64BITS_TICKS,		\
 					(.max_top_value_64 = RTC_MAX_TOP_VALUE_64,),	\
 					(.max_top_value = RTC_MAX_TOP_VALUE,))		\
@@ -517,7 +536,6 @@ static const struct counter_driver_api k3_counter_api = {
 			},								\
 		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(i)),			\
 		.irq_config_func = ti_k3_counter_irq_config_##i,			\
-		.osc_freq = DT_INST_PROP(i, clock_frequency)				\
 	};										\
 	DEVICE_DT_INST_DEFINE(i,							\
 		k3_counter_init,							\
