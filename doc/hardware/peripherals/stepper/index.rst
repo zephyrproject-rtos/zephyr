@@ -102,13 +102,13 @@ API Reference
 
 A common set of functions which should be implemented by all stepper drivers.
 
-.. doxygengroup:: stepper_hw_driver_interface
+.. doxygengroup:: stepper_hw_driver
 
 .. _stepper-ctrl-api-reference:
 
 A common set of functions which should be implemented by all stepper motion controllers.
 
-.. doxygengroup:: stepper_ctrl_interface
+.. doxygengroup:: stepper_ctrl
 
 Stepper motion controller specific APIs
 ***************************************
