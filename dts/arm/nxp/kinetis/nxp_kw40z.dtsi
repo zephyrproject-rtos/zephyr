@@ -109,7 +109,7 @@
 			#size-cells = <0>;
 			reg = <0x40066000 0x1000>;
 			interrupts = <8 0>;
-			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1034 6>;
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x1034, 6)>;
 			status = "disabled";
 		};
 
@@ -120,7 +120,7 @@
 			#size-cells = <0>;
 			reg = <0x40067000 0x1000>;
 			interrupts = <9 0>;
-			clocks = <&sim KINETIS_SIM_CORESYS_CLK 0x1034 7>;
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_CORESYS_CLK, 0x1034, 7)>;
 			status = "disabled";
 		};
 
@@ -128,7 +128,7 @@
 			compatible = "nxp,lpuart";
 			reg = <0x40054000 0x18>;
 			interrupts = <12 0>;
-			clocks = <&sim KINETIS_SIM_CORESYS_CLK 0x1038 20>;
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_CORESYS_CLK, 0x1038, 20)>;
 
 			status = "disabled";
 		};
@@ -136,19 +136,19 @@
 		porta: pinmux@40049000 {
 			compatible = "nxp,port-pinmux";
 			reg = <0x40049000 0xa4>;
-			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 9>;
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x1038, 9)>;
 		};
 
 		portb: pinmux@4004a000 {
 			compatible = "nxp,port-pinmux";
 			reg = <0x4004a000 0xa4>;
-			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 10>;
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x1038, 10)>;
 		};
 
 		portc: pinmux@4004b000 {
 			compatible = "nxp,port-pinmux";
 			reg = <0x4004b000 0xa4>;
-			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 11>;
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x1038, 11)>;
 		};
 
 		gpioa: gpio@400ff000 {
@@ -184,7 +184,7 @@
 			compatible = "nxp,dspi";
 			reg = <0x4002c000 0x9c>;
 			interrupts = <10 3>;
-			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103c 12>;
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x103c, 12)>;
 			status = "disabled";
 
 			#address-cells = <1>;
@@ -195,7 +195,7 @@
 			compatible = "nxp,dspi";
 			reg = <0x4002d000 0x9c>;
 			interrupts = <29 3>;
-			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103c 13>;
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x103c, 13)>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;

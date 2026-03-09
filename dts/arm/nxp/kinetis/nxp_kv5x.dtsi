@@ -166,7 +166,7 @@
 			#size-cells = <0>;
 			reg = <0x40066000 0x1000>;
 			interrupts = <24 0>;
-			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1034 6>;
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x1034, 6)>;
 			status = "disabled";
 		};
 
@@ -177,38 +177,38 @@
 			#size-cells = <0>;
 			reg = <0x40067000 0x1000>;
 			interrupts = <25 0>;
-			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1034 7>;
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x1034, 7)>;
 			status = "disabled";
 		};
 
 		porta: pinmux@40049000 {
 			compatible = "nxp,port-pinmux";
 			reg = <0x40049000 0x1000>;
-			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 9>;
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x1038, 9)>;
 		};
 
 		portb: pinmux@4004a000 {
 			compatible = "nxp,port-pinmux";
 			reg = <0x4004a000 0x1000>;
-			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 10>;
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x1038, 10)>;
 		};
 
 		portc: pinmux@4004b000 {
 			compatible = "nxp,port-pinmux";
 			reg = <0x4004b000 0x1000>;
-			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 11>;
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x1038, 11)>;
 		};
 
 		portd: pinmux@4004c000 {
 			compatible = "nxp,port-pinmux";
 			reg = <0x4004c000 0x1000>;
-			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 12>;
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x1038, 12)>;
 		};
 
 		porte: pinmux@4004d000 {
 			compatible = "nxp,port-pinmux";
 			reg = <0x4004d000 0x1000>;
-			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 13>;
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x1038, 13)>;
 		};
 
 		ftm0: ftm@40038000 {
@@ -248,7 +248,8 @@
 			reg = <0x4002c000 0x1000>;
 			interrupts = <26 3>;
 			status = "disabled";
-			clocks = <&sim KINETIS_SIM_FAST_PERIPHERAL_CLK 0x103c 12>;
+			clocks = <&sim
+				  KINETIS_SIM_CLOCK(KINETIS_SIM_FAST_PERIPHERAL_CLK, 0x103c, 12)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
@@ -258,7 +259,8 @@
 			reg = <0x4002d000 0x1000>;
 			interrupts = <27 3>;
 			status = "disabled";
-			clocks = <&sim KINETIS_SIM_FAST_PERIPHERAL_CLK 0x103c 13>;
+			clocks = <&sim
+				  KINETIS_SIM_CLOCK(KINETIS_SIM_FAST_PERIPHERAL_CLK, 0x103c, 13)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
@@ -268,7 +270,8 @@
 			reg = <0x400ac000 0x1000>;
 			interrupts = <65 3>;
 			status = "disabled";
-			clocks = <&sim KINETIS_SIM_FAST_PERIPHERAL_CLK 0x1030 12>;
+			clocks = <&sim
+				  KINETIS_SIM_CLOCK(KINETIS_SIM_FAST_PERIPHERAL_CLK, 0x1030, 12)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
@@ -278,7 +281,8 @@
 			reg = <0x4006a000 0x1000>;
 			interrupts = <31 0>, <32 0>;
 			interrupt-names = "status", "error";
-			clocks = <&sim KINETIS_SIM_FAST_PERIPHERAL_CLK 0x1034 10>;
+			clocks = <&sim
+				  KINETIS_SIM_CLOCK(KINETIS_SIM_FAST_PERIPHERAL_CLK, 0x1034, 10)>;
 			status = "disabled";
 		};
 
@@ -287,7 +291,8 @@
 			reg = <0x4006b000 0x1000>;
 			interrupts = <33 0>, <34 0>;
 			interrupt-names = "status", "error";
-			clocks = <&sim KINETIS_SIM_FAST_PERIPHERAL_CLK 0x1034 11>;
+			clocks = <&sim
+				  KINETIS_SIM_CLOCK(KINETIS_SIM_FAST_PERIPHERAL_CLK, 0x1034, 11)>;
 			status = "disabled";
 		};
 
@@ -296,7 +301,8 @@
 			reg = <0x4006c000 0x1000>;
 			interrupts = <35 0>, <36 0>;
 			interrupt-names = "status", "error";
-			clocks = <&sim KINETIS_SIM_FAST_PERIPHERAL_CLK 0x1034 12>;
+			clocks = <&sim
+				  KINETIS_SIM_CLOCK(KINETIS_SIM_FAST_PERIPHERAL_CLK, 0x1034, 12)>;
 			status = "disabled";
 		};
 
@@ -305,7 +311,8 @@
 			reg = <0x4006d000 0x1000>;
 			interrupts = <44 0>, <45 0>;
 			interrupt-names = "status", "error";
-			clocks = <&sim KINETIS_SIM_FAST_PERIPHERAL_CLK 0x1034 13>;
+			clocks = <&sim
+				  KINETIS_SIM_CLOCK(KINETIS_SIM_FAST_PERIPHERAL_CLK, 0x1034, 13)>;
 			status = "disabled";
 		};
 
@@ -314,7 +321,8 @@
 			reg = <0x400ea000 0x1000>;
 			interrupts = <46 0>, <47 0>;
 			interrupt-names = "status", "error";
-			clocks = <&sim KINETIS_SIM_FAST_PERIPHERAL_CLK 0x1028 10>;
+			clocks = <&sim
+				  KINETIS_SIM_CLOCK(KINETIS_SIM_FAST_PERIPHERAL_CLK, 0x1028, 10)>;
 			status = "disabled";
 		};
 
@@ -323,7 +331,8 @@
 			reg = <0x400eb000 0x1000>;
 			interrupts = <28 0>, <29 0>;
 			interrupt-names = "status", "error";
-			clocks = <&sim KINETIS_SIM_FAST_PERIPHERAL_CLK 0x1028 11>;
+			clocks = <&sim
+				  KINETIS_SIM_CLOCK(KINETIS_SIM_FAST_PERIPHERAL_CLK, 0x1028, 11)>;
 			status = "disabled";
 		};
 	};
