@@ -220,43 +220,46 @@ static int tmag5170_convert_magn_reading_to_gauss(struct sensor_value *output,
 	/* The sensor returns data in mT, we need to convert it to Gauss */
 	uint32_t max_range_gauss = max_range_mt * TMAG5170_MT_TO_GAUSS_RATIO;
 
-	/* Convert from 2's complementary system */
+	/* Convert from 2's complementary system, as it is shown in datasheet.
+	 * Since the DATA_TYPE register is not written (default=0x0),
+	 * the formula for 16-bit sensor data must be applied.
+	 */
 	int64_t result = chan_reading - ((chan_reading & 0x8000) << 1);
 
 	result *= max_range_gauss;
 
-	/* Scale to increase accuracy */
-	result *= 100000;
+	/* Scale to sensor_value micro-units */
+	result *= 1000000LL;
 
 	/* Divide as it is shown in datasheet */
-	result /= 65536;
+	result /= 65536LL;
 
-	/* Remove scale from the final result */
-	output->val1 = result / 100000;
-	output->val2 = result % 100000;
-
-	return 0;
+	return sensor_value_from_micro(output, result);
 }
 
 static void tmag5170_convert_temp_reading_to_celsius(struct sensor_value *output,
 						     uint16_t chan_reading)
 {
-	int32_t result = chan_reading - TMAG5170_T_ADC_T0;
+	/* Apply value conversion as shown in the datasheet */
+	int64_t result = chan_reading - TMAG5170_T_ADC_T0;
 
-	result = (TMAG5170_T_SENS_T0 * 100000) + (100000 * result / (int32_t)TMAG5170_T_ADC_RES);
+	result = (TMAG5170_T_SENS_T0 * 1000000LL) +
+		 (1000000LL * result / (int64_t)TMAG5170_T_ADC_RES);
 
-	output->val1 = result / 100000;
-	output->val2 = (result % 100000) * 10;
+	(void)sensor_value_from_micro(output, result);
 }
 
 static void tmag5170_convert_angle_reading_to_degrees(struct sensor_value *output,
 						      uint16_t chan_reading)
 {
-	/* 12 MSBs store the integer part of the result,
+	/* Apply value conversion as shown in the datasheet.
+	 * 12 MSBs store the integer part of the result,
 	 * 4 LSBs store the fractional part of the result
 	 */
-	output->val1 = chan_reading >> 4;
-	output->val2 = ((chan_reading & 0xF) * 1000000) / 16;
+	const int64_t result =
+		(chan_reading >> 4) * 1000000LL + ((chan_reading & 0xF) * 1000000LL) / 16LL;
+
+	(void)sensor_value_from_micro(output, result);
 }
 
 static int tmag5170_sample_fetch(const struct device *dev, enum sensor_channel chan)
