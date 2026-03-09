@@ -31,11 +31,19 @@ extern "C" {
 
 /** Time as returned by SNTP API, fractional seconds since 1 Jan 1970 */
 struct sntp_time {
-	uint64_t seconds;        /**< Second value */
-	uint32_t fraction;       /**< Fractional seconds value */
+	/** Second value */
+	uint64_t seconds;
+	/** Fractional seconds value */
+	uint32_t fraction;
+	/** Estimated delay between server sending response and client
+	 *  receiving in microseconds.
+	 */
+	uint32_t rsp_delay_us;
 #if defined(CONFIG_SNTP_UNCERTAINTY)
-	uint64_t uptime_us;      /**< Uptime in microseconds */
-	uint32_t uncertainty_us; /**< Uncertainty in microseconds */
+	/** Uptime in microseconds */
+	uint64_t uptime_us;
+	/** Uncertainty in microseconds */
+	uint32_t uncertainty_us;
 #endif
 };
 
