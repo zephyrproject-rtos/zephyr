@@ -158,6 +158,13 @@ SECTIONS
   #include <zephyr/linker/rel-sections.ld>
   #include <zephyr/linker/llext-sections.ld>
 
+  .rtc.force_slow (NOLOAD) :
+  {
+    . = ALIGN(4);
+    *(.rtc.force_slow .rtc.force_slow.*)
+    . = ALIGN(4);
+  } GROUP_LINK_IN(RAMABLE_REGION)
+
   /* --- START OF IRAM --- */
 
   /* Send .iram0 code to iram */
@@ -322,7 +329,8 @@ SECTIONS
     *libzephyr.a:esp_rom_efuse.*(.literal .literal.* .text .text.*)
 
     /* [mapping:esp_mm] */
-    *libzephyr.a:esp_cache.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_cache_utils.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_cache_msync.*(.literal .literal.* .text .text.*)
 
     . = ALIGN(16);
 
@@ -463,7 +471,8 @@ SECTIONS
     *libzephyr.a:flash_ops.*(.rodata .rodata.*)
 
     /* [mapping:esp_mm] */
-    *libzephyr.a:esp_cache.*(.rodata .rodata.*)
+    *libzephyr.a:esp_cache_utils.*(.rodata .rodata.*)
+    *libzephyr.a:esp_cache_msync.*(.rodata .rodata.*)
 
     /* [mapping:esp_hw_support] */
     *(.rodata.esp_cpu_stall)

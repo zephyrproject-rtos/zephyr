@@ -14,16 +14,26 @@
 
 #define RETAINED_MEM_CONST 0x01234567
 
-#define WAKE_GPIOS DT_ALIAS(wakeup_gpios)
+#define WAKE_GPIOS DT_ALIAS(wakeup_pins)
 
 #if !DT_NODE_HAS_STATUS_OKAY(WAKE_GPIOS)
-#error "Unsupported: wakeup-gpios node/alias not defined"
+#error "Unsupported: wakeup-pins node/alias not defined"
 #endif
 
 #define BUILD_GPIO_SPEC(node_id, prop, idx) GPIO_DT_SPEC_GET_BY_IDX(node_id, prop, idx),
 
 static const struct gpio_dt_spec wake_gpios[] = {
 	DT_FOREACH_PROP_ELEM(WAKE_GPIOS, gpios, BUILD_GPIO_SPEC)};
+
+static esp_sleep_wakeup_cause_t get_wakeup_cause(void)
+{
+	uint32_t causes = esp_sleep_get_wakeup_causes();
+
+	if (causes == 0) {
+		return ESP_SLEEP_WAKEUP_UNDEFINED;
+	}
+	return (esp_sleep_wakeup_cause_t)__builtin_ctz(causes);
+}
 
 void dev_enable_wakeup(const struct device *dev)
 {
@@ -111,7 +121,7 @@ int main(void)
 		dev_enable_wakeup(dev_gpio);
 	}
 
-	esp_sleep_wakeup_cause_t sleep_wakeup_cause = esp_sleep_get_wakeup_cause();
+	esp_sleep_wakeup_cause_t sleep_wakeup_cause = get_wakeup_cause();
 
 	print_counter(sleep_wakeup_cause);
 

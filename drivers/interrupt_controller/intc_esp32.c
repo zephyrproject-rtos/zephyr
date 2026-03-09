@@ -617,6 +617,22 @@ int esp_intr_alloc_intrstatus(int source,
 	ret->vector_desc = vd;
 	ret->shared_vector_desc = vd->shared_vec_info;
 
+#if SOC_CPU_HAS_FLEXIBLE_INTC
+	/*
+	 * Set interrupt priority and type BEFORE enabling the interrupt.
+	 * On RISC-V chips with flexible INTC, the default priority is 0 which
+	 * would cause the interrupt to be masked if the threshold is >= 1.
+	 */
+	int level = esp_intr_flags_to_level(flags);
+	esp_cpu_intr_set_priority(intr, level);
+
+	if (flags & ESP_INTR_FLAG_EDGE) {
+		esp_cpu_intr_set_type(intr, ESP_CPU_INTR_TYPE_EDGE);
+	} else {
+		esp_cpu_intr_set_type(intr, ESP_CPU_INTR_TYPE_LEVEL);
+	}
+#endif
+
 	/* Enable int at CPU-level; */
 	irq_enable(intr);
 
@@ -627,18 +643,6 @@ int esp_intr_alloc_intrstatus(int source,
 	if (flags & ESP_INTR_FLAG_INTRDISABLED) {
 		esp_intr_disable(ret);
 	}
-
-#if SOC_CPU_HAS_FLEXIBLE_INTC
-	/* Extract the level from the interrupt passed flags */
-	int level = esp_intr_flags_to_level(flags);
-	esp_cpu_intr_set_priority(intr, level);
-
-	if (flags & ESP_INTR_FLAG_EDGE) {
-		esp_cpu_intr_set_type(intr, ESP_CPU_INTR_TYPE_EDGE);
-	} else {
-		esp_cpu_intr_set_type(intr, ESP_CPU_INTR_TYPE_LEVEL);
-	}
-#endif
 
 #if SOC_INT_PLIC_SUPPORTED
 	/* Make sure the interrupt is not delegated to user mode (IDF uses machine mode only) */
