@@ -96,8 +96,16 @@ static int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *exp
 	}
 
 #if defined(CONFIG_SNTP_UNCERTAINTY)
+	struct timespec dest_ts;
+	int ret;
 
-	int64_t dest_ts_us = k_ticks_to_us_near64(k_uptime_ticks());
+	ret = sys_clock_gettime(SYS_CLOCK_REALTIME, &dest_ts);
+	if (ret < 0) {
+		return ret;
+	}
+
+	int64_t dest_ts_us = (USEC_PER_SEC * (int64_t)(dest_ts.tv_sec + OFFSET_1970_JAN_1)) +
+			     (dest_ts.tv_nsec / NSEC_PER_USEC);
 	int64_t orig_ts_us =
 		q32_32_s_to_ll_us(expected_orig_ts->seconds, expected_orig_ts->fraction);
 
