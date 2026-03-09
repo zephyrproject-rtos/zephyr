@@ -398,6 +398,16 @@
 				height = <448>;
 				busy-gpios = <&test_gpio 0 0>;
 			};
+
+			test_mipi_dbi_ili9163c: ili9163c@23 {
+				compatible = "ilitek,ili9163c";
+				reg = <23>;
+				mipi-max-frequency = <25000000>;
+				pixel-format = <0>;
+				rotation = <270>;
+				width = <128>;
+				height = <160>;
+			};
 		};
 
 		test_mipi_dbi_xfr_16bit_write_only {
@@ -419,6 +429,17 @@
 				rotation = <270>;
 				width = <320>;
 				height = <240>;
+			};
+
+			test_mipi_dbi_xfr_16bit_ili163c: ili9163c@1 {
+				compatible = "ilitek,ili9163c";
+				reg = <1>;
+				mipi-max-frequency = <25000000>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+				pixel-format = <0>;
+				rotation = <270>;
+				width = <128>;
+				height = <160>;
 			};
 		};
 
