@@ -66,6 +66,14 @@ API Changes
       * :kconfig:option:`CONFIG_XTENSA_CACHED_REGION`
       * :kconfig:option:`CONFIG_XTENSA_UNCACHED_REGION`
 
+* Bluetooth
+
+  * Controller
+
+    * :kconfig:option:`CONFIG_BT_CTLR_ADV_AUX_SET`, :kconfig:option:`CONFIG_BT_CTLR_ADV_SYNC_SET`
+      and :kconfig:option:`CONFIG_BT_CTLR_ADV_DATA_BUF_MAX` no longer require
+      :kconfig:option:`CONFIG_BT_CTLR_ADVANCED_FEATURES`
+
 Removed APIs and options
 ========================
 
