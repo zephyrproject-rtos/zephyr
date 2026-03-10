@@ -1,0 +1,18 @@
+common:
+  tags:
+    - drivers
+    - mux
+  harness: ztest
+
+tests:
+  drivers.mux.nxp_inputmux:
+    platform_allow:
+      - mimxrt595_evk/mimxrt595s/cm33
+    integration_platforms:
+      - mimxrt595_evk/mimxrt595s/cm33
+
+  drivers.mux.nxp_xbar:
+    platform_allow:
+      - mimxrt1050_evk/mimxrt1052/hyperflash
+    integration_platforms:
+      - mimxrt1050_evk/mimxrt1052/hyperflash

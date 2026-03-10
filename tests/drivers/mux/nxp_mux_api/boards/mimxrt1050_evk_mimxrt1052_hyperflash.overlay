@@ -1,0 +1,73 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Test overlay for the nxp_xbar driver on mimxrt1050_evk/mimxrt1052/hyperflash.
+ *
+ * XBAR1 (base 0x403bc000) is a crossbar switch that routes signals between
+ * on-chip peripherals.  The test uses signal index 0 on both input and output
+ * sides:
+ *   - XBAR1 input  0 == kXBAR1_InputLogicLow  (always logic-0, harmless)
+ *   - XBAR1 output 0 == kXBAR1_OutputDmaChMuxReq30
+ *
+ * Routing LOGIC_LOW → DMA_CH_MUX_REQ30 does not trigger any active DMA
+ * channel in the default board configuration and is therefore safe for a
+ * driver API test.
+ *
+ * nxp_xbar cell layout (mux-states / mux-controls):
+ *   input   – XBAR input signal index  (xbar_input_signal_t)
+ *   output  – XBAR output signal index (xbar_output_signal_t)
+ *   enable  – 1 to write the routing register, 0 to skip (3-cell mux-states only)
+ *
+ * Test topology
+ * ─────────────
+ *  test_mux_state_node  mux-states  (3-cell)
+ *    idx 0: input=0 output=0 enable=1  → active route, used by test_configure_default_idx0
+ *    idx 1: input=0 output=1 enable=0  → skipped route (enable=0 early-exit path)
+ *
+ *  test_mux_ctrl_node   mux-controls (2-cell, len==2)
+ *    idx 0: input=0 output=0           → accepted by driver; state arg = enable flag
+ *
+ *  alias test-mux → &xbar1
+ */
+
+/ {
+	aliases {
+		test-mux = &xbar1;
+	};
+
+	/*
+	 * Consumer node using mux-controls (2-cell specifier).
+	 * Passed to mux_configure(state=1) to exercise the 2-cell code path
+	 * (driver accepts len >= 2, uses state arg as the enable flag).
+	 * Also used to verify mux_configure_default() returns -ESRCH (no
+	 * embedded default state in mux-controls entries).
+	 */
+	test_mux_ctrl_node: test-mux-ctrl {
+		compatible = "test-nxp-mux-consumer";
+		mux-controls = <&xbar1 0 0>;
+		mux-control-names = "sig0-ctrl";
+	};
+
+	/*
+	 * Consumer node using mux-states (3-cell specifier).
+	 *
+	 * idx 0 (enable=1): exercises the active routing code path – the
+	 *   driver performs a read-modify-write on the XBAR SEL register.
+	 *
+	 * idx 1 (enable=0): exercises the early-exit path inside nxp_xbar_configure()
+	 *   where the function returns 0 without touching any hardware register.
+	 */
+	test_mux_state_node: test-mux-state {
+		compatible = "test-nxp-mux-consumer";
+		mux-states = <&xbar1 0 0 1>,
+			     <&xbar1 0 1 0>;
+		mux-state-names = "sig0-state", "sig1-state";
+	};
+};
+
+/* Enable XBAR1; the CCM clock node (&ccm) is already active on RT1050. */
+&xbar1 {
+	status = "okay";
+};

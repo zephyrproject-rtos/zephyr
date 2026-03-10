@@ -1,0 +1,16 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Test consumer node for NXP MUX driver API tests (nxp_inputmux, nxp_xbar).
+
+  Used in board overlays to create test nodes that reference the real MUX
+  controller (inputmux or xbar) with either mux-controls (2-cell) or
+  mux-states (3-cell) properties, exercising both the mux-controls and
+  mux-states code paths of the MUX API.
+
+compatible: "test-nxp-mux-consumer"
+
+include:
+  - base.yaml
+  - mux-consumer.yaml

@@ -52,10 +52,6 @@ MUX_CONTROL_DT_SPEC_DEFINE_ALL(TEST_STATE_NODE);
 #define CH1_STATE  MUX_CONTROL_DT_GET_BY_IDX(TEST_STATE_NODE, 0)
 #define CH3_STATE  MUX_CONTROL_DT_GET_BY_IDX(TEST_STATE_NODE, 1)
 
-/* -------------------------------------------------------------------------
- * Suite-level setup / teardown (platform-specific)
- * -----------------------------------------------------------------------*/
-
 #ifdef CONFIG_ARCH_POSIX
 /*
  * On native_sim the DT address (0x40000000) is used directly as a host
@@ -225,7 +221,6 @@ ZTEST(reg_mux, test_configure_default)
 	uint32_t state;
 	int ret;
 
-	/* ch1: cells = {1, 10}, mux_configure_default uses cells[len-1] = 10 */
 	ret = mux_configure_default(test_mux_dev, CH1_STATE);
 	zassert_equal(ret, 0, "mux_configure_default ch1 failed: %d", ret);
 
@@ -234,7 +229,6 @@ ZTEST(reg_mux, test_configure_default)
 	zassert_equal(state, 10U,
 		      "ch1 default state: expected 10, got %u", state);
 
-	/* ch3: cells = {3, 7}, mux_configure_default uses cells[len-1] = 7 */
 	ret = mux_configure_default(test_mux_dev, CH3_STATE);
 	zassert_equal(ret, 0, "mux_configure_default ch3 failed: %d", ret);
 

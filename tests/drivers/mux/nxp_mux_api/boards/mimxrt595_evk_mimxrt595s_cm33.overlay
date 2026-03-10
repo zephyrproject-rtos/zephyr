@@ -1,0 +1,71 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Test overlay for the nxp_inputmux driver on mimxrt595_evk/mimxrt595s/cm33.
+ *
+ * The INPUTMUX peripheral (base 0x26000, size 0x800) routes trigger signals
+ * between peripherals.  The test writes to two register slots that are not
+ * activated by any other enabled peripheral in this board's default
+ * configuration, so the test cannot disrupt normal board operation.
+ *
+ * nxp_inputmux cell layout (mux-states / mux-controls):
+ *   offset  – byte offset from the INPUTMUX base into its register array
+ *   mask    – bitmask of the field within that register word
+ *   value   – value to place into the field (3-cell mux-states only)
+ *
+ * Test topology
+ * ─────────────
+ *  test_mux_state_node  mux-states  (3-cell)
+ *    idx 0: offset=0x740 mask=0x3f value=0x00  → used by test_configure_default_idx0
+ *    idx 1: offset=0x744 mask=0x3f value=0x01  → used by test_configure_default_idx1
+ *
+ *  test_mux_ctrl_node   mux-controls (2-cell, len==2)
+ *    idx 0: offset=0x740 mask=0x3f             → accepted by driver; state arg = value to write
+ *
+ *  alias test-mux → &inputmux
+ */
+
+/ {
+	aliases {
+		test-mux = &inputmux;
+	};
+
+	/*
+	 * Consumer node using mux-controls (2-cell specifier).
+	 * Passed to mux_configure(state=1) to exercise the 2-cell code path
+	 * (driver accepts len >= 2, uses state arg as the field value to write).
+	 * Also used to verify mux_configure_default() returns -ESRCH (no
+	 * embedded default state in mux-controls entries).
+	 */
+	test_mux_ctrl_node: test-mux-ctrl {
+		compatible = "test-nxp-mux-consumer";
+		mux-controls = <&inputmux 0x740 0x3f>;
+		mux-control-names = "slot0-ctrl";
+	};
+
+	/*
+	 * Consumer node using mux-states (3-cell specifier).
+	 * Used to exercise mux_configure_default() and mux_configure().
+	 *
+	 * Both offsets (0x740, 0x744) map to FLEXCOMM DMA trigger-select
+	 * registers.  Writing value=0 / value=1 selects a trigger source;
+	 * the fields are write-safe because the test board overlay does not
+	 * enable FLEXCOMM DMA transfers.
+	 */
+	test_mux_state_node: test-mux-state {
+		compatible = "test-nxp-mux-consumer";
+		mux-states = <&inputmux 0x740 0x3f 0x00>,
+			     <&inputmux 0x744 0x3f 0x01>;
+		mux-state-names = "slot0-state", "slot1-state";
+	};
+};
+
+/* The inputmux node in nxp_rt5xx_common.dtsi has no explicit status, which
+ * defaults to "okay".  Assert it explicitly so the MUX_NXP_INPUTMUX driver
+ * is compiled in and the device is instantiated.
+ */
+&inputmux {
+	status = "okay";
+};
