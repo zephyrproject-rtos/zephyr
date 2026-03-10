@@ -19,6 +19,8 @@ supported:
   - input
   - video
   - crypto
+  - usbd
+  - usbh
   - retained_mem
   - netif:wifi
 vendor: espressif
