@@ -7,10 +7,10 @@
 / {
 	mbox-consumer {
 		compatible = "vnd,mbox-consumer";
-		mboxes = <&mfis 0>, <&mfis 0>,
-			 <&mfis 1>, <&mfis 1>,
-			 <&mfis 2>, <&mfis 2>,
-			 <&mfis 3>, <&mfis 3>;
+		mboxes = <&mfis 64>, <&mfis 64>,
+			 <&mfis 65>, <&mfis 65>,
+			 <&mfis 66>, <&mfis 66>,
+			 <&mfis 67>, <&mfis 67>;
 		mbox-names = "tx0", "rx0",
 			     "tx1", "rx1",
 			     "tx2", "rx2",
