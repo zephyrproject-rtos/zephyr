@@ -26,6 +26,7 @@
 #include <stddef.h>
 #include <zephyr/device.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/sys/sys_io.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -807,6 +808,71 @@ enum gpio_int_trig {
 	GPIO_INT_TRIG_WAKE_BOTH = GPIO_INT_LOW_0 | GPIO_INT_HIGH_1 | GPIO_INT_WAKEUP,
 };
 
+/**
+ * @brief Raw GPIO register access structure.
+ *
+ * This structure provides direct access to GPIO port registers for reading
+ * and manipulating pin states. Each member points to a memory-mapped GPIO
+ * register controlling a specific operation on the GPIO port.
+ *
+ * @note Reading or writing bits corresponding to unimplemented GPIO pins
+ * results in undefined behavior. The set of valid pins for the GPIO port
+ * is defined by @ref gpio_driver_config.port_pin_mask.
+ *
+ * @note These registers must be accessed using Zephyr sys_io primitives
+ * (e.g. sys_read32(), sys_write32(), sys_set_bit(), sys_clear_bit())
+ * and must not be accessed through direct pointer dereferencing.
+ */
+struct gpio_raw_regs {
+	/**
+	 * @brief GPIO input register.
+	 *
+	 * Reading this register returns the current logic level of each GPIO pin.
+	 * Each bit corresponds to one GPIO pin in the port.
+	 *
+	 * @note Writing to this register is not supported.
+	 */
+	mem_addr_t in;
+
+	/**
+	 * @brief GPIO output register.
+	 *
+	 * Reading returns the current output state of GPIO pins.
+	 * Writing updates the output value of all pins in the port.
+	 */
+	mem_addr_t out;
+
+	/**
+	 * @brief GPIO set register.
+	 *
+	 * Writing 1 to a bit sets the corresponding GPIO pin to active/high.
+	 * Writing 0 has no effect.
+	 *
+	 * @note Reading this register is not supported and may return undefined values.
+	 */
+	mem_addr_t set;
+
+	/**
+	 * @brief GPIO clear register.
+	 *
+	 * Writing 1 to a bit clears the corresponding GPIO pin to inactive/low.
+	 * Writing 0 has no effect.
+	 *
+	 * @note Reading this register is not supported and may return undefined values.
+	 */
+	mem_addr_t clear;
+
+	/**
+	 * @brief GPIO toggle register.
+	 *
+	 * Writing 1 to a bit toggles the corresponding GPIO pin state.
+	 * Writing 0 has no effect.
+	 *
+	 * @note Reading this register is not supported and may return undefined values.
+	 */
+	mem_addr_t toggle;
+};
+
 __subsystem struct gpio_driver_api {
 	int (*pin_configure)(const struct device *port, gpio_pin_t pin,
 			     gpio_flags_t flags);
@@ -833,6 +899,9 @@ __subsystem struct gpio_driver_api {
 			       struct gpio_callback *cb,
 			       bool set);
 	uint32_t (*get_pending_int)(const struct device *dev);
+#ifdef CONFIG_GPIO_RAW_REGS
+	int (*port_get_raw_regs)(const struct device *port, struct gpio_raw_regs *regs);
+#endif /* CONFIG_GPIO_RAW_REGS */
 #ifdef CONFIG_GPIO_GET_DIRECTION
 	int (*port_get_direction)(const struct device *port, gpio_port_pins_t map,
 				  gpio_port_pins_t *inputs, gpio_port_pins_t *outputs);
@@ -1915,6 +1984,35 @@ static inline int z_impl_gpio_get_pending_int(const struct device *dev)
 	SYS_PORT_TRACING_FUNC_EXIT(gpio, get_pending_int, dev, ret);
 	return ret;
 }
+
+#ifdef CONFIG_GPIO_RAW_REGS
+/**
+ * @brief Function to get raw GPIO registers.
+ *
+ * The purpose of this function is to return pointers to the GPIO registers. This is intended for
+ * time-sensitive GPIO bitbang drivers, to avoid function call overhead.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param regs Pointer to the gpio_raw_regs structure which is populated by this function.
+ *
+ * @retval 0 for success.
+ * @retval -ENOSYS If driver does not implement the operation
+ *
+ * @note a success response does not mean that all registers are populated. It just means that all
+ * registers supported by underlying hardware are populated, with the rest being set to NULL. It is
+ * user's responsibility to check for NULL registers before use.
+ */
+static inline int gpio_port_get_raw_regs(const struct device *dev, struct gpio_raw_regs *regs)
+{
+	const struct gpio_driver_api *api = (const struct gpio_driver_api *)dev->api;
+
+	if (api->port_get_raw_regs == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->port_get_raw_regs(dev, regs);
+}
+#endif /* CONFIG_GPIO_RAW_REGS */
 
 /**
  * @}
