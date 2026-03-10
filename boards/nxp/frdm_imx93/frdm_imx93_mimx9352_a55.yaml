@@ -22,6 +22,7 @@ supported:
   - net
   - watchdog
   - usbd
+  - pwm
 testing:
   ignore_tags:
     - bluetooth
