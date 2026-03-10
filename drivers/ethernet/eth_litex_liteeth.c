@@ -220,19 +220,16 @@ static const struct device *eth_get_phy(const struct device *dev)
 	return config->phy_dev;
 }
 
-static void phy_link_state_changed(const struct device *phy_dev,
+static void phy_link_state_changed(const struct device *phy_dev __unused,
 				   struct phy_link_state *state,
 				   void *user_data)
 {
-	const struct device *dev = (const struct device *)user_data;
-	struct eth_litex_dev_data *context = dev->data;
-
-	ARG_UNUSED(phy_dev);
+	struct net_if *iface = (struct net_if *)user_data;
 
 	if (state->is_up) {
-		net_eth_carrier_on(context->iface);
+		net_eth_carrier_on(iface);
 	} else {
-		net_eth_carrier_off(context->iface);
+		net_eth_carrier_off(iface);
 	}
 }
 
@@ -263,7 +260,7 @@ static void eth_iface_init(struct net_if *iface)
 	net_if_carrier_off(iface);
 
 	if (device_is_ready(config->phy_dev)) {
-		phy_link_callback_set(config->phy_dev, phy_link_state_changed, (void *)port);
+		phy_link_callback_set(config->phy_dev, phy_link_state_changed, (void *)iface);
 	} else {
 		LOG_ERR("PHY device not ready");
 	}
