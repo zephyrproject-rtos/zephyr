@@ -431,6 +431,14 @@
 			clocks = <&cctl APB_CLK(I2C3)>;
 			status = "disabled";
 		};
+
+		rtc_counter: rtc@40001800 {
+			compatible = "realtek,bee-counter-rtc";
+			reg = <0x40001800 0x40>;
+			interrupts = <8 0>;
+			channels = <4>;
+			status = "disabled";
+		};
 	};
 };
 
