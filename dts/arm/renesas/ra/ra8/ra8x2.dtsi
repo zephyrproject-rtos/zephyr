@@ -844,6 +844,11 @@
 				compatible = "renesas,ra-ulpt-timer";
 				status = "disabled";
 			};
+
+			counter {
+				compatible = "renesas,ra-ulpt-counter";
+				status = "disabled";
+			};
 		};
 
 		ulpt1: ulpt@40220100 {
@@ -856,6 +861,11 @@
 
 			timer {
 				compatible = "renesas,ra-ulpt-timer";
+				status = "disabled";
+			};
+
+			counter {
+				compatible = "renesas,ra-ulpt-counter";
 				status = "disabled";
 			};
 		};
