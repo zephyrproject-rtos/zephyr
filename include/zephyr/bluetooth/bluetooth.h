@@ -774,12 +774,9 @@ enum {
 	/**
 	 * @brief Advertise using a Non-Resolvable Private Address.
 	 *
-	 * A new NRPA is set when updating the advertising parameters.
-	 *
-	 * This is an advanced feature; most users will want to enable
-	 * @kconfig{CONFIG_BT_EXT_ADV} instead.
-	 *
-	 * @note Not implemented when @kconfig{CONFIG_BT_PRIVACY}.
+	 * A NRPA generated and used when updating the advertising parameters
+	 * and rotated using the same interval as @kconfig{CONFIG_BT_RPA_TIMEOUT}
+	 * when @kconfig{CONFIG_BT_PRIVACY} is enabled.
 	 *
 	 * @note Mutually exclusive with BT_LE_ADV_OPT_USE_IDENTITY.
 	 */

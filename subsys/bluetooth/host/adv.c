@@ -430,12 +430,19 @@ static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
-	    param->peer &&
-	    (param->options & BT_LE_ADV_OPT_USE_IDENTITY) &&
-	    (param->options & BT_LE_ADV_OPT_DIR_ADDR_RPA)) {
-		/* own addr type used for both RPAs in directed advertising. */
-		return false;
+	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+		if (param->peer &&
+		    (param->options & BT_LE_ADV_OPT_USE_IDENTITY) &&
+		    (param->options & BT_LE_ADV_OPT_DIR_ADDR_RPA)) {
+				/* own addr type used for both RPAs in directed advertising. */
+				return false;
+		}
+
+		if (param->options & BT_LE_ADV_OPT_USE_NRPA &&
+		    param->options & BT_LE_ADV_OPT_USE_IDENTITY) {
+				LOG_ERR("NRPA and identity options are mutually exclusive");
+				return false;
+		}
 	}
 
 	if (param->id >= bt_dev.id_count ||
@@ -1114,6 +1121,11 @@ set_adv_state:
 	atomic_set_bit_to(adv->flags, BT_ADV_USE_IDENTITY,
 			  param->options & BT_LE_ADV_OPT_USE_IDENTITY);
 
+	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+		atomic_set_bit_to(adv->flags, BT_ADV_USE_NRPA,
+				  param->options & BT_LE_ADV_OPT_USE_NRPA);
+	}
+
 	return 0;
 }
 
@@ -1288,6 +1300,11 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 
 	atomic_set_bit_to(adv->flags, BT_ADV_USE_IDENTITY,
 			  param->options & BT_LE_ADV_OPT_USE_IDENTITY);
+
+	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+		atomic_set_bit_to(adv->flags, BT_ADV_USE_NRPA,
+				  param->options & BT_LE_ADV_OPT_USE_NRPA);
+	}
 
 	atomic_set_bit_to(adv->flags, BT_ADV_EXT_ADV,
 			  param->options & BT_LE_ADV_OPT_EXT_ADV);
@@ -1468,20 +1485,6 @@ int bt_le_adv_stop(void)
 	}
 
 	bt_le_adv_delete_legacy();
-
-#if defined(CONFIG_BT_OBSERVER)
-	if (!(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
-	      BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) &&
-	    !IS_ENABLED(CONFIG_BT_PRIVACY) &&
-	    !IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY)) {
-		/* If scan is ongoing set back NRPA */
-		if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)) {
-			bt_le_scan_set_enable(BT_HCI_LE_SCAN_DISABLE);
-			bt_id_set_private_addr(BT_ID_DEFAULT);
-			bt_le_scan_set_enable(BT_HCI_LE_SCAN_ENABLE);
-		}
-	}
-#endif /* defined(CONFIG_BT_OBSERVER) */
 
 	return 0;
 }
@@ -1687,16 +1690,23 @@ int bt_le_ext_adv_start(struct bt_le_ext_adv *adv,
 	atomic_set_bit_to(adv->flags, BT_ADV_LIMITED, param &&
 			  (param->timeout > 0 || param->num_events > 0));
 
+#if defined(CONFIG_BT_PRIVACY)
 	if (atomic_test_bit(adv->flags, BT_ADV_CONNECTABLE)) {
-		if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
-		    !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
+		if (!atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY) &&
+		    (!atomic_test_and_clear_bit(adv->flags, BT_ADV_RANDOM_ADDR_UPDATED) ||
+		     atomic_test_bit(adv->flags, BT_PER_ADV_ENABLED) ||
+		     !atomic_test_bit(adv->flags, BT_ADV_RPA_VALID))) {
 			bt_id_set_adv_private_addr(adv);
 		}
 	} else {
-		if (!atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
+		if (!atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY) &&
+		    (!atomic_test_and_clear_bit(adv->flags, BT_ADV_RANDOM_ADDR_UPDATED) ||
+		     atomic_test_bit(adv->flags, BT_PER_ADV_ENABLED) ||
+		     !atomic_test_bit(adv->flags, BT_ADV_RPA_VALID))) {
 			bt_id_set_adv_private_addr(adv);
 		}
 	}
+#endif
 
 	if (get_adv_name_type(adv) != ADV_NAME_TYPE_NONE &&
 	    !atomic_test_bit(adv->flags, BT_ADV_DATA_SET)) {

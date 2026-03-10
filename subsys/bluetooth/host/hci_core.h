@@ -151,6 +151,9 @@ enum {
 	 */
 	BT_PER_ADV_CTE_ENABLED,
 
+	/* Advertiser is using a Non-Resolvable Private Address. */
+	BT_ADV_USE_NRPA,
+
 	BT_ADV_NUM_FLAGS,
 };
 
@@ -418,6 +421,9 @@ struct bt_dev {
 
 	/* The RPA timeout value. */
 	uint16_t rpa_timeout;
+
+	/* Work used for NRPA rotation, independent from RPA */
+	struct k_work_delayable nrpa_update;
 #endif
 
 	/* Local Name */

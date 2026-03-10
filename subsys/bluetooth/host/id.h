@@ -38,9 +38,10 @@ bool bt_id_scan_random_addr_check(void);
 
 int bt_id_set_adv_random_addr(struct bt_le_ext_adv *adv,
 			      const bt_addr_t *addr);
+#if defined(CONFIG_BT_PRIVACY)
 int bt_id_set_adv_private_addr(struct bt_le_ext_adv *adv);
-
 int bt_id_set_private_addr(uint8_t id);
+#endif
 
 void bt_id_pending_keys_update(void);
 
