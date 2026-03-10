@@ -52,12 +52,12 @@ endchoice
 
 config IRONSIDE_SE_CALL_INIT_PRIORITY
 	int "IronSide calls' driver initialization priority"
-	default 41
+	default 0
 	depends on IRONSIDE_SE_CALL_ZEPHYR
 	help
-	  Initialization priority of the IronSide call protocol driver.
-	  It must be below MBOX_INIT_PRIORITY, but higher than the priority of any feature
-	  that depends on IRONSIDE_SE_CALL.
+	  Initialization priority of the IronSide call protocol driver in the POST_KERNEL
+	  phase. MBOX driver is initialized in the pre kernel phase so we want to allow
+	  Ironside SE calls as early as possible.
 
 endif # IRONSIDE_SE_CALL
 

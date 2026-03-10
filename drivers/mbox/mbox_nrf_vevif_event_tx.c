@@ -69,5 +69,5 @@ static DEVICE_API(mbox, vevif_event_tx_driver_api) = {
 	.max_channels_get = vevif_event_tx_max_channels_get,
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, POST_KERNEL, CONFIG_MBOX_INIT_PRIORITY,
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, PRE_KERNEL_1, CONFIG_MBOX_INIT_PRIORITY,
 		      &vevif_event_tx_driver_api);

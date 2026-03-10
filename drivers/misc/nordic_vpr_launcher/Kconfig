@@ -18,8 +18,8 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config NORDIC_VPR_LAUNCHER_INIT_PRIORITY
 	int "Nordic VPR coprocessor launcher init priority"
-	default 44 if DT_HAS_NORDIC_CORESIGHT_NRF_ENABLED
-	default 0
+	# If STM logging is enabled initialization must be after STM logging and Ironside IPC
+	default 4
 	help
 	  The init priority of the VPR coprocessor launcher.
 

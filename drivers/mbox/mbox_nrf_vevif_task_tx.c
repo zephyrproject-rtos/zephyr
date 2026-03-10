@@ -118,7 +118,7 @@ static DEVICE_API(mbox, vevif_task_tx_driver_api) = {
 		.tasks_mask = DT_INST_PROP(inst, nordic_tasks_mask),                               \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, &conf##inst, POST_KERNEL,                    \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &data##inst, &conf##inst, PRE_KERNEL_1,            \
 			      CONFIG_MBOX_INIT_PRIORITY, &vevif_task_tx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VEVIF_TASK_TX_DEFINE)
