@@ -119,6 +119,18 @@ Run following command to test user buttons connected to FRDM-IMX93 GPIO:
 Note: The overlay only supports ``mimx9352/a55``, but can be extended to support
 ``mimx9352/m33`` if I2C and PCAL6524 is enabled.
 
+PWM(TPM)
+--------
+
+For A55 Core, TPM3 is enabled for :zephyr:code-sample:`pwm-blinky` application,
+the GREEN Colored LED in RGB LED LED1 on the board will blink with different frequency.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky_pwm
+   :host-os: unix
+   :board: frdm_imx93/mimx9352/a55
+   :goals: build
+
 Programming and Debugging (A55)
 *******************************
 
