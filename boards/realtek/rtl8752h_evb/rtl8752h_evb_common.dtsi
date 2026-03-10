@@ -13,6 +13,7 @@
 		zephyr,code-partition = &app_partition;
 		zephyr,console = &uart2;
 		zephyr,shell-uart = &uart2;
+		zephyr,bt-hci = &bee_bt_hci;
 	};
 
 	leds {
@@ -78,4 +79,8 @@
 	parity = "none";
 	stop-bits = "1";
 	data-bits = <8>;
+};
+
+&bee_bt_hci {
+	status = "okay";
 };
