@@ -25,6 +25,9 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 #include <zephyr/net/net_event.h>
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/wifi_utils.h>
+#ifdef CONFIG_WIFI_NM
+#include <zephyr/net/wifi_nm.h>
+#endif
 #include <zephyr/sys/slist.h>
 
 #include "net_shell_private.h"
@@ -136,6 +139,23 @@ static struct net_if *get_iface(enum iface_type type, int argc, char *argv[])
 			return NULL;
 		}
 	}
+
+#ifdef CONFIG_WIFI_NM
+	if (iface != NULL) {
+		/* If iface is valid nm wifi iface */
+		if (!wifi_nm_get_instance_iface(iface)) {
+			LOG_ERR("Interface %d is not a nm wifi iface", iface_index);
+			return NULL;
+		}
+
+		/* If iface nm wifi type match input type */
+		if ((type == IFACE_TYPE_STA && !wifi_nm_iface_is_sta(iface)) ||
+			(type == IFACE_TYPE_SAP && !wifi_nm_iface_is_sap(iface))) {
+			LOG_ERR("Interface %d type does not match %d", iface_index, type);
+			return NULL;
+		}
+	}
+#endif
 
 	return iface;
 }
