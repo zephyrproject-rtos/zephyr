@@ -137,6 +137,16 @@ Bluetooth Host
   recommended sizing is ``CONFIG_BT_ATT_PREPARE_COUNT`` = buffers needed by one client
   multiplied by ``CONFIG_BT_MAX_CONN``, which keeps every connection's capacity independent
   of the other connections.
+* ``CONFIG_BT_ISO_TX_MTU`` has been removed. Applications should define their own SDU buffer sizes.
+  The ISO HCI data buffer size can be configured for the Controller with
+  :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE`, and the SDU size with
+  :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_SDU_LEN_MAX`.
+  In most cases :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE` should be set to 4
+  (if timestamps are not used) or 8 (if timestamps are used) above
+  :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_SDU_LEN_MAX`. For larger values of
+  :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_SDU_LEN_MAX` it may be better to increase
+  :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_BUFFERS` instead of
+  :kconfig:option:`CONFIG_BT_CTLR_ISO_TX_BUFFER_SIZE`.
 
 Networking
 **********
