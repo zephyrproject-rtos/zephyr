@@ -10,10 +10,11 @@
 / {
 	aliases {
 		usbc-port0 = &port1;
+		usbc-port0-pwrctrl = &pwrctrl1;
 	};
 
 	/* usbc.rst pwrctrl start */
-	pwrctrl: pwrctrl {
+	pwrctrl1: pwrctrl {
 		compatible = "zephyr,usb-c-pwrctrl";
 
 		/* Pin D3 is used to enable VBUS Source */
