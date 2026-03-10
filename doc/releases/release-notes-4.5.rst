@@ -97,6 +97,12 @@ Removed APIs and options
 
 * West sign support for imgtool, which was deprecated in Zephyr 4.0, has been removed.
 
+* Bluetooth
+
+  * Host
+
+    * ``CONFIG_BT_ISO_TX_MTU``
+
 Deprecated APIs and options
 ===========================
 
