@@ -48,9 +48,8 @@ static struct tx_stream tx_streams[CONFIG_BT_ISO_MAX_CHAN];
 
 static void tx_thread_func(void *arg1, void *arg2, void *arg3)
 {
-	/* We set the SDU size to 3 x CONFIG_BT_ISO_TX_MTU to support the fragmentation tests */
 	NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
-				  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU * 3),
+				  BT_ISO_SDU_BUF_SIZE(ISO_TX_SDU_SIZE),
 				  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 	/* This loop will attempt to send on all streams in the streaming state in a round robin
@@ -85,8 +84,14 @@ static void tx_thread_func(void *arg1, void *arg2, void *arg3)
 
 				net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
 
-				TEST_ASSERT(len_to_send <= sizeof(mock_iso_data),
-					    "Invalid len_to_send: %zu", len_to_send);
+				TEST_ASSERT(
+					len_to_send <= sizeof(mock_iso_data),
+					"Invalid len_to_send: %zu larger than mock_iso_data (%zu)",
+					len_to_send, sizeof(mock_iso_data));
+				TEST_ASSERT(
+					len_to_send <= ISO_TX_SDU_SIZE,
+					"Invalid len_to_send: %zu larger than ISO_TX_SDU_SIZE (%u)",
+					len_to_send, ISO_TX_SDU_SIZE);
 				net_buf_add_mem(buf, mock_iso_data, len_to_send);
 
 				err = bt_iso_chan_send(iso_chan, buf, tx_stream->seq_num);
