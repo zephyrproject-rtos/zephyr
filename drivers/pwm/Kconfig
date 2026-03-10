@@ -39,6 +39,23 @@ config PWM_EVENT
 	  This option extends the Zephyr PWM API with the ability to configure
 	  and receive PWM events.
 
+config PWM_CAPTURE_WITH_DMA
+	bool "Provide API for PWM capture with DMA"
+	depends on PWM_CAPTURE && DMA
+	default n
+	help
+	  Capture PWM period/pulse using DMA backend.
+
+if PWM_CAPTURE_WITH_DMA
+
+config PWM_CAPTURE_DMA_BUFFER_SIZE
+	int "PWM capture DMA buffer size (samples)"
+	default 64
+	help
+	  Number of CCR samples per DMA completion callback.
+
+endif # PWM_CAPTURE_WITH_DMA
+
 # zephyr-keep-sorted-start
 source "drivers/pwm/Kconfig.ambiq_timer"
 source "drivers/pwm/Kconfig.b91"

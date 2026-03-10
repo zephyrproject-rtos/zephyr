@@ -9,10 +9,12 @@
 #define DT_DRV_COMPAT st_stm32_pwm
 
 #include <errno.h>
+#include <string.h>
 
 #include <soc.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_tim.h>
+#include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/reset.h>
@@ -60,11 +62,13 @@ static const uint32_t complementary_channel[] = {2, 1, 4, 3};
 
 struct pwm_stm32_capture_data {
 	pwm_capture_callback_handler_t callback;
+#if defined(CONFIG_PWM_CAPTURE_WITH_DMA)
+	pwm_capture_batch_callback_handler_t batch_callback;
+#endif
 	void *user_data;
 	uint32_t period;
 	uint32_t pulse;
 	uint32_t overflows;
-	uint8_t skip_irq;
 	bool capture_period;
 	bool capture_pulse;
 	bool continuous;
@@ -72,6 +76,17 @@ struct pwm_stm32_capture_data {
 
 	/* only used when four_channel_capture_support */
 	enum capture_state state;
+#ifdef CONFIG_PWM_CAPTURE_WITH_DMA
+	struct dma_config dma_cfg[2];
+	struct dma_block_config dma_blk[2];
+	uint32_t dma_buf[2][CONFIG_PWM_CAPTURE_DMA_BUFFER_SIZE];
+	size_t samples;
+	size_t sample_bytes;
+	uint8_t dma_done_mask;
+	bool started;
+#else
+	uint8_t skip_irq;
+#endif /* CONFIG_PWM_CAPTURE_WITH_DMA */
 };
 
 /* When PWM capture is done by resetting the counter with UIF then the
@@ -106,6 +121,11 @@ struct pwm_stm32_config {
 #ifdef CONFIG_PWM_CAPTURE
 	void (*irq_config_func)(const struct device *dev);
 	const bool four_channel_capture_support;
+#ifdef CONFIG_PWM_CAPTURE_WITH_DMA
+	const struct device *dma_dev[4];
+	uint32_t dma_channel[4];
+	uint32_t dma_slot[4];
+#endif /* CONFIG_PWM_CAPTURE_WITH_DMA */
 #endif /* CONFIG_PWM_CAPTURE */
 };
 
@@ -193,6 +213,249 @@ static void __maybe_unused (*const clear_capture_interrupt[])(TIM_TypeDef *) = {
 	LL_TIM_ClearFlag_CC3, LL_TIM_ClearFlag_CC4
 };
 
+/** Channel to enable DMA request flag mapping. */
+static void __maybe_unused (*const enable_dma_interrupt[])(TIM_TypeDef *) = {
+	LL_TIM_EnableDMAReq_CC1, LL_TIM_EnableDMAReq_CC2,
+	LL_TIM_EnableDMAReq_CC3, LL_TIM_EnableDMAReq_CC4
+};
+
+/** Channel to disable DMA request flag mapping. */
+static void __maybe_unused (*const disable_dma_interrupt[])(TIM_TypeDef *) = {
+	LL_TIM_DisableDMAReq_CC1, LL_TIM_DisableDMAReq_CC2,
+	LL_TIM_DisableDMAReq_CC3, LL_TIM_DisableDMAReq_CC4
+};
+
+#ifdef CONFIG_PWM_CAPTURE_WITH_DMA
+static int pwm_stm32_disable_capture(const struct device *dev, uint32_t channel);
+
+static uintptr_t pwm_stm32_ccr_addr(TIM_TypeDef *timer, uint32_t channel)
+{
+	switch (channel) {
+	case 1:
+		return (uintptr_t)&timer->CCR1;
+	case 2:
+		return (uintptr_t)&timer->CCR2;
+	case 3:
+		return (uintptr_t)&timer->CCR3;
+	default:
+		return (uintptr_t)&timer->CCR4;
+	}
+}
+
+static int pwm_stm32_dma_reload_and_start(const struct pwm_stm32_config *cfg, TIM_TypeDef *timer,
+					  struct pwm_stm32_capture_data *cpt, uint32_t channel)
+{
+	uint32_t ch_pair[2] = {
+		channel,
+		complementary_channel[channel - 1U],
+	};
+	uintptr_t dst_pair[2] = {
+		(uintptr_t)cpt->dma_buf[0],
+		(uintptr_t)cpt->dma_buf[1],
+	};
+	uint32_t i;
+	unsigned int key;
+
+	for (i = 0; i < 2; i++) {
+		uint32_t ch = ch_pair[i];
+
+		if (dma_reload(cfg->dma_dev[ch - 1], cfg->dma_channel[ch - 1],
+			       pwm_stm32_ccr_addr(timer, ch), dst_pair[i],
+			       cpt->samples * sizeof(uint32_t)) != 0) {
+			LOG_ERR("dma_reload failed (ch=%u)", ch);
+			return -EIO;
+		}
+	}
+
+	key = irq_lock();
+	cpt->dma_done_mask = 0;
+	irq_unlock(key);
+
+	for (i = 0; i < 2; i++) {
+		uint32_t ch = ch_pair[i];
+
+		if (dma_start(cfg->dma_dev[ch - 1], cfg->dma_channel[ch - 1]) != 0) {
+			LOG_ERR("dma_start failed (ch=%u)", ch);
+			/* If a channel fails to start, stop all previously started*/
+			for (uint32_t j = i; j > 0; j--) {
+				uint32_t prev_ch = ch_pair[j - 1];
+				(void)dma_stop(cfg->dma_dev[prev_ch - 1],
+					       cfg->dma_channel[prev_ch - 1]);
+			}
+			return -EIO;
+		}
+	}
+
+	return 0;
+}
+
+static void pwm_stm32_dma_cb(const struct device *dma_dev, void *user_data, uint32_t dma_channel,
+			     int status)
+{
+	const struct device *dev = user_data;
+	const struct pwm_stm32_config *cfg = dev->config;
+	TIM_TypeDef *timer = cfg->timer;
+	struct pwm_stm32_data *data = dev->data;
+	struct pwm_stm32_capture_data *cpt = &data->capture;
+	uint32_t ch = cpt->channel;
+	uint32_t comp = complementary_channel[ch - 1];
+	unsigned int key;
+	int cb_status = 0;
+
+	if (cpt->batch_callback == NULL) {
+		return;
+	}
+
+	if (status < 0) {
+		cpt->batch_callback(dev, ch, NULL, NULL, 0, status, cpt->user_data);
+		return;
+	}
+
+	key = irq_lock();
+	/* Check which DMA completed */
+	if ((dma_dev == cfg->dma_dev[ch - 1]) && (dma_channel == cfg->dma_channel[ch - 1])) {
+		cpt->dma_done_mask |= BIT(0);
+	} else if ((dma_dev == cfg->dma_dev[comp - 1]) &&
+		   (dma_channel == cfg->dma_channel[comp - 1])) {
+		cpt->dma_done_mask |= BIT(1);
+	} else {
+		irq_unlock(key);
+		return;
+	}
+	/* Return if one of the DMA channel hasn't finished */
+	if (cpt->dma_done_mask != (BIT(0) | BIT(1))) {
+		irq_unlock(key);
+		return;
+	}
+	irq_unlock(key);
+
+	uint32_t last = cpt->samples - 1;
+
+	cpt->period = cpt->dma_buf[0][last];
+	cpt->pulse = cpt->dma_buf[1][last];
+
+	if (cpt->overflows) {
+		cb_status = -ERANGE;
+	}
+
+	if (!cpt->continuous) {
+		(void)pwm_stm32_disable_capture(dev, ch);
+	} else {
+		if (pwm_stm32_dma_reload_and_start(cfg, timer, cpt, ch) != 0) {
+			cpt->started = false;
+			return;
+		}
+
+		cpt->overflows = 0;
+		cpt->state = CAPTURE_STATE_WAIT_FOR_PERIOD_END;
+	}
+
+	if (cpt->batch_callback != NULL) {
+		cpt->batch_callback(dev, ch, cpt->dma_buf[0], cpt->dma_buf[1],
+				    (uint32_t)cpt->samples, cb_status, cpt->user_data);
+	}
+}
+
+static int pwm_stm32_dma_start_capture(const struct device *dev, uint32_t channel)
+{
+	const struct pwm_stm32_config *cfg = dev->config;
+	TIM_TypeDef *timer = cfg->timer;
+	struct pwm_stm32_data *data = dev->data;
+	struct pwm_stm32_capture_data *cpt = &data->capture;
+	uint32_t comp = complementary_channel[channel - 1];
+	uint32_t ch_pair[2] = {channel, comp};
+	uint32_t i;
+
+	cpt->sample_bytes = IS_TIM_32B_COUNTER_INSTANCE(timer) ? 4 : 2;
+	cpt->samples = CONFIG_PWM_CAPTURE_DMA_BUFFER_SIZE;
+	cpt->dma_done_mask = 0;
+
+	memset(cpt->dma_cfg, 0, sizeof(cpt->dma_cfg));
+	memset(cpt->dma_blk, 0, sizeof(cpt->dma_blk));
+	memset(cpt->dma_buf, 0, sizeof(cpt->dma_buf));
+
+	for (i = 0U; i < 2U; i++) {
+		uint32_t ch = ch_pair[i];
+		const struct device *dma_dev = cfg->dma_dev[ch - 1];
+		uint32_t dma_ch = cfg->dma_channel[ch - 1];
+
+		if ((dma_dev == NULL) || !device_is_ready(dma_dev)) {
+			LOG_ERR("No DMA route for capture ch%u", ch);
+			return -ENOTSUP;
+		}
+
+		cpt->dma_blk[i].source_address = pwm_stm32_ccr_addr(timer, ch);
+		cpt->dma_blk[i].dest_address = (uintptr_t)cpt->dma_buf[i];
+		cpt->dma_blk[i].block_size = cpt->samples * sizeof(uint32_t);
+		cpt->dma_blk[i].source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+		cpt->dma_blk[i].dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+
+		cpt->dma_cfg[i].channel_direction = PERIPHERAL_TO_MEMORY;
+		cpt->dma_cfg[i].source_data_size = cpt->sample_bytes;
+		cpt->dma_cfg[i].dest_data_size = sizeof(uint32_t);
+		cpt->dma_cfg[i].dma_slot = cfg->dma_slot[ch - 1];
+		cpt->dma_cfg[i].block_count = 1;
+		cpt->dma_cfg[i].head_block = &cpt->dma_blk[i];
+		cpt->dma_cfg[i].dma_callback = pwm_stm32_dma_cb;
+		cpt->dma_cfg[i].user_data = (void *)dev;
+		cpt->dma_cfg[i].complete_callback_en = 1;
+		cpt->dma_cfg[i].error_callback_dis = 0;
+
+		if (dma_config(dma_dev, dma_ch, &cpt->dma_cfg[i]) != 0) {
+			LOG_ERR("dma_config failed (ch=%u)", dma_ch);
+			return -EIO;
+		}
+	}
+
+	for (i = 0; i < 2; i++) {
+		uint32_t ch = ch_pair[i];
+		const struct device *dma_dev = cfg->dma_dev[ch - 1];
+		uint32_t dma_ch = cfg->dma_channel[ch - 1];
+
+		if (dma_start(dma_dev, dma_ch) != 0) {
+			LOG_ERR("dma_start failed (ch=%u)", dma_ch);
+			while (i-- > 0U) {
+				uint32_t prev_ch = ch_pair[i];
+
+				disable_dma_interrupt[prev_ch - 1](timer);
+				(void)dma_stop(cfg->dma_dev[prev_ch - 1],
+					       cfg->dma_channel[prev_ch - 1]);
+			}
+			return -EIO;
+		}
+
+		enable_dma_interrupt[ch - 1](timer);
+	}
+
+	cpt->started = true;
+
+	return 0;
+}
+
+static void pwm_stm32_dma_stop_capture(const struct device *dev, uint32_t channel)
+{
+	const struct pwm_stm32_config *cfg = dev->config;
+	struct pwm_stm32_data *data = dev->data;
+	struct pwm_stm32_capture_data *cpt = &data->capture;
+	uint32_t comp = complementary_channel[channel - 1];
+
+	disable_dma_interrupt[channel - 1](cfg->timer);
+	disable_dma_interrupt[comp - 1](cfg->timer);
+
+	if (cpt->started) {
+		if (cfg->dma_dev[channel - 1] != NULL) {
+			(void)dma_stop(cfg->dma_dev[channel - 1], cfg->dma_channel[channel - 1]);
+		}
+		if (cfg->dma_dev[comp - 1] != NULL) {
+			(void)dma_stop(cfg->dma_dev[comp - 1], cfg->dma_channel[comp - 1]);
+		}
+	}
+
+	cpt->started = false;
+	cpt->dma_done_mask = 0U;
+}
+#endif /* CONFIG_PWM_CAPTURE_WITH_DMA */
+
 /**
  * Obtain LL polarity from PWM flags.
  *
@@ -239,7 +502,10 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 {
 	const struct pwm_stm32_config *cfg = dev->config;
 	TIM_TypeDef *timer = cfg->timer;
-
+#ifdef CONFIG_PWM_CAPTURE_WITH_DMA
+	struct pwm_stm32_data *data = dev->data;
+	struct pwm_stm32_capture_data *cpt = &data->capture;
+#endif /* CONFIG_PWM_CAPTURE_WITH_DMA */
 	uint32_t ll_channel;
 	uint32_t current_ll_channel; /* complementary output if used */
 	uint32_t negative_ll_channel;
@@ -261,11 +527,18 @@ static int pwm_stm32_set_cycles(const struct device *dev, uint32_t channel,
 	}
 
 #ifdef CONFIG_PWM_CAPTURE
+#ifdef CONFIG_PWM_CAPTURE_WITH_DMA
+	if (cpt->started) {
+		LOG_ERR("PWM capture already in progress");
+		return -EBUSY;
+	}
+#else
 	if (LL_TIM_IsEnabledIT_CC1(timer) || LL_TIM_IsEnabledIT_CC2(timer) ||
 	    LL_TIM_IsEnabledIT_CC3(timer) || LL_TIM_IsEnabledIT_CC4(timer)) {
 		LOG_ERR("Cannot set PWM output, capture in progress");
 		return -EBUSY;
 	}
+#endif /* CONFIG_PWM_CAPTURE_WITH_DMA */
 #endif /* CONFIG_PWM_CAPTURE */
 
 	ll_channel = ch2ll[channel - 1u];
@@ -447,6 +720,34 @@ static int pwm_stm32_configure_capture(const struct device *dev,
 	return 0;
 }
 
+#ifdef CONFIG_PWM_CAPTURE_WITH_DMA
+static int pwm_stm32_configure_capture_batch(const struct device *dev, uint32_t channel,
+					     pwm_flags_t flags,
+					     pwm_capture_batch_callback_handler_t cb,
+					     void *user_data)
+{
+	struct pwm_stm32_data *data = dev->data;
+	int ret;
+
+	if (cb == NULL) {
+		return -EINVAL;
+	}
+
+	ret = pwm_stm32_configure_capture(dev, channel,
+					  (flags & ~PWM_CAPTURE_TYPE_MASK) | PWM_CAPTURE_TYPE_BOTH,
+					  NULL, user_data);
+	if (ret != 0) {
+		return ret;
+	}
+
+	data->capture.callback = NULL;
+	data->capture.batch_callback = cb;
+	data->capture.user_data = user_data;
+
+	return 0;
+}
+#endif /* CONFIG_PWM_CAPTURE_WITH_DMA */
+
 static int pwm_stm32_enable_capture(const struct device *dev, uint32_t channel)
 {
 	const struct pwm_stm32_config *cfg = dev->config;
@@ -466,20 +767,37 @@ static int pwm_stm32_enable_capture(const struct device *dev, uint32_t channel)
 		}
 	}
 
+#ifdef CONFIG_PWM_CAPTURE_WITH_DMA
+	if (cpt->started) {
+		LOG_ERR("PWM capture already in progress");
+		return -EBUSY;
+	}
+#else
 	if (LL_TIM_IsEnabledIT_CC1(timer) || LL_TIM_IsEnabledIT_CC2(timer) ||
 	    LL_TIM_IsEnabledIT_CC3(timer) || LL_TIM_IsEnabledIT_CC4(timer)) {
 		LOG_ERR("PWM capture already active");
 		return -EBUSY;
 	}
+#endif /* CONFIG_PWM_CAPTURE_WITH_DMA */
 
+#ifdef CONFIG_PWM_CAPTURE_WITH_DMA
+	if (data->capture.batch_callback == NULL) {
+		LOG_ERR("PWM DMA capture requires batch callback");
+		return -EINVAL;
+	}
+#else
 	if (!data->capture.callback) {
 		LOG_ERR("PWM capture not configured");
 		return -EINVAL;
 	}
+#endif
 
 	cpt->channel = channel;
 	cpt->state = CAPTURE_STATE_WAIT_FOR_PULSE_START;
+
+#ifndef CONFIG_PWM_CAPTURE_WITH_DMA
 	data->capture.skip_irq = cfg->four_channel_capture_support ?  0 : SKIPPED_PWM_CAPTURES;
+#endif /* !CONFIG_PWM_CAPTURE_WITH_DMA */
 	data->capture.overflows = 0u;
 
 	clear_capture_interrupt[channel - 1](timer);
@@ -487,7 +805,15 @@ static int pwm_stm32_enable_capture(const struct device *dev, uint32_t channel)
 
 	LL_TIM_SetUpdateSource(timer, LL_TIM_UPDATESOURCE_COUNTER);
 
+#ifdef CONFIG_PWM_CAPTURE_WITH_DMA
+	int ret = pwm_stm32_dma_start_capture(dev, channel);
+
+	if (ret < 0) {
+		return ret;
+	}
+#else
 	enable_capture_interrupt[channel - 1](timer);
+#endif /* CONFIG_PWM_CAPTURE_WITH_DMA */
 
 	LL_TIM_CC_EnableChannel(timer, ch2ll[channel - 1]);
 	LL_TIM_CC_EnableChannel(timer, ch2ll[complementary_channel[channel - 1] - 1]);
@@ -515,15 +841,20 @@ static int pwm_stm32_disable_capture(const struct device *dev, uint32_t channel)
 
 	LL_TIM_SetUpdateSource(timer, LL_TIM_UPDATESOURCE_REGULAR);
 
+#ifdef CONFIG_PWM_CAPTURE_WITH_DMA
+	pwm_stm32_dma_stop_capture(dev, channel);
+#else
 	disable_capture_interrupt[channel - 1](timer);
 
 	LL_TIM_DisableIT_UPDATE(timer);
+#endif /* CONFIG_PWM_CAPTURE_WITH_DMA */
 	LL_TIM_CC_DisableChannel(timer, ch2ll[channel - 1]);
 	LL_TIM_CC_DisableChannel(timer, ch2ll[complementary_channel[channel - 1] - 1]);
 
 	return 0;
 }
 
+#if !defined(CONFIG_PWM_CAPTURE_WITH_DMA)
 static void pwm_stm32_isr(const struct device *dev)
 {
 	const struct pwm_stm32_config *cfg = dev->config;
@@ -627,7 +958,7 @@ static void pwm_stm32_isr(const struct device *dev)
 				cpt->capture_pulse ? cpt->pulse : 0u, status, cpt->user_data);
 	}
 }
-
+#endif /* !CONFIG_PWM_CAPTURE_WITH_DMA */
 #endif /* CONFIG_PWM_CAPTURE */
 
 static int pwm_stm32_get_cycles_per_sec(const struct device *dev,
@@ -645,7 +976,12 @@ static DEVICE_API(pwm, pwm_stm32_driver_api) = {
 	.set_cycles = pwm_stm32_set_cycles,
 	.get_cycles_per_sec = pwm_stm32_get_cycles_per_sec,
 #ifdef CONFIG_PWM_CAPTURE
+#ifdef CONFIG_PWM_CAPTURE_WITH_DMA
+	.configure_capture = NULL,
+	.configure_capture_batch = pwm_stm32_configure_capture_batch,
+#else
 	.configure_capture = pwm_stm32_configure_capture,
+#endif
 	.enable_capture = pwm_stm32_enable_capture,
 	.disable_capture = pwm_stm32_disable_capture,
 #endif /* CONFIG_PWM_CAPTURE */
@@ -750,16 +1086,16 @@ static int pwm_stm32_init(const struct device *dev)
 
 	LL_TIM_EnableCounter(timer);
 
-#ifdef CONFIG_PWM_CAPTURE
+#if defined(CONFIG_PWM_CAPTURE) && !defined(CONFIG_PWM_CAPTURE_WITH_DMA)
 	cfg->irq_config_func(dev);
-#endif /* CONFIG_PWM_CAPTURE */
+#endif /* CONFIG_PWM_CAPTURE && !CONFIG_PWM_CAPTURE_WITH_DMA */
 
 	return 0;
 }
 
 #define PWM(index) DT_INST_PARENT(index)
 
-#ifdef CONFIG_PWM_CAPTURE
+#if defined(CONFIG_PWM_CAPTURE) && !defined(CONFIG_PWM_CAPTURE_WITH_DMA)
 #define IRQ_CONNECT_AND_ENABLE_BY_NAME(index, name)				\
 	{									\
 		IRQ_CONNECT(DT_IRQ_BY_NAME(PWM(index), name, irq),		\
@@ -787,7 +1123,46 @@ static int pwm_stm32_init(const struct device *dev)
 #define CAPTURE_INIT(index)							\
 	.irq_config_func = pwm_stm32_irq_config_func_##index,			\
 	.four_channel_capture_support = DT_INST_PROP(index, four_channel_capture_support)
-#else /* CONFIG_PWM_CAPTURE */
+#elif defined(CONFIG_PWM_CAPTURE) && defined(CONFIG_PWM_CAPTURE_WITH_DMA)
+#define IRQ_CONFIG_FUNC(index)
+
+#define PWM_DMA_DEV_OR_NULL(index, name)					\
+	COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, name),				\
+		(DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(index, name))),	\
+		(NULL))
+
+#define PWM_DMA_CH_OR_ZERO(index, name)						\
+	COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, name),				\
+		(DT_INST_DMAS_CELL_BY_NAME(index, name, channel)),		\
+		(0))
+
+#define PWM_DMA_CFG_OR_ZERO(index, name)					\
+	COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, name),				\
+		(DT_INST_DMAS_CELL_BY_NAME(index, name, channel_config)),	\
+		(0))
+
+#define CAPTURE_INIT(index)									\
+	.four_channel_capture_support = DT_INST_PROP(index, four_channel_capture_support),	\
+	.dma_dev = {										\
+		PWM_DMA_DEV_OR_NULL(index, cc1),						\
+		PWM_DMA_DEV_OR_NULL(index, cc2),						\
+		PWM_DMA_DEV_OR_NULL(index, cc3),						\
+		PWM_DMA_DEV_OR_NULL(index, cc4),						\
+	},											\
+	.dma_channel = {									\
+		PWM_DMA_CH_OR_ZERO(index, cc1),							\
+		PWM_DMA_CH_OR_ZERO(index, cc2),							\
+		PWM_DMA_CH_OR_ZERO(index, cc3),							\
+		PWM_DMA_CH_OR_ZERO(index, cc4),							\
+	},											\
+	.dma_slot = {										\
+		PWM_DMA_CFG_OR_ZERO(index, cc1),						\
+		PWM_DMA_CFG_OR_ZERO(index, cc2),						\
+		PWM_DMA_CFG_OR_ZERO(index, cc3),						\
+		PWM_DMA_CFG_OR_ZERO(index, cc4),						\
+	}
+
+#else
 #define IRQ_CONFIG_FUNC(index)
 #define CAPTURE_INIT(index)
 #endif /* CONFIG_PWM_CAPTURE */
