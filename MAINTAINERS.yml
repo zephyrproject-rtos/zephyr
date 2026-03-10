@@ -5705,7 +5705,7 @@ Userspace:
     - tests/kernel/mem_protect/
     - samples/userspace/
     - include/zephyr/syscall.h
-    - kernel/userspace*
+    - kernel/userspace/
     - scripts/build/gen_app_partitions.py
     - scripts/build/gen_kobject_list.py
     - scripts/build/gen_syscalls.py
