@@ -9,6 +9,7 @@ DT_STM32_LPTIM_PATH := $(dt_nodelabel_path,stm32_lp_tick_source)
 menuconfig STM32_LPTIM_TIMER
 	bool "STM32 Low Power Timer [EXPERIMENTAL]"
 	default y
+	depends on $(dt_nodelabel_exists,stm32_lp_tick_source)
 	depends on DT_HAS_ST_STM32_LPTIM_ENABLED
 	depends on CLOCK_CONTROL && PM
 	select TICKLESS_CAPABLE
