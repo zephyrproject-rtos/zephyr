@@ -47,6 +47,11 @@
 		};
 	};
 
+	bee_bt_hci: bee_bt_hci {
+		compatible = "realtek,bee-bt-hci";
+		status = "disabled";
+	};
+
 	soc {
 		cctl: clock-controller@40000200 {
 			compatible = "realtek,bee-cctl";
