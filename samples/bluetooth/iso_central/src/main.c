@@ -29,7 +29,8 @@ static struct bt_iso_chan iso_chan;
 static uint16_t seq_num;
 static uint16_t latency_ms = 10U; /* 10ms */
 static uint32_t interval_us = 10U * USEC_PER_MSEC; /* 10 ms */
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+#define SDU_SIZE 247U
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(SDU_SIZE),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 /**
@@ -41,14 +42,14 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
  * Second iteration: 0x00 0x01
  * Third iteration : 0x00 0x01 0x02
  *
- * And so on, until it wraps around the configured ISO TX MTU (CONFIG_BT_ISO_TX_MTU)
+ * And so on, until it wraps around the configured ISO TX SDU_SIZE
  *
  * @param work Pointer to the work structure
  */
 static void iso_timer_timeout(struct k_work *work)
 {
 	int ret;
-	static uint8_t buf_data[CONFIG_BT_ISO_TX_MTU];
+	static uint8_t buf_data[SDU_SIZE];
 	static bool data_initialized;
 	struct net_buf *buf;
 	static size_t len_to_send = 1;
@@ -179,7 +180,7 @@ static struct bt_iso_chan_ops iso_ops = {
 };
 
 static struct bt_iso_chan_io_qos iso_tx = {
-	.sdu = CONFIG_BT_ISO_TX_MTU,
+	.sdu = SDU_SIZE,
 	.phy = BT_GAP_LE_PHY_2M,
 	.rtn = 1,
 };
