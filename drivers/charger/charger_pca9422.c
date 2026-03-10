@@ -238,6 +238,11 @@ static const struct linear_range i_fast_chg_ua_range[] = {
 	LINEAR_RANGE_INIT(2500, 2500, 0x0U, 0x7FU),
 };
 
+/* 5.0 mA step: 5 mA .. 640 mA */
+static const struct linear_range i_fast_chg_ua_range_5ma[] = {
+	LINEAR_RANGE_INIT(5000, 5000, 0x00U, 0x7FU),
+};
+
 static int pca9422_charger_get_status(const struct device *dev, enum charger_status *status)
 {
 	const struct charger_pca9422_config *const config = dev->config;
@@ -297,6 +302,7 @@ static int pca9422_charger_set_constant_charge_current(const struct device *dev,
 {
 	const struct charger_pca9422_config *const config = dev->config;
 	struct charger_pca9422_data *data = dev->data;
+	const struct linear_range *range;
 	uint16_t idx;
 	uint8_t val;
 	uint8_t num_ranges;
@@ -326,9 +332,17 @@ static int pca9422_charger_set_constant_charge_current(const struct device *dev,
 		data->chg_current_step = CHG_CURRENT_STEP_5P0MA;
 	}
 
-	num_ranges = ARRAY_SIZE(i_fast_chg_ua_range);
-	ret = linear_range_group_get_win_index(i_fast_chg_ua_range, num_ranges, current_ua,
-					       current_ua, &idx);
+	/* Select range based on current step mode */
+	if (data->chg_current_step == CHG_CURRENT_STEP_5P0MA) {
+		range = i_fast_chg_ua_range_5ma;
+		num_ranges = ARRAY_SIZE(i_fast_chg_ua_range_5ma);
+	} else {
+		range = i_fast_chg_ua_range;
+		num_ranges = ARRAY_SIZE(i_fast_chg_ua_range);
+	}
+
+	/* Map requested current to selector index */
+	ret = linear_range_group_get_win_index(range, num_ranges, current_ua, current_ua, &idx);
 	if (ret == -EINVAL) {
 		goto lock;
 	}
