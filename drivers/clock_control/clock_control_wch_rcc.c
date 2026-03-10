@@ -124,8 +124,6 @@ static DEVICE_API(clock_control, clock_control_wch_rcc_api) = {
 
 static int clock_control_wch_rcc_init(const struct device *dev)
 {
-	const struct clock_control_wch_rcc_config *config = dev->config;
-
 	clock_control_wch_rcc_setup_flash();
 
 	if (IS_ENABLED(CONFIG_DT_HAS_WCH_CH32V00X_PLL_CLOCK_ENABLED) ||
@@ -168,6 +166,7 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 			RCC->CFGR0 &= ~RCC_PLLSRC;
 		}
 #if defined(RCC_PLLMULL)
+		const struct clock_control_wch_rcc_config *config = dev->config;
 		uint8_t pllmul = 0x0; /* Default Reset Value */
 
 		for (size_t i = 0; i < ARRAY_SIZE(pllmul_lut); i++) {
