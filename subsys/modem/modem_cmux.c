@@ -1258,6 +1258,7 @@ static void modem_cmux_drop_frame(struct modem_cmux *cmux)
 
 	LOG_WRN("Dropped frame");
 	cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_SOF;
+	cmux->frame_start = 0;
 
 #if defined(CONFIG_MODEM_CMUX_LOG_LEVEL_DBG)
 	struct modem_cmux_frame *frame = &cmux->frame;
@@ -1267,13 +1268,16 @@ static void modem_cmux_drop_frame(struct modem_cmux *cmux)
 #endif
 }
 
-static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t byte)
+static void modem_cmux_process_received_byte(struct modem_cmux *cmux, int idx)
 {
 	uint8_t fcs;
+	uint8_t byte = cmux->config.receive_buf[idx];
 
 	switch (cmux->receive_state) {
 	case MODEM_CMUX_RECEIVE_STATE_SOF:
+		cmux->frame = (struct modem_cmux_frame) {0};
 		cmux->frame_header_len = 0;
+		cmux->frame_start = 0;
 		if (byte == MODEM_CMUX_SOF) {
 			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_RESYNC;
 			cmux->frame_header_len++;
@@ -1309,12 +1313,8 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 
 	case MODEM_CMUX_RECEIVE_STATE_ADDRESS:
 		/* Initialize */
-		cmux->receive_buf_len = 0;
-		cmux->frame_header_len = 0;
-
-		/* Store header for FCS */
-		cmux->frame_header[cmux->frame_header_len] = byte;
-		cmux->frame_header_len++;
+		cmux->frame_start = idx;
+		cmux->frame_header_len = 1;
 
 		/* Get CR */
 		cmux->frame.cr = (byte & 0x02) ? true : false;
@@ -1327,8 +1327,6 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 		break;
 
 	case MODEM_CMUX_RECEIVE_STATE_CONTROL:
-		/* Store header for FCS */
-		cmux->frame_header[cmux->frame_header_len] = byte;
 		cmux->frame_header_len++;
 
 		/* Get PF */
@@ -1342,8 +1340,6 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 		break;
 
 	case MODEM_CMUX_RECEIVE_STATE_LENGTH:
-		/* Store header for FCS */
-		cmux->frame_header[cmux->frame_header_len] = byte;
 		cmux->frame_header_len++;
 
 		/* Get first 7 bits of data length */
@@ -1374,8 +1370,6 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 		break;
 
 	case MODEM_CMUX_RECEIVE_STATE_LENGTH_CONT:
-		/* Store header for FCS */
-		cmux->frame_header[cmux->frame_header_len] = byte;
 		cmux->frame_header_len++;
 
 		/* Get last 8 bits of data length */
@@ -1400,31 +1394,30 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 		break;
 
 	case MODEM_CMUX_RECEIVE_STATE_DATA:
-		/* Copy byte to data */
-		if (cmux->receive_buf_len < cmux->config.receive_buf_size) {
-			cmux->config.receive_buf[cmux->receive_buf_len] = byte;
-		}
-		cmux->receive_buf_len++;
-
-		/* Check if datalen reached */
-		if (cmux->frame.data_len == cmux->receive_buf_len) {
-			/* Await FCS */
-			cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_FCS;
-		}
-
-		break;
-
-	case MODEM_CMUX_RECEIVE_STATE_FCS:
-		if (cmux->receive_buf_len > cmux->config.receive_buf_size) {
-			LOG_WRN("Receive buffer overrun (%u > %u)", cmux->receive_buf_len,
-				cmux->config.receive_buf_size);
+		/* We only allow payload on UIH frames */
+		if (cmux->frame.data_len > 0 && cmux->frame.type != MODEM_CMUX_FRAME_TYPE_UIH) {
 			modem_cmux_drop_frame(cmux);
 			break;
 		}
+		cmux->frame.data = &cmux->config.receive_buf[idx];
+		cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_DATA_CONT;
+		break;
 
+	case MODEM_CMUX_RECEIVE_STATE_DATA_CONT:
+		/* Check if datalen reached */
+		if (idx < (cmux->frame.data_len + cmux->frame_start + cmux->frame_header_len)) {
+			break;
+		}
+
+		cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_FCS;
+		__fallthrough;
+
+	case MODEM_CMUX_RECEIVE_STATE_FCS:
 		/* Compute FCS */
-		fcs = crc8_rohc(MODEM_CMUX_FCS_INIT_VALUE, cmux->frame_header,
-				cmux->frame_header_len);
+		uint8_t *frame_start = &cmux->config.receive_buf[cmux->frame_start];
+
+		fcs = crc8_rohc(MODEM_CMUX_FCS_INIT_VALUE, frame_start,
+			cmux->frame_header_len);
 		if (cmux->frame.type == MODEM_CMUX_FRAME_TYPE_UIH) {
 			fcs = 0xFF - fcs;
 		} else {
@@ -1433,7 +1426,7 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 
 		/* Validate FCS */
 		if (fcs != byte) {
-			LOG_WRN("Frame FCS error");
+			LOG_WRN("Frame FCS error expect %hhx was %hhx", fcs, byte);
 
 			modem_cmux_drop_frame(cmux);
 			break;
@@ -1451,7 +1444,6 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 		}
 
 		/* Process frame */
-		cmux->frame.data = cmux->config.receive_buf;
 		modem_cmux_on_frame(cmux);
 
 		/* Await start of next frame */
@@ -1460,6 +1452,39 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, uint8_t by
 
 	default:
 		break;
+	}
+}
+
+/*
+ * If we have incomplete frame within our receive_buffer,
+ * move it to beginning so that we have room for at least one full CMUX
+ * frame.
+ * Before:
+ *      |.......parsed.......[SOF|ADDR|CTRL|LEN|(data..|
+ * After:
+ *      |[ADDR|CTRL|LEN|(data..........................|
+ *
+ */
+static void move_incomplete_frame(struct modem_cmux *cmux)
+{
+	if (cmux->receive_state <= MODEM_CMUX_RECEIVE_STATE_RESYNC) {
+		cmux->receive_buf_len = 0;
+		cmux->frame_start = 0;
+		return;
+	}
+	if (cmux->receive_buf_len <= MODEM_CMUX_HEADER_SIZE ||
+	    cmux->frame_start < (cmux->config.receive_buf_size - MODEM_CMUX_DATA_FRAME_SIZE_MAX)) {
+		return;
+	}
+
+	uint8_t *frame_start = &cmux->config.receive_buf[cmux->frame_start];
+	int data_offset = cmux->frame.data - frame_start;
+
+	memmove(cmux->config.receive_buf, frame_start, cmux->receive_buf_len - cmux->frame_start);
+	cmux->receive_buf_len -= cmux->frame_start;
+	cmux->frame_start = 0;
+	if (cmux->frame.data && cmux->receive_state > MODEM_CMUX_RECEIVE_STATE_DATA) {
+		cmux->frame.data = &cmux->config.receive_buf[data_offset];
 	}
 }
 
@@ -1472,11 +1497,18 @@ static void modem_cmux_receive_handler(struct k_work *item)
 	runtime_pm_keepalive(cmux);
 
 	/* Receive data from pipe */
-	while ((ret = modem_pipe_receive(cmux->pipe, cmux->work_buf, sizeof(cmux->work_buf))) > 0) {
+	while ((ret = modem_pipe_receive(cmux->pipe,
+					 &cmux->config.receive_buf[cmux->receive_buf_len],
+					 cmux->config.receive_buf_size - cmux->receive_buf_len))
+					 > 0) {
 		/* Process received data */
-		for (int i = 0; i < ret; i++) {
-			modem_cmux_process_received_byte(cmux, cmux->work_buf[i]);
+		int parsed = cmux->receive_buf_len;
+
+		cmux->receive_buf_len += ret;
+		for (int i = parsed; i < cmux->receive_buf_len; i++) {
+			modem_cmux_process_received_byte(cmux, i);
 		}
+		move_incomplete_frame(cmux);
 	}
 	if (ret < 0) {
 		LOG_ERR("Pipe receiving error: %d", ret);
