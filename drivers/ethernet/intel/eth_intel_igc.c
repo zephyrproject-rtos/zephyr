@@ -409,15 +409,15 @@ static void eth_intel_igc_set_mac_filter(const struct device *dev,
 	eth_intel_igc_set_mac_addr(data->base, index, mac_addr, config);
 }
 
-static void eth_intel_igc_phylink_cb(const struct device *phy, struct phy_link_state *state,
-				     void *user_data)
+static void eth_intel_igc_phylink_cb(const struct device *phy __unused,
+				     struct phy_link_state *state, void *user_data)
 {
-	struct eth_intel_igc_mac_data *data = (struct eth_intel_igc_mac_data *)user_data;
+	struct net_if *iface = (struct net_if *)user_data;
 
 	if (state->is_up) {
-		net_eth_carrier_on(data->iface);
+		net_eth_carrier_on(iface);
 	} else {
-		net_eth_carrier_off(data->iface);
+		net_eth_carrier_off(iface);
 	}
 }
 
@@ -463,7 +463,7 @@ static void eth_intel_igc_iface_init(struct net_if *iface)
 	eth_intel_igc_set_mac_filter(dev, DEST_ADDR, data->mac_addr, 0, 0);
 
 	if (device_is_ready(cfg->phy)) {
-		phy_link_callback_set(cfg->phy, eth_intel_igc_phylink_cb, (void *)data);
+		phy_link_callback_set(cfg->phy, eth_intel_igc_phylink_cb, (void *)iface);
 	} else {
 		LOG_ERR("PHY device is not ready");
 		return;
