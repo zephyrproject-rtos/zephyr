@@ -66,6 +66,16 @@ static inline void z_vrfy_k_object_access_grant(const void *object,
 }
 #include <zephyr/syscalls/k_object_access_grant_mrsh.c>
 
+/*
+ * z_impl_k_object_access_check already checks if the object is valid.
+ * No additional verification is required.
+ */
+static inline int z_vrfy_k_object_access_check(const void *object)
+{
+	return z_impl_k_object_access_check(object);
+}
+#include <zephyr/syscalls/k_object_access_check_mrsh.c>
+
 static inline void z_vrfy_k_object_release(const void *object)
 {
 	struct k_object *ko;

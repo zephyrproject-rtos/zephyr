@@ -784,6 +784,11 @@ int k_object_validate(struct k_object *ko, enum k_objects otype,
 	return 0;
 }
 
+int z_impl_k_object_access_check(const void *object)
+{
+	return k_object_validate(k_object_find(object), K_OBJ_ANY, _OBJ_INIT_ANY);
+}
+
 void k_object_init(const void *obj)
 {
 	struct k_object *ko;
