@@ -46,6 +46,9 @@ config LV_LOG_LEVEL_USER
 config LV_LOG_LEVEL_TRACE
 	bool
 
+config LV_ATTRIBUTE_MEM_ALIGN_SIZE
+	int
+
 config LV_Z_LOG_LEVEL
 	int
 	default 0 if LV_LOG_LEVEL_NONE || !LV_USE_LOG
