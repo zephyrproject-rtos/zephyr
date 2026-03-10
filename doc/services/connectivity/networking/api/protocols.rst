@@ -14,6 +14,7 @@ Protocols
    http_client
    http_server
    lwm2m
+   mcp
    mqtt
    mqtt_sn
    ocpp
