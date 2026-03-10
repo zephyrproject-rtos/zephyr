@@ -310,7 +310,7 @@ static void test_main_fragment(void)
 	 */
 	new_sdu_size = iso_qos.tx->sdu * 3U;
 
-	if (new_sdu_size > BT_ISO_MAX_SDU) {
+	if (new_sdu_size > ISO_TX_SDU_SIZE) {
 		TEST_FAIL("Not possible to use SDU size of 0x%08X (default SDU is 0x%04X)",
 			  new_sdu_size, iso_qos.tx->sdu);
 		return;

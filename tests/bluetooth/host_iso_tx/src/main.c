@@ -42,6 +42,7 @@
 #define ACL_HANDLE 0x0001U
 #define CIS_HANDLE 0x0010U
 
+#define ISO_MAX_SDU_SIZE 60U
 /* An SDU that fits in one ISO data packet, and one that takes two */
 #define SHORT_SDU_LEN 10U
 #define LONG_SDU_LEN  50U
@@ -409,7 +410,7 @@ static struct bt_iso_chan_ops iso_ops = {
 };
 
 static struct bt_iso_chan_io_qos iso_tx_qos = {
-	.sdu = CONFIG_BT_ISO_TX_MTU,
+	.sdu = ISO_MAX_SDU_SIZE,
 	.phy = BT_GAP_LE_PHY_1M,
 	.rtn = 1U,
 };
@@ -438,7 +439,7 @@ static void connect_cis(void)
 		.c_bn = 1U,
 		.c_ft = 1U,
 		.p_ft = 1U,
-		.c_max_pdu = sys_cpu_to_le16(CONFIG_BT_ISO_TX_MTU),
+		.c_max_pdu = sys_cpu_to_le16(ISO_MAX_SDU_SIZE),
 		.interval = sys_cpu_to_le16(BT_ISO_ISO_INTERVAL_MIN),
 	};
 
@@ -468,8 +469,8 @@ static void disconnect_cis(void)
 }
 
 NET_BUF_POOL_FIXED_DEFINE(sdu_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
-			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+			  BT_ISO_SDU_BUF_SIZE(ISO_MAX_SDU_SIZE), CONFIG_BT_CONN_TX_USER_DATA_SIZE,
+			  NULL);
 
 static void send_sdu(size_t len)
 {
