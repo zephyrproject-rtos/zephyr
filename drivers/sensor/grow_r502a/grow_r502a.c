@@ -156,12 +156,18 @@ static void uart_cb_handler(const struct device *dev, void *user_data)
 	int len = 0;
 	int offset = drv_data->rx_buf.len;
 
-	if ((uart_irq_update(dev) > 0) && (uart_irq_is_pending(dev) > 0)) {
+	while (true) {
+		uart_irq_update(dev);
+
+		if (uart_irq_is_pending(dev) <= 0) {
+			break;
+		}
+
 		if (uart_irq_tx_ready(dev)) {
 			uart_cb_tx_handler(uart_dev);
 		}
 
-		while (uart_irq_rx_ready(dev)) {
+		if (uart_irq_rx_ready(dev)) {
 			len = uart_fifo_read(dev, &drv_data->rx_buf.data[offset],
 								drv_data->pkt_len);
 			offset += len;

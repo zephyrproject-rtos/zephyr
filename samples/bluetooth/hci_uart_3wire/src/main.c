@@ -426,16 +426,10 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 	ARG_UNUSED(unused);
 	ARG_UNUSED(user_data);
 
-	while (uart_irq_update(h5_dev) &&
-	       uart_irq_is_pending(h5_dev)) {
+	while (true) {
+		uart_irq_update(h5_dev);
 
-		if (!uart_irq_rx_ready(h5_dev)) {
-			if (uart_irq_tx_ready(h5_dev)) {
-				LOG_DBG("transmit ready");
-			} else {
-				LOG_DBG("spurious interrupt");
-			}
-			/* Only the UART RX path is interrupt-enabled */
+		if (uart_irq_rx_ready(h5_dev) <= 0) {
 			break;
 		}
 

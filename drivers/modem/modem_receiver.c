@@ -117,8 +117,13 @@ static void mdm_receiver_isr(const struct device *uart_dev, void *user_data)
 	}
 
 	/* get all of the data off UART as fast as we can */
-	while (uart_irq_update(ctx->uart_dev) &&
-	       uart_irq_rx_ready(ctx->uart_dev)) {
+	while (true) {
+		uart_irq_update(ctx->uart_dev);
+
+		if (uart_irq_rx_ready(ctx->uart_dev) <= 0) {
+			break;
+		}
+
 		rx = uart_fifo_read(ctx->uart_dev, read_buf, sizeof(read_buf));
 		if (rx > 0) {
 			ret = ring_buf_put(&ctx->rx_rb, read_buf, rx);

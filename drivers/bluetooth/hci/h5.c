@@ -434,16 +434,10 @@ static void bt_uart_isr(const struct device *uart, void *user_data)
 	static uint8_t hdr[4];
 	size_t buf_tailroom;
 
-	while (uart_irq_update(uart) &&
-	       uart_irq_is_pending(uart)) {
+	while (true) {
+		uart_irq_update(uart);
 
-		if (!uart_irq_rx_ready(uart)) {
-			if (uart_irq_tx_ready(uart)) {
-				LOG_DBG("transmit ready");
-			} else {
-				LOG_DBG("spurious interrupt");
-			}
-			/* Only the UART RX path is interrupt-enabled */
+		if (uart_irq_rx_ready(uart) <= 0) {
 			break;
 		}
 

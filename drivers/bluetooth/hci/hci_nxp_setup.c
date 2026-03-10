@@ -1110,7 +1110,13 @@ static void bt_nxp_ctlr_uart_isr(const struct device *unused, void *user_data)
 	ARG_UNUSED(unused);
 	ARG_UNUSED(user_data);
 
-	while (uart_irq_update(uart_dev) && uart_irq_is_pending(uart_dev)) {
+	while (true) {
+		uart_irq_update(uart_dev);
+
+		if (uart_irq_rx_ready(uart_dev) <= 0) {
+			break;
+		}
+
 		err = uart_poll_in(uart_dev, &fw_upload.rx.buffer[fw_upload.rx.head]);
 		if (err >= 0) {
 			fw_upload.rx.head++;
