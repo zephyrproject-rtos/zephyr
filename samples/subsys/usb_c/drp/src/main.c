@@ -15,7 +15,12 @@ LOG_MODULE_REGISTER(main, LOG_LEVEL_DBG);
 
 #include "power_ctrl.h"
 
-#define USBC_PORT0_NODE DT_ALIAS(usbc_port0)
+#define USBC_PORT0_NODE         DT_ALIAS(usbc_port0)
+#define USBC_PORT0_PWRCTRL_NODE DT_ALIAS(usbc_port0_pwrctrl)
+
+#if !DT_NODE_HAS_STATUS(USBC_PORT0_PWRCTRL_NODE, okay)
+#error "Unsupported board: usbc-port0-pwrctrl devicetree alias is not defined"
+#endif
 
 BUILD_ASSERT(DT_ENUM_IDX(USBC_PORT0_NODE, power_role) == TC_ROLE_CAP_DRP,
 	     "Unsupported board: Only Dual Role Power (DRP) device supported");
@@ -32,6 +37,8 @@ BUILD_ASSERT(DT_ENUM_IDX(USBC_PORT0_NODE, power_role) == TC_ROLE_CAP_DRP,
  * @brief A structure that encapsulates Port data.
  */
 static struct port0_data_t {
+	/** Power controller device */
+	const struct device *pwrctrl;
 	/** CC Rp value */
 	int rp;
 	/** Source Capabilities */
@@ -215,7 +222,9 @@ int port0_policy_cb_get_src_rp(const struct device *dev, enum tc_rp_value *rp)
  */
 int port0_policy_cb_src_en(const struct device *dev, bool en)
 {
-	return source_ctrl_set(en ? SOURCE_5V : SOURCE_0V);
+	struct port0_data_t *dpm_data = usbc_get_dpm_data(dev);
+
+	return source_ctrl_set(dpm_data->pwrctrl, en ? SOURCE_5V : SOURCE_0V);
 }
 
 /**
@@ -231,13 +240,13 @@ int port0_policy_cb_vconn_en(const struct device *tcpc_dev, const struct device 
 	if (en == true) {
 		if (pol == TC_POLARITY_CC1) {
 			/* set VCONN on CC1 */
-			return vconn_ctrl_set(VCONN1_ON);
+			return vconn_ctrl_set(dpm_data->pwrctrl, VCONN1_ON);
 		}
 		/* set VCONN on CC2 */
-		return vconn_ctrl_set(VCONN2_ON);
+		return vconn_ctrl_set(dpm_data->pwrctrl, VCONN2_ON);
 	}
 
-	return vconn_ctrl_set(VCONN_OFF);
+	return vconn_ctrl_set(dpm_data->pwrctrl, VCONN_OFF);
 }
 
 /**
@@ -438,9 +447,9 @@ static void port0_notify(const struct device *dev, const enum usbc_policy_notify
 		 */
 
 		/* Power off VCONN */
-		vconn_ctrl_set(VCONN_OFF);
+		vconn_ctrl_set(dpm_data->pwrctrl, VCONN_OFF);
 		/* Transition PS to Default level */
-		source_ctrl_set(SOURCE_5V);
+		source_ctrl_set(dpm_data->pwrctrl, SOURCE_5V);
 		break;
 	case SENDER_RESPONSE_TIMEOUT:
 		break;
@@ -478,7 +487,7 @@ bool port0_policy_check(const struct device *dev, const enum usbc_policy_check_t
 		 */
 
 		/* Power on VCONN */
-		vconn_ctrl_set(dpm_data->vconn_pol);
+		vconn_ctrl_set(dpm_data->pwrctrl, dpm_data->vconn_pol);
 
 		/* PS should be at default level after receiving a Hard Reset */
 		return true;
@@ -497,6 +506,13 @@ int main(void)
 	usbc_port0 = DEVICE_DT_GET(USBC_PORT0_NODE);
 	if (!device_is_ready(usbc_port0)) {
 		LOG_ERR("PORT0 device not ready");
+		return 0;
+	}
+
+	/* Get the power controller device for this port */
+	port0_data.pwrctrl = DEVICE_DT_GET(USBC_PORT0_PWRCTRL_NODE);
+	if (!device_is_ready(port0_data.pwrctrl)) {
+		LOG_ERR("PORT0 power controller not ready");
 		return 0;
 	}
 
@@ -550,7 +566,7 @@ int main(void)
 			 * Transition Power Supply to new voltage.
 			 * Okay if this blocks.
 			 */
-			source_ctrl_set(port0_data.obj_pos);
+			source_ctrl_set(port0_data.pwrctrl, port0_data.obj_pos);
 			atomic_set_bit(&port0_data.ps_flags, PS_SOURCE_READY_BIT);
 		}
 
