@@ -927,9 +927,11 @@ static int flexcomm_uart_async_init(const struct device *dev)
 	USART_EnableTxDMA(config->base, false);
 	USART_EnableRxDMA(config->base, false);
 
-	/* Route DMA requests */
-	for (int i = 0; i < config->num_muxes; i++) {
-		mux_configure_default(config->mux_dev, config->mux_controls[i]);
+	if (config->mux_dev != NULL) {
+		/* Route DMA requests */
+		for (int i = 0; i < config->num_muxes; i++) {
+			mux_configure_default(config->mux_dev, config->mux_controls[i]);
+		}
 	}
 
 	/* Init work objects for RX and TX timeouts */
@@ -1269,24 +1271,9 @@ static void mcux_flexcomm_##n##_pm_unlock(struct k_work *work)			\
 DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_TX_TIMEOUT_FUNC);
 DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_RX_TIMEOUT_FUNC);
 
-/* mux-controls is not used in this driver actually because its all just init once */
-#define UART_MCUX_FLEXCOMM_MUX_CONTROL_DEFINE_IDX(node_id, pha, idx)		\
-	MUX_CONTROL_DT_SPEC_DEFINE_BY_IDX(node_id, idx)
-#define UART_MCUX_FLEXCOMM_MUX_CONTROL_DEFINE_ALL(n)				\
-	DT_INST_FOREACH_PROP_ELEM(n, mux_states,				\
-					UART_MCUX_FLEXCOMM_MUX_CONTROL_DEFINE_IDX)
-DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_MUX_CONTROL_DEFINE_ALL)
-
-#define UART_MCUX_FLEXCOMM_MUX_CONTROL_GET_IDX(node_id, pha, idx)		\
-	MUX_CONTROL_DT_GET_BY_IDX(node_id, idx)
-#define UART_MCUX_FLEXCOMM_MUX_CONTROL_LIST_DEFINE(n)					\
-	static struct mux_control *fc_uart_##n##_muxes[] = {				\
-	DT_INST_FOREACH_PROP_ELEM_SEP(n, mux_states,					\
-					UART_MCUX_FLEXCOMM_MUX_CONTROL_GET_IDX, (,))	\
-	};
-DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_MUX_CONTROL_LIST_DEFINE)
-
-#define UART_MCUX_FLEXCOMM_GET_MUX_LIST(n) fc_uart_##n##_muxes
+/* mux-states entries are configured once at init; select the property explicitly */
+#define UART_MCUX_FLEXCOMM_MUX_DEFINE(n) MUX_CONTROL_DT_INST_DEFINE_BY_PROP(fc_uart, n, mux_states)
+DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_MUX_DEFINE)
 
 #define UART_MCUX_FLEXCOMM_ASYNC_CFG(n)						\
 	.tx_dma = {								\
@@ -1331,9 +1318,10 @@ DT_INST_FOREACH_STATUS_OKAY(UART_MCUX_FLEXCOMM_MUX_CONTROL_LIST_DEFINE)
 	},									\
 	.rx_timeout_func = mcux_flexcomm_uart_##n##_rx_timeout,			\
 	.tx_timeout_func = mcux_flexcomm_uart_##n##_tx_timeout,			\
-	.mux_dev = DEVICE_DT_GET(DT_MUX_CTLR_BY_IDX(DT_DRV_INST(n), 0)),	\
-	.mux_controls = UART_MCUX_FLEXCOMM_GET_MUX_LIST(n),			\
-	.num_muxes = DT_INST_PROP_LEN(n, mux_states),
+	.mux_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, mux_states),		\
+			(MUX_CONTROL_DT_INST_DEV_GET_BY_PROP(n, mux_states)), (NULL)),\
+	.mux_controls = MUX_CONTROL_DT_INST_ARRAY_GET(fc_uart, n),		\
+	.num_muxes = MUX_CONTROL_DT_INST_COUNT_BY_PROP(n, mux_states),
 #else
 #define UART_MCUX_FLEXCOMM_ASYNC_CFG(n)
 #endif /* CONFIG_UART_ASYNC_API */
