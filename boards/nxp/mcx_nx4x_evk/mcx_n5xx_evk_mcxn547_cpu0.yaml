@@ -13,4 +13,8 @@ flash: 2048
 toolchain:
   - zephyr
   - gnuarmemb
+supported:
+  - dma
+  - gpio
+  - i2s
 vendor: nxp
