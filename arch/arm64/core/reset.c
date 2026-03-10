@@ -84,7 +84,9 @@ void z_arm64_el3_init(void)
 	if (is_sve_implemented()) {
 		reg |= CPTR_EZ_BIT;		/* Enable SVE access for lower ELs */
 		write_cptr_el3(reg);
-
+		
+		__asm("ISB");
+		
 		/* Initialize ZCR_EL3 for full SVE vector length */
 		/* ZCR_EL3.LEN = 0x1ff means full hardware vector length */
 		write_zcr_el3(0x1ff);
@@ -206,6 +208,8 @@ void z_arm64_el2_init(void)
 		reg |= (CPTR_EL2_ZEN_EL1_EN | CPTR_EL2_ZEN_EL0_EN);
 		write_cptr_el2(reg);
 
+		__asm("ISB");
+		
 		/* Initialize ZCR_EL2 for full SVE vector length */
 		/* ZCR_EL2.LEN = 0x1ff means full hardware vector length */
 		write_zcr_el2(0x1ff);
@@ -260,6 +264,8 @@ void z_arm64_el1_init(void)
 		reg |= CPACR_EL1_ZEN;	/* Do not trap SVE initially */
 		write_cpacr_el1(reg);
 
+		__asm("ISB");
+		
 		/* Initialize ZCR_EL1 SVE vector length */
 		write_zcr_el1(CONFIG_ARM64_SVE_VL_MAX/16 - 1);
 	} else {
