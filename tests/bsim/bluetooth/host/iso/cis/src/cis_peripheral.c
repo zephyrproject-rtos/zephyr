@@ -134,7 +134,7 @@ static int iso_accept(const struct bt_iso_accept_info *info, struct bt_iso_chan 
 static void init(void)
 {
 	static struct bt_iso_chan_io_qos iso_rx = {
-		.sdu = CONFIG_BT_ISO_TX_MTU,
+		.sdu = CONFIG_BT_ISO_RX_MTU,
 	};
 	static struct bt_iso_server iso_server = {
 		.accept = iso_accept,
