@@ -42,6 +42,8 @@ Build System
   the application source dir per-default. Samples requiring application source dir to be added to
   ``SNIPPET_ROOT`` must instead add the application source dir using ``snippet_root = <dir>`` entry
   in :file:`zephyr/module.yml` or manually append the folder to the CMake variable ``SNIPPET_ROOT``.
+* Shell autocompletions (``west completion``) should be regenerated as board target auto-complete now
+  supports board revisions.
 
 Kernel
 ******
