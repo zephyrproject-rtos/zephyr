@@ -112,6 +112,7 @@ enum modem_cmux_receive_state {
 	MODEM_CMUX_RECEIVE_STATE_LENGTH,
 	MODEM_CMUX_RECEIVE_STATE_LENGTH_CONT,
 	MODEM_CMUX_RECEIVE_STATE_DATA,
+	MODEM_CMUX_RECEIVE_STATE_DATA_CONT,
 	MODEM_CMUX_RECEIVE_STATE_FCS,
 	MODEM_CMUX_RECEIVE_STATE_EOF,
 };
@@ -187,9 +188,7 @@ struct modem_cmux {
 
 	/* Receive state*/
 	enum modem_cmux_receive_state receive_state;
-	uint16_t receive_buf_len;
-
-	uint8_t work_buf[MODEM_CMUX_WORK_BUFFER_SIZE];
+	int receive_buf_len;
 
 	/* Transmit buffer */
 	struct ring_buf transmit_rb;
@@ -197,7 +196,7 @@ struct modem_cmux {
 
 	/* Received frame */
 	struct modem_cmux_frame frame;
-	uint8_t frame_header[5];
+	int frame_start;
 	uint16_t frame_header_len;
 
 	/* Work */
