@@ -75,9 +75,6 @@
 
 /* imports */
 GDATA(_sw_isr_table)
-#ifdef CONFIG_RISCV_SOC_EXCEPTION_FROM_IRQ
-GTEXT(__soc_is_irq)
-#endif
 GTEXT(__soc_handle_irq)
 GTEXT(z_riscv_fault)
 GTEXT(z_irq_spurious)
@@ -122,8 +119,6 @@ GTEXT(_isr_wrapper)
  * what standard behavior is defined). Hence, the arch level code expects
  * the following functions to be provided at the SOC level:
  *
- *     - __soc_is_irq (optional): decide if we're handling an interrupt or an
-         exception
  *     - __soc_handle_irq: handle SoC-specific details for a pending IRQ
  *       (e.g. clear a pending bit in a SoC-specific register)
  *
@@ -328,21 +323,11 @@ no_fp:	/* increment _current->arch.exception_depth */
 	 * Check if exception is the result of an interrupt or not.
 	 * (SOC dependent). Following the RISC-V architecture spec, the MSB
 	 * of the mcause register is used to indicate whether an exception
-	 * is the result of an interrupt or an exception/fault. But for some
-	 * SOCs (like pulpino or riscv-qemu), the MSB is never set to indicate
-	 * interrupt. Hence, check for interrupt/exception via the __soc_is_irq
-	 * function (that needs to be implemented by each SOC). The result is
-	 * returned via register a0 (1: interrupt, 0 exception)
+	 * is the result of an interrupt or an exception/fault.
 	 */
-
-#ifdef CONFIG_RISCV_SOC_EXCEPTION_FROM_IRQ
-	jal ra, __soc_is_irq
-	bnez a0, is_interrupt
-#else
 	csrr t0, mcause
 	srli t0, t0, RISCV_MCAUSE_IRQ_POS
 	bnez t0, is_interrupt
-#endif
 
 	/*
 	 * If the exception is the result of an ECALL, check whether to
