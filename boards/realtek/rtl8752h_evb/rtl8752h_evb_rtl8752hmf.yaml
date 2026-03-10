@@ -20,6 +20,7 @@ supported:
   - dma
   - spi
   - crypto
+  - adc
 testing:
   ignore_tags:
     - pm
