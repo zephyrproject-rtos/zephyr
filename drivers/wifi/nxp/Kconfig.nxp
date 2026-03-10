@@ -880,6 +880,20 @@ config NXP_WIFI_WLS
 	help
 	  Enable/Disable Wireless Location Service(WLS) feature.
 
+config NXP_WIFI_MAX_CSI_LOCAL_BUF
+	int "Max csi local buffer entry"
+	default 20
+	depends on NXP_WIFI_CSI
+	help
+	  This option sets the max csi local buffer entry.
+
+config NXP_WIFI_CSI_LOCAL_BUF_ENTRY_SIZE
+	int "Max size of every csi local buffer entry"
+	default 768
+	depends on NXP_WIFI_CSI
+	help
+	  This option sets the size of every csi local buffer entry.
+
 config NXP_WIFI_RESET
 	bool "Wi-Fi reset"
 	default y
