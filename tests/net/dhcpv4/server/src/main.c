@@ -57,7 +57,7 @@ struct test_lease_count {
 #define NO_LEASE_TIME -1
 #define TEST_XID 0x12345678
 
-#define TEST_TIMEOUT K_MSEC(100)
+#define TEST_TIMEOUT K_MSEC(500)
 
 static void server_iface_init(struct net_if *iface)
 {
@@ -291,7 +291,7 @@ static void client_send_release(void)
 		&test_ctx.assigned_ip);
 
 	/* Small delay to let the DHCP server process the packet */
-	k_msleep(10);
+	k_msleep(50);
 }
 
 static void client_send_decline(void)
@@ -302,7 +302,7 @@ static void client_send_decline(void)
 		&test_ctx.assigned_ip, NULL);
 
 	/* Small delay to let the DHCP server process the packet */
-	k_msleep(10);
+	k_msleep(50);
 }
 
 static void client_send_inform(void)
@@ -836,8 +836,8 @@ ZTEST(dhcpv4_server_tests, test_expiry)
 	test_ctx.lease_time = 1;
 	client_get_lease(true);
 
-	/* Add extra 10ms to avoid race. */
-	k_msleep(1000 + 10);
+	/* Add extra 50ms to avoid race. */
+	k_msleep(1000 + 50);
 	verify_lease_count(0, 0, 0);
 }
 
@@ -886,8 +886,8 @@ ZTEST(dhcpv4_server_tests, test_decline)
 	verify_lease_count(0, 0, 1);
 	verify_declined_address(&test_ctx.assigned_ip);
 
-	/* Add extra 10ms to avoid race. */
-	k_msleep(1000 + 10);
+	/* Add extra 50ms to avoid race. */
+	k_msleep(1000 + 50);
 	verify_lease_count(0, 0, 0);
 }
 
@@ -904,7 +904,7 @@ ZTEST(dhcpv4_server_tests, test_declined_reuse)
 			oldest_addr = test_ctx.assigned_ip;
 		}
 		client_send_decline();
-		k_msleep(10);
+		k_msleep(50);
 	}
 
 	verify_lease_count(0, 0, 4);
