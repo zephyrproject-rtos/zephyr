@@ -175,7 +175,7 @@ static void init(void)
 		.sent = iso_tx_sent_cb,
 	};
 	static struct bt_iso_chan_io_qos iso_tx = {
-		.sdu = CONFIG_BT_ISO_TX_MTU,
+		.sdu = MIN(200U, ISO_TX_SDU_SIZE),
 		.phy = BT_GAP_LE_PHY_2M,
 		.rtn = 1,
 	};
