@@ -5455,7 +5455,7 @@ struct k_mbox {
  *
  * @param mbox Address of the mailbox.
  */
-void k_mbox_init(struct k_mbox *mbox);
+__syscall void k_mbox_init(struct k_mbox *mbox);
 
 /**
  * @brief Send a mailbox message in a synchronous manner.
@@ -5476,8 +5476,7 @@ void k_mbox_init(struct k_mbox *mbox);
  * @retval -ENOMSG Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
  */
-int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
-		      k_timeout_t timeout);
+__syscall int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg, k_timeout_t timeout);
 
 /**
  * @brief Send a mailbox message in an asynchronous manner.
@@ -5492,14 +5491,17 @@ int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
  * @param tx_msg Address of the transmit message descriptor.
  * @param sem Address of a semaphore, or NULL if none is needed.
  */
-void k_mbox_async_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
-			     struct k_sem *sem);
+__syscall void k_mbox_async_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg, struct k_sem *sem);
 
 /**
  * @brief Receive a mailbox message.
  *
  * This routine receives a message from @a mbox, then optionally retrieves
  * its data and disposes of the message.
+ *
+ * When called from userspace, delayed retrieval with k_mbox_data_get is not
+ * supported. Therefore, either @a buffer must be non-NULL or the size in
+ * @a rx_msg must be zero, so that the message is disposed directly.
  *
  * @param mbox Address of the mailbox.
  * @param rx_msg Address of the receive message descriptor.
@@ -5511,9 +5513,10 @@ void k_mbox_async_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
  * @retval 0 Message received.
  * @retval -ENOMSG Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
+ * @retval -ENOTSUP Call from userspace with delayed retrieval.
  */
-int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg,
-		      void *buffer, k_timeout_t timeout);
+__syscall int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
+			 k_timeout_t timeout);
 
 /**
  * @brief Retrieve mailbox message data into a buffer.
@@ -5523,6 +5526,9 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg,
  *
  * Alternatively, this routine can be used to dispose of a received message
  * without retrieving its data.
+ *
+ * Since k_mbox_msg is not a kernel object, this method cannot be called from
+ * userspace.
  *
  * @param rx_msg Address of the receive message descriptor.
  * @param buffer Address of the buffer to receive data, or NULL to discard

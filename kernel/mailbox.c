@@ -17,6 +17,7 @@
 #include <zephyr/sys/dlist.h>
 #include <zephyr/init.h>
 /* private kernel APIs */
+#include <zephyr/internal/syscall_handler.h>
 #include <ksched.h>
 #include <kthread.h>
 #include <wait_q.h>
@@ -84,7 +85,7 @@ SYS_INIT(init_mbox_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 #endif /* CONFIG_NUM_MBOX_ASYNC_MSGS > 0 */
 
-void k_mbox_init(struct k_mbox *mbox)
+void z_impl_k_mbox_init(struct k_mbox *mbox)
 {
 	z_waitq_init(&mbox->tx_msg_queue);
 	z_waitq_init(&mbox->rx_msg_queue);
@@ -292,8 +293,7 @@ static int mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 	return ret;
 }
 
-int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
-	       k_timeout_t timeout)
+int z_impl_k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg, k_timeout_t timeout)
 {
 	/* configure things for a synchronous send, then send the message */
 	tx_msg->_syncing_thread = _current;
@@ -308,8 +308,7 @@ int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 }
 
 #if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)
-void k_mbox_async_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
-		      struct k_sem *sem)
+void z_impl_k_mbox_async_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg, struct k_sem *sem)
 {
 	struct k_mbox_async *async;
 
@@ -379,8 +378,8 @@ static int mbox_message_data_check(struct k_mbox_msg *rx_msg, void *buffer)
 	return 0;
 }
 
-int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
-	       k_timeout_t timeout)
+int z_impl_k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
+		      k_timeout_t timeout)
 {
 	struct k_thread *sending_thread;
 	struct k_mbox_msg *tx_msg;
@@ -437,6 +436,62 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 
 	return result;
 }
+
+#ifdef CONFIG_USERSPACE
+static inline void z_vrfy_k_mbox_init(struct k_mbox *mbox)
+{
+	K_OOPS(K_SYSCALL_OBJ_NEVER_INIT(mbox, K_OBJ_MBOX));
+
+	z_impl_k_mbox_init(mbox);
+}
+#include <zephyr/syscalls/k_mbox_init_mrsh.c>
+
+int z_vrfy_k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg, k_timeout_t timeout)
+{
+	K_OOPS(K_SYSCALL_OBJ(mbox, K_OBJ_MBOX));
+	K_OOPS(K_SYSCALL_MEMORY_READ(tx_msg, sizeof(*tx_msg)));
+	if (tx_msg->size != 0) {
+		K_OOPS(K_SYSCALL_MEMORY_READ(tx_msg->tx_data, tx_msg->size));
+	}
+
+	return z_impl_k_mbox_put(mbox, tx_msg, timeout);
+}
+#include <zephyr/syscalls/k_mbox_put_mrsh.c>
+
+static inline void z_vrfy_k_mbox_async_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
+					   struct k_sem *sem)
+{
+	K_OOPS(K_SYSCALL_OBJ(mbox, K_OBJ_MBOX));
+	K_OOPS(K_SYSCALL_MEMORY_READ(tx_msg, sizeof(*tx_msg)));
+	if (tx_msg->size != 0) {
+		K_OOPS(K_SYSCALL_MEMORY_READ(tx_msg->tx_data, tx_msg->size));
+	}
+	if (sem != NULL) {
+		K_OOPS(K_SYSCALL_OBJ(sem, K_OBJ_SEM));
+	}
+
+	z_impl_k_mbox_async_put(mbox, tx_msg, sem);
+}
+#include <zephyr/syscalls/k_mbox_async_put_mrsh.c>
+
+static inline int z_vrfy_k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
+				    k_timeout_t timeout)
+{
+	K_OOPS(K_SYSCALL_OBJ(mbox, K_OBJ_MBOX));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(rx_msg, sizeof(*rx_msg)));
+	if (rx_msg->size != 0) {
+		if (buffer != NULL) {
+			K_OOPS(K_SYSCALL_MEMORY_WRITE(buffer, rx_msg->size));
+		} else {
+			/* Delayed retrieval not supported for userspace */
+			return -ENOTSUP;
+		}
+	}
+
+	return z_impl_k_mbox_get(mbox, rx_msg, buffer, timeout);
+}
+#include <zephyr/syscalls/k_mbox_get_mrsh.c>
+#endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_MAILBOX
 

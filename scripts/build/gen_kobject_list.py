@@ -91,6 +91,7 @@ from collections import OrderedDict
 # https://stackoverflow.com/questions/39980323/are-dictionaries-ordered-in-python-3-6
 kobjects = OrderedDict(
     [
+        ("k_mbox", (None, False, False)),
         ("k_mem_slab", (None, False, True)),
         ("k_msgq", (None, False, True)),
         ("k_mutex", (None, False, True)),
