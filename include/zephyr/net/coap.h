@@ -302,7 +302,7 @@ struct coap_observer {
 	/** Observer list node */
 	sys_snode_t list;
 	/** Observer connection end point information */
-	struct net_sockaddr addr;
+	struct net_sockaddr_storage addr;
 	/** Observer token */
 	uint8_t token[8];
 	/** Extended token length */
