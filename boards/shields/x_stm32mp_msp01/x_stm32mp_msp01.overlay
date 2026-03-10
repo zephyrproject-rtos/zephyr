@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		magn0 = &iis2mdc_x_stm32mp_msp01;
+		accel0 = &ism330dhcx_6b_x_stm32mp_msp01;
+		accel1 = &iis2dlpc_x_stm32mp_msp01;
+	};
+};
+
+&i2c5 {
+	ism330dhcx_6b_x_stm32mp_msp01: ism330dhcx@6b {
+		compatible = "st,ism330dhcx";
+		reg = <0x6b>;
+		drdy-gpios = <&gpiob 0 GPIO_ACTIVE_HIGH>;
+		int-pin = <2>;
+	};
+
+	iis2mdc_x_stm32mp_msp01: iis2mdc@1e {
+		compatible = "st,iis2mdc";
+		reg = <0x1e>;
+		drdy-gpios = <&gpiob 1 GPIO_ACTIVE_HIGH>;
+	};
+
+	iis2dlpc_x_stm32mp_msp01: iis2dlpc@19 {
+		compatible = "st,iis2dlpc";
+		reg = <0x19>;
+		drdy-gpios = <&gpiof 10 GPIO_ACTIVE_HIGH>;
+		drdy-int = <1>;
+	};
+
+	stts22h_x_stm32mp_msp01: stts22h@38 {
+		compatible = "st,stts22h";
+		reg = <0x38>;
+		int-gpios = <&gpioe 6 GPIO_ACTIVE_HIGH>;
+	};
+
+	lps22hh_x_stm32mp_msp01: lps22hh@5d {
+		compatible = "st,lps22hh";
+		reg = <0x5d>;
+		drdy-gpios = <&gpioc 2 GPIO_ACTIVE_HIGH>;
+	};
+};
