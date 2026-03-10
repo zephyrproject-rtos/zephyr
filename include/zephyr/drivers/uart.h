@@ -656,6 +656,11 @@ __syscall void uart_irq_err_disable(const struct device *dev);
 /**
  * @brief Check if any IRQs is pending.
  *
+ * This function must be called in a UART interrupt
+ * handler, or its result is undefined. Before calling this function
+ * in the interrupt handler, uart_irq_update() must be called otherwise
+ * its result may be outdated.
+ *
  * @param dev UART device instance.
  *
  * @retval 1 If an IRQ is pending.
@@ -670,7 +675,7 @@ __syscall int uart_irq_is_pending(const struct device *dev);
  *
  * This function should be called the first thing in the ISR. Calling
  * uart_irq_rx_ready(), uart_irq_tx_ready(), uart_irq_tx_complete()
- * allowed only after this.
+ * and uart_irq_is_pending() is allowed only after this.
  *
  * The purpose of this function is:
  *
