@@ -56,6 +56,9 @@ struct sd_data {
 	uint16_t transfermode;
 	/**< Maximum input clock supported by HC */
 	uint32_t maxclock;
+	/**< interrupt callback */
+	sdhc_interrupt_cb_t sdio_cb;
+	void *sdio_cb_user_data;
 	/**< ADMA descriptor table */
 	adma2_descriptor adma2_descrtbl[MAX(1, CONFIG_HOST_ADMA2_DESC_SIZE)];
 };
@@ -1297,6 +1300,50 @@ static int xlnx_sdhc_card_tuning(const struct device *dev)
 
 /**
  * @brief
+ * Enable interrupt
+ */
+static int xlnx_sdhc_enable_interrupt(const struct device *dev, sdhc_interrupt_cb_t callback,
+					int sources, void *user_data)
+{
+	struct sd_data *dev_data = dev->data;
+	volatile struct reg_base *reg = (struct reg_base *)DEVICE_MMIO_GET(dev);
+
+	if (sources != SDHC_INT_SDIO) {
+		return -ENOTSUP;
+	}
+	if (callback == NULL) {
+		return -EINVAL;
+	}
+
+	reg->normal_int_signal_en |= XLNX_SDHC_INTR_CARD_MASK;
+	/* Record SDIO callback parameters */
+	dev_data->sdio_cb = callback;
+	dev_data->sdio_cb_user_data = user_data;
+
+	return 0;
+}
+
+/**
+ * @brief
+ * Disable interrupt
+ */
+static int xlnx_sdhc_disable_interrupt(const struct device *dev, int sources)
+{
+	struct sd_data *dev_data = dev->data;
+	volatile struct reg_base *reg = (struct reg_base *)DEVICE_MMIO_GET(dev);
+
+	if (sources != SDHC_INT_SDIO) {
+		return -ENOTSUP;
+	}
+	reg->normal_int_signal_en &= ~XLNX_SDHC_INTR_CARD_MASK;
+	dev_data->sdio_cb = NULL;
+	dev_data->sdio_cb_user_data = NULL;
+
+	return 0;
+}
+
+/**
+ * @brief
  * Perform early system init for SDHC
  */
 static int xlnx_sdhc_init(const struct device *dev)
@@ -1327,6 +1374,8 @@ static DEVICE_API(sdhc, xlnx_sdhc_api) = {
 	.execute_tuning = xlnx_sdhc_card_tuning,
 	.card_busy = xlnx_sdhc_card_busy,
 	.get_host_props = xlnx_sdhc_host_props,
+	.enable_interrupt = xlnx_sdhc_enable_interrupt,
+	.disable_interrupt = xlnx_sdhc_disable_interrupt,
 };
 
 #define XLNX_SDHC_INTR_CONFIG(n)                                                                  \
@@ -1351,6 +1400,15 @@ static DEVICE_API(sdhc, xlnx_sdhc_api) = {
 			reg->err_int_stat = XLNX_SDHC_ERROR_INTR_ALL;                             \
 			k_event_post(&dev_data->irq_event, XLNX_SDHC_INTR_ERR_MASK);              \
 		}                                                                                 \
+		if ((reg->normal_int_stat & XLNX_SDHC_INTR_CARD_MASK) != 0U) {  \
+			reg->normal_int_stat_en &= ~XLNX_SDHC_INTR_CARD_MASK;         \
+			reg->normal_int_signal_en &= ~XLNX_SDHC_INTR_CARD_MASK;   \
+			if (dev_data->sdio_cb != NULL) {                             \
+				dev_data->sdio_cb(dev, SDHC_INT_SDIO,	\
+						dev_data->sdio_cb_user_data);   \
+			}  \
+			reg->normal_int_stat_en |= XLNX_SDHC_INTR_CARD_MASK;          \
+		}  \
 	}                                                                                         \
 	static void xlnx_sdhc_config_intr##n(const struct device *dev)                            \
 	{                                                                                         \
