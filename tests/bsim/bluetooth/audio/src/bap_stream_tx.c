@@ -47,7 +47,7 @@ static struct tx_stream tx_streams[CONFIG_BT_ISO_MAX_CHAN];
 static void tx_thread_func(void *arg1, void *arg2, void *arg3)
 {
 	NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
-				  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+				  BT_ISO_SDU_BUF_SIZE(MAX_SDU_SIZE),
 				  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 	/* This loop will attempt to send on all streams in the streaming state in a round robin

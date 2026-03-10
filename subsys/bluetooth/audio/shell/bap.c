@@ -61,6 +61,7 @@
 	(IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE) || IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT))
 
 #define GENERATE_SINE_SUPPORTED (IS_ENABLED(CONFIG_LIBLC3) && !IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS))
+#define MAX_SDU_SIZE            310U /* enough for stereo in a single stream with 48_6_1 */
 
 #if defined(CONFIG_BT_BAP_UNICAST)
 
@@ -254,6 +255,7 @@ static int get_lc3_chan_alloc_from_index(const struct shell_stream *sh_stream, u
 #endif /* CONFIG_LIBLC3 */
 
 #if defined(CONFIG_BT_AUDIO_TX)
+
 static size_t tx_streaming_cnt;
 
 size_t bap_get_tx_streaming_cnt(void)
@@ -290,8 +292,8 @@ uint16_t get_next_seq_num(struct bt_bap_stream *bap_stream)
 /* For the first call-back we push multiple audio frames to the buffer to use the
  * controller ISO buffer to handle jitter.
  */
-#define PRIME_COUNT 2U
-#define SINE_TX_POOL_SIZE (BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU))
+#define PRIME_COUNT       2U
+#define SINE_TX_POOL_SIZE (BT_ISO_SDU_BUF_SIZE(MAX_SDU_SIZE))
 NET_BUF_POOL_FIXED_DEFINE(sine_tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT, SINE_TX_POOL_SIZE,
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
@@ -4018,12 +4020,12 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 
 #if defined(CONFIG_BT_AUDIO_TX)
 
-#define DATA_MTU CONFIG_BT_ISO_TX_MTU
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, DATA_MTU, CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+NET_BUF_POOL_FIXED_DEFINE(tx_pool, 1, BT_ISO_SDU_BUF_SIZE(MAX_SDU_SIZE),
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 static int cmd_send(const struct shell *sh, size_t argc, char *argv[])
 {
-	static uint8_t data[DATA_MTU - BT_ISO_CHAN_SEND_RESERVE];
+	static uint8_t data[MAX_SDU_SIZE];
 	int ret, len;
 	struct net_buf *buf;
 

@@ -33,6 +33,7 @@
 #include <zephyr/types.h>
 
 #include "btp_bap_audio_stream.h"
+#include "bttester.h"
 
 LOG_MODULE_REGISTER(bttester_bap_audio_stream, CONFIG_BTTESTER_LOG_LEVEL);
 
@@ -77,7 +78,7 @@ static bool stream_is_streaming(const struct bt_bap_stream *bap_stream)
 static void tx_thread_func(void *arg1, void *arg2, void *arg3)
 {
 	NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
-				  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
+				  BT_ISO_SDU_BUF_SIZE(ISO_MAX_SDU_SIZE),
 				  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
 	/* This loop will attempt to send on all streams in the streaming state in a round robin
