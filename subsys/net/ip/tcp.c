@@ -611,7 +611,7 @@ static void tcp_send_keepalive_probe(struct k_work *work);
 
 static void keep_alive_timer_init(struct tcp *conn)
 {
-	conn->keep_alive = false;
+	conn->keep_alive = true;
 	conn->keep_idle = CONFIG_NET_TCP_KEEPIDLE_DEFAULT;
 	conn->keep_intvl = CONFIG_NET_TCP_KEEPINTVL_DEFAULT;
 	conn->keep_cnt = CONFIG_NET_TCP_KEEPCNT_DEFAULT;
