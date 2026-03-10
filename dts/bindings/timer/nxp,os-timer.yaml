@@ -24,3 +24,13 @@ properties:
   resets:
     type: phandle-array
     description: reset line
+
+  role:
+    type: string
+    default: "timer"
+    description: |
+      Controls whether this OS Timer instance is used as a Zephyr counter
+      device or as the system tick timer. The default is "timer".
+    enum:
+      - "counter"
+      - "timer"
