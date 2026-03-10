@@ -168,20 +168,18 @@ static enum ethernet_hw_caps axi_eth_lite_get_caps(const struct device *dev)
 	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
 }
 
-static void axi_eth_lite_phy_link_state_changed(const struct device *phydev,
+static void axi_eth_lite_phy_link_state_changed(const struct device *phydev __unused,
 						struct phy_link_state *state, void *user_data)
 {
-	struct axi_eth_lite_data *data = user_data;
-
-	ARG_UNUSED(phydev);
+	struct net_if *iface = (struct net_if *)user_data;
 
 	LOG_INF("Link state changed to: %s (speed %x)", state->is_up ? "up" : "down", state->speed);
 
 	/* inform the L2 driver whether we can handle packets now */
 	if (state->is_up) {
-		net_eth_carrier_on(data->iface);
+		net_eth_carrier_on(iface);
 	} else {
-		net_eth_carrier_off(data->iface);
+		net_eth_carrier_off(iface);
 	}
 }
 
@@ -207,7 +205,8 @@ static void axi_eth_lite_iface_init(struct net_if *iface)
 		/* initially no carrier */
 		net_eth_carrier_off(iface);
 
-		err = phy_link_callback_set(config->phy, axi_eth_lite_phy_link_state_changed, data);
+		err = phy_link_callback_set(config->phy, axi_eth_lite_phy_link_state_changed,
+					    iface);
 
 		if (err < 0) {
 			LOG_ERR("Could not set PHY link state changed handler: %d", err);
