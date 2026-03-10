@@ -126,7 +126,7 @@ static int coap_server_process(int sock_fd)
 {
 	static uint8_t buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
 
-	struct net_sockaddr client_addr;
+	struct net_sockaddr_storage client_addr;
 	net_socklen_t client_addr_len = sizeof(client_addr);
 	struct coap_service *service = NULL;
 	struct coap_packet request;
@@ -142,7 +142,8 @@ static int coap_server_process(int sock_fd)
 		flags |= ZSOCK_MSG_TRUNC;
 	}
 
-	received = zsock_recvfrom(sock_fd, buf, sizeof(buf), flags, &client_addr, &client_addr_len);
+	received = zsock_recvfrom(sock_fd, buf, sizeof(buf), flags, net_sad(&client_addr),
+				  &client_addr_len);
 
 	if (received < 0) {
 		if (errno == EWOULDBLOCK) {
@@ -201,7 +202,8 @@ static int coap_server_process(int sock_fd)
 			goto unlock;
 		}
 
-		ret = coap_service_send(service, &response, &client_addr, client_addr_len, NULL);
+		ret = coap_service_send(service, &response, net_sad(&client_addr), client_addr_len,
+					NULL);
 		if (ret < 0) {
 			LOG_ERR("Failed to reply \"Request Entity Too Large\" (%d)", ret);
 			goto unlock;
@@ -218,7 +220,8 @@ static int coap_server_process(int sock_fd)
 		switch (type) {
 		case COAP_TYPE_RESET:
 			tkl = coap_header_get_token(&request, token);
-			coap_service_remove_observer(service, NULL, &client_addr, token, tkl);
+			coap_service_remove_observer(service, NULL, net_sad(&client_addr), token,
+						     tkl);
 			__fallthrough;
 		case COAP_TYPE_ACK:
 			coap_server_free(pending->data);
@@ -252,11 +255,12 @@ static int coap_server_process(int sock_fd)
 			goto unlock;
 		}
 
-		ret = coap_service_send(service, &response, &client_addr, client_addr_len, NULL);
+		ret = coap_service_send(service, &response, net_sad(&client_addr), client_addr_len,
+					NULL);
 	} else {
 		ret = coap_handle_request_len(&request, service->res_begin,
-					      COAP_SERVICE_RESOURCE_COUNT(service),
-					      options, opt_num, &client_addr, client_addr_len);
+					      COAP_SERVICE_RESOURCE_COUNT(service), options,
+					      opt_num, net_sad(&client_addr), client_addr_len);
 
 		/* Translate errors to response codes */
 		switch (ret) {
@@ -283,7 +287,8 @@ static int coap_server_process(int sock_fd)
 				goto unlock;
 			}
 
-			ret = coap_service_send(service, &ack, &client_addr, client_addr_len, NULL);
+			ret = coap_service_send(service, &ack, net_sad(&client_addr),
+						client_addr_len, NULL);
 		}
 	}
 
