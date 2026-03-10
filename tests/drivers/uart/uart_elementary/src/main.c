@@ -99,6 +99,7 @@ static void interrupt_driven_uart_callback_main_uart(const struct device *dev, v
 		if (uart_irq_tx_ready(dev)) {
 			uart_tx_interrupt_service(dev, &tx_byte_offset);
 		}
+		uart_irq_update(dev);
 	}
 }
 
@@ -124,6 +125,7 @@ static void interrupt_driven_uart_callback_aux_uart(const struct device *dev, vo
 		if (uart_irq_tx_ready(dev)) {
 			uart_tx_interrupt_service(dev, &tx_byte_offset_aux);
 		}
+		uart_irq_update(dev);
 	}
 }
 #endif /* CONFIG_DUAL_UART_TEST */
