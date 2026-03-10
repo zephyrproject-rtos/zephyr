@@ -1907,6 +1907,7 @@ endmacro()
 #     SOURCE  <file>          - C source file using GEN_ABSOLUTE_SYM macros
 #     [HEADER  <filename>]    - output header name (default: <name>.h)
 #     [INCLUDES <dir>...]     - additional private include directories
+#     [DEPENDS <name>...]     - other constants libraries this one depends on
 #   )
 #
 # Creates an OBJECT library from a C source file containing
@@ -1919,8 +1920,11 @@ endmacro()
 # allowing callers to reference the compiled objects at link time via
 # $<TARGET_OBJECTS:name> if needed.
 #
+# DEPENDS lists other constants libraries (by NAME) whose generated
+# headers must be produced before this library is compiled.
+#
 function(zephyr_constants_library)
-  cmake_parse_arguments(ARG "" "NAME;SOURCE;HEADER" "INCLUDES" ${ARGN})
+  cmake_parse_arguments(ARG "" "NAME;SOURCE;HEADER" "INCLUDES;DEPENDS" ${ARGN})
 
   zephyr_check_arguments_required_all(${CMAKE_CURRENT_FUNCTION} ARG NAME SOURCE)
   if(NOT ARG_HEADER)
@@ -1951,6 +1955,10 @@ function(zephyr_constants_library)
   add_custom_target(${target_name} DEPENDS ${output_path})
 
   add_dependencies(zephyr_generated_headers ${target_name})
+
+  foreach(_dep IN LISTS ARG_DEPENDS)
+    add_dependencies(${lib_name} ${_dep}_h)
+  endforeach()
 endfunction()
 
 ########################################################
