@@ -668,7 +668,7 @@ __syscall void uart_irq_err_disable(const struct device *dev);
  * @retval -ENOSYS If this function is not implemented.
  * @retval -ENOTSUP If API is not enabled.
  */
-__syscall int uart_irq_is_pending(const struct device *dev);
+static inline int uart_irq_is_pending(const struct device *dev);
 
 /**
  * @brief Start processing interrupts in ISR.
@@ -695,7 +695,7 @@ __syscall int uart_irq_is_pending(const struct device *dev);
  * @retval -ENOSYS If this function is not implemented.
  * @retval -ENOTSUP If API is not enabled.
  */
-__syscall int uart_irq_update(const struct device *dev);
+static inline int uart_irq_update(const struct device *dev);
 
 /**
  * @brief Set the IRQ callback function pointer.
