@@ -183,6 +183,7 @@ static void hfp_hf_send_failed(struct bt_hfp_hf *hf)
 }
 
 static void hfp_hf_send_data(struct bt_hfp_hf *hf);
+static int bt_hfp_ag_get_cme_err(enum at_cme cme_err);
 
 static int hfp_hf_common_finish(struct at_client *at, enum at_result result,
 			  enum at_cme cme_err)
@@ -338,13 +339,25 @@ static int vendor_resp(struct at_client *hf_at, struct net_buf *buf)
 	return 0;
 }
 
-static int vendor_finish(struct at_client *hf_at, enum bt_at_result result,
-		          enum bt_at_cme cme_err)
+static int vendor_finish(struct at_client *hf_at, enum at_result result,
+			 enum at_cme cme_err)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	int err;
+
 	LOG_DBG("Vendor specific response finished");
 
-	if (bt_hf && bt_hf->vendor_specific) {
+	if (result == AT_RESULT_CME_ERROR) {
+		err = bt_hfp_ag_get_cme_err(cme_err);
+	} else if (result == AT_RESULT_ERROR) {
+		err = -ENOTSUP;
+	} else {
+		err = 0;
+	}
+
+	if (bt_hf && bt_hf->vendor_complete) {
+		bt_hf->vendor_complete(hf, err);
+	} else if (bt_hf && bt_hf->vendor_specific) {
 		bt_hf->vendor_specific(hf, NULL, NULL);
 	}
 

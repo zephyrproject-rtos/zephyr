@@ -514,13 +514,25 @@ struct bt_hfp_hf_cb {
 	 *
 	 * If this callback is provided it will be called whenever the
 	 * vendor specific result is received from AG.
-	 * If the request is finished, the callback will be called with NULL cmd and value.
+	 * For completion notification, use @ref bt_hfp_hf_cb::vendor_complete.
+	 * If @ref bt_hfp_hf_cb::vendor_complete is not provided, this callback
+	 * is called with NULL @p cmd and @p value when the request finishes.
 	 *
 	 * @param hf HFP HF object.
-	 * @param cmd Vendor specific command name (without leading '+'), or NULL if finished.
-	 * @param value Vendor specific response value, or NULL if finished.
+	 * @param cmd Vendor specific command name (without leading '+').
+	 * @param value Vendor specific response value.
 	 */
 	void (*vendor_specific)(struct bt_hfp_hf *hf, const char *cmd, const char *value);
+
+	/** @brief Vendor specific command complete callback
+	 *
+	 * If this callback is provided it will be called whenever the
+	 * vendor specific command transaction is finished.
+	 *
+	 * @param hf HFP HF object.
+	 * @param err Result of the command transaction. Zero means success.
+	 */
+	void (*vendor_complete)(struct bt_hfp_hf *hf, int err);
 };
 
 /** @brief Register HFP HF profile
