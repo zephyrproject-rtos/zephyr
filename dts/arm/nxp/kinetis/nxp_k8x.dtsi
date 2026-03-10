@@ -443,9 +443,9 @@
 				     <8 0>, <9 0>, <10 0>, <11 0>,
 				     <12 0>, <13 0>, <14 0>, <15 0>,
 				     <16 0>;
-			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_DMA_CLK, 0x1040, 0x00000002)>,
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_DMA_CLK, 0x1040, 1)>,
 				 <&sim
-				  KINETIS_SIM_CLOCK(KINETIS_SIM_DMAMUX_CLK, 0x103c, 0x00000002)>;
+				  KINETIS_SIM_CLOCK(KINETIS_SIM_DMAMUX_CLK, 0x103c, 1)>;
 			status = "disabled";
 		};
 	};
